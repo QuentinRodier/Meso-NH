@@ -975,7 +975,7 @@ IF (LVAR_MRW .OR. LLIMA_DIAG) THEN
 !
       TZFIELD%CMNHNAME   = 'VRC'
       TZFIELD%CLONGNAME  = 'VRC'
-      TZFIELD%CUNITS     = '' !vol/vol
+      TZFIELD%CUNITS     = '1' !vol/vol
       TZFIELD%CCOMMENT   = 'X_Y_Z_VRC (vol/vol)'
       CALL IO_WRITE_FIELD(TPFILE,TZFIELD,XRT(:,:,:,IDX_RCT)*XRHODREF(:,:,:)/1.E3)
     END IF
@@ -988,7 +988,7 @@ IF (LVAR_MRW .OR. LLIMA_DIAG) THEN
 !
       TZFIELD%CMNHNAME   = 'VRR'
       TZFIELD%CLONGNAME  = 'VRR'
-      TZFIELD%CUNITS     = '' !vol/vol
+      TZFIELD%CUNITS     = '1' !vol/vol
       TZFIELD%CCOMMENT   = 'X_Y_Z_VRR (vol/vol)'
       CALL IO_WRITE_FIELD(TPFILE,TZFIELD,XRT(:,:,:,IDX_RRT)*XRHODREF(:,:,:)/1.E3)
     END IF
@@ -1484,7 +1484,7 @@ IF (LELECDIAG .AND. CELEC .NE. "NONE") THEN
     TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
     IF (JSV .GT. NSV_ELECBEG .AND. JSV .LT. NSV_ELECEND) THEN 
       TZFIELD%CUNITS     = 'C m-3'
-      WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (C/m3)'
+      WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
     ELSE
       TZFIELD%CUNITS     = 'm-3'
       WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (nb ions/m3)'
@@ -2493,7 +2493,7 @@ IF ( LMOIST_L .OR. LMOIST_S1 .OR. LMOIST_S2 ) THEN
     TZFIELD%CLONGNAME  = 'THETAL'
     TZFIELD%CUNITS     = 'K'
     TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_Liquid water potential temperature (K)'
+    TZFIELD%CCOMMENT   = 'X_Y_Z_Liquid water potential temperature'
     TZFIELD%NGRID      = 1
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
@@ -2548,7 +2548,7 @@ IF ( LMOIST_S1 .OR. LMOIST_S2 ) THEN
     TZFIELD%CLONGNAME  = 'THETAS1'
     TZFIELD%CUNITS     = 'K'
     TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_Moist air Entropy (1st order) potential temperature (K)'
+    TZFIELD%CCOMMENT   = 'X_Y_Z_Moist air Entropy (1st order) potential temperature'
     TZFIELD%NGRID      = 1
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
@@ -2562,7 +2562,7 @@ IF ( LMOIST_S1 .OR. LMOIST_S2 ) THEN
     TZFIELD%CLONGNAME  = 'THETAS2'
     TZFIELD%CUNITS     = 'K'
     TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_Z_Moist air Entropy (2nd order) potential temperature (K)'
+    TZFIELD%CCOMMENT   = 'X_Y_Z_Moist air Entropy (2nd order) potential temperature'
     TZFIELD%NGRID      = 1
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3

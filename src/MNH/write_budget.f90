@@ -590,7 +590,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
       ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
 !
-      YWORKUNIT(:)       = 'm^2 s-3' ; YWORKUNIT(1:3) = 'm^2 s-1'
+      YWORKUNIT(:)       = 'm2 s-3' ; YWORKUNIT(1:3) = 'm2 s-1'
       YWORKCOMMENT(:)    = 'Budget of turbulent kinetic energy'
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('TK___',I4.4)") NBUTSHIFT 
@@ -1284,7 +1284,7 @@ SELECT CASE (CBUTYPE)
       END DO
       DEALLOCATE(ZCONVERT)
 !
-      YWORKUNIT(:)       = 'm^2 s-3' ; YWORKUNIT(1:3) = 'm^2 s-2'
+      YWORKUNIT(:)       = 'm2 s-3' ; YWORKUNIT(1:3) = 'm2 s-2'
       YWORKCOMMENT(:)    = 'Budget of turbulent kinetic energy'
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('TK___',I4.4)") NBUTSHIFT

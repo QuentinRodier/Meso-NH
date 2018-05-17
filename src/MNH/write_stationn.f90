@@ -189,31 +189,31 @@ ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%P(:,II)
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'LON'
-YUNIT    (JPROC) = 'decimal degree'
+YUNIT    (JPROC) = 'degree'
 YCOMMENT (JPROC) = 'Longitude'
 ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%LON(II)
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'LAT'
-YUNIT    (JPROC) = 'decimal degree'
+YUNIT    (JPROC) = 'degree'
 YCOMMENT (JPROC) = 'Latitude'
 ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%LAT(II)
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'ZON_WIND'
-YUNIT    (JPROC) = 'm/s'
+YUNIT    (JPROC) = 'm s-1'
 YCOMMENT (JPROC) = 'Zonal wind'
 ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%ZON(:,II)
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'MER_WIND'
-YUNIT    (JPROC) = 'm/s'
+YUNIT    (JPROC) = 'm s-1'
 YCOMMENT (JPROC) = 'Meridional wind'
 ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%MER(:,II)
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'W'
-YUNIT    (JPROC) = 'm/s'
+YUNIT    (JPROC) = 'm s-1'
 YCOMMENT (JPROC) = 'Air vertical speed' 
 ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%W(:,II)
 !
@@ -232,104 +232,104 @@ IF (LDIAG_IN_RUN) THEN
   !
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'Q2m'
-  YUNIT    (JPROC) = 'kg/kg'
+  YUNIT    (JPROC) = 'kg kg-1'
   YCOMMENT (JPROC) = '2-m humidity' 
   ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%Q2M(:,II)
   !
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'HU2m'
-  YUNIT    (JPROC) = '%'
+  YUNIT    (JPROC) = 'percent'
   YCOMMENT (JPROC) = '2-m relative humidity' 
   ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%HU2M(:,II)
   !
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'zon10m'
-  YUNIT    (JPROC) = 'm/s'
+  YUNIT    (JPROC) = 'm s-1'
   YCOMMENT (JPROC) = '10-m zonal wind' 
   ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%ZON10M(:,II)
   !       
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'mer10m'
-  YUNIT    (JPROC) = 'm/s'
+  YUNIT    (JPROC) = 'm s-1'
   YCOMMENT (JPROC) = '10-m meridian wind' 
   ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%MER10M(:,II)
   !
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'RN'  
-  YUNIT    (JPROC) = 'W/m2'
+  YUNIT    (JPROC) = 'W m-2'
   YCOMMENT (JPROC) = 'Net radiation'         
   ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%RN(:,II)
   !
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'H'   
-  YUNIT    (JPROC) = 'W/m2' 
+  YUNIT    (JPROC) = 'W m-2'
   YCOMMENT (JPROC) = 'Sensible heat flux'
   ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%H(:,II)
   !       
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'LE'  
-  YUNIT    (JPROC) = 'W/m2' 
+  YUNIT    (JPROC) = 'W m-2'
   YCOMMENT (JPROC) = 'Total Latent heat flux'   
   ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%LE(:,II)
 !
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'G'    
-  YUNIT    (JPROC) = 'W/m2' 
+  YUNIT    (JPROC) = 'W m-2'
   YCOMMENT (JPROC) = 'Storage heat flux'     
   ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%GFLUX(:,II)
   !
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'SWD'   
-  YUNIT    (JPROC) = 'W/m2'  
+  YUNIT    (JPROC) = 'W m-2'
   YCOMMENT (JPROC) = 'Downward short-wave radiation' 
   ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SWD(:,II)
   !       
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'SWU'   
-  YUNIT    (JPROC) = 'W/m2'  
+  YUNIT    (JPROC) = 'W m-2'
   YCOMMENT (JPROC) = 'Upward short-wave radiation' 
   ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SWU(:,II)
   !       
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'LWD'  
-  YUNIT    (JPROC) = 'W/m2' 
+  YUNIT    (JPROC) = 'W m-2'
   YCOMMENT (JPROC) = 'Downward long-wave radiation'
   ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%LWD(:,II)
   !       
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'LWU'  
-  YUNIT    (JPROC) = 'W/m2' 
+  YUNIT    (JPROC) = 'W m-2'
   YCOMMENT (JPROC) = 'Upward long-wave radiation'
   ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%LWU(:,II)
   JPROC = JPROC + 1
   !
   YTITLE   (JPROC) = 'SWDIR'   
-  YUNIT    (JPROC) = 'W/m2'  
+  YUNIT    (JPROC) = 'W m-2'
   YCOMMENT (JPROC) = 'Downward direct short-wave radiation' 
   ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SWDIR(:,II)
   !
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'SWDIFF'   
-  YUNIT    (JPROC) = 'W/m2'  
+  YUNIT    (JPROC) = 'W m-2'
   YCOMMENT (JPROC) = 'Downward diffuse short-wave radiation' 
   ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SWDIFF(:,II)  
   !       
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'DSTAOD'  
-  YUNIT    (JPROC) = 'm' 
+  YUNIT    (JPROC) = 'm'
   YCOMMENT (JPROC) = 'Dust aerosol optical depth'
   ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%DSTAOD(:,II)
   !
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'LEI'  
-  YUNIT    (JPROC) = 'W/m2' 
+  YUNIT    (JPROC) = 'W m-2'
   YCOMMENT (JPROC) = 'Solid Latent heat flux'   
   ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%LEI(:,II)
 ENDIF
 !
 DO JRR=1,SIZE(TSTATION%R,3)
   JPROC = JPROC+1
-  YUNIT    (JPROC) = 'kg/kg'
+  YUNIT    (JPROC) = 'kg kg-1'
   ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%R(:,II,JRR)
   IF (JRR==1) THEN
     YTITLE   (JPROC) = 'Rv'
@@ -358,7 +358,7 @@ END DO
 IF (SIZE(TSTATION%TKE,1)>0) THEN
   JPROC = JPROC+1
   YTITLE   (JPROC) = 'Tke'
-  YUNIT    (JPROC) = 'm2/s2'
+  YUNIT    (JPROC) = 'm2 s-2'
   YCOMMENT (JPROC) = 'Turbulent kinetic energy'
   ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%TKE(:,II)
 END IF
@@ -369,7 +369,7 @@ IF (SIZE(TSTATION%SV,3)>=1) THEN
   DO JSV = 1,NSV_USER
     JPROC = JPROC+1
     WRITE (YTITLE(JPROC),FMT='(A2,I3.3)')   'Sv',JSV
-    YUNIT    (JPROC) = 'kg/kg'
+    YUNIT    (JPROC) = 'kg kg-1'
     YCOMMENT (JPROC) = ' '
     ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SV(:,II,JSV)
   END DO
@@ -377,7 +377,7 @@ IF (SIZE(TSTATION%SV,3)>=1) THEN
   DO JSV = NSV_C2R2BEG,NSV_C2R2END
     JPROC = JPROC+1
     YTITLE(JPROC)= TRIM(C2R2NAMES(JSV-NSV_C2R2BEG+1))
-    YUNIT    (JPROC) = '/M3'
+    YUNIT    (JPROC) = 'm-3'
     YCOMMENT (JPROC) = ' '
     ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SV(:,II,JSV)
   END DO
@@ -385,7 +385,7 @@ IF (SIZE(TSTATION%SV,3)>=1) THEN
   DO JSV = NSV_C1R3BEG,NSV_C1R3END
     JPROC = JPROC+1
     YTITLE(JPROC)= TRIM(C1R3NAMES(JSV-NSV_C1R3BEG+1))
-    YUNIT    (JPROC) = '/M3'
+    YUNIT    (JPROC) = 'm-3'
     YCOMMENT (JPROC) = ' '
     ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SV(:,II,JSV)
   END DO
@@ -393,7 +393,7 @@ IF (SIZE(TSTATION%SV,3)>=1) THEN
   DO JSV = NSV_ELECBEG,NSV_ELECEND
     JPROC = JPROC+1
     YTITLE(JPROC)= TRIM(CELECNAMES(JSV-NSV_ELECBEG+1))
-    YUNIT    (JPROC) = 'Cb'
+    YUNIT    (JPROC) = 'C'
     YCOMMENT (JPROC) = ' '
     ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SV(:,II,JSV)
   END DO
@@ -401,15 +401,15 @@ IF (SIZE(TSTATION%SV,3)>=1) THEN
   DO JSV = NSV_CHEMBEG,NSV_CHEMEND
     JPROC = JPROC+1
     YTITLE(JPROC)= TRIM(CNAMES(JSV-NSV_CHEMBEG+1))
-    YUNIT    (JPROC) = 'PPB'
-    WRITE(YCOMMENT (JPROC),'(A5,A3,I3.3,A)') 'T(s) ','SVT',JSV,' (ppb)'
+    YUNIT    (JPROC) = 'ppb'
+    WRITE(YCOMMENT (JPROC),'(A5,A3,I3.3)') 'T(s) ','SVT',JSV
     ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SV(:,II,JSV) * 1.E9
   END DO
   ! LiNOX passive tracer
   DO JSV = NSV_LNOXBEG,NSV_LNOXEND
     JPROC = JPROC+1
     WRITE (YTITLE(JPROC),FMT='(A5)') 'LiNOx'
-    YUNIT    (JPROC) = 'PPB'
+    YUNIT    (JPROC) = 'ppb'
     YCOMMENT (JPROC) = ' '
     ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SV(:,II,JSV) * 1.E9
   END DO
@@ -417,7 +417,7 @@ IF (SIZE(TSTATION%SV,3)>=1) THEN
   DO JSV = NSV_AERBEG,NSV_AEREND
     JPROC = JPROC+1
     YTITLE(JPROC)= TRIM(CAERONAMES(JSV-NSV_AERBEG+1))
-    YUNIT    (JPROC) = 'PPB'
+    YUNIT    (JPROC) = 'ppb'
     YCOMMENT (JPROC) = ' '
     ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SV(:,II,JSV) *1.E9
   END DO
@@ -451,7 +451,7 @@ IF (SIZE(TSTATION%SV,3)>=1) THEN
       JPROC = JPROC+1
       WRITE(YTITLE(JPROC),'(A6,I1)')'AERRGA',JSV
       YUNIT    (JPROC) = 'um'
-      WRITE(YCOMMENT(JPROC),'(A18,I1,A5)')'RG (nb) AERO MODE ',JSV,' (um)'
+      WRITE(YCOMMENT(JPROC),'(A18,I1)')'RG (nb) AERO MODE ',JSV
       ZWORK6 (1,1,1,:,1,JPROC) = ZRG(1,1,:,JSV)
       ! standard deviation
       JPROC = JPROC+1
@@ -462,99 +462,99 @@ IF (SIZE(TSTATION%SV,3)>=1) THEN
       ! particles number
       JPROC = JPROC+1
       WRITE(YTITLE(JPROC),'(A6,I1)')'AERN0A',JSV
-      YUNIT    (JPROC) = '  '
-      WRITE(YCOMMENT(JPROC),'(A13,I1,A6)')'N0 AERO MODE ',JSV,' (1/m3)'
+      YUNIT    (JPROC) = 'm-3'
+      WRITE(YCOMMENT(JPROC),'(A13,I1)')'N0 AERO MODE ',JSV
       ZWORK6 (1,1,1,:,1,JPROC) = ZN0(1,1,:,JSV)
       JPROC = JPROC+1
       WRITE(YTITLE(JPROC),'(A5,I1)')'MOC  ',JSV
-      YUNIT    (JPROC) = 'ug/m3'
-      WRITE(YCOMMENT,'(A23,I1,A7)')'MASS OC   AEROSOL MODE ',JSV,'(ug/m3)'
+      YUNIT    (JPROC) = 'ug m-3'
+      WRITE(YCOMMENT,'(A23,I1)')'MASS OC   AEROSOL MODE ',JSV
       ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_OC,JSV)
 
       JPROC = JPROC+1
       WRITE(YTITLE(JPROC),'(A5,I1)')'MBC  ',JSV
-      YUNIT    (JPROC) = 'ug/m3'
-      WRITE(YCOMMENT,'(A23,I1,A7)')'MASS BC   AEROSOL MODE ',JSV,'(ug/m3)'
+      YUNIT    (JPROC) = 'ug m-3'
+      WRITE(YCOMMENT,'(A23,I1)')'MASS BC   AEROSOL MODE ',JSV
       ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_BC,JSV)
 
       JPROC = JPROC+1
       WRITE(YTITLE(JPROC),'(A5,I1)')'MDST  ',JSV
-      YUNIT    (JPROC) = 'ug/m3'
-      WRITE(YCOMMENT,'(A23,I1,A7)')'MASS DST   AEROSOL MODE ',JSV,'(ug/m3)'
+      YUNIT    (JPROC) = 'ug m-3'
+      WRITE(YCOMMENT,'(A23,I1)')'MASS DST   AEROSOL MODE ',JSV
       ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_DST,JSV)
 
       JPROC = JPROC+1
       WRITE(YTITLE(JPROC),'(A5,I1)')'MSO4 ',JSV
-      YUNIT    (JPROC) = 'ug/m3'
-      WRITE(YCOMMENT,'(A23,I1,A7)')'MASS SO4  AEROSOL MODE ',JSV,'(ug/m3)'
+      YUNIT    (JPROC) = 'ug m-3'
+      WRITE(YCOMMENT,'(A23,I1)')'MASS SO4  AEROSOL MODE ',JSV
       ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_SO4,JSV)
 
       JPROC = JPROC+1
       WRITE(YTITLE(JPROC),'(A5,I1)')'MNO3 ',JSV
-      YUNIT    (JPROC) = 'ug/m3'
-      WRITE(YCOMMENT,'(A23,I1,A7)')'MASS NO3  AEROSOL MODE ',JSV,'(ug/m3)'
+      YUNIT    (JPROC) = 'ug m-3'
+      WRITE(YCOMMENT,'(A23,I1)')'MASS NO3  AEROSOL MODE ',JSV
       ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_NO3,JSV)
 
       JPROC = JPROC+1
       WRITE(YTITLE(JPROC),'(A5,I1)')'MH2O ',JSV
-      YUNIT    (JPROC) = 'ug/m3'
-      WRITE(YCOMMENT,'(A23,I1,A7)')'MASS H2O  AEROSOL MODE ',JSV,'(ug/m3)'
+      YUNIT    (JPROC) = 'ug m-3'
+      WRITE(YCOMMENT,'(A23,I1)')'MASS H2O  AEROSOL MODE ',JSV
       ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_H2O,JSV)
       JPROC = JPROC+1
       WRITE(YTITLE(JPROC),'(A5,I1)')'MNH3 ',JSV
-      YUNIT    (JPROC) = 'ug/m3'
-      WRITE(YCOMMENT,'(A23,I1,A7)')'MASS NH3  AEROSOL MODE ',JSV,'(ug/m3)'
+      YUNIT    (JPROC) = 'ug m-3'
+      WRITE(YCOMMENT,'(A23,I1)')'MASS NH3  AEROSOL MODE ',JSV
       ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_NH3,JSV)
       JPROC = JPROC+1
       IF (NSOA == 10) THEN
       WRITE(YTITLE(JPROC),'(A5,I1)')'MSOA1',JSV
-      YUNIT    (JPROC) = 'ug/m3'
-      WRITE(YCOMMENT,'(A23,I1,A7)')'MASS SOA1 AEROSOL MODE ',JSV,'(ug/m3)'
+      YUNIT    (JPROC) = 'ug m-3'
+      WRITE(YCOMMENT,'(A23,I1)')'MASS SOA1 AEROSOL MODE ',JSV
       ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_SOA1,JSV)
       JPROC = JPROC+1
       WRITE(YTITLE(JPROC),'(A5,I1)')'MSOA2',JSV
-      YUNIT    (JPROC) = 'ug/m3'
-      WRITE(YCOMMENT,'(A23,I1,A7)')'MASS SOA2 AEROSOL MODE ',JSV,'(ug/m3)'
+      YUNIT    (JPROC) = 'ug m-3'
+      WRITE(YCOMMENT,'(A23,I1)')'MASS SOA2 AEROSOL MODE ',JSV
       ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_SOA2,JSV)
       JPROC = JPROC+1
       WRITE(YTITLE(JPROC),'(A5,I1)')'MSOA3',JSV
-      YUNIT    (JPROC) = 'ug/m3'
-      WRITE(YCOMMENT,'(A23,I1,A7)')'MASS SOA3 AEROSOL MODE ',JSV,'(ug/m3)'
+      YUNIT    (JPROC) = 'ug m-3'
+      WRITE(YCOMMENT,'(A23,I1)')'MASS SOA3 AEROSOL MODE ',JSV
       ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_SOA3,JSV)
       JPROC = JPROC+1
       WRITE(YTITLE(JPROC),'(A5,I1)')'MSOA4',JSV
-      YUNIT    (JPROC) = 'ug/m3'
-      WRITE(YCOMMENT,'(A23,I1,A7)')'MASS SOA4 AEROSOL MODE ',JSV,'(ug/m3)'
+      YUNIT    (JPROC) = 'ug m-3'
+      WRITE(YCOMMENT,'(A23,I1)')'MASS SOA4 AEROSOL MODE ',JSV
       ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_SOA4,JSV)
       JPROC = JPROC+1
       WRITE(YTITLE(JPROC),'(A5,I1)')'MSOA5',JSV
-      YUNIT    (JPROC) = 'ug/m3'
-      WRITE(YCOMMENT,'(A23,I1,A7)')'MASS SOA5 AEROSOL MODE ',JSV,'(ug/m3)'
+      YUNIT    (JPROC) = 'ug m-3'
+      WRITE(YCOMMENT,'(A23,I1)')'MASS SOA5 AEROSOL MODE ',JSV
       ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_SOA5,JSV)
       JPROC = JPROC+1
       WRITE(YTITLE(JPROC),'(A5,I1)')'MSOA6',JSV
-      YUNIT    (JPROC) = 'ug/m3'
-      WRITE(YCOMMENT,'(A23,I1,A7)')'MASS SOA6 AEROSOL MODE ',JSV,'(ug/m3)'
+      YUNIT    (JPROC) = 'ug m-3'
+      WRITE(YCOMMENT,'(A23,I1)')'MASS SOA6 AEROSOL MODE ',JSV
       ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_SOA6,JSV)
       JPROC = JPROC+1
       WRITE(YTITLE(JPROC),'(A5,I1)')'MSOA7',JSV
-      YUNIT    (JPROC) = 'ug/m3'
-      WRITE(YCOMMENT,'(A23,I1,A7)')'MASS SOA7 AEROSOL MODE ',JSV,'(ug/m3)'
+      YUNIT    (JPROC) = 'ug m-3'
+      WRITE(YCOMMENT,'(A23,I1)')'MASS SOA7 AEROSOL MODE ',JSV
       ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_SOA7,JSV)
       JPROC = JPROC+1
       WRITE(YTITLE(JPROC),'(A5,I1)')'MSOA8',JSV
-      YUNIT    (JPROC) = 'ug/m3'
-      WRITE(YCOMMENT,'(A23,I1,A7)')'MASS SOA8 AEROSOL MODE ',JSV,'(ug/m3)'
+      YUNIT    (JPROC) = 'ug m-3'
+      WRITE(YCOMMENT,'(A23,I1)')'MASS SOA8 AEROSOL MODE ',JSV
       ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_SOA8,JSV)
       JPROC = JPROC+1
       WRITE(YTITLE(JPROC),'(A5,I1)')'MSOA9',JSV
-      YUNIT    (JPROC) = 'ug/m3'
-      WRITE(YCOMMENT,'(A23,I1,A7)')'MASS SOA9 AEROSOL MODE ',JSV,'(ug/m3)'
+      YUNIT    (JPROC) = 'ug m-3'
+      WRITE(YCOMMENT,'(A23,I1)')'MASS SOA9 AEROSOL MODE ',JSV
       ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_SOA9,JSV)
       JPROC = JPROC+1
       WRITE(YTITLE(JPROC),'(A6,I1)')'MSOA10',JSV
-      YUNIT    (JPROC) = 'ug/m3'
-      WRITE(YCOMMENT,'(A24,I1,A7)')'MASS SOA10 AEROSOL MODE ',JSV,'(ug/m3)'
+      YUNIT    (JPROC) = 'ug m-3'
+      WRITE(YCOMMENT,'(A24,I1)')'MASS SOA10 AEROSOL MODE ',JSV
       ZWORK6(1,1,1,:,1,JPROC)=ZPTOTA(1,1,:,JP_AER_SOA10,JSV)
       END IF
       ENDDO
@@ -566,7 +566,7 @@ IF (SIZE(TSTATION%SV,3)>=1) THEN
   DO JSV = NSV_DSTBEG,NSV_DSTEND
     JPROC = JPROC+1
     YTITLE(JPROC)= TRIM(CDUSTNAMES(JSV-NSV_DSTBEG+1))
-    YUNIT    (JPROC) = 'PPB'
+    YUNIT    (JPROC) = 'ppb'
     YCOMMENT (JPROC) = ' '
     ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SV(:,II,JSV) *1.E9
   END DO
@@ -595,7 +595,7 @@ IF (SIZE(TSTATION%SV,3)>=1) THEN
       JPROC = JPROC+1
       WRITE(YTITLE(JPROC),'(A6,I1)')'DSTRGA',JSV
       YUNIT    (JPROC) = 'um'
-      WRITE(YCOMMENT(JPROC),'(A18,I1,A5)')'RG (nb) DUST MODE ',JSV,' (um)'
+      WRITE(YCOMMENT(JPROC),'(A18,I1)')'RG (nb) DUST MODE ',JSV
       ZWORK6 (1,1,1,:,1,JPROC) = ZRG(1,1,:,JSV)
       ! standard deviation
       JPROC = JPROC+1
@@ -606,8 +606,8 @@ IF (SIZE(TSTATION%SV,3)>=1) THEN
       ! particles number
       JPROC = JPROC+1
       WRITE(YTITLE(JPROC),'(A6,I1)')'DSTN0A',JSV
-      YUNIT    (JPROC) = '  '
-      WRITE(YCOMMENT(JPROC),'(A13,I1,A6)')'N0 DUST MODE ',JSV,' (1/m3)'
+      YUNIT    (JPROC) = 'm-3'
+      WRITE(YCOMMENT(JPROC),'(A13,I1)')'N0 DUST MODE ',JSV
       ZWORK6 (1,1,1,:,1,JPROC) = ZN0(1,1,:,JSV)
     ENDDO
     DEALLOCATE (ZSV,ZRHO) 
@@ -617,7 +617,7 @@ IF (SIZE(TSTATION%SV,3)>=1) THEN
   DO JSV = NSV_SLTBEG,NSV_SLTEND
     JPROC = JPROC+1
     YTITLE(JPROC)= TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))
-    YUNIT    (JPROC) = 'PPB'
+    YUNIT    (JPROC) = 'ppb'
     YCOMMENT (JPROC) = ' '
     ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SV(:,II,JSV) *1.E9
   END DO
@@ -648,7 +648,7 @@ ENDIF
       JPROC = JPROC+1
       WRITE(YTITLE(JPROC),'(A6,I1)')'SLTRGA',JSV
       YUNIT    (JPROC) = 'um'
-      WRITE(YCOMMENT(JPROC),'(A18,I1,A5)')'RG (nb) SALT MODE ',JSV,' (um)'
+      WRITE(YCOMMENT(JPROC),'(A18,I1)')'RG (nb) SALT MODE ',JSV
       ZWORK6 (1,1,1,:,1,JPROC) = ZRG(1,1,:,JSV)
       ! standard deviation
       JPROC = JPROC+1
@@ -659,8 +659,8 @@ ENDIF
       ! particles number
       JPROC = JPROC+1
       WRITE(YTITLE(JPROC),'(A6,I1)')'SLTN0A',JSV
-      YUNIT    (JPROC) = '  '
-      WRITE(YCOMMENT(JPROC),'(A13,I1,A6)')'N0 DUST MODE ',JSV,' (1/m3)'
+      YUNIT    (JPROC) = 'm-3'
+      WRITE(YCOMMENT(JPROC),'(A13,I1)')'N0 DUST MODE ',JSV
       ZWORK6 (1,1,1,:,1,JPROC) = ZN0(1,1,:,JSV)
     ENDDO
     DEALLOCATE (ZSV,ZRHO) 
@@ -678,7 +678,7 @@ END IF
 IF (SIZE(TSTATION%SFCO2,1)>0) THEN
   JPROC = JPROC+1
   YTITLE   (JPROC) = 'SFCO2'
-  YUNIT    (JPROC) = 'mgCO2/m/s'
+  YUNIT    (JPROC) = 'mg m-2 s-1'
   YCOMMENT (JPROC) = 'CO2 Surface Flux'
   ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SFCO2(:,II)
 END IF

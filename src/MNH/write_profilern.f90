@@ -203,7 +203,7 @@ ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%VISIKUN(:,IK,II)
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'RARE'
-YUNIT    (JPROC) = 'dBz'
+YUNIT    (JPROC) = 'dBZ'
 YCOMMENT (JPROC) = 'Radar reflectivity'       
 ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%RARE(:,IK,II)
 !
@@ -221,31 +221,31 @@ ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%ZZ(:,IK,II)
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'LON'
-YUNIT    (JPROC) = 'decimal degree'
+YUNIT    (JPROC) = 'degree'
 YCOMMENT (JPROC) = 'Longitude'
 ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%LON(II)
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'LAT'
-YUNIT    (JPROC) = 'decimal degree'
+YUNIT    (JPROC) = 'degree'
 YCOMMENT (JPROC) = 'Latitude'
 ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%LAT(II)
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'ZON_WIND'
-YUNIT    (JPROC) = 'm/s'
+YUNIT    (JPROC) = 'm s-1'
 YCOMMENT (JPROC) = 'Zonal wind'
 ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%ZON(:,IK,II)
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'MER_WIND'
-YUNIT    (JPROC) = 'm/s'
+YUNIT    (JPROC) = 'm s-1'
 YCOMMENT (JPROC) = 'Meridional wind'
 ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%MER(:,IK,II)
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'FF'           
-YUNIT    (JPROC) = 'm/s'
+YUNIT    (JPROC) = 'm s-1'
 YCOMMENT (JPROC) = 'Wind intensity'
 ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%FF(:,IK,II)
 !
@@ -257,7 +257,7 @@ ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%DD(:,IK,II)
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'W'
-YUNIT    (JPROC) = 'm/s'
+YUNIT    (JPROC) = 'm s-1'
 YCOMMENT (JPROC) = 'Air vertical speed' 
 ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%W(:,IK,II)
 !
@@ -271,86 +271,86 @@ IF (LDIAG_IN_RUN) THEN
   !
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'Q2m'
-  YUNIT    (JPROC) = 'kg/kg'
+  YUNIT    (JPROC) = 'kg kg-1'
   YCOMMENT (JPROC) = '2-m humidity' 
   ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%Q2M(:,II)
   !
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'HU2m'
-  YUNIT    (JPROC) = '%'
+  YUNIT    (JPROC) = 'percent'
   YCOMMENT (JPROC) = '2-m relative humidity' 
   ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%HU2M(:,II)
   !
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'zon10m'
-  YUNIT    (JPROC) = 'm/s'
+  YUNIT    (JPROC) = 'm s-1'
   YCOMMENT (JPROC) = '10-m zonal wind' 
   ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%ZON10M(:,II)
   !       
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'mer10m'
-  YUNIT    (JPROC) = 'm/s'
+  YUNIT    (JPROC) = 'm s-1'
   YCOMMENT (JPROC) = '10-m meridian wind' 
   ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%MER10M(:,II)
   !
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'RN' 
-  YUNIT    (JPROC) = 'W/m²'          
+  YUNIT    (JPROC) = 'W m-2'
   YCOMMENT (JPROC) = 'Net radiation'
   ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%RN(:,II)
   !
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'H' 
-  YUNIT    (JPROC) = 'W/m²'
+  YUNIT    (JPROC) = 'W m-2'
   YCOMMENT (JPROC) = 'Sensible heat flux'
   ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%H(:,II)
   !
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'LE' 
-  YUNIT    (JPROC) = 'W/m²'
+  YUNIT    (JPROC) = 'W m-2'
   YCOMMENT (JPROC) = 'Total Latent heat flux'
   ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%LE(:,II)
   !
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'G' 
-  YUNIT    (JPROC) = 'W/m²'
+  YUNIT    (JPROC) = 'W m-2'
   YCOMMENT (JPROC) = 'Storage heat flux'
   ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%GFLUX(:,II)
   !
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'SWD'
-  YUNIT    (JPROC) = 'W/m²'
+  YUNIT    (JPROC) = 'W m-2'
   YCOMMENT (JPROC) = 'Downward short-wave radiation'
   ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SWD(:,II)
   !
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'SWU'
-  YUNIT    (JPROC) = 'W/m²'
+  YUNIT    (JPROC) = 'W m-2'
   YCOMMENT (JPROC) = 'Upward short-wave radiation'
   ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SWU(:,II)
   !
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'LWD'
-  YUNIT    (JPROC) = 'W/m²'
+  YUNIT    (JPROC) = 'W m-2'
   YCOMMENT (JPROC) = 'Downward long-wave radiation'
   ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%LWD(:,II)
   !
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'LWU'
-  YUNIT    (JPROC) = 'W/m²'
+  YUNIT    (JPROC) = 'W m-2'
   YCOMMENT (JPROC) = 'Upward long-wave radiation'
   ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%LWU(:,II)
   !
   !
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'TKE_DISS'
-  YUNIT    (JPROC) = 'm2/s2'
+  YUNIT    (JPROC) = 'm2 s-2'
   YCOMMENT (JPROC) = 'TKE dissipation rate'
   ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%TKE_DISS(:,IK,II)
   !
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'LEI' 
-  YUNIT    (JPROC) = 'W/m²'
+  YUNIT    (JPROC) = 'W m-2'
   YCOMMENT (JPROC) = 'Solid Latent heat flux'
   ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%LEI(:,II)  
 !
@@ -358,7 +358,7 @@ ENDIF
 !
 DO JRR=1,SIZE(TPROFILER%R,4)
   JPROC = JPROC+1
-  YUNIT    (JPROC) = 'kg/kg'
+  YUNIT    (JPROC) = 'kg kg-1'
   ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%R(:,IK,II,JRR)
   IF (JRR==1) THEN
     YTITLE   (JPROC) = 'Rv'
@@ -385,21 +385,21 @@ DO JRR=1,SIZE(TPROFILER%R,4)
 END DO
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'Rhod'
-YUNIT    (JPROC) = 'kg/m3'
+YUNIT    (JPROC) = 'kg m-3'
 YCOMMENT (JPROC) = 'Density of dry air in moist' 
 ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%RHOD(:,IK,II)
 !
 IF (SIZE(TPROFILER%TKE,1)>0) THEN
   JPROC = JPROC+1
   YTITLE   (JPROC) = 'Tke'
-  YUNIT    (JPROC) = 'm2/s2'
+  YUNIT    (JPROC) = 'm2 s-2'
   YCOMMENT (JPROC) = 'Turbulent kinetic energy' 
   ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%TKE(:,IK,II)
 END IF
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'IWV'
-YUNIT    (JPROC) = 'kg/m2'
+YUNIT    (JPROC) = 'kg m-2'
 YCOMMENT (JPROC) = 'Integrated Water Vapour' 
 ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%IWV(:,II)
 !
@@ -426,7 +426,7 @@ IF (SIZE(TPROFILER%SV,4)>=1) THEN
   DO JSV = 1,NSV_USER
     JPROC = JPROC+1
     WRITE (YTITLE(JPROC),FMT='(A2,I3.3)')   'Sv',JSV
-    YUNIT    (JPROC) = 'kg/kg'
+    YUNIT    (JPROC) = 'kg kg-1'
     YCOMMENT (JPROC) = ' ' 
     ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SV(:,IK,II,JSV)
   END DO
@@ -442,7 +442,7 @@ IF (SIZE(TPROFILER%SV,4)>=1) THEN
   DO JSV = NSV_C2R2BEG,NSV_C2R2END
     JPROC = JPROC+1
     YTITLE(JPROC)= TRIM(C2R2NAMES(JSV-NSV_C2R2BEG+1))
-    YUNIT    (JPROC) = '/M3'
+    YUNIT    (JPROC) = 'm-3'
     YCOMMENT (JPROC) = ' '
     ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SV(:,IK,II,JSV)
   END DO
@@ -450,14 +450,14 @@ IF (SIZE(TPROFILER%SV,4)>=1) THEN
   DO JSV = NSV_C1R3BEG,NSV_C1R3END
     JPROC = JPROC+1
     YTITLE(JPROC)= TRIM(C1R3NAMES(JSV-NSV_C1R3BEG+1))
-    YUNIT    (JPROC) = '/M3'
+    YUNIT    (JPROC) = 'm-3'
     YCOMMENT (JPROC) = ' '
     ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SV(:,IK,II,JSV)
   END DO
   ! LIMA variables
   DO JSV=NSV_LIMA_BEG,NSV_LIMA_END
     JPROC = JPROC+1
-    YUNIT    (JPROC) = '/kg'
+    YUNIT    (JPROC) = 'kg-1'
     YCOMMENT (JPROC) = ' '
     IF (JSV==NSV_LIMA_NC) YTITLE(JPROC)=TRIM(CLIMA_WARM_NAMES(1))//'T' 
     IF (JSV==NSV_LIMA_NR) YTITLE(JPROC)=TRIM(CLIMA_WARM_NAMES(2))//'T' 
@@ -493,7 +493,7 @@ IF (SIZE(TPROFILER%SV,4)>=1) THEN
   DO JSV = NSV_ELECBEG,NSV_ELECEND
     JPROC = JPROC+1
     YTITLE(JPROC)= TRIM(CELECNAMES(JSV-NSV_ELECBEG+1))
-    YUNIT    (JPROC) = 'Cb'
+    YUNIT    (JPROC) = 'C'
     YCOMMENT (JPROC) = ' '
     ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SV(:,IK,II,JSV)
   END DO
@@ -501,8 +501,8 @@ IF (SIZE(TPROFILER%SV,4)>=1) THEN
   DO JSV=NSV_CHEMBEG,NSV_CHEMEND
     JPROC = JPROC+1
     YTITLE(JPROC)= TRIM(CNAMES(JSV))
-    YUNIT    (JPROC) = 'PPB'
-    WRITE(YCOMMENT (JPROC),'(A5,A3,I3.3,A)') 'T(s) ','SVT',JSV,' (ppb)'
+    YUNIT    (JPROC) = 'ppb'
+    WRITE(YCOMMENT (JPROC),'(A5,A3,I3.3)') 'T(s) ','SVT',JSV
     ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SV(:,IK,II,JSV) * 1.E9
   END DO
   IF ((LORILAM).AND. .NOT.(ANY(TPROFILER%P(:,IK,II) == 0.))) THEN
@@ -530,7 +530,7 @@ IF (SIZE(TPROFILER%SV,4)>=1) THEN
       JPROC = JPROC+1
       WRITE(YTITLE(JPROC),'(A6,I1)')'AERRGA',JSV
       YUNIT    (JPROC) = 'um'
-      WRITE(YCOMMENT(JPROC),'(A18,I1,A5)')'RG (nb) AERO MODE ',JSV,' (um)'
+      WRITE(YCOMMENT(JPROC),'(A18,I1)')'RG (nb) AERO MODE ',JSV
       ZWORK6 (1,1,IK,:,1,JPROC) = ZRG(1,1,:,JSV)
       ! standard deviation
       JPROC = JPROC+1
@@ -541,8 +541,8 @@ IF (SIZE(TPROFILER%SV,4)>=1) THEN
       ! particles number
       JPROC = JPROC+1
       WRITE(YTITLE(JPROC),'(A6,I1)')'AERN0A',JSV
-      YUNIT    (JPROC) = '  '
-      WRITE(YCOMMENT(JPROC),'(A13,I1,A6)')'N0 AERO MODE ',JSV,' (1/m3)'
+      YUNIT    (JPROC) = 'm-3'
+      WRITE(YCOMMENT(JPROC),'(A13,I1)')'N0 AERO MODE ',JSV
       ZWORK6 (1,1,IK,:,1,JPROC) = ZN0(1,1,:,JSV)
     ENDDO
     DEALLOCATE (ZSV,ZRHO) 
@@ -552,7 +552,7 @@ IF (SIZE(TPROFILER%SV,4)>=1) THEN
   DO JSV = NSV_DSTBEG,NSV_DSTEND
     JPROC = JPROC+1
     YTITLE(JPROC)= TRIM(CDUSTNAMES(JSV-NSV_DSTBEG+1))
-    YUNIT    (JPROC) = 'PPB'
+    YUNIT    (JPROC) = 'ppb'
     YCOMMENT (JPROC) = ' '
     ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SV(:,IK,II,JSV) * 1.E9
   END DO
@@ -581,7 +581,7 @@ IF (SIZE(TPROFILER%SV,4)>=1) THEN
       JPROC = JPROC+1
       WRITE(YTITLE(JPROC),'(A6,I1)')'DSTRGA',JSV
       YUNIT    (JPROC) = 'um'
-      WRITE(YCOMMENT(JPROC),'(A18,I1,A5)')'RG (nb) DUST MODE ',JSV,' (um)'
+      WRITE(YCOMMENT(JPROC),'(A18,I1)')'RG (nb) DUST MODE ',JSV
       ZWORK6 (1,1,IK,:,1,JPROC) = ZRG(1,1,:,JSV)
       ! standard deviation
       JPROC = JPROC+1
@@ -592,8 +592,8 @@ IF (SIZE(TPROFILER%SV,4)>=1) THEN
       ! particles number
       JPROC = JPROC+1
       WRITE(YTITLE(JPROC),'(A6,I1)')'DSTN0A',JSV
-      YUNIT    (JPROC) = '  '
-      WRITE(YCOMMENT(JPROC),'(A13,I1,A6)')'N0 DUST MODE ',JSV,' (1/m3)'
+      YUNIT    (JPROC) = 'm-3'
+      WRITE(YCOMMENT(JPROC),'(A13,I1)')'N0 DUST MODE ',JSV
       ZWORK6 (1,1,IK,:,1,JPROC) = ZN0(1,1,:,JSV)
     ENDDO
     DEALLOCATE (ZSV,ZRHO) 
@@ -603,7 +603,7 @@ IF (SIZE(TPROFILER%SV,4)>=1) THEN
   DO JSV = NSV_SLTBEG,NSV_SLTEND
     JPROC = JPROC+1
     YTITLE(JPROC)= TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))
-    YUNIT    (JPROC) = 'PPB'
+    YUNIT    (JPROC) = 'ppb'
     YCOMMENT (JPROC) = ' '
     ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SV(:,IK,II,JSV) * 1.E9
   END DO

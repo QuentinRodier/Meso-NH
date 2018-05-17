@@ -129,10 +129,10 @@ INTEGER,INTENT(IN),OPTIONAL :: KMODEL
 INTEGER :: IDX, IMODEL
 CHARACTER(LEN=42) :: YMSG
 !
-!F90/95: TFIELDLIST(1) = TFIELDDATA('UT','x_wind','m s-1','XY','X_Y_Z_U component of wind (m/s)',2)
+!F90/95: TFIELDLIST(1) = TFIELDDATA('UT','x_wind','m s-1','XY','X_Y_Z_U component of wind',2)
 !F2003:
 !TFIELDLIST(1) = TFIELDDATA(CMNHNAME='UT',CSTDNAME='x_wind',CUNITS='m s-1',CDIR='XY',&
-!                           CCOMMENT='X_Y_Z_U component of wind (m/s)',NGRID=2)
+!                           CCOMMENT='X_Y_Z_U component of wind',NGRID=2)
 !
 CALL PRINT_MSG(NVERB_DEBUG,'GEN','INI_FIELD_LIST','called')
 IF (LFIELDLIST_ISINIT) THEN

@@ -430,7 +430,7 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. OCLOSE_OUT ) &
       TZFIELD%CMNHNAME   = 'R_HVAR'
       TZFIELD%CSTDNAME   = ''
       TZFIELD%CLONGNAME  = 'R_HVAR'
-      TZFIELD%CUNITS     = '(kg kg-1)^2'
+      TZFIELD%CUNITS     = 'kg2 kg-2'
       TZFIELD%CDIR       = 'XY'
       TZFIELD%CCOMMENT   = 'X_Y_Z_R_HVAR'
       TZFIELD%NGRID      = 1
