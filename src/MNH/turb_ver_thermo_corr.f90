@@ -575,7 +575,7 @@ END IF
     TZFIELD%CMNHNAME   = 'THL_VVAR'
     TZFIELD%CSTDNAME   = ''
     TZFIELD%CLONGNAME  = 'THL_VVAR'
-    TZFIELD%CUNITS     = 'K^2'
+    TZFIELD%CUNITS     = 'K2'
     TZFIELD%CDIR       = 'XY'
     TZFIELD%CCOMMENT   = 'X_Y_Z_THL_VVAR'
     TZFIELD%NGRID      = 1
@@ -809,7 +809,7 @@ END IF
       TZFIELD%CMNHNAME   = 'RTOT_VVAR'
       TZFIELD%CSTDNAME   = ''
       TZFIELD%CLONGNAME  = 'RTOT_VVAR'
-      TZFIELD%CUNITS     = '(kg kg-1)^2'
+      TZFIELD%CUNITS     = 'kg2 kg-2'
       TZFIELD%CDIR       = 'XY'
       TZFIELD%CCOMMENT   = 'X_Y_Z_RTOT_VVAR'
       TZFIELD%NGRID      = 1

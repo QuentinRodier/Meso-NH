@@ -339,7 +339,7 @@ ZLES_BUDGET(NLES_K,:,ILES) = ZLES_BUDGET(NLES_K-1,:,ILES)
 !       -------
 !
 !
-CALL LES_DIACHRO_MASKS(TPDIAFILE,YGROUP,YSUBTITLE(:ILES),"Rt variance budget"//YSUBTITLE(:ILES),"kg2/kg2/s", &
+CALL LES_DIACHRO_MASKS(TPDIAFILE,YGROUP,YSUBTITLE(:ILES),"Rt variance budget"//YSUBTITLE(:ILES),"kg2 kg-2 s-1", &
                        ZLES_BUDGET(:,:,:ILES),HLES_AVG)
 !
 !
@@ -646,7 +646,7 @@ ZLES_BUDGET(:,:,ILES)=-XLES_RES_ddxa_Rt_SBG_UaW(:,:,1)       &
 !       -------
 !
 !
-CALL LES_DIACHRO_MASKS(TPDIAFILE,YGROUP,YSUBTITLE(:ILES),"Rt flux budget"//YSUBTITLE(:ILES),"mkg/kg/s2", &
+CALL LES_DIACHRO_MASKS(TPDIAFILE,YGROUP,YSUBTITLE(:ILES),"Rt flux budget"//YSUBTITLE(:ILES),"m kg kg-1 s-2", &
                        ZLES_BUDGET(:,:,:ILES),HLES_AVG)
 !
 !
@@ -894,7 +894,7 @@ ZLES_BUDGET(NLES_K,:,ILES) = ZLES_BUDGET(NLES_K-1,:,ILES)
 !
 !
 CALL LES_DIACHRO_MASKS(TPDIAFILE,YGROUP,YSUBTITLE(:ILES),"Thl-Rt covariance budget"//YSUBTITLE(:ILES), &
-                                              "Kkg/kg/s",ZLES_BUDGET(:,:,:ILES),HLES_AVG)
+                                              "K kg kg-1 s-1",ZLES_BUDGET(:,:,:ILES),HLES_AVG)
 !
 !-------------------------------------------------------------------------------
 !

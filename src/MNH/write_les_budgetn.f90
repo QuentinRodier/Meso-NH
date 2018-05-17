@@ -409,7 +409,7 @@ END DO
 !       -------
 !
 !
-CALL LES_DIACHRO_MASKS(TPDIAFILE,YGROUP,YSUBTITLE(:ILES),"resolved KE budget"//YSUBTITLE(:ILES),"m2/s3", &
+CALL LES_DIACHRO_MASKS(TPDIAFILE,YGROUP,YSUBTITLE(:ILES),"resolved KE budget"//YSUBTITLE(:ILES),"m2 s-3", &
                        ZLES_BUDGET(:,:,:ILES),HLES_AVG)
 !
 !-------------------------------------------------------------------------------
@@ -656,7 +656,7 @@ ZLES_BUDGET(NLES_K,:,ILES) = ZLES_BUDGET(NLES_K-1,:,ILES)
 !       -------
 !
 !
-CALL LES_DIACHRO_MASKS(TPDIAFILE,YGROUP,YSUBTITLE(:ILES),"thetal variance budget"//YSUBTITLE(:ILES),"K2/s", &
+CALL LES_DIACHRO_MASKS(TPDIAFILE,YGROUP,YSUBTITLE(:ILES),"thetal variance budget"//YSUBTITLE(:ILES),"K2 s-1", &
                        ZLES_BUDGET(:,:,:ILES),HLES_AVG)
 !
 !-------------------------------------------------------------------------------
@@ -966,7 +966,7 @@ ZLES_BUDGET(:,:,ILES)=-XLES_RES_ddxa_Thl_SBG_UaW(:,:,1)       &
 !       -------
 !
 !
-CALL LES_DIACHRO_MASKS(TPDIAFILE,YGROUP,YSUBTITLE(:ILES),"thetal flux budget"//YSUBTITLE(:ILES),"mK/s2", &
+CALL LES_DIACHRO_MASKS(TPDIAFILE,YGROUP,YSUBTITLE(:ILES),"thetal flux budget"//YSUBTITLE(:ILES),"m K s-2", &
                        ZLES_BUDGET(:,:,:ILES),HLES_AVG)
 !
 !
