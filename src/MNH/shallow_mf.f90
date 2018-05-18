@@ -312,9 +312,11 @@ ENDIF
 
 ! Thermodynamics functions
 ZFRAC_ICE(:,:) = 0.
-WHERE(PRM(:,:,2)+PRM(:,:,4) > 1.E-20)
-  ZFRAC_ICE(:,:) = PRM(:,:,4) / (PRM(:,:,2)+PRM(:,:,4))
-ENDWHERE
+IF (SIZE(PRM,3).GE.4) THEN
+  WHERE(PRM(:,:,2)+PRM(:,:,4) > 1.E-20)
+    ZFRAC_ICE(:,:) = PRM(:,:,4) / (PRM(:,:,2)+PRM(:,:,4))
+  ENDWHERE
+ENDIF
 CALL COMPUTE_FRAC_ICE(HFRAC_ICE,ZFRAC_ICE(:,:),PTHM(:,:)*PEXNM(:,:))
 
 ! Conservative variables at t-dt
