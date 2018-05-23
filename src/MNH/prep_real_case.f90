@@ -1180,6 +1180,7 @@ END IF
 !-------------------------------------------------------------------------------
 !
 CALL IO_FILE_CLOSE_ll(TINIFILE)
+CALL IO_FILE_CLOSE_ll(TPGDFILE)
 !
 IF(NIO_VERB>=NVERB_DEBUG) CALL IO_FILE_PRINT_LIST()
 !

@@ -187,21 +187,23 @@ ENDIF
 !
 IF (CTYPEFILE=='MESONH') THEN
   CALL SPECTRE_MESONH(YOUTFILE)
-  CALL IO_FILE_CLOSE_ll(TLUOUT)
+  !
+  CALL IO_FILE_CLOSE_ll(LUNIT_MODEL(1)%TINIFILE)
+  IF(NIO_VERB>=NVERB_DEBUG) CALL IO_FILE_PRINT_LIST()
   CALL IO_FILE_CLOSE_ll(TLUOUT0)
+  CALL IO_FILE_CLOSE_ll(TLUOUT)
 ELSEIF (CTYPEFILE=='AROME ')THEN
  CALL SPECTRE_AROME(CINIFILE,YOUTFILE,XDELTAX,XDELTAY,NI,NJ,NK)
 ELSE
   print*,"This type of file is not accept for SPECTRE PROGRAM"
 ENDIF
+!
 !-------------------------------------------------------------------------------
 !
 !*      4.    FINALIZE THE PARALLEL SESSION
 !              -----------------------------
 !
 CALL END_PARA_ll(IINFO_ll)
-!
-IF(NIO_VERB>=NVERB_DEBUG) CALL IO_FILE_PRINT_LIST()
 !
 PRINT*, ' '
 PRINT*, '****************************************************'
@@ -210,3 +212,4 @@ PRINT*, '****************************************************'
 PRINT*, ' '
 !-------------------------------------------------------------------------------
 END PROGRAM SPECTRE
+
