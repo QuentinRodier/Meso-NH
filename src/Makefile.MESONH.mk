@@ -31,9 +31,9 @@ endif
 #           Source MNH                                   #
 ##########################################################
 ifdef VER_OASIS
-DIR_SURFEX    += ARCH_SRC/CPL_WAVE/SURFEX
-DIR_MNH       += ARCH_SRC/CPL_WAVE/MNH
-DIR_SURCOUCHE += ARCH_SRC/CPL_WAVE/SURCOUCHE
+DIR_SURFEX    += OASIS/SURFEX
+DIR_MNH       += OASIS/MNH
+DIR_SURCOUCHE += OASIS/SURCOUCHE
 CPPFLAGS       += -DCPLOASIS
 endif
 # PRE_BUG TEST !!!
@@ -427,6 +427,7 @@ LIBS          += $(LIB_GRIBAPI)
 VPATH         += $(GRIBAPI_PATH)/include
 R64_GRIBAPI=R64
 endif
+
 ##########################################################
 #           Librairie OASIS                              #
 ##########################################################
@@ -441,6 +442,7 @@ INC            += $(INC_OASIS)
 LIBS           += $(LIB_OASIS)
 VPATH          += ${OASIS_PATH}/build/lib/psmile.MPI1
 CPPFLAGS       += -DCPLOASIS
+
 endif
 
 ifeq "$(VER_OASIS)" "OASISBASHRC"
@@ -474,12 +476,19 @@ CDF_MOD?=${CDF_PATH}/include/netcdf.mod
 #
 INC_NETCDF     ?= -I${CDF_PATH}/include
 LIB_NETCDF     ?= -L${CDF_PATH}/lib -L${CDF_PATH}/lib64 -lnetcdff -lnetcdf  -lhdf5_hl -lhdf5 -lsz -laec -lz -ldl
+#
 INC            += $(INC_NETCDF)
 LIBS           += $(LIB_NETCDF)
 #
 DIR_HDF?=${SRC_MESONH}/src/LIB/hdf5-${VERSION_HDF}
 #
 DIR_LIBAEC?=${SRC_MESONH}/src/LIB/libaec-${VERSION_LIBAEC}
+
+# for oasis compilation <=> to find correctly netcdf
+NETCDF_INCLUDE ?= ${CDF_PATH}/include
+NETCDF_LIBRARY ?= $(LIB_NETCDF)
+export NETCDF_INCLUDE NETCDF_LIBRARY
+
 endif
 #
 # NetCDF : CDF LaReunion Local
@@ -600,6 +609,8 @@ LIB_NETCDF     ?=  -L${CDF_PATH}/lib64  -lnetcdf_c++ -lnetcdf
 INC            +=  $(INC_NETCDF)
 LIBS           +=  $(LIB_NETCDF)
 endif
+
+
 
 ##########################################################
 #           Number of NESTED MODEL                       #
