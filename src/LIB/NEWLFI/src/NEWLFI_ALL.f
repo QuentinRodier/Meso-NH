@@ -3037,6 +3037,8 @@ C
       LOGICAL LLSTTU, LLVERF, LLVERG, LLECRD, LLIMST
 C
 #include "lficom2.h"
+C
+      CLACTI=''
 C**
 C     1.  -  CONTROLES DES PARAMETRES D'APPEL, PUIS INITIALISATIONS.
 C-----------------------------------------------------------------------
