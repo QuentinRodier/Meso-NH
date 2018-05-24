@@ -15,6 +15,8 @@ ln -sf  ../1_INPUT_MNH/IROISE_5KM_201109_0?_??.* .
 cp ../1_INPUT_MNH/rstrt_MNH.nc rst_A.nc
 ln -sf ../1_INPUT_MNH/EXSEG1.nam_${TYPE_TOY} EXSEG1.nam
 
+rm -fr IROIS.1.00-01.*
+
 #~~~~~ TOY
 ln -sf ../2_INPUT_TOY/grid_toy_model.nc .
 cp ../2_INPUT_TOY/rstrt_TOY.nc rst_T.nc
