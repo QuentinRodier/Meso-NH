@@ -415,7 +415,8 @@ ENDIF
 !
  CALL INIT_CHEMICAL_n(ILUOUT, KSV, HSV, SM%CHS%SVS,           &
                      SM%CHS%CCH_NAMES, SM%CHS%CAER_NAMES,     &
-                     HDSTNAMES=SM%CHS%CDSTNAMES, HSLTNAMES=SM%CHS%CSLTNAMES        )
+                     HDSTNAMES=SM%CHS%CDSTNAMES, HSLTNAMES=SM%CHS%CSLTNAMES,  &
+                     HSNWNAMES=SM%CHS%CSNWNAMES     )
 !
 !* deposition scheme
 !
