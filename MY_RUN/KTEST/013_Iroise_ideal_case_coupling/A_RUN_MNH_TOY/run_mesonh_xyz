@@ -10,8 +10,8 @@ export PATH_EXETOY=${SRC_MESONH}/src/LIB/toy_v1-0/
 export TYPE_TOY='WAVE'
 
 #~~~~~ MESONH
-ln -sf  ../1_INPUT_MNH/IROISE_5KM.??? .
-ln -sf  ../1_INPUT_MNH/IROISE_5KM_201109_0?_??.??? .
+ln -sf  ../1_INPUT_MNH/IROISE_5KM.* .
+ln -sf  ../1_INPUT_MNH/IROISE_5KM_201109_0?_??.* .
 cp ../1_INPUT_MNH/rstrt_MNH.nc rst_A.nc
 ln -sf ../1_INPUT_MNH/EXSEG1.nam_${TYPE_TOY} EXSEG1.nam
 

@@ -27,9 +27,9 @@ imax=dims(1)-2
 jmax=dims(0)-2
 LON_MNH=a->LON(1:jmax,1:imax)
 LAT_MNH=a->LAT(1:jmax,1:imax)
-U10_MNH=a->UT(2,1:jmax,1:imax)
-V10_MNH=a->VT(2,1:jmax,1:imax)
-PRES_MNH=a->PABST(2,1:jmax,1:imax)
+U10_MNH=a->UT(0,2,1:jmax,1:imax)
+V10_MNH=a->VT(0,2,1:jmax,1:imax)
+PRES_MNH=a->PABST(0,2,1:jmax,1:imax)
 
 if(isfilevar(a,"EVAP3D")) then
   EVAP_MNH=a->EVAP3D(1:jmax,1:imax)

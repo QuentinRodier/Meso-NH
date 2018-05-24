@@ -36,6 +36,7 @@ echo '--  input for Meso-NH :                '
 echo '--  Create_restart_file_for_MNH.ncl/py '
 echo '---------------------------------------'
 
+rm -f rstrt_MNH.nc
 ncl Create_restart_file_for_MNH.ncl
 #python Create_restart_file_for_MNH.py
 
