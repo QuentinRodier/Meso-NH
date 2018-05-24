@@ -69,16 +69,23 @@
 !!      J.Stein                     08/04/99  general case of the sequential form
 !!      V. Masson                   15/03/99  MASDEV number and PROGRAM name
 !!      J.P. Chaboureau             15/03/04  loop limited to 100000 iterations
-!!                                           remplaced by infinite loop
+!!                                            remplaced by infinite loop
 !!      J.Escobar                 19/03/2008  rename INIT to INIT_MNH --> grib problem
 !!      J.Escobar                  6/11/2014  remove test on LCHECK otherwise never call MPPDB_INIT
-!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
-!!  06/2016     (G.Delautier) phasage surfex 8
+!!      J.Escobar                 15/09/2015  WENO5 & JPHEXT <> 1
+!!      G.Delautier                  06/2016  phasage surfex 8
+!!      J. Pianezze               01/08/2016  add sfxoasis coupling functions
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
+!
+#ifdef CPLOASIS
+  USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD, IP
+  USE MODD_DYN_n, ONLY : XTSTEP
+  USE MODD_SFX_OASIS, ONLY : LOASIS, LOASIS_GRID
+#endif
 !
 USE MODD_CONF
 USE MODD_NESTING
@@ -97,6 +104,13 @@ USE MODI_VERSION
 USE MODI_INIT_MNH
 USE MODD_MNH_SURFEX_n
 !
+#ifdef CPLOASIS
+  USE MODI_SFX_OASIS_INIT
+  USE MODI_MNH_OASIS_GRID
+  USE MODI_MNH_OASIS_DEFINE
+  USE MODI_SFX_OASIS_END
+#endif
+!
 USE MODE_MPPDB
 !
 IMPLICIT NONE 
@@ -109,13 +123,26 @@ LOGICAL       :: GEXIT                        ! flag for the end of the
                                               ! temporal loop       
 INTEGER       :: IINFO_ll                     ! return code of // routines
 !
+#ifdef CPLOASIS
+  CHARACTER(LEN=28)  :: CNAMELIST
+  LOGICAL            :: L_MASTER
+#endif
+!
 !-------------------------------------------------------------------------------
 !
 !*       1.    INITIALIZATION
 !              --------------
 ! Switch to model 1 variables
+#ifndef CPLOASIS
 CALL MPPDB_INIT()
+#endif
+!
 CALL GOTO_MODEL(1,ONOFIELDLIST=.TRUE.)
+!
+#ifdef CPLOASIS
+  CNAMELIST='EXSEG1.nam'
+  CALL SFX_OASIS_INIT(CNAMELIST, NMNH_COMM_WORLD)
+#endif
 !
 CALL INITIO_ll()
 !
@@ -126,6 +153,33 @@ CALL INIT_MNH
 !
 !
 GEXIT=.FALSE.
+!
+!
+!*         1.1   INITIALIZATION GRID OASIS
+!                -------------------------
+!
+!
+#ifdef CPLOASIS
+IF(IP==1) THEN
+  L_MASTER=.TRUE.
+ELSE
+  L_MASTER=.FALSE.
+END IF
+!
+IF (LOASIS_GRID) THEN
+  CALL MNH_OASIS_GRID(L_MASTER,NMNH_COMM_WORLD)
+ENDIF
+#endif
+!
+!
+!*         1.2   INITIALIZATION PARTITION OASIS
+!                ------------------------------
+!
+#ifdef CPLOASIS
+IF (LOASIS) THEN
+  CALL MNH_OASIS_DEFINE(CPROGRAM,IP)
+END IF
+#endif
 !
 !-------------------------------------------------------------------------------
 !
@@ -170,6 +224,11 @@ IF (LCHECK) THEN
   CALL MPPDB_BARRIER()
 ELSE
   CALL END_PARA_ll(IINFO_ll)
+#ifdef CPLOASIS
+IF (LOASIS) THEN
+  CALL SFX_OASIS_END
+END IF
+#endif
 END IF
 !
 !

@@ -98,9 +98,10 @@ END MODULE MODI_GROUND_PARAM_n
 !      (P.Tulet )             01/11/03  externalisation of the surface chemistry!
 !!     (D.Gazen)              01/12/03  change emissions handling for surf. externalization
 !!     (J.escobar)            18/10/2012 missing USE MODI_COUPLING_SURF_ATM_n & MODI_DIAG_SURF_ATM_n
-!      (J.escobar)            2/2014 add Forefire coupling
-!!  06/2016     (G.Delautier) phasage surfex 8
+!      (J.escobar)            02/2014 add Forefire coupling
+!!     (G.Delautier)          06/2016 phasage surfex 8
 !!     (B.Vie)                2016 LIMA
+!!     (J.Pianezze)           08/2016 add send/recv oasis functions
 !!      (M.Leriche)            24/03/16 remove flag for chemical surface fluxes
 !!      (M.Leriche)           01/07/2017 Add DIAG chimical surface fluxes
 !!  01/2018      (G.Delautier) SURFEX 8.1
@@ -113,6 +114,16 @@ END MODULE MODI_GROUND_PARAM_n
 !*       0.     DECLARATIONS
 !               ------------
 !
+! 
+#ifdef CPLOASIS
+USE MODI_GET_HALO
+USE MODI_MNH_OASIS_RECV
+USE MODI_MNH_OASIS_SEND
+USE MODD_SFX_OASIS, ONLY : LOASIS
+USE MODD_DYN, ONLY : XSEGLEN
+#endif
+!
+USE MODD_LUNIT_n, ONLY: TLUOUT
 USE MODD_CST,        ONLY : XP00, XCPD, XRD, XRV,XRHOLW, XDAY, XPI, XLVTT, XMD, XAVOGADRO
 USE MODD_PARAMETERS, ONLY : JPVEXT, XUNDEF
 USE MODD_DYN_n,      ONLY : XTSTEP
@@ -336,10 +347,12 @@ CHARACTER(LEN=6), DIMENSION(:), ALLOCATABLE :: YSV_SURF ! name of the scalar var
                                                         ! sent to SURFEX
 !                                                        
 REAL                              :: ZTIMEC
+INTEGER           :: ILUOUT         ! logical unit
 !
 !-------------------------------------------------------------------------------
 !
 !
+ILUOUT=TLUOUT%NLU
 IKB= 1+JPVEXT
 IKU=NKMAX + 2* JPVEXT
 IKE=IKU-JPVEXT
@@ -553,6 +566,22 @@ CALL RESHAPE_SURF(IDIM1D)
 ! call to have the cumulated time since beginning of simulation
 !
 CALL DATETIME_DISTANCE(TDTSEG,TDTCUR,ZTIMEC)
+
+#ifdef CPLOASIS
+IF (LOASIS) THEN
+  IF ( MOD(ZTIMEC,1.0) .LE. 1E-2 .OR. (1.0 - MOD(ZTIMEC,1.0)) .LE. 1E-2 ) THEN
+    IF ( NINT(ZTIMEC-(XSEGLEN-XTSTEP)) .LT. 0 ) THEN
+      WRITE(ILUOUT,*) '----------------------------'
+      WRITE(ILUOUT,*) ' Reception des champs avec OASIS'
+      WRITE(ILUOUT,*) 'NINT(ZTIMEC)=', NINT(ZTIMEC)
+      CALL MNH_OASIS_RECV(CPROGRAM,IDIM1D,SIZE(XSW_BANDS),ZTIMEC+XTSTEP,XTSTEP,         &
+                        ZP_ZENITH,XSW_BANDS                                         ,         &
+                        ZP_TSRAD,ZP_DIR_ALB,ZP_SCA_ALB,ZP_EMIS,ZP_TSURF)
+      WRITE(ILUOUT,*) '----------------------------'
+    END IF
+  END IF
+END IF
+#endif
 !
 ! Call to surface schemes
 !                       
@@ -568,7 +597,20 @@ CALL COUPLING_SURF_ATM_n(YSURF_CUR,'MESONH', 'E',ZTIMEC,                        
                ZP_PET_A_COEF, ZP_PEQ_A_COEF, ZP_PET_B_COEF, ZP_PEQ_B_COEF,                    &
                'OK'                                                                           )
 !
-
+#ifdef CPLOASIS
+IF (LOASIS) THEN
+  IF ( MOD(ZTIMEC,1.0) .LE. 1E-2 .OR. (1.0 - MOD(ZTIMEC,1.0)) .LE. 1E-2 ) THEN
+    IF (NINT(ZTIMEC-(XSEGLEN-XTSTEP)) .LT. 0) THEN
+      WRITE(ILUOUT,*) '----------------------------'
+      WRITE(ILUOUT,*) ' Envoi des champs avec OASIS'
+      WRITE(ILUOUT,*) 'NINT(ZTIMEC)=', NINT(ZTIMEC)
+      CALL MNH_OASIS_SEND(CPROGRAM,IDIM1D,ZTIMEC+XTSTEP,XTSTEP)
+      WRITE(ILUOUT,*) '----------------------------'
+    END IF
+  END IF
+END IF
+#endif
+!
 IF (CPROGRAM=='DIAG  ' .OR. LDIAG_IN_RUN) THEN
   CALL DIAG_SURF_ATM_n(YSURF_CUR,'MESONH')
   CALL  MNHGET_SURF_PARAM_n(PRN=ZP_RN,PH=ZP_H,PLE=ZP_LE,PGFLUX=ZP_GFLUX, &
@@ -637,10 +679,10 @@ END IF
 !* conversion from chemistry flux (molec/m2/s) to (ppp.m.s-1)
 !
 IF (LUSECHEM) THEN
-  DO JSV=NSV_CHEMBEG,NSV_CHEMEND
-    PSFSV(:,:,JSV) = ZSFTS(:,:,JSV) * XMD / ( XAVOGADRO * XRHODREF(:,:,IKB)) 
-    IF ((LCHEMDIAG).AND.(CPROGRAM == 'DIAG  ')) XCHFLX(:,:,JSV) = PSFSV(:,:,JSV)
-  END DO
+   DO JSV=NSV_CHEMBEG,NSV_CHEMEND
+      PSFSV(:,:,JSV) = ZSFTS(:,:,JSV) * XMD / ( XAVOGADRO * XRHODREF(:,:,IKB))
+      IF ((LCHEMDIAG).AND.(CPROGRAM == 'DIAG  ')) XCHFLX(:,:,JSV) = PSFSV(:,:,JSV)    
+   END DO
 ELSE
   PSFSV(:,:,NSV_CHEMBEG:NSV_CHEMEND) = 0.
 END IF

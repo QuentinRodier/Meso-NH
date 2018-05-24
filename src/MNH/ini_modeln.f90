@@ -265,6 +265,7 @@ END MODULE MODI_INI_MODEL_n
 !!                   J.Escobar : 01/06/2016 : correct check limit of NRIM versus local subdomain size IDIM
 !!                   06/2016     (G.Delautier) phasage surfex 8
 !!                   Modification    01/2016  (JP Pinty) Add LIMA
+!!                   Aug.  2016 (J.Pianezze) Add SFX_OASIS_READ_NAM function from SurfEx
 !!                   M.Leriche 2016 Chemistry
 !!                   10/2016 M.Mazoyer New KHKO output fields
 !!                      10/2016 (C.Lac) Add max values
@@ -281,6 +282,11 @@ END MODULE MODI_INI_MODEL_n
 !
 !*       0.    DECLARATIONS
 !              ------------
+!
+#ifdef CPLOASIS
+  USE MODI_SFX_OASIS_READ_NAM
+#endif
+!
 USE MODE_ll
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
 USE MODE_IO_ll
@@ -2068,6 +2074,10 @@ IF (CSURF=='EXTE' .AND. (CPROGRAM=='MESONH' .OR. CPROGRAM=='DIAG  ')) THEN
   END IF
   !
   CALL GOTO_SURFEX(KMI)
+#ifdef CPLOASIS
+  CALL SFX_OASIS_READ_NAM(CPROGRAM,XTSTEP)
+  WRITE(*,*) 'SFX-OASIS: READ NAM_SFX_SEA_CPL OK'
+#endif
   !* initialization of surface
   CALL INIT_GROUND_PARAM_n ('ALL',SIZE(CSV),CSV,ZCO2,                             &
                             XZENITH,XAZIM,XSW_BANDS,XLW_BANDS,ZDIR_ALB,ZSCA_ALB,  &
