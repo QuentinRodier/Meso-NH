@@ -377,9 +377,15 @@ CONTAINS
           TPFILE%LMULTIMASTERS = .TRUE.
        ELSE
           IF (TPFILE%CTYPE=='OUTPUTLISTING') THEN
-            TPFILE%NMASTER_RANK  = -1
-            TPFILE%LMASTER       = .TRUE. !Every process may write in the file
-            TPFILE%LMULTIMASTERS = .TRUE.
+            IF (LVERB_ALLPRC) THEN
+              TPFILE%NMASTER_RANK  = -1
+              TPFILE%LMASTER       = .TRUE. !Every process may write in the file
+              TPFILE%LMULTIMASTERS = .TRUE.
+            ELSE
+              TPFILE%NMASTER_RANK  = ISIOP
+              TPFILE%LMASTER       = (ISP == ISIOP)
+              TPFILE%LMULTIMASTERS = .FALSE.
+            END IF
           ELSE
             TPFILE%NMASTER_RANK  = ISIOP
             TPFILE%LMASTER       = (ISP == ISIOP)
