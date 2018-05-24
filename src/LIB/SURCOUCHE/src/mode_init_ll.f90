@@ -532,7 +532,6 @@
         TYPE(PROCONF_ll), POINTER :: TZPROCONF
         INTEGER :: JMODEL
 
-        LOGICAL     :: GISINIT
         !JUANZ
         INTEGER :: myrank_key,new_rank,new_size
         INTEGER  :: COLOR = 1
@@ -544,12 +543,7 @@
         !              --------------
         !
         KINFO_ll = 0
-        CALL MPI_INITIALIZED(GISINIT, KINFO_ll)
-        IF (.NOT. GISINIT) THEN
-           !CALL MPI_INIT(KINFO_ll)
-           !JUANZ create new/remapped communicator if need
-           CALL INIT_NMNH_COMM_WORLD(KINFO_ll)
-        END IF
+        CALL INIT_NMNH_COMM_WORLD(KINFO_ll)
         !
         CALL MPI_COMM_DUP(NMNH_COMM_WORLD, NHALO_COM, KINFO_ll)
         !
@@ -751,6 +745,7 @@
 !!    -------------
 !     Original 01/06/98
 !     R. Guivarch 15/09/99  deallocation of grid-nesting arrays
+!     J. Pianezze 11/2016 - add LOASIS flag
 !
 !-------------------------------------------------------------------------------
 !
@@ -760,6 +755,9 @@
 !  USE MODD_STRUCTURE_ll
 !  USE MODD_VAR_ll, ONLY : NIOUNIT, YOUTPUTFILE
   USE MODD_IO_ll,          ONLY : ISP
+#ifdef CPLOASIS
+  USE MODD_SFX_OASIS, ONLY : LOASIS
+#endif
 !
 #ifdef MNH_GA
 USE MODE_GA
@@ -792,7 +790,13 @@ USE MODE_GA
      CALL ga_terminate()
   endif
 #endif
+#ifdef CPLOASIS
+IF (.NOT. LOASIS) THEN
+        CALL MPI_FINALIZE(KINFO_ll)
+END IF
+#else
   CALL MPI_FINALIZE(KINFO_ll)
+#endif
 !
 !-------------------------------------------------------------------------------
 !

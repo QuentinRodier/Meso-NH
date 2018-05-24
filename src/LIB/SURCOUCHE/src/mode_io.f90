@@ -16,6 +16,7 @@
 !     P. Wautelet : may 2016: use NetCDF Fortran module
 !     P. Wautelet : July 2016: added type OUTBAK
 !     Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!     J. Pianezze 01/08/2016  add LOASIS flag
 !
 MODULE MODE_IO_ll
 
@@ -143,18 +144,14 @@ CONTAINS
     IMPLICIT NONE
 
     INTEGER :: IERR, IOS
-    LOGICAL :: GISINIT
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','INITIO_ll','called')
 
     ISTDERR = 0
 
-    CALL MPI_INITIALIZED(GISINIT, IERR)
-    IF (.NOT. GISINIT) THEN
-       !CALL MPI_INIT(IERR)
-       CALL INIT_NMNH_COMM_WORLD(IERR)
-       if (IERR .NE.0) CALL PRINT_MSG(NVERB_FATAL,'IO','SET_CONFIO_ll','problem with remapping of NMNH_COMM_WORLD')
-    END IF
+    CALL INIT_NMNH_COMM_WORLD(IERR)
+    IF (IERR .NE.0) CALL PRINT_MSG(NVERB_FATAL,'IO','SET_CONFIO_ll','problem with remapping of NMNH_COMM_WORLD')
+
     !! Now MPI is initialized for sure
 
     !! Default number for Processor I/O

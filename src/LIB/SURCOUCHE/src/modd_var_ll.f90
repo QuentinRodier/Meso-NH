@@ -93,6 +93,7 @@ INTEGER,SAVE      :: NZ_PROC_ll = 0  ! Number of proc to use in the Z splitting
 !
 !JUANZ
   INTEGER :: NMNH_COMM_WORLD
+  LOGICAL :: LMNH_ISINIT = .FALSE.
 !JUANZ
   INTEGER :: NHALO_COM
   INTEGER :: NTRANS_COM

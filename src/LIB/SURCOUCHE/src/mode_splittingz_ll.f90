@@ -170,13 +170,7 @@ CONTAINS
     !              --------------
     !
     KINFO_ll = 0
-    CALL MPI_INITIALIZED(GISINIT, KINFO_ll)
-    IF (.NOT. GISINIT) THEN
-       !CALL MPI_INIT(KINFO_ll)
-       !STOP "mode_splittinz_ll.f90::INI_PARAZ_ll MPI_INIT not initialized  ---> PROBLEME WITH REMAPPING NMNH_COMM_WORLD "
-       CALL INIT_NMNH_COMM_WORLD(KINFO_ll)
-    END IF
-    !
+    CALL INIT_NMNH_COMM_WORLD(KINFO_ll)
     !
     CALL MPI_COMM_DUP(NMNH_COMM_WORLD, NHALO_COM, KINFO_ll)
     !

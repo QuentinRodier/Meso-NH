@@ -24,7 +24,7 @@ CONTAINS
 #ifdef MNH_GA
     USE MODD_MPIF  , ONLY :  MPI_THREAD_MULTIPLE
 #endif
-    USE MODD_VAR_ll, ONLY : IP, NPROC, NMNH_COMM_WORLD
+    USE MODD_VAR_ll, ONLY : IP, NPROC, NMNH_COMM_WORLD , LMNH_ISINIT 
     !JUANZ
     IMPLICIT NONE
 
@@ -62,7 +62,6 @@ CONTAINS
        ! Read namelist config file
        !
        IF ( irank .EQ. 0 ) THEN
-          PRINT*,"hello world from rank=",irank," nproc=",IPROC
           OPEN(unit=10,form="formatted",file=conf_mnh_world,STATUS='OLD',iostat=IERR)
           ! Read IO parameter
           IF (IERR.EQ.0) THEN
@@ -109,11 +108,18 @@ CONTAINS
        !
        !JUANZ create new/remapped communicator 
        !
+    END IF
+    IF (.NOT. LMNH_ISINIT ) THEN
+       LMNH_ISINIT = .TRUE.
+       !
        CALL MPI_COMM_RANK(NMNH_COMM_WORLD, IP, KINFO_ll)
        IP = IP + 1
        !
        CALL MPI_COMM_SIZE(NMNH_COMM_WORLD, NPROC, KINFO_ll)
        !
+       IF ( IP .EQ. 1 ) THEN
+          PRINT*,"hello MNH world from IP=",IP," nproc=",NPROC
+       END IF
     END IF
 
   END SUBROUTINE INIT_NMNH_COMM_WORLD
