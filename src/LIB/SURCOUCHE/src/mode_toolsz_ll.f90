@@ -841,8 +841,7 @@
       !
       ! Local Variable
       !
-      !TYPE(ZONE_ll), ALLOCATABLE, DIMENSION(:) :: TP_ZONE_FROM,TP_ZONE_TO,TZINTER
-      TYPE(ZONE_ll)          , DIMENSION(KPROC) :: TP_ZONE_FROM,TP_ZONE_TO,TZINTER
+      TYPE(ZONE_ll), ALLOCATABLE, DIMENSION(:)  :: TP_ZONE_FROM,TP_ZONE_TO,TZINTER
       INTEGER                                   :: JI,JII,NSEND,JB,JE,JINC,ITIC
       INTEGER                , DIMENSION(KPROC) :: ISEND
       !-------------------------------------------------------------------------------
@@ -850,8 +849,7 @@
       !*       1.    ALLOCATE OF THE LOCAL VARIABLES :
       !              -------------------------------
       !
-      !ALLOCATE( TZPZS(KPROC), TZTRANSXZS(KPROC), &
-      !     TZTRANSYZS(KPROC), TZINTER(KPROC) )
+      ALLOCATE(TP_ZONE_FROM(KPROC),TP_ZONE_TO(KPROC),TZINTER(KPROC))
       !
       !-------------------------------------------------------------------------------
       !
@@ -920,6 +918,8 @@
          if ( TP_TSPLITS_FROM(JI)%NUMBER .EQ. IP ) EXIT
       END DO
       CALL G2LXZ(TP_TSPLITS_FROM(JI),TP_TRANS_FROM_TO,TBOX_FROM_TO)
+      !
+      DEALLOCATE(TP_ZONE_FROM,TP_ZONE_TO,TZINTER)
       !
     END SUBROUTINE CONSTRUCT_TRANSZZ
   END SUBROUTINE CONSTRUCT_TRANSZ

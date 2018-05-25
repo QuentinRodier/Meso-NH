@@ -87,8 +87,8 @@ INTEGER :: IINFO_ll
 !
 ! structures for the partitionning
 !
-TYPE(ZONE_ll), DIMENSION(NPROC) :: TZSPLITTING_PHYS  !physical splitting of the field
-TYPE(ZONE_ll), DIMENSION(NPROC) :: TZSPLITTING_EXT   !extended splitting of the field
+TYPE(ZONE_ll), DIMENSION(:),ALLOCATABLE :: TZSPLITTING_PHYS  !physical splitting of the field
+TYPE(ZONE_ll), DIMENSION(:),ALLOCATABLE :: TZSPLITTING_EXT   !extended splitting of the field
 TYPE(ZONE_ll) :: TZFIELD_ll ! global field
 !
 ! structures for the communications
@@ -121,6 +121,7 @@ INTEGER , DIMENSION(NPROC) :: IRECVCOUNTS !nteger array containing the number of
 !!
 !!	we assume that the sizes are correct
 !!
+ALLOCATE(TZSPLITTING_PHYS(NPROC),TZSPLITTING_EXT(NPROC))
 !------------------------------------------------------------------------------
 !
 !*       1.    Partitionning of the field
@@ -378,6 +379,7 @@ DEALLOCATE(PFIELD3D)
 DEALLOCATE(PFIELDTMP)
 DEALLOCATE(TZSEND)
 DEALLOCATE(TZRECV)
+DEALLOCATE(TZSPLITTING_PHYS,TZSPLITTING_EXT)
 IF (LHOOK) CALL DR_HOOK('UPDATE_NHALO1D',1,ZHOOK_HANDLE)
 !---------------------------------------------------------------------------
 !
