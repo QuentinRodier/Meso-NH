@@ -644,7 +644,7 @@ IF( IMICRO >= 0 ) THEN
 
   ELSEIF (HSUBG_AUCV == 'CLFR') THEN
     !Cloud water is only in the cloudy part and entirely in low or high part
-      WHERE (ZCF(:) > 0. .AND. ZRCT(:)/ZCF(:) > ZRCRAUTC(:))
+      WHERE (ZCF(:) > 0. .AND. ZRCT(:) > ZRCRAUTC(:)*ZCF(:))
         ZHLC_HCF(:) = ZCF(:)
         ZHLC_LCF(:) = 0.0
         ZHLC_HRC(:) = ZRCT(:)
