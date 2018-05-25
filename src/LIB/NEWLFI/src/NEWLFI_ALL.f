@@ -6679,7 +6679,7 @@ C                                     NEES SUR LE FICHIER, INITIALEMENT.
 C                                     (ZERO SI CREATION)
       INTEGER JPNBST
 C
-      PARAMETER ( JPNBST=4 )
+      PARAMETER ( JPNBST=5 )
 C
       CHARACTER CPNOMD*(*)
       PARAMETER ( CPNOMD='%%%%% FICHIER SANS NOM %%%%%' )
@@ -6726,6 +6726,7 @@ C      DATA CLSTEX /'OLD', 'NEW', 'UNKNOWN', 'SCRATCH'/
       CLSTEX(2) = 'NEW' 
       CLSTEX(3) = 'UNKNOWN'
       CLSTEX(4) = 'SCRATCH'
+      CLSTEX(5) = 'REPLACE'
 C**
 C     1.  -  CONTROLES DIVERS, ET INITIALISATIONS.
 C-----------------------------------------------------------------------

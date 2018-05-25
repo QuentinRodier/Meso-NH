@@ -254,6 +254,7 @@ CONTAINS
 #endif
     CHARACTER(len=20)    :: YACTION
     CHARACTER(len=20)    :: YMODE
+    CHARACTER(LEN=256)   :: YIOERRMSG
     INTEGER              :: IOS,IERR,IRESP
     INTEGER(KIND=IDCDF_KIND) :: IOSCDF
     INTEGER              :: ICOMM
@@ -265,6 +266,7 @@ CONTAINS
     LOGICAL               :: GPARALLELIO
     TYPE(TFILEDATA),POINTER :: TZSPLITFILE
     CHARACTER(LEN=:),ALLOCATABLE :: YPREFILENAME !To store the directory + filename
+    CHARACTER(LEN=:),ALLOCATABLE :: YFORSTATUS  ! Status for open of a file (for LFI) ('OLD','NEW','UNKNOWN','SCRATCH','REPLACE')
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','opening '//TRIM(TPFILE%CNAME)//' for '//TRIM(TPFILE%CMODE))
     !
@@ -404,6 +406,7 @@ CONTAINS
                STATUS=STATUS,          &
                ACCESS=ACCESS,          &
                IOSTAT=IOS,             &
+               IOMSG=YIOERRMSG,        &
                FORM=FORM,              &
                RECL=IRECSIZE,          &
                BLANK=BLANK,            &
@@ -421,6 +424,7 @@ CONTAINS
                   STATUS=YSTATUS,         &
                   ACCESS=YACCESS,         &
                   IOSTAT=IOS,             &
+                  IOMSG=YIOERRMSG,        &
                   FORM=YFORM,             &
                   ACTION=YACTION)
           ELSEIF (YACCESS=='DIRECT') THEN
@@ -429,6 +433,7 @@ CONTAINS
                   STATUS=YSTATUS,         &
                   ACCESS=YACCESS,         &
                   IOSTAT=IOS,             &
+                  IOMSG=YIOERRMSG,        &
                   FORM=YFORM,             &
                   RECL=YRECL,             &
                   ACTION=YACTION)
@@ -440,6 +445,7 @@ CONTAINS
                      STATUS=YSTATUS,         &
                      ACCESS=YACCESS,         &
                      IOSTAT=IOS,             &
+                     IOMSG=YIOERRMSG,        &
                      FORM=YFORM,             &
                      RECL=YRECL,             &
                      BLANK=YBLANK,           &
@@ -453,6 +459,7 @@ CONTAINS
                      STATUS=YSTATUS,         &
                      ACCESS=YACCESS,         &
                      IOSTAT=IOS,             &
+                     IOMSG=YIOERRMSG,        &
                      FORM=YFORM,             &
                      RECL=YRECL,             &
                      BLANK=YBLANK,           &
@@ -467,6 +474,7 @@ CONTAINS
                      STATUS=YSTATUS,         &
                      ACCESS=YACCESS,         &
                      IOSTAT=IOS,             &
+                     IOMSG=YIOERRMSG,        &
                      FORM=YFORM,             &
                      RECL=YRECL,             &
                      POSITION=YPOSITION,     &
@@ -494,6 +502,7 @@ CONTAINS
                STATUS=STATUS,          &
                ACCESS=ACCESS,          &
                IOSTAT=IOS,             &
+               IOMSG=YIOERRMSG,        &
                FORM=FORM,              &
                RECL=RECL,              &
                BLANK=BLANK,            &
@@ -504,7 +513,7 @@ CONTAINS
 #endif
 
 #endif
-
+          IF (IOS/=0) CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll','Problem when opening '//TRIM(YPREFILENAME)//': '//TRIM(YIOERRMSG))
        ELSE 
           !! NON I/O processors case
           IOS = 0
@@ -525,6 +534,7 @@ CONTAINS
             STATUS=STATUS,                         &
             ACCESS=ACCESS,                         &
             IOSTAT=IOS,                            &
+            IOMSG=YIOERRMSG,                       &
             FORM=FORM,                             &
             RECL=IRECSIZE,                         &
             BLANK=BLANK,                           &
@@ -541,6 +551,7 @@ CONTAINS
                STATUS=YSTATUS,                        &
                ACCESS=YACCESS,                        &
                IOSTAT=IOS,                            &
+               IOMSG=YIOERRMSG,                       &
                FORM=YFORM,                            &
                RECL=YRECL,                            &
                ACTION=YACTION)
@@ -551,6 +562,7 @@ CONTAINS
                STATUS=YSTATUS,                         &
                ACCESS=YACCESS,                         &
                IOSTAT=IOS,                             &
+               IOMSG=YIOERRMSG,                        &
                FORM=YFORM,                             &
                RECL=YRECL,                             &
                BLANK=YBLANK,                           &
@@ -564,6 +576,7 @@ CONTAINS
                STATUS=YSTATUS,                         &
                ACCESS=YACCESS,                         &
                IOSTAT=IOS,                             &
+               IOMSG=YIOERRMSG,                        &
                FORM=YFORM,                             &
                RECL=YRECL,                             &
                BLANK=YBLANK,                           &
@@ -579,6 +592,7 @@ CONTAINS
             STATUS=STATUS,                         &
             ACCESS=ACCESS,                         &
             IOSTAT=IOS,                            &
+            IOMSG=YIOERRMSG,                       &
             FORM=FORM,                             &
             RECL=RECL,                             &
             BLANK=BLANK,                           &
@@ -589,6 +603,7 @@ CONTAINS
 #endif
 
 #endif
+       IF (IOS/=0) CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll','Problem when opening '//TRIM(YPREFILENAME)//': '//TRIM(YIOERRMSG))
 
 
 
@@ -729,13 +744,20 @@ CONTAINS
                    ENDIF
                    INPRAR = 49
                    !
+                   SELECT CASE (YACTION)
+                     CASE('READ')
+                       YFORSTATUS = 'OLD'
+                     CASE('WRITE')
+                       YFORSTATUS = 'REPLACE'
+                   END SELECT
+                   !
                    ! JUAN open lfi file temporary modif
                    !
                    CALL LFIOUV(IRESOU,                   &
                         TZSPLITFILE%NLFIFLU,             &
                         GNAMFI8,                         &
                         TRIM(YPREFILENAME)//'.lfi',      &
-                        "UNKNOWN",                       &
+                        YFORSTATUS,                      &
                         GFATER8,                         &
                         GSTATS8,                         &
                         IMELEV,                          &

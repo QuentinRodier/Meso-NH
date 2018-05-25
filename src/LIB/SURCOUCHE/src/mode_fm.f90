@@ -239,6 +239,7 @@ INTEGER                 :: IFTYPE  ! type of FM-file
 INTEGER                 :: IROWF,IRESP
 CHARACTER(LEN=7)        :: YACTION ! Action upon the file ('READ' or 'WRITE')
 CHARACTER(LEN=:),ALLOCATABLE :: YFILEM  ! name of the file
+CHARACTER(LEN=:),ALLOCATABLE :: YFORSTATUS  ! Status for open of a file (for LFI) ('OLD','NEW','UNKNOWN','SCRATCH','REPLACE')
 CHARACTER(LEN=8)        :: YRESP
 LOGICAL                 :: GSTATS
 LOGICAL :: GNAMFI,GFATER,GNEWFI
@@ -361,15 +362,22 @@ IF (TPFILE%LMASTER) THEN
      GFATER8 = GFATER
      GSTATS8 = GSTATS
      !
-     CALL LFIOUV(IRESOU,     &
-          INUMBR8,           &
-          GNAMFI8,           &
-          TRIM(YFILEM)//'.lfi',  &
-          "UNKNOWN",         &
-          GFATER8,           &
-          GSTATS8,           &
-          IMELEV,            &
-          INPRAR,            &
+     SELECT CASE (YACTION)
+       CASE('READ')
+         YFORSTATUS = 'OLD'
+       CASE('WRITE')
+         YFORSTATUS = 'REPLACE'
+     END SELECT
+     !
+     CALL LFIOUV(IRESOU,        &
+          INUMBR8,              &
+          GNAMFI8,              &
+          TRIM(YFILEM)//'.lfi', &
+          YFORSTATUS,           &
+          GFATER8,              &
+          GSTATS8,              &
+          IMELEV,               &
+          INPRAR,               &
           ININAR)
      TPFILE%NLFININAR = ININAR
   IF (IRESOU /= 0 ) THEN
