@@ -935,15 +935,15 @@ IF (IMODEL/=10) THEN ! others than NCEP
   END DO
 ELSE !NCEP
   DO JLOOP1=1, INLEVEL
-    WRITE (ILUOUT0,*), 'JLOOP1=',JLOOP1,MINVAL(ZPM_G(:,JLOOP1)),MINVAL(ZT_G(:,JLOOP1)),MINVAL(ZQ_G(:,JLOOP1))
-    WRITE (ILUOUT0,*), '                     ',MAXVAL(ZPM_G(:,JLOOP1)),MAXVAL(ZT_G(:,JLOOP1)),MAXVAL(ZQ_G(:,JLOOP1))
+    WRITE (ILUOUT0,*) 'JLOOP1=',JLOOP1,MINVAL(ZPM_G(:,JLOOP1)),MINVAL(ZT_G(:,JLOOP1)),MINVAL(ZQ_G(:,JLOOP1))
+    WRITE (ILUOUT0,*) '                     ',MAXVAL(ZPM_G(:,JLOOP1)),MAXVAL(ZT_G(:,JLOOP1)),MAXVAL(ZQ_G(:,JLOOP1))
     ZH_G(:)  =ZQ_G(:,JLOOP1)
     ZRV_G(:) = (XRD/XRV)*SM_FOES(ZT_G(:,JLOOP1))*0.01*ZH_G(:) &
                         /(ZPM_G(:,JLOOP1) -SM_FOES(ZT_G(:,JLOOP1))*0.01*ZH_G(:))
-    WRITE (ILUOUT0,*), '                     ',MINVAL(ZRV_G(:)),MAXVAL(ZRV_G(:))
+    WRITE (ILUOUT0,*) '                     ',MINVAL(ZRV_G(:)),MAXVAL(ZRV_G(:))
     ZTHV_G(:)=ZT_G(:,JLOOP1) * ((XP00/ZPM_G(:,JLOOP1))**(XRD/XCPD)) * &
                                ((1. + XRV*ZRV_G(:)/XRD) / (1. + ZRV_G(:)))
-    WRITE (ILUOUT0,*), '                     ',MINVAL(ZTHV_G(:)),MAXVAL(ZTHV_G(:))
+    WRITE (ILUOUT0,*) '                     ',MINVAL(ZTHV_G(:)),MAXVAL(ZTHV_G(:))
     !
     ! Interpolation : H           
     CALL HORIBL(ZPARAM(3),ZPARAM(4),ZPARAM(5),ZPARAM(6),INT(ZPARAM(2)),IINLO,INI, &
