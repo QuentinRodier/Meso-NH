@@ -1,6 +1,6 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
-!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE WRITESURF_SBL_n (HSELECT, OSBL, SB, HPROGRAM, HWRITE, HSURF,SV)
@@ -33,6 +33,7 @@
 !!    -------------
 !!      Original    01/2003 
 !!      E. Martin   01/2012 avoid write of XUNDEF fields
+!!      P. Wautelet 28/05/2018: check if SV is present before using it
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -206,7 +207,7 @@ IF (HWRITE/='PRE') THEN
     CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,SB%XP(:,JL),IRESP,HCOMMENT=YCOMMENT)
   END DO
   !
-  IF (HSURF=="NATURE") THEN
+  IF (HSURF=="NATURE" .AND. PRESENT(SV)) THEN
     IF(SV%NSNWEQ>0) THEN
       DO JN=1,SV%NSNWEQ
       !DO JN=1,2
