@@ -1154,7 +1154,28 @@ IF (IO%CPHOTO/='NON') THEN
                              HPROGRAM,'MAJ','REAP_D: day of reaping','NAT',&
                              CFNAM_REAP_D,CFTYP_REAP_D,XUNIF_REAP_D,DTV%XPAR_REAP_D,DTV%LDATA_REAP_D)
       IF (ALL(.NOT.DTV%LDATA_REAP_D)) DEALLOCATE(DTV%XPAR_REAP_D)
-      !      
+      !  
+      IF (.NOT.IO%LECOCLIMAP .AND. .NOT.(ANY(DTV%LDATA_IRRIG).AND.ANY(DTV%LDATA_WATSUP).AND.&
+            ANY(DTV%LDATA_SEED_M).AND.ANY(DTV%LDATA_SEED_D).AND.ANY(DTV%LDATA_REAP_M).AND.&
+            ANY(DTV%LDATA_REAP_D))) THEN
+        !
+        WRITE(ILUOUT,*) ' '
+        WRITE(ILUOUT,*) '***********************************************************'
+        WRITE(ILUOUT,*) '* Error in PGD field preparation of irrigation fields      *'
+        WRITE(ILUOUT,*) '* There is no prescribed value and no input file :         *'
+        IF (ALL(.NOT.DTV%LDATA_IRRIG   )) WRITE(ILUOUT,*) '* for IRRIG                   *'
+        IF (ALL(.NOT.DTV%LDATA_WATSUP  )) WRITE(ILUOUT,*) '* for WATSUP                  *'
+        IF (ALL(.NOT.DTV%LDATA_SEED_M  )) WRITE(ILUOUT,*) '* for SEED_M                  *'
+        IF (ALL(.NOT.DTV%LDATA_SEED_D  )) WRITE(ILUOUT,*) '* for SEED_D                  *'
+        IF (ALL(.NOT.DTV%LDATA_REAP_M  )) WRITE(ILUOUT,*) '* for REAP_M                  *'
+        IF (ALL(.NOT.DTV%LDATA_REAP_D  )) WRITE(ILUOUT,*) '* for REAP_D                  *'      
+        WRITE(ILUOUT,*) '* Without ECOCLIMAP, these fields must be prescribed      *'
+        WRITE(ILUOUT,*) '***********************************************************'
+        WRITE(ILUOUT,*) ' '
+        CALL ABOR1_SFX('PGD_ISBA_PAR: NO PRESCRIBED VALUE NOR INPUT FILE FOR IRRIGATION PARAMETERS')
+        !
+      ENDIF
+      
     ENDIF
     !
     IF ((ANY(DTV%LDATA_IRRIG).OR.ANY(DTV%LDATA_WATSUP).OR.ANY(DTV%LDATA_SEED_M).OR.&
@@ -1173,29 +1194,7 @@ IF (IO%CPHOTO/='NON') THEN
       WRITE(ILUOUT,*) ' '
       CALL ABOR1_SFX('PGD_ISBA_PAR: MISSING PRESCRIBED VALUE OR INPUT FILE FOR IRRIGATION PARAMETERS')
       !
-    ENDIF
-    !
-    IF (.NOT.IO%LECOCLIMAP .AND. .NOT.(ANY(DTV%LDATA_IRRIG).AND.ANY(DTV%LDATA_WATSUP).AND.&
-            ANY(DTV%LDATA_SEED_M).AND.ANY(DTV%LDATA_SEED_D).AND.ANY(DTV%LDATA_REAP_M).AND.&
-            ANY(DTV%LDATA_REAP_D))) THEN
-      !
-      WRITE(ILUOUT,*) ' '
-      WRITE(ILUOUT,*) '***********************************************************'
-      WRITE(ILUOUT,*) '* Error in PGD field preparation of irrigation fields      *'
-      WRITE(ILUOUT,*) '* There is no prescribed value and no input file :         *'
-      IF (ALL(.NOT.DTV%LDATA_IRRIG   )) WRITE(ILUOUT,*) '* for IRRIG                   *'
-      IF (ALL(.NOT.DTV%LDATA_WATSUP  )) WRITE(ILUOUT,*) '* for WATSUP                  *'
-      IF (ALL(.NOT.DTV%LDATA_SEED_M  )) WRITE(ILUOUT,*) '* for SEED_M                  *'
-      IF (ALL(.NOT.DTV%LDATA_SEED_D  )) WRITE(ILUOUT,*) '* for SEED_D                  *'
-      IF (ALL(.NOT.DTV%LDATA_REAP_M  )) WRITE(ILUOUT,*) '* for REAP_M                  *'
-      IF (ALL(.NOT.DTV%LDATA_REAP_D  )) WRITE(ILUOUT,*) '* for REAP_D                  *'      
-      WRITE(ILUOUT,*) '* Without ECOCLIMAP, these fields must be prescribed      *'
-      WRITE(ILUOUT,*) '***********************************************************'
-      WRITE(ILUOUT,*) ' '
-      CALL ABOR1_SFX('PGD_ISBA_PAR: NO PRESCRIBED VALUE NOR INPUT FILE FOR IRRIGATION PARAMETERS')
-      !
-    ENDIF
-    
+    ENDIF    
     !
   ENDIF
   !
