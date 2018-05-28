@@ -90,6 +90,7 @@ END MODULE MODI_LIMA_PRECIP_SCAVENGING
 !!    -------------
 !!      Original             ??/??/13 
 !!
+!!  Philippe Wautelet 28/05/2018: corrected truncated integer division (3/2 -> 1.5)
 !-------------------------------------------------------------------------------
 !
 !*                  0.DECLARATIONS          
@@ -289,7 +290,7 @@ WHERE ( GRAIN(:,:,:) )
    ZT_3D(:,:,:)      = PTHT(:,:,:) * ( PPABST(:,:,:)/XP00 )**(XRD/XCPD)
    ZCONCR_3D(:,:,:)  = PCRT(:,:,:) * PRHODREF(:,:,:)                    ![/m3]
    ! Sutherland law for viscosity of air
-   ZVISCA_3D(:,:,:)  = XMUA0*(ZT_3D(:,:,:)/XTREF)**(3/2)*(XTREF+XT_SUTH_A) &
+   ZVISCA_3D(:,:,:)  = XMUA0*(ZT_3D(:,:,:)/XTREF)**1.5*(XTREF+XT_SUTH_A) &
                                                         /(XT_SUTH_A+ZT_3D(:,:,:))
    ! Air mean free path
    ZMFPA_3D(:,:,:)   = XMFPA0*(XP00*ZT_3D(:,:,:))/(PPABST(:,:,:)*XT0SCAV)           

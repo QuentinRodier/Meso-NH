@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -76,6 +76,7 @@ SUBROUTINE AERO_EFFIC3D(PRG,PVGG,    & !aerosol radius/fall speed (m/s)
 !!
 !!   MODIFICATIONS
 !!    -------------
+!!  Philippe Wautelet 28/05/2018: corrected truncated integer division (1/12 -> 1./12.)
 !!
 !-----------------------------------------------------------------
 !       
@@ -179,7 +180,7 @@ ZREY(:,:,:)= MAX(ZREY(:,:,:), 1E-2)
 
 
 !S Star
-ZSTA(:,:,:)=(1.2+(1/12)*LOG(1+ZREY(:,:,:)))/(1+LOG(1+ZREY(:,:,:)))
+ZSTA(:,:,:)=(1.2+(1./12.)*LOG(1.+ZREY(:,:,:)))/(1.+LOG(1.+ZREY(:,:,:)))
 
 PEFFIC_AER(:,:,:,:)=0.0
 

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -164,6 +164,7 @@ END MODULE MODI_SHALLOW_MF
 !!      R.Honnert 07/2012 : MF gray zone 
 !!      R.Honnert 10/2016 : SURF=gray zone initilisation + EDKF  
 !!      R.Honnert 10/2016 : Update with Arome
+!!      Philippe Wautelet 28/05/2018: corrected truncated integer division (2/3 -> 2./3.)
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -468,8 +469,8 @@ ENDIF
       ENDDO
       ZRESOL_NORM=ZRESOL_GRID/ZLUP
       !! P=loi pour MF, on utilise la même loi à chaque fois
-      ZPLAW=(ZRESOL_NORM*ZRESOL_NORM+0.19*ZRESOL_NORM**(2/3))/ &
-      (ZRESOL_NORM*ZRESOL_NORM+0.15*ZRESOL_NORM**(2/3)+0.33)
+      ZPLAW=(ZRESOL_NORM*ZRESOL_NORM+0.19*ZRESOL_NORM**(2./3.))/ &
+      (ZRESOL_NORM*ZRESOL_NORM+0.15*ZRESOL_NORM**(2./3.)+0.33)
       !! reduction des flux a posteriori
       !! MF=P*MF en première approximation, on oublie w'f' (Kgrad) et w'f'resol (nul avec ce flux)
       !  

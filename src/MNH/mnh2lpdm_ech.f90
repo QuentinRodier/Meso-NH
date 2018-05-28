@@ -13,6 +13,7 @@
 ! Creation : 07.01.2009
 ! Modifications:
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  Philippe Wautelet 28/05/2018: corrected truncated integer division (1/3 -> 1./3.)
 !-----------------------------------------------------------------------
 !
 !*	0.  DECLARATIONS.
@@ -269,7 +270,7 @@ XSSFV(:,:) = XSFV(NSIB:NSIE,NSJB:NSJE)
              DO JK=1,NKMAX
              IF (XSHAUT(JK).LE.XSHMIX(JI,JJ)) THEN
              XSSIGU(JI,JJ,JK)=XSUSTAR(JI,JJ)         &
-                        * (12+0.5*XSHMIX(JI,JJ)/ABS(XSLMO(JI,JJ)))**(1/3)
+                        * (12+0.5*XSHMIX(JI,JJ)/ABS(XSLMO(JI,JJ)))**(1./3.)
              ELSE
              XSSIGU(JI,JJ,JK)=0.001
              ENDIF

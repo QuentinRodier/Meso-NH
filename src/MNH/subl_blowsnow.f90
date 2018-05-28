@@ -43,6 +43,9 @@ END MODULE MODI_SUBL_BLOWSNOW
       SUBROUTINE SUBL_BLOWSNOW(PZZ, PRHODJ , PRHODREF, PEXNREF , PPABST,    &
                          PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PSVT,     &
                          PTHS, PRVS, PSVS,PSNWSUBL3D,PVGK)
+!!   MODIFICATIONS
+!!    -------------
+!!  Philippe Wautelet 28/05/2018: corrected truncated integer division (1*10**(-6) -> 1E-6)
 
 USE MODD_PARAMETERS
 USE MODD_CST
@@ -453,7 +456,7 @@ DO JL=1,IMICRO
    ZSUM_SUBL=0.
    ZUSI(JL) = MIN(ZUSI(JL), 0.)   !Only the undersaturation over ice is considered.  
    DO JN=1,NMAX(JL)
-            ZR = 1*10**(-6)+(JN-0.5)*ZDELTAR
+            ZR = 1E-6+(JN-0.5)*ZDELTAR
 !       Carrier settling velocity
             ZVEL_CARRIER = - ZAA(JL)/ZR+((ZAA(JL)/ZR)**2+ZBB(JL)*ZR)**0.5
 !       Weight of the corresponding bin following the gamma distribution            

@@ -1,3 +1,8 @@
+!SFX_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+!SFX_LIC for details. version 1.
+!-----------------------------------------------------------------
 !!   #######################################
 SUBROUTINE BLOWSNW_VELGRAV1D(PBETA, PRG, PTA, PRHODREF,PPABST,PVGK)
 
@@ -25,6 +30,10 @@ SUBROUTINE BLOWSNW_VELGRAV1D(PBETA, PRG, PTA, PRHODREF,PPABST,PVGK)
 !!   AUTHOR
 !!    ------
 !!   V. Vionnet (CNRM/GMME/MOSAYC)
+!!
+!!   MODIFICATIONS
+!!    -------------
+!!  Philippe Wautelet 28/05/2018: corrected truncated integer division (1*10**(-6) -> 1E-6)
 !!
 !!   NB : this routine is similar to the routine implemented in Meso-NH (blowsnow_velgrav.f90)
 !
@@ -159,7 +168,7 @@ DO JI=1,SIZE(PTA,1)
        ZSUM_VEL_M0=0.
        ZSUM_VEL_M3=0.
        DO II=1,NMAX(JI,JK)
-          ZR = 1*10**(-6)+(II-0.5)*ZDELTAR
+          ZR = 1E-6+(II-0.5)*ZDELTAR
           ZVEL_CARRIER = - ZAA(JI,JK)/ZR+((ZAA(JI,JK)/ZR)**2.+ZBB(JI)*ZR)**0.5
           ZW_M0=ZR**(XEMIALPHA_SNW-1)*exp(-ZR/PBETA(JI,JK))/(PBETA(JI,JK)**XEMIALPHA_SNW*ZGAM)
 

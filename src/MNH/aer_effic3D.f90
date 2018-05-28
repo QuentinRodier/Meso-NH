@@ -1,4 +1,4 @@
-!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
@@ -76,6 +76,7 @@ SUBROUTINE AER_EFFIC3D(PRG,PVGG,    & !aerosol radius/fall speed (m/s)
 !!
 !!   MODIFICATIONS
 !!    -------------
+!!  Philippe Wautelet 28/05/2018: corrected truncated integer division (1/12 -> 1./12.)
 !!
 !-----------------------------------------------------------------
 !       
@@ -176,7 +177,7 @@ ZREY(:,:,:)= MAX(ZREY(:,:,:), 1E-2)
 
 
 !S Star
-ZSTA(:,:,:)=(1.2+(1/12)*LOG(1+ZREY(:,:,:)))/(1+LOG(1+ZREY(:,:,:)))
+ZSTA(:,:,:)=(1.2+(1./12.)*LOG(1.+ZREY(:,:,:)))/(1.+LOG(1.+ZREY(:,:,:)))
 PEFFIC(:,:,:,:)=0.0
 DO JI=1,NMODE_DST
 !

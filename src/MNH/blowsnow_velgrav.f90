@@ -52,6 +52,7 @@ END MODULE MODI_BLOWSNOW_VELGRAV
 !!
 !!   MODIFICATIONS
 !!    -------------
+!!  Philippe Wautelet 28/05/2018: corrected truncated integer division (1*10**(-6) -> 1E-6)
 !!
 !!
 !-----------------------------------------------------------------
@@ -249,7 +250,7 @@ DO JI=1,SIZE(PSVT,1)
          ZSUM_VEL_M0=0.
          ZSUM_VEL_M3=0.
          DO II=1,NMAX(JI,JJ,JK)
-            ZR = 1*10**(-6)+(II-0.5)*ZDELTAR
+            ZR = 1E-6+(II-0.5)*ZDELTAR
             ZVEL_CARRIER = - ZAA(JI,JJ,JK)/ZR+((ZAA(JI,JJ,JK)/ZR)**2.+ZBB(JI,JJ,JK)*ZR)**0.5
             ZW_M0=ZR**(XALPHA_SNOW-1)*exp(-ZR/ZBETA(JI,JJ,JK))/(ZBETA(JI,JJ,JK))**XALPHA_SNOW*ZGAM
 
