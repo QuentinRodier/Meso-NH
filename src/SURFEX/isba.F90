@@ -482,6 +482,7 @@ CALL SOILSTRESS(IO%CISBA, ZF2, KK, PK, PEK, ZF2WGHT, ZF5 )
 !              ---------------------------------
 !
 IF(OMEB)THEN
+  IF (PRESENT(PBLOWSNW_FLUX)) THEN
    CALL ISBA_MEB(IO, KK, PK, PEK, DK, DEK, DMK, G, AG,                &
                  TPTIME, OMEB, GSHADE, HIMPLICIT_WIND, PTSTEP,        &
                  ZSOILHCAPZ, ZSOILCONDZ, ZFROZEN1, PPS, PZENITH,      &
@@ -496,7 +497,24 @@ IF(OMEB)THEN
                  PHU_AGG, PAC_AGG, ZDELHEATV_SFC, ZDELHEATG_SFC, ZDELHEATG, &
                  ZDELHEATN, ZDELHEATN_SFC, ZGSFCSNOW, PTDEEP_A, PDEEP_FLUX, &
                  ZRI3L, ZSNOW_THRUFAL, ZSNOW_THRUFAL_SOIL, ZEVAPCOR, ZSUBVCOR, &
-                 ZLITCOR, ZSNOWSFCH, ZQS3L,PBLOWSNW_FLUX,PBLOWSNW_CONC, PRN_SHADE, PRN_SUNLIT   )
+                 ZLITCOR, ZSNOWSFCH, ZQS3L,PRN_SHADE, PRN_SUNLIT,PBLOWSNW_FLUX,PBLOWSNW_CONC )
+  ELSE
+   CALL ISBA_MEB(IO, KK, PK, PEK, DK, DEK, DMK, G, AG,                &
+                 TPTIME, OMEB, GSHADE, HIMPLICIT_WIND, PTSTEP,        &
+                 ZSOILHCAPZ, ZSOILCONDZ, ZFROZEN1, PPS, PZENITH,      &
+                 PSCA_SW, PSW_RAD, PVMOD, PRR, PSR, PRHOA, PTA, PQA,  &
+                 PDIRCOSZW, PEXNS, PEXNA, PPET_A_COEF, PPET_B_COEF,   &
+                 PPEQ_A_COEF, PPEQ_B_COEF, PPEW_A_COEF, PPEW_B_COEF,  &
+                 PZREF, PUREF, PZ0G_WITHOUT_SNOW, PZ0_MEBV, PZ0H_MEBV,&
+                 PZ0EFF_MEBV, PZ0_MEBN, PZ0H_MEBN, PZ0EFF_MEBN,       & 
+                 PALBNIR_TVEG, PALBVIS_TVEG,PALBNIR_TSOIL, PALBVIS_TSOIL, &
+                 PABC, PIACAN, PPOI, PCSP, PRESP_BIOMASS_INST,  PPALPHAN, &
+                 ZF2, PLW_RAD, ZGRNDFLUX, ZFLSN_COR, PUSTAR, ZEMIST,      &
+                 PHU_AGG, PAC_AGG, ZDELHEATV_SFC, ZDELHEATG_SFC, ZDELHEATG, &
+                 ZDELHEATN, ZDELHEATN_SFC, ZGSFCSNOW, PTDEEP_A, PDEEP_FLUX, &
+                 ZRI3L, ZSNOW_THRUFAL, ZSNOW_THRUFAL_SOIL, ZEVAPCOR, ZSUBVCOR, &
+                 ZLITCOR, ZSNOWSFCH, ZQS3L,PRN_SHADE, PRN_SUNLIT   )
+  ENDIF
 
 ELSE
 !
@@ -526,7 +544,8 @@ ELSE
 !*      7.0    Explicit snow scheme
 !              --------------------
 !
-   CALL SNOW3L_ISBA(IO, G, PK, PEK, DK, DEK, DMK, OMEB, HIMPLICIT_WIND,                   &
+   IF (PRESENT(PBLOWSNW_FLUX)) THEN
+     CALL SNOW3L_ISBA(IO, G, PK, PEK, DK, DEK, DMK, OMEB, HIMPLICIT_WIND,                   &
                     TPTIME, PTSTEP, PK%XVEGTYPE_PATCH, PEK%XTG, DMK%XCT, ZSOILHCAPZ,      &
                     ZSOILCONDZ(:,1), PPS, PTA, PSW_RAD, PQA, PVMOD, PLW_RAD, PRR,         &
                     PSR, PRHOA, PUREF, PEXNS, PEXNA, PDIRCOSZW, PZREF, PEK%XSNOWFREE_ALB, &
@@ -535,6 +554,16 @@ ELSE
                     ZGSFCSNOW, ZEVAPCOR, ZLES3L, ZLEL3L, ZEVAP3L, ZSNOWSFCH, ZDELHEATN,   &
                     ZDELHEATN_SFC, ZRI3L, PZENITH, ZDELHEATG, ZDELHEATG_SFC, ZQS3L,       &
                     PBLOWSNW_FLUX,PBLOWSNW_CONC     )   
+    ELSE
+     CALL SNOW3L_ISBA(IO, G, PK, PEK, DK, DEK, DMK, OMEB, HIMPLICIT_WIND,                   &
+                    TPTIME, PTSTEP, PK%XVEGTYPE_PATCH, PEK%XTG, DMK%XCT, ZSOILHCAPZ,      &
+                    ZSOILCONDZ(:,1), PPS, PTA, PSW_RAD, PQA, PVMOD, PLW_RAD, PRR,         &
+                    PSR, PRHOA, PUREF, PEXNS, PEXNA, PDIRCOSZW, PZREF, PEK%XSNOWFREE_ALB, &
+                    PK%XDG, PK%XDZG, PPEW_A_COEF, PPEW_B_COEF, PPET_A_COEF, PPEQ_A_COEF,  &
+                    PPET_B_COEF, PPEQ_B_COEF, ZSNOW_THRUFAL_SOIL, ZGRNDFLUX, ZFLSN_COR,    &
+                    ZGSFCSNOW, ZEVAPCOR, ZLES3L, ZLEL3L, ZEVAP3L, ZSNOWSFCH, ZDELHEATN,   &
+                    ZDELHEATN_SFC, ZRI3L, PZENITH, ZDELHEATG, ZDELHEATG_SFC, ZQS3L)   
+    ENDIF
 !  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 !
 !*      8.0    Plant stress, stomatal resistance and, possibly, CO2 assimilation

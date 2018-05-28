@@ -211,12 +211,12 @@ REAL, DIMENSION(:), INTENT(OUT)     :: PQS
 ! puis plus tard dans LALB
 REAL, DIMENSION(:), INTENT(IN)      :: PZENITH    ! solar zenith angle
 !
-REAL, DIMENSION(:,:), INTENT(INOUT) :: PBLOWSNW_FLUX
+REAL, DIMENSION(:,:),OPTIONAL, INTENT(INOUT) :: PBLOWSNW_FLUX
 !                                      PBLOWSNW_FLUX  = Blowing snow particles flux:
 !                                           1: Number (#/m2/s) 2: Mass (kg/m2/s)
 !                                        IN : contains sedimentation flux
 !                                        OUT : contains emitted turbulent flux towards the atmosphere
-REAL, DIMENSION(:,:), INTENT(IN)    :: PBLOWSNW_CONC
+REAL, DIMENSION(:,:),OPTIONAL, INTENT(IN)    :: PBLOWSNW_CONC
 !                                      PBLOWSNW_CONC = Blowing snow particles concentration:
 !                                           1: Number (#/m3) 2: Mass (kg/m3)
 !
@@ -330,7 +330,11 @@ DMK%XSNOWDZ(:,:)   = 0.0
 !
 INLVLS          = SIZE(PEK%TSNOW%WSNOW(:,:),2)    
 INLVLG          = MIN(SIZE(PD_G(:,:),2),SIZE(PTG(:,:),2)) 
-IBLOWSNW       = SIZE(PBLOWSNW_FLUX(:,:),2)
+IF (PRESENT(PBLOWSNW_FLUX)) THEN
+  IBLOWSNW       = SIZE(PBLOWSNW_FLUX(:,:),2)
+ELSE
+  IBLOWSNW=0
+ENDIF
 !
 !
 IF(.NOT.OMEB)THEN 

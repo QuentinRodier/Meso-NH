@@ -18,7 +18,7 @@
                           PDELHEATN, PDELHEATN_SFC, PRESTOREN, PTDEEP_A, PDEEP_FLUX,&
                           PRISNOW, PSNOW_THRUFAL, PSNOW_THRUFAL_SOIL, PEVAPCOR,     &
                           PSUBVCOR, PLITCOR, PSNOWSFCH, PQSNOW,                     &
-                          PBLOWSNW_FLUX, PBLOWSNW_CONC,PRN_SHADE, PRN_SUNLIT)
+                          PRN_SHADE, PRN_SUNLIT,PBLOWSNW_FLUX, PBLOWSNW_CONC )
 !     ##########################################################################
 !
 !                             
@@ -927,7 +927,8 @@ ZVEGFACT(:) = ZSIGMA_F(:)*(1.0-PPALPHAN(:)*PEK%XPSN(:))
 !*      10.0    Explicit snow scheme (MEB: impose surface fluxes as upper BC)
 !              ----------------------------------------------------------------
 !
- CALL SNOW3L_ISBA(IO, G, PK, PEK, DK, DEK, DMK, OMEB, HIMPLICIT_WIND,       &
+ IF (PRESENT(PBLOWSNW_FLUX)) THEN
+   CALL SNOW3L_ISBA(IO, G, PK, PEK, DK, DEK, DMK, OMEB, HIMPLICIT_WIND,       &
                   TPTIME, PTSTEP, PK%XVEGTYPE_PATCH,  ZTGL, ZCTSFC,         &
                   ZSOILHCAPZ, ZSOILCONDZ(:,1), PPS, PTA, PSW_RAD, PQA,      &
                   PVMOD, PLW_RAD, ZRRSFC, DEK%XSR_GN, PRHOA, ZUREF, PEXNS,  &
@@ -937,6 +938,19 @@ ZVEGFACT(:) = ZSIGMA_F(:)*(1.0-PPALPHAN(:)*PEK%XPSN(:))
                   PRESTOREN, PEVAPCOR, DEK%XLES, DEK%XLESL, ZEVAP3L, PSNOWSFCH, &
                   PDELHEATN, PDELHEATN_SFC, PRISNOW, PZENITH, PDELHEATG,    &
                   PDELHEATG_SFC, PQSNOW,PBLOWSNW_FLUX,PBLOWSNW_CONC      ) 
+ ELSE
+   CALL SNOW3L_ISBA(IO, G, PK, PEK, DK, DEK, DMK, OMEB, HIMPLICIT_WIND,       &
+                  TPTIME, PTSTEP, PK%XVEGTYPE_PATCH,  ZTGL, ZCTSFC,         &
+                  ZSOILHCAPZ, ZSOILCONDZ(:,1), PPS, PTA, PSW_RAD, PQA,      &
+                  PVMOD, PLW_RAD, ZRRSFC, DEK%XSR_GN, PRHOA, ZUREF, PEXNS,  &
+                  PEXNA, PDIRCOSZW, ZZREF, ZALBG, ZD_G, ZDZG, PPEW_A_COEF,  &
+                  PPEW_B_COEF, PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF,       &
+                  PPEQ_B_COEF, PSNOW_THRUFAL, PGRNDFLUX, PFLSN_COR,         &
+                  PRESTOREN, PEVAPCOR, DEK%XLES, DEK%XLESL, ZEVAP3L, PSNOWSFCH, &
+                  PDELHEATN, PDELHEATN_SFC, PRISNOW, PZENITH, PDELHEATG,    &
+                  PDELHEATG_SFC, PQSNOW      ) 
+
+ ENDIF
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 !*      11.0    Litter layer hydrology:
