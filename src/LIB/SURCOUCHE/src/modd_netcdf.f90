@@ -32,7 +32,10 @@ TYPE DIMCDF
    TYPE(DIMCDF), POINTER    :: NEXT => NULL()
 END TYPE DIMCDF
 
-TYPE(DIMCDF),DIMENSION(3,0:8),TARGET :: NCOORDID !X,Y,Z coordinates for the Arakawa points
-                                          !0 2nd-dimension is to treat NGRID=0 case without crash
+TYPE TPTR2DIMCDF
+  TYPE(DIMCDF),POINTER :: TDIM
+END TYPE TPTR2DIMCDF
+
+TYPE(DIMCDF),TARGET :: TDIM_DUMMY !Dummy dimension
 
 END MODULE MODD_NETCDF
