@@ -8,12 +8,12 @@ module mode_options
 
   implicit none
 
-  integer,parameter :: nbavailoptions = 8
+  integer,parameter :: nbavailoptions = 9
   integer,parameter :: MODEUNDEF = -11, MODECDF2CDF = 11, MODELFI2CDF = 12, MODECDF2LFI = 13
 
   integer,parameter :: OPTCOMPRESS = 1, OPTHELP   = 2, OPTLIST   = 3
   integer,parameter :: OPTMERGE    = 4, OPTOUTPUT = 5, OPTREDUCE = 6
-  integer,parameter :: OPTSPLIT    = 7, OPTVAR    = 8
+  integer,parameter :: OPTSPLIT    = 7, OPTVAR    = 8, OPTMODE   = 9
 
   type option
     logical :: set = .false.
@@ -58,8 +58,6 @@ subroutine read_commandline(options,hinfile,houtfile,runmode)
       runmode = MODELFI2CDF
     case default
       runmode = MODEUNDEF
-      print *,'Error: program started with unknown command: ',command
-      call help()
   end select
   deallocate(command,fullcommand)
 
@@ -146,6 +144,11 @@ subroutine init_options(options)
   options(OPTVAR)%has_argument = .true.
   options(OPTVAR)%type         = TYPECHAR
 
+  options(OPTMODE)%long_name    = "runmode"
+  options(OPTMODE)%short_name   = 'R'
+  options(OPTMODE)%has_argument = .true.
+  options(OPTMODE)%type         = TYPECHAR
+
 end subroutine init_options
 
 subroutine get_option(options,finished)
@@ -228,13 +231,33 @@ subroutine check_options(options,infile,runmode)
 
   type(option),dimension(:),intent(inout) :: options
   character(len=:),allocatable,intent(in) :: infile
-  integer,intent(in)                      :: runmode
+  integer,intent(inout)                   :: runmode
 
   integer :: idx1, idx2
 
   !Check if help has been asked
   if (options(OPTHELP)%set) then
     call help()
+  end if
+
+  !Check runmode
+  if (options(OPTMODE)%set) then
+    select case (options(OPTMODE)%cvalue)
+      case ('cdf2cdf')
+        runmode = MODECDF2CDF
+      case ('lfi2cdf')
+        runmode = MODELFI2CDF
+      case ('cdf2lfi')
+        runmode = MODECDF2LFI
+      case default
+        print *,'Error: invalid runmode option'
+        call help()
+     end select
+  else
+    if(runmode==MODEUNDEF) then
+      print *,'Error: program started with unknown command'
+      call help()
+    end if
   end if
 
   !Check compression level
@@ -302,11 +325,13 @@ subroutine help()
 !TODO: -l option for cdf2cdf and cdf2lfi
   print *,"Usage : lfi2cdf [-h --help] [-l] [-v --var var1[,...]] [-r --reduce-precision]"
   print *,"                [-m --merge number_of_z_levels] [-s --split] [-o --output output-file.nc]"
+  print *,"                [-R --runmode mode]"
   print *,"                [-c --compress compression_level] input-file.lfi"
   print *,"        cdf2cdf [-h --help] [-v --var var1[,...]] [-r --reduce-precision]"
   print *,"                [-m --merge number_of_split_files] [-s --split] [-o --output output-file.nc]"
+  print *,"                [-R --runmode mode]"
   print *,"                [-c --compress compression_level] input-file.nc"
-  print *,"        cdf2lfi [-o --output output-file.lfi] input-file.nc"
+  print *,"        cdf2lfi [-o --output output-file.lfi] [-R --runmode mode] input-file.nc"
   print *,""
   print *,"Options:"
   print *,"  --compress, -c compression_level"
@@ -322,6 +347,8 @@ subroutine help()
   print *,"     Name of file for the output"
   print *,"  --reduce-precision, -r"
   print *,"     Reduce the precision of the floating point variables to single precision (cdf2cdf and lfi2cdf only)"
+  print *,"  --runmode, -R"
+  print *,"     Force runmode (lfi2cdf, cdf2cdf or cdf2lfi)"
   print *,"  --split, -s"
   print *,"     Split variables specified with the -v option (one per file) (cdf2cdf and lfi2cdf only)"
   print *,"  --var, -v var1[,...]"

@@ -385,7 +385,7 @@ ifdef PROG_LIST
 prog :   lib $(LIB_GRIBEX)
 	@$(MAKE) -I$(B)$(OBJDIR) DEP=YES  $(PROG_LIST)  
 
-install : $(patsubst %,%-${ARCH_XYZ},$(PROG_LIST)) install_tools
+install : $(patsubst %,%-${ARCH_XYZ},$(PROG_LIST))
 
 
 $(PROG_LIST) : OBJ_PROG=$(shell find $(PROG_DIR) -follow -type f -name "spll_*.f*" \
@@ -404,13 +404,6 @@ else
 	ln -sf $(OBJDIR)/$(*F) $(SRC_MESONH)/exe/$(*F)${XYZ}
 endif
 	rm -f $(SRC_MESONH)/exe/$(*F)_${ARCH_XYZ}~
-
-install_tools :
-ifdef MNH_TOOLS
-	ln -sf $(OBJDIR)/LFI2CDF $(SRC_MESONH)/bin_tools/lfi2cdf
-	ln -sf $(OBJDIR)/LFI2CDF $(SRC_MESONH)/bin_tools/cdf2cdf
-	ln -sf $(OBJDIR)/LFI2CDF $(SRC_MESONH)/bin_tools/cdf2lfi
-endif
 
 ##########################################################
 #                                                        #
