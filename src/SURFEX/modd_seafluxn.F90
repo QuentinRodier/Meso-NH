@@ -29,6 +29,9 @@
 !!      Original      01/2004
 !!      S. Senesi     01/2014  adapt to fractional seaice, and to seaice scheme
 !!      S. Belamari   03/2014  Include NZ0
+!!      Modified      03/2014 : M.N. Bouin  ! possibility of wave parameters
+!!                                        ! from external source
+!!      Modified      11/2014 : J. Pianezze ! add surface pressure, evap-rain and charnock coefficient
 !
 !*       0.   DECLARATIONS
 !             ------------
@@ -84,6 +87,7 @@ TYPE SEAFLUX_t
                                                    ! 0= ARPEGE / 1= Smith (1988) / 2= Direct
   INTEGER                           :: NGRVWAVES   ! set to 0,1 or 2 according to the 
                                                    ! gravity waves model used in coare30_flux
+  LOGICAL                           :: LWAVEWIND    ! wave parameters computed from wind only
   REAL                              :: XICHCE      ! CE coef calculation for ECUME
   LOGICAL                           :: LPERTFLUX   ! flag for stochastic flux perturbation
 !
@@ -91,6 +95,8 @@ TYPE SEAFLUX_t
 !
   REAL, POINTER, DIMENSION(:) :: XSST    ! sea surface temperature
   REAL, POINTER, DIMENSION(:) :: XSSS    ! sea surface salinity
+  REAL, POINTER, DIMENSION(:) :: XHS     ! significant wave height
+  REAL, POINTER, DIMENSION(:) :: XTP     ! wave peak period
   REAL, POINTER, DIMENSION(:) :: XTICE   ! sea ice temperature
   REAL, POINTER, DIMENSION(:) :: XSIC    ! sea ice concentration ( constraint for seaice scheme )
   REAL, POINTER, DIMENSION(:) :: XSST_INI! initial sea surface temperature
@@ -110,6 +116,8 @@ TYPE SEAFLUX_t
   REAL, POINTER, DIMENSION(:)   :: XFSIC   ! nudging (or forcing) sea ice cover
   REAL, POINTER, DIMENSION(:)   :: XFSIT   ! nudging sea ice thickness
 !
+  REAL, POINTER, DIMENSION(:) :: XCHARN  ! Charnock coefficient (for ESM coupling)
+!
   REAL, POINTER, DIMENSION(:) :: XCPL_SEA_WIND ! 10m wind speed for ESM coupling
   REAL, POINTER, DIMENSION(:) :: XCPL_SEA_FWSU ! zonal wind stress for ESM coupling
   REAL, POINTER, DIMENSION(:) :: XCPL_SEA_FWSV ! meridian wind stress for ESM coupling
@@ -117,8 +125,10 @@ TYPE SEAFLUX_t
   REAL, POINTER, DIMENSION(:) :: XCPL_SEA_HEAT ! Non solar net heat flux
   REAL, POINTER, DIMENSION(:) :: XCPL_SEA_EVAP ! Evaporation for ESM coupling
   REAL, POINTER, DIMENSION(:) :: XCPL_SEA_RAIN ! Rainfall for ESM coupling
+  REAL, POINTER, DIMENSION(:) :: XCPL_SEA_EVPR ! Evaporatrion - Rainfall for ESM coupling
   REAL, POINTER, DIMENSION(:) :: XCPL_SEA_SNOW ! Snowfall for ESM coupling
   REAL, POINTER, DIMENSION(:) :: XCPL_SEA_FWSM ! wind stress for ESM coupling
+  REAL, POINTER, DIMENSION(:) :: XCPL_SEA_PRES ! Surface pressure for ESM coupling
 !  
   REAL, POINTER, DIMENSION(:) :: XCPL_SEAICE_SNET ! Solar net heat flux for ESM coupling
   REAL, POINTER, DIMENSION(:) :: XCPL_SEAICE_HEAT ! Non solar net heat flux
@@ -168,6 +178,8 @@ IF (LHOOK) CALL DR_HOOK("MODD_SEAFLUX_N:SEAFLUX_INIT",0,ZHOOK_HANDLE)
   NULLIFY(YSEAFLUX%XSST)
   NULLIFY(YSEAFLUX%XSSS)
   NULLIFY(YSEAFLUX%XSIC)
+  NULLIFY(YSEAFLUX%XHS)
+  NULLIFY(YSEAFLUX%XTP)
   NULLIFY(YSEAFLUX%XTICE)
   NULLIFY(YSEAFLUX%XSST_INI)
   NULLIFY(YSEAFLUX%XZ0)
@@ -191,8 +203,10 @@ IF (LHOOK) CALL DR_HOOK("MODD_SEAFLUX_N:SEAFLUX_INIT",0,ZHOOK_HANDLE)
   NULLIFY(YSEAFLUX%XCPL_SEA_HEAT)
   NULLIFY(YSEAFLUX%XCPL_SEA_EVAP)
   NULLIFY(YSEAFLUX%XCPL_SEA_RAIN)
+  NULLIFY(YSEAFLUX%XCPL_SEA_EVPR)
   NULLIFY(YSEAFLUX%XCPL_SEA_SNOW)
   NULLIFY(YSEAFLUX%XCPL_SEA_FWSM)
+  NULLIFY(YSEAFLUX%XCPL_SEA_PRES)
   NULLIFY(YSEAFLUX%XCPL_SEAICE_SNET)
   NULLIFY(YSEAFLUX%XCPL_SEAICE_HEAT)
   NULLIFY(YSEAFLUX%XCPL_SEAICE_EVAP)
@@ -221,6 +235,7 @@ YSEAFLUX%LPRECIP=.FALSE.
 YSEAFLUX%LPWEBB=.FALSE.
 YSEAFLUX%NZ0=0
 YSEAFLUX%NGRVWAVES=0
+YSEAFLUX%LWAVEWIND=.TRUE.
 YSEAFLUX%XICHCE=0.
 YSEAFLUX%LPERTFLUX=.FALSE.
 YSEAFLUX%JSX=0

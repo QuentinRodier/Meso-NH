@@ -25,7 +25,9 @@ SUBROUTINE PREP_SEAFLUX_NETCDF(HPROGRAM,HSURF,HFILE,KLUOUT,PFIELD)
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2008
-!!      Modified    09/2013 : S. Senesi : extends to SSS and SIC fields 
+!!      Modified    09/2013 : S. Senesi : extends to SSS and SIC fields
+!!      Modified    03/2014 : M.N. Bouin  ! possibility of wave parameters
+!!                                        ! from external source
 !!------------------------------------------------------------------
 !
 USE MODE_READ_NETCDF_MERCATOR
@@ -110,6 +112,26 @@ SELECT CASE(HSURF)
       PFIELD(:,1) = ZFIELD(:)
       DEALLOCATE(ZFIELD)
     ENDIF
+!
+!
+!* 2.3 Wave parameters
+!      --------------------
+!
+  CASE('HS     ')
+    YNCVAR='significant_h'
+    CALL PREP_NETCDF_GRID(HFILE,YNCVAR)
+    CALL READ_NETCDF_WAVE(HFILE,YNCVAR,ZFIELD)
+    ALLOCATE(PFIELD(MAX(1,NILENGTH),1))
+    PFIELD(:,1) = ZFIELD(:)
+    DEALLOCATE(ZFIELD)
+!
+  CASE('TP     ')
+    YNCVAR='peak_period'
+    CALL PREP_NETCDF_GRID(HFILE,YNCVAR)
+    CALL READ_NETCDF_WAVE(HFILE,YNCVAR,ZFIELD)
+    ALLOCATE(PFIELD(MAX(1,NILENGTH),1))
+    PFIELD(:,1) = ZFIELD(:)
+    DEALLOCATE(ZFIELD)
 !
 END SELECT
 !

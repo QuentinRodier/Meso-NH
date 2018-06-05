@@ -26,6 +26,8 @@ SUBROUTINE PREP_SEAFLUX_UNIF(KLUOUT,HSURF,PFIELD)
 !!    -------------
 !!      Original    01/2004
 !!      Modified    09/2013 : S. Senesi : extends to SSS and SIC variables
+!!      Modified    03/2014 : M.N. Bouin  ! possibility of wave parameters
+!!                                        ! from external source
 !!------------------------------------------------------------------
 !
 
@@ -79,6 +81,15 @@ SELECT CASE(HSURF)
     ALLOCATE(PFIELD(1,1))
     PFIELD = XSIC_UNIF
 !
+!*      3.4    Wave parameters
+!
+  CASE('HS     ')
+    ALLOCATE(PFIELD(1,1))
+    PFIELD = 1.
+!
+  CASE('TP     ')
+    ALLOCATE(PFIELD(1,1))
+    PFIELD = 8.
 END SELECT
 !
 !*      4.     Interpolation method

@@ -27,6 +27,8 @@ MODULE MODN_SFX_OASIS
 !!    -------------
 !!      Original       10/13
 !!    10/2016 B. Decharme : bug surface/groundwater coupling
+!!      Modified       11/2014 : J. Pianezze - add wave coupling parameters
+!!                                             and surface pressure parameter for ocean coupling
 !
 !*       0.   DECLARATIONS
 !             ------------
@@ -37,6 +39,7 @@ IMPLICIT NONE
 REAL             :: XTSTEP_CPL_LAND = -1.0  ! Coupling time step for land
 REAL             :: XTSTEP_CPL_SEA  = -1.0  ! Coupling time step for sea
 REAL             :: XTSTEP_CPL_LAKE = -1.0  ! Coupling time step for lake
+REAL             :: XTSTEP_CPL_WAVE = -1.0  ! Coupling time step for wave
 !
 !-------------------------------------------------------------------------------
 !
@@ -90,7 +93,9 @@ CHARACTER(LEN=8) :: CSEA_FWSM = '        '   ! module of wind stress
 CHARACTER(LEN=8) :: CSEA_EVAP = '        '   ! Evaporation 
 CHARACTER(LEN=8) :: CSEA_RAIN = '        '   ! Rainfall 
 CHARACTER(LEN=8) :: CSEA_SNOW = '        '   ! Snowfall 
+CHARACTER(LEN=8) :: CSEA_EVPR = '        '   ! Evaporation - Preci.
 CHARACTER(LEN=8) :: CSEA_WATF = '        '   ! Net freshwater flux
+CHARACTER(LEN=8) :: CSEA_PRES = '        '   ! Surface pressure 
 !
 ! Sea-ice Output variables
 !  
@@ -109,6 +114,25 @@ CHARACTER(LEN=8) :: CSEA_VCU    = '        ' ! Sea v-current stress
 CHARACTER(LEN=8) :: CSEAICE_SIT = '        ' ! Sea-ice temperature
 CHARACTER(LEN=8) :: CSEAICE_CVR = '        ' ! Sea-ice cover
 CHARACTER(LEN=8) :: CSEAICE_ALB = '        ' ! Sea-ice albedo
+!
+!-------------------------------------------------------------------------------
+!
+! * Wave variables for Surfex - Oasis coupling 
+!
+!-------------------------------------------------------------------------------
+!
+! Wave Output variables
+!
+CHARACTER(LEN=8) :: CWAVE_U10  = '        '   ! 10m u-wind speed 
+CHARACTER(LEN=8) :: CWAVE_V10  = '        '   ! 10m u-wind speed 
+!
+! Wave Input variables
+!
+CHARACTER(LEN=8) :: CWAVE_CHA    = '        ' ! Charnock coefficient
+CHARACTER(LEN=8) :: CWAVE_UCU    = '        ' ! Wave u-current velocity
+CHARACTER(LEN=8) :: CWAVE_VCU    = '        ' ! Wave v-current velocity
+CHARACTER(LEN=8) :: CWAVE_HS     = '        ' ! Significant wave height
+CHARACTER(LEN=8) :: CWAVE_TP     = '        ' ! Peak period
 !
 ! Switch to add water into sea oasis mask
 !
@@ -135,10 +159,17 @@ NAMELIST/NAM_SFX_LAKE_CPL/XTSTEP_CPL_LAKE,                              &
 !
 NAMELIST/NAM_SFX_SEA_CPL/XTSTEP_CPL_SEA, LWATER,                               &
                           CSEA_FWSU,CSEA_FWSV,CSEA_HEAT,CSEA_SNET,CSEA_WIND,   &
-                          CSEA_FWSM,CSEA_EVAP,CSEA_RAIN,CSEA_SNOW,CSEA_WATF,   &
-                          CSEAICE_HEAT,CSEAICE_SNET,CSEAICE_EVAP,              &
-                          CSEA_SST,CSEA_UCU,CSEA_VCU,                          &
+                          CSEA_FWSM,CSEA_EVAP,CSEA_RAIN,CSEA_SNOW,CSEA_EVPR,   &
+                          CSEA_WATF,CSEA_PRES,CSEAICE_HEAT,CSEAICE_SNET,       &
+                          CSEAICE_EVAP,CSEA_SST,CSEA_UCU,CSEA_VCU,             &
                           CSEAICE_SIT,CSEAICE_CVR,CSEAICE_ALB
+!
+!*       4.    NAMELISTS FOR WAVE FIELD
+!              ---------------------------------------------------------------
+!
+NAMELIST/NAM_SFX_WAVE_CPL/XTSTEP_CPL_WAVE,                                     &
+                          CWAVE_U10, CWAVE_V10,                                &
+                          CWAVE_CHA, CWAVE_UCU, CWAVE_VCU, CWAVE_HS, CWAVE_TP
 !
 !-------------------------------------------------------------------------------
 !

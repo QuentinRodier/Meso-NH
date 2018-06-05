@@ -38,6 +38,8 @@
 !!      P. Le Moigne 10/2005, Phasage Arome
 !!      C. Lebeaupin 01/2008  Add oceanic variables initialization
 !!      Modified     09/2013  S. Senesi : introduce variables for sea-ice scheme 
+!!      Modified    03/2014 : M.N. Bouin  ! possibility of wave parameters
+!!                                        ! from external source
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -52,7 +54,7 @@ USE MODI_READ_PREP_SURF_ATM_CONF
 USE MODI_PREP_OCEAN_MERCATORVERGRID
 !
 USE MODD_PREP_SEAFLUX, ONLY : CFILE_SEAFLX, CTYPE_SEAFLX, CFILEPGD_SEAFLX, CTYPEPGD, &
-                              XSST_UNIF, XSSS_UNIF, XSIC_UNIF
+                              CFILEWAVE_SEAFLX, CTYPEWAVE, XSST_UNIF, XSSS_UNIF, XSIC_UNIF
 !
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 !
@@ -111,9 +113,16 @@ OUNIF     = .FALSE.
 !* Select seaflux files if they are defined
 !  -----------------------------------------
 !
-IF (LEN_TRIM(HFILE)==0 .AND. LEN_TRIM(CFILE_SEAFLX)>0 .AND. LEN_TRIM(CTYPE_SEAFLX)>0) THEN
-  HFILE     = CFILE_SEAFLX
-  HFILETYPE = CTYPE_SEAFLX
+IF (HVAR .EQ. 'HS     ' .OR. HVAR .EQ. 'TP     ') THEN
+  IF (LEN_TRIM(HFILE)==0 .AND. LEN_TRIM(CFILEWAVE_SEAFLX)>0 .AND. LEN_TRIM(CTYPEWAVE)>0) THEN
+    HFILE     = CFILEWAVE_SEAFLX
+    HFILETYPE = CTYPEWAVE
+  END IF
+ELSE
+  IF (LEN_TRIM(HFILE)==0 .AND. LEN_TRIM(CFILE_SEAFLX)>0 .AND. LEN_TRIM(CTYPE_SEAFLX)>0) THEN
+    HFILE     = CFILE_SEAFLX
+    HFILETYPE = CTYPE_SEAFLX
+  END IF
 END IF
 !
 IF (LEN_TRIM(HFILEPGD)==0 .AND. LEN_TRIM(CFILEPGD_SEAFLX)>0 .AND. LEN_TRIM(CTYPEPGD)>0) THEN
@@ -160,6 +169,19 @@ IF (HVAR=='DATE   ' .OR. HVAR=='ZS     ') THEN
   IF (LHOOK) CALL DR_HOOK('READ_PREP_SEAFLUX_CONF',1,ZHOOK_HANDLE)
   RETURN
 END IF
+!
+!-------------------------------------------------------------------------------
+!
+!* If no file and var == wave: uniform field
+!  ---------------------------------------------
+!
+IF (HVAR=='HS    ' .OR. HVAR=='TP    ') THEN
+  OUNIF = (HFILETYPE/='NETCDF')
+  IF (LHOOK) CALL DR_HOOK('READ_PREP_SEAFLUX_CONF',1,ZHOOK_HANDLE)
+  RETURN
+END IF
+!
+!-------------------------------------------------------------------------------
 !
 IF (LEN_TRIM(HFILETYPE)==0 .AND. .NOT. OUNIF) THEN
    CALL ABOR1_SFX('READ_PREP_SEAFLUX_CONF: AN INPUT VALUE IS REQUIRED FOR '//HVAR)

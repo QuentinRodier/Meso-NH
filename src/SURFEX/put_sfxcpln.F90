@@ -9,7 +9,9 @@ SUBROUTINE PUT_SFXCPL_n (F, IM, S, U, W, &
                         PLAND_PIFLOOD,PSEA_SST,PSEA_UCU,   &
                         PSEA_VCU,PSEAICE_SIT,PSEAICE_CVR,  &
                         PSEAICE_ALB,PTSRAD,                &
-                        PDIR_ALB,PSCA_ALB,PEMIS,PTSURF     )  
+                        PDIR_ALB,PSCA_ALB,PEMIS,PTSURF,    & 
+                        PWAVE_CHA,PWAVE_UCU,PWAVE_VCU,     &
+                        PWAVE_HS,PWAVE_TP     )  
 !     #################################################################################################
 !
 !!****  *PUT_SFXCPL_n* - routine to modify some variables in surfex from information coming
@@ -40,6 +42,7 @@ SUBROUTINE PUT_SFXCPL_n (F, IM, S, U, W, &
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    08/2009
+!!      Modified       11/2014 : J. Pianezze - add wave coupling parameters
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -56,13 +59,14 @@ USE MODD_SURF_PAR,   ONLY : XUNDEF
 USE MODN_SFX_OASIS,  ONLY : LWATER
 USE MODD_SFX_OASIS,  ONLY : LCPL_SEA, LCPL_SEAICE, &
                             LCPL_LAND, LCPL_GW,    &
-                            LCPL_FLOOD
+                            LCPL_FLOOD, LCPL_WAVE
 !                          
 USE MODI_GET_LUOUT
 !
 USE MODI_ABOR1_SFX
 USE MODI_PUT_SFX_LAND
 USE MODI_PUT_SFX_SEA
+USE MODI_PUT_SFX_WAVE
 USE MODI_UPDATE_ESM_SURF_ATM_n
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -99,6 +103,12 @@ REAL, DIMENSION(KI),      INTENT(IN) :: PSEA_VCU ! Sea v-current stress (Pa)
 REAL, DIMENSION(KI),      INTENT(IN) :: PSEAICE_SIT ! Sea-ice Temperature (K)
 REAL, DIMENSION(KI),      INTENT(IN) :: PSEAICE_CVR ! Sea-ice cover (-)
 REAL, DIMENSION(KI),      INTENT(IN) :: PSEAICE_ALB ! Sea-ice albedo (-)
+!
+REAL, DIMENSION(KI),      INTENT(IN) :: PWAVE_CHA ! Charnock coefficient (-)
+REAL, DIMENSION(KI),      INTENT(IN) :: PWAVE_UCU ! u-current velocity   (m/s)
+REAL, DIMENSION(KI),      INTENT(IN) :: PWAVE_VCU ! v-current velocity   (m/s)
+REAL, DIMENSION(KI),      INTENT(IN) :: PWAVE_HS  ! Significant wave height (m)
+REAL, DIMENSION(KI),      INTENT(IN) :: PWAVE_TP  ! Peak period (s)
 !
 REAL, DIMENSION(KI),     INTENT(OUT) :: PTSRAD   ! Total radiative temperature see by the atmosphere
 REAL, DIMENSION(KI),     INTENT(OUT) :: PTSURF   ! Total surface temperature see by the atmosphere
@@ -145,6 +155,17 @@ IF(LCPL_SEA)THEN
 !
   CALL PUT_SFX_SEA(S, U, W, ILUOUT,LCPL_SEAICE,LWATER,PSEA_SST(:),PSEA_UCU(:), &
                    PSEA_VCU(:),PSEAICE_SIT(:),PSEAICE_CVR(:),PSEAICE_ALB(:) )
+!
+ENDIF
+!
+!-------------------------------------------------------------------------------
+! Put variable over sea and/or water tile for waves
+!-------------------------------------------------------------------------------
+!
+IF(LCPL_WAVE)THEN
+!
+  CALL PUT_SFX_WAVE(S, U, &
+                    ILUOUT,PWAVE_CHA(:),PWAVE_UCU(:),PWAVE_VCU(:),PWAVE_HS(:),PWAVE_TP(:) )
 !
 ENDIF
 !

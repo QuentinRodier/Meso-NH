@@ -37,6 +37,7 @@
 !!      Modified    08/2009 : cumulative sea flux 
 !!      B. decharme 04/2013 : Add EVAP and SUBL diag
 !!      S.Senesi    01/2014 : introduce fractional seaice 
+!!      Modified    11/2014 : J. Pianezze : Add surface pressure coupling parameter
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -202,7 +203,9 @@ IF(LCPL_SEA.OR.S%LHANDLE_SIC)THEN
   ALLOCATE(S%XCPL_SEA_EVAP(KLU))
   ALLOCATE(S%XCPL_SEA_RAIN(KLU))
   ALLOCATE(S%XCPL_SEA_SNOW(KLU))
+  ALLOCATE(S%XCPL_SEA_EVPR(KLU))
   ALLOCATE(S%XCPL_SEA_FWSM(KLU))
+  ALLOCATE(S%XCPL_SEA_PRES(KLU))  
   S%XCPL_SEA_WIND(:) = 0.0
   S%XCPL_SEA_FWSU(:) = 0.0
   S%XCPL_SEA_FWSV(:) = 0.0
@@ -210,8 +213,10 @@ IF(LCPL_SEA.OR.S%LHANDLE_SIC)THEN
   S%XCPL_SEA_HEAT(:) = 0.0
   S%XCPL_SEA_EVAP(:) = 0.0
   S%XCPL_SEA_RAIN(:) = 0.0
+  S%XCPL_SEA_EVPR(:) = 0.0  
   S%XCPL_SEA_SNOW(:) = 0.0
   S%XCPL_SEA_FWSM(:) = 0.0
+  S%XCPL_SEA_PRES(:) = 0.0  
 !
 ELSE
   ALLOCATE(S%XCPL_SEA_WIND(0))
@@ -222,7 +227,9 @@ ELSE
   ALLOCATE(S%XCPL_SEA_EVAP(0))
   ALLOCATE(S%XCPL_SEA_RAIN(0))
   ALLOCATE(S%XCPL_SEA_SNOW(0))
+  ALLOCATE(S%XCPL_SEA_EVPR(0))  
   ALLOCATE(S%XCPL_SEA_FWSM(0))
+  ALLOCATE(S%XCPL_SEA_PRES(0))  
 ENDIF
 !
 IF (LHOOK) CALL DR_HOOK('DIAG_SEAFLUX_INIT_N',1,ZHOOK_HANDLE)

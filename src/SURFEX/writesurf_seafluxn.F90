@@ -36,6 +36,9 @@
 !!      S. Belamari 03/2014   Include sea surface salinity XSSS
 !!      R. Séférian 01/2015 : introduce interactive ocean surface albedo
 !!      S. Senesi   08/2015 : fix units in some HCOMMENTs
+!!      Modified    03/2014 : M.N. Bouin  ! possibility of wave parameters
+!!                                        ! from external source
+!!      Modified    11/2014 : J. Pianezze ! add currents and charnock coefficient
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -48,9 +51,11 @@ USE MODD_OCEAN_n, ONLY : OCEAN_t
 USE MODD_OCEAN_REL_n, ONLY : OCEAN_REL_t
 USE MODD_SEAFLUX_n, ONLY : SEAFLUX_t
 !
+USE MODD_SFX_OASIS,  ONLY : LCPL_WAVE, LCPL_SEA
+!
 USE MODI_WRITE_SURF
 USE MODI_WRITESURF_OCEAN_n
-USE MODI_WRITESURF_SEAICE_N
+USE MODI_WRITESURF_SEAICE_n
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -130,7 +135,45 @@ YCOMMENT='SST (K)'
 YRECFM='Z0SEA'
 YCOMMENT='Z0SEA (m)'
  CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,S%XZ0(:),IRESP,HCOMMENT=YCOMMENT)
+ !
+!* significant height
 !
+YRECFM='HS'
+YCOMMENT='HS (m)'
+ CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,S%XHS(:),IRESP,HCOMMENT=YCOMMENT)
+!
+!* peak period
+!
+YRECFM='TP'
+YCOMMENT='TP (s)'
+ CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,S%XTP(:),IRESP,HCOMMENT=YCOMMENT)
+!
+!
+IF (LCPL_WAVE) THEN
+  !
+  !* Charnock coefficient
+  !
+  YRECFM='CHARN'
+  YCOMMENT='CHARN (-)'
+  CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,S%XCHARN(:),IRESP,HCOMMENT=YCOMMENT)
+  !
+END IF
+!
+IF (LCPL_WAVE .OR. LCPL_SEA) THEN
+  !
+  !* u-current velocity
+  !
+  YRECFM='UMER'
+  YCOMMENT='UMER (m/s)'
+  CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,S%XUMER(:),IRESP,HCOMMENT=YCOMMENT)
+  !
+  !* v-current velocity
+  !
+  YRECFM='VMER'
+  YCOMMENT='VMER (m/s)'
+  CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,S%XVMER(:),IRESP,HCOMMENT=YCOMMENT)
+  !
+ENDIF
 !
 !* sea surface salinity
 !

@@ -35,7 +35,9 @@
 !!      Original    01/2003 
 !!      Modified    02/2008 Add oceanic variables initialisation
 !!      S. Belamari 04/2014 Suppress LMERCATOR
-!!      R. Séférian 01/2015 introduce new ocean surface albedo 
+!!      R. Séférian 01/2015 introduce new ocean surface albedo
+!!      Modified    03/2014 : M.N. Bouin  ! possibility of wave parameters
+!!                                        ! from external source
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -213,6 +215,21 @@ ELSE
   S%XSCA_ALB(:)=0.065
 !
 ENDIF
+!
+!* Peak frequency and significant wave height
+!
+ALLOCATE(S%XHS(ILU))
+ALLOCATE(S%XTP(ILU))
+!
+IF (.NOT.S%LWAVEWIND) THEN
+  YRECFM='HS'
+  CALL READ_SURF(HPROGRAM,YRECFM,S%XHS(:),IRESP)
+  YRECFM='TP'
+  CALL READ_SURF(HPROGRAM,YRECFM,S%XTP(:),IRESP)
+ELSE
+  S%XHS(:)=XUNDEF
+  S%XTP(:)=XUNDEF
+END IF
 !
 IF (LHOOK) CALL DR_HOOK('READ_SEAFLUX_N',1,ZHOOK_HANDLE)
 !

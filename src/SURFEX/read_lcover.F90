@@ -37,13 +37,15 @@
 !!    -------------
 !!      Original    10/2008
 !!      M. Moge     02/2015 parallelization for mésonh
+!!      J. Pianezze 08/2016 replacement of MPI_COMM_WOLRD by NMNH_COMM_WORLD
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-!
-!
+#ifdef MNH_PARALLEL
+USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD
+#endif
 !
 USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
 !
@@ -103,6 +105,8 @@ OCOVER(:SIZE(GCOVER))=GCOVER(:)
 !
 #ifdef MNH_PARALLEL
 #ifndef NOMPI
+CALL MPI_ALLREDUCE(GCOVER, OCOVER, SIZE(GCOVER),MPI_LOGICAL, MPI_LOR, NMNH_COMM_WORLD, IINFO)
+#else
 CALL MPI_ALLREDUCE(GCOVER, OCOVER, SIZE(GCOVER),MPI_LOGICAL, MPI_LOR, MPI_COMM_WORLD, IINFO)
 #endif
 #endif

@@ -47,6 +47,8 @@ SUBROUTINE COUPLING_SEAFLUX_n (CHS, DTS, DGS, O, OR, G, S, DST, SLT, &
 !!      Modified    01/2014 : S. Belamari Remove MODE_THERMOS and XLVTT
 !!      Modified    05/2014 : S. Belamari New ECUME : Include salinity & atm. pressure impact 
 !!      Modified    01/2015 : R. Séférian interactive ocaen surface albedo
+!!      Modified    03/2014 : M.N. Bouin possibility of wave parameters from external source
+!!      Modified    11/2014 : J. Pianezze : add currents for wave coupling
 !!                                       
 !!---------------------------------------------------------------------
 !
@@ -66,7 +68,7 @@ USE MODD_REPROD_OPER, ONLY : CIMPLICIT_WIND
 !
 USE MODD_CSTS,       ONLY : XRD, XCPD, XP00, XTT, XTTS, XTTSI, XDAY
 USE MODD_SURF_PAR,   ONLY : XUNDEF
-USE MODD_SFX_OASIS,  ONLY : LCPL_SEA, LCPL_SEAICE
+USE MODD_SFX_OASIS,  ONLY : LCPL_WAVE, LCPL_SEA, LCPL_SEAICE
 USE MODD_WATER_PAR,  ONLY : XEMISWAT, XEMISWATICE
 !
 USE MODD_WATER_PAR, ONLY : XALBSEAICE
@@ -299,7 +301,7 @@ ZSCA_ALB (:,:) = XUNDEF
 ZEXNS(:)     = (PPS(:)/XP00)**(XRD/XCPD)
 ZEXNA(:)     = (PPA(:)/XP00)**(XRD/XCPD)
 !
-IF(LCPL_SEA)THEN 
+IF(LCPL_SEA .OR. LCPL_WAVE)THEN 
   !Sea currents are taken into account
   ZU(:)=PU(:)-S%XUMER(:)
   ZV(:)=PV(:)-S%XVMER(:)
@@ -690,27 +692,38 @@ REAL, DIMENSION(KI), INTENT(OUT) :: PSFV      ! meridian momentum flux          
 REAL, DIMENSION(KI) :: ZUSTAR2    ! square of friction velocity (m2/s2)
 REAL, DIMENSION(KI) :: ZWORK      ! Work array
 !
+REAL, DIMENSION(KI) :: ZPEW_A_COEF
+REAL, DIMENSION(KI) :: ZPEW_B_COEF
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('COUPLING_SEAFLUX_N: SEA_MOMENTUM_FLUXES',0,ZHOOK_HANDLE)
+!
+IF( (LCPL_SEA .OR. LCPL_WAVE) .AND. HCOUPLING .EQ. 'E')THEN
+  ZPEW_A_COEF(:)=0.0
+  ZPEW_B_COEF(:)=ZWIND(:)
+ELSE
+  ZPEW_A_COEF(:)=PPEW_A_COEF(:)
+  ZPEW_B_COEF(:)=PPEW_B_COEF(:)
+ENDIF
 !
 ZWORK  (:) = XUNDEF
 ZUSTAR2(:) = XUNDEF
 !
 IF(CIMPLICIT_WIND=='OLD')THEN
 ! old implicitation (m2/s2)
-  ZUSTAR2(:) = (PCD(:)*ZWIND(:)*PPEW_B_COEF(:)) /            &
-              (1.0-PRHOA(:)*PCD(:)*ZWIND(:)*PPEW_A_COEF(:))
+  ZUSTAR2(:) = (PCD(:)*ZWIND(:)*ZPEW_B_COEF(:)) /            &
+              (1.0-PRHOA(:)*PCD(:)*ZWIND(:)*ZPEW_A_COEF(:))
 ELSE
 ! new implicitation (m2/s2)
-  ZUSTAR2(:) = (PCD(:)*ZWIND(:)*(2.*PPEW_B_COEF(:)-ZWIND(:))) /&
-              (1.0-2.0*PRHOA(:)*PCD(:)*ZWIND(:)*PPEW_A_COEF(:))
+  ZUSTAR2(:) = (PCD(:)*ZWIND(:)*(2.*ZPEW_B_COEF(:)-ZWIND(:))) /&
+              (1.0-2.0*PRHOA(:)*PCD(:)*ZWIND(:)*ZPEW_A_COEF(:))
 !                   
-  ZWORK(:)  = PRHOA(:)*PPEW_A_COEF(:)*ZUSTAR2(:) + PPEW_B_COEF(:)
+  ZWORK(:)  = PRHOA(:)*PPEW_A_COEF(:)*ZUSTAR2(:) + ZPEW_B_COEF(:)
   ZWORK(:) = MAX(ZWORK(:),0.)
 !
-  WHERE(PPEW_A_COEF(:)/= 0.)
-        ZUSTAR2(:) = MAX( ( ZWORK(:) - PPEW_B_COEF(:) ) / (PRHOA(:)*PPEW_A_COEF(:)), 0.)
+  WHERE(ZPEW_A_COEF(:)/= 0.)
+        ZUSTAR2(:) = MAX( ( ZWORK(:) - PPEW_B_COEF(:) ) / (PRHOA(:)*ZPEW_A_COEF(:)), 0.)
   ENDWHERE
 !              
 ENDIF

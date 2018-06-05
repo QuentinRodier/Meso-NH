@@ -31,6 +31,8 @@
 !!      Modified    08/2009 : LSURF_BUDGETC
 !!      Modified    01/2014 : S. Senesi : introduce sea-ice model
 !!      Modified    03/2014 : S. Belamari - add NZ0 (to choose PZ0SEA formulation)
+!!      Modified    03/2014 : M.N. Bouin  ! possibility of wave parameters
+!!                                        ! from external source
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -61,6 +63,7 @@ LOGICAL  :: LPWG
 LOGICAL  :: LPRECIP
 LOGICAL  :: LPWEBB
 LOGICAL  :: LDIAG_OCEAN
+LOGICAL  :: LWAVEWIND
 LOGICAL  :: LDIAG_MISC_SEAICE
 INTEGER  :: NZ0
 INTEGER  :: NGRVWAVES
@@ -83,7 +86,7 @@ REAL     :: XSI_FLX_DRV
 !
 NAMELIST/NAM_SEAFLUXn/CSEA_FLUX,CSEA_ALB, LPWG, LPRECIP, LPWEBB, NGRVWAVES, &
                       NZ0, LPROGSST, NTIME_COUPLING, XOCEAN_TSTEP, XICHCE, &
-                      CINTERPOL_SST, CINTERPOL_SSS, LPERTFLUX
+                      CINTERPOL_SST, CINTERPOL_SSS, LPERTFLUX, LWAVEWIND
 NAMELIST/NAM_DIAG_SURFn/N2M,L2M_MIN_ZS,LSURF_BUDGET,LRAD_BUDGET, &
                           LSURF_BUDGETC,LRESET_BUDGETC,LCOEF,LSURF_VARS  
 NAMELIST/NAM_CH_SEAFLUXn/CCH_DRY_DEP
@@ -118,6 +121,7 @@ SUBROUTINE INIT_NAM_SEAFLUXn (O, S)
   LPWEBB = S%LPWEBB
   NZ0 = S%NZ0
   NGRVWAVES = S%NGRVWAVES
+  LWAVEWIND = S%LWAVEWIND
   LPROGSST = O%LPROGSST
   NTIME_COUPLING = O%NTIME_COUPLING
   XOCEAN_TSTEP = O%XOCEAN_TSTEP
@@ -150,6 +154,7 @@ SUBROUTINE UPDATE_NAM_SEAFLUXn (O, S)
   S%LPWEBB = LPWEBB
   S%NZ0 = NZ0
   S%NGRVWAVES = NGRVWAVES
+  S%LWAVEWIND = LWAVEWIND  
   O%LPROGSST = LPROGSST
   O%NTIME_COUPLING = NTIME_COUPLING
   O%XOCEAN_TSTEP = XOCEAN_TSTEP

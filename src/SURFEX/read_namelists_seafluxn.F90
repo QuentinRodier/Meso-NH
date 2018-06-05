@@ -7,6 +7,8 @@ SUBROUTINE READ_NAMELISTS_SEAFLUX_n (SM, &
                                      HPROGRAM,HINIT)
 !     #######################################################
 !
+!!      Modified    03/2014 : M.N. Bouin  ! possibility of wave parameters
+!!                                        ! from external source
 !---------------------------------------------------------------------------   
 !
 !
@@ -44,7 +46,7 @@ IF (LHOOK) CALL DR_HOOK('READ_NAMELISTS_SEAFLUX_N',0,ZHOOK_HANDLE)
 CALL DEFAULT_SEAFLUX(XTSTEP,XOUT_TSTEP,CSEA_ALB,CSEA_FLUX,LPWG,         &
                      LPRECIP,LPWEBB,NZ0,NGRVWAVES,LPROGSST,           &
                      NTIME_COUPLING,XOCEAN_TSTEP,XICHCE,CINTERPOL_SST,&
-                     CINTERPOL_SSS)
+                     CINTERPOL_SSS,LWAVEWIND)
 CALL DEFAULT_SEAICE(HPROGRAM, CINTERPOL_SIC, CINTERPOL_SIT,             &
                     XFREEZING_SST,XSEAICE_TSTEP, XSIC_EFOLDING_TIME,    &
                     XSIT_EFOLDING_TIME, XCD_ICE_CST, XSI_FLX_DRV        )     

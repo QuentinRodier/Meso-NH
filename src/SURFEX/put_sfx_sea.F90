@@ -43,7 +43,8 @@ USE MODD_SEAFLUX_n, ONLY : SEAFLUX_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_WATFLUX_n, ONLY : WATFLUX_t
 !
-USE MODD_SURF_PAR,   ONLY : XUNDEF
+USE MODD_SFX_OASIS
+USE MODD_SURF_PAR,   ONLY : XUNDEF, NUNDEF
 USE MODD_CSTS,       ONLY : XTT, XTTS, XICEC
 !
 !
@@ -132,31 +133,37 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('PUT_SFX_SEA:TREAT_SEA',0,ZHOOK_HANDLE)
 !
-YCOMMENT='Sea surface temperature'
-CALL PACK_SAME_RANK(U%NR_SEA(:),PSEA_SST(:),ZSST(:))
-WHERE (ZSST(:)/=0.0) S%XSST(:)=ZSST(:)
-CALL CHECK_SEA(YCOMMENT,S%XSST(:))
-!
-ZTMIN=MINVAL(S%XSST(:))
-ZTMAX=MAXVAL(S%XSST(:))
-!
-IF(ZTMIN<=0.0.OR.ZTMAX>500.)THEN
-  WRITE(KLUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-  WRITE(KLUOUT,*)'SST from ocean model not define or not physic'
-  WRITE(KLUOUT,*)'SST MIN =',ZTMIN,'SST MAX =',ZTMAX
-  WRITE(KLUOUT,*)'There is certainly a problem between         '
-  WRITE(KLUOUT,*)'SURFEX and OASIS sea/land mask               '
-  WRITE(KLUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-  CALL ABOR1_SFX('PUT_SFX_SEA: SST from ocean model not define or not physic')
+IF(NSEA_SST_ID/=NUNDEF)THEN
+  YCOMMENT='Sea surface temperature'
+  CALL PACK_SAME_RANK(U%NR_SEA(:),PSEA_SST(:),ZSST(:))
+  WHERE (ZSST(:)/=0.0) S%XSST(:)=ZSST(:)
+  CALL CHECK_SEA(YCOMMENT,S%XSST(:))
+  !
+  ZTMIN=MINVAL(S%XSST(:))
+  ZTMAX=MAXVAL(S%XSST(:))
+  !
+  IF(ZTMIN<=0.0.OR.ZTMAX>500.)THEN
+    WRITE(KLUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+    WRITE(KLUOUT,*)'SST from ocean model not define or not physic'
+    WRITE(KLUOUT,*)'SST MIN =',ZTMIN,'SST MAX =',ZTMAX
+    WRITE(KLUOUT,*)'There is certainly a problem between         '
+    WRITE(KLUOUT,*)'SURFEX and OASIS sea/land mask               '
+    WRITE(KLUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+    CALL ABOR1_SFX('PUT_SFX_SEA: SST from ocean model not define or not physic')
+  ENDIF
 ENDIF
 !
-YCOMMENT='Sea u-current stress'
-CALL PACK_SAME_RANK(U%NR_SEA(:),PSEA_UCU(:),S%XUMER(:))
-CALL CHECK_SEA(YCOMMENT,S%XUMER(:))
+IF(NSEA_UCU_ID/=NUNDEF)THEN
+  YCOMMENT='Sea u-current stress'
+  CALL PACK_SAME_RANK(U%NR_SEA(:),PSEA_UCU(:),S%XUMER(:))
+  CALL CHECK_SEA(YCOMMENT,S%XUMER(:))
+ENDIF
 !
-YCOMMENT='Sea v-current stress'
-CALL PACK_SAME_RANK(U%NR_SEA(:),PSEA_VCU(:),S%XVMER(:))
-CALL CHECK_SEA(YCOMMENT,S%XVMER(:))
+IF(NSEA_VCU_ID/=NUNDEF)THEN
+  YCOMMENT='Sea v-current stress'
+  CALL PACK_SAME_RANK(U%NR_SEA(:),PSEA_VCU(:),S%XVMER(:))
+  CALL CHECK_SEA(YCOMMENT,S%XVMER(:))
+ENDIF
 !
 IF(OCPL_SEAICE)THEN
 !

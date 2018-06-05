@@ -33,6 +33,8 @@ SUBROUTINE SFX_OASIS_READ_NAM(HPROGRAM,PTSTEP_SURF,HINIT)
 !!    -------------
 !!      Original    05/2008 
 !!    10/2016 B. Decharme : bug surface/groundwater coupling 
+!!      Modified    11/2014 : J. Pianezze - add wave coupling parameters
+!!                                          and surface pressure for ocean coupling
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -43,7 +45,7 @@ USE MODN_SFX_OASIS
 USE MODD_SFX_OASIS, ONLY : LOASIS, XRUNTIME,               &
                            LCPL_LAND, LCPL_GW, LCPL_FLOOD, &
                            LCPL_CALVING, LCPL_LAKE,        &
-                           LCPL_SEA, LCPL_SEAICE
+                           LCPL_SEA, LCPL_SEAICE, LCPL_WAVE
 !
 USE MODE_POS_SURF
 !
@@ -73,6 +75,7 @@ INTEGER,          PARAMETER :: KOUT  = 0
 CHARACTER(LEN=5), PARAMETER :: YLAND = 'land'
 CHARACTER(LEN=5), PARAMETER :: YLAKE = 'lake'
 CHARACTER(LEN=5), PARAMETER :: YSEA  = 'ocean'
+CHARACTER(LEN=5), PARAMETER :: YWAVE = 'wave'
 !
 !*       0.3   Declarations of local variables
 !              -------------------------------
@@ -101,6 +104,7 @@ LCPL_CALVING = .FALSE.
 LCPL_LAKE    = .FALSE.
 LCPL_SEA     = .FALSE.
 LCPL_SEAICE  = .FALSE.
+LCPL_WAVE    = .FALSE.
 !
 IF(.NOT.LOASIS)THEN
   IF (LHOOK) CALL DR_HOOK('SFX_OASIS_READ_NAM',1,ZHOOK_HANDLE)
@@ -153,13 +157,26 @@ ELSE
    WRITE(ILUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
 ENDIF
 !
+CALL POSNAM(ILUNAM,'NAM_SFX_WAVE_CPL',GFOUND,ILUOUT)
+!
+IF (GFOUND) THEN
+   READ(UNIT=ILUNAM,NML=NAM_SFX_WAVE_CPL)
+ELSE
+   WRITE(ILUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+   WRITE(ILUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+   WRITE(ILUOUT,*)'NAM_SFX_WAVE_CPL not found : Surfex not coupled with wave model'
+   WRITE(ILUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+   WRITE(ILUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+ENDIF
+!
 CALL CLOSE_NAMELIST(HPROGRAM,ILUNAM)
 !
 IF(XTSTEP_CPL_LAND>0.0)LCPL_LAND=.TRUE.
 IF(XTSTEP_CPL_LAKE>0.0)LCPL_LAKE=.TRUE.
 IF(XTSTEP_CPL_SEA >0.0)LCPL_SEA =.TRUE.
+IF(XTSTEP_CPL_WAVE>0.0)LCPL_WAVE=.TRUE.
 !
-IF(.NOT.LCPL_LAND.AND..NOT.LCPL_SEA)THEN
+IF(.NOT.LCPL_LAND.AND..NOT.LCPL_SEA.AND..NOT.LCPL_WAVE)THEN
   CALL ABOR1_SFX('SFX_OASIS_READ_NAM: OASIS USED BUT NAMELIST NOT FOUND')
 ENDIF
 !
@@ -355,9 +372,17 @@ IF(LCPL_SEA)THEN
   YCOMMENT='Snowfall rate'
   CALL CHECK_FIELD(CSEA_SNOW,YKEY,YCOMMENT,YSEA,KOUT)
 !
+  YKEY  ='CSEA_EVPR'
+  YCOMMENT='Evap. - Precip. rate'
+  CALL CHECK_FIELD(CSEA_EVPR,YKEY,YCOMMENT,YSEA,KOUT)
+!
   YKEY  ='CSEA_WATF'
   YCOMMENT='Freshwater flux'
   CALL CHECK_FIELD(CSEA_WATF,YKEY,YCOMMENT,YSEA,KOUT)
+!
+  YKEY  ='CSEA_PRES'
+  YCOMMENT='Surface pressure'
+  CALL CHECK_FIELD(CSEA_PRES,YKEY,YCOMMENT,YSEA,KOUT)
 !
 ! Sea Input variables
 !
@@ -415,6 +440,57 @@ IF(LCPL_SEA)THEN
 !  
 ENDIF
 !
+!-------------------------------------------------------------------------------
+!
+!*       6.     Check status for Wave fields 
+!               ---------------------------
+!
+IF(LCPL_WAVE)THEN
+!
+  IF(YINIT/='PRE')THEN
+    IF(MOD(XTSTEP_CPL_WAVE,PTSTEP_SURF)/=0.)THEN
+      WRITE(ILUOUT,*)'! MOD(XTSTEP_SURF,XTSTEP_CPL_WAVE) /= 0     !'
+      WRITE(ILUOUT,*)'XTSTEP_SURF =',PTSTEP_SURF,'XTSTEP_CPL_WAVE = ',XTSTEP_CPL_WAVE
+      IF(PTSTEP_SURF>XTSTEP_CPL_WAVE) &
+      WRITE(ILUOUT,*)'! XTSTEP_SURF (model timestep) is superiror to  XTSTEP_CPL_WAVE !'
+      CALL ABOR1_SFX('SFX_OASIS_READ_NAM: XTSTEP_SURF and XTSTEP_CPL_WAVE not consistent !!!')
+    ENDIF
+  ENDIF
+!
+! Wave Output variables
+!
+  YKEY  ='CWAVE_U10'
+  YCOMMENT='10m u-wind speed'
+  CALL CHECK_FIELD(CWAVE_U10,YKEY,YCOMMENT,YWAVE,KOUT)
+!
+  YKEY  ='CWAVE_V10'
+  YCOMMENT='10m v-wind speed'
+  CALL CHECK_FIELD(CWAVE_V10,YKEY,YCOMMENT,YWAVE,KOUT)
+!
+! Wave Input variables
+!
+  YKEY  ='CWAVE_CHA'
+  YCOMMENT='Charnock Coefficient'
+  CALL CHECK_FIELD(CWAVE_CHA,YKEY,YCOMMENT,YWAVE,KIN)
+!
+  YKEY  ='CWAVE_UCU'
+  YCOMMENT='u-current velocity'
+  CALL CHECK_FIELD(CWAVE_UCU,YKEY,YCOMMENT,YWAVE,KIN)
+!
+  YKEY  ='CWAVE_VCU'
+  YCOMMENT='v-current velocity'
+  CALL CHECK_FIELD(CWAVE_VCU,YKEY,YCOMMENT,YWAVE,KIN)
+!
+  YKEY  ='CWAVE_HS'
+  YCOMMENT='Significant wave height'
+  CALL CHECK_FIELD(CWAVE_HS,YKEY,YCOMMENT,YWAVE,KIN)
+!
+  YKEY  ='CWAVE_TP'
+  YCOMMENT='Peak period'
+  CALL CHECK_FIELD(CWAVE_TP,YKEY,YCOMMENT,YWAVE,KIN)
+!  
+ENDIF
+!
 IF (LHOOK) CALL DR_HOOK('SFX_OASIS_READ_NAM',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------
@@ -455,7 +531,9 @@ IF(LEN_TRIM(HFIELD)==0)THEN
      CASE(YSEA)
           YNAMELIST='NAM_SFX_SEA_CPL'
      CASE(YLAKE)
-          YNAMELIST='NAM_SFX_LAKE_CPL'          
+          YNAMELIST='NAM_SFX_LAKE_CPL' 
+     CASE(YWAVE)
+          YNAMELIST='NAM_SFX_WAVE_CPL'
      CASE DEFAULT
           CALL ABOR1_SFX('SFX_OASIS_READ_NAM: TYPE NOT SUPPORTED OR IMPLEMENTD : '//TRIM(HTYP))               
   END SELECT
@@ -469,7 +547,7 @@ IF(LEN_TRIM(HFIELD)==0)THEN
 ! For oceanic coupling do not stop the model if a field from surfex to ocean is
 ! not  done because many particular case can be used
 !
-  IF(KID==0.AND.HTYP/=YLAND)THEN
+  IF((KID==0.OR.KID==1).AND.HTYP/=YLAND)THEN
     LSTOP=.FALSE.
   ELSE
     LSTOP=.TRUE.

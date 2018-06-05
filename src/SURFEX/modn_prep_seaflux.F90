@@ -31,13 +31,15 @@
 !!      Modified    07/2012, P. Le Moigne : CMO1D phasing
 !!                  07/2013, S. Senesi    : handle seaice scheme
 !!                              and uniform sea surface salinity and ice cover
+!!      Modified    03/2014 : M.N. Bouin  ! possibility of wave parameters
+!!                                        ! from external source
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
 !
 USE MODD_PREP_SEAFLUX, ONLY : CFILE_SEAFLX, CTYPE_SEAFLX, CFILEPGD_SEAFLX, CTYPEPGD, &
-                              XSST_UNIF, XSSS_UNIF, XSIC_UNIF
+                              XSST_UNIF, XSSS_UNIF, XSIC_UNIF, CFILEWAVE_SEAFLX, CTYPEWAVE
 !
 IMPLICIT NONE
 !
@@ -60,6 +62,7 @@ REAL              :: XCORFLX          ! correction coefficient ( W.m-2.K-1)
 LOGICAL           :: LDIAPYC          ! If T, fluxes correction is made                                      
 !
 NAMELIST/NAM_PREP_SEAFLUX/CFILE_SEAFLX, CTYPE_SEAFLX, CFILEPGD_SEAFLX, CTYPEPGD, XSST_UNIF,  &
+                          CFILEWAVE_SEAFLX, CTYPEWAVE, &        
                           XSSS_UNIF, XSIC_UNIF, NYEAR, NMONTH, NDAY, XTIME, LSEA_SBL, &
                           CSEAICE_SCHEME, LOCEAN_MERCATOR, LOCEAN_CURRENT,              & 
                           XTIME_REL,LCUR_REL,LTS_REL,                                  &

@@ -30,6 +30,8 @@ SUBROUTINE PREP_HOR_SEAFLUX_FIELD (DTCO, UG, U, GCP, DTS, O, OR, KLAT, S, &
 !!      P. Le Moigne 09/2007, sst from clim
 !!      S. Senesi    09/2013, extends to fields of SSS and SIC
 !!      P. Marguinaud10/2014, Support for a 2-part PREP
+!!      Modified    03/2014 : M.N. Bouin  ! possibility of wave parameters
+!!                                        ! from external source
 !!------------------------------------------------------------------
 !
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
@@ -44,7 +46,8 @@ USE MODD_SEAFLUX_n, ONLY : SEAFLUX_t
 !
 USE MODD_TYPE_DATE_SURF, ONLY : DATE_TIME
 USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO, NCOMM, NPROC
-USE MODD_PREP,           ONLY : CINGRID_TYPE, CINTERP_TYPE, XZS_LS, CMASK
+USE MODD_PREP,           ONLY : CINGRID_TYPE, CINTERP_TYPE, XZS_LS, XLAT_OUT, XLON_OUT, &
+                                XX_OUT, XY_OUT, CMASK
 !
 USE MODD_GRID_GRIB, ONLY : CINMODEL
 !
@@ -205,6 +208,12 @@ IF (YDCTL%LPART5) THEN
   CASE('SIC    ')
     ALLOCATE(S%XSIC(SIZE(ZFIELDOUT,1)))
     S%XSIC(:) = ZFIELDOUT(:,1)
+  CASE('HS     ')
+    ALLOCATE(S%XHS(SIZE(ZFIELDOUT,1)))
+    S%XHS(:) = ZFIELDOUT(:,1)
+  CASE('TP     ')
+    ALLOCATE(S%XTP(SIZE(ZFIELDOUT,1)))
+    S%XTP(:) = ZFIELDOUT(:,1)    
   END SELECT
 !
 ENDIF

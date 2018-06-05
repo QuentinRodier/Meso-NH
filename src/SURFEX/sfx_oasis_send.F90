@@ -3,13 +3,14 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !#########
-SUBROUTINE SFX_OASIS_SEND(KLUOUT,KI,KDATE,OSEND_LAND,OSEND_LAKE,OSEND_SEA,      &
+SUBROUTINE SFX_OASIS_SEND(KLUOUT,KI,KDATE,OSEND_LAND,OSEND_LAKE,OSEND_SEA,OSEND_WAVE,  &
                           PLAND_RUNOFF,PLAND_DRAIN,PLAND_CALVING,               &
                           PLAND_SRCFLOOD,                                       &
                           PLAKE_EVAP,PLAKE_RAIN,PLAKE_SNOW,PLAKE_WATF,          &
                           PSEA_FWSU,PSEA_FWSV,PSEA_HEAT,PSEA_SNET,PSEA_WIND,    &
-                          PSEA_FWSM,PSEA_EVAP,PSEA_RAIN,PSEA_SNOW,PSEA_WATF,    &
-                          PSEAICE_HEAT,PSEAICE_SNET,PSEAICE_EVAP                )
+                          PSEA_FWSM,PSEA_EVAP,PSEA_RAIN,PSEA_SNOW,PSEA_EVPR,    &
+                          PSEA_WATF,PSEA_PRES,PSEAICE_HEAT,PSEAICE_SNET,        &
+                          PSEAICE_EVAP,PWAVE_U10,PWAVE_V10            )
 !###########################################
 !
 !!****  *SFX_OASIS_SEND* - Send coupling fields
@@ -42,13 +43,15 @@ SUBROUTINE SFX_OASIS_SEND(KLUOUT,KI,KDATE,OSEND_LAND,OSEND_LAKE,OSEND_SEA,      
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    10/2013
-!!    10/2016 B. Decharme : bug surface/groundwater coupling 
+!!      Modified    11/2014 : J. Pianezze - add wave coupling parameters
+!!                                          and surface pressure for ocean coupling
+!!    10/2016 B. Decharme : bug surface/groundwater coupling
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODN_SFX_OASIS,  ONLY : XTSTEP_CPL_SEA, XTSTEP_CPL_LAKE, &
+USE MODN_SFX_OASIS,  ONLY : XTSTEP_CPL_SEA, XTSTEP_CPL_WAVE, XTSTEP_CPL_LAKE, &
                             XTSTEP_CPL_LAND
 !                    
 USE MODD_SURF_PAR,   ONLY : XUNDEF, NUNDEF
@@ -75,6 +78,7 @@ INTEGER,             INTENT(IN) :: KDATE  ! current coupling time step (s)
 LOGICAL,             INTENT(IN) :: OSEND_LAND
 LOGICAL,             INTENT(IN) :: OSEND_LAKE
 LOGICAL,             INTENT(IN) :: OSEND_SEA
+LOGICAL,             INTENT(IN) :: OSEND_WAVE
 !
 REAL, DIMENSION(KI), INTENT(IN) :: PLAND_RUNOFF    ! Cumulated Surface runoff             (kg/m2)
 REAL, DIMENSION(KI), INTENT(IN) :: PLAND_DRAIN     ! Cumulated Deep drainage              (kg/m2)
@@ -95,11 +99,16 @@ REAL, DIMENSION(KI), INTENT(IN) :: PSEA_FWSM  ! Cumulated wind stress           
 REAL, DIMENSION(KI), INTENT(IN) :: PSEA_EVAP  ! Cumulated Evaporation             (kg/m2)
 REAL, DIMENSION(KI), INTENT(IN) :: PSEA_RAIN  ! Cumulated Rainfall rate           (kg/m2)
 REAL, DIMENSION(KI), INTENT(IN) :: PSEA_SNOW  ! Cumulated Snowfall rate           (kg/m2)
+REAL, DIMENSION(KI), INTENT(IN) :: PSEA_EVPR  ! Evap. - Precip. rate              (kg/m2)
 REAL, DIMENSION(KI), INTENT(IN) :: PSEA_WATF  ! Cumulated freshwater flux         (kg/m2)
+REAL, DIMENSION(KI), INTENT(IN) :: PSEA_PRES  ! Cumulated Surface pressure        (Pa.s)
 !
 REAL, DIMENSION(KI), INTENT(IN) :: PSEAICE_HEAT ! Cumulated Sea-ice non solar net heat flux (J/m2)
 REAL, DIMENSION(KI), INTENT(IN) :: PSEAICE_SNET ! Cumulated Sea-ice solar net heat flux     (J/m2)
 REAL, DIMENSION(KI), INTENT(IN) :: PSEAICE_EVAP ! Cumulated Sea-ice sublimation             (kg/m2)
+!
+REAL, DIMENSION(KI), INTENT(IN) :: PWAVE_U10  ! 
+REAL, DIMENSION(KI), INTENT(IN) :: PWAVE_V10  !
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
@@ -268,10 +277,24 @@ IF(OSEND_SEA)THEN
     CALL CHECK_SFX_SEND(KLUOUT,IERR,YCOMMENT,ZWRITE(:,1))
   ENDIF
 !
+  IF(NSEA_EVPR_ID/=NUNDEF)THEN
+    YCOMMENT='Evap. - Precip. rate over sea'
+    CALL OUTVAR(PSEA_EVPR,XTSTEP_CPL_SEA,ZWRITE(:,1))
+    CALL OASIS_PUT(NSEA_EVPR_ID,KDATE,ZWRITE(:,:),IERR)
+    CALL CHECK_SFX_SEND(KLUOUT,IERR,YCOMMENT,ZWRITE(:,1))
+  ENDIF
+!
   IF(NSEA_WATF_ID/=NUNDEF)THEN
     YCOMMENT='Freshwater flux over sea (P-E)'
     CALL OUTVAR(PSEA_WATF,XTSTEP_CPL_SEA,ZWRITE(:,1))
     CALL OASIS_PUT(NSEA_WATF_ID,KDATE,ZWRITE(:,:),IERR)
+    CALL CHECK_SFX_SEND(KLUOUT,IERR,YCOMMENT,ZWRITE(:,1))
+  ENDIF
+!
+  IF(NSEA_PRES_ID/=NUNDEF)THEN
+    YCOMMENT='Surface pressure'
+    CALL OUTVAR(PSEA_PRES,XTSTEP_CPL_SEA,ZWRITE(:,1))
+    CALL OASIS_PUT(NSEA_PRES_ID,KDATE,ZWRITE(:,:),IERR)
     CALL CHECK_SFX_SEND(KLUOUT,IERR,YCOMMENT,ZWRITE(:,1))
   ENDIF
 !
@@ -300,6 +323,30 @@ IF(OSEND_SEA)THEN
       CALL CHECK_SFX_SEND(KLUOUT,IERR,YCOMMENT,ZWRITE(:,1))
     ENDIF
 !
+  ENDIF
+!
+ENDIF
+!
+!-------------------------------------------------------------------------------
+!
+!*       5.     Send wave fields to OASIS :
+!               --------------------------
+IF(OSEND_WAVE)THEN
+!
+! * Send output fields
+!
+  IF(NWAVE_U10_ID/=NUNDEF)THEN
+    YCOMMENT='10m u-wind speed'
+    ZWRITE(:,1) = PWAVE_U10(:)
+    CALL OASIS_PUT(NWAVE_U10_ID,KDATE,ZWRITE(:,:),IERR)
+    CALL CHECK_SFX_SEND(KLUOUT,IERR,YCOMMENT,ZWRITE(:,1))
+  ENDIF
+!
+  IF(NWAVE_V10_ID/=NUNDEF)THEN
+    YCOMMENT='10m v-wind speed'
+    ZWRITE(:,1) = PWAVE_V10(:)
+    CALL OASIS_PUT(NWAVE_V10_ID,KDATE,ZWRITE(:,:),IERR)
+    CALL CHECK_SFX_SEND(KLUOUT,IERR,YCOMMENT,ZWRITE(:,1))
   ENDIF
 !
 ENDIF

@@ -31,6 +31,8 @@ SUBROUTINE PREP_SEAFLUX (DTCO, UG, U, GCP, SG, SB, S, DTS, O, OR, &
 !!      Modified    01/2014, S. Senesi : introduce sea-ice model 
 !!      Modified    01/2015, R. Séférian : introduce ocean surface albedo 
 !!      P. Marguinaud10/2014, Support for a 2-part PREP
+!!      Modified    03/2014 : M.N. Bouin  ! possibility of wave parameters
+!!                                        ! from external source
 !!------------------------------------------------------------------
 !
 USE MODD_SFX_GRID_n, ONLY : GRID_t
@@ -151,6 +153,16 @@ IF (CSEAICE_SCHEME /= 'NONE  ') THEN
    CALL PREP_SEAICE(UG, DTCO, DTS, O, OR, SIZE(SG%XLAT), S, U, GCP, &
                     HPROGRAM,HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
 ENDIF
+!
+!
+!*      2.2    Significant height and peak period
+!
+ CALL PREP_HOR_SEAFLUX_FIELD(DTCO, UG, U, GCP, DTS, O, OR, SIZE(SG%XLAT), S, &
+                             HPROGRAM,'HS     ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
+!
+ CALL PREP_HOR_SEAFLUX_FIELD(DTCO, UG, U, GCP, DTS, O, OR, SIZE(SG%XLAT), S, &
+                             HPROGRAM,'TP     ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
+!
 !
  CALL CLEAN_PREP_OUTPUT_GRID
 

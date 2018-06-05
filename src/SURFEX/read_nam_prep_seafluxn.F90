@@ -6,6 +6,8 @@
 SUBROUTINE READ_NAM_PREP_SEAFLUX_n(HPROGRAM)
 !     #######################################################
 !
+!!      Modified    03/2014 : M.N. Bouin  ! possibility of wave parameters
+!!                                        ! from external source
 !---------------------------------------
 !
 USE MODD_SURF_PAR, ONLY : XUNDEF, NUNDEF
@@ -53,6 +55,8 @@ CALL TEST_NAM_VAR_SURF(ILUOUT,'CTYPE_SEAFLX',   CTYPE_SEAFLX,   '      ','GRIB  
                           'ASCII ','NETCDF','LFI   ','FA    ')   
 CALL TEST_NAM_VAR_SURF(ILUOUT,'CTYPEPGD',   CTYPEPGD,   '      ','GRIB  ','MESONH','ASCII ','LFI   ','FA    ')
 CALL TEST_NAM_VAR_SURF(ILUOUT,'CSEAICE_SCHEME',CSEAICE_SCHEME,'GELATO','NONE  ')
+ CALL TEST_NAM_VAR_SURF(ILUOUT,'CTYPEWAVE', CTYPEWAVE, '      ','GRIB  ','MESONH','ASCII ',&
+                          'NETCDF','LFI   ')
 ! 
 IF (LHOOK) CALL DR_HOOK('READ_NAM_PREP_SEAFLUX_N',1,ZHOOK_HANDLE)
 !------------------------------------

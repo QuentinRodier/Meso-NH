@@ -40,6 +40,7 @@ SUBROUTINE DIAG_INLINE_SEAFLUX_n (DGO, D, DC, DI, DIC, DGMSI, S,              &
 !!                          more argument (height of diagnostic)
 !!      B. Decharme 04/2013 : Add EVAP and SUBL diag
 !!      S. Senesi   01/2014 ! introduce fractional seaice and sea-ice model 
+!!      J. Pianezze 08/2016 : Add surface pressure coupling parameter
 !!------------------------------------------------------------------
 !
 USE MODD_DIAG_n, ONLY : DIAG_t, DIAG_OPTIONS_t
@@ -298,7 +299,7 @@ GSIC=(S%LHANDLE_SIC.AND.(S%CSEAICE_SCHEME /= 'NONE  '))
 IF (LCPL_SEA.OR.GSIC) THEN
 !
   CALL DIAG_CPL_ESM_SEA(S, D, DI, PTSTEP, PSFTQ, PRAIN, PSNOW, &
-                        PLW, PSFTH_ICE, PSFTQ_ICE, PDIR_SW, PSCA_SW, GSIC )
+                        PLW, PPS, PSFTH_ICE, PSFTQ_ICE, PDIR_SW, PSCA_SW, GSIC )
 ! 
 ENDIF
 IF (LHOOK) CALL DR_HOOK('DIAG_INLINE_SEAFLUX_N',1,ZHOOK_HANDLE)

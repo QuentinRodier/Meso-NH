@@ -6,7 +6,8 @@
       SUBROUTINE DEFAULT_SEAFLUX(PTSTEP,POUT_TSTEP,HSEA_ALB,HSEA_FLUX,   &
                                    OPWG, OPRECIP, OPWEBB, KZ0, KGRVWAVES,&
                                    OPROGSST, KTIME_COUPLING,POCEAN_TSTEP,&
-                                   PICHCE, HINTERPOL_SST, HINTERPOL_SSS  )  
+                                   PICHCE, HINTERPOL_SST, HINTERPOL_SSS, &
+                                   OWAVEWIND     )
 !     ########################################################################
 !
 !!****  *DEFAULT_SEAFLUX* - routine to set default values for the configuration for SEAFLUX scheme
@@ -37,7 +38,8 @@
 !!      Original    01/2004 
 !!      Modified    01/2006 : sea flux parameterization.
 !!      S. Belamari 03/2014 : add KZ0 (to choose PZ0SEA formulation)
-!!!
+!!      Modified    03/2014 : M.N. Bouin  ! possibility of wave parameters
+!!                                        ! from external source
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -70,6 +72,7 @@ REAL,              INTENT(OUT) :: PICHCE        !CE coef calculation for ECUME
 REAL,              INTENT(OUT) :: POCEAN_TSTEP  !ocean 1D model time-step
 CHARACTER(LEN=6),  INTENT(OUT) :: HINTERPOL_SST ! Quadratic interpolation of monthly SST
 CHARACTER(LEN=6),  INTENT(OUT) :: HINTERPOL_SSS ! Quadratic interpolation of monthly SSS
+LOGICAL,           INTENT(OUT) :: OWAVEWIND     ! wave parameters from wind only
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !*       0.2   Declarations of local variables
@@ -88,6 +91,7 @@ HSEA_ALB  = "TA96"
 OPWG    = .FALSE.
 OPRECIP = .FALSE. 
 OPWEBB  = .FALSE.
+OWAVEWIND = .TRUE.
 !
 KZ0 = 0
 KGRVWAVES = 0

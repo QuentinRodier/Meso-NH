@@ -45,6 +45,9 @@
 !!      S. Senesi   01/2014 : introduce sea-ice model 
 !!      S. Belamari 03/2014 : add NZ0 (to choose PZ0SEA formulation)
 !!      R. Séférian 01/2015 : introduce interactive ocean surface albedo
+!!      M.N. Bouin  03/2014 : possibility of wave parameters
+!!                          ! from external source
+!!      J. Pianezze 11/2014 : add wave coupling flag for wave parameters
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -57,7 +60,7 @@ USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
 !
-USE MODD_SFX_OASIS,      ONLY : LCPL_SEA, LCPL_SEAICE
+USE MODD_SFX_OASIS,      ONLY : LCPL_WAVE, LCPL_SEA, LCPL_SEAICE
 !
 USE MODD_READ_NAMELIST,  ONLY : LNAM_READ
 USE MODD_CSTS,           ONLY : XTTS
@@ -185,7 +188,7 @@ IF (LNAM_READ) THEN
  CALL DEFAULT_SEAFLUX(SM%S%XTSTEP,SM%S%XOUT_TSTEP,SM%S%CSEA_ALB,SM%S%CSEA_FLUX,SM%S%LPWG,  &
                       SM%S%LPRECIP,SM%S%LPWEBB,SM%S%NZ0,SM%S%NGRVWAVES,SM%O%LPROGSST,      &
                       SM%O%NTIME_COUPLING,SM%O%XOCEAN_TSTEP,SM%S%XICHCE,SM%S%CINTERPOL_SST,&
-                      SM%S%CINTERPOL_SSS                            )
+                      SM%S%CINTERPOL_SSS,SM%S%LWAVEWIND                            )
  CALL DEFAULT_SEAICE(HPROGRAM,                                                  &
                      SM%S%CINTERPOL_SIC,SM%S%CINTERPOL_SIT, SM%S%XFREEZING_SST, &
                      SM%S%XSEAICE_TSTEP, SM%S%XSIC_EFOLDING_TIME,               &
@@ -344,19 +347,26 @@ ENDWHERE
 !               (Sea current and Sea-ice temperature)
 !               -----------------------------------------------------------------
 !
-IF(LCPL_SEA.OR.SM%S%LHANDLE_SIC)THEN       
+IF(LCPL_SEA.OR.SM%S%LHANDLE_SIC.OR.LCPL_WAVE)THEN       
 ! 
   ALLOCATE(SM%S%XUMER   (ILU))
   ALLOCATE(SM%S%XVMER   (ILU))
 !
-  SM%S%XUMER   (:)=XUNDEF
-  SM%S%XVMER   (:)=XUNDEF
+  SM%S%XUMER   (:)=0.
+  SM%S%XVMER   (:)=0.
 !
 ELSE
 ! 
   ALLOCATE(SM%S%XUMER   (0))
   ALLOCATE(SM%S%XVMER   (0))
 !
+ENDIF
+!
+IF(LCPL_WAVE) THEN
+  ALLOCATE(SM%S%XCHARN  (ILU))
+  SM%S%XCHARN  (:)=0.011
+ELSE
+  ALLOCATE(SM%S%XCHARN   (0))
 ENDIF
 !
 IF(LCPL_SEAICE.OR.SM%S%LHANDLE_SIC)THEN       

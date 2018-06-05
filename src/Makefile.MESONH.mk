@@ -31,9 +31,6 @@ endif
 #           Source MNH                                   #
 ##########################################################
 ifdef VER_OASIS
-DIR_SURFEX    += OASIS/SURFEX
-DIR_MNH       += OASIS/MNH
-DIR_SURCOUCHE += OASIS/SURCOUCHE
 CPPFLAGS       += -DCPLOASIS
 endif
 # PRE_BUG TEST !!!
