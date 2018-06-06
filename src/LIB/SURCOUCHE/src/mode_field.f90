@@ -76,7 +76,7 @@ TYPE TFIELDDATA
   CHARACTER(LEN=2)   :: CDIR      = '' !Type of the data field (XX,XY,--...)
   CHARACTER(LEN=4)   :: CLBTYPE   = 'NONE' !Type of the lateral boundary (LBX,LBY,LBXU,LBYV)
   CHARACTER(LEN=100) :: CCOMMENT  = '' !Comment (for MesoNH, non CF convention)
-  INTEGER            :: NGRID     = -1 !Localization on the model grid
+  INTEGER            :: NGRID     = NGRIDUNKNOWN !Localization on the model grid
   INTEGER            :: NTYPE     = TYPEUNDEF !Datatype
   INTEGER            :: NDIMS     = 0  !Number of dimensions
   LOGICAL            :: LTIMEDEP  = .FALSE. !Is the field time-dependent?

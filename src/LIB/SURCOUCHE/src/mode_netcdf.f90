@@ -55,7 +55,8 @@ PUBLIC NF90_CLOSE,NF90_OPEN,NF90_CREATE,                                &
        NF90_NOWRITE,NF90_CLOBBER,NF90_NETCDF4,NF90_NOERR,NF90_STRERROR, &
        NF90_FILL_REAL,NF90_INQUIRE
 ! Public from this module :
-PUBLIC NEWIOCDF,CLEANIOCDF,IO_GUESS_DIMIDS_NC4,                 &
+PUBLIC GETDIMCDF,NEWIOCDF,CLEANIOCDF,                           &
+       IO_GUESS_DIMIDS_NC4,IO_FIND_DIM_BYNAME_NC4,              &
        IO_SET_KNOWNDIMS_NC4,IO_WRITE_COORDVAR_NC4,              &
        IO_WRITE_FIELD_NC4,IO_READ_FIELD_NC4,IO_WRITE_HEADER_NC4
 
@@ -962,6 +963,7 @@ GETDIMCDF => TMP
 
 END FUNCTION GETDIMCDF
 
+
 FUNCTION GETSTRDIMID(TPFILE,KLEN)
 TYPE(TFILEDATA),         INTENT(IN) :: TPFILE
 INTEGER(KIND=IDCDF_KIND),INTENT(IN) :: KLEN
@@ -1003,6 +1005,38 @@ END IF
 GETSTRDIMID = TMP%ID
 
 END FUNCTION GETSTRDIMID
+
+
+SUBROUTINE IO_FIND_DIM_BYNAME_NC4(TPFILE, HDIMNAME, TPDIM, KRESP)
+TYPE(TFILEDATA),         INTENT(IN)  :: TPFILE
+CHARACTER(LEN=*),        INTENT(IN)  :: HDIMNAME
+TYPE(DIMCDF),            INTENT(OUT) :: TPDIM
+INTEGER,                 INTENT(OUT) :: KRESP
+!
+TYPE(DIMCDF), POINTER :: TMP
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_FIND_DIM_BYNAME_NC4','called for dimension name '//TRIM(HDIMNAME))
+!
+KRESP = -2
+!
+IF(.NOT.ASSOCIATED(TPFILE%TNCDIMS%DIMLIST)) THEN
+  CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FIND_DIM_BYNAME_NC4','DIMLIST not associated for file  '//TRIM(TPFILE%CNAME))
+  KRESP = -1
+  RETURN
+END IF
+!
+TMP => TPFILE%TNCDIMS%DIMLIST
+!
+DO WHILE(ASSOCIATED(TMP))
+  IF (TRIM(TMP%NAME)==TRIM(HDIMNAME)) THEN
+    TPDIM = TMP
+    KRESP = 0
+    EXIT
+  END IF
+  TMP => TMP%NEXT
+END DO
+!
+END SUBROUTINE IO_FIND_DIM_BYNAME_NC4
 
 
 SUBROUTINE FILLVDIMS(TPFILE, TPFIELD, KSHAPE, KVDIMS)
@@ -1107,7 +1141,7 @@ PTDIM => NULL()
 !
 IF(IGRID<0 .OR. IGRID>8) THEN
   WRITE(YINT,'( I0 )') IGRID
-  CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GUESS_DIMIDS_NC4','invalid NGRID ('//TRIM(YINT)//') for field '//TRIM(TPFIELD%CMNHNAME))
+  CALL PRINT_MSG(NVERB_FATAL,'IO','IO_GUESS_DIMIDS_NC4','invalid NGRID ('//TRIM(YINT)//') for field '//TRIM(TPFIELD%CMNHNAME))
 END IF
 !
 IF(IGRID==0 .AND. YDIR/='--' .AND. YDIR/=''  ) THEN
@@ -1176,8 +1210,8 @@ ELSE
         PTDIM => TPFILE%TNCCOORDS(2,IGRID)%TDIM
       ELSE IF ( YDIR == 'ZZ' ) THEN
         PTDIM => TPFILE%TNCCOORDS(3,IGRID)%TDIM
-      ELSE
-        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GUESS_DIMIDS_NC4','can not guess 1st dimension for field '//TRIM(TPFIELD%CMNHNAME))
+      ELSE IF (JI==TPFIELD%NDIMS) THEN !Guess last dimension
+        PTDIM => GETDIMCDF(TPFILE, KLEN)
       END IF
       ILEN       = PTDIM%LEN
       TPDIMS(JI) = PTDIM
@@ -1186,44 +1220,60 @@ ELSE
         PTDIM => TPFILE%TNCCOORDS(2,IGRID)%TDIM
       ELSE IF (JI==TPFIELD%NDIMS) THEN !Guess last dimension
         ISIZE = KLEN/ILEN
-        IF (MOD(KLEN,ILEN)/=0) CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GUESS_DIMIDS_NC4', &
-                                              'can not guess 2nd and last dimension for field '//TRIM(TPFIELD%CMNHNAME))
+        IF (MOD(KLEN,ILEN)/=0) THEN
+          CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GUESS_DIMIDS_NC4', &
+                                            'can not guess 2nd and last dimension for field '//TRIM(TPFIELD%CMNHNAME))
+          EXIT
+        END IF
         PTDIM => GETDIMCDF(TPFILE, ISIZE)
       ELSE
         CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GUESS_DIMIDS_NC4','can not guess 2nd dimension for field '//TRIM(TPFIELD%CMNHNAME))
+        EXIT
       END IF
       ILEN       = ILEN * PTDIM%LEN
       TPDIMS(JI) = PTDIM
     ELSE IF (JI == 3) THEN
       IF ( YDIR == 'XY' ) THEN
-        PTDIM => TPFILE%TNCCOORDS(3,IGRID)%TDIM
+        IF (JI==TPFIELD%NDIMS .AND. KLEN/ILEN==1 .AND. MOD(KLEN,ILEN)==0) THEN
+          !The last dimension is of size 1 => probably time dimension
+          ISIZE = 1
+          PTDIM => GETDIMCDF(TPFILE,ISIZE)
+        ELSE
+          PTDIM => TPFILE%TNCCOORDS(3,IGRID)%TDIM
+        END IF
       ELSE IF (JI==TPFIELD%NDIMS) THEN !Guess last dimension
         ISIZE = KLEN/ILEN
-        IF (MOD(KLEN,ILEN)/=0) CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GUESS_DIMIDS_NC4', &
-                                              'can not guess 3rd and last dimension for field '//TRIM(TPFIELD%CMNHNAME))
+        IF (MOD(KLEN,ILEN)/=0) THEN
+          CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GUESS_DIMIDS_NC4', &
+                                            'can not guess 3rd and last dimension for field '//TRIM(TPFIELD%CMNHNAME))
+          EXIT
+        END IF
         PTDIM => GETDIMCDF(TPFILE, ISIZE)
       ELSE
         CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GUESS_DIMIDS_NC4','can not guess 3rd dimension for field '//TRIM(TPFIELD%CMNHNAME))
+        EXIT
       END IF
       ILEN       = ILEN * PTDIM%LEN
       TPDIMS(JI) = PTDIM
     ELSE IF (JI==4 .AND. JI==TPFIELD%NDIMS) THEN !Guess last dimension
       ISIZE = KLEN/ILEN
-      IF (MOD(KLEN,ILEN)/=0) CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GUESS_DIMIDS_NC4', &
-                                            'can not guess 4th and last dimension for field '//TRIM(TPFIELD%CMNHNAME))
+      IF (MOD(KLEN,ILEN)/=0) THEN
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GUESS_DIMIDS_NC4', &
+                                          'can not guess 4th and last dimension for field '//TRIM(TPFIELD%CMNHNAME))
+        EXIT
+      END IF
       PTDIM => GETDIMCDF(TPFILE, ISIZE)
       ILEN       = ILEN * PTDIM%LEN
       TPDIMS(JI) = PTDIM
     ELSE
-        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GUESS_DIMIDS_NC4','can not guess dimension above 4 for field '&
-                       //TRIM(TPFIELD%CMNHNAME))
+      CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GUESS_DIMIDS_NC4','can not guess dimension above 4 for field '&
+                     //TRIM(TPFIELD%CMNHNAME))
     END IF
   END DO
 END IF
 !
-!print *,'IO_GUESS_DIMIDS_NC4: ',TPFIELD%CMNHNAME,':  klen,ilen,dims%len=',KLEN,ILEN,TPDIMS(:)%LEN
 IF (KLEN /= ILEN) THEN
-  CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GUESS_DIMIDS_NC4','problem with dimensions for field '&
+  CALL PRINT_MSG(NVERB_INFO,'IO','IO_GUESS_DIMIDS_NC4','can not guess dimensions of field '&
                                    //TRIM(TPFIELD%CMNHNAME))
   KRESP = 1
 END IF
@@ -2408,6 +2458,8 @@ END SUBROUTINE IO_WRITE_FIELD_NC4_T0
 !
 SUBROUTINE IO_READ_CHECK_FIELD_ATTR_NC4(TPFILE,TPFIELD,KVARID,KRESP,HCALENDAR)
 !
+USE MODD_PARAMETERS, ONLY: NGRIDUNKNOWN
+!
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE
 TYPE(TFIELDDATA),         INTENT(INOUT) :: TPFIELD
 INTEGER(KIND=IDCDF_KIND), INTENT(IN)    :: KVARID
@@ -2444,7 +2496,7 @@ IF (STATUS == NF90_NOERR) THEN
                    ': expected GRID found in file for field '//TRIM(TPFIELD%CMNHNAME))
   ENDIF
 ELSE !no GRID
-  IF (TPFIELD%NGRID==0 .OR. TPFIELD%NGRID==-1) THEN
+  IF (TPFIELD%NGRID==0 .OR. TPFIELD%NGRID==NGRIDUNKNOWN) THEN
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
                    ': no GRID (as expected) in file for field '//TRIM(TPFIELD%CMNHNAME))
   ELSE
