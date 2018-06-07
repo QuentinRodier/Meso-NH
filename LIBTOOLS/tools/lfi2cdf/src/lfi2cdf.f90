@@ -58,6 +58,11 @@ program LFI2CDF
 
   call read_commandline(options,hinfile,houtfile,runmode)
 
+  if (options(OPTVERBOSE)%set) then
+    NIO_VERB  = NVERB_DEBUG
+    NGEN_VERB = NVERB_DEBUG
+  end if
+
   IF (options(OPTMERGE)%set) THEN
     NB_PROCIO_R = options(OPTMERGE)%ivalue
   ELSE

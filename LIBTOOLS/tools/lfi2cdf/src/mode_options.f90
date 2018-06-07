@@ -8,12 +8,13 @@ module mode_options
 
   implicit none
 
-  integer,parameter :: nbavailoptions = 9
+  integer,parameter :: nbavailoptions = 10
   integer,parameter :: MODEUNDEF = -11, MODECDF2CDF = 11, MODELFI2CDF = 12, MODECDF2LFI = 13
 
   integer,parameter :: OPTCOMPRESS = 1, OPTHELP   = 2, OPTLIST   = 3
   integer,parameter :: OPTMERGE    = 4, OPTOUTPUT = 5, OPTREDUCE = 6
-  integer,parameter :: OPTSPLIT    = 7, OPTVAR    = 8, OPTMODE   = 9
+  integer,parameter :: OPTMODE     = 7, OPTSPLIT  = 8, OPTVAR    = 9
+  integer,parameter :: OPTVERBOSE  = 10
 
   type option
     logical :: set = .false.
@@ -135,6 +136,11 @@ subroutine init_options(options)
   options(OPTREDUCE)%short_name   = 'r'
   options(OPTREDUCE)%has_argument = .false.
 
+  options(OPTMODE)%long_name    = "runmode"
+  options(OPTMODE)%short_name   = 'R'
+  options(OPTMODE)%has_argument = .true.
+  options(OPTMODE)%type         = TYPECHAR
+
   options(OPTSPLIT)%long_name    = "split"
   options(OPTSPLIT)%short_name   = 's'
   options(OPTSPLIT)%has_argument = .false.
@@ -144,11 +150,9 @@ subroutine init_options(options)
   options(OPTVAR)%has_argument = .true.
   options(OPTVAR)%type         = TYPECHAR
 
-  options(OPTMODE)%long_name    = "runmode"
-  options(OPTMODE)%short_name   = 'R'
-  options(OPTMODE)%has_argument = .true.
-  options(OPTMODE)%type         = TYPECHAR
-
+  options(OPTVERBOSE)%long_name    = "verbose"
+  options(OPTVERBOSE)%short_name   = 'V'
+  options(OPTVERBOSE)%has_argument = .false.
 end subroutine init_options
 
 subroutine get_option(options,finished)
@@ -325,13 +329,13 @@ subroutine help()
 !TODO: -l option for cdf2cdf and cdf2lfi
   print *,"Usage : lfi2cdf [-h --help] [-l] [-v --var var1[,...]] [-r --reduce-precision]"
   print *,"                [-m --merge number_of_z_levels] [-s --split] [-o --output output-file.nc]"
-  print *,"                [-R --runmode mode]"
+  print *,"                [-R --runmode mode] [-V --verbose]"
   print *,"                [-c --compress compression_level] input-file.lfi"
   print *,"        cdf2cdf [-h --help] [-v --var var1[,...]] [-r --reduce-precision]"
   print *,"                [-m --merge number_of_split_files] [-s --split] [-o --output output-file.nc]"
-  print *,"                [-R --runmode mode]"
+  print *,"                [-R --runmode mode] [-V --verbose]"
   print *,"                [-c --compress compression_level] input-file.nc"
-  print *,"        cdf2lfi [-o --output output-file.lfi] [-R --runmode mode] input-file.nc"
+  print *,"        cdf2lfi [-o --output output-file.lfi] [-R --runmode mode]  [-V --verbose] input-file.nc"
   print *,""
   print *,"Options:"
   print *,"  --compress, -c compression_level"
@@ -355,6 +359,8 @@ subroutine help()
   print *,"     List of the variable to write in the output file. Variables names have to be separated by commas (,)."
   print *,"     A variable can be computed from the sum of existing variables (format: new_var=var1+var2[+...])"
   print *,"     (cdf2cdf and lfi2cdf only)"
+  print *,"  --verbose, -V"
+  print *,"     Be verbose (for debugging purpose)"
   print *,""
   stop
 

@@ -89,6 +89,8 @@ CONTAINS
     LOGICAL                                  :: GOK
     TYPE(TLFIDATE),DIMENSION(MAXDATES)       :: TLFIDATES
 
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','parse_infiles','called')
+
     IF (options(OPTSPLIT)%set) THEN
       idx_out = 0
     ELSE
@@ -626,6 +628,8 @@ END DO
     INTEGER(KIND=IDCDF_KIND) :: kcdf_id
 
 
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','def_ncdf','called')
+
     DO ji = 1,KNFILES_OUT
       kcdf_id = outfiles(ji)%TFILE%NNCID
 
@@ -664,6 +668,8 @@ END DO
     REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: XTAB4D, XTAB4D2
     TYPE(DATE_TIME)                     :: TZDATE
 
+
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','fill_files','called')
 
     idx = 1
     DO ji=1,knaf
@@ -908,6 +914,8 @@ END DO
     INTEGER(KIND=LFI_INT)       :: ilu,iresp
 
 
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_FILES','called')
+
     KNFILES_OUT = 0
     !
     ! Infiles
@@ -1056,6 +1064,8 @@ END DO
     INTEGER(KIND=IDCDF_KIND) :: status
     INTEGER(KIND=IDCDF_KIND) :: omode
 
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_SPLIT_NCFILES_OUT','called')
+
     KNFILES_OUT = nbvar
     YLIST = TRIM(options(OPTVAR)%cvalue)
 
@@ -1110,6 +1120,8 @@ END DO
     INTEGER :: ji
 
 
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','CLOSE_FILES','called')
+
     DO ji=1,KNFILES
       IF (filelist(ji)%TFILE%LOPENED) CALL IO_FILE_CLOSE_ll(filelist(ji)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
     END DO
@@ -1129,6 +1141,8 @@ END DO
     INTEGER                                  :: JDIM
     INTEGER(KIND=IDCDF_KIND)                 :: ISTATUS
     INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: IDIMS_ID
+
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_GET_METADATA_NC4','called')
 
     ISTATUS = NF90_INQUIRE_VARIABLE(KFILE_ID,KVAR_ID,NDIMS = TPREC%NDIMS_FILE, &
                                     XTYPE = TPREC%NTYPE_FILE, DIMIDS = IDIMS_ID)
@@ -1203,6 +1217,8 @@ END DO
 
     INTEGER              :: JJ
     TYPE(DIMCDF),POINTER :: TZDIMPTR
+
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_FILL_DIMS_NC4','called')
 
     KRESP = 0
 
