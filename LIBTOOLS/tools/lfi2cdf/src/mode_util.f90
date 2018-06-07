@@ -80,13 +80,11 @@ CONTAINS
     INTEGER                                  :: ji,jj
     INTEGER                                  :: ndb, nde, ndey, idx, idx_out, idx_var, maxvar
     INTEGER                                  :: leng
-    INTEGER                                  :: sizemax
     INTEGER                                  :: IID, IRESP, IDATES, ICURDATE
     INTEGER                                  :: IDXDATE, IDXTIME
     INTEGER(KIND=LFI_INT)                    :: iresp2,ilu,ileng,ipos
     INTEGER(KIND=IDCDF_KIND)                 :: kcdf_id, kcdf_id2, var_id
-    INTEGER(KIND=IDCDF_KIND)                 :: jdim, status
-    INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: idims_id
+    INTEGER(KIND=IDCDF_KIND)                 :: status
     LOGICAL                                  :: ladvan
     LOGICAL                                  :: GOK
     TYPE(TLFIDATE),DIMENSION(MAXDATES)       :: TLFIDATES
@@ -114,8 +112,6 @@ CONTAINS
     PRINT *,'DIMX =',NIMAX_ll+2*JPHEXT
     PRINT *,'DIMY =',NJMAX_ll+2*JPHEXT
     PRINT *,'DIMZ =',NKMAX   +2*JPVEXT
-
-    sizemax = 0
 
     ! Phase 1 : build articles list to convert.
     !
@@ -241,76 +237,14 @@ CONTAINS
             !
             IF (status == NF90_NOERR) THEN
               tpreclist(ji)%found = .true.
-              status = NF90_INQUIRE_VARIABLE(kcdf_id2,var_id,ndims = tpreclist(ji)%NDIMS_FILE, &
-                                             xtype=tpreclist(ji)%NTYPE_FILE, dimids = idims_id)
-              IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-
-              IF (.NOT.tpreclist(ji)%LSPLIT) THEN
-                ALLOCATE(tpreclist(ji)%NDIMSIZES_FILE(tpreclist(ji)%NDIMS_FILE))
-                ALLOCATE(tpreclist(ji)%CDIMNAMES_FILE(tpreclist(ji)%NDIMS_FILE))
-              ELSE
-                ALLOCATE(tpreclist(ji)%NDIMSIZES_FILE(tpreclist(ji)%NDIMS_FILE+1))
-                ALLOCATE(tpreclist(ji)%CDIMNAMES_FILE(tpreclist(ji)%NDIMS_FILE+1))
-              END IF
-
-              IF (tpreclist(ji)%NDIMS_FILE == 0) THEN
-                 ! variable scalaire
-                 leng = 1
-              ELSE
-                 ! infos sur dimensions
-                 leng = 1
-                 DO jdim=1,tpreclist(ji)%NDIMS_FILE
-                   status = NF90_INQUIRE_DIMENSION(kcdf_id2,idims_id(jdim),                    &
-                                                   len =  tpreclist(ji)%NDIMSIZES_FILE(jdim), &
-                                                   name = tpreclist(ji)%CDIMNAMES_FILE(jdim)  )
-                   IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-                   leng = leng*tpreclist(ji)%NDIMSIZES_FILE(jdim)
-                END DO
-
-                IF (tpreclist(ji)%NDIMS_FILE>0) THEN
-                  IF (tpreclist(ji)%CDIMNAMES_FILE(tpreclist(ji)%NDIMS_FILE)=='time') THEN
-                    tpreclist(ji)%TFIELD%LTIMEDEP = .TRUE.
-                  ELSE
-                    tpreclist(ji)%TFIELD%LTIMEDEP = .FALSE.
-                  END IF
-                ELSE
-                  tpreclist(ji)%TFIELD%LTIMEDEP = .FALSE.
-                END IF
-
-                IF (tpreclist(ji)%LSPLIT) THEN
-                  IF(     (.NOT.tpreclist(ji)%TFIELD%LTIMEDEP .AND.  tpreclist(ji)%NDIMS_FILE/=2)   &
-                     .OR. (     tpreclist(ji)%TFIELD%LTIMEDEP .AND.  tpreclist(ji)%NDIMS_FILE/=3) ) &
-                    CALL PRINT_MSG(NVERB_FATAL,'IO','parse_infiles','split variables can only be 3D')
-                  !Split variables are Z-split
-                  leng = leng * (NKMAX+2*JPVEXT)
-                  !Move time dimension to last (4th) position
-                  IF (tpreclist(ji)%TFIELD%LTIMEDEP) THEN
-                    tpreclist(ji)%NDIMSIZES_FILE(4) = tpreclist(ji)%NDIMSIZES_FILE(3)
-                    tpreclist(ji)%CDIMNAMES_FILE(4) = tpreclist(ji)%CDIMNAMES_FILE(3)
-                  END IF
-                  !Add vertical dimension
-                  tpreclist(ji)%NDIMSIZES_FILE(3) = NKMAX+2*JPVEXT
-                  tpreclist(ji)%CDIMNAMES_FILE(3) = 'level' !Could also be 'level_w'
-                END IF
-              END IF
+              CALL IO_GET_METADATA_NC4(kcdf_id2,var_id,tpreclist(ji))
             END IF
-            tpreclist(ji)%NSIZE = leng
-
-            STATUS = NF90_GET_ATT(kcdf_id,var_id,'grid',tpreclist(ji)%NGRID_FILE)
-            IF (status /= NF90_NOERR) tpreclist(ji)%NGRID_FILE = 0
-
-            STATUS = NF90_GET_ATT(kcdf_id,var_id,'units',tpreclist(ji)%CUNITS_FILE)
-
-            !Add maximum comment size (necessary when writing LFI files because the comment is stored with the field)
-            leng = leng + NLFIMAXCOMMENTLENGTH
           END IF
 
           IF (.NOT.tpreclist(ji)%found) THEN
             CALL PRINT_MSG(NVERB_WARNING,'IO','parse_infiles','variable '//TRIM(yrecfm)//' not found => ignored')
              tpreclist(ji)%tbw   = .FAlSE.
              tpreclist(ji)%tbr   = .FAlSE.
-          ELSE
-             IF (leng > sizemax) sizemax = leng
           END IF
        END DO
 
@@ -338,7 +272,6 @@ END DO
            tpreclist(ji)%name   = trim(yrecfm)
            tpreclist(ji)%found  = .TRUE.
            tpreclist(ji)%NSIZE  = ileng - 2 - NLFIMAXCOMMENTLENGTH
-           IF (ileng > sizemax) sizemax = ileng
 
            !Detect if date variable
            IDXDATE = INDEX(trim(yrecfm),"%TDATE",.TRUE.)
@@ -393,38 +326,11 @@ END DO
        ELSE IF (INFILES(1)%TFILE%CFORMAT == 'NETCDF4') THEN
          DO ji=1,nbvar_infile
            var_id = ji
-           status = NF90_INQUIRE_VARIABLE(kcdf_id,var_id, name = tpreclist(ji)%name, ndims = tpreclist(ji)%NDIMS_FILE, &
-                                          xtype=tpreclist(ji)%NTYPE_FILE, dimids = idims_id)
+           status = NF90_INQUIRE_VARIABLE(kcdf_id,var_id, name = tpreclist(ji)%name)
            IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
            tpreclist(ji)%found  = .TRUE.
-
-           ALLOCATE(tpreclist(ji)%NDIMSIZES_FILE(tpreclist(ji)%NDIMS_FILE))
-           ALLOCATE(tpreclist(ji)%CDIMNAMES_FILE(tpreclist(ji)%NDIMS_FILE))
-
-           IF (tpreclist(ji)%NDIMS_FILE == 0) THEN
-             ! variable scalaire
-             leng = 1
-           ELSE
-             ! infos sur dimensions
-             leng = 1
-             DO jdim=1,tpreclist(ji)%NDIMS_FILE
-               status = NF90_INQUIRE_DIMENSION(kcdf_id,idims_id(jdim),                     &
-                                               len =  tpreclist(ji)%NDIMSIZES_FILE(jdim), &
-                                               name = tpreclist(ji)%CDIMNAMES_FILE(jdim)  )
-               IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-               leng = leng*tpreclist(ji)%NDIMSIZES_FILE(jdim)
-             END DO
-           END IF
-           tpreclist(ji)%NSIZE  = leng
-           IF (leng > sizemax) sizemax = leng
-
-           STATUS = NF90_GET_ATT(kcdf_id,var_id,'grid',tpreclist(ji)%NGRID_FILE)
-           IF (status /= NF90_NOERR) tpreclist(ji)%NGRID_FILE = 0
-
-           STATUS = NF90_GET_ATT(kcdf_id,var_id,'units',tpreclist(ji)%CUNITS_FILE)
+           CALL IO_GET_METADATA_NC4(kcdf_id,var_id,tpreclist(ji))
          END DO
-         !Add maximum comment size (necessary when writing LFI files because the comment is stored with the field)
-         sizemax = sizemax + NLFIMAXCOMMENTLENGTH
        END IF
 
        maxvar = nbvar_infile
@@ -564,16 +470,6 @@ END DO
 
             IF (tpreclist(ji)%NDIMS_FILE>0) THEN
               IF (tpreclist(ji)%CDIMNAMES_FILE(tpreclist(ji)%NDIMS_FILE)=='time') THEN
-                tpreclist(ji)%TFIELD%LTIMEDEP = .TRUE.
-              ELSE
-                tpreclist(ji)%TFIELD%LTIMEDEP = .FALSE.
-              END IF
-            ELSE
-              tpreclist(ji)%TFIELD%LTIMEDEP = .FALSE.
-            END IF
-
-            IF (tpreclist(ji)%NDIMS_FILE>0) THEN
-              IF (tpreclist(ji)%CDIMNAMES_FILE(tpreclist(ji)%NDIMS_FILE)=='time') THEN
                 tpreclist(ji)%TFIELD%NDIMS = tpreclist(ji)%TFIELD%NDIMS - 1
               END IF
             END IF
@@ -705,8 +601,6 @@ END DO
       END IF
     END DO !ji=1,maxvar
     END IF !nbvar_calc>0
-
-    WRITE(*,'("Maximum buffer size:",f10.3," Mio")') sizemax*8./1048576.
 
   END SUBROUTINE parse_infiles
   
@@ -1221,6 +1115,83 @@ END DO
     END DO
 
   END SUBROUTINE CLOSE_FILES
+
+
+  SUBROUTINE IO_GET_METADATA_NC4(KFILE_ID,KVAR_ID,TPREC)
+    USE MODD_DIM_n,      ONLY: NKMAX
+    USE MODD_PARAMETERS, ONLY: JPVEXT
+
+    INTEGER,        INTENT(IN)    :: KFILE_ID
+    INTEGER,        INTENT(IN)    :: KVAR_ID
+    TYPE(workfield),INTENT(INOUT) :: TPREC
+
+    INTEGER                                  :: ILENG
+    INTEGER                                  :: JDIM
+    INTEGER(KIND=IDCDF_KIND)                 :: ISTATUS
+    INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: IDIMS_ID
+
+    ISTATUS = NF90_INQUIRE_VARIABLE(KFILE_ID,KVAR_ID,NDIMS = TPREC%NDIMS_FILE, &
+                                    XTYPE = TPREC%NTYPE_FILE, DIMIDS = IDIMS_ID)
+    IF (ISTATUS /= NF90_NOERR) CALL HANDLE_ERR(ISTATUS,__LINE__)
+
+    IF (.NOT.TPREC%LSPLIT) THEN
+      ALLOCATE(TPREC%NDIMSIZES_FILE(TPREC%NDIMS_FILE))
+      ALLOCATE(TPREC%CDIMNAMES_FILE(TPREC%NDIMS_FILE))
+    ELSE
+      ALLOCATE(TPREC%NDIMSIZES_FILE(TPREC%NDIMS_FILE+1))
+      ALLOCATE(TPREC%CDIMNAMES_FILE(TPREC%NDIMS_FILE+1))
+    END IF
+
+    IF (TPREC%NDIMS_FILE == 0) THEN
+      ! Scalar variable
+      ILENG = 1
+    ELSE
+      ! Fill dimensions info
+      ILENG = 1
+      DO JDIM=1,TPREC%NDIMS_FILE
+        ISTATUS = NF90_INQUIRE_DIMENSION(KFILE_ID,IDIMS_ID(JDIM),                    &
+                                                   len =  TPREC%NDIMSIZES_FILE(JDIM), &
+                                                   name = TPREC%CDIMNAMES_FILE(JDIM)  )
+        IF (ISTATUS /= NF90_NOERR) CALL HANDLE_ERR(ISTATUS,__LINE__)
+        ILENG = ILENG*TPREC%NDIMSIZES_FILE(JDIM)
+      END DO
+
+      IF (TPREC%NDIMS_FILE>0) THEN
+        IF (TPREC%CDIMNAMES_FILE(TPREC%NDIMS_FILE)=='time') THEN
+          TPREC%TFIELD%LTIMEDEP = .TRUE.
+        ELSE
+          TPREC%TFIELD%LTIMEDEP = .FALSE.
+        END IF
+      ELSE
+        TPREC%TFIELD%LTIMEDEP = .FALSE.
+      END IF
+
+      IF (TPREC%LSPLIT) THEN
+        IF(     (.NOT.TPREC%TFIELD%LTIMEDEP .AND.  TPREC%NDIMS_FILE/=2)   &
+            .OR. (     TPREC%TFIELD%LTIMEDEP .AND.  TPREC%NDIMS_FILE/=3) ) &
+          CALL PRINT_MSG(NVERB_FATAL,'IO','parse_infiles','split variables can only be 3D')
+          !Split variables are Z-split
+          ILENG = ILENG * (NKMAX+2*JPVEXT)
+          !Move time dimension to last (4th) position
+          IF (TPREC%TFIELD%LTIMEDEP) THEN
+            TPREC%NDIMSIZES_FILE(4) = TPREC%NDIMSIZES_FILE(3)
+            TPREC%CDIMNAMES_FILE(4) = TPREC%CDIMNAMES_FILE(3)
+          END IF
+          !Add vertical dimension
+          TPREC%NDIMSIZES_FILE(3) = NKMAX+2*JPVEXT
+          TPREC%CDIMNAMES_FILE(3) = 'level' !Could also be 'level_w'
+        END IF
+      END IF
+
+      TPREC%NSIZE = ILENG
+
+      ISTATUS = NF90_GET_ATT(KFILE_ID,KVAR_ID,'grid',TPREC%NGRID_FILE)
+      IF (ISTATUS /= NF90_NOERR) TPREC%NGRID_FILE = 0
+
+      ISTATUS = NF90_GET_ATT(KFILE_ID,KVAR_ID,'units',TPREC%CUNITS_FILE)
+      IF (ISTATUS /= NF90_NOERR) TPREC%CUNITS_FILE = ''
+  END SUBROUTINE IO_GET_METADATA_NC4
+
 
   SUBROUTINE IO_FILL_DIMS_NC4(TPFILE,TPREC,KRESP)
     USE MODD_IO_ll,  ONLY: TFILEDATA
