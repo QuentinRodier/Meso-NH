@@ -109,26 +109,24 @@ IF(HSUBG_AUCV=='NONE') THEN
 
 ELSEIF(HSUBG_AUCV=='CLFR') THEN
   !Cloud water is only in the cloudy part and entirely in low or high part
-  WHERE(PCF(:)>0.)
-    WHERE(PRCT(:)/PCF(:)>ZRCRAUTC(:))
-      PHLC_HCF(:)=PCF(:)
-      PHLC_LCF(:)=0.
-      PHLC_HRC(:)=PRCT(:)
-      PHLC_LRC(:)=0.
-      PRF(:)     =PCF(:)
-    ELSEWHERE(PRCT(:)>XRTMIN(2))
-      PHLC_HCF(:)=0.
-      PHLC_LCF(:)=PCF(:)
-      PHLC_HRC(:)=0.0
-      PHLC_LRC(:)=PRCT(:)
-      PRF(:)     =0.
-    ELSEWHERE
-      PHLC_HCF(:)=0.
-      PHLC_LCF(:)=0.
-      PHLC_HRC(:)=0.
-      PHLC_LRC(:)=0.
-      PRF(:)     =0.
-    END WHERE
+  WHERE(PCF(:) > 0. .AND. PRCT(:)>ZRCRAUTC(:)*PCF(:))
+    PHLC_HCF(:)=PCF(:)
+    PHLC_LCF(:)=0.
+    PHLC_HRC(:)=PRCT(:)
+    PHLC_LRC(:)=0.
+    PRF(:)     =PCF(:)
+  ELSEWHERE(PCF(:) > 0. .AND. PRCT(:)>XRTMIN(2))
+    PHLC_HCF(:)=0.
+    PHLC_LCF(:)=PCF(:)
+    PHLC_HRC(:)=0.0
+    PHLC_LRC(:)=PRCT(:)
+    PRF(:)     =0.
+  ELSEWHERE (PCF(:) > 0.)
+    PHLC_HCF(:)=0.
+    PHLC_LCF(:)=0.
+    PHLC_HRC(:)=0.
+    PHLC_LRC(:)=0.
+    PRF(:)     =0.
   ELSEWHERE
     PHLC_HCF(:)=0.
     PHLC_LCF(:)=0.
