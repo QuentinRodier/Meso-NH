@@ -127,6 +127,7 @@ TYPE(TFILEDATA),POINTER,SAVE :: TFILE_SURFEX  => NULL() !Pointer used to find th
 
 TYPE(TFILEDATA),POINTER,SAVE :: TFILE_OUTPUTLISTING  => NULL() !Pointer used to point to the file used when writing to OUTPUT_LISTINGn file
 
-TYPE(TFILEDATA),TARGET, SAVE :: TFILE_DUMMY = TFILEDATA(CNAME="dummy",CDIRNAME=NULL(),TFILES_IOZ=NULL()) !Non existing file which can be used as a dummy target
+!Non existing file which can be used as a dummy target
+TYPE(TFILEDATA),TARGET, SAVE :: TFILE_DUMMY = TFILEDATA(CNAME="dummy",CDIRNAME=NULL(),TFILES_IOZ=NULL(),TNCCOORDS=NULL())
 
 END MODULE MODD_IO_ll
