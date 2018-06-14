@@ -459,10 +459,10 @@ END IF
 !*      5.    SET DEFAULT VALUES FOR MODD_ADV_n :
 !             ----------------------------------
 !
-CUVW_ADV_SCHEME =  'WENO_K'
+CUVW_ADV_SCHEME =  'CEN4TH'
 CMET_ADV_SCHEME =  'PPM_01'
 CSV_ADV_SCHEME  =  'PPM_01'
-CTEMP_SCHEME    =  'RK53'        
+CTEMP_SCHEME    =  'RKC4'        
 NWENO_ORDER = 3
 NSPLIT      = 1
 LSPLIT_CFL  = .TRUE.
