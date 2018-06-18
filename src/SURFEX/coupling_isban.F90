@@ -727,8 +727,8 @@ REAL, DIMENSION(PK%NSIZE_P) :: ZP_Z0FLOOD  !Floodplain
 REAL, DIMENSION(PK%NSIZE_P) :: ZP_FFGNOS   !Floodplain fraction over the ground without snow
 REAL, DIMENSION(PK%NSIZE_P) :: ZP_FFVNOS   !Floodplain fraction over vegetation without snow
 !
-REAL, DIMENSION(SIZE(MGN%XPFT,1),PK%NSIZE_P) :: ZP_PFT
-REAL, DIMENSION(SIZE(MGN%XEF,1),PK%NSIZE_P) :: ZP_EF
+REAL, DIMENSION(:,:),ALLOCATABLE :: ZP_PFT
+REAL, DIMENSION(:,:),ALLOCATABLE :: ZP_EF
 INTEGER, DIMENSION(PK%NSIZE_P) :: IP_SLTYP
 !
 REAL, DIMENSION(PK%NSIZE_P,IO%NNBIOMASS) :: ZP_RESP_BIOMASS_INST         ! instantaneous biomass respiration (kgCO2/kgair m/s)
@@ -776,6 +776,16 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('COUPLING_ISBA_n:TREAT_PATCH',0,ZHOOK_HANDLE)
 !
+IF (ASSOCIATED(MGN%XPFT)) THEN
+  ALLOCATE(ZP_PFT(SIZE(MGN%XPFT,1),PK%NSIZE_P))
+ELSE
+  ALLOCATE(ZP_PFT(0,0))
+ENDIF
+IF (ASSOCIATED(MGN%XEF)) THEN
+  ALLOCATE(ZP_EF(SIZE(MGN%XEF,1),PK%NSIZE_P))
+ELSE
+  ALLOCATE(ZP_EF(0,0))
+ENDIF
 !--------------------------------------------------------------------------------------
 !
 ! Pack isba forcing outputs
