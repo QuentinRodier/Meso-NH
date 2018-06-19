@@ -29185,7 +29185,7 @@ REAL,DIMENSION(:,:,:,:), INTENT(IN) :: PJVALUES    ! Tuv coefficient
 ! /BEGIN_SET_PHOTO_RATES/
 ! parameter for use by subroutine JVALUES,
 ! contains the actual photolysis rates
-REAL, DIMENSION(KVECNPT,41) :: ZRATESIO ! TUV photolysis rates at one level
+REAL, DIMENSION(KVECNPT,42) :: ZRATESIO ! TUV photolysis rates at one level
 REAL, DIMENSION(KVECNPT,19) :: ZRATES   ! photolysis rates of RACM (vector)
 INTEGER                     :: JITPK    ! loop counter for J-Value transfer
 INTEGER                     :: IDTI,IDTJ
@@ -29247,8 +29247,8 @@ DO JITPK = 0, KVECNPT-1
   ZRATES(JITPK+1, 17) = 0.20*ZRATESIO(JITPK+1,20)&
                     &+ 0.80*ZRATESIO(JITPK+1,21)
 ! aqueous phase photolysis
-  ZRATES(JITPK+1, 18) = ZRATESIO(JITPK+1,40)
-  ZRATES(JITPK+1, 19) = ZRATESIO(JITPK+1,41)
+  ZRATES(JITPK+1, 18) = ZRATESIO(JITPK+1,41)
+  ZRATES(JITPK+1, 19) = ZRATESIO(JITPK+1,42)
 !
 END DO
 !

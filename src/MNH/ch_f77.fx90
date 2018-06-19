@@ -5141,8 +5141,8 @@ c
 
 C copy labels into output array
 
-         if (njout .ne. 41) then
-           WRITE(kout,*) 'There should be 41 J-Values to be updated!'
+         if (njout .ne. 42) then
+           WRITE(kout,*) 'There should be 42 J-Values to be updated!'
            WRITE(kout,*) 'We better stop here ... in tuvmain.f'
 C callabortstop
            CALL ABORT
@@ -19678,7 +19678,7 @@ CCC FILE rxn.f
 * the product (cross section) x (quantum yield) for photo-reactions:
 *     r01 through r47
 *     r101 through r148
-*     r149, r150 and r151 added from original TUV code
+*     r149, r150, r151 and r152 added from original TUV code
 *=============================================================================* 
       SUBROUTINE r01(nw,wl,wc,nz,tlev,airden,j,sq,jlabel,tpflag,kout)
 
@@ -23675,7 +23675,7 @@ c      INCLUDE 'params'
       jlabel(j) = 'CHOCHO -> HCO + HCO'
 
       j = j + 1
-      jlabel(j) = 'CHOCHO -> CH2O + CO'
+      jlabel(j) = 'CHOCHO -> H2 + 2CO'
 
       j = j + 1
       jlabel(j) = 'CHOCHO -> CH2O + CO'
@@ -39846,7 +39846,180 @@ c      INCLUDE 'params'
 
 *=============================================================================*
 
-      SUBROUTINE r150(nw,wl,wc,nz,tlev,airden,j,sq,jlabel,tpflag,kout)
+      SUBROUTINE r149(nw,wl,wc,nz,tlev,airden,j,sq,jlabel,tpflag,kout)
+
+*-----------------------------------------------------------------------------*
+*=  PURPOSE:                                                                 =*
+*=  Provide the product (cross section) x (quantum yield) for benzaldehyde   =*
+*=  photolysis:                                                              =*
+*=         C6H5CHO + hv -> CHO + HO2 + CO                                    =*
+*=                                                                           =*
+*=  Cross section from SAPRC-07 (Calvert et al., 2002)                       =*
+*=                                                                           =*
+*=  Products from Zhu and Cronin (Chem. Phys. Let., 317, 2000)               =*
+*=                                                                           =*
+*=  Quantum yield asumed 0.06 (RACM2, Goliff et al., 2013)                   =*
+*-----------------------------------------------------------------------------*
+*=  PARAMETERS:                                                              =*
+*=  NW     - INTEGER, number of specified intervals + 1 in working        (I)=*
+*=           wavelength grid                                                 =*
+*=  WL     - REAL, vector of lower limits of wavelength intervals in      (I)=*
+*=           working wavelength grid                                         =*
+*=  WC     - REAL, vector of center points of wavelength intervals in     (I)=*
+*=           working wavelength grid                                         =*
+*=  NZ     - INTEGER, number of altitude levels in working altitude grid  (I)=*
+*=  TLEV   - REAL, temperature (K) at each specified altitude level       (I)=*
+*=  AIRDEN - REAL, air density (molec/cc) at each altitude level          (I)=*
+*=  J      - INTEGER, counter for number of weighting functions defined  (IO)=*
+*=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
+*=           photolysis reaction defined, at each defined wavelength and     =*
+*=           at each defined altitude level                                  =*
+*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=           defined                                                         =*
+*-----------------------------------------------------------------------------*
+*= Routine added by M. Leriche for BALD in RACM2 mecanism - March 2018       =*
+*-----------------------------------------------------------------------------*
+
+      IMPLICIT NONE
+c      INCLUDE 'params'
+
+* BROADLY USED PARAMETERS:
+*_________________________________________________
+* i/o file unit numbers
+      INTEGER kout, kin
+* output
+*      PARAMETER(kout=6)
+* input
+      PARAMETER(kin=78)
+*_________________________________________________
+* altitude, wavelength, time (or solar zenith angle) grids
+      INTEGER kz, kw
+* altitude
+      PARAMETER(kz=151)
+* wavelength
+      PARAMETER(kw=157)
+*_________________________________________________
+* number of weighting functions
+      INTEGER kj
+*  wavelength and altitude dependent
+      PARAMETER(kj=90)
+
+* delta for adding points at beginning or end of data grids
+      REAL deltax
+      PARAMETER (deltax = 1.E-5)
+
+* some constants...
+
+* pi:
+      REAL pi
+      PARAMETER(pi=3.1415926535898)
+
+* radius of the earth, km:
+      REAL radius
+      PARAMETER(radius=6.371E+3)
+
+* Planck constant x speed of light, J m
+
+      REAL hc
+      PARAMETER(hc = 6.626068E-34 * 2.99792458E8)
+
+* largest number of the machine:
+      REAL largest
+      PARAMETER(largest=1.E+36)
+
+* small numbers (positive and negative)
+      REAL pzero, nzero
+      PARAMETER(pzero = +10./largest)
+      PARAMETER(nzero = -10./largest)
+
+* machine precision
+
+      REAL precis
+      PARAMETER(precis = 1.e-7)
+
+* input
+
+      INTEGER nw
+      REAL wl(kw), wc(kw)
+
+      INTEGER nz
+
+      REAL tlev(kz)
+      REAL airden(kz)
+
+* weighting functions
+
+      CHARACTER*50 jlabel(kj)
+      INTEGER TPFLAG(kj)
+      REAL sq(kj,kz,kw)
+
+* input/output:
+
+      INTEGER j
+
+* data arrays
+
+      INTEGER kdata
+      PARAMETER(kdata=20000)
+
+      INTEGER i, n
+      REAL x(kdata), y(kdata)
+
+* local
+
+      REAL yg(kw)
+      REAL qy, sig
+      INTEGER ierr
+      INTEGER iw
+
+************************* C6H5CHO photolysis
+
+      j = j+1
+      jlabel(j) = 'C6H5CHO -> HCO + HO2 + CO'
+
+
+      OPEN(UNIT=kin,FILE='DATAJ1/ABS/BENZALD.abs',
+     $     STATUS='old')
+      DO i = 1, 5
+         READ(kin,*)
+      ENDDO
+      n = 100
+      DO i = 1, n
+         READ(kin,*) x(i), y(i)
+      ENDDO
+      CLOSE(kin)
+
+      CALL addpnt(x,y,kdata,n,x(1)*(1.-deltax),0.)
+      CALL addpnt(x,y,kdata,n,               0.,0.)
+      CALL addpnt(x,y,kdata,n,x(n)*(1.+deltax),0.)
+      CALL addpnt(x,y,kdata,n,           1.e+38,0.)
+      CALL inter2(nw,wl,yg,n,x,y,ierr)
+      IF (ierr .NE. 0) THEN
+         WRITE(*,*) ierr, jlabel(j)
+         STOP
+      ENDIF
+
+* quantum yields assumed to be 0.06
+
+      qy = 0.06
+
+      DO iw = 1, nw-1
+        DO i = 1, nz
+
+          sig = yg(iw)
+          sq(j,i,iw)   = qy * sig
+
+        ENDDO
+      ENDDO
+
+      tpflag(j) = 0
+
+      RETURN
+      END
+
+*=============================================================================*
+
+      SUBROUTINE r151(nw,wl,wc,nz,tlev,airden,j,sq,jlabel,tpflag,kout)
 
 *-----------------------------------------------------------------------------*
 *=  PURPOSE:                                                                 =*
@@ -40025,7 +40198,7 @@ c      INCLUDE 'params'
 
 *=============================================================================*
 
-      SUBROUTINE r151(nw,wl,wc,nz,tlev,airden,j,sq,jlabel,tpflag,kout)
+      SUBROUTINE r152(nw,wl,wc,nz,tlev,airden,j,sq,jlabel,tpflag,kout)
 
 *-----------------------------------------------------------------------------*
 *=  PURPOSE:                                                                 =*
@@ -42392,6 +42565,11 @@ C      call r124(nw,wl,wc,nz,tlev,airden,j,sq,jlabel,tpflag,kout)
 * Uses availble Martinez data for cross section
       CALL r149(nw,wl,wc,nz,tlev,airden,j,sq,jlabel,tpflag,kout)
 
+* BENZALD + hv -> phenoxy + HO2 + CO
+* M. Leriche added March 2018 for BALD (RACM2)
+* Uses data from SAPRC-07 for cross section
+      CALL r150(nw,wl,wc,nz,tlev,airden,j,sq,jlabel,tpflag,kout)
+
 ******** FOx Photochemistry
 
 *E12. CF2O + hv -> Products
@@ -42553,10 +42731,10 @@ C      CALL r145(nw,wl,wc,nz,tlev,airden,j,sq,jlabel,tpflag,kout)
 *** Add from LaMP code (Deguillaume et al., 2004)
 
 *AQ01. H2O2(aq) -> 2OH
-       CALL r151(nw,wl,wc,nz,tlev,airden,j,sq,jlabel,tpflag,kout)
+       CALL r152(nw,wl,wc,nz,tlev,airden,j,sq,jlabel,tpflag,kout)
 
 *AQ02. NO3-(aq) -> NO2 + OH
-       CALL r150(nw,wl,wc,nz,tlev,airden,j,sq,jlabel,tpflag,kout)
+       CALL r151(nw,wl,wc,nz,tlev,airden,j,sq,jlabel,tpflag,kout)
 
 ****************************************************************
 

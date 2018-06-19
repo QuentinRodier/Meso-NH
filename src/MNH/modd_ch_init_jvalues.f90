@@ -33,7 +33,7 @@ INTEGER                               :: NSZA_INCR = 99 + 1
 REAL, ALLOCATABLE, DIMENSION(:)       :: XSZA_JVAL
 INTEGER, PARAMETER                    :: NZZ_JVAL = 30 + 1
 REAL, ALLOCATABLE, DIMENSION(:)       :: XZZ_JVAL
-INTEGER, PARAMETER                    :: JPJVMAX = 41    
+INTEGER, PARAMETER                    :: JPJVMAX = 42    
 INTEGER                               :: NBALB = 10   
 !
 END MODULE MODD_CH_INIT_JVALUES
