@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 ! Modifications:
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!-
+!  J. Escobar : 18/06/2018 , bug compile R*4 => real*8 pointer XT_VISC  
 !-----------------------------------------------------------------
 !     #################
       MODULE MODD_SUB_MODEL_n
@@ -65,7 +65,7 @@ REAL*8,DIMENSION(:), POINTER :: XT_ADV=>NULL(),XT_SOURCES=>NULL(),XT_DRAG=>NULL(
 REAL*8,DIMENSION(:), POINTER :: XT_ADVUVW=>NULL(),XT_GRAV=>NULL()
 REAL*8,DIMENSION(:), POINTER :: XT_DIFF=>NULL(),XT_RELAX=>NULL(),XT_PARAM=>NULL(),XT_SPECTRA=>NULL()
 REAL*8,DIMENSION(:), POINTER :: XT_HALO=>NULL(),XT_RAD_BOUND=>NULL(),XT_PRESS=>NULL()
-REAL,DIMENSION(:), POINTER :: XT_VISC=>NULL()
+REAL*8,DIMENSION(:), POINTER :: XT_VISC=>NULL()
 REAL*8,DIMENSION(:), POINTER :: XT_CLOUD=>NULL(),XT_STEP_SWA=>NULL(),XT_STEP_MISC=>NULL()
 REAL*8,DIMENSION(:), POINTER :: XT_ELEC=>NULL(),XT_SHADOWS=>NULL()
 REAL*8,DIMENSION(:), POINTER :: XT_COUPL=>NULL(),XT_1WAY=>NULL(),XT_STEP_BUD=>NULL()

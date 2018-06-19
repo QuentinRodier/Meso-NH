@@ -68,8 +68,8 @@ SUBROUTINE ECRAD_INTERFACE ( KLON,KLEV,KRAD_DIAG, KAER, &
 !        Q. LIBOIS (June 2017)  
 
 !     MODIFICATIONS.
-!     --------------        
-
+!     --------------     
+!       J. Escobar 18/06/2018: bug compile R*4 => REAL(KIND=JPRB) PLAT/LON
 !-----------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -195,8 +195,8 @@ REAL(KIND=JPRB), DIMENSION(:,:,:),INTENT(IN)    :: PCGA_DST    !Assymetry factor
 REAL(KIND=JPRB), DIMENSION(:,:,:),INTENT(IN)    :: PTAUREL_DST !Optical depth of dust relative to the one at 550nm
 LOGICAL, INTENT (IN)                 :: ODUST  ! flag for dust
 !
-REAL, DIMENSION (:), INTENT (IN)     :: PLAT ! latitude
-REAL, DIMENSION (:), INTENT (IN)     :: PLON  ! longitude
+REAL(KIND=JPRB), DIMENSION (:), INTENT (IN)     :: PLAT ! latitude
+REAL(KIND=JPRB), DIMENSION (:), INTENT (IN)     :: PLON  ! longitude
 !
 ! OUTPUTS 
 !
