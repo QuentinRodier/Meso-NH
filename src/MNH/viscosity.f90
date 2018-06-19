@@ -4,7 +4,7 @@
 !MNH_LIC for details. version 1.
 ! 
 !     #####################
-      MODULE MODI_VISC
+      MODULE MODI_VISCOSITY
 !     #####################
 !
 INTERFACE
@@ -66,7 +66,7 @@ INTERFACE
 !
 END INTERFACE
 !
-END MODULE MODI_VISC
+END MODULE MODI_VISCOSITY
 !
 !-------------------------------------------------------------------------------
 !
@@ -98,7 +98,7 @@ SUBROUTINE VISCOSITY(HLBCX, HLBCY, KRR, KSV, PNU, PPRANDTL,          &
   USE MODI_SHUMAN  
   USE MODD_PARAMETERS
   USE MODD_CONF
-  USE MODD_VISC
+  USE MODD_VISCOSITY
   USE MODD_DRAG_n
   USE MODD_BUDGET
   USE MODE_ll
@@ -127,7 +127,7 @@ SUBROUTINE VISCOSITY(HLBCX, HLBCY, KRR, KSV, PNU, PPRANDTL,          &
      LOGICAL, INTENT(IN) :: OVISC_TH  ! theta
      LOGICAL, INTENT(IN) :: OVISC_SV  ! scalar tracer
      LOGICAL, INTENT(IN) :: OVISC_R   ! moisture
-     LOGICAL, INTENT(IN) :: ODRAG     ! moisture
+     LOGICAL, INTENT(IN) :: ODRAG     ! noslip/freeslip
 !
 ! input variables at time t
      REAL, DIMENSION(:,:,:), INTENT(IN) :: PUT
@@ -190,7 +190,7 @@ IF (OVISC_TH) THEN
               LAP_M(HLBCX,HLBCY,PDXX,PDYY,PDZX,PDZY,PDZZ,PRHODJ,PTHT)
 !
 !
- END IF
+END IF
 !
 IF (LBUDGET_TH) CALL BUDGET (PRTHS,4,'VISC_BU_RU')
 !
@@ -199,7 +199,7 @@ IF (LBUDGET_TH) CALL BUDGET (PRTHS,4,'VISC_BU_RU')
 !*       2.    Viscous forcing for moisture
 !	       ----------------------------
 !
- IF (OVISC_R .AND. (SIZE(PRT,1) > 0)) THEN
+IF (OVISC_R .AND. (SIZE(PRT,1) > 0)) THEN
 !
 !
      DO IK = 1, KRR
@@ -208,7 +208,7 @@ IF (LBUDGET_TH) CALL BUDGET (PRTHS,4,'VISC_BU_RU')
      END DO
 !
 !
- END IF
+END IF
 !
 IF (LBUDGET_RV) CALL BUDGET (PRRS(:,:,:,1),6,'VISC_BU_RRV')
 IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2),7,'VISC_BU_RRC')
@@ -223,7 +223,7 @@ IF (LBUDGET_RH) CALL BUDGET (PRRS(:,:,:,7),12,'VISC_BU_RRH')
 !*       3.    Viscous forcing for passive scalars
 !	       -----------------------------------
 !
- IF (OVISC_SV .AND. (SIZE(PSVT,1) > 0)) THEN
+IF (OVISC_SV .AND. (SIZE(PSVT,1) > 0)) THEN
 !
 !
       DO IK = 1, KSV
@@ -231,7 +231,7 @@ IF (LBUDGET_RH) CALL BUDGET (PRRS(:,:,:,7),12,'VISC_BU_RRH')
               LAP_M(HLBCX,HLBCY,PDXX,PDYY,PDZX,PDZY,PDZZ,PRHODJ,PSVT(:,:,:,IK))
       END DO
 !
- END IF
+END IF
 !
 IF (LBUDGET_SV) THEN
   DO  IK = 1, KSV
@@ -259,12 +259,12 @@ IF (OVISC_UVW) THEN
        ZLAPu = LAP_M(HLBCX,HLBCY,PDXX,PDYY,PDZX,   &
                    PDZY,PDZZ,PRHODJ,ZY1)
 !! Update halo to compute the source term
-NULLIFY(TZFIELDS_ll)
-CALL ADD3DFIELD_ll(TZFIELDS_ll,ZLAPu)
-CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
-CALL CLEANLIST_ll(TZFIELDS_ll)
+ NULLIFY(TZFIELDS_ll)
+ CALL ADD3DFIELD_ll(TZFIELDS_ll,ZLAPu)
+ CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+ CALL CLEANLIST_ll(TZFIELDS_ll)
 !
-PRUS = PRUS + MXM(PNU*ZLAPu)
+ PRUS = PRUS + MXM(PNU*ZLAPu)
 !
 !*       4.2   V - component
 !              -------------
@@ -272,21 +272,20 @@ PRUS = PRUS + MXM(PNU*ZLAPu)
   IF (.NOT. L2D) THEN
 
       ZY2 = MYF(PVT) 
-         IF (ODRAG) THEN
-         ZY2(:,:,1) = PDRAG * ZY2(:,:,2)
-         ENDIF
-      ELSE
+      IF (ODRAG) THEN
+        ZY2(:,:,1) = PDRAG * ZY2(:,:,2)
+      ENDIF
 !
       ZLAPv =  LAP_M(HLBCX,HLBCY,PDXX,PDYY,PDZX,   &
                      PDZY,PDZZ,PRHODJ,ZY2)
 !! Update halo to compute the source term
 !
-NULLIFY(TZFIELDS_ll)
-CALL ADD3DFIELD_ll(TZFIELDS_ll,ZLAPv)
-CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
-CALL CLEANLIST_ll(TZFIELDS_ll)
+ NULLIFY(TZFIELDS_ll)
+ CALL ADD3DFIELD_ll(TZFIELDS_ll,ZLAPv)
+ CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+ CALL CLEANLIST_ll(TZFIELDS_ll)
 !
-PRVS = PRVS + MYM(PNU*ZLAPv)
+ PRVS = PRVS + MYM(PNU*ZLAPv)
 
 ENDIF 
 
@@ -297,31 +296,32 @@ ENDIF
    IKB = JPVEXT + 1
    IKE = SIZE(PWT,3) - JPVEXT
 
-     ZTMP = PWT
+   ZTMP = MZF(1,IKU,1,PWT)
 !
-IF (ODRAG) THEN
+   IF (ODRAG) THEN
          WHERE (PDRAG==-1)
          ZTMP(:,:,IKB) = 0.
          ENDWHERE
-ENDIF
+   ENDIF
 !
    DO IK = 1,JPVEXT
       ZTMP(:,:,IK) = ZTMP(:,:,IKB)
-     ZTMP(:,:,IKE+IK) = ZTMP(:,:,IKE)
+      ZTMP(:,:,IKE+IK) = ZTMP(:,:,IKE)
    END DO
 !
    ZTMP = MZM(1,IKU,1, PNU * &
           LAP_M(HLBCX,HLBCY,PDXX,PDYY,PDZX,PDZY,PDZZ,PRHODJ,ZTMP) )
-
+!
    DO IK = 1,JPVEXT
       ZTMP(:,:,IK) = ZTMP(:,:,IKB)
       ZTMP(:,:,IKE+IK) = ZTMP(:,:,IKE) 
    END DO
-PRWS = PRWS + ZTMP
+   PRWS = PRWS + ZTMP
 !
 !!! Debug provisoire dans le cas ou le noslip est applique jusqu'au bord de
 !sortie de flux en OPEN
-  IF ( LWEST_ll().AND.(ODRAG).AND.(MINVAL(PDRAG(IIU,:))== -1)) THEN
+  IF ( LWEST_ll().AND.(ODRAG)) THEN
+    IF ( MINVAL(PDRAG(IIU,:))== -1) THEN
               DO JK=1,IKU
                 WHERE(PDRAG(IIU,:)== -1)
             PRUS(IIU,:,JK) = PRUS(IIU-1,:,JK)
@@ -329,6 +329,7 @@ PRWS = PRWS + ZTMP
             PRWS(IIU,:,JK) = PRWS(IIU-1,:,JK)
                 ENDWHERE
             END DO
+   ENDIF
   ENDIF
 END IF
 !

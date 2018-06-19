@@ -3,7 +3,7 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !      #######################
-          MODULE MODD_VISC
+          MODULE MODD_VISCOSITY
 !      #######################
 !
 !!****   *MODD_VISCOSITY*  - declaration of viscosity forces constants
@@ -42,7 +42,7 @@ LOGICAL :: LVISC_SV          ! Logical switch to activate viscosity for the
 !                               scalar tracer
 LOGICAL :: LVISC_R          ! Logical switch to activate viscosity for the
 !                                moisture
-REAL, SAVE :: XMU_v        ! Molecular (cinematic) viscosity
+REAL, SAVE :: XMU_V        ! Molecular (cinematic) viscosity
 REAL, SAVE :: XPRANDTL     ! Prandtl number
 
-END MODULE MODD_VISC
+END MODULE MODD_VISCOSITY
