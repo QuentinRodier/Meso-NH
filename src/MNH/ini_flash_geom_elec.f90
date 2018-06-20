@@ -47,6 +47,7 @@ END MODULE MODI_INI_FLASH_GEOM_ELEC
 !!
 !!      Modifications
 !!        J.-P. Pinty  jan 2015 : add LMA simulator
+!!        J.Escobar 20/06/2018 : truly set NBRANCH_MAX = 5000 !
 !!
 !-------------------------------------------------------------------------------
 !
@@ -110,7 +111,7 @@ XE_THRESH =  35.E3 ! (V/m)
 NLEADER_MAX = NKMAX
 !
 ! the maximum number of branches is arbitriraly set to 5000
-NBRANCH_MAX = 50000
+NBRANCH_MAX = 5000
 !
 ! the maximum number of electrified cells in the domain is arbitrarily 
 ! set to 10

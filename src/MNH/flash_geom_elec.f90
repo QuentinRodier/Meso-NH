@@ -83,6 +83,7 @@ END MODULE MODI_FLASH_GEOM_ELEC_n
 !!      C. Barthe * LACy * Jan. 2015 : convert trig. pt into lat,lon in ascii file
 !!      J.Escobar : 18/12/2015 : Correction of bug in bound in // for NHALO <>1 
 !!      J.Escobar : 28/03/2018 : Correction of multiple // bug & compiler indepedent mnh_random_number
+!!      J.Escobar : 20/06/2018 : Correction of computation of global index I8VECT
 !!
 !-------------------------------------------------------------------------------
 !
@@ -303,7 +304,7 @@ INTEGER :: IFLASH_COUNT, IFLASH_COUNT_GLOB  ! Total number of flashes within the
 REAL,DIMENSION(SIZE(PRT,1),SIZE(PRT,2)) :: ZCELL_NEW
 !
 INTEGER :: ILJ
-INTEGER :: NIMAX_ll, NJMAX_ll    ! dimensions of global domain
+INTEGER :: NIMAX_ll, NJMAX_ll,IIU_ll,IJU_ll    ! dimensions of global domain
 !
 !-------------------------------------------------------------------------------
 !
@@ -322,6 +323,8 @@ IKU = SIZE(PRT,3)
 ! global indexes of the local subdomains origin
 CALL GET_GLOBALDIMS_ll (NIMAX_ll,NJMAX_ll)
 CALL GET_OR_ll('B',IXOR,IYOR)
+IIU_ll = NIMAX_ll + 2*JPHEXT
+IJU_ll = NJMAX_ll + 2*JPHEXT
 !
 !
 !*      1.2     allocations and initializations
@@ -2145,7 +2148,8 @@ DO WHILE (IM .LE. IDELTA_IND .AND. ISTOP .NE. 1)
                  DO JI=IIB,IIE
                     IF (IMASKQ_DIST(JI,JJ,JK) .EQ. IM) THEN
                        JIL = JIL + 1
-                       I8VECT(JIL) = NJMAX_ll*NIMAX_ll*(JK-1) + NIMAX_ll*(IYOR+JJ-1) + (IXOR+JI-1)
+                       I8VECT(JIL) = IJU_ll*IIU_ll*(JK-1) + IIU_ll*(JJ-1 +IYOR-1) + (JI +IXOR-1)
+                       !print*,"IN  => I8VECT(JIL    )=",I8VECT(JIL),JI,JJ,JK,JIL
                     END IF
                  END DO
               END DO
@@ -2174,9 +2178,10 @@ DO WHILE (IM .LE. IDELTA_IND .AND. ISTOP .NE. 1)
                  IFOUND = 1               
                  ! The points is in this processors  , get is coord and set it
                  IF (IRANK_LL(IORDER_LL(ICHOICE)) .EQ. IPROC) THEN
-                    JK = I8VECT_LL(ICHOICE) / ( NJMAX_ll*NIMAX_ll ) +1 
-                    JJ = ( I8VECT_LL(ICHOICE) - NJMAX_ll*NIMAX_ll*(JK-1) ) / NIMAX_ll - IYOR +1
-                    JI = MOD(I8VECT_LL(ICHOICE),NIMAX_ll) - IXOR +1
+                    JK = 1 +     (I8VECT_LL(ICHOICE)-1) / ( IJU_ll*IIU_ll ) 
+                    JJ = 1 + (   (I8VECT_LL(ICHOICE)-1) - IJU_ll*IIU_ll*(JK-1) ) / IIU_ll  - IYOR +1
+                    JI = 1 + MOD((I8VECT_LL(ICHOICE)-1)                          , IIU_ll) - IXOR +1
+                    !print*,"OUT => I8VECT_LL(ICHOICE)=",I8VECT_ll(ICHOICE),JI,JJ,JK,ICHOICE
                     ZFLASH(JI,JJ,JK,IL) = 2.
                  END IF
                  I8VECT_LL(ICHOICE) = 0.

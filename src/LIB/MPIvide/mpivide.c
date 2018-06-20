@@ -24,12 +24,16 @@ MNH_LIC for details. version 1.
 
 /* MPI_INTEGER is defined in mpi.h */
 
+#define MPI_INTEGER8 MPI_LONG_LONG_INT
+
 #ifdef FUJI
 #if MNH_INT == 8 
 #define SIZEINTEGER 8
+#define SIZEINTEGER8 8
 #define SIZELOGICAL 8
 #else
 #define SIZEINTEGER 4
+#define SIZEINTEGER8 8
 #define SIZELOGICAL 4
 #endif
 #if MNH_REAL == 4
@@ -41,6 +45,7 @@ MNH_LIC for details. version 1.
 #endif
 #else
 #define SIZEINTEGER 8 
+#define SIZEINTEGER8 8
 #define SIZEPRECISION 8
 #define SIZE2PRECISION 16
 #endif
@@ -178,6 +183,9 @@ int              *__ierr;
     {
       case MPI_INTEGER:
         size = SIZEINTEGER;
+        break;
+      case MPI_INTEGER8:
+        size = SIZEINTEGER8;
         break;
       case MPI_PRECISION:
         size = SIZEPRECISION;
