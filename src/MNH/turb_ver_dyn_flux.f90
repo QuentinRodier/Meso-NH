@@ -75,8 +75,8 @@ REAL, DIMENSION(:,:,:), INTENT(OUT)  ::  PWV          ! momentum flux v'w'
 REAL, DIMENSION(:,:,:), INTENT(INOUT)   ::  PRUS, PRVS, PRWS
                             ! cumulated sources for the prognostic variables
 !
-REAL, DIMENSION(:,:,:), INTENT(INOUT)::  PDP,PTP   ! Dynamic and thermal
-                                                   ! TKE production terms
+REAL, DIMENSION(:,:,:), INTENT(OUT)  ::  PDP          ! Dynamic TKE production term
+REAL, DIMENSION(:,:,:), INTENT(IN)   ::  PTP          ! Thermal TKE production term
 !
 !
 !
@@ -365,8 +365,8 @@ REAL, DIMENSION(:,:,:), INTENT(OUT)  ::  PWV          ! momentum flux v'w'
 REAL, DIMENSION(:,:,:), INTENT(INOUT)   ::  PRUS, PRVS, PRWS
                             ! cumulated sources for the prognostic variables
 !
-REAL, DIMENSION(:,:,:), INTENT(INOUT)::  PDP,PTP   ! Dynamic and thermal
-                                                   ! TKE production terms
+REAL, DIMENSION(:,:,:), INTENT(OUT)  ::  PDP          ! Dynamic TKE production term
+REAL, DIMENSION(:,:,:), INTENT(IN)   ::  PTP          ! Thermal TKE production term
 !
 !
 !
@@ -419,8 +419,7 @@ IKTE=IKT-JPVEXT_TURB
 
 
 !
-ZSOURCE = 0.
-ZFLXZ   = 0.
+ZSOURCE(:,:,:) = 0.
 !
 ZDIRSINZW(:,:) = SQRT(1.-PDIRCOSZW(:,:)**2)
 !  compute the coefficients for the uncentred gradient computation near the 
@@ -463,20 +462,20 @@ ZCOEFS(:,:,1)=  ZCOEFFLXU(:,:,1) * PCOSSLOPE(:,:) * PDIRCOSZW(:,:)  &
 ZCOEFS(:,:,1:1)=MXM(ZCOEFS(:,:,1:1) / PDZZ(:,:,IKB:IKB) )
 !
 ! compute the explicit tangential flux at the W point
-ZSOURCE(:,:,IKB)     =                                                    &
-    PTAU11M(:,:) * PCOSSLOPE(:,:) * PDIRCOSZW(:,:) * ZDIRSINZW(:,:)         &
-   -PTAU12M(:,:) * PSINSLOPE(:,:) * ZDIRSINZW(:,:)                          &
+ZSOURCE(:,:,IKB)     =                                              &
+    PTAU11M(:,:) * PCOSSLOPE(:,:) * PDIRCOSZW(:,:) * ZDIRSINZW(:,:) &
+   -PTAU12M(:,:) * PSINSLOPE(:,:) * ZDIRSINZW(:,:)                  &
    -PTAU33M(:,:) * PCOSSLOPE(:,:) * ZDIRSINZW(:,:) * PDIRCOSZW(:,:)  
 !
 ! add the vertical part or the surface flux at the U,W vorticity point
 
-ZSOURCE(:,:,IKB:IKB) =                                      &
-  (   MXM( ZSOURCE(:,:,IKB:IKB)   / PDZZ(:,:,IKB:IKB) )     &
-   +  MXM( ZCOEFFLXU(:,:,1:1) / PDZZ(:,:,IKB:IKB)      &
+ZSOURCE(:,:,IKB:IKB) =                                  &
+  (   MXM( ZSOURCE(:,:,IKB:IKB)   / PDZZ(:,:,IKB:IKB) ) &
+   +  MXM( ZCOEFFLXU(:,:,1:1) / PDZZ(:,:,IKB:IKB)       &
            *ZUSLOPEM(:,:,1:1)                           &
-          -ZCOEFFLXV(:,:,1:1) / PDZZ(:,:,IKB:IKB)      &
-           *ZVSLOPEM(:,:,1:1)                      )     &
-   -  ZCOEFS(:,:,1:1) * PUM(:,:,IKB:IKB) * PIMPL            &
+          -ZCOEFFLXV(:,:,1:1) / PDZZ(:,:,IKB:IKB)       &
+           *ZVSLOPEM(:,:,1:1)                      )    &
+   -  ZCOEFS(:,:,1:1) * PUM(:,:,IKB:IKB) * PIMPL        &
   ) * 0.5 * ( 1. + MXM(PRHODJ(:,:,KKA:KKA)) / MXM(PRHODJ(:,:,IKB:IKB)) )
 !
 ZSOURCE(:,:,IKTB+1:IKTE-1) = 0.
@@ -620,7 +619,7 @@ END IF
 ! Preparation of the arguments for TRIDIAG_WIND
 !!
 ZA(:,:,:)    = - PTSTEP * XCMFS *                              &
-              MYM( ZKEFF ) * MYM(MZM(KKA,KKU,KKL, PRHODJ )) / &
+              MYM( ZKEFF ) * MYM(MZM(KKA,KKU,KKL, PRHODJ )) /  &
               MYM( PDZZ )**2
 !
 !
@@ -648,11 +647,11 @@ ZSOURCE(:,:,IKB)       =                                                  &
 !
 ! add the vertical part or the surface flux at the V,W vorticity point
 ZSOURCE(:,:,IKB:IKB) =                                      &
-  (   MYM( ZSOURCE(:,:,IKB:IKB)   / PDZZ(:,:,IKB:IKB) )         &
+  (   MYM( ZSOURCE(:,:,IKB:IKB)   / PDZZ(:,:,IKB:IKB) )     &
    +  MYM( ZCOEFFLXU(:,:,1:1) / PDZZ(:,:,IKB:IKB)           &
-          *ZUSLOPEM(:,:,1:1)                            &
+          *ZUSLOPEM(:,:,1:1)                                &
           +ZCOEFFLXV(:,:,1:1) / PDZZ(:,:,IKB:IKB)           &
-          *ZVSLOPEM(:,:,1:1)                      )     &
+          *ZVSLOPEM(:,:,1:1)                      )         &
    - ZCOEFS(:,:,1:1) * PVM(:,:,IKB:IKB) * PIMPL             &
   ) * 0.5 * ( 1. + MYM(PRHODJ(:,:,KKA:KKA)) / MYM(PRHODJ(:,:,IKB:IKB)) )
 !
@@ -760,7 +759,7 @@ IF(HTURBDIM=='3DIM') THEN
                 /(PDZZ(:,:,IKB+KKL:IKB+KKL)+PDZZ(:,:,IKB:IKB  ))           &
             )                                                              &
           * PDZY(:,:,IKB+KKL:IKB+KKL)                                      &
-       ) / (0.5*(PDYY(:,:,IKB+KKL:IKB+KKL)+PDYY(:,:,IKB:IKB)))                     &
+       ) / (0.5*(PDYY(:,:,IKB+KKL:IKB+KKL)+PDYY(:,:,IKB:IKB)))             &
                             )
   !
     PDP(:,:,:)=PDP(:,:,:)+ZA(:,:,:)

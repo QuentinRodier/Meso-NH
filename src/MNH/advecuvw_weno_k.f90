@@ -96,7 +96,7 @@ TYPE(HALO2LIST_ll), POINTER :: TZHALO2_UT,TZHALO2_VT,TZHALO2_WT
 TYPE(LIST_ll), POINTER :: TZHALO2_ZMEAN
 INTEGER                     :: IINFO_ll    ! return code of parallel routine
 !
-REAL, DIMENSION(SIZE(PUT,1), SIZE(PUT,2), SIZE(PUT,3)) :: ZMEAN, ZWORK, DYM_ZMEAN
+REAL, DIMENSION(SIZE(PUT,1), SIZE(PUT,2), SIZE(PUT,3)) :: ZMEAN, ZWORK
 !
 INTEGER :: K_SCHEME
 INTEGER :: IKU
@@ -110,8 +110,6 @@ TZHALO2_VT => TPHALO2LIST%NEXT              ! 2nd  add3dfield in model_n
 TZHALO2_WT => TPHALO2LIST%NEXT%NEXT         ! 3rst add3dfield in model_n
 !
 IKU=SIZE(PUT,3)
-ZMEAN = 0.0
-ZWORK=0.0
 !      -------------------------------------------------------
 !
 SELECT CASE(KWENO_ORDER)

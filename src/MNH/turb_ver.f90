@@ -517,8 +517,6 @@ ALLOCATE ( &
 !
 !*       1.   PRELIMINARIES
 !             -------------
-PTP (:,:,:) = 0.
-PDP (:,:,:) = 0.
 !
 IKB=KKA+JPVEXT_TURB*KKL
 IKE=KKU-JPVEXT_TURB*KKL

@@ -40,7 +40,7 @@ LOGICAL,                 INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
                                   ! diagnostic fields in the syncronous FM-file
 REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PDP          ! Dyn. prod. of TKE
 REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PTRH
-REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PTP          ! Ther. prod. of TKE
+REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PTP          ! Ther. prod. of TKE
 REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PRTKES       ! RHOD * Jacobian *
                                                        ! TKE at t+deltat
 REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PRTKESM      ! Advection source 
@@ -97,8 +97,6 @@ END MODULE MODI_TKE_EPS_SOURCES
 !!      MXF,MXM.MYF,MYM,MZF,MZM:  Shuman functions (mean operators)
 !!      DZF                    :  Shuman functions (difference operators)     
 !!
-!!      SUBROUTINE TRIDIAG     :  to solve an implicit temporal scheme
-!!      
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -192,7 +190,6 @@ USE MODI_GRADIENT_U
 USE MODI_GRADIENT_V
 USE MODI_GRADIENT_W
 USE MODI_SHUMAN 
-USE MODI_TRIDIAG 
 USE MODI_TRIDIAG_TKE
 USE MODI_BUDGET
 USE MODI_LES_MEAN_SUBGRID
@@ -229,8 +226,9 @@ LOGICAL,                 INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
                                                        ! file opening
 LOGICAL,                 INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
                                   ! diagnostic fields in the syncronous FM-file
-REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PDP, PTRH          ! Dyn. prod. of TKE
-REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PTP          ! Ther. prod. of TKE
+REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PDP          ! Dyn. prod. of TKE
+REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PTRH
+REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PTP          ! Ther. prod. of TKE
 REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PRTKES       ! RHOD * Jacobian *
                                                        ! TKE at t+deltat
 REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PRTHLS       ! Source of Theta_l
@@ -253,8 +251,8 @@ REAL, DIMENSION(SIZE(PTKEM,1),SIZE(PTKEM,2),SIZE(PTKEM,3))::         &
        ZFLX,     & ! horizontal or vertical flux of the treated variable
        ZSOURCE,  & ! source of evolution for the treated variable
        ZKEFF       ! effectif diffusion coeff = LT * SQRT( TKE )
-LOGICAL,DIMENSION(SIZE(PTKEM,1),SIZE(PTKEM,2),SIZE(PTKEM,3)) :: GTKENEG
-                   ! 3D mask .T. if TKE < XTKEMIN
+!LOGICAL,DIMENSION(SIZE(PTKEM,1),SIZE(PTKEM,2),SIZE(PTKEM,3)) :: GTKENEG
+!                   ! 3D mask .T. if TKE < XTKEMIN
 INTEGER             :: IIB,IIE,IJB,IJE,IKB,IKE
                                     ! Index values for the Beginning and End
                                     ! mass points of the domain 

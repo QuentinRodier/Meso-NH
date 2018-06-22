@@ -15,7 +15,7 @@ INTERFACE
                 HTURBDIM,HTURBLEN,HTOM,HTURBLEN_CL,HCLOUD,PIMPL,      &
                 PTSTEP,TPFILE,PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,           &
                 PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,PCOSSLOPE,PSINSLOPE,    &
-                PRHODJ,PTHVREF,PRHODREF,                              &
+                PRHODJ,PTHVREF,                                       &
                 PSFTH,PSFRV,PSFSV,PSFU,PSFV,                          &
                 PPABST,PUT,PVT,PWT,PTKET,PSVT,PSRCT,                  &
                 PBL_DEPTH, PSBL_DEPTH,                                &
@@ -70,8 +70,6 @@ REAL, DIMENSION(:,:),   INTENT(IN)   ::  PSINSLOPE       ! sinus of the angle
 REAL, DIMENSION(:,:,:), INTENT(IN)      ::  PRHODJ    ! dry density * Grid size
 REAL, DIMENSION(:,:,:), INTENT(IN)      ::  PTHVREF   ! Virtual Potential
                                         ! Temperature of the reference state
-REAL, DIMENSION(:,:,:), INTENT(IN)      ::  PRHODREF  ! dry density of the 
-                                        ! reference state
 !
 REAL, DIMENSION(:,:),   INTENT(IN)      ::  PSFTH,PSFRV,   &
 ! normal surface fluxes of theta and Rv 
@@ -121,11 +119,11 @@ REAL, DIMENSION(:,:,:), INTENT(IN)      ::  PFLXZTHVMF
 REAL, DIMENSION(:,:,:), INTENT(OUT)  :: PWTH       ! heat flux
 REAL, DIMENSION(:,:,:), INTENT(OUT)  :: PWRC       ! cloud water flux
 REAL, DIMENSION(:,:,:,:),INTENT(OUT) :: PWSV       ! scalar flux
-REAL, DIMENSION(:,:,:), INTENT(INOUT):: PDYP  ! Dynamical production of TKE
-REAL, DIMENSION(:,:,:), INTENT(INOUT):: PTHP  ! Thermal production of TKE
-REAL, DIMENSION(:,:,:), INTENT(OUT):: PTR   ! Transport production of TKE
-REAL, DIMENSION(:,:,:), INTENT(OUT):: PDISS ! Dissipation of TKE
-REAL, DIMENSION(:,:,:), INTENT(INOUT):: PLEM  ! Mixing length                   
+REAL, DIMENSION(:,:,:), INTENT(OUT)  :: PDYP  ! Dynamical production of TKE
+REAL, DIMENSION(:,:,:), INTENT(OUT)  :: PTHP  ! Thermal production of TKE
+REAL, DIMENSION(:,:,:), INTENT(OUT)  :: PTR   ! Transport production of TKE
+REAL, DIMENSION(:,:,:), INTENT(OUT)  :: PDISS ! Dissipation of TKE
+REAL, DIMENSION(:,:,:), INTENT(OUT)  :: PLEM  ! Mixing length
 
 !
 !-------------------------------------------------------------------------------
@@ -142,7 +140,7 @@ END MODULE MODI_TURB
                 HTURBDIM,HTURBLEN,HTOM,HTURBLEN_CL,HCLOUD,PIMPL,      &
                 PTSTEP,TPFILE,PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,           &
                 PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,PCOSSLOPE,PSINSLOPE,    &
-                PRHODJ,PTHVREF,PRHODREF,                              &
+                PRHODJ,PTHVREF,                                       &
                 PSFTH,PSFRV,PSFSV,PSFU,PSFV,                          &
                 PPABST,PUT,PVT,PWT,PTKET,PSVT,PSRCT,                  &
                 PBL_DEPTH,PSBL_DEPTH,                                 &
@@ -432,13 +430,11 @@ REAL, DIMENSION(:,:),   INTENT(IN)   ::  PSINSLOPE       ! sinus of the angle
 REAL, DIMENSION(:,:,:), INTENT(IN)      ::  PRHODJ    ! dry density * Grid size
 REAL, DIMENSION(:,:,:), INTENT(IN)      ::  PTHVREF   ! Virtual Potential
                                         ! Temperature of the reference state
-REAL, DIMENSION(:,:,:), INTENT(IN)      ::  PRHODREF  ! dry density of the 
-                                        ! reference state
 !
 REAL, DIMENSION(:,:),   INTENT(IN)      ::  PSFTH,PSFRV,   &
 ! normal surface fluxes of theta and Rv 
                                             PSFU,PSFV
-! normal surface fluxes of (u,v) parallel to the orography 
+! normal surface fluxes of (u,v) parallel to the orography
 REAL, DIMENSION(:,:,:), INTENT(IN)      ::  PSFSV
 ! normal surface fluxes of Scalar var. 
 !
@@ -483,11 +479,11 @@ REAL, DIMENSION(:,:,:), INTENT(IN)      ::  PFLXZTHVMF
 REAL, DIMENSION(:,:,:), INTENT(OUT)  :: PWTH       ! heat flux
 REAL, DIMENSION(:,:,:), INTENT(OUT)  :: PWRC       ! cloud water flux
 REAL, DIMENSION(:,:,:,:),INTENT(OUT) :: PWSV       ! scalar flux
-REAL, DIMENSION(:,:,:), INTENT(INOUT):: PDYP  ! Dynamical production of TKE
-REAL, DIMENSION(:,:,:), INTENT(INOUT):: PTHP  ! Thermal production of TKE
-REAL, DIMENSION(:,:,:), INTENT(OUT):: PTR   ! Transport production of TKE
-REAL, DIMENSION(:,:,:), INTENT(OUT):: PDISS ! Dissipation of TKE
-REAL, DIMENSION(:,:,:), INTENT(INOUT):: PLEM  ! Mixing length                   
+REAL, DIMENSION(:,:,:), INTENT(OUT)  :: PDYP  ! Dynamical production of TKE
+REAL, DIMENSION(:,:,:), INTENT(OUT)  :: PTHP  ! Thermal production of TKE
+REAL, DIMENSION(:,:,:), INTENT(OUT)  :: PTR   ! Transport production of TKE
+REAL, DIMENSION(:,:,:), INTENT(OUT)  :: PDISS ! Dissipation of TKE
+REAL, DIMENSION(:,:,:), INTENT(OUT)  :: PLEM  ! Mixing length
 !
 !
 !-------------------------------------------------------------------------------
@@ -619,7 +615,7 @@ ZRM(:,:,:,:) = PRT(:,:,:,:)
 !
 !*      2.1 Cph at t
 !
-ZCP=XCPD
+ZCP(:,:,:)=XCPD
 !
 IF (KRR > 0) ZCP(:,:,:) = ZCP(:,:,:) + XCPV * PRT(:,:,:,1)
 DO JRR = 2,1+KRRL                          ! loop on the liquid components  
@@ -714,7 +710,7 @@ END IF              ! loop end on KRRL >= 1
 ! computes conservative variables
 !
 IF ( KRRL >= 1 ) THEN
-  IF ( KRRI >= 1 ) THEN 
+  IF ( KRRI >= 1 ) THEN
     ! Rnp at t
     PRT(:,:,:,1)  = PRT(:,:,:,1)  + PRT(:,:,:,2)  + PRT(:,:,:,4)
     PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,2) + PRRS(:,:,:,4)
@@ -801,7 +797,7 @@ IF (KMODEL_CL==KMI .AND. HTURBLEN_CL/='NONE') CALL CLOUD_MODIF_LM
 !*      3.6 Dissipative length
 !           ------------------
 !
-ZLEPS=ZLM
+ZLEPS(:,:,:)=ZLM(:,:,:)
 !
 !*      3.7 Correction in the Surface Boundary Layer (Redelsperger 2001)
 !           ----------------------------------------
@@ -876,24 +872,35 @@ ZMTH2 = 0.     ! w'th'2
 ZMR2  = 0.     ! w'r'2
 ZMTHR = 0.     ! w'th'r'
 
-IF (HTOM=='TM06') CALL TM06(KKA,KKU,KKL,PTHVREF,PBL_DEPTH,PZZ,PSFTH,ZMWTH,ZMTH2)
+IF (HTOM=='TM06') THEN
+  CALL TM06(KKA,KKU,KKL,PTHVREF,PBL_DEPTH,PZZ,PSFTH,ZMWTH,ZMTH2)
 !
-ZFWTH = -GZ_M_W(KKA,KKU,KKL,ZMWTH,PDZZ)    ! -d(w'2th' )/dz
-ZFWR  = -GZ_M_W(KKA,KKU,KKL,ZMWR, PDZZ)    ! -d(w'2r'  )/dz
-ZFTH2 = -GZ_W_M(KKA,KKU,KKL,ZMTH2,PDZZ)    ! -d(w'th'2 )/dz
-ZFR2  = -GZ_W_M(KKA,KKU,KKL,ZMR2, PDZZ)    ! -d(w'r'2  )/dz
-ZFTHR = -GZ_W_M(KKA,KKU,KKL,ZMTHR,PDZZ)    ! -d(w'th'r')/dz
+  ZFWTH = -GZ_M_W(KKA,KKU,KKL,ZMWTH,PDZZ)    ! -d(w'2th' )/dz
+  !ZFWR  = -GZ_M_W(KKA,KKU,KKL,ZMWR, PDZZ)    ! -d(w'2r'  )/dz
+  ZFTH2 = -GZ_W_M(KKA,KKU,KKL,ZMTH2,PDZZ)    ! -d(w'th'2 )/dz
+  !ZFR2  = -GZ_W_M(KKA,KKU,KKL,ZMR2, PDZZ)    ! -d(w'r'2  )/dz
+  !ZFTHR = -GZ_W_M(KKA,KKU,KKL,ZMTHR,PDZZ)    ! -d(w'th'r')/dz
 !
-ZFWTH(:,:,IKTE:) = 0.
-ZFWTH(:,:,:IKTB) = 0.
-ZFWR (:,:,IKTE:) = 0.
-ZFWR (:,:,:IKTB) = 0.
-ZFTH2(:,:,IKTE:) = 0.
-ZFTH2(:,:,:IKTB) = 0.
-ZFR2 (:,:,IKTE:) = 0.
-ZFR2 (:,:,:IKTB) = 0.
-ZFTHR(:,:,IKTE:) = 0.
-ZFTHR(:,:,:IKTB) = 0.
+  ZFWTH(:,:,IKTE:) = 0.
+  ZFWTH(:,:,:IKTB) = 0.
+  !ZFWR (:,:,IKTE:) = 0.
+  !ZFWR (:,:,:IKTB) = 0.
+  ZFWR  = 0.
+  ZFTH2(:,:,IKTE:) = 0.
+  ZFTH2(:,:,:IKTB) = 0.
+  !ZFR2 (:,:,IKTE:) = 0.
+  !ZFR2 (:,:,:IKTB) = 0.
+  ZFR2  = 0.
+  !ZFTHR(:,:,IKTE:) = 0.
+  !ZFTHR(:,:,:IKTB) = 0.
+  ZFTHR = 0.
+ELSE
+  ZFWTH = 0.
+  ZFWR  = 0.
+  ZFTH2 = 0.
+  ZFR2  = 0.
+  ZFTHR = 0.
+ENDIF
 !
 !----------------------------------------------------------------------------
 !
@@ -1171,8 +1178,8 @@ IF (LLES_CALL) THEN
 !
   IF (HTURBDIM=="1DIM") THEN
     CALL LES_MEAN_SUBGRID(2./3.*PTKET,X_LES_SUBGRID_U2)
-    CALL LES_MEAN_SUBGRID(2./3.*PTKET,X_LES_SUBGRID_V2)
-    CALL LES_MEAN_SUBGRID(2./3.*PTKET,X_LES_SUBGRID_W2)
+    X_LES_SUBGRID_V2 = X_LES_SUBGRID_U2
+    X_LES_SUBGRID_W2 = X_LES_SUBGRID_U2
     CALL LES_MEAN_SUBGRID(2./3.*PTKET*MZF(KKA,KKU,KKL,&
                & GZ_M_W(KKA,KKU,KKL,PTHLT,PDZZ)),X_LES_RES_ddz_Thl_SBG_W2)
     IF (KRR>=1) &
@@ -1308,7 +1315,7 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments 
 !
-REAL                                  :: PALP,PBETA,PGAM,PLTT,PC
+REAL,                   INTENT(IN)    :: PALP,PBETA,PGAM,PLTT,PC
 REAL, DIMENSION(:,:,:), INTENT(IN)    :: PT,PEXN,PCP
 !
 REAL, DIMENSION(:,:,:), INTENT(OUT)   :: PLOCPEXN
@@ -1463,7 +1470,8 @@ REAL, DIMENSION(:,:,:), INTENT(OUT)   :: PLM
 !*       0.2   Declarations of local variables
 !
 REAL                :: ZD           ! distance to the surface
-REAL, DIMENSION(:,:), ALLOCATABLE  ::   ZWORK2D
+REAL                :: ZVAR         ! Intermediary variable
+REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2)) ::   ZWORK2D
 !
 REAL, DIMENSION(SIZE(PTHLT,1),SIZE(PTHLT,2),SIZE(PTHLT,3)) ::     &
             ZDTHLDZ,ZDRTDZ,     &!dtheta_l/dz, drt_dz used for computing the stablity
@@ -1488,29 +1496,44 @@ IF ( HTURBDIM /= '1DIM' ) THEN  ! 3D turbulence scheme
 END IF
 !   compute a mixing length limited by the stability
 !
-ALLOCATE(ZWORK2D(SIZE(PUT,1),SIZE(PUT,2)))
-!
 ZETHETA(:,:,:) = ETHETA(KRR,KRRI,PTHLT,PRT,ZLOCPEXNM,ZATHETA,PSRCT)
 ZEMOIST(:,:,:) = EMOIST(KRR,KRRI,PTHLT,PRT,ZLOCPEXNM,ZAMOIST,PSRCT)
 !
-DO JK = IKTB+1,IKTE-1
-      ZDTHLDZ(:,:,JK)= 0.5*((PTHLT(:,:,JK+KKL)-PTHLT(:,:,JK))/PDZZ(:,:,JK+KKL)+      &
-                         (PTHLT(:,:,JK)-PTHLT(:,:,JK-KKL))/PDZZ(:,:,JK))
 ! For dry simulations
-IF (KRR>0) THEN    
-        ZDRTDZ(:,:,JK)= 0.5*((PRT(:,:,JK+KKL,1)-PRT(:,:,JK,1))/PDZZ(:,:,JK+KKL)+      &
-                         (PRT(:,:,JK,1)-PRT(:,:,JK-KKL,1))/PDZZ(:,:,JK))
+IF (KRR>0) THEN
+  DO JK = IKTB+1,IKTE-1
+    DO JJ=1,SIZE(PUT,2)
+      DO JI=1,SIZE(PUT,1)
+        ZDTHLDZ(JI,JJ,JK)= 0.5*((PTHLT(JI,JJ,JK+KKL)-PTHLT(JI,JJ,JK    ))/PDZZ(JI,JJ,JK+KKL)+ &
+                                (PTHLT(JI,JJ,JK    )-PTHLT(JI,JJ,JK-KKL))/PDZZ(JI,JJ,JK    ))
+        ZDRTDZ(JI,JJ,JK) = 0.5*((PRT(JI,JJ,JK+KKL,1)-PRT(JI,JJ,JK    ,1))/PDZZ(JI,JJ,JK+KKL)+ &
+                                (PRT(JI,JJ,JK    ,1)-PRT(JI,JJ,JK-KKL,1))/PDZZ(JI,JJ,JK    ))
+        ZVAR=XG/PTHVREF(JI,JJ,JK)*                                                  &
+             (ZETHETA(JI,JJ,JK)*ZDTHLDZ(JI,JJ,JK)+ZEMOIST(JI,JJ,JK)*ZDRTDZ(JI,JJ,JK))
+        !
+        IF (ZVAR>0.) THEN
+          PLM(JI,JJ,JK)=MAX(XMNH_EPSILON,MIN(PLM(JI,JJ,JK), &
+                        0.76* SQRT(PTKET(JI,JJ,JK)/ZVAR)))
+        END IF
+      END DO
+    END DO
+  END DO
 ELSE
-       ZDRTDZ(:,:,JK)=0
-ENDIF
-       ZWORK2D(:,:)=XG/PTHVREF(:,:,JK)*                                           &
-            (ZETHETA(:,:,JK)*ZDTHLDZ(:,:,JK)+ZEMOIST(:,:,JK)*ZDRTDZ(:,:,JK))
-  !
-  WHERE(ZWORK2D(:,:)>0.)
-    PLM(:,:,JK)=MAX(XMNH_EPSILON,MIN(PLM(:,:,JK),                &
-                    0.76* SQRT(PTKET(:,:,JK)/ZWORK2D(:,:))))
-  END WHERE
-END DO
+  DO JK = IKTB+1,IKTE-1
+    DO JJ=1,SIZE(PUT,2)
+      DO JI=1,SIZE(PUT,1)
+        ZDTHLDZ(JI,JJ,JK)= 0.5*((PTHLT(JI,JJ,JK+KKL)-PTHLT(JI,JJ,JK    ))/PDZZ(JI,JJ,JK+KKL)+ &
+                                (PTHLT(JI,JJ,JK    )-PTHLT(JI,JJ,JK-KKL))/PDZZ(JI,JJ,JK    ))
+        ZVAR=XG/PTHVREF(JI,JJ,JK)*ZETHETA(JI,JJ,JK)*ZDTHLDZ(JI,JJ,JK)
+        !
+        IF (ZVAR>0.) THEN
+          PLM(JI,JJ,JK)=MAX(XMNH_EPSILON,MIN(PLM(JI,JJ,JK), &
+                        0.76* SQRT(PTKET(JI,JJ,JK)/ZVAR)))
+        END IF
+      END DO
+    END DO
+  END DO
+END IF
 !  special case near the surface 
 ZDTHLDZ(:,:,IKB)=(PTHLT(:,:,IKB+KKL)-PTHLT(:,:,IKB))/PDZZ(:,:,IKB+KKL)
 ! For dry simulations
@@ -1526,8 +1549,6 @@ WHERE(ZWORK2D(:,:)>0.)
   PLM(:,:,IKB)=MAX(XMNH_EPSILON,MIN( PLM(:,:,IKB),                 &
                     0.76* SQRT(PTKET(:,:,IKB)/ZWORK2D(:,:))))
 END WHERE
-!
-DEALLOCATE(ZWORK2D)
 !
 !  mixing length limited by the distance normal to the surface (with the same factor as for BL89)
 !

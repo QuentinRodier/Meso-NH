@@ -1493,8 +1493,6 @@ REAL, DIMENSION(SIZE(PSRC,1),SIZE(PSRC,2),SIZE(PSRC,3)):: ZBNEG1, ZBNEG2, ZBNEG3
 !
 REAL, DIMENSION(SIZE(PSRC,1),SIZE(PSRC,2),SIZE(PSRC,3)):: ZOMP1, ZOMP2, ZOMP3
 REAL, DIMENSION(SIZE(PSRC,1),SIZE(PSRC,2),SIZE(PSRC,3)):: ZOMN1, ZOMN2, ZOMN3
-
-REAL, DIMENSION(SIZE(PSRC,1),SIZE(PSRC,2),SIZE(PSRC,3)) :: ZWORK
 !
 ! EPSILON for weno weights calculation
 ! 
@@ -1532,8 +1530,6 @@ ZOMP3  = 0.0
 ZOMN1  = 0.0
 ZOMN2  = 0.0
 ZOMN3  = 0.0 
-
-ZWORK = 0.0
 !
 !-------------------------------------------------------------------------------
 !*       1.1.   Interior Fluxes 

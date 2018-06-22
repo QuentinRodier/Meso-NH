@@ -263,7 +263,7 @@ REAL, DIMENSION(:,:,:), INTENT(OUT)  ::  PEMOIST ! coefficient E_moist
 !       0.2  declaration of local variables
 !
 REAL, DIMENSION(SIZE(PTHLM,1),SIZE(PTHLM,2),SIZE(PTHLM,3)) ::  &
-                  ZW1, ZW2, ZW3
+                  ZW1, ZW2
 !                                                 working variables
 !                                                     
 INTEGER :: IKB      ! vertical index value for the first inner mass point
@@ -440,19 +440,20 @@ END IF   ! end of the if structure on the turbulence dimensionnality
 !
 !           5. Prandtl numbers for scalars
 !              ---------------------------
-DO JSV=1,ISV
-!
-  IF(HTURBDIM=='1DIM') THEN
+IF(HTURBDIM=='1DIM') THEN
 !        1D case
+  DO JSV=1,ISV
     PRED2THS3(:,:,:,JSV)  = PREDS1(:,:,:,JSV) * PREDTH1(:,:,:)
     IF (KRR /= 0) THEN
       PRED2RS3(:,:,:,JSV)   = PREDR1(:,:,:) *PREDS1(:,:,:,JSV)
     ELSE
       PRED2RS3(:,:,:,JSV)   = 0.
     END IF
+  ENDDO
 !
-  ELSE  IF (L2D) THEN ! 3D case in a 2D model
+ELSE  IF (L2D) THEN ! 3D case in a 2D model
 !
+  DO JSV=1,ISV
     IF (KRR /= 0) THEN
       ZW1 = MZM(KKA,KKU,KKL, (XG / PTHVREF * PLM * PLEPS / PTKEM)**2 ) *PETHETA
     ELSE
@@ -473,9 +474,11 @@ DO JSV=1,ISV
     ELSE
       PRED2RS3(:,:,:,JSV) = 0.
     END IF
+  ENDDO
 !
-  ELSE ! 3D case in a 3D model
+ELSE ! 3D case in a 3D model
 !
+  DO JSV=1,ISV
     IF (KRR /= 0) THEN
       ZW1 = MZM(KKA,KKU,KKL, (XG / PTHVREF * PLM * PLEPS / PTKEM)**2 ) *PETHETA
     ELSE
@@ -500,10 +503,10 @@ DO JSV=1,ISV
     ELSE
       PRED2RS3(:,:,:,JSV) = 0.
     END IF
+  ENDDO
 !
-  END IF ! end of HTURBDIM if-block
+END IF ! end of HTURBDIM if-block
 !
-END DO
 !
 !---------------------------------------------------------------------------
 !

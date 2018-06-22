@@ -20,7 +20,7 @@ USE MODD_ARGSLIST_ll, ONLY : HALO2LIST_ll
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX ! X direction LBC type
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCY ! Y direction LBC type
 !
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PMEANX, PMEANY ! fluxes
+REAL, DIMENSION(:,:,:), INTENT(OUT)   :: PMEANX, PMEANY ! fluxes
 REAL, DIMENSION(:,:,:), INTENT(IN)    :: PFIELDT  ! variable at t
 INTEGER,                INTENT(IN)    :: KGRID    ! C grid localisation
 !
@@ -119,7 +119,7 @@ IMPLICIT NONE
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX ! X direction LBC type
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCY ! Y direction LBC type
 !
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PMEANX, PMEANY ! fluxes
+REAL, DIMENSION(:,:,:), INTENT(OUT)   :: PMEANX, PMEANY ! fluxes
 REAL, DIMENSION(:,:,:), INTENT(IN)    :: PFIELDT  ! variable at t
 INTEGER,                INTENT(IN)    :: KGRID    ! C grid localisation
 !

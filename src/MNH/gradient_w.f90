@@ -40,14 +40,14 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGX_W_UW ! result UW point
 END FUNCTION GX_W_UW
 !
 !            
-FUNCTION GY_W_VW(KKA,KKU,KL,PA,PDXX,PDZZ,PDZX)      RESULT(PGY_W_VW)
+FUNCTION GY_W_VW(KKA,KKU,KL,PA,PDYY,PDZZ,PDZY)      RESULT(PGY_W_VW)
 !
 INTEGER,              INTENT(IN)     :: KKA, KKU ! near ground and uppest atmosphere array indexes
 INTEGER,              INTENT(IN)     :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the W point
-REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDXX    ! metric coefficient dxx
+REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDYY    ! metric coefficient dyy
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
-REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZX    ! metric coefficient dzx
+REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZY    ! metric coefficient dzy
 !
 REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGY_W_VW ! result VW point
 !

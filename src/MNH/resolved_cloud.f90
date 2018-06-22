@@ -436,7 +436,6 @@ INTEGER :: IKE           !
 INTEGER :: IKU
 INTEGER :: IINFO_ll      ! return code of parallel routine
 INTEGER :: JK,JI,JL
-INTEGER :: I, J, K
 !
 !
 !

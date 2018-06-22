@@ -19,11 +19,11 @@ INTERFACE
          !
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 INTEGER,                  INTENT(IN)    :: KMI      ! Model index 
-CHARACTER*4,              INTENT(IN)    :: HTURBDIM ! Dimensionality of the
+CHARACTER(LEN=*),         INTENT(IN)    :: HTURBDIM ! Dimensionality of the
                                                     ! turbulence scheme
-CHARACTER(LEN=4),         INTENT(IN)    :: HSCONV   ! Shallow convection scheme
-CHARACTER(LEN=4),         INTENT(IN)    :: HMF_CLOUD! Type of statistical cloud
-CHARACTER*4,              INTENT(IN)    :: HRAD     ! Radiation scheme name
+CHARACTER(LEN=*),         INTENT(IN)    :: HSCONV   ! Shallow convection scheme
+CHARACTER(LEN=*),         INTENT(IN)    :: HMF_CLOUD! Type of statistical cloud
+CHARACTER(LEN=*),         INTENT(IN)    :: HRAD     ! Radiation scheme name
 LOGICAL,                  INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid 
                                                     ! Condensation
 REAL,                     INTENT(IN)    :: PTSTEP   ! Time step          
@@ -175,11 +175,11 @@ IMPLICIT NONE
 !
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 INTEGER,                  INTENT(IN)    :: KMI      ! Model index 
-CHARACTER*4,              INTENT(IN)    :: HTURBDIM ! Dimensionality of the
+CHARACTER(LEN=*),         INTENT(IN)    :: HTURBDIM ! Dimensionality of the
                                                     ! turbulence scheme
-CHARACTER(LEN=4),         INTENT(IN)    :: HSCONV   ! Shallow convection scheme
-CHARACTER(LEN=4),         INTENT(IN)    :: HMF_CLOUD! Type of statistical cloud
-CHARACTER*4,              INTENT(IN)    :: HRAD     ! Radiation scheme name
+CHARACTER(LEN=*),         INTENT(IN)    :: HSCONV   ! Shallow convection scheme
+CHARACTER(LEN=*),         INTENT(IN)    :: HMF_CLOUD! Type of statistical cloud
+CHARACTER(LEN=*),         INTENT(IN)    :: HRAD     ! Radiation scheme name
 LOGICAL,                  INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid 
                                                     ! Condensation
 REAL,                     INTENT(IN)    :: PTSTEP   ! Time step          

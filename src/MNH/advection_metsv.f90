@@ -461,7 +461,7 @@ ZRWCPPM = ZRWCPPM*ZTSTEP_PPM
 !  Clouds    related processes from previous time-step are     taken into account in PRTHS_CLD
 !  Advection related processes from previous time-step will be taken into account in ZRTHS_PPM
 !
-ZRTHS_OTHER = PRTHS - PTHT * PRHODJ / PTSTEP                      
+ZRTHS_OTHER = PRTHS - PTHT * PRHODJ / PTSTEP
 IF (GTKE) ZRTKES_OTHER = PRTKES - PTKET * PRHODJ / PTSTEP                      
 DO JR = 1, KRR
  ZRRS_OTHER(:,:,:,JR) = PRRS(:,:,:,JR) - PRT(:,:,:,JR) * PRHODJ(:,:,:) / PTSTEP

@@ -351,8 +351,8 @@ ZDW_DZ(:,:,:)=-ZDU_DX(:,:,:)-ZDV_DY(:,:,:)
 !
 !* computation 
 !
-ZFLX(:,:,IKB:IKB)   = (2./3.) * PTKEM(:,:,IKB:IKB)                           &
-  - XCMFS * PK(:,:,IKB:IKB) * 2. * ZDU_DX(:,:,:)
+ZFLX(:,:,IKB)   = (2./3.) * PTKEM(:,:,IKB)                           &
+  - XCMFS * PK(:,:,IKB) * 2. * ZDU_DX(:,:,1)
 
 
 !!  &  to be tested later
@@ -360,17 +360,16 @@ ZFLX(:,:,IKB:IKB)   = (2./3.) * PTKEM(:,:,IKB:IKB)                           &
 !!   (-2./3.) * PTP(:,:,IKB:IKB)
 !
 ! extrapolates this flux under the ground with the surface flux
-ZFLX(:,:,IKB-1) =                                                          &
+ZFLX(:,:,IKB-1) =                                                            &
         PTAU11M(:,:) * PCOSSLOPE(:,:)**2 * PDIRCOSZW(:,:)**2                 &
   -2. * PTAU12M(:,:) * PCOSSLOPE(:,:)* PSINSLOPE(:,:) * PDIRCOSZW(:,:)       &
   +     PTAU22M(:,:) * PSINSLOPE(:,:)**2                                     &
   +     PTAU33M(:,:) * PCOSSLOPE(:,:)**2 * ZDIRSINZW(:,:)**2                 &
   +2. * PCDUEFF(:,:) *      (                                                &
       PVSLOPEM(:,:) * PCOSSLOPE(:,:)    * PSINSLOPE(:,:) * ZDIRSINZW(:,:)    &
-    - PUSLOPEM(:,:) * PCOSSLOPE(:,:)**2 * ZDIRSINZW(:,:) * PDIRCOSZW(:,:)    &
-                            ) 
+    - PUSLOPEM(:,:) * PCOSSLOPE(:,:)**2 * ZDIRSINZW(:,:) * PDIRCOSZW(:,:)    )
 ! 
-ZFLX(:,:,IKB-1:IKB-1) = 2. * ZFLX(:,:,IKB-1:IKB-1) -  ZFLX(:,:,IKB:IKB)
+ZFLX(:,:,IKB-1) = 2. * ZFLX(:,:,IKB-1) -  ZFLX(:,:,IKB)
 !
 CALL UPDATE_HALO_ll(TZFIELDS_ll, IINFO_ll)
 IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
@@ -447,25 +446,24 @@ END IF
 !
 ZFLX(:,:,IKE+1) = ZFLX(:,:,IKE) 
 !
-ZFLX(:,:,IKB:IKB)   = (2./3.) * PTKEM(:,:,IKB:IKB)                           &
-  - XCMFS * PK(:,:,IKB:IKB) * 2. * ZDV_DY(:,:,:)
+ZFLX(:,:,IKB)   = (2./3.) * PTKEM(:,:,IKB)                           &
+  - XCMFS * PK(:,:,IKB) * 2. * ZDV_DY(:,:,1)
 
 !!           & to be tested
 !! + XCMFB * PLM(:,:,IKB:IKB) /SQRT(PTKEM(:,:,IKB:IKB)) *         &
 !!   (-2./3.) * PTP(:,:,IKB:IKB)
 !
 ! extrapolates this flux under the ground with the surface flux
-ZFLX(:,:,IKB-1) =                                                          &
+ZFLX(:,:,IKB-1) =                                                            &
         PTAU11M(:,:) * PSINSLOPE(:,:)**2 * PDIRCOSZW(:,:)**2                 &         
   +2. * PTAU12M(:,:) * PCOSSLOPE(:,:)* PSINSLOPE(:,:) * PDIRCOSZW(:,:)       &
   +     PTAU22M(:,:) * PCOSSLOPE(:,:)**2                                     &
   +     PTAU33M(:,:) * PSINSLOPE(:,:)**2 * ZDIRSINZW(:,:)**2                 &
   -2. * PCDUEFF(:,:)*       (                                                &
       PUSLOPEM(:,:) * PSINSLOPE(:,:)**2 * ZDIRSINZW(:,:) * PDIRCOSZW(:,:)    &
-    + PVSLOPEM(:,:) * PCOSSLOPE(:,:)    * PSINSLOPE(:,:) * ZDIRSINZW(:,:)    &
-                            ) 
+    + PVSLOPEM(:,:) * PCOSSLOPE(:,:)    * PSINSLOPE(:,:) * ZDIRSINZW(:,:)    )
 ! 
-ZFLX(:,:,IKB-1:IKB-1) = 2. * ZFLX(:,:,IKB-1:IKB-1) -  ZFLX(:,:,IKB:IKB)
+ZFLX(:,:,IKB-1) = 2. * ZFLX(:,:,IKB-1) -  ZFLX(:,:,IKB)
 !
 CALL UPDATE_HALO_ll(TZFIELDS_ll, IINFO_ll)
 !
@@ -541,16 +539,16 @@ END IF
 !
 ZFLX(:,:,IKE+1)= ZFLX(:,:,IKE)
 !
-ZFLX(:,:,IKB:IKB)   = (2./3.) * PTKEM(:,:,IKB:IKB)                           &
-  - XCMFS * PK(:,:,IKB:IKB) * 2. * ZDW_DZ(:,:,:)
+ZFLX(:,:,IKB)   = (2./3.) * PTKEM(:,:,IKB)                           &
+  - XCMFS * PK(:,:,IKB) * 2. * ZDW_DZ(:,:,1)
 
-!!             &  to be tested
-!!   - 2.* XCMFB * PLM(:,:,IKB:IKB) /SQRT(PTKEM(:,:,IKB:IKB)) *             &
-!!  (-2./3.) * PTP(:,:,IKB:IKB)
+!             &  to be tested
+!   - 2.* XCMFB * PLM(:,:,IKB:IKB) /SQRT(PTKEM(:,:,IKB:IKB)) *             &
+!  (-2./3.) * PTP(:,:,IKB:IKB)
 !
 ! extrapolates this flux under the ground with the surface flux
 ZFLX(:,:,IKB-1) =                                                     &
-        PTAU11M(:,:) * ZDIRSINZW(:,:)**2                                &         
+        PTAU11M(:,:) * ZDIRSINZW(:,:)**2                                &
   +     PTAU33M(:,:) * PDIRCOSZW(:,:)**2                                &
   +2. * PCDUEFF(:,:)* PUSLOPEM(:,:)  * ZDIRSINZW(:,:) * PDIRCOSZW(:,:) 
   ! 

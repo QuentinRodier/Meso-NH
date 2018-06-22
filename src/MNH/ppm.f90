@@ -232,7 +232,6 @@ REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZQL0,ZQR0,ZQ60
 REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZFPOS, ZFNEG
 !
 !BEG JUAN PPM_LL
-INTEGER                          :: ILUOUT,IRESP             ! for prints
 INTEGER                          :: IJS,IJN
 !END JUAN PPM_LL
 !-------------------------------------------------------------------------------
@@ -249,15 +248,6 @@ IJN=IJE
 !*              initialise & update halo & halo2 for PSRC
 !
 CALL GET_HALO(PSRC)
-PR=PSRC
-ZQL=PSRC
-ZQR=PSRC
-ZDQ=PSRC
-ZQ6=PSRC
-ZDMQ=PSRC
-ZQL0=PSRC
-ZQR0=PSRC
-ZQ60=PSRC
 ZFPOS=PSRC
 ZFNEG=PSRC
 !
@@ -347,7 +337,7 @@ CASE ('CYCL','WALL')          ! In that case one must have HLBCX(1) == HLBCX(2)
       ZQ6 = 3.0*(ZQL0 - PSRC)
       ZQR = ZQL0 - ZQ6
       ZQL = ZQL0
-   ELSEWHERE ( ZQ60*ZDQ > (ZDQ)**2 ) 
+   ELSEWHERE ( ZQ60*ZDQ > (ZDQ)**2 )
       ZQ6 = 3.0*(ZQR0 - PSRC)
       ZQL = ZQR0 - ZQ6
       ZQR = ZQR0
@@ -474,7 +464,7 @@ CASE('OPEN')
 !
    ZQL = ZQL0
    ZQR = ZQR0
-   ZQ6 = ZQ60 
+   ZQ6 = ZQ60
 !
 ! eliminate over and undershoots and create qL and qR as in Lin96
 !
@@ -486,7 +476,7 @@ CASE('OPEN')
       ZQ6 = 3.0*(ZQL0 - PSRC)
       ZQR = ZQL0 - ZQ6
       ZQL = ZQL0
-   ELSEWHERE ( ZQ60*ZDQ > (ZDQ)**2 ) 
+   ELSEWHERE ( ZQ60*ZDQ > (ZDQ)**2 )
       ZQ6 = 3.0*(ZQR0 - PSRC)
       ZQL = ZQR0 - ZQ6
       ZQR = ZQR0
@@ -671,7 +661,6 @@ REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZQL0,ZQR0,ZQ60
 REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZFPOS, ZFNEG
 !
 !BEG JUAN PPM_LL
-INTEGER                          :: ILUOUT,IRESP             ! for prints
 INTEGER                          :: IIW,IIA
 !END JUAN PPM_LL
 !-------------------------------------------------------------------------------
@@ -688,15 +677,6 @@ CALL GET_HALO(PSRC)
 !-------------------------------------------------------------------------------
 !
 !
-PR=PSRC
-ZQL=PSRC
-ZQR=PSRC
-ZDQ=PSRC
-ZQ6=PSRC
-ZDMQ=PSRC
-ZQL0=PSRC
-ZQR0=PSRC
-ZQ60=PSRC
 ZFPOS=PSRC
 ZFNEG=PSRC
 !
@@ -781,7 +761,7 @@ CASE ('CYCL','WALL')          ! In that case one must have HLBCY(1) == HLBCY(2)
       ZQ6 = 3.0*(ZQL0 - PSRC)
       ZQR = ZQL0 - ZQ6
       ZQL = ZQL0
-   ELSEWHERE ( ZQ60*ZDQ > (ZDQ)**2 ) 
+   ELSEWHERE ( ZQ60*ZDQ > (ZDQ)**2 )
       ZQ6 = 3.0*(ZQR0 - PSRC)
       ZQL = ZQR0 - ZQ6
       ZQR = ZQR0
@@ -903,7 +883,7 @@ CASE('OPEN')
       ZQ6 = 3.0*(ZQL0 - PSRC)
       ZQR = ZQL0 - ZQ6
       ZQL = ZQL0
-   ELSEWHERE ( ZQ60*ZDQ > (ZDQ)**2 ) 
+   ELSEWHERE ( ZQ60*ZDQ > (ZDQ)**2 )
       ZQ6 = 3.0*(ZQR0 - PSRC)
       ZQL = ZQR0 - ZQ6
       ZQR = ZQR0
@@ -1312,7 +1292,6 @@ REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZPHAT
 !
 !BEG JUAN PPM_LL
 TYPE(HALO2LIST_ll), POINTER      :: TZ_PSRC_HALO2_ll         ! halo2 for PSRC
-INTEGER                          :: ILUOUT,IRESP             ! for prints
 INTEGER                          :: IJS,IJN
 !END JUAN PPM_LL
 !-------------------------------------------------------------------------------
@@ -1577,7 +1556,6 @@ REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZPHAT
 !BEG JUAN PPM_LL
 TYPE(HALO2LIST_ll), POINTER      :: TZ_PSRC_HALO2_ll         ! halo2 for PSRC
 TYPE(HALO2LIST_ll), POINTER      :: TZ_PHAT_HALO2_ll         ! halo2 for ZPHAT
-INTEGER                          :: ILUOUT,IRESP             ! for prints
 INTEGER                          :: IIW,IIA
 !END JUAN PPM_LL
 !

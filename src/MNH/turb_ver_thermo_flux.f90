@@ -106,7 +106,7 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS       ! cumulated source for rt
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PTHLP      ! guess of thl at t+ deltat
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PRP        ! guess of r at t+ deltat
 !
-REAL, DIMENSION(:,:,:),   INTENT(INOUT)::  PTP       ! Dynamic and thermal
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PTP       ! Dynamic and thermal
                                                      ! TKE production terms
 !
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PWTH       ! heat flux
@@ -438,7 +438,7 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS       ! cumulated source for rt
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PTHLP      ! guess of thl at t+ deltat
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PRP        ! guess of r at t+ deltat
 !
-REAL, DIMENSION(:,:,:),   INTENT(INOUT)::  PTP       ! Dynamic and thermal
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PTP       ! Dynamic and thermal
                                                      ! TKE production terms
 !
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PWTH       ! heat flux

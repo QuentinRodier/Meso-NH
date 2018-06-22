@@ -1371,7 +1371,7 @@ END IF
       XTSTEP,TPFILE,                                                        &
       XDXX,XDYY,XDZZ,XDZX,XDZY,XZZ,                                         &
       XDIRCOSXW,XDIRCOSYW,XDIRCOSZW,XCOSSLOPE,XSINSLOPE,                    &
-      XRHODJ,XTHVREF,XRHODREF,                                              &
+      XRHODJ,XTHVREF,                                                       &
       ZSFTH,ZSFRV,ZSFSV,ZSFU,ZSFV,                                          &
       XPABST,XUT,XVT,XWT,XTKET,XSVT,XSRCT,XBL_DEPTH,XSBL_DEPTH,             &
       XCEI,XCEI_MIN,XCEI_MAX,XCOEF_AMPL_SAT,                                &
