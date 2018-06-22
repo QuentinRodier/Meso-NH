@@ -6,6 +6,8 @@ set -x
 
 ln -sf ../002_mesonh/ARM__.1.CEN4T.000.* .
 
+rm -f visu_ARM.*.png
+
 ncl  plot_arm.ncl
 display visu_ARM.000001.png
 display visu_ARM.000002.png

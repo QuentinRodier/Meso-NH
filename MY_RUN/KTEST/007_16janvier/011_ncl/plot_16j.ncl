@@ -161,13 +161,13 @@ wt1@lon2d = lon2d
 zhat= fichier1->ZHAT(1:kmax+1)
 
 ; Unstagger zhat (from grid 4 to 1)
-    nzhat=new(kmax,double)
+    nzhat=new(kmax,typeof(pabst1))
     do k=0,kmax-1
      nzhat(k)=(zhat(k)+zhat(k+1))/2.
     end do
 
 ; Create Z3D == ALT
-    alt=new(dimsizes(tht1),double)
+    alt=new(dimsizes(tht1),typeof(pabst1))
     zcoef=1.-zs/nzhat(kmax-1)
 
     do i=0,imax-1

@@ -6,6 +6,8 @@ set -x
 
 ln -sf ../003_mesonh/REUNI.1.00A20.004.nc .
 
+rm -f visu_Reunion.*.png
+
 ncl plot_Reunion.ncl
 display visu_Reunion.000001.png
 display visu_Reunion.000002.png
