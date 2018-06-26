@@ -184,8 +184,8 @@ ZRTM_F (:,:) = MZM_MF(KKA,KKU,KKL,PRTM (:,:))
 ZTHLM_F(:,:) = MZM_MF(KKA,KKU,KKL,PTHLM(:,:))
 ZQTM   (:,:) = ZRTM_F (:,:)/(1.+ZRTM_F (:,:))
 ZQT_UP (:,:) = PRT_UP (:,:)/(1.+PRT_UP (:,:))
-ZTHS_UP(:,:) = PTHL_UP(:,:)*(1.+XLAMBDA*ZQT_UP(:,:))
-ZTHSM  (:,:) = ZTHLM_F(:,:)*(1.+XLAMBDA*ZQTM(:,:))
+ZTHS_UP(:,:) = PTHL_UP(:,:)*(1.+XLAMBDA_MF*ZQT_UP(:,:))
+ZTHSM  (:,:) = ZTHLM_F(:,:)*(1.+XLAMBDA_MF*ZQTM(:,:))
 
 PFLXZTHLMF(:,:)  = PEMF(:,:)*(PTHL_UP(:,:)-MZM_MF(KKA,KKU,KKL,PTHLM(:,:)))  ! ThetaL
 PFLXZRMF(:,:)    = PEMF(:,:)*(PRT_UP (:,:)-MZM_MF(KKA,KKU,KKL,PRTM (:,:)))  ! Rt
@@ -213,7 +213,7 @@ DO JK=KKB,KKE-KKL,KKL
   PRTDT (:,JK) = (PFLXZRMF  (:,JK  ) - PFLXZRMF  (:,JK+KKL)) / PRHODJ(:,JK)
   ZQTDT (:,JK) = PRTDT (:,JK)/(1.+ ZRTM_F (:,JK)*ZRTM_F (:,JK))
   ZTHSDT(:,JK) = (ZFLXZTHSMF(:,JK  ) - ZFLXZTHSMF(:,JK+KKL)) / PRHODJ(:,JK)
-  PTHLDT(:,JK) = ZTHSDT(:,JK)/(1.+XLAMBDA*ZQTM(:,JK)) - ZTHLM_F(:,JK)*XLAMBDA*ZQTDT(:,JK)
+  PTHLDT(:,JK) = ZTHSDT(:,JK)/(1.+XLAMBDA_MF*ZQTM(:,JK)) - ZTHLM_F(:,JK)*XLAMBDA_MF*ZQTDT(:,JK)
 END DO
 
 IF (OMIXUV) THEN

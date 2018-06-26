@@ -348,7 +348,7 @@ PTHL_UP(:,KKB)= ZTHLM_F(:,KKB)+MAX(0.,MIN(ZTMAX,(PSFTH(:)/SQRT(ZTKEM_F(:,KKB)))*
 PRT_UP(:,KKB) = ZRTM_F(:,KKB)+MAX(0.,MIN(ZRMAX,(PSFRV(:)/SQRT(ZTKEM_F(:,KKB)))*XALP_PERT)) 
 
 ZQT_UP(:) = PRT_UP(:,KKB)/(1.+PRT_UP(:,KKB))
-ZTHS_UP(:,KKB)=PTHL_UP(:,KKB)*(1.+XLAMBDA*ZQT_UP(:))
+ZTHS_UP(:,KKB)=PTHL_UP(:,KKB)*(1.+XLAMBDA_MF*ZQT_UP(:))
 
 ZTHM_F (:,:) = MZM_MF(KKA,KKU,KKL,PTHM (:,:))
 ZPRES_F(:,:) = MZM_MF(KKA,KKU,KKL,PPABSM(:,:))
@@ -499,13 +499,13 @@ DO JK=KKB,KKE-KKL,KKL
     ZMIX3(:) = (PZZ(:,JK+KKL)-PZZ(:,JK))*PDETR(:,JK) !&                   
            
     ZQTM(:) = PRTM(:,JK)/(1.+PRTM(:,JK))            
-    ZTHSM(:,JK) = PTHLM(:,JK)*(1.+XLAMBDA*ZQTM(:))
+    ZTHSM(:,JK) = PTHLM(:,JK)*(1.+XLAMBDA_MF*ZQTM(:))
     ZTHS_UP(:,JK+KKL)=(ZTHS_UP(:,JK)*(1.-0.5*ZMIX2(:)) + ZTHSM(:,JK)*ZMIX2(:)) &
                           /(1.+0.5*ZMIX2(:))   
     PRT_UP(:,JK+KKL)=(PRT_UP (:,JK)*(1.-0.5*ZMIX2(:)) + PRTM(:,JK)*ZMIX2(:))  &
                           /(1.+0.5*ZMIX2(:))
     ZQT_UP(:) = PRT_UP(:,JK+KKL)/(1.+PRT_UP(:,JK+KKL))
-    PTHL_UP(:,JK+KKL)=ZTHS_UP(:,JK+KKL)/(1.+XLAMBDA*ZQT_UP(:))                      
+    PTHL_UP(:,JK+KKL)=ZTHS_UP(:,JK+KKL)/(1.+XLAMBDA_MF*ZQT_UP(:))                      
   ENDWHERE
   
 

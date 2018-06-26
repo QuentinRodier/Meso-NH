@@ -84,7 +84,7 @@ REAL          :: XR      ! Aspect ratio of updraft
 
 !  Thermodynamic parameter
 
-REAL          :: XLAMBDA      ! Lambda to compute ThetaS1 from ThetaL
+REAL          :: XLAMBDA_MF      ! Lambda to compute ThetaS1 from ThetaL
 
 END TYPE PARAM_MFSHALL_t
 
@@ -118,7 +118,7 @@ REAL, POINTER          :: XB=>NULL()
 REAL, POINTER          :: XC=>NULL()  
 REAL, POINTER          :: XBETA1=>NULL()
 REAL, POINTER          :: XR=>NULL() 
-REAL, POINTER          :: XLAMBDA=>NULL() 
+REAL, POINTER          :: XLAMBDA_MF=>NULL() 
 
 CONTAINS
 
@@ -156,7 +156,7 @@ XB=>PARAM_MFSHALL_MODEL(KTO)%XB
 XC=>PARAM_MFSHALL_MODEL(KTO)%XC
 XBETA1=>PARAM_MFSHALL_MODEL(KTO)%XBETA1
 XR=>PARAM_MFSHALL_MODEL(KTO)%XR
-XLAMBDA=>PARAM_MFSHALL_MODEL(KTO)%XLAMBDA
+XLAMBDA_MF=>PARAM_MFSHALL_MODEL(KTO)%XLAMBDA_MF
 
 END SUBROUTINE PARAM_MFSHALL_GOTO_MODEL
 
