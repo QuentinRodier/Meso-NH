@@ -198,7 +198,7 @@ INTEGER                            :: IXOR,IYOR,JI_ll,JJ_ll
 NAMELIST/NAM_PERT_PRE/CPERT_KIND,XAMPLITH,       &! Perturbation parameters
                       XAMPLIRV,XCENTERZ,XRADX,   &!
                       XRADY,XRADZ,LSET_RHU,      &
-                      XAMPLIUV,XAMPLIWH,NKWH
+                      XAMPLIUV,XAMPLIWH,NKWH,LWH_LBXU,LWH_LBYV
 !-------------------------------------------------------------------------------
 !
 !*	 1.     PROLOGUE : 
@@ -447,7 +447,6 @@ SELECT CASE(CPERT_KIND)
       XUT(:,:,JK) = XUT(:,:,JK) +  XAMPLIWH * ZWHITE(:,:)
       XVT(:,:,JK) = XVT(:,:,JK) +  XAMPLIWH * ZWHITE(:,:)
     ENDIF
-    DEALLOCATE(ZWHITE)
 !
  END DO
 !
@@ -470,13 +469,14 @@ IF (LWH_LBYV) THEN
   ALLOCATE(ZWHITE_ll(IIU_ll,IJU_ll))
   CALL GATHERALL_FIELD_ll('XY',ZWHITE,ZWHITE_ll,IRESP)
   DO JK=1,MIN(IKU,IJU_ll)
-    DO JJ=1,SIZE(XLBXVM,1)
+    DO JJ=1,SIZE(XLBXVM,2)
      XLBXVM(:,JJ,JK) = XLBXVM(:,JJ,JK) + XAMPLIWH * ZWHITE_ll(JK,:)
     END DO
   END DO
   DEALLOCATE(ZWHITE_ll)
 END IF
 
+    DEALLOCATE(ZWHITE)
 
  CALL GET_HALO(XTHT)
  CALL GET_HALO(XUT)
