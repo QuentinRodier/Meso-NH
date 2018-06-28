@@ -13,8 +13,9 @@
 !
 INTERFACE
 !
-      SUBROUTINE CONDSAMP (PSFSV, KLUOUT, KVERB)
+      SUBROUTINE CONDSAMP (PTSTEP, PSFSV, KLUOUT, KVERB)
 IMPLICIT NONE
+REAL,  INTENT(IN)            ::  PTSTEP  ! Time step
 REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PSFSV ! surface flux of scalars
 INTEGER, INTENT(IN)          :: KLUOUT     ! unit for output listing count
 INTEGER, INTENT(IN)          :: KVERB      ! verbosity level
@@ -25,7 +26,7 @@ END INTERFACE
 !
 END MODULE MODI_CONDSAMP
 !     ######spl
-      SUBROUTINE CONDSAMP (PSFSV, KLUOUT, KVERB)
+      SUBROUTINE CONDSAMP (PTSTEP, PSFSV, KLUOUT, KVERB)
 !     ############################################################
 !
 !
@@ -60,8 +61,9 @@ END MODULE MODI_CONDSAMP
 USE MODD_PARAMETERS , ONLY : JPVEXT
 USE MODD_NSV        , ONLY : NSV_CSBEG, NSV_CSEND, NSV_CS
 USE MODD_CONF_n     , ONLY : LUSERC
-USE MODD_FIELD_n    , ONLY : XSVT, XRT
+USE MODD_FIELD_n    , ONLY : XSVT, XRT,XRSVS
 USE MODD_GRID_n     , ONLY : XZHAT
+USE MODD_REF_n      , ONLY : XRHODJ
 USE MODD_DYN        , ONLY : XTSTEP_MODEL1
 USE MODD_CONDSAMP
 USE MODE_ll
@@ -74,6 +76,7 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
+REAL,  INTENT(IN)            ::  PTSTEP  ! Time step
 REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PSFSV ! surface flux of scalars
 INTEGER, INTENT(IN)          :: KLUOUT     ! unit for output listing count
 INTEGER, INTENT(IN)          :: KVERB      ! verbosity level
@@ -86,6 +89,7 @@ INTEGER :: IIU, IJU, IKU                      ! dimensional indexes
 INTEGER :: JK,JSV,IBOT,ITOP ! Loop indice
 INTEGER :: IINFO_ll       ! return code of parallel routine
 REAL, DIMENSION(SIZE(XRT,1),SIZE(XRT,2),SIZE(XRT,3)) :: ZRT
+REAL, DIMENSION(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),SIZE(XSVT,4)) :: ZSVT
 !
 !--------------------------------------------------------------------------------------
 !
@@ -99,6 +103,7 @@ IKB = 1 + JPVEXT
 IKE = IKU - JPVEXT
 CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 !
+ZSVT(:,:,:,:) = XSVT(:,:,:,:)
 !
 !
 !
@@ -142,7 +147,7 @@ DO JSV=NSV_CSBEG, NSV_CSEND
     DO JK=1,IKE
      IF ((XZHAT(JK) > XZHAT(IBOT) - XHEIGHT_BASE - XDEPTH_BASE/2. ).AND. &
          (XZHAT(JK) < XZHAT(IBOT) - XHEIGHT_BASE + XDEPTH_BASE/2. )) THEN
-         XSVT(IIB:IIE,IJB:IJE,JK,JSV) =  &
+         ZSVT(IIB:IIE,IJB:IJE,JK,JSV) =  &
            XSVT(IIB:IIE,IJB:IJE,JK,JSV)+1.  
      END IF
     END DO
@@ -154,7 +159,7 @@ DO JSV=NSV_CSBEG, NSV_CSEND
     DO JK=1,IKE
      IF ((XZHAT(JK) > XZHAT(ITOP) + XHEIGHT_TOP - XDEPTH_TOP/2. ).AND. &
          (XZHAT(JK) < XZHAT(ITOP) + XHEIGHT_TOP + XDEPTH_TOP/2. )) THEN
-         XSVT(IIB:IIE,IJB:IJE,JK,JSV) = &
+         ZSVT(IIB:IIE,IJB:IJE,JK,JSV) = &
            XSVT(IIB:IIE,IJB:IJE,JK,JSV)+1. 
      END IF
     END DO
@@ -164,15 +169,17 @@ END DO
          !
 !
 ! correction d'eventuelle concentration négative
-WHERE (XSVT(:,:,:,NSV_CSBEG:NSV_CSEND) <0.0) &
-       XSVT(:,:,:,NSV_CSBEG:NSV_CSEND)=0.0
+WHERE (ZSVT(:,:,:,NSV_CSBEG:NSV_CSEND) <0.0) &
+       ZSVT(:,:,:,NSV_CSBEG:NSV_CSEND)=0.0
 !
 !
 !  2: Radioactive decrease            
 !
 DO JSV=NSV_CSBEG, NSV_CSEND
-   XSVT(:,:,:,JSV) = XSVT(:,:,:,JSV) *         &
-           EXP(-1.*XTSTEP_MODEL1/XRADIO(JSV-NSV_CSBEG+1)) 
+   ZSVT(:,:,:,JSV) = ZSVT(:,:,:,JSV) *         &
+           EXP(-1.*XTSTEP_MODEL1/XRADIO(JSV-NSV_CSBEG+1))
+   XRSVS(:,:,:,JSV) = XRSVS(:,:,:,JSV) + &
+        XRHODJ(:,:,:)*(ZSVT(:,:,:,JSV)-XSVT(:,:,:,JSV))/PTSTEP
 END DO
 !-------------------------------------------------------------------------------
 !
