@@ -280,6 +280,90 @@ CONTAINS
     c = ddc%R
   END FUNCTION SUM_DD_R2_LL
 
+ FUNCTION SUM_DD_R2_R1_ll (a) RESULT(c)
+    !----------------------------------------------------------------------
+    ! 
+    ! Purpose: 
+    ! Modification of original codes written by David H. Bailey    
+    ! This subroutine computes c(1:n2) = sum_dd(a(:,1:n2)) on all processors
+    ! 
+    !----------------------------------------------------------------------
+    USE MODE_ll , ONLY : REDUCESUM_ll
+    !
+    ! Arguments
+    !
+    REAL,DIMENSION      (:,:), INTENT(in)          :: a     ! input
+    REAL,DIMENSION(SIZE(a,2))                      :: c     ! result
+    !
+    ! Local workspace
+    !
+    TYPE(DOUBLE_DOUBLE),DIMENSION(SIZE(a,2)) :: ddb   
+    REAL               ,DIMENSION(SIZE(a,2)) :: e, t1, t2
+    INTEGER                                  :: i,j
+    INTEGER                                  :: IINFO_ll 
+    !
+    !-----------------------------------------------------------------------
+    !
+    !   Compute dda + ddb using Knuth's trick.
+    ddb(:)%R = 0.0
+    ddb(:)%E = 0.0
+    DO j=1,SIZE(a,2)
+       DO i=1,SIZE(a,1)
+          t1(j) = a(i,j)  + ddb(j)%R
+          e(j)  = t1(j) - a(i,j)
+          t2(j) = ((ddb(j)%R - e(j)) + (a(i,j) - (t1(j) - e(j)))) &
+               + ddb(j)%E
+          !
+          !   The result is t1 + t2, after normalization.
+          ddb(j)%R = t1(j) + t2(j)
+          ddb(j)%E = t2(j) - ((t1(j) + t2(j)) - t1(j)) 
+       END DO
+    END DO
+    CALL REDUCESUM_ll(ddb,IINFO_ll)
+    c(:) = ddb(:)%R
+  END FUNCTION SUM_DD_R2_R1_ll
+
+ FUNCTION SUM_DD_R1_ll (a) RESULT(c)
+    !----------------------------------------------------------------------
+    ! 
+    ! Purpose: 
+    ! Modification of original codes written by David H. Bailey    
+    ! This subroutine computes c = sum_dd(a(:)) on all processors
+    ! 
+    !----------------------------------------------------------------------
+    USE MODE_ll , ONLY : REDUCESUM_ll
+    !
+    ! Arguments
+    !
+    REAL,DIMENSION        (:), INTENT(in)          :: a     ! input
+    REAL                                           :: c     ! result
+    !
+    ! Local workspace
+    !
+    TYPE(DOUBLE_DOUBLE)                      :: ddb   
+    REAL                                     :: e, t1, t2
+    INTEGER                                  :: i,j
+    INTEGER                                  :: IINFO_ll 
+    !
+    !-----------------------------------------------------------------------
+    !
+    !   Compute dda + ddb using Knuth's trick.
+    ddb%R = 0.0
+    ddb%E = 0.0
+    DO i=1,SIZE(a,1)
+       t1 = a(i)  + ddb%R
+       e  = t1 - a(i)
+       t2 = ((ddb%R - e) + (a(i) - (t1 - e))) &
+            + ddb%E
+       !
+       !   The result is t1 + t2, after normalization.
+       ddb%R = t1 + t2
+       ddb%E = t2 - ((t1 + t2) - t1) 
+    END DO
+    CALL REDUCESUM_ll(ddb,IINFO_ll)
+    c = ddb%R
+  END FUNCTION SUM_DD_R1_ll
+
 !!$  ELEMENTAL FUNCTION ADD_DD_R (ddb, a) RESULT(ddc)
 !!$    !----------------------------------------------------------------------
 !!$    ! 

@@ -187,6 +187,7 @@ END MODULE MODI_PPM
 !!    
 !!    11.5.2006.  T. Maric - original version
 !!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
+!!      J.Escobar 28/06/2018: limit computation on TAB(:,IJS:IJN,:) to avoid unneeded NaN
 !!
 !-------------------------------------------------------------------------------
 !
@@ -250,6 +251,7 @@ IJN=IJE
 CALL GET_HALO(PSRC)
 ZFPOS=PSRC
 ZFNEG=PSRC
+!ZQR0 = 0.0
 !
 !-------------------------------------------------------------------------------
 !
@@ -318,34 +320,34 @@ CASE ('CYCL','WALL')          ! In that case one must have HLBCX(1) == HLBCX(2)
 !
 ! determine initial coefficients of the parabolae
 !
-   ZDQ = ZQR0 - ZQL0
-   ZQ60 = 6.0*(PSRC - 0.5*(ZQL0 + ZQR0))
+   ZDQ(:,IJS:IJN,:) = ZQR0(:,IJS:IJN,:) - ZQL0(:,IJS:IJN,:)
+   ZQ60(:,IJS:IJN,:) = 6.0*(PSRC(:,IJS:IJN,:) - 0.5*(ZQL0(:,IJS:IJN,:) + ZQR0(:,IJS:IJN,:)))
 !
 ! initialize final parabolae parameters
 !
-   ZQL = ZQL0
-   ZQR = ZQR0
-   ZQ6 = ZQ60 
+   ZQL(:,IJS:IJN,:) = ZQL0(:,IJS:IJN,:)
+   ZQR(:,IJS:IJN,:) = ZQR0(:,IJS:IJN,:)
+   ZQ6(:,IJS:IJN,:) = ZQ60(:,IJS:IJN,:) 
 !
 ! eliminate over and undershoots and create qL and qR as in Lin96
 !
-   WHERE ( ZDMQ == 0.0 )
-      ZQL = PSRC
-      ZQR = PSRC
-      ZQ6 = 0.0
-   ELSEWHERE ( ZQ60*ZDQ < -(ZDQ)**2 )
-      ZQ6 = 3.0*(ZQL0 - PSRC)
-      ZQR = ZQL0 - ZQ6
-      ZQL = ZQL0
-   ELSEWHERE ( ZQ60*ZDQ > (ZDQ)**2 )
-      ZQ6 = 3.0*(ZQR0 - PSRC)
-      ZQL = ZQR0 - ZQ6
-      ZQR = ZQR0
+   WHERE ( ZDMQ(:,IJS:IJN,:) == 0.0 )
+      ZQL(:,IJS:IJN,:) = PSRC(:,IJS:IJN,:)
+      ZQR(:,IJS:IJN,:) = PSRC(:,IJS:IJN,:)
+      ZQ6(:,IJS:IJN,:) = 0.0
+   ELSEWHERE ( ZQ60(:,IJS:IJN,:)*ZDQ(:,IJS:IJN,:) < -(ZDQ(:,IJS:IJN,:))**2 )
+      ZQ6(:,IJS:IJN,:) = 3.0*(ZQL0(:,IJS:IJN,:) - PSRC(:,IJS:IJN,:))
+      ZQR(:,IJS:IJN,:) = ZQL0(:,IJS:IJN,:) - ZQ6(:,IJS:IJN,:)
+      ZQL(:,IJS:IJN,:) = ZQL0(:,IJS:IJN,:)
+   ELSEWHERE ( ZQ60(:,IJS:IJN,:)*ZDQ(:,IJS:IJN,:) > (ZDQ(:,IJS:IJN,:))**2 )
+      ZQ6(:,IJS:IJN,:) = 3.0*(ZQR0(:,IJS:IJN,:) - PSRC(:,IJS:IJN,:))
+      ZQL(:,IJS:IJN,:) = ZQR0(:,IJS:IJN,:) - ZQ6(:,IJS:IJN,:)
+      ZQR(:,IJS:IJN,:) = ZQR0(:,IJS:IJN,:)
    END WHERE
 !
 ! recalculate coefficients of the parabolae
 !
-   ZDQ = ZQR - ZQL
+   ZDQ(:,IJS:IJN,:) = ZQR(:,IJS:IJN,:) - ZQL(:,IJS:IJN,:)
 !
 ! and finally calculate fluxes for the advection
 !
@@ -457,34 +459,34 @@ CASE('OPEN')
 !
 ! determine initial coefficients of the parabolae
 !
-   ZDQ = ZQR0 - ZQL0
-   ZQ60 = 6.0*(PSRC - 0.5*(ZQL0 + ZQR0))
+   ZDQ(:,IJS:IJN,:) = ZQR0(:,IJS:IJN,:) - ZQL0(:,IJS:IJN,:)
+   ZQ60(:,IJS:IJN,:) = 6.0*(PSRC(:,IJS:IJN,:) - 0.5*(ZQL0(:,IJS:IJN,:) + ZQR0(:,IJS:IJN,:)))
 !
 ! initialize final parabolae parameters
 !
-   ZQL = ZQL0
-   ZQR = ZQR0
-   ZQ6 = ZQ60
+   ZQL(:,IJS:IJN,:) = ZQL0(:,IJS:IJN,:)
+   ZQR(:,IJS:IJN,:) = ZQR0(:,IJS:IJN,:)
+   ZQ6(:,IJS:IJN,:) = ZQ60(:,IJS:IJN,:)
 !
 ! eliminate over and undershoots and create qL and qR as in Lin96
 !
-   WHERE ( ZDMQ == 0.0 )
-      ZQL = PSRC
-      ZQR = PSRC
-      ZQ6 = 0.0
-   ELSEWHERE ( ZQ60*ZDQ < -(ZDQ)**2 )
-      ZQ6 = 3.0*(ZQL0 - PSRC)
-      ZQR = ZQL0 - ZQ6
-      ZQL = ZQL0
-   ELSEWHERE ( ZQ60*ZDQ > (ZDQ)**2 )
-      ZQ6 = 3.0*(ZQR0 - PSRC)
-      ZQL = ZQR0 - ZQ6
-      ZQR = ZQR0
+   WHERE ( ZDMQ(:,IJS:IJN,:) == 0.0 )
+      ZQL(:,IJS:IJN,:) = PSRC(:,IJS:IJN,:)
+      ZQR(:,IJS:IJN,:) = PSRC(:,IJS:IJN,:)
+      ZQ6(:,IJS:IJN,:) = 0.0
+   ELSEWHERE ( ZQ60(:,IJS:IJN,:)*ZDQ(:,IJS:IJN,:) < -(ZDQ(:,IJS:IJN,:))**2 )
+      ZQ6(:,IJS:IJN,:) = 3.0*(ZQL0(:,IJS:IJN,:) - PSRC(:,IJS:IJN,:))
+      ZQR(:,IJS:IJN,:) = ZQL0(:,IJS:IJN,:) - ZQ6(:,IJS:IJN,:)
+      ZQL(:,IJS:IJN,:) = ZQL0(:,IJS:IJN,:)
+   ELSEWHERE ( ZQ60(:,IJS:IJN,:)*ZDQ(:,IJS:IJN,:) > (ZDQ(:,IJS:IJN,:))**2 )
+      ZQ6(:,IJS:IJN,:) = 3.0*(ZQR0(:,IJS:IJN,:) - PSRC(:,IJS:IJN,:))
+      ZQL(:,IJS:IJN,:) = ZQR0(:,IJS:IJN,:) - ZQ6(:,IJS:IJN,:)
+      ZQR(:,IJS:IJN,:) = ZQR0(:,IJS:IJN,:)
    END WHERE
 !
 ! recalculate coefficients of the parabolae
 !
-   ZDQ = ZQR - ZQL
+   ZDQ(:,IJS:IJN,:) = ZQR(:,IJS:IJN,:) - ZQL(:,IJS:IJN,:)
 !
 ! and finally calculate fluxes for the advection
 !
@@ -616,6 +618,7 @@ END FUNCTION PPM_01_X
 !!    
 !!    11.5.2006.  T. Maric - original version
 !!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
+!!      J.Escobar 28/06/2018: limit computation on TAB(IIW:IIA,:,:) to avoid unneeded NaN 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -742,34 +745,34 @@ CASE ('CYCL','WALL')          ! In that case one must have HLBCY(1) == HLBCY(2)
 !
 ! determine initial coefficients of the parabolae
 !
-   ZDQ = ZQR0 - ZQL0
-   ZQ60 = 6.0*(PSRC - 0.5*(ZQL0 + ZQR0))
+   ZDQ(IIW:IIA,:,:) = ZQR0(IIW:IIA,:,:) - ZQL0(IIW:IIA,:,:)
+   ZQ60(IIW:IIA,:,:) = 6.0*(PSRC(IIW:IIA,:,:) - 0.5*(ZQL0(IIW:IIA,:,:) + ZQR0(IIW:IIA,:,:)))
 !
 ! initialize final parabolae parameters
 !
-   ZQL = ZQL0
-   ZQR = ZQR0
-   ZQ6 = ZQ60 
+   ZQL(IIW:IIA,:,:) = ZQL0(IIW:IIA,:,:)
+   ZQR(IIW:IIA,:,:) = ZQR0(IIW:IIA,:,:)
+   ZQ6(IIW:IIA,:,:) = ZQ60(IIW:IIA,:,:) 
 !
 ! eliminate over and undershoots and create qL and qR as in Lin96
 !
-   WHERE ( ZDMQ == 0.0 )
-      ZQL = PSRC
-      ZQR = PSRC
-      ZQ6 = 0.0
-   ELSEWHERE ( ZQ60*ZDQ < -(ZDQ)**2 )
-      ZQ6 = 3.0*(ZQL0 - PSRC)
-      ZQR = ZQL0 - ZQ6
-      ZQL = ZQL0
-   ELSEWHERE ( ZQ60*ZDQ > (ZDQ)**2 )
-      ZQ6 = 3.0*(ZQR0 - PSRC)
-      ZQL = ZQR0 - ZQ6
-      ZQR = ZQR0
+   WHERE ( ZDMQ(IIW:IIA,:,:) == 0.0 )
+      ZQL(IIW:IIA,:,:) = PSRC(IIW:IIA,:,:)
+      ZQR(IIW:IIA,:,:) = PSRC(IIW:IIA,:,:)
+      ZQ6(IIW:IIA,:,:) = 0.0
+   ELSEWHERE ( ZQ60(IIW:IIA,:,:)*ZDQ(IIW:IIA,:,:) < -(ZDQ(IIW:IIA,:,:))**2 )
+      ZQ6(IIW:IIA,:,:) = 3.0*(ZQL0(IIW:IIA,:,:) - PSRC(IIW:IIA,:,:))
+      ZQR(IIW:IIA,:,:) = ZQL0(IIW:IIA,:,:) - ZQ6(IIW:IIA,:,:)
+      ZQL(IIW:IIA,:,:) = ZQL0(IIW:IIA,:,:)
+   ELSEWHERE ( ZQ60(IIW:IIA,:,:)*ZDQ(IIW:IIA,:,:) > (ZDQ(IIW:IIA,:,:))**2 )
+      ZQ6(IIW:IIA,:,:) = 3.0*(ZQR0(IIW:IIA,:,:) - PSRC(IIW:IIA,:,:))
+      ZQL(IIW:IIA,:,:) = ZQR0(IIW:IIA,:,:) - ZQ6(IIW:IIA,:,:)
+      ZQR(IIW:IIA,:,:) = ZQR0(IIW:IIA,:,:)
    END WHERE
 !
 ! recalculate coefficients of the parabolae
 !
-   ZDQ = ZQR - ZQL
+   ZDQ(IIW:IIA,:,:) = ZQR(IIW:IIA,:,:) - ZQL(IIW:IIA,:,:)
 !
 ! and finally calculate fluxes for the advection
 !
@@ -864,34 +867,34 @@ CASE('OPEN')
 !
 ! determine initial coefficients of the parabolae
 !
-   ZDQ = ZQR0 - ZQL0
-   ZQ60 = 6.0*(PSRC - 0.5*(ZQL0 + ZQR0))
+   ZDQ(IIW:IIA,:,:) = ZQR0(IIW:IIA,:,:) - ZQL0(IIW:IIA,:,:)
+   ZQ60(IIW:IIA,:,:) = 6.0*(PSRC(IIW:IIA,:,:) - 0.5*(ZQL0(IIW:IIA,:,:) + ZQR0(IIW:IIA,:,:)))
 !
 ! initialize final parabolae parameters
 !
-   ZQL = ZQL0
-   ZQR = ZQR0
-   ZQ6 = ZQ60 
+   ZQL(IIW:IIA,:,:) = ZQL0(IIW:IIA,:,:)
+   ZQR(IIW:IIA,:,:) = ZQR0(IIW:IIA,:,:)
+   ZQ6(IIW:IIA,:,:) = ZQ60(IIW:IIA,:,:) 
 !
 ! eliminate over and undershoots and create qL and qR as in Lin96
 !
-   WHERE ( ZDMQ == 0.0 )
-      ZQL = PSRC
-      ZQR = PSRC
-      ZQ6 = 0.0
-   ELSEWHERE ( ZQ60*ZDQ < -(ZDQ)**2 )
-      ZQ6 = 3.0*(ZQL0 - PSRC)
-      ZQR = ZQL0 - ZQ6
-      ZQL = ZQL0
-   ELSEWHERE ( ZQ60*ZDQ > (ZDQ)**2 )
-      ZQ6 = 3.0*(ZQR0 - PSRC)
-      ZQL = ZQR0 - ZQ6
-      ZQR = ZQR0
+   WHERE ( ZDMQ(IIW:IIA,:,:) == 0.0 )
+      ZQL(IIW:IIA,:,:) = PSRC(IIW:IIA,:,:)
+      ZQR(IIW:IIA,:,:) = PSRC(IIW:IIA,:,:)
+      ZQ6(IIW:IIA,:,:) = 0.0
+   ELSEWHERE ( ZQ60(IIW:IIA,:,:)*ZDQ(IIW:IIA,:,:) < -(ZDQ(IIW:IIA,:,:))**2 )
+      ZQ6(IIW:IIA,:,:) = 3.0*(ZQL0(IIW:IIA,:,:) - PSRC(IIW:IIA,:,:))
+      ZQR(IIW:IIA,:,:) = ZQL0(IIW:IIA,:,:) - ZQ6(IIW:IIA,:,:)
+      ZQL(IIW:IIA,:,:) = ZQL0(IIW:IIA,:,:)
+   ELSEWHERE ( ZQ60(IIW:IIA,:,:)*ZDQ(IIW:IIA,:,:) > (ZDQ(IIW:IIA,:,:))**2 )
+      ZQ6(IIW:IIA,:,:) = 3.0*(ZQR0(IIW:IIA,:,:) - PSRC(IIW:IIA,:,:))
+      ZQL(IIW:IIA,:,:) = ZQR0(IIW:IIA,:,:) - ZQ6(IIW:IIA,:,:)
+      ZQR(IIW:IIA,:,:) = ZQR0(IIW:IIA,:,:)
    END WHERE
 !
 ! recalculate coefficients of the parabolae
 !
-   ZDQ = ZQR - ZQL
+   ZDQ(IIW:IIA,:,:) = ZQR(IIW:IIA,:,:) - ZQL(IIW:IIA,:,:)
 !
 ! and finally calculate fluxes for the advection
 !!$   ZFPOS(:,IJB+1:IJE+1,:) = ZQR(:,IJB:IJE,:) - 0.5*PCR(:,IJB+1:IJE+1,:) * &            

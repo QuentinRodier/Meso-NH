@@ -114,7 +114,8 @@ CONTAINS
 !!      J.Escobar 29/06/2017  : Check if Pressure Decreasing with height <-> elsif PB & STOP 
 !!      Q.LIBOIS  06/2017     : correction on CLOUD_ONLY
 !!      Q.Libois  02/2018     : ECRAD
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      J.Escobar 28/06/2018 : Reproductible parallelisation of CLOUD_ONLY case
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -150,6 +151,7 @@ USE MODE_DUSTOPT
 USE MODE_FIELD,       ONLY: TFIELDDATA,TYPEREAL
 USE MODE_FMWRIT
 USE MODE_ll
+USE MODE_REPRO_SUM, ONLY : SUM_DD_R2_R1_ll,SUM_DD_R1_ll
 !
 #ifdef MNH_PGI
 USE MODE_PACK_PGI
@@ -161,6 +163,7 @@ USE MODI_AEROOPT_GET
 USE MODI_ECMWF_RADIATION_VERS2
 USE MODI_ECRAD_INTERFACE
 USE MODI_SUM_ll,      ONLY: GMINLOC_ll, MIN_ll
+USE MODD_VAR_ll,      ONLY: IP
 !  
 IMPLICIT NONE
 !
@@ -538,6 +541,11 @@ LOGICAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2)) :: GCLOUD_SURF
 !
 REAL(KIND=JPRB), DIMENSION(:),   ALLOCATABLE :: ZLON,ZLAT
 REAL(KIND=JPRB), DIMENSION(:),   ALLOCATABLE :: ZLON_SPLIT,ZLAT_SPLIT
+!
+INTEGER                            :: ICLEAR_COL_ll
+INTEGER, DIMENSION(:), ALLOCATABLE :: INDEX_ICLEAR_COL
+REAL, DIMENSION(KFLEV)             :: ZT_CLEAR_DD  ! ensemble mean clear-sky temperature
+REAL                               :: ZCLEAR_COL_ll , ZDLON_ll
 !-------------------------------------------------------------------------
 !-------------------------------------------------------------------------
 !-------------------------------------------------------------------------
@@ -1169,13 +1177,20 @@ IF(OCLOUD_ONLY .OR. OCLEAR_SKY) THEN
     GCLEAR_2D(:) = .FALSE.
   END WHERE
   !
-  !
   ICLEAR_COL = COUNT( GCLEAR_2D(:) )  ! number of clear sky columns
   !
+  ALLOCATE(INDEX_ICLEAR_COL(ICLEAR_COL))
+  IIJ = 0
+  DO JI=1,KDLON
+     IF ( GCLEAR_2D(JI) ) THEN
+         IIJ = IIJ + 1
+         INDEX_ICLEAR_COL(IIJ) = JI
+     END IF
+  END DO
 
   IF( ICLEAR_COL == KDLON ) THEN ! No cloud case so only the mean clear-sky
-    GCLEAR_2D(1) = .FALSE.       !           column is selected
-    ICLEAR_COL = KDLON-1
+!!$    GCLEAR_2D(1) = .FALSE.       !           column is selected
+!!$    ICLEAR_COL = KDLON-1
     GNOCL = .TRUE.               ! TRUE if no cloud at all
   ELSE
     GNOCL = .FALSE.
@@ -1184,41 +1199,48 @@ IF(OCLOUD_ONLY .OR. OCLEAR_SKY) THEN
   GCLEAR(:,:) = SPREAD( GCLEAR_2D(:),DIM=2,NCOPIES=KFLEV )  ! vertical extension of clear columns 2D map
   ICLOUD_COL = KDLON - ICLEAR_COL                           ! number of  cloudy columns
 !
-  IF( ICLEAR_COL /=0 ) THEN ! at least one clear-sky column exists -> average profiles on clear columns
-    ZT_CLEAR(:)  = SUM( ZTAVE(:,:) ,DIM=1,MASK=GCLEAR(:,:) )/FLOAT(ICLEAR_COL)
-    ZP_CLEAR(:)  = SUM( ZPAVE(:,:) ,DIM=1,MASK=GCLEAR(:,:) )/FLOAT(ICLEAR_COL)
-    ZQV_CLEAR(:) = SUM( ZQVAVE(:,:),DIM=1,MASK=GCLEAR(:,:) )/FLOAT(ICLEAR_COL)
-    ZOZ_CLEAR(:) = SUM( ZO3AVE(:,:),DIM=1,MASK=GCLEAR(:,:) )/FLOAT(ICLEAR_COL)
-    ZDP_CLEAR(:) = SUM( ZDPRES(:,:),DIM=1,MASK=GCLEAR(:,:) )/FLOAT(ICLEAR_COL)
+  ZCLEAR_COL_ll = FLOAT(ICLEAR_COL)
+  CALL REDUCESUM_ll(ZCLEAR_COL_ll,IINFO_ll)
+  !ZDLON_ll = KDLON
+  !CALL REDUCESUM_ll(ZDLON_ll,IINFO_ll)
+
+  !IF (IP == 1 )  
+  !print*,",RADIATIOn COULD_ONLY=OCLOUD_ONLY,OCLEAR_SKY,ZCLEAR_COL_ll,ICLEAR_COL,ICLOUD_COL,KDON,ZDLON_ll,GNOCL=", &
+  !     OCLOUD_ONLY,OCLEAR_SKY,ZCLEAR_COL_ll,ICLEAR_COL,ICLOUD_COL,KDLON,ZDLON_ll,GNOCL
+!
+!!$  IF( ICLEAR_COL /=0 ) THEN ! at least one clear-sky column exists -> average profiles on clear columns
+  IF( ZCLEAR_COL_ll /= 0.0  ) THEN ! at least one clear-sky column exists -> average profiles on clear columns
+    ZT_CLEAR(:)  = SUM_DD_R2_R1_ll(ZTAVE(INDEX_ICLEAR_COL(:),:)) / ZCLEAR_COL_ll
+    ZP_CLEAR(:)  = SUM_DD_R2_R1_ll(ZPAVE(INDEX_ICLEAR_COL(:),:)) / ZCLEAR_COL_ll
+    ZQV_CLEAR(:) = SUM_DD_R2_R1_ll(ZQVAVE(INDEX_ICLEAR_COL(:),:)) / ZCLEAR_COL_ll
+    ZOZ_CLEAR(:) = SUM_DD_R2_R1_ll(ZO3AVE(INDEX_ICLEAR_COL(:),:)) / ZCLEAR_COL_ll
+    ZDP_CLEAR(:) = SUM_DD_R2_R1_ll(ZDPRES(INDEX_ICLEAR_COL(:),:)) / ZCLEAR_COL_ll
+ 
     DO JK1=1,KAER
-      ZAER_CLEAR(:,JK1) = SUM( ZAER(:,:,JK1),DIM=1,MASK=GCLEAR(:,:) )/FLOAT(ICLEAR_COL)
+      ZAER_CLEAR(:,JK1) = SUM_DD_R2_R1_ll(ZAER(INDEX_ICLEAR_COL(:),:,JK1)) / ZCLEAR_COL_ll
     END DO
     !Get an average value for the clear column
     IF(CAOP=='EXPL')THEN
        DO WVL_IDX=1,KSWB_OLD
-          ZPIZA_EQ_CLEAR(:,WVL_IDX) = SUM( ZPIZA_EQ(:,:,WVL_IDX), DIM=1,MASK=GCLEAR(:,:))/FLOAT(ICLEAR_COL)
-          ZCGA_EQ_CLEAR(:,WVL_IDX) = SUM( ZCGA_EQ(:,:,WVL_IDX),DIM=1,MASK=GCLEAR(:,:))/FLOAT(ICLEAR_COL)
-          ZTAUREL_EQ_CLEAR(:,WVL_IDX) = SUM( ZTAUREL_EQ(:,:,WVL_IDX),DIM=1,MASK=GCLEAR(:,:))/FLOAT(ICLEAR_COL)
+          ZPIZA_EQ_CLEAR(:,WVL_IDX)   = SUM_DD_R2_R1_ll(ZPIZA_EQ(  INDEX_ICLEAR_COL(:),:,WVL_IDX)) / ZCLEAR_COL_ll
+          ZCGA_EQ_CLEAR(:,WVL_IDX)    = SUM_DD_R2_R1_ll(ZCGA_EQ(   INDEX_ICLEAR_COL(:),:,WVL_IDX)) / ZCLEAR_COL_ll
+          ZTAUREL_EQ_CLEAR(:,WVL_IDX) = SUM_DD_R2_R1_ll(ZTAUREL_EQ(INDEX_ICLEAR_COL(:),:,WVL_IDX)) / ZCLEAR_COL_ll
        ENDDO
-    ENDIF
-    
+    ENDIF   
     !
-    ZHP_CLEAR(1:KFLEV) =SUM( ZPRES_HL(:,1:KFLEV),DIM=1,MASK=GCLEAR(:,:) )/FLOAT(ICLEAR_COL)
-    ZHT_CLEAR(1:KFLEV)  = SUM( ZT_HL(:,1:KFLEV) ,DIM=1,MASK=GCLEAR(:,:) )/FLOAT(ICLEAR_COL)
+    ZHP_CLEAR(1:KFLEV) = SUM_DD_R2_R1_ll(ZPRES_HL(INDEX_ICLEAR_COL(:),1:KFLEV)) / ZCLEAR_COL_ll
+    ZHT_CLEAR(1:KFLEV) = SUM_DD_R2_R1_ll(ZT_HL   (INDEX_ICLEAR_COL(:),1:KFLEV)) / ZCLEAR_COL_ll
     ! 
-    GCLEAR_SWB(:,:) = SPREAD(GCLEAR_2D(:),DIM=2,NCOPIES=KSWB_MNH)
-    ZALBP_CLEAR(:) = SUM( ZALBP(:,:),DIM=1,MASK=GCLEAR_SWB(:,:) ) &
-         / FLOAT(ICLEAR_COL)
-    ZALBD_CLEAR(:) = SUM( ZALBD(:,:),DIM=1,MASK=GCLEAR_SWB(:,:) ) &
-         / FLOAT(ICLEAR_COL)
-    !
-    ZEMIS_CLEAR  = SUM( ZEMIS(:,1),DIM=1,MASK=GCLEAR_2D(:)) / FLOAT(ICLEAR_COL)
-    ZEMIW_CLEAR  = SUM( ZEMIW(:,1),DIM=1,MASK=GCLEAR_2D(:)) / FLOAT(ICLEAR_COL)
-    ZRMU0_CLEAR  = SUM( ZRMU0(:) ,DIM=1,MASK=GCLEAR_2D(:)) / FLOAT(ICLEAR_COL)
-    ZTS_CLEAR    = SUM( ZTS(:) ,DIM=1,MASK=GCLEAR_2D(:)) / FLOAT(ICLEAR_COL)
-    ZLSM_CLEAR   = SUM( ZLSM(:) ,DIM=1,MASK=GCLEAR_2D(:)) / FLOAT(ICLEAR_COL)  
-    ZLAT_CLEAR   = SUM( ZLAT(:) ,DIM=1,MASK=GCLEAR_2D(:)) / FLOAT(ICLEAR_COL)  
-    ZLON_CLEAR   = SUM( ZLON(:) ,DIM=1,MASK=GCLEAR_2D(:)) / FLOAT(ICLEAR_COL)    
+    ZALBP_CLEAR(:) = SUM_DD_R2_R1_ll(ZALBP(INDEX_ICLEAR_COL(:),:)) / ZCLEAR_COL_ll
+    ZALBD_CLEAR(:) = SUM_DD_R2_R1_ll(ZALBD(INDEX_ICLEAR_COL(:),:)) / ZCLEAR_COL_ll
+    ! 
+    ZEMIS_CLEAR = SUM_DD_R1_ll(ZEMIS(INDEX_ICLEAR_COL(:),1)) / ZCLEAR_COL_ll
+    ZEMIW_CLEAR = SUM_DD_R1_ll(ZEMIW(INDEX_ICLEAR_COL(:),1)) / ZCLEAR_COL_ll
+    ZRMU0_CLEAR = SUM_DD_R1_ll(ZRMU0(INDEX_ICLEAR_COL(:)))   / ZCLEAR_COL_ll
+    ZTS_CLEAR   = SUM_DD_R1_ll(ZTS(INDEX_ICLEAR_COL(:)))     / ZCLEAR_COL_ll
+    ZLSM_CLEAR  = SUM_DD_R1_ll(ZLSM(INDEX_ICLEAR_COL(:)))    / ZCLEAR_COL_ll
+    ZLAT_CLEAR  = SUM_DD_R1_ll(ZLAT(INDEX_ICLEAR_COL(:)))    / ZCLEAR_COL_ll
+    ZLON_CLEAR  = SUM_DD_R1_ll(ZLON(INDEX_ICLEAR_COL(:)))    / ZCLEAR_COL_ll 
 !
   ELSE ! no clear columns -> the first column is chosen, without physical meaning: it will not be
     ! unpacked after the call to the radiation ecmwf routine
