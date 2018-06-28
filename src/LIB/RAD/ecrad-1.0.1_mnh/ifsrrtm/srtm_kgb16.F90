@@ -11,7 +11,7 @@ SUBROUTINE SRTM_KGB16(DIRECTORY)
 
 USE PARKIND1  , ONLY : JPRB
 USE YOMHOOK   , ONLY : LHOOK, DR_HOOK
-USE YOMLUN    , ONLY : NULRAD
+USE YOMLUN    , ONLY : NULRAD , NULOUT
 USE YOMMP0    , ONLY : NPROC, MYPROC
 USE MPL_MODULE, ONLY : MPL_BROADCAST
 USE YOMTAG    , ONLY : MTAGRAD
@@ -37,7 +37,7 @@ IF( MYPROC==1 )THEN
   !IF(CLZZZ /= " ") THEN
   !  CLF1=TRIM(CLZZZ)//"/RADSRTM"
   CLF1 = DIRECTORY // "/RADSRTM"
-  WRITE(0,'(A,A)') 'Reading ',TRIM(CLF1)
+  WRITE(NULOUT,'(A,A)') 'Reading ',TRIM(CLF1)
   ! RRTM and SRTM files from ecrad are in big-endian format.
   ! Here they are covnerted into little-endian at opening
   ! No need for compialtion option export GFORTRAN_CONVERT_UNIT="little_endian;big_endian:145"

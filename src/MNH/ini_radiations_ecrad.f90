@@ -108,6 +108,8 @@ USE MODI_SURRTRF
 !USE MODI_SRTM_INIT
 USE MODD_PARAM_ECRAD_n
 USE YOERDI
+USE MODD_LUNIT_n , ONLY : TLUOUT
+USE YOMLUN    ,ONLY : NULOUT
 #endif
 USE MODD_PARAM_RAD_n, ONLY : XDTRAD
 USE MODD_DYN_n, ONLY : XTSTEP
@@ -157,6 +159,9 @@ REAL, DIMENSION(:,:,:,:), POINTER :: PDST_WL    ! aerosols optical thickness (fr
 LOGICAL, INTENT(IN)  ::   OSUBG_COND ! Switch for sub-grid condensation
 
 #ifdef MNH_ECRAD
+
+! Redirect OUTPUT to MNH OUTPUT_LISTING
+NULOUT = TLUOUT%NLU
 
 ! Initialization of ECMWF still neede because many things intialized through this routine
 CALL INI_RADIATIONS_ECMWF (HINIFILE,HLUOUT,                                           &
