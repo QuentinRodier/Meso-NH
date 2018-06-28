@@ -220,7 +220,7 @@ END SUBROUTINE IO_FILE_OPEN_ll
 
 SUBROUTINE FMOPEN_ll(TPFILE,KRESP,OPARALLELIO,HPROGRAM_ORIG)
 USE MODD_IO_ll, ONLY : ISTDOUT,TFILEDATA
-USE MODE_IO_ll, ONLY : OPEN_ll,GCONFIO
+USE MODE_IO_ll, ONLY : OPEN_ll,GCONFIO,IOFREEFLU,IONEWFLU
 !JUANZ
 USE MODD_CONFZ,ONLY  : NB_PROCIO_R,NB_PROCIO_W
 !JUANZ
@@ -252,6 +252,7 @@ LOGICAL               :: GNAMFI8,GFATER8,GSTATS8
 INTEGER               :: INB_PROCIO
 !JUAN
 LOGICAL               :: GPARALLELIO
+LOGICAL               :: GEXIST_LFI, GEXIST_NC4
 #if defined(MNH_IOCDF4)
 INTEGER(KIND=IDCDF_KIND) :: INCERR
 #endif
@@ -322,6 +323,56 @@ IF (IRESP /= 0) GOTO 1000
 
 IF (TPFILE%LMASTER) THEN
   ! Proc I/O case
+  INQUIRE(FILE=TRIM(TPFILE%CNAME)//'.lfi',EXIST=GEXIST_LFI)
+  INQUIRE(FILE=TRIM(TPFILE%CNAME)//'.nc',EXIST=GEXIST_NC4)
+
+  IF (YACTION == 'READ') THEN
+    IF (.NOT.GEXIST_LFI .AND. .NOT.GEXIST_NC4) &
+      CALL PRINT_MSG(NVERB_FATAL,'IO','FMOPEN_ll',TRIM(TPFILE%CNAME)//': no .nc or .lfi file')
+
+    SELECT CASE (TRIM(TPFILE%CFORMAT))
+      CASE ('NETCDF4')
+        IF (.NOT.GEXIST_NC4 .AND. GEXIST_LFI) THEN
+          CALL PRINT_MSG(NVERB_WARNING,'IO','FMOPEN_ll',TRIM(TPFILE%CNAME)// &
+                         ': .nc file does not exist but .lfi exists -> forced to LFI')
+          TPFILE%CFORMAT='LFI'
+          TPFILE%NLFIFLU = IONEWFLU()
+        END IF
+      CASE ('LFI')
+        IF (.NOT.GEXIST_LFI .AND. GEXIST_NC4) THEN
+          CALL PRINT_MSG(NVERB_WARNING,'IO','FMOPEN_ll',TRIM(TPFILE%CNAME)// &
+                         ': .lfi file does not exist but .nc exists -> forced to NETCDF4')
+          TPFILE%CFORMAT='NETCDF4'
+          CALL IOFREEFLU(INT(TPFILE%NLFIFLU))
+          TPFILE%NLFIFLU = -1
+        END IF
+      CASE ('LFICDF4')
+        IF (GEXIST_NC4) THEN
+          CALL PRINT_MSG(NVERB_WARNING,'IO','FMOPEN_ll',TRIM(TPFILE%CNAME)// &
+                         ': LFICDF4 format is not allowed in READ mode -> forced to NETCDF4')
+          TPFILE%CFORMAT='NETCDF4'
+          IF (TPFILE%NLFIFLU>0) CALL IOFREEFLU(INT(TPFILE%NLFIFLU))
+          TPFILE%NLFIFLU = -1
+        ELSE IF (GEXIST_LFI) THEN
+          CALL PRINT_MSG(NVERB_WARNING,'IO','FMOPEN_ll',TRIM(TPFILE%CNAME)// &
+                         ': LFICDF4 format is not allowed in READ mode -> forced to LFI')
+          TPFILE%CFORMAT='LFI'
+          TPFILE%NLFIFLU = IONEWFLU()
+        END IF
+      CASE DEFAULT
+        IF (GEXIST_NC4) THEN
+          CALL PRINT_MSG(NVERB_ERROR,'IO','FMOPEN_ll',TRIM(TPFILE%CNAME)// &
+                         ': invalid fileformat (-> forced to NETCDF4 if no abort)')
+          TPFILE%CFORMAT='NETCDF4'
+        ELSE IF (GEXIST_LFI) THEN
+          CALL PRINT_MSG(NVERB_ERROR,'IO','FMOPEN_ll',TRIM(TPFILE%CNAME)// &
+                         ': invalid fileformat (-> forced to LFI if no abort)')
+          TPFILE%CFORMAT='LFI'
+          TPFILE%NLFIFLU = IONEWFLU()
+        END IF
+    END SELECT
+  END IF
+
 #if defined(MNH_IOCDF4)
   IF (TPFILE%CFORMAT=='NETCDF4' .OR. TPFILE%CFORMAT=='LFICDF4') THEN
      IF (YACTION == 'READ') THEN
