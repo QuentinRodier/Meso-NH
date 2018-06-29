@@ -453,7 +453,7 @@ IF( INUCT >= 1 ) THEN
       ZZW2(:) = 0.
       ZZW3(:) = 0.
    !
-      WHERE( SUM(ZTMP(:,:),DIM=2)*PTSTEP .GT. 25.E6/ZRHODREF(:) ) 
+      WHERE( SUM(ZTMP(:,:),DIM=2)*PTSTEP .GT. 15.E6/ZRHODREF(:) ) 
          ZZW1(:) = MIN( ZNFS(:,JMOD),MAX( ZTMP(:,JMOD)- ZNAS(:,JMOD) , 0.0 ) )
       ENDWHERE
    !

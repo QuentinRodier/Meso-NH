@@ -394,7 +394,7 @@ IF( INUCT >= 1 ) THEN
       ZZW2(:) = 0.
       ZZW3(:) = 0.
    !
-      WHERE( SUM(ZTMP(:,:),DIM=2) .GT. 25.E6/ZRHODREF(:) ) 
+      WHERE( SUM(ZTMP(:,:),DIM=2) .GT. 15.E6/ZRHODREF(:) ) 
          ZZW1(:) = MIN( ZNFT(:,JMOD),MAX( ZTMP(:,JMOD)- ZNAT(:,JMOD) , 0.0 ) )
       ENDWHERE
    !
