@@ -36,6 +36,8 @@
 !!    MODIFICATIONS
 !!    -------------
 !!     Original     07/2006
+!!     P. Wautelet 04/07/2018: add POINTER attribute to PLMO
+!!                             to allow to pass it even if not associated
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -57,7 +59,7 @@ IMPLICIT NONE
 !              ------------------------
 !
 REAL, DIMENSION(:,:),   INTENT(IN)  :: PZ   ! altitude of full levels
-REAL, DIMENSION(:,:),   INTENT(IN)  :: PLMO ! Monin Obuhkov length
+REAL, DIMENSION(:,:),POINTER, INTENT(IN)  :: PLMO ! Monin Obuhkov length
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PLK  ! Mixing length
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PLEPS! Dissipative length
 LOGICAL, OPTIONAL,      INTENT(IN)  :: ONEUTRAL
