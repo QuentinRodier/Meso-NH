@@ -351,7 +351,8 @@ $(CDF_MOD) :
 	CC="$(CC)" CFLAGS="$(NETCDF_OPT)" CPPFLAGS="${INC_NETCDF}" ${CDF_CONF} LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lhdf5_hl -lhdf5 -lsz -laec -lz" && \
 	$(MAKE) && $(MAKE) install && $(MAKE) clean
 	cd ${DIR_CDFF} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 \
-	FC="$(FC)" FCFLAGS="$(NETCDF_OPT)" CPPFLAGS="${INC_NETCDF}" ${CDF_CONF} LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lnetcdf -lhdf5_hl -lhdf5 -lsz -laec -lz" && \
+	CC="$(CC)" CFLAGS="$(NETCDF_OPT)" FC="$(FC)" FCFLAGS="$(NETCDF_OPT)" \
+	CPPFLAGS="${INC_NETCDF}" ${CDF_CONF} LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lnetcdf -lhdf5_hl -lhdf5 -lsz -laec -lz" && \
 	$(MAKE) && $(MAKE) install && $(MAKE) clean
 
 cleanmaster : cleancdf
