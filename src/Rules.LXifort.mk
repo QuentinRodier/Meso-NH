@@ -48,6 +48,11 @@ OPT0      = $(OPT_BASE) $(OPT_PERF0) $(OPT_CHECK)
 OPT_NOCB  = $(OPT_BASE) $(OPT_PERF0)
 CFLAGS   += -g
 endif
+ifeq "$(OPTLEVEL)" "O2"
+OPT       = $(OPT_BASE) $(OPT_PERF2)
+OPT0      = $(OPT_BASE) $(OPT_PERF0)
+OPT_NOCB  = $(OPT_BASE) $(OPT_PERF2)
+endif
 ifeq "$(OPTLEVEL)" "O2PAR"
 PAR= -parallel -diag-file -par-report2
 OPT       = $(OPT_BASE) $(OPT_PERF2) $(PAR)
@@ -66,6 +71,7 @@ OPT_NOCB  = $(OPT_BASE) $(OPT_PERF3)
 endif
 #
 #
+CC = gcc
 FC = ifort
 ifeq "$(VER_MPI)" "MPIAUTO"
 ifneq "$(findstring TAU,$(XYZ))" ""
