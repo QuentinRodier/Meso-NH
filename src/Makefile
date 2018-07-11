@@ -358,6 +358,10 @@ $(CDF_MOD) :
 cleanmaster : cleancdf
 cleancdf :
 	- [ -d ${CDF_PATH} ] && rm -fr  ${CDF_PATH}
+	cd ${DIR_LIBAEC} && $(MAKE) clean
+	cd ${DIR_HDF} && $(MAKE) clean 
+	cd ${DIR_CDFC} && $(MAKE) clean 
+	cd ${DIR_CDFF} && $(MAKE) clean
 endif
 ##########################################################
 #                                                        #
