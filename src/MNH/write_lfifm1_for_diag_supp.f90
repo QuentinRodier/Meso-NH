@@ -88,6 +88,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG_SUPP
 !!      J.-P. Chaboureau 01/2018 add altitude interpolation
 !!      J.-P. Chaboureau 01/2018 add coarse graining
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      J.-P. Chaboureau 07/2018 bug fix on XEMIS when calling CALL_RTTOVxx
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -848,12 +849,12 @@ END IF
 IF (NRTTOVINFO(1,1) /= NUNDEF) THEN
   PRINT*,'YOU ASK FOR BRIGHTNESS TEMPERATURE COMPUTED by RTTOV code'
 #ifdef MNH_RTTOV_8
-  CALL CALL_RTTOV8(NDLON, NFLEV, NSTATM, XEMIS, XTSRAD, XSTATM, XTHT, XRT,    &
+  CALL CALL_RTTOV8(NDLON, NFLEV, NSTATM, XEMIS(:,:,1), XTSRAD, XSTATM, XTHT, XRT, &
                   XPABST, XZZ, XMFCONV, XCLDFR, XUT(:,:,IKB), XVT(:,:,IKB),   &
                   LUSERI, NRTTOVINFO, TPFILE                                  )
 #else
 #ifdef MNH_RTTOV_11
-  CALL CALL_RTTOV11(NDLON, NFLEV, XEMIS, XTSRAD, XTHT, XRT,    &
+  CALL CALL_RTTOV11(NDLON, NFLEV, XEMIS(:,:,1), XTSRAD, XTHT, XRT,            &
                   XPABST, XZZ, XMFCONV, XCLDFR, XUT(:,:,IKB), XVT(:,:,IKB),   &
                   LUSERI, NRTTOVINFO, TPFILE                                  )
 #else
