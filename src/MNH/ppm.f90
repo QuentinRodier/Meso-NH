@@ -188,6 +188,7 @@ END MODULE MODI_PPM
 !!    11.5.2006.  T. Maric - original version
 !!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !!      J.Escobar 28/06/2018: limit computation on TAB(:,IJS:IJN,:) to avoid unneeded NaN
+!!      J.Escobr  16/07/2018: still NaN pb => reintroduce initialization of temporary local array
 !!
 !-------------------------------------------------------------------------------
 !
@@ -249,9 +250,17 @@ IJN=IJE
 !*              initialise & update halo & halo2 for PSRC
 !
 CALL GET_HALO(PSRC)
+PR=PSRC
+ZQL=PSRC
+ZQR=PSRC
+ZDQ=PSRC
+ZQ6=PSRC
+ZDMQ=PSRC
+ZQL0=PSRC
+ZQR0=PSRC
+ZQ60=PSRC
 ZFPOS=PSRC
 ZFNEG=PSRC
-!ZQR0 = 0.0
 !
 !-------------------------------------------------------------------------------
 !
@@ -619,6 +628,7 @@ END FUNCTION PPM_01_X
 !!    11.5.2006.  T. Maric - original version
 !!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !!      J.Escobar 28/06/2018: limit computation on TAB(IIW:IIA,:,:) to avoid unneeded NaN 
+!!      J.Escobr  16/07/2018: still NaN pb => reintroduce initialization of temporary local array
 !!
 !-------------------------------------------------------------------------------
 !
@@ -680,6 +690,15 @@ CALL GET_HALO(PSRC)
 !-------------------------------------------------------------------------------
 !
 !
+PR=PSRC
+ZQL=PSRC
+ZQR=PSRC
+ZDQ=PSRC
+ZQ6=PSRC
+ZDMQ=PSRC
+ZQL0=PSRC
+ZQR0=PSRC
+ZQ60=PSRC
 ZFPOS=PSRC
 ZFNEG=PSRC
 !
