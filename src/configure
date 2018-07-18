@@ -291,6 +291,18 @@ export SLURM_CPU_BIND=none
 export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
 "}
               ;;
+'Linux olympe'*)
+                export     ARCH=${ARCH:-LXifort}
+                export  VER_MPI=${VER_MPI:-MPIINTEL}
+                export OPTLEVEL=${OPTLEVEL:-O2}
+                export VER_CDF=${VER_CDF:-CDFAUTO}
+                export   MNHENV=${MNHENV:-"
+module purge
+module load intel/18.2  intelmpi/18.2
+export SLURM_CPU_BIND=none
+export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
+"}
+              ;; 
 
 Linux*)
                 export     ARCH=${ARCH:-LXgfortran}
