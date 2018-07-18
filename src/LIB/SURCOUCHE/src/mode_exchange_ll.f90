@@ -1913,6 +1913,7 @@ INTEGER                                               :: NB_REQ
 !!    Author
 !!    ------
 !     N. Gicquel               * CERFACS - CNRM *
+!     J. Escobar 18/08/2018 : Bug on MPI_RECV <-> uninitialized IMAXSIZESEND/IMAXSIZERECV variables 
 !
 !-------------------------------------------------------------------------------
 !
@@ -1997,6 +1998,7 @@ INTEGER                                               :: NB_REQ,NFIRST_REQ_RECV
 !
   IF (.NOT.ASSOCIATED(TPCRSPDSEND)) THEN
     ISENDNB = 0
+    IMAXSIZESEND = 0
   ELSE
     ISENDNB = TPCRSPDSEND%NCARDDIF
     IMAXSIZESEND = GET_MAX_SIZE(TPCRSPDSEND)
@@ -2004,6 +2006,7 @@ INTEGER                                               :: NB_REQ,NFIRST_REQ_RECV
 !
   IF (.NOT.ASSOCIATED(TPCRSPDRECV)) THEN
     IRECVNB = 0
+    IMAXSIZERECV = 0
   ELSE
     IRECVNB = TPCRSPDRECV%NCARDDIF
     IMAXSIZERECV = GET_MAX_SIZE(TPCRSPDRECV)
