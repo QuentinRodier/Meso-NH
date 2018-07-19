@@ -98,6 +98,22 @@ export MPI_DSM_CPULIST=0-7:allhosts
 module load ncl_ncarg/6.3.0
 "}
               ;;
+'Linux irene'*)
+                export MNH_ARCH=`echo $ARCH | grep LX`
+                export     ARCH=${MNH_ARCH:-LXifort}
+                export  VER_MPI=${VER_MPI:-MPIINTEL}
+                export OPTLEVEL=${OPTLEVEL:-O2}
+                export MVWORK=${MVWORK:-NO}
+		export VER_CDF=${VER_CDF:-CDFAUTO}
+                export MNHENV=${MNHENV:-"
+module purge
+module load intel/18.0.3.222
+module load mpi/intelmpi/2018.0.3.222
+export SLURM_CPU_BIND=none
+export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
+"}
+              ;;
+
 'Linux beaufix'*|'Linux prolix'*)
                 export     ARCH=${ARCH:-LXifort}
                 export  VER_MPI=${VER_MPI:-MPIINTEL}
