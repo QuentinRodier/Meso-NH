@@ -481,11 +481,6 @@ DIR_HDF?=${SRC_MESONH}/src/LIB/hdf5-${VERSION_HDF}
 #
 DIR_LIBAEC?=${SRC_MESONH}/src/LIB/libaec-${VERSION_LIBAEC}
 
-# for oasis compilation <=> to find correctly netcdf
-NETCDF_INCLUDE ?= ${CDF_PATH}/include
-NETCDF_LIBRARY ?= $(LIB_NETCDF)
-export NETCDF_INCLUDE NETCDF_LIBRARY
-
 endif
 #
 # NetCDF : CDF LaReunion Local
@@ -607,7 +602,10 @@ INC            +=  $(INC_NETCDF)
 LIBS           +=  $(LIB_NETCDF)
 endif
 
-
+# for oasis compilation <=> to find correctly netcdf
+NETCDF_INCLUDE ?= ${CDF_PATH}/include
+NETCDF_LIBRARY ?= $(LIB_NETCDF)
+export NETCDF_INCLUDE NETCDF_LIBRARY F90 CC
 
 ##########################################################
 #           Number of NESTED MODEL                       #
