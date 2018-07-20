@@ -84,7 +84,7 @@ REAL, POINTER, DIMENSION(:,:,:)    ::ZFIELDIN=>NULL()!field to interpolate horiz
 REAL, POINTER, DIMENSION(:,:)      ::ZFIELD=>NULL()  !field to interpolate horizontally
 REAL, ALLOCATABLE, DIMENSION(:,:,:)::ZFIELDOUT!field interpolated horizontally
 !
-INTEGER                       :: JLEV, JLEV2    ! loop on oceanic vertical level
+INTEGER                       :: JLEV    ! loop on oceanic vertical level
 INTEGER                       :: IK1
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !----------------------------------------------------------------------------
@@ -114,11 +114,10 @@ END IF
 ALLOCATE(ZFIELDOUT  (KLAT,SIZE(ZFIELDIN,2),SIZE(ZFIELDIN,3)) )
 ALLOCATE(ZFIELD(SIZE(ZFIELDIN,1),SIZE(ZFIELDIN,3)))
 !
-DO JLEV=NOCKMIN,NOCKMAX
-  JLEV2 = JLEV - NOCKMIN + 1
+DO JLEV=1,SIZE(ZFIELDIN,2)
   WHERE (PSEABATHY(:)-XZHOC(JLEV)>0.) LINTERP(:) = .FALSE.
-  ZFIELD(:,:)=ZFIELDIN(:,JLEV2,:)
-  CALL HOR_INTERPOL(DTCO, U, GCP, KLUOUT,ZFIELD,ZFIELDOUT(:,JLEV2,:))
+  ZFIELD(:,:)=ZFIELDIN(:,JLEV,:)
+  CALL HOR_INTERPOL(DTCO, U, GCP, KLUOUT,ZFIELD,ZFIELDOUT(:,JLEV,:))
   LINTERP(:) = .TRUE.
 ENDDO
 !
