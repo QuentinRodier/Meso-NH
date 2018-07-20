@@ -9,7 +9,7 @@
 ##########################################################
 #OBJDIR_PATH=/home/escj/azertyuiopqsdfghjklm/wxcvbn/azertyuiopqsdfghjklmwxcvbn
 #
-OPT_BASE   =  -g -w -assume nosource_include -assume byterecl -fpe0 -ftz -fpic -traceback  -fp-model precise -switch fe_inline_all_arg_copy_inout -fno-common
+OPT_BASE   =  -g -w -assume nosource_include -assume byterecl -fpe0 -ftz -fpic -traceback  -fp-model precise -switch fe_inline_all_arg_copy_inout -fno-common 
 OPT_PERF0  =  -O0
 OPT_PERF2  =  -O2
 OPT_PERF3  =  -O3 -xHost
@@ -53,6 +53,17 @@ OPT       = $(OPT_BASE) $(OPT_PERF2)
 OPT0      = $(OPT_BASE) $(OPT_PERF0)
 OPT_NOCB  = $(OPT_BASE) $(OPT_PERF2)
 endif
+ifeq "$(OPTLEVEL)" "CORE_AVX2"
+OPT       = $(OPT_BASE)  $(OPT_PERF2) -xCORE-AVX2
+OPT0      = $(OPT_BASE)  $(OPT_PERF0) -xCORE-AVX2
+OPT_NOCB  = $(OPT_BASE)  $(OPT_PERF2) -xCORE-AVX2
+endif
+ifeq "$(OPTLEVEL)" "MIC_AVX512"
+OPT       = $(OPT_BASE)  $(OPT_PERF2) -xMIC-AVX512
+OPT0      = $(OPT_BASE)  $(OPT_PERF0) -xMIC-AVX512
+OPT_NOCB  = $(OPT_BASE)  $(OPT_PERF2) -xMIC-AVX512
+endif
+
 ifeq "$(OPTLEVEL)" "O2PAR"
 PAR= -parallel -diag-file -par-report2
 OPT       = $(OPT_BASE) $(OPT_PERF2) $(PAR)
@@ -69,6 +80,51 @@ OPT       = $(OPT_BASE) $(OPT_PERF3)
 OPT0      = $(OPT_BASE) $(OPT_PERF0)
 OPT_NOCB  = $(OPT_BASE) $(OPT_PERF3)
 endif
+
+ifeq "$(OPTLEVEL)" "O3_MIC_AVX512_full"
+OPT_BASE      = -xMIC-AVX512 -g -w -assume nosource_include -assume byterecl -fpic -traceback -switch fe_inline_all_arg_copy_inout -r8 -align array64byte
+OPT_NOAVX512  = -O2 -g -w -assume nosource_include -assume byterecl -fpe0 -ftz  -fp-model precise -fpic -traceback -switch fe_inline_all_arg_copy_inout -r8 -align array64byte
+OPT       = $(OPT_BASE) $(OPT_PERF3)
+OPT0      = $(OPT_BASE) $(OPT_PERF0)
+OPT_NOCB  = $(OPT_BASE) $(OPT_PERF3)
+OBJS_NOAVX512 = spll_mode_construct_ll.o spll_av_patch_pgd_1d.o spll_ecume_flux.o spll_fft.o \
+                spll_mode_repro_sum.o spll_tridiag_thermo.o spll_tridz.o spll_isba_fluxes.o \
+                spll_surface_aero_cond.o spll_swni.o spll_swr.o \
+                spll_ini_les_n.o
+$(OBJS_NOAVX512) : OPT = $(OPT_NOAVX512) 
+OBJS_REPROD= spll_mode_sum_ll.o
+$(OBJS_REPROD) : OPT = $(OPT_NOAVX512) 
+endif
+
+ifeq "$(OPTLEVEL)" "O3_CORE_AVX2_full"
+OPT_BASE      = -xCORE-AVX2 -g -w -assume nosource_include -assume byterecl -fpic -traceback -switch fe_inline_all_arg_copy_inout -r8 -align array64byte
+OPT_NOAVX2  = -O2 -g -w -assume nosource_include -assume byterecl -fpe0 -ftz  -fp-model precise -fpic -traceback -switch fe_inline_all_arg_copy_inout -r8 -align array64byte
+OPT       = $(OPT_BASE) $(OPT_PERF3)
+OPT0      = $(OPT_BASE) $(OPT_PERF0)
+OPT_NOCB  = $(OPT_BASE) $(OPT_PERF3)
+OBJS_NOAVX2 = spll_mode_construct_ll.o spll_av_patch_pgd_1d.o spll_ecume_flux.o spll_fft.o \
+              spll_mode_repro_sum.o spll_tridiag_thermo.o spll_tridz.o spll_isba_fluxes.o \
+              spll_ini_les_n.o
+$(OBJS_NOAVX2) : OPT = $(OPT_NOAVX2) 
+OBJS_REPROD= spll_mode_sum_ll.o
+$(OBJS_REPROD) : OPT = $(OPT_NOAVX2) 
+endif
+
+ifeq "$(OPTLEVEL)" "O3_CORE_AVX512_full"
+OPT_BASE      = -xCORE-AVX512 -g -w -assume nosource_include -assume byterecl -fpic -traceback -switch fe_inline_all_arg_copy_inout -r8 -align array64byte
+OPT_NOAVX512  = -O2 -g -w -assume nosource_include -assume byterecl -fpe0 -ftz  -fp-model precise -fpic -traceback -switch fe_inline_all_arg_copy_inout -r8 -align array64byte
+OPT       = $(OPT_BASE) $(OPT_PERF3)
+OPT0      = $(OPT_BASE) $(OPT_PERF0)
+OPT_NOCB  = $(OPT_BASE) $(OPT_PERF3)
+OBJS_NOAVX512 = spll_mode_construct_ll.o spll_av_patch_pgd_1d.o spll_ecume_flux.o spll_fft.o \
+                spll_mode_repro_sum.o spll_tridiag_thermo.o spll_tridz.o spll_isba_fluxes.o \
+                spll_surface_aero_cond.o spll_swni.o spll_swr.o \
+                spll_ini_les_n.o spll_mode_exchange_ll.o spll_update_nhalo1d.o
+$(OBJS_NOAVX512) : OPT = $(OPT_NOAVX512) 
+OBJS_REPROD= spll_mode_sum_ll.o
+$(OBJS_REPROD) : OPT = $(OPT_NOAVX512) 
+endif
+
 #
 #
 CC = gcc
@@ -165,7 +221,7 @@ include Makefile.MESONH.mk
 # Juan & Maud 20/03/2008 --> Ifort 10.1.008 Bug O2 optimization
 ifneq "$(OPTLEVEL)" "DEBUG"
 OPT_PERF1  =  -O1 
-OBJS_O1= spll_mode_snow3l.o spll_schu.o spll_ps2str.o spll_p_abs.o spll_ini_one_way_n.o spll_urban_solar_abs.o
+OBJS_O1= spll_mode_snow3l.o spll_schu.o spll_ps2str.o spll_p_abs.o spll_ini_one_way_n.o spll_urban_solar_abs.o spll_aeroopt_get.o spll_ch_get_rates.o
 $(OBJS_O1) : OPT = $(OPT_BASE) $(OPT_PERF1)
 endif
 
