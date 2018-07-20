@@ -116,6 +116,7 @@ CONTAINS
 !!      Q.Libois  02/2018     : ECRAD
 !!      Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      J.Escobar 28/06/2018 : Reproductible parallelisation of CLOUD_ONLY case
+!!      J.Escobar 20/07/2018 : for real*4 compilation, convert with REAL(X) argument to SUM_DD... 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1212,35 +1213,35 @@ IF(OCLOUD_ONLY .OR. OCLEAR_SKY) THEN
   IF( ZCLEAR_COL_ll /= 0.0  ) THEN ! at least one clear-sky column exists -> average profiles on clear columns
     ZT_CLEAR(:)  = SUM_DD_R2_R1_ll(ZTAVE(INDEX_ICLEAR_COL(:),:)) / ZCLEAR_COL_ll
     ZP_CLEAR(:)  = SUM_DD_R2_R1_ll(ZPAVE(INDEX_ICLEAR_COL(:),:)) / ZCLEAR_COL_ll
-    ZQV_CLEAR(:) = SUM_DD_R2_R1_ll(ZQVAVE(INDEX_ICLEAR_COL(:),:)) / ZCLEAR_COL_ll
-    ZOZ_CLEAR(:) = SUM_DD_R2_R1_ll(ZO3AVE(INDEX_ICLEAR_COL(:),:)) / ZCLEAR_COL_ll
-    ZDP_CLEAR(:) = SUM_DD_R2_R1_ll(ZDPRES(INDEX_ICLEAR_COL(:),:)) / ZCLEAR_COL_ll
+    ZQV_CLEAR(:) = SUM_DD_R2_R1_ll(REAL(ZQVAVE(INDEX_ICLEAR_COL(:),:))) / ZCLEAR_COL_ll
+    ZOZ_CLEAR(:) = SUM_DD_R2_R1_ll(REAL(ZO3AVE(INDEX_ICLEAR_COL(:),:))) / ZCLEAR_COL_ll
+    ZDP_CLEAR(:) = SUM_DD_R2_R1_ll(REAL(ZDPRES(INDEX_ICLEAR_COL(:),:))) / ZCLEAR_COL_ll
  
     DO JK1=1,KAER
-      ZAER_CLEAR(:,JK1) = SUM_DD_R2_R1_ll(ZAER(INDEX_ICLEAR_COL(:),:,JK1)) / ZCLEAR_COL_ll
+      ZAER_CLEAR(:,JK1) = SUM_DD_R2_R1_ll(REAL(ZAER(INDEX_ICLEAR_COL(:),:,JK1))) / ZCLEAR_COL_ll
     END DO
     !Get an average value for the clear column
     IF(CAOP=='EXPL')THEN
        DO WVL_IDX=1,KSWB_OLD
-          ZPIZA_EQ_CLEAR(:,WVL_IDX)   = SUM_DD_R2_R1_ll(ZPIZA_EQ(  INDEX_ICLEAR_COL(:),:,WVL_IDX)) / ZCLEAR_COL_ll
-          ZCGA_EQ_CLEAR(:,WVL_IDX)    = SUM_DD_R2_R1_ll(ZCGA_EQ(   INDEX_ICLEAR_COL(:),:,WVL_IDX)) / ZCLEAR_COL_ll
-          ZTAUREL_EQ_CLEAR(:,WVL_IDX) = SUM_DD_R2_R1_ll(ZTAUREL_EQ(INDEX_ICLEAR_COL(:),:,WVL_IDX)) / ZCLEAR_COL_ll
+          ZPIZA_EQ_CLEAR(:,WVL_IDX)   = SUM_DD_R2_R1_ll(REAL(ZPIZA_EQ(  INDEX_ICLEAR_COL(:),:,WVL_IDX))) / ZCLEAR_COL_ll
+          ZCGA_EQ_CLEAR(:,WVL_IDX)    = SUM_DD_R2_R1_ll(REAL(ZCGA_EQ(   INDEX_ICLEAR_COL(:),:,WVL_IDX))) / ZCLEAR_COL_ll
+          ZTAUREL_EQ_CLEAR(:,WVL_IDX) = SUM_DD_R2_R1_ll(REAL(ZTAUREL_EQ(INDEX_ICLEAR_COL(:),:,WVL_IDX))) / ZCLEAR_COL_ll
        ENDDO
     ENDIF   
     !
-    ZHP_CLEAR(1:KFLEV) = SUM_DD_R2_R1_ll(ZPRES_HL(INDEX_ICLEAR_COL(:),1:KFLEV)) / ZCLEAR_COL_ll
-    ZHT_CLEAR(1:KFLEV) = SUM_DD_R2_R1_ll(ZT_HL   (INDEX_ICLEAR_COL(:),1:KFLEV)) / ZCLEAR_COL_ll
+    ZHP_CLEAR(1:KFLEV) = SUM_DD_R2_R1_ll(REAL(ZPRES_HL(INDEX_ICLEAR_COL(:),1:KFLEV))) / ZCLEAR_COL_ll
+    ZHT_CLEAR(1:KFLEV) = SUM_DD_R2_R1_ll(REAL(ZT_HL   (INDEX_ICLEAR_COL(:),1:KFLEV))) / ZCLEAR_COL_ll
     ! 
-    ZALBP_CLEAR(:) = SUM_DD_R2_R1_ll(ZALBP(INDEX_ICLEAR_COL(:),:)) / ZCLEAR_COL_ll
-    ZALBD_CLEAR(:) = SUM_DD_R2_R1_ll(ZALBD(INDEX_ICLEAR_COL(:),:)) / ZCLEAR_COL_ll
+    ZALBP_CLEAR(:) = SUM_DD_R2_R1_ll(REAL(ZALBP(INDEX_ICLEAR_COL(:),:))) / ZCLEAR_COL_ll
+    ZALBD_CLEAR(:) = SUM_DD_R2_R1_ll(REAL(ZALBD(INDEX_ICLEAR_COL(:),:))) / ZCLEAR_COL_ll
     ! 
-    ZEMIS_CLEAR = SUM_DD_R1_ll(ZEMIS(INDEX_ICLEAR_COL(:),1)) / ZCLEAR_COL_ll
-    ZEMIW_CLEAR = SUM_DD_R1_ll(ZEMIW(INDEX_ICLEAR_COL(:),1)) / ZCLEAR_COL_ll
-    ZRMU0_CLEAR = SUM_DD_R1_ll(ZRMU0(INDEX_ICLEAR_COL(:)))   / ZCLEAR_COL_ll
-    ZTS_CLEAR   = SUM_DD_R1_ll(ZTS(INDEX_ICLEAR_COL(:)))     / ZCLEAR_COL_ll
-    ZLSM_CLEAR  = SUM_DD_R1_ll(ZLSM(INDEX_ICLEAR_COL(:)))    / ZCLEAR_COL_ll
-    ZLAT_CLEAR  = SUM_DD_R1_ll(ZLAT(INDEX_ICLEAR_COL(:)))    / ZCLEAR_COL_ll
-    ZLON_CLEAR  = SUM_DD_R1_ll(ZLON(INDEX_ICLEAR_COL(:)))    / ZCLEAR_COL_ll 
+    ZEMIS_CLEAR = SUM_DD_R1_ll(REAL(ZEMIS(INDEX_ICLEAR_COL(:),1))) / ZCLEAR_COL_ll
+    ZEMIW_CLEAR = SUM_DD_R1_ll(REAL(ZEMIW(INDEX_ICLEAR_COL(:),1))) / ZCLEAR_COL_ll
+    ZRMU0_CLEAR = SUM_DD_R1_ll(REAL(ZRMU0(INDEX_ICLEAR_COL(:))))   / ZCLEAR_COL_ll
+    ZTS_CLEAR   = SUM_DD_R1_ll(REAL(ZTS(INDEX_ICLEAR_COL(:))))     / ZCLEAR_COL_ll
+    ZLSM_CLEAR  = SUM_DD_R1_ll(REAL(ZLSM(INDEX_ICLEAR_COL(:))))    / ZCLEAR_COL_ll
+    ZLAT_CLEAR  = SUM_DD_R1_ll(REAL(ZLAT(INDEX_ICLEAR_COL(:))))    / ZCLEAR_COL_ll
+    ZLON_CLEAR  = SUM_DD_R1_ll(REAL(ZLON(INDEX_ICLEAR_COL(:))))    / ZCLEAR_COL_ll 
 !
   ELSE ! no clear columns -> the first column is chosen, without physical meaning: it will not be
     ! unpacked after the call to the radiation ecmwf routine
