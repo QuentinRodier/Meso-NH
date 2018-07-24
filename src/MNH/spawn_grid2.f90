@@ -10,7 +10,7 @@ MODULE MODI_SPAWN_GRID2
 INTERFACE
 !
      SUBROUTINE SPAWN_GRID2 (KXOR,KYOR,KXEND,KYEND,KDXRATIO,KDYRATIO,         &
-                             PLONOR,PLATOR,PXHAT,PYHAT,PZHAT,                 &
+                             PLONOR,PLATOR,PXHAT,PYHAT,PZHAT,PZTOP,           &
                              OSLEVE,PLEN1,PLEN2,                              &
                              PZS,PZSMT,PZS_LS,PZSMT_LS,                       &
                              TPDTMOD,TPDTCUR                                  )
@@ -27,6 +27,7 @@ REAL,                 INTENT(INOUT) :: PLATOR            ! Latitude of the origi
 REAL,                 INTENT(INOUT) :: PLONOR            ! Longitude of the origine point
 REAL, DIMENSION(:),   INTENT(INOUT) :: PXHAT,PYHAT,PZHAT ! positions x,y,z in the
                                      ! conformal plane or on the cartesian plane
+REAL,                 INTENT(OUT)   :: PZTOP             ! model top (m)
 LOGICAL,              INTENT(OUT)   :: OSLEVE            ! flag for SLEVE coordinate
 REAL,                 INTENT(OUT)   :: PLEN1             ! Decay scale for smooth topography
 REAL,                 INTENT(OUT)   :: PLEN2             ! Decay scale for small-scale topography deviation
@@ -48,7 +49,7 @@ END MODULE MODI_SPAWN_GRID2
 !
 !     #########################################################################
      SUBROUTINE SPAWN_GRID2 (KXOR,KYOR,KXEND,KYEND,KDXRATIO,KDYRATIO,         &
-                             PLONOR,PLATOR,PXHAT,PYHAT,PZHAT,                 &
+                             PLONOR,PLATOR,PXHAT,PYHAT,PZHAT,PZTOP,           &
                              OSLEVE,PLEN1,PLEN2,                              &
                              PZS,PZSMT,PZS_LS,PZSMT_LS,                       &
                              TPDTMOD,TPDTCUR                                  )
@@ -188,6 +189,7 @@ REAL,                 INTENT(INOUT) :: PLATOR            ! Latitude of the origi
 REAL,                 INTENT(INOUT) :: PLONOR            ! Longitude of the origine point
 REAL, DIMENSION(:),   INTENT(INOUT) :: PXHAT,PYHAT,PZHAT ! positions x,y,z in the
                                      ! conformal plane or on the cartesian plane
+REAL,                 INTENT(OUT)   :: PZTOP             ! model top (m)
 LOGICAL,              INTENT(OUT)   :: OSLEVE            ! flag for SLEVE coordinate
 REAL,                 INTENT(OUT)   :: PLEN1             ! Decay scale for smooth topography
 REAL,                 INTENT(OUT)   :: PLEN2             ! Decay scale for small-scale topography deviation
@@ -302,6 +304,7 @@ END IF
 !*       2.    INITIALIZATION OF THE GRID OF MODEL 2:
 !              --------------------------------------
 !
+PZTOP    = XZTOP1
 PZHAT(:) = XZHAT1(:) 
 OSLEVE   = LSLEVE1
 PLEN1    = XLEN11
