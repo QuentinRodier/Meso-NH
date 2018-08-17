@@ -59,6 +59,7 @@ END MODULE MODI_WRITE_PROFILER_n
 !!     2016 : G.DELAUTIER : LIMA
 !!              Oct, 2016 (C.Lac) Add visibility diagnostics for fog
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!  J. Escobar : 16/08/2018: From Pierre & Maud , correction use CNAMES(JSV-NSV_CHEMBEG+1)
 !!
 !! --------------------------------------------------------------------------
 !       
@@ -500,7 +501,7 @@ IF (SIZE(TPROFILER%SV,4)>=1) THEN
   ! chemical scalar variables
   DO JSV=NSV_CHEMBEG,NSV_CHEMEND
     JPROC = JPROC+1
-    YTITLE(JPROC)= TRIM(CNAMES(JSV))
+    YTITLE(JPROC)= TRIM(CNAMES(JSV-NSV_CHEMBEG+1))
     YUNIT    (JPROC) = 'ppb'
     WRITE(YCOMMENT (JPROC),'(A5,A3,I3.3)') 'T(s) ','SVT',JSV
     ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SV(:,IK,II,JSV) * 1.E9
