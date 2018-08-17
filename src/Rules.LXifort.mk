@@ -127,7 +127,7 @@ endif
 
 #
 #
-CC = gcc
+CC ?= gcc
 FC = ifort
 ifeq "$(VER_MPI)" "MPIAUTO"
 ifneq "$(findstring TAU,$(XYZ))" ""
