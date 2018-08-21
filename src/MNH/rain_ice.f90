@@ -236,6 +236,7 @@ END MODULE MODI_RAIN_ICE
 !!      C.Lac : 01/2017 : correction on droplet deposition
 !!      J.Escobar : 10/2017 : for real*4 , limit exp() in RAIN_ICE_SLOW with XMNH_HUGE_12_LOG
 !!      (C. Abiven, Y. Léauté, V. Seigner, S. Riette) Phasing of Turner rain subgrid param
+!!      J.Escobar : 8/2018 : for real*4 , bis => limit exp() in RAIN_ICE_SLOW with XMNH_HUGE_12_LOG
 !
 !*       0.    DECLARATIONS
 !              ------------
@@ -2207,7 +2208,8 @@ IMPLICIT NONE
   ZZW(:) = 0.0
   WHERE( (ZZT(:)<XTT-35.0) .AND. (ZRCT(:)>XRTMIN(2)) .AND. (ZRCS(:)>0.) )
     ZZW(:) = MIN( ZRCS(:),XHON*ZRHODREF(:)*ZRCT(:)       &
-                                 *EXP( XALPHA3*(ZZT(:)-XTT)-XBETA3 ) )
+                                 *EXP( MIN(XMNH_HUGE_12_LOG,XALPHA3*(ZZT(:)-XTT)-XBETA3) ) )
+                                 ! *EXP( XALPHA3*(ZZT(:)-XTT)-XBETA3 ) )
     ZRIS(:) = ZRIS(:) + ZZW(:)
     ZRCS(:) = ZRCS(:) - ZZW(:)
     ZTHS(:) = ZTHS(:) + ZZW(:)*(ZLSFACT(:)-ZLVFACT(:)) ! f(L_f*(RCHONI))
