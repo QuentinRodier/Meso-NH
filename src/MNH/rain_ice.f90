@@ -3492,7 +3492,7 @@ IMPLICIT NONE
 SUBROUTINE RAINFR_VERT(ZPRFR, ZRR)
 
 IMPLICIT NONE
-REAL, DIMENSION(:,:,:),   INTENT(OUT)    :: ZPRFR !Precipitation fraction
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: ZPRFR !Precipitation fraction
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: ZRR !Rain field
 !
 !-------------------------------------------------------------------------------
