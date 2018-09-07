@@ -60,7 +60,7 @@ END MODULE MODI_GAMMA_INC_LOW
 !*       0. DECLARATIONS
 !           ------------
 !
-USE MODI_GAMMA
+USE MODI_GAMMA_SURF
 !
 IMPLICIT NONE
 !
@@ -124,7 +124,7 @@ ZC(4) = ZS(1) + ZS(2)/PA + ZS(3)/PA**2 + ZS(4)/PA**3 + ZS(5)/PA**4
 ZWORK = 0.5+0.5*TANH(ZC(2)*(PX-ZC(3)))
 
 PGAMMA_INC_LOW = EXP(-PX)* PX**PA * (1./PA +ZC(1)*PX/(PA*(PA+1.))+(ZC(1)*PX)**2/(PA*(PA+1.)*(PA+2.))) &
-                            * (1.-ZWORK) + GAMMA(PA)*ZWORK*(1.-ZC(4)**(-PX)) 
+                            * (1.-ZWORK) + GAMMA_SURF(PA)*ZWORK*(1.-ZC(4)**(-PX))
 RETURN
 !
 END FUNCTION GAMMA_INC_LOW

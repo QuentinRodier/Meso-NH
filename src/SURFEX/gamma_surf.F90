@@ -1,25 +1,25 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !########################
-        MODULE MODI_GAMMA
+        MODULE MODI_GAMMA_SURF
 !########################
 !
-INTERFACE GAMMA
+INTERFACE GAMMA_SURF
 !
-FUNCTION GAMMA_X0D(PX)  RESULT(PGAMMA)
+FUNCTION GAMMA_SURF_X0D(PX)  RESULT(PGAMMA)
 REAL, INTENT(IN)                                  :: PX
 REAL                                              :: PGAMMA
-END FUNCTION GAMMA_X0D
+END FUNCTION GAMMA_SURF_X0D
 !
-FUNCTION GAMMA_X1D(PX)  RESULT(PGAMMA)
+FUNCTION GAMMA_SURF_X1D(PX)  RESULT(PGAMMA)
 REAL, DIMENSION(:), INTENT(IN)                    :: PX
 REAL, DIMENSION(SIZE(PX))                         :: PGAMMA
-END FUNCTION GAMMA_X1D
+END FUNCTION GAMMA_SURF_X1D
 !
 END INTERFACE
-END MODULE MODI_GAMMA
+END MODULE MODI_GAMMA_SURF
 !
 !--------------------------------------------------------------------------
 !
@@ -28,7 +28,7 @@ END MODULE MODI_GAMMA
 ! 
 !
 !     ######################################
-      FUNCTION GAMMA_X0D(PX)  RESULT(PGAMMA)
+      FUNCTION GAMMA_SURF_X0D(PX)  RESULT(PGAMMA)
 !     ######################################
 !
 !
@@ -64,6 +64,7 @@ END MODULE MODI_GAMMA
 !!    -------------
 !!      Original     7/11/95
 !!      C. Barthe    9/11/09  add a function for 1D arguments
+!!      P. Wautelet  07/09/2018 rename function to prevent problems with MesoNH (duplicated)
 !
 !*       0. DECLARATIONS
 !           ------------
@@ -123,7 +124,7 @@ ELSE
 END IF
 RETURN
 !
-END FUNCTION GAMMA_X0D
+END FUNCTION GAMMA_SURF_X0D
 !
 !-------------------------------------------------------------------------------
 !
@@ -132,7 +133,7 @@ END FUNCTION GAMMA_X0D
 ! 
 !
 !     ######################################
-      FUNCTION GAMMA_X1D(PX)  RESULT(PGAMMA)
+      FUNCTION GAMMA_SURF_X1D(PX)  RESULT(PGAMMA)
 !     ######################################
 !
 !
@@ -167,6 +168,7 @@ END FUNCTION GAMMA_X0D
 !!    MODIFICATIONS
 !!    -------------
 !!      Original     7/11/95
+!!      P. Wautelet  07/09/2018 rename function to prevent problems with MesoNH (duplicated)
 !!
 !-------------------------------------------------------------------------------
 !
@@ -221,4 +223,4 @@ WHERE ( PX(:)<0.0 )
 END WHERE
 RETURN
 !
-END FUNCTION GAMMA_X1D
+END FUNCTION GAMMA_SURF_X1D
