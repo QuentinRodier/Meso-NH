@@ -60,6 +60,8 @@
 !           components to t_tfl
 ! Modified: 2013/07 (S. Senesi) : #ifdef in_surfex for dynamic arrays 
 !           in t_glt
+! Modified: 2018/09 (J. Escobar): initialize bat => NULL() , 
+!           used in associated statement   
 ! -----------------------------------------------------------------------
 !
 MODULE modd_types_glt
@@ -698,7 +700,7 @@ TYPE t_glt
 !
 ! Bathymetry (in meters)
   REAL, DIMENSION(:,:), POINTER ::  &
-    bat
+    bat => NULL()
 ! Main domain 
   TYPE(t_dom), DIMENSION(:,:), POINTER ::  &
     dom
