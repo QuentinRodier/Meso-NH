@@ -45,6 +45,7 @@
 !!                           XTSRAD_NAT instead of XAVG_TSRAD
 !!                           delete NWG_SIZE
 !!                           water table depth
+!!      J. Escoabr  09/18    change ZMAX,from automatic(error if DM%XSWI not initialized) to allocatable  
 !!
 !-------------------------------------------------------------------------------
 !
@@ -110,7 +111,7 @@ INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
  CHARACTER(LEN=2)  :: YLVL
  CHARACTER(LEN=20) :: YFORM
 !
-REAL, DIMENSION(SIZE(DM%XSWI,1)) :: ZMAX
+REAL, DIMENSION(:) , ALLOCATABLE :: ZMAX
 INTEGER           :: JL, JJ, JVAR, JOBS, JP, JI, JT, JK, ISIZE
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -176,6 +177,7 @@ IF (DM%LSURF_MISC_BUDGET) THEN
   !               --------------------------------------------------------
   !  
   IF(IO%CISBA=='DIF')THEN
+    ALLOCATE( ZMAX(SIZE(DM%XSWI,1)))
     ZMAX(:) = 0.
     !
     DO JP = 1,IO%NPATCH
@@ -198,6 +200,7 @@ IF (DM%LSURF_MISC_BUDGET) THEN
       ENDDO 
 
     ENDDO
+    DEALLOCATE(ZMAX)
   ENDIF         
   !
   DO JL=1,IO%NGROUND_LAYER
