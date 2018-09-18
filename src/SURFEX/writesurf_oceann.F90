@@ -34,6 +34,7 @@
 !!      Original    03/2007
 !!      Modified    07/2012, P. Le Moigne : CMO1D phasing
 !!      11/2014 (David BARBARY) : Write oceanic level
+!!      10/2018 (Juan ESCOBAR) : change ZWORK,from automatic(error if O%XSEAT not initialized) to allocatable
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -75,7 +76,7 @@ INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
 !
 INTEGER :: JLEVEL ! loop counter on oceanic levels
 !
-REAL, DIMENSION(SIZE(O%XSEAT,1)) :: ZWORK ! 1D array to write data in file
+REAL, DIMENSION(:) , ALLOCATABLE :: ZWORK ! 1D array to write data in file
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
@@ -89,6 +90,8 @@ YCOMMENT='flag to use OCEAN model'
 !
 IF (.NOT. O%LMERCATOR .AND. LHOOK) CALL DR_HOOK('WRITESURF_OCEAN_N',1,ZHOOK_HANDLE)
 IF (.NOT. O%LMERCATOR) RETURN
+!
+ALLOCATE(ZWORK(SIZE(O%XSEAT,1)))
 !
 ! Write Oceanic Level
 YRECFM='SEA_NBLEVEL'
@@ -310,6 +313,9 @@ YRECFM='SEA_HMO'
 YCOMMENT='X_Y_'
  CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,O%XSEAHMO(:),IRESP,HCOMMENT=YCOMMENT)
 !-------------------------------------------------------------------------------
+!
+DEALLOCATE(ZWORK)
+!
 IF (LHOOK) CALL DR_HOOK('WRITESURF_OCEAN_N',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE WRITESURF_OCEAN_n
