@@ -33,6 +33,7 @@
 !!    -------------
 !!      Original    28/08/94 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!  J.Escobar : 5/10/2018 : add FLUSH , for better logging in case of PB
 !--------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -374,6 +375,7 @@ IF ( ANY(ZDT > ZEPS) ) THEN
   WRITE(ILUOUT,*) 'MR AT THIS MAXIMUM : ', PMR(IMAXLOC(1),IMAXLOC(2),IMAXLOC(3))
   WRITE(ILUOUT,*) 'T AT THIS MAXIMUM : ', ZT(IMAXLOC(1),IMAXLOC(2),IMAXLOC(3))
   WRITE(ILUOUT,*) 'JOB ABORTED '
+  CALL FLUSH(ILUOUT)
   CALL ABORT
   STOP 
 END IF
