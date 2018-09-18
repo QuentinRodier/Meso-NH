@@ -63,6 +63,7 @@ END MODULE MODI_INI_CST
 !!      J. Escobar  28/03/2014 for pb with emissivity/aerosol reset XMNH_TINY=1.0e-80 in real8 case 
 !!      J.Escobar : 10/2017 : for real*4 , add XMNH_HUGE_12_LOG
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      J.Escobar : 5/10/2018 : for real*4 ,higher value for XEPS_DT = 1.5e-4
 !!
 !-------------------------------------------------------------------------------
 !
@@ -166,7 +167,7 @@ XRES_OTHER     = 1.0e-9
 XRES_PREP      = 1.0e-8
 #else
 XMNH_TINY      = TINY    (XMNH_TINY    )
-XEPS_DT        = 1.0e-4
+XEPS_DT        = 1.5e-4
 XRES_FLAT_CART = 1.0e-12
 XRES_OTHER     = 1.0e-7
 XRES_PREP      = 1.0e-4
