@@ -96,6 +96,7 @@ END MODULE MODI_SET_PERTURB
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      C.Lac, V.Masson       1/2018 : White noise in the LBC
+!!      Q.Rodier              10/2018 : move allocate(ZWHITE) for NKWH>2
 !!
 !-------------------------------------------------------------------------------
 !
@@ -372,6 +373,8 @@ SELECT CASE(CPERT_KIND)
   CASE('WH','WW')  !    white noise is computed on global domain
                    ! J.Escobar optim => need only identical random on all domain 
 !
+ ALLOCATE(ZWHITE(IIU,IJU))
+!
  DO JK = IKB, NKWH
      IKX = (NIMAX_ll+1)/2
      ZX  = 2*XPI/NIMAX_ll
@@ -397,7 +400,6 @@ SELECT CASE(CPERT_KIND)
         END DO
       END DO
 !
-    ALLOCATE(ZWHITE(IIU,IJU))
     ZWHITE(:,:) = 0.0
 ! 
     DO JY = 1, IKY
@@ -452,31 +454,31 @@ SELECT CASE(CPERT_KIND)
 !
 ! white noise for inflow/outflow U field in X direction                   
 !
-IF (LWH_LBXU) THEN
-  ALLOCATE(ZWHITE_ll(IIU_ll,IJU_ll))
-  CALL GATHERALL_FIELD_ll('XY',ZWHITE,ZWHITE_ll,IRESP)
-  DO JK=1,MIN(IKU,IIU_ll)
-    DO JI=1,SIZE(XLBXUM,1)
-     XLBXUM(JI,:,JK) = XLBXUM(JI,:,JK) + XAMPLIWH * ZWHITE_ll(JK,:)
-    END DO
-  END DO
-  DEALLOCATE(ZWHITE_ll)
-END IF
+ IF (LWH_LBXU) THEN
+   ALLOCATE(ZWHITE_ll(IIU_ll,IJU_ll))
+   CALL GATHERALL_FIELD_ll('XY',ZWHITE,ZWHITE_ll,IRESP)
+   DO JK=1,MIN(IKU,IIU_ll)
+     DO JI=1,SIZE(XLBXUM,1)
+      XLBXUM(JI,:,JK) = XLBXUM(JI,:,JK) + XAMPLIWH * ZWHITE_ll(JK,:)
+     END DO
+   END DO
+   DEALLOCATE(ZWHITE_ll)
+ END IF
 !
 ! white noise for inflow/outflow V field in Y direction                   
 !
-IF (LWH_LBYV) THEN
-  ALLOCATE(ZWHITE_ll(IIU_ll,IJU_ll))
-  CALL GATHERALL_FIELD_ll('XY',ZWHITE,ZWHITE_ll,IRESP)
-  DO JK=1,MIN(IKU,IJU_ll)
-    DO JJ=1,SIZE(XLBXVM,2)
-     XLBXVM(:,JJ,JK) = XLBXVM(:,JJ,JK) + XAMPLIWH * ZWHITE_ll(JK,:)
-    END DO
-  END DO
-  DEALLOCATE(ZWHITE_ll)
-END IF
+ IF (LWH_LBYV) THEN
+   ALLOCATE(ZWHITE_ll(IIU_ll,IJU_ll))
+   CALL GATHERALL_FIELD_ll('XY',ZWHITE,ZWHITE_ll,IRESP)
+   DO JK=1,MIN(IKU,IJU_ll)
+     DO JJ=1,SIZE(XLBXVM,2)
+      XLBXVM(:,JJ,JK) = XLBXVM(:,JJ,JK) + XAMPLIWH * ZWHITE_ll(JK,:)
+     END DO
+   END DO
+   DEALLOCATE(ZWHITE_ll)
+ END IF
 
-    DEALLOCATE(ZWHITE)
+ DEALLOCATE(ZWHITE)
 
  CALL GET_HALO(XTHT)
  CALL GET_HALO(XUT)
