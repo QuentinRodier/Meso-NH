@@ -34,7 +34,7 @@ USE MODE_READ_GRIB
 !
 USE MODD_TYPE_DATE_SURF
 !
-USE MODD_GRID_GRIB,  ONLY : CGRIB_FILE
+USE MODD_GRID_GRIB,  ONLY : CGRIB_FILE, CINMODEL
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -52,9 +52,9 @@ REAL,DIMENSION(:,:), POINTER    :: PFIELD    ! field to interpolate horizontally
 !
 !*      0.2    declarations of local variables
 !
-TYPE (DATE_TIME)                :: TZTIME_GRIB    ! current date and time
- CHARACTER(LEN=6)              :: YINMODEL ! model from which GRIB file originates
-REAL, DIMENSION(:)  , POINTER   :: ZMASK => NULL()          ! Land mask
+REAL, DIMENSION(:)  ,POINTER:: ZMASK => NULL()      ! Land mask
+!  TYPE (DATE_TIME)                :: TZTIME_GRIB    ! current date and time
+!  CHARACTER(LEN=6)              :: YINMODEL ! model from which GRIB file originates
 REAL, DIMENSION(:), POINTER :: ZFIELD => NULL()   ! field read
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -67,7 +67,7 @@ IF (LHOOK) CALL DR_HOOK('PREP_FLAKE_GRIB',0,ZHOOK_HANDLE)
 !
 IF (TRIM(HFILE).NE.CGRIB_FILE) CGRIB_FILE=""
 !
- CALL READ_GRIB_LAND_MASK(HFILE,KLUOUT,YINMODEL,ZMASK)
+ CALL READ_GRIB_LAND_MASK(HFILE,KLUOUT,CINMODEL,ZMASK)
 !
 !*      2.     Reading of field
 !              ----------------
@@ -80,9 +80,9 @@ SELECT CASE(HSURF)
 !      ---------
 !
   CASE('ZS     ')
-    SELECT CASE (YINMODEL)
+    SELECT CASE (CINMODEL)
       CASE ('ECMWF ','ARPEGE','ALADIN','MOCAGE','HIRLAM','NCEP  ')
-        CALL READ_GRIB_ZS_LAND(HFILE,KLUOUT,YINMODEL,ZMASK,ZFIELD)
+        CALL READ_GRIB_ZS_LAND(HFILE,KLUOUT,CINMODEL,ZMASK,ZFIELD)
         ALLOCATE(PFIELD(SIZE(ZFIELD),1))
         PFIELD(:,1) = ZFIELD(:)
         DEALLOCATE(ZFIELD)
@@ -93,9 +93,9 @@ SELECT CASE(HSURF)
 !      --------------------
 !
   CASE('TS     ')
-    SELECT CASE (YINMODEL)
+    SELECT CASE (CINMODEL)
       CASE ('ECMWF ','ARPEGE','ALADIN','MOCAGE','HIRLAM','NCEP  ')
-        CALL READ_GRIB_TSWATER(HFILE,KLUOUT,YINMODEL,ZMASK,ZFIELD)
+        CALL READ_GRIB_TSWATER(HFILE,KLUOUT,CINMODEL,ZMASK,ZFIELD)
         ALLOCATE(PFIELD(SIZE(ZFIELD),1))
         PFIELD(:,1) = ZFIELD(:)
         DEALLOCATE(ZFIELD)
