@@ -152,7 +152,7 @@ SELECT CASE(TPFILE%CTYPE)
     !
     CALL FMOPEN_ll(TPFILE,IRESP,OPARALLELIO=OPARALLELIO,HPROGRAM_ORIG=HPROGRAM_ORIG)
     !
-    !Compare MNHVERSION of file with current version
+    !Compare MNHVERSION of file with current version and store it in file metadata
     IF (TRIM(TPFILE%CMODE) == 'READ') THEN
       IMNHVERSION(:) = 0
       !Use TZFIELD because TFIELDLIST could be not initialised
@@ -211,8 +211,12 @@ SELECT CASE(TPFILE%CTYPE)
         CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_FILE_OPEN_ll','file '//TRIM(TPFILE%CNAME)//&
                       ' was written with the same version of MesoNH ('//TRIM(YMNHVERSION_CURR)//')')
       END IF
+      !
+      TPFILE%NMNHVERSION(:) = IMNHVERSION(:)
     END IF
 END SELECT
+!
+IF (TRIM(TPFILE%CMODE) == 'WRITE') TPFILE%NMNHVERSION(:) = NMNHVERSION(:)
 !
 IF (PRESENT(KRESP)) KRESP = IRESP
 !

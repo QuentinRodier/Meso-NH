@@ -83,7 +83,8 @@ TYPE TFILEDATA
                                                !the 2 sub-files are abcd.Z001 and abcd.Z002
   TYPE(TFILE_ELT),DIMENSION(:),ALLOCATABLE :: TFILES_IOZ !Corresponding Z-splitted files
   !
-  INTEGER           :: NMODEL = 0          !Model number corresponding to the file (field not always set)
+  INTEGER              :: NMODEL = 0              !Model number corresponding to the file (field not always set)
+  INTEGER,DIMENSION(3) :: NMNHVERSION = (/0,0,0/) !MesoNH version used to create the file
   !
   ! Fields for LFI files
   INTEGER(KIND=LFI_INT) :: NLFININAR = 0  !Number of articles of the LFI file (only accurate if file opened in read mode)
