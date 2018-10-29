@@ -1,6 +1,6 @@
 !MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !####################################
@@ -185,8 +185,6 @@ CHARACTER(LEN=28) :: YPGD_NAME, YPGD_DAD_NAME
 CHARACTER(LEN=28) :: YOUTFILE
 CHARACTER(LEN=2)  :: YPGD_TYPE
 !
-INTEGER           :: IMASDEV       ! Masdev version
-!
 !* temporary namelist configuration variables
 !
 INTEGER                           :: IVERB      ! verbosity level
@@ -312,8 +310,7 @@ CALL IO_READ_FIELD(TPPGDFILE,'ZS',XZS)
 CALL ZS_BOUNDARY(XZS,XZS_LS)
 !
 ALLOCATE(XZSMT(IISUP_LS-IIINF_LS+1,IJSUP_LS-IJINF_LS+1))
-CALL IO_READ_FIELD(TPPGDFILE,'MASDEV',IMASDEV)
-IF (IMASDEV<=46) THEN
+IF (TPPGDFILE%NMNHVERSION(1)<4 .OR. (TPPGDFILE%NMNHVERSION(1)==4 .AND. TPPGDFILE%NMNHVERSION(2)<=6)) THEN
   XZSMT = XZS
 ELSE
   CALL IO_READ_FIELD(TPPGDFILE,'ZSMT',XZSMT)

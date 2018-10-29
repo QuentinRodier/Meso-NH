@@ -1,6 +1,6 @@
 !MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #######################
@@ -462,7 +462,6 @@ TYPE(TFILEDATA),  INTENT(IN)   :: TPINIFILE ! Initial file
 INTEGER             :: JSV     ! Loop index
 INTEGER             :: IRESP   ! Return code of FM routines
 INTEGER             :: ININAR  ! File management variable
-INTEGER             :: IMASDEV ! version of MESONH in the input file
 INTEGER             :: ILUOUT  ! Logical unit number of output-listing
 CHARACTER(LEN=28)   :: YNAME
 INTEGER             :: IIU     ! Upper dimension in x direction (local)
@@ -550,7 +549,6 @@ NULLIFY(TZINITHALO3D_ll)
 !
 ILUOUT = TLUOUT%NLU
 !
-CALL IO_READ_FIELD(TPINIFILE,'MASDEV',IMASDEV)
 !-------------------------------------------------------------------------------
 !
 !*       2.   END OF READING
@@ -1662,7 +1660,7 @@ IF (CCLOUD=='LIMA') CALL INIT_AEROSOL_PROPERTIES
 !              --------------------------------
 !
 CALL MPPDB_CHECK3D(XUT,"INI_MODEL_N-before read_field::XUT",PRECISION)
-CALL READ_FIELD(TPINIFILE,IMASDEV, IIU,IJU,IKU,XTSTEP,                        &
+CALL READ_FIELD(TPINIFILE,IIU,IJU,IKU,XTSTEP,                                 &
                 CGETTKET,CGETRVT,CGETRCT,CGETRRT,CGETRIT,CGETCIT,             &
                 CGETRST,CGETRGT,CGETRHT,CGETSVT,CGETSRCT,CGETSIGS,CGETCLDFR,  &
                 CGETBL_DEPTH,CGETSBL_DEPTH,CGETPHC,CGETPHR,CUVW_ADV_SCHEME,   &
@@ -2049,7 +2047,7 @@ ALLOCATE(ZSCA_ALB(IIU,IJU,NSWB_MNH))
 ALLOCATE(ZEMIS  (IIU,IJU,NLWB_MNH))
 ALLOCATE(ZTSRAD (IIU,IJU))
 !
-IF (IMASDEV>=46) THEN
+IF ((TPINIFILE%NMNHVERSION(1)==4 .AND. TPINIFILE%NMNHVERSION(2)>=6) .OR. TPINIFILE%NMNHVERSION(1)>4) THEN
   CALL IO_READ_FIELD(TPINIFILE,'SURF',CSURF)
 ELSE
   CSURF = "EXTE"

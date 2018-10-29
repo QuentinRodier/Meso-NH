@@ -1,6 +1,6 @@
 !MNH_LIC Copyright 1996-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #######################
@@ -108,7 +108,6 @@ INTEGER             :: ILUOUT
 INTEGER             :: IRESP
 REAL                :: ZLAT0,ZLON0,ZRPK,ZBETA
 REAL                :: ZEPS = 1.E-10
-INTEGER             :: IMASDEV
 INTEGER             :: IID, IMI
 !
 !-------------------------------------------------------------------------------
@@ -121,6 +120,7 @@ INTEGER             :: IXOR, IYOR, IXEND, IYEND
 INTEGER             :: IJPHEXT
 TYPE(TFIELDDATA)    :: TZFIELD
 !
+print *,'PW: READ_HGRIDn called'
 ILUOUT = TLUOUT%NLU
 !
 !*       1.     General information :
@@ -129,12 +129,12 @@ ILUOUT = TLUOUT%NLU
 CALL IO_READ_FIELD(TPFMFILE,'MY_NAME',     HMY_NAME)
 CALL IO_READ_FIELD(TPFMFILE,'DAD_NAME',    HDAD_NAME)
 CALL IO_READ_FIELD(TPFMFILE,'STORAGE_TYPE',HSTORAGE_TYPE)
-CALL IO_READ_FIELD(TPFMFILE,'MASDEV',      IMASDEV)
 !
 !*       2.     Grid information :
 !               ----------------
 !
-IF(IMASDEV<=45 .AND. HSTORAGE_TYPE == 'PG') THEN
+IF( (TPFMFILE%NMNHVERSION(1)<4 .OR. (TPFMFILE%NMNHVERSION(1)==4 .AND. TPFMFILE%NMNHVERSION(2)<=5)) &
+   .AND. HSTORAGE_TYPE == 'PG') THEN
   LCARTESIAN=.FALSE.
 ELSE
   CALL IO_READ_FIELD(TPFMFILE,'CARTESIAN',LCARTESIAN)
@@ -268,7 +268,7 @@ IF (.NOT. (ASSOCIATED(XZSMT))) ALLOCATE(XZSMT(NIMAX+2*JPHEXT,NJMAX+2*JPHEXT))
 ENDIF
 !JUAN REALZ
 
-IF (IMASDEV<=46) THEN
+IF (TPFMFILE%NMNHVERSION(1)<4 .OR. (TPFMFILE%NMNHVERSION(1)==4 .AND. TPFMFILE%NMNHVERSION(2)<=6)) THEN
   XZSMT = XZS
 ELSE
   CALL IO_READ_FIELD(TPFMFILE,'ZSMT',XZSMT)
@@ -276,7 +276,7 @@ ELSE
 END IF
 !
 !-------------------------------------------------------------------------------
-IF (IMASDEV<=45) THEN
+IF (TPFMFILE%NMNHVERSION(1)<4 .OR. (TPFMFILE%NMNHVERSION(1)==4 .AND. TPFMFILE%NMNHVERSION(2)<=5)) THEN
   CALL FIND_FIELD_ID_FROM_MNHNAME('LONORI',IID,IRESP)
   TZFIELD = TFIELDLIST(IID)
   TZFIELD%CMNHNAME = 'LONOR'

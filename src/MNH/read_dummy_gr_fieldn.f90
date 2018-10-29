@@ -1,6 +1,6 @@
 !MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 MODULE MODI_READ_DUMMY_GR_FIELD_n
@@ -99,8 +99,6 @@ CHARACTER (LEN=20 ) :: YSTRING20   ! string
 CHARACTER (LEN=3  ) :: YSTRING03   ! string
 INTEGER             :: JDUMMY      ! Loop index for cover data
 !
-INTEGER             :: IMASDEV ! masdev used for creation of input FM file
-!
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZWORK  ! work array read in the file
 INTEGER                           :: IIWORK ! 1st dimension of work array
 INTEGER                           :: IJWORK ! 2nd dimension of work array
@@ -112,15 +110,7 @@ TYPE(TFIELDDATA)                  :: TZFIELD
 !
 !-------------------------------------------------------------------------------
 !
-!*       1..   TEST MASDEV VERSION OF INPUT FILE
-!              ---------------------------------
-!
-CALL IO_READ_FIELD(TPINIFILE,'MASDEV',IMASDEV,IRESP)
-IF (IRESP /= 0) IMASDEV=33
-!
-!-------------------------------------------------------------------------------
-!
-!*       2..   READ DIMENSIONS IN THE FILE
+!*       1..   READ DIMENSIONS IN THE FILE
 !              ---------------------------
 !
 IF (OREAD_ALL) THEN
@@ -152,11 +142,11 @@ END IF
 !
 !-------------------------------------------------------------------------------
 !
-!*       3..    READ DUMMY VARIABLES
+!*       2..    READ DUMMY VARIABLES
 !              ----------------------
 !
 !
-IF (IMASDEV>=40) THEN
+IF (TPINIFILE%NMNHVERSION(1)>=4) THEN
   TZFIELD%CMNHNAME   = 'DUMMY_GR_NBR'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = 'DUMMY_GR_NBR'

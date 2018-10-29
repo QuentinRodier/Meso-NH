@@ -1,6 +1,6 @@
 !MNH_LIC Copyright 2004-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 ---------------------------------------------------------------
 !     #############################
@@ -31,7 +31,7 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_CONF,        ONLY : CPROGRAM,NMASDEV,NBUGFIX,CBIBUSER,&
+USE MODD_CONF,        ONLY : CPROGRAM,&
                              L1D, L2D, LPACK
 USE MODD_CONF_n,      ONLY : CSTORAGE_TYPE
 USE MODD_IO_ll,       ONLY : TFILEDATA, NIO_VERB, NVERB_DEBUG, TFILE_SURFEX

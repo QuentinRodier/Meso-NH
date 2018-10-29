@@ -1,6 +1,6 @@
 !MNH_LIC Copyright 1996-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ######################
@@ -111,7 +111,6 @@ CHARACTER(LEN=2) , INTENT(OUT) :: HSTORAGE_TYPE
 !*       0.2   declarations of local variables
 !
 INTEGER                :: IRESP
-INTEGER                :: IMASDEV
 INTEGER                :: IID, IMI
 LOGICAL                :: G1D,G2D,GPACK
 INTEGER                :: IINFO_ll
@@ -152,7 +151,6 @@ END IF
 CALL IO_READ_FIELD(TPFMFILE,'MY_NAME',     HMY_NAME)
 CALL IO_READ_FIELD(TPFMFILE,'DAD_NAME',    HDAD_NAME)
 CALL IO_READ_FIELD(TPFMFILE,'STORAGE_TYPE',HSTORAGE_TYPE)
-CALL IO_READ_FIELD(TPFMFILE,'MASDEV',      IMASDEV)
 !
 !*       2.2    Grid information :
 !               ----------------
@@ -199,7 +197,7 @@ IF (IRESP/=0) GPACK=.TRUE.
 !
 CALL SET_FMPACK_ll(G1D,G2D,GPACK)
 !-------------------------------------------------------------------------------
-IF (IMASDEV<=45) THEN
+IF (TPFMFILE%NMNHVERSION(1)<4 .OR. (TPFMFILE%NMNHVERSION(1)==4 .AND. TPFMFILE%NMNHVERSION(2)<=5)) THEN
   CALL FIND_FIELD_ID_FROM_MNHNAME('LONORI',IID,IRESP)
   TZFIELD = TFIELDLIST(IID)
   TZFIELD%CMNHNAME = 'LONOR'

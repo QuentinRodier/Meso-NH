@@ -1,6 +1,6 @@
 !MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ######################
@@ -227,7 +227,6 @@ LOGICAL :: GHORELAX_R, GHORELAX_SV ! switch for the horizontal relaxation
 CHARACTER (LEN= LEN(HGETRVM)), DIMENSION (7) :: YGETRXM ! Arrays with  the get indicators 
                                                         !  for the moist variables
 CHARACTER (LEN=1), DIMENSION (7) :: YC    ! array with the prefix of the moist variables
-INTEGER :: IMASDEV                                                      
 CHARACTER(LEN=2)  :: INDICE ! to index CCN and IFN fields of LIMA scheme
 TYPE(TFIELDDATA)  :: TZFIELD
 !-------------------------------------------------------------------------------
@@ -235,8 +234,7 @@ TYPE(TFIELDDATA)  :: TZFIELD
 !
 !*       0.    READ CPL_AROME to know which LB_fileds there are to read
 !              --------------------
-CALL IO_READ_FIELD(TPINIFILE,'MASDEV',IMASDEV)
-IF (IMASDEV > 48) THEN
+IF ((TPINIFILE%NMNHVERSION(1)==4 .AND. TPINIFILE%NMNHVERSION(2)>8) .OR. TPINIFILE%NMNHVERSION(1)>4) THEN
   CALL IO_READ_FIELD(TPINIFILE,'CPL_AROME',LCPL_AROME)
 ELSE
   LCPL_AROME=.FALSE.

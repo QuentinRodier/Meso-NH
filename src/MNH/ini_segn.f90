@@ -1,6 +1,6 @@
 !MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ###################
@@ -209,7 +209,6 @@ REAL,DIMENSION(:),          INTENT(INOUT) :: PTSTEP_ALL   ! Time STEP of ALL mod
 LOGICAL            :: GFOUND              ! Return code when searching namelist
 CHARACTER (LEN=28) :: YINIFILE                    ! name of initial file
 CHARACTER (LEN=2)  :: YMI                         ! string for model index
-INTEGER            :: IMASDEV                     ! version of MESOHN file  
 INTEGER            :: ILUOUT                      ! Logical unit number
                                                   ! associated with CLUOUT 
                                                   !
@@ -384,10 +383,8 @@ END IF
 !*      6.    READ in the LFI file SOME VARIABLES of MODD_CONF
 !             ------------------------------------------------
 !
-CALL IO_READ_FIELD(TPINIFILE,'MASDEV',IMASDEV)
-!
 IF (CPROGRAM=='MESONH' .OR. CPROGRAM=='SPAWN ') THEN
-  IF (IMASDEV > 49) THEN
+  IF ((TPINIFILE%NMNHVERSION(1)==4 .AND. TPINIFILE%NMNHVERSION(2)>9) .OR. TPINIFILE%NMNHVERSION(1)>4) THEN
     CALL IO_READ_FIELD(TPINIFILE,'COUPLING',LCOUPLING)
     IF (LCOUPLING) THEN
       WRITE(ILUOUT,*) 'Error with the initial file'
@@ -413,7 +410,7 @@ IF (KMI == 1) THEN
 ! Read the thinshell approximation
   CALL IO_READ_FIELD(TPINIFILE,'THINSHELL',LTHINSHELL)
 !
-  IF (IMASDEV>=46) THEN
+  IF ((TPINIFILE%NMNHVERSION(1)==4 .AND. TPINIFILE%NMNHVERSION(2)>=6) .OR. TPINIFILE%NMNHVERSION(1)>4) THEN
    CALL IO_READ_FIELD(TPINIFILE,'L1D',L1D,IRESP)
    IF (IRESP/=0)  L1D=.FALSE.
 !
@@ -427,7 +424,7 @@ IF (KMI == 1) THEN
    L2D=.FALSE.
    LPACK=.TRUE.
   END IF
-  IF (IMASDEV>=410) THEN
+  IF ((TPINIFILE%NMNHVERSION(1)==4 .AND. TPINIFILE%NMNHVERSION(2)>=10) .OR. TPINIFILE%NMNHVERSION(1)>4) THEN
    CALL IO_READ_FIELD(TPINIFILE,'LBOUSS',LBOUSS)
   END IF
 !

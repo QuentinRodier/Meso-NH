@@ -1,6 +1,6 @@
 !MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !###########################
@@ -117,7 +117,6 @@ REAL                         :: ZLATORI, ZLONORI ! lat and lon of left-bottom po
 INTEGER             :: IIU,IJU       ! Upper dimension in x,y direction (local)
 INTEGER             :: IKU           ! Upper dimension in z direction
 INTEGER             :: IINFO_ll      ! return code of // routines
-INTEGER             :: IMASDEV       ! masdev of the file
 INTEGER             :: IID
 TYPE(TFIELDDATA)    :: TZFIELD
 !
@@ -193,12 +192,11 @@ CALL IO_READ_FIELD(TPINIFILE,'XHAT',XXHAT)
 CALL IO_READ_FIELD(TPINIFILE,'YHAT',XYHAT)
 !
 IF (.NOT.LCARTESIAN) THEN
-  CALL IO_READ_FIELD(TPINIFILE,'MASDEV',IMASDEV)
   CALL IO_READ_FIELD(TPINIFILE,'RPK',XRPK)
   CALL IO_READ_FIELD(TPINIFILE,'LONORI',XLONORI)
   CALL IO_READ_FIELD(TPINIFILE,'LATORI',XLATORI)
   !
-  IF (IMASDEV<=45) THEN
+  IF (TPINIFILE%NMNHVERSION(1)<4 .OR. (TPINIFILE%NMNHVERSION(1)==4 .AND. TPINIFILE%NMNHVERSION(2)<=5)) THEN
     CALL FIND_FIELD_ID_FROM_MNHNAME('LONORI',IID,IRESP)
     TZFIELD = TFIELDLIST(IID)
     TZFIELD%CMNHNAME = 'LONOR'

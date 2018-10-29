@@ -1,6 +1,6 @@
 !MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !#####################
@@ -95,7 +95,6 @@ CHARACTER(LEN=*),    INTENT(INOUT) :: HDAD_NAME ! true name of the Mesonh input 
 !              ------------------------------
 !
 INTEGER             :: IKMAX                ! vertical dimension in input file
-INTEGER             :: IMASDEV              ! Masdev version
 REAL, DIMENSION(:), ALLOCATABLE :: ZZHAT    ! vertical grid in input file
 LOGICAL             :: GSLEVE               ! flag for sleve coordinate
 REAL                :: ZLEN1                ! Decay scale for smooth topography
@@ -121,8 +120,7 @@ CALL IO_READ_FIELD(TZFMFILE,'KMAX',IKMAX)
 ALLOCATE(ZZHAT(IKMAX+2*JPVEXT))
 CALL IO_READ_FIELD(TZFMFILE,'ZHAT',ZZHAT)
 CALL IO_READ_FIELD(TZFMFILE,'THINSHELL',GTHINSHELL)
-CALL IO_READ_FIELD(TZFMFILE,'MASDEV',IMASDEV)
-IF (IMASDEV<=46) THEN
+IF ( TZFMFILE%NMNHVERSION(1)<4 .OR. (TZFMFILE%NMNHVERSION(1)==4 .AND. TZFMFILE%NMNHVERSION(2)<=6) ) THEN
   GSLEVE = .FALSE.
 ELSE
   CALL IO_READ_FIELD(TZFMFILE,'SLEVE',GSLEVE)

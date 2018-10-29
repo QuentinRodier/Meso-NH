@@ -1,6 +1,6 @@
 !MNH_LIC Copyright 2003-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 ! Modifications:
@@ -164,7 +164,6 @@ CHARACTER(LEN=100),     INTENT(OUT) :: HCOMMENT ! comment
 INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: ILENCH         ! ILENCH : length of comment string
 INTEGER           :: ILUOUT
-INTEGER           :: IMASDEV
 INTEGER           :: IID,IRESP
 INTEGER           :: IIMAX,IJMAX
 REAL,DIMENSION(:), ALLOCATABLE :: ZXHAT,ZYHAT
@@ -178,8 +177,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFX0_MNH',TRIM(TPINFILE%CNAME)//': readi
 ILUOUT = TOUT%NLU
 !
 IF (HREC=='LONORI' .OR. HREC=='LATORI') THEN
-  CALL IO_READ_FIELD(TPINFILE,'MASDEV',IMASDEV)
-  IF (IMASDEV<=45) THEN
+  IF (TPINFILE%NMNHVERSION(1)<4 .OR. (TPINFILE%NMNHVERSION(1)==4 .AND. TPINFILE%NMNHVERSION(2)<=5)) THEN
       ZLATORI = XUNDEF
       ZLONORI = XUNDEF
       !* saves projection parameters of MODD_GRID
@@ -333,7 +331,6 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZWORK  ! work array read in the file
 REAL, DIMENSION(:),   ALLOCATABLE :: ZWORK1D! work array read in the file
 REAL                              :: ZW     ! work value
 
-INTEGER           :: IMASDEV
 CHARACTER(LEN=LEN_HREC) :: YREC
 CHARACTER(LEN=2)  :: YSTORAGE_TYPE
 !
@@ -470,8 +467,7 @@ ELSE
   YREC = ' '
   YREC(1:LEN(HREC)) = HREC
   IF (HREC(1:8)=='Q_CANYON') THEN
-    CALL IO_READ_FIELD(TPINFILE,'MASDEV',IMASDEV)
-    IF (IMASDEV<=45) THEN
+    IF (TPINFILE%NMNHVERSION(1)<4 .OR. (TPINFILE%NMNHVERSION(1)==4 .AND. TPINFILE%NMNHVERSION(2)<=5)) THEN
       CALL IO_READ_FIELD(TPINFILE,'STORAGE_TYPE',YSTORAGE_TYPE)
       IF (YSTORAGE_TYPE=='TT') THEN
         PFIELD = 0.
@@ -483,15 +479,15 @@ ELSE
     END IF
   END IF
   IF (HREC(1:8)=='T_CANYON') THEN
-    CALL IO_READ_FIELD(TPINFILE,'MASDEV',IMASDEV)
-    IF (IMASDEV<=45) THEN
+    IF (TPINFILE%NMNHVERSION(1)<4 .OR. (TPINFILE%NMNHVERSION(1)==4 .AND. TPINFILE%NMNHVERSION(2)<=5)) THEN
       CALL IO_READ_FIELD(TPINFILE,'STORAGE_TYPE',YSTORAGE_TYPE)
       IF (YSTORAGE_TYPE=='TT') YREC = 'T_ROAD1             '
     END IF
   END IF
   IF (HREC(1:7)=='SSO_DIR') THEN
-    CALL IO_READ_FIELD(TPINFILE,'MASDEV',IMASDEV)
-    IF (IMASDEV<=45) YREC = 'SSO_DIRECTION       '
+    IF (TPINFILE%NMNHVERSION(1)<4 .OR. (TPINFILE%NMNHVERSION(1)==4 .AND. TPINFILE%NMNHVERSION(2)<=5)) THEN
+      YREC = 'SSO_DIRECTION       '
+    END IF
   END IF
 !
   ALLOCATE(ZWORK(IIU,IJU))
@@ -1328,7 +1324,6 @@ INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: ILENCH         ! ILENCH : length of comment string
 INTEGER           :: ILUOUT
 !
-INTEGER           :: IMASDEV      ! mesonh version of the input file
 INTEGER           :: ILUDES       ! .des file logical unit
 !
 LOGICAL           :: GFOUND
@@ -1343,72 +1338,73 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFC0_MNH',TRIM(TPINFILE%CNAME)//': readi
 !
 KRESP = 0
 ILUOUT = TOUT%NLU
-! On lit la version de Mesonh usilisée pour fabriquer le fichier
 !
-CALL IO_READ_FIELD(TPINFILE,'MASDEV',IMASDEV)
-
-IF (HREC=='SNOW_VEG_TYPE'.AND.IMASDEV<46) THEN
-  HFIELD='D95'
-ELSE IF (HREC=='SNOW_ROAD_TYPE'.AND.IMASDEV<46) THEN
-  HFIELD='1-L'
-ELSE IF (HREC=='SNOW_ROOF_TYPE'.AND.IMASDEV<46) THEN
-  HFIELD='1-L'
-ELSE IF (HREC=='PHOTO'.AND.IMASDEV<46) THEN
-  HFIELD='NON'
-ELSE IF ( HREC=='GRID_TYPE'.AND. (IMASDEV<46 .OR. &
+IF (TPINFILE%NMNHVERSION(1)<4 .OR. (TPINFILE%NMNHVERSION(1)==4 .AND. TPINFILE%NMNHVERSION(2)<6)) THEN
+  SELECT CASE(TRIM(HREC))
+    CASE('SNOW_VEG_TYPE')
+      HFIELD='D95'
+    CASE('SNOW_ROAD_TYPE')
+      HFIELD='1-L'
+    CASE('SNOW_ROOF_TYPE')
+      HFIELD='1-L'
+    CASE('PHOTO')
+      HFIELD='NON'
+    CASE('ISBA')
+      HFIELD = '3-L'
+    CASE('GRID_TYPE')
+      IF (LCARTESIAN) THEN
+        HFIELD="CARTESIAN "
+      ELSE
+        HFIELD='CONF PROJ '
+      END IF
+    CASE('NATURE','SEA','WATER','TOWN')
+      IF (CPROGRAM=='REAL  ' .OR. CPROGRAM=='IDEAL ') THEN
+        CGROUND='ISBA'
+      ELSE
+        CGROUND='NONE'
+        ILUDES = TPINFILE%TDESFILE%NLU
+        CALL POSNAM(ILUDES,'NAM_PARAMN',GFOUND,ILUOUT)
+        IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_PARAMn)
+      END IF
+      IF (CGROUND=='NONE') THEN
+        HFIELD ='NONE  '
+      ELSE IF (CGROUND=='FLUX') THEN
+        HFIELD ='FLUX  '
+      ELSE IF (CGROUND=='ISBA') THEN
+        IF(HREC=='SEA   ') HFIELD ='SEAFLX'
+        IF(HREC=='WATER ') HFIELD ='WATFLX'
+        IF(HREC=='NATURE') HFIELD ='ISBA  '
+        IF(HREC=='TOWN  ') HFIELD ='TEB   '
+      ELSE
+        CALL PRINT_MSG(NVERB_FATAL,'IO','READ_SURFC0_MNH',TRIM(TPINFILE%CNAME)//': error when reading article '//TRIM(HREC)// &
+                       ' with CGROUND='//TRIM(CGROUND))
+      END IF
+    CASE DEFAULT
+      CALL PREPARE_METADATA_READ_SURF(HREC,'--',0,TYPECHAR,0,'READ_SURFC0_MNH',TZFIELD)
+      CALL IO_READ_FIELD(TPINFILE,TZFIELD,HFIELD,KRESP)
+      !
+      IF (KRESP /=0) THEN
+        CALL PRINT_MSG(NVERB_FATAL,'IO','READ_SURFC0_MNH',TRIM(TPINFILE%CNAME)//': error when reading article '//TRIM(HREC)// &
+                       ' default value may be used, who knows???')
+      ENDIF
+  END SELECT
+ELSE IF ( HREC=='GRID_TYPE'.AND. ( &
                            (CPROGRAM=='IDEAL ' .AND. .NOT.ASSOCIATED(TPGDFILE,TOUT)) .OR. &
                            (CPROGRAM=='SPAWN ' .AND. .NOT.ASSOCIATED(TPGDFILE,TOUT)) .OR. &
-                           CPROGRAM=='ZOOMPG'                         )) THEN
+                            CPROGRAM=='ZOOMPG'                         )) THEN
   IF (LCARTESIAN) THEN
     HFIELD="CARTESIAN "
   ELSE
     HFIELD='CONF PROJ '
   END IF
-ELSE IF ( HREC=='ISBA  ' .AND.IMASDEV<46) THEN
-  HFIELD = '3-L'
-ELSE IF ( (HREC=='NATURE'.OR.HREC=='SEA   '.OR.HREC=='WATER ' &
-            .OR.HREC=='TOWN  ') .AND.IMASDEV<46) THEN
-     IF (CPROGRAM=='REAL  ' .OR. CPROGRAM=='IDEAL ') THEN
-       CGROUND='ISBA'
-     ELSE
-       CGROUND='NONE'
-       ILUDES = TPINFILE%TDESFILE%NLU
-       CALL POSNAM(ILUDES,'NAM_PARAMN',GFOUND,ILUOUT)
-       IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_PARAMn)
-     END IF
-     IF (CGROUND=='NONE') THEN
-       HFIELD ='NONE  '
-     ELSE IF (CGROUND=='FLUX') THEN
-       HFIELD ='FLUX  '
-     ELSE IF (CGROUND=='ISBA') THEN
-       IF(HREC=='SEA   ') HFIELD ='SEAFLX'
-       IF(HREC=='WATER ') HFIELD ='WATFLX'
-       IF(HREC=='NATURE') HFIELD ='ISBA  '
-       IF(HREC=='TOWN  ') HFIELD ='TEB   '
-     ELSE
-       WRITE(ILUOUT,*) ' '
-       WRITE(ILUOUT,*) 'error when reading article', HREC,'KRESP=',KRESP
-       WRITE(ILUOUT,*) 'avec CGROUND = "',CGROUND,'"'
- !callabortstop
-CALL ABORT
-       STOP
-     END IF
-
 ELSE
-   CALL PREPARE_METADATA_READ_SURF(HREC,'--',0,TYPECHAR,0,'READ_SURFC0_MNH',TZFIELD)
-   CALL IO_READ_FIELD(TPINFILE,TZFIELD,HFIELD,KRESP)
-   !
-   IF (KRESP /=0) THEN
-      WRITE(ILUOUT,*) 'WARNING'
-      WRITE(ILUOUT,*) '-------'
-      WRITE(ILUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
-      WRITE(ILUOUT,*) 'default value may be used, who knows???'
-      WRITE(ILUOUT,*) ' '
- !callabortstop
-CALL ABORT
-      STOP
-   ENDIF
-
+  CALL PREPARE_METADATA_READ_SURF(HREC,'--',0,TYPECHAR,0,'READ_SURFC0_MNH',TZFIELD)
+  CALL IO_READ_FIELD(TPINFILE,TZFIELD,HFIELD,KRESP)
+  !
+  IF (KRESP /=0) THEN
+        CALL PRINT_MSG(NVERB_FATAL,'IO','READ_SURFC0_MNH',TRIM(TPINFILE%CNAME)//': error when reading article '//TRIM(HREC)// &
+                       ' default value may be used, who knows???')
+  ENDIF
 ENDIF
 !
 !-------------------------------------------------------------------------------
@@ -1591,7 +1587,6 @@ CHARACTER(LEN=100),     INTENT(OUT) :: HCOMMENT ! comment
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER           :: IMASDEV        ! MESONH version
 INTEGER           :: ILUOUT
 TYPE(TFIELDDATA)  :: TZFIELD
 !-------------------------------------------------------------------------------
@@ -1600,8 +1595,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFL0_MNH',TRIM(TPINFILE%CNAME)//': readi
 ILUOUT = TOUT%NLU
 !
 IF (HREC(1:4)=='BUDC') THEN
-  CALL IO_READ_FIELD(TPINFILE,'MASDEV',IMASDEV)
-  IF (IMASDEV<=45) THEN
+  IF (TPINFILE%NMNHVERSION(1)<4 .OR. (TPINFILE%NMNHVERSION(1)==4 .AND. TPINFILE%NMNHVERSION(2)<=5)) THEN
     OFIELD = .FALSE.
     KRESP = 0
     RETURN
@@ -1609,8 +1603,7 @@ IF (HREC(1:4)=='BUDC') THEN
 END IF
 !
 IF (HREC=='ECOCLIMAP') THEN
-  CALL IO_READ_FIELD(TPINFILE,'MASDEV',IMASDEV)
-  IF (IMASDEV<=46) THEN
+  IF (TPINFILE%NMNHVERSION(1)<4 .OR. (TPINFILE%NMNHVERSION(1)==4 .AND. TPINFILE%NMNHVERSION(2)<=6)) THEN
     OFIELD = .TRUE.
     KRESP = 0
     RETURN
@@ -1703,7 +1696,6 @@ CHARACTER(LEN=LEN_HREC)        :: YRECFM     ! Name of the article to be written
 CHARACTER(LEN=40)              :: YFILETYPE40! MESONH file type
 CHARACTER(LEN=2)               :: YFILETYPE2 ! MESONH file type
 INTEGER, DIMENSION(3)  :: ITDATE
-INTEGER                :: IMASDEV           ! MESONH version
 TYPE(TFIELDDATA)       :: TZFIELD
 TYPE(DATE_TIME)        :: TZDATETIME
 !-------------------------------------------------------------------------------
@@ -1712,8 +1704,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFT0_MNH',TRIM(TPINFILE%CNAME)//': readi
 !
 ILUOUT = TOUT%NLU
 !
-CALL IO_READ_FIELD(TPINFILE,'MASDEV',IMASDEV)
-IF (IMASDEV<46) THEN
+IF (TPINFILE%NMNHVERSION(1)<4 .OR. (TPINFILE%NMNHVERSION(1)==4 .AND. TPINFILE%NMNHVERSION(2)<6)) THEN
   CALL IO_READ_FIELD(TPINFILE,'STORAGE_TYPE',YFILETYPE2)
 ELSE
   TZFIELD%CMNHNAME   = 'STORAGETYPE'
@@ -1830,7 +1821,6 @@ CHARACTER(LEN=LEN_HREC)        :: YRECFM     ! Name of the article to be written
 CHARACTER(LEN=40)              :: YFILETYPE40! MESONH file type
 CHARACTER(LEN=2)               :: YFILETYPE2 ! MESONH file type
 INTEGER, DIMENSION(3,KL1)  :: ITDATE
-INTEGER                :: IMASDEV           ! MESONH version
 TYPE(TFIELDDATA)       :: TZFIELD
 !-------------------------------------------------------------------------------
 !
@@ -1838,8 +1828,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFT1_MNH',TRIM(TPINFILE%CNAME)//': readi
 !
 ILUOUT = TOUT%NLU
 !
-CALL IO_READ_FIELD(TPINFILE,'MASDEV',IMASDEV)
-IF (IMASDEV<46) THEN
+IF (TPINFILE%NMNHVERSION(1)<4 .OR. (TPINFILE%NMNHVERSION(1)==4 .AND. TPINFILE%NMNHVERSION(2)<6)) THEN
   CALL IO_READ_FIELD(TPINFILE,'STORAGE_TYPE',YFILETYPE2)
 ELSE
   TZFIELD%CMNHNAME   = 'STORAGETYPE'

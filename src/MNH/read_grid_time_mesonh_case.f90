@@ -1,6 +1,6 @@
 !MNH_LIC Copyright 1996-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !#####################################
@@ -118,7 +118,6 @@ CHARACTER(LEN=*),  INTENT(OUT):: HDAD_NAME! dad name of the FM file
 REAL               :: ZEPS       ! a little number
 INTEGER            :: IRESP      ! return-code
 INTEGER            :: ILUOUT0    ! logical number for listing file
-INTEGER            :: IMASDEV    ! Masdev version
 INTEGER            :: JL         ! loop controls
 INTEGER            :: ILMAX_LS
 !
@@ -223,9 +222,8 @@ ILMAX_LS=ILMAX_LS+2*JPVEXT
 ALLOCATE(XZHAT_LS(ILMAX_LS))
 CALL IO_READ_FIELD(TZFMFILE,'ZHAT',XZHAT_LS)
 !
-CALL IO_READ_FIELD(TZFMFILE,'MASDEV',IMASDEV)
 CALL DEFAULT_SLEVE(LSLEVE_LS,XLEN1_LS,XLEN2_LS)
-IF (IMASDEV<=46) THEN
+IF (TZFMFILE%NMNHVERSION(1)<4 .OR. (TZFMFILE%NMNHVERSION(1)==4 .AND. TZFMFILE%NMNHVERSION(2)<=6)) THEN
   LSLEVE_LS = .FALSE.
 ELSE
   CALL IO_READ_FIELD(TZFMFILE,'SLEVE',LSLEVE_LS)

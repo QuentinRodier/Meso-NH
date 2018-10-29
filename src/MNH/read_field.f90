@@ -1,6 +1,6 @@
 !MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !     ######################
       MODULE MODI_READ_FIELD
@@ -8,7 +8,7 @@
 !
 INTERFACE 
 !
-      SUBROUTINE READ_FIELD(TPINIFILE,KMASDEV,KIU,KJU,KKU,PTSTEP,            &
+      SUBROUTINE READ_FIELD(TPINIFILE,KIU,KJU,KKU,PTSTEP,                    &
             HGETTKET,HGETRVT,HGETRCT,HGETRRT,HGETRIT,HGETCIT,                &
             HGETRST,HGETRGT,HGETRHT,HGETSVT,HGETSRCT,HGETSIGS,HGETCLDFR,     &
             HGETBL_DEPTH,HGETSBL_DEPTH,HGETPHC,HGETPHR,HUVW_ADV_SCHEME,      &
@@ -35,8 +35,6 @@ USE MODD_TIME ! for type DATE_TIME
 !
 !
 TYPE(TFILEDATA),           INTENT(IN)  :: TPINIFILE    !Initial file
-INTEGER,                   INTENT(IN)  :: KMASDEV
-                             ! version of the input file
 INTEGER,                   INTENT(IN)  :: KIU, KJU, KKU   
                              ! array sizes in x, y and z  directions
 REAL,                      INTENT(IN)  :: PTSTEP       
@@ -126,7 +124,7 @@ END INTERFACE
 END MODULE MODI_READ_FIELD
 !
 !     ########################################################################
-      SUBROUTINE READ_FIELD(TPINIFILE,KMASDEV,KIU,KJU,KKU,PTSTEP,            &
+      SUBROUTINE READ_FIELD(TPINIFILE,KIU,KJU,KKU,PTSTEP,                    &
             HGETTKET,HGETRVT,HGETRCT,HGETRRT,HGETRIT,HGETCIT,                &
             HGETRST,HGETRGT,HGETRHT,HGETSVT,HGETSRCT,HGETSIGS,HGETCLDFR,     &
             HGETBL_DEPTH,HGETSBL_DEPTH,HGETPHC,HGETPHR,HUVW_ADV_SCHEME,      &
@@ -293,8 +291,6 @@ IMPLICIT NONE
 !
 !
 TYPE(TFILEDATA),           INTENT(IN)  :: TPINIFILE    !Initial file
-INTEGER,                   INTENT(IN)  :: KMASDEV
-                             ! version of the input file
 INTEGER,                   INTENT(IN)  :: KIU, KJU, KKU   
                              ! array sizes in x, y and z  directions
 REAL,                      INTENT(IN)  :: PTSTEP       
@@ -412,7 +408,7 @@ ZWORK = 0.0
 !
 !*       2.1  Time t:
 !
-IF (KMASDEV<50) THEN
+IF (TPINIFILE%NMNHVERSION(1)<5) THEN
   CALL FIND_FIELD_ID_FROM_MNHNAME('UT',IID,IRESP)
   TZFIELD = TFIELDLIST(IID)
   TZFIELD%CMNHNAME = 'UM'
@@ -447,7 +443,7 @@ ENDIF
 !
 SELECT CASE(HGETTKET)                   
   CASE('READ')
-    IF (KMASDEV<50) THEN
+    IF (TPINIFILE%NMNHVERSION(1)<5) THEN
       CALL FIND_FIELD_ID_FROM_MNHNAME('TKET',IID,IRESP)
       TZFIELD = TFIELDLIST(IID)
       TZFIELD%CMNHNAME = 'TKEM'
@@ -455,7 +451,8 @@ SELECT CASE(HGETTKET)
     ELSE
       CALL IO_READ_FIELD(TPINIFILE,'TKET',PTKET)
     END IF
-    IF (KMASDEV>50 .AND. (CCONF == 'RESTA') .AND. LSPLIT_CFL) THEN
+    IF ( ( (TPINIFILE%NMNHVERSION(1)==5 .AND. TPINIFILE%NMNHVERSION(2)>0) .OR. TPINIFILE%NMNHVERSION(1)>5 ) &
+        .AND. (CCONF == 'RESTA') .AND. LSPLIT_CFL) THEN
       CALL IO_READ_FIELD(TPINIFILE,'TKEMS',PRTKEMS)
     END IF
   CASE('INIT')
@@ -465,7 +462,7 @@ END SELECT
 !
 SELECT CASE(HGETRVT)             ! vapor
   CASE('READ')
-    IF (KMASDEV<50) THEN
+    IF (TPINIFILE%NMNHVERSION(1)<5) THEN
       CALL FIND_FIELD_ID_FROM_MNHNAME('RVT',IID,IRESP)
       TZFIELD = TFIELDLIST(IID)
       TZFIELD%CMNHNAME = 'RVM'
@@ -479,7 +476,7 @@ END SELECT
 !
 SELECT CASE(HGETRCT)             ! cloud 
   CASE('READ') 
-    IF (KMASDEV<50) THEN
+    IF (TPINIFILE%NMNHVERSION(1)<5) THEN
       CALL FIND_FIELD_ID_FROM_MNHNAME('RCT',IID,IRESP)
       TZFIELD = TFIELDLIST(IID)
       TZFIELD%CMNHNAME = 'RCM'
@@ -493,7 +490,7 @@ END SELECT
 !
 SELECT CASE(HGETRRT)             ! rain 
   CASE('READ') 
-    IF (KMASDEV<50) THEN
+    IF (TPINIFILE%NMNHVERSION(1)<5) THEN
       CALL FIND_FIELD_ID_FROM_MNHNAME('RRT',IID,IRESP)
       TZFIELD = TFIELDLIST(IID)
       TZFIELD%CMNHNAME = 'RRM'
@@ -507,7 +504,7 @@ END SELECT
 !
 SELECT CASE(HGETRIT)             ! cloud ice
   CASE('READ') 
-    IF (KMASDEV<50) THEN
+    IF (TPINIFILE%NMNHVERSION(1)<5) THEN
       CALL FIND_FIELD_ID_FROM_MNHNAME('RIT',IID,IRESP)
       TZFIELD = TFIELDLIST(IID)
       TZFIELD%CMNHNAME = 'RIM'
@@ -521,7 +518,7 @@ END SELECT
 !
 SELECT CASE(HGETRST)             ! snow
   CASE('READ')
-    IF (KMASDEV<50) THEN
+    IF (TPINIFILE%NMNHVERSION(1)<5) THEN
       CALL FIND_FIELD_ID_FROM_MNHNAME('RST',IID,IRESP)
       TZFIELD = TFIELDLIST(IID)
       TZFIELD%CMNHNAME = 'RSM'
@@ -535,7 +532,7 @@ END SELECT
 !
 SELECT CASE(HGETRGT)             ! graupel
   CASE('READ') 
-    IF (KMASDEV<50) THEN
+    IF (TPINIFILE%NMNHVERSION(1)<5) THEN
       CALL FIND_FIELD_ID_FROM_MNHNAME('RGT',IID,IRESP)
       TZFIELD = TFIELDLIST(IID)
       TZFIELD%CMNHNAME = 'RGM'
@@ -549,7 +546,7 @@ END SELECT
 !
 SELECT CASE(HGETRHT)             ! hail
   CASE('READ') 
-    IF (KMASDEV<50) THEN
+    IF (TPINIFILE%NMNHVERSION(1)<5) THEN
       CALL FIND_FIELD_ID_FROM_MNHNAME('RHT',IID,IRESP)
       TZFIELD = TFIELDLIST(IID)
       TZFIELD%CMNHNAME = 'RHM'

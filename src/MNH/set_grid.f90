@@ -335,11 +335,8 @@ INTEGER                :: IIUP,IJUP ,ISUP=1         ! size  of working
                                                     ! window arrays,
                                                     ! supp. time steps
 !
-INTEGER                :: IMASDEV                   ! masdev of the file
 TYPE(TFIELDDATA)       :: TZFIELD
 !-------------------------------------------------------------------------------
-!
-CALL IO_READ_FIELD(TPINIFILE,'MASDEV',IMASDEV)
 !
 !*       1.    READ GRID  VARIABLES IN INITIAL FILE
 !              ------------------------------------
@@ -369,7 +366,7 @@ CALL IO_READ_FIELD(TPINIFILE,'YHAT',PYHAT)
 IF (.NOT.LCARTESIAN) THEN
   CALL IO_READ_FIELD(TPINIFILE,'RPK',XRPK)
   !
-  IF (IMASDEV > 45) THEN
+  IF ( (TPINIFILE%NMNHVERSION(1)==4 .AND. TPINIFILE%NMNHVERSION(2)>5) .OR. TPINIFILE%NMNHVERSION(1)>4 ) THEN
     CALL IO_READ_FIELD(TPINIFILE,'LONORI',PLONORI)
     CALL IO_READ_FIELD(TPINIFILE,'LATORI',PLATORI)
   !
@@ -403,7 +400,7 @@ CALL IO_READ_FIELD(TPINIFILE,'ZTOP',PZTOP)
 !
 CALL DEFAULT_SLEVE(OSLEVE,PLEN1,PLEN2)
 !
-IF (IMASDEV<=46) THEN
+IF ( TPINIFILE%NMNHVERSION(1)<4 .OR. (TPINIFILE%NMNHVERSION(1)==4 .AND. TPINIFILE%NMNHVERSION(2)<=6) ) THEN
   PZSMT  = PZS
   OSLEVE = .FALSE.
 ELSE

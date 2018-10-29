@@ -1,6 +1,6 @@
 !MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !#########################
@@ -116,7 +116,6 @@ TYPE(TFILEDATA),                INTENT(IN)    :: TPINIFILE   ! Model 1 file
 INTEGER :: IRESP    ! Return codes in FM routines
 INTEGER :: ILUOUT   ! Logical unit number for the output listing
 INTEGER :: ININAR   ! Number of articles present in the LFIFM file
-INTEGER :: IMASDEV
 CHARACTER(LEN=2)    :: YDIR   ! Type  of the data field in LFIFM file
 !
 CHARACTER (LEN=5)  :: YPRESOPT        ! Pressure solver option of model 1
@@ -263,9 +262,7 @@ IF (LEN_TRIM(CDOMAIN)>0) THEN
   ALLOCATE(XPGDYHAT(DIM_MODEL(1)%NJMAX+2*JPHEXT))
   CALL IO_READ_FIELD(TPINIFILE,'YHAT',XPGDYHAT)
   !
-  CALL IO_READ_FIELD(TPINIFILE,'MASDEV',IMASDEV)
-  !
-  IF (IMASDEV<=45) THEN
+  IF (TPINIFILE%NMNHVERSION(1)<4 .OR. (TPINIFILE%NMNHVERSION(1)==4 .AND. TPINIFILE%NMNHVERSION(2)<=5)) THEN
     CALL FIND_FIELD_ID_FROM_MNHNAME('LONORI',IID,IRESP)
     TZFIELD = TFIELDLIST(IID)
     TZFIELD%CMNHNAME = 'LONOR'
