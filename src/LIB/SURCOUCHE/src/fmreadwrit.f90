@@ -637,8 +637,11 @@ CHARACTER(LEN=12)            :: YVAL_FILE, YVAL_MEM
 CHARACTER(LEN=JPXKRK)        :: YCOMMENT
 CHARACTER(LEN=12)            :: YRESP
 CHARACTER(LEN=LEN_HREC)      :: YRECFM
+LOGICAL                      :: GOLDMNH !if old version of MesoNH (<5.4, old files without complete and correct metadata)
 !
 OGOOD = .TRUE.
+!
+GOLDMNH = TPFILE%NMNHVERSION(1)<5 .OR. (TPFILE%NMNHVERSION(1)==5 .AND. TPFILE%NMNHVERSION(2)<4)
 !
 YRECFM=TRIM(TPFIELD%CMNHNAME)
 IF( LEN_TRIM(TPFIELD%CMNHNAME) > LEN(YRECFM) ) &
@@ -704,15 +707,17 @@ IF(TPFIELD%NGRID==NGRIDUNKNOWN) TPFIELD%NGRID=KWORK(1)
 IF (KWORK(1)/=TPFIELD%NGRID) THEN
   WRITE(YVAL_FILE,'(I12)') KWORK(1)
   WRITE(YVAL_MEM, '(I12)') TPFIELD%NGRID
-  IF (TPFIELD%NDIMS==0) THEN
+  IF (TPFIELD%NDIMS==0 .OR. GOLDMNH) THEN
     IERRLEVEL = NVERB_WARNING
   ELSE
     IERRLEVEL = NVERB_ERROR
   END IF
   CALL PRINT_MSG(IERRLEVEL,'IO','IO_READ_CHECK_FIELD_LFI','expected GRID value ('//TRIM(ADJUSTL(YVAL_MEM))// &
                  ') is different than found in file ('//TRIM(ADJUSTL(YVAL_FILE))//') for variable '//TRIM(TPFIELD%CMNHNAME))
-  TPFIELD%NGRID = KWORK(1)
-  KRESP = -111 !Used later to broadcast modified metadata
+  IF(.NOT.GOLDMNH) THEN !Do not modify probably incorrect grid number (to prevent problems later with other correct files)
+    TPFIELD%NGRID = KWORK(1)
+    KRESP = -111 !Used later to broadcast modified metadata
+  END IF
 ELSE
   CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_LFI','expected GRID    found in file for field ' &
                                                             //TRIM(TPFIELD%CMNHNAME))

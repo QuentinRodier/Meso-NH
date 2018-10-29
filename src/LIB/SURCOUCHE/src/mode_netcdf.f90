@@ -2532,17 +2532,27 @@ INTEGER(KIND=IDCDF_KIND), INTENT(IN)    :: KVARID
 INTEGER,                  INTENT(OUT)   :: KRESP  ! return-code
 CHARACTER(LEN=*),OPTIONAL,INTENT(IN)    :: HCALENDAR
 !
+INTEGER                      :: IERRLEVEL
 INTEGER                      :: ILEN
 INTEGER                      :: IGRID
 INTEGER(KIND=IDCDF_KIND)     :: INCID
 INTEGER(KIND=IDCDF_KIND)     :: STATUS
 CHARACTER(LEN=12)            :: YVAL_FILE, YVAL_MEM
 CHARACTER(LEN=:),ALLOCATABLE :: YVALUE
+LOGICAL                      :: GOLDMNH !if old version of MesoNH (<5.4, old files without complete and correct metadata)
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)//': called for field '//TRIM(TPFIELD%CMNHNAME))
 !
 KRESP = 0
 INCID = TPFILE%NNCID
+!
+GOLDMNH = TPFILE%NMNHVERSION(1)<5 .OR. (TPFILE%NMNHVERSION(1)==5 .AND. TPFILE%NMNHVERSION(2)<4)
+!
+IF (GOLDMNH) THEN !Set a lower level of error if file comes from an old MesoNH version
+  IERRLEVEL = NVERB_WARNING
+ELSE
+  IERRLEVEL = NVERB_ERROR
+END IF
 !
 ! GRID
 !
@@ -2552,11 +2562,13 @@ IF (STATUS == NF90_NOERR) THEN
   IF (IGRID/=TPFIELD%NGRID) THEN
     WRITE(YVAL_FILE,'(I12)') IGRID
     WRITE(YVAL_MEM, '(I12)') TPFIELD%NGRID
-    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+    CALL PRINT_MSG(IERRLEVEL,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
                    ': expected GRID     value ('//TRIM(ADJUSTL(YVAL_MEM))//             &
                    ') is different than found in file ('//TRIM(ADJUSTL(YVAL_FILE))//') for variable '//TRIM(TPFIELD%CMNHNAME))
-    TPFIELD%NGRID = IGRID
-    KRESP = -111 !Used later to broadcast modified metadata
+    IF (.NOT.GOLDMNH) THEN !Do not modify probably incorrect grid number (to prevent problems later with other correct files)
+      TPFIELD%NGRID = IGRID
+      KRESP = -111 !Used later to broadcast modified metadata
+    END IF
   ELSE
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
                    ': expected GRID found in file for field '//TRIM(TPFIELD%CMNHNAME))
@@ -2566,7 +2578,7 @@ ELSE !no GRID
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
                    ': no GRID (as expected) in file for field '//TRIM(TPFIELD%CMNHNAME))
   ELSE
-    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+    CALL PRINT_MSG(IERRLEVEL,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
                    ': expected GRID but not found in file for field '//TRIM(TPFIELD%CMNHNAME))
   END IF
 ENDIF
