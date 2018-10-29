@@ -1,12 +1,13 @@
 !MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 ! Modifications:
 !  D.Gazen   : avril 2016 change error message
 !  P. Wautelet : may 2016: use NetCDF Fortran module
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  Philippe Wautelet: 29/10/2018: better detection of older MNH version numbers
 !-----------------------------------------------------------------
 
 MODULE MODE_FM
@@ -175,8 +176,13 @@ SELECT CASE(TPFILE%CTYPE)
         IF (IRESP2/=0) THEN
           CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FILE_OPEN_ll','unknown MASDEV version for '//TRIM(TPFILE%CNAME))
         ELSE
-          IMNHVERSION(1)=IMASDEV/10
-          IMNHVERSION(2)=MOD(IMASDEV,10)
+          IF (IMASDEV<100) THEN
+            IMNHVERSION(1)=IMASDEV/10
+            IMNHVERSION(2)=MOD(IMASDEV,10)
+          ELSE !for example for MNH 4.10
+            IMNHVERSION(1)=IMASDEV/100
+            IMNHVERSION(2)=MOD(IMASDEV,100)
+          END IF
         END IF
         !
         TZFIELD%CMNHNAME   = 'BUGFIX'
