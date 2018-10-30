@@ -1119,9 +1119,7 @@ IF ( .NOT. OSUBG_COND ) THEN
    END IF
 END IF
 !
-IF ( HRAD /= 'NONE' ) THEN
-  PCLDFR(:,:,:) = ZW(:,:,:)
-END IF
+PCLDFR(:,:,:) = ZW(:,:,:)
 !
 IF ( OCLOSE_OUT ) THEN
   TZFIELD%CMNHNAME   = 'NEB'
