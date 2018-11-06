@@ -34,6 +34,7 @@ SUBROUTINE COUPLING_NATURE_n (DTCO, UG, U, USS, IM, DTZ, DGO, DL, DLC, NDST, SLT
 !!      Original    01/2004
 !!      B. Decharme  04/2013 new coupling variables
 !!      P. Le Moigne 03/2015 tsz0 time management
+!!      Q. Rodier    11/2018 correction: wrong time variable in call coupling_tsz0  (PTIMEC --> PTIME) 
 !!--------------------------------------------------------------------
 !
 USE MODD_SURFEX_n, ONLY : ISBA_MODEL_t
@@ -161,7 +162,7 @@ IF (U%CNATURE=='ISBA  ') THEN
                             PPEW_B_COEF, PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,'OK')  
 ELSE IF (U%CNATURE=='TSZ0  ') THEN
   CALL COUPLING_TSZ0_n(DTCO, UG, U, USS, IM, DTZ,  NDST, SLT, BLOWSNW,     &
-                       HPROGRAM, HCOUPLING, PTSTEP, KYEAR, KMONTH, KDAY, PTIMEC, KI,    &
+                       HPROGRAM, HCOUPLING, PTSTEP, KYEAR, KMONTH, KDAY, PTIME, KI,    &
                        KSV, KSW, PTSUN, PZENITH,  PZENITH2, PAZIM, PZREF, PUREF, PZS,   &
                        PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV, PRAIN, PSNOW, PLW,      &
                        PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA, PSFTQ, PSFTH, PSFTS,      &
