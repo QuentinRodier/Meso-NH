@@ -18,7 +18,7 @@ REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLBDAS   ! Slope parameter of the
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PT       ! Temperature
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRCT     ! Cloud water m.r. at t
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRST     ! Snow/aggregate m.r. at t
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRSRIMCG_MR ! Mr change due to cloud droplet riming of the aggregates
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRSRIMCG_MR ! Mr change due to cloud droplet riming of the aggregates
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PB_RS
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PB_RG
 END SUBROUTINE ICE4_RSRIMCG_OLD
@@ -63,7 +63,7 @@ REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLBDAS   ! Slope parameter of the
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PT       ! Temperature
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRCT     ! Cloud water m.r. at t
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRST     ! Snow/aggregate m.r. at t
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRSRIMCG_MR ! Mr change due to cloud droplet riming of the aggregates
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRSRIMCG_MR ! Mr change due to cloud droplet riming of the aggregates
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PB_RS
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PB_RG
 !

@@ -19,7 +19,7 @@ REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLSFACT  ! L_s/(Pi_ref*C_ph)
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PT       ! Temperature
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PTHT     ! Theta at t
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRIT     ! Cloud ice at t
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRIMLTC_MR ! Mixing ratio change due to cloud ice melting
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRIMLTC_MR ! Mixing ratio change due to cloud ice melting
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PB_TH
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PB_RC
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PB_RI
@@ -66,7 +66,7 @@ REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLSFACT  ! L_s/(Pi_ref*C_ph)
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PT       ! Temperature
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PTHT     ! Theta at t
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRIT     ! Cloud ice at t
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRIMLTC_MR ! Mixing ratio change due to cloud ice melting
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRIMLTC_MR ! Mixing ratio change due to cloud ice melting
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PB_TH
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PB_RC
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PB_RI

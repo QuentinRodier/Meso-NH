@@ -37,17 +37,17 @@ REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRIT     ! Pristine ice m.r. at t
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRST     ! Snow/aggregate m.r. at t
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRGT     ! Graupel m.r. at t
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRHT     ! Hail m.r. at t
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRCWETH  ! Dry growth of hailstone
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRIWETH  ! Dry growth of hailstone
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRSWETH  ! Dry growth of hailstone
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRGWETH  ! Dry growth of hailstone
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRRWETH  ! Dry growth of hailstone
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRCDRYH  ! Wet growth of hailstone
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRIDRYH  ! Wet growth of hailstone
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRSDRYH  ! Wet growth of hailstone
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRRDRYH  ! Wet growth of hailstone
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRGDRYH  ! Wet growth of hailstone
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRDRYHG  ! Conversion of hailstone into graupel
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRCWETH  ! Dry growth of hailstone
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRIWETH  ! Dry growth of hailstone
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRSWETH  ! Dry growth of hailstone
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRGWETH  ! Dry growth of hailstone
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRRWETH  ! Dry growth of hailstone
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRCDRYH  ! Wet growth of hailstone
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRIDRYH  ! Wet growth of hailstone
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRSDRYH  ! Wet growth of hailstone
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRRDRYH  ! Wet growth of hailstone
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRGDRYH  ! Wet growth of hailstone
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRDRYHG  ! Conversion of hailstone into graupel
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRHMLTR  ! Melting of the hailstones
 REAL, DIMENSION(KSIZE, 8),    INTENT(INOUT) :: PRH_TEND ! Individual tendencies
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PA_TH
@@ -118,17 +118,17 @@ REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRIT     ! Pristine ice m.r. at t
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRST     ! Snow/aggregate m.r. at t
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRGT     ! Graupel m.r. at t
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRHT     ! Hail m.r. at t
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRCWETH  ! Dry growth of hailstone
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRIWETH  ! Dry growth of hailstone
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRSWETH  ! Dry growth of hailstone
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRGWETH  ! Dry growth of hailstone
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRRWETH  ! Dry growth of hailstone
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRCDRYH  ! Wet growth of hailstone
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRIDRYH  ! Wet growth of hailstone
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRSDRYH  ! Wet growth of hailstone
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRRDRYH  ! Wet growth of hailstone
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRGDRYH  ! Wet growth of hailstone
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRDRYHG  ! Conversion of hailstone into graupel
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRCWETH  ! Dry growth of hailstone
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRIWETH  ! Dry growth of hailstone
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRSWETH  ! Dry growth of hailstone
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRGWETH  ! Dry growth of hailstone
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRRWETH  ! Dry growth of hailstone
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRCDRYH  ! Wet growth of hailstone
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRIDRYH  ! Wet growth of hailstone
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRSDRYH  ! Wet growth of hailstone
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRRDRYH  ! Wet growth of hailstone
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRGDRYH  ! Wet growth of hailstone
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRDRYHG  ! Conversion of hailstone into graupel
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRHMLTR  ! Melting of the hailstones
 REAL, DIMENSION(KSIZE, 8),    INTENT(INOUT) :: PRH_TEND ! Individual tendencies
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PA_TH
@@ -141,6 +141,8 @@ REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PA_RH
 !
 !*       0.2  declaration of local variables
 !
+INTEGER, PARAMETER :: IRCWETH=1, IRRWETH=2, IRIDRYH=3, IRIWETH=4, IRSDRYH=5, IRSWETH=6, IRGDRYH=7, IRGWETH=8
+!
 LOGICAL, DIMENSION(SIZE(PRHODREF)) :: GHAIL, GWET, GMASK, LLWETH, LLDRYH
 INTEGER :: IHAIL, IGWET
 REAL, DIMENSION(SIZE(PRHODREF)) :: ZVEC1, ZVEC2, ZVEC3
@@ -149,19 +151,8 @@ REAL, DIMENSION(SIZE(PRHODREF)) :: ZZW, &
                                    ZRDRYH_INIT, ZRWETH_INIT, &
                                    ZRDRYHG
 INTEGER :: JJ
-INTEGER :: IRCWETH, IRRWETH, IRIDRYH, IRIWETH, IRSDRYH, IRSWETH, IRGDRYH, IRGWETH
 !
 !-------------------------------------------------------------------------------
-!
-IRCWETH=1
-IRRWETH=2
-IRIDRYH=3
-IRIWETH=4
-IRSDRYH=5
-IRSWETH=6
-IRGDRYH=7
-IRGWETH=8
-!
 !
 !
 !*       7.2    compute the Wet and Dry growth of hail

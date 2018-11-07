@@ -20,7 +20,7 @@ REAL, DIMENSION(KSIZE),   INTENT(IN)    :: PLSFACT
 REAL, DIMENSION(KSIZE),   INTENT(IN)    :: PT      ! Temperature at time t
 REAL, DIMENSION(KSIZE),   INTENT(IN)    :: PRVT    ! Water vapor m.r. at t
 REAL, DIMENSION(KSIZE),   INTENT(INOUT) :: PCIT    ! Pristine ice n.c. at t
-REAL, DIMENSION(KSIZE),   INTENT(INOUT) :: PRVHENI_MR ! Mixing ratio change due to the heterogeneous nucleation
+REAL, DIMENSION(KSIZE),   INTENT(OUT)   :: PRVHENI_MR ! Mixing ratio change due to the heterogeneous nucleation
 REAL, DIMENSION(KSIZE),   INTENT(INOUT) :: PB_TH
 REAL, DIMENSION(KSIZE),   INTENT(INOUT) :: PB_RV
 REAL, DIMENSION(KSIZE),   INTENT(INOUT) :: PB_RI
@@ -68,7 +68,7 @@ REAL, DIMENSION(KSIZE),   INTENT(IN)    :: PLSFACT
 REAL, DIMENSION(KSIZE),   INTENT(IN)    :: PT      ! Temperature at time t
 REAL, DIMENSION(KSIZE),   INTENT(IN)    :: PRVT    ! Water vapor m.r. at t
 REAL, DIMENSION(KSIZE),   INTENT(INOUT) :: PCIT    ! Pristine ice n.c. at t
-REAL, DIMENSION(KSIZE),   INTENT(INOUT) :: PRVHENI_MR ! Mixing ratio change due to the heterogeneous nucleation
+REAL, DIMENSION(KSIZE),   INTENT(OUT)   :: PRVHENI_MR ! Mixing ratio change due to the heterogeneous nucleation
 REAL, DIMENSION(KSIZE),   INTENT(INOUT) :: PB_TH
 REAL, DIMENSION(KSIZE),   INTENT(INOUT) :: PB_RV
 REAL, DIMENSION(KSIZE),   INTENT(INOUT) :: PB_RI

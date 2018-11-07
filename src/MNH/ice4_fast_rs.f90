@@ -34,12 +34,12 @@ REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRCT     ! Cloud water m.r. at t
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRRT     ! Rain water m.r. at t
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRST     ! Snow/aggregate m.r. at t
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRIAGGS  ! r_i aggregation on r_s
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRCRIMSS ! Cloud droplet riming of the aggregates
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRCRIMSG ! Cloud droplet riming of the aggregates
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRSRIMCG ! Cloud droplet riming of the aggregates
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRRACCSS ! Rain accretion onto the aggregates
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRRACCSG ! Rain accretion onto the aggregates
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRSACCRG ! Rain accretion onto the aggregates
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRCRIMSS ! Cloud droplet riming of the aggregates
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRCRIMSG ! Cloud droplet riming of the aggregates
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRSRIMCG ! Cloud droplet riming of the aggregates
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRRACCSS ! Rain accretion onto the aggregates
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRRACCSG ! Rain accretion onto the aggregates
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRSACCRG ! Rain accretion onto the aggregates
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRSMLTG  ! Conversion-Melting of the aggregates
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRCMLTSR ! Cloud droplet collection onto aggregates by positive temperature
 REAL, DIMENSION(KSIZE, 6),    INTENT(INOUT) :: PRS_TEND ! Individual tendencies
@@ -106,12 +106,12 @@ REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRCT     ! Cloud water m.r. at t
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRRT     ! Rain water m.r. at t
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRST     ! Snow/aggregate m.r. at t
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRIAGGS  ! r_i aggregation on r_s
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRCRIMSS ! Cloud droplet riming of the aggregates
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRCRIMSG ! Cloud droplet riming of the aggregates
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRSRIMCG ! Cloud droplet riming of the aggregates
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRRACCSS ! Rain accretion onto the aggregates
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRRACCSG ! Rain accretion onto the aggregates
-REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRSACCRG ! Rain accretion onto the aggregates
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRCRIMSS ! Cloud droplet riming of the aggregates
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRCRIMSG ! Cloud droplet riming of the aggregates
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRSRIMCG ! Cloud droplet riming of the aggregates
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRRACCSS ! Rain accretion onto the aggregates
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRRACCSG ! Rain accretion onto the aggregates
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRSACCRG ! Rain accretion onto the aggregates
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRSMLTG  ! Conversion-Melting of the aggregates
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRCMLTSR ! Cloud droplet collection onto aggregates by positive temperature
 REAL, DIMENSION(KSIZE, 6),    INTENT(INOUT) :: PRS_TEND ! Individual tendencies
@@ -123,23 +123,14 @@ REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PA_RG
 !
 !*       0.2  declaration of local variables
 !
+INTEGER, PARAMETER :: IRCRIMS=1, IRCRIMSS=2, IRSRIMCG=3, IRRACCS=4, IRRACCSS=5, IRSACCRG=6
+!
 LOGICAL, DIMENSION(SIZE(PRHODREF)) :: GRIM, GACC, GMASK
 INTEGER :: IGRIM, IGACC
 REAL, DIMENSION(SIZE(PRHODREF)) :: ZVEC1, ZVEC2, ZVEC3
 INTEGER, DIMENSION(SIZE(PRHODREF)) :: IVEC1, IVEC2
 REAL, DIMENSION(SIZE(PRHODREF)) :: ZZW, ZZW2, ZZW6, ZFREEZ_RATE
 INTEGER :: JJ
-INTEGER :: IRCRIMS, IRCRIMSS, IRSRIMCG, IRRACCS, IRRACCSS, IRSACCRG
-!-------------------------------------------------------------------------------
-!
-!
-IRCRIMS=1
-IRCRIMSS=2
-IRSRIMCG=3
-IRRACCS=4
-IRRACCSS=5
-IRSACCRG=6
-!
 !-------------------------------------------------------------------------------
 !
 !

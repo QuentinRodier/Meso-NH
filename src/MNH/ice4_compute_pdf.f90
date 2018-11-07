@@ -79,10 +79,8 @@ REAL, DIMENSION(SIZE(PRHODREF)) :: ZRCRAUTC,      & !RC value to begin rain form
                                                     !    note that ZRC/CF = ZHLC_HRCLOCAL+ ZHLC_LRCLOCAL
                                                     !                     = PHLC_HRC/HCF+ PHLC_LRC/LCF
 REAL :: ZCOEFFRCM
-INTEGER :: ILUOUT ! logical unit
 !-------------------------------------------------------------------------------
 !
-ILUOUT = TLUOUT%NLU
 !Cloud water split between high and low content part is done according to autoconversion option
 ZRCRAUTC(:)=XCRIAUTC/PRHODREF(:) ! Autoconversion rc threshold
 IF(HSUBG_AUCV=='NONE') THEN
@@ -252,14 +250,10 @@ ELSEIF(HSUBG_AUCV=='PDF ') THEN
     END WHERE
      PRF(:)=PHLC_HCF(:) !Precipitation fraction
    ELSE
-    !wrong HSUBG_PR_PDF case
-    WRITE(ILUOUT,*) 'STOP : wrong HSUBG_PR_PDF case'
-     CALL PRINT_MSG(NVERB_FATAL,'GEN','ICE4_COMPUTE_PDF','')
+     CALL PRINT_MSG(NVERB_FATAL,'GEN','ICE4_COMPUTE_PDF','wrong HSUBG_PR_PDF case')
    ENDIF
 ELSE
-  !wrong HSUBG_AUCV case
-  WRITE(ILUOUT,*) 'STOP : wrong HSUBG_AUCV case'
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','ICE4_COMPUTE_PDF','')
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','ICE4_COMPUTE_PDF','wrong HSUBG_AUCV case')
 ENDIF
 !
 END SUBROUTINE ICE4_COMPUTE_PDF
