@@ -88,6 +88,11 @@ REAL, DIMENSION(COUNT(PT<XTT .AND. LDMASK))  :: ZZT,      & ! Temperature
 GNEGT(:,:,:)=PT(:,:,:)<XTT .AND. LDMASK
 INEGT=0
 IF(COUNT(GNEGT)/=0) INEGT=ICE4_NUCLEATION_COUNTJV(GNEGT(:,:,:), KIT, KJT, KKT, SIZE(I1), I1(:), I2(:), I3(:))
+!
+ZB_TH(:) = 0.
+ZB_RV(:) = 0.
+ZB_RI(:) = 0.
+!
 PRVHENI_MR(:,:,:)=0.
 IF(INEGT>=1) THEN
   DO JL=1, INEGT
