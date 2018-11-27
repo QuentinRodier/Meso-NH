@@ -1200,6 +1200,8 @@ END DO
       TPREC%NSIZE = ILENG
 
       ISTATUS = NF90_GET_ATT(KFILE_ID,KVAR_ID,'grid',TPREC%NGRID_FILE)
+      !On MesoNH versions < 5.4.0, the grid number was stored in 'GRID' instead of 'grid'
+      IF (ISTATUS /= NF90_NOERR) ISTATUS = NF90_GET_ATT(KFILE_ID,KVAR_ID,'GRID',TPREC%NGRID_FILE)
       IF (ISTATUS /= NF90_NOERR) TPREC%NGRID_FILE = 0
 
       ISTATUS = NF90_GET_ATT(KFILE_ID,KVAR_ID,'units',TPREC%CUNITS_FILE)
@@ -1221,6 +1223,15 @@ END DO
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_FILL_DIMS_NC4','called')
 
     KRESP = 0
+
+    IF (TPREC%NDIMS_FILE<TPREC%TFIELD%NDIMS) THEN
+      CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FILL_DIMS_NC4','less dimensions than expected for '//TRIM(TPREC%TFIELD%CMNHNAME)// &
+                                        ' => ignored')
+      TPREC%tbw   = .FALSE.
+      TPREC%tbr   = .FALSE.
+      TPREC%found = .FALSE.
+      RETURN
+    END IF
 
     ALLOCATE(TPREC%TDIMS(TPREC%TFIELD%NDIMS))
 
