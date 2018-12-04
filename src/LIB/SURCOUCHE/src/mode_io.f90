@@ -944,6 +944,9 @@ USE MODD_IO_ll,  ONLY : NIO_VERB,NIO_ABORT_LEVEL,NGEN_VERB,NGEN_ABORT_LEVEL, &
                         LVERB_OUTLST, LVERB_STDOUT, LVERB_ALLPRC, TFILE_OUTPUTLISTING
 USE MODD_LUNIT,  ONLY : TLUOUT0
 USE MODD_VAR_ll, ONLY : IP, NMNH_COMM_WORLD
+!
+use modi_tools_c
+!
 !USE MODE_FM,     ONLY : IO_FILE_CLOSE_ll
 !
 INTEGER,         INTENT(IN) :: KVERB   !Verbosity level
@@ -1037,6 +1040,10 @@ IF (KVERB<=IABORTLEVEL) THEN
   IF (ILU>0) FLUSH(UNIT=ILU) !OK in F2003
   IF (ASSOCIATED(TLUOUT0)) FLUSH(UNIT=TLUOUT0%NLU)
 #endif
+  !Add a sleep to ensure that the process(es) that have to write to stderr and to file
+  !have enough time before an other process calls mpi_abort
+  CALL SLEEP_C(5)
+  !
   CALL MPI_ABORT(NMNH_COMM_WORLD, -10, IERR)
   CALL ABORT
 END IF
