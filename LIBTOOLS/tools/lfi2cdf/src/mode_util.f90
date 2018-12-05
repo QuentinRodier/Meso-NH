@@ -375,6 +375,9 @@ END DO
             CALL IO_GUESS_DIMIDS_NC4(outfiles(idx_out)%TFILE,tpreclist(ji)%TFIELD,&
                                      tpreclist(ji)%NSIZE,tpreclist(ji)%TDIMS,IRESP)
           ELSE !If we read netCDF4, we already have all necessary data
+            !Special case for EMIS (only the first band is read/written) -> NDIMS reduced to 2
+            if(tpreclist(ji)%TFIELD%CMNHNAME=="EMIS") tpreclist(ji)%TFIELD%NDIMS = 2
+
             CALL IO_FILL_DIMS_NC4(outfiles(idx_out)%TFILE,tpreclist(ji),IRESP)
           ENDIF
           IF (IRESP/=0) THEN
@@ -657,6 +660,7 @@ END DO
     INTEGER                                  :: INSRC
     INTEGER                                  :: ISRC
     INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: IDIMLEN
+    logical,dimension(knaf)                  :: gtimedep_in, gtimedep_out
 
     CHARACTER(LEN=:),       ALLOCATABLE :: YTAB0D
     INTEGER,DIMENSION(:),   ALLOCATABLE :: ITAB1D, ITAB1D2
@@ -670,6 +674,16 @@ END DO
 
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','fill_files','called')
+
+    ! For versions of MesoNH <5.4.0, fields were not stored with a time dimension
+    ! ->necessary to remove it when reading and to restore to the correct one when writing
+    if( infiles(1)%TFILE%NMNHVERSION(1)<5 .OR. &
+       (infiles(1)%TFILE%NMNHVERSION(1)==5 .AND. infiles(1)%TFILE%NMNHVERSION(2)<4) ) then
+      gtimedep_in(:)  = .false.
+    else
+      gtimedep_in(:)  = tpreclist(:)%TFIELD%LTIMEDEP
+    end if
+    gtimedep_out(:)   = tpreclist(:)%TFIELD%LTIMEDEP
 
     idx = 1
     DO ji=1,knaf
@@ -689,6 +703,7 @@ END DO
           ISRC  = tpreclist(ji)%src(1)
         END IF
 
+        tpreclist(ISRC)%TFIELD%LTIMEDEP = gtimedep_in(ISRC)
         SELECT CASE(IDIMS)
         CASE (0)
           ALLOCATE(ITAB1D(1))
@@ -710,6 +725,7 @@ END DO
 
         DO JJ=2,INSRC
           ISRC = tpreclist(ji)%src(jj)
+          tpreclist(ISRC)%TFIELD%LTIMEDEP = gtimedep_in(ISRC)
 
           SELECT CASE(IDIMS)
           CASE (0)
@@ -724,6 +740,7 @@ END DO
           END SELECT
         END DO
 
+        tpreclist(ji)%TFIELD%LTIMEDEP = gtimedep_out(ji)
         SELECT CASE(IDIMS)
         CASE (0)
           CALL IO_WRITE_FIELD(outfiles(idx)%TFILE,tpreclist(ji)%TFIELD,ITAB1D(1))
@@ -740,23 +757,26 @@ END DO
         END SELECT
 
 
-        CASE (TYPELOG)
+      CASE (TYPELOG)
         IDIMLEN(1:IDIMS) = tpreclist(ji)%TDIMS(1:IDIMS)%LEN
 
+        tpreclist(ji)%TFIELD%LTIMEDEP = gtimedep_in(ji)
         SELECT CASE(IDIMS)
         CASE (0)
           ALLOCATE(GTAB1D(1))
           CALL IO_READ_FIELD (INFILES(1)%TFILE,   tpreclist(ji)%TFIELD,GTAB1D(1))
+          tpreclist(ji)%TFIELD%LTIMEDEP = gtimedep_out(ji)
           CALL IO_WRITE_FIELD(outfiles(idx)%TFILE,tpreclist(ji)%TFIELD,GTAB1D(1))
           DEALLOCATE(GTAB1D)
         CASE (1)
           ALLOCATE(GTAB1D(IDIMLEN(1)))
           CALL IO_READ_FIELD (INFILES(1)%TFILE,   tpreclist(ji)%TFIELD,GTAB1D)
+          tpreclist(ji)%TFIELD%LTIMEDEP = gtimedep_out(ji)
           CALL IO_WRITE_FIELD(outfiles(idx)%TFILE,tpreclist(ji)%TFIELD,GTAB1D)
           DEALLOCATE(GTAB1D)
         CASE DEFAULT
           CALL PRINT_MSG(NVERB_WARNING,'IO','fill_files','too many dimensions for ' &
-                         //TRIM(tpreclist(ISRC)%name)//' => ignored')
+                         //TRIM(tpreclist(ji)%name)//' => ignored')
           CYCLE
         END SELECT
 
@@ -772,6 +792,7 @@ END DO
           ISRC  = tpreclist(ji)%src(1)
         END IF
 
+        tpreclist(ISRC)%TFIELD%LTIMEDEP = gtimedep_in(ISRC)
         SELECT CASE(IDIMS)
         CASE (0)
           ALLOCATE(XTAB1D(1))
@@ -801,6 +822,7 @@ END DO
 
         DO JJ=2,INSRC
           ISRC = tpreclist(ji)%src(jj)
+          tpreclist(ISRC)%TFIELD%LTIMEDEP = gtimedep_in(ISRC)
 
           SELECT CASE(IDIMS)
           CASE (0)
@@ -821,6 +843,7 @@ END DO
           END SELECT
         END DO
 
+        tpreclist(ji)%TFIELD%LTIMEDEP = gtimedep_out(ji)
         SELECT CASE(IDIMS)
         CASE (0)
           CALL IO_WRITE_FIELD(outfiles(idx)%TFILE,tpreclist(ji)%TFIELD,XTAB1D(1))
@@ -855,7 +878,9 @@ END DO
         END IF
 
         ALLOCATE(CHARACTER(LEN=tpreclist(ji)%NSIZE)::YTAB0D)
+        tpreclist(ji)%TFIELD%LTIMEDEP = gtimedep_in(ji)
         CALL IO_READ_FIELD (INFILES(1)%TFILE,   tpreclist(ji)%TFIELD,YTAB0D)
+        tpreclist(ji)%TFIELD%LTIMEDEP = gtimedep_out(ji)
         CALL IO_WRITE_FIELD(outfiles(idx)%TFILE,tpreclist(ji)%TFIELD,YTAB0D)
         DEALLOCATE(YTAB0D)
 
@@ -868,7 +893,9 @@ END DO
                          //TRIM(tpreclist(ISRC)%name)//' => ignored')
           CYCLE
         END IF
+        tpreclist(ji)%TFIELD%LTIMEDEP = gtimedep_in(ji)
         CALL IO_READ_FIELD (INFILES(1)%TFILE,   tpreclist(ji)%TFIELD%CMNHNAME,TZDATE)
+        tpreclist(ji)%TFIELD%LTIMEDEP = gtimedep_out(ji)
         CALL IO_WRITE_FIELD(outfiles(idx)%TFILE,tpreclist(ji)%TFIELD,TZDATE)
 
 
