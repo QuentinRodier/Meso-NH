@@ -233,13 +233,6 @@ ALLOCATE(ZWORK31(IIU,IJU,IKU))
 ALLOCATE(ZTEMP(IIU,IJU,IKU))
 ZTEMP(:,:,:)=XTHT(:,:,:)*(XPABST(:,:,:)/ XP00) **(XRD/XCPD)
 !
-! #ifdef MNH_NCWRIT
-! IF (LNETCDF.AND..NOT.LCARTESIAN) THEN
-!   CALL IO_WRITE_FIELD(TPFILE,'LAT',XLAT)
-!   CALL IO_WRITE_FIELD(TPFILE,'LON',XLON)
-! END IF
-! #endif
-!
 !-------------------------------------------------------------------------------
 !
 !*       1.     DIAGNOSTIC RELATED TO CONVECTION
