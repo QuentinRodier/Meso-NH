@@ -134,14 +134,14 @@ program LFI2CDF
      ! Conversion LFI -> NetCDF
      IF (options(OPTSPLIT)%set) call open_split_ncfiles_out(outfiles,nfiles_out,houtfile,nbvar_tbw,options)
      CALL parse_infiles(infiles,outfiles,nfiles_out,nbvar_infile,nbvar_tbr,nbvar_calc,nbvar_tbw,tzreclist,options,runmode)
-     CALL def_ncdf(outfiles,nfiles_out)
+     CALL def_ncdf(infiles,outfiles,nfiles_out)
      CALL fill_files(infiles,outfiles,tzreclist,nbvar,options)
 
   ELSE IF (runmode == MODECDF2CDF) THEN
      ! Conversion netCDF -> netCDF
      IF (options(OPTSPLIT)%set) call open_split_ncfiles_out(outfiles,nfiles_out,houtfile,nbvar_tbw,options)
      CALL parse_infiles(infiles,outfiles,nfiles_out,nbvar_infile,nbvar_tbr,nbvar_calc,nbvar_tbw,tzreclist,options,runmode)
-     CALL def_ncdf(outfiles,nfiles_out)
+     CALL def_ncdf(infiles,outfiles,nfiles_out)
      CALL fill_files(infiles,outfiles,tzreclist,nbvar,options)
 
   ELSE

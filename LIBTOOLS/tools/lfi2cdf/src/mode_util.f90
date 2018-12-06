@@ -618,21 +618,47 @@ END DO
     END IF
   END SUBROUTINE HANDLE_ERR
 
-  SUBROUTINE def_ncdf(outfiles,KNFILES_OUT)
+  SUBROUTINE def_ncdf(infiles,outfiles,KNFILES_OUT)
     USE MODD_CONF,   ONLY: NMNHVERSION
     USE MODE_NETCDF, ONLY: IO_WRITE_HEADER_NC4
 
+    TYPE(TFILE_ELT),DIMENSION(:),INTENT(IN) :: infiles
     TYPE(TFILE_ELT),DIMENSION(:),INTENT(IN) :: outfiles
     INTEGER,                     INTENT(IN) :: KNFILES_OUT
 
+    CHARACTER(LEN=*),PARAMETER :: YUNKNOWNHIST = 'Previous history is unknown'
+
     CHARACTER(LEN=16) :: YMNHVERSION
-    INTEGER :: ji
+    CHARACTER(LEN=:),ALLOCATABLE :: YHISTORY
+    INTEGER :: ilen, ji
     INTEGER(KIND=IDCDF_KIND) :: status
     INTEGER(KIND=IDCDF_KIND) :: kcdf_id
 
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','def_ncdf','called')
 
+    !Copy history attribute for netCDF files
+    IF( outfiles(1)%TFILE%CFORMAT=='NETCDF4' ) THEN
+      IF( infiles(1)%TFILE%CFORMAT=='NETCDF4' ) THEN
+        status = NF90_INQUIRE_ATTRIBUTE(infiles(1)%TFILE%NNCID, NF90_GLOBAL, 'history', LEN=ilen)
+        IF (status == NF90_NOERR) THEN
+          ALLOCATE(CHARACTER(LEN=ilen) :: YHISTORY)
+          status = NF90_GET_ATT(infiles(1)%TFILE%NNCID, NF90_GLOBAL, 'history', YHISTORY)
+        ELSE
+          YHISTORY = YUNKNOWNHIST
+        END IF
+      ELSE
+        YHISTORY = YUNKNOWNHIST
+      END IF
+
+      DO ji = 1,KNFILES_OUT
+        kcdf_id = outfiles(ji)%TFILE%NNCID
+        status = NF90_PUT_ATT(kcdf_id,NF90_GLOBAL,'history',YHISTORY)
+        IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+      END DO
+    END IF
+
+    !Write header for netCDF files
     DO ji = 1,KNFILES_OUT
       kcdf_id = outfiles(ji)%TFILE%NNCID
 
@@ -643,7 +669,7 @@ END DO
       status = NF90_PUT_ATT(kcdf_id,NF90_GLOBAL,'lfi2cdf_version',TRIM(YMNHVERSION))
       IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
     END DO
-    
+
   END SUBROUTINE def_ncdf
 
   SUBROUTINE fill_files(infiles,outfiles,tpreclist,knaf,options)
