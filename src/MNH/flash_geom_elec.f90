@@ -84,6 +84,8 @@ END MODULE MODI_FLASH_GEOM_ELEC_n
 !!      J.Escobar : 18/12/2015 : Correction of bug in bound in // for NHALO <>1 
 !!      J.Escobar : 28/03/2018 : Correction of multiple // bug & compiler indepedent mnh_random_number
 !!      J.Escobar : 20/06/2018 : Correction of computation of global index I8VECT
+!!      J.Escobar : 10/12/2018 : // Correction , mpi_bcast CG & CG_POS parameter 
+!!                               & initialize INBLIGHT on all proc for filling/saving AREA* arrays
 !!
 !-------------------------------------------------------------------------------
 !
@@ -1141,11 +1143,8 @@ ENDIF
 !*              Save the particule charge and total pos/neg charge neutralization points.
 !*                   the coordinates of all flash branch points
 !
-          INBSEG_PROC(IPROC+1) = INBSEG(IL)
-          DO IK = 0, NPROC-1
-            CALL MPI_BCAST (INBSEG_PROC(IK+1), 1, MPI_INTEGER, IK,  &
-                            NMNH_COMM_WORLD, IERR)
-          END DO
+          CALL MPI_ALLGATHER(INBSEG(IL), 1, MPI_INTEGER, &
+                             INBSEG_PROC,  1, MPI_INTEGER, NMNH_COMM_WORLD, IERR)
 
           INBSEG_ALL(IL) = INBSEG(IL)
           CALL SUM_ELEC_ll(INBSEG_ALL(IL))
@@ -1228,8 +1227,8 @@ ENDIF
 ! Synchronizing all processes
 !   CALL MPI_BARRIER(NMNH_COMM_WORLD, IERR)   ! A ACTIVER SI PB.
 !
+    INBLIGHT = COUNT(GNEW_FLASH(1:INB_CELL))
     IF (IPROC .EQ. 0) THEN
-      INBLIGHT = COUNT(GNEW_FLASH(1:INB_CELL))
       IF (INBLIGHT .NE. 0) THEN
         IF ((NNBLIGHT+INBLIGHT) .LE. NFLASH_WRITE) THEN       ! SAVE
           ISAVE_STATUS = 1
@@ -1882,6 +1881,16 @@ CALL MPI_BCAST (ISEG_LOC(:,IL), 3*SIZE(PRT,3), &
                 MPI_INTEGER, IPROC_TRIG(IL), NMNH_COMM_WORLD, IERR)
 CALL MPI_BCAST (ITYPE(IL), 1, &
                 MPI_INTEGER, IPROC_TRIG(IL), NMNH_COMM_WORLD, IERR)
+
+CALL MPI_BCAST (GCG, 1, &
+                MPI_LOGICAL, IPROC_TRIG(IL), NMNH_COMM_WORLD, IERR)
+CALL MPI_BCAST (GCG_POS, 1, &
+                MPI_LOGICAL, IPROC_TRIG(IL), NMNH_COMM_WORLD, IERR)
+CALL MPI_BCAST (NNB_CG, 1, &
+                MPI_INTEGER, IPROC_TRIG(IL), NMNH_COMM_WORLD, IERR)
+CALL MPI_BCAST (NNB_CG_POS, 1, &
+                MPI_INTEGER, IPROC_TRIG(IL), NMNH_COMM_WORLD, IERR)
+
 !
 CALL MPPDB_CHECK3DM("flash:: one_leader end ZFLASH",PRECISION,ZFLASH(:,:,:,IL))
 !
