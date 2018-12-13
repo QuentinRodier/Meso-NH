@@ -56,7 +56,7 @@ CONTAINS
     USE MODD_DIM_n,      ONLY: NIMAX_ll, NJMAX_ll, NKMAX
     USE MODD_PARAMETERS, ONLY: JPHEXT, JPVEXT, NGRIDUNKNOWN
 
-    USE MODE_NETCDF, ONLY: IO_GUESS_DIMIDS_NC4
+    use mode_io_tools_nc4, only: io_guess_dimids_nc4
 
     TYPE(TFILE_ELT),DIMENSION(:),         INTENT(IN)  :: infiles
     TYPE(TFILE_ELT),DIMENSION(:),         INTENT(IN)  :: outfiles
@@ -620,7 +620,7 @@ END DO
 
   SUBROUTINE def_ncdf(infiles,outfiles,KNFILES_OUT)
     USE MODD_CONF,   ONLY: NMNHVERSION
-    USE MODE_NETCDF, ONLY: IO_WRITE_HEADER_NC4
+    use mode_io_write_nc4, only: io_write_header_nc4
 
     TYPE(TFILE_ELT),DIMENSION(:),INTENT(IN) :: infiles
     TYPE(TFILE_ELT),DIMENSION(:),INTENT(IN) :: outfiles
@@ -1263,8 +1263,8 @@ END DO
 
 
   SUBROUTINE IO_FILL_DIMS_NC4(TPFILE,TPREC,KRESP)
-    USE MODD_IO_ll,  ONLY: TFILEDATA
-    USE MODE_NETCDF, ONLY: GETDIMCDF, IO_FIND_DIM_BYNAME_NC4
+    USE MODD_IO_ll,        ONLY: TFILEDATA
+    use mode_io_tools_nc4, only: getdimcdf, io_find_dim_byname_nc4
 
     TYPE(TFILEDATA),INTENT(IN)    :: TPFILE
     TYPE(workfield),INTENT(INOUT) :: TPREC

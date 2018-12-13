@@ -8,6 +8,7 @@
 !  P. Wautelet : may 2016: use NetCDF Fortran module
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  Philippe Wautelet: 29/10/2018: better detection of older MNH version numbers
+!  Philippe Wautelet: 13/12/2018: moved some operations to new mode_io_*_nc4 modules
 !-----------------------------------------------------------------
 
 MODULE MODE_FM
@@ -45,9 +46,8 @@ END SUBROUTINE SET_FMPACK_ll
 
 SUBROUTINE IO_FILE_OPEN_ll(TPFILE,KRESP,OPARALLELIO,HPOSITION,HSTATUS,HPROGRAM_ORIG)
 !
-USE MODD_CONF,  ONLY: CPROGRAM, NMNHVERSION
+USE MODD_CONF,  ONLY: CPROGRAM
 USE MODD_IO_ll, ONLY: TFILEDATA
-USE MODE_FIELD, ONLY: TFIELDDATA,TYPEINT
 USE MODE_FMREAD
 USE MODE_IO_ll, ONLY : OPEN_ll
 USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST,IO_FILE_FIND_BYNAME
@@ -59,11 +59,7 @@ CHARACTER(LEN=*),       INTENT(IN),  OPTIONAL :: HPOSITION
 CHARACTER(LEN=*),       INTENT(IN),  OPTIONAL :: HSTATUS
 CHARACTER(LEN=*),       INTENT(IN),  OPTIONAL :: HPROGRAM_ORIG !To emulate a file coming from this program
 !
-INTEGER :: IRESP,IRESP2
-INTEGER :: IMASDEV,IBUGFIX
-INTEGER,DIMENSION(3)    :: IMNHVERSION
-CHARACTER(LEN=12)       :: YMNHVERSION_FILE,YMNHVERSION_CURR
-TYPE(TFIELDDATA)        :: TZFIELD
+INTEGER :: IRESP
 TYPE(TFILEDATA),POINTER :: TZFILE_DES
 TYPE(TFILEDATA),POINTER :: TZFILE_DUMMY
 !
@@ -152,91 +148,23 @@ SELECT CASE(TPFILE%CTYPE)
     ENDIF
     !
     CALL FMOPEN_ll(TPFILE,IRESP,OPARALLELIO=OPARALLELIO,HPROGRAM_ORIG=HPROGRAM_ORIG)
-    !
-    !Compare MNHVERSION of file with current version and store it in file metadata
-    IF (TRIM(TPFILE%CMODE) == 'READ') THEN
-      IMNHVERSION(:) = 0
-      !Use TZFIELD because TFIELDLIST could be not initialised
-      TZFIELD%CMNHNAME   = 'MNHVERSION'
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CLONGNAME  = 'MesoNH version'
-      TZFIELD%CUNITS     = ''
-      TZFIELD%CDIR       = '--'
-      TZFIELD%CCOMMENT   = ''
-      TZFIELD%NGRID      = 0
-      TZFIELD%NTYPE      = TYPEINT
-      TZFIELD%NDIMS      = 1
-      TZFIELD%LTIMEDEP   = .FALSE.
-      CALL IO_READ_FIELD(TPFILE,TZFIELD,IMNHVERSION,IRESP2)
-      IF (IRESP2/=0) THEN
-        TZFIELD%CMNHNAME   = 'MASDEV'
-        TZFIELD%CLONGNAME  = 'MesoNH version (without bugfix)'
-        TZFIELD%NDIMS      = 0
-        CALL IO_READ_FIELD(TPFILE,TZFIELD,IMASDEV,IRESP2)
-        IF (IRESP2/=0) THEN
-          CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FILE_OPEN_ll','unknown MASDEV version for '//TRIM(TPFILE%CNAME))
-        ELSE
-          IF (IMASDEV<100) THEN
-            IMNHVERSION(1)=IMASDEV/10
-            IMNHVERSION(2)=MOD(IMASDEV,10)
-          ELSE !for example for MNH 4.10
-            IMNHVERSION(1)=IMASDEV/100
-            IMNHVERSION(2)=MOD(IMASDEV,100)
-          END IF
-        END IF
-        !
-        TZFIELD%CMNHNAME   = 'BUGFIX'
-        TZFIELD%CLONGNAME  = 'MesoNH bugfix number'
-        CALL IO_READ_FIELD(TPFILE,TZFIELD,IBUGFIX,IRESP2)
-        IF (IRESP2/=0) THEN
-          CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FILE_OPEN_ll','unknown BUGFIX version for '//TRIM(TPFILE%CNAME))
-        ELSE
-          IMNHVERSION(3)=IBUGFIX
-        END IF
-      END IF
-      !
-      WRITE(YMNHVERSION_FILE,"( I0,'.',I0,'.',I0 )" ) IMNHVERSION(1),IMNHVERSION(2),IMNHVERSION(3)
-      WRITE(YMNHVERSION_CURR,"( I0,'.',I0,'.',I0 )" ) NMNHVERSION(1),NMNHVERSION(2),NMNHVERSION(3)
-      !
-      IF ( IMNHVERSION(1)==0 .AND. IMNHVERSION(2)==0 .AND. IMNHVERSION(3)==0 ) THEN
-        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FILE_OPEN_ll','file '//TRIM(TPFILE%CNAME)//&
-                      ' was written with an unknown version of MesoNH')
-      ELSE IF (  IMNHVERSION(1)< NMNHVERSION(1) .OR. &
-                (IMNHVERSION(1)==NMNHVERSION(1) .AND. IMNHVERSION(2)< NMNHVERSION(2)) .OR. &
-                (IMNHVERSION(1)==NMNHVERSION(1) .AND. IMNHVERSION(2)==NMNHVERSION(2) .AND. IMNHVERSION(3)<NMNHVERSION(3)) ) THEN
-        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FILE_OPEN_ll','file '//TRIM(TPFILE%CNAME)//&
-                      ' was written with an older version of MesoNH ('//TRIM(YMNHVERSION_FILE)//&
-                      ' instead of '//TRIM(YMNHVERSION_CURR)//')')
-      ELSE IF (  IMNHVERSION(1)> NMNHVERSION(1) .OR. &
-                (IMNHVERSION(1)==NMNHVERSION(1) .AND. IMNHVERSION(2)> NMNHVERSION(2)) .OR. &
-                (IMNHVERSION(1)==NMNHVERSION(1) .AND. IMNHVERSION(2)==NMNHVERSION(2) .AND. IMNHVERSION(3)>NMNHVERSION(3)) ) THEN
-        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FILE_OPEN_ll','file '//TRIM(TPFILE%CNAME)//&
-                      ' was written with a more recent version of MesoNH ('//TRIM(YMNHVERSION_FILE)//&
-                      ' instead of '//TRIM(YMNHVERSION_CURR)//')')
-      ELSE
-        CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_FILE_OPEN_ll','file '//TRIM(TPFILE%CNAME)//&
-                      ' was written with the same version of MesoNH ('//TRIM(YMNHVERSION_CURR)//')')
-      END IF
-      !
-      TPFILE%NMNHVERSION(:) = IMNHVERSION(:)
-    END IF
+
 END SELECT
-!
-IF (TRIM(TPFILE%CMODE) == 'WRITE') TPFILE%NMNHVERSION(:) = NMNHVERSION(:)
 !
 IF (PRESENT(KRESP)) KRESP = IRESP
 !
 END SUBROUTINE IO_FILE_OPEN_ll
 
 SUBROUTINE FMOPEN_ll(TPFILE,KRESP,OPARALLELIO,HPROGRAM_ORIG)
-USE MODD_IO_ll, ONLY : ISTDOUT,TFILEDATA
-USE MODE_IO_ll, ONLY : OPEN_ll,GCONFIO,IOFREEFLU,IONEWFLU
+USE MODD_IO_ll,         ONLY: ISTDOUT,TFILEDATA
+USE MODE_IO_ll,         ONLY: OPEN_ll,GCONFIO,IOFREEFLU,IONEWFLU
+use mode_io_tools, only: io_get_mnhversion,io_set_mnhversion
 !JUANZ
 USE MODD_CONFZ,ONLY  : NB_PROCIO_R,NB_PROCIO_W
 !JUANZ
 #if defined(MNH_IOCDF4)
 USE MODD_NETCDF, ONLY:IDCDF_KIND
-USE MODE_NETCDF
+use mode_io_file_nc4, only: io_create_file_nc4, io_open_file_nc4
 #endif
 TYPE(TFILEDATA), INTENT(INOUT) :: TPFILE ! File structure
 INTEGER,         INTENT(OUT)   :: KRESP  ! return-code
@@ -263,9 +191,6 @@ INTEGER               :: INB_PROCIO
 !JUAN
 LOGICAL               :: GPARALLELIO
 LOGICAL               :: GEXIST_LFI, GEXIST_NC4
-#if defined(MNH_IOCDF4)
-INTEGER(KIND=IDCDF_KIND) :: INCERR
-#endif
 
 YACTION = TPFILE%CMODE
 
@@ -382,37 +307,22 @@ IF (TPFILE%LMASTER) THEN
         END IF
     END SELECT
   END IF
+END IF
 
 #if defined(MNH_IOCDF4)
-  IF (TPFILE%CFORMAT=='NETCDF4' .OR. TPFILE%CFORMAT=='LFICDF4') THEN
-     IF (YACTION == 'READ') THEN
-        !! Open NetCDF File for reading
-        TPFILE%TNCDIMS => NEWIOCDF()
-        CALL PRINT_MSG(NVERB_DEBUG,'IO','FMOPEN_ll','NF90_OPEN for '//TRIM(YFILEM)//'.nc')
-        INCERR = NF90_OPEN(ADJUSTL(TRIM(YFILEM))//".nc", NF90_NOWRITE, TPFILE%NNCID)
-        IF (INCERR /= NF90_NOERR) THEN
-          CALL PRINT_MSG(NVERB_FATAL,'IO','FMOPEN_ll','NF90_OPEN for '//TRIM(YFILEM)//'.nc: '//NF90_STRERROR(INCERR))
-        END IF
-        INCERR = NF90_INQUIRE(TPFILE%NNCID,NVARIABLES=TPFILE%NNCNAR)
-        IF (INCERR /= NF90_NOERR) THEN
-          CALL PRINT_MSG(NVERB_FATAL,'IO','FMOPEN_ll','NF90_INQUIRE for '//TRIM(YFILEM)//'.nc: '//NF90_STRERROR(INCERR))
-        END IF
-     END IF
-     
-     IF (YACTION == 'WRITE') THEN
-        TPFILE%TNCDIMS => NEWIOCDF()
-        CALL PRINT_MSG(NVERB_DEBUG,'IO','FMOPEN_ll','NF90_CREATE for '//TRIM(YFILEM)//'.nc')
-        INCERR = NF90_CREATE(ADJUSTL(TRIM(YFILEM))//".nc", &
-             &IOR(NF90_CLOBBER,NF90_NETCDF4), TPFILE%NNCID)
-        IF (INCERR /= NF90_NOERR) THEN
-          CALL PRINT_MSG(NVERB_FATAL,'IO','FMOPEN_ll','NF90_CREATE for '//TRIM(YFILEM)//'.nc: '//NF90_STRERROR(INCERR))
-        END IF
-        CALL IO_SET_KNOWNDIMS_NC4(TPFILE,HPROGRAM_ORIG=HPROGRAM_ORIG)
-     END IF
-  END IF
+IF (TPFILE%CFORMAT=='NETCDF4' .OR. TPFILE%CFORMAT=='LFICDF4') THEN
+   IF (YACTION == 'READ') THEN
+      call io_open_file_nc4(tpfile)
+   END IF
+
+   IF (YACTION == 'WRITE') THEN
+      call io_create_file_nc4(TPFILE, hprogram_orig=HPROGRAM_ORIG)
+   END IF
+END IF
 #endif
-  
-  IF (TPFILE%CFORMAT=='LFI' .OR. TPFILE%CFORMAT=='LFICDF4') THEN
+
+IF (TPFILE%CFORMAT=='LFI' .OR. TPFILE%CFORMAT=='LFICDF4') THEN
+  IF (TPFILE%LMASTER) THEN
      ! LFI Case
      IRESOU = 0
      GNAMFI = .TRUE.
@@ -441,19 +351,23 @@ IF (TPFILE%LMASTER) THEN
           INPRAR,               &
           ININAR)
      TPFILE%NLFININAR = ININAR
-  IF (IRESOU /= 0 ) THEN
+     IF (IRESOU /= 0 ) THEN
         IRESP = IRESOU
      ENDIF
+     !
+     !*      6.    TEST IF FILE IS NEWLY DEFINED
+     !
+     GNEWFI=(ININAR==0).OR.(IMELEV<2)
+     IF (.NOT.GNEWFI) THEN
+       WRITE (ISTDOUT,*) ' file ',TRIM(YFILEM)//'.lfi',' previously created with LFI'
+     ENDIF
   END IF
-
-  !
-  !*      6.    TEST IF FILE IS NEWLY DEFINED
-  !
-  
-  GNEWFI=(ININAR==0).OR.(IMELEV<2)
-  IF (.NOT.GNEWFI) THEN
-    WRITE (ISTDOUT,*) ' file ',TRIM(YFILEM)//'.lfi',' previously created with LFI'
-  ENDIF
+  SELECT CASE (YACTION)
+    CASE('READ')
+      call io_get_mnhversion(tpfile)
+    CASE('WRITE')
+      call io_set_mnhversion(tpfile)
+  END SELECT
 END IF
 
 ! Broadcast ERROR
@@ -625,7 +539,8 @@ USE MODE_IO_ll, ONLY : CLOSE_ll,UPCASE
 USE MODI_SYSTEM_MNH
 #endif
 #if defined(MNH_IOCDF4)
-USE MODE_NETCDF
+  use mode_io_file_nc4,  only: io_close_file_nc4
+  use mode_io_write_nc4, only: io_write_coordvar_nc4
 #endif
 TYPE(TFILEDATA),      INTENT(IN) :: TPFILE ! File structure
 CHARACTER(LEN=*),     INTENT(IN) :: HSTATU ! status for the closed file
@@ -693,11 +608,7 @@ IF (TPFILE%LMASTER) THEN
 #if defined(MNH_IOCDF4)
   IF (TPFILE%NNCID/=-1) THEN
     ! Close Netcdf File
-    IRESP = NF90_CLOSE(TPFILE%NNCID)
-    IF (IRESP /= NF90_NOERR) THEN
-      CALL PRINT_MSG(NVERB_WARNING,'IO','FMCLOS_ll','NF90_CLOSE error: '//TRIM(NF90_STRERROR(IRESP)))
-    END IF
-    IF (ASSOCIATED(TPFILE%TNCDIMS)) CALL CLEANIOCDF(TPFILE%TNCDIMS)
+    call io_close_file_nc4(tpfile,iresp)
   END IF
 #endif
   IF (IRESP == 0 .AND. CPROGRAM/='LFICDF') THEN

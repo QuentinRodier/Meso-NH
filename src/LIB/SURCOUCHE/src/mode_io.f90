@@ -1,6 +1,6 @@
 !MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !!    Authors
@@ -13,10 +13,11 @@
 !     J.Escobar   18/10/10   bug with PGI compiler on ADJUSTL
 !     P. Wautelet 04/02/2016: bug with DELIM='NONE' and GCC 5.2/5.3
 !     D.Gazen   : avril 2016 change error message 
-!     P. Wautelet : may 2016: use NetCDF Fortran module
+!     P. Wautelet : may 2016: use netCDF Fortran module
 !     P. Wautelet : July 2016: added type OUTBAK
 !     Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !     J. Pianezze 01/08/2016  add LOASIS flag
+!     Philippe Wautelet: 13/12/2018: moved some operations to new mode_io_*_nc4 modules
 !
 MODULE MODE_IO_ll
 
@@ -42,7 +43,6 @@ MODULE MODE_IO_ll
 
   PUBLIC IOFREEFLU,IONEWFLU,UPCASE,INITIO_ll,OPEN_ll,CLOSE_ll
   PUBLIC SET_CONFIO_ll,GCONFIO
-  PUBLIC  io_file,IO_RANK
 
 CONTAINS 
 
@@ -72,9 +72,9 @@ CONTAINS
   END FUNCTION IONEWFLU
 
   SUBROUTINE IOFREEFLU(KOFLU)
-    
+
     INTEGER :: KOFLU
-    
+
     IF ((KOFLU .GE. JPRESERVED_UNIT) .AND. (KOFLU .LE. JPMAX_UNIT_NUMBER )) THEN 
        GALLOC(KOFLU) = .FALSE.
     ELSE
@@ -204,11 +204,13 @@ CONTAINS
        HPROGRAM_ORIG)
 
 #if defined(MNH_IOCDF4)
-  USE MODD_NETCDF, ONLY:IDCDF_KIND
-  USE MODE_NETCDF
+  USE MODD_NETCDF,           ONLY:IDCDF_KIND
+  use mode_io_file_nc4,      only: io_create_file_nc4, io_open_file_nc4
 #endif
   USE MODD_IO_ll
+
   USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST, IO_FILE_FIND_BYNAME
+  use mode_io_tools,         only: io_rank, io_get_mnhversion,io_set_mnhversion
 
     TYPE(TFILEDATA), INTENT(INOUT)         :: TPFILE
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: MODE
@@ -253,7 +255,6 @@ CONTAINS
     CHARACTER(len=20)    :: YMODE
     CHARACTER(LEN=256)   :: YIOERRMSG
     INTEGER              :: IOS,IERR,IRESP
-    INTEGER(KIND=IDCDF_KIND) :: IOSCDF
     INTEGER              :: ICOMM
     INTEGER              :: ICMPRES
     ! didier
@@ -638,7 +639,7 @@ CONTAINS
 #endif
              TPFILE%NLFIFLU = IONEWFLU()
        ELSE 
-          !! NON I/O processors OR NetCDF read case 
+          !! NON I/O processors OR netCDF read case
           IOS = 0
           TPFILE%NLFIFLU = -1
        END IF
@@ -686,45 +687,23 @@ CONTAINS
              TZSPLITFILE%LMULTIMASTERS = .FALSE.
              TZSPLITFILE%NSUBFILES_IOZ = 0
 
-             IF ( TZSPLITFILE%LMASTER ) THEN
-#if defined(MNH_IOCDF4)                   
-                IF (TZSPLITFILE%CFORMAT=='NETCDF4' .OR. TZSPLITFILE%CFORMAT=='LFICDF4') THEN
-                   IF (YACTION == 'READ') THEN
-                      ! Open NetCDF File for reading
-                      TZSPLITFILE%TNCDIMS => NEWIOCDF()
-                      CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','NF90_OPEN(IO_ZSPLIT) for '//TRIM(TZSPLITFILE%CNAME)//'.nc')
-                      IOSCDF = NF90_OPEN(TRIM(YPREFILENAME)//".nc", NF90_NOWRITE, TZSPLITFILE%NNCID)
-                      IF (IOSCDF /= NF90_NOERR) THEN
-                        CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll','NF90_OPEN for '//TRIM(TZSPLITFILE%CNAME)//'.nc: '// &
-                                                                  NF90_STRERROR(IOSCDF))
-                      ELSE
-                         IOS = 0
-                      END IF
-                      IOSCDF = NF90_INQUIRE(TZSPLITFILE%NNCID,NVARIABLES=TZSPLITFILE%NNCNAR)
-                      IF (IOSCDF /= NF90_NOERR) THEN
-                        CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll','NF90_INQUIRE for '//TRIM(TZSPLITFILE%CNAME)//'.nc: ' &
-                                                                  //NF90_STRERROR(IOSCDF))
-                      END IF
-                   END IF
-                   
-                   IF (YACTION == 'WRITE') THEN
-                      ! YACTION == 'WRITE'
-                      ! Create NetCDF File for writing
-                      TZSPLITFILE%TNCDIMS => NEWIOCDF()
-                      CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','NF90_CREATE(IO_ZSPLIT) for '//TRIM(TZSPLITFILE%CNAME)//'.nc')
-                      IOSCDF = NF90_CREATE(TRIM(YPREFILENAME)//".nc", &
-                           &IOR(NF90_CLOBBER,NF90_NETCDF4), TZSPLITFILE%NNCID)
-                      IF (IOSCDF /= NF90_NOERR) THEN
-                        CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll','NF90_CREATE for '//TRIM(TZSPLITFILE%CNAME)//'.nc: '// &
-                                                                  NF90_STRERROR(IOSCDF))
-                      ELSE
-                         IOS = 0
-                      END IF
-                      CALL IO_SET_KNOWNDIMS_NC4(TZSPLITFILE,HPROGRAM_ORIG=HPROGRAM_ORIG)
-                   END IF
+#if defined(MNH_IOCDF4)
+             IF (TZSPLITFILE%CFORMAT=='NETCDF4' .OR. TZSPLITFILE%CFORMAT=='LFICDF4') THEN
+                IF (YACTION == 'READ') THEN
+                   ! Open netCDF File for reading
+                   call io_open_file_nc4(tzsplitfile)
+                   IOS = 0
                 END IF
+
+                IF (YACTION == 'WRITE') THEN
+                   ! Create netCDF File for writing
+                   call io_create_file_nc4(TZSPLITFILE, hprogram_orig=HPROGRAM_ORIG)
+                   IOS = 0
+                END IF
+             END IF
 #endif
-                IF (TZSPLITFILE%CFORMAT=='LFI' .OR. TZSPLITFILE%CFORMAT=='LFICDF4') THEN
+             IF (TZSPLITFILE%CFORMAT=='LFI' .OR. TZSPLITFILE%CFORMAT=='LFICDF4') THEN
+                IF ( TZSPLITFILE%LMASTER ) THEN
                    ! LFI case
                    ! Open LFI File for reading
                    !this proc must write on this file open it ...    
@@ -762,6 +741,13 @@ CONTAINS
                         ININAR8)
                    TZSPLITFILE%NLFININAR = ININAR8
                 END IF
+                !
+                SELECT CASE (YACTION)
+                  CASE('READ')
+                    call io_get_mnhversion(tpfile)
+                  CASE('WRITE')
+                    call io_set_mnhversion(tpfile)
+                END SELECT
              ENDIF
              !
              TZSPLITFILE%LOPENED = .TRUE.
@@ -794,7 +780,8 @@ CONTAINS
   USE MODD_IO_ll
   USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
 #if defined(MNH_IOCDF4)
-  USE MODE_NETCDF
+  use mode_io_file_nc4,      only: io_close_file_nc4
+  use mode_io_write_nc4,     only: io_write_coordvar_nc4
 #endif
     TYPE(TFILEDATA),  INTENT(IN)            :: TPFILE
     INTEGER,          INTENT(OUT), OPTIONAL :: IOSTAT
@@ -841,7 +828,7 @@ CONTAINS
       DO IFILE=1,TPFILE%NSUBFILES_IOZ
         TZFILE => TPFILE%TFILES_IOZ(IFILE)%TFILE
 #if defined(MNH_IOCDF4)
-        !Write coordinates variables in NetCDF file
+        !Write coordinates variables in netCDF file
         IF (TZFILE%CMODE == 'WRITE' .AND. (TZFILE%CFORMAT=='NETCDF4' .OR. TZFILE%CFORMAT=='LFICDF4')) THEN
           CALL IO_WRITE_COORDVAR_NC4(TZFILE,HPROGRAM_ORIG=HPROGRAM_ORIG)
         END IF
@@ -855,11 +842,7 @@ CONTAINS
 #if defined(MNH_IOCDF4)
           IF (TZFILE%NNCID/=-1) THEN
             ! Close Netcdf File
-            IRESP = NF90_CLOSE(TZFILE%NNCID)
-            IF (IRESP /= NF90_NOERR) THEN
-              CALL PRINT_MSG(NVERB_WARNING,'IO','CLOSE_ll','NF90_CLOSE error: '//TRIM(NF90_STRERROR(IRESP)))
-            END IF
-            IF (ASSOCIATED(TZFILE%TNCDIMS)) CALL CLEANIOCDF(TZFILE%TNCDIMS)
+            call io_close_file_nc4(tzfile)
           END IF
 #endif
         END IF
@@ -879,49 +862,6 @@ CONTAINS
     END IF
 
   END SUBROUTINE CLOSE_ll
-
-  FUNCTION io_file(k,nb_proc_io)
-    !
-    ! return the file number where to write the K level of data
-    !
-    IMPLICIT NONE
-    INTEGER(kind=MNH_MPI_RANK_KIND)                   :: k,nb_proc_io
-    INTEGER(kind=MNH_MPI_RANK_KIND)                   :: io_file
-
-    io_file = MOD ((k-1) , nb_proc_io )
-
-  END FUNCTION io_file
-
-  FUNCTION IO_RANK(IFILE,nb_proc,nb_proc_io,offset_rank)
-    !
-    ! return the proc number which must write the 'IFILE' file
-    !
-    IMPLICIT NONE
-    INTEGER(kind=MNH_MPI_RANK_KIND)                  :: IFILE,nb_proc,nb_proc_io
-    INTEGER(kind=MNH_MPI_RANK_KIND),OPTIONAL         :: offset_rank
-
-    INTEGER(kind=MNH_MPI_RANK_KIND)                  :: IO_RANK
-
-    INTEGER(kind=MNH_MPI_RANK_KIND)                  :: ipas,irest
-
-    ipas  =        nb_proc / nb_proc_io
-    irest =  MOD ( nb_proc , nb_proc_io )
-
-    IF  (ipas /= 0 ) THEN
-       IO_RANK=ipas * IFILE + MIN(IFILE , irest )
-    ELSE
-       IO_RANK=MOD(IFILE , nb_proc )
-    ENDIF
-
-    !
-    ! optional rank to shift for read test
-    !
-    IF (PRESENT(offset_rank)) THEN
-       IF ( offset_rank .GT.0 ) IO_RANK=MOD(IO_RANK+offset_rank,nb_proc)
-       IF ( offset_rank .LT.0 ) IO_RANK=MOD(nb_proc-IO_RANK+offset_rank,nb_proc)
-    ENDIF
-
-  END FUNCTION IO_RANK
   !
   !
 END MODULE MODE_IO_ll
