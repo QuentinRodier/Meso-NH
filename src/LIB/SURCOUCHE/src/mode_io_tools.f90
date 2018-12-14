@@ -5,17 +5,17 @@
 !-----------------------------------------------------------------
 !  Modifications:
 !    P. Wautelet : 13/12/2018 : extracted from mode_io.f90
+!    P. Wautelet : 14/12/2018 : added io_construct_filename
 !-----------------------------------------------------------------
 module mode_io_tools
 
-use mode_msg
+use modd_io_ll, only: tfiledata
 
 implicit none
 
 private
 
-public :: io_file, io_rank
-public :: io_get_mnhversion, io_set_mnhversion
+public :: io_file, io_rank, io_construct_filename
 
 contains
 
@@ -62,6 +62,41 @@ contains
 
   END FUNCTION IO_RANK
 
+
+subroutine io_construct_filename(tpfile,hfilem)
+  type(tfiledata),               intent(inout) :: tpfile
+  character(len=:), allocatable, intent(out)   :: hfilem
+
+  if (allocated(tpfile%cdirname)) then
+    if(len_trim(tpfile%cdirname)>0) then
+      hfilem = trim(tpfile%cdirname)//'/'//trim(tpfile%cname)
+    else
+      hfilem = trim(tpfile%cname)
+    end if
+  else
+    hfilem = trim(tpfile%cname)
+  end if
+
+end subroutine io_construct_filename
+
+
+end module mode_io_tools
+
+
+
+module mode_io_tools_mnhversion
+
+use modd_io_ll, only: tfiledata
+
+use mode_msg
+
+implicit none
+
+private
+
+public :: io_get_mnhversion, io_set_mnhversion
+
+contains
 
   subroutine io_get_mnhversion(tpfile)
   !Compare MNHVERSION of file with current version and store it in file metadata
@@ -164,4 +199,4 @@ contains
     tpfile%nmnhversion(:) = nmnhversion(:)
   end subroutine io_set_mnhversion
 
-end module mode_io_tools
+end module mode_io_tools_mnhversion

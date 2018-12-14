@@ -13,7 +13,7 @@
 module mode_io_read_nc4
 
 use modd_io_ll,        only: tfiledata
-use modd_netcdf,       only: idcdf_kind
+use modd_netcdf,       only: IDCDF_KIND
 
 use mode_field,        only: tfielddata
 use mode_io_tools_nc4, only: cleanmnhname, handle_err

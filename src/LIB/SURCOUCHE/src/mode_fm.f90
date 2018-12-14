@@ -156,9 +156,8 @@ IF (PRESENT(KRESP)) KRESP = IRESP
 END SUBROUTINE IO_FILE_OPEN_ll
 
 SUBROUTINE FMOPEN_ll(TPFILE,KRESP,OPARALLELIO,HPROGRAM_ORIG)
-USE MODD_IO_ll,         ONLY: ISTDOUT,TFILEDATA
-USE MODE_IO_ll,         ONLY: OPEN_ll,GCONFIO,IOFREEFLU,IONEWFLU
-use mode_io_tools, only: io_get_mnhversion,io_set_mnhversion
+USE MODD_IO_ll,               ONLY: ISTDOUT,TFILEDATA
+USE MODE_IO_ll,               ONLY: OPEN_ll,GCONFIO,IOFREEFLU,IONEWFLU
 !JUANZ
 USE MODD_CONFZ,ONLY  : NB_PROCIO_R,NB_PROCIO_W
 !JUANZ
@@ -166,6 +165,8 @@ USE MODD_CONFZ,ONLY  : NB_PROCIO_R,NB_PROCIO_W
 USE MODD_NETCDF, ONLY:IDCDF_KIND
 use mode_io_file_nc4, only: io_create_file_nc4, io_open_file_nc4
 #endif
+use mode_io_file_lfi, only: io_create_file_lfi, io_open_file_lfi
+
 TYPE(TFILEDATA), INTENT(INOUT) :: TPFILE ! File structure
 INTEGER,         INTENT(OUT)   :: KRESP  ! return-code
 LOGICAL,         INTENT(IN),  OPTIONAL :: OPARALLELIO
@@ -173,38 +174,17 @@ CHARACTER(LEN=*),INTENT(IN),  OPTIONAL :: HPROGRAM_ORIG !To emulate a file comin
 !
 !   Local variables
 !
-INTEGER                 :: IFTYPE  ! type of FM-file
-INTEGER                 :: IROWF,IRESP
-CHARACTER(LEN=7)        :: YACTION ! Action upon the file ('READ' or 'WRITE')
-CHARACTER(LEN=:),ALLOCATABLE :: YFILEM  ! name of the file
-CHARACTER(LEN=:),ALLOCATABLE :: YFORSTATUS  ! Status for open of a file (for LFI) ('OLD','NEW','UNKNOWN','SCRATCH','REPLACE')
-CHARACTER(LEN=8)        :: YRESP
-LOGICAL                 :: GSTATS
-LOGICAL :: GNAMFI,GFATER,GNEWFI
-INTEGER :: IERR
-!JUAN
-INTEGER(KIND=LFI_INT) :: IRESOU,INUMBR8
-INTEGER(KIND=LFI_INT) :: IMELEV,INPRAR
-INTEGER(KIND=LFI_INT) :: ININAR ! Number of articles present in LFI file
-LOGICAL               :: GNAMFI8,GFATER8,GSTATS8
+INTEGER               :: IROWF, IRESP
+CHARACTER(LEN=7)      :: YACTION ! Action upon the file ('READ' or 'WRITE')
+CHARACTER(LEN=8)      :: YRESP
+INTEGER               :: IERR
 INTEGER               :: INB_PROCIO
-!JUAN
 LOGICAL               :: GPARALLELIO
 LOGICAL               :: GEXIST_LFI, GEXIST_NC4
 
 YACTION = TPFILE%CMODE
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','FMOPEN_ll','opening '//TRIM(TPFILE%CNAME)//' for '//TRIM(YACTION))
-
-IF (ALLOCATED(TPFILE%CDIRNAME)) THEN
-  IF(LEN_TRIM(TPFILE%CDIRNAME)>0) THEN
-    YFILEM = TRIM(TPFILE%CDIRNAME)//'/'//TRIM(TPFILE%CNAME)
-  ELSE
-    YFILEM = TRIM(TPFILE%CNAME)
-  END IF
-ELSE
-  YFILEM = TRIM(TPFILE%CNAME)
-END IF
 
 IF ( PRESENT(OPARALLELIO) ) THEN
   GPARALLELIO = OPARALLELIO
@@ -218,25 +198,8 @@ IF (.NOT. GCONFIO) THEN
    STOP
 END IF
 
-ININAR = 0
-INPRAR = TPFILE%NLFINPRAR
 IROWF  = 0
 IRESP  = 0
-
-SELECT CASE (TPFILE%NLFIVERB)
-CASE(:2)
-  GSTATS = .FALSE.
-  IMELEV=0
-CASE(3:6)
-  GSTATS = .FALSE.
-  IMELEV=1
-CASE(7:9)
-  GSTATS = .FALSE.
-  IMELEV=2
-CASE(10:)
-  GSTATS = .TRUE.
-  IMELEV=2
-END SELECT
 
 IROWF=LEN_TRIM(TPFILE%CNAME)
 
@@ -252,7 +215,7 @@ ENDIF
     INB_PROCIO = NB_PROCIO_W
  END SELECT
 CALL OPEN_ll(TPFILE,STATUS="UNKNOWN",MODE='IO_ZSPLIT',IOSTAT=IRESP,     &
-             KNB_PROCIO=INB_PROCIO,KMELEV=IMELEV,OPARALLELIO=GPARALLELIO,HPROGRAM_ORIG=HPROGRAM_ORIG)
+             KNB_PROCIO=INB_PROCIO,OPARALLELIO=GPARALLELIO,HPROGRAM_ORIG=HPROGRAM_ORIG)
 
 IF (IRESP /= 0) GOTO 1000
 
@@ -311,62 +274,21 @@ END IF
 
 #if defined(MNH_IOCDF4)
 IF (TPFILE%CFORMAT=='NETCDF4' .OR. TPFILE%CFORMAT=='LFICDF4') THEN
-   IF (YACTION == 'READ') THEN
+  SELECT CASE (YACTION)
+    CASE('READ')
       call io_open_file_nc4(tpfile)
-   END IF
-
-   IF (YACTION == 'WRITE') THEN
+    CASE('WRITE')
       call io_create_file_nc4(TPFILE, hprogram_orig=HPROGRAM_ORIG)
-   END IF
+  END SELECT
 END IF
 #endif
 
 IF (TPFILE%CFORMAT=='LFI' .OR. TPFILE%CFORMAT=='LFICDF4') THEN
-  IF (TPFILE%LMASTER) THEN
-     ! LFI Case
-     IRESOU = 0
-     GNAMFI = .TRUE.
-     GFATER = .TRUE.
-     !
-     INUMBR8 = TPFILE%NLFIFLU
-     GNAMFI8 = GNAMFI
-     GFATER8 = GFATER
-     GSTATS8 = GSTATS
-     !
-     SELECT CASE (YACTION)
-       CASE('READ')
-         YFORSTATUS = 'OLD'
-       CASE('WRITE')
-         YFORSTATUS = 'REPLACE'
-     END SELECT
-     !
-     CALL LFIOUV(IRESOU,        &
-          INUMBR8,              &
-          GNAMFI8,              &
-          TRIM(YFILEM)//'.lfi', &
-          YFORSTATUS,           &
-          GFATER8,              &
-          GSTATS8,              &
-          IMELEV,               &
-          INPRAR,               &
-          ININAR)
-     TPFILE%NLFININAR = ININAR
-     IF (IRESOU /= 0 ) THEN
-        IRESP = IRESOU
-     ENDIF
-     !
-     !*      6.    TEST IF FILE IS NEWLY DEFINED
-     !
-     GNEWFI=(ININAR==0).OR.(IMELEV<2)
-     IF (.NOT.GNEWFI) THEN
-       WRITE (ISTDOUT,*) ' file ',TRIM(YFILEM)//'.lfi',' previously created with LFI'
-     ENDIF
-  END IF
   SELECT CASE (YACTION)
     CASE('READ')
-      call io_get_mnhversion(tpfile)
+      call io_open_file_lfi(tpfile,iresp)
     CASE('WRITE')
-      call io_set_mnhversion(tpfile)
+      call io_create_file_lfi(tpfile,iresp)
   END SELECT
 END IF
 
@@ -379,13 +301,13 @@ IF (IRESP /= 0) GOTO 1000
 
 IF (IRESP.NE.0)  THEN
   WRITE(YRESP,"( I0 )") IRESP
-  CALL PRINT_MSG(NVERB_ERROR,'IO','FMOPEN_ll',TRIM(YFILEM)//': exit with IRESP='//TRIM(YRESP))
+  CALL PRINT_MSG(NVERB_ERROR,'IO','FMOPEN_ll',TRIM(TPFILE%CNAME)//': exit with IRESP='//TRIM(YRESP))
 END IF
 
 KRESP=IRESP
 
 END SUBROUTINE FMOPEN_ll
-  
+
 SUBROUTINE IO_FILE_CLOSE_ll(TPFILE,KRESP,OPARALLELIO,HPROGRAM_ORIG)
 !
 USE MODD_CONF,  ONLY: CPROGRAM
@@ -491,13 +413,13 @@ SELECT CASE(TPFILE%CTYPE)
       TZFILE_DES%NCLOSE        = TZFILE_DES%NCLOSE + 1
       !
       IF (TZFILE_DES%NOPEN_CURRENT==0) THEN
-        CALL CLOSE_ll(TZFILE_DES,IOSTAT=IRESP,STATUS='KEEP')
+        CALL CLOSE_ll(TZFILE_DES,IOSTAT=IRESP)
         TZFILE_DES%LOPENED = .FALSE.
         TZFILE_DES%NLU     = -1
       END IF
     ENDIF
     !
-    CALL FMCLOS_ll(TPFILE,'KEEP',KRESP=IRESP,OPARALLELIO=OPARALLELIO,HPROGRAM_ORIG=HPROGRAM_ORIG)
+    CALL FMCLOS_ll(TPFILE,KRESP=IRESP,OPARALLELIO=OPARALLELIO,HPROGRAM_ORIG=HPROGRAM_ORIG)
     !
     TPFILE%NLFIFLU = -1
     TPFILE%NNCID   = -1
@@ -525,7 +447,7 @@ IF (PRESENT(KRESP)) KRESP=IRESP
 !
 END SUBROUTINE IO_FILE_CLOSE_ll
 
-SUBROUTINE FMCLOS_ll(TPFILE,HSTATU,KRESP,OPARALLELIO,HPROGRAM_ORIG)
+SUBROUTINE FMCLOS_ll(TPFILE,KRESP,OPARALLELIO,HPROGRAM_ORIG)
 !
 !!    MODIFICATIONS
 !!    -------------
@@ -538,28 +460,25 @@ USE MODE_IO_ll, ONLY : CLOSE_ll,UPCASE
 #if !defined(MNH_SGI)
 USE MODI_SYSTEM_MNH
 #endif
+  use mode_io_file_lfi,  only: io_close_file_lfi
 #if defined(MNH_IOCDF4)
   use mode_io_file_nc4,  only: io_close_file_nc4
   use mode_io_write_nc4, only: io_write_coordvar_nc4
 #endif
 TYPE(TFILEDATA),      INTENT(IN) :: TPFILE ! File structure
-CHARACTER(LEN=*),     INTENT(IN) :: HSTATU ! status for the closed file
 INTEGER,              INTENT(OUT), OPTIONAL :: KRESP   ! return-code if problems araised
 LOGICAL,              INTENT(IN),  OPTIONAL :: OPARALLELIO
 CHARACTER(LEN=*),     INTENT(IN),  OPTIONAL :: HPROGRAM_ORIG !To emulate a file coming from this program
 
-INTEGER              ::IRESP,IROWF
-CHARACTER(LEN=28)    :: YFILEM  ! name of the file
-CHARACTER(LEN=7)     ::YSTATU
-LOGICAL              ::GSTATU
+INTEGER                 :: IRESP,IROWF
+CHARACTER(LEN=28)       :: YFILEM  ! name of the file
 CHARACTER(LEN=8)        :: YRESP
-CHARACTER(LEN=10)       ::YCPIO
-CHARACTER(LEN=14)       ::YTRANS
-CHARACTER(LEN=100)      ::YCOMMAND
+CHARACTER(LEN=10)       :: YCPIO
+CHARACTER(LEN=14)       :: YTRANS
+CHARACTER(LEN=100)      :: YCOMMAND
 INTEGER                 :: IERR, IFITYP
 INTEGER, SAVE           :: ICPT=0
-INTEGER(KIND=LFI_INT) :: IRESP8
-LOGICAL :: GPARALLELIO
+LOGICAL                 :: GPARALLELIO
 
 YFILEM  = TPFILE%CNAME
 
@@ -581,18 +500,6 @@ IF (IROWF.EQ.0) THEN
   GOTO 1000
 ENDIF
 
-IF (LEN(HSTATU).LE.0) THEN
-  IRESP=-41
-  GOTO 1000
-ELSE
-  YSTATU = HSTATU
-  YSTATU = UPCASE(TRIM(ADJUSTL(YSTATU)))
-  GSTATU=YSTATU=='KEEP'.OR.YSTATU=='DELETE'
-  IF (.NOT. GSTATU) THEN
-    YSTATU='DEFAULT'
-  ENDIF
-ENDIF
-
 #if defined(MNH_IOCDF4)
 !Write coordinates variables in NetCDF file
 IF (TPFILE%CMODE == 'WRITE' .AND. (TPFILE%CFORMAT=='NETCDF4' .OR. TPFILE%CFORMAT=='LFICDF4')) THEN
@@ -601,15 +508,9 @@ END IF
 #endif
 
 IF (TPFILE%LMASTER) THEN
-  IF (TPFILE%NLFIFLU > 0) THEN
-     CALL LFIFER(IRESP8,TPFILE%NLFIFLU,YSTATU)
-     IRESP = IRESP8
-  END IF
+  if (tpfile%cformat == 'LFI'     .or. tpfile%cformat == 'LFICDF4') call io_close_file_lfi(tpfile,iresp)
 #if defined(MNH_IOCDF4)
-  IF (TPFILE%NNCID/=-1) THEN
-    ! Close Netcdf File
-    call io_close_file_nc4(tpfile,iresp)
-  END IF
+  if (tpfile%cformat == 'NETCDF4' .or. tpfile%cformat == 'LFICDF4') call io_close_file_nc4(tpfile,iresp)
 #endif
   IF (IRESP == 0 .AND. CPROGRAM/='LFICDF') THEN
     !! Write in pipe
@@ -657,7 +558,7 @@ END IF
 500 CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
 IF (IRESP /= 0) GOTO 1000
 
-CALL CLOSE_ll(TPFILE,IOSTAT=IRESP,STATUS=YSTATU,OPARALLELIO=GPARALLELIO)
+CALL CLOSE_ll(TPFILE,IOSTAT=IRESP,OPARALLELIO=GPARALLELIO)
 
 1000 CONTINUE
 

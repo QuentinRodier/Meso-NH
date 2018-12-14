@@ -13,7 +13,7 @@
 module mode_io_tools_nc4
 
 use modd_io_ll,  only: tfiledata
-use modd_netcdf, only: dimcdf, idcdf_kind, iocdf, tdim_dummy
+use modd_netcdf, only: dimcdf, IDCDF_KIND, iocdf, tdim_dummy
 
 use mode_field,  only: tfielddata
 use mode_msg

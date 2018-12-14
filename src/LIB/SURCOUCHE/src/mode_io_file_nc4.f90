@@ -15,7 +15,7 @@
 module mode_io_file_nc4
 
 use modd_io_ll,  only: tfiledata
-use modd_netcdf, only: idcdf_kind
+use modd_netcdf, only: IDCDF_KIND
 
 use mode_io_tools_nc4, only: handle_err, io_set_knowndims_nc4, newiocdf
 use mode_msg
@@ -33,27 +33,21 @@ public :: io_create_file_nc4, io_close_file_nc4, io_open_file_nc4
 contains
 
 subroutine io_create_file_nc4(tpfile,hprogram_orig)
-  use mode_io_tools, only: io_set_mnhversion
+  use mode_io_tools,            only: io_construct_filename
+  use mode_io_tools_mnhversion, only: io_set_mnhversion
 
   type(tfiledata),           intent(inout) :: tpfile
   character(len=*),optional, intent(in)    :: hprogram_orig !to emulate a file coming from this program
 
   character(len=:),allocatable :: yfilem  ! name of the file
-  integer(kind=idcdf_kind)     :: istatus
+  integer(kind=IDCDF_KIND)     :: istatus
+
+  call print_msg(NVERB_DEBUG,'IO','io_create_file_nc4','called for '//trim(tpfile%cname))
 
   if (tpfile%lmaster) then
-    if (allocated(tpfile%cdirname)) then
-      if(len_trim(tpfile%cdirname)>0) then
-        yfilem = trim(tpfile%cdirname)//'/'//trim(tpfile%cname)
-      else
-        yfilem = trim(tpfile%cname)
-      end if
-    else
-      yfilem = trim(tpfile%cname)
-    end if
+    call io_construct_filename(tpfile, yfilem)
 
     tpfile%tncdims => newiocdf()
-    call print_msg(NVERB_DEBUG, 'IO', 'io_create_file_nc4', 'NF90_CREATE for '//trim(yfilem)//'.nc')
     istatus = NF90_CREATE(adjustl(trim(yfilem))//".nc", ior(NF90_CLOBBER,NF90_NETCDF4), tpfile%nncid)
     if (istatus /= NF90_NOERR) then
       call print_msg(NVERB_FATAL,'IO','io_create_file_nc4','NF90_CREATE for '//trim(yfilem)//'.nc: '//NF90_STRERROR(istatus))
@@ -69,21 +63,25 @@ subroutine io_close_file_nc4(tpfile,kstatus)
   use mode_io_tools_nc4, only: cleaniocdf
 
   type(tfiledata),                    intent(in)  :: tpfile
-  integer(kind=idcdf_kind), optional, intent(out) :: kstatus
+  integer(kind=IDCDF_KIND), optional, intent(out) :: kstatus
 
-  integer(kind=idcdf_kind) :: istatus
+  integer(kind=IDCDF_KIND) :: istatus
 
   call print_msg(NVERB_DEBUG,'IO','io_close_file_nc4','called for '//trim(tpfile%cname))
 
   istatus = 0
 
-  if (tpfile%lmaster) then
-    if (trim(tpfile%cmode) == 'WRITE') call io_set_cleanly_closed_nc4(tpfile)
-    istatus = NF90_CLOSE(tpfile%nncid)
-    if (istatus /= NF90_NOERR) then
-      call print_msg(NVERB_WARNING, 'IO', 'io_close_file_nc4', 'NF90_CLOSE error: '//trim(NF90_STRERROR(istatus)))
+  if (tpfile%lmaster ) then
+    if (tpfile%nncid == -1) then
+      call print_msg(NVERB_WARNING, 'IO', 'io_close_file_nc4', 'file '//trim(tpfile%cname)//'.nc is not opened')
+    else
+      if (trim(tpfile%cmode) == 'WRITE') call io_set_cleanly_closed_nc4(tpfile)
+      istatus = NF90_CLOSE(tpfile%nncid)
+      if (istatus /= NF90_NOERR) then
+        call print_msg(NVERB_WARNING, 'IO', 'io_close_file_nc4', 'NF90_CLOSE error: '//trim(NF90_STRERROR(istatus)))
+      end if
+      if (associated(tpfile%tncdims)) call cleaniocdf(tpfile%tncdims)
     end if
-    if (associated(tpfile%tncdims)) call cleaniocdf(tpfile%tncdims)
   end if
 
   if (present(kstatus)) kstatus = istatus
@@ -91,26 +89,20 @@ end subroutine io_close_file_nc4
 
 
 subroutine io_open_file_nc4(tpfile)
-  use mode_io_tools, only: io_get_mnhversion
+  use mode_io_tools,            only: io_construct_filename
+  use mode_io_tools_mnhversion, only: io_get_mnhversion
 
   type(tfiledata), intent(inout) :: tpfile
 
   character(len=:),allocatable :: yfilem  ! name of the file
-  integer(kind=idcdf_kind)     :: istatus
+  integer(kind=IDCDF_KIND)     :: istatus
+
+  call print_msg(NVERB_DEBUG,'IO','io_open_file_nc4','called for '//trim(tpfile%cname))
 
   if (tpfile%lmaster) then
-    if (allocated(tpfile%cdirname)) then
-      if(len_trim(tpfile%cdirname)>0) then
-        yfilem = trim(tpfile%cdirname)//'/'//trim(tpfile%cname)
-      else
-        yfilem = trim(tpfile%cname)
-      end if
-    else
-      yfilem = trim(tpfile%cname)
-    end if
+    call io_construct_filename(tpfile, yfilem)
 
     tpfile%tncdims => newiocdf()
-    call print_msg(NVERB_DEBUG,'IO','io_open_file_nc4','NF90_OPEN for '//trim(yfilem)//'.nc')
     istatus = NF90_OPEN(adjustl(trim(yfilem))//".nc", NF90_NOWRITE, tpfile%nncid)
     if (istatus /= NF90_NOERR) then
       call print_msg(NVERB_FATAL, 'IO', 'io_open_file_nc4', 'NF90_OPEN for '//trim(yfilem)//'.nc: '//NF90_STRERROR(istatus))

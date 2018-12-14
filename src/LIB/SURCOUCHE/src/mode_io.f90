@@ -199,18 +199,17 @@ CONTAINS
        DELIM,    &
        PAD,      &
        KNB_PROCIO,& 
-       KMELEV,&
        OPARALLELIO, &
        HPROGRAM_ORIG)
 
-#if defined(MNH_IOCDF4)
-  USE MODD_NETCDF,           ONLY:IDCDF_KIND
-  use mode_io_file_nc4,      only: io_create_file_nc4, io_open_file_nc4
-#endif
   USE MODD_IO_ll
-
-  USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST, IO_FILE_FIND_BYNAME
-  use mode_io_tools,         only: io_rank, io_get_mnhversion,io_set_mnhversion
+#if defined(MNH_IOCDF4)
+  USE MODD_NETCDF,              ONLY:IDCDF_KIND
+  use mode_io_file_nc4,         only: io_create_file_nc4, io_open_file_nc4
+#endif
+  use mode_io_file_lfi,         only: io_create_file_lfi, io_open_file_lfi
+  USE MODE_IO_MANAGE_STRUCT,    ONLY: IO_FILE_ADD2LIST, IO_FILE_FIND_BYNAME
+  use mode_io_tools,            only: io_rank
 
     TYPE(TFILEDATA), INTENT(INOUT)         :: TPFILE
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: MODE
@@ -225,19 +224,13 @@ CONTAINS
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: PAD
     INTEGER,         INTENT(IN),  OPTIONAL :: COMM
     INTEGER,         INTENT(IN),  OPTIONAL :: KNB_PROCIO
-    INTEGER(KIND=LFI_INT), INTENT(IN),  OPTIONAL :: KMELEV    
     LOGICAL,         INTENT(IN),  OPTIONAL :: OPARALLELIO
     CHARACTER(LEN=*),INTENT(IN),  OPTIONAL :: HPROGRAM_ORIG !To emulate a file coming from this program
     !
     ! local var
     !
-    !JUANZ
     CHARACTER(len=5)                      :: CFILE
     INTEGER                               :: IFILE, IRANK_PROCIO
-    INTEGER(KIND=LFI_INT)                 :: IRESOU,IMELEV,INPRAR
-    INTEGER(KIND=LFI_INT)                 :: ININAR8
-    LOGICAL(KIND=LFI_INT)                 :: GNAMFI8,GFATER8,GSTATS8 
-    !JUANZ
 
 #if defined(MNH_SX5) || defined(MNH_SP4) || defined(NAGf95) || defined(MNH_LINUX)
     CHARACTER(len=20)    :: YSTATUS
@@ -254,13 +247,8 @@ CONTAINS
     CHARACTER(len=20)    :: YACTION
     CHARACTER(len=20)    :: YMODE
     CHARACTER(LEN=256)   :: YIOERRMSG
-    INTEGER              :: IOS,IERR,IRESP
+    INTEGER              :: IOS,IRESP
     INTEGER              :: ICOMM
-    INTEGER              :: ICMPRES
-    ! didier
-    LOGICAL :: GEXISTS,GOPENED
-    INTEGER :: IUNIT
-    ! didier
     LOGICAL               :: GPARALLELIO
     TYPE(TFILEDATA),POINTER :: TZSPLITFILE
     CHARACTER(LEN=:),ALLOCATABLE :: YPREFILENAME !To store the directory + filename
@@ -703,50 +691,11 @@ CONTAINS
              END IF
 #endif
              IF (TZSPLITFILE%CFORMAT=='LFI' .OR. TZSPLITFILE%CFORMAT=='LFICDF4') THEN
-                IF ( TZSPLITFILE%LMASTER ) THEN
-                   ! LFI case
-                   ! Open LFI File for reading
-                   !this proc must write on this file open it ...    
-                   TZSPLITFILE%NLFIFLU = IONEWFLU()
-                   !! LFI-File case
-                   IRESOU = 0
-                   GNAMFI8 = .TRUE.
-                   GFATER8 = .TRUE.
-                   GSTATS8 = .FALSE.
-                   IF (PRESENT(KMELEV)) THEN
-                      IMELEV = KMELEV
-                   ELSE
-                      IMELEV = 0
-                   ENDIF
-                   INPRAR = 49
-                   !
-                   SELECT CASE (YACTION)
-                     CASE('READ')
-                       YFORSTATUS = 'OLD'
-                     CASE('WRITE')
-                       YFORSTATUS = 'REPLACE'
-                   END SELECT
-                   !
-                   ! JUAN open lfi file temporary modif
-                   !
-                   CALL LFIOUV(IRESOU,                   &
-                        TZSPLITFILE%NLFIFLU,             &
-                        GNAMFI8,                         &
-                        TRIM(YPREFILENAME)//'.lfi',      &
-                        YFORSTATUS,                      &
-                        GFATER8,                         &
-                        GSTATS8,                         &
-                        IMELEV,                          &
-                        INPRAR,                          &
-                        ININAR8)
-                   TZSPLITFILE%NLFININAR = ININAR8
-                END IF
-                !
                 SELECT CASE (YACTION)
                   CASE('READ')
-                    call io_get_mnhversion(tpfile)
+                    call io_open_file_lfi(tzsplitfile,iresp)
                   CASE('WRITE')
-                    call io_set_mnhversion(tpfile)
+                    call io_create_file_lfi(tzsplitfile,iresp)
                 END SELECT
              ENDIF
              !
@@ -776,25 +725,23 @@ CONTAINS
 
   END SUBROUTINE OPEN_ll
 
-  SUBROUTINE CLOSE_ll(TPFILE,IOSTAT,STATUS,OPARALLELIO,HPROGRAM_ORIG)
+  SUBROUTINE CLOSE_ll(TPFILE,IOSTAT,OPARALLELIO,HPROGRAM_ORIG)
   USE MODD_IO_ll
+
   USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
+  use mode_io_file_lfi,      only: io_close_file_lfi
 #if defined(MNH_IOCDF4)
   use mode_io_file_nc4,      only: io_close_file_nc4
   use mode_io_write_nc4,     only: io_write_coordvar_nc4
 #endif
     TYPE(TFILEDATA),  INTENT(IN)            :: TPFILE
     INTEGER,          INTENT(OUT), OPTIONAL :: IOSTAT
-    CHARACTER(LEN=*), INTENT(IN),  OPTIONAL :: STATUS
     LOGICAL,          INTENT(IN),  OPTIONAL :: OPARALLELIO
     CHARACTER(LEN=*), INTENT(IN),  OPTIONAL :: HPROGRAM_ORIG !To emulate a file coming from this program
 
     INTEGER :: IERR, IGLOBALERR, IGLOBALERR2, IRESP, IRESP2
 
-    CHARACTER(LEN=100)                    :: STATUSL
     INTEGER                               :: IFILE
-    INTEGER(KIND=LFI_INT)                 :: IRESP8
-    CHARACTER(LEN=7)                      :: YSTATU  
     LOGICAL                               :: GPARALLELIO
     TYPE(TFILEDATA),POINTER               :: TZFILE
 
@@ -811,15 +758,10 @@ CONTAINS
     IRESP2      = 0
     IGLOBALERR  = 0
     IGLOBALERR2 = 0
-    IF (PRESENT(STATUS))  THEN
-       STATUSL = STATUS
-    ELSE
-       STATUSL = "KEEP"
-    ENDIF
 
     IF (TPFILE%LMASTER) THEN
       IF (TPFILE%NLU>0 .AND. TPFILE%NLU/=JPFNULL) THEN
-        CLOSE(UNIT=TPFILE%NLU, IOSTAT=IRESP,STATUS=STATUSL)
+        CLOSE(UNIT=TPFILE%NLU, IOSTAT=IRESP,STATUS='KEEP')
         CALL IOFREEFLU(TPFILE%NLU)
       END IF
     END IF
@@ -834,17 +776,13 @@ CONTAINS
         END IF
 #endif
         IF (TPFILE%LMASTER) THEN
-          IF (TZFILE%NLFIFLU > 0) THEN !if LFI
-            CALL LFIFER(IRESP8,TZFILE%NLFIFLU,YSTATU)
-            CALL IOFREEFLU(INT(TPFILE%NLFIFLU))
-            IRESP2 = IRESP8
-          END IF
+          if (tzfile%cformat == 'LFI'     .or. tzfile%cformat == 'LFICDF4') call io_close_file_lfi(tzfile,iresp2)
 #if defined(MNH_IOCDF4)
-          IF (TZFILE%NNCID/=-1) THEN
-            ! Close Netcdf File
-            call io_close_file_nc4(tzfile)
-          END IF
+          if (tzfile%cformat == 'NETCDF4' .or. tzfile%cformat == 'LFICDF4') call io_close_file_nc4(tzfile,iresp2)
 #endif
+          IF (TZFILE%NLFIFLU > 0) THEN !if LFI
+            CALL IOFREEFLU(INT(TZFILE%NLFIFLU))
+          END IF
         END IF
       END DO
       !

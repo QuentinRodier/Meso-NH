@@ -13,7 +13,7 @@
 module mode_io_write_nc4
 
 use modd_io_ll,        only: gsmonoproc, tfiledata
-use modd_netcdf,       only: dimcdf, idcdf_kind, iocdf
+use modd_netcdf,       only: dimcdf, IDCDF_KIND, iocdf
 
 use mode_field,        only: tfielddata
 use mode_io_tools_nc4, only: cleanmnhname, fillvdims, getdimcdf, getstrdimid, handle_err
@@ -45,8 +45,8 @@ END INTERFACE IO_WRITE_FIELD_NC4
 integer,parameter :: NSTRINGCHUNKSIZE = 16 !Dimension of the chunks of strings
                                            !(to limit the number of dimensions for strings)
 
-integer(kind=idcdf_kind),parameter :: SHUFFLE = 1 !Set to 1 for (usually) better compression
-integer(kind=idcdf_kind),parameter :: DEFLATE = 1
+integer(kind=IDCDF_KIND),parameter :: SHUFFLE = 1 !Set to 1 for (usually) better compression
+integer(kind=IDCDF_KIND),parameter :: DEFLATE = 1
 
 contains
 
