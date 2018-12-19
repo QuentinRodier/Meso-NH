@@ -223,18 +223,12 @@ ZHLVPT(:,KKA)    =         ZVPT(:,KKA)
 !
 !*       3.  loop on model levels
 !            --------------------
-
-WHERE (ZSHEAR<1.E-7)
-  ZSHEAR = 1.E-7
-END WHERE
-ZLM = 1.0
 !
 DO JK=IKTB,IKTE
 !
 !-------------------------------------------------------------------------------
 !
 !
-
 !*       4.  mixing length for a downwards displacement
 !            ------------------------------------------
   ZINTE(:)=ZTKEM(:,JK)
