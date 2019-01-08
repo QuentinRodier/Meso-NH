@@ -63,6 +63,7 @@ END MODULE MODI_INI_CTURB
 !!        P.Jabouille       20/10/99   XCET=0.4
 !!        V.Masson          13/11/02   XALPSBL and XASBL
 !!                             05/06   Remove KEPS
+!!        Q.Rodier             01/19   XCED replaced by XCEDIS in read_exsegn.f90 and ini_modeln.f90
 !! --------------------------------------------------------------------------
 !
 !*        0. DECLARATIONS
@@ -80,8 +81,10 @@ IMPLICIT NONE
 !
 !         1.1 Constant for dissipation of Tke
 !
+!XCED is now replaced by XCEDIS
 !XCED  = 0.70
-XCED  = 0.84
+!XCED  = 0.84
+!
 !       Redelsperger-Sommeria (1981) = 0.70
 !       Schmidt-Schumann      (1989) = 0.845
 !       Cheng-Canuto-Howard   (2002) = 0.845

@@ -10,7 +10,7 @@ INTERFACE
 
 !     ###################################################################
       SUBROUTINE COMPUTE_BL89_ML(KKA,KKB,KKE,KKU,KKL,PDZZ2D, &
-             PTKEM_DEP,PG_O_THVREF,PVPT,KK,OUPORDN,OFLUX,PLWORK)
+             PTKEM_DEP,PG_O_THVREF,PVPT,KK,OUPORDN,OFLUX,PSHEAR,PLWORK)
 !     ###################################################################
 
 !*               1.1  Declaration of Arguments
@@ -29,6 +29,7 @@ LOGICAL,                INTENT(IN)  :: OUPORDN       ! switch to compute upward 
                                                      !   downward (false) mixing length
 LOGICAL,                INTENT(IN)  :: OFLUX         ! Computation must be done from flux level
 REAL, DIMENSION(:),     INTENT(OUT) :: PLWORK        ! Resulting mixing length
+REAL, DIMENSION(:,:),   INTENT(IN)  :: PSHEAR        ! vertical wind shear for RM17 mixing length
 
 END SUBROUTINE COMPUTE_BL89_ML
 
@@ -37,7 +38,7 @@ END INTERFACE
 END MODULE MODI_COMPUTE_BL89_ML
 !     ######spl
       SUBROUTINE COMPUTE_BL89_ML(KKA,KKB,KKE,KKU,KKL,PDZZ2D, &
-             PTKEM_DEP,PG_O_THVREF,PVPT,KK,OUPORDN,OFLUX,PLWORK)
+             PTKEM_DEP,PG_O_THVREF,PVPT,KK,OUPORDN,OFLUX,PSHEAR,PLWORK)
 
 !     ###################################################################
 !!
@@ -53,6 +54,7 @@ END MODULE MODI_COMPUTE_BL89_ML
 !!     Original   19/01/06
 !!     S. Riette Jan 2012: support for both order of vertical levels and cleaning
 !!     R.Honnert Oct 2016 : Update with AROME
+!!     Q.Rodier  01/2019 : support RM17 mixing length as in bl89.f90 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -92,6 +94,7 @@ LOGICAL,                INTENT(IN)  :: OUPORDN       ! switch to compute upward 
                                                      !   downward (false) mixing length
 LOGICAL,                INTENT(IN)  :: OFLUX         ! Computation must be done from flux level
 REAL, DIMENSION(:),     INTENT(OUT) :: PLWORK        ! Resulting mixing length
+REAL, DIMENSION(:,:),   INTENT(IN)  :: PSHEAR        ! vertical wind shear for RM17 mixing length
 
 !          0.2 Local variable
 !
@@ -144,21 +147,24 @@ IF (OUPORDN.EQV..TRUE.) THEN
      ZTEST0=0.5+SIGN(0.5,ZINTE(J1D)) ! test if there's energy to consume
      ! Energy consumed if parcel cross the entire layer
      ZPOTE(J1D) = ZTEST0*(PG_O_THVREF(J1D)      *      &
-         (0.5*(ZHLVPT(J1D,KK)+ PVPT(J1D,KK)) - ZVPT_DEP(J1D)))  * &
+         (0.5*(ZHLVPT(J1D,KK)+ PVPT(J1D,KK)) - ZVPT_DEP(J1D)) + &
+         XRM17*PSHEAR(J1D,KK)*SQRT(ABS(PTKEM_DEP(J1D))))  * &
          PDZZ2D(J1D,KK)*0.5
      ! Test if it rests some energy to consume
      ZTEST =0.5+SIGN(0.5,ZINTE(J1D)-ZPOTE(J1D))
      ! Length travelled by parcel if it rests energy to consume
      ZLWORK1(J1D)=PDZZ2D(J1D,KK)*0.5
      ! Lenght travelled by parcel to nullify energy
-     ZLWORK2(J1D)=        ( - PG_O_THVREF(J1D) *                     &
+      ZLWORK2(J1D)=        ( - PG_O_THVREF(J1D) *                     &
             (  ZHLVPT(J1D,KK) - ZVPT_DEP(J1D) )                              &
+            - XRM17*PSHEAR(J1D,JKK)*sqrt(abs(PTKEM_DEP(J1D))) &
           + SQRT (ABS(                                                       &
-            ( PG_O_THVREF(J1D) * (ZHLVPT(J1D,KK) - ZVPT_DEP(J1D)) )**2  &
+            (XRM17*PSHEAR(J1D,JKK)*sqrt(abs(PTKEM_DEP(J1D))) +  &
+             PG_O_THVREF(J1D) * (ZHLVPT(J1D,KK) - ZVPT_DEP(J1D)) )**2  &
             + 2. * ZINTE(J1D) * PG_O_THVREF(J1D)                        &
                  * ZDELTVPT(J1D,KK) / PDZZ2D(J1D,KK) ))    ) /             &
-        ( PG_O_THVREF(J1D) * ZDELTVPT(J1D,KK) / PDZZ2D(J1D,KK) ) 
-      ! Effective length travelled by parcel
+        ( PG_O_THVREF(J1D) * ZDELTVPT(J1D,KK) / PDZZ2D(J1D,KK) )  
+     ! Effective length travelled by parcel
       PLWORK(J1D)=PLWORK(J1D)+ZTEST0*(ZTEST*ZLWORK1(J1D)+  &
                                     (1-ZTEST)*ZLWORK2(J1D))
       ! Rest of energy to consume
@@ -174,19 +180,22 @@ IF (OUPORDN.EQV..TRUE.) THEN
       DO J1D=1,IIJU
         ZTEST0=0.5+SIGN(0.5,ZINTE(J1D))
         ZPOTE(J1D) = ZTEST0*(PG_O_THVREF(J1D)      *      &
-            (ZHLVPT(J1D,JKK) - ZVPT_DEP(J1D)))  * PDZZ2D(J1D,JKK) !particle keeps its temperature
+            (ZHLVPT(J1D,JKK) - ZVPT_DEP(J1D))   &
+           + XRM17*PSHEAR(J1D,JKK)*SQRT(ABS(PTKEM_DEP(J1D))))* PDZZ2D(J1D,JKK) 
         ZTEST =0.5+SIGN(0.5,ZINTE(J1D)-ZPOTE(J1D))
         ZTESTM=ZTESTM+ZTEST0
         ZLWORK1(J1D)=PDZZ2D(J1D,JKK)
         !ZLWORK2 jump of the last reached level
         ZLWORK2(J1D)=        ( - PG_O_THVREF(J1D) *                     &
             (  PVPT(J1D,JKK-KKL) - ZVPT_DEP(J1D) )                              &
-          + SQRT (ABS(                                                       &
-            ( PG_O_THVREF(J1D) * (PVPT(J1D,JKK-KKL) - ZVPT_DEP(J1D)) )**2  &
+            - XRM17*PSHEAR(J1D,JKK)*sqrt(abs(PTKEM_DEP(J1D))) &
+          + SQRT (ABS(                                                   &
+            (XRM17*PSHEAR(J1D,JKK)*sqrt(abs(PTKEM_DEP(J1D))) +  &
+             PG_O_THVREF(J1D) * (PVPT(J1D,JKK-KKL) - ZVPT_DEP(J1D)) )**2  &
             + 2. * ZINTE(J1D) * PG_O_THVREF(J1D)                        &
                  * ZDELTVPT(J1D,JKK) / PDZZ2D(J1D,JKK) ))    ) /             &
         ( PG_O_THVREF(J1D) * ZDELTVPT(J1D,JKK) / PDZZ2D(J1D,JKK) ) 
-      !
+!
         PLWORK(J1D)=PLWORK(J1D)+ZTEST0*(ZTEST*ZLWORK1(J1D)+  &
                                     (1-ZTEST)*ZLWORK2(J1D))
         ZINTE(J1D) = ZINTE(J1D) - ZPOTE(J1D)
@@ -214,19 +223,22 @@ IF (OUPORDN.EQV..FALSE.) THEN
       ZTESTM=0
       DO J1D=1,IIJU
         ZTEST0=0.5+SIGN(0.5,ZINTE(J1D))
-        ZPOTE(J1D) = -ZTEST0*(PG_O_THVREF(J1D)      *      &
-            (ZHLVPT(J1D,JKK) - PVPT(J1D,KK)))  * PDZZ2D(J1D,JKK) !particle keeps its temperature
+         ZPOTE(J1D) = ZTEST0*(-PG_O_THVREF(J1D)      *      &
+            (ZHLVPT(J1D,JKK) - PVPT(J1D,KK)) &
+         + XRM17*PSHEAR(J1D,JKK)*SQRT(ABS(PTKEM_DEP(J1D))))* PDZZ2D(J1D,JKK) 
         ZTEST =0.5+SIGN(0.5,ZINTE(J1D)-ZPOTE(J1D))
         ZTESTM=ZTESTM+ZTEST0
         ZLWORK1(J1D)=PDZZ2D(J1D,JKK)
-        ZLWORK2(J1D)=        ( + PG_O_THVREF(J1D) *                     &
+      ZLWORK2(J1D)=        ( + PG_O_THVREF(J1D) *                     &
             (  PVPT(J1D,JKK) - PVPT(J1D,KK) )                              &
+             -XRM17*PSHEAR(J1D,JKK)*sqrt(abs(PTKEM_DEP(J1D))) &
           + SQRT (ABS(                                                       &
-            ( PG_O_THVREF(J1D) * (PVPT(J1D,JKK) - PVPT(J1D,KK)) )**2  &
+            (XRM17*PSHEAR(J1D,JKK)*sqrt(abs(PTKEM_DEP(J1D))) - &
+             PG_O_THVREF(J1D) * (PVPT(J1D,JKK) - PVPT(J1D,KK)) )**2  &
             + 2. * ZINTE(J1D) * PG_O_THVREF(J1D)                        &
                  * ZDELTVPT(J1D,JKK) / PDZZ2D(J1D,JKK) ))    ) /             &
         ( PG_O_THVREF(J1D) * ZDELTVPT(J1D,JKK) / PDZZ2D(J1D,JKK) ) 
-      !
+!
         PLWORK(J1D)=PLWORK(J1D)+ZTEST0*(ZTEST*ZLWORK1(J1D)+  &
                                     (1-ZTEST)*ZLWORK2(J1D)) 
         ZINTE(J1D) = ZINTE(J1D) - ZPOTE(J1D)
@@ -234,5 +246,5 @@ IF (OUPORDN.EQV..FALSE.) THEN
     ENDIF
   END DO 
 ENDIF
-  
+ 
 END SUBROUTINE COMPUTE_BL89_ML

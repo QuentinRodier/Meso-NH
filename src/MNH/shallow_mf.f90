@@ -165,6 +165,7 @@ END MODULE MODI_SHALLOW_MF
 !!      R.Honnert 10/2016 : SURF=gray zone initilisation + EDKF  
 !!      R.Honnert 10/2016 : Update with Arome
 !!      Philippe Wautelet 28/05/2018: corrected truncated integer division (2/3 -> 2./3.)
+!!      Q.Rodier  01/2019 : support RM17 mixing length 
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -173,6 +174,7 @@ END MODULE MODI_SHALLOW_MF
 USE MODD_CST
 USE MODD_PARAMETERS, ONLY: JPVEXT
 USE MODD_PARAM_MFSHALL_n
+USE MODD_TURB_n, ONLY: CTURBLEN
 
 USE MODI_THL_RT_FROM_TH_R_MF
 USE MODI_COMPUTE_UPDRAFT
@@ -184,7 +186,7 @@ USE MODI_MF_TURB_EXPL
 USE MODI_MF_TURB_GREYZONE
 USE MODI_COMPUTE_MF_CLOUD
 USE MODI_COMPUTE_FRAC_ICE
-!
+USE MODI_SHUMAN_MF
 !
 USE MODI_COMPUTE_BL89_ML
 USE MODD_GRID_n, ONLY : XDXHAT, XDYHAT
@@ -282,6 +284,7 @@ REAL, DIMENSION(SIZE(PSVM,1),SIZE(PSVM,2),SIZE(PSVM,3)) ::  &
 REAL, DIMENSION(SIZE(PTHM,1)) :: ZDEPTH             ! Deepness of cloud
 REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2)) :: ZFRAC_ICE_UP ! liquid/solid fraction in updraft
 REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2)) :: ZRSAT_UP ! Rsat in updraft
+REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2)) :: ZSHEAR,ZDUDZ,ZDVDZ !vertical wind shear
 
 LOGICAL :: GENTR_DETR  ! flag to recompute entrainment, detrainment and mass flux
 INTEGER :: IKB         ! near ground physical index
@@ -460,7 +463,14 @@ ENDIF
       ENDDO
       ZG_O_THVREF=XG/PTHVREF
       GLMIX=.TRUE.
-      CALL COMPUTE_BL89_ML(KKA,IKB,IKE,KKU,KKL,PDZZ,PTKEM(:,IKB)  ,ZG_O_THVREF(:,IKB),ZTHVM,IKB,GLMIX,.TRUE.,ZLUP)
+      IF(CTURBLEN=='RM17') THEN
+       ZDUDZ = MZF_MF(KKA,KKU,KKL,GZ_M_W_MF(KKA,KKU,KKL,PUM,PDZZ))
+       ZDVDZ = MZF_MF(KKA,KKU,KKL,GZ_M_W_MF(KKA,KKU,KKL,PVM,PDZZ))
+       ZSHEAR = SQRT(ZDUDZ*ZDUDZ + ZDVDZ*ZDVDZ)
+      ELSE
+       ZSHEAR = 0. !no shear in bl89 mixing length
+      END IF  
+      CALL COMPUTE_BL89_ML(KKA,IKB,IKE,KKU,KKL,PDZZ,PTKEM(:,IKB)  ,ZG_O_THVREF(:,IKB),ZTHVM,IKB,GLMIX,.TRUE.,ZSHEAR,ZLUP)
       !! calcul de Dx/(h+hc)
       DO JI=1,SIZE(XDXHAT)
        DO JJ=1,SIZE(XDYHAT)

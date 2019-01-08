@@ -288,6 +288,7 @@ END MODULE MODI_READ_EXSEG_n
 !!      Q.Libois       02/2018  ECRAD
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      Modification   07/2017   (V. Vionnet) add blowing snow scheme
+!!      Modification   01/2019   (Q. Rodier) define XCEDIS depending on BL89 or RM17 mixing length
 !!------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1414,7 +1415,12 @@ ELSE
     CGETCLDFR = 'SKIP'
   END IF
 END IF
-
+!
+IF(CTURBLEN=='RM17') THEN
+  XCEDIS=0.34
+ELSE
+  XCEDIS=0.84
+END IF
 !
 !*       3.3  Moist turbulence
 !
