@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 
 !     ########################
@@ -40,6 +40,7 @@ END MODULE MODI_READ_ASCP
 !!    MODIFICATION
 !!    ------------
 !!
+!!  Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
 !!
 !----------------------------------------------------------------------------
 !
@@ -74,15 +75,14 @@ REAL  :: ZLEV
 !*    1.      Open the file
 !             -------------
 !
-KUNIT=222
-OPEN(KUNIT,FILE=HFILENAME)
+OPEN(NEWUNIT=KUNIT,FILE=HFILENAME)
 !
 !*    3.     Reading of a data point
 !            -----------------------
 !
-  DO JK=1,KLEV
-  READ(KUNIT,*) ZLEV, PTHDF(JK),PRVF(JK)
-  END DO
+DO JK=1,KLEV
+  READ(UNIT=KUNIT,FMT=*) ZLEV, PTHDF(JK),PRVF(JK)
+END DO
 !
 !----------------------------------------------------------------------------
 
@@ -90,8 +90,7 @@ OPEN(KUNIT,FILE=HFILENAME)
 !*    8.    Closing of the data file
 !           ------------------------
 !
-!99 CLOSE(KUNIT)
- CLOSE(KUNIT)
+ CLOSE(UNIT=KUNIT)
 !
 !-------------------------------------------------------------------------------
 !

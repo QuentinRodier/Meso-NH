@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !     #############################
       MODULE MODI_SERIES_CLOUD_ELEC
@@ -10,40 +10,46 @@ INTERFACE
   SUBROUTINE SERIES_CLOUD_ELEC (KTCOUNT, PTSTEP,                &
                                 PZZ, PRHODJ, PRHODREF, PEXNREF, &
                                 PRT, PRS, PSVT,                 &
-                                PTHT, PWT, PPABST, PCIT, PINPRR )
+                                PTHT, PWT, PPABST, PCIT,        &
+                                TPFILE_SERIES_CLOUD_ELEC,       &
+                                PINPRR                          )
 !
+USE MODD_IO_ll, ONLY: TFILEDATA
 !
-INTEGER, INTENT(IN)  :: KTCOUNT  ! Temporal loop counter
+INTEGER,                  INTENT(IN)    :: KTCOUNT  ! Temporal loop counter
 !
-REAL, INTENT(IN)  :: PTSTEP   ! Double time step except for cold start
+REAL,                     INTENT(IN)    :: PTSTEP   ! Double time step except for cold start
 !
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PZZ     ! Height (z)
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PRHODJ  ! Dry density * Jacobian
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PRHODREF! Reference density
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PEXNREF ! Reference Exner function
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ     ! Height (z)
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ  ! Dry density * Jacobian
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF! Reference density
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF ! Reference Exner function
 !
-REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PRT     ! Moist variables at time t
-REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PRS     ! Moist  variable sources
-REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PSVT    ! Scalar variable at time t
+REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT     ! Moist variables at time t
+REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRS     ! Moist  variable sources
+REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT    ! Scalar variable at time t
 !
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PTHT   ! Theta at time t
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PWT    ! Vertical velocity at t-dt
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PPABST ! ab. pressure at time t
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PCIT   ! Pristine ice number
-                                                 ! concentration at time t
-REAL, DIMENSION(:,:), INTENT(INOUT) :: PINPRR  ! Rain instant precip
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT   ! Theta at time t
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PWT    ! Vertical velocity at t-dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST ! ab. pressure at time t
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCIT   ! Pristine ice number
+                                                  ! concentration at time t
+TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE_SERIES_CLOUD_ELEC
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRR  ! Rain instant precip
 !
 END SUBROUTINE SERIES_CLOUD_ELEC
 END INTERFACE
 END MODULE MODI_SERIES_CLOUD_ELEC
 !
 !      
-!      ###############################################################
-       SUBROUTINE SERIES_CLOUD_ELEC (KTCOUNT, PTSTEP,                &
-                                     PZZ, PRHODJ, PRHODREF, PEXNREF, &
-                                     PRT, PRS, PSVT,                 &
-                                     PTHT, PWT, PPABST, PCIT, PINPRR )
-!      ###############################################################
+! ###############################################################
+  SUBROUTINE SERIES_CLOUD_ELEC (KTCOUNT, PTSTEP,                &
+                                PZZ, PRHODJ, PRHODREF, PEXNREF, &
+                                PRT, PRS, PSVT,                 &
+                                PTHT, PWT, PPABST, PCIT,        &
+                                TPFILE_SERIES_CLOUD_ELEC,       &
+                                PINPRR                          )
+! ###############################################################
 !
 !!****  * -
 !!
@@ -72,6 +78,7 @@ END MODULE MODI_SERIES_CLOUD_ELEC
 !!      Modifications:
 !!      C. Barthe  * LACy *  Dec. 2010    add some parameters
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
+!!      Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
 !!
 !-------------------------------------------------------------------------------
 !
@@ -80,6 +87,7 @@ END MODULE MODI_SERIES_CLOUD_ELEC
 !
 USE MODD_CONF, ONLY : CEXP
 USE MODD_CST
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_REF
 USE MODD_PARAMETERS
 USE MODD_ELEC_DESCR
@@ -91,7 +99,6 @@ USE MODD_DYN_n, ONLY : XDXHATM, XDYHATM
 USE MODD_RAIN_ICE_DESCR
 USE MODD_RAIN_ICE_PARAM
 USE MODD_NSV, ONLY : NSV_ELECBEG, NSV_ELECEND
-USE MODD_PRINT_ELEC,  ONLY : NLU_series_cloud_elec, NIOSTAT_series_cloud_elec
 !
 USE MODI_MOMG
 USE MODI_RADAR_RAIN_ICE
@@ -103,25 +110,26 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
-INTEGER, INTENT(IN) :: KTCOUNT  ! Temporal loop counter
+INTEGER,                  INTENT(IN)    :: KTCOUNT  ! Temporal loop counter
 !
-REAL, INTENT(IN) :: PTSTEP   ! Double time step except for
-                             ! cold start
+REAL,                     INTENT(IN)    :: PTSTEP   ! Double time step except for cold start
 !
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PZZ      ! Height (z)
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PRHODJ   ! Dry density * Jacobian
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PRHODREF ! Reference density
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PEXNREF  ! Reference Exner function
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PTHT     ! Theta at time t
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PWT      ! Vertical velocity at t
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PPABST   ! abs. pressure at time t
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PCIT     ! Pristine ice number
-                                               ! concentration at time t
-REAL, DIMENSION(:,:), INTENT(INOUT) :: PINPRR  ! Rain instant precip
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ     ! Height (z)
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ  ! Dry density * Jacobian
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF! Reference density
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF ! Reference Exner function
 !
-REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PRT    ! Moist variables at time t
-REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PRS    ! Moist  variable sources
-REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PSVT   ! Scalar variable at time t
+REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT     ! Moist variables at time t
+REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRS     ! Moist  variable sources
+REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT    ! Scalar variable at time t
+!
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT   ! Theta at time t
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PWT    ! Vertical velocity at t-dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST ! ab. pressure at time t
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCIT   ! Pristine ice number
+                                                  ! concentration at time t
+TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE_SERIES_CLOUD_ELEC
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRR  ! Rain instant precip
 !
 !
 !*       0.2   Declarations of local variables :
@@ -135,6 +143,7 @@ INTEGER :: ICOUNT     ! counter for iwp computation
 INTEGER :: IPROC      ! my proc number
 INTEGER :: IPROC_MAX  ! proc that contains max value
 INTEGER :: IINFO_ll   ! return code of parallel routine
+INTEGER :: ILU        ! unit number for IO
 !
 INTEGER, SAVE :: JCOUNT
 !
@@ -532,9 +541,8 @@ IF (JCOUNT == JCOUNT_STOP) THEN
   CALL REDUCESUM_ll (ZINPRR,        IINFO_ll)
 !
   IF (IPROC == 0) THEN
-    OPEN (UNIT=NLU_series_cloud_elec, FILE=CEXP//"_series_cloud_elec.asc", ACTION="WRITE",   &
-                 STATUS="OLD", FORM="FORMATTED", POSITION="APPEND")
-    WRITE (NLU_series_cloud_elec, FMT='(I6,19(E12.4))') &
+    ILU = TPFILE_SERIES_CLOUD_ELEC%NLU
+    WRITE (ILU, FMT='(I6,19(E12.4))') &
              INT(KTCOUNT*PTSTEP),         & ! time
              ZCTH_REF/FLOAT(JCOUNT),      & ! cloud top height from Z
              ZCTH_MR/FLOAT(JCOUNT),       & ! cloud top height from m.r.
@@ -555,9 +563,9 @@ IF (JCOUNT == JCOUNT_STOP) THEN
              ZCLD_VOL/FLOAT(JCOUNT),      & ! cloud volume
              ZINPRR/FLOAT(JCOUNT),        & ! Rain instant precip
              ZMAX_INPRR/FLOAT(JCOUNT)       ! maximum rain instant. precip.
-    CLOSE (UNIT=NLU_series_cloud_elec)
+    CALL FLUSH(UNIT=ILU)
   END IF
-! 
+!
   JCOUNT = 0
   ZMASS_C     = 0.
   ZMASS_R     = 0.

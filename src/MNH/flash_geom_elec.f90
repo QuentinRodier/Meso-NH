@@ -1,17 +1,19 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !     #############################
       MODULE MODI_FLASH_GEOM_ELEC_n
 !     #############################
 !
 INTERFACE
-    SUBROUTINE FLASH_GEOM_ELEC_n (KTCOUNT, KMI, KRR, PTSTEP, OEXIT,    &
-                                  PRHODJ, PRHODREF,                    &
-                                  PRT, PCIT, PRSVS, PRS, PTHT, PPABST, &
-                                  PEFIELDU, PEFIELDV, PEFIELDW,        &
-                                  PZZ, PSVS_LINOX, PTOWN, PSEA         )
+    SUBROUTINE FLASH_GEOM_ELEC_n (KTCOUNT, KMI, KRR, PTSTEP, OEXIT,                      &
+                                  PRHODJ, PRHODREF, PRT, PCIT, PRSVS, PRS, PTHT, PPABST, &
+                                  PEFIELDU, PEFIELDV, PEFIELDW, PZZ, PSVS_LINOX,         &
+                                  TPFILE_FGEOM_DIAG, TPFILE_FGEOM_COORD, TPFILE_LMA,     &
+                                  PTOWN, PSEA                                            )
+!
+USE MODD_IO_ll, ONLY: TFILEDATA
 !
 INTEGER,                  INTENT(IN)    :: KTCOUNT  ! Temporal loop counter
 INTEGER,                  INTENT(IN)    :: KMI      ! current model index
@@ -32,6 +34,9 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT     ! Theta (K) at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST   ! Absolute pressure at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ      ! height
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSVS_LINOX ! NOx source term
+TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE_FGEOM_DIAG
+TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE_FGEOM_COORD
+TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE_LMA
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PTOWN ! town fraction
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA  ! Land-sea mask
 !
@@ -40,13 +45,13 @@ END INTERFACE
 END MODULE MODI_FLASH_GEOM_ELEC_n
 !
 !
-!       ####################################################################
-        SUBROUTINE FLASH_GEOM_ELEC_n (KTCOUNT, KMI, KRR, PTSTEP, OEXIT,    &
-                                      PRHODJ, PRHODREF,                    &
-                                      PRT, PCIT, PRSVS, PRS, PTHT, PPABST, &
-                                      PEFIELDU, PEFIELDV, PEFIELDW,        &
-                                      PZZ, PSVS_LINOX, PTOWN, PSEA         )
-!       ####################################################################
+!   ######################################################################################
+    SUBROUTINE FLASH_GEOM_ELEC_n (KTCOUNT, KMI, KRR, PTSTEP, OEXIT,                      &
+                                  PRHODJ, PRHODREF, PRT, PCIT, PRSVS, PRS, PTHT, PPABST, &
+                                  PEFIELDU, PEFIELDV, PEFIELDW, PZZ, PSVS_LINOX,         &
+                                  TPFILE_FGEOM_DIAG, TPFILE_FGEOM_COORD, TPFILE_LMA,     &
+                                  PTOWN, PSEA                                            )
+!   ######################################################################################
 !
 !!****  * -
 !!
@@ -86,6 +91,7 @@ END MODULE MODI_FLASH_GEOM_ELEC_n
 !!      J.Escobar : 20/06/2018 : Correction of computation of global index I8VECT
 !!      J.Escobar : 10/12/2018 : // Correction , mpi_bcast CG & CG_POS parameter 
 !!                               & initialize INBLIGHT on all proc for filling/saving AREA* arrays
+!!      Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
 !!
 !-------------------------------------------------------------------------------
 !
@@ -94,6 +100,7 @@ END MODULE MODI_FLASH_GEOM_ELEC_n
 !
 USE MODD_CST, ONLY : XAVOGADRO, XMD
 USE MODD_CONF, ONLY : CEXP, LCARTESIAN
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAMETERS, ONLY : JPHEXT, JPVEXT
 USE MODD_GRID, ONLY : XLATORI,XLONORI
 USE MODD_GRID_n, ONLY : XXHAT, XYHAT, XZHAT
@@ -112,8 +119,6 @@ USE MODD_RAIN_ICE_DESCR, ONLY : XLBR, XLBEXR, XLBS, XLBEXS, &
 USE MODD_NSV, ONLY : NSV_ELECBEG, NSV_ELECEND, NSV_ELEC
 USE MODD_VAR_ll, ONLY : NPROC,NMNH_COMM_WORLD
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
-USE MODD_PRINT_ELEC,  ONLY : NLU_fgeom_diag, NLU_fgeom_coord, &
-                             NIOSTAT_fgeom_diag, NIOSTAT_fgeom_coord
 USE MODD_SUB_ELEC_n
 USE MODD_TIME_n
 USE MODD_LMA_SIMULATOR
@@ -156,6 +161,9 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT     ! Theta (K) at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST   ! Absolute pressure at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ      ! height
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSVS_LINOX ! NOx source term
+TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE_FGEOM_DIAG
+TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE_FGEOM_COORD
+TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE_LMA
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PTOWN ! town fraction
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA  ! Land-sea mask
 !
@@ -1375,15 +1383,9 @@ ENDIF
       PRSVS(:,:,:,1) = PRSVS(:,:,:,1) / XECHARGE
       PRSVS(:,:,:,NSV_ELEC) = - PRSVS(:,:,:,NSV_ELEC) / XECHARGE
 !
-      IF (PRESENT(PSEA)) THEN
-        CALL ION_ATTACH_ELEC(KTCOUNT, KRR, PTSTEP, PRHODREF,                   &
-                             PRHODJ, PRSVS, PRS, PTHT, PCIT, PPABST, PEFIELDU, &
-                             PEFIELDV, PEFIELDW, GATTACH, PTOWN, PSEA          )
-      ELSE
-        CALL ION_ATTACH_ELEC(KTCOUNT, KRR, PTSTEP, PRHODREF,                   &
-                             PRHODJ, PRSVS, PRS, PTHT, PCIT, PPABST, PEFIELDU, & 
-                             PEFIELDV, PEFIELDW, GATTACH                       )
-      ENDIF
+      CALL ION_ATTACH_ELEC(KTCOUNT, KRR, PTSTEP, PRHODREF,                   &
+                           PRHODJ, PRSVS, PRS, PTHT, PCIT, PPABST, PEFIELDU, &
+                           PEFIELDV, PEFIELDW, GATTACH, PTOWN, PSEA          )
 !
       PRSVS(:,:,:,1) = PRSVS(:,:,:,1) * XECHARGE
       PRSVS(:,:,:,NSV_ELEC) = - PRSVS(:,:,:,NSV_ELEC) * XECHARGE
@@ -2471,19 +2473,19 @@ END SUBROUTINE PT_DISCHARGE
 IMPLICIT NONE
 !
 INTEGER :: I1, I2
+INTEGER :: ILU ! unit number for IO
 !
 !
 !*      1.     FLASH PARAMETERS
 !              ----------------
 !
-OPEN (UNIT=NLU_fgeom_diag, FILE=CEXP//"_fgeom_diag.asc", ACTION="WRITE", &
-      STATUS="OLD", FORM="FORMATTED", POSITION="APPEND")
+ILU = TPFILE_FGEOM_DIAG%NLU
 !
 ! Ecriture ascii dans CEXP//'_fgeom_diag.asc" defini dans RESOLVED_ELEC
 !
 IF (LCARTESIAN) THEN
   DO I1 = 1, NNBLIGHT
-    WRITE (UNIT=NLU_fgeom_diag,FMT='(I8,F9.1,I4,I6,I4,I6,F9.3,F12.3,F12.3,F9.3,F8.2,F9.2,f9.4)') &
+    WRITE (UNIT=ILU,FMT='(I8,F9.1,I4,I6,I4,I6,F9.3,F12.3,F12.3,F9.3,F8.2,F9.2,f9.4)') &
           ISFLASH_NUMBER(I1),              &
           ISTCOUNT_NUMBER(I1) * PTSTEP,    &
           ISCELL_NUMBER(I1),               &
@@ -2504,7 +2506,7 @@ ELSE
                                    ZSCOORD_SEG(I1,1,2),&
                                    ZLAT,ZLON)
 !
-    WRITE (UNIT=NLU_fgeom_diag,FMT='(I8,F9.1,I4,I6,I4,I6,F9.3,F12.3,F12.3,F9.3,F8.2,F9.2,f9.4)') &
+    WRITE (UNIT=ILU,FMT='(I8,F9.1,I4,I6,I4,I6,F9.3,F12.3,F12.3,F9.3,F8.2,F9.2,f9.4)') &
           ISFLASH_NUMBER(I1),              &
           ISTCOUNT_NUMBER(I1) * PTSTEP,    &
           ISCELL_NUMBER(I1),               &
@@ -2520,7 +2522,7 @@ ELSE
   END DO
 END IF
 !
-CLOSE (UNIT=NLU_fgeom_diag)
+CALL FLUSH(UNIT=ILU)
 !
 !
 !*      2.     FLASH SEGMENT COORDINATES
@@ -2530,12 +2532,11 @@ IF (LSAVE_COORD) THEN
 !
 ! Ecriture ascii dans CEXP//'_fgeom_coord.asc" defini dans RESOLVED_ELEC
 !
-  OPEN (UNIT=NLU_fgeom_coord, FILE=CEXP//"_fgeom_coord.asc", ACTION="WRITE", &
-        STATUS="OLD", FORM="FORMATTED", POSITION="APPEND")
+  ILU = TPFILE_FGEOM_COORD%NLU
 !
   DO I1 = 1, NNBLIGHT
     DO I2 = 1, ISNBSEG(I1)
-      WRITE (NLU_fgeom_coord, FMT='(I4,F9.1,I4,F12.3,F12.3,F12.3)') &
+      WRITE (ILU, FMT='(I4,F9.1,I4,F12.3,F12.3,F12.3)') &
                  ISFLASH_NUMBER(I1),           & 
                  ISTCOUNT_NUMBER(I1) * PTSTEP, & 
                  ISTYPE(I1),                   &
@@ -2545,7 +2546,7 @@ IF (LSAVE_COORD) THEN
     END DO
   END DO
 !
-  CLOSE (UNIT=NLU_fgeom_coord)
+  CALL FLUSH(UNIT=ILU)
 END IF
 !
 END SUBROUTINE WRITE_OUT_ASCII
@@ -2564,6 +2565,7 @@ SUBROUTINE WRITE_OUT_LMA
 IMPLICIT NONE
 !
 INTEGER :: I1, I2
+INTEGER :: ILU ! unit number for IO
 !
 !
 !*      1.     LMA SIMULATOR
@@ -2571,9 +2573,12 @@ INTEGER :: I1, I2
 !
 CALL SM_LATLON(XLATORI,XLONORI,ZSCOORD_SEG(:,:,1),ZSCOORD_SEG(:,:,2), &
                                ZLMA_LAT(:,:),ZLMA_LON(:,:))
+!
+ILU = TPFILE_LMA%NLU
+!
 DO I1 = 1, NNBLIGHT
   DO I2 = 1, ISNBSEG(I1)
-    WRITE (ILMA_UNIT,FMT='(I6,F12.1,I6,2(F15.6),3(F15.3),3(I6),12(E15.4))') &
+    WRITE (UNIT=ILU,FMT='(I6,F12.1,I6,2(F15.6),3(F15.3),3(I6),12(E15.4))') &
                ISFLASH_NUMBER(I1),           &
                ISTCOUNT_NUMBER(I1) * PTSTEP, &
                ISTYPE(I1),                   &
@@ -2599,6 +2604,8 @@ DO I1 = 1, NNBLIGHT
                ZSLMA_NEUT_NEG(I1,I2)
   END DO
 END DO
+!
+CALL FLUSH(UNIT=ILU)
 !
 END SUBROUTINE WRITE_OUT_LMA
 !

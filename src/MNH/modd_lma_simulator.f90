@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !     ############################
       MODULE MODD_LMA_SIMULATOR
@@ -28,6 +28,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    15/02/13
+!!  Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
 !!
 !-------------------------------------------------------------------------------
 !
@@ -47,8 +48,6 @@ LOGICAL, SAVE                          :: LLMA=.FALSE.! Flag to record LMA-like
 REAL, SAVE                             :: XDTLMA ! Time length of a LMA record
 TYPE (DATE_TIME), SAVE                 :: TDTLMA ! Date and Time of LMA file
 CHARACTER (LEN=31), SAVE               :: CLMA_FILE   ! File name
-INTEGER, SAVE                          :: ILMA_UNIT   ! File information
-INTEGER, SAVE                          :: ILMA_IOSTAT ! File information
 !
 !* storage monitoring
 !

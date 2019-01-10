@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 MODULE MODE_MNH_TIMING
 !
@@ -8,6 +8,7 @@ MODULE MODE_MNH_TIMING
 ! J.ESCOBAR 13/11/2008 : change (2) in (:) for bug in IBM-SP6 compiler
 ! J.Escobar 1/09/2011  : reduce 'timing' format
 ! J.Escobar 12/02/2013 : tribulle to slow on large BG partition , inhib it by a early return in the code 
+! Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
 !
 
 INTEGER     :: NLUOUT_TIMING
@@ -111,6 +112,7 @@ END SUBROUTINE SECOND_MNH2
 
   REAL*8,DIMENSION(2,NPROC)   :: ZSTAT_ALL 
   INTEGER, DIMENSION(NPROC) :: IND
+  INTEGER :: ILU
 !
 !-------------------------------------------------------------------------------
 !
@@ -164,14 +166,14 @@ INFO = -1
             END SELECT
 
          END DO
-         OPEN (100+NLUOUT_TIMING,file=FILE)
-         WRITE(100+NLUOUT_TIMING,FMT= "(10('#'),A30,10('#'))" ) HPRINT//VIDE
+         OPEN (newunit=ILU,file=FILE)
+         WRITE(unit=ILU,FMT= "(10('#'),A30,10('#'))" ) HPRINT//VIDE
          call  triabulle(ZSTAT_ALL(2,:),ind)
          DO JP=1,NPROC
-            WRITE(100+NLUOUT_TIMING,FMT= "(5(I8,' ',F15.3,' '))" ) &
+            WRITE(unit=ILU,FMT= "(5(I8,' ',F15.3,' '))" ) &
                  ind(JP),ZSTAT_ALL(2,ind(JP))
          END DO
-         CLOSE (100+NLUOUT_TIMING)
+         CLOSE (unit=ILU)
       END IF
    END IF
    !

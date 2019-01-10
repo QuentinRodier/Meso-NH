@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !     ####################
       MODULE MODI_COMPUTE_SPECTRE
@@ -49,6 +49,7 @@ END MODULE MODI_COMPUTE_SPECTRE
 !	A. Mary, R. Legrand          **ENM**
 !       D. Ricard    **CNRM**            
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!  Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -114,6 +115,7 @@ INTEGER :: IIX,IJX,IIY,IJY ! dimensions of the extended x or y slices subdomain
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZBAND_YT  ! array in Y slices distribution transpose
 !
 ! local variables for section 5
+CHARACTER(len=9)                    :: YJNB       ! for error message
 INTEGER                             :: JNB        ! loop index : adimensionned wavenumbers
 INTEGER                             :: JERR       ! allocation or writing errors
 INTEGER                             :: IMIN       ! minimum domain dimension
@@ -142,6 +144,7 @@ REAL, DIMENSION(:,:), ALLOCATABLE   :: ZSP        ! results table
 !         ----!-------------------------------
 !         ... !        !         !
 !
+INTEGER                         :: ILU
 INTEGER                         :: ILUOUT    ! Logical unit number for
                                              ! output-listing   
 INTEGER                         :: IRESP     ! return code in FM routines         
@@ -469,29 +472,24 @@ ELSE
   WRITE(YFMT,FMT='(A,I1,A,I3,A)') "(I",JLOGIMIN,",F13.2,",IKU,"F25.16)"
 ENDIF
 YFMT=TRIM(ADJUSTL(YFMT))
-
-OPEN(UNIT=32, FILE=YOUTFILE, ACCESS='SEQUENTIAL', IOSTAT=JERR)
-IF (JERR /= 0) THEN 
-  print*,"error when open the  file ",YOUTFILE, " JERR=",JERR
-  CALL ABORT
-  STOP
+!
+OPEN(NEWUNIT=ILU, FILE=YOUTFILE, ACCESS='SEQUENTIAL', IOSTAT=JERR)
+IF (JERR /= 0) THEN
+  CALL PRINT_MSG(NVERB_FATAL,'IO','COMPUTE_SPECTRE','error when opening '//trim(YOUTFILE))
 ENDIF
+!
 DO JNB=1,IMIN-1
- WRITE(UNIT=32,IOSTAT=JERR,FMT=YFMT) INT(ZLGO(JNB,1)),ZLGO(JNB,2),ZSP(JNB,:)
- IF (JERR /= 0) THEN 
-   print*,"error when writing JNB=",JNB," JERR=",JERR
-   CALL ABORT
-   STOP
- ENDIF
-
+  WRITE(UNIT=ILU,IOSTAT=JERR,FMT=YFMT) INT(ZLGO(JNB,1)),ZLGO(JNB,2),ZSP(JNB,:)
+  IF (JERR /= 0) THEN
+    WRITE(YJNB,'( I9 )') JNB
+    CALL PRINT_MSG(NVERB_FATAL,'IO','COMPUTE_SPECTRE','error when writing JNB='//trim(YJNB)//' in file '//trim(YOUTFILE))
+  ENDIF
 END DO
-CLOSE(UNIT=32, IOSTAT=JERR)
+!
+CLOSE(UNIT=ILU, IOSTAT=JERR)
 IF (JERR /= 0) THEN 
-  print*,"error when closing the  file ",YOUTFILE, " JERR=",JERR
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_ERROR,'IO','COMPUTE_SPECTRE','error when closing '//trim(YOUTFILE))
 ENDIF
-
 !
 !-------------------------------------------------------------------------------
 !

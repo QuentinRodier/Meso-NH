@@ -9,6 +9,9 @@
 !           (was duplicated in the 2 files)
 !
 !  Modifications:
+!     Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
+!                                    + move IOFREEFLU and IONEWFLU to mode_io_file_lfi.f90
+!                                    + move management of NNCID and NLFIFLU to the nc4 and lfi subroutines
 !
 !-----------------------------------------------------------------
 #if defined(MNH_IOCDF4)
@@ -62,8 +65,8 @@ end subroutine io_create_file_nc4
 subroutine io_close_file_nc4(tpfile,kstatus)
   use mode_io_tools_nc4, only: cleaniocdf
 
-  type(tfiledata),                    intent(in)  :: tpfile
-  integer(kind=IDCDF_KIND), optional, intent(out) :: kstatus
+  type(tfiledata),                    intent(inout) :: tpfile
+  integer(kind=IDCDF_KIND), optional, intent(out)   :: kstatus
 
   integer(kind=IDCDF_KIND) :: istatus
 
@@ -80,6 +83,7 @@ subroutine io_close_file_nc4(tpfile,kstatus)
       if (istatus /= NF90_NOERR) then
         call print_msg(NVERB_WARNING, 'IO', 'io_close_file_nc4', 'NF90_CLOSE error: '//trim(NF90_STRERROR(istatus)))
       end if
+      tpfile%nncid = -1
       if (associated(tpfile%tncdims)) call cleaniocdf(tpfile%tncdims)
     end if
   end if

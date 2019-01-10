@@ -19,10 +19,12 @@
 !     J. Pianezze 01/08/2016  add LOASIS flag
 !     Philippe Wautelet: 13/12/2018: moved some operations to new mode_io_*_nc4 modules
 !     Philippe Wautelet: 10/01/2019: bug correction: close correctly Z-split files
+!     Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
+!                                    + move IOFREEFLU and IONEWFLU to mode_io_file_lfi.f90
+!                                    + move management of NNCID and NLFIFLU to the nc4 and lfi subroutines
 !
 MODULE MODE_IO_ll
 
-  USE MODD_ERRCODES
   USE MODD_MPIF
   USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD
 
@@ -32,58 +34,12 @@ MODULE MODE_IO_ll
 
   PRIVATE
 
-  INTEGER, PARAMETER :: JPFNULL = 9       !! /dev/null fortran unit
-  INTEGER, PARAMETER :: JPRESERVED_UNIT   = 11
-  INTEGER, PARAMETER :: JPMAX_UNIT_NUMBER = JPRESERVED_UNIT+300
-  ! 
-  LOGICAL,SAVE :: GALLOC(JPRESERVED_UNIT:JPMAX_UNIT_NUMBER) = .FALSE.
-  !
-  CHARACTER(LEN=*),PARAMETER      :: CFILENULL="/dev/null"
-  !
   LOGICAL,SAVE :: GCONFIO = .FALSE. ! Turn TRUE when SET_CONFIO_ll is called.
 
-  PUBLIC IOFREEFLU,IONEWFLU,UPCASE,INITIO_ll,OPEN_ll,CLOSE_ll
+  PUBLIC UPCASE,INITIO_ll,OPEN_ll,CLOSE_ll
   PUBLIC SET_CONFIO_ll,GCONFIO
 
 CONTAINS 
-
-  FUNCTION IONEWFLU()
-
-    INTEGER :: IONEWFLU
-
-    INTEGER :: JI
-    INTEGER :: IOS
-    LOGICAL :: GEXISTS, GOPENED, GFOUND
-
-    GFOUND = .FALSE.
-
-    DO JI=JPRESERVED_UNIT, JPMAX_UNIT_NUMBER
-       IF (GALLOC(JI)) CYCLE
-       INQUIRE(UNIT=JI, EXIST=GEXISTS, OPENED=GOPENED, IOSTAT=IOS)
-       IF (GEXISTS .AND. .NOT. GOPENED .AND. IOS == 0) THEN
-          IONEWFLU   = JI
-          GFOUND     = .TRUE.
-          GALLOC(JI) = .TRUE.
-          EXIT
-       END IF
-    END DO
-
-    IF (.NOT. GFOUND) IONEWFLU = NOSLOTLEFT
-
-  END FUNCTION IONEWFLU
-
-  SUBROUTINE IOFREEFLU(KOFLU)
-
-    INTEGER :: KOFLU
-
-    IF ((KOFLU .GE. JPRESERVED_UNIT) .AND. (KOFLU .LE. JPMAX_UNIT_NUMBER )) THEN 
-       GALLOC(KOFLU) = .FALSE.
-    ELSE
-       print*,"mode_io.f90: IOFREEFLU BAD IUNIT=",KOFLU
-       STOP "mode_io.f90: IOFREEFLU BAD IUNIT"
-    END IF
-
-  END SUBROUTINE IOFREEFLU
 
   FUNCTION UPCASE(HSTRING)
     CHARACTER(LEN=*)            :: HSTRING
@@ -137,9 +93,9 @@ CONTAINS
     END IF
     
   END SUBROUTINE SET_CONFIO_INTERN_ll
-  
+
   SUBROUTINE INITIO_ll()
-    USE  MODE_MNH_WORLD , ONLY :  INIT_NMNH_COMM_WORLD
+    USE MODE_MNH_WORLD, ONLY: INIT_NMNH_COMM_WORLD
     USE MODD_IO_ll
     USE MODE_FIELD
     IMPLICIT NONE
@@ -148,10 +104,8 @@ CONTAINS
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','INITIO_ll','called')
 
-    ISTDERR = 0
-
     CALL INIT_NMNH_COMM_WORLD(IERR)
-    IF (IERR .NE.0) CALL PRINT_MSG(NVERB_FATAL,'IO','SET_CONFIO_ll','problem with remapping of NMNH_COMM_WORLD')
+    IF (IERR .NE.0) CALL PRINT_MSG(NVERB_FATAL,'IO','INITIO_ll','problem with remapping of NMNH_COMM_WORLD')
 
     !! Now MPI is initialized for sure
 
@@ -168,22 +122,13 @@ CONTAINS
 
     !! Open /dev/null for GLOBAL mode
 #if defined(DEV_NULL)
-    OPEN(UNIT=JPFNULL,FILE=CFILENULL  ,ACTION='WRITE',IOSTAT=IOS)
+    OPEN(NEWUNIT=NNULLUNIT,FILE=CNULLFILE  ,ACTION='WRITE',IOSTAT=IOS)
 #else
-    OPEN(UNIT=JPFNULL,STATUS='SCRATCH',ACTION='WRITE',IOSTAT=IOS)
+    OPEN(NEWUNIT=NNULLUNIT,STATUS='SCRATCH',ACTION='WRITE',IOSTAT=IOS)
 #endif
     IF (IOS > 0) THEN
-       WRITE(ISTDERR,*) 'Error OPENING /dev/null...'
-       CALL MPI_ABORT(NMNH_COMM_WORLD, IOS, IERR)
+       CALL PRINT_MSG(NVERB_FATAL,'IO','INITIO_ll','error opening /dev/null')
     END IF
-
-    !! Init STDOUT and PIPE
-    IF (ISP == ISIOP) THEN
-       ISTDOUT = 6
-    ELSE
-       ISTDOUT = JPFNULL
-    END IF
-
   END SUBROUTINE INITIO_ll
 
   SUBROUTINE OPEN_ll(&
@@ -292,14 +237,14 @@ CONTAINS
     IF (YACTION /= "READ" .AND. YACTION /= "WRITE") THEN
        IOSTAT = 99
        TPFILE%NLU = -1
-       WRITE(ISTDERR,*) 'Erreur OPEN_ll : ACTION=',YACTION,' non supportee'
+       CALL PRINT_MSG(NVERB_ERROR,'IO','OPEN_ll','action='//TRIM(YACTION)//' not supported')
        RETURN
     END IF
 
     IF (.NOT. ANY(YMODE == (/'GLOBAL     ','SPECIFIC   ','DISTRIBUTED' , 'IO_ZSPLIT  '/))) THEN
        IOSTAT = 99
        TPFILE%NLU = -1
-       WRITE(ISTDERR,*) 'OPEN_ll error : MODE UNKNOWN'
+       CALL PRINT_MSG(NVERB_ERROR,'IO','OPEN_ll','ymode='//TRIM(YMODE)//' not supported')
        RETURN
     END IF
 
@@ -385,10 +330,8 @@ CONTAINS
 
        IF (TPFILE%LMASTER) THEN
           !! I/O processor case
-
-          TPFILE%NLU = IONEWFLU()
 #ifdef MNH_VPP
-          OPEN(UNIT=TPFILE%NLU,        &
+          OPEN(NEWUNIT=TPFILE%NLU,     &
                FILE=TRIM(YPREFILENAME),&
                STATUS=STATUS,          &
                ACCESS=ACCESS,          &
@@ -406,7 +349,7 @@ CONTAINS
 #if defined(MNH_SX5) || defined(MNH_SP4) || defined(NAGf95) || defined(MNH_LINUX)
           !JUAN : 31/03/2000 modif pour acces direct
           IF (YACCESS=='STREAM') THEN
-             OPEN(UNIT=TPFILE%NLU,        &
+             OPEN(NEWUNIT=TPFILE%NLU,     &
                   FILE=TRIM(YPREFILENAME),&
                   STATUS=YSTATUS,         &
                   ACCESS=YACCESS,         &
@@ -415,7 +358,7 @@ CONTAINS
                   FORM=YFORM,             &
                   ACTION=YACTION)
           ELSEIF (YACCESS=='DIRECT') THEN
-             OPEN(UNIT=TPFILE%NLU,        &
+             OPEN(NEWUNIT=TPFILE%NLU,     &
                   FILE=TRIM(YPREFILENAME),&
                   STATUS=YSTATUS,         &
                   ACCESS=YACCESS,         &
@@ -427,7 +370,7 @@ CONTAINS
           ELSE
              IF (YFORM=="FORMATTED") THEN
                IF (YACTION=='READ') THEN
-                OPEN(UNIT=TPFILE%NLU,        &
+                OPEN(NEWUNIT=TPFILE%NLU,     &
                      FILE=TRIM(YPREFILENAME),&
                      STATUS=YSTATUS,         &
                      ACCESS=YACCESS,         &
@@ -441,7 +384,7 @@ CONTAINS
                      !DELIM=YDELIM,          & !Philippe: commented because bug with GCC 5.X
                      PAD=YPAD)
                ELSE
-                OPEN(UNIT=TPFILE%NLU,        &
+                OPEN(NEWUNIT=TPFILE%NLU,     &
                      FILE=TRIM(YPREFILENAME),&
                      STATUS=YSTATUS,         &
                      ACCESS=YACCESS,         &
@@ -456,7 +399,7 @@ CONTAINS
                      PAD=YPAD)
                ENDIF
              ELSE
-                OPEN(UNIT=TPFILE%NLU,        &
+                OPEN(NEWUNIT=TPFILE%NLU,     &
                      FILE=TRIM(YPREFILENAME),&
                      STATUS=YSTATUS,         &
                      ACCESS=YACCESS,         &
@@ -471,7 +414,7 @@ CONTAINS
 
 
           !print*,' OPEN_ll'
-          !print*,' OPEN(UNIT=',TPFILE%NLU
+          !print*,' OPEN(NEWUNIT=',TPFILE%NLU
           !print*,' FILE=',TRIM(YPREFILENAME)
           !print*,' STATUS=',YSTATUS       
           !print*,' ACCESS=',YACCESS
@@ -484,7 +427,7 @@ CONTAINS
           !print*,' DELIM=',YDELIM
           !print*,' PAD=',YPAD
 #else
-          OPEN(UNIT=TPFILE%NLU,        &
+          OPEN(NEWUNIT=TPFILE%NLU,     &
                FILE=TRIM(YPREFILENAME),&
                STATUS=STATUS,          &
                ACCESS=ACCESS,          &
@@ -501,22 +444,21 @@ CONTAINS
 
 #endif
           IF (IOS/=0) CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll','Problem when opening '//TRIM(YPREFILENAME)//': '//TRIM(YIOERRMSG))
-       ELSE 
+       ELSE
           !! NON I/O processors case
           IOS = 0
-          TPFILE%NLU = JPFNULL
+          TPFILE%NLU = NNULLUNIT
        END IF
 
 
     CASE('SPECIFIC')
-       TPFILE%NLU = IONEWFLU()
        TPFILE%NMASTER_RANK  = -1
        TPFILE%LMASTER       = .TRUE. !Every process use the file
        TPFILE%LMULTIMASTERS = .TRUE.
        TPFILE%NSUBFILES_IOZ = 0
 
 #ifdef MNH_VPP
-       OPEN(UNIT=TPFILE%NLU,                       &
+       OPEN(NEWUNIT=TPFILE%NLU,                    &
             FILE=TRIM(YPREFILENAME)//SUFFIX(".P"), &
             STATUS=STATUS,                         &
             ACCESS=ACCESS,                         &
@@ -533,7 +475,7 @@ CONTAINS
 #else
 #if defined(MNH_SX5) || defined(MNH_SP4) || defined(NAGf95) || defined(MNH_LINUX)
        IF (ACCESS=='DIRECT') THEN
-          OPEN(UNIT=TPFILE%NLU,                       &
+          OPEN(NEWUNIT=TPFILE%NLU,                    &
                FILE=TRIM(YPREFILENAME)//SUFFIX(".P"), &
                STATUS=YSTATUS,                        &
                ACCESS=YACCESS,                        &
@@ -544,7 +486,7 @@ CONTAINS
                ACTION=YACTION)
        ELSE
         IF (YACTION=='READ') THEN
-          OPEN(UNIT=TPFILE%NLU,                        &
+          OPEN(NEWUNIT=TPFILE%NLU,                     &
                FILE=TRIM(YPREFILENAME)//SUFFIX(".P"),  &
                STATUS=YSTATUS,                         &
                ACCESS=YACCESS,                         &
@@ -558,7 +500,7 @@ CONTAINS
                !DELIM=YDELIM,         & !Philippe: commented because bug with GCC 5.X
                PAD=YPAD)
          ELSE
-          OPEN(UNIT=TPFILE%NLU,                        &
+          OPEN(NEWUNIT=TPFILE%NLU,                     &
                FILE=TRIM(YPREFILENAME)//SUFFIX(".P"),  &
                STATUS=YSTATUS,                         &
                ACCESS=YACCESS,                         &
@@ -574,7 +516,7 @@ CONTAINS
          ENDIF
        ENDIF
 #else
-       OPEN(UNIT=TPFILE%NLU,                       &
+       OPEN(NEWUNIT=TPFILE%NLU,                    &
             FILE=TRIM(YPREFILENAME)//SUFFIX(".P"), &
             STATUS=STATUS,                         &
             ACCESS=ACCESS,                         &
@@ -600,12 +542,9 @@ CONTAINS
        TPFILE%LMULTIMASTERS = .FALSE.
        TPFILE%NSUBFILES_IOZ = 0
 
-       IF (TPFILE%LMASTER) THEN
-          TPFILE%NLU = IONEWFLU()
-       ELSE 
+       IF (.NOT.TPFILE%LMASTER) THEN
           !! NON I/O processors case
           IOS = 0
-          TPFILE%NLU = -1
        END IF
 
 
@@ -626,11 +565,9 @@ CONTAINS
 #else
        IF (TPFILE%LMASTER) THEN
 #endif
-             TPFILE%NLFIFLU = IONEWFLU()
        ELSE 
           !! NON I/O processors OR netCDF read case
           IOS = 0
-          TPFILE%NLFIFLU = -1
        END IF
 
        IF (TPFILE%NSUBFILES_IOZ > 0) THEN
@@ -761,9 +698,8 @@ CONTAINS
     IGLOBALERR2 = 0
 
     IF (TPFILE%LMASTER) THEN
-      IF (TPFILE%NLU>0 .AND. TPFILE%NLU/=JPFNULL) THEN
+      IF (TPFILE%NLU/=-1 .AND. TPFILE%NLU/=NNULLUNIT) THEN
         CLOSE(UNIT=TPFILE%NLU, IOSTAT=IRESP,STATUS='KEEP')
-        CALL IOFREEFLU(TPFILE%NLU)
       END IF
     END IF
     !
@@ -781,9 +717,6 @@ CONTAINS
 #if defined(MNH_IOCDF4)
           if (tzfile%cformat == 'NETCDF4' .or. tzfile%cformat == 'LFICDF4') call io_close_file_nc4(tzfile,iresp2)
 #endif
-          IF (TZFILE%NLFIFLU > 0) THEN !if LFI
-            CALL IOFREEFLU(INT(TZFILE%NLFIFLU))
-          END IF
         END IF
       END DO
       !

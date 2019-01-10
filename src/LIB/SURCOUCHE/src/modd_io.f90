@@ -1,10 +1,11 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 ! Modifications:
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN (removed ISTDOUT, ISTDERR, added NNULLUNIT, CNULLFILE)
 !-----------------------------------------------------------------
 
 MODULE MODD_IO_ll
@@ -17,8 +18,8 @@ IMPLICIT NONE
 !
 INTEGER, PARAMETER :: NVERB_NO=0, NVERB_FATAL=1, NVERB_ERROR=2, NVERB_WARNING=3, NVERB_INFO=4, NVERB_DEBUG=5
 
-
-INTEGER, SAVE :: ISTDOUT, ISTDERR
+INTEGER                     :: NNULLUNIT = -1  ! /dev/null fortran unit, value set in INITIO_ll
+CHARACTER(LEN=*), PARAMETER :: CNULLFILE = "/dev/null"
 
 INTEGER, SAVE :: ISIOP   !! IOproc number
 INTEGER, SAVE :: ISP     !! Actual proc number

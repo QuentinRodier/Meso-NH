@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 MODULE MODE_MPPDB
@@ -11,6 +11,7 @@ MODULE MODE_MPPDB
 !  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !  G.Delautier : 23/06/2016 : surfex v8
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
 !
   IMPLICIT NONE
 
@@ -46,16 +47,15 @@ CONTAINS
     !pas de mpi_spawn sur IBM-SP ni MPI_ARGV_NULL etc ...
     RETURN           
 #else
-    !USE MPI
+    USE MODD_MPIF
     !JUANZ
     USE  MODE_MNH_WORLD , ONLY :  INIT_NMNH_COMM_WORLD
     USE  MODD_VAR_ll    , ONLY :  NMNH_COMM_WORLD
     !JUANZ
     IMPLICIT NONE
-    INCLUDE "mpif.h"
 
 
-    INTEGER                         :: IUNIT = 100
+    INTEGER                         :: IUNIT
     INTEGER                         :: IERR
     INTEGER                         :: IRANK_WORLD,IRANK_INTRA
     INTEGER                         :: NBPROC_WORLD,NBPROC_INTRA
@@ -104,7 +104,7 @@ CONTAINS
        !
        ! if no config file , inactive MPPDB routines
        !
-       OPEN(unit=IUNIT,file=MPPDB_CONF,STATUS='OLD',iostat=IERR)
+       OPEN(newunit=IUNIT,file=MPPDB_CONF,STATUS='OLD',iostat=IERR)
        IF (IERR.NE.0 ) THEN
           ! PRINT*,"IOSTAT=",IERR
           !

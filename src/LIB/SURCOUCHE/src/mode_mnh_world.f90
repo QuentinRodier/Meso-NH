@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !!    MODIFICATIONS
@@ -8,6 +8,7 @@
 !!
 !!  J.Escobar 3/12/2014 : typo form -> from
 !!  Philippe 03/10/2017: set IP and NPROC in INIT_NMNH_COMM_WORLD
+!!  Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
 !!
 MODULE MODE_MNH_WORLD
   IMPLICIT NONE
@@ -42,7 +43,8 @@ CONTAINS
 #ifdef MNH_GA
     INTEGER                         :: REQUIRED=MPI_THREAD_MULTIPLE,PROVIDED 
 #endif
-    !JUANZ    
+    !JUANZ
+    INTEGER :: ILU
 
     !
     KINFO_ll = 0
@@ -62,13 +64,13 @@ CONTAINS
        ! Read namelist config file
        !
        IF ( irank .EQ. 0 ) THEN
-          OPEN(unit=10,form="formatted",file=conf_mnh_world,STATUS='OLD',iostat=IERR)
+          OPEN(newunit=ILU,form="formatted",file=conf_mnh_world,STATUS='OLD',iostat=IERR)
           ! Read IO parameter
           IF (IERR.EQ.0) THEN
-             READ(10,NML=NAM_CONF_MNH_WORLD) 
+             READ(unit=ilu,NML=NAM_CONF_MNH_WORLD)
              WRITE(*,NAM_CONF_MNH_WORLD)
           ENDIF
-          CLOSE(10)
+          CLOSE(unit=ILU)
        ENDIF
        iroot = 0
        ! Brodcast mapping
@@ -85,12 +87,12 @@ CONTAINS
 !          myrank_key =  IY_COORD(IRANK+1) + IX_COORD(IRANK+1) * IX_DIM
 !          IF (IRANK .EQ. 0 ) THEN
 !             print *,"IX_DIM=",IX_DIM
-!             OPEN(unit=100,form="formatted",file="hilbert_2D")
+!             OPEN(newunit=ILU,form="formatted",file="hilbert_2D")
 !             DO  I=1,IPROC
-!                write(100,*) I, IX_COORD(I),IY_COORD(I) , &
+!                write(unit=ILU,fmt=*) I, IX_COORD(I),IY_COORD(I) , &
 !                     1+ IY_COORD(I) + IX_COORD(I) * IX_DIM 
 !             END DO
-!             CLOSE(100)
+!             CLOSE(unit=ILU)
 !          END IF
 !          color = 1
 !          call MPI_Comm_split( MPI_COMM_WORLD, color, myrank_key,NMNH_COMM_WORLD , KINFO_ll )

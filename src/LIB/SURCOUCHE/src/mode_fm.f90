@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -9,10 +9,11 @@
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  Philippe Wautelet: 29/10/2018: better detection of older MNH version numbers
 !  Philippe Wautelet: 13/12/2018: moved some operations to new mode_io_*_nc4 modules
+!  Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN + move management
+!                                 of NNCID and NLFIFLU to the nc4 and lfi subroutines
 !-----------------------------------------------------------------
 
 MODULE MODE_FM
-USE MODD_ERRCODES
 USE MODD_MPIF
 
 USE MODE_MSG
@@ -156,8 +157,8 @@ IF (PRESENT(KRESP)) KRESP = IRESP
 END SUBROUTINE IO_FILE_OPEN_ll
 
 SUBROUTINE FMOPEN_ll(TPFILE,KRESP,OPARALLELIO,HPROGRAM_ORIG)
-USE MODD_IO_ll,               ONLY: ISTDOUT,TFILEDATA
-USE MODE_IO_ll,               ONLY: OPEN_ll,GCONFIO,IOFREEFLU,IONEWFLU
+USE MODD_IO_ll,               ONLY: TFILEDATA
+USE MODE_IO_ll,               ONLY: OPEN_ll,GCONFIO
 !JUANZ
 USE MODD_CONFZ,ONLY  : NB_PROCIO_R,NB_PROCIO_W
 !JUANZ
@@ -234,28 +235,22 @@ IF (TPFILE%LMASTER) THEN
           CALL PRINT_MSG(NVERB_WARNING,'IO','FMOPEN_ll',TRIM(TPFILE%CNAME)// &
                          ': .nc file does not exist but .lfi exists -> forced to LFI')
           TPFILE%CFORMAT='LFI'
-          TPFILE%NLFIFLU = IONEWFLU()
         END IF
       CASE ('LFI')
         IF (.NOT.GEXIST_LFI .AND. GEXIST_NC4) THEN
           CALL PRINT_MSG(NVERB_WARNING,'IO','FMOPEN_ll',TRIM(TPFILE%CNAME)// &
                          ': .lfi file does not exist but .nc exists -> forced to NETCDF4')
           TPFILE%CFORMAT='NETCDF4'
-          CALL IOFREEFLU(INT(TPFILE%NLFIFLU))
-          TPFILE%NLFIFLU = -1
         END IF
       CASE ('LFICDF4')
         IF (GEXIST_NC4) THEN
           CALL PRINT_MSG(NVERB_WARNING,'IO','FMOPEN_ll',TRIM(TPFILE%CNAME)// &
                          ': LFICDF4 format is not allowed in READ mode -> forced to NETCDF4')
           TPFILE%CFORMAT='NETCDF4'
-          IF (TPFILE%NLFIFLU>0) CALL IOFREEFLU(INT(TPFILE%NLFIFLU))
-          TPFILE%NLFIFLU = -1
         ELSE IF (GEXIST_LFI) THEN
           CALL PRINT_MSG(NVERB_WARNING,'IO','FMOPEN_ll',TRIM(TPFILE%CNAME)// &
                          ': LFICDF4 format is not allowed in READ mode -> forced to LFI')
           TPFILE%CFORMAT='LFI'
-          TPFILE%NLFIFLU = IONEWFLU()
         END IF
       CASE DEFAULT
         IF (GEXIST_NC4) THEN
@@ -266,7 +261,6 @@ IF (TPFILE%LMASTER) THEN
           CALL PRINT_MSG(NVERB_ERROR,'IO','FMOPEN_ll',TRIM(TPFILE%CNAME)// &
                          ': invalid fileformat (-> forced to LFI if no abort)')
           TPFILE%CFORMAT='LFI'
-          TPFILE%NLFIFLU = IONEWFLU()
         END IF
     END SELECT
   END IF
@@ -421,9 +415,6 @@ SELECT CASE(TPFILE%CTYPE)
     !
     CALL FMCLOS_ll(TPFILE,KRESP=IRESP,OPARALLELIO=OPARALLELIO,HPROGRAM_ORIG=HPROGRAM_ORIG)
     !
-    TPFILE%NLFIFLU = -1
-    TPFILE%NNCID   = -1
-    !
     DO JI = 1,TPFILE%NSUBFILES_IOZ
       TZFILE_IOZ => TPFILE%TFILES_IOZ(JI)%TFILE
       IF (.NOT.TZFILE_IOZ%LOPENED) &
@@ -434,8 +425,6 @@ SELECT CASE(TPFILE%CTYPE)
       TZFILE_IOZ%LOPENED       = .FALSE.
       TZFILE_IOZ%NOPEN_CURRENT = 0
       TZFILE_IOZ%NCLOSE        = TZFILE_IOZ%NCLOSE + 1
-      TZFILE_IOZ%NLFIFLU       = -1
-      TZFILE_IOZ%NNCID         = -1
     END DO
 END SELECT
 !
@@ -465,7 +454,7 @@ USE MODI_SYSTEM_MNH
   use mode_io_file_nc4,  only: io_close_file_nc4
   use mode_io_write_nc4, only: io_write_coordvar_nc4
 #endif
-TYPE(TFILEDATA),      INTENT(IN) :: TPFILE ! File structure
+TYPE(TFILEDATA),      INTENT(INOUT)         :: TPFILE ! File structure
 INTEGER,              INTENT(OUT), OPTIONAL :: KRESP   ! return-code if problems araised
 LOGICAL,              INTENT(IN),  OPTIONAL :: OPARALLELIO
 CHARACTER(LEN=*),     INTENT(IN),  OPTIONAL :: HPROGRAM_ORIG !To emulate a file coming from this program

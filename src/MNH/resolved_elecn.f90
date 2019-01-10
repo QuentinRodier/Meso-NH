@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2009-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2009-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !     ###########################
       MODULE MODI_RESOLVED_ELEC_n
@@ -166,6 +166,7 @@ END MODULE MODI_RESOLVED_ELEC_n
 !!      M. Chong      31/07/14  Add explicit LiNOx
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!  Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
 !!
 !-------------------------------------------------------------------------------
 !
@@ -184,7 +185,7 @@ USE MODD_CST
 USE MODD_IO_ll,            ONLY: TFILEDATA
 USE MODD_PARAMETERS, ONLY : JPVEXT
 USE MODD_ELEC_DESCR
-USE MODD_ELEC_n          
+USE MODD_ELEC_n
 USE MODD_BUDGET
 USE MODD_NSV
 USE MODD_CH_MNHC_n,    ONLY: LUSECHEM,LCH_CONV_LINOX
@@ -299,6 +300,7 @@ INTEGER :: IKU
 INTEGER :: IINFO_ll      ! return code of parallel routine
 INTEGER :: IPROC         ! my proc number
 INTEGER :: IERR          ! error status
+INTEGER :: ILU           ! unit number for IO
 !
 REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZT,   &
                                                        ZEXN, &
@@ -342,10 +344,16 @@ CHARACTER (LEN=32) :: YASCFILE
 REAL               :: ZTEMP_DIST
 CHARACTER (LEN=18) :: YNAME
 LOGICAL            :: GLMA_FILE
-TYPE(TFILEDATA),POINTER :: TZFILE
+TYPE(TFILEDATA),POINTER :: TZFILE_FGEOM_COORD
+TYPE(TFILEDATA),POINTER :: TZFILE_FGEOM_DIAG
+TYPE(TFILEDATA),POINTER :: TZFILE_LMA
+TYPE(TFILEDATA),POINTER :: TZFILE_SERIES_CLOUD_ELEC
 !
 NULLIFY(TZFIELDS_ll)
-TZFILE => NULL()
+TZFILE_FGEOM_COORD       => NULL()
+TZFILE_FGEOM_DIAG        => NULL()
+TZFILE_LMA               => NULL()
+TZFILE_SERIES_CLOUD_ELEC => NULL()
 !
 !------------------------------------------------------------------------------
 !
@@ -835,93 +843,78 @@ ENDIF
 !*      9.      OPEN THE OUTPUT ASCII FILES
 !               ---------------------------
 !
-IF (KTCOUNT .EQ. 1) THEN
+IF (KTCOUNT==1 .AND. IPROC==0) THEN
   IF (LFLASH_GEOM) THEN
     YASCFILE = CEXP//"_fgeom_diag.asc"
-    CALL IO_FILE_ADD2LIST(TZFILE,YASCFILE,'TXT','WRITE')
-    CALL IO_FILE_OPEN_ll(TZFILE,HPOSITION='APPEND',HSTATUS='NEW',KRESP=NIOSTAT_fgeom_diag)
-    NLU_fgeom_diag = TZFILE%NLU
-    IF ( IPROC .EQ. 0) THEN
-      WRITE (NLU_fgeom_diag, FMT='(A)') '--------------------------------------------------------'
-      WRITE (NLU_fgeom_diag, FMT='(A)') '*FLASH CHARACTERISTICS FROM FLASH_GEOM_ELEC*'
-      WRITE (NLU_fgeom_diag, FMT='(A)') '-- Column 1 : total flash number          --'
-      WRITE (NLU_fgeom_diag, FMT='(A)') '-- Column 2 : time (s)                    --'
-      WRITE (NLU_fgeom_diag, FMT='(A)') '-- Column 3 : cell number                 --'
-      WRITE (NLU_fgeom_diag, FMT='(A)') '-- Column 4 : flash number/cell/time step --'
-      WRITE (NLU_fgeom_diag, FMT='(A)') '-- Column 5 : flash type 1=IC, 2=CGN, 3=CGP '
-      WRITE (NLU_fgeom_diag, FMT='(A)') '-- Column 6 : number of segments          --'
-      WRITE (NLU_fgeom_diag, FMT='(A)') '-- Column 7 : trig electric field (kV/m)  --'
-      WRITE (NLU_fgeom_diag, FMT='(A)') '-- Column 8 : x coord. trig. point        --'
-      WRITE (NLU_fgeom_diag, FMT='(A)') '-- Column 9 : y coord. trig. point        --'
-      WRITE (NLU_fgeom_diag, FMT='(A)') '--         --> x,y in km if lcartesian=t, --'
-      WRITE (NLU_fgeom_diag, FMT='(A)') '--                    deg otherwise       --'
-      WRITE (NLU_fgeom_diag, FMT='(A)') '-- Column 10 : z coord. trig. point (km)  --'
-      WRITE (NLU_fgeom_diag, FMT='(A)') '-- Column 11: neutr. positive charge (C)  --' 
-      WRITE (NLU_fgeom_diag, FMT='(A)') '-- Column 12: neutr. negative charge (C)  --'
-      WRITE (NLU_fgeom_diag, FMT='(A)') '--------------------------------------------'
-    END IF
-!  
-    CALL IO_FILE_CLOSE_ll(TZFILE)
-    TZFILE => NULL()
-    CALL MPI_BCAST (NLU_fgeom_diag,1, MPI_INTEGER, 0, NMNH_COMM_WORLD, IERR)
+    CALL IO_FILE_ADD2LIST(TZFILE_FGEOM_DIAG,YASCFILE,'TXT','WRITE')
+    CALL IO_FILE_OPEN_ll(TZFILE_FGEOM_DIAG,HPOSITION='APPEND',HSTATUS='NEW')
+    ILU = TZFILE_FGEOM_DIAG%NLU
+    WRITE (UNIT=ILU, FMT='(A)') '--------------------------------------------------------'
+    WRITE (UNIT=ILU, FMT='(A)') '*FLASH CHARACTERISTICS FROM FLASH_GEOM_ELEC*'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 1 : total flash number          --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 2 : time (s)                    --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 3 : cell number                 --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 4 : flash number/cell/time step --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 5 : flash type 1=IC, 2=CGN, 3=CGP '
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 6 : number of segments          --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 7 : trig electric field (kV/m)  --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 8 : x coord. trig. point        --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 9 : y coord. trig. point        --'
+    WRITE (UNIT=ILU, FMT='(A)') '--         --> x,y in km if lcartesian=t, --'
+    WRITE (UNIT=ILU, FMT='(A)') '--                    deg otherwise       --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 10 : z coord. trig. point (km)  --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 11: neutr. positive charge (C)  --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 12: neutr. negative charge (C)  --'
+    WRITE (UNIT=ILU, FMT='(A)') '--------------------------------------------'
+    CALL FLUSH(UNIT=ILU)
 !
     IF (LSAVE_COORD) THEN
       YASCFILE = CEXP//"_fgeom_coord.asc"
-      CALL IO_FILE_ADD2LIST(TZFILE,YASCFILE,'TXT','WRITE')
-      CALL IO_FILE_OPEN_ll(TZFILE,HPOSITION='APPEND',HSTATUS='NEW',KRESP=NIOSTAT_fgeom_coord)
-      NLU_fgeom_coord = TZFILE%NLU
-      IF ( IPROC .EQ. 0) THEN
-        WRITE (NLU_fgeom_coord,FMT='(A)') '------------------------------------------'
-        WRITE (NLU_fgeom_coord,FMT='(A)') '*****FLASH COORD. FROM FLASH_GEOM_ELEC****'
-        WRITE (NLU_fgeom_coord,FMT='(A)') '-- Column 1 : flash number             --'
-        WRITE (NLU_fgeom_coord,FMT='(A)') '-- Column 2 : time (s)                 --'
-        WRITE (NLU_fgeom_coord,FMT='(A)') '-- Column 3 : type                     --'
-        WRITE (NLU_fgeom_coord,FMT='(A)') '-- Column 4 : coordinate along X (km)  --'
-        WRITE (NLU_fgeom_coord,FMT='(A)') '-- Column 5 : coordinate along Y (km)  --'
-        WRITE (NLU_fgeom_coord,FMT='(A)') '-- Column 6 : coordinate along Z (km)  --'
-        WRITE (NLU_fgeom_coord,FMT='(A)') '------------------------------------------'
-      END IF
-!
-      CALL IO_FILE_CLOSE_ll(TZFILE)
-      TZFILE => NULL()
-      CALL MPI_BCAST (NLU_fgeom_coord,1, MPI_INTEGER, 0, NMNH_COMM_WORLD, IERR)
+      CALL IO_FILE_ADD2LIST(TZFILE_FGEOM_COORD,YASCFILE,'TXT','WRITE')
+      CALL IO_FILE_OPEN_ll(TZFILE_FGEOM_COORD,HPOSITION='APPEND',HSTATUS='NEW')
+      ILU = TZFILE_FGEOM_COORD%NLU
+      WRITE (UNIT=ILU,FMT='(A)') '------------------------------------------'
+      WRITE (UNIT=ILU,FMT='(A)') '*****FLASH COORD. FROM FLASH_GEOM_ELEC****'
+      WRITE (UNIT=ILU,FMT='(A)') '-- Column 1 : flash number             --'
+      WRITE (UNIT=ILU,FMT='(A)') '-- Column 2 : time (s)                 --'
+      WRITE (UNIT=ILU,FMT='(A)') '-- Column 3 : type                     --'
+      WRITE (UNIT=ILU,FMT='(A)') '-- Column 4 : coordinate along X (km)  --'
+      WRITE (UNIT=ILU,FMT='(A)') '-- Column 5 : coordinate along Y (km)  --'
+      WRITE (UNIT=ILU,FMT='(A)') '-- Column 6 : coordinate along Z (km)  --'
+      WRITE (UNIT=ILU,FMT='(A)') '------------------------------------------'
+      CALL FLUSH(UNIT=ILU)
     END IF
   END IF
 !
   IF (LSERIES_ELEC) THEN
-    YASCFILE = CEXP//"_series_cloud_elec.asc"                              
-    CALL IO_FILE_ADD2LIST(TZFILE,YASCFILE,'TXT','WRITE')
-    CALL IO_FILE_OPEN_ll(TZFILE,HPOSITION='APPEND',HSTATUS='NEW',KRESP=NIOSTAT_series_cloud_elec)
-    NLU_series_cloud_elec = TZFILE%NLU
-    IF ( IPROC .EQ. 0) THEN
-      WRITE (NLU_series_cloud_elec, FMT='(A)') '----------------------------------------------------'
-      WRITE (NLU_series_cloud_elec, FMT='(A)') '********* RESULTS FROM of LSERIES_ELEC *************'
-      WRITE (NLU_series_cloud_elec, FMT='(A)') '-- Column 1 : Time (s)                            --'
-      WRITE (NLU_series_cloud_elec, FMT='(A)') '-- Column 2 : Cloud top height / Z > 20 dBZ (m)   --'
-      WRITE (NLU_series_cloud_elec, FMT='(A)') '-- Column 3 : Cloud top height / m.r. > 1.e-4 (m) --'
-      WRITE (NLU_series_cloud_elec, FMT='(A)') '-- Column 4 : Maximum radar reflectivity (dBZ)    --'
-      WRITE (NLU_series_cloud_elec, FMT='(A)') '-- Column 5 : Maximum vertical velocity (m/s)     --'
-      WRITE (NLU_series_cloud_elec, FMT='(A)') '-- Column 6 : Updraft volume for W > 5 m/s        --'
-      WRITE (NLU_series_cloud_elec, FMT='(A)') '-- Column 7 : Updraft volume for W > 10 m/s       --'
-      WRITE (NLU_series_cloud_elec, FMT='(A)') '-- Column 8 : Cloud water mass (kg)               --'
-      WRITE (NLU_series_cloud_elec, FMT='(A)') '-- Column 9 : Rain water mass (kg)                --'
-      WRITE (NLU_series_cloud_elec, FMT='(A)') '-- Column 10 : Ice crystal mass (kg)              --'
-      WRITE (NLU_series_cloud_elec, FMT='(A)') '-- Column 11 : Snow mass (kg)                     --'
-      WRITE (NLU_series_cloud_elec, FMT='(A)') '-- Column 12 : Graupel mass (kg)                  --'
-      WRITE (NLU_series_cloud_elec, FMT='(A)') '-- Column 13 : Precipitation ice mass (kg)        --'
-      WRITE (NLU_series_cloud_elec, FMT='(A)') '-- Column 14 : Ice mass flux product (kg2 m2/s2)  --'
-      WRITE (NLU_series_cloud_elec, FMT='(A)') '-- Column 15 : Precip. ice mass flux (kg m/s)     --'
-      WRITE (NLU_series_cloud_elec, FMT='(A)') '-- Column 16 : Non-precip. ice mass flux (kg m/s) --'
-      WRITE (NLU_series_cloud_elec, FMT='(A)') '-- Column 17 : Ice water path (kg/m2)             --'
-      WRITE (NLU_series_cloud_elec, FMT='(A)') '-- Column 18 : Cloud volume (m3)                  --'
-      WRITE (NLU_series_cloud_elec, FMT='(A)') '-- Column 19 : Maximum rain inst. precip. (mm/H)  --'
-      WRITE (NLU_series_cloud_elec, FMT='(A)') '-- Column 20 : Rain instant. precip. (mm/H)       --'
-      WRITE (NLU_series_cloud_elec, FMT='(A)') '----------------------------------------------------'
-    END IF
-!
-    CALL IO_FILE_CLOSE_ll(TZFILE)
-    TZFILE => NULL()
-    CALL MPI_BCAST (NLU_series_cloud_elec,1, MPI_INTEGER, 0, NMNH_COMM_WORLD, IERR)
+    YASCFILE = CEXP//"_series_cloud_elec.asc"
+    CALL IO_FILE_ADD2LIST(TZFILE_SERIES_CLOUD_ELEC,YASCFILE,'TXT','WRITE')
+    CALL IO_FILE_OPEN_ll(TZFILE_SERIES_CLOUD_ELEC,HPOSITION='APPEND',HSTATUS='NEW')
+    ILU = TZFILE_SERIES_CLOUD_ELEC%NLU
+    WRITE (UNIT=ILU, FMT='(A)') '----------------------------------------------------'
+    WRITE (UNIT=ILU, FMT='(A)') '********* RESULTS FROM of LSERIES_ELEC *************'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 1 : Time (s)                            --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 2 : Cloud top height / Z > 20 dBZ (m)   --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 3 : Cloud top height / m.r. > 1.e-4 (m) --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 4 : Maximum radar reflectivity (dBZ)    --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 5 : Maximum vertical velocity (m/s)     --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 6 : Updraft volume for W > 5 m/s        --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 7 : Updraft volume for W > 10 m/s       --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 8 : Cloud water mass (kg)               --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 9 : Rain water mass (kg)                --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 10 : Ice crystal mass (kg)              --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 11 : Snow mass (kg)                     --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 12 : Graupel mass (kg)                  --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 13 : Precipitation ice mass (kg)        --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 14 : Ice mass flux product (kg2 m2/s2)  --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 15 : Precip. ice mass flux (kg m/s)     --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 16 : Non-precip. ice mass flux (kg m/s) --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 17 : Ice water path (kg/m2)             --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 18 : Cloud volume (m3)                  --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 19 : Maximum rain inst. precip. (mm/H)  --'
+    WRITE (UNIT=ILU, FMT='(A)') '-- Column 20 : Rain instant. precip. (mm/H)       --'
+    WRITE (UNIT=ILU, FMT='(A)') '----------------------------------------------------'
+    CALL FLUSH(UNIT=ILU)
   END IF
 END IF
 !
@@ -942,9 +935,9 @@ IF (LFLASH_GEOM .AND. LLMA) THEN
 !
   IF (GLMA_FILE) THEN
     IF(CLMA_FILE(1:5) /= "BEGIN") THEN ! close previous file if exists
-      CALL IO_FILE_FIND_BYNAME(CLMA_FILE,TZFILE,IERR)
-      CALL IO_FILE_CLOSE_ll(TZFILE)
-      TZFILE => NULL()
+      CALL IO_FILE_FIND_BYNAME(CLMA_FILE,TZFILE_LMA,IERR)
+      CALL IO_FILE_CLOSE_ll(TZFILE_LMA)
+      TZFILE_LMA => NULL()
     ENDIF
 !
     TDTLMA%TIME = TDTLMA%TIME - XDTLMA
@@ -955,34 +948,32 @@ IF (LFLASH_GEOM .AND. LLMA) THEN
     TDTLMA%TIME = MOD(TDTLMA%TIME + XDTLMA,86400.)
     CLMA_FILE = CEXP//"_SIMLMA_"//YNAME//".dat"
 !
-    CALL IO_FILE_ADD2LIST(TZFILE,CLMA_FILE,'TXT','WRITE')
-    CALL IO_FILE_OPEN_ll(TZFILE,HPOSITION='APPEND',HSTATUS='NEW',KRESP=ILMA_IOSTAT)
-    ILMA_UNIT = TZFILE%NLU
     IF ( IPROC .EQ. 0 ) THEN
-      WRITE (UNIT=ILMA_UNIT,FMT='(A)') '----------------------------------------'
-      WRITE (UNIT=ILMA_UNIT,FMT='(A)') '*** FLASH COORD. FROM LMA SIMULATOR ****'
-      WRITE (UNIT=ILMA_UNIT,FMT='(A)') '-- Column 1  : flash number           --'
-      WRITE (UNIT=ILMA_UNIT,FMT='(A)') '-- Column 2  : time (s)               --'
-      WRITE (UNIT=ILMA_UNIT,FMT='(A)') '-- Column 3  : type                   --'
-      WRITE (UNIT=ILMA_UNIT,FMT='(A)') '-- Column 4  : coordinate along X (km)--'
-      WRITE (UNIT=ILMA_UNIT,FMT='(A)') '-- Column 5  : coordinate along Y (km)--'
-      WRITE (UNIT=ILMA_UNIT,FMT='(A)') '-- Column 6  : coordinate along Z (km)--'
-      WRITE (UNIT=ILMA_UNIT,FMT='(A)') '-- Column 7  : cld drop. mixing ratio --'
-      WRITE (UNIT=ILMA_UNIT,FMT='(A)') '-- Column 8  : rain mixing ratio      --'
-      WRITE (UNIT=ILMA_UNIT,FMT='(A)') '-- Column 9  : ice cryst mixing ratio --'
-      WRITE (UNIT=ILMA_UNIT,FMT='(A)') '-- Column 10 : snow mixing ratio      --'
-      WRITE (UNIT=ILMA_UNIT,FMT='(A)') '-- Column 11 : graupel mixing ratio   --'
-      WRITE (UNIT=ILMA_UNIT,FMT='(A)') '-- Column 12 : rain charge neut       --'
-      WRITE (UNIT=ILMA_UNIT,FMT='(A)') '-- Column 13 : ice cryst. charge neut --'
-      WRITE (UNIT=ILMA_UNIT,FMT='(A)') '-- Column 14 : snow charge neut       --'
-      WRITE (UNIT=ILMA_UNIT,FMT='(A)') '-- Column 15 : graupel charge neut    --'
-      WRITE (UNIT=ILMA_UNIT,FMT='(A)') '-- Column 16 : positive ions neut     --'
-      WRITE (UNIT=ILMA_UNIT,FMT='(A)') '-- Column 17 : negative ions neut     --'
-      WRITE (UNIT=ILMA_UNIT,FMT='(A)') '----------------------------------------'
+      CALL IO_FILE_ADD2LIST(TZFILE_LMA,CLMA_FILE,'TXT','WRITE')
+      CALL IO_FILE_OPEN_ll(TZFILE_LMA,HPOSITION='APPEND',HSTATUS='NEW')
+      ILU = TZFILE_LMA%NLU
+      WRITE (UNIT=ILU,FMT='(A)') '----------------------------------------'
+      WRITE (UNIT=ILU,FMT='(A)') '*** FLASH COORD. FROM LMA SIMULATOR ****'
+      WRITE (UNIT=ILU,FMT='(A)') '-- Column 1  : flash number           --'
+      WRITE (UNIT=ILU,FMT='(A)') '-- Column 2  : time (s)               --'
+      WRITE (UNIT=ILU,FMT='(A)') '-- Column 3  : type                   --'
+      WRITE (UNIT=ILU,FMT='(A)') '-- Column 4  : coordinate along X (km)--'
+      WRITE (UNIT=ILU,FMT='(A)') '-- Column 5  : coordinate along Y (km)--'
+      WRITE (UNIT=ILU,FMT='(A)') '-- Column 6  : coordinate along Z (km)--'
+      WRITE (UNIT=ILU,FMT='(A)') '-- Column 7  : cld drop. mixing ratio --'
+      WRITE (UNIT=ILU,FMT='(A)') '-- Column 8  : rain mixing ratio      --'
+      WRITE (UNIT=ILU,FMT='(A)') '-- Column 9  : ice cryst mixing ratio --'
+      WRITE (UNIT=ILU,FMT='(A)') '-- Column 10 : snow mixing ratio      --'
+      WRITE (UNIT=ILU,FMT='(A)') '-- Column 11 : graupel mixing ratio   --'
+      WRITE (UNIT=ILU,FMT='(A)') '-- Column 12 : rain charge neut       --'
+      WRITE (UNIT=ILU,FMT='(A)') '-- Column 13 : ice cryst. charge neut --'
+      WRITE (UNIT=ILU,FMT='(A)') '-- Column 14 : snow charge neut       --'
+      WRITE (UNIT=ILU,FMT='(A)') '-- Column 15 : graupel charge neut    --'
+      WRITE (UNIT=ILU,FMT='(A)') '-- Column 16 : positive ions neut     --'
+      WRITE (UNIT=ILU,FMT='(A)') '-- Column 17 : negative ions neut     --'
+      WRITE (UNIT=ILU,FMT='(A)') '----------------------------------------'
+      CALL FLUSH(UNIT=ILU)
     END IF
-    CALL IO_FILE_CLOSE_ll(TZFILE)
-    TZFILE => NULL()
-    CALL MPI_BCAST (ILMA_UNIT,1, MPI_INTEGER, 0, NMNH_COMM_WORLD, IERR)
   END IF
 END IF
 !
@@ -1001,27 +992,14 @@ DO JSV = NSV_ELECBEG+1, NSV_ELECEND-1
 END DO
 !
 IF ((.NOT. LOCG) .AND. LELEC_FIELD .AND.  MAX_ll(ABS(ZQTOT),IINFO_ll)>0.) THEN
-  IF (PRESENT(PSEA)) THEN
-    IF (LFLASH_GEOM) THEN
-      CALL FLASH_GEOM_ELEC_n (KTCOUNT, KMI, KRR, PTSTEP, OEXIT,       &
-                              PRHODJ, PRHODREF,                       &
-                              PRT, PCIT,                              &
-                              PSVS(:,:,:,NSV_ELECBEG:NSV_ELECEND),    &
-                              PRS, PTHT, PPABST,                      & 
-                              XEFIELDU, XEFIELDV, XEFIELDW,           &
-                              PZZ, PSVS(:,:,:,NSV_LNOXBEG), PTOWN, PSEA)
-    END IF 
-  ELSE
-    IF (LFLASH_GEOM) THEN
-      CALL FLASH_GEOM_ELEC_n (KTCOUNT, KMI, KRR, PTSTEP, OEXIT,       &
-                              PRHODJ, PRHODREF,                       &
-                              PRT, PCIT,                              &
-                              PSVS(:,:,:,NSV_ELECBEG:NSV_ELECEND),    &
-                              PRS, PTHT, PPABST,                      & 
-                              XEFIELDU, XEFIELDV, XEFIELDW,           &
-                              PZZ, PSVS(:,:,:,NSV_LNOXBEG)            )
-    END IF
-  ENDIF
+  IF (LFLASH_GEOM) THEN
+    CALL FLASH_GEOM_ELEC_n (KTCOUNT, KMI, KRR, PTSTEP, OEXIT,                                 &
+                            PRHODJ, PRHODREF, PRT, PCIT, PSVS(:,:,:,NSV_ELECBEG:NSV_ELECEND), &
+                            PRS, PTHT, PPABST, XEFIELDU, XEFIELDV, XEFIELDW,                  &
+                            PZZ, PSVS(:,:,:,NSV_LNOXBEG),                                     &
+                            TZFILE_FGEOM_DIAG, TZFILE_FGEOM_COORD, TZFILE_LMA,                &
+                            PTOWN, PSEA)
+  END IF
 !
   PSVS(:,:,:,NSV_ELECBEG) = MAX(0., PSVS(:,:,:,NSV_ELECBEG))
   PSVS(:,:,:,NSV_ELECEND) = MAX(0., PSVS(:,:,:,NSV_ELECEND))
@@ -1038,18 +1016,20 @@ IF (LSERIES_ELEC) THEN
   CALL SERIES_CLOUD_ELEC (KTCOUNT, PTSTEP,                &
                           PZZ, PRHODJ, PRHODREF, PEXNREF, &
                           PRT, PRS, PSVT,                 &
-                          PTHT, PWT, PPABST, PCIT, PINPRR  )
+                          PTHT, PWT, PPABST, PCIT,        &
+                          TZFILE_SERIES_CLOUD_ELEC,       &
+                          PINPRR                          )
 END IF
 !
 !
 !-------------------------------------------------------------------------------
 !
 !   Close Ascii Files if KTCOUNT = NSTOP
-
-IF (OEXIT) THEN
-  IF (.NOT. LFLASH_GEOM) CLOSE (UNIT=NLU_light_diag)
-  IF (.NOT. LFLASH_GEOM .AND. LSAVE_COORD) CLOSE (UNIT=NLU_light_coord)
-  IF (LLMA) CLOSE (UNIT=ILMA_UNIT)
+IF (OEXIT .AND. IPROC==0) THEN
+  IF (LFLASH_GEOM)                  CALL IO_FILE_CLOSE_ll(TZFILE_FGEOM_DIAG)
+  IF(LFLASH_GEOM .AND. LSAVE_COORD) CALL IO_FILE_CLOSE_ll(TZFILE_FGEOM_COORD)
+  IF (LSERIES_ELEC)                 CALL IO_FILE_CLOSE_ll(TZFILE_SERIES_CLOUD_ELEC)
+  IF (LFLASH_GEOM .AND. LLMA)       CALL IO_FILE_CLOSE_ll(TZFILE_LMA)
 ENDIF
 !
 !
