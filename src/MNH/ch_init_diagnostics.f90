@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 chimie 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !!    ##############################
       SUBROUTINE CH_INIT_DIAGNOSTICS
@@ -38,6 +33,7 @@
 !!    Original 14/05/95
 !!    27/07/96 (K. Suhre) restructured
 !!    01/12/03  (Gazen)   change Chemical scheme interface
+!!    Philippe Wautelet: 10/01/2019: use newunit argument to open files
 !!
 !!    EXTERNAL
 !!    --------
@@ -82,11 +78,11 @@ ALLOCATE(IINDEX(2,NNONZEROTERMS))
 !     ---------------------
 !
 ! open the file
+OPEN(NEWUNIT =  NDIAGIO,    &
+     FILE    =  CDIAGFILE,  &
+     FORM    = "FORMATTED", &
+     STATUS  = "UNKNOWN"    )
 PRINT *, "CH_INIT_DIAGNOSTICS: opening unit ", NDIAGIO, " for file ", CDIAGFILE
-OPEN(UNIT   =  NDIAGIO,    &
-     FILE   =  CDIAGFILE,  &
-     FORM   = "FORMATTED", &
-     STATUS = "UNKNOWN"    )
 !
 ! write the headder
 CALL DATE_AND_TIME(YDATE, YTIME)

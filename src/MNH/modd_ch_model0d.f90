@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !!    ###################### 
@@ -32,6 +32,7 @@
 !!              CCH_TUV_CLOUDS  : method for the impact of clouds on radiation
 !!    18/02/99  LCH_SURFACE0D   : apply surface emission / deposition fluxes
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!  Philippe Wautelet: 10/01/2019: use newunit argument to open files
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -74,9 +75,8 @@ CHARACTER*80  :: CRUNID        = "no runid specified" ! runid for output file
 CHARACTER*40  :: CRESULTFORMAT = "(5E16.8)" ! Format for results
 CHARACTER*40  :: CDIAGFORMAT   = "(5E16.8)" ! Format for diagnostics
 !
-INTEGER :: NFILEIO   = 42 ! channel to be used for all intermediate file I/O
-INTEGER :: NRESULTIO = 44 ! channel to be used for all regular result file I/O
-INTEGER :: NDIAGIO   = 45 ! channel to be used for all diagnostics file I/O
+INTEGER :: NRESULTIO = -1 ! channel to be used for all regular result file I/O (set in CH_INIT_OUTPUT)
+INTEGER :: NDIAGIO   = -1 ! channel to be used for all diagnostics file I/O (set in CH_INIT_DIAGNOSTICS)
 !
 !*       0.3  verbosity level
 !

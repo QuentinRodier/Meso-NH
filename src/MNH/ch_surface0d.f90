@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1999-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ####################################################
@@ -39,6 +39,7 @@
 !!    -------------
 !!    Original 03/03/99
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!  Philippe Wautelet: 10/01/2019: use newunit argument to open files
 !!
 !!    EXTERNAL
 !!    --------
@@ -51,7 +52,7 @@ USE MODI_CH_EMISSION_FLUX0D
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
-USE MODD_CH_MODEL0D, ONLY: NFILEIO, XDTOUT, XTBEGIN, NVERB
+USE MODD_CH_MODEL0D, ONLY: XDTOUT, XTBEGIN, NVERB
 USE MODD_CH_M9_n,    ONLY: CNAMES
 !!
 !!    EXPLICIT ARGUMENTS
@@ -64,6 +65,7 @@ REAL, DIMENSION(KEQ), INTENT(INOUT) :: PCONC ! concentration vector
 !
 !!    DECLARATION OF LOCAL VARIABLES
 !!    ------------------------------
+INTEGER, SAVE :: ILU = -1 ! unit number for IO
 INTEGER :: JI
 REAL, DIMENSION(KEQ) :: ZDEPO  ! deposition velocity
 REAL, DIMENSION(KEQ) :: ZEMIS  ! emission flux after multiplication 
@@ -174,49 +176,48 @@ PCONC(:) = (PCONC(:) + PDTACT*ZEMIS(:)/(100.*ZHEIGHT)) &
 !
 IF (LSFIRST) THEN
   ZSTNEXTOUT = XTBEGIN
-  OPEN(UNIT   = 86,            &
-       FILE   = "SURFACE.out", &
-       FORM   = "FORMATTED",   &
-       STATUS = "UNKNOWN"      )
-  WRITE(86,'(A)') 'parameters from the Wesley scheme'
-  WRITE(86,'(A)') 'quick & dirty coding :-)'
-  WRITE(86,'(2I5,A)') 1+2*KEQ+21, KEQ, ' 0 0'
-  WRITE(86,'(A)') 'XTSIMUL'
+  OPEN(NEWUNIT = ILU,            &
+       FILE    = "SURFACE.out", &
+       FORM    = "FORMATTED",   &
+       STATUS  = "UNKNOWN"      )
+  WRITE(UNIT=ILU, FMT='(A)') 'parameters from the Wesley scheme'
+  WRITE(UNIT=ILU, FMT='(A)') 'quick & dirty coding :-)'
+  WRITE(UNIT=ILU, FMT='(2I5,A)') 1+2*KEQ+21, KEQ, ' 0 0'
+  WRITE(UNIT=ILU, FMT='(A)') 'XTSIMUL'
   DO JI = 1, KEQ
-    WRITE (86,'(2A)') "VDEP-", CNAMES(JI)
+    WRITE (UNIT=ILU, FMT='(2A)') "VDEP-", CNAMES(JI)
   END DO
   DO JI = 1, KEQ
-    WRITE (86,'(2A)') "EMIS-", CNAMES(JI)
+    WRITE (UNIT=ILU, FMT='(2A)') "EMIS-", CNAMES(JI)
   END DO
-  WRITE(86,'(A)') 'VMOD'
-  WRITE(86,'(A)') 'RHODREF'
-  WRITE(86,'(A)') 'RS'
-  WRITE(86,'(A)') 'RESA'
-  WRITE(86,'(A)') 'THT2D'
-  WRITE(86,'(A)') 'PABST2D'
-  WRITE(86,'(A)') 'CD'
-  WRITE(86,'(A)') 'CLAY'
-  WRITE(86,'(A)') 'SAND'
-  WRITE(86,'(A)') 'LAND'
-  WRITE(86,'(A)') 'VEG'
-  WRITE(86,'(A)') 'LAI'
-  WRITE(86,'(A)') 'SST'
-  WRITE(86,'(A)') 'TS'
-  WRITE(86,'(A)') 'HU'
-  WRITE(86,'(A)') 'PSN'
-  WRITE(86,'(A)') 'PSNG'
-  WRITE(86,'(A)') 'PSNV'
-  WRITE(86,'(A)') 'Z0VEG'
-  WRITE(86,'(A)') 'HEIGHT'
-  WRITE(86,'(A)') 'EMISFACTOR'
-print *, "209"
-  WRITE(86,'(A)') '(5E16.8)'
+  WRITE(UNIT=ILU, FMT='(A)') 'VMOD'
+  WRITE(UNIT=ILU, FMT='(A)') 'RHODREF'
+  WRITE(UNIT=ILU, FMT='(A)') 'RS'
+  WRITE(UNIT=ILU, FMT='(A)') 'RESA'
+  WRITE(UNIT=ILU, FMT='(A)') 'THT2D'
+  WRITE(UNIT=ILU, FMT='(A)') 'PABST2D'
+  WRITE(UNIT=ILU, FMT='(A)') 'CD'
+  WRITE(UNIT=ILU, FMT='(A)') 'CLAY'
+  WRITE(UNIT=ILU, FMT='(A)') 'SAND'
+  WRITE(UNIT=ILU, FMT='(A)') 'LAND'
+  WRITE(UNIT=ILU, FMT='(A)') 'VEG'
+  WRITE(UNIT=ILU, FMT='(A)') 'LAI'
+  WRITE(UNIT=ILU, FMT='(A)') 'SST'
+  WRITE(UNIT=ILU, FMT='(A)') 'TS'
+  WRITE(UNIT=ILU, FMT='(A)') 'HU'
+  WRITE(UNIT=ILU, FMT='(A)') 'PSN'
+  WRITE(UNIT=ILU, FMT='(A)') 'PSNG'
+  WRITE(UNIT=ILU, FMT='(A)') 'PSNV'
+  WRITE(UNIT=ILU, FMT='(A)') 'Z0VEG'
+  WRITE(UNIT=ILU, FMT='(A)') 'HEIGHT'
+  WRITE(UNIT=ILU, FMT='(A)') 'EMISFACTOR'
+  WRITE(UNIT=ILU, FMT='(A)') '(5E16.8)'
   LSFIRST = .FALSE.
 END IF
 
 IF (PTSIMUL >= ZSTNEXTOUT) THEN 
   ZSTNEXTOUT = ZSTNEXTOUT + XDTOUT
-  WRITE(86, '(5E16.8)') PTSIMUL, &
+  WRITE(UNIT=ILU, FMT= '(5E16.8)') PTSIMUL, &
         (ZDEPO(JI),JI=1,KEQ), &
         (ZEMIS(JI),JI=1,KEQ), &
         ZVMOD(1,1), &   
@@ -240,6 +241,7 @@ IF (PTSIMUL >= ZSTNEXTOUT) THEN
         ZZ0VEG(1,1), &   
         ZHEIGHT, &
         ZEMISFACTOR
+  CALL FLUSH(UNIT=ILU)
 END IF
 
 RETURN

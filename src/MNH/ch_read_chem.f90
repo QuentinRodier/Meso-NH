@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -56,6 +56,7 @@ END MODULE MODI_CH_READ_CHEM
 !!    01/12/03 (D. Gazen)   change Chemical scheme interface
 !!    M.Leriche 2015 : masse molaire Black carbon à 12 g/mol
 !!    Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!    Philippe Wautelet: 10/01/2019: use newunit argument to open files
 !!
 !!    EXTERNAL
 !!    --------
@@ -66,7 +67,7 @@ USE MODE_FM,    ONLY: IO_FILE_CLOSE_ll
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
-USE MODD_CH_MODEL0D, ONLY: NFILEIO, NVERB
+USE MODD_CH_MODEL0D, ONLY: NVERB
 USE MODD_CH_M9_n, ONLY:      NEQ, CNAMES
 USE MODD_CH_AEROSOL
 !!
@@ -83,6 +84,7 @@ CHARACTER(LEN=*), INTENT(IN)      :: HFILE ! name of the file to be read from
 !!    ------------------------------
 CHARACTER(LEN=32) :: YVARNAME
 CHARACTER(LEN=80) :: YINPUT
+INTEGER :: ILU ! unit number for IO
 INTEGER :: JI, JJ, IIN
 REAL :: ZMD
 REAL, DIMENSION(NSP+NCARB+NSOA) :: ZMI ! aerosol molecular mass in g/mol
@@ -114,15 +116,15 @@ ELSE
 ! open file 
 !
   PRINT *, 'CH_READ_CHEM: opening file ', HFILE
-  OPEN(UNIT = NFILEIO, &
-       FILE = HFILE, &
-       FORM = 'FORMATTED', &
-       STATUS = 'OLD')
+  OPEN(NEWUNIT = ILU,         &
+       FILE    = HFILE,       &
+       FORM    = 'FORMATTED', &
+       STATUS  = 'OLD')
 !
 ! read line by line and check variable names
 !
   outer_loop : DO JI = 1, NEQ
-    READ(NFILEIO,*,END=999) YVARNAME, PCONC(JI)
+    READ(UNIT=ILU,FMT=*,END=999) YVARNAME, PCONC(JI)
     check_loop : DO JJ = 1, 32
       IF (YVARNAME(JJ:JJ).NE.CNAMES(JI)(JJ:JJ)) THEN
         PRINT *, 'CH_READ_CHEM: Error: variable names do not match:'
@@ -139,7 +141,7 @@ ELSE
  PCONC(:) =  PCONC(:) * 1E-9
 IF (LORILAM) THEN
   outer_loop2 : DO JI = 1, SIZE(PAERO,1)
-    READ(NFILEIO,*,END=997) YVARNAME, PAERO(JI)
+    READ(UNIT=ILU,FMT=*,END=997) YVARNAME, PAERO(JI)
     check_loop2 : DO JJ = 1, 32
       IF (YVARNAME(JJ:JJ).NE.CAERONAMES(JI)(JJ:JJ)) THEN
         PRINT *, 'CH_READ_CHEM: Error: variable names do not match:'
@@ -260,7 +262,7 @@ END IF
 END IF
 !
 ! close file
-  CLOSE(NFILEIO)
+  CLOSE(UNIT=ILU)
 !
 
 END IF

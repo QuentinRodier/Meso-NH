@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1999-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 chimie 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !      ######################
        PROGRAM CH_MAKE_LOOKUP
@@ -57,6 +52,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!    Original 01/03/99
+!!    Philippe Wautelet: 10/01/2019: use newunit argument to open files
 !!
 !!    EXTERNAL
 !!    --------
@@ -92,6 +88,7 @@ CHARACTER*40, DIMENSION(NJOUT)        :: JLABELOUT
 !
 CHARACTER*120 :: HEADDER
 REAL          :: UT
+INTEGER       :: ILU ! unit number for IO
 INTEGER       :: I, J, K, NJIO
 CHARACTER*40  :: YFMT = '(2F11.2,5E11.4/99(7E11.4/))'
 !
@@ -122,11 +119,11 @@ DOBNEW = -1.
 !
 !      read the namelist
 WRITE(*,*) "TRYING TO OPEN FILE LOOKUP1.nam ..."
-OPEN(UNIT=42,FILE="LOOKUP1.nam",STATUS="OLD",FORM="FORMATTED", ERR=100)
-READ(42,NAM_TUV)
+OPEN(NEWUNIT=ILU,FILE="LOOKUP1.nam",STATUS="OLD",FORM="FORMATTED", ERR=100)
+READ(UNIT=ILU,NML=NAM_TUV)
 WRITE(*,*) "NAMELIST NAM_TUV INITIALIZED TO:"
 WRITE(*,NAM_TUV)
-CLOSE(42)
+CLOSE(UNIT=ILU)
 GOTO 200
 !
 100    CONTINUE
@@ -171,21 +168,21 @@ ENDDO
 !*       3.   WRITE LOOKUP TABLE FILE
 !        -----------------
 !
-OPEN(66,FILE="PHOTO.TUV39",STATUS="UNKNOWN",FORM="FORMATTED")
-WRITE(66,'(A)') HEADDER
-WRITE(66,'(I6,A)') NJIO,   "  NUMBER OF PHOTOLYSIS REACTIONS"
-WRITE(66,'(I6, F10.0, A)') NLEVEL, DZ, &
+OPEN(NEWUNIT=ILU,FILE="PHOTO.TUV39",STATUS="UNKNOWN",FORM="FORMATTED")
+WRITE(ILU,'(A)') HEADDER
+WRITE(UNIT=ILU, FMT='(I6,A)') NJIO,   "  NUMBER OF PHOTOLYSIS REACTIONS"
+WRITE(UNIT=ILU, FMT='(I6, F10.0, A)') NLEVEL, DZ, &
       "  NUMBER OF LEVELS, VERTICAL INCREMENT (M)"
-WRITE(66,'(I6, F10.4, A)') NTIME,  DT, &
+WRITE(UNIT=ILU, FMT='(I6, F10.4, A)') NTIME,  DT, &
       "  NUMBER OF TEMPORAL RECS, TEMPORAL INCREMENT (H)"
-WRITE(66,'(A)') (JLABELOUT(K), K=1, NJIO)
-WRITE(66,'(A)') YFMT
+WRITE(UNIT=ILU, FMT='(A)') (JLABELOUT(K), K=1, NJIO)
+WRITE(UNIT=ILU, FMT='(A)') YFMT
 DO J = 1, NLEVEL
   DO I = 1, NTIME
-    WRITE(66,YFMT) AZ(J), ATIME(I), (JDATA(J,K,I), K=1, NJIO)
+    WRITE(UNIT=ILU, FMT=YFMT) AZ(J), ATIME(I), (JDATA(J,K,I), K=1, NJIO)
   ENDDO
 ENDDO
-CLOSE(66)
+CLOSE(UNIT=ILU)
 !
 PRINT *, 'Lookup table file PHOTO.TUV39 has been generated.'
 PRINT *, 'CH_MAKE_LOOKUP ended correctly.'

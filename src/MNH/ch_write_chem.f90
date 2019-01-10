@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 chimie 2006/06/30 11:47:01
 !-----------------------------------------------------------------
 !!    ######################### 
       MODULE MODI_CH_WRITE_CHEM
@@ -55,6 +50,7 @@ END MODULE MODI_CH_WRITE_CHEM
 !!    Original 21/04/95
 !!    01/12/03 (D. Gazen)   change Chemical scheme interface
 !!    M.Leriche 2015 : masse molaire Black carbon à 12 g/mol
+!!    Philippe Wautelet: 10/01/2019: use newunit argument to open files
 !!
 !!    EXTERNAL
 !!    --------
@@ -62,7 +58,6 @@ END MODULE MODI_CH_WRITE_CHEM
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
-USE MODD_CH_MODEL0D, ONLY: NFILEIO
 USE MODD_CH_M9_n, ONLY:      NEQ, CNAMES
 USE MODD_CH_AEROSOL
 !!
@@ -76,7 +71,8 @@ CHARACTER(LEN=*), INTENT(IN)     :: HFILE ! HFILE: name of the file for write
 !
 !!    DECLARATION OF LOCAL VARIABLES
 !!    ------------------------------
-INTEGER :: JI, NAERO
+INTEGER :: ILU ! unit number for IO
+INTEGER :: JI, IAER
 REAL :: ZMD
 REAL, DIMENSION(NSP+NCARB+NSOA) :: ZMI ! aerosol molecular mass in g/mol
 
@@ -84,20 +80,20 @@ REAL, DIMENSION(NSP+NCARB+NSOA) :: ZMI ! aerosol molecular mass in g/mol
 !*    EXECUTABLE STATEMENTS
 !     ---------------------
 IF (LORILAM) THEN
-NAERO=SIZE(PAERO)
+IAER=SIZE(PAERO)
 ELSE
-NAERO=0
+IAER=0
 END IF
 !
 ! open file 
 PRINT *, 'CH_WRITE_CHEM: opening file ', HFILE
-OPEN(UNIT   =  NFILEIO,    &
-     FILE   =  HFILE,      &
-     FORM   = 'FORMATTED', &
-     STATUS = 'UNKNOWN'    )
+OPEN(NEWUNIT =  ILU,        &
+     FILE    =  HFILE,      &
+     FORM    = 'FORMATTED', &
+     STATUS  = 'UNKNOWN'    )
 !
 DO JI = 1, NEQ
-  WRITE(NFILEIO,'(3A,E20.8)') "'", CNAMES(JI), "' ", PCONC(JI)*1.E9 ! convert ppp to ppb
+  WRITE(UNIT=ILU,FMT='(3A,E20.8)') "'", CNAMES(JI), "' ", PCONC(JI)*1.E9 ! convert ppp to ppb
 ENDDO
 IF (LORILAM) THEN
 !Conversion  ppp to microgram/m3
@@ -206,12 +202,12 @@ IF (NSOA .EQ. 10) THEN
 END IF
 END IF
 
-DO JI = 1, NAERO
-  WRITE(NFILEIO,'(3A,E20.8)') "'", CAERONAMES(JI), "' ", PAERO(JI) 
+DO JI = 1, IAER
+  WRITE(UNIT=ILU,FMT='(3A,E20.8)') "'", CAERONAMES(JI), "' ", PAERO(JI)
 ENDDO
 
 !
 ! close file
-CLOSE(NFILEIO)
+CLOSE(UNIT=ILU)
 !
 END SUBROUTINE CH_WRITE_CHEM
