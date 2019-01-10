@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -18,6 +18,7 @@
 !     Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !     J. Pianezze 01/08/2016  add LOASIS flag
 !     Philippe Wautelet: 13/12/2018: moved some operations to new mode_io_*_nc4 modules
+!     Philippe Wautelet: 10/01/2019: bug correction: close correctly Z-split files
 !
 MODULE MODE_IO_ll
 
@@ -775,7 +776,7 @@ CONTAINS
           CALL IO_WRITE_COORDVAR_NC4(TZFILE,HPROGRAM_ORIG=HPROGRAM_ORIG)
         END IF
 #endif
-        IF (TPFILE%LMASTER) THEN
+        IF (TZFILE%LMASTER) THEN
           if (tzfile%cformat == 'LFI'     .or. tzfile%cformat == 'LFICDF4') call io_close_file_lfi(tzfile,iresp2)
 #if defined(MNH_IOCDF4)
           if (tzfile%cformat == 'NETCDF4' .or. tzfile%cformat == 'LFICDF4') call io_close_file_nc4(tzfile,iresp2)
