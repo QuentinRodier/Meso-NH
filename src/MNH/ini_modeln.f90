@@ -461,7 +461,6 @@ TYPE(TFILEDATA),  INTENT(IN)   :: TPINIFILE ! Initial file
 !
 INTEGER             :: JSV     ! Loop index
 INTEGER             :: IRESP   ! Return code of FM routines
-INTEGER             :: ININAR  ! File management variable
 INTEGER             :: ILUOUT  ! Logical unit number of output-listing
 CHARACTER(LEN=28)   :: YNAME
 INTEGER             :: IIU     ! Upper dimension in x direction (local)

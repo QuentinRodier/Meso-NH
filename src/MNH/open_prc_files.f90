@@ -138,7 +138,6 @@ TYPE(TFILEDATA),POINTER, INTENT(OUT) :: TPPGDFILE ! physiographic data file
 INTEGER :: IRESP      ! return-code if problems eraised
 INTEGER :: IPRE_REAL1 ! logical unit for file PRE_REAL1
 INTEGER :: ILUOUT0    ! logical unit for listing file
-INTEGER :: ININAR     ! number of articles initially present in a FM file
 LOGICAL :: GFOUND     ! Return code when searching namelist
 INTEGER :: ILEN
 CHARACTER(LEN=28) :: YFILE

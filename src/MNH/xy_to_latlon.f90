@@ -89,7 +89,6 @@ CHARACTER(LEN=2)  :: YSTORAGE_TYPE
 INTEGER :: INAM                ! Logical unit for namelist file
 INTEGER :: ILUOUT0             ! Logical unit for output file.
 INTEGER :: IRESP               ! Return-code if problem eraised.
-INTEGER :: ININAR
 REAL    :: ZI,ZJ               ! input positions of the point
 INTEGER :: II,IJ               ! integer positions of the point
 REAL    :: ZXHAT               ! output conformal coodinate x

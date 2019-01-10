@@ -126,7 +126,6 @@ INTEGER :: IRESP    ! return code for I/O
 INTEGER :: ILUOUT0
 INTEGER :: ILUNAM
 INTEGER :: IINFO_LL
-INTEGER :: ININAR
 LOGICAL :: GFOUND
 CHARACTER(LEN=28) :: YDAD     =' '        ! name of dad of input FM file
 CHARACTER(LEN=28) :: CPGDFILE ='PGDFILE'  ! name of the output file

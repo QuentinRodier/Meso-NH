@@ -448,8 +448,6 @@ INTEGER :: NLUPRE,NLUOUT           ! Logical unit numbers for EXPRE file
 INTEGER :: NRESP                   ! return code in FM routines
 INTEGER :: NTYPE                   ! type of file (cpio or not)
 INTEGER(KIND=LFI_INT) :: NNPRAR    ! number of articles predicted in the LFIFM file
-INTEGER :: NNINAR                  ! number of articles  present in
-                                   !  the LFIFM file
 LOGICAL :: GFOUND                  ! Return code when searching namelist
 !
 INTEGER :: JLOOP,JILOOP,JJLOOP     ! Loop indexes

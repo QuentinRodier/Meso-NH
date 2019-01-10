@@ -212,7 +212,7 @@ CHARACTER (LEN=2)  :: YMI                         ! string for model index
 INTEGER            :: ILUOUT                      ! Logical unit number
                                                   ! associated with CLUOUT 
                                                   !
-INTEGER            :: IRESP,ILUSEG,ININAR         ! File management variables
+INTEGER            :: IRESP,ILUSEG                ! File management variables
 CHARACTER (LEN=5)  :: YCONF                       ! Local variables which have
 LOGICAL            :: GFLAT                       ! the same definition as the
 LOGICAL            :: GUSERV,GUSERC,GUSERR,GUSERI ! variables in module MODD_CONF,

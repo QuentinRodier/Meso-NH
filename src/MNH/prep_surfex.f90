@@ -75,8 +75,6 @@ CHARACTER(LEN=28)     :: YPGDFILE        ! name of the physiographic data
 !
 INTEGER               :: ILUOUT0         ! logical unit for listing file
 INTEGER               :: IRESP           ! return code in FM routines
-INTEGER               :: ININAR          ! number of articles initially
-                                                  ! present in a FM file
 !
 INTEGER               :: IINFO_ll        ! return code of // routines
 CHARACTER (LEN=100)   :: HCOMMENT

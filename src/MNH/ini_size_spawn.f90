@@ -115,8 +115,6 @@ TYPE(TFILEDATA),                INTENT(IN)    :: TPINIFILE   ! Model 1 file
 !
 INTEGER :: IRESP    ! Return codes in FM routines
 INTEGER :: ILUOUT   ! Logical unit number for the output listing
-INTEGER :: ININAR   ! Number of articles present in the LFIFM file
-CHARACTER(LEN=2)    :: YDIR   ! Type  of the data field in LFIFM file
 !
 CHARACTER (LEN=5)  :: YPRESOPT        ! Pressure solver option of model 1
 INTEGER            :: IITR            ! Iterations of pressure solver of model 1

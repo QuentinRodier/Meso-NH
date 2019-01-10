@@ -488,8 +488,6 @@ REAL,DIMENSION(:,:,:), ALLOCATABLE:: ZJ       ! Jacobian
 INTEGER                           :: ILUOUT0  ! logical unit for listing file
 INTEGER                           :: IPRE_REAL1 ! logical unit for namelist file
 INTEGER                           :: IRESP    ! return code in FM routines
-INTEGER                           :: ININAR   ! number of articles initially
-                                              ! present in a FM file
 LOGICAL                           :: GFOUND   ! Return code when searching namelist
 !
 REAL :: ZSTART, ZEND, ZTIME1, ZTIME2, ZTOT, ZALL ! for computing time analysis
