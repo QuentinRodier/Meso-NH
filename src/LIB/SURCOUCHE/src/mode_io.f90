@@ -22,6 +22,7 @@
 !     Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
 !                                    + move IOFREEFLU and IONEWFLU to mode_io_file_lfi.f90
 !                                    + move management of NNCID and NLFIFLU to the nc4 and lfi subroutines
+!     Philippe Wautelet: 10/01/2019: bug: modify some metadata before open calls
 !
 MODULE MODE_IO_ll
 
@@ -613,6 +614,11 @@ CONTAINS
              TZSPLITFILE%LMULTIMASTERS = .FALSE.
              TZSPLITFILE%NSUBFILES_IOZ = 0
 
+             ! Must be done BEFORE the call to io_open_file_* because we need to read things in these subroutines
+             TZSPLITFILE%LOPENED = .TRUE.
+             TZSPLITFILE%NOPEN         = TZSPLITFILE%NOPEN         + 1
+             TZSPLITFILE%NOPEN_CURRENT = TZSPLITFILE%NOPEN_CURRENT + 1
+
 #if defined(MNH_IOCDF4)
              IF (TZSPLITFILE%CFORMAT=='NETCDF4' .OR. TZSPLITFILE%CFORMAT=='LFICDF4') THEN
                 IF (YACTION == 'READ') THEN
@@ -636,10 +642,6 @@ CONTAINS
                     call io_create_file_lfi(tzsplitfile,iresp)
                 END SELECT
              ENDIF
-             !
-             TZSPLITFILE%LOPENED = .TRUE.
-             TZSPLITFILE%NOPEN         = TZSPLITFILE%NOPEN         + 1
-             TZSPLITFILE%NOPEN_CURRENT = TZSPLITFILE%NOPEN_CURRENT + 1
              !
           ENDDO
        END IF
