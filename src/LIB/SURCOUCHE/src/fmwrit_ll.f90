@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -6,6 +6,7 @@
 ! Modifications:
 !  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  Philippe Wautelet: 10/01/2019: do not write scalars in Z-split files
 !-----------------------------------------------------------------
 
 #ifdef MNH_MPI_DOUBLE_PRECISION
@@ -13,6 +14,8 @@
 #else
 #define MPI_FLOAT MPI_REAL
 #endif
+
+#define MNH_SCALARS_IN_SPLITFILES 0
 
 MODULE MODE_FMWRIT
 
@@ -297,6 +300,7 @@ CONTAINS
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
        END IF ! multiprocesses execution
+#if MNH_SCALARS_IN_SPLITFILES
        IF (TPFILE%NSUBFILES_IOZ>0) THEN
           ! write the data in all Z files
           DO IK_FILE=1,TPFILE%NSUBFILES_IOZ
@@ -307,6 +311,7 @@ CONTAINS
              END IF
           END DO
        ENDIF
+#endif
     END IF
     !
     IF (IRESP.NE.0) THEN
@@ -1444,6 +1449,7 @@ CONTAINS
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
        END IF ! multiprocess execution
+#if MNH_SCALARS_IN_SPLITFILES
        IF (TPFILE%NSUBFILES_IOZ>0) THEN
           ! write the data in all Z files
           DO IK_FILE=1,TPFILE%NSUBFILES_IOZ
@@ -1454,6 +1460,7 @@ CONTAINS
              END IF
           END DO
        ENDIF
+#endif
     END IF
     !
     IF (IRESP.NE.0) THEN
@@ -1951,6 +1958,7 @@ CONTAINS
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
        END IF ! multiprocesses execution
+#if MNH_SCALARS_IN_SPLITFILES
        IF (TPFILE%NSUBFILES_IOZ>0) THEN
           ! write the data in all Z files
           DO IK_FILE=1,TPFILE%NSUBFILES_IOZ
@@ -1961,6 +1969,7 @@ CONTAINS
              END IF
           END DO
        ENDIF
+#endif
     END IF
     !
     IF (IRESP.NE.0) THEN
