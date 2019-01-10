@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2018-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -12,6 +12,7 @@
 !     Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
 !                                    + move IOFREEFLU and IONEWFLU to mode_io_file_lfi.f90
 !                                    + move management of NNCID and NLFIFLU to the nc4 and lfi subroutines
+!     Philippe Wautelet: 10/01/2019: replace handle_err by io_handle_err_nc4 for better netCDF error messages
 !
 !-----------------------------------------------------------------
 #if defined(MNH_IOCDF4)
@@ -20,7 +21,7 @@ module mode_io_file_nc4
 use modd_io_ll,  only: tfiledata
 use modd_netcdf, only: IDCDF_KIND
 
-use mode_io_tools_nc4, only: handle_err, io_set_knowndims_nc4, newiocdf
+use mode_io_tools_nc4, only: io_handle_err_nc4, io_set_knowndims_nc4, newiocdf
 use mode_msg
 
 use NETCDF,      only: NF90_CLOBBER, NF90_GLOBAL, NF90_NETCDF4, NF90_NOERR, NF90_NOWRITE,  &
@@ -178,7 +179,7 @@ subroutine io_set_cleanly_closed_nc4(tpfile)
   call print_msg(NVERB_DEBUG,'IO','io_set_cleanly_closed_nc4','called for '//trim(tpfile%cname))
 
   istatus = NF90_PUT_ATT(tpfile%nncid, NF90_GLOBAL, 'MNH_cleanly_closed', 'yes')
-  if (istatus /= NF90_NOERR) call handle_err(istatus,__LINE__,'io_set_cleanly_closed_nc4[NF90_PUT_ATT]')
+  if (istatus /= NF90_NOERR) call io_handle_err_nc4(istatus,'io_set_cleanly_closed_nc4','NF90_PUT_ATT','MNH_cleanly_closed')
 end subroutine io_set_cleanly_closed_nc4
 
 
@@ -190,7 +191,7 @@ subroutine io_set_not_cleanly_closed_nc4(tpfile)
   call print_msg(NVERB_DEBUG,'IO','io_set_not_cleanly_closed_nc4','called for '//trim(tpfile%cname))
 
   istatus = NF90_PUT_ATT(tpfile%nncid, NF90_GLOBAL, 'MNH_cleanly_closed', 'no')
-  if (istatus /= NF90_NOERR) call handle_err(istatus,__LINE__,'io_set_not_cleanly_closed_nc4[NF90_PUT_ATT]')
+  if (istatus /= NF90_NOERR) call io_handle_err_nc4(istatus,'io_set_not_cleanly_closed_nc4','NF90_PUT_ATT','MNH_cleanly_closed')
 end subroutine io_set_not_cleanly_closed_nc4
 
 end module mode_io_file_nc4

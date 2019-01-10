@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -8,6 +8,7 @@
 !    J.Escobar   : 14/12/2017 : Correction for MNH_INT=8
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !    P. Wautelet : 13/12/2018 : split of mode_netcdf into multiple modules/files
+!  Philippe Wautelet: 10/01/2019: replace handle_err by io_handle_err_nc4 for better netCDF error messages
 !-----------------------------------------------------------------
 #if defined(MNH_IOCDF4)
 module mode_io_tools_nc4
@@ -26,7 +27,7 @@ implicit none
 private
 
 public :: io_find_dim_byname_nc4, io_guess_dimids_nc4, io_set_knowndims_nc4
-public :: cleaniocdf, cleanmnhname, fillvdims, getdimcdf, getstrdimid, handle_err, newiocdf
+public :: cleaniocdf, cleanmnhname, fillvdims, getdimcdf, getstrdimid, io_handle_err_nc4, newiocdf
 
 contains
 
@@ -480,7 +481,7 @@ IF (.NOT. ASSOCIATED(TMP)) THEN
    TMP%NAME = YDIMNAME
    TMP%LEN = KLEN
    STATUS = NF90_DEF_DIM(TPFILE%NNCID, TMP%NAME, KLEN, TMP%ID)
-   IF (STATUS /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__,'GETDIMCDF[NF90_DEF_DIM]')
+   IF (STATUS /= NF90_NOERR) CALL io_handle_err_nc4(status,'GETDIMCDF','NF90_DEF_DIM',trim(TMP%NAME))
    NULLIFY(TMP%NEXT)
    TMP%NEXT       => PIOCDF%DIMLIST
    PIOCDF%DIMLIST => TMP
@@ -523,7 +524,7 @@ IF (.NOT. ASSOCIATED(TMP)) THEN
    TMP%NAME = 'char'//TRIM(YSUFFIX)
    TMP%LEN = KLEN
    STATUS = NF90_DEF_DIM(TPFILE%NNCID, TMP%NAME, KLEN, TMP%ID)
-   IF (STATUS /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__,'GETSTRDIMID[NF90_DEF_DIM]')
+   IF (STATUS /= NF90_NOERR) CALL io_handle_err_nc4(status,'GETSTRDIMID','NF90_DEF_DIM',trim(TMP%NAME))
    NULLIFY(TMP%NEXT)
    TMP%NEXT      => TPFILE%TNCDIMS%DIMSTR
    TZIOCDF => TPFILE%TNCDIMS
@@ -553,33 +554,28 @@ NEWIOCDF=>TZIOCDF
 END FUNCTION NEWIOCDF
 
 
-SUBROUTINE HANDLE_ERR(STATUS,LINE,TEXT,KRESP)
-INTEGER(KIND=IDCDF_KIND),INTENT(IN)  :: STATUS
-INTEGER,                 INTENT(IN)  :: LINE
-CHARACTER(LEN=*),        INTENT(IN)  :: TEXT
-INTEGER, OPTIONAL,       INTENT(OUT) :: KRESP
+subroutine io_handle_err_nc4(kstatus,hsubr,hncsubr,hvar,kresp)
+integer(kind=IDCDF_KIND),intent(in)  :: kstatus
+character(len=*),        intent(in)  :: hsubr
+character(len=*),        intent(in)  :: hncsubr
+character(len=*),        intent(in)  :: hvar
+integer, optional,       intent(out) :: kresp
 
-CHARACTER(LEN=6) :: YLINE
-
-WRITE(YLINE,'( I6 )') LINE
-
-! Don't stop (by default) the code when KRESP is present
-! and ensure KRESP is a negative integer
-IF (STATUS /= NF90_NOERR) THEN
-  IF (PRESENT(KRESP)) THEN
-    IF (STATUS < 0) THEN
-      KRESP = STATUS
-    ELSE IF (STATUS == 0) THEN
-      KRESP = -1
-    ELSE
-      KRESP = -STATUS
-    END IF
-    CALL PRINT_MSG(NVERB_WARNING,'IO',TRIM(TEXT),'netCDF error at line '//TRIM(YLINE)//': '//TRIM(NF90_STRERROR(STATUS)))
-  ELSE
-    CALL PRINT_MSG(NVERB_FATAL,'IO',TRIM(TEXT),'netCDF error at line '//TRIM(YLINE)//': '//TRIM(NF90_STRERROR(STATUS)))
-  END IF
-END IF
-END SUBROUTINE HANDLE_ERR
+! Don't stop (by default) the code when kresp is present
+! and ensure kresp is a negative integer
+if (kstatus /= NF90_NOERR) then
+  if (present(kresp)) then
+    if (kstatus < 0) then
+      kresp = kstatus
+    else
+      kresp = -kstatus
+    end if
+    call print_msg(NVERB_WARNING,'IO',trim(hsubr),trim(hvar)//': '//trim(hncsubr)//': '//trim(NF90_STRERROR(kstatus)))
+  else
+    call print_msg(NVERB_ERROR,  'IO',trim(hsubr),trim(hvar)//': '//trim(hncsubr)//': '//trim(NF90_STRERROR(kstatus)))
+  end if
+end if
+end subroutine io_handle_err_nc4
 
 
 SUBROUTINE CLEANMNHNAME(HINNAME,HOUTNAME)
@@ -664,11 +660,11 @@ integer :: a, b
 CALL PRINT_MSG(NVERB_ERROR,'IO','getstrdimid','empty call. Compile with -DMNH_IOCDF4 flag to enable NetCDF')
 end function getstrdimid
 !
-subroutine handle_err(a, b, c, d)
+subroutine io_handle_err_nc4(a, b, c, d, e)
 use mode_msg
-integer :: a, b, c, d
-CALL PRINT_MSG(NVERB_ERROR,'IO','handle_err','empty call. Compile with -DMNH_IOCDF4 flag to enable NetCDF')
-end subroutine handle_err
+integer :: a, b, c, d, e
+CALL PRINT_MSG(NVERB_ERROR,'IO','io_handle_err_nc4','empty call. Compile with -DMNH_IOCDF4 flag to enable NetCDF')
+end subroutine io_handle_err_nc4
 !
 function newiocdf()
 use mode_msg
