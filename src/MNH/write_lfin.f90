@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #########################
@@ -168,6 +168,7 @@ END MODULE MODI_WRITE_LFIFM_n
 !!                   02/2018 Q.Libois move Diagnostic related to the radiations in radiations.f90
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!       V. Vionnet    07/2017, add blowing snow variables
+!!       P.Wautelet    11/01/2019: bug correction in write XBL_DEPTH->XSBL_DEPTH
 !!                   
 !-------------------------------------------------------------------------------
 !
@@ -1412,7 +1413,7 @@ IF( CTURB /= 'NONE' .AND. CTOM=='TM06') THEN
 END IF
 !
 IF( CTURB /= 'NONE' .AND. LRMC01) THEN
-  CALL IO_WRITE_FIELD(TPFILE,'SBL_DEPTH',XBL_DEPTH)
+  CALL IO_WRITE_FIELD(TPFILE,'SBL_DEPTH',XSBL_DEPTH)
 END IF
 !
 IF( CTURB /= 'NONE' .AND. CSCONV == 'EDKF' .AND.(CPROGRAM == 'MESONH' .OR. CPROGRAM == 'DIAG')) THEN
