@@ -9,17 +9,20 @@
 ##########################################################
 #
 #   Gfortran version
-GFV=$(shell  gfortran --version | grep -E -m1 -o ' [[:digit:]\.]{2,}( |$$)'  | sed 's/\.//g' )
+#GFV=$(shell  gfortran --version | grep -E -m1 -o ' [[:digit:]\.]{2,}( |$$)'  | sed 's/\.//g' )
+GFV=123
 #
 #OBJDIR_PATH=/home/escj/azertyuiopqsdfghjklm/wxcvbn/azertyuiopqsdfghjklmwxcvbn
 #
-OPT_BASE  =  -g -fno-second-underscore -fPIC  -ffpe-trap=overflow,zero,invalid  -fbacktrace
+OPT_BASE  =  -g -fno-backslash
+#OPT_BASE  =  -g -fPIC  -fno-backslash
 #
 OPT_PERF0 = -O0
-OPT_PERF2 = -O2
-OPT_CHECK = -fbounds-check -finit-real=nan
-OPT_I8    = -fdefault-integer-8 
-OPT_R8    = -fdefault-real-8 -fdefault-double-8
+OPT_PERF2 = -O2 -mcpu=thunderx2t99
+OPT_PERF3 = -O3 -mcpu=thunderx2t99 -ffp-contract=fast
+OPT_CHECK = 
+OPT_I8    = -i8 
+OPT_R8    = -r8
 #
 #
 # Real/Integer 4/8 option
@@ -56,14 +59,20 @@ OPT_NOCB  = $(OPT_BASE) $(OPT_PERF0)
 CFLAGS    += -g -O0
 endif
 #
+ifeq "$(OPTLEVEL)" "O3"
+OPT       = $(OPT_BASE) $(OPT_PERF3)
+OPT0      = $(OPT_BASE) $(OPT_PERF0) 
+OPT_NOCB  = $(OPT_BASE) $(OPT_PERF3)
+endif
+#
 #  
-CC = gcc
-FC = gfortran 
+CC = armclang
+FC = armflang
 ifeq "$(VER_MPI)" "MPIAUTO"
 F90 = mpif90
 CPPFLAGS_SURCOUCHE += -DMNH_USE_MPI_STATUSES_IGNORE
 else         
-F90 = gfortran
+F90 = armflang
 endif
 #
 F90FLAGS      =  $(OPT) 
