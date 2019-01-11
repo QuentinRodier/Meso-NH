@@ -9,6 +9,7 @@
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !    P. Wautelet : 13/12/2018 : split of mode_netcdf into multiple modules/files
 !  Philippe Wautelet: 10/01/2019: replace handle_err by io_handle_err_nc4 for better netCDF error messages
+!    P. Wautelet : 11/01/2019 : NVERB_INFO->NVERB_WARNING for zero size fields
 !-----------------------------------------------------------------
 #if defined(MNH_IOCDF4)
 module mode_io_write_nc4
@@ -337,7 +338,7 @@ CALL CLEANMNHNAME(TPFIELD%CMNHNAME,YVARNAME)
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
 IF (STATUS /= NF90_NOERR) THEN
    IF (SIZE(PFIELD)==0) THEN
-     CALL PRINT_MSG(NVERB_INFO,'IO','IO_WRITE_FIELD_NC4_X1','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
+     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_WRITE_FIELD_NC4_X1','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
      KRESP = 0
      RETURN
    END IF
@@ -432,7 +433,7 @@ CALL CLEANMNHNAME(TZFIELD%CMNHNAME,YVARNAME)
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
 IF (STATUS /= NF90_NOERR) THEN
    IF (SIZE(PFIELD)==0) THEN
-     CALL PRINT_MSG(NVERB_INFO,'IO','IO_WRITE_FIELD_NC4_X2','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
+     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_WRITE_FIELD_NC4_X2','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
      KRESP = 0
      RETURN
    END IF
@@ -503,7 +504,7 @@ CALL CLEANMNHNAME(TPFIELD%CMNHNAME,YVARNAME)
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
 IF (STATUS /= NF90_NOERR) THEN
    IF (SIZE(PFIELD)==0) THEN
-     CALL PRINT_MSG(NVERB_INFO,'IO','IO_WRITE_FIELD_NC4_X3','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
+     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_WRITE_FIELD_NC4_X3','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
      KRESP = 0
      RETURN
    END IF
@@ -575,7 +576,7 @@ CALL CLEANMNHNAME(TPFIELD%CMNHNAME,YVARNAME)
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
 IF (STATUS /= NF90_NOERR) THEN
    IF (SIZE(PFIELD)==0) THEN
-     CALL PRINT_MSG(NVERB_INFO,'IO','IO_WRITE_FIELD_NC4_X4','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
+     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_WRITE_FIELD_NC4_X4','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
      KRESP = 0
      RETURN
    END IF
@@ -647,7 +648,7 @@ CALL CLEANMNHNAME(TPFIELD%CMNHNAME,YVARNAME)
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
 IF (STATUS /= NF90_NOERR) THEN
    IF (SIZE(PFIELD)==0) THEN
-     CALL PRINT_MSG(NVERB_INFO,'IO','IO_WRITE_FIELD_NC4_X5','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
+     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_WRITE_FIELD_NC4_X5','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
      KRESP = 0
      RETURN
    END IF
@@ -719,7 +720,7 @@ CALL CLEANMNHNAME(TPFIELD%CMNHNAME,YVARNAME)
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
 IF (STATUS /= NF90_NOERR) THEN
    IF (SIZE(PFIELD)==0) THEN
-     CALL PRINT_MSG(NVERB_INFO,'IO','IO_WRITE_FIELD_NC4_X6','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
+     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_WRITE_FIELD_NC4_X6','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
      KRESP = 0
      RETURN
    END IF
@@ -885,7 +886,7 @@ CALL CLEANMNHNAME(TPFIELD%CMNHNAME,YVARNAME)
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
 IF (STATUS /= NF90_NOERR) THEN
    IF (SIZE(KFIELD)==0) THEN
-     CALL PRINT_MSG(NVERB_INFO,'IO','IO_WRITE_FIELD_NC4_N1','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
+     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_WRITE_FIELD_NC4_N1','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
      KRESP = 0
      RETURN
    END IF
@@ -947,7 +948,7 @@ CALL CLEANMNHNAME(TPFIELD%CMNHNAME,YVARNAME)
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
 IF (STATUS /= NF90_NOERR) THEN
    IF (SIZE(KFIELD)==0) THEN
-     CALL PRINT_MSG(NVERB_INFO,'IO','IO_WRITE_FIELD_NC4_N2','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
+     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_WRITE_FIELD_NC4_N2','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
      KRESP = 0
      RETURN
    END IF
@@ -1013,7 +1014,7 @@ CALL CLEANMNHNAME(TPFIELD%CMNHNAME,YVARNAME)
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
 IF (STATUS /= NF90_NOERR) THEN
    IF (SIZE(KFIELD)==0) THEN
-     CALL PRINT_MSG(NVERB_INFO,'IO','IO_WRITE_FIELD_NC4_N3','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
+     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_WRITE_FIELD_NC4_N3','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
      KRESP = 0
      RETURN
    END IF
@@ -1147,7 +1148,7 @@ CALL CLEANMNHNAME(TPFIELD%CMNHNAME,YVARNAME)
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
 IF (STATUS /= NF90_NOERR) THEN
    IF (SIZE(OFIELD)==0) THEN
-     CALL PRINT_MSG(NVERB_INFO,'IO','IO_WRITE_FIELD_NC4_L1','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
+     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_WRITE_FIELD_NC4_L1','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
      KRESP = 0
      RETURN
    END IF
