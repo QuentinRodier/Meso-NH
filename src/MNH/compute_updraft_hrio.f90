@@ -134,6 +134,7 @@ END MODULE MODI_COMPUTE_UPDRAFT_HRIO!     ######spl
 !!     S. Riette may 2011: ice added, interface modified
 !!     S. Riette Jan 2012: support for both order of vertical levels
 !!     V.Masson, C.Lac : 02/2011 : SV_UP initialized by a non-zero value
+!!     Q.Rodier  01/2019 : support RM17 mixing length 
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -147,6 +148,7 @@ USE MODD_PARAM_MFSHALL_n, ONLY : XPRES_UV,XALP_PERT,XCMF,XFRAC_UP_MAX,XA1,XB,&
 !                          XC,XBETA1
 USE MODD_GRID_n, ONLY : XDXHAT, XDYHAT
 USE MODD_BLANK
+USE MODD_TURB_n, ONLY :CTURBLEN
 
 !USE MODI_COMPUTE_ENTR_DETR
 USE MODI_TH_R_FROM_THL_RT_1D
@@ -275,6 +277,7 @@ REAL  :: XFRAC_LIM ! surface maximale du thermique
 
 REAL  :: ZTMAX,ZRMAX, ZEPS  ! control value
 
+REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2)) :: ZSHEAR,ZDUDZ,ZDVDZ ! vertical wind shear
 ! pour le calcul de la resolution normalisée
 REAL, DIMENSION(SIZE(PTHM,1))              ::  ZA1, ZRESOL_NORM 
 REAL :: ZRESOL_GRID   
@@ -446,9 +449,15 @@ IF (OENTR_DETR) THEN
   ! compute L_up
   GLMIX=.TRUE.
   ZTKEM_F(:,KKB)=0.
-
+  IF(CTURBLEN=='RM17') THEN
+    ZDUDZ = MZF_MF(KKA,KKU,KKL,GZ_M_W_MF(KKA,KKU,KKL,PUM,PDZZ))
+    ZDVDZ = MZF_MF(KKA,KKU,KKL,GZ_M_W_MF(KKA,KKU,KKL,PVM,PDZZ))
+    ZSHEAR = SQRT(ZDUDZ*ZDUDZ + ZDVDZ*ZDVDZ)
+  ELSE
+    ZSHEAR = 0. !no shear in bl89 mixing length
+  END IF  
   CALL COMPUTE_BL89_ML(KKA,KKB,KKE,KKU,KKL,PDZZ,ZTKEM_F(:,KKB),ZG_O_THVREF(:,KKB), &
-                       ZTHVM_F,KKB,GLMIX,.TRUE.,ZLUP)
+                       ZTHVM_F,KKB,GLMIX,.TRUE.,ZSHEAR,ZLUP)
   ZLUP(:)=MAX(ZLUP(:),1.E-10)
 
   ! Compute Buoyancy flux at the ground

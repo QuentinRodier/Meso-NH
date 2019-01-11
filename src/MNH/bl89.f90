@@ -71,6 +71,7 @@ END MODULE MODI_BL89
 !!                  2012-02 (Y. Seity) add possibility to run with 
 !!                            reversed vertical levels
 !!  Philippe 13/02/2018: use ifdef MNH_REAL to prevent problems with intrinsics on Blue Gene/Q
+!!                  01/2019 (Q. Rodier) support for RM17 mixing length
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -223,12 +224,12 @@ ZHLVPT(:,KKA)    =         ZVPT(:,KKA)
 !
 !*       3.  loop on model levels
 !            --------------------
-!
 DO JK=IKTB,IKTE
 !
 !-------------------------------------------------------------------------------
 !
 !
+
 !*       4.  mixing length for a downwards displacement
 !            ------------------------------------------
   ZINTE(:)=ZTKEM(:,JK)

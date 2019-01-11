@@ -124,6 +124,7 @@ SUBROUTINE COMPUTE_UPDRAFT_RHCJ10(KKA,KKB,KKE,KKU,KKL,HFRAC_ICE,       &
 !!     ------
 !!     Y. Bouteloup (2012)
 !!     R. Honert Janv 2013 ==> corection of some bugs
+!!     Q.Rodier  01/2019 : support RM17 mixing length 
 !! --------------------------------------------------------------------------
 
 ! WARNING ==>  This updraft is not yet ready to use scalar variables 
@@ -133,7 +134,7 @@ SUBROUTINE COMPUTE_UPDRAFT_RHCJ10(KKA,KKB,KKE,KKU,KKL,HFRAC_ICE,       &
 
 USE MODD_CST
 USE MODD_PARAM_MFSHALL_n
-
+USE MODD_TURB_n, ONLY : CTURBLEN
 USE MODI_COMPUTE_ENTR_DETR
 USE MODI_TH_R_FROM_THL_RT_1D
 USE MODI_SHUMAN_MF
@@ -252,6 +253,7 @@ REAL  :: ZDEPTH_MAX1, ZDEPTH_MAX2 ! control auto-extinction process
 
 REAL  :: ZTMAX,ZRMAX, ZEPS  ! control value
 
+REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2)) :: ZSHEAR,ZDUDZ,ZDVDZ ! vertical wind shear
 
 ! Thresholds for the  perturbation of
 ! theta_l and r_t at the first level of the updraft
@@ -389,9 +391,17 @@ ENDDO
 ! compute L_up
 GLMIX=.TRUE.
 ZTKEM_F(:,KKB)=0.
-
+!
+IF(CTURBLEN=='RM17') THEN
+  ZDUDZ = MZF_MF(KKA,KKU,KKL,GZ_M_W_MF(KKA,KKU,KKL,PUM,PDZZ))
+  ZDVDZ = MZF_MF(KKA,KKU,KKL,GZ_M_W_MF(KKA,KKU,KKL,PVM,PDZZ))
+  ZSHEAR = SQRT(ZDUDZ*ZDUDZ + ZDVDZ*ZDVDZ)
+ELSE
+  ZSHEAR = 0. !no shear in bl89 mixing length
+END IF
+!
 CALL COMPUTE_BL89_ML(KKA,KKB,KKE,KKU,KKL,PDZZ,ZTKEM_F(:,KKB),ZG_O_THVREF(:,KKB), &
-                       ZTHVM_F,KKB,GLMIX,.TRUE.,ZLUP)
+                       ZTHVM_F,KKB,GLMIX,.TRUE.,ZSHEAR,ZLUP)
 ZLUP(:)=MAX(ZLUP(:),1.E-10)
 
 ! Compute Buoyancy flux at the ground

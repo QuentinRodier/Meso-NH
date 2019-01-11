@@ -72,6 +72,8 @@
 !!    10/2016    (S.Faroux S.Bielli) correction for NHALO=0
 !!  01/2018      (G.Delautier) SURFEX 8.1
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!  Q. Rodier 01/2019 : add a new filtering for very high slopes in NAM_ZSFILTER
+!! 
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -131,8 +133,9 @@ CHARACTER(LEN=28) :: YDAD     =' '        ! name of dad of input FM file
 CHARACTER(LEN=28) :: CPGDFILE ='PGDFILE'  ! name of the output file
 CHARACTER(LEN=100) :: YMSG
 INTEGER           :: NZSFILTER=1          ! number of iteration for filter for fine   orography
-LOGICAL           :: LHSLOP=.FALSE.       ! filtering of slopes higher than XHSLOP   
-REAL              :: XHSLOP=1.2           ! if LHSLOP filtering of slopes higher than XHSLOP   
+INTEGER           :: NLOCZSFILTER=3       ! number of iteration for filter of local fine orography
+LOGICAL           :: LHSLOP=.FALSE.       ! filtering of local slopes higher than XHSLOP   
+REAL              :: XHSLOP=1.0           ! slopes where the local fine filtering is applied   
 INTEGER           :: NSLEVE   =12         ! number of iteration for filter for smooth orography
 REAL              :: XSMOOTH_ZS = XUNDEF  ! optional uniform smooth orography for SLEVE coordinate
 REAL, DIMENSION(:,:),ALLOCATABLE   :: ZWORK ! work array for lat and lon reshape
@@ -144,7 +147,7 @@ TYPE(TFILEDATA),POINTER :: TZFILE     => NULL()
 TYPE(TFILEDATA),POINTER :: TZNMLFILE  => NULL() ! Namelist file
 !
 NAMELIST/NAM_PGDFILE/CPGDFILE, NHALO
-NAMELIST/NAM_ZSFILTER/NZSFILTER,LHSLOP,XHSLOP
+NAMELIST/NAM_ZSFILTER/NZSFILTER,NLOCZSFILTER,LHSLOP,XHSLOP
 NAMELIST/NAM_SLEVE/NSLEVE, XSMOOTH_ZS
 NAMELIST/NAM_CONF_PGD/JPHEXT, NHALO_MNH
 !------------------------------------------------------------------------------
@@ -278,7 +281,7 @@ NULLIFY(TFILE_SURFEX) !Probably not necessary
 !
 !*    4.      Computes and writes smooth orography for SLEVE coordinate
 !             ---------------------------------------------------------
-CALL ZSMT_PGD(TZFILE,NZSFILTER,NSLEVE,XSMOOTH_ZS)
+CALL ZSMT_PGD(TZFILE,NZSFILTER,NSLEVE,NLOCZSFILTER,LHSLOP,XHSLOP,XSMOOTH_ZS)
 !
 IF (.NOT.LCARTESIAN) THEN
 !!!! WRITE LAT and LON

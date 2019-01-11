@@ -55,6 +55,7 @@ SUBROUTINE INIT_SURF_ATM_n (YSC, HPROGRAM,HINIT, OLAND_USE,             &
 !!      R. Séférian 03/2014   Adding decoupling between CO2 seen by photosynthesis and radiative CO2
 !!      M.Leriche & V. Masson 05/16 bug in write emis fields for nest
 !!     (P.Tulet & M.Leriche)    06/2016   add MEGAN coupling
+!!      J.Escoabr 01/2019  integrate bypass fo albedo pb > 1.0 from Florian Pantillon (Sep 2011)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -219,6 +220,8 @@ REAL :: XTIME0
 INTEGER :: ISIZE_FULL
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+INTEGER :: JJ
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('INIT_SURF_ATM_N',0,ZHOOK_HANDLE)
@@ -663,6 +666,19 @@ IF (SIZE(PTSURF)>0) &
 !                  
 DEALLOCATE(ZFRAC_TILE)
 !
+! MODIF FP SEP 2011
+DO JJ=1,KI
+  IF (PDIR_ALB(JJ,1)>1.) THEN
+    WRITE (*,*) 'JJ', JJ
+    WRITE (*,*) 'PDIR_ALB', PDIR_ALB(JJ,:)
+    WRITE (*,*) 'PSCA_ALB', PSCA_ALB(JJ,:)
+    WRITE (*,*) 'PEMIS', PEMIS(JJ)
+    WRITE (*,*) 'PTSRAD', PTSRAD(JJ)
+    PDIR_ALB(JJ,:) = 0.5
+    PSCA_ALB(JJ,:) = 0.5
+  END IF
+END DO
+! END MODIF FP SEP 2011
 !-------------------------------------------------------------------------------
 !==============================================================================
 IF (LHOOK) CALL DR_HOOK('INIT_SURF_ATM_N',1,ZHOOK_HANDLE)
