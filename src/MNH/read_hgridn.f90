@@ -120,7 +120,6 @@ INTEGER             :: IXOR, IYOR, IXEND, IYEND
 INTEGER             :: IJPHEXT
 TYPE(TFIELDDATA)    :: TZFIELD
 !
-print *,'PW: READ_HGRIDn called'
 ILUOUT = TLUOUT%NLU
 !
 !*       1.     General information :
