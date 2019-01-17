@@ -281,6 +281,7 @@ END MODULE MODI_TURB_VER_DYN_FLUX
 !!      2012-02 Y. Seity,  add possibility to run with reversed vertical levels
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      Q. Rodier      17/01/2019 : cleaning : remove cyclic conditions on DP and ZA
 !!--------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -407,6 +408,8 @@ TYPE(TFIELDDATA) :: TZFIELD
 !
 !*       1.   PRELIMINARIES
 !             -------------
+ZA=XUNDEF
+PDP=XUNDEF
 !
 IIU=SIZE(PUM,1)
 IJU=SIZE(PUM,2)
@@ -444,7 +447,6 @@ ZA(:,:,:)    = -PTSTEP * XCMFS *                              &
               MXM( ZKEFF ) * MXM(MZM(KKA,KKU,KKL, PRHODJ )) / &
               MXM( PDZZ )**2
 !
-IF (CPROGRAM/='AROME ') ZA(1,:,:)=ZA(IIE,:,:)
 !
 ! Compute the source of U wind component 
 !
@@ -623,7 +625,6 @@ ZA(:,:,:)    = - PTSTEP * XCMFS *                              &
               MYM( PDZZ )**2
 !
 !
-IF(CPROGRAM/='AROME ') ZA(:,1,:)=ZA(:,IJE,:)
 !
 ! Compute the source of V wind component
 ! compute the coefficient between the vertical flux and the 2 components of the 
@@ -784,15 +785,6 @@ IF(HTURBDIM=='3DIM') THEN
   !
 END IF
 !
-! complete the dynamic production at the marginal points
-IF (CPROGRAM/='AROME ') THEN
-  PDP(:,:,KKA)= -999.
-  PDP(:,:,KKU)= -999.
-  PDP(:,1,:)= PDP(:,IJE,:)
-  PDP(:,IJE+1,:)= PDP(:,IJB,:)
-  PDP(1,:,:)= PDP(IIE,:,:)
-  PDP(IIE+1,:,:)= PDP(IIB,:,:)
-END IF
 !
 !----------------------------------------------------------------------------
 !
