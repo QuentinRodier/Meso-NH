@@ -6,6 +6,7 @@
 ! Modifications:
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN (removed ISTDOUT, ISTDERR, added NNULLUNIT, CNULLFILE)
+!  Philippe Wautelet: 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll to allow to disable writes (for bench purposes)
 !-----------------------------------------------------------------
 
 MODULE MODD_IO_ll
@@ -44,6 +45,9 @@ INTEGER, SAVE :: NGEN_VERB        = NVERB_WARNING ! Verbosity level for 'GEN' (g
 INTEGER, SAVE :: NGEN_ABORT_LEVEL = NVERB_ERROR   ! Level of 'GEN' error necessary to force stop of application
 
 CHARACTER(LEN=NDIRNAMELGTMAX) :: CIO_DIR = '' ! Directory for IO
+
+logical, save :: LIO_ALLOW_NO_BACKUP = .false. ! Allow to have no valid backup time (useful for some tests)
+logical, save :: LIO_NO_WRITE        = .false. ! Disable file writes (useful for benchs)
 
 !Structure containing one pointer to a file
 !Useful to create arrays of pointers to files

@@ -11,6 +11,8 @@
 !  Philippe Wautelet: 13/12/2018: moved some operations to new mode_io_*_nc4 modules
 !  Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN + move management
 !                                 of NNCID and NLFIFLU to the nc4 and lfi subroutines
+!  Philippe Wautelet: 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll
+!                                 to allow to disable writes (for bench purposes)
 !-----------------------------------------------------------------
 
 MODULE MODE_FM
@@ -48,7 +50,7 @@ END SUBROUTINE SET_FMPACK_ll
 SUBROUTINE IO_FILE_OPEN_ll(TPFILE,KRESP,OPARALLELIO,HPOSITION,HSTATUS,HPROGRAM_ORIG)
 !
 USE MODD_CONF,  ONLY: CPROGRAM
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO_ll, ONLY: LIO_NO_WRITE, TFILEDATA
 USE MODE_FMREAD
 USE MODE_IO_ll, ONLY : OPEN_ll
 USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST,IO_FILE_FIND_BYNAME
@@ -68,6 +70,10 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_FILE_OPEN_ll','opening '//TRIM(TPFILE%CNAME)
                ' (filetype='//TRIM(TPFILE%CTYPE)//')')
 !
 IF (.NOT.ASSOCIATED(TPFILE)) CALL PRINT_MSG(NVERB_FATAL,'IO','IO_FILE_OPEN_ll','TPFILE is not associated')
+!
+IF ( LIO_NO_WRITE .AND. TPFILE%CMODE == 'WRITE' .AND. TPFILE%CTYPE/='OUTPUTLISTING') THEN
+  CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FILE_OPEN_ll','opening file '//TRIM(TPFILE%CNAME)//' in write mode but LIO_NO_WRITE is set')
+END IF
 !
 TZFILE_DES   => NULL()
 TZFILE_DUMMY => NULL()

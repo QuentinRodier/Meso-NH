@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2016-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !!    Authors
@@ -9,6 +9,8 @@
 !     P. Wautelet : 2016: original version
 ! Modifications:
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  Philippe Wautelet: 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll
+!                                 to allow to disable writes (for bench purposes)
 !-----------------------------------------------------------------
 MODULE MODE_IO_MANAGE_STRUCT
 !
@@ -43,6 +45,7 @@ REAL,    INTENT(IN) :: PSEGLEN ! segment duration (in seconds)
 !
 INTEGER           :: IMI              ! Model number for loop
 INTEGER           :: IBAK_NUMB, IOUT_NUMB ! Number of backups/outputs
+INTEGER           :: IERR_LVL         ! Level of error message
 INTEGER           :: IVAR             ! Number of variables
 INTEGER           :: ISTEP_MAX        ! Number of timesteps
 INTEGER           :: IPOS,IFIELD      ! Indices
@@ -54,6 +57,15 @@ CHARACTER (LEN=4) :: YDADNUMBER       ! Character string for the DAD model file 
 !
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_PREPARE_BAKOUT_STRUCT','called')
+!
+! Special case if writes are forced to NO
+IF (LIO_NO_WRITE) THEN
+  DO IMI = 1, NMODEL
+    OUT_MODEL(IMI)%NBAK_NUMB = 0
+    OUT_MODEL(IMI)%NOUT_NUMB = 0
+  END DO
+  RETURN
+END IF
 !
 DO IMI = 1, NMODEL
   IBAK_NUMB = 0
@@ -159,7 +171,14 @@ DO IMI = 1, NMODEL
       IBAK_NUMB = IBAK_NUMB + 1
     END IF
   END DO
-  IF (IBAK_NUMB==0) CALL PRINT_MSG(NVERB_ERROR,'IO','IO_PREPARE_BAKOUT_STRUCT','no (valid) backup time')
+  IF (IBAK_NUMB==0) THEN
+    IF(LIO_ALLOW_NO_BACKUP) THEN
+      IERR_LVL = NVERB_WARNING
+    ELSE
+      IERR_LVL = NVERB_ERROR
+    END IF
+    CALL PRINT_MSG(IERR_LVL,'IO','IO_PREPARE_BAKOUT_STRUCT','no (valid) backup time')
+  END IF
   !
   IOUT_NUMB = 0
   DO JOUT = 1,SIZE(IOUT_STEP)

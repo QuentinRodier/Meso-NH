@@ -23,6 +23,8 @@
 !                                    + move IOFREEFLU and IONEWFLU to mode_io_file_lfi.f90
 !                                    + move management of NNCID and NLFIFLU to the nc4 and lfi subroutines
 !     Philippe Wautelet: 10/01/2019: bug: modify some metadata before open calls
+!     Philippe Wautelet: 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll to allow
+!                                    to disable writes (for bench purposes)
 !
 MODULE MODE_IO_ll
 
@@ -68,7 +70,7 @@ CONTAINS
   END SUBROUTINE SET_CONFIO_ll
 
   SUBROUTINE SET_CONFIO_INTERN_ll(OIOCDF4, OLFIOUT, OLFIREAD)
-    USE MODD_IO_ll, ONLY : LIOCDF4, LLFIOUT, LLFIREAD
+    USE MODD_IO_ll, ONLY : LIOCDF4, LLFIOUT, LLFIREAD, LIO_ALLOW_NO_BACKUP, LIO_NO_WRITE
     LOGICAL, INTENT(IN) :: OIOCDF4, OLFIOUT, OLFIREAD
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','SET_CONFIO_ll','called')
@@ -89,10 +91,16 @@ CONTAINS
       LIOCDF4  = .FALSE.
       LLFIOUT  = .TRUE.
       LLFIREAD = .TRUE.
-#endif       
+#endif
       GCONFIO = .TRUE.
+
+      ! Set LIO_ALLOW_NO_BACKUP=.true. if writes are disabled (to be coherent)
+      IF (LIO_NO_WRITE) THEN
+        CALL PRINT_MSG(NVERB_WARNING,'IO','SET_CONFIO_ll','file writes are disabled')
+        LIO_ALLOW_NO_BACKUP = .true.
+      END IF
     END IF
-    
+
   END SUBROUTINE SET_CONFIO_INTERN_ll
 
   SUBROUTINE INITIO_ll()
