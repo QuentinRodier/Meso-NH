@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !      #################
        MODULE MODI_BHMIE
@@ -63,6 +63,7 @@ END MODULE MODI_BHMIE
 !!                 portable.  In event that portable version is
 !!                 needed, use src/bhmie_f77.f
 !! 93/06/01 (BTD): Changed AMAX1 to generic function MAX
+!! 22/01/2019 (P.Wautelet): correct kind of complex datatype
 !!***********************************************************************
 !
 !*       0.    DECLARATIONS
@@ -187,8 +188,8 @@ DO J = 1,ISTOP
   DO JJ = 1,KNANG
     ZPI(JJ) = ZPI1(JJ)
     ZTAU(JJ) = ZEN*ZAMU(JJ)*ZPI(JJ) - (ZEN+1.)*ZPI0(JJ)
-    PPS1(JJ) = PPS1(JJ) + ZFN*(ZZAN*ZPI(JJ)+ZZBN*ZTAU(JJ))
-    PPS2(JJ) = PPS2(JJ) + ZFN*(ZZAN*ZTAU(JJ)+ZZBN*ZPI(JJ))
+    PPS1(JJ) = PPS1(JJ) + CMPLX(ZFN*(ZZAN*ZPI(JJ)+ZZBN*ZTAU(JJ)),kind=kind(PPS1(1)))
+    PPS2(JJ) = PPS2(JJ) + CMPLX(ZFN*(ZZAN*ZTAU(JJ)+ZZBN*ZPI(JJ)),kind=kind(PPS2(1)))
   ENDDO
 !
 !*** Now do angles greater than 90 using PI and TAU from
@@ -198,8 +199,8 @@ DO J = 1,ISTOP
   ZONE = -ZONE
   DO JJ = 1,KNANG-1
     JJJ = 2*KNANG-JJ
-    PPS1(JJJ) = PPS1(JJJ) + ZFN*ZONE*(ZZAN*ZPI(JJ)-ZZBN*ZTAU(JJ))
-    PPS2(JJJ) = PPS2(JJJ) + ZFN*ZONE*(ZZBN*ZPI(JJ)-ZZAN*ZTAU(JJ))
+    PPS1(JJJ) = PPS1(JJJ) + CMPLX(ZFN*ZONE*(ZZAN*ZPI(JJ)-ZZBN*ZTAU(JJ)),kind=kind(PPS1(1)))
+    PPS2(JJJ) = PPS2(JJJ) + CMPLX(ZFN*ZONE*(ZZBN*ZPI(JJ)-ZZAN*ZTAU(JJ)),kind=kind(PPS2(1)))
   ENDDO
   ZPSI0 = ZPSI1
   ZPSI1 = ZPSI
