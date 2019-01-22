@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !    ########################
@@ -117,6 +117,7 @@ CONTAINS
 !!      Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      J.Escobar 28/06/2018 : Reproductible parallelisation of CLOUD_ONLY case
 !!      J.Escobar 20/07/2018 : for real*4 compilation, convert with REAL(X) argument to SUM_DD... 
+!!      P.Wautelet 22/01/2019: use standard FLUSH statement instead of non standard intrinsics
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -578,7 +579,7 @@ IF ( ZMINVAL <= 0.0 ) THEN
    IMINLOC=GMINLOC_ll( ZDZPABST )
    WRITE(ILUOUT,*) ' radiation.f90 STOP :: SOMETHING WRONG WITH PRESSURE , ZDZPABST <= 0.0 '  
    WRITE(ILUOUT,*) ' radiation :: ZDZPABST ', ZMINVAL,' located at ',   IMINLOC
-   CALL FLUSH(ILUOUT)
+   FLUSH(unit=ILUOUT)
    STOP ' radiation.f90 STOP :: SOMETHING WRONG WITH PRESSURE , ZDZPABST < 0.0  '
 ENDIF
 !------------------------------------------------------------------------------

@@ -12,7 +12,9 @@ MODULE MODE_MPPDB
 !  G.Delautier : 23/06/2016 : surfex v8
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
+!  Philippe Wautelet: 22/01/2019: use standard FLUSH statement instead of non standard intrinsics
 !
+  use ISO_FORTRAN_ENV, only: OUTPUT_UNIT
   IMPLICIT NONE
 
 
@@ -183,7 +185,7 @@ CONTAINS
           !  I'm the first father 
        IF (MPPDB_DEBUG) print*,"MPPDB_INIT :: FIRST FATHER mppdb_irank_intra=", mppdb_irank_intra &
             ,"mppdb_nbproc_intra=",mppdb_nbproc_intra
-       call flush(6)
+       flush(unit=OUTPUT_UNIT)
        endif
        !
        ! Wait the sons
@@ -377,7 +379,7 @@ CONTAINS
           ELSE
              write(6, '(" MPPDB_CHECK3D :: OK MPPDB_CHECK3D =",A40," ERROR=",e15.8," MAXVAL=",e15.8)' ) MESSAGE,MAX_DIFF , MAX_VAL
           END IF
-          call flush(6)
+          flush(unit=OUTPUT_UNIT)
           !
           DEALLOCATE(TAB_ll,TAB_SON_ll)
           !
@@ -564,7 +566,7 @@ CONTAINS
           ELSE
              write(6, '(" MPPDB_CHECK2D :: OK MPPDB_CHECK2D =",A40," ERROR=",e15.8," MAXVAL=",e15.8)' ) MESSAGE,MAX_DIFF , MAX_VAL
           END IF
-          call flush(6)
+          flush(unit=OUTPUT_UNIT)
           !
           DEALLOCATE(TAB_ll,TAB_SON_ll)
           !
@@ -758,7 +760,7 @@ CONTAINS
           ELSE
              print*," MPPDB_CHECKLB :: OK MPPDB_CHECKLB =", MESSAGE ," ERROR=",MAX_DIFF , MAX_VAL
           END IF
-          call flush(6)
+          flush(unit=OUTPUT_UNIT)
           !
           DEALLOCATE(TAB_SON_ll)
           !

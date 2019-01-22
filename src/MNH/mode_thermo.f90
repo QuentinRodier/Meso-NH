@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #######################
@@ -286,6 +286,8 @@ END FUNCTION SM_FOES_1D
 !!      Modification   16/03/95    remove the EPSILON function
 !!      Modification   15/09/97    (V. Masson) add solid and liquid water phases
 !!                                 in thetav computation
+!!      Modification    22/01/2019 (P. Wautelet) use standard FLUSH statement
+!!                                 instead of non standard intrinsics!!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -375,7 +377,7 @@ IF ( ANY(ZDT > ZEPS) ) THEN
   WRITE(ILUOUT,*) 'MR AT THIS MAXIMUM : ', PMR(IMAXLOC(1),IMAXLOC(2),IMAXLOC(3))
   WRITE(ILUOUT,*) 'T AT THIS MAXIMUM : ', ZT(IMAXLOC(1),IMAXLOC(2),IMAXLOC(3))
   WRITE(ILUOUT,*) 'JOB ABORTED '
-  CALL FLUSH(ILUOUT)
+  FLUSH(unit=ILUOUT)
   CALL ABORT
   STOP 
 END IF

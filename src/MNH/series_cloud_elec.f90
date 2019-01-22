@@ -79,6 +79,7 @@ END MODULE MODI_SERIES_CLOUD_ELEC
 !!      C. Barthe  * LACy *  Dec. 2010    add some parameters
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!      Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
+!!      Philippe Wautelet: 22/01/2019: use standard FLUSH statement instead of non standard intrinsics
 !!
 !-------------------------------------------------------------------------------
 !
@@ -563,7 +564,7 @@ IF (JCOUNT == JCOUNT_STOP) THEN
              ZCLD_VOL/FLOAT(JCOUNT),      & ! cloud volume
              ZINPRR/FLOAT(JCOUNT),        & ! Rain instant precip
              ZMAX_INPRR/FLOAT(JCOUNT)       ! maximum rain instant. precip.
-    CALL FLUSH(UNIT=ILU)
+    FLUSH(UNIT=ILU)
   END IF
 !
   JCOUNT = 0

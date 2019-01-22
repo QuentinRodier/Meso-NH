@@ -40,6 +40,7 @@
 !!    Original 03/03/99
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!  Philippe Wautelet: 10/01/2019: use newunit argument to open files
+!!  Philippe Wautelet: 22/01/2019: use standard FLUSH statement instead of non standard intrinsics
 !!
 !!    EXTERNAL
 !!    --------
@@ -241,7 +242,7 @@ IF (PTSIMUL >= ZSTNEXTOUT) THEN
         ZZ0VEG(1,1), &   
         ZHEIGHT, &
         ZEMISFACTOR
-  CALL FLUSH(UNIT=ILU)
+  FLUSH(UNIT=ILU)
 END IF
 
 RETURN

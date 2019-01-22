@@ -167,6 +167,7 @@ END MODULE MODI_RESOLVED_ELEC_n
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!  Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
+!!  Philippe Wautelet: 22/01/2019: use standard FLUSH statement instead of non standard intrinsics
 !!
 !-------------------------------------------------------------------------------
 !
@@ -865,7 +866,7 @@ IF (KTCOUNT==1 .AND. IPROC==0) THEN
     WRITE (UNIT=ILU, FMT='(A)') '-- Column 11: neutr. positive charge (C)  --'
     WRITE (UNIT=ILU, FMT='(A)') '-- Column 12: neutr. negative charge (C)  --'
     WRITE (UNIT=ILU, FMT='(A)') '--------------------------------------------'
-    CALL FLUSH(UNIT=ILU)
+    FLUSH(UNIT=ILU)
 !
     IF (LSAVE_COORD) THEN
       YASCFILE = CEXP//"_fgeom_coord.asc"
@@ -881,7 +882,7 @@ IF (KTCOUNT==1 .AND. IPROC==0) THEN
       WRITE (UNIT=ILU,FMT='(A)') '-- Column 5 : coordinate along Y (km)  --'
       WRITE (UNIT=ILU,FMT='(A)') '-- Column 6 : coordinate along Z (km)  --'
       WRITE (UNIT=ILU,FMT='(A)') '------------------------------------------'
-      CALL FLUSH(UNIT=ILU)
+      FLUSH(UNIT=ILU)
     END IF
   END IF
 !
@@ -913,7 +914,7 @@ IF (KTCOUNT==1 .AND. IPROC==0) THEN
     WRITE (UNIT=ILU, FMT='(A)') '-- Column 19 : Maximum rain inst. precip. (mm/H)  --'
     WRITE (UNIT=ILU, FMT='(A)') '-- Column 20 : Rain instant. precip. (mm/H)       --'
     WRITE (UNIT=ILU, FMT='(A)') '----------------------------------------------------'
-    CALL FLUSH(UNIT=ILU)
+    FLUSH(UNIT=ILU)
   END IF
 END IF
 !
@@ -971,7 +972,7 @@ IF (LFLASH_GEOM .AND. LLMA) THEN
       WRITE (UNIT=ILU,FMT='(A)') '-- Column 16 : positive ions neut     --'
       WRITE (UNIT=ILU,FMT='(A)') '-- Column 17 : negative ions neut     --'
       WRITE (UNIT=ILU,FMT='(A)') '----------------------------------------'
-      CALL FLUSH(UNIT=ILU)
+      FLUSH(UNIT=ILU)
     END IF
   END IF
 END IF

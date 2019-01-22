@@ -92,7 +92,7 @@ END MODULE MODI_FLASH_GEOM_ELEC_n
 !!      J.Escobar : 10/12/2018 : // Correction , mpi_bcast CG & CG_POS parameter 
 !!                               & initialize INBLIGHT on all proc for filling/saving AREA* arrays
 !!      Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
-!!
+!!      Philippe Wautelet: 22/01/2019: use standard FLUSH statement instead of non standard intrinsics!!
 !-------------------------------------------------------------------------------
 !
 !*      0.      DECLARATIONS
@@ -2522,7 +2522,7 @@ ELSE
   END DO
 END IF
 !
-CALL FLUSH(UNIT=ILU)
+FLUSH(UNIT=ILU)
 !
 !
 !*      2.     FLASH SEGMENT COORDINATES
@@ -2546,7 +2546,7 @@ IF (LSAVE_COORD) THEN
     END DO
   END DO
 !
-  CALL FLUSH(UNIT=ILU)
+  FLUSH(UNIT=ILU)
 END IF
 !
 END SUBROUTINE WRITE_OUT_ASCII
@@ -2605,7 +2605,7 @@ DO I1 = 1, NNBLIGHT
   END DO
 END DO
 !
-CALL FLUSH(UNIT=ILU)
+FLUSH(UNIT=ILU)
 !
 END SUBROUTINE WRITE_OUT_LMA
 !

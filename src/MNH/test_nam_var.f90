@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/test_nam_var.f90,v $ $Revision: 1.2.4.1.18.1 $
-! MASDEV4_7 init 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !############################
 MODULE MODI_TEST_NAM_VAR
@@ -84,6 +79,7 @@ END MODULE MODI_TEST_NAM_VAR
 !!
 !!      original                                                     17/04/98
 !!      10/2016 (C.Lac) Increase of the number of values
+!!      P.Wautelet 22/01/2019: use standard FLUSH statement instead of non standard intrinsics
 !----------------------------------------------------------------------------
 !
 !*      0.    DECLARATIONS
@@ -185,7 +181,7 @@ IF ( PRESENT (HVALUE9) ) WRITE (KLUOUT,*) '"',HVALUE9,'"'
 IF ( PRESENT (HVALUE10) ) WRITE (KLUOUT,*) '"',HVALUE10,'"'
 IF ( PRESENT (HVALUE11) ) WRITE (KLUOUT,*) '"',HVALUE11,'"'
 IF ( PRESENT (HVALUE12) ) WRITE (KLUOUT,*) '"',HVALUE12,'"'
-CALL FLUSH(KLUOUT)
+FLUSH(unit=KLUOUT)
 !
  !callabortstop
 CALL ABORT
