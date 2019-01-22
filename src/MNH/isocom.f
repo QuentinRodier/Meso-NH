@@ -1,6 +1,6 @@
-CMNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+CMNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 CMNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-CMNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+CMNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 CMNH_LIC for details. version 1.
 C=======================================================================
 C
@@ -124,7 +124,8 @@ C *** COPYRIGHT 1996-2000, UNIVERSITY OF MIAMI, CARNEGIE MELLON UNIVERSITY
 C *** WRITTEN BY ATHANASIOS NENES
 C
 C Modifications:
-C  Philippe 13/02/2018: use ifdef MNH_REAL to prevent problems with intrinsics on Blue Gene/Q
+C  P. Wautelet 13/02/2018: use ifdef MNH_REAL to prevent problems with intrinsics on Blue Gene/Q
+C  P. Wautelet 22/01/2019: replace obsolete SNGL intrinsics by REAL intrinsics
 C=======================================================================
 C
       SUBROUTINE ISOROPIA (WI, RHI, TEMPI,  CNTRL, 
@@ -671,7 +672,7 @@ C
       IF (M0(01) .LT. 100.0) THEN
          IC = M0(01)
          CALL KMTAB(IC,298.0,     GI0,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX)
-         CALL KMTAB(IC,SNGL(TEMP),GII,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),GII,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX)
          M0(01) = M0(01)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -679,7 +680,7 @@ C
       IF (M0(02) .LT. 100.0) THEN
          IC = 3.0*M0(02)
          CALL KMTAB(IC,298.0,     XX,GI0,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX)
-         CALL KMTAB(IC,SNGL(TEMP),XX,GII,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),XX,GII,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX)
          M0(02) = M0(02)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -687,7 +688,7 @@ C
       IF (M0(03) .LT. 100.0) THEN
          IC = M0(03)
          CALL KMTAB(IC,298.0,     XX,XX,GI0,XX,XX,XX,XX,XX,XX,XX,XX,XX)
-         CALL KMTAB(IC,SNGL(TEMP),XX,XX,GII,XX,XX,XX,XX,XX,XX,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),XX,XX,GII,XX,XX,XX,XX,XX,XX,XX,XX,XX)
          M0(03) = M0(03)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -695,7 +696,7 @@ C
       IF (M0(04) .LT. 100.0) THEN
          IC = 3.0*M0(04)
          CALL KMTAB(IC,298.0,     XX,XX,XX,GI0,XX,XX,XX,XX,XX,XX,XX,XX)
-         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,GII,XX,XX,XX,XX,XX,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,GII,XX,XX,XX,XX,XX,XX,XX,XX)
          M0(04) = M0(04)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -703,7 +704,7 @@ C
       IF (M0(05) .LT. 100.0) THEN
          IC     = M0(05)
          CALL KMTAB(IC,298.0,     XX,XX,XX,XX,GI0,XX,XX,XX,XX,XX,XX,XX)
-         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,XX,GII,XX,XX,XX,XX,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,XX,GII,XX,XX,XX,XX,XX,XX,XX)
          M0(05) = M0(05)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -711,7 +712,7 @@ C
       IF (M0(06) .LT. 100.0) THEN
          IC = M0(06)
          CALL KMTAB(IC,298.0,     XX,XX,XX,XX,XX,GI0,XX,XX,XX,XX,XX,XX)
-         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,XX,XX,GII,XX,XX,XX,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,XX,XX,GII,XX,XX,XX,XX,XX,XX)
          M0(06) = M0(06)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -719,7 +720,7 @@ C
       IF (M0(07) .LT. 100.0) THEN
          IC = 3.0*M0(07)
          CALL KMTAB(IC,298.0,     XX,XX,XX,XX,XX,XX,GI0,XX,XX,XX,XX,XX)
-         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,XX,XX,XX,GII,XX,XX,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,XX,XX,XX,GII,XX,XX,XX,XX,XX)
          M0(07) = M0(07)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -727,8 +728,8 @@ C
 CCC      IF (M0(08) .LT. 100.0) THEN     ! These are redundant, because M0(8) is not used
 CCC         IC = M0(08)
 CCC         CALL KMTAB(IC,298.0,     XX,XX,XX,XX,XX,XX,XX,GI0,XX,XX,XX,XX)
-CCC         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,XX,XX,XX,XX,GI0,XX,XX,XX,XX)
-CCCCCC         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,XX,XX,XX,XX,GII,XX,XX,XX,XX)
+CCC         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,XX,XX,XX,XX,GI0,XX,XX,XX,XX)
+CCCCCC         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,XX,XX,XX,XX,GII,XX,XX,XX,XX)
 CCC         M0(08) = M0(08)*EXP(LN10*(GI0-GII))
 CCC      ENDIF
 C
@@ -736,7 +737,7 @@ C
       IF (M0(09) .LT. 100.0) THEN
          IC = M0(09)
          CALL KMTAB(IC,298.0,     XX,XX,XX,XX,XX,XX,XX,XX,GI0,XX,XX,XX)
-         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,XX,XX,XX,XX,XX,GII,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,XX,XX,XX,XX,XX,GII,XX,XX,XX)
          M0(09) = M0(09)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -744,7 +745,7 @@ C
       IF (M0(12) .LT. 100.0) THEN
          IC = M0(12)
          CALL KMTAB(IC,298.0,     XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,GI0)
-         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,GII)
+         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,GII)
          M0(12) = M0(12)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -753,9 +754,9 @@ C
          IC     = 4.0*M0(13)
          CALL KMTAB(IC,298.0,     XX,XX,XX,GI0,XX,XX,XX,XX,GII,XX,XX,XX)
          G130   = 0.2*(3.0*GI0+2.0*GII)
-         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,GI0,XX,XX,XX,XX,GII,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,GI0,XX,XX,XX,XX,GII,XX,XX,XX)
          G13I   = 0.2*(3.0*GI0+2.0*GII)
-         M0(13) = M0(13)*EXP(LN10*SNGL(G130-G13I))
+         M0(13) = M0(13)*EXP(LN10*REAL(G130-G13I))
       ENDIF
 C
 C *** OTHER INITIALIZATIONS *********************************************
@@ -933,7 +934,7 @@ C
       IF (M0(01) .LT. 100.0) THEN
          IC = M0(01)
          CALL KMTAB(IC,298.0,     GI0,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX)
-         CALL KMTAB(IC,SNGL(TEMP),GII,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),GII,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX)
          M0(01) = M0(01)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -941,7 +942,7 @@ C
       IF (M0(02) .LT. 100.0) THEN
          IC = 3.0*M0(02)
          CALL KMTAB(IC,298.0,     XX,GI0,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX)
-         CALL KMTAB(IC,SNGL(TEMP),XX,GII,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),XX,GII,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX)
          M0(02) = M0(02)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -949,7 +950,7 @@ C
       IF (M0(03) .LT. 100.0) THEN
          IC = M0(03)
          CALL KMTAB(IC,298.0,     XX,XX,GI0,XX,XX,XX,XX,XX,XX,XX,XX,XX)
-         CALL KMTAB(IC,SNGL(TEMP),XX,XX,GII,XX,XX,XX,XX,XX,XX,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),XX,XX,GII,XX,XX,XX,XX,XX,XX,XX,XX,XX)
          M0(03) = M0(03)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -957,7 +958,7 @@ C
       IF (M0(04) .LT. 100.0) THEN
          IC = 3.0*M0(04)
          CALL KMTAB(IC,298.0,     XX,XX,XX,GI0,XX,XX,XX,XX,XX,XX,XX,XX)
-         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,GII,XX,XX,XX,XX,XX,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,GII,XX,XX,XX,XX,XX,XX,XX,XX)
          M0(04) = M0(04)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -965,7 +966,7 @@ C
       IF (M0(05) .LT. 100.0) THEN
          IC     = M0(05)
          CALL KMTAB(IC,298.0,     XX,XX,XX,XX,GI0,XX,XX,XX,XX,XX,XX,XX)
-         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,XX,GII,XX,XX,XX,XX,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,XX,GII,XX,XX,XX,XX,XX,XX,XX)
          M0(05) = M0(05)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -973,7 +974,7 @@ C
       IF (M0(06) .LT. 100.0) THEN
          IC = M0(06)
          CALL KMTAB(IC,298.0,     XX,XX,XX,XX,XX,GI0,XX,XX,XX,XX,XX,XX)
-         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,XX,XX,GII,XX,XX,XX,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,XX,XX,GII,XX,XX,XX,XX,XX,XX)
          M0(06) = M0(06)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -981,7 +982,7 @@ C
       IF (M0(07) .LT. 100.0) THEN
          IC = 3.0*M0(07)
          CALL KMTAB(IC,298.0,     XX,XX,XX,XX,XX,XX,GI0,XX,XX,XX,XX,XX)
-         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,XX,XX,XX,GII,XX,XX,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,XX,XX,XX,GII,XX,XX,XX,XX,XX)
          M0(07) = M0(07)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -989,8 +990,8 @@ C
 CCC      IF (M0(08) .LT. 100.0) THEN     ! These are redundant, because M0(8) is not used
 CCC         IC = M0(08)
 CCC         CALL KMTAB(IC,298.0,     XX,XX,XX,XX,XX,XX,XX,GI0,XX,XX,XX,XX)
-CCC         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,XX,XX,XX,XX,GI0,XX,XX,XX,XX)
-CCCCCC         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,XX,XX,XX,XX,GII,XX,XX,XX,XX)
+CCC         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,XX,XX,XX,XX,GI0,XX,XX,XX,XX)
+CCCCCC         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,XX,XX,XX,XX,GII,XX,XX,XX,XX)
 CCC         M0(08) = M0(08)*EXP(LN10*(GI0-GII))
 CCC      ENDIF
 C
@@ -998,7 +999,7 @@ C
       IF (M0(09) .LT. 100.0) THEN
          IC = M0(09)
          CALL KMTAB(IC,298.0,     XX,XX,XX,XX,XX,XX,XX,XX,GI0,XX,XX,XX)
-         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,XX,XX,XX,XX,XX,GII,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,XX,XX,XX,XX,XX,GII,XX,XX,XX)
          M0(09) = M0(09)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -1006,7 +1007,7 @@ C
       IF (M0(12) .LT. 100.0) THEN
          IC = M0(12)
          CALL KMTAB(IC,298.0,     XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,GI0)
-         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,GII)
+         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,GII)
          M0(12) = M0(12)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -1015,9 +1016,9 @@ C
          IC     = 4.0*M0(13)
          CALL KMTAB(IC,298.0,     XX,XX,XX,GI0,XX,XX,XX,XX,GII,XX,XX,XX)
          G130   = 0.2*(3.0*GI0+2.0*GII)
-         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,GI0,XX,XX,XX,XX,GII,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,GI0,XX,XX,XX,XX,GII,XX,XX,XX)
          G13I   = 0.2*(3.0*GI0+2.0*GII)
-         M0(13) = M0(13)*EXP(LN10*SNGL(G130-G13I))
+         M0(13) = M0(13)*EXP(LN10*REAL(G130-G13I))
       ENDIF
 C
 C *** OTHER INITIALIZATIONS *********************************************
@@ -1261,7 +1262,7 @@ C
       IF (M0(01) .LT. 100.0) THEN
          IC = M0(01)
          CALL KMTAB(IC,298.0,     GI0,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX)
-         CALL KMTAB(IC,SNGL(TEMP),GII,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),GII,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX)
          M0(01) = M0(01)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -1269,7 +1270,7 @@ C
       IF (M0(02) .LT. 100.0) THEN
          IC = 3.0*M0(02)
          CALL KMTAB(IC,298.0,     XX,GI0,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX)
-         CALL KMTAB(IC,SNGL(TEMP),XX,GII,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),XX,GII,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX)
          M0(02) = M0(02)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -1277,7 +1278,7 @@ C
       IF (M0(03) .LT. 100.0) THEN
          IC = M0(03)
          CALL KMTAB(IC,298.0,     XX,XX,GI0,XX,XX,XX,XX,XX,XX,XX,XX,XX)
-         CALL KMTAB(IC,SNGL(TEMP),XX,XX,GII,XX,XX,XX,XX,XX,XX,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),XX,XX,GII,XX,XX,XX,XX,XX,XX,XX,XX,XX)
          M0(03) = M0(03)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -1285,7 +1286,7 @@ C
       IF (M0(04) .LT. 100.0) THEN
          IC = 3.0*M0(04)
          CALL KMTAB(IC,298.0,     XX,XX,XX,GI0,XX,XX,XX,XX,XX,XX,XX,XX)
-         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,GII,XX,XX,XX,XX,XX,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,GII,XX,XX,XX,XX,XX,XX,XX,XX)
          M0(04) = M0(04)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -1293,7 +1294,7 @@ C
       IF (M0(05) .LT. 100.0) THEN
          IC     = M0(05)
          CALL KMTAB(IC,298.0,     XX,XX,XX,XX,GI0,XX,XX,XX,XX,XX,XX,XX)
-         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,XX,GII,XX,XX,XX,XX,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,XX,GII,XX,XX,XX,XX,XX,XX,XX)
          M0(05) = M0(05)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -1301,7 +1302,7 @@ C
       IF (M0(06) .LT. 100.0) THEN
          IC = M0(06)
          CALL KMTAB(IC,298.0,     XX,XX,XX,XX,XX,GI0,XX,XX,XX,XX,XX,XX)
-         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,XX,XX,GII,XX,XX,XX,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,XX,XX,GII,XX,XX,XX,XX,XX,XX)
          M0(06) = M0(06)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -1309,7 +1310,7 @@ C
       IF (M0(07) .LT. 100.0) THEN
          IC = 3.0*M0(07)
          CALL KMTAB(IC,298.0,     XX,XX,XX,XX,XX,XX,GI0,XX,XX,XX,XX,XX)
-         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,XX,XX,XX,GII,XX,XX,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,XX,XX,XX,GII,XX,XX,XX,XX,XX)
          M0(07) = M0(07)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -1317,8 +1318,8 @@ C
 CCC      IF (M0(08) .LT. 100.0) THEN     ! These are redundant, because M0(8) is not used
 CCC         IC = M0(08)
 CCC         CALL KMTAB(IC,298.0,     XX,XX,XX,XX,XX,XX,XX,GI0,XX,XX,XX,XX)
-CCC         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,XX,XX,XX,XX,GI0,XX,XX,XX,XX)
-CCCCCC         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,XX,XX,XX,XX,GII,XX,XX,XX,XX)
+CCC         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,XX,XX,XX,XX,GI0,XX,XX,XX,XX)
+CCCCCC         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,XX,XX,XX,XX,GII,XX,XX,XX,XX)
 CCC         M0(08) = M0(08)*EXP(LN10*(GI0-GII))
 CCC      ENDIF
 C
@@ -1326,7 +1327,7 @@ C
       IF (M0(09) .LT. 100.0) THEN
          IC = M0(09)
          CALL KMTAB(IC,298.0,     XX,XX,XX,XX,XX,XX,XX,XX,GI0,XX,XX,XX)
-         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,XX,XX,XX,XX,XX,GII,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,XX,XX,XX,XX,XX,GII,XX,XX,XX)
          M0(09) = M0(09)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -1334,7 +1335,7 @@ C
       IF (M0(12) .LT. 100.0) THEN
          IC = M0(12)
          CALL KMTAB(IC,298.0,     XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,GI0)
-         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,GII)
+         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,XX,GII)
          M0(12) = M0(12)*EXP(LN10*(GI0-GII))
       ENDIF
 C
@@ -1343,9 +1344,9 @@ C
          IC     = 4.0*M0(13)
          CALL KMTAB(IC,298.0,     XX,XX,XX,GI0,XX,XX,XX,XX,GII,XX,XX,XX)
          G130   = 0.2*(3.0*GI0+2.0*GII)
-         CALL KMTAB(IC,SNGL(TEMP),XX,XX,XX,GI0,XX,XX,XX,XX,GII,XX,XX,XX)
+         CALL KMTAB(IC,REAL(TEMP),XX,XX,XX,GI0,XX,XX,XX,XX,GII,XX,XX,XX)
          G13I   = 0.2*(3.0*GI0+2.0*GII)
-         M0(13) = M0(13)*EXP(LN10*SNGL(G130-G13I))
+         M0(13) = M0(13)*EXP(LN10*REAL(G130-G13I))
       ENDIF
 C
 C *** OTHER INITIALIZATIONS *********************************************
@@ -2850,11 +2851,11 @@ C  G0(1,1)=G11;G0(1,2)=G07;G0(1,3)=G08;G0(1,4)=G10;G0(2,1)=G01;G0(2,2)=G02
 C  G0(2,3)=G12;G0(2,4)=G03;G0(3,1)=G06;G0(3,2)=G04;G0(3,3)=G09;G0(3,4)=G05
 C
       IF (IACALC.EQ.0) THEN              ! K.M.; FULL
-         CALL KMFUL (IONIC, SNGL(TEMP),G0(2,1),G0(2,2),G0(2,4),
+         CALL KMFUL (IONIC, REAL(TEMP),G0(2,1),G0(2,2),G0(2,4),
      &               G0(3,2),G0(3,4),G0(3,1),G0(1,2),G0(1,3),G0(3,3),
      &               G0(1,4),G0(1,1),G0(2,3))
       ELSE                               ! K.M.; TABULATED
-         CALL KMTAB (IONIC, SNGL(TEMP),G0(2,1),G0(2,2),G0(2,4),
+         CALL KMTAB (IONIC, REAL(TEMP),G0(2,1),G0(2,2),G0(2,4),
      &               G0(3,2),G0(3,4),G0(3,1),G0(1,2),G0(1,3),G0(3,3),
      &               G0(1,4),G0(1,1),G0(2,3))
       ENDIF
@@ -2879,8 +2880,8 @@ C
             CH    = 0.25*(ZPL+ZMI)*(ZPL+ZMI)/IONIC
             XIJ   = CH*MPL
             YJI   = CH*MOLAL(J+3)/WATER
-            F1(I) = F1(I) + SNGL(YJI*(G0(I,J) + ZPL*ZMI*H))
-            F2(J) = F2(J) + SNGL(XIJ*(G0(I,J) + ZPL*ZMI*H))
+            F1(I) = F1(I) + REAL(YJI*(G0(I,J) + ZPL*ZMI*H))
+            F2(J) = F2(J) + REAL(XIJ*(G0(I,J) + ZPL*ZMI*H))
 110   CONTINUE
 C
 C *** LOG10 OF ACTIVITY COEFFICIENTS ***********************************
@@ -2906,7 +2907,7 @@ C
       DO 200 I=1,NPAIR
 CC         GAMA(I)=MAX(-5.0d0, MIN(GAMA(I),5.0d0) ) ! F77 LIBRARY ROUTINE
 CC         GAMA(I)=10.0**GAMA(I)
-         GAMA(I)=EX10(SNGL(GAMA(I)), 5.0)    ! CUTOFF SET TO [-5,5]
+         GAMA(I)=EX10(REAL(GAMA(I)), 5.0)    ! CUTOFF SET TO [-5,5]
          GAMA(I) = GAMIN(I)*(1.0-URF) + URF*GAMA(I)  ! Under-relax GAMA's
   200 CONTINUE
 C
