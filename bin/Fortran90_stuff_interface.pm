@@ -566,6 +566,9 @@ sub study_exec{
   elsif(/^END *WHERE\b/) {
     $$content='ENDWHERE';
   }
+  elsif(/^FLUSH\s*\(/) {
+    $$content='FLUSH';
+  }
   elsif(/^$name\s*=/o) {                                 #ZVAR = ....
     $$content='scal_assign';
   }
