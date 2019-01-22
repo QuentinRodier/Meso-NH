@@ -1,3 +1,8 @@
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+!MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ######spl
        MODULE MODI_INI_RAIN_ICE
 !      ########################
@@ -95,6 +100,7 @@ END MODULE MODI_INI_RAIN_ICE
 !!                  24/03/01 Update XCRIAUTI for cirrus cases
 !!      J.-P. Pinty 24/11/01 Update ICE3/ICE4 options
 !!      S. Riette 2016-11: new ICE3/ICE4 options
+!!      P. Wautelet 22/01/2019 bug correction: incorrect write
 !!
 !-------------------------------------------------------------------------------
 !
@@ -585,8 +591,7 @@ IF (GFLAG) THEN
   WRITE(UNIT=KLUOUT,FMT='(" Crit. ice cont. XCRIAUTI=",E13.6)') XCRIAUTI
   WRITE(UNIT=KLUOUT,FMT='(" A Coef. for cirrus law XACRIAUTI=",E13.6)')XACRIAUTI
   WRITE(UNIT=KLUOUT,FMT='(" B Coef. for cirrus law XBCRIAUTI=",E13.6)')XBCRIAUTI
-  WRITE(UNIT=KLUOUT,FMT='(" Temp degC at which cirrus law starts to be &
-                              used=",E13.6)') XT0CRIAUTI
+  WRITE(UNIT=KLUOUT,FMT='(" Temp degC at which cirrus law starts to be used=",E13.6)') XT0CRIAUTI
 END IF
 !
 !

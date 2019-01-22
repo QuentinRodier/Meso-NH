@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ###################### 
@@ -289,6 +289,7 @@ END MODULE MODI_READ_EXSEG_n
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      Modification   07/2017   (V. Vionnet) add blowing snow scheme
 !!      Modification   01/2019   (Q. Rodier) define XCEDIS depending on BL89 or RM17 mixing length
+!!      Modification   01/2019   (P. Wautelet) bugs correction: incorrect writes
 !!------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1033,16 +1034,16 @@ SELECT CASE ( CCLOUD )
 !
     IF(LACTI .AND. NMOD_CCN == 0) THEN
       WRITE(UNIT=ILUOUT,FMT=9001) KMI
-      WRITE(UNIT=ILUOUT,FMT='("ACTIVATION OF AEROSOL PARTICLES IS NOT "    &
-           &"POSSIBLE IF NMOD_CCN HAS VALUE ZERO. YOU HAVE TO SET AN UPPER " &
+      WRITE(UNIT=ILUOUT,FMT='("ACTIVATION OF AEROSOL PARTICLES IS NOT ",      &
+           &"POSSIBLE IF NMOD_CCN HAS VALUE ZERO. YOU HAVE TO SET AN UPPER ", &
            &"VALUE OF NMOD_CCN IN ORDER TO USE LIMA WARM ACTIVATION SCHEME.")') 
       STOP
     END IF
 !
     IF(LNUCL .AND. NMOD_IFN == 0 .AND. (.NOT.LMEYERS)) THEN
       WRITE(UNIT=ILUOUT,FMT=9001) KMI
-      WRITE(UNIT=ILUOUT,FMT='("NUCLEATION BY DEPOSITION AND CONTACT IS NOT "&
-           &"POSSIBLE IF NMOD_IFN HAS VALUE ZERO. YOU HAVE TO SET AN UPPER"   &
+      WRITE(UNIT=ILUOUT,FMT='("NUCLEATION BY DEPOSITION AND CONTACT IS NOT ", &
+           &"POSSIBLE IF NMOD_IFN HAS VALUE ZERO. YOU HAVE TO SET AN UPPER",  &
            &"VALUE OF NMOD_IFN IN ORDER TO USE LIMA COLD NUCLEATION SCHEME.")') 
     END IF
 !

@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !      ####################
@@ -34,6 +34,7 @@ END MODULE MODI_INIT_AEROSOL_PROPERTIES
 !!    -------------
 !!      Original             ??/??/13 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!  Philippe Wautelet: 22/01/2019: bugs correction: incorrect writes + unauthorized goto
 !!
 !-------------------------------------------------------------------------------
 !
@@ -158,9 +159,16 @@ IF ( NMOD_CCN .GE. 1 ) THEN
   IF (.NOT.(ALLOCATED(XBETAHEN_MULTI))) ALLOCATE(XBETAHEN_MULTI(NMOD_CCN))
   IF (.NOT.(ALLOCATED(XLIMIT_FACTOR)))  ALLOCATE(XLIMIT_FACTOR(NMOD_CCN))
 !
-  IF (HINI_CCN == 'CCN'.AND. (.NOT. LSCAV) ) THEN
+  IF (HINI_CCN == 'CCN') THEN
+    IF (LSCAV) THEN
+! Attention !
+      WRITE(UNIT=ILUOUT0,FMT='("You are using a numerical initialization &
+        &not depending on the aerosol properties, however you need it for &
+        &scavenging.                                                      &
+        &With LSCAV = true, HINI_CCN should be set to AER for consistency")')
+    END IF
 ! Numerical initialization without dependence on AP physical properties
-100 DO JMOD = 1, NMOD_CCN 
+    DO JMOD = 1, NMOD_CCN
       XKHEN_MULTI(JMOD)    = XKHEN_TMP(JMOD)  
       XMUHEN_MULTI(JMOD)   = XMUHEN_TMP(JMOD)
       XBETAHEN_MULTI(JMOD) = XBETAHEN_TMP(JMOD)*(100.)**2                    
@@ -170,13 +178,6 @@ IF ( NMOD_CCN .GE. 1 ) THEN
            /( XBETAHEN_MULTI(JMOD)**(0.5*XKHEN_MULTI(JMOD))       &
            *GAMMA_X0D(XMUHEN_MULTI(JMOD)) ) ! N/C
     END DO
-  ELSE IF (HINI_CCN == 'CCN'.AND. LSCAV ) THEN
-! Attention !
-    WRITE(UNIT=ILUOUT0,FMT='("You are using a numerical initialization &
-      not depending on the aerosol properties, however you need it for &
-      scavenging.                                                      &
-      With LSCAV = true, HINI_CCN should be set to AER for consistency")')
-    go to 100
   ELSE IF (HINI_CCN == 'AER') THEN
 ! 
 ! Initialisation depending on aerosol physical properties
@@ -218,7 +219,7 @@ IF ( NMOD_CCN .GE. 1 ) THEN
           XALPHA6    = 3.076
        CASE DEFAULT
           WRITE(UNIT=ILUOUT0,FMT='("You must specify HTYPE_CNN(JMOD)=C or M &
-               in EXSEG1.nam for each CCN mode")')
+               &in EXSEG1.nam for each CCN mode")')
           CALL ABORT
        ENDSELECT
 !
