@@ -1,18 +1,42 @@
-#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 #MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 #MNH_LIC for details. version 1.
 ##########################################################
 #                                                        #
 # Compiler Options                                       #
 #                                                        #
 ##########################################################
-#OBJDIR_PATH=/home/escj/azertyuiopqsdfghjklm/wxcvbn/azertyuiopqsdfghjklmwxcvbn
 #
-OPT_BASE  = -r8 -mdir $(OBJDIR) -g -gline -kind=byte -w -maxcontin=200 -PIC
+OPT_BASE  = -g -gline -kind=byte -PIC -wmismatch=$(LIST_MISMATCH)
 OPT_PERF0 = -O0
 OPT_PERF2 = -O2
 OPT_CHECK = -C -nan
+OPT_I8    = -i8
+OPT_R8    = -r8
+#
+# Real/Integer 4/8 option
+#
+MNH_REAL  ?=8
+MNH_INT   ?=4
+LFI_RECL  ?=512
+#
+#
+ifneq "$(MNH_REAL)" "4"
+OPT_BASE           += $(OPT_R8)
+CPPFLAGS_SURCOUCHE += -DMNH_MPI_DOUBLE_PRECISION
+endif
+#
+OPT_BASE_I4       := $(OPT_BASE)
+ifeq "$(MNH_INT)" "8"
+OPT_BASE          += $(OPT_I8)
+LFI_INT           ?=8
+MNH_MPI_RANK_KIND ?=8
+else
+MNH_MPI_RANK_KIND ?=4
+LFI_INT           ?=4
+endif
+#
 #
 OPT       = $(OPT_BASE) $(OPT_PERF2) 
 OPT0      = $(OPT_BASE) $(OPT_PERF0) 
@@ -22,37 +46,50 @@ ifeq "$(OPTLEVEL)" "DEBUG"
 OPT       = $(OPT_BASE) $(OPT_PERF0) $(OPT_CHECK)
 OPT0      = $(OPT_BASE) $(OPT_PERF0) $(OPT_CHECK)
 OPT_NOCB  = $(OPT_BASE) $(OPT_PERF0)
+CFLAGS    += -g -O0
 endif
 #
-#            
-F90 = f95
+#  
+CC = gcc
+FC = nagfor 
+ifeq "$(VER_MPI)" "MPIAUTO"
+F90 = mpifort
+CPPFLAGS_SURCOUCHE += -DMNH_USE_MPI_STATUSES_IGNORE
+else         
+F90 = nagfor
+endif
+#
 F90FLAGS      =  $(OPT) 
 F77 = $(F90)
-#F77FLAGS      =  $(OPT) -132 -fixed
-F77FLAGS      =  $(OPT) -fixed
+F77FLAGS      =  $(OPT) -dusty
 FX90 = $(F90)
-#FX90FLAGS     =  $(OPT) -132 -fixed
 FX90FLAGS     =  $(OPT) -fixed
 #
-LDFLAGS   =  -Wl,-Xlinker,-noinhibit-exec  -Wl,-Xlinker,-warn-once
+#LDFLAGS   =  -Wl,-Xlinker,-noinhibit-exec  -Wl,-Xlinker,-warn-once
 #
 # preprocessing flags 
 #
 CPP = cpp -P -traditional -Wcomment
 #
 CPPFLAGS_SURFEX    =
-CPPFLAGS_SURCOUCHE = -DMNH_MPI_DOUBLE_PRECISION -DMNH_LINUX -DMNH_MPI_BSEND -DNAGf95
+CPPFLAGS_SURCOUCHE += -DMNH_LINUX -DDEV_NULL  -DMNH_MPI_RANK_KIND=$(MNH_MPI_RANK_KIND)
 CPPFLAGS_RAD       =
-CPPFLAGS_NEWLFI    = -DSWAPIO -DLINUX
+CPPFLAGS_NEWLFI    = -DSWAPIO -DLINUX -DLFI_INT=${LFI_INT} -DLFI_RECL=${LFI_RECL}
 CPPFLAGS_MNH       = -DMNH -DSFX_MNH
 
 #
 # Gribex flags
 #
 TARGET_GRIBEX=linux
-CNAME_GRIBEX=f95
+CNAME_GRIBEX=_nagfor
+GRIB_FLAGS = -dusty -kind=byte
 #
-# LIBTOOLS flags
+# Netcdf/HDF5 flags
+#
+HDF_CONF= CFLAGS=-std=c99
+NETCDF_SUPPFLAGS = -dusty -kind=byte
+#
+## LIBTOOLS flags
 #
 #if MNH_TOOLS exists => compile the tools
 MNH_TOOLS = yes
@@ -62,7 +99,6 @@ MNH_TOOLS = yes
 # Source of MESONH PACKAGE  Distribution                 #
 #                                                        #
 ##########################################################
-#DIR_SURFEX      += ARCH_SRC/surfex
 #
 include Makefile.MESONH.mk
 #
@@ -74,31 +110,16 @@ include Makefile.MESONH.mk
 #         etc ...                                        #
 #                                                        #
 ##########################################################
-#
-#  Where to find precompiled system module for "NAGf95"
-#  like "f90_unix.mod"  , etc ...
-#MODULE_SYSTEM = /opt/F95_42/lib/bytes
-MODULE_SYSTEM = /usr/local/lib/NAGWare/bytes
-all : $(MODULE_SYSTEM)
-$(MODULE_SYSTEM) :
-	@test -d $@ || \
-        ( echo ATTENTION :: Rules.LXNAGF95 ; \
-          echo MODULE_SYSTEM=$@ n existe pas ; exit 1 )
-VPATH += $(MODULE_SYSTEM)
-INC   += -I$(MODULE_SYSTEM)
 
-#
-# non conformance des argument/routine dans les appels MPI
-#
-OBJS1 = spll_mode_exchange2_ll.o spll_mode_exchange_ll.o spll_mode_fm.o \
-spll_mode_fmread.o spll_mode_fmwrit.o spll_mode_gather_ll.o \
-spll_mode_init_ll.o spll_mode_io_ll.o spll_mode_scatter_ll.o \
-spll_mode_sum2_ll.o spll_mode_sum_ll.o spll_mode_tools_ll.o \
-spll_zdiffusetup.o spll_lapack.o spll_fm_writ_ll.o \
-spll_NEWLFI_ALL.o spll_fm_read_ll.o \
-mode_tools_ll.mod mode_gather_ll.mod \
-mode_fmwrit.mod mode_scatter_ll.mod \
-mode_fmread.mod mode_sum_ll.mod \
-mode_exchange_ll.mod
-#
-$(OBJS1): OPT = $(OPT_BASE) $(OPT_PERF0) -dusty 
+ifneq "$(findstring 8,$(LFI_INT))" ""
+OBJS_I8=spll_NEWLFI_ALL.o
+$(OBJS_I8) : OPT = $(OPT_BASE) $(OPT_PERF2) $(OPT_I8)
+endif
+
+ifeq "$(MNH_INT)" "8"
+OBJS_I4=spll_modd_netcdf.o
+$(OBJS_I4) : OPT = $(OPT_BASE_I4)
+endif
+# 
+LIST_MISMATCH=MPI_Allgatherv,MPI_Allreduce,MPI_Bcast,MPI_Bsend,MPI_Gather,MPI_Gatherv,MPI_Recv,LEPOLY
+

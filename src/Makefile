@@ -326,7 +326,9 @@ A64=A64
 endif
 gribapi : $(GRIBAPI_INC)
 $(GRIBAPI_INC) : 
-	cd ${DIR_GRIBAPI} && ./configure --disable-shared --disable-jpeg --prefix=${GRIBAPI_PATH} CC="$(CC)" FC="$(FC)" ${GRIBAPI_CONF} && $(MAKE) -j 1 clean && $(MAKE) -j 1 && $(MAKE) -j 1 install && $(MAKE) -j 1 clean
+	cd ${DIR_GRIBAPI} && ./configure --disable-shared --disable-jpeg --prefix=${GRIBAPI_PATH} CC="$(CC)" \
+	FC="$(FC)" FCFLAGS="$(GRIB_FLAGS)" ${GRIBAPI_CONF} && $(MAKE) -j 1 clean && \
+	$(MAKE) -j 1 && $(MAKE) -j 1 install && $(MAKE) -j 1 clean
 
 gribapi_clean :
 	- [  -d ${GRIBAPI_PATH} ] && rm -fr ${GRIBAPI_PATH} 
@@ -351,7 +353,7 @@ $(CDF_MOD) :
 	CC="$(CC)" CFLAGS="$(NETCDF_OPT)" CPPFLAGS="${INC_NETCDF}" ${CDF_CONF} LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lhdf5_hl -lhdf5 -lsz -laec -lz" && \
 	$(MAKE) && $(MAKE) install && $(MAKE) clean
 	cd ${DIR_CDFF} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 \
-	CC="$(CC)" CFLAGS="$(NETCDF_OPT)" FC="$(FC)" FCFLAGS="$(NETCDF_OPT)" FFLAGS="$(NETCDF_OPT)"  \
+	CC="$(CC)" CFLAGS="$(NETCDF_OPT)" FC="$(FC)" FCFLAGS="$(NETCDF_OPT) $(NETCDF_SUPPFLAGS)" FFLAGS="$(NETCDF_OPT)"  \
 	CPPFLAGS="${INC_NETCDF}" ${CDF_CONF} LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lnetcdf -lhdf5_hl -lhdf5 -lsz -laec -lz" && \
 	$(MAKE) && $(MAKE) install && $(MAKE) clean
 

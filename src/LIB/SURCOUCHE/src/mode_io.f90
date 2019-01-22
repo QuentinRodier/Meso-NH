@@ -187,7 +187,7 @@ CONTAINS
     CHARACTER(len=5)                      :: CFILE
     INTEGER                               :: IFILE, IRANK_PROCIO
 
-#if defined(MNH_SX5) || defined(MNH_SP4) || defined(NAGf95) || defined(MNH_LINUX)
+#if defined(MNH_SX5) || defined(MNH_SP4) || defined(MNH_LINUX)
     CHARACTER(len=20)    :: YSTATUS
     CHARACTER(len=20)    :: YACCESS
     CHARACTER(len=20)    :: YFORM
@@ -257,7 +257,7 @@ CONTAINS
        RETURN
     END IF
 
-#if defined(MNH_SX5) || defined(MNH_SP4) || defined(NAGf95) || defined(MNH_LINUX)
+#if defined(MNH_SX5) || defined(MNH_SP4) || defined(MNH_LINUX)
     !JUAN
     IF (PRESENT(STATUS)) THEN
        YSTATUS=STATUS
@@ -355,7 +355,7 @@ CONTAINS
                PAD=PAD)
 
 #else
-#if defined(MNH_SX5) || defined(MNH_SP4) || defined(NAGf95) || defined(MNH_LINUX)
+#if defined(MNH_SX5) || defined(MNH_SP4) || defined(MNH_LINUX)
           !JUAN : 31/03/2000 modif pour acces direct
           IF (YACCESS=='STREAM') THEN
              OPEN(NEWUNIT=TPFILE%NLU,     &
@@ -482,7 +482,7 @@ CONTAINS
             PAD=PAD)
 
 #else
-#if defined(MNH_SX5) || defined(MNH_SP4) || defined(NAGf95) || defined(MNH_LINUX)
+#if defined(MNH_SX5) || defined(MNH_SP4) || defined(MNH_LINUX)
        IF (ACCESS=='DIRECT') THEN
           OPEN(NEWUNIT=TPFILE%NLU,                    &
                FILE=TRIM(YPREFILENAME)//SUFFIX(".P"), &
