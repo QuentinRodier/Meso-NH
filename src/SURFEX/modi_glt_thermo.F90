@@ -1,6 +1,6 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 2009-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
-!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
 !GLT_LIC The GELATO model is a seaice model used in stand-alone or embedded mode. 
 !GLT_LIC  It has been developed by Meteo-France. The holder of GELATO is Meteo-France.
@@ -70,6 +70,8 @@
 !           Sea ice damping
 ! Modified: 2015/07 (D. Salas y Melia)
 !           Sea ice damping has been externalized from thermo_r routine
+! Modified: 2019/01 (P. Wautelet)
+!           Correct small print bug
 !
 ! -------------------- BEGIN MODULE modi_glt_thermo -------------------------
 
@@ -731,7 +733,7 @@ SUBROUTINE glt_thermo  &
 ! ==============================
 !
 1000 FORMAT( " Processor ", I5," ==> Running on ", I5,  &
-  " points instead of ", I6, "(" I5, " times " , I5, ")" ) 
+  " points instead of ", I6, "(" , I5, " times " , I5, ")" )
 !
   IF (lp1) THEN
     WRITE(noutlu,*) ' '
