@@ -127,6 +127,7 @@ END MODULE MODI_READ_ALL_DATA_GRIB_CASE
 !!                  08/03/2018 (P.Wautelet)  replace ADD_FORECAST_TO_DATE by DATETIME_CORRECTDATE
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!         Pergaud  : 2018 add GFS
+!!                   01/2019 (G.Delautier via Q.Rodier) for GRIB2 ARPEGE and AROME from EPYGRAM
 !-------------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -323,6 +324,7 @@ REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZR_DUM
 INTEGER                            :: IMI
 TYPE(TFILEDATA),POINTER             :: TZFILE
 INTEGER, DIMENSION(JP_GFS)    :: IP_GFS   ! list of pressure levels for GFS model
+INTEGER :: IVERSION,ILEVTYPE
 !---------------------------------------------------------------------------------------
 IP_GFS=(/1000,975,950,925,900,850,800,750,700,650,600,550,500,450,400,350,300,&
            250,200,150,100,70,50,30,20,10/)!
@@ -448,8 +450,13 @@ SELECT CASE (ICENTER)
   CASE (85)
     SELECT CASE (HGRID)      
       CASE('lambert')
-        WRITE (ILUOUT0,'(A)') ' | Grib file from French Weather Service - Aladin france model'
-        IMODEL = 1
+        WRITE (ILUOUT0,'(A)') ' | Grib file from French Weather Service - Arome france model'
+        CALL GRIB_GET(IGRIB(1),'editionNumber',IVERSION,IRET_GRIB)
+        IF (IVERSION==2) THEN
+          IMODEL = 6 ! GRIB2 since summer 2018 (epygram)
+        ELSE
+          IMODEL = 1 ! GRIB1 befor summer 2018 (lfi2mv) 
+        ENDIF
         ALLOCATE(ZPARAM(10))
       CASE('mercator')
         WRITE (ILUOUT0,'(A)') ' | Grib file from French Weather Service - Aladin reunion model'
@@ -458,8 +465,13 @@ SELECT CASE (ICENTER)
 
     CASE('unknown_PLPresent','reduced_stretched_rotated_gg')
       WRITE (ILUOUT0,'(A)') ' | Grib file from French Weather Service - Arpege model'
-      IMODEL = 3
       ALLOCATE(ZPARAM(10))
+      CALL GRIB_GET(IGRIB(1),'editionNumber',IVERSION,IRET_GRIB)
+        IF (IVERSION==2) THEN
+          IMODEL = 7 ! GRIB2 since summer 2018 (epygram)
+        ELSE
+          IMODEL = 3 ! GRIB1 befor summer 2018 (lfi2mv)
+        ENDIF
 
     CASE('regular_gg')
       WRITE (ILUOUT0,'(A)') ' | Grib file from French Weather Service - Arpege model'
@@ -488,29 +500,31 @@ END IF
 WRITE (ILUOUT0,'(A)') ' | Searching orography'
 SELECT CASE (IMODEL)
   CASE(0) ! ECMWF
-     CALL SEARCH_FIELD(129,109,1,0,IGRIB,INUM_ZS)
+     CALL SEARCH_FIELD(IGRIB,INUM_ZS,KPARAM=129)
      IF(INUM_ZS < 0) THEN
-     CALL SEARCH_FIELD(129,1,0,0,IGRIB,INUM_ZS)
-       IF(INUM_ZS < 0) THEN
-         WRITE (ILUOUT0,'(A)')'Orography is missing - abort'
-       END IF 
-      END IF
+       WRITE (ILUOUT0,'(A)')'Orography is missing - abort'
+     END IF 
   CASE(3,4,5) ! arpege et mocage
-      CALL SEARCH_FIELD(8,-1,-1,-1,IGRIB,INUM_ZS)
+      CALL SEARCH_FIELD(IGRIB,INUM_ZS,KPARAM=8)
        IF(INUM_ZS < 0) THEN
          WRITE (ILUOUT0,'(A)')'Orography is missing - abort'
        ENDIF 
   CASE(1,2) ! aladin et aladin reunion
-      CALL SEARCH_FIELD(6,-1,-1,-1,IGRIB,INUM_ZS)
+      CALL SEARCH_FIELD(IGRIB,INUM_ZS,KPARAM=6)
+       IF(INUM_ZS < 0) THEN
+         WRITE (ILUOUT0,'(A)')'Orography is missing - abort'
+       ENDIF 
+  CASE(6,7) !  arpege and arome GRIB2
+      CALL SEARCH_FIELD(IGRIB,INUM_ZS,KDIS=0,KCAT=3,KNUMBER=5)
        IF(INUM_ZS < 0) THEN
          WRITE (ILUOUT0,'(A)')'Orography is missing - abort'
        ENDIF 
   CASE(10) ! NCEP
-   DO IVAR=0,222
-      CALL SEARCH_FIELD(IVAR,1,0,0,IGRIB,INUM_ZS)
-      IF(INUM_ZS < 0) THEN
-        WRITE (ILUOUT0,'(A)')'Orography is missing'
-      ENDIF
+      DO IVAR=0,222
+        CALL SEARCH_FIELD(IGRIB,INUM_ZS,KPARAM=IVAR)
+        IF(INUM_ZS < 0) THEN
+          WRITE (ILUOUT0,'(A)')'Orography is missing'
+        ENDIF
       END DO
       INUM_ZS=218
       WRITE (ILUOUT0,*) 'lsm  ',IGRIB(350)
@@ -561,11 +575,13 @@ WRITE (ILUOUT0,'(A)') ' | Searching pressure'
 
 SELECT CASE (IMODEL)
   CASE(0) ! ECMWF
-     CALL SEARCH_FIELD(152,-1,-1,-1,IGRIB,INUM)
+     CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=152)
   CASE(1,2,3,4,5) ! arpege mocage aladin et aladin reunion
-      CALL SEARCH_FIELD(1,-1,-1,-1,IGRIB,INUM)
+      CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=1)
+  CASE(6,7) ! NEW AROME,ARPEGE
+     CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=3,KNUMBER=25)
   CASE(10) ! NCEP
-      CALL SEARCH_FIELD(134,1,0,0,IGRIB,INUM)
+      CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=134)
 END SELECT
 IF(INUM < 0) THEN
    WRITE (ILUOUT0,'(A)')'Surface pressure is missing - abort'
@@ -578,7 +594,7 @@ ALLOCATE(ZVALUE(ISIZE))
 CALL GRIB_GET(IGRIB(INUM),'values',ZVALUE)
 ! determination des tableaux ZPS_G et ZLNPS_G
 SELECT CASE (IMODEL)
-  CASE(0) ! ECMWF
+  CASE(0,6,7) ! ECMWF
     ALLOCATE (ZPS_G  (ISIZE))
     ALLOCATE (ZLNPS_G(ISIZE))
     ZLNPS_G(:) =     ZVALUE(1:ISIZE)
@@ -645,64 +661,55 @@ DEALLOCATE (ZLNPS_G)
 !
 WRITE (ILUOUT0,'(A)') ' | Reading T and Q fields'
 !
-SELECT CASE (IMODEL)
-  CASE(0) ! ECMWF
+IF (IMODEL/=10) THEN
+  SELECT CASE (IMODEL)
+    CASE(0) ! ECMWF
           ISTARTLEVEL=1
           IT=130
           IQ=133
-     CALL SEARCH_FIELD(IT,109,ISTARTLEVEL,-1,IGRIB,INUM)
-     IF(INUM < 0) THEN 
-             ISTARTLEVEL=0
-       CALL SEARCH_FIELD(IT,109,ISTARTLEVEL,-1,IGRIB,INUM)
-     ENDIF
-     IF(INUM < 0) THEN
-        WRITE (ILUOUT0,'(A)')'Air temperature is missing - abort'
-        CALL ABORT
-        STOP
-     ENDIF      
-     CALL SEARCH_FIELD(IQ,109,ISTARTLEVEL,-1,IGRIB,INUM)
-     IF(INUM < 0) THEN
-        WRITE (ILUOUT0,'(A)')'Atmospheric specific humidity is missing - abort'
-        CALL ABORT
-        STOP
-     ENDIF 
-  CASE(1,2,3,4,5) ! arpege mocage aladin et aladin reunion
+    CASE(1,2,3,4,5) ! arpege mocage aladin et aladin reunion
           IT=11
           IQ=51
           ISTARTLEVEL=1
-      CALL SEARCH_FIELD(IT,109,ISTARTLEVEL,-1,IGRIB,INUM)
-      IF(INUM < 0) THEN 
-          ISTARTLEVEL=0    
-       CALL SEARCH_FIELD(IT,109,ISTARTLEVEL,-1,IGRIB,INUM)
-     ENDIF
-     IF(INUM < 0) THEN
-        WRITE (ILUOUT0,'(A)')'Air temperature is missing - abort'
-        CALL ABORT
-        STOP
-     ENDIF 
-     CALL SEARCH_FIELD(IQ,109,ISTARTLEVEL,-1,IGRIB,INUM)
-     IF(INUM < 0) THEN
-        WRITE (ILUOUT0,'(A)')'Atmospheric specific humidity is missing - abort'
-        CALL ABORT
-        STOP
-     ENDIF 
-  CASE(10) ! NCEP
-          ISTARTLEVEL=10
-          IT=130
-          IQ=157
-     CALL SEARCH_FIELD(IT,100,ISTARTLEVEL,-1,IGRIB,INUM)
-     IF(INUM < 0) THEN
-        WRITE (ILUOUT0,'(A)')'Air temperature is missing - abort'
-        CALL ABORT
-        STOP
-     ENDIF      
-     CALL SEARCH_FIELD(IQ,100,ISTARTLEVEL,-1,IGRIB,INUM)
-     IF(INUM < 0) THEN
-        WRITE (ILUOUT0,'(A)')'Atmospheric relative humidity is missing - abort'
-        CALL ABORT
-        STOP
-     ENDIF 
-END SELECT
+    CASE(6,7) !GRIB2 AROME AND ARPEGE
+     IT=130
+     IQ=133
+     ISTARTLEVEL=1
+  END SELECT
+        
+  CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IT,KLEV1=ISTARTLEVEL)
+  IF(INUM < 0) THEN 
+    ISTARTLEVEL=0
+    CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IT,KLEV1=ISTARTLEVEL)
+  ENDIF
+  IF(INUM < 0) THEN
+    WRITE (ILUOUT0,'(A)')'Air temperature is missing - abort'
+    CALL ABORT
+    STOP
+  ENDIF      
+  CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IQ,KLEV1=ISTARTLEVEL)
+  IF(INUM < 0) THEN
+    WRITE (ILUOUT0,'(A)')'Atmospheric specific humidity is missing - abort'
+    CALL ABORT
+    STOP
+  ENDIF 
+ELSE ! NCEP
+  ISTARTLEVEL=10
+  IT=130
+  IQ=157
+  CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IT,KLEV1=ISTARTLEVEL)
+  IF(INUM < 0) THEN
+    WRITE (ILUOUT0,'(A)')'Air temperature is missing - abort'
+    CALL ABORT
+    STOP
+  ENDIF      
+  CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IQ,KLEV1=ISTARTLEVEL)
+  IF(INUM < 0) THEN
+    WRITE (ILUOUT0,'(A)')'Atmospheric relative humidity is missing - abort'
+    CALL ABORT
+    STOP
+  ENDIF 
+ENDIF
 !
 IF (IMODEL/=10) THEN ! others than NCEP
   CALL GRIB_GET(IGRIB(INUM),'NV',INLEVEL)
@@ -718,14 +725,14 @@ ALLOCATE (ZQ_G(ISIZE,INLEVEL))
 IF (IMODEL/=10) THEN ! others than NCEP
   DO JLOOP1=1, INLEVEL
     ILEV1 = JLOOP1-1+ISTARTLEVEL
-    CALL SEARCH_FIELD(IQ,109,ILEV1,-1,IGRIB,INUM)
+    CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IQ,KLEV1=ILEV1)
     IF (INUM< 0) THEN
     !callabortstop
       WRITE(YMSG,*) 'atmospheric humidity level ',JLOOP1,' is missing'
       CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
     END IF
     CALL GRIB_GET(IGRIB(INUM),'values',ZQ_G(:,INLEVEL-JLOOP1+1))
-    CALL SEARCH_FIELD(IT,109,ILEV1,-1,IGRIB,INUM)
+    CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IT,KLEV1=ILEV1)
     IF (INUM< 0) THEN
       !callabortstop
       WRITE(YMSG,*) 'atmospheric temperature level ',JLOOP1,' is missing'
@@ -737,7 +744,7 @@ IF (IMODEL/=10) THEN ! others than NCEP
 ELSE ! NCEP
   DO JLOOP1=1, INLEVEL
     ILEV1 = IP_GFS(JLOOP1)
-    CALL SEARCH_FIELD(IQ,100,ILEV1,-1,IGRIB,INUM)
+    CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IQ,KLEV1=ILEV1)
     IF (INUM< 0) THEN
     !callabortstop
       WRITE(YMSG,*) 'atmospheric humidity level ',JLOOP1,' is missing'
@@ -745,7 +752,7 @@ ELSE ! NCEP
     END IF
     CALL GRIB_GET(IGRIB(INUM),'values',ZQ_G(:,JLOOP1),IRET_GRIB)
     WRITE (ILUOUT0,*) 'Q ',ILEV1,IRET_GRIB
-    CALL SEARCH_FIELD(IT,100,ILEV1,-1,IGRIB,INUM)
+    CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IT,KLEV1=ILEV1)
     IF (INUM< 0) THEN
       !callabortstop
       WRITE(YMSG,*) 'atmospheric temperature level ',JLOOP1,' is missing'
@@ -790,7 +797,7 @@ IF (IMODEL/=10) THEN ! others than NCEP
       CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE','there is no PV value in this message')
     ENDIF
     SELECT CASE (IMODEL)
-      CASE (0,3,4)
+      CASE (0,3,4,6,7)
         DO JLOOP1 = 1, INLEVEL
           XA_LS(1 + INLEVEL - JLOOP1) = ZPV(1+JLOOP1) / XP00_LS
           XB_LS(1 + INLEVEL - JLOOP1) = ZPV(2+INLEVEL+JLOOP1)
@@ -860,10 +867,10 @@ IF (IMODEL==1) THEN
   ! search cloud_water in Arome case (forecast)
   ISTARTLEVEL = 1
   IPAR=246
-  CALL SEARCH_FIELD(IPAR,109,ISTARTLEVEL,-1,IGRIB,INUM)
+  CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IPAR,KLEV1=ISTARTLEVEL)
   IF (INUM < 0) THEN
     ISTARTLEVEL = 0
-    CALL SEARCH_FIELD(IPAR,109,ISTARTLEVEL,-1,IGRIB,INUM)
+    CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IPAR,KLEV1=ISTARTLEVEL)
   END IF
   IF (INUM > 0) THEN
     WRITE (ILUOUT0,'(A)') ' | Grib file from French Weather Service - Arome model (forecast)'
@@ -873,10 +880,33 @@ IF (IMODEL==1) THEN
   ! search also turbulent kinetic energy 
   ISTARTLEVEL = 1
   IPAR=251
-  CALL SEARCH_FIELD(IPAR,109,ISTARTLEVEL,-1,IGRIB,INUM)
+  CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IPAR,KLEV1=ISTARTLEVEL)
   IF (INUM < 0) THEN
     ISTARTLEVEL = 0
-    CALL SEARCH_FIELD(IPAR,109,ISTARTLEVEL,-1,IGRIB,INUM)
+    CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IPAR,KLEV1=ISTARTLEVEL)
+  END IF
+  IF (INUM > 0) CTURB='TKEL'
+END IF
+
+IF (IMODEL==6) THEN ! GRIB2 AROME
+! search cloud_water in Arome case (forecast)
+  ISTARTLEVEL = 1
+  CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=6,KNUMBER=6,KLEV1=ISTARTLEVEL)
+  IF (INUM < 0) THEN
+    ISTARTLEVEL = 0
+    CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=6,KNUMBER=6,KLEV1=ISTARTLEVEL)
+  END IF
+  IF (INUM > 0) THEN
+    WRITE (ILUOUT0,'(A)') ' | Grib file from French Weather Service - Arome model (forecast)'
+    LCPL_AROME=.TRUE.
+    NRR=6
+  END IF
+  ! search also turbulent kinetic energy 
+  ISTARTLEVEL = 1
+  CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=19,KNUMBER=11,KLEV1=ISTARTLEVEL)
+  IF (INUM < 0) THEN
+    ISTARTLEVEL = 0
+    CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=19,KNUMBER=11,KLEV1=ISTARTLEVEL)
   END IF
   IF (INUM > 0) CTURB='TKEL'
 END IF
@@ -1034,12 +1064,35 @@ DEALLOCATE (ZEXNM_LS)
 !*  2.5.8 Read the other specific ratios (if Arome model)
 !
 IF (NRR >1) THEN
-  WRITE (ILUOUT0,'(A)') ' | Reading Q fields (except humidity)'
-  DO JLOOP2=1,NRR-1
-    IPAR=246+JLOOP2-1
+  IF (IMODEL==1) THEN
+    WRITE (ILUOUT0,'(A)') ' | Reading Q fields (except humidity)'
+    DO JLOOP2=1,NRR-1
+      IPAR=246+JLOOP2-1
+      DO JLOOP1=1, INLEVEL
+        ILEV1 = JLOOP1-1+ISTARTLEVEL
+        CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IPAR,KLEV1=ILEV1)
+
+        IF (INUM < 0) THEN
+          !callabortstop
+          WRITE(YMSG,*) 'Specific ratio ',IPAR,' at level ',JLOOP1,' is missing'
+          CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+        END IF
+        CALL GRIB_GET_SIZE(IGRIB(INUM),'values',ISIZE)
+        ALLOCATE(ZVALUE(ISIZE))
+        CALL GRIB_GET(IGRIB(INUM),'values',ZVALUE)
+        ALLOCATE(ZOUT(INO))
+        CALL HORIBL(ZPARAM(3),ZPARAM(4),ZPARAM(5),ZPARAM(6),INT(ZPARAM(2)),IINLO,INI, &
+                    ZVALUE,INO,ZXOUT,ZYOUT,ZOUT,.FALSE.,PTIME_HORI,.FALSE.)
+        CALL ARRAY_1D_TO_2D(INO,ZOUT,IIU,IJU,XQ_LS(:,:,INLEVEL-JLOOP1+1,1+JLOOP2))
+        DEALLOCATE (ZVALUE)
+        DEALLOCATE (ZOUT)
+      END DO
+    END DO 
+  ELSE ! GRIB2 AROME IMODEL =6
+    WRITE (ILUOUT0,'(A)') ' | Reading Q fields (except humidity)'
     DO JLOOP1=1, INLEVEL
       ILEV1 = JLOOP1-1+ISTARTLEVEL
-      CALL SEARCH_FIELD(IPAR,109,ILEV1,-1,IGRIB,INUM)
+      CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=6,KNUMBER=6,KLEV1=ILEV1)
 
       IF (INUM < 0) THEN
         !callabortstop
@@ -1052,19 +1105,102 @@ IF (NRR >1) THEN
       ALLOCATE(ZOUT(INO))
       CALL HORIBL(ZPARAM(3),ZPARAM(4),ZPARAM(5),ZPARAM(6),INT(ZPARAM(2)),IINLO,INI, &
         ZVALUE,INO,ZXOUT,ZYOUT,ZOUT,.FALSE.,PTIME_HORI,.FALSE.)
-      CALL ARRAY_1D_TO_2D(INO,ZOUT,IIU,IJU,XQ_LS(:,:,INLEVEL-JLOOP1+1,1+JLOOP2))
+      CALL ARRAY_1D_TO_2D(INO,ZOUT,IIU,IJU,XQ_LS(:,:,INLEVEL-JLOOP1+1,2))
       DEALLOCATE (ZVALUE)
       DEALLOCATE (ZOUT)
     END DO
-  END DO
+
+    DO JLOOP1=1, INLEVEL
+      ILEV1 = JLOOP1-1+ISTARTLEVEL
+      CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=1,KNUMBER=85,KLEV1=ILEV1)
+
+      IF (INUM < 0) THEN
+        !callabortstop
+        WRITE(YMSG,*) 'Specific ratio for rain at level ',JLOOP1,' is missing'
+        CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+      END IF
+      CALL GRIB_GET_SIZE(IGRIB(INUM),'values',ISIZE)
+      ALLOCATE(ZVALUE(ISIZE))
+      CALL GRIB_GET(IGRIB(INUM),'values',ZVALUE)
+      ALLOCATE(ZOUT(INO))
+      CALL HORIBL(ZPARAM(3),ZPARAM(4),ZPARAM(5),ZPARAM(6),INT(ZPARAM(2)),IINLO,INI, &
+        ZVALUE,INO,ZXOUT,ZYOUT,ZOUT,.FALSE.,PTIME_HORI,.FALSE.)
+      CALL ARRAY_1D_TO_2D(INO,ZOUT,IIU,IJU,XQ_LS(:,:,INLEVEL-JLOOP1+1,3))
+      DEALLOCATE (ZVALUE)
+      DEALLOCATE (ZOUT)
+    END DO  
+
+
+    DO JLOOP1=1, INLEVEL
+      ILEV1 = JLOOP1-1+ISTARTLEVEL
+      CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=1,KNUMBER=82,KLEV1=ILEV1)
+      IF (INUM < 0) THEN
+        !callabortstop
+        WRITE(YMSG,*) 'Specific ratio for ICE at level ',JLOOP1,' is missing'
+        CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+      END IF
+      CALL GRIB_GET_SIZE(IGRIB(INUM),'values',ISIZE)
+      ALLOCATE(ZVALUE(ISIZE))
+      CALL GRIB_GET(IGRIB(INUM),'values',ZVALUE)
+      ALLOCATE(ZOUT(INO))
+      CALL HORIBL(ZPARAM(3),ZPARAM(4),ZPARAM(5),ZPARAM(6),INT(ZPARAM(2)),IINLO,INI, &
+        ZVALUE,INO,ZXOUT,ZYOUT,ZOUT,.FALSE.,PTIME_HORI,.FALSE.)
+      CALL ARRAY_1D_TO_2D(INO,ZOUT,IIU,IJU,XQ_LS(:,:,INLEVEL-JLOOP1+1,4))
+      DEALLOCATE (ZVALUE)
+      DEALLOCATE (ZOUT)
+    END DO
+
+
+    DO JLOOP1=1, INLEVEL
+      ILEV1 = JLOOP1-1+ISTARTLEVEL
+      CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=1,KNUMBER=86,KLEV1=ILEV1)
+      IF (INUM < 0) THEN
+        !callabortstop
+        WRITE(YMSG,*) 'Specific ratio ',IPAR,' at level ',JLOOP1,' is missing'
+        CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+      END IF
+      CALL GRIB_GET_SIZE(IGRIB(INUM),'values',ISIZE)
+      ALLOCATE(ZVALUE(ISIZE))
+      CALL GRIB_GET(IGRIB(INUM),'values',ZVALUE)
+      ALLOCATE(ZOUT(INO))
+      CALL HORIBL(ZPARAM(3),ZPARAM(4),ZPARAM(5),ZPARAM(6),INT(ZPARAM(2)),IINLO,INI, &
+        ZVALUE,INO,ZXOUT,ZYOUT,ZOUT,.FALSE.,PTIME_HORI,.FALSE.)
+      CALL ARRAY_1D_TO_2D(INO,ZOUT,IIU,IJU,XQ_LS(:,:,INLEVEL-JLOOP1+1,5))
+      DEALLOCATE (ZVALUE)
+      DEALLOCATE (ZOUT)
+    END DO
+
+
+    DO JLOOP1=1, INLEVEL
+      ILEV1 = JLOOP1-1+ISTARTLEVEL
+      CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=1,KNUMBER=32,KLEV1=ILEV1)
+      IF (INUM < 0) THEN
+        !callabortstop
+        WRITE(YMSG,*) 'Specific ratio ',IPAR,' at level ',JLOOP1,' is missing'
+        CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+      END IF
+      CALL GRIB_GET_SIZE(IGRIB(INUM),'values',ISIZE)
+      ALLOCATE(ZVALUE(ISIZE))
+      CALL GRIB_GET(IGRIB(INUM),'values',ZVALUE)
+      ALLOCATE(ZOUT(INO))
+      CALL HORIBL(ZPARAM(3),ZPARAM(4),ZPARAM(5),ZPARAM(6),INT(ZPARAM(2)),IINLO,INI, &
+        ZVALUE,INO,ZXOUT,ZYOUT,ZOUT,.FALSE.,PTIME_HORI,.FALSE.)
+      CALL ARRAY_1D_TO_2D(INO,ZOUT,IIU,IJU,XQ_LS(:,:,INLEVEL-JLOOP1+1,6))
+      DEALLOCATE (ZVALUE)
+      DEALLOCATE (ZOUT)
+    END DO
+  END IF
 END IF
 !
 IF (CTURB=='TKEL') THEN
   WRITE (ILUOUT0,'(A)') ' | Reading TKE field'
-  IPAR=251
   DO JLOOP1=1, INLEVEL
     ILEV1 = JLOOP1-1+ISTARTLEVEL
-    CALL SEARCH_FIELD(IPAR,109,ILEV1,-1,IGRIB,INUM)
+    IF (IMODEL==1) THEN
+      CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=251,KLEV1=ILEV1)
+    ELSE ! case 6 new arome
+      CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=19,KNUMBER=11,KLEV1=ILEV1)
+    END IF
     IF (INUM <  0) THEN
       !callabortstop
       WRITE(YMSG,*) 'TKE at level ',JLOOP1,' is missing'
@@ -1109,9 +1245,7 @@ IF (IMODEL==5) THEN
     CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE','Mocage model: Bad input argument in read_all_data_grib_case')
   END IF
   XSV_LS(:,:,:,:) = 0.
-  ITYP=109
   ILEV1=-1
-  ILEV2=-1
 !
   WRITE (ILUOUT0,'(A,A4,A)') ' | Reading Mocage species (ppp) from ',HFILE,' file'
 !
@@ -1166,7 +1300,7 @@ IF (IMODEL==5) THEN
     IF (INACT .NE. 0) THEN
       DO JLOOP1=1, INLEVEL
         ILEV1 = JLOOP1
-        CALL SEARCH_FIELD(INUMGRIB(JN),ITYP,ILEV1,ILEV2,IGRIB,INUM)
+        CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=INUMGRIB(JN),KLEV1=ILEV1)
         IF (INUM <  0) THEN
           !callabortstop
           WRITE(YMSG,*) 'Atmospheric ',INUMGRIB(JN),' grib chemical species level ',JLOOP1,' is missing'
@@ -1233,32 +1367,29 @@ END IF
 !
 IF (HFILE(1:3)=='ATM') THEN
 IF (IMODEL/=10) THEN ! others than NCEP
-  ITYP  = 109
   ISTARTLEVEL = 1
 ELSE
-  ITYP  = 100
   ISTARTLEVEL = 10
 END IF
-ILEV2 = -1
 ALLOCATE (XU_LS(IIU,IJU,INLEVEL))
 ALLOCATE (XV_LS(IIU,IJU,INLEVEL))
 ALLOCATE (ZTU_LS(INO))
 ALLOCATE (ZTV_LS(INO))
 !
 SELECT CASE (IMODEL)
-  CASE (0)
+  CASE (0,6,7)
     IPAR = 131
-    CALL SEARCH_FIELD(IPAR,ITYP,ISTARTLEVEL,ILEV2,IGRIB,INUM)
+    CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IPAR,KLEV1=ISTARTLEVEL)
     IF (INUM< 0) THEN
       ISTARTLEVEL = 0
-      CALL SEARCH_FIELD(IPAR,ITYP,ISTARTLEVEL,ILEV2,IGRIB,INUM)
+    CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IPAR,KLEV1=ISTARTLEVEL)
     END IF
   CASE (1,2,3)
     IPAR  = 33
-    CALL SEARCH_FIELD(IPAR,ITYP,ISTARTLEVEL,ILEV2,IGRIB,INUM)
+    CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IPAR,KLEV1=ISTARTLEVEL)
     IF (INUM < 0) THEN
       ISTARTLEVEL = 0
-      CALL SEARCH_FIELD(IPAR,ITYP,ISTARTLEVEL,ILEV2,IGRIB,INUM)
+      CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IPAR,KLEV1=ISTARTLEVEL)
     END IF
   CASE (10)
     IPAR = 131
@@ -1272,7 +1403,7 @@ DO JLOOP1 = ISTARTLEVEL, ISTARTLEVEL+INLEVEL-1
     ILEV1 = IP_GFS(JLOOP1)
   END IF
   ! read component u 
-  CALL SEARCH_FIELD(IPAR,ITYP,ILEV1,ILEV2,IGRIB,INUM)
+  CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IPAR,KLEV1=ILEV1)
   IF (INUM < 0) THEN
     !callabortstop
     WRITE(YMSG,*) 'wind vector component "u" at level ',JLOOP1,' is missing'
@@ -1281,7 +1412,7 @@ DO JLOOP1 = ISTARTLEVEL, ISTARTLEVEL+INLEVEL-1
   CALL GRIB_GET_SIZE(IGRIB(INUM),'values',ISIZE)
   ALLOCATE(ZVALUE(ISIZE))
   CALL GRIB_GET(IGRIB(INUM),'values',ZVALUE)
-  IF (IMODEL==3) THEN
+  IF (IMODEL==3.OR.(IMODEL==7)) THEN
     ALLOCATE(ZTU0_LS(INI))
     ZTU0_LS(:) = ZVALUE(:)
   ELSE
@@ -1304,7 +1435,7 @@ DO JLOOP1 = ISTARTLEVEL, ISTARTLEVEL+INLEVEL-1
   ELSE
     ILEV1 = IP_GFS(JLOOP1)
   END IF
-  CALL SEARCH_FIELD(IPAR+1,ITYP,ILEV1,ILEV2,IGRIB,INUM)
+  CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IPAR+1,KLEV1=ILEV1)
   IF (INUM < 0) THEN
     !callabortstop
     WRITE(YMSG,*) 'wind vector component "v" at level ',JLOOP1,' is missing'
@@ -1313,7 +1444,7 @@ DO JLOOP1 = ISTARTLEVEL, ISTARTLEVEL+INLEVEL-1
   CALL GRIB_GET_SIZE(IGRIB(INUM),'values',ISIZE)
   ALLOCATE(ZVALUE(ISIZE))
   CALL GRIB_GET(IGRIB(INUM),'values',ZVALUE)
-  IF ((IMODEL==3)) THEN 
+  IF ((IMODEL==3).OR.(IMODEL==7)) THEN 
     CALL GRIB_GET(IGRIB(INUM),'Nj',INJ,IRET_GRIB)
     ALLOCATE(IINLO(INJ))         
     CALL COORDINATE_CONVERSION(IMODEL,IGRIB(INUM),IIU,IJU,ZLONOUT,ZLATOUT,&
@@ -1332,8 +1463,8 @@ DO JLOOP1 = ISTARTLEVEL, ISTARTLEVEL+INLEVEL-1
     DEALLOCATE(ZOUT)
   END IF
   DEALLOCATE (ZVALUE)
-    ! interpolations for arpege grid
-  IF ((IMODEL==3)) THEN
+   ! interpolations for arpege grid
+  IF ((IMODEL==3).OR.(IMODEL==7)) THEN
     ! Comes back to real winds instead of stretched winds
     ! (but still with components according to Arpege grid axes)
     ZLATPOLE = ZPARAM(7) * XPI/180.
@@ -1413,7 +1544,7 @@ DO JLOOP1 = ISTARTLEVEL, ISTARTLEVEL+INLEVEL-1
           ZTU_LS(JLOOP4)*SIN(ZALPHA) + ZTV_LS(JLOOP4)*COS(ZALPHA)
     ENDDO
   ENDDO
-  IF ((IMODEL==3)) THEN ! deallocation of Arpege arrays
+  IF ((IMODEL==3).OR.(IMODEL==7)) THEN ! deallocation of Arpege arrays
     DEALLOCATE (ZTU0_LS)
     DEALLOCATE (ZTV0_LS)
   END IF
@@ -1618,7 +1749,7 @@ IF (ODUMMY_REAL) THEN
   !
   DO JI = 1, IMOC
     WRITE(ILUOUT0,'(A,4(I3,1X))') CDUMMY_2D(JI),INUMGRIB(JI),INUMLEV(JI),INUMLEV1(JI),INUMLEV2(JI)
-    CALL SEARCH_FIELD(IPAR,ITYP,ILEV1,ILEV2,IGRIB,INUM)
+    CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IPAR,KLEV1=ILEV1)
     IF (INUM < 0) THEN
       WRITE (ILUOUT0,'(A,I3,A,I2,A)') ' -> 2D field ',INUMGRIB(JI),' is missing - abort'
       !callabortstop
@@ -1715,7 +1846,7 @@ END SUBROUTINE ARRAY_1D_TO_2D
 !---------------------------------------------------------------------------------------
 !---------------------------------------------------------------------------------------
 !#################################################################################
-SUBROUTINE SEARCH_FIELD(KPARAM,KLTYPE,KLEV1,KLEV2,KGRIB,KNUM)
+SUBROUTINE SEARCH_FIELD(KGRIB,KNUM,KPARAM,KDIS,KCAT,KNUMBER,KLEV1)
 !#################################################################################
 ! search the grib message corresponding to KPARAM,KLTYPE,KLEV1,KLEV2 in all 
 ! the KGIRB messages
@@ -1728,40 +1859,37 @@ USE MODE_IO_ll
 IMPLICIT NONE
 !
 !
-INTEGER,INTENT(IN)              :: KPARAM ! Parameter to read
-INTEGER,INTENT(IN)              :: KLTYPE ! Level type
-INTEGER,INTENT(IN)              :: KLEV1  ! Level parameter 1
-INTEGER,INTENT(IN)              :: KLEV2  ! Level parameter 2
 INTEGER(KIND=kindOfInt),DIMENSION(:),INTENT(IN) :: KGRIB ! number of grib messages
 INTEGER,INTENT(OUT)             :: KNUM  ! number of the message researched
+INTEGER,INTENT(IN),OPTIONAL     :: KPARAM ! INdicator of parameter/paramId
+INTEGER,INTENT(IN),OPTIONAL     :: KDIS ! Discipline (GRIB2)
+INTEGER,INTENT(IN),OPTIONAL     :: KCAT ! Catégorie (GRIB2)
+INTEGER,INTENT(IN),OPTIONAL     :: KNUMBER ! parameterNumber (GRIB2)
+INTEGER,INTENT(IN),OPTIONAL     :: KLEV1  ! Level 
 !
 ! Declaration of local variables
 !
 INTEGER :: IFOUND  ! Number of correct parameters
+INTEGER :: ISEARCH  ! Number of correct parameters to find
 INTEGER :: IRET    ! error code 
-INTEGER :: IPARAM  ! Parameter read
+INTEGER :: IPARAM,IDIS,ICAT,INUMBER
 INTEGER :: ILEV1   ! Level parameter 1
-INTEGER :: ILEV2   ! Level parameter 2
 INTEGER :: JLOOP   ! Dummy counter
 INTEGER :: IVERSION
-CHARACTER(LEN=24) :: YLTYPELU
-CHARACTER(LEN=20) :: YLTYPE
-!
 ! Variables used to display messages
 INTEGER :: ILUOUT0   ! Logical unit number of the listing
 !
 ILUOUT0 = TLUOUT0%NLU
 !
-SELECT CASE (KLTYPE) 
-CASE(100)
-  YLTYPE='isobaricInhPa'
-CASE(109)
-  YLTYPE='hybrid'
-CASE(1)
-  YLTYPE='surface'
-CASE DEFAULT
-  YLTYPE='unknown'
-END SELECT
+ISEARCH=0
+IF (PRESENT(KPARAM)) ISEARCH=ISEARCH+1
+IF (PRESENT(KDIS)) ISEARCH=ISEARCH+1
+IF (PRESENT(KCAT)) ISEARCH=ISEARCH+1
+IF (PRESENT(KNUMBER)) ISEARCH=ISEARCH+1
+IF (PRESENT(KLEV1)) ISEARCH=ISEARCH+1
+
+
+
 DO JLOOP=1,SIZE(KGRIB)
       IFOUND = 0
       ! 
@@ -1773,50 +1901,89 @@ DO JLOOP=1,SIZE(KGRIB)
         WRITE (ILUOUT0,'(A)')' | ECMWF pseudo-Grib data encountered, skipping field'
         CYCLE
       ENDIF
-      IF (IVERSION == 2) THEN
-        CALL GRIB_GET(KGRIB(JLOOP),'paramId',IPARAM,IRET_GRIB)
-      ELSE
-        CALL GRIB_GET(KGRIB(JLOOP),'indicatorOfParameter',IPARAM,IRET_GRIB)
-      ENDIF
-      IF (IRET_GRIB >   0) THEN
-        WRITE (ILUOUT0,'(A)')' | Error encountered in the Grib file, skipping field'
-        CYCLE
-      ELSE IF (IRET_GRIB == -6) THEN
-        WRITE (ILUOUT0,'(A)')' | ECMWF pseudo-Grib data encountered, skipping field'
-        CYCLE
-      ENDIF
-      !
-      CALL GRIB_GET(KGRIB(JLOOP),'typeOfLevel',YLTYPELU,IRET_GRIB)
-      IF (IRET_GRIB >   0) THEN
-        WRITE (ILUOUT0,'(A)')' | Error encountered in the Grib file, skipping field'
-        CYCLE
-      ELSE IF (IRET_GRIB == -6) THEN
-        WRITE (ILUOUT0,'(A)')' | ECMWF pseudo-Grib data encountered, skipping field'
-        CYCLE
+      IF (PRESENT(KPARAM)) THEN
+        IF (IVERSION == 2) THEN
+          CALL GRIB_GET(KGRIB(JLOOP),'paramId',IPARAM,IRET_GRIB)
+        ELSE
+          CALL GRIB_GET(KGRIB(JLOOP),'indicatorOfParameter',IPARAM,IRET_GRIB)
+        ENDIF
+        IF (IRET_GRIB >   0) THEN
+          WRITE (ILUOUT0,'(A)')' | Error encountered in the Grib file, skipping field'
+          CYCLE
+        ELSE IF (IRET_GRIB == -6) THEN
+          WRITE (ILUOUT0,'(A)')' | ECMWF pseudo-Grib data encountered, skipping field'
+          CYCLE
+        ENDIF
+        IF (IPARAM==KPARAM) THEN
+                IFOUND = IFOUND + 1
+        ELSE
+          CYCLE
+        ENDIF
       ENDIF
       !
-      CALL GRIB_GET(KGRIB(JLOOP),'topLevel',ILEV1,IRET_GRIB)
-      IF (IRET_GRIB >   0) THEN
-        WRITE (ILUOUT0,'(A)')' | Error encountered in the Grib file, skipping field'
-        CYCLE
-      ELSE IF (IRET_GRIB == -6) THEN
-        WRITE (ILUOUT0,'(A)')' | ECMWF pseudo-Grib data encountered, skipping field'
-        CYCLE
+      IF (PRESENT(KDIS)) THEN
+        CALL GRIB_GET(KGRIB(JLOOP),'discipline',IDIS,IRET_GRIB)
+        IF (IRET_GRIB >   0) THEN
+          WRITE (ILUOUT0,'(A)')' | Error encountered in the Grib file, skipping field'
+          CYCLE
+        ELSE IF (IRET_GRIB == -6) THEN
+          WRITE (ILUOUT0,'(A)')' | ECMWF pseudo-Grib data encountered, skipping field'
+          CYCLE
+        ENDIF
+        IF (IDIS==KDIS) THEN
+          IFOUND = IFOUND + 1
+        ELSE
+          CYCLE
+        ENDIF
+      ENDIF
+      IF (PRESENT(KCAT)) THEN
+        CALL GRIB_GET(KGRIB(JLOOP),'parameterCategory',ICAT,IRET_GRIB)
+        IF (IRET_GRIB >   0) THEN
+          WRITE (ILUOUT0,'(A)')' | Error encountered in the Grib file, skipping field'
+          CYCLE
+        ELSE IF (IRET_GRIB == -6) THEN
+          WRITE (ILUOUT0,'(A)')' | ECMWF pseudo-Grib data encountered, skipping field'
+          CYCLE
+        ENDIF
+        IF (ICAT==KCAT) THEN
+          IFOUND = IFOUND + 1
+        ELSE
+          CYCLE
+        ENDIF
+      ENDIF
+      IF (PRESENT(KNUMBER)) THEN      
+        CALL GRIB_GET(KGRIB(JLOOP),'parameterNumber',INUMBER,IRET_GRIB)
+        IF (IRET_GRIB >   0) THEN
+          WRITE (ILUOUT0,'(A)')' | Error encountered in the Grib file, skipping field'
+          CYCLE
+        ELSE IF (IRET_GRIB == -6) THEN
+          WRITE (ILUOUT0,'(A)')' | ECMWF pseudo-Grib data encountered, skipping field'
+          CYCLE
+        ENDIF
+        IF (INUMBER==KNUMBER) THEN
+          IFOUND = IFOUND + 1
+        ELSE
+          CYCLE
+        ENDIF
+      ENDIF
+      !
+      IF(PRESENT(KLEV1)) THEN
+        CALL GRIB_GET(KGRIB(JLOOP),'topLevel',ILEV1,IRET_GRIB)
+        IF (IRET_GRIB >   0) THEN
+          WRITE (ILUOUT0,'(A)')' | Error encountered in the Grib file, skipping field'
+          CYCLE
+        ELSE IF (IRET_GRIB == -6) THEN
+          WRITE (ILUOUT0,'(A)')' | ECMWF pseudo-Grib data encountered, skipping field'
+          CYCLE
+        ENDIF
+        IF (ILEV1==KLEV1) THEN
+          IFOUND = IFOUND + 1
+        ELSE
+          CYCLE
+        ENDIF
       ENDIF
       ! 
-      CALL GRIB_GET(KGRIB(JLOOP),'bottomLevel',ILEV2,IRET_GRIB)
-      IF (IRET_GRIB >   0) THEN
-        WRITE (ILUOUT0,'(A)')' | Error encountered in the Grib file, skipping field'
-        CYCLE
-      ELSE IF (IRET_GRIB == -6) THEN
-        WRITE (ILUOUT0,'(A)')' | ECMWF pseudo-Grib data encountered, skipping field'
-        CYCLE
-      ENDIF
-      IF (IPARAM==KPARAM) IFOUND = 1
-      IF (YLTYPELU==YLTYPE .OR. -1==KLTYPE) IFOUND = IFOUND + 1
-      IF (ILEV1== KLEV1  .OR. -1== KLEV1) IFOUND = IFOUND + 1
-      IF (ILEV2== KLEV2 .OR. -1== KLEV2) IFOUND = IFOUND + 1
-      IF (IFOUND == 4) THEN
+      IF (IFOUND == ISEARCH) THEN
           KNUM=JLOOP
           EXIT
       ELSE  ! field not found
@@ -1826,7 +1993,6 @@ DO JLOOP=1,SIZE(KGRIB)
 END DO
 
 END SUBROUTINE SEARCH_FIELD
-
 !#################################################################################
 SUBROUTINE COORDINATE_CONVERSION(KMODEL,KGRIB,KNOLON,KNOLARG,&
                            PLONOUT,PLATOUT,PLXOUT,PLYOUT,KNI,PPARAM,KINLO)
@@ -1961,7 +2127,7 @@ CASE(0,5) ! CEP/MOCAGE
     PLYOUT=PLATOUT
   ENDIF
 !
-CASE(1) ! ALADIN
+CASE(1,6) ! ALADIN
 !
   CALL GRIB_GET(KGRIB,'Nj',IINLA,IRET_GRIB)
   CALL GRIB_GET(KGRIB,'Ni',INLO_GRIB(1),IRET_GRIB)
@@ -2084,8 +2250,14 @@ CASE(2) ! ALADIN REUNION
     DEALLOCATE (ZXM)       
   END IF
 !
-CASE(3,4) ! ARPEGE
+CASE(3,4,7) ! ARPEGE
 !
+!print*,"=========COORDINATE CONVERSION CASE ARPEGE ============="
+! PROBLEME AVEC LES GRIB d'EPYGRAM
+! dans longitudeOfLastGridPointInDegrees on la la longitude du dernier point du
+! tableau (donc au pole sud)  
+! dans les GRIB1 ont avait la valeur max du tableau des longitude (donc à
+! l'equateur) 
   CALL GRIB_GET(KGRIB,'latitudeOfFirstGridPointInDegrees',ZILA1)
   CALL GRIB_GET(KGRIB,'longitudeOfFirstGridPointInDegrees',ZILO1)
   CALL GRIB_GET(KGRIB,'latitudeOfLastGridPointInDegrees',ZILA2)
@@ -2111,6 +2283,7 @@ CASE(3,4) ! ARPEGE
      DO JLOOP1=1 ,IINLA
         KNI = KNI + INLO_GRIB(JLOOP1)
      ENDDO
+     ZILO2=360.-360./(MAXVAL(INLO_GRIB))
      GREADY= (PPARAM(1)==INLO_GRIB(1) .AND.&
        PPARAM(3)==ZILA1 .AND. PPARAM(4)==ZILO1 .AND.&
        PPARAM(5)==ZILA2 .AND. PPARAM(6)==ZILO2 .AND.&
