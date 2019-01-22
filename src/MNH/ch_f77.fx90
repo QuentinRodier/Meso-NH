@@ -18,6 +18,8 @@ C**MODIFIED: 19/06/2014 (J.Escobar & M.Leriche) write(kout,...) to OUTPUT_LISTIN
 C                       & correct IN_LUN = 11 => IN_LUN = 78 to avoid fort.11 creation 
 C**MODIFIED: 10/01/2019 (P.Wautelet) use newunit argument to open files
 C                        + bug corrections: some files were not closed
+C**MODIFIED: 10/01/2019 (P.Wautelet) replace double precision declarations by
+C                       real(kind(0.0d0)) (to allow compilation by NAG compiler)
 C!
 C!
 C!
@@ -6732,8 +6734,8 @@ c      c      INCLUDE 'params'
 
 * local variables
 
-      DOUBLE PRECISION rm(kz), ro2(kz)
-      DOUBLE PRECISION b(3), c(3), d(3), e(3)
+      REAL(kind(0.0d0)) :: rm(kz), ro2(kz)
+      REAL(kind(0.0d0)) :: b(3), c(3), d(3), e(3)
       DATA b/ 6.8431D-01, 2.29841D-01,  8.65412D-02/,
      >     c/8.22114D-21, 1.77556D-20,  8.22112D-21/,
      >     d/ 6.0073D-21, 4.28569D-21,  1.28059D-20/,
@@ -7067,9 +7069,9 @@ C-------------------------------------------------------------
 
 	REAL    CHEBEV
 
-	DOUBLE PRECISION  AC(20,17)
-        DOUBLE PRECISION  BC(20,17) ! Chebyshev polynomial coeffs
-	REAL  WAVE_NUM(17)
+        REAL(kind(0.0d0)) ::  AC(20,17)
+        REAL(kind(0.0d0)) ::  BC(20,17) ! Chebyshev polynomial coeffs
+        REAL  WAVE_NUM(17)
 	COMMON /XS_COEFFS/ AC, BC, WAVE_NUM
 
 	INTEGER I
@@ -7096,8 +7098,8 @@ C	polynomial coeffs necessary to calculate O2 effective
 C       cross-sections
 C
 C-------------------------------------------------------------
-	DOUBLE PRECISION  AC(20,17)
-	DOUBLE PRECISION  BC(20,17) ! Chebyshev polynomial coeffs
+	REAL(kind(0.0d0)) ::  AC(20,17)
+	REAL(kind(0.0d0)) ::  BC(20,17) ! Chebyshev polynomial coeffs
 	REAL  WAVE_NUM(17)
 	COMMON /XS_COEFFS/ AC, BC, WAVE_NUM
 	
@@ -7145,7 +7147,7 @@ C-------------------------------------------------------------
       
 	INTEGER M
         REAL  CHEBEV,A,B,X
-	DOUBLE PRECISION  C(M)
+	REAL(kind(0.0d0)) ::  C(M)
         INTEGER J
         REAL D,DD,SV,Y,Y2
 
@@ -15460,12 +15462,12 @@ c     .. Local Scalars ..
 
       INTEGER   ITER, K, LIM, MAXIT, NN, NP1
       REAL      CONA, PI, T
-      DOUBLE PRECISION EN, NNP1, ONE, P, P2PRI, PM1, PM2, PPR, PROD,
-     &                 TMP, TOL, TWO, X, XI
+      REAL(kind(0.0d0)) :: EN, NNP1, ONE, P, P2PRI, PM1, PM2, PPR,
+     &                 PROD, TMP, TOL, TWO, X, XI
 c     ..
 c     .. External Functions ..
 
-      DOUBLE PRECISION D1MACH
+      REAL(kind(0.0d0)) :: D1MACH
       EXTERNAL  D1MACH
 c     ..
 c     .. External Subroutines ..
@@ -16223,7 +16225,7 @@ c     .. Array Arguments ..
      &          CC( MXCMU, MXCMU ), CMU( MXCMU ), CWT( MXCMU ),
      &          EVAL( MI ), EVECC( MXCMU, MXCMU ), GC( MXCMU, MXCMU ),
      &          GL( 0:MXCMU ), KK( MXCMU ), YLMC( 0:MXCMU, MXCMU )
-      DOUBLE PRECISION AAD( MI, MI ), EVALD( MI ), EVECCD( MI, MI ),
+      REAL(kind(0.0d0)) :: AAD( MI, MI ), EVALD( MI ), EVECCD( MI, MI ),
      &                 WKD( MXCMU )
 c     ..
 c     .. Local Scalars ..
@@ -16964,7 +16966,7 @@ c     .. Array Arguments ..
      &     YLM0( 0:MXCMU ), YLMC( 0:MXCMU, MXCMU ),
      &     WK( MXCMU ), ZJ( MXCMU ), ZZ( MXCMU )
 
-      DOUBLE PRECISION AAD( MI, MI ), EVALD( MI ), EVECCD( MI, MI ),
+      REAL(kind(0.0d0)) :: AAD( MI, MI ), EVALD( MI ), EVECCD( MI, MI ),
      &                 WKD( MXCMU )
 
 *bm   Variables for instability fix
@@ -19078,14 +19080,14 @@ C     ##############################
 *-----------------------------------------------------------------------------*
 
       EXTERNAL t665d
-      DOUBLE PRECISION d1mach
+      REAL(kind(0.0d0)) :: d1mach
       INTEGER i
    
       LOGICAL doinit
       DATA doinit/.TRUE./
       SAVE doinit
 
-      DOUBLE PRECISION dmach(4) 
+      REAL(kind(0.0d0)) :: dmach(4) 
       SAVE dmach
 
       IF (( i .GE. 1 ) .AND. ( i .LE. 4 )) THEN
@@ -19117,12 +19119,12 @@ C-----------------------------------------------------------------------
 C This subroutine is a double precision version of subroutine T665R.
 C See code of T665R for detailed comments and explanation
 C-----------------------------------------------------------------------
-      DOUBLE PRECISION DMACH(4)
+      REAL(kind(0.0d0)) :: DMACH(4)
       INTEGER I,IBETA,IEXP,IRND,IT,ITEMP,IZ,J,K,MACHEP,MAXEXP,
      1        MINEXP,MX,NEGEP,NGRD,NXRES
 CS    REAL A,B,BETA,BETAIN,BETAH,CONV,EPS,EPSNEG,ONE,T,TEMP,TEMPA,
 CS   1     TEMP1,TWO,XMAX,XMIN,Y,Z,ZERO
-      DOUBLE PRECISION A,B,BETA,BETAIN,BETAH,CONV,EPS,EPSNEG,ONE,
+      REAL(kind(0.0d0)) :: A,B,BETA,BETAIN,BETAH,CONV,EPS,EPSNEG,ONE,
      1                 T,TEMP,TEMPA,TEMP1,TWO,XMAX,XMIN,Y,Z,ZERO
 C-----------------------------------------------------------------------
 CS    CONV(I) = REAL(I)
@@ -41958,7 +41960,8 @@ c      INCLUDE 'params'
 
 * local 
 
-      DOUBLE PRECISION zenrad, rpsinz, rj, rjp1, dsj, dhj, ga, gb, sm
+      REAL(kind(0.0d0)) :: zenrad, rpsinz, rj, rjp1, dsj, dhj,
+     &                     ga, gb, sm
       INTEGER i, j, k
       INTEGER id
 

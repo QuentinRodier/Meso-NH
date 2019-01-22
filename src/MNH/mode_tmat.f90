@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
 !-----------------------------------------------------------------
 !     algorithme initial créé par Michael Mishchenko (2000)
 !
@@ -19,6 +15,7 @@
 !
 !     Modif par Olivier Caumont (04/2008) pour interfaçage avec diagnostic 
 !     radar de Méso-NH.
+!     P. Wautelet 22/01/2019: replace double precision declarations by real(kind(0.0d0)) (to allow compilation by NAG compiler)
 !
 !****************************************************************************
 
@@ -324,7 +321,7 @@
 !!          RT21(NPN6,NPN4,NPN4),RT22(NPN6,NPN4,NPN4),&
 ! !         IT11(NPN6,NPN4,NPN4),IT12(NPN6,NPN4,NPN4),&
 !!          IT21(NPN6,NPN4,NPN4),IT22(NPN6,NPN4,NPN4)
-      DOUBLE COMPLEX S11,S12,S21,S22
+      COMPLEX*16 S11,S12,S21,S22
       COMPLEX*16 S11u,S12u,S21u,S22u
 
       REAL*8 S11carre,S22carre

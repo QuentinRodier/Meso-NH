@@ -1,3 +1,12 @@
+!MNH_LIC Copyright 2016-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+!MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
+! Modifications:
+!  P.Wautelet 22/01/2019: replace double precision declarations by real(kind(0.0d0)) (to allow compilation by NAG compiler)
+!
+!-----------------------------------------------------------------
 !#################################
         MODULE MODI_LIMA_FUNCTIONS
 !#################################
@@ -215,11 +224,11 @@ SUBROUTINE gaulag(x,w,n,alf)
 !###########################
   INTEGER n,MAXIT
   REAL alf,w(n),x(n)
-  DOUBLE PRECISION EPS
+  REAL(kind=8) :: EPS
   PARAMETER (EPS=3.D-14,MAXIT=10)
   INTEGER i,its,j
   REAL ai
-  DOUBLE PRECISION p1,p2,p3,pp,z,z1
+  REAL(kind=8) :: p1,p2,p3,pp,z,z1
 !
   REAL SUMW
 !
@@ -270,10 +279,10 @@ SUBROUTINE gauher(x,w,n)
 !##########################################
   INTEGER n,MAXIT
   REAL w(n),x(n)
-  DOUBLE PRECISION EPS,PIM4
+  REAL(kind=8) :: EPS,PIM4
   PARAMETER (EPS=3.D-14,PIM4=.7511255444649425D0,MAXIT=10)
   INTEGER i,its,j,m
-  DOUBLE PRECISION p1,p2,p3,pp,z,z1
+  REAL(kind=8) :: p1,p2,p3,pp,z,z1
 !
   REAL SUMW
 !
