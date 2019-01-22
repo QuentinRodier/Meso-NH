@@ -13,11 +13,15 @@ MODULE MODE_MPPDB
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
 !  Philippe Wautelet: 22/01/2019: use standard FLUSH statement instead of non standard intrinsics
+!  Philippe Wautelet: 22/01/2019: use sleep_c subroutine instead of non-standard call system
 !
   use ISO_FORTRAN_ENV, only: OUTPUT_UNIT
+  use modi_tools_c
+
   IMPLICIT NONE
 
 
+  INTEGER            ,PARAMETER    :: NSLEEP=30 !Sleep duration to wait for (in seconds)
   INTEGER            ,PARAMETER    :: chlg=256
   CHARACTER(LEN=chlg),PARAMETER    :: MPPDB_CONF = "mppdb.nam"
 
@@ -28,7 +32,6 @@ MODULE MODE_MPPDB
   CHARACTER(LEN=chlg)              :: MPPDB_HOST  = "localhost" 
   CHARACTER(LEN=chlg)              :: MPPDB_WDIR  = "."
   INTEGER                          :: MPPDB_NBSON = 1
-  CHARACTER(LEN=chlg)              :: MPPDB_COMMAND  = " sleep " // " 30 "
 
   INTEGER                          :: MPPDB_INTER_COMM,MPPDB_INTRA_COMM
   INTEGER                          :: MPPDB_IRANK_WORLD,MPPDB_IRANK_INTRA
@@ -192,7 +195,7 @@ CONTAINS
        !
        CALL MPI_BARRIER  ( MPPDB_INTRA_COMM , ierr )
        ! WAIT FOR TOTALVIEW IF NEEDED 
-       call system(MPPDB_COMMAND)
+       call sleep_c(NSLEEP)
        !
     ELSE ! (MPPDB_INTER_COMM <> MPI_COMM_NULL)
        !-------------------------------------------------------------------------!
@@ -220,7 +223,7 @@ CONTAINS
        CALL MPI_BARRIER  ( MPPDB_INTRA_COMM , ierr )
        !
        ! WAIT FOR TOTALVIEW IF NEEDED 
-       call system(MPPDB_COMMAND)
+       call sleep_c(NSLEEP)
        !
        MPPDB_DEBUG = .TRUE.
        IF (MPPDB_DEBUG) write(200,*) "MPPDB_INIT :: FIRST SON mppdb_irank_intra=", mppdb_irank_intra &
