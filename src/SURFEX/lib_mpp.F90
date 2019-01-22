@@ -1,6 +1,6 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
-!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
 !GLT_LIC The GELATO model is a seaice model used in stand-alone or embedded mode. 
 !GLT_LIC  It has been developed by Meteo-France. The holder of GELATO is Meteo-France.
@@ -36,6 +36,9 @@
 !GLT_LIC  Attempts to use this software in a way not complying with CeCILL-C license
 !GLT_LIC  may lead to prosecution. 
 !GLT_LIC 
+!!    MODIFICATIONS
+!!    --------------
+!!       P. Wautelet 22/01/2019  use standard FLUSH statement instead of non standard intrinsics
 MODULE lib_mpp
    !!======================================================================
    !!                       ***  MODULE  lib_mpp  ***
@@ -3084,10 +3087,10 @@ CONTAINS
          IF( PRESENT(cd9 ) )   WRITE(numout,*) cd9
          IF( PRESENT(cd10) )   WRITE(numout,*) cd10
       ENDIF
-                               CALL FLUSH(numout    )
-      IF( numstp     /= -1 )   CALL FLUSH(numstp    )
-      IF( numsol     /= -1 )   CALL FLUSH(numsol    )
-      IF( numevo_ice /= -1 )   CALL FLUSH(numevo_ice)
+                               FLUSH(unit=numout    )
+      IF( numstp     /= -1 )   FLUSH(unit=numstp    )
+      IF( numsol     /= -1 )   FLUSH(unit=numsol    )
+      IF( numevo_ice /= -1 )   FLUSH(unit=numevo_ice)
       !
       IF( cd1 == 'STOP' ) THEN
          IF(lwp) WRITE(numout,*)  'huge E-R-R-O-R : immediate stop'
@@ -3123,7 +3126,7 @@ CONTAINS
          IF( PRESENT(cd9 ) ) WRITE(numout,*) cd9
          IF( PRESENT(cd10) ) WRITE(numout,*) cd10
       ENDIF
-      CALL FLUSH(numout)
+      FLUSH(unit=numout)
       !
    END SUBROUTINE ctl_warn
 

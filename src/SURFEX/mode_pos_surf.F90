@@ -1,6 +1,6 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 2001-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
-!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
 !!    ###############
       MODULE MODE_POS_SURF
@@ -52,6 +52,7 @@ END INTERFACE
 !!    MODIFICATIONS
 !!    --------------
 !!       I. Mallet  15/10/01     adaptation to MesoNH (F90 norm)
+!!       P. Wautelet 22/01/2019  use standard FLUSH statement instead of non standard intrinsics
 !------------------------------------------------------------------------------
 !
 IMPLICIT NONE
@@ -101,7 +102,7 @@ DO JFILE=1,2
         IF (PRESENT(KLUOUT)) THEN
           WRITE(KLUOUT,FMT=*) 'MODE_POS_SURF : error reading from unit ',&
                 KULNAM,' file ',HDNAML,' line ',YLINE
-          CALL FLUSH(KLUOUT)
+          FLUSH(unit=KLUOUT)
         ENDIF        
         CALL ABOR1_SFX('MODE_POS_SURF: read error in namelist file') 
       ELSE
