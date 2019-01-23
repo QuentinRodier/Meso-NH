@@ -10,7 +10,6 @@ INTERFACE
 !
 !     #################################################################
       SUBROUTINE COMPUTE_UPDRAFT(KKA,KKB,KKE,KKU,KKL, HFRAC_ICE,  &
-                                 HMF_UPDRAFT,                     &
                                  OENTR_DETR,OMIXUV,               &
                                  ONOMIXLG,KSV_LGBEG,KSV_LGEND,    &
                                  PZZ,PDZZ,                        &
@@ -36,7 +35,6 @@ INTEGER,                INTENT(IN)   :: KKE          ! uppest atmosphere physica
 INTEGER,                INTENT(IN)   :: KKU          ! uppest atmosphere array index
 INTEGER,                INTENT(IN)   :: KKL          ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 CHARACTER*1,            INTENT(IN)   :: HFRAC_ICE    ! partition liquid/ice scheme
-CHARACTER (LEN=4),      INTENT(IN)   :: HMF_UPDRAFT  ! Type of Mass Flux Scheme
 LOGICAL,                INTENT(IN) :: OENTR_DETR! flag to recompute entrainment, detrainment and mass flux
 LOGICAL,                INTENT(IN) :: OMIXUV    ! True if mixing of momentum
 LOGICAL,                INTENT(IN)   :: ONOMIXLG  ! False if mixing of lagrangian tracer
@@ -85,7 +83,6 @@ END INTERFACE
 END MODULE MODI_COMPUTE_UPDRAFT
 !     ######spl
       SUBROUTINE COMPUTE_UPDRAFT(KKA,KKB,KKE,KKU,KKL,HFRAC_ICE,   &
-                                 HMF_UPDRAFT,                     &
                                  OENTR_DETR,OMIXUV,               &
                                  ONOMIXLG,KSV_LGBEG,KSV_LGEND,    &
                                  PZZ,PDZZ,                        &
@@ -134,7 +131,8 @@ END MODULE MODI_COMPUTE_UPDRAFT
 !!     V.Masson, C.Lac : 02/2011 : SV_UP initialized by a non-zero value
 !!     S. Riette Apr 2013: improvement of continuity at the condensation level
 !!     R.Honnert Oct 2016 : Add ZSURF and Update with AROME
-!!     Q.Rodier  01/2019 : support RM17 mixing length 
+!!     Q.Rodier  01/2019 : support RM17 mixing length
+!!     R.Honnert 01/2019 : add LGZ (reduction of the mass-flux surface closure with the resolution)
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -164,7 +162,6 @@ INTEGER,                INTENT(IN)   :: KKE          ! uppest atmosphere physica
 INTEGER,                INTENT(IN)   :: KKU          ! uppest atmosphere array index
 INTEGER,                INTENT(IN)   :: KKL          ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 CHARACTER*1,            INTENT(IN)   :: HFRAC_ICE    ! partition liquid/ice scheme
-CHARACTER (LEN=4),      INTENT(IN)   :: HMF_UPDRAFT  ! Type of Mass Flux Scheme
 LOGICAL,                INTENT(IN) :: OENTR_DETR! flag to recompute entrainment, detrainment and mass flux
 LOGICAL,                INTENT(IN) :: OMIXUV    ! True if mixing of momentum
 LOGICAL,                INTENT(IN)   :: ONOMIXLG  ! False if mixing of lagrangian tracer
@@ -396,8 +393,8 @@ IF (OENTR_DETR) THEN
                 (0.61*ZTHM_F(:,KKB))*PSFRV(:)
 
   ! Mass flux at KKB level (updraft triggered if PSFTH>0.)
-  IF (HMF_UPDRAFT=='SURF') THEN
-    ZSURF(:)=TANH(1.83*SQRT(XDXHAT(1)*XDYHAT(1))/ZLUP)
+  IF (LGZ) THEN
+    ZSURF(:)=TANH(XGZ*SQRT(XDXHAT(1)*XDYHAT(1))/ZLUP)
   ELSE
     ZSURF(:)=1.
   END IF

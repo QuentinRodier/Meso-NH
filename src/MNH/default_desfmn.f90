@@ -226,6 +226,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!                   01/2018  (S. Riette) new budgets and variables for ICE3/ICE4
 !!                   01/2018 (J.Colin) add VISC and DRAG
 !!                   07/2017 (V. Vionnet) add blowing snow variables
+!!                   01/2019 (R. Honnert) add reduction of the mass-flux surface closure with the resolution
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1146,6 +1147,8 @@ XC     =  0.012
 XBETA1 =  0.9 
 XR     =  2.
 XLAMBDA_MF=  0.
+LGZ    =  .TRUE.
+XGZ    =  1.83 ! between 1.83 and 1.33
 !
 !-------------------------------------------------------------------------------
 !

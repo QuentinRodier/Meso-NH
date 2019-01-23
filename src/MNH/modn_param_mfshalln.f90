@@ -6,6 +6,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!       10/16 R.Honnert Update with AROME
+!!       01/2019 R.Honnert add parameters for the reduction of mass-flux surface closure with resolution
 !-----------------------------------------------------------------
 !     ###########################
       MODULE MODN_PARAM_MFSHALL_n
@@ -44,7 +45,9 @@ USE MODD_PARAM_MFSHALL_n, ONLY: &
          XC_n => XC, &
          XBETA1_n => XBETA1, &
          XR_n => XR, &
-         XLAMBDA_MF_n => XLAMBDA_MF
+         XLAMBDA_MF_n => XLAMBDA_MF, &
+         LGZ_n => LGZ, &
+         XGZ_n => XGZ
 !
 IMPLICIT NONE
 !
@@ -78,24 +81,29 @@ REAL,SAVE          :: XSIGMA_MF   ! coefficient for sigma computation
 
 REAL,SAVE          :: XFRAC_UP_MAX! maximum Updraft fraction
 !
-
+!
 ! Tuning variables for RHCJ10 updraft :
-
+!
 REAL,SAVE          :: XA1 
 REAL,SAVE          :: XB
 REAL,SAVE          :: XC  
 REAL,SAVE          :: XBETA1
-
+!
 ! Tuning variables for RAHA updraft :
-
+!
 REAL,SAVE          :: XR
 REAL,SAVE          :: XLAMBDA_MF
-
+!
+! Tuning variables for Grey Zone updraft :
+!
+LOGICAL,SAVE       :: LGZ
+REAL,SAVE          :: XGZ
+!
 NAMELIST/NAM_PARAM_MFSHALLn/XIMPL_MF,CMF_UPDRAFT,CMF_CLOUD,LMIXUV,LMF_FLX,&
                             XALP_PERT,XABUO,XBENTR,XBDETR,XCMF,XENTR_MF,&
                             XCRAD_MF,XENTR_DRY,XDETR_DRY,XDETR_LUP,XKCF_MF,&
                             XKRC_MF,XTAUSIGMF,XPRES_UV,XALPHA_MF,XSIGMA_MF,&
-                            XFRAC_UP_MAX,XA1,XB,XC,XBETA1,XR,XLAMBDA_MF
+                            XFRAC_UP_MAX,XA1,XB,XC,XBETA1,XR,XLAMBDA_MF,LGZ,XGZ
 
 
 !
@@ -130,6 +138,8 @@ SUBROUTINE INIT_NAM_PARAM_MFSHALLn
    XBETA1 = XBETA1_n
    XR = XR_n
    XLAMBDA_MF = XLAMBDA_MF_n
+   LGZ = LGZ_n
+   XGZ = XGZ_n
 
 END SUBROUTINE INIT_NAM_PARAM_MFSHALLn
 
@@ -162,6 +172,9 @@ SUBROUTINE UPDATE_NAM_PARAM_MFSHALLn
    XBETA1_n = XBETA1
    XR_n = XR
    XLAMBDA_MF_n = XLAMBDA_MF
+   LGZ_n = LGZ
+   XGZ_n = XGZ
+
 END SUBROUTINE UPDATE_NAM_PARAM_MFSHALLn
 
 END MODULE MODN_PARAM_MFSHALL_n

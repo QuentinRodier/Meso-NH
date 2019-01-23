@@ -30,7 +30,8 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/02/07  
-!!       10/16 R.Honnert Update with AROME
+!!      10/16 R.Honnert Update with AROME
+!!      01/2019 R.Honnert add parameters for the reduction of mass-flux surface closure with resolution
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -81,7 +82,12 @@ REAL          :: XBETA1
 !  Parameters for closure assumption of Hourdin et al 2002
 
 REAL          :: XR      ! Aspect ratio of updraft
+!
+!  Grey Zone 
 
+LOGICAL       :: LGZ      ! Grey Zone Surface Closure
+REAL          :: XGZ      ! Tuning of the surface initialisation
+!
 !  Thermodynamic parameter
 
 REAL          :: XLAMBDA_MF      ! Lambda to compute ThetaS1 from ThetaL
@@ -119,7 +125,8 @@ REAL, POINTER          :: XC=>NULL()
 REAL, POINTER          :: XBETA1=>NULL()
 REAL, POINTER          :: XR=>NULL() 
 REAL, POINTER          :: XLAMBDA_MF=>NULL() 
-
+LOGICAL, POINTER       :: LGZ=>NULL() 
+REAL, POINTER          :: XGZ=>NULL() 
 CONTAINS
 
 SUBROUTINE PARAM_MFSHALL_GOTO_MODEL(KFROM, KTO)
@@ -157,7 +164,9 @@ XC=>PARAM_MFSHALL_MODEL(KTO)%XC
 XBETA1=>PARAM_MFSHALL_MODEL(KTO)%XBETA1
 XR=>PARAM_MFSHALL_MODEL(KTO)%XR
 XLAMBDA_MF=>PARAM_MFSHALL_MODEL(KTO)%XLAMBDA_MF
-
+LGZ=>PARAM_MFSHALL_MODEL(KTO)%LGZ
+XGZ=>PARAM_MFSHALL_MODEL(KTO)%XGZ
+!
 END SUBROUTINE PARAM_MFSHALL_GOTO_MODEL
 
 END MODULE MODD_PARAM_MFSHALL_n

@@ -290,6 +290,7 @@ END MODULE MODI_READ_EXSEG_n
 !!      Modification   07/2017   (V. Vionnet) add blowing snow scheme
 !!      Modification   01/2019   (Q. Rodier) define XCEDIS depending on BL89 or RM17 mixing length
 !!      Modification   01/2019   (P. Wautelet) bugs correction: incorrect writes
+!!      Modification   01/2019   (R. Honnert) remove SURF in CMF_UPDRAFT
 !!------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -723,7 +724,7 @@ CALL TEST_NAM_VAR(ILUOUT,'CTURBLEN_CLOUD',CTURBLEN_CLOUD,'NONE','DEAR','DELT','B
 !   The test on the mass flux scheme for shallow convection
 !
 CALL TEST_NAM_VAR(ILUOUT,'CMF_UPDRAFT',CMF_UPDRAFT,'NONE','EDKF','RHCJ',&
-                   'HRIO','SURF','BOUT')
+                   'HRIO','BOUT')
 CALL TEST_NAM_VAR(ILUOUT,'CMF_CLOUD',CMF_CLOUD,'NONE','STAT','DIRE')
 !
 !   The test on the CSOLVER name is made elsewhere

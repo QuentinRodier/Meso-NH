@@ -165,7 +165,8 @@ END MODULE MODI_SHALLOW_MF
 !!      R.Honnert 10/2016 : SURF=gray zone initilisation + EDKF  
 !!      R.Honnert 10/2016 : Update with Arome
 !!      Philippe Wautelet 28/05/2018: corrected truncated integer division (2/3 -> 2./3.)
-!!      Q.Rodier  01/2019 : support RM17 mixing length 
+!!      Q.Rodier  01/2019 : support RM17 mixing length
+!!      R.Honnert 1/2019  : remove SURF 
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -306,8 +307,7 @@ IKE=KKU-KKL*JPVEXT
 
 ! updraft governing variables
 IF (HMF_UPDRAFT == 'EDKF' .OR. HMF_UPDRAFT == 'HRIO' .OR. &
-    HMF_UPDRAFT == 'RHCJ' .OR. HMF_UPDRAFT == 'BOUT' .OR. &
-    HMF_UPDRAFT == 'SURF' ) THEN
+    HMF_UPDRAFT == 'RHCJ' .OR. HMF_UPDRAFT == 'BOUT') THEN
   PENTR      = 1.E20
   PDETR      = 1.E20
   PEMF       = 1.E20
@@ -335,9 +335,9 @@ ZTHVM(:,:) = PTHM(:,:)*((1.+XRV / XRD *PRM(:,:,1))/(1.+ZRTM(:,:)))
 !!! 2. Compute updraft
 !!!    ---------------
 !
-IF (HMF_UPDRAFT == 'EDKF' .OR. HMF_UPDRAFT == 'BOUT' .OR. HMF_UPDRAFT == 'SURF') THEN
+IF (HMF_UPDRAFT == 'EDKF' .OR. HMF_UPDRAFT == 'BOUT') THEN
   GENTR_DETR = .TRUE.
-  CALL COMPUTE_UPDRAFT(KKA,IKB,IKE,KKU,KKL,HFRAC_ICE,HMF_UPDRAFT,GENTR_DETR,OMIXUV,&
+  CALL COMPUTE_UPDRAFT(KKA,IKB,IKE,KKU,KKL,HFRAC_ICE,GENTR_DETR,OMIXUV,&
                        ONOMIXLG,KSV_LGBEG,KSV_LGEND,             &
                        PZZ,PDZZ,                                 &
                        PSFTH,PSFRV,PPABSM,PRHODREF,              &
@@ -417,8 +417,7 @@ CALL COMPUTE_MF_CLOUD(KKA,IKB,IKE,KKU,KKL,KRR,KRRL,KRRI,&
 !!!    ------------------------------------------------------------------------
 !
 ZEMF_O_RHODREF=PEMF/PRHODREF
-      IF(HMF_UPDRAFT == 'EDKF' .OR. HMF_UPDRAFT == 'RHCJ'.OR. HMF_UPDRAFT == 'BOUT' &
-              .OR. HMF_UPDRAFT == 'SURF') THEN
+      IF(HMF_UPDRAFT == 'EDKF' .OR. HMF_UPDRAFT == 'RHCJ'.OR. HMF_UPDRAFT == 'BOUT') THEN
    IF ( PIMPL_MF > 1.E-10 ) THEN  
        CALL MF_TURB(KKA, IKB, IKE, KKU, KKL, OMIXUV,                     &
                 ONOMIXLG,KSV_LGBEG,KSV_LGEND,                            &
