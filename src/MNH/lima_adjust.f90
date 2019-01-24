@@ -1109,7 +1109,8 @@ DEALLOCATE(ZCTMIN)
 !*       5.2    compute the cloud fraction PCLDFR (binary !!!!!!!)
 !
 IF ( .NOT. OSUBG_COND ) THEN
-   WHERE (PRCS(:,:,:) + PRIS(:,:,:) + PRSS(:,:,:) > 1.E-12 / ZDT)
+!  WHERE (PRCS(:,:,:) + PRIS(:,:,:) + PRSS(:,:,:) > 1.E-12 / ZDT)
+   WHERE (PRCS(:,:,:) + PRIS(:,:,:)  > 1.E-12 / ZDT)
       ZW(:,:,:)  = 1.
    ELSEWHERE
       ZW(:,:,:)  = 0. 

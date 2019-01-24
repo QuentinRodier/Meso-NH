@@ -7,15 +7,17 @@
 !      ###################################
 !
 INTERFACE
-      SUBROUTINE LIMA_SEDIMENTATION (HPHASE, KMOMENTS, KID, KSPLITG, PTSTEP, PZZ, PRHODREF,           &
+      SUBROUTINE LIMA_SEDIMENTATION (KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB, KKTE, KKT, KKL, &
+                                     HPHASE, KMOMENTS, KID, KSPLITG, PTSTEP, PDZZ, PRHODREF,       &
                                      PPABST, PT, PRT_SUM, PCPT, PRS, PCS, PINPR )
 !
+INTEGER,                  INTENT(IN)    :: KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB, KKTE, KKT, KKL
 CHARACTER(1),             INTENT(IN)    :: HPHASE    ! Liquid or solid hydrometeors
 INTEGER,                  INTENT(IN)    :: KMOMENTS  ! Number of moments 
 INTEGER,                  INTENT(IN)    :: KID       ! Hydrometeor ID
 INTEGER,                  INTENT(IN)    :: KSPLITG   !  
 REAL,                     INTENT(IN)    :: PTSTEP    ! Time step          
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ       ! Height (z)
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDZZ      ! Height (z)
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF  ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST    ! abs. pressure at time t
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PT        ! Temperature
@@ -31,7 +33,8 @@ END MODULE MODI_LIMA_SEDIMENTATION
 !
 !
 !     ######################################################################
-      SUBROUTINE LIMA_SEDIMENTATION (HPHASE, KMOMENTS, KID, KSPLITG, PTSTEP, PZZ, PRHODREF,           &
+      SUBROUTINE LIMA_SEDIMENTATION (KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB, KKTE, KKT, KKL, &
+                                     HPHASE, KMOMENTS, KID, KSPLITG, PTSTEP, PDZZ, PRHODREF,       &
                                      PPABST, PT, PRT_SUM, PCPT, PRS, PCS, PINPR )
 !     ######################################################################
 !
@@ -78,12 +81,13 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
+INTEGER,                  INTENT(IN)    :: KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB, KKTE, KKT, KKL
 CHARACTER(1),             INTENT(IN)    :: HPHASE    ! Liquid or solid hydrometeors
 INTEGER,                  INTENT(IN)    :: KMOMENTS  ! Number of moments 
 INTEGER,                  INTENT(IN)    :: KID       ! Hydrometeor ID
 INTEGER,                  INTENT(IN)    :: KSPLITG   !  
 REAL,                     INTENT(IN)    :: PTSTEP    ! Time step          
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ       ! Height (z)
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDZZ      ! Height (z)
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF  ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST    ! abs. pressure at time t
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PT        ! Temperature
@@ -96,7 +100,6 @@ REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPR     ! Instant precip rate
 !*       0.2   Declarations of local variables :
 !
 INTEGER :: JK, JL, JN                     ! Loop index
-INTEGER :: IIB, IIE, IJB, IJE, IKB, IKE   ! Physical domain
 INTEGER :: ISEDIM                         ! Case number of sedimentation
 !
 LOGICAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3)) &
@@ -127,15 +130,6 @@ REAL    :: ZC                             ! Cpl or Cpi
 !
 !-------------------------------------------------------------------------------
 !
-! Physical domain
-!
-IIB=1+JPHEXT
-IIE=SIZE(PZZ,1) - JPHEXT
-IJB=1+JPHEXT
-IJE=SIZE(PZZ,2) - JPHEXT
-IKB=1+JPVEXT
-IKE=SIZE(PZZ,3) - JPVEXT
-!
 ! Time splitting
 !
 ZTSPLITG= PTSTEP / FLOAT(NSPLITSED(KID))
@@ -145,10 +139,9 @@ PINPR(:,:) = 0.
 !
 PRS(:,:,:) = PRS(:,:,:) * PTSTEP
 IF (KMOMENTS==2) PCS(:,:,:) = PCS(:,:,:) * PTSTEP
-DO JK = IKB , IKE
-   ZW(:,:,JK)=ZTSPLITG/(PZZ(:,:,JK+1)-PZZ(:,:,JK))
+DO JK = KKTB , KKTE
+   ZW(:,:,JK)=ZTSPLITG/PDZZ(:,:,JK)
 END DO
-ZW(:,:,IKE+1) = ZW(:,:,IKE)
 !
 IF (HPHASE=='L') ZC=XCL
 IF (HPHASE=='I') ZC=XCI
@@ -160,7 +153,7 @@ IF (HPHASE=='I') ZC=XCI
 DO JN = 1 ,  NSPLITSED(KID)
   ! Computation only where enough ice, snow, graupel or hail
    GSEDIM(:,:,:) = .FALSE.
-   GSEDIM(IIB:IIE,IJB:IJE,IKB:IKE) = PRS(IIB:IIE,IJB:IJE,IKB:IKE)>XRTMIN(KID)
+   GSEDIM(KIB:KIE,KJB:KJE,KKTB:KKTE) = PRS(KIB:KIE,KJB:KJE,KKTB:KKTE)>XRTMIN(KID)
    IF (KMOMENTS==2)  GSEDIM(:,:,:) = GSEDIM(:,:,:) .AND. PCS(:,:,:)>XCTMIN(KID)
    ISEDIM = COUNTJV( GSEDIM(:,:,:),I1(:),I2(:),I3(:))
 !
@@ -200,23 +193,25 @@ DO JN = 1 ,  NSPLITSED(KID)
       END IF
 
       ZWSEDR(:,:,:) = UNPACK( ZZW(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
-      ZWSEDR(:,:,IKB:IKE) = MIN( ZWSEDR(:,:,IKB:IKE), PRS(:,:,IKB:IKE) * PRHODREF(:,:,IKB:IKE) / ZW(:,:,IKB:IKE) )
-      IF (KMOMENTS==2) ZWSEDC(:,:,:) = UNPACK( ZZX(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
-      IF (KMOMENTS==2) ZWSEDC(:,:,IKB:IKE) = MIN( ZWSEDC(:,:,IKB:IKE), PCS(:,:,IKB:IKE) * PRHODREF(:,:,IKB:IKE) / ZW(:,:,IKB:IKE) )
+      ZWSEDR(:,:,KKTB:KKTE) = MIN( ZWSEDR(:,:,KKTB:KKTE), PRS(:,:,KKTB:KKTE) * PRHODREF(:,:,KKTB:KKTE) / ZW(:,:,KKTB:KKTE) )
+      IF (KMOMENTS==2) THEN
+         ZWSEDC(:,:,:) = UNPACK( ZZX(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
+         ZWSEDC(:,:,KKTB:KKTE) = MIN( ZWSEDC(:,:,KKTB:KKTE), PCS(:,:,KKTB:KKTE) * PRHODREF(:,:,KKTB:KKTE) / ZW(:,:,KKTB:KKTE) )
+      END IF
       
-      DO JK = IKB , IKE
+      DO JK = KKTB , KKTE
          PRS(:,:,JK) = PRS(:,:,JK) + ZW(:,:,JK)*    &
-              (ZWSEDR(:,:,JK+1)-ZWSEDR(:,:,JK))/PRHODREF(:,:,JK)
+              (ZWSEDR(:,:,JK+KKL)-ZWSEDR(:,:,JK))/PRHODREF(:,:,JK)
          IF (KMOMENTS==2) PCS(:,:,JK) = PCS(:,:,JK) + ZW(:,:,JK)*    &
-              (ZWSEDC(:,:,JK+1)-ZWSEDC(:,:,JK))/PRHODREF(:,:,JK)
+              (ZWSEDC(:,:,JK+KKL)-ZWSEDC(:,:,JK))/PRHODREF(:,:,JK)
          ! Heat transport
-         PRT_SUM(:,:,JK-1) = PRT_SUM(:,:,JK-1) + ZW(:,:,JK-1)*ZWSEDR(:,:,JK)/PRHODREF(:,:,JK-1)
+         PRT_SUM(:,:,JK-KKL) = PRT_SUM(:,:,JK-KKL) + ZW(:,:,JK-KKL)*ZWSEDR(:,:,JK)/PRHODREF(:,:,JK-KKL)
          PRT_SUM(:,:,JK) = PRT_SUM(:,:,JK) - ZW(:,:,JK)*ZWSEDR(:,:,JK)/PRHODREF(:,:,JK)
-         PCPT(:,:,JK-1) = PCPT(:,:,JK-1) + ZC * (ZW(:,:,JK-1)*ZWSEDR(:,:,JK)/PRHODREF(:,:,JK-1))
+         PCPT(:,:,JK-KKL) = PCPT(:,:,JK-KKL) + ZC * (ZW(:,:,JK-KKL)*ZWSEDR(:,:,JK)/PRHODREF(:,:,JK-KKL))
          PCPT(:,:,JK) = PCPT(:,:,JK) - ZC * (ZW(:,:,JK)*ZWSEDR(:,:,JK)/PRHODREF(:,:,JK))
-         ZWDT(:,:,JK) =(PRHODREF(:,:,JK+1)*(1.+PRT_SUM(:,:,JK))*PCPT(:,:,JK)*PT(:,:,JK) + &
-              ZW(:,:,JK)*ZWSEDR(:,:,JK+1)*ZC*PT(:,:,JK+1)) / &
-              (PRHODREF(:,:,JK+1)*(1.+PRT_SUM(:,:,JK))*PCPT(:,:,JK) + ZW(:,:,JK)*ZWSEDR(:,:,JK+1)*ZC)
+         ZWDT(:,:,JK) =(PRHODREF(:,:,JK+KKL)*(1.+PRT_SUM(:,:,JK))*PCPT(:,:,JK)*PT(:,:,JK) + &
+              ZW(:,:,JK)*ZWSEDR(:,:,JK+1)*ZC*PT(:,:,JK+KKL)) / &
+              (PRHODREF(:,:,JK+KKL)*(1.+PRT_SUM(:,:,JK))*PCPT(:,:,JK) + ZW(:,:,JK)*ZWSEDR(:,:,JK+KKL)*ZC)
          ZWDT(:,:,JK) = ZWDT(:,:,JK) - PT(:,:,JK)
       END DO
       DEALLOCATE(ZRHODREF)
@@ -230,7 +225,7 @@ DO JN = 1 ,  NSPLITSED(KID)
       DEALLOCATE(ZZX)
       DEALLOCATE(ZZY)
       !      
-      PINPR(:,:) = PINPR(:,:) + ZWSEDR(:,:,IKB)/XRHOLW/NSPLITSED(KID)                          ! in m/s
+      PINPR(:,:) = PINPR(:,:) + ZWSEDR(:,:,KKB)/XRHOLW/NSPLITSED(KID)                          ! in m/s
       PT(:,:,:) = PT(:,:,:) + ZWDT(:,:,:)
       
    END IF

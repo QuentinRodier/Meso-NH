@@ -589,11 +589,11 @@ DO JK = 1 , KLEV
                 ZFLWP(JL)/=0.0) THEN
             ZNUM =  PLWC(JL,IKL)/ XAC
             ZDEN = XCREC * (PCCT_C2R2(JL,IKL)*(PLWC(JL,IKL))**2)**(XLBEXC)
-            ZRADLS(JL) = 0.5E6 * sqrt(ZDEN/PCCT_C2R2(JL,IKL))
-            ZRADLP(JL) = 0.5E6 * (ZNUM/ZDEN)
+            ZRADLS(JL) = MIN( 0.5E6 * sqrt(ZDEN/PCCT_C2R2(JL,IKL)) , 100.)
+            ZRADLP(JL) = MIN( 0.5E6 * (ZNUM/ZDEN)                  , 100.)
           ENDIF
            IF (PCRT_C2R2(JL, IKL)>XCTMIN(3) .AND. PRWC(JL,IKL)>XRTMIN(3).AND.&
-                ZFRWP(JL)/=0.0) THEN
+                ZFRWP(JL)/=0.0 ) THEN
             ZNUM =  PRWC(JL,IKL)/ XAR
             ZDEN = XCRER * (PCRT_C2R2(JL,IKL)*(PRWC(JL,IKL))**2)**(XLBEXR)
             ZRADRS(JL) = 0.5E6 * sqrt(ZDEN/PCRT_C2R2(JL,IKL))
@@ -1098,6 +1098,7 @@ ENDDO
 !
 NUAER = NUA
 NTRAER = NTRA
+
 !
 !     ------------------------------------------------------------------
 !*         2.6    DIFFUSIVITY FACTOR OR SATELLITE VIEWING ANGLE

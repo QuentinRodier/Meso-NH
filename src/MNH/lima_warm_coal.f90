@@ -242,6 +242,7 @@ IF( IMICRO >= 1 ) THEN
 !
 !-------------------------------------------------------------------------------
 !
+IF (LRAIN) THEN
 !
 !*       2. Self-collection of cloud droplets    
 !   	 ------------------------------------
@@ -270,7 +271,6 @@ IF( IMICRO >= 1 ) THEN
 !   	 ----------------------------------------------------------------------
 !
 !
-IF (LRAIN) THEN
 !
    ZZW2(:) = 0.0
    ZZW1(:) = 0.0
@@ -472,7 +472,7 @@ ELSE
 !        ------------------------
 !
 !
-   IF (LBUDGET_SV) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NC,'SELF_BU_RSV')
+   IF (LBUDGET_SV .AND. LRAIN) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NC,'SELF_BU_RSV')
 !
    IF (LBUDGET_RC .AND. LRAIN) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7 ,'AUTO_BU_RRC')
    IF (LBUDGET_RR .AND. LRAIN) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),8 ,'AUTO_BU_RRR')

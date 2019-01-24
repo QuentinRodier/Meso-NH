@@ -8,16 +8,21 @@ MODULE MODI_LIMA
 !
 INTERFACE
 !
-SUBROUTINE LIMA ( PTSTEP, TPFILE, OCLOSE_OUT,                    &
-                  PRHODREF, PEXNREF, PZZ,                         &
-                  PRHODJ, PPABSM, PPABST,                         &
-                  NCCN, NIFN, NIMM,                               &
-                  PTHM, PTHT, PRT, PSVT, PW_NU,                   &
-                  PTHS, PRS, PSVS,                                &
-                  PINPRC, PINDEP, PINPRR, PINPRI, PINPRS, PINPRG, PINPRH, &
-                  PEVAP3D                                         )
+   SUBROUTINE LIMA ( KKA, KKU, KKL,                                  &
+                     PTSTEP, TPFILE, OCLOSE_OUT,                     &
+                     PRHODREF, PEXNREF, PDZZ,                        &
+                     PRHODJ, PPABSM, PPABST,                         &
+                     NCCN, NIFN, NIMM,                               &
+                     PTHM, PTHT, PRT, PSVT, PW_NU,                   &
+                     PTHS, PRS, PSVS,                                &
+                     PINPRC, PINDEP, PINPRR, PINPRI, PINPRS, PINPRG, PINPRH, &
+                     PEVAP3D                                         )
 !
 USE MODD_IO_ll, ONLY: TFILEDATA
+!
+INTEGER,                  INTENT(IN)    :: KKA   !near ground array index  
+INTEGER,                  INTENT(IN)    :: KKU   !uppest atmosphere array index
+INTEGER,                  INTENT(IN)    :: KKL   !vert. levels type 1=MNH -1=ARO
 !
 REAL,                     INTENT(IN)    :: PTSTEP     ! Time step
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE     ! Output file
@@ -25,7 +30,7 @@ LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of o
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF    ! Reference Exner function
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ        ! Layer thikness (m)
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDZZ       ! Layer thikness (m)
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ     ! Dry density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABSM     ! absolute pressure at t
@@ -60,8 +65,9 @@ END MODULE MODI_LIMA
 !
 !
 !     ######spl
-      SUBROUTINE LIMA ( PTSTEP, TPFILE, OCLOSE_OUT,                    &
-                        PRHODREF, PEXNREF, PZZ,                         &
+      SUBROUTINE LIMA ( KKA, KKU, KKL,                                  &
+                        PTSTEP, TPFILE, OCLOSE_OUT,                     &
+                        PRHODREF, PEXNREF, PDZZ,                        &
                         PRHODJ, PPABSM, PPABST,                         &
                         NCCN, NIFN, NIMM,                               &
                         PTHM, PTHT, PRT, PSVT, PW_NU,                   &
@@ -122,13 +128,17 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
+INTEGER,                  INTENT(IN)    :: KKA   !near ground array index  
+INTEGER,                  INTENT(IN)    :: KKU   !uppest atmosphere array index
+INTEGER,                  INTENT(IN)    :: KKL   !vert. levels type 1=MNH -1=ARO
+!
 REAL,                     INTENT(IN)    :: PTSTEP     ! Time step
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE     ! Output file
 LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of output
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF    ! Reference Exner function
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ        ! Layer thikness (m)
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDZZ       ! Layer thikness (m)
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ     ! Dry density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABSM     ! absolute pressure at t
@@ -292,7 +302,6 @@ INTEGER                                                 :: INB_ITER_MAX
 ! domain size and levels (AROME compatibility)
 INTEGER :: KRR
 INTEGER :: IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKT, IKTB, IKTE
-INTEGER :: KKA, KKU, KKL
 ! loops and packing
 INTEGER :: II, IPACK
 INTEGER, DIMENSION(:), ALLOCATABLE :: I1, I2, I3
@@ -309,6 +318,22 @@ LOGICAL, DIMENSION(SIZE(PRT,1),SIZE(PRT,2))          :: GDEP
 !
 !*       0.     Init
 !               ----
+!
+!
+IIB=1+JPHEXT      ! first physical point in i
+IIT=SIZE(PDZZ,1)  ! total number of points in i
+IIE=IIT - JPHEXT  ! last physical point in i
+!
+IJB=1+JPHEXT      ! first physical point in j
+IJT=SIZE(PDZZ,2)  ! total number of points in j
+IJE=IJT - JPHEXT  ! last physical point in j
+!
+IKB=KKA+JPVEXT*KKL ! near ground physical point
+IKE=KKU-JPVEXT*KKL ! near TOA physical point
+IKT=SIZE(PDZZ,3)   ! total number of points in k
+!
+IKTB=1+JPVEXT      ! first index for a physical point in k
+IKTE=IKT-JPVEXT    ! last index for a physical point in k
 !
 ZTHS(:,:,:) = PTHS(:,:,:)
 ZTHT(:,:,:) = PTHS(:,:,:) * PTSTEP
@@ -550,22 +575,28 @@ END IF
 !
 ZRT_SUM = (ZRVS + ZRCS + ZRRS + ZRIS + ZRSS + ZRGS + ZRHS)*PTSTEP
 ZCPT    = XCPD + (XCPV * ZRVS + XCL * (ZRCS + ZRRS) + XCI * (ZRIS + ZRSS + ZRGS + ZRHS))*PTSTEP
-IF (LWARM .AND. LSEDC) CALL LIMA_SEDIMENTATION('L', 2, 2, 1, PTSTEP, PZZ, PRHODREF, PPABST, ZT, ZRT_SUM, ZCPT, ZRCS, ZCCS, PINPRC)
+IF (LWARM .AND. LSEDC) CALL LIMA_SEDIMENTATION(IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKTB, IKTE, IKT, KKL, &
+                                               'L', 2, 2, 1, PTSTEP, PDZZ, PRHODREF, PPABST, ZT, ZRT_SUM, ZCPT, ZRCS, ZCCS, PINPRC)
 ZRT_SUM = (ZRVS + ZRCS + ZRRS + ZRIS + ZRSS + ZRGS + ZRHS)*PTSTEP
 ZCPT    = XCPD + (XCPV * ZRVS + XCL * (ZRCS + ZRRS) + XCI * (ZRIS + ZRSS + ZRGS + ZRHS))*PTSTEP
-IF (LWARM .AND. LRAIN) CALL LIMA_SEDIMENTATION('L', 2, 3, 1, PTSTEP, PZZ, PRHODREF, PPABST, ZT, ZRT_SUM, ZCPT, ZRRS, ZCRS, PINPRR)
+IF (LWARM .AND. LRAIN) CALL LIMA_SEDIMENTATION(IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKTB, IKTE, IKT, KKL, &
+                                               'L', 2, 3, 1, PTSTEP, PDZZ, PRHODREF, PPABST, ZT, ZRT_SUM, ZCPT, ZRRS, ZCRS, PINPRR)
 ZRT_SUM = (ZRVS + ZRCS + ZRRS + ZRIS + ZRSS + ZRGS + ZRHS)*PTSTEP
 ZCPT    = XCPD + (XCPV * ZRVS + XCL * (ZRCS + ZRRS) + XCI * (ZRIS + ZRSS + ZRGS + ZRHS))*PTSTEP
-IF (LCOLD .AND. LSEDI) CALL LIMA_SEDIMENTATION('I', 2, 4, 1, PTSTEP, PZZ, PRHODREF, PPABST, ZT, ZRT_SUM, ZCPT, ZRIS, ZCIS, ZW2D)
+IF (LCOLD .AND. LSEDI) CALL LIMA_SEDIMENTATION(IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKTB, IKTE, IKT, KKL, &
+                                               'I', 2, 4, 1, PTSTEP, PDZZ, PRHODREF, PPABST, ZT, ZRT_SUM, ZCPT, ZRIS, ZCIS, ZW2D)
 ZRT_SUM = (ZRVS + ZRCS + ZRRS + ZRIS + ZRSS + ZRGS + ZRHS)*PTSTEP
 ZCPT    = XCPD + (XCPV * ZRVS + XCL * (ZRCS + ZRRS) + XCI * (ZRIS + ZRSS + ZRGS + ZRHS))*PTSTEP
-IF (LCOLD .AND. LSNOW) CALL LIMA_SEDIMENTATION('I', 1, 5, 1, PTSTEP, PZZ, PRHODREF, PPABST, ZT, ZRT_SUM, ZCPT, ZRSS, ZW3D, PINPRS)
+IF (LCOLD .AND. LSNOW) CALL LIMA_SEDIMENTATION(IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKTB, IKTE, IKT, KKL, &
+                                               'I', 1, 5, 1, PTSTEP, PDZZ, PRHODREF, PPABST, ZT, ZRT_SUM, ZCPT, ZRSS, ZW3D, PINPRS)
 ZRT_SUM = (ZRVS + ZRCS + ZRRS + ZRIS + ZRSS + ZRGS + ZRHS)*PTSTEP
 ZCPT    = XCPD + (XCPV * ZRVS + XCL * (ZRCS + ZRRS) + XCI * (ZRIS + ZRSS + ZRGS + ZRHS))*PTSTEP
-IF (LCOLD .AND. LSNOW) CALL LIMA_SEDIMENTATION('I', 1, 6, 1, PTSTEP, PZZ, PRHODREF, PPABST, ZT, ZRT_SUM, ZCPT, ZRGS, ZW3D, PINPRG)
+IF (LCOLD .AND. LSNOW) CALL LIMA_SEDIMENTATION(IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKTB, IKTE, IKT, KKL, &
+                                               'I', 1, 6, 1, PTSTEP, PDZZ, PRHODREF, PPABST, ZT, ZRT_SUM, ZCPT, ZRGS, ZW3D, PINPRG)
 ZRT_SUM = (ZRVS + ZRCS + ZRRS + ZRIS + ZRSS + ZRGS + ZRHS)*PTSTEP
 ZCPT    = XCPD + (XCPV * ZRVS + XCL * (ZRCS + ZRRS) + XCI * (ZRIS + ZRSS + ZRGS + ZRHS))*PTSTEP
-IF (LCOLD .AND. LHAIL) CALL LIMA_SEDIMENTATION('I', 1, 7, 1, PTSTEP, PZZ, PRHODREF, PPABST, ZT, ZRT_SUM, ZCPT, ZRHS, ZW3D, PINPRH)
+IF (LCOLD .AND. LHAIL) CALL LIMA_SEDIMENTATION(IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKTB, IKTE, IKT, KKL, &
+                                               'I', 1, 7, 1, PTSTEP, PDZZ, PRHODREF, PPABST, ZT, ZRT_SUM, ZCPT, ZRHS, ZW3D, PINPRH)
 !
 ZTHS(:,:,:) = ZT(:,:,:) / ZEXN(:,:,:) * ZINV_TSTEP
 !
@@ -591,19 +622,21 @@ END IF
 IF (LWARM .AND. LDEPOC) THEN
   PINDEP(:,:)=0.
   GDEP(:,:) = .FALSE.
-  GDEP(:,:) =    ZRCS(:,:,2) >0 .AND. ZCCS(:,:,2) >0
+  GDEP(:,:) =    ZRCS(:,:,IKB) >0 .AND. ZCCS(:,:,IKB) >0
   WHERE (GDEP)
-     ZRCS(:,:,2) = ZRCS(:,:,2) - XVDEPOC * ZRCT(:,:,2) / ( PZZ(:,:,3) - PZZ(:,:,2))
-     ZCCS(:,:,2) = ZCCS(:,:,2) - XVDEPOC * ZCCT(:,:,2) / ( PZZ(:,:,3) - PZZ(:,:,2))
-     PINPRC(:,:) = PINPRC(:,:) + XVDEPOC * ZRCT(:,:,2) * PRHODREF(:,:,2) /XRHOLW
-     PINDEP(:,:) = XVDEPOC * ZRCT(:,:,2) *  PRHODREF(:,:,2) /XRHOLW
+     ZRCS(:,:,IKB) = ZRCS(:,:,IKB) - XVDEPOC * ZRCT(:,:,IKB) / PDZZ(:,:,IKB)
+     ZCCS(:,:,IKB) = ZCCS(:,:,IKB) - XVDEPOC * ZCCT(:,:,IKB) / PDZZ(:,:,IKB)
+     PINPRC(:,:) = PINPRC(:,:) + XVDEPOC * ZRCT(:,:,IKB) * PRHODREF(:,:,IKB) /XRHOLW
+     PINDEP(:,:) = XVDEPOC * ZRCT(:,:,IKB) *  PRHODREF(:,:,IKB) /XRHOLW
   END WHERE
 !
   IF ( LBUDGET_RC ) CALL BUDGET (ZRCS(:,:,:)*PRHODJ(:,:,:),7             ,'DEPO_BU_RRC')
   IF ( LBUDGET_SV ) CALL BUDGET (ZCCS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NC,'DEPO_BU_RSV') 
 END IF
 !
-! 
+!
+Z_RR_CVRC(:,:,:) = 0.
+Z_CR_CVRC(:,:,:) = 0.
 IF (LWARM .AND. LRAIN) THEN
    CALL LIMA_DROPS_TO_DROPLETS_CONV(PRHODREF, ZRCS*PTSTEP, ZRRS*PTSTEP, ZCCS*PTSTEP, ZCRS*PTSTEP, &
                                     Z_RR_CVRC, Z_CR_CVRC)
@@ -675,26 +708,6 @@ ZHOMFS(:,:,:)   = ZHOMFT(:,:,:)   *ZINV_TSTEP
 ZTHS(:,:,:) = ZTHT(:,:,:) *ZINV_TSTEP
 ZT(:,:,:)   = ZTHT(:,:,:) * ZEXN(:,:,:)
 !
-!
-!*       1.     PREPARE COMPUTATIONS
-!               -----------------------
-!
-!
-KKA=1
-KKU=SIZE(PZZ,3)
-KKL=1
-!
-IIB=1+JPHEXT
-IIE=SIZE(PZZ,1) - JPHEXT
-IIT=SIZE(PZZ,1)
-IJB=1+JPHEXT
-IJE=SIZE(PZZ,2) - JPHEXT
-IJT=SIZE(PZZ,2)
-IKB=KKA+JPVEXT*KKL
-IKE=KKU-JPVEXT*KKL
-IKT=SIZE(PZZ,3)
-IKTB=1+JPVEXT
-IKTE=IKT-JPVEXT
 !
 !-------------------------------------------------------------------------------
 !

@@ -715,7 +715,7 @@ SELECT CASE ( HCLOUD )
    CASE('LIMA')   
 ! Correction where rc<0 or Nc<0
       IF (OWARM) THEN
-         WHERE (PRS(:,:,:,2) < YRTMIN(2)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NC) < YCTMIN(2)/PTSTEP)
+         WHERE (PRS(:,:,:,2) < 0. .OR. ZSVS(:,:,:,NSV_LIMA_NC) < 0.)
             PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
             PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
                  ZCPH(:,:,:) / ZEXN(:,:,:)
@@ -1052,24 +1052,29 @@ SELECT CASE ( HCLOUD )
 !
   CASE ('LIMA')
      !
+    DO JK=IKB,IKE
+      ZDZZ(:,:,JK)=PZZ(:,:,JK+1)-PZZ(:,:,JK)    
+    ENDDO
+    ZZZ = MZF(1,IKU,1, PZZ )
      IF (LPTSPLIT) THEN
-           CALL LIMA (PTSTEP, TPFILE, OCLOSE_OUT,                    &
-                      PRHODREF, PEXNREF, PZZ,                         &
-                      PRHODJ, PPABSM, PPABST,                         &
-                      NMOD_CCN, NMOD_IFN, NMOD_IMM,                   &
-                      PTHM, PTHT, PRT, ZSVT, PW_ACT,                  &
-                      PTHS, PRS, ZSVS,                                &
-                      PINPRC, PINDEP, PINPRR, ZINPRI, PINPRS, PINPRG, PINPRH, &
-                      PEVAP3D                                         )
+        CALL LIMA (1, IKU, 1,                                              &
+                   PTSTEP, TPFILE, OCLOSE_OUT,                             &
+                   PRHODREF, PEXNREF, ZDZZ,                                &
+                   PRHODJ, PPABSM, PPABST,                                 &
+                   NMOD_CCN, NMOD_IFN, NMOD_IMM,                           &
+                   PTHM, PTHT, PRT, ZSVT, PW_ACT,                          &
+                   PTHS, PRS, ZSVS,                                        &
+                   PINPRC, PINDEP, PINPRR, ZINPRI, PINPRS, PINPRG, PINPRH, &
+                   PEVAP3D                                         )
      ELSE
 
         IF (OWARM) CALL LIMA_WARM(OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,   &
-                                  TPFILE, OCLOSE_OUT, KRR, PZZ, PRHODJ,&
+                                  TPFILE, OCLOSE_OUT, KRR, PZZ, PRHODJ,         &
                                   PRHODREF, PEXNREF, PW_ACT, PPABSM, PPABST,    &
                                   PTHM, PRCM,                                   &
                                   PTHT, PRT, ZSVT,                              &
                                   PTHS, PRS, ZSVS,                              &
-                                  PINPRC, PINPRR, PINDEP, PINPRR3D, PEVAP3D    )
+                                  PINPRC, PINPRR, PINDEP, PINPRR3D, PEVAP3D     )
 !
         IF (LCOLD) CALL LIMA_COLD(OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,               &
                                   KRR, PZZ, PRHODJ,                                  &
@@ -1080,20 +1085,20 @@ SELECT CASE ( HCLOUD )
                                   PINPRS, PINPRG, PINPRH)
 !
         IF (OWARM .AND. LCOLD) CALL LIMA_MIXED(OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,    &
-                                               KRR, PZZ, PRHODJ,                             &
-                                               PRHODREF, PEXNREF, PPABST, PW_ACT,            &
-                                               PTHM, PPABSM,                                 &
-                                               PTHT, PRT, ZSVT,                              &
-                                               PTHS, PRS, ZSVS                               )
+                                               KRR, PZZ, PRHODJ,                       &
+                                               PRHODREF, PEXNREF, PPABST, PW_ACT,      &
+                                               PTHM, PPABSM,                           &
+                                               PTHT, PRT, ZSVT,                        &
+                                               PTHS, PRS, ZSVS                         )
      ENDIF
 !
 !*       12.2   Perform the saturation adjustment
 !
-    CALL LIMA_ADJUST(KRR, KMI, TPFILE, HRAD,                  &
-                     HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,         &
-                     PRHODREF, PRHODJ, PEXNREF, PPABST, PSIGS, PPABST, &
-                     PRT, PRS, ZSVT, ZSVS,                             &
-                     PTHS, PSRCS, PCLDFR                               )
+     CALL LIMA_ADJUST(KRR, KMI, TPFILE, HRAD,                           &
+                      HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,         &
+                      PRHODREF, PRHODJ, PEXNREF, PPABST, PSIGS, PPABST, &
+                      PRT, PRS, ZSVT, ZSVS,                             &
+                      PTHS, PSRCS, PCLDFR                               )
 !
 END SELECT
 !
