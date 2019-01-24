@@ -1418,12 +1418,6 @@ ELSE
   END IF
 END IF
 !
-IF(CTURBLEN=='RM17') THEN
-  XCEDIS=0.34
-ELSE
-  XCEDIS=0.84
-END IF
-!
 !*       3.3  Moist turbulence
 !
 IF ( LUSERC .AND. CTURB /= 'NONE' ) THEN
