@@ -38,6 +38,7 @@
 !!       Original            08/08/94
 !!     Nov 06, 2002 (V. Masson)  add XALPSBL and XASBL
 !!     May 06                    Remove EPS
+!!     Jan 2019     (Q. Rodier)  Remove XASBL
 !----------------------------------------------------------------------------
 !
 !*       0. DECLARATIONS
@@ -74,7 +75,6 @@ REAL,SAVE :: XLINI        ! initial value for BL mixing length
 REAL,SAVE :: XLINF        ! to prevent division by zero in the BL algorithm
 !
 REAL,SAVE :: XALPSBL      ! constant linking TKE and friction velocity in the SBL
-REAL,SAVE :: XASBL        ! constant used to define mixing length in the SBL
 !
 REAL,SAVE :: XCEP         ! Constant for wind pressure-correlations
 REAL,SAVE :: XA0          ! Constant a0 for wind pressure-correlations

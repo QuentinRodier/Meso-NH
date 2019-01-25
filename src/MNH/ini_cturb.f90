@@ -64,6 +64,7 @@ END MODULE MODI_INI_CTURB
 !!        V.Masson          13/11/02   XALPSBL and XASBL
 !!                             05/06   Remove KEPS
 !!        Q.Rodier             01/19   XCED replaced by XCEDIS in read_exsegn.f90 and ini_modeln.f90
+!!                                     Remove XASBL (not used)
 !! --------------------------------------------------------------------------
 !
 !*        0. DECLARATIONS
@@ -212,14 +213,6 @@ XCPR2= XCHT1
 XCPR3= XCPR2        ! used only for the Schmidt number for scalar variables
 XCPR4= XCPR2
 XCPR5= XCPR2
-!
-!         2.4 Value related to the TKE universal function within SBL
-!
-!
-XASBL   = 0.5*( XALPSBL**(3./2.)*XKARMAN*XCED + XKARMAN/SQRT(XALPSBL)/XCMFS )
-!       Redelsperger et al 2001
-!
-!
 !
 !         3. MINIMUM VALUES 
 !            --------------
