@@ -1,6 +1,6 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 2004-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
-!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
 !##################
 MODULE MODN_ISBA_n
@@ -27,10 +27,11 @@ MODULE MODN_ISBA_n
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    01/2004                    
+!!      Original    01/2004
 !!      Modified    08/2009 by B. Decharme : LSURF_BUDGETC for all tiles
 !!      Modified by A.L. Gibelin, 04/2009: add carbon spinup
 !!      P. Tulet & M. Leriche 06/2017 : coupling megan online
+!!      P. Wautelet 01/2019: initialize XDROUGHT, XDAILYPAR, XDAILYTEMP, XMODPREC to prevent not initialized errors later on
 !!
 !-------------------------------------------------------------------------------
 !
@@ -38,8 +39,9 @@ MODULE MODN_ISBA_n
 !             ------------
 !
 !
-USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-USE PARKIND1  ,ONLY : JPRB
+USE MODD_SURF_PAR, ONLY : XUNDEF
+USE YOMHOOK      , ONLY : LHOOK,   DR_HOOK
+USE PARKIND1     , ONLY : JPRB
 !
 IMPLICIT NONE
 !
@@ -90,10 +92,10 @@ LOGICAL  :: LSURF_VARS
 LOGICAL  :: LCH_BIO_FLUX
 LOGICAL  :: LSOILNOX
 LOGICAL  :: LCH_NO_FLUX
-REAL     :: XDROUGHT 
-REAL     :: XDAILYPAR
-REAL     :: XDAILYTEMP
-REAL     :: XMODPREC
+REAL     :: XDROUGHT = XUNDEF
+REAL     :: XDAILYPAR = XUNDEF
+REAL     :: XDAILYTEMP = XUNDEF
+REAL     :: XMODPREC = XUNDEF
 LOGICAL  :: LGLACIER
 LOGICAL  :: LVEGUPD
 LOGICAL  :: LNITRO_DILU
