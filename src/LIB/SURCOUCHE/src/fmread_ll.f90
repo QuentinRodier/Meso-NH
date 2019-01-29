@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 
@@ -18,7 +18,8 @@ MODULE MODE_FMREAD
 !  J.Escobar : 13/01/2015 : remove comment on BCAST(IRESP in FMREADX2_ll
 !  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!  J.Escobar : 17/07/2018 : reintroduce needed MPI_BARRIER in IO_READ_FIELD_BYFIELD_X3 
+!  J.Escobar : 17/07/2018 : reintroduce needed MPI_BARRIER in IO_READ_FIELD_BYFIELD_X3
+!  P.Wautelet: 29/01/2019 : small bug correction in time measurement in IO_READ_FIELD_BYFIELD_X2
 !
 USE MODD_IO_ll, ONLY : NVERB_FATAL,NVERB_ERROR,NVERB_WARNING,NVERB_INFO,NVERB_DEBUG,TFILEDATA
 USE MODD_MPIF
@@ -452,9 +453,9 @@ IF (IRESP==0) THEN
     ELSE
       CALL MPI_BCAST(PFIELD,SIZE(PFIELD),MPI_FLOAT,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
     END IF
+    CALL SECOND_MNH2(T2)
+    TIMEZ%T_READ2D_SCAT=TIMEZ%T_READ2D_SCAT + T2 - T1
   END IF
-  CALL SECOND_MNH2(T2)
-  TIMEZ%T_READ2D_SCAT=TIMEZ%T_READ2D_SCAT + T2 - T1    
 END IF
 !
 IF (GALLOC) DEALLOCATE (ZFIELDP)

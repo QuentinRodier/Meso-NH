@@ -1,10 +1,12 @@
-!MNH_LIC Copyright 2016-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2016-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 ! Original version:
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+! Modifications:
+!  Philippe Wautelet: 29/01/2019 : small bug correction (null pointers) in FIELDLIST_GOTO_MODEL if NESPGD or PGD
 !-----------------------------------------------------------------
 MODULE MODE_FIELD
 !
@@ -3806,18 +3808,17 @@ END IF
 !
 ! Initialize some pointers
 !
+!PW: TODO: check if still necessary as XRHODREFZ and XTHVREFZ are now initialiazed in ini_modeln even for KMI/=1 (29/01/2019)
 IF (KFROM == KTO) THEN
-  IF (.NOT.ALLOCATED(XRHODREFZ) .AND. CPROGRAM/='NESPGD' .AND. CPROGRAM/='PGD') THEN
-    CALL PRINT_MSG(NVERB_FATAL,'GEN','FIELDLIST_GOTO_MODEL','XRHODREFZ not yet allocated')
+  IF ( CPROGRAM/='NESPGD' .AND. CPROGRAM/='PGD' ) THEN
+    IF (.NOT.ALLOCATED(XRHODREFZ)) CALL PRINT_MSG(NVERB_FATAL,'GEN','FIELDLIST_GOTO_MODEL','XRHODREFZ not yet allocated')
+    CALL FIND_FIELD_ID_FROM_MNHNAME('RHOREFZ',IID,IRESP)
+    TFIELDLIST(IID)%TFIELD_X1D(KFROM)%DATA=>XRHODREFZ
+    !
+    IF (.NOT.ALLOCATED(XTHVREFZ)) CALL PRINT_MSG(NVERB_FATAL,'GEN','FIELDLIST_GOTO_MODEL','XTHVREFZ not yet allocated')
+    CALL FIND_FIELD_ID_FROM_MNHNAME('THVREFZ',IID,IRESP)
+    TFIELDLIST(IID)%TFIELD_X1D(KFROM)%DATA=>XTHVREFZ
   END IF
-  CALL FIND_FIELD_ID_FROM_MNHNAME('RHOREFZ',IID,IRESP)
-  TFIELDLIST(IID)%TFIELD_X1D(KFROM)%DATA=>XRHODREFZ
-  !
-  IF (.NOT.ALLOCATED(XTHVREFZ) .AND. CPROGRAM/='NESPGD' .AND. CPROGRAM/='PGD') THEN
-    CALL PRINT_MSG(NVERB_FATAL,'GEN','FIELDLIST_GOTO_MODEL','XTHVREFZ not yet allocated')
-  END IF
-  CALL FIND_FIELD_ID_FROM_MNHNAME('THVREFZ',IID,IRESP)
-  TFIELDLIST(IID)%TFIELD_X1D(KFROM)%DATA=>XTHVREFZ
 END IF
 !
 !

@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !      ########################
@@ -51,6 +51,7 @@ END MODULE MODI_INI_MICRO_n
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!      C.LAc          10/2016   Add budget for droplet deposition
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      P.Wautelet     01/2019: bug: add missing allocations
 !!
 !! --------------------------------------------------------------------------
 !
@@ -220,14 +221,12 @@ IF(LBLOWSNOW) THEN
   IF(CSNOWSEDIM=='TABC') THEN
 !Read in look up tables of snow particles properties
 !No arguments, all look up tables are defined in module
-!mode_snowdrift_sedim_lkt           
-          CALL BLOWSNOW_SEDIM_LKT_SET 
+!mode_snowdrift_sedim_lkt
+    CALL BLOWSNOW_SEDIM_LKT_SET
   END IF
 ELSE
   ALLOCATE(XSNWSUBL3D(0,0,0))
 END IF
-!
-IF(SIZE(XINPRR) == 0) RETURN
 !
 !*       2b.    ALLOCATION for Radiative cooling 
 !              ------------------------------
@@ -236,11 +235,10 @@ IF (LACTIT .OR. MACTIT) THEN
   ALLOCATE( XRCM(IIU,IJU,IKU) )
   XTHM = XTHT
   XRCM(:,:,:) = XRT(:,:,:,2)
-             ELSE
+ELSE
   ALLOCATE( XTHM(0,0,0) )
   ALLOCATE( XRCM(0,0,0) )
 END IF
-!
 !
 !*       2.bis ALLOCATE  Module MODD_PRECIP_SCAVENGING_n
 !              ------------------------------
@@ -249,8 +247,13 @@ IF ( (CCLOUD=='LIMA') .AND. LSCAV ) THEN
   ALLOCATE(XINPAP(IIU,IJU))
   ALLOCATE(XACPAP(IIU,IJU))
   XINPAP(:,:)=0.0
-  XACPAP(:,:)=0.0  
+  XACPAP(:,:)=0.0
+ELSE
+  ALLOCATE(XINPAP(0,0))
+  ALLOCATE(XACPAP(0,0))
 END IF
+!
+IF(SIZE(XINPRR) == 0) RETURN
 !
 !*       3.    INITIALIZE MODD_PRECIP_n variables
 !              ----------------------------------
@@ -258,7 +261,7 @@ END IF
 CALL READ_PRECIP_FIELD(TPINIFILE,CLUOUT,CPROGRAM,CCONF,               &
                   CGETRCT,CGETRRT,CGETRST,CGETRGT,CGETRHT,            &
                   XINPRC,XACPRC,XINDEP,XACDEP,XINPRR,XINPRR3D,XEVAP3D,&
-                  XACPRR,XINPRS,XACPRS,XINPRG,XACPRG, XINPRH,XACPRH )           
+                  XACPRR,XINPRS,XACPRS,XINPRG,XACPRG, XINPRH,XACPRH )
 !
 !
 !*       4.    INITIALIZE THE PARAMETERS FOR THE MICROPHYSICS
@@ -287,13 +290,13 @@ ELSE IF (CCLOUD == 'C2R2' .OR. CCLOUD == 'C3R5' .OR. CCLOUD == 'KHKO') THEN
   IF (CCLOUD == 'C3R5') THEN
     CALL INI_ICE_C1R3(XTSTEP,ZDZMIN,NSPLITG)       ! 1/2 spectral cold cloud
   END IF
-ELSE IF (CCLOUD == 'LIMA') THEN               
-   IF (CGETCLOUD /= 'READ') THEN 
-      CALL INIT_AEROSOL_CONCENTRATION(XRHODREF,                              &
-                                      XSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END), &
-                                                                  XZZ(:,:,:) )
-   END IF
-   CALL INI_LIMA(XTSTEP,ZDZMIN,NSPLITR, NSPLITG)   ! 1/2 spectral warm cloud
+ELSE IF (CCLOUD == 'LIMA') THEN
+  IF (CGETCLOUD /= 'READ') THEN
+    CALL INIT_AEROSOL_CONCENTRATION(XRHODREF,                              &
+                                    XSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END), &
+                                                                XZZ(:,:,:) )
+  END IF
+  CALL INI_LIMA(XTSTEP,ZDZMIN,NSPLITR, NSPLITG)   ! 1/2 spectral warm cloud
 END IF
 !
 IF (CCLOUD == 'C2R2' .OR. CCLOUD == 'C3R5' .OR. CCLOUD == 'KHKO') THEN
@@ -313,9 +316,9 @@ IF (CCLOUD == 'C2R2' .OR. CCLOUD == 'C3R5' .OR. CCLOUD == 'KHKO') THEN
 ENDIF
 !
 IF (CCLOUD == 'LIMA') THEN
-   IF (CGETCLOUD/='READ') THEN
-      CALL SET_CONC_LIMA(CGETCLOUD,XRHODREF,XRT,XSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END))
-   END IF
+  IF (CGETCLOUD/='READ') THEN
+    CALL SET_CONC_LIMA(CGETCLOUD,XRHODREF,XRT,XSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END))
+  END IF
 END IF
 !
 !

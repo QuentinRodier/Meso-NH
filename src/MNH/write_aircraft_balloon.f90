@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2000-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !      ###########################
@@ -63,9 +63,10 @@ END MODULE MODI_WRITE_AIRCRAFT_BALLOON
 !!     Oct 2016 : G.Delautier LIMA
 !!     August 2016 (M.Leriche) Add mass concentration of aerosol species
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!     P. Wautelet 29/01/2019: bug: moved an instruction later (to prevent access to a not allocated array)
 !!
 !! --------------------------------------------------------------------------
-!       
+!
 !*      0. DECLARATIONS
 !          ------------
 !
@@ -210,12 +211,12 @@ INTEGER :: JLOOP
 !
 !----------------------------------------------------------------------------
 !
-IKU = SIZE(TPFLYER%RTZ,2)    !number of vertical levels           
 IF (TPFLYER%NMODEL==0) RETURN
 IF (ALL(TPFLYER%X==XUNDEF)) RETURN
 IF (COUNT(TPFLYER%X/=XUNDEF)<=1) RETURN
 IF ( IMI /= TPFLYER%NMODEL ) RETURN
 !
+IKU = SIZE(TPFLYER%RTZ,2) !number of vertical levels
 !
 IPROC = 20 + SIZE(TPFLYER%R,2) + SIZE(TPFLYER%SV,2) &
        + 2 + SIZE(TPFLYER%SVW_FLUX,2)

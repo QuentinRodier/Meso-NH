@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -237,6 +237,7 @@ END MODULE MODI_READ_FIELD
 !!                   09/2017 Q.Rodier add LTEND_UV_FRC
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!          V. Vionnet  07/17    add blowing snow scheme
+!!          P. Wautelet 01/2019  corrected intent of PDUM,PDVM,PDWM (OUT->INOUT)
 !!-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -319,8 +320,8 @@ INTEGER, INTENT(IN) :: KSIZELBY_ll,KSIZELBYV_ll      ! for T,U,W  and v
 INTEGER, INTENT(IN) :: KSIZELBYTKE_ll                ! for TKE
 INTEGER, INTENT(IN) :: KSIZELBYR_ll,KSIZELBYSV_ll    ! for Rx and SV 
 !
-REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PUM,PVM,PWM     ! U,V,W at t-dt
-REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PDUM,PDVM,PDWM  ! Difference on U,V,W 
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PUM1,PVM,PWM     ! U,V,W at t-dt
+REAL, DIMENSION(:,:,:),    INTENT(INOUT) :: PDUM,PDVM,PDWM  ! Difference on U,V,W
                                                           ! between t+dt and t-dt
 REAL, DIMENSION(:,:),      INTENT(OUT) :: PBL_DEPTH       ! BL depth
 REAL, DIMENSION(:,:),      INTENT(OUT) :: PSBL_DEPTH      ! SBL depth
