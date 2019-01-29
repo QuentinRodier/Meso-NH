@@ -320,7 +320,7 @@ INTEGER, INTENT(IN) :: KSIZELBY_ll,KSIZELBYV_ll      ! for T,U,W  and v
 INTEGER, INTENT(IN) :: KSIZELBYTKE_ll                ! for TKE
 INTEGER, INTENT(IN) :: KSIZELBYR_ll,KSIZELBYSV_ll    ! for Rx and SV 
 !
-REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PUM1,PVM,PWM     ! U,V,W at t-dt
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PUM,PVM,PWM     ! U,V,W at t-dt
 REAL, DIMENSION(:,:,:),    INTENT(INOUT) :: PDUM,PDVM,PDWM  ! Difference on U,V,W
                                                           ! between t+dt and t-dt
 REAL, DIMENSION(:,:),      INTENT(OUT) :: PBL_DEPTH       ! BL depth
