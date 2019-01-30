@@ -6,7 +6,7 @@
 set -x
 set -e
 
-ln -fs ../002_prep_ideal_case/REUNION_IDEA.{des,lfi,nc} .
+ln -fs ../002_prep_ideal_case/REUNION_IDEA*.{des,lfi,nc} .
 ln -sf ../001_prep_pgd/REUNION_PGD_1km5.{des,lfi,nc} .
 
 if [ "x${MNH_ECRAD}" != "x" ]  ; then

@@ -9,7 +9,7 @@ rm -f KWRAI* OUT*
 #
 #
 ln -sf  ../002_mesonh/KWRAI.1.SEG01.004.des .
-ln -sf  ../002_mesonh/KWRAI.1.SEG01.004.nc .
+ln -sf  ../002_mesonh/KWRAI.1.SEG01.004.*nc .
 
 time ${MPIRUN} DIAG${XYZ}
 
