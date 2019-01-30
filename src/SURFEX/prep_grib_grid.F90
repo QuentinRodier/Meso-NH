@@ -115,8 +115,6 @@ INTEGER                            :: JLOOP1        ! Dummy counter
 !JUAN
 !JUAN
 INTEGER :: INFOMPI, J
-INTEGER(KIND=kindOfInt),DIMENSION(:),ALLOCATABLE            :: INLO_GRIB   ! Number of points along a parallel
-
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -495,7 +493,7 @@ SELECT CASE (HGRIDTYPE)
          CALL GRIB_IS_MISSING(IGRIB,'pl',IMISSING,IRET)
          IF (IRET == 0 .OR. IMISSING/=1)  THEN !  quasi-regular
            CALL GRIB_GET(IGRIB,'pl',ININLO_GRIB)
-           XILO2=360.-360./(MAXVAL(INLO_GRIB))
+           XILO2=360.-360./(MAXVAL(ININLO_GRIB))
            print*,"XILO2=",XILO2
          ENDIF
          DEALLOCATE(ININLO_GRIB)
