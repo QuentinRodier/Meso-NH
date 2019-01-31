@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 
@@ -560,14 +560,6 @@
         !
         !-------------------------------------------------------------------------------
         !
-        !*       2.    SET OUTPUT FILE :
-        !              ---------------
-
-        !  CALL OPEN_ll(UNIT=NIOUNIT,FILE=YOUTPUTFILE,ACTION='write',form&
-        !       &='FORMATTED',MODE=SPECIFIC,IOSTAT=IRESP)
-        !
-        !-------------------------------------------------------------------------------
-        !
         !*       3.    ALLOCATION :
         !              ----------
         !
@@ -776,8 +768,6 @@ USE MODE_GA
 !
 !*       1.    CALL TO MPI_FINALIZE
 !
-!  CALL CLOSE_ll(YOUTPUTFILE)
-
 #ifdef MNH_GA
   if (.not. GFIRST_GA ) then
      call ga_sync()

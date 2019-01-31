@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1999-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !!    ############################
@@ -107,7 +107,6 @@ CHARACTER*80  :: YFORMAT     ! format of the input data
 INTEGER       :: ICHEMIS     ! number of variables for which a flux is given
                              ! in the input file
 INTEGER       :: IIO         ! I/O channel
-INTEGER       :: IFAIL       ! return code from CLOSE_ll
 REAL          :: ZALPHA      ! interpolation weight
 !
 CHARACTER(LEN=3)                              :: YUNIT

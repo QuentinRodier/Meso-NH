@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !!    ######################### 
@@ -39,13 +39,12 @@ SUBROUTINE CH_OPEN_INPUT(HCHEM_INPUT_FILE,HKEYWORD,TPFILE,KLUOUT,KVERB)
 !!
 !!**  METHOD
 !!    ------
-!!      An unused input channel is selected using OPEN_ll.
 !!    The file HCHEM_INPUT_FILE will be rewinded
 !!    at each call and data will be read in using (A8)-format until the
 !!    given keyword is found. The following comment line will then
 !!    be read and printed and the input channel number will be returned.
-!!    After reading the needed data, the user must assure that the file
-!!    will be closed and that the unit will be freed using CLOSE_ll.
+!!    After reading the needed data, the user must ensure that the file
+!!    will be closed.
 !!
 !!    REFERENCE
 !!    ---------
@@ -92,7 +91,7 @@ INTEGER,                 INTENT(IN)  :: KVERB            ! verbosity level
 !
 CHARACTER(LEN=79) :: YIN ! character string for line-by-line read
 INTEGER :: ILU
-INTEGER :: IRESP         ! return code from OPEN_ll
+INTEGER :: IRESP         ! return code from IO_FILE_OPEN_ll
 !
 !-------------------------------------------------------------------------------
 !
