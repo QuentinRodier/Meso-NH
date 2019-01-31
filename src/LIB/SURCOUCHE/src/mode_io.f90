@@ -186,8 +186,6 @@ CONTAINS
     !
     CHARACTER(len=5)                      :: CFILE
     INTEGER                               :: IFILE, IRANK_PROCIO
-
-#if defined(MNH_SX5) || defined(MNH_SP4) || defined(MNH_LINUX)
     CHARACTER(len=20)    :: YSTATUS
     CHARACTER(len=20)    :: YACCESS
     CHARACTER(len=20)    :: YFORM
@@ -197,8 +195,6 @@ CONTAINS
     CHARACTER(len=20)    :: YPOSITION
     CHARACTER(len=20)    :: YDELIM
     CHARACTER(len=20)    :: YPAD
-    !JUAN
-#endif
     CHARACTER(len=20)    :: YACTION
     CHARACTER(len=20)    :: YMODE
     CHARACTER(LEN=256)   :: YIOERRMSG
@@ -216,16 +212,6 @@ CONTAINS
     ELSE  !par defaut on active les IO paralleles en Z si possible
       GPARALLELIO = .TRUE.
     ENDIF
-
-#ifdef MNH_VPP
-    !! BUG Fuji avec RECL non fourni en argument de MYOPEN
-    INTEGER :: IRECSIZE     
-    IF (PRESENT(RECL)) THEN
-       IRECSIZE = RECL
-    ELSE 
-       IRECSIZE = 2147483647  ! Default value for FUJI RECL
-    END IF
-#endif
 
     IOS = 0
     IF (PRESENT(COMM)) THEN 
@@ -257,8 +243,6 @@ CONTAINS
        RETURN
     END IF
 
-#if defined(MNH_SX5) || defined(MNH_SP4) || defined(MNH_LINUX)
-    !JUAN
     IF (PRESENT(STATUS)) THEN
        YSTATUS=STATUS
     ELSE
@@ -299,7 +283,6 @@ CONTAINS
     ELSE
        YPAD='YES'
     ENDIF
-#endif
 
     IF (ALLOCATED(TPFILE%CDIRNAME)) THEN
       IF(LEN_TRIM(TPFILE%CDIRNAME)>0) THEN
@@ -339,23 +322,6 @@ CONTAINS
 
        IF (TPFILE%LMASTER) THEN
           !! I/O processor case
-#ifdef MNH_VPP
-          OPEN(NEWUNIT=TPFILE%NLU,     &
-               FILE=TRIM(YPREFILENAME),&
-               STATUS=STATUS,          &
-               ACCESS=ACCESS,          &
-               IOSTAT=IOS,             &
-               IOMSG=YIOERRMSG,        &
-               FORM=FORM,              &
-               RECL=IRECSIZE,          &
-               BLANK=BLANK,            &
-               POSITION=POSITION,      &
-               ACTION=YACTION,         &
-               DELIM=DELIM,            &
-               PAD=PAD)
-
-#else
-#if defined(MNH_SX5) || defined(MNH_SP4) || defined(MNH_LINUX)
           !JUAN : 31/03/2000 modif pour acces direct
           IF (YACCESS=='STREAM') THEN
              OPEN(NEWUNIT=TPFILE%NLU,     &
@@ -421,37 +387,6 @@ CONTAINS
              ENDIF
           ENDIF
 
-
-          !print*,' OPEN_ll'
-          !print*,' OPEN(NEWUNIT=',TPFILE%NLU
-          !print*,' FILE=',TRIM(YPREFILENAME)
-          !print*,' STATUS=',YSTATUS       
-          !print*,' ACCESS=',YACCESS
-          !print*,' IOSTAT=',IOS
-          !print*,' FORM=',YFORM
-          !print*,' RECL=',YRECL
-          !print*,' BLANK=',YBLANK
-          !print*,' POSITION=',YPOSITION
-          !print*,' ACTION=',YACTION
-          !print*,' DELIM=',YDELIM
-          !print*,' PAD=',YPAD
-#else
-          OPEN(NEWUNIT=TPFILE%NLU,     &
-               FILE=TRIM(YPREFILENAME),&
-               STATUS=STATUS,          &
-               ACCESS=ACCESS,          &
-               IOSTAT=IOS,             &
-               IOMSG=YIOERRMSG,        &
-               FORM=FORM,              &
-               RECL=RECL,              &
-               BLANK=BLANK,            &
-               POSITION=POSITION,      &
-               ACTION=YACTION,         &
-               DELIM=DELIM,            &
-               PAD=PAD)
-#endif
-
-#endif
           IF (IOS/=0) CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll','Problem when opening '//TRIM(YPREFILENAME)//': '//TRIM(YIOERRMSG))
        ELSE
           !! NON I/O processors case
@@ -466,23 +401,6 @@ CONTAINS
        TPFILE%LMULTIMASTERS = .TRUE.
        TPFILE%NSUBFILES_IOZ = 0
 
-#ifdef MNH_VPP
-       OPEN(NEWUNIT=TPFILE%NLU,                    &
-            FILE=TRIM(YPREFILENAME)//SUFFIX(".P"), &
-            STATUS=STATUS,                         &
-            ACCESS=ACCESS,                         &
-            IOSTAT=IOS,                            &
-            IOMSG=YIOERRMSG,                       &
-            FORM=FORM,                             &
-            RECL=IRECSIZE,                         &
-            BLANK=BLANK,                           &
-            POSITION=POSITION,                     &
-            ACTION=YACTION,                        &
-            DELIM=DELIM,                           &
-            PAD=PAD)
-
-#else
-#if defined(MNH_SX5) || defined(MNH_SP4) || defined(MNH_LINUX)
        IF (ACCESS=='DIRECT') THEN
           OPEN(NEWUNIT=TPFILE%NLU,                    &
                FILE=TRIM(YPREFILENAME)//SUFFIX(".P"), &
@@ -524,23 +442,7 @@ CONTAINS
                PAD=YPAD)
          ENDIF
        ENDIF
-#else
-       OPEN(NEWUNIT=TPFILE%NLU,                    &
-            FILE=TRIM(YPREFILENAME)//SUFFIX(".P"), &
-            STATUS=STATUS,                         &
-            ACCESS=ACCESS,                         &
-            IOSTAT=IOS,                            &
-            IOMSG=YIOERRMSG,                       &
-            FORM=FORM,                             &
-            RECL=RECL,                             &
-            BLANK=BLANK,                           &
-            POSITION=POSITION,                     &
-            ACTION=YACTION,                        &
-            DELIM=DELIM,                           &
-            PAD=PAD)
-#endif
 
-#endif
        IF (IOS/=0) CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll','Problem when opening '//TRIM(YPREFILENAME)//': '//TRIM(YIOERRMSG))
 
 

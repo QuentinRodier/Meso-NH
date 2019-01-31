@@ -452,9 +452,7 @@ SUBROUTINE FMCLOS_ll(TPFILE,KRESP,OPARALLELIO,HPROGRAM_ORIG)
 USE MODD_CONF,  ONLY : CPROGRAM
 USE MODD_IO_ll, ONLY : TFILEDATA
 USE MODE_IO_ll, ONLY : CLOSE_ll,UPCASE
-#if !defined(MNH_SGI)
 USE MODI_SYSTEM_MNH
-#endif
   use mode_io_file_lfi,  only: io_close_file_lfi
 #if defined(MNH_IOCDF4)
   use mode_io_file_nc4,  only: io_close_file_nc4
@@ -509,15 +507,13 @@ IF (TPFILE%LMASTER) THEN
 #endif
   IF (IRESP == 0 .AND. CPROGRAM/='LFICDF') THEN
     !! Write in pipe
-#if defined(MNH_LINUX) || defined(MNH_SP4)
-    YTRANS='xtransfer.x'
-#elif defined(MNH_SX5)
+#if defined(MNH_SX5)
     YTRANS='nectransfer.x'
 #else
-    YTRANS='fujitransfer.x'
+    YTRANS='xtransfer.x'
 #endif
     IFITYP = TPFILE%NLFITYPE
-    
+
     SELECT CASE (IFITYP)
     CASE(:-1)
       IRESP=-66
@@ -534,19 +530,10 @@ IF (TPFILE%LMASTER) THEN
       GOTO 500
     END SELECT
 !   WRITE (YCOMMAND,*) YTRANS,' ',YCPIO,' ',YFILEM
-#if defined(MNH_LINUX) || defined(MNH_VPP) || defined(MNH_SX5) ||  defined(MNH_SP4)
     ICPT=ICPT+1
     WRITE (YCOMMAND,'(A," ",A," ",A," >> OUTPUT_TRANSFER",I3.3,"  2>&1 &")') TRIM(YTRANS),TRIM(YCPIO),TRIM(YFILEM),ICPT
-!JUAN jusqu'a MASDEV4_4    WRITE (YCOMMAND,'(A," ",A," ",A,"  ")') TRIM(YTRANS),TRIM(YCPIO),TRIM(YFILEM)
-#endif
-#if defined(MNH_SGI)
-    WRITE (YCOMMAND,'(A," ",A," ",A," &")') TRIM(YTRANS),TRIM(YCPIO),TRIM(YFILEM)
-#endif
-
     PRINT *,'YCOMMAND =',YCOMMAND
-#if !defined(MNH_SGI)
     CALL SYSTEM_MNH(YCOMMAND)
-#endif
   END IF
 END IF
 
@@ -564,11 +551,6 @@ END IF
 
 IF (PRESENT(KRESP)) KRESP=IRESP
 
-! format: 14c for fujitransfer.x and mesonh/nil
-!         32c for file name
-! if you have to change this format one day, don't forget the blank after 1H
-! 20 FORMAT(A14,1H ,A10,1H ,A32,1H ,A1)
-!
 END SUBROUTINE FMCLOS_ll
 
 END MODULE MODE_FM

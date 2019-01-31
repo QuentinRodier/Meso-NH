@@ -26,14 +26,10 @@ SUBROUTINE SYSTEM_MNH(HCOMMAND)
 !
 !*       0.2   Declaration of local variables
 !              ------------------------------
-#if defined(MNH_LINUX) || defined(MNH_SP4)
-  CHARACTER(LEN=*),PARAMETER :: CFILE="file_for_xtransfer"
-#else
-#if !defined(MNH_SX5)
-  CHARACTER(LEN=*),PARAMETER :: CFILE="file_for_fujitransfer"
-#else
+#ifdef MNH_SX5
   CHARACTER(LEN=*),PARAMETER :: CFILE="file_for_nectransfer"
-#endif
+#else
+  CHARACTER(LEN=*),PARAMETER :: CFILE="file_for_xtransfer"
 #endif
   INTEGER                    :: IUNIT
 !
