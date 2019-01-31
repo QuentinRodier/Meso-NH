@@ -45,8 +45,6 @@ USE MODD_IO_ll,            ONLY: TFILEDATA
 USE MODE_FM,               ONLY: IO_FILE_CLOSE_ll
 USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
 !
-USE MODI_TRANSFER_FILE
-!
 !
 IMPLICIT NONE
 !
@@ -72,7 +70,6 @@ TZFILE => NULL()
 IF (TRIM(CPROGRAM)=='PGD') THEN
   CALL IO_FILE_FIND_BYNAME(YTEX,TZFILE,IRESP)
   CALL IO_FILE_CLOSE_ll(TZFILE)
-  CALL TRANSFER_FILE('fujitransfer.x','NIL',YTEX)
 END IF
 !-------------------------------------------------------------------------------
 !

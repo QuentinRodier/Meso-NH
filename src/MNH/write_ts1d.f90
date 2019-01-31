@@ -70,7 +70,6 @@
 !!
 !!    EXTERNAL
 !!    --------
-!!    OPEN_ll and CLOSE_ll  ! attribute a free I/O unit and close it again
 
 
 !!    IMPLICIT ARGUMENTS
@@ -121,7 +120,6 @@ USE MODD_CH_JVALUES_n,    ONLY: XJVALUES   ! Jvalues and
 USE MODD_CH_INIT_JVALUES, ONLY:JPJVMAX ! their number
 USE MODD_PARAMETERS,      ONLY: XUNDEF
 USE MODD_DIAG_FLAG,       ONLY: LCHEMDIAG, XCHEMLAT, XCHEMLON
-USE MODI_TRANSFER_FILE
 
 IMPLICIT NONE
 !!    EXPLICIT ARGUMENTS
@@ -278,7 +276,6 @@ DO JN=1,NBPROF
   
     CALL IO_FILE_CLOSE_ll(TZFILE)
     TZFILE => NULL()
-    CALL TRANSFER_FILE('fujitransfer.x','NIL',YSIO1DDEF)
 
     ! open picasso dat-file
     CALL IO_FILE_ADD2LIST(TZFILE,YSIO1DDAT,'TXT','WRITE')
@@ -392,12 +389,10 @@ DO JN=1,NBPROF
     IF ((CPROGRAM =='DIAG  ').AND.(LCHEMDIAG)) THEN
       CALL IO_FILE_CLOSE_ll(TZFILE)
       TZFILE => NULL()
-      CALL TRANSFER_FILE('fujitransfer.x','NIL',YSIO1DDAT)
     END IF
  
     IF (L1D) THEN
       GSFIRSTCALL = .FALSE.
-      CALL TRANSFER_FILE('fujitransfer.x','NIL',YSIO1DDAT)
     END IF
 
   END IF
