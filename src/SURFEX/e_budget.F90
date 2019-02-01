@@ -1,6 +1,6 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
-!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE E_BUDGET(IO, KK, PK, PEK, DK, DMK, HIMPLICIT_WIND,  &
@@ -76,6 +76,7 @@
 !!      (B. Decharme)        10/14 Bug in DIF composite budget
 !!                                 Use harmonic mean to compute interfacial thermal conductivities
 !!                                 "Restore" flux computed here
+!!      (P. Wautelet)        02/19 Bug in intent of PDEEP_FLUX OUT->INOUT
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -183,7 +184,7 @@ REAL, DIMENSION(:), INTENT(OUT)  :: PALBT, PEMIST, PDQSAT
 REAL, DIMENSION(:), INTENT(IN)   :: PQSAT
 !                                     PQSAT  = saturation vapor humidity
 !
-REAL, DIMENSION(:), INTENT(OUT)    :: PDEEP_FLUX ! Heat flux at bottom of ISBA (W/m2)
+REAL, DIMENSION(:), INTENT(INOUT)  :: PDEEP_FLUX ! Heat flux at bottom of ISBA (W/m2)
 !
 REAL, DIMENSION(:), INTENT(OUT)    :: PRESTORE
 !                                     PRESTORE = surface restore flux (W m-2)
