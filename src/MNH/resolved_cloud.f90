@@ -1,8 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/resolved_cloud.f90,v $
 !-----------------------------------------------------------------
 !     ##########################
       MODULE MODI_RESOLVED_CLOUD
@@ -265,49 +264,49 @@ END MODULE MODI_RESOLVED_CLOUD
 !!      S.Riette  : 11/2016 : ice_adjust before and after rain_ice
 !!                            ICE3/ICE4 modified, old version under LRED=F   
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      P. Wautelet: 01/02/2019: ZRSMIN is now allocatable (instead of size of XRTMIN which was sometimes not allocated)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
+USE MODD_BUDGET,         ONLY: LBUDGET_TH, LBUDGET_RC, LBUDGET_RG, LBUDGET_RH, LBUDGET_RI, LBUDGET_RR, LBUDGET_RS, LBUDGET_RV, &
+                               LBUDGET_SV
+USE MODD_CH_AEROSOL,     ONLY: LORILAM
+USE MODD_DUST,           ONLY: LDUST
+USE MODD_CST,            ONLY: XCI, XCL, XCPD, XCPV, XLSTT, XLVTT, XMNH_TINY, XP00, XRD, XRHOLW, XTT
+USE MODD_DUST ,          ONLY: LDUST
+USE MODD_IO_ll,          ONLY: TFILEDATA
+USE MODD_NSV,            ONLY: NSV_C1R3END, NSV_C2R2BEG, NSV_C2R2END,                            &
+                               NSV_LIMA_BEG, NSV_LIMA_END, NSV_LIMA_CCN_FREE, NSV_LIMA_IFN_FREE, &
+                               NSV_LIMA_NC, NSV_LIMA_NI, NSV_LIMA_NR
+USE MODD_PARAM_C2R2,     ONLY: LSUPSAT
+USE MODD_PARAMETERS,     ONLY: JPHEXT, JPVEXT
+USE MODD_PARAM_ICE,      ONLY: CSEDIM, LADJ_BEFORE, LADJ_AFTER, CFRAC_ICE_ADJUST, LRED
+USE MODD_PARAM_LIMA,     ONLY: LCOLD, XCONC_CCN_TOT, NMOD_CCN, NMOD_IFN, NMOD_IMM, LPTSPLIT, &
+                               YRTMIN=>XRTMIN, YCTMIN=>XCTMIN
+USE MODD_RAIN_ICE_DESCR, ONLY: XRTMIN
+USE MODD_SALT,           ONLY: LSALT
+!
 USE MODE_ll
-USE MODE_FM
 !
-USE MODD_CONF
-USE MODD_CST
-USE MODD_IO_ll, ONLY: TFILEDATA
-USE MODD_PARAMETERS
-USE MODD_PARAM_ICE,  ONLY : CSEDIM, LADJ_BEFORE, LADJ_AFTER, CFRAC_ICE_ADJUST, LRED
-USE MODD_RAIN_ICE_DESCR
-USE MODD_PARAM_C2R2
-USE MODD_BUDGET
-USE MODD_NSV
-USE MODD_CH_AEROSOL , ONLY : LORILAM
-USE MODD_DUST , ONLY : LDUST
-USE MODD_SALT , ONLY : LSALT
-!
-USE MODD_PARAM_LIMA, ONLY : LCOLD, XCONC_CCN_TOT, NMOD_CCN, NMOD_IFN, NMOD_IMM, LPTSPLIT, &
-                            YRTMIN=>XRTMIN, YCTMIN=>XCTMIN
-
-!
-USE MODI_SLOW_TERMS
-USE MODI_FAST_TERMS
-USE MODI_ICE_ADJUST
-USE MODI_RAIN_ICE
-USE MODI_RAIN_ICE_RED
-USE MODI_RAIN_C2R2_KHKO
-USE MODI_ICE_C1R3
-USE MODI_C2R2_ADJUST
-USE MODI_KHKO_NOTADJUST
-USE MODI_C3R5_ADJUST
-USE MODI_SHUMAN
 USE MODI_BUDGET
+USE MODI_C2R2_ADJUST
+USE MODI_C3R5_ADJUST
+USE MODI_FAST_TERMS
 USE MODI_GET_HALO
-!
+USE MODI_ICE_ADJUST
+USE MODI_ICE_C1R3
+USE MODI_KHKO_NOTADJUST
 USE MODI_LIMA
 USE MODI_LIMA_WARM
 USE MODI_LIMA_COLD
 USE MODI_LIMA_MIXED
 USE MODI_LIMA_ADJUST
+USE MODI_RAIN_C2R2_KHKO
+USE MODI_RAIN_ICE
+USE MODI_RAIN_ICE_RED
+USE MODI_SHUMAN
+USE MODI_SLOW_TERMS
 !
 IMPLICIT NONE
 !
@@ -453,10 +452,10 @@ REAL  :: ZRATIO                     ! ZMASSTOT / ZMASSCOR
 !
 INTEGER                               :: ISVBEG ! first scalar index for microphysics
 INTEGER                               :: ISVEND ! last  scalar index for microphysics
+REAL, DIMENSION(:),       ALLOCATABLE :: ZRSMIN ! Minimum value for tendencies
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZSVT   ! scalar variable for microphysics only
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZSVS   ! scalar tendency for microphysics only
 LOGICAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: LLMICRO ! mask to limit computation
-REAL, DIMENSION(SIZE(XRTMIN)) :: ZRSMIN ! Minimum value for tendencies
 REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3), KRR) :: ZFPR
 !
 INTEGER                               :: JMOD, JMOD_IFN
@@ -493,7 +492,10 @@ IF (HCLOUD=='C2R2' .OR. HCLOUD=='C3R5' .OR. HCLOUD=='KHKO' .OR. HCLOUD=='LIMA') 
   ZSVT(:,:,:,:) = PSVT(:,:,:,ISVBEG:ISVEND)
   ZSVS(:,:,:,:) = PSVS(:,:,:,ISVBEG:ISVEND)
 END IF
-IF (HCLOUD(1:3)=='ICE') ZRSMIN(:) = XRTMIN(:) / PTSTEP
+IF (HCLOUD(1:3)=='ICE') THEN
+  ALLOCATE(ZRSMIN(SIZE(XRTMIN)))
+  ZRSMIN(:) = XRTMIN(:) / PTSTEP
+END IF
 !
 !*       2.     TRANSFORMATION INTO PHYSICAL TENDENCIES
 !               ---------------------------------------
