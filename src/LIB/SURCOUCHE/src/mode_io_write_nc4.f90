@@ -10,6 +10,7 @@
 !    P. Wautelet : 13/12/2018 : split of mode_netcdf into multiple modules/files
 !  Philippe Wautelet: 10/01/2019: replace handle_err by io_handle_err_nc4 for better netCDF error messages
 !    P. Wautelet : 11/01/2019 : NVERB_INFO->NVERB_WARNING for zero size fields
+!    P. Wautelet : 01/02/2019 : IO_WRITE_COORDVAR_NC4: bug: use of non-associated pointers (PIOCDF%DIM_Nx_y)
 !-----------------------------------------------------------------
 #if defined(MNH_IOCDF4)
 module mode_io_write_nc4
@@ -1475,6 +1476,7 @@ USE MODD_CONF,       ONLY: CPROGRAM, LCARTESIAN
 USE MODD_CONF_n,     ONLY: CSTORAGE_TYPE
 USE MODD_GRID,       ONLY: XLATORI, XLONORI
 USE MODD_GRID_n,     ONLY: LSLEVE, XXHAT, XYHAT, XZHAT
+use modd_netcdf,     only: dimcdf
 USE MODD_PARAMETERS, ONLY: JPHEXT, JPVEXT
 
 USE MODE_FIELD,      ONLY: TFIELDLIST,FIND_FIELD_ID_FROM_MNHNAME
@@ -1495,7 +1497,8 @@ LOGICAL,POINTER                 :: GSLEVE
 REAL,DIMENSION(:),POINTER       :: ZXHAT, ZYHAT, ZZHAT
 REAL,DIMENSION(:),ALLOCATABLE   :: ZXHATM, ZYHATM,ZZHATM !Coordinates at mass points in the transformed space
 REAL,DIMENSION(:,:),POINTER     :: ZLAT, ZLON
-TYPE(IOCDF), POINTER            :: PIOCDF
+type(dimcdf), pointer           :: tzdim_ni, tzdim_nj, tzdim_ni_u, tzdim_nj_u, tzdim_ni_v, tzdim_nj_v
+TYPE(IOCDF),  POINTER           :: PIOCDF
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_COORDVAR_NC4','called for '//TRIM(TPFILE%CNAME))
 
@@ -1554,17 +1557,34 @@ IF (LCARTESIAN) THEN
 ELSE
   YSTDNAMEPREFIX = 'projection'
 ENDIF
-CALL WRITE_HOR_COORD(PIOCDF%DIM_NI,'x-dimension of the grid',TRIM(YSTDNAMEPREFIX)//'_x_coordinate','X',0.,JPHEXT,JPHEXT,ZXHATM)
-CALL WRITE_HOR_COORD(PIOCDF%DIM_NJ,'y-dimension of the grid',TRIM(YSTDNAMEPREFIX)//'_y_coordinate','Y',0.,JPHEXT,JPHEXT,ZYHATM)
-CALL WRITE_HOR_COORD(PIOCDF%DIM_NI_U,'x-dimension of the grid at u location', &
+
+if(associated(piocdf)) then
+tzdim_ni   => piocdf%dim_ni
+tzdim_nj   => piocdf%dim_nj
+tzdim_ni_u => piocdf%dim_ni_u
+tzdim_nj_u => piocdf%dim_nj_u
+tzdim_ni_v => piocdf%dim_ni_v
+tzdim_nj_v => piocdf%dim_nj_v
+else
+tzdim_ni   => null()
+tzdim_nj   => null()
+tzdim_ni_u => null()
+tzdim_nj_u => null()
+tzdim_ni_v => null()
+tzdim_nj_v => null()
+end if
+
+CALL WRITE_HOR_COORD(tzdim_ni,'x-dimension of the grid',TRIM(YSTDNAMEPREFIX)//'_x_coordinate','X',0.,JPHEXT,JPHEXT,ZXHATM)
+CALL WRITE_HOR_COORD(tzdim_nj,'y-dimension of the grid',TRIM(YSTDNAMEPREFIX)//'_y_coordinate','Y',0.,JPHEXT,JPHEXT,ZYHATM)
+CALL WRITE_HOR_COORD(tzdim_ni_u,'x-dimension of the grid at u location', &
                      TRIM(YSTDNAMEPREFIX)//'_x_coordinate_at_u_location','X',-0.5,JPHEXT,0,     ZXHAT)
-CALL WRITE_HOR_COORD(PIOCDF%DIM_NJ_U,'y-dimension of the grid at u location', &
+CALL WRITE_HOR_COORD(tzdim_nj_u,'y-dimension of the grid at u location', &
                      TRIM(YSTDNAMEPREFIX)//'_y_coordinate_at_u_location','Y', 0., JPHEXT,JPHEXT,ZYHATM)
-CALL WRITE_HOR_COORD(PIOCDF%DIM_NI_V,'x-dimension of the grid at v location', &
+CALL WRITE_HOR_COORD(tzdim_ni_v,'x-dimension of the grid at v location', &
                      TRIM(YSTDNAMEPREFIX)//'_x_coordinate_at_v_location','X', 0., JPHEXT,JPHEXT,ZXHATM)
-CALL WRITE_HOR_COORD(PIOCDF%DIM_NJ_V,'y-dimension of the grid at v location', &
+CALL WRITE_HOR_COORD(tzdim_nj_v,'y-dimension of the grid at v location', &
                      TRIM(YSTDNAMEPREFIX)//'_y_coordinate_at_v_location','Y',-0.5,JPHEXT,0,     ZYHAT)
-!
+
 IF (.NOT.LCARTESIAN) THEN
   ALLOCATE(ZLAT(IIU,IJU),ZLON(IIU,IJU))
   !
