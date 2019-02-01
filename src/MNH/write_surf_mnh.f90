@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1997-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1997-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 MODULE MODE_WRITE_SURF_MNH_TOOLS
@@ -276,6 +276,7 @@ END SUBROUTINE WRITE_SURFX0_MNH
 !!
 !!      original                                                     01/08/03
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!  P. Wautelet 01/02/2019: bug: forgotten if for iib=iie and XX (same as for YY)
 !----------------------------------------------------------------------------
 !
 !*      0.    DECLARATIONS
@@ -412,7 +413,7 @@ END IF
 
  CALL GET_SURF_UNDEF(ZUNDEF)
  WHERE (ZWORK==ZUNDEF) ZWORK=XUNDEF
-!
+ !
 !! Add cases in 2D (IJB=IJE) and 1D (IJB=IJE and IIB=IIE) 
 !! to write the correct mesh
 IF (      (CSTORAGE_TYPE=='PG' .OR. CSTORAGE_TYPE=='SU')  &
@@ -425,7 +426,7 @@ IF (      (CSTORAGE_TYPE=='PG' .OR. CSTORAGE_TYPE=='SU')  &
       ZW1D(      J1D) = 2. * ZW1D(J1D+1)   - ZW1D(J1D+2)
       ZW1D(IIU+1-J1D) = 2. * ZW1D(IIU-J1D) - ZW1D(IIU-J1D-1)
     END DO
-  ELSE IF (IIB==IIE .AND. HREC=='DX') THEN
+  ELSE IF (IIB==IIE .AND. (HREC=='DX' .OR. HREC=='XX')) THEN
     ZW1D(IIB-1) = - 0.5 * ZWORK(IIB,1+JPHEXT)
     ZW1D(IIB)   =   0.5 * ZWORK(IIB,1+JPHEXT)
     ZW1D(IIB+1) =   1.5 * ZWORK(IIB,1+JPHEXT)
