@@ -1,6 +1,6 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 2004-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
-!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
 !     #################################################################################
 SUBROUTINE COUPLING_SURF_ATM_n (YSC, HPROGRAM, HCOUPLING, PTIMEC, PTSTEP, KYEAR, KMONTH,  &
@@ -38,6 +38,7 @@ SUBROUTINE COUPLING_SURF_ATM_n (YSC, HPROGRAM, HCOUPLING, PTIMEC, PTSTEP, KYEAR,
 !!      B. Decharme 04/2013 new coupling variables and replace RW_PRECIP_n by CPL_GCM_n
 !!      Modified    06/2013 by J.Escobar  : replace DOUBLE PRECISION by REAL to handle problem for promotion of real on IBM SP
 !!      R. Séférian 03/2014 Adding decoupling between CO2 seen by photosynthesis and radiative CO2
+!!      P. Wautelet 02/2019 bug correction KI->KSIZE for size of KMASK argument in TREAT_SURF
 !!-------------------------------------------------------------
 !
 !
@@ -450,9 +451,9 @@ SUBROUTINE TREAT_SURF(KTILE,KSIZE,KMASK)
 !
 IMPLICIT NONE
 !
-INTEGER, INTENT(IN)               :: KTILE
-INTEGER, INTENT(IN)               :: KSIZE
-INTEGER, INTENT(IN), DIMENSION(KI) :: KMASK
+INTEGER, INTENT(IN)                   :: KTILE
+INTEGER, INTENT(IN)                   :: KSIZE
+INTEGER, INTENT(IN), DIMENSION(KSIZE) :: KMASK
 !
 REAL, DIMENSION(KSIZE) :: ZP_TSUN     ! solar time                    (s from midnight)
 REAL, DIMENSION(KSIZE) :: ZP_ZREF     ! height of T,q forcing                 (m)
