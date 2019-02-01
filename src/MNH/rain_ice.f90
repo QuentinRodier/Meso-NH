@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !     ######spl
        MODULE MODI_RAIN_ICE
@@ -237,6 +237,7 @@ END MODULE MODI_RAIN_ICE
 !!      J.Escobar : 10/2017 : for real*4 , limit exp() in RAIN_ICE_SLOW with XMNH_HUGE_12_LOG
 !!      (C. Abiven, Y. Léauté, V. Seigner, S. Riette) Phasing of Turner rain subgrid param
 !!      J.Escobar : 8/2018 : for real*4 , bis => limit exp() in RAIN_ICE_SLOW with XMNH_HUGE_12_LOG
+!!      P.Wautelet 01/02/2019: add missing initialization for PFPR
 !
 !*       0.    DECLARATIONS
 !              ------------
@@ -1142,6 +1143,7 @@ PINPRR3D (:,:,:) = 0.
 PINPRS (:,:) = 0.
 PINPRG (:,:) = 0.
 IF ( KRR == 7 ) PINPRH (:,:) = 0.
+IF (PRESENT(PFPR)) PFPR(:,:,:,:) = 0.
 !
 !*       1. Parameters for cloud sedimentation
 !
