@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ##########################
@@ -90,6 +90,7 @@ END MODULE MODI_OPEN_PRC_FILES
 !!      J.ESCOBAR    12/11/2008  Improve checking --> add STATUS=OLD in open_ll(PRE_REAL1.nam,...
 !!      J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      P. Wautelet  01/02/2019 added missing initialization to NULL for files with OUT intent
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -181,6 +182,7 @@ IF (NVERB>=5) WRITE(ILUOUT0,*) 'Routine OPEN_PRC_FILES started'
 !*       3.    OPENNING OF PRE_REAL1.nam
 !              -------------------------
 !
+TPPRE_REAL1FILE => NULL()
 CALL IO_FILE_ADD2LIST(TPPRE_REAL1FILE,'PRE_REAL1.nam','NML','READ')
 CALL IO_FILE_OPEN_ll(TPPRE_REAL1FILE,KRESP=IRESP)
 IPRE_REAL1=TPPRE_REAL1FILE%NLU
@@ -266,6 +268,7 @@ ELSE
 !*       5.    OPENING THE PHYSIOGRAPHIC DATA FILE
 !              -----------------------------------
 !
+  TPPGDFILE => NULL()
   CALL IO_FILE_ADD2LIST(TPPGDFILE,TRIM(HPGDFILE),'UNKNOWN','READ',KLFITYPE=2,KLFIVERB=NVERB)
   CALL IO_FILE_OPEN_ll(TPPGDFILE,IRESP,OPARALLELIO=.FALSE.)
   IF (IRESP/=0) THEN
