@@ -1,11 +1,11 @@
-#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 #MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 #MNH_LIC for details. version 1.
 # Nom arbitraire du travail LoadLeveler
 # @ job_name = Sortie_examples_ada
 # Type de travail
-# @ job_type = parallel
+# @ job_type = mpich
 # Fichier de sortie standard du travail
 # @ output = $(job_name).$(jobid)
 # Fichier de sortie d'erreur du travail
@@ -14,7 +14,7 @@
 # @ wall_clock_limit = 3600
 # Nombre de processus demande (ici 1)
 # @ total_tasks = 4
-# @ environment = $DISPLAY
+# @ environment = NB_TASKS=$(total_tasks)
 # @ queue
 
 cd $LOADL_STEP_INITDIR
@@ -26,12 +26,9 @@ set -x
 
 #001_2Drelief 002_3Drelief 003_KW78 004_Reunion 007_16janvier
 
-export MONORUN="Poe -world_sizes 1 "
-export MPIRUN="Poe -world_sizes 4 "
+export MONORUN="Mpirun -np 1 "
+export MPIRUN="Mpirun -prepend-rank -np $NB_TASKS "
 export POSTRUN=" echo "
-
-export MP_MPILIB=pempi
-export MP_LABELIO=yes
 
 time make -k 001_2Drelief
 time make -k 002_3Drelief
@@ -47,5 +44,4 @@ make -k << EOF
 
 EOF
 #
-
 

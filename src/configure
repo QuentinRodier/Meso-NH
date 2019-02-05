@@ -186,10 +186,9 @@ module load ga/\${VER_GA}
                 export MVWORK=${MVWORK:-YES}
                 export VER_CDF=${VER_CDF:-CDFAUTO}
                 export MNHENV=${MNHENV:-"
-#export OBJDIR_PATH=$WORKDIR/DIR_OBJ_ADA
-export MP_MPILIB=pempi
+#export MP_MPILIB=pempi
 module purge
-module load intel/2013.1
+module load intel/2018.2
 "}
               ;;
 AIX*)
