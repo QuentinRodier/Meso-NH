@@ -11,6 +11,8 @@
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  Philippe Wautelet: 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll
 !                                 to allow to disable writes (for bench purposes)
+!  P. Wautelet 06/02/2019: simplify OPEN_ll and do somme assignments at a more logical place
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
 !-----------------------------------------------------------------
 MODULE MODE_IO_MANAGE_STRUCT
 !
@@ -642,7 +644,7 @@ CHARACTER(LEN=*),                INTENT(IN)    :: HNAME     !Filename
 CHARACTER(LEN=*),                INTENT(IN)    :: HTYPE     !Filetype (backup, output, prepidealcase...)
 CHARACTER(LEN=*),                INTENT(IN)    :: HMODE     !Opening mode (read, write...)
 CHARACTER(LEN=*),       OPTIONAL,INTENT(IN)    :: HFORM     !Formatted/unformatted
-CHARACTER(LEN=*),       OPTIONAL,INTENT(IN)    :: HACCESS   !Direct/sequential
+CHARACTER(LEN=*),       OPTIONAL,INTENT(IN)    :: HACCESS   !Direct/sequential/stream
 CHARACTER(LEN=*),       OPTIONAL,INTENT(IN)    :: HFORMAT   !Fileformat (NETCDF4, LFI, LFICDF4...)
 CHARACTER(LEN=*),       OPTIONAL,INTENT(IN)    :: HDIRNAME  !File directory
 INTEGER(KIND=LFI_INT),  OPTIONAL,INTENT(IN)    :: KLFINPRAR !Number of predicted articles of the LFI file (non crucial)
@@ -713,8 +715,8 @@ IF(     PRESENT(HACCESS) .AND. TRIM(HTYPE)/='SURFACE_DATA') &
 IF(.NOT.PRESENT(HACCESS) .AND. TRIM(HTYPE)=='SURFACE_DATA') &
     CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','optional argument HACCESS is necessary for '//TRIM(HTYPE)//' files')
 IF(PRESENT(HACCESS)) THEN
-  IF(HACCESS/='DIRECT' .AND. HACCESS/='SEQUENTIAL') &
-    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','HACCESS should be DIRECT or SEQUENTIAL and not '//TRIM(HACCESS))
+  IF(HACCESS/='DIRECT' .AND. HACCESS/='SEQUENTIAL' .AND. HACCESS/='STREAM') &
+    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','HACCESS should be DIRECT, SEQUENTIAL or STREAM and not '//TRIM(HACCESS))
 END IF
 !
 IF (PRESENT(HFORMAT)) THEN
@@ -785,6 +787,8 @@ SELECT CASE(TPFILE%CTYPE)
   CASE('CHEMINPUT')
     IF (TRIM(HMODE)/='READ') & !Invalid because not (yet) necessary
       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
+    TPFILE%CACCESS = 'SEQUENTIAL'
+    TPFILE%CFORM   = 'FORMATTED'
     TPFILE%CFORMAT = 'TEXT'
 
 
@@ -792,12 +796,17 @@ SELECT CASE(TPFILE%CTYPE)
   CASE('CHEMTAB')
     IF (TRIM(HMODE)/='READ') & !Invalid because not (yet) necessary
       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
+    TPFILE%CACCESS = 'SEQUENTIAL'
+    TPFILE%CFORM   = 'FORMATTED'
     TPFILE%CFORMAT = 'TEXT'
 
 
   !DES files
   CASE('DES')
+    TPFILE%CACCESS = 'SEQUENTIAL'
+    TPFILE%CFORM   = 'FORMATTED'
     TPFILE%CFORMAT = 'TEXT'
+    TPFILE%NRECL   = 8*1024
     IF (.NOT.PRESENT(TPDATAFILE)) THEN
       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','missing TPDATAFILE argument for DES file '//TRIM(HNAME))
     ELSE
@@ -815,6 +824,8 @@ SELECT CASE(TPFILE%CTYPE)
   CASE('GPS')
     IF (TRIM(HMODE)/='WRITE') & !Invalid because not (yet) necessary
       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
+    TPFILE%CACCESS = 'SEQUENTIAL'
+    TPFILE%CFORM   = 'FORMATTED'
     TPFILE%CFORMAT = 'TEXT'
 
 
@@ -822,13 +833,18 @@ SELECT CASE(TPFILE%CTYPE)
   CASE('METEO')
     IF (TRIM(HMODE)/='WRITE') & !Invalid because not (yet) necessary
       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
+    TPFILE%CACCESS = 'SEQUENTIAL'
+    TPFILE%CFORM   = 'UNFORMATTED'
     TPFILE%CFORMAT = 'BINARY'
+    TPFILE%NRECL   = 100000000
 
 
   !Namelist files
   CASE('NML')
     IF (TRIM(HMODE)/='READ') & !Invalid because not (yet) necessary
       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
+    TPFILE%CACCESS = 'SEQUENTIAL'
+    TPFILE%CFORM   = 'FORMATTED'
     TPFILE%CFORMAT = 'TEXT'
 
 
@@ -836,6 +852,8 @@ SELECT CASE(TPFILE%CTYPE)
   CASE('OUTPUTLISTING')
     IF (TRIM(HMODE)/='WRITE') & !Invalid because not (yet) necessary
       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
+    TPFILE%CACCESS = 'SEQUENTIAL'
+    TPFILE%CFORM   = 'FORMATTED'
     TPFILE%CFORMAT = 'TEXT'
 
 
@@ -846,11 +864,13 @@ SELECT CASE(TPFILE%CTYPE)
     TPFILE%CFORMAT = 'SURFACE_DATA'
     TPFILE%CFORM   = HFORM
     TPFILE%CACCESS = HACCESS
-    IF(TRIM(HACCESS)=='DIRECT') TPFILE%NRECL   = KRECL
+    IF(TRIM(HACCESS)=='DIRECT') TPFILE%NRECL = KRECL
 
 
   !Text files
   CASE('TXT')
+    TPFILE%CACCESS = 'SEQUENTIAL'
+    TPFILE%CFORM   = 'FORMATTED'
     TPFILE%CFORMAT = 'TEXT'
     IF(PRESENT(KRECL)) TPFILE%NRECL = KRECL
 

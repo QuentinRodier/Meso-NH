@@ -25,6 +25,7 @@
 !     Philippe Wautelet: 10/01/2019: bug: modify some metadata before open calls
 !     Philippe Wautelet: 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll to allow
 !                                    to disable writes (for bench purposes)
+!  P. Wautelet 06/02/2019: simplify OPEN_ll and do somme assignments at a more logical place
 !
 MODULE MODE_IO_ll
 
@@ -142,17 +143,11 @@ CONTAINS
 
   SUBROUTINE OPEN_ll(&
        TPFILE,  &
-       MODE,    &
-       COMM,    &
-       STATUS,  &
-       ACCESS,  &
        IOSTAT,  &
-       FORM,    &
-       RECL,    &
-       BLANK,   &
+       MODE,    &
+       STATUS,  &
        POSITION,&
        DELIM,    &
-       PAD,      &
        KNB_PROCIO,& 
        OPARALLELIO, &
        HPROGRAM_ORIG)
@@ -167,17 +162,11 @@ CONTAINS
   use mode_io_tools,            only: io_rank
 
     TYPE(TFILEDATA), INTENT(INOUT)         :: TPFILE
+    INTEGER,         INTENT(OUT)           :: IOSTAT
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: MODE
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: STATUS
-    CHARACTER(len=*),INTENT(IN),  OPTIONAL :: ACCESS
-    INTEGER,         INTENT(OUT)           :: IOSTAT
-    CHARACTER(len=*),INTENT(IN),  OPTIONAL :: FORM
-    INTEGER,         INTENT(IN),  OPTIONAL :: RECL
-    CHARACTER(len=*),INTENT(IN),  OPTIONAL :: BLANK
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: POSITION
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: DELIM
-    CHARACTER(len=*),INTENT(IN),  OPTIONAL :: PAD
-    INTEGER,         INTENT(IN),  OPTIONAL :: COMM
     INTEGER,         INTENT(IN),  OPTIONAL :: KNB_PROCIO
     LOGICAL,         INTENT(IN),  OPTIONAL :: OPARALLELIO
     CHARACTER(LEN=*),INTENT(IN),  OPTIONAL :: HPROGRAM_ORIG !To emulate a file coming from this program
@@ -187,19 +176,14 @@ CONTAINS
     CHARACTER(len=5)                      :: CFILE
     INTEGER                               :: IFILE, IRANK_PROCIO
     CHARACTER(len=20)    :: YSTATUS
-    CHARACTER(len=20)    :: YACCESS
-    CHARACTER(len=20)    :: YFORM
     INTEGER              :: YRECL
     INTEGER ,PARAMETER   :: RECL_DEF = 10000
-    CHARACTER(len=20)    :: YBLANK
     CHARACTER(len=20)    :: YPOSITION
     CHARACTER(len=20)    :: YDELIM
-    CHARACTER(len=20)    :: YPAD
     CHARACTER(len=20)    :: YACTION
     CHARACTER(len=20)    :: YMODE
     CHARACTER(LEN=256)   :: YIOERRMSG
     INTEGER              :: IOS,IRESP
-    INTEGER              :: ICOMM
     LOGICAL               :: GPARALLELIO
     TYPE(TFILEDATA),POINTER :: TZSPLITFILE
     CHARACTER(LEN=:),ALLOCATABLE :: YPREFILENAME !To store the directory + filename
@@ -214,11 +198,6 @@ CONTAINS
     ENDIF
 
     IOS = 0
-    IF (PRESENT(COMM)) THEN 
-       ICOMM = COMM
-    ELSE
-       ICOMM = NMNH_COMM_WORLD ! Default communicator
-    END IF
 
     IF (PRESENT(MODE)) THEN 
        YMODE = MODE
@@ -236,7 +215,7 @@ CONTAINS
        RETURN
     END IF
 
-    IF (.NOT. ANY(YMODE == (/'GLOBAL     ','SPECIFIC   ','DISTRIBUTED' , 'IO_ZSPLIT  '/))) THEN
+    IF (.NOT. ANY(YMODE == (/'GLOBAL     ','SPECIFIC   ', 'IO_ZSPLIT  '/))) THEN
        IOSTAT = 99
        TPFILE%NLU = -1
        CALL PRINT_MSG(NVERB_ERROR,'IO','OPEN_ll','ymode='//TRIM(YMODE)//' not supported')
@@ -248,26 +227,13 @@ CONTAINS
     ELSE
        YSTATUS='UNKNOWN'
     ENDIF
-    IF (PRESENT(ACCESS)) THEN
-       YACCESS=ACCESS
+
+    IF (TPFILE%NRECL == -1) THEN
+      YRECL = RECL_DEF
     ELSE
-       YACCESS='SEQUENTIAL'
-    ENDIF
-    IF (PRESENT(FORM)) THEN
-       YFORM=FORM
-    ELSE
-       YFORM='FORMATTED'
-    ENDIF
-    IF (PRESENT(RECL)) THEN
-       YRECL=RECL
-    ELSE
-       YRECL=RECL_DEF
-    ENDIF
-    IF (PRESENT(BLANK)) THEN
-       YBLANK=BLANK
-    ELSE
-       YBLANK='NULL'
-    ENDIF
+      YRECL = TPFILE%NRECL
+    END IF
+
     IF (PRESENT(POSITION)) THEN
        YPOSITION=POSITION
     ELSE
@@ -277,11 +243,6 @@ CONTAINS
        YDELIM=DELIM
     ELSE
        YDELIM='NONE'
-    ENDIF
-    IF (PRESENT(PAD)) THEN
-       YPAD=PAD
-    ELSE
-       YPAD='YES'
     ENDIF
 
     IF (ALLOCATED(TPFILE%CDIRNAME)) THEN
@@ -323,64 +284,60 @@ CONTAINS
        IF (TPFILE%LMASTER) THEN
           !! I/O processor case
           !JUAN : 31/03/2000 modif pour acces direct
-          IF (YACCESS=='STREAM') THEN
+          IF (TPFILE%CACCESS=='STREAM') THEN
              OPEN(NEWUNIT=TPFILE%NLU,     &
                   FILE=TRIM(YPREFILENAME),&
                   STATUS=YSTATUS,         &
-                  ACCESS=YACCESS,         &
+                  ACCESS=TPFILE%CACCESS,  &
                   IOSTAT=IOS,             &
                   IOMSG=YIOERRMSG,        &
-                  FORM=YFORM,             &
+                  FORM=TPFILE%CFORM,      &
                   ACTION=YACTION)
-          ELSEIF (YACCESS=='DIRECT') THEN
+          ELSEIF (TPFILE%CACCESS=='DIRECT') THEN
              OPEN(NEWUNIT=TPFILE%NLU,     &
                   FILE=TRIM(YPREFILENAME),&
                   STATUS=YSTATUS,         &
-                  ACCESS=YACCESS,         &
+                  ACCESS=TPFILE%CACCESS,  &
                   IOSTAT=IOS,             &
                   IOMSG=YIOERRMSG,        &
-                  FORM=YFORM,             &
+                  FORM=TPFILE%CFORM,      &
                   RECL=YRECL,             &
                   ACTION=YACTION)
           ELSE
-             IF (YFORM=="FORMATTED") THEN
+             IF (TPFILE%CFORM=="FORMATTED") THEN
                IF (YACTION=='READ') THEN
                 OPEN(NEWUNIT=TPFILE%NLU,     &
                      FILE=TRIM(YPREFILENAME),&
                      STATUS=YSTATUS,         &
-                     ACCESS=YACCESS,         &
+                     ACCESS=TPFILE%CACCESS,  &
                      IOSTAT=IOS,             &
                      IOMSG=YIOERRMSG,        &
-                     FORM=YFORM,             &
+                     FORM=TPFILE%CFORM,      &
                      RECL=YRECL,             &
-                     BLANK=YBLANK,           &
                      POSITION=YPOSITION,     &
-                     ACTION=YACTION,         &
+                     ACTION=YACTION)
                      !DELIM=YDELIM,          & !Philippe: commented because bug with GCC 5.X
-                     PAD=YPAD)
                ELSE
                 OPEN(NEWUNIT=TPFILE%NLU,     &
                      FILE=TRIM(YPREFILENAME),&
                      STATUS=YSTATUS,         &
-                     ACCESS=YACCESS,         &
+                     ACCESS=TPFILE%CACCESS,  &
                      IOSTAT=IOS,             &
                      IOMSG=YIOERRMSG,        &
-                     FORM=YFORM,             &
+                     FORM=TPFILE%CFORM,      &
                      RECL=YRECL,             &
-                     BLANK=YBLANK,           &
                      POSITION=YPOSITION,     &
                      ACTION=YACTION,         &
-                     DELIM=YDELIM,           &
-                     PAD=YPAD)
+                     DELIM=YDELIM)
                ENDIF
              ELSE
                 OPEN(NEWUNIT=TPFILE%NLU,     &
                      FILE=TRIM(YPREFILENAME),&
                      STATUS=YSTATUS,         &
-                     ACCESS=YACCESS,         &
+                     ACCESS=TPFILE%CACCESS,  &
                      IOSTAT=IOS,             &
                      IOMSG=YIOERRMSG,        &
-                     FORM=YFORM,             &
+                     FORM=TPFILE%CFORM,      &
                      RECL=YRECL,             &
                      POSITION=YPOSITION,     &
                      ACTION=YACTION)
@@ -401,14 +358,14 @@ CONTAINS
        TPFILE%LMULTIMASTERS = .TRUE.
        TPFILE%NSUBFILES_IOZ = 0
 
-       IF (ACCESS=='DIRECT') THEN
+       IF (TPFILE%CACCESS=='DIRECT') THEN
           OPEN(NEWUNIT=TPFILE%NLU,                    &
                FILE=TRIM(YPREFILENAME)//SUFFIX(".P"), &
                STATUS=YSTATUS,                        &
-               ACCESS=YACCESS,                        &
+               ACCESS=TPFILE%CACCESS,                 &
                IOSTAT=IOS,                            &
                IOMSG=YIOERRMSG,                       &
-               FORM=YFORM,                            &
+               FORM=TPFILE%CFORM,                     &
                RECL=YRECL,                            &
                ACTION=YACTION)
        ELSE
@@ -416,47 +373,30 @@ CONTAINS
           OPEN(NEWUNIT=TPFILE%NLU,                     &
                FILE=TRIM(YPREFILENAME)//SUFFIX(".P"),  &
                STATUS=YSTATUS,                         &
-               ACCESS=YACCESS,                         &
+               ACCESS=TPFILE%CACCESS,                  &
                IOSTAT=IOS,                             &
                IOMSG=YIOERRMSG,                        &
-               FORM=YFORM,                             &
+               FORM=TPFILE%CFORM,                      &
                RECL=YRECL,                             &
-               BLANK=YBLANK,                           &
                POSITION=YPOSITION,                     &
-               ACTION=YACTION,                         &
+               ACTION=YACTION)
                !DELIM=YDELIM,         & !Philippe: commented because bug with GCC 5.X
-               PAD=YPAD)
          ELSE
           OPEN(NEWUNIT=TPFILE%NLU,                     &
                FILE=TRIM(YPREFILENAME)//SUFFIX(".P"),  &
                STATUS=YSTATUS,                         &
-               ACCESS=YACCESS,                         &
+               ACCESS=TPFILE%CACCESS,                  &
                IOSTAT=IOS,                             &
                IOMSG=YIOERRMSG,                        &
-               FORM=YFORM,                             &
+               FORM=TPFILE%CFORM,                      &
                RECL=YRECL,                             &
-               BLANK=YBLANK,                           &
                POSITION=YPOSITION,                     &
                ACTION=YACTION,                         &
-               DELIM=YDELIM,                           &
-               PAD=YPAD)
+               DELIM=YDELIM)
          ENDIF
        ENDIF
 
        IF (IOS/=0) CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll','Problem when opening '//TRIM(YPREFILENAME)//': '//TRIM(YIOERRMSG))
-
-
-
-    CASE('DISTRIBUTED')
-       TPFILE%NMASTER_RANK  = ISIOP
-       TPFILE%LMASTER       = (ISP == ISIOP)
-       TPFILE%LMULTIMASTERS = .FALSE.
-       TPFILE%NSUBFILES_IOZ = 0
-
-       IF (.NOT.TPFILE%LMASTER) THEN
-          !! NON I/O processors case
-          IOS = 0
-       END IF
 
 
 
@@ -518,7 +458,7 @@ CONTAINS
 
              TPFILE%TFILES_IOZ(IFILE)%TFILE => TZSPLITFILE
              !Done outside of the previous IF to prevent problems with .OUT files
-             TZSPLITFILE%NMPICOMM      = ICOMM
+             TZSPLITFILE%NMPICOMM      = NMNH_COMM_WORLD
              TZSPLITFILE%NMASTER_RANK  = IRANK_PROCIO
              TZSPLITFILE%LMASTER       = (ISP == IRANK_PROCIO)
              TZSPLITFILE%LMULTIMASTERS = .FALSE.
@@ -559,7 +499,7 @@ CONTAINS
 
     END SELECT
 
-    TPFILE%NMPICOMM = ICOMM
+    TPFILE%NMPICOMM = NMNH_COMM_WORLD
 
     IOSTAT = IOS
 

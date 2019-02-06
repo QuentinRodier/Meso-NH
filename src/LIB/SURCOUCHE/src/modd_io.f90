@@ -112,7 +112,7 @@ TYPE TFILEDATA
   INTEGER :: NLU = -1                      !Logical unit number
   INTEGER :: NRECL = -1                    !Fortran RECL (record length)
   CHARACTER(LEN=11) :: CFORM   = "UNKNOWN" !Fortran FORM (FORMATTED/UNFORMATTED)
-  CHARACTER(LEN=10) :: CACCESS = "UNKNOWN" !Fortran ACCESS (DIRECT/SEQUENTIAL)
+  CHARACTER(LEN=10) :: CACCESS = "UNKNOWN" !Fortran ACCESS (DIRECT/SEQUENTIAL/STREAM)
   !
   TYPE(TFILEDATA),POINTER :: TDADFILE   => NULL() !Corresponding dad file
   TYPE(TFILEDATA),POINTER :: TDESFILE   => NULL() !Corresponding .des file
