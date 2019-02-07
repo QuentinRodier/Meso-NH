@@ -26,7 +26,10 @@
 !     Philippe Wautelet: 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll to allow
 !                                    to disable writes (for bench purposes)
 !  P. Wautelet 06/02/2019: simplify OPEN_ll and do somme assignments at a more logical place
+!  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
+!                          (nsubfiles_ioz is now determined in IO_FILE_ADD2LIST)
 !
+!-----------------------------------------------------------------
 MODULE MODE_IO_ll
 
   USE MODD_MPIF
@@ -148,8 +151,6 @@ CONTAINS
        STATUS,  &
        POSITION,&
        DELIM,    &
-       KNB_PROCIO,& 
-       OPARALLELIO, &
        HPROGRAM_ORIG)
 
   USE MODD_IO_ll
@@ -167,8 +168,6 @@ CONTAINS
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: STATUS
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: POSITION
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: DELIM
-    INTEGER,         INTENT(IN),  OPTIONAL :: KNB_PROCIO
-    LOGICAL,         INTENT(IN),  OPTIONAL :: OPARALLELIO
     CHARACTER(LEN=*),INTENT(IN),  OPTIONAL :: HPROGRAM_ORIG !To emulate a file coming from this program
     !
     ! local var
@@ -184,18 +183,11 @@ CONTAINS
     CHARACTER(len=20)    :: YMODE
     CHARACTER(LEN=256)   :: YIOERRMSG
     INTEGER              :: IOS,IRESP
-    LOGICAL               :: GPARALLELIO
     TYPE(TFILEDATA),POINTER :: TZSPLITFILE
     CHARACTER(LEN=:),ALLOCATABLE :: YPREFILENAME !To store the directory + filename
     CHARACTER(LEN=:),ALLOCATABLE :: YFORSTATUS  ! Status for open of a file (for LFI) ('OLD','NEW','UNKNOWN','SCRATCH','REPLACE')
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','opening '//TRIM(TPFILE%CNAME)//' for '//TRIM(TPFILE%CMODE))
-    !
-    IF ( PRESENT(OPARALLELIO) ) THEN
-      GPARALLELIO = OPARALLELIO
-    ELSE  !par defaut on active les IO paralleles en Z si possible
-      GPARALLELIO = .TRUE.
-    ENDIF
 
     IOS = 0
 
@@ -404,12 +396,6 @@ CONTAINS
        TPFILE%NMASTER_RANK  = ISIOP
        TPFILE%LMASTER       = (ISP == ISIOP)
        TPFILE%LMULTIMASTERS = .FALSE.
-       TPFILE%NSUBFILES_IOZ = 0
-       IF ( GPARALLELIO .AND. PRESENT(KNB_PROCIO) ) THEN
-         IF (KNB_PROCIO>1) THEN
-           TPFILE%NSUBFILES_IOZ = KNB_PROCIO
-         END IF
-       END IF
 
 #if defined(MNH_IOCDF4)
        IF (TPFILE%LMASTER .AND. (TPFILE%CFORMAT=='LFI' .OR. TPFILE%CFORMAT=='LFICDF4') ) THEN
@@ -425,7 +411,7 @@ CONTAINS
           IF (.NOT.ALLOCATED(TPFILE%TFILES_IOZ)) THEN
             ALLOCATE(TPFILE%TFILES_IOZ(TPFILE%NSUBFILES_IOZ))
           ELSE IF ( SIZE(TPFILE%TFILES_IOZ) /= TPFILE%NSUBFILES_IOZ ) THEN
-            CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll','SIZE(PFILE%TFILES_IOZ) /= TPFILE%NSUBFILES_IOZ for '//TRIM(TPFILE%CNAME))
+            CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll','SIZE(TPFILE%TFILES_IOZ) /= TPFILE%NSUBFILES_IOZ for '//TRIM(TPFILE%CNAME))
           END IF
           DO IFILE=1,TPFILE%NSUBFILES_IOZ
              IRANK_PROCIO = 1 + IO_RANK(IFILE-1,ISNPROC,TPFILE%NSUBFILES_IOZ)
@@ -515,7 +501,7 @@ CONTAINS
 
   END SUBROUTINE OPEN_ll
 
-  SUBROUTINE CLOSE_ll(TPFILE,IOSTAT,OPARALLELIO,HPROGRAM_ORIG)
+  SUBROUTINE CLOSE_ll(TPFILE,IOSTAT,HPROGRAM_ORIG)
   USE MODD_IO_ll
 
   USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
@@ -526,23 +512,14 @@ CONTAINS
 #endif
     TYPE(TFILEDATA),  INTENT(IN)            :: TPFILE
     INTEGER,          INTENT(OUT), OPTIONAL :: IOSTAT
-    LOGICAL,          INTENT(IN),  OPTIONAL :: OPARALLELIO
     CHARACTER(LEN=*), INTENT(IN),  OPTIONAL :: HPROGRAM_ORIG !To emulate a file coming from this program
 
-    INTEGER :: IERR, IGLOBALERR, IGLOBALERR2, IRESP, IRESP2
-
-    INTEGER                               :: IFILE
-    LOGICAL                               :: GPARALLELIO
-    TYPE(TFILEDATA),POINTER               :: TZFILE
+    character(len=256)      :: yioerrmsg
+    INTEGER                 :: IERR, IGLOBALERR, IGLOBALERR2, IRESP, IRESP2
+    INTEGER                 :: IFILE
+    TYPE(TFILEDATA),POINTER :: TZFILE
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','CLOSE_ll','closing '//TRIM(TPFILE%CNAME))
-
-    IF ( PRESENT(OPARALLELIO) ) THEN
-      GPARALLELIO = OPARALLELIO
-    ELSE  !par defaut on active les IO paralleles en Z si possible
-      GPARALLELIO = .TRUE.
-    ENDIF
-    !JUANZ
 
     IRESP       = 0
     IRESP2      = 0
@@ -551,29 +528,30 @@ CONTAINS
 
     IF (TPFILE%LMASTER) THEN
       IF (TPFILE%NLU/=-1 .AND. TPFILE%NLU/=NNULLUNIT) THEN
-        CLOSE(UNIT=TPFILE%NLU, IOSTAT=IRESP,STATUS='KEEP')
+        CLOSE(UNIT=TPFILE%NLU, STATUS='KEEP', IOSTAT=IRESP, IOMSG=yioerrmsg)
       END IF
     END IF
+
+    !Warning and not error or fatal if close fails to allow continuation of execution
+    IF (IRESP/=0) CALL PRINT_MSG(NVERB_WARNING,'IO','CLOSE_ll','Problem when closing '//TRIM(TPFILE%CNAME)//': '//TRIM(YIOERRMSG))
+
+    DO IFILE=1,TPFILE%NSUBFILES_IOZ
+      TZFILE => TPFILE%TFILES_IOZ(IFILE)%TFILE
+#if defined(MNH_IOCDF4)
+      !Write coordinates variables in netCDF file
+      IF (TZFILE%CMODE == 'WRITE' .AND. (TZFILE%CFORMAT=='NETCDF4' .OR. TZFILE%CFORMAT=='LFICDF4')) THEN
+        CALL IO_WRITE_COORDVAR_NC4(TZFILE,HPROGRAM_ORIG=HPROGRAM_ORIG)
+      END IF
+#endif
+      IF (TZFILE%LMASTER) THEN
+        if (tzfile%cformat == 'LFI'     .or. tzfile%cformat == 'LFICDF4') call io_close_file_lfi(tzfile,iresp2)
+#if defined(MNH_IOCDF4)
+        if (tzfile%cformat == 'NETCDF4' .or. tzfile%cformat == 'LFICDF4') call io_close_file_nc4(tzfile,iresp2)
+#endif
+      END IF
+    END DO
     !
-    IF( GPARALLELIO ) THEN
-      DO IFILE=1,TPFILE%NSUBFILES_IOZ
-        TZFILE => TPFILE%TFILES_IOZ(IFILE)%TFILE
-#if defined(MNH_IOCDF4)
-        !Write coordinates variables in netCDF file
-        IF (TZFILE%CMODE == 'WRITE' .AND. (TZFILE%CFORMAT=='NETCDF4' .OR. TZFILE%CFORMAT=='LFICDF4')) THEN
-          CALL IO_WRITE_COORDVAR_NC4(TZFILE,HPROGRAM_ORIG=HPROGRAM_ORIG)
-        END IF
-#endif
-        IF (TZFILE%LMASTER) THEN
-          if (tzfile%cformat == 'LFI'     .or. tzfile%cformat == 'LFICDF4') call io_close_file_lfi(tzfile,iresp2)
-#if defined(MNH_IOCDF4)
-          if (tzfile%cformat == 'NETCDF4' .or. tzfile%cformat == 'LFICDF4') call io_close_file_nc4(tzfile,iresp2)
-#endif
-        END IF
-      END DO
-      !
-      CALL MPI_ALLREDUCE(IRESP2,IGLOBALERR2,1,MPI_INTEGER,MPI_BOR,TPFILE%NMPICOMM,IERR)
-    END IF
+    IF (TPFILE%NSUBFILES_IOZ>0) CALL MPI_ALLREDUCE(IRESP2,IGLOBALERR2,1,MPI_INTEGER,MPI_BOR,TPFILE%NMPICOMM,IERR)
     !
     CALL MPI_ALLREDUCE(IRESP, IGLOBALERR, 1,MPI_INTEGER,MPI_BOR,TPFILE%NMPICOMM,IERR)
 

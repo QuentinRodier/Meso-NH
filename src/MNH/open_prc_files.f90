@@ -92,6 +92,8 @@ END MODULE MODI_OPEN_PRC_FILES
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      P. Wautelet  01/02/2019 added missing initialization to NULL for files with OUT intent
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
+!  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
+!                          (nsubfiles_ioz is now determined in IO_FILE_ADD2LIST)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -271,7 +273,7 @@ ELSE
 !
   TPPGDFILE => NULL()
   CALL IO_FILE_ADD2LIST(TPPGDFILE,TRIM(HPGDFILE),'PGD','READ',KLFITYPE=2,KLFIVERB=NVERB)
-  CALL IO_FILE_OPEN_ll(TPPGDFILE,IRESP,OPARALLELIO=.FALSE.)
+  CALL IO_FILE_OPEN_ll(TPPGDFILE,IRESP)
   IF (IRESP/=0) THEN
 !callabortstop
     CALL PRINT_MSG(NVERB_FATAL,'GEN','OPEN_PRC_FILES',' problem during opening of PGD file '//TRIM(HPGDFILE))

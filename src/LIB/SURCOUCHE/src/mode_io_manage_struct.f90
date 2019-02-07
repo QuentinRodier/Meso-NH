@@ -13,6 +13,8 @@
 !                                 to allow to disable writes (for bench purposes)
 !  P. Wautelet 06/02/2019: simplify OPEN_ll and do somme assignments at a more logical place
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
+!  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
+!                          (nsubfiles_ioz is now determined in IO_FILE_ADD2LIST)
 !-----------------------------------------------------------------
 MODULE MODE_IO_MANAGE_STRUCT
 !
@@ -287,20 +289,24 @@ DO IMI = 1, NMODEL
   DEALLOCATE(IOUT_STEP)
   !
   IF (IP==1) THEN
-  PRINT *,'-------------------------'
+  PRINT *,'-------------------------------'
   PRINT *,'Model number:      ',IMI
   PRINT *,'Number of backups: ',IBAK_NUMB
-  PRINT *,'Timestep     Time'
-  DO JOUT = 1,IBAK_NUMB
-    WRITE(*,'( I9,F12.3 )'  ) OUT_MODEL(IMI)%TBACKUPN(JOUT)%NSTEP,OUT_MODEL(IMI)%TBACKUPN(JOUT)%XTIME
-  END DO
-  PRINT *,'-------------------------'
+  if ( ibak_numb > 0 ) then
+    PRINT *,'Timestep     Time'
+    DO JOUT = 1,IBAK_NUMB
+      WRITE(*,'( I9,F12.3 )'  ) OUT_MODEL(IMI)%TBACKUPN(JOUT)%NSTEP,OUT_MODEL(IMI)%TBACKUPN(JOUT)%XTIME
+    END DO
+  end if
+  PRINT *,'-------------------------------'
   PRINT *,'Model number:      ',IMI
   PRINT *,'Number of outputs: ',IOUT_NUMB
-  PRINT *,'Timestep     Time'
-  DO JOUT = 1,IOUT_NUMB
-    WRITE(*,'( I9,F12.3 )'  ) OUT_MODEL(IMI)%TOUTPUTN(JOUT)%NSTEP,OUT_MODEL(IMI)%TOUTPUTN(JOUT)%XTIME
-  END DO
+  if ( iout_numb > 0 ) then
+    PRINT *,'Timestep     Time'
+    DO JOUT = 1,IOUT_NUMB
+      WRITE(*,'( I9,F12.3 )'  ) OUT_MODEL(IMI)%TOUTPUTN(JOUT)%NSTEP,OUT_MODEL(IMI)%TOUTPUTN(JOUT)%XTIME
+    END DO
+  end if
   !
   IF (IOUT_NUMB>0) THEN
     PRINT *,'Field list:'
@@ -310,7 +316,7 @@ DO IMI = 1, NMODEL
     END DO
   END IF
   !
-  PRINT *,'-------------------------'
+  PRINT *,'-------------------------------'
   END IF
   !
 END DO ! IMI=1,NMODEL
@@ -632,10 +638,11 @@ END SUBROUTINE IO_PREPARE_BAKOUT_STRUCT
 SUBROUTINE IO_FILE_ADD2LIST(TPFILE,HNAME,HTYPE,HMODE,                 &
                             HFORM,HACCESS,HFORMAT,HDIRNAME,           &
                             KLFINPRAR,KLFITYPE,KLFIVERB,KRECL,KMODEL, &
-                            TPDADFILE,TPDATAFILE,OOLD)
+                            TPDADFILE,TPDATAFILE,OOLD,OSPLIT_IOZ)
 !
 USE MODD_BAKOUT,         ONLY: LOUT_COMPRESS,LOUT_REDUCE_FLOAT_PRECISION,NOUT_COMPRESS_LEVEL
 USE MODD_CONF,           ONLY: CPROGRAM
+use modd_confz,          only: nb_procio_r,nb_procio_w
 !
 USE MODE_MODELN_HANDLER, ONLY: GET_CURRENT_MODEL_INDEX
 !
@@ -657,14 +664,18 @@ TYPE(TFILEDATA),POINTER,OPTIONAL,INTENT(IN)    :: TPDATAFILE!Corresponding data 
 LOGICAL,                OPTIONAL,INTENT(IN)    :: OOLD      !FALSE if new file (should not be found)
                                                             !TRUE if the file could already be in the list
                                                             !     (add it only if not yet present)
+logical,                optional,intent(in)    :: osplit_ioz !Is the file split vertically
 !
 INTEGER :: IMI,IRESP
 INTEGER(KIND=LFI_INT) :: ILFINPRAR
 INTEGER :: ILFITYPE
 INTEGER :: ILFIVERB
 LOGICAL :: GOLD
+logical :: gsplit_ioz
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_FILE_ADD2LIST','called for '//TRIM(HNAME))
+!
+IMI = GET_CURRENT_MODEL_INDEX()
 !
 IF (PRESENT(OOLD)) THEN
   GOLD = OOLD
@@ -698,8 +709,6 @@ IF (IRESP==0) THEN
     RETURN
   END IF
 END IF
-!
-IMI = GET_CURRENT_MODEL_INDEX()
 !
 IF(     PRESENT(HFORM) .AND. TRIM(HTYPE)/='SURFACE_DATA') &
     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FILE_ADD2LIST','optional argument HFORM is not used by '//TRIM(HTYPE)//' files')
@@ -781,6 +790,26 @@ IF (TRIM(HMODE)/='READ' .AND. TRIM(HMODE)/='WRITE') THEN
 END IF
 !
 TPFILE%CMODE = HMODE
+!
+if ( present(osplit_ioz) ) then
+  gsplit_ioz = osplit_ioz
+else
+  gsplit_ioz = .false.
+  if ( len_trim(htype) >= 3 ) then
+    if ( htype(1:3) == 'MNH' ) then
+      ! MNH/MNHBACKUP/MNHOUTPUT
+      !Remark: 'MNH' is more general than MNHBACKUP and could be in fact a MNHBACKUP file
+      gsplit_ioz = .true.
+      select case (hmode)
+        case('READ')
+          tpfile%nsubfiles_ioz = nb_procio_r
+        case('WRITE')
+          tpfile%nsubfiles_ioz = nb_procio_w
+      end select
+      if (tpfile%nsubfiles_ioz == 1) tpfile%nsubfiles_ioz = 0
+    end if
+  end if
+end if
 !
 SELECT CASE(TPFILE%CTYPE)
   !Chemistry input files

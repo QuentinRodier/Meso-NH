@@ -53,6 +53,8 @@ END MODULE MODI_MNHOPEN_AUX_IO_SURF
 !!         J.Escobar : 02/06/2016 : abort MNHOPEN with STOP if problem with OPEN of INPUT/READ file 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
+!  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
+!                          (nsubfiles_ioz is now determined in IO_FILE_ADD2LIST)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -139,7 +141,7 @@ END IF
 !
 IF (HFILE/=YFILE .AND. HFILE/=YPGDFILE) THEN
   CALL IO_FILE_ADD2LIST(TPINFILE,TRIM(HFILE),'PGD','READ',KLFITYPE=2,KLFIVERB=5,OOLD=.TRUE.)
-  CALL IO_FILE_OPEN_ll(TPINFILE,KRESP=IRESP,OPARALLELIO=.FALSE.)
+  CALL IO_FILE_OPEN_ll(TPINFILE,KRESP=IRESP)
   !
   IF (IRESP .NE. 0) THEN
     PRINT*," /!\  MNHOPEN_AUX_IO_SURF :: FATAL PROBLEM OPENING INPUT/READ FILES =", HFILE

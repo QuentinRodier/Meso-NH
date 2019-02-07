@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ###################
@@ -253,6 +253,8 @@ END MODULE MODI_MODEL_n
 !!                   01/2018 (C.Lac) Add VISCOSITY
 !!  Philippe Wautelet: 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll
 !                                  to allow to disable writes (for bench purposes)
+!  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
+!                          (nsubfiles_ioz is now determined in IO_FILE_ADD2LIST)
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -2111,7 +2113,7 @@ IF (OEXIT) THEN
   END IF
   !
   CALL IO_FILE_CLOSE_ll(TINIFILE)
-  IF (CSURF=="EXTE") CALL IO_FILE_CLOSE_ll(TINIFILEPGD,OPARALLELIO=.FALSE.)
+  IF (CSURF=="EXTE") CALL IO_FILE_CLOSE_ll(TINIFILEPGD)
 !
 !*       28.1   print statistics!
 !

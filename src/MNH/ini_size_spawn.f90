@@ -68,6 +68,8 @@ END MODULE MODI_INI_SIZE_SPAWN
 !!         J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
+!  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
+!                          (nsubfiles_ioz is now determined in IO_FILE_ADD2LIST)
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -226,7 +228,7 @@ IF (LEN_TRIM(CDOMAIN)>0) THEN
 ! structures TCRRT_COMDATA%T_CHILDREN%T_SPLITB and TCRRT_PROCONF%T_CHILDREN
 !$20140602 add condition on npproc
   CALL IO_FILE_ADD2LIST(TZDOMAIN,TRIM(CDOMAIN),'PGD','READ',KLFITYPE=2,KLFIVERB=NVERB)
-  CALL IO_FILE_OPEN_ll(TZDOMAIN,OPARALLELIO=.FALSE.)
+  CALL IO_FILE_OPEN_ll(TZDOMAIN)
   !
   CALL IO_READ_FIELD(TZDOMAIN,'DXRATIO',NDXRATIO)
   CALL IO_READ_FIELD(TZDOMAIN,'DYRATIO',NDYRATIO)
@@ -283,7 +285,7 @@ IF (LEN_TRIM(CDOMAIN)>0) THEN
 !*     1.4   read grid in file CDOMAIN if available :
 !
   CALL READ_HGRID(2,TZDOMAIN,YMY_NAME,YDAD_NAME,YSTORAGE_TYPE)
-  CALL IO_FILE_CLOSE_ll(TZDOMAIN,OPARALLELIO=.FALSE.)
+  CALL IO_FILE_CLOSE_ll(TZDOMAIN)
   CALL RETRIEVE1_NEST_INFO_n(1,2,NXOR,NYOR,NXSIZE,NYSIZE,NDXRATIO,NDYRATIO)
   DEALLOCATE(XZS,XZSMT,XXHAT,XYHAT)
 !

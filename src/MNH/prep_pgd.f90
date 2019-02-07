@@ -74,7 +74,9 @@
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!  Q. Rodier 01/2019 : add a new filtering for very high slopes in NAM_ZSFILTER
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
-!!
+!  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
+!                          (nsubfiles_ioz is now determined in IO_FILE_ADD2LIST)
+!
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -247,7 +249,7 @@ CALL PGD_SURF_ATM(YSURF_CUR,'MESONH','                            ','      ',.FA
 !
 CALL IO_FILE_ADD2LIST(TZFILE,CPGDFILE,'PGD','WRITE',KLFINPRAR=INT(1,KIND=LFI_INT),KLFITYPE=1,KLFIVERB=5)
 !
-CALL IO_FILE_OPEN_ll(TZFILE,OPARALLELIO=.FALSE.)
+CALL IO_FILE_OPEN_ll(TZFILE)
 !
 CALL IO_WRITE_HEADER(TZFILE)
 !
@@ -325,13 +327,13 @@ WRITE(ILUOUT0,*) '***************************'
 !*    6.      Close parallelized I/O
 !             ----------------------
 !
-CALL IO_FILE_CLOSE_ll(TZFILE,OPARALLELIO=.FALSE.)
+CALL IO_FILE_CLOSE_ll(TZFILE)
 !
 CALL SURFEX_DEALLO_LIST
 !
 IF(NIO_VERB>=NVERB_DEBUG) CALL IO_FILE_PRINT_LIST()
 !
-CALL IO_FILE_CLOSE_ll(TLUOUT0,OPARALLELIO=.FALSE.)
+CALL IO_FILE_CLOSE_ll(TLUOUT0)
 !
 CALL END_PARA_ll(IINFO_ll)
 !

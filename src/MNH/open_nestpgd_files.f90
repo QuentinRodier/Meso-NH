@@ -68,6 +68,8 @@ END MODULE MODI_OPEN_NESTPGD_FILES
 !!    P.Wautelet : 08/07/2016 : removed MNH_NCWRIT define
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
+!  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
+!                          (nsubfiles_ioz is now determined in IO_FILE_ADD2LIST)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -325,7 +327,7 @@ CALL IO_FILE_CLOSE_ll(TZPRE_NEST_PGD)
 !Remark: output PGD files are opened later when the mesh dimensions are known
 !
 DO JPGD=1,NMODEL
-  CALL IO_FILE_OPEN_ll(TPFILEPGD(JPGD)    %TZFILE,OPARALLELIO=.FALSE.)
+  CALL IO_FILE_OPEN_ll(TPFILEPGD(JPGD)%TZFILE)
 END DO
 !
 !-------------------------------------------------------------------------------
