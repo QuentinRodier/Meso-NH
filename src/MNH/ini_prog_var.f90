@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ########################
@@ -94,6 +94,7 @@ END MODULE MODI_INI_PROG_VAR
 !!                  Mai 2017 (M. Leriche) read aerosol namelists before call ini_nsv
 !!                  Mai 2017 (M. Leriche) Get wet dep. sv in Meso-NH init file
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -216,7 +217,7 @@ ALLOCATE(XSVT(0,0,0,0))
 IF(PRESENT(HCHEMFILE)) THEN
   WRITE(ILUOUT,*) 'Routine INI_PROG_VAR: CHEMical species read in ',TRIM(HCHEMFILE)
   ! Read dimensions in chem file and checks with output file
-  CALL IO_FILE_ADD2LIST(TZCHEMFILE,TRIM(HCHEMFILE),'UNKNOWN','READ',KLFITYPE=2,KLFIVERB=NVERB)
+  CALL IO_FILE_ADD2LIST(TZCHEMFILE,TRIM(HCHEMFILE),'MNH','READ',KLFITYPE=2,KLFIVERB=NVERB)
   CALL IO_FILE_OPEN_ll(TZCHEMFILE)
   !
   ILUDES = TZCHEMFILE%TDESFILE%NLU

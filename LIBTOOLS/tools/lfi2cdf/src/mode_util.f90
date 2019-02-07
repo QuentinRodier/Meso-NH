@@ -3,6 +3,9 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
+! Modifications:
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
+!-----------------------------------------------------------------
 MODULE mode_util
   USE MODD_IO_ll,  ONLY: TFILE_ELT
   USE MODD_NETCDF, ONLY: DIMCDF, IDCDF_KIND
@@ -977,7 +980,7 @@ END DO
        !
        ! NetCDF
        !
-       CALL IO_FILE_ADD2LIST(INFILES(1)%TFILE,HINFILE,'UNKNOWN','READ',HFORMAT='NETCDF4')
+       CALL IO_FILE_ADD2LIST(INFILES(1)%TFILE,HINFILE,'MNH','READ',HFORMAT='NETCDF4')
        CALL IO_FILE_OPEN_ll(INFILES(1)%TFILE)
 
        nbvar_infile = INFILES(1)%TFILE%NNCNAR
@@ -985,7 +988,7 @@ END DO
        !
        ! LFI
        !
-       CALL IO_FILE_ADD2LIST(INFILES(1)%TFILE,HINFILE,'UNKNOWN','READ', &
+       CALL IO_FILE_ADD2LIST(INFILES(1)%TFILE,HINFILE,'MNH','READ', &
                              HFORMAT='LFI',KLFIVERB=0)
        CALL IO_FILE_OPEN_ll(INFILES(1)%TFILE)
 
@@ -1056,7 +1059,7 @@ END DO
          KNFILES_OUT = KNFILES_OUT + 1
 
          idx = KNFILES_OUT
-         CALL IO_FILE_ADD2LIST(outfiles(idx)%TFILE,HOUTFILE,'UNKNOWN','WRITE', &
+         CALL IO_FILE_ADD2LIST(outfiles(idx)%TFILE,HOUTFILE,'MNH','WRITE', &
                                HFORMAT='NETCDF4',OOLD=.TRUE.)
          CALL IO_FILE_OPEN_ll(outfiles(idx)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
 
@@ -1078,7 +1081,7 @@ END DO
        !
        KNFILES_OUT = KNFILES_OUT + 1
        idx = KNFILES_OUT
-       CALL IO_FILE_ADD2LIST(outfiles(idx)%TFILE,houtfile,'UNKNOWN','WRITE', &
+       CALL IO_FILE_ADD2LIST(outfiles(idx)%TFILE,houtfile,'MNH','WRITE', &
                              HFORMAT='LFI',KLFIVERB=0,OOLD=.TRUE.)
        LIOCDF4 = .FALSE. !Necessary to open correctly the LFI file
        CALL IO_FILE_OPEN_ll(outfiles(idx)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
@@ -1090,7 +1093,7 @@ END DO
      KNFILES_OUT = KNFILES_OUT + 1
 
      idx = KNFILES_OUT
-     CALL IO_FILE_ADD2LIST(outfiles(idx)%TFILE,'dummy_file','UNKNOWN','WRITE', &
+     CALL IO_FILE_ADD2LIST(outfiles(idx)%TFILE,'dummy_file','MNH','WRITE', &
                            HFORMAT='NETCDF4',OOLD=.TRUE.)
      CALL IO_FILE_OPEN_ll(outfiles(idx)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
    END IF
@@ -1145,7 +1148,7 @@ END DO
 
     DO ji = 1,nbvar
       filename = trim(houtfile)//'.'//TRIM(YVARS(ji))
-      CALL IO_FILE_ADD2LIST(outfiles(ji)%TFILE,filename,'UNKNOWN','WRITE', &
+      CALL IO_FILE_ADD2LIST(outfiles(ji)%TFILE,filename,'MNH','WRITE', &
                             HFORMAT='NETCDF4')
       CALL IO_FILE_OPEN_ll(outfiles(ji)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
 

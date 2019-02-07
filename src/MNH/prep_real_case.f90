@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ######################
@@ -379,6 +379,7 @@
 !!    P.Wautelet : 08/07/2016 : removed MNH_NCWRIT define
 !!     B.VIE 2016 : LIMA
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -745,7 +746,7 @@ CALL SECOND_MNH(ZTIME2)
 ZREAD = ZTIME2 - ZTIME1 - ZHORI
 !-------------------------------------------------------------------------------
 !
-CALL IO_FILE_ADD2LIST(TINIFILE,CINIFILE,'PREPREALCASE','WRITE',KLFITYPE=1,KLFIVERB=NVERB)
+CALL IO_FILE_ADD2LIST(TINIFILE,CINIFILE,'MNH','WRITE',KLFITYPE=1,KLFIVERB=NVERB)
 CALL IO_FILE_OPEN_ll(TINIFILE)
 !
 ZTIME1=ZTIME2

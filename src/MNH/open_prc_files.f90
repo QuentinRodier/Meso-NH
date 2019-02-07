@@ -91,6 +91,7 @@ END MODULE MODI_OPEN_PRC_FILES
 !!      J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      P. Wautelet  01/02/2019 added missing initialization to NULL for files with OUT intent
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -269,7 +270,7 @@ ELSE
 !              -----------------------------------
 !
   TPPGDFILE => NULL()
-  CALL IO_FILE_ADD2LIST(TPPGDFILE,TRIM(HPGDFILE),'UNKNOWN','READ',KLFITYPE=2,KLFIVERB=NVERB)
+  CALL IO_FILE_ADD2LIST(TPPGDFILE,TRIM(HPGDFILE),'PGD','READ',KLFITYPE=2,KLFIVERB=NVERB)
   CALL IO_FILE_OPEN_ll(TPPGDFILE,IRESP,OPARALLELIO=.FALSE.)
   IF (IRESP/=0) THEN
 !callabortstop

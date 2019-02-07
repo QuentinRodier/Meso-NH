@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2004-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -26,6 +26,7 @@
 !!    10/10/2011  J.Escobar call INI_PARAZ_ll
 !!  06/2016     (G.Delautier) phasage surfex 8
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -155,7 +156,7 @@ CALL INI_PARAZ_ll(IINFO_ll)
 !* reading of date
 !
 IF (YATMFILETYPE=='MESONH') THEN
-  CALL IO_FILE_ADD2LIST(TZATMFILE,TRIM(YATMFILE),'UNKNOWN','READ',KLFITYPE=1,KLFIVERB=1)
+  CALL IO_FILE_ADD2LIST(TZATMFILE,TRIM(YATMFILE),'MNH','READ',KLFITYPE=1,KLFIVERB=1)
   CALL IO_FILE_OPEN_ll(TZATMFILE)
   CALL IO_READ_FIELD(TZATMFILE,'DTCUR',TDTCUR)
   CALL IO_FILE_CLOSE_ll(TZATMFILE)
@@ -171,7 +172,7 @@ YSURF_CUR => YSURF_LIST(1)
 CALL READ_ALL_NAMELISTS(YSURF_CUR,'MESONH','PRE',.FALSE.)
 CALL GOTO_SURFEX(1)
 !
-CALL IO_FILE_ADD2LIST(TINIFILE,TRIM(CINIFILE),'PREPSURFEX','WRITE',KLFITYPE=1,KLFIVERB=1)
+CALL IO_FILE_ADD2LIST(TINIFILE,TRIM(CINIFILE),'PGD','WRITE',KLFITYPE=1,KLFIVERB=1)
 !The open is done later in PREP_SURF_MNH when domain dimensions are known
 !
 TFILE_SURFEX => TINIFILE

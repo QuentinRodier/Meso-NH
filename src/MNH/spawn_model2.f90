@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !########################
 MODULE MODI_SPAWN_MODEL2
@@ -191,6 +191,7 @@ END MODULE MODI_SPAWN_MODEL2
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!                    10/2016 (C.Lac) Add droplet deposition
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -489,7 +490,7 @@ IF (LEN_TRIM(HSONFILE) /= 0 ) THEN
 !        3.3.1  Opening the son input file and reading the grid
 ! 
   WRITE(ILUOUT,*) 'SPAWN_MODEL2: spawning with a SON input file :',TRIM(HSONFILE)
-  CALL IO_FILE_ADD2LIST(TZSONFILE,TRIM(HSONFILE),'UNKNOWN','READ',KLFITYPE=2,KLFIVERB=NVERB)
+  CALL IO_FILE_ADD2LIST(TZSONFILE,TRIM(HSONFILE),'MNH','READ',KLFITYPE=2,KLFIVERB=NVERB)
   CALL IO_FILE_OPEN_ll(TZSONFILE)
   CALL IO_READ_FIELD(TZSONFILE,'DAD_NAME',YDAD_SON)
   CALL IO_READ_FIELD(TZSONFILE,'IMAX',    IIMAXSON)
@@ -1436,7 +1437,7 @@ ELSE
      CMY_NAME(2)=ADJUSTL(ADJUSTR(CINIFILE)//'.spr'//ADJUSTL(HSPANBR))
 END IF
 !
-CALL IO_FILE_ADD2LIST(TZFILE,CMY_NAME(2),'SPAWNING','WRITE',KLFINPRAR=INPRAR,KLFITYPE=1,KLFIVERB=NVERB)
+CALL IO_FILE_ADD2LIST(TZFILE,CMY_NAME(2),'MNH','WRITE',KLFINPRAR=INPRAR,KLFITYPE=1,KLFIVERB=NVERB)
 !
 CALL IO_FILE_OPEN_ll(TZFILE)
 !

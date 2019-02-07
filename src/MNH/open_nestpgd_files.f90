@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1996-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !#############################
@@ -67,6 +67,7 @@ END MODULE MODI_OPEN_NESTPGD_FILES
 !!                   J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
 !!    P.Wautelet : 08/07/2016 : removed MNH_NCWRIT define
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -302,15 +303,15 @@ ALLOCATE(TPFILEPGD    (NMODEL))
 ALLOCATE(TPFILENESTPGD(NMODEL))
 !
 DO JPGD=1,NMODEL
-  CALL IO_FILE_ADD2LIST(TPFILEPGD(JPGD)%TZFILE,TRIM(YPGD(JPGD)),'PREPPGD','READ',KLFITYPE=2,KLFIVERB=NVERB)
+  CALL IO_FILE_ADD2LIST(TPFILEPGD(JPGD)%TZFILE,TRIM(YPGD(JPGD)),'PGD','READ',KLFITYPE=2,KLFIVERB=NVERB)
   !
   IF (NDAD(JPGD)>=1) THEN
     TZDADFILE => TPFILENESTPGD(NDAD(JPGD))%TZFILE
-    CALL IO_FILE_ADD2LIST(TPFILENESTPGD(JPGD)%TZFILE,TRIM(YPGD(JPGD))//'.nest'//ADJUSTL(YNEST),'PREPNESTPGD', &
+    CALL IO_FILE_ADD2LIST(TPFILENESTPGD(JPGD)%TZFILE,TRIM(YPGD(JPGD))//'.nest'//ADJUSTL(YNEST),'PGD', &
                           'WRITE',KLFITYPE=1,KLFIVERB=NVERB,KMODEL=JPGD,TPDADFILE=TZDADFILE)
   ELSE
     NULLIFY(TZDADFILE)
-    CALL IO_FILE_ADD2LIST(TPFILENESTPGD(JPGD)%TZFILE,TRIM(YPGD(JPGD))//'.nest'//ADJUSTL(YNEST),'PREPNESTPGD', &
+    CALL IO_FILE_ADD2LIST(TPFILENESTPGD(JPGD)%TZFILE,TRIM(YPGD(JPGD))//'.nest'//ADJUSTL(YNEST),'PGD', &
                           'WRITE',KLFITYPE=1,KLFIVERB=NVERB,KMODEL=JPGD)
   END IF
 END DO

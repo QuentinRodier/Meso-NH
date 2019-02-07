@@ -7,6 +7,7 @@
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN (removed ISTDOUT, ISTDERR, added NNULLUNIT, CNULLFILE)
 !  Philippe Wautelet: 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll to allow to disable writes (for bench purposes)
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
 !-----------------------------------------------------------------
 
 MODULE MODD_IO_ll
@@ -70,7 +71,7 @@ END TYPE TOUTBAK
 TYPE TFILEDATA
   CHARACTER(LEN=NFILENAMELGTMAX) :: CNAME = '' !Filename
   CHARACTER(LEN=:),ALLOCATABLE   :: CDIRNAME   !Directory name
-  CHARACTER(LEN=13) :: CTYPE   = "UNKNOWN" !Filetype (backup, output, prepidealcase...)
+  CHARACTER(LEN=13) :: CTYPE   = "UNKNOWN" !Filetype (PGD, MNH, DES, NML...)
   CHARACTER(LEN=7)  :: CFORMAT = "UNKNOWN" !Fileformat (NETCDF4, LFI, LFICDF4...)
   CHARACTER(LEN=7)  :: CMODE   = "UNKNOWN" !Opening mode (read, write...)
   LOGICAL           :: LOPENED = .FALSE.   !Is the file opened

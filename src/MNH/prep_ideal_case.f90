@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #######################
@@ -311,6 +311,7 @@
 !!      P.Wautelet : 08/07/2016 : removed MNH_NCWRIT define
 !!  01/2018      (G.Delautier) SURFEX 8.1
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -710,7 +711,7 @@ CALL INI_FIELD_SCALARS()
 !
 IF( LEN_TRIM(CPGD_FILE) /= 0 ) THEN 
   ! open the PGD_FILE
-  CALL IO_FILE_ADD2LIST(TPGDFILE,TRIM(CPGD_FILE),'UNKNOWN','READ',KLFINPRAR=NNPRAR,KLFITYPE=2,KLFIVERB=NVERB)
+  CALL IO_FILE_ADD2LIST(TPGDFILE,TRIM(CPGD_FILE),'PGD','READ',KLFINPRAR=NNPRAR,KLFITYPE=2,KLFIVERB=NVERB)
   CALL IO_FILE_OPEN_ll(TPGDFILE)
 
   ! read the grid in the PGD file
@@ -1730,7 +1731,7 @@ NNPRAR = 22 + 2*(NRR+NSV)   &    ! 22 = number of grid variables + reference
                                  ! variables at time t and t-dt
 NTYPE=1
 !
-CALL IO_FILE_ADD2LIST(TINIFILE,TRIM(CINIFILE),'PREPIDEALCASE','WRITE',KLFINPRAR=NNPRAR,KLFITYPE=NTYPE,KLFIVERB=NVERB)
+CALL IO_FILE_ADD2LIST(TINIFILE,TRIM(CINIFILE),'MNH','WRITE',KLFINPRAR=NNPRAR,KLFITYPE=NTYPE,KLFIVERB=NVERB)
 !
 CALL IO_FILE_OPEN_ll(TINIFILE)
 !
@@ -1770,7 +1771,7 @@ IF (CSURF =='EXTE') THEN
     TPGDFILE => TINIFILE
     CALL PGD_GRID_SURF_ATM(YSURF_CUR%UG, YSURF_CUR%U,YSURF_CUR%GCP,'MESONH',TINIFILE%CNAME,'MESONH',.TRUE.,HDIR='-')
     CALL PGD_SURF_ATM     (YSURF_CUR,'MESONH',TINIFILE%CNAME,'MESONH',.TRUE.)
-    CALL IO_FILE_ADD2LIST(TINIFILEPGD,TRIM(CINIFILEPGD),'PREPIDEALCASE','WRITE',KLFINPRAR=NNPRAR,KLFITYPE=NTYPE,KLFIVERB=NVERB)
+    CALL IO_FILE_ADD2LIST(TINIFILEPGD,TRIM(CINIFILEPGD),'PGD','WRITE',KLFINPRAR=NNPRAR,KLFITYPE=NTYPE,KLFIVERB=NVERB)
     CALL IO_FILE_OPEN_ll (TINIFILEPGD)
     TPGDFILE => TINIFILEPGD
   ELSE

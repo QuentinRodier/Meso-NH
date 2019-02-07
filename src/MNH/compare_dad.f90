@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -58,6 +58,7 @@ END MODULE MODI_COMPARE_DAD
 !!
 !!      Original     O8/04/04 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -136,7 +137,7 @@ ZLATORI_2=0.
 !*   2.    Read DAD of initial file
 !          ------------------------
 !
-CALL IO_FILE_ADD2LIST(TZDADINIFILE,TRIM(HDADINIFILE),'UNKNOWN','READ',KLFITYPE=2,KLFIVERB=NVERB)
+CALL IO_FILE_ADD2LIST(TZDADINIFILE,TRIM(HDADINIFILE),'MNH','READ',KLFITYPE=2,KLFIVERB=NVERB)
 CALL IO_FILE_OPEN_ll(TZDADINIFILE)
 !
 CALL IO_READ_FIELD(TZDADINIFILE,'IMAX',IIMAX_1)
@@ -192,7 +193,7 @@ CALL IO_FILE_CLOSE_ll(TZDADINIFILE)
 !*   3.    Read DAD of spawning file 
 !          ------------------------
 !
-CALL IO_FILE_ADD2LIST(TZDADSPAFILE,TRIM(HDADSPAFILE),'UNKNOWN','READ',KLFITYPE=2,KLFIVERB=NVERB)
+CALL IO_FILE_ADD2LIST(TZDADSPAFILE,TRIM(HDADSPAFILE),'MNH','READ',KLFITYPE=2,KLFIVERB=NVERB)
 CALL IO_FILE_OPEN_ll(TZDADSPAFILE)
 !
 CALL IO_READ_FIELD(TZDADSPAFILE,'IMAX',IIMAX_2)

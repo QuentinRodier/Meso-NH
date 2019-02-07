@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2002-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !     ######spl
         PROGRAM MNH2LPDM
@@ -13,6 +13,7 @@
 !       Modification  : 07.01.2006 (T.LAUVAUX, adaptation LPDM)
 !       Modification  : 04.01.2009 (F. BONNARDOT, DP/SER/ENV )
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
 !
 !-----------------------------------------------------------------------------
 !
@@ -107,10 +108,10 @@ CALL IO_FILE_CLOSE_ll(TZNMLFILE)
 !
 IF (LEN_TRIM(CFMNH(1))>0) THEN
    NBMNH=1
-   CALL IO_FILE_ADD2LIST(TZFMNH(1)%TZFILE,TRIM(CFMNH(1)),'UNKNOWN','READ',KLFITYPE=2,KLFIVERB=IVERB)
+   CALL IO_FILE_ADD2LIST(TZFMNH(1)%TZFILE,TRIM(CFMNH(1)),'MNH','READ',KLFITYPE=2,KLFIVERB=IVERB)
    DO WHILE (CFMNH(NBMNH+1).NE.'VIDE')
       NBMNH=NBMNH+1
-      CALL IO_FILE_ADD2LIST(TZFMNH(NBMNH)%TZFILE,TRIM(CFMNH(NBMNH)),'UNKNOWN','READ',KLFITYPE=2,KLFIVERB=IVERB)
+      CALL IO_FILE_ADD2LIST(TZFMNH(NBMNH)%TZFILE,TRIM(CFMNH(NBMNH)),'MNH','READ',KLFITYPE=2,KLFIVERB=IVERB)
    END DO
    print *,NBMNH,' fichiers a traiter.'
 ELSE

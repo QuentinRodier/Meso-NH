@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !     ################
       PROGRAM PREP_PGD
@@ -73,7 +73,8 @@
 !!  01/2018      (G.Delautier) SURFEX 8.1
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!  Q. Rodier 01/2019 : add a new filtering for very high slopes in NAM_ZSFILTER
-!! 
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
+!!
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -244,7 +245,7 @@ CALL PGD_SURF_ATM(YSURF_CUR,'MESONH','                            ','      ',.FA
 !*    3.      Writes the physiographic fields
 !             -------------------------------
 !
-CALL IO_FILE_ADD2LIST(TZFILE,CPGDFILE,'PREPPGD','WRITE',KLFINPRAR=INT(1,KIND=LFI_INT),KLFITYPE=1,KLFIVERB=5)
+CALL IO_FILE_ADD2LIST(TZFILE,CPGDFILE,'PGD','WRITE',KLFINPRAR=INT(1,KIND=LFI_INT),KLFITYPE=1,KLFIVERB=5)
 !
 CALL IO_FILE_OPEN_ll(TZFILE,OPARALLELIO=.FALSE.)
 !

@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #####################
@@ -91,6 +91,7 @@
 !!  06/2016     (G.Delautier) phasage surfex 8
 !!      P.Wautelet : 08/07/2016 : removed MNH_NCWRIT define
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -334,7 +335,7 @@ DO JPGD=1,NMODEL
   TOUTDATAFILE => TZFILENESTPGD(JPGD)%TZFILE
   CALL GOTO_MODEL(JPGD)
   !Open done here because grid dimensions have to be known
-  CALL IO_FILE_OPEN_ll(TZFILENESTPGD(JPGD)%TZFILE,OPARALLELIO=.FALSE.)
+  CALL IO_FILE_OPEN_ll(TZFILENESTPGD(JPGD)%TZFILE)
   CALL GOTO_SURFEX(JPGD)
   TFILE_SURFEX => TZFILENESTPGD(JPGD)%TZFILE
   CALL WRITE_PGD_SURF_ATM_n(YSURF_CUR,'MESONH')
@@ -369,8 +370,8 @@ END DO
 !              --------------------
 !
 DO JPGD=1,NMODEL
-  CALL IO_FILE_CLOSE_ll(TZFILEPGD(JPGD)%TZFILE,    OPARALLELIO=.FALSE.)
-  CALL IO_FILE_CLOSE_ll(TZFILENESTPGD(JPGD)%TZFILE,OPARALLELIO=.FALSE.)
+  CALL IO_FILE_CLOSE_ll(TZFILEPGD(JPGD)%TZFILE)
+  CALL IO_FILE_CLOSE_ll(TZFILENESTPGD(JPGD)%TZFILE)
 END DO
 !
 !* loop to spare enough time to transfer commands before end of program

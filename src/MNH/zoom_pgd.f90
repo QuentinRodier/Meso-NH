@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2005-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2005-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ################
@@ -40,6 +40,7 @@
 !!  06/2016     (G.Delautier) phasage surfex 8
 !!    08/07/2016  P.Wautelet Removed MNH_NCWRIT define
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
 !!
 !----------------------------------------------------------------------------
 !
@@ -148,7 +149,7 @@ CALL SET_CONFIO_ll()
 !*    2.1     Open PGD file
 !             -------------
 !
-CALL IO_FILE_ADD2LIST(TZPGDFILE,TRIM(CPGDFILE),'UNKNOWN','READ',KLFINPRAR=INT(1,KIND=LFI_INT),KLFITYPE=2,KLFIVERB=5)
+CALL IO_FILE_ADD2LIST(TZPGDFILE,TRIM(CPGDFILE),'PGD','READ',KLFINPRAR=INT(1,KIND=LFI_INT),KLFITYPE=2,KLFIVERB=5)
 CALL IO_FILE_OPEN_ll(TZPGDFILE)
 !
 !*    2.2     Reading of initial grid
@@ -194,7 +195,7 @@ IF ( (LEN_TRIM(YZOOMFILE) == 0) .OR. (ADJUSTL(YZOOMFILE) == ADJUSTL(CPGDFILE)) )
   YZOOMFILE=ADJUSTL(ADJUSTR(CPGDFILE)//'.z'//ADJUSTL(YZOOMNBR))
 END IF
 !
-CALL IO_FILE_ADD2LIST(TZZOOMFILE,TRIM(YZOOMFILE),'ZOOMPGD','WRITE',KLFINPRAR=INT(1,KIND=LFI_INT),KLFITYPE=1,KLFIVERB=5)
+CALL IO_FILE_ADD2LIST(TZZOOMFILE,TRIM(YZOOMFILE),'PGD','WRITE',KLFINPRAR=INT(1,KIND=LFI_INT),KLFITYPE=1,KLFIVERB=5)
 !PW: TODO: points to dad file (if existing) ! TZZOOMFILE%TDADFILE =>
 !
 CALL IO_FILE_OPEN_ll(TZZOOMFILE)

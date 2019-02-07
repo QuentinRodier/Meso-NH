@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1999-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -67,6 +67,7 @@ END MODULE MODI_INI_SIZE_SPAWN
 !!         J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!         J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -224,7 +225,7 @@ IF (LEN_TRIM(CDOMAIN)>0) THEN
 ! initialize grid2 dims, xor, xend and ratio so to initialize in INI_CHILD 
 ! structures TCRRT_COMDATA%T_CHILDREN%T_SPLITB and TCRRT_PROCONF%T_CHILDREN
 !$20140602 add condition on npproc
-  CALL IO_FILE_ADD2LIST(TZDOMAIN,TRIM(CDOMAIN),'UNKNOWN','READ',KLFITYPE=2,KLFIVERB=NVERB)
+  CALL IO_FILE_ADD2LIST(TZDOMAIN,TRIM(CDOMAIN),'PGD','READ',KLFITYPE=2,KLFIVERB=NVERB)
   CALL IO_FILE_OPEN_ll(TZDOMAIN,OPARALLELIO=.FALSE.)
   !
   CALL IO_READ_FIELD(TZDOMAIN,'DXRATIO',NDXRATIO)

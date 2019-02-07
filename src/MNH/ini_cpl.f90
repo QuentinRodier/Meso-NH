@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ###################
@@ -209,6 +209,7 @@ END MODULE MODI_INI_CPL
 !!                     (J.Escobar) 26/03/2014 bug in init of NSV_USER on RESTA case
 !!                     (P.Wautelet)28/03/2018 replace TEMPORAL_DIST by DATETIME_DISTANCE
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -343,7 +344,7 @@ ILUOUT = TLUOUT%NLU
 !
 DO JCI=1,NCPL_NBR
   WRITE(YCI,'(I2.0)') JCI
-  CALL IO_FILE_ADD2LIST(TCPLFILE(JCI)%TZFILE,CCPLFILE(JCI),'UNKNOWN','READ',KLFITYPE=2,KLFIVERB=NVERB)
+  CALL IO_FILE_ADD2LIST(TCPLFILE(JCI)%TZFILE,CCPLFILE(JCI),'MNH','READ',KLFITYPE=2,KLFIVERB=NVERB)
   CALL IO_FILE_OPEN_ll(TCPLFILE(JCI)%TZFILE,KRESP=IRESP)
   IF (IRESP /= 0) THEN
     CALL PRINT_MSG(NVERB_FATAL,'IO','INI_CPL','problem when opening coupling file '//TRIM(YCI))

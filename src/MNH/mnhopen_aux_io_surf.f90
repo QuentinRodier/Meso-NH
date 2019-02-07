@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !     #########################
       MODULE MODI_MNHOPEN_AUX_IO_SURF
@@ -42,7 +42,7 @@ END MODULE MODI_MNHOPEN_AUX_IO_SURF
 !!
 !!    AUTHOR
 !!    ------
-!!	S.Malardel   *Meteo France*	
+!!    S.Malardel   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -52,6 +52,7 @@ END MODULE MODI_MNHOPEN_AUX_IO_SURF
 !!         J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
 !!         J.Escobar : 02/06/2016 : abort MNHOPEN with STOP if problem with OPEN of INPUT/READ file 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -137,7 +138,7 @@ ELSE
 END IF
 !
 IF (HFILE/=YFILE .AND. HFILE/=YPGDFILE) THEN
-  CALL IO_FILE_ADD2LIST(TPINFILE,TRIM(HFILE),'UNKNOWN','READ',KLFITYPE=2,KLFIVERB=5,OOLD=.TRUE.)
+  CALL IO_FILE_ADD2LIST(TPINFILE,TRIM(HFILE),'PGD','READ',KLFITYPE=2,KLFIVERB=5,OOLD=.TRUE.)
   CALL IO_FILE_OPEN_ll(TPINFILE,KRESP=IRESP,OPARALLELIO=.FALSE.)
   !
   IF (IRESP .NE. 0) THEN
