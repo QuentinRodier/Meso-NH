@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #######################
@@ -34,8 +34,8 @@ END MODULE MODI_INI_SPECTRE_n
 !!      J.P Chaboureau       * L.A*
 !!      10/2016 (C.Lac) Cleaning of the modules
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!      
-
+!  P. Wautelet 08/02/2019: allocate to zero-size non associated pointers
+!!
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -917,6 +917,10 @@ WRITE(COUTFILE,'(A,".",I1,".",A)') CEXP,KMI,TRIM(ADJUSTL(CSEG))
 !
 !*       17.    INITIALIZE THE PARAMETERS FOR THE DYNAMICS
 !               ------------------------------------------
+!
+!Allocate to zero size to not pass unallocated pointers
+ALLOCATE(XALKBAS(0))
+ALLOCATE(XALKWBAS(0))
 !
 CALL INI_DYNAMICS(XLON,XLAT,XRHODJ,XTHVREF,XMAP,XZZ,XDXHAT,XDYHAT,            &
              XZHAT,CLBCX,CLBCY,XTSTEP,                                        &
