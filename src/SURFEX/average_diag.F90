@@ -1,6 +1,6 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 2003-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
-!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE AVERAGE_DIAG(PFRAC_TILE, DGO, D, ND, DC, NDC      )                                
@@ -37,6 +37,7 @@
 !!      Modified    08/2009 (B. Decharme) : new diag
 !     02/2010 - S. Riette - Security for wind average in case of XUNDEF values
 !       B. decharme 04/2013 : Add EVAP and SUBL diag
+!       P. Wautelet 02/2019: bug: fixed intent of PFIELD_OUT (OUT->INOUT)
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -323,7 +324,7 @@ IMPLICIT NONE
 !
 REAL, DIMENSION(:),INTENT(IN)   :: PFRAC
 REAL, DIMENSION(:),INTENT(IN)   :: PFIELD_IN
-REAL, DIMENSION(:), INTENT(OUT) :: PFIELD_OUT
+REAL, DIMENSION(:), INTENT(INOUT) :: PFIELD_OUT
 INTEGER, INTENT(IN) :: KTILE
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 INTEGER :: JT
@@ -350,7 +351,7 @@ IMPLICIT NONE
 !
 REAL, DIMENSION(:),INTENT(IN)   :: PFRAC
 REAL, DIMENSION(:,:),INTENT(IN)   :: PFIELD_IN
-REAL, DIMENSION(:,:), INTENT(OUT) :: PFIELD_OUT
+REAL, DIMENSION(:,:), INTENT(INOUT) :: PFIELD_OUT
 INTEGER, INTENT(IN) :: KTILE
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 INTEGER :: JT, JL
@@ -379,7 +380,7 @@ IMPLICIT NONE
 REAL, DIMENSION(:),INTENT(IN)   :: PFRAC
 REAL, DIMENSION(:),INTENT(IN)   :: PFIELD_IN
 REAL, DIMENSION(:),INTENT(IN)   :: PREF
-REAL, DIMENSION(:), INTENT(OUT) :: PFIELD_OUT
+REAL, DIMENSION(:), INTENT(INOUT) :: PFIELD_OUT
 INTEGER, INTENT(IN) :: KTILE
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -413,7 +414,7 @@ IMPLICIT NONE
 !
 REAL, DIMENSION(:),INTENT(IN)   :: PFRAC
 REAL, DIMENSION(:),INTENT(IN)   :: PFIELD_IN
-REAL, DIMENSION(:),  INTENT(OUT)  :: PFIELD_OUT
+REAL, DIMENSION(:),  INTENT(INOUT)  :: PFIELD_OUT
 INTEGER, INTENT(IN) :: KTILE
 REAL, DIMENSION(:), INTENT(INOUT) :: PLAND
 REAL, DIMENSION(:), INTENT(INOUT) :: PSEA
