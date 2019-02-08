@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !################################
@@ -142,6 +142,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!       D.Ricard and P.Marquet 2016-2017 : THETAL + THETAS1 POVOS1 or THETAS2 POVOS2
 !!                                        if  LMOIST_L     LMOIST_S1   or  LMOIST_S2
+!  P. Wautelet 08/02/2019: minor bug: compute ZWORK36 only when needed
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -738,14 +739,14 @@ IF (LHU_FLX) THEN
   ZWORK35(:,:,:) = XRHODREF(:,:,:) * XRT(:,:,:,1)
   ZWORK31(:,:,:) = MXM(ZWORK35(:,:,:)) * XUT(:,:,:)
   ZWORK32(:,:,:) = MYM(ZWORK35(:,:,:)) * XVT(:,:,:)
+  ZWORK35(:,:,:) = GX_U_M(1,IKU,1,ZWORK31,XDXX,XDZZ,XDZX) + GY_V_M(1,IKU,1,ZWORK32,XDYY,XDZZ,XDZY)
   IF  (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'LIMA') THEN
     ZWORK36(:,:,:) = ZWORK35(:,:,:) + XRHODREF(:,:,:) * (XRT(:,:,:,2) + &
     XRT(:,:,:,3) + XRT(:,:,:,4) + XRT(:,:,:,5) + XRT(:,:,:,6))
     ZWORK33(:,:,:) = MXM(ZWORK36(:,:,:)) * XUT(:,:,:)
     ZWORK34(:,:,:) = MYM(ZWORK36(:,:,:)) * XVT(:,:,:)
+    ZWORK36(:,:,:) = GX_U_M(1,IKU,1,ZWORK33,XDXX,XDZZ,XDZX) + GY_V_M(1,IKU,1,ZWORK34,XDYY,XDZZ,XDZY)
   ENDIF
-  ZWORK35(:,:,:) = GX_U_M(1,IKU,1,ZWORK31,XDXX,XDZZ,XDZX) + GY_V_M(1,IKU,1,ZWORK32,XDYY,XDZZ,XDZY)
-  ZWORK36(:,:,:) = GX_U_M(1,IKU,1,ZWORK33,XDXX,XDZZ,XDZX) + GY_V_M(1,IKU,1,ZWORK34,XDYY,XDZZ,XDZY)
   !
   ! Integration sur 3000 m
   !
