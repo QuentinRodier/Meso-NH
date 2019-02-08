@@ -1,6 +1,6 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 2004-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
-!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
 !     #########
      SUBROUTINE BILIN_VALUE (KLUOUT,KX,KY,PFIELD1,PCX,PCY,KCI,KCJ,PFIELD2)
@@ -77,7 +77,7 @@
 !!
 !!      Original     01/2004
 ! TD&DD: added OpenMP directives
-
+!       P. Wautelet 08/02/2019: initialize ZFIELD1 even if of size=1
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -200,7 +200,8 @@ ELSE
       IS2 = IBOR(2,2,0)-IBOR(2,1,0)+1
       ISIZE = IS1*IS2
       ALLOCATE(ZFIELD1(IS1,IS2,INL))
-      IF (SUM(IBOR(:,:,0))/=0) THEN    
+      IF(ISIZE==1) ZFIELD1(:,:,:) = XUNDEF !Necessary to initialize ZFIELD1 in all cases (value could be anything)
+      IF (SUM(IBOR(:,:,0))/=0) THEN
         DO JL=IBOR(2,1,0),IBOR(2,2,0)
           ZFIELD1(:,JL-IBOR(2,1,0)+1,:) = PFIELD1(KX*(JL-1)+IBOR(1,1,0):KX*(JL-1)+IBOR(1,2,0),:)
         ENDDO
