@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !      ########################
@@ -37,6 +37,7 @@
 !!                    03/03/03 (V. Masson) surface radiative schemes and
 !!                                         multiple wavelengths for surface SW
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 08/02/2019: add missing NULL association for pointers
 !!
 !-------------------------------------------------------------------------------
 !
@@ -108,18 +109,18 @@ TYPE RADIATIONS_t
 !  REAL, DIMENSION(:,:,:),       POINTER :: XSCA_ALB=>NULL()   ! scattered albedo for each spectral band
 !  REAL, DIMENSION(:,:,:),       POINTER :: XEMIS=>NULL()      ! emissivity
 !  REAL, DIMENSION(:,:),         POINTER :: XTSRAD=>NULL()      ! surface temperature
-  REAL, DIMENSION(:,:),         POINTER :: XSEA=>NULL()       ! sea fraction
+  REAL, DIMENSION(:,:),         POINTER :: XSEA=>NULL()        ! sea fraction
 !
 !  REAL, DIMENSION(:,:),         POINTER :: XZENITH=>NULL()    ! zenithal angle  (radian from the vertical)
 !  REAL, DIMENSION(:,:),         POINTER :: XAZIM=>NULL()      ! azimuthal angle (radian from N, clockwise)
-  REAL, DIMENSION(:,:),         POINTER :: XALBUV=>NULL()     ! UV albedo
-  REAL, DIMENSION(:,:,:),       POINTER :: XSWU    !SW_UP
-  REAL, DIMENSION(:,:,:),       POINTER :: XSWD    !SW_DOWN 
-  REAL, DIMENSION(:,:,:),       POINTER :: XLWU    !LW_UP 
-  REAL, DIMENSION(:,:,:),       POINTER :: XLWD    !LW_DOWN 
-  REAL, DIMENSION(:,:,:),       POINTER :: XDTHRADSW    !DTHRAD SW
-  REAL, DIMENSION(:,:,:),       POINTER :: XDTHRADLW    !DTHRAD LW
-  REAL, DIMENSION(:,:,:),       POINTER :: XRADEFF    !effective radius
+  REAL, DIMENSION(:,:),         POINTER :: XALBUV=>NULL()      ! UV albedo
+  REAL, DIMENSION(:,:,:),       POINTER :: XSWU => NULL()      ! SW_UP
+  REAL, DIMENSION(:,:,:),       POINTER :: XSWD => NULL()      ! SW_DOWN
+  REAL, DIMENSION(:,:,:),       POINTER :: XLWU => NULL()      ! LW_UP
+  REAL, DIMENSION(:,:,:),       POINTER :: XLWD => NULL()      ! LW_DOWN
+  REAL, DIMENSION(:,:,:),       POINTER :: XDTHRADSW => NULL() ! DTHRAD SW
+  REAL, DIMENSION(:,:,:),       POINTER :: XDTHRADLW => NULL() ! DTHRAD LW
+  REAL, DIMENSION(:,:,:),       POINTER :: XRADEFF   => NULL() ! effective radius
 !
 END TYPE RADIATIONS_t
 

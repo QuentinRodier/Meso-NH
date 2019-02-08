@@ -1,15 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2015-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home//MESONH/MNH-V5-1-4/src/MODIF_TMICICE/modd_ch_icen.f90
-!-----------------------------------------------------------------
-!-----------------------------------------------------------------
-!-----------------------------------------------------------------
-!-----------------------------------------------------------------------------
 !!    ########################
       MODULE MODD_CH_ICE_n
 !!    ########################
@@ -28,6 +21,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!    Original 11/12/15
+!  P. Wautelet 08/02/2019: add missing NULL association for pointers
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -43,7 +37,7 @@ IMPLICIT NONE
 TYPE CH_ICE_t
 !
 
-  INTEGER, POINTER, DIMENSION(:)  :: NINDEXGI, NINDEXWI, NINDEXWG
+  INTEGER, POINTER, DIMENSION(:)  :: NINDEXGI => NULL(), NINDEXWI => NULL(), NINDEXWG => NULL()
 !
 !-----------------------------------------------------------------------------
 END TYPE CH_ICE_t

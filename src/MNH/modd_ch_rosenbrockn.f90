@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2007-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !!    #########################
       MODULE MODD_CH_ROSENBROCK_n
@@ -20,6 +20,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!    Original 05/06/07
+!  P. Wautelet 08/02/2019: add missing NULL association for pointers
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -36,19 +37,19 @@ TYPE CH_ROSENBROCK_t
 !
   INTEGER :: NSPARSEDIM ! size of vectors NSPARSE_IROW and NSPARSE_ICOL
 !
-  INTEGER, POINTER, DIMENSION(:) :: NSPARSE_IROW ! row index 
-  INTEGER, POINTER, DIMENSION(:) :: NSPARSE_ICOL ! col index
-  INTEGER, POINTER, DIMENSION(:) :: NSPARSE_CROW ! first row element index
-  INTEGER, POINTER, DIMENSION(:) :: NSPARSE_DIAG ! diag index
+  INTEGER, POINTER, DIMENSION(:) :: NSPARSE_IROW => NULL() ! row index
+  INTEGER, POINTER, DIMENSION(:) :: NSPARSE_ICOL => NULL() ! col index
+  INTEGER, POINTER, DIMENSION(:) :: NSPARSE_CROW => NULL() ! first row element index
+  INTEGER, POINTER, DIMENSION(:) :: NSPARSE_DIAG => NULL() ! diag index
                                                 ! of the sparse JACobian matrix
 !
   INTEGER :: NEQ_NAQ    ! number of Non-AQueous species
   INTEGER :: NSPARSEDIM_NAQ !size of vectors NSPARSE_IROW_NAQ and NSPARSE_ICOL_NAQ
 !
-  INTEGER, POINTER, DIMENSION(:) :: NSPARSE_IROW_NAQ ! row index 
-  INTEGER, POINTER, DIMENSION(:) :: NSPARSE_ICOL_NAQ ! col index
-  INTEGER, POINTER, DIMENSION(:) :: NSPARSE_CROW_NAQ ! first row element index
-  INTEGER, POINTER, DIMENSION(:) :: NSPARSE_DIAG_NAQ ! diag index
+  INTEGER, POINTER, DIMENSION(:) :: NSPARSE_IROW_NAQ => NULL() ! row index
+  INTEGER, POINTER, DIMENSION(:) :: NSPARSE_ICOL_NAQ => NULL() ! col index
+  INTEGER, POINTER, DIMENSION(:) :: NSPARSE_CROW_NAQ => NULL() ! first row element index
+  INTEGER, POINTER, DIMENSION(:) :: NSPARSE_DIAG_NAQ => NULL() ! diag index
                            ! of the sparse JACobian matrix of NonAQueous species
 !
 !

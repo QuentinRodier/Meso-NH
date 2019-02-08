@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !******************************************************************
 
@@ -25,6 +25,8 @@
 ! Output root filename : RBK90
 ! 
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+! Modifications
+!  P. Wautelet 08/02/2019: add missing NULL association for pointers
 
 
 MODULE MODD_RBK90_JacobianSP_n
@@ -39,13 +41,13 @@ TYPE RBK90_JacobianSP_t
 ! Sparse Jacobian Data
 
 
-    INTEGER, DIMENSION(:), POINTER :: LU_IROW
-    INTEGER, DIMENSION(:), POINTER :: LU_ICOL
+    INTEGER, DIMENSION(:), POINTER :: LU_IROW => NULL()
+    INTEGER, DIMENSION(:), POINTER :: LU_ICOL => NULL()
 
-    INTEGER, DIMENSION(:), POINTER :: LU_CROW
-    INTEGER, DIMENSION(:), POINTER :: LU_DIAG
+    INTEGER, DIMENSION(:), POINTER :: LU_CROW => NULL()
+    INTEGER, DIMENSION(:), POINTER :: LU_DIAG => NULL()
 
-    INTEGER, DIMENSION(:), POINTER :: LU_DIM_SPECIES
+    INTEGER, DIMENSION(:), POINTER :: LU_DIM_SPECIES => NULL()
 
 END TYPE RBK90_JacobianSP_t
 

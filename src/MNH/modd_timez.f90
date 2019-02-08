@@ -1,7 +1,10 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
+! Modifications
+!  P. Wautelet 08/02/2019: add missing NULL association for pointers
 MODULE MODD_TIMEZ
 
   USE MODD_PARAMETERS, ONLY: JPMODELMAX
@@ -26,7 +29,7 @@ MODULE MODD_TIMEZ
      REAL*8,DIMENSION(2) :: T_WRIT3D_WRIT = 0.0
      REAL*8,DIMENSION(2) :: T_WRIT3D_WAIT = 0.0
      REAL*8,DIMENSION(2) :: T_WRIT3D_ALL  = 0.0
-     
+
      REAL*8,DIMENSION(2) :: T_WRIT2D_GATH = 0.0
      REAL*8,DIMENSION(2) :: T_WRIT2D_WRIT = 0.0
      REAL*8,DIMENSION(2) :: T_WRIT2D_ALL  = 0.0
@@ -51,7 +54,7 @@ MODULE MODD_TIMEZ
 
 TYPE(SUB_TIMEZ_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: SUB_TIMEZN
 
-TYPE(SUB_TIMEZ_t), POINTER  :: TIMEZ
+TYPE(SUB_TIMEZ_t), POINTER  :: TIMEZ => NULL()
 
 CONTAINS
 
