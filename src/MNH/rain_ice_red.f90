@@ -72,18 +72,15 @@ REAL, DIMENSION(KIT,KJT,KKT),   INTENT(INOUT) :: PRSS    ! Snow/aggregate m.r. s
 REAL, DIMENSION(KIT,KJT,KKT),   INTENT(INOUT) :: PRGS    ! Graupel m.r. source
 
 !
-! REAL, DIMENSION(KIT,KJT), INTENT(OUT)       :: PINPRC! Cloud instant precip
-REAL, DIMENSION(:,:), INTENT(OUT)       :: PINPRC! Cloud instant precip
+REAL, DIMENSION(:,:), INTENT(OUT)           :: PINPRC! Cloud instant precip
 REAL, DIMENSION(KIT,KJT), INTENT(OUT)       :: PINPRR! Rain instant precip
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(OUT)   :: PINPRR3D! Rain inst precip 3D
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(OUT)     :: PEVAP3D! Rain evap profile
 REAL, DIMENSION(KIT,KJT), INTENT(OUT)       :: PINPRS! Snow instant precip
 REAL, DIMENSION(KIT,KJT), INTENT(OUT)       :: PINPRG! Graupel instant precip
-! REAL, DIMENSION(KIT,KJT), INTENT(OUT)       :: PINDEP  ! Cloud instant deposition
-REAL, DIMENSION(:,:), INTENT(OUT)       :: PINDEP  ! Cloud instant deposition
+REAL, DIMENSION(:,:), INTENT(OUT)           :: PINDEP  ! Cloud instant deposition
 REAL, DIMENSION(KIT,KJT,KKT),   INTENT(OUT) :: PRAINFR
-! REAL, DIMENSION(KIT,KJT,KKT),   INTENT(IN)    :: PSIGS   ! Sigma_s at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PSIGS   ! Sigma_s at t
+REAL, DIMENSION(:,:,:),   INTENT(IN)        :: PSIGS   ! Sigma_s at t
 REAL, DIMENSION(KIT,KJT), OPTIONAL, INTENT(IN)        :: PSEA ! Sea Mask
 REAL, DIMENSION(KIT,KJT), OPTIONAL, INTENT(IN)        :: PTOWN! Fraction that is town
 REAL, DIMENSION(KIT,KJT,KKT), OPTIONAL,  INTENT(IN)    :: PRHT    ! Hail m.r. at t
@@ -341,15 +338,15 @@ REAL, DIMENSION(KIT,KJT,KKT),   INTENT(INOUT) :: PRIS    ! Pristine ice m.r. sou
 REAL, DIMENSION(KIT,KJT,KKT),   INTENT(INOUT) :: PRSS    ! Snow/aggregate m.r. source
 REAL, DIMENSION(KIT,KJT,KKT),   INTENT(INOUT) :: PRGS    ! Graupel m.r. source
 !
-REAL, DIMENSION(KIT,KJT), INTENT(OUT)       :: PINPRC! Cloud instant precip
+REAL, DIMENSION(:,:),     INTENT(OUT)       :: PINPRC! Cloud instant precip
 REAL, DIMENSION(KIT,KJT), INTENT(OUT)       :: PINPRR! Rain instant precip
 REAL, DIMENSION(KIT,KJT,KKT),INTENT(OUT)      :: PINPRR3D! Rain inst precip 3D
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(OUT)     :: PEVAP3D! Rain evap profile
 REAL, DIMENSION(KIT,KJT), INTENT(OUT)       :: PINPRS! Snow instant precip
 REAL, DIMENSION(KIT,KJT), INTENT(OUT)       :: PINPRG! Graupel instant precip
-REAL, DIMENSION(KIT,KJT), INTENT(OUT)       :: PINDEP  ! Cloud instant deposition
+REAL, DIMENSION(:,:),     INTENT(OUT)       :: PINDEP  ! Cloud instant deposition
 REAL, DIMENSION(KIT,KJT,KKT),   INTENT(OUT) :: PRAINFR
-REAL, DIMENSION(KIT,KJT,KKT),   INTENT(IN)    :: PSIGS   ! Sigma_s at t
+REAL, DIMENSION(:,:,:),       INTENT(IN)    :: PSIGS   ! Sigma_s at t
 REAL, DIMENSION(KIT,KJT), OPTIONAL, INTENT(IN)        :: PSEA ! Sea Mask
 REAL, DIMENSION(KIT,KJT), OPTIONAL, INTENT(IN)        :: PTOWN! Fraction that is town
 REAL, DIMENSION(KIT,KJT,KKT), OPTIONAL,  INTENT(IN)    :: PRHT    ! Hail m.r. at t
