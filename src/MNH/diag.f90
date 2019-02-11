@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ############
@@ -88,6 +88,7 @@
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!  V.Vionnet 07/2017 add LWIND_CONTRAV
 !!  11/2017      (D. Ricard, P. Marquet) add diagnostics for THETAS 
+!  P. Wautelet 11/02/2019: added missing use of MODI_CH_MONITOR_n
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -148,6 +149,7 @@ USE MODE_POS
 USE MODE_TIME
 !
 USE MODI_AIRCRAFT_BALLOON
+USE MODI_CH_MONITOR_n
 USE MODI_COMPUTE_R00
 USE MODI_DIAG_SURF_ATM_N
 USE MODI_INIT_MNH
