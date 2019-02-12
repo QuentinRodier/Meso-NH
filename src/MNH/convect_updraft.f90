@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 conv 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     #################
       MODULE MODI_CONVECT_UPDRAFT
@@ -149,6 +144,7 @@ END MODULE MODI_CONVECT_UPDRAFT
 !!      Original    07/11/95 
 !!   Last modified  10/12/97
 !!   V.Masson, C.Lac, Sept. 2010 : Correction of a loop for reproducibility
+!  P. Wautelet 12/02/2019: bugfix: PURR/PURS were sometimes =-0. -> problems later
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -384,7 +380,9 @@ DO JK = MAX( IKB + 1, JKMIN ), IKE - 1
     PUTPR(:)    = PUTPR(:) + PUPR(:,JKP)   ! total precipitation rate
     ZWORK2(:)   = PURR(:,JKP) / MAX( 1.E-8, PURC(:,JKP) + PURI(:,JKP) )
     PURR(:,JKP) = ZWORK2(:) * PURC(:,JKP)          ! liquid precipitation
+    PURR(:,JKP)=MAX(TINY(0.),PURR(:,JKP)) !To prevent problems when =-0. (occur sometimes)
     PURS(:,JKP) = ZWORK2(:) * PURI(:,JKP)          ! solid precipitation
+    PURS(:,JKP)=MAX(TINY(0.),PURS(:,JKP)) !To prevent problems when =-0. (occur sometimes)
 !
 !
 !*       7.     Update r_c, r_i, enthalpy, r_w  for precipitation 

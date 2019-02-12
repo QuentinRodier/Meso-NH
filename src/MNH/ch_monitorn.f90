@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !!    ########################
       MODULE MODI_CH_MONITOR_n
@@ -113,6 +113,7 @@ END MODULE MODI_CH_MONITOR_n
 !!    20/01/17 (G.Delautier) bug if CPROGRAM/=DIAG
 !!    01/10/17 (C.Lac) add correction of negativity
 !!    Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 12/02/2019: bugfix: ZINPRR was not initialized all the time
 !!
 !!    EXTERNAL
 !!    --------
@@ -845,6 +846,8 @@ IF (LUSECHAQ.AND.(NRRL>=2) ) THEN
                                   XRSVS(:,:,:,NSV_CHACBEG+NEQAQ/2:NSV_CHACEND),&
                                   ZINPRR(:,:)                                  )
     END SELECT
+  ELSE
+    ZINPRR(:,:) = 0.
   END IF
 ELSE IF (LUSECHAQ.AND.(NRRL==1) ) THEN
   CALL CH_AQUEOUS_CHECK (PTSTEP, XRHODREF, XRHODJ, XRRS, XRSVS, NRRL, &
