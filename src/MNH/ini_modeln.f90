@@ -280,6 +280,7 @@ END MODULE MODI_INI_MODEL_n
 !!                   01/18 J.Colin Add DRAG 
 !  P. Wautelet 29/01/2019: bug: add missing zero-size allocations
 !  P. Wautelet 13/02/2019: initialize XALBUV even if no radiation (needed in CH_INTERP_JVALUES)
+!  P. Wautelet 13/02/2019: removed PPABSM and PTSTEP dummy arguments of READ_FIELD
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1747,7 +1748,7 @@ IF (CCLOUD=='LIMA') CALL INIT_AEROSOL_PROPERTIES
 !              --------------------------------
 !
 CALL MPPDB_CHECK3D(XUT,"INI_MODEL_N-before read_field::XUT",PRECISION)
-CALL READ_FIELD(TPINIFILE,IIU,IJU,IKU,XTSTEP,                                 &
+CALL READ_FIELD(TPINIFILE,IIU,IJU,IKU,                                        &
                 CGETTKET,CGETRVT,CGETRCT,CGETRRT,CGETRIT,CGETCIT,             &
                 CGETRST,CGETRGT,CGETRHT,CGETSVT,CGETSRCT,CGETSIGS,CGETCLDFR,  &
                 CGETBL_DEPTH,CGETSBL_DEPTH,CGETPHC,CGETPHR,CUVW_ADV_SCHEME,   &
@@ -1755,7 +1756,7 @@ CALL READ_FIELD(TPINIFILE,IIU,IJU,IKU,XTSTEP,                                 &
                 NSIZELBXTKE_ll,NSIZELBYTKE_ll,                                &
                 NSIZELBXR_ll,NSIZELBYR_ll,NSIZELBXSV_ll,NSIZELBYSV_ll,        &
                 XUM,XVM,XWM,XDUM,XDVM,XDWM,                                   &
-                XUT,XVT,XWT,XTHT,XPABST,XPABSM,XTKET,XRTKEMS,                 &
+                XUT,XVT,XWT,XTHT,XPABST,XTKET,XRTKEMS,                        &
                 XRT,XSVT,XCIT,XDRYMASST,                                      &
                 XSIGS,XSRCT,XCLDFR,XBL_DEPTH,XSBL_DEPTH,XWTHVMF,XPHC,XPHR,    &
                 XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM,                              &

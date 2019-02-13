@@ -8,7 +8,7 @@
 !
 INTERFACE 
 !
-      SUBROUTINE READ_FIELD(TPINIFILE,KIU,KJU,KKU,PTSTEP,                    &
+      SUBROUTINE READ_FIELD(TPINIFILE,KIU,KJU,KKU,                           &
             HGETTKET,HGETRVT,HGETRCT,HGETRRT,HGETRIT,HGETCIT,                &
             HGETRST,HGETRGT,HGETRHT,HGETSVT,HGETSRCT,HGETSIGS,HGETCLDFR,     &
             HGETBL_DEPTH,HGETSBL_DEPTH,HGETPHC,HGETPHR,HUVW_ADV_SCHEME,      &
@@ -16,7 +16,7 @@ INTERFACE
             KSIZELBXTKE_ll,KSIZELBYTKE_ll,                                   &
             KSIZELBXR_ll,KSIZELBYR_ll,KSIZELBXSV_ll,KSIZELBYSV_ll,           &
             PUM,PVM,PWM,PDUM,PDVM,PDWM,                                      &
-            PUT,PVT,PWT,PTHT,PPABST,PPABSM,PTKET,PRTKEMS,                    &
+            PUT,PVT,PWT,PTHT,PPABST,PTKET,PRTKEMS,                           &
             PRT,PSVT,PCIT,PDRYMASST,                                         &
             PSIGS,PSRCT,PCLDFR,PBL_DEPTH,PSBL_DEPTH,PWTHVMF,PPHC,PPHR,       &
             PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM,                                 &
@@ -24,7 +24,7 @@ INTERFACE
             PLBYUM,PLBYVM,PLBYWM,PLBYTHM,PLBYTKEM,PLBYRM,PLBYSVM,            &
             KFRC,TPDTFRC,PUFRC,PVFRC,PWFRC,PTHFRC,PRVFRC,                    &
             PTENDTHFRC,PTENDRVFRC,PGXTHFRC,PGYTHFRC,PPGROUNDFRC,PATC,        &
-            PTENDUFRC,PTENDVFRC,                                             &            
+            PTENDUFRC,PTENDVFRC,                                             &
             KADVFRC,TPDTADVFRC,PDTHFRC,PDRVFRC,                              &
             KRELFRC,TPDTRELFRC, PTHREL, PRVREL,                              &
             PVTH_FLUX_M,PWTH_FLUX_M,PVU_FLUX_M,                              &
@@ -37,8 +37,6 @@ USE MODD_TIME ! for type DATE_TIME
 TYPE(TFILEDATA),           INTENT(IN)  :: TPINIFILE    !Initial file
 INTEGER,                   INTENT(IN)  :: KIU, KJU, KKU   
                              ! array sizes in x, y and z  directions
-REAL,                      INTENT(IN)  :: PTSTEP       
-                             ! current Time STEP   
 ! 
 CHARACTER (LEN=*),         INTENT(IN)  :: HGETTKET,                          &
                                           HGETRVT,HGETRCT,HGETRRT,           &
@@ -72,7 +70,6 @@ REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PUT,PVT,PWT     ! U,V,W at t
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PTHT,PTKET      ! theta, tke and
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PRTKEMS         ! tke adv source
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PPABST          ! pressure at t
-REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PPABSM          ! pressure at t-1
 REAL, DIMENSION(:,:,:,:),  INTENT(OUT) :: PRT,PSVT        ! moist and scalar
                                                           ! variables at t
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PSRCT           ! turbulent flux
@@ -124,7 +121,7 @@ END INTERFACE
 END MODULE MODI_READ_FIELD
 !
 !     ########################################################################
-      SUBROUTINE READ_FIELD(TPINIFILE,KIU,KJU,KKU,PTSTEP,                    &
+      SUBROUTINE READ_FIELD(TPINIFILE,KIU,KJU,KKU,                           &
             HGETTKET,HGETRVT,HGETRCT,HGETRRT,HGETRIT,HGETCIT,                &
             HGETRST,HGETRGT,HGETRHT,HGETSVT,HGETSRCT,HGETSIGS,HGETCLDFR,     &
             HGETBL_DEPTH,HGETSBL_DEPTH,HGETPHC,HGETPHR,HUVW_ADV_SCHEME,      &
@@ -132,7 +129,7 @@ END MODULE MODI_READ_FIELD
             KSIZELBXTKE_ll,KSIZELBYTKE_ll,                                   &
             KSIZELBXR_ll,KSIZELBYR_ll,KSIZELBXSV_ll,KSIZELBYSV_ll,           &
             PUM,PVM,PWM,PDUM,PDVM,PDWM,                                      &
-            PUT,PVT,PWT,PTHT,PPABST,PPABSM,PTKET,PRTKEMS,                    &
+            PUT,PVT,PWT,PTHT,PPABST,PTKET,PRTKEMS,                           &
             PRT,PSVT,PCIT,PDRYMASST,                                         &
             PSIGS,PSRCT,PCLDFR,PBL_DEPTH,PSBL_DEPTH,PWTHVMF,PPHC,PPHR,       &
             PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM,                                 &
@@ -140,7 +137,7 @@ END MODULE MODI_READ_FIELD
             PLBYUM,PLBYVM,PLBYWM,PLBYTHM,PLBYTKEM,PLBYRM,PLBYSVM,            &
             KFRC,TPDTFRC,PUFRC,PVFRC,PWFRC,PTHFRC,PRVFRC,                    &
             PTENDTHFRC,PTENDRVFRC,PGXTHFRC,PGYTHFRC,PPGROUNDFRC,PATC,        &
-            PTENDUFRC,PTENDVFRC,                                             &            
+            PTENDUFRC,PTENDVFRC,                                             &
             KADVFRC,TPDTADVFRC,PDTHFRC,PDRVFRC,                              &
             KRELFRC,TPDTRELFRC, PTHREL, PRVREL,                              &
             PVTH_FLUX_M,PWTH_FLUX_M,PVU_FLUX_M,                              &
@@ -238,6 +235,7 @@ END MODULE MODI_READ_FIELD
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!          V. Vionnet  07/17    add blowing snow scheme
 !!          P. Wautelet 01/2019  corrected intent of PDUM,PDVM,PDWM (OUT->INOUT)
+!  P. Wautelet 13/02/2019: removed PPABSM and PTSTEP dummy arguments (bugfix: PPABSM was intent(OUT))
 !!-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -294,8 +292,6 @@ IMPLICIT NONE
 TYPE(TFILEDATA),           INTENT(IN)  :: TPINIFILE    !Initial file
 INTEGER,                   INTENT(IN)  :: KIU, KJU, KKU   
                              ! array sizes in x, y and z  directions
-REAL,                      INTENT(IN)  :: PTSTEP       
-                             ! current Time STEP   
 ! 
 CHARACTER (LEN=*),         INTENT(IN)  :: HGETTKET,                          &
                                           HGETRVT,HGETRCT,HGETRRT,           &
@@ -331,7 +327,6 @@ REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PUT,PVT,PWT     ! U,V,W at t
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PTHT,PTKET      ! theta, tke and
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PRTKEMS         ! tke adv source
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PPABST          ! pressure at t
-REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PPABSM          ! pressure at t-1
 REAL, DIMENSION(:,:,:,:),  INTENT(OUT) :: PRT,PSVT        ! moist and scalar
                                                           ! variables at t
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PSRCT           ! turbulent flux
