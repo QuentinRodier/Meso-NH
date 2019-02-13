@@ -132,6 +132,7 @@ SUBROUTINE INI_LB(TPINIFILE,OLSOURCE,KSV,                          &
 !!      J.-P. Pinty     09/02/16    Add LIMA that is LBC for CCN and IFN
 !!      M.Leriche       09/02/16    Treat gas and aq. chemicals separately
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 13/02/2019: initialize PLBXSVM and PLBYSVM in all cases
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -469,7 +470,10 @@ END IF
 !
 !*        2.6    LB-Scalar Variables
 !
-IF (KSV > 0) THEN 
+PLBXSVM(:,:,:,:) = 0.
+PLBYSVM(:,:,:,:) = 0.
+!
+IF (KSV > 0) THEN
   IF (ANY(HGETSVM(1:KSV)=='READ')) THEN
     TZFIELD%CMNHNAME   = 'HORELAX_SV'
     TZFIELD%CSTDNAME   = ''
