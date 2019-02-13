@@ -278,7 +278,8 @@ END MODULE MODI_INI_MODEL_n
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!                   V. Vionnet : 18/07/2017 : add blowing snow scheme 
 !!                   01/18 J.Colin Add DRAG 
-!!      P.Wautelet   29/01/2019: bug: add missing zero-size allocations
+!  P. Wautelet 29/01/2019: bug: add missing zero-size allocations
+!  P. Wautelet 13/02/2019: initialize XALBUV even if no radiation (needed in CH_INTERP_JVALUES)
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -459,6 +460,8 @@ CHARACTER(LEN=*), INTENT(IN)   :: HLUOUT    ! name for output-listing of nested 
 TYPE(TFILEDATA),  INTENT(IN)   :: TPINIFILE ! Initial file
 !
 !*       0.2   declarations of local variables
+!
+REAL, PARAMETER :: NALBUV_DEFAULT = 0.01 ! Arbitrary low value for XALBUV
 !
 INTEGER             :: JSV     ! Loop index
 INTEGER             :: IRESP   ! Return code of FM routines
@@ -1325,6 +1328,7 @@ ALLOCATE(XLW_BANDS (NLWB_MNH))
 ALLOCATE(XZENITH   (IIU,IJU))
 ALLOCATE(XAZIM     (IIU,IJU))
 ALLOCATE(XALBUV    (IIU,IJU))
+XALBUV(:,:) = NALBUV_DEFAULT !Set to an arbitrary low value (XALBUV is needed in CH_INTERP_JVALUES even if no radiation)
 ALLOCATE(XDIRSRFSWD(IIU,IJU,NSWB_MNH))
 ALLOCATE(XSCAFLASWD(IIU,IJU,NSWB_MNH))
 ALLOCATE(XFLALWD   (IIU,IJU))
