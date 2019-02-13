@@ -1,13 +1,13 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 MODULE MODI_ICE4_RAINFR_VERT
 INTERFACE
 SUBROUTINE ICE4_RAINFR_VERT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKL, PPRFR, PRR)
 IMPLICIT NONE
 INTEGER,                      INTENT(IN) :: KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKL
-REAL, DIMENSION(KIT,KJT,KKT), INTENT(OUT)    :: PPRFR !Precipitation fraction
+REAL, DIMENSION(KIT,KJT,KKT), INTENT(INOUT) :: PPRFR !Precipitation fraction
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)    :: PRR !Rain field
 END SUBROUTINE ICE4_RAINFR_VERT
 END INTERFACE
@@ -25,6 +25,7 @@ SUBROUTINE ICE4_RAINFR_VERT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKL, PP
 !!    MODIFICATIONS
 !!    -------------
 !!
+!  P. Wautelet 13/02/2019: bugfix: intent of PPRFR OUT->INOUT
 !
 !
 !*      0. DECLARATIONS
@@ -37,7 +38,7 @@ IMPLICIT NONE
 !*       0.1   Declarations of dummy arguments :
 !
 INTEGER,                      INTENT(IN) :: KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKL
-REAL, DIMENSION(KIT,KJT,KKT), INTENT(OUT)    :: PPRFR !Precipitation fraction
+REAL, DIMENSION(KIT,KJT,KKT), INTENT(INOUT)    :: PPRFR !Precipitation fraction
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)    :: PRR !Rain field
 !
 !*       0.2  declaration of local variables
