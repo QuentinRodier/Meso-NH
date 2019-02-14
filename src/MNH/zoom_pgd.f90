@@ -41,6 +41,7 @@
 !!    08/07/2016  P.Wautelet Removed MNH_NCWRIT define
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !!
 !----------------------------------------------------------------------------
 !
@@ -49,7 +50,7 @@
 !
 USE MODD_CONF,   ONLY : CPROGRAM, L1D, L2D, LPACK
 USE MODD_IO_ll,  ONLY:  NIO_VERB,NVERB_DEBUG,TFILE_OUTPUTLISTING,TFILEDATA
-USE MODD_LUNIT,  ONLY : CLUOUT0, TLUOUT0, TOUTDATAFILE
+USE MODD_LUNIT,  ONLY : TLUOUT0, TOUTDATAFILE
 USE MODD_PARAMETERS, ONLY : XUNDEF, NUNDEF, JPVEXT, JPHEXT, JPMODELMAX
 USE MODD_PARAM_n,     ONLY : CSURF
 USE MODD_DIM_n,       ONLY : NIMAX, NJMAX
@@ -122,7 +123,6 @@ CALL INI_CST
 !
 CALL INITIO_ll()
 !
-CLUOUT0='OUTPUT_LISTING0'                    ! name of the output-listing
 CALL IO_FILE_ADD2LIST(TLUOUT0,'OUTPUT_LISTING0','OUTPUTLISTING','WRITE')
 CALL IO_FILE_OPEN_ll(TLUOUT0)
 TFILE_OUTPUTLISTING => TLUOUT0

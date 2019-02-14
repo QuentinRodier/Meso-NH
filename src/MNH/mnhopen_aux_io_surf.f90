@@ -2,6 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     #########################
       MODULE MODI_MNHOPEN_AUX_IO_SURF
 !     #########################
@@ -65,7 +66,7 @@ USE MODD_CONF,             ONLY: CPROGRAM
 USE MODD_IO_SURF_MNH,      ONLY: TOUT, TPINFILE, COUTFILE, NMASK_ALL, CMASK, NIU_ALL,  &
                                  NJU_ALL, NIB_ALL, NJB_ALL, NIE_ALL, NJE_ALL, CACTION, &
                                  NMASK, NIU, NJU, NIB, NJB, NIE, NJE
-USE MODD_LUNIT,            ONLY: CLUOUT0, TPGDFILE, TLUOUT0, TOUTDATAFILE
+USE MODD_LUNIT,            ONLY: TPGDFILE, TLUOUT0, TOUTDATAFILE
 USE MODD_LUNIT_n,          ONLY: TLUOUT
 USE MODD_PARAMETERS,       ONLY: JPHEXT
 !

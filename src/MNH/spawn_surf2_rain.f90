@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2004-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !###########################
@@ -91,7 +91,7 @@ END MODULE MODI_SPAWN_SURF2_RAIN
 !!    ---------
 !!
 !!       Book1 of the documentation
-!!      
+!!
 !!
 !!    AUTHOR
 !!    ------
@@ -109,6 +109,7 @@ END MODULE MODI_SPAWN_SURF2_RAIN
 !!      C.Lac 10/2016 : Add droplet deposition for fog
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      J.Escobar 05/03/2018 : bypass gridnesting special case KD(X/Y)RATIO == 1 not parallelized
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -119,7 +120,6 @@ USE MODD_CONF,    ONLY : CCONF,CPROGRAM
 USE MODD_FIELD_n, ONLY : XTHT
 USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_LBC_n,   ONLY : LBC_MODEL
-USE MODD_LUNIT_n, ONLY : CLUOUT
 USE MODD_SPAWN
 !
 USE MODE_MODELN_HANDLER
@@ -413,7 +413,7 @@ IF (PRESENT(TPSONFILE)) THEN
     ALLOCATE(ZACPRH1(0,0))
     YGETRHT='SKIP'
   END IF
-  CALL READ_PRECIP_FIELD(TPSONFILE,CLUOUT,CPROGRAM,CCONF,                            &
+  CALL READ_PRECIP_FIELD(TPSONFILE,CPROGRAM,CCONF,                                   &
                          YGETRCT,YGETRRT,YGETRST,YGETRGT,YGETRHT,                    &
                          ZINPRC1,ZACPRC1,ZINDEP1,ZACDEP1,ZINPRR1,ZINPRR3D1,ZEVAP3D1, &
                          ZACPRR1,ZINPRS1,ZACPRS1,                                    &

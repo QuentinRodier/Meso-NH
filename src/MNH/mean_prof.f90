@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1997-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #####################
@@ -62,7 +62,7 @@ END MODULE MODI_MEAN_PROF
 !!      Module MODD_CONF      : contains configuration variables for all models. 
 !!         NVERB : verbosity level for output-listing
 !!      Module MODD_LUNIT     :  contains logical unit names for all models
-!!         CLUOUT0 : name of output-listing
+!!         TLUOUT0 : name of output-listing
 !!      Module MODD_GRID1     : contains grid variables for model1
 !!         XZS   : orography of MESO-NH
 !!         XZHAT : GS levels

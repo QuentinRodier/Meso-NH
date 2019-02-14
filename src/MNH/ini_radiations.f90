@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ##########################
@@ -9,7 +9,7 @@
 !
 INTERFACE
 !
-    SUBROUTINE INI_RADIATIONS(TPINIFILE,HLUOUT,OINIRAD,TPDTCUR,TPDTEXP,&
+    SUBROUTINE INI_RADIATIONS(TPINIFILE,OINIRAD,TPDTCUR,TPDTEXP,       &
          PZZ,PDXX,PDYY,                                                &
          PSINDEL,PCOSDEL,PTSIDER,PCORSOL,PSLOPANG,PSLOPAZI,            &
          PDTHRAD,PDIRFLASWD,PSCAFLASWD,                                &
@@ -22,8 +22,6 @@ USE MODD_IO_ll,       ONLY : TFILEDATA
 USE MODD_TYPE_DATE
 !
 TYPE(TFILEDATA),        INTENT(IN)  :: TPINIFILE ! Initial file
-CHARACTER (LEN=*),      INTENT(IN)  :: HLUOUT    ! name for output-listing
-                                                 !  of nested models
 LOGICAL,                INTENT(IN)  :: OINIRAD   ! switch to initialize or read
                                                  ! the radiation informations
 TYPE (DATE_TIME),       INTENT(IN) :: TPDTCUR    ! Current date and time
@@ -69,7 +67,7 @@ END MODULE MODI_INI_RADIATIONS
 !
 !
 !   ####################################################################
-    SUBROUTINE INI_RADIATIONS(TPINIFILE,HLUOUT,OINIRAD,TPDTCUR,TPDTEXP,&
+    SUBROUTINE INI_RADIATIONS(TPINIFILE,OINIRAD,TPDTCUR,TPDTEXP,       &
          PZZ,PDXX,PDYY,                                                &
          PSINDEL,PCOSDEL,PTSIDER,PCORSOL,PSLOPANG,PSLOPAZI,            &
          PDTHRAD,PDIRFLASWD,PSCAFLASWD,                                &
@@ -109,6 +107,7 @@ END MODULE MODI_INI_RADIATIONS
 !!                               TDTEXP to  have a perpetual day ie. the diurnal cycle is retained 
 !!                               but the day stays the same during the whole run 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -135,8 +134,6 @@ IMPLICIT NONE
 !*       0.1   Declarations of dummy arguments :
 !
 TYPE(TFILEDATA),        INTENT(IN)  :: TPINIFILE ! Initial file
-CHARACTER (LEN=*),      INTENT(IN)  :: HLUOUT    ! name for output-listing
-                                                 !  of nested models
 LOGICAL,                INTENT(IN)  :: OINIRAD   ! switch to initialize or read
                                                  ! the radiation informations
 TYPE (DATE_TIME),       INTENT(IN) :: TPDTCUR    ! Current date and time

@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #######################
@@ -9,12 +9,11 @@
 !
 INTERFACE
 !
-       SUBROUTINE INI_SPECTRE_n(KMI,HLUOUT,TPINIFILE)
+       SUBROUTINE INI_SPECTRE_n(KMI,TPINIFILE)
 !
        USE MODD_IO_ll, ONLY: TFILEDATA
 !
        INTEGER,           INTENT(IN) :: KMI       ! Model index 
-       CHARACTER (LEN=*), INTENT(IN) :: HLUOUT    ! Name for output-listing of nested models
        TYPE(TFILEDATA),   INTENT(IN) :: TPINIFILE ! Initial file
 !
 END SUBROUTINE INI_SPECTRE_n
@@ -22,9 +21,9 @@ END SUBROUTINE INI_SPECTRE_n
 END INTERFACE
 !
 END MODULE MODI_INI_SPECTRE_n
-!     ######################################################
-      SUBROUTINE INI_SPECTRE_n(KMI,HLUOUT,TPINIFILE)
-!     ######################################################
+!     #######################################
+      SUBROUTINE INI_SPECTRE_n(KMI,TPINIFILE)
+!     #######################################
 !
 !!****  *INI_SPECTRE_n* - routine to initialize SPECTRE (based on ini_modeln.f90)
 !!
@@ -34,8 +33,8 @@ END MODULE MODI_INI_SPECTRE_n
 !!      J.P Chaboureau       * L.A*
 !!      10/2016 (C.Lac) Cleaning of the modules
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!      
-
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
+!
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -135,7 +134,6 @@ IMPLICIT NONE
 !
 !
 INTEGER,           INTENT(IN) :: KMI       ! Model index 
-CHARACTER (LEN=*), INTENT(IN) :: HLUOUT    ! Name for output-listing of nested models
 TYPE(TFILEDATA),   INTENT(IN) :: TPINIFILE ! Initial file
 !
 !*       0.2   declarations of local variables
@@ -891,7 +889,7 @@ IF ( KMI > 1) THEN
   DPTR_XLBYRM=>XLBYRM
   DPTR_XLBXSVM=>XLBXSVM
   DPTR_XLBYSVM=>XLBYSVM
-  CALL INI_ONE_WAY_n(NDAD(KMI),HLUOUT,XTSTEP,KMI,1,                         &
+  CALL INI_ONE_WAY_n(NDAD(KMI),XTSTEP,KMI,1,                         &
        DPTR_XBMX1,DPTR_XBMX2,DPTR_XBMX3,DPTR_XBMX4,DPTR_XBMY1,DPTR_XBMY2,DPTR_XBMY3,DPTR_XBMY4,        &
        DPTR_XBFX1,DPTR_XBFX2,DPTR_XBFX3,DPTR_XBFX4,DPTR_XBFY1,DPTR_XBFY2,DPTR_XBFY3,DPTR_XBFY4,        &
        NDXRATIO_ALL(KMI),NDYRATIO_ALL(KMI),NDTRATIO(KMI),      &

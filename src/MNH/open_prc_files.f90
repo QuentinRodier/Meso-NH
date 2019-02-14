@@ -43,7 +43,7 @@ END MODULE MODI_OPEN_PRC_FILES
 !!    PURPOSE
 !!    -------
 !!
-!!    This routine set the default name of CLUOUT0
+!!    This routine creates TLUOUT0
 !!    This routine read in 'PRE_REAL1.nam' the names of the files used in
 !!    PREP_REAL_CASE: Aladin or Mesonh input file, physiographic data file,
 !!    output listing file and MESO-NH output file.
@@ -65,7 +65,7 @@ END MODULE MODI_OPEN_PRC_FILES
 !!      Module MODD_CONF      : contains configuration variables for all models.
 !!         NVERB    : verbosity level for output-listing
 !!      Module MODD_LUNIT     :  contains logical unit names for all models
-!!         CLUOUT0  : name of output-listing
+!!         TLUOUT0  : output-listing
 !!      Module MODD_LUNIT1    :
 !!         CINIFILE : name of MESO-NH file
 !!
@@ -94,6 +94,7 @@ END MODULE MODI_OPEN_PRC_FILES
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
 !  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
 !                          (nsubfiles_ioz is now determined in IO_FILE_ADD2LIST)
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -164,8 +165,6 @@ HCHEMFILE='                            '
 HCHEMFILETYPE='MESONH'
 HSURFFILE='                            '
 HSURFFILETYPE='MESONH'
-CLUOUT0   ='OUTPUT_LISTING0             '
-CLUOUT = CLUOUT0
 !
 !-------------------------------------------------------------------------------
 !

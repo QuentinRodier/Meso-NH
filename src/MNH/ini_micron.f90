@@ -52,6 +52,7 @@ END MODULE MODI_INI_MICRO_n
 !!      C.LAc          10/2016   Add budget for droplet deposition
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      P.Wautelet     01/2019: bug: add missing allocations
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !!
 !! --------------------------------------------------------------------------
 !
@@ -61,7 +62,6 @@ END MODULE MODI_INI_MICRO_n
 !
 USE MODD_CONF, ONLY : CCONF,CPROGRAM       
 USE MODD_IO_ll, ONLY : TFILEDATA
-USE MODD_LUNIT_n, ONLY : CLUOUT
 USE MODD_GET_n, ONLY : CGETRCT,CGETRRT, CGETRST, CGETRGT, CGETRHT, CGETCLOUD
 USE MODD_DIM_n, ONLY : NIMAX_ll, NJMAX_ll
 USE MODD_PARAMETERS, ONLY : JPVEXT, JPHEXT
@@ -258,7 +258,7 @@ IF(SIZE(XINPRR) == 0) RETURN
 !*       3.    INITIALIZE MODD_PRECIP_n variables
 !              ----------------------------------
 !
-CALL READ_PRECIP_FIELD(TPINIFILE,CLUOUT,CPROGRAM,CCONF,               &
+CALL READ_PRECIP_FIELD(TPINIFILE,CPROGRAM,CCONF,                      &
                   CGETRCT,CGETRRT,CGETRST,CGETRGT,CGETRHT,            &
                   XINPRC,XACPRC,XINDEP,XACDEP,XINPRR,XINPRR3D,XEVAP3D,&
                   XACPRR,XINPRS,XACPRS,XINPRG,XACPRG, XINPRH,XACPRH )
@@ -328,8 +328,8 @@ END IF
 !
 IMI = GET_CURRENT_MODEL_INDEX()
 !IF (CELEC /= 'NONE') THEN
-!  CALL INI_ELEC(IMI,CINIFILE,CLUOUT,XTSTEP,ZDZMIN,NSPLITR, &
-!                XDXX,XDYY,XDZZ,XDZX,XDZY                   )
+!  CALL INI_ELEC(IMI,TPINIFILE,XTSTEP,ZDZMIN,NSPLITR, &
+!                XDXX,XDYY,XDZZ,XDZX,XDZY            )
 !END IF
 !
 !

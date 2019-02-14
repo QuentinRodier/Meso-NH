@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 2010-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     #####################
       MODULE MODI_REL_FORCING_n
 !     #####################
@@ -70,7 +71,7 @@ END MODULE MODI_REL_FORCING_n
 !!        TDTADVFRC: date of each advecting-forcing profile
 !!        XUFRC,XVFRC,XWFRC,XTHFRC,XRVFRC: advecting-forcing variables
 !!      Module MODD_LUNIT :  contains logical unit names for all models
-!!        CLUOUT0 : name of output-listing
+!!        TLUOUT0 : name of output-listing
 !!      Module MODD_PARAMETERS: declaration of parameter variables
 !!        JPVEXT: define the number of marginal points out of the 
 !!        physical domain along the vertical direction.    

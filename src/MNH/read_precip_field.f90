@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1996-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #############################
@@ -11,7 +11,7 @@
 !
 INTERFACE
 !
-      SUBROUTINE READ_PRECIP_FIELD(TPINIFILE,HLUOUT,HPROGRAM,HCONF,                &
+      SUBROUTINE READ_PRECIP_FIELD(TPINIFILE,HPROGRAM,HCONF,                       &
                               HGETRCT,HGETRRT,HGETRST,HGETRGT,HGETRHT,             &
                               PINPRC,PACPRC,PINDEP,PACDEP,PINPRR,PINPRR3D,PEVAP3D, &
                               PACPRR,PINPRS,PACPRS,PINPRG,PACPRG,PINPRH,PACPRH     )
@@ -21,7 +21,6 @@ USE MODD_IO_ll, ONLY : TFILEDATA
 !*       0.1   declarations of arguments
 !
 TYPE(TFILEDATA),        INTENT(IN)    :: TPINIFILE ! Initial file
-CHARACTER (LEN=*),      INTENT(IN)    :: HLUOUT    ! name for output-listing of nested models
 CHARACTER (LEN=*),      INTENT(IN)    :: HPROGRAM  !
 CHARACTER (LEN=*),      INTENT(IN)    :: HCONF     !
 !                    
@@ -50,7 +49,7 @@ END INTERFACE
 END MODULE MODI_READ_PRECIP_FIELD 
 !
 !     ##############################################################################
-      SUBROUTINE READ_PRECIP_FIELD(TPINIFILE,HLUOUT,HPROGRAM,HCONF,                &
+      SUBROUTINE READ_PRECIP_FIELD(TPINIFILE,HPROGRAM,HCONF,                       &
                               HGETRCT,HGETRRT,HGETRST,HGETRGT,HGETRHT,             &
                               PINPRC,PACPRC,PINDEP,PACDEP,PINPRR,PINPRR3D,PEVAP3D, &
                               PACPRR,PINPRS,PACPRS,PINPRG,PACPRG,PINPRH,PACPRH     )
@@ -93,6 +92,7 @@ END MODULE MODI_READ_PRECIP_FIELD
 !!      (C.Lac)        04/03/13  add YGETxxx for FIT scheme
 !!                    10/2016 (C.Lac) Add droplet deposition
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !!
 !-----------------------------------------------------------------------------
 !
@@ -111,7 +111,6 @@ IMPLICIT NONE
 !*       0.1   declarations of arguments
 !
 TYPE(TFILEDATA),        INTENT(IN)    :: TPINIFILE ! Initial file
-CHARACTER (LEN=*),      INTENT(IN)    :: HLUOUT    ! name for output-listing of nested models
 CHARACTER (LEN=*),      INTENT(IN)    :: HPROGRAM  !
 CHARACTER (LEN=*),      INTENT(IN)    :: HCONF     !
 !                    

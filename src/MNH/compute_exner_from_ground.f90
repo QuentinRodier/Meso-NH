@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #####################################
@@ -83,8 +83,6 @@ END MODULE MODI_COMPUTE_EXNER_FROM_GROUND3
 !!      Module MODD_CONF      : contains configuration variables for all models.
 !!         NVERB : verbosity level for output-listing
 !!         LTHINSHELL : logical for thinshell approximation
-!!      Module MODD_LUNIT     :  contains logical unit names for all models
-!!         CLUOUT0 : name of output-listing
 !!      Module MODD_CST       : contains physical constants
 !!         XG  : gravity constant
 !!         XCPD: specific heat for dry air at constant pressure
@@ -115,7 +113,6 @@ END MODULE MODI_COMPUTE_EXNER_FROM_GROUND3
 !
 USE MODD_CONF
 USE MODD_CST
-USE MODD_LUNIT
 USE MODD_PARAMETERS
 !
 USE MODI_SHUMAN

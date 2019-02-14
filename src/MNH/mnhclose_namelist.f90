@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #############################
@@ -77,7 +77,6 @@ INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
 !
 INTEGER           :: IMI            ! model index
 INTEGER           :: ILUOUT         ! output listing logical unit
-CHARACTER(LEN=16) :: YLUOUT         ! output listing file name
 !-------------------------------------------------------------------------------
 !
 IF (.NOT.ASSOCIATED(TNAM)) CALL PRINT_MSG(NVERB_FATAL,'IO','CLOSE_FILE_MNH','TNAM not associated')

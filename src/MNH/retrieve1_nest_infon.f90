@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 spawn 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ################################
       MODULE MODI_RETRIEVE1_NEST_INFO_n
@@ -72,8 +67,6 @@ END MODULE MODI_RETRIEVE1_NEST_INFO_n
 !!        NIMAX, NJMAX
 !!      Module MODD_PARAMETERS :
 !!        JPHEXT
-!!      Module MODD_LUNIT :
-!!        CLUOUT
 !!
 !!    REFERENCE
 !!    ---------

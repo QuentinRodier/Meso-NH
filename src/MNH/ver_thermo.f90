@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ######################
@@ -94,7 +94,7 @@ END MODULE MODI_VER_THERMO
 !!      Module MODD_CONF1     : contains configuration variables for model 1.
 !!         NRR     : number of moist variables
 !!      Module MODD_LUNIT     :  contains logical unit names for all models
-!!         CLUOUT0 : name of output-listing
+!!         TLUOUT0 : name of output-listing
 !!      Module MODD_CST       : contains physical constants
 !!         XRD : gas constant for dry air
 !!         XRV : gas constant for vapor
@@ -163,8 +163,7 @@ USE MODD_GRID_n
 USE MODD_IO_ll,       ONLY: TFILEDATA,TFILE_DUMMY
 USE MODD_LBC_n
 USE MODD_LSFIELD_n
-USE MODD_LUNIT,       ONLY: CLUOUT0,TLUOUT0
-USE MODD_LUNIT_n,     ONLY: CLUOUT
+USE MODD_LUNIT,       ONLY: TLUOUT0
 USE MODD_PARAMETERS
 USE MODD_REF_n
 !

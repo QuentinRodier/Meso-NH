@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !     #############################
       MODULE MODI_CHANGE_GRIBEX_VAR
@@ -116,7 +116,7 @@ END MODULE MODI_CHANGE_GRIBEX_VAR
 !!      Module MODD_CONF1
 !!         NRR
 !!      Module MODD_LUNIT     :  contains logical unit names for all models
-!!         CLUOUT0 : name of output-listing
+!!         TLUOUT0 : name of output-listing
 !!      Module MODD_CST       : contains physical constants
 !!         XRD : gas constant for dry air
 !!         XRV : gas constant for vapor
@@ -167,7 +167,7 @@ USE MODD_CONF
 USE MODD_CONF_n
 USE MODD_CST
 USE MODD_GRID_n
-USE MODD_LUNIT, ONLY: CLUOUT0, TLUOUT0
+USE MODD_LUNIT, ONLY: TLUOUT0
 USE MODD_PARAMETERS
 USE MODD_REF
 !

@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ####################
@@ -133,8 +133,8 @@ END MODULE MODI_SET_CSTN
 !!        XRD   : Gas constant  for dry air
 !!        XCPD : Specific heat for dry air at constant pressure
 !!
-!!      Module MODD_LUNIT1  : contains logical unit names 
-!!        CLUOUT : name of output-listing
+!!      Module MODD_LUNIT_n  : contains logical unit names
+!!        TLUOUT : name of output-listing
 !!
 !!      Module MODD_CONF    : contains configuration variables for all models. 
 !!        NVERB : verbosity level for output-listing
@@ -173,7 +173,7 @@ USE MODD_CONF
 USE MODD_CST
 USE MODD_GRID_n
 USE MODD_IO_ll,      ONLY : TFILEDATA
-USE MODD_LUNIT_n,    ONLY: CLUOUT, TLUOUT
+USE MODD_LUNIT_n,    ONLY: TLUOUT
 USE MODD_PARAMETERS, ONLY: JPHEXT
 !
 USE MODE_FM

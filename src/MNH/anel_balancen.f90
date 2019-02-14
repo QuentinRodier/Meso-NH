@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ##########################
@@ -55,9 +55,6 @@ END MODULE MODI_ANEL_BALANCE_n
 !!
 !!      Module MODD_CONF    : contains configuration variables for all models.
 !!         NVERB : verbosity level for output-listing
-!!
-!!      Module MODD_LUNIT   :  contains logical unit names for all models
-!!         CLUOUT0 : name of output-listing
 !!
 !!      Module MODD_GRID_n  : contains grid variables
 !!         XMAP,XXHAT,XYHAT,XZZ
@@ -115,7 +112,6 @@ USE MODE_IO_ll
 USE MODE_MODELN_HANDLER
 !
 USE MODD_CONF    ! declarative modules
-USE MODD_LUNIT
 USE MODD_PARAMETERS
 USE MODD_GRID_n
 USE MODD_DIM_n

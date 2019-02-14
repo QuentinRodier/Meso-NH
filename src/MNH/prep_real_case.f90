@@ -287,7 +287,6 @@
 !!      Module MODD_CONF1 : contains configuration variables for model 1.
 !!         NRR     : number of moist variables
 !!      Module MODD_LUNIT : contains logical unit and names of files.
-!!         CLUOUT0 : name of output-listing
 !!      Module MODD_LUNIT : contains logical unit and names of files (model1).
 !!         CINIFILE: name of the FM file which will be used for the MESO-NH run.
 !!      Module MODD_GRID1 : contains grid variables.
@@ -380,6 +379,7 @@
 !!     B.VIE 2016 : LIMA
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -402,7 +402,7 @@ USE MODD_HURR_CONF
 USE MODD_IO_ll,            ONLY: TFILEDATA,NIO_VERB,NVERB_DEBUG,TFILE_SURFEX
 USE MODD_LBC_n
 USE MODD_LSFIELD_n
-USE MODD_LUNIT,            ONLY: CLUOUT0,TPGDFILE,TLUOUT0,TOUTDATAFILE
+USE MODD_LUNIT,            ONLY: TPGDFILE,TLUOUT0,TOUTDATAFILE
 USE MODD_LUNIT_n,          ONLY: CINIFILE,TINIFILE,TLUOUT
 USE MODD_METRICS_n
 USE MODD_MNH_SURFEX_n
@@ -959,14 +959,14 @@ ZDYN = ZTIME2 - ZTIME1
 ZTIME1 = ZTIME2
 !
 IF(LEN_TRIM(YCHEMFILE)>0 .AND. YCHEMFILETYPE=='MESONH')THEN
-  CALL INI_PROG_VAR(CLUOUT0,XTKE_MX,XSV_MX,YCHEMFILE)
+  CALL INI_PROG_VAR(XTKE_MX,XSV_MX,YCHEMFILE)
   LHORELAX_SVCHEM = (NSV_CHEM > 0)
   LHORELAX_SVCHIC = (NSV_CHIC > 0)
   LHORELAX_SVDST  = (NSV_DST > 0)
   LHORELAX_SVSLT  = (NSV_SLT > 0)
   LHORELAX_SVAER  = (NSV_AER > 0)
 ELSE
-  CALL INI_PROG_VAR(CLUOUT0,XTKE_MX,XSV_MX)
+  CALL INI_PROG_VAR(XTKE_MX,XSV_MX)
 END IF
 !
 IF (ALLOCATED(XSV_MX)) DEALLOCATE(XSV_MX)

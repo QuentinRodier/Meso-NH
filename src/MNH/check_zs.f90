@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !###################
@@ -48,7 +48,7 @@ END MODULE MODI_CHECK_ZS
 !!      Module MODD_CONF      : contains configuration variables for all models.
 !!         NVERB : verbosity level for output-listing
 !!      Module MODD_LUNIT     : contains logical unit names for all models
-!!         CLUOUT0 : name of output-listing
+!!         TLUOUT0 : name of output-listing
 !!      Module MODD_GRID1 
 !!         XZS
 !!      Module MODD_DIM1 
@@ -105,7 +105,7 @@ INTEGER,             INTENT(IN)    :: KJINF     ! domain, compared to the old
 !              ------------------------------
 !
 INTEGER             :: IRESP                ! return-code if problems occured
-INTEGER             :: ILUOUT0              ! logical unit for file CLUOUT0
+INTEGER             :: ILUOUT0              ! logical unit for file TLUOUT0
 !
 INTEGER             :: IDXRATIO = 0         ! aspect ratios during previous
 INTEGER             :: IDYRATIO = 0         ! spawning (if any)

@@ -7,9 +7,8 @@
       MODULE MODI_INI_PROG_VAR
 !     ########################
 INTERFACE
-      SUBROUTINE INI_PROG_VAR(HLUOUT,PTKE_MX,PSV_MX,HCHEMFILE)
+      SUBROUTINE INI_PROG_VAR(PTKE_MX, PSV_MX, HCHEMFILE)
 !
-CHARACTER(LEN=*),       INTENT(IN)          :: HLUOUT     ! Name of the output-listing
 REAL,DIMENSION(:,:,:),  INTENT(IN)          :: PTKE_MX
 REAL,DIMENSION(:,:,:,:),INTENT(IN)          :: PSV_MX
 CHARACTER(LEN=*),       INTENT(IN),OPTIONAL :: HCHEMFILE  ! Name of the chem file
@@ -17,9 +16,9 @@ END SUBROUTINE INI_PROG_VAR
 END INTERFACE
 END MODULE MODI_INI_PROG_VAR
 !
-!     ########################################################
-      SUBROUTINE INI_PROG_VAR(HLUOUT,PTKE_MX,PSV_MX,HCHEMFILE)
-!     ########################################################
+!     ###################################################
+      SUBROUTINE INI_PROG_VAR(PTKE_MX, PSV_MX, HCHEMFILE)
+!     ###################################################
 !
 !!****  *INI_PROG_VAR* - initialization the prognostic variables not yet 
 !!                       initialized
@@ -45,8 +44,8 @@ END MODULE MODI_INI_PROG_VAR
 !!
 !!      Module MODD_CONF      : contains configuration variables for all models.
 !!         NVERB   : verbosity level for output-listing
-!!      Module MODD_LUNIT     :  contains logical unit names for all models
-!!         CLUOUT0 : name of output-listing
+!!      Module MODD_LUNIT_n     :  contains logical unit names for all models
+!!         TLUOUT : name of output-listing
 !!      Module MODD_FIELD1    : contains the prognostic fields of model1
 !!         XUM
 !!         XVM
@@ -95,6 +94,7 @@ END MODULE MODI_INI_PROG_VAR
 !!                  Mai 2017 (M. Leriche) Get wet dep. sv in Meso-NH init file
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -141,15 +141,13 @@ IMPLICIT NONE
 !
 !*       0.1   declaration of arguments
 !
-CHARACTER(LEN=*),       INTENT(IN)          :: HLUOUT     ! Name of the output-listing
 REAL,DIMENSION(:,:,:),  INTENT(IN)          :: PTKE_MX
 REAL,DIMENSION(:,:,:,:),INTENT(IN)          :: PSV_MX
 CHARACTER(LEN=*),       INTENT(IN),OPTIONAL :: HCHEMFILE  ! Name of the chem file
 !
 !*       0.2   declaration of local variables
 !
-INTEGER                :: ILUOUT                     !  Logical unit number
-                                                     ! associated with HLUOUT 
+INTEGER                :: ILUOUT
 INTEGER                :: IRESP
 !
 INTEGER                :: IIMAX,IJMAX,IKMAX       !  Dimensions of the chem file

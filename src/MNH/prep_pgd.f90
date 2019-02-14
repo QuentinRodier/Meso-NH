@@ -2,6 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ################
       PROGRAM PREP_PGD
 !     ################
@@ -76,6 +77,7 @@
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
 !  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
 !                          (nsubfiles_ioz is now determined in IO_FILE_ADD2LIST)
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !
 !----------------------------------------------------------------------------
 !
@@ -84,7 +86,7 @@
 !
 USE MODD_CONF,   ONLY : CPROGRAM, L1D, L2D, LPACK, LCARTESIAN
 USE MODD_CONF_n,ONLY : CSTORAGE_TYPE
-USE MODD_LUNIT,  ONLY : CLUOUT0,TLUOUT0
+USE MODD_LUNIT,  ONLY : TLUOUT0
 USE MODD_LUNIT_n,ONLY : LUNIT_MODEL
 USE MODD_PARAMETERS, ONLY : XUNDEF
 USE MODD_IO_ll,   ONLY : NIO_VERB,NVERB_DEBUG,TFILEDATA,TFILE_OUTPUTLISTING,TFILE_SURFEX
@@ -166,7 +168,6 @@ CALL INITIO_ll()
 !
 NHALO=15
 !
-CLUOUT0='OUTPUT_LISTING0'                    ! Name of the output-listing.
 CALL IO_FILE_ADD2LIST(TLUOUT0,'OUTPUT_LISTING0','OUTPUTLISTING','WRITE')
 CALL IO_FILE_OPEN_ll(TLUOUT0)
 !

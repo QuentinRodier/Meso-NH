@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2009-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ######################
@@ -8,17 +8,15 @@
 !     ######################
 !
 INTERFACE
-      SUBROUTINE INI_ELEC_n (KLUOUT, HELEC, HCLOUD, HLUOUT, TPINIFILE, &
-                             PTSTEP, PZZ,                              &
-                             PDXX, PDYY, PDZZ, PDZX, PDZY              )
+      SUBROUTINE INI_ELEC_n (KLUOUT, HELEC, HCLOUD, TPINIFILE, &
+                             PTSTEP, PZZ,                      &
+                             PDXX, PDYY, PDZZ, PDZX, PDZY      )
 !
 USE MODD_IO_ll,  ONLY : TFILEDATA
 !
 INTEGER,           INTENT(IN) :: KLUOUT   ! Logical unit number for prints
 CHARACTER (LEN=4), INTENT(IN) :: HELEC    ! atmospheric electricity scheme
 CHARACTER (LEN=4), INTENT(IN) :: HCLOUD   ! microphysics scheme
-CHARACTER (LEN=*), INTENT(IN) :: HLUOUT   ! name for output-listing
-                                          !  of nested models
 TYPE(TFILEDATA),   INTENT(IN) :: TPINIFILE! Initial file
 REAL,              INTENT(IN) :: PTSTEP   ! Time STEP
 !
@@ -33,11 +31,11 @@ END SUBROUTINE INI_ELEC_n
 END INTERFACE
 END MODULE MODI_INI_ELEC_n
 !
-!     #################################################################
-      SUBROUTINE INI_ELEC_n(KLUOUT, HELEC, HCLOUD, HLUOUT, TPINIFILE, &
-                            PTSTEP, PZZ,                              &
-                            PDXX, PDYY, PDZZ, PDZX, PDZY              )
-!     #################################################################
+!     #########################################################
+      SUBROUTINE INI_ELEC_n(KLUOUT, HELEC, HCLOUD, TPINIFILE, &
+                            PTSTEP, PZZ,                      &
+                            PDXX, PDYY, PDZZ, PDZX, PDZY      )
+!     #########################################################
 !
 !!    PURPOSE
 !!    -------
@@ -74,6 +72,7 @@ END MODULE MODI_INI_ELEC_n
 !!      J.-P. Pinty  15/11/13  Initialize the flash maps
 !!                    10/2016 (C.Lac) Add droplet deposition
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !!
 !-------------------------------------------------------------------------------
 !
@@ -128,8 +127,6 @@ IMPLICIT NONE
 INTEGER,           INTENT(IN) :: KLUOUT   ! Logical unit number for prints
 CHARACTER (LEN=4), INTENT(IN) :: HELEC    ! atmospheric electricity scheme
 CHARACTER (LEN=4), INTENT(IN) :: HCLOUD   ! microphysics scheme
-CHARACTER (LEN=*), INTENT(IN) :: HLUOUT   ! name for output-listing
-                                          !  of nested models
 TYPE(TFILEDATA),   INTENT(IN) :: TPINIFILE! Initial file
 REAL,              INTENT(IN) :: PTSTEP   ! Time STEP
 !
@@ -225,7 +222,7 @@ IF(SIZE(XINPRR) == 0) RETURN
 !*       2.    Initialize MODD_PRECIP_n variables
 !              -----------------------------------
 !
-CALL READ_PRECIP_FIELD (TPINIFILE, HLUOUT, CPROGRAM, CCONF,                   &
+CALL READ_PRECIP_FIELD (TPINIFILE, CPROGRAM, CCONF,                           &
                         CGETINPRC,CGETINPRR,CGETINPRS,CGETINPRG,CGETINPRH,    &
                         XINPRC,XACPRC,XINDEP,XACDEP,XINPRR,XINPRR3D,XEVAP3D,  &
                         XACPRR, XINPRS, XACPRS, XINPRG, XACPRG, XINPRH, XACPRH)

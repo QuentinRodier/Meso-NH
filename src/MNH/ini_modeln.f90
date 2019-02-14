@@ -9,12 +9,11 @@
 !
 INTERFACE
 !
-       SUBROUTINE INI_MODEL_n(KMI,HLUOUT,TPINIFILE)
+       SUBROUTINE INI_MODEL_n(KMI,TPINIFILE)
 !
 USE MODD_IO_ll, ONLY : TFILEDATA
 !
 INTEGER,          INTENT(IN)   :: KMI       ! Model Index
-CHARACTER(LEN=*), INTENT(IN)   :: HLUOUT    ! name for output-listing of nested models
 TYPE(TFILEDATA),  INTENT(IN)   :: TPINIFILE ! Initial file
 !
 END SUBROUTINE INI_MODEL_n
@@ -23,7 +22,7 @@ END INTERFACE
 !
 END MODULE MODI_INI_MODEL_n
 !     ############################################
-      SUBROUTINE INI_MODEL_n(KMI,HLUOUT,TPINIFILE)
+      SUBROUTINE INI_MODEL_n(KMI,TPINIFILE)
 !     ############################################
 !
 !!****  *INI_MODEL_n* - routine to initialize the nested model _n
@@ -280,6 +279,7 @@ END MODULE MODI_INI_MODEL_n
 !!                   01/18 J.Colin Add DRAG 
 !!      P.Wautelet   29/01/2019: bug: add missing zero-size allocations
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -456,7 +456,6 @@ IMPLICIT NONE
 !
 !
 INTEGER,          INTENT(IN)   :: KMI       ! Model Index
-CHARACTER(LEN=*), INTENT(IN)   :: HLUOUT    ! name for output-listing of nested models
 TYPE(TFILEDATA),  INTENT(IN)   :: TPINIFILE ! Initial file
 !
 !*       0.2   declarations of local variables
@@ -1823,9 +1822,9 @@ IF (CELEC == 'NONE') THEN
 !               --------------------------------------
 !
 ELSE
-  CALL INI_ELEC_n(ILUOUT, CELEC, CCLOUD, HLUOUT, TPINIFILE, &
-                  XTSTEP, XZZ,                              &
-                  XDXX, XDYY, XDZZ, XDZX, XDZY              )
+  CALL INI_ELEC_n(ILUOUT, CELEC, CCLOUD, TPINIFILE, &
+                  XTSTEP, XZZ,                      &
+                  XDXX, XDYY, XDZZ, XDZX, XDZY      )
 !
   WRITE (UNIT=ILUOUT,&
   FMT='(/,"ELECTRIC VARIABLES ARE BETWEEN INDEX",I2," AND ",I2)')&
@@ -1998,7 +1997,7 @@ IF ( KMI > 1) THEN
   DPTR_XLBYRM=>XLBYRM
   DPTR_XLBXSVM=>XLBXSVM
   DPTR_XLBYSVM=>XLBYSVM
-  CALL INI_ONE_WAY_n(NDAD(KMI),CLUOUT,XTSTEP,KMI,1,                         &
+  CALL INI_ONE_WAY_n(NDAD(KMI),XTSTEP,KMI,1,                         &
        DPTR_XBMX1,DPTR_XBMX2,DPTR_XBMX3,DPTR_XBMX4,DPTR_XBMY1,DPTR_XBMY2,DPTR_XBMY3,DPTR_XBMY4,        &
        DPTR_XBFX1,DPTR_XBFX2,DPTR_XBFX3,DPTR_XBFX4,DPTR_XBFY1,DPTR_XBFY2,DPTR_XBFY3,DPTR_XBFY4,        &
        NDXRATIO_ALL(KMI),NDYRATIO_ALL(KMI),NDTRATIO(KMI),      &
@@ -2071,7 +2070,7 @@ IF (CRAD   /= 'NONE') THEN
   ELSE
     GINIRAD  =.FALSE.
   END IF
-  CALL INI_RADIATIONS(TPINIFILE,HLUOUT,GINIRAD,TDTCUR,TDTEXP,XZZ, &
+  CALL INI_RADIATIONS(TPINIFILE,GINIRAD,TDTCUR,TDTEXP,XZZ, &
                       XDXX, XDYY,                         &
                       XSINDEL,XCOSDEL,XTSIDER,XCORSOL,    &
                       XSLOPANG,XSLOPAZI,                  &
@@ -2242,7 +2241,7 @@ IF (CRAD   == 'ECMW') THEN
       ZBARE(:,:) = 0.
     END IF
 !
-    CALL INI_RADIATIONS_ECMWF (TPINIFILE%CNAME,HLUOUT,                                 &
+    CALL INI_RADIATIONS_ECMWF (TPINIFILE%CNAME,                                        &
                                XZHAT,XPABST,XTHT,XTSRAD,XLAT,XLON,TDTCUR,TDTEXP,       &
                                CLW,NDLON,NFLEV,NFLUX,NRAD,NSWB_OLD,CAER,NAER,NSTATM,   &
                                XSTATM,ZSEA,ZTOWN,ZBARE,XOZON, XAER,XDST_WL, LSUBG_COND )
@@ -2270,7 +2269,7 @@ ELSE IF (CRAD   == 'ECRA') THEN
       ZBARE(:,:) = 0.
     END IF
 !   
-    CALL INI_RADIATIONS_ECRAD (TPINIFILE%CNAME,HLUOUT,                                 &
+    CALL INI_RADIATIONS_ECRAD (TPINIFILE%CNAME,                                        &
                                XZHAT,XPABST,XTHT,XTSRAD,XLAT,XLON,TDTCUR,TDTEXP,       &
                                CLW,NDLON,NFLEV,NFLUX,NRAD,NSWB_OLD,CAER,NAER,NSTATM,   &
                                XSTATM,ZSEA,ZTOWN,ZBARE,XOZON, XAER,XDST_WL, LSUBG_COND )
@@ -2304,7 +2303,7 @@ IF (CDCONV /= 'NONE' .OR. CSCONV == 'KAFR') THEN
   IF (NVERB>=10) THEN
     WRITE(ILUOUT,*) 'XDTCONV has been set to : ',XDTCONV
   END IF
-  CALL INI_DEEP_CONVECTION (TPINIFILE,HLUOUT,GINIDCONV,TDTCUR,               &
+  CALL INI_DEEP_CONVECTION (TPINIFILE,GINIDCONV,TDTCUR,                      &
                            NCOUNTCONV,XDTHCONV,XDRVCONV,XDRCCONV,            &
                            XDRICONV,XPRCONV,XPRSCONV,XPACCONV,               &
                            XUMFCONV,XDMFCONV,XMFCONV,XPRLFLXCONV,XPRSFLXCONV,&

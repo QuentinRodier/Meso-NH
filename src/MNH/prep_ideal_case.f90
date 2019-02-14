@@ -312,6 +312,7 @@
 !!  01/2018      (G.Delautier) SURFEX 8.1
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -664,9 +665,7 @@ CALL DEFAULT_EXPRE
 !              and open these files :
 ! 
 ! 
-CLUOUT  = 'OUTPUT_LISTING1'
-CLUOUT0 = CLUOUT
-CALL IO_FILE_ADD2LIST(TLUOUT0,CLUOUT0,'OUTPUTLISTING','WRITE')
+CALL IO_FILE_ADD2LIST(TLUOUT0,'OUTPUT_LISTING1','OUTPUTLISTING','WRITE')
 CALL IO_FILE_OPEN_ll(TLUOUT0)
 NLUOUT = TLUOUT0%NLU
 !Set output files for PRINT_MSG

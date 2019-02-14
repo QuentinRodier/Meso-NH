@@ -9,12 +9,11 @@
 !
 INTERFACE
 !
-SUBROUTINE INI_SEG_n(KMI,HLUOUT,TPINIFILE,HINIFILEPGD,PTSTEP_ALL)
+SUBROUTINE INI_SEG_n(KMI,TPINIFILE,HINIFILEPGD,PTSTEP_ALL)
 !
 USE MODD_IO_ll, ONLY : TFILEDATA
 !
 INTEGER,                    INTENT(IN)    :: KMI          !Model index
-CHARACTER (LEN=*),          INTENT(OUT)   :: HLUOUT       !Name for output-listing of nested models
 TYPE(TFILEDATA),   POINTER, INTENT(OUT)   :: TPINIFILE    !Initial file
 CHARACTER (LEN=28),         INTENT(OUT)   :: HINIFILEPGD
 REAL,DIMENSION(:),          INTENT(INOUT) :: PTSTEP_ALL   ! Time STEP of ALL models
@@ -29,7 +28,7 @@ END MODULE MODI_INI_SEG_n
 !
 !
 !     #############################################################
-      SUBROUTINE INI_SEG_n(KMI,HLUOUT,TPINIFILE,HINIFILEPGD,PTSTEP_ALL)
+      SUBROUTINE INI_SEG_n(KMI,TPINIFILE,HINIFILEPGD,PTSTEP_ALL)
 !     #############################################################
 !
 !!****  *INI_SEG_n * - routine to read and update the descriptor files for 
@@ -164,6 +163,7 @@ END MODULE MODI_INI_SEG_n
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!                       07/2017   add GBLOWSNOW (V. Vionnet)
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -200,7 +200,6 @@ IMPLICIT NONE
 !*       0.1   declarations of arguments 
 !
 INTEGER,                    INTENT(IN)    :: KMI          !Model index
-CHARACTER (LEN=*),          INTENT(OUT)   :: HLUOUT       !Name for output-listing of nested models
 TYPE(TFILEDATA),   POINTER, INTENT(OUT)   :: TPINIFILE    !Initial file
 CHARACTER (LEN=28),         INTENT(OUT)   :: HINIFILEPGD
 REAL,DIMENSION(:),          INTENT(INOUT) :: PTSTEP_ALL   ! Time STEP of ALL models
@@ -211,7 +210,7 @@ LOGICAL            :: GFOUND              ! Return code when searching namelist
 CHARACTER (LEN=28) :: YINIFILE                    ! name of initial file
 CHARACTER (LEN=2)  :: YMI                         ! string for model index
 INTEGER            :: ILUOUT                      ! Logical unit number
-                                                  ! associated with CLUOUT 
+                                                  ! associated with TLUOUT 
                                                   !
 INTEGER            :: IRESP,ILUSEG                ! File management variables
 CHARACTER (LEN=5)  :: YCONF                       ! Local variables which have
@@ -260,8 +259,7 @@ TZFILE_DES => NULL()
 !              ---------------------------------------
 !
 WRITE(YMI,'(I2.0)') KMI
-HLUOUT='OUTPUT_LISTING'//ADJUSTL(YMI)
-CALL IO_FILE_ADD2LIST(LUNIT_MODEL(KMI)%TLUOUT,HLUOUT,'OUTPUTLISTING','WRITE')
+CALL IO_FILE_ADD2LIST(LUNIT_MODEL(KMI)%TLUOUT,'OUTPUT_LISTING'//ADJUSTL(YMI),'OUTPUTLISTING','WRITE')
 TLUOUT => LUNIT_MODEL(KMI)%TLUOUT !Necessary because TLUOUT was initially pointing to NULL
 CALL IO_FILE_OPEN_ll(TLUOUT)
 !

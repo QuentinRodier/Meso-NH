@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #################
@@ -9,12 +9,11 @@
 !
 INTERFACE
 !
-SUBROUTINE INI_SIZE_n(KMI,HLUOUT,TPINIFILE,HINIFILEPGD)
+SUBROUTINE INI_SIZE_n( KMI, TPINIFILE, HINIFILEPGD )
 !
 USE MODD_IO_ll, ONLY : TFILEDATA
 !
 INTEGER,            INTENT(IN)    :: KMI          !Model Index
-CHARACTER (LEN=*),  INTENT(IN)    :: HLUOUT       !Name for output-listing of nested models
 TYPE(TFILEDATA),    INTENT(IN)    :: TPINIFILE    !Initial file
 CHARACTER (LEN=*),  INTENT(IN)    :: HINIFILEPGD
 !
@@ -24,9 +23,9 @@ END INTERFACE
 !
 END MODULE MODI_INI_SIZE_n
 !-----------------------------------------------------------------
-!     #######################################################
-      SUBROUTINE INI_SIZE_n(KMI,HLUOUT,TPINIFILE,HINIFILEPGD)
-!     #######################################################
+!     ####################################################
+      SUBROUTINE INI_SIZE_n( KMI, TPINIFILE, HINIFILEPGD )
+!     ####################################################
 !
 !!
 !!****  *INI_SIZE_n* - routine to initialize the sizes ratio positions of nested model _n
@@ -40,7 +39,7 @@ END MODULE MODI_INI_SIZE_n
 !!    ------
 !!      The first part of the initialization of the model _n is performed as 
 !!    follows :
-!!       - The logical unit number associated to output_listing file HLUOUT is 
+!!       - The logical unit number associated to output_listing file TLUOUT is
 !!    retrieved and module MODD_LUNIT_n is initialized.
 !!       -  Then the description of the segment to perform for the model _n is
 !!    retrieved : 
@@ -95,6 +94,7 @@ END MODULE MODI_INI_SIZE_n
 !!             June 2006   (D. Gazen) _n: no more read of updated var. 
 !!             J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !!
 !-------------------------------------------------------------------------------
 !
@@ -108,7 +108,7 @@ USE MODD_DIM_n,      ONLY: NIMAX_ll, NJMAX_ll, NKMAX
 USE MODD_DYN,        ONLY: LCORIO
 USE MODD_IO_ll,      ONLY: GSMONOPROC, TFILEDATA
 USE MODD_LBC_n,      ONLY: CLBCX, CLBCY
-USE MODD_LUNIT_n,    ONLY: CLUOUT, CINIFILE, CINIFILEPGD, TLUOUT
+USE MODD_LUNIT_n,    ONLY: CINIFILE, CINIFILEPGD, TLUOUT
 USE MODD_NESTING,    ONLY: CMY_NAME, CDAD_NAME, NDAD, NDXRATIO_ALL, NDYRATIO_ALL, &
                            NXOR_ALL, NYOR_ALL, NXEND_ALL,NYEND_ALL
 USE MODD_PARAMETERS, ONLY: JPMODELMAX, JPHEXT,JPVEXT 
@@ -126,7 +126,6 @@ IMPLICIT NONE
 !*       0.1   declarations of arguments
 !
 INTEGER,            INTENT(IN)    :: KMI          !Model Index
-CHARACTER (LEN=*),  INTENT(IN)    :: HLUOUT       !Name for output-listing of nested models
 TYPE(TFILEDATA),    INTENT(IN)    :: TPINIFILE    !Initial file
 CHARACTER (LEN=*),  INTENT(IN)    :: HINIFILEPGD
 !
@@ -142,7 +141,6 @@ INTEGER             :: IJPHEXT
 !              --------------------------------------------------------
 !
 ILUOUT = TLUOUT%NLU
-CLUOUT = HLUOUT
 CINIFILEPGD=HINIFILEPGD
 !
 !-------------------------------------------------------------------------------

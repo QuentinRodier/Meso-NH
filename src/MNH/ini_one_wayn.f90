@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1999-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #######################
@@ -9,7 +9,7 @@
 !
 INTERFACE 
 !
-      SUBROUTINE INI_ONE_WAY_n( KDAD,HLUOUT,PTSTEP,KMI,KTCOUNT,          &
+      SUBROUTINE INI_ONE_WAY_n( KDAD,PTSTEP,KMI,KTCOUNT,                 &
                     PBMX1,PBMX2,PBMX3,PBMX4,PBMY1,PBMY2,PBMY3,PBMY4,     &
                     PBFX1,PBFX2,PBFX3,PBFX4,PBFY1,PBFY2,PBFY3,PBFY4,     &
                     KDXRATIO,KDYRATIO,KDTRATIO,                          &
@@ -26,7 +26,6 @@ INTERFACE
 !
 !
 INTEGER,          INTENT(IN)    :: KDAD     !  Number of the DAD model
-CHARACTER (LEN=*),INTENT(IN)    :: HLUOUT   ! name of the output-listing
 REAL,             INTENT(IN)    :: PTSTEP   !  Time step
 INTEGER,          INTENT(IN)    :: KMI      ! model number
 INTEGER,          INTENT(IN)    :: KTCOUNT  !  Temporal loop COUNTer
@@ -72,7 +71,7 @@ END MODULE MODI_INI_ONE_WAY_n
 !
 
 !     ####################################################################
-SUBROUTINE INI_ONE_WAY_n(KDAD,HLUOUT,PTSTEP,KMI,KTCOUNT,                 &
+SUBROUTINE INI_ONE_WAY_n(KDAD,PTSTEP,KMI,KTCOUNT,                        &
                     PBMX1,PBMX2,PBMX3,PBMX4,PBMY1,PBMY2,PBMY3,PBMY4,     &
                     PBFX1,PBFX2,PBFX3,PBFX4,PBFY1,PBFY2,PBFY3,PBFY4,     &
                     KDXRATIO,KDYRATIO,KDTRATIO,                          &
@@ -140,6 +139,7 @@ SUBROUTINE INI_ONE_WAY_n(KDAD,HLUOUT,PTSTEP,KMI,KTCOUNT,                 &
 !!      J.Escobar : 18/12/2015 : Correction of bug in bound in // for NHALO <>1 
 !!      B.VIE   2016 : LIMA
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !!
 !------------------------------------------------------------------------------
 !
@@ -172,7 +172,6 @@ IMPLICIT NONE
 !
 !
 INTEGER,          INTENT(IN)    :: KDAD     !  Number of the DAD model
-CHARACTER (LEN=*),INTENT(IN)    :: HLUOUT   ! name for output-listing
 REAL,             INTENT(IN)    :: PTSTEP   !  Time step
 INTEGER,          INTENT(IN)    :: KMI      ! model number
 INTEGER,          INTENT(IN)    :: KTCOUNT  !  Temporal loop COUNTer

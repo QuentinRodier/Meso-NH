@@ -41,7 +41,7 @@ END MODULE MODI_OPEN_NESTPGD_FILES
 !!    ------------------
 !!
 !!      Module MODD_LUNIT     :  contains logical unit names for all models
-!!         CLUOUT0  : name of output-listing
+!!         TLUOUT0  : output-listing
 !!
 !!    REFERENCE
 !!    ---------
@@ -70,6 +70,7 @@ END MODULE MODI_OPEN_NESTPGD_FILES
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
 !  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
 !                          (nsubfiles_ioz is now determined in IO_FILE_ADD2LIST)
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -152,12 +153,11 @@ TZPRE_NEST_PGD => NULL()
 !              -----------------
 !
 HPRE_NEST_PGD='PRE_NEST_PGD1.nam'
-CLUOUT0='OUTPUT_LISTING0'
 !
 !-------------------------------------------------------------------------------
 !
-!*       2.    OPENNING OF CLUOUT0
-!              -------------------
+!*       2.    OPENING OF TLUOUT0
+!              ------------------
 !
 CALL IO_FILE_ADD2LIST(TLUOUT0,'OUTPUT_LISTING0','OUTPUTLISTING','WRITE')
 CALL IO_FILE_OPEN_ll(TLUOUT0)
