@@ -128,6 +128,7 @@ endif
 #
 #
 CC ?= gcc
+CXX ?= g++
 FC = ifort
 ifeq "$(VER_MPI)" "MPIAUTO"
 ifneq "$(findstring TAU,$(XYZ))" ""
@@ -190,6 +191,12 @@ endif
 #
 TARGET_GRIBEX=linux
 CNAME_GRIBEX=ifort
+#
+# Netcdf/HDF5 flags
+#
+HDF_CONF= CFLAGS=-std=c99
+HDF_OPT ?= -fPIC
+NETCDF_OPT ?= -fPIC
 #
 # LIBTOOLS flags
 #

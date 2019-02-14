@@ -252,6 +252,7 @@ OBJS_LISTE_MASTER     += C_ForeFire_Interface.o
 INC                   += $(INC_FOREFIRE)
 VPATH                 += $(DIR_FOREFIRE)
 CPPFLAGS              += -DMNH_FOREFIRE
+ARCH_XYZ    := $(ARCH_XYZ)-FF
 endif
 ##########################################################
 #           Source TOOLS                                 #
@@ -467,6 +468,7 @@ endif
 #
 ifeq "$(VER_CDF)" "CDFAUTO"
 DIR_CDFC?=${SRC_MESONH}/src/LIB/netcdf-${VERSION_CDFC}
+DIR_CDFCXX?=${SRC_MESONH}/src/LIB/netcdf-cxx-${VERSION_CDFCXX}
 DIR_CDFF?=${SRC_MESONH}/src/LIB/netcdf-fortran-${VERSION_CDFF}
 CDF_PATH?=${SRC_MESONH}/src/LIB/netcdf-${ARCH}-R${MNH_REAL}I${MNH_INT}
 CDF_MOD?=${CDF_PATH}/include/netcdf.mod

@@ -67,6 +67,7 @@ export CONF_DOLLAR=${CONF_DOLLAR}
 #
 export VER_CDF=${VER_CDF}
 export VERSION_CDFC=${VERSION_CDFC}
+export VERSION_CDFCXX=${VERSION_CDFCXX}
 export VERSION_CDFF=${VERSION_CDFF}
 export VERSION_HDF=${VERSION_HDF}
 export VERSION_LIBAEC=${VERSION_LIBAEC}
@@ -125,7 +126,7 @@ export VERSION_NCL=${VERSION_NCL}
 ##########################################################
 ##########################################################
 #
-export XYZ="-\${ARCH}-R\${MNH_REAL}I\${MNH_INT}-\${VERSION_XYZ}\${MNH_ECRAD:+-ECRAD}\${VER_USER:+-\${VER_USER}}-\${VER_MPI}-\${OPTLEVEL}"
+export XYZ="-\${ARCH}-R\${MNH_REAL}I\${MNH_INT}-\${VERSION_XYZ}\${MNH_ECRAD:+-ECRAD}\${MNH_FOREFIRE:+-FF}\${VER_USER:+-\${VER_USER}}-\${VER_MPI}-\${OPTLEVEL}"
 #[ "x\${VER_USER}" != "x" ] && export XYZ="\${XYZ}-\${VER_USER}"
 # PATH to find tools like "makegen, etc ..."
 export BIN_TOOLS=${BIN_TOOLS}
