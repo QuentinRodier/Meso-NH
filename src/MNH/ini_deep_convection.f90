@@ -109,6 +109,7 @@ END MODULE MODI_INI_DEEP_CONVECTION
 !!                    for a correct restart this variable has to be writen in FM file
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
+!  P. Wautelet 14/02/2019: move UPCASE function to tools.f90
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -134,6 +135,7 @@ USE MODD_SALT, ONLY : CSALTNAMES
 USE MODE_FIELD
 USE MODE_FM
 USE MODE_FMREAD
+USE MODE_TOOLS, ONLY: UPCASE
 !
 IMPLICIT NONE
 !
@@ -336,25 +338,5 @@ ELSE
 !
 !
 END IF
-!  
-CONTAINS
-FUNCTION UPCASE(HSTRING)
-
-CHARACTER(LEN=*)            :: HSTRING
-CHARACTER(LEN=LEN(HSTRING)) :: UPCASE
-
-INTEGER :: JC
-INTEGER, PARAMETER :: IAMIN = IACHAR("a")
-INTEGER, PARAMETER :: IAMAJ = IACHAR("A")
-
-DO JC=1,LEN(HSTRING)
-  IF (HSTRING(JC:JC) >= "a" .AND. HSTRING(JC:JC) <= "z") THEN
-      UPCASE(JC:JC) = ACHAR(IACHAR(HSTRING(JC:JC)) - IAMIN + IAMAJ)
-  ELSE
-      UPCASE(JC:JC) = HSTRING(JC:JC)
-  END IF
-END DO
-
-END FUNCTION UPCASE
 !
 END SUBROUTINE INI_DEEP_CONVECTION

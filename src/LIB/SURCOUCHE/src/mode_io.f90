@@ -28,6 +28,7 @@
 !  P. Wautelet 06/02/2019: simplify OPEN_ll and do somme assignments at a more logical place
 !  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
 !                          (nsubfiles_ioz is now determined in IO_FILE_ADD2LIST)
+!  P. Wautelet 14/02/2019: move UPCASE function to tools.f90
 !
 !-----------------------------------------------------------------
 MODULE MODE_IO_ll
@@ -43,28 +44,10 @@ MODULE MODE_IO_ll
 
   LOGICAL,SAVE :: GCONFIO = .FALSE. ! Turn TRUE when SET_CONFIO_ll is called.
 
-  PUBLIC UPCASE,INITIO_ll,OPEN_ll,CLOSE_ll
+  PUBLIC INITIO_ll,OPEN_ll,CLOSE_ll
   PUBLIC SET_CONFIO_ll,GCONFIO
 
 CONTAINS 
-
-  FUNCTION UPCASE(HSTRING)
-    CHARACTER(LEN=*)            :: HSTRING
-    CHARACTER(LEN=LEN(HSTRING)) :: UPCASE
-
-    INTEGER :: JC
-    INTEGER, PARAMETER :: IAMIN = IACHAR("a")
-    INTEGER, PARAMETER :: IAMAJ = IACHAR("A")
-
-    DO JC=1,LEN(HSTRING)
-       IF (HSTRING(JC:JC) >= "a" .AND. HSTRING(JC:JC) <= "z") THEN
-          UPCASE(JC:JC) = ACHAR(IACHAR(HSTRING(JC:JC)) - IAMIN + IAMAJ)
-       ELSE
-          UPCASE(JC:JC) = HSTRING(JC:JC)
-       END IF
-    END DO
-
-  END FUNCTION UPCASE
 
   SUBROUTINE SET_CONFIO_ll()
     USE MODN_CONFIO
@@ -161,6 +144,7 @@ CONTAINS
   use mode_io_file_lfi,         only: io_create_file_lfi, io_open_file_lfi
   USE MODE_IO_MANAGE_STRUCT,    ONLY: IO_FILE_ADD2LIST, IO_FILE_FIND_BYNAME
   use mode_io_tools,            only: io_rank
+  use mode_tools,               only: upcase
 
     TYPE(TFILEDATA), INTENT(INOUT)         :: TPFILE
     INTEGER,         INTENT(OUT)           :: IOSTAT
@@ -194,7 +178,7 @@ CONTAINS
     IF (PRESENT(MODE)) THEN 
        YMODE = MODE
        YMODE = UPCASE(TRIM(ADJUSTL(YMODE)))
-    ELSE 
+    ELSE
        YMODE = 'GLOBAL'         ! Default Mode
     END IF
 

@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !#######################
 MODULE MODI_SPAWN_FIELD2
@@ -185,11 +185,11 @@ USE MODD_SPAWN
 !
 USE MODE_FIELD,           ONLY: TFIELDDATA,TYPEREAL
 USE MODE_FMREAD
-USE MODE_IO_ll,           ONLY: UPCASE
 USE MODE_ll
 USE MODE_MODELN_HANDLER
 USE MODE_MPPDB
 USE MODE_THERMO
+USE MODE_TOOLS,           ONLY: UPCASE
 !
 USE MODI_BIKHARDT
 !

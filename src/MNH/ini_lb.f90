@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -132,6 +132,7 @@ SUBROUTINE INI_LB(TPINIFILE,OLSOURCE,KSV,                          &
 !!      J.-P. Pinty     09/02/16    Add LIMA that is LBC for CCN and IFN
 !!      M.Leriche       09/02/16    Treat gas and aq. chemicals separately
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 14/02/2019: move UPCASE function to tools.f90
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -158,6 +159,7 @@ USE MODD_SALT
 USE MODE_FIELD,           ONLY: TFIELDDATA,TYPELOG,TYPEREAL
 USE MODE_FMREAD
 USE MODE_MSG
+USE MODE_TOOLS, ONLY: UPCASE
 !
 IMPLICIT NONE
 !
@@ -1623,27 +1625,7 @@ IF (OLSOURCE) THEN
       PLBYSVM(:,:,:,JSV) = (PLBYSVM(:,:,:,JSV) - PLBYSVMM(:,:,:,JSV))   / PLENG 
     ENDIF
   END DO
-! 
+!
 ENDIF
-
-CONTAINS
-FUNCTION UPCASE(HSTRING)
-
-CHARACTER(LEN=*)            :: HSTRING
-CHARACTER(LEN=LEN(HSTRING)) :: UPCASE
-
-INTEGER :: JC
-INTEGER, PARAMETER :: IAMIN = IACHAR("a")
-INTEGER, PARAMETER :: IAMAJ = IACHAR("A")
-
-DO JC=1,LEN(HSTRING)
-  IF (HSTRING(JC:JC) >= "a" .AND. HSTRING(JC:JC) <= "z") THEN
-      UPCASE(JC:JC) = ACHAR(IACHAR(HSTRING(JC:JC)) - IAMIN + IAMAJ)
-  ELSE
-      UPCASE(JC:JC) = HSTRING(JC:JC)
-  END IF
-END DO
-
-END FUNCTION UPCASE
 !
 END SUBROUTINE INI_LB
