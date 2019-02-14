@@ -9,14 +9,13 @@
 !
 INTERFACE
 !
-    SUBROUTINE INI_RADIATIONS_ECMWF(HINIFILE,                         &
+    SUBROUTINE INI_RADIATIONS_ECMWF(                                  &
          PZHAT, PPABST, PTHT, PTSRAD, PLAT, PLON, TPDTCUR, TPDTEXP,   &
          HLW, KDLON, KFLEV, KFLUX, KRAD, KSWB, HAER, KAER, KSTATM,    &
          PSTATM, PSEA, PTOWN, PBARE, POZON, PAER, PDST_WL, OSUBG_COND )
 !
 USE MODD_TYPE_DATE
 !
-CHARACTER (LEN=*),      INTENT(IN)  :: HINIFILE  ! Name of the initial file
 CHARACTER (LEN=*),      INTENT(IN) :: HAER       ! aerosol optical thickness climatology
 CHARACTER (LEN=4),      INTENT(IN) :: HLW        ! LW scheme used
 !
@@ -59,7 +58,7 @@ END MODULE MODI_INI_RADIATIONS_ECMWF
 !
 !
 !   ###################################################################
-    SUBROUTINE INI_RADIATIONS_ECMWF(HINIFILE,                         &
+    SUBROUTINE INI_RADIATIONS_ECMWF(                                  &
          PZHAT, PPABST, PTHT, PTSRAD, PLAT, PLON, TPDTCUR, TPDTEXP,   &
          HLW, KDLON, KFLEV, KFLUX, KRAD, KSWB, HAER, KAER, KSTATM,    &
          PSTATM, PSEA, PTOWN, PBARE, POZON, PAER, PDST_WL, OSUBG_COND )
@@ -172,6 +171,7 @@ END MODULE MODI_INI_RADIATIONS_ECMWF
 !!      J.Escobar 30/03/2017  : Management of compilation of ECMWF_RAD in REAL*8 with MNH_REAL=R4
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
+!  P. Wautelet 14/02/2019: remove HINIFILE dummy argument
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -215,7 +215,6 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
-CHARACTER (LEN=*),      INTENT(IN)  :: HINIFILE  ! Name of the initial file
 CHARACTER (LEN=*),      INTENT(IN) :: HAER       ! aerosol optical thickness climatology
 CHARACTER (LEN=4),      INTENT(IN) :: HLW        ! LW scheme used
 !

@@ -280,6 +280,7 @@ END MODULE MODI_INI_MODEL_n
 !!      P.Wautelet   29/01/2019: bug: add missing zero-size allocations
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
+!  P. Wautelet 14/02/2019: remove HINIFILE dummy argument from INI_RADIATIONS_ECMWF/ECRAD
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -2241,8 +2242,7 @@ IF (CRAD   == 'ECMW') THEN
       ZBARE(:,:) = 0.
     END IF
 !
-    CALL INI_RADIATIONS_ECMWF (TPINIFILE%CNAME,                                        &
-                               XZHAT,XPABST,XTHT,XTSRAD,XLAT,XLON,TDTCUR,TDTEXP,       &
+    CALL INI_RADIATIONS_ECMWF (XZHAT,XPABST,XTHT,XTSRAD,XLAT,XLON,TDTCUR,TDTEXP,       &
                                CLW,NDLON,NFLEV,NFLUX,NRAD,NSWB_OLD,CAER,NAER,NSTATM,   &
                                XSTATM,ZSEA,ZTOWN,ZBARE,XOZON, XAER,XDST_WL, LSUBG_COND )
 !
@@ -2268,9 +2268,8 @@ ELSE IF (CRAD   == 'ECRA') THEN
       ZTOWN(:,:) = 0.
       ZBARE(:,:) = 0.
     END IF
-!   
-    CALL INI_RADIATIONS_ECRAD (TPINIFILE%CNAME,                                        &
-                               XZHAT,XPABST,XTHT,XTSRAD,XLAT,XLON,TDTCUR,TDTEXP,       &
+!
+    CALL INI_RADIATIONS_ECRAD (XZHAT,XPABST,XTHT,XTSRAD,XLAT,XLON,TDTCUR,TDTEXP,       &
                                CLW,NDLON,NFLEV,NFLUX,NRAD,NSWB_OLD,CAER,NAER,NSTATM,   &
                                XSTATM,ZSEA,ZTOWN,ZBARE,XOZON, XAER,XDST_WL, LSUBG_COND )
 
