@@ -57,6 +57,7 @@ SUBROUTINE INIT_ISBA_n (DTCO, OREAD_BUDGETC, UG, U, USS, GCP, IM, DTZ,&
 !!      P. Wautelet    16/02/2018: bug correction: allocate some work arrays to 0,1,1 instead of 0,0,1 (crash with XLF)
 !!      V.VIonnet       2017 : Blow snow
 !!      P.Tulet        06/16 : add MEGAN coupling  
+!!      J.Pianezzej    02/2019 : correction for use of MEGAN
 !!
 !-------------------------------------------------------------------------------
 !
@@ -234,7 +235,7 @@ IF (LNAM_READ) THEN
                    IM%O%NNBYEARSPINS, IM%O%NNBYEARSPINW, IM%O%LNITRO_DILU     )
  !                  
  CALL DEFAULT_CH_DEP(IM%CHI%CCH_DRY_DEP)
- CALL DEFAULT_CH_BIO_FLUX(IM%CHI%LCH_BIO_FLUX)                  
+ CALL DEFAULT_CH_BIO_FLUX(IM%CHI%LCH_BIO_FLUX,PDAILYPAR=IM%MGN%XDAILYPAR,PDAILYTEMP=IM%MGN%XDAILYTEMP)                  
  CALL DEFAULT_DIAG_ISBA(IM%ID%O%N2M, IM%ID%O%LSURF_BUDGET, IM%ID%O%L2M_MIN_ZS, IM%ID%O%LRAD_BUDGET, &
                         IM%ID%O%LCOEF, IM%ID%O%LSURF_VARS, IM%ID%DE%LSURF_EVAP_BUDGET,              &
                         IM%ID%DM%LSURF_MISC_BUDGET, IM%ID%DM%LSURF_DIAG_ALBEDO,                     &

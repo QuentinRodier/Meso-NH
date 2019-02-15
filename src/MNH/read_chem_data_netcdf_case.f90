@@ -83,6 +83,7 @@ END MODULE MODI_READ_CHEM_DATA_NETCDF_CASE
 !!      Original    23/01/12 (C. Mari) 
 !!      A. Berger   20/03/12 adapt whatever the chemical mechanism in BASIC
 !!      P. Wautelet 30/10/17 use F90 module for netCDF
+!!      J.Pianezzej 13/02/2019 : correction for use of MEGAN
 !-------------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -389,7 +390,7 @@ ELSEIF (CDUMMY1=="12") THEN
        itimeindex=2
 ELSEIF (CDUMMY1=="18") THEN
        itimeindex=3
-ELSEIF (CDUMMY1=="24") THEN
+ELSEIF ((CDUMMY1=="24").OR.(CDUMMY1=="00")) THEN
        itimeindex=4
 ENDIF
  start3d(4) = itimeindex

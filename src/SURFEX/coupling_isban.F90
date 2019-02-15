@@ -69,6 +69,7 @@ SUBROUTINE COUPLING_ISBA_n (DTCO, UG, U, USS, NAG, CHI, NCHI, MGN, MSF,  DTI, ID
 !!      P. LeMoigne  12/2014 EBA scheme update
 !!      R. Seferian  05/2015 : Add coupling fiels to vegetation_evol call
 !!      P. Tulet     06/2016 : call coupling_megan add RN leaves for MEGAN
+!!      J. Pianezzej 02/2019 : correction for use of MEGAN
 !!-------------------------------------------------------------------
 !
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
@@ -1153,6 +1154,12 @@ ENDIF
 ! --------------------------------------------------------------------------------------
 IF (CHI%SVI%NBEQ>0 .AND. CHI%LCH_BIO_FLUX) THEN
  IF ((TRIM(CHI%CPARAMBVOC) == 'MEGAN').AND.(ANY(PEK%XLAI(:)/=XUNDEF))) THEN
+
+!UPG*PT
+ WHERE (GBK%XIACAN > 2000.) ! non physical values
+  GBK%XIACAN = 0.
+ END WHERE
+!UPG*PT
 
  CALL COUPLING_MEGAN_n(MGN, CHI, GK, PEK, &
                        KYEAR, KMONTH, KDAY, PTIME, IO%LTR_ML, &

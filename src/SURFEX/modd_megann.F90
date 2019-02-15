@@ -26,6 +26,7 @@
 !!    -------------
 !!  16/07/2003 (P. Tulet)    restructured for externalization
 !!  24/05/2017 (J. Pianezze) adaptation for SurfEx v8.0
+!!  13/02/2019 (J. Pianezze) correction for use of MEGAN
 !------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -185,8 +186,8 @@ YMEGAN%LCONVERSION=.FALSE.
 YMEGAN%NVARS3D=0
 YMEGAN%N_SCON_SPC=0
 YMEGAN%XDROUGHT=0.
-YMEGAN%XDAILYPAR=0.
-YMEGAN%XDAILYTEMP=0.
+YMEGAN%XDAILYPAR=150.
+YMEGAN%XDAILYTEMP=293.
 YMEGAN%XMODPREC=0.
 IF (LHOOK) CALL DR_HOOK("MODD_MEGAN_n:MEGAN_INIT",1,ZHOOK_HANDLE)
 END SUBROUTINE MEGAN_INIT
