@@ -42,6 +42,7 @@
 !!                10/14    (C.Lac) Correction on user masks
 !!                10/16    (C.Lac) Add ground droplet deposition amount
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!                     02/2019 (C. Lac) Add rain fraction as a LES diagnostic
 !!
 !! --------------------------------------------------------------------------
 !
@@ -107,6 +108,7 @@ REAL, DIMENSION(:,:,:),   ALLOCATABLE :: ZEW
 REAL, DIMENSION(:,:,:),   ALLOCATABLE :: ZINDCLD   !indice cloud si rc>0
 REAL, DIMENSION(:,:,:),   ALLOCATABLE :: ZINDCLD2  !indice cloud rc>1E-5
 REAL, DIMENSION(:,:,:),   ALLOCATABLE :: ZCLDFR_LES! CLDFR    on LES vertical grid
+REAL, DIMENSION(:,:,:),   ALLOCATABLE :: ZRAINFR_LES! RAINFR   on LES vertical grid
 REAL, DIMENSION(:,:,:),   ALLOCATABLE :: ZMASSF    ! massflux=rho*w
 REAL, DIMENSION(:,:,:),   ALLOCATABLE :: ZREHU     ! relative humidity
 
@@ -333,12 +335,14 @@ IF (LUSERR) THEN
   ALLOCATE(ZRWP_LES(IIU,IJU))
   ALLOCATE(ZINPRR3D_LES (IIU,IJU,NLES_K))
   ALLOCATE(ZEVAP3D_LES  (IIU,IJU,NLES_K))
+  ALLOCATE(ZRAINFR_LES(IIU,IJU,NLES_K))
 ELSE
   ALLOCATE(ZRR_LES  (0,0,0))
   ALLOCATE(ZMAXWRR2D(0,0))
   ALLOCATE(ZRWP_LES(0,0))
   ALLOCATE(ZINPRR3D_LES(0,0,0))
   ALLOCATE(ZEVAP3D_LES(0,0,0))
+  ALLOCATE(ZRAINFR_LES(0,0,0))
 END IF
 IF (LUSERI) THEN
   ALLOCATE(ZRI_LES    (IIU,IJU,NLES_K))
@@ -554,6 +558,7 @@ IF (LUSERR) THEN
   CALL LES_VER_INT(     XRT(:,:,:,IRR)  ,ZRR_LES )
   CALL LES_VER_INT(     XINPRR3D(:,:,:), ZINPRR3D_LES)
   CALL LES_VER_INT(    XEVAP3D(:,:,:), ZEVAP3D_LES)
+  CALL LES_VER_INT( XRAINFR(:,:,:)  ,ZRAINFR_LES )
 END IF
 IF (LUSERC) THEN
     DO JJ=1,IJU
@@ -779,6 +784,8 @@ END IF
                      XLES_ACPRR(NLES_CURRENT_TCOUNT)    )
 !   conversion de m en mm
     XLES_ACPRR(NLES_CURRENT_TCOUNT)=XLES_ACPRR(NLES_CURRENT_TCOUNT)*1000.
+    CALL LES_MEAN_ll ( ZRAINFR_LES, LLES_CURRENT_CART_MASK,            &
+                    XLES_MEAN_RF(:,NLES_CURRENT_TCOUNT,1)        )
 
   ENDIF
 !
@@ -1041,6 +1048,7 @@ DEALLOCATE(ZINDCLD2  )
 DEALLOCATE(ZINDCLD2D )
 DEALLOCATE(ZINDCLD2D2)
 DEALLOCATE(ZCLDFR_LES)
+DEALLOCATE(ZRAINFR_LES)
 DEALLOCATE(ZMASSF    )  
 DEALLOCATE(ZTEMP     )
 DEALLOCATE(ZREHU     )
