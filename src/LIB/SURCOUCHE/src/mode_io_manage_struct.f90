@@ -15,6 +15,7 @@
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
 !  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
 !                          (nsubfiles_ioz is now determined in IO_FILE_ADD2LIST)
+!  P. Wautelet 18/02/2019: bugfixes for nsubfiles_ioz
 !-----------------------------------------------------------------
 MODULE MODE_IO_MANAGE_STRUCT
 !
@@ -584,8 +585,8 @@ SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN)
         !
         !Create file structures if Z-splitted files
         IF (NB_PROCIO_W>1) THEN
+          TPBAKOUTN(IPOS)%TFILE%NSUBFILES_IOZ = NB_PROCIO_W
           ALLOCATE(TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(NB_PROCIO_W))
-!           ALLOCATE(TPBAKOUTN(IPOS)%TFILE_IOZ(NB_PROCIO_W))
           IF (NB_PROCIO_W>999) THEN
             CALL PRINT_MSG(NVERB_FATAL,'IO','POPULATE_STRUCT','more than 999 z-levels')
           END IF
@@ -800,17 +801,20 @@ else
       ! MNH/MNHBACKUP/MNHOUTPUT
       !Remark: 'MNH' is more general than MNHBACKUP and could be in fact a MNHBACKUP file
       gsplit_ioz = .true.
-      select case (hmode)
-        case('READ')
-          tpfile%nsubfiles_ioz = nb_procio_r
-        case('WRITE')
-          tpfile%nsubfiles_ioz = nb_procio_w
-      end select
-      if (tpfile%nsubfiles_ioz == 1) tpfile%nsubfiles_ioz = 0
     end if
   end if
 end if
-!
+
+if ( gsplit_ioz ) then
+  select case (hmode)
+    case('READ')
+      tpfile%nsubfiles_ioz = nb_procio_r
+    case('WRITE')
+      tpfile%nsubfiles_ioz = nb_procio_w
+  end select
+  if (tpfile%nsubfiles_ioz == 1) tpfile%nsubfiles_ioz = 0
+end if
+
 SELECT CASE(TPFILE%CTYPE)
   !Chemistry input files
   CASE('CHEMINPUT')
