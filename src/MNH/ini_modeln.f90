@@ -281,6 +281,7 @@ END MODULE MODI_INI_MODEL_n
 !  P. Wautelet 29/01/2019: bug: add missing zero-size allocations
 !  P. Wautelet 13/02/2019: initialize XALBUV even if no radiation (needed in CH_INTERP_JVALUES)
 !  P. Wautelet 13/02/2019: removed PPABSM and PTSTEP dummy arguments of READ_FIELD
+!!                   02/2019 C.Lac add rain fraction as an output field
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -835,8 +836,10 @@ END IF
 !
 IF (NRR>1) THEN
   ALLOCATE(XCLDFR(IIU,IJU,IKU))
+  ALLOCATE(XRAINFR(IIU,IJU,IKU))
 ELSE
   ALLOCATE(XCLDFR(0,0,0))
+  ALLOCATE(XRAINFR(0,0,0))
 END IF
 !
 ALLOCATE(XSVT(IIU,IJU,IKU,NSV)) ;     XSVT  = 0.

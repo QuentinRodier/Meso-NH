@@ -49,6 +49,7 @@
 !!                               for Theta and r (noted _CLD)
 !!                     04/16    (M.Mazoyer) New supersaturation fields
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!                   02/2019 C.Lac add rain fraction as an output field
 !!
 !-------------------------------------------------------------------------------
 !
@@ -133,6 +134,7 @@ REAL, DIMENSION(:,:,:), POINTER :: XSRC=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XSRCT=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XSIGS=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XCLDFR=>NULL()
+REAL, DIMENSION(:,:,:), POINTER :: XRAINFR=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XCIT=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XTHM=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XPABSM=>NULL()

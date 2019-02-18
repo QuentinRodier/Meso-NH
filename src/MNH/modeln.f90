@@ -253,6 +253,7 @@ END MODULE MODI_MODEL_n
 !!                   01/2018 (C.Lac) Add VISCOSITY
 !!  Philippe Wautelet: 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll
 !                                  to allow to disable writes (for bench purposes)
+!!                   02/2019 C.Lac add rain fraction as an output field
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -1802,7 +1803,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           XINPRC,ZINPRC3D,XINPRR, XINPRR3D, XEVAP3D,             &
                           XINPRS,ZINPRS3D, XINPRG,ZINPRG3D, XINPRH,ZINPRH3D,   &
                           XSOLORG, XMI,ZSPEEDC, ZSPEEDR, ZSPEEDS, ZSPEEDG, ZSPEEDH, &
-                          XINDEP, XSUPSAT, XNACT, XNPRO,XSSPRO,                &
+                          XINDEP, XSUPSAT, XNACT, XNPRO,XSSPRO, XRAINFR,       &
                           ZSEA, ZTOWN                                          )
     DEALLOCATE(ZTOWN)
   ELSE
@@ -1820,7 +1821,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           XINPRC,ZINPRC3D,XINPRR, XINPRR3D, XEVAP3D,             &
                           XINPRS,ZINPRS3D, XINPRG,ZINPRG3D, XINPRH,ZINPRH3D,   &
                           XSOLORG, XMI,ZSPEEDC, ZSPEEDR, ZSPEEDS, ZSPEEDG, ZSPEEDH, &
-                          XINDEP, XSUPSAT, XNACT, XNPRO,XSSPRO                 )
+                          XINDEP, XSUPSAT, XNACT, XNPRO,XSSPRO, XRAINFR        )
   END IF
   XRTHS_CLD  = XRTHS - XRTHS_CLD
   XRRS_CLD   = XRRS  - XRRS_CLD

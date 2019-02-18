@@ -66,6 +66,7 @@ END MODULE MODI_DEALLOCATE_MODEL1
 !!                   06/2012 M.Tomasini add 2D nesting ADVFRC
 !!                   10/2016 M.Mazoyer New KHKO output fields
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!                   02/2019 C.Lac add rain fraction as an output field
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -185,6 +186,10 @@ END IF
 !
 IF ( ASSOCIATED(XCLDFR) .AND. KCALL==2 ) THEN
   DEALLOCATE(XCLDFR)
+END IF   
+!
+IF ( ASSOCIATED(XRAINFR) .AND. KCALL==2 ) THEN
+  DEALLOCATE(XRAINFR)
 END IF   
 !
 IF ( KCALL == 3 ) THEN

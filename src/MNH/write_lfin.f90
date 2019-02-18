@@ -169,7 +169,7 @@ END MODULE MODI_WRITE_LFIFM_n
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!       V. Vionnet    07/2017, add blowing snow variables
 !!       P.Wautelet    11/01/2019: bug correction in write XBL_DEPTH->XSBL_DEPTH
-!!                   
+!!       C.Lac         18/02/2019: add rain fraction as an output field              
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1517,6 +1517,7 @@ ENDIF
 !
 IF (NRR > 1 .AND. CPROGRAM == 'MESONH') THEN
   CALL IO_WRITE_FIELD(TPFILE,'CLDFR',XCLDFR)
+  CALL IO_WRITE_FIELD(TPFILE,'RAINFR',XRAINFR)
 END IF
 !
 !
