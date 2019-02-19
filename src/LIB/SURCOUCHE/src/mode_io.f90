@@ -3,32 +3,32 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!!    Authors
-!!    -------
-!
-!     D. Gazen
-!     Juan 19/08/2005: bug argument optinonel ACCESS --> YACCESS 
-!     Juan 22/05/2008: bug mode SPECIFIC in OPEN_ll 
-!     Juan 05/11/2009: allow JPMAX_UNIT=48 open files 
-!     J.Escobar   18/10/10   bug with PGI compiler on ADJUSTL
-!     P. Wautelet 04/02/2016: bug with DELIM='NONE' and GCC 5.2/5.3
-!     D.Gazen   : avril 2016 change error message 
-!     P. Wautelet : may 2016: use netCDF Fortran module
-!     P. Wautelet : July 2016: added type OUTBAK
-!     Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!     J. Pianezze 01/08/2016  add LOASIS flag
-!     Philippe Wautelet: 13/12/2018: moved some operations to new mode_io_*_nc4 modules
-!     Philippe Wautelet: 10/01/2019: bug correction: close correctly Z-split files
-!     Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
-!                                    + move IOFREEFLU and IONEWFLU to mode_io_file_lfi.f90
-!                                    + move management of NNCID and NLFIFLU to the nc4 and lfi subroutines
-!     Philippe Wautelet: 10/01/2019: bug: modify some metadata before open calls
-!     Philippe Wautelet: 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll to allow
-!                                    to disable writes (for bench purposes)
+! Author(s)
+!  D. Gazen
+! Modifications:
+!  J. Escobar  19/08/2005: bug argument optinonel ACCESS --> YACCESS
+!  J. Escobar  22/05/2008: bug mode SPECIFIC in OPEN_ll
+!  J. Escobar  05/11/2009: allow JPMAX_UNIT=48 open files
+!  J. Escobar  18/10/2010: bug with PGI compiler on ADJUSTL
+!  P. Wautelet 04/02/2016: bug with DELIM='NONE' and GCC 5.2/5.3
+!  D.Gazen     April 2016: change error message
+!  P. Wautelet May 2016  : use netCDF Fortran module
+!  P. Wautelet July 2016 : added type OUTBAK
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  J. Pianezze 01/08/2016: add LOASIS flag
+!  P. Wautelet 13/12/2018: moved some operations to new mode_io_*_nc4 modules
+!  P. Wautelet 10/01/2019: bug correction: close correctly Z-split files
+!  P. Wautelet 10/01/2019: use NEWUNIT argument of OPEN
+!                          + move IOFREEFLU and IONEWFLU to mode_io_file_lfi.f90
+!                          + move management of NNCID and NLFIFLU to the nc4 and lfi subroutines
+!  P. Wautelet 10/01/2019: bug: modify some metadata before open calls
+!  P. Wautelet 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll to allow
+!                                 to disable writes (for bench purposes)
 !  P. Wautelet 06/02/2019: simplify OPEN_ll and do somme assignments at a more logical place
 !  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
 !                          (nsubfiles_ioz is now determined in IO_FILE_ADD2LIST)
 !  P. Wautelet 14/02/2019: move UPCASE function to tools.f90
+!  P. Wautelet 19/02/2019: simplification/restructuration/cleaning of open/close subroutines (TBCto be continued)
 !
 !-----------------------------------------------------------------
 MODULE MODE_IO_ll
@@ -50,7 +50,7 @@ MODULE MODE_IO_ll
 CONTAINS 
 
   SUBROUTINE SET_CONFIO_ll()
-    USE MODN_CONFIO
+    USE MODN_CONFIO, only: LCDF4, LLFIOUT, LLFIREAD
 
     !Use MODN_CONFIO namelist variables
     CALL SET_CONFIO_INTERN_ll(LCDF4, LLFIOUT, LLFIREAD)
@@ -58,6 +58,7 @@ CONTAINS
 
   SUBROUTINE SET_CONFIO_INTERN_ll(OIOCDF4, OLFIOUT, OLFIREAD)
     USE MODD_IO_ll, ONLY : LIOCDF4, LLFIOUT, LLFIREAD, LIO_ALLOW_NO_BACKUP, LIO_NO_WRITE
+
     LOGICAL, INTENT(IN) :: OIOCDF4, OLFIOUT, OLFIREAD
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','SET_CONFIO_ll','called')
@@ -91,12 +92,14 @@ CONTAINS
   END SUBROUTINE SET_CONFIO_INTERN_ll
 
   SUBROUTINE INITIO_ll()
+    USE MODD_IO_ll,     only: CNULLFILE, GSMONOPROC, ISIOP, ISNPROC, ISP, NNULLUNIT
+
     USE MODE_MNH_WORLD, ONLY: INIT_NMNH_COMM_WORLD
-    USE MODD_IO_ll
-    USE MODE_FIELD
+
     IMPLICIT NONE
 
     INTEGER :: IERR, IOS
+    character(len=256) :: yioerrmsg
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','INITIO_ll','called')
 
@@ -118,27 +121,20 @@ CONTAINS
 
     !! Open /dev/null for GLOBAL mode
 #if defined(DEV_NULL)
-    OPEN(NEWUNIT=NNULLUNIT,FILE=CNULLFILE  ,ACTION='WRITE',IOSTAT=IOS)
+    OPEN(NEWUNIT=NNULLUNIT,FILE=CNULLFILE  ,ACTION='WRITE',IOSTAT=IOS, IOMSG=yioerrmsg)
 #else
-    OPEN(NEWUNIT=NNULLUNIT,STATUS='SCRATCH',ACTION='WRITE',IOSTAT=IOS)
+    OPEN(NEWUNIT=NNULLUNIT,STATUS='SCRATCH',ACTION='WRITE',IOSTAT=IOS, IOMSG=yioerrmsg)
 #endif
-    IF (IOS > 0) THEN
-       CALL PRINT_MSG(NVERB_FATAL,'IO','INITIO_ll','error opening /dev/null')
+    IF (IOS /= 0) THEN
+       CALL PRINT_MSG(NVERB_FATAL,'IO','INITIO_ll','problem opening /dev/null :'//trim(yioerrmsg))
     END IF
   END SUBROUTINE INITIO_ll
 
-  SUBROUTINE OPEN_ll(&
-       TPFILE,  &
-       IOSTAT,  &
-       MODE,    &
-       STATUS,  &
-       POSITION,&
-       DELIM,    &
-       HPROGRAM_ORIG)
+
+  SUBROUTINE OPEN_ll(TPFILE, KRESP, HMODE, HSTATUS, HPOSITION, HDELIM, HPROGRAM_ORIG)
 
   USE MODD_IO_ll
 #if defined(MNH_IOCDF4)
-  USE MODD_NETCDF,              ONLY:IDCDF_KIND
   use mode_io_file_nc4,         only: io_create_file_nc4, io_open_file_nc4
 #endif
   use mode_io_file_lfi,         only: io_create_file_lfi, io_open_file_lfi
@@ -146,37 +142,37 @@ CONTAINS
   use mode_io_tools,            only: io_rank
   use mode_tools,               only: upcase
 
-    TYPE(TFILEDATA), INTENT(INOUT)         :: TPFILE
-    INTEGER,         INTENT(OUT)           :: IOSTAT
-    CHARACTER(len=*),INTENT(IN),  OPTIONAL :: MODE
-    CHARACTER(len=*),INTENT(IN),  OPTIONAL :: STATUS
-    CHARACTER(len=*),INTENT(IN),  OPTIONAL :: POSITION
-    CHARACTER(len=*),INTENT(IN),  OPTIONAL :: DELIM
-    CHARACTER(LEN=*),INTENT(IN),  OPTIONAL :: HPROGRAM_ORIG !To emulate a file coming from this program
+    TYPE(TFILEDATA),            INTENT(INOUT) :: TPFILE
+    INTEGER,                    INTENT(OUT)   :: KRESP
+    CHARACTER(len=*), OPTIONAL, INTENT(IN)    :: HMODE
+    CHARACTER(len=*), OPTIONAL, INTENT(IN)    :: HSTATUS
+    CHARACTER(len=*), OPTIONAL, INTENT(IN)    :: HPOSITION
+    CHARACTER(len=*), OPTIONAL, INTENT(IN)    :: HDELIM
+    CHARACTER(LEN=*), OPTIONAL, INTENT(IN)    :: HPROGRAM_ORIG !To emulate a file coming from this program
     !
     ! local var
     !
-    CHARACTER(len=5)                      :: CFILE
-    INTEGER                               :: IFILE, IRANK_PROCIO
-    CHARACTER(len=20)    :: YSTATUS
-    INTEGER              :: YRECL
-    INTEGER ,PARAMETER   :: RECL_DEF = 10000
-    CHARACTER(len=20)    :: YPOSITION
-    CHARACTER(len=20)    :: YDELIM
-    CHARACTER(len=20)    :: YACTION
-    CHARACTER(len=20)    :: YMODE
-    CHARACTER(LEN=256)   :: YIOERRMSG
-    INTEGER              :: IOS,IRESP
-    TYPE(TFILEDATA),POINTER :: TZSPLITFILE
+    INTEGER, PARAMETER :: RECL_DEF = 10000
+    !
+    CHARACTER(len=5)             :: YFILE
+    CHARACTER(len=20)            :: YSTATUS
+    CHARACTER(len=20)            :: YPOSITION
+    CHARACTER(len=20)            :: YDELIM
+    CHARACTER(len=20)            :: YACTION
+    CHARACTER(len=20)            :: YMODE
+    CHARACTER(LEN=256)           :: YIOERRMSG
     CHARACTER(LEN=:),ALLOCATABLE :: YPREFILENAME !To store the directory + filename
-    CHARACTER(LEN=:),ALLOCATABLE :: YFORSTATUS  ! Status for open of a file (for LFI) ('OLD','NEW','UNKNOWN','SCRATCH','REPLACE')
+    INTEGER                      :: IFILE, IRANK_PROCIO
+    INTEGER                      :: YRECL
+    INTEGER                      :: IOS, IRESP
+    TYPE(TFILEDATA),POINTER      :: TZSPLITFILE
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','opening '//TRIM(TPFILE%CNAME)//' for '//TRIM(TPFILE%CMODE))
 
     IOS = 0
 
-    IF (PRESENT(MODE)) THEN 
-       YMODE = MODE
+    IF (PRESENT(HMODE)) THEN
+       YMODE = HMODE
        YMODE = UPCASE(TRIM(ADJUSTL(YMODE)))
     ELSE
        YMODE = 'GLOBAL'         ! Default Mode
@@ -185,21 +181,21 @@ CONTAINS
     YACTION = TPFILE%CMODE
     YACTION = UPCASE(TRIM(ADJUSTL(YACTION)))
     IF (YACTION /= "READ" .AND. YACTION /= "WRITE") THEN
-       IOSTAT = 99
+       KRESP = 99
        TPFILE%NLU = -1
        CALL PRINT_MSG(NVERB_ERROR,'IO','OPEN_ll','action='//TRIM(YACTION)//' not supported')
        RETURN
     END IF
 
     IF (.NOT. ANY(YMODE == (/'GLOBAL     ','SPECIFIC   ', 'IO_ZSPLIT  '/))) THEN
-       IOSTAT = 99
+       KRESP = 99
        TPFILE%NLU = -1
        CALL PRINT_MSG(NVERB_ERROR,'IO','OPEN_ll','ymode='//TRIM(YMODE)//' not supported')
        RETURN
     END IF
 
-    IF (PRESENT(STATUS)) THEN
-       YSTATUS=STATUS
+    IF (PRESENT(HSTATUS)) THEN
+       YSTATUS=HSTATUS
     ELSE
        YSTATUS='UNKNOWN'
     ENDIF
@@ -210,13 +206,13 @@ CONTAINS
       YRECL = TPFILE%NRECL
     END IF
 
-    IF (PRESENT(POSITION)) THEN
-       YPOSITION=POSITION
+    IF (PRESENT(HPOSITION)) THEN
+       YPOSITION=HPOSITION
     ELSE
        YPOSITION='ASIS'
     ENDIF
-    IF (PRESENT(DELIM)) THEN
-       YDELIM=DELIM
+    IF (PRESENT(HDELIM)) THEN
+       YDELIM=HDELIM
     ELSE
        YDELIM='NONE'
     ENDIF
@@ -399,18 +395,18 @@ CONTAINS
           END IF
           DO IFILE=1,TPFILE%NSUBFILES_IOZ
              IRANK_PROCIO = 1 + IO_RANK(IFILE-1,ISNPROC,TPFILE%NSUBFILES_IOZ)
-             WRITE(CFILE ,'(".Z",i3.3)') IFILE
+             WRITE(YFILE ,'(".Z",i3.3)') IFILE
 
-             CALL IO_FILE_FIND_BYNAME(TRIM(TPFILE%CNAME)//TRIM(CFILE),TZSPLITFILE,IRESP)
+             CALL IO_FILE_FIND_BYNAME(TRIM(TPFILE%CNAME)//TRIM(YFILE),TZSPLITFILE,IRESP)
 
              IF (IRESP/=0) THEN !File not yet in filelist => add it (nothing to do if already in list)
                IF (ALLOCATED(TPFILE%CDIRNAME)) THEN
-                 CALL IO_FILE_ADD2LIST(TZSPLITFILE,TRIM(TPFILE%CNAME)//TRIM(CFILE),TPFILE%CTYPE,TPFILE%CMODE,        &
+                 CALL IO_FILE_ADD2LIST(TZSPLITFILE,TRIM(TPFILE%CNAME)//TRIM(YFILE),TPFILE%CTYPE,TPFILE%CMODE,        &
                                        HDIRNAME=TPFILE%CDIRNAME,                                                     &
                                        KLFINPRAR=TPFILE%NLFINPRAR,KLFITYPE=TPFILE%NLFITYPE,KLFIVERB=TPFILE%NLFIVERB, &
                                        HFORMAT=TPFILE%CFORMAT)
                ELSE
-                 CALL IO_FILE_ADD2LIST(TZSPLITFILE,TRIM(TPFILE%CNAME)//TRIM(CFILE),TPFILE%CTYPE,TPFILE%CMODE,        &
+                 CALL IO_FILE_ADD2LIST(TZSPLITFILE,TRIM(TPFILE%CNAME)//TRIM(YFILE),TPFILE%CTYPE,TPFILE%CMODE,        &
                                        KLFINPRAR=TPFILE%NLFINPRAR,KLFITYPE=TPFILE%NLFITYPE,KLFIVERB=TPFILE%NLFIVERB, &
                                        HFORMAT=TPFILE%CFORMAT)
                END IF
@@ -471,7 +467,7 @@ CONTAINS
 
     TPFILE%NMPICOMM = NMNH_COMM_WORLD
 
-    IOSTAT = IOS
+    KRESP = IOS
 
   CONTAINS
     FUNCTION SUFFIX(HEXT)
@@ -485,30 +481,19 @@ CONTAINS
 
   END SUBROUTINE OPEN_ll
 
-  SUBROUTINE CLOSE_ll(TPFILE,IOSTAT,HPROGRAM_ORIG)
-  USE MODD_IO_ll
 
-  USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
-  use mode_io_file_lfi,      only: io_close_file_lfi
-#if defined(MNH_IOCDF4)
-  use mode_io_file_nc4,      only: io_close_file_nc4
-  use mode_io_write_nc4,     only: io_write_coordvar_nc4
-#endif
-    TYPE(TFILEDATA),  INTENT(IN)            :: TPFILE
-    INTEGER,          INTENT(OUT), OPTIONAL :: IOSTAT
-    CHARACTER(LEN=*), INTENT(IN),  OPTIONAL :: HPROGRAM_ORIG !To emulate a file coming from this program
+  SUBROUTINE CLOSE_ll(TPFILE,KRESP)
+    USE MODD_IO_ll
+
+    TYPE(TFILEDATA),  INTENT(IN)  :: TPFILE
+    INTEGER,          INTENT(OUT) :: KRESP
 
     character(len=256)      :: yioerrmsg
-    INTEGER                 :: IERR, IGLOBALERR, IGLOBALERR2, IRESP, IRESP2
-    INTEGER                 :: IFILE
-    TYPE(TFILEDATA),POINTER :: TZFILE
+    INTEGER                 :: IRESP
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','CLOSE_ll','closing '//TRIM(TPFILE%CNAME))
 
     IRESP       = 0
-    IRESP2      = 0
-    IGLOBALERR  = 0
-    IGLOBALERR2 = 0
 
     IF (TPFILE%LMASTER) THEN
       IF (TPFILE%NLU/=-1 .AND. TPFILE%NLU/=NNULLUNIT) THEN
@@ -519,37 +504,10 @@ CONTAINS
     !Warning and not error or fatal if close fails to allow continuation of execution
     IF (IRESP/=0) CALL PRINT_MSG(NVERB_WARNING,'IO','CLOSE_ll','Problem when closing '//TRIM(TPFILE%CNAME)//': '//TRIM(YIOERRMSG))
 
-    DO IFILE=1,TPFILE%NSUBFILES_IOZ
-      TZFILE => TPFILE%TFILES_IOZ(IFILE)%TFILE
-#if defined(MNH_IOCDF4)
-      !Write coordinates variables in netCDF file
-      IF (TZFILE%CMODE == 'WRITE' .AND. (TZFILE%CFORMAT=='NETCDF4' .OR. TZFILE%CFORMAT=='LFICDF4')) THEN
-        CALL IO_WRITE_COORDVAR_NC4(TZFILE,HPROGRAM_ORIG=HPROGRAM_ORIG)
-      END IF
-#endif
-      IF (TZFILE%LMASTER) THEN
-        if (tzfile%cformat == 'LFI'     .or. tzfile%cformat == 'LFICDF4') call io_close_file_lfi(tzfile,iresp2)
-#if defined(MNH_IOCDF4)
-        if (tzfile%cformat == 'NETCDF4' .or. tzfile%cformat == 'LFICDF4') call io_close_file_nc4(tzfile,iresp2)
-#endif
-      END IF
-    END DO
-    !
-    IF (TPFILE%NSUBFILES_IOZ>0) CALL MPI_ALLREDUCE(IRESP2,IGLOBALERR2,1,MPI_INTEGER,MPI_BOR,TPFILE%NMPICOMM,IERR)
-    !
-    CALL MPI_ALLREDUCE(IRESP, IGLOBALERR, 1,MPI_INTEGER,MPI_BOR,TPFILE%NMPICOMM,IERR)
-
-    IF (PRESENT(IOSTAT)) THEN
-      IF (IGLOBALERR/=0) THEN
-        IOSTAT = IGLOBALERR
-      ELSE
-        IOSTAT = IGLOBALERR2
-      END IF
-    END IF
+    KRESP = IRESP
 
   END SUBROUTINE CLOSE_ll
-  !
-  !
+
 END MODULE MODE_IO_ll
 
 

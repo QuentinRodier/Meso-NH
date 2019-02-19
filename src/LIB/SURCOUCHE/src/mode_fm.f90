@@ -3,25 +3,26 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
+! Author(s):
+!
 ! Modifications:
-!  D.Gazen   : avril 2016 change error message
-!  P. Wautelet : may 2016: use NetCDF Fortran module
-!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!  Philippe Wautelet: 29/10/2018: better detection of older MNH version numbers
-!  Philippe Wautelet: 13/12/2018: moved some operations to new mode_io_*_nc4 modules
-!  Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN + move management
-!                                 of NNCID and NLFIFLU to the nc4 and lfi subroutines
-!  Philippe Wautelet: 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll
-!                                 to allow to disable writes (for bench purposes)
+!  D. Gazen    April 2016: change error message
+!  P. Wautelet May 2016  : use NetCDF Fortran module
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 29/10/2018: better detection of older MNH version numbers
+!  P. Wautelet 13/12/2018: moved some operations to new mode_io_*_nc4 modules
+!  P. Wautelet 10/01/2019: use NEWUNIT argument of OPEN + move management
+!                          of NNCID and NLFIFLU to the nc4 and lfi subroutines
+!  P. Wautelet 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll
+!                          to allow to disable writes (for bench purposes)
 !  P. Wautelet 06/02/2019: simplify OPEN_ll and do somme assignments at a more logical place
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
 !  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
 !                          (nsubfiles_ioz is now determined in IO_FILE_ADD2LIST)
+!  P. Wautelet 19/02/2019: simplification/restructuration/cleaning of open/close subroutines (TBCto be continued)
 !-----------------------------------------------------------------
 
 MODULE MODE_FM
-USE MODD_MPIF
-
 USE MODE_MSG
 
 IMPLICIT NONE 
@@ -34,10 +35,8 @@ PUBLIC IO_FILE_OPEN_ll, IO_FILE_CLOSE_ll
 CONTAINS 
 
 SUBROUTINE SET_FMPACK_ll(O1D,O2D,OPACK)
-USE MODD_IO_ll, ONLY : LPACK,L1D,L2D
-!JUAN
-USE MODD_VAR_ll, ONLY : IP
-!JUAN
+USE MODD_IO_ll,  ONLY: LPACK, L1D, L2D
+USE MODD_VAR_ll, ONLY: IP
 
 IMPLICIT NONE 
 
@@ -47,27 +46,27 @@ LPACK = OPACK
 L1D   = O1D
 L2D   = O2D
 
-IF ( IP .EQ. 1 ) PRINT *,'INIT L1D,L2D,LPACK = ',L1D,L2D,LPACK
+IF ( IP == 1 ) PRINT *,'INIT L1D,L2D,LPACK = ',L1D,L2D,LPACK
 
 END SUBROUTINE SET_FMPACK_ll
 
 SUBROUTINE IO_FILE_OPEN_ll(TPFILE,KRESP,HPOSITION,HSTATUS,HPROGRAM_ORIG)
 !
-USE MODD_CONF,  ONLY: CPROGRAM
-USE MODD_IO_ll, ONLY: LIO_NO_WRITE, TFILEDATA
-USE MODE_FMREAD
-USE MODE_IO_ll, ONLY : OPEN_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST,IO_FILE_FIND_BYNAME
+USE MODD_CONF,             ONLY: CPROGRAM
+USE MODD_IO_ll,            ONLY: LIO_NO_WRITE, TFILEDATA
 !
-TYPE(TFILEDATA),POINTER,INTENT(INOUT)         :: TPFILE ! File structure
-INTEGER,                INTENT(OUT), OPTIONAL :: KRESP  ! Return code
-CHARACTER(LEN=*),       INTENT(IN),  OPTIONAL :: HPOSITION
-CHARACTER(LEN=*),       INTENT(IN),  OPTIONAL :: HSTATUS
-CHARACTER(LEN=*),       INTENT(IN),  OPTIONAL :: HPROGRAM_ORIG !To emulate a file coming from this program
+USE MODE_IO_ll,            ONLY: OPEN_ll
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST, IO_FILE_FIND_BYNAME
 !
-INTEGER :: IRESP
-TYPE(TFILEDATA),POINTER :: TZFILE_DES
-TYPE(TFILEDATA),POINTER :: TZFILE_DUMMY
+TYPE(TFILEDATA), POINTER, INTENT(INOUT)         :: TPFILE ! File structure
+INTEGER,                  INTENT(OUT), OPTIONAL :: KRESP  ! Return code
+CHARACTER(LEN=*),         INTENT(IN),  OPTIONAL :: HPOSITION
+CHARACTER(LEN=*),         INTENT(IN),  OPTIONAL :: HSTATUS
+CHARACTER(LEN=*),         INTENT(IN),  OPTIONAL :: HPROGRAM_ORIG !To emulate a file coming from this program
+!
+INTEGER                  :: IRESP
+TYPE(TFILEDATA), POINTER :: TZFILE_DES
+TYPE(TFILEDATA), POINTER :: TZFILE_DUMMY
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_FILE_OPEN_ll','opening '//TRIM(TPFILE%CNAME)//' for '//TRIM(TPFILE%CMODE)// &
                ' (filetype='//TRIM(TPFILE%CTYPE)//')')
@@ -98,42 +97,42 @@ IF (IRESP/=0) CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_OPEN_ll','file '//TRIM(TP
 SELECT CASE(TPFILE%CTYPE)
   !Chemistry input files
   CASE('CHEMINPUT')
-    CALL OPEN_ll(TPFILE,IOSTAT=IRESP,POSITION='REWIND',STATUS='OLD',MODE='GLOBAL')
+    CALL OPEN_ll(TPFILE,IRESP,HPOSITION='REWIND',HSTATUS='OLD',HMODE='GLOBAL')
 
 
   !Chemistry tabulation files
   CASE('CHEMTAB')
-    CALL OPEN_ll(TPFILE,IOSTAT=IRESP,MODE='GLOBAL')
+    CALL OPEN_ll(TPFILE,IRESP,HMODE='GLOBAL')
 
 
   !GPS files
   CASE('GPS')
-    CALL OPEN_ll(TPFILE,IOSTAT=IRESP,MODE='SPECIFIC')
+    CALL OPEN_ll(TPFILE,IRESP,HMODE='SPECIFIC')
 
 
   !Meteo files
   CASE('METEO')
-   CALL OPEN_ll(TPFILE,IOSTAT=IRESP,MODE='GLOBAL')
+   CALL OPEN_ll(TPFILE,IRESP,HMODE='GLOBAL')
 
 
   !Namelist files
   CASE('NML')
-    CALL OPEN_ll(TPFILE,IOSTAT=IRESP,DELIM='QUOTE',MODE='GLOBAL')
+    CALL OPEN_ll(TPFILE,IRESP,HDELIM='QUOTE',HMODE='GLOBAL')
 
 
   !OUTPUTLISTING files
   CASE('OUTPUTLISTING')
-    CALL OPEN_ll(TPFILE,IOSTAT=IRESP,MODE='GLOBAL')
+    CALL OPEN_ll(TPFILE,IRESP,HMODE='GLOBAL')
 
 
   !SURFACE_DATA files
   CASE('SURFACE_DATA')
-    CALL OPEN_ll(TPFILE,IOSTAT=IRESP,MODE='GLOBAL')
+    CALL OPEN_ll(TPFILE,IRESP,HMODE='GLOBAL')
 
 
   !Text files
   CASE('TXT')
-    CALL OPEN_ll(TPFILE,IOSTAT=IRESP,POSITION=HPOSITION,STATUS=HSTATUS,MODE='GLOBAL')
+    CALL OPEN_ll(TPFILE,IRESP,HPOSITION=HPOSITION,HSTATUS=HSTATUS,HMODE='GLOBAL')
 
 
   CASE DEFAULT
@@ -141,7 +140,7 @@ SELECT CASE(TPFILE%CTYPE)
     IF(TPFILE%CTYPE/='MNHOUTPUT' .AND. CPROGRAM/='LFICDF') THEN
       CALL IO_FILE_ADD2LIST(TZFILE_DES,TRIM(TPFILE%CNAME)//'.des','DES',TPFILE%CMODE,TPDATAFILE=TPFILE,OOLD=.TRUE.) !OOLD=T because the file may already be in the list
       CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_FILE_OPEN_ll','OPEN_ll for '//TRIM(TPFILE%CNAME)//'.des')
-      CALL OPEN_ll(TZFILE_DES,IOSTAT=IRESP,DELIM='QUOTE')
+      CALL OPEN_ll(TZFILE_DES,IRESP,HDELIM='QUOTE')
       TZFILE_DES%LOPENED       = .TRUE.
       TZFILE_DES%NOPEN_CURRENT = TZFILE_DES%NOPEN_CURRENT + 1
       TZFILE_DES%NOPEN         = TZFILE_DES%NOPEN + 1
@@ -155,29 +154,26 @@ IF (PRESENT(KRESP)) KRESP = IRESP
 !
 END SUBROUTINE IO_FILE_OPEN_ll
 
+
 SUBROUTINE FMOPEN_ll(TPFILE,KRESP,HPROGRAM_ORIG)
-USE MODD_IO_ll,               ONLY: TFILEDATA
-USE MODE_IO_ll,               ONLY: OPEN_ll,GCONFIO
-!JUANZ
-USE MODD_CONFZ,ONLY  : NB_PROCIO_R,NB_PROCIO_W
-!JUANZ
+
+USE MODD_IO_ll,       ONLY: TFILEDATA
+
 #if defined(MNH_IOCDF4)
-USE MODD_NETCDF, ONLY:IDCDF_KIND
 use mode_io_file_nc4, only: io_create_file_nc4, io_open_file_nc4
 #endif
 use mode_io_file_lfi, only: io_create_file_lfi, io_open_file_lfi
+USE MODE_IO_ll,       ONLY: OPEN_ll, GCONFIO
 
-TYPE(TFILEDATA), INTENT(INOUT) :: TPFILE ! File structure
-INTEGER,         INTENT(OUT)   :: KRESP  ! return-code
-CHARACTER(LEN=*),INTENT(IN),  OPTIONAL :: HPROGRAM_ORIG !To emulate a file coming from this program
+TYPE(TFILEDATA),            INTENT(INOUT) :: TPFILE ! File structure
+INTEGER,                    INTENT(OUT)   :: KRESP  ! return-code
+CHARACTER(LEN=*), OPTIONAL, INTENT(IN)    :: HPROGRAM_ORIG !To emulate a file coming from this program
 !
 !   Local variables
 !
-INTEGER               :: IROWF, IRESP
+INTEGER               :: IRESP
 CHARACTER(LEN=7)      :: YACTION ! Action upon the file ('READ' or 'WRITE')
 CHARACTER(LEN=8)      :: YRESP
-INTEGER               :: IERR
-INTEGER               :: INB_PROCIO
 LOGICAL               :: GEXIST_LFI, GEXIST_NC4
 
 YACTION = TPFILE%CMODE
@@ -190,26 +186,9 @@ IF (.NOT. GCONFIO) THEN
    STOP
 END IF
 
-IROWF  = 0
 IRESP  = 0
 
-IROWF=LEN_TRIM(TPFILE%CNAME)
-
-IF (IROWF.EQ.0) THEN
-  IRESP=-45
-  GOTO 1000
-ENDIF
-
- SELECT CASE (YACTION)
- CASE('READ')
-    INB_PROCIO = NB_PROCIO_R
- CASE('WRITE')
-    INB_PROCIO = NB_PROCIO_W
- END SELECT
-
-CALL OPEN_ll(TPFILE,IOSTAT=IRESP,MODE='IO_ZSPLIT',HPROGRAM_ORIG=HPROGRAM_ORIG)
-
-IF (IRESP /= 0) GOTO 1000
+CALL OPEN_ll(TPFILE,IRESP,HMODE='IO_ZSPLIT',HPROGRAM_ORIG=HPROGRAM_ORIG)
 
 IF (TPFILE%LMASTER) THEN
   ! Proc I/O case
@@ -277,14 +256,7 @@ IF (TPFILE%CFORMAT=='LFI' .OR. TPFILE%CFORMAT=='LFICDF4') THEN
   END SELECT
 END IF
 
-! Broadcast ERROR
-CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
-IF (IRESP /= 0) GOTO 1000
-
-
-1000 CONTINUE
-
-IF (IRESP.NE.0)  THEN
+IF ( IRESP /= 0 )  THEN
   WRITE(YRESP,"( I0 )") IRESP
   CALL PRINT_MSG(NVERB_ERROR,'IO','FMOPEN_ll',TRIM(TPFILE%CNAME)//': exit with IRESP='//TRIM(YRESP))
 END IF
@@ -293,16 +265,23 @@ KRESP=IRESP
 
 END SUBROUTINE FMOPEN_ll
 
+
 SUBROUTINE IO_FILE_CLOSE_ll(TPFILE,KRESP,HPROGRAM_ORIG)
 !
-USE MODD_CONF,  ONLY: CPROGRAM
-USE MODD_IO_ll, ONLY: TFILEDATA
-USE MODE_IO_ll, ONLY : CLOSE_ll
+USE MODD_CONF,             ONLY: CPROGRAM
+USE MODD_IO_ll,            ONLY: TFILEDATA
+
+use mode_io_file_lfi,      only: io_close_file_lfi
+#if defined(MNH_IOCDF4)
+use mode_io_file_nc4,      only: io_close_file_nc4
+use mode_io_write_nc4,     only: io_write_coordvar_nc4
+#endif
+USE MODE_IO_ll,            ONLY: CLOSE_ll
 USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
 !
-TYPE(TFILEDATA),  INTENT(INOUT)         :: TPFILE ! File structure
-INTEGER,          INTENT(OUT), OPTIONAL :: KRESP  ! Return code
-CHARACTER(LEN=*), INTENT(IN),  OPTIONAL :: HPROGRAM_ORIG !To emulate a file coming from this program
+TYPE(TFILEDATA),            INTENT(INOUT) :: TPFILE ! File structure
+INTEGER,          OPTIONAL, INTENT(OUT)   :: KRESP  ! Return code
+CHARACTER(LEN=*), OPTIONAL, INTENT(IN)    :: HPROGRAM_ORIG !To emulate a file coming from this program
 !
 INTEGER                 :: IRESP, JI
 TYPE(TFILEDATA),POINTER :: TZFILE_DES
@@ -331,61 +310,10 @@ IF (TPFILE%NOPEN_CURRENT>1) THEN
 END IF
 !
 SELECT CASE(TPFILE%CTYPE)
-  !Chemistry input files
-  CASE('CHEMINPUT')
-    CALL CLOSE_ll(TPFILE,IOSTAT=IRESP)
+  CASE('CHEMINPUT','CHEMTAB','GPS','METEO','NML','OUTPUTLISTING','SURFACE_DATA','TXT')
+    CALL CLOSE_ll(TPFILE,IRESP)
     !
     TPFILE%NLU = -1
-
-
-  !Chemistry tabulation files
-  CASE('CHEMTAB')
-    CALL CLOSE_ll(TPFILE,IOSTAT=IRESP)
-    !
-    TPFILE%NLU = -1
-
-
-  !GPS files
-  CASE('GPS')
-    CALL CLOSE_ll(TPFILE,IOSTAT=IRESP)
-    !
-    TPFILE%NLU = -1
-
-
-  !Meteo files
-  CASE('METEO')
-    CALL CLOSE_ll(TPFILE,IOSTAT=IRESP)
-    !
-    TPFILE%NLU = -1
-
-
-  !Namelist files
-  CASE('NML')
-    CALL CLOSE_ll(TPFILE,IOSTAT=IRESP)
-    !
-    TPFILE%NLU = -1
-
-
-  !OUTPUTLISTING files
-  CASE('OUTPUTLISTING')
-    CALL CLOSE_ll(TPFILE,IOSTAT=IRESP)
-    !
-    TPFILE%NLU = -1
-
-
-  !SURFACE_DATA files
-  CASE('SURFACE_DATA')
-    CALL CLOSE_ll(TPFILE,IOSTAT=IRESP)
-    !
-    TPFILE%NLU = -1
-
-
-  !Text files
-  CASE('TXT')
-    CALL CLOSE_ll(TPFILE,IOSTAT=IRESP)
-    !
-    TPFILE%NLU = -1
-
 
   CASE DEFAULT
     !Do not close (non-existing) '.des' file if OUTPUT
@@ -397,15 +325,29 @@ SELECT CASE(TPFILE%CTYPE)
       TZFILE_DES%NCLOSE        = TZFILE_DES%NCLOSE + 1
       !
       IF (TZFILE_DES%NOPEN_CURRENT==0) THEN
-        CALL CLOSE_ll(TZFILE_DES,IOSTAT=IRESP)
+        CALL CLOSE_ll(TZFILE_DES,IRESP)
         TZFILE_DES%LOPENED = .FALSE.
         TZFILE_DES%NLU     = -1
       END IF
     ENDIF
     !
-    CALL FMCLOS_ll(TPFILE,KRESP=IRESP,HPROGRAM_ORIG=HPROGRAM_ORIG)
+#if defined(MNH_IOCDF4)
+    !Write coordinates variables in NetCDF file
+    IF (TPFILE%CMODE == 'WRITE' .AND. (TPFILE%CFORMAT=='NETCDF4' .OR. TPFILE%CFORMAT=='LFICDF4')) THEN
+      CALL IO_WRITE_COORDVAR_NC4(TPFILE,HPROGRAM_ORIG=HPROGRAM_ORIG)
+    END IF
+#endif
+
+    if (tpfile%lmaster) then
+      if (tpfile%cformat == 'LFI'     .or. tpfile%cformat == 'LFICDF4') call io_close_file_lfi(tpfile,iresp)
+#if defined(MNH_IOCDF4)
+      if (tpfile%cformat == 'NETCDF4' .or. tpfile%cformat == 'LFICDF4') call io_close_file_nc4(tpfile,iresp)
+#endif
+    end if
     !
-    DO JI = 1,TPFILE%NSUBFILES_IOZ
+    CALL IO_ADD2TRANSFER_LIST(TPFILE)
+    !
+    SUBFILES: DO JI = 1,TPFILE%NSUBFILES_IOZ
       TZFILE_IOZ => TPFILE%TFILES_IOZ(JI)%TFILE
       IF (.NOT.TZFILE_IOZ%LOPENED) &
         CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_CLOSE_ll','file '//TRIM(TZFILE_IOZ%CNAME)//' is not opened')
@@ -415,7 +357,19 @@ SELECT CASE(TPFILE%CTYPE)
       TZFILE_IOZ%LOPENED       = .FALSE.
       TZFILE_IOZ%NOPEN_CURRENT = 0
       TZFILE_IOZ%NCLOSE        = TZFILE_IOZ%NCLOSE + 1
-    END DO
+#if defined(MNH_IOCDF4)
+      !Write coordinates variables in netCDF file
+      IF (TZFILE_IOZ%CMODE == 'WRITE' .AND. (TZFILE_IOZ%CFORMAT=='NETCDF4' .OR. TZFILE_IOZ%CFORMAT=='LFICDF4')) THEN
+        CALL IO_WRITE_COORDVAR_NC4(TZFILE_IOZ,HPROGRAM_ORIG=HPROGRAM_ORIG)
+      END IF
+#endif
+      IF (TZFILE_IOZ%LMASTER) THEN
+        if (tzfile_ioz%cformat == 'LFI'     .or. tzfile_ioz%cformat == 'LFICDF4') call io_close_file_lfi(tzfile_ioz,iresp)
+#if defined(MNH_IOCDF4)
+        if (tzfile_ioz%cformat == 'NETCDF4' .or. tzfile_ioz%cformat == 'LFICDF4') call io_close_file_nc4(tzfile_ioz,iresp)
+#endif
+      END IF
+    END DO SUBFILES
 END SELECT
 !
 TPFILE%LOPENED       = .FALSE.
@@ -426,106 +380,53 @@ IF (PRESENT(KRESP)) KRESP=IRESP
 !
 END SUBROUTINE IO_FILE_CLOSE_ll
 
-SUBROUTINE FMCLOS_ll(TPFILE,KRESP,HPROGRAM_ORIG)
-!
-!!    MODIFICATIONS
-!!    -------------
-!
-!!      J.Escobar   18/10/10   bug with PGI compiler on ADJUSTL
-!-------------------------------------------------------------------------------
+
+subroutine IO_ADD2TRANSFER_LIST(TPFILE)
+
 USE MODD_CONF,  ONLY : CPROGRAM
 USE MODD_IO_ll, ONLY : TFILEDATA
-USE MODE_IO_ll, ONLY : CLOSE_ll,UPCASE
-USE MODI_SYSTEM_MNH
-  use mode_io_file_lfi,  only: io_close_file_lfi
-#if defined(MNH_IOCDF4)
-  use mode_io_file_nc4,  only: io_close_file_nc4
-  use mode_io_write_nc4, only: io_write_coordvar_nc4
-#endif
-TYPE(TFILEDATA),      INTENT(INOUT)         :: TPFILE ! File structure
-INTEGER,              INTENT(OUT)           :: KRESP   ! return-code if problems araised
-CHARACTER(LEN=*),     INTENT(IN),  OPTIONAL :: HPROGRAM_ORIG !To emulate a file coming from this program
 
-INTEGER                 :: IRESP,IROWF
-CHARACTER(LEN=28)       :: YFILEM  ! name of the file
-CHARACTER(LEN=8)        :: YRESP
-CHARACTER(LEN=10)       :: YCPIO
-CHARACTER(LEN=14)       :: YTRANS
-CHARACTER(LEN=100)      :: YCOMMAND
-INTEGER                 :: IERR, IFITYP
-INTEGER, SAVE           :: ICPT=0
+USE MODI_SYSTEM_MNH
+
+TYPE(TFILEDATA), INTENT(INOUT) :: TPFILE ! File structure
+
+CHARACTER(len=:),allocatable :: YFILEM  ! name of the file
+CHARACTER(len=:),allocatable :: YCPIO
+CHARACTER(len=:),allocatable :: YTRANS
+CHARACTER(LEN=100)           :: YCOMMAND
+INTEGER, SAVE                :: ICPT = 0
 
 YFILEM  = TPFILE%CNAME
 
-CALL PRINT_MSG(NVERB_DEBUG,'IO','FMCLOS_ll','closing '//TRIM(YFILEM))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_ADD2TRANSFER_LIST','called for '//TRIM(YFILEM))
 
-IRESP  = 0
-IROWF  = 0
-
-IROWF=LEN_TRIM(YFILEM)
-
-IF (IROWF.EQ.0) THEN
-  IRESP=-59
-  GOTO 1000
-ENDIF
-
-#if defined(MNH_IOCDF4)
-!Write coordinates variables in NetCDF file
-IF (TPFILE%CMODE == 'WRITE' .AND. (TPFILE%CFORMAT=='NETCDF4' .OR. TPFILE%CFORMAT=='LFICDF4')) THEN
-  CALL IO_WRITE_COORDVAR_NC4(TPFILE,HPROGRAM_ORIG=HPROGRAM_ORIG)
-END IF
-#endif
-
-IF (TPFILE%LMASTER) THEN
-  if (tpfile%cformat == 'LFI'     .or. tpfile%cformat == 'LFICDF4') call io_close_file_lfi(tpfile,iresp)
-#if defined(MNH_IOCDF4)
-  if (tpfile%cformat == 'NETCDF4' .or. tpfile%cformat == 'LFICDF4') call io_close_file_nc4(tpfile,iresp)
-#endif
-  IF (IRESP == 0 .AND. CPROGRAM/='LFICDF') THEN
-    !! Write in pipe
+IF (TPFILE%LMASTER .AND. CPROGRAM/='LFICDF') THEN
+  !! Write in pipe
 #if defined(MNH_SX5)
-    YTRANS='nectransfer.x'
+  YTRANS='nectransfer.x'
 #else
-    YTRANS='xtransfer.x'
+  YTRANS='xtransfer.x'
 #endif
-    IFITYP = TPFILE%NLFITYPE
 
-    SELECT CASE (IFITYP)
-    CASE(:-1)
-      IRESP=-66
-      GOTO 500
+  SELECT CASE (TPFILE%NLFITYPE)
+    CASE(:-1,3:)
+      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_ADD2TRANSFER_LIST',TRIM(YFILEM)//': incorrect NLFITYPE')
     CASE(0)
       YCPIO='NIL'
     CASE(1)
       YCPIO='MESONH'
     CASE(2)
-      CALL PRINT_MSG(NVERB_INFO,'IO','FMCLOS_ll','file '//TRIM(YFILEM)//' not transferred')
-      GOTO 500
-    CASE(3:)
-      IRESP=-66
-      GOTO 500
-    END SELECT
+      CALL PRINT_MSG(NVERB_INFO,'IO','IO_ADD2TRANSFER_LIST','file '//TRIM(YFILEM)//' not transferred')
+  END SELECT
+
+  if (TPFILE%NLFITYPE==0 .or. TPFILE%NLFITYPE==1) then
     ICPT=ICPT+1
-    WRITE (YCOMMAND,'(A," ",A," ",A," >> OUTPUT_TRANSFER",I3.3,"  2>&1 &")') TRIM(YTRANS),TRIM(YCPIO),TRIM(YFILEM),ICPT
-    CALL PRINT_MSG(NVERB_INFO,'IO','FMCLOS_ll','YCOMMAND='//TRIM(YCOMMAND))
+    WRITE (YCOMMAND,'(A," ",A," ",A," >> OUTPUT_TRANSFER",I3.3,"  2>&1 &")') YTRANS,YCPIO,TRIM(YFILEM),ICPT
+    CALL PRINT_MSG(NVERB_INFO,'IO','IO_ADD2TRANSFER_LIST','YCOMMAND='//TRIM(YCOMMAND))
     CALL SYSTEM_MNH(YCOMMAND)
-  END IF
+  end if
 END IF
 
-500 CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
-IF (IRESP /= 0) GOTO 1000
-
-CALL CLOSE_ll(TPFILE,IOSTAT=IRESP)
-
-1000 CONTINUE
-
-IF (IRESP.NE.0)  THEN
-  WRITE(YRESP,"( I0 )") IRESP
-  CALL PRINT_MSG(NVERB_ERROR,'IO','FMCLOS_ll',TRIM(YFILEM)//': exit with IRESP='//TRIM(YRESP))
-END IF
-
-KRESP=IRESP
-
-END SUBROUTINE FMCLOS_ll
+end subroutine IO_ADD2TRANSFER_LIST
 
 END MODULE MODE_FM
