@@ -176,6 +176,11 @@ GRIBAPI_CONF= --host=powerpc64-bgq-linux
 #if MNH_COMPRESS exists => compile the COMPRESS library (for LFI files)
 #MNH_COMPRESS=no
 #
+## S4PY flag
+#
+#if MNH_S4PY exists => compile the libs4py library (for epygram)
+#MNH_S4PY=no
+#
 ##########################################################
 #                                                        #
 # Source of MESONH PACKAGE  Distribution                 #

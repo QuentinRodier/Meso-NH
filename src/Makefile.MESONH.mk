@@ -255,6 +255,17 @@ CPPFLAGS_COMPRESS     ?= -DLITTLE_endian
 CPPFLAGS              += $(CPPFLAGS_COMPRESS)
 endif
 ##########################################################
+#           Source S4PY                                  #
+##########################################################
+ifdef MNH_S4PY
+DIR_S4PY               = LIB/s4py
+INC_S4PY               = -I$(B)$(DIR_S4PY)
+DIR_MASTER            += $(DIR_S4PY)
+OBJS_LISTE_MASTER     += init_gfortran.o
+INC                   += $(INC_S4PY)
+VPATH                 += $(DIR_S4PY)
+endif
+##########################################################
 #           Source FOREFIRE                              #
 ##########################################################
 ifdef MNH_FOREFIRE

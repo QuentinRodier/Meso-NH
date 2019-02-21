@@ -62,6 +62,11 @@ MNH_TOOLS = yes
 #if MNH_COMPRESS exists => compile the COMPRESS library (for LFI files)
 MNH_COMPRESS=yes
 #
+## S4PY flag
+#
+#if MNH_S4PY exists => compile the libs4py library (for epygram)
+MNH_S4PY=yes
+#
 ##########################################################
 #                                                        #
 # Source of MESONH PACKAGE  Distribution                 #
