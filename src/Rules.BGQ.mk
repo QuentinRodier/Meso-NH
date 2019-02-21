@@ -171,6 +171,11 @@ GRIBAPI_CONF= --host=powerpc64-bgq-linux
 #if MNH_TOOLS exists => compile the tools
 #MNH_TOOLS = no
 #
+## COMPRESS flag
+#
+#if MNH_COMPRESS exists => compile the COMPRESS library (for LFI files)
+#MNH_COMPRESS=no
+#
 ##########################################################
 #                                                        #
 # Source of MESONH PACKAGE  Distribution                 #

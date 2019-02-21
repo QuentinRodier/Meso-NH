@@ -109,6 +109,11 @@ GRIBAPI_CONF="FCFLAGS= -em -ef "
 #if MNH_TOOLS exists => compile the tools
 MNH_TOOLS = yes
 #
+## COMPRESS flag
+#
+#if MNH_COMPRESS exists => compile the COMPRESS library (for LFI files)
+MNH_COMPRESS=yes
+#
 ##########################################################
 #                                                        #
 # Source of MESONH PACKAGE  Distribution                 #

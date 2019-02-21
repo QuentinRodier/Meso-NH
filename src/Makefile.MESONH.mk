@@ -1,6 +1,6 @@
-#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 #MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 #MNH_LIC for details. version 1.
 ##########################################################
 #                                                        #
@@ -240,6 +240,19 @@ INC                 += $(INC_NEWLFI)
 VPATH               += $(DIR_NEWLFI)
 #VER_NEWLFI=
 #ARCH_XYZ    := $(ARCH_XYZ)-$(VER_NEWLFI)
+endif
+##########################################################
+#           Source COMPRESS                              #
+##########################################################
+ifdef MNH_COMPRESS
+DIR_COMPRESS           = ../LIBTOOLS/lib/COMPRESS/src
+INC_COMPRESS           = -I$(B)$(DIR_COMPRESS)
+DIR_MASTER            += $(DIR_COMPRESS)
+OBJS_LISTE_MASTER     += bitbuff.o nearestpow2.o
+INC                   += $(INC_COMPRESS)
+VPATH                 += $(DIR_COMPRESS)
+CPPFLAGS_COMPRESS     ?= -DLITTLE_endian
+CPPFLAGS              += $(CPPFLAGS_COMPRESS)
 endif
 ##########################################################
 #           Source FOREFIRE                              #

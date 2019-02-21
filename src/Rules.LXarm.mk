@@ -116,6 +116,10 @@ MNH_TOOLS=yes
 endif
 endif
 #
+## COMPRESS flag
+#
+#if MNH_COMPRESS exists => compile the COMPRESS library (for LFI files)
+MNH_COMPRESS=yes
 #
 #
 ##########################################################

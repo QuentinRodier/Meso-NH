@@ -205,6 +205,11 @@ ifeq "$(MNH_INT)" "4"
 MNH_TOOLS=yes
 endif
 #
+## COMPRESS flag
+#
+#if MNH_COMPRESS exists => compile the COMPRESS library (for LFI files)
+MNH_COMPRESS=yes
+#
 ##########################################################
 #                                                        #
 # Source of MESONH PACKAGE  Distribution                 #
