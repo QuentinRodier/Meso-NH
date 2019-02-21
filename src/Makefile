@@ -407,7 +407,7 @@ $(OBJDIR_MASTER)/spll_lockoff.o $(OBJDIR_MASTER)/spll_lockon.o $(OBJDIR_MASTER)/
 $(OBJDIR_MASTER)/fswap8buff.o $(OBJDIR_MASTER)/spll_remark2.o
 
 libs4py.so : progmaster
-	$(F90) -shared $(LDFLAGS) -o $(OBJDIR_MASTER)/$@ $(OBJ_S4PY) $(LIBS)
+	$(CC) -shared $(LDFLAGS) -o $(OBJDIR_MASTER)/$@ $(OBJ_S4PY) $(LIBS)
 endif
 ##########################################################
 #                                                        #

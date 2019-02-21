@@ -131,5 +131,5 @@ OBJS_I4=spll_modd_netcdf.o
 $(OBJS_I4) : OPT = $(OPT_BASE_I4)
 endif
 # 
-LIST_MISMATCH=MPI_Allgatherv,MPI_Allreduce,MPI_Bcast,MPI_Bsend,MPI_Gather,MPI_Gatherv,MPI_Recv,LEPOLY
+LIST_MISMATCH=MPI_Allgatherv,MPI_Allreduce,MPI_Bcast,MPI_Bsend,MPI_Gather,MPI_Gatherv,MPI_Recv,LEPOLY,EXTRACT_BBUFF,FILL_BBUFF
 
