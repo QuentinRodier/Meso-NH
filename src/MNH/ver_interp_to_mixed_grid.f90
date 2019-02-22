@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ####################################
@@ -160,6 +160,7 @@ END MODULE MODI_VER_INTERP_TO_MIXED_GRID
 !!                      2014 (M.Faivre)
 !!                  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 22/02/2019: replace Hollerith edit descriptor (deleted from Fortran 95 standard)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -450,13 +451,13 @@ ZCOUNT   = FLOAT((IIE-IIB+1)*(IJE-IJB+1))
     WRITE(ILUOUT0,*) ' '
     WRITE(ILUOUT0,*) 'Altitude and humidity on large-scale grid (I=',IIJ(1),';J=',IIJ(2),')'
     DO JK=1,ILU
-      WRITE(ILUOUT0,'(6Hlevel ,F6.0,5H m : ,F6.2,2H %)') PZMASS_LS(IIJ(1),IIJ(2),JK),PHU_LS(IIJ(1),IIJ(2),JK)
+      WRITE(ILUOUT0,'( "level ", F6.0, " m : ", F6.2, " %" )') PZMASS_LS(IIJ(1),IIJ(2),JK),PHU_LS(IIJ(1),IIJ(2),JK)
     END DO
     !
     WRITE(ILUOUT0,*) ' '
     WRITE(ILUOUT0,*) 'Altitude and humidity on mixed grid       (I=',IIJ(1),';J=',IIJ(2),')'
     DO JK=JPVEXT+1,IKE
-      WRITE(ILUOUT0,'(6Hlevel ,F6.0,5H m : ,F6.2,2H %)') XZMASS_MX(IIJ(1),IIJ(2),JK),ZHU_MX(IIJ(1),IIJ(2),JK)
+      WRITE(ILUOUT0,'( "level ", F6.0, " m : ", F6.2, " %" )') XZMASS_MX(IIJ(1),IIJ(2),JK),ZHU_MX(IIJ(1),IIJ(2),JK)
     END DO
   END IF
 !

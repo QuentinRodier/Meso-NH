@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !########################
 MODULE MODI_SPAWN_MODEL2
@@ -191,6 +191,7 @@ END MODULE MODI_SPAWN_MODEL2
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!                    10/2016 (C.Lac) Add droplet deposition
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 22/02/2019: replace Hollerith edit descriptor (deleted from Fortran 95 standard)
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -1201,7 +1202,7 @@ IF (NVERB>=2) THEN
   WRITE(ILUOUT,*) ' '
   WRITE(ILUOUT,*) 'humidity     (I=',IIJ(1),';J=',IIJ(2),')'
   DO JK=IKB,IKE
-    WRITE(ILUOUT,'(F6.2,2H %)') ZHUT(IIJ(1),IIJ(2),JK)
+    WRITE(ILUOUT,'(F6.2," %")') ZHUT(IIJ(1),IIJ(2),JK)
   END DO
 END IF
 !*       5.8    Retrieve model thermodynamical variables :
