@@ -63,7 +63,8 @@ END MODULE MODI_BHMIE
 !!                 portable.  In event that portable version is
 !!                 needed, use src/bhmie_f77.f
 !! 93/06/01 (BTD): Changed AMAX1 to generic function MAX
-!! 22/01/2019 (P.Wautelet): correct kind of complex datatype
+!  P. Wautelet 22/01/2019: correct kind of complex datatype
+!  P. Wautelet 22/02/2019: add kind parameter for CMPLX intrinsics (if not it default to single precision)
 !!***********************************************************************
 !
 !*       0.    DECLARATIONS
@@ -151,11 +152,11 @@ ZPSI0 = COS(PSIZE_PARAM)
 ZPSI1 = SIN(PSIZE_PARAM)
 ZCHI0 =-SIN(PSIZE_PARAM)
 ZCHI1 = COS(PSIZE_PARAM)
-ZZXI1 = CMPLX(ZPSI1,-ZCHI1)
+ZZXI1 = CMPLX(ZPSI1,-ZCHI1,kind=kind(ZZXI1))
 ZONE = -1.
 !
-ZZAN1 = CMPLX(0.0,0.0)
-ZZBN1 = CMPLX(0.0,0.0)
+ZZAN1 = CMPLX(0.0d0,0.0d0,kind=kind(ZZAN1))
+ZZBN1 = CMPLX(0.0d0,0.0d0,kind=kind(ZZBN1))
 DO J = 1,ISTOP
   ZEN = FLOAT(J)
   ZFN = (2.0*ZEN+1.0)/(ZEN*(ZEN+1.0))
@@ -167,7 +168,7 @@ DO J = 1,ISTOP
 !
   ZPSI = (2.0*ZEN-1.0)*ZPSI1/PSIZE_PARAM-ZPSI0
   ZCHI = (2.0*ZEN-1.0)*ZCHI1/PSIZE_PARAM-ZCHI0
-  ZZXI = CMPLX(ZPSI,-ZCHI)
+  ZZXI = CMPLX(ZPSI,-ZCHI,kind=kind(ZZXI))
 !
 !*** Compute AN and BN:
 !
@@ -206,7 +207,7 @@ DO J = 1,ISTOP
   ZPSI1 = ZPSI
   ZCHI0 = ZCHI1
   ZCHI1 = ZCHI
-  ZZXI1 = CMPLX(ZPSI1,-ZCHI1)
+  ZZXI1 = CMPLX(ZPSI1,-ZCHI1,kind=kind(ZZXI1))
 !
 !*** Compute pi_n for next value of n
 !    For each angle J, compute pi_n+1

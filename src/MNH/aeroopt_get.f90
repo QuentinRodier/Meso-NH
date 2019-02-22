@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !        ###################
          MODULE MODI_AEROOPT_GET
@@ -68,7 +68,8 @@
 !!    ------
 !!      Benjamin Aouizerats (CNRM/GMEI)
 !!
-!!
+! Modifications:
+!  P. Wautelet 22/02/2019: add kind parameter for CMPLX intrinsics (if not it default to single precision)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -160,48 +161,48 @@
 
   DO JMDE=1,NMODE_AER
 
-      Ri(1,1)=CMPLX(1.80,-7.40E-1)
-      Ri(1,2)=CMPLX(1.80,-7.40E-1)
-      Ri(1,3)=CMPLX(1.83,-7.40E-1)
-      Ri(1,4)=CMPLX(1.88,-6.90E-1)
-      Ri(1,5)=CMPLX(1.97,-6.80E-1)
-      Ri(1,6)=CMPLX(2.10,-7.20E-1)
+      Ri(1,1)=CMPLX(1.80,-7.40E-1,kind=kind(Ri(1,1)))
+      Ri(1,2)=CMPLX(1.80,-7.40E-1,kind=kind(Ri(1,1)))
+      Ri(1,3)=CMPLX(1.83,-7.40E-1,kind=kind(Ri(1,1)))
+      Ri(1,4)=CMPLX(1.88,-6.90E-1,kind=kind(Ri(1,1)))
+      Ri(1,5)=CMPLX(1.97,-6.80E-1,kind=kind(Ri(1,1)))
+      Ri(1,6)=CMPLX(2.10,-7.20E-1,kind=kind(Ri(1,1)))
 
-      Ri(2,1)=CMPLX(1.45,-1.00E-3)
-      Ri(2,2)=CMPLX(1.45,-1.00E-3)
-      Ri(2,3)=CMPLX(1.45,-1.00E-3)
-      Ri(2,4)=CMPLX(1.46,-1.00E-3)
-      Ri(2,5)=CMPLX(1.49,-1.00E-3)
-      Ri(2,6)=CMPLX(1.42,-1.26E-2)
+      Ri(2,1)=CMPLX(1.45,-1.00E-3,kind=kind(Ri(1,1)))
+      Ri(2,2)=CMPLX(1.45,-1.00E-3,kind=kind(Ri(1,1)))
+      Ri(2,3)=CMPLX(1.45,-1.00E-3,kind=kind(Ri(1,1)))
+      Ri(2,4)=CMPLX(1.46,-1.00E-3,kind=kind(Ri(1,1)))
+      Ri(2,5)=CMPLX(1.49,-1.00E-3,kind=kind(Ri(1,1)))
+      Ri(2,6)=CMPLX(1.42,-1.26E-2,kind=kind(Ri(1,1)))
 
-      Ri(3,1)=CMPLX(1.36,-3.60E-8)
-      Ri(3,2)=CMPLX(1.34,-3.00E-9)
-      Ri(3,3)=CMPLX(1.33,-1.80E-8)
-      Ri(3,4)=CMPLX(1.33,-5.75E-7)
-      Ri(3,5)=CMPLX(1.31,-1.28E-4)
-      Ri(3,6)=CMPLX(1.42,-2.54E-1)
+      Ri(3,1)=CMPLX(1.36,-3.60E-8,kind=kind(Ri(1,1)))
+      Ri(3,2)=CMPLX(1.34,-3.00E-9,kind=kind(Ri(1,1)))
+      Ri(3,3)=CMPLX(1.33,-1.80E-8,kind=kind(Ri(1,1)))
+      Ri(3,4)=CMPLX(1.33,-5.75E-7,kind=kind(Ri(1,1)))
+      Ri(3,5)=CMPLX(1.31,-1.28E-4,kind=kind(Ri(1,1)))
+      Ri(3,6)=CMPLX(1.42,-2.54E-1,kind=kind(Ri(1,1)))
       
-      Ri(4,1)=CMPLX(1.52,-5.00E-4)
-      Ri(4,2)=CMPLX(1.52,-5.00E-4)
-      Ri(4,3)=CMPLX(1.52,-5.00E-4)
-      Ri(4,4)=CMPLX(1.52,-5.00E-4)
-      Ri(4,5)=CMPLX(1.51,-5.00E-4)
-      Ri(4,6)=CMPLX(1.35,-1.40E-2)
+      Ri(4,1)=CMPLX(1.52,-5.00E-4,kind=kind(Ri(1,1)))
+      Ri(4,2)=CMPLX(1.52,-5.00E-4,kind=kind(Ri(1,1)))
+      Ri(4,3)=CMPLX(1.52,-5.00E-4,kind=kind(Ri(1,1)))
+      Ri(4,4)=CMPLX(1.52,-5.00E-4,kind=kind(Ri(1,1)))
+      Ri(4,5)=CMPLX(1.51,-5.00E-4,kind=kind(Ri(1,1)))
+      Ri(4,6)=CMPLX(1.35,-1.40E-2,kind=kind(Ri(1,1)))
       
-      Ri(5,1)=CMPLX(1.53,-5.00E-3)
-      Ri(5,2)=CMPLX(1.53,-5.00E-3)
-      Ri(5,3)=CMPLX(1.53,-6.00E-3)
-      Ri(5,4)=CMPLX(1.52,-1.30E-2)
-      Ri(5,5)=CMPLX(1.52,-1.30E-2)
-      Ri(5,6)=CMPLX(1.45,-5.00E-1)
+      Ri(5,1)=CMPLX(1.53,-5.00E-3,kind=kind(Ri(1,1)))
+      Ri(5,2)=CMPLX(1.53,-5.00E-3,kind=kind(Ri(1,1)))
+      Ri(5,3)=CMPLX(1.53,-6.00E-3,kind=kind(Ri(1,1)))
+      Ri(5,4)=CMPLX(1.52,-1.30E-2,kind=kind(Ri(1,1)))
+      Ri(5,5)=CMPLX(1.52,-1.30E-2,kind=kind(Ri(1,1)))
+      Ri(5,6)=CMPLX(1.45,-5.00E-1,kind=kind(Ri(1,1)))
 
 
-      Ri(6,1)=CMPLX(1.448,-0.00292)
-      Ri(6,2)=CMPLX(1.448,-0.00292)
-      Ri(6,3)=CMPLX(1.4777,-0.01897)
-      Ri(6,4)=CMPLX(1.44023,-0.00116)
-      Ri(6,5)=CMPLX(1.41163,-0.00106)
-      Ri(6,6)=CMPLX(1.41163,-0.00106)
+      Ri(6,1)=CMPLX(1.448,-0.00292,kind=kind(Ri(1,1)))
+      Ri(6,2)=CMPLX(1.448,-0.00292,kind=kind(Ri(1,1)))
+      Ri(6,3)=CMPLX(1.4777,-0.01897,kind=kind(Ri(1,1)))
+      Ri(6,4)=CMPLX(1.44023,-0.00116,kind=kind(Ri(1,1)))
+      Ri(6,5)=CMPLX(1.41163,-0.00106,kind=kind(Ri(1,1)))
+      Ri(6,6)=CMPLX(1.41163,-0.00106,kind=kind(Ri(1,1)))
 
 ! Computation of the refractive index for the whole aerosol mode according to
 ! Maxwell-Garnett mixing rule
@@ -235,17 +236,18 @@
      
      
      DO JWVL=1,KSWB                    !Number of SW wavelengths
-     eps1(:,:,:)=CMPLX((Ri(1,JWVL)*VBC(:,:,:)+Ri(2,JWVL)*VOC(:,:,:)+VDDST(:,:,:)*Ri(6,JWVL))/(VBC(:,:,:)+VOC(:,:,:)))**2
-     Req(:,:,:,JWVL)=sqrt(CMPLX(eps1(:,:,:)))
+     eps1(:,:,:)=CMPLX((Ri(1,JWVL)*VBC(:,:,:)+Ri(2,JWVL)*VOC(:,:,:)+VDDST(:,:,:)*Ri(6,JWVL))/(VBC(:,:,:)+VOC(:,:,:)), &
+                       kind=kind(eps1(1,1,1)))**2
+     Req(:,:,:,JWVL)=sqrt(CMPLX(eps1(:,:,:),kind=kind(eps1(1,1,1))))
 
      WHERE (VEXTR(:,:,:).NE.0. )
      eps2(:,:,:)=CMPLX((VSOA(:,:,:)*Ri(2,JWVL)+VH2O(:,:,:)*Ri(3,JWVL)+VAM(:,:,:)*Ri(4,JWVL)&
                  +VSU(:,:,:)*Ri(4,JWVL)+VNI(:,:,:)*Ri(5,JWVL))/&
-                 (VSOA(:,:,:)+VH2O(:,:,:)+VAM(:,:,:)+VSU(:,:,:)+VNI(:,:,:)))**2
+                 (VSOA(:,:,:)+VH2O(:,:,:)+VAM(:,:,:)+VSU(:,:,:)+VNI(:,:,:)),kind=kind(eps2(1,1,1)))**2
      f1(:,:,:)=(VOC(:,:,:)+VBC(:,:,:))/(VSOA(:,:,:)+VH2O(:,:,:)+VAM(:,:,:)+VSU(:,:,:)+VNI(:,:,:)+VOC(:,:,:)+VBC(:,:,:))
      eps3(:,:,:)=CMPLX(eps2(:,:,:)*(eps1(:,:,:)+2*eps2(:,:,:)+2*f1(:,:,:)*(eps1(:,:,:)-eps2(:,:,:)))/&
-                      (eps1(:,:,:)+2*eps2(:,:,:)-f1(:,:,:)*(eps1(:,:,:)-eps2(:,:,:))))
-     Req(:,:,:,JWVL)=sqrt(CMPLX(eps3(:,:,:)))
+                      (eps1(:,:,:)+2*eps2(:,:,:)-f1(:,:,:)*(eps1(:,:,:)-eps2(:,:,:))),kind=kind(eps3(1,1,1)))
+     Req(:,:,:,JWVL)=sqrt(CMPLX(eps3(:,:,:),kind=kind(eps3(1,1,1))))
      ENDWHERE
 
      ENDDO   
@@ -254,8 +256,8 @@
                          +ZMASS(:,:,:,8,JMDE)+ZMASS(:,:,:,9,JMDE)+ZMASS(:,:,:,10,JMDE)+ZMASS(:,:,:,11,JMDE)&
                          +ZMASS(:,:,:,12,JMDE)+ZMASS(:,:,:,13,JMDE)+ZMASS(:,:,:,14,JMDE)+ZMASS(:,:,:,15,JMDE)&
                          +ZMASS(:,:,:,16,JMDE)    
-     PII(:,:,:,:) = aimag(CMPLX(Req(:,:,:,:))) 
-     PIR(:,:,:,:) = real(CMPLX(Req(:,:,:,:))) 
+     PII(:,:,:,:) = aimag(CMPLX(Req(:,:,:,:),kind=kind(PII(1,1,1,1))))
+     PIR(:,:,:,:) = real( CMPLX(Req(:,:,:,:),kind=kind(PIR(1,1,1,1))))
      !Get aerosol optical properties from look up tables
 
 

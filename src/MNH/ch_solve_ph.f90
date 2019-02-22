@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2007-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home//MESONH/MNH-V4-6-5/src/SRC_CHIMAQ/ch_solve_ph.f90
 !-----------------------------------------------------------------
 !!    #######################
       MODULE MODI_CH_SOLVE_PH
@@ -63,6 +59,7 @@ END MODULE MODI_CH_SOLVE_PH
 !!    M. Leriche 16/11/07 add sulfuric acid
 !!    J.-P. Pinty 11/07/07 add CO3-- and SO3--
 !!    M. Leriche 05/06/08 add sum of ions
+!  P. Wautelet 22/02/2019: add kind parameter for CMPLX intrinsics (if not it default to single precision)
 !!
 !!    EXTERNAL
 !!    --------
@@ -217,9 +214,7 @@ ZCOEFS(:,2) = ZCOEFS(:,2) -2.0*(K11*K21*K3*KW*K22*(C1*K12+K12*C2))
 !
 ALLOCATE(ZZCOEFS(KLW,IORDER+1))
 ALLOCATE(ZZROOTS(KLW,IORDER))
-DO JJ=1,IORDER+1
-  ZZCOEFS(:,JJ) = CMPLX(ZCOEFS(:,JJ),0.0)
-END DO
+ZZCOEFS(:,:) = CMPLX(ZCOEFS(:,:),0.0d0,kind=kind(ZCOEFS(1,1)))
 GPOLISH=.TRUE.
 !
 DO JI = 1, KLW

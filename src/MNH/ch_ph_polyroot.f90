@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2007-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -34,6 +34,7 @@ END MODULE MODI_CH_PH_POLYROOT
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    26/03/07
+!  P. Wautelet 22/02/2019: add kind parameter for CMPLX intrinsics (if not it default to single precision)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -66,10 +67,10 @@ ZZDEFLATED_COEF(:) = PPCOEF(:)
 !  First estimate of the roots
 !
 DO JJ=KORDER,1,-1
-  ZROOT = CMPLX(0.0,0.0)
+  ZROOT = CMPLX(0.0d0,0.0d0,kind=kind(ZROOT))
   CALL LAGUERRE(ZZDEFLATED_COEF, JJ, ZROOT, IITER)
   IF( ABS(AIMAG(ZROOT))<=2.0*ZEPS**(2*ABS(REAL(ZROOT))) ) THEN
-    ZROOT = CMPLX(REAL(ZROOT),0.0)
+    ZROOT = CMPLX(REAL(ZROOT,kind=kind(ZROOT)),0.0d0,kind=kind(ZROOT))
   END IF
   PPALL_ROOTS(JJ) = ZROOT
   ZB = ZZDEFLATED_COEF(JJ+1)
@@ -125,8 +126,8 @@ CONTAINS
     IITS = JITER
     ZZB  = PA(IM+1)
     ZERR = ABS(ZZB)
-    ZZD  = CMPLX(0.0,0.0)
-    ZZF  = CMPLX(0.0,0.0)
+    ZZD  = CMPLX(0.0d0,0.0d0,kind=kind(ZZD))
+    ZZF  = CMPLX(0.0d0,0.0d0,kind=kind(ZZF))
     ZABX = ABS(PX)
     DO JJ=IM,1,-1
       ZZF = PX*ZZF+ZZD
@@ -154,7 +155,7 @@ CONTAINS
       IF(MAX(ZABP,ZABM) > 0.0) THEN
         ZZDX = FLOAT(IM)/ZZGP
         ELSE
-        ZZDX = EXP(CMPLX(LOG(1.0+ZABX),FLOAT(JITER)))
+        ZZDX = EXP(CMPLX(LOG(1.0+ZABX),REAL(JITER,kind=kind(ZZDX)),kind=kind(ZZDX)))
       END IF 
     END IF
     ZZX1 = PX-ZZDX
