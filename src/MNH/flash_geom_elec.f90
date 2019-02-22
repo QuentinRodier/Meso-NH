@@ -2,6 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     #############################
       MODULE MODI_FLASH_GEOM_ELEC_n
 !     #############################
@@ -91,8 +92,9 @@ END MODULE MODI_FLASH_GEOM_ELEC_n
 !!      J.Escobar : 20/06/2018 : Correction of computation of global index I8VECT
 !!      J.Escobar : 10/12/2018 : // Correction , mpi_bcast CG & CG_POS parameter 
 !!                               & initialize INBLIGHT on all proc for filling/saving AREA* arrays
-!!      Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
-!!      Philippe Wautelet: 22/01/2019: use standard FLUSH statement instead of non standard intrinsics!!
+!  P. Wautelet 10/01/2019: use NEWUNIT argument of OPEN
+!  P. Wautelet 22/01/2019: use standard FLUSH statement instead of non standard intrinsics!!
+!  P. Wautelet 22/02/2019: use MOD intrinsics with same kind for all arguments (to respect Fortran standard)
 !-------------------------------------------------------------------------------
 !
 !*      0.      DECLARATIONS
@@ -2191,7 +2193,7 @@ DO WHILE (IM .LE. IDELTA_IND .AND. ISTOP .NE. 1)
                  IF (IRANK_LL(IORDER_LL(ICHOICE)) .EQ. IPROC) THEN
                     JK = 1 +     (I8VECT_LL(ICHOICE)-1) / ( IJU_ll*IIU_ll ) 
                     JJ = 1 + (   (I8VECT_LL(ICHOICE)-1) - IJU_ll*IIU_ll*(JK-1) ) / IIU_ll  - IYOR +1
-                    JI = 1 + MOD((I8VECT_LL(ICHOICE)-1)                          , IIU_ll) - IXOR +1
+                    JI = 1 + MOD((I8VECT_LL(ICHOICE)-1)                          , int(IIU_ll,kind(I8VECT_LL(1)))) - IXOR +1
                     !print*,"OUT => I8VECT_LL(ICHOICE)=",I8VECT_ll(ICHOICE),JI,JJ,JK,ICHOICE
                     ZFLASH(JI,JJ,JK,IL) = 2.
                  END IF
