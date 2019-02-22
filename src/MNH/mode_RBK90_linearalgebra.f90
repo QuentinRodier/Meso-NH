@@ -1,10 +1,11 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-
-!******************************************************************
-
+!-----------------------------------------------------------------
+! Modifications:
+!  P. Wautelet 22/02/2019: DOUBLE COMPLEX -> COMPLEX(kind(0.0d0)) to respect Fortran standard
+!-----------------------------------------------------------------
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ! 
 ! Linear Algebra Data and Routines File
@@ -97,7 +98,7 @@ SUBROUTINE KppDecompCmplx( JVS, IER )
   USE MODD_RBK90_JacobianSP_n
 
       INTEGER        :: IER
-      DOUBLE COMPLEX :: JVS(LU_NONZERO), W(NVAR), a
+      COMPLEX (KIND(0.0D0)) :: JVS(LU_NONZERO), W(NVAR), a
       REAL  :: b = 0.0
       INTEGER        :: k, kk, j, jj
 
@@ -243,7 +244,7 @@ SUBROUTINE KppSolveCmplx( JVS, X )
   USE MODD_RBK90_JacobianSP_n
 
       INTEGER        :: i, j
-      DOUBLE COMPLEX :: JVS(LU_NONZERO), X(NVAR), sum
+      COMPLEX (KIND(0.0D0)) :: JVS(LU_NONZERO), X(NVAR), sum
 
       DO i=1,NVAR
          DO j = LU_CROW(i), LU_DIAG(i)-1 
@@ -305,7 +306,7 @@ SUBROUTINE KppSolveTRCmplx( JVS, X )
   USE MODD_RBK90_JacobianSP_n
 
       INTEGER        :: i, j
-      DOUBLE COMPLEX :: JVS(LU_NONZERO), X(NVAR)
+      COMPLEX (KIND(0.0D0)) :: JVS(LU_NONZERO), X(NVAR)
 
       DO i=1,NVAR
         X(i) = X(i)/JVS(LU_DIAG(i))
