@@ -25,7 +25,7 @@ different norm-profile
 ===================================================================
 
 NORMINIT
-!initial values (units are par per part = MIX)
+initial values (units are par per part = MIX)
 MIX
 37
 (1X,A12,1X,E17.2)
@@ -120,9 +120,9 @@ norm-profiles to be associated
 
 SURF_RES
 surface resistances (s/m), refer to Seinfeld and Pandis, 1998, p. 975, Tab.19.2
-1
-(1X,A12,1X,F5.0)
-'NONE        '  0.0
+   1
+(A32,2E15.5)
+NONE                                0.0
 
 =====================================================================
 *** the following section will be read by ch_init_depconst.F90 ***
@@ -281,8 +281,6 @@ CON
 ================================================================
 *** the following section will be read by build_pronoslistn.F90 ***
 *** <called by ch_init_emissionn.F90>  ***
-* Format: Nom espece pronostic Meso-NH - Facteur Aggregation - NOM ESPECE EMISE 
-* expl: NO (espece Meso-NH)  0.70 (facteur aggregation) ANOX (espece emise PGD)  
 ================================================================
 
 AGREGATION
@@ -293,14 +291,11 @@ CO  1. COBB 1. COBIO 1. COAN
 NO  0.7 NOXBB 0.7 NOXAN
 NO2 0.3 NOXBB 0.3 NOXAN
 HCHO 1. CH2OBB 1. CH2OAN
-BIOL 1. ISOPBIO 1. TERPBIO
-BIOH 1. ISOPBIO 1. TERPBIO
-ETHE 1. C2H6BB 1. C2H6BIO 1. C2H6AN
-AROH 1. TOLUBB 1. TOLUAN
-AROL 1. TOLUBB 1. TOLUAN
-AROO 1. TOLUBB 1. TOLUAN
-ALD2 1. CH3CHOBB 1. CH3CHOAN
-KETL 0.33 ACETBB 0.33 ACETBIO 0.33 ACETAN 1.61 MEKBB 1.61 MEKAN
-KETH 0.33 ACETBB 0.33 ACETBIO 0.33 ACETAN 1.61 MEKBB 1.61 MEKAN
-
+BIO 1. ISOPBIO 1. TERPBIO
+ETH 1. C2H6BB 1. C2H6BIO 1. C2H6AN
+ARO 1. TOLUBB 1. TOLUAN
+ALD 1. CH3CHOBB 1. CH3CHOAN
+KET 0.33 ACETBB 0.33 ACETBIO 0.33 ACETAN 1.61 MEKBB 1.61 MEKAN
+ALKE 0.96 C2H4BB 0.96 C2H4BIO 0.96 C2H4AN 1.04 C3H6BB 1.04 C3H6BIO 1.04 C3H6AN 1.04 BUTEBB 1.04 BUTEAN
+ALKA 0.44 C3H8BB 0.44 C3H8BIO 0.44 C3H8AN 0.38 CH3OHBB 0.38 CH3OHBIO 0.38 CH3OHAN 1. BUTABB 1. BUTAAN 1. C2H5OHBB 1. C2H5OHAN
 END_AGREGATION
