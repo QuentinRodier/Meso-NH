@@ -26,10 +26,13 @@ SUBROUTINE RAIN_ICE_SLOW(OMICRO, PINVTSTEP, PRHODREF,                      &
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_BUDGET
-USE MODD_CST
-USE MODD_RAIN_ICE_DESCR
-USE MODD_RAIN_ICE_PARAM
+use MODD_BUDGET,         only: LBUDGET_RC, LBUDGET_RG, LBUDGET_RI, LBUDGET_RR, LBUDGET_RS, LBUDGET_RV, LBUDGET_TH
+use MODD_CST,            only: XALPI, XBETAI, XCI, XCPV, XGAMI, XLSTT, XMNH_HUGE_12_LOG, XP00, XRV, XTT
+use MODD_RAIN_ICE_DESCR, only: XCEXVT, XLBDAS_MAX, XLBEXG, XLBEXS, XLBG, XLBS, XRTMIN
+use MODD_RAIN_ICE_PARAM, only: X0DEPG, X0DEPS, X1DEPG, X1DEPS, XACRIAUTI, XALPHA3, XBCRIAUTI, XBETA3, XCOLEXIS, XCRIAUTI, &
+                               XEX0DEPG, XEX0DEPS, XEX1DEPG, XEX1DEPS, XEXIAGGS, XFIAGGS, XHON, XSCFAC, XTEXAUTI, XTIMAUTI
+!
+use MODI_BUDGET
 !
 IMPLICIT NONE
 !
@@ -68,7 +71,7 @@ REAL,     DIMENSION(:),     intent(OUT)   :: PLBDAG   ! Slope parameter of the g
 !
 !*       0.2  declaration of local variables
 !
-REAL, DIMENSION(size(PRHODREF)) :: ZZW ! Work array
+REAL, DIMENSION(size(PRHODREF)) :: ZZW      ! Work array
 REAL, DIMENSION(size(PRHODREF)) :: ZCRIAUTI ! Snow-to-ice autoconversion thres.
 !
 !-------------------------------------------------------------------------------

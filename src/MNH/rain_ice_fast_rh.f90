@@ -23,11 +23,15 @@ SUBROUTINE RAIN_ICE_FAST_RH(OMICRO, PRHODREF, PRVT, PRCT, PRIT, PRST, PRGT, PRHT
 !*      0. DECLARATIONS
 !          ------------
 !
-use MODD_BUDGET
-use MODD_CST
-use MODD_PARAM_ICE
-USE MODD_RAIN_ICE_DESCR
-USE MODD_RAIN_ICE_PARAM
+use MODD_BUDGET,         only: LBUDGET_RC, LBUDGET_RG, LBUDGET_RH, LBUDGET_RI, LBUDGET_RR, LBUDGET_RS, LBUDGET_TH
+use MODD_CST,            only: XCI, XCL, XCPV, XESTT, XLMTT, XLVTT, XMD, XMV, XRV, XTT
+use MODD_RAIN_ICE_DESCR, only: XBG, XBS, XCEXVT, XCXG, XCXH, XCXS, XDH, XLBEXH, XLBH, XRTMIN
+use MODD_RAIN_ICE_PARAM, only: NWETLBDAG, NWETLBDAH, NWETLBDAS, X0DEPH, X1DEPH, &
+                               XEX0DEPH, XEX1DEPH, XFGWETH, XFSWETH, XFWETH, XKER_GWETH, XKER_SWETH, &
+                               XLBGWETH1, XLBGWETH2, XLBGWETH3, XLBSWETH1, XLBSWETH2, XLBSWETH3,     &
+                               XWETINTP1G, XWETINTP1H, XWETINTP1S, XWETINTP2G, XWETINTP2H, XWETINTP2S
+!
+use MODI_BUDGET
 !
 IMPLICIT NONE
 !
@@ -65,16 +69,14 @@ REAL,     DIMENSION(:),     intent(inout) :: PUSW     ! Undersaturation over wat
 !
 !*       0.2  declaration of local variables
 !
-INTEGER :: IHAIL, IGWET
-INTEGER :: JJ
-LOGICAL, DIMENSION(size(PRHODREF)) :: GWET  ! Test where to compute wet growth
-LOGICAL, DIMENSION(size(PRHODREF)) :: GHAIL ! Test where to compute hail growth
-INTEGER, DIMENSION(:), ALLOCATABLE :: IVEC1, IVEC2       ! Vectors of indices for
-                                ! interpolations
-REAL, DIMENSION(size(PRHODREF)) :: ZZW  ! Work array
-REAL,    DIMENSION(:), ALLOCATABLE :: ZVEC1,ZVEC2,ZVEC3 ! Work vectors for
-                                ! interpolations
-REAL,     DIMENSION(size(PRHODREF),6) :: ZZW1     ! Work arrays
+INTEGER                              :: IHAIL, IGWET
+INTEGER                              :: JJ
+INTEGER, DIMENSION(:), ALLOCATABLE   :: IVEC1, IVEC2      ! Vectors of indices for interpolations
+LOGICAL, DIMENSION(size(PRHODREF))   :: GWET              ! Test where to compute wet growth
+LOGICAL, DIMENSION(size(PRHODREF))   :: GHAIL             ! Test where to compute hail growth
+REAL,    DIMENSION(:), ALLOCATABLE   :: ZVEC1,ZVEC2,ZVEC3 ! Work vectors for interpolations
+REAL,    DIMENSION(size(PRHODREF))   :: ZZW               ! Work array
+REAL,    DIMENSION(size(PRHODREF),6) :: ZZW1              ! Work arrays
 !
 !-------------------------------------------------------------------------------
 !

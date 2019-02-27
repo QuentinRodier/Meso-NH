@@ -24,120 +24,122 @@ SUBROUTINE RAIN_ICE_SEDIMENTATION_SPLIT(KIB, KIE, KJB, KJE, KKB, KKE, KKTB, KKTE
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_BUDGET, only: LBUDGET_RC, LBUDGET_RG, LBUDGET_RH, LBUDGET_RI, LBUDGET_RR, LBUDGET_RS
-USE MODD_CST, only: XCPD, XP00, XRD, XRHOLW
-USE MODD_PARAM_ICE, only: XVDEPOSC
-USE MODD_RAIN_ICE_DESCR, only: XCC,XCONC_LAND,xconc_sea,xconc_urban,XDC,XCEXVT,XALPHAC,XNUC,XALPHAC2,XNUC2, XLBEXC,XRTMIN,&
-              XLBEXC, XLBC
-USE MODD_RAIN_ICE_PARAM, only: xexsedg,xexsedh,XEXCSEDI,xexsedr,xexseds,xfsedg,xfsedh,xfsedi,xfsedr,xfseds,XFSEDC
+use MODD_BUDGET,         only: LBUDGET_RC, LBUDGET_RG, LBUDGET_RH, LBUDGET_RI, LBUDGET_RR, LBUDGET_RS
+use MODD_CST,            only: XCPD, XP00, XRD, XRHOLW
+use MODD_PARAM_ICE,      only: XVDEPOSC
+use MODD_RAIN_ICE_DESCR, only: XCC, XCONC_LAND, xconc_sea, xconc_urban, XDC, XCEXVT, &
+                               XALPHAC, XNUC, XALPHAC2, XNUC2, XLBEXC, XRTMIN, XLBEXC, XLBC
+use MODD_RAIN_ICE_PARAM, only: XEXSEDG, XEXSEDH, XEXCSEDI, XEXSEDR, XEXSEDS, &
+                               XFSEDG, XFSEDH, XFSEDI, XFSEDR, XFSEDS, XFSEDC
+!
+use MODI_BUDGET
 !
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
-INTEGER, INTENT(IN) :: KIB, KIE, KJB, KJE, KKB, KKE, KKTB, KKTE, KKT
-INTEGER,                  INTENT(IN)    :: KKL   !vert. levels type 1=MNH -1=ARO
-INTEGER,                  INTENT(IN)    :: KSPLITR ! Number of small time step
-                                      ! integration for  rain sedimendation
-REAL,                     INTENT(IN)    :: PTSTEP  ! Double Time step
-                                                   ! (single if cold start)
-INTEGER,                      INTENT(IN)              :: KRR     ! Number of moist variable
-LOGICAL,                      INTENT(IN)              :: OSEDIC  ! Switch for droplet sedim.
-LOGICAL,                      INTENT(IN)              :: ODEPOSC ! Switch for droplet depos.
-REAL, DIMENSION(:,:),         INTENT(INOUT)           :: PINPRC  ! Cloud instant precip
-REAL, DIMENSION(:,:),         INTENT(INOUT)           :: PINDEP  ! Cloud instant deposition
-REAL, DIMENSION(:,:),     INTENT(OUT)             :: PINPRR  ! Rain instant precip
-REAL, DIMENSION(:,:),     INTENT(OUT)             :: PINPRS  ! Snow instant precip
-REAL, DIMENSION(:,:),     INTENT(OUT)             :: PINPRG  ! Graupel instant precip
-REAL, DIMENSION(:,:,:), INTENT(IN)              :: PDZZ    ! Layer thikness (m)
-REAL, DIMENSION(:,:,:), INTENT(IN)              :: PRHODREF! Reference density
-REAL, DIMENSION(:,:,:), INTENT(IN)              :: PPABST  ! absolute pressure at t
-REAL, DIMENSION(:,:,:), INTENT(IN)              :: PTHT    ! Theta at time t
-REAL, DIMENSION(:,:,:), INTENT(IN)              :: PRHODJ  ! Dry density * Jacobian
-REAL, DIMENSION(:,:,:),INTENT(OUT)      :: PINPRR3D! Rain inst precip 3D
-REAL, DIMENSION(:,:,:), INTENT(INOUT)           :: PRCS    ! Cloud water m.r. source
-REAL, DIMENSION(:,:,:), INTENT(IN)              :: PRCT    ! Cloud water m.r. at t
-REAL, DIMENSION(:,:,:), INTENT(INOUT)           :: PRRS    ! Rain water m.r. source
-REAL, DIMENSION(:,:,:), INTENT(IN)              :: PRRT    ! Rain water m.r. at t
-REAL, DIMENSION(:,:,:), INTENT(INOUT)           :: PRIS    ! Pristine ice m.r. source
-REAL, DIMENSION(:,:,:), INTENT(IN)              :: PRIT    ! Pristine ice m.r. at t
-REAL, DIMENSION(:,:,:), INTENT(INOUT)           :: PRSS    ! Snow/aggregate m.r. source
-REAL, DIMENSION(:,:,:), INTENT(IN)              :: PRST    ! Snow/aggregate m.r. at t
-REAL, DIMENSION(:,:,:), INTENT(INOUT)           :: PRGS    ! Graupel m.r. source
-REAL, DIMENSION(:,:,:), INTENT(IN)              :: PRGT    ! Graupel/hail m.r. at t
-REAL, DIMENSION(:,:), OPTIONAL,INTENT(IN)         :: PSEA    ! Sea Mask
-REAL, DIMENSION(:,:), OPTIONAL,INTENT(IN)         :: PTOWN   ! Fraction that is town
-REAL, DIMENSION(:,:),         OPTIONAL, INTENT(OUT)   :: PINPRH  ! Hail instant precip
-REAL, DIMENSION(:,:,:),     OPTIONAL, INTENT(INOUT) :: PRHS    ! Hail m.r. source
-REAL, DIMENSION(:,:,:),     OPTIONAL, INTENT(IN)    :: PRHT    ! Hail m.r. at t
+INTEGER,                            INTENT(IN)    :: KIB, KIE, KJB, KJE, KKB, KKE, KKTB, KKTE, KKT
+INTEGER,                            INTENT(IN)    :: KKL   !vert. levels type 1=MNH -1=ARO
+INTEGER,                            INTENT(IN)    :: KSPLITR ! Number of small time step
+                                                             ! integration for  rain sedimendation
+REAL,                               INTENT(IN)    :: PTSTEP  ! Double Time step
+                                                            ! (single if cold start)
+INTEGER,                            INTENT(IN)    :: KRR     ! Number of moist variable
+LOGICAL,                            INTENT(IN)    :: OSEDIC  ! Switch for droplet sedim.
+LOGICAL,                            INTENT(IN)    :: ODEPOSC ! Switch for droplet depos.
+REAL, DIMENSION(:,:),               INTENT(INOUT) :: PINPRC  ! Cloud instant precip
+REAL, DIMENSION(:,:),               INTENT(INOUT) :: PINDEP  ! Cloud instant deposition
+REAL, DIMENSION(:,:),               INTENT(OUT)   :: PINPRR  ! Rain instant precip
+REAL, DIMENSION(:,:),               INTENT(OUT)   :: PINPRS  ! Snow instant precip
+REAL, DIMENSION(:,:),               INTENT(OUT)   :: PINPRG  ! Graupel instant precip
+REAL, DIMENSION(:,:,:),             INTENT(IN)    :: PDZZ    ! Layer thikness (m)
+REAL, DIMENSION(:,:,:),             INTENT(IN)    :: PRHODREF! Reference density
+REAL, DIMENSION(:,:,:),             INTENT(IN)    :: PPABST  ! absolute pressure at t
+REAL, DIMENSION(:,:,:),             INTENT(IN)    :: PTHT    ! Theta at time t
+REAL, DIMENSION(:,:,:),             INTENT(IN)    :: PRHODJ  ! Dry density * Jacobian
+REAL, DIMENSION(:,:,:),             INTENT(OUT)   :: PINPRR3D! Rain inst precip 3D
+REAL, DIMENSION(:,:,:),             INTENT(INOUT) :: PRCS    ! Cloud water m.r. source
+REAL, DIMENSION(:,:,:),             INTENT(IN)    :: PRCT    ! Cloud water m.r. at t
+REAL, DIMENSION(:,:,:),             INTENT(INOUT) :: PRRS    ! Rain water m.r. source
+REAL, DIMENSION(:,:,:),             INTENT(IN)    :: PRRT    ! Rain water m.r. at t
+REAL, DIMENSION(:,:,:),             INTENT(INOUT) :: PRIS    ! Pristine ice m.r. source
+REAL, DIMENSION(:,:,:),             INTENT(IN)    :: PRIT    ! Pristine ice m.r. at t
+REAL, DIMENSION(:,:,:),             INTENT(INOUT) :: PRSS    ! Snow/aggregate m.r. source
+REAL, DIMENSION(:,:,:),             INTENT(IN)    :: PRST    ! Snow/aggregate m.r. at t
+REAL, DIMENSION(:,:,:),             INTENT(INOUT) :: PRGS    ! Graupel m.r. source
+REAL, DIMENSION(:,:,:),             INTENT(IN)    :: PRGT    ! Graupel/hail m.r. at t
+REAL, DIMENSION(:,:),     OPTIONAL, INTENT(IN)    :: PSEA    ! Sea Mask
+REAL, DIMENSION(:,:),     OPTIONAL, INTENT(IN)    :: PTOWN   ! Fraction that is town
+REAL, DIMENSION(:,:),     OPTIONAL, INTENT(OUT)   :: PINPRH  ! Hail instant precip
+REAL, DIMENSION(:,:,:),   OPTIONAL, INTENT(INOUT) :: PRHS    ! Hail m.r. source
+REAL, DIMENSION(:,:,:),   OPTIONAL, INTENT(IN)    :: PRHT    ! Hail m.r. at t
 REAL, DIMENSION(:,:,:,:), OPTIONAL, INTENT(OUT)   :: PFPR    ! upper-air precipitation fluxes
 !
 !*       0.2  declaration of local variables
 !
 !
-INTEGER, SAVE :: IOLDALLOCC = 6000
-INTEGER, SAVE :: IOLDALLOCR = 6000
-INTEGER, SAVE :: IOLDALLOCI = 6000
-INTEGER, SAVE :: IOLDALLOCS = 6000
-INTEGER, SAVE :: IOLDALLOCG = 6000
-INTEGER, SAVE :: IOLDALLOCH = 6000
-INTEGER   :: ILENALLOCC,ILENALLOCR,ILENALLOCI,ILENALLOCS,ILENALLOCG,ILENALLOCH
-INTEGER   :: ILISTLENC,ILISTLENR,ILISTLENI,ILISTLENS,ILISTLENG,ILISTLENH
-INTEGER :: ISEDIMR,ISEDIMC, ISEDIMI, ISEDIMS, ISEDIMG, ISEDIMH
-INTEGER :: JK            ! Vertical loop index for the rain sedimentation
-INTEGER :: JN            ! Temporal loop index for the rain sedimentation
-INTEGER :: JJ            ! Loop index for the interpolation
-INTEGER :: JL
-INTEGER , DIMENSION(SIZE(PRCS)) :: IC1,IC2,IC3 ! Used to replace the COUNT
-INTEGER , DIMENSION(SIZE(PRCS)) :: IR1,IR2,IR3 ! Used to replace the COUNT
-INTEGER , DIMENSION(SIZE(PRCS)) :: IS1,IS2,IS3 ! Used to replace the COUNT
-INTEGER , DIMENSION(SIZE(PRCS)) :: II1,II2,II3 ! Used to replace the COUNT
-INTEGER , DIMENSION(SIZE(PRCS)) :: IG1,IG2,IG3 ! Used to replace the COUNT
-INTEGER , DIMENSION(SIZE(PRCS)) :: IH1,IH2,IH3 ! Used to replace the COUNT
+INTEGER, SAVE                      :: IOLDALLOCC = 6000
+INTEGER, SAVE                      :: IOLDALLOCR = 6000
+INTEGER, SAVE                      :: IOLDALLOCI = 6000
+INTEGER, SAVE                      :: IOLDALLOCS = 6000
+INTEGER, SAVE                      :: IOLDALLOCG = 6000
+INTEGER, SAVE                      :: IOLDALLOCH = 6000
+INTEGER                            :: ILENALLOCC,ILENALLOCR,ILENALLOCI,ILENALLOCS,ILENALLOCG,ILENALLOCH
+INTEGER                            :: ILISTLENC,ILISTLENR,ILISTLENI,ILISTLENS,ILISTLENG,ILISTLENH
+INTEGER                            :: ISEDIMR,ISEDIMC, ISEDIMI, ISEDIMS, ISEDIMG, ISEDIMH
+INTEGER                            :: JK            ! Vertical loop index for the rain sedimentation
+INTEGER                            :: JN            ! Temporal loop index for the rain sedimentation
+INTEGER                            :: JJ            ! Loop index for the interpolation
+INTEGER                            :: JL
+INTEGER, DIMENSION(SIZE(PRCS))     :: IC1,IC2,IC3 ! Used to replace the COUNT
+INTEGER, DIMENSION(SIZE(PRCS))     :: IR1,IR2,IR3 ! Used to replace the COUNT
+INTEGER, DIMENSION(SIZE(PRCS))     :: IS1,IS2,IS3 ! Used to replace the COUNT
+INTEGER, DIMENSION(SIZE(PRCS))     :: II1,II2,II3 ! Used to replace the COUNT
+INTEGER, DIMENSION(SIZE(PRCS))     :: IG1,IG2,IG3 ! Used to replace the COUNT
+INTEGER, DIMENSION(SIZE(PRCS))     :: IH1,IH2,IH3 ! Used to replace the COUNT
 INTEGER, DIMENSION(:), ALLOCATABLE :: ILISTR,ILISTC,ILISTI,ILISTS,ILISTG,ILISTH
 LOGICAL, DIMENSION(SIZE(PRCS,1),SIZE(PRCS,2)):: GDEP
 LOGICAL, DIMENSION(SIZE(PRCS,1),SIZE(PRCS,2),SIZE(PRCS,3)) &
-    :: GSEDIMR,GSEDIMC, GSEDIMI, GSEDIMS, GSEDIMG, GSEDIMH ! Test where to compute the SED processes
-REAL            :: ZINVTSTEP
-REAL    :: ZTSPLITR      ! Small time step for rain sedimentation
-REAL, DIMENSION(SIZE(XRTMIN))     :: ZRTMIN
+                                   :: GSEDIMR,GSEDIMC, GSEDIMI, GSEDIMS, GSEDIMG, GSEDIMH ! Test where to compute the SED processes
+REAL                               :: ZINVTSTEP
+REAL                               :: ZTSPLITR ! Small time step for rain sedimentation
+REAL,    DIMENSION(SIZE(XRTMIN))   :: ZRTMIN
 ! XRTMIN = Minimum value for the mixing ratio
 ! ZRTMIN = Minimum value for the source (tendency)
-REAL, DIMENSION(:), ALLOCATABLE :: ZRCS    ! Cloud water m.r. source
-REAL, DIMENSION(:), ALLOCATABLE :: ZRRS    ! Rain water m.r. source
-REAL, DIMENSION(:), ALLOCATABLE :: ZRIS    ! Pristine ice m.r. source
-REAL, DIMENSION(:), ALLOCATABLE :: ZRSS    ! Snow/aggregate m.r. source
-REAL, DIMENSION(:), ALLOCATABLE :: ZRGS    ! Graupel m.r. source
-REAL, DIMENSION(:), ALLOCATABLE :: ZRHS    ! Hail m.r. source
-REAL, DIMENSION(:), ALLOCATABLE :: ZRCT    ! Cloud water m.r. at t
-REAL, DIMENSION(:), ALLOCATABLE :: &
-                  ZRHODREFC,& ! RHO Dry REFerence
-                  ZRHODREFR,& ! RHO Dry REFerence
-                  ZRHODREFI,& ! RHO Dry REFerence
-                  ZRHODREFS,& ! RHO Dry REFerence
-                  ZRHODREFG,& ! RHO Dry REFerence
-                  ZRHODREFH,& ! RHO Dry REFerence
-                  ZCC,      & ! terminal velocity
-                  ZFSEDC1D, & ! For cloud sedimentation
-                  ZWLBDC,   & ! Slope parameter of the droplet  distribution
-                  ZCONC,    & ! Concentration des aerosols
-                  ZRAY1D,   & ! Mean radius
-                  ZWLBDA,   & ! Libre parcours moyen
-                  ZZT,      & ! Temperature
-                  ZPRES       ! Pressure
+REAL,    DIMENSION(:), ALLOCATABLE :: ZRCS    ! Cloud water m.r. source
+REAL,    DIMENSION(:), ALLOCATABLE :: ZRRS    ! Rain water m.r. source
+REAL,    DIMENSION(:), ALLOCATABLE :: ZRIS    ! Pristine ice m.r. source
+REAL,    DIMENSION(:), ALLOCATABLE :: ZRSS    ! Snow/aggregate m.r. source
+REAL,    DIMENSION(:), ALLOCATABLE :: ZRGS    ! Graupel m.r. source
+REAL,    DIMENSION(:), ALLOCATABLE :: ZRHS    ! Hail m.r. source
+REAL,    DIMENSION(:), ALLOCATABLE :: ZRCT    ! Cloud water m.r. at t
+REAL,    DIMENSION(:), ALLOCATABLE :: ZRHODREFC,& ! RHO Dry REFerence
+                                      ZRHODREFR,& ! RHO Dry REFerence
+                                      ZRHODREFI,& ! RHO Dry REFerence
+                                      ZRHODREFS,& ! RHO Dry REFerence
+                                      ZRHODREFG,& ! RHO Dry REFerence
+                                      ZRHODREFH,& ! RHO Dry REFerence
+                                      ZCC,      & ! terminal velocity
+                                      ZFSEDC1D, & ! For cloud sedimentation
+                                      ZWLBDC,   & ! Slope parameter of the droplet  distribution
+                                      ZCONC,    & ! Concentration des aerosols
+                                      ZRAY1D,   & ! Mean radius
+                                      ZWLBDA,   & ! Libre parcours moyen
+                                      ZZT,      & ! Temperature
+                                      ZPRES       ! Pressure
 REAL,    DIMENSION(SIZE(PRCS,1),SIZE(PRCS,2))                   &
-                                  :: ZCONC_TMP    ! Weighted concentration
-REAL, DIMENSION(SIZE(PRCS,1),SIZE(PRCS,2),SIZE(PRCS,3)) :: ZCONC3D !  droplet condensation
+                                   :: ZCONC_TMP    ! Weighted concentration
+REAL,    DIMENSION(SIZE(PRCS,1),SIZE(PRCS,2),SIZE(PRCS,3)) :: ZCONC3D !  droplet condensation
 REAL,    DIMENSION(SIZE(PRCS,1),SIZE(PRCS,2),SIZE(PRCS,3)) ::  &
-                                     ZRAY,   & ! Cloud Mean radius
-                                     ZLBC,   & ! XLBC weighted by sea fraction
-                                     ZFSEDC
+                                      ZRAY,   & ! Cloud Mean radius
+                                      ZLBC,   & ! XLBC weighted by sea fraction
+                                      ZFSEDC
 REAL,    DIMENSION(SIZE(PRCS,1),SIZE(PRCS,2),SIZE(PRCS,3))   &
-      :: ZPRCS,ZPRRS,ZPRSS,ZPRGS,ZPRHS   ! Mixing ratios created during the time step
+                                   :: ZPRCS,ZPRRS,ZPRSS,ZPRGS,ZPRHS   ! Mixing ratios created during the time step
 REAL,    DIMENSION(SIZE(PRCS,1),SIZE(PRCS,2),SIZE(PRCS,3))   &
-                                  :: ZW ! work array
+                                   :: ZW ! work array
 REAL,    DIMENSION(SIZE(PRCS,1),SIZE(PRCS,2),0:SIZE(PRCS,3)+1)   &
-                                  :: ZWSED        ! sedimentation fluxes
+                                   :: ZWSED        ! sedimentation fluxes
 !-------------------------------------------------------------------------------
 !
 !

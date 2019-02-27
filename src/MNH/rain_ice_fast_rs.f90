@@ -23,11 +23,16 @@ SUBROUTINE RAIN_ICE_FAST_RS(PTSTEP, OMICRO, PRHODREF, PRVT, PRCT, PRRT, PRST, PR
 !*      0. DECLARATIONS
 !          ------------
 !
-use MODD_BUDGET
-use MODD_CST
-use MODD_PARAM_ICE
-USE MODD_RAIN_ICE_DESCR
-USE MODD_RAIN_ICE_PARAM
+use MODD_BUDGET,         only: LBUDGET_RC, LBUDGET_RG, LBUDGET_RR, LBUDGET_RS, LBUDGET_TH
+use MODD_CST,            only: XCL, XCPV, XESTT, XLMTT, XLVTT, XMD, XMV, XRV, XTT
+use MODD_RAIN_ICE_DESCR, only: XBS, XCEXVT, XCXS, XRTMIN
+use MODD_RAIN_ICE_PARAM, only: NACCLBDAR, NACCLBDAS, NGAMINC, X0DEPS, X1DEPS, XACCINTP1R, XACCINTP1S, XACCINTP2R, XACCINTP2S, &
+                               XCRIMSG, XCRIMSS, XEX0DEPS, XEX1DEPS, XEXCRIMSG, XEXCRIMSS, XEXSRIMCG, XFRACCSS,               &
+                               XFSACCRG, XFSCVMG, XGAMINC_RIM1, XGAMINC_RIM1, XGAMINC_RIM2, XKER_RACCS,                       &
+                               XKER_RACCSS, XKER_SACCRG, XLBRACCS1, XLBRACCS2, XLBRACCS3, XLBSACCR1, XLBSACCR2, XLBSACCR3,    &
+                               XRIMINTP1, XRIMINTP2, XSRIMCG
+!
+use MODI_BUDGET
 !
 IMPLICIT NONE
 !
@@ -61,16 +66,14 @@ REAL,     DIMENSION(:),     INTENT(INOUT) :: PTHS     ! Theta source
 !
 !*       0.2  declaration of local variables
 !
-INTEGER :: IGRIM, IGACC
-INTEGER :: JJ
-LOGICAL, DIMENSION(size(PRHODREF)) :: GRIM ! Test where to compute riming
-LOGICAL, DIMENSION(size(PRHODREF)) :: GACC ! Test where to compute accretion
-INTEGER, DIMENSION(:), ALLOCATABLE :: IVEC1, IVEC2       ! Vectors of indices for
-                                ! interpolations
-REAL, DIMENSION(size(PRHODREF)) :: ZZW  ! Work array
-REAL,     DIMENSION(size(PRHODREF),4) :: ZZW1     ! Work arrays
-REAL,    DIMENSION(:), ALLOCATABLE :: ZVEC1,ZVEC2,ZVEC3 ! Work vectors for
-                                ! interpolations
+INTEGER                              :: IGRIM, IGACC
+INTEGER                              :: JJ
+INTEGER, DIMENSION(:), ALLOCATABLE   :: IVEC1, IVEC2      ! Vectors of indices for interpolations
+LOGICAL, DIMENSION(size(PRHODREF))   :: GRIM              ! Test where to compute riming
+LOGICAL, DIMENSION(size(PRHODREF))   :: GACC              ! Test where to compute accretion
+REAL,    DIMENSION(size(PRHODREF))   :: ZZW               ! Work array
+REAL,    DIMENSION(:), ALLOCATABLE   :: ZVEC1,ZVEC2,ZVEC3 ! Work vectors for interpolations
+REAL,    DIMENSION(size(PRHODREF),4) :: ZZW1              ! Work arrays
 !-------------------------------------------------------------------------------
 !
 !*       5.1    cloud droplet riming of the aggregates

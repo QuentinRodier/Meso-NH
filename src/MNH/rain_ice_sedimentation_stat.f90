@@ -25,11 +25,15 @@ SUBROUTINE RAIN_ICE_SEDIMENTATION_STAT( KIB, KIE, KJB, KJE, KKB, KKE, KKTB, KKTE
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_BUDGET
-USE MODD_CST
-USE MODD_PARAM_ICE
-USE MODD_RAIN_ICE_DESCR
-USE MODD_RAIN_ICE_PARAM
+use MODD_BUDGET,         only: LBUDGET_RC, LBUDGET_RG, LBUDGET_RH, LBUDGET_RI, LBUDGET_RR, LBUDGET_RS
+use MODD_CST,            only: XRHOLW
+use MODD_PARAM_ICE,      only: LDEPOSC, XVDEPOSC
+use MODD_RAIN_ICE_PARAM, only: XEXSEDG, XEXSEDH, XEXCSEDI, XEXSEDR, XEXSEDS, &
+                               XFSEDC, XFSEDG, XFSEDH, XFSEDI, XFSEDR, XFSEDS
+use MODD_RAIN_ICE_DESCR, only: XALPHAC, XALPHAC2, XCC, XCEXVT, XCONC_LAND, XCONC_SEA, XCONC_URBAN, &
+                               XDC, XLBC, XLBEXC, XNUC, XNUC2, XRTMIN
+!
+use MODI_BUDGET
 !
 IMPLICIT NONE
 !
@@ -70,22 +74,21 @@ REAL, DIMENSION(:,:,:,:), OPTIONAL, INTENT(OUT)   :: PFPR    ! upper-air precipi
 !
 !*       0.2  declaration of local variables
 !
-REAL :: ZINVTSTEP
-REAL :: ZP1,ZP2,ZH,ZZWLBDA,ZZWLBDC,ZZCC
-REAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2)) :: ZQP
-INTEGER :: JI,JJ,JK
-INTEGER :: JCOUNT, JL
+INTEGER                           :: JI,JJ,JK
+INTEGER                           :: JCOUNT, JL
 INTEGER, DIMENSION(SIZE(PRHODREF,1)*SIZE(PRHODREF,2)) :: I1, I2
-!
-LOGICAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2)):: GDEP
-REAL, DIMENSION(SIZE(XRTMIN))     :: ZRTMIN
+LOGICAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2)) :: GDEP
+REAL                              :: ZINVTSTEP
+REAL                              :: ZP1,ZP2,ZH,ZZWLBDA,ZZWLBDC,ZZCC
+REAL,    DIMENSION(SIZE(XRTMIN))     :: ZRTMIN
 ! XRTMIN = Minimum value for the mixing ratio
 ! ZRTMIN = Minimum value for the source (tendency)
-REAL,    DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3))   &
-      :: ZPRCS,ZPRRS,ZPRSS,ZPRGS,ZPRHS   ! Mixing ratios created during the time step
+REAL,    DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2)) :: ZQP
 REAL,    DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2))                   &
                                   :: ZCONC_TMP    ! Weighted concentration
-REAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3)) :: ZCONC3D !  droplet condensation
+REAL,    DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3))   &
+                                  :: ZPRCS,ZPRRS,ZPRSS,ZPRGS,ZPRHS   ! Mixing ratios created during the time step
+REAL,    DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3)) :: ZCONC3D !  droplet condensation
 REAL,    DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3)) ::  &
                                      ZRAY,   & ! Cloud Mean radius
                                      ZLBC,   & ! XLBC weighted by sea fraction

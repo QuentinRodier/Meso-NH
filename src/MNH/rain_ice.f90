@@ -60,21 +60,20 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRRS    ! Rain water m.r. source
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRIS    ! Pristine ice m.r. source
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRSS    ! Snow/aggregate m.r. source
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRGS    ! Graupel m.r. source
-
 !
-REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRC! Cloud instant precip
-REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINDEP  ! Cloud instant deposition
-REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRR! Rain instant precip
-REAL, DIMENSION(:,:,:),INTENT(OUT)      :: PINPRR3D! Rain inst precip 3D
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PEVAP3D! Rain evap profile
-REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRS! Snow instant precip
-REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRG! Graupel instant precip
-REAL, DIMENSION(:,:,:), INTENT(OUT)     :: PRAINFR! Rain fraction
-REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA ! Sea Mask
-REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PTOWN! Fraction that is town 
-REAL, DIMENSION(:,:,:), OPTIONAL,  INTENT(IN)    :: PRHT    ! Hail m.r. at t
-REAL, DIMENSION(:,:,:), OPTIONAL,  INTENT(INOUT) :: PRHS    ! Hail m.r. source
-REAL, DIMENSION(:,:), OPTIONAL, INTENT(INOUT)     :: PINPRH! Hail instant precip
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRC! Cloud instant precip
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINDEP  ! Cloud instant deposition
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRR! Rain instant precip
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PINPRR3D! Rain inst precip 3D
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PEVAP3D! Rain evap profile
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRS! Snow instant precip
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRG! Graupel instant precip
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PRAINFR! Rain fraction
+REAL, DIMENSION(:,:),     OPTIONAL, INTENT(IN)    :: PSEA ! Sea Mask
+REAL, DIMENSION(:,:),     OPTIONAL, INTENT(IN)    :: PTOWN! Fraction that is town
+REAL, DIMENSION(:,:,:),   OPTIONAL, INTENT(IN)    :: PRHT    ! Hail m.r. at t
+REAL, DIMENSION(:,:,:),   OPTIONAL, INTENT(INOUT) :: PRHS    ! Hail m.r. source
+REAL, DIMENSION(:,:),     OPTIONAL, INTENT(INOUT) :: PINPRH! Hail instant precip
 REAL, DIMENSION(:,:,:,:), OPTIONAL, INTENT(OUT)   :: PFPR ! upper-air precipitation fluxes
 !
 END SUBROUTINE RAIN_ICE
@@ -245,33 +244,32 @@ END MODULE MODI_RAIN_ICE
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAMETERS
-USE MODD_CST
-USE MODD_CONF
-USE MODD_RAIN_ICE_DESCR
-USE MODD_RAIN_ICE_PARAM
-USE MODD_PARAM_ICE
-USE MODD_BUDGET
-USE MODD_LES
-USE MODI_BUDGET
-USE MODI_GAMMA
-USE MODE_FMWRIT
-USE MODE_ll
-USE MODE_MSG
-USE MODE_RAIN_ICE_FAST_RG,             only: RAIN_ICE_FAST_RG
-USE MODE_RAIN_ICE_FAST_RH,             only: RAIN_ICE_FAST_RH
-USE MODE_RAIN_ICE_FAST_RI,             only: RAIN_ICE_FAST_RI
-USE MODE_RAIN_ICE_FAST_RS,             only: RAIN_ICE_FAST_RS
-USE MODE_RAIN_ICE_NUCLEATION,          only: RAIN_ICE_NUCLEATION
-USE MODE_RAIN_ICE_SEDIMENTATION_SPLIT, only: RAIN_ICE_SEDIMENTATION_SPLIT
-USE MODE_RAIN_ICE_SEDIMENTATION_STAT,  only: RAIN_ICE_SEDIMENTATION_STAT
-USE MODE_RAIN_ICE_SLOW,                only: RAIN_ICE_SLOW
-USE MODE_RAIN_ICE_WARM,                only: RAIN_ICE_WARM
+use MODD_BUDGET,         only: LBU_ENABLE, LBUDGET_RC, LBUDGET_RG, LBUDGET_RH, LBUDGET_RI, &
+                               LBUDGET_RR, LBUDGET_RS, LBUDGET_RV, LBUDGET_TH
+use MODD_CST,            only: XCI, XCL, XCPD, XCPV, XLSTT, XLVTT, XTT
+use MODD_CST,            only: XALPI, XBETAI, XGAMI, XMD, XMV, XTT
+use MODD_LES,            only: LLES_CALL
+use MODD_PARAMETERS,     only: JPVEXT
+use MODD_PARAM_ICE,      only: CSUBG_PR_PDF, LDEPOSC
+use MODD_RAIN_ICE_DESCR, only: XLBEXR, XLBR, XRTMIN
+use MODD_RAIN_ICE_PARAM, only: XCRIAUTC
+!
+use MODE_MSG
+use MODE_RAIN_ICE_FAST_RG,             only: RAIN_ICE_FAST_RG
+use MODE_RAIN_ICE_FAST_RH,             only: RAIN_ICE_FAST_RH
+use MODE_RAIN_ICE_FAST_RI,             only: RAIN_ICE_FAST_RI
+use MODE_RAIN_ICE_FAST_RS,             only: RAIN_ICE_FAST_RS
+use MODE_RAIN_ICE_NUCLEATION,          only: RAIN_ICE_NUCLEATION
+use MODE_RAIN_ICE_SEDIMENTATION_SPLIT, only: RAIN_ICE_SEDIMENTATION_SPLIT
+use MODE_RAIN_ICE_SEDIMENTATION_STAT,  only: RAIN_ICE_SEDIMENTATION_STAT
+use MODE_RAIN_ICE_SLOW,                only: RAIN_ICE_SLOW
+use MODE_RAIN_ICE_WARM,                only: RAIN_ICE_WARM
 !
 #ifdef MNH_PGI
 USE MODE_PACK_PGI
 #endif
 !
+use MODI_BUDGET
 USE MODI_ICE4_RAINFR_VERT
 !
 IMPLICIT NONE
@@ -282,7 +280,7 @@ IMPLICIT NONE
 !
 LOGICAL,                  INTENT(IN)    :: OSEDIC ! Switch for droplet sedim.
 CHARACTER(LEN=4),         INTENT(IN)    :: HSEDIM ! Sedimentation scheme
-CHARACTER(LEN=4),         INTENT(IN)    :: HSUBG_AUCV
+CHARACTER(LEN=4),         INTENT(IN)    :: HSUBG_AUCV ! Switch for rc->rr Subgrid autoconversion
                                         ! Kind of Subgrid autoconversion method
 LOGICAL,                  INTENT(IN)    :: OWARM   ! .TRUE. allows raindrops to
                                                    !   form by warm processes
@@ -297,14 +295,14 @@ REAL,                     INTENT(IN)    :: PTSTEP  ! Double Time step
                                                    ! (single if cold start)
 INTEGER,                  INTENT(IN)    :: KRR     ! Number of moist variable
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDZZ    ! Layer thikness (m)
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDZZ     ! Layer thikness (m)
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ  ! Dry density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF ! Reference Exner function
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST  ! absolute pressure at t
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCIT    ! Pristine ice n.c. at t
-REAL, DIMENSION(:,:,:),     INTENT(IN)  :: PCLDFR! Convective Mass Flux Cloud fraction
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCLDFR  ! Cloud fraction
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT    ! Theta at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRVT    ! Water vapor m.r. at t
@@ -313,6 +311,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRT    ! Rain water m.r. at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRIT    ! Pristine ice m.r. at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRST    ! Snow/aggregate m.r. at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRGT    ! Graupel/hail m.r. at t
+!
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PSIGS   ! Sigma_s at t
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS    ! Theta source
@@ -323,105 +322,101 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRIS    ! Pristine ice m.r. source
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRSS    ! Snow/aggregate m.r. source
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRGS    ! Graupel m.r. source
 !
-REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRC! Cloud instant precip
-REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINDEP  ! Cloud instant deposition
-REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRR! Rain instant precip
-REAL, DIMENSION(:,:,:),INTENT(OUT)      :: PINPRR3D! Rain inst precip 3D
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PEVAP3D! Rain evap profile
-REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRS! Snow instant precip
-REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRG! Graupel instant precip
-REAL, DIMENSION(:,:,:), INTENT(OUT)     :: PRAINFR! Rain fraction            
-REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA ! Sea Mask
-REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PTOWN! Fraction that is town
-REAL, DIMENSION(:,:,:), OPTIONAL,  INTENT(IN)    :: PRHT    ! Hail m.r. at t
-REAL, DIMENSION(:,:,:), OPTIONAL,  INTENT(INOUT) :: PRHS    ! Hail m.r. source
-REAL, DIMENSION(:,:), OPTIONAL, INTENT(INOUT)     :: PINPRH! Hail instant precip
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRC! Cloud instant precip
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINDEP  ! Cloud instant deposition
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRR! Rain instant precip
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PINPRR3D! Rain inst precip 3D
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PEVAP3D! Rain evap profile
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRS! Snow instant precip
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRG! Graupel instant precip
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PRAINFR! Rain fraction
+REAL, DIMENSION(:,:),     OPTIONAL, INTENT(IN)    :: PSEA ! Sea Mask
+REAL, DIMENSION(:,:),     OPTIONAL, INTENT(IN)    :: PTOWN! Fraction that is town
+REAL, DIMENSION(:,:,:),   OPTIONAL, INTENT(IN)    :: PRHT    ! Hail m.r. at t
+REAL, DIMENSION(:,:,:),   OPTIONAL, INTENT(INOUT) :: PRHS    ! Hail m.r. source
+REAL, DIMENSION(:,:),     OPTIONAL, INTENT(INOUT) :: PINPRH! Hail instant precip
 REAL, DIMENSION(:,:,:,:), OPTIONAL, INTENT(OUT)   :: PFPR ! upper-air precipitation fluxes
 !
 !*       0.2   Declarations of local variables :
 !
-INTEGER :: IIB           !  Define the domain where is
-INTEGER :: IIE           !  the microphysical sources have to be computed
-INTEGER :: IIT           !
-INTEGER :: IJB           !
-INTEGER :: IJE           !
-INTEGER :: IJT           !
-INTEGER :: IKB,IKTB,IKT  !
-INTEGER :: IKE,IKTE      !
+INTEGER                           :: IIB           !  Define the domain where is
+INTEGER                           :: IIE           !  the microphysical sources have to be computed
+INTEGER                           :: IIT           !
+INTEGER                           :: IJB           !
+INTEGER                           :: IJE           !
+INTEGER                           :: IJT           !
+INTEGER                           :: IKB,IKTB,IKT  !
+INTEGER                           :: IKE,IKTE      !
 !
-!
-!
-INTEGER :: IMICRO
-LOGICAL, DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3)) &
-                     :: GMICRO ! Test where to compute all processes
-REAL,    DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3))   &
-                                  :: ZW ! work array
-REAL,    DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3))   &
-                                  :: ZT ! Temperature
-REAL, DIMENSION(:), ALLOCATABLE :: ZRVT    ! Water vapor m.r. at t
-REAL, DIMENSION(:), ALLOCATABLE :: ZRCT    ! Cloud water m.r. at t
-REAL, DIMENSION(:), ALLOCATABLE :: ZRRT    ! Rain water m.r. at t
-REAL, DIMENSION(:), ALLOCATABLE :: ZRIT    ! Pristine ice m.r. at t
-REAL, DIMENSION(:), ALLOCATABLE :: ZRST    ! Snow/aggregate m.r. at t
-REAL, DIMENSION(:), ALLOCATABLE :: ZRGT    ! Graupel m.r. at t
-REAL, DIMENSION(:), ALLOCATABLE :: ZRHT    ! Hail m.r. at t
-REAL, DIMENSION(:), ALLOCATABLE :: ZCIT    ! Pristine ice conc. at t
-!
-REAL, DIMENSION(:), ALLOCATABLE :: ZRVS    ! Water vapor m.r. source
-REAL, DIMENSION(:), ALLOCATABLE :: ZRCS    ! Cloud water m.r. source
-REAL, DIMENSION(:), ALLOCATABLE :: ZRRS    ! Rain water m.r. source
-REAL, DIMENSION(:), ALLOCATABLE :: ZRIS    ! Pristine ice m.r. source
-REAL, DIMENSION(:), ALLOCATABLE :: ZRSS    ! Snow/aggregate m.r. source
-REAL, DIMENSION(:), ALLOCATABLE :: ZRGS    ! Graupel m.r. source
-REAL, DIMENSION(:), ALLOCATABLE :: ZRHS    ! Hail m.r. source
-REAL, DIMENSION(:), ALLOCATABLE :: ZTHS    ! Theta source
-REAL, DIMENSION(:), ALLOCATABLE :: ZTHT    ! Potential temperature
-REAL, DIMENSION(:), ALLOCATABLE :: ZTHLT   ! Liquid potential temperature
-!
-REAL, DIMENSION(:), ALLOCATABLE &
-               :: ZRHODREF, & ! RHO Dry REFerence
-                  ZRHODJ,   & ! RHO times Jacobian
-                  ZZT,      & ! Temperature
-                  ZPRES,    & ! Pressure
-                  ZEXNREF,  & ! EXNer Pressure REFerence
-                  ZZW,      & ! Work array
-                  ZLSFACT,  & ! L_s/(Pi_ref*C_ph)
-                  ZLVFACT,  & ! L_v/(Pi_ref*C_ph)
-                  ZUSW,     & ! Undersaturation over water
-                  ZSSI,     & ! Supersaturation over ice
-                  ZLBDAR,   & ! Slope parameter of the raindrop  distribution
-                  ZLBDAR_RF,& ! Slope parameter of the raindrop  distribution
-                                 ! for the Rain Fraction part
-                  ZLBDAS,   & ! Slope parameter of the aggregate distribution
-                  ZLBDAG,   & ! Slope parameter of the graupel   distribution
-                  ZLBDAH,   & ! Slope parameter of the hail      distribution
-                  ZRDRYG,   & ! Dry growth rate of the graupeln
-                  ZRWETG,   & ! Wet growth rate of the graupeln
-                  ZAI,      & ! Thermodynamical function
-                  ZCJ,      & ! Function to compute the ventilation coefficient
-                  ZKA,      & ! Thermal conductivity of the air
-                  ZDV,      & ! Diffusivity of water vapor in the air
-                  ZSIGMA_RC,& ! Standard deviation of rc at time t
-                  ZCF,      & ! Cloud fraction
-                  ZRF,      & ! Rain fraction
-                  ZHLC_HCF, & ! HLCLOUDS : fraction of High Cloud Fraction in grid
-                  ZHLC_LCF, & ! HLCLOUDS : fraction of Low  Cloud Fraction in grid
-                              !    note that ZCF = ZHLC_HCF + ZHLC_LCF
-                  ZHLC_HRC, & ! HLCLOUDS : LWC that is High LWC in grid
-                  ZHLC_LRC, & ! HLCLOUDS : LWC that is Low  LWC in grid
-                              !    note that ZRC = ZHLC_HRC + ZHLC_LRC
-                ZHLC_RCMAX, & ! HLCLOUDS : maximum value for RC in distribution
-                  ZRCRAUTC, & ! RC value to begin rain formation =XCRIAUTC/RHODREF
-             ZHLC_HRCLOCAL, & ! HLCLOUDS : LWC that is High LWC local in HCF
-             ZHLC_LRCLOCAL    ! HLCLOUDS : LWC that is Low  LWC local in LCF
-                              !    note that ZRC/CF = ZHLC_HRCLOCAL+ ZHLC_LRCLOCAL
-                              !                     = ZHLC_HRC/HCF+ ZHLC_LRC/LCF
-REAL, DIMENSION(:,:), ALLOCATABLE :: ZZW1 ! Work arrays
-REAL            :: ZINVTSTEP
-!
-INTEGER , DIMENSION(SIZE(GMICRO)) :: I1,I2,I3 ! Used to replace the COUNT
+INTEGER                           :: IMICRO
+INTEGER, DIMENSION(SIZE(PEXNREF)) :: I1,I2,I3 ! Used to replace the COUNT
 INTEGER                           :: JL       ! and PACK intrinsics
-REAL :: ZCOEFFRCM
+LOGICAL, DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3)) &
+                                  :: GMICRO ! Test where to compute all processes
+REAL                              :: ZINVTSTEP
+REAL                              :: ZCOEFFRCM
+REAL, DIMENSION(:), ALLOCATABLE   :: ZRVT    ! Water vapor m.r. at t
+REAL, DIMENSION(:), ALLOCATABLE   :: ZRCT    ! Cloud water m.r. at t
+REAL, DIMENSION(:), ALLOCATABLE   :: ZRRT    ! Rain water m.r. at t
+REAL, DIMENSION(:), ALLOCATABLE   :: ZRIT    ! Pristine ice m.r. at t
+REAL, DIMENSION(:), ALLOCATABLE   :: ZRST    ! Snow/aggregate m.r. at t
+REAL, DIMENSION(:), ALLOCATABLE   :: ZRGT    ! Graupel m.r. at t
+REAL, DIMENSION(:), ALLOCATABLE   :: ZRHT    ! Hail m.r. at t
+REAL, DIMENSION(:), ALLOCATABLE   :: ZCIT    ! Pristine ice conc. at t
+!
+REAL, DIMENSION(:), ALLOCATABLE   :: ZRVS    ! Water vapor m.r. source
+REAL, DIMENSION(:), ALLOCATABLE   :: ZRCS    ! Cloud water m.r. source
+REAL, DIMENSION(:), ALLOCATABLE   :: ZRRS    ! Rain water m.r. source
+REAL, DIMENSION(:), ALLOCATABLE   :: ZRIS    ! Pristine ice m.r. source
+REAL, DIMENSION(:), ALLOCATABLE   :: ZRSS    ! Snow/aggregate m.r. source
+REAL, DIMENSION(:), ALLOCATABLE   :: ZRGS    ! Graupel m.r. source
+REAL, DIMENSION(:), ALLOCATABLE   :: ZRHS    ! Hail m.r. source
+REAL, DIMENSION(:), ALLOCATABLE   :: ZTHS    ! Theta source
+REAL, DIMENSION(:), ALLOCATABLE   :: ZTHT    ! Potential temperature
+REAL, DIMENSION(:), ALLOCATABLE   :: ZTHLT   ! Liquid potential temperature
+!
+REAL, DIMENSION(:), ALLOCATABLE   :: ZRHODREF, &      ! RHO Dry REFerence
+                                     ZRHODJ,   &      ! RHO times Jacobian
+                                     ZZT,      &      ! Temperature
+                                     ZPRES,    &      ! Pressure
+                                     ZEXNREF,  &      ! EXNer Pressure REFerence
+                                     ZZW,      &      ! Work array
+                                     ZLSFACT,  &      ! L_s/(Pi_ref*C_ph)
+                                     ZLVFACT,  &      ! L_v/(Pi_ref*C_ph)
+                                     ZUSW,     &      ! Undersaturation over water
+                                     ZSSI,     &      ! Supersaturation over ice
+                                     ZLBDAR,   &      ! Slope parameter of the raindrop  distribution
+                                     ZLBDAR_RF,&      ! Slope parameter of the raindrop  distribution
+                                                      ! for the Rain Fraction part
+                                     ZLBDAS,   &      ! Slope parameter of the aggregate distribution
+                                     ZLBDAG,   &      ! Slope parameter of the graupel   distribution
+                                     ZLBDAH,   &      ! Slope parameter of the hail      distribution
+                                     ZRDRYG,   &      ! Dry growth rate of the graupeln
+                                     ZRWETG,   &      ! Wet growth rate of the graupeln
+                                     ZAI,      &      ! Thermodynamical function
+                                     ZCJ,      &      ! Function to compute the ventilation coefficient
+                                     ZKA,      &      ! Thermal conductivity of the air
+                                     ZDV,      &      ! Diffusivity of water vapor in the air
+                                     ZSIGMA_RC,&      ! Standard deviation of rc at time t
+                                     ZCF,      &      ! Cloud fraction
+                                     ZRF,      &      ! Rain fraction
+                                     ZHLC_HCF, &      ! HLCLOUDS : fraction of High Cloud Fraction in grid
+                                     ZHLC_LCF, &      ! HLCLOUDS : fraction of Low  Cloud Fraction in grid
+                                                      !    note that ZCF = ZHLC_HCF + ZHLC_LCF
+                                     ZHLC_HRC, &      ! HLCLOUDS : LWC that is High LWC in grid
+                                     ZHLC_LRC, &      ! HLCLOUDS : LWC that is Low  LWC in grid
+                                                      !    note that ZRC = ZHLC_HRC + ZHLC_LRC
+                                     ZHLC_RCMAX, &    ! HLCLOUDS : maximum value for RC in distribution
+                                     ZRCRAUTC, &      ! RC value to begin rain formation =XCRIAUTC/RHODREF
+                                     ZHLC_HRCLOCAL, & ! HLCLOUDS : LWC that is High LWC local in HCF
+                                     ZHLC_LRCLOCAL    ! HLCLOUDS : LWC that is Low  LWC local in LCF
+                                                      !    note that ZRC/CF = ZHLC_HRCLOCAL+ ZHLC_LRCLOCAL
+                                                      !                     = ZHLC_HRC/HCF+ ZHLC_LRC/LCF
+REAL, DIMENSION(:,:), ALLOCATABLE :: ZZW1 ! Work arrays
+REAL, DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3))   &
+                                  :: ZW ! work array
+REAL, DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3))   &
+                                  :: ZT ! Temperature
 !
 !-------------------------------------------------------------------------------
 !
@@ -444,13 +439,9 @@ ZINVTSTEP=1./PTSTEP
 !*       2.     COMPUTES THE SLOW COLD PROCESS SOURCES
 !               --------------------------------------
 !
-#ifdef RAIN_OLD
-CALL RAIN_ICE_NUCLEATION_OLD
-#else
 CALL RAIN_ICE_NUCLEATION(IIB, IIE, IJB, IJE, IKTB, IKTE,KRR,PTSTEP,&
      PTHT,PPABST,PRHODJ,PRHODREF,PRVT,PRCT,PRRT,PRIT,PRST,PRGT,&
      PCIT,PEXNREF,PTHS,PRVS,PRIS,ZT,PRHT)
-#endif
 !
 !
 !  optimization by looking for locations where

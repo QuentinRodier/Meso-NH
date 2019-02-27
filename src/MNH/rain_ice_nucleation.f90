@@ -23,54 +23,55 @@ SUBROUTINE RAIN_ICE_NUCLEATION(KIB, KIE, KJB, KJE, KKTB, KKTE,KRR,PTSTEP,&
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_BUDGET
-USE MODD_CST
-USE MODD_RAIN_ICE_PARAM
-USE MODD_RAIN_ICE_DESCR, ONLY : XRTMIN
-USE MODD_PARAM_ICE, ONLY : LFEEDBACKT
+use MODD_BUDGET,         only: LBUDGET_RI, LBUDGET_RV, LBUDGET_TH
+use MODD_CST,            only: XALPI, XALPW, XBETAI, XBETAW, XCI, XCL, XCPD, XCPV, XGAMI, XGAMW, &
+                               XLSTT, XMD, XMV, XP00, XRD, XTT
+use MODD_RAIN_ICE_PARAM, only: XALPHA1, XALPHA2, XBETA1, XBETA2, XMNU0, XNU10, XNU20
+!
+use MODI_BUDGET
 !
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
 INTEGER, INTENT(IN) :: KIB, KIE, KJB, KJE, KKTB, KKTE
-INTEGER,                      INTENT(IN)              :: KRR     ! Number of moist variable
-REAL,                     INTENT(IN)    :: PTSTEP  ! Double Time step
-                                                   ! (single if cold start)
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT    ! Theta at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST  ! absolute pressure at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ  ! Dry density * Jacobian
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF! Reference density
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRVT    ! Water vapor m.r. at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCT    ! Cloud water m.r. at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRT    ! Rain water m.r. at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRIT    ! Pristine ice m.r. at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRST    ! Snow/aggregate m.r. at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRGT    ! Graupel/hail m.r. at t
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCIT    ! Pristine ice n.c. at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF ! Reference Exner function
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS    ! Theta source
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRVS    ! Water vapor m.r. source
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRIS    ! Pristine ice m.r. source
-REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PT      ! Temperature
+INTEGER,                          INTENT(IN)    :: KRR     ! Number of moist variable
+REAL,                             INTENT(IN)    :: PTSTEP  ! Double Time step
+                                                           ! (single if cold start)
+REAL, DIMENSION(:,:,:),           INTENT(IN)    :: PTHT    ! Theta at t
+REAL, DIMENSION(:,:,:),           INTENT(IN)    :: PPABST  ! absolute pressure at t
+REAL, DIMENSION(:,:,:),           INTENT(IN)    :: PRHODJ  ! Dry density * Jacobian
+REAL, DIMENSION(:,:,:),           INTENT(IN)    :: PRHODREF! Reference density
+REAL, DIMENSION(:,:,:),           INTENT(IN)    :: PRVT    ! Water vapor m.r. at t
+REAL, DIMENSION(:,:,:),           INTENT(IN)    :: PRCT    ! Cloud water m.r. at t
+REAL, DIMENSION(:,:,:),           INTENT(IN)    :: PRRT    ! Rain water m.r. at t
+REAL, DIMENSION(:,:,:),           INTENT(IN)    :: PRIT    ! Pristine ice m.r. at t
+REAL, DIMENSION(:,:,:),           INTENT(IN)    :: PRST    ! Snow/aggregate m.r. at t
+REAL, DIMENSION(:,:,:),           INTENT(IN)    :: PRGT    ! Graupel/hail m.r. at t
+REAL, DIMENSION(:,:,:),           INTENT(INOUT) :: PCIT    ! Pristine ice n.c. at t
+REAL, DIMENSION(:,:,:),           INTENT(IN)    :: PEXNREF ! Reference Exner function
+REAL, DIMENSION(:,:,:),           INTENT(INOUT) :: PTHS    ! Theta source
+REAL, DIMENSION(:,:,:),           INTENT(INOUT) :: PRVS    ! Water vapor m.r. source
+REAL, DIMENSION(:,:,:),           INTENT(INOUT) :: PRIS    ! Pristine ice m.r. source
+REAL, DIMENSION(:,:,:),           INTENT(OUT)   :: PT      ! Temperature
 REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    :: PRHT    ! Hail m.r. at t
 !
 !*       0.2  declaration of local variables
 !
-INTEGER :: INEGT
-INTEGER                           :: JL       ! and PACK intrinsics
-INTEGER , DIMENSION(SIZE(PEXNREF))  :: I1,I2,I3 ! Used to replace the COUNT
+INTEGER                            :: INEGT
+INTEGER                            :: JL       ! and PACK intrinsics
+INTEGER, DIMENSION(SIZE(PEXNREF))  :: I1,I2,I3 ! Used to replace the COUNT
 LOGICAL, DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3)) &
-                     :: GNEGT  ! Test where to compute the HEN process
-REAL, DIMENSION(:), ALLOCATABLE :: ZRVT    ! Water vapor m.r. at t
-REAL, DIMENSION(:), ALLOCATABLE :: ZCIT    ! Pristine ice conc. at t
-REAL, DIMENSION(:), ALLOCATABLE ::                   ZZT,      & ! Temperature
-                  ZPRES,    & ! Pressure
-                  ZZW,      & ! Work array
-                  ZUSW,     & ! Undersaturation over water
-                  ZSSI        ! Supersaturation over ice
+                                   :: GNEGT    ! Test where to compute the HEN process
+REAL,    DIMENSION(:), ALLOCATABLE :: ZRVT     ! Water vapor m.r. at t
+REAL,    DIMENSION(:), ALLOCATABLE :: ZCIT     ! Pristine ice conc. at t
+REAL,    DIMENSION(:), ALLOCATABLE :: ZZT,   & ! Temperature
+                                      ZPRES, & ! Pressure
+                                      ZZW,   & ! Work array
+                                      ZUSW,  & ! Undersaturation over water
+                                      ZSSI     ! Supersaturation over ice
 REAL,    DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3))   &
-                                  :: ZW ! work array
+                                    :: ZW      ! work array
 !
 !-------------------------------------------------------------------------------
 !
