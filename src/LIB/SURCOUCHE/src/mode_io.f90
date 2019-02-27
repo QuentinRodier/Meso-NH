@@ -29,6 +29,7 @@
 !                          (nsubfiles_ioz is now determined in IO_FILE_ADD2LIST)
 !  P. Wautelet 14/02/2019: move UPCASE function to tools.f90
 !  P. Wautelet 19/02/2019: simplification/restructuration/cleaning of open/close subroutines (TBCto be continued)
+!  P. Wautelet 27/02/2019: remove CLOSE_ll subroutine
 !
 !-----------------------------------------------------------------
 MODULE MODE_IO_ll
@@ -44,7 +45,7 @@ MODULE MODE_IO_ll
 
   LOGICAL,SAVE :: GCONFIO = .FALSE. ! Turn TRUE when SET_CONFIO_ll is called.
 
-  PUBLIC INITIO_ll,OPEN_ll,CLOSE_ll
+  PUBLIC INITIO_ll,OPEN_ll
   PUBLIC SET_CONFIO_ll,GCONFIO
 
 CONTAINS 
@@ -480,32 +481,5 @@ CONTAINS
     END FUNCTION SUFFIX
 
   END SUBROUTINE OPEN_ll
-
-
-  SUBROUTINE CLOSE_ll(TPFILE,KRESP)
-    USE MODD_IO_ll
-
-    TYPE(TFILEDATA),  INTENT(IN)  :: TPFILE
-    INTEGER,          INTENT(OUT) :: KRESP
-
-    character(len=256)      :: yioerrmsg
-    INTEGER                 :: IRESP
-
-    CALL PRINT_MSG(NVERB_DEBUG,'IO','CLOSE_ll','closing '//TRIM(TPFILE%CNAME))
-
-    IRESP       = 0
-
-    IF (TPFILE%LMASTER) THEN
-      IF (TPFILE%NLU/=-1 .AND. TPFILE%NLU/=NNULLUNIT) THEN
-        CLOSE(UNIT=TPFILE%NLU, STATUS='KEEP', IOSTAT=IRESP, IOMSG=yioerrmsg)
-      END IF
-    END IF
-
-    !Warning and not error or fatal if close fails to allow continuation of execution
-    IF (IRESP/=0) CALL PRINT_MSG(NVERB_WARNING,'IO','CLOSE_ll','Problem when closing '//TRIM(TPFILE%CNAME)//': '//TRIM(YIOERRMSG))
-
-    KRESP = IRESP
-
-  END SUBROUTINE CLOSE_ll
 
 END MODULE MODE_IO_ll

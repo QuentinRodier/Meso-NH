@@ -21,6 +21,7 @@
 !                          (nsubfiles_ioz is now determined in IO_FILE_ADD2LIST)
 !  P. Wautelet 19/02/2019: simplification/restructuration/cleaning of open/close subroutines (TBCto be continued)
 !  P. Wautelet 27/02/2019: use recursive calls to open/close DES files
+!  P. Wautelet 27/02/2019: remove CLOSE_ll subroutine (from mode_io.f90)
 !-----------------------------------------------------------------
 
 MODULE MODE_FM
@@ -279,20 +280,20 @@ END SUBROUTINE FMOPEN_ll
 recursive SUBROUTINE IO_FILE_CLOSE_ll(TPFILE,KRESP,HPROGRAM_ORIG)
 !
 USE MODD_CONF,             ONLY: CPROGRAM
-USE MODD_IO_ll,            ONLY: TFILEDATA
+USE MODD_IO_ll,            ONLY: NNULLUNIT, TFILEDATA
 
 use mode_io_file_lfi,      only: io_close_file_lfi
 #if defined(MNH_IOCDF4)
 use mode_io_file_nc4,      only: io_close_file_nc4
 use mode_io_write_nc4,     only: io_write_coordvar_nc4
 #endif
-USE MODE_IO_ll,            ONLY: CLOSE_ll
 USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
 !
 TYPE(TFILEDATA),            INTENT(INOUT) :: TPFILE ! File structure
 INTEGER,          OPTIONAL, INTENT(OUT)   :: KRESP  ! Return code
 CHARACTER(LEN=*), OPTIONAL, INTENT(IN)    :: HPROGRAM_ORIG !To emulate a file coming from this program
 !
+character(len=256)      :: yioerrmsg
 INTEGER                 :: IRESP, JI
 TYPE(TFILEDATA),POINTER :: TZFILE_DES
 TYPE(TFILEDATA),POINTER :: TZFILE_IOZ
@@ -321,11 +322,22 @@ END IF
 !
 SELECT CASE(TPFILE%CTYPE)
   CASE('CHEMINPUT','CHEMTAB','DES','GPS','METEO','NML','OUTPUTLISTING','SURFACE_DATA','TXT')
-    CALL CLOSE_ll(TPFILE,IRESP)
-    !
+    IF (TPFILE%LMASTER) THEN
+      IF (TPFILE%NLU/=-1 .AND. TPFILE%NLU/=NNULLUNIT) THEN
+        CLOSE(UNIT=TPFILE%NLU, STATUS='KEEP', IOSTAT=IRESP, IOMSG=yioerrmsg)
+      END IF
+    END IF
+
+    !Warning and not error or fatal if close fails to allow continuation of execution
+    IF (IRESP/=0) CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FILE_CLOSE_ll','Problem when closing ' &
+                                 //TRIM(TPFILE%CNAME)//': '//TRIM(YIOERRMSG))
+
     TPFILE%NLU = -1
 
-  CASE DEFAULT
+
+  !MesoNH files
+  !Remark: 'MNH' is more general than MNHBACKUP and could be in fact a MNHBACKUP file
+  CASE ('MNH', 'MNHBACKUP', 'MNHDIACHRONIC', 'MNHDIAG', 'MNHOUTPUT', 'PGD')
     !Do not close (non-existing) '.des' file if OUTPUT
     IF(TPFILE%CTYPE/='OUTPUT' .AND. CPROGRAM/='LFICDF') THEN
       CALL IO_FILE_FIND_BYNAME(TRIM(TPFILE%CNAME)//'.des',TZFILE_DES,IRESP)
@@ -372,6 +384,10 @@ SELECT CASE(TPFILE%CTYPE)
 #endif
       END IF
     END DO SUBFILES
+
+
+  CASE DEFAULT
+    call print_msg(NVERB_FATAL,'IO','IO_FILE_CLOSE_ll','invalid type '//trim(tpfile%ctype)//' for file '//trim(tpfile%cname))
 END SELECT
 !
 TPFILE%LOPENED       = .FALSE.
