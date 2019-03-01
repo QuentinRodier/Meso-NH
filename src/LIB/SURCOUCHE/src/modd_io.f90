@@ -23,7 +23,7 @@ INTEGER, PARAMETER :: NVERB_NO=0, NVERB_FATAL=1, NVERB_ERROR=2, NVERB_WARNING=3,
 INTEGER                     :: NNULLUNIT = -1  ! /dev/null fortran unit, value set in INITIO_ll
 CHARACTER(LEN=*), PARAMETER :: CNULLFILE = "/dev/null"
 
-INTEGER, SAVE :: ISIOP   !! IOproc number
+INTEGER, SAVE :: NIO_RANK ! Rank of IO process
 INTEGER, SAVE :: ISP     !! Actual proc number
 INTEGER, SAVE :: ISNPROC !! Total number of allocated processes
 LOGICAL, SAVE :: GSMONOPROC = .FALSE. !! True if sequential execution (ISNPROC = 1) 

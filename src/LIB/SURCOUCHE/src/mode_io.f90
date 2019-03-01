@@ -71,7 +71,7 @@ CONTAINS
   END SUBROUTINE SET_CONFIO_INTERN_ll
 
   SUBROUTINE INITIO_ll()
-    USE MODD_IO_ll,     only: CNULLFILE, GSMONOPROC, ISIOP, ISNPROC, ISP, NNULLUNIT
+    USE MODD_IO_ll,     only: CNULLFILE, GSMONOPROC, nio_rank, ISNPROC, ISP, NNULLUNIT
 
     USE MODE_MNH_WORLD, ONLY: INIT_NMNH_COMM_WORLD
 
@@ -88,7 +88,7 @@ CONTAINS
     !! Now MPI is initialized for sure
 
     !! Default number for Processor I/O
-    ISIOP = 1
+    nio_rank = 1
 
     !! Get number of allocated processors
     CALL MPI_COMM_SIZE(NMNH_COMM_WORLD, ISNPROC,IERR)

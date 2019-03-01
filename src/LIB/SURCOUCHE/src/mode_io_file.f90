@@ -180,7 +180,7 @@ END SUBROUTINE IO_File_open
 
 SUBROUTINE OPEN_ll(TPFILE, KRESP, HMODE, HSTATUS, HPOSITION, HDELIM, HPROGRAM_ORIG)
 
-  use modd_io_ll,  only: ISNPROC, ISP, LVERB_ALLPRC, ISIOP, NNULLUNIT
+  use modd_io_ll,  only: ISNPROC, ISP, LVERB_ALLPRC, nio_rank, NNULLUNIT
   use modd_var_ll, only : nmnh_comm_world
 
 #if defined(MNH_IOCDF4)
@@ -290,13 +290,13 @@ SUBROUTINE OPEN_ll(TPFILE, KRESP, HMODE, HSTATUS, HPOSITION, HDELIM, HPROGRAM_OR
               TPFILE%LMASTER       = .TRUE. !Every process may write in the file
               TPFILE%LMULTIMASTERS = .TRUE.
             ELSE
-              TPFILE%NMASTER_RANK  = ISIOP
-              TPFILE%LMASTER       = (ISP == ISIOP)
+              TPFILE%NMASTER_RANK  = nio_rank
+              TPFILE%LMASTER       = (ISP == nio_rank)
               TPFILE%LMULTIMASTERS = .FALSE.
             END IF
           ELSE
-            TPFILE%NMASTER_RANK  = ISIOP
-            TPFILE%LMASTER       = (ISP == ISIOP)
+            TPFILE%NMASTER_RANK  = nio_rank
+            TPFILE%LMASTER       = (ISP == nio_rank)
             TPFILE%LMULTIMASTERS = .FALSE.
           END IF
        END IF
@@ -422,8 +422,8 @@ SUBROUTINE OPEN_ll(TPFILE, KRESP, HMODE, HSTATUS, HPOSITION, HDELIM, HPROGRAM_OR
 
 
     CASE('IO_ZSPLIT')
-       TPFILE%NMASTER_RANK  = ISIOP
-       TPFILE%LMASTER       = (ISP == ISIOP)
+       TPFILE%NMASTER_RANK  = nio_rank
+       TPFILE%LMASTER       = (ISP == nio_rank)
        TPFILE%LMULTIMASTERS = .FALSE.
 
        IF (TPFILE%NSUBFILES_IOZ > 0) THEN
