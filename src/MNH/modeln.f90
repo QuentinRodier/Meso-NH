@@ -254,6 +254,7 @@ END MODULE MODI_MODEL_n
 !!  Philippe Wautelet: 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll
 !                                  to allow to disable writes (for bench purposes)
 !!                   02/2019 C.Lac add rain fraction as an output field
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -497,6 +498,7 @@ REAL, DIMENSION(:,:,:,:), POINTER :: DPTR_XLBXRM,DPTR_XLBYRM
 REAL, DIMENSION(:,:,:),   POINTER ::  DPTR_XZZ
 REAL, DIMENSION(:,:,:), POINTER :: DPTR_XLSUM,DPTR_XLSVM,DPTR_XLSWM,DPTR_XLSTHM,DPTR_XLSRVM
 REAL, DIMENSION(:,:,:), POINTER :: DPTR_XLSUS,DPTR_XLSVS,DPTR_XLSWS,DPTR_XLSTHS,DPTR_XLSRVS
+REAL, DIMENSION(:,:),   POINTER :: DPTR_XLSZWSM,DPTR_XLSZWSS
 REAL, DIMENSION(:,:,:), POINTER :: DPTR_XLBXUS,DPTR_XLBYUS,DPTR_XLBXVS,DPTR_XLBYVS
 REAL, DIMENSION(:,:,:), POINTER :: DPTR_XLBXWS,DPTR_XLBYWS,DPTR_XLBXTHS,DPTR_XLBYTHS
 REAL, DIMENSION(:,:,:), POINTER :: DPTR_XLBXTKES,DPTR_XLBYTKES
@@ -672,6 +674,7 @@ IF (KTCOUNT == 1) THEN
     CALL ADD3DFIELD_ll(TZLSFIELD_ll, XLSVM)
     CALL ADD3DFIELD_ll(TZLSFIELD_ll, XLSWM)
     CALL ADD3DFIELD_ll(TZLSFIELD_ll, XLSTHM)
+    CALL ADD2DFIELD_ll(TZLSFIELD_ll, XLSZWSM)
     IF (NRR >= 1) THEN
       CALL ADD3DFIELD_ll(TZLSFIELD_ll, XLSRVM)
     ENDIF
@@ -701,6 +704,7 @@ IF (KTCOUNT == 1) THEN
   !
     IF ( LSTEADYLS ) THEN
        CALL UPDATE_HALO_ll(TZLSFIELD_ll, IINFO_ll)
+       CALL DEL2DFIELD_ll(TZLSFIELD_ll,XLSZWSM,IINFO_ll) 
        CALL UPDATE_HALO2_ll(TZLSFIELD_ll, TZLSHALO2_ll, IINFO_ll)
     END IF
   END IF
@@ -798,11 +802,13 @@ IF (IMI/=1 .AND. NDAD(IMI)/=IMI .AND. (ISYNCHRO==1 .OR. NDTRATIO(IMI) == 1) ) TH
   DPTR_XLSUM=>XLSUM
   DPTR_XLSVM=>XLSVM
   DPTR_XLSWM=>XLSWM
+  DPTR_XLSZWSM=>XLSZWSM
   DPTR_XLSTHS=>XLSTHS
   DPTR_XLSRVS=>XLSRVS
   DPTR_XLSUS=>XLSUS
   DPTR_XLSVS=>XLSVS
   DPTR_XLSWS=>XLSWS
+  DPTR_XLSZWSS=>XLSZWSS
   !
   IF ( LSTEADYLS                     ) THEN
     NCPL_CUR=0
@@ -817,8 +823,8 @@ IF (IMI/=1 .AND. NDAD(IMI)/=IMI .AND. (ISYNCHRO==1 .OR. NDTRATIO(IMI) == 1) ) TH
              DPTR_XBFX1,DPTR_XBFX2,DPTR_XBFX3,DPTR_XBFX4,DPTR_XBFY1,DPTR_XBFY2,DPTR_XBFY3,DPTR_XBFY4,        &
              NDXRATIO_ALL(IMI),NDYRATIO_ALL(IMI),                    &
              DPTR_CLBCX,DPTR_CLBCY,DPTR_XZZ,DPTR_XZHAT,LSLEVE,XLEN1,XLEN2,DPTR_XCOEFLIN_LBXM, &
-             DPTR_XLSTHM,DPTR_XLSRVM,DPTR_XLSUM,DPTR_XLSVM,DPTR_XLSWM,                        &
-             DPTR_XLSTHS,DPTR_XLSRVS,DPTR_XLSUS,DPTR_XLSVS,DPTR_XLSWS                         )
+             DPTR_XLSTHM,DPTR_XLSRVM,DPTR_XLSUM,DPTR_XLSVM,DPTR_XLSWM,DPTR_XLSZWSM,                        &
+             DPTR_XLSTHS,DPTR_XLSRVS,DPTR_XLSUS,DPTR_XLSVS,DPTR_XLSWS, DPTR_XLSZWSS                         )
       END IF
     END IF
     !
@@ -1408,10 +1414,10 @@ IF (.NOT. LSTEADYLS) THEN
              NSIZELBX_ll,NSIZELBXU_ll,NSIZELBY_ll,NSIZELBYV_ll,             &
              NSIZELBXTKE_ll,NSIZELBYTKE_ll,                                 &
              NSIZELBXR_ll,NSIZELBYR_ll,NSIZELBXSV_ll,NSIZELBYSV_ll,         &
-             XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM,XDRYMASST,                     &
+             XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM,XLSZWSM,XDRYMASST,             &
              XLBXUM,XLBXVM,XLBXWM,XLBXTHM,XLBXTKEM,XLBXRM,XLBXSVM,          &
              XLBYUM,XLBYVM,XLBYWM,XLBYTHM,XLBYTKEM,XLBYRM,XLBYSVM,          &
-             XLSUS,XLSVS,XLSWS,XLSTHS,XLSRVS,XDRYMASSS,                     &
+             XLSUS,XLSVS,XLSWS,XLSTHS,XLSRVS,XLSZWSS,XDRYMASSS,             &
              XLBXUS,XLBXVS,XLBXWS,XLBXTHS,XLBXTKES,XLBXRS,XLBXSVS,          &
              XLBYUS,XLBYVS,XLBYWS,XLBYTHS,XLBYTKES,XLBYRS,XLBYSVS           )
       !
@@ -1978,16 +1984,16 @@ CALL ENDSTEP  ( XTSTEP,NRR,NSV,KTCOUNT,IMI,               &
                 XRUS,XRVS,XRWS,XDRYMASSS,                 &
                 XRTHS,XRRS,XRTKES,XRSVS,                  &
                 XLSUS,XLSVS,XLSWS,                        &
-                XLSTHS,XLSRVS,                            &
+                XLSTHS,XLSRVS,XLSZWSS,                    &
                 XLBXUS,XLBXVS,XLBXWS,                     &
                 XLBXTHS,XLBXRS,XLBXTKES,XLBXSVS,          &
                 XLBYUS,XLBYVS,XLBYWS,                     &
                 XLBYTHS,XLBYRS,XLBYTKES,XLBYSVS,          &
-                XUM,XVM,XWM,                              &
+                XUM,XVM,XWM,XZWS,                         &
                 XUT,XVT,XWT,XPABST,XDRYMASST,             &
                 XTHT, XRT, XTHM, XRCM, XPABSM,XTKET, XSVT,&
                 XLSUM,XLSVM,XLSWM,                        &
-                XLSTHM,XLSRVM,                            &
+                XLSTHM,XLSRVM,XLSZWSM,                    &
                 XLBXUM,XLBXVM,XLBXWM,                     &
                 XLBXTHM,XLBXRM,XLBXTKEM,XLBXSVM,          &
                 XLBYUM,XLBYVM,XLBYWM,                     &

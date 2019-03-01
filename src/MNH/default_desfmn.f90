@@ -227,6 +227,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!                   01/2018 (J.Colin) add VISC and DRAG
 !!                   07/2017 (V. Vionnet) add blowing snow variables
 !!                   01/2019 (R. Honnert) add reduction of the mass-flux surface closure with the resolution
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1371,7 +1372,6 @@ IF (KMI == 1) THEN ! other values initialized in modd_dust
   LDEPOS_DST(:) = .FALSE.
 
   LSALT      = .FALSE.
-  NMODE_SLT  = 3
   LVARSIG_SLT= .FALSE.
   LSEDIMSALT = .FALSE.
   LDEPOS_SLT(:)     = .FALSE.

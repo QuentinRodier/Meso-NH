@@ -20,10 +20,11 @@
 !!    MODIFICATIONS
 !!    -------------
 !!    Original 24/02/05
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
-USE MODD_SLT_SURF, ONLY : CEMISPARAM_SLT
+USE MODD_SLT_SURF
 !!
 !-----------------------------------------------------------------------------
 !
@@ -32,7 +33,6 @@ USE MODD_SLT_SURF, ONLY : CEMISPARAM_SLT
 IMPLICIT NONE
 SAVE
 NAMELIST /NAM_SURF_SLT/  &
-       CEMISPARAM_SLT            !Parameterization type   
-
+       CEMISPARAM_SLT, LVARSIG_SLT, LRGFIX_SLT, JPMODE_SLT            !Parameterization type
 !
 END MODULE MODN_SLT

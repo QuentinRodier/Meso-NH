@@ -74,6 +74,7 @@
 !!      J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
 !!  06/2016     (G.Delautier) phasage surfex 8
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -292,12 +293,14 @@ XRT1 => XRT
 XUT1 => XUT
 XVT1 => XVT
 XWT1 => XWT
+XZWS1 => XZWS
 XSRCT1 => XSRCT
 XSIGS1 => XSIGS
 TDTCUR1 => TDTCUR
 XLSUM1 => XLSUM
 XLSVM1 => XLSVM
 XLSWM1 => XLSWM
+XLSZWSM1 => XLSZWSM
 XLSTHM1 => XLSTHM
 XLSRVM1 => XLSRVM
 !

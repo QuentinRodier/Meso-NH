@@ -191,6 +191,7 @@ END MODULE MODI_SPAWN_MODEL2
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!                    10/2016 (C.Lac) Add droplet deposition
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -703,6 +704,8 @@ ALLOCATE(ZJ(IIU,IJU,IKU))
 !
 !*       4.2   Prognostic (and diagnostic) variables (module MODD_FIELD2) :
 !
+ALLOCATE(XZWS(IIU,IJU))
+ALLOCATE(XLSZWSM(IIU,IJU))
 ALLOCATE(XUT(IIU,IJU,IKU))
 ALLOCATE(XVT(IIU,IJU,IKU))
 ALLOCATE(XWT(IIU,IJU,IKU))
@@ -1117,18 +1120,18 @@ ALLOCATE(ZHUT(IIU,IJU,IKU))
 MPPDB_CHECK_LB = .TRUE.
 IF (GNOSON) THEN
   CALL SPAWN_FIELD2 (NXOR,NYOR,NXEND,NYEND,NDXRATIO,NDYRATIO,CTURB,            &
-                 XUT,XVT,XWT,ZTHVT,XRT,ZHUT,XTKET,XSVT,XATC,                   &
+                 XUT,XVT,XWT,ZTHVT,XRT,ZHUT,XTKET,XSVT,XZWS,XATC,              &
                  XSRCT,XSIGS,                                                  &
-                 XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM,                              &
+                 XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM,XLSZWSM,                      &
                  XDTHFRC,XDRVFRC,XTHREL,XRVREL,                                &
                  XVU_FLUX_M,XVTH_FLUX_M,XWTH_FLUX_M            )
   CALL MPPDB_CHECK3D(XUT,"SPAWN_M2 after SPAWN_FIELD2:XUT",PRECISION)
 ELSE
   CALL MPPDB_CHECK3D(XUT,"SPAWN_M2 before SPAWN_FIELD2:XUT",PRECISION)
   CALL SPAWN_FIELD2 (NXOR,NYOR,NXEND,NYEND,NDXRATIO,NDYRATIO,CTURB,            &
-                 XUT,XVT,XWT,ZTHVT,XRT,ZHUT,XTKET,XSVT,XATC,                   &
+                 XUT,XVT,XWT,ZTHVT,XRT,ZHUT,XTKET,XSVT,XZWS,XATC,              &
                  XSRCT,XSIGS,                                                  &
-                 XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM,                              &
+                 XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM,XLSZWSM,                      &
                  XDTHFRC,XDRVFRC,XTHREL,XRVREL,                                &                 
                  XVU_FLUX_M, XVTH_FLUX_M,XWTH_FLUX_M,                          &
                  TZSONFILE,IIUSON,IJUSON,                                      &

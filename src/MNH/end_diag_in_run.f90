@@ -58,6 +58,7 @@ SUBROUTINE END_DIAG_IN_RUN
 !!     Original 11/2003
 !!
 !!                   02/2018 Q.Libois ECRAD
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -92,6 +93,9 @@ DEALLOCATE(XCURRENT_MER10M)! meridian wind at 10m
 DEALLOCATE(XCURRENT_DSTAOD)! dust aerosol optical depth
 DEALLOCATE(XCURRENT_SFCO2   ) ! CO2 Surface flux
 DEALLOCATE(XCURRENT_TKE_DISS) ! Tke dissipation rate
+DEALLOCATE(XCURRENT_SLTAOD)   ! Salt aerosol optical depth
+DEALLOCATE(XCURRENT_ZWS   )   ! Significant height of waves
+
 !
 !-------------------------------------------------------------------------------
 !

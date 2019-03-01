@@ -25,6 +25,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!    Original 24/02/05
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -38,6 +39,6 @@ IMPLICIT NONE
 !
 NAMELIST /NAM_SALT/ LSALT, CRGUNITS, LVARSIG_SLT,LSEDIMSALT,XN0MIN_SLT, XINIRADIUS_SLT, &
                XINISIG_SLT, XSIGMIN_SLT, XSIGMAX_SLT, XCOEFRADMAX_SLT, XCOEFRADMIN_SLT, &
-               NMODE_SLT, LRGFIX_SLT, LDEPOS_SLT
+               NMODE_SLT, LRGFIX_SLT, LDEPOS_SLT, LONLY
 !
 END MODULE MODN_SALT

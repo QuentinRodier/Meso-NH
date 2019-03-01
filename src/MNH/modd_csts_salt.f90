@@ -33,6 +33,7 @@
 !!
 !!     MODIFICATIONS
 !!     -------------
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !!
 !!--------------------------------------------------------------------
 !!     DECLARATIONS
@@ -42,7 +43,9 @@
 IMPLICIT NONE
 !
 !densité salt a introduire
-REAL, PARAMETER  :: XDENSITY_SALT     = 2.1e3     ![kg/m3] density of dust
+! ++ PIERRE / MARINE SSA DUST - MODIF ++
+REAL, PARAMETER  :: XDENSITY_SALT     = 2.2e3     ![kg/m3] density of dust
+! -- PIERRE / MARINE SSA DUST - MODIF --
 REAL, PARAMETER  :: XMOLARWEIGHT_SALT = 58.e-3   ![kg/mol] molar weight dust
 REAL, PARAMETER  :: XM3TOUM3_SALT     = 1.d18     ![um3/m3] conversion factor
 REAL, PARAMETER  :: XUM3TOM3_SALT     = 1.d-18    ![m3/um3] conversion factor

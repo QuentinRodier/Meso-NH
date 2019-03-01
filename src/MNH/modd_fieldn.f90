@@ -50,6 +50,7 @@
 !!                     04/16    (M.Mazoyer) New supersaturation fields
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!                   02/2019 C.Lac add rain fraction as an output field
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !!
 !-------------------------------------------------------------------------------
 !
@@ -81,6 +82,8 @@ TYPE FIELD_t
   REAL, DIMENSION(:,:,:), POINTER :: XRTKES=>NULL()   ! Source of kinetic energy
                                                      ! (rho e)
 !  REAL, DIMENSION(:,:,:), POINTER :: XPABST=>NULL()   ! absolute pressure at
+  REAL, DIMENSION(:,:),   POINTER :: XZWS=>NULL()    ! significant sea wave
+  REAL, DIMENSION(:,:),   POINTER :: XZWSS=>NULL()    ! significant sea wave
 !                                                     ! time t
 !  REAL, DIMENSION(:,:,:,:), POINTER :: XRT=>NULL()    ! Moist variables (rho Rn) 
 !                                                     ! at time t
@@ -114,6 +117,8 @@ REAL, DIMENSION(:,:,:), POINTER :: XRUS=>NULL(),XRVS=>NULL(),XRWS=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XRUS_PRES=>NULL(),XRVS_PRES=>NULL(),XRWS_PRES=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XTHT=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XRTHS=>NULL()
+REAL, DIMENSION(:,:),   POINTER :: XZWS=>NULL()
+REAL, DIMENSION(:,:),   POINTER :: XZWSS=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XRTHS_CLD=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XSUPSAT=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XNACT=>NULL()
@@ -159,6 +164,8 @@ FIELD_MODEL(KFROM)%XRWS=>XRWS
 !FIELD_MODEL(KFROM)%XRVS_PRES=>XRVS_PRES !Done in FIELDLIST_GOTO_MODEL
 !FIELD_MODEL(KFROM)%XRWS_PRES=>XRWS_PRES !Done in FIELDLIST_GOTO_MODEL
 !FIELD_MODEL(KFROM)%XTHT=>XTHT !Done in FIELDLIST_GOTO_MODEL
+FIELD_MODEL(KFROM)%XZWS=>XZWS
+FIELD_MODEL(KFROM)%XZWSS=>XZWSS
 FIELD_MODEL(KFROM)%XRTHS=>XRTHS
 !FIELD_MODEL(KFROM)%XRTHS_CLD=>XRTHS_CLD !Done in FIELDLIST_GOTO_MODEL
 !FIELD_MODEL(KFROM)%XSUPSAT=>XSUPSAT !Done in FIELDLIST_GOTO_MODEL
@@ -193,6 +200,8 @@ XRWS=>FIELD_MODEL(KTO)%XRWS
 !XRUS_PRES=>FIELD_MODEL(KTO)%XRUS_PRES !Done in FIELDLIST_GOTO_MODEL
 !XRVS_PRES=>FIELD_MODEL(KTO)%XRVS_PRES !Done in FIELDLIST_GOTO_MODEL
 !XRWS_PRES=>FIELD_MODEL(KTO)%XRWS_PRES !Done in FIELDLIST_GOTO_MODEL
+XZWS=>FIELD_MODEL(KTO)%XZWS
+XZWSS=>FIELD_MODEL(KTO)%XZWSS
 !XTHT=>FIELD_MODEL(KTO)%XTHT !Done in FIELDLIST_GOTO_MODEL
 XRTHS=>FIELD_MODEL(KTO)%XRTHS
 !XRTHS_CLD=>FIELD_MODEL(KTO)%XRTHS_CLD !Done in FIELDLIST_GOTO_MODEL

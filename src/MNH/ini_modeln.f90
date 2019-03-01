@@ -282,6 +282,7 @@ END MODULE MODI_INI_MODEL_n
 !  P. Wautelet 13/02/2019: initialize XALBUV even if no radiation (needed in CH_INTERP_JVALUES)
 !  P. Wautelet 13/02/2019: removed PPABSM and PTSTEP dummy arguments of READ_FIELD
 !!                   02/2019 C.Lac add rain fraction as an output field
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -532,6 +533,7 @@ REAL, DIMENSION(:,:,:,:), POINTER :: DPTR_XLBXRM,DPTR_XLBYRM
 REAL, DIMENSION(:,:,:),   POINTER ::  DPTR_XZZ
 REAL, DIMENSION(:,:,:), POINTER ::   DPTR_XLSUM,DPTR_XLSVM,DPTR_XLSWM,DPTR_XLSTHM,DPTR_XLSRVM
 REAL, DIMENSION(:,:,:), POINTER ::   DPTR_XLSUS,DPTR_XLSVS,DPTR_XLSWS,DPTR_XLSTHS,DPTR_XLSRVS
+REAL, DIMENSION(:,:),   POINTER ::   DPTR_XLSZWSM,DPTR_XLSZWSS
 !
 INTEGER                         ::  IIB,IJB,IIE,IJE,IDIMX,IDIMY,IMI
 !
@@ -845,6 +847,7 @@ END IF
 ALLOCATE(XSVT(IIU,IJU,IKU,NSV)) ;     XSVT  = 0.
 ALLOCATE(XRSVS(IIU,IJU,IKU,NSV));     XRSVS = 0.
 ALLOCATE(XRSVS_CLD(IIU,IJU,IKU,NSV)); XRSVS_CLD = 0.0
+ALLOCATE(XZWS(IIU,IJU)) ;     XZWS  = -1.
 !
 IF (LPASPOL) THEN
   ALLOCATE( XATC(IIU,IJU,IKU,NSV_PP) )
@@ -987,6 +990,7 @@ IF ( NRR > 0 ) THEN
 ELSE
   ALLOCATE(XLSRVM(0,0,0))
 END IF
+ALLOCATE(XLSZWSM(IIU,IJU)) ; XLSZWSM = -1.
 !
 !  lbc part
 !
@@ -1265,6 +1269,7 @@ IF( .NOT. LSTEADYLS )  THEN
   ALLOCATE(XLSWS(SIZE(XLSWM,1),SIZE(XLSWM,2),SIZE(XLSWM,3)))
   ALLOCATE(XLSTHS(SIZE(XLSTHM,1),SIZE(XLSTHM,2),SIZE(XLSTHM,3)))
   ALLOCATE(XLSRVS(SIZE(XLSRVM,1),SIZE(XLSRVM,2),SIZE(XLSRVM,3)))
+  ALLOCATE(XLSZWSS(SIZE(XLSZWSM,1),SIZE(XLSZWSM,2)))
 !
 ELSE
 !
@@ -1273,6 +1278,7 @@ ELSE
   ALLOCATE(XLSWS(0,0,0))
   ALLOCATE(XLSTHS(0,0,0))
   ALLOCATE(XLSRVS(0,0,0))
+  ALLOCATE(XLSZWSS(0,0))
 !
 END IF
 !  allocation of the LB fields for horizontal relaxation and Lateral Boundaries
@@ -1752,7 +1758,7 @@ IF (CCLOUD=='LIMA') CALL INIT_AEROSOL_PROPERTIES
 !
 CALL MPPDB_CHECK3D(XUT,"INI_MODEL_N-before read_field::XUT",PRECISION)
 CALL READ_FIELD(TPINIFILE,IIU,IJU,IKU,                                        &
-                CGETTKET,CGETRVT,CGETRCT,CGETRRT,CGETRIT,CGETCIT,             &
+                CGETTKET,CGETRVT,CGETRCT,CGETRRT,CGETRIT,CGETCIT,CGETZWS,     &
                 CGETRST,CGETRGT,CGETRHT,CGETSVT,CGETSRCT,CGETSIGS,CGETCLDFR,  &
                 CGETBL_DEPTH,CGETSBL_DEPTH,CGETPHC,CGETPHR,CUVW_ADV_SCHEME,   &
                 CTEMP_SCHEME,NSIZELBX_ll,NSIZELBXU_ll,NSIZELBY_ll,NSIZELBYV_ll,&
@@ -1760,9 +1766,9 @@ CALL READ_FIELD(TPINIFILE,IIU,IJU,IKU,                                        &
                 NSIZELBXR_ll,NSIZELBYR_ll,NSIZELBXSV_ll,NSIZELBYSV_ll,        &
                 XUM,XVM,XWM,XDUM,XDVM,XDWM,                                   &
                 XUT,XVT,XWT,XTHT,XPABST,XTKET,XRTKEMS,                        &
-                XRT,XSVT,XCIT,XDRYMASST,                                      &
+                XRT,XSVT,XZWS,XCIT,XDRYMASST,                                 &
                 XSIGS,XSRCT,XCLDFR,XBL_DEPTH,XSBL_DEPTH,XWTHVMF,XPHC,XPHR,    &
-                XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM,                              &
+                XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM,XLSZWSM,                      &
                 XLBXUM,XLBXVM,XLBXWM,XLBXTHM,XLBXTKEM,                        &
                 XLBXRM,XLBXSVM,                                               &
                 XLBYUM,XLBYVM,XLBYWM,XLBYTHM,XLBYTKEM,                        &
@@ -1865,10 +1871,10 @@ IF ((KMI==1).AND.(.NOT. LSTEADYLS)) THEN
                NSIZELBX_ll,NSIZELBXU_ll,NSIZELBY_ll,NSIZELBYV_ll,             &
                NSIZELBXTKE_ll,NSIZELBYTKE_ll,                                 &
                NSIZELBXR_ll,NSIZELBYR_ll,NSIZELBXSV_ll,NSIZELBYSV_ll,         &
-               XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM,XDRYMASST,                     &
+               XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM,XLSZWSM,XDRYMASST,             &
                XLBXUM,XLBXVM,XLBXWM,XLBXTHM,XLBXTKEM,XLBXRM,XLBXSVM,          &
                XLBYUM,XLBYVM,XLBYWM,XLBYTHM,XLBYTKEM,XLBYRM,XLBYSVM,          &
-               XLSUS,XLSVS,XLSWS,XLSTHS,XLSRVS,XDRYMASSS,                     &
+               XLSUS,XLSVS,XLSWS,XLSTHS,XLSRVS,XLSZWSS,XDRYMASSS,             &
                XLBXUS,XLBXVS,XLBXWS,XLBXTHS,XLBXTKES,XLBXRS,XLBXSVS,          &
                XLBYUS,XLBYVS,XLBYWS,XLBYTHS,XLBYTKES,XLBYRS,XLBYSVS           )
   CALL MPPDB_CHECK3D(XUT,"INI_MODEL_N-after ini_cpl::XUT",PRECISION)
@@ -1955,11 +1961,13 @@ IF ( KMI > 1) THEN
   DPTR_XLSWM=>XLSWM
   DPTR_XLSTHM=>XLSTHM
   DPTR_XLSRVM=>XLSRVM
+  DPTR_XLSZWSM=>XLSZWSM
   DPTR_XLSUS=>XLSUS
   DPTR_XLSVS=>XLSVS
   DPTR_XLSWS=>XLSWS
   DPTR_XLSTHS=>XLSTHS
   DPTR_XLSRVS=>XLSRVS
+  DPTR_XLSZWSS=>XLSZWSS
   !
   DPTR_NKLIN_LBXU=>NKLIN_LBXU
   DPTR_XCOEFLIN_LBXU=>XCOEFLIN_LBXU
@@ -1984,8 +1992,8 @@ IF ( KMI > 1) THEN
        NDXRATIO_ALL(KMI),NDYRATIO_ALL(KMI),                  &
        DPTR_CLBCX,DPTR_CLBCY,DPTR_XZZ,DPTR_XZHAT,                                &
        LSLEVE,XLEN1,XLEN2,                                   &
-       DPTR_XLSUM,DPTR_XLSVM,DPTR_XLSWM,DPTR_XLSTHM,DPTR_XLSRVM,                      &
-       DPTR_XLSUS,DPTR_XLSVS,DPTR_XLSWS,DPTR_XLSTHS,DPTR_XLSRVS,                      &
+       DPTR_XLSUM,DPTR_XLSVM,DPTR_XLSWM,DPTR_XLSTHM,DPTR_XLSRVM,DPTR_XLSZWSM,         &
+       DPTR_XLSUS,DPTR_XLSVS,DPTR_XLSWS,DPTR_XLSTHS,DPTR_XLSRVS,DPTR_XLSZWSS,                      &       
        DPTR_NKLIN_LBXU,DPTR_XCOEFLIN_LBXU,DPTR_NKLIN_LBYU,DPTR_XCOEFLIN_LBYU,    &
        DPTR_NKLIN_LBXV,DPTR_XCOEFLIN_LBXV,DPTR_NKLIN_LBYV,DPTR_XCOEFLIN_LBYV,    &
        DPTR_NKLIN_LBXW,DPTR_XCOEFLIN_LBXW,DPTR_NKLIN_LBYW,DPTR_XCOEFLIN_LBYW,    &

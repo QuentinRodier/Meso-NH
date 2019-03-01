@@ -9,6 +9,7 @@
 !  Philippe Wautelet: 29/01/2019 : small bug correction (null pointers) in FIELDLIST_GOTO_MODEL if NESPGD or PGD
 !  Philippe Wautelet: 01/02/2019 : bug correction in case XRT is not associated
 !                   02/2019 C.Lac add rain fraction as an output field
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !-----------------------------------------------------------------
 MODULE MODE_FIELD
 !
@@ -892,6 +893,20 @@ TFIELDLIST(IDX)%NGRID      = 4
 TFIELDLIST(IDX)%NTYPE      = TYPEREAL
 TFIELDLIST(IDX)%NDIMS      = 2
 TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
+ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
+IDX = IDX+1
+!
+IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
+TFIELDLIST(IDX)%CMNHNAME   = 'ZWS'
+TFIELDLIST(IDX)%CSTDNAME   = 'surface_altitude'
+TFIELDLIST(IDX)%CLONGNAME  = 'ZWS'
+TFIELDLIST(IDX)%CUNITS     = 'm'
+TFIELDLIST(IDX)%CDIR       = 'XY'
+TFIELDLIST(IDX)%CCOMMENT   = 'sea wave height'
+TFIELDLIST(IDX)%NGRID      = 4
+TFIELDLIST(IDX)%NTYPE      = TYPEREAL
+TFIELDLIST(IDX)%NDIMS      = 2
+TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
 ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
 IDX = IDX+1
 !
@@ -4160,6 +4175,9 @@ IF( KFROM/=KTO) THEN
 !
 ! MODD_FIELD_n variables
 !
+! *** BEGIN SB ADD HS ***
+CALL FIND_FIELD_ID_FROM_MNHNAME('ZWS',   IID,IRESP); TFIELDLIST(IID)%TFIELD_X2D(KFROM)%DATA => XZWS
+! *** END SB ADD HS ***
 CALL FIND_FIELD_ID_FROM_MNHNAME('UT',   IID,IRESP); XUT    => TFIELDLIST(IID)%TFIELD_X3D(KTO)%DATA
 CALL FIND_FIELD_ID_FROM_MNHNAME('VT',   IID,IRESP); XVT    => TFIELDLIST(IID)%TFIELD_X3D(KTO)%DATA
 CALL FIND_FIELD_ID_FROM_MNHNAME('WT',   IID,IRESP); XWT    => TFIELDLIST(IID)%TFIELD_X3D(KTO)%DATA

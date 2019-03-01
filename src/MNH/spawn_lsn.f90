@@ -21,9 +21,9 @@ INTERFACE
                     HLBCX,HLBCY,PZZ,PZHAT,OSLEVE,PLEN1,PLEN2,        &
                     PCOEFLIN_LBXM,                                   &
                                   PLSTHM,PLSRVM,                     &
-                                  PLSUM,PLSVM,PLSWM,                 &
+                                  PLSUM,PLSVM,PLSWM,PLSZWSM,         &
                                   PLSTHS,PLSRVS,                     &
-                                  PLSUS,PLSVS,PLSWS                  )
+                                  PLSUS,PLSVS,PLSWS,PLSZWSS          )
 !
 INTEGER,   INTENT(IN)  :: KDAD      ! number of the DAD model
 REAL,             INTENT(IN)    :: PTSTEP   !  Time step
@@ -48,8 +48,11 @@ REAL, DIMENSION(:,:,:), INTENT(IN) :: PCOEFLIN_LBXM ! coefficient used for
 !  
 REAL, DIMENSION(:,:,:), INTENT(IN)    :: PLSTHM,PLSRVM ! Large Scale fields at t-dt
 REAL, DIMENSION(:,:,:), INTENT(IN)    :: PLSUM,PLSVM,PLSWM ! Large Scale fields at t-dt
+REAL, DIMENSION(:,:),   INTENT(IN)    :: PLSZWSM          ! Large Scale fields at t-dt
+
 REAL, DIMENSION(:,:,:), INTENT(OUT)   :: PLSTHS,PLSRVS ! Large Scale source terms 
 REAL, DIMENSION(:,:,:), INTENT(OUT)   :: PLSUS,PLSVS,PLSWS ! Large Scale source terms 
+REAL, DIMENSION(:,:),   INTENT(OUT)   :: PLSZWSS
 !
 END SUBROUTINE SPAWN_LS_n
 !
@@ -65,10 +68,10 @@ END MODULE MODI_SPAWN_LS_n
                     KDXRATIO,KDYRATIO,                               &
                     HLBCX,HLBCY,PZZ,PZHAT,OSLEVE,PLEN1,PLEN2,        &
                     PCOEFLIN_LBXM,                                   &
-                                  PLSTHM,PLSRVM,                     &
+                                  PLSTHM,PLSRVM,PLSZWSM,             &
                                   PLSUM,PLSVM,PLSWM,                 &
                                   PLSTHS,PLSRVS,                     &
-                                  PLSUS,PLSVS,PLSWS                  )
+                                  PLSUS,PLSVS,PLSWS,PLSZWSS          )
 !     ################################################################
 !
 !!****  *SPAWN_LS_n* - Refresh of the Large Scale sources 
@@ -125,7 +128,7 @@ END MODULE MODI_SPAWN_LS_n
 !!      Original     22/12/97
 !!    P. Jabouille   19/04/00 parallelisation
 !!      J.Escobar : 18/12/2015 : Correction of bug in bound in // for NHALO <>1 
-!!
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -174,8 +177,10 @@ REAL, DIMENSION(:,:,:), INTENT(IN) :: PCOEFLIN_LBXM ! coefficient used for
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)    :: PLSTHM,PLSRVM ! Large Scale fields at t-dt
 REAL, DIMENSION(:,:,:), INTENT(IN)    :: PLSUM,PLSVM,PLSWM ! Large Scale fields at t-dt
+REAL, DIMENSION(:,:),   INTENT(IN)    :: PLSZWSM          ! Large Scale fields at t-dt
 REAL, DIMENSION(:,:,:), INTENT(OUT)   :: PLSTHS,PLSRVS ! Large Scale source terms
 REAL, DIMENSION(:,:,:), INTENT(OUT)   :: PLSUS,PLSVS,PLSWS ! Large Scale source terms
+REAL, DIMENSION(:,:),   INTENT(OUT)   :: PLSZWSS
 !
 !
 !*       0.2   declarations of local variables
@@ -202,8 +207,10 @@ TYPE(LIST_ll), POINTER :: TZLSFIELD_ll   ! list of metric coefficient fields
 INTEGER :: IINFO_ll, IDIMX, IDIMY
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZTLSUM, ZTLSVM, ZTLSWM, ZTLSTHM, ZTLSRVM
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZTZS,ZZS
+REAL, DIMENSION(:,:),   ALLOCATABLE :: ZTZWS
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZTZSMT,ZZSMT
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: Z1,Z2,Z3,Z4,Z5
+REAL, DIMENSION(:,:),   ALLOCATABLE :: Z6
 !
 !-------------------------------------------------------------------------------
 !
@@ -235,6 +242,7 @@ ALLOCATE(ZTLSVM(IDIMX,IDIMY,SIZE(PLSVM,3)))
 ALLOCATE(ZTLSWM(IDIMX,IDIMY,SIZE(PLSWM,3)))
 ALLOCATE(ZTLSTHM(IDIMX,IDIMY,SIZE(PLSTHM,3)))
 ALLOCATE(ZTLSRVM(IDIMX,IDIMY,SIZE(PLSRVM,3)))
+ALLOCATE(ZTZWS(IDIMX,IDIMY))
 !
 IF(GVERT_INTERP) THEN
   ALLOCATE(ZTZS  (IDIMX,IDIMY,1))
@@ -250,6 +258,7 @@ ALLOCATE(Z2(SIZE(XLSUM,1),SIZE(XLSUM,2),SIZE(XLSUM,3)))
 ALLOCATE(Z3(SIZE(XLSUM,1),SIZE(XLSUM,2),SIZE(XLSUM,3)))
 ALLOCATE(Z4(SIZE(XLSUM,1),SIZE(XLSUM,2),SIZE(XLSUM,3)))
 ALLOCATE(Z5(SIZE(XLSUM,1),SIZE(XLSUM,2),SIZE(XLSUM,3)))
+ALLOCATE(Z6(SIZE(XLSUM,1),SIZE(XLSUM,2)))
 !
 Z1=XLSUM+XLSUS*ZTIME
 CALL SET_LSFIELD_1WAY_ll(Z1, ZTLSUM, KMI)
@@ -263,6 +272,10 @@ IF ( SIZE(PLSRVM,1) /= 0 ) THEN
   Z5=XLSRVM+XLSRVS*ZTIME
   CALL SET_LSFIELD_1WAY_ll(Z5, ZTLSRVM, KMI)
 ENDIF
+IF ( SIZE(PLSZWSM,1) /= 0 ) THEN
+  Z6=XLSZWSM+XLSZWSS*ZTIME
+  CALL SET_LSFIELD_1WAY_ll(Z6, ZTZWS, KMI)
+ENDIF
 !
 IF ( GVERT_INTERP ) THEN
    CALL SET_LSFIELD_1WAY_ll(ZZS,   ZTZS,   KMI)
@@ -273,7 +286,7 @@ ENDIF
 !
 CALL LS_FORCING_ll(KMI, IINFO_ll)
 !
-DEALLOCATE(Z1,Z2,Z3,Z4,Z5)
+DEALLOCATE(Z1,Z2,Z3,Z4,Z5,Z6)
 !
 !        1.5  Back to the (current) child model
 !
@@ -355,6 +368,12 @@ IF ( SIZE(PLSRVM,1) /= 0 ) THEN
                  2,2,IDIMX-1,IDIMY-1,KDXRATIO,KDYRATIO,1,         &
                  HLBCX,HLBCY,ZTLSRVM,PLSRVS(IIB:IIE,IJB:IJE,:))
 END IF
+IF ( SIZE(PLSZWSM,1) /= 0 ) THEN
+  CALL BIKHARDT (PBMX1,PBMX2,PBMX3,PBMX4,PBMY1,PBMY2,PBMY3,PBMY4, &
+                 PBFX1,PBFX2,PBFX3,PBFX4,PBFY1,PBFY2,PBFY3,PBFY4, &
+                 2,2,IDIMX-1,IDIMY-1,KDXRATIO,KDYRATIO,1,         &
+                 HLBCX,HLBCY,ZTZWS,PLSZWSS(IIB:IIE,IJB:IJE))
+END IF
 !
 !*      3.2  Vertical linear interpolation on the mass grid
 !
@@ -383,6 +402,9 @@ PLSTHS(:,:,:)   = (PLSTHS(:,:,:) - PLSTHM(:,:,:)) / ZTIME
 !
 IF ( SIZE(PLSRVM,1) /= 0 ) THEN
   PLSRVS(:,:,:)   = (PLSRVS(:,:,:) - PLSRVM(:,:,:)) / ZTIME
+END IF
+IF ( SIZE(PLSZWSM,1) /= 0 ) THEN
+  PLSZWSS(:,:)   = (PLSZWSS(:,:) - PLSZWSM(:,:)) / ZTIME
 END IF
 !
 !------------------------------------------------------------------------------
@@ -454,6 +476,7 @@ PLSVS(:,:,:)   = (PLSVS(:,:,:) - PLSVM(:,:,:)) / ZTIME
 !
 DEALLOCATE(ZTLSUM,ZTLSVM,ZTLSWM,ZTLSTHM,ZTLSRVM)
 IF(GVERT_INTERP) DEALLOCATE(ZTZS,ZZS)
+DEALLOCATE(ZTLSUM,ZTLSVM,ZTLSWM,ZTLSTHM,ZTLSRVM,ZTZWS)
 IF(GVERT_INTERP) DEALLOCATE(ZTZSMT,ZZSMT)
 !
 NULLIFY(TZLSFIELD_ll)
@@ -462,6 +485,7 @@ CALL ADD3DFIELD_ll(TZLSFIELD_ll, PLSVS)
 CALL ADD3DFIELD_ll(TZLSFIELD_ll, PLSWS)
 CALL ADD3DFIELD_ll(TZLSFIELD_ll, PLSTHS)
 IF(SIZE(PLSRVM) /= 0) CALL ADD3DFIELD_ll(TZLSFIELD_ll, PLSRVS)
+IF(SIZE(PLSZWSM) /= 0) CALL ADD2DFIELD_ll(TZLSFIELD_ll, PLSZWSS)
 CALL UPDATE_HALO_ll(TZLSFIELD_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZLSFIELD_ll)
 !------------------------------------------------------------------------------

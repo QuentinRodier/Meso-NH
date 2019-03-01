@@ -379,6 +379,7 @@
 !!    P.Wautelet : 08/07/2016 : removed MNH_NCWRIT define
 !!     B.VIE 2016 : LIMA
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -687,6 +688,9 @@ CALL POSNAM(IPRE_REAL1,'NAM_AERO_CONF',GFOUND,ILUOUT0)
 IF (GFOUND) READ(IPRE_REAL1,NAM_AERO_CONF)
 CALL POSNAM(IPRE_REAL1,'NAM_CONFZ',GFOUND,ILUOUT0)
 IF (GFOUND) READ(UNIT=IPRE_REAL1,NML=NAM_CONFZ)
+!
+! Sea salt
+CALL INIT_SALT
 !
 !*       4.3   set soil scheme to ISBA for initialization from GRIB
 !

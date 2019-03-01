@@ -9,9 +9,9 @@ MODULE MODI_SPAWN_FIELD2
 INTERFACE
 !
       SUBROUTINE SPAWN_FIELD2(KXOR,KYOR,KXEND,KYEND,KDXRATIO,KDYRATIO,HTURB,   &
-               PUT,PVT,PWT,PTHVT,PRT,PHUT,PTKET,PSVT,PATC,                     &
+               PUT,PVT,PWT,PTHVT,PRT,PHUT,PTKET,PSVT,PZWS,PATC,                &
                PSRCT,PSIGS,                                                    &
-               PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM,                                &
+               PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM,PLSZWSM,                        &
                PDTHFRC,PDRVFRC,PTHREL,PRVREL,                                  &
                PVU_FLUX_M,PVTH_FLUX_M,PWTH_FLUX_M,                             &
                TPSONFILE,KIUSON,KJUSON,                                        &
@@ -30,11 +30,13 @@ REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PUT,PVT,PWT        !  model 2
 REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PTKET              ! variables
 REAL, DIMENSION(:,:,:,:), INTENT(OUT) :: PRT,PSVT,PATC      !   at t
 REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PTHVT,PHUT         !
+REAL, DIMENSION(:,:),     INTENT(OUT) :: PZWS
 !
 REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PSRCT,PSIGS  ! secondary
                                                             ! prognostic variables
            ! Larger Scale fields for relaxation and diffusion
 REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PLSUM, PLSVM, PLSWM 
+REAL, DIMENSION(:,:),            INTENT(OUT) :: PLSZWSM
 REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PLSTHM,  PLSRVM     
 REAL, DIMENSION(:,:,:,:),        INTENT(OUT) :: PDTHFRC,PDRVFRC
 REAL, DIMENSION(:,:,:,:),        INTENT(OUT) :: PTHREL,PRVREL
@@ -55,9 +57,9 @@ END INTERFACE
 END MODULE MODI_SPAWN_FIELD2
 !     ##########################################################################
       SUBROUTINE SPAWN_FIELD2(KXOR,KYOR,KXEND,KYEND,KDXRATIO,KDYRATIO,HTURB,   &
-               PUT,PVT,PWT,PTHVT,PRT,PHUT,PTKET,PSVT,PATC,                     &
+               PUT,PVT,PWT,PTHVT,PRT,PHUT,PTKET,PSVT, PZWS,PATC,                &
                PSRCT,PSIGS,                                                    &
-               PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM,                                &
+               PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM,PLSZWSM,                        &
                PDTHFRC,PDRVFRC,PTHREL,PRVREL,                                  &
                PVU_FLUX_M,PVTH_FLUX_M,PWTH_FLUX_M,                             &
                TPSONFILE,KIUSON,KJUSON,                                        &
@@ -150,6 +152,7 @@ END MODULE MODI_SPAWN_FIELD2
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      Modification 05/03/2018 (J.Escobar) bypass gridnesting special case KD(X/Y)RATIO == 1 not parallelized
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -205,6 +208,7 @@ INTEGER,   INTENT(IN)  :: KDYRATIO   ! between model 2 and model 1
 CHARACTER (LEN=4), INTENT(IN) :: HTURB !  Kind of turbulence parameterization
 !
 REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PUT,PVT,PWT        !  model 2
+REAL, DIMENSION(:,:),     INTENT(OUT) :: PZWS
 REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PTKET              ! variables
 REAL, DIMENSION(:,:,:,:), INTENT(OUT) :: PRT,PSVT,PATC      !   at t
 REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PTHVT,PHUT         !
@@ -213,6 +217,7 @@ REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PSRCT,PSIGS  ! secondary
                                                             ! prognostic variables
            ! Larger Scale fields for relaxation and diffusion
 REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PLSUM, PLSVM, PLSWM 
+REAL, DIMENSION(:,:),            INTENT(OUT) :: PLSZWSM
 REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PLSTHM,  PLSRVM 
 REAL, DIMENSION(:,:,:,:),        INTENT(OUT) :: PDTHFRC,PDRVFRC
 REAL, DIMENSION(:,:,:,:),        INTENT(OUT) :: PTHREL,PRVREL
@@ -238,6 +243,7 @@ REAL, DIMENSION(SIZE(XRT1,1),SIZE(XRT1,2),SIZE(XRT1,3)) :: ZHUT ! relative humid
 REAL, DIMENSION(SIZE(XTHT1,1),SIZE(XTHT1,2),SIZE(XTHT1,3)) :: ZTHVT! virtual pot. T
                                                                 ! (model 1)          
 !$20140708
+REAL, DIMENSION(:,:),   ALLOCATABLE   :: ZZWS_C, ZLSZWSM_C
 !$***** 3D
 REAL, DIMENSION(:,:,:), ALLOCATABLE   :: ZUT_C, ZLSUM_C 
 REAL, DIMENSION(:,:,:), ALLOCATABLE   :: ZVT_C, ZLSVM_C
@@ -261,6 +267,7 @@ INTEGER  :: IINFO_ll
 !$
 ! Arrays for reading fields of input SON 1 file
 REAL, DIMENSION(:,:,:), ALLOCATABLE   :: ZWORK3D
+REAL, DIMENSION(:,:),   ALLOCATABLE   :: ZWORK2D
 REAL, DIMENSION(:,:,:), ALLOCATABLE   :: ZTHT1,ZTHVT1
 REAL, DIMENSION(:,:,:), ALLOCATABLE   :: ZPABST1,ZHUT1
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZRT1
@@ -291,6 +298,7 @@ CALL COMPUTE_THV_HU(CONF_MODEL(1)%LUSERV,XRT1,XTHT1,XPABST1,ZTHVT,ZHUT)
 !
 IF (PRESENT(TPSONFILE)) THEN
   ALLOCATE(ZWORK3D(KIUSON,KJUSON,SIZE(PUT,3)))
+  ALLOCATE(ZWORK2D(KIUSON,KJUSON))
   ALLOCATE(ZPABST1(KIE1-KIB1+1,KJE1-KJB1+1,SIZE(PUT,3)))
   ALLOCATE(ZTHT1(KIE1-KIB1+1,KJE1-KJB1+1,SIZE(PUT,3)))
   ALLOCATE(ZTHVT1(KIE1-KIB1+1,KJE1-KJB1+1,SIZE(PUT,3)))
@@ -402,6 +410,8 @@ END IF
   CALL GET_CHILD_DIM_ll(2, IDIMX_C, IDIMY_C, IINFO_ll)
 !
 !$20140708 use  ZTHVM_C in BIKAT top cal PTHVM_C
+  ALLOCATE(ZZWS_C(IDIMX_C,IDIMY_C))
+  ALLOCATE(ZLSZWSM_C(IDIMX_C,IDIMY_C))
   !$**** 3D
   ALLOCATE(ZUT_C(IDIMX_C,IDIMY_C,SIZE(PUT,3)))
   ALLOCATE(ZLSUM_C(IDIMX_C,IDIMY_C,SIZE(PUT,3)))
@@ -434,6 +444,8 @@ END IF
   ZVT_C   =0.
   ZWT_C   =0.
   ZTHVT_C =0.
+  ZZWS_C  =0.
+  ZLSZWSM_C=0.
   ZHUT_C  =0.
   ZTKET_C =0.
   ZSRCT_C =0.
@@ -449,6 +461,14 @@ END IF
   ZRVREL_C=0.
   ZTHREL_C=00
 !
+    CALL SET_LSFIELD_1WAY_ll(XZWS1(:,:),ZZWS_C(:,:),2)
+    CALL SET_LSFIELD_1WAY_ll(XLSZWSM1(:,:),ZLSZWSM_C(:,:),2)
+    !
+    CALL LS_FORCING_ll(2, IINFO_ll, .TRUE.)
+    CALL GO_TOMODEL_ll(2, IINFO_ll)
+    CALL GOTO_MODEL(2)
+    CALL UNSET_LSFIELD_1WAY_ll()
+    !
   !$***** 3D VARS
   DO JI=1,SIZE(PUT,3)
     CALL GOTO_MODEL(1)
@@ -566,6 +586,21 @@ END IF
                    2,2,IDIMX_C-1,IDIMY_C-1,KDXRATIO,KDYRATIO,3,     &
                    LBC_MODEL(1)%CLBCX,LBC_MODEL(1)%CLBCY,ZLSVM_C,PLSVM)
     CALL MPPDB_CHECK3D(PLSVM,"SPAWN_FIELD2:PLSVM",PRECISION)
+
+!                        Interpolation of the ZWS variable at t
+!
+    CALL BIKHARDT (XBMX1,XBMX2,XBMX3,XBMX4,XBMY1,XBMY2,XBMY3,XBMY4, &
+                   XBFX1,XBFX2,XBFX3,XBFX4,XBFY1,XBFY2,XBFY3,XBFY4, &
+                   2,2,IDIMX_C-1,IDIMY_C-1,KDXRATIO,KDYRATIO,3,     &
+                   LBC_MODEL(1)%CLBCX,LBC_MODEL(1)%CLBCY,ZZWS_C,PZWS)
+    CALL MPPDB_CHECK2D(PZWS,"SPAWN_FIELD2:PZWS",PRECISION)
+!
+    CALL BIKHARDT (XBMX1,XBMX2,XBMX3,XBMX4,XBMY1,XBMY2,XBMY3,XBMY4, &
+                   XBFX1,XBFX2,XBFX3,XBFX4,XBFY1,XBFY2,XBFY3,XBFY4, &
+                   2,2,IDIMX_C-1,IDIMY_C-1,KDXRATIO,KDYRATIO,3,     &
+                   LBC_MODEL(1)%CLBCX,LBC_MODEL(1)%CLBCY,ZLSZWSM_C,PLSZWSM)
+    CALL MPPDB_CHECK2D(PLSZWSM,"SPAWN_FIELD2:PLSZWSM",PRECISION)
+!
 !
 !                        Interpolation of variables at t
 !
@@ -725,6 +760,8 @@ IF (PRESENT(TPSONFILE)) THEN
   PVT(KIB2:KIE2,KJB2:KJE2,:) = ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
   CALL IO_READ_FIELD(TPSONFILE,'WT',ZWORK3D) ! W wind component at time t
   PWT(KIB2:KIE2,KJB2:KJE2,:) = ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
+  CALL IO_READ_FIELD(TPSONFILE,'ZWS',ZWORK2D) ! 
+  PZWS(KIB2:KIE2,KJB2:KJE2) = ZWORK2D(KIB1:KIE1,KJB1:KJE1)
   !
   ! moist variables
   !

@@ -63,6 +63,7 @@ END MODULE MODI_INI_DIAG_IN_RUN
 !!    -------------
 !!     Original 11/2003
 !!                   02/2018 Q.Libois ECRAD
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !!
 !! --------------------------------------------------------------------------
 !       
@@ -113,6 +114,8 @@ IF (LDIAG_IN_RUN) THEN
   ALLOCATE(XCURRENT_DSTAOD(KIU,KJU))! dust aerosol optical depth
   ALLOCATE(XCURRENT_SFCO2 (KIU,KJU))! CO2 Surface flux
   ALLOCATE(XCURRENT_TKE_DISS(KIU,KJU,KKU)) ! Tke dissipation rate
+  ALLOCATE(XCURRENT_SLTAOD(KIU,KJU))! Salt aerosol optical depth
+  ALLOCATE(XCURRENT_ZWS(KIU,KJU)) ! Significant height of waves
   !
   !
   XCURRENT_RN    = XUNDEF
@@ -134,6 +137,8 @@ IF (LDIAG_IN_RUN) THEN
   XCURRENT_DSTAOD= XUNDEF
   XCURRENT_SFCO2 = XUNDEF
   XCURRENT_TKE_DISS = XUNDEF
+  XCURRENT_SLTAOD= XUNDEF
+  XCURRENT_ZWS = XUNDEF
 ELSE
   ALLOCATE(XCURRENT_RN    (0,0))! net radiation
   ALLOCATE(XCURRENT_H     (0,0))! sensible heat flux
@@ -154,6 +159,8 @@ ELSE
   ALLOCATE(XCURRENT_DSTAOD(0,0))! dust aerosol optical depth
   ALLOCATE(XCURRENT_SFCO2 (0,0))! CO2 Surface flux
   ALLOCATE(XCURRENT_TKE_DISS(0,0,0)) ! Tke dissipation rate
+  ALLOCATE(XCURRENT_SLTAOD(0,0))! Salt aerosol optical depth
+  ALLOCATE(XCURRENT_ZWS(0,0))! Significant height of waves
 END IF
 !
 !-------------------------------------------------------------------------------

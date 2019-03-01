@@ -33,6 +33,7 @@
 !!      Original    12/07/99
 !!      Modification 08/04/04   (G.Jaubert) Spawning 1 option
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -79,12 +80,14 @@ REAL,DIMENSION(:,:,:,:),SAVE,POINTER :: XRT1  => NULL()
 REAL,DIMENSION(:,:,:),SAVE,POINTER :: XUT1    => NULL()
 REAL,DIMENSION(:,:,:),SAVE,POINTER :: XVT1    => NULL()
 REAL,DIMENSION(:,:,:),SAVE,POINTER :: XWT1    => NULL()
+REAL,DIMENSION(:,:),  SAVE,POINTER :: XZWS1   => NULL()
 REAL,DIMENSION(:,:,:),SAVE,POINTER :: XSRCT1  => NULL()
 REAL,DIMENSION(:,:,:),SAVE,POINTER :: XSIGS1  => NULL()
 TYPE(DATE_TIME),      SAVE,POINTER :: TDTCUR1 => NULL()
 REAL,DIMENSION(:,:,:),SAVE,POINTER :: XLSUM1  => NULL()
 REAL,DIMENSION(:,:,:),SAVE,POINTER :: XLSVM1  => NULL()
 REAL,DIMENSION(:,:,:),SAVE,POINTER :: XLSWM1  => NULL()
+REAL,DIMENSION(:,:)  ,SAVE,POINTER :: XLSZWSM1=> NULL()
 REAL,DIMENSION(:,:,:),SAVE,POINTER :: XLSTHM1 => NULL()
 REAL,DIMENSION(:,:,:),SAVE,POINTER :: XLSRVM1 => NULL()
 !

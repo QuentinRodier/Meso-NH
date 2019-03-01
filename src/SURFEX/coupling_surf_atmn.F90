@@ -10,7 +10,7 @@ SUBROUTINE COUPLING_SURF_ATM_n (YSC, HPROGRAM, HCOUPLING, PTIMEC, PTSTEP, KYEAR,
                                 PPS, PPA, PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV, PTRAD, &
                                 PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF,     &
                                 PPEW_A_COEF, PPEW_B_COEF, PPET_A_COEF, PPEQ_A_COEF,       &
-                                PPET_B_COEF, PPEQ_B_COEF, HTEST           )
+                                PPET_B_COEF, PPEQ_B_COEF, PZWS, HTEST           )
 !     #################################################################################
 !
 !!****  *COUPLING_INLAND_WATER_n * - Driver to call the schemes for the 
@@ -39,6 +39,7 @@ SUBROUTINE COUPLING_SURF_ATM_n (YSC, HPROGRAM, HCOUPLING, PTIMEC, PTSTEP, KYEAR,
 !!      Modified    06/2013 by J.Escobar  : replace DOUBLE PRECISION by REAL to handle problem for promotion of real on IBM SP
 !!      R. Séférian 03/2014 Adding decoupling between CO2 seen by photosynthesis and radiative CO2
 !!      P. Wautelet 02/2019 bug correction KI->KSIZE for size of KMASK argument in TREAT_SURF
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !!-------------------------------------------------------------
 !
 !
@@ -128,6 +129,7 @@ REAL, DIMENSION(KI), INTENT(IN)  :: PLW       ! longwave radiation (on horizonta
 !                                             !                                       (W/m2)
 REAL, DIMENSION(KI), INTENT(IN)  :: PPS       ! pressure at atmospheric model surface (Pa)
 REAL, DIMENSION(KI), INTENT(IN)  :: PPA       ! pressure at forcing level             (Pa)
+REAL, DIMENSION(KI), INTENT(IN)  :: PZWS      ! significant sea wave                  (m)
 REAL, DIMENSION(KI), INTENT(IN)  :: PZS       ! atmospheric model orography           (m)
 REAL, DIMENSION(KI), INTENT(IN)  :: PCO2      ! CO2 concentration in the air          (kg/m3)
 REAL, DIMENSION(KI), INTENT(IN)  :: PSNOW     ! snow precipitation                    (kg/m2/s)
@@ -475,6 +477,7 @@ REAL, DIMENSION(KSIZE) :: ZP_LW       ! longwave radiation (on horizontal surf.)
 !                                              !                                       (W/m2)
 REAL, DIMENSION(KSIZE) :: ZP_PS       ! pressure at atmospheric model surface (Pa)
 REAL, DIMENSION(KSIZE) :: ZP_PA       ! pressure at forcing level             (Pa)
+REAL, DIMENSION(KSIZE) :: ZP_ZWS      ! significant sea wave                  (m)
 REAL, DIMENSION(KSIZE) :: ZP_ZS       ! atmospheric model orography           (m)
 REAL, DIMENSION(KSIZE) :: ZP_CO2      ! CO2 concentration in the air          (kg/m3)
 REAL, DIMENSION(KSIZE,KSV) :: ZP_SV       ! scalar concentration in the air
@@ -532,6 +535,7 @@ DO JJ=1,KSIZE
   ZP_LW(JJ)         = PLW         (JI)
   ZP_PS(JJ)         = PPS         (JI)
   ZP_PA(JJ)         = PPA         (JI)
+  ZP_ZWS(JJ)        = PZWS        (JI)
   ZP_ZS(JJ)         = PZS         (JI)
 ENDDO
 !
@@ -584,7 +588,7 @@ IF (KTILE==1) THEN
                       ZP_PS, ZP_PA, ZP_SFTQ, ZP_SFTH, ZP_SFTS, ZP_SFCO2, ZP_SFU, ZP_SFV,     &
                       ZP_TRAD, ZP_DIR_ALB, ZP_SCA_ALB, ZP_EMIS, ZP_TSURF, ZP_Z0, ZP_Z0H,     &
                       ZP_QSURF, ZP_PEW_A_COEF, ZP_PEW_B_COEF, ZP_PET_A_COEF, ZP_PEQ_A_COEF,  &
-                      ZP_PET_B_COEF, ZP_PEQ_B_COEF, 'OK'        )
+                      ZP_PET_B_COEF, ZP_PEQ_B_COEF, ZP_ZWS, 'OK'        )
   !
 ELSEIF (KTILE==2) THEN
   !
