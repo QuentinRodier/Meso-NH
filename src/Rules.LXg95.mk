@@ -89,7 +89,7 @@ MNH_COMPRESS=yes
 ## S4PY flag
 #
 #if MNH_S4PY exists => compile the libs4py library (for epygram)
-MNH_S4PY=yes
+#MNH_S4PY=no
 #
 ##########################################################
 #                                                        #
