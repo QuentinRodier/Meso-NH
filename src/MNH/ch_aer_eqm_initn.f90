@@ -1,12 +1,7 @@
-!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
-!-----------------------------------------------------------------
 !-----------------------------------------------------------------
 !!   ########################
      MODULE MODI_CH_AER_EQM_INIT_n
@@ -49,7 +44,7 @@ END MODULE MODI_CH_AER_EQM_INIT_n
 !!    MODIFICATIONS
 !!    -------------
 !!    M.Leriche 2015 : masse molaire Black carbon à 12 g/mol
-!!    P.Wautelet 03/2019 : deallocate XMI and XSOLORG if already allocated in ini_modeln but size=0
+!  P. Wautelet 05/03/2019: modify allocation procedure for XMI and XSOLORG
 !!
 !!    EXTERNAL
 !!    --------
@@ -117,18 +112,21 @@ END DO
 
 ZDEN2MOL = 1E-6 * XAVOGADRO / XMD
 
-
-IF ( SIZE(XMI) == 0 ) THEN
-  DEALLOCATE( XMI )
-  XMI => NULL()
+IF ( ASSOCIATED(XMI) ) THEN
+  IF ( SIZE(XMI) == 0 ) THEN
+    DEALLOCATE( XMI )
+    XMI => NULL()
+  END IF
 END IF
 IF (.NOT.(ASSOCIATED(XMI))) THEN
   ALLOCATE(XMI(SIZE(PCHEM,1),SIZE(PCHEM,2),SIZE(PCHEM,3),NSP+NCARB+NSOA))
 END IF
-!
-IF ( SIZE(XSOLORG) == 0 ) THEN
-  DEALLOCATE( XSOLORG )
-  XSOLORG => NULL()
+
+IF ( ASSOCIATED(XSOLORG) ) THEN
+  IF ( SIZE(XSOLORG) == 0 ) THEN
+    DEALLOCATE( XSOLORG )
+    XSOLORG => NULL()
+  END IF
 END IF
 IF (.NOT.(ASSOCIATED(XSOLORG))) THEN
   ALLOCATE(XSOLORG(SIZE(PCHEM,1),SIZE(PCHEM,2),SIZE(PCHEM,3),10))
