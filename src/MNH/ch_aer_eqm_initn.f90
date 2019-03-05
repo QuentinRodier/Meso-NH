@@ -49,6 +49,7 @@ END MODULE MODI_CH_AER_EQM_INIT_n
 !!    MODIFICATIONS
 !!    -------------
 !!    M.Leriche 2015 : masse molaire Black carbon à 12 g/mol
+!!    P.Wautelet 03/2019 : deallocate XMI and XSOLORG if already allocated in ini_modeln but size=0
 !!
 !!    EXTERNAL
 !!    --------
@@ -116,15 +117,24 @@ END DO
 
 ZDEN2MOL = 1E-6 * XAVOGADRO / XMD
 
+
+IF ( SIZE(XMI) == 0 ) THEN
+  DEALLOCATE( XMI )
+  XMI => NULL()
+END IF
 IF (.NOT.(ASSOCIATED(XMI))) THEN
   ALLOCATE(XMI(SIZE(PCHEM,1),SIZE(PCHEM,2),SIZE(PCHEM,3),NSP+NCARB+NSOA))
 END IF
-
+!
+IF ( SIZE(XSOLORG) == 0 ) THEN
+  DEALLOCATE( XSOLORG )
+  XSOLORG => NULL()
+END IF
 IF (.NOT.(ASSOCIATED(XSOLORG))) THEN
   ALLOCATE(XSOLORG(SIZE(PCHEM,1),SIZE(PCHEM,2),SIZE(PCHEM,3),10))
   XSOLORG(:,:,:,:) = 0.
 END IF
-
+!
 ! Default values of molar mass
 
 XMI(:,:,:,:) = 250.
