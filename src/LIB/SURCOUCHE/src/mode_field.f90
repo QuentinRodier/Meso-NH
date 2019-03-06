@@ -4,12 +4,13 @@
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 ! Original version:
-!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 ! Modifications:
-!  Philippe Wautelet: 29/01/2019 : small bug correction (null pointers) in FIELDLIST_GOTO_MODEL if NESPGD or PGD
-!  Philippe Wautelet: 01/02/2019 : bug correction in case XRT is not associated
-!                   02/2019 C.Lac add rain fraction as an output field
-!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  P. Wautelet 29/01/2019: small bug correction (null pointers) in FIELDLIST_GOTO_MODEL if NESPGD or PGD
+!  P. Wautelet 01/02/2019: bug correction in case XRT is not associated
+!  C. Lac         02/2019: add rain fraction as an output field
+!  S. Bielli      02/2019: sea salt: significant sea wave height influences salt emission; 5 salt modes
+!  P. Wautelet 06/03/2019: correct ZWS entry
 !-----------------------------------------------------------------
 MODULE MODE_FIELD
 !
@@ -898,7 +899,7 @@ IDX = IDX+1
 !
 IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
 TFIELDLIST(IDX)%CMNHNAME   = 'ZWS'
-TFIELDLIST(IDX)%CSTDNAME   = 'surface_altitude'
+TFIELDLIST(IDX)%CSTDNAME   = 'sea_surface_wave_significant_height'
 TFIELDLIST(IDX)%CLONGNAME  = 'ZWS'
 TFIELDLIST(IDX)%CUNITS     = 'm'
 TFIELDLIST(IDX)%CDIR       = 'XY'
@@ -3863,6 +3864,7 @@ END IF
 !
 ! MODD_FIELD_n variables
 !
+CALL FIND_FIELD_ID_FROM_MNHNAME('ZWS',  IID,IRESP); TFIELDLIST(IID)%TFIELD_X2D(KFROM)%DATA => XZWS
 CALL FIND_FIELD_ID_FROM_MNHNAME('UT',   IID,IRESP); TFIELDLIST(IID)%TFIELD_X3D(KFROM)%DATA => XUT
 CALL FIND_FIELD_ID_FROM_MNHNAME('VT',   IID,IRESP); TFIELDLIST(IID)%TFIELD_X3D(KFROM)%DATA => XVT
 CALL FIND_FIELD_ID_FROM_MNHNAME('WT',   IID,IRESP); TFIELDLIST(IID)%TFIELD_X3D(KFROM)%DATA => XWT
@@ -4175,9 +4177,7 @@ IF( KFROM/=KTO) THEN
 !
 ! MODD_FIELD_n variables
 !
-! *** BEGIN SB ADD HS ***
-CALL FIND_FIELD_ID_FROM_MNHNAME('ZWS',   IID,IRESP); TFIELDLIST(IID)%TFIELD_X2D(KFROM)%DATA => XZWS
-! *** END SB ADD HS ***
+CALL FIND_FIELD_ID_FROM_MNHNAME('ZWS',  IID,IRESP); XZWS   => TFIELDLIST(IID)%TFIELD_X2D(KTO)%DATA
 CALL FIND_FIELD_ID_FROM_MNHNAME('UT',   IID,IRESP); XUT    => TFIELDLIST(IID)%TFIELD_X3D(KTO)%DATA
 CALL FIND_FIELD_ID_FROM_MNHNAME('VT',   IID,IRESP); XVT    => TFIELDLIST(IID)%TFIELD_X3D(KTO)%DATA
 CALL FIND_FIELD_ID_FROM_MNHNAME('WT',   IID,IRESP); XWT    => TFIELDLIST(IID)%TFIELD_X3D(KTO)%DATA

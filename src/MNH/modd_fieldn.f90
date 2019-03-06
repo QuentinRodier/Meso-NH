@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -51,6 +51,7 @@
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!                   02/2019 C.Lac add rain fraction as an output field
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  P. Wautelet 06/03/2019: correct XZWS entry
 !!
 !-------------------------------------------------------------------------------
 !
@@ -61,6 +62,7 @@ USE MODD_PARAMETERS, ONLY: JPMODELMAX
 IMPLICIT NONE
 
 TYPE FIELD_t
+  REAL, DIMENSION(:,:),   POINTER :: XZWS=>NULL()    ! significant sea wave
 !  REAL, DIMENSION(:,:,:), POINTER :: XUT=>NULL(),XVT=>NULL(),XWT=>NULL()
                                       ! U,V,W  at time t
   REAL, DIMENSION(:,:,:), POINTER :: XRUS=>NULL(),XRVS=>NULL(),XRWS=>NULL()
@@ -82,8 +84,6 @@ TYPE FIELD_t
   REAL, DIMENSION(:,:,:), POINTER :: XRTKES=>NULL()   ! Source of kinetic energy
                                                      ! (rho e)
 !  REAL, DIMENSION(:,:,:), POINTER :: XPABST=>NULL()   ! absolute pressure at
-  REAL, DIMENSION(:,:),   POINTER :: XZWS=>NULL()    ! significant sea wave
-  REAL, DIMENSION(:,:),   POINTER :: XZWSS=>NULL()    ! significant sea wave
 !                                                     ! time t
 !  REAL, DIMENSION(:,:,:,:), POINTER :: XRT=>NULL()    ! Moist variables (rho Rn) 
 !                                                     ! at time t
@@ -112,13 +112,12 @@ END TYPE FIELD_t
 
 TYPE(FIELD_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: FIELD_MODEL
 
+REAL, DIMENSION(:,:),   POINTER :: XZWS=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XUT=>NULL(),XVT=>NULL(),XWT=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XRUS=>NULL(),XRVS=>NULL(),XRWS=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XRUS_PRES=>NULL(),XRVS_PRES=>NULL(),XRWS_PRES=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XTHT=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XRTHS=>NULL()
-REAL, DIMENSION(:,:),   POINTER :: XZWS=>NULL()
-REAL, DIMENSION(:,:),   POINTER :: XZWSS=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XRTHS_CLD=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XSUPSAT=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XNACT=>NULL()
@@ -154,6 +153,7 @@ INTEGER, INTENT(IN) :: KFROM, KTO
 INTEGER :: IID,IRESP
 !
 ! Save current state for allocated arrays
+!FIELD_MODEL(KFROM)%XZWS=>XZWS !Done in FIELDLIST_GOTO_MODEL
 !FIELD_MODEL(KFROM)%XUT=>XUT !Done in FIELDLIST_GOTO_MODEL
 !FIELD_MODEL(KFROM)%XVT=>XVT !Done in FIELDLIST_GOTO_MODEL
 !FIELD_MODEL(KFROM)%XWT=>XWT !Done in FIELDLIST_GOTO_MODEL
@@ -164,8 +164,6 @@ FIELD_MODEL(KFROM)%XRWS=>XRWS
 !FIELD_MODEL(KFROM)%XRVS_PRES=>XRVS_PRES !Done in FIELDLIST_GOTO_MODEL
 !FIELD_MODEL(KFROM)%XRWS_PRES=>XRWS_PRES !Done in FIELDLIST_GOTO_MODEL
 !FIELD_MODEL(KFROM)%XTHT=>XTHT !Done in FIELDLIST_GOTO_MODEL
-FIELD_MODEL(KFROM)%XZWS=>XZWS
-FIELD_MODEL(KFROM)%XZWSS=>XZWSS
 FIELD_MODEL(KFROM)%XRTHS=>XRTHS
 !FIELD_MODEL(KFROM)%XRTHS_CLD=>XRTHS_CLD !Done in FIELDLIST_GOTO_MODEL
 !FIELD_MODEL(KFROM)%XSUPSAT=>XSUPSAT !Done in FIELDLIST_GOTO_MODEL
@@ -191,6 +189,7 @@ FIELD_MODEL(KFROM)%XPABSM=>XPABSM
 FIELD_MODEL(KFROM)%XRCM=>XRCM
 !
 ! Current model is set to model KTO
+!XZWS=>FIELD_MODEL(KTO)%XZWS !Done in FIELDLIST_GOTO_MODEL
 !XUT=>FIELD_MODEL(KTO)%XUT !Done in FIELDLIST_GOTO_MODEL
 !XVT=>FIELD_MODEL(KTO)%XVT !Done in FIELDLIST_GOTO_MODEL
 !XWT=>FIELD_MODEL(KTO)%XWT !Done in FIELDLIST_GOTO_MODEL
@@ -200,8 +199,6 @@ XRWS=>FIELD_MODEL(KTO)%XRWS
 !XRUS_PRES=>FIELD_MODEL(KTO)%XRUS_PRES !Done in FIELDLIST_GOTO_MODEL
 !XRVS_PRES=>FIELD_MODEL(KTO)%XRVS_PRES !Done in FIELDLIST_GOTO_MODEL
 !XRWS_PRES=>FIELD_MODEL(KTO)%XRWS_PRES !Done in FIELDLIST_GOTO_MODEL
-XZWS=>FIELD_MODEL(KTO)%XZWS
-XZWSS=>FIELD_MODEL(KTO)%XZWSS
 !XTHT=>FIELD_MODEL(KTO)%XTHT !Done in FIELDLIST_GOTO_MODEL
 XRTHS=>FIELD_MODEL(KTO)%XRTHS
 !XRTHS_CLD=>FIELD_MODEL(KTO)%XRTHS_CLD !Done in FIELDLIST_GOTO_MODEL
