@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !     ######spl
        MODULE MODI_RAIN_ICE_RED
@@ -254,7 +254,6 @@ USE MODI_ICE4_SEDIMENTATION_STAT
 USE MODI_ICE4_SEDIMENTATION_SPLIT
 USE MODI_ICE4_NUCLEATION_WRAPPER
 USE MODI_ICE4_TENDENCIES
-USE MODE_FMWRIT
 USE MODE_ll
 USE MODE_MSG
 !

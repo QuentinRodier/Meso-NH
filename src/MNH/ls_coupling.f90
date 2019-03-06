@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ############################## 
@@ -124,8 +124,8 @@ END MODULE MODI_LS_COUPLING
 !!
 !!    EXTERNAL
 !!    --------
-!!      IO_READ_FIELD : to read data in file
-!!      IO_FILE_CLOSE_ll : to close a file
+!!      IO_Field_read : to read data in file
+!!      IO_File_close : to close a file
 !!      INI_LS      : to initialize larger scale fields
 !!      INI_LB      : to initialize "2D" surfacic LB fields 
 !!
@@ -186,9 +186,8 @@ USE MODD_PASPOL
 #endif
 USE MODD_CH_MNHC_n
 !
-USE MODE_FM
-USE MODE_FMREAD
-USE MODE_IO_ll
+USE MODE_IO_FIELD_READ, only: IO_Field_read
+USE MODE_IO_FILE,       only: IO_File_close
 USE MODE_MSG
 !
 USE MODI_INI_LS
@@ -274,9 +273,9 @@ LOGICAL               :: GLSOURCE ! switch for the source term (for ini_ls and i
 !
 !*      1.1  Check dimensions
 !
-CALL IO_READ_FIELD(TCPLFILE(NCPL_CUR)%TZFILE,'IMAX',IIMAX)
-CALL IO_READ_FIELD(TCPLFILE(NCPL_CUR)%TZFILE,'JMAX',IJMAX)
-CALL IO_READ_FIELD(TCPLFILE(NCPL_CUR)%TZFILE,'KMAX',IKMAX)
+CALL IO_Field_read(TCPLFILE(NCPL_CUR)%TZFILE,'IMAX',IIMAX)
+CALL IO_Field_read(TCPLFILE(NCPL_CUR)%TZFILE,'JMAX',IJMAX)
+CALL IO_Field_read(TCPLFILE(NCPL_CUR)%TZFILE,'KMAX',IKMAX)
 !
 IKU=SIZE(PLSTHM,3)
 !
@@ -345,7 +344,7 @@ CALL INI_LB(TCPLFILE(NCPL_CUR)%TZFILE,GLSOURCE,KSV,                   &
 !
 !*      1.4  Close the coupling file
 !
-CALL IO_FILE_CLOSE_ll(TCPLFILE(NCPL_CUR)%TZFILE)
+CALL IO_File_close(TCPLFILE(NCPL_CUR)%TZFILE)
 !
 !-------------------------------------------------------------------------------
 

@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !    #################### 
@@ -27,7 +27,7 @@ INTERFACE
                       PDP,PTP,PSIGS,PWTH,PWRC,PWSV                  )
 
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 INTEGER,                INTENT(IN)   :: KRR           ! number of moist var.
 INTEGER,                INTENT(IN)   :: KRRL          ! number of liquid water var.
@@ -326,10 +326,10 @@ END MODULE MODI_TURB_VER
 !
 USE MODD_CST
 USE MODD_CTURB
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_LES
-USE MODD_NSV, ONLY : NSV
+USE MODD_NSV,            ONLY: NSV
 USE MODD_BLANK
 !
 USE MODI_PRANDTL
@@ -346,8 +346,8 @@ USE MODI_TURB_VER_SV_CORR
 USE MODI_LES_MEAN_SUBGRID
 USE MODI_SBL_DEPTH
 !
-USE MODE_FIELD, ONLY: TFIELDDATA, TYPEREAL
-USE MODE_FMWRIT
+USE MODE_FIELD,          ONLY: TFIELDDATA, TYPEREAL
+USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 USE MODE_PRANDTL
 !
 USE MODI_SECOND_MNH
@@ -712,7 +712,7 @@ IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZPHI3)
+  CALL IO_Field_write(TPFILE,TZFIELD,ZPHI3)
 !
 ! stores the Turbulent Schmidt number
 ! 
@@ -726,7 +726,7 @@ IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZPSI3)
+  CALL IO_Field_write(TPFILE,TZFIELD,ZPSI3)
 !
 !
 ! stores the Turbulent Schmidt number for the scalar variables
@@ -742,7 +742,7 @@ IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
     WRITE(TZFIELD%CMNHNAME, '("PSI_SV_",I3.3)') JSV
     TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
     TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZPSI_SV(:,:,:,JSV))
+    CALL IO_Field_write(TPFILE,TZFIELD,ZPSI_SV(:,:,:,JSV))
   END DO
 !
 END IF

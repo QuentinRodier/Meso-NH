@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ######################
@@ -15,7 +15,7 @@ INTERFACE
            PLSUMM,PLSVMM,PLSWMM,PLSTHMM,PLSRVMM,PDRYMASST,PLENG, &
            OSTEADY_DMASS)
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 TYPE(TFILEDATA),        INTENT(IN)    :: TPINIFILE ! Initial file
 CHARACTER (LEN=*),      INTENT(IN)    :: HGETRVM   ! GET indicator
@@ -87,10 +87,9 @@ END MODULE MODI_INI_LS
 !*       0.    DECLARATIONS
 !
 USE MODD_CONF
-USE MODD_IO_ll, ONLY: TFILEDATA
-USE MODD_TIME ! for type DATE_TIME
+USE MODD_IO,            ONLY: TFILEDATA
 !
-USE MODE_FMREAD
+USE MODE_IO_FIELD_READ, only: IO_Field_read
 USE MODE_MSG
 !
 IMPLICIT NONE
@@ -134,13 +133,13 @@ LOGICAL,                INTENT(IN),    OPTIONAL :: OSTEADY_DMASS         ! Md ev
 !*       2.    READ LARGE SCALE FIELDS
 !              -----------------------
 !
-CALL IO_READ_FIELD(TPINIFILE,'LSUM', PLSUM)
-CALL IO_READ_FIELD(TPINIFILE,'LSVM', PLSVM)
-CALL IO_READ_FIELD(TPINIFILE,'LSWM', PLSWM)
-CALL IO_READ_FIELD(TPINIFILE,'LSTHM',PLSTHM)
+CALL IO_Field_read(TPINIFILE,'LSUM', PLSUM)
+CALL IO_Field_read(TPINIFILE,'LSVM', PLSVM)
+CALL IO_Field_read(TPINIFILE,'LSWM', PLSWM)
+CALL IO_Field_read(TPINIFILE,'LSTHM',PLSTHM)
 !
 IF (HGETRVM == 'READ') THEN         ! LS-vapor                                    
-  CALL IO_READ_FIELD(TPINIFILE,'LSRVM',PLSRVM)
+  CALL IO_Field_read(TPINIFILE,'LSRVM',PLSRVM)
 ENDIF
 !
 !
@@ -172,7 +171,7 @@ IF (OLSOURCE) THEN
 ! Dry mass
    IF(.NOT. OSTEADY_DMASS) THEN
      IF (PRESENT(PDRYMASSS).AND.PRESENT(PDRYMASST)) THEN
-       CALL IO_READ_FIELD(TPINIFILE,'DRYMASST',PDRYMASSS)
+       CALL IO_Field_read(TPINIFILE,'DRYMASST',PDRYMASSS)
        PDRYMASSS   = (PDRYMASSS - PDRYMASST) / PLENG
      ENDIF
    ENDIF

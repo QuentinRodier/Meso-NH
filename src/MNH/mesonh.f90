@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -90,14 +90,14 @@
 USE MODD_CONF
 USE MODD_NESTING
 USE MODD_CONF_n
-USE MODD_IO_ll, ONLY: NIO_VERB,NVERB_DEBUG
+USE MODD_IO, ONLY: NIO_VERB,NVERB_DEBUG
 !
 USE MODI_MODEL_n
 USE MODI_KID_MODEL
 !
+USE MODE_IO,               only: IO_Init
+USE MODE_IO_MANAGE_STRUCT, only: IO_Filelist_print
 USE MODE_ll
-USE MODE_IO_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_PRINT_LIST
 USE MODE_MODELN_HANDLER
 !
 USE MODI_VERSION
@@ -144,7 +144,7 @@ CALL GOTO_MODEL(1,ONOFIELDLIST=.TRUE.)
   CALL SFX_OASIS_INIT(CNAMELIST, NMNH_COMM_WORLD)
 #endif
 !
-CALL INITIO_ll()
+CALL IO_Init()
 !
 CALL VERSION
 CPROGRAM='MESONH'
@@ -213,7 +213,7 @@ DO
   !
 END DO
 !
-IF(NIO_VERB>=NVERB_DEBUG) CALL IO_FILE_PRINT_LIST()
+IF(NIO_VERB>=NVERB_DEBUG) CALL IO_Filelist_print()
 !
 !-------------------------------------------------------------------------------
 !

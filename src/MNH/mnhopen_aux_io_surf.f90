@@ -53,9 +53,9 @@ END MODULE MODI_MNHOPEN_AUX_IO_SURF
 !!         J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
 !!         J.Escobar : 02/06/2016 : abort MNHOPEN with STOP if problem with OPEN of INPUT/READ file 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
-!                          (nsubfiles_ioz is now determined in IO_FILE_ADD2LIST)
+!                          (nsubfiles_ioz is now determined in IO_File_add2list)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -70,10 +70,9 @@ USE MODD_LUNIT,            ONLY: TPGDFILE, TLUOUT0, TOUTDATAFILE
 USE MODD_LUNIT_n,          ONLY: TLUOUT
 USE MODD_PARAMETERS,       ONLY: JPHEXT
 !
-USE MODE_FM,               ONLY: IO_FILE_OPEN_ll
-USE MODE_FMREAD
-USE MODE_IO_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST,IO_FILE_FIND_BYNAME
+USE MODE_IO_FIELD_READ,    only: IO_Field_read
+USE MODE_IO_FILE,          ONLY: IO_File_open
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_add2list, IO_File_find_byname
 USE MODE_MSG
 !
 USE MODI_GET_1D_MASK
@@ -141,8 +140,8 @@ ELSE
 END IF
 !
 IF (HFILE/=YFILE .AND. HFILE/=YPGDFILE) THEN
-  CALL IO_FILE_ADD2LIST(TPINFILE,TRIM(HFILE),'PGD','READ',KLFITYPE=2,KLFIVERB=5,OOLD=.TRUE.)
-  CALL IO_FILE_OPEN_ll(TPINFILE,KRESP=IRESP)
+  CALL IO_File_add2list(TPINFILE,TRIM(HFILE),'PGD','READ',KLFITYPE=2,KLFIVERB=5,OOLD=.TRUE.)
+  CALL IO_File_open(TPINFILE,KRESP=IRESP)
   !
   IF (IRESP .NE. 0) THEN
     PRINT*," /!\  MNHOPEN_AUX_IO_SURF :: FATAL PROBLEM OPENING INPUT/READ FILES =", HFILE
@@ -150,7 +149,7 @@ IF (HFILE/=YFILE .AND. HFILE/=YPGDFILE) THEN
   ENDIF
   CACTION = 'OPEN  '
 ELSE
-  CALL IO_FILE_FIND_BYNAME(TRIM(HFILE),TPINFILE,IRESP)
+  CALL IO_File_find_byname(TRIM(HFILE),TPINFILE,IRESP)
 END IF
 !
 COUTFILE = HFILE
@@ -158,11 +157,11 @@ COUTFILE = HFILE
 !
 !*       3.    initialisation of 2D arrays for entire physical field
 !
-CALL IO_READ_FIELD(TPINFILE,'IMAX',IIMAX)
-CALL IO_READ_FIELD(TPINFILE,'JMAX',IJMAX)
+CALL IO_Field_read(TPINFILE,'IMAX',IIMAX)
+CALL IO_Field_read(TPINFILE,'JMAX',IJMAX)
 CALL MNH_SURF_GRID_IO_INIT(IIMAX,IJMAX)
 IJPHEXT= 1
-CALL IO_READ_FIELD(TPINFILE,'JPHEXT',IJPHEXT)
+CALL IO_Field_read(TPINFILE,'JPHEXT',IJPHEXT)
 IF ( IJPHEXT .NE. JPHEXT ) THEN
    WRITE(ILUOUT,FMT=*) ' MNHOPEN_AUX_IO : JPHEXT in PRE_PGD1.nam/NAM_CONF_PGD ( or default value )&
       & JPHEXT=',JPHEXT

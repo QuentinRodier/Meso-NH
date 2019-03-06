@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !!    #############################
@@ -76,9 +76,8 @@
 !!    ------------------
 
 USE MODE_DATETIME
-USE MODE_FM,              ONLY: IO_FILE_CLOSE_ll,IO_FILE_OPEN_ll
-USE MODE_IO_MANAGE_STRUCT,ONLY: IO_FILE_ADD2LIST
-USE MODE_IO_ll
+USE MODE_IO_FILE,          ONLY: IO_File_close, IO_File_open
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_add2list
 USE MODE_GRIDPROJ
 USE MODE_ll
 !
@@ -88,7 +87,7 @@ USE MODD_NSV,             ONLY: NSV,NSV_CHEMBEG,NSV_CHEMEND,  &
 USE MODD_CH_AEROSOL,      ONLY: CAERONAMES, LORILAM
 USE MODD_DYN_n,           ONLY: XTSTEP       ! time-step of the model
 USE MODD_DIM_n,           ONLY: NKMAX        ! # of points in Z of the physical grid
-USE MODD_IO_ll,           ONLY: TFILEDATA
+USE MODD_IO,           ONLY: TFILEDATA
 USE MODD_PARAMETERS,      ONLY: JPVEXT   ! vertical external points number
 USE MODD_GRID,      ONLY: XLATORI,XLONORI
 USE MODD_GRID_n,    ONLY: XXHAT,XYHAT,XZZ
@@ -230,8 +229,8 @@ DO JN=1,NBPROF
       (JINDEX >= 1).AND.(JINDEX <= IJU)) THEN  
   ! write picasso def-file
     IF (GSFIRSTCALL) THEN
-      CALL IO_FILE_ADD2LIST(TZFILE,YSIO1DDEF,'TXT','WRITE')
-      CALL IO_FILE_OPEN_ll(TZFILE,HPOSITION='REWIND',HSTATUS='NEW')
+      CALL IO_File_add2list(TZFILE,YSIO1DDEF,'TXT','WRITE')
+      CALL IO_File_open(TZFILE,HPOSITION='REWIND',HSTATUS='NEW')
       ISIO1D = TZFILE%NLU
 
     ! write comment
@@ -274,12 +273,12 @@ DO JN=1,NBPROF
       END IF
     END DO
   
-    CALL IO_FILE_CLOSE_ll(TZFILE)
+    CALL IO_File_close(TZFILE)
     TZFILE => NULL()
 
     ! open picasso dat-file
-    CALL IO_FILE_ADD2LIST(TZFILE,YSIO1DDAT,'TXT','WRITE')
-    CALL IO_FILE_OPEN_ll(TZFILE,HPOSITION='REWIND',HSTATUS='NEW')
+    CALL IO_File_add2list(TZFILE,YSIO1DDAT,'TXT','WRITE')
+    CALL IO_File_open(TZFILE,HPOSITION='REWIND',HSTATUS='NEW')
     ISIO1D = TZFILE%NLU
 
     ! calculate ISSKIP
@@ -387,7 +386,7 @@ DO JN=1,NBPROF
     ENDDO
 
     IF ((CPROGRAM =='DIAG  ').AND.(LCHEMDIAG)) THEN
-      CALL IO_FILE_CLOSE_ll(TZFILE)
+      CALL IO_File_close(TZFILE)
       TZFILE => NULL()
     END IF
  

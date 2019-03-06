@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/Attic/radar_simulator.f90,v $ $Revision: 1.1.2.3.2.1.12.2.2.2 $ $Date: 2015/09/16 14:31:20 $
 !-----------------------------------------------------------------
 !      ###########################
        MODULE MODI_RADAR_SIMULATOR 
@@ -63,10 +59,7 @@ END MODULE MODI_RADAR_SIMULATOR
 !!      Module MODD_RAIN_ICE_PARAM
 !!      Module MODD_PARAMETERS
 !!      Module MODD_LUNIT
-!
-!!      Module MODE_IO_ll
-!!      Module MODE_FM
-!
+!!
 !!      Module MODD_GR_FIELD_n
 !!      Module MODD_GRID_n
 !!      Module MODD_CONF_n
@@ -139,7 +132,6 @@ USE MODD_REF
 USE MODD_PARAMETERS
 USE MODD_LUNIT
 !
-USE MODE_IO_ll
 USE MODE_MSG
 !
 USE MODD_GR_FIELD_n

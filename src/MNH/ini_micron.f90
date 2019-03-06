@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,7 +10,7 @@
 INTERFACE
       SUBROUTINE INI_MICRO_n  ( TPINIFILE,KLUOUT )
 !
-USE MODD_IO_ll, ONLY : TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 TYPE(TFILEDATA), INTENT(IN) :: TPINIFILE ! Initial file
 INTEGER,         INTENT(IN) :: KLUOUT    ! Logical unit number for prints
@@ -61,7 +61,7 @@ END MODULE MODI_INI_MICRO_n
 !
 !
 USE MODD_CONF, ONLY : CCONF,CPROGRAM       
-USE MODD_IO_ll, ONLY : TFILEDATA
+USE MODD_IO, ONLY : TFILEDATA
 USE MODD_GET_n, ONLY : CGETRCT,CGETRRT, CGETRST, CGETRGT, CGETRHT, CGETCLOUD
 USE MODD_DIM_n, ONLY : NIMAX_ll, NJMAX_ll
 USE MODD_PARAMETERS, ONLY : JPVEXT, JPHEXT

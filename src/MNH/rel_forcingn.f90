@@ -109,7 +109,6 @@ USE MODD_RELFRC_n     ! Modules for time evolving advfrc
 USE MODD_TIME
 !
 USE MODE_DATETIME
-USE MODE_IO_ll
 !
 USE MODI_BUDGET
 USE MODI_SHUMAN

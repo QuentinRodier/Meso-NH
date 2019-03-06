@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !    #################### 
@@ -26,7 +26,7 @@ INTERFACE
                       PFWTH,PFWR,PFTH2,PFR2,PFTHR,PBL_DEPTH,        &
                       PWTHV,PRTHLS,PRRS,PTHLP,PRP,PTP,PWTH,PWRC     )
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 INTEGER,                INTENT(IN)   :: KKA           !near ground array index  
 INTEGER,                INTENT(IN)   :: KKU           !uppest atmosphere array index
@@ -332,7 +332,7 @@ END MODULE MODI_TURB_VER_THERMO_FLUX
 !
 USE MODD_CST
 USE MODD_CTURB
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_CONF
 USE MODD_LES
@@ -343,13 +343,13 @@ USE MODI_GRADIENT_W
 USE MODI_GRADIENT_M
 USE MODI_SHUMAN 
 USE MODI_TRIDIAG 
-USE MODE_FMWRIT
 USE MODI_LES_MEAN_SUBGRID
 USE MODI_PRANDTL
 USE MODI_TRIDIAG_THERMO
 USE MODI_TM06_H
 !
-USE MODE_FIELD, ONLY: TFIELDDATA, TYPEREAL
+USE MODE_FIELD,          ONLY: TFIELDDATA, TYPEREAL
+USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 USE MODE_PRANDTL
 !
 USE MODI_SECOND_MNH
@@ -617,7 +617,7 @@ IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZFLXZ)
+  CALL IO_Field_write(TPFILE,TZFIELD,ZFLXZ)
 END IF
 !
 ! Contribution of the conservative temperature flux to the buoyancy flux
@@ -795,7 +795,7 @@ IF (KRR /= 0) THEN
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
     TZFIELD%LTIMEDEP   = .TRUE.
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZFLXZ)
+    CALL IO_Field_write(TPFILE,TZFIELD,ZFLXZ)
   END IF
   !
   ! Contribution of the conservative water flux to the Buoyancy flux
@@ -877,7 +877,7 @@ IF ( ((OTURB_FLX .AND. OCLOSE_OUT) .OR. LLES_CALL) .AND. (KRRL > 0) ) THEN
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
     TZFIELD%LTIMEDEP   = .TRUE.
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZFLXZ)
+    CALL IO_Field_write(TPFILE,TZFIELD,ZFLXZ)
   END IF
   !  
 ! and we store in LES configuration this subgrid flux <w'rc'>

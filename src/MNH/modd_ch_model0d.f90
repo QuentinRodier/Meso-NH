@@ -43,7 +43,7 @@
 !*       0.   DECLARATIONS
 !        -----------------
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 IMPLICIT NONE
 SAVE

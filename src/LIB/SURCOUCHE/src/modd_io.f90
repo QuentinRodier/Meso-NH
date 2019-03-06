@@ -7,10 +7,10 @@
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN (removed ISTDOUT, ISTDERR, added NNULLUNIT, CNULLFILE)
 !  Philippe Wautelet: 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll to allow to disable writes (for bench purposes)
-!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !-----------------------------------------------------------------
 
-MODULE MODD_IO_ll
+MODULE MODD_IO
 !
 USE MODD_NETCDF,     ONLY: IDCDF_KIND, IOCDF, TPTR2DIMCDF
 USE MODD_PARAMETERS, ONLY: NDIRNAMELGTMAX, NFILENAMELGTMAX
@@ -20,7 +20,7 @@ IMPLICIT NONE
 !
 INTEGER, PARAMETER :: NVERB_NO=0, NVERB_FATAL=1, NVERB_ERROR=2, NVERB_WARNING=3, NVERB_INFO=4, NVERB_DEBUG=5
 
-INTEGER                     :: NNULLUNIT = -1  ! /dev/null fortran unit, value set in INITIO_ll
+INTEGER                     :: NNULLUNIT = -1  ! /dev/null fortran unit, value set in IO_Init
 CHARACTER(LEN=*), PARAMETER :: CNULLFILE = "/dev/null"
 
 INTEGER, SAVE :: NIO_RANK ! Rank of IO process
@@ -137,4 +137,4 @@ TYPE(TFILEDATA),POINTER,SAVE :: TFILE_OUTPUTLISTING  => NULL() !Pointer used to 
 !Non existing file which can be used as a dummy target
 TYPE(TFILEDATA),TARGET, SAVE :: TFILE_DUMMY = TFILEDATA(CNAME="dummy",CDIRNAME=NULL(),TFILES_IOZ=NULL(),TNCCOORDS=NULL())
 
-END MODULE MODD_IO_ll
+END MODULE MODD_IO

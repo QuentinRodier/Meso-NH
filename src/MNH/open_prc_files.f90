@@ -13,7 +13,7 @@ INTERFACE
                                                 HSURFFILE,HSURFFILETYPE, &
                                                 HPGDFILE,TPPGDFILE)
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 TYPE(TFILEDATA),POINTER, INTENT(OUT) :: TPPRE_REAL1FILE ! PRE_REAL1 file
 CHARACTER(LEN=28), INTENT(OUT) :: HATMFILE     ! name of the input atmospheric file
@@ -91,9 +91,9 @@ END MODULE MODI_OPEN_PRC_FILES
 !!      J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      P. Wautelet  01/02/2019 added missing initialization to NULL for files with OUT intent
-!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
-!                          (nsubfiles_ioz is now determined in IO_FILE_ADD2LIST)
+!                          (nsubfiles_ioz is now determined in IO_File_add2list)
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !-------------------------------------------------------------------------------
 !
@@ -105,16 +105,16 @@ USE MODD_CONF_n
 !JUAN Z_SPLITTING
 !USE MODD_CONFZ
 !JUAN Z_SPLITTING
-USE MODD_IO_ll, ONLY: TFILE_OUTPUTLISTING,TFILEDATA
+USE MODD_IO,               ONLY: TFILE_OUTPUTLISTING, TFILEDATA
 USE MODD_LUNIT
 USE MODD_LUNIT_n, CINIFILE_n=>CINIFILE , CINIFILEPGD_n=>CINIFILEPGD
 !
 !
-USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST
-USE MODE_POS
-USE MODE_FM
-USE MODE_IO_ll
+USE MODE_IO,               only: IO_Config_set
+USE MODE_IO_FILE,          only: IO_File_open
+USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list
 USE MODE_MSG
+USE MODE_POS
 !
 USE MODN_CONFIO, ONLY : NAM_CONFIO
 !JUAN Z_SPLITTING
@@ -171,8 +171,8 @@ HSURFFILETYPE='MESONH'
 !*       2.    OPENNING OF THE OUTPUT LISTING FILE
 !              -----------------------------------
 !
-CALL IO_FILE_ADD2LIST(TLUOUT0,'OUTPUT_LISTING0','OUTPUTLISTING','WRITE')
-CALL IO_FILE_OPEN_ll(TLUOUT0)
+CALL IO_File_add2list(TLUOUT0,'OUTPUT_LISTING0','OUTPUTLISTING','WRITE')
+CALL IO_File_open(TLUOUT0)
 !Set output file for PRINT_MSG
 TFILE_OUTPUTLISTING => TLUOUT0
 !
@@ -185,8 +185,8 @@ IF (NVERB>=5) WRITE(ILUOUT0,*) 'Routine OPEN_PRC_FILES started'
 !              -------------------------
 !
 TPPRE_REAL1FILE => NULL()
-CALL IO_FILE_ADD2LIST(TPPRE_REAL1FILE,'PRE_REAL1.nam','NML','READ')
-CALL IO_FILE_OPEN_ll(TPPRE_REAL1FILE,KRESP=IRESP)
+CALL IO_File_add2list(TPPRE_REAL1FILE,'PRE_REAL1.nam','NML','READ')
+CALL IO_File_open(TPPRE_REAL1FILE,KRESP=IRESP)
 IPRE_REAL1=TPPRE_REAL1FILE%NLU
 IF (IRESP.NE.0 ) THEN
    !callabortstop
@@ -204,7 +204,7 @@ IF (GFOUND) READ(UNIT=IPRE_REAL1,NML=NAM_CONFZ)
 !JUANZ
 CALL POSNAM(IPRE_REAL1,'NAM_CONFIO',GFOUND,ILUOUT0)
 IF (GFOUND) READ(UNIT=IPRE_REAL1,NML=NAM_CONFIO)
-CALL SET_CONFIO_ll()
+CALL IO_Config_set()
 !
 CINIFILE = CINIFILE_n
 CALL POSNAM(IPRE_REAL1,'NAM_FILE_NAMES',GFOUND,ILUOUT0)
@@ -271,8 +271,8 @@ ELSE
 !              -----------------------------------
 !
   TPPGDFILE => NULL()
-  CALL IO_FILE_ADD2LIST(TPPGDFILE,TRIM(HPGDFILE),'PGD','READ',KLFITYPE=2,KLFIVERB=NVERB)
-  CALL IO_FILE_OPEN_ll(TPPGDFILE,IRESP)
+  CALL IO_File_add2list(TPPGDFILE,TRIM(HPGDFILE),'PGD','READ',KLFITYPE=2,KLFIVERB=NVERB)
+  CALL IO_File_open(TPPGDFILE,IRESP)
   IF (IRESP/=0) THEN
 !callabortstop
     CALL PRINT_MSG(NVERB_FATAL,'GEN','OPEN_PRC_FILES',' problem during opening of PGD file '//TRIM(HPGDFILE))

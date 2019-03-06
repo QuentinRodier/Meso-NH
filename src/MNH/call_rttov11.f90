@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !    ########################
@@ -12,7 +12,7 @@ INTERFACE
                 PTHT, PRT, PPABST, PZZ, PMFCONV, PCLDFR, PULVLKB, PVLVLKB,  &
                 OUSERI, KRTTOVINFO, TPFILE    )
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 INTEGER, INTENT(IN)   :: KDLON !number of columns where the
                                !radiation calculations are performed
@@ -90,23 +90,20 @@ SUBROUTINE CALL_RTTOV11(KDLON, KFLEV, PEMIS, PTSRAD,     &
 USE MODD_CST
 USE MODD_PARAMETERS
 USE MODD_GRID_n
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 USE MODD_LUNIT_n
 USE MODD_DEEP_CONVECTION_n
 USE MODD_REF_n
 USE MODD_RADIATIONS_n,  ONLY : XSEA
 !
 USE MODN_CONF
-!                                
+!
 USE MODI_DETER_ANGLE
 USE MODI_PINTER
 !
 USE MODE_FIELD
-USE MODE_FMWRIT
-USE MODE_FMREAD
+USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 USE MODE_ll
-USE MODE_FM
-USE MODE_IO_ll
 USE MODE_MSG
 USE MODE_POS
 !
@@ -579,7 +576,7 @@ DO JSAT=1,IJSAT ! loop over sensors
     TZFIELD%NDIMS      = 2
     TZFIELD%LTIMEDEP   = .FALSE.
 !    PRINT *,'YRECFM='//TRIM(TZFIELD%CMNHNAME)
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZBT(:,:,JCH))
+    CALL IO_Field_write(TPFILE,TZFIELD,ZBT(:,:,JCH))
   END DO
   DEALLOCATE(chanprof,frequencies,emissivity,calcemis,profiles,cld_profiles)
   DEALLOCATE(ZBT)

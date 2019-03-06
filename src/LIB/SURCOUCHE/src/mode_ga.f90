@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -6,7 +6,8 @@
 ! Author: J.Escobar
 !
 ! Modifications:
-!  P.Wautelet: 14/12/2018: split from fmwrit_ll.f90
+!  J. Escobar  05/02/2015: use JPHEXT from MODD_PARAMETERS_ll
+!  P. Wautelet 14/12/2018: split from fmwrit_ll.f90
 !-----------------------------------------------------------------
 #ifdef MNH_GA
 MODULE MODE_GA
@@ -36,15 +37,12 @@ MODULE MODE_GA
 
     SUBROUTINE MNH_INIT_GA(MY_NI,MY_NJ,MY_NK,HRECFM,HRW_MODE)
 
-!
-!  Modification
-!  J.Escobar 5/02/2015 : use JPHEXT from MODD_PARAMETERS_ll
+      USE MODD_IO,             ONLY: ISP
+      USE MODD_PARAMETERS_ll,  ONLY: JPHEXT
 
-      USE MODE_TOOLS_ll,       ONLY : GET_GLOBALDIMS_ll
-      USE MODD_PARAMETERS_ll,  ONLY : JPHEXT
-      USE MODD_IO_ll,          ONLY : ISP
-      USE MODE_GATHER_ll,      ONLY : GET_DOMWRITE_ll
-      USE MODE_SCATTER_ll,     ONLY : GET_DOMREAD_ll
+      USE MODE_GATHER_ll,      ONLY: GET_DOMWRITE_ll
+      USE MODE_SCATTER_ll,     ONLY: GET_DOMREAD_ll
+      USE MODE_TOOLS_ll,       ONLY: GET_GLOBALDIMS_ll
 
       IMPLICIT NONE
 

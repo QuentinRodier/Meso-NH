@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ###########################
@@ -15,7 +15,7 @@ INTERFACE
                       TPFILE,OCLOSE_OUT,OTURB_DIAG,                         &
                       PTP,PRTKES,PRTKESM, PRTHLS,PCOEF_DISS,PTR,PDISS       )
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 INTEGER,                 INTENT(IN)   ::  KKA          !near ground array index  
 INTEGER,                 INTENT(IN)   ::  KKU          !uppest atmosphere array index
@@ -175,15 +175,15 @@ END MODULE MODI_TKE_EPS_SOURCES
 USE MODD_CST
 USE MODD_CONF
 USE MODD_CTURB
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_BUDGET
 USE MODD_LES
 USE MODD_DIAG_IN_RUN, ONLY : LDIAG_IN_RUN, XCURRENT_TKE_DISS
 !
 USE MODE_ll
-USE MODE_FIELD, ONLY: TFIELDDATA, TYPEREAL
-USE MODE_FMWRIT
+USE MODE_FIELD,          ONLY: TFIELDDATA, TYPEREAL
+USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 !
 USE MODI_GRADIENT_M
 USE MODI_GRADIENT_U
@@ -426,7 +426,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,PDP)
+  CALL IO_Field_write(TPFILE,TZFIELD,PDP)
 !
 ! stores the thermal production 
 !
@@ -440,7 +440,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,PTP)
+  CALL IO_Field_write(TPFILE,TZFIELD,PTP)
 !
 ! stores the whole turbulent transport
 !
@@ -454,7 +454,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,PTR)
+  CALL IO_Field_write(TPFILE,TZFIELD,PTR)
 !
 ! stores the dissipation of TKE 
 !
@@ -468,7 +468,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,PDISS)
+  CALL IO_Field_write(TPFILE,TZFIELD,PDISS)
 END IF
 !
 ! Storage in the LES configuration of the Dynamic Production of TKE and

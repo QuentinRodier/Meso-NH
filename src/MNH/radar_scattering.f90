@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
 !-----------------------------------------------------------------
 !     ######spl
        MODULE MODI_RADAR_SCATTERING 
@@ -106,7 +102,7 @@ END MODULE MODI_RADAR_SCATTERING
 !              ------------
 !
 USE MODD_CST
-USE MODD_IO_ll,           ONLY: TFILEDATA
+USE MODD_IO,           ONLY: TFILEDATA
 USE MODD_LUNIT
 USE MODD_PARAMETERS
 USE MODD_RAIN_ICE_DESCR, ONLY: XALPHAR_I=>XALPHAR,XNUR_I=>XNUR,XDR_I=>XDR,XLBEXR_I=>XLBEXR,&
@@ -140,10 +136,9 @@ USE MODE_READTMAT
 USE MODE_FGAU , ONLY:GAULAG
 USE MODI_GAMMA, ONLY:GAMMA
 !
-USE MODE_FM,               ONLY: IO_FILE_CLOSE_ll,IO_FILE_OPEN_ll
-USE MODE_IO_ll
 USE MODD_LUNIT
-USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
+USE MODE_IO_FILE,          ONLY: IO_File_close, IO_File_open
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_add2list
 USE MODE_MSG
 
 !
@@ -750,8 +745,8 @@ DO JI=1,INBRAD
                  E12.5,2X,E12.5,2X,E12.5,2X,E12.5,2X,E12.5)
 
     !rain
-    CALL IO_FILE_ADD2LIST(TZFILE,YFILE_COEFINT(1),'TXT','READ')
-    CALL IO_FILE_OPEN_ll(TZFILE,KRESP=IRESP)
+    CALL IO_File_add2list(TZFILE,YFILE_COEFINT(1),'TXT','READ')
+    CALL IO_File_open(TZFILE,KRESP=IRESP)
     IUNIT = TZFILE%NLU
     IF ( IRESP /= 0 ) THEN       
       WRITE(YMSG,*) "problem opening file ",TRIM(YFILE_COEFINT(1))
@@ -764,7 +759,7 @@ DO JI=1,INBRAD
       ZIM_S22S11_T_R(ILINE),ZRE_S22FMS11FT_T_R(ILINE),ZIM_S22FT_T_R(ILINE),ZIM_S11FT_T_R(ILINE) 
       ILINE=ILINE+1
     ENDDO
-    CALL IO_FILE_CLOSE_ll(TZFILE)
+    CALL IO_File_close(TZFILE)
     TZFILE => NULL()    
     WRITE(ILUOUT0,*) "NLIGNE rain",ILINE      
     ILINE=2
@@ -777,8 +772,8 @@ DO JI=1,INBRAD
     ZIM_S22S11_T_R(ILINE),ZRE_S22FMS11FT_T_R(ILINE),ZIM_S22FT_T_R(ILINE),ZIM_S11FT_T_R(ILINE)
    
     !snow
-    CALL IO_FILE_ADD2LIST(TZFILE,YFILE_COEFINT(2),'TXT','READ')
-    CALL IO_FILE_OPEN_ll(TZFILE,KRESP=IRESP)
+    CALL IO_File_add2list(TZFILE,YFILE_COEFINT(2),'TXT','READ')
+    CALL IO_File_open(TZFILE,KRESP=IRESP)
     IUNIT = TZFILE%NLU
     IF ( IRESP /= 0 ) THEN       
       WRITE(YMSG,*) "problem opening file ",TRIM(YFILE_COEFINT(2))
@@ -791,7 +786,7 @@ DO JI=1,INBRAD
       ZIM_S22S11_T_S(ILINE),ZRE_S22FMS11FT_T_S(ILINE),ZIM_S22FT_T_S(ILINE),ZIM_S11FT_T_S(ILINE)
       ILINE=ILINE+1
     ENDDO
-    CALL IO_FILE_CLOSE_ll(TZFILE)
+    CALL IO_File_close(TZFILE)
     TZFILE => NULL()
     WRITE(ILUOUT0,*) "NLIGNE snow",ILINE    
     ILINE=2
@@ -804,8 +799,8 @@ DO JI=1,INBRAD
     ZIM_S22S11_T_S(ILINE),ZRE_S22FMS11FT_T_S(ILINE),ZIM_S22FT_T_S(ILINE),ZIM_S11FT_T_S(ILINE)
  
     !graupel
-    CALL IO_FILE_ADD2LIST(TZFILE,YFILE_COEFINT(3),'TXT','READ')
-    CALL IO_FILE_OPEN_ll(TZFILE,KRESP=IRESP)
+    CALL IO_File_add2list(TZFILE,YFILE_COEFINT(3),'TXT','READ')
+    CALL IO_File_open(TZFILE,KRESP=IRESP)
     IUNIT = TZFILE%NLU
     IF ( IRESP /= 0 ) THEN       
       WRITE(YMSG,*) "problem opening file ",TRIM(YFILE_COEFINT(3))
@@ -818,7 +813,7 @@ DO JI=1,INBRAD
       ZIM_S22S11_T_G(ILINE),ZRE_S22FMS11FT_T_G(ILINE),ZIM_S22FT_T_G(ILINE),ZIM_S11FT_T_G(ILINE)
       ILINE=ILINE+1
     ENDDO
-    CALL IO_FILE_CLOSE_ll(TZFILE)
+    CALL IO_File_close(TZFILE)
     TZFILE => NULL()
     WRITE(ILUOUT0,*) "NLIGNE graupel",ILINE    
     ILINE=2
@@ -831,8 +826,8 @@ DO JI=1,INBRAD
     ZIM_S22S11_T_G(ILINE),ZRE_S22FMS11FT_T_G(ILINE),ZIM_S22FT_T_G(ILINE),ZIM_S11FT_T_G(ILINE)
 
     !wet graupel
-    CALL IO_FILE_ADD2LIST(TZFILE,YFILE_COEFINT(4),'TXT','READ')
-    CALL IO_FILE_OPEN_ll(TZFILE,KRESP=IRESP)
+    CALL IO_File_add2list(TZFILE,YFILE_COEFINT(4),'TXT','READ')
+    CALL IO_File_open(TZFILE,KRESP=IRESP)
     IUNIT = TZFILE%NLU
     IF ( IRESP /= 0 ) THEN       
       WRITE(YMSG,*) "problem opening file ",TRIM(YFILE_COEFINT(4))
@@ -845,7 +840,7 @@ DO JI=1,INBRAD
       ZIM_S22S11_T_W(ILINE),ZRE_S22FMS11FT_T_W(ILINE),ZIM_S22FT_T_W(ILINE),ZIM_S11FT_T_W(ILINE)
       ILINE=ILINE+1
     ENDDO
-    CALL IO_FILE_CLOSE_ll(TZFILE)
+    CALL IO_File_close(TZFILE)
     TZFILE => NULL()
     WRITE(ILUOUT0,*) "NLIGNE wet graupel",ILINE    
     ILINE=2
@@ -858,8 +853,8 @@ DO JI=1,INBRAD
 
     !hail
     IF (GHAIL) THEN
-    CALL IO_FILE_ADD2LIST(TZFILE,YFILE_COEFINT(5),'TXT','READ')
-    CALL IO_FILE_OPEN_ll(TZFILE,KRESP=IRESP)
+    CALL IO_File_add2list(TZFILE,YFILE_COEFINT(5),'TXT','READ')
+    CALL IO_File_open(TZFILE,KRESP=IRESP)
     IUNIT = TZFILE%NLU
     IF ( IRESP /= 0 ) THEN       
       WRITE(YMSG,*) "problem opening file ",TRIM(YFILE_COEFINT(5))
@@ -872,7 +867,7 @@ DO JI=1,INBRAD
         ZIM_S22S11_T_H(ILINE),ZRE_S22FMS11FT_T_H(ILINE),ZIM_S22FT_T_H(ILINE),ZIM_S11FT_T_H(ILINE)
         ILINE=ILINE+1
       ENDDO
-      CALL IO_FILE_CLOSE_ll(TZFILE)
+      CALL IO_File_close(TZFILE)
       TZFILE => NULL()
       WRITE(ILUOUT0,*) "NLIGNE hail",ILINE    
       ILINE=2

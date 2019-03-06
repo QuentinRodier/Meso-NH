@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2015-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2015-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !#######################
@@ -42,19 +42,6 @@ MODULE MODI_MNH_SURF_GRID_IO_INIT
     !!    Original      19/03/2015
     !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
     !----------------------------------------------------------------------------
-    !
-    !*    0.     DECLARATION
-    !            -----------
-    !
-    USE MODE_ll
-    USE MODE_FM
-    USE MODD_PARAMETERS, ONLY : JPHEXT, JPVEXT, JPMODELMAX
-    USE MODD_CONF,       ONLY : CPROGRAM, L1D, L2D, LPACK
-    !
-    USE MODE_SPLITTINGZ_ll
-    !
-    USE MODI_GET_SURF_GRID_DIM_N
-    USE MODI_GET_LUOUT
     !
     IMPLICIT NONE
     !
@@ -105,10 +92,9 @@ END MODULE MODI_MNH_SURF_GRID_IO_INIT
 !            -----------
 !
 USE MODE_ll
-USE MODE_FM
-USE MODE_IO_ll
-USE MODD_PARAMETERS, ONLY : JPHEXT, JPVEXT, JPMODELMAX
-USE MODD_CONF,       ONLY : CPROGRAM, L1D, L2D, LPACK
+USE MODE_IO,         only: IO_Pack_set
+USE MODD_PARAMETERS, ONLY: JPHEXT, JPVEXT, JPMODELMAX
+USE MODD_CONF,       ONLY: CPROGRAM, L1D, L2D, LPACK
 !
 !JUANZ
 USE MODE_SPLITTINGZ_ll
@@ -139,7 +125,7 @@ IF (CPROGRAM=='IDEAL ' .OR. CPROGRAM=='SPAWN ' .OR. CPROGRAM=='REAL  ') RETURN
 L1D=(KIMAX==1).AND.(KJMAX==1)
 L2D=(KIMAX/=1).AND.(KJMAX==1)
 LPACK=L1D.OR.L2D
-CALL SET_FMPACK_ll(L1D,L2D,LPACK)
+CALL IO_Pack_set(L1D,L2D,LPACK)
 CALL SET_JP_ll(JPMODELMAX,JPHEXT,JPVEXT,JPHEXT)
 CALL SET_DAD0_ll()
 CALL SET_DIM_ll(KIMAX, KJMAX, 1)

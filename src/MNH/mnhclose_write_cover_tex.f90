@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ##################################
@@ -40,10 +40,10 @@
 !              ------------
 !
 USE MODD_CONF,             ONLY: CPROGRAM
-USE MODD_IO_ll,            ONLY: TFILEDATA
+USE MODD_IO,               ONLY: TFILEDATA
 !
-USE MODE_FM,               ONLY: IO_FILE_CLOSE_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
+USE MODE_IO_FILE,          ONLY: IO_File_close
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_find_byname
 !
 !
 IMPLICIT NONE
@@ -68,8 +68,8 @@ TYPE(TFILEDATA),POINTER :: TZFILE
 TZFILE => NULL()
 !
 IF (TRIM(CPROGRAM)=='PGD') THEN
-  CALL IO_FILE_FIND_BYNAME(YTEX,TZFILE,IRESP)
-  CALL IO_FILE_CLOSE_ll(TZFILE)
+  CALL IO_File_find_byname(YTEX,TZFILE,IRESP)
+  CALL IO_File_close(TZFILE)
 END IF
 !-------------------------------------------------------------------------------
 !

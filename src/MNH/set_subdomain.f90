@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #########################
@@ -10,7 +10,7 @@ INTERFACE
       SUBROUTINE SET_SUBDOMAIN(TPNMLFILE,TPATMFILE,KXOR_DAD,KYOR_DAD, &
                                KXOR,KYOR,KDXRATIO,KDYRATIO            )
 !
-USE MODD_IO_ll, ONLY : TFILEDATA
+USE MODD_IO, ONLY : TFILEDATA
 !
 TYPE(TFILEDATA),   INTENT(IN) :: TPNMLFILE ! namelist file
 TYPE(TFILEDATA),   INTENT(IN) :: TPATMFILE ! atmospheric MNH file
@@ -85,23 +85,20 @@ END MODULE MODI_SET_SUBDOMAIN
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_GRIDPROJ       ! executive module
-USE MODE_POS
-USE MODE_FM
-USE MODE_IO_ll
-USE MODE_MSG
-!
-USE MODD_CONF           ! declaration modules
-USE MODD_IO_ll, ONLY : TFILEDATA
-USE MODD_LUNIT
+USE MODD_CONF
+USE MODD_DIM_n, ONLY: NIMAX_n=>NIMAX,NJMAX_n=>NJMAX
 USE MODD_GRID
 USE MODD_GRID_n
-USE MODD_DIM_n, ONLY: NIMAX_n=>NIMAX,NJMAX_n=>NJMAX
-USE MODD_PGDGRID
-USE MODD_PGDDIM
+USE MODD_IO,    ONLY: TFILEDATA
+USE MODD_LUNIT
 USE MODD_PARAMETERS
+USE MODD_PGDDIM
+USE MODD_PGDGRID
 !
-USE MODE_FMREAD
+USE MODE_IO_FIELD_READ, only: IO_Field_read
+USE MODE_GRIDPROJ
+USE MODE_MSG
+USE MODE_POS
 !
 IMPLICIT NONE
 !
@@ -222,24 +219,24 @@ WRITE(ILUOUT0,*) 'given or computed NYOR  = ',NYOR
 !*       4.1   TEST if FATHER of atmospheric MNH file exists:
 !              ---------------------------------------------
 !
-CALL IO_READ_FIELD(TPATMFILE,'DAD_NAME',YDADFILE,IRESP)
+CALL IO_Field_read(TPATMFILE,'DAD_NAME',YDADFILE,IRESP)
 IF ( IRESP /= 0  ) YDADFILE='                          '
 !
 IF (LEN_TRIM(YDADFILE)/=0) THEN
-  CALL IO_READ_FIELD(TPATMFILE,'DXRATIO',KDXRATIO,IRESP)
+  CALL IO_Field_read(TPATMFILE,'DXRATIO',KDXRATIO,IRESP)
   IF ( IRESP /= 0 .OR. KDXRATIO == 0 ) THEN
     KDXRATIO=1
   END IF
   !
-  CALL IO_READ_FIELD(TPATMFILE,'DYRATIO',KDYRATIO,IRESP)
+  CALL IO_Field_read(TPATMFILE,'DYRATIO',KDYRATIO,IRESP)
   IF ( IRESP /= 0 .OR. KDYRATIO == 0 ) THEN
     KDYRATIO=1
   END IF
   !
-  CALL IO_READ_FIELD(TPATMFILE,'XOR',KXOR,IRESP)
+  CALL IO_Field_read(TPATMFILE,'XOR',KXOR,IRESP)
   IF ( IRESP /= 0 ) KXOR_DAD=1
   !
-  CALL IO_READ_FIELD(TPATMFILE,'YOR',KYOR,IRESP)
+  CALL IO_Field_read(TPATMFILE,'YOR',KYOR,IRESP)
   IF ( IRESP /= 0 ) KYOR_DAD=1
 END IF
 !

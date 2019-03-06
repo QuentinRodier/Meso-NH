@@ -79,8 +79,6 @@ END MODULE MODI_COMPARE_WITH_PGD_DOMAIN
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_FM
-USE MODE_IO_ll
 USE MODE_MSG
 !
 USE MODD_CONF        ! declaration modules

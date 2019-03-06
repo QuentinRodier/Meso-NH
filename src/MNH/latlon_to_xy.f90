@@ -55,28 +55,28 @@
 !!    no transfer of the file when closing   Dec. 09, 1996 (V.Masson)
 !!    + changes call to READ_HGRID
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
 !            -----------
 !
-USE MODD_GRID      
-USE MODD_IO_ll,  ONLY: TFILEDATA
+USE MODD_GRID
+USE MODD_IO,               ONLY: TFILEDATA
 USE MODD_PGDDIM
 USE MODD_PGDGRID
 USE MODD_PARAMETERS
 USE MODD_LUNIT
 !
-USE MODE_FM
 USE MODE_GRIDPROJ
-USE MODE_IO_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST
+USE MODE_IO,               only: IO_Config_set, IO_Init
+USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
+USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list
 !
 USE MODI_INI_CST
 USE MODI_READ_HGRID
 !
-USE MODN_CONFIO, ONLY : NAM_CONFIO
+USE MODN_CONFIO,           ONLY: NAM_CONFIO
 !
 IMPLICIT NONE
 !
@@ -119,22 +119,22 @@ CALL INI_CST
 !*    2.     Reading of namelist file
 !            ------------------------
 !
-CALL INITIO_ll()
+CALL IO_Init()
 !
-CALL IO_FILE_ADD2LIST(TZNMLFILE,'LATLON2XY1.nam','NML','READ')
-CALL IO_FILE_OPEN_ll(TZNMLFILE)
+CALL IO_File_add2list(TZNMLFILE,'LATLON2XY1.nam','NML','READ')
+CALL IO_File_open(TZNMLFILE)
 INAM=TZNMLFILE%NLU
 READ(INAM,NAM_INIFILE)
 !
 READ(INAM,NAM_CONFIO)
-CALL SET_CONFIO_ll()
-CALL IO_FILE_CLOSE_ll(TZNMLFILE)
+CALL IO_Config_set()
+CALL IO_File_close(TZNMLFILE)
 !
 !*    1.     Opening of MESONH file
 !            ----------------------
 !
-CALL IO_FILE_ADD2LIST(TZINIFILE,TRIM(YINIFILE),'MNH','READ',KLFITYPE=2,KLFIVERB=2)
-CALL IO_FILE_OPEN_ll(TZINIFILE)
+CALL IO_File_add2list(TZINIFILE,TRIM(YINIFILE),'MNH','READ',KLFITYPE=2,KLFIVERB=2)
+CALL IO_File_open(TZINIFILE)
 !
 !*    2.     Reading of MESONH file
 !            ----------------------
@@ -144,7 +144,7 @@ CALL READ_HGRID(0,TZINIFILE,YNAME,YDAD,YSTORAGE_TYPE)
 !*    3.     Closing of MESONH file
 !            ----------------------
 !
-CALL IO_FILE_CLOSE_ll(TZINIFILE)
+CALL IO_File_close(TZINIFILE)
 !
 !-------------------------------------------------------------------------------
 !

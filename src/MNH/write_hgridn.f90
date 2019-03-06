@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1996-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ########################
@@ -9,7 +9,7 @@
 INTERFACE
       SUBROUTINE WRITE_HGRID_n(TPFILE)
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 TYPE(TFILEDATA), INTENT(IN)  :: TPFILE    ! File to write
 !
@@ -32,8 +32,8 @@ END MODULE MODI_WRITE_HGRIDn
 !!
 !!    EXTERNAL
 !!    --------
-!!      FMWRIT   : to write data in LFIFM file
-!!       
+!!      IO_Field_write   : to write data in LFIFM file
+!!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------ 
 !!      Module MODD_GRID : contains projection definition
@@ -73,9 +73,9 @@ USE MODD_CONF_n
 USE MODD_DIM_n
 USE MODD_GRID
 USE MODD_GRID_n
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO,             ONLY: TFILEDATA
 !
-USE MODE_FMWRIT
+USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 !
 IMPLICIT NONE
 !
@@ -89,20 +89,20 @@ TYPE(TFILEDATA), INTENT(IN)  :: TPFILE    ! File to write
 ! NONE
 !-------------------------------------------------------------------------------
 !
-CALL IO_WRITE_FIELD(TPFILE,'LAT0',  XLAT0)
-CALL IO_WRITE_FIELD(TPFILE,'LON0',  XLON0)
-CALL IO_WRITE_FIELD(TPFILE,'RPK',   XRPK)
-CALL IO_WRITE_FIELD(TPFILE,'BETA',  XBETA)
-CALL IO_WRITE_FIELD(TPFILE,'LATORI',XLATORI)
-CALL IO_WRITE_FIELD(TPFILE,'LONORI',XLONORI)
-CALL IO_WRITE_FIELD(TPFILE,'IMAX',  NIMAX)
-CALL IO_WRITE_FIELD(TPFILE,'JMAX',  NJMAX)
-CALL IO_WRITE_FIELD(TPFILE,'XHAT',  XXHAT)
-CALL IO_WRITE_FIELD(TPFILE,'YHAT',  XYHAT)
+CALL IO_Field_write(TPFILE,'LAT0',  XLAT0)
+CALL IO_Field_write(TPFILE,'LON0',  XLON0)
+CALL IO_Field_write(TPFILE,'RPK',   XRPK)
+CALL IO_Field_write(TPFILE,'BETA',  XBETA)
+CALL IO_Field_write(TPFILE,'LATORI',XLATORI)
+CALL IO_Field_write(TPFILE,'LONORI',XLONORI)
+CALL IO_Field_write(TPFILE,'IMAX',  NIMAX)
+CALL IO_Field_write(TPFILE,'JMAX',  NJMAX)
+CALL IO_Field_write(TPFILE,'XHAT',  XXHAT)
+CALL IO_Field_write(TPFILE,'YHAT',  XYHAT)
 !
 IF (CSTORAGE_TYPE=='TT') THEN
-  CALL IO_WRITE_FIELD(TPFILE,'THINSHELL',LTHINSHELL)
-  CALL IO_WRITE_FIELD(TPFILE,'CARTESIAN',LCARTESIAN)
+  CALL IO_Field_write(TPFILE,'THINSHELL',LTHINSHELL)
+  CALL IO_Field_write(TPFILE,'CARTESIAN',LCARTESIAN)
 END IF
 !-------------------------------------------------------------------------------
 !

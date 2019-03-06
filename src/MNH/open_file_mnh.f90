@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2003-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #########################
@@ -59,8 +59,8 @@ END MODULE MODI_OPEN_FILE_MNH
 !
 USE MODD_IO_NAM,           ONLY: TFILE
 !
-USE MODE_FM,               ONLY: IO_FILE_OPEN_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
+USE MODE_IO_FILE,          ONLY: IO_File_open
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_add2list
 USE MODE_MSG
 !
 IMPLICIT NONE
@@ -84,10 +84,10 @@ INTEGER :: IRESP
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_FILE_MNH','called for '//TRIM(HFILE))
 !
-CALL IO_FILE_ADD2LIST(TFILE,TRIM(HFILE),'SURFACE_DATA',HACTION, &
+CALL IO_File_add2list(TFILE,TRIM(HFILE),'SURFACE_DATA',HACTION, &
                       HFORM=HFORM,HACCESS=HACCESS,KRECL=KRECL,  &
                       OOLD=.TRUE.) !OOLD=T because the file may already be in list
-CALL IO_FILE_OPEN_ll(TFILE)
+CALL IO_File_open(TFILE)
 !
 KUNIT = TFILE%NLU
 !

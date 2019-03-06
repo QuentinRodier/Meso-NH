@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !      ######spl
 MODULE MODI_LIMA
@@ -18,7 +18,7 @@ INTERFACE
                      PINPRC, PINDEP, PINPRR, PINPRI, PINPRS, PINPRG, PINPRH, &
                      PEVAP3D                                         )
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 INTEGER,                  INTENT(IN)    :: KKA   !near ground array index  
 INTEGER,                  INTENT(IN)    :: KKU   !uppest atmosphere array index
@@ -99,8 +99,8 @@ END MODULE MODI_LIMA
 !!
 !*       0.    DECLARATIONS
 !              ------------
-USE MODD_IO_ll,   ONLY: TFILEDATA
-USE MODD_LUNIT_n, ONLY: TLUOUT
+USE MODD_IO,             ONLY: TFILEDATA
+USE MODD_LUNIT_n,        ONLY: TLUOUT
 USE MODD_CLOUDPAR_n,     ONLY : NSPLITR, NSPLITG
 USE MODD_PARAMETERS,     ONLY : JPHEXT, JPVEXT
 USE MODD_PARAM_LIMA,     ONLY : LCOLD, LRAIN, LWARM, NMOD_CCN, NMOD_IFN, NMOD_IMM, LHHONI,      &

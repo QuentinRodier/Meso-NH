@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #######################
@@ -15,7 +15,7 @@ INTERFACE
                              PTHS, PRVS, PRCS, PCNUCS,                    &
                              PCCS, PSRCS, PCLDFR, PRRS )
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE   ! Output file
@@ -152,17 +152,17 @@ END MODULE MODI_C2R2_ADJUST
 USE MODD_BUDGET
 USE MODD_CONF
 USE MODD_CST
-USE MODD_IO_ll,   ONLY: TFILEDATA
-USE MODD_LUNIT_n, ONLY: TLUOUT
-USE MODD_NSV,     ONLY: NSV_C2R2BEG
+USE MODD_IO,             ONLY: TFILEDATA
+USE MODD_LUNIT_n,        ONLY: TLUOUT
+USE MODD_NSV,            ONLY: NSV_C2R2BEG
 USE MODD_PARAMETERS
+!
+USE MODE_FIELD
+USE MODE_IO_FIELD_WRITE, only: IO_Field_write
+USE MODE_MSG
 !
 USE MODI_CONDENS
 USE MODI_BUDGET
-!
-USE MODE_FIELD
-USE MODE_FMWRIT
-USE MODE_MSG
 !
 IMPLICIT NONE
 !
@@ -423,7 +423,7 @@ IF ( OCLOSE_OUT ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZW1)
+  CALL IO_Field_write(TPFILE,TZFIELD,ZW1)
 END IF
 !
 !

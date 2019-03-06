@@ -61,8 +61,8 @@ END MODULE MODI_CH_INIT_CONST_n
 !!    EXTERNAL
 !!    --------
 USE MODI_CH_OPEN_INPUT  ! open the general purpose ASCII input file
-USE MODD_IO_ll,         ONLY: TFILEDATA
-USE MODE_FM,            ONLY: IO_FILE_CLOSE_ll
+USE MODD_IO,            ONLY: TFILEDATA
+USE MODE_IO_FILE,       ONLY: IO_File_close
 
 !!
 !!    IMPLICIT ARGUMENTS
@@ -151,7 +151,7 @@ DO JI = 1, IMASS
 END DO
 !
 ! close file
-CALL IO_FILE_CLOSE_ll(TZFILE)
+CALL IO_File_close(TZFILE)
 TZFILE => NULL()
 !
 !
@@ -205,7 +205,7 @@ DO JI = 1, IREACT
 END DO
 !
 ! close file
-CALL IO_FILE_CLOSE_ll(TZFILE)
+CALL IO_File_close(TZFILE)
 TZFILE => NULL()
 !
 !
@@ -262,7 +262,7 @@ DO JNREAL = 1, IHENRY
 END DO
 !
 ! close file
-CALL IO_FILE_CLOSE_ll(TZFILE)
+CALL IO_File_close(TZFILE)
 TZFILE => NULL()
 !
 IF (KVERB >= 10) THEN

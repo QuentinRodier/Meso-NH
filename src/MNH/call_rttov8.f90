@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !    #######################
@@ -12,7 +12,7 @@ INTERFACE
                 PTHT, PRT, PPABST, PZZ, PMFCONV, PCLDFR, PULVLKB, PVLVLKB,  &
                 OUSERI, KRTTOVINFO, TPFILE    )
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 INTEGER, INTENT(IN)   :: KDLON !number of columns where the
                                !radiation calculations are performed
@@ -90,7 +90,7 @@ SUBROUTINE CALL_RTTOV8(KDLON, KFLEV, KSTATM, PEMIS, PTSRAD, PSTATM,     &
 !!              ------------
 !!
 USE MODD_CST
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_GRID_n
 USE MODD_DEEP_CONVECTION_n
@@ -98,18 +98,15 @@ USE MODD_REF_n
 USE MODD_RADIATIONS_n,  ONLY : XSEA
 !
 USE MODN_CONF
-!                                
+!
 USE MODD_RAD_TRANSF
-!                               
+!
 USE MODI_DETER_ANGLE
 USE MODI_PINTER
 !
 USE MODE_FIELD
-USE MODE_FMWRIT
-USE MODE_FMREAD
+USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 USE MODE_ll
-USE MODE_FM
-USE MODE_IO_ll
 USE MODE_MSG
 USE MODE_POS
 !
@@ -1582,7 +1579,7 @@ DO JSAT=1,IJSAT ! loop over sensors
     TZFIELD%NDIMS      = 2
     TZFIELD%LTIMEDEP   = .TRUE.
     PRINT *,TZFIELD%CMNHNAME//TZFIELD%CCOMMENT
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZANTMP)
+    CALL IO_Field_write(TPFILE,TZFIELD,ZANTMP)
   END IF
   DEALLOCATE(ZANTMP)
 ! -----------------------------------------------------------------------------
@@ -1641,7 +1638,7 @@ DO JSAT=1,IJSAT ! loop over sensors
     PRINT *,TZFIELD%CMNHNAME//TZFIELD%CCOMMENT, &
          MINVAL(ZTBTMP(:,:,JCH),ZTBTMP(:,:,JCH)/=XUNDEF), &
          MAXVAL(ZTBTMP(:,:,JCH),ZTBTMP(:,:,JCH)/=XUNDEF)
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZTBTMP(:,:,JCH))
+    CALL IO_Field_write(TPFILE,TZFIELD,ZTBTMP(:,:,JCH))
     IF (KRTTOVINFO(3,JSAT) == 4.AND. JCH==3 ) THEN ! AMSU-B
       TZFIELD%CMNHNAME   = TRIM(YBEG)//'_UTH'
       TZFIELD%CSTDNAME   = ''
@@ -1670,7 +1667,7 @@ DO JSAT=1,IJSAT ! loop over sensors
           END IF
         END DO
       END DO
-      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZUTH)
+      CALL IO_Field_write(TPFILE,TZFIELD,ZUTH)
       DEALLOCATE(ZUTH)
     END IF
   END DO
@@ -1737,7 +1734,7 @@ DO JSAT=1,IJSAT ! loop over sensors
       PRINT *,TZFIELD%CMNHNAME//TZFIELD%CCOMMENT, &
            MINVAL(ZTEMPK(:,:,:),ZTEMPK(:,:,:)/=XUNDEF), &
            MAXVAL(ZTEMPK(:,:,:),ZTEMPK(:,:,:)/=XUNDEF)
-      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZTEMPK(:,:,:))
+      CALL IO_Field_write(TPFILE,TZFIELD,ZTEMPK(:,:,:))
       !
       TZFIELD%CMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'JAV'
       TZFIELD%CSTDNAME   = ''
@@ -1754,7 +1751,7 @@ DO JSAT=1,IJSAT ! loop over sensors
       PRINT *,TZFIELD%CMNHNAME//TZFIELD%CCOMMENT, &
            MINVAL(ZWVAPK(:,:,:),ZWVAPK(:,:,:)/=XUNDEF), &
            MAXVAL(ZWVAPK(:,:,:),ZWVAPK(:,:,:)/=XUNDEF)
-      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWVAPK(:,:,:))
+      CALL IO_Field_write(TPFILE,TZFIELD,ZWVAPK(:,:,:))
     END DO
     DEALLOCATE(ZTEMPKP,ZWVAPKP,ZFIN)
   ENDIF

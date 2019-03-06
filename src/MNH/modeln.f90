@@ -62,7 +62,7 @@ END MODULE MODI_MODEL_n
 !!
 !!    EXTERNAL
 !!    --------
-!!      Subroutine IO_FILE_OPEN_ll: to open a file
+!!      Subroutine IO_File_open: to open a file
 !!      Subroutine WRITE_DESFM: to write the descriptive part of a FMfile
 !!      Subroutine WRITE_LFIFM: to write the binary part of a FMfile
 !!      Subroutine SET_MASK   : to compute all the masks selected for budget
@@ -89,7 +89,7 @@ END MODULE MODI_MODEL_n
 !!                                 compute the large scale fields, used to
 !!                                 couple Model_n with outer informations.
 !!      Subroutine ENDSTEP_BUDGET: writes the budget informations.
-!!      Subroutine IO_FILE_CLOSE_ll: closes a file
+!!      Subroutine IO_File_close: closes a file
 !!      Subroutine DATETIME_CORRECTDATE: transform the current time in GMT
 !!      Subroutine FORCING : computes forcing terms
 !!      Subroutine ADD3DFIELD_ll : add a field to 3D-list
@@ -254,7 +254,7 @@ END MODULE MODI_MODEL_n
 !!  Philippe Wautelet: 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll
 !                                  to allow to disable writes (for bench purposes)
 !  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
-!                          (nsubfiles_ioz is now determined in IO_FILE_ADD2LIST)
+!                          (nsubfiles_ioz is now determined in IO_File_add2list)
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -293,7 +293,7 @@ USE MODD_GET_n
 USE MODD_GRID,           ONLY: XLONORI,XLATORI
 USE MODD_GRID_n
 USE MODD_ICE_C1R3_DESCR, ONLY: XRTMIN_C1R3=>XRTMIN
-USE MODD_IO_ll,          ONLY: LIO_NO_WRITE, TFILEDATA,TFILE_SURFEX,TFILE_DUMMY
+USE MODD_IO,             ONLY: LIO_NO_WRITE, TFILEDATA, TFILE_SURFEX, TFILE_DUMMY
 USE MODD_LBC_n
 USE MODD_LES
 USE MODD_LES_BUDGET
@@ -318,7 +318,7 @@ USE MODD_PARAM_LIMA,     ONLY: MSEDC => LSEDC, MWARM => LWARM, MRAIN => LRAIN, L
                                MSEDI => LSEDI, MHHONI => LHHONI, NMOD_IFN, LHAIL,      &
                                XRTMIN_LIMA=>XRTMIN, MACTTKE=>LACTTKE
 USE MODD_BLOWSNOW_n
-USE MODD_BLOWSNOW                       
+USE MODD_BLOWSNOW
 USE MODD_PARAM_MFSHALL_n
 USE MODD_PARAM_n
 USE MODD_PAST_FIELD_n
@@ -340,19 +340,19 @@ USE MODD_TURB_n
 !
 USE MODE_DATETIME
 USE MODE_ELEC_ll
-USE MODE_FM
-USE MODE_GRIDCART         
+USE MODE_GRIDCART
 USE MODE_GRIDPROJ
-USE MODE_IO_ll
-USE MODE_IO_WRITE_FIELD
+USE MODE_IO_FIELD_WRITE,   only: IO_Field_user_write, IO_Fieldlist_write, IO_Header_write
+USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
+USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list
 USE MODE_ll
 USE MODE_MNH_TIMING
 USE MODE_MODELN_HANDLER
 USE MODE_MPPDB
 !
 USE MODI_ADVECTION_METSV
-USE MODI_ADVECTION_UVW     
-USE MODI_ADVECTION_UVW_CEN 
+USE MODI_ADVECTION_UVW
+USE MODI_ADVECTION_UVW_CEN
 USE MODI_ADV_FORCING_n
 USE MODI_AER_MONITOR_n
 USE MODI_AIRCRAFT_BALLOON
@@ -370,7 +370,7 @@ USE MODI_FORCING
 USE MODI_FORC_SQUALL_LINE
 USE MODI_FORC_WIND
 USE MODI_GET_HALO
-USE MODI_GRAVITY_IMPL         
+USE MODI_GRAVITY_IMPL
 USE MODI_INI_DIAG_IN_RUN
 USE MODI_INI_LG
 USE MODI_INI_MEAN_FIELD
@@ -635,9 +635,9 @@ IF (KTCOUNT == 1) THEN
   IOUT=0
 !
   IF ( .NOT. LIO_NO_WRITE ) THEN
-    CALL IO_FILE_OPEN_ll(TDIAFILE)
+    CALL IO_File_open(TDIAFILE)
 !
-    CALL IO_WRITE_HEADER(TDIAFILE)
+    CALL IO_Header_write(TDIAFILE)
     CALL WRITE_DESFM_n(IMI,TDIAFILE)
     CALL WRITE_LFIFMN_FORDIACHRO_n(TDIAFILE)
   END IF
@@ -946,10 +946,10 @@ IF (IBAK < NBAK_NUMB ) THEN
     TZBAKFILE => TBACKUPN(IBAK)%TFILE
     IVERB    = TZBAKFILE%NLFIVERB
     !
-    CALL IO_FILE_OPEN_ll(TZBAKFILE)
+    CALL IO_File_open(TZBAKFILE)
     !
     CALL WRITE_DESFM_n(IMI,TZBAKFILE)
-    CALL IO_WRITE_HEADER(TBACKUPN(IBAK)%TFILE)
+    CALL IO_Header_write(TBACKUPN(IBAK)%TFILE)
     CALL WRITE_LFIFM_n(TBACKUPN(IBAK)%TFILE,TBACKUPN(IBAK)%TFILE%TDADFILE%CNAME)
     TOUTDATAFILE => TZBAKFILE
     CALL MNHWRITE_ZS_DUMMY_n(TZBAKFILE)
@@ -989,13 +989,13 @@ IF (IOUT < NOUT_NUMB ) THEN
     !
     TZOUTFILE => TOUTPUTN(IOUT)%TFILE
     !
-    CALL IO_FILE_OPEN_ll(TZOUTFILE)
+    CALL IO_File_open(TZOUTFILE)
     !
-    CALL IO_WRITE_HEADER(TZOUTFILE)
-    CALL IO_WRITE_FIELDLIST(TOUTPUTN(IOUT))
-    CALL IO_WRITE_FIELD_USER(TOUTPUTN(IOUT))
+    CALL IO_Header_write(TZOUTFILE)
+    CALL IO_Fieldlist_write(TOUTPUTN(IOUT))
+    CALL IO_Field_user_write(TOUTPUTN(IOUT))
     !
-    CALL IO_FILE_CLOSE_ll(TZOUTFILE)
+    CALL IO_File_close(TZOUTFILE)
     !
   END IF
 END IF
@@ -2073,7 +2073,7 @@ XT_STEP_BUD = XT_STEP_BUD + ZTIME2 - ZTIME1 + XTIME_BU
 !
 IF (GCLOSE_OUT) THEN
   GCLOSE_OUT=.FALSE.
-  CALL IO_FILE_CLOSE_ll(TZBAKFILE)
+  CALL IO_File_close(TZBAKFILE)
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -2109,11 +2109,11 @@ IF (OEXIT) THEN
     CALL WRITE_LES_n(TDIAFILE,'E')
     CALL WRITE_LES_n(TDIAFILE,'H')
     CALL MENU_DIACHRO(TDIAFILE,'END')
-    CALL IO_FILE_CLOSE_ll(TDIAFILE)
+    CALL IO_File_close(TDIAFILE)
   END IF
   !
-  CALL IO_FILE_CLOSE_ll(TINIFILE)
-  IF (CSURF=="EXTE") CALL IO_FILE_CLOSE_ll(TINIFILEPGD)
+  CALL IO_File_close(TINIFILE)
+  IF (CSURF=="EXTE") CALL IO_File_close(TINIFILEPGD)
 !
 !*       28.1   print statistics!
 !
@@ -2228,8 +2228,8 @@ IF (OEXIT) THEN
   !
   !
   !
-  CALL IO_FILE_CLOSE_ll(TLUOUT)
-  IF (IMI==NMODEL) CALL IO_FILE_CLOSE_ll(TLUOUT0)
+  CALL IO_File_close(TLUOUT)
+  IF (IMI==NMODEL) CALL IO_File_close(TLUOUT0)
 END IF
 !
 END SUBROUTINE MODEL_n

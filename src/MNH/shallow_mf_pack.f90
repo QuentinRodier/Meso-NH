@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2010-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !    ######################
      MODULE MODI_SHALLOW_MF_PACK
@@ -21,7 +21,7 @@ INTERFACE
                 PSIGMF,PRC_MF,PRI_MF,PCF_MF,PFLXZTHVMF  )
 !     #################################################################
 !!
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !               
 !*               1.1  Declaration of Arguments
 !                
@@ -123,14 +123,14 @@ END MODULE MODI_SHALLOW_MF_PACK
 USE MODD_PARAMETERS
 USE MODD_CST
 USE MODD_CONF
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO,              ONLY: TFILEDATA
 USE MODD_NSV
-USE MODD_PARAM_ICE, ONLY : CFRAC_ICE_SHALLOW_MF
+USE MODD_PARAM_ICE,       ONLY: CFRAC_ICE_SHALLOW_MF
 USE MODD_PARAM_MFSHALL_n
 USE MODD_BUDGET
 
-USE MODE_FIELD, ONLY: TFIELDDATA,TYPEREAL
-USE MODE_FMWRIT
+USE MODE_FIELD,           ONLY: TFIELDDATA, TYPEREAL
+USE MODE_IO_FIELD_WRITE,  only: IO_Field_write
 
 USE MODI_SHALLOW_MF
 USE MODI_BUDGET
@@ -390,7 +390,7 @@ IF ( OMF_FLX .AND. OCLOSE_OUT ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWORK)
+  CALL IO_Field_write(TPFILE,TZFIELD,ZWORK)
   !
   ! stores the conservative mixing ratio vertical flux
   ZWORK(:,:,:)=RESHAPE(ZFLXZRMF(:,:),(/ IIU,IJU,IKU /) )
@@ -404,7 +404,7 @@ IF ( OMF_FLX .AND. OCLOSE_OUT ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWORK)
+  CALL IO_Field_write(TPFILE,TZFIELD,ZWORK)
   !
   ! stores the theta_v vertical flux
   TZFIELD%CMNHNAME   = 'MF_THVW_FLX'
@@ -417,7 +417,7 @@ IF ( OMF_FLX .AND. OCLOSE_OUT ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,PFLXZTHVMF)
+  CALL IO_Field_write(TPFILE,TZFIELD,PFLXZTHVMF)
   !
  IF (OMIXUV) THEN
   ! stores the U momentum vertical flux
@@ -432,7 +432,7 @@ IF ( OMF_FLX .AND. OCLOSE_OUT ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWORK)
+  CALL IO_Field_write(TPFILE,TZFIELD,ZWORK)
   !
   ! stores the V momentum vertical flux
   ZWORK(:,:,:)=RESHAPE(ZFLXZVMF(:,:),(/ IIU,IJU,IKU /) )
@@ -446,7 +446,7 @@ IF ( OMF_FLX .AND. OCLOSE_OUT ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWORK)
+  CALL IO_Field_write(TPFILE,TZFIELD,ZWORK)
   !
  END IF
 END IF

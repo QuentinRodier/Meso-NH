@@ -259,7 +259,7 @@
 !!                              initialized
 !!      Routine WRITE_DESFM1  : to write a DESFM file.
 !!      Routine WRITE_LFIFM1  : to write a LFIFM file.
-!!      Routine IO_FILE_CLOSE_ll : to close a FM-file (DESFM + LFIFM).
+!!      Routine IO_File_close : to close a FM-file (DESFM + LFIFM).
 !!
 !!      Module MODE_GRIDPROJ  : contains conformal projection routines
 !!    
@@ -378,7 +378,7 @@
 !!    P.Wautelet : 08/07/2016 : removed MNH_NCWRIT define
 !!     B.VIE 2016 : LIMA
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !-------------------------------------------------------------------------------
 !
@@ -399,7 +399,7 @@ USE MODD_GR_FIELD_n
 USE MODD_GRID
 USE MODD_GRID_n
 USE MODD_HURR_CONF
-USE MODD_IO_ll,            ONLY: TFILEDATA,NIO_VERB,NVERB_DEBUG,TFILE_SURFEX
+USE MODD_IO,               ONLY: TFILEDATA,NIO_VERB,NVERB_DEBUG,TFILE_SURFEX
 USE MODD_LBC_n
 USE MODD_LSFIELD_n
 USE MODD_LUNIT,            ONLY: TPGDFILE,TLUOUT0,TOUTDATAFILE
@@ -417,13 +417,13 @@ USE MODD_TURB_n
 !
 USE MODE_EXTRAPOL
 USE MODE_FIELD
-USE MODE_FM
-USE MODE_FMREAD
-USE MODE_FMWRIT,           ONLY: IO_WRITE_HEADER
 USE MODE_GRIDCART
 USE MODE_GRIDPROJ
-USE MODE_IO_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST, IO_FILE_FIND_BYNAME,IO_FILE_PRINT_LIST
+USE MODE_IO,               only: IO_Init
+USE MODE_IO_FIELD_READ,    only: IO_Field_read
+USE MODE_IO_FIELD_WRITE,   only: IO_Header_write
+USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
+USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list, IO_File_find_byname,IO_Filelist_print
 USE MODE_ll
 USE MODE_MODELN_HANDLER
 USE MODE_MPPDB
@@ -564,7 +564,7 @@ IDX_RVT = 1
 !
 !*       2.    OPENNING OF THE FILES
 !              ---------------------
-CALL INITIO_ll()
+CALL IO_Init()
 !
 CALL OPEN_PRC_FILES(TZPRE_REAL1FILE,YATMFILE, YATMFILETYPE,TZATMFILE &
                                    ,YCHEMFILE,YCHEMFILETYPE &
@@ -626,8 +626,8 @@ IF (YATMFILETYPE == 'GRIBEX') THEN
 CALL INIT_NMLVAR()
 CALL READ_VER_GRID(TZPRE_REAL1FILE)
 !
-CALL IO_READ_FIELD(TPGDFILE,'IMAX',NIMAX)
-CALL IO_READ_FIELD(TPGDFILE,'JMAX',NJMAX)
+CALL IO_Field_read(TPGDFILE,'IMAX',NIMAX)
+CALL IO_Field_read(TPGDFILE,'JMAX',NJMAX)
 !
 NIMAX_ll=NIMAX   !! _ll variables are global variables
 NJMAX_ll=NJMAX   !! but the old names are kept in PRE_IDEA1.nam file
@@ -740,14 +740,14 @@ IF(LEN_TRIM(YCHEMFILE)>0)THEN
   CALL READ_CHEM_DATA_NETCDF_CASE(TZPRE_REAL1FILE,YCHEMFILE,TPGDFILE,ZHORI,NVERB,LDUMMY_REAL)
 END IF
 !
-CALL IO_FILE_CLOSE_ll(TZPRE_REAL1FILE)
+CALL IO_File_close(TZPRE_REAL1FILE)
 !
 CALL SECOND_MNH(ZTIME2)
 ZREAD = ZTIME2 - ZTIME1 - ZHORI
 !-------------------------------------------------------------------------------
 !
-CALL IO_FILE_ADD2LIST(TINIFILE,CINIFILE,'MNH','WRITE',KLFITYPE=1,KLFIVERB=NVERB)
-CALL IO_FILE_OPEN_ll(TINIFILE)
+CALL IO_File_add2list(TINIFILE,CINIFILE,'MNH','WRITE',KLFITYPE=1,KLFIVERB=NVERB)
+CALL IO_File_open(TINIFILE)
 !
 ZTIME1=ZTIME2
 !
@@ -1048,7 +1048,7 @@ IF (YATMFILETYPE=='GRIBEX') THEN
 END IF
 !
 CALL WRITE_DESFM_n(1,TINIFILE)
-CALL IO_WRITE_HEADER(TINIFILE,HDAD_NAME=YDAD_NAME)
+CALL IO_Header_write(TINIFILE,HDAD_NAME=YDAD_NAME)
 CALL WRITE_LFIFM_n(TINIFILE,YDAD_NAME)
 ! 
 CALL SECOND_MNH(ZTIME2)
@@ -1071,8 +1071,8 @@ CALL MNHWRITE_ZS_DUMMY_n(TINIFILE)
 CALL DEALLOCATE_MODEL1(3)
 !
 IF (YATMFILETYPE=='MESONH'.AND. YATMFILE/=YPGDFILE) THEN
-  CALL IO_FILE_FIND_BYNAME(TRIM(YATMFILE),TZATMFILE,IRESP)
-  CALL IO_FILE_CLOSE_ll(TZATMFILE)
+  CALL IO_File_find_byname(TRIM(YATMFILE),TZATMFILE,IRESP)
+  CALL IO_File_close(TZATMFILE)
 END IF
 !-------------------------------------------------------------------------------
 !
@@ -1178,12 +1178,12 @@ END IF
 !
 !-------------------------------------------------------------------------------
 !
-CALL IO_FILE_CLOSE_ll(TINIFILE)
-CALL IO_FILE_CLOSE_ll(TPGDFILE)
+CALL IO_File_close(TINIFILE)
+CALL IO_File_close(TPGDFILE)
 !
-IF(NIO_VERB>=NVERB_DEBUG) CALL IO_FILE_PRINT_LIST()
+IF(NIO_VERB>=NVERB_DEBUG) CALL IO_Filelist_print()
 !
-CALL IO_FILE_CLOSE_ll(TLUOUT0)
+CALL IO_File_close(TLUOUT0)
 !
 !
 CALL END_PARA_ll(IINFO_ll)

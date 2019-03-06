@@ -11,7 +11,7 @@ INTERFACE
 !!
 SUBROUTINE CH_OPEN_INPUT(HCHEM_INPUT_FILE,HKEYWORD,TPFILE,KLUOUT,KVERB)
 !
-USE MODD_IO_ll,            ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 IMPLICIT NONE
 !
@@ -72,10 +72,10 @@ SUBROUTINE CH_OPEN_INPUT(HCHEM_INPUT_FILE,HKEYWORD,TPFILE,KLUOUT,KVERB)
 !*       0.     DECLARATIONS
 !               ------------
 !
-USE MODD_IO_ll,            ONLY: TFILEDATA
+USE MODD_IO,               ONLY: TFILEDATA
 !
-USE MODE_FM,               ONLY: IO_FILE_OPEN_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
+USE MODE_IO_FILE,          ONLY: IO_File_open
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_add2list
 !
 IMPLICIT NONE
 !
@@ -91,7 +91,7 @@ INTEGER,                 INTENT(IN)  :: KVERB            ! verbosity level
 !
 CHARACTER(LEN=79) :: YIN ! character string for line-by-line read
 INTEGER :: ILU
-INTEGER :: IRESP         ! return code from IO_FILE_OPEN_ll
+INTEGER :: IRESP         ! return code from IO_File_open
 !
 !-------------------------------------------------------------------------------
 !
@@ -101,13 +101,13 @@ TPFILE => NULL()
 !              -----------------------
 !
 IF (KVERB >= 5) WRITE(KLUOUT,*) "CH_OPEN_INPUT: opening file ", HCHEM_INPUT_FILE
-CALL IO_FILE_ADD2LIST(TPFILE,HCHEM_INPUT_FILE,'CHEMINPUT','READ',OOLD=.TRUE.)
-CALL IO_FILE_OPEN_ll(TPFILE,KRESP=IRESP)
+CALL IO_File_add2list(TPFILE,HCHEM_INPUT_FILE,'CHEMINPUT','READ',OOLD=.TRUE.)
+CALL IO_File_open(TPFILE,KRESP=IRESP)
 ILU = TPFILE%NLU
 !
 IF (IRESP /= 0) THEN
   WRITE(KLUOUT,*) "CH_OPEN_INPUT ERROR: unable to open file", HCHEM_INPUT_FILE
-  WRITE(KLUOUT,*) "                     IO_FILE_OPEN_ll return code is: ", IRESP
+  WRITE(KLUOUT,*) "                     IO_File_open return code is: ", IRESP
   WRITE(KLUOUT,*) "                     the program will be stopped now"
   ! callabortstop
   CALL ABORT

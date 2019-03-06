@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !######################## 
@@ -12,7 +12,7 @@ INTERFACE
       SUBROUTINE WRITE_BUDGET(TPDIAFILE,TPDTCUR, &
                               TPDTMOD,PTSTEP, KSV)
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 USE MODD_TYPE_DATE
 !
 TYPE(TFILEDATA),    INTENT(IN) :: TPDIAFILE    ! file to write
@@ -131,12 +131,12 @@ END MODULE MODI_WRITE_BUDGET
 !*       0.    
 !              ------------
 USE MODD_BUDGET
-USE MODD_IO_ll,   ONLY: TFILEDATA
-USE MODD_LUNIT_n, ONLY: TLUOUT
+USE MODD_IO,             ONLY: TFILEDATA
+USE MODD_LUNIT_n,        ONLY: TLUOUT
 !
 USE MODE_DATETIME
-USE MODE_FIELD,   ONLY: TFIELDDATA,TYPEREAL
-USE MODE_FMWRIT
+USE MODE_FIELD,          ONLY: TFIELDDATA, TYPEREAL
+USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 USE MODE_TIME
 !
 USE MODI_END_CART_COMPRESS
@@ -199,7 +199,7 @@ TZFIELD%NGRID      = 0
 TZFIELD%NTYPE      = TYPEREAL
 TZFIELD%NDIMS      = 0
 TZFIELD%LTIMEDEP   = .FALSE.
-CALL IO_WRITE_FIELD(TPDIAFILE,TZFIELD,PTSTEP)
+CALL IO_Field_write(TPDIAFILE,TZFIELD,PTSTEP)
 !
 TZFIELD%CMNHNAME   = 'BULEN'
 TZFIELD%CSTDNAME   = ''
@@ -211,7 +211,7 @@ TZFIELD%NGRID      = 0
 TZFIELD%NTYPE      = TYPEREAL
 TZFIELD%NDIMS      = 0
 TZFIELD%LTIMEDEP   = .FALSE.
-CALL IO_WRITE_FIELD(TPDIAFILE,TZFIELD,XBULEN)
+CALL IO_Field_write(TPDIAFILE,TZFIELD,XBULEN)
 !
 !*   1.1   initialize NBUTSHIFT
 !           ---------------------
@@ -1031,7 +1031,7 @@ SELECT CASE (CBUTYPE)
         TZFIELD%NTYPE      = TYPEREAL
         TZFIELD%NDIMS      = 6
         TZFIELD%LTIMEDEP   = .FALSE.
-        CALL IO_WRITE_FIELD(TPDIAFILE,TZFIELD,ZWORKMASK(:,:,:,:,:,:))
+        CALL IO_Field_write(TPDIAFILE,TZFIELD,ZWORKMASK(:,:,:,:,:,:))
         WRITE(YRECFM,FMT="('MASK_',I4.4)") NBUTSHIFT
         CALL MENU_DIACHRO(TPDIAFILE,YRECFM)
         DEALLOCATE(ZWORKMASK)

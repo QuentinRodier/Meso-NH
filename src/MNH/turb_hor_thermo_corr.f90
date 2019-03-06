@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !    ################################
@@ -20,7 +20,7 @@ INTERFACE
                       PLOCPEXNM,PATHETA,PAMOIST,PSRCM,               &
                       PSIGS                                          )
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 INTEGER,                INTENT(IN)   :: KRR           ! number of moist var.
 INTEGER,                INTENT(IN)   :: KRRL          ! number of liquid water var.
@@ -123,12 +123,12 @@ END MODULE MODI_TURB_HOR_THERMO_CORR
 USE MODD_CST
 USE MODD_CONF
 USE MODD_CTURB
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_LES
 !
-USE MODE_FIELD, ONLY: TFIELDDATA, TYPEREAL
-USE MODE_FMWRIT
+USE MODE_FIELD,          ONLY: TFIELDDATA, TYPEREAL
+USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 !
 USE MODI_GRADIENT_M
 USE MODI_GRADIENT_U
@@ -281,7 +281,7 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. OCLOSE_OUT ) &
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
     TZFIELD%LTIMEDEP   = .TRUE.
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZFLX)
+    CALL IO_Field_write(TPFILE,TZFIELD,ZFLX)
   END IF
 !
 ! Storage in the LES configuration (addition to TURB_VER computation)
@@ -369,7 +369,7 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. OCLOSE_OUT ) &
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
       TZFIELD%LTIMEDEP   = .TRUE.
-      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZFLX)
+      CALL IO_Field_write(TPFILE,TZFIELD,ZFLX)
     END IF
 !
 !   Storage in the LES configuration (addition to TURB_VER computation)
@@ -437,7 +437,7 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. OCLOSE_OUT ) &
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
       TZFIELD%LTIMEDEP   = .TRUE.
-      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZFLX)
+      CALL IO_Field_write(TPFILE,TZFIELD,ZFLX)
     END IF
     !
     !   Storage in the LES configuration (addition to TURB_VER computation)

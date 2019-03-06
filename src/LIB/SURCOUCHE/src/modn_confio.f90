@@ -13,7 +13,7 @@
 !!    -------
 !     Define I/O configuration variables that can be set with the NAM_CONFIO namelist
 !!    /!\ These variables must be transmitted to the SURCOUCHE library via the
-!!    SET_CONFIO_ll subroutine before the FIRST call to IO_FILE_OPEN_ll
+!!    IO_Config_set subroutine before the FIRST call to IO_FILE_OPEN_ll
 !
 !!
 !!**  IMPLICIT ARGUMENTS
@@ -36,9 +36,9 @@
 !*       0.   DECLARATIONS
 !             ------------
 !
-USE MODD_IO_ll, ONLY : LVERB_OUTLST, LVERB_STDOUT, LVERB_ALLPRC, &
-                       NIO_VERB, NIO_ABORT_LEVEL, NGEN_VERB, NGEN_ABORT_LEVEL, &
-                       CIO_DIR, LIO_ALLOW_NO_BACKUP, LIO_NO_WRITE
+USE MODD_IO, ONLY : LVERB_OUTLST, LVERB_STDOUT, LVERB_ALLPRC, &
+                    NIO_VERB, NIO_ABORT_LEVEL, NGEN_VERB, NGEN_ABORT_LEVEL, &
+                    CIO_DIR, LIO_ALLOW_NO_BACKUP, LIO_NO_WRITE
 !
 IMPLICIT NONE
 !

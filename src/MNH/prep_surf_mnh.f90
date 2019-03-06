@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2004-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -53,7 +53,7 @@ USE MODD_LUNIT_n,     ONLY : CINIFILE, TINIFILE
 USE MODD_MNH_SURFEX_n
 USE MODD_TIME_n,      ONLY : TDTCUR
 !
-USE MODE_FM,       ONLY : IO_FILE_OPEN_ll
+USE MODE_IO_FILE,     ONLY: IO_File_open
 USE MODE_PREP_CTL, ONLY : PREP_CTL
 !
 USE MODI_INIT_PGD_SURF_ATM
@@ -100,7 +100,7 @@ CALL INIT_PGD_SURF_ATM(YSURF_CUR,'MESONH','PRE',HATMFILE,YATMFILETYPE,  &
 CALL PREP_SURF_ATM(YSURF_CUR,'MESONH',HATMFILE,YATMFILETYPE,HATMFILE,YATMFILETYPE,YLCTL)
 IF (PRESENT(OINIFILEOPEN)) THEN
   !This is done here because model dimensions were not known before this call (for PREP_SURFEX)
-  IF (OINIFILEOPEN) CALL IO_FILE_OPEN_ll(TINIFILE)
+  IF (OINIFILEOPEN) CALL IO_File_open(TINIFILE)
 END IF
 CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','PRE',.FALSE.)
 CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','PRE')

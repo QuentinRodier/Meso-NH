@@ -81,13 +81,13 @@ END MODULE MODI_CHECK_ZS
 USE MODD_CONF
 USE MODD_DIM_n
 USE MODD_GRID_n
-USE MODD_IO_ll,            ONLY: TFILEDATA
+USE MODD_IO,               ONLY: TFILEDATA
 USE MODD_LUNIT,            ONLY: TLUOUT0
 USE MODD_NESTING
 USE MODD_PARAMETERS
 !
-USE MODE_FMREAD
-USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
+USE MODE_IO_FIELD_READ,    only: IO_Field_read
+USE MODE_IO_MANAGE_STRUCT, only: IO_File_find_byname
 !
 IMPLICIT NONE
 !
@@ -128,9 +128,9 @@ ILUOUT0 = TLUOUT0%NLU
 !*            1. Reading of aspect ratios and dimensions
 !                ---------------------------------------
 !
-CALL IO_FILE_FIND_BYNAME(TRIM(HFMFILE),TZFMFILE,IRESP)
+CALL IO_File_find_byname(TRIM(HFMFILE),TZFMFILE,IRESP)
 !
-CALL IO_READ_FIELD(TZFMFILE,'DXRATIO',IDXRATIO,IRESP)
+CALL IO_Field_read(TZFMFILE,'DXRATIO',IDXRATIO,IRESP)
 IF ( IRESP /= 0 .OR. IDXRATIO == 0 ) THEN
   WRITE (ILUOUT0,*) '********************************************************'
   WRITE (ILUOUT0,*) 'resolution ratio in x direction not present in fmfile; no nesting allowed'
@@ -139,7 +139,7 @@ IF ( IRESP /= 0 .OR. IDXRATIO == 0 ) THEN
   RETURN
 END IF
 !
-CALL IO_READ_FIELD(TZFMFILE,'DYRATIO',IDYRATIO,IRESP)
+CALL IO_Field_read(TZFMFILE,'DYRATIO',IDYRATIO,IRESP)
 IF ( IRESP /= 0 .OR. IDYRATIO == 0 ) THEN
   WRITE (ILUOUT0,*) '********************************************************'
   WRITE (ILUOUT0,*) 'resolution ratio in y direction not present in fmfile; no nesting allowed'
@@ -148,7 +148,7 @@ IF ( IRESP /= 0 .OR. IDYRATIO == 0 ) THEN
   RETURN 
 END IF
 !
-CALL IO_READ_FIELD(TZFMFILE,'XOR',NXOR_ALL(1),IRESP)
+CALL IO_Field_read(TZFMFILE,'XOR',NXOR_ALL(1),IRESP)
 IF ( IRESP /= 0 ) THEN
   WRITE (ILUOUT0,*) '********************************************************'
   WRITE (ILUOUT0,*) 'position XOR not present in fmfile; no nesting allowed'
@@ -157,7 +157,7 @@ IF ( IRESP /= 0 ) THEN
   RETURN
 END IF
 !
-CALL IO_READ_FIELD(TZFMFILE,'YOR',NYOR_ALL(1),IRESP)
+CALL IO_Field_read(TZFMFILE,'YOR',NYOR_ALL(1),IRESP)
 IF ( IRESP /= 0 ) THEN
   WRITE (ILUOUT0,*) '********************************************************'
   WRITE (ILUOUT0,*) 'resolution YOR not present in fmfile; no nesting allowed'
@@ -166,11 +166,11 @@ IF ( IRESP /= 0 ) THEN
   RETURN 
 END IF
 !
-CALL IO_READ_FIELD(TZFMFILE,'IMAX',IIMAX)
-CALL IO_READ_FIELD(TZFMFILE,'JMAX',IJMAX)
+CALL IO_Field_read(TZFMFILE,'IMAX',IIMAX)
+CALL IO_Field_read(TZFMFILE,'JMAX',IJMAX)
 !
 ALLOCATE(ZZS(IIMAX+2*JPHEXT,IJMAX+2*JPHEXT))
-CALL IO_READ_FIELD(TZFMFILE,'ZS',ZZS)
+CALL IO_Field_read(TZFMFILE,'ZS',ZZS)
 !
 !*            2. Allocate coarse arrays
 !                ----------------------
@@ -236,7 +236,7 @@ END IF
 !
 IF (LSLEVE) THEN
 !
-  CALL IO_READ_FIELD(TZFMFILE,'ZSMT',ZZS)
+  CALL IO_Field_read(TZFMFILE,'ZSMT',ZZS)
 !
 !*            5. Average the smooth orographies
 !                ------------------------------

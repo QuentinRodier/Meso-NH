@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ##########################
@@ -15,7 +15,7 @@ INTERFACE
                                 PTHS, PRVS, PRCS, PRRS, PCCS, PCNUCS, PSAT,         &
                                 PCLDFR, PSRCS, PNPRO,PSSPRO                          )
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 INTEGER,                  INTENT(IN)    :: KTCOUNT      ! Number of moist variables
@@ -99,7 +99,7 @@ END MODULE MODI_KHKO_NOTADJUST
 USE MODD_BUDGET
 USE MODD_CONF
 USE MODD_CST
-USE MODD_IO_ll,           ONLY: TFILEDATA
+USE MODD_IO,              ONLY: TFILEDATA
 USE MODD_LUNIT_n,         ONLY: TLUOUT
 USE MODD_NSV,             ONLY: NSV_C2R2BEG
 USE MODD_PARAMETERS
@@ -107,8 +107,7 @@ USE MODD_RAIN_C2R2_DESCR, ONLY: XRTMIN
 
 !
 USE MODE_FIELD,           ONLY: TFIELDDATA,TYPEREAL
-USE MODE_FMWRIT
-USE MODE_IO_ll
+USE MODE_IO_FIELD_WRITE,  only: IO_Field_write
 USE MODE_MSG
 !
 USE MODI_BUDGET
@@ -391,7 +390,7 @@ IF ( OCLOSE_OUT ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .FALSE.
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWORK)
+  CALL IO_Field_write(TPFILE,TZFIELD,ZWORK)
   !
   TZFIELD%CMNHNAME   = 'ACT_OD'
   TZFIELD%CSTDNAME   = ''
@@ -403,7 +402,7 @@ IF ( OCLOSE_OUT ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .FALSE.
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZACT)
+  CALL IO_Field_write(TPFILE,TZFIELD,ZACT)
 END IF
 !
 !*       7.  STORE THE BUDGET TERMS

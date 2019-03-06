@@ -27,18 +27,19 @@
 !                                 to disable writes (for bench purposes)
 !  P. Wautelet 06/02/2019: simplify OPEN_ll and do somme assignments at a more logical place
 !  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
-!                          (nsubfiles_ioz is now determined in IO_FILE_ADD2LIST)
-!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
+!                          (nsubfiles_ioz is now determined in IO_File_add2list)
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !  P. Wautelet 14/02/2019: move UPCASE function to tools.f90
 !  P. Wautelet 19/02/2019: simplification/restructuration/cleaning of open/close subroutines (TBCto be continued)
 !  P. Wautelet 27/02/2019: use recursive calls to open/close DES files
 !  P. Wautelet 27/02/2019: remove CLOSE_ll subroutine
 !  P. Wautelet 01/03/2019: move open/close subroutines to mode_io_file.f90
+!  P. Wautelet 05/03/2019: rename IO subroutines and modules
 !
 !-----------------------------------------------------------------
 module mode_io_file
 
-use modd_io_ll, only: tfiledata
+use modd_io, only: tfiledata
 
 use mode_msg
 
@@ -46,15 +47,7 @@ implicit none
 
 private
 
-public :: IO_File_close_ll, IO_File_open_ll
-
-interface IO_File_close_ll
-  module procedure IO_File_close
-end interface
-
-interface IO_File_open_ll
-  module procedure IO_File_open
-end interface
+public :: IO_File_close, IO_File_open
 
 
 contains
@@ -63,10 +56,10 @@ contains
 recursive SUBROUTINE IO_File_open(TPFILE,KRESP,HPOSITION,HSTATUS,HPROGRAM_ORIG)
 !
 USE MODD_CONF,             ONLY: CPROGRAM
-USE MODD_IO_ll,            ONLY: LIO_NO_WRITE
+USE MODD_IO,               ONLY: LIO_NO_WRITE
 !
-USE MODE_IO_ll,            ONLY: GCONFIO
-USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST, IO_FILE_FIND_BYNAME
+USE MODE_IO,               ONLY: GCONFIO
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_add2list, IO_File_find_byname
 !
 TYPE(TFILEDATA), POINTER, INTENT(INOUT)         :: TPFILE ! File structure
 INTEGER,                  INTENT(OUT), OPTIONAL :: KRESP  ! Return code
@@ -102,7 +95,7 @@ END IF
 TPFILE%LOPENED       = .TRUE.
 !
 !Check if file is in filelist
-CALL IO_FILE_FIND_BYNAME(TRIM(TPFILE%CNAME),TZFILE_DUMMY,IRESP)
+CALL IO_File_find_byname(TRIM(TPFILE%CNAME),TZFILE_DUMMY,IRESP)
 IF (IRESP/=0) CALL PRINT_MSG(NVERB_ERROR,'IO','IO_File_open','file '//TRIM(TPFILE%CNAME)//' not in filelist')
 !
 SELECT CASE(TPFILE%CTYPE)
@@ -154,11 +147,11 @@ SELECT CASE(TPFILE%CTYPE)
   !MesoNH files
   !Remark: 'MNH' is more general than MNHBACKUP and could be in fact a MNHBACKUP file
   CASE ('MNH', 'MNHBACKUP', 'MNHDIACHRONIC', 'MNHDIAG', 'MNHOUTPUT', 'PGD')
-    if (.not.GCONFIO) CALL PRINT_MSG(NVERB_FATAL,'IO','IO_File_open','SET_CONFIO_ll must be called before IO_File_open')
+    if (.not.GCONFIO) CALL PRINT_MSG(NVERB_FATAL,'IO','IO_File_open','IO_Config_set must be called before IO_File_open')
     !Do not open '.des' file if OUTPUT
     IF(TPFILE%CTYPE/='MNHOUTPUT' .AND. CPROGRAM/='LFICDF') THEN
       !OOLD=T because the file may already be in the list
-      CALL IO_FILE_ADD2LIST(TZFILE_DES,TRIM(TPFILE%CNAME)//'.des','DES',TPFILE%CMODE,TPDATAFILE=TPFILE,OOLD=.TRUE.)
+      CALL IO_File_add2list(TZFILE_DES,TRIM(TPFILE%CNAME)//'.des','DES',TPFILE%CMODE,TPDATAFILE=TPFILE,OOLD=.TRUE.)
       CALL IO_File_open(TZFILE_DES,HPROGRAM_ORIG=HPROGRAM_ORIG)
     ENDIF
 
@@ -180,15 +173,11 @@ END SUBROUTINE IO_File_open
 
 SUBROUTINE OPEN_ll(TPFILE, KRESP, HMODE, HSTATUS, HPOSITION, HDELIM, HPROGRAM_ORIG)
 
-  use modd_io_ll,  only: ISNPROC, ISP, LVERB_ALLPRC, nio_rank, NNULLUNIT
+  use modd_io,     only: ISNPROC, ISP, LVERB_ALLPRC, nio_rank, NNULLUNIT
   use modd_var_ll, only : nmnh_comm_world
 
-#if defined(MNH_IOCDF4)
-  use mode_io_file_nc4,         only: io_create_file_nc4, io_open_file_nc4
-#endif
-  use mode_io_file_lfi,         only: io_create_file_lfi, io_open_file_lfi
-  USE MODE_IO_MANAGE_STRUCT,    ONLY: IO_FILE_ADD2LIST, IO_FILE_FIND_BYNAME
-  use mode_io_tools,            only: io_rank
+  USE MODE_IO_MANAGE_STRUCT,    ONLY: IO_File_add2list, IO_File_find_byname
+  use mode_io_tools,            only: IO_Rank_master_get
   use mode_tools,               only: upcase
 
     TYPE(TFILEDATA),            INTENT(INOUT) :: TPFILE
@@ -433,19 +422,19 @@ SUBROUTINE OPEN_ll(TPFILE, KRESP, HMODE, HSTATUS, HPOSITION, HDELIM, HPROGRAM_OR
             CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll','SIZE(TPFILE%TFILES_IOZ) /= TPFILE%NSUBFILES_IOZ for '//TRIM(TPFILE%CNAME))
           END IF
           DO IFILE=1,TPFILE%NSUBFILES_IOZ
-             IRANK_PROCIO = 1 + IO_RANK(IFILE-1,ISNPROC,TPFILE%NSUBFILES_IOZ)
+             IRANK_PROCIO = 1 + IO_Rank_master_get( IFILE-1, ISNPROC, TPFILE%NSUBFILES_IOZ )
              WRITE(YFILE ,'(".Z",i3.3)') IFILE
 
-             CALL IO_FILE_FIND_BYNAME(TRIM(TPFILE%CNAME)//TRIM(YFILE),TZSPLITFILE,IRESP)
+             CALL IO_File_find_byname(TRIM(TPFILE%CNAME)//TRIM(YFILE),TZSPLITFILE,IRESP)
 
              IF (IRESP/=0) THEN !File not yet in filelist => add it (nothing to do if already in list)
                IF (ALLOCATED(TPFILE%CDIRNAME)) THEN
-                 CALL IO_FILE_ADD2LIST(TZSPLITFILE,TRIM(TPFILE%CNAME)//TRIM(YFILE),TPFILE%CTYPE,TPFILE%CMODE,        &
+                 CALL IO_File_add2list(TZSPLITFILE,TRIM(TPFILE%CNAME)//TRIM(YFILE),TPFILE%CTYPE,TPFILE%CMODE,        &
                                        HDIRNAME=TPFILE%CDIRNAME,                                                     &
                                        KLFINPRAR=TPFILE%NLFINPRAR,KLFITYPE=TPFILE%NLFITYPE,KLFIVERB=TPFILE%NLFIVERB, &
                                        HFORMAT=TPFILE%CFORMAT)
                ELSE
-                 CALL IO_FILE_ADD2LIST(TZSPLITFILE,TRIM(TPFILE%CNAME)//TRIM(YFILE),TPFILE%CTYPE,TPFILE%CMODE,        &
+                 CALL IO_File_add2list(TZSPLITFILE,TRIM(TPFILE%CNAME)//TRIM(YFILE),TPFILE%CTYPE,TPFILE%CMODE,        &
                                        KLFINPRAR=TPFILE%NLFINPRAR,KLFITYPE=TPFILE%NLFITYPE,KLFIVERB=TPFILE%NLFIVERB, &
                                        HFORMAT=TPFILE%CFORMAT)
                END IF
@@ -474,31 +463,9 @@ SUBROUTINE OPEN_ll(TPFILE, KRESP, HMODE, HSTATUS, HPOSITION, HDELIM, HPROGRAM_OR
              TZSPLITFILE%NOPEN         = TZSPLITFILE%NOPEN         + 1
              TZSPLITFILE%NOPEN_CURRENT = TZSPLITFILE%NOPEN_CURRENT + 1
 
-#if defined(MNH_IOCDF4)
-             IF (TZSPLITFILE%CFORMAT=='NETCDF4' .OR. TZSPLITFILE%CFORMAT=='LFICDF4') THEN
-                IF (YACTION == 'READ') THEN
-                   ! Open netCDF File for reading
-                   call io_open_file_nc4(tzsplitfile)
-                END IF
-
-                IF (YACTION == 'WRITE') THEN
-                   ! Create netCDF File for writing
-                   call io_create_file_nc4(TZSPLITFILE, hprogram_orig=HPROGRAM_ORIG)
-                END IF
-             END IF
-#endif
-             IF (TZSPLITFILE%CFORMAT=='LFI' .OR. TZSPLITFILE%CFORMAT=='LFICDF4') THEN
-                SELECT CASE (YACTION)
-                  CASE('READ')
-                    call io_open_file_lfi(tzsplitfile,iresp)
-                  CASE('WRITE')
-                    call io_create_file_lfi(tzsplitfile,iresp)
-                END SELECT
-             ENDIF
-             !
+             call IO_File_open_format( tzsplitfile, hprogram_orig=hprogram_orig )
           ENDDO
        END IF
-
 
     END SELECT
 
@@ -521,15 +488,15 @@ END SUBROUTINE OPEN_ll
 
 recursive SUBROUTINE IO_File_close(TPFILE,KRESP,HPROGRAM_ORIG)
 !
-USE MODD_CONF,             ONLY: CPROGRAM
-USE MODD_IO_ll,            ONLY: NNULLUNIT
+use modd_conf,             only: cprogram
+use modd_io,               only: nnullunit
 
-use mode_io_file_lfi,      only: io_close_file_lfi
+use mode_io_file_lfi,      only: IO_File_close_lfi
 #if defined(MNH_IOCDF4)
-use mode_io_file_nc4,      only: io_close_file_nc4
-use mode_io_write_nc4,     only: io_write_coordvar_nc4
+use mode_io_file_nc4,      only: IO_File_close_nc4
+use mode_io_write_nc4,     only: IO_Coordvar_write_nc4
 #endif
-USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
+use mode_io_manage_struct, only: IO_File_find_byname
 !
 TYPE(TFILEDATA),            INTENT(INOUT) :: TPFILE ! File structure
 INTEGER,          OPTIONAL, INTENT(OUT)   :: KRESP  ! Return code
@@ -582,7 +549,7 @@ SELECT CASE(TPFILE%CTYPE)
   CASE ('MNH', 'MNHBACKUP', 'MNHDIACHRONIC', 'MNHDIAG', 'MNHOUTPUT', 'PGD')
     !Do not close (non-existing) '.des' file if OUTPUT
     IF(TPFILE%CTYPE/='OUTPUT' .AND. CPROGRAM/='LFICDF') THEN
-      CALL IO_FILE_FIND_BYNAME(TRIM(TPFILE%CNAME)//'.des',TZFILE_DES,IRESP)
+      CALL IO_File_find_byname(TRIM(TPFILE%CNAME)//'.des',TZFILE_DES,IRESP)
       IF (IRESP/=0) CALL PRINT_MSG(NVERB_ERROR,'IO','IO_File_close','file '//TRIM(TPFILE%CNAME)//'.des not in filelist')
       CALL IO_File_close(TZFILE_DES,KRESP=IRESP,HPROGRAM_ORIG=HPROGRAM_ORIG)
     ENDIF
@@ -590,18 +557,18 @@ SELECT CASE(TPFILE%CTYPE)
 #if defined(MNH_IOCDF4)
     !Write coordinates variables in NetCDF file
     IF (TPFILE%CMODE == 'WRITE' .AND. (TPFILE%CFORMAT=='NETCDF4' .OR. TPFILE%CFORMAT=='LFICDF4')) THEN
-      CALL IO_WRITE_COORDVAR_NC4(TPFILE,HPROGRAM_ORIG=HPROGRAM_ORIG)
+      CALL IO_Coordvar_write_nc4(TPFILE,HPROGRAM_ORIG=HPROGRAM_ORIG)
     END IF
 #endif
 
     if (tpfile%lmaster) then
-      if (tpfile%cformat == 'LFI'     .or. tpfile%cformat == 'LFICDF4') call io_close_file_lfi(tpfile,iresp)
+      if (tpfile%cformat == 'LFI'     .or. tpfile%cformat == 'LFICDF4') call IO_File_close_lfi(tpfile,iresp)
 #if defined(MNH_IOCDF4)
-      if (tpfile%cformat == 'NETCDF4' .or. tpfile%cformat == 'LFICDF4') call io_close_file_nc4(tpfile,iresp)
+      if (tpfile%cformat == 'NETCDF4' .or. tpfile%cformat == 'LFICDF4') call IO_File_close_nc4(tpfile,iresp)
 #endif
     end if
     !
-    CALL IO_ADD2TRANSFER_LIST(TPFILE)
+    CALL IO_Transfer_list_addto(TPFILE)
     !
     SUBFILES: DO JI = 1,TPFILE%NSUBFILES_IOZ
       TZFILE_IOZ => TPFILE%TFILES_IOZ(JI)%TFILE
@@ -616,13 +583,13 @@ SELECT CASE(TPFILE%CTYPE)
 #if defined(MNH_IOCDF4)
       !Write coordinates variables in netCDF file
       IF (TZFILE_IOZ%CMODE == 'WRITE' .AND. (TZFILE_IOZ%CFORMAT=='NETCDF4' .OR. TZFILE_IOZ%CFORMAT=='LFICDF4')) THEN
-        CALL IO_WRITE_COORDVAR_NC4(TZFILE_IOZ,HPROGRAM_ORIG=HPROGRAM_ORIG)
+        CALL IO_Coordvar_write_nc4(TZFILE_IOZ,HPROGRAM_ORIG=HPROGRAM_ORIG)
       END IF
 #endif
       IF (TZFILE_IOZ%LMASTER) THEN
-        if (tzfile_ioz%cformat == 'LFI'     .or. tzfile_ioz%cformat == 'LFICDF4') call io_close_file_lfi(tzfile_ioz,iresp)
+        if (tzfile_ioz%cformat == 'LFI'     .or. tzfile_ioz%cformat == 'LFICDF4') call IO_File_close_lfi(tzfile_ioz,iresp)
 #if defined(MNH_IOCDF4)
-        if (tzfile_ioz%cformat == 'NETCDF4' .or. tzfile_ioz%cformat == 'LFICDF4') call io_close_file_nc4(tzfile_ioz,iresp)
+        if (tzfile_ioz%cformat == 'NETCDF4' .or. tzfile_ioz%cformat == 'LFICDF4') call IO_File_close_nc4(tzfile_ioz,iresp)
 #endif
       END IF
     END DO SUBFILES
@@ -641,9 +608,9 @@ IF (PRESENT(KRESP)) KRESP=IRESP
 END SUBROUTINE IO_File_close
 
 
-subroutine IO_ADD2TRANSFER_LIST(TPFILE)
+subroutine IO_Transfer_list_addto(TPFILE)
 
-USE MODD_CONF,  ONLY : CPROGRAM
+USE MODD_CONF,  ONLY: CPROGRAM
 
 USE MODI_SYSTEM_MNH
 
@@ -657,7 +624,7 @@ INTEGER, SAVE                :: ICPT = 0
 
 YFILEM  = TPFILE%CNAME
 
-CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_ADD2TRANSFER_LIST','called for '//TRIM(YFILEM))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Transfer_list_addto','called for '//TRIM(YFILEM))
 
 IF (TPFILE%LMASTER .AND. CPROGRAM/='LFICDF') THEN
   !! Write in pipe
@@ -669,24 +636,24 @@ IF (TPFILE%LMASTER .AND. CPROGRAM/='LFICDF') THEN
 
   SELECT CASE (TPFILE%NLFITYPE)
     CASE(:-1,3:)
-      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_ADD2TRANSFER_LIST',TRIM(YFILEM)//': incorrect NLFITYPE')
+      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Transfer_list_addto',TRIM(YFILEM)//': incorrect NLFITYPE')
     CASE(0)
       YCPIO='NIL'
     CASE(1)
       YCPIO='MESONH'
     CASE(2)
-      CALL PRINT_MSG(NVERB_INFO,'IO','IO_ADD2TRANSFER_LIST','file '//TRIM(YFILEM)//' not transferred')
+      CALL PRINT_MSG(NVERB_INFO,'IO','IO_Transfer_list_addto','file '//TRIM(YFILEM)//' not transferred')
   END SELECT
 
   if (TPFILE%NLFITYPE==0 .or. TPFILE%NLFITYPE==1) then
     ICPT=ICPT+1
     WRITE (YCOMMAND,'(A," ",A," ",A," >> OUTPUT_TRANSFER",I3.3,"  2>&1 &")') YTRANS,YCPIO,TRIM(YFILEM),ICPT
-    CALL PRINT_MSG(NVERB_INFO,'IO','IO_ADD2TRANSFER_LIST','YCOMMAND='//TRIM(YCOMMAND))
+    CALL PRINT_MSG(NVERB_INFO,'IO','IO_Transfer_list_addto','YCOMMAND='//TRIM(YCOMMAND))
     CALL SYSTEM_MNH(YCOMMAND)
   end if
 END IF
 
-end subroutine IO_ADD2TRANSFER_LIST
+end subroutine IO_Transfer_list_addto
 
 
 subroutine IO_File_check_format_exist( tpfile )
@@ -750,9 +717,9 @@ end subroutine IO_File_check_format_exist
 subroutine IO_File_open_format( tpfile, hprogram_orig )
 
 #if defined(MNH_IOCDF4)
-use mode_io_file_nc4, only: io_create_file_nc4, io_open_file_nc4
+use mode_io_file_nc4, only: IO_File_create_nc4, IO_File_open_nc4
 #endif
-use mode_io_file_lfi, only: io_create_file_lfi, io_open_file_lfi
+use mode_io_file_lfi, only: IO_File_create_lfi, IO_File_open_lfi
 
 type(tfiledata),            intent(inout) :: tpfile ! File structure
 character(len=*), optional, intent(in)    :: hprogram_orig !To emulate a file coming from this program
@@ -766,9 +733,9 @@ call Print_msg( NVERB_DEBUG, 'IO', 'IO_File_open_format', 'called for '//TRIM(tp
     IF (TPFILE%CFORMAT=='NETCDF4' .OR. TPFILE%CFORMAT=='LFICDF4') THEN
       SELECT CASE (TPFILE%CMODE)
         CASE('READ')
-          call io_open_file_nc4(tpfile)
+          call IO_File_open_nc4(tpfile)
         CASE('WRITE')
-          call io_create_file_nc4(TPFILE, hprogram_orig=HPROGRAM_ORIG)
+          call IO_File_create_nc4(TPFILE, hprogram_orig=HPROGRAM_ORIG)
       END SELECT
     END IF
 #endif
@@ -776,9 +743,9 @@ call Print_msg( NVERB_DEBUG, 'IO', 'IO_File_open_format', 'called for '//TRIM(tp
     IF (TPFILE%CFORMAT=='LFI' .OR. TPFILE%CFORMAT=='LFICDF4') THEN
       SELECT CASE (TPFILE%CMODE)
         CASE('READ')
-          call io_open_file_lfi(tpfile,iresp)
+          call IO_File_open_lfi(tpfile,iresp)
         CASE('WRITE')
-          call io_create_file_lfi(tpfile,iresp)
+          call IO_File_create_lfi(tpfile,iresp)
       END SELECT
     END IF
 

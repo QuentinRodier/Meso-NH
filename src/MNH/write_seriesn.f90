@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2002-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !########################
@@ -13,7 +13,7 @@ INTERFACE
 !
       SUBROUTINE WRITE_SERIES_n(TPDIAFILE)
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 TYPE(TFILEDATA),    INTENT(IN) :: TPDIAFILE    ! file to write
 !
@@ -67,14 +67,13 @@ END MODULE MODI_WRITE_SERIES_n
 !*    0. Declaration
 !     --------------
 ! 
-USE MODD_IO_ll,   ONLY: NGEN_VERB,TFILEDATA
+USE MODD_IO,      ONLY: NGEN_VERB, TFILEDATA
 USE MODD_LUNIT_n, ONLY: TLUOUT
 USE MODD_PARAMETERS
 USE MODD_SERIES
 USE MODD_SERIES_n
 !
 USE MODE_GATHER_ll
-USE MODE_IO_ll
 USE MODE_ll
 USE MODE_MSG
 !

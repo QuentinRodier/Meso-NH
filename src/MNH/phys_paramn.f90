@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !    ########################
      MODULE MODI_PHYS_PARAM_n  
 !    ########################
@@ -13,7 +14,7 @@ INTERFACE
                               PRAD,PSHADOWS,PKAFR,PGROUND,PMAFL,PDRAG,PTURB,PTRACER,       &
                               PTIME_BU, PWETDEPAER, OMASKkids,OCLOUD_ONLY                  )           
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 INTEGER,           INTENT(IN)     :: KTCOUNT   ! temporal iteration count
 TYPE(TFILEDATA),   INTENT(IN)     :: TPFILE    ! Synchronous output file
@@ -239,8 +240,6 @@ END MODULE MODI_PHYS_PARAM_n
 !    
 USE MODE_DATETIME
 USE MODE_ll
-USE MODE_FM
-USE MODE_FMWRIT
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
 !
 USE MODD_BLANK
@@ -248,7 +247,7 @@ USE MODD_CST
 USE MODD_DYN
 USE MODD_CONF
 USE MODD_FRC
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_GRID
 USE MODD_NSV
@@ -303,7 +302,6 @@ USE MODI_CONVECTION
 USE MODI_BUDGET
 USE MODI_PASPOL
 USE MODI_CONDSAMP
-USE MODE_FM
 USE MODE_MODELN_HANDLER
 USE MODI_SEDIM_DUST
 USE MODI_SEDIM_SALT

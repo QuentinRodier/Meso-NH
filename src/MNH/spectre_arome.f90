@@ -2,6 +2,11 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
+! Modifications:
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 10/01/2019: use NEWUNIT argument of OPEN
+!-----------------------------------------------------------------
 !     ####################
       MODULE MODI_SPECTRE_AROME
 !     ####################
@@ -22,14 +27,9 @@ END MODULE
 
 SUBROUTINE SPECTRE_AROME(HINIFILE,HOUTFILE,PDELTAX,PDELTAY,KI,KJ,KK)
 !     ######################################################################
-!     
-! Modifications:
-!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!  Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
 !
 USE MODD_CONF
-USE MODE_FM
-USE MODE_IO_ll
+USE MODE_IO, only: IO_Pack_set
 USE MODD_SPECTRE
 USE MODI_COMPUTE_SPECTRE
 USE MODD_PARAMETERS
@@ -54,7 +54,7 @@ INTEGER :: JJJ,III,JERR
 CALL SET_SPLITTING_ll(CSPLIT)
 CALL SET_JP_ll(JPMODELMAX,JPHEXT,JPVEXT, NHALO)
 CALL SET_DAD0_ll()
-CALL SET_FMPACK_ll(L1D,L2D,LPACK)
+CALL IO_Pack_set(L1D,L2D,LPACK)
 ALLOCATE(ZWORK1(KI+2,KJ+2,KK+2))
 !
 IF (LSPECTRE_U) THEN

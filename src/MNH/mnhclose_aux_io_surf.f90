@@ -50,17 +50,16 @@ END MODULE MODI_MNHCLOSE_AUX_IO_SURF
 !!      Original    09/2003 
 !!      J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
 !  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
-!                          (nsubfiles_ioz is now determined in IO_FILE_ADD2LIST)
+!                          (nsubfiles_ioz is now determined in IO_File_add2list)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_IO_SURF_MNH, ONLY: TPINFILE, CACTION, NMASK_ALL, NMASK
+!
+USE MODE_IO_FILE,     only: IO_File_close
 USE MODE_ll
-USE MODE_FM
-USE MODE_IO_ll
-
-USE MODD_IO_SURF_MNH, ONLY : TPINFILE, CACTION, NMASK_ALL, NMASK
 !
 IMPLICIT NONE
 !
@@ -79,7 +78,7 @@ INTEGER           :: IRESP          ! return-code if a problem appears
 !-------------------------------------------------------------------------------
 !
 IF (CACTION=='OPEN  ') THEN
-  CALL IO_FILE_CLOSE_ll(TPINFILE)
+  CALL IO_File_close(TPINFILE)
   CACTION='      '
 END IF
 !

@@ -6,13 +6,14 @@
 ! Author(s)
 !  D. Gazen
 ! Modifications:
-!  P. Wautelet 01/03/2019: move OPEN_ll to mode_io_file.f90 and SET_FMPACK_ll to here from mode_fm.f90
+!  P. Wautelet 01/03/2019: move OPEN_ll to mode_io_file.f90 and IO_Pack_set to here from mode_fm.f90
+!  P. Wautelet 05/03/2019: rename IO subroutines and modules
 !
 !-----------------------------------------------------------------
-MODULE MODE_IO_ll
+MODULE MODE_IO
 
   USE MODD_MPIF
-  USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD
+  USE MODD_VAR_ll, ONLY: NMNH_COMM_WORLD
 
   USE MODE_MSG
 
@@ -20,30 +21,30 @@ MODULE MODE_IO_ll
 
   PRIVATE
 
-  LOGICAL,SAVE :: GCONFIO = .FALSE. ! Turn TRUE when SET_CONFIO_ll is called.
+  LOGICAL,SAVE :: GCONFIO = .FALSE. ! Turn TRUE when IO_Config_set is called.
 
   public :: GCONFIO
-  public :: INITIO_ll, SET_CONFIO_ll
-  public :: SET_FMPACK_ll
+  public :: IO_Init, IO_Config_set
+  public :: IO_Pack_set
 
 CONTAINS 
 
-  SUBROUTINE SET_CONFIO_ll()
+  SUBROUTINE IO_Config_set()
     USE MODN_CONFIO, only: LCDF4, LLFIOUT, LLFIREAD
 
     !Use MODN_CONFIO namelist variables
-    CALL SET_CONFIO_INTERN_ll(LCDF4, LLFIOUT, LLFIREAD)
-  END SUBROUTINE SET_CONFIO_ll
+    CALL IO_Config_set_intern(LCDF4, LLFIOUT, LLFIREAD)
+  END SUBROUTINE IO_Config_set
 
-  SUBROUTINE SET_CONFIO_INTERN_ll(OIOCDF4, OLFIOUT, OLFIREAD)
-    USE MODD_IO_ll, ONLY : LIOCDF4, LLFIOUT, LLFIREAD, LIO_ALLOW_NO_BACKUP, LIO_NO_WRITE
+  SUBROUTINE IO_Config_set_intern(OIOCDF4, OLFIOUT, OLFIREAD)
+    USE MODD_IO, ONLY: LIOCDF4, LLFIOUT, LLFIREAD, LIO_ALLOW_NO_BACKUP, LIO_NO_WRITE
 
     LOGICAL, INTENT(IN) :: OIOCDF4, OLFIOUT, OLFIREAD
 
-    CALL PRINT_MSG(NVERB_DEBUG,'IO','SET_CONFIO_ll','called')
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Config_set','called')
 
     IF (GCONFIO) THEN
-      CALL PRINT_MSG(NVERB_WARNING,'IO','SET_CONFIO_ll','already called (ignoring this call)')
+      CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Config_set','already called (ignoring this call)')
     ELSE
 #if defined(MNH_IOCDF4)
       LIOCDF4  = OIOCDF4
@@ -51,7 +52,7 @@ CONTAINS
       LLFIREAD = OLFIREAD
 
       IF (.NOT.LIOCDF4 .AND. .NOT.LLFIOUT) THEN
-        CALL PRINT_MSG(NVERB_WARNING,'IO','SET_CONFIO_ll','output format forced to netCDF')
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Config_set','output format forced to netCDF')
         LIOCDF4 = .TRUE.
       END IF
 #else
@@ -63,15 +64,15 @@ CONTAINS
 
       ! Set LIO_ALLOW_NO_BACKUP=.true. if writes are disabled (to be coherent)
       IF (LIO_NO_WRITE) THEN
-        CALL PRINT_MSG(NVERB_WARNING,'IO','SET_CONFIO_ll','file writes are disabled')
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Config_set','file writes are disabled')
         LIO_ALLOW_NO_BACKUP = .true.
       END IF
     END IF
 
-  END SUBROUTINE SET_CONFIO_INTERN_ll
+  END SUBROUTINE IO_Config_set_intern
 
-  SUBROUTINE INITIO_ll()
-    USE MODD_IO_ll,     only: CNULLFILE, GSMONOPROC, nio_rank, ISNPROC, ISP, NNULLUNIT
+  SUBROUTINE IO_Init()
+    use MODD_IO, only: CNULLFILE, GSMONOPROC, nio_rank, ISNPROC, ISP, NNULLUNIT
 
     USE MODE_MNH_WORLD, ONLY: INIT_NMNH_COMM_WORLD
 
@@ -80,10 +81,10 @@ CONTAINS
     INTEGER :: IERR, IOS
     character(len=256) :: yioerrmsg
 
-    CALL PRINT_MSG(NVERB_DEBUG,'IO','INITIO_ll','called')
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Init','called')
 
     CALL INIT_NMNH_COMM_WORLD(IERR)
-    IF (IERR .NE.0) CALL PRINT_MSG(NVERB_FATAL,'IO','INITIO_ll','problem with remapping of NMNH_COMM_WORLD')
+    IF (IERR .NE.0) CALL PRINT_MSG(NVERB_FATAL,'IO','IO_Init','problem with remapping of NMNH_COMM_WORLD')
 
     !! Now MPI is initialized for sure
 
@@ -105,13 +106,13 @@ CONTAINS
     OPEN(NEWUNIT=NNULLUNIT,STATUS='SCRATCH',ACTION='WRITE',IOSTAT=IOS, IOMSG=yioerrmsg)
 #endif
     IF (IOS /= 0) THEN
-       CALL PRINT_MSG(NVERB_FATAL,'IO','INITIO_ll','problem opening /dev/null :'//trim(yioerrmsg))
+       CALL PRINT_MSG(NVERB_FATAL,'IO','IO_Init','problem opening /dev/null :'//trim(yioerrmsg))
     END IF
-  END SUBROUTINE INITIO_ll
+  END SUBROUTINE IO_Init
 
 
-SUBROUTINE SET_FMPACK_ll(O1D,O2D,OPACK)
-USE MODD_IO_ll,  ONLY: LPACK, L1D, L2D
+SUBROUTINE IO_Pack_set(O1D,O2D,OPACK)
+USE MODD_IO,     ONLY: LPACK, L1D, L2D
 USE MODD_VAR_ll, ONLY: IP
 
 IMPLICIT NONE
@@ -124,6 +125,6 @@ L2D   = O2D
 
 IF ( IP == 1 ) PRINT *,'INIT L1D,L2D,LPACK = ',L1D,L2D,LPACK
 
-END SUBROUTINE SET_FMPACK_ll
+END SUBROUTINE IO_Pack_set
 
-END MODULE MODE_IO_ll
+END MODULE MODE_IO

@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ##########################
@@ -9,7 +9,7 @@
 INTERFACE
       SUBROUTINE MNHWRITE_ZS_DUMMY_n(TPFILE)
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 TYPE(TFILEDATA),   INTENT(IN) :: TPFILE ! File characteristics
 !
@@ -57,15 +57,15 @@ END MODULE MODI_MNHWRITE_ZS_DUMMY_n
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_GR_FIELD_n, ONLY : XSSO_STDEV, XSSO_ANISOTROPY, XSSO_DIRECTION, XSSO_SLOPE, &
-                            XAVG_ZS, XSIL_ZS, XMIN_ZS, XMAX_ZS
+USE MODD_GR_FIELD_n,     ONLY: XSSO_STDEV, XSSO_ANISOTROPY, XSSO_DIRECTION, XSSO_SLOPE, &
+                               XAVG_ZS, XSIL_ZS, XMIN_ZS, XMAX_ZS
 !
-USE MODD_PARAM_n,    ONLY : CSURF
-USE MODD_IO_ll,      ONLY : TFILEDATA
+USE MODD_PARAM_n,        ONLY: CSURF
+USE MODD_IO,             ONLY: TFILEDATA
 !
 USE MODI_WRITE_DUMMY_GR_FIELD_n
 !
-USE MODE_FMWRIT
+USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 !
 IMPLICIT NONE
 !
@@ -92,14 +92,14 @@ IF (CSURF /='EXTE') RETURN
 !*       2.     Orographic characteristics :
 !               --------------------------
 !
-CALL IO_WRITE_FIELD(TPFILE,'SSO_ANIS', XSSO_ANISOTROPY)
-CALL IO_WRITE_FIELD(TPFILE,'SSO_SLOPE',XSSO_SLOPE)
-CALL IO_WRITE_FIELD(TPFILE,'SSO_DIR',  XSSO_DIRECTION)
-CALL IO_WRITE_FIELD(TPFILE,'AVG_ZS',   XAVG_ZS)
-CALL IO_WRITE_FIELD(TPFILE,'SIL_ZS',   XSIL_ZS)
-CALL IO_WRITE_FIELD(TPFILE,'MAX_ZS',   XMAX_ZS)
-CALL IO_WRITE_FIELD(TPFILE,'MIN_ZS',   XMIN_ZS)
-CALL IO_WRITE_FIELD(TPFILE,'SSO_STDEV',XSSO_STDEV)
+CALL IO_Field_write(TPFILE,'SSO_ANIS', XSSO_ANISOTROPY)
+CALL IO_Field_write(TPFILE,'SSO_SLOPE',XSSO_SLOPE)
+CALL IO_Field_write(TPFILE,'SSO_DIR',  XSSO_DIRECTION)
+CALL IO_Field_write(TPFILE,'AVG_ZS',   XAVG_ZS)
+CALL IO_Field_write(TPFILE,'SIL_ZS',   XSIL_ZS)
+CALL IO_Field_write(TPFILE,'MAX_ZS',   XMAX_ZS)
+CALL IO_Field_write(TPFILE,'MIN_ZS',   XMIN_ZS)
+CALL IO_Field_write(TPFILE,'SSO_STDEV',XSSO_STDEV)
 !
 !-------------------------------------------------------------------------------
 !

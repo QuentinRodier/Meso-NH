@@ -1,21 +1,22 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 program LFI2CDF
   USE MODD_CONF,          ONLY: CPROGRAM
   USE MODD_CONFZ,         ONLY: NB_PROCIO_R
   USE MODD_DIM_n,         ONLY: NIMAX_ll, NJMAX_ll, NKMAX
-  USE MODD_IO_ll,         ONLY: LVERB_OUTLST, LVERB_STDOUT, NIO_ABORT_LEVEL, NIO_VERB, NGEN_ABORT_LEVEL, NGEN_VERB
+  USE MODD_IO,            ONLY: LVERB_OUTLST, LVERB_STDOUT, NIO_ABORT_LEVEL, NIO_VERB, NGEN_ABORT_LEVEL, NGEN_VERB
   USE MODD_PARAMETERS,    ONLY: JPHEXT, JPVEXT
   USE MODD_TIMEZ,         ONLY: TIMEZ
 
-  USE MODE_IO_ll,         ONLY: INITIO_ll, SET_CONFIO_ll
   USE MODE_FIELD,         ONLY: INI_FIELD_LIST
+  USE MODE_IO,            ONLY: IO_Init, IO_Config_set
   USE mode_options
   USE MODE_SPLITTINGZ_ll, ONLY: INI_PARAZ_ll
   USE mode_util
+
   USE MODI_VERSION
 
   USE MODN_CONFIO, ONLY: LCDF4, LLFIOUT, LLFIREAD
@@ -43,7 +44,7 @@ program LFI2CDF
 
   CPROGRAM = 'LFICDF'
 
-  CALL INITIO_ll()
+  CALL IO_Init()
   CALL VERSION
   CALL INI_CST
 
@@ -73,17 +74,17 @@ program LFI2CDF
      LCDF4    = .TRUE.
      LLFIOUT  = .FALSE.
      LLFIREAD = .TRUE.
-     CALL SET_CONFIO_ll()
+     CALL IO_Config_set()
   ELSE IF (runmode == MODECDF2CDF) THEN
      LCDF4    = .TRUE.
      LLFIOUT  = .FALSE.
      LLFIREAD = .FALSE.
-     CALL SET_CONFIO_ll()
+     CALL IO_Config_set()
   ELSE
      LCDF4    = .TRUE.
      LLFIOUT  = .TRUE.
      LLFIREAD = .FALSE.
-     CALL SET_CONFIO_ll()
+     CALL IO_Config_set()
   END IF
 
   CALL INI_FIELD_LIST(1)

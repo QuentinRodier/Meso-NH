@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #############################
@@ -57,8 +57,8 @@ END MODULE MODI_MNHOPEN_NAMELIST
 USE MODD_CONF,             ONLY: CPROGRAM
 USE MODD_IO_NAM,           ONLY: TNAM
 !
-USE MODE_FM,               ONLY: IO_FILE_OPEN_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
+USE MODE_IO_FILE,          ONLY: IO_File_open
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_add2list
 USE MODE_MSG
 !
 IMPLICIT NONE
@@ -113,8 +113,8 @@ END IF
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','MNHOPEN_NAMELIST','called for '//TRIM(YNAM))
 !
-CALL IO_FILE_ADD2LIST(TNAM,TRIM(YNAM),'NML','READ',OOLD=.TRUE.) !OOLD=T because the file may already be in list
-CALL IO_FILE_OPEN_ll(TNAM)
+CALL IO_File_add2list(TNAM,TRIM(YNAM),'NML','READ',OOLD=.TRUE.) !OOLD=T because the file may already be in list
+CALL IO_File_open(TNAM)
 !
 KLUNAM = TNAM%NLU
 !

@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2009-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2009-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------------
 !     ######spl
@@ -24,7 +24,7 @@
 !
 !
 USE MODD_DIM_n
-USE MODD_IO_ll,ONLY : TFILEDATA
+USE MODD_IO,               ONLY: TFILEDATA
 USE MODD_TIME_n
 USE MODD_GRID_n
 !
@@ -34,9 +34,9 @@ USE MODD_TIME
 !
 USE MODD_MNH2LPDM
 !
-USE MODE_FM,               ONLY: IO_FILE_CLOSE_ll,IO_FILE_OPEN_ll
-USE MODE_FMREAD
-USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
+USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
+USE MODE_IO_FIELD_READ,    only: IO_Field_read
+USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list
 !
 USE MODI_INI_CST
 !
@@ -76,11 +76,11 @@ IFMTO = TPMETEOFILE%NLU
 !
 !*	2.1 Ouverture du fichier Meso-NH.
 !
-CALL IO_FILE_OPEN_ll(TPFILE)
+CALL IO_File_open(TPFILE)
 !
 !*	2.2 Date et heure courante.
 !
-CALL IO_READ_FIELD(TPFILE,'DTCUR',TZDTCUR)
+CALL IO_Field_read(TPFILE,'DTCUR',TZDTCUR)
 ! 
 ICURAA=MOD(TZDTCUR%TDATE%YEAR,100)  ! Annee sur 2 caracteres.
 ICURMM=TZDTCUR%TDATE%MONTH
@@ -100,28 +100,28 @@ print 20300, ICURJJ,ICURMM,ICURAA,ICURHH,ICURMN,ICURSS
 !
 !*	2.3 Lecture des champs Meso-NH de base.
 !
-CALL IO_READ_FIELD(TPFILE,'UT',     XUT)
-CALL IO_READ_FIELD(TPFILE,'VT',     XVT)
-CALL IO_READ_FIELD(TPFILE,'WT',     XWT)
-CALL IO_READ_FIELD(TPFILE,'THT',    XTHT)
-CALL IO_READ_FIELD(TPFILE,'TKET',   XTKET)
+CALL IO_Field_read(TPFILE,'UT',     XUT)
+CALL IO_Field_read(TPFILE,'VT',     XVT)
+CALL IO_Field_read(TPFILE,'WT',     XWT)
+CALL IO_Field_read(TPFILE,'THT',    XTHT)
+CALL IO_Field_read(TPFILE,'TKET',   XTKET)
 !PW:TODO: where are these fields (LM,THW_FLX,DISS,FMU,FMV) written?
 !Warning: not in fieldlist => won't be found
-CALL IO_READ_FIELD(TPFILE,'LM',     XLM)
-CALL IO_READ_FIELD(TPFILE,'THW_FLX',XWPTHP)
-CALL IO_READ_FIELD(TPFILE,'DISS',   XDISSIP)
-CALL IO_READ_FIELD(TPFILE,'FMU',    XSFU)
-CALL IO_READ_FIELD(TPFILE,'FMV',    XSFV)
-CALL IO_READ_FIELD(TPFILE,'INPRT',  XINRT)
-CALL IO_READ_FIELD(TPFILE,'RVT',    XRMVT)
-CALL IO_READ_FIELD(TPFILE,'RCT',    XRMCT)
-CALL IO_READ_FIELD(TPFILE,'RRT',    XRMRT)
+CALL IO_Field_read(TPFILE,'LM',     XLM)
+CALL IO_Field_read(TPFILE,'THW_FLX',XWPTHP)
+CALL IO_Field_read(TPFILE,'DISS',   XDISSIP)
+CALL IO_Field_read(TPFILE,'FMU',    XSFU)
+CALL IO_Field_read(TPFILE,'FMV',    XSFV)
+CALL IO_Field_read(TPFILE,'INPRT',  XINRT)
+CALL IO_Field_read(TPFILE,'RVT',    XRMVT)
+CALL IO_Field_read(TPFILE,'RCT',    XRMCT)
+CALL IO_Field_read(TPFILE,'RRT',    XRMRT)
 !
 !              Lecture des donnees Meso-NH terminee.'
 !
 !*	2.4 Fermeture du fichier Meso-NH.
 !
-CALL IO_FILE_CLOSE_ll(TPFILE)
+CALL IO_File_close(TPFILE)
 !
 !
 !*	3.  PREPARATION DES DONNEES.
@@ -376,8 +376,8 @@ XSSFV(:,:) = XSFV(NSIB:NSIE,NSJB:NSJE)
   !
      IF (IGRILLE.EQ.2) THEN
      WRITE(YFTURB,'("TURB_LPDM",5I2.2)') ICURAA,ICURMM,ICURJJ,ICURHH,ICURMN
-     CALL IO_FILE_ADD2LIST(TZFILE,YFTURB,'TXT','WRITE')
-     CALL IO_FILE_OPEN_ll(TZFILE)
+     CALL IO_File_add2list(TZFILE,YFTURB,'TXT','WRITE')
+     CALL IO_File_open(TZFILE)
      IFTURB = TZFILE%NLU
      WRITE(UNIT=IFTURB,FMT='(5A12)') "WSTAR       ","USTAR       ", &
                                      "HMIX        ","LMO         ", &
@@ -398,7 +398,7 @@ XSSFV(:,:) = XSFV(NSIB:NSIE,NSJB:NSJE)
                                     XSTIMEU(15,15,JK),XSTIMEW(15,15,JK)
   
      ENDDO
-     CALL IO_FILE_CLOSE_ll(TZFILE)
+     CALL IO_File_close(TZFILE)
      ENDIF
 !
                

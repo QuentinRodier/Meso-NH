@@ -26,7 +26,7 @@
 !!    10/10/2011  J.Escobar call INI_PARAZ_ll
 !!  06/2016     (G.Delautier) phasage surfex 8
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -35,7 +35,7 @@
 USE MODD_CONF,        ONLY : CPROGRAM,&
                              L1D, L2D, LPACK
 USE MODD_CONF_n,      ONLY : CSTORAGE_TYPE
-USE MODD_IO_ll,       ONLY : TFILEDATA, NIO_VERB, NVERB_DEBUG, TFILE_SURFEX
+USE MODD_IO,          ONLY : TFILEDATA, NIO_VERB, NVERB_DEBUG, TFILE_SURFEX
 USE MODD_LUNIT,       ONLY : TPGDFILE, TLUOUT0
 USE MODD_LUNIT_n,     ONLY : CINIFILE, TINIFILE
 USE MODD_MNH_SURFEX_n
@@ -43,11 +43,11 @@ USE MODD_PARAMETERS,  ONLY : JPMODELMAX,JPHEXT,JPVEXT, NUNDEF, XUNDEF
 USE MODD_TIME_n,      ONLY : TDTCUR
 !
 USE MODE_FIELD
-USE MODE_FM
-USE MODE_FMREAD
-USE MODE_FMWRIT
-USE MODE_IO_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST,IO_FILE_PRINT_LIST
+USE MODE_IO,               only: IO_Init
+USE MODE_IO_FIELD_READ,    only: IO_Field_read
+USE MODE_IO_FIELD_WRITE,   only: IO_Field_write, IO_Header_write
+USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
+USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list, IO_Filelist_print
 USE MODE_ll
 USE MODE_MSG
 USE MODE_MODELN_HANDLER
@@ -100,7 +100,7 @@ CSTORAGE_TYPE='SU'
 !
 !*       2.    OPENNING OF THE FILES
 !              ---------------------
-CALL INITIO_ll()
+CALL IO_Init()
 !
 CALL OPEN_PRC_FILES(TZPRE_REAL1FILE,YATMFILE, YATMFILETYPE,TZATMFILE &
                                    ,YCHEMFILE,YCHEMFILETYPE &
@@ -122,7 +122,7 @@ CALL INI_CST
 !
 !*       4.1   reading of configuration variables
 !
-CALL IO_FILE_CLOSE_ll(TZPRE_REAL1FILE)
+CALL IO_File_close(TZPRE_REAL1FILE)
 !
 !*       4.2   reading of values of some configuration variables in namelist
 !
@@ -130,8 +130,8 @@ CALL INI_FIELD_LIST(1)
 !
 CALL INI_FIELD_SCALARS()
 !
-CALL IO_READ_FIELD(TPGDFILE,'IMAX',II)
-CALL IO_READ_FIELD(TPGDFILE,'JMAX',IJ)
+CALL IO_Field_read(TPGDFILE,'IMAX',II)
+CALL IO_Field_read(TPGDFILE,'JMAX',IJ)
 CALL SET_JP_ll(JPMODELMAX,JPHEXT,JPVEXT,JPHEXT)
 CALL SET_DAD0_ll()
 CALL SET_DIM_ll(II, IJ, 1)
@@ -156,10 +156,10 @@ CALL INI_PARAZ_ll(IINFO_ll)
 !* reading of date
 !
 IF (YATMFILETYPE=='MESONH') THEN
-  CALL IO_FILE_ADD2LIST(TZATMFILE,TRIM(YATMFILE),'MNH','READ',KLFITYPE=1,KLFIVERB=1)
-  CALL IO_FILE_OPEN_ll(TZATMFILE)
-  CALL IO_READ_FIELD(TZATMFILE,'DTCUR',TDTCUR)
-  CALL IO_FILE_CLOSE_ll(TZATMFILE)
+  CALL IO_File_add2list(TZATMFILE,TRIM(YATMFILE),'MNH','READ',KLFITYPE=1,KLFIVERB=1)
+  CALL IO_File_open(TZATMFILE)
+  CALL IO_Field_read(TZATMFILE,'DTCUR',TDTCUR)
+  CALL IO_File_close(TZATMFILE)
 ELSE
   TDTCUR%TDATE%YEAR = NUNDEF
   TDTCUR%TDATE%MONTH= NUNDEF
@@ -172,7 +172,7 @@ YSURF_CUR => YSURF_LIST(1)
 CALL READ_ALL_NAMELISTS(YSURF_CUR,'MESONH','PRE',.FALSE.)
 CALL GOTO_SURFEX(1)
 !
-CALL IO_FILE_ADD2LIST(TINIFILE,TRIM(CINIFILE),'PGD','WRITE',KLFITYPE=1,KLFIVERB=1)
+CALL IO_File_add2list(TINIFILE,TRIM(CINIFILE),'PGD','WRITE',KLFITYPE=1,KLFIVERB=1)
 !The open is done later in PREP_SURF_MNH when domain dimensions are known
 !
 TFILE_SURFEX => TINIFILE
@@ -181,11 +181,11 @@ NULLIFY(TFILE_SURFEX)
 !
 !-------------------------------------------------------------------------------
 !
-CALL IO_WRITE_HEADER(TINIFILE)
-CALL IO_WRITE_FIELD(TINIFILE,'SURF','EXTE')
-CALL IO_WRITE_FIELD(TINIFILE,'L1D', L1D)
-CALL IO_WRITE_FIELD(TINIFILE,'L2D', L2D)
-CALL IO_WRITE_FIELD(TINIFILE,'PACK',LPACK)
+CALL IO_Header_write(TINIFILE)
+CALL IO_Field_write(TINIFILE,'SURF','EXTE')
+CALL IO_Field_write(TINIFILE,'L1D', L1D)
+CALL IO_Field_write(TINIFILE,'L2D', L2D)
+CALL IO_Field_write(TINIFILE,'PACK',LPACK)
 !
 !-------------------------------------------------------------------------------
 WRITE(ILUOUT0,*) ' '
@@ -194,11 +194,11 @@ WRITE(ILUOUT0,*) '|                                |'
 WRITE(ILUOUT0,*) '|   PREP_SURFEX ends correctly   |'
 WRITE(ILUOUT0,*) '|                                |'
 WRITE(ILUOUT0,*) '----------------------------------'
-CALL IO_FILE_CLOSE_ll(TINIFILE)
+CALL IO_File_close(TINIFILE)
 !
-IF(NIO_VERB>=NVERB_DEBUG) CALL IO_FILE_PRINT_LIST()
+IF(NIO_VERB>=NVERB_DEBUG) CALL IO_Filelist_print()
 !
-CALL IO_FILE_CLOSE_ll(TLUOUT0)
+CALL IO_File_close(TLUOUT0)
 !
 CALL END_PARA_ll(IINFO_ll)
 CALL SURFEX_DEALLO_LIST

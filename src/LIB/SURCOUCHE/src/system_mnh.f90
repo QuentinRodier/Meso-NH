@@ -12,7 +12,6 @@ SUBROUTINE SYSTEM_MNH(HCOMMAND)
 !!    Modifications:
 !!      Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
 !!
-  USE MODE_IO_ll
 !!
 !*       0.    DECLARATIONS
 !              ------------

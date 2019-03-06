@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1996-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ##################################################
@@ -54,11 +54,11 @@
 !              ------------
 !
 USE MODD_CONF
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO,             only: TFILEDATA
 !
 USE MODE_FIELD
-USE MODE_FMREAD
-USE MODE_FMWRIT
+USE MODE_IO_FIELD_READ,  only: IO_Field_read
+USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 !
 IMPLICIT NONE
 !
@@ -103,7 +103,7 @@ IF(HGROUP == 'END')THEN
   TZFIELD%NTYPE      = TYPEINT
   TZFIELD%NDIMS      = 0
   TZFIELD%LTIMEDEP   = .FALSE.
-  CALL IO_WRITE_FIELD(TPDIAFILE,TZFIELD,ILENG)
+  CALL IO_Field_write(TPDIAFILE,TZFIELD,ILENG)
 
   ALLOCATE(ITABCHAR(ILENG))
   DO JJ=1,IGROUP
@@ -122,7 +122,7 @@ IF(HGROUP == 'END')THEN
   TZFIELD%NTYPE      = TYPEINT
   TZFIELD%NDIMS      = 1
   TZFIELD%LTIMEDEP   = .FALSE.
-  CALL IO_WRITE_FIELD(TPDIAFILE,TZFIELD,ITABCHAR)
+  CALL IO_Field_write(TPDIAFILE,TZFIELD,ITABCHAR)
 
   DEALLOCATE(ITABCHAR)
 
@@ -138,7 +138,7 @@ ELSE IF(HGROUP == 'READ')THEN
   TZFIELD%NTYPE      = TYPEINT
   TZFIELD%NDIMS      = 0
   TZFIELD%LTIMEDEP   = .FALSE.
-  CALL IO_READ_FIELD(TPDIAFILE,TZFIELD,ILENG,IRESPDIA)
+  CALL IO_Field_read(TPDIAFILE,TZFIELD,ILENG,IRESPDIA)
   IF(IRESPDIA == -47)THEN
 !   print *,' No record MENU_BUDGET '
     LPACK=GPACK
@@ -156,7 +156,7 @@ ELSE IF(HGROUP == 'READ')THEN
   TZFIELD%NTYPE      = TYPEINT
   TZFIELD%NDIMS      = 1
   TZFIELD%LTIMEDEP   = .FALSE.
-  CALL IO_READ_FIELD(TPDIAFILE,TZFIELD,ITABCHAR)
+  CALL IO_Field_read(TPDIAFILE,TZFIELD,ITABCHAR)
   IGROUP=ILENG/NMNHNAMELGTMAX
   DO JJ=1,IGROUP
     DO J = 1,NMNHNAMELGTMAX

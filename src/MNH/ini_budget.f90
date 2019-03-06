@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/ini_budget.f90,v $ $Revision: 1.3.2.5.2.2.2.2.10.2.2.5.2.1 $
-! masdev4_8 budget 2008/06/20 10:08:26
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODI_INI_BUDGET
@@ -163,8 +158,6 @@ END MODULE MODI_INI_BUDGET
 !*       0.    DECLARATIONS
 !              ------------ 
 !
-USE MODE_FM
-!
 USE MODD_PARAMETERS
 USE MODD_BUDGET
 USE MODD_DYN
@@ -181,7 +174,6 @@ USE MODD_PARAM_LIMA, ONLY : OWARM=>LWARM, OCOLD=>LCOLD, OSEDI=>LSEDI,   &
                             NMOD_CCN
 !
 USE MODE_ll
-USE MODE_IO_ll
 USE MODE_MSG
 !
 IMPLICIT NONE

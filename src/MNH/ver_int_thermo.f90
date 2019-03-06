@@ -12,7 +12,7 @@ INTERFACE
                                 PPMHP_MX,PEXNTOP2D,PTHV,PR,PPMHP,PDIAG,            &
                                 PLSTH_MX, PLSRV_MX, PLSTHM, PLSRVM                 )
 !
-USE MODD_IO_ll, ONLY : TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 TYPE(TFILEDATA),          INTENT(IN)  :: TPFILE     ! File characteristics
 LOGICAL,                  INTENT(IN)  :: OSHIFT     ! T: vertical shift of BL (used for GRIB file data)
@@ -144,7 +144,7 @@ USE MODD_CONF
 USE MODD_CONF_n
 USE MODD_CST
 USE MODD_GRID_n
-USE MODD_IO_ll,       ONLY: TFILEDATA
+USE MODD_IO,          ONLY: TFILEDATA
 USE MODD_LUNIT,       ONLY: TLUOUT0
 USE MODD_PARAMETERS
 USE MODD_VER_INTERP_LIN

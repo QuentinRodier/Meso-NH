@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 ! Modifications:
@@ -13,7 +13,7 @@
 INTERFACE
 !
 SUBROUTINE MENU_DIACHRO(TPDIAFILE,HGROUP)
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE    ! file to write
 CHARACTER(LEN=*), INTENT(IN) :: HGROUP
@@ -31,7 +31,7 @@ END MODULE MODI_MENU_DIACHRO
 INTERFACE
 !
 SUBROUTINE WRITE_LFIFMN_FORDIACHRO_n(TPFILE)
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 TYPE(TFILEDATA),INTENT(IN) :: TPFILE
 END SUBROUTINE WRITE_LFIFMN_FORDIACHRO_n
 !
@@ -49,7 +49,7 @@ SUBROUTINE WRITE_DIACHRO(TPDIAFILE,TPLUOUTDIA,HGROUP,HTYPE,          &
       HTITRE,HUNITE,HCOMMENT,OICP,OJCP,OKCP,KIL,KIH,KJL,KJH,KKL,KKH, &
       PTRAJX,PTRAJY,PTRAJZ,PMASK)
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 TYPE(TFILEDATA),              INTENT(IN)          :: TPDIAFILE    ! file to write
 TYPE(TFILEDATA),              INTENT(IN)          :: TPLUOUTDIA

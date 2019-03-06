@@ -73,15 +73,14 @@ END MODULE MODI_CH_EMISSION_FLUX0D
 !!
 !!    EXTERNAL
 !!    --------
-USE MODD_IO_ll,         ONLY: TFILEDATA
-USE MODE_FM,            ONLY: IO_FILE_CLOSE_ll
-USE MODE_IO_ll
+USE MODD_IO,      ONLY: TFILEDATA
+USE MODE_IO_FILE, ONLY: IO_File_close
 !
 USE MODI_CH_OPEN_INPUT
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
-USE MODD_CH_M9_n,      ONLY: NEQ, CNAMES
+USE MODD_CH_M9_n, ONLY: NEQ, CNAMES
 !!
 !------------------------------------------------------------------------------
 !
@@ -198,7 +197,7 @@ IF (LSFIRSTCALL) THEN
 !
 ! close file
 !
-  CALL IO_FILE_CLOSE_ll(TZFILE)
+  CALL IO_File_close(TZFILE)
 !
 !*       2.   MAP DATA ONTO PROGNOSTIC VARIABLES
 !        ---------------------------------------

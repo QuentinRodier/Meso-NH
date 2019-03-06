@@ -11,7 +11,7 @@ INTERFACE
 !
 SUBROUTINE INI_SEG_n(KMI,TPINIFILE,HINIFILEPGD,PTSTEP_ALL)
 !
-USE MODD_IO_ll, ONLY : TFILEDATA
+USE MODD_IO, ONLY : TFILEDATA
 !
 INTEGER,                    INTENT(IN)    :: KMI          !Model index
 TYPE(TFILEDATA),   POINTER, INTENT(OUT)   :: TPINIFILE    !Initial file
@@ -73,7 +73,7 @@ END MODULE MODI_INI_SEG_n
 !!      The  name of the initial file is read in EXSEG file.     
 !!         - Default values are supplied for variables in descriptor files
 !!      (by DEFAULT_DESFM).
-!!         - The Initial file (LFIFM + DESFM) is opened by IO_FILE_OPEN_ll.
+!!         - The Initial file (LFIFM + DESFM) is opened by IO_File_open.
 !!         - The descriptor DESFM file is read (by READ_DESFM_n). 
 !!         - The descriptor file EXSEG is read (by READ_EXSEG_n) and coherence
 !!      between the initial file and the description of segment is also checked 
@@ -90,7 +90,7 @@ END MODULE MODI_INI_SEG_n
 !!    EXTERNAL
 !!    --------
 !!      FMATTR        : to associate a logical unit number to a file 
-!!      IO_FILE_OPEN_ll : to open descriptor file or LFI file
+!!      IO_File_open : to open descriptor file or LFI file
 !!      DEFAULT_DESFM1: to set default values
 !!      READ_DESFM_n    : to read a DESFM file 
 !!      READ_EXSEG_n    : to read a EXSEG file
@@ -162,7 +162,7 @@ END MODULE MODI_INI_SEG_n
 !!                       04/2016   add ABORT if CINIFILEPGD is not specified (G.Delautier)
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!                       07/2017   add GBLOWSNOW (V. Vionnet)
-!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !-------------------------------------------------------------------------------
 !
@@ -172,7 +172,7 @@ USE MODD_CONF
 USE MODD_CONF_n,           ONLY: CSTORAGE_TYPE
 USE MODN_CONFZ
 USE MODD_DYN
-USE MODD_IO_ll,            ONLY: NVERB_FATAL,NVERB_WARNING,TFILE_OUTPUTLISTING,TFILEDATA
+USE MODD_IO,               ONLY: NVERB_FATAL, NVERB_WARNING, TFILE_OUTPUTLISTING, TFILEDATA
 USE MODD_LUNIT
 USE MODD_LUNIT_n,          ONLY: CINIFILE_n=> CINIFILE, TINIFILE_n => TINIFILE, CINIFILEPGD_n=> CINIFILEPGD, TLUOUT, LUNIT_MODEL
 USE MODD_PARAM_n,          ONLY: CSURF
@@ -180,10 +180,10 @@ USE MODD_PARAMETERS
 USE MODD_REF,              ONLY: LBOUSS
 !
 USE MODE_FIELD
-USE MODE_FMREAD
-USE MODE_FM,               ONLY: IO_FILE_CLOSE_ll, IO_FILE_OPEN_ll
-USE MODE_IO_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
+USE MODE_IO_FIELD_READ,    only: IO_Field_read
+USE MODE_IO_FILE,          ONLY: IO_File_close, IO_File_open
+USE MODE_IO,               only: IO_Config_set
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_add2list
 USE MODE_MSG
 USE MODE_POS
 !
@@ -259,9 +259,9 @@ TZFILE_DES => NULL()
 !              ---------------------------------------
 !
 WRITE(YMI,'(I2.0)') KMI
-CALL IO_FILE_ADD2LIST(LUNIT_MODEL(KMI)%TLUOUT,'OUTPUT_LISTING'//ADJUSTL(YMI),'OUTPUTLISTING','WRITE')
+CALL IO_File_add2list(LUNIT_MODEL(KMI)%TLUOUT,'OUTPUT_LISTING'//ADJUSTL(YMI),'OUTPUTLISTING','WRITE')
 TLUOUT => LUNIT_MODEL(KMI)%TLUOUT !Necessary because TLUOUT was initially pointing to NULL
-CALL IO_FILE_OPEN_ll(TLUOUT)
+CALL IO_File_open(TLUOUT)
 !
 !Set output file for PRINT_MSG
 TFILE_OUTPUTLISTING => TLUOUT
@@ -272,8 +272,8 @@ WRITE(UNIT=ILUOUT,FMT='(50("*"),/,"*",17X,"MODEL ",I1," LISTING",16X,"*",/,  &
             & 50("*"))') KMI
 !
 IF (CPROGRAM=='MESONH') THEN
-  CALL IO_FILE_ADD2LIST(TZFILE_DES,'EXSEG'//TRIM(ADJUSTL(YMI))//'.nam','NML','READ')
-  CALL IO_FILE_OPEN_ll(TZFILE_DES)
+  CALL IO_File_add2list(TZFILE_DES,'EXSEG'//TRIM(ADJUSTL(YMI))//'.nam','NML','READ')
+  CALL IO_File_open(TZFILE_DES)
 !
 !*       1.3   SPAWNING or SPEC or REAL program case
 !              ---------------------
@@ -281,8 +281,8 @@ IF (CPROGRAM=='MESONH') THEN
 ELSE IF (CPROGRAM=='SPAWN ' .OR. CPROGRAM=='REAL  '.OR. CPROGRAM=='SPEC  ') THEN
   YINIFILE    = CINIFILE_n
   HINIFILEPGD = CINIFILEPGD_n
-  CALL IO_FILE_ADD2LIST(TPINIFILE,TRIM(YINIFILE),'MNH','READ',KLFITYPE=2,KLFIVERB=NVERB)
-  CALL IO_FILE_OPEN_ll(TPINIFILE)
+  CALL IO_File_add2list(TPINIFILE,TRIM(YINIFILE),'MNH','READ',KLFITYPE=2,KLFIVERB=NVERB)
+  CALL IO_File_open(TPINIFILE)
   TZFILE_DES => TPINIFILE%TDESFILE
 !
 !*       1.3bis   DIAG program case
@@ -290,8 +290,8 @@ ELSE IF (CPROGRAM=='SPAWN ' .OR. CPROGRAM=='REAL  '.OR. CPROGRAM=='SPEC  ') THEN
 ELSE IF (CPROGRAM=='DIAG  ') THEN
   YINIFILE    = CINIFILE_n
   HINIFILEPGD = CINIFILEPGD_n
-  CALL IO_FILE_ADD2LIST(TINIFILE_n,TRIM(YINIFILE),'MNH','READ',KLFITYPE=2,KLFIVERB=NVERB)
-  CALL IO_FILE_OPEN_ll(TINIFILE_n)
+  CALL IO_File_add2list(TINIFILE_n,TRIM(YINIFILE),'MNH','READ',KLFITYPE=2,KLFIVERB=NVERB)
+  CALL IO_File_open(TINIFILE_n)
   TPINIFILE  => TINIFILE_n
   TZFILE_DES => TPINIFILE%TDESFILE
 !   
@@ -334,14 +334,14 @@ IF (CPROGRAM=='MESONH') THEN
       IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_CONFZ)
       CALL POSNAM(ILUSEG,'NAM_CONFIO',GFOUND,ILUOUT)
       IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_CONFIO)
-      CALL SET_CONFIO_ll()
+      CALL IO_Config_set()
    END IF
   HINIFILEPGD=CINIFILEPGD_n
   YINIFILE=CINIFILE_n
 
-  CALL IO_FILE_ADD2LIST(TPINIFILE,TRIM(YINIFILE),'MNH','READ',KLFITYPE=2,KLFIVERB=NVERB)
+  CALL IO_File_add2list(TPINIFILE,TRIM(YINIFILE),'MNH','READ',KLFITYPE=2,KLFIVERB=NVERB)
   TINIFILE_n => TPINIFILE !Necessary because TINIFILE was initially pointing to NULL
-  CALL IO_FILE_OPEN_ll(TPINIFILE)
+  CALL IO_File_open(TPINIFILE)
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -384,7 +384,7 @@ END IF
 !
 IF (CPROGRAM=='MESONH' .OR. CPROGRAM=='SPAWN ') THEN
   IF ((TPINIFILE%NMNHVERSION(1)==4 .AND. TPINIFILE%NMNHVERSION(2)>9) .OR. TPINIFILE%NMNHVERSION(1)>4) THEN
-    CALL IO_READ_FIELD(TPINIFILE,'COUPLING',LCOUPLING)
+    CALL IO_Field_read(TPINIFILE,'COUPLING',LCOUPLING)
     IF (LCOUPLING) THEN
       WRITE(ILUOUT,*) 'Error with the initial file'
       WRITE(ILUOUT,*) 'The file',YINIFILE,' was created with LCOUPLING=.TRUE.'
@@ -397,7 +397,7 @@ IF (CPROGRAM=='MESONH' .OR. CPROGRAM=='SPAWN ') THEN
 END IF
 !
 ! Read the storage type
-  CALL IO_READ_FIELD(TPINIFILE,'STORAGE_TYPE',CSTORAGE_TYPE,IRESP)
+  CALL IO_Field_read(TPINIFILE,'STORAGE_TYPE',CSTORAGE_TYPE,IRESP)
   IF (IRESP /= 0) THEN
     WRITE(ILUOUT,FMT=9002) 'STORAGE_TYPE',IRESP
 !callabortstop
@@ -405,18 +405,18 @@ END IF
   END IF
 IF (KMI == 1) THEN 
 ! Read the geometry kind 
-  CALL IO_READ_FIELD(TPINIFILE,'CARTESIAN',LCARTESIAN)
+  CALL IO_Field_read(TPINIFILE,'CARTESIAN',LCARTESIAN)
 ! Read the thinshell approximation
-  CALL IO_READ_FIELD(TPINIFILE,'THINSHELL',LTHINSHELL)
+  CALL IO_Field_read(TPINIFILE,'THINSHELL',LTHINSHELL)
 !
   IF ((TPINIFILE%NMNHVERSION(1)==4 .AND. TPINIFILE%NMNHVERSION(2)>=6) .OR. TPINIFILE%NMNHVERSION(1)>4) THEN
-   CALL IO_READ_FIELD(TPINIFILE,'L1D',L1D,IRESP)
+   CALL IO_Field_read(TPINIFILE,'L1D',L1D,IRESP)
    IF (IRESP/=0)  L1D=.FALSE.
 !
-   CALL IO_READ_FIELD(TPINIFILE,'L2D',L2D,IRESP)
+   CALL IO_Field_read(TPINIFILE,'L2D',L2D,IRESP)
    IF (IRESP/=0)  L2D=.FALSE.
 !
-   CALL IO_READ_FIELD(TPINIFILE,'PACK',LPACK,IRESP)
+   CALL IO_Field_read(TPINIFILE,'PACK',LPACK,IRESP)
    IF (IRESP/=0) LPACK=.TRUE.
   ELSE
    L1D=.FALSE.
@@ -424,7 +424,7 @@ IF (KMI == 1) THEN
    LPACK=.TRUE.
   END IF
   IF ((TPINIFILE%NMNHVERSION(1)==4 .AND. TPINIFILE%NMNHVERSION(2)>=10) .OR. TPINIFILE%NMNHVERSION(1)>4) THEN
-   CALL IO_READ_FIELD(TPINIFILE,'LBOUSS',LBOUSS)
+   CALL IO_Field_read(TPINIFILE,'LBOUSS',LBOUSS)
   END IF
 !
 END IF
@@ -467,7 +467,7 @@ END IF
 !*      7.    CLOSE  FILES
 !             ------------
 !
-IF (CPROGRAM=='MESONH') CALL IO_FILE_CLOSE_ll(TZFILE_DES)
+IF (CPROGRAM=='MESONH') CALL IO_File_close(TZFILE_DES)
 !
 !-------------------------------------------------------------------------------
 9002  FORMAT(/,'FATAL ERROR IN INI_SEG_n: pb to read ',A16,' IRESP=',I3)

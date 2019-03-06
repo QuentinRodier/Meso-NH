@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !      ###############################
        MODULE MODI_LIMA_NUCLEATION_PROCS
 !      ###############################
@@ -13,7 +14,7 @@ INTERFACE
                                      PCCT, PCRT, PCIT,                             &
                                      PNFT, PNAT, PIFT, PINT, PNIT, PNHT            )
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE     ! Output file
@@ -78,7 +79,7 @@ USE MODD_BUDGET,     ONLY : LBU_ENABLE, LBUDGET_TH, LBUDGET_RV, LBUDGET_RC, LBUD
 USE MODD_NSV,        ONLY : NSV_LIMA_NC, NSV_LIMA_NR, NSV_LIMA_CCN_FREE,               &
                             NSV_LIMA_NI, NSV_LIMA_IFN_FREE
 !
-USE MODD_IO_ll,   ONLY: TFILEDATA
+USE MODD_IO,         ONLY: TFILEDATA
 USE MODI_BUDGET
 USE MODI_LIMA_CCN_ACTIVATION
 USE MODI_LIMA_PHILLIPS_IFN_NUCLEATION
