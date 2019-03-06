@@ -1,6 +1,6 @@
-!SFX_LIC Copyright 1997-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 1997-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
-!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
 
 !     #########
@@ -46,7 +46,7 @@ USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
 #ifdef SFX_MNH
-USE MODD_IO_ll, ONLY : ISIOP, ISP, ISNPROC
+USE MODD_IO, ONLY : ISP, ISNPROC, NIO_RANK
 USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD
 #endif
 !
@@ -88,7 +88,7 @@ ICOMM_SAVE = NCOMM
 ! on met les infos de mésonh
 NRANK = ISP-1
 NPROC = ISNPROC
-NPIO = ISIOP-1
+NPIO  = NIO_RANK-1
 NCOMM = NMNH_COMM_WORLD
 #endif
 !
