@@ -13,6 +13,7 @@
 !                                    + move IOFREEFLU and IONEWFLU to mode_io_file_lfi.f90
 !                                    + move management of NNCID and NLFIFLU to the nc4 and lfi subroutines
 !     Philippe Wautelet: 10/01/2019: replace handle_err by io_handle_err_nc4 for better netCDF error messages
+!  P. Wautelet 07/03/2019: bugfix: io_set_mnhversion must be called by all the processes
 !
 !-----------------------------------------------------------------
 #if defined(MNH_IOCDF4)
@@ -57,9 +58,9 @@ subroutine io_create_file_nc4(tpfile,hprogram_orig)
       call print_msg(NVERB_FATAL,'IO','io_create_file_nc4','NF90_CREATE for '//trim(yfilem)//'.nc: '//NF90_STRERROR(istatus))
     end if
     call io_set_not_cleanly_closed_nc4(tpfile)
-    call io_set_mnhversion(tpfile)
     call io_set_knowndims_nc4(tpfile, hprogram_orig=hprogram_orig)
   end if
+  call io_set_mnhversion(tpfile)
 end subroutine io_create_file_nc4
 
 
