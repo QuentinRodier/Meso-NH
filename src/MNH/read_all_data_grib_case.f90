@@ -583,8 +583,8 @@ SELECT CASE (IMODEL)
       CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=229)
       !
       IF(INUM < 0) THEN
-        WRITE (ILUOUT0,'(A)')' | !!! WARNING !!! Sea wave height is missing in &
-               the GRIB file - the default value of 2 meters is used'
+        WRITE (ILUOUT0,'(A)')' | !!! WARNING !!! Sea wave height is missing in '// &
+               'the GRIB file - the default value of 2 meters is used'
         XZWS = 2.0       
       ELSE
         GFIND=.TRUE.
