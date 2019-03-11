@@ -15,6 +15,7 @@
 !                          + move management of NNCID and NLFIFLU to the nc4 and lfi subroutines
 !  P. Wautelet 10/01/2019: replace handle_err by IO_Err_handle_nc4 for better netCDF error messages
 !  P. Wautelet 05/03/2019: rename IO subroutines and modules
+!  P. Wautelet 07/03/2019: bugfix: io_set_mnhversion must be called by all the processes
 !
 !-----------------------------------------------------------------
 #if defined(MNH_IOCDF4)
@@ -58,10 +59,10 @@ subroutine IO_File_create_nc4(tpfile,hprogram_orig)
     if (istatus /= NF90_NOERR) then
       call print_msg(NVERB_FATAL,'IO','IO_File_create_nc4','NF90_CREATE for '//trim(yfilem)//'.nc: '//NF90_STRERROR(istatus))
     end if
-    call io_set_not_cleanly_closed_nc4(tpfile)
-    call IO_Mnhversion_set(tpfile)
+    call IO_Not_cleanly_closed_set_nc4(tpfile)
     call IO_Knowndims_set_nc4(tpfile, hprogram_orig=hprogram_orig)
   end if
+  call IO_Mnhversion_set(tpfile)
 end subroutine IO_File_create_nc4
 
 
@@ -185,16 +186,16 @@ subroutine IO_Cleanly_closed_set_nc4(tpfile)
 end subroutine IO_Cleanly_closed_set_nc4
 
 
-subroutine io_set_not_cleanly_closed_nc4(tpfile)
+subroutine IO_Not_cleanly_closed_set_nc4(tpfile)
   type(tfiledata), intent(in) :: tpfile
 
   integer(kind=IDCDF_KIND) :: istatus
 
-  call print_msg(NVERB_DEBUG,'IO','io_set_not_cleanly_closed_nc4','called for '//trim(tpfile%cname))
+  call print_msg(NVERB_DEBUG,'IO','IO_Not_cleanly_closed_set_nc4','called for '//trim(tpfile%cname))
 
   istatus = NF90_PUT_ATT(tpfile%nncid, NF90_GLOBAL, 'MNH_cleanly_closed', 'no')
-  if (istatus /= NF90_NOERR) call IO_Err_handle_nc4(istatus,'io_set_not_cleanly_closed_nc4','NF90_PUT_ATT','MNH_cleanly_closed')
-end subroutine io_set_not_cleanly_closed_nc4
+  if (istatus /= NF90_NOERR) call IO_Err_handle_nc4(istatus,'IO_Not_cleanly_closed_set_nc4','NF90_PUT_ATT','MNH_cleanly_closed')
+end subroutine IO_Not_cleanly_closed_set_nc4
 
 end module mode_io_file_nc4
 #else

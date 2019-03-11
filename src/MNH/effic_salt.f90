@@ -57,6 +57,7 @@ END MODULE MODI_EFFIC_SALT
 !!    -------------
 !!   Original
 !!
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 ! Entry variables:
 !
 ! PSVTS(INOUT)       -Array of moments included in PSVTS

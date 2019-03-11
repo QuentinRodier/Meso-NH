@@ -132,7 +132,9 @@ SUBROUTINE INI_LB(TPINIFILE,OLSOURCE,KSV,                          &
 !!      J.-P. Pinty     09/02/16    Add LIMA that is LBC for CCN and IFN
 !!      M.Leriche       09/02/16    Treat gas and aq. chemicals separately
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 13/02/2019: initialize PLBXSVM and PLBYSVM in all cases
 !  P. Wautelet 14/02/2019: move UPCASE function to tools.f90
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -471,7 +473,10 @@ END IF
 !
 !*        2.6    LB-Scalar Variables
 !
-IF (KSV > 0) THEN 
+PLBXSVM(:,:,:,:) = 0.
+PLBYSVM(:,:,:,:) = 0.
+!
+IF (KSV > 0) THEN
   IF (ANY(HGETSVM(1:KSV)=='READ')) THEN
     TZFIELD%CMNHNAME   = 'HORELAX_SV'
     TZFIELD%CSTDNAME   = ''
@@ -898,7 +903,7 @@ END IF
 ! Chemical aqueous phase scalar variables
 IF (NSV_CHACEND>=NSV_CHACBEG) THEN
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'kg kg-1'
+  TZFIELD%CUNITS     = 'ppp'
   TZFIELD%CDIR       = ''
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
@@ -954,7 +959,7 @@ END IF
 ! Chemical ice phase scalar variables
 IF (NSV_CHICEND>=NSV_CHICBEG) THEN
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'kg kg-1'
+  TZFIELD%CUNITS     = 'ppp'
   TZFIELD%CDIR       = ''
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
@@ -1010,7 +1015,7 @@ END IF
 ! Orilam aerosol scalar variables
 IF (NSV_AEREND>=NSV_AERBEG) THEN
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'kg kg-1'
+  TZFIELD%CUNITS     = 'ppp'
   TZFIELD%CDIR       = ''
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
@@ -1066,7 +1071,7 @@ END IF
 ! Orilam aerosols moist scalar variables
 IF (NSV_AERDEPEND>=NSV_AERDEPBEG) THEN
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'kg kg-1'
+  TZFIELD%CUNITS     = 'ppp'
   TZFIELD%CDIR       = ''
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
@@ -1122,7 +1127,7 @@ END IF
 ! Dust scalar variables
 IF (NSV_DSTEND>=NSV_DSTBEG) THEN
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'kg kg-1'
+  TZFIELD%CUNITS     = 'ppp'
   TZFIELD%CDIR       = ''
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
@@ -1178,7 +1183,7 @@ END IF
 !
 IF (NSV_DSTDEPEND>=NSV_DSTDEPBEG) THEN
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'kg kg-1'
+  TZFIELD%CUNITS     = 'ppp'
   TZFIELD%CDIR       = ''
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
@@ -1235,7 +1240,7 @@ END IF
 ! Sea salt scalar variables
 IF (NSV_SLTEND>=NSV_SLTBEG) THEN
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CUNITS     = 'kg kg-1'
+  TZFIELD%CUNITS     = 'ppp'
   TZFIELD%CDIR       = ''
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL

@@ -1,11 +1,12 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 ! Modifications:
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  J. Escobar : 18/06/2018 , bug compile R*4 => real*8 pointer XT_VISC  
+!  P. Wautelet 08/02/2019: add missing NULL association for pointers
 !-----------------------------------------------------------------
 !     #################
       MODULE MODD_SUB_MODEL_n
@@ -17,19 +18,19 @@ USE MODD_PARAMETERS, ONLY: JPMODELMAX
 IMPLICIT NONE
 
 TYPE SUB_MODEL_t
-  TYPE(LIST_ll), POINTER :: TZFIELDS_ll,TZLSFIELD_ll,TZFIELDM_ll
+  TYPE(LIST_ll), POINTER :: TZFIELDS_ll => NULL(), TZLSFIELD_ll => NULL(), TZFIELDM_ll => NULL()
                        ! list of fields to update halo
-  TYPE(HALO2LIST_ll), POINTER :: TZHALO2M_ll, TZLSHALO2_ll
+  TYPE(HALO2LIST_ll), POINTER :: TZHALO2M_ll => NULL(), TZLSHALO2_ll => NULL()
                        ! list of fields for the halo updates (2nd layer)
   ! halo lists and updates for 4th order schemes
 ! list of fields to update halo at time t
-  TYPE(LIST_ll), POINTER :: TZFIELDT_ll  ! for meteorological scalars
-  TYPE(LIST_ll), POINTER :: TZFIELDMT_ll ! for momentum
-  TYPE(LIST_ll), POINTER :: TZFIELDSC_ll  ! for tracer scalars
+  TYPE(LIST_ll), POINTER :: TZFIELDT_ll  => NULL() ! for meteorological scalars
+  TYPE(LIST_ll), POINTER :: TZFIELDMT_ll => NULL() ! for momentum
+  TYPE(LIST_ll), POINTER :: TZFIELDSC_ll => NULL() ! for tracer scalars
 ! list of fields for the halo updates (2nd layer) at time t
-  TYPE(HALO2LIST_ll), POINTER :: TZHALO2T_ll
-  TYPE(HALO2LIST_ll), POINTER :: TZHALO2MT_ll
-  TYPE(HALO2LIST_ll), POINTER :: TZHALO2SC_ll
+  TYPE(HALO2LIST_ll), POINTER :: TZHALO2T_ll  => NULL()
+  TYPE(HALO2LIST_ll), POINTER :: TZHALO2MT_ll => NULL()
+  TYPE(HALO2LIST_ll), POINTER :: TZHALO2SC_ll => NULL()
   INTEGER :: IBAK, IOUT          ! number of the backup / output
   REAL*8,DIMENSION(2)    :: XT_START
   REAL*8,DIMENSION(2)    :: XT_STORE,XT_BOUND,XT_GUESS

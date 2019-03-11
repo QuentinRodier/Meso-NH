@@ -1,3 +1,8 @@
+!MNH_LIC Copyright 2016-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+!MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !!    ########################
       MODULE MODD_CH_PRODLOSSTOT_n
 !!    ########################
@@ -25,7 +30,8 @@
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    October 2016                   
+!!      Original    October 2016
+!  P. Wautelet 08/02/2019: add missing NULL association for pointers
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -36,11 +42,11 @@ IMPLICIT NONE
 
 TYPE CH_PRODLOSSTOT_t
 !
-    CHARACTER(LEN=32),  DIMENSION(:), POINTER :: CNAMES_PRODLOSST
-    INTEGER,            DIMENSION(:), POINTER :: NIND_SPEC
+    CHARACTER(LEN=32),  DIMENSION(:), POINTER :: CNAMES_PRODLOSST => NULL()
+    INTEGER,            DIMENSION(:), POINTER :: NIND_SPEC => NULL()
     INTEGER                                   :: NEQ_PLT
-    REAL,         DIMENSION(:,:,:,:), POINTER:: XPROD
-    REAL,         DIMENSION(:,:,:,:), POINTER:: XLOSS
+    REAL,         DIMENSION(:,:,:,:), POINTER:: XPROD => NULL()
+    REAL,         DIMENSION(:,:,:,:), POINTER:: XLOSS => NULL()
 !
 !-----------------------------------------------------------------------------
 

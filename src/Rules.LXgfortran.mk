@@ -58,6 +58,7 @@ endif
 #
 #  
 CC = gcc
+CXX = g++
 FC = gfortran 
 ifeq "$(VER_MPI)" "MPIAUTO"
 F90 = mpif90
@@ -97,6 +98,8 @@ CNAME_GRIBEX=_gfortran
 # Netcdf/HDF5 flags
 #
 HDF_CONF= CFLAGS=-std=c99
+HDF_OPT ?= -fPIC
+NETCDF_OPT ?= -fPIC
 #
 ## LIBTOOLS flags
 #
@@ -107,7 +110,15 @@ MNH_TOOLS=yes
 endif
 endif
 #
+## COMPRESS flag
 #
+#if MNH_COMPRESS exists => compile the COMPRESS library (for LFI files)
+MNH_COMPRESS=yes
+#
+## S4PY flag
+#
+#if MNH_S4PY exists => compile the libs4py library (for epygram)
+#MNH_S4PY=no
 #
 ##########################################################
 #                                                        #

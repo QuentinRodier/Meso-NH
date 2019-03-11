@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -49,6 +49,9 @@
 !!                               for Theta and r (noted _CLD)
 !!                     04/16    (M.Mazoyer) New supersaturation fields
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!                   02/2019 C.Lac add rain fraction as an output field
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  P. Wautelet 06/03/2019: correct XZWS entry
 !!
 !-------------------------------------------------------------------------------
 !
@@ -59,6 +62,7 @@ USE MODD_PARAMETERS, ONLY: JPMODELMAX
 IMPLICIT NONE
 
 TYPE FIELD_t
+  REAL, DIMENSION(:,:),   POINTER :: XZWS=>NULL()    ! significant sea wave
 !  REAL, DIMENSION(:,:,:), POINTER :: XUT=>NULL(),XVT=>NULL(),XWT=>NULL()
                                       ! U,V,W  at time t
   REAL, DIMENSION(:,:,:), POINTER :: XRUS=>NULL(),XRVS=>NULL(),XRWS=>NULL()
@@ -108,6 +112,7 @@ END TYPE FIELD_t
 
 TYPE(FIELD_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: FIELD_MODEL
 
+REAL, DIMENSION(:,:),   POINTER :: XZWS=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XUT=>NULL(),XVT=>NULL(),XWT=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XRUS=>NULL(),XRVS=>NULL(),XRWS=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XRUS_PRES=>NULL(),XRVS_PRES=>NULL(),XRWS_PRES=>NULL()
@@ -133,6 +138,7 @@ REAL, DIMENSION(:,:,:), POINTER :: XSRC=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XSRCT=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XSIGS=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XCLDFR=>NULL()
+REAL, DIMENSION(:,:,:), POINTER :: XRAINFR=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XCIT=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XTHM=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XPABSM=>NULL()
@@ -147,6 +153,7 @@ INTEGER, INTENT(IN) :: KFROM, KTO
 INTEGER :: IID,IRESP
 !
 ! Save current state for allocated arrays
+!FIELD_MODEL(KFROM)%XZWS=>XZWS !Done in FIELDLIST_GOTO_MODEL
 !FIELD_MODEL(KFROM)%XUT=>XUT !Done in FIELDLIST_GOTO_MODEL
 !FIELD_MODEL(KFROM)%XVT=>XVT !Done in FIELDLIST_GOTO_MODEL
 !FIELD_MODEL(KFROM)%XWT=>XWT !Done in FIELDLIST_GOTO_MODEL
@@ -182,6 +189,7 @@ FIELD_MODEL(KFROM)%XPABSM=>XPABSM
 FIELD_MODEL(KFROM)%XRCM=>XRCM
 !
 ! Current model is set to model KTO
+!XZWS=>FIELD_MODEL(KTO)%XZWS !Done in FIELDLIST_GOTO_MODEL
 !XUT=>FIELD_MODEL(KTO)%XUT !Done in FIELDLIST_GOTO_MODEL
 !XVT=>FIELD_MODEL(KTO)%XVT !Done in FIELDLIST_GOTO_MODEL
 !XWT=>FIELD_MODEL(KTO)%XWT !Done in FIELDLIST_GOTO_MODEL

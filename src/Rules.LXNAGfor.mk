@@ -94,6 +94,16 @@ NETCDF_SUPPFLAGS = -dusty -kind=byte
 #if MNH_TOOLS exists => compile the tools
 MNH_TOOLS = yes
 #
+## COMPRESS flag
+#
+#if MNH_COMPRESS exists => compile the COMPRESS library (for LFI files)
+MNH_COMPRESS=yes
+#
+## S4PY flag
+#
+#if MNH_S4PY exists => compile the libs4py library (for epygram)
+#MNH_S4PY=no
+#
 ##########################################################
 #                                                        #
 # Source of MESONH PACKAGE  Distribution                 #
@@ -121,5 +131,5 @@ OBJS_I4=spll_modd_netcdf.o
 $(OBJS_I4) : OPT = $(OPT_BASE_I4)
 endif
 # 
-LIST_MISMATCH=MPI_Allgatherv,MPI_Allreduce,MPI_Bcast,MPI_Bsend,MPI_Gather,MPI_Gatherv,MPI_Recv,LEPOLY
+LIST_MISMATCH=MPI_Allgatherv,MPI_Allreduce,MPI_Bcast,MPI_Bsend,MPI_Gather,MPI_Gatherv,MPI_Recv,LEPOLY,EXTRACT_BBUFF,FILL_BBUFF
 

@@ -18,16 +18,16 @@ INTERFACE
                                  PUS,PVS,PWS,PDRYMASSS,                    &
                                  PTHS,PRS,PTKES,PSVS,                      &
                                  PLSUS,PLSVS,PLSWS,                        &
-                                 PLSTHS,PLSRVS,                            &
+                                 PLSTHS,PLSRVS,PLSZWSS,                    &
                                  PLBXUS,PLBXVS,PLBXWS,                     &
                                  PLBXTHS,PLBXRS,PLBXTKES,PLBXSVS,          &
                                  PLBYUS,PLBYVS,PLBYWS,                     &
                                  PLBYTHS,PLBYRS,PLBYTKES,PLBYSVS,          &
-                                 PUM,PVM,PWM,                              &
+                                 PUM,PVM,PWM,PZWS,                         &
                                  PUT,PVT,PWT,PPABST,PDRYMASST,             &
                                  PTHT,PRT,PTHM,PRCM,PPABSM,PTKET,PSVT,     &
                                  PLSUM,PLSVM,PLSWM,                        &
-                                 PLSTHM,PLSRVM,                            &
+                                 PLSTHM,PLSRVM,PLSZWSM,                    &
                                  PLBXUM,PLBXVM,PLBXWM,                     &
                                  PLBXTHM,PLBXRM,PLBXTKEM,PLBXSVM,          &
                                  PLBYUM,PLBYVM,PLBYWM,                     &
@@ -51,6 +51,7 @@ REAL,                     INTENT(IN) :: PDRYMASSS           !   Md source
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PLSUS,PLSVS,PLSWS,& ! Large Scale 
                                         PLSTHS,PLSRVS       ! fields tendencies
 !
+REAL, DIMENSION(:,:),     INTENT(IN) :: PLSZWSS               ! Large Scale fields tendencies
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PLBXUS,PLBXVS,PLBXWS,  &  !
                                         PLBXTHS,PLBXTKES          ! LBX tendancy 
 REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PLBXRS,PLBXSVS            ! 
@@ -68,6 +69,7 @@ REAL,                    INTENT(INOUT):: PDRYMASST                !
 !
 REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PLSUM,PLSVM,PLSWM,& ! Large Scale fields
                                          PLSTHM,PLSRVM       !     at t-dt
+REAL, DIMENSION(:,:),   INTENT(INOUT) :: PLSZWSM  ! Large Scale fields at t-dt
 !
 REAL, DIMENSION(:,:,:), INTENT(INOUT)  :: PLBXUM,PLBXVM,PLBXWM,   & ! 
                                           PLBXTHM,PLBXTKEM          ! LBX fields
@@ -76,6 +78,7 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT):: PLBXRM,PLBXSVM            !
 REAL, DIMENSION(:,:,:), INTENT(INOUT)  :: PLBYUM,PLBYVM,PLBYWM,   & ! 
                                           PLBYTHM,PLBYTKEM          ! LBY fields
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT):: PLBYRM,PLBYSVM            ! 
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PZWS                  ! significant wave height
 !
 END SUBROUTINE ENDSTEP
 !
@@ -91,16 +94,16 @@ END MODULE MODI_ENDSTEP
                                  PUS,PVS,PWS,PDRYMASSS,                    &
                                  PTHS,PRS,PTKES,PSVS,                      &
                                  PLSUS,PLSVS,PLSWS,                        &
-                                 PLSTHS,PLSRVS,                            &
+                                 PLSTHS,PLSRVS,PLSZWSS,                    &
                                  PLBXUS,PLBXVS,PLBXWS,                     &
                                  PLBXTHS,PLBXRS,PLBXTKES,PLBXSVS,          &
                                  PLBYUS,PLBYVS,PLBYWS,                     &
                                  PLBYTHS,PLBYRS,PLBYTKES,PLBYSVS,          &
-                                 PUM,PVM,PWM,                              &
+                                 PUM,PVM,PWM,PZWS,                         &
                                  PUT,PVT,PWT,PPABST,PDRYMASST,             &
                                  PTHT,PRT,PTHM,PRCM,PPABSM,PTKET,PSVT,     &
                                  PLSUM,PLSVM,PLSWM,                        &
-                                 PLSTHM,PLSRVM,                            &
+                                 PLSTHM,PLSRVM,PLSZWSM,                    &
                                  PLBXUM,PLBXVM,PLBXWM,                     &
                                  PLBXTHM,PLBXRM,PLBXTKEM,PLBXSVM,          &
                                  PLBYUM,PLBYVM,PLBYWM,                     &
@@ -192,6 +195,7 @@ END MODULE MODI_ENDSTEP
 !!                 04/2013  (C.Lac)       FIT for all the variables     
 !!                 04/2014  (C.Lac)       Check on the positivity of PSVT
 !!                 J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
+!!                 02/2019  (S. Bielli)  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !!
 !------------------------------------------------------------------------------
 !
@@ -241,6 +245,7 @@ REAL,                     INTENT(IN) :: PDRYMASSS           !   Md source
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PLSUS,PLSVS,PLSWS,& !    Large Scale 
                                         PLSTHS,PLSRVS       ! fields tendencies
+REAL, DIMENSION(:,:),     INTENT(IN) :: PLSZWSS               ! Large Scale fields tendencies
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PLBXUS,PLBXVS,PLBXWS,  &  !
                                         PLBXTHS,PLBXTKES          ! LBX tendancy 
@@ -260,6 +265,8 @@ REAL,                    INTENT(INOUT):: PDRYMASST                !
 REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PLSUM,PLSVM,PLSWM,& ! Large Scale fields
                                          PLSTHM,PLSRVM       !     at t-dt
 !
+REAL, DIMENSION(:,:),   INTENT(INOUT) :: PLSZWSM  ! Large Scale fields at t-dt
+!
 REAL, DIMENSION(:,:,:), INTENT(INOUT)  :: PLBXUM,PLBXVM,PLBXWM,   & ! 
                                           PLBXTHM,PLBXTKEM          ! LBX fields
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT):: PLBXRM,PLBXSVM            !
@@ -268,6 +275,7 @@ REAL, DIMENSION(:,:,:), INTENT(INOUT)  :: PLBYUM,PLBYVM,PLBYWM,   & !
                                           PLBYTHM,PLBYTKEM          ! LBY fields
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT):: PLBYRM,PLBYSVM            !   
 !
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PZWS                  ! significant wave height
 !
 !*      0.2  DECLARATIONS OF LOCAL VARIABLES
 !
@@ -382,6 +390,11 @@ ENDIF
 !
 IF (SIZE(PLSRVS,1) /= 0) THEN
   PLSRVM(:,:,:) = MAX( PLSRVM(:,:,:) + PTSTEP * PLSRVS(:,:,:) , 0.)
+ENDIF
+
+IF (SIZE(PLSZWSS,1) /= 0) THEN
+  PLSZWSM(:,:) = MAX( PLSZWSM(:,:) + PTSTEP * PLSZWSS(:,:) , 0.)
+  PZWS(:,:) = PLSZWSM(:,:)
 ENDIF
 !
 !------------------------------------------------------------------------------

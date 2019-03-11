@@ -72,7 +72,8 @@ END MODULE MODI_AER_MONITOR_n
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!
+!
+!!    Bielli S. (02/2019) : Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !!    EXTERNAL
 !!    --------
 !
@@ -112,7 +113,7 @@ USE MODD_LBC_n, ONLY: CLBCX, &!X-direction LBC type at left(1)
                               ! and right(2) boundaries
 USE MODD_CLOUDPAR_n, ONLY: NSPLITR  ! Nb of required small time step integration
                                     ! for rain sedimentation computation
-USE MODD_CONF,      ONLY: L1D, L2D
+USE MODD_CONF,      ONLY: L1D, L2D, NVERB
 USE MODD_CONF_n,    ONLY: LUSERC,&    ! Logical to use clouds
                           LUSERV,&    ! Logical to use wapor water
                           LUSERR,&    ! Logical to use rain water
@@ -185,9 +186,14 @@ IKE = IKU - JPVEXT
 !
 !*       1.2   calculate timestep variables
 !
+! ++ JORIS DEBUG ++
+IF (NVERB == 10) WRITE(*,*) 'dans aer_monitorn.f90 1.'
+! -- JORIS DEBUG --
 !
-  XRSVS(:,:,:,NSV_DSTBEG:NSV_DSTEND) = &
-                      MAX(XRSVS(:,:,:,NSV_DSTBEG:NSV_DSTEND), 0.)  
+! ++ PIERRE / MARINE SSA DUST - MODIF ++
+!  XRSVS(:,:,:,NSV_DSTBEG:NSV_DSTEND) = &
+!                      MAX(XRSVS(:,:,:,NSV_DSTBEG:NSV_DSTEND), 0.)  
+! -- PIERRE / MARINE SSA DUST - MODIF --
 !
 !*       2.   Sedimentation of aerosols 
 !              ------------------------
@@ -198,8 +204,11 @@ IF (LDUST.AND.LSEDIMDUST) THEN
   DO JSV = NSV_DSTBEG, NSV_DSTEND
     ZSVT(:,:,:,JSV-NSV_DSTBEG+1) = XRSVS(:,:,:,JSV) * PTSTEP / XRHODJ(:,:,:)
   ENDDO
-  CALL DUST_FILTER(ZSVT(IIB:IIE,IJB:IJE,IKB:IKE,:),&
-                   XRHODREF(IIB:IIE,IJB:IJE,IKB:IKE)) 
+! ++ PIERRE / MARINE SSA DUST - MODIF ++
+ CALL DUST_FILTER(ZSVT,XRHODREF)
+!  CALL DUST_FILTER(ZSVT(IIB:IIE,IJB:IJE,IKB:IKE,:),&
+!                   XRHODREF(IIB:IIE,IJB:IJE,IKB:IKE)) 
+! -- PIERRE / MARINE SSA DUST - MODIF --
   CALL SEDIM_DUST(XTHT(IIB:IIE,IJB:IJE,IKB:IKE), PTSTEP,&
                   XRHODREF(IIB:IIE,IJB:IJE,IKB:IKE), &
                   XPABST(IIB:IIE,IJB:IJE,IKB:IKE), &
@@ -222,14 +231,17 @@ IF ((LSALT).AND.(LSEDIMSALT)) THEN
     ZSVT(:,:,:,JSV-NSV_SLTBEG+1) = XRSVS(:,:,:,JSV) * PTSTEP / XRHODJ(:,:,:)
   ENDDO
 
+! ++ JORIS DEBUG ++
   CALL SALT_FILTER(ZSVT(IIB:IIE,IJB:IJE,IKB:IKE,:),&
-                   XRHODREF(IIB:IIE,IJB:IJE,IKB:IKE)) 
+                   XRHODREF(IIB:IIE,IJB:IJE,IKB:IKE))
+! 
   CALL SEDIM_SALT(XTHT(IIB:IIE,IJB:IJE,IKB:IKE),PTSTEP,&
                   XRHODREF(IIB:IIE,IJB:IJE,IKB:IKE), &
                   XPABST(IIB:IIE,IJB:IJE,IKB:IKE), &
                   XZZ(IIB:IIE,IJB:IJE,IKB:IKE+1),    &
                   ZSVT(IIB:IIE,IJB:IJE,IKB:IKE,:))  !ppp (concentration)
-!
+! -- JORIS DEBUG --
+
 DO JSV = NSV_SLTBEG, NSV_SLTEND
  XRSVS(IIB:IIE,IJB:IJE,IKB:IKE,JSV) = &
              ZSVT(IIB:IIE,IJB:IJE,IKB:IKE,JSV-NSV_SLTBEG+1)  *&
@@ -365,7 +377,26 @@ SELECT CASE (CCLOUD)
                               ZVMASSMIN(IIB:IIE,IJB:IJE,IKB:IKE,:),&
                               PCCT=ZSVT(IIB:IIE,IJB:IJE,IKB:IKE,NSV_C2R2BEG+1),&
                               PCRT=ZSVT(IIB:IIE,IJB:IJE,IKB:IKE,NSV_C2R2BEG+2) )
-
+!++th++ 05/05/17 ajout LIMA
+CASE ('LIMA')
+  CALL AER_WET_DEP_KMT_WARM  (NSPLITR, PTSTEP,                     &
+                              XZZ(IIB:IIE,IJB:IJE,IKB:IKE),        &
+                              XRHODREF(IIB:IIE,IJB:IJE,IKB:IKE),   &
+                              XRT(IIB:IIE,IJB:IJE,IKB:IKE,2),      &
+                              XRT(IIB:IIE,IJB:IJE,IKB:IKE,3),      &
+                              ZRCS(IIB:IIE,IJB:IJE,IKB:IKE),       &
+                              ZRRS(IIB:IIE,IJB:IJE,IKB:IKE),       &
+                              ZSVDST(IIB:IIE,IJB:IJE,IKB:IKE,:),   &
+                              XTHT(IIB:IIE,IJB:IJE,IKB:IKE),       &
+                              XPABST(IIB:IIE,IJB:IJE,IKB:IKE),     &
+                              ZRGDST(IIB:IIE,IJB:IJE,IKB:IKE,:),   &
+                              XEVAP3D(IIB:IIE,IJB:IJE,IKB:IKE),    &
+                              NMODE_DST,                           &
+                              ZDENSITY(IIB:IIE,IJB:IJE,IKB:IKE,:), &
+                              ZVMASSMIN(IIB:IIE,IJB:IJE,IKB:IKE,:),&
+                              PCCT=ZSVT(IIB:IIE,IJB:IJE,IKB:IKE,NSV_LIMA_NC),&
+                              PCRT=ZSVT(IIB:IIE,IJB:IJE,IKB:IKE,NSV_LIMA_NR) )
+!--th--
 END SELECT
 
 !     3.5 Compute return to moment vector
@@ -441,25 +472,25 @@ ZDENSITY(:,:,:,:) = XDENSITY_SALT
 
 !
 !     4.1 Minimum mass to transfer between dry mass or in-cloud droplets
-
+! ++ PIERRE / MARINE SSA DUST - MODIF ++
 DO JN=1,NMODE_SLT
   IMODEIDX = JPSALTORDER(JN)
    IF (CRGUNITD=="MASS") THEN
-    ZINIRADIUS(JN) = XINIRADIUS(IMODEIDX) * EXP(-3.*(LOG(XINISIG(IMODEIDX)))**2)
+    ZINIRADIUS(JN) = XINIRADIUS_SLT(IMODEIDX) * EXP(-3.*(LOG(XINISIG_SLT(IMODEIDX)))**2)
    ELSE
-    ZINIRADIUS(JN) = XINIRADIUS(IMODEIDX)
+    ZINIRADIUS(JN) = XINIRADIUS_SLT(IMODEIDX)
    END IF
    IF (LVARSIG) THEN
-    ZSIGMIN = XSIGMIN
+    ZSIGMIN = XSIGMIN_SLT
    ELSE
-    ZSIGMIN = XINISIG(IMODEIDX)
+    ZSIGMIN = XINISIG_SLT(IMODEIDX)
    ENDIF
-   ZMASSMIN(JN) = XN0MIN(IMODEIDX) * (ZINIRADIUS(JN)**3)*EXP(4.5 * LOG(ZSIGMIN)**2)
+   ZMASSMIN(JN) = XN0MIN_SLT(IMODEIDX) * (ZINIRADIUS(JN)**3)*EXP(4.5 * LOG(ZSIGMIN)**2)
 ! volume/um3 =>  #/molec_{air}
    ZVMASSMIN(:,:,:,JN)=  ZMASSMIN(JN) * XMD * XPI * 4./3. * XDENSITY_SALT  / &
-                 (XMOLARWEIGHT_SALT*XM3TOUM3*XRHODREF(:,:,:))
+                 (XMOLARWEIGHT_SALT*XM3TOUM3_SALT*XRHODREF(:,:,:))
 ENDDO
-  
+! -- PIERRE / MARINE SSA DUST - MODIF --
 !
 
 !     4.2 Derive moment from aerosol moments sources
@@ -536,7 +567,25 @@ SELECT CASE (CCLOUD)
                               ZVMASSMIN(IIB:IIE,IJB:IJE,IKB:IKE,:),&
                               PCCT=ZSVT(IIB:IIE,IJB:IJE,IKB:IKE,NSV_C2R2BEG+1),&
                               PCRT=ZSVT(IIB:IIE,IJB:IJE,IKB:IKE,NSV_C2R2BEG+2) )
-
+!++th++05/05/17 ajout LIMA
+  CALL AER_WET_DEP_KMT_WARM  (NSPLITR, PTSTEP,                     &
+                              XZZ(IIB:IIE,IJB:IJE,IKB:IKE),        &
+                              XRHODREF(IIB:IIE,IJB:IJE,IKB:IKE),   &
+                              XRT(IIB:IIE,IJB:IJE,IKB:IKE,2),      &
+                              XRT(IIB:IIE,IJB:IJE,IKB:IKE,3),      &
+                              ZRCS(IIB:IIE,IJB:IJE,IKB:IKE),       &
+                              ZRRS(IIB:IIE,IJB:IJE,IKB:IKE),       &
+                              ZSVSLT(IIB:IIE,IJB:IJE,IKB:IKE,:),   &
+                              XTHT(IIB:IIE,IJB:IJE,IKB:IKE),       &
+                              XPABST(IIB:IIE,IJB:IJE,IKB:IKE),     &
+                              ZRGSLT(IIB:IIE,IJB:IJE,IKB:IKE,:),   &
+                              XEVAP3D(IIB:IIE,IJB:IJE,IKB:IKE),    &
+                              NMODE_SLT,                           &
+                              ZDENSITY(IIB:IIE,IJB:IJE,IKB:IKE,:), &
+                              ZVMASSMIN(IIB:IIE,IJB:IJE,IKB:IKE,:),&
+                              PCCT=ZSVT(IIB:IIE,IJB:IJE,IKB:IKE,NSV_LIMA_NC),&
+                              PCRT=ZSVT(IIB:IIE,IJB:IJE,IKB:IKE,NSV_LIMA_NR) )
+!--th--
 END SELECT
 
 !     4.5 Compute return to moment vector

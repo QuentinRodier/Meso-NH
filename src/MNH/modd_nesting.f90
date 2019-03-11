@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ###################
@@ -24,7 +24,7 @@
 !!    REFERENCE
 !!    ---------
 !!      Book2 of documentation of Meso-NH (module MODD_NESTING)
-!!       
+!!
 !!    AUTHOR
 !!    ------
 !!	J.P. Lafore   *Meteo France*
@@ -32,8 +32,9 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    18/08/95
-!!      updated     29/07/96  (J.P. Lafore) MY_NAME(m) introduction          
+!!      updated     29/07/96  (J.P. Lafore) MY_NAME(m) introduction
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 08/02/2019: add missing NULL association for pointers
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -81,11 +82,11 @@ LOGICAL,SAVE,  DIMENSION(JPMODELMAX) :: L2D_NEST         ! Logical for 2D model 
 LOGICAL,SAVE,  DIMENSION(JPMODELMAX) :: LPACK_NEST       ! Logical to compress 1D or 2D FM files of model m
 !
 TYPE REAL_FIELD2D_ALL
-    REAL, DIMENSION(:,:), POINTER :: XFIELD2D
+    REAL, DIMENSION(:,:), POINTER :: XFIELD2D => NULL()
 END TYPE REAL_FIELD2D_ALL
 
 TYPE REAL_FIELD1D_ALL
-    REAL, DIMENSION(:), POINTER :: XFIELD1D
+    REAL, DIMENSION(:), POINTER :: XFIELD1D => NULL()
 END TYPE REAL_FIELD1D_ALL
 !
 TYPE(REAL_FIELD2D_ALL), DIMENSION(JPMODELMAX), TARGET :: TXZS   ! orography of model m

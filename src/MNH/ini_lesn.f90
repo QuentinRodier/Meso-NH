@@ -33,7 +33,7 @@
 !!                       06/11/02 (V. Masson) add LES budgets
 !!                    10/2016 (C.Lac) Add droplet deposition
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!!                     02/2019 (C. Lac) Add rain fraction as a LES diagnostic
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -537,8 +537,10 @@ ELSE
 END IF
 IF (LUSERR ) THEN
   ALLOCATE(XLES_MEAN_Rr (NLES_K,NLES_TIMES,NLES_MASKS))
+  ALLOCATE(XLES_MEAN_RF (NLES_K,NLES_TIMES,NLES_MASKS))
 ELSE
   ALLOCATE(XLES_MEAN_Rr (0,0,0))
+  ALLOCATE(XLES_MEAN_RF (0,0,0))
 END IF
 IF (LUSERI ) THEN
   ALLOCATE(XLES_MEAN_Ri (NLES_K,NLES_TIMES,NLES_MASKS))
@@ -644,6 +646,7 @@ IF (LUSERC ) XLES_MEAN_KHt = XUNDEF
 IF (LUSERC ) XLES_MEAN_Rt  = XUNDEF
 IF (LUSERC ) XLES_MEAN_Rc  = XUNDEF
 IF (LUSERC ) XLES_MEAN_Cf  = XUNDEF
+IF (LUSERC ) XLES_MEAN_RF  = XUNDEF
 IF (LUSERC ) XLES_MEAN_INDCf  = XUNDEF
 IF (LUSERC ) XLES_MEAN_INDCf2 = XUNDEF
 IF (LUSERR ) XLES_MEAN_Rr  = XUNDEF

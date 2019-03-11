@@ -1,6 +1,6 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 2010-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
-!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE CONVERT_PATCH_ISBA (DTCO, DTV, IO, KDEC, KDEC2, PCOVER, OCOVER,&
@@ -45,7 +45,8 @@
 !!                           albedo, UV albedo not defined (conserv nrj when
 !!                           coupled to atmosphere)
 !!    P Samuelsson  10/2014  MEB
-!!
+!  P. Wautelet 15/02/2019: bugfix: allocate ZSTRESS only when its size has a meaning
+!
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -671,13 +672,14 @@ SUBROUTINE SET_STRESS
 IMPLICIT NONE
 !
 REAL, DIMENSION(PK%NSIZE_P)   :: ZWORK
-REAL, DIMENSION(SIZE(DTV%LPAR_STRESS,1),NVEGTYPE) :: ZSTRESS
+REAL, DIMENSION(:,:), ALLOCATABLE :: ZSTRESS
 INTEGER :: JI
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('CONVERT_PATCH_ISBA:SET_STRESS',0,ZHOOK_HANDLE)
 !
 IF (GDATA .AND. ANY(DTV%LDATA_STRESS)) THEN
+  ALLOCATE( ZSTRESS( SIZE(DTV%LPAR_STRESS,1),NVEGTYPE ) )
   ZSTRESS(:,:)=0.
   DO JVEG=1,NVEGTYPE
     DO JI = 1,PK%NSIZE_P
@@ -686,6 +688,7 @@ IF (GDATA .AND. ANY(DTV%LDATA_STRESS)) THEN
   ENDDO
   CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
                       ZWORK,DTV%XPAR_VEGTYPE,ZSTRESS,YVEG,'ARI',PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC2)
+  DEALLOCATE( ZSTRESS )
 ELSE
   CALL AV_PGD_1P(DTCO, ZWORK,PCOVER,XDATA_STRESS(:,:),YVEG,'ARI',OCOVER,PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)
 ENDIF

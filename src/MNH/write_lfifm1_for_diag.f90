@@ -142,6 +142,8 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!       D.Ricard and P.Marquet 2016-2017 : THETAL + THETAS1 POVOS1 or THETAS2 POVOS2
 !!                                        if  LMOIST_L     LMOIST_S1   or  LMOIST_S2
+!  P. Wautelet 08/02/2019: minor bug: compute ZWORK36 only when needed
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -429,6 +431,7 @@ CALL IO_Field_write(TPFILE,'ZHAT',XZHAT)
 CALL IO_Field_write(TPFILE,'ZTOP',XZTOP)
 !
 CALL IO_Field_write(TPFILE,'ZS',   XZS)
+CALL IO_Field_write(TPFILE,'ZWS',  XZWS)
 CALL IO_Field_write(TPFILE,'ZSMT', XZSMT)
 CALL IO_Field_write(TPFILE,'SLEVE',LSLEVE)
 !
@@ -738,14 +741,14 @@ IF (LHU_FLX) THEN
   ZWORK35(:,:,:) = XRHODREF(:,:,:) * XRT(:,:,:,1)
   ZWORK31(:,:,:) = MXM(ZWORK35(:,:,:)) * XUT(:,:,:)
   ZWORK32(:,:,:) = MYM(ZWORK35(:,:,:)) * XVT(:,:,:)
+  ZWORK35(:,:,:) = GX_U_M(1,IKU,1,ZWORK31,XDXX,XDZZ,XDZX) + GY_V_M(1,IKU,1,ZWORK32,XDYY,XDZZ,XDZY)
   IF  (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'LIMA') THEN
     ZWORK36(:,:,:) = ZWORK35(:,:,:) + XRHODREF(:,:,:) * (XRT(:,:,:,2) + &
     XRT(:,:,:,3) + XRT(:,:,:,4) + XRT(:,:,:,5) + XRT(:,:,:,6))
     ZWORK33(:,:,:) = MXM(ZWORK36(:,:,:)) * XUT(:,:,:)
     ZWORK34(:,:,:) = MYM(ZWORK36(:,:,:)) * XVT(:,:,:)
+    ZWORK36(:,:,:) = GX_U_M(1,IKU,1,ZWORK33,XDXX,XDZZ,XDZX) + GY_V_M(1,IKU,1,ZWORK34,XDYY,XDZZ,XDZY)
   ENDIF
-  ZWORK35(:,:,:) = GX_U_M(1,IKU,1,ZWORK31,XDXX,XDZZ,XDZX) + GY_V_M(1,IKU,1,ZWORK32,XDYY,XDZZ,XDZY)
-  ZWORK36(:,:,:) = GX_U_M(1,IKU,1,ZWORK33,XDXX,XDZZ,XDZX) + GY_V_M(1,IKU,1,ZWORK34,XDYY,XDZZ,XDZY)
   !
   ! Integration sur 3000 m
   !
@@ -1528,14 +1531,14 @@ IF (LSALT) THEN
   TZFIELD%LTIMEDEP   = .TRUE.
   !
   DO JJ=1,NMODE_SLT
-    TZFIELD%CMNHNAME   = 'SLTRGA'
-    TZFIELD%CLONGNAME  = 'SLTRGA'
+    WRITE(TZFIELD%CMNHNAME,'(A6,I1)')'SLTRGA',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
     TZFIELD%CUNITS     = 'um'
     WRITE(TZFIELD%CCOMMENT,'(A18,I1)')'RG (nb) SALT MODE ',JJ
     CALL IO_Field_write(TPFILE,TZFIELD,ZRG_SLT(:,:,:,JJ))
     !
-    TZFIELD%CMNHNAME   = 'SLTRGAM'
-    TZFIELD%CLONGNAME  = 'SLTRGAM'
+    WRITE(TZFIELD%CMNHNAME,'(A7,I1)')'SLTRGAM',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
     TZFIELD%CUNITS     = 'um'
     WRITE(TZFIELD%CCOMMENT,'(A17,I1)')'RG (m) SALT MODE ',JJ
     ZWORK31(:,:,:)=ZRG_SLT(:,:,:,JJ) / (EXP(-3.*(LOG(ZSIG_SLT(:,:,:,JJ)))**2))
@@ -1706,14 +1709,14 @@ IF (LDUST) THEN
   CALL PPP2DUST(XSVT(:,:,:,NSV_DSTBEG:NSV_DSTEND),XRHODREF,&
                PSIG3D=ZSIG_DST, PRG3D=ZRG_DST, PN3D=ZN0_DST)
   DO JJ=1,NMODE_DST
-    TZFIELD%CMNHNAME   = 'DSTRGA'
-    TZFIELD%CLONGNAME  = 'DSTRGA'
+    WRITE(TZFIELD%CMNHNAME,'(A6,I1)')'DSTRGA',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
     TZFIELD%CUNITS     = 'um'
     WRITE(TZFIELD%CCOMMENT,'(A18,I1)')'RG (nb) DUST MODE ',JJ
     CALL IO_Field_write(TPFILE,TZFIELD,ZRG_DST(:,:,:,JJ))
     !
-    TZFIELD%CMNHNAME   = 'DSTRGAM'
-    TZFIELD%CLONGNAME  = 'DSTRGAM'
+    WRITE(TZFIELD%CMNHNAME,'(A7,I1)')'DSTRGAM',JJ
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
     TZFIELD%CUNITS     = 'um'
     WRITE(TZFIELD%CCOMMENT,'(A17,I1)')'RG (m) DUST MODE ',JJ
     ZWORK31(:,:,:)=ZRG_DST(:,:,:,JJ) / (EXP(-3.*(LOG(ZSIG_DST(:,:,:,JJ)))**2))

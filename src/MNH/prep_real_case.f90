@@ -380,6 +380,7 @@
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -688,6 +689,9 @@ CALL POSNAM(IPRE_REAL1,'NAM_AERO_CONF',GFOUND,ILUOUT0)
 IF (GFOUND) READ(IPRE_REAL1,NAM_AERO_CONF)
 CALL POSNAM(IPRE_REAL1,'NAM_CONFZ',GFOUND,ILUOUT0)
 IF (GFOUND) READ(UNIT=IPRE_REAL1,NML=NAM_CONFZ)
+!
+! Sea salt
+CALL INIT_SALT
 !
 !*       4.3   set soil scheme to ISBA for initialization from GRIB
 !

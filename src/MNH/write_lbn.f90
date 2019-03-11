@@ -76,6 +76,7 @@ END MODULE MODI_WRITE_LB_n
 !!     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!    J.-P. Pinty  09/02/16 Add LIMA that is LBC for CCN and IFN
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -111,6 +112,8 @@ USE MODI_CH_AER_REALLFI_n
 USE MODD_CONF
 USE MODD_REF,   ONLY : XRHODREFZ
 USE MODD_CONF,  ONLY : CPROGRAM
+USE MODD_GRID_n, ONLY : XZZ
+USE MODD_PARAMETERS, ONLY : JPHEXT, JPVEXT
 USE MODD_DUST
 USE MODD_SALT
 USE MODI_DUSTLFI_n
@@ -144,6 +147,12 @@ INTEGER            :: JK
 INTEGER            :: JMOM, IMOMENTS, JMODE, ISV_NAME_IDX
 INTEGER            :: IMI    ! Current model index
 CHARACTER(LEN=2)   :: INDICE ! to index CCN and IFN fields of LIMA scheme
+INTEGER           :: I
+INTEGER           :: ILBX,ILBY
+INTEGER           :: IIB, IIE, IJB, IJE, IKB, IKE
+INTEGER           :: IIU, IJU, IKU
+REAL, DIMENSION(SIZE(XLBXSVM,1), SIZE(XLBXSVM,2), SIZE(XLBXSVM,3)) :: ZLBXZZ
+REAL, DIMENSION(SIZE(XLBYSVM,1), SIZE(XLBYSVM,2), SIZE(XLBYSVM,3)) :: ZLBYZZ
 CHARACTER(LEN=100) :: YMSG
 TYPE(TFIELDDATA)   :: TZFIELD
 !-------------------------------------------------------------------------------
@@ -154,6 +163,16 @@ TYPE(TFIELDDATA)   :: TZFIELD
 ILUOUT = TLUOUT%NLU
 !
 IMI = GET_CURRENT_MODEL_INDEX()
+
+IIB=JPHEXT+1
+IIE=SIZE(XZZ,1)-JPHEXT
+IIU=SIZE(XZZ,1)
+IJB=JPHEXT+1
+IJE=SIZE(XZZ,2)-JPHEXT
+IJU=SIZE(XZZ,2)
+IKB=JPVEXT+1
+IKE=SIZE(XZZ,3)-JPVEXT
+IKU=SIZE(XZZ,3)
 !
 !        2.  WRITE THE DIMENSION OF LB FIELDS
 !            --------------------------------
@@ -456,7 +475,7 @@ IF (NSV >=1) THEN
     END IF
     !
     TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'kg kg-1'
+    TZFIELD%CUNITS     = 'ppp'
     TZFIELD%CDIR       = ''
     TZFIELD%NGRID      = 1
     TZFIELD%NTYPE      = TYPEREAL
@@ -664,7 +683,7 @@ IF (NSV >=1) THEN
       !in the same order as the variables in XSVM (i.e. following JPDUSTORDER)
       !
       TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'kg kg-1'
+      TZFIELD%CUNITS     = 'ppp'
       TZFIELD%CDIR       = ''
       TZFIELD%NGRID      = 1
       TZFIELD%NTYPE      = TYPEREAL
@@ -717,6 +736,19 @@ IF (NSV >=1) THEN
     DO JK=1,size(XLBYSVM,3)
       ZRHODREFY(:,:,JK) =  XRHODREFZ(JK)
     ENDDO
+    IIU  = SIZE(XZZ,1)
+    IJU  = SIZE(XZZ,2)
+    IKU  = SIZE(XZZ,3)
+    IF (SIZE(ZLBXZZ) .NE. 0 ) THEN
+      ILBX=SIZE(ZLBXZZ,1)/2-1
+      ZLBXZZ(1:ILBX+1,:,:)         = XZZ(IIB-1:IIB-1+ILBX,:,:)
+      ZLBXZZ(ILBX+2:2*ILBX+2,:,:)  = XZZ(IIE+1-ILBX:IIE+1,:,:)
+    ENDIF
+    IF (SIZE(ZLBYZZ) .NE. 0 ) THEN
+      ILBY=SIZE(ZLBYZZ,2)/2-1
+      ZLBYZZ(:,1:ILBY+1,:)        = XZZ(:,IJB-1:IJB-1+ILBY,:)
+      ZLBYZZ(:,ILBY+2:2*ILBY+2,:) = XZZ(:,IJE+1-ILBY:IJE+1,:)
+    ENDIF
     IF (NSIZELBXSV_ll /= 0) &
       XLBXSVM(:,:,:,NSV_SLTBEG:NSV_SLTEND) = MAX(XLBXSVM(:,:,:,NSV_SLTBEG:NSV_SLTEND), 0.)
     IF (NSIZELBYSV_ll /= 0) &
@@ -727,16 +759,16 @@ IF (NSV >=1) THEN
         XLBYSVM(:,:,:,NSV_SLTDEPBEG:NSV_SLTDEPEND) = MAX(XLBYSVM(:,:,:,NSV_SLTDEPBEG:NSV_SLTDEPEND), 0.)      
     IF ((LSLTINIT).OR.(LSLTPRES)) THEN ! GRIBEX case (dust initialization)
       IF ((NSIZELBXSV_ll /= 0).AND.(CPROGRAM == 'REAL ').AND.(NSV_SLT > 1)) THEN
-        CALL SALTLFI_n(XLBXSVM(:,:,:,NSV_SLTBEG:NSV_SLTEND), ZRHODREFX)
+        CALL SALTLFI_n(XLBXSVM(:,:,:,NSV_SLTBEG:NSV_SLTEND), ZRHODREFX, ZLBXZZ)
       END IF
       IF ((NSIZELBYSV_ll /= 0).AND.(CPROGRAM == 'REAL ').AND.(NSV_SLT > 1)) THEN
-        CALL SALTLFI_n(XLBYSVM(:,:,:,NSV_SLTBEG:NSV_SLTEND), ZRHODREFY)
+        CALL SALTLFI_n(XLBYSVM(:,:,:,NSV_SLTBEG:NSV_SLTEND), ZRHODREFY, ZLBYZZ)
       END IF
       IF ((NSIZELBXSV_ll /= 0).AND.(CPROGRAM == 'IDEAL ').AND.(NSV_SLT > 1)) THEN
-        CALL SALTLFI_n(XLBXSVM(:,:,:,NSV_SLTBEG:NSV_SLTEND), ZRHODREFX)
+        CALL SALTLFI_n(XLBXSVM(:,:,:,NSV_SLTBEG:NSV_SLTEND), ZRHODREFX, ZLBXZZ)
       END IF
       IF ((NSIZELBYSV_ll /= 0).AND.(CPROGRAM == 'IDEAL ').AND.(NSV_SLT > 1)) THEN
-        CALL SALTLFI_n(XLBYSVM(:,:,:,NSV_SLTBEG:NSV_SLTEND), ZRHODREFY)
+        CALL SALTLFI_n(XLBYSVM(:,:,:,NSV_SLTBEG:NSV_SLTEND), ZRHODREFY, ZLBYZZ)
       END IF
     END IF
     !
@@ -810,7 +842,7 @@ IF (NSV >=1) THEN
       ! We are in the subprogram MESONH, CSALTNAMES are allocated and are 
       !in the same order as the variables in XSVM (i.e. following JPSALTORDER)
       TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'kg kg-1'
+      TZFIELD%CUNITS     = 'ppp'
       TZFIELD%CDIR       = ''
       TZFIELD%NGRID      = 1
       TZFIELD%NTYPE      = TYPEREAL

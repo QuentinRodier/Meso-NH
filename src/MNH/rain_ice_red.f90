@@ -13,7 +13,7 @@ INTERFACE
                             PTHT, PRVT, PRCT, PRRT, PRIT, PRST,                   &
                             PRGT, PTHS, PRVS, PRCS, PRRS, PRIS, PRSS, PRGS,       &
                             PINPRC,PINPRR, PINPRR3D, PEVAP3D,           &
-                            PINPRS, PINPRG, PSIGS, PINDEP, PSEA, PTOWN,                   &
+                            PINPRS, PINPRG, PSIGS, PINDEP, PRAINFR, PSEA, PTOWN,  &
                             PRHT, PRHS, PINPRH, PFPR                              )
 !
 !
@@ -69,6 +69,7 @@ REAL, DIMENSION(:,:,:),INTENT(OUT)      :: PINPRR3D! Rain inst precip 3D
 REAL, DIMENSION(:,:,:), INTENT(OUT)     :: PEVAP3D! Rain evap profile
 REAL, DIMENSION(:,:), INTENT(OUT)       :: PINPRS! Snow instant precip
 REAL, DIMENSION(:,:), INTENT(OUT)       :: PINPRG! Graupel instant precip
+REAL, DIMENSION(:,:,:), INTENT(OUT)     :: PRAINFR! Rain fraction            
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA ! Sea Mask
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PTOWN! Fraction that is town 
 REAL, DIMENSION(:,:,:), OPTIONAL,  INTENT(IN)    :: PRHT    ! Hail m.r. at t
@@ -86,7 +87,7 @@ END MODULE MODI_RAIN_ICE_RED
                             PTHT, PRVT, PRCT, PRRT, PRIT, PRST,                   &
                             PRGT, PTHS, PRVS, PRCS, PRRS, PRIS, PRSS, PRGS,       &
                             PINPRC,PINPRR, PINPRR3D, PEVAP3D,           &
-                            PINPRS, PINPRG, PSIGS, PINDEP, PSEA, PTOWN,                   &
+                            PINPRS, PINPRG, PSIGS, PINDEP, PRAINFR, PSEA, PTOWN,  &
                             PRHT, PRHS, PINPRH, PFPR                              )
 !     ######################################################################
 !
@@ -237,6 +238,7 @@ END MODULE MODI_RAIN_ICE_RED
 !!      J.Escobar : 10/2017 : for real*4 , limit exp() in RAIN_ICE_SLOW with XMNH_HUGE_12_LOG
 !!      (C. Abiven, Y. Léauté, V. Seigner, S. Riette) Phasing of Turner rain subgrid param
 !!      (S. Riette) Source code split into several files
+!!                  02/2019 C.Lac add rain fraction as an output field
 !
 !*       0.    DECLARATIONS
 !              ------------
@@ -313,6 +315,7 @@ REAL, DIMENSION(:,:,:),INTENT(OUT)      :: PINPRR3D! Rain inst precip 3D
 REAL, DIMENSION(:,:,:), INTENT(OUT)     :: PEVAP3D! Rain evap profile
 REAL, DIMENSION(:,:), INTENT(OUT)       :: PINPRS! Snow instant precip
 REAL, DIMENSION(:,:), INTENT(OUT)       :: PINPRG! Graupel instant precip
+REAL, DIMENSION(:,:,:), INTENT(OUT)     :: PRAINFR! Rain fraction            
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA ! Sea Mask
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PTOWN! Fraction that is town 
 REAL, DIMENSION(:,:,:), OPTIONAL,  INTENT(IN)    :: PRHT    ! Hail m.r. at t
@@ -345,7 +348,7 @@ REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) :: &
 REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) :: ZZ_LVFACT, ZZ_LSFACT
 !
 !Diagnostics
-REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) :: ZRAINFR,   &
+REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) ::            &
                                                          & ZHLC_HCF3D,& ! HLCLOUDS cloud fraction in high water content part
                                                          & ZHLC_LCF3D,& ! HLCLOUDS cloud fraction in low water content part
                                                          & ZHLC_HRC3D,& ! HLCLOUDS cloud water content in high water content
@@ -778,7 +781,7 @@ DO WHILE(ANY(ZTIME(:)<PTSTEP)) ! Loop to *really* compute tendencies
                         &ZRS_TEND, ZRG_TEND, ZRH_TEND, &
                         &ZA_TH, ZA_RV, ZA_RC, ZA_RR, ZA_RI, ZA_RS, ZA_RG, ZA_RH, &
                         &ZB_TH, ZB_RV, ZB_RC, ZB_RR, ZB_RI, ZB_RS, ZB_RG, ZB_RH, &
-                        &ZHLC_HCF, ZHLC_LCF, ZHLC_HRC, ZHLC_LRC, ZRAINFR)
+                        &ZHLC_HCF, ZHLC_LCF, ZHLC_HRC, ZHLC_LRC, PRAINFR)
     ! External tendencies
     IF(LEXT_TEND) THEN
       ZA_TH(:) = ZA_TH(:) + ZEXT_TH(:)
@@ -1032,7 +1035,7 @@ IF(IMICRO>0) THEN
   ZHLC_LRC3D(:,:,:) = UNPACK(ZHLC_LRC(:), MASK=LDMICRO(:,:,:), FIELD=ZW(:,:,:))
   PCIT(:,:,:) = UNPACK(ZCIT(:), MASK=LDMICRO(:,:,:), FIELD=PCIT(:,:,:))
 ELSE
-  ZRAINFR(:,:,:)=0.
+  PRAINFR(:,:,:)=0.
   ZHLC_HCF3D(:,:,:)=0.
   ZHLC_LCF3D(:,:,:)=0.
   ZHLC_HRC3D(:,:,:)=0.
@@ -1539,7 +1542,7 @@ IF(LSEDIM_AFTER) THEN
                   CALL BUDGET (PRHS(:,:,:)*PRHODJ(:,:,:), 12, 'SEDI_BU_RRH')
   !
   !sedimentation of rain fraction
-  CALL ICE4_RAINFR_VERT(IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKT, KKL, ZRAINFR, PRRS(:,:,:)*PTSTEP)
+  CALL ICE4_RAINFR_VERT(IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKT, KKL, PRAINFR, PRRS(:,:,:)*PTSTEP)
 
 ENDIF
 !

@@ -9,12 +9,13 @@ if [ "x$XYZ" = "x" ]
 then
 # 
 export VERSION_MASTER=${VERSION_MASTER:-MNH-V5-4}
-export VERSION_BUG=${VERSION_BUG:-1}
+export VERSION_BUG=${VERSION_BUG:-2}
 export VERSION_XYZ=${VERSION_XYZ:-${VERSION_MASTER}-${VERSION_BUG}${VER_OASIS:+-${VER_OASIS}}}
 export VERSION_DATE=${VERSION_DATE:-"dd/mm/yyyy"}
 export VERSION_LIBAEC=${VERSION_LIBAEC:-"0.3.2"}
 export VERSION_HDF=${VERSION_HDF:-"1.8.20"}
 export VERSION_CDFC=${VERSION_CDFC:-"4.5.0"}
+export VERSION_CDFCXX=${VERSION_CDFCXX:-"4.2"}
 export VERSION_CDFF=${VERSION_CDFF:-"4.4.4"}
 export VERSION_GRIBAPI=${VERSION_GRIBAPI:-"1.26.0-Source"}
 export MNH_INT=${MNH_INT:-"4"}
@@ -186,10 +187,9 @@ module load ga/\${VER_GA}
                 export MVWORK=${MVWORK:-YES}
                 export VER_CDF=${VER_CDF:-CDFAUTO}
                 export MNHENV=${MNHENV:-"
-#export OBJDIR_PATH=$WORKDIR/DIR_OBJ_ADA
-export MP_MPILIB=pempi
+#export MP_MPILIB=pempi
 module purge
-module load intel/2013.1
+module load intel/2018.2
 "}
               ;;
 AIX*)
@@ -430,7 +430,7 @@ fi
 #
 ${LOCAL}/bin/eval_dollar  profile_mesonh.ihm > profile_mesonh
 chmod +x profile_mesonh
-XYZ=${ARCH}-R${MNH_REAL}I${MNH_INT}-${VERSION_XYZ}${MNH_ECRAD:+-ECRAD}${VER_USER:+-${VER_USER}}-${VER_MPI}-${OPTLEVEL}
+XYZ=${ARCH}-R${MNH_REAL}I${MNH_INT}-${VERSION_XYZ}${MNH_ECRAD:+-ECRAD}${MNH_FOREFIRE:+-FF}${VER_USER:+-${VER_USER}}-${VER_MPI}-${OPTLEVEL}
 cp profile_mesonh profile_mesonh-${XYZ}
 #
 #  Do some post-install stuff
@@ -467,6 +467,7 @@ if [ "x${VER_CDF}" == "xCDFAUTO" ] ;then
 ( cd $LOCAL/src/LIB ; [ ! -d libaec-${VERSION_LIBAEC} ] && tar xvfz libaec-${VERSION_LIBAEC}.tar.gz )
 ( cd $LOCAL/src/LIB ; [ ! -d hdf5-${VERSION_HDF} ] && tar xvfz hdf5-${VERSION_HDF}.tar.gz )
 ( cd $LOCAL/src/LIB ; [ ! -d netcdf-${VERSION_CDFC} ] && tar xvfz netcdf-${VERSION_CDFC}.tar.gz )
+( cd $LOCAL/src/LIB ; [ ! -d netcdf-cxx-${VERSION_CDFCXX} ] && tar xvfz netcdf-cxx-${VERSION_CDFCXX}.tar.gz )
 ( cd $LOCAL/src/LIB ; [ ! -d netcdf-fortran-${VERSION_CDFF} ] && tar xvfz netcdf-fortran-${VERSION_CDFF}.tar.gz )
 fi
 #

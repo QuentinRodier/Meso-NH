@@ -36,6 +36,7 @@
 !!                                 2D arrays to store values at lateral boundaries
 !!                  20/05/06  Remove EPS
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !-------------------------------------------------------------------------------
 !
 !
@@ -55,12 +56,15 @@ TYPE LSFIELD_t
 !                              ! time t-dt for larger scales 
 !  REAL, DIMENSION(:,:,:), POINTER :: XLSRVM=>NULL() ! Rv (mixing ratio for vapor)
 !                              ! at time t-dt for larger scales 
+ REAL, DIMENSION(:,:),   POINTER :: XLSZWSM=>NULL() ! height of sea waves
   REAL, DIMENSION(:,:,:), POINTER :: XLSUS=>NULL(),XLSVS=>NULL(),XLSWS=>NULL() ! Tendency of 
                               ! U,V,W for larger scales 
   REAL, DIMENSION(:,:,:), POINTER :: XLSTHS=>NULL()     ! Tendency of 
                               ! theta for larger scales
   REAL, DIMENSION(:,:,:), POINTER :: XLSRVS=>NULL() ! Tendency of 
 !                              ! RV for larger scales
+REAL, DIMENSION(:,:),   POINTER :: XLSZWSS=>NULL() ! Tendency of 
+!                              ! sea wave for larger scales
 !    previously  present for LS for V * Prhodj
 !
 !  Large scale variables for horizontal lbc
@@ -104,8 +108,10 @@ TYPE(LSFIELD_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: LSFIELD_MODEL
 REAL, DIMENSION(:,:,:), POINTER :: XLSUM=>NULL(),XLSVM=>NULL(),XLSWM=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XLSTHM=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XLSRVM=>NULL()
+REAL, DIMENSION(:,:),   POINTER :: XLSZWSM=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XLSUS=>NULL(),XLSVS=>NULL(),XLSWS=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XLSTHS=>NULL()
+REAL, DIMENSION(:,:),   POINTER :: XLSZWSS=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XLSRVS=>NULL()
 REAL, DIMENSION(:,:,:),   POINTER :: XLBXUM=>NULL(),XLBXVM=>NULL(),XLBXWM=>NULL()
 REAL, DIMENSION(:,:,:),   POINTER :: XLBXTHM=>NULL()
@@ -143,11 +149,13 @@ INTEGER, INTENT(IN) :: KFROM, KTO
 !LSFIELD_MODEL(KFROM)%XLSWM=>XLSWM !Done in FIELDLIST_GOTO_MODEL
 !LSFIELD_MODEL(KFROM)%XLSTHM=>XLSTHM !Done in FIELDLIST_GOTO_MODEL
 !LSFIELD_MODEL(KFROM)%XLSRVM=>XLSRVM !Done in FIELDLIST_GOTO_MODEL
+LSFIELD_MODEL(KFROM)%XLSZWSM=>XLSZWSM
 LSFIELD_MODEL(KFROM)%XLSUS=>XLSUS
 LSFIELD_MODEL(KFROM)%XLSVS=>XLSVS
 LSFIELD_MODEL(KFROM)%XLSWS=>XLSWS
 LSFIELD_MODEL(KFROM)%XLSTHS=>XLSTHS
 LSFIELD_MODEL(KFROM)%XLSRVS=>XLSRVS
+LSFIELD_MODEL(KFROM)%XLSZWSS=>XLSZWSS
 !LSFIELD_MODEL(KFROM)%XLBXUM=>XLBXUM !Done in FIELDLIST_GOTO_MODEL
 !LSFIELD_MODEL(KFROM)%XLBXVM=>XLBXVM !Done in FIELDLIST_GOTO_MODEL
 !LSFIELD_MODEL(KFROM)%XLBXWM=>XLBXWM !Done in FIELDLIST_GOTO_MODEL
@@ -199,11 +207,13 @@ LSFIELD_MODEL(KFROM)%NKLIN_LBYM=>NKLIN_LBYM
 !XLSWM=>LSFIELD_MODEL(KTO)%XLSWM !Done in FIELDLIST_GOTO_MODEL
 !XLSTHM=>LSFIELD_MODEL(KTO)%XLSTHM !Done in FIELDLIST_GOTO_MODEL
 !XLSRVM=>LSFIELD_MODEL(KTO)%XLSRVM !Done in FIELDLIST_GOTO_MODEL
+XLSZWSM=>LSFIELD_MODEL(KTO)%XLSZWSM
 XLSUS=>LSFIELD_MODEL(KTO)%XLSUS
 XLSVS=>LSFIELD_MODEL(KTO)%XLSVS
 XLSWS=>LSFIELD_MODEL(KTO)%XLSWS
 XLSTHS=>LSFIELD_MODEL(KTO)%XLSTHS
 XLSRVS=>LSFIELD_MODEL(KTO)%XLSRVS
+XLSZWSS=>LSFIELD_MODEL(KTO)%XLSZWSS
 !XLBXUM=>LSFIELD_MODEL(KTO)%XLBXUM !Done in FIELDLIST_GOTO_MODEL
 !XLBXVM=>LSFIELD_MODEL(KTO)%XLBXVM !Done in FIELDLIST_GOTO_MODEL
 !XLBXWM=>LSFIELD_MODEL(KTO)%XLBXWM !Done in FIELDLIST_GOTO_MODEL

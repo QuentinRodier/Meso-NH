@@ -1,15 +1,13 @@
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+!MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 SUBROUTINE COMPRESS_FIELD(XTAB,KX,KY,KNBTOT,KNBUSE)
 USE MODD_COMPPAR
 USE MODE_SEARCHGRP
 
-#ifdef NAGf95
 USE,INTRINSIC :: IEEE_ARITHMETIC
-#endif
 
 IMPLICIT NONE 
 
@@ -38,17 +36,21 @@ INTEGER :: IEXTCOD
 CHARACTER(LEN=8),PARAMETER :: KEYWORD='COMPRESS'
 REAL,DIMENSION(KNBTOT) :: XWORKTAB
 LOGICAL :: LUPREAL,LNAN
-#ifndef NAGf95
-LOGICAL, EXTERNAL :: IEEE_IS_NAN
-#endif
+logical :: gnansupport
 
 ILEVNBELT = KX*KY
 LUPREAL = .FALSE.
 LNAN    = .FALSE.
 
+if ( IEEE_SUPPORT_NAN( xtab(1)) ) then
+  gnansupport=.true.
+else
+  gnansupport=.false.
+end if
+
 ! Check for NAN and change Upper and Lower bound according to 32bits real limits.
 DO JI=1,KNBTOT
-  IF (IEEE_IS_NAN(XTAB(JI))) THEN 
+  IF ( gnansupport .and. IEEE_IS_NAN(XTAB(JI)) ) THEN
     XTAB(JI)=0.
     LNAN = .TRUE.
   ELSE IF (ABS(XTAB(JI)) > HUGE(1.0_4)) THEN

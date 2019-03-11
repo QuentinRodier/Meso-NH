@@ -33,8 +33,10 @@ END MODULE MODI_INI_SPECTRE_n
 !!      J.P Chaboureau       * L.A*
 !!      10/2016 (C.Lac) Cleaning of the modules
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 08/02/2019: allocate to zero-size non associated pointers
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
-!
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!!
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -195,6 +197,7 @@ REAL, DIMENSION(:,:,:,:), POINTER :: DPTR_XLBXRM,DPTR_XLBYRM
 REAL, DIMENSION(:,:,:),   POINTER ::  DPTR_XZZ
 REAL, DIMENSION(:,:,:), POINTER ::   DPTR_XLSUM,DPTR_XLSVM,DPTR_XLSWM,DPTR_XLSTHM,DPTR_XLSRVM
 REAL, DIMENSION(:,:,:), POINTER ::   DPTR_XLSUS,DPTR_XLSVS,DPTR_XLSWS,DPTR_XLSTHS,DPTR_XLSRVS
+REAL, DIMENSION(:,:),   POINTER ::   DPTR_XLSZWSS,DPTR_XLSZWSM
 !
 !-------------------------------------------------------------------------------
 !
@@ -801,10 +804,10 @@ IF ((KMI==1).AND.(.NOT. LSTEADYLS)) THEN
                NSIZELBX_ll,NSIZELBXU_ll,NSIZELBY_ll,NSIZELBYV_ll,             &
                NSIZELBXTKE_ll,NSIZELBYTKE_ll,                                 &
                NSIZELBXR_ll,NSIZELBYR_ll,NSIZELBXSV_ll,NSIZELBYSV_ll,         &
-               XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM,XDRYMASST,                     &
+               XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM,XLSZWSM,XDRYMASST,             &
                XLBXUM,XLBXVM,XLBXWM,XLBXTHM,XLBXTKEM,XLBXRM,XLBXSVM,          &
                XLBYUM,XLBYVM,XLBYWM,XLBYTHM,XLBYTKEM,XLBYRM,XLBYSVM,          &
-               XLSUS,XLSVS,XLSWS,XLSTHS,XLSRVS,XDRYMASSS,                     &
+               XLSUS,XLSVS,XLSWS,XLSTHS,XLSRVS,XLSZWSS,XDRYMASSS,             &
                XLBXUS,XLBXVS,XLBXWS,XLBXTHS,XLBXTKES,XLBXRS,XLBXSVS,          &
                XLBYUS,XLBYVS,XLBYWS,XLBYTHS,XLBYTKES,XLBYRS,XLBYSVS           )
   END IF
@@ -838,11 +841,13 @@ IF ( KMI > 1) THEN
   DPTR_XLSWM=>XLSWM
   DPTR_XLSTHM=>XLSTHM
   DPTR_XLSRVM=>XLSRVM
+  DPTR_XLSZWSM=>XLSZWSM
   DPTR_XLSUS=>XLSUS
   DPTR_XLSVS=>XLSVS
   DPTR_XLSWS=>XLSWS
   DPTR_XLSTHS=>XLSTHS
   DPTR_XLSRVS=>XLSRVS
+  DPTR_XLSZWSS=>XLSZWSS
   !
   DPTR_NKLIN_LBXU=>NKLIN_LBXU
   DPTR_XCOEFLIN_LBXU=>XCOEFLIN_LBXU
@@ -867,8 +872,8 @@ IF ( KMI > 1) THEN
        NDXRATIO_ALL(KMI),NDYRATIO_ALL(KMI),                  &
        DPTR_CLBCX,DPTR_CLBCY,DPTR_XZZ,DPTR_XZHAT,                                &
        LSLEVE,XLEN1,XLEN2,                                   &
-       DPTR_XLSUM,DPTR_XLSVM,DPTR_XLSWM,DPTR_XLSTHM,DPTR_XLSRVM,                      &
-       DPTR_XLSUS,DPTR_XLSVS,DPTR_XLSWS,DPTR_XLSTHS,DPTR_XLSRVS,                      &
+       DPTR_XLSUM,DPTR_XLSVM,DPTR_XLSWM,DPTR_XLSTHM,DPTR_XLSRVM,DPTR_XLSZWSM,         &
+       DPTR_XLSUS,DPTR_XLSVS,DPTR_XLSWS,DPTR_XLSTHS,DPTR_XLSRVS,DPTR_XLSZWSS,         &
        DPTR_NKLIN_LBXU,DPTR_XCOEFLIN_LBXU,DPTR_NKLIN_LBYU,DPTR_XCOEFLIN_LBYU,    &
        DPTR_NKLIN_LBXV,DPTR_XCOEFLIN_LBXV,DPTR_NKLIN_LBYV,DPTR_XCOEFLIN_LBYV,    &
        DPTR_NKLIN_LBXW,DPTR_XCOEFLIN_LBXW,DPTR_NKLIN_LBYW,DPTR_XCOEFLIN_LBYW,    &
@@ -914,6 +919,10 @@ WRITE(COUTFILE,'(A,".",I1,".",A)') CEXP,KMI,TRIM(ADJUSTL(CSEG))
 !
 !*       17.    INITIALIZE THE PARAMETERS FOR THE DYNAMICS
 !               ------------------------------------------
+!
+!Allocate to zero size to not pass unallocated pointers
+ALLOCATE(XALKBAS(0))
+ALLOCATE(XALKWBAS(0))
 !
 CALL INI_DYNAMICS(XLON,XLAT,XRHODJ,XTHVREF,XMAP,XZZ,XDXHAT,XDYHAT,            &
              XZHAT,CLBCX,CLBCY,XTSTEP,                                        &

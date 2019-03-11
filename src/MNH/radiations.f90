@@ -118,6 +118,7 @@ CONTAINS
 !!      J.Escobar 28/06/2018 : Reproductible parallelisation of CLOUD_ONLY case
 !!      J.Escobar 20/07/2018 : for real*4 compilation, convert with REAL(X) argument to SUM_DD... 
 !!      P.Wautelet 22/01/2019: use standard FLUSH statement instead of non standard intrinsics
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -926,13 +927,15 @@ IF (CAOP=='EXPL') THEN
         PSVT(IIB:IIE,IJB:IJE,:,NSV_SLTBEG:NSV_SLTEND)        &  !I [ppp] sea salt scalar concentration
         ,PZZ(IIB:IIE,IJB:IJE,:)                   &  !I [m] height of layers
         ,PRHODREF(IIB:IIE,IJB:IJE,:)              &  !I [kg/m3] density of air
+        ,PTHT(IIB:IIE,IJB:IJE,:)                  &  !I [K] potential temperature
+        ,PPABST(IIB:IIE,IJB:IJE,:)                &  !I [hPa] pressure
+        ,PRT(IIB:IIE,IJB:IJE,:,:)                 &  !I [kg/kg] water mixing ratio
         ,ZPIZA_SLT_TMP(IIB:IIE,IJB:IJE,IKB-JPVEXT:IKE-JPVEXT,:)   &  !O [-] single scattering albedo of sea salt
         ,ZCGA_SLT_TMP(IIB:IIE,IJB:IJE,IKB-JPVEXT:IKE-JPVEXT,:)    &  !O [-] assymetry factor for sea salt
         ,ZTAUREL_SLT_TMP(IIB:IIE,IJB:IJE,IKB-JPVEXT:IKE-JPVEXT,:) &  !O [-] opt.depth(wvl=lambda)/opt.depth(wvl=550nm)
         ,PAER_SLT(IIB:IIE,IJB:IJE,IKB-JPVEXT:IKE-JPVEXT)            &  !O [-] optical depth of sea salt at wvl=550nm
         ,KSWB_OLD                                    &  !I |nbr] number of shortwave bands
         )
-
  ENDIF
 
  ZTAUREL_EQ_TMP(:,:,:,:)=ZTAUREL_DST_TMP(:,:,:,:)+ZTAUREL_AER_TMP(:,:,:,:)+ZTAUREL_SLT_TMP(:,:,:,:)

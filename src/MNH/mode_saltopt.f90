@@ -14,8 +14,11 @@
 !!    PURPOSE
 !!    -------
 !!
+!!    MODIFICATIONS
+!!    -------------
 !!
-
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!
   IMPLICIT NONE
   PUBLIC
   PRIVATE :: SALTOPT_LKT
@@ -27,6 +30,9 @@ CONTAINS
        PSVT                   & !I [moments/molec_{air}] Transported moments of sea salts
        ,PZZ                   & !I [m] height of layers
        ,PRHODREF              & !I [kg/m3] density of air
+       ,PTHT                  &
+       ,PPABST                &
+       ,PRT                   &
        ,PPIZA_WVL             & !O [-] single scattering albedo of sea salt layer for all SW wavelengths
        ,PCGA_WVL              & !O [-] assymetry factor for sea salt layer for all SW wavelengths
        ,PTAUREL_WVL           & !O [-] opt.depth/opt.depth(550) for sea salt layer for all SW wvl 
@@ -35,14 +41,18 @@ CONTAINS
        )
     
 
-    USE MODE_SALT_PSD   !Conversion procedures from moments to radius, ,number, mass and sigma
+    USE MODE_SALT_PSD_WET   !Conversion procedures from moments to radius, ,number, mass and sigma
+    USE MODE_SALT_PSD
     USE MODD_SALT, ONLY : NMODE_SLT
+
     IMPLICIT NONE
     
     !INPUT
     REAL, DIMENSION(:,:,:,:),INTENT(IN)      :: PSVT       !I [moments/molec_{air}] transported moments of sea salt
     REAL, DIMENSION(:,:,:),INTENT(IN)        :: PZZ        !I [m] height of layers
     REAL, DIMENSION(:,:,:),INTENT(IN)        :: PRHODREF   !I [kg/m3] density of air
+    REAL, DIMENSION(:,:,:),INTENT(IN)        :: PTHT, PPABST   !I
+    REAL, DIMENSION(:,:,:,:),INTENT(IN)      :: PRT
     INTEGER, INTENT(IN)                      :: KSWB       !I [nbr] number of shortwave wavelengths
     REAL, PARAMETER                          :: EPSILON=1.e-8 !a very low number for optical depth in a layer
 
@@ -57,6 +67,7 @@ CONTAINS
     REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3), NMODE_SLT) :: ZMASS         ![kg/m3] mass of one sea salt mode
     REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3), NMODE_SLT) :: ZRADIUS       ![um] number median radius of one sea salt mode
     REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3), NMODE_SLT) :: ZSIGMA        ![-] dispersion coefficient one sea salt mode
+    REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3), NMODE_SLT) :: ZDENSITY        ![-] [g/m2] density of wet aerosol (water + sea salt)
     REAL, ALLOCATABLE, DIMENSION(:,:,:,:)                   :: ZTAU550_MDE   ![-] opt.depth 550nm one mode
     REAL, ALLOCATABLE, DIMENSION(:,:,:,:,:)                 :: ZTAU_WVL_MDE  ![-] opt.depth @ wvl, one mode
     REAL, ALLOCATABLE, DIMENSION(:,:,:,:,:)                 :: ZPIZA_WVL_MDE ![-] single scattering albedo @ wvl, one mode
@@ -70,15 +81,26 @@ CONTAINS
     ALLOCATE(ZCGA_WVL_MDE(SIZE(PTAU550,1),SIZE(PTAU550,2),SIZE(PTAU550,3),KSWB,NMODE_SLT))
     
     ZSVT(:,:,:,:)=PSVT(:,:,:,:)
-
-    CALL PPP2SALT(     &
+    CALL PPP2SALT_WET(     &
          ZSVT                                   & !I [moments/molec_{air}] moments of sea salt for all modes
          ,PRHODREF                              & !I [kg/m3] air density
+         ,PPABST                                & !I Pression
+         ,PTHT                                  & !I Potential temperature
+         ,PRT                                   & !I Large scale vapor mixing ratio
          ,PSIG3D=ZSIGMA                         & !O [-] dispersion coefficient
          ,PRG3D=ZRADIUS                         & !O [um] number median radius
          ,PMASS3D=ZMASS                         & !O [kg/m3] mass of sea salt
+         ,PDENSITY_WET=ZDENSITY                 & !0 [g/m2] density of wet aerosol (water + salt)
          )
-       
+
+!    CALL PPP2SALT(     &
+!         ZSVT                                   & !I [moments/molec_{air}] moments of sea salt for all modes
+!         ,PRHODREF                              & !I [kg/m3] air density
+!         ,PSIG3D=ZSIGMA                         & !O [-] dispersion coefficient
+!         ,PRG3D=ZRADIUS                         & !O [um] number median radius
+!         ,PMASS3D=ZMASS                         & !O [kg/m3] mass of sea salt
+!         )
+
     DO JMDE=1,NMODE_SLT
        !Get sea salt optical properties from look up tables
        CALL SALTOPT_LKT(                     &

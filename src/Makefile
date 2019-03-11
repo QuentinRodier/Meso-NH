@@ -1,6 +1,6 @@
-#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 #MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 #MNH_LIC for details. version 1.
 ##########################################################
 #                                                        #
@@ -58,7 +58,7 @@ include Rules.$(ARCH)$(F).mk
 #   All modification are allowed !!!!!                   #
 #   adding new subroutines                               #
 #       or                                               #
-#   adding new modules                                   #       
+#   adding new modules                                   #
 #                                                        #
 #   REM : if during modification, you deleting some      #
 #         FORTRAN subroutines you must also deleted the  #
@@ -339,8 +339,8 @@ gribapi_clean :
 ##########################################################
 ifeq "$(VER_CDF)" "CDFAUTO"
 #
-HDF_OPT    = ${OPT_BASE_I4:-$OPT_BASE}
-NETCDF_OPT = ${OPT_BASE_I4:-$OPT_BASE}
+HDF_OPT    ?= ${OPT_BASE_I4:-$OPT_BASE}
+NETCDF_OPT ?= ${OPT_BASE_I4:-$OPT_BASE}
 #
 cdf : $(CDF_MOD)
 $(CDF_MOD) :
@@ -352,6 +352,12 @@ $(CDF_MOD) :
 	cd ${DIR_CDFC} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --disable-dap \
 	CC="$(CC)" CFLAGS="$(NETCDF_OPT)" CPPFLAGS="${INC_NETCDF}" ${CDF_CONF} LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lhdf5_hl -lhdf5 -lsz -laec -lz" && \
 	$(MAKE) && $(MAKE) install && $(MAKE) clean
+ifdef MNH_FOREFIRE
+	cd ${DIR_CDFCXX} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 \
+	CXX="$(CXX)" CXXFLAGS="$(NETCDF_OPT)" FC="$(FC)" FCFLAGS="$(NETCDF_OPT) $(NETCDF_SUPPFLAGS)" FFLAGS="$(NETCDF_OPT)"  \
+	CPPFLAGS="${INC_NETCDF}" ${CDF_CONF} LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lnetcdf -lhdf5_hl -lhdf5 -lsz -laec -lz" && \
+	$(MAKE) && $(MAKE) install && $(MAKE) clean
+endif
 	cd ${DIR_CDFF} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 \
 	CC="$(CC)" CFLAGS="$(NETCDF_OPT)" FC="$(FC)" FCFLAGS="$(NETCDF_OPT) $(NETCDF_SUPPFLAGS)" FFLAGS="$(NETCDF_OPT)"  \
 	CPPFLAGS="${INC_NETCDF}" ${CDF_CONF} LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lnetcdf -lhdf5_hl -lhdf5 -lsz -laec -lz" && \
@@ -363,6 +369,9 @@ cleancdf :
 	cd ${DIR_LIBAEC} && $(MAKE) clean
 	cd ${DIR_HDF} && $(MAKE) clean 
 	cd ${DIR_CDFC} && $(MAKE) clean 
+ifdef MNH_FOREFIRE
+	cd ${DIR_CDFCXX} && $(MAKE) clean 
+endif
 	cd ${DIR_CDFF} && $(MAKE) clean
 endif
 ##########################################################
@@ -380,8 +389,26 @@ cleanmaster : cleanoasis
 cleanoasis :
 	- [ -d ${OASIS_PATH} ] && rm -fr  ${OASIS_PATH}
 endif
+##########################################################
+#                                                        #
+# EXTRA LIB : S4PY                                       #
+#                                                        #
+##########################################################
+ifdef MNH_S4PY
+all : libs4py.so
 
+OBJ_S4PY=$(OBJDIR_MASTER)/spll_wcompress_field.o $(OBJDIR_MASTER)/spll_wdecompress_field.o \
+$(OBJDIR_MASTER)/spll_wget_compheader.o $(OBJDIR_MASTER)/spll_wlficas.o \
+$(OBJDIR_MASTER)/spll_wlfiecr.o $(OBJDIR_MASTER)/spll_wlfifer.o \
+$(OBJDIR_MASTER)/spll_wlfilec.o $(OBJDIR_MASTER)/spll_wlfinaf.o \
+$(OBJDIR_MASTER)/spll_wlfinfo.o $(OBJDIR_MASTER)/spll_wlfiouv.o $(OBJDIR_MASTER)/spll_wlfipos.o \
+$(OBJDIR_MASTER)/spll_NEWLFI_ALL.o $(OBJDIR_MASTER)/spll_lockasgn.o \
+$(OBJDIR_MASTER)/spll_lockoff.o $(OBJDIR_MASTER)/spll_lockon.o $(OBJDIR_MASTER)/spll_lockrel.o \
+$(OBJDIR_MASTER)/fswap8buff.o $(OBJDIR_MASTER)/spll_remark2.o
 
+libs4py.so : progmaster
+	$(CC) -shared $(LDFLAGS) -o $(OBJDIR_MASTER)/$@ $(OBJ_S4PY) $(LIBS)
+endif
 ##########################################################
 #                                                        #
 # PROGRAM RULES                                          #

@@ -169,7 +169,8 @@ END MODULE MODI_WRITE_LFIFM_n
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!       V. Vionnet    07/2017, add blowing snow variables
 !!       P.Wautelet    11/01/2019: bug correction in write XBL_DEPTH->XSBL_DEPTH
-!!                   
+!!       C.Lac         18/02/2019: add rain fraction as an output field              
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -393,6 +394,9 @@ IF (.NOT.LCARTESIAN) THEN
 END IF
 !
 CALL IO_Field_write(TPFILE,'ZS',   XZS)
+IF(ASSOCIATED(XZWS)) THEN
+  CALL IO_Field_write(TPFILE,'ZWS',  XZWS)
+END IF
 CALL IO_Field_write(TPFILE,'ZSMT', XZSMT)
 CALL IO_Field_write(TPFILE,'SLEVE',LSLEVE)
 !
@@ -1249,9 +1253,9 @@ IF (NSV >=1) THEN
   ! sea salt scalar variables
   IF (LSALT) THEN
     IF ((CPROGRAM == 'REAL  ').AND.(NSV_SLT > 1).AND.(IMI==1).AND.(LSLTINIT)) &
-      CALL SALTLFI_n(XSVT(:,:,:,NSV_SLTBEG:NSV_SLTEND), XRHODREF)
+      CALL SALTLFI_n(XSVT(:,:,:,NSV_SLTBEG:NSV_SLTEND), XRHODREF, XZZ)
     IF ((CPROGRAM == 'IDEAL ').AND.(NSV_SLT > 1).AND.(IMI==1)) &
-      CALL SALTLFI_n(XSVT(:,:,:,NSV_SLTBEG:NSV_SLTEND), XRHODREF)
+      CALL SALTLFI_n(XSVT(:,:,:,NSV_SLTBEG:NSV_SLTEND), XRHODREF, XZZ)
     !At this point, we have the tracer array in order of importance, i.e.
     !if mode 2 is most important it will occupy place 1-3 of XSVT  
     IF (((CPROGRAM == 'REAL  ').AND.(LSLTINIT)).OR.&
@@ -1517,6 +1521,7 @@ ENDIF
 !
 IF (NRR > 1 .AND. CPROGRAM == 'MESONH') THEN
   CALL IO_Field_write(TPFILE,'CLDFR',XCLDFR)
+  CALL IO_Field_write(TPFILE,'RAINFR',XRAINFR)
 END IF
 !
 !

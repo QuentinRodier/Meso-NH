@@ -76,6 +76,7 @@
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
 !                          (nsubfiles_ioz is now determined in IO_File_add2list)
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -294,12 +295,14 @@ XRT1 => XRT
 XUT1 => XUT
 XVT1 => XVT
 XWT1 => XWT
+XZWS1 => XZWS
 XSRCT1 => XSRCT
 XSIGS1 => XSIGS
 TDTCUR1 => TDTCUR
 XLSUM1 => XLSUM
 XLSVM1 => XLSVM
 XLSWM1 => XLSWM
+XLSZWSM1 => XLSZWSM
 XLSTHM1 => XLSTHM
 XLSRVM1 => XLSRVM
 !

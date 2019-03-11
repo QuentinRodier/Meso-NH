@@ -14,10 +14,14 @@
 !
 INTERFACE
 !
-SUBROUTINE SALTLFI_n(PSV, PRHODREF)
+!++cb++24/10/16
+!SUBROUTINE SALTLFI_n(PSV, PRHODREF)
+SUBROUTINE SALTLFI_n(PSV, PRHODREF, PZZ)
 IMPLICIT NONE
-REAL,       DIMENSION(:,:,:,:),  INTENT(INOUT) :: PSV
-REAL,       DIMENSION(:,:,:),  INTENT(IN) :: PRHODREF
+REAL, DIMENSION(:,:,:,:),  INTENT(INOUT) :: PSV
+REAL, DIMENSION(:,:,:),    INTENT(IN)    :: PRHODREF
+REAL, DIMENSION(:,:,:),    INTENT(IN)    :: PZZ
+
 END SUBROUTINE SALTLFI_n
 !
 END INTERFACE
@@ -26,7 +30,8 @@ END MODULE MODI_SALTLFI_n
 !
 !
 !     ############################################################
-      SUBROUTINE SALTLFI_n(PSV, PRHODREF)
+!      SUBROUTINE SALTLFI_n(PSV, PRHODREF)
+      SUBROUTINE SALTLFI_n(PSV, PRHODREF, PZZ)
 !     ############################################################
 !
 !!    PURPOSE
@@ -43,9 +48,9 @@ END MODULE MODI_SALTLFI_n
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!    none
-!!
 !!    2014    P.Tulet  modif calcul ZM
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+
 !!    EXTERNAL
 !!    --------
 !!    None
@@ -57,7 +62,9 @@ END MODULE MODI_SALTLFI_n
 !
 USE MODD_SALT
 USE MODD_NSV
-USE MODD_GRID_n, ONLY: XZZ
+!++cb++24/10/16
+!USE MODD_GRID_n, ONLY: XZZ
+!--cb--
 USE MODD_CSTS_SALT
 USE MODD_CST, ONLY :    &
        XPI              & !Definition of pi
@@ -75,6 +82,7 @@ IMPLICIT NONE
 !
 REAL,   DIMENSION(:,:,:,:),    INTENT(INOUT) :: PSV
 REAL,   DIMENSION(:,:,:),      INTENT(IN) :: PRHODREF
+REAL,   DIMENSION(:,:,:),      INTENT(IN) :: PZZ
 !
 !
 !*      0.2    declarations local variables
@@ -88,6 +96,9 @@ REAL,DIMENSION(:),       ALLOCATABLE  :: ZMMIN
 REAL,DIMENSION(:),       ALLOCATABLE  :: ZINIRADIUS, ZINISIGMA
 REAL,DIMENSION(:,:),     ALLOCATABLE  :: ZSEA
 INTEGER :: IKU
+!+Marine
+INTEGER :: IMOMENTS
+!-Marine
 INTEGER :: JI, JJ, JN, JK  ! loop counter
 INTEGER :: IMODEIDX  ! index mode
 REAL, PARAMETER  :: ZN_SALT=0.1 ! particles of sea salt/cm3 {air}
@@ -102,6 +113,7 @@ REAL    :: ZN_SALTN
 !        1.1    initialisation 
 !
 IKU=SIZE(PSV,3)
+!+ Marine
 !
 ALLOCATE (IM0(NMODE_SLT))
 ALLOCATE (IM3(NMODE_SLT))
@@ -115,11 +127,20 @@ ALLOCATE (ZMMIN(NMODE_SLT*3))
 ALLOCATE (ZSEA(SIZE(PSV,1), SIZE(PSV,2)))
 
 ZSEA(:,:) = 0.
-WHERE ((XZZ(:,:,1) .LT. 0.1).AND.(XZZ(:,:,1) .GE. 0.)) 
+!++cb++20/10/16
+!WHERE ((XZZ(:,:,1) .LT. 0.1).AND.(XZZ(:,:,1) .GE. 0.)) 
+!  ZSEA(:,:) = 1.
+!END WHERE
+!++cb++24/10/16
+!WHERE (XZZ(:,:,1) .LE. 0.01) 
+WHERE (PZZ(:,:,1) .LE. 0.01)
+!--cb--
   ZSEA(:,:) = 1.
 END WHERE
+!--cb--
 !
 !
+!+ Marine
 DO JN = 1, NMODE_SLT
   IM0(JN) = 1+(JN-1)*3
   IM3(JN) = 2+(JN-1)*3
@@ -146,8 +167,8 @@ DO JN = 1, NMODE_SLT
 ENDDO
 !
 !
-ZRHOI = XDENSITY_SALT !1.8e3 !++changed alfgr
-!ZMI   = XMOLARWEIGHT_SALT*1.D3 !100.  !++changed alfgr
+!XDENSITY_SALT est fixé dans modd_csts_salt.f90
+ZRHOI = XDENSITY_SALT 
 ZMI   = XMOLARWEIGHT_SALT 
 ZDEN2MOL = 1E-6 * XAVOGADRO / XMD
 ZFAC=(4./3.)*XPI*ZRHOI*1.e-9
@@ -158,18 +179,49 @@ DO JN=1,NMODE_SLT
 !*       1.1    calculate moment 0 from sea salt number by m3
 !
 ! initial vertical profil of sea salt  and convert in  #/m3
-  IF (JN == 1) ZN_SALTN = 1E-4  *  ZN_SALT *1E6
-  IF (JN == 2) ZN_SALTN = 1.   *  ZN_SALT *1E6
-  IF (JN == 3) ZN_SALTN = 10 *  ZN_SALT *1E6
-  DO JK=1, SIZE(XZZ,3) 
-    DO JJ=1, SIZE(XZZ,2) 
-      DO JI=1, SIZE(XZZ,1) 
-        IF (XZZ(JI,JJ,JK) .LT. 600.) THEN
-         ZM(JI,JJ,JK,IM0(JN)) = ZN_SALTN 
-        ELSE IF ((XZZ(JI,JJ,JK) .GE. 600.).AND.(XZZ(JI,JJ,JK) .LT. 1000.)) THEN 
-         ZM(JI,JJ,JK,IM0(JN)) = ZN_SALTN - ZN_SALTN*(1.-1E-3)*(XZZ(JI,JJ,JK)-600.) / 400.
-        ELSE IF (XZZ(JI,JJ,JK) .GE. 1000.) THEN
-         ZM(JI,JJ,JK,IM0(JN)) = ZN_SALTN *1E-3
+!+Marine : (reprendre XN0MIN_SLT de modd_salt.f90).
+! Pas plus simple de fixer une dimension à ZN_SALT qui dépend de JN pour ne pas
+! avoir à rappeler le schéma d'émission?
+
+  IF(NMODE_SLT == 5)THEN
+
+
+    IF (JN == 1) ZN_SALTN = XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT *1E6
+    IF (JN == 2) ZN_SALTN = XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT *1E6
+    IF (JN == 3) ZN_SALTN = XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT *1E6
+    IF (JN == 4) ZN_SALTN = XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT *1E6
+    IF (JN == 5) ZN_SALTN = XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT *1E6
+
+  ELSE 
+!  IF (JN == 1) ZN_SALTN = 1E-4  *  ZN_SALT *1E6
+!  IF (JN == 2) ZN_SALTN = 1.   *  ZN_SALT *1E6
+!  IF (JN == 3) ZN_SALTN = 10 *  ZN_SALT *1E6
+
+    IF (JN == 1) ZN_SALTN =  XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT *1E6
+    IF (JN == 2) ZN_SALTN =  XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT *1E6
+    IF (JN == 3) ZN_SALTN =  XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT *1E6
+
+  END IF
+
+
+!-Marine
+
+  DO JK=1, SIZE(PSV,3) 
+    DO JJ=1, SIZE(PSV,2) 
+      DO JI=1, SIZE(PSV,1) 
+!++cb++24/10/16
+!        IF (XZZ(JI,JJ,JK) .LT. 600.) THEN
+        IF (PZZ(JI,JJ,JK) .LT. 600.) THEN
+          ZM(JI,JJ,JK,IM0(JN)) = ZN_SALTN 
+!        ELSE IF ((XZZ(JI,JJ,JK) .GE. 600.).AND.(XZZ(JI,JJ,JK) .LT. 1000.)) THEN 
+        ELSE IF ((PZZ(JI,JJ,JK) .GE. 600.).AND.(PZZ(JI,JJ,JK) .LT. 1000.)) THEN
+!          ZM(JI,JJ,JK,IM0(JN)) = ZN_SALTN - ZN_SALTN*(1.-1E-3)*(XZZ(JI,JJ,JK)-600.) / 400.
+          ZM(JI,JJ,JK,IM0(JN)) = ZN_SALTN - &
+                                 ZN_SALTN * (1.-1E-3) * (PZZ(JI,JJ,JK)-600.) / 400.
+!        ELSE IF (XZZ(JI,JJ,JK) .GE. 1000.) THEN
+        ELSE IF (PZZ(JI,JJ,JK) .GE. 1000.) THEN
+          ZM(JI,JJ,JK,IM0(JN)) = ZN_SALTN * 1E-3
+!--cb--
         END IF
       END DO
     END DO
@@ -179,7 +231,7 @@ DO JN=1,NMODE_SLT
     END WHERE
     WHERE ((ZSEA(:,:) .GT. 0.).AND.(ZSEA(:,:) .LT. 1.))
       ZM(:,:,JK,IM0(JN)) = ZM(:,:,JK,IM0(JN))-(ZM(:,:,JK,IM0(JN)) -ZN_SALTN *1E-3) * &
-      (1. - ZSEA(:,:))
+                           (1. - ZSEA(:,:))
     END WHERE
   END DO
 
@@ -198,12 +250,31 @@ DO JN=1,NMODE_SLT
   ZM(:,:,:,IM6(JN)) = MAX(ZMMIN(IM6(JN)), ZM(:,:,:,IM6(JN)))
 !
 !*       1.4    output concentration
+!+ Marine
+!  PSV(:,:,:,1+(JN-1)*3) = ZM(:,:,:,IM0(JN)) * XMD / (XAVOGADRO*PRHODREF(:,:,:))
+!  PSV(:,:,:,2+(JN-1)*3) = ZM(:,:,:,IM3(JN)) * XMD*XPI * 4./3.  / &
+!                           (ZMI*PRHODREF(:,:,:)*(1.d0/ZRHOI)*XM3TOUM3_SALT)
 !
-  PSV(:,:,:,1+(JN-1)*3) = ZM(:,:,:,IM0(JN)) * XMD / (XAVOGADRO*PRHODREF(:,:,:))
-  PSV(:,:,:,2+(JN-1)*3) = ZM(:,:,:,IM3(JN)) * XMD*XPI * 4./3.  / &
-                           (ZMI*PRHODREF(:,:,:)*(1.d0/ZRHOI)*XM3TOUM3_SALT)
+!  PSV(:,:,:,3+(JN-1)*3) = ZM(:,:,:,IM6(JN)) *  XMD / (XAVOGADRO*PRHODREF(:,:,:)*1.d-6)
+!
+!++cb++20/10/16
+  IMOMENTS = INT(NSV_SLTEND - NSV_SLTBEG + 1) / NMODE_SLT
+!--cb--
 
-  PSV(:,:,:,3+(JN-1)*3) = ZM(:,:,:,IM6(JN)) *  XMD / (XAVOGADRO*PRHODREF(:,:,:)*1.d-6)
+  IF (IMOMENTS == 3) THEN
+    PSV(:,:,:,1+(JN-1)*3) = ZM(:,:,:,IM0(JN)) * XMD / (XAVOGADRO*PRHODREF(:,:,:))
+    PSV(:,:,:,2+(JN-1)*3) = ZM(:,:,:,IM3(JN)) * XMD*XPI * 4./3.  / &
+                            (ZMI*PRHODREF(:,:,:)*(1.d0/ZRHOI)*XM3TOUM3_SALT)
+
+    PSV(:,:,:,3+(JN-1)*3) = ZM(:,:,:,IM6(JN)) * XMD / (XAVOGADRO*PRHODREF(:,:,:)*1.d-6)
+  ELSE IF (IMOMENTS == 2) THEN
+    PSV(:,:,:,1+(JN-1)*2) = ZM(:,:,:,IM0(JN)) * XMD / (XAVOGADRO*PRHODREF(:,:,:))
+    PSV(:,:,:,2+(JN-1)*2) = ZM(:,:,:,IM3(JN)) * XMD*XPI * 4./3.  / &
+                            (ZMI*PRHODREF(:,:,:)*(1.d0/ZRHOI)*XM3TOUM3_SALT)
+  ELSE 
+    PSV(:,:,:,JN) = ZM(:,:,:,IM3(JN)) * XMD*XPI * 4./3.  / &
+                            (ZMI*PRHODREF(:,:,:)*(1.d0/ZRHOI)*XM3TOUM3_SALT)
+  END IF
 !
 END DO
 !

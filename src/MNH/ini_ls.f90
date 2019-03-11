@@ -10,9 +10,9 @@
 INTERFACE 
 !
       SUBROUTINE INI_LS(TPINIFILE,HGETRVM,OLSOURCE,              &
-           PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM,                      &
+           PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM,PLSZWSM,              &
            PDRYMASSS,                                            &
-           PLSUMM,PLSVMM,PLSWMM,PLSTHMM,PLSRVMM,PDRYMASST,PLENG, &
+           PLSUMM,PLSVMM,PLSWMM,PLSTHMM,PLSRVMM,PLSZWSMM, PDRYMASST,PLENG, &
            OSTEADY_DMASS)
 !
 USE MODD_IO, ONLY: TFILEDATA
@@ -23,11 +23,13 @@ LOGICAL,                INTENT(IN)    :: OLSOURCE  ! Switch for the source term
 ! Larger Scale fields (source if OLSOURCE=T,  fields at time t-dt if OLSOURCE=F) :
 REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PLSUM,PLSVM,PLSWM  ! Wind
 REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PLSTHM,PLSRVM      ! Mass
+REAL, DIMENSION(:,:),            INTENT(INOUT) :: PLSZWSM                ! sea wave
 !if OLSOURCE=T : 
 REAL,                   INTENT(INOUT), OPTIONAL :: PDRYMASSS             ! Md source
 !Large Scale  fields at time t-dt (if OLSOURCE=T) : 
 REAL, DIMENSION(:,:,:), INTENT(IN),    OPTIONAL :: PLSUMM,PLSVMM,PLSWMM  ! Wind
 REAL, DIMENSION(:,:,:), INTENT(IN),    OPTIONAL :: PLSTHMM,PLSRVMM       ! Mass
+REAL, DIMENSION(:,:),   INTENT(IN),    OPTIONAL  :: PLSZWSMM             ! Sea wave
 REAL,                   INTENT(IN),    OPTIONAL :: PDRYMASST             ! Md(t)
 REAL,                   INTENT(IN),    OPTIONAL :: PLENG                 ! Interpolation length
 LOGICAL,                INTENT(IN),    OPTIONAL :: OSTEADY_DMASS         ! Md evolution logical switch
@@ -41,9 +43,9 @@ END MODULE MODI_INI_LS
 !
 !     ############################################################
       SUBROUTINE INI_LS(TPINIFILE,HGETRVM,OLSOURCE,              &
-           PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM,                      &
+           PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM,PLSZWSM,              &
            PDRYMASSS,                                            &
-           PLSUMM,PLSVMM,PLSWMM,PLSTHMM,PLSRVMM,PDRYMASST,PLENG, &
+           PLSUMM,PLSVMM,PLSWMM,PLSTHMM,PLSRVMM,PLSZWSMM,PDRYMASST,PLENG, &
            OSTEADY_DMASS)
 !     ############################################################
 !
@@ -80,6 +82,7 @@ END MODULE MODI_INI_LS
 !!    -------------
 !!      Original        22/09/98
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !!
 !! 
 !-------------------------------------------------------------------------------
@@ -104,11 +107,13 @@ LOGICAL,                INTENT(IN)    :: OLSOURCE  ! Switch for the source term
 ! Larger Scale fields (source if OLSOURCE=T,  fields at time t-dt if OLSOURCE=F) :
 REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PLSUM,PLSVM,PLSWM  ! Wind
 REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PLSTHM,PLSRVM      ! Mass
+REAL, DIMENSION(:,:),            INTENT(INOUT) :: PLSZWSM                ! sea wave
 !if OLSOURCE=T : 
 REAL,                   INTENT(INOUT), OPTIONAL :: PDRYMASSS             ! Md source
 !Large Scale  fields at time t-dt (if OLSOURCE=T) : 
 REAL, DIMENSION(:,:,:), INTENT(IN),    OPTIONAL :: PLSUMM,PLSVMM,PLSWMM  ! Wind
 REAL, DIMENSION(:,:,:), INTENT(IN),    OPTIONAL :: PLSTHMM,PLSRVMM       ! Mass
+REAL, DIMENSION(:,:),   INTENT(IN),    OPTIONAL :: PLSZWSMM              ! Sea wave
 REAL,                   INTENT(IN),    OPTIONAL :: PDRYMASST             ! Md(t)
 REAL,                   INTENT(IN),    OPTIONAL :: PLENG                 ! Interpolation length
 LOGICAL,                INTENT(IN),    OPTIONAL :: OSTEADY_DMASS         ! Md evolution logical switch
@@ -137,11 +142,15 @@ CALL IO_Field_read(TPINIFILE,'LSUM', PLSUM)
 CALL IO_Field_read(TPINIFILE,'LSVM', PLSVM)
 CALL IO_Field_read(TPINIFILE,'LSWM', PLSWM)
 CALL IO_Field_read(TPINIFILE,'LSTHM',PLSTHM)
+CALL IO_Field_read(TPINIFILE,'ZWS',  PLSZWSM)
 !
 IF (HGETRVM == 'READ') THEN         ! LS-vapor                                    
   CALL IO_Field_read(TPINIFILE,'LSRVM',PLSRVM)
 ENDIF
 !
+IF (PRESENT(PLSZWSMM)) THEN
+    PLSZWSM(:,:)= (PLSZWSM(:,:) - PLSZWSMM(:,:)) / PLENG
+END IF
 !
 !-------------------------------------------------------------------------------
 !

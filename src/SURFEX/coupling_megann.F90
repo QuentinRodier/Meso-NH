@@ -29,6 +29,7 @@
 !!    -------------
 !!    Original: 25/10/2014
 !!    Modified: 06/07/2017, J. Pianezze, adaptation for SurfEx v8.0
+!!    Modified: 06/07/2018, P. Tulet, correction for T leaf
 !!
 !!    EXTERNAL
 !!    --------
@@ -132,27 +133,14 @@ ZPFD(:) = 0.
 DO JSM = 1,SIZE(PIACAN,2)
   ZPFD(:) = ZPFD(:) + PIACAN(:, JSM)
 END DO
-! Test car PIACAN prends des valeurs non physiques au lever du soleil
-WHERE (ZPFD(:) .GT. 2000.) ZPFD(:) = 0.
 !
-! compute sun and shade leaf temperature upon RN_SHADE and RN_SUNLIT
-! thanks to D. Carrer
-!
-ZLSUT(:) = PTEMP(:) + 3.
+! UPG*PT en attendat un calcul propre. Temperature des feuilles à l'ombre egale a la
+! température de l'air. La temparature des feuilles au soleil egale a la valeur
+! max entre la temperature de l'air et la temperaure radiative.
+ZLSUT(:) = MAX(PLEAFT(:),PTEMP(:))
 ZLSHT(:) = PTEMP(:)
-!
-IF (OTR_ML) THEN
-  ! 
-  ZRN(:) = PRN_SUNLIT(:)**2 + PRN_SHADE(:)**2
-  !
-  WHERE ( ZRN(:).NE.0. )
-    ! for sun leaves
-    ZLSUT(:) = PLEAFT(:) * PRN_SUNLIT(:) * (PRN_SUNLIT(:)+PRN_SHADE(:))/ZRN(:)
-    ! for shade leaves
-    ZLSHT(:) = PLEAFT(:) * PRN_SHADE (:) * (PRN_SUNLIT(:)+PRN_SHADE(:))/ZRN(:)
-  END WHERE
-  !
-END IF
+!UPG*PT
+
 !
 ! MEGAN : calcul des facteurs d'ajustement et de perte dans la canopée.
 ! ZCFSPEC: classe de sorties MEGAN (voir SPC_NOCONVER.EXT)

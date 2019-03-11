@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2007-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !      ################################
        MODULE MODI_CH_AQUEOUS_SEDIM1MOM
@@ -79,6 +79,7 @@ END MODULE MODI_CH_AQUEOUS_SEDIM1MOM
 !!    17/09/10 (M Leriche) add LUSECHIC flag
 !!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!    16/12/15 (M Leriche) compute instantaneous rain at the surface
+!  P. Wautelet 12/02/2019: bugfix: ZRR_SEDIM was not initialized everywhere
 !!
 !-------------------------------------------------------------------------------
 !
@@ -268,6 +269,7 @@ DO JN = 1 , KSPLITR
 !
     ZZW(:) = ZFSEDR * ZZZRRS(:)**(ZEXSEDR) * ZRHODREF(:)**(ZEXSEDR-ZCEXVT)
     ZWSED(:,:,:) = UNPACK( ZZW(:),MASK=GSEDIMR(:,:,:),FIELD=0.0 )
+    ZRR_SEDIM(:,:,:) = 0.0
     DO JK = IKB , IKE
       ZRR_SEDIM(:,:,JK) = ZW(:,:,JK)*(ZWSED(:,:,JK+1)-ZWSED(:,:,JK))
     END DO
@@ -308,6 +310,7 @@ DO JN = 1 , KSPLITR
 !
     ZZW(:) = XFSEDS * ZZZRSS(:)**(XEXSEDS) * ZRHODREF(:)**(XEXSEDS-ZCEXVT)
     ZWSED(:,:,:) = UNPACK( ZZW(:),MASK=GSEDIMS(:,:,:),FIELD=0.0 )
+    ZRR_SEDIM(:,:,:) = 0.0
     DO JK = IKB , IKE
       ZRR_SEDIM(:,:,JK) = ZW(:,:,JK)*(ZWSED(:,:,JK+1)-ZWSED(:,:,JK))
     END DO
@@ -336,6 +339,7 @@ DO JN = 1 , KSPLITR
 !
     ZZW(:) = XFSEDG * ZZZRGS(:)**(XEXSEDG) * ZRHODREF(:)**(XEXSEDG-ZCEXVT)
     ZWSED(:,:,:) = UNPACK( ZZW(:),MASK=GSEDIMG(:,:,:),FIELD=0.0 )
+    ZRR_SEDIM(:,:,:) = 0.0
     DO JK = IKB , IKE
       ZRR_SEDIM(:,:,JK) = ZW(:,:,JK)*(ZWSED(:,:,JK+1)-ZWSED(:,:,JK))
     END DO

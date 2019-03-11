@@ -89,6 +89,7 @@
 !!  V.Vionnet 07/2017 add LWIND_CONTRAV
 !!  11/2017      (D. Ricard, P. Marquet) add diagnostics for THETAS 
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
+!  P. Wautelet 11/02/2019: added missing use of MODI_CH_MONITOR_n
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -148,6 +149,7 @@ USE MODE_POS
 USE MODE_TIME
 !
 USE MODI_AIRCRAFT_BALLOON
+USE MODI_CH_MONITOR_n
 USE MODI_COMPUTE_R00
 USE MODI_DIAG_SURF_ATM_N
 USE MODI_INIT_MNH

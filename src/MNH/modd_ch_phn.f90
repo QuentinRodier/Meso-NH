@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2007-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2007-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !!    ########################
@@ -23,6 +23,7 @@
 !!       P. Tulet      Nov 2014 accumulated moles of aqueous species that fall at the surface   
 !!       P. Tulet & M. Leriche Nov 2015 add pH in rain at the surface
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 08/02/2019: add missing NULL association for pointers
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -38,11 +39,11 @@ IMPLICIT NONE
 TYPE CH_PH_t
 !
 
-!  REAL, POINTER, DIMENSION(:,:,:) :: XPHC ! cloud
-!  REAL, POINTER, DIMENSION(:,:,:) :: XPHR ! rain
-  REAL, POINTER, DIMENSION(:,:,:) :: XACPRAQ ! sum of aqueous chemical species fall at the surface by rain
-                                             ! in moles i / m2 (ratio with XACPRR for concentration
-  REAL, POINTER, DIMENSION(:,:) :: XACPHR !  mean PH in accumulated surface rain
+!  REAL, POINTER, DIMENSION(:,:,:) :: XPHC => NULL() ! cloud
+!  REAL, POINTER, DIMENSION(:,:,:) :: XPHR => NULL() ! rain
+  REAL, POINTER, DIMENSION(:,:,:) :: XACPRAQ => NULL() ! sum of aqueous chemical species fall at the surface by rain
+                                                       ! in moles i / m2 (ratio with XACPRR for concentration
+  REAL, POINTER, DIMENSION(:,:) :: XACPHR => NULL()    !  mean PH in accumulated surface rain
 !
 !-----------------------------------------------------------------------------
 END TYPE CH_PH_t

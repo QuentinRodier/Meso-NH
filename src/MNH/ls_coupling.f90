@@ -17,10 +17,10 @@ INTERFACE
             KSIZELBX_ll,KSIZELBXU_ll,KSIZELBY_ll,KSIZELBYV_ll,               &
             KSIZELBXTKE_ll,KSIZELBYTKE_ll,                                   &
             KSIZELBXR_ll,KSIZELBYR_ll,KSIZELBXSV_ll,KSIZELBYSV_ll,           &
-            PLSUM,PLSVM,PLSWM, PLSTHM,PLSRVM,PDRYMASST,                      &
+            PLSUM,PLSVM,PLSWM, PLSTHM,PLSRVM,PLSZWSM,PDRYMASST,              &
             PLBXUM,PLBXVM,PLBXWM,PLBXTHM,PLBXTKEM,PLBXRM,PLBXSVM,            &
             PLBYUM,PLBYVM,PLBYWM,PLBYTHM,PLBYTKEM,PLBYRM,PLBYSVM,            &
-            PLSUS,PLSVS,PLSWS,PLSTHS,PLSRVS,PDRYMASSS,                       &
+            PLSUS,PLSVS,PLSWS,PLSTHS,PLSRVS,PLSZWSS,PDRYMASSS,               &
             PLBXUS,PLBXVS,PLBXWS,PLBXTHS,PLBXTKES,PLBXRS,PLBXSVS,            &
             PLBYUS,PLBYVS,PLBYWS,PLBYTHS,PLBYTKES,PLBYRS,PLBYSVS             )
 !
@@ -52,6 +52,7 @@ INTEGER, INTENT(IN) :: KSIZELBYR_ll,KSIZELBYSV_ll    ! for Rx and SV
 !
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PLSUM,PLSVM,PLSWM ! Large Scale 
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PLSTHM, PLSRVM    ! fields at t-dt
+REAL, DIMENSION(:,:),    INTENT(IN)  :: PLSZWSM              ! fields at t-dt
 REAL,                    INTENT(IN)  :: PDRYMASST         ! Mass of dry air Md
 ! larger scale fields for Lateral Boundary condition
 REAL, DIMENSION(:,:,:),          INTENT(IN) :: PLBXUM,PLBXVM,PLBXWM ! Wind
@@ -65,6 +66,7 @@ REAL, DIMENSION(:,:,:,:),        INTENT(IN) :: PLBYRM  ,PLBYSVM  ! in x and y-di
 !
 REAL, DIMENSION(:,:,:),  INTENT(OUT) :: PLSUS,PLSVS,PLSWS  ! Large Scale 
 REAL, DIMENSION(:,:,:),  INTENT(OUT) :: PLSTHS,PLSRVS      ! source terms
+REAL, DIMENSION(:,:),    INTENT(OUT) :: PLSZWSS              ! source terms
 REAL,                    INTENT(OUT) :: PDRYMASSS          !  Md source 
 ! larger scale fields sources for Lateral Boundary condition
 REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PLBXUS,PLBXVS,PLBXWS ! Wind
@@ -95,10 +97,10 @@ END MODULE MODI_LS_COUPLING
             KSIZELBX_ll,KSIZELBXU_ll,KSIZELBY_ll,KSIZELBYV_ll,               &
             KSIZELBXTKE_ll,KSIZELBYTKE_ll,                                   &
             KSIZELBXR_ll,KSIZELBYR_ll,KSIZELBXSV_ll,KSIZELBYSV_ll,           &
-            PLSUM,PLSVM,PLSWM, PLSTHM,PLSRVM,PDRYMASST,                      &
+            PLSUM,PLSVM,PLSWM, PLSTHM,PLSRVM,PLSZWSM,PDRYMASST,              &
             PLBXUM,PLBXVM,PLBXWM,PLBXTHM,PLBXTKEM,PLBXRM,PLBXSVM,            &
             PLBYUM,PLBYVM,PLBYWM,PLBYTHM,PLBYTKEM,PLBYRM,PLBYSVM,            &
-            PLSUS,PLSVS,PLSWS,PLSTHS,PLSRVS,PDRYMASSS,                       &
+            PLSUS,PLSVS,PLSWS,PLSTHS,PLSRVS,PLSZWSS,PDRYMASSS,               &
             PLBXUS,PLBXVS,PLBXWS,PLBXTHS,PLBXTKES,PLBXRS,PLBXSVS,            &
             PLBYUS,PLBYVS,PLBYWS,PLBYTHS,PLBYTKES,PLBYRS,PLBYSVS             )
 !     ######################################################################
@@ -171,6 +173,7 @@ END MODULE MODI_LS_COUPLING
 !!                   05/2006    Remove KEPS
 !!                   2/2014     (escobar) add paspol for Forefire
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!! Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !! 
 !------------------------------------------------------------------------------
 !
@@ -227,6 +230,7 @@ INTEGER, INTENT(IN) :: KSIZELBYR_ll,KSIZELBYSV_ll    ! for Rx and SV
 !
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PLSUM,PLSVM,PLSWM ! Large Scale 
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PLSTHM, PLSRVM    ! fields at t-dt
+REAL, DIMENSION(:,:),    INTENT(IN)  :: PLSZWSM
 REAL,                    INTENT(IN)  :: PDRYMASST         ! Mass of dry air Md
 ! larger scale fields for Lateral Boundary condition
 REAL, DIMENSION(:,:,:),          INTENT(IN) :: PLBXUM,PLBXVM,PLBXWM ! Wind
@@ -250,6 +254,7 @@ REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PLBXTKES          ! TKE
 REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PLBYTKES
 REAL, DIMENSION(:,:,:,:),        INTENT(OUT) :: PLBXRS  ,PLBXSVS  ! Moisture and SV
 REAL, DIMENSION(:,:,:,:),        INTENT(OUT) :: PLBYRS  ,PLBYSVS  ! in x and y-dir.
+REAL, DIMENSION(:,:),    INTENT(OUT) :: PLSZWSS              ! source terms
 !
 !
 !*       0.2   declarations of local variables
@@ -297,7 +302,7 @@ GLSOURCE=.TRUE.
 ZLENG = (NCPL_TIMES(NCPL_CUR,1) - NCPL_TIMES(NCPL_CUR-1,1)) * PTSTEP 
 !
 CALL INI_LS(TCPLFILE(NCPL_CUR)%TZFILE,HGETRVM,GLSOURCE,PLSUS,PLSVS,PLSWS,PLSTHS,PLSRVS, &
-             PDRYMASSS,PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM,PDRYMASST,ZLENG,OSTEADY_DMASS)
+            PLSZWSS, PDRYMASSS,PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM,PLSZWSM,PDRYMASST,ZLENG,OSTEADY_DMASS)
 
 !
 !

@@ -56,7 +56,8 @@ END MODULE MODI_WRITE_LES_n
 !!                          11/15 (C.Lac) Add production terms of TKE
 !!                    10/2016 (C.Lac) Add droplet deposition
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!!!!                     02/2019 (C. Lac) Add rain fraction as a LES diagnostic
+
 !! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -381,6 +382,10 @@ CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_INDCF2 ",YSUBTITLE(:), &
 IF (LUSERR) &
 CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_RR ",YSUBTITLE(:), &
   "Mean Rr Profile"//YSUBTITLE(:),"kg kg-1",XLES_MEAN_Rr,HLES_AVG)
+
+IF (LUSERR) &
+CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_RF ",YSUBTITLE(:), &
+  "Mean RF Profile"//YSUBTITLE(:),"1",XLES_MEAN_RF,HLES_AVG)
 
 IF (LUSERI) &
 CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_RI ",YSUBTITLE(:), &

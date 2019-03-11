@@ -95,6 +95,7 @@ END MODULE MODI_LIMA
 !!    -------------
 !!      Original   15/03/2018
 !!
+!!      B.Vié  02/2019 : minor correction on budget
 !!
 !!
 !*       0.    DECLARATIONS
@@ -640,6 +641,12 @@ Z_CR_CVRC(:,:,:) = 0.
 IF (LWARM .AND. LRAIN) THEN
    CALL LIMA_DROPS_TO_DROPLETS_CONV(PRHODREF, ZRCS*PTSTEP, ZRRS*PTSTEP, ZCCS*PTSTEP, ZCRS*PTSTEP, &
                                     Z_RR_CVRC, Z_CR_CVRC)
+   !
+   ZRCS(:,:,:) = ZRCS(:,:,:) - Z_RR_CVRC(:,:,:)/PTSTEP
+   ZRRS(:,:,:) = ZRRS(:,:,:) + Z_RR_CVRC(:,:,:)/PTSTEP
+   ZCCS(:,:,:) = ZCCS(:,:,:) - Z_CR_CVRC(:,:,:)/PTSTEP
+   ZCRS(:,:,:) = ZCRS(:,:,:) + Z_CR_CVRC(:,:,:)/PTSTEP
+   !
    IF(LBU_ENABLE) THEN
       IF (LBUDGET_RC) CALL BUDGET (ZRCS(:,:,:)*PRHODJ(:,:,:), 7  , 'R2C1_BU_RRC')
       IF (LBUDGET_RR) CALL BUDGET (ZRRS(:,:,:)*PRHODJ(:,:,:), 8  , 'R2C1_BU_RRR')
@@ -655,15 +662,15 @@ END IF
 ZTHT(:,:,:) = ZTHS(:,:,:) * PTSTEP
 ZT(:,:,:)   = ZTHT(:,:,:) * ZEXN(:,:,:)
 !
-IF ( KRR .GE. 2 ) ZRCT(:,:,:) = ZRCS(:,:,:) * PTSTEP - Z_RR_CVRC(:,:,:)
-IF ( KRR .GE. 3 ) ZRRT(:,:,:) = ZRRS(:,:,:) * PTSTEP + Z_RR_CVRC(:,:,:)
+IF ( KRR .GE. 2 ) ZRCT(:,:,:) = ZRCS(:,:,:) * PTSTEP
+IF ( KRR .GE. 3 ) ZRRT(:,:,:) = ZRRS(:,:,:) * PTSTEP
 IF ( KRR .GE. 4 ) ZRIT(:,:,:) = ZRIS(:,:,:) * PTSTEP
 IF ( KRR .GE. 5 ) ZRST(:,:,:) = ZRSS(:,:,:) * PTSTEP
 IF ( KRR .GE. 6 ) ZRGT(:,:,:) = ZRGS(:,:,:) * PTSTEP
 IF ( KRR .GE. 7 ) ZRHT(:,:,:) = ZRHS(:,:,:) * PTSTEP
 !
-IF ( LWARM )             ZCCT(:,:,:)   = ZCCS(:,:,:) * PTSTEP - Z_CR_CVRC(:,:,:)
-IF ( LWARM .AND. LRAIN ) ZCRT(:,:,:)   = ZCRS(:,:,:) * PTSTEP + Z_CR_CVRC(:,:,:)
+IF ( LWARM )             ZCCT(:,:,:)   = ZCCS(:,:,:) * PTSTEP
+IF ( LWARM .AND. LRAIN ) ZCRT(:,:,:)   = ZCRS(:,:,:) * PTSTEP
 IF ( LCOLD )             ZCIT(:,:,:)   = ZCIS(:,:,:) * PTSTEP
 ! 
 !-------------------------------------------------------------------------------

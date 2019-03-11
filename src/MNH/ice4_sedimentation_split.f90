@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 MODULE MODI_ICE4_SEDIMENTATION_SPLIT
 INTERFACE
@@ -34,8 +34,8 @@ REAL, DIMENSION(KIT,KJT,KKT), INTENT(INOUT)           :: PRSS    ! Snow/aggregat
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRST    ! Snow/aggregate m.r. at t
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(INOUT)           :: PRGS    ! Graupel m.r. source
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRGT    ! Graupel/hail m.r. at t
-REAL, DIMENSION(KIT,KJT),     INTENT(OUT)             :: PINPRC  ! Cloud instant precip
-REAL, DIMENSION(KIT,KJT),     INTENT(OUT)             :: PINDEP  ! Cloud instant deposition
+REAL, DIMENSION(:,:),         INTENT(OUT)             :: PINPRC  ! Cloud instant precip
+REAL, DIMENSION(:,:),         INTENT(OUT)             :: PINDEP  ! Cloud instant deposition
 REAL, DIMENSION(KIT,KJT),     INTENT(OUT)             :: PINPRR  ! Rain instant precip
 REAL, DIMENSION(KIT,KJT),     INTENT(OUT)             :: PINPRI  ! Pristine ice instant precip
 REAL, DIMENSION(KIT,KJT),     INTENT(OUT)             :: PINPRS  ! Snow instant precip
@@ -69,6 +69,7 @@ SUBROUTINE ICE4_SEDIMENTATION_SPLIT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB
 !!    MODIFICATIONS
 !!    -------------
 !!
+!  P. Wautelet 11/02/2019: dimensions of PINPRC and PINDEP not necessarily KIT,KJT
 !
 !
 !*      0. DECLARATIONS
@@ -107,8 +108,8 @@ REAL, DIMENSION(KIT,KJT,KKT), INTENT(INOUT)           :: PRSS    ! Snow/aggregat
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRST    ! Snow/aggregate m.r. at t
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(INOUT)           :: PRGS    ! Graupel m.r. source
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRGT    ! Graupel/hail m.r. at t
-REAL, DIMENSION(KIT,KJT),     INTENT(OUT)             :: PINPRC  ! Cloud instant precip
-REAL, DIMENSION(KIT,KJT),     INTENT(OUT)             :: PINDEP  ! Cloud instant deposition
+REAL, DIMENSION(:,:),         INTENT(OUT)             :: PINPRC  ! Cloud instant precip
+REAL, DIMENSION(:,:),         INTENT(OUT)             :: PINDEP  ! Cloud instant deposition
 REAL, DIMENSION(KIT,KJT),     INTENT(OUT)             :: PINPRR  ! Rain instant precip
 REAL, DIMENSION(KIT,KJT),     INTENT(OUT)             :: PINPRI  ! Pristine ice instant precip
 REAL, DIMENSION(KIT,KJT),     INTENT(OUT)             :: PINPRS  ! Snow instant precip

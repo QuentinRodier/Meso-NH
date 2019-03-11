@@ -61,6 +61,7 @@ END MODULE MODI_LIMA_SEDIMENTATION
 !!    -------------
 !!      Original             15/03/2018
 !!
+!!      B.Vie  02/2019  Desactivate (comment) the heat transport by droplets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -205,14 +206,14 @@ DO JN = 1 ,  NSPLITSED(KID)
          IF (KMOMENTS==2) PCS(:,:,JK) = PCS(:,:,JK) + ZW(:,:,JK)*    &
               (ZWSEDC(:,:,JK+KKL)-ZWSEDC(:,:,JK))/PRHODREF(:,:,JK)
          ! Heat transport
-         PRT_SUM(:,:,JK-KKL) = PRT_SUM(:,:,JK-KKL) + ZW(:,:,JK-KKL)*ZWSEDR(:,:,JK)/PRHODREF(:,:,JK-KKL)
-         PRT_SUM(:,:,JK) = PRT_SUM(:,:,JK) - ZW(:,:,JK)*ZWSEDR(:,:,JK)/PRHODREF(:,:,JK)
-         PCPT(:,:,JK-KKL) = PCPT(:,:,JK-KKL) + ZC * (ZW(:,:,JK-KKL)*ZWSEDR(:,:,JK)/PRHODREF(:,:,JK-KKL))
-         PCPT(:,:,JK) = PCPT(:,:,JK) - ZC * (ZW(:,:,JK)*ZWSEDR(:,:,JK)/PRHODREF(:,:,JK))
-         ZWDT(:,:,JK) =(PRHODREF(:,:,JK+KKL)*(1.+PRT_SUM(:,:,JK))*PCPT(:,:,JK)*PT(:,:,JK) + &
-              ZW(:,:,JK)*ZWSEDR(:,:,JK+1)*ZC*PT(:,:,JK+KKL)) / &
-              (PRHODREF(:,:,JK+KKL)*(1.+PRT_SUM(:,:,JK))*PCPT(:,:,JK) + ZW(:,:,JK)*ZWSEDR(:,:,JK+KKL)*ZC)
-         ZWDT(:,:,JK) = ZWDT(:,:,JK) - PT(:,:,JK)
+         !PRT_SUM(:,:,JK-KKL) = PRT_SUM(:,:,JK-KKL) + ZW(:,:,JK-KKL)*ZWSEDR(:,:,JK)/PRHODREF(:,:,JK-KKL)
+         !PRT_SUM(:,:,JK) = PRT_SUM(:,:,JK) - ZW(:,:,JK)*ZWSEDR(:,:,JK)/PRHODREF(:,:,JK)
+         !PCPT(:,:,JK-KKL) = PCPT(:,:,JK-KKL) + ZC * (ZW(:,:,JK-KKL)*ZWSEDR(:,:,JK)/PRHODREF(:,:,JK-KKL))
+         !PCPT(:,:,JK) = PCPT(:,:,JK) - ZC * (ZW(:,:,JK)*ZWSEDR(:,:,JK)/PRHODREF(:,:,JK))
+         !ZWDT(:,:,JK) =(PRHODREF(:,:,JK+KKL)*(1.+PRT_SUM(:,:,JK))*PCPT(:,:,JK)*PT(:,:,JK) + &
+         !     ZW(:,:,JK)*ZWSEDR(:,:,JK+1)*ZC*PT(:,:,JK+KKL)) / &
+         !     (PRHODREF(:,:,JK+KKL)*(1.+PRT_SUM(:,:,JK))*PCPT(:,:,JK) + ZW(:,:,JK)*ZWSEDR(:,:,JK+KKL)*ZC)
+         !ZWDT(:,:,JK) = ZWDT(:,:,JK) - PT(:,:,JK)
       END DO
       DEALLOCATE(ZRHODREF)
       DEALLOCATE(ZPABST)

@@ -32,6 +32,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    03/2005 
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -52,8 +53,10 @@ IMPLICIT NONE
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('DEFAULT_SLT',0,ZHOOK_HANDLE)
-CEMISPARAM_SLT = 'Vig01'
-JPMODE_SLT     = 3
+! ++ PIERRE / MARINE SSA - MODIF ++
+CEMISPARAM_SLT = 'Ova14'
+JPMODE_SLT     = 5
+! -- PIERRE / MARINE SSA - MODIF --
 LVARSIG_SLT    = .FALSE.
 LRGFIX_SLT     = .TRUE.
 IF (LHOOK) CALL DR_HOOK('DEFAULT_SLT',1,ZHOOK_HANDLE)

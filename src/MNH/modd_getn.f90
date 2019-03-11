@@ -52,6 +52,7 @@
 !!      V. Masson   01/2004   surface externalization (rm CGETSURF)
 !!                  05/2006   Remove EPS and LGETALL
 !!      M. Leriche  04/2010   add get indicators for pH in cloud and rain
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -102,6 +103,7 @@ TYPE GET_t
   CHARACTER (LEN=4)  :: CGETBL_DEPTH          ! Get indicator for the BL depth
   CHARACTER (LEN=4)  :: CGETSBL_DEPTH         ! Get indicator for the SBL depth
   CHARACTER (LEN=4)  :: CGETPHC,CGETPHR       ! Get indicator for the pH values
+  CHARACTER (LEN=4)  :: CGETZWS
                                 ! in cloud water and rainwater
 !
 END TYPE GET_t
@@ -133,6 +135,7 @@ CHARACTER (LEN=4), POINTER :: CGETBL_DEPTH=>NULL()
 CHARACTER (LEN=4), POINTER :: CGETSBL_DEPTH=>NULL()
 CHARACTER (LEN=4), POINTER :: CGETPHC=>NULL()
 CHARACTER (LEN=4), POINTER :: CGETPHR=>NULL()
+CHARACTER (LEN=4), POINTER :: CGETZWS=>NULL()
 
 CONTAINS
 
@@ -179,6 +182,7 @@ CGETSRC=>GET_MODEL(KTO)%CGETSRC
 CGETCLDFR=>GET_MODEL(KTO)%CGETCLDFR
 CGETSRCT=>GET_MODEL(KTO)%CGETSRCT
 CGETCIT=>GET_MODEL(KTO)%CGETCIT
+CGETZWS=>GET_MODEL(KTO)%CGETZWS
 CGETCONV=>GET_MODEL(KTO)%CGETCONV
 CGETRAD=>GET_MODEL(KTO)%CGETRAD
 CGETCLOUD=>GET_MODEL(KTO)%CGETCLOUD

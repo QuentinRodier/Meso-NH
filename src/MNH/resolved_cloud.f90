@@ -22,7 +22,7 @@ INTERFACE
                                   PINPRS,PINPRS3D,PINPRG,PINPRG3D,PINPRH,PINPRH3D,     &
                                   PSOLORG,PMI,                                         &
                                   PSPEEDC, PSPEEDR, PSPEEDS, PSPEEDG, PSPEEDH,         &
-                                  PINDEP, PSUPSAT,  PNACT, PNPRO,PSSPRO,               &
+                                  PINDEP, PSUPSAT,  PNACT, PNPRO,PSSPRO, PRAINFR,      &
                                   PSEA,PTOWN          )   
 !
 USE MODD_IO, ONLY: TFILEDATA
@@ -133,6 +133,7 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSUPSAT  !sursat
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNACT  !concentrtaion d'aérosols activés au temps t
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNPRO  !concentrtaion d'aérosols activés au temps t
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSSPRO   !sursat
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PRAINFR ! Rain fraction                
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA      ! Land Sea mask
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PTOWN      ! Town fraction
 !
@@ -156,7 +157,7 @@ END MODULE MODI_RESOLVED_CLOUD
                                   PINPRS,PINPRS3D,PINPRG,PINPRG3D,PINPRH,PINPRH3D,     &
                                   PSOLORG,PMI,                                         &
                                   PSPEEDC, PSPEEDR, PSPEEDS, PSPEEDG, PSPEEDH,         &
-                                  PINDEP, PSUPSAT,  PNACT, PNPRO,PSSPRO,               &
+                                  PINDEP, PSUPSAT,  PNACT, PNPRO,PSSPRO, PRAINFR,      &
                                   PSEA,PTOWN          )   
 !     ##########################################################################
 !
@@ -265,6 +266,7 @@ END MODULE MODI_RESOLVED_CLOUD
 !!                            ICE3/ICE4 modified, old version under LRED=F   
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      P. Wautelet: 01/02/2019: ZRSMIN is now allocatable (instead of size of XRTMIN which was sometimes not allocated)
+!!                   02/2019 C.Lac add rain fraction as an output field
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -419,6 +421,7 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSUPSAT  !sursat
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNACT  !concentrtaion d'aérosols activés au temps t
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNPRO  !concentrtaion d'aérosols activés au temps t
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSSPRO   !sursat
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PRAINFR ! Rain fraction                
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA      ! Land Sea mask
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PTOWN      ! Town fraction
 !
@@ -918,8 +921,8 @@ SELECT CASE ( HCLOUD )
                    PRS(:,:,:,4)>ZRSMIN(4) .OR. &
                    PRS(:,:,:,5)>ZRSMIN(5) .OR. &
                    PRS(:,:,:,6)>ZRSMIN(6)
-      CALL RAIN_ICE_RED ( OSEDIC,CSEDIM, HSUBG_AUCV, OWARM,1,IKU,1,            &
-                    PTSTEP, KRR, LLMICRO, ZEXN,            &
+      CALL RAIN_ICE_RED ( OSEDIC,CSEDIM, HSUBG_AUCV, OWARM,1,IKU,1,      &
+                    PTSTEP, KRR, LLMICRO, ZEXN,                          &
                     ZDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT,PCLDFR,&
                     PTHT, PRT(:,:,:,1), PRT(:,:,:,2),                    &
                     PRT(:,:,:,3), PRT(:,:,:,4),                          &
@@ -927,18 +930,18 @@ SELECT CASE ( HCLOUD )
                     PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),      &
                     PRS(:,:,:,4), PRS(:,:,:,5), PRS(:,:,:,6),            &
                     PINPRC,PINPRR, PINPRR3D, PEVAP3D,                    &
-                    PINPRS, PINPRG, PSIGS, PINDEP, PSEA,PTOWN, PFPR=ZFPR)
+                    PINPRS, PINPRG, PSIGS, PINDEP, PRAINFR, PSEA,PTOWN, PFPR=ZFPR)
     ELSE 
-      CALL RAIN_ICE ( OSEDIC,CSEDIM, HSUBG_AUCV, OWARM,1,IKU,1,            &
-                    KSPLITR, PTSTEP, KRR,                           &
+      CALL RAIN_ICE ( OSEDIC,CSEDIM, HSUBG_AUCV, OWARM,1,IKU,1,          &
+                    KSPLITR, PTSTEP, KRR,                                &
                     ZDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT,PCLDFR,&
                     PTHT, PRT(:,:,:,1), PRT(:,:,:,2),                    &
                     PRT(:,:,:,3), PRT(:,:,:,4),                          &
                     PRT(:,:,:,5), PRT(:,:,:,6),                          &
                     PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),      &
                     PRS(:,:,:,4), PRS(:,:,:,5), PRS(:,:,:,6),            &
-                    PINPRC,PINPRR, PINPRR3D, PEVAP3D,           &
-                    PINPRS, PINPRG, PSIGS,PINDEP,             &
+                    PINPRC,PINPRR, PINPRR3D, PEVAP3D,                    &
+                    PINPRS, PINPRG, PSIGS,PINDEP, PRAINFR,               &
                     PSEA,PTOWN, PFPR=ZFPR)
     END IF
 !
@@ -1009,7 +1012,7 @@ SELECT CASE ( HCLOUD )
                     PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),       &
                     PRS(:,:,:,4), PRS(:,:,:,5), PRS(:,:,:,6),             &
                     PINPRC, PINPRR, PINPRR3D, PEVAP3D,                    &
-                    PINPRS, PINPRG, PSIGS, PINDEP, PSEA, PTOWN,           &
+                    PINPRS, PINPRG, PSIGS, PINDEP, PRAINFR, PSEA, PTOWN,  &
                     PRT(:,:,:,7), PRS(:,:,:,7), PINPRH, PFPR=ZFPR         )
     ELSE
       CALL RAIN_ICE ( OSEDIC,CSEDIM, HSUBG_AUCV, OWARM,1,IKU,1,         &
@@ -1021,7 +1024,7 @@ SELECT CASE ( HCLOUD )
                     PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),       &
                     PRS(:,:,:,4), PRS(:,:,:,5), PRS(:,:,:,6),             &
                     PINPRC, PINPRR, PINPRR3D, PEVAP3D,           &
-                    PINPRS, PINPRG, PSIGS,PINDEP,              &
+                    PINPRS, PINPRG, PSIGS,PINDEP, PRAINFR,                &
                     PSEA, PTOWN,                                          &
                     PRT(:,:,:,7),  PRS(:,:,:,7), PINPRH,PFPR=ZFPR )
      END IF

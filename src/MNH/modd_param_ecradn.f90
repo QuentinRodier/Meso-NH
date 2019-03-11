@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2017-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 modd 2006/11/23 17:28:26
 !-----------------------------------------------------------------
 !     ######################## 
       MODULE MODD_PARAM_ECRAD_n
@@ -38,6 +33,7 @@
 !!    -------------
 !!      Original      29/05/2017 add ECRAD parameters as namelist
 !!      Q. Libois
+!  P. Wautelet 08/02/2019: add missing NULL association for pointers
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -213,7 +209,7 @@ LOGICAL, POINTER :: LAPPROXSWUPDATE=>NULL()
 LOGICAL, POINTER :: LAPPROXLWUPDATE=>NULL()
 CHARACTER (LEN=255), POINTER :: CDATADIR=>NULL()
 #ifdef MNH_ECRAD
-type(config_type), pointer :: rad_config
+type(config_type), pointer :: rad_config => NULL()
 #endif
 CONTAINS
 

@@ -56,8 +56,8 @@ END MODULE MODI_CH_INIT_CONST_n
 !!    MODIFICATIONS
 !!    -------------
 !!    Original 16/02/01
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-
+!  P. Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet: 25/02/2019: bug correction for the file unit numbers
 !!    EXTERNAL
 !!    --------
 USE MODI_CH_OPEN_INPUT  ! open the general purpose ASCII input file
@@ -240,6 +240,7 @@ IF (KVERB >= 5) WRITE(KLUOUT,*) &
    "CH_INIT_CONST: reading effective Henry constant", &
    " and its temperature correction "
 CALL CH_OPEN_INPUT(CCHEM_INPUT_FILE, "HENRY_SP", TZFILE, KLUOUT, KVERB)
+ICHANNEL = TZFILE%NLU
 !
 ! read number of molecular diffusivity IHENRY
 READ(ICHANNEL, *) IHENRY

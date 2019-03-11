@@ -128,6 +128,7 @@ endif
 #
 #
 CC ?= gcc
+CXX ?= g++
 FC = ifort
 ifeq "$(VER_MPI)" "MPIAUTO"
 ifneq "$(findstring TAU,$(XYZ))" ""
@@ -191,12 +192,28 @@ endif
 TARGET_GRIBEX=linux
 CNAME_GRIBEX=ifort
 #
+# Netcdf/HDF5 flags
+#
+HDF_CONF= CFLAGS=-std=c99
+HDF_OPT ?= -fPIC
+NETCDF_OPT ?= -fPIC
+#
 # LIBTOOLS flags
 #
 #if MNH_TOOLS exists => compile the tools
 ifeq "$(MNH_INT)" "4"
 MNH_TOOLS=yes
 endif
+#
+## COMPRESS flag
+#
+#if MNH_COMPRESS exists => compile the COMPRESS library (for LFI files)
+MNH_COMPRESS=yes
+#
+## S4PY flag
+#
+#if MNH_S4PY exists => compile the libs4py library (for epygram)
+#MNH_S4PY=no
 #
 ##########################################################
 #                                                        #

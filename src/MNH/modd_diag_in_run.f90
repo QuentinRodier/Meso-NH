@@ -11,6 +11,7 @@
 MODULE MODD_DIAG_IN_RUN
 ! Modifications
 !!                   02/2018 Q.Libois ECRAD
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !
 !* stores instantaneous diagnostic arrays for the current time-step
 !
@@ -37,4 +38,6 @@ REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_MER10M! meridian wind at 10m
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_DSTAOD! dust aerosol optical depth
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_SFCO2    ! CO2 Surface flux
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: XCURRENT_TKE_DISS ! Tke dissipation rate
+REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_SLTAOD   ! Salt aerosol optical depth
+REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_ZWS      ! Significant height of waves
 END MODULE MODD_DIAG_IN_RUN

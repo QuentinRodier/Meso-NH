@@ -11,7 +11,7 @@ SUBROUTINE COUPLING_SEAFLUX_OROG_n (SM, DST, SLT, HPROGRAM, HCOUPLING, PTIMEC, P
                                     PSFTS, PSFCO2, PSFU, PSFV, PTRAD, PDIR_ALB, PSCA_ALB,&
                                     PEMIS, PTSURF, PZ0, PZ0H, PQSURF, PPEW_A_COEF,       &
                                     PPEW_B_COEF, PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF,  &
-                                    PPEQ_B_COEF, HTEST                        )  
+                                    PPEQ_B_COEF, PZWS, HTEST                        )  
 !     ###############################################################################
 !
 !!****  *COUPLING_SEAFLUX_OROG_n * - Modifies the input forcing if not
@@ -38,6 +38,7 @@ SUBROUTINE COUPLING_SEAFLUX_OROG_n (SM, DST, SLT, HPROGRAM, HCOUPLING, PTIMEC, P
 !!      J. Escobar    09/2012 SIZE(PTA) not allowed without-interface , replace by KI
 !!      B. Decharme  04/2013 new coupling variables
 !!                           improve forcing vertical shift
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !!-------------------------------------------------------------
 !
 !
@@ -106,6 +107,7 @@ REAL, DIMENSION(KI), INTENT(IN)  :: PLW       ! longwave radiation (on horizonta
 !                                             !                                       (W/m2)
 REAL, DIMENSION(KI), INTENT(IN)  :: PPS       ! pressure at atmospheric model surface (Pa)
 REAL, DIMENSION(KI), INTENT(IN)  :: PPA       ! pressure at forcing level             (Pa)
+REAL, DIMENSION(KI), INTENT(IN)  :: PZWS      ! significant sea wave                  (m)
 REAL, DIMENSION(KI), INTENT(IN)  :: PZS       ! atmospheric model orography           (m)
 REAL, DIMENSION(KI), INTENT(IN)  :: PCO2      ! CO2 concentration in the air          (kg/m3)
 REAL, DIMENSION(KI), INTENT(IN)  :: PSNOW     ! snow precipitation                    (kg/m2/s)
@@ -204,7 +206,7 @@ ENDIF
                              PSFTS, PSFCO2, PSFU, PSFV, PTRAD, PDIR_ALB, PSCA_ALB,  &
                              PEMIS, PTSURF, PZ0, PZ0H, PQSURF, PPEW_A_COEF,         &
                              PPEW_B_COEF, PPET_A_COEF, PPEQ_A_COEF, ZPET_B_COEF,    &
-                             ZPEQ_B_COEF, HTEST                                     )
+                             ZPEQ_B_COEF, PZWS, HTEST                                     )
 !
 IF (LHOOK) CALL DR_HOOK('COUPLING_SEAFLUX_OROG_N',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------------

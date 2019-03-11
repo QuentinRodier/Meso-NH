@@ -291,6 +291,7 @@ END MODULE MODI_READ_EXSEG_n
 !!      Modification   01/2019   (Q. Rodier) define XCEDIS depending on BL89 or RM17 mixing length
 !!      Modification   01/2019   (P. Wautelet) bugs correction: incorrect writes
 !!      Modification   01/2019   (R. Honnert) remove SURF in CMF_UPDRAFT
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !!------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1738,6 +1739,7 @@ END IF
 IF (LSALT) THEN
   IF (OSALT) THEN
     CGETSVT(NSV_SLTBEG:NSV_SLTEND)='READ'
+    CGETZWS='READ'
 !   IF(CCONF=='START') CGETSVT(NSV_SLTBEG:NSV_SLTEND)='INIT'
   ELSE
     WRITE(UNIT=ILUOUT,FMT=9001) KMI
@@ -1745,6 +1747,7 @@ IF (LSALT) THEN
          &SCHEME IN INITIAL FMFILE",/,&
          & "THE SALT VARIABLES HAVE BEEN INITIALIZED TO ZERO ")') 
     CGETSVT(NSV_SLTBEG:NSV_SLTEND)='INIT'
+    CGETZWS='INIT'
   END IF
   IF (LDEPOS_SLT(KMI)) THEN
 
@@ -1769,9 +1772,9 @@ IF (LSALT) THEN
     CGETSVT(NSV_SLTDEPBEG:NSV_SLTDEPEND)='INIT'    
    END IF
   END IF
-  IF(NMODE_SLT.GT.3 .OR. NMODE_SLT.LT.1) THEN
+  IF(NMODE_SLT.GT.5 .OR. NMODE_SLT.LT.1) THEN
     WRITE(UNIT=ILUOUT,FMT=9003) KMI
-    WRITE(UNIT=ILUOUT,FMT='("SALT MODES MUST BE BETWEEN 1 and 3 ")') 
+    WRITE(UNIT=ILUOUT,FMT='("SALT MODES MUST BE BETWEEN 1 and 5 ")') 
  !callabortstop
     CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_EXSEG_n','')
   END IF     
@@ -1805,7 +1808,7 @@ IF (LSALT) THEN
     IF(.NOT.ALLOCATED(CDESLTNAMES)) THEN
       ALLOCATE(CDESLTNAMES(NMODE_SLT*2))
       DO JMODE=1,NMODE_SLT  
-        IMODEIDX=JPDUSTORDER(JMODE)
+        IMODEIDX=JPSALTORDER(JMODE)
         CDESLTNAMES(JMODE) = YPDESLT_INI(IMODEIDX)
         CDESLTNAMES(NMODE_SLT+JMODE) = YPDESLT_INI(NMODE_SLT+IMODEIDX)
       ENDDO

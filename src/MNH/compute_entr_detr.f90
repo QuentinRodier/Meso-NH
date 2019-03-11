@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2009-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !     ######spl
      MODULE MODI_COMPUTE_ENTR_DETR
@@ -120,6 +120,7 @@ END MODULE MODI_COMPUTE_ENTR_DETR
 !!                          improvement of continuity at the condensation level
 !!      S. Riette Nov 2013: protection against zero divide for min value of dry PDETR
 !!      R.Honnert Oct 2016 : Update with AROME
+!  P. Wautelet 08/02/2019: bug fix: compute ZEPSI_CLOUD only once and only when it is needed
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -468,7 +469,7 @@ ENDDO
 !               3.4 Computation of PENTR and PDETR
   DO JLOOP=1,SIZE(OTEST)
     IF(OTEST(JLOOP)) THEN
-      ZEPSI_CLOUD=MIN(ZDELTA,ZEPSI)
+      ZEPSI_CLOUD(JLOOP)=MIN(ZDELTA(JLOOP),ZEPSI(JLOOP))
       PENTR_CLD(JLOOP) = (1.-PPART_DRY(JLOOP))*ZCOEFFMF_CLOUD*PRHODREF(JLOOP)*ZEPSI_CLOUD(JLOOP)
       PDETR_CLD(JLOOP) = (1.-PPART_DRY(JLOOP))*ZCOEFFMF_CLOUD*PRHODREF(JLOOP)*ZDELTA(JLOOP)
       PENTR(JLOOP) = PENTR(JLOOP)+PENTR_CLD(JLOOP)

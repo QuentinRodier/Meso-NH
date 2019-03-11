@@ -7,6 +7,7 @@
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 21/06/2018: read and write correctly if MNH_REAL=4
 !  P. Wautelet 14/12/2018: split fmreadwrit.f90
+!  P. Wautelet 21/02/2019: bugfix: intent of read fields: OUT->INOUT to keep initial value if not found in file
 !  P. Wautelet 05/03/2019: rename IO subroutines and modules
 !-----------------------------------------------------------------
 module mode_io_read_lfi
@@ -49,7 +50,7 @@ IMPLICIT NONE
 !
 TYPE(TFILEDATA),  INTENT(IN)    :: TPFILE
 TYPE(TFIELDDATA), INTENT(INOUT) :: TPFIELD
-REAL,             INTENT(OUT)   :: PFIELD  ! array containing the data field
+REAL,             INTENT(INOUT) :: PFIELD  ! array containing the data field
 INTEGER,          INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
@@ -88,7 +89,7 @@ IMPLICIT NONE
 !
 TYPE(TFILEDATA),  INTENT(IN)    :: TPFILE
 TYPE(TFIELDDATA), INTENT(INOUT) :: TPFIELD
-REAL,DIMENSION(:),INTENT(OUT)   :: PFIELD  ! array containing the data field
+REAL,DIMENSION(:),INTENT(INOUT) :: PFIELD  ! array containing the data field
 INTEGER,          INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
@@ -122,7 +123,7 @@ IMPLICIT NONE
 !
 TYPE(TFILEDATA),    INTENT(IN)    :: TPFILE
 TYPE(TFIELDDATA),   INTENT(INOUT) :: TPFIELD
-REAL,DIMENSION(:,:),INTENT(OUT)   :: PFIELD  ! array containing the data field
+REAL,DIMENSION(:,:),INTENT(INOUT) :: PFIELD  ! array containing the data field
 INTEGER,            INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
@@ -156,7 +157,7 @@ IMPLICIT NONE
 !
 TYPE(TFILEDATA),      INTENT(IN)    :: TPFILE
 TYPE(TFIELDDATA),     INTENT(INOUT) :: TPFIELD
-REAL,DIMENSION(:,:,:),INTENT(OUT)   :: PFIELD  ! array containing the data field
+REAL,DIMENSION(:,:,:),INTENT(INOUT) :: PFIELD  ! array containing the data field
 INTEGER,              INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
@@ -190,7 +191,7 @@ IMPLICIT NONE
 !
 TYPE(TFILEDATA),        INTENT(IN)    :: TPFILE
 TYPE(TFIELDDATA),       INTENT(INOUT) :: TPFIELD
-REAL,DIMENSION(:,:,:,:),INTENT(OUT)   :: PFIELD  ! array containing the data field
+REAL,DIMENSION(:,:,:,:),INTENT(INOUT) :: PFIELD  ! array containing the data field
 INTEGER,                INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
@@ -224,7 +225,7 @@ IMPLICIT NONE
 !
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE
 TYPE(TFIELDDATA),         INTENT(INOUT) :: TPFIELD
-REAL,DIMENSION(:,:,:,:,:),INTENT(OUT)   :: PFIELD  ! array containing the data field
+REAL,DIMENSION(:,:,:,:,:),INTENT(INOUT) :: PFIELD  ! array containing the data field
 INTEGER,                  INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
@@ -258,7 +259,7 @@ IMPLICIT NONE
 !
 TYPE(TFILEDATA),            INTENT(IN)    :: TPFILE
 TYPE(TFIELDDATA),           INTENT(INOUT) :: TPFIELD
-REAL,DIMENSION(:,:,:,:,:,:),INTENT(OUT)   :: PFIELD  ! array containing the data field
+REAL,DIMENSION(:,:,:,:,:,:),INTENT(INOUT) :: PFIELD  ! array containing the data field
 INTEGER,                    INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
@@ -292,7 +293,7 @@ IMPLICIT NONE
 !
 TYPE(TFILEDATA), INTENT(IN)    :: TPFILE
 TYPE(TFIELDDATA),INTENT(INOUT) :: TPFIELD
-INTEGER,         INTENT(OUT)   :: KFIELD  ! array containing the data field
+INTEGER,         INTENT(INOUT) :: KFIELD  ! array containing the data field
 INTEGER,         INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
@@ -326,7 +327,7 @@ IMPLICIT NONE
 !
 TYPE(TFILEDATA),     INTENT(IN)    :: TPFILE
 TYPE(TFIELDDATA),    INTENT(INOUT) :: TPFIELD
-INTEGER,DIMENSION(:),INTENT(OUT)   :: KFIELD  ! array containing the data field
+INTEGER,DIMENSION(:),INTENT(INOUT) :: KFIELD  ! array containing the data field
 INTEGER,             INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
@@ -360,7 +361,7 @@ IMPLICIT NONE
 !
 TYPE(TFILEDATA),       INTENT(IN)    :: TPFILE
 TYPE(TFIELDDATA),      INTENT(INOUT) :: TPFIELD
-INTEGER,DIMENSION(:,:),INTENT(OUT)   :: KFIELD  ! array containing the data field
+INTEGER,DIMENSION(:,:),INTENT(INOUT) :: KFIELD  ! array containing the data field
 INTEGER,               INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
@@ -394,7 +395,7 @@ IMPLICIT NONE
 !
 TYPE(TFILEDATA), INTENT(IN)    :: TPFILE
 TYPE(TFIELDDATA),INTENT(INOUT) :: TPFIELD
-LOGICAL,         INTENT(OUT)   :: OFIELD  ! array containing the data field
+LOGICAL,         INTENT(INOUT) :: OFIELD  ! array containing the data field
 INTEGER,         INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
@@ -441,7 +442,7 @@ IMPLICIT NONE
 !
 TYPE(TFILEDATA),     INTENT(IN)    :: TPFILE
 TYPE(TFIELDDATA),    INTENT(INOUT) :: TPFIELD
-LOGICAL,DIMENSION(:),INTENT(OUT)   :: OFIELD  ! array containing the data field
+LOGICAL,DIMENSION(:),INTENT(INOUT) :: OFIELD  ! array containing the data field
 INTEGER,             INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
@@ -496,7 +497,7 @@ IMPLICIT NONE
 !
 TYPE(TFILEDATA), INTENT(IN)    :: TPFILE
 TYPE(TFIELDDATA),INTENT(INOUT) :: TPFIELD
-CHARACTER(LEN=*),INTENT(OUT)   :: HFIELD  ! array containing the data field
+CHARACTER(LEN=*),INTENT(INOUT) :: HFIELD  ! array containing the data field
 INTEGER,         INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables

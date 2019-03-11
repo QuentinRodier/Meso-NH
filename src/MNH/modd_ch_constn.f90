@@ -1,13 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2001-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
-!-----------------------------------------------------------------
-!-----------------------------------------------------------------
 !-----------------------------------------------------------------
 !     #####################
       MODULE MODD_CH_CONST_n
@@ -32,6 +26,7 @@
 !!
 !!    MODIFICATIONS
 !!    -------------
+!  P. Wautelet 08/02/2019: add missing NULL association for pointers
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -43,14 +38,14 @@ IMPLICIT NONE
 TYPE CH_CONST_t
 !
 
-  REAL, DIMENSION(:), POINTER :: XSREALMASSMOLVAL ! final molecular
+  REAL, DIMENSION(:), POINTER :: XSREALMASSMOLVAL => NULL() ! final molecular
                                                           ! diffusivity value
-  REAL, DIMENSION(:), POINTER :: XSREALREACTVAL ! final chemical
+  REAL, DIMENSION(:), POINTER :: XSREALREACTVAL => NULL() ! final chemical
                                                         ! reactivity factor
                                                         ! with biologie
-  REAL, DIMENSION(:,:), POINTER :: XSREALHENRYVAL ! chemical Henry
+  REAL, DIMENSION(:,:), POINTER :: XSREALHENRYVAL => NULL() ! chemical Henry
                                                           ! constant value
-  REAL                            :: XCONVERSION ! emission unit 
+  REAL                            :: XCONVERSION ! emission unit
                                                      ! conversion factor
 !
 

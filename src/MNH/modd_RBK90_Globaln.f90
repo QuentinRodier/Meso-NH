@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ! 
@@ -23,6 +23,8 @@
 ! Output root filename : RBK90
 ! 
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+! Modifications
+!  P. Wautelet 08/02/2019: add missing NULL association for pointers
 
 
 MODULE MODD_RBK90_Global_n
@@ -40,15 +42,15 @@ TYPE RBK90_Global_t
 ! Declaration of global variables
 
 ! C - Concentration of all species
-    REAL(KIND(0.0D0)), DIMENSION(:), POINTER :: C
+    REAL(KIND(0.0D0)), DIMENSION(:), POINTER :: C => NULL()
 ! VAR - Concentrations of variable species (global)
-    REAL(KIND(0.0D0)), DIMENSION(:), POINTER :: VAR
+    REAL(KIND(0.0D0)), DIMENSION(:), POINTER :: VAR => NULL()
 ! FIX - Concentrations of fixed species (global)
-    REAL(KIND(0.0D0)), DIMENSION(:), POINTER :: FIX
+    REAL(KIND(0.0D0)), DIMENSION(:), POINTER :: FIX => NULL()
 !JPP      EQUIVALENCE( C(1),VAR(1) )
 !JPP      EQUIVALENCE( C(66),FIX(1) )
 ! RCONST - Rate constants (global)
-    REAL(KIND(0.0D0)), DIMENSION(:), POINTER :: RCONST
+    REAL(KIND(0.0D0)), DIMENSION(:), POINTER :: RCONST => NULL()
 ! TIME - Current integration time
     REAL(KIND(0.0D0)) :: TIME
 ! SUN - Sunlight intensity between [0,1]
@@ -64,9 +66,9 @@ TYPE RBK90_Global_t
 ! DT - Integration step
     REAL(KIND(0.0D0)) :: DT
 ! ATOL - Absolute tolerance
-    REAL(KIND(0.0D0)), DIMENSION(:), POINTER :: ATOL
+    REAL(KIND(0.0D0)), DIMENSION(:), POINTER :: ATOL => NULL()
 ! RTOL - Relative tolerance
-    REAL(KIND(0.0D0)), DIMENSION(:), POINTER :: RTOL
+    REAL(KIND(0.0D0)), DIMENSION(:), POINTER :: RTOL => NULL()
 ! STEPMIN - Lower bound for integration step
     REAL(KIND(0.0D0)) :: STEPMIN
 ! STEPMAX - Upper bound for integration step

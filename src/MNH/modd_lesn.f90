@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/modd_lesn.f90,v $ $Revision: 1.2.2.2.2.1.2.1.12.2 $ $Date: 2014/01/09 15:01:56 $
-!-----------------------------------------------------------------
 !-----------------------------------------------------------------
 !     ############### 
       MODULE MODD_LES_n
@@ -22,13 +17,13 @@
 !!
 !!**  IMPLICIT ARGUMENTS
 !!    ------------------ 
-!!      None  
+!!      None
 !!
 !!    REFERENCE
 !!    ---------
 !!      Book2 of documentation of Meso-NH (module MODD_LES)
 !!      Technical Specifications Report of the Meso-NH (chapters 2 and 3)
-!!      
+!!
 !!
 !!    AUTHOR
 !!    ------
@@ -36,7 +31,7 @@
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    March 10, 1995                
+!!      Original    March 10, 1995
 !!
 !!       (J.Stein)  Sept. 25, 1995  add the model number in LES mode
 !!       J. Cuxart  Oct.   4, 1996  New time series
@@ -44,6 +39,8 @@
 !!       V. Masson  Nov.   6, 2002  LES budgets
 !!       O.Thouron  June,     2008  New radiation diagnostics
 !!                    10/2016 (C.Lac) Add droplet deposition
+!  P. Wautelet 08/02/2019: add missing NULL association for pointers
+!!                    02/2019 (C. Lac) Add rain fraction as a LES diagnostic
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -117,6 +114,7 @@ TYPE LES_t
   REAL, DIMENSION(:,:,:), POINTER :: XLES_MEAN_Cf=>NULL()  ! <CLDFR>
   REAL, DIMENSION(:,:,:), POINTER :: XLES_MEAN_INDCf=>NULL()  ! <Cf> tq rc>0 (0 OU 1)
   REAL, DIMENSION(:,:,:), POINTER :: XLES_MEAN_INDCf2=>NULL()  ! <Cf> tq rc>1E-5 (0 OU 1)
+  REAL, DIMENSION(:,:,:), POINTER :: XLES_MEAN_RF=>NULL()  ! <RAINFR>
   REAL, DIMENSION(:,:,:), POINTER :: XLES_MEAN_Mf=>NULL()  ! <Mf> 
   REAL, DIMENSION(:,:,:), POINTER :: XLES_MEAN_KHt=>NULL()! <Kh for thet
   REAL, DIMENSION(:,:,:), POINTER :: XLES_MEAN_KHr=>NULL()! <Kh for qr>
@@ -647,20 +645,20 @@ TYPE LES_t
 !
   REAL, DIMENSION(:,:,:), POINTER :: XCORRk_WW=>NULL()   ! between w and w
 !
-!lw and sw fluxes up and down                                                 
-  REAL, DIMENSION(:,:), POINTER :: XLES_SWU   !mean on the domain of the sw_up flux                         
+!lw and sw fluxes up and down
+  REAL, DIMENSION(:,:), POINTER :: XLES_SWU => NULL()   !mean on the domain of the sw_up flux
                                                  !temporal serie
-  REAL, DIMENSION(:,:), POINTER :: XLES_SWD   !mean on the domain of the sw_down flux                       
+  REAL, DIMENSION(:,:), POINTER :: XLES_SWD => NULL()   !mean on the domain of the sw_down flux
                                                  !temporal serie
-  REAL, DIMENSION(:,:), POINTER :: XLES_LWU   !mean on the domain of the lw_up flux                          
+  REAL, DIMENSION(:,:), POINTER :: XLES_LWU => NULL()   !mean on the domain of the lw_up flux
                                                  !temporal serie
-  REAL, DIMENSION(:,:), POINTER :: XLES_LWD   !mean on the domain of the lw_down flux                        
+  REAL, DIMENSION(:,:), POINTER :: XLES_LWD => NULL()   !mean on the domain of the lw_down flux
                                                  !temporal serie
-  REAL, DIMENSION(:,:), POINTER :: XLES_DTHRADSW   !mean on the domain of dthrad_sw flux                        
+  REAL, DIMENSION(:,:), POINTER :: XLES_DTHRADSW => NULL()   !mean on the domain of dthrad_sw flux
                                                  !temporal serie
-  REAL, DIMENSION(:,:), POINTER :: XLES_DTHRADLW   !mean on the domain of dthrad_lw flux                        
+  REAL, DIMENSION(:,:), POINTER :: XLES_DTHRADLW => NULL()   !mean on the domain of dthrad_lw flux
                                                  !temporal serie
-  REAL, DIMENSION(:,:), POINTER :: XLES_RADEFF   ! effective radius                       
+  REAL, DIMENSION(:,:), POINTER :: XLES_RADEFF => NULL()   ! effective radius
 !-------------------------------------------------------------------------------
 !
 END TYPE LES_t
@@ -698,6 +696,7 @@ REAL, DIMENSION(:,:,:), POINTER :: XLES_MEAN_Rc=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XLES_MEAN_Cf=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XLES_MEAN_INDCf=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XLES_MEAN_INDCf2=>NULL()
+REAL, DIMENSION(:,:,:), POINTER :: XLES_MEAN_RF=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XLES_MEAN_Mf=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XLES_MEAN_KHt=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XLES_MEAN_KHr=>NULL()
@@ -1125,6 +1124,7 @@ LES_MODEL(KFROM)%XLES_MEAN_Rc=>XLES_MEAN_Rc
 LES_MODEL(KFROM)%XLES_MEAN_Cf=>XLES_MEAN_Cf
 LES_MODEL(KFROM)%XLES_MEAN_INDCf=>XLES_MEAN_INDCf
 LES_MODEL(KFROM)%XLES_MEAN_INDCf2=>XLES_MEAN_INDCf2
+LES_MODEL(KFROM)%XLES_MEAN_RF=>XLES_MEAN_RF
 LES_MODEL(KFROM)%XLES_MEAN_Mf=>XLES_MEAN_Mf
 LES_MODEL(KFROM)%XLES_MEAN_KHt=>XLES_MEAN_KHt
 LES_MODEL(KFROM)%XLES_MEAN_KHr=>XLES_MEAN_KHr
@@ -1553,6 +1553,7 @@ XLES_MEAN_Rc=>LES_MODEL(KTO)%XLES_MEAN_Rc
 XLES_MEAN_Cf=>LES_MODEL(KTO)%XLES_MEAN_Cf
 XLES_MEAN_INDCf=>LES_MODEL(KTO)%XLES_MEAN_INDCf
 XLES_MEAN_INDCf2=>LES_MODEL(KTO)%XLES_MEAN_INDCf2
+XLES_MEAN_RF=>LES_MODEL(KTO)%XLES_MEAN_RF
 XLES_MEAN_Mf=>LES_MODEL(KTO)%XLES_MEAN_Mf
 XLES_MEAN_KHt=>LES_MODEL(KTO)%XLES_MEAN_KHt
 XLES_MEAN_KHr=>LES_MODEL(KTO)%XLES_MEAN_KHr

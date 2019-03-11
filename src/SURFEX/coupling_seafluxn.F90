@@ -10,7 +10,7 @@ SUBROUTINE COUPLING_SEAFLUX_n (CHS, DTS, DGS, O, OR, G, S, DST, SLT, &
                                PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA, PSFTQ, PSFTH, PSFTS,      &
                                PSFCO2, PSFU, PSFV, PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF,    &
                                PZ0, PZ0H, PQSURF, PPEW_A_COEF, PPEW_B_COEF, PPET_A_COEF,        &
-                               PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,  HTEST                 )  
+                               PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF, PZWS,  HTEST              )  
 !     ###############################################################################
 !
 !!****  *COUPLING_SEAFLUX_n * - Driver of the WATER_FLUX scheme for sea   
@@ -49,6 +49,7 @@ SUBROUTINE COUPLING_SEAFLUX_n (CHS, DTS, DGS, O, OR, G, S, DST, SLT, &
 !!      Modified    01/2015 : R. Séférian interactive ocaen surface albedo
 !!      Modified    03/2014 : M.N. Bouin possibility of wave parameters from external source
 !!      Modified    11/2014 : J. Pianezze : add currents for wave coupling
+!!      Modified    02/2019 : S. Bielli Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !!                                       
 !!---------------------------------------------------------------------
 !
@@ -157,6 +158,7 @@ REAL, DIMENSION(KI), INTENT(IN)  :: PLW       ! longwave radiation (on horizonta
 !                                             !                                       (W/m2)
 REAL, DIMENSION(KI), INTENT(IN)  :: PPS       ! pressure at atmospheric model surface (Pa)
 REAL, DIMENSION(KI), INTENT(IN)  :: PPA       ! pressure at forcing level             (Pa)
+REAL, DIMENSION(KI), INTENT(IN)  :: PZWS      ! significant sea wave                  (m)
 REAL, DIMENSION(KI), INTENT(IN)  :: PCO2      ! CO2 concentration in the air          (kg/m3)
 REAL, DIMENSION(KI), INTENT(IN)  :: PSNOW     ! snow precipitation                    (kg/m2/s)
 REAL, DIMENSION(KI), INTENT(IN)  :: PRAIN     ! liquid precipitation                  (kg/m2/s)
@@ -232,6 +234,8 @@ REAL, DIMENSION(KI) :: ZHU        ! Near surface relative humidity
 REAL, DIMENSION(KI) :: ZQA        ! specific humidity (kg/kg)
 REAL, DIMENSION(KI) :: ZEMIS      ! Emissivity at time t
 REAL, DIMENSION(KI) :: ZTRAD      ! Radiative temperature at time t
+REAL, DIMENSION(KI) :: ZHS        ! significant wave height
+REAL, DIMENSION(KI) :: ZTP        ! peak period
 !
 REAL, DIMENSION(KI) :: ZSST       ! XSST corrected for anomalously low values (which actually are sea-ice temp)
 REAL, DIMENSION(KI) :: ZMASK      ! A mask for diagnosing where seaice exists (or, for coupling_iceflux, may appear)
@@ -245,14 +249,17 @@ INTEGER                          :: ISIZE_ICE    ! number of points with some se
 !
 INTEGER                          :: ISWB       ! number of shortwave spectral bands
 INTEGER                          :: JSWB       ! loop counter on shortwave spectral bands
-INTEGER                          :: ISLT       ! number of sea salt variable
 !
 INTEGER :: IBEG, IEND
+INTEGER                          :: ISLT, IDST, JSV, IMOMENT   ! number of sea salt, dust variables
+!
+INTEGER :: ILUOUT
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------------
 ! Preliminaries:
 !-------------------------------------------------------------------------------------
+CALL GET_LUOUT(HPROGRAM,ILUOUT)
 IF (LHOOK) CALL DR_HOOK('COUPLING_SEAFLUX_N',0,ZHOOK_HANDLE)
 IF (HTEST/='OK') THEN
   CALL ABOR1_SFX('COUPLING_SEAFLUXN: FATAL ERROR DURING ARGUMENT TRANSFER')        
@@ -277,6 +284,8 @@ ZUSTAR   (:) = XUNDEF
 ZZ0      (:) = XUNDEF
 ZZ0H     (:) = XUNDEF
 ZQSAT    (:) = XUNDEF
+ZHS      (:) = XUNDEF
+ZTP      (:) = XUNDEF
 !
 ZSFTQ_ICE(:) = XUNDEF
 ZSFTH_ICE(:) = XUNDEF
@@ -317,6 +326,24 @@ PSFTS(:,:) = 0.
 ZHU = 1.
 !
 ZQA(:) = PQA(:) / PRHOA(:)
+
+! HS value from ECMWF file
+ZHS(:) = PZWS(:)
+#ifdef CPLOASIS
+! HS value from WW3 if activated
+IF (LCPL_WAVE) THEN
+  ZHS(:)=S%XHS(:)
+  ZTP(:)=S%XTP(:)
+ELSE
+  ZHS(:)=PZWS(:)
+  ZTP(:)=S%XTP(:)
+END IF
+#endif
+! if HS value is undef : constant value and alert message
+IF (ALL(ZHS==XUNDEF)) THEN
+ ZHS(:)=2.
+ WRITE (ILUOUT,*) 'WARNING : no HS values from ECMWF or WW3, then it is initialized to a constant value of 2 m'
+END IF
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Time evolution
@@ -374,8 +401,16 @@ CALL COARE30_SEAFLUX(S, ZMASK, ISIZE_WATER, ISIZE_ICE,        &
               PTA, ZEXNA ,PRHOA, ZSST, ZEXNS, ZQA, PRAIN,     &
               PSNOW, ZWIND, PZREF, PUREF, PPS, ZQSAT,         &
               ZSFTH, ZSFTQ, ZUSTAR,                           &
-              ZCD, ZCDN, ZCH, ZCE, ZRI, ZRESA_SEA, ZZ0H       )  
+              ZCD, ZCDN, ZCH, ZCE, ZRI, ZRESA_SEA, ZZ0H     )
 END SELECT
+
+#ifdef CPLOASIS
+IF (.NOT. LCPL_WAVE) THEN
+  S%XHS(:)=ZHS(:)
+  S%XTP(:)=ZTP(:)
+END IF
+#endif
+
 !
 !-------------------------------------------------------------------------------------
 !radiative properties at time t
@@ -442,7 +477,7 @@ PSFCO2(:) = - ZWIND(:)**2 * 1.13E-3 * 8.7 * 44.E-3 / ( 365*24*3600 )
 ! Scalar fluxes:
 !-------------------------------------------------------------------------------------
 !
-IF (CHS%SVS%NBEQ>0) THEN
+IF (CHS%SVS%NBEQ>0.AND.(KI.GT.0)) THEN
   !
   IF (CHS%CCH_DRY_DEP == "WES89") THEN
     !
@@ -475,7 +510,7 @@ IF (CHS%SVS%NBEQ>0) THEN
   !
 ENDIF
 !
-IF (CHS%SVS%NDSTEQ>0) THEN
+IF (CHS%SVS%NDSTEQ>0.AND.(KI.GT.0)) THEN
   !
   IBEG = CHS%SVS%NSV_DSTBEG
   IEND = CHS%SVS%NSV_DSTEND
@@ -499,7 +534,7 @@ IF (CHS%SVS%NDSTEQ>0) THEN
 ENDIF
 
 !
-IF (CHS%SVS%NSLTEQ>0) THEN
+IF (CHS%SVS%NSLTEQ>0.AND.(KI.GT.0)) THEN
   !
   IBEG = CHS%SVS%NSV_SLTBEG
   IEND = CHS%SVS%NSV_SLTEND
@@ -510,6 +545,9 @@ IF (CHS%SVS%NSLTEQ>0) THEN
                       SIZE(ZUSTAR,1),           & !I [nbr] number of sea point
                       ISLT,                     & !I [nbr] number of sea salt variables
                       ZWIND,                    & !I [m/s] wind velocity
+                      ZHS,                      & !I [m] significant sea wave
+                      S%XSST,                   &
+                      ZUSTAR,                   &
                       PSFTS(:,IBEG:IEND) )   
   !
   CALL DSLT_DEP(PSV(:,IBEG:IEND), PSFTS(:,IBEG:IEND), ZUSTAR, ZRESA_SEA, PTA, &
@@ -517,11 +555,11 @@ IF (CHS%SVS%NSLTEQ>0) THEN
                 XDENSITY_SLT, XMOLARWEIGHT_SLT, ZCONVERTFACM0_SLT, ZCONVERTFACM6_SLT, &
                 ZCONVERTFACM3_SLT, LVARSIG_SLT, LRGFIX_SLT, CVERMOD  )  
   !
-  CALL MASSFLUX2MOMENTFLUX(         &
-                PSFTS(:,IBEG:IEND), & !I/O ![kg/m2/sec] In: flux of only mass, out: flux of moments
+  CALL MASSFLUX2MOMENTFLUX(                     &
+                PSFTS(:,IBEG:IEND),             & !I/O [kg/m2/sec] In: flux of only mass, out: flux of moments
                 PRHOA,                          & !I [kg/m3] air density
-                SLT%XEMISRADIUS_SLT,            &!I [um] emitted radius for the modes (max 3)
-                SLT%XEMISSIG_SLT,               &!I [-] emitted sigma for the different modes (max 3)
+                SLT%XEMISRADIUS_SLT,            & !I [um] emitted radius for the modes (max 3)
+                SLT%XEMISSIG_SLT,               & !I [-] emitted sigma for the different modes (max 3)
                 NSLTMDE,                        &
                 ZCONVERTFACM0_SLT,              &
                 ZCONVERTFACM6_SLT,              &

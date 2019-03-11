@@ -128,6 +128,7 @@ END MODULE MODI_READ_ALL_DATA_GRIB_CASE
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!         Pergaud  : 2018 add GFS
 !!                   01/2019 (G.Delautier via Q.Rodier) for GRIB2 ARPEGE and AROME from EPYGRAM
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !-------------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -153,6 +154,7 @@ USE MODI_INI_CTURB
 USE MODI_CH_OPEN_INPUT
 !
 USE MODD_IO, ONLY: TFILEDATA
+USE MODD_FIELD_n, ONLY: XZWS
 USE MODD_CONF
 USE MODD_CONF_n
 USE MODD_CST
@@ -325,6 +327,7 @@ INTEGER                            :: IMI
 TYPE(TFILEDATA),POINTER             :: TZFILE
 INTEGER, DIMENSION(JP_GFS)    :: IP_GFS   ! list of pressure levels for GFS model
 INTEGER :: IVERSION,ILEVTYPE
+LOGICAL                                       :: GFIND  ! to test if sea wave height is found
 !---------------------------------------------------------------------------------------
 IP_GFS=(/1000,975,950,925,900,850,800,750,700,650,600,550,500,450,400,350,300,&
            250,200,150,100,70,50,30,20,10/)!
@@ -564,6 +567,55 @@ ELSE IF (HFILE=='CHEM') THEN
   CALL ARRAY_1D_TO_2D (INO,ZOUT,IIU,IJU,XZS_SV_LS)
 END IF
 DEALLOCATE (ZOUT)
+!
+! *** BEGIN MODIF SB ADD HS ***
+!---------------------------------------------------------------------------------------
+!* 2.3 bis Read and interpol Sea Wave significant height
+!---------------------------------------------------------------------------------------
+WRITE (ILUOUT0,'(A)') ' | Searching sea wave significant height'
+SELECT CASE (IMODEL)
+  CASE(0) ! ECMWF
+    ALLOCATE (XZWS(IIU,IJU))
+    GFIND=.FALSE.
+    !    
+    CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=140229)
+    IF(INUM < 0) THEN
+      CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=229)
+      !
+      IF(INUM < 0) THEN
+        WRITE (ILUOUT0,'(A)')' | !!! WARNING !!! Sea wave height is missing in '// &
+               'the GRIB file - the default value of 2 meters is used'
+        XZWS = 2.0       
+      ELSE
+        GFIND=.TRUE.
+      END IF
+    ELSE
+      GFIND=.TRUE. 
+    END IF
+  !
+  IF(GFIND) THEN
+    !!!!!!!!!!! Faire en sorte de le faire que pour le CASE(0)
+    ! Sea wave significant height disponible uniquement pour ECMWF
+    ! recuperation du tableau de valeurs
+    CALL GRIB_GET_SIZE(IGRIB(INUM),'values',ISIZE)
+    ALLOCATE(IINLO(INJ))
+    CALL COORDINATE_CONVERSION(IMODEL,IGRIB(INUM),IIU,IJU,ZLONOUT,ZLATOUT,&
+          ZXOUT,ZYOUT,INI,ZPARAM,IINLO)
+    ALLOCATE(ZVALUE(ISIZE))
+    CALL GRIB_GET(IGRIB(INUM),'values',ZVALUE)
+    ! Change 9999 value to -1
+    WHERE(ZVALUE.EQ.9999.) ZVALUE=0.
+    ALLOCATE(ZOUT(INO))
+    CALL HORIBL(ZPARAM(3),ZPARAM(4),ZPARAM(5),ZPARAM(6),INT(ZPARAM(2)),IINLO,INI, &
+              ZVALUE,INO,ZXOUT,ZYOUT,ZOUT,.FALSE.,PTIME_HORI,.FALSE.)
+    DEALLOCATE(IINLO)
+    DEALLOCATE(ZVALUE)
+    ! Stores the field in a 2 dimension array
+    CALL ARRAY_1D_TO_2D (INO,ZOUT,IIU,IJU,XZWS)
+    DEALLOCATE (ZOUT)
+  END IF
+END SELECT
+  ! *** END MODIF SB ADD HS ***
 !
 !---------------------------------------------------------------------------------------
 !* 2.4 Interpolation surface pressure
@@ -1880,14 +1932,15 @@ INTEGER :: ILUOUT0   ! Logical unit number of the listing
 ILUOUT0 = TLUOUT0%NLU
 !
 ISEARCH=0
+! Initialize as not found
+KNUM = -1
+!
 IF (PRESENT(KPARAM)) ISEARCH=ISEARCH+1
 IF (PRESENT(KDIS)) ISEARCH=ISEARCH+1
 IF (PRESENT(KCAT)) ISEARCH=ISEARCH+1
 IF (PRESENT(KNUMBER)) ISEARCH=ISEARCH+1
 IF (PRESENT(KLEV1)) ISEARCH=ISEARCH+1
-
-
-
+!
 DO JLOOP=1,SIZE(KGRIB)
       IFOUND = 0
       ! 
@@ -1980,16 +2033,15 @@ DO JLOOP=1,SIZE(KGRIB)
           CYCLE
         ENDIF
       ENDIF
-      ! 
+      !
       IF (IFOUND == ISEARCH) THEN
           KNUM=JLOOP
           EXIT
       ELSE  ! field not found
           KNUM=-1
       END IF
- 
 END DO
-
+!
 END SUBROUTINE SEARCH_FIELD
 !#################################################################################
 SUBROUTINE COORDINATE_CONVERSION(KMODEL,KGRIB,KNOLON,KNOLARG,&

@@ -11,7 +11,7 @@ SUBROUTINE COUPLING_SEAFLUX_SBL_n (CHS, DTS, DGS, O, OR, G, S, SB, DST, SLT,    
                                   PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV,                          &
                                   PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF,      &
                                   PPEW_A_COEF, PPEW_B_COEF, PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF,  &
-                                  PPEQ_B_COEF, HTEST                                             )
+                                  PPEQ_B_COEF, PZWS, HTEST                                           )
 !     ###############################################################################
 !
 !!****  *COUPLING_SEAFLUX_SBL_n * - Adds a SBL into SEAFLUX
@@ -38,6 +38,7 @@ SUBROUTINE COUPLING_SEAFLUX_SBL_n (CHS, DTS, DGS, O, OR, G, S, SB, DST, SLT,    
 !!      S. Riette   10/2009 Iterative computation of XZ0
 !!      S. Riette   01/2010 Use of interpol_sbl to compute 10m wind diagnostic
 !!      B. Decharme  04/2013 new coupling variables
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !----------------------------------------------------------------
 !
 !
@@ -122,6 +123,7 @@ REAL, DIMENSION(KI), INTENT(IN)  :: PLW       ! longwave radiation (on horizonta
 !                                             !                                       (W/m2)
 REAL, DIMENSION(KI), INTENT(IN)  :: PPS       ! pressure at atmospheric model surface (Pa)
 REAL, DIMENSION(KI), INTENT(IN)  :: PPA       ! pressure at forcing level             (Pa)
+REAL, DIMENSION(KI), INTENT(IN)  :: PZWS      ! significant sea wave                  (m)
 REAL, DIMENSION(KI), INTENT(IN)  :: PCO2      ! CO2 concentration in the air          (kg/m3)
 REAL, DIMENSION(KI), INTENT(IN)  :: PSNOW     ! snow precipitation                    (kg/m2/s)
 REAL, DIMENSION(KI), INTENT(IN)  :: PRAIN     ! liquid precipitation                  (kg/m2/s)
@@ -302,7 +304,7 @@ END IF
              PSV, PCO2, HSV, PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS, ZPA,&
              PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV, PTRAD, PDIR_ALB, PSCA_ALB,      &
              PEMIS, PTSURF, PZ0, PZ0H, PQSURF, ZPEW_A_COEF, ZPEW_B_COEF,              &
-             ZPET_A_COEF, ZPEQ_A_COEF, ZPET_B_COEF, ZPEQ_B_COEF, HTEST)
+             ZPET_A_COEF, ZPEQ_A_COEF, ZPET_B_COEF, ZPEQ_B_COEF, PZWS, HTEST)
 !
 !-------------------------------------------------------------------------------------
 !
