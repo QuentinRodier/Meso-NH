@@ -15,6 +15,7 @@
 !                          (nsubfiles_ioz is now determined in IO_File_add2list)
 !  P. Wautelet 18/02/2019: bugfixes for nsubfiles_ioz
 !  P. Wautelet 05/03/2019: rename IO subroutines and modules
+!  P. Wautelet 12/03/2019: add TMAINFILE field in TFILEDATA
 !-----------------------------------------------------------------
 MODULE MODE_IO_MANAGE_STRUCT
 !
@@ -630,6 +631,7 @@ SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN)
             ELSE
               CALL PRINT_MSG(NVERB_FATAL,'IO','POPULATE_STRUCT','unknown backup/output fileformat')
             ENDIF
+            TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%TMAINFILE => TPBAKOUTN(IPOS)%TFILE
           END DO
         END IF
         !
@@ -816,6 +818,8 @@ if ( gsplit_ioz ) then
       tpfile%nsubfiles_ioz = nb_procio_w
   end select
   if (tpfile%nsubfiles_ioz == 1) tpfile%nsubfiles_ioz = 0
+else
+  tpfile%nsubfiles_ioz = 0
 end if
 
 SELECT CASE(TPFILE%CTYPE)
@@ -1047,19 +1051,22 @@ ELSE
   TZFILE => TFILE_FIRST
 END IF
 !
-WRITE (*,'( /,A28," ",A13," ",A7," ",A7," ",A7," ",A7," ",A6," ",A6," ",A5," ",A6," ",A13)' ) 'CNAME                       ', &
-      'CTYPE        ','CFORMAT','CMODE  ','LOPENED','NLFIFLU','NNCID','NLU','NOPEN','NCLOSE','NOPEN_CURRENT'
+WRITE (*,'( /,A28," ",A13," ",A7," ",A7," ",A7," ",A7," ",A6," ",A6," ",A5," ",A6," ",A13," ",A13)' ) &
+      'CNAME                       ', &
+      'CTYPE        ','CFORMAT','CMODE  ','LOPENED','NLFIFLU','NNCID','NLU','NOPEN','NCLOSE','NOPEN_CURRENT','NSUBFILES_IOZ'
 WRITE (*,'( A,A )') '--------------------------------------------------------------------------------------------------------', &
-                    '-----------'
-WRITE (*,'(A28," ",A13," ",A7," ",A7," ",L7," ",I7," ",I6," ",I6," ",I5," ",I6," ",I13)' ) &
+                    '------------------------'
+WRITE (*,'(A28," ",A13," ",A7," ",A7," ",L7," ",I7," ",I6," ",I6," ",I5," ",I6," ",I13," ",I13)' ) &
       TZFILE%CNAME,TZFILE%CTYPE,TZFILE%CFORMAT,&
-      TZFILE%CMODE,TZFILE%LOPENED,TZFILE%NLFIFLU,TZFILE%NNCID,TZFILE%NLU,TZFILE%NOPEN,TZFILE%NCLOSE,TZFILE%NOPEN_CURRENT
+      TZFILE%CMODE,TZFILE%LOPENED,TZFILE%NLFIFLU,TZFILE%NNCID,TZFILE%NLU,TZFILE%NOPEN,TZFILE%NCLOSE,TZFILE%NOPEN_CURRENT,&
+      TZFILE%NSUBFILES_IOZ
 !
 DO WHILE (ASSOCIATED(TZFILE%TFILE_NEXT))
   TZFILE => TZFILE%TFILE_NEXT
-  WRITE (*,'(A28," ",A13," ",A7," ",A7," ",L7," ",I7," ",I6," ",I6," ",I5," ",I6," ",I13)' ) &
+  WRITE (*,'(A28," ",A13," ",A7," ",A7," ",L7," ",I7," ",I6," ",I6," ",I5," ",I6," ",I13," ",I13)' ) &
         TZFILE%CNAME,TZFILE%CTYPE,TZFILE%CFORMAT,&
-        TZFILE%CMODE,TZFILE%LOPENED,TZFILE%NLFIFLU,TZFILE%NNCID,TZFILE%NLU,TZFILE%NOPEN,TZFILE%NCLOSE,TZFILE%NOPEN_CURRENT
+        TZFILE%CMODE,TZFILE%LOPENED,TZFILE%NLFIFLU,TZFILE%NNCID,TZFILE%NLU,TZFILE%NOPEN,TZFILE%NCLOSE,TZFILE%NOPEN_CURRENT,&
+        TZFILE%NSUBFILES_IOZ
 END DO
 WRITE (*,'(/)')
 !

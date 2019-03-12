@@ -7,7 +7,7 @@
 !  D. Gazen, P. Wautelet
 ! Modifications:
 !  J. Escobar  19/08/2005: bug argument optinonel ACCESS --> YACCESS
-!  J. Escobar  22/05/2008: bug mode SPECIFIC in OPEN_ll
+!  J. Escobar  22/05/2008: bug mode SPECIFIC in IO_File_doopen
 !  J. Escobar  05/11/2009: allow JPMAX_UNIT=48 open files
 !  J. Escobar  18/10/2010: bug with PGI compiler on ADJUSTL
 !  P. Wautelet 04/02/2016: bug with DELIM='NONE' and GCC 5.2/5.3
@@ -25,7 +25,7 @@
 !  P. Wautelet 10/01/2019: bug: modify some metadata before open calls
 !  P. Wautelet 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll to allow
 !                                 to disable writes (for bench purposes)
-!  P. Wautelet 06/02/2019: simplify OPEN_ll and do somme assignments at a more logical place
+!  P. Wautelet 06/02/2019: simplify IO_File_doopen and do somme assignments at a more logical place
 !  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
 !                          (nsubfiles_ioz is now determined in IO_File_add2list)
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
@@ -35,7 +35,7 @@
 !  P. Wautelet 27/02/2019: remove CLOSE_ll subroutine
 !  P. Wautelet 01/03/2019: move open/close subroutines to mode_io_file.f90
 !  P. Wautelet 05/03/2019: rename IO subroutines and modules
-!
+!  P. Wautelet 12/03/2019: simplify opening of IO split files
 !-----------------------------------------------------------------
 module mode_io_file
 
@@ -53,23 +53,28 @@ public :: IO_File_close, IO_File_open
 contains
 
 
-recursive SUBROUTINE IO_File_open(TPFILE,KRESP,HPOSITION,HSTATUS,HPROGRAM_ORIG)
+recursive SUBROUTINE IO_File_open(TPFILE,KRESP,kmasterrank, HPOSITION,HSTATUS,HPROGRAM_ORIG)
 !
 USE MODD_CONF,             ONLY: CPROGRAM
-USE MODD_IO,               ONLY: LIO_NO_WRITE
+USE MODD_IO,               ONLY: ISNPROC, LIO_NO_WRITE
 !
-USE MODE_IO,               ONLY: GCONFIO
-USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_add2list, IO_File_find_byname
+use mode_io,               only: gconfio
+use mode_io_manage_struct, only: IO_File_add2list, IO_File_find_byname
+use mode_io_tools,         only: IO_Rank_master_get
 !
-TYPE(TFILEDATA), POINTER, INTENT(INOUT)         :: TPFILE ! File structure
-INTEGER,                  INTENT(OUT), OPTIONAL :: KRESP  ! Return code
-CHARACTER(LEN=*),         INTENT(IN),  OPTIONAL :: HPOSITION
-CHARACTER(LEN=*),         INTENT(IN),  OPTIONAL :: HSTATUS
-CHARACTER(LEN=*),         INTENT(IN),  OPTIONAL :: HPROGRAM_ORIG !To emulate a file coming from this program
+TYPE(TFILEDATA),  POINTER,  INTENT(INOUT) :: TPFILE ! File structure
+INTEGER,          optional, INTENT(OUT)   :: KRESP  ! Return code
+integer,          optional, intent(in)    :: kmasterrank !Rank of the master process
+CHARACTER(LEN=*), optional, INTENT(IN)    :: HPOSITION
+CHARACTER(LEN=*), optional, INTENT(IN)    :: HSTATUS
+CHARACTER(LEN=*), optional, INTENT(IN)    :: HPROGRAM_ORIG !To emulate a file coming from this program
 !
+CHARACTER(len=5)         :: YFILE
+INTEGER                  :: IFILE, IRANK_PROCIO
 INTEGER                  :: IRESP
 TYPE(TFILEDATA), POINTER :: TZFILE_DES
 TYPE(TFILEDATA), POINTER :: TZFILE_DUMMY
+TYPE(TFILEDATA), POINTER :: TZFILE_SPLIT
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_File_open','opening '//TRIM(TPFILE%CNAME)//' for '//TRIM(TPFILE%CMODE)// &
                ' (filetype='//TRIM(TPFILE%CTYPE)//')')
@@ -83,6 +88,7 @@ END IF
 !
 TZFILE_DES   => NULL()
 TZFILE_DUMMY => NULL()
+TZFILE_SPLIT => NULL()
 !
 TPFILE%NOPEN         = TPFILE%NOPEN + 1
 TPFILE%NOPEN_CURRENT = TPFILE%NOPEN_CURRENT + 1
@@ -101,65 +107,98 @@ IF (IRESP/=0) CALL PRINT_MSG(NVERB_ERROR,'IO','IO_File_open','file '//TRIM(TPFIL
 SELECT CASE(TPFILE%CTYPE)
   !Chemistry input files
   CASE('CHEMINPUT')
-    CALL OPEN_ll(TPFILE,IRESP,HPOSITION='REWIND',HSTATUS='OLD',HMODE='GLOBAL')
+    CALL IO_File_doopen(TPFILE,IRESP,HPOSITION='REWIND',HSTATUS='OLD',HMODE='GLOBAL')
 
 
   !Chemistry tabulation files
   CASE('CHEMTAB')
-    CALL OPEN_ll(TPFILE,IRESP,HMODE='GLOBAL')
+    CALL IO_File_doopen(TPFILE,IRESP,HMODE='GLOBAL')
 
 
   !DES files
   CASE('DES')
-    CALL OPEN_ll(TPFILE,IRESP,HDELIM='QUOTE')
+    CALL IO_File_doopen(TPFILE,IRESP,HDELIM='QUOTE')
 
 
   !GPS files
   CASE('GPS')
-    CALL OPEN_ll(TPFILE,IRESP,HMODE='SPECIFIC')
+    CALL IO_File_doopen(TPFILE,IRESP,HMODE='SPECIFIC')
 
 
   !Meteo files
   CASE('METEO')
-   CALL OPEN_ll(TPFILE,IRESP,HMODE='GLOBAL')
+   CALL IO_File_doopen(TPFILE,IRESP,HMODE='GLOBAL')
 
 
   !Namelist files
   CASE('NML')
-    CALL OPEN_ll(TPFILE,IRESP,HDELIM='QUOTE',HMODE='GLOBAL')
+    CALL IO_File_doopen(TPFILE,IRESP,HDELIM='QUOTE',HMODE='GLOBAL')
 
 
   !OUTPUTLISTING files
   CASE('OUTPUTLISTING')
-    CALL OPEN_ll(TPFILE,IRESP,HMODE='GLOBAL')
+    CALL IO_File_doopen(TPFILE,IRESP,HMODE='GLOBAL')
 
 
   !SURFACE_DATA files
   CASE('SURFACE_DATA')
-    CALL OPEN_ll(TPFILE,IRESP,HMODE='GLOBAL')
+    CALL IO_File_doopen(TPFILE,IRESP,HMODE='GLOBAL')
 
 
   !Text files
   CASE('TXT')
-    CALL OPEN_ll(TPFILE,IRESP,HPOSITION=HPOSITION,HSTATUS=HSTATUS,HMODE='GLOBAL')
+    CALL IO_File_doopen(TPFILE,IRESP,HPOSITION=HPOSITION,HSTATUS=HSTATUS,HMODE='GLOBAL')
 
 
   !MesoNH files
   !Remark: 'MNH' is more general than MNHBACKUP and could be in fact a MNHBACKUP file
   CASE ('MNH', 'MNHBACKUP', 'MNHDIACHRONIC', 'MNHDIAG', 'MNHOUTPUT', 'PGD')
     if (.not.GCONFIO) CALL PRINT_MSG(NVERB_FATAL,'IO','IO_File_open','IO_Config_set must be called before IO_File_open')
-    !Do not open '.des' file if OUTPUT
-    IF(TPFILE%CTYPE/='MNHOUTPUT' .AND. CPROGRAM/='LFICDF') THEN
+
+    !Do not open '.des' file if OUTPUT or if is a "subfile" (tmainfile is associated)
+    IF(TPFILE%CTYPE/='MNHOUTPUT' .AND. CPROGRAM/='LFICDF' .and. .not.associated(tpfile%tmainfile) ) THEN
       !OOLD=T because the file may already be in the list
       CALL IO_File_add2list(TZFILE_DES,TRIM(TPFILE%CNAME)//'.des','DES',TPFILE%CMODE,TPDATAFILE=TPFILE,OOLD=.TRUE.)
       CALL IO_File_open(TZFILE_DES,HPROGRAM_ORIG=HPROGRAM_ORIG)
     ENDIF
 
-    CALL OPEN_ll(TPFILE,IRESP,HMODE='IO_ZSPLIT',HPROGRAM_ORIG=HPROGRAM_ORIG)
+    !Manage split files
+    IF (TPFILE%NSUBFILES_IOZ > 0) THEN
+      IF (.NOT.ALLOCATED(TPFILE%TFILES_IOZ)) THEN
+        ALLOCATE(TPFILE%TFILES_IOZ(TPFILE%NSUBFILES_IOZ))
+      ELSE IF ( SIZE(TPFILE%TFILES_IOZ) /= TPFILE%NSUBFILES_IOZ ) THEN
+        CALL PRINT_MSG(NVERB_FATAL,'IO','IO_File_open','SIZE(TPFILE%TFILES_IOZ) /= TPFILE%NSUBFILES_IOZ for '//TRIM(TPFILE%CNAME))
+      END IF
 
-    call IO_File_check_format_exist( tpfile )
+      DO IFILE=1,TPFILE%NSUBFILES_IOZ
+        IRANK_PROCIO = 1 + IO_Rank_master_get( IFILE-1, ISNPROC, TPFILE%NSUBFILES_IOZ )
+        WRITE(YFILE ,'(".Z",i3.3)') IFILE
 
-    call IO_File_open_format( tpfile )
+        tzfile_split => null()
+        CALL IO_File_find_byname(TRIM(TPFILE%CNAME)//TRIM(YFILE),TZFILE_SPLIT,IRESP)
+
+        IF (IRESP/=0) THEN !File not yet in filelist => add it (nothing to do if already in list)
+          IF (ALLOCATED(TPFILE%CDIRNAME)) THEN
+            CALL IO_File_add2list(TZFILE_SPLIT,TRIM(TPFILE%CNAME)//TRIM(YFILE),TPFILE%CTYPE,TPFILE%CMODE,        &
+                                  HDIRNAME=TPFILE%CDIRNAME,                                                     &
+                                  KLFINPRAR=TPFILE%NLFINPRAR,KLFITYPE=TPFILE%NLFITYPE,KLFIVERB=TPFILE%NLFIVERB, &
+                                  HFORMAT=TPFILE%CFORMAT,osplit_ioz=.false.)
+          ELSE
+            CALL IO_File_add2list(TZFILE_SPLIT,TRIM(TPFILE%CNAME)//TRIM(YFILE),TPFILE%CTYPE,TPFILE%CMODE,        &
+                                  KLFINPRAR=TPFILE%NLFINPRAR,KLFITYPE=TPFILE%NLFITYPE,KLFIVERB=TPFILE%NLFIVERB, &
+                                  HFORMAT=TPFILE%CFORMAT,osplit_ioz=.false.)
+          END IF
+
+          TZFILE_SPLIT%TMAINFILE => TPFILE
+        END IF
+
+        TPFILE%TFILES_IOZ(IFILE)%TFILE => TZFILE_SPLIT
+
+        CALL IO_File_open(TZFILE_SPLIT, kmasterrank=IRANK_PROCIO,HPROGRAM_ORIG=HPROGRAM_ORIG)
+      END DO
+    end if
+
+    CALL IO_File_doopen(TPFILE,IRESP,kmasterrank=kmasterrank,HMODE='MASTER',HPROGRAM_ORIG=HPROGRAM_ORIG)
 
 
   CASE DEFAULT
@@ -171,319 +210,279 @@ IF (PRESENT(KRESP)) KRESP = IRESP
 END SUBROUTINE IO_File_open
 
 
-SUBROUTINE OPEN_ll(TPFILE, KRESP, HMODE, HSTATUS, HPOSITION, HDELIM, HPROGRAM_ORIG)
+SUBROUTINE IO_File_doopen(TPFILE, KRESP, kmasterrank, HMODE, HSTATUS, HPOSITION, HDELIM, HPROGRAM_ORIG)
 
-  use modd_io,     only: ISNPROC, ISP, LVERB_ALLPRC, nio_rank, NNULLUNIT
-  use modd_var_ll, only : nmnh_comm_world
+use modd_io,     only: ISP, LVERB_ALLPRC, nio_rank, NNULLUNIT
+use modd_var_ll, only: nmnh_comm_world
 
-  USE MODE_IO_MANAGE_STRUCT,    ONLY: IO_File_add2list, IO_File_find_byname
-  use mode_io_tools,            only: IO_Rank_master_get
-  use mode_tools,               only: upcase
+use mode_tools,  only: upcase
 
-    TYPE(TFILEDATA),            INTENT(INOUT) :: TPFILE
-    INTEGER,                    INTENT(OUT)   :: KRESP
-    CHARACTER(len=*), OPTIONAL, INTENT(IN)    :: HMODE
-    CHARACTER(len=*), OPTIONAL, INTENT(IN)    :: HSTATUS
-    CHARACTER(len=*), OPTIONAL, INTENT(IN)    :: HPOSITION
-    CHARACTER(len=*), OPTIONAL, INTENT(IN)    :: HDELIM
-    CHARACTER(LEN=*), OPTIONAL, INTENT(IN)    :: HPROGRAM_ORIG !To emulate a file coming from this program
-    !
-    ! local var
-    !
-    INTEGER, PARAMETER :: RECL_DEF = 10000
-    !
-    CHARACTER(len=5)             :: YFILE
-    CHARACTER(len=20)            :: YSTATUS
-    CHARACTER(len=20)            :: YPOSITION
-    CHARACTER(len=20)            :: YDELIM
-    CHARACTER(len=20)            :: YACTION
-    CHARACTER(len=20)            :: YMODE
-    CHARACTER(LEN=256)           :: YIOERRMSG
-    CHARACTER(LEN=:),ALLOCATABLE :: YPREFILENAME !To store the directory + filename
-    INTEGER                      :: IFILE, IRANK_PROCIO
-    INTEGER                      :: YRECL
-    INTEGER                      :: IOS, IRESP
-    TYPE(TFILEDATA),POINTER      :: TZSPLITFILE
+TYPE(TFILEDATA), pointer,   INTENT(INOUT) :: TPFILE
+INTEGER,                    INTENT(OUT)   :: KRESP
+integer,          optional, intent(in)    :: kmasterrank !Rank of the master process
+CHARACTER(len=*), OPTIONAL, INTENT(IN)    :: HMODE
+CHARACTER(len=*), OPTIONAL, INTENT(IN)    :: HSTATUS
+CHARACTER(len=*), OPTIONAL, INTENT(IN)    :: HPOSITION
+CHARACTER(len=*), OPTIONAL, INTENT(IN)    :: HDELIM
+CHARACTER(LEN=*), OPTIONAL, INTENT(IN)    :: HPROGRAM_ORIG !To emulate a file coming from this program
+!
+! local var
+!
+INTEGER, PARAMETER :: RECL_DEF = 10000
+!
+CHARACTER(len=20)            :: YSTATUS
+CHARACTER(len=20)            :: YPOSITION
+CHARACTER(len=20)            :: YDELIM
+CHARACTER(len=20)            :: YACTION
+CHARACTER(len=20)            :: YMODE
+CHARACTER(LEN=256)           :: YIOERRMSG
+CHARACTER(LEN=:),ALLOCATABLE :: YPREFILENAME !To store the directory + filename
+integer                      :: imasterrank
+INTEGER                      :: irecl
+INTEGER                      :: IOS
 
-    CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','opening '//TRIM(TPFILE%CNAME)//' for '//TRIM(TPFILE%CMODE))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_File_doopen','opening '//TRIM(TPFILE%CNAME)//' for '//TRIM(TPFILE%CMODE))
 
-    IOS = 0
+IOS = 0
 
-    IF (PRESENT(HMODE)) THEN
-       YMODE = HMODE
-       YMODE = UPCASE(TRIM(ADJUSTL(YMODE)))
+if ( present( kmasterrank ) ) then
+  imasterrank = kmasterrank
+else
+  imasterrank = nio_rank
+end if
+
+IF (PRESENT(HMODE)) THEN
+  YMODE = HMODE
+  YMODE = UPCASE(TRIM(ADJUSTL(YMODE)))
+ELSE
+  YMODE = 'GLOBAL'         ! Default Mode
+END IF
+
+YACTION = TPFILE%CMODE
+YACTION = UPCASE(TRIM(ADJUSTL(YACTION)))
+IF (YACTION /= "READ" .AND. YACTION /= "WRITE") THEN
+  KRESP = 99
+  TPFILE%NLU = -1
+  CALL PRINT_MSG(NVERB_ERROR,'IO','IO_File_doopen','action='//TRIM(YACTION)//' not supported')
+  RETURN
+END IF
+
+if (       trim(ymode) /= 'GLOBAL'    .and. trim(ymode) /= 'SPECIFIC' &
+     .and. trim(ymode) /= 'IO_ZSPLIT' .and. trim(ymode) /= 'MASTER'   ) then
+  KRESP = 99
+  TPFILE%NLU = -1
+  CALL PRINT_MSG(NVERB_ERROR,'IO','IO_File_doopen','ymode='//TRIM(YMODE)//' not supported')
+  RETURN
+end if
+
+IF (PRESENT(HSTATUS)) THEN
+  YSTATUS=HSTATUS
+ELSE
+  YSTATUS='UNKNOWN'
+ENDIF
+
+IF (TPFILE%NRECL == -1) THEN
+  irecl = RECL_DEF
+ELSE
+  irecl = TPFILE%NRECL
+END IF
+
+IF (PRESENT(HPOSITION)) THEN
+  YPOSITION=HPOSITION
+ELSE
+  YPOSITION='ASIS'
+ENDIF
+IF (PRESENT(HDELIM)) THEN
+  YDELIM=HDELIM
+ELSE
+  YDELIM='NONE'
+ENDIF
+
+IF (ALLOCATED(TPFILE%CDIRNAME)) THEN
+  IF(LEN_TRIM(TPFILE%CDIRNAME)>0) THEN
+    YPREFILENAME = TRIM(TPFILE%CDIRNAME)//'/'//TRIM(TPFILE%CNAME)
+  ELSE
+    YPREFILENAME = TRIM(TPFILE%CNAME)
+  END IF
+ELSE
+  YPREFILENAME = TRIM(TPFILE%CNAME)
+END IF
+
+!NMPICOMM must be set before this select case (necessary for case MASTER)
+TPFILE%NMPICOMM = NMNH_COMM_WORLD
+
+SELECT CASE(YMODE)
+
+  CASE('GLOBAL')
+    IF (YACTION == 'READ') THEN
+      TPFILE%NMASTER_RANK  = -1
+      TPFILE%LMASTER       = .TRUE. !Every process read the file
+      TPFILE%LMULTIMASTERS = .TRUE.
     ELSE
-       YMODE = 'GLOBAL'         ! Default Mode
-    END IF
-
-    YACTION = TPFILE%CMODE
-    YACTION = UPCASE(TRIM(ADJUSTL(YACTION)))
-    IF (YACTION /= "READ" .AND. YACTION /= "WRITE") THEN
-       KRESP = 99
-       TPFILE%NLU = -1
-       CALL PRINT_MSG(NVERB_ERROR,'IO','OPEN_ll','action='//TRIM(YACTION)//' not supported')
-       RETURN
-    END IF
-
-    IF (.NOT. ANY(YMODE == (/'GLOBAL     ','SPECIFIC   ', 'IO_ZSPLIT  '/))) THEN
-       KRESP = 99
-       TPFILE%NLU = -1
-       CALL PRINT_MSG(NVERB_ERROR,'IO','OPEN_ll','ymode='//TRIM(YMODE)//' not supported')
-       RETURN
-    END IF
-
-    IF (PRESENT(HSTATUS)) THEN
-       YSTATUS=HSTATUS
-    ELSE
-       YSTATUS='UNKNOWN'
-    ENDIF
-
-    IF (TPFILE%NRECL == -1) THEN
-      YRECL = RECL_DEF
-    ELSE
-      YRECL = TPFILE%NRECL
-    END IF
-
-    IF (PRESENT(HPOSITION)) THEN
-       YPOSITION=HPOSITION
-    ELSE
-       YPOSITION='ASIS'
-    ENDIF
-    IF (PRESENT(HDELIM)) THEN
-       YDELIM=HDELIM
-    ELSE
-       YDELIM='NONE'
-    ENDIF
-
-    IF (ALLOCATED(TPFILE%CDIRNAME)) THEN
-      IF(LEN_TRIM(TPFILE%CDIRNAME)>0) THEN
-        YPREFILENAME = TRIM(TPFILE%CDIRNAME)//'/'//TRIM(TPFILE%CNAME)
-      ELSE
-        YPREFILENAME = TRIM(TPFILE%CNAME)
-      END IF
-    ELSE
-      YPREFILENAME = TRIM(TPFILE%CNAME)
-    END IF
-
-    SELECT CASE(YMODE)
-
-    CASE('GLOBAL')
-       IF (YACTION == 'READ') THEN
+      IF (TPFILE%CTYPE=='OUTPUTLISTING') THEN
+        IF (LVERB_ALLPRC) THEN
           TPFILE%NMASTER_RANK  = -1
-          TPFILE%LMASTER       = .TRUE. !Every process read the file
+          TPFILE%LMASTER       = .TRUE. !Every process may write in the file
           TPFILE%LMULTIMASTERS = .TRUE.
-       ELSE
-          IF (TPFILE%CTYPE=='OUTPUTLISTING') THEN
-            IF (LVERB_ALLPRC) THEN
-              TPFILE%NMASTER_RANK  = -1
-              TPFILE%LMASTER       = .TRUE. !Every process may write in the file
-              TPFILE%LMULTIMASTERS = .TRUE.
-            ELSE
-              TPFILE%NMASTER_RANK  = nio_rank
-              TPFILE%LMASTER       = (ISP == nio_rank)
-              TPFILE%LMULTIMASTERS = .FALSE.
-            END IF
-          ELSE
-            TPFILE%NMASTER_RANK  = nio_rank
-            TPFILE%LMASTER       = (ISP == nio_rank)
-            TPFILE%LMULTIMASTERS = .FALSE.
-          END IF
-       END IF
-       TPFILE%NSUBFILES_IOZ = 0
+        ELSE
+          TPFILE%NMASTER_RANK  = imasterrank
+          TPFILE%LMASTER       = (ISP == imasterrank)
+          TPFILE%LMULTIMASTERS = .FALSE.
+        END IF
+      ELSE
+        TPFILE%NMASTER_RANK  = imasterrank
+        TPFILE%LMASTER       = (ISP == imasterrank)
+        TPFILE%LMULTIMASTERS = .FALSE.
+      END IF
+    END IF
+    TPFILE%NSUBFILES_IOZ = 0
 
-       IF (TPFILE%LMASTER) THEN
-          !! I/O processor case
-          !JUAN : 31/03/2000 modif pour acces direct
-          IF (TPFILE%CACCESS=='STREAM') THEN
-             OPEN(NEWUNIT=TPFILE%NLU,     &
-                  FILE=TRIM(YPREFILENAME),&
-                  STATUS=YSTATUS,         &
-                  ACCESS=TPFILE%CACCESS,  &
-                  IOSTAT=IOS,             &
-                  IOMSG=YIOERRMSG,        &
-                  FORM=TPFILE%CFORM,      &
-                  ACTION=YACTION)
-          ELSEIF (TPFILE%CACCESS=='DIRECT') THEN
-             OPEN(NEWUNIT=TPFILE%NLU,     &
-                  FILE=TRIM(YPREFILENAME),&
-                  STATUS=YSTATUS,         &
-                  ACCESS=TPFILE%CACCESS,  &
-                  IOSTAT=IOS,             &
-                  IOMSG=YIOERRMSG,        &
-                  FORM=TPFILE%CFORM,      &
-                  RECL=YRECL,             &
-                  ACTION=YACTION)
+    IF (TPFILE%LMASTER) THEN
+      !! I/O processor case
+      !JUAN : 31/03/2000 modif pour acces direct
+      IF (TPFILE%CACCESS=='STREAM') THEN
+        OPEN(NEWUNIT=TPFILE%NLU,     &
+             FILE=TRIM(YPREFILENAME),&
+             STATUS=YSTATUS,         &
+             ACCESS=TPFILE%CACCESS,  &
+             IOSTAT=IOS,             &
+             IOMSG=YIOERRMSG,        &
+             FORM=TPFILE%CFORM,      &
+             ACTION=YACTION)
+      ELSEIF (TPFILE%CACCESS=='DIRECT') THEN
+        OPEN(NEWUNIT=TPFILE%NLU,     &
+             FILE=TRIM(YPREFILENAME),&
+             STATUS=YSTATUS,         &
+             ACCESS=TPFILE%CACCESS,  &
+             IOSTAT=IOS,             &
+             IOMSG=YIOERRMSG,        &
+             FORM=TPFILE%CFORM,      &
+             RECL=irecl,             &
+             ACTION=YACTION)
+      ELSE
+        IF (TPFILE%CFORM=="FORMATTED") THEN
+          IF (YACTION=='READ') THEN
+            OPEN(NEWUNIT=TPFILE%NLU,     &
+                 FILE=TRIM(YPREFILENAME),&
+                 STATUS=YSTATUS,         &
+                 ACCESS=TPFILE%CACCESS,  &
+                 IOSTAT=IOS,             &
+                 IOMSG=YIOERRMSG,        &
+                 FORM=TPFILE%CFORM,      &
+                 RECL=irecl,             &
+                 POSITION=YPOSITION,     &
+                 ACTION=YACTION)
+                 !DELIM=YDELIM,          & !Philippe: commented because bug with GCC 5.X
           ELSE
-             IF (TPFILE%CFORM=="FORMATTED") THEN
-               IF (YACTION=='READ') THEN
-                OPEN(NEWUNIT=TPFILE%NLU,     &
-                     FILE=TRIM(YPREFILENAME),&
-                     STATUS=YSTATUS,         &
-                     ACCESS=TPFILE%CACCESS,  &
-                     IOSTAT=IOS,             &
-                     IOMSG=YIOERRMSG,        &
-                     FORM=TPFILE%CFORM,      &
-                     RECL=YRECL,             &
-                     POSITION=YPOSITION,     &
-                     ACTION=YACTION)
-                     !DELIM=YDELIM,          & !Philippe: commented because bug with GCC 5.X
-               ELSE
-                OPEN(NEWUNIT=TPFILE%NLU,     &
-                     FILE=TRIM(YPREFILENAME),&
-                     STATUS=YSTATUS,         &
-                     ACCESS=TPFILE%CACCESS,  &
-                     IOSTAT=IOS,             &
-                     IOMSG=YIOERRMSG,        &
-                     FORM=TPFILE%CFORM,      &
-                     RECL=YRECL,             &
-                     POSITION=YPOSITION,     &
-                     ACTION=YACTION,         &
-                     DELIM=YDELIM)
-               ENDIF
-             ELSE
-                OPEN(NEWUNIT=TPFILE%NLU,     &
-                     FILE=TRIM(YPREFILENAME),&
-                     STATUS=YSTATUS,         &
-                     ACCESS=TPFILE%CACCESS,  &
-                     IOSTAT=IOS,             &
-                     IOMSG=YIOERRMSG,        &
-                     FORM=TPFILE%CFORM,      &
-                     RECL=YRECL,             &
-                     POSITION=YPOSITION,     &
-                     ACTION=YACTION)
-             ENDIF
+            OPEN(NEWUNIT=TPFILE%NLU,     &
+                 FILE=TRIM(YPREFILENAME),&
+                 STATUS=YSTATUS,         &
+                 ACCESS=TPFILE%CACCESS,  &
+                 IOSTAT=IOS,             &
+                 IOMSG=YIOERRMSG,        &
+                 FORM=TPFILE%CFORM,      &
+                 RECL=irecl,             &
+                 POSITION=YPOSITION,     &
+                 ACTION=YACTION,         &
+                 DELIM=YDELIM)
           ENDIF
-
-          IF (IOS/=0) CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll','Problem when opening '//TRIM(YPREFILENAME)//': '//TRIM(YIOERRMSG))
-       ELSE
-          !! NON I/O processors case
-          IOS = 0
-          TPFILE%NLU = NNULLUNIT
-       END IF
-
-
-    CASE('SPECIFIC')
-       TPFILE%NMASTER_RANK  = -1
-       TPFILE%LMASTER       = .TRUE. !Every process use the file
-       TPFILE%LMULTIMASTERS = .TRUE.
-       TPFILE%NSUBFILES_IOZ = 0
-
-       IF (TPFILE%CACCESS=='DIRECT') THEN
-          OPEN(NEWUNIT=TPFILE%NLU,                    &
-               FILE=TRIM(YPREFILENAME)//SUFFIX(".P"), &
-               STATUS=YSTATUS,                        &
-               ACCESS=TPFILE%CACCESS,                 &
-               IOSTAT=IOS,                            &
-               IOMSG=YIOERRMSG,                       &
-               FORM=TPFILE%CFORM,                     &
-               RECL=YRECL,                            &
+        ELSE
+          OPEN(NEWUNIT=TPFILE%NLU,     &
+               FILE=TRIM(YPREFILENAME),&
+               STATUS=YSTATUS,         &
+               ACCESS=TPFILE%CACCESS,  &
+               IOSTAT=IOS,             &
+               IOMSG=YIOERRMSG,        &
+               FORM=TPFILE%CFORM,      &
+               RECL=irecl,             &
+               POSITION=YPOSITION,     &
                ACTION=YACTION)
-       ELSE
-        IF (YACTION=='READ') THEN
-          OPEN(NEWUNIT=TPFILE%NLU,                     &
-               FILE=TRIM(YPREFILENAME)//SUFFIX(".P"),  &
-               STATUS=YSTATUS,                         &
-               ACCESS=TPFILE%CACCESS,                  &
-               IOSTAT=IOS,                             &
-               IOMSG=YIOERRMSG,                        &
-               FORM=TPFILE%CFORM,                      &
-               RECL=YRECL,                             &
-               POSITION=YPOSITION,                     &
-               ACTION=YACTION)
-               !DELIM=YDELIM,         & !Philippe: commented because bug with GCC 5.X
-         ELSE
-          OPEN(NEWUNIT=TPFILE%NLU,                     &
-               FILE=TRIM(YPREFILENAME)//SUFFIX(".P"),  &
-               STATUS=YSTATUS,                         &
-               ACCESS=TPFILE%CACCESS,                  &
-               IOSTAT=IOS,                             &
-               IOMSG=YIOERRMSG,                        &
-               FORM=TPFILE%CFORM,                      &
-               RECL=YRECL,                             &
-               POSITION=YPOSITION,                     &
-               ACTION=YACTION,                         &
-               DELIM=YDELIM)
-         ENDIF
-       ENDIF
+        ENDIF
+      ENDIF
 
-       IF (IOS/=0) CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll','Problem when opening '//TRIM(YPREFILENAME)//': '//TRIM(YIOERRMSG))
+      IF ( IOS /= 0 ) &
+        CALL PRINT_MSG(NVERB_FATAL,'IO','IO_File_doopen','Problem when opening '//TRIM(YPREFILENAME)//': '//TRIM(YIOERRMSG))
+    ELSE
+      !! NON I/O processors case
+      IOS = 0
+      TPFILE%NLU = NNULLUNIT
+    END IF
 
 
+  CASE('SPECIFIC')
+    TPFILE%NMASTER_RANK  = -1
+    TPFILE%LMASTER       = .TRUE. !Every process use the file
+    TPFILE%LMULTIMASTERS = .TRUE.
+    TPFILE%NSUBFILES_IOZ = 0
 
-    CASE('IO_ZSPLIT')
-       TPFILE%NMASTER_RANK  = nio_rank
-       TPFILE%LMASTER       = (ISP == nio_rank)
-       TPFILE%LMULTIMASTERS = .FALSE.
+    IF (TPFILE%CACCESS=='DIRECT') THEN
+      OPEN(NEWUNIT=TPFILE%NLU,                    &
+           FILE=TRIM(YPREFILENAME)//SUFFIX(".P"), &
+           STATUS=YSTATUS,                        &
+           ACCESS=TPFILE%CACCESS,                 &
+           IOSTAT=IOS,                            &
+           IOMSG=YIOERRMSG,                       &
+           FORM=TPFILE%CFORM,                     &
+           RECL=irecl,                            &
+           ACTION=YACTION)
+    ELSE
+      IF (YACTION=='READ') THEN
+        OPEN(NEWUNIT=TPFILE%NLU,                     &
+             FILE=TRIM(YPREFILENAME)//SUFFIX(".P"),  &
+             STATUS=YSTATUS,                         &
+             ACCESS=TPFILE%CACCESS,                  &
+             IOSTAT=IOS,                             &
+             IOMSG=YIOERRMSG,                        &
+             FORM=TPFILE%CFORM,                      &
+             RECL=irecl,                             &
+             POSITION=YPOSITION,                     &
+             ACTION=YACTION)
+             !DELIM=YDELIM,         & !Philippe: commented because bug with GCC 5.X
+      ELSE
+        OPEN(NEWUNIT=TPFILE%NLU,                     &
+             FILE=TRIM(YPREFILENAME)//SUFFIX(".P"),  &
+             STATUS=YSTATUS,                         &
+             ACCESS=TPFILE%CACCESS,                  &
+             IOSTAT=IOS,                             &
+             IOMSG=YIOERRMSG,                        &
+             FORM=TPFILE%CFORM,                      &
+             RECL=irecl,                             &
+             POSITION=YPOSITION,                     &
+             ACTION=YACTION,                         &
+             DELIM=YDELIM)
+      ENDIF
+    ENDIF
 
-       IF (TPFILE%NSUBFILES_IOZ > 0) THEN
-          IF (.NOT.ALLOCATED(TPFILE%TFILES_IOZ)) THEN
-            ALLOCATE(TPFILE%TFILES_IOZ(TPFILE%NSUBFILES_IOZ))
-          ELSE IF ( SIZE(TPFILE%TFILES_IOZ) /= TPFILE%NSUBFILES_IOZ ) THEN
-            CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll','SIZE(TPFILE%TFILES_IOZ) /= TPFILE%NSUBFILES_IOZ for '//TRIM(TPFILE%CNAME))
-          END IF
-          DO IFILE=1,TPFILE%NSUBFILES_IOZ
-             IRANK_PROCIO = 1 + IO_Rank_master_get( IFILE-1, ISNPROC, TPFILE%NSUBFILES_IOZ )
-             WRITE(YFILE ,'(".Z",i3.3)') IFILE
+    IF ( IOS /= 0 ) &
+      CALL PRINT_MSG(NVERB_FATAL,'IO','IO_File_doopen','Problem when opening '//TRIM(YPREFILENAME)//': '//TRIM(YIOERRMSG))
 
-             CALL IO_File_find_byname(TRIM(TPFILE%CNAME)//TRIM(YFILE),TZSPLITFILE,IRESP)
 
-             IF (IRESP/=0) THEN !File not yet in filelist => add it (nothing to do if already in list)
-               IF (ALLOCATED(TPFILE%CDIRNAME)) THEN
-                 CALL IO_File_add2list(TZSPLITFILE,TRIM(TPFILE%CNAME)//TRIM(YFILE),TPFILE%CTYPE,TPFILE%CMODE,        &
-                                       HDIRNAME=TPFILE%CDIRNAME,                                                     &
-                                       KLFINPRAR=TPFILE%NLFINPRAR,KLFITYPE=TPFILE%NLFITYPE,KLFIVERB=TPFILE%NLFIVERB, &
-                                       HFORMAT=TPFILE%CFORMAT)
-               ELSE
-                 CALL IO_File_add2list(TZSPLITFILE,TRIM(TPFILE%CNAME)//TRIM(YFILE),TPFILE%CTYPE,TPFILE%CMODE,        &
-                                       KLFINPRAR=TPFILE%NLFINPRAR,KLFITYPE=TPFILE%NLFITYPE,KLFIVERB=TPFILE%NLFIVERB, &
-                                       HFORMAT=TPFILE%CFORMAT)
-               END IF
-             END IF
+  case ( 'MASTER' )
+    tpfile%nmaster_rank  = imasterrank
+    tpfile%lmaster       = (isp == imasterrank)
+    tpfile%lmultimasters = .false.
 
-             IF (ALLOCATED(TPFILE%CDIRNAME)) THEN
-               IF (LEN_TRIM(TZSPLITFILE%CDIRNAME)>0) THEN
-                 YPREFILENAME = TRIM(TZSPLITFILE%CDIRNAME)//'/'//TRIM(TZSPLITFILE%CNAME)
-               ELSE
-                 YPREFILENAME = TRIM(TZSPLITFILE%CNAME)
-               END IF
-             ELSE
-               YPREFILENAME = TRIM(TZSPLITFILE%CNAME)
-             END IF
+    call IO_File_check_format_exist( tpfile )
 
-             TPFILE%TFILES_IOZ(IFILE)%TFILE => TZSPLITFILE
-             !Done outside of the previous IF to prevent problems with .OUT files
-             TZSPLITFILE%NMPICOMM      = NMNH_COMM_WORLD
-             TZSPLITFILE%NMASTER_RANK  = IRANK_PROCIO
-             TZSPLITFILE%LMASTER       = (ISP == IRANK_PROCIO)
-             TZSPLITFILE%LMULTIMASTERS = .FALSE.
-             TZSPLITFILE%NSUBFILES_IOZ = 0
+    call IO_File_open_format( tpfile, hprogram_orig=hprogram_orig )
+END SELECT
 
-             ! Must be done BEFORE the call to io_open_file_* because we need to read things in these subroutines
-             TZSPLITFILE%LOPENED = .TRUE.
-             TZSPLITFILE%NOPEN         = TZSPLITFILE%NOPEN         + 1
-             TZSPLITFILE%NOPEN_CURRENT = TZSPLITFILE%NOPEN_CURRENT + 1
+KRESP = IOS
 
-             call IO_File_open_format( tzsplitfile, hprogram_orig=hprogram_orig )
-          ENDDO
-       END IF
+CONTAINS
 
-    END SELECT
+FUNCTION SUFFIX(HEXT)
 
-    TPFILE%NMPICOMM = NMNH_COMM_WORLD
+  CHARACTER(len=*)             :: HEXT
+  CHARACTER(len=LEN(HEXT)+3)   :: SUFFIX
 
-    KRESP = IOS
+  if ( isp > 999 ) call Print_msg(NVERB_FATAL,'IO','IO_File_doopen','SUFFIX: ISP>999')
 
-  CONTAINS
-    FUNCTION SUFFIX(HEXT)
+  WRITE(SUFFIX,'(A,i3.3)') TRIM(HEXT), ISP
 
-      CHARACTER(len=*)             :: HEXT
-      CHARACTER(len=LEN(HEXT)+3)   :: SUFFIX
+END FUNCTION SUFFIX
 
-      WRITE(SUFFIX,'(A,i3.3)') TRIM(HEXT), ISP
-
-    END FUNCTION SUFFIX
-
-END SUBROUTINE OPEN_ll
+END SUBROUTINE IO_File_doopen
 
 
 recursive SUBROUTINE IO_File_close(TPFILE,KRESP,HPROGRAM_ORIG)
