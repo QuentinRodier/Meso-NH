@@ -8,13 +8,9 @@
 !  J. Escobar  14/12/2017: correction for MNH_INT=8
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 13/12/2018: split of mode_netcdf into multiple modules/files
-<<<<<<< HEAD
 !  P. Wautelet 10/01/2019: replace handle_err by IO_Err_handle_nc4 for better netCDF error messages
-!  P. Wautelet 05/03/2019: rename IO subroutines and modules
-=======
-!  P. Wautelet 10/01/2019: replace handle_err by io_handle_err_nc4 for better netCDF error messages
 !  P. Wautelet 21/02/2019: bugfix: intent of read fields: OUT->INOUT to keep initial value if not found in file
->>>>>>> MNH-54X
+!  P. Wautelet 05/03/2019: rename IO subroutines and modules
 !-----------------------------------------------------------------
 #if defined(MNH_IOCDF4)
 module mode_io_read_nc4
