@@ -14,6 +14,8 @@ INTEGER :: arglen
 INTEGER :: inarg
 CHARACTER(LEN=50) :: yexe
 
+LOGICAL(KIND=LFI_INT),PARAMETER :: GTRUE  = .TRUE.
+LOGICAL(KIND=LFI_INT),PARAMETER :: GFALSE = .FALSE.
 
 INTEGER, PARAMETER :: FM_FIELD_SIZE = 16
 INTEGER(KIND=LFI_INT), PARAMETER :: ISRCLU  = 11
@@ -27,7 +29,7 @@ CHARACTER(LEN=128) :: filename,DESTFNAME
 INTEGER :: JI,JJ
 INTEGER(KIND=LFI_INT) :: IRESP
 CHARACTER(LEN=FM_FIELD_SIZE),DIMENSION(:),ALLOCATABLE :: yrecfm
-INTEGER(KIND=LFI_INT),                     DIMENSION(:),ALLOCATABLE :: ileng
+INTEGER(KIND=LFI_INT),       DIMENSION(:),ALLOCATABLE :: ileng
 INTEGER(KIND=8),             DIMENSION(:),ALLOCATABLE :: iwork,iworknew
 
 INTEGER(KIND=LFI_INT) :: ilengs
@@ -43,7 +45,7 @@ INTEGER :: CPT
 INTEGER :: LFICOMP
 INTEGER :: searchndx
 INTEGER :: ITYPCOD
-INTEGER :: ITOTAL,ITOTALMAX
+INTEGER(KIND=LFI_INT) :: ITOTAL,ITOTALMAX
 
 !OLD: INARG = IARGC()
 INARG = COMMAND_ARGUMENT_COUNT()
@@ -102,8 +104,8 @@ IDIMY = 0
 IDIMZ = 0
 GUSEDIM = .FALSE.
 
-CALL LFIOUV(IRESP,ISRCLU,.TRUE.,filename,'OLD',.FALSE.&
-            & ,.FALSE.,iverb,inap,inaf)
+CALL LFIOUV(IRESP,ISRCLU,GTRUE,filename,'OLD',GFALSE&
+            & ,GFALSE,iverb,inap,inaf)
 
 CALL FMREADLFIN1(ISRCLU,'LFI_COMPRESSED',LFICOMP,iresp)
 IF (iresp /= 0 .OR. LFICOMP /= 1) THEN
@@ -113,8 +115,8 @@ IF (iresp /= 0 .OR. LFICOMP /= 1) THEN
 END IF  
 
 PRINT *,'Uncompressed (but 32 bits REAL precision) file : ',DESTFNAME
-CALL LFIOUV(IRESP,IDESTLU,.TRUE.,DESTFNAME,'NEW'&
-     & ,.FALSE.,.FALSE.,iverb,inaf,inafdest)
+CALL LFIOUV(IRESP,IDESTLU,GTRUE,DESTFNAME,'NEW'&
+     & ,GFALSE,GFALSE,iverb,inaf,inafdest)
 
 CALL LFIPOS(IRESP,ISRCLU)
 ALLOCATE(yrecfm(inaf))
@@ -122,7 +124,7 @@ ALLOCATE(ileng(inaf))
 yrecfm(:) = ''
 sizemax=0
 DO ji=1,inaf
-  CALL LFICAS(IRESP,ISRCLU,yrecfm(ji),ileng(ji),ipos,.TRUE.)
+  CALL LFICAS(IRESP,ISRCLU,yrecfm(ji),ileng(ji),ipos,GTRUE)
   IF (ileng(ji) > sizemax) sizemax=ileng(ji)
 END DO
 PRINT *,' Nombre total d''articles dans fichier source :', inaf

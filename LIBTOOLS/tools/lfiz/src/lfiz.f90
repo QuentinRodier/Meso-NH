@@ -14,6 +14,8 @@ INTEGER :: arglen
 INTEGER :: inarg
 CHARACTER(LEN=50) :: yexe
 
+LOGICAL(KIND=LFI_INT),PARAMETER :: GTRUE  = .TRUE.
+LOGICAL(KIND=LFI_INT),PARAMETER :: GFALSE = .FALSE.
 
 INTEGER, PARAMETER :: FM_FIELD_SIZE = 16
 INTEGER(KIND=LFI_INT), PARAMETER :: ISRCLU  = 11
@@ -101,8 +103,8 @@ IDIMY = 0
 IDIMZ = 0
 GUSEDIM = .FALSE.
 
-CALL LFIOUV(IRESP,ISRCLU,.TRUE.,filename,'OLD',.FALSE.&
-            & ,.FALSE.,iverb,inap,inaf)
+CALL LFIOUV(IRESP,ISRCLU,GTRUE,filename,'OLD',GFALSE&
+            & ,GFALSE,iverb,inap,inaf)
 
 CALL FMREADLFIN1(ISRCLU,'LFI_COMPRESSED',LFICOMP,iresp)
 IF (iresp == 0) THEN
@@ -149,8 +151,8 @@ END IF
 
 
 PRINT *,'compressed file : ',DESTFNAME
-CALL LFIOUV(IRESP,IDESTLU,.TRUE.,DESTFNAME,'NEW'&
-     & ,.FALSE.,.FALSE.,iverb,inaf+1,inafdest)
+CALL LFIOUV(IRESP,IDESTLU,GTRUE,DESTFNAME,'NEW'&
+     & ,GFALSE,GFALSE,iverb,inaf+1,inafdest)
 
 CALL LFIPOS(IRESP,ISRCLU)
 ALLOCATE(yrecfm(inaf))
@@ -158,7 +160,7 @@ ALLOCATE(ileng(inaf))
 yrecfm(:) = ''
 sizemax=0
 DO ji=1,inaf
-  CALL LFICAS(IRESP,ISRCLU,yrecfm(ji),ileng(ji),ipos,.TRUE.)
+  CALL LFICAS(IRESP,ISRCLU,yrecfm(ji),ileng(ji),ipos,GTRUE)
   IF (ileng(ji) > sizemax) sizemax=ileng(ji)
 END DO
 PRINT *,' Nombre total d''articles dans fichier source :', inaf
