@@ -72,7 +72,7 @@ REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PRTKEMS         ! tke adv source
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PPABST          ! pressure at t
 REAL, DIMENSION(:,:,:,:),  INTENT(OUT) :: PRT,PSVT        ! moist and scalar
                                                           ! variables at t
-REAL, DIMENSION(:,:),      INTENT(OUT) :: PZWS
+REAL, DIMENSION(:,:),      INTENT(INOUT) :: PZWS
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PSRCT           ! turbulent flux
                                                           !  <s'Rc'> at t 
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PCIT            ! ice conc. at t
@@ -239,6 +239,7 @@ END MODULE MODI_READ_FIELD
 !!          P. Wautelet 01/2019  corrected intent of PDUM,PDVM,PDWM (OUT->INOUT)
 !  P. Wautelet 13/02/2019: removed PPABSM and PTSTEP dummy arguments (bugfix: PPABSM was intent(OUT))
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  P. Wautelet 14/03/2019: correct ZWS when variable not present in file
 !!-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -253,6 +254,7 @@ USE MODD_CST
 USE MODD_CTURB
 USE MODD_DUST
 USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
+USE MODD_FIELD_n,         only: XZWS_DEFAULT
 #ifdef MNH_FOREFIRE
 USE MODD_FOREFIRE
 #endif
@@ -332,7 +334,7 @@ REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PRTKEMS         ! tke adv source
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PPABST          ! pressure at t
 REAL, DIMENSION(:,:,:,:),  INTENT(OUT) :: PRT,PSVT        ! moist and scalar
                                                           ! variables at t
-REAL, DIMENSION(:,:),      INTENT(OUT) :: PZWS
+REAL, DIMENSION(:,:),      INTENT(INOUT) :: PZWS
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PSRCT           ! turbulent flux
                                                           !  <s'Rc'> at t 
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PCIT            ! ice conc. at t
@@ -391,6 +393,7 @@ INTEGER                      :: JT           ! loop index
 LOGICAL                      :: GLSOURCE     ! switch for the source term (for ini_ls and ini_lb)
 CHARACTER(LEN=2)             :: INDICE
 CHARACTER(LEN=3)             :: YFRC         ! To mark the different forcing dates
+CHARACTER(LEN=15)            :: YVAL
 REAL, DIMENSION(KIU,KJU,KKU) :: ZWORK        ! to compute supersaturation
 TYPE(TFIELDDATA)             :: TZFIELD
 !
@@ -463,9 +466,17 @@ END SELECT
 !
 SELECT CASE(HGETZWS)
   CASE('READ')
-  CALL IO_READ_FIELD(TPINIFILE,'ZWS',PZWS)
+    CALL IO_READ_FIELD(TPINIFILE,'ZWS',PZWS,IRESP)
+    !If the field ZWS is not in the file, set its value to XZWS_DEFAULT
+    !ZWS is present in files since MesoNH 5.4.2
+    IF ( IRESP/=0 ) THEN
+      WRITE (YVAL,'( E15.8 )') XZWS_DEFAULT
+      CALL PRINT_MSG(NVERB_WARNING,'IO','READ_FIELD','ZWS not found in file: using default value: '//TRIM(YVAL)//' m')
+      PZWS(:,:) = XZWS_DEFAULT
+    END IF
+
   CASE('INIT')
-  PZWS(:,:)=0.
+    PZWS(:,:)=0.
 END SELECT 
 !
 SELECT CASE(HGETRVT)             ! vapor

@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !#######################
 MODULE MODI_SPAWN_FIELD2
@@ -153,6 +153,7 @@ END MODULE MODI_SPAWN_FIELD2
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      Modification 05/03/2018 (J.Escobar) bypass gridnesting special case KD(X/Y)RATIO == 1 not parallelized
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  P. Wautelet 14/03/2019: correct ZWS when variable not present in file
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -168,7 +169,7 @@ USE MODD_CST
 USE MODD_CONF_n,          ONLY:  CONF_MODEL
 USE MODD_DUST,            ONLY: CDUSTNAMES
 USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
-USE MODD_FIELD_n,         ONLY:  FIELD_MODEL
+USE MODD_FIELD_n,         ONLY: FIELD_MODEL, XZWS_DEFAULT
 USE MODD_IO_ll,           ONLY : TFILEDATA
 USE MODD_LATZ_EDFLX
 USE MODD_LBC_n,           ONLY:  LBC_MODEL
@@ -190,6 +191,7 @@ USE MODE_FIELD,           ONLY: TFIELDDATA,TYPEREAL
 USE MODE_FMREAD
 USE MODE_IO_ll,           ONLY: UPCASE
 USE MODE_ll
+USE MODE_MSG
 USE MODE_MODELN_HANDLER
 USE MODE_MPPDB
 USE MODE_THERMO
@@ -273,6 +275,7 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE   :: ZPABST1,ZHUT1
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZRT1
 LOGICAL :: GUSERV
 !
+CHARACTER(LEN=15) :: YVAL
 CHARACTER(LEN=2)  :: INDICE
 INTEGER           :: I
 TYPE(TFIELDDATA)             :: TZFIELD
@@ -760,7 +763,14 @@ IF (PRESENT(TPSONFILE)) THEN
   PVT(KIB2:KIE2,KJB2:KJE2,:) = ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
   CALL IO_READ_FIELD(TPSONFILE,'WT',ZWORK3D) ! W wind component at time t
   PWT(KIB2:KIE2,KJB2:KJE2,:) = ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
-  CALL IO_READ_FIELD(TPSONFILE,'ZWS',ZWORK2D) ! 
+  CALL IO_READ_FIELD(TPSONFILE,'ZWS',ZWORK2D,IRESP) !
+  !If the field ZWS is not in the file, set its value to XZWS_DEFAULT
+  !ZWS is present in files since MesoNH 5.4.2
+  IF ( IRESP/=0 ) THEN
+    WRITE (YVAL,'( E15.8 )') XZWS_DEFAULT
+    CALL PRINT_MSG(NVERB_WARNING,'IO','SPAWN_FIELD2','ZWS not found in file: using default value: '//TRIM(YVAL)//' m')
+    ZWORK2D(:,:) = XZWS_DEFAULT
+  END IF
   PZWS(KIB2:KIE2,KJB2:KJE2) = ZWORK2D(KIB1:KIE1,KJB1:KJE1)
   !
   ! moist variables

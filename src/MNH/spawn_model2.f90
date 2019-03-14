@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !########################
 MODULE MODI_SPAWN_MODEL2
@@ -192,6 +192,7 @@ END MODULE MODI_SPAWN_MODEL2
 !!                    10/2016 (C.Lac) Add droplet deposition
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  P. Wautelet 14/03/2019: correct ZWS when variable not present in file
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -704,7 +705,7 @@ ALLOCATE(ZJ(IIU,IJU,IKU))
 !
 !*       4.2   Prognostic (and diagnostic) variables (module MODD_FIELD2) :
 !
-ALLOCATE(XZWS(IIU,IJU))
+ALLOCATE(XZWS(IIU,IJU)); XZWS(:,:) = XZWS_DEFAULT
 ALLOCATE(XLSZWSM(IIU,IJU))
 ALLOCATE(XUT(IIU,IJU,IKU))
 ALLOCATE(XVT(IIU,IJU,IKU))

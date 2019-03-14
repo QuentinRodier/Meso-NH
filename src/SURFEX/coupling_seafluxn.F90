@@ -1,6 +1,6 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 2004-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
-!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
 !     ###############################################################################
 SUBROUTINE COUPLING_SEAFLUX_n (CHS, DTS, DGS, O, OR, G, S, DST, SLT, &
@@ -50,7 +50,8 @@ SUBROUTINE COUPLING_SEAFLUX_n (CHS, DTS, DGS, O, OR, G, S, DST, SLT, &
 !!      Modified    03/2014 : M.N. Bouin possibility of wave parameters from external source
 !!      Modified    11/2014 : J. Pianezze : add currents for wave coupling
 !!      Modified    02/2019 : S. Bielli Sea salt : significant sea wave height influences salt emission; 5 salt modes
-!!                                       
+!!      Modified    03/2019 : P. Wautelet: correct ZWS when variable not present in file
+!!
 !!---------------------------------------------------------------------
 !
 !
@@ -73,6 +74,10 @@ USE MODD_SFX_OASIS,  ONLY : LCPL_WAVE, LCPL_SEA, LCPL_SEAICE
 USE MODD_WATER_PAR,  ONLY : XEMISWAT, XEMISWATICE
 !
 USE MODD_WATER_PAR, ONLY : XALBSEAICE
+!
+#ifdef SFX_MNH
+USE MODD_FIELD_n, only: XZWS_DEFAULT
+#endif
 !
 !
 USE MODI_WATER_FLUX
@@ -341,8 +346,13 @@ END IF
 #endif
 ! if HS value is undef : constant value and alert message
 IF (ALL(ZHS==XUNDEF)) THEN
+#ifdef SFX_MNH
+ ZHS(:) = XZWS_DEFAULT
+ WRITE (ILUOUT,*) 'WARNING : no HS values from ECMWF or WW3, then it is initialized to a constant value of XZWS_DEFAULT m'
+#else
  ZHS(:)=2.
  WRITE (ILUOUT,*) 'WARNING : no HS values from ECMWF or WW3, then it is initialized to a constant value of 2 m'
+#endif
 END IF
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

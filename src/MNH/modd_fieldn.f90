@@ -52,6 +52,7 @@
 !!                   02/2019 C.Lac add rain fraction as an output field
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 06/03/2019: correct XZWS entry
+!  P. Wautelet 14/03/2019: add XZWS_DEFAULT parameter
 !!
 !-------------------------------------------------------------------------------
 !
@@ -60,6 +61,8 @@
 !
 USE MODD_PARAMETERS, ONLY: JPMODELMAX
 IMPLICIT NONE
+
+REAL, PARAMETER :: XZWS_DEFAULT = 2. ! Default value for XZWS: 2 meters
 
 TYPE FIELD_t
   REAL, DIMENSION(:,:),   POINTER :: XZWS=>NULL()    ! significant sea wave

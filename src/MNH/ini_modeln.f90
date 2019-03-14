@@ -283,6 +283,7 @@ END MODULE MODI_INI_MODEL_n
 !  P. Wautelet 13/02/2019: removed PPABSM and PTSTEP dummy arguments of READ_FIELD
 !!                   02/2019 C.Lac add rain fraction as an output field
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  P. Wautelet 14/03/2019: correct ZWS when variable not present in file (set to XZWS_DEFAULT)
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -847,7 +848,7 @@ END IF
 ALLOCATE(XSVT(IIU,IJU,IKU,NSV)) ;     XSVT  = 0.
 ALLOCATE(XRSVS(IIU,IJU,IKU,NSV));     XRSVS = 0.
 ALLOCATE(XRSVS_CLD(IIU,IJU,IKU,NSV)); XRSVS_CLD = 0.0
-ALLOCATE(XZWS(IIU,IJU)) ;     XZWS  = -1.
+ALLOCATE(XZWS(IIU,IJU)) ;             XZWS(:,:) = XZWS_DEFAULT
 !
 IF (LPASPOL) THEN
   ALLOCATE( XATC(IIU,IJU,IKU,NSV_PP) )

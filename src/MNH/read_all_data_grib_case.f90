@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1998-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #################################
@@ -129,6 +129,7 @@ END MODULE MODI_READ_ALL_DATA_GRIB_CASE
 !!         Pergaud  : 2018 add GFS
 !!                   01/2019 (G.Delautier via Q.Rodier) for GRIB2 ARPEGE and AROME from EPYGRAM
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  P. Wautelet 14/03/2019: correct ZWS when variable not present in file
 !-------------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -153,7 +154,7 @@ USE MODI_CH_AER_INIT_SOA
 USE MODI_INI_CTURB
 USE MODI_CH_OPEN_INPUT
 !
-USE MODD_FIELD_n, ONLY: XZWS
+USE MODD_FIELD_n, ONLY: XZWS, XZWS_DEFAULT
 USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_CONF
 USE MODD_CONF_n
@@ -284,6 +285,7 @@ INTEGER  :: ITIME
 INTEGER  :: IDATE
 INTEGER  :: ITIMESTEP
 CHARACTER(LEN=10) :: CSTEPUNIT
+CHARACTER(LEN=15)  :: YVAL
 !chemistery field
 CHARACTER(LEN=16)                  :: YPRE_MOC="PRE_MOC1.nam"
 INTEGER, DIMENSION(:), ALLOCATABLE :: INUMGRIB, INUMLEV  ! grib
@@ -583,9 +585,10 @@ SELECT CASE (IMODEL)
       CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=229)
       !
       IF(INUM < 0) THEN
+        WRITE (YVAL,'( E15.8 )') XZWS_DEFAULT
         WRITE (ILUOUT0,'(A)')' | !!! WARNING !!! Sea wave height is missing in '// &
-               'the GRIB file - the default value of 2 meters is used'
-        XZWS = 2.0       
+               'the GRIB file - the default value of '//TRIM(YVAL)//' meters is used'
+        XZWS = XZWS_DEFAULT
       ELSE
         GFIND=.TRUE.
       END IF

@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ######################
@@ -83,6 +83,7 @@ END MODULE MODI_INI_LS
 !!      Original        22/09/98
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  P. Wautelet 14/03/2019: correct ZWS when variable not present in file
 !!
 !! 
 !-------------------------------------------------------------------------------
@@ -90,6 +91,7 @@ END MODULE MODI_INI_LS
 !*       0.    DECLARATIONS
 !
 USE MODD_CONF
+USE MODD_FIELD_n, only: XZWS_DEFAULT
 USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_TIME ! for type DATE_TIME
 !
@@ -122,7 +124,8 @@ LOGICAL,                INTENT(IN),    OPTIONAL :: OSTEADY_DMASS         ! Md ev
 !
 !*       0.2   declarations of local variables
 !
-!NONE
+CHARACTER(LEN=15) :: YVAL
+INTEGER           :: IRESP
 !
 !-------------------------------------------------------------------------------
 !
@@ -143,7 +146,14 @@ CALL IO_READ_FIELD(TPINIFILE,'LSUM', PLSUM)
 CALL IO_READ_FIELD(TPINIFILE,'LSVM', PLSVM)
 CALL IO_READ_FIELD(TPINIFILE,'LSWM', PLSWM)
 CALL IO_READ_FIELD(TPINIFILE,'LSTHM',PLSTHM)
-CALL IO_READ_FIELD(TPINIFILE,'ZWS',PLSZWSM)
+CALL IO_READ_FIELD(TPINIFILE,'ZWS',PLSZWSM, IRESP)
+!If the field ZWS is not in the file, set its value to XZWS_DEFAULT
+!ZWS is present in files since MesoNH 5.4.2
+IF ( IRESP/=0 ) THEN
+  WRITE (YVAL,'( E15.8 )') XZWS_DEFAULT
+  CALL PRINT_MSG(NVERB_WARNING,'IO','INI_LS','ZWS not found in file: using default value: '//TRIM(YVAL)//' m')
+  PLSZWSM(:,:) = XZWS_DEFAULT
+END IF
 !
 IF (HGETRVM == 'READ') THEN         ! LS-vapor                                    
   CALL IO_READ_FIELD(TPINIFILE,'LSRVM',PLSRVM)
