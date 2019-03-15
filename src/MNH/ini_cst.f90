@@ -71,6 +71,7 @@ END MODULE MODI_INI_CST
 !              ------------
 !
 USE MODD_CST
+use modd_precision, only: MNHREAL
 !
 IMPLICIT NONE
 !  
@@ -160,17 +161,19 @@ XMNH_HUGE    = HUGE    (XMNH_HUGE )
 XMNH_HUGE_12_LOG = LOG ( SQRT(XMNH_HUGE)  )
 
 #if (MNH_REAL == 8)
-XMNH_TINY      = 1.0e-80
-XEPS_DT        = 1.0e-5
-XRES_FLAT_CART = 1.0e-12
-XRES_OTHER     = 1.0e-9
-XRES_PREP      = 1.0e-8
-#else
+XMNH_TINY      = 1.0e-80_MNHREAL
+XEPS_DT        = 1.0e-5_MNHREAL
+XRES_FLAT_CART = 1.0e-12_MNHREAL
+XRES_OTHER     = 1.0e-9_MNHREAL
+XRES_PREP      = 1.0e-8_MNHREAL
+#elif (MNH_REAL == 4)
 XMNH_TINY      = TINY    (XMNH_TINY    )
-XEPS_DT        = 1.5e-4
-XRES_FLAT_CART = 1.0e-12
-XRES_OTHER     = 1.0e-7
-XRES_PREP      = 1.0e-4
+XEPS_DT        = 1.5e-4_MNHREAL
+XRES_FLAT_CART = 1.0e-12_MNHREAL
+XRES_OTHER     = 1.0e-7_MNHREAL
+XRES_PREP      = 1.0e-4_MNHREAL
+#else
+#error "Invalid MNH_REAL"
 #endif
 XMNH_TINY_12 = SQRT    (XMNH_TINY    )
 
