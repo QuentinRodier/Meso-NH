@@ -12,6 +12,7 @@ module mode_io_write_lfi
 !
 USE MODD_IO_ll
 USE MODD_PARAMETERS, ONLY: NLFIMAXCOMMENTLENGTH
+use modd_precision,  only: LFIINT
 !
 USE MODE_FIELD, ONLY : TFIELDDATA
 USE MODE_MSG
@@ -54,7 +55,7 @@ INTEGER,               INTENT(OUT):: KRESP  ! return-code if problems araised
 !*      0.2   Declarations of local variables
 !
 INTEGER                                  :: ILENG
-INTEGER(KIND=LFI_INT)                    :: IRESP, ITOTAL
+INTEGER(KIND=LFIINT)                     :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
@@ -93,7 +94,7 @@ INTEGER,               INTENT(OUT):: KRESP  ! return-code if problems araised
 !*      0.2   Declarations of local variables
 !
 INTEGER                                  :: ILENG
-INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
+INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
@@ -140,7 +141,7 @@ INTEGER,OPTIONAL,      INTENT(IN) :: KZFILE     ! Number of the Z-level splitted
 !*      0.2   Declarations of local variables
 !
 INTEGER                                  :: ILENG
-INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
+INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 CHARACTER(LEN=4)                         :: YSUFFIX
 CHARACTER(LEN=LEN(TPFIELD%CMNHNAME)+4)   :: YVARNAME
@@ -204,7 +205,7 @@ INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 !*      0.2   Declarations of local variables
 !
 INTEGER                                  :: ILENG
-INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
+INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
@@ -249,7 +250,7 @@ INTEGER,                  INTENT(OUT):: KRESP  ! return-code if problems araised
 !*      0.2   Declarations of local variables
 !
 INTEGER                                  :: ILENG
-INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
+INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
@@ -294,7 +295,7 @@ INTEGER,                  INTENT(OUT):: KRESP  ! return-code if problems araised
 !*      0.2   Declarations of local variables
 !
 INTEGER                                  :: ILENG
-INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
+INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
@@ -339,7 +340,7 @@ INTEGER,                    INTENT(OUT):: KRESP  ! return-code if problems arais
 !*      0.2   Declarations of local variables
 !
 INTEGER                                  :: ILENG
-INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
+INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
@@ -384,7 +385,7 @@ INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 !*      0.2   Declarations of local variables
 !
 INTEGER                                  :: ILENG
-INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
+INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
@@ -423,7 +424,7 @@ INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 !*      0.2   Declarations of local variables
 !
 INTEGER                                  :: ILENG
-INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
+INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
@@ -468,7 +469,7 @@ INTEGER,               INTENT(OUT):: KRESP  ! return-code if problems araised
 !*      0.2   Declarations of local variables
 !
 INTEGER                                  :: ILENG
-INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
+INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
@@ -513,7 +514,7 @@ INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 !*      0.2   Declarations of local variables
 !
 INTEGER                                  :: ILENG
-INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
+INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
@@ -559,7 +560,7 @@ INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 !
 INTEGER                                  :: IFIELD
 INTEGER                                  :: ILENG
-INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
+INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
@@ -606,7 +607,7 @@ INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 !
 INTEGER, DIMENSION(SIZE(OFIELD))         :: IFIELD
 INTEGER                                  :: ILENG
-INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
+INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
@@ -660,7 +661,7 @@ INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 !*      0.2   Declarations of local variables
 !
 INTEGER                                  :: ILENG, ILENGMAX, JLOOP
-INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
+INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
@@ -718,7 +719,7 @@ INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 !*      0.2   Declarations of local variables
 !
 INTEGER                                  :: ILENG
-INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
+INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
 TYPE(TFIELDDATA)                         :: TZFIELD
 INTEGER, DIMENSION(3)                    :: ITDATE    ! date array
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
@@ -783,8 +784,8 @@ SUBROUTINE WRITE_PREPARE(TPFIELD,KLENG,KWORK,KTOTAL,KRESP)
 TYPE(TFIELDDATA),                        INTENT(IN)    :: TPFIELD
 INTEGER,                                 INTENT(IN)    :: KLENG
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE,INTENT(INOUT) :: KWORK
-INTEGER(kind=LFI_INT),                   INTENT(OUT)   :: KTOTAL
-INTEGER(kind=LFI_INT),                   INTENT(OUT)   :: KRESP
+INTEGER(kind=LFIINT),                    INTENT(OUT)   :: KTOTAL
+INTEGER(kind=LFIINT),                    INTENT(OUT)   :: KRESP
 !
 INTEGER                   :: ICOMLEN
 INTEGER                   :: J

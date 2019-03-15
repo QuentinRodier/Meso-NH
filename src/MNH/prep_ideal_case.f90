@@ -349,6 +349,7 @@ USE MODD_IO_ll,     ONLY: NIO_VERB,NVERB_DEBUG,TFILE_DUMMY,TFILE_OUTPUTLISTING
 USE MODD_CONF_n
 USE MODD_NSV,      ONLY : NSV,NSV_CHEM,           &
                           NSV_DSTEND, NSV_DSTBEG
+use modd_precision, only: LFIINT
 !
 USE MODN_BLANK
 !
@@ -447,7 +448,7 @@ INTEGER :: NLUPRE,NLUOUT           ! Logical unit numbers for EXPRE file
                                    ! and for output_listing file
 INTEGER :: NRESP                   ! return code in FM routines
 INTEGER :: NTYPE                   ! type of file (cpio or not)
-INTEGER(KIND=LFI_INT) :: NNPRAR    ! number of articles predicted in the LFIFM file
+INTEGER(KIND=LFIINT) :: NNPRAR     ! number of articles predicted in the LFIFM file
 LOGICAL :: GFOUND                  ! Return code when searching namelist
 !
 INTEGER :: JLOOP,JILOOP,JJLOOP     ! Loop indexes

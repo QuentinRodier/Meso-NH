@@ -8,7 +8,8 @@
 !-----------------------------------------------------------------
 module mode_io_tools_lfi
 
-use modd_io_ll, only: tfiledata
+use modd_io_ll,     only: tfiledata
+use modd_precision, only: LFIINT
 
 implicit none
 
@@ -19,9 +20,9 @@ public :: io_prepare_verbosity_lfi
 contains
 
 subroutine io_prepare_verbosity_lfi(tpfile, kmelev, ostats)
-  type(tfiledata),       intent(in)  :: tpfile
-  integer(kind=LFI_INT), intent(out) :: kmelev
-  logical,               intent(out) :: ostats
+  type(tfiledata),      intent(in)  :: tpfile
+  integer(kind=LFIINT), intent(out) :: kmelev
+  logical,              intent(out) :: ostats
 
   select case (tpfile%nlfiverb)
     case(:2)

@@ -124,6 +124,7 @@ USE MODD_PARAM_LIMA,       ONLY: LLIMA_DIAG
 USE MODD_PARAM_MFSHALL_n
 USE MODD_PARAM_n
 USE MODD_PARAM_RAD_n
+use modd_precision,        only: LFIINT
 USE MODD_PROFILER_n
 USE MODD_RADAR
 USE MODD_RADIATIONS_n
@@ -187,7 +188,7 @@ INTEGER  :: ILUOUT0             ! Logical unit number for the output listing
 REAL*8,DIMENSION(2)     :: ZTIME0,ZTIME1,ZTIME2,ZRAD,ZDCONV,ZSHADOWS,ZGROUND, &
                          ZTRACER,ZDRAG,ZTURB,ZMAFL,ZCHEM,ZTIME_BU ! CPU time 
 REAL*8,DIMENSION(2)     :: ZSTART,ZINIT,ZWRIT,ZBALL,ZPHYS,ZSURF,ZWRITS,ZTRAJ ! storing variables
-INTEGER(KIND=LFI_INT) :: INPRAR ! number of articles predicted  in the LFIFM file
+INTEGER(KIND=LFIINT) :: INPRAR ! number of articles predicted  in the LFIFM file
 LOGICAL :: GCLOSE_OUT = .FALSE. ! conditional closure of the OUTPUT FM-file
 INTEGER :: ISTEPBAL   ! loop indice for balloons and aircraft
 INTEGER :: ILUNAM      ! Logical unit numbers for the namelist file

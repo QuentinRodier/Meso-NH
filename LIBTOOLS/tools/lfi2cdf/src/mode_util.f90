@@ -7,6 +7,7 @@ MODULE mode_util
   USE MODD_IO_ll,  ONLY: TFILE_ELT
   USE MODD_NETCDF, ONLY: DIMCDF, IDCDF_KIND
   USE MODD_PARAMETERS, ONLY: NLFIMAXCOMMENTLENGTH, NMNHNAMELGTMAX
+  use modd_precision, only: LFIINT
 
   USE MODE_FIELD
   USE MODE_FMREAD
@@ -45,8 +46,8 @@ MODULE mode_util
      TYPE(DIMCDF),DIMENSION(:),ALLOCATABLE :: TDIMS  ! Dimensions of the field
   END TYPE workfield
 
-  LOGICAL(KIND=LFI_INT), PARAMETER :: ltrue  = .TRUE.
-  LOGICAL(KIND=LFI_INT), PARAMETER :: lfalse = .FALSE.
+  LOGICAL(KIND=LFIINT), PARAMETER :: ltrue  = .TRUE.
+  LOGICAL(KIND=LFIINT), PARAMETER :: lfalse = .FALSE.
 
   CHARACTER(LEN=6) :: CPROGRAM_ORIG
 
@@ -82,9 +83,9 @@ CONTAINS
     INTEGER                                  :: leng
     INTEGER                                  :: IID, IRESP, IDATES, ICURDATE
     INTEGER                                  :: IDXDATE, IDXTIME
-    INTEGER(KIND=LFI_INT)                    :: iresp2,ilu,ileng,ipos
     INTEGER(KIND=IDCDF_KIND)                 :: kcdf_id, kcdf_id2, var_id
     INTEGER(KIND=IDCDF_KIND)                 :: status
+    INTEGER(KIND=LFIINT)                     :: iresp2,ilu,ileng,ipos
     LOGICAL                                  :: ladvan
     LOGICAL                                  :: GOK
     TYPE(TLFIDATE),DIMENSION(MAXDATES)       :: TLFIDATES
@@ -964,7 +965,7 @@ END DO
     INTEGER                     :: idx, IRESP2
     INTEGER(KIND=IDCDF_KIND)    :: omode
     INTEGER(KIND=IDCDF_KIND)    :: status
-    INTEGER(KIND=LFI_INT)       :: ilu,iresp
+    INTEGER(KIND=LFIINT) :: ilu,iresp
 
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_FILES','called')

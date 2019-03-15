@@ -287,6 +287,7 @@ USE MODD_PASPOL, ONLY : LPASPOL
 !
 USE MODD_MPIF
 USE MODD_VAR_ll
+use modd_precision, only: LFIINT
 !
 IMPLICIT NONE
 !
@@ -314,7 +315,7 @@ LOGICAL,               INTENT(IN) :: OSPAWN_SURF  ! flag to spawn surface fields
 !
 !
 INTEGER :: ILUOUT   ! Logical unit number for the output listing 
-INTEGER(KIND=LFI_INT) :: INPRAR ! Number of articles predicted in the LFIFM file
+INTEGER(KIND=LFIINT) :: INPRAR ! Number of articles predicted in the LFIFM file
 !
 !
 INTEGER             :: IIU            ! Upper dimension in x direction

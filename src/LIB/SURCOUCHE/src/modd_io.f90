@@ -13,6 +13,7 @@ MODULE MODD_IO_ll
 !
 USE MODD_NETCDF,     ONLY: IDCDF_KIND, IOCDF, TPTR2DIMCDF
 USE MODD_PARAMETERS, ONLY: NDIRNAMELGTMAX, NFILENAMELGTMAX
+use modd_precision,  only: LFIINT
 !
 IMPLICIT NONE 
 !
@@ -92,11 +93,11 @@ TYPE TFILEDATA
   INTEGER,DIMENSION(3) :: NMNHVERSION = (/0,0,0/) !MesoNH version used to create the file
   !
   ! Fields for LFI files
-  INTEGER(KIND=LFI_INT) :: NLFININAR = 0  !Number of articles of the LFI file (only accurate if file opened in read mode)
-  INTEGER(KIND=LFI_INT) :: NLFINPRAR = 0  !Number of predicted articles of the LFI file (non crucial)
-  INTEGER               :: NLFITYPE  = -1 !Type of the file (used to generate list of files to transfers)
-  INTEGER               :: NLFIVERB  = 1  !LFI verbosity level
-  INTEGER(KIND=LFI_INT) :: NLFIFLU   = -1 !File identifier
+  INTEGER(KIND=LFIINT) :: NLFININAR = 0  !Number of articles of the LFI file (only accurate if file opened in read mode)
+  INTEGER(KIND=LFIINT) :: NLFINPRAR = 0  !Number of predicted articles of the LFI file (non crucial)
+  INTEGER              :: NLFITYPE  = -1 !Type of the file (used to generate list of files to transfers)
+  INTEGER              :: NLFIVERB  = 1  !LFI verbosity level
+  INTEGER(KIND=LFIINT) :: NLFIFLU   = -1 !File identifier
   !
   ! Fields for netCDF files
   INTEGER(KIND=IDCDF_KIND) :: NNCID = -1 !File identifier
