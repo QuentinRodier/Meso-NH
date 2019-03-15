@@ -11,9 +11,9 @@
 
 MODULE MODD_IO_ll
 !
-USE MODD_NETCDF,     ONLY: IDCDF_KIND, IOCDF, TPTR2DIMCDF
+USE MODD_NETCDF,     ONLY: IOCDF, TPTR2DIMCDF
 USE MODD_PARAMETERS, ONLY: NDIRNAMELGTMAX, NFILENAMELGTMAX
-use modd_precision,  only: LFIINT
+use modd_precision,  only: CDFINT, LFIINT
 !
 IMPLICIT NONE 
 !
@@ -100,13 +100,13 @@ TYPE TFILEDATA
   INTEGER(KIND=LFIINT) :: NLFIFLU   = -1 !File identifier
   !
   ! Fields for netCDF files
-  INTEGER(KIND=IDCDF_KIND) :: NNCID = -1 !File identifier
-  INTEGER(KIND=IDCDF_KIND) :: NNCNAR = 0 !Number of articles of the netCDF file (only accurate if file opened in read mode)
-  LOGICAL                  :: LNCREDUCE_FLOAT_PRECISION = .FALSE. ! Reduce the precision of floats to single precision
+  INTEGER(KIND=CDFINT) :: NNCID = -1 !File identifier
+  INTEGER(KIND=CDFINT) :: NNCNAR = 0 !Number of articles of the netCDF file (only accurate if file opened in read mode)
+  LOGICAL              :: LNCREDUCE_FLOAT_PRECISION = .FALSE. ! Reduce the precision of floats to single precision
                                                                   ! instead of double precision
-  LOGICAL                  :: LNCCOMPRESS = .FALSE. ! Do compression on fields
-  INTEGER(KIND=IDCDF_KIND) :: NNCCOMPRESS_LEVEL = 0 ! Compression level
-  TYPE(IOCDF),POINTER      :: TNCDIMS => NULL()     ! Structure containing netCDF dimensions
+  LOGICAL              :: LNCCOMPRESS = .FALSE. ! Do compression on fields
+  INTEGER(KIND=CDFINT) :: NNCCOMPRESS_LEVEL = 0 ! Compression level
+  TYPE(IOCDF),POINTER  :: TNCDIMS => NULL()     ! Structure containing netCDF dimensions
   TYPE(TPTR2DIMCDF),DIMENSION(:,:),ALLOCATABLE :: TNCCOORDS ! Structure pointing to the coordinates variables
   !
   !Fields for other files

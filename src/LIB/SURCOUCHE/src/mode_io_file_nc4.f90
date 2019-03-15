@@ -18,15 +18,15 @@
 #if defined(MNH_IOCDF4)
 module mode_io_file_nc4
 
-use modd_io_ll,  only: tfiledata
-use modd_netcdf, only: IDCDF_KIND
+use modd_io_ll,        only: tfiledata
+use modd_precision,    only: CDFINT
 
 use mode_io_tools_nc4, only: io_handle_err_nc4, io_set_knowndims_nc4, newiocdf
 use mode_msg
 
-use NETCDF,      only: NF90_CLOBBER, NF90_GLOBAL, NF90_NETCDF4, NF90_NOERR, NF90_NOWRITE,  &
-                       NF90_CLOSE, NF90_CREATE, NF90_GET_ATT, NF90_INQUIRE, NF90_INQUIRE_ATTRIBUTE, &
-                       NF90_OPEN, NF90_PUT_ATT, NF90_STRERROR
+use NETCDF,            only: NF90_CLOBBER, NF90_GLOBAL, NF90_NETCDF4, NF90_NOERR, NF90_NOWRITE,  &
+                             NF90_CLOSE, NF90_CREATE, NF90_GET_ATT, NF90_INQUIRE, NF90_INQUIRE_ATTRIBUTE, &
+                             NF90_OPEN, NF90_PUT_ATT, NF90_STRERROR
 
 implicit none
 
@@ -44,7 +44,7 @@ subroutine io_create_file_nc4(tpfile,hprogram_orig)
   character(len=*),optional, intent(in)    :: hprogram_orig !to emulate a file coming from this program
 
   character(len=:),allocatable :: yfilem  ! name of the file
-  integer(kind=IDCDF_KIND)     :: istatus
+  integer(kind=CDFINT)         :: istatus
 
   call print_msg(NVERB_DEBUG,'IO','io_create_file_nc4','called for '//trim(tpfile%cname))
 
@@ -66,10 +66,10 @@ end subroutine io_create_file_nc4
 subroutine io_close_file_nc4(tpfile,kstatus)
   use mode_io_tools_nc4, only: cleaniocdf
 
-  type(tfiledata),                    intent(inout) :: tpfile
-  integer(kind=IDCDF_KIND), optional, intent(out)   :: kstatus
+  type(tfiledata),                intent(inout) :: tpfile
+  integer(kind=CDFINT), optional, intent(out)   :: kstatus
 
-  integer(kind=IDCDF_KIND) :: istatus
+  integer(kind=CDFINT) :: istatus
 
   call print_msg(NVERB_DEBUG,'IO','io_close_file_nc4','called for '//trim(tpfile%cname))
 
@@ -100,7 +100,7 @@ subroutine io_open_file_nc4(tpfile)
   type(tfiledata), intent(inout) :: tpfile
 
   character(len=:),allocatable :: yfilem  ! name of the file
-  integer(kind=IDCDF_KIND)     :: istatus
+  integer(kind=CDFINT)         :: istatus
 
   call print_msg(NVERB_DEBUG,'IO','io_open_file_nc4','called for '//trim(tpfile%cname))
 
@@ -131,8 +131,8 @@ subroutine io_check_cleanly_closed_nc4(tpfile)
   type(tfiledata), intent(in) :: tpfile
 
   character(len=:), allocatable :: yclean
-  integer(kind=IDCDF_KIND) :: ilen, istatus
-  integer, dimension(3) :: imnhversion
+  integer(kind=CDFINT)          :: ilen, istatus
+  integer, dimension(3)         :: imnhversion
 
   call print_msg(NVERB_DEBUG,'IO','io_check_cleanly_closed_nc4','called for '//trim(tpfile%cname))
 
@@ -174,7 +174,7 @@ end subroutine io_check_cleanly_closed_nc4
 subroutine io_set_cleanly_closed_nc4(tpfile)
   type(tfiledata), intent(in) :: tpfile
 
-  integer(kind=IDCDF_KIND) :: istatus
+  integer(kind=CDFINT) :: istatus
 
   call print_msg(NVERB_DEBUG,'IO','io_set_cleanly_closed_nc4','called for '//trim(tpfile%cname))
 
@@ -186,7 +186,7 @@ end subroutine io_set_cleanly_closed_nc4
 subroutine io_set_not_cleanly_closed_nc4(tpfile)
   type(tfiledata), intent(in) :: tpfile
 
-  integer(kind=IDCDF_KIND) :: istatus
+  integer(kind=CDFINT) :: istatus
 
   call print_msg(NVERB_DEBUG,'IO','io_set_not_cleanly_closed_nc4','called for '//trim(tpfile%cname))
 

@@ -15,7 +15,7 @@
 module mode_io_read_nc4
 
 use modd_io_ll,        only: tfiledata
-use modd_netcdf,       only: IDCDF_KIND
+use modd_precision,    only: CDFINT
 
 use mode_field,        only: tfielddata
 use mode_io_tools_nc4, only: cleanmnhname, io_handle_err_nc4
@@ -52,15 +52,15 @@ USE MODD_PARAMETERS, ONLY: NGRIDUNKNOWN
 !
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE
 TYPE(TFIELDDATA),         INTENT(INOUT) :: TPFIELD
-INTEGER(KIND=IDCDF_KIND), INTENT(IN)    :: KVARID
+INTEGER(KIND=CDFINT),     INTENT(IN)    :: KVARID
 INTEGER,                  INTENT(OUT)   :: KRESP  ! return-code
 CHARACTER(LEN=*),OPTIONAL,INTENT(IN)    :: HCALENDAR
 !
 INTEGER                      :: IERRLEVEL
 INTEGER                      :: ILEN
 INTEGER                      :: IGRID
-INTEGER(KIND=IDCDF_KIND)     :: INCID
-INTEGER(KIND=IDCDF_KIND)     :: STATUS
+INTEGER(KIND=CDFINT)         :: INCID
+INTEGER(KIND=CDFINT)         :: STATUS
 CHARACTER(LEN=12)            :: YVAL_FILE, YVAL_MEM
 CHARACTER(LEN=:),ALLOCATABLE :: YVALUE
 LOGICAL                      :: GOLDMNH !if old version of MesoNH (<5.4, old files without complete and correct metadata)
@@ -262,13 +262,13 @@ TYPE(TFIELDDATA), INTENT(INOUT) :: TPFIELD
 REAL,             INTENT(INOUT) :: PFIELD
 INTEGER,          INTENT(OUT)   :: KRESP  ! return-code
 
-INTEGER(KIND=IDCDF_KIND) :: STATUS
-INTEGER(KIND=IDCDF_KIND) :: INCID
-INTEGER(KIND=IDCDF_KIND) :: IVARID
-INTEGER(KIND=IDCDF_KIND) :: ITYPE   ! variable type
-INTEGER(KIND=IDCDF_KIND) :: IDIMS   ! number of dimensions
-CHARACTER(LEN=30)        :: YVARNAME
-INTEGER                  :: IRESP
+INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: INCID
+INTEGER(KIND=CDFINT) :: IVARID
+INTEGER(KIND=CDFINT) :: ITYPE   ! variable type
+INTEGER(KIND=CDFINT) :: IDIMS   ! number of dimensions
+CHARACTER(LEN=30)    :: YVARNAME
+INTEGER              :: IRESP
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_NC4_X0',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 
@@ -317,15 +317,15 @@ TYPE(TFIELDDATA), INTENT(INOUT) :: TPFIELD
 REAL,DIMENSION(:),INTENT(INOUT) :: PFIELD
 INTEGER,          INTENT(OUT)   :: KRESP  ! return-code
 
-INTEGER(KIND=IDCDF_KIND) :: STATUS
-INTEGER(KIND=IDCDF_KIND) :: INCID
-INTEGER(KIND=IDCDF_KIND) :: IVARID
-INTEGER(KIND=IDCDF_KIND) :: ITYPE   ! variable type
-INTEGER(KIND=IDCDF_KIND) :: IDIMS   ! number of dimensions
-INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: IVDIMS
-CHARACTER(LEN=30)        :: YVARNAME
-INTEGER(KIND=IDCDF_KIND) :: IDIMLEN
-INTEGER                  :: IRESP
+INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: INCID
+INTEGER(KIND=CDFINT) :: IVARID
+INTEGER(KIND=CDFINT) :: ITYPE   ! variable type
+INTEGER(KIND=CDFINT) :: IDIMS   ! number of dimensions
+INTEGER(KIND=CDFINT),DIMENSION(NF90_MAX_VAR_DIMS) :: IVDIMS
+CHARACTER(LEN=30)    :: YVARNAME
+INTEGER(KIND=CDFINT) :: IDIMLEN
+INTEGER              :: IRESP
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_NC4_X1',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 
@@ -384,15 +384,15 @@ TYPE(TFIELDDATA),   INTENT(INOUT) :: TPFIELD
 REAL,DIMENSION(:,:),INTENT(INOUT) :: PFIELD
 INTEGER,            INTENT(OUT)   :: KRESP  ! return-code
 
-INTEGER(KIND=IDCDF_KIND) :: STATUS
-INTEGER(KIND=IDCDF_KIND) :: INCID
-INTEGER(KIND=IDCDF_KIND) :: IVARID
-INTEGER(KIND=IDCDF_KIND) :: ITYPE   ! variable type
-INTEGER(KIND=IDCDF_KIND) :: IDIMS   ! number of dimensions
-INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: IVDIMS
-CHARACTER(LEN=30)        :: YVARNAME
-INTEGER(KIND=IDCDF_KIND),DIMENSION(3) :: IDIMLEN
-INTEGER                  :: IRESP
+INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: INCID
+INTEGER(KIND=CDFINT) :: IVARID
+INTEGER(KIND=CDFINT) :: ITYPE   ! variable type
+INTEGER(KIND=CDFINT) :: IDIMS   ! number of dimensions
+INTEGER(KIND=CDFINT),DIMENSION(NF90_MAX_VAR_DIMS) :: IVDIMS
+CHARACTER(LEN=30)    :: YVARNAME
+INTEGER(KIND=CDFINT),DIMENSION(3) :: IDIMLEN
+INTEGER              :: IRESP
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_NC4_X2',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 
@@ -466,15 +466,15 @@ TYPE(TFIELDDATA),     INTENT(INOUT) :: TPFIELD
 REAL,DIMENSION(:,:,:),INTENT(INOUT) :: PFIELD
 INTEGER,              INTENT(OUT)   :: KRESP  ! return-code
 
-INTEGER(KIND=IDCDF_KIND)                              :: STATUS
-INTEGER(KIND=IDCDF_KIND)                              :: INCID
-INTEGER(KIND=IDCDF_KIND)                              :: IVARID
-INTEGER(KIND=IDCDF_KIND)                              :: ITYPE   ! variable type
-INTEGER(KIND=IDCDF_KIND)                              :: IDIMS   ! number of dimensions
-INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: IVDIMS
-INTEGER(KIND=IDCDF_KIND),DIMENSION(3)                 :: IDIMLEN
-CHARACTER(LEN=30)                                     :: YVARNAME
-INTEGER                                               :: IRESP
+INTEGER(KIND=CDFINT)                              :: STATUS
+INTEGER(KIND=CDFINT)                              :: INCID
+INTEGER(KIND=CDFINT)                              :: IVARID
+INTEGER(KIND=CDFINT)                              :: ITYPE   ! variable type
+INTEGER(KIND=CDFINT)                              :: IDIMS   ! number of dimensions
+INTEGER(KIND=CDFINT),DIMENSION(NF90_MAX_VAR_DIMS) :: IVDIMS
+INTEGER(KIND=CDFINT),DIMENSION(3)                 :: IDIMLEN
+CHARACTER(LEN=30)                                 :: YVARNAME
+INTEGER                                           :: IRESP
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_NC4_X3',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 
@@ -537,15 +537,15 @@ TYPE(TFIELDDATA),       INTENT(INOUT) :: TPFIELD
 REAL,DIMENSION(:,:,:,:),INTENT(INOUT) :: PFIELD
 INTEGER,                INTENT(OUT)   :: KRESP  ! return-code
 
-INTEGER(KIND=IDCDF_KIND)                              :: STATUS
-INTEGER(KIND=IDCDF_KIND)                              :: INCID
-INTEGER(KIND=IDCDF_KIND)                              :: IVARID
-INTEGER(KIND=IDCDF_KIND)                              :: ITYPE   ! variable type
-INTEGER(KIND=IDCDF_KIND)                              :: IDIMS   ! number of dimensions
-INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: IVDIMS
-INTEGER(KIND=IDCDF_KIND),DIMENSION(4)                 :: IDIMLEN
-CHARACTER(LEN=30)                                     :: YVARNAME
-INTEGER                                               :: IRESP
+INTEGER(KIND=CDFINT)                              :: STATUS
+INTEGER(KIND=CDFINT)                              :: INCID
+INTEGER(KIND=CDFINT)                              :: IVARID
+INTEGER(KIND=CDFINT)                              :: ITYPE   ! variable type
+INTEGER(KIND=CDFINT)                              :: IDIMS   ! number of dimensions
+INTEGER(KIND=CDFINT),DIMENSION(NF90_MAX_VAR_DIMS) :: IVDIMS
+INTEGER(KIND=CDFINT),DIMENSION(4)                 :: IDIMLEN
+CHARACTER(LEN=30)                                 :: YVARNAME
+INTEGER                                           :: IRESP
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_NC4_X4',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 
@@ -611,15 +611,15 @@ TYPE(TFIELDDATA),         INTENT(INOUT) :: TPFIELD
 REAL,DIMENSION(:,:,:,:,:),INTENT(INOUT) :: PFIELD
 INTEGER,                  INTENT(OUT)   :: KRESP  ! return-code
 
-INTEGER(KIND=IDCDF_KIND)                              :: STATUS
-INTEGER(KIND=IDCDF_KIND)                              :: INCID
-INTEGER(KIND=IDCDF_KIND)                              :: IVARID
-INTEGER(KIND=IDCDF_KIND)                              :: ITYPE   ! variable type
-INTEGER(KIND=IDCDF_KIND)                              :: IDIMS   ! number of dimensions
-INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: IVDIMS
-INTEGER(KIND=IDCDF_KIND),DIMENSION(5)                 :: IDIMLEN
-CHARACTER(LEN=30)                                     :: YVARNAME
-INTEGER                                               :: IRESP
+INTEGER(KIND=CDFINT)                              :: STATUS
+INTEGER(KIND=CDFINT)                              :: INCID
+INTEGER(KIND=CDFINT)                              :: IVARID
+INTEGER(KIND=CDFINT)                              :: ITYPE   ! variable type
+INTEGER(KIND=CDFINT)                              :: IDIMS   ! number of dimensions
+INTEGER(KIND=CDFINT),DIMENSION(NF90_MAX_VAR_DIMS) :: IVDIMS
+INTEGER(KIND=CDFINT),DIMENSION(5)                 :: IDIMLEN
+CHARACTER(LEN=30)                                 :: YVARNAME
+INTEGER                                           :: IRESP
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_NC4_X5',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 
@@ -688,15 +688,15 @@ TYPE(TFIELDDATA),           INTENT(INOUT) :: TPFIELD
 REAL,DIMENSION(:,:,:,:,:,:),INTENT(INOUT) :: PFIELD
 INTEGER,                    INTENT(OUT)   :: KRESP  ! return-code
 
-INTEGER(KIND=IDCDF_KIND)                              :: STATUS
-INTEGER(KIND=IDCDF_KIND)                              :: INCID
-INTEGER(KIND=IDCDF_KIND)                              :: IVARID
-INTEGER(KIND=IDCDF_KIND)                              :: ITYPE   ! variable type
-INTEGER(KIND=IDCDF_KIND)                              :: IDIMS   ! number of dimensions
-INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: IVDIMS
-INTEGER(KIND=IDCDF_KIND),DIMENSION(6)                 :: IDIMLEN
-CHARACTER(LEN=30)                                     :: YVARNAME
-INTEGER                                               :: IRESP
+INTEGER(KIND=CDFINT)                              :: STATUS
+INTEGER(KIND=CDFINT)                              :: INCID
+INTEGER(KIND=CDFINT)                              :: IVARID
+INTEGER(KIND=CDFINT)                              :: ITYPE   ! variable type
+INTEGER(KIND=CDFINT)                              :: IDIMS   ! number of dimensions
+INTEGER(KIND=CDFINT),DIMENSION(NF90_MAX_VAR_DIMS) :: IVDIMS
+INTEGER(KIND=CDFINT),DIMENSION(6)                 :: IDIMLEN
+CHARACTER(LEN=30)                                 :: YVARNAME
+INTEGER                                           :: IRESP
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_NC4_X6',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 
@@ -767,13 +767,13 @@ TYPE(TFIELDDATA), INTENT(INOUT) :: TPFIELD
 INTEGER,          INTENT(INOUT) :: KFIELD
 INTEGER,          INTENT(OUT)   :: KRESP  ! return-code
 
-INTEGER(KIND=IDCDF_KIND) :: STATUS
-INTEGER(KIND=IDCDF_KIND) :: INCID
-INTEGER(KIND=IDCDF_KIND) :: IVARID
-INTEGER(KIND=IDCDF_KIND) :: ITYPE   ! variable type
-INTEGER(KIND=IDCDF_KIND) :: IDIMS   ! number of dimensions
-CHARACTER(LEN=30)        :: YVARNAME
-INTEGER                  :: IRESP
+INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: INCID
+INTEGER(KIND=CDFINT) :: IVARID
+INTEGER(KIND=CDFINT) :: ITYPE   ! variable type
+INTEGER(KIND=CDFINT) :: IDIMS   ! number of dimensions
+CHARACTER(LEN=30)    :: YVARNAME
+INTEGER              :: IRESP
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_NC4_N0',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 
@@ -823,15 +823,15 @@ TYPE(TFIELDDATA),        INTENT(INOUT) :: TPFIELD
 INTEGER, DIMENSION(:),   INTENT(INOUT) :: KFIELD
 INTEGER,                 INTENT(OUT)   :: KRESP  ! return-code
 
-INTEGER(KIND=IDCDF_KIND) :: STATUS
-INTEGER(KIND=IDCDF_KIND) :: INCID
-INTEGER(KIND=IDCDF_KIND) :: IVARID
-INTEGER(KIND=IDCDF_KIND) :: ITYPE   ! variable type
-INTEGER(KIND=IDCDF_KIND) :: IDIMS   ! number of dimensions
-INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: IVDIMS
-CHARACTER(LEN=30)        :: YVARNAME
-INTEGER(KIND=IDCDF_KIND) :: IDIMLEN
-INTEGER                  :: IRESP
+INTEGER(KIND=CDFINT)                              :: STATUS
+INTEGER(KIND=CDFINT)                              :: INCID
+INTEGER(KIND=CDFINT)                              :: IVARID
+INTEGER(KIND=CDFINT)                              :: ITYPE   ! variable type
+INTEGER(KIND=CDFINT)                              :: IDIMS   ! number of dimensions
+INTEGER(KIND=CDFINT),DIMENSION(NF90_MAX_VAR_DIMS) :: IVDIMS
+CHARACTER(LEN=30)                                 :: YVARNAME
+INTEGER(KIND=CDFINT)                              :: IDIMLEN
+INTEGER                                           :: IRESP
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_NC4_N1',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 
@@ -891,15 +891,15 @@ TYPE(TFIELDDATA),        INTENT(INOUT) :: TPFIELD
 INTEGER, DIMENSION(:,:), INTENT(INOUT) :: KFIELD
 INTEGER,                 INTENT(OUT)   :: KRESP  ! return-code
 
-INTEGER(KIND=IDCDF_KIND) :: STATUS
-INTEGER(KIND=IDCDF_KIND) :: INCID
-INTEGER(KIND=IDCDF_KIND) :: IVARID
-INTEGER(KIND=IDCDF_KIND) :: ITYPE   ! variable type
-INTEGER(KIND=IDCDF_KIND) :: IDIMS   ! number of dimensions
-INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: IVDIMS
-CHARACTER(LEN=30)        :: YVARNAME
-INTEGER(KIND=IDCDF_KIND),DIMENSION(3) :: IDIMLEN
-INTEGER                  :: IRESP
+INTEGER(KIND=CDFINT)                              :: STATUS
+INTEGER(KIND=CDFINT)                              :: INCID
+INTEGER(KIND=CDFINT)                              :: IVARID
+INTEGER(KIND=CDFINT)                              :: ITYPE   ! variable type
+INTEGER(KIND=CDFINT)                              :: IDIMS   ! number of dimensions
+INTEGER(KIND=CDFINT),DIMENSION(NF90_MAX_VAR_DIMS) :: IVDIMS
+CHARACTER(LEN=30)                                 :: YVARNAME
+INTEGER(KIND=CDFINT),DIMENSION(3)                 :: IDIMLEN
+INTEGER                                           :: IRESP
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_NC4_N2',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 
@@ -973,14 +973,14 @@ TYPE(TFIELDDATA), INTENT(INOUT) :: TPFIELD
 LOGICAL,          INTENT(INOUT) :: OFIELD
 INTEGER,          INTENT(OUT)   :: KRESP  ! return-code
 
-INTEGER(KIND=IDCDF_KIND) :: STATUS
-INTEGER(KIND=IDCDF_KIND) :: INCID
-INTEGER(KIND=IDCDF_KIND) :: IVARID
-INTEGER(KIND=IDCDF_KIND) :: ITYPE   ! variable type
-INTEGER(KIND=IDCDF_KIND) :: IDIMS   ! number of dimensions
-CHARACTER(LEN=30)        :: YVARNAME
-INTEGER                  :: IRESP
-INTEGER                  :: IFIELD
+INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: INCID
+INTEGER(KIND=CDFINT) :: IVARID
+INTEGER(KIND=CDFINT) :: ITYPE   ! variable type
+INTEGER(KIND=CDFINT) :: IDIMS   ! number of dimensions
+CHARACTER(LEN=30)    :: YVARNAME
+INTEGER              :: IRESP
+INTEGER              :: IFIELD
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_NC4_L0',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 
@@ -1043,17 +1043,17 @@ TYPE(TFIELDDATA),    INTENT(INOUT) :: TPFIELD
 LOGICAL,DIMENSION(:),INTENT(INOUT) :: OFIELD
 INTEGER,             INTENT(OUT)   :: KRESP  ! return-code
 
-INTEGER(KIND=IDCDF_KIND) :: STATUS
-INTEGER(KIND=IDCDF_KIND) :: INCID
-INTEGER(KIND=IDCDF_KIND) :: IVARID
-INTEGER(KIND=IDCDF_KIND) :: ITYPE   ! variable type
-INTEGER(KIND=IDCDF_KIND) :: IDIMS   ! number of dimensions
-INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: IVDIMS
-INTEGER(KIND=IDCDF_KIND) :: IDIMLEN
-CHARACTER(LEN=30)        :: YVARNAME
-INTEGER                  :: IRESP
-INTEGER                  :: JI
-INTEGER,DIMENSION(SIZE(OFIELD)) :: IFIELD
+INTEGER(KIND=CDFINT)                              :: STATUS
+INTEGER(KIND=CDFINT)                              :: INCID
+INTEGER(KIND=CDFINT)                              :: IVARID
+INTEGER(KIND=CDFINT)                              :: ITYPE   ! variable type
+INTEGER(KIND=CDFINT)                              :: IDIMS   ! number of dimensions
+INTEGER(KIND=CDFINT),DIMENSION(NF90_MAX_VAR_DIMS) :: IVDIMS
+INTEGER(KIND=CDFINT)                              :: IDIMLEN
+CHARACTER(LEN=30)                                 :: YVARNAME
+INTEGER                                           :: IRESP
+INTEGER                                           :: JI
+INTEGER,DIMENSION(SIZE(OFIELD))                   :: IFIELD
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_NC4_L1',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 
@@ -1130,16 +1130,16 @@ TYPE(TFIELDDATA), INTENT(INOUT) :: TPFIELD
 CHARACTER(LEN=*), INTENT(INOUT) :: HFIELD
 INTEGER,          INTENT(OUT)   :: KRESP  ! return-code
 
-INTEGER(KIND=IDCDF_KIND)     :: STATUS
-INTEGER(KIND=IDCDF_KIND)     :: INCID
-INTEGER(KIND=IDCDF_KIND)     :: IVARID
-INTEGER(KIND=IDCDF_KIND)     :: ITYPE   ! variable type
-INTEGER(KIND=IDCDF_KIND)     :: IDIMS   ! number of dimensions
-INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: IVDIMS
-CHARACTER(LEN=30)            :: YVARNAME
-CHARACTER(LEN=:),ALLOCATABLE :: YSTR
-INTEGER(KIND=IDCDF_KIND)     :: IDIMLEN
-INTEGER                      :: IRESP
+INTEGER(KIND=CDFINT)                              :: STATUS
+INTEGER(KIND=CDFINT)                              :: INCID
+INTEGER(KIND=CDFINT)                              :: IVARID
+INTEGER(KIND=CDFINT)                              :: ITYPE   ! variable type
+INTEGER(KIND=CDFINT)                              :: IDIMS   ! number of dimensions
+INTEGER(KIND=CDFINT),DIMENSION(NF90_MAX_VAR_DIMS) :: IVDIMS
+CHARACTER(LEN=30)                                 :: YVARNAME
+CHARACTER(LEN=:),ALLOCATABLE                      :: YSTR
+INTEGER(KIND=CDFINT)                              :: IDIMLEN
+INTEGER                                           :: IRESP
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_NC4_C0',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 
@@ -1199,14 +1199,14 @@ TYPE(TFIELDDATA), INTENT(INOUT) :: TPFIELD
 TYPE (DATE_TIME), INTENT(INOUT) :: TPDATA
 INTEGER,          INTENT(OUT)   :: KRESP  ! return-code
 
-INTEGER(KIND=IDCDF_KIND)     :: STATUS
-INTEGER(KIND=IDCDF_KIND)     :: INCID
-INTEGER(KIND=IDCDF_KIND)     :: IVARID
-INTEGER(KIND=IDCDF_KIND)     :: ITYPE   ! variable type
-INTEGER(KIND=IDCDF_KIND)     :: IDIMS   ! number of dimensions
+INTEGER(KIND=CDFINT)         :: STATUS
+INTEGER(KIND=CDFINT)         :: INCID
+INTEGER(KIND=CDFINT)         :: IVARID
+INTEGER(KIND=CDFINT)         :: ITYPE   ! variable type
+INTEGER(KIND=CDFINT)         :: IDIMS   ! number of dimensions
 CHARACTER(LEN=30)            :: YVARNAME
 CHARACTER(LEN=:),ALLOCATABLE :: YSTR
-INTEGER(KIND=IDCDF_KIND)     :: IDIMLEN
+INTEGER(KIND=CDFINT)         :: IDIMLEN
 INTEGER                      :: IDX,IRESP
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_NC4_T0',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))

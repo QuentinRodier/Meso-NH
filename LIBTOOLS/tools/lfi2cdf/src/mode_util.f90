@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 MODULE mode_util
   USE MODD_IO_ll,  ONLY: TFILE_ELT
-  USE MODD_NETCDF, ONLY: DIMCDF, IDCDF_KIND
+  USE MODD_NETCDF, ONLY: DIMCDF, CDFINT
   USE MODD_PARAMETERS, ONLY: NLFIMAXCOMMENTLENGTH, NMNHNAMELGTMAX
   use modd_precision, only: LFIINT
 
@@ -83,9 +83,9 @@ CONTAINS
     INTEGER                                  :: leng
     INTEGER                                  :: IID, IRESP, IDATES, ICURDATE
     INTEGER                                  :: IDXDATE, IDXTIME
-    INTEGER(KIND=IDCDF_KIND)                 :: kcdf_id, kcdf_id2, var_id
-    INTEGER(KIND=IDCDF_KIND)                 :: status
     INTEGER(KIND=LFIINT)                     :: iresp2,ilu,ileng,ipos
+    INTEGER(KIND=CDFINT)                     :: kcdf_id, kcdf_id2, var_id
+    INTEGER(KIND=CDFINT)                     :: status
     LOGICAL                                  :: ladvan
     LOGICAL                                  :: GOK
     TYPE(TLFIDATE),DIMENSION(MAXDATES)       :: TLFIDATES
@@ -632,8 +632,8 @@ END DO
     CHARACTER(LEN=16) :: YMNHVERSION
     CHARACTER(LEN=:),ALLOCATABLE :: YHISTORY
     INTEGER :: ilen, ji
-    INTEGER(KIND=IDCDF_KIND) :: status
-    INTEGER(KIND=IDCDF_KIND) :: kcdf_id
+    INTEGER(KIND=CDFINT) :: status
+    INTEGER(KIND=CDFINT) :: kcdf_id
 
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','def_ncdf','called')
@@ -686,7 +686,7 @@ END DO
     INTEGER                                  :: IDIMS
     INTEGER                                  :: INSRC
     INTEGER                                  :: ISRC
-    INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: IDIMLEN
+    INTEGER(KIND=CDFINT),DIMENSION(NF90_MAX_VAR_DIMS) :: IDIMLEN
     logical,dimension(knaf)                  :: gtimedep_in, gtimedep_out
 
     CHARACTER(LEN=:),       ALLOCATABLE :: YTAB0D
@@ -962,9 +962,9 @@ END DO
     TYPE(option),DIMENSION(:),   INTENT(IN)  :: options
     INTEGER,                     INTENT(IN)  :: runmode
 
-    INTEGER                     :: idx, IRESP2
-    INTEGER(KIND=IDCDF_KIND)    :: omode
-    INTEGER(KIND=IDCDF_KIND)    :: status
+    INTEGER              :: idx, IRESP2
+    INTEGER(KIND=CDFINT) :: omode
+    INTEGER(KIND=CDFINT) :: status
     INTEGER(KIND=LFIINT) :: ilu,iresp
 
 
@@ -1115,8 +1115,8 @@ END DO
     CHARACTER(LEN=NMNHNAMELGTMAX),DIMENSION(nbvar) :: YVARS
     INTEGER                  :: ji
     INTEGER                  :: idx1, idx2
-    INTEGER(KIND=IDCDF_KIND) :: status
-    INTEGER(KIND=IDCDF_KIND) :: omode
+    INTEGER(KIND=CDFINT)     :: status
+    INTEGER(KIND=CDFINT)     :: omode
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_SPLIT_NCFILES_OUT','called')
 
@@ -1193,8 +1193,8 @@ END DO
 
     INTEGER                                  :: ILENG
     INTEGER                                  :: JDIM
-    INTEGER(KIND=IDCDF_KIND)                 :: ISTATUS
-    INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: IDIMS_ID
+    INTEGER(KIND=CDFINT)                     :: ISTATUS
+    INTEGER(KIND=CDFINT),DIMENSION(NF90_MAX_VAR_DIMS) :: IDIMS_ID
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_GET_METADATA_NC4','called')
 

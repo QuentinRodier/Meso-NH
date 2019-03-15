@@ -103,10 +103,10 @@ USE MODD_GRID_n
 USE MODD_IO_ll,      ONLY: TFILEDATA
 USE MODD_LUNIT,      ONLY: TLUOUT0
 USE MODE_MODELN_HANDLER
-USE MODD_NETCDF,     ONLY:IDCDF_KIND
 USE MODD_NSV  
 USE MODD_PARAMETERS
-USE MODD_PARAM_n,    ONLY : CTURB
+USE MODD_PARAM_n,    ONLY: CTURB
+USE MODD_PRECISION,  ONLY: CDFINT
 USE MODD_PREP_REAL
 USE MODD_TIME
 USE MODD_TIME_n
@@ -189,12 +189,12 @@ TYPE(TFILEDATA),POINTER                       :: TZFILE
 !
 ! For netcdf 
 !
-integer(kind=IDCDF_KIND) :: status, ncid, varid
-integer(kind=IDCDF_KIND) :: lat_varid, lon_varid, lev_varid, time_varid 
-integer(kind=IDCDF_KIND) :: hyam_varid, hybm_varid, p0_varid, t_varid, q_varid, ps_varid 
-integer(kind=IDCDF_KIND) :: recid, latid, lonid, levid, timeid
-integer(kind=IDCDF_KIND) :: latlen, lonlen, levlen, nrecs,timelen
-integer(kind=IDCDF_KIND) :: itimeindex, KILEN, jrec
+integer(kind=CDFINT) :: status, ncid, varid
+integer(kind=CDFINT) :: lat_varid, lon_varid, lev_varid, time_varid
+integer(kind=CDFINT) :: hyam_varid, hybm_varid, p0_varid, t_varid, q_varid, ps_varid
+integer(kind=CDFINT) :: recid, latid, lonid, levid, timeid
+integer(kind=CDFINT) :: latlen, lonlen, levlen, nrecs,timelen
+integer(kind=CDFINT) :: itimeindex, KILEN, jrec
 CHARACTER(LEN=40)                     :: recname
 REAL, DIMENSION(:), ALLOCATABLE       :: lats
 REAL, DIMENSION(:), ALLOCATABLE       :: lons 
@@ -764,7 +764,7 @@ CONTAINS
 !     #############################
       SUBROUTINE HANDLE_ERR(STATUS)
 !     #############################
-     INTEGER(KIND=IDCDF_KIND) STATUS
+     INTEGER(KIND=CDFINT) STATUS
      IF (STATUS .NE. NF90_NOERR) THEN
         PRINT *, NF90_STRERROR(STATUS)
      STOP 'Stopped'
