@@ -3,15 +3,6 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-
-#ifdef MNH_MPI_DOUBLE_PRECISION
-#define MNH_MPI_REAL MPI_DOUBLE_PRECISION
-#define MNH_MPI_2REAL MPI_2DOUBLE_PRECISION
-#else
-#define MNH_MPI_REAL MPI_REAL
-#define MNH_MPI_2REAL MPI_2REAL
-#endif
-
 !       ########################
 MODULE MODE_SPLITTINGZ_ll
   !     ########################
@@ -40,6 +31,7 @@ MODULE MODE_SPLITTINGZ_ll
   ! Modifications:
   !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
   USE MODD_MPIF
+  use modd_precision, only: MNHREAL_MPI, MNH2REAL_MPI
   !
   USE MODE_SPLITTING_ll
   !
@@ -180,8 +172,8 @@ CONTAINS
     !
     CALL MPI_COMM_DUP(NMNH_COMM_WORLD, NGRID_COM, KINFO_ll)
     !
-    MPI_PRECISION  = MNH_MPI_REAL
-    MPI_2PRECISION = MNH_MPI_2REAL
+    MPI_PRECISION  = MNHREAL_MPI
+    MPI_2PRECISION = MNH2REAL_MPI
     !
     ! For bug with intelmpi+ilp64+i8 declare MNH_STATUSES_IGNORE
     !

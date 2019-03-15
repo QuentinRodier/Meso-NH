@@ -159,7 +159,6 @@ CONTAINS
 
   USE MODD_IO_ll
 #if defined(MNH_IOCDF4)
-  USE MODD_NETCDF,              ONLY:IDCDF_KIND
   use mode_io_file_nc4,         only: io_create_file_nc4, io_open_file_nc4
 #endif
   use mode_io_file_lfi,         only: io_create_file_lfi, io_open_file_lfi

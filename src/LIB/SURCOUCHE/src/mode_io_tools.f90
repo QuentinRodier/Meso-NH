@@ -24,8 +24,8 @@ contains
     ! return the file number where to write the K level of data
     !
     IMPLICIT NONE
-    INTEGER(kind=MNH_MPI_RANK_KIND)                   :: k,nb_proc_io
-    INTEGER(kind=MNH_MPI_RANK_KIND)                   :: io_file
+    INTEGER :: k,nb_proc_io
+    INTEGER :: io_file
 
     io_file = MOD ((k-1) , nb_proc_io )
 
@@ -36,12 +36,12 @@ contains
     ! return the proc number which must write the 'IFILE' file
     !
     IMPLICIT NONE
-    INTEGER(kind=MNH_MPI_RANK_KIND)                  :: IFILE,nb_proc,nb_proc_io
-    INTEGER(kind=MNH_MPI_RANK_KIND),OPTIONAL         :: offset_rank
+    INTEGER          :: IFILE,nb_proc,nb_proc_io
+    INTEGER,OPTIONAL :: offset_rank
 
-    INTEGER(kind=MNH_MPI_RANK_KIND)                  :: IO_RANK
+    INTEGER          :: IO_RANK
 
-    INTEGER(kind=MNH_MPI_RANK_KIND)                  :: ipas,irest
+    INTEGER          :: ipas,irest
 
     ipas  =        nb_proc / nb_proc_io
     irest =  MOD ( nb_proc , nb_proc_io )
