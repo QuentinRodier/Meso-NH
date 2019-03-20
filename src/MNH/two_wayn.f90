@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1997-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1997-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ###################
@@ -112,7 +112,8 @@ END MODULE MODI_TWO_WAY_n
 !!      Bosseur & Filippi 07/2013 Adds Forefire
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!      Modification    01/2016  (JP Pinty) Add LIMA
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 20/03/2019: bugfix: use size(ZDIRFLASWD,3) instead of SIZE(PDIRFLASWD,3) for loop for ZDIRFLASWD(:,:,JVAR)
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -1011,7 +1012,7 @@ IF (CDCONV /= 'NONE') THEN
   CALL SET_LSFIELD_2WAY_ll(ZPRSCONV , ZTPRSCONV) 
 END IF
 IF (CRAD /= 'NONE') THEN
- DO JVAR=1,SIZE( PDIRFLASWD,3)                                
+ DO JVAR = 1, SIZE(ZDIRFLASWD, 3)
    CALL SET_LSFIELD_2WAY_ll(ZDIRFLASWD(:,:,JVAR) , ZTDIRFLASWD(:,:,JVAR)) 
    CALL SET_LSFIELD_2WAY_ll(ZSCAFLASWD(:,:,JVAR) , ZTSCAFLASWD(:,:,JVAR)) 
    CALL SET_LSFIELD_2WAY_ll(ZDIRSRFSWD(:,:,JVAR) , ZTDIRSRFSWD(:,:,JVAR)) 
