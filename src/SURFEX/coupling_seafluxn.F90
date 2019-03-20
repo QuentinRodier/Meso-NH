@@ -51,7 +51,7 @@ SUBROUTINE COUPLING_SEAFLUX_n (CHS, DTS, DGS, O, OR, G, S, DST, SLT, &
 !!      Modified    11/2014 : J. Pianezze : add currents for wave coupling
 !!      Modified    02/2019 : S. Bielli Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !!      Modified    03/2019 : P. Wautelet: correct ZWS when variable not present in file
-!!
+!!      Modified    03/2019 : P. Wautelet: missing use MODI_GET_LUOUT
 !!---------------------------------------------------------------------
 !
 !
@@ -109,6 +109,7 @@ USE MODI_COUPLING_ICEFLUX_n
 USE MODI_SEAICE_GELATO1D_n
 !
 USE MODI_COUPLING_SLT_n
+USE MODI_GET_LUOUT
 !
 IMPLICIT NONE
 !
