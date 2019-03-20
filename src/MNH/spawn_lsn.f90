@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1997-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 nesting 2006/06/19 11:16:39
 !-----------------------------------------------------------------
 !     ####################
       MODULE MODI_SPAWN_LS_n
@@ -68,8 +63,8 @@ END MODULE MODI_SPAWN_LS_n
                     KDXRATIO,KDYRATIO,                               &
                     HLBCX,HLBCY,PZZ,PZHAT,OSLEVE,PLEN1,PLEN2,        &
                     PCOEFLIN_LBXM,                                   &
-                                  PLSTHM,PLSRVM,PLSZWSM,             &
-                                  PLSUM,PLSVM,PLSWM,                 &
+                                  PLSTHM,PLSRVM,                     &
+                                  PLSUM,PLSVM,PLSWM,PLSZWSM,         &
                                   PLSTHS,PLSRVS,                     &
                                   PLSUS,PLSVS,PLSWS,PLSZWSS          )
 !     ################################################################
@@ -129,6 +124,7 @@ END MODULE MODI_SPAWN_LS_n
 !!    P. Jabouille   19/04/00 parallelisation
 !!      J.Escobar : 18/12/2015 : Correction of bug in bound in // for NHALO <>1 
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  P. Wautelet 20/03/2019: fixes: wrong order of the dummy arguments + double deallocate
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -474,9 +470,8 @@ END IF
 !
 PLSVS(:,:,:)   = (PLSVS(:,:,:) - PLSVM(:,:,:)) / ZTIME
 !
-DEALLOCATE(ZTLSUM,ZTLSVM,ZTLSWM,ZTLSTHM,ZTLSRVM)
-IF(GVERT_INTERP) DEALLOCATE(ZTZS,ZZS)
 DEALLOCATE(ZTLSUM,ZTLSVM,ZTLSWM,ZTLSTHM,ZTLSRVM,ZTZWS)
+IF(GVERT_INTERP) DEALLOCATE(ZTZS,ZZS)
 IF(GVERT_INTERP) DEALLOCATE(ZTZSMT,ZZSMT)
 !
 NULLIFY(TZLSFIELD_ll)
