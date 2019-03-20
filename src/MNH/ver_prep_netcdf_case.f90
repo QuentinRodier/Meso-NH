@@ -84,6 +84,7 @@ END MODULE MODI_VER_PREP_NETCDF_CASE
 !!                  May 2006                 Remove EPS
 !!                  Oct 2017 (J.Escobar) minor, missing USE MODI_SECOND_MNH
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!                  Mars 2019 (Q. Rodier): missing SECOND_MNH(ZTIME1)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -141,6 +142,7 @@ INTEGER                            :: JK      ! loop counter
 !-------------------------------------------------------------------------------
 !
 ILUOUT0 = TLUOUT0%NLU
+CALL SECOND_MNH(ZTIME1)
 !
 !*       1.    CHANGING OF VARIABLES
 !              ---------------------
@@ -190,7 +192,7 @@ DEALLOCATE(ZSV_LS)
 !*       3.    ERROR CONTROL
 !              -------------
 !
-CALL SECOND_MNH(ZTIME1)
+CALL SECOND_MNH(ZTIME2)
 PDIAG = ZTIME2 - ZTIME1
 !
 !-------------------------------------------------------------------------------
