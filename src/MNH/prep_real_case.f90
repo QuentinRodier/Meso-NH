@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ######################
@@ -380,6 +380,7 @@
 !!     B.VIE 2016 : LIMA
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  P. Wautelet 20/03/2019: missing use MODI_INIT_SALT
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -438,6 +439,7 @@ USE MODI_DEALLOC_PARA_LL
 USE MODI_DEFAULT_DESFM_n
 USE MODI_ERROR_ON_TEMPERATURE
 USE MODI_INI_PROG_VAR
+USE MODI_INIT_SALT
 USE MODI_METRICS
 USE MODI_MNHREAD_ZS_DUMMY_n
 USE MODI_MNHWRITE_ZS_DUMMY_n
