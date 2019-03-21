@@ -229,10 +229,6 @@ OBJS_I8=spll_NEWLFI_ALL.o
 $(OBJS_I8) : OPT = $(OPT_BASE) $(OPT_PERF2) $(OPT_INT8)
 endif
 #
-# Management/parametrisation of size of RECL for LFI I/O speedup 
-#
-LFI_RECL?=512
-#
 DIR_MASTER          += $(DIR_NEWLFI)
 CPPFLAGS            += $(CPPFLAGS_NEWLFI)
 OBJS_LISTE_MASTER   += fswap8buff.o

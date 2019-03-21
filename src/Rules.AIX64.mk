@@ -25,7 +25,6 @@ OPT_I8    = -qintsize=8
 # Integer 4/8 option
 #
 MNH_INT   ?=4
-LFI_RECL  ?=512
 #
 OPT_BASE_I4       := $(OPT_BASE)
 ifeq "$(MNH_INT)" "8"
@@ -86,7 +85,7 @@ CPP = /usr/lib/cpp -C -P -qlanglvl=classic
 CPPFLAGS_SURFEX    =
 CPPFLAGS_SURCOUCHE = -DMNH_MPI_DOUBLE_PRECISION -DMNH_SP4 -DMNH_MPI_RANK_KIND=$(MNH_MPI_RANK_KIND)
 CPPFLAGS_RAD       =
-CPPFLAGS_NEWLFI    = -DLINUX -DLFI_INT=${LFI_INT} -DLFI_RECL=${LFI_RECL}
+CPPFLAGS_NEWLFI    = -DLINUX -DLFI_INT=${LFI_INT}
 CPPFLAGS_MNH       = -DAMAX1=MAX -DMNH -DSFX_MNH
 #
 # Gribex flags
