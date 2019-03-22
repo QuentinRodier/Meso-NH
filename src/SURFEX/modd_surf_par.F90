@@ -33,6 +33,9 @@ MODULE MODD_SURF_PAR
 !*       0.   DECLARATIONS
 !             ------------
 !
+#ifdef SFX_MNH
+USE MODD_PRECISION, ONLY: MNHREAL
+#endif
 !
 IMPLICIT NONE
 !
@@ -43,10 +46,12 @@ INTEGER :: NBUGFIX   ! bugfix number of this version
 #ifndef SFX_MNH
 REAL,    PARAMETER :: XUNDEF = 1.E+20
 #else 
-#ifdef MNH_MPI_DOUBLE_PRECISION
-REAL,    PARAMETER :: XUNDEF = 1.E+20! HUGE(XUNDEF) ! Z'7FFFFFFFFFFFFFFF' !  undefined value
+#if (MNH_REAL == 8)
+REAL,    PARAMETER :: XUNDEF = 1.E+20_MNHREAL ! HUGE(XUNDEF) ! Z'7FFFFFFFFFFFFFFF' !  undefined value
+#elif (MNH_REAL == 4)
+REAL,    PARAMETER :: XUNDEF = 1.E+9_MNHREAL  ! HUGE(XUNDEF) ! Z'7FBFFFFF' ! undefined value
 #else
-REAL,    PARAMETER :: XUNDEF = 1.E+9 ! HUGE(XUNDEF) ! Z'7FBFFFFF' ! undefined value
+#error "Invalid MNH_REAL"
 #endif
 #endif
 INTEGER, PARAMETER :: NUNDEF = 1E+9   !  HUGE(NUNDEF) !  undefined value
