@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
+!------------------------------------------------------------------------
 !     ###################
       MODULE MODE_ELEC_ll
 !     ###################
@@ -24,7 +25,8 @@
 !------------------------------------------------------------------------
 !
 USE MODD_MPIF
-USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD
+use modd_precision, only: MNHREAL_MPI
+USE MODD_VAR_ll,    ONLY: NMNH_COMM_WORLD
 !
 IMPLICIT NONE
 !
@@ -32,7 +34,6 @@ IMPLICIT NONE
 !
 !
 INTEGER, PARAMETER :: IFIRST_PROC = 0   ! 0/1 to increase numerotation of proc number 
-INTEGER, PARAMETER :: MPI_PRECISION = MPI_DOUBLE_PRECISION
 !
 !
 INTERFACE SUM_ELEC_ll
@@ -115,7 +116,7 @@ ZTAB = PSUM_INOUT
 INFO = -1
 !
 ! Sum(Proc)
-CALL MPI_ALLREDUCE(ZTAB, PSUM_INOUT, IDIM, MPI_PRECISION, &
+CALL MPI_ALLREDUCE(ZTAB, PSUM_INOUT, IDIM, MNHREAL_MPI, &
                    MPI_SUM, NMNH_COMM_WORLD, INFO)
 !
 END SUBROUTINE RSUM_ELEC_ll
@@ -152,7 +153,7 @@ INFO = -1
 !
 !*     1.1    max(Proc)
 !
-CALL MPI_ALLREDUCE(ZTAB, PMIN_INOUT, IDIM, MPI_PRECISION, &
+CALL MPI_ALLREDUCE(ZTAB, PMIN_INOUT, IDIM, MNHREAL_MPI, &
                    MPI_MIN, NMNH_COMM_WORLD, INFO)
 !
 !*     1.2    find the proc number of the maximum
@@ -202,7 +203,7 @@ INFO = -1
 !
 !*     1.1    max(Proc)
 !
-CALL MPI_ALLREDUCE(ZTAB, PMAX_INOUT, IDIM, MPI_PRECISION, &
+CALL MPI_ALLREDUCE(ZTAB, PMAX_INOUT, IDIM, MNHREAL_MPI, &
                    MPI_MAX, NMNH_COMM_WORLD, INFO)
 !
 !*     1.2    find the proc number of the maximum
@@ -420,7 +421,7 @@ INFO = -1
 !
 !*     1.1    sum(Proc)
 !
-CALL MPI_ALLREDUCE(ZTAB, PSUM_INOUT, IDIM, MPI_PRECISION, &
+CALL MPI_ALLREDUCE(ZTAB, PSUM_INOUT, IDIM, MNHREAL_MPI, &
                    MPI_SUM, NMNH_COMM_WORLD, INFO)
 !
 END SUBROUTINE RSUM0_ELEC_ll

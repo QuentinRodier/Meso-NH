@@ -1,14 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for CVS information
-!-----------------------------------------------------------------
-! $Source$
-! $Name$ 
-! $Revision$ 
-! $Date$
 !-----------------------------------------------------------------
 !Correction :
 !  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
@@ -61,14 +55,14 @@
 !                       and local processor
 !       NHALO2_COM - MPI communicator for halo 2
 !       NCOMBUFFSIZE2 - buffer size
-!       MPI_PRECISION - mpi precision
+!       MNHREAL_MPI - mpi precision
 !       NNEXTTAG, NMAXTAG - variable to define message tag
 !
 !!    Modifications
 !!    -------------
 !       Original    May 19, 1998
 !       R. Guivarch June 24, 1998 _ll
-!       R. Guivarch June 29, 1998 MPI_PRECISION
+!       R. Guivarch June 29, 1998 MNHREAL_MPI
 !       N. Gicquel  October 30, 1998 COPY_CRSPD2
 !       J.Escobar 10/02/2012 : Bug , in MPI_RECV replace 
 !            MPI_STATUSES_IGNORE with MPI_STATUS_IGNORE
@@ -691,7 +685,6 @@
 !     Module MODD_VAR_ll
 !       IP - Number of local processor=subdomain
 !       NCOMBUFFSIZE2 - buffer size
-!       MPI_PRECISION - mpi precision
 !       NNEXTTAG, NMAXTAG - variable to define message tag
 !               
 !!    Reference
@@ -707,8 +700,8 @@
 !
   USE MODD_STRUCTURE_ll, ONLY : CRSPD_ll, ZONE_ll
   USE MODD_ARGSLIST_ll, ONLY : LIST_ll, HALO2LIST_ll
-!
-  USE MODD_VAR_ll, ONLY : NCOMBUFFSIZE2, IP, MPI_PRECISION, NNEXTTAG, NMAXTAG
+  use modd_precision, only: MNHREAL_MPI
+  USE MODD_VAR_ll, ONLY : NCOMBUFFSIZE2, IP, NNEXTTAG, NMAXTAG
   USE MODE_EXCHANGE_ll, ONLY : FILLIN_BUFFERS
   USE MODD_MPIF
 !JUANZ
@@ -829,13 +822,13 @@ INTEGER                                               :: NB_REQ,NFIRST_REQ_RECV
 !JUAN
 !if defined(MNH_MPI_BSEND)
  IF (LMNH_MPI_BSEND) THEN
-           CALL MPI_BSEND(TZBUFFER, JINC, MPI_PRECISION, &
+           CALL MPI_BSEND(TZBUFFER, JINC, MNHREAL_MPI, &
                 TZZONESEND%NUMBER - 1, TZZONESEND%MSSGTAG + ITAGOFFSET, &
                 KMPI_COMM, KERROR)
 else
 !JUAN
 !if defined(MNH_MPI_ISEND)
-           CALL MPI_ISEND(TZBUFFER(1,NB_REQ), JINC, MPI_PRECISION, &
+           CALL MPI_ISEND(TZBUFFER(1,NB_REQ), JINC, MNHREAL_MPI, &
                 TZZONESEND%NUMBER - 1, TZZONESEND%MSSGTAG + ITAGOFFSET, &
                 KMPI_COMM, REQ_TAB(NB_REQ), KERROR)
 
@@ -864,12 +857,12 @@ else
 !if defined (MNH_MPI_ISEND)
  IF ( .NOT. LMNH_MPI_BSEND) THEN
         NB_REQ = NB_REQ + 1
-        CALL MPI_IRECV(TZBUFFER(1,NB_REQ), NCOMBUFFSIZE2, MPI_PRECISION, &
+        CALL MPI_IRECV(TZBUFFER(1,NB_REQ), NCOMBUFFSIZE2, MNHREAL_MPI, &
              TPMAILRECV%TELT%NUMBER-1, &
              TPMAILRECV%TELT%MSSGTAG + ITAGOFFSET, &
              KMPI_COMM, REQ_TAB(NB_REQ), KERROR)
 else
-        CALL MPI_RECV(TZBUFFER, NCOMBUFFSIZE2, MPI_PRECISION, &
+        CALL MPI_RECV(TZBUFFER, NCOMBUFFSIZE2, MNHREAL_MPI, &
              TPMAILRECV%TELT%NUMBER-1, &
              TPMAILRECV%TELT%MSSGTAG + ITAGOFFSET, &
              KMPI_COMM, MPI_STATUS_IGNORE, KERROR)

@@ -6,7 +6,7 @@
 ! Author:
 !  P. Wautelet 08/03/2019
 ! Modifications:
-!
+!  P. Wautelet 22/03/2019: add MNHINT/REAL32/64_MPI, MNH2REAL32/64_MPI + more public parameters
 !-----------------------------------------------------------------
 module modd_precision
 
@@ -19,6 +19,12 @@ use NETCDF, only: NF90_DOUBLE, NF90_FLOAT, NF90_INT, NF90_INT64
 implicit none
 
 private
+
+public :: MNHINT32, MNHINT64, MNHREAL32, MNHREAL64, MNHREAL128
+
+public :: MNHINT32_MPI,   MNHINT64_MPI
+public :: MNHREAL32_MPI,  MNHREAL64_MPI
+public :: MNH2REAL32_MPI, MNH2REAL64_MPI
 
 public :: MNHINT, MNHREAL
 public :: MNHINT_MPI, MNHREAL_MPI, MNH2REAL_MPI
@@ -37,26 +43,35 @@ integer, parameter :: MNHREAL32  = selected_real_kind( p = 6,  r = 37 )
 integer, parameter :: MNHREAL64  = selected_real_kind( p = 15, r = 307 )
 integer, parameter :: MNHREAL128 = selected_real_kind( p = 33, r = 4931 )
 
+integer, parameter :: MNHINT32_MPI  = MPI_INTEGER4
+integer, parameter :: MNHINT64_MPI  = MPI_INTEGER8
+
+integer, parameter :: MNHREAL32_MPI  = MPI_REAL4
+integer, parameter :: MNHREAL64_MPI  = MPI_REAL8
+
+integer, parameter :: MNH2REAL32_MPI  = MPI_2REAL
+integer, parameter :: MNH2REAL64_MPI  = MPI_2DOUBLE_PRECISION
+
 
 ! Kinds for MesoNH
 #if ( MNH_INT == 4 )
 integer, parameter :: MNHINT     = MNHINT32
-integer, parameter :: MNHINT_MPI = MPI_INTEGER4
+integer, parameter :: MNHINT_MPI = MNHINT32_MPI
 #elif ( MNH_INT == 8 )
 integer, parameter :: MNHINT     = MNHINT64
-integer, parameter :: MNHINT_MPI = MPI_INTEGER8
+integer, parameter :: MNHINT_MPI = MNHINT64_MPI
 #else
 #error "Invalid MNH_INT"
 #endif
 
 #if ( MNH_REAL == 4 )
 integer, parameter :: MNHREAL      = MNHREAL32
-integer, parameter :: MNHREAL_MPI  = MPI_REAL4
-integer, parameter :: MNH2REAL_MPI = MPI_2REAL
+integer, parameter :: MNHREAL_MPI  = MNHREAL32_MPI
+integer, parameter :: MNH2REAL_MPI = MNH2REAL32_MPI
 #elif ( MNH_REAL == 8 )
 integer, parameter :: MNHREAL      = MNHREAL64
-integer, parameter :: MNHREAL_MPI  = MPI_REAL8
-integer, parameter :: MNH2REAL_MPI = MPI_2DOUBLE_PRECISION
+integer, parameter :: MNHREAL_MPI  = MNHREAL64_MPI
+integer, parameter :: MNH2REAL_MPI = MNH2REAL64_MPI
 #elif ( MNH_REAL == 16 )
 integer, parameter :: MNHREAL     = MNHREAL128
 integer, parameter :: MNHREAL_MPI = MPI_REAL16

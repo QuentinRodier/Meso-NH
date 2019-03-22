@@ -1,16 +1,7 @@
-
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1999-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for CVS information
-!-----------------------------------------------------------------
-! $Source$
-! $Name$ 
-! $Revision$ 
-! $Date$
-!-----------------------------------------------------------------
 !-----------------------------------------------------------------
 
 !      ##################
@@ -46,6 +37,7 @@
 !    Original 04/05/99
 !    Modifications
 !    J.Escobar 5/06/2018 : add cpp key MNH_USE_MPI_STATUSES_IGNORE for use of true MPI_STATUSES_IGNORE
+!  P. Wautelet 22/03/2019: remove MPI_PRECISION and MPI_2PRECISION (replaced by MNHREAL_MPI and MNH2REAL_MPI in modd_precision)
 !-------------------------------------------------------------------------------
 !  
   USE MODD_STRUCTURE_ll
@@ -118,11 +110,6 @@ INTEGER,SAVE      :: NZ_PROC_ll = 0  ! Number of proc to use in the Z splitting
 ! DIMX = NIMAX + 2*JPHEXT ...
 !
   INTEGER :: DIMX,DIMY,DIMZ
-!
-! MPI_PRECISION, MPI_2PRECISION
-!
-  INTEGER :: MPI_PRECISION
-  INTEGER :: MPI_2PRECISION
 !
   INTEGER, PARAMETER :: NTMAX = 100
 !

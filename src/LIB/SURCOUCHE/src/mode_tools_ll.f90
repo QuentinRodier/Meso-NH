@@ -1,14 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for CVS information
-!-----------------------------------------------------------------
-! $Source$
-! $Name$ 
-! $Revision$ 
-! $Date$
 !-----------------------------------------------------------------
 !Correction :
 !  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
@@ -52,8 +45,9 @@
 !     Juan/Didier 12/03/2009: array bound bug correction with 1proc/MPIVIDE
 !     J. Escobar  27/06/2011  correction for gridnesting with different SHAPE 
 ! 
-  USE MODD_STRUCTURE_ll
   USE MODD_MPIF
+  use modd_precision, only: MNHREAL_MPI
+  USE MODD_STRUCTURE_ll
   !JUANZ
   USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD
   !JUANZ  
@@ -1098,7 +1092,6 @@ ENDIF
 !        NPROC - Number of processors
 !        TCRRT_PROCONF -  Current configuration for current model
 !        IP - Number of the local processor
-!        MPI_PRECISION - mpi precision
 !
 !      Module MODD_PARAMETERS_ll
 !        JPHEXT - halo size
@@ -1120,15 +1113,11 @@ ENDIF
 !
 !*       0.    DECLARATIONS
 !
-  USE MODD_PARAMETERS_ll, ONLY : JPHEXT
-  USE MODD_STRUCTURE_ll, ONLY : MODELSPLITTING_ll
-  USE MODD_VAR_ll, ONLY : NPROC, TCRRT_PROCONF, IP, MPI_PRECISION
+  USE MODD_PARAMETERS_ll, ONLY: JPHEXT
+  USE MODD_STRUCTURE_ll,  ONLY: MODELSPLITTING_ll
+  USE MODD_VAR_ll,        ONLY: NPROC, TCRRT_PROCONF, IP
 !
   IMPLICIT NONE
-!
-!*       0.099 Include MPI parameters
-!
-!  INCLUDE 'mpif.h'
 !
 !*       0.1   declarations of arguments
 !
@@ -1332,8 +1321,8 @@ ENDIF
 !*        3.3     Have the values of the local slice on each proc known
 !                 by all procs on the global slice
 !
-    CALL MPI_ALLGATHERV(ZPTR, ISIZE, MPI_PRECISION, PGLOBALSLICE, &
-                        ISIZES, IDISPL, MPI_PRECISION, ICOMM_GLOBALSLICE, IERR)
+    CALL MPI_ALLGATHERV(ZPTR, ISIZE, MNHREAL_MPI, PGLOBALSLICE, &
+                        ISIZES, IDISPL, MNHREAL_MPI, ICOMM_GLOBALSLICE, IERR)
 !
 !*        3.4     Delete slice communicator
 !
@@ -1364,7 +1353,7 @@ ENDIF
   IF (ICOMM .NE. MPI_COMM_NULL) THEN
 !
     CALL MPI_BCAST(IGLOBALSLICELENGTH, 1, MPI_INTEGER, IPROCS(1), ICOMM, IERR)
-    CALL MPI_BCAST(PGLOBALSLICE(IDISPL1+1), IGLOBALSLICELENGTH, MPI_PRECISION, &
+    CALL MPI_BCAST(PGLOBALSLICE(IDISPL1+1), IGLOBALSLICELENGTH, MNHREAL_MPI, &
                     IPROCS(1), ICOMM, IERR)
 !
     CALL MPI_COMM_FREE(ICOMM, IERR)
@@ -1416,7 +1405,6 @@ ENDIF
 !        NPROC - Number of processors
 !        TCRRT_PROCONF -  Current configuration for current model
 !        IP - Number of the local processor
-!        MPI_PRECISION - mpi precision
 !
 !      Module MODD_PARAMETERS_ll
 !        JPHEXT, JPVEXT - halo size
@@ -1438,15 +1426,11 @@ ENDIF
 !
 !*       0.    DECLARATIONS
 !
-  USE MODD_PARAMETERS_ll, ONLY : JPHEXT, JPVEXT
-  USE MODD_STRUCTURE_ll, ONLY : MODELSPLITTING_ll
-  USE MODD_VAR_ll, ONLY : NPROC, TCRRT_PROCONF, IP, MPI_PRECISION
+  USE MODD_PARAMETERS_ll, ONLY: JPHEXT, JPVEXT
+  USE MODD_STRUCTURE_ll,  ONLY: MODELSPLITTING_ll
+  USE MODD_VAR_ll,        ONLY: NPROC, TCRRT_PROCONF, IP
 !
   IMPLICIT NONE
-!
-!*       0.099 Include MPI parameters
-!
-!  INCLUDE 'mpif.h'
 !
 !*       0.1   declarations of arguments
 !
@@ -1668,9 +1652,9 @@ ENDIF
 !                 by all procs on the global slice
 !
     DO JK = 1, IGLOBALSLICEHEIGHT
-      CALL MPI_ALLGATHERV(ZPTR(1,JK), ISIZE, MPI_PRECISION, &
+      CALL MPI_ALLGATHERV(ZPTR(1,JK), ISIZE, MNHREAL_MPI, &
                           PGLOBALSLICE(1,JK), ISIZES, IDISPL, &
-                          MPI_PRECISION, ICOMM_GLOBALSLICE, IERR)
+                          MNHREAL_MPI, ICOMM_GLOBALSLICE, IERR)
     ENDDO
 !
 !*        3.4     Delete slice communicator
@@ -1704,7 +1688,7 @@ ENDIF
 !
     CALL MPI_BCAST(IGLOBALSLICELENGTH, 1, MPI_INTEGER, IPROCS(1), ICOMM, IERR)
     DO JK = 1, IGLOBALSLICEHEIGHT
-      CALL MPI_BCAST(PGLOBALSLICE(1,JK), IGLOBALSLICELENGTH, MPI_PRECISION, &
+      CALL MPI_BCAST(PGLOBALSLICE(1,JK), IGLOBALSLICELENGTH, MNHREAL_MPI, &
                     IPROCS(1), ICOMM, IERR)
     ENDDO
 !
@@ -1764,7 +1748,6 @@ ENDIF
 !        NPROC - Number of processors
 !        TCRRT_PROCONF -  Current configuration for current model
 !        IP - Number of the local processor
-!        MPI_PRECISION - mpi precision
 !
 !      Module MODD_PARAMETERS_ll
 !        JPHEXT, JPVEXT - halo size
@@ -1785,15 +1768,11 @@ ENDIF
 !
 !*       0.    DECLARATIONS
 !
-  USE MODD_PARAMETERS_ll, ONLY : JPHEXT
-  USE MODD_VAR_ll, ONLY : NPROC,TCRRT_PROCONF,IP,MPI_PRECISION
-  USE MODD_STRUCTURE_ll, ONLY : MODELSPLITTING_ll
+  USE MODD_PARAMETERS_ll, ONLY: JPHEXT
+  USE MODD_STRUCTURE_ll,  ONLY: MODELSPLITTING_ll
+  USE MODD_VAR_ll,        ONLY: NPROC, TCRRT_PROCONF, IP
 !
   IMPLICIT NONE
-!
-!*       0.099 Include MPI parameters
-!
-!  INCLUDE 'mpif.h'
 !
 !*       0.1   declarations of arguments
 !
@@ -2024,8 +2003,8 @@ ENDIF
 !*        3.3     Have the values of the local slice on each proc known
 !                 by all procs on the global slice
 !
-    CALL MPI_ALLGATHERV(ZPTR, ISIZE, MPI_PRECISION, ITOTALSLICE, ISIZES, &
-                        IDISPL, MPI_PRECISION, ICOMM_SLICE, IERR)
+    CALL MPI_ALLGATHERV(ZPTR, ISIZE, MNHREAL_MPI, ITOTALSLICE, ISIZES, &
+                        IDISPL, MNHREAL_MPI, ICOMM_SLICE, IERR)
 !
     DEALLOCATE(ISIZES, IDISPL)
 !
@@ -2058,7 +2037,7 @@ ENDIF
   IF (ICOMM .NE. MPI_COMM_NULL) THEN
 !
     CALL MPI_BCAST(ISLICELENGTH, 1, MPI_INTEGER, IPROCS(1), ICOMM, IERR)
-    CALL MPI_BCAST(ITOTALSLICE, ISLICELENGTH, MPI_PRECISION, &
+    CALL MPI_BCAST(ITOTALSLICE, ISLICELENGTH, MNHREAL_MPI, &
                     IPROCS(1), ICOMM, IERR)
     CALL MPI_COMM_FREE(ICOMM, IERR)
   ENDIF
@@ -2112,7 +2091,6 @@ ENDIF
 !        NPROC - Number of processors
 !        TCRRT_PROCONF -  Current configuration for current model
 !        IP - Number of the local processor
-!        MPI_PRECISION - mpi precision
 !
 !      Module MODD_PARAMETERS_ll
 !        JPHEXT, JPVEXT - halo size
@@ -2133,15 +2111,11 @@ ENDIF
 !
 !*       0.    DECLARATIONS
 !
-  USE MODD_PARAMETERS_ll, ONLY : JPHEXT, JPVEXT
-  USE MODD_VAR_ll, ONLY : NPROC,TCRRT_PROCONF,IP,MPI_PRECISION
-  USE MODD_STRUCTURE_ll, ONLY : MODELSPLITTING_ll
+  USE MODD_PARAMETERS_ll, ONLY: JPHEXT, JPVEXT
+  USE MODD_STRUCTURE_ll,  ONLY: MODELSPLITTING_ll
+  USE MODD_VAR_ll,        ONLY: NPROC, TCRRT_PROCONF, IP
 !
   IMPLICIT NONE
-!
-!*       0.099 Include MPI parameters
-!
-!  INCLUDE 'mpif.h'
 !
 !*       0.1   declarations of arguments
 !
@@ -2384,9 +2358,9 @@ ENDIF
 !                 by all procs on the global slice
 !
     DO JK = 1, ISLICEHEIGHT
-      CALL MPI_ALLGATHERV(ZPTR(1,JK), ISIZE, MPI_PRECISION, &
+      CALL MPI_ALLGATHERV(ZPTR(1,JK), ISIZE, MNHREAL_MPI, &
                           ITOTALSLICE(1,JK), &
-                          ISIZES, IDISPL, MPI_PRECISION, ICOMM_SLICE, IERR)
+                          ISIZES, IDISPL, MNHREAL_MPI, ICOMM_SLICE, IERR)
     ENDDO
 !
 !*        3.4     Delete slice communicator
@@ -2420,7 +2394,7 @@ ENDIF
 !
     CALL MPI_BCAST(ISLICELENGTH, 1, MPI_INTEGER, IPROCS(1), ICOMM, IERR)
     DO JK = 1, ISLICEHEIGHT
-      CALL MPI_BCAST(ITOTALSLICE(1,JK), ISLICELENGTH, MPI_PRECISION, &
+      CALL MPI_BCAST(ITOTALSLICE(1,JK), ISLICELENGTH, MNHREAL_MPI, &
                     IPROCS(1), ICOMM, IERR)
     ENDDO
 !
@@ -3299,8 +3273,6 @@ ENDIF
 !
 !*       0.    DECLARATIONS
 !
-  USE MODD_VAR_ll, ONLY : MPI_PRECISION
-!
   IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
@@ -3319,7 +3291,7 @@ ENDIF
 !-------------------------------------------------------------------------------
 !
 IMEANSQRTLOC = SUM(SQRT(PARRAY))
-CALL MPI_ALLREDUCE(IMEANSQRTLOC, PMEANSQRT, 1, MPI_PRECISION, MPI_SUM, NMNH_COMM_WORLD,IINFO)
+CALL MPI_ALLREDUCE(IMEANSQRTLOC, PMEANSQRT, 1, MNHREAL_MPI, MPI_SUM, NMNH_COMM_WORLD,IINFO)
 PMEANSQRT = PMEANSQRT / KSIZEGLB
 !
 !-----------------------------------------------------------------------

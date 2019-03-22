@@ -50,11 +50,8 @@
 !-------------------------------------------------------------------------------
 !
   USE MODD_MPIF
-  use modd_precision, only: MNHREAL_MPI, MNH2REAL_MPI
 !
   IMPLICIT NONE
-!
-!  INCLUDE 'mpif.h'
 !
   CONTAINS
 !
@@ -546,9 +543,6 @@
         CALL MPI_COMM_DUP(NMNH_COMM_WORLD, NGRID_COM, KINFO_ll)
         !
         IP = IP + 1
-        !
-        MPI_PRECISION  = MNHREAL_MPI
-        MPI_2PRECISION = MNH2REAL_MPI
         !
         !-------------------------------------------------------------------------------
         !

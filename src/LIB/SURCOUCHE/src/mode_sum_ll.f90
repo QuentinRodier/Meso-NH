@@ -1,14 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for CVS information
-!-----------------------------------------------------------------
-! $Source$
-! $Name$ 
-! $Revision$ 
-! $Date$
 !-----------------------------------------------------------------
 !Correction :
 !  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
@@ -57,7 +50,6 @@
 !       NPROC -
 !       IP -
 !       JPHALO -
-!       MPI_PRECISION - 
 !
 !     Module MODD_STRUCTURE_ll
 !       type MODELSPLITTING_ll
@@ -65,11 +57,8 @@
 !------------------------------------------------------------------------------
 !
    USE MODD_MPIF
-   !JUANZ
-   USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD
-   !JUANZ
-!
-!  INCLUDE 'mpif.h'
+   use modd_precision, only: MNHREAL_MPI
+   USE MODD_VAR_ll,    ONLY: NMNH_COMM_WORLD
 !
   CONTAINS
 !
@@ -110,7 +99,6 @@
 !     Module MODD_VAR_ll
 !       TCRRT_COMDATA - Current communication data structure for current model
 !                       and local processor
-!       MPI_PRECISION - 
 !
 !!    Reference
 !!    ---------
@@ -127,9 +115,9 @@
 !
 !*        0.    DECLARATIONS
 !
-  USE MODD_PARAMETERS_ll, ONLY : JPHEXT, JPVEXT
-  USE MODD_VAR_ll, ONLY : TCRRT_COMDATA, MPI_PRECISION
-  USE MODE_TOOLS_ll, ONLY : LNORTH_ll, LSOUTH_ll, LEAST_ll, LWEST_ll
+  USE MODD_PARAMETERS_ll, ONLY: JPHEXT, JPVEXT
+  USE MODD_VAR_ll,        ONLY: TCRRT_COMDATA
+  USE MODE_TOOLS_ll,      ONLY: LNORTH_ll, LSOUTH_ll, LEAST_ll, LWEST_ll
 !
   IMPLICIT NONE
 !
@@ -299,7 +287,7 @@
 !
 !*        3.4    Summation with all the processors
 !
-    CALL MPI_ALLREDUCE(ZBUF, ZBUFD, IDIM, MPI_PRECISION, &
+    CALL MPI_ALLREDUCE(ZBUF, ZBUFD, IDIM, MNHREAL_MPI, &
                        MPI_SUM, NMNH_COMM_WORLD, KINFO)
 !
 !*        3.5    Return the result
@@ -357,7 +345,6 @@
 !     Module MODD_VAR_ll
 !       TCRRT_COMDATA - Current communication data structure for current model
 !                       and local processor
-!       MPI_PRECISION - 
 !
 !!    Implicit Arguments
 !!    ------------------
@@ -377,10 +364,10 @@
 !
 !*        0.    DECLARATIONS
 !
-  USE MODD_PARAMETERS_ll, ONLY : JPHEXT, JPVEXT
-  USE MODD_VAR_ll, ONLY : TCRRT_COMDATA, MPI_PRECISION
+  USE MODD_PARAMETERS_ll, ONLY: JPHEXT, JPVEXT
+  USE MODD_VAR_ll,        ONLY: TCRRT_COMDATA
 !
-  USE MODE_TOOLS_ll, ONLY : LNORTH_ll, LSOUTH_ll, LEAST_ll, LWEST_ll
+  USE MODE_TOOLS_ll,      ONLY: LNORTH_ll, LSOUTH_ll, LEAST_ll, LWEST_ll
 !
   IMPLICIT NONE
 !
@@ -601,7 +588,7 @@
 !
 !*        3.4    Summation with all the processors
 !
-    CALL MPI_ALLREDUCE(ZBUF, ZBUFD, IDIM, MPI_PRECISION, &
+    CALL MPI_ALLREDUCE(ZBUF, ZBUFD, IDIM, MNHREAL_MPI, &
                        MPI_SUM, NMNH_COMM_WORLD, KINFO)
 !
 !*        3.5    Return the result
@@ -659,7 +646,6 @@
 !     Module MODD_VAR_ll
 !       TCRRT_COMDATA - Current communication data structure for current model
 !                       and local processor
-!       MPI_PRECISION - 
 !
 !!    Implicit Arguments
 !!    ------------------
@@ -680,10 +666,10 @@
 !
 !*        0.    DECLARATIONS
 !
-  USE MODD_PARAMETERS_ll, ONLY : JPHEXT, JPVEXT
-  USE MODD_VAR_ll, ONLY : TCRRT_COMDATA, MPI_PRECISION
+  USE MODD_PARAMETERS_ll, ONLY: JPHEXT, JPVEXT
+  USE MODD_VAR_ll,        ONLY: TCRRT_COMDATA
 !
-  USE MODE_TOOLS_ll, ONLY : LNORTH_ll, LSOUTH_ll, LEAST_ll, LWEST_ll
+  USE MODE_TOOLS_ll,      ONLY: LNORTH_ll, LSOUTH_ll, LEAST_ll, LWEST_ll
 !
   IMPLICIT NONE
 !
@@ -903,7 +889,7 @@
 !
 !*        3.4    Summation with all the processors
 !
-    CALL MPI_ALLREDUCE(ZBUF, ZBUFD, IDIM, MPI_PRECISION, &
+    CALL MPI_ALLREDUCE(ZBUF, ZBUFD, IDIM, MNHREAL_MPI, &
                        MPI_SUM, NMNH_COMM_WORLD, KINFO)
 !
 !*        3.5    Return the result
@@ -961,7 +947,6 @@
 !     Module MODD_VAR_ll
 !       TCRRT_COMDATA - Current communication data structure for current model
 !                       and local processor
-!       MPI_PRECISION - 
 !
 !!    Implicit Arguments
 !!    ------------------
@@ -982,10 +967,10 @@
 !
 !*        0.    DECLARATIONS
 !
-  USE MODD_PARAMETERS_ll, ONLY : JPHEXT, JPVEXT
-  USE MODD_VAR_ll, ONLY : TCRRT_COMDATA, MPI_PRECISION
+  USE MODD_PARAMETERS_ll, ONLY: JPHEXT, JPVEXT
+  USE MODD_VAR_ll,        ONLY: TCRRT_COMDATA
 !
-  USE MODE_TOOLS_ll, ONLY : LNORTH_ll, LSOUTH_ll, LEAST_ll, LWEST_ll
+  USE MODE_TOOLS_ll,      ONLY: LNORTH_ll, LSOUTH_ll, LEAST_ll, LWEST_ll
 !
   USE MODE_TOOLS_ll
 !
@@ -1136,7 +1121,7 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !
 !*        3.4    Summation with all the processors
 !
-!!$    CALL MPI_ALLREDUCE(ZSUM3D, SUM3D_ll, 1, MPI_PRECISION, &
+!!$    CALL MPI_ALLREDUCE(ZSUM3D, SUM3D_ll, 1, MNHREAL_MPI, &
 !!$                       MPI_SUM, NMNH_COMM_WORLD, KINFO)
 !!$!
 !!$! gathers the total 2D field
@@ -1197,7 +1182,6 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !                       and local processor
 !       TCRRT_PROCONF - Current configuration for current model
 !       NPROC -
-!       MPI_PRECISION - 
 !
 !!    Reference
 !!    ---------
@@ -1216,11 +1200,11 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !
 !*        0.    DECLARATIONS
 !
-  USE MODD_PARAMETERS_ll, ONLY : JPHEXT
-  USE MODD_STRUCTURE_ll, ONLY : MODELSPLITTING_ll
-  USE MODD_VAR_ll, ONLY : IP, TCRRT_COMDATA, TCRRT_PROCONF, NPROC, MPI_PRECISION
+  USE MODD_PARAMETERS_ll, ONLY: JPHEXT
+  USE MODD_STRUCTURE_ll,  ONLY: MODELSPLITTING_ll
+  USE MODD_VAR_ll,        ONLY: IP, TCRRT_COMDATA, TCRRT_PROCONF, NPROC
 !
-  USE MODE_TOOLS_ll, ONLY :  LNORTH_ll, LSOUTH_ll, LEAST_ll, LWEST_ll
+  USE MODE_TOOLS_ll,      ONLY:  LNORTH_ll, LSOUTH_ll, LEAST_ll, LWEST_ll
 !
   IMPLICIT NONE
 !
@@ -1339,8 +1323,8 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !
   ALLOCATE(ZGLOBFIELD(IGE-IGB+1))
   CALL MPI_ALLGATHERV(PFIELD(IB-IORE(IDIR)+1:), ISIZE, &
-                      MPI_PRECISION, ZGLOBFIELD, ISIZES, IDISPL, &
-                      MPI_PRECISION, NMNH_COMM_WORLD, IERR)
+                      MNHREAL_MPI, ZGLOBFIELD, ISIZES, IDISPL, &
+                      MNHREAL_MPI, NMNH_COMM_WORLD, IERR)
 !
 !-------------------------------------------------------------------------------
 !
@@ -1399,7 +1383,6 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !                       and local processor
 !       TCRRT_PROCONF - Current configuration for current model
 !       NPROC -
-!       MPI_PRECISION - 
 !
 !!    Reference
 !!    ---------
@@ -1418,10 +1401,10 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !
 !*        0.    DECLARATIONS
 !
-  USE MODD_PARAMETERS_ll, ONLY : JPHEXT, JPVEXT
-  USE MODD_VAR_ll, ONLY : TCRRT_COMDATA, MPI_PRECISION
+  USE MODD_PARAMETERS_ll, ONLY: JPHEXT, JPVEXT
+  USE MODD_VAR_ll,        ONLY: TCRRT_COMDATA
 !
-  USE MODE_TOOLS_ll, ONLY : LNORTH_ll, LSOUTH_ll, LEAST_ll, LWEST_ll
+  USE MODE_TOOLS_ll,      ONLY: LNORTH_ll, LSOUTH_ll, LEAST_ll, LWEST_ll
 !
   IMPLICIT NONE
 !
@@ -1560,7 +1543,7 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !
 !*        3.4    Reduction with all the processors
 !
-    CALL MPI_ALLREDUCE(ZMAX, MAX_ll, 1, MPI_PRECISION, &
+    CALL MPI_ALLREDUCE(ZMAX, MAX_ll, 1, MNHREAL_MPI, &
                        MPI_MAX, NMNH_COMM_WORLD, KINFO)
 !
   ENDIF
@@ -1612,7 +1595,6 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !                       and local processor
 !       TCRRT_PROCONF - Current configuration for current model
 !       NPROC -
-!       MPI_PRECISION - 
 !
 !!    Reference
 !!    ---------
@@ -1631,10 +1613,10 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !
 !*        0.    DECLARATIONS
 !
-  USE MODD_PARAMETERS_ll, ONLY : JPHEXT, JPVEXT
-  USE MODD_VAR_ll, ONLY : TCRRT_COMDATA, MPI_PRECISION
+  USE MODD_PARAMETERS_ll, ONLY: JPHEXT, JPVEXT
+  USE MODD_VAR_ll,        ONLY: TCRRT_COMDATA
 !
-  USE MODE_TOOLS_ll, ONLY : LNORTH_ll, LSOUTH_ll, LEAST_ll, LWEST_ll
+  USE MODE_TOOLS_ll,      ONLY: LNORTH_ll, LSOUTH_ll, LEAST_ll, LWEST_ll
 !
   IMPLICIT NONE
 !
@@ -1773,7 +1755,7 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !
 !        3.4    Reduction with all the processors
 !
-    CALL MPI_ALLREDUCE(ZMIN, MIN_ll, 1, MPI_PRECISION, &
+    CALL MPI_ALLREDUCE(ZMIN, MIN_ll, 1, MNHREAL_MPI, &
                        MPI_MIN, NMNH_COMM_WORLD, KINFO)
 !
   ENDIF
@@ -1809,7 +1791,6 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !     Module MODD_VAR_ll
 !       TCRRT_COMDATA - Current communication data structure for current model
 !                       and local processor
-!       MPI_PRECISION - 
 !
 !!    Reference
 !!    ---------
@@ -1826,7 +1807,7 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !
 !*        0.    DECLARATIONS
 !
-  USE MODD_VAR_ll, ONLY : TCRRT_COMDATA, MPI_PRECISION
+  USE MODD_VAR_ll, ONLY : TCRRT_COMDATA
 !
 !
   IMPLICIT NONE
@@ -1862,7 +1843,7 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !              ---------------------------------
 !
   CALL MPI_ALLREDUCE(ZBUF, ZBUFD, SIZE(PFIELD,3), &
-                     MPI_PRECISION, MPI_SUM, NMNH_COMM_WORLD, KINFO)
+                     MNHREAL_MPI, MPI_SUM, NMNH_COMM_WORLD, KINFO)
 !
 !-------------------------------------------------------------------------------
 !
@@ -1899,8 +1880,6 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !!    Implicit Arguments
 !!    ------------------
 !
-!     Module MODD_VAR_ll
-!       MPI_PRECISION - 
 !
 !!    Reference
 !!    ---------
@@ -1916,8 +1895,6 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !-------------------------------------------------------------------------------
 !
 !*        0.    DECLARATIONS
-!
-  USE MODD_VAR_ll, ONLY : MPI_PRECISION
 !
   IMPLICIT NONE
 !
@@ -1953,7 +1930,7 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !*        2.    REDUCTION WITH ALL THE PROCESSORS :
 !               ---------------------------------
 !
-  CALL MPI_ALLREDUCE(ZSUM, SUMMASKCOMP_ll, 1, MPI_PRECISION, &
+  CALL MPI_ALLREDUCE(ZSUM, SUMMASKCOMP_ll, 1, MNHREAL_MPI, &
                      MPI_SUM, NMNH_COMM_WORLD, KINFO)
 !
 !-------------------------------------------------------------------------------
@@ -1995,7 +1972,6 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !                       and local processor
 !       TCRRT_PROCONF - Current configuration for current model
 !       IP -
-!       MPI_PRECISION -
 !       JPHALO -
 !
 !!    Author
@@ -2010,12 +1986,10 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !
 !*        0.    DECLARATIONS
 !
-  USE MODD_STRUCTURE_ll, ONLY : MODELSPLITTING_ll
+  USE MODD_STRUCTURE_ll, ONLY: MODELSPLITTING_ll
+  USE MODD_VAR_ll,       ONLY: IP, TCRRT_COMDATA, TCRRT_PROCONF, JPHALO
 !
-  USE MODD_VAR_ll, ONLY : IP, TCRRT_COMDATA, TCRRT_PROCONF, JPHALO, &
-                          MPI_PRECISION
-!
-  USE MODE_TOOLS_ll, ONLY : LWEST_ll, LEAST_ll
+  USE MODE_TOOLS_ll,     ONLY: LWEST_ll, LEAST_ll
 !
   IMPLICIT NONE
 !
@@ -2071,7 +2045,7 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !*        3.    MERGE LOCAL SUMS
 !               ----------------
 !
-  CALL MPI_ALLREDUCE(ZBUF, PRES, SIZE(PRES), MPI_PRECISION, MPI_SUM, &
+  CALL MPI_ALLREDUCE(ZBUF, PRES, SIZE(PRES), MNHREAL_MPI, MPI_SUM, &
                      NMNH_COMM_WORLD,KINFO)
 !
 !-----------------------------------------------------------------
@@ -2113,7 +2087,6 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !                       and local processor
 !       TCRRT_PROCONF - Current configuration for current model
 !       IP -
-!       MPI_PRECISION -
 !       JPHALO -
 !
 !!    Author
@@ -2129,14 +2102,11 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !
 !*        0.    DECLARATIONS
 !
-  USE MODD_STRUCTURE_ll, ONLY : MODELSPLITTING_ll
+  USE MODD_STRUCTURE_ll, ONLY: MODELSPLITTING_ll
+  USE MODD_VAR_ll,       ONLY: IP, TCRRT_COMDATA, TCRRT_PROCONF, JPHALO
 !
-  USE MODD_VAR_ll, ONLY : IP, TCRRT_COMDATA, TCRRT_PROCONF, JPHALO, &
-                          MPI_PRECISION
-!
-  USE MODE_TOOLS_ll, ONLY : LWEST_ll, LEAST_ll, LNORTH_ll, LSOUTH_ll
-!
- USE MODE_REPRO_SUM
+  USE MODE_REPRO_SUM
+  USE MODE_TOOLS_ll,     ONLY: LWEST_ll, LEAST_ll, LNORTH_ll, LSOUTH_ll
 !
 !*       0.    DECLARATIONS
 !              ------------
@@ -2282,7 +2252,6 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !                       and local processor
 !       TCRRT_PROCONF - Current configuration for current model
 !       IP -
-!       MPI_PRECISION -
 !       JPHALO -
 !
 !!    Author
@@ -2298,12 +2267,10 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !
 !*        0.    DECLARATIONS
 !
-  USE MODD_STRUCTURE_ll, ONLY : MODELSPLITTING_ll
+  USE MODD_STRUCTURE_ll, ONLY: MODELSPLITTING_ll
+  USE MODD_VAR_ll,       ONLY: IP, TCRRT_COMDATA, TCRRT_PROCONF, JPHALO
 !
-  USE MODD_VAR_ll, ONLY : IP, TCRRT_COMDATA, TCRRT_PROCONF, JPHALO, &
-                          MPI_PRECISION
-!
-  USE MODE_TOOLS_ll, ONLY : LWEST_ll, LEAST_ll, LNORTH_ll, LSOUTH_ll
+  USE MODE_TOOLS_ll,     ONLY: LWEST_ll, LEAST_ll, LNORTH_ll, LSOUTH_ll
 !
 !*       0.    DECLARATIONS
 !              ------------
@@ -2364,7 +2331,7 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !
 !*       2.    Merge local sums
 !
-     CALL MPI_ALLREDUCE(ZBUF, PRES, SIZE(PRES, 1) * SIZE(PRES, 2), MPI_PRECISION, MPI_SUM, NMNH_COMM_WORLD,KINFO)
+     CALL MPI_ALLREDUCE(ZBUF, PRES, SIZE(PRES, 1) * SIZE(PRES, 2), MNHREAL_MPI, MPI_SUM, NMNH_COMM_WORLD,KINFO)
 !
 !-----------------------------------------------------------------
   ELSE
@@ -2396,7 +2363,7 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !
 !*       2.    Merge local sums
 !
-        CALL MPI_ALLREDUCE(ZBUF, PRES, SIZE(PRES, 1) * SIZE(PRES,2), MPI_PRECISION, MPI_SUM, NMNH_COMM_WORLD,KINFO)       
+        CALL MPI_ALLREDUCE(ZBUF, PRES, SIZE(PRES, 1) * SIZE(PRES,2), MNHREAL_MPI, MPI_SUM, NMNH_COMM_WORLD,KINFO)
      ENDIF
   ENDIF
   
@@ -2429,8 +2396,6 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !!    Implicit Arguments
 !!    ------------------
 !
-!     Module MODD_VAR_ll
-!       MPI_PRECISION -
 !
 !!    Author
 !!    ------
@@ -2445,7 +2410,7 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !
 !*       0.    DECLARATIONS
 !
- USE MODE_REPRO_SUM 
+  USE MODE_REPRO_SUM
 !
   IMPLICIT NONE
 !
@@ -2502,8 +2467,6 @@ END SUBROUTINE REDUCE_SUM_0DD_ll
 !!    Implicit Arguments
 !!    ------------------
 !
-!     Module MODD_VAR_ll
-!       MPI_PRECISION -
 !
 !!    Author
 !!    ------
@@ -2517,8 +2480,6 @@ END SUBROUTINE REDUCE_SUM_0DD_ll
 !-----------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
-!
-  USE MODD_VAR_ll, ONLY : MPI_PRECISION
 !
   IMPLICIT NONE
 !
@@ -2537,7 +2498,7 @@ END SUBROUTINE REDUCE_SUM_0DD_ll
 !*       1. CALL THE MPI_ALLREDUCE ROUTINE
 !           ------------------------------
 !
-  CALL MPI_ALLREDUCE(PRES, ZRES, 1, MPI_PRECISION, &
+  CALL MPI_ALLREDUCE(PRES, ZRES, 1, MNHREAL_MPI, &
                      MPI_SUM, NMNH_COMM_WORLD, KINFO)
 !
   PRES = ZRES
@@ -2620,8 +2581,6 @@ END SUBROUTINE REDUCE_SUM_1DD_ll
 !!    Implicit Arguments
 !!    ------------------
 !
-!     Module MODD_VAR_ll
-!       MPI_PRECISION -
 !
 !!    Author
 !!    ------
@@ -2635,8 +2594,6 @@ END SUBROUTINE REDUCE_SUM_1DD_ll
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
-!
-  USE MODD_VAR_ll, ONLY : MPI_PRECISION
 !
   IMPLICIT NONE
 !
@@ -2655,7 +2612,7 @@ END SUBROUTINE REDUCE_SUM_1DD_ll
 !*       1. CALL THE MPI_ALLREDUCE ROUTINE
 !           ------------------------------
 !
-  CALL MPI_ALLREDUCE(PRES, ZRES, SIZE(PRES,1), MPI_PRECISION, &
+  CALL MPI_ALLREDUCE(PRES, ZRES, SIZE(PRES,1), MNHREAL_MPI, &
                      MPI_SUM, NMNH_COMM_WORLD, KINFO)
 !
   PRES = ZRES
@@ -2692,8 +2649,6 @@ END SUBROUTINE REDUCE_SUM_1DD_ll
 !!    Implicit Arguments
 !!    ------------------
 !
-!     Module MODD_VAR_ll
-!       MPI_PRECISION -
 !
 !!    Author
 !!    ------
@@ -2707,8 +2662,6 @@ END SUBROUTINE REDUCE_SUM_1DD_ll
 !-------------------------------------------------------------------------------
 ! 
 !*       0.    DECLARATIONS 
-!
-  USE MODD_VAR_ll, ONLY : MPI_PRECISION
 !
   IMPLICIT NONE
 !
@@ -2731,7 +2684,7 @@ END SUBROUTINE REDUCE_SUM_1DD_ll
 !
   IDIM = SIZE(PRES,1) * SIZE(PRES,2)
 !
-  CALL MPI_ALLREDUCE(PRES, ZRES, IDIM, MPI_PRECISION, MPI_SUM, &
+  CALL MPI_ALLREDUCE(PRES, ZRES, IDIM, MNHREAL_MPI, MPI_SUM, &
                      NMNH_COMM_WORLD, KINFO)
 !
   PRES = ZRES
@@ -2768,8 +2721,6 @@ END SUBROUTINE REDUCE_SUM_1DD_ll
 !!    Implicit Arguments
 !!    ------------------
 !
-!     Module MODD_VAR_ll
-!       MPI_PRECISION -
 !
 !!    Author
 !!    ------
@@ -2783,8 +2734,6 @@ END SUBROUTINE REDUCE_SUM_1DD_ll
 !-------------------------------------------------------------------------------
 ! 
 !*       0.    DECLARATIONS 
-!
-  USE MODD_VAR_ll, ONLY : MPI_PRECISION
 !
   IMPLICIT NONE
 !
@@ -2808,7 +2757,7 @@ END SUBROUTINE REDUCE_SUM_1DD_ll
 !
   IDIM = SIZE(PRES,1) * SIZE(PRES,2) * SIZE(PRES,3)
 !
-  CALL MPI_ALLREDUCE(PRES, ZRES, IDIM, MPI_PRECISION, MPI_SUM, &
+  CALL MPI_ALLREDUCE(PRES, ZRES, IDIM, MNHREAL_MPI, MPI_SUM, &
                      NMNH_COMM_WORLD, KINFO)
 !
   PRES = ZRES
@@ -3046,8 +2995,6 @@ END SUBROUTINE REDUCE_SUM_1DD_ll
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
-!
-  USE MODD_VAR_ll, ONLY : MPI_PRECISION
 !
   IMPLICIT NONE
 !
