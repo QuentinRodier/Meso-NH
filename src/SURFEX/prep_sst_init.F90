@@ -36,6 +36,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    09/2007
+!!      J.Escobar   03/2019 correction for only 1 file of SST
 !!
 !-------------------------------------------------------------------------------
 !
@@ -80,33 +81,38 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !
 IF (LHOOK) CALL DR_HOOK('PREP_SST_INIT',0,ZHOOK_HANDLE)
-LOOP: DO JI = DTS%NTIME-1,1,-1
-         KSX = JI
-         IF (.NOT.TEMPORAL_LTS(TPTIME,DTS%TDATA_SST(KSX))) EXIT LOOP
-      ENDDO LOOP
-
-IF ( TEMPORAL_LTS ( TPTIME, DTS%TDATA_SST(KSX) ) ) THEN
-   ZSST(:) = DTS%XDATA_SST(:,KSX)     
-ELSE IF ( .NOT. TEMPORAL_LTS ( TPTIME, DTS%TDATA_SST(DTS%NTIME) ) ) THEN
-  ZSST(:) = DTS%XDATA_SST(:,DTS%NTIME)
+  IF ( DTS%NTIME ==1 ) THEN
+  ! only one value, take this 
+     KSX = 1 
+     ZSST(:) = DTS%XDATA_SST(:,DTS%NTIME)
 ELSE
+  LOOP: DO JI = DTS%NTIME-1,1,-1
+           KSX = JI
+           IF (.NOT.TEMPORAL_LTS(TPTIME,DTS%TDATA_SST(KSX))) EXIT LOOP
+        ENDDO LOOP
+  
+  IF ( TEMPORAL_LTS ( TPTIME, DTS%TDATA_SST(KSX) ) ) THEN
+     ZSST(:) = DTS%XDATA_SST(:,KSX)     
+  ELSE IF ( .NOT. TEMPORAL_LTS ( TPTIME, DTS%TDATA_SST(DTS%NTIME) ) ) THEN
+    ZSST(:) = DTS%XDATA_SST(:,DTS%NTIME)
+  ELSE
 
-   CALL TEMPORAL_DISTS ( DTS%TDATA_SST(KSX+1)%TDATE%YEAR,DTS%TDATA_SST(KSX+1)%TDATE%MONTH,   &
-                         DTS%TDATA_SST(KSX+1)%TDATE%DAY ,DTS%TDATA_SST(KSX+1)%TIME,          &
-                         DTS%TDATA_SST(KSX)%TDATE%YEAR,DTS%TDATA_SST(KSX)%TDATE%MONTH,       &
-                         DTS%TDATA_SST(KSX)%TDATE%DAY ,DTS%TDATA_SST(KSX)%TIME,              &
-                         ZSDTJX                                                      )  
+     CALL TEMPORAL_DISTS ( DTS%TDATA_SST(KSX+1)%TDATE%YEAR,DTS%TDATA_SST(KSX+1)%TDATE%MONTH,   &
+                           DTS%TDATA_SST(KSX+1)%TDATE%DAY ,DTS%TDATA_SST(KSX+1)%TIME,          &
+                           DTS%TDATA_SST(KSX)%TDATE%YEAR,DTS%TDATA_SST(KSX)%TDATE%MONTH,       &
+                           DTS%TDATA_SST(KSX)%TDATE%DAY ,DTS%TDATA_SST(KSX)%TIME,              &
+                           ZSDTJX                                                      )  
 
-   CALL TEMPORAL_DISTS ( TPTIME%TDATE%YEAR   ,TPTIME%TDATE%MONTH,                      &
-                         TPTIME%TDATE%DAY    ,TPTIME%TIME,                             &
-                         DTS%TDATA_SST(KSX)%TDATE%YEAR,DTS%TDATA_SST(KSX)%TDATE%MONTH,       &
-                         DTS%TDATA_SST(KSX)%TDATE%DAY ,DTS%TDATA_SST(KSX)%TIME,              &
-                         ZDT                                                         )  
-!
-    ZALPHA = ZDT / ZSDTJX
-!
-    ZSST(:)= DTS%XDATA_SST(:,KSX)+(DTS%XDATA_SST(:,KSX+1)-DTS%XDATA_SST(:,KSX))*ZALPHA
-                       
+     CALL TEMPORAL_DISTS ( TPTIME%TDATE%YEAR   ,TPTIME%TDATE%MONTH,                      &
+                           TPTIME%TDATE%DAY    ,TPTIME%TIME,                             &
+                           DTS%TDATA_SST(KSX)%TDATE%YEAR,DTS%TDATA_SST(KSX)%TDATE%MONTH,       &
+                           DTS%TDATA_SST(KSX)%TDATE%DAY ,DTS%TDATA_SST(KSX)%TIME,              &
+                           ZDT                                                         )  
+  !
+      ZALPHA = ZDT / ZSDTJX
+  !
+      ZSST(:)= DTS%XDATA_SST(:,KSX)+(DTS%XDATA_SST(:,KSX+1)-DTS%XDATA_SST(:,KSX))*ZALPHA
+  END IF
 END IF
 
 PSST(:) = ZSST(:)
