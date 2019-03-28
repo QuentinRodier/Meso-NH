@@ -255,6 +255,7 @@ END MODULE MODI_MODEL_n
 !                                  to allow to disable writes (for bench purposes)
 !!                   02/2019 C.Lac add rain fraction as an output field
 !  P. Wautelet 28/03/2019: use MNHTIME for time measurement variables
+!  P. Wautelet 28/03/2019: use TFILE instead of unit number for set_iluout_timing
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -2119,7 +2120,7 @@ IF (OEXIT) THEN
 !
   ! Set File Timing OUTPUT
   !
-  CALL SET_ILUOUT_TIMING(ILUOUT)
+  CALL SET_ILUOUT_TIMING(TLUOUT)
   !
   ! Compute global time
   !

@@ -12,7 +12,8 @@ MODULE MODE_MNH_TIMING
 !  P. Wautelet 10/01/2019: use NEWUNIT argument of OPEN
 !  P. Wautelet 22/03/2019: use MNHREAL64 and MNHREAL64_MPI + typo corrections
 !  P. Wautelet 27/03/2019: use MNHTIME and MNHTIME_MPI instead of MNHREAL64 and MNHREAL64_MPI
-!
+!  P. Wautelet 28/03/2019: use TFILE instead of unit number for set_iluout_timing
+!------------------------------------------------------------------------
 
 implicit none
 
@@ -40,14 +41,17 @@ xt(2) = MPI_WTIME()
 end subroutine second_mnh2
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+subroutine set_iluout_timing(tfile)
 
-!JUAN
-      SUBROUTINE SET_ILUOUT_TIMING(KLUOUT)
-        IMPLICIT NONE
-        INTEGER, INTENT(IN) :: KLUOUT
-        NLUOUT_TIMING = KLUOUT
-      END SUBROUTINE SET_ILUOUT_TIMING
+use modd_io_ll, only: tfiledata
 
+implicit none
+
+type(tfiledata), intent(in) :: tfile
+
+nluout_timing = tfile%nlu
+
+end subroutine set_iluout_timing
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

@@ -312,6 +312,7 @@
 !!  01/2018      (G.Delautier) SURFEX 8.1
 !  P. Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 28/03/2019: use MNHTIME for time measurement variables
+!  P. Wautelet 28/03/2019: use TFILE instead of unit number for set_iluout_timing
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -1875,7 +1876,7 @@ END IF
   !
   ! Set File Timing OUTPUT
   !
-  CALL SET_ILUOUT_TIMING(NLUOUT)
+  CALL SET_ILUOUT_TIMING(TLUOUT0)
   !
   ! Compute global time
   !
