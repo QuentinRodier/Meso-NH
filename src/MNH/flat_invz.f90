@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
 !-----------------------------------------------------------------
 !     ####################
 MODULE MODI_FLAT_INVZ
@@ -130,13 +126,15 @@ SUBROUTINE FLAT_INVZ(HLBCX,HLBCY,PDXHATM,PDYHATM,PRHOM,PAF,PBF,PCF,   &
   !!                                points under the ground and out of the domain  
   !!      Modification   Lugato, Guivarch (June 1998) Parallelisation
   !!                     Escobar, Stein   (July 2000) optimisation
+!  P. Wautelet 28/03/2019: use MNHTIME for time measurement variables
   !-------------------------------------------------------------------------------
   !
   !*       0.    DECLARATIONS
   !              ------------
   !
-  USE MODD_PARAMETERS
   USE MODD_CONF
+  USE MODD_PARAMETERS
+  use modd_precision,     only: MNHTIME
   !
   USE MODE_ll
   USE MODD_ARGSLIST_ll, ONLY : LIST_ll
@@ -258,7 +256,7 @@ SUBROUTINE FLAT_INVZ(HLBCX,HLBCY,PDXHATM,PDYHATM,PRHOM,PAF,PBF,PCF,   &
   REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZBAND_YT  ! array in Y slices distribution transpose
   REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZBAND_YRT ! array in Y slices distribution transpose
   !
-  REAL*8,DIMENSION(2) :: T0,T1
+  REAL(kind=MNHTIME), DIMENSION(2) :: ZT0,ZT1
   !JUAN Z_SPLITTING
   !
   !
@@ -481,13 +479,13 @@ SUBROUTINE FLAT_INVZ(HLBCX,HLBCY,PDXHATM,PDYHATM,PRHOM,PAF,PBF,PCF,   &
 !!$     print*,"IP=",IP," SIZE(ZBAND_SXP1_YP2_Z)=",SIZE(ZBAND_SXP1_YP2_Z,1),SIZE(ZBAND_SXP1_YP2_Z,2)
      ZBAND_SXP1_YP2_Z = ZY_B (IIBI:IIEI,IJBI:IJEI,:)
      ZBAND_SX_YP2_ZP1 = 0.0
-     CALL SECOND_MNH2(T0)
+     CALL SECOND_MNH2(ZT0)
 
      CALL REMAP_SXP1_YP2_Z_SX_YP2_ZP1_ll(ZBAND_SXP1_YP2_Z,ZBAND_SX_YP2_ZP1,IINFO_ll)
      !CALL REMAP_B_SX_YP2_ZP1_ll(ZBAND_B,ZBAND_SX_YP2_ZP1,IINFO_ll)
      !ZWORK_SX_YP2_ZP1 = ZWORK_SX_YP2_ZP1 - ZBAND_SX_YP2_ZP1
-     CALL SECOND_MNH2(T1)
-     TIMEZ%T_MAP_B_SX_YP2_ZP1  = TIMEZ%T_MAP_B_SX_YP2_ZP1 + T1 - T0
+     CALL SECOND_MNH2(ZT1)
+     TIMEZ%T_MAP_B_SX_YP2_ZP1  = TIMEZ%T_MAP_B_SX_YP2_ZP1 + ZT1 - ZT0
   END IF ! NZ_SPLITTING
   !
   !JUAN Z_SPLITTING
@@ -527,10 +525,10 @@ SUBROUTINE FLAT_INVZ(HLBCX,HLBCY,PDXHATM,PDYHATM,PRHOM,PAF,PBF,PCF,   &
              IIMAX,ILOT_SX_YP2_ZP1,-1 )
      END IF
      ZBAND_SXP2_Y_ZP1=0.0
-     CALL SECOND_MNH2(T0)
+     CALL SECOND_MNH2(ZT0)
      CALL REMAP_SX_YP2_ZP1_SXP2_Y_ZP1_ll(ZBAND_SX_YP2_ZP1,ZBAND_SXP2_Y_ZP1,IINFO_ll)
-     CALL SECOND_MNH2(T1)
-     TIMEZ%T_MAP_SX_YP2_ZP1_SXP2_Y_ZP1  = TIMEZ%T_MAP_SX_YP2_ZP1_SXP2_Y_ZP1 + T1 - T0
+     CALL SECOND_MNH2(ZT1)
+     TIMEZ%T_MAP_SX_YP2_ZP1_SXP2_Y_ZP1  = TIMEZ%T_MAP_SX_YP2_ZP1_SXP2_Y_ZP1 + ZT1 - ZT0
   END IF ! NZ_SPLITTING
   !
   !JUAN Z_SPLITTING
@@ -612,10 +610,10 @@ SUBROUTINE FLAT_INVZ(HLBCX,HLBCY,PDXHATM,PDYHATM,PRHOM,PAF,PBF,PCF,   &
 !!$  IF (( IAND(NZ_SPLITTING,2) > 0 ) .AND. ( IAND(NZ_SPLITTING,16) > 0 ) ) THEN
 !!$     CALL FAST_TRANSPOSE(ZBAND_SXP2_Y_ZP1T,ZBAND_SXP2_Y_ZP1,IJ_SXP2_Y_ZP1+2,II_SXP2_Y_ZP1,IK_SXP2_Y_ZP1)
 !!$     ZBAND_B  = 0.0 
-!!$     CALL SECOND_MNH2(T0)
+!!$     CALL SECOND_MNH2(ZT0)
 !!$     CALL REMAP_SXP2_Y_ZP1_B_ll(ZBAND_SXP2_Y_ZP1,ZBAND_B,IINFO_ll)
-!!$     CALL SECOND_MNH2(T1)
-!!$     TIMEZ.T_MAP_SXP2_Y_ZP1_B  = TIMEZ.T_MAP_SXP2_Y_ZP1_B + T1 - T0
+!!$     CALL SECOND_MNH2(ZT1)
+!!$     TIMEZ.T_MAP_SXP2_Y_ZP1_B  = TIMEZ.T_MAP_SXP2_Y_ZP1_B + ZT1 - ZT0
 !!$     !    
 !!$     !       singular matrix case : the last term is computed by setting the 
 !!$     !       average of the pressure field equal to zero.
@@ -646,10 +644,10 @@ SUBROUTINE FLAT_INVZ(HLBCX,HLBCY,PDXHATM,PDYHATM,PRHOM,PAF,PBF,PCF,   &
   IF  ( ( IAND(NZ_SPLITTING,2) > 0 ) .AND. (  IAND(NZ_SPLITTING,8) > 0 )) THEN
      CALL FAST_TRANSPOSE(ZBAND_SXP2_Y_ZP1T,ZBAND_SXP2_Y_ZP1,IJ_SXP2_Y_ZP1+2,II_SXP2_Y_ZP1,IK_SXP2_Y_ZP1)
      ZBAND_SXP2_YP1_Z  = 0.0 
-     CALL SECOND_MNH2(T0)
+     CALL SECOND_MNH2(ZT0)
      CALL REMAP_SXP2_Y_ZP1_SXP2_YP1_Z_ll(ZBAND_SXP2_Y_ZP1,ZBAND_SXP2_YP1_Z,IINFO_ll)
-     CALL SECOND_MNH2(T1)
-     TIMEZ%T_MAP_SXP2_Y_ZP1_SXP2_YP1_Z  = TIMEZ%T_MAP_SXP2_Y_ZP1_SXP2_YP1_Z + T1 - T0
+     CALL SECOND_MNH2(ZT1)
+     TIMEZ%T_MAP_SXP2_Y_ZP1_SXP2_YP1_Z  = TIMEZ%T_MAP_SXP2_Y_ZP1_SXP2_YP1_Z + ZT1 - ZT0
      !    
      !       singular matrix case : the last term is computed by setting the 
      !       average of the pressure field equal to zero.
@@ -718,19 +716,19 @@ SUBROUTINE FLAT_INVZ(HLBCX,HLBCY,PDXHATM,PDYHATM,PRHOM,PAF,PBF,PCF,   &
 
 !!$  IF  ( ( IAND(NZ_SPLITTING,2) > 0 ) .AND.(  IAND(NZ_SPLITTING,16) > 0 ) ) THEN
 !!$     !
-!!$     CALL SECOND_MNH2(T0)
+!!$     CALL SECOND_MNH2(ZT0)
 !!$     CALL REMAP_B_SXP2_Y_ZP1_ll(ZBAND_BR,ZBAND_SXP2_Y_ZP1R,IINFO_ll)
-!!$     CALL SECOND_MNH2(T1)
-!!$     TIMEZ.T_MAP_B_SXP2_Y_ZP1  = TIMEZ.T_MAP_B_SXP2_Y_ZP1 + T1 - T0
+!!$     CALL SECOND_MNH2(ZT1)
+!!$     TIMEZ.T_MAP_B_SXP2_Y_ZP1  = TIMEZ.T_MAP_B_SXP2_Y_ZP1 + ZT1 - ZT0
 !!$  ENDIF
   ! JUAN P1/P2 SPLITTING
   IF  ( ( IAND(NZ_SPLITTING,2) > 0 ) .AND. (  IAND(NZ_SPLITTING,8) > 0 ) ) THEN
      !
-     CALL SECOND_MNH2(T0)
+     CALL SECOND_MNH2(ZT0)
      CALL REMAP_SXP2_YP1_Z_SXP2_Y_ZP1_ll(ZBAND_SXP2_YP1_ZR,ZBAND_SXP2_Y_ZP1R,IINFO_ll)
      !TEST     CALL REMAP_SXP2_YP1_Z_SXP2_Y_ZP1_ll(ZBAND_SXP2_YP1_ZR,ZBAND_SXP2_Y_ZP1RBIS,IINFO_ll)
-     CALL SECOND_MNH2(T1)
-     TIMEZ%T_MAP_SXP2_YP1_Z_SXP2_Y_ZP1  = TIMEZ%T_MAP_SXP2_YP1_Z_SXP2_Y_ZP1 + T1 - T0
+     CALL SECOND_MNH2(ZT1)
+     TIMEZ%T_MAP_SXP2_YP1_Z_SXP2_Y_ZP1  = TIMEZ%T_MAP_SXP2_YP1_Z_SXP2_Y_ZP1 + ZT1 - ZT0
   ENDIF
   IF (  IAND(NZ_SPLITTING,2) > 0 )  THEN
      CALL FAST_TRANSPOSE(ZBAND_SXP2_Y_ZP1R,ZBAND_SXP2_Y_ZP1RT,II_SXP2_Y_ZP1,IJ_SXP2_Y_ZP1+2,IK_SXP2_Y_ZP1)
@@ -754,10 +752,10 @@ SUBROUTINE FLAT_INVZ(HLBCX,HLBCY,PDXHATM,PDYHATM,PRHOM,PAF,PBF,PCF,   &
      ! Transposition Y-> X
      !
      ZBAND_SX_YP2_ZP1=0
-     CALL SECOND_MNH2(T0)
+     CALL SECOND_MNH2(ZT0)
      CALL  REMAP_SXP2_Y_ZP1_SX_YP2_ZP1_ll(ZBAND_SXP2_Y_ZP1R,ZBAND_SX_YP2_ZP1,IINFO_ll)
-     CALL SECOND_MNH2(T1)
-     TIMEZ%T_MAP_SXP2_Y_ZP1_SX_YP2_ZP1  = TIMEZ%T_MAP_SXP2_Y_ZP1_SX_YP2_ZP1 + T1 - T0
+     CALL SECOND_MNH2(ZT1)
+     TIMEZ%T_MAP_SXP2_Y_ZP1_SX_YP2_ZP1  = TIMEZ%T_MAP_SXP2_Y_ZP1_SX_YP2_ZP1 + ZT1 - ZT0
      !
      IF (HLBCX(1) == 'CYCL') THEN
         ! re-set (N+1) values with (2) values ( stored here to avoid to lost them )
@@ -787,11 +785,11 @@ SUBROUTINE FLAT_INVZ(HLBCX,HLBCY,PDXHATM,PDYHATM,PRHOM,PAF,PBF,PCF,   &
   !JUAN Z_SPLITTING
   !
   IF (  IAND(NZ_SPLITTING,2) > 0 ) THEN
-     CALL SECOND_MNH2(T0)
+     CALL SECOND_MNH2(ZT0)
      !CALL REMAP_SX_YP2_ZP1_B_ll(ZBAND_SX_YP2_ZP1,ZBAND_B,IINFO_ll)
      CALL REMAP_SX_YP2_ZP1_SXP1_YP2_Z_ll(ZBAND_SX_YP2_ZP1,ZBAND_SXP1_YP2_Z,IINFO_ll)
-     CALL SECOND_MNH2(T1)
-     TIMEZ%T_MAP_SX_YP2_ZP1_B  = TIMEZ%T_MAP_SX_YP2_ZP1_B + T1 - T0
+     CALL SECOND_MNH2(ZT1)
+     TIMEZ%T_MAP_SX_YP2_ZP1_B  = TIMEZ%T_MAP_SX_YP2_ZP1_B + ZT1 - ZT0
      IF (  IAND(NZ_SPLITTING,1) > 0 ) THEN
         ! for test save 2D value
         CALL GET_HALO(ZBAND_B)

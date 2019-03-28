@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ###################
@@ -254,6 +254,7 @@ END MODULE MODI_MODEL_n
 !!  Philippe Wautelet: 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll
 !                                  to allow to disable writes (for bench purposes)
 !!                   02/2019 C.Lac add rain fraction as an output field
+!  P. Wautelet 28/03/2019: use MNHTIME for time measurement variables
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -322,6 +323,7 @@ USE MODD_PARAM_MFSHALL_n
 USE MODD_PARAM_n
 USE MODD_PAST_FIELD_n
 USE MODD_PRECIP_n
+use modd_precision,      only: MNHTIME
 USE MODD_PROFILER_n
 USE MODD_RADIATIONS_n,   ONLY: XTSRAD,XSCAFLASWD,XDIRFLASWD,XDIRSRFSWD, XAER, XDTHRAD
 USE MODD_RAIN_ICE_DESCR, ONLY: XRTMIN
@@ -440,9 +442,8 @@ INTEGER :: IVERB                ! LFI verbosity level
 LOGICAL :: GSTEADY_DMASS        ! conditional call to mass computation
 !
                                 ! for computing time analysis
-REAL*8,DIMENSION(2)         :: ZTIME,ZTIME1,ZTIME2,ZEND,ZTOT,ZALL,ZTOT_PT
-!
-REAL*8,DIMENSION(2)         :: ZTIME_STEP,ZTIME_STEP_PTS
+REAL(kind=MNHTIME), DIMENSION(2) :: ZTIME, ZTIME1, ZTIME2, ZEND, ZTOT, ZALL, ZTOT_PT
+REAL(kind=MNHTIME), DIMENSION(2) :: ZTIME_STEP,ZTIME_STEP_PTS
 CHARACTER                 :: YMI
 INTEGER                   :: IPOINTS
 CHARACTER(len=16)         :: YTCOUNT,YPOINTS
@@ -707,45 +708,45 @@ IF (KTCOUNT == 1) THEN
   !
 !
   !
-  XT_START = 0.0
-  ! 
-  XT_STORE     = 0.0
-  XT_BOUND     = 0.0
-  XT_GUESS     = 0.0
-  XT_FORCING   = 0.0
-  XT_NUDGING   = 0.0
-  XT_ADV       = 0.0
-  XT_ADVUVW    = 0.0
-  XT_GRAV      = 0.0
-  XT_SOURCES   = 0.0
+  XT_START     = 0.0_MNHTIME
   !
-  XT_DIFF      = 0.0
-  XT_RELAX     = 0.0
-  XT_PARAM     = 0.0
-  XT_SPECTRA   = 0.0
-  XT_HALO      = 0.0
-  XT_VISC      = 0.0  
-  XT_RAD_BOUND = 0.0
-  XT_PRESS     = 0.0
+  XT_STORE     = 0.0_MNHTIME
+  XT_BOUND     = 0.0_MNHTIME
+  XT_GUESS     = 0.0_MNHTIME
+  XT_FORCING   = 0.0_MNHTIME
+  XT_NUDGING   = 0.0_MNHTIME
+  XT_ADV       = 0.0_MNHTIME
+  XT_ADVUVW    = 0.0_MNHTIME
+  XT_GRAV      = 0.0_MNHTIME
+  XT_SOURCES   = 0.0_MNHTIME
   !
-  XT_CLOUD     = 0.0
-  XT_STEP_SWA  = 0.0
-  XT_STEP_MISC = 0.0
-  XT_COUPL     = 0.0
-  XT_1WAY      = 0.0
-  XT_STEP_BUD  = 0.0
+  XT_DIFF      = 0.0_MNHTIME
+  XT_RELAX     = 0.0_MNHTIME
+  XT_PARAM     = 0.0_MNHTIME
+  XT_SPECTRA   = 0.0_MNHTIME
+  XT_HALO      = 0.0_MNHTIME
+  XT_VISC      = 0.0_MNHTIME
+  XT_RAD_BOUND = 0.0_MNHTIME
+  XT_PRESS     = 0.0_MNHTIME
   !
-  XT_RAD       = 0.0
-  XT_DCONV     = 0.0
-  XT_GROUND    = 0.0
-  XT_TURB      = 0.0
-  XT_MAFL      = 0.0
-  XT_DRAG      = 0.0
-  XT_TRACER    = 0.0
-  XT_SHADOWS   = 0.0
-  XT_ELEC      = 0.0
-  XT_CHEM      = 0.0
-  XT_2WAY      = 0.0
+  XT_CLOUD     = 0.0_MNHTIME
+  XT_STEP_SWA  = 0.0_MNHTIME
+  XT_STEP_MISC = 0.0_MNHTIME
+  XT_COUPL     = 0.0_MNHTIME
+  XT_1WAY      = 0.0_MNHTIME
+  XT_STEP_BUD  = 0.0_MNHTIME
+  !
+  XT_RAD       = 0.0_MNHTIME
+  XT_DCONV     = 0.0_MNHTIME
+  XT_GROUND    = 0.0_MNHTIME
+  XT_TURB      = 0.0_MNHTIME
+  XT_MAFL      = 0.0_MNHTIME
+  XT_DRAG      = 0.0_MNHTIME
+  XT_TRACER    = 0.0_MNHTIME
+  XT_SHADOWS   = 0.0_MNHTIME
+  XT_ELEC      = 0.0_MNHTIME
+  XT_CHEM      = 0.0_MNHTIME
+  XT_2WAY      = 0.0_MNHTIME
   !
 END IF
 !

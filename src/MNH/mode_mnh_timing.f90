@@ -11,25 +11,33 @@ MODULE MODE_MNH_TIMING
 !  J. Escobar  12/02/2013: triabulle too slow on large BG partition, inhib it by a early return in the code
 !  P. Wautelet 10/01/2019: use NEWUNIT argument of OPEN
 !  P. Wautelet 22/03/2019: use MNHREAL64 and MNHREAL64_MPI + typo corrections
+!  P. Wautelet 27/03/2019: use MNHTIME and MNHTIME_MPI instead of MNHREAL64 and MNHREAL64_MPI
 !
 
-INTEGER     :: NLUOUT_TIMING
+implicit none
+
+private
+
+public :: SECOND_MNH2, SET_ILUOUT_TIMING, TIME_HEADER_ll, TIME_STAT_ll
+public :: TIMING_SEPARATOR, TIMING_LEGEND
+
+INTEGER :: NLUOUT_TIMING
 
 CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+subroutine second_mnh2(xt)
 
-SUBROUTINE SECOND_MNH2(XT)
-!
 USE modd_mpif
-!
-REAL*8,DIMENSION(2)           :: XT
-!
-CALL CPU_TIME(XT(1))
-XT(2) = MPI_Wtime()
-END SUBROUTINE SECOND_MNH2
+use modd_precision, only: MNHTIME
 
+real(kind=MNHTIME),dimension(2) :: xt
+
+call cpu_time( xt(1) )
+xt(2) = MPI_WTIME()
+
+end subroutine second_mnh2
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -86,18 +94,18 @@ END SUBROUTINE SECOND_MNH2
 !*       0.    DECLARATIONS
 !
   USE MODD_MPIF
-  use modd_precision, only: MNHREAL64, MNHREAL64_MPI
+  use modd_precision, only: MNHTIME, MNHTIME_MPI
   USE MODD_VAR_ll,    ONLY: IP, NMNH_COMM_WORLD, NPROC
   !
   IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 ! 
-  REAL(kind=MNHREAL64), DIMENSION(:), INTENT(IN)    :: PRES ! (1)=CPU & (2)=ELAPSED Processes Timing
-  REAL(kind=MNHREAL64), DIMENSION(:), INTENT(INOUT) :: PSUM ! (1)=SUM(CPU) & (2)=SUM(ELAPSED) Timing
-  CHARACTER(len=*), OPTIONAL,         INTENT(IN)    :: HPRINT
-  CHARACTER       , OPTIONAL,         INTENT(IN)    :: HSEP
-  CHARACTER(len=*), OPTIONAL,         INTENT(IN)    :: HFULL
+  REAL(kind=MNHTIME), DIMENSION(:), INTENT(IN)    :: PRES ! (1)=CPU & (2)=ELAPSED Processes Timing
+  REAL(kind=MNHTIME), DIMENSION(:), INTENT(INOUT) :: PSUM ! (1)=SUM(CPU) & (2)=SUM(ELAPSED) Timing
+  CHARACTER(len=*), OPTIONAL,       INTENT(IN)    :: HPRINT
+  CHARACTER       , OPTIONAL,       INTENT(IN)    :: HSEP
+  CHARACTER(len=*), OPTIONAL,       INTENT(IN)    :: HFULL
 !
 !*       0.2   Declarations of local variables :
 !
@@ -108,8 +116,8 @@ END SUBROUTINE SECOND_MNH2
   CHARACTER(len=30)         :: FILE = ""
   INTEGER                   :: IC
 
-  REAL(kind=MNHREAL64), DIMENSION(2,NSTAT) :: ZSTAT ! (1)=Sum(proc),(2)=Sum/Nproc,(3)=Min(proc),(4)=Max(proc),(5)=Percent(1)
-  REAL(kind=MNHREAL64), DIMENSION(2,NPROC) :: ZSTAT_ALL
+  REAL(kind=MNHTIME), DIMENSION(2,NSTAT) :: ZSTAT ! (1)=Sum(proc),(2)=Sum/Nproc,(3)=Min(proc),(4)=Max(proc),(5)=Percent(1)
+  REAL(kind=MNHTIME), DIMENSION(2,NPROC) :: ZSTAT_ALL
   INTEGER, DIMENSION(NPROC) :: IND
   INTEGER :: ILU
 !
@@ -119,15 +127,15 @@ END SUBROUTINE SECOND_MNH2
 !           ------------------------------
 INFO = -1
 ! 1.1 Sum(Proc)
-  CALL MPI_ALLREDUCE(PRES, ZSTAT(:,1), 2, MNHREAL64_MPI, &
+  CALL MPI_ALLREDUCE(PRES, ZSTAT(:,1), 2, MNHTIME_MPI, &
                      MPI_SUM, NMNH_COMM_WORLD, INFO)
 ! 1.2 Sum/Proc
   ZSTAT(:,2) = ZSTAT(:,1 ) / NPROC
 ! 1.3 Min(Proc)
-  CALL MPI_ALLREDUCE(PRES, ZSTAT(:,3), 2, MNHREAL64_MPI, &
+  CALL MPI_ALLREDUCE(PRES, ZSTAT(:,3), 2, MNHTIME_MPI, &
                      MPI_MIN, NMNH_COMM_WORLD, INFO)
 ! 1.4 Max(Proc)
-  CALL MPI_ALLREDUCE(PRES, ZSTAT(:,4), 2, MNHREAL64_MPI, &
+  CALL MPI_ALLREDUCE(PRES, ZSTAT(:,4), 2, MNHTIME_MPI, &
                      MPI_MAX, NMNH_COMM_WORLD, INFO)
 
 
@@ -154,7 +162,7 @@ INFO = -1
       ! gather all data
       !CALL  TIMING_SEPARATOR(HSEP)
       IROOT = 0
-      CALL MPI_GATHER(PRES(:),2,MNHREAL64_MPI,ZSTAT_ALL(:,1),2,MNHREAL64_MPI,&
+      CALL MPI_GATHER(PRES(:),2,MNHTIME_MPI,ZSTAT_ALL(:,1),2,MNHTIME_MPI,&
            IROOT,NMNH_COMM_WORLD, INFO)
       IF (IP.EQ.1) THEN
          FILE = trim(adjustl(HPRINT))
@@ -187,12 +195,12 @@ INFO = -1
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 subroutine triabulle(vec,ind)
-use modd_precision, only: MNHREAL64
+use modd_precision, only: MNHTIME
 
 implicit none
 
-real(kind=MNHREAL64), dimension(:), intent(inout) :: vec
-integer,              dimension(:), intent(out)   :: ind
+real(kind=MNHTIME), dimension(:), intent(inout) :: vec
+integer,            dimension(:), intent(out)   :: ind
 
 logical :: a
 integer :: i

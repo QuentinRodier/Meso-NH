@@ -7,6 +7,7 @@
 !  P. Wautelet 08/03/2019
 ! Modifications:
 !  P. Wautelet 22/03/2019: add MNHINT/REAL32/64_MPI, MNH2REAL32/64_MPI + more public parameters
+!  P. Wautelet 27/03/2019: add MNHTIME and MNHTIME_MPI
 !-----------------------------------------------------------------
 module modd_precision
 
@@ -28,6 +29,7 @@ public :: MNH2REAL32_MPI, MNH2REAL64_MPI
 
 public :: MNHINT, MNHREAL
 public :: MNHINT_MPI, MNHREAL_MPI, MNH2REAL_MPI
+public :: MNHTIME, MNHTIME_MPI
 
 public :: LFIINT
 
@@ -79,6 +81,9 @@ integer, parameter :: MNHREAL_MPI = MPI_REAL16
 #else
 #error "Invalid MNH_REAL"
 #endif
+
+integer, parameter :: MNHTIME     = MNHREAL64
+integer, parameter :: MNHTIME_MPI = MNHREAL64_MPI
 
 
 ! Kinds for LFI

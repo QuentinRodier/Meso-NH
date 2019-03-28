@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2009-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !    ###########################
      MODULE MODI_DIAGNOS_LES_MF
 !    ###########################
@@ -20,10 +21,10 @@ INTERFACE
 !
 !*                    1.1  Declaration of Arguments
 !
-!
+use modd_precision, only: MNHTIME
 !
 INTEGER,                INTENT(IN)  :: KIU, KJU, KKU ! 3D grid size
-REAL*8,DIMENSION(2),                   INTENT(OUT) :: PTIME_LES
+REAL(kind=MNHTIME), DIMENSION(2), INTENT(OUT) :: PTIME_LES
 REAL, DIMENSION(:,:),   INTENT(IN)  :: PTHL_UP,PRT_UP,PRV_UP,&
                                        PRC_UP,PRI_UP   ! updraft properties
 REAL, DIMENSION(:,:),   INTENT(IN)  :: PU_UP, PV_UP
@@ -74,20 +75,23 @@ END MODULE MODI_DIAGNOS_LES_MF
 !!     AUTHOR
 !!     ------
 !!     J.pergaud
-!!     V.Masson : Optimization 09/2010
+!
+! Modifications:
+!  V. Masson      09/2010: Optimization
+!  P. Wautelet 28/03/2019: use MNHTIME for time measurement variables
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
 !          ------------
 !
 USE MODD_LES
+use modd_precision, only: MNHTIME
+!
+USE MODE_MNH_TIMING
 !
 USE MODI_LES_VER_INT
 USE MODI_LES_MEAN_ll
 USE MODI_SHUMAN
-!JUANZ
-USE MODE_MNH_TIMING
-!JUANZ
 !
 IMPLICIT NONE
 
@@ -95,7 +99,7 @@ IMPLICIT NONE
 !
 !
 INTEGER,                INTENT(IN)  :: KIU, KJU, KKU ! 3D grid size
-REAL*8,DIMENSION(2),                   INTENT(OUT) :: PTIME_LES
+REAL(kind=MNHTIME), DIMENSION(2), INTENT(OUT) :: PTIME_LES
 REAL, DIMENSION(:,:),   INTENT(IN)  :: PTHL_UP,PRT_UP,PRV_UP,&
                                        PRC_UP,PRI_UP   ! updraft properties
 REAL, DIMENSION(:,:),   INTENT(IN)  :: PU_UP, PV_UP
@@ -119,7 +123,7 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE   :: ZTHLUP_MF_LES,ZRTUP_MF_LES, &
                                          ZWUP_MF_LES,ZFRACUP_MF_LES, &
                                          ZTHVUP_MF_LES,ZRVUP_MF_LES, &
                                          ZRIUP_MF_LES
-REAL*8,DIMENSION(2) :: ZTIME1, ZTIME2
+REAL(kind=MNHTIME), DIMENSION(2) :: ZTIME1, ZTIME2
 !------------------------------------------------------------------------
 !
 

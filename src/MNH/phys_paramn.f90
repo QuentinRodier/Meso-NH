@@ -1,9 +1,10 @@
-!MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !    ########################
-     MODULE MODI_PHYS_PARAM_n  
+     MODULE MODI_PHYS_PARAM_n
 !    ########################
 !
 !
@@ -13,18 +14,17 @@ INTERFACE
                               PRAD,PSHADOWS,PKAFR,PGROUND,PMAFL,PDRAG,PTURB,PTRACER,       &
                               PTIME_BU, PWETDEPAER, OMASKkids,OCLOUD_ONLY                  )           
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO_ll,     ONLY: TFILEDATA
+use modd_precision, only: MNHTIME
 !
 INTEGER,           INTENT(IN)     :: KTCOUNT   ! temporal iteration count
 TYPE(TFILEDATA),   INTENT(IN)     :: TPFILE    ! Synchronous output file
 LOGICAL,           INTENT(IN)     :: OCLOSE_OUT! conditional closure of the 
                                                ! OUTPUT FM-file
-! advection schemes                   
-REAL*8,DIMENSION(2), INTENT(INOUT)  :: PRAD,PSHADOWS,PKAFR,PGROUND,PTURB,PMAFL,PDRAG,PTRACER ! to store CPU
-                                               ! time for computing time
-                                        
-REAL*8,DIMENSION(2),              INTENT(INOUT)  :: PTIME_BU  ! time used in budget&LES budgets
-     !        statistics
+! advection schemes
+REAL(kind=MNHTIME), DIMENSION(2), INTENT(INOUT) :: PRAD,PSHADOWS,PKAFR,PGROUND,PTURB,PMAFL,PDRAG,PTRACER ! to store CPU
+                                                                                                         ! time for computing time
+REAL(kind=MNHTIME), DIMENSION(2), INTENT(INOUT) :: PTIME_BU  ! time used in budget&LES budgets statistics
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT)  :: PWETDEPAER
 LOGICAL, DIMENSION(:,:), INTENT(IN) :: OMASKkids ! kids domains mask
 LOGICAL, INTENT(OUT) :: OCLOUD_ONLY ! conditionnal radiation computations for
@@ -230,8 +230,9 @@ END MODULE MODI_PHYS_PARAM_n
 !!      C.Lac  10/2017 : ch_monitor and aer_monitor extracted from phys_param
 !!                       to be called directly by modeln as the last process 
 !!                   02/2018 Q.Libois ECRAD
-!!     28/03/2018 P. Wautelet: replace TEMPORAL_DIST by DATETIME_DISTANCE
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 28/03/2018: replace TEMPORAL_DIST by DATETIME_DISTANCE
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 28/03/2019: use MNHTIME for time measurement variables
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -293,6 +294,7 @@ USE MODD_PARAM_MFSHALL_n
 USE MODI_SHALLOW_MF_PACK
 USE MODD_CLOUD_MF_n
 USE MODD_ADV_n,            ONLY : XRTKEMS
+use modd_precision,        only: MNHTIME
 !
 USE MODI_SURF_RAD_MODIF
 USE MODI_GROUND_PARAM_n
@@ -347,11 +349,10 @@ INTEGER,           INTENT(IN)     :: KTCOUNT   ! temporal iteration count
 TYPE(TFILEDATA),   INTENT(IN)     :: TPFILE    ! Synchronous output file
 LOGICAL,           INTENT(IN)     :: OCLOSE_OUT! conditional closure of the 
                                                ! OUTPUT FM-file
-! advection schemes                   
-REAL*8,DIMENSION(2), INTENT(INOUT)  :: PRAD,PSHADOWS,PKAFR,PGROUND,PTURB,PMAFL,PDRAG,PTRACER ! to store CPU
-                                               ! time for computing time
-                                               !        statistics
-REAL*8,DIMENSION(2),              INTENT(INOUT)  :: PTIME_BU  ! time used in budget&LES budgets
+! advection schemes
+REAL(kind=MNHTIME), DIMENSION(2), INTENT(INOUT) :: PRAD,PSHADOWS,PKAFR,PGROUND,PTURB,PMAFL,PDRAG,PTRACER ! to store CPU
+                                                                                                         ! time for computing time
+REAL(kind=MNHTIME), DIMENSION(2), INTENT(INOUT) :: PTIME_BU  ! time used in budget&LES budgets statistics
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT)  :: PWETDEPAER
 LOGICAL, DIMENSION(:,:), INTENT(IN) :: OMASKkids ! kids domains mask
 LOGICAL, INTENT(OUT) :: OCLOUD_ONLY ! conditionnal radiation computations for
@@ -403,8 +404,8 @@ REAL    :: ZRAD_GLOB_ll         ! 'real' global parallel mask of 'GRAD'
 INTEGER :: INFO_ll              ! error report of parallel routines
                                 !      the only cloudy columns
 !
-REAL*8,DIMENSION(2)    :: ZTIME1,ZTIME2,ZTIME3,ZTIME4       ! for computing time analysis
-REAL*8,DIMENSION(2)    :: ZTIME_LES_MF         ! time spent in LES computation in shallow conv.
+REAL(kind=MNHTIME), DIMENSION(2) :: ZTIME1, ZTIME2, ZTIME3, ZTIME4 ! for computing time analysis
+REAL(kind=MNHTIME), DIMENSION(2) :: ZTIME_LES_MF                   ! time spent in LES computation in shallow conv.
 LOGICAL :: GDCONV               ! conditionnal call for the deep convection
                                 !         computations
 REAL, DIMENSION(:,:,:), ALLOCATABLE  :: ZRC, ZRI, ZWT ! additional dummies
@@ -454,12 +455,12 @@ IKB = 1 + JPVEXT
 IKE = IKU - JPVEXT
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 !
-ZTIME1 = 0.0
-ZTIME2 = 0.0
-ZTIME3 = 0.0
-ZTIME4 = 0.0
-PTIME_BU = 0.
-ZTIME_LES_MF = 0.0
+ZTIME1 = 0.0_MNHTIME
+ZTIME2 = 0.0_MNHTIME
+ZTIME3 = 0.0_MNHTIME
+ZTIME4 = 0.0_MNHTIME
+PTIME_BU = 0._MNHTIME
+ZTIME_LES_MF = 0.0_MNHTIME
 PWETDEPAER(:,:,:,:) = 0.
 !
 !* allocation of variables used in more than one parameterization

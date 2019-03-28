@@ -310,7 +310,8 @@
 !!  06/2016     (G.Delautier) phasage surfex 8
 !!      P.Wautelet : 08/07/2016 : removed MNH_NCWRIT define
 !!  01/2018      (G.Delautier) SURFEX 8.1
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 28/03/2019: use MNHTIME for time measurement variables
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -349,7 +350,7 @@ USE MODD_IO_ll,     ONLY: NIO_VERB,NVERB_DEBUG,TFILE_DUMMY,TFILE_OUTPUTLISTING
 USE MODD_CONF_n
 USE MODD_NSV,      ONLY : NSV,NSV_CHEM,           &
                           NSV_DSTEND, NSV_DSTBEG
-use modd_precision, only: LFIINT, MNHREAL_MPI
+use modd_precision, only: LFIINT, MNHREAL_MPI, MNHTIME
 !
 USE MODN_BLANK
 !
@@ -554,7 +555,7 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE ::ZTHL,ZT,ZRT,ZFRAC_ICE,&
 REAL                :: ZDIST
 !
 !JUAN TIMING
-REAL*8,DIMENSION(2)         :: ZTIME1,ZTIME2,ZEND,ZTOT
+REAL(kind=MNHTIME), DIMENSION(2) :: ZTIME1, ZTIME2, ZEND, ZTOT
 CHARACTER                 :: YMI
 INTEGER                   :: IMI
 INTEGER::JK                                 
@@ -622,8 +623,8 @@ CALL VERSION
 CPROGRAM='IDEAL '
 !
 !JUAN TIMING
-  XT_START     = 0.0
-  XT_STORE     = 0.0
+  XT_START     = 0.0_MNHTIME
+  XT_STORE     = 0.0_MNHTIME
 !
   CALL SECOND_MNH2(ZEND)
 !

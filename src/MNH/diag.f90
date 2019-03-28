@@ -89,6 +89,7 @@
 !!  V.Vionnet 07/2017 add LWIND_CONTRAV
 !!  11/2017      (D. Ricard, P. Marquet) add diagnostics for THETAS 
 !  P. Wautelet 11/02/2019: added missing use of MODI_CH_MONITOR_n
+!  P. Wautelet 28/03/2019: use MNHTIME for time measurement variables
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -124,7 +125,7 @@ USE MODD_PARAM_LIMA,       ONLY: LLIMA_DIAG
 USE MODD_PARAM_MFSHALL_n
 USE MODD_PARAM_n
 USE MODD_PARAM_RAD_n
-use modd_precision,        only: LFIINT
+use modd_precision,        only: LFIINT, MNHTIME
 USE MODD_PROFILER_n
 USE MODD_RADAR
 USE MODD_RADIATIONS_n
@@ -185,9 +186,9 @@ CHARACTER (LEN=4)  :: YTURB     ! initial flag to call to turbulence schemes
 CHARACTER (LEN=40) :: YFMT,YFMT2! format for cpu analysis printing
 INTEGER  :: IRESP               ! return code in FM routines
 INTEGER  :: ILUOUT0             ! Logical unit number for the output listing
-REAL*8,DIMENSION(2)     :: ZTIME0,ZTIME1,ZTIME2,ZRAD,ZDCONV,ZSHADOWS,ZGROUND, &
-                         ZTRACER,ZDRAG,ZTURB,ZMAFL,ZCHEM,ZTIME_BU ! CPU time 
-REAL*8,DIMENSION(2)     :: ZSTART,ZINIT,ZWRIT,ZBALL,ZPHYS,ZSURF,ZWRITS,ZTRAJ ! storing variables
+REAL(kind=MNHTIME), DIMENSION(2) :: ZTIME0, ZTIME1, ZTIME2, ZRAD, ZDCONV, ZSHADOWS, ZGROUND, &
+                                    ZTRACER, ZDRAG, ZTURB, ZMAFL, ZCHEM, ZTIME_BU ! CPU times
+REAL(kind=MNHTIME), DIMENSION(2) :: ZSTART, ZINIT, ZWRIT, ZBALL, ZPHYS, ZSURF, ZWRITS, ZTRAJ ! storing variables
 INTEGER(KIND=LFIINT) :: INPRAR ! number of articles predicted  in the LFIFM file
 LOGICAL :: GCLOSE_OUT = .FALSE. ! conditional closure of the OUTPUT FM-file
 INTEGER :: ISTEPBAL   ! loop indice for balloons and aircraft
@@ -676,18 +677,18 @@ END IF
 !* call to physics monitor
 !
 GCLOSE_OUT=.TRUE.
-ZRAD=0.
-ZSHADOWS=0.
-ZDCONV=0.
-ZGROUND=0.
-ZTRACER=0.
-ZTURB=0.
-ZDRAG=0.
-ZMAFL=0.
-ZCHEM=0.
-XTIME_LES=0.
-XTIME_LES_BU_PROCESS=0.
-XTIME_BU_PROCESS=0.
+ZRAD                 = 0.0_MNHTIME
+ZSHADOWS             = 0.0_MNHTIME
+ZDCONV               = 0.0_MNHTIME
+ZGROUND              = 0.0_MNHTIME
+ZTRACER              = 0.0_MNHTIME
+ZTURB                = 0.0_MNHTIME
+ZDRAG                = 0.0_MNHTIME
+ZMAFL                = 0.0_MNHTIME
+ZCHEM                = 0.0_MNHTIME
+XTIME_LES            = 0.0_MNHTIME
+XTIME_LES_BU_PROCESS = 0.0_MNHTIME
+XTIME_BU_PROCESS     = 0.0_MNHTIME
 CALL PHYS_PARAM_n(1,TOUTDATAFILE,GCLOSE_OUT,                      &
                   ZRAD,ZSHADOWS,ZDCONV,ZGROUND,ZMAFL,ZDRAG, &
                   ZTURB,ZTRACER, ZTIME_BU,ZWETDEPAER,GMASKkids,GCLOUD_ONLY)

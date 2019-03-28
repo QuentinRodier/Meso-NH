@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 2010-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !    ######################
      MODULE MODI_SHALLOW_MF_PACK
 !    ######################
@@ -21,10 +22,11 @@ INTERFACE
                 PSIGMF,PRC_MF,PRI_MF,PCF_MF,PFLXZTHVMF  )
 !     #################################################################
 !!
-USE MODD_IO_ll, ONLY: TFILEDATA
-!               
+USE MODD_IO_ll,     ONLY: TFILEDATA
+use modd_precision, only: MNHTIME
+!
 !*               1.1  Declaration of Arguments
-!                
+!
 !
 INTEGER,                INTENT(IN)   :: KRR        ! number of moist var.
 INTEGER,                INTENT(IN)   :: KRRL       ! number of liquid water var.
@@ -39,7 +41,7 @@ LOGICAL,                INTENT(IN)   :: OCLOSE_OUT ! switch for synchronous
 LOGICAL,                INTENT(IN)   :: OMF_FLX    ! switch to write the
                                                    ! MF fluxes in the synchronous FM-file
 TYPE(TFILEDATA),        INTENT(IN)   :: TPFILE     ! Output file
-REAL*8,DIMENSION(2),    INTENT(OUT)  :: PTIME_LES  ! time spent in LES computations
+REAL(kind=MNHTIME),DIMENSION(2), INTENT(OUT)  :: PTIME_LES  ! time spent in LES computations
 REAL,                   INTENT(IN)   :: PIMPL_MF   ! degre of implicitness
 REAL,                   INTENT(IN)   :: PTSTEP     ! Dynamical timestep 
 
@@ -110,32 +112,35 @@ END MODULE MODI_SHALLOW_MF_PACK
 !!     AUTHOR
 !!     ------
 !!      V.Masson 09/2010
-!!      Modification R. Honnert 07/2012 : introduction of vertical wind 
-!!                                        for the height of the thermal
-!!                   M. Leriche 02/2017 : avoid negative values for sv tendencies
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!                   S. Riette 11/2016: support for CFRAC_ICE_SHALLOW_MF
-!! --------------------------------------------------------------------------
+! --------------------------------------------------------------------------
+! Modifications:
+!  R. Honnert     07/2012: introduction of vertical wind for the height of the thermal
+!  M. Leriche     02/2017: avoid negative values for sv tendencies
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  S. Riette      11/2016: support for CFRAC_ICE_SHALLOW_MF
+!  P. Wautelet 28/03/2019: use MNHTIME for time measurement variables
+! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_PARAMETERS
-USE MODD_CST
+USE MODD_BUDGET
 USE MODD_CONF
+USE MODD_CST
 USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_NSV
+USE MODD_PARAMETERS
 USE MODD_PARAM_ICE, ONLY : CFRAC_ICE_SHALLOW_MF
 USE MODD_PARAM_MFSHALL_n
-USE MODD_BUDGET
+use modd_precision, only: MNHTIME
 
 USE MODE_FIELD, ONLY: TFIELDDATA,TYPEREAL
 USE MODE_FMWRIT
 
-USE MODI_SHALLOW_MF
 USE MODI_BUDGET
-USE MODI_SHUMAN
 USE MODI_DIAGNOS_LES_MF
+USE MODI_SHALLOW_MF
+USE MODI_SHUMAN
 !
 IMPLICIT NONE
 
@@ -156,7 +161,7 @@ LOGICAL,                INTENT(IN)   :: OCLOSE_OUT ! switch for synchronous
 LOGICAL,                INTENT(IN)   :: OMF_FLX    ! switch to write the
                                                    ! MF fluxes in the synchronous FM-file
 TYPE(TFILEDATA),        INTENT(IN)   :: TPFILE     ! Output file
-REAL*8,DIMENSION(2),    INTENT(OUT)  :: PTIME_LES  ! time spent in LES computations
+REAL(kind=MNHTIME),DIMENSION(2), INTENT(OUT)  :: PTIME_LES  ! time spent in LES computations
 REAL,                   INTENT(IN)   :: PIMPL_MF   ! degre of implicitness
 REAL,                   INTENT(IN)   :: PTSTEP     ! Dynamical timestep 
 
