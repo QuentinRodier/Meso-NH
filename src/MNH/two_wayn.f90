@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1997-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1997-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ###################
@@ -112,7 +112,8 @@ END MODULE MODI_TWO_WAY_n
 !!      Bosseur & Filippi 07/2013 Adds Forefire
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!      Modification    01/2016  (JP Pinty) Add LIMA
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 29/03/2019: bugfix: use correct sizes for 3rd dimension in allocation and loops when CRAD/='NONE'
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -950,9 +951,10 @@ IF (LINTER) THEN
     ALLOCATE(ZSCAFLASWD(IXOR:IXEND,IYOR:IYEND, SIZE(PSCAFLASWD, 3))) 
     ALLOCATE(ZDIRSRFSWD(IXOR:IXEND,IYOR:IYEND, SIZE(PDIRSRFSWD, 3)))  
   ELSE
-    ALLOCATE(ZDIRFLASWD(0,0,0))
-    ALLOCATE(ZSCAFLASWD(0,0,0))
-    ALLOCATE(ZDIRSRFSWD(0,0,0))
+    !3rd dimension size can also be allocated with a zero size
+    ALLOCATE( ZDIRFLASWD(0, 0, SIZE( PDIRFLASWD, 3 )) )
+    ALLOCATE( ZSCAFLASWD(0, 0, SIZE( PSCAFLASWD, 3 )) )
+    ALLOCATE( ZDIRSRFSWD(0, 0, SIZE( PDIRSRFSWD, 3 )) )
   ENDIF
 ELSE
   ALLOCATE(ZUM(0,0,0))
@@ -971,9 +973,11 @@ ELSE
   ALLOCATE(ZINPRH(0,0))
   ALLOCATE(ZPRCONV(0,0))
   ALLOCATE(ZPRSCONV(0,0))
-  ALLOCATE(ZDIRFLASWD(0,0,0))                            
-  ALLOCATE(ZSCAFLASWD(0,0,0))                            
-  ALLOCATE(ZDIRSRFSWD(0,0,0))
+  !3rd dimension of ZDIRFLASWD, ZSCAFLASWD and ZDIRSRFSWD is allocated with a not necessarily zero size
+  !because it needs to be to this size for the SET_LSFIELD_2WAY_ll loops if CRAD/='NONE'
+  ALLOCATE( ZDIRFLASWD(0, 0, SIZE( PDIRFLASWD, 3 )) )
+  ALLOCATE( ZSCAFLASWD(0, 0, SIZE( PSCAFLASWD, 3 )) )
+  ALLOCATE( ZDIRSRFSWD(0, 0, SIZE( PDIRSRFSWD, 3 )) )
 ENDIF
 !
 ! Initialize the list for the forcing
@@ -1011,11 +1015,15 @@ IF (CDCONV /= 'NONE') THEN
   CALL SET_LSFIELD_2WAY_ll(ZPRSCONV , ZTPRSCONV) 
 END IF
 IF (CRAD /= 'NONE') THEN
- DO JVAR=1,SIZE( PDIRFLASWD,3)                                
-   CALL SET_LSFIELD_2WAY_ll(ZDIRFLASWD(:,:,JVAR) , ZTDIRFLASWD(:,:,JVAR)) 
-   CALL SET_LSFIELD_2WAY_ll(ZSCAFLASWD(:,:,JVAR) , ZTSCAFLASWD(:,:,JVAR)) 
-   CALL SET_LSFIELD_2WAY_ll(ZDIRSRFSWD(:,:,JVAR) , ZTDIRSRFSWD(:,:,JVAR)) 
- ENDDO
+  DO JVAR = 1, SIZE( PDIRFLASWD, 3 )
+    CALL SET_LSFIELD_2WAY_ll(ZDIRFLASWD(:,:,JVAR) , ZTDIRFLASWD(:,:,JVAR))
+  END DO
+  DO JVAR = 1, SIZE( PSCAFLASWD, 3 )
+    CALL SET_LSFIELD_2WAY_ll(ZSCAFLASWD(:,:,JVAR) , ZTSCAFLASWD(:,:,JVAR))
+  END DO
+  DO JVAR = 1, SIZE( PDIRSRFSWD, 3 )
+    CALL SET_LSFIELD_2WAY_ll(ZDIRSRFSWD(:,:,JVAR) , ZTDIRSRFSWD(:,:,JVAR))
+  END DO
 END IF
 CALL SET_LSFIELD_2WAY_ll(ZRHODJ, ZTRHODJ)
 CALL SET_LSFIELD_2WAY_ll(ZRHODJU, ZTRHODJU)
