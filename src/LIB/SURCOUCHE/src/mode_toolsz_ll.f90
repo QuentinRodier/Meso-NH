@@ -202,6 +202,7 @@
     !!    -------------
     !     Original 01/05/98
     !     R.Guivarch 29/11/99 : x and y splitting : HSPLITTING
+    !     J.Escobar 28/03/2019: check very small domain(0 size) 
     !
     !-------------------------------------------------------------------------------
     !
@@ -332,6 +333,14 @@
        CALL CARTESIANZ(TPROC,NB_PROC,X_DIM,Y_DIM,Z_DIM,X_DOMAINS,Y_DOMAINS,Z_DOMAINS,321)
        !
     END IF
+    IF (      ( (1+TPROC(IP)%NXEND-TPROC(IP)%NXOR) == 0 )  &
+         .OR. ( (1+TPROC(IP)%NYEND-TPROC(IP)%NYOR) == 0 )  ) THEN
+       PRINT*, "/!\ SPLITZ: some proc have 0 size local domaine , to much processors used for domaine size ", &
+            " IP="  ,IP , &
+            " DIMX=",1+TPROC(IP)%NXEND-TPROC(IP)%NXOR, &
+            " DIMY=",1+TPROC(IP)%NYEND-TPROC(IP)%NYOR
+       CALL ABORT()
+    END IF
     !
     !*       3.     shift from physical to extended domain
     !
@@ -352,6 +361,7 @@
                 PRINT*,"NYOR=",TPROC(IK)%NYOR," NYEND=",TPROC(IK)%NYEND," TAILLE=",1+TPROC(IK)%NYEND-TPROC(IK)%NYOR
                 PRINT*,"NZOR=",TPROC(IK)%NZOR," NZEND=",TPROC(IK)%NZEND," TAILLE=",1+TPROC(IK)%NZEND-TPROC(IK)%NZOR
              END DO
+
           ENDIF
        END IF
     END IF

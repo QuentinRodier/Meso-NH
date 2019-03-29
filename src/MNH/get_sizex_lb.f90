@@ -83,6 +83,7 @@ END MODULE MODI_GET_SIZEX_LB
 !!      Original    23/09/98
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!   J.Escobar 28/03/2019: for very small domain , force N/S/E/W check on getting LB bounds
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -139,7 +140,7 @@ IF (KRIMX /=0) THEN
   IYOR=1 
   IYEND=KJMAX_ll+ 2 * JPHEXT
   CALL GET_INTERSECTION_ll(IXOR,IYOR,IXEND,IYEND,IXORI,IYORI,IXENDI,IYENDI,"EXTE",IINFO)
-  IF (IINFO/=1) THEN  ! no empty intersection
+  IF (IINFO/=1 .AND. LWEST_ll() ) THEN  ! no empty intersection
     KISIZEXF=KISIZEXF + (IXENDI - IXORI +1)
     KJSIZEXF= IYENDI - IYORI +1 
   ENDIF
@@ -150,7 +151,7 @@ IF (KRIMX /=0) THEN
   IYOR=1
   IYEND=KJMAX_ll+ 2 * JPHEXT
   CALL GET_INTERSECTION_ll(IXOR,IYOR,IXEND,IYEND,IXORI,IYORI,IXENDI,IYENDI,"EXTE",IINFO)
-  IF (IINFO/=1) THEN ! no empty intersection
+  IF (IINFO/=1 .AND. LEAST_ll() ) THEN ! no empty intersection
     KISIZEXF=KISIZEXF + (IXENDI - IXORI +1) ! added to the western side 
     KJSIZEXF= IYENDI - IYORI +1 
     KISIZEXFU=KISIZEXFU + ( IXENDI - IXORI +1)
@@ -162,7 +163,7 @@ IF (KRIMX /=0) THEN
   IYOR=1 
   IYEND=KJMAX_ll+ 2 * JPHEXT
   CALL GET_INTERSECTION_ll(IXOR,IYOR,IXEND,IYEND,IXORI,IYORI,IXENDI,IYENDI,"EXTE",IINFO)
-  IF (IINFO /= 1) THEN ! no empty intersection
+  IF (IINFO/=1 .AND. LWEST_ll() ) THEN ! no empty intersection
     KISIZEXFU=KISIZEXFU + (IXENDI - IXORI +1)
     KJSIZEXFU= IYENDI - IYORI +1 
   ENDIF
@@ -176,7 +177,7 @@ IXEND=JPHEXT+2 ! 3
 IYOR=1
 IYEND=KJMAX_ll+ 2 * JPHEXT
 CALL GET_INTERSECTION_ll(IXOR,IYOR,IXEND,IYEND,IXORI,IYORI,IXENDI,IYENDI,"EXTE",IINFO)
-IF (IINFO /=1 ) THEN ! no empty intersection
+IF (IINFO /=1 .AND. LWEST_ll() ) THEN ! no empty intersection
   KISIZEX4=KISIZEX4 + ( IXENDI - IXORI +1)
   KJSIZEX4= IYENDI - IYORI +1 
 ENDIF
@@ -186,7 +187,7 @@ IXEND=KIMAX_ll+ 2 * JPHEXT - JPHEXT + JPHEXT  ! + 2*JPHEXT
 IYOR=1
 IYEND=KJMAX_ll+ 2 * JPHEXT
 CALL GET_INTERSECTION_ll(IXOR,IYOR,IXEND,IYEND,IXORI,IYORI,IXENDI,IYENDI,"EXTE",IINFO)
-IF (IINFO/=1) THEN ! no empty intersection
+IF (IINFO/=1 .AND. LEAST_ll() ) THEN ! no empty intersection
   KISIZEX4=KISIZEX4 + (IXENDI - IXORI +1)
   KJSIZEX4= IYENDI - IYORI +1 
 ENDIF
@@ -199,7 +200,7 @@ IXEND=JPHEXT ! 1
 IYOR=1
 IYEND=KJMAX_ll+ 2 * JPHEXT
 CALL GET_INTERSECTION_ll(IXOR,IYOR,IXEND,IYEND,IXORI,IYORI,IXENDI,IYENDI,"EXTE",IINFO)
-IF (IINFO /=1) THEN   ! no empty intersection
+IF (IINFO/=1 .AND. LWEST_ll() ) THEN   ! no empty intersection
   KISIZEX2=KISIZEX2 + ( IXENDI - IXORI +1)
   KJSIZEX2= IYENDI - IYORI +1 
 ENDIF
@@ -209,7 +210,7 @@ IXEND=KIMAX_ll + 2 * JPHEXT - JPHEXT + JPHEXT !  + 2 * JPHEXT
 IYOR=1
 IYEND=KJMAX_ll+ 2 * JPHEXT
 CALL GET_INTERSECTION_ll(IXOR,IYOR,IXEND,IYEND,IXORI,IYORI,IXENDI,IYENDI,"EXTE",IINFO)
-IF (IINFO /=1) THEN    ! no empty intersection
+IF (IINFO/=1 .AND. LEAST_ll() ) THEN    ! no empty intersection
   KISIZEX2=KISIZEX2 + ( IXENDI - IXORI +1)
   KJSIZEX2= IYENDI - IYORI +1 
 ENDIF
