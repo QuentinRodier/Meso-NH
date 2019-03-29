@@ -40,6 +40,7 @@
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!      B.VIE 2016 LIMA
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      Q. Rodier : 29/03/2019 : increase maximum number of outputs to 999
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -74,7 +75,7 @@ INTEGER, PARAMETER :: NNEGUNDEF = -999  ! default value for undefined or unused
 !                                       ! field (negative value guaranteed)
 INTEGER, PARAMETER :: JPDUMMY  = 20   ! Size of dummy array
 !
-INTEGER, PARAMETER :: JPOUTMAX = 192    ! Maximum allowed number of OUTput files
+INTEGER, PARAMETER :: JPOUTMAX = 999    ! Maximum allowed number of OUTput files
 INTEGER, PARAMETER :: JPOUTVARMAX = 192 ! Maximum allowed number of variables in an output file
 !
 INTEGER, PARAMETER :: NMNHNAMELGTMAX = 32 ! Maximum length of a MNH variable name
