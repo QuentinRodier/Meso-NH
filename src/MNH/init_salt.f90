@@ -42,7 +42,7 @@ XINIRADIUS_SLT=  (/0.009, 0.021, 0.045, 0.115, 0.415/)
 !Initial, standard deviation from  Ova et al., 2014
 XINISIG_SLT =  (/ 1.37, 1.5, 1.42, 1.53, 1.85 /)
 !Minimum allowed number concentration for any mode (#/m3)
-XN0MIN_SLT  = (/1.e1 , 1.e1, 1.e1, 1., 1.e-4 /)
+XN0MIN_SLT  = (/1. , 1., 1., 1., 1. /)
 
 
 ELSE IF ( NMODE_SLT == 3) THEN

@@ -68,7 +68,7 @@ CHARACTER(LEN=6),DIMENSION(15), PARAMETER  :: YPSALT_INI = &
                     'SLTM04','SLTM34','SLTM64',&
                     'SLTM05','SLTM35','SLTM65' /)
 
-INTEGER, DIMENSION(5),PARAMETER  :: JPSALTORDER = (/3, 2, 1, 5, 4/)
+INTEGER, DIMENSION(5),PARAMETER  :: JPSALTORDER = (/1, 2, 3, 4, 5/)
 
 !Test Thomas (definir rayons et sigma ici si on veut desactiver initialisation MACC)
 
@@ -79,7 +79,7 @@ REAL,DIMENSION(5)    :: XINIRADIUS_SLT=  (/0.009, 0.021, 0.045, 0.115, 0.415/)
 !Initial, standard deviation from  Ova et al., 2014
 REAL,DIMENSION(5)      :: XINISIG_SLT =  (/ 1.37, 1.5, 1.42, 1.53, 1.85 /)
 !Minimum allowed number concentration for any mode (#/m3)
-REAL,DIMENSION(5)  :: XN0MIN_SLT  = (/1.e1 , 1.e1, 1.e1, 1., 1.e-4 /)
+REAL,DIMENSION(5)  :: XN0MIN_SLT  = (/1. , 1., 1., 1., 1. /)
 
 !Test Thomas
 

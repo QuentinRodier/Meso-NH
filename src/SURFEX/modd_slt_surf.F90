@@ -15,7 +15,7 @@ REAL, PARAMETER  :: XDENSITY_SLT     = 2.1e3    ! [kg/m3] density of sea salt
 REAL, PARAMETER  :: XMOLARWEIGHT_SLT = 58.e-3   ! [kg/mol] molar weight sea salt
 !
 INTEGER, PARAMETER  :: NEMISMODES_MAX=5
-INTEGER, DIMENSION(NEMISMODES_MAX), PARAMETER :: JORDER_SLT=(/3,2,1,5,4/) !Dust modes in order of importance
+INTEGER, DIMENSION(NEMISMODES_MAX), PARAMETER :: JORDER_SLT=(/1,2,3,4,5/) !Dust modes in order of importance
 !Set emission related parameters
 REAL,DIMENSION(NEMISMODES_MAX)   :: XEMISRADIUS_INI_SLT          ! number madian radius initialization for sea salt mode (um)
 REAL,DIMENSION(NEMISMODES_MAX)   :: XEMISSIG_INI_SLT             ! dispersion initialization for sea salt mode

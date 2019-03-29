@@ -101,7 +101,7 @@ INTEGER :: IMOMENTS
 !-Marine
 INTEGER :: JI, JJ, JN, JK  ! loop counter
 INTEGER :: IMODEIDX  ! index mode
-REAL, PARAMETER  :: ZN_SALT=0.1 ! particles of sea salt/cm3 {air}
+REAL, PARAMETER  :: ZN_SALT=1E4 ! multiplcative factor for X0MIN
 REAL, PARAMETER  :: ZCLM=800. ! Marine Salt layer (m)
 REAL    :: ZN_SALTN
 !
@@ -182,30 +182,18 @@ DO JN=1,NMODE_SLT
 !+Marine : (reprendre XN0MIN_SLT de modd_salt.f90).
 ! Pas plus simple de fixer une dimension à ZN_SALT qui dépend de JN pour ne pas
 ! avoir à rappeler le schéma d'émission?
-
   IF(NMODE_SLT == 5)THEN
-
-
-    IF (JN == 1) ZN_SALTN = XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT *1E6
-    IF (JN == 2) ZN_SALTN = XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT *1E6
-    IF (JN == 3) ZN_SALTN = XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT *1E6
-    IF (JN == 4) ZN_SALTN = XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT *1E6
-    IF (JN == 5) ZN_SALTN = XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT *1E6
-
+    IF (JN == 1) ZN_SALTN = XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT 
+    IF (JN == 2) ZN_SALTN = XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT
+    IF (JN == 3) ZN_SALTN = XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT
+    IF (JN == 4) ZN_SALTN = XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT
+    IF (JN == 5) ZN_SALTN = XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT
   ELSE 
-!  IF (JN == 1) ZN_SALTN = 1E-4  *  ZN_SALT *1E6
-!  IF (JN == 2) ZN_SALTN = 1.   *  ZN_SALT *1E6
-!  IF (JN == 3) ZN_SALTN = 10 *  ZN_SALT *1E6
-
-    IF (JN == 1) ZN_SALTN =  XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT *1E6
-    IF (JN == 2) ZN_SALTN =  XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT *1E6
-    IF (JN == 3) ZN_SALTN =  XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT *1E6
-
+    IF (JN == 1) ZN_SALTN =  XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT 
+    IF (JN == 2) ZN_SALTN =  XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT
+    IF (JN == 3) ZN_SALTN =  XN0MIN_SLT(JPSALTORDER(JN)) *  ZN_SALT
   END IF
-
-
 !-Marine
-
   DO JK=1, SIZE(PSV,3) 
     DO JJ=1, SIZE(PSV,2) 
       DO JI=1, SIZE(PSV,1) 
