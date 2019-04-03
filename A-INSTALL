@@ -74,7 +74,7 @@
 # ==========================================
 #
 # With your preferred web browser go to the MESONH WEB SITE
-# 
+#
 #  http://mesonh.aero.obs-mip.fr/mesonh
 #     ---> Download
 #
@@ -85,10 +85,10 @@
 # Then untar the file "PACK-MNH-V5-4-2.tar.gz" where you want to.
 # For example, in your home directory:
 #
- 
+
 cd ~
 tar xvfz PACK-MNH-V5-4-2.tar.gz
-      
+
 #
 #  Process now to the chapter to configure the MesoNH package.
 #
@@ -121,7 +121,7 @@ git --version
 git lfs install
 
 #      that will set up some filters under the name "lfs" in the global Git
-#      config file ($HOME/.gitconfig) 
+#      config file ($HOME/.gitconfig)
 #
 #    b) Before cloning
 #    -----------------
@@ -217,7 +217,7 @@ git checkout -b MYB-MNH-V5-4-2 PACK-MNH-V5-4-2
 
 git fetch
 git diff HEAD MNH-54-branch
-  
+
 #
 # And, test this development (not yet official) version by going to this branch:
 #
@@ -261,14 +261,20 @@ cd ~/MNH-V5-4-2/src
 #    this will create a configuration file "profile_mesonh" with
 #    an extension reflecting the different "choices" made automatically
 #    to match the computer on which you want to install MESONH
-#   
+# 
 #    WARNING :
 #    =========
-#    On GENCI & ECMWF & METEO/CNRM  computers, the './configure' is tuned to 
+#    On GENCI & ECMWF & METEO/CNRM & METEO/DSI  computers, the './configure' is tuned to 
 #    identify the computer on which the command is used
 #    so the good compiler, MPI & netCDF libraries,... 
 #    are automatically chosen
 # 
+#    To install this version on one of these machines, go to the chapter
+#
+#    => VI) COMPILING/INSTALLING ON GENCI & ECMWF & METEO COMPUTERS
+#
+#    else follow the guidelines below.
+#
 #    /!\ This is not the case in your "own" personal Linux computer ...
 #    So is up to you to set the ARCH variable correctly
 #    ARCH     = Fortran compiler to use,
@@ -488,7 +494,7 @@ export VER_USER=MY_MODIF
 #
 # as before load it & and compile with the command "make user"
 
-. ../conf/profile_mesnh...${VER_USER}...
+. ../conf/profile_mesonh...${VER_USER}...
 
 make user
 
@@ -611,9 +617,9 @@ export ARCH=LXifort
 
 ...
 
-création du fichier -->  ../conf/profile_mesonh-LXifortI4-MNH-V5-4-2-MPICRAY-O2
+creation du fichier -->  ../conf/profile_mesonh-LXifortI4-MNH-V5-4-2-MPICRAY-O2
 
-# And for the compilation & example job , switch the ARCH variable to LXiort :
+# And for the compilation & example job , switch the ARCH variable to LXifort :
 
 vi  job_make_mesonh_CRAY_cca(job_make_examples_CRAY_cca)
 
@@ -621,11 +627,53 @@ ARCH=LXifort
 #ARCH=LXcray # this is the default one
 . ../conf/profile_mesonh-${ARCH}I4-MNH-V5-4-2-MPICRAY-O2
 
+#
+#   - At Meteo-France DSI on beaufix (or prolix)
+#
+#  to install the whole package on your "$HOME" directory
+#  untar the file "PACK-MNH-V5-4-2.tar.gz" from its location :
 
+cd ~
+tar xvf $MESONH/pack_MNH-V5-4-2.tar.gz
+
+#  run the "./configure" command :
+
+cd MNH-V5-4-2/src
+./configure
 
 #
-#   EXAMPLES ON GENCI & ECMWF PLATFORMS
-#   ====================================
+#   Due to limitation in time & memory on interactive connection
+#   then compile the MESONH PACKAGE in batch mode with the job_make_mesonh_BullX file :
+
+sbatch   job_make_mesonh_BullX
+
+#   This job does : gmake -j 4
+#   then : make installmaster
+
+#   To run basic KTEST examples :
+
+sbatch   job_make_examples_BullX
+
+#   Step-2 : configure/compiling with VER_USER=...
+# ----------------------------------------------
+#  In a new session set the variable "VER_USER" with the name of your "USER VERSION",
+#  and run again the "./configure" command
+#
+
+export VER_USER=MY_MODIF
+./configure
+
+# this will regenerate the "profile-mesonh" file and a copy
+# of this with the extent  "profile_mesonh...${VER_USER)..."
+#
+#   in job_make_mesonh_user_BullX insert " export VER_USER=MY_MODIF "
+#   then submit in batch mode
+
+sbatch  job_make_mesonh_user_BullX
+
+#
+#   EXAMPLES ON GENCI & ECMWF PLATFORMS & METEO COMPUTERS
+#   =====================================================
 #
 #  - At IDRIS
 #
@@ -655,6 +703,12 @@ make examples
 #
 
 llsubmit  job_make_examples_CRAY_cca
+
+#
+#   - At Meteo-France DSI on beaufix or prolix
+#
+
+sbatch   job_make_examples_BullX
 
 #
 # That's all for the basic INSTALLATION of the "MESONH PACKAGE"
