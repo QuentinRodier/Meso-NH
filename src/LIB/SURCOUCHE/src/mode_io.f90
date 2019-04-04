@@ -25,6 +25,7 @@
 !     Philippe Wautelet: 10/01/2019: bug: modify some metadata before open calls
 !     Philippe Wautelet: 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll to allow
 !                                    to disable writes (for bench purposes)
+!  P. Wautelet 04/04/2019: force write on stderr for all processes in print_msg if abort
 !
 MODULE MODE_IO_ll
 
@@ -791,9 +792,6 @@ IF (IP == 1 .OR. LVERB_ALLPRC) THEN
   IF (LVERB_STDOUT) GWRITE_STDOUT = .TRUE.
 END IF
 !
-YPRC=''
-IF (LVERB_ALLPRC) WRITE(YPRC,'( I8 )') IP-1
-!
 !Check if the output file is available
 ILU = -1
 IF (ASSOCIATED(TFILE_OUTPUTLISTING)) THEN
@@ -841,6 +839,8 @@ SELECT CASE(KVERB)
     IF (GWRITE_OUTLST) WRITE(UNIT=ILU,        FMT=*) 'ERROR: PRINT_MSG: wrong verbosity level'
 END SELECT
 !
+WRITE(YPRC,'( I8 )') IP-1
+!
 YSUBR=TRIM(HSUBR)//':'
 IF (LVERB_ALLPRC) THEN
   IF (GWRITE_STDOUT) WRITE(UNIT=OUTPUT_UNIT,FMT="(A8,': ',A9,A30,A)") ADJUSTL(YPRC),YPRE,YSUBR,HMSG
@@ -851,9 +851,11 @@ ELSE
 END IF
 !
 IF (KVERB<=IABORTLEVEL) THEN
-  IF (IP==1) WRITE(UNIT=ERROR_UNIT,FMT=*) 'ABORT asked by application '//TRIM(CPROGRAM)
   IF (GWRITE_STDOUT) WRITE(UNIT=OUTPUT_UNIT,FMT=*) 'ABORT asked by application '//TRIM(CPROGRAM)
   IF (GWRITE_OUTLST) WRITE(UNIT=ILU,        FMT=*) 'ABORT asked by application '//TRIM(CPROGRAM)
+  !Every process write on the error unit. This is necessary if the abort is done by an other process than 0.
+  WRITE(UNIT=ERROR_UNIT,FMT="(A8,': ',A9,A30,A)") ADJUSTL(YPRC),YPRE,YSUBR,HMSG
+  WRITE(UNIT=ERROR_UNIT,FMT="(A8,': ',A)")        ADJUSTL(YPRC),'ABORT asked by application '//TRIM(CPROGRAM)
 #if 0
   !Problem: loop dependency between MODE_MSG and MODE_FM (IO_FILE_CLOSE_ll call PRINT_MSG)
   NIO_VERB = 0 !To not get further messages (ABORT should be the last for readability)
