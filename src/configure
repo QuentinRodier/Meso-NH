@@ -55,6 +55,9 @@ module purge
 module load intel/17.0 intelmpi/2017.2.174
 export SLURM_CPU_BIND=none
 export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
+# force CC=gcc , for HDF5 divide by zero problem with icc !!!
+export CC=gcc
+export I_MPI_CC=gcc
 "}
               ;;
 'Linux service'*)
