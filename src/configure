@@ -259,6 +259,7 @@ module rm grib_api eccodes
 prgenvswitchto intel
 module rm intel
 module load intel/17.0.3.053
+export CC=gcc
 "}
                 fi
                 fi
