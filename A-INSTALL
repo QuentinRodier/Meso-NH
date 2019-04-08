@@ -82,12 +82,12 @@
 #
 # http://mesonh.aero.obs-mip.fr/mesonh/dir_open/dir_MESONH/MNH-V5-4-2.tar.gz
 #
-# Then untar the file "PACK-MNH-V5-4-2.tar.gz" where you want to.
+# Then untar the file "MNH-V5-4-2.tar.gz" where you want to.
 # For example, in your home directory:
 #
 
 cd ~
-tar xvfz PACK-MNH-V5-4-2.tar.gz
+tar xvfz MNH-V5-4-2.tar.gz
 
 #
 #  Process now to the chapter to configure the MesoNH package.
