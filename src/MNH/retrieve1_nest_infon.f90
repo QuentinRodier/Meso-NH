@@ -82,6 +82,7 @@ END MODULE MODI_RETRIEVE1_NEST_INFO_n
 !!      Original        26/09/96
 !!      Modification    30/07/97 (Masson) group MODI_RETRIEVE2_NEST_INFOn
 !!      Modification    04/05/00 (Jabouille) test on CPROGRAM to fill working modules
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -92,6 +93,8 @@ USE MODD_DIM_n
 USE MODD_PGDGRID
 USE MODD_PGDDIM
 USE MODD_CONF
+!
+use mode_msg
 USE MODE_MODELN_HANDLER 
 !
 USE MODI_RETRIEVE2_NEST_INFO_n
@@ -117,11 +120,7 @@ INTEGER :: IMI
 !-------------------------------------------------------------------------------
 !
 !
-IF (KMI<=KDAD) THEN
-   !callabortstop
-  CALL ABORT
-  STOP
-ENDIF
+IF ( KMI <= KDAD ) call Print_msg( NVERB_FATAL, 'GEN', 'RETRIEVE1_NEST_INFO_n', 'KMI<=KDAD' )
 !
 IMI = GET_CURRENT_MODEL_INDEX()
 CALL GOTO_MODEL(KDAD)   

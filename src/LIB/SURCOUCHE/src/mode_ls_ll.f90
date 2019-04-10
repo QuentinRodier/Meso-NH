@@ -1,15 +1,10 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for CVS information
-!-----------------------------------------------------------------
-! $Source$
-! $Name$ 
-! $Revision$ 
-! $Date$
-!-----------------------------------------------------------------
+! Modifications:
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !-----------------------------------------------------------------
 
 !     #################
@@ -59,6 +54,8 @@
 !------------------------------------------------------------------------------
 !
   USE MODD_STRUCTURE_ll
+
+  use mode_msg
 !
   CONTAINS
 !
@@ -120,6 +117,7 @@
 !
 !*       0.2   declarations of local variables
 !
+  character(len=10) :: ymodel ! String for error message
   INTEGER :: ICOARSE
   TYPE(LCRSPD_ll), POINTER :: TZPAR, TZCHILD
   TYPE(LPROC_COM_DATA_ll), POINTER :: TZLCOMDATA
@@ -149,9 +147,8 @@
     TZLCOMDATA => TZLCOMDATA%TNEXT
   ENDDO
   IF (.NOT.ASSOCIATED(TZLCOMDATA)) THEN
-    WRITE(*,*) 'Error SET_LS2DFIELD_1WAY_ll : ', KMODEL, &
-               ' is not a child of the current model'
-    STOP
+    write( ymodel, '( I10 )' ) kmodel
+    call Print_msg( NVERB_FATAL, 'GEN', 'SET_LS2DFIELD_1WAY_ll', 'model '//trim(ymodel)//' is not a child of the current model' )
   ENDIF
 !
 !*       2.2   Point to the parent2child data structure
@@ -161,9 +158,8 @@
     TZP2CDATA => TZP2CDATA%TNEXT
   ENDDO
   IF (.NOT.ASSOCIATED(TZP2CDATA)) THEN
-    WRITE(*,*) 'Error SET_LS2DFIELD_1WAY_ll : ', KMODEL, &
-               ' is not a child of the current model'
-    STOP
+    write( ymodel, '( I10 )' ) kmodel
+    call Print_msg( NVERB_FATAL, 'GEN', 'SET_LS2DFIELD_1WAY_ll', 'model '//trim(ymodel)//' is not a child of the current model' )
   ENDIF
 !
   TZPAR => TZP2CDATA%TELT%TSEND_1WAY_LS
@@ -239,6 +235,7 @@
 !
 !*       0.2   declarations of local variables
 !
+  character(len=10) :: ymodel ! String for error message
   INTEGER :: ICOARSE
   TYPE(LCRSPD_ll), POINTER :: TZPAR, TZCHILD
   TYPE(LPROC_COM_DATA_ll), POINTER :: TZLCOMDATA
@@ -268,9 +265,8 @@
     TZLCOMDATA => TZLCOMDATA%TNEXT
   ENDDO
   IF (.NOT.ASSOCIATED(TZLCOMDATA)) THEN
-    WRITE(*,*) 'Error SET_LS3DFIELD_1WAY_ll : ', KMODEL, &
-               ' is not a child of the current model'
-    STOP
+    write( ymodel, '( I10 )' ) kmodel
+    call Print_msg( NVERB_FATAL, 'GEN', 'SET_LS3DFIELD_1WAY_ll', 'model '//trim(ymodel)//' is not a child of the current model' )
   ENDIF
 !
 !*       2.2   Point to the parent2child data structure
@@ -280,9 +276,8 @@
     TZP2CDATA => TZP2CDATA%TNEXT
   ENDDO
   IF (.NOT.ASSOCIATED(TZP2CDATA)) THEN
-    WRITE(*,*) 'Error SET_LS3DFIELD_1WAY_ll : ', KMODEL, &
-               ' is not a child of the current model'
-    STOP
+    write( ymodel, '( I10 )' ) kmodel
+    call Print_msg( NVERB_FATAL, 'GEN', 'SET_LS3DFIELD_1WAY_ll', 'model '//trim(ymodel)//' is not a child of the current model' )
   ENDIF
 !
   TZPAR => TZP2CDATA%TELT%TSEND_1WAY_LS
@@ -617,6 +612,7 @@
 !
 !*       0.2   declarations of local variables
 !
+  character(len=10) :: ymodel ! String for error message
   TYPE(LPARENT2CHILD_DATA_ll), POINTER :: TZP2CDATA
   TYPE(LPROC_COM_DATA_ll), POINTER :: TZLCOMDATA
 !
@@ -629,9 +625,8 @@
     TZLCOMDATA => TZLCOMDATA%TNEXT
   ENDDO
   IF (.NOT.ASSOCIATED(TZLCOMDATA)) THEN
-    WRITE(*,*) 'Error UNSET_LSFIELD_2WAY_ll : ', KMODEL, &
-               ' is not a child of the current model'
-    STOP
+    write( ymodel, '( I10 )' ) kmodel
+    call Print_msg( NVERB_FATAL, 'GEN', 'UNSET_LSFIELD_2WAY_ll', 'model '//trim(ymodel)//' is not a child of the current model' )
   ENDIF
 !
 !*       2.2   Point to the parent2child data structure
@@ -641,9 +636,8 @@
     TZP2CDATA => TZP2CDATA%TNEXT
   ENDDO
   IF (.NOT.ASSOCIATED(TZP2CDATA)) THEN
-    WRITE(*,*) 'Error UNSET_LSFIELD_2WAY_ll : ', KMODEL, &
-               ' is not a child of the current model'
-    STOP
+    write( ymodel, '( I10 )' ) kmodel
+    call Print_msg( NVERB_FATAL, 'GEN', 'UNSET_LSFIELD_2WAY_ll', 'model '//trim(ymodel)//' is not a child of the current model' )
   ENDIF
 !
   CALL CLEANLIST_LCRSPD(TZLCOMDATA%TELT%TSEND_2WAY_LS)

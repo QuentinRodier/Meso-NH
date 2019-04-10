@@ -239,6 +239,7 @@ END MODULE MODI_RAIN_ICE_RED
 !!      (C. Abiven, Y. Léauté, V. Seigner, S. Riette) Phasing of Turner rain subgrid param
 !!      (S. Riette) Source code split into several files
 !!                  02/2019 C.Lac add rain fraction as an output field
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !
 !*       0.    DECLARATIONS
 !              ------------
@@ -580,9 +581,7 @@ IF(.NOT. LSEDIM_AFTER) THEN
                              &PRIS, PRSS, PRGS, &
                              &PTHS, ZZ_LVFACT, ZZ_LSFACT, PRHS)
   ELSE
-    WRITE(*,*) ' STOP'
-    WRITE(*,*) ' NO SEDIMENTATION SCHEME FOR HSEDIM=', HSEDIM
-    CALL PRINT_MSG(NVERB_FATAL,'GEN','RAIN_ICE_RED','')
+    call Print_msg( NVERB_FATAL, 'GEN', 'RAIN_ICE_RED', 'no sedimentation scheme for HSEDIM='//HSEDIM )
   END IF
   !
   !*       2.2     budget storage
@@ -1525,9 +1524,7 @@ IF(LSEDIM_AFTER) THEN
                              &PRIS, PRSS, PRGS, &
                              &PTHS, ZZ_LVFACT, ZZ_LSFACT, PRHS)
   ELSE
-    WRITE(*,*) ' STOP'
-    WRITE(*,*) ' NO SEDIMENTATION SCHEME FOR HSEDIM=', HSEDIM
-    CALL PRINT_MSG(NVERB_FATAL,'GEN','RAIN_ICE_RED','')
+    call Print_msg( NVERB_FATAL, 'GEN', 'RAIN_ICE_RED', 'no sedimentation scheme for HSEDIM='//HSEDIM )
   END IF
   !
   !*       8.2     budget storage

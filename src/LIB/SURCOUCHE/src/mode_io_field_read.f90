@@ -11,6 +11,7 @@
 !  J. Escobar  17/07/2018: reintroduce needed MPI_BARRIER in IO_Field_read_byfield_X3
 !  P. Wautelet 29/01/2019: small bug correction in time measurement in IO_Field_read_byfield_X2
 !  P. Wautelet 05/03/2019: rename IO subroutines and modules
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !-----------------------------------------------------------------
 
 #ifdef MNH_MPI_DOUBLE_PRECISION
@@ -753,12 +754,12 @@ IF (IRESP==0) THEN
       !
       IF (YDIR == 'XX' .OR. YDIR =='YY') THEN
         ! XX or YY Scatter Field
-        STOP " XX ou YY NON PREVU SUR BG POUR LE MOMENT "
+        call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_read_byfield_X3', 'XX or YY not yet planned on Blue Gene' )
         CALL SCATTER_XXFIELD(YDIR,ZFIELDP,PFIELD,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
       ELSE IF (YDIR == 'XY') THEN
         IF (LPACK .AND. L2D) THEN
           ! 2D compact case
-          STOP " L2D NON PREVU SUR BG POUR LE MOMENT "
+          call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_read_byfield_X3', 'L2D not yet planned on Blue Gene' )
           CALL SCATTER_XXFIELD('XX',ZFIELDP(:,1,:),PFIELD(:,JPHEXT+1,:),TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
           PFIELD(:,:,:) = SPREAD(PFIELD(:,JPHEXT+1,:),DIM=2,NCOPIES=IHEXTOT)
         ELSE
@@ -792,7 +793,7 @@ IF (IRESP==0) THEN
         END IF
       ELSE
         ! Broadcast Field
-        STOP "  Broadcast Field NON PREVU SUR BG POUR LE MOMENT "
+        call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_read_byfield_X3', 'broadcast field not yet planned on Blue Gene' )
         CALL MPI_BCAST(PFIELD,SIZE(PFIELD),MPI_FLOAT,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
       END IF
       CALL SECOND_MNH2(T0)

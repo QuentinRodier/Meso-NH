@@ -34,6 +34,7 @@
 !!                    10/2016 (C.Lac) Add droplet deposition
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!                     02/2019 (C. Lac) Add rain fraction as a LES diagnostic
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -160,9 +161,7 @@ IF (LLES_SPECTRA  )  LLES_MEAN = .TRUE.
 IF (CTURB=='NONE') THEN
   WRITE(ILUOUT,FMT=*) 'LES diagnostics cannot be done without subgrid turbulence.'
   WRITE(ILUOUT,FMT=*) 'You have chosen CTURB="NONE". You must choose a turbulence scheme.'
-  WRITE(ILUOUT,FMT=*) 'STOP'
-!callabortstop
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','WRITE_LB_n','')
+  call Print_msg( NVERB_FATAL, 'GEN', 'WRITE_LB_n', 'LES diagnostics cannot be done without subgrid turbulence' )
 END IF
 !-------------------------------------------------------------------------------
 !

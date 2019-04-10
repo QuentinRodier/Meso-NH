@@ -73,6 +73,7 @@ END MODULE MODI_INI_ELEC_n
 !!                    10/2016 (C.Lac) Add droplet deposition
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !-------------------------------------------------------------------------------
 !
@@ -108,6 +109,7 @@ USE MODD_TIME
 !
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
 USE MODE_ll
+use mode_msg
 !
 USE MODI_ELEC_TRIDZ
 USE MODI_INI_CLOUD
@@ -279,14 +281,12 @@ IF (HELEC(1:3) == 'ELE') THEN
     IF (LFLASH_GEOM) THEN
       CALL INI_FLASH_GEOM_ELEC
     ELSE
-      PRINT *,' INI_LIGHTNING_ELEC NOT YET DEVELOPPED'
-      STOP
+      call Print_msg( NVERB_FATAL, 'GEN', 'INI_ELEC_n', 'INI_LIGHTNING_ELEC not yet developed' )
     END IF
   END IF
 !
 ELSE IF (HELEC /= 'NONE') THEN
-  WRITE(ILUOUT,FMT=*) "INI_ELEC_n IS NOT YET DEVELOPPED FOR CELEC=",HELEC
-  STOP
+  call Print_msg( NVERB_FATAL, 'GEN', 'INI_ELEC_n', 'not yet developed for CELEC='//trim(HELEC) )
 END IF
 !
 !*       3.6    initialize the parameters for the resolution of the electric field

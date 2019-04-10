@@ -40,6 +40,7 @@
 !!      June 2016: P. Wautelet: corrected writes
 !!      Nov. 2017: J.-P. Chaboureau: fix a bug in dimension check
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !-------------------------------------------------------------------------------
 !
@@ -73,6 +74,7 @@ IMPLICIT NONE
 !
 !*       0.2     Local variables
 !
+character(len=10) :: yval1, yval2 ! Strings for error messages
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZSEA !sea/ocean fraction
 LOGICAL :: GMASKLANDSEA   ! local for LMASKLANDSEA
 INTEGER :: IIMAX_ll  ! total physical domain I size
@@ -141,8 +143,7 @@ IF ( ( NFREQSERIES*XTSTEP < XSEGLEN )       .AND.                        &
    WRITE(ILUOUT,FMT=*) ' NKCLS,NKCLA,NKLOW,NKMID,NKUP= ',                &
                         NKCLS,NKCLA,NKLOW,NKMID,NKUP
    WRITE(ILUOUT,FMT=*) '**********************************************'
-!callabortstop
-   CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_SERIES_n','')
+   call Print_msg( NVERB_FATAL, 'GEN', 'INI_SERIES_n', 'incompatible dimensions' )
 END IF
 !
 ALLOCATE(LINBOX(IIU,IJU))
@@ -177,8 +178,7 @@ IF (NBJSLICE > 0 ) THEN
         WRITE(UNIT=ILUOUT,FMT=*) 'STOP in INI_SERIESn: VOID INTERSECTION for slice ',JJ
         WRITE(ILUOUT,*) ' NJSLICEL=', NJSLICEL(JJ),'NJSLICEH=',NJSLICEH(JJ)
         WRITE(ILUOUT,*) ' NISL=',NISL(JJ),'NJSLICESL=',NJSLICESL(JJ),'NISH=',NISH(JJ),'NJSLICESH=',NJSLICESH(JJ)
-!callabortstop
-        CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_SERIES_n','')
+        call Print_msg( NVERB_FATAL, 'GEN', 'INI_SERIES_n', 'void intersection' )
       END IF
       WRITE(UNIT=ILUOUT,FMT=*) 'INI_SERIESn: intersection with slice ',JJ
     ELSE ! the intersection is void
@@ -365,13 +365,12 @@ IF (LWMINMAX) THEN
   END DO
 END IF
 !
-IF (ISB1.NE.NSTEMP_SERIE1) THEN
-  WRITE(ILUOUT,FMT=*) 'STOP in INI_SERIESn:'
-  WRITE(UNIT=ILUOUT,FMT=*) ' NUMBER OF SERIES1 DIFFERS FROM ALLOC, ISB1=', &
-                            ISB1,' NSTEMP_SERIE1=',NSTEMP_SERIE1
-!callabortstop
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_SERIES_n','')
-END IF
+if ( isb1 /= nstemp_serie1 ) then
+  write( yval1, '( I10 )' ) isb1
+  write( yval2, '( I10 )' ) nstemp_serie1
+  call Print_msg( NVERB_FATAL, 'GEN', 'INI_SERIES_n', 'number of series1 differs from alloc: isb1='// &
+                  trim(yval1)//' nstemp_serie1='//trim(yval2) )
+end if
 !
 !*       2.2   Temporal series (z,t)
 !              ---------------------
@@ -412,13 +411,12 @@ DO JI=1,ISER
   END IF
 END DO
 !
-IF (ISB2.NE.NSTEMP_SERIE2) THEN
-  WRITE(ILUOUT,FMT=*) 'STOP in INI_SERIESn:'
-  WRITE(ILUOUT,FMT=*) ' NUMBER OF SERIES2 DIFFERS FROM ALLOC, ISB2=',ISB2, &
-                      ' NSTEMP_SERIE2=',NSTEMP_SERIE2
-!callabortstop
-   CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_SERIES_n','')
-END IF
+if ( isb2 /= nstemp_serie2 ) then
+  write( yval1, '( I10 )' ) isb2
+  write( yval2, '( I10 )' ) nstemp_serie2
+  call Print_msg( NVERB_FATAL, 'GEN', 'INI_SERIES_n', 'number of series2 differs from alloc: isb2='// &
+                  trim(yval1)//' nstemp_serie2='//trim(yval2) )
+end if
 !
 !*    2.3 Temporal series (x,t)
 !
@@ -460,13 +458,12 @@ IF (LUSERR) THEN
   ISB3=ISB3+1    ; CSTITLE3(ISB3)='RR'//CSKCLS      ; CSUNIT3(ISB3)='KG/KG'
 END IF
 !
-IF (ISB3.NE.NSTEMP_SERIE3) THEN
-  WRITE(ILUOUT,FMT=*) 'STOP in INI_SERIESn:'
-  WRITE(ILUOUT,FMT=*) ' NUMBER OF SERIES3 DIFFERS FROM ALLOC, ISB3=',ISB3, &
-                      ' NTEMP_SERIE3=',NSTEMP_SERIE3
-!callabortstop
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_SERIES_n','')
-END IF
+if ( isb3 /= nstemp_serie3 ) then
+  write( yval1, '( I10 )' ) isb3
+  write( yval2, '( I10 )' ) nstemp_serie3
+  call Print_msg( NVERB_FATAL, 'GEN', 'INI_SERIES_n', 'number of series3 differs from alloc: isb3='// &
+                  trim(yval1)//' nstemp_serie3='//trim(yval2) )
+end if
 !
 !-------------------------------------------------------------------------------
 !

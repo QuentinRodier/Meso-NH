@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 chimie 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !!    ##################### 
       MODULE MODI_CH_CRANCK
@@ -69,8 +64,12 @@ SUBROUTINE CH_CRANCK(PTSIMUL, PDTACT, PCONC, PNEWCONC, KEQ, KVECNPT, KMI, &
 !!    31/07/96 (K. Suhre) restructured
 !!    19/04/02 add PALPHA argument
 !!    01/12/03  (Gazen)   change Chemical scheme interface
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!
 !!    EXTERNAL
 !!    --------
+use mode_msg
+
 USE MODI_CH_FCN
 USE MODI_CH_JAC
 USE MODI_CH_GAUSS
@@ -128,9 +127,7 @@ newton: DO WHILE (MAXVAL(ZERR).GT.ZMAXERR)
 !
   IITERCOUNT = IITERCOUNT + 1
   IF (IITERCOUNT.GT.IMAXITER) THEN
-!callabortstop
-    CALL ABORT
-    STOP "CH_CRANCK ERROR: no convergence of Newton-Raphson iteration obtained"
+    call Print_msg( NVERB_FATAL, 'GEN', 'CH_CRANCK', 'no convergence of Newton-Raphson iteration obtained' )
   ENDIF
 !
 !*       2.1  calculate derivative F for next iteration
@@ -163,9 +160,7 @@ newton: DO WHILE (MAXVAL(ZERR).GT.ZMAXERR)
   IFAIL = 1
   CALL CH_GAUSS(ZB,ZC,KEQ,IFAIL)
   IF (IFAIL.NE.0) THEN
-!callabortstop
-          CALL ABORT
-    STOP 'CH_CRANCK ERROR: matrix cannot be inverted by CH_GAUSS'
+    call Print_msg( NVERB_FATAL, 'GEN', 'CH_CRANCK', 'matrix cannot be inverted by CH_GAUSS' )
   ENDIF
 !
 !*       2.5  calculate dY = ZB F (result is put in ZFTRAPEZ)

@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 MODULE MODI_ICE4_SEDIMENTATION_STAT
 INTERFACE
 SUBROUTINE ICE4_SEDIMENTATION_STAT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB, KKTE, KKT, KKL, &
@@ -71,6 +72,7 @@ SUBROUTINE ICE4_SEDIMENTATION_STAT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB,
 !!    MODIFICATIONS
 !!    -------------
 !!
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !
 !
 !*      0. DECLARATIONS
@@ -275,6 +277,7 @@ CONTAINS
     !*       0.2  declaration of local variables
     !
     !
+    character(len=10) :: yspe ! String for error message
     INTEGER :: JK, JCOUNT, JL, JI, JJ
     INTEGER, DIMENSION(SIZE(PRHODREF,1)*SIZE(PRHODREF,2)) :: I1, I2
     REAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),0:SIZE(PRHODREF,3)+1)   &
@@ -389,9 +392,9 @@ CONTAINS
           ZFSED=XFSEDH
           ZEXSED=XEXSEDH
         ELSE
-          WRITE(*,*) ' STOP'
-          WRITE(*,*) ' NO SEDIMENTATION PARAMETER FOR KSPE==', KSPE
-          CALL PRINT_MSG(NVERB_FATAL,'GEN','ICE4_SEDIMENTATION_STAT','')
+          write( yspe, '( I10 )' ) kspe
+          call Print_msg( NVERB_FATAL, 'GEN', 'ICE4_SEDIMENTATION_STAT', &
+                          'no sedimentation parameter for KSPE='//trim(yspe) )
         ENDIF
         DO JL=1, JCOUNT
           JI=I1(JL)

@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
 !-----------------------------------------------------------------
 !     ######spl
       MODULE MODE_FGAU
@@ -36,7 +32,8 @@
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original   26/03/2004    
+!!      Original   26/03/2004
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !--------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -153,6 +150,8 @@ CONTAINS
       SUBROUTINE GAUHER(N,X2,W)
 !     #########################
 !   returns POSITIVE nodes and weights of Gauss-Hermite quadrature.
+    use mode_msg
+
     IMPLICIT NONE
     ! N : ordre du polynôme de Hermite
     ! X2 : abscisses POSITIVES de la quadrature
@@ -163,19 +162,17 @@ CONTAINS
     REAL :: PX,DPX,X,Y
     INTEGER,DIMENSION(N+1) :: P0,P1,P2
     REAL,DIMENSION((N+1)/2) :: X1
-    
+
     INTEGER :: I,J,K
-    
-    IF(N>=15) THEN
-       PRINT*,'SUBROUTINE GAUHER FAILS TO CONVERGE FOR N>=15. ANYWAY, THIS NUMBER IS TOO HIGH.'
-       PRINT*,'PLEASE TAKE A SMALLER NUMBER OF POINTS OR MODIFY THIS SUBROUTINE.'
-       STOP
-    END IF
+
+    if ( n >=15 ) call Print_msg( NVERB_FATAL, 'GEN', 'GAUHER', 'subroutine gauher fails to converge for n>=15.'// &
+                                  'Anyway, this number is too high.'// &
+                                  'Please take a smaller number of points or modify this subroutine.' )
 
     P0(:)=0
     P1(:)=0
     P2(:)=0
-    
+
     P0(1)=1 ! N=0 H0(x)=1
     P1(1)=0 ! N=1 H1(x)=2x
     P1(2)=2 

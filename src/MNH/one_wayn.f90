@@ -1,6 +1,6 @@
 !MNH_LIC Copyright 1996-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ###################
@@ -187,12 +187,14 @@ SUBROUTINE ONE_WAY_n(KDAD,PTSTEP,KMI,KTCOUNT,                            &
 !!      J.Escobar : 18/12/2015 : Correction of bug in bound in // for NHALO <>1 
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
 !            ------------
 USE MODE_ll
 USE MODE_MODELN_HANDLER
+use mode_msg
 !
 USE MODD_PARAMETERS
 USE MODD_NESTING
@@ -493,7 +495,8 @@ IF (HCLOUD=="LIMA"  ) THEN
               &ZTSVT(:,:,:,JSV-1+NSV_LIMA_BEG_A(KMI)),KMI)
       ENDDO   
    ELSE
-      IF (NSV_LIMA_A(KMI)/=NSV_LIMA_A(KDAD)) CALL ABORT
+      IF ( NSV_LIMA_A(KMI) /= NSV_LIMA_A(KDAD) ) &
+        call Print_msg( NVERB_FATAL, 'GEN', 'ONE_WAY_n', 'NSV_LIMA_A(KMI)/=NSV_LIMA_A(KDAD)' )
       DO JSV=1,NSV_LIMA_A(KMI)
          CALL SET_LSFIELD_1WAY_ll(XSVT(:,:,:,JSV-1+NSV_LIMA_BEG_A(KDAD)),&
               &ZTSVT(:,:,:,JSV-1+NSV_LIMA_BEG_A(KMI)),KMI)

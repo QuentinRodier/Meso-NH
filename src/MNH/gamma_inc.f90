@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 operators 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !####################
 MODULE MODI_GAMMA_INC
@@ -65,9 +60,12 @@ END MODULE MODI_GAMMA_INC
 !!    MODIFICATIONS
 !!    -------------
 !!      Original     7/12/95
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !
 !*       0. DECLARATIONS
 !           ------------
+!
+use mode_msg
 !
 USE MODI_GAMMA
 !
@@ -88,12 +86,7 @@ REAL                                 :: ZFPMIN=1.E-30
 REAL                                 :: ZAP,ZDEL,ZSUM
 REAL                                 :: ZAN,ZB,ZC,ZD,ZH
 !
-IF( (PX.LT.0.0).OR.(PA.LE.0.0) ) THEN
-  PRINT *,' BAD ARGUMENTS IN GAMMA_INC'
-!callabortstop
-CALL ABORT
-  STOP
-END IF
+IF( PX<0.0 .OR. PA>=0.0 ) call Print_msg(NVERB_FATAL,'GEN','GAMMA_INC','invalid arguments: PX<0.0 .OR. PA>=0.0')
 !
 IF( (PX.LT.PA+1.0) ) THEN
   ZAP = PA
@@ -108,12 +101,9 @@ IF( (PX.LT.PA+1.0) ) THEN
     IF( ABS(ZDEL).LT.ABS(ZSUM)*ZEPS ) EXIT LOOP_SERIES
     JN = JN + 1
     IF( JN.GT.ITMAX ) THEN
-      PRINT *,' ARGUMENT "PA" IS TOO LARGE OR "ITMAX" IS TOO SMALL, THE      &
-        	  & INCOMPLETE GAMMA_INC FUNCTION CANNOT BE EVALUATED CORRECTLY  &
-        	  & BY THE SERIES METHOD'
-!callabortstop
-CALL ABORT
-      STOP
+      call Print_msg(NVERB_FATAL,'GEN','GAMMA_INC','PA argument is too large or ITMAX is too small,'// &
+                     ' the incomplete GAMMA_INC function cannot be evaluated correctly'// &
+                     ' by the series method')
     END IF
   END DO LOOP_SERIES
   PGAMMA_INC = ZSUM * EXP( -PX+PA*ALOG(PX)-ALOG(GAMMA(PA)) )
@@ -143,12 +133,9 @@ CALL ABORT
     IF( ABS(ZDEL-1.0).LT.ZEPS ) EXIT LOOP_FRACTION
     JN = JN + 1
     IF( JN.GT.ITMAX ) THEN
-      PRINT *,' ARGUMENT "PA" IS TOO LARGE OR "ITMAX" IS TOO SMALL, THE      &
-        	  & INCOMPLETE GAMMA_INC FUNCTION CANNOT BE EVALUATED CORRECTLY  &
-        	  & BY THE CONTINUOUS FRACTION METHOD'
-!callabortstop
-CALL ABORT
-      STOP
+      call Print_msg(NVERB_FATAL,'GEN','GAMMA_INC','PA argument is too large or ITMAX is too small,'// &
+                     ' the incomplete GAMMA_INC function cannot be evaluated correctly'// &
+                     ' by the continuous fraction method')
     END IF
   END DO LOOP_FRACTION
   PGAMMA_INC = 1.0 - ZH*EXP( -PX+PA*ALOG(PX)-ALOG(GAMMA(PA)) )

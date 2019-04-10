@@ -2,6 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ######spl
         PROGRAM MNH2LPDM
 !	##############
@@ -14,6 +15,7 @@
 !       Modification  : 04.01.2009 (F. BONNARDOT, DP/SER/ENV )
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !
 !-----------------------------------------------------------------------------
 !
@@ -32,6 +34,7 @@ USE MODE_IO,               ONLY: IO_Init, IO_Config_set
 USE MODE_IO_FILE,          ONLY: IO_File_open, IO_File_close
 USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_add2list
 USE MODE_MODELN_HANDLER
+use mode_msg
 USE MODE_POS
 !
 USE MODI_MNH2LPDM_ECH
@@ -115,8 +118,8 @@ IF (LEN_TRIM(CFMNH(1))>0) THEN
    END DO
    print *,NBMNH,' fichiers a traiter.'
 ELSE
-   STOP
-ENDIF   
+  call Print_msg( NVERB_FATAL, 'GEN', 'MNH2LPDM', 'no CFMNH file given' )
+END IF
 !
 !
 !

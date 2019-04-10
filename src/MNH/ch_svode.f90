@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 chimie 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !**FILE:     ch_svode.f90
 !**AUTHOR:   Karsten Suhre
@@ -73,6 +68,7 @@ SUBROUTINE CH_SVODE(PTSIMUL, PDTACT, PCONC, PNEWCONC, KEQ, KVECNPT, KMI, &
 !!    Original 10/11/95
 !!    01/08/01 (C. Mari)  add arguments
 !!    01/12/03 (D. Gazen)   change Chemical scheme interface
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !!    EXTERNAL
 !!    --------
@@ -83,7 +79,10 @@ SUBROUTINE CH_SVODE(PTSIMUL, PDTACT, PCONC, PNEWCONC, KEQ, KVECNPT, KMI, &
 !!    ------------------
 !!    EXPLICIT ARGUMENTS
 !!    ------------------
+use mode_msg
+
 IMPLICIT NONE
+
 REAL,    INTENT(IN) :: PTSIMUL  ! time of simulation
 REAL,    INTENT(IN) :: PDTACT   ! actual time-step
 INTEGER, INTENT(IN) :: KEQ      ! dimension of the problem to solve
@@ -161,7 +160,7 @@ DO JI = 1, KVECNPT
   IF (ISTATE.LT.0) THEN
     PRINT *, "Problems !!! ISTATE = ", ISTATE
     PRINT *, "at vector element ", JI, " out of ", KVECNPT
-    STOP "CH_SVODE: program stopped due to SVODE error!"
+    call Print_msg( NVERB_FATAL, 'GEN', 'CH_SVODE', '' )
   ENDIF
 
   PNEWCONC(JI,:) = ZCONC(:)

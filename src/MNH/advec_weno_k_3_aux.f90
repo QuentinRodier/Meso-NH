@@ -1,7 +1,11 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
+! Modifications:
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!-----------------------------------------------------------------
 !     ##############################
       MODULE MODI_ADVEC_WENO_K_3_AUX
 !     ##############################
@@ -132,9 +136,11 @@ END MODULE MODI_ADVEC_WENO_K_3_AUX
 !!
 !-------------------------------------------------------------------------------
 !
-USE MODE_ll
-USE MODD_LUNIT
 USE MODD_CONF
+USE MODD_LUNIT
+!
+USE MODE_ll
+use mode_msg
 !
 IMPLICIT NONE
 !
@@ -354,9 +360,7 @@ ZFNEG3(IW,:,:)   = 1./6 * (-1.0*PSRC(IW-1,:,:) + 5.0*PSRC(IW,:,:)   + 2.0*PSRC(I
  ZOMN3(IW-1:IW,:,:) = 3./10. / (ZEPS + ZBNEG3(IW-1:IW,:,:))**2 ! Non-normalized weight IW,IW-1
 !
  ELSE ! East boundary is proc border, with NHALO < 3 on west side
-  PRINT *,'ERROR : WENO5/CYCL fluxes calculation needs JPHEXT (&NHALO) >= 3 on west side'
-  CALL ABORT  
-  STOP  ' Error in advec_weno_k_3_aux.f90 '
+  call Print_msg(NVERB_FATAL,'GEN','ADVEC_WENO_K_3_UX','WENO5/CYCL fluxes calculation needs JPHEXT (&NHALO) >= 3 on west side')
  ENDIF
 !
  ! Third positive stencil, needs indices i, i+1, i+2
@@ -439,9 +443,7 @@ ELSE
  !-----------------------------------------------------------------------------
 !
  IF (NHALO<3) THEN
- PRINT *,'ERROR : WENO5/west-int not parallelisable with NHALO < 3' 
- CALL ABORT 
- STOP ' Error in advec_weno_k_3_aux.f90 '
+  call Print_msg(NVERB_FATAL,'GEN','ADVEC_WENO_K_3_UX','WENO5/west-int not parallelisable with NHALO < 3')
  ELSEIF (NHALO>=3) THEN
  !---------------------------------------------------------------------------
  ! NHALO >3 => WENO5 for all boundary points
@@ -596,9 +598,7 @@ IF( LEAST_ll() ) THEN
  ZOMN2(IE-1:IE,:,:) = 3./5. / (ZEPS + ZBNEG2(IE-1:IE,:,:))**2 ! Non-normalized weight IE-1,IE
 !
  ELSE ! West boundary is proc border, with NHALO < 3 on east side
-  PRINT *,'ERROR : WENO5/CYCL fluxes calculation needs JPHEXT (&NHALO) >= 3 on east side'
-  CALL ABORT
-  STOP  ' Error in advec_weno_k_3_aux.f90 '
+  call Print_msg(NVERB_FATAL,'GEN','ADVEC_WENO_K_3_UX','WENO5/CYCL fluxes calculation needs JPHEXT (&NHALO) >= 3 on east side')
  ENDIF
 !
  ! First positive stencil, needs indices i-2, i-1, i 
@@ -681,9 +681,7 @@ ELSE
  !-----------------------------------------------------------------------------
 !
  IF (NHALO<3) THEN
- PRINT *,'ERROR : WENO5/east-int not parallelisable with NHALO < 3' 
- CALL ABORT
- STOP  ' Error in advec_weno_k_3_aux.f90 '
+  call Print_msg(NVERB_FATAL,'GEN','ADVEC_WENO_K_3_UX','WENO5/east-int not parallelisable with NHALO < 3')
  ELSEIF (NHALO>=3) THEN
  !---------------------------------------------------------------------------
  ! NHALO >= 3 => WENO5 for all boundary points
@@ -791,9 +789,11 @@ END SUBROUTINE ADVEC_WENO_K_3_UX
 !!
 !------------------------------------------------------------------------------
 !
-USE MODE_ll
-USE MODD_LUNIT
 USE MODD_CONF
+USE MODD_LUNIT
+!
+USE MODE_ll
+use mode_msg
 !
 IMPLICIT NONE
 !
@@ -1014,9 +1014,7 @@ IF( LWEST_ll() ) THEN
  ZOMN3(IW:IW+1,:,:) = 3./10. / (ZEPS + ZBNEG3(IW:IW+1,:,:))**2 ! Non-normalized weight IW+1,IW
 !
  ELSE ! East boundary is proc border, with NHALO < 3 on west side
-  PRINT *,'ERROR : WENO5/CYCL fluxes calculation needs JPHEXT (&NHALO) >= 3 on west side'
-  CALL ABORT
-  STOP  ' Error in advec_weno_k_3_aux.f90 '
+  call Print_msg(NVERB_FATAL,'GEN','ADVEC_WENO_K_3_MX','WENO5/CYCL fluxes calculation needs JPHEXT (&NHALO) >= 3 on west side')
  ENDIF
 ! 
  ! Third positive stencil, needs indices i-1, i, i+1
@@ -1099,9 +1097,7 @@ ELSE
  !-----------------------------------------------------------------------------
 !
  IF (NHALO<3) THEN
- PRINT *,'ERROR : WENO5/west-int not parallelisable with NHALO < 3' 
- CALL ABORT
- STOP  ' Error in advec_weno_k_3_aux.f90 '
+  call Print_msg(NVERB_FATAL,'GEN','ADVEC_WENO_K_3_MX','WENO5/west-int not parallelisable with NHALO < 3')
  ELSEIF (NHALO>=3) THEN
  !---------------------------------------------------------------------------
  ! NHALO >3 => WENO5 for all boundary points
@@ -1255,9 +1251,7 @@ IF(LEAST_ll() ) THEN
  ZOMN2(IE:IE+1,:,:) = 3./5. / (ZEPS + ZBNEG2(IE:IE+1,:,:))**2 ! Non-normalized weight IE,IE+1
 !
  ELSE ! West boundary is proc border, with NHALO < 3 on east side
-  PRINT *,'ERROR : WENO5/CYCL fluxes calculation needs JPHEXT (&NHALO) >= 3 on east side'
-  CALL ABORT
-  STOP  ' Error in advec_weno_k_3_aux.f90 '
+  call Print_msg(NVERB_FATAL,'GEN','ADVEC_WENO_K_3_MX','WENO5/CYCL fluxes calculation needs JPHEXT (&NHALO) >= 3 on east side')
  ENDIF
 !
  ! First positive stencil, needs indices i-3, i-2, i-1 
@@ -1339,9 +1333,7 @@ ELSE
  !-----------------------------------------------------------------------------
 !
  IF (NHALO<3) THEN
- PRINT *,'ERROR : WENO5/east-int not parallelisable with NHALO < 3' 
- CALL ABORT
- STOP  ' Error in advec_weno_k_3_aux.f90 '
+  call Print_msg(NVERB_FATAL,'GEN','ADVEC_WENO_K_3_MX','WENO5/east-int not parallelisable with NHALO < 3')
  ELSEIF (NHALO>=3) THEN
  !---------------------------------------------------------------------------
  ! NHALO >= 3 => WENO5 for all boundary points
@@ -1450,9 +1442,11 @@ END SUBROUTINE ADVEC_WENO_K_3_MX
 !!
 !-------------------------------------------------------------------------------
 !
-USE MODE_ll
-USE MODD_LUNIT
 USE MODD_CONF
+USE MODD_LUNIT
+!
+USE MODE_ll
+use mode_msg
 !
 IMPLICIT NONE
 !
@@ -1675,9 +1669,7 @@ IF(LSOUTH_ll()) THEN
  ZOMN3(:,IS:IS+1,:) = 3./10. / (ZEPS + ZBNEG3(:,IS:IS+1,:))**2 ! Non-normalized weight IS+1,IS
 ! 
  ELSE ! North boundary is proc border, with NHALO < 3 on south side
-  PRINT *,'ERROR : WENO5/CYCL fluxes calculation needs JPHEXT (&NHALO) >= 3 on south side'
-  CALL ABORT
-  STOP  ' Error in advec_weno_k_3_aux.f90 '
+  call Print_msg(NVERB_FATAL,'GEN','ADVEC_WENO_K_3_MY','WENO5/CYCL fluxes calculation needs JPHEXT (&NHALO) >= 3 on south side')
  ENDIF
 ! 
  ! Third positive stencil, needs indices i-1, i, i+1
@@ -1761,9 +1753,7 @@ ELSE
  !-----------------------------------------------------------------------------
 !
  IF (NHALO<3) THEN
- PRINT *,'ERROR : WENO5/south-int not parallelisable with NHALO < 3' 
- CALL ABORT
- STOP  ' Error in advec_weno_k_3_aux.f90 '
+  call Print_msg(NVERB_FATAL,'GEN','ADVEC_WENO_K_3_MY','WENO5/south-int not parallelisable with NHALO < 3')
  ELSEIF (NHALO>=3) THEN
  !---------------------------------------------------------------------------
  ! NHALO >3 => WENO5 for all boundary points
@@ -1917,9 +1907,7 @@ IF( LNORTH_ll() ) THEN
  ZOMN2(:,IN:IN+1,:) = 3./5. / (ZEPS + ZBNEG2(:,IN:IN+1,:))**2 ! Non-normalized weight IN,IN+1
 !
  ELSE ! South boundary is proc border, with NHALO < 3 on south side
-  PRINT *,'ERROR : WENO5/CYCL fluxes calculation needs JPHEXT (&NHALO) >= 3 on south side'
-  CALL ABORT
-  STOP  ' Error in advec_weno_k_3_aux.f90 '
+  call Print_msg(NVERB_FATAL,'GEN','ADVEC_WENO_K_3_MY','WENO5/CYCL fluxes calculation needs JPHEXT (&NHALO) >= 3 on south side')
  ENDIF
 !
  ! First positive stencil, needs indices i-3, i-2, i-1 
@@ -2001,9 +1989,7 @@ ELSE
  !-----------------------------------------------------------------------------
 !
  IF (NHALO<3) THEN
- PRINT *,'ERROR : WENO5/north-int not parallelisable with NHALO < 3' 
- CALL ABORT
- STOP  ' Error in advec_weno_k_3_aux.f90 '
+  call Print_msg(NVERB_FATAL,'GEN','ADVEC_WENO_K_3_MY','WENO5/north-int not parallelisable with NHALO < 3')
  ELSEIF (NHALO>=3) THEN
  !---------------------------------------------------------------------------
  ! NHALO >= 3 => WENO5 for all boundary points
@@ -2111,9 +2097,11 @@ END SUBROUTINE ADVEC_WENO_K_3_MY
 !!
 !-------------------------------------------------------------------------------
 !
-USE MODE_ll
-USE MODD_LUNIT
 USE MODD_CONF
+USE MODD_LUNIT
+!
+USE MODE_ll
+use mode_msg
 !
 IMPLICIT NONE
 !
@@ -2337,9 +2325,7 @@ IF(LSOUTH_ll() ) THEN
  ZOMN3(:,IS-1:IS,:) = 3./10. / (ZEPS + ZBNEG3(:,IS-1:IS,:))**2 ! Non-normalized weight IS,IS-1
 ! 
  ELSE ! North boundary is proc border, with NHALO < 3 on south side
-  PRINT *,'ERROR : WENO5/CYCL fluxes calculation needs JPHEXT (&NHALO) >= 3 on south side'
-  CALL ABORT
-  STOP  ' Error in advec_weno_k_3_aux.f90 '
+  call Print_msg(NVERB_FATAL,'GEN','ADVEC_WENO_K_3_VY','WENO5/CYCL fluxes calculation needs JPHEXT (&NHALO) >= 3 on south side')
  ENDIF
 ! 
  ! Third positive stencil, needs indices i, i+1, i+2
@@ -2424,9 +2410,7 @@ ELSE
  !-----------------------------------------------------------------------------
 !
  IF (NHALO<3) THEN
- PRINT *,'ERROR : WENO5/south-int not parallelisable with NHALO < 3' 
- CALL ABORT
- STOP  ' Error in advec_weno_k_3_aux.f90 '
+  call Print_msg(NVERB_FATAL,'GEN','ADVEC_WENO_K_3_VY','WENO5/south-int not parallelisable with NHALO < 3')
  ELSEIF (NHALO>=3) THEN
  !---------------------------------------------------------------------------
  ! NHALO >3 => WENO5 for all boundary points
@@ -2580,9 +2564,7 @@ IF(LNORTH_ll()) THEN
  ZOMN2(:,IN-1:IN,:) = 3./5. / (ZEPS + ZBNEG2(:,IN-1:IN,:))**2 ! Non-normalized weight IN-1,IN
 !
  ELSE ! South boundary is proc border, with NHALO < 3 on north side
-  PRINT *,'ERROR : WENO5/CYCL fluxes calculation needs JPHEXT (&NHALO) >= 3 on north side'
-  CALL ABORT
-  STOP  ' Error in advec_weno_k_3_aux.f90 '
+  call Print_msg(NVERB_FATAL,'GEN','ADVEC_WENO_K_3_VY','WENO5/CYCL fluxes calculation needs JPHEXT (&NHALO) >= 3 on north side')
  ENDIF
 !
  ! First positive stencil, needs indices i-2, i-1, i 
@@ -2665,9 +2647,7 @@ ELSE
  !-----------------------------------------------------------------------------
 !
  IF (NHALO<3) THEN
- PRINT *,'ERROR : WENO5/north-int not parallelisable with NHALO < 3' 
- CALL ABORT
- STOP  ' Error in advec_weno_k_3_aux.f90 '
+  call Print_msg(NVERB_FATAL,'GEN','ADVEC_WENO_K_3_VY','WENO5/north-int not parallelisable with NHALO < 3')
  ELSEIF (NHALO>=3) THEN
  !---------------------------------------------------------------------------
  ! NHALO >= 3 => WENO5 for all boundary points

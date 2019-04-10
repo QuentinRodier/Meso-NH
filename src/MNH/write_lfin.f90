@@ -169,8 +169,9 @@ END MODULE MODI_WRITE_LFIFM_n
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!       V. Vionnet    07/2017, add blowing snow variables
 !!       P.Wautelet    11/01/2019: bug correction in write XBL_DEPTH->XSBL_DEPTH
-!!       C.Lac         18/02/2019: add rain fraction as an output field              
+!!       C.Lac         18/02/2019: add rain fraction as an output field
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1159,12 +1160,9 @@ IF (NSV >=1) THEN
       IMOMENTS = INT(NSV_DSTEND - NSV_DSTBEG+1)/NMODE_DST  
       !Should equal 3 at this point
       IF (IMOMENTS > 3) THEN
-        WRITE(ILUOUT,*) 'Error in write_lfin: number of moments must equal or inferior to 3'
+        WRITE(ILUOUT,*) 'Error in write_lfin: number of moments must be less or equal to 3'
         WRITE(ILUOUT,*) NSV_DSTBEG, NSV_DSTEND,NMODE_DST,IMOMENTS
- !callabortstop
-        CALL IO_File_close(TLUOUT)
-        CALL ABORT
-        STOP
+        call Print_msg( NVERB_FATAL, 'GEN', 'WRITE_LFIFM_n', 'number of moments must be less or equal to 3' )
       END IF ! Test IMOMENTS
       ALLOCATE(YDSTNAMES(NSV_DSTEND - NSV_DSTBEG+1))
       !
@@ -1265,12 +1263,9 @@ IF (NSV >=1) THEN
       IMOMENTS = INT(NSV_SLTEND - NSV_SLTBEG+1)/NMODE_SLT  
       !Should equal 3 at this point
       IF (IMOMENTS .NE. 3) THEN
-        WRITE(ILUOUT,*) 'Error in write_lfin: number of moments must be 3'
+        WRITE(ILUOUT,*) 'Error in write_lfin: number of moments must be equal to 3'
         WRITE(ILUOUT,*) NSV_SLTBEG, NSV_SLTEND,NMODE_SLT,IMOMENTS
- !callabortstop
-        CALL IO_File_close(TLUOUT)
-        CALL ABORT
-        STOP
+        call Print_msg( NVERB_FATAL, 'GEN', 'WRITE_LFIFM_n', 'number of moments must be equal to 3' )
       END IF
       ALLOCATE(YSLTNAMES(NSV_SLTEND - NSV_SLTBEG+1))
       TZFIELD%CSTDNAME   = ''

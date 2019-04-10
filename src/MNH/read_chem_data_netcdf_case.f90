@@ -84,6 +84,7 @@ END MODULE MODI_READ_CHEM_DATA_NETCDF_CASE
 !!      A. Berger   20/03/12 adapt whatever the chemical mechanism in BASIC
 !!      P. Wautelet 30/10/17 use F90 module for netCDF
 !!      J.Pianezzej 13/02/2019 : correction for use of MEGAN
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !-------------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -761,15 +762,18 @@ WRITE (ILUOUT0,'(A,A4,A)') ' -- netcdf decoder for ',HFILE,' file ended successf
 !
 CONTAINS
 !
-!     #############################
-      SUBROUTINE HANDLE_ERR(STATUS)
-!     #############################
-     INTEGER(KIND=IDCDF_KIND) STATUS
-     IF (STATUS .NE. NF90_NOERR) THEN
-        PRINT *, NF90_STRERROR(STATUS)
-     STOP 'Stopped'
-     ENDIF
-     END SUBROUTINE HANDLE_ERR
+! #############################
+  subroutine handle_err(status)
+! #############################
+    use mode_msg
+
+    integer(kind=IDCDF_KIND) status
+
+    if ( status /= NF90_NOERR ) then
+      call Print_msg( NVERB_FATAL, 'IO', 'HANDLE_ERR', NF90_STRERROR(status) )
+    end if
+
+  end subroutine handle_err
 !
 !
 !     #############################################

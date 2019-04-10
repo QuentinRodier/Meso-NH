@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2006-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ######spl
      MODULE MODI_COMPUTE_FRAC_ICE  
 !    ############################ 
@@ -239,6 +240,7 @@ END SUBROUTINE COMPUTE_FRAC_ICE2D
 !!      Original         13/03/06
 !!      S. Riette        April 2011 optimisation
 !!      S. Riette        08/2016 add option O
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !! --------------------------------------------------------------------------
 !       0. DECLARATIONS
@@ -275,9 +277,7 @@ ELSEIF (HFRAC_ICE=='N') THEN !No ice
 ELSEIF (HFRAC_ICE=='S') THEN !Same as previous
   !nothing to do
 ELSE
-  WRITE(*,*) ' STOP'
-  WRITE(*,*) ' INVALID OPTION IN COMPUTE_FRAC_ICE, HFRAC_ICE=',HFRAC_ICE
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','COMPUTE_FRAC_ICE','')
+  call Print_msg(NVERB_FATAL,'GEN','COMPUTE_FRAC_ICE','invalid option for HFRAC_ICE='//HFRAC_ICE)
 ENDIF
 
 PFRAC_ICE(:) = MAX( 0., MIN(1., PFRAC_ICE(:) ) )

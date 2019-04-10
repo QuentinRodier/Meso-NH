@@ -2,6 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 MODULE MODI_ICE4_SEDIMENTATION_SPLIT
 INTERFACE
 SUBROUTINE ICE4_SEDIMENTATION_SPLIT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB, KKTE, KKT, KKL, &
@@ -70,6 +71,7 @@ SUBROUTINE ICE4_SEDIMENTATION_SPLIT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB
 !!    -------------
 !!
 !  P. Wautelet 11/02/2019: dimensions of PINPRC and PINDEP not necessarily KIT,KJT
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !
 !
 !*      0. DECLARATIONS
@@ -408,6 +410,7 @@ CONTAINS
     !*       0.2  declaration of local variables
     !
     !
+    character(len=10) :: yspe ! String for error message
     INTEGER :: JK, JL, JI, JJ
     REAL :: ZINVTSTEP
     REAL :: ZZWLBDC, ZRAY, ZZT, ZZWLBDA, ZZCC
@@ -475,9 +478,8 @@ CONTAINS
         ZFSED=XFSEDH
         ZEXSED=XEXSEDH
       ELSE
-        WRITE(*,*) ' STOP'
-        WRITE(*,*) ' NO SEDIMENTATION PARAMETER FOR KSPE==', KSPE
-        CALL PRINT_MSG(NVERB_FATAL,'GEN','ICE4_SEDIMENTATION_SPLIT','')
+        write( yspe, '( I10 )' ) kspe
+        call Print_msg( NVERB_FATAL, 'GEN', 'ICE4_SEDIMENTATION_SPLIT', 'no sedimentation parameter for KSPE='//trim(yspe) )
       ENDIF
       PWSED(:,:,:) = 0.
       DO JL=1, KSEDIM

@@ -70,12 +70,16 @@ END MODULE MODI_CH_FIELD_VALUE_n
 !!    11/08/98 (N. Asencio) add parallel code
 !!    28/07/99 (V. Crassier & K. Suhre) modify initialization scheme (1-D)
 !!    Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !!    EXTERNAL
 !!    --------
-USE MODI_CH_OPEN_INPUT  ! open general purpose ASCII input file
 USE MODD_IO,            ONLY: TFILEDATA
+
 USE MODE_IO_FILE,       ONLY: IO_File_close
+use mode_msg
+
+USE MODI_CH_OPEN_INPUT  ! open general purpose ASCII input file
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -100,6 +104,7 @@ INTEGER,          INTENT(IN) :: KVERB           ! verbosity level
 !
 !*      0.2    declarations local variables
 !
+character(len=10) :: yval            ! String for error message
 INTEGER       :: JI, JJ              ! loop control variables
 INTEGER       :: ICHANNEL            ! I/O channel for file input
 CHARACTER(LEN=40) :: YFORMAT         ! format for input
@@ -177,12 +182,10 @@ firstcall: IF (GSFIRSTCALL) THEN
   DO JI = 2, ISLEVEL
     IF (ZINF .GE. ZSZPROF(JI)) THEN
       WRITE(KLUOUT,*) &
-   	   "CH_FIELD_VALUE_n-Error: Z-profile must be in increasing order!"
+        "CH_FIELD_VALUE_n-Error: Z-profile must be in increasing order!"
       WRITE(KLUOUT,*) " minimum value: ",ZINF," at level ",IINF
       WRITE(KLUOUT,*) " current value: ",ZSZPROF(JI)," at level ",JI
-      ! callabortstop
-      CALL ABORT
-      STOP "Program stopped by CH_FIELD_VALUE_n"
+      call Print_msg( NVERB_FATAL, 'GEN', 'CH_FIELD_VALUE_n', 'Z-profile must be in increasing order' )
     ENDIF
     ZINF = ZSZPROF(JI) ; IINF=JI
   ENDDO
@@ -236,10 +239,7 @@ firstcall: IF (GSFIRSTCALL) THEN
       WRITE(KLUOUT,*) "initial data is given as mixing ratio (part per par)"
     END IF
   ELSE
-    WRITE(KLUOUT,*) "CH_FIELD_VALUE_n ERROR: unit type unknown: ", HUNIT
-    ! callabortstop
-    CALL ABORT
-    STOP
+    call Print_msg( NVERB_FATAL, 'GEN', 'CH_FIELD_VALUE_n', 'unknown unit type: '//trim(HUNIT) )
   ENDIF
 !
 ! read number of initial values ISINIT
@@ -327,19 +327,13 @@ ENDDO search_loop
 !*       2.5   check boundaries of IASSOACT and IINITACT
 !
 IF ((IASSOACT.LE.0).OR.(IASSOACT.GT.ISPROF)) THEN
-  WRITE(KLUOUT,*) &
-    "CH_FIELD_VALUE_n-ERROR: unproper associated profile value:", IASSOACT
-    ! callabortstop
-    CALL ABORT
-  STOP
+  write( yval, '( I10 )' ) IASSOACT
+  call Print_msg( NVERB_FATAL, 'GEN', 'CH_FIELD_VALUE_n', 'invalid associated profile value: '//trim(yval) )
 ENDIF
 !
 IF ((IINITACT.LE.0).OR.(IINITACT.GT.ISINIT)) THEN
-  WRITE(KLUOUT,*) &
-    "CH_FIELD_VALUE_n-ERROR: unproper associated initial value:", IINITACT
-    ! callabortstop
-    CALL ABORT
-  STOP
+  write( yval, '( I10 )' ) IINITACT
+  call Print_msg( NVERB_FATAL, 'GEN', 'CH_FIELD_VALUE_n', 'invalid associated initial value: '//trim(yval) )
 ENDIF
 !
 !*       2.6   linear interpolation between IZINDEX and IZINDEX+1, 

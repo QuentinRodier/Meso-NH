@@ -2,6 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     #############################
       MODULE MODI_FLASH_GEOM_ELEC_n
 !     #############################
@@ -93,6 +94,7 @@ END MODULE MODI_FLASH_GEOM_ELEC_n
 !!                               & initialize INBLIGHT on all proc for filling/saving AREA* arrays
 !!      Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
 !!      Philippe Wautelet: 22/01/2019: use standard FLUSH statement instead of non standard intrinsics!!
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !-------------------------------------------------------------------------------
 !
 !*      0.      DECLARATIONS
@@ -2822,6 +2824,8 @@ END SUBROUTINE N8INTERCHANGE_SORT
     !    Output, real ( kind = 8 ) R8_UNIFORM_01, a new pseudorandom variate,
     !    strictly between 0 and 1.
     !
+    use mode_msg
+
     IMPLICIT NONE
 
     INTEGER ( kind = 4 ), PARAMETER :: i4_huge = 2147483647
@@ -2830,10 +2834,7 @@ END SUBROUTINE N8INTERCHANGE_SORT
     INTEGER ( kind = 4 ) seed
 
     IF ( seed == 0 ) THEN
-       WRITE ( *, '(a)' ) ' '
-       WRITE ( *, '(a)' ) 'R8_UNIFORM_01 - Fatal error!'
-       WRITE ( *, '(a)' ) '  Input value of SEED = 0.'
-       STOP 1
+      call Print_msg( NVERB_FATAL, 'GEN', 'r8_uniform_01', 'seed dummy argument must be different of 0' )
     END IF
 
     k = seed / 127773

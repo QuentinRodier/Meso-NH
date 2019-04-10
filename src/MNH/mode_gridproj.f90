@@ -37,19 +37,29 @@
 !!          Original  24/05/94
 !!                    05/02/15   M.Moge (LA-CNRS)
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !!    
 !------------------------------------------------------------------------------
 !
 !*                0.  DECLARATIONS
-USE MODE_MPPDB
-USE MODD_CONF
-!------------
+!
 !------------------------------------------------------------------------------
+USE MODD_CONF
+!
+USE MODE_MPPDB
+use mode_msg
+!
+implicit none
+!
+private
+!
+public :: SM_GRIDPROJ, SM_LATLON, SM_XYHAT
 !
 INTERFACE SM_LATLON
    MODULE PROCEDURE SM_LATLON_A,SM_LATLON_S
 END INTERFACE
+
 INTERFACE SM_XYHAT
    MODULE PROCEDURE SM_XYHAT_A,SM_XYHAT_S
 END INTERFACE
@@ -174,14 +184,14 @@ CONTAINS
 !              ------------
 !
 !
-USE MODE_ll
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll, LIST1D_ll
+USE MODD_CONF
+USE MODD_CST
+USE MODD_GRID
 USE MODD_LUNIT_n,     ONLY : TLUOUT
+USE MODD_PARAMETERS
 !
-USE MODD_CONF          
-USE MODD_CST          
-USE MODD_PARAMETERS 
-USE MODD_GRID      
+USE MODE_ll
 !
 USE MODI_VERT_COORD
 !
@@ -390,11 +400,7 @@ ZCLAT0 = COS(ZRDSDG*ZLAT0)
 ZSLAT0 = SIN(ZRDSDG*ZLAT0)
 !
 IF ((ABS(ZRPK-1.)>1.E-10).AND. (ANY(ABS(COS(ZRDSDG*ZLAT))<1.E-10))) THEN
-  WRITE(ILUOUT,*) 'Error in SM_GRIDPROJ : '
-  WRITE(ILUOUT,*) 'pole in the domain, but not with stereopolar projection'
-!callabortstop
-CALL ABORT
-  STOP
+  call Print_msg( NVERB_FATAL, 'GEN', 'SM_GRIDPROJ', 'pole in the domain, but not with stereopolar projection' )
 ENDIF
 !
 IF (ABS(ZCLAT0)<1.E-10 .AND. (ABS(ZRPK-1.)<1.E-10)) THEN
@@ -1542,9 +1548,7 @@ WRITE(ILUOUT,*) ' Function fails to converge after ',ITER,' iterations.'
 WRITE(ILUOUT,*) ' LATREF2=',LATREF2,' Residual=',ZGLAT-1.,           &
                 ' ZEPSI=',ZEPSI,' Last increment=',ZDLAT/ZRDSDG
 WRITE(ILUOUT,*) ' JOB ABORTS...'
-!callabortstop
-CALL ABORT
-STOP
+call Print_msg( NVERB_FATAL, 'GEN', 'LATREF2', 'failed to converge' )
 !-------------------------------------------------------------------------------
 END FUNCTION LATREF2
 !-------------------------------------------------------------------------------

@@ -283,6 +283,7 @@ END MODULE MODI_INI_MODEL_n
 !  P. Wautelet 14/02/2019: remove HINIFILE dummy argument from INI_RADIATIONS_ECMWF/ECRAD
 !!                   02/2019 C.Lac add rain fraction as an output field
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1115,9 +1116,7 @@ ELSE                                   ! 3D case
              " Local domain to small for relaxation NRIMX,IDIMX ", &
              NRIMX,IDIMX ,&
              " change relaxation parameters or number of processors "
-        !callabortstop
-        CALL ABORT
-        STOP
+        call Print_msg(NVERB_FATAL,'GEN','INI_MODEL_n','')
      END IF
   END IF
   IF ( CLBCY(1) /= 'CYCL' ) THEN
@@ -1127,9 +1126,7 @@ ELSE                                   ! 3D case
              " Local domain to small for relaxation NRIMY,IDIMY ", &
              NRIMY,IDIMY ,&
              " change relaxation parameters or number of processors "
-        !callabortstop
-        CALL ABORT
-        STOP
+        call Print_msg(NVERB_FATAL,'GEN','INI_MODEL_n','')
      END IF
   END IF
 IF ( LHORELAX_UVWTH ) THEN

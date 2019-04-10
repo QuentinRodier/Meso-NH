@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 surfex 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ##########################
       MODULE MODI_INI_SW_SETUP
@@ -58,11 +53,13 @@ END MODULE MODI_INI_SW_SETUP
 !!      Original    03/03/03
 !!      modification : 01/09/03  Y. Seity, KSWB_MNH=6
 !!                   02/2018 Q.Libois ECRAD
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
+use mode_msg
 !
 IMPLICIT NONE
 !
@@ -92,9 +89,7 @@ SELECT CASE (HRAD)
        PSW_BANDS(5) = 1.785E-6
        PSW_BANDS(6) = 3.19E-6
     ELSE
-       !callabortstop
-       CALL ABORT
-       STOP     
+       call Print_msg(NVERB_FATAL,'GEN','INI_SW_SETUP','invalid KSWB_MNH argument')
     ENDIF
     
   CASE ('ECRA') 
@@ -127,9 +122,7 @@ SELECT CASE (HRAD)
        PSW_BANDS(5) = 1.785E-6
        PSW_BANDS(6) = 3.19E-6
     ELSE
-!callabortstop
-CALL ABORT
-       STOP     
+       call Print_msg(NVERB_FATAL,'GEN','INI_SW_SETUP','invalid KSWB_MNH argument')
     ENDIF
 
 !

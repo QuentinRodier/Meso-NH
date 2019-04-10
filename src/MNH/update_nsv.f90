@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ######spl
         MODULE MODI_UPDATE_NSV
 !       ######################
@@ -24,17 +25,20 @@ END MODULE MODI_UPDATE_NSV
 !!  Modify (Escobar ) 2/2014 : add Forefire var
 !!  Modify (Vie) 2016 : add LIMA
 !!         V. Vionnet 7/2017 : add blowing snow var
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!
 USE MODD_CONF, ONLY : NVERB
 USE MODD_NSV
+
+use mode_msg
+
 IMPLICIT NONE 
+
 INTEGER, INTENT(IN) :: KMI ! Model index
 !
 ! STOP if INI_NSV has not be called yet
 IF (.NOT. LINI_NSV) THEN
-  PRINT *, 'UPDATE_NSV  FATAL Error : can t continue because INI_NSV was not called.'
-!callabortstop
-  CALL ABORT
-  STOP
+  call Print_msg( NVERB_FATAL, 'GEN', 'UPDATE_NSV', 'can not continue because INI_NSV was not called' )
 END IF
 !
 ! Update the NSV_* variables from original NSV_*_A arrays

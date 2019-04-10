@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
 !-----------------------------------------------------------------
 !!    #####################
       MODULE MODI_CH_SOLVER_n
@@ -60,6 +56,7 @@ END MODULE MODI_CH_SOLVER_n
 !!    01/12/03 (D. Gazen)   change Chemical scheme interface
 !!    01/06/07 (P. Tulet)  model number in argument (for AROME)
 !!    01/06/07 (JP Pinty & M Leriche) add Rosenbrock solvers
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !!    EXTERNAL
 !!    --------
@@ -73,6 +70,8 @@ USE MODI_CH_EXQSSA
 !@USE MODI_CH_D02EAF
 !@USE MODI_CH_D02EBF
 !@USE MODI_CH_D02NBF
+
+use mode_msg
 USE MODE_RBK90_Integrator
 !!
 !!    IMPLICIT ARGUMENTS
@@ -132,25 +131,19 @@ CASE ('D02EAF')
 !
   ! call NAG's stiff-solver D02EAF
   !@CALL CH_D02EAF(PTSIMUL, PDTACT, PCONC, PNEWCONC, KEQ, KMI)
-!callabortstop
-CALL ABORT
-  STOP 'CH_SOLVER_n SORRY: requested solver currently not supported (CSOLVER)'
+  call Print_msg( NVERB_FATAL, 'GEN', 'CH_SOLVER_n', 'requested solver currently not supported (CSOLVER='//trim(CSOLVER)//')' )
 !
 CASE ('D02EBF')
 !
   ! call NAG's stiff-solver D02EBF
   !@CALL CH_D02EBF(PTSIMUL, PDTACT, PCONC, PNEWCONC, KEQ, KMI)
-!callabortstop
-CALL ABORT
-  STOP 'CH_SOLVER_n SORRY: requested solver currently not supported (CSOLVER)'
+  call Print_msg( NVERB_FATAL, 'GEN', 'CH_SOLVER_n', 'requested solver currently not supported (CSOLVER='//trim(CSOLVER)//')' )
 !
 CASE ('D02NBF')
 !
   ! call NAG's stiff-solver D02NBF
   !@CALL CH_D02NBF(PTSIMUL, PDTACT, PCONC, PNEWCONC, KEQ, KMI)
-!callabortstop
-CALL ABORT
-  STOP 'CH_SOLVER_n SORRY: requested solver currently not supported (CSOLVER)'
+  call Print_msg( NVERB_FATAL, 'GEN', 'CH_SOLVER_n', 'requested solver currently not supported (CSOLVER='//trim(CSOLVER)//')' )
 !
 CASE ('SVODE')
 !
@@ -158,9 +151,7 @@ CASE ('SVODE')
 
  ! CALL CH_SVODE(PTSIMUL, PDTACT, PCONC, PNEWCONC, KEQ, KVECNPT, KMI, &
  !               XRTOL, XATOL, NPED)
-!callabortstop
-CALL ABORT
-  STOP 'CH_SOLVER_n SORRY: requested solver currently not supported (CSOLVER) until Masdev47'
+  call Print_msg( NVERB_FATAL, 'GEN', 'CH_SOLVER_n', 'requested solver currently not supported (CSOLVER='//trim(CSOLVER)//')' )
 !
 CASE ('QSSA')
 !
@@ -200,9 +191,7 @@ CASE ('NONE')
   PNEWCONC(:,:) = PCONC(:,:)
 !
 CASE DEFAULT
-!callabortstop
-CALL ABORT
-  STOP 'CH_SOLVER_n ERROR: requested solver not supported (CSOLVER)'
+  call Print_msg( NVERB_FATAL, 'GEN', 'CH_SOLVER_n', 'requested solver currently not supported (CSOLVER='//trim(CSOLVER)//')' )
 END SELECT
 !
 END SUBROUTINE CH_SOLVER_n

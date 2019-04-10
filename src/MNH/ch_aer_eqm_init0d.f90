@@ -1,12 +1,7 @@
-!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 chimie 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !!   ########################
      MODULE MODI_CH_AER_EQM_INIT0d
@@ -47,7 +42,7 @@ END MODULE MODI_CH_AER_EQM_INIT0d
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!    none
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !!    EXTERNAL
 !!    --------
@@ -59,9 +54,10 @@ USE MODD_CH_M9_n, ONLY : CNAMES
 USE MODD_CH_AERO_n
 USE MODD_CH_MNHC_n
 
-!!
+use mode_msg
+!
 IMPLICIT NONE
-!!
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -214,9 +210,7 @@ print*, 'COMPATIBILITY ERROR: Initialization of particle number mode I < XN0IMIN
 print*, ' MINIMAL NUMBER PARTICLE BY m3 is ', MINVAL(PM3D(:,1)),&
 'located at ',MINLOC(PM3D(:,1))
 print*, 'PLEASE CHANGE MASS OR XN0IMIN INITIALIZATION '
-!callabortstop
-CALL ABORT
-STOP
+call Print_msg( NVERB_FATAL, 'GEN', 'CH_AER_EQM_INIT0d', '' )
 END IF
     PM3D(:,4)= PM3D(:,5) / &
                ((XINIRADIUSJ**3)*EXP(4.5 * (LOG(XINISIGJ))**2))
@@ -227,9 +221,7 @@ print*, 'COMPATIBILITY ERROR: Initialization of particle number mode J < XN0JMIN
 print*, ' MINIMAL NUMBER PARTICLE BY m3 is ',MINVAL(PM3D(:,4)),&
 'located at ',MINLOC(PM3D(:,4))
 print*, 'PLEASE CHANGE MASS OR XN0JMIN INITIALIZATION '
-!callabortstop
-CALL ABORT
-STOP
+call Print_msg( NVERB_FATAL, 'GEN', 'CH_AER_EQM_INIT0d', '' )
 END IF
 
 !*       1.3    calculate moment 6 from dispersion and mean radius

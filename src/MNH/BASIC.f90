@@ -1,3 +1,5 @@
+! Modifications:
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !
 !========================================================================
 !
@@ -35369,7 +35371,7 @@ CONTAINS
 !!
 !!    EXTERNAL
 !!    --------
-!!    none
+use mode_msg
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -35380,7 +35382,7 @@ CONTAINS
 IMPLICIT NONE
 ! check if output array is large enough
 IF (KINDEXDIM.LT.942) THEN
-  STOP 'CH_NONZEROTERMS ERROR: array KINDEX is too small!'
+  call Print_msg( NVERB_FATAL, 'GEN', 'CH_NONZEROTERMS_AQ', 'array KINDEX is too small' )
 END IF
  KINDEX(1, 1)=3
  KINDEX(2, 1)=1
@@ -37305,7 +37307,7 @@ END SUBROUTINE CH_NONZEROTERMS_AQ
 !!
 !!    EXTERNAL
 !!    --------
-!!    none
+use mode_msg
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -37316,7 +37318,7 @@ END SUBROUTINE CH_NONZEROTERMS_AQ
 IMPLICIT NONE
 ! check if output array is large enough
 IF (KINDEXDIM.LT.606) THEN
-  STOP 'CH_NONZEROTERMS ERROR: array KINDEX is too small!'
+  call Print_msg( NVERB_FATAL, 'GEN', 'CH_NONZEROTERMS_GAZ', 'array KINDEX is too small' )
 END IF
  KINDEX(1, 1)=3
  KINDEX(2, 1)=1
@@ -38643,7 +38645,7 @@ CONTAINS
 !!
 !!    EXTERNAL
 !!    --------
-!!    none
+use mode_msg
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -38662,7 +38664,7 @@ IMPLICIT NONE
 !!    ---------------------
 ! check if output array is large enough
 IF (KSPARSEDIM.LT.745) THEN
-  STOP 'CH_SPARSE ERROR: array KSPARSE is too small!'
+  call Print_msg( NVERB_FATAL, 'GEN', 'CH_SPARSE_AQ', 'array KSPARSE is too small' )
 END IF
 !O3/O3
  KSPARSE(1, 1)=1
@@ -40935,7 +40937,7 @@ END SUBROUTINE CH_SPARSE_AQ
 !!
 !!    EXTERNAL
 !!    --------
-!!    none
+use mode_msg
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -40954,7 +40956,7 @@ IMPLICIT NONE
 !!    ---------------------
 ! check if output array is large enough
 IF (KSPARSEDIM.LT.449) THEN
-  STOP 'CH_SPARSE ERROR: array KSPARSE is too small!'
+  call Print_msg( NVERB_FATAL, 'GEN', 'CH_SPARSE_GAZ', 'array KSPARSE is too small' )
 END IF
 !O3/O3
  KSPARSE(1, 1)=1

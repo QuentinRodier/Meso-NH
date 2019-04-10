@@ -1,6 +1,6 @@
 !MNH_LIC Copyright 2000-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !      #################
@@ -50,6 +50,7 @@ END MODULE MODI_SPEC_VER_INT
 !!    -------------
 !!      Original         07/02/00
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !! --------------------------------------------------------------------------
 !       
@@ -59,8 +60,10 @@ END MODULE MODI_SPEC_VER_INT
 USE MODD_LES
 USE MODD_PARAMETERS
 !
-USE MODE_ll
 USE MODE_GATHER_ll
+USE MODE_ll
+use mode_msg
+!
 USE MODI_VER_INTERP_LIN
 !
 IMPLICIT NONE
@@ -102,16 +105,13 @@ ELSE IF (CSPECTRA_LEVEL_TYPE=='Z') THEN
     PA_SPEC = XUNDEF
   END WHERE
 ELSE
-  PRINT*, '-------> STOP in SPEC_VER_INT <----------'
- !callabortstop
-CALL ABORT
-  STOP
+  call Print_msg( NVERB_FATAL, 'GEN', 'SPEC_VER_INT', 'invalid CSPECTRA_LEVEL_TYPE ('//CSPECTRA_LEVEL_TYPE//')' )
 END IF
 !
 !-------------------------------------------------------------------------------
 !
-! ONE PROCESSOR ONLY
-! ------------------
+! ONE PROCESS ONLY
+! ----------------
 !
 CALL GET_GLOBALDIMS_ll(IIMAX_ll,IJMAX_ll)
 ALLOCATE(ZA_ll(IIMAX_ll+2*JPHEXT,IJMAX_ll+2*JPHEXT,NSPECTRA_K))

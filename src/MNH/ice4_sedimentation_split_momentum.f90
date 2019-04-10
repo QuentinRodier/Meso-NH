@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 MODULE MODI_ICE4_SEDIMENTATION_SPLIT_MOMENTUM
 INTERFACE
 SUBROUTINE ICE4_SEDIMENTATION_SPLIT_MOMENTUM(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB, KKTE, KKT, KKL, &
@@ -67,6 +68,7 @@ SUBROUTINE ICE4_SEDIMENTATION_SPLIT_MOMENTUM(KIB, KIE, KIT, KJB, KJE, KJT, KKB, 
 !!    MODIFICATIONS
 !!    -------------
 !!
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !
 !
 !*      0. DECLARATIONS
@@ -406,6 +408,7 @@ CONTAINS
     !*       0.2  declaration of local variables
     !
     !
+    character(len=10) :: yspe ! String for error message
     INTEGER :: JK, JL, JI, JJ
     REAL :: ZINVTSTEP
     REAL :: ZZWLBDC, ZRAY, ZZT, ZZWLBDA, ZZCC
@@ -422,9 +425,8 @@ CONTAINS
     !
     !
     IF(OCOMPUTE_MOM .AND. .NOT. OMOMENTUM) THEN
-      WRITE(*,*) ' STOP'
-      WRITE(*,*) ' OCOMPUTE_MOM cannot be .TRUE. if we do not use momentum'
-      CALL PRINT_MSG(NVERB_FATAL,'GEN','ICE4_SEDIMENTATION_SPLIT_MOMENTUM','')
+      call Print_msg( NVERB_FATAL, 'GEN', 'ICE4_SEDIMENTATION_SPLIT_MOMENTUM',  &
+                      'OCOMPUTE_MOM cannot be .TRUE. if we do not use momentum' )
     ENDIF
     !*       2.    compute the fluxes
     !
@@ -504,9 +506,9 @@ CONTAINS
         ZFSED=XFSEDH
         ZEXSED=XEXSEDH
       ELSE
-        WRITE(*,*) ' STOP'
-        WRITE(*,*) ' NO SEDIMENTATION PARAMETER FOR KSPE==', KSPE
-        CALL PRINT_MSG(NVERB_FATAL,'GEN','ICE4_SEDIMENTATION_SPLIT_MOMENTUM','')
+        write( yspe, '( I10 )' ) kspe
+        call Print_msg( NVERB_FATAL, 'GEN', 'ICE4_SEDIMENTATION_SPLIT_MOMENTUM', &
+                        'no sedimentation parameter for KSPE='//trim(yspe) )
       ENDIF
       IF(OCOMPUTE_MOM .OR. .NOT. OMOMENTUM) THEN
         !Momentum (per m3) and mass flux are given by the same formulae

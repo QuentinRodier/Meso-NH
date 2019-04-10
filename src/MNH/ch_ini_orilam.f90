@@ -1,12 +1,7 @@
-!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 chimie 2007/03/02 13:59:36
 !-----------------------------------------------------------------
 !!   ###########################
      MODULE MODI_CH_INI_ORILAM
@@ -64,26 +59,30 @@ END MODULE MODI_CH_INI_ORILAM
 !!    MODIFICATIONS
 !!    -------------
 !!    Original
-!! 
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!!
 !!    EXTERNAL
 !!    --------
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
-USE MODI_CH_AER_SOLV
-USE MODI_CH_AER_TRANS
 USE MODD_CH_AEROSOL
-USE MODD_CSTS_DUST, ONLY : XDENSITY_DUST
 USE MODD_CH_M9_n, ONLY : CNAMES
 USE MODD_CST, ONLY :    &
        XPI              & !Definition of pi
-      ,XBOLTZ           & ! Boltzman constant 
+      ,XBOLTZ           & ! Boltzman constant
       ,XAVOGADRO        & ![molec/mol] avogadros number
       ,XG               & ! Gravity constant
       ,XP00             & ! Reference pressure
       ,XMD              & ![kg/mol] molar weight of air
       ,XRD              & ! Gaz constant for dry air
       ,XCPD               !  Cpd (dry air)
+USE MODD_CSTS_DUST, ONLY : XDENSITY_DUST
+!
+use mode_msg
+!
+USE MODI_CH_AER_SOLV
+USE MODI_CH_AER_TRANS
 !
 !*       0.     DECLARATIONS
 !               ------------
@@ -106,6 +105,7 @@ CHARACTER(LEN=10),      INTENT(IN)    :: GSCHEME
 !
 !*      0.2    declarations of local variables
 !
+character(len=10) :: yspec ! String for error message
 REAL, DIMENSION(SIZE(PM,1),(JPMODE)*3)    :: ZDMINTRA, ZDMINTER, ZDMCOND
 REAL, DIMENSION(SIZE(PM,1),JPMODE)        :: ZMASK, ZSOLORG
 
@@ -151,10 +151,8 @@ ENDDO
 ! verify that all array elements are defined
 DO JI = 1, SIZE(XRHOI)
   IF (XRHOI(JI) .LE. 0.0) THEN
-    PRINT *, 'CH_AER_MOD_INIT ERROR: density for species ', JI, ' not defined'
-    ! callabortstop
-    CALL ABORT
-    STOP 'CH_AER_MOD_INIT ERROR: density not defined'
+    write( yspec, '( I10 )' ) JI
+    call Print_msg( NVERB_FATAL, 'GEN', 'CH_AER_MOD_INIT', 'density for species '//trim(yspec)//' not defined' )
   END IF
 ENDDO
 !

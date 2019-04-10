@@ -236,8 +236,4 @@ CALL SURFEX_DEALLO_LIST
 !
 !-------------------------------------------------------------------------------
 !
-!callabortstop
-!CALL ABORT
-STOP
-!
-END PROGRAM MESONH  
+END PROGRAM MESONH

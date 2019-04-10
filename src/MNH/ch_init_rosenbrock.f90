@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2007-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ##############################
       MODULE MODI_CH_INIT_ROSENBROCK
 !     ##############################
@@ -46,6 +47,7 @@ END MODULE MODI_CH_INIT_ROSENBROCK
 !!    MODIFICATIONS
 !!    -------------
 !!    Original 05/06/07
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !!
 !!    IMPLICIT ARGUMENTS
@@ -59,6 +61,8 @@ USE MODI_CH_SPARSE
 !
 USE MODD_CH_M9_n, ONLY: NEQ, NEQAQ, NNONZEROTERMS
 USE MODD_CH_ROSENBROCK_n
+
+use mode_msg
 !
 !*       0.   DECLARATIONS
 !        -----------------
@@ -118,7 +122,7 @@ JLL_Loop2:  DO JLL = 1, NSPARSEDIM
               WRITE(KLUOUT,*)"DIAGONAL ELEMENT IS FOUND FOR CHEMICAL COMPOUND"
               WRITE(KLUOUT,*)"NUMBER: ",JLL," IN THE JACOBIAN MATRIX !!!"
               WRITE(KLUOUT,*)"PLEASE MODIFY AND REPROCESS THE CHEMICAL SYSTEM"
-              STOP
+              call Print_msg( NVERB_FATAL, 'GEN', 'CH_INIT_ROSENBROCK', 'no diagonal element found for chemical compound' )
             ENDIF
           END DO
 !

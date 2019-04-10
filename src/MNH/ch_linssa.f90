@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 chimie 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !!    ##################### 
       MODULE MODI_CH_LINSSA
@@ -65,9 +60,12 @@ SUBROUTINE CH_LINSSA(PTSIMUL, PDTACT, PCONC, PNEWCONC, KEQ, KVECNPT, KMI, &
 !!    -------------
 !!    Original 25/04/95
 !!    Modification   01/12/03  (Gazen)   change Chemical scheme interface
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !!    EXTERNAL
 !!    --------
+use mode_msg
+
 USE MODI_CH_FCN
 USE MODI_CH_JAC
 USE MODI_CH_GAUSS
@@ -152,9 +150,7 @@ ENDDO
 IFAIL = 1
 CALL CH_GAUSS(ZWORK,ZINV,KEQ,IFAIL)
 IF (IFAIL.NE.0) THEN
-! callabortstop
-  CALL ABORT
-  STOP 'CH_LinSSA ERROR: matrix cannot be inverted by CH_GAUSS'
+  call Print_msg( NVERB_FATAL, 'GEN', 'CH_LinSSA', 'matrix cannot be inverted by CH_GAUSS' )
 ENDIF
 !
 !*       5.   CALCULATE 1/2 * (P+I) * f^n

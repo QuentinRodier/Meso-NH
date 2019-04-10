@@ -1,17 +1,11 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for CVS information
-!-----------------------------------------------------------------
-! $Source$
-! $Name$ 
-! $Revision$ 
-! $Date$
-!-----------------------------------------------------------------
-!Correction :
-!  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+! Modifications:
+!  J. Escobar  15/09/2015: WENO5 & JPHEXT <> 1
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !-----------------------------------------------------------------
 
 !     ####################
@@ -56,7 +50,9 @@
   USE MODD_MPIF
   !JUANZ
   USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD
-  !JUANZ  
+  !JUANZ
+
+  use mode_msg
 !
   CONTAINS
 
@@ -1270,7 +1266,7 @@ ENDIF
       ZPTR => PARRAY(ILOC,IB:IE)
 !
     CASE DEFAULT
-      STOP 'GET_GLOBALSLICE_ll : Bad HDIR argument'
+      call Print_msg( NVERB_FATAL, 'GEN', 'GET_1DGLOBALSLICE_ll', 'invalid HDIR dummy argument ('//hdir//')' )
 !
     END SELECT 
 !
@@ -1602,7 +1598,7 @@ ENDIF
       ZPTR = PARRAY(ILOC,IB:IE,KKB:KKE)
 !
     CASE DEFAULT
-      STOP 'GET_GLOBALSLICE_ll : Bad HDIR argument'
+      call Print_msg( NVERB_FATAL, 'GEN', 'GET_2DGLOBALSLICE_ll', 'invalid HDIR dummy argument ('//hdir//')' )
 !
     END SELECT
 !
@@ -1962,7 +1958,7 @@ ENDIF
       ZPTR => PARRAY(ILOC,IJB:IJE)
 !
     CASE DEFAULT
-      STOP 'GET_SLICE_ll : Bad HDIR argument'
+      call Print_msg( NVERB_FATAL, 'GEN', 'GET_1DSLICE_ll', 'invalid HDIR dummy argument ('//hdir//')' )
 !
     END SELECT 
 !
@@ -2320,7 +2316,7 @@ ENDIF
       ZPTR = PARRAY(ILOC,IJB:IJE,KKB:KKE)
 !
     CASE DEFAULT
-      STOP 'GET_SLICE_ll : Bad HDIR argument'
+      call Print_msg( NVERB_FATAL, 'GEN', 'GET_2DSLICE_ll', 'invalid HDIR dummy argument ('//hdir//')' )
 !
     END SELECT
 !

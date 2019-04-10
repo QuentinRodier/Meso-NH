@@ -3,6 +3,9 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
+! Modifications:
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!-----------------------------------------------------------------
 
 !     #################
       MODULE MODE_LB_ll
@@ -117,6 +120,7 @@
   USE MODD_VAR_ll, ONLY : TCRRT_COMDATA
 !
   USE MODE_ARGSLIST_ll, ONLY : ADD2DFIELD_ll
+  use mode_msg
   USE MODE_NEST_ll, ONLY : LBFINE2COARSE
 !  
   IMPLICIT NONE
@@ -129,6 +133,7 @@
 !
 !*       0.2   declarations of local variables
 !
+  CHARACTER(len=10) :: ymodel !String for error message
   INTEGER :: ICOARSE
   TYPE(LCRSPD_ll), POINTER :: TZPAR, TZCHILD
   TYPE(LPROC_COM_DATA_ll), POINTER :: TZLCOMDATA
@@ -142,8 +147,7 @@
 !
   IF (.NOT.ASSOCIATED(TCRRT_COMDATA%TCHILDREN) &
     & .OR. .NOT.ASSOCIATED(TCRRT_COMDATA%TP2C_DATA)) THEN
-    WRITE(*,*) 'Problem in set_lbfield_ll'
-    WRITE(*,*) 'The current model has no child'
+    call Print_msg( NVERB_WARNING, 'GEN', 'SET_LB2DFIELD_ll', 'the current model has no child' )
     RETURN
   ENDIF
 !
@@ -165,9 +169,8 @@
     TZLCOMDATA => TZLCOMDATA%TNEXT
   ENDDO
   IF (.NOT.ASSOCIATED(TZLCOMDATA)) THEN
-    WRITE(*,*) 'Error SET_LBFIELD_ll : ', KMODEL, &
-               ' is not a child of the current model'
-    STOP
+    write( ymodel, '( I10 )' ) KMODEL
+    call Print_msg( NVERB_FATAL, 'GEN', 'SET_LB2DFIELD_ll', trim(ymodel)//' is not a child of the current model' )
   ENDIF
 !
 !*       2.2   Point to the parent2child data structure
@@ -177,9 +180,8 @@
     TZP2CDATA => TZP2CDATA%TNEXT
   ENDDO
   IF (.NOT.ASSOCIATED(TZP2CDATA)) THEN
-    WRITE(*,*) 'Error SET_LBFIELD_ll : ', KMODEL, &
-               ' is not a child of the current model'
-    STOP
+    write( ymodel, '( I10 )' ) KMODEL
+    call Print_msg( NVERB_FATAL, 'GEN', 'SET_LB2DFIELD_ll', trim(ymodel)//' is not a child of the current model' )
   ENDIF
 !
 !*       2.3   Point to the appropriate side
@@ -281,6 +283,7 @@
   USE MODD_VAR_ll, ONLY : TCRRT_COMDATA
 !
   USE MODE_ARGSLIST_ll, ONLY : ADD3DFIELD_ll
+  use mode_msg
   USE MODE_NEST_ll, ONLY : LBFINE2COARSE
 !
 !
@@ -294,6 +297,7 @@
 !
 !*       0.2   declarations of local variables
 !
+  CHARACTER(len=10) :: ymodel !String for error message
   INTEGER :: ICOARSE
   TYPE(LCRSPD_ll), POINTER :: TZPAR, TZCHILD
   TYPE(LPROC_COM_DATA_ll), POINTER :: TZLCOMDATA
@@ -307,8 +311,7 @@
 !
   IF (.NOT.ASSOCIATED(TCRRT_COMDATA%TCHILDREN) &
     & .OR. .NOT.ASSOCIATED(TCRRT_COMDATA%TP2C_DATA)) THEN
-    WRITE(*,*) 'Problem in set_lbfield_ll'
-    WRITE(*,*) 'The current model has no child'
+    call Print_msg( NVERB_WARNING, 'GEN', 'SET_LB3DFIELD_ll', 'the current model has no child' )
     RETURN
   ENDIF
 !
@@ -330,9 +333,8 @@
     TZLCOMDATA => TZLCOMDATA%TNEXT
   ENDDO
   IF (.NOT.ASSOCIATED(TZLCOMDATA)) THEN
-    WRITE(*,*) 'Error SET_LBFIELD_ll : ', KMODEL, &
-               ' is not a child of the current model'
-    STOP
+    write( ymodel, '( I10 )' ) KMODEL
+    call Print_msg( NVERB_FATAL, 'GEN', 'SET_LB3DFIELD_ll', trim(ymodel)//' is not a child of the current model' )
   ENDIF
 !
 !*       2.2   Point to the parent2child data structure
@@ -342,9 +344,8 @@
     TZP2CDATA => TZP2CDATA%TNEXT
   ENDDO
   IF (.NOT.ASSOCIATED(TZP2CDATA)) THEN
-    WRITE(*,*) 'Error SET_LBFIELD_ll : ', KMODEL, &
-               ' is not a child of the current model'
-    STOP
+    write( ymodel, '( I10 )' ) KMODEL
+    call Print_msg( NVERB_FATAL, 'GEN', 'SET_LB3DFIELD_ll', trim(ymodel)//' is not a child of the current model' )
   ENDIF
 !
 !*       2.3   Point to the appropriate side
@@ -433,7 +434,9 @@
 !!
   USE MODD_STRUCTURE_ll, ONLY : LPARENT2CHILD_DATA_ll, PARENT2CHILD_DATA_ll
   USE MODD_VAR_ll, ONLY : TCRRT_COMDATA
+
   USE MODE_CONSTRUCT_ll, ONLY : CLEANLIST_LCRSPD
+  use mode_msg
 !
   IMPLICIT NONE
 !
@@ -475,8 +478,7 @@
 !
   ELSE
 !
-    WRITE(*,*) 'Problem in UNSET_LBFIELD'
-    WRITE(*,*) 'The current model is 1'
+    call Print_msg( NVERB_WARNING, 'GEN', 'UNSET_LBFIELD', 'problem: the current model is 1' )
 !
   ENDIF
 !
@@ -1671,6 +1673,7 @@
   USE MODD_PARAMETERS_ll, ONLY: JPHEXT
 
   USE MODE_DISTRIB_LB
+  use mode_msg
   !
   IMPLICIT NONE
   !
@@ -1690,6 +1693,7 @@
   ! LOCAL VARIABLES
   CHARACTER(4) :: YLBTYPEX ! LB type : 'LBX','LBXU'
   CHARACTER(4) :: YLBTYPEY ! LB type : 'LBY','LBYV'
+  character(len=10) :: ydim1, ydim2 !Strings for error messages
   ! local indices for the intersection of the local subdomain and the LB zone
   INTEGER             :: IIB_LOCLB           ! indice I Beginning in x direction
   INTEGER             :: IJB_LOCLB           ! indice J Beginning in y direction
@@ -1711,8 +1715,7 @@
     YLBTYPEX = 'LBXU'
     YLBTYPEY = 'LBYV'
   ELSE
-    WRITE(*,*) "ERROR: from SET_LB_FIELD_ll, UNKNOWN LB TYPE", HLBTYPE
-    CALL ABORT
+    call Print_msg( NVERB_FATAL, 'GEN', 'SET_LB_FIELD_ll', 'unknown HLBTYPE ('//trim(HLBTYPE)//')' )
   ENDIF
 !
 ! get the local indices of the West-East LB arrays for the local subdomain
@@ -1720,9 +1723,10 @@
 ! and the corresponding indices for the LB global arrays
   CALL GET_DISTRIB_LB(YLBTYPEX,ISP,'FM','WRITE',NRIMX,IIB_GLBLB,IIE_GLBLB,IJB_GLBLB,IJE_GLBLB)
   IF ( IIE_LOCLB-IIB_LOCLB /= IIE_GLBLB-IIB_GLBLB ) THEN
-    WRITE(*,*) "ERROR: from SET_LB_FIELD_ll, West-East IIE_LOCLB-IIB_LOCLB =",&
-        IIE_LOCLB-IIB_LOCLB, " /= IIE_GLBLB-IIB_GLBLB =", IIE_GLBLB-IIB_GLBLB
-    CALL ABORT
+    write( ydim1, '( I10 )' ) IIE_LOCLB-IIB_LOCLB
+    write( ydim2, '( I10 )' ) IIE_GLBLB-IIB_GLBLB
+    call Print_msg( NVERB_FATAL, 'GEN', 'SET_LB_FIELD_ll', 'West-East IIE_LOCLB-IIB_LOCL='//trim(ydim1)// &
+                    ' /= IIE_GLBLB-IIB_GLBLB='//trim(ydim2) )
   ENDIF
   LOCLBSIZEW = 0
   LOCLBSIZEE = 0
@@ -1744,8 +1748,7 @@
       PLBXFIELD(IIB_LOCLB:IIE_LOCLB,:,:)  = PFIELD(GLBLBBEGIN:GLBLBEND,:,:)
 !      PLBXFIELD(NRIMX+1+IIB_LOCLB:NRIMX+1+IIE_LOCLB,:,:)  = PFIELD(GLBLBBEGIN:GLBLBEND,:,:)
     ELSE
-      WRITE(*,*) "ERROR: from SET_LB_FIELD_ll, This type of partition is not allowed !"
-      CALL ABORT
+    call Print_msg( NVERB_FATAL, 'GEN', 'SET_LB_FIELD_ll', 'this type of partition is not allowed' )
     ENDIF
   ENDIF !( IIB_LOCLB /= 0 )
 !
@@ -1759,9 +1762,10 @@
   ! and the corresponding indices for the LB global arrays
     CALL GET_DISTRIB_LB(YLBTYPEY,ISP,'FM','WRITE',NRIMY,IIB_GLBLB,IIE_GLBLB,IJB_GLBLB,IJE_GLBLB)
     IF ( IJE_LOCLB-IJB_LOCLB /= IJE_GLBLB-IJB_GLBLB ) THEN
-      WRITE(*,*) "ERROR: from SET_LB_FIELD_ll, South-North IJE_LOCLB-IJB_LOCLB =",&
-           IJE_LOCLB-IJB_LOCLB, " /= IJE_GLBLB-IJB_GLBLB =", IJE_GLBLB-IJB_GLBLB
-      CALL ABORT
+      write( ydim1, '( I10 )' ) IJE_LOCLB-IJB_LOCLB
+      write( ydim2, '( I10 )' ) IJE_GLBLB-IJB_GLBLB
+      call Print_msg( NVERB_FATAL, 'GEN', 'SET_LB_FIELD_ll', 'South-North IJE_LOCLB-IJB_LOCLB='//trim(ydim1)// &
+                      ' /= IJE_GLBLB-IJB_GLBLB='//trim(ydim2) )
     ENDIF
     IF ( IJB_LOCLB /= 0 ) THEN  ! if the LB zone of the local subdomain is non-empty
       IF ( IJB_GLBLB <= NRIMY+JPHEXT .AND. IJE_GLBLB >= NRIMY+JPHEXT+1 ) THEN ! the local south and north LB zones are non empty
@@ -1777,8 +1781,7 @@
         PLBYFIELD(:,IJB_LOCLB:IJE_LOCLB,:)  = PFIELD(:,GLBLBBEGIN:GLBLBEND,:)
 !        PLBYFIELD(:,NRIMY+1+IJB_LOCLB:NRIMY+1+IJE_LOCLB,:)  = PFIELD(:,GLBLBBEGIN:GLBLBEND,:)
       ELSE
-        WRITE(*,*) "ERROR: from SET_LB_FIELD_ll, This type of partition is not allowed !"
-        CALL ABORT
+        call Print_msg( NVERB_FATAL, 'GEN', 'SET_LB_FIELD_ll', 'this type of partition is not allowed' )
       ENDIF
 
     ENDIF !( IJB_LOCLB /= 0 )

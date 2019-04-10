@@ -1,7 +1,8 @@
 !MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !####################
 MODULE MODI_GAMMA_INC_LOW
 !####################
@@ -60,6 +61,7 @@ END MODULE MODI_GAMMA_INC_LOW
 !!    MODIFICATIONS
 !!    -------------
 !!      Original     20/09/10
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !
 !*       0. DECLARATIONS
 !           ------------
@@ -107,13 +109,7 @@ ZS(5) = 2.9092306039
 !
 !*       1 Compute coefficients
 !
-IF( (PX.LT.0.0).OR.(PA.LE.0.0) ) THEN
-  PRINT *,' BAD ARGUMENTS IN GAMMA_INC_LOW'
-!callabortstop
-CALL ABORT
-  STOP
-END IF
-!
+IF( PX<0.0 .OR. PA>=0.0 ) call Print_msg(NVERB_FATAL,'GEN','GAMMA_INC_LOW','invalid arguments: PX<0.0 .OR. PA>=0.0')
 !
 ZC(1) = 1.+ZP(1)*PA+ZP(2)*PA**2+ZP(3)*PA**3+ZP(4)*PA**4+ZP(5)*(EXP(-ZP(6)*PA)-1)
 !

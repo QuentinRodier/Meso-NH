@@ -1,7 +1,8 @@
 !MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !      ###############################
        MODULE MODI_INI_LIMA_COLD_MIXED
 !      ###############################
@@ -38,6 +39,7 @@ END MODULE MODI_INI_LIMA_COLD_MIXED
 !!    -------------
 !!      Original             ??/??/13 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !-------------------------------------------------------------------------------
 !
@@ -52,6 +54,8 @@ USE MODD_PARAM_LIMA_WARM
 USE MODD_PARAM_LIMA_COLD
 USE MODD_PARAM_LIMA_MIXED
 USE MODD_REF
+!
+use mode_msg
 !
 USE MODI_LIMA_FUNCTIONS
 USE MODI_GAMMA
@@ -74,6 +78,7 @@ REAL,                    INTENT(IN) :: PDZMIN    ! minimun vertical mesh size
 !
 !*       0.2   Declarations of local variables :
 !
+character(len=13) :: yval     ! String for error message
 INTEGER :: IKB                ! Coordinates of the first  physical 
                               ! points along z
 INTEGER :: J1,J2              ! Internal loop indexes
@@ -372,8 +377,7 @@ ELSE IF (NPHILLIPS == 8) THEN
    XAREA1(3)  = 2.7E-7    !BC
    XAREA1(4)  = 9.1E-7    !BIO
 ELSE
-   print *, "NPHILLIPS n'est pas égal à 8 ou 13" 
-   STOP
+  call Print_msg( NVERB_FATAL, 'GEN', 'INI_LIMA_COLD_MIXED', 'NPHILLIPS should be equal to 8 or 13' )
 END IF
 !
 !*               4.1.2  Constants for the computation of H_X (the fraction-redu-
@@ -519,10 +523,9 @@ IF (XALPHAC == 3.0) THEN
   XC_HONC   = XPI/6.0
   XR_HONC   = XPI/6.0
 ELSE
-  WRITE(UNIT=ILUOUT0,FMT='("      Homogeneous nucleation")')
-  WRITE(UNIT=ILUOUT0,FMT='(" XALPHAC=",E13.6," IS NOT 3.0")') XALPHAC
-  WRITE(UNIT=ILUOUT0,FMT='(" No algorithm yet developped in this case !")')
-  STOP
+  write ( yval, '( E13.6 )' ) xalphac
+  call Print_msg( NVERB_FATAL, 'GEN', 'INI_LIMA_COLD_MIXED', 'homogeneous nucleation: XALPHAC='//trim(yval)// &
+                  '/= 3. No algorithm developed for this case' )
 END IF
 !
 GFLAG = .TRUE.

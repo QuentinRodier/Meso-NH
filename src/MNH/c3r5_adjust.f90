@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 microph 2006/06/06 18:25:10
 !-----------------------------------------------------------------
 !     #######################
       MODULE MODI_C3R5_ADJUST
@@ -163,12 +158,14 @@ END MODULE MODI_C3R5_ADJUST
 !!                     November 13 1996 (V. Masson) add prints in test above
 !!                     March 11, 1997 (J.-M. Cohard)  C2R2 option
 !!                     April  6, 2001 (J.-P. Pinty)   C3R5 option 
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !-------------------------------------------------------------------------------
 !
-PRINT *,'C3R5_ADJUST IS NOT YET DEVELOPPED'
-!callabortstop
-CALL ABORT
-STOP
+!implicit none
+!
+use mode_msg
+!
+call Print_msg(NVERB_FATAL,'GEN','C3R5_ADJUST','not yet developed')
 !
 END SUBROUTINE C3R5_ADJUST

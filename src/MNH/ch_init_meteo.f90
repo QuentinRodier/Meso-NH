@@ -53,12 +53,14 @@ END MODULE MODI_CH_INIT_METEO
 !!                        to interpolate between different forcings)
 !!    01/12/03 (Gazen)   change Chemical scheme interface
 !!    Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !!
 !!    EXTERNAL
 !!    --------
 USE MODI_CH_OPEN_INPUT
 USE MODE_IO_FILE,     ONLY: IO_File_close
+use mode_msg
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -78,8 +80,8 @@ TYPE(METEOTRANSTYPE), INTENT(OUT) :: TPM  ! the meteo variables
 !
 !*       0.2  declaration of local variables
 !
+character(len=10) :: ynum1, ynum2 ! Strings for error message
 INTEGER      :: JI, JJ      ! loop control
-CHARACTER*80 :: YCOMMENT    ! comment line in meteo update file
 INTEGER      :: IMETEOVARS  ! number of meteovars to be read from file and
 			    ! checked against NMETEOVARS
 INTEGER      :: ILUMETEO
@@ -100,14 +102,10 @@ READ(ILUMETEO,*) NMETEORECS
 !
 ! check if number of meteovars in file corresponds to what the CCS expects
 IF (IMETEOVARS .NE. NMETEOVARS) THEN
-  PRINT *, "CH_INIT_METEO ERROR: number of meteo variables in file does not"
-  PRINT *, "                     correspond to the number expected by the CCS:"
-  PRINT *, "                     IMETEOVARS read:     ", IMETEOVARS
-  PRINT *, "                     NMETEOVARS expected: ", NMETEOVARS
-  PRINT *, "The program will be stopped now!"
-  ! callabortstop
-  CALL ABORT
-  STOP 1
+  write( ynum1, '( I10 )' ) IMETEOVARS
+  write( ynum2, '( I10 )' ) NMETEOVARS
+  call Print_msg( NVERB_FATAL, 'GEN', 'CH_INIT_METEO', 'number of meteo variables in file '//trim(ynum1)// &
+                  ' does not correspond to the number expected by the CCS'//trim(ynum2) )
 END IF
 
 ! read names for TPM%CMETEOVAR

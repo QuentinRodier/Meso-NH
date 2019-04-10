@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1997-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 chimie 2006/06/29 11:52:38
 !-----------------------------------------------------------------
 !!    #############################
       MODULE MODI_CH_UPDATE_JVALUES
@@ -90,21 +85,24 @@ END MODULE MODI_CH_UPDATE_JVALUES
 !!    -------------
 !!    Original 05/03/97
 !!    05/03/05  P. Tulet (CNRM/GMEI) Update for Arome
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !!------------------------------------------------------------------------------
 !!
 !!    EXTERNAL
 !!    --------
+USE MODE_MODELN_HANDLER
+use mode_msg
+
 USE MODI_CH_INTERP_JVALUES
 USE MODI_CH_JVALUES_CLOUDS
-USE MODE_MODELN_HANDLER
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
-USE MODD_CST
-USE MODD_PARAMETERS
 USE MODD_CH_INIT_JVALUES, ONLY : JPJVMAX
 USE MODD_CONF
+USE MODD_CST
+USE MODD_PARAMETERS
 !!
 !!    EXPLICIT ARGUMENTS
 !!    ------------------
@@ -180,13 +178,7 @@ IF (.NOT.ALLOCATED(ZSZA))     ALLOCATE(ZSZA(IIU,IJU))
 IF (OCH_TUV_ONLINE) THEN
 !
    IF ((.NOT.L1D).OR.(CPROGRAM .EQ. "AROME")) THEN
-     WRITE(KLUOUT,*)"ERROR in CH_UPDATE_JVALUES:                             "
-     WRITE(KLUOUT,*)"you want to use ON-LINE calculation of photolysis rates "
-     WRITE(KLUOUT,*)"but you are not runnning in 1D                          "
-     WRITE(KLUOUT,*)"Program is STOPPED now                                  "
-!callabortstop
-CALL ABORT
-     STOP
+    call Print_msg( NVERB_FATAL, 'GEN', 'CH_UPDATE_JVALUES', 'online computation of photolysis rates is only supported in 1D' )
   ENDIF
 
 !*        1. TUV 3D ON LINE

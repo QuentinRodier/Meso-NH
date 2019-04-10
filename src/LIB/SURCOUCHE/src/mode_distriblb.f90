@@ -1,17 +1,11 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for CVS information
-!-----------------------------------------------------------------
-! $Source$
-! $Name$ 
-! $Revision$ 
-! $Date$
-!-----------------------------------------------------------------
-!Correction :
-!  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+! Modifications:
+!  J. Escobar  15/09/2015: WENO5 & JPHEXT <> 1
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !-----------------------------------------------------------------
 
 !     #############################
@@ -105,10 +99,12 @@ END SUBROUTINE GET_DISTRIB_LB
 !!      Original    23/09/98
 !-------------------------------------------------------------------------------
 !
-USE MODD_PARAMETERS_ll,ONLY : JPHEXT
-USE MODD_VAR_ll,       ONLY : TCRRT_PROCONF
-USE MODD_STRUCTURE_ll,  ONLY : MODELSPLITTING_ll
-USE MODE_TOOLS_ll,     ONLY : GET_INTERSECTION_ll,GET_GLOBALDIMS_ll,LWEST_ll
+USE MODD_PARAMETERS_ll, ONLY: JPHEXT
+USE MODD_STRUCTURE_ll,  ONLY: MODELSPLITTING_ll
+USE MODD_VAR_ll,        ONLY: TCRRT_PROCONF
+
+use mode_msg
+USE MODE_TOOLS_ll,      ONLY: GET_INTERSECTION_ll, GET_GLOBALDIMS_ll, LWEST_ll
 
 !*       0.    DECLARATIONS
 !              ------------ 
@@ -150,8 +146,7 @@ CASE('READ')
 CASE('WRITE')
   YMODE = 'PHYS'
 CASE default
-  WRITE(*,*) 'Error in GET_DISTRIBX_LB...'
-  STOP
+  call Print_msg( NVERB_FATAL, 'GEN', 'GET_DISTRIBX_LB', 'invalid dummy argument HMODE ('//trim(HMODE)//')' )
 END SELECT
 !
 CALL  GET_GLOBALDIMS_ll(IIMAX_ll, IJMAX_ll)
@@ -219,8 +214,7 @@ IF (IINFO /= 1) THEN  ! no empty intersection
     KJB=IYORI + IYOR3DX -1
     KJE=IYENDI+ IYOR3DX- 1
   ELSE
-    WRITE(*,*) 'Error in GET_DISTRIBX_LB...'
-    STOP
+    call Print_msg( NVERB_FATAL, 'GEN', 'GET_DISTRIBX_LB', 'invalid dummy argument HCOORD ('//trim(HCOORD)//')' )
   ENDIF
 END IF
 
@@ -314,10 +308,12 @@ END SUBROUTINE GET_DISTRIBX_LB
 !!      Original    23/09/98
 !-------------------------------------------------------------------------------
 !
-USE MODD_PARAMETERS_ll,ONLY : JPHEXT
-USE MODD_VAR_ll,       ONLY : TCRRT_PROCONF
-USE MODD_STRUCTURE_ll,  ONLY : MODELSPLITTING_ll
-USE MODE_TOOLS_ll,     ONLY : GET_INTERSECTION_ll,GET_GLOBALDIMS_ll,LSOUTH_ll
+USE MODD_PARAMETERS_ll, ONLY: JPHEXT
+USE MODD_STRUCTURE_ll,  ONLY: MODELSPLITTING_ll
+USE MODD_VAR_ll,        ONLY: TCRRT_PROCONF
+
+use mode_msg
+USE MODE_TOOLS_ll,      ONLY: GET_INTERSECTION_ll, GET_GLOBALDIMS_ll, LSOUTH_ll
 !*       0.    DECLARATIONS
 !              ------------ 
 !*       0.1   declarations of arguments
@@ -356,8 +352,7 @@ CASE('READ')
 CASE('WRITE')
   YMODE = 'PHYS'
 CASE default
-  WRITE(*,*) 'Error in GET_DISTRIBX_LB...'
-  STOP
+  call Print_msg( NVERB_FATAL, 'GEN', 'GET_DISTRIBY_LB', 'invalid dummy argument HMODE ('//trim(HMODE)//')' )
 END SELECT
 !   
 CALL  GET_GLOBALDIMS_ll(IIMAX_ll, IJMAX_ll)

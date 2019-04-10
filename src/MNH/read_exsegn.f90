@@ -292,6 +292,7 @@ END MODULE MODI_READ_EXSEG_n
 !!      Modification   01/2019   (P. Wautelet) bugs correction: incorrect writes
 !!      Modification   01/2019   (R. Honnert) remove SURF in CMF_UPDRAFT
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1030,7 +1031,7 @@ SELECT CASE ( CCLOUD )
       WRITE(UNIT=ILUOUT,FMT='("YOU WANT TO USE A 2-MOMENT MICROPHYSICAL ",  &
            &" SCHEME BUT YOU DIDNT FILL CORRECTLY NAM_PARAM_LIMA",             &
            &" YOU HAVE TO FILL FINI_CCN ")')
-      STOP
+      call Print_msg( NVERB_FATAL, 'GEN', 'READ_EXSEG_n', '' )
     END IF
 !
     IF(LACTI .AND. NMOD_CCN == 0) THEN
@@ -1038,7 +1039,7 @@ SELECT CASE ( CCLOUD )
       WRITE(UNIT=ILUOUT,FMT='("ACTIVATION OF AEROSOL PARTICLES IS NOT ",      &
            &"POSSIBLE IF NMOD_CCN HAS VALUE ZERO. YOU HAVE TO SET AN UPPER ", &
            &"VALUE OF NMOD_CCN IN ORDER TO USE LIMA WARM ACTIVATION SCHEME.")') 
-      STOP
+      call Print_msg( NVERB_FATAL, 'GEN', 'READ_EXSEG_n', '' )
     END IF
 !
     IF(LNUCL .AND. NMOD_IFN == 0 .AND. (.NOT.LMEYERS)) THEN

@@ -194,6 +194,7 @@ END MODULE MODI_SPAWN_MODEL2
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -652,16 +653,12 @@ ELSE
   NRIMY=0
 END IF
 IF (NRIMX >= IIU/2-1) THEN      ! Error ! this case is not supported - it should be, but there is a bug
-  WRITE(*,*) "Error : The size of the LBX zone is too big for the size of the subdomains"
-  WRITE(*,*) "Try with less cores, a smaller LBX size, or a bigger grid in X "
-  CALL ABORT
-  STOP
+  call Print_msg( NVERB_FATAL, 'GEN', 'SPAWN_MODEL2', 'The size of the LBX zone is too big for the size of the subdomains. '// &
+                  'Try with less processes, a smaller LBX size or a bigger grid in X.' )
 ENDIF
 IF ( ( .NOT. L2D ) .AND. (NRIMY >= IJU/2-1) ) THEN  ! Error ! this case is not supported - it should be, but there is a bug
-  WRITE(*,*) "Error : The size of the LBY zone is too big for the size of the subdomains"
-  WRITE(*,*) "Try with less cores, a smaller LBY size, or a bigger grid in Y "
-  CALL ABORT
-  STOP
+  call Print_msg( NVERB_FATAL, 'GEN', 'SPAWN_MODEL2', 'The size of the LBY zone is too big for the size of the subdomains. '// &
+                  'Try with less processes, a smaller LBY size or a bigger grid in Y.' )
 ENDIF
 !
 LHORELAX_UVWTH=.TRUE.

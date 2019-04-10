@@ -1,11 +1,11 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2011-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 MODULE MODE_MPPDB
 !
-!       Modifs :
+! Modifications:
 !!      J.Escobar 23/10/2012: correct CHECK_LB & format print output 
 !!      M.Moge 05/02/2015: MPPDB_CHECK_SURFEX2D and MPPDB_CHECK_SURFEX3D + bug fix in MPPDB_CHECK2D and MPPDB_CHECK3D (call MPI_AllReduce at the beginning)
 !  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
@@ -14,8 +14,13 @@ MODULE MODE_MPPDB
 !  Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
 !  Philippe Wautelet: 22/01/2019: use standard FLUSH statement instead of non standard intrinsics
 !  Philippe Wautelet: 22/01/2019: use sleep_c subroutine instead of non-standard call system
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!-----------------------------------------------------------------
 !
   use ISO_FORTRAN_ENV, only: OUTPUT_UNIT
+
+  use mode_msg
+
   use modi_tools_c
 
   IMPLICIT NONE
@@ -154,7 +159,8 @@ CONTAINS
           CALL MPI_INFO_SET    (INFO_SPAWN , "wdir", MPPDB_WDIR , ierr)
           CALL MPI_INFO_GET    (INFO_SPAWN , "wdir", 40, chaine, isset ,ierr)
           IF (MPPDB_DEBUG) PRINT*,"MPPDB_INIT:: FATHER :: INFO_SPAWN , wdir=",isset,chaine
-          IF (ierr.NE.0) STOP 'MPPDB_INIT:: PB MPI_INFO_SET  "wdir" '
+          if (ierr /= 0 ) call Print_msg( NVERB_FATAL, 'GEN', 'MPPDB_INIT', 'MPI_INFO_SET failed' )
+
           !
        ELSE
           ! other father only do nothing but participate 
