@@ -86,6 +86,7 @@ endif
 #
 ifdef DO_COMP_MASTER
 VPATH += $(OBJDIR_MASTER) $(OBJDIR_MASTER)/MOD
+INC += -I$(B)$(OBJDIR_MASTER)/MOD
 endif
 #
 ##########################################################
@@ -552,10 +553,12 @@ ARFLAGS=r
 #
 
 %.o:%.f90
+	echo "inc=$(INC)"
 	$(F90) -I$(OBJDIR) $(INC) -c $(F90FLAGS) $< 
 	-mv  $(*F).o $(OBJDIR)/. || echo OK $(*F).o
 
 %.o:%.f
+	echo "inc=$(INC)"
 	$(F77) -I$(OBJDIR) $(INC) -c $(F77FLAGS)  $<  
 	-mv  $(*F).o $(OBJDIR)/. || echo OK $(*F).o
 
