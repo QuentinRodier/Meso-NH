@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1996-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !######################
@@ -94,6 +94,7 @@ END MODULE MODI_READ_EXSPA
 !!      Modification 30/03/12  (S.Bielli) add NAM_NCOUT for netcdf output (removed 08/07/2016)
 !!      Modification 08/07/2016 (P.Wautelet) removed MNH_NCWRIT define
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !
 !-------------------------------------------------------------------------------
 !
@@ -101,13 +102,13 @@ END MODULE MODI_READ_EXSPA
 !               ------------
 !
 USE MODD_CONF
-USE MODD_IO_ll,   ONLY : TFILEDATA,TFILE_OUTPUTLISTING
+USE MODD_IO,      ONLY : TFILEDATA,TFILE_OUTPUTLISTING
 USE MODD_LUNIT_n, ONLY : LUNIT_MODEL
 USE MODD_PARAMETERS
 !
-USE MODE_FM, ONLY : IO_FILE_OPEN_ll,IO_FILE_CLOSE_ll
-USE MODE_IO_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST
+USE MODE_IO,               only: IO_Config_set
+USE MODE_IO_FILE,          only: IO_File_open, IO_File_close
+USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list
 USE MODE_POS
 USE MODE_MODELN_HANDLER
 !
@@ -201,17 +202,16 @@ YSPANBR     = '00'
 YDADINIFILE = ' '
 YDADSPAFILE = ' '
 !
-LUNIT_MODEL(2)%CLUOUT = 'OUTPUT_LISTING2'
-CALL IO_FILE_ADD2LIST(LUNIT_MODEL(2)%TLUOUT,LUNIT_MODEL(2)%CLUOUT,'OUTPUTLISTING','WRITE')
-CALL IO_FILE_OPEN_ll(LUNIT_MODEL(2)%TLUOUT)
+CALL IO_File_add2list(LUNIT_MODEL(2)%TLUOUT,'OUTPUT_LISTING2','OUTPUTLISTING','WRITE')
+CALL IO_File_open(LUNIT_MODEL(2)%TLUOUT)
 !
 !Set output file for PRINT_MSG
 TFILE_OUTPUTLISTING => LUNIT_MODEL(2)%TLUOUT
 !
 ILUOUT=LUNIT_MODEL(2)%TLUOUT%NLU
 !
-CALL IO_FILE_ADD2LIST(TZNMLFILE,'SPAWN1.nam','NML','READ')
-CALL IO_FILE_OPEN_ll(TZNMLFILE)
+CALL IO_File_add2list(TZNMLFILE,'SPAWN1.nam','NML','READ')
+CALL IO_File_open(TZNMLFILE)
 ILUSPA = TZNMLFILE%NLU
 !
 !
@@ -239,8 +239,8 @@ LUNIT_MODEL(2)%CINIFILEPGD = CINIFILEPGD
 CALL POSNAM(ILUSPA,'NAM_CONFIO',GFOUND,ILUOUT)
 IF (GFOUND) READ(ILUSPA,NAM_CONFIO)
 !
-CALL SET_CONFIO_ll()
-CALL IO_FILE_CLOSE_ll(TZNMLFILE)
+CALL IO_Config_set()
+CALL IO_File_close(TZNMLFILE)
 !
 !
 !*       3.    model 1 and SON1 FM file name (passed as arguments)

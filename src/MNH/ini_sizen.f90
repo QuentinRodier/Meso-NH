@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #################
@@ -9,12 +9,11 @@
 !
 INTERFACE
 !
-SUBROUTINE INI_SIZE_n(KMI,HLUOUT,TPINIFILE,HINIFILEPGD)
+SUBROUTINE INI_SIZE_n( KMI, TPINIFILE, HINIFILEPGD )
 !
-USE MODD_IO_ll, ONLY : TFILEDATA
+USE MODD_IO, ONLY : TFILEDATA
 !
 INTEGER,            INTENT(IN)    :: KMI          !Model Index
-CHARACTER (LEN=*),  INTENT(IN)    :: HLUOUT       !Name for output-listing of nested models
 TYPE(TFILEDATA),    INTENT(IN)    :: TPINIFILE    !Initial file
 CHARACTER (LEN=*),  INTENT(IN)    :: HINIFILEPGD
 !
@@ -24,9 +23,9 @@ END INTERFACE
 !
 END MODULE MODI_INI_SIZE_n
 !-----------------------------------------------------------------
-!     #######################################################
-      SUBROUTINE INI_SIZE_n(KMI,HLUOUT,TPINIFILE,HINIFILEPGD)
-!     #######################################################
+!     ####################################################
+      SUBROUTINE INI_SIZE_n( KMI, TPINIFILE, HINIFILEPGD )
+!     ####################################################
 !
 !!
 !!****  *INI_SIZE_n* - routine to initialize the sizes ratio positions of nested model _n
@@ -40,7 +39,7 @@ END MODULE MODI_INI_SIZE_n
 !!    ------
 !!      The first part of the initialization of the model _n is performed as 
 !!    follows :
-!!       - The logical unit number associated to output_listing file HLUOUT is 
+!!       - The logical unit number associated to output_listing file TLUOUT is
 !!    retrieved and module MODD_LUNIT_n is initialized.
 !!       -  Then the description of the segment to perform for the model _n is
 !!    retrieved : 
@@ -55,7 +54,7 @@ END MODULE MODI_INI_SIZE_n
 !!   
 !!    EXTERNAL
 !!    --------
-!!      IO_READ_FIELD : to read a LFIFM file
+!!      IO_Field_read : to read a LFIFM file
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------ 
@@ -95,27 +94,27 @@ END MODULE MODI_INI_SIZE_n
 !!             June 2006   (D. Gazen) _n: no more read of updated var. 
 !!             J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_CONF,       ONLY: CCONF, LCARTESIAN, NVERB, LTHINSHELL, NHALO, CSPLIT, &
-                           L1D, L2D, LPACK
-USE MODD_CONFZ,      ONLY: NZ_PROC
-USE MODD_DIM_n,      ONLY: NIMAX_ll, NJMAX_ll, NKMAX
-USE MODD_DYN,        ONLY: LCORIO
-USE MODD_IO_ll,      ONLY: GSMONOPROC, TFILEDATA
-USE MODD_LBC_n,      ONLY: CLBCX, CLBCY
-USE MODD_LUNIT_n,    ONLY: CLUOUT, CINIFILE, CINIFILEPGD, TLUOUT
-USE MODD_NESTING,    ONLY: CMY_NAME, CDAD_NAME, NDAD, NDXRATIO_ALL, NDYRATIO_ALL, &
-                           NXOR_ALL, NYOR_ALL, NXEND_ALL,NYEND_ALL
-USE MODD_PARAMETERS, ONLY: JPMODELMAX, JPHEXT,JPVEXT 
+USE MODD_CONF,          ONLY: CCONF, LCARTESIAN, NVERB, LTHINSHELL, NHALO, CSPLIT, &
+                              L1D, L2D, LPACK
+USE MODD_CONFZ,         ONLY: NZ_PROC
+USE MODD_DIM_n,         ONLY: NIMAX_ll, NJMAX_ll, NKMAX
+USE MODD_DYN,           ONLY: LCORIO
+USE MODD_IO,            ONLY: GSMONOPROC, TFILEDATA
+USE MODD_LBC_n,         ONLY: CLBCX, CLBCY
+USE MODD_LUNIT_n,       ONLY: CINIFILE, CINIFILEPGD, TLUOUT
+USE MODD_NESTING,       ONLY: CMY_NAME, CDAD_NAME, NDAD, NDXRATIO_ALL, NDYRATIO_ALL, &
+                              NXOR_ALL, NYOR_ALL, NXEND_ALL,NYEND_ALL
+USE MODD_PARAMETERS,    ONLY: JPMODELMAX, JPHEXT,JPVEXT
 !
-USE MODE_FM,         ONLY: SET_FMPACK_ll
-USE MODE_FMREAD
-USE MODE_IO_ll
+USE MODE_IO,            ONLY: IO_Pack_set
+USE MODE_IO_FIELD_READ, only: IO_Field_read
 USE MODE_ll
 USE MODE_MSG
 USE MODE_POS
@@ -126,7 +125,6 @@ IMPLICIT NONE
 !*       0.1   declarations of arguments
 !
 INTEGER,            INTENT(IN)    :: KMI          !Model Index
-CHARACTER (LEN=*),  INTENT(IN)    :: HLUOUT       !Name for output-listing of nested models
 TYPE(TFILEDATA),    INTENT(IN)    :: TPINIFILE    !Initial file
 CHARACTER (LEN=*),  INTENT(IN)    :: HINIFILEPGD
 !
@@ -142,7 +140,6 @@ INTEGER             :: IJPHEXT
 !              --------------------------------------------------------
 !
 ILUOUT = TLUOUT%NLU
-CLUOUT = HLUOUT
 CINIFILEPGD=HINIFILEPGD
 !
 !-------------------------------------------------------------------------------
@@ -152,14 +149,14 @@ CINIFILEPGD=HINIFILEPGD
 !
 !*       2.0   Retrieve DAD_NAME and MY_NAME to check the DAD model identity
 !
-CALL IO_READ_FIELD(TPINIFILE,'MY_NAME',CMY_NAME(KMI),IRESP)
+CALL IO_Field_read(TPINIFILE,'MY_NAME',CMY_NAME(KMI),IRESP)
 IF (IRESP /= 0)  THEN
   WRITE(ILUOUT,FMT=9000) 'MY_NAME',IRESP
 !callabortstop
   CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_SIZE_n','')
 END IF
 !
-CALL IO_READ_FIELD(TPINIFILE,'DAD_NAME',CDAD_NAME(KMI),IRESP)
+CALL IO_Field_read(TPINIFILE,'DAD_NAME',CDAD_NAME(KMI),IRESP)
 IF (IRESP /= 0)  THEN
   WRITE(ILUOUT,FMT=9000) 'DAD_NAME',IRESP
 !callabortstop
@@ -187,10 +184,10 @@ END IF
 !*       3.1  Read dimensions in initial file and initialize  subdomain 
 !             dimensions and parallel variables
 !
-CALL IO_READ_FIELD(TPINIFILE,'IMAX',  NIMAX_ll)
-CALL IO_READ_FIELD(TPINIFILE,'JMAX',  NJMAX_ll)
-CALL IO_READ_FIELD(TPINIFILE,'KMAX',  NKMAX)
-CALL IO_READ_FIELD(TPINIFILE,'JPHEXT',IJPHEXT)
+CALL IO_Field_read(TPINIFILE,'IMAX',  NIMAX_ll)
+CALL IO_Field_read(TPINIFILE,'JMAX',  NJMAX_ll)
+CALL IO_Field_read(TPINIFILE,'KMAX',  NKMAX)
+CALL IO_Field_read(TPINIFILE,'JPHEXT',IJPHEXT)
 !
 IF ( IJPHEXT .NE. JPHEXT ) THEN
    WRITE(ILUOUT,FMT=*) ' INI_SIZE_N : JPHEXT in namelist NAM_CONF ( or default or .des value )&
@@ -220,10 +217,10 @@ ENDIF
 !   read the nested model location in its father's grid
 !   and compute the coordinates of the corner points
 IF (LEN_TRIM(CDAD_NAME(KMI))>0) THEN
-  CALL IO_READ_FIELD(TPINIFILE,'DXRATIO',NDXRATIO_ALL(KMI))
-  CALL IO_READ_FIELD(TPINIFILE,'DYRATIO',NDYRATIO_ALL(KMI))
-  CALL IO_READ_FIELD(TPINIFILE,'XOR',NXOR_ALL(KMI))
-  CALL IO_READ_FIELD(TPINIFILE,'YOR',NYOR_ALL(KMI))
+  CALL IO_Field_read(TPINIFILE,'DXRATIO',NDXRATIO_ALL(KMI))
+  CALL IO_Field_read(TPINIFILE,'DYRATIO',NDYRATIO_ALL(KMI))
+  CALL IO_Field_read(TPINIFILE,'XOR',NXOR_ALL(KMI))
+  CALL IO_Field_read(TPINIFILE,'YOR',NYOR_ALL(KMI))
   NXEND_ALL(KMI)=NXOR_ALL(KMI)-1 + NIMAX_ll/NDXRATIO_ALL(KMI) +2*JPHEXT
   NYEND_ALL(KMI)=NYOR_ALL(KMI)-1 + NJMAX_ll/NDYRATIO_ALL(KMI) +2*JPHEXT
 ELSE
@@ -275,7 +272,7 @@ IF (KMI == 1) THEN
     CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_SIZE_n','this is a 2D simulation: it has to be performed in monoprocess mode')
   ENDIF
 !
-  CALL SET_FMPACK_ll(L1D,L2D,LPACK)
+  CALL IO_Pack_set(L1D,L2D,LPACK)
 !
 END IF
 !-------------------------------------------------------------------------------

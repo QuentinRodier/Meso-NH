@@ -9,12 +9,11 @@
 !
 INTERFACE
 !
-       SUBROUTINE INI_SPECTRE_n(KMI,HLUOUT,TPINIFILE)
+       SUBROUTINE INI_SPECTRE_n(KMI,TPINIFILE)
 !
-       USE MODD_IO_ll, ONLY: TFILEDATA
+       USE MODD_IO, ONLY: TFILEDATA
 !
        INTEGER,           INTENT(IN) :: KMI       ! Model index 
-       CHARACTER (LEN=*), INTENT(IN) :: HLUOUT    ! Name for output-listing of nested models
        TYPE(TFILEDATA),   INTENT(IN) :: TPINIFILE ! Initial file
 !
 END SUBROUTINE INI_SPECTRE_n
@@ -22,9 +21,9 @@ END SUBROUTINE INI_SPECTRE_n
 END INTERFACE
 !
 END MODULE MODI_INI_SPECTRE_n
-!     ######################################################
-      SUBROUTINE INI_SPECTRE_n(KMI,HLUOUT,TPINIFILE)
-!     ######################################################
+!     #######################################
+      SUBROUTINE INI_SPECTRE_n(KMI,TPINIFILE)
+!     #######################################
 !
 !!****  *INI_SPECTRE_n* - routine to initialize SPECTRE (based on ini_modeln.f90)
 !!
@@ -35,6 +34,7 @@ END MODULE MODI_INI_SPECTRE_n
 !!      10/2016 (C.Lac) Cleaning of the modules
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 08/02/2019: allocate to zero-size non associated pointers
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !!
 !---------------------------------------------------------------------------------
@@ -73,7 +73,7 @@ USE MODD_FRC_n
 USE MODD_GET_n
 USE MODD_GRID,          ONLY: XLONORI,XLATORI
 USE MODD_GRID_n
-USE MODD_IO_ll,         ONLY: TFILEDATA
+USE MODD_IO,            ONLY: TFILEDATA
 USE MODD_LBC_n
 USE MODD_LSFIELD_n
 USE MODD_LUNIT_n,       ONLY: COUTFILE, TLUOUT
@@ -108,9 +108,8 @@ USE MODD_TURB_n
 USE MODD_VAR_ll,        ONLY: IP
 !
 USE MODD_ARGSLIST_ll,   ONLY: LIST_ll
-USE MODE_FMREAD
 USE MODE_GATHER_ll
-USE MODE_IO_ll
+USE MODE_IO_FIELD_READ, only: IO_Field_read
 USE MODE_ll
 USE MODE_MODELN_HANDLER
 USE MODE_MSG
@@ -136,7 +135,6 @@ IMPLICIT NONE
 !
 !
 INTEGER,           INTENT(IN) :: KMI       ! Model index 
-CHARACTER (LEN=*), INTENT(IN) :: HLUOUT    ! Name for output-listing of nested models
 TYPE(TFILEDATA),   INTENT(IN) :: TPINIFILE ! Initial file
 !
 !*       0.2   declarations of local variables
@@ -225,8 +223,8 @@ ILUOUT = TLUOUT%NLU
 IKU=NKMAX+2*JPVEXT
 !
 ALLOCATE(XZHAT(IKU))
-CALL IO_READ_FIELD(TPINIFILE,'ZHAT',XZHAT)
-CALL IO_READ_FIELD(TPINIFILE,'ZTOP',XZTOP)
+CALL IO_Field_read(TPINIFILE,'ZHAT',XZHAT)
+CALL IO_Field_read(TPINIFILE,'ZTOP',XZTOP)
 IF (XALZBOT>=XZHAT(IKU) .AND. LVE_RELAX) THEN
   WRITE(ILUOUT,FMT=*) "INI_SPECTRE_n ERROR: you want to use vertical relaxation"
   WRITE(ILUOUT,FMT=*) "                  but bottom of layer XALZBOT(",XALZBOT,")"
@@ -746,27 +744,27 @@ NDT_2_WAY(KMI)=4
 
 IF (LSPECTRE_U) THEN
   ALLOCATE(XUT(IIU,IJU,IKU))      ; XUT  = 0.0
-  CALL IO_READ_FIELD(TPINIFILE,'UT',XUT)
+  CALL IO_Field_read(TPINIFILE,'UT',XUT)
 END IF
 !
 IF (LSPECTRE_V) THEN
   ALLOCATE(XVT(IIU,IJU,IKU))      ; XVT  = 0.0
-  CALL IO_READ_FIELD(TPINIFILE,'VT',XVT)
+  CALL IO_Field_read(TPINIFILE,'VT',XVT)
 END IF
 !
 IF (LSPECTRE_W) THEN  
   ALLOCATE(XWT(IIU,IJU,IKU))      ; XWT  = 0.0
-  CALL IO_READ_FIELD(TPINIFILE,'WT',XWT)
+  CALL IO_Field_read(TPINIFILE,'WT',XWT)
 END IF
 !
 IF (LSPECTRE_TH) THEN
   ALLOCATE(XTHT(IIU,IJU,IKU))     ; XTHT = 0.0
-  CALL IO_READ_FIELD(TPINIFILE,'THT',XTHT)
+  CALL IO_Field_read(TPINIFILE,'THT',XTHT)
 END IF
 !
 IF (LSPECTRE_RV) THEN
   ALLOCATE(XRT(IIU,IJU,IKU,NRR))
-  CALL IO_READ_FIELD(TPINIFILE,'RVT',XRT(:,:,:,1))
+  CALL IO_Field_read(TPINIFILE,'RVT',XRT(:,:,:,1))
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -895,7 +893,7 @@ IF ( KMI > 1) THEN
   DPTR_XLBYRM=>XLBYRM
   DPTR_XLBXSVM=>XLBXSVM
   DPTR_XLBYSVM=>XLBYSVM
-  CALL INI_ONE_WAY_n(NDAD(KMI),HLUOUT,XTSTEP,KMI,1,                         &
+  CALL INI_ONE_WAY_n(NDAD(KMI),XTSTEP,KMI,1,                         &
        DPTR_XBMX1,DPTR_XBMX2,DPTR_XBMX3,DPTR_XBMX4,DPTR_XBMY1,DPTR_XBMY2,DPTR_XBMY3,DPTR_XBMY4,        &
        DPTR_XBFX1,DPTR_XBFX2,DPTR_XBFX3,DPTR_XBFX4,DPTR_XBFY1,DPTR_XBFY2,DPTR_XBFY3,DPTR_XBFY4,        &
        NDXRATIO_ALL(KMI),NDYRATIO_ALL(KMI),NDTRATIO(KMI),      &

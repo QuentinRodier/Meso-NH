@@ -1,4 +1,4 @@
-!ORILAM_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
@@ -50,11 +50,11 @@ END MODULE MODI_CH_AER_MOD_INIT
 !!    ------------------
 USE MODD_CH_AEROSOL
 USE MODD_GLO
-USE MODD_IO_ll,            ONLY: TFILEDATA
+USE MODD_IO,               ONLY: TFILEDATA
 USE MODD_UNIFACPARAM
 !
-USE MODE_FM,               ONLY: IO_FILE_OPEN_ll,IO_FILE_CLOSE_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
+USE MODE_IO_FILE,          ONLY: IO_File_open,IO_File_close
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_add2list
 USE MODE_UNIFAC
 !
 !
@@ -84,8 +84,8 @@ TZFILE => NULL()
 ! Initialize the mineral tabulation 
 IF (CMINERAL == 'NARES') THEN
 !       .. the file ares.w contains the weights of the model
-        CALL IO_FILE_ADD2LIST(TZFILE,'ares1A.w','CHEMTAB','READ')
-        CALL IO_FILE_OPEN_ll(TZFILE)
+        CALL IO_File_add2list(TZFILE,'ares1A.w','CHEMTAB','READ')
+        CALL IO_File_open(TZFILE)
         ILU = TZFILE%NLU
         READ(ILU,*) I1IA,J1JA,K1KA 
         DO JI=1,I1IA 
@@ -100,11 +100,11 @@ IF (CMINERAL == 'NARES') THEN
         DO JJ=1,J1JA+1 
           READ(ILU,*) (W1JKA(JJ,JK),JK=1,K1KA) 
         ENDDO
-        CALL IO_FILE_CLOSE_ll(TZFILE)
+        CALL IO_File_close(TZFILE)
         TZFILE => NULL()
         !
-        CALL IO_FILE_ADD2LIST(TZFILE,'ares1C.w','CHEMTAB','READ')
-        CALL IO_FILE_OPEN_ll(TZFILE)
+        CALL IO_File_add2list(TZFILE,'ares1C.w','CHEMTAB','READ')
+        CALL IO_File_open(TZFILE)
         ILU = TZFILE%NLU
         READ(ILU,*) I1IC,J1JC,K1KC 
         DO JI=1,I1IC 
@@ -119,11 +119,11 @@ IF (CMINERAL == 'NARES') THEN
         DO JJ=1,J1JC+1 
           READ(ILU,*) (W1JKC(JJ,JK),JK=1,K1KC) 
         ENDDO
-        CALL IO_FILE_CLOSE_ll(TZFILE)
+        CALL IO_File_close(TZFILE)
         TZFILE => NULL()
         !
-        CALL IO_FILE_ADD2LIST(TZFILE,'ares2A.w','CHEMTAB','READ')
-        CALL IO_FILE_OPEN_ll(TZFILE)
+        CALL IO_File_add2list(TZFILE,'ares2A.w','CHEMTAB','READ')
+        CALL IO_File_open(TZFILE)
         ILU = TZFILE%NLU
         READ(ILU,*) I2IA,J2JA,K2KA 
         DO JI=1,I2IA 
@@ -138,11 +138,11 @@ IF (CMINERAL == 'NARES') THEN
         DO JJ=1,J2JA+1 
           READ(ILU,*) (W2JKA(JJ,JK),JK=1,K2KA) 
         ENDDO
-        CALL IO_FILE_CLOSE_ll(TZFILE)
+        CALL IO_File_close(TZFILE)
         TZFILE => NULL()
         !
-        CALL IO_FILE_ADD2LIST(TZFILE,'ares2B.w','CHEMTAB','READ')
-        CALL IO_FILE_OPEN_ll(TZFILE)
+        CALL IO_File_add2list(TZFILE,'ares2B.w','CHEMTAB','READ')
+        CALL IO_File_open(TZFILE)
         ILU = TZFILE%NLU
         READ(ILU,*) I2IB,J2JB,K2KB 
         DO JI=1,I2IB 
@@ -157,11 +157,11 @@ IF (CMINERAL == 'NARES') THEN
         DO JJ=1,J2JB+1 
           READ(ILU,*) (W2JKB(JJ,JK),JK=1,K2KB) 
         ENDDO
-        CALL IO_FILE_CLOSE_ll(TZFILE)
+        CALL IO_File_close(TZFILE)
         TZFILE => NULL()
         !
-        CALL IO_FILE_ADD2LIST(TZFILE,'ares2C.w','CHEMTAB','READ')
-        CALL IO_FILE_OPEN_ll(TZFILE)
+        CALL IO_File_add2list(TZFILE,'ares2C.w','CHEMTAB','READ')
+        CALL IO_File_open(TZFILE)
         ILU = TZFILE%NLU
         READ(ILU,*) I2IC,J2JC,K2KC 
         DO JI=1,I2IC 
@@ -176,7 +176,7 @@ IF (CMINERAL == 'NARES') THEN
         DO JJ=1,J2JC+1 
           READ(ILU,*) (W2JKC(JJ,JK),JK=1,K2KC) 
         ENDDO
-        CALL IO_FILE_CLOSE_ll(TZFILE)
+        CALL IO_File_close(TZFILE)
         TZFILE => NULL()
         !
 END IF
@@ -188,8 +188,8 @@ IF (CMINERAL == 'TABUL') THEN
   IF(.NOT.ALLOCATED(znh)) ALLOCATE(znh(22))
   IF(.NOT.ALLOCATED(zni)) ALLOCATE(zni(22))
   IF(.NOT.ALLOCATED(zf)) ALLOCATE(zf(16,11,22,22,22,3))
-  CALL IO_FILE_ADD2LIST(TZFILE,'AEROMIN_NEW','CHEMTAB','READ')
-  CALL IO_FILE_OPEN_ll(TZFILE)
+  CALL IO_File_add2list(TZFILE,'AEROMIN_NEW','CHEMTAB','READ')
+  CALL IO_File_open(TZFILE)
   ILU = TZFILE%NLU
 
   WRITE(*,*) 'LOADING MINERAL AEROSOL DATA ...'
@@ -220,7 +220,7 @@ IF (CMINERAL == 'TABUL') THEN
   ENDDO
   ENDDO
   WRITE(*,*) 'END LOADING'
-  CALL IO_FILE_CLOSE_ll(TZFILE)
+  CALL IO_File_close(TZFILE)
   TZFILE => NULL()
 ENDIF
 

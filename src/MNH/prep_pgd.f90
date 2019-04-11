@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ################
       PROGRAM PREP_PGD
 !     ################
@@ -73,7 +74,11 @@
 !!  01/2018      (G.Delautier) SURFEX 8.1
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!  Q. Rodier 01/2019 : add a new filtering for very high slopes in NAM_ZSFILTER
-!! 
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
+!  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
+!                          (nsubfiles_ioz is now determined in IO_File_add2list)
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
+!
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -81,21 +86,21 @@
 !
 USE MODD_CONF,   ONLY : CPROGRAM, L1D, L2D, LPACK, LCARTESIAN
 USE MODD_CONF_n,ONLY : CSTORAGE_TYPE
-USE MODD_LUNIT,  ONLY : CLUOUT0,TLUOUT0
+USE MODD_LUNIT,  ONLY : TLUOUT0
 USE MODD_LUNIT_n,ONLY : LUNIT_MODEL
 USE MODD_PARAMETERS, ONLY : XUNDEF
-USE MODD_IO_ll,   ONLY : NIO_VERB,NVERB_DEBUG,TFILEDATA,TFILE_OUTPUTLISTING,TFILE_SURFEX
+USE MODD_IO,   ONLY : NIO_VERB,NVERB_DEBUG,TFILEDATA,TFILE_OUTPUTLISTING,TFILE_SURFEX
 USE MODD_IO_SURF_MNH, ONLY : NHALO
 USE MODD_SPAWN, ONLY : NDXRATIO,NDYRATIO,NXSIZE,NYSIZE,NXOR,NYOR
 !
-USE MODE_POS
-USE MODE_FM
-USE MODE_FMWRIT
-USE MODE_IO_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST,IO_FILE_PRINT_LIST
+USE MODE_FIELD
+USE MODE_IO,               only: IO_Config_set, IO_Init
+USE MODE_IO_FIELD_WRITE,   only: IO_Field_write, IO_Header_write
+USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
+USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list, IO_Filelist_print
 USE MODE_MODELN_HANDLER
 USE MODE_MSG
-USE MODE_FIELD
+USE MODE_POS
 !
 USE MODI_ZSMT_PGD
 !
@@ -159,13 +164,12 @@ CPROGRAM='PGD   '
 !*    1.      Set default names and parallelized I/O
 !             --------------------------------------
 !
-CALL INITIO_ll()
+CALL IO_Init()
 !
 NHALO=15
 !
-CLUOUT0='OUTPUT_LISTING0'                    ! Name of the output-listing.
-CALL IO_FILE_ADD2LIST(TLUOUT0,'OUTPUT_LISTING0','OUTPUTLISTING','WRITE')
-CALL IO_FILE_OPEN_ll(TLUOUT0)
+CALL IO_File_add2list(TLUOUT0,'OUTPUT_LISTING0','OUTPUTLISTING','WRITE')
+CALL IO_File_open(TLUOUT0)
 !
 !Set output file for PRINT_MSG
 TFILE_OUTPUTLISTING => TLUOUT0
@@ -174,8 +178,8 @@ LUNIT_MODEL(1)%TLUOUT => TLUOUT0
 ILUOUT0=TLUOUT0%NLU
 !
 !JUAN
-CALL IO_FILE_ADD2LIST(TZNMLFILE,'PRE_PGD1.nam','NML','READ')
-CALL IO_FILE_OPEN_ll(TZNMLFILE,KRESP=IRESP)
+CALL IO_File_add2list(TZNMLFILE,'PRE_PGD1.nam','NML','READ')
+CALL IO_File_open(TZNMLFILE,KRESP=IRESP)
 ILUNAM = TZNMLFILE%NLU
 IF (IRESP.NE.0 ) THEN
   WRITE(YMSG,*) 'file PRE_PGD1.nam not found, IRESP=', IRESP
@@ -202,9 +206,9 @@ ENDIF
 !JUANZ
 CALL POSNAM(ILUNAM,'NAM_CONFIO',GFOUND)
 IF (GFOUND) READ(UNIT=ILUNAM,NML=NAM_CONFIO)
-CALL SET_CONFIO_ll()
+CALL IO_Config_set()
 !
-CALL IO_FILE_CLOSE_ll(TZNMLFILE)
+CALL IO_File_close(TZNMLFILE)
 !
 !
 CALL SURFEX_ALLOC_LIST(1)
@@ -244,16 +248,16 @@ CALL PGD_SURF_ATM(YSURF_CUR,'MESONH','                            ','      ',.FA
 !*    3.      Writes the physiographic fields
 !             -------------------------------
 !
-CALL IO_FILE_ADD2LIST(TZFILE,CPGDFILE,'PREPPGD','WRITE',KLFINPRAR=INT(1,KIND=LFI_INT),KLFITYPE=1,KLFIVERB=5)
+CALL IO_File_add2list(TZFILE,CPGDFILE,'PGD','WRITE',KLFINPRAR=INT(1,KIND=LFI_INT),KLFITYPE=1,KLFIVERB=5)
 !
-CALL IO_FILE_OPEN_ll(TZFILE,OPARALLELIO=.FALSE.)
+CALL IO_File_open(TZFILE)
 !
-CALL IO_WRITE_HEADER(TZFILE)
+CALL IO_Header_write(TZFILE)
 !
-CALL IO_WRITE_FIELD(TZFILE,'SURF','EXTE')
-CALL IO_WRITE_FIELD(TZFILE,'L1D', L1D)
-CALL IO_WRITE_FIELD(TZFILE,'L2D', L2D)
-CALL IO_WRITE_FIELD(TZFILE,'PACK',LPACK)
+CALL IO_Field_write(TZFILE,'SURF','EXTE')
+CALL IO_Field_write(TZFILE,'L1D', L1D)
+CALL IO_Field_write(TZFILE,'L2D', L2D)
+CALL IO_Field_write(TZFILE,'PACK',LPACK)
 IF ( NDXRATIO <= 0 .AND. NDYRATIO <= 0 ) THEN
   NDXRATIO = 1
   NDYRATIO = 1
@@ -266,13 +270,13 @@ IF ( NXOR <= 0 .AND. NYOR <= 0 ) THEN
   NXOR = 1
   NYOR = 1
 ENDIF
-CALL IO_WRITE_FIELD(TZFILE,'DXRATIO',NDXRATIO)
-CALL IO_WRITE_FIELD(TZFILE,'DYRATIO',NDYRATIO)
-CALL IO_WRITE_FIELD(TZFILE,'XSIZE',  NXSIZE)
-CALL IO_WRITE_FIELD(TZFILE,'YSIZE',  NYSIZE)
-CALL IO_WRITE_FIELD(TZFILE,'XOR',    NXOR)
-CALL IO_WRITE_FIELD(TZFILE,'YOR',    NYOR)
-CALL IO_WRITE_FIELD(TZFILE,'JPHEXT', JPHEXT)
+CALL IO_Field_write(TZFILE,'DXRATIO',NDXRATIO)
+CALL IO_Field_write(TZFILE,'DYRATIO',NDYRATIO)
+CALL IO_Field_write(TZFILE,'XSIZE',  NXSIZE)
+CALL IO_Field_write(TZFILE,'YSIZE',  NYSIZE)
+CALL IO_Field_write(TZFILE,'XOR',    NXOR)
+CALL IO_Field_write(TZFILE,'YOR',    NYOR)
+CALL IO_Field_write(TZFILE,'JPHEXT', JPHEXT)
 !
 TFILE_SURFEX => TZFILE
 ALLOCATE(YSURF_CUR%DUO%CSELECT(0))
@@ -309,8 +313,8 @@ IF (.NOT.LCARTESIAN) THEN
      ZWORK_LON(:,1) = ZWORK_LON(:,2)
      ZWORK_LON(:,IJMAX+2) = ZWORK_LON(:,IJMAX+1)           
    ENDIF   
-   CALL IO_WRITE_FIELD(TZFILE,'LAT',ZWORK_LAT)
-   CALL IO_WRITE_FIELD(TZFILE,'LON',ZWORK_LON)
+   CALL IO_Field_write(TZFILE,'LAT',ZWORK_LAT)
+   CALL IO_Field_write(TZFILE,'LON',ZWORK_LON)
    !
    DEALLOCATE(ZWORK,ZWORK_LAT,ZWORK_LON)
 END IF
@@ -324,13 +328,13 @@ WRITE(ILUOUT0,*) '***************************'
 !*    6.      Close parallelized I/O
 !             ----------------------
 !
-CALL IO_FILE_CLOSE_ll(TZFILE,OPARALLELIO=.FALSE.)
+CALL IO_File_close(TZFILE)
 !
 CALL SURFEX_DEALLO_LIST
 !
-IF(NIO_VERB>=NVERB_DEBUG) CALL IO_FILE_PRINT_LIST()
+IF(NIO_VERB>=NVERB_DEBUG) CALL IO_Filelist_print()
 !
-CALL IO_FILE_CLOSE_ll(TLUOUT0,OPARALLELIO=.FALSE.)
+CALL IO_File_close(TLUOUT0)
 !
 CALL END_PARA_ll(IINFO_ll)
 !

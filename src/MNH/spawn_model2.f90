@@ -2,6 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !########################
 MODULE MODI_SPAWN_MODEL2
 !########################
@@ -90,10 +91,10 @@ END MODULE MODI_SPAWN_MODEL2
 !!      TOTAL_DMASS   : to compute the total mass of dry air
 !!      ANEL_BALANCE2  : to apply an anelastic correction in the case of changing
 !!                      resolution between the two models
-!!      IO_FILE_OPEN_ll : to open a FM-file (DESFM + LFIFM)
+!!      IO_File_open : to open a FM-file (DESFM + LFIFM)
 !!      WRITE_DESFM   : to write the  DESFM file
 !!      WRITE_LFIFM   : to write the  LFIFM file  
-!!      IO_FILE_CLOSE_ll : to close a FM-file (DESFM + LFIFM)
+!!      IO_File_close : to close a FM-file (DESFM + LFIFM)
 !!      INI_BIKHARDT2     : initializes Bikhardt coefficients
 !!
 !!
@@ -191,6 +192,7 @@ END MODULE MODI_SPAWN_MODEL2
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!                    10/2016 (C.Lac) Add droplet deposition
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 14/03/2019: correct ZWS when variable not present in file
 !-------------------------------------------------------------------------------
@@ -230,7 +232,7 @@ USE MODD_CH_MNHC_n
 USE MODD_PASPOL_n
 !$20140515
 USE MODD_VAR_ll, ONLY : NPROC
-USE MODD_IO_ll, ONLY: TFILEDATA,TFILE_DUMMY,TFILE_SURFEX
+USE MODD_IO, ONLY: TFILEDATA,TFILE_DUMMY,TFILE_SURFEX
 !
 USE MODE_GRIDCART         ! Executive modules
 USE MODE_GRIDPROJ
@@ -258,12 +260,11 @@ USE MODI_CH_INIT_SCHEME_n
 !$20140710
 USE MODI_UPDATE_METRICS
 !
-USE MODE_FM
-USE MODE_FMWRIT, ONLY : IO_WRITE_HEADER
-USE MODE_IO_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST
+USE MODE_IO_FIELD_READ,    only: IO_Field_read
+USE MODE_IO_FIELD_WRITE,   only: IO_Header_write
+USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
+USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list
 USE MODE_MODELN_HANDLER
-USE MODE_FMREAD
 USE MODE_MPPDB
 !
 USE MODE_THERMO
@@ -491,15 +492,15 @@ IF (LEN_TRIM(HSONFILE) /= 0 ) THEN
 !        3.3.1  Opening the son input file and reading the grid
 ! 
   WRITE(ILUOUT,*) 'SPAWN_MODEL2: spawning with a SON input file :',TRIM(HSONFILE)
-  CALL IO_FILE_ADD2LIST(TZSONFILE,TRIM(HSONFILE),'UNKNOWN','READ',KLFITYPE=2,KLFIVERB=NVERB)
-  CALL IO_FILE_OPEN_ll(TZSONFILE)
-  CALL IO_READ_FIELD(TZSONFILE,'DAD_NAME',YDAD_SON)
-  CALL IO_READ_FIELD(TZSONFILE,'IMAX',    IIMAXSON)
-  CALL IO_READ_FIELD(TZSONFILE,'JMAX',    IJMAXSON)
-  CALL IO_READ_FIELD(TZSONFILE,'XOR',     IXORSON)
-  CALL IO_READ_FIELD(TZSONFILE,'YOR',     IYORSON)
-  CALL IO_READ_FIELD(TZSONFILE,'DXRATIO', IDXRATIOSON)
-  CALL IO_READ_FIELD(TZSONFILE,'DYRATIO', IDYRATIOSON)
+  CALL IO_File_add2list(TZSONFILE,TRIM(HSONFILE),'MNH','READ',KLFITYPE=2,KLFIVERB=NVERB)
+  CALL IO_File_open(TZSONFILE)
+  CALL IO_Field_read(TZSONFILE,'DAD_NAME',YDAD_SON)
+  CALL IO_Field_read(TZSONFILE,'IMAX',    IIMAXSON)
+  CALL IO_Field_read(TZSONFILE,'JMAX',    IJMAXSON)
+  CALL IO_Field_read(TZSONFILE,'XOR',     IXORSON)
+  CALL IO_Field_read(TZSONFILE,'YOR',     IYORSON)
+  CALL IO_Field_read(TZSONFILE,'DXRATIO', IDXRATIOSON)
+  CALL IO_Field_read(TZSONFILE,'DYRATIO', IDYRATIOSON)
   !
   IF (ADJUSTL(ADJUSTR(YDAD_SON)).NE.ADJUSTL(ADJUSTR(CMY_NAME(1)))) THEN 
     WRITE(ILUOUT,*) 'SPAWN_MODEL2: DAD of SON file is different from the one of model2'
@@ -1190,7 +1191,7 @@ CALL SPAWN_PRESSURE2(NXOR,NYOR,NXEND,NYEND,NDXRATIO,NDYRATIO,   &
 !
 IF (.NOT.GNOSON) THEN
   ALLOCATE(ZWORK3D(IIUSON,IJUSON,IKU))
-  CALL IO_READ_FIELD(TZSONFILE,'PABST',ZWORK3D)
+  CALL IO_Field_read(TZSONFILE,'PABST',ZWORK3D)
   XPABST(IIB2:IIE2,IJB2:IJE2,:) = ZWORK3D(IIB1:IIE1,IJB1:IJE1,:)
   DEALLOCATE(ZWORK3D)
 END IF
@@ -1440,9 +1441,9 @@ ELSE
      CMY_NAME(2)=ADJUSTL(ADJUSTR(CINIFILE)//'.spr'//ADJUSTL(HSPANBR))
 END IF
 !
-CALL IO_FILE_ADD2LIST(TZFILE,CMY_NAME(2),'SPAWNING','WRITE',KLFINPRAR=INPRAR,KLFITYPE=1,KLFIVERB=NVERB)
+CALL IO_File_add2list(TZFILE,CMY_NAME(2),'MNH','WRITE',KLFINPRAR=INPRAR,KLFITYPE=1,KLFIVERB=NVERB)
 !
-CALL IO_FILE_OPEN_ll(TZFILE)
+CALL IO_File_open(TZFILE)
 !
 CALL WRITE_DESFM_n(2,TZFILE)
 !
@@ -1468,7 +1469,7 @@ ELSE
   CDAD_NAME(2)=CMY_NAME(1) ! model 1 becomes the DAD of model 2 (spawned one)
 ENDIF
 !
-CALL IO_WRITE_HEADER(TZFILE,HDAD_NAME=CDAD_NAME(2))
+CALL IO_Header_write(TZFILE,HDAD_NAME=CDAD_NAME(2))
 CALL WRITE_LFIFM_n(TZFILE,CDAD_NAME(2))
 !
 CALL SECOND_MNH(ZTIME2)
@@ -1494,9 +1495,9 @@ ZSURF2 = ZTIME2 - ZTIME1
 !*	 8.    CLOSES THE FMFILE
 !	       ----------------- 
 !
-CALL IO_FILE_CLOSE_ll(TZFILE)
+CALL IO_File_close(TZFILE)
 IF (ASSOCIATED(TZSONFILE)) THEN
-  CALL IO_FILE_CLOSE_ll(TZSONFILE)
+  CALL IO_File_close(TZSONFILE)
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -1659,7 +1660,7 @@ WRITE(ILUOUT,*) ' ------------------------------------------------------------ '
 6  FORMAT(' |    SPAWN_MODEL2     |     ',F8.3,'      |     ',F8.3,'     |')
 !
 !
-CALL IO_FILE_CLOSE_ll(TLUOUT)
+CALL IO_File_close(TLUOUT)
 !
 9900  FORMAT(' K = 001    ZHAT = ',E14.7)
 9901  FORMAT(' K = ',I3.3,'    ZHAT = ',E14.7,'    DZ = ' ,E14.7)

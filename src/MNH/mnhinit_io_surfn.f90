@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #########################
@@ -61,13 +61,11 @@ USE MODD_IO_SURF_MNH,      ONLY: TOUT, TPINFILE, COUTFILE,                      
                                  NMASK, CMASK, NIU, NJU, NIB, NJB, NIE, NJE, CACTION,  &
                                  NMASK_ALL, NIU_ALL, NJU_ALL, NIB_ALL, NJB_ALL,        &
                                  NIE_ALL, NJE_ALL, NHALO
-USE MODD_LUNIT,            ONLY: CLUOUT0, TPGDFILE, TLUOUT0, TOUTDATAFILE
+USE MODD_LUNIT,            ONLY: TPGDFILE, TLUOUT0, TOUTDATAFILE
 USE MODD_LUNIT_n,          ONLY: CMASK_SURFEX, TINIFILE, TINIFILEPGD, TLUOUT
 USE MODD_MNH_SURFEX_n,     ONLY: YSURF_CUR
 USE MODD_PARAMETERS,       ONLY: JPHEXT
 !
-USE MODE_IO_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
 USE MODE_ll
 USE MODE_MODELN_HANDLER
 !

@@ -2,6 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     #############################
       MODULE MODI_SERIES_CLOUD_ELEC
 !     #############################
@@ -14,7 +15,7 @@ INTERFACE
                                 TPFILE_SERIES_CLOUD_ELEC,       &
                                 PINPRR                          )
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 INTEGER,                  INTENT(IN)    :: KTCOUNT  ! Temporal loop counter
 !
@@ -88,7 +89,7 @@ END MODULE MODI_SERIES_CLOUD_ELEC
 !
 USE MODD_CONF, ONLY : CEXP
 USE MODD_CST
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO,   ONLY: TFILEDATA
 USE MODD_REF
 USE MODD_PARAMETERS
 USE MODD_ELEC_DESCR

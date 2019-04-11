@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1999-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !!    ############################
@@ -73,15 +73,14 @@ END MODULE MODI_CH_EMISSION_FLUX0D
 !!
 !!    EXTERNAL
 !!    --------
-USE MODD_IO_ll,         ONLY: TFILEDATA
-USE MODE_FM,            ONLY: IO_FILE_CLOSE_ll
-USE MODE_IO_ll
+USE MODD_IO,      ONLY: TFILEDATA
+USE MODE_IO_FILE, ONLY: IO_File_close
 !
 USE MODI_CH_OPEN_INPUT
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
-USE MODD_CH_M9_n,      ONLY: NEQ, CNAMES
+USE MODD_CH_M9_n, ONLY: NEQ, CNAMES
 !!
 !------------------------------------------------------------------------------
 !
@@ -107,7 +106,6 @@ CHARACTER*80  :: YFORMAT     ! format of the input data
 INTEGER       :: ICHEMIS     ! number of variables for which a flux is given
                              ! in the input file
 INTEGER       :: IIO         ! I/O channel
-INTEGER       :: IFAIL       ! return code from CLOSE_ll
 REAL          :: ZALPHA      ! interpolation weight
 !
 CHARACTER(LEN=3)                              :: YUNIT
@@ -199,7 +197,7 @@ IF (LSFIRSTCALL) THEN
 !
 ! close file
 !
-  CALL IO_FILE_CLOSE_ll(TZFILE)
+  CALL IO_File_close(TZFILE)
 !
 !*       2.   MAP DATA ONTO PROGNOSTIC VARIABLES
 !        ---------------------------------------

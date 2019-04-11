@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/Attic/rain_c2r2_khko.f90,v $ $Revision: 1.1.2.1.2.3 $
 !-----------------------------------------------------------------
 !      ######################
        MODULE MODI_RAIN_C2R2_KHKO
@@ -24,7 +20,7 @@ INTERFACE
                             PSOLORG, PMI, HACTCCN,                              &
                             PINDEP, PSUPSAT, PNACT                      )
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 CHARACTER(LEN=*),         INTENT(IN)    :: HCLOUD   !  kind of cloud
 
@@ -225,7 +221,7 @@ END MODULE MODI_RAIN_C2R2_KHKO
 USE MODD_PARAMETERS
 USE MODD_CST
 USE MODD_CONF
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 USE MODD_PARAM_C2R2
 USE MODD_RAIN_C2R2_DESCR
 USE MODD_RAIN_C2R2_KHKO_PARAM
@@ -238,9 +234,8 @@ USE MODD_SALT
 USE MODI_BUDGET
 !
 USE MODE_FIELD
-USE MODE_FM
 USE MODE_ll
-USE MODE_FMWRIT
+USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 USE MODI_GAMMA
 !
 IMPLICIT NONE
@@ -602,7 +597,7 @@ INTEGER                           :: J1
 !   TZFIELD%NTYPE      = TYPEREAL
 !   TZFIELD%NDIMS      = 3
 !   TZFIELD%LTIMEDEP   = .TRUE.
-!   CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZCHEN)
+!   CALL IO_Field_write(TPFILE,TZFIELD,ZCHEN)
 ! END IF
 !
 !-------------------------------------------------------------------------------
@@ -885,7 +880,7 @@ IF ( OCLOSE_OUT ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZZW1LOG)
+  CALL IO_Field_write(TPFILE,TZFIELD,ZZW1LOG)
 END IF
 !
 !*       3.4   budget storage
@@ -1912,7 +1907,7 @@ DO JN = 1 , KSPLITR
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWSEDC)
+  CALL IO_Field_write(TPFILE,TZFIELD,ZWSEDC)
   !
   TZFIELD%CMNHNAME   = 'SEDFLUXR'
   TZFIELD%CSTDNAME   = ''
@@ -1924,7 +1919,7 @@ DO JN = 1 , KSPLITR
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWSEDR)
+  CALL IO_Field_write(TPFILE,TZFIELD,ZWSEDR)
  END IF
 END DO
 !

@@ -4,12 +4,14 @@
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 ! Modifications:
-!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!  Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN (removed ISTDOUT, ISTDERR, added NNULLUNIT, CNULLFILE)
-!  Philippe Wautelet: 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll to allow to disable writes (for bench purposes)
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 10/01/2019: use NEWUNIT argument of OPEN (removed ISTDOUT, ISTDERR, added NNULLUNIT, CNULLFILE)
+!  P. Wautelet 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll to allow to disable writes (for bench purposes)
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
+!  P. Wautelet 12/03/2019: add TMAINFILE field in TFILEDATA
 !-----------------------------------------------------------------
 
-MODULE MODD_IO_ll
+MODULE MODD_IO
 !
 USE MODD_NETCDF,     ONLY: IDCDF_KIND, IOCDF, TPTR2DIMCDF
 USE MODD_PARAMETERS, ONLY: NDIRNAMELGTMAX, NFILENAMELGTMAX
@@ -19,10 +21,10 @@ IMPLICIT NONE
 !
 INTEGER, PARAMETER :: NVERB_NO=0, NVERB_FATAL=1, NVERB_ERROR=2, NVERB_WARNING=3, NVERB_INFO=4, NVERB_DEBUG=5
 
-INTEGER                     :: NNULLUNIT = -1  ! /dev/null fortran unit, value set in INITIO_ll
+INTEGER                     :: NNULLUNIT = -1  ! /dev/null fortran unit, value set in IO_Init
 CHARACTER(LEN=*), PARAMETER :: CNULLFILE = "/dev/null"
 
-INTEGER, SAVE :: ISIOP   !! IOproc number
+INTEGER, SAVE :: NIO_RANK ! Rank of IO process
 INTEGER, SAVE :: ISP     !! Actual proc number
 INTEGER, SAVE :: ISNPROC !! Total number of allocated processes
 LOGICAL, SAVE :: GSMONOPROC = .FALSE. !! True if sequential execution (ISNPROC = 1) 
@@ -70,7 +72,7 @@ END TYPE TOUTBAK
 TYPE TFILEDATA
   CHARACTER(LEN=NFILENAMELGTMAX) :: CNAME = '' !Filename
   CHARACTER(LEN=:),ALLOCATABLE   :: CDIRNAME   !Directory name
-  CHARACTER(LEN=13) :: CTYPE   = "UNKNOWN" !Filetype (backup, output, prepidealcase...)
+  CHARACTER(LEN=13) :: CTYPE   = "UNKNOWN" !Filetype (PGD, MNH, DES, NML...)
   CHARACTER(LEN=7)  :: CFORMAT = "UNKNOWN" !Fileformat (NETCDF4, LFI, LFICDF4...)
   CHARACTER(LEN=7)  :: CMODE   = "UNKNOWN" !Opening mode (read, write...)
   LOGICAL           :: LOPENED = .FALSE.   !Is the file opened
@@ -94,7 +96,7 @@ TYPE TFILEDATA
   ! Fields for LFI files
   INTEGER(KIND=LFI_INT) :: NLFININAR = 0  !Number of articles of the LFI file (only accurate if file opened in read mode)
   INTEGER(KIND=LFI_INT) :: NLFINPRAR = 0  !Number of predicted articles of the LFI file (non crucial)
-  INTEGER               :: NLFITYPE  = -1 !Type of the file (used to generate list of files to transfers)
+  INTEGER               :: NLFITYPE  = -1 !Type of the file (used to generate list of files to transfer)
   INTEGER               :: NLFIVERB  = 1  !LFI verbosity level
   INTEGER(KIND=LFI_INT) :: NLFIFLU   = -1 !File identifier
   !
@@ -112,11 +114,13 @@ TYPE TFILEDATA
   INTEGER :: NLU = -1                      !Logical unit number
   INTEGER :: NRECL = -1                    !Fortran RECL (record length)
   CHARACTER(LEN=11) :: CFORM   = "UNKNOWN" !Fortran FORM (FORMATTED/UNFORMATTED)
-  CHARACTER(LEN=10) :: CACCESS = "UNKNOWN" !Fortran ACCESS (DIRECT/SEQUENTIAL)
+  CHARACTER(LEN=10) :: CACCESS = "UNKNOWN" !Fortran ACCESS (DIRECT/SEQUENTIAL/STREAM)
   !
   TYPE(TFILEDATA),POINTER :: TDADFILE   => NULL() !Corresponding dad file
   TYPE(TFILEDATA),POINTER :: TDESFILE   => NULL() !Corresponding .des file
   TYPE(TFILEDATA),POINTER :: TDATAFILE  => NULL() !Corresponding data file (if .des file)
+  TYPE(TFILEDATA),POINTER :: TMAINFILE  => NULL() !Corresponding main file if the file is an sub-file
+  !
   TYPE(TFILEDATA),POINTER :: TFILE_PREV => NULL()
   TYPE(TFILEDATA),POINTER :: TFILE_NEXT => NULL()
 END TYPE TFILEDATA
@@ -136,4 +140,4 @@ TYPE(TFILEDATA),POINTER,SAVE :: TFILE_OUTPUTLISTING  => NULL() !Pointer used to 
 !Non existing file which can be used as a dummy target
 TYPE(TFILEDATA),TARGET, SAVE :: TFILE_DUMMY = TFILEDATA(CNAME="dummy",CDIRNAME=NULL(),TFILES_IOZ=NULL(),TNCCOORDS=NULL())
 
-END MODULE MODD_IO_ll
+END MODULE MODD_IO

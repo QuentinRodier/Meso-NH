@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !    ################################ 
@@ -21,7 +21,7 @@ INTERFACE
                       PATHETA,PAMOIST,PSRCM,PFRAC_ICE,               &
                       PRTHLS,PRRS                                    )
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 INTEGER,                  INTENT(IN)    :: KSPLT         ! split process index
 INTEGER,                  INTENT(IN)    :: KRR           ! number of moist var.
@@ -132,12 +132,12 @@ END MODULE MODI_TURB_HOR_THERMO_FLUX
 USE MODD_CST
 USE MODD_CONF
 USE MODD_CTURB
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_LES
 !
-USE MODE_FIELD, ONLY: TFIELDDATA, TYPEREAL
-USE MODE_FMWRIT
+USE MODE_FIELD,          ONLY: TFIELDDATA, TYPEREAL
+USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 !
 USE MODI_GRADIENT_M
 USE MODI_GRADIENT_U
@@ -325,7 +325,7 @@ IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZFLX)
+  CALL IO_Field_write(TPFILE,TZFIELD,ZFLX)
 END IF
 !
 IF (KSPLT==1 .AND. LLES_CALL) THEN
@@ -428,7 +428,7 @@ IF (KRR/=0) THEN
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
     TZFIELD%LTIMEDEP   = .TRUE.
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZFLX)
+    CALL IO_Field_write(TPFILE,TZFIELD,ZFLX)
   END IF
   !
   IF (KSPLT==1 .AND. LLES_CALL) THEN
@@ -477,7 +477,7 @@ END IF
 !!    TZFIELD%NTYPE      = TYPEREAL
 !!    TZFIELD%NDIMS      = 3
 !!    TZFIELD%LTIMEDEP   = .TRUE.
-!!    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZVPTU)
+!!    CALL IO_Field_write(TPFILE,TZFIELD,ZVPTU)
 !!  END IF
 !!!
 !!ELSE
@@ -580,7 +580,7 @@ IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZFLX)
+  CALL IO_Field_write(TPFILE,TZFIELD,ZFLX)
 END IF
 !
 IF (KSPLT==1 .AND. LLES_CALL) THEN
@@ -692,7 +692,7 @@ IF (KRR/=0) THEN
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
     TZFIELD%LTIMEDEP   = .TRUE.
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZFLX)
+    CALL IO_Field_write(TPFILE,TZFIELD,ZFLX)
   END IF
   !
   IF (KSPLT==1 .AND. LLES_CALL) THEN
@@ -745,7 +745,7 @@ END IF
 !!    TZFIELD%NTYPE      = TYPEREAL
 !!    TZFIELD%NDIMS      = 3
 !!    TZFIELD%LTIMEDEP   = .TRUE.
-!!    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZVPTV)
+!!    CALL IO_Field_write(TPFILE,TZFIELD,ZVPTV)
 !!  END IF
 !!!
 !!ELSE

@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2004-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !######################## 
@@ -11,7 +11,7 @@ INTERFACE
 !
       SUBROUTINE SPAWN_SURF (HINIFILE, HINIFILEPGD, TPOUTDATAFILE, OSPAWN_SURF)
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 
 !
 CHARACTER (LEN=*),      INTENT(IN) :: HINIFILE     ! Input file
@@ -75,7 +75,7 @@ END MODULE MODI_SPAWN_SURF
 !
 USE MODD_CONF,         ONLY : NVERB
 USE MODD_GRID_n,       ONLY : XZS
-USE MODD_IO_ll,        ONLY : TFILEDATA
+USE MODD_IO,           ONLY : TFILEDATA
 USE MODD_IO_SURF_MNH,  ONLY : COUTFILE
 USE MODD_LUNIT,        ONLY : TPGDFILE, TOUTDATAFILE
 USE MODD_MNH_SURFEX_n
@@ -84,8 +84,6 @@ USE MODD_PARAM_n,      ONLY : CSURF
 USE MODD_TIME_n,       ONLY : TDTCUR
 !
 USE MODE_ll
-USE MODE_FMWRIT
-USE MODE_IO_ll
 USE MODE_MODELN_HANDLER
 USE MODE_PREP_CTL,     ONLY : PREP_CTL
 !

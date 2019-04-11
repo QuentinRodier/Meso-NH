@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !      #####################
@@ -16,7 +16,7 @@ INTERFACE
                             PTHS, PRS, PSVS,                              &
                             PINPRC, PINPRR, PINDEP, PINPRR3D, PEVAP3D     )
 !
-USE MODD_IO_ll,   ONLY: TFILEDATA
+USE MODD_IO,   ONLY: TFILEDATA
 !
 LOGICAL,                  INTENT(IN)    :: OACTIT     ! Switch to activate the
                                                       ! activation by radiative
@@ -144,14 +144,11 @@ USE MODD_NSV
 USE MODD_BUDGET
 USE MODI_BUDGET
 !
-USE MODE_FM
-USE MODE_FMWRIT
-!
 USE MODI_LIMA_WARM_SEDIMENTATION
 USE MODI_LIMA_WARM_NUCL
 USE MODI_LIMA_WARM_COAL
 USE MODI_LIMA_WARM_EVAP
-USE MODD_IO_ll,   ONLY: TFILEDATA
+USE MODD_IO,      ONLY: TFILEDATA
 USE MODD_LUNIT_n, ONLY: TLUOUT
 !
 IMPLICIT NONE

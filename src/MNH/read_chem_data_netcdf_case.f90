@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2012-2017 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2012-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ################################
@@ -10,7 +10,7 @@ INTERFACE
 SUBROUTINE READ_CHEM_DATA_NETCDF_CASE(TPPRE_REAL1,HFILE,TPPGDFILE, &
                                       PTIME_HORI,KVERB,ODUMMY_REAL ) 
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 TYPE(TFILEDATA),POINTER,INTENT(IN) :: TPPRE_REAL1 ! PRE_REAL1 file
 CHARACTER(LEN=28),  INTENT(IN)    :: HFILE      ! name of the NETCDF file
@@ -71,7 +71,7 @@ END MODULE MODI_READ_CHEM_DATA_NETCDF_CASE
 !!      Module MODD_CONF      : contains configuration variables for all models.
 !!         NVERB : verbosity level for output-listing
 !!      Module MODD_LUNIT     : contains logical unit names for all models
-!!         CLUOUT0 : name of output-listing
+!!         TLUOUT0 : name of output-listing
 !!      Module MODD_PGDDIM    : contains dimension of PGD fields
 !!         NPGDIMAX: dimension along x (no external point)
 !!         NPGDJMAX: dimension along y (no external point)
@@ -100,7 +100,7 @@ USE MODD_CST
 USE MODD_DIM_n
 USE MODD_GRID
 USE MODD_GRID_n
-USE MODD_IO_ll,      ONLY: TFILEDATA
+USE MODD_IO,         ONLY: TFILEDATA
 USE MODD_LUNIT,      ONLY: TLUOUT0
 USE MODE_MODELN_HANDLER
 USE MODD_NETCDF,     ONLY:IDCDF_KIND
@@ -111,15 +111,15 @@ USE MODD_PREP_REAL
 USE MODD_TIME
 USE MODD_TIME_n
 !
-USE MODE_FM
-USE MODE_IO_ll
+USE MODE_IO_FILE,    only: IO_File_close
 USE MODE_MPPDB
 USE MODE_THERMO
 USE MODE_TIME
+USE MODE_TOOLS,      ONLY: UPCASE
 !
 USE MODI_CH_AER_INIT_SOA
 USE MODI_CH_INIT_SCHEME_n
-USE MODI_CH_OPEN_INPUT  
+USE MODI_CH_OPEN_INPUT
 USE MODI_HORIBL
 USE MODI_INI_NSV
 USE MODI_READ_HGRID_n
@@ -729,7 +729,7 @@ if (status /= nf90_noerr) call handle_err(status)
 
 ! close
 ! file
-CALL IO_FILE_CLOSE_ll(TZFILE)
+CALL IO_File_close(TZFILE)
 
 
 !-------------------------------------------------------------

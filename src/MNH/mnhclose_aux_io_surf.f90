@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2003-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #########################
@@ -49,21 +49,17 @@ END MODULE MODI_MNHCLOSE_AUX_IO_SURF
 !!    -------------
 !!      Original    09/2003 
 !!      J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 surfex 2006/05/23 15:47:28
-!-----------------------------------------------------------------
+!  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
+!                          (nsubfiles_ioz is now determined in IO_File_add2list)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_IO_SURF_MNH, ONLY: TPINFILE, CACTION, NMASK_ALL, NMASK
+!
+USE MODE_IO_FILE,     only: IO_File_close
 USE MODE_ll
-USE MODE_FM
-USE MODE_IO_ll
-
-USE MODD_IO_SURF_MNH, ONLY : TPINFILE, CACTION, NMASK_ALL, NMASK
 !
 IMPLICIT NONE
 !
@@ -82,7 +78,7 @@ INTEGER           :: IRESP          ! return-code if a problem appears
 !-------------------------------------------------------------------------------
 !
 IF (CACTION=='OPEN  ') THEN
-  CALL IO_FILE_CLOSE_ll(TPINFILE,OPARALLELIO=.FALSE.)
+  CALL IO_File_close(TPINFILE)
   CACTION='      '
 END IF
 !

@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2010-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !     ########################
       MODULE MODI_SET_MASS
@@ -12,7 +12,7 @@ SUBROUTINE SET_MASS(TPFILE,OPROFILE_IN_PROC, PZFLUX_PROFILE,                    
                     KILOC,KJLOC,PZS_MX,PZMASS_MX,PZFLUX_MX,PPGROUND,                   &
                     PTHVM,PMRM,PUW,PVW,OSHIFT,OBOUSS,PJ,HFUNU,HFUNV,PMRCM,PMRIM,PCORIOZ)
 !
-USE MODD_IO_ll, ONLY : TFILEDATA
+USE MODD_IO, ONLY : TFILEDATA
 !
 TYPE(TFILEDATA),        INTENT(IN) :: TPFILE    ! File characteristics
 LOGICAL,                INTENT(IN) :: OPROFILE_IN_PROC ! initialization profile in current processor
@@ -124,7 +124,7 @@ SUBROUTINE SET_MASS(TPFILE,OPROFILE_IN_PROC, PZFLUX_PROFILE,                    
 ! use des modules
 USE MODD_GRID_n ! declarative modules
 USE MODD_GRID
-USE MODD_IO_ll, ONLY : TFILEDATA
+USE MODD_IO, ONLY : TFILEDATA
 USE MODD_CONF
 USE MODD_CONF_n
 USE MODD_FIELD_n

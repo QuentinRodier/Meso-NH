@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ###################
@@ -142,8 +142,8 @@ END MODULE MODI_INI_CPL
 !!
 !!    EXTERNAL
 !!    --------
-!!      IO_READ_FIELD: to read data in LFI_FM file
-!!      IO_FILE_CLOSE_ll : to close a FM-file
+!!      IO_Field_read: to read data in LFI_FM file
+!!      IO_File_close : to close a FM-file
 !!      INI_LS      : to initialize larger scale fields
 !!      INI_LB      : to initialize "2D" surfacic LB fields 
 !!      DATETIME_DISTANCE : compute the temporal distance in seconds between 2 dates
@@ -211,6 +211,7 @@ END MODULE MODI_INI_CPL
 !!                     (J.Escobar) 26/03/2014 bug in init of NSV_USER on RESTA case
 !!                     (P.Wautelet)28/03/2018 replace TEMPORAL_DIST by DATETIME_DISTANCE
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !-------------------------------------------------------------------------------
 !
@@ -220,7 +221,8 @@ USE MODD_CH_MNHC_n
 USE MODD_CONF
 USE MODD_CTURB
 USE MODD_DYN
-USE MODD_LUNIT_n, ONLY: CCPLFILE, TCPLFILE, TLUOUT
+USE MODD_LUNIT_n,          ONLY: CCPLFILE, TCPLFILE, TLUOUT
+USE MODD_NESTING
 USE MODD_NSV
 USE MODD_PARAMETERS
 USE MODD_TIME_n
@@ -231,12 +233,10 @@ USE MODD_TIME_n
 ! #endif
 !
 USE MODE_DATETIME
-USE MODE_FM, ONLY: IO_FILE_OPEN_ll, IO_FILE_CLOSE_ll
-USE MODE_FMREAD
-USE MODE_IO_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST
+USE MODE_IO_FIELD_READ,    only: IO_Field_read
+USE MODE_IO_FILE,          only: IO_File_open, IO_File_close
+USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list
 USE MODE_MSG
-USE MODD_NESTING
 USE MODE_TIME
 !
 USE MODI_INI_LS
@@ -348,15 +348,15 @@ ILUOUT = TLUOUT%NLU
 !
 DO JCI=1,NCPL_NBR
   WRITE(YCI,'(I2.0)') JCI
-  CALL IO_FILE_ADD2LIST(TCPLFILE(JCI)%TZFILE,CCPLFILE(JCI),'UNKNOWN','READ',KLFITYPE=2,KLFIVERB=NVERB)
-  CALL IO_FILE_OPEN_ll(TCPLFILE(JCI)%TZFILE,KRESP=IRESP)
+  CALL IO_File_add2list(TCPLFILE(JCI)%TZFILE,CCPLFILE(JCI),'MNH','READ',KLFITYPE=2,KLFIVERB=NVERB)
+  CALL IO_File_open(TCPLFILE(JCI)%TZFILE,KRESP=IRESP)
   IF (IRESP /= 0) THEN
     CALL PRINT_MSG(NVERB_FATAL,'IO','INI_CPL','problem when opening coupling file '//TRIM(YCI))
   END IF
 !
 !*       2.1   Read current time in coupling files
 !
-  CALL IO_READ_FIELD(TCPLFILE(JCI)%TZFILE,'DTCUR',TDTCPL(JCI))
+  CALL IO_Field_read(TCPLFILE(JCI)%TZFILE,'DTCUR',TDTCPL(JCI))
 !
 !*       2.2   Check chronological order
 !
@@ -449,9 +449,9 @@ END DO
 !
 !*      3.1   Read dimensions in coupling file and checks with initial file
 !
-CALL IO_READ_FIELD(TCPLFILE(NCPL_CUR)%TZFILE,'IMAX',IIMAX)
-CALL IO_READ_FIELD(TCPLFILE(NCPL_CUR)%TZFILE,'JMAX',IJMAX)
-CALL IO_READ_FIELD(TCPLFILE(NCPL_CUR)%TZFILE,'KMAX',IKMAX)
+CALL IO_Field_read(TCPLFILE(NCPL_CUR)%TZFILE,'IMAX',IIMAX)
+CALL IO_Field_read(TCPLFILE(NCPL_CUR)%TZFILE,'JMAX',IJMAX)
+CALL IO_Field_read(TCPLFILE(NCPL_CUR)%TZFILE,'KMAX',IKMAX)
 !
 IKU=SIZE(PLSUM,3)
 !
@@ -515,7 +515,7 @@ CALL INI_LB(TCPLFILE(NCPL_CUR)%TZFILE,GLSOURCE,KSV,                  &
 !
 !*      3.5   Close the coupling file
 !
-CALL IO_FILE_CLOSE_ll(TCPLFILE(NCPL_CUR)%TZFILE)
+CALL IO_File_close(TCPLFILE(NCPL_CUR)%TZFILE)
 !!-------------------------------------------------------------------------------
 !
 !*      6.    FORMATS

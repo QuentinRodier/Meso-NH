@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2000-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #######################
@@ -9,9 +9,7 @@
 !
 INTERFACE
 !
-      SUBROUTINE RESET_EXSEG(HLUOUT)
-!
-CHARACTER (LEN=*),  INTENT(IN) :: HLUOUT ! Name  for output listing
+      SUBROUTINE RESET_EXSEG()
 !
 END SUBROUTINE RESET_EXSEG
 !
@@ -20,7 +18,7 @@ END INTERFACE
 END MODULE MODI_RESET_EXSEG
 !
 !     ##############################
-      SUBROUTINE RESET_EXSEG(HLUOUT)
+      SUBROUTINE RESET_EXSEG()
 !     ##############################
 !
 !!****  *RESET_EXSEG* - routine used to mofify the EXSEG1.nam informations
@@ -57,21 +55,20 @@ END MODULE MODI_RESET_EXSEG
 !!      Modifications  04/06/02  (P Jabouille) reset radiation and convective options
 !!                   02/2018 Q.Libois ECRAD
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
-USE MODE_FM, ONLY : IO_FILE_OPEN_ll,IO_FILE_CLOSE_ll
-USE MODE_FMREAD
-USE MODE_IO_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
+USE MODE_IO_FILE,          ONLY : IO_File_open,IO_File_close
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_find_byname
 USE MODE_POS
 !
 USE MODD_DIAG_FLAG
 USE MODD_CH_MNHC_n, ONLY: LUSECHEM
 USE MODD_CONF_n, ONLY: LUSERV
 USE MODD_GET_n
-USE MODD_IO_ll,   ONLY: TFILEDATA
+USE MODD_IO,   ONLY: TFILEDATA
 USE MODD_PARAM_n, ONLY: CDCONV, CRAD
 USE MODN_PARAM_KAFR_n
 USE MODN_PARAM_RAD_n
@@ -81,8 +78,6 @@ IMPLICIT NONE
 !
 !
 !*       0.1   declarations of arguments
-!
-CHARACTER (LEN=*),  INTENT(IN) :: HLUOUT ! Name for output listing
 !
 !*       0.2   declarations of local variables
 !
@@ -100,8 +95,8 @@ TYPE(TFILEDATA),POINTER :: TZNMLFILE! Namelist file
 !
 TZNMLFILE  => NULL()
 !
-CALL IO_FILE_FIND_BYNAME('DIAG1.nam',TZNMLFILE,IRESP)
-CALL IO_FILE_OPEN_ll(TZNMLFILE)
+CALL IO_File_find_byname('DIAG1.nam',TZNMLFILE,IRESP)
+CALL IO_File_open(TZNMLFILE)
 ILUNAM = TZNMLFILE%NLU
 !
 !-------------------------------------------------------------------------------
@@ -189,6 +184,6 @@ PRINT*,' '
 !
 !-------------------------------------------------------------------------------
 !
-CALL IO_FILE_CLOSE_ll(TZNMLFILE)
+CALL IO_File_close(TZNMLFILE)
 !
 END SUBROUTINE RESET_EXSEG

@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ######################
@@ -22,7 +22,7 @@ INTERFACE
                    KRIMX,KRIMY,KSV_USER,                                         &
                    HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,HEQNSYS     )
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 USE MODD_PARAMETERS
 !
 INTEGER,            INTENT(IN)  :: KMI    ! Model index
@@ -196,7 +196,7 @@ END MODULE MODI_READ_DESFM_n
 !
 !*       0.    DECLARATIONS
 !              ------------
-USE MODD_IO_ll,   ONLY: NVERB_FATAL, TFILEDATA
+USE MODD_IO,      ONLY: TFILEDATA
 USE MODD_LUNIT_n, ONLY: TLUOUT
 USE MODD_PARAMETERS
 !

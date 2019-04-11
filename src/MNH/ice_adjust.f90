@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ######################
@@ -170,14 +170,13 @@ END MODULE MODI_ICE_ADJUST
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAMETERS
-USE MODD_CST
-USE MODD_CONF
 USE MODD_BUDGET
+USE MODD_CONF
+USE MODD_CST
+USE MODD_PARAMETERS
 !
-USE MODI_CONDENSATION
 USE MODI_BUDGET
-USE MODE_FMWRIT
+USE MODI_CONDENSATION
 USE MODI_GET_HALO
 !
 IMPLICIT NONE

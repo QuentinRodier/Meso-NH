@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !    #######################
@@ -22,7 +22,7 @@ INTERFACE
                       PDP,                                           &
                       PRUS,PRVS                                      )
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 INTEGER,                  INTENT(IN)    ::  KSPLT        ! split process index
 LOGICAL,                  INTENT(IN)    ::  OCLOSE_OUT   ! switch for syncronous
@@ -128,12 +128,12 @@ END MODULE MODI_TURB_HOR_UV
 USE MODD_CST
 USE MODD_CONF
 USE MODD_CTURB
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_LES
 !
-USE MODE_FIELD, ONLY: TFIELDDATA, TYPEREAL
-USE MODE_FMWRIT
+USE MODE_FIELD,          ONLY: TFIELDDATA, TYPEREAL
+USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 !
 USE MODI_GRADIENT_M
 USE MODI_GRADIENT_U
@@ -285,7 +285,7 @@ IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZFLX)
+  CALL IO_Field_write(TPFILE,TZFIELD,ZFLX)
 END IF
 !
 !

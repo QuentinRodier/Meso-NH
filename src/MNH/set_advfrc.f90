@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
       MODULE MODI_SETADVFRC
@@ -10,7 +10,7 @@ INTERFACE
 !
 SUBROUTINE SET_ADVFRC(TPEXPREFILE)
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 TYPE(TFILEDATA), INTENT(IN)  :: TPEXPREFILE ! input data file
 !
@@ -85,13 +85,12 @@ USE MODD_DIM_n
 USE MODD_FRC
 USE MODD_GRID
 USE MODD_GRID_n
-USE MODD_IO_ll,      ONLY: TFILEDATA
+USE MODD_IO,         ONLY: TFILEDATA
 USE MODD_LUNIT_n,    ONLY: TLUOUT
 USE MODD_PARAMETERS, ONLY: JPHEXT, JPVEXT
 USE MODD_REF
 ! 
 USE MODE_DATETIME
-USE MODE_IO_ll
 USE MODE_MSG
 USE MODE_THERMO
 !

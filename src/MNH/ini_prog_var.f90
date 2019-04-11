@@ -1,15 +1,14 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ########################
       MODULE MODI_INI_PROG_VAR
 !     ########################
 INTERFACE
-      SUBROUTINE INI_PROG_VAR(HLUOUT,PTKE_MX,PSV_MX,HCHEMFILE)
+      SUBROUTINE INI_PROG_VAR(PTKE_MX, PSV_MX, HCHEMFILE)
 !
-CHARACTER(LEN=*),       INTENT(IN)          :: HLUOUT     ! Name of the output-listing
 REAL,DIMENSION(:,:,:),  INTENT(IN)          :: PTKE_MX
 REAL,DIMENSION(:,:,:,:),INTENT(IN)          :: PSV_MX
 CHARACTER(LEN=*),       INTENT(IN),OPTIONAL :: HCHEMFILE  ! Name of the chem file
@@ -17,9 +16,9 @@ END SUBROUTINE INI_PROG_VAR
 END INTERFACE
 END MODULE MODI_INI_PROG_VAR
 !
-!     ########################################################
-      SUBROUTINE INI_PROG_VAR(HLUOUT,PTKE_MX,PSV_MX,HCHEMFILE)
-!     ########################################################
+!     ###################################################
+      SUBROUTINE INI_PROG_VAR(PTKE_MX, PSV_MX, HCHEMFILE)
+!     ###################################################
 !
 !!****  *INI_PROG_VAR* - initialization the prognostic variables not yet 
 !!                       initialized
@@ -45,8 +44,8 @@ END MODULE MODI_INI_PROG_VAR
 !!
 !!      Module MODD_CONF      : contains configuration variables for all models.
 !!         NVERB   : verbosity level for output-listing
-!!      Module MODD_LUNIT     :  contains logical unit names for all models
-!!         CLUOUT0 : name of output-listing
+!!      Module MODD_LUNIT_n     :  contains logical unit names for all models
+!!         TLUOUT : name of output-listing
 !!      Module MODD_FIELD1    : contains the prognostic fields of model1
 !!         XUM
 !!         XVM
@@ -94,6 +93,8 @@ END MODULE MODI_INI_PROG_VAR
 !!                  Mai 2017 (M. Leriche) read aerosol namelists before call ini_nsv
 !!                  Mai 2017 (M. Leriche) Get wet dep. sv in Meso-NH init file
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -109,7 +110,7 @@ USE MODD_DIM_n
 USE MODD_DUST
 USE MODD_DYN_n
 USE MODD_FIELD_n
-USE MODD_IO_ll,            ONLY: TFILEDATA
+USE MODD_IO,               ONLY: TFILEDATA
 USE MODD_LSFIELD_n
 USE MODD_LUNIT
 USE MODD_LUNIT_n,          ONLY: TLUOUT
@@ -119,11 +120,10 @@ USE MODD_PARAMETERS
 USE MODD_SALT
 USE MODD_TURB_n
 !
-USE MODE_IO_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
-USE MODE_FIELD,            ONLY: TFIELDDATA,TYPEREAL
-USE MODE_FM,               ONLY: IO_FILE_CLOSE_ll, IO_FILE_OPEN_ll
-USE MODE_FMREAD
+USE MODE_FIELD,            ONLY: TFIELDDATA, TYPEREAL
+USE MODE_IO_FIELD_READ,    only: IO_Field_read
+USE MODE_IO_FILE,          ONLY: IO_File_close, IO_File_open
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_add2list
 USE MODE_MODELN_HANDLER
 USE MODE_MSG
 USE MODE_POS
@@ -140,15 +140,13 @@ IMPLICIT NONE
 !
 !*       0.1   declaration of arguments
 !
-CHARACTER(LEN=*),       INTENT(IN)          :: HLUOUT     ! Name of the output-listing
 REAL,DIMENSION(:,:,:),  INTENT(IN)          :: PTKE_MX
 REAL,DIMENSION(:,:,:,:),INTENT(IN)          :: PSV_MX
 CHARACTER(LEN=*),       INTENT(IN),OPTIONAL :: HCHEMFILE  ! Name of the chem file
 !
 !*       0.2   declaration of local variables
 !
-INTEGER                :: ILUOUT                     !  Logical unit number
-                                                     ! associated with HLUOUT 
+INTEGER                :: ILUOUT
 INTEGER                :: IRESP
 !
 INTEGER                :: IIMAX,IJMAX,IKMAX       !  Dimensions of the chem file
@@ -216,24 +214,24 @@ ALLOCATE(XSVT(0,0,0,0))
 IF(PRESENT(HCHEMFILE)) THEN
   WRITE(ILUOUT,*) 'Routine INI_PROG_VAR: CHEMical species read in ',TRIM(HCHEMFILE)
   ! Read dimensions in chem file and checks with output file
-  CALL IO_FILE_ADD2LIST(TZCHEMFILE,TRIM(HCHEMFILE),'UNKNOWN','READ',KLFITYPE=2,KLFIVERB=NVERB)
-  CALL IO_FILE_OPEN_ll(TZCHEMFILE)
+  CALL IO_File_add2list(TZCHEMFILE,TRIM(HCHEMFILE),'MNH','READ',KLFITYPE=2,KLFIVERB=NVERB)
+  CALL IO_File_open(TZCHEMFILE)
   !
   ILUDES = TZCHEMFILE%TDESFILE%NLU
   !
-  CALL IO_READ_FIELD(TZCHEMFILE,'IMAX',IIMAX,IRESP)
+  CALL IO_Field_read(TZCHEMFILE,'IMAX',IIMAX,IRESP)
   IF (IRESP/=0) THEN
    !callabortstop
     CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_PROG_VAR','IMAX not found in the CHEM file '//TRIM(HCHEMFILE))
   END IF !IRESP
   !
-  CALL IO_READ_FIELD(TZCHEMFILE,'JMAX',IJMAX,IRESP)
+  CALL IO_Field_read(TZCHEMFILE,'JMAX',IJMAX,IRESP)
   IF (IRESP/=0) THEN
 !callabortstop
     CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_PROG_VAR','JMAX not found in the CHEM file '//TRIM(HCHEMFILE))
   END IF !IRESP
   !
-  CALL IO_READ_FIELD(TZCHEMFILE,'KMAX',IKMAX,IRESP)
+  CALL IO_Field_read(TZCHEMFILE,'KMAX',IKMAX,IRESP)
   IF (IRESP/=0) THEN
 !callabortstop
     CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_PROG_VAR','KMAX not found in the CHEM file '//TRIM(HCHEMFILE))
@@ -287,7 +285,7 @@ IF(PRESENT(HCHEMFILE)) THEN
       TZFIELD%CMNHNAME   = TRIM(CNAMES(JSV-NSV_CHEMBEG+1))//'T'
       TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
       WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-      CALL IO_READ_FIELD(TZCHEMFILE,TZFIELD,XSVT(:,:,:,JSV),IRESP)
+      CALL IO_Field_read(TZCHEMFILE,TZFIELD,XSVT(:,:,:,JSV),IRESP)
       IF (IRESP/=0) THEN
         WRITE(ILUOUT,*) TRIM(TZFIELD%CMNHNAME),' NOT FOUND IN THE CHEM FILE ',HCHEMFILE
         XSVT(:,:,:,JSV) = 0.
@@ -314,7 +312,7 @@ IF(PRESENT(HCHEMFILE)) THEN
       TZFIELD%CMNHNAME   = TRIM(CAERONAMES(JSV-NSV_AERBEG+1))//'T'
       TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
       WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-      CALL IO_READ_FIELD(TZCHEMFILE,TZFIELD,XSVT(:,:,:,JSV),IRESP)
+      CALL IO_Field_read(TZCHEMFILE,TZFIELD,XSVT(:,:,:,JSV),IRESP)
       IF (IRESP/=0) THEN
         WRITE(ILUOUT,*) TRIM(TZFIELD%CMNHNAME),'NOT FOUND IN THE CHEM FILE ',HCHEMFILE
         LORILAM=.FALSE.
@@ -339,7 +337,7 @@ IF(PRESENT(HCHEMFILE)) THEN
         TZFIELD%CMNHNAME   = TRIM(CDEAERNAMES(JSV-NSV_AERDEPBEG+1))//'T'
         TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
         WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_READ_FIELD(TZCHEMFILE,TZFIELD,XSVT(:,:,:,JSV),IRESP)
+        CALL IO_Field_read(TZCHEMFILE,TZFIELD,XSVT(:,:,:,JSV),IRESP)
         IF (IRESP/=0) THEN
           WRITE(ILUOUT,*) TRIM(TZFIELD%CMNHNAME),'NOT FOUND IN THE CHEM FILE ',HCHEMFILE
           LDEPOS_AER(IMI)=.FALSE.
@@ -368,7 +366,7 @@ IF(PRESENT(HCHEMFILE)) THEN
         TZFIELD%CMNHNAME   = TRIM(YPDUST_INI(ISV_NAME_IDX))//'T'
         TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
         WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_READ_FIELD(TZCHEMFILE,TZFIELD,XSVT(:,:,:,JSV),IRESP)
+        CALL IO_Field_read(TZCHEMFILE,TZFIELD,XSVT(:,:,:,JSV),IRESP)
         IF (IRESP/=0) THEN
           CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_PROG_VAR',TRIM(TZFIELD%CMNHNAME)//' not found in the CHEM file '//TRIM(HCHEMFILE))
         END IF !IRESP
@@ -383,7 +381,7 @@ IF(PRESENT(HCHEMFILE)) THEN
           TZFIELD%CMNHNAME   = TRIM(YPDUST_INI(ISV_NAME_IDX))//'T'
           TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
           WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-          CALL IO_READ_FIELD(TZCHEMFILE,TZFIELD,XSVT(:,:,:,JSV),IRESP)
+          CALL IO_Field_read(TZCHEMFILE,TZFIELD,XSVT(:,:,:,JSV),IRESP)
           IF (IRESP/=0) THEN
             CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_PROG_VAR',TRIM(TZFIELD%CMNHNAME)//&
                                              ' not found in the CHEM file '//TRIM(HCHEMFILE))
@@ -413,7 +411,7 @@ IF(PRESENT(HCHEMFILE)) THEN
         TZFIELD%CMNHNAME   = TRIM(CDEDSTNAMES(JSV-NSV_DSTDEPBEG+1))//'T'
         TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
         WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_READ_FIELD(TZCHEMFILE,TZFIELD,XSVT(:,:,:,JSV),IRESP)
+        CALL IO_Field_read(TZCHEMFILE,TZFIELD,XSVT(:,:,:,JSV),IRESP)
         IF (IRESP/=0) THEN
           WRITE(ILUOUT,*) TRIM(TZFIELD%CMNHNAME),'NOT FOUND IN THE CHEM FILE ',HCHEMFILE
           LDEPOS_DST(IMI)=.FALSE.
@@ -442,7 +440,7 @@ IF(PRESENT(HCHEMFILE)) THEN
         TZFIELD%CMNHNAME   = TRIM(YPSALT_INI(ISV_NAME_IDX))//'T'
         TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
         WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_READ_FIELD(TZCHEMFILE,TZFIELD,XSVT(:,:,:,JSV),IRESP)
+        CALL IO_Field_read(TZCHEMFILE,TZFIELD,XSVT(:,:,:,JSV),IRESP)
         IF (IRESP/=0) THEN
           CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_PROG_VAR',TRIM(TZFIELD%CMNHNAME)//' not found in the CHEM file '//TRIM(HCHEMFILE))
         END IF !IRESP
@@ -457,7 +455,7 @@ IF(PRESENT(HCHEMFILE)) THEN
           TZFIELD%CMNHNAME   = TRIM(YPSALT_INI(ISV_NAME_IDX))//'T'
           TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
           WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-          CALL IO_READ_FIELD(TZCHEMFILE,TZFIELD,XSVT(:,:,:,JSV),IRESP)
+          CALL IO_Field_read(TZCHEMFILE,TZFIELD,XSVT(:,:,:,JSV),IRESP)
           IF (IRESP/=0) THEN
             CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_PROG_VAR',TRIM(TZFIELD%CMNHNAME)//' not found in the CHEM file '//TRIM(HCHEMFILE))
           END IF !IRESP
@@ -487,7 +485,7 @@ IF(PRESENT(HCHEMFILE)) THEN
         TZFIELD%CMNHNAME   = TRIM(CDESLTNAMES(JSV-NSV_SLTDEPBEG+1))//'T'
         TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
         WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_READ_FIELD(TZCHEMFILE,TZFIELD,XSVT(:,:,:,JSV),IRESP)
+        CALL IO_Field_read(TZCHEMFILE,TZFIELD,XSVT(:,:,:,JSV),IRESP)
         IF (IRESP/=0) THEN
           WRITE(ILUOUT,*) TRIM(TZFIELD%CMNHNAME),'NOT FOUND IN THE CHEM FILE ',HCHEMFILE
           LDEPOS_SLT(IMI)=.FALSE.
@@ -496,7 +494,7 @@ IF(PRESENT(HCHEMFILE)) THEN
     ENDIF ! ldepos_slt 
   END IF  ! LSALT
   !
-  CALL IO_FILE_CLOSE_ll(TZCHEMFILE)
+  CALL IO_File_close(TZCHEMFILE)
   !
 ELSE ! HCHEMFILE
   IF (NSV >=1) THEN

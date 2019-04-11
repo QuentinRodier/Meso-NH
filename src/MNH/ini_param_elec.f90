@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     	##########################
@@ -12,7 +12,7 @@ INTERFACE
         SUBROUTINE INI_PARAM_ELEC (TPINIFILE, HGETSVM, PRHO00,       &
                                    KRR, KND, PFDINFTY, IIU, IJU, IKU )
 !
-USE MODD_IO_ll, ONLY : TFILEDATA
+USE MODD_IO, ONLY : TFILEDATA
 !
 TYPE(TFILEDATA),   INTENT(IN) :: TPINIFILE ! Initial file
 CHARACTER (LEN=*), DIMENSION(:),INTENT(IN)  :: HGETSVM
@@ -94,15 +94,15 @@ USE MODD_CST
 USE MODD_ELEC_n
 USE MODD_ELEC_DESCR
 USE MODD_ELEC_PARAM
-USE MODD_IO_ll, ONLY : TFILEDATA
-USE MODD_NSV,   ONLY : NSV_ELECEND
+USE MODD_IO,             ONLY: TFILEDATA
+USE MODD_NSV,            ONLY: NSV_ELECEND
 USE MODD_PARAMETERS
 USE MODD_PARAM_ICE
 USE MODD_RAIN_ICE_DESCR
 USE MODD_RAIN_ICE_PARAM
 USE MODD_VAR_ll
 !
-USE MODE_FMREAD
+USE MODE_IO_FIELD_READ,  only: IO_Field_read
 !
 USE MODI_MOMG
 USE MODI_RRCOLSS
@@ -348,10 +348,10 @@ XEW(:,:,:) = 0.
 !
 SELECT CASE(HGETSVM(NSV_ELECEND))
   CASE ('READ')
-    CALL IO_READ_FIELD(TPINIFILE,'NI_IAGGS',XNI_IAGGS)
-    CALL IO_READ_FIELD(TPINIFILE,'NI_IDRYG',XNI_IDRYG)
-    CALL IO_READ_FIELD(TPINIFILE,'NI_SDRYG',XNI_SDRYG)
-    CALL IO_READ_FIELD(TPINIFILE,'INDUC_CG',XIND_RATE)
+    CALL IO_Field_read(TPINIFILE,'NI_IAGGS',XNI_IAGGS)
+    CALL IO_Field_read(TPINIFILE,'NI_IDRYG',XNI_IDRYG)
+    CALL IO_Field_read(TPINIFILE,'NI_SDRYG',XNI_SDRYG)
+    CALL IO_Field_read(TPINIFILE,'INDUC_CG',XIND_RATE)
   CASE ('INIT')
     XNI_IAGGS(:,:,:) = 0.
     XNI_IDRYG(:,:,:) = 0.

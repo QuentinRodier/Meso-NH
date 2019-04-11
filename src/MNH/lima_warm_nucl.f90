@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !      ##########################
@@ -13,7 +13,7 @@ INTERFACE
                                  PRCM, PRVT, PRCT, PRRT,                          &
                                  PTHS, PRVS, PRCS, PCCS, PNFS, PNAS               )
 !
-USE MODD_IO_ll,   ONLY: TFILEDATA
+USE MODD_IO,   ONLY: TFILEDATA
 !
 LOGICAL,                  INTENT(IN)    :: OACTIT     ! Switch to activate the
                                                       ! activation by radiative
@@ -108,19 +108,18 @@ END MODULE MODI_LIMA_WARM_NUCL
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAMETERS,     ONLY : JPHEXT, JPVEXT
+USE MODD_PARAMETERS,      ONLY : JPHEXT, JPVEXT
 USE MODD_CST
 USE MODD_PARAM_LIMA
 USE MODD_PARAM_LIMA_WARM
 !
 USE MODI_GAMMA
-USE MODI_LIMA_FUNCTIONS, ONLY : COUNTJV
+USE MODI_LIMA_FUNCTIONS,  ONLY : COUNTJV
 !
-USE MODE_FM
-USE MODE_FMWRIT
-USE MODD_IO_ll,   ONLY: TFILEDATA
-USE MODD_LUNIT_n, ONLY: TLUOUT
-USE MODE_FIELD, ONLY : TFIELDDATA, TYPEREAL
+USE MODE_IO_FIELD_WRITE,  only: IO_Field_write
+USE MODD_IO,              ONLY: TFILEDATA
+USE MODD_LUNIT_n,         ONLY: TLUOUT
+USE MODE_FIELD,           ONLY : TFIELDDATA, TYPEREAL
 !
 IMPLICIT NONE
 !
@@ -132,7 +131,7 @@ LOGICAL,                  INTENT(IN)    :: OACTIT     ! Switch to activate the
 REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
                                                       ! (single if cold start)
 INTEGER,                  INTENT(IN)    :: KMI        ! Model index 
-TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE     ! Output file
+TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE     ! Output file
 LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
                                                       ! the output FM file
 !
@@ -535,7 +534,7 @@ IF ( OCLOSE_OUT ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZW)
+  CALL IO_Field_write(TPFILE,TZFIELD,ZW)
   !
   TZFIELD%CMNHNAME   ='NACT'
   TZFIELD%CSTDNAME   = ''
@@ -547,7 +546,7 @@ IF ( OCLOSE_OUT ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZW2)
+  CALL IO_Field_write(TPFILE,TZFIELD,ZW2)
 END IF
 !
 !

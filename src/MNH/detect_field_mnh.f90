@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 surfex 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !      #####################
 MODULE MODI_DETECT_FIELD_MNH
@@ -72,15 +67,13 @@ SUBROUTINE DETECT_FIELD_MNH(HPROGRAM,KI,KJ,PFIELD,OITSHERE)
 !
 !
 !
-USE MODE_FM
-USE MODE_ll
-USE MODE_IO_ll
-
-USE MODD_PARAMETERS,     ONLY : XUNDEF, JPHEXT
+USE MODD_PARAMETERS,  ONLY: XUNDEF, JPHEXT
+USE MODD_IO_SURF_MNH, ONLY: NMASK, NIU, NJU, NIB, NJB, NIE, NJE
 !
-USE MODD_IO_SURF_MNH, ONLY : NMASK, NIU, NJU, NIB, NJB, NIE, NJE
-
+USE MODE_ll
+!
 USE MODI_UNPACK_1D_2D
+!
 IMPLICIT NONE
 !
 !*       0.1   declarations of arguments

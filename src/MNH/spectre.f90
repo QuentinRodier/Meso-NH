@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ######spl
       PROGRAM SPECTRE
 !     ############
@@ -24,7 +25,7 @@
 !
 !
 USE MODD_CONF
-USE MODD_IO_ll, ONLY: NIO_VERB,NVERB_DEBUG,TFILEDATA
+USE MODD_IO, ONLY: NIO_VERB,NVERB_DEBUG,TFILEDATA
 USE MODD_LUNIT
 USE MODD_LUNIT_n
 USE MODD_TIME_n
@@ -36,10 +37,10 @@ USE MODI_SPECTRE_AROME
 !
 USE MODE_MSG
 USE MODE_POS
-USE MODE_IO_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST,IO_FILE_PRINT_LIST
+USE MODE_IO,               only: IO_Config_set, IO_Init
+USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
+USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list, IO_Filelist_print
 USE MODE_MODELN_HANDLER
-USE MODE_FM
 !USE MODD_TYPE_DATE
 USE MODI_VERSION
 !
@@ -84,7 +85,7 @@ CALL GOTO_MODEL(1)
 CALL VERSION
 CPROGRAM='SPEC  '
 !
-CALL INITIO_ll()
+CALL IO_Init()
 !
 ! initialization 
 YINIFILE(:)   = '                         '
@@ -120,8 +121,8 @@ PRINT*, '*********************************************************************'
 PRINT*, '*********************************************************************'
 PRINT*, ' '
 !
-CALL IO_FILE_ADD2LIST(TZNMLFILE,'SPEC1.nam','NML','READ')
-CALL IO_FILE_OPEN_ll(TZNMLFILE)
+CALL IO_File_add2list(TZNMLFILE,'SPEC1.nam','NML','READ')
+CALL IO_File_open(TZNMLFILE)
 ILUNAM = TZNMLFILE%NLU
 !
 PRINT*, 'READ THE SPEC1.NAM FILE'
@@ -162,9 +163,9 @@ IF (GFOUND) THEN
   READ(UNIT=ILUNAM,NML=NAM_CONFIO)
   PRINT*, '  namelist NAM_CONFIO read'
 END IF
-CALL SET_CONFIO_ll()
+CALL IO_Config_set()
 !
-CALL IO_FILE_CLOSE_ll(TZNMLFILE)
+CALL IO_File_close(TZNMLFILE)
 !
 CINIFILE = YINIFILE(1)
 !
@@ -188,10 +189,10 @@ ENDIF
 IF (CTYPEFILE=='MESONH') THEN
   CALL SPECTRE_MESONH(YOUTFILE)
   !
-  CALL IO_FILE_CLOSE_ll(LUNIT_MODEL(1)%TINIFILE)
-  IF(NIO_VERB>=NVERB_DEBUG) CALL IO_FILE_PRINT_LIST()
-  CALL IO_FILE_CLOSE_ll(TLUOUT0)
-  CALL IO_FILE_CLOSE_ll(TLUOUT)
+  CALL IO_File_close(LUNIT_MODEL(1)%TINIFILE)
+  IF(NIO_VERB>=NVERB_DEBUG) CALL IO_Filelist_print()
+  CALL IO_File_close(TLUOUT0)
+  CALL IO_File_close(TLUOUT)
 ELSEIF (CTYPEFILE=='AROME ')THEN
  CALL SPECTRE_AROME(CINIFILE,YOUTFILE,XDELTAX,XDELTAY,NI,NJ,NK)
 ELSE

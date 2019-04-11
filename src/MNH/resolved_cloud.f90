@@ -25,7 +25,7 @@ INTERFACE
                                   PINDEP, PSUPSAT,  PNACT, PNPRO,PSSPRO, PRAINFR,      &
                                   PSEA,PTOWN          )   
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 CHARACTER(LEN=4),         INTENT(IN)   :: HCLOUD   ! kind of cloud
 CHARACTER(LEN=4),         INTENT(IN)   :: HACTCCN  ! kind of CCN activation scheme
@@ -277,7 +277,7 @@ USE MODD_CH_AEROSOL,     ONLY: LORILAM
 USE MODD_DUST,           ONLY: LDUST
 USE MODD_CST,            ONLY: XCI, XCL, XCPD, XCPV, XLSTT, XLVTT, XMNH_TINY, XP00, XRD, XRHOLW, XTT
 USE MODD_DUST ,          ONLY: LDUST
-USE MODD_IO_ll,          ONLY: TFILEDATA
+USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_NSV,            ONLY: NSV_C1R3END, NSV_C2R2BEG, NSV_C2R2END,                            &
                                NSV_LIMA_BEG, NSV_LIMA_END, NSV_LIMA_CCN_FREE, NSV_LIMA_IFN_FREE, &
                                NSV_LIMA_NC, NSV_LIMA_NI, NSV_LIMA_NR

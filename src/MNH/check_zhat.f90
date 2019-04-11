@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -45,7 +45,7 @@ END MODULE MODI_CHECK_ZHAT
 !!      Module MODD_CONF      : contains configuration variables for all models.
 !!         NVERB : verbosity level for output-listing
 !!      Module MODD_LUNIT     : contains logical unit names for all models
-!!         CLUOUT0 : name of output-listing
+!!         TLUOUT0 : name of output-listing
 !!      Module MODD_GRID1 
 !!         XZHAT
 !!      Module MODD_DIM1 
@@ -75,12 +75,12 @@ END MODULE MODI_CHECK_ZHAT
 USE MODD_CONF
 USE MODD_DIM_n
 USE MODD_GRID_n
-USE MODD_IO_ll,            ONLY: TFILEDATA
+USE MODD_IO,               ONLY: TFILEDATA
 USE MODD_LUNIT,            ONLY: TLUOUT0
 USE MODD_PARAMETERS
 !
-USE MODE_FMREAD
-USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
+USE MODE_IO_FIELD_READ,    only: IO_Field_read
+USE MODE_IO_MANAGE_STRUCT, only: IO_File_find_byname
 !
 IMPLICIT NONE
 !
@@ -101,7 +101,7 @@ REAL                :: ZLEN1                ! Decay scale for smooth topography
 REAL                :: ZLEN2                ! Decay scale for small-scale topography deviation
 !
 INTEGER             :: IRESP                ! return-code if problems occured
-INTEGER             :: ILUOUT0              ! logical unit for file CLUOUT0
+INTEGER             :: ILUOUT0              ! logical unit for file TLUOUT0
 LOGICAL             :: GTHINSHELL
 TYPE(TFILEDATA),POINTER :: TZFMFILE
 !
@@ -114,16 +114,16 @@ ILUOUT0 = TLUOUT0%NLU
 !*            1. Reading grid and dimension
 !                --------------------------
 !
-CALL IO_FILE_FIND_BYNAME(TRIM(HFMFILE),TZFMFILE,IRESP)
+CALL IO_File_find_byname(TRIM(HFMFILE),TZFMFILE,IRESP)
 !
-CALL IO_READ_FIELD(TZFMFILE,'KMAX',IKMAX)
+CALL IO_Field_read(TZFMFILE,'KMAX',IKMAX)
 ALLOCATE(ZZHAT(IKMAX+2*JPVEXT))
-CALL IO_READ_FIELD(TZFMFILE,'ZHAT',ZZHAT)
-CALL IO_READ_FIELD(TZFMFILE,'THINSHELL',GTHINSHELL)
+CALL IO_Field_read(TZFMFILE,'ZHAT',ZZHAT)
+CALL IO_Field_read(TZFMFILE,'THINSHELL',GTHINSHELL)
 IF ( TZFMFILE%NMNHVERSION(1)<4 .OR. (TZFMFILE%NMNHVERSION(1)==4 .AND. TZFMFILE%NMNHVERSION(2)<=6) ) THEN
   GSLEVE = .FALSE.
 ELSE
-  CALL IO_READ_FIELD(TZFMFILE,'SLEVE',GSLEVE)
+  CALL IO_Field_read(TZFMFILE,'SLEVE',GSLEVE)
 ENDIF
 !
 !*            2. Check dimensions
@@ -171,8 +171,8 @@ END IF
 !                -------------------------------------
 !
 IF ( GSLEVE .AND. LSLEVE ) THEN
-  CALL IO_READ_FIELD(TZFMFILE,'LEN1',ZLEN1)
-  CALL IO_READ_FIELD(TZFMFILE,'LEN2',ZLEN2)
+  CALL IO_Field_read(TZFMFILE,'LEN1',ZLEN1)
+  CALL IO_Field_read(TZFMFILE,'LEN2',ZLEN2)
   IF (ZLEN1 /= XLEN1 .OR. ZLEN2 /= XLEN2) THEN
     HDAD_NAME=' '
     WRITE (ILUOUT0,*) '********************************************************'

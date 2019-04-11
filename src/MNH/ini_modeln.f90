@@ -9,12 +9,11 @@
 !
 INTERFACE
 !
-       SUBROUTINE INI_MODEL_n(KMI,HLUOUT,TPINIFILE)
+       SUBROUTINE INI_MODEL_n(KMI,TPINIFILE)
 !
-USE MODD_IO_ll, ONLY : TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 INTEGER,          INTENT(IN)   :: KMI       ! Model Index
-CHARACTER(LEN=*), INTENT(IN)   :: HLUOUT    ! name for output-listing of nested models
 TYPE(TFILEDATA),  INTENT(IN)   :: TPINIFILE ! Initial file
 !
 END SUBROUTINE INI_MODEL_n
@@ -23,7 +22,7 @@ END INTERFACE
 !
 END MODULE MODI_INI_MODEL_n
 !     ############################################
-      SUBROUTINE INI_MODEL_n(KMI,HLUOUT,TPINIFILE)
+      SUBROUTINE INI_MODEL_n(KMI,TPINIFILE)
 !     ############################################
 !
 !!****  *INI_MODEL_n* - routine to initialize the nested model _n
@@ -64,7 +63,7 @@ END MODULE MODI_INI_MODEL_n
 !!    INI_CPL.
 !!       - The initialization of the parameters needed for the dynamics
 !!         of the model n is realized in INI_DYNAMICS.
-!!       - Then the initial file (DESFM+LFIFM files) is closed by IO_FILE_CLOSE_ll.
+!!       - Then the initial file (DESFM+LFIFM files) is closed by IO_File_close.
 !!       - The initialization of the parameters needed for the ECMWF radiation
 !!         code is realized in INI_RADIATIONS.
 !!       - The contents of the scalar variables are overwritten by
@@ -75,8 +74,6 @@ END MODULE MODI_INI_MODEL_n
 !!
 !!    EXTERNAL
 !!    --------
-!!      FMREAD      : to read a LFIFM file
-!!      FMFREE      : to release a logical unit number
 !!      SET_DIM     : to initialize dimensions
 !!      SET_GRID    : to initialize grid
 !!      METRICS     : to compute metric coefficients
@@ -279,8 +276,11 @@ END MODULE MODI_INI_MODEL_n
 !!                   V. Vionnet : 18/07/2017 : add blowing snow scheme 
 !!                   01/18 J.Colin Add DRAG 
 !  P. Wautelet 29/01/2019: bug: add missing zero-size allocations
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !  P. Wautelet 13/02/2019: initialize XALBUV even if no radiation (needed in CH_INTERP_JVALUES)
 !  P. Wautelet 13/02/2019: removed PPABSM and PTSTEP dummy arguments of READ_FIELD
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
+!  P. Wautelet 14/02/2019: remove HINIFILE dummy argument from INI_RADIATIONS_ECMWF/ECRAD
 !!                   02/2019 C.Lac add rain fraction as an output field
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 14/03/2019: correct ZWS when variable not present in file (set to XZWS_DEFAULT)
@@ -295,10 +295,10 @@ END MODULE MODI_INI_MODEL_n
 !
 USE MODE_ll
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
-USE MODE_IO_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST
-USE MODE_FM, ONLY: IO_FILE_OPEN_ll
-USE MODE_FMREAD
+USE MODE_IO
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_add2list
+USE MODE_IO_FILE,          ONLY: IO_File_open
+USE MODE_IO_FIELD_READ,    only: IO_Field_read
 USE MODE_GATHER_ll
 USE MODE_MSG
 USE MODE_TYPE_ZDIFFU
@@ -439,7 +439,7 @@ USE MODD_ADVFRC_n
 USE MODD_RELFRC_n
 USE MODD_2D_FRC
 USE MODD_IO_SURF_MNH, ONLY : IO_SURF_MNH_MODEL
-USE MODD_IO_ll,       ONLY : CIO_DIR,TFILEDATA,TFILE_DUMMY,TFILE_FIRST,TFILE_LAST
+USE MODD_IO,       ONLY: CIO_DIR, TFILEDATA, TFILE_DUMMY, TFILE_FIRST, TFILE_LAST
 !
 USE MODD_CH_PRODLOSSTOT_n
 USE MODI_CH_INIT_PRODLOSSTOT_n
@@ -460,7 +460,6 @@ IMPLICIT NONE
 !
 !
 INTEGER,          INTENT(IN)   :: KMI       ! Model Index
-CHARACTER(LEN=*), INTENT(IN)   :: HLUOUT    ! name for output-listing of nested models
 TYPE(TFILEDATA),  INTENT(IN)   :: TPINIFILE ! Initial file
 !
 !*       0.2   declarations of local variables
@@ -564,11 +563,11 @@ ILUOUT = TLUOUT%NLU
 !*       2.1  Read number of forcing fields
 !
 IF (LFORCING) THEN ! Retrieve the number of time-dependent forcings.
-  CALL IO_READ_FIELD(TPINIFILE,'FRC',NFRC,IRESP)
+  CALL IO_Field_read(TPINIFILE,'FRC',NFRC,IRESP)
   IF ( (IRESP /= 0) .OR. (NFRC <=0) ) THEN
     WRITE(ILUOUT,'(A/A)') &
      "INI_MODEL_n ERROR: you want to read forcing variables from FMfile", &
-     "                   but no fields have been found by IO_READ_FIELD"
+     "                   but no fields have been found by IO_Field_read"
 !callabortstop
     CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_MODEL_n','')
   END IF
@@ -577,11 +576,11 @@ END IF
 ! Modif PP for time evolving adv forcing
   IF ( L2D_ADV_FRC ) THEN ! Retrieve the number of time-dependent forcings.
     WRITE(ILUOUT,FMT=*) "INI_MODEL_n ENTER ADV_FORCING"
-    CALL IO_READ_FIELD(TPINIFILE,'NADVFRC1',NADVFRC,IRESP)
+    CALL IO_Field_read(TPINIFILE,'NADVFRC1',NADVFRC,IRESP)
     IF ( (IRESP /= 0) .OR. (NADVFRC <=0) ) THEN
       WRITE(ILUOUT,'(A/A)') &
       "INI_MODELn ERROR: you want to read forcing ADV variables from FMfile", &
-      "                   but no fields have been found by IO_READ_FIELD"
+      "                   but no fields have been found by IO_Field_read"
     !callabortstop
       CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_MODEL_n','')
     END IF
@@ -590,11 +589,11 @@ END IF
 !
 IF ( L2D_REL_FRC ) THEN ! Retrieve the number of time-dependent forcings.
     WRITE(ILUOUT,FMT=*) "INI_MODEL_n ENTER REL_FORCING"
-    CALL IO_READ_FIELD(TPINIFILE,'NRELFRC1',NRELFRC,IRESP)
+    CALL IO_Field_read(TPINIFILE,'NRELFRC1',NRELFRC,IRESP)
     IF ( (IRESP /= 0) .OR. (NRELFRC <=0) ) THEN
       WRITE(ILUOUT,'(A/A)') &
       "INI_MODELn ERROR: you want to read forcing REL variables from FMfile", &
-      "                   but no fields have been found by IO_READ_FIELD"
+      "                   but no fields have been found by IO_Field_read"
     !callabortstop
       CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_MODEL_n','')
     END IF
@@ -605,8 +604,8 @@ END IF
 IKU=NKMAX+2*JPVEXT
 !
 ALLOCATE(XZHAT(IKU))
-CALL IO_READ_FIELD(TPINIFILE,'ZHAT',XZHAT)
-CALL IO_READ_FIELD(TPINIFILE,'ZTOP',XZTOP)
+CALL IO_Field_read(TPINIFILE,'ZHAT',XZHAT)
+CALL IO_Field_read(TPINIFILE,'ZTOP',XZTOP)
 IF (XALZBOT>=XZHAT(IKU) .AND. LVE_RELAX) THEN
   WRITE(ILUOUT,FMT=*) "INI_MODEL_n ERROR: you want to use vertical relaxation"
   WRITE(ILUOUT,FMT=*) "                  but bottom of layer XALZBOT(",XALZBOT,")"
@@ -1678,7 +1677,7 @@ IF (KMI == 1) THEN
   DO IMI = 1 , NMODEL
     WRITE(IO_SURF_MNH_MODEL(IMI)%COUTFILE,'(A,".",I1,".",A)') CEXP,IMI,TRIM(ADJUSTL(CSEG))
     WRITE(YNAME, '(A,".",I1,".",A)') CEXP,IMI,TRIM(ADJUSTL(CSEG))//'.000'
-    CALL IO_FILE_ADD2LIST(LUNIT_MODEL(IMI)%TDIAFILE,YNAME,'DIACHRONIC','WRITE',     &
+    CALL IO_File_add2list(LUNIT_MODEL(IMI)%TDIAFILE,YNAME,'MNHDIACHRONIC','WRITE',  &
                           HDIRNAME=CIO_DIR,                                         &
                           KLFINPRAR=INT(50,KIND=LFI_INT),KLFITYPE=1,KLFIVERB=NVERB, &
                           TPDADFILE=LUNIT_MODEL(NDAD(IMI))%TDIAFILE )
@@ -1837,9 +1836,9 @@ IF (CELEC == 'NONE') THEN
 !               --------------------------------------
 !
 ELSE
-  CALL INI_ELEC_n(ILUOUT, CELEC, CCLOUD, HLUOUT, TPINIFILE, &
-                  XTSTEP, XZZ,                              &
-                  XDXX, XDYY, XDZZ, XDZX, XDZY              )
+  CALL INI_ELEC_n(ILUOUT, CELEC, CCLOUD, TPINIFILE, &
+                  XTSTEP, XZZ,                      &
+                  XDXX, XDYY, XDZZ, XDZX, XDZY      )
 !
   WRITE (UNIT=ILUOUT,&
   FMT='(/,"ELECTRIC VARIABLES ARE BETWEEN INDEX",I2," AND ",I2)')&
@@ -2014,7 +2013,7 @@ IF ( KMI > 1) THEN
   DPTR_XLBYRM=>XLBYRM
   DPTR_XLBXSVM=>XLBXSVM
   DPTR_XLBYSVM=>XLBYSVM
-  CALL INI_ONE_WAY_n(NDAD(KMI),CLUOUT,XTSTEP,KMI,1,                         &
+  CALL INI_ONE_WAY_n(NDAD(KMI),XTSTEP,KMI,1,                         &
        DPTR_XBMX1,DPTR_XBMX2,DPTR_XBMX3,DPTR_XBMX4,DPTR_XBMY1,DPTR_XBMY2,DPTR_XBMY3,DPTR_XBMY4,        &
        DPTR_XBFX1,DPTR_XBFX2,DPTR_XBFX3,DPTR_XBFX4,DPTR_XBFY1,DPTR_XBFY2,DPTR_XBFY3,DPTR_XBFY4,        &
        NDXRATIO_ALL(KMI),NDYRATIO_ALL(KMI),NDTRATIO(KMI),      &
@@ -2087,7 +2086,7 @@ IF (CRAD   /= 'NONE') THEN
   ELSE
     GINIRAD  =.FALSE.
   END IF
-  CALL INI_RADIATIONS(TPINIFILE,HLUOUT,GINIRAD,TDTCUR,TDTEXP,XZZ, &
+  CALL INI_RADIATIONS(TPINIFILE,GINIRAD,TDTCUR,TDTEXP,XZZ, &
                       XDXX, XDYY,                         &
                       XSINDEL,XCOSDEL,XTSIDER,XCORSOL,    &
                       XSLOPANG,XSLOPAZI,                  &
@@ -2148,7 +2147,7 @@ ALLOCATE(ZEMIS  (IIU,IJU,NLWB_MNH))
 ALLOCATE(ZTSRAD (IIU,IJU))
 !
 IF ((TPINIFILE%NMNHVERSION(1)==4 .AND. TPINIFILE%NMNHVERSION(2)>=6) .OR. TPINIFILE%NMNHVERSION(1)>4) THEN
-  CALL IO_READ_FIELD(TPINIFILE,'SURF',CSURF)
+  CALL IO_Field_read(TPINIFILE,'SURF',CSURF)
 ELSE
   CSURF = "EXTE"
 END IF
@@ -2157,8 +2156,8 @@ END IF
 IF (CSURF=='EXTE' .AND. (CPROGRAM=='MESONH' .OR. CPROGRAM=='DIAG  ')) THEN
   ! ouverture du fichier PGD
   IF  ( LEN_TRIM(CINIFILEPGD) > 0 ) THEN
-    CALL IO_FILE_ADD2LIST(TINIFILEPGD,TRIM(CINIFILEPGD),'UNKNOWN','READ',KLFITYPE=2,KLFIVERB=NVERB)
-    CALL IO_FILE_OPEN_ll(TINIFILEPGD,OPARALLELIO=.FALSE.,KRESP=IRESP)
+    CALL IO_File_add2list(TINIFILEPGD,TRIM(CINIFILEPGD),'PGD','READ',KLFITYPE=2,KLFIVERB=NVERB)
+    CALL IO_File_open(TINIFILEPGD,KRESP=IRESP)
     LUNIT_MODEL(KMI)%TINIFILEPGD => TINIFILEPGD
     IF (IRESP/=0) THEN
       WRITE(ILUOUT,FMT=*) "INI_MODEL_n ERROR TO OPEN THE FILE CINIFILEPGD=",CINIFILEPGD
@@ -2200,8 +2199,8 @@ ELSE
 END IF
 IF (CSURF=='EXTE' .AND. (CPROGRAM=='SPAWN ')) THEN
   ! ouverture du fichier PGD
-  CALL IO_FILE_ADD2LIST(TINIFILEPGD,TRIM(CINIFILEPGD),'UNKNOWN','READ',KLFITYPE=2,KLFIVERB=NVERB)
-  CALL IO_FILE_OPEN_ll(TINIFILEPGD,OPARALLELIO=.FALSE.,KRESP=IRESP)
+  CALL IO_File_add2list(TINIFILEPGD,TRIM(CINIFILEPGD),'PGD','READ',KLFITYPE=2,KLFIVERB=NVERB)
+  CALL IO_File_open(TINIFILEPGD,KRESP=IRESP)
   LUNIT_MODEL(KMI)%TINIFILEPGD => TINIFILEPGD
   IF (IRESP/=0) THEN
     WRITE(ILUOUT,FMT=*) "INI_MODEL_n ERROR TO OPEN THE FILE CINIFILEPGD=",CINIFILEPGD
@@ -2258,8 +2257,7 @@ IF (CRAD   == 'ECMW') THEN
       ZBARE(:,:) = 0.
     END IF
 !
-    CALL INI_RADIATIONS_ECMWF (TPINIFILE%CNAME,HLUOUT,                                 &
-                               XZHAT,XPABST,XTHT,XTSRAD,XLAT,XLON,TDTCUR,TDTEXP,       &
+    CALL INI_RADIATIONS_ECMWF (XZHAT,XPABST,XTHT,XTSRAD,XLAT,XLON,TDTCUR,TDTEXP,       &
                                CLW,NDLON,NFLEV,NFLUX,NRAD,NSWB_OLD,CAER,NAER,NSTATM,   &
                                XSTATM,ZSEA,ZTOWN,ZBARE,XOZON, XAER,XDST_WL, LSUBG_COND )
 !
@@ -2285,9 +2283,8 @@ ELSE IF (CRAD   == 'ECRA') THEN
       ZTOWN(:,:) = 0.
       ZBARE(:,:) = 0.
     END IF
-!   
-    CALL INI_RADIATIONS_ECRAD (TPINIFILE%CNAME,HLUOUT,                                 &
-                               XZHAT,XPABST,XTHT,XTSRAD,XLAT,XLON,TDTCUR,TDTEXP,       &
+!
+    CALL INI_RADIATIONS_ECRAD (XZHAT,XPABST,XTHT,XTSRAD,XLAT,XLON,TDTCUR,TDTEXP,       &
                                CLW,NDLON,NFLEV,NFLUX,NRAD,NSWB_OLD,CAER,NAER,NSTATM,   &
                                XSTATM,ZSEA,ZTOWN,ZBARE,XOZON, XAER,XDST_WL, LSUBG_COND )
 
@@ -2320,7 +2317,7 @@ IF (CDCONV /= 'NONE' .OR. CSCONV == 'KAFR') THEN
   IF (NVERB>=10) THEN
     WRITE(ILUOUT,*) 'XDTCONV has been set to : ',XDTCONV
   END IF
-  CALL INI_DEEP_CONVECTION (TPINIFILE,HLUOUT,GINIDCONV,TDTCUR,               &
+  CALL INI_DEEP_CONVECTION (TPINIFILE,GINIDCONV,TDTCUR,                      &
                            NCOUNTCONV,XDTHCONV,XDRVCONV,XDRCCONV,            &
                            XDRICONV,XPRCONV,XPRSCONV,XPACCONV,               &
                            XUMFCONV,XDMFCONV,XMFCONV,XPRLFLXCONV,XPRSFLXCONV,&

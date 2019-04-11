@@ -193,7 +193,6 @@ END MODULE MODI_PPM
 !-------------------------------------------------------------------------------
 !
 USE MODE_ll
-USE MODE_IO_ll
 USE MODI_SHUMAN
 USE MODI_GET_HALO
 !
@@ -633,7 +632,6 @@ END FUNCTION PPM_01_X
 !-------------------------------------------------------------------------------
 !
 USE MODE_ll
-USE MODE_IO_ll
 USE MODI_SHUMAN
 USE MODI_GET_HALO
 !
@@ -1275,7 +1273,6 @@ END FUNCTION PPM_01_Z
 !-------------------------------------------------------------------------------
 !
 USE MODE_ll
-USE MODE_IO_ll
 USE MODI_SHUMAN
 USE MODI_GET_HALO
 !
@@ -1540,7 +1537,6 @@ END FUNCTION PPM_S0_X
 !-------------------------------------------------------------------------------
 !
 USE MODE_ll
-USE MODE_IO_ll
 USE MODI_SHUMAN
 USE MODI_GET_HALO
 !
@@ -1933,7 +1929,6 @@ END FUNCTION PPM_S0_Z
 !-------------------------------------------------------------------------------
 !
 USE MODE_ll
-USE MODE_IO_ll
 USE MODI_SHUMAN
 !
 USE MODD_CONF
@@ -2186,7 +2181,6 @@ END FUNCTION PPM_S1_X
 !-------------------------------------------------------------------------------
 !
 USE MODE_ll
-USE MODE_IO_ll
 USE MODI_SHUMAN
 !
 USE MODD_CONF

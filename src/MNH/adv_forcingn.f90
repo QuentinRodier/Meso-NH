@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !     #####################
       MODULE MODI_ADV_FORCING_n
@@ -100,21 +100,17 @@ END MODULE MODI_ADV_FORCING_n
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_DATETIME
-USE MODE_FM
-USE MODE_IO_ll
-!
+USE MODD_ADVFRC_n     ! Modules for time evolving advfrc
+USE MODD_BUDGET
 USE MODD_DYN
 USE MODD_LUNIT, ONLY: TLUOUT0
 USE MODD_PARAMETERS
 USE MODD_TIME
-USE MODD_BUDGET
+!
+USE MODE_DATETIME
 !
 USE MODI_BUDGET
-!
-USE MODD_ADVFRC_n     ! Modules for time evolving advfrc
 USE MODI_SHUMAN
-!USE MODD_FRC
 !
 IMPLICIT NONE
 !

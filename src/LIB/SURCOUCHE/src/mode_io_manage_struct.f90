@@ -3,26 +3,35 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!!    Authors
-!!    -------
-!
-!     P. Wautelet : 2016: original version
+! Author(s)
+!  P. Wautelet 2016
 ! Modifications:
-!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!  Philippe Wautelet: 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll
-!                                 to allow to disable writes (for bench purposes)
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll
+!                          to allow to disable writes (for bench purposes)
+!  P. Wautelet 06/02/2019: simplify OPEN_ll and do somme assignments at a more logical place
+!  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
+!  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
+!                          (nsubfiles_ioz is now determined in IO_File_add2list)
+!  P. Wautelet 18/02/2019: bugfixes for nsubfiles_ioz
+!  P. Wautelet 05/03/2019: rename IO subroutines and modules
+!  P. Wautelet 12/03/2019: add TMAINFILE field in TFILEDATA
 !-----------------------------------------------------------------
 MODULE MODE_IO_MANAGE_STRUCT
 !
-USE MODD_IO_ll
+USE MODD_IO
 USE MODE_MSG
 !
 IMPLICIT NONE
 !
+private
+!
+public :: IO_Bakout_struct_prepare, IO_File_add2list, IO_File_find_byname, IO_Filelist_print
+!
 CONTAINS
 !
 !#########################################################################
-SUBROUTINE IO_PREPARE_BAKOUT_STRUCT(KSUP,PTSTEP,PSEGLEN)
+SUBROUTINE IO_Bakout_struct_prepare(KSUP,PTSTEP,PSEGLEN)
 !#########################################################################
 !
 USE MODD_BAKOUT
@@ -56,7 +65,7 @@ INTEGER, DIMENSION(:), ALLOCATABLE :: IBAK_STEP, IOUT_STEP
 CHARACTER (LEN=4) :: YDADNUMBER       ! Character string for the DAD model file number
 !
 !
-CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_PREPARE_BAKOUT_STRUCT','called')
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Bakout_struct_prepare','called')
 !
 ! Special case if writes are forced to NO
 IF (LIO_NO_WRITE) THEN
@@ -177,7 +186,7 @@ DO IMI = 1, NMODEL
     ELSE
       IERR_LVL = NVERB_ERROR
     END IF
-    CALL PRINT_MSG(IERR_LVL,'IO','IO_PREPARE_BAKOUT_STRUCT','no (valid) backup time')
+    CALL PRINT_MSG(IERR_LVL,'IO','IO_Bakout_struct_prepare','no (valid) backup time')
   END IF
   !
   IOUT_NUMB = 0
@@ -195,13 +204,13 @@ DO IMI = 1, NMODEL
   ALLOCATE(OUT_MODEL(IMI)%TBACKUPN(IBAK_NUMB))
   ALLOCATE(OUT_MODEL(IMI)%TOUTPUTN(IOUT_NUMB))
   !
-  CALL POPULATE_STRUCT(TFILE_FIRST,TFILE_LAST,IBAK_STEP,"BACKUP",OUT_MODEL(IMI)%TBACKUPN)
-  CALL POPULATE_STRUCT(TFILE_FIRST,TFILE_LAST,IOUT_STEP,"OUTPUT",OUT_MODEL(IMI)%TOUTPUTN)
+  CALL POPULATE_STRUCT(TFILE_FIRST,TFILE_LAST,IBAK_STEP,"MNHBACKUP",OUT_MODEL(IMI)%TBACKUPN)
+  CALL POPULATE_STRUCT(TFILE_FIRST,TFILE_LAST,IOUT_STEP,"MNHOUTPUT",OUT_MODEL(IMI)%TOUTPUTN)
   !
   !* Find dad output number
   !
   !Security check (if it happens, this part of the code should be exported outside of the IMI loop)
-  IF (NDAD(IMI)>IMI) CALL PRINT_MSG(NVERB_FATAL,'IO','IO_PREPARE_BAKOUT_STRUCT','NDAD(IMI)>IMI')
+  IF (NDAD(IMI)>IMI) CALL PRINT_MSG(NVERB_FATAL,'IO','IO_Bakout_struct_prepare','NDAD(IMI)>IMI')
   IF (NDAD(IMI) == IMI .OR.  IMI == 1) THEN
     OUT_MODEL(IMI)%TBACKUPN(:)%NOUTDAD = 0
     DO IPOS = 1,OUT_MODEL(IMI)%NBAK_NUMB
@@ -257,7 +266,7 @@ DO IMI = 1, NMODEL
     DO IPOS = 1,JPOUTVARMAX
       IF (COUT_VAR(IMI,IPOS)/='') IVAR = IVAR + 1
     END DO
-    IF (IVAR==0) CALL PRINT_MSG(NVERB_ERROR,'IO','IO_PREPARE_BAKOUT_STRUCT','no fields chosen for output')
+    IF (IVAR==0) CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Bakout_struct_prepare','no fields chosen for output')
     ALLOCATE(OUT_MODEL(IMI)%TOUTPUTN(1)%NFIELDLIST(IVAR))
     !Determine the list of the outputs to do (by field number)
     IVAR = 1
@@ -268,7 +277,7 @@ DO IMI = 1, NMODEL
         CALL FIND_FIELD_ID_FROM_MNHNAME(COUT_VAR(IMI,IPOS),IFIELD,IRESP)
         OUT_MODEL(IMI)%TOUTPUTN(1)%NFIELDLIST(IVAR) = IFIELD
         IF (IRESP/=0) THEN
-          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_PREPARE_BAKOUT_STRUCT','unknown field for output: '//TRIM(COUT_VAR(IMI,IPOS)))
+          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_Bakout_struct_prepare','unknown field for output: '//TRIM(COUT_VAR(IMI,IPOS)))
           !MNH is killed to prevent problems with wrong values in NFIELDLIST
         END IF
         !
@@ -285,20 +294,24 @@ DO IMI = 1, NMODEL
   DEALLOCATE(IOUT_STEP)
   !
   IF (IP==1) THEN
-  PRINT *,'-------------------------'
+  PRINT *,'-------------------------------'
   PRINT *,'Model number:      ',IMI
   PRINT *,'Number of backups: ',IBAK_NUMB
-  PRINT *,'Timestep     Time'
-  DO JOUT = 1,IBAK_NUMB
-    WRITE(*,'( I9,F12.3 )'  ) OUT_MODEL(IMI)%TBACKUPN(JOUT)%NSTEP,OUT_MODEL(IMI)%TBACKUPN(JOUT)%XTIME
-  END DO
-  PRINT *,'-------------------------'
+  if ( ibak_numb > 0 ) then
+    PRINT *,'Timestep     Time'
+    DO JOUT = 1,IBAK_NUMB
+      WRITE(*,'( I9,F12.3 )'  ) OUT_MODEL(IMI)%TBACKUPN(JOUT)%NSTEP,OUT_MODEL(IMI)%TBACKUPN(JOUT)%XTIME
+    END DO
+  end if
+  PRINT *,'-------------------------------'
   PRINT *,'Model number:      ',IMI
   PRINT *,'Number of outputs: ',IOUT_NUMB
-  PRINT *,'Timestep     Time'
-  DO JOUT = 1,IOUT_NUMB
-    WRITE(*,'( I9,F12.3 )'  ) OUT_MODEL(IMI)%TOUTPUTN(JOUT)%NSTEP,OUT_MODEL(IMI)%TOUTPUTN(JOUT)%XTIME
-  END DO
+  if ( iout_numb > 0 ) then
+    PRINT *,'Timestep     Time'
+    DO JOUT = 1,IOUT_NUMB
+      WRITE(*,'( I9,F12.3 )'  ) OUT_MODEL(IMI)%TOUTPUTN(JOUT)%NSTEP,OUT_MODEL(IMI)%TOUTPUTN(JOUT)%XTIME
+    END DO
+  end if
   !
   IF (IOUT_NUMB>0) THEN
     PRINT *,'Field list:'
@@ -308,7 +321,7 @@ DO IMI = 1, NMODEL
     END DO
   END IF
   !
-  PRINT *,'-------------------------'
+  PRINT *,'-------------------------------'
   END IF
   !
 END DO ! IMI=1,NMODEL
@@ -529,7 +542,7 @@ SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN)
         TPBAKOUTN(IPOS)%TFILE%CTYPE=HFILETYPE
         TPBAKOUTN(IPOS)%TFILE%CMODE="WRITE"
         WRITE (YNUMBER,FMT="(I3.3)") IPOS
-        IF (TRIM(HFILETYPE)=='OUTPUT') THEN
+        IF (TRIM(HFILETYPE)=='MNHOUTPUT') THEN
           ! Add a "OUT" suffix for output files
           TPBAKOUTN(IPOS)%TFILE%CNAME=ADJUSTL(ADJUSTR(IO_SURF_MNH_MODEL(IMI)%COUTFILE)//'.OUT.'//YNUMBER)
           !Reduce the float precision if asked
@@ -547,7 +560,7 @@ SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN)
           ELSE IF (LEN_TRIM(CIO_DIR)>0) THEN
             TPBAKOUTN(IPOS)%TFILE%CDIRNAME=TRIM(CIO_DIR)
           END IF
-        ELSE IF (TRIM(HFILETYPE)=='BACKUP') THEN
+        ELSE IF (TRIM(HFILETYPE)=='MNHBACKUP') THEN
           TPBAKOUTN(IPOS)%TFILE%CNAME=ADJUSTL(ADJUSTR(IO_SURF_MNH_MODEL(IMI)%COUTFILE)//'.'//YNUMBER)
           IF (LEN_TRIM(CBAK_DIR)>0) THEN
             TPBAKOUTN(IPOS)%TFILE%CDIRNAME=TRIM(CBAK_DIR)
@@ -557,7 +570,7 @@ SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN)
         ELSE
           CALL PRINT_MSG(NVERB_FATAL,'IO','POPULATE_STRUCT','unknown filetype ('//TRIM(HFILETYPE)//')')
         ENDIF
-        TPBAKOUTN(IPOS)%TFILE%NLFITYPE=1 !1: to be transfered
+        TPBAKOUTN(IPOS)%TFILE%NLFITYPE=1 !1: to be transferred
 !PW: TODO: set NLFIVERB only when useful (only if LFI file...)
         TPBAKOUTN(IPOS)%TFILE%NLFIVERB=NVERB
         IF (LIOCDF4) THEN
@@ -565,19 +578,19 @@ SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN)
             TPBAKOUTN(IPOS)%TFILE%CFORMAT='NETCDF4'
           ELSE
             TPBAKOUTN(IPOS)%TFILE%CFORMAT='LFICDF4'
-            IF (TRIM(HFILETYPE)=='BACKUP') TPBAKOUTN(IPOS)%TFILE%NLFINPRAR= 22+2*(4+NRR+NSV)
+            IF (TRIM(HFILETYPE)=='MNHBACKUP') TPBAKOUTN(IPOS)%TFILE%NLFINPRAR= 22+2*(4+NRR+NSV)
           END IF
         ELSE IF (LLFIOUT) THEN
           TPBAKOUTN(IPOS)%TFILE%CFORMAT='LFI'
-          IF (TRIM(HFILETYPE)=='BACKUP') TPBAKOUTN(IPOS)%TFILE%NLFINPRAR= 22+2*(4+NRR+NSV)
+          IF (TRIM(HFILETYPE)=='MNHBACKUP') TPBAKOUTN(IPOS)%TFILE%NLFINPRAR= 22+2*(4+NRR+NSV)
         ELSE
           CALL PRINT_MSG(NVERB_FATAL,'IO','POPULATE_STRUCT','unknown backup/output fileformat')
         ENDIF
         !
         !Create file structures if Z-splitted files
         IF (NB_PROCIO_W>1) THEN
+          TPBAKOUTN(IPOS)%TFILE%NSUBFILES_IOZ = NB_PROCIO_W
           ALLOCATE(TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(NB_PROCIO_W))
-!           ALLOCATE(TPBAKOUTN(IPOS)%TFILE_IOZ(NB_PROCIO_W))
           IF (NB_PROCIO_W>999) THEN
             CALL PRINT_MSG(NVERB_FATAL,'IO','POPULATE_STRUCT','more than 999 z-levels')
           END IF
@@ -592,7 +605,7 @@ SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN)
             TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%CNAME = TRIM(TPBAKOUTN(IPOS)%TFILE%CNAME)//'.Z'//YNUMBER
             IF(ALLOCATED(TPBAKOUTN(IPOS)%TFILE%CDIRNAME)) &
               TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%CDIRNAME = TRIM(TPBAKOUTN(IPOS)%TFILE%CDIRNAME)
-            IF (TRIM(HFILETYPE)=='OUTPUT') THEN
+            IF (TRIM(HFILETYPE)=='MNHOUTPUT') THEN
               !Reduce the float precision if asked
               TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%LNCREDUCE_FLOAT_PRECISION = LOUT_REDUCE_FLOAT_PRECISION(IMI)
               !Set compression if asked
@@ -603,7 +616,7 @@ SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN)
               END IF
               TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%NNCCOMPRESS_LEVEL = NOUT_COMPRESS_LEVEL(IMI)
             END IF
-            TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%NLFITYPE=1 !1: to be transfered
+            TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%NLFITYPE=1 !1: to be transferred
 !PW: TODO: set NLFIVERB only when useful (only if LFI file...)
             TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%NLFIVERB=NVERB
             IF (LIOCDF4) THEN
@@ -618,6 +631,7 @@ SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN)
             ELSE
               CALL PRINT_MSG(NVERB_FATAL,'IO','POPULATE_STRUCT','unknown backup/output fileformat')
             ENDIF
+            TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%TMAINFILE => TPBAKOUTN(IPOS)%TFILE
           END DO
         END IF
         !
@@ -625,15 +639,16 @@ SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN)
   END DO
 END SUBROUTINE POPULATE_STRUCT
 !
-END SUBROUTINE IO_PREPARE_BAKOUT_STRUCT
+END SUBROUTINE IO_Bakout_struct_prepare
 !
-SUBROUTINE IO_FILE_ADD2LIST(TPFILE,HNAME,HTYPE,HMODE,                 &
+SUBROUTINE IO_File_add2list(TPFILE,HNAME,HTYPE,HMODE,                 &
                             HFORM,HACCESS,HFORMAT,HDIRNAME,           &
                             KLFINPRAR,KLFITYPE,KLFIVERB,KRECL,KMODEL, &
-                            TPDADFILE,TPDATAFILE,OOLD)
+                            TPDADFILE,TPDATAFILE,OOLD,OSPLIT_IOZ)
 !
 USE MODD_BAKOUT,         ONLY: LOUT_COMPRESS,LOUT_REDUCE_FLOAT_PRECISION,NOUT_COMPRESS_LEVEL
 USE MODD_CONF,           ONLY: CPROGRAM
+use modd_confz,          only: nb_procio_r,nb_procio_w
 !
 USE MODE_MODELN_HANDLER, ONLY: GET_CURRENT_MODEL_INDEX
 !
@@ -642,7 +657,7 @@ CHARACTER(LEN=*),                INTENT(IN)    :: HNAME     !Filename
 CHARACTER(LEN=*),                INTENT(IN)    :: HTYPE     !Filetype (backup, output, prepidealcase...)
 CHARACTER(LEN=*),                INTENT(IN)    :: HMODE     !Opening mode (read, write...)
 CHARACTER(LEN=*),       OPTIONAL,INTENT(IN)    :: HFORM     !Formatted/unformatted
-CHARACTER(LEN=*),       OPTIONAL,INTENT(IN)    :: HACCESS   !Direct/sequential
+CHARACTER(LEN=*),       OPTIONAL,INTENT(IN)    :: HACCESS   !Direct/sequential/stream
 CHARACTER(LEN=*),       OPTIONAL,INTENT(IN)    :: HFORMAT   !Fileformat (NETCDF4, LFI, LFICDF4...)
 CHARACTER(LEN=*),       OPTIONAL,INTENT(IN)    :: HDIRNAME  !File directory
 INTEGER(KIND=LFI_INT),  OPTIONAL,INTENT(IN)    :: KLFINPRAR !Number of predicted articles of the LFI file (non crucial)
@@ -655,14 +670,18 @@ TYPE(TFILEDATA),POINTER,OPTIONAL,INTENT(IN)    :: TPDATAFILE!Corresponding data 
 LOGICAL,                OPTIONAL,INTENT(IN)    :: OOLD      !FALSE if new file (should not be found)
                                                             !TRUE if the file could already be in the list
                                                             !     (add it only if not yet present)
+logical,                optional,intent(in)    :: osplit_ioz !Is the file split vertically
 !
 INTEGER :: IMI,IRESP
 INTEGER(KIND=LFI_INT) :: ILFINPRAR
 INTEGER :: ILFITYPE
 INTEGER :: ILFIVERB
 LOGICAL :: GOLD
+logical :: gsplit_ioz
 !
-CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_FILE_ADD2LIST','called for '//TRIM(HNAME))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_File_add2list','called for '//TRIM(HNAME))
+!
+IMI = GET_CURRENT_MODEL_INDEX()
 !
 IF (PRESENT(OOLD)) THEN
   GOLD = OOLD
@@ -672,59 +691,57 @@ END IF
 !
 IF (ASSOCIATED(TPFILE)) THEN
   IF (GOLD) THEN
-    CALL PRINT_MSG(NVERB_INFO,'IO','IO_FILE_ADD2LIST','file '//TRIM(HNAME)//' already associated. Pointer will be overwritten')
+    CALL PRINT_MSG(NVERB_INFO,'IO','IO_File_add2list','file '//TRIM(HNAME)//' already associated. Pointer will be overwritten')
     TPFILE => NULL()
   ELSE
-    CALL PRINT_MSG(NVERB_FATAL,'IO','IO_FILE_ADD2LIST','file '//TRIM(HNAME)//' already associated')
+    CALL PRINT_MSG(NVERB_FATAL,'IO','IO_File_add2list','file '//TRIM(HNAME)//' already associated')
   END IF
 END IF
 !
-CALL IO_FILE_FIND_BYNAME(HNAME,TPFILE,IRESP,OOLD=GOLD)
+CALL IO_File_find_byname(HNAME,TPFILE,IRESP,OOLD=GOLD)
 IF (IRESP==0) THEN
   !File has been found
   !Check if really same one (LFI vs netCDF)
   IF (PRESENT(HFORMAT)) THEN
     IF ( (HFORMAT=='LFI' .AND. TPFILE%CFORMAT/='NETCDF4') .OR. (HFORMAT=='NETCDF4' .AND. TPFILE%CFORMAT/='LFI') ) THEN
-      CALL PRINT_MSG(NVERB_FATAL,'IO','IO_FILE_ADD2LIST','file '//TRIM(HNAME)//' already in filelist')
+      CALL PRINT_MSG(NVERB_FATAL,'IO','IO_File_add2list','file '//TRIM(HNAME)//' already in filelist')
     END IF
   ELSE
     IF (.NOT.GOLD) THEN
-      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','file '//TRIM(HNAME)//' already in filelist')
+      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_File_add2list','file '//TRIM(HNAME)//' already in filelist')
     ELSE
-      CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_FILE_ADD2LIST','file '//TRIM(HNAME)//' already in filelist (not unexpected)')
+      CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_File_add2list','file '//TRIM(HNAME)//' already in filelist (not unexpected)')
     END IF
     RETURN
   END IF
 END IF
 !
-IMI = GET_CURRENT_MODEL_INDEX()
-!
 IF(     PRESENT(HFORM) .AND. TRIM(HTYPE)/='SURFACE_DATA') &
-    CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FILE_ADD2LIST','optional argument HFORM is not used by '//TRIM(HTYPE)//' files')
+    CALL PRINT_MSG(NVERB_WARNING,'IO','IO_File_add2list','optional argument HFORM is not used by '//TRIM(HTYPE)//' files')
 IF(.NOT.PRESENT(HFORM) .AND. TRIM(HTYPE)=='SURFACE_DATA') &
-    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','optional argument HFORM is necessary for '//TRIM(HTYPE)//' files')
+    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_File_add2list','optional argument HFORM is necessary for '//TRIM(HTYPE)//' files')
 IF(PRESENT(HFORM)) THEN
   IF(HFORM/='FORMATTED' .AND. HFORM/='UNFORMATTED') &
-    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','HFORM should be FORMATTED or UNFORMATTED and not '//TRIM(HFORM))
+    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_File_add2list','HFORM should be FORMATTED or UNFORMATTED and not '//TRIM(HFORM))
 END IF
 !
 IF(     PRESENT(HACCESS) .AND. TRIM(HTYPE)/='SURFACE_DATA') &
-    CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FILE_ADD2LIST','optional argument HACCESS is not used by '//TRIM(HTYPE)//' files')
+    CALL PRINT_MSG(NVERB_WARNING,'IO','IO_File_add2list','optional argument HACCESS is not used by '//TRIM(HTYPE)//' files')
 IF(.NOT.PRESENT(HACCESS) .AND. TRIM(HTYPE)=='SURFACE_DATA') &
-    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','optional argument HACCESS is necessary for '//TRIM(HTYPE)//' files')
+    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_File_add2list','optional argument HACCESS is necessary for '//TRIM(HTYPE)//' files')
 IF(PRESENT(HACCESS)) THEN
-  IF(HACCESS/='DIRECT' .AND. HACCESS/='SEQUENTIAL') &
-    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','HACCESS should be DIRECT or SEQUENTIAL and not '//TRIM(HACCESS))
+  IF(HACCESS/='DIRECT' .AND. HACCESS/='SEQUENTIAL' .AND. HACCESS/='STREAM') &
+    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_File_add2list','HACCESS should be DIRECT, SEQUENTIAL or STREAM and not '//TRIM(HACCESS))
 END IF
 !
 IF (PRESENT(HFORMAT)) THEN
   IF(CPROGRAM=='LFICDF') THEN
     IF (HFORMAT/='LFI' .AND. HFORMAT/='NETCDF4') &
-      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','invalid HFORMAT ('//TRIM(HFORMAT)//')')
+      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_File_add2list','invalid HFORMAT ('//TRIM(HFORMAT)//')')
   END IF
 ELSE
   IF(CPROGRAM=='LFICDF') &
-    CALL PRINT_MSG(NVERB_FATAL,'IO','IO_FILE_ADD2LIST','optional argument HFORMAT is necessary for CPROGRAM='//TRIM(CPROGRAM))
+    CALL PRINT_MSG(NVERB_FATAL,'IO','IO_File_add2list','optional argument HFORMAT is necessary for CPROGRAM='//TRIM(CPROGRAM))
 END IF
 !
 IF(PRESENT(KLFINPRAR)) THEN
@@ -746,15 +763,15 @@ ELSE
 END IF
 !
 IF(     PRESENT(KRECL) .AND. TRIM(HTYPE)/='SURFACE_DATA' .AND. TRIM(HTYPE)/='TXT') &
-    CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FILE_ADD2LIST','optional argument KRECL is not used by '//TRIM(HTYPE)//' files')
+    CALL PRINT_MSG(NVERB_WARNING,'IO','IO_File_add2list','optional argument KRECL is not used by '//TRIM(HTYPE)//' files')
 IF(.NOT.PRESENT(KRECL) .AND. TRIM(HTYPE)=='SURFACE_DATA') THEN
     IF(TRIM(HACCESS)=='DIRECT') &
-      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','optional argument KRECL is necessary for '//TRIM(HTYPE)// &
+      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_File_add2list','optional argument KRECL is necessary for '//TRIM(HTYPE)// &
                                                          ' files in DIRECT access')
 END IF
 !
 IF (PRESENT(TPDATAFILE) .AND. TRIM(HTYPE)/='DES') &
-    CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FILE_ADD2LIST','optional argument TPDATAFILE is not used by '//TRIM(HTYPE)//' files')
+    CALL PRINT_MSG(NVERB_WARNING,'IO','IO_File_add2list','optional argument TPDATAFILE is not used by '//TRIM(HTYPE)//' files')
 !
 IF (.NOT.ASSOCIATED(TFILE_LAST)) THEN
   ALLOCATE(TFILE_LAST)
@@ -775,38 +792,70 @@ IF (PRESENT(HDIRNAME)) THEN
 END IF
 !
 IF (TRIM(HMODE)/='READ' .AND. TRIM(HMODE)/='WRITE') THEN
-  CALL PRINT_MSG(NVERB_FATAL,'IO','IO_FILE_ADD2LIST','unknown mode ('//TRIM(HMODE)//') for file '//TRIM(HNAME))
+  CALL PRINT_MSG(NVERB_FATAL,'IO','IO_File_add2list','unknown mode ('//TRIM(HMODE)//') for file '//TRIM(HNAME))
 END IF
 !
 TPFILE%CMODE = HMODE
 !
+if ( present(osplit_ioz) ) then
+  gsplit_ioz = osplit_ioz
+else
+  gsplit_ioz = .false.
+  if ( len_trim(htype) >= 3 ) then
+    if ( htype(1:3) == 'MNH' ) then
+      ! MNH/MNHBACKUP/MNHOUTPUT
+      !Remark: 'MNH' is more general than MNHBACKUP and could be in fact a MNHBACKUP file
+      gsplit_ioz = .true.
+    end if
+  end if
+end if
+
+if ( gsplit_ioz ) then
+  select case (hmode)
+    case('READ')
+      tpfile%nsubfiles_ioz = nb_procio_r
+    case('WRITE')
+      tpfile%nsubfiles_ioz = nb_procio_w
+  end select
+  if (tpfile%nsubfiles_ioz == 1) tpfile%nsubfiles_ioz = 0
+else
+  tpfile%nsubfiles_ioz = 0
+end if
+
 SELECT CASE(TPFILE%CTYPE)
   !Chemistry input files
   CASE('CHEMINPUT')
     IF (TRIM(HMODE)/='READ') & !Invalid because not (yet) necessary
-      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
+      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_File_add2list','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
+    TPFILE%CACCESS = 'SEQUENTIAL'
+    TPFILE%CFORM   = 'FORMATTED'
     TPFILE%CFORMAT = 'TEXT'
 
 
   !Chemistry tabulation files
   CASE('CHEMTAB')
     IF (TRIM(HMODE)/='READ') & !Invalid because not (yet) necessary
-      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
+      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_File_add2list','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
+    TPFILE%CACCESS = 'SEQUENTIAL'
+    TPFILE%CFORM   = 'FORMATTED'
     TPFILE%CFORMAT = 'TEXT'
 
 
   !DES files
   CASE('DES')
+    TPFILE%CACCESS = 'SEQUENTIAL'
+    TPFILE%CFORM   = 'FORMATTED'
     TPFILE%CFORMAT = 'TEXT'
+    TPFILE%NRECL   = 8*1024
     IF (.NOT.PRESENT(TPDATAFILE)) THEN
-      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','missing TPDATAFILE argument for DES file '//TRIM(HNAME))
+      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_File_add2list','missing TPDATAFILE argument for DES file '//TRIM(HNAME))
     ELSE
       IF (.NOT.ASSOCIATED(TPDATAFILE)) &
-        CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','TPDATAFILE is not associated for DES file '//TRIM(HNAME))
+        CALL PRINT_MSG(NVERB_ERROR,'IO','IO_File_add2list','TPDATAFILE is not associated for DES file '//TRIM(HNAME))
       TPFILE%TDATAFILE => TPDATAFILE
       TPDATAFILE%TDESFILE => TPFILE
       IF (PRESENT(HDIRNAME)) &
-        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FILE_ADD2LIST','HDIRNAME argument ignored for DES file '//TRIM(HNAME))
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_File_add2list','HDIRNAME argument ignored for DES file '//TRIM(HNAME))
       IF (ALLOCATED(TPDATAFILE%CDIRNAME)) TPFILE%CDIRNAME = TPDATAFILE%CDIRNAME
     END IF
 
@@ -814,48 +863,61 @@ SELECT CASE(TPFILE%CTYPE)
   !GPS files
   CASE('GPS')
     IF (TRIM(HMODE)/='WRITE') & !Invalid because not (yet) necessary
-      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
+      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_File_add2list','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
+    TPFILE%CACCESS = 'SEQUENTIAL'
+    TPFILE%CFORM   = 'FORMATTED'
     TPFILE%CFORMAT = 'TEXT'
 
 
   !Meteo files
   CASE('METEO')
     IF (TRIM(HMODE)/='WRITE') & !Invalid because not (yet) necessary
-      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
+      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_File_add2list','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
+    TPFILE%CACCESS = 'SEQUENTIAL'
+    TPFILE%CFORM   = 'UNFORMATTED'
     TPFILE%CFORMAT = 'BINARY'
+    TPFILE%NRECL   = 100000000
 
 
   !Namelist files
   CASE('NML')
     IF (TRIM(HMODE)/='READ') & !Invalid because not (yet) necessary
-      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
+      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_File_add2list','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
+    TPFILE%CACCESS = 'SEQUENTIAL'
+    TPFILE%CFORM   = 'FORMATTED'
     TPFILE%CFORMAT = 'TEXT'
 
 
   !OUTPUTLISTING files
   CASE('OUTPUTLISTING')
     IF (TRIM(HMODE)/='WRITE') & !Invalid because not (yet) necessary
-      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
+      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_File_add2list','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
+    TPFILE%CACCESS = 'SEQUENTIAL'
+    TPFILE%CFORM   = 'FORMATTED'
     TPFILE%CFORMAT = 'TEXT'
 
 
   !SURFACE_DATA files
   CASE('SURFACE_DATA')
     IF (TRIM(HMODE)/='READ') & !Invalid because not (yet) necessary
-      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
+      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_File_add2list','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
     TPFILE%CFORMAT = 'SURFACE_DATA'
     TPFILE%CFORM   = HFORM
     TPFILE%CACCESS = HACCESS
-    IF(TRIM(HACCESS)=='DIRECT') TPFILE%NRECL   = KRECL
+    IF(TRIM(HACCESS)=='DIRECT') TPFILE%NRECL = KRECL
 
 
   !Text files
   CASE('TXT')
+    TPFILE%CACCESS = 'SEQUENTIAL'
+    TPFILE%CFORM   = 'FORMATTED'
     TPFILE%CFORMAT = 'TEXT'
     IF(PRESENT(KRECL)) TPFILE%NRECL = KRECL
 
 
-  CASE DEFAULT
+  !MesoNH files
+  !Remark: 'MNH' is more general than MNHBACKUP and could be in fact a MNHBACKUP file
+  CASE ('MNH', 'MNHBACKUP', 'MNHDIACHRONIC', 'MNHDIAG', 'MNHOUTPUT', 'PGD')
     IF (TRIM(HMODE)=='READ') THEN
       IF (PRESENT(HFORMAT)) THEN
         TPFILE%CFORMAT = TRIM(HFORMAT)
@@ -865,7 +927,7 @@ SELECT CASE(TPFILE%CTYPE)
       ELSE IF (LIOCDF4) THEN
         TPFILE%CFORMAT = 'NETCDF4'
       ELSE
-        CALL PRINT_MSG(NVERB_FATAL,'IO','IO_FILE_ADD2LIST','invalid format for file '//TRIM(HNAME))
+        CALL PRINT_MSG(NVERB_FATAL,'IO','IO_File_add2list','invalid format for file '//TRIM(HNAME))
       END IF
     ELSE IF (TRIM(HMODE)=='WRITE') THEN
       IF (PRESENT(HFORMAT)) THEN
@@ -879,7 +941,7 @@ SELECT CASE(TPFILE%CTYPE)
         TPFILE%CFORMAT = 'LFI'
         TPFILE%NLFINPRAR = ILFINPRAR
       ELSE
-        CALL PRINT_MSG(NVERB_FATAL,'IO','IO_FILE_ADD2LIST','invalid format for file '//TRIM(HNAME))
+        CALL PRINT_MSG(NVERB_FATAL,'IO','IO_File_add2list','invalid format for file '//TRIM(HNAME))
       END IF
     END IF
     !
@@ -893,12 +955,16 @@ SELECT CASE(TPFILE%CTYPE)
     END IF
     !
     IF(PRESENT(TPDADFILE)) THEN
-      IF (.NOT.ASSOCIATED(TPDADFILE)) CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FILE_ADD2LIST', &
+      IF (.NOT.ASSOCIATED(TPDADFILE)) CALL PRINT_MSG(NVERB_WARNING,'IO','IO_File_add2list', &
                                                      'TPDADFILE provided but not associated for file '//TRIM(HNAME))
       TPFILE%TDADFILE => TPDADFILE
     ELSE
       TPFILE%TDADFILE => NULL()
     END IF
+
+
+  CASE default
+    call print_msg(NVERB_FATAL,'IO','IO_File_add2list','invalid type '//trim(tpfile%ctype)//' for file '//trim(hname))
 END SELECT
 !
 IF(PRESENT(KMODEL)) TPFILE%NMODEL = KMODEL
@@ -907,9 +973,9 @@ TPFILE%LOPENED = .FALSE.
 TPFILE%NOPEN   = 0
 TPFILE%NCLOSE  = 0
 !
-END SUBROUTINE IO_FILE_ADD2LIST
+END SUBROUTINE IO_File_add2list
 !
-SUBROUTINE IO_FILE_FIND_BYNAME(HNAME,TPFILE,KRESP,OOLD)
+SUBROUTINE IO_File_find_byname(HNAME,TPFILE,KRESP,OOLD)
 !
 USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
 !
@@ -922,7 +988,7 @@ LOGICAL, OPTIONAL,      INTENT(IN)  :: OOLD   ! FALSE if new file (should not be
 TYPE(TFILEDATA),POINTER :: TZFILE ! File structure
 LOGICAL                 :: GOLD
 !
-CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_FILE_FIND_BYNAME','looking for '//TRIM(HNAME))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_File_find_byname','looking for '//TRIM(HNAME))
 !
 NULLIFY(TPFILE)
 KRESP = 0
@@ -934,10 +1000,10 @@ ELSE
 END IF
 !
 IF (LEN_TRIM(HNAME)>NFILENAMELGTMAX) &
-  CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FILE_FIND_BYNAME','HNAME length is bigger than NFILENAMELGTMAX for '//TRIM(HNAME))
+  CALL PRINT_MSG(NVERB_WARNING,'IO','IO_File_find_byname','HNAME length is bigger than NFILENAMELGTMAX for '//TRIM(HNAME))
 !
 IF (.NOT.ASSOCIATED(TFILE_FIRST)) THEN
-  IF (GOLD) CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FILE_FIND_BYNAME','filelist is empty')
+  IF (GOLD) CALL PRINT_MSG(NVERB_WARNING,'IO','IO_File_find_byname','filelist is empty')
 ELSE
   !
   TZFILE => TFILE_FIRST
@@ -953,19 +1019,19 @@ ELSE
 END IF
 !
 IF (.NOT.ASSOCIATED(TPFILE)) THEN
-  CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_FILE_FIND_BYNAME','file '//TRIM(HNAME)//' not found in list')
+  CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_File_find_byname','file '//TRIM(HNAME)//' not found in list')
   KRESP = -1 !File not found
 ELSE
   IF (GOLD) THEN
-    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_FILE_FIND_BYNAME',TRIM(HNAME)//' was found')
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_File_find_byname',TRIM(HNAME)//' was found')
   ELSE !File should not be found
-    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_FIND_BYNAME',TRIM(HNAME)//' was found (unexpected)')
+    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_File_find_byname',TRIM(HNAME)//' was found (unexpected)')
   END IF
 END IF
 !
-END SUBROUTINE IO_FILE_FIND_BYNAME
+END SUBROUTINE IO_File_find_byname
 !
-SUBROUTINE IO_FILE_PRINT_LIST(TPFILE_FIRST)
+SUBROUTINE IO_Filelist_print(TPFILE_FIRST)
 !
 USE MODD_VAR_ll, ONLY : IP
 !
@@ -975,7 +1041,7 @@ TYPE(TFILEDATA),POINTER :: TZFILE ! File structure
 !
 IF (IP/=1 .AND. .NOT.LVERB_ALLPRC) RETURN
 !
-CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_FILE_PRINT_LIST','called')
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Filelist_print','called')
 !
 IF (PRESENT(TPFILE_FIRST)) THEN
   IF (.NOT.ASSOCIATED(TPFILE_FIRST)) RETURN
@@ -985,22 +1051,25 @@ ELSE
   TZFILE => TFILE_FIRST
 END IF
 !
-WRITE (*,'( /,A28," ",A13," ",A7," ",A7," ",A7," ",A7," ",A6," ",A6," ",A5," ",A6," ",A13)' ) 'CNAME                       ', &
-      'CTYPE        ','CFORMAT','CMODE  ','LOPENED','NLFIFLU','NNCID','NLU','NOPEN','NCLOSE','NOPEN_CURRENT'
+WRITE (*,'( /,A28," ",A13," ",A7," ",A7," ",A7," ",A7," ",A6," ",A6," ",A5," ",A6," ",A13," ",A13)' ) &
+      'CNAME                       ', &
+      'CTYPE        ','CFORMAT','CMODE  ','LOPENED','NLFIFLU','NNCID','NLU','NOPEN','NCLOSE','NOPEN_CURRENT','NSUBFILES_IOZ'
 WRITE (*,'( A,A )') '--------------------------------------------------------------------------------------------------------', &
-                    '-----------'
-WRITE (*,'(A28," ",A13," ",A7," ",A7," ",L7," ",I7," ",I6," ",I6," ",I5," ",I6," ",I13)' ) &
+                    '------------------------'
+WRITE (*,'(A28," ",A13," ",A7," ",A7," ",L7," ",I7," ",I6," ",I6," ",I5," ",I6," ",I13," ",I13)' ) &
       TZFILE%CNAME,TZFILE%CTYPE,TZFILE%CFORMAT,&
-      TZFILE%CMODE,TZFILE%LOPENED,TZFILE%NLFIFLU,TZFILE%NNCID,TZFILE%NLU,TZFILE%NOPEN,TZFILE%NCLOSE,TZFILE%NOPEN_CURRENT
+      TZFILE%CMODE,TZFILE%LOPENED,TZFILE%NLFIFLU,TZFILE%NNCID,TZFILE%NLU,TZFILE%NOPEN,TZFILE%NCLOSE,TZFILE%NOPEN_CURRENT,&
+      TZFILE%NSUBFILES_IOZ
 !
 DO WHILE (ASSOCIATED(TZFILE%TFILE_NEXT))
   TZFILE => TZFILE%TFILE_NEXT
-  WRITE (*,'(A28," ",A13," ",A7," ",A7," ",L7," ",I7," ",I6," ",I6," ",I5," ",I6," ",I13)' ) &
+  WRITE (*,'(A28," ",A13," ",A7," ",A7," ",L7," ",I7," ",I6," ",I6," ",I5," ",I6," ",I13," ",I13)' ) &
         TZFILE%CNAME,TZFILE%CTYPE,TZFILE%CFORMAT,&
-        TZFILE%CMODE,TZFILE%LOPENED,TZFILE%NLFIFLU,TZFILE%NNCID,TZFILE%NLU,TZFILE%NOPEN,TZFILE%NCLOSE,TZFILE%NOPEN_CURRENT
+        TZFILE%CMODE,TZFILE%LOPENED,TZFILE%NLFIFLU,TZFILE%NNCID,TZFILE%NLU,TZFILE%NOPEN,TZFILE%NCLOSE,TZFILE%NOPEN_CURRENT,&
+        TZFILE%NSUBFILES_IOZ
 END DO
 WRITE (*,'(/)')
 !
-END SUBROUTINE IO_FILE_PRINT_LIST
+END SUBROUTINE IO_Filelist_print
 !
 END MODULE MODE_IO_MANAGE_STRUCT

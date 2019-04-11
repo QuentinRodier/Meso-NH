@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ##################################
@@ -40,10 +40,10 @@
 !              ------------
 !
 USE MODD_CONF,             ONLY: CPROGRAM
-USE MODD_IO_ll,            ONLY: TFILEDATA
+USE MODD_IO,               ONLY: TFILEDATA
 !
-USE MODE_FM,               ONLY: IO_FILE_OPEN_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
+USE MODE_IO_FILE,          ONLY: IO_File_open
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_add2list
 !
 !
 IMPLICIT NONE
@@ -67,8 +67,8 @@ TYPE(TFILEDATA),POINTER :: TZFILE
 TZFILE => NULL()
 !
 IF (TRIM(CPROGRAM)=='PGD') THEN
-  CALL IO_FILE_ADD2LIST(TZFILE,YTEX,'TXT','WRITE')
-  CALL IO_FILE_OPEN_ll(TZFILE,HPOSITION='REWIND')
+  CALL IO_File_add2list(TZFILE,YTEX,'TXT','WRITE')
+  CALL IO_File_open(TZFILE,HPOSITION='REWIND')
   KTEX = TZFILE%NLU
 ELSE
   KTEX=0

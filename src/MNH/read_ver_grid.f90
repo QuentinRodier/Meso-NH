@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #########################
@@ -9,7 +9,7 @@
 INTERFACE
       SUBROUTINE READ_VER_GRID(TPPRE_REAL1,PZHAT,OSLEVE,PLEN1,PLEN2)
 !
-USE MODD_IO_ll, ONLY : TFILEDATA
+USE MODD_IO, ONLY : TFILEDATA
 !
 TYPE(TFILEDATA),POINTER,      INTENT(IN) :: TPPRE_REAL1! namelist file
 REAL, DIMENSION(:), OPTIONAL, INTENT(IN) :: PZHAT      ! vertival grid of input fmfile
@@ -70,7 +70,7 @@ END MODULE MODI_READ_VER_GRID
 !!      Module MODD_CONF      : contains configuration variables for all models.
 !!         NVERB : verbosity level for output-listing
 !!      Module MODD_LUNIT     :  contains logical unit names for all models
-!!         CLUOUT0 : name of output-listing
+!!         TLUOUT0 : name of output-listing
 !!      Module MODD_GRID1
 !!         XZHAT
 !!      Module MODD_DIM1
@@ -104,11 +104,10 @@ END MODULE MODI_READ_VER_GRID
 USE MODD_CONF           ! declaration modules
 USE MODD_DIM_n, NKMAX_n=>NKMAX
 USE MODD_GRID_n, LSLEVE_n=>LSLEVE, XLEN1_n=>XLEN1, XLEN2_n=>XLEN2
-USE MODD_IO_ll, ONLY : TFILEDATA
+USE MODD_IO, ONLY : TFILEDATA
 USE MODD_LUNIT
 USE MODD_PARAMETERS
 !
-USE MODE_FM
 USE MODE_MSG
 USE MODE_POS
 !

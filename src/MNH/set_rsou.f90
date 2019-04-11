@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ####################
@@ -12,7 +12,7 @@ INTERFACE
       SUBROUTINE SET_RSOU(TPFILE,TPEXPREFILE,HFUNU,HFUNV,KILOC,KJLOC,OBOUSS,OPV_PERT,&
                           ORMV_BL,PJ,OSHIFT,PCORIOZ) 
 !
-USE MODD_IO_ll, ONLY : TFILEDATA
+USE MODD_IO, ONLY : TFILEDATA
 !
 TYPE(TFILEDATA),        INTENT(IN)  :: TPFILE ! outpput data file
 TYPE(TFILEDATA),        INTENT(IN)  :: TPEXPREFILE ! input data file
@@ -206,7 +206,7 @@ END MODULE MODI_SET_RSOU
 !!        XCPD : Specific heat for dry air at constant pressure
 !!
 !!      Module MODD_LUNIT1  : contains logical unit names 
-!!        CLUOUT : name of output-listing
+!!        TLUOUT : name of output-listing
 !!
 !!      Module MODD_CONF    : contains configuration variables for all models. 
 !!        NVERB : verbosity level for output-listing
@@ -254,13 +254,11 @@ USE MODD_CST
 USE MODD_FIELD_n
 USE MODD_GRID
 USE MODD_GRID_n
-USE MODD_IO_ll,      ONLY: TFILEDATA
+USE MODD_IO,         ONLY: TFILEDATA
 USE MODD_LUNIT_n
 USE MODD_PARAMETERS, ONLY: JPHEXT
 USE MODD_PARAM_n,    ONLY: CCLOUD
-! 
-USE MODE_FM
-USE MODE_IO_ll
+!
 USE MODE_ll
 USE MODE_MSG
 USE MODE_THERMO

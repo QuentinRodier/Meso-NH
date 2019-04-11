@@ -3,17 +3,18 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!  Modifications:
-!    P. Wautelet : may 2016   : use NetCDF Fortran module
-!    J.Escobar   : 14/12/2017 : Correction for MNH_INT=8
-!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!    P. Wautelet : 13/12/2018 : split of mode_netcdf into multiple modules/files
-!  Philippe Wautelet: 10/01/2019: replace handle_err by io_handle_err_nc4 for better netCDF error messages
+! Modifications:
+!  P. Wautelet may 2016  : use NetCDF Fortran module
+!  J.Escobar   14/12/2017: correction for MNH_INT=8
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 13/12/2018: split of mode_netcdf into multiple modules/files
+!  P. Wautelet 10/01/2019: replace handle_err by IO_Err_handle_nc4 for better netCDF error messages
+!  P. Wautelet 05/03/2019: rename IO subroutines and modules
 !-----------------------------------------------------------------
 #if defined(MNH_IOCDF4)
 module mode_io_tools_nc4
 
-use modd_io_ll,  only: tfiledata
+use modd_io,     only: tfiledata
 use modd_netcdf, only: dimcdf, IDCDF_KIND, iocdf, tdim_dummy
 
 use mode_field,  only: tfielddata
@@ -26,12 +27,13 @@ implicit none
 
 private
 
-public :: io_find_dim_byname_nc4, io_guess_dimids_nc4, io_set_knowndims_nc4
-public :: cleaniocdf, cleanmnhname, fillvdims, getdimcdf, getstrdimid, io_handle_err_nc4, newiocdf
+public :: IO_Dim_find_byname_nc4, IO_Dimids_guess_nc4, IO_Knowndims_set_nc4
+public :: IO_Iocdf_alloc_nc4, IO_Iocdf_dealloc_nc4, IO_Mnhname_clean
+public :: IO_Dimcdf_get_nc4, IO_Strdimid_get_nc4, IO_Vdims_fill_nc4, IO_Err_handle_nc4
 
 contains
 
-SUBROUTINE IO_FIND_DIM_BYNAME_NC4(TPFILE, HDIMNAME, TPDIM, KRESP)
+SUBROUTINE IO_Dim_find_byname_nc4(TPFILE, HDIMNAME, TPDIM, KRESP)
 TYPE(TFILEDATA),         INTENT(IN)  :: TPFILE
 CHARACTER(LEN=*),        INTENT(IN)  :: HDIMNAME
 TYPE(DIMCDF),            INTENT(OUT) :: TPDIM
@@ -39,12 +41,12 @@ INTEGER,                 INTENT(OUT) :: KRESP
 !
 TYPE(DIMCDF), POINTER :: TMP
 !
-CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_FIND_DIM_BYNAME_NC4','called for dimension name '//TRIM(HDIMNAME))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Dim_find_byname_nc4','called for dimension name '//TRIM(HDIMNAME))
 !
 KRESP = -2
 !
 IF(.NOT.ASSOCIATED(TPFILE%TNCDIMS%DIMLIST)) THEN
-  CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FIND_DIM_BYNAME_NC4','DIMLIST not associated for file  '//TRIM(TPFILE%CNAME))
+  CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Dim_find_byname_nc4','DIMLIST not associated for file  '//TRIM(TPFILE%CNAME))
   KRESP = -1
   RETURN
 END IF
@@ -60,10 +62,10 @@ DO WHILE(ASSOCIATED(TMP))
   TMP => TMP%NEXT
 END DO
 !
-END SUBROUTINE IO_FIND_DIM_BYNAME_NC4
+END SUBROUTINE IO_Dim_find_byname_nc4
 
 
-SUBROUTINE IO_GUESS_DIMIDS_NC4(TPFILE, TPFIELD, KLEN, TPDIMS, KRESP)
+SUBROUTINE IO_Dimids_guess_nc4(TPFILE, TPFIELD, KLEN, TPDIMS, KRESP)
 !
 USE MODE_FIELD, ONLY: TYPECHAR
 !
@@ -81,7 +83,7 @@ CHARACTER(LEN=32)     :: YINT
 CHARACTER(LEN=2)      :: YDIR
 TYPE(DIMCDF), POINTER :: PTDIM
 !
-CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_GUESS_DIMIDS_NC4','called for '//TRIM(TPFIELD%CMNHNAME))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Dimids_guess_nc4','called for '//TRIM(TPFIELD%CMNHNAME))
 !
 IGRID  =  TPFIELD%NGRID
 YDIR   =  TPFIELD%CDIR
@@ -92,11 +94,11 @@ PTDIM => NULL()
 !
 IF(IGRID<0 .OR. IGRID>8) THEN
   WRITE(YINT,'( I0 )') IGRID
-  CALL PRINT_MSG(NVERB_FATAL,'IO','IO_GUESS_DIMIDS_NC4','invalid NGRID ('//TRIM(YINT)//') for field '//TRIM(TPFIELD%CMNHNAME))
+  CALL PRINT_MSG(NVERB_FATAL,'IO','IO_Dimids_guess_nc4','invalid NGRID ('//TRIM(YINT)//') for field '//TRIM(TPFIELD%CMNHNAME))
 END IF
 !
 IF(IGRID==0 .AND. YDIR/='--' .AND. YDIR/=''  ) THEN
-  CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GUESS_DIMIDS_NC4','invalid YDIR ('//TRIM(YDIR)//') with NGRID=0 for field '&
+  CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Dimids_guess_nc4','invalid YDIR ('//TRIM(YDIR)//') with NGRID=0 for field '&
                  //TRIM(TPFIELD%CMNHNAME))
 END IF
 !
@@ -109,16 +111,16 @@ IF (IGRID==0) THEN
         ILEN = 1
       END IF
     CASE (1)
-      PTDIM => GETDIMCDF(TPFILE,KLEN)
+      PTDIM => IO_Dimcdf_get_nc4(TPFILE,KLEN)
       TPDIMS(1) = PTDIM
       ILEN      = PTDIM%LEN
     CASE DEFAULT
-      CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GUESS_DIMIDS_NC4','NGRID=0 and NDIMS>1 not yet supported (field '&
+      CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Dimids_guess_nc4','NGRID=0 and NDIMS>1 not yet supported (field '&
                      //TRIM(TPFIELD%CMNHNAME)//')')
   END SELECT
 ELSE IF (TPFIELD%CLBTYPE/='NONE') THEN
   IF (TPFIELD%NDIMS/=3) THEN
-    CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GUESS_DIMIDS_NC4','CLBTYPE/=NONE and NDIMS/=3 not supported (field '&
+    CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Dimids_guess_nc4','CLBTYPE/=NONE and NDIMS/=3 not supported (field '&
                      //TRIM(TPFIELD%CMNHNAME)//')')
   END IF
   !
@@ -129,9 +131,9 @@ ELSE IF (TPFIELD%CLBTYPE/='NONE') THEN
     TPDIMS(3) = PTDIM
     ILEN = TPDIMS(2)%LEN * TPDIMS(3)%LEN
     ISIZE = KLEN/ILEN
-    IF (MOD(KLEN,ILEN)/=0) CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GUESS_DIMIDS_NC4', &
+    IF (MOD(KLEN,ILEN)/=0) CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Dimids_guess_nc4', &
                                               'can not guess 1st dimension for field '//TRIM(TPFIELD%CMNHNAME))
-    PTDIM => GETDIMCDF(TPFILE, ISIZE)
+    PTDIM => IO_Dimcdf_get_nc4(TPFILE, ISIZE)
     TPDIMS(1) = PTDIM
     ILEN       = ILEN * PTDIM%LEN
   ELSE IF (TPFIELD%CLBTYPE=='LBY' .OR. TPFIELD%CLBTYPE=='LBYV') THEN
@@ -141,13 +143,13 @@ ELSE IF (TPFIELD%CLBTYPE/='NONE') THEN
     TPDIMS(3) = PTDIM
     ILEN = TPDIMS(1)%LEN * TPDIMS(3)%LEN
     ISIZE = KLEN/ILEN
-    IF (MOD(KLEN,ILEN)/=0) CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GUESS_DIMIDS_NC4', &
+    IF (MOD(KLEN,ILEN)/=0) CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Dimids_guess_nc4', &
                                               'can not guess 2nd dimension for field '//TRIM(TPFIELD%CMNHNAME))
-    PTDIM => GETDIMCDF(TPFILE, ISIZE)
+    PTDIM => IO_Dimcdf_get_nc4(TPFILE, ISIZE)
     TPDIMS(2) = PTDIM
     ILEN       = ILEN * PTDIM%LEN
   ELSE
-    CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GUESS_DIMIDS_NC4','invalid CLBTYPE ('//TPFIELD%CLBTYPE//') for field '&
+    CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Dimids_guess_nc4','invalid CLBTYPE ('//TPFIELD%CLBTYPE//') for field '&
                      //TRIM(TPFIELD%CMNHNAME))
   END IF
 ELSE
@@ -162,7 +164,7 @@ ELSE
       ELSE IF ( YDIR == 'ZZ' ) THEN
         PTDIM => TPFILE%TNCCOORDS(3,IGRID)%TDIM
       ELSE IF (JI==TPFIELD%NDIMS) THEN !Guess last dimension
-        PTDIM => GETDIMCDF(TPFILE, KLEN)
+        PTDIM => IO_Dimcdf_get_nc4(TPFILE, KLEN)
       END IF
       ILEN       = PTDIM%LEN
       TPDIMS(JI) = PTDIM
@@ -172,13 +174,13 @@ ELSE
       ELSE IF (JI==TPFIELD%NDIMS) THEN !Guess last dimension
         ISIZE = KLEN/ILEN
         IF (MOD(KLEN,ILEN)/=0) THEN
-          CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GUESS_DIMIDS_NC4', &
+          CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Dimids_guess_nc4', &
                                             'can not guess 2nd and last dimension for field '//TRIM(TPFIELD%CMNHNAME))
           EXIT
         END IF
-        PTDIM => GETDIMCDF(TPFILE, ISIZE)
+        PTDIM => IO_Dimcdf_get_nc4(TPFILE, ISIZE)
       ELSE
-        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GUESS_DIMIDS_NC4','can not guess 2nd dimension for field '//TRIM(TPFIELD%CMNHNAME))
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Dimids_guess_nc4','can not guess 2nd dimension for field '//TRIM(TPFIELD%CMNHNAME))
         EXIT
       END IF
       ILEN       = ILEN * PTDIM%LEN
@@ -188,20 +190,20 @@ ELSE
         IF (JI==TPFIELD%NDIMS .AND. KLEN/ILEN==1 .AND. MOD(KLEN,ILEN)==0) THEN
           !The last dimension is of size 1 => probably time dimension
           ISIZE = 1
-          PTDIM => GETDIMCDF(TPFILE,ISIZE)
+          PTDIM => IO_Dimcdf_get_nc4(TPFILE,ISIZE)
         ELSE
           PTDIM => TPFILE%TNCCOORDS(3,IGRID)%TDIM
         END IF
       ELSE IF (JI==TPFIELD%NDIMS) THEN !Guess last dimension
         ISIZE = KLEN/ILEN
         IF (MOD(KLEN,ILEN)/=0) THEN
-          CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GUESS_DIMIDS_NC4', &
+          CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Dimids_guess_nc4', &
                                             'can not guess 3rd and last dimension for field '//TRIM(TPFIELD%CMNHNAME))
           EXIT
         END IF
-        PTDIM => GETDIMCDF(TPFILE, ISIZE)
+        PTDIM => IO_Dimcdf_get_nc4(TPFILE, ISIZE)
       ELSE
-        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GUESS_DIMIDS_NC4','can not guess 3rd dimension for field '//TRIM(TPFIELD%CMNHNAME))
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Dimids_guess_nc4','can not guess 3rd dimension for field '//TRIM(TPFIELD%CMNHNAME))
         EXIT
       END IF
       ILEN       = ILEN * PTDIM%LEN
@@ -209,30 +211,30 @@ ELSE
     ELSE IF (JI==4 .AND. JI==TPFIELD%NDIMS) THEN !Guess last dimension
       ISIZE = KLEN/ILEN
       IF (MOD(KLEN,ILEN)/=0) THEN
-        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GUESS_DIMIDS_NC4', &
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Dimids_guess_nc4', &
                                           'can not guess 4th and last dimension for field '//TRIM(TPFIELD%CMNHNAME))
         EXIT
       END IF
-      PTDIM => GETDIMCDF(TPFILE, ISIZE)
+      PTDIM => IO_Dimcdf_get_nc4(TPFILE, ISIZE)
       ILEN       = ILEN * PTDIM%LEN
       TPDIMS(JI) = PTDIM
     ELSE
-      CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GUESS_DIMIDS_NC4','can not guess dimension above 4 for field '&
+      CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Dimids_guess_nc4','can not guess dimension above 4 for field '&
                      //TRIM(TPFIELD%CMNHNAME))
     END IF
   END DO
 END IF
 !
 IF (KLEN /= ILEN) THEN
-  CALL PRINT_MSG(NVERB_INFO,'IO','IO_GUESS_DIMIDS_NC4','can not guess dimensions of field '&
+  CALL PRINT_MSG(NVERB_INFO,'IO','IO_Dimids_guess_nc4','can not guess dimensions of field '&
                                    //TRIM(TPFIELD%CMNHNAME))
   KRESP = 1
 END IF
 !
-END SUBROUTINE IO_GUESS_DIMIDS_NC4
+END SUBROUTINE IO_Dimids_guess_nc4
 
 
-SUBROUTINE IO_SET_KNOWNDIMS_NC4(TPFILE,HPROGRAM_ORIG)
+SUBROUTINE IO_Knowndims_set_nc4(TPFILE,HPROGRAM_ORIG)
 
 USE MODD_CONF,          ONLY: CPROGRAM
 USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
@@ -246,7 +248,7 @@ CHARACTER(LEN=:),ALLOCATABLE :: YPROGRAM
 INTEGER                      :: IIU_ll, IJU_ll, IKU
 TYPE(IOCDF), POINTER         :: PIOCDF
 
-CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_SET_KNOWNDIMS_NC4','called for '//TRIM(TPFILE%CNAME))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Knowndims_set_nc4','called for '//TRIM(TPFILE%CNAME))
 
 PIOCDF => TPFILE%TNCDIMS
 
@@ -260,17 +262,17 @@ IIU_ll = NIMAX_ll + 2*JPHEXT
 IJU_ll = NJMAX_ll + 2*JPHEXT
 IKU    = NKMAX    + 2*JPVEXT
 
-IF (.NOT. ASSOCIATED(PIOCDF%DIM_NI))      PIOCDF%DIM_NI      => GETDIMCDF(TPFILE, IIU_ll, 'ni')
-IF (.NOT. ASSOCIATED(PIOCDF%DIM_NJ))      PIOCDF%DIM_NJ      => GETDIMCDF(TPFILE, IJU_ll, 'nj')
-IF (.NOT. ASSOCIATED(PIOCDF%DIM_NI_U))    PIOCDF%DIM_NI_U    => GETDIMCDF(TPFILE, IIU_ll, 'ni_u')
-IF (.NOT. ASSOCIATED(PIOCDF%DIM_NJ_U))    PIOCDF%DIM_NJ_U    => GETDIMCDF(TPFILE, IJU_ll, 'nj_u')
-IF (.NOT. ASSOCIATED(PIOCDF%DIM_NI_V))    PIOCDF%DIM_NI_V    => GETDIMCDF(TPFILE, IIU_ll, 'ni_v')
-IF (.NOT. ASSOCIATED(PIOCDF%DIM_NJ_V))    PIOCDF%DIM_NJ_V    => GETDIMCDF(TPFILE, IJU_ll, 'nj_v')
+IF (.NOT. ASSOCIATED(PIOCDF%DIM_NI))      PIOCDF%DIM_NI      => IO_Dimcdf_get_nc4(TPFILE, IIU_ll, 'ni')
+IF (.NOT. ASSOCIATED(PIOCDF%DIM_NJ))      PIOCDF%DIM_NJ      => IO_Dimcdf_get_nc4(TPFILE, IJU_ll, 'nj')
+IF (.NOT. ASSOCIATED(PIOCDF%DIM_NI_U))    PIOCDF%DIM_NI_U    => IO_Dimcdf_get_nc4(TPFILE, IIU_ll, 'ni_u')
+IF (.NOT. ASSOCIATED(PIOCDF%DIM_NJ_U))    PIOCDF%DIM_NJ_U    => IO_Dimcdf_get_nc4(TPFILE, IJU_ll, 'nj_u')
+IF (.NOT. ASSOCIATED(PIOCDF%DIM_NI_V))    PIOCDF%DIM_NI_V    => IO_Dimcdf_get_nc4(TPFILE, IIU_ll, 'ni_v')
+IF (.NOT. ASSOCIATED(PIOCDF%DIM_NJ_V))    PIOCDF%DIM_NJ_V    => IO_Dimcdf_get_nc4(TPFILE, IJU_ll, 'nj_v')
 IF (TRIM(YPROGRAM)/='PGD' .AND. TRIM(YPROGRAM)/='NESPGD' .AND. TRIM(YPROGRAM)/='ZOOMPG' &
     .AND. .NOT.(TRIM(YPROGRAM)=='REAL' .AND. CSTORAGE_TYPE=='SU') ) THEN !condition to detect PREP_SURFEX
-  IF (.NOT. ASSOCIATED(PIOCDF%DIM_LEVEL))   PIOCDF%DIM_LEVEL   => GETDIMCDF(TPFILE, IKU   , 'level')
-  IF (.NOT. ASSOCIATED(PIOCDF%DIM_LEVEL_W)) PIOCDF%DIM_LEVEL_W => GETDIMCDF(TPFILE, IKU   , 'level_w')
-  IF (.NOT. ASSOCIATED(PIOCDF%DIMTIME)) PIOCDF%DIMTIME => GETDIMCDF(TPFILE, NF90_UNLIMITED, 'time')
+  IF (.NOT. ASSOCIATED(PIOCDF%DIM_LEVEL))   PIOCDF%DIM_LEVEL   => IO_Dimcdf_get_nc4(TPFILE, IKU   , 'level')
+  IF (.NOT. ASSOCIATED(PIOCDF%DIM_LEVEL_W)) PIOCDF%DIM_LEVEL_W => IO_Dimcdf_get_nc4(TPFILE, IKU   , 'level_w')
+  IF (.NOT. ASSOCIATED(PIOCDF%DIMTIME)) PIOCDF%DIMTIME => IO_Dimcdf_get_nc4(TPFILE, NF90_UNLIMITED, 'time')
 ELSE
   !PGD and SURFEX files for MesoNH have no vertical levels or time scale
   !These dimensions are allocated to default values
@@ -321,15 +323,15 @@ TPFILE%TNCCOORDS(2,8)%TDIM => PIOCDF%DIM_NJ_V
 TPFILE%TNCCOORDS(3,8)%TDIM => PIOCDF%DIM_LEVEL_W
 
 
-END SUBROUTINE IO_SET_KNOWNDIMS_NC4
+END SUBROUTINE IO_Knowndims_set_nc4
 
 
-SUBROUTINE CLEANIOCDF(PIOCDF)
+SUBROUTINE IO_Iocdf_dealloc_nc4(PIOCDF)
 TYPE(IOCDF),  POINTER :: PIOCDF
 
 INTEGER(KIND=IDCDF_KIND) :: IRESP
 
-CALL PRINT_MSG(NVERB_DEBUG,'IO','CLEANIOCDF','called')
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Iocdf_dealloc_nc4','called')
 
 ! Clean DIMLIST and DIMSTR
 CALL CLEANLIST(PIOCDF%DIMLIST)
@@ -351,10 +353,10 @@ END DO
 
 END SUBROUTINE CLEANLIST
 
-END SUBROUTINE CLEANIOCDF
+END SUBROUTINE IO_Iocdf_dealloc_nc4
 
 
-SUBROUTINE FILLVDIMS(TPFILE, TPFIELD, KSHAPE, KVDIMS)
+SUBROUTINE IO_Vdims_fill_nc4(TPFILE, TPFIELD, KSHAPE, KVDIMS)
 TYPE(TFILEDATA),                      INTENT(IN)  :: TPFILE
 TYPE(TFIELDDATA),                     INTENT(IN)  :: TPFIELD
 INTEGER(KIND=IDCDF_KIND),DIMENSION(:),INTENT(IN)  :: KSHAPE
@@ -366,16 +368,16 @@ CHARACTER(LEN=32)     :: YINT
 CHARACTER(LEN=2)      :: YDIR
 TYPE(DIMCDF), POINTER :: PTDIM
 !
-CALL PRINT_MSG(NVERB_DEBUG,'IO','FILLVDIMS','called for '//TRIM(TPFIELD%CMNHNAME))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Vdims_fill_nc4','called for '//TRIM(TPFIELD%CMNHNAME))
 !
-IF (SIZE(KSHAPE) < 1 .AND. .NOT.TPFIELD%LTIMEDEP) CALL PRINT_MSG(NVERB_FATAL,'IO','FILLVDIMS','empty KSHAPE')
+IF (SIZE(KSHAPE) < 1 .AND. .NOT.TPFIELD%LTIMEDEP) CALL PRINT_MSG(NVERB_FATAL,'IO','IO_Vdims_fill_nc4','empty KSHAPE')
 !
 IGRID  =  TPFIELD%NGRID
 YDIR   =  TPFIELD%CDIR
 !
 IF(SIZE(KSHAPE)/=TPFIELD%NDIMS) THEN
   WRITE(YINT,'( I0,"/",I0 )') SIZE(KSHAPE),TPFIELD%NDIMS
-  CALL PRINT_MSG(NVERB_FATAL,'IO','FILLVDIMS','SIZE(KSHAPE)/=TPFIELD%NDIMS ('//TRIM(YINT)//') for field ' &
+  CALL PRINT_MSG(NVERB_FATAL,'IO','IO_Vdims_fill_nc4','SIZE(KSHAPE)/=TPFIELD%NDIMS ('//TRIM(YINT)//') for field ' &
                  //TRIM(TPFIELD%CMNHNAME))
 END IF
 !
@@ -389,11 +391,12 @@ END IF
 !
 IF(IGRID<0 .OR. IGRID>8) THEN
   WRITE(YINT,'( I0 )') IGRID
-  CALL PRINT_MSG(NVERB_FATAL,'IO','FILLVDIMS','invalid NGRID ('//TRIM(YINT)//') for field '//TRIM(TPFIELD%CMNHNAME))
+  CALL PRINT_MSG(NVERB_FATAL,'IO','IO_Vdims_fill_nc4','invalid NGRID ('//TRIM(YINT)//') for field '//TRIM(TPFIELD%CMNHNAME))
 END IF
 !
 IF(IGRID==0 .AND. YDIR/='--' .AND. YDIR/=''  ) THEN
-  CALL PRINT_MSG(NVERB_FATAL,'IO','FILLVDIMS','invalid YDIR ('//TRIM(YDIR)//') with NGRID=0 for field '//TRIM(TPFIELD%CMNHNAME))
+  CALL PRINT_MSG(NVERB_FATAL,'IO','IO_Vdims_fill_nc4','invalid YDIR ('//TRIM(YDIR)//') with NGRID=0 for field ' &
+                 //TRIM(TPFIELD%CMNHNAME))
 END IF
 !
 DO JI=1,SIZE(KSHAPE)
@@ -405,34 +408,34 @@ DO JI=1,SIZE(KSHAPE)
     ELSE IF ( YDIR == 'ZZ'                .AND. KSHAPE(1)==TPFILE%TNCCOORDS(3,IGRID)%TDIM%LEN) THEN
       KVDIMS(1) = TPFILE%TNCCOORDS(3,IGRID)%TDIM%ID
     ELSE
-      PTDIM => GETDIMCDF(TPFILE, KSHAPE(1)); KVDIMS(1) = PTDIM%ID
+      PTDIM => IO_Dimcdf_get_nc4(TPFILE, KSHAPE(1)); KVDIMS(1) = PTDIM%ID
     END IF
   ELSE IF (JI == 2) THEN
     IF ( YDIR == 'XY' .AND. KSHAPE(2)==TPFILE%TNCCOORDS(2,IGRID)%TDIM%LEN) THEN
       KVDIMS(2) = TPFILE%TNCCOORDS(2,IGRID)%TDIM%ID
     ELSE
-      PTDIM => GETDIMCDF(TPFILE, KSHAPE(2)); KVDIMS(2) = PTDIM%ID
+      PTDIM => IO_Dimcdf_get_nc4(TPFILE, KSHAPE(2)); KVDIMS(2) = PTDIM%ID
     END IF
   ELSE IF (JI == 3) THEN
     IF ( YDIR == 'XY' .AND. KSHAPE(3)==TPFILE%TNCCOORDS(3,IGRID)%TDIM%LEN) THEN
       KVDIMS(3) = TPFILE%TNCCOORDS(3,IGRID)%TDIM%ID
     ELSE
-      PTDIM => GETDIMCDF(TPFILE, KSHAPE(3)); KVDIMS(3) = PTDIM%ID
+      PTDIM => IO_Dimcdf_get_nc4(TPFILE, KSHAPE(3)); KVDIMS(3) = PTDIM%ID
     END IF
   ELSE
-      PTDIM => GETDIMCDF(TPFILE, KSHAPE(JI)); KVDIMS(JI) = PTDIM%ID
+      PTDIM => IO_Dimcdf_get_nc4(TPFILE, KSHAPE(JI)); KVDIMS(JI) = PTDIM%ID
   END IF
 END DO
 !
-END SUBROUTINE FILLVDIMS
+END SUBROUTINE IO_Vdims_fill_nc4
 
 
-FUNCTION GETDIMCDF(TPFILE, KLEN, HDIMNAME)
+FUNCTION IO_Dimcdf_get_nc4(TPFILE, KLEN, HDIMNAME)
 TYPE(TFILEDATA),         INTENT(IN) :: TPFILE
 INTEGER(KIND=IDCDF_KIND),INTENT(IN) :: KLEN
 CHARACTER(LEN=*), OPTIONAL :: HDIMNAME ! When provided don't search but
                                        ! simply create with name HDIMNAME
-TYPE(DIMCDF), POINTER   :: GETDIMCDF
+TYPE(DIMCDF), POINTER   :: IO_Dimcdf_get_nc4
 
 TYPE(DIMCDF), POINTER :: TMP
 INTEGER               :: COUNT
@@ -442,7 +445,7 @@ INTEGER(KIND=IDCDF_KIND) :: STATUS
 LOGICAL                  :: GCHKLEN !Check if KLEN is valid
 TYPE(IOCDF), POINTER     :: PIOCDF
 
-CALL PRINT_MSG(NVERB_DEBUG,'IO','GETDIMCDF','called')
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Dimcdf_get_nc4','called')
 
 PIOCDF => TPFILE%TNCDIMS
 
@@ -457,7 +460,7 @@ END IF
 WRITE(YSUFFIX,'(I0)') KLEN
 
 IF (GCHKLEN .AND. KLEN < 1) THEN
-  CALL PRINT_MSG(NVERB_FATAL,'IO','GETDIMCDF','KLEN='//TRIM(YSUFFIX))
+  CALL PRINT_MSG(NVERB_FATAL,'IO','IO_Dimcdf_get_nc4','KLEN='//TRIM(YSUFFIX))
 END IF
 
 IF (PRESENT(HDIMNAME)) THEN
@@ -481,34 +484,34 @@ IF (.NOT. ASSOCIATED(TMP)) THEN
    TMP%NAME = YDIMNAME
    TMP%LEN = KLEN
    STATUS = NF90_DEF_DIM(TPFILE%NNCID, TMP%NAME, KLEN, TMP%ID)
-   IF (STATUS /= NF90_NOERR) CALL io_handle_err_nc4(status,'GETDIMCDF','NF90_DEF_DIM',trim(TMP%NAME))
+   IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Dimcdf_get_nc4','NF90_DEF_DIM',trim(TMP%NAME))
    NULLIFY(TMP%NEXT)
    TMP%NEXT       => PIOCDF%DIMLIST
    PIOCDF%DIMLIST => TMP
-CALL PRINT_MSG(NVERB_DEBUG,'IO','GETDIMCDF','new dimension: '//TRIM(TMP%NAME))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Dimcdf_get_nc4','new dimension: '//TRIM(TMP%NAME))
 END IF
 
-GETDIMCDF => TMP
+IO_Dimcdf_get_nc4 => TMP
 
-END FUNCTION GETDIMCDF
+END FUNCTION IO_Dimcdf_get_nc4
 
 
-FUNCTION GETSTRDIMID(TPFILE,KLEN)
+FUNCTION IO_Strdimid_get_nc4(TPFILE,KLEN)
 TYPE(TFILEDATA),         INTENT(IN) :: TPFILE
 INTEGER(KIND=IDCDF_KIND),INTENT(IN) :: KLEN
-INTEGER(KIND=IDCDF_KIND)            :: GETSTRDIMID
+INTEGER(KIND=IDCDF_KIND)            :: IO_Strdimid_get_nc4
 
 TYPE(DIMCDF), POINTER :: TMP
 TYPE(IOCDF),  POINTER :: TZIOCDF
 CHARACTER(LEN=16)     :: YSUFFIX
 INTEGER(KIND=IDCDF_KIND) :: STATUS
 
-CALL PRINT_MSG(NVERB_DEBUG,'IO','GETSTRDIMID','called')
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Strdimid_get_nc4','called')
 
 WRITE(YSUFFIX,'(I0)') KLEN
 
 IF (KLEN < 1) THEN
-  CALL PRINT_MSG(NVERB_FATAL,'IO','GETSTRDIMID','KLEN='//TRIM(YSUFFIX))
+  CALL PRINT_MSG(NVERB_FATAL,'IO','IO_Strdimid_get_nc4','KLEN='//TRIM(YSUFFIX))
 END IF
 
 ! Search string dimension with KLEN length
@@ -524,37 +527,36 @@ IF (.NOT. ASSOCIATED(TMP)) THEN
    TMP%NAME = 'char'//TRIM(YSUFFIX)
    TMP%LEN = KLEN
    STATUS = NF90_DEF_DIM(TPFILE%NNCID, TMP%NAME, KLEN, TMP%ID)
-   IF (STATUS /= NF90_NOERR) CALL io_handle_err_nc4(status,'GETSTRDIMID','NF90_DEF_DIM',trim(TMP%NAME))
+   IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Strdimid_get_nc4','NF90_DEF_DIM',trim(TMP%NAME))
    NULLIFY(TMP%NEXT)
    TMP%NEXT      => TPFILE%TNCDIMS%DIMSTR
    TZIOCDF => TPFILE%TNCDIMS
    TZIOCDF%DIMSTR => TMP
 END IF
 
-GETSTRDIMID = TMP%ID
+IO_Strdimid_get_nc4 = TMP%ID
 
-END FUNCTION GETSTRDIMID
+END FUNCTION IO_Strdimid_get_nc4
 
 
-FUNCTION NEWIOCDF()
-TYPE(IOCDF), POINTER :: NEWIOCDF
+FUNCTION IO_Iocdf_alloc_nc4()
+TYPE(IOCDF), POINTER :: IO_Iocdf_alloc_nc4
 TYPE(IOCDF), POINTER :: TZIOCDF
 INTEGER              :: IRESP
 
-CALL PRINT_MSG(NVERB_DEBUG,'IO','NEWIOCDF','called')
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Iocdf_alloc_nc4','called')
 
 ALLOCATE(TZIOCDF, STAT=IRESP)
 IF (IRESP > 0) THEN
-  CALL PRINT_MSG(NVERB_FATAL,'IO','NEWIOCDF','memory allocation error')
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'IO','IO_Iocdf_alloc_nc4','memory allocation error')
 END IF
 
-NEWIOCDF=>TZIOCDF
+IO_Iocdf_alloc_nc4=>TZIOCDF
 
-END FUNCTION NEWIOCDF
+END FUNCTION IO_Iocdf_alloc_nc4
 
 
-subroutine io_handle_err_nc4(kstatus,hsubr,hncsubr,hvar,kresp)
+subroutine IO_Err_handle_nc4(kstatus,hsubr,hncsubr,hvar,kresp)
 integer(kind=IDCDF_KIND),intent(in)  :: kstatus
 character(len=*),        intent(in)  :: hsubr
 character(len=*),        intent(in)  :: hncsubr
@@ -575,10 +577,10 @@ if (kstatus /= NF90_NOERR) then
     call print_msg(NVERB_ERROR,  'IO',trim(hsubr),trim(hvar)//': '//trim(hncsubr)//': '//trim(NF90_STRERROR(kstatus)))
   end if
 end if
-end subroutine io_handle_err_nc4
+end subroutine IO_Err_handle_nc4
 
 
-SUBROUTINE CLEANMNHNAME(HINNAME,HOUTNAME)
+SUBROUTINE IO_Mnhname_clean(HINNAME,HOUTNAME)
   CHARACTER(LEN=*),INTENT(IN)  :: HINNAME
   CHARACTER(LEN=*),INTENT(OUT) :: HOUTNAME
 
@@ -610,66 +612,66 @@ end module mode_io_tools_nc4
 !
 ! External dummy subroutines
 !
-subroutine io_find_dim_byname_nc4(a, b, c, d)
+subroutine IO_Dim_find_byname_nc4(a, b, c, d)
 use mode_msg
 integer :: a, b, c, d
-CALL PRINT_MSG(NVERB_ERROR,'IO','io_find_dim_byname_nc4','empty call. Compile with -DMNH_IOCDF4 flag to enable NetCDF')
-end subroutine io_find_dim_byname_nc4
+CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Dim_find_byname_nc4','empty call. Compile with -DMNH_IOCDF4 flag to enable NetCDF')
+end subroutine IO_Dim_find_byname_nc4
 !
-subroutine io_guess_dimids_nc4(a, b, c, d)
+subroutine IO_Dimids_guess_nc4(a, b, c, d)
 use mode_msg
 integer :: a, b, c, d
-CALL PRINT_MSG(NVERB_ERROR,'IO','io_guess_dimids_nc4','empty call. Compile with -DMNH_IOCDF4 flag to enable NetCDF')
-end subroutine io_guess_dimids_nc4
+CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Dimids_guess_nc4','empty call. Compile with -DMNH_IOCDF4 flag to enable NetCDF')
+end subroutine IO_Dimids_guess_nc4
 !
-subroutine io_set_knowndims_nc4(a, b)
+subroutine IO_Knowndims_set_nc4(a, b)
 use mode_msg
 integer :: a, b,
-CALL PRINT_MSG(NVERB_ERROR,'IO','io_set_knowndims_nc4','empty call. Compile with -DMNH_IOCDF4 flag to enable NetCDF')
-end subroutine io_set_knowndims_nc4
+CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Knowndims_set_nc4','empty call. Compile with -DMNH_IOCDF4 flag to enable NetCDF')
+end subroutine IO_Knowndims_set_nc4
 !
-subroutine cleaniocdf(a)
+subroutine IO_Iocdf_dealloc_nc4(a)
 use mode_msg
 integer :: a
-CALL PRINT_MSG(NVERB_ERROR,'IO','cleaniocdf','empty call. Compile with -DMNH_IOCDF4 flag to enable NetCDF')
-end subroutine cleaniocdf
+CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Iocdf_dealloc_nc4','empty call. Compile with -DMNH_IOCDF4 flag to enable NetCDF')
+end subroutine IO_Iocdf_dealloc_nc4
 !
-subroutine cleanmnhname(a, b)
+subroutine IO_Mnhname_clean(a, b)
 use mode_msg
 integer :: a, b
-CALL PRINT_MSG(NVERB_ERROR,'IO','cleanmnhname','empty call. Compile with -DMNH_IOCDF4 flag to enable NetCDF')
-end subroutine cleanmnhname
+CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Mnhname_clean','empty call. Compile with -DMNH_IOCDF4 flag to enable NetCDF')
+end subroutine IO_Mnhname_clean
 !
-subroutine fillvdims(a, b, c, d)
+subroutine IO_Vdims_fill_nc4(a, b, c, d)
 use mode_msg
 integer :: a, b, c, d
-CALL PRINT_MSG(NVERB_ERROR,'IO','fillvdims','empty call. Compile with -DMNH_IOCDF4 flag to enable NetCDF')
-end subroutine fillvdims
+CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Vdims_fill_nc4','empty call. Compile with -DMNH_IOCDF4 flag to enable NetCDF')
+end subroutine IO_Vdims_fill_nc4
 !
-function getdimcdf(a, b, c)
+function IO_Dimcdf_get_nc4(a, b, c)
 use mode_msg
-integer :: getdimcdf
+integer :: IO_Dimcdf_get_nc4
 integer :: a, b, c
-CALL PRINT_MSG(NVERB_ERROR,'IO','getdimcdf','empty call. Compile with -DMNH_IOCDF4 flag to enable NetCDF')
-end function getdimcdf
+CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Dimcdf_get_nc4','empty call. Compile with -DMNH_IOCDF4 flag to enable NetCDF')
+end function IO_Dimcdf_get_nc4
 !
-function getstrdimid(a, b)
+function IO_Strdimid_get_nc4(a, b)
 use mode_msg
-integer :: getstrdimid
+integer :: IO_Strdimid_get_nc4
 integer :: a, b
-CALL PRINT_MSG(NVERB_ERROR,'IO','getstrdimid','empty call. Compile with -DMNH_IOCDF4 flag to enable NetCDF')
-end function getstrdimid
+CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Strdimid_get_nc4','empty call. Compile with -DMNH_IOCDF4 flag to enable NetCDF')
+end function IO_Strdimid_get_nc4
 !
-subroutine io_handle_err_nc4(a, b, c, d, e)
+subroutine IO_Err_handle_nc4(a, b, c, d, e)
 use mode_msg
 integer :: a, b, c, d, e
-CALL PRINT_MSG(NVERB_ERROR,'IO','io_handle_err_nc4','empty call. Compile with -DMNH_IOCDF4 flag to enable NetCDF')
-end subroutine io_handle_err_nc4
+CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Err_handle_nc4','empty call. Compile with -DMNH_IOCDF4 flag to enable NetCDF')
+end subroutine IO_Err_handle_nc4
 !
-function newiocdf()
+function IO_Iocdf_alloc_nc4()
 use mode_msg
-integer :: newiocdf
-CALL PRINT_MSG(NVERB_ERROR,'IO','newiocdf','empty call. Compile with -DMNH_IOCDF4 flag to enable NetCDF')
-end function newiocdf()
+integer :: IO_Iocdf_alloc_nc4
+CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Iocdf_alloc_nc4','empty call. Compile with -DMNH_IOCDF4 flag to enable NetCDF')
+end function IO_Iocdf_alloc_nc4()
 !
 #endif

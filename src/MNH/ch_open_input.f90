@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !!    ######################### 
@@ -11,7 +11,7 @@ INTERFACE
 !!
 SUBROUTINE CH_OPEN_INPUT(HCHEM_INPUT_FILE,HKEYWORD,TPFILE,KLUOUT,KVERB)
 !
-USE MODD_IO_ll,            ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 IMPLICIT NONE
 !
@@ -39,13 +39,12 @@ SUBROUTINE CH_OPEN_INPUT(HCHEM_INPUT_FILE,HKEYWORD,TPFILE,KLUOUT,KVERB)
 !!
 !!**  METHOD
 !!    ------
-!!      An unused input channel is selected using OPEN_ll.
 !!    The file HCHEM_INPUT_FILE will be rewinded
 !!    at each call and data will be read in using (A8)-format until the
 !!    given keyword is found. The following comment line will then
 !!    be read and printed and the input channel number will be returned.
-!!    After reading the needed data, the user must assure that the file
-!!    will be closed and that the unit will be freed using CLOSE_ll.
+!!    After reading the needed data, the user must ensure that the file
+!!    will be closed.
 !!
 !!    REFERENCE
 !!    ---------
@@ -73,10 +72,10 @@ SUBROUTINE CH_OPEN_INPUT(HCHEM_INPUT_FILE,HKEYWORD,TPFILE,KLUOUT,KVERB)
 !*       0.     DECLARATIONS
 !               ------------
 !
-USE MODD_IO_ll,            ONLY: TFILEDATA
+USE MODD_IO,               ONLY: TFILEDATA
 !
-USE MODE_FM,               ONLY: IO_FILE_OPEN_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
+USE MODE_IO_FILE,          ONLY: IO_File_open
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_add2list
 !
 IMPLICIT NONE
 !
@@ -92,7 +91,7 @@ INTEGER,                 INTENT(IN)  :: KVERB            ! verbosity level
 !
 CHARACTER(LEN=79) :: YIN ! character string for line-by-line read
 INTEGER :: ILU
-INTEGER :: IRESP         ! return code from OPEN_ll
+INTEGER :: IRESP         ! return code from IO_File_open
 !
 !-------------------------------------------------------------------------------
 !
@@ -102,13 +101,13 @@ TPFILE => NULL()
 !              -----------------------
 !
 IF (KVERB >= 5) WRITE(KLUOUT,*) "CH_OPEN_INPUT: opening file ", HCHEM_INPUT_FILE
-CALL IO_FILE_ADD2LIST(TPFILE,HCHEM_INPUT_FILE,'CHEMINPUT','READ',OOLD=.TRUE.)
-CALL IO_FILE_OPEN_ll(TPFILE,KRESP=IRESP)
+CALL IO_File_add2list(TPFILE,HCHEM_INPUT_FILE,'CHEMINPUT','READ',OOLD=.TRUE.)
+CALL IO_File_open(TPFILE,KRESP=IRESP)
 ILU = TPFILE%NLU
 !
 IF (IRESP /= 0) THEN
   WRITE(KLUOUT,*) "CH_OPEN_INPUT ERROR: unable to open file", HCHEM_INPUT_FILE
-  WRITE(KLUOUT,*) "                     IO_FILE_OPEN_ll return code is: ", IRESP
+  WRITE(KLUOUT,*) "                     IO_File_open return code is: ", IRESP
   WRITE(KLUOUT,*) "                     the program will be stopped now"
   ! callabortstop
   CALL ABORT

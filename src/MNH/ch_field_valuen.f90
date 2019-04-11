@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !!    ############################ 
@@ -74,8 +74,8 @@ END MODULE MODI_CH_FIELD_VALUE_n
 !!    EXTERNAL
 !!    --------
 USE MODI_CH_OPEN_INPUT  ! open general purpose ASCII input file
-USE MODD_IO_ll,         ONLY: TFILEDATA
-USE MODE_FM,            ONLY: IO_FILE_CLOSE_ll
+USE MODD_IO,            ONLY: TFILEDATA
+USE MODE_IO_FILE,       ONLY: IO_File_close
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -169,7 +169,7 @@ firstcall: IF (GSFIRSTCALL) THEN
   END IF
 !
 ! close file
-  CALL IO_FILE_CLOSE_ll(TZFILE)
+  CALL IO_File_close(TZFILE)
   TZFILE => NULL()
 !
 ! check if Z-profile is given in increasing order, otherwise stop
@@ -214,7 +214,7 @@ firstcall: IF (GSFIRSTCALL) THEN
   ENDDO
 !
 ! close file
-  CALL IO_FILE_CLOSE_ll(TZFILE)
+  CALL IO_File_close(TZFILE)
   TZFILE => NULL()
 !
 !
@@ -261,7 +261,7 @@ firstcall: IF (GSFIRSTCALL) THEN
   ENDDO
 !
 ! close file
-  CALL IO_FILE_CLOSE_ll(TZFILE)
+  CALL IO_File_close(TZFILE)
   TZFILE => NULL()
 !
 ENDIF firstcall

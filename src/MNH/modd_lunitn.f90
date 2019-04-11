@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ###################
@@ -35,13 +35,14 @@
 !!      Modification  10/03/95 (I.Mallet)   add the coupling files names 
 !!      Modification  25/09/95 (J.Stein) add the output diachronic file                    
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
 !
 !
-USE MODD_IO_ll,      ONLY: TFILEDATA, TPTR2FILE
+USE MODD_IO,         ONLY: TFILEDATA, TPTR2FILE
 USE MODD_PARAMETERS, ONLY: JPMODELMAX, JPCPLFILEMAX 
 
 IMPLICIT NONE
@@ -54,8 +55,6 @@ TYPE LUNIT_t
   TYPE(TFILEDATA),POINTER :: TINIFILEPGD => NULL() ! PGD associated to input FM-file
   CHARACTER(LEN=24) :: COUTFILE = ''    ! Generic name of the output FM-files
   TYPE(TFILEDATA),POINTER :: TDIAFILE => NULL() ! diachronic output file
-!
-  CHARACTER(LEN=16) :: CLUOUT = ''      ! Name of output_listing file
   TYPE(TFILEDATA),POINTER :: TLUOUT => NULL() ! output_listing file
 !JUAN
   CHARACTER(LEN=28),DIMENSION(:),POINTER :: CCPLFILE =>NULL() ! Names of the
@@ -75,7 +74,6 @@ CHARACTER(LEN=28), POINTER :: CINIFILEPGD =>NULL()
 TYPE(TFILEDATA),   POINTER :: TINIFILEPGD => NULL()
 CHARACTER(LEN=24), POINTER :: COUTFILE=>NULL()
 TYPE(TFILEDATA),   POINTER :: TDIAFILE=>NULL()
-CHARACTER(LEN=16), POINTER :: CLUOUT=>NULL()
 TYPE(TFILEDATA),   POINTER :: TLUOUT=>NULL()
 CHARACTER(LEN=28),DIMENSION(:), POINTER :: CCPLFILE=>NULL()
 TYPE(TPTR2FILE),  DIMENSION(:), POINTER :: TCPLFILE=>NULL()
@@ -84,7 +82,7 @@ CONTAINS
 
 SUBROUTINE LUNIT_GOTO_MODEL(KFROM, KTO)
 !
-USE MODD_IO_ll, ONLY : TFILE_OUTPUTLISTING
+USE MODD_IO, ONLY : TFILE_OUTPUTLISTING
 !
 INTEGER, INTENT(IN) :: KFROM, KTO
 !
@@ -107,7 +105,6 @@ CINIFILEPGD=>LUNIT_MODEL(KTO)%CINIFILEPGD
 TINIFILEPGD=>LUNIT_MODEL(KTO)%TINIFILEPGD
 COUTFILE=>LUNIT_MODEL(KTO)%COUTFILE
 TDIAFILE=>LUNIT_MODEL(KTO)%TDIAFILE
-CLUOUT=>LUNIT_MODEL(KTO)%CLUOUT
 TLUOUT=>LUNIT_MODEL(KTO)%TLUOUT
 CCPLFILE=>LUNIT_MODEL(KTO)%CCPLFILE
 TCPLFILE=>LUNIT_MODEL(KTO)%TCPLFILE

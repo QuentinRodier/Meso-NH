@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1996-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ################################
@@ -71,7 +71,7 @@ END MODULE MODI_RETRIEVE2_NEST_INFO_n
 !!      Module MODD_PARAMETERS :
 !!        JPHEXT
 !!      Module MODD_LUNIT :
-!!        CLUOUT
+!!        TLUOUT0
 !!
 !!    REFERENCE
 !!    ---------
@@ -100,7 +100,7 @@ USE MODD_DIM_ll,       ONLY: NXOR_ALL, NXEND_ALL, NYOR_ALL, NYEND_ALL, NIMAX_TMP
 USE MODD_DIM_n,        ONLY: NIMAX, NJMAX
 USE MODD_GRID
 USE MODD_GRID_n
-USE MODD_IO_ll,        ONLY: ISNPROC, ISP
+USE MODD_IO,           ONLY: ISNPROC, ISP
 USE MODD_LUNIT,        ONLY: TLUOUT0
 USE MODD_MPIF
 USE MODD_PARAMETERS

@@ -3,21 +3,22 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!  Author: P. Wautelet 14/12/2018
+! Author
+!  P. Wautelet 14/12/2018
 !
 !  Remarks: some of the code comes from mode_fm.f90 and mode_io.f90
 !           (was duplicated in the 2 files)
 !
-!  Modifications:
-!     Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
-!                                    + move IOFREEFLU and IONEWFLU to mode_io_file_lfi.f90
-!                                    + move management of NNCID and NLFIFLU to the nc4 and lfi subroutines
+! Modifications:
+!  P. Wautelet 10/01/2019: use NEWUNIT argument of OPEN
+!                          + move IO_Flu_dealloc and IO_Flu_alloc to mode_io_file_lfi.f90
+!                          + move management of NNCID and NLFIFLU to the nc4 and lfi subroutines
+!  P. Wautelet 05/03/2019: rename IO subroutines and modules
 !
 !-----------------------------------------------------------------
 module mode_io_file_lfi
 
-use modd_io_ll,  only: tfiledata
-use modd_netcdf, only: idcdf_kind
+use modd_io,     only: tfiledata
 
 use mode_msg
 
@@ -25,7 +26,7 @@ implicit none
 
 private
 
-public :: io_create_file_lfi, io_close_file_lfi, io_open_file_lfi
+public :: IO_File_create_lfi, IO_File_close_lfi, IO_File_open_lfi
 
 integer, parameter :: JPRESERVED_UNIT   = 11
 integer, parameter :: JPMAX_UNIT_NUMBER = JPRESERVED_UNIT + 300
@@ -34,10 +35,10 @@ logical,save :: galloc(JPRESERVED_UNIT:JPMAX_UNIT_NUMBER) = .false.
 
 contains
 
-subroutine io_create_file_lfi(tpfile, kstatus)
-  use mode_io_tools,            only: io_construct_filename
-  use mode_io_tools_lfi,        only: io_prepare_verbosity_lfi
-  use mode_io_tools_mnhversion, only: io_set_mnhversion
+subroutine IO_File_create_lfi(tpfile, kstatus)
+  use mode_io_tools,            only: IO_Filename_construct
+  use mode_io_tools_mnhversion, only: IO_Mnhversion_set
+  use mode_io_tools_lfi,        only: IO_Verbosity_prepare_lfi
 
   type(tfiledata), intent(inout) :: tpfile
   integer,         intent(inout) :: kstatus
@@ -50,22 +51,22 @@ subroutine io_create_file_lfi(tpfile, kstatus)
   logical                       :: gnewfi
   logical                       :: gnamfi, gfater, gstats
 
-  call print_msg(NVERB_DEBUG,'IO','io_create_file_lfi','called for '//trim(tpfile%cname))
+  call print_msg(NVERB_DEBUG,'IO','IO_File_create_lfi','called for '//trim(tpfile%cname))
 
   kstatus = 0
 
   if (tpfile%lmaster) then
-    call io_construct_filename(tpfile, yfilem)
+    call IO_Filename_construct(tpfile, yfilem)
 
     iresou = 0
     if ( tpfile%nlfiflu /= -1 ) call print_msg(NVERB_ERROR,'IO', &
-                                               'io_create_file_lfi','file '//trim(yfilem)//'.lfi has already a unit number')
-    tpfile%nlfiflu = ionewflu()
+                                               'IO_File_create_lfi','file '//trim(yfilem)//'.lfi has already a unit number')
+    tpfile%nlfiflu = IO_Flu_alloc()
     gnamfi = .true.
     yforstatus = 'REPLACE'
     gfater = .true.
 
-    call io_prepare_verbosity_lfi(tpfile, imelev, gstats)
+    call IO_Verbosity_prepare_lfi(tpfile, imelev, gstats)
 
     inumbr = tpfile%nlfiflu
     inprar = tpfile%nlfinprar
@@ -78,14 +79,14 @@ subroutine io_create_file_lfi(tpfile, kstatus)
     !test if file is newly defined
     gnewfi = (ininar==0) .or. (imelev<2)
     if (.not.gnewfi) then
-      call print_msg(NVERB_INFO,'IO','io_create_file_lfi','file '//trim(yfilem)//'.lfi previously created with LFI')
+      call print_msg(NVERB_INFO,'IO','IO_File_create_lfi','file '//trim(yfilem)//'.lfi previously created with LFI')
     endif
   end if
-  call io_set_mnhversion(tpfile)
-end subroutine io_create_file_lfi
+  call IO_Mnhversion_set(tpfile)
+end subroutine IO_File_create_lfi
 
 
-subroutine io_close_file_lfi(tpfile, kstatus)
+subroutine IO_File_close_lfi(tpfile, kstatus)
   type(tfiledata),   intent(inout)  :: tpfile
   integer, optional, intent(out)    :: kstatus
 
@@ -93,29 +94,29 @@ subroutine io_close_file_lfi(tpfile, kstatus)
 
   integer(kind=LFI_INT) :: istatus
 
-  call print_msg(NVERB_DEBUG,'IO','io_close_file_lfi','called for '//trim(tpfile%cname))
+  call print_msg(NVERB_DEBUG,'IO','IO_File_close_lfi','called for '//trim(tpfile%cname))
 
   istatus = 0
 
   if (tpfile%lmaster) then
     if ( tpfile%nlfiflu /= -1 ) then
       call lfifer(istatus, tpfile%nlfiflu, YSTATUS)
-      call iofreeflu(int(tpfile%nlfiflu))
+      call IO_Flu_dealloc(int(tpfile%nlfiflu))
       tpfile%nlfiflu = -1
     else
       istatus = -1
-      call print_msg(NVERB_WARNING, 'IO', 'io_close_file_lfi', 'file '//trim(tpfile%cname)//'.lfi is not opened')
+      call print_msg(NVERB_WARNING, 'IO', 'IO_File_close_lfi', 'file '//trim(tpfile%cname)//'.lfi is not opened')
     end if
   end if
 
   if (present(kstatus)) kstatus = int(istatus,kind=kind(kstatus))
-end subroutine io_close_file_lfi
+end subroutine IO_File_close_lfi
 
 
-subroutine io_open_file_lfi(tpfile, kstatus)
-  use mode_io_tools,            only: io_construct_filename
-  use mode_io_tools_lfi,        only: io_prepare_verbosity_lfi
-  use mode_io_tools_mnhversion, only: io_get_mnhversion
+subroutine IO_File_open_lfi(tpfile, kstatus)
+  use mode_io_tools,            only: IO_Filename_construct
+  use mode_io_tools_mnhversion, only: IO_Mnhversion_get
+  use mode_io_tools_lfi,        only: IO_Verbosity_prepare_lfi
 
   type(tfiledata), intent(inout) :: tpfile
   integer,         intent(inout) :: kstatus
@@ -129,22 +130,22 @@ subroutine io_open_file_lfi(tpfile, kstatus)
   logical                      :: gnewfi
   logical                      :: gnamfi, gfater, gstats
 
-  call print_msg(NVERB_DEBUG,'IO','io_open_file_lfi','called for '//trim(tpfile%cname))
+  call print_msg(NVERB_DEBUG,'IO','IO_File_open_lfi','called for '//trim(tpfile%cname))
 
   kstatus = 0
 
   if (tpfile%lmaster) then
-    call io_construct_filename(tpfile, yfilem)
+    call IO_Filename_construct(tpfile, yfilem)
 
     iresou = 0
     if ( tpfile%nlfiflu /= -1 ) call print_msg(NVERB_ERROR,'IO', &
-                                               'io_open_file_lfi','file '//trim(yfilem)//'.lfi has already a unit number')
-    tpfile%nlfiflu = ionewflu()
+                                               'IO_File_open_lfi','file '//trim(yfilem)//'.lfi has already a unit number')
+    tpfile%nlfiflu = IO_Flu_alloc()
     gnamfi = .true.
     yforstatus = 'OLD'
     gfater = .true.
 
-    call io_prepare_verbosity_lfi(tpfile, imelev, gstats)
+    call IO_Verbosity_prepare_lfi(tpfile, imelev, gstats)
 
     inumbr = tpfile%nlfiflu
     inprar = tpfile%nlfinprar
@@ -155,14 +156,14 @@ subroutine io_open_file_lfi(tpfile, kstatus)
 
     if (iresou/=0) kstatus = int(iresou, kind=kind(kstatus))
   end if
-  call io_get_mnhversion(tpfile)
-end subroutine io_open_file_lfi
+  call IO_Mnhversion_get(tpfile)
+end subroutine IO_File_open_lfi
 
 
-function ionewflu()
-  use modd_io_ll, only: nnullunit
+function IO_Flu_alloc()
+  use modd_io, only: nnullunit
 
-  integer :: ionewflu
+  integer :: IO_Flu_alloc
 
   integer :: ji
   integer :: ios
@@ -174,7 +175,7 @@ function ionewflu()
     if ( galloc(ji) ) cycle
     inquire(unit=ji, exist=gexists, opened=gopened, iostat=ios)
     if (gexists .and. .not. gopened .and. ios == 0) then
-      ionewflu   = ji
+      IO_Flu_alloc   = ji
       gfound     = .true.
       galloc(ji) = .true.
       exit
@@ -182,21 +183,21 @@ function ionewflu()
   end do
 
   if (.not. gfound) then
-    call print_msg(NVERB_ERROR,'IO','ionewflu','wrong unit number')
-    ionewflu = nnullunit !/dev/null Fortran unit
+    call print_msg(NVERB_ERROR,'IO','IO_Flu_alloc','wrong unit number')
+    IO_Flu_alloc = nnullunit !/dev/null Fortran unit
   end if
-end function ionewflu
+end function IO_Flu_alloc
 
 
-subroutine iofreeflu(koflu)
+subroutine IO_Flu_dealloc(koflu)
   integer :: koflu
 
   if ( (koflu >= JPRESERVED_UNIT) .and. (koflu <= JPMAX_UNIT_NUMBER) ) then
     galloc(koflu) = .false.
   else
-    call print_msg(NVERB_ERROR,'IO','iofreeflu','wrong unit number')
+    call print_msg(NVERB_ERROR,'IO','IO_Flu_dealloc','wrong unit number')
   end if
-end subroutine iofreeflu
+end subroutine IO_Flu_dealloc
 
 
 end module mode_io_file_lfi

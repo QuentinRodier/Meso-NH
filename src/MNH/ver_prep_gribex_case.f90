@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision
-! MASDEV4_7 prep_real 2006/05/23 14:49:51
 !-----------------------------------------------------------------
 !     ################################
       MODULE MODI_VER_PREP_GRIBEX_CASE
@@ -52,7 +47,7 @@ END MODULE MODI_VER_PREP_GRIBEX_CASE
 !!      Module MODD_CONF1     : contains configuration variables for all models.
 !!         NVERB      : verbosity level for output-listing
 !!      Module MODD_LUNIT     :  contains logical unit names for all models
-!!         CLUOUT0 : name of output-listing
+!!         TLUOUT0 : name of output-listing
 !!      Module MODD_CST       : contains physical constants
 !!         XRD : gas constant for dry air
 !!         XRV : gas constant for vapor

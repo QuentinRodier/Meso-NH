@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ################
@@ -74,6 +74,8 @@
 !!      J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
 !!  06/2016     (G.Delautier) phasage surfex 8
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
+!                          (nsubfiles_ioz is now determined in IO_File_add2list)
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !-------------------------------------------------------------------------------
 !
@@ -102,7 +104,7 @@ USE MODD_CURVCOR_n
 USE MODD_DIM_n
 USE MODD_DYN_n, LRES_n=>LRES, XRES_n=>XRES 
 USE MODD_FIELD_n
-USE MODD_IO_ll, ONLY: NIO_VERB,NVERB_DEBUG,TFILEDATA
+USE MODD_IO, ONLY: NIO_VERB,NVERB_DEBUG,TFILEDATA
 USE MODD_LSFIELD_n
 USE MODD_LBC_n
 USE MODD_LUNIT_n
@@ -112,12 +114,12 @@ USE MODD_REF_n
 USE MODD_TIME_n
 USE MODD_CH_MNHC_n
 USE MODD_GRID_n
-! 
-USE MODE_IO_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME,IO_FILE_PRINT_LIST
+!
+USE MODE_IO,               only: IO_Init
+USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
+USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list, IO_File_find_byname, IO_Filelist_print
 USE MODE_ll
 USE MODE_POS
-USE MODE_FM
 USE MODE_MODELN_HANDLER
 !
 USE MODI_SPAWN_MODEL2    
@@ -166,7 +168,7 @@ CALL VERSION
 CPROGRAM='SPAWN '
 CDOMAIN= ''
 !
-CALL INITIO_ll()
+CALL IO_Init()
 !-------------------------------------------------------------------------------
 !
 !*       1.    SPAWNING INITIALIZATION 
@@ -181,8 +183,8 @@ CALL READ_EXSPA(CINIFILE,CINIFILEPGD,&
 !*       2.    NAM_BLANK, NAM_SPAWN_SURF and NAM_CONFZ READING AND EXSPA file CLOSURE
 !              ----------------------------------------
 !
-CALL IO_FILE_FIND_BYNAME('SPAWN1.nam',TZEXPAFILE,IRESP)
-CALL IO_FILE_OPEN_ll(TZEXPAFILE)
+CALL IO_File_find_byname('SPAWN1.nam',TZEXPAFILE,IRESP)
+CALL IO_File_open(TZEXPAFILE)
 ILUSPA = TZEXPAFILE%NLU
 !
 CALL INIT_NMLVAR
@@ -195,7 +197,7 @@ CALL POSNAM(ILUSPA,'NAM_CONFZ',GFOUND)
 IF (GFOUND) READ(UNIT=ILUSPA,NML=NAM_CONFZ)
 CALL POSNAM(ILUSPA,'NAM_CONF_SPAWN',GFOUND)
 IF (GFOUND) READ(UNIT=ILUSPA,NML=NAM_CONF_SPAWN)
-CALL IO_FILE_CLOSE_ll(TZEXPAFILE)
+CALL IO_File_close(TZEXPAFILE)
 !
 !-------------------------------------------------------------------------------
 !
@@ -204,9 +206,9 @@ CALL IO_FILE_CLOSE_ll(TZEXPAFILE)
 !
 CALL INIT_MNH
 !
-CALL IO_FILE_FIND_BYNAME(TRIM(CINIFILE),TZINIFILE,IRESP)
-CALL IO_FILE_CLOSE_ll(TZINIFILE)
-CALL IO_FILE_CLOSE_ll(TINIFILEPGD,OPARALLELIO=.FALSE.)
+CALL IO_File_find_byname(TRIM(CINIFILE),TZINIFILE,IRESP)
+CALL IO_File_close(TZINIFILE)
+CALL IO_File_close(TINIFILEPGD)
 !-------------------------------------------------------------------------------
 !
 !*       4.    INITIALIZATION OF OUTER POINTS OF MODEL 1
@@ -227,7 +229,7 @@ CALL MPPDB_CHECK3D(XUT,"SPAWNING-after boundaries::XUT",PRECISION)
 !*       5.    SPAWNING OF MODEL 2 FROM MODEL 1
 !              --------------------------------
 !
-CALL IO_FILE_OPEN_ll(TZEXPAFILE)
+CALL IO_File_open(TZEXPAFILE)
 ILUSPA = TZEXPAFILE%NLU
 !
 CALL SET_POINTERS_TO_MODEL1()
@@ -237,7 +239,7 @@ CALL POSNAM(ILUSPA,'NAM_SPAWN_SURF',GFOUND)
 IF (GFOUND) READ(UNIT=ILUSPA,NML=NAM_SPAWN_SURF)
 CALL UPDATE_MODD_FROM_NMLVAR
 CALL GOTO_MODEL(1)
-CALL IO_FILE_CLOSE_ll(TZEXPAFILE)
+CALL IO_File_close(TZEXPAFILE)
 !
 CALL GO_TOMODEL_ll(2,IINFO_ll)
 !
@@ -247,9 +249,9 @@ CALL SPAWN_MODEL2 (NRR,NSV_USER,CTURB,CSURF,CCLOUD,                     &
 !
 CALL SURFEX_DEALLO_LIST
 !
-IF(NIO_VERB>=NVERB_DEBUG) CALL IO_FILE_PRINT_LIST()
+IF(NIO_VERB>=NVERB_DEBUG) CALL IO_Filelist_print()
 !
-CALL IO_FILE_CLOSE_ll(TLUOUT)
+CALL IO_File_close(TLUOUT)
 !
 CALL END_PARA_ll(IINFO_ll)
 !JUAN CALL ABORT

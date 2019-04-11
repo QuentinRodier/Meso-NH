@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ####################
@@ -41,7 +41,6 @@
 !
 USE MODE_ll
 USE MODE_GATHER_ll
-USE MODE_IO_ll
 USE MODE_MSG
 USE MODE_MODELN_HANDLER
 !
@@ -66,7 +65,6 @@ USE MODD_DYN
 USE MODD_NSV, ONLY: NSV ! update_nsv is done in INI_MODEL
 USE MODD_CONDSAMP, ONLY : LCONDSAMP
 !
-
 USE MODI_INI_LES_CART_MASKn
 USE MODI_COEF_VER_INTERP_LIN
 !

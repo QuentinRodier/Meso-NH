@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ####################
@@ -1429,8 +1429,8 @@ END SUBROUTINE SM_XYHAT_A
 !!       Module MODD_CST      : contains Physical constants
 !!          XPI        : Pi;    
 !!
-!!       Module MODD_LUNIT    : contains logical unit names
-!!          CLUOUT0    : Output listing file name
+!!       Module MODD_LUNIT_n    : contains logical unit names
+!!          TLUOUT    : Output listing file name
 !!
 !!     REFERENCE
 !!     ---------

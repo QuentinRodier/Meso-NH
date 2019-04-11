@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !###################
@@ -14,7 +14,7 @@ INTERFACE
                          PREFMASS,PMASS_O_PHI0,PLINMASS,                   &
                          PRHODREF,PTHVREF,PRVREF,PEXNREF,PRHODJ            )
 !
-USE MODD_IO_ll, ONLY : TFILEDATA
+USE MODD_IO, ONLY : TFILEDATA
 !
 INTEGER,                INTENT(IN)  :: KMI       ! Model index 
 TYPE(TFILEDATA),        INTENT(IN)  :: TPINIFILE ! Initial file
@@ -155,12 +155,12 @@ END MODULE MODI_SET_REF
 !              ------------ 
 USE MODD_CONF
 USE MODD_CST
-USE MODD_IO_ll,   ONLY : TFILEDATA
+USE MODD_IO,      ONLY: TFILEDATA
 USE MODD_LUNIT_n, ONLY: TLUOUT
 USE MODD_PARAMETERS
 USE MODD_REF
 !
-USE MODE_FMREAD
+USE MODE_IO_FIELD_READ, only: IO_Field_read
 USE MODE_ll
 USE MODE_MPPDB
 USE MODE_REPRO_SUM
@@ -255,9 +255,9 @@ ILUOUT = TLUOUT%NLU
 !              ----------------------------------------------------
 !
 IF (KMI == 1) THEN
-  CALL IO_READ_FIELD(TPINIFILE,'RHOREFZ',XRHODREFZ)
-  CALL IO_READ_FIELD(TPINIFILE,'THVREFZ',XTHVREFZ)
-  CALL IO_READ_FIELD(TPINIFILE,'EXNTOP', XEXNTOP)
+  CALL IO_Field_read(TPINIFILE,'RHOREFZ',XRHODREFZ)
+  CALL IO_Field_read(TPINIFILE,'THVREFZ',XTHVREFZ)
+  CALL IO_Field_read(TPINIFILE,'EXNTOP', XEXNTOP)
 !
   LNEUTRAL=.FALSE.
   IF (MAXVAL(XTHVREFZ(IKB:IKE))-MINVAL(XTHVREFZ(IKB:IKE)) < 1.E-10) LNEUTRAL=.TRUE.

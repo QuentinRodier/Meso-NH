@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2009-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !     ######spl
         SUBROUTINE MNH2LPDM_INI(TPFILE1,TPFILE2,TPLOGFILE,TPGRIDFILE,TPDATEFILE)
@@ -33,7 +33,7 @@ USE MODD_CST
 USE MODD_DIM_n
 USE MODD_GRID
 USE MODD_GRID_n
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO,            ONLY: TFILEDATA
 USE MODD_LUNIT
 USE MODD_MNH2LPDM
 USE MODD_PARAMETERS
@@ -41,10 +41,9 @@ USE MODD_TIME
 USE MODD_TIME_n
 !
 USE MODE_DATETIME
-USE MODE_FM
-USE MODE_FMREAD
 USE MODE_GRIDPROJ
-USE MODE_IO_ll
+USE MODE_IO_FILE,       only: IO_File_close, IO_File_open
+USE MODE_IO_FIELD_READ, only: IO_Field_read
 USE MODE_MODELN_HANDLER
 !
 USE MODI_INI_CST
@@ -100,15 +99,15 @@ CALL GOTO_MODEL(1)
 !
 !*	2.1 Ouverture du fichier Meso-NH.
 !
-CALL IO_FILE_OPEN_ll(TPFILE1)
-CALL IO_FILE_OPEN_ll(TPFILE2)
+CALL IO_File_open(TPFILE1)
+CALL IO_File_open(TPFILE2)
 !
 !
 !*      2.2 Date et heure du modele.
 !
-CALL IO_READ_FIELD(TPFILE1,'DTEXP',TZDTEXP1)
-CALL IO_READ_FIELD(TPFILE1,'DTCUR',TZDTCUR1)
-CALL IO_READ_FIELD(TPFILE2,'DTCUR',TZDTCUR2)
+CALL IO_Field_read(TPFILE1,'DTEXP',TZDTEXP1)
+CALL IO_Field_read(TPFILE1,'DTCUR',TZDTCUR1)
+CALL IO_Field_read(TPFILE2,'DTCUR',TZDTCUR2)
 !
 CALL DATETIME_DISTANCE(TZDTEXP1,TZDTCUR1,ZECHEANCE1)
 CALL DATETIME_DISTANCE(TZDTEXP1,TZDTCUR2,ZECHEANCE2)
@@ -164,7 +163,7 @@ NJE=NJU-JPHEXT
 !
 !*	2.4 Nombre de niveaux-verticaux.
 !
-CALL IO_READ_FIELD(TPFILE1,'KMAX',NKMAX)
+CALL IO_Field_read(TPFILE1,'KMAX',NKMAX)
 !WRITE(IFLOG,*) '%%% MNH2S2_INI Lecture du nombre de niveau OK.'
 !
 NKU = NKMAX+2*JPVEXT
@@ -194,17 +193,17 @@ ALLOCATE( XSFV(NIU,NJU))
 !
 !*	2.6 Decoupage vertical.
 !
-CALL IO_READ_FIELD(TPFILE1,'ZHAT',XZHAT)
-CALL IO_READ_FIELD(TPFILE1,'ZTOP',XZTOP)
+CALL IO_Field_read(TPFILE1,'ZHAT',XZHAT)
+CALL IO_Field_read(TPFILE1,'ZTOP',XZTOP)
 !
 !*	2.7 Orographie. 
 !
-CALL IO_READ_FIELD(TPFILE1,'ZS',XZS)
+CALL IO_Field_read(TPFILE1,'ZS',XZS)
 !
 !*	2.8 Rugosite Z0. 
 !
 !PW:TODO: where is this field written? Warning: not in fieldlist => won't be found
-CALL IO_READ_FIELD(TPFILE1,'Z0',XZ0)
+CALL IO_Field_read(TPFILE1,'Z0',XZ0)
 !
 XXPTSOMNH=XXHAT(1)+(XXHAT(2)-XXHAT(1))/2
 XYPTSOMNH=XYHAT(1)+(XYHAT(2)-XYHAT(1))/2
@@ -435,8 +434,8 @@ DEALLOCATE(XZHAT)
 !
 !	 Fermeture du fichier Meso-NH.
 !
-CALL IO_FILE_CLOSE_ll(TPFILE1)
-CALL IO_FILE_CLOSE_ll(TPFILE2)
+CALL IO_File_close(TPFILE1)
+CALL IO_File_close(TPFILE2)
 !
 !
 !-------------------------------------------'

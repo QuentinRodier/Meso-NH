@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2004-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !#######################
@@ -58,19 +58,6 @@ MODULE MODI_PGD_GRID_IO_INIT_MNH
     !            -----------
     !
     USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
-    !
-    USE MODE_ll
-    USE MODE_FM
-    USE MODD_PARAMETERS, ONLY : JPHEXT, JPVEXT, JPMODELMAX
-    USE MODD_CONF,       ONLY : CPROGRAM, L1D, L2D, LPACK
-    !
-    USE MODE_IO_ll
-    !JUANZ
-    USE MODE_SPLITTINGZ_ll
-    !JUANZ
-    !
-    USE MODI_GET_SURF_GRID_DIM_N
-    USE MODI_GET_LUOUT
     !
     IMPLICIT NONE
     !
@@ -140,22 +127,19 @@ END MODULE MODI_PGD_GRID_IO_INIT_MNH
 !*    0.     DECLARATION
 !            -----------
 !
-USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_CONF,            ONLY: CPROGRAM, L1D, L2D, LPACK
+USE MODD_DIM_n,           ONLY: NIMAX_ll, NJMAX_ll, NKMAX
+USE MODD_MNH_SURFEX_n
+USE MODD_PARAMETERS,      ONLY: JPHEXT, JPVEXT, JPMODELMAX
+USE MODD_SURF_ATM_GRID_n, ONLY: SURF_ATM_GRID_t
 !
+USE MODE_IO,              only: IO_Pack_set
 USE MODE_ll
-USE MODE_FM
-USE MODD_PARAMETERS, ONLY : JPHEXT, JPVEXT, JPMODELMAX
-USE MODD_CONF,       ONLY : CPROGRAM, L1D, L2D, LPACK
-USE MODD_DIM_n,      ONLY : NIMAX_ll, NJMAX_ll, NKMAX
-!
-!JUANZ
 USE MODE_SPLITTINGZ_ll
-!JUANZ
 !
 USE MODI_GET_SURF_GRID_DIM_N
 USE MODI_GET_LUOUT
 !
-USE MODD_MNH_SURFEX_n
 !
 IMPLICIT NONE
 !
@@ -227,7 +211,7 @@ END IF
 L1D=(IIMAX==1).AND.(IJMAX==1)
 L2D=(IIMAX/=1).AND.(IJMAX==1)
 LPACK=L1D.OR.L2D
-CALL SET_FMPACK_ll(L1D,L2D,LPACK)
+CALL IO_Pack_set(L1D,L2D,LPACK)
 CALL SET_JP_ll(JPMODELMAX,JPHEXT,JPVEXT,JPHEXT)
 CALL SET_DAD0_ll()
 NIMAX_ll = IIMAX

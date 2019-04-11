@@ -10,7 +10,7 @@ INTERFACE
 SUBROUTINE READ_ALL_DATA_GRIB_CASE(HFILE,TPPRE_REAL1,HGRIB,TPPGDFILE,    &
                     PTIME_HORI,KVERB,ODUMMY_REAL                         ) 
 !
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 CHARACTER(LEN=4),  INTENT(IN)    :: HFILE       ! which file ('ATM0','ATM1' or 'CHEM')
 TYPE(TFILEDATA),POINTER,INTENT(INOUT) :: TPPRE_REAL1 ! PRE_REAL1 file
@@ -75,7 +75,7 @@ END MODULE MODI_READ_ALL_DATA_GRIB_CASE
 !!      Module MODD_CONF      : contains configuration variables for all models.
 !!         NVERB : verbosity level for output-listing
 !!      Module MODD_LUNIT     : contains logical unit names for all models
-!!         CLUOUT0 : name of output-listing
+!!         TLUOUT0 : name of output-listing
 !!      Module MODD_PGDDIM    : contains dimension of PGD fields
 !!         NPGDIMAX: dimension along x (no external point)
 !!         NPGDJMAX: dimension along y (no external point)
@@ -136,11 +136,11 @@ END MODULE MODI_READ_ALL_DATA_GRIB_CASE
 !------------
 !
 USE MODE_DATETIME
-USE MODE_FM,    ONLY: IO_FILE_CLOSE_ll
-USE MODE_IO_ll, ONLY: UPCASE
+USE MODE_IO_FILE,    ONLY: IO_File_close
 USE MODE_MSG
 USE MODE_TIME
 USE MODE_THERMO
+USE MODE_TOOLS, ONLY: UPCASE
 !
 USE MODI_READ_HGRID_n
 USE MODI_READ_VER_GRID
@@ -154,8 +154,8 @@ USE MODI_CH_AER_INIT_SOA
 USE MODI_INI_CTURB
 USE MODI_CH_OPEN_INPUT
 !
+USE MODD_IO, ONLY: TFILEDATA
 USE MODD_FIELD_n, ONLY: XZWS, XZWS_DEFAULT
-USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_CONF
 USE MODD_CONF_n
 USE MODD_CST
@@ -1337,7 +1337,7 @@ IF (IMODEL==5) THEN
   ENDIF
   !
   ! close file
-  CALL IO_FILE_CLOSE_ll(TZFILE)
+  CALL IO_File_close(TZFILE)
   TZFILE => NULL()
   !
   !*  2.6.2   exchange mocage values onto prognostic variables XSV_LS
@@ -1715,7 +1715,7 @@ IF (ODUMMY_REAL) THEN
   !*       2.10.1   read 2D dummy fields
   !
   ! close file
-  CALL IO_FILE_CLOSE_ll(TPPRE_REAL1)
+  CALL IO_File_close(TPPRE_REAL1)
   ! open input file
   CALL CH_OPEN_INPUT(TPPRE_REAL1%CNAME, "DUMMY_2D", TZFILE, ILUOUT0, KVERB)
   ICHANNEL = TZFILE%NLU
@@ -1782,7 +1782,7 @@ IF (ODUMMY_REAL) THEN
     !
   END DO
   !
-  CALL IO_FILE_CLOSE_ll(TZFILE)
+  CALL IO_File_close(TZFILE)
   TZFILE => NULL()
   !
   IF (NVERB>=10) THEN
@@ -1908,8 +1908,6 @@ SUBROUTINE SEARCH_FIELD(KGRIB,KNUM,KPARAM,KDIS,KCAT,KNUMBER,KLEV1)
 !
 USE MODD_LUNIT
 USE GRIB_API
-!
-USE MODE_IO_ll
 !
 IMPLICIT NONE
 !

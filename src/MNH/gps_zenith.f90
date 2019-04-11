@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !##########################################
@@ -77,15 +77,15 @@ END MODULE MODI_GPS_ZENITH
 USE MODD_CST
 USE MODD_DIAG_FLAG
 USE MODD_GR_FIELD_n
-USE MODD_GRID,             ONLY: XLONORI,XLATORI
+USE MODD_GRID,             ONLY: XLONORI, XLATORI
 USE MODD_GRID_n
 USE MODE_GRIDPROJ
-USE MODD_IO_ll,            ONLY: TFILEDATA
+USE MODD_IO,               ONLY: TFILEDATA
 USE MODD_LUNIT
 USE MODD_PARAMETERS
 !
-USE MODE_FM,               ONLY: IO_FILE_CLOSE_ll,IO_FILE_OPEN_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
+USE MODE_IO_FILE,          ONLY: IO_File_close, IO_File_open
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_add2list
 USE MODE_TOOLS_ll,         ONLY: LWEST_ll, LEAST_ll, LNORTH_ll, LSOUTH_ll
 !
 USE MODI_INTERPOL_STATION
@@ -275,8 +275,8 @@ PRINT *,'Number of GPS STATIONS ', ISTATIONS
 !
 IF (ISTATIONS >0 ) THEN 
 !
-  CALL IO_FILE_ADD2LIST(TZFILE,HFGRI,'GPS','WRITE')
-  CALL IO_FILE_OPEN_ll(TZFILE)
+  CALL IO_File_add2list(TZFILE,HFGRI,'GPS','WRITE')
+  CALL IO_File_open(TZFILE)
   IFGRI = TZFILE%NLU
   PRINT *,'File ',TRIM(HFGRI),' opened with unit= ',IFGRI,' IRESP= ',IRESP
   WRITE(IFGRI,*,IOSTAT=IRESP) 'Number of STATIONS', ISTATIONS
@@ -432,7 +432,7 @@ IF (ISTATIONS >0 ) THEN
 !
   1000 FORMAT('STATION ',A10,' ZHD: ',F8.5,' ZWD: ',F8.5,' ZTD: ',F8.5)
 ! 
-  CALL IO_FILE_CLOSE_ll(TZFILE,IRESP)
+  CALL IO_File_close(TZFILE,IRESP)
   PRINT *,'File ',TRIM(HFGRI),' closed, IRESP= ',IRESP
 !
   DEALLOCATE(ZXHATM)

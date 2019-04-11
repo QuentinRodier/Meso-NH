@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ###############
@@ -47,8 +47,6 @@
 !!
 !!      Module MODD_CONF       : NMODEL,NVERB
 !!
-!!      Module MODD_LUNIT      : CLUOUT0
-!!
 !!    REFERENCE
 !!    ---------
 !!      Book2 of documentation (routine INIT_MNH)
@@ -72,13 +70,14 @@
 !!      J.Escobar   2/03/2016 bypass , reset NHALO=1 for SPAWNING
 !!  06/2016     (G.Delautier) phasage surfex 8
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 USE MODD_CONF
 USE MODD_DYN_n, ONLY: CPRESOPT,NITR ! only for spawning purpose
-USE MODD_IO_ll, ONLY: TFILE_OUTPUTLISTING,TPTR2FILE
+USE MODD_IO,    ONLY: TFILE_OUTPUTLISTING, TPTR2FILE
 USE MODD_LBC_n, ONLY: CLBCX,CLBCY   ! only for spawning purpose
 USE MODD_LUNIT
 USE MODD_LUNIT_n
@@ -86,9 +85,8 @@ USE MODD_MNH_SURFEX_n
 USE MODD_PARAMETERS
 !
 USE MODE_FIELD
-USE MODE_FM,               ONLY: IO_FILE_OPEN_ll
-USE MODE_IO_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
+USE MODE_IO_FILE,          ONLY: IO_File_open
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_add2list
 USE MODE_ll
 USE MODE_MODELN_HANDLER
 USE MODE_SPLITTINGZ_ll
@@ -108,8 +106,6 @@ IMPLICIT NONE
 !*       0.1   Local variables
 !
 INTEGER :: JMI                                        !  Loop index
-CHARACTER(LEN=16), DIMENSION(JPMODELMAX) :: YLUOUT    ! Name for output-listing
-                                                      ! of nested models
 CHARACTER(LEN=28),DIMENSION(JPMODELMAX)  :: YINIFILEPGD
 INTEGER  :: ILUOUT0,IRESP                             ! Logical unit number for
                                                       ! output-listing common
@@ -130,9 +126,8 @@ CHARACTER(LEN=4), DIMENSION(:), POINTER :: DPTR_CLBCX,DPTR_CLBCY
 !
 !
 IF (CPROGRAM/='REAL  ') THEN
-  CLUOUT0 = 'OUTPUT_LISTING0'
-  CALL IO_FILE_ADD2LIST(TLUOUT0,'OUTPUT_LISTING0','OUTPUTLISTING','WRITE')
-  CALL IO_FILE_OPEN_ll(TLUOUT0)
+  CALL IO_File_add2list(TLUOUT0,'OUTPUT_LISTING0','OUTPUTLISTING','WRITE')
+  CALL IO_File_open(TLUOUT0)
   !Set output file for PRINT_MSG
   TFILE_OUTPUTLISTING => TLUOUT0
   ILUOUT0=TLUOUT0%NLU
@@ -171,11 +166,11 @@ IF (CPROGRAM=='SPAWN ' .OR. CPROGRAM=='DIAG  ' .OR. CPROGRAM=='SPEC  ' .OR. CPRO
 END IF
 !
 CALL GOTO_MODEL(1)
-CALL INI_SEG_n(1,YLUOUT(1),LUNIT_MODEL(1)%TINIFILE,YINIFILEPGD(1),ZTSTEP_ALL)
+CALL INI_SEG_n(1,LUNIT_MODEL(1)%TINIFILE,YINIFILEPGD(1),ZTSTEP_ALL)
 !
 DO JMI=2,NMODEL
   CALL GOTO_MODEL(JMI)
-  CALL INI_SEG_n(JMI,YLUOUT(JMI),LUNIT_MODEL(JMI)%TINIFILE,YINIFILEPGD(JMI),ZTSTEP_ALL)
+  CALL INI_SEG_n(JMI,LUNIT_MODEL(JMI)%TINIFILE,YINIFILEPGD(JMI),ZTSTEP_ALL)
 END DO
 !
 IF (CPROGRAM=='SPAWN ') THEN 
@@ -183,7 +178,7 @@ IF (CPROGRAM=='SPAWN ') THEN
   NHALO = 1
 END IF
 !
-IF (CPROGRAM=='DIAG') CALL RESET_EXSEG(YLUOUT(1))
+IF (CPROGRAM=='DIAG') CALL RESET_EXSEG()
 !
 !-------------------------------------------------------------------------------
 !
@@ -193,7 +188,7 @@ IF (CPROGRAM=='DIAG') CALL RESET_EXSEG(YLUOUT(1))
 !
 DO JMI=1,NMODEL
   CALL GOTO_MODEL(JMI)
-  CALL INI_SIZE_n(JMI,YLUOUT(JMI),LUNIT_MODEL(JMI)%TINIFILE,YINIFILEPGD(JMI))
+  CALL INI_SIZE_n(JMI,LUNIT_MODEL(JMI)%TINIFILE,YINIFILEPGD(JMI))
 END DO
 !
 IF (CPROGRAM=='SPAWN ') THEN 
@@ -234,11 +229,11 @@ DO JMI=1,NMODEL
   CALL GO_TOMODEL_ll(JMI,IINFO_ll)
   CALL GOTO_MODEL(JMI)
   IF (CPROGRAM/='SPEC  ') THEN
-    CALL INI_MODEL_n(JMI,YLUOUT(JMI),LUNIT_MODEL(JMI)%TINIFILE)
+    CALL INI_MODEL_n(JMI,LUNIT_MODEL(JMI)%TINIFILE)
     !Call necessary to update the TFIELDLIST pointers to the data
     CALL FIELDLIST_GOTO_MODEL(JMI,JMI)
   ELSE
-    CALL INI_SPECTRE_n(JMI,YLUOUT(JMI),LUNIT_MODEL(JMI)%TINIFILE)
+    CALL INI_SPECTRE_n(JMI,LUNIT_MODEL(JMI)%TINIFILE)
   END IF  
 END DO
 !

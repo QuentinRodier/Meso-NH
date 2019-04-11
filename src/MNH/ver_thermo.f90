@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ######################
@@ -12,7 +12,7 @@ INTERFACE
                             PDXX,PDYY,PEXNTOP2D,PPSURF,PDIAG,                              &
                             PLSTH_MX,PLSRV_MX                                              )
 !
-USE MODD_IO_ll, ONLY : TFILEDATA
+USE MODD_IO, ONLY: TFILEDATA
 !
 TYPE(TFILEDATA),          INTENT(IN)  :: TPFILE     ! File characteristics
 LOGICAL,                  INTENT(IN)  :: OSHIFT     ! T: vertical shift of BL (used for GRIB file data)
@@ -94,7 +94,7 @@ END MODULE MODI_VER_THERMO
 !!      Module MODD_CONF1     : contains configuration variables for model 1.
 !!         NRR     : number of moist variables
 !!      Module MODD_LUNIT     :  contains logical unit names for all models
-!!         CLUOUT0 : name of output-listing
+!!         TLUOUT0 : name of output-listing
 !!      Module MODD_CST       : contains physical constants
 !!         XRD : gas constant for dry air
 !!         XRV : gas constant for vapor
@@ -153,25 +153,24 @@ END MODULE MODI_VER_THERMO
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_ARGSLIST_ll, ONLY: LIST_ll
+USE MODD_ARGSLIST_ll,    ONLY: LIST_ll
 USE MODD_CONF
 USE MODD_CONF_n
 USE MODD_CST
 USE MODD_DYN_n
-USE MODD_FIELD_n,     ONLY: XTHT,XRT,XPABST,XDRYMASST
+USE MODD_FIELD_n,        ONLY: XTHT,XRT,XPABST,XDRYMASST
 USE MODD_GRID_n
-USE MODD_IO_ll,       ONLY: TFILEDATA,TFILE_DUMMY
+USE MODD_IO,             ONLY: TFILEDATA,TFILE_DUMMY
 USE MODD_LBC_n
 USE MODD_LSFIELD_n
-USE MODD_LUNIT,       ONLY: CLUOUT0,TLUOUT0
-USE MODD_LUNIT_n,     ONLY: CLUOUT
+USE MODD_LUNIT,          ONLY: TLUOUT0
 USE MODD_PARAMETERS
 USE MODD_REF_n
 !
 USE MODD_DIM_n
 USE MODE_EXTRAPOL
-USE MODE_FIELD,       ONLY: TFIELDDATA,TYPEREAL
-USE MODE_FMWRIT
+USE MODE_FIELD,          ONLY: TFIELDDATA,TYPEREAL
+USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 USE MODE_ll
 USE MODE_MPPDB
 !
@@ -305,7 +304,7 @@ IF (NVERB>=10) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZTHV)
+  CALL IO_Field_write(TPFILE,TZFIELD,ZTHV)
 END IF
 !-------------------------------------------------------------------------------
 !
