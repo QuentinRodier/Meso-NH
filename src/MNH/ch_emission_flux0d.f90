@@ -70,11 +70,14 @@ END MODULE MODI_CH_EMISSION_FLUX0D
 !!    -------------
 !!    Original 26/07/1999
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !!    EXTERNAL
 !!    --------
 USE MODD_IO,      ONLY: TFILEDATA
+
 USE MODE_IO_FILE, ONLY: IO_File_close
+use mode_msg
 !
 USE MODI_CH_OPEN_INPUT
 !!
@@ -213,10 +216,7 @@ IF (LSFIRSTCALL) THEN
                ! where 1 microMol/m2/day = (22.414/86.400)*1E-12 ppp*m/s
     ZCONVERSION = (22.414/86.400)*1E-12
   CASE DEFAULT
-    WRITE(KLUOUT,*) 'CH_EMISSION_FLUX0D: unknow conversion factor: ', YUNIT
-!callabortstop
-    CALL ABORT
-    STOP 'CH_EMISSION_FLUX0D: unknow conversion factor' 
+    call Print_msg( NVERB_FATAL, 'GEN', 'CH_EMISSION_FLUX0D', 'unknow conversion factor: '//trim(YUNIT) )
   END SELECT
 !
 ! set all fluxes to zero

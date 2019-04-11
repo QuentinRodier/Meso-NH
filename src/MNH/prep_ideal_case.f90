@@ -1462,7 +1462,6 @@ END IF
 IF(LPV_PERT .AND. .NOT.(LGEOSBAL)) THEN
    !callabortstop
   CALL PRINT_MSG(NVERB_FATAL,'GEN','PREP_IDEAL_CASE','for PV inversion, LGEOSBAL has to be true')
-  STOP
 ENDIF
 !
 IF(LPV_PERT .AND. NPROC>1) THEN
@@ -1901,10 +1900,5 @@ IF(NIO_VERB>=NVERB_DEBUG) CALL IO_Filelist_print()
 CALL IO_File_close(TLUOUT)
 !
 CALL END_PARA_ll(IINFO_ll)
-!
-! 
-   !callabortstop
-   !JUAN CALL ABORT
-STOP
 !
 END PROGRAM PREP_IDEAL_CASE

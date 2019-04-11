@@ -60,6 +60,7 @@ SUBROUTINE CH_OPEN_INPUT(HCHEM_INPUT_FILE,HKEYWORD,TPFILE,KLUOUT,KVERB)
 !!    05/08/96 (K. Suhre) restructured
 !!    11/08/98 (N. Asencio) add parallel code
 !!    Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !!
 !!    IMPLICIT ARGUMENTS
@@ -76,6 +77,7 @@ USE MODD_IO,               ONLY: TFILEDATA
 !
 USE MODE_IO_FILE,          ONLY: IO_File_open
 USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_add2list
+use mode_msg
 !
 IMPLICIT NONE
 !
@@ -106,12 +108,7 @@ CALL IO_File_open(TPFILE,KRESP=IRESP)
 ILU = TPFILE%NLU
 !
 IF (IRESP /= 0) THEN
-  WRITE(KLUOUT,*) "CH_OPEN_INPUT ERROR: unable to open file", HCHEM_INPUT_FILE
-  WRITE(KLUOUT,*) "                     IO_File_open return code is: ", IRESP
-  WRITE(KLUOUT,*) "                     the program will be stopped now"
-  ! callabortstop
-  CALL ABORT
-  STOP
+  call Print_msg( NVERB_FATAL, 'GEN', 'CH_OPEN_INPUT', 'unable to open file '//trim(HCHEM_INPUT_FILE) )
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -147,9 +144,6 @@ RETURN
 !              ---------------------------------------
 !
 100 CONTINUE
-WRITE(KLUOUT,*) "CH_OPEN_INPUT-Error: Keyword ", HKEYWORD(1:8), " not found."
-! callabortstop
-CALL ABORT
-STOP "Program stopped"
+call Print_msg( NVERB_FATAL, 'GEN', 'CH_OPEN_INPUT', 'keyword '//HKEYWORD(1:8)//' not found' )
 !
 END SUBROUTINE CH_OPEN_INPUT

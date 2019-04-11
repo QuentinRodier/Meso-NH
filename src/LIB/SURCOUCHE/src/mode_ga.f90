@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -8,6 +8,7 @@
 ! Modifications:
 !  J. Escobar  05/02/2015: use JPHEXT from MODD_PARAMETERS_ll
 !  P. Wautelet 14/12/2018: split from fmwrit_ll.f90
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !-----------------------------------------------------------------
 #ifdef MNH_GA
 MODULE MODE_GA
@@ -41,6 +42,7 @@ MODULE MODE_GA
       USE MODD_PARAMETERS_ll,  ONLY: JPHEXT
 
       USE MODE_GATHER_ll,      ONLY: GET_DOMWRITE_ll
+      use mode_msg
       USE MODE_SCATTER_ll,     ONLY: GET_DOMREAD_ll
       USE MODE_TOOLS_ll,       ONLY: GET_GLOBALDIMS_ll
 
@@ -58,7 +60,7 @@ MODULE MODE_GA
          stack = heap
          !gstatus_ga = ma_init(MT_F_DBL, stack/ISNPROC, heap/ISNPROC)
          gstatus_ga = ma_init(MT_F_DBL, stack, heap)
-         if ( .not. gstatus_ga ) STOP " MA_INIT FAILED "
+         if ( .not. gstatus_ga ) call Print_msg( NVERB_FATAL, 'GEN', 'MNH_INIT_GA', 'MA_INIT failed' )
          !
          !   Initialize GA library
          !

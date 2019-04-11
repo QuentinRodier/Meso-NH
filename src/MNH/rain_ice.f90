@@ -241,6 +241,7 @@ END MODULE MODI_RAIN_ICE
 !!      J.Escobar : 8/2018 : for real*4 , bis => limit exp() in RAIN_ICE_SLOW with XMNH_HUGE_12_LOG
 !!      P.Wautelet 01/02/2019: add missing initialization for PFPR
 !!                   02/2019 C.Lac add rain fraction as an output field
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !
 !*       0.    DECLARATIONS
 !              ------------
@@ -1079,9 +1080,7 @@ IF (HSEDIM == 'STAT') THEN
 ELSEIF (HSEDIM == 'SPLI') THEN
   CALL RAIN_ICE_SEDIMENTATION_SPLIT
 ELSE
-  WRITE(*,*) ' STOP'
-  WRITE(*,*) ' NO SEDIMENTATION SCHEME FOR HSEDIM=',HSEDIM
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','RAIN_ICE','')  
+  call Print_msg( NVERB_FATAL, 'GEN', 'RAIN_ICE', 'no sedimentation scheme for HSEDIM='//HSEDIM )
 END IF
 !sedimentation of rain fraction
 CALL RAINFR_VERT(PRAINFR, PRRS(:,:,:)*PTSTEP)

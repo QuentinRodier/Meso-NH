@@ -5,6 +5,7 @@
 !-----------------------------------------------------------------
 ! Modifications:
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
+!  P. Wautelet 10/04/2019: use IO_Err_handle_nc4 to handle netCDF errors
 !-----------------------------------------------------------------
 MODULE mode_util
   USE MODD_IO,         ONLY: TFILE_ELT
@@ -14,6 +15,7 @@ MODULE mode_util
   USE MODE_FIELD
   USE MODE_IO_FIELD_READ
   USE MODE_IO_FIELD_WRITE
+  use mode_io_tools_nc4,   only: IO_Err_handle_nc4
 
   USE mode_options
 
@@ -232,10 +234,11 @@ CONTAINS
                   tpreclist(tpreclist(ji)%tgt)%LSPLIT = .true.
                 END IF
               ELSE
-                CALL HANDLE_ERR(status,__LINE__)
+                if ( status /= NF90_NOERR ) &
+                  call IO_Err_handle_nc4( status, 'parse_infiles', 'NF90_INQ_VARID', trim(yrecfm)//'0001' )
               END IF
             ELSE IF (status /= NF90_NOERR) THEN
-              CALL HANDLE_ERR(status,__LINE__)
+              call IO_Err_handle_nc4( status, 'parse_infiles', 'NF90_INQ_VARID', trim(yrecfm) )
             ELSE
               kcdf_id2 = kcdf_id
             ENDIF
@@ -332,7 +335,8 @@ END DO
          DO ji=1,nbvar_infile
            var_id = ji
            status = NF90_INQUIRE_VARIABLE(kcdf_id,var_id, name = tpreclist(ji)%name)
-           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+           if ( status /= NF90_NOERR ) &
+             call IO_Err_handle_nc4( status, 'parse_infiles', 'NF90_INQUIRE_VARIABLE', tpreclist(ji)%name )
            tpreclist(ji)%found  = .TRUE.
            CALL IO_Metadata_get_nc4(kcdf_id,var_id,tpreclist(ji))
          END DO
@@ -611,15 +615,6 @@ END DO
     END IF !nbvar_calc>0
 
   END SUBROUTINE parse_infiles
-  
-  SUBROUTINE HANDLE_ERR(status,line)
-    INTEGER :: status,line
-
-    IF (status /= NF90_NOERR) THEN
-       PRINT *, 'line ',line,': ',NF90_STRERROR(status)
-           STOP
-    END IF
-  END SUBROUTINE HANDLE_ERR
 
   SUBROUTINE def_ncdf(infiles,outfiles,KNFILES_OUT)
     USE MODD_CONF,   ONLY: NMNHVERSION
@@ -657,7 +652,7 @@ END DO
       DO ji = 1,KNFILES_OUT
         kcdf_id = outfiles(ji)%TFILE%NNCID
         status = NF90_PUT_ATT(kcdf_id,NF90_GLOBAL,'history',YHISTORY)
-        IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+        if ( status /= NF90_NOERR ) call IO_Err_handle_nc4( status, 'def_ncdf', 'NF90_PUT_ATT', 'history' )
       END DO
     END IF
 
@@ -670,7 +665,7 @@ END DO
       !
       WRITE(YMNHVERSION,"( I0,'.',I0,'.',I0 )" ) NMNHVERSION(1),NMNHVERSION(2),NMNHVERSION(3)
       status = NF90_PUT_ATT(kcdf_id,NF90_GLOBAL,'lfi2cdf_version',TRIM(YMNHVERSION))
-      IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+      if ( status /= NF90_NOERR ) call IO_Err_handle_nc4( status, 'def_ncdf', 'NF90_PUT_ATT', 'lfi2cdf_version' )
     END DO
 
   END SUBROUTINE def_ncdf
@@ -1073,7 +1068,7 @@ END DO
          END IF
 
          status = NF90_SET_FILL(outfiles(idx)%TFILE%NNCID,NF90_NOFILL,omode)
-         IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+         if ( status /= NF90_NOERR ) call IO_Err_handle_nc4( status, 'OPEN_FILES', 'NF90_SET_FILL', '' )
        END IF ! .NOT.osplit
     ELSE
        !
@@ -1162,7 +1157,7 @@ END DO
       END IF
 
       status = NF90_SET_FILL(outfiles(ji)%TFILE%NNCID,NF90_NOFILL,omode)
-      IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+      if ( status /= NF90_NOERR ) call IO_Err_handle_nc4( status, 'OPEN_SPLIT_NCFILES_OUT', 'NF90_SET_FILL', '' )
     END DO
 
   END SUBROUTINE OPEN_SPLIT_NCFILES_OUT
@@ -1189,9 +1184,9 @@ END DO
     USE MODD_DIM_n,      ONLY: NKMAX
     USE MODD_PARAMETERS, ONLY: JPVEXT
 
-    INTEGER,        INTENT(IN)    :: KFILE_ID
-    INTEGER,        INTENT(IN)    :: KVAR_ID
-    TYPE(workfield),INTENT(INOUT) :: TPREC
+    INTEGER(KIND=IDCDF_KIND), INTENT(IN)    :: KFILE_ID
+    INTEGER(KIND=IDCDF_KIND), INTENT(IN)    :: KVAR_ID
+    TYPE(workfield),          INTENT(INOUT) :: TPREC
 
     INTEGER                                  :: ILENG
     INTEGER                                  :: JDIM
@@ -1202,7 +1197,7 @@ END DO
 
     ISTATUS = NF90_INQUIRE_VARIABLE(KFILE_ID,KVAR_ID,NDIMS = TPREC%NDIMS_FILE, &
                                     XTYPE = TPREC%NTYPE_FILE, DIMIDS = IDIMS_ID)
-    IF (ISTATUS /= NF90_NOERR) CALL HANDLE_ERR(ISTATUS,__LINE__)
+    if ( istatus /= NF90_NOERR ) call IO_Err_handle_nc4( istatus, 'IO_Metadata_get_nc4', 'NF90_INQUIRE_VARIABLE', '' )
 
     IF (.NOT.TPREC%LSPLIT) THEN
       ALLOCATE(TPREC%NDIMSIZES_FILE(TPREC%NDIMS_FILE))
@@ -1222,7 +1217,7 @@ END DO
         ISTATUS = NF90_INQUIRE_DIMENSION(KFILE_ID,IDIMS_ID(JDIM),                    &
                                                    len =  TPREC%NDIMSIZES_FILE(JDIM), &
                                                    name = TPREC%CDIMNAMES_FILE(JDIM)  )
-        IF (ISTATUS /= NF90_NOERR) CALL HANDLE_ERR(ISTATUS,__LINE__)
+        if ( istatus /= NF90_NOERR ) call IO_Err_handle_nc4( istatus, 'IO_Metadata_get_nc4', 'NF90_INQUIRE_DIMENSION', '' )
         ILENG = ILENG*TPREC%NDIMSIZES_FILE(JDIM)
       END DO
 

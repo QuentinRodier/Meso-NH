@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ##########################
@@ -51,11 +51,14 @@ END MODULE MODI_INI_LW_SETUP
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    03/03/03
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
+!
+use mode_msg
 !
 IMPLICIT NONE
 !
@@ -116,9 +119,7 @@ SELECT CASE (HRAD)
        PLW_BANDS(15) = 4.02E-6      
        PLW_BANDS(16) = 3.59E-6
     ELSE
-!callabortstop
-       CALL ABORT
-       STOP     
+      call Print_msg(NVERB_FATAL,'GEN','INI_LW_SETUP','invalid KLWB_MNH argument')
     ENDIF
 
 !

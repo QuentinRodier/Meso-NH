@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1999-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 mode 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 MODULE mode_zsrpun
   
@@ -28,6 +23,7 @@ MODULE mode_zsrpun
   !		     by Betty Pun, Nov, 99.  A file with xi at given Aw
   !		     is included binsolu.h
   !               4. Rewritten to FORTRAN90 by Alf Grini (alf.grini@cnrm.meteo.fr)
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
   !
   !***************************************************************************/
 
@@ -44,7 +40,9 @@ CONTAINS
        )
 
     USE modd_binsolu
-    
+
+    use mode_msg
+
     IMPLICIT NONE
 
     !INPUT
@@ -82,10 +80,7 @@ CONTAINS
 
     !Start code
     IF (ZSRFLAG.eq.0)THEN
-!callabortstop
-CALL ABORT
-       stop "ZSRFLAG=0 not implemented yet"
-       
+      call Print_msg( NVERB_FATAL, 'GEN', 'ZSRPUN', 'ZSRFLAG=0 not yet implemented' )
     ELSE  !        zsrflag = 1 
        
        !Get the total moles (umole/m3) of the main components, 

@@ -153,6 +153,7 @@ END MODULE MODI_INI_BUDGET
 !!      C.Lac          10/2016   Add budget for droplet deposition
 !!      S. Riette        11/2016  New budgets for ICE3/ICE4
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -2795,9 +2796,7 @@ IF (CBUTYPE=='MASK') THEN
   WRITE(UNIT=KLUOUT, FMT= '("BUMASK = ",I4.4)' ) NBUMASK
 END IF
 IF (GERROR) THEN
-   !callabortstop
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_BUDGET','')
-  STOP
+  call Print_msg( NVERB_FATAL, 'GEN', 'INI_BUDGET', '' )
 ENDIF
 !-------------------------------------------------------------------------------
 !*       5.    ALLOCATE MEMORY FOR BUDGET STORAGE ARRAYS

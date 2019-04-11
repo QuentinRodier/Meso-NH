@@ -135,6 +135,7 @@ END MODULE MODI_LIMA_ADJUST
 !!      C. Barthe  * LACy*   jan. 2014  add budgets
 !!      JP Chaboureau *LA*   March 2014  fix the calculation of icy cloud fraction
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !-------------------------------------------------------------------------------
 !
@@ -155,6 +156,7 @@ USE MODD_PARAM_LIMA_WARM
 !
 USE MODE_FIELD,            ONLY: TFIELDDATA, TYPEREAL
 USE MODE_IO_FIELD_WRITE,   only: IO_Field_write
+use mode_msg
 !
 USE MODI_BUDGET
 USE MODI_CONDENS
@@ -420,10 +422,7 @@ DO JITER =1,ITERMAX
 !               ---------------------------------------
 !
   IF ( OSUBG_COND ) THEN
-!
-! not yet available
-!
-     STOP
+    call Print_msg( NVERB_FATAL, 'GEN', 'LIMA_ADJUST', 'OSUBG_COND=.true. not yet developed' )
   ELSE
 !
 !-------------------------------------------------------------------------------

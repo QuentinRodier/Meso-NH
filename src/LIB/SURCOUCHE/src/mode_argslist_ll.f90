@@ -1,15 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for CVS information
-!-----------------------------------------------------------------
-! $Source$
-! $Name$ 
-! $Revision$ 
-! $Date$
-!-----------------------------------------------------------------
 !-----------------------------------------------------------------
 
 !!    #######################
@@ -55,6 +47,7 @@
 !!    Modifications
 !!    -------------
 !     Original    May 19, 1998
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !
 !-------------------------------------------------------------------------------
 !
@@ -100,6 +93,8 @@
 !
 !*       0.1   declarations of arguments
 !
+  use mode_msg
+
   IMPLICIT NONE
 !
   TYPE(LIST1D_ll), POINTER     :: TPLIST ! list of fields
@@ -116,8 +111,7 @@
 !*       1.    Test value of HDIR
 !
   IF (HDIR /= "X" .AND. HDIR /= "Y") THEN
-    WRITE(*,*) 'Error ADD1DFIELD : Bad HDIR argument'
-    STOP
+    call Print_msg( NVERB_FATAL, 'GEN', 'ADD1DFIELD', 'bad HDIR argument ('//HDIR//')' )
   ENDIF
 !
 !-------------------------------------------------------------------------------

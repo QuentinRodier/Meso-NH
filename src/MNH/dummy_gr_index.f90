@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1997-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 init 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     #####################
       MODULE MODI_DUMMY_GR_INDEX
@@ -53,12 +48,14 @@ END MODULE MODI_DUMMY_GR_INDEX
 !!    ------------
 !!
 !!    Original    15/12/97
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
 !            -----------
 !
+use mode_msg
 !
 IMPLICIT NONE
 !
@@ -81,9 +78,7 @@ DO JDUMMY=1,1000
     RETURN
   END IF
   IF (LEN_TRIM(HFIELD)==0) THEN
-     !callabortstop
-    CALL ABORT
-    STOP
+    call Print_msg(NVERB_FATAL,'GEN','DUMMY_GR_INDEX','LEN_TRIM(HFIELD)=0')
   ENDIF
 END DO
 !-------------------------------------------------------------------------------

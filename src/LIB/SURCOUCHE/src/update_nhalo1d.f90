@@ -2,6 +2,7 @@
 !SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
 !SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SURFEX_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ################################################################
       SUBROUTINE UPDATE_NHALO1D( NHALO, PFIELD1D, KISIZE_ll, KJSIZE_ll, KXOR, KXEND, KYOR, KYEND, HREC )
 !     ################################################################
@@ -39,25 +40,26 @@
 !!        M.Moge    08/2015 calling ABORT if local subdomain is of size < NHALO
 !!                          (this causes problems on the boundary of the domain)
 !!        M.Moge    08/2015 bug fix : changing the computation of IISIZE
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_SURF_PAR, ONLY : NUNDEF
+USE PARKIND1,          ONLY: JPRB
+USE YOMHOOK,           ONLY: LHOOK, DR_HOOK
 !
-!
-USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-USE PARKIND1  ,ONLY : JPRB
-!
-USE MODE_ll
-USE MODE_EXCHANGE_ll, ONLY : SEND_RECV_FIELD
-USE MODE_SPLITTING_ll, ONLY : SPLIT2
-USE MODD_VAR_ll, ONLY : NPROC, IP, YSPLITTING, NMNH_COMM_WORLD
 USE MODD_MPIF
-USE MODD_STRUCTURE_ll, ONLY : ZONE_ll, CRSPD_ll
-USE MODE_TOOLS_ll, ONLY : INTERSECTION
-USE MODD_PARAMETERS, ONLY : JPHEXT, JPVEXT
+USE MODD_PARAMETERS,   ONLY: JPHEXT, JPVEXT
+USE MODD_STRUCTURE_ll, ONLY: ZONE_ll, CRSPD_ll
+USE MODD_SURF_PAR,     ONLY: NUNDEF
+USE MODD_VAR_ll,       ONLY: NPROC, IP, YSPLITTING, NMNH_COMM_WORLD
+!
+USE MODE_EXCHANGE_ll,  ONLY: SEND_RECV_FIELD
+USE MODE_ll
+use mode_msg
+USE MODE_SPLITTING_ll, ONLY: SPLIT2
+USE MODE_TOOLS_ll,     ONLY: INTERSECTION
 !
 IMPLICIT NONE
 !
@@ -97,6 +99,7 @@ TYPE(ZONE_ll), ALLOCATABLE, DIMENSION(:)  :: TZSEND, TZRECV
 TYPE(CRSPD_ll), POINTER      :: TZCRSPDSEND, TZCRSPDRECV
 TYPE(CRSPD_ll), ALLOCATABLE, DIMENSION(:), TARGET :: TZCRSPDSENDTAB, TZCRSPDRECVTAB
 !
+character(len=10) :: ydim1, ydim2, yhalo ! String for error message
 INTEGER :: J
 INTEGER :: INBMSG
 INTEGER :: ICARD
@@ -134,10 +137,11 @@ ALLOCATE(TZSPLITTING_PHYS(NPROC),TZSPLITTING_EXT(NPROC))
 ! Donc on fait un WARNING et un ABORT
 !
 IF ( NHALO > KXEND - KXOR + 1 .OR. NHALO > KYEND - KYOR + 1 ) THEN
-  WRITE(*,*) "ERROR in UPDATE_NHALO1D : size of local subdomain is (", KXEND - KXOR + 1,",",KYEND - KYOR + 1, &
-       ") which is less than NHALO=",NHALO
-  WRITE(*,*) "Try with less MPI processes or a larger domain"
-  CALL ABORT
+  write( ydim1, '( I10 )' ) KXEND - KXOR + 1
+  write( ydim2, '( I10 )' ) KYEND - KYOR + 1
+  write( yhalo, '( I10 )' ) NHALO
+  call Print_msg( NVERB_FATAL, 'GEN', 'UPDATE_NHALO1D', 'local subdomain ('//trim(ydim1)//'x'//trim(ydim2)// &
+                  ') is smaller than NHALO ('//trim(yhalo)//'). Try with less MPI processes or a larger domain.' )
 ENDIF
 !
 ! physical splitting of the field

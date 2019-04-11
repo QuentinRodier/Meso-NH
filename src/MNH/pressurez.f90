@@ -217,6 +217,7 @@ END MODULE MODI_PRESSUREZ
 !!   J.escobar : check nb proc versus ZRESI & min(DIMX,DIMY)
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!  Philippe Wautelet: 22/01/2019: use standard FLUSH statement instead of non standard intrinsics
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -650,10 +651,8 @@ WRITE(ILUOUT,*) 'residual divergence / 2 DT', ZMAXVAL,     &
                 ' located at ',   IMAXLOC
 FLUSH(unit=ILUOUT)
 IF (ABS(ZMAXVAL) .GT. 100.0 ) THEN
-   WRITE(ILUOUT,*) ' pressurez.f90 STOP :: SOMETHING WRONG WITH PRESSURE , ABS(RESIDUAL) > 100.0 '  
-   FLUSH(unit=ILUOUT)
-   STOP ' pressurez.f90 STOP :: SOMETHING WRONG WITH PRESSURE , ABS(RESIDUAL) > 100.0 '
-ENDIF 
+   call Print_msg( NVERB_FATAL, 'GEN', 'PRESSUREZ', 'something wrong with pressure: abs(residual) > 100.0' )
+END IF
 ! number of iterations adjusted
 IF (LRES) THEN
    ZMAXRES = XRES

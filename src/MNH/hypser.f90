@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 operators 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !####################
 MODULE MODI_HYPSER
@@ -67,11 +62,14 @@ END MODULE MODI_HYPSER
 !!    MODIFICATIONS
 !!    -------------
 !!      Original     31/12/96
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !
 !------------------------------------------------------------------------------
 !
 !*       0. DECLARATIONS
 !
+!
+use mode_msg
 !
 IMPLICIT NONE
 !
@@ -112,11 +110,6 @@ SERIE: DO JN = 1,5000
   ZZB = ZZB + 1.
   ZZC = ZZC + 1.
 END DO SERIE
-IF (JFLAG == 0) THEN
-  PRINT *,'CONVERGENCE FAILURE IN HYPSER'
-!callabortstop
-CALL ABORT
-  STOP
-END IF
+IF (JFLAG == 0) call Print_msg(NVERB_FATAL,'GEN','HYPSER','convergence failure')
 !
-END
+END SUBROUTINE HYPSER

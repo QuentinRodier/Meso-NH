@@ -1,23 +1,13 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1993-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 mode 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !!    ###############
       MODULE MODE_POS
 !!    ###############
 !!
-INTERFACE POS
-!!
-MODULE PROCEDURE POSNAM
-MODULE PROCEDURE POSKEY
-!!
-END INTERFACE
+implicit none
 !!
 !!
 CONTAINS
@@ -54,6 +44,7 @@ CONTAINS
 !!    --------------
 !!       Original : 22/06/93
 !!       I. Mallet  15/10/01     adaptation to MesoNH (F90 norm)
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -156,6 +147,8 @@ END SUBROUTINE POSNAM
 !!       Original : 15/10/01
 !------------------------------------------------------------------------------
 !
+use mode_msg
+!
 !*       0.    DECLARATIONS
 !              ------------
 !
@@ -169,7 +162,7 @@ CHARACTER(LEN=*), OPTIONAL, INTENT(IN) :: HKEYWD2
 !*       0.2   Declarations of local variables
 !
 CHARACTER(LEN=120) :: YLINE
-INTEGER            :: ILEN1,IRET
+INTEGER            :: ILEN1, ILEN2, IRET
 !
 !
 !*       1.    POSITION FILE
@@ -197,10 +190,7 @@ RETURN
 ! end of file: keyword not found
 100  CONTINUE
 IF (.NOT.PRESENT(HKEYWD2)) THEN
-  WRITE(KLUOUT,FMT=*)  '-- keyword ',HKEYWD1,' not found: program stop'
-!callabortstop
-CALL ABORT
-  STOP
+  call Print_msg( NVERB_FATAL, 'GEN', 'POSKEY', 'keyword '//trim(HKEYWD1)//' not found' )
 ELSE
 !
 !*       2.    SECOND KEYWORD: POSITION FILE
@@ -222,10 +212,7 @@ ELSE
 END IF
 ! end of file: scd keyword not found
 101  CONTINUE
-WRITE(KLUOUT,FMT=*)  '-- keyword ',HKEYWD2,' not found: program stop'
-!callabortstop
-CALL ABORT
-STOP
+call Print_msg( NVERB_FATAL, 'GEN', 'POSKEY', 'keyword '//trim(HKEYWD2)//' not found' )
 !------------------------------------------------------------------
 END SUBROUTINE POSKEY
 !

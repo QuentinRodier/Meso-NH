@@ -130,6 +130,7 @@ END MODULE MODI_READ_ALL_DATA_GRIB_CASE
 !!                   01/2019 (G.Delautier via Q.Rodier) for GRIB2 ARPEGE and AROME from EPYGRAM
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 14/03/2019: correct ZWS when variable not present in file
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !-------------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -392,7 +393,7 @@ ALLOCATE (ZYOUT(INO))
 IF (HFILE(1:3)=='ATM' .OR. HFILE=='CHEM') THEN
   WRITE (ILUOUT0,'(A,A4)') ' -- Grib reader started for ',HFILE
 ELSE
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE','bad input argument')
+  CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE','bad input argument')
 END IF
 !
 !* 2.1 Charge in memory the grib messages
@@ -400,16 +401,14 @@ END IF
 ! open grib file
 CALL GRIB_OPEN_FILE(IUNIT,HGRIB,'R',IRET_GRIB)
 IF (IRET_GRIB /= 0) THEN
-  !callabortstop
   WRITE(YMSG,*) 'Error opening the grib file ',TRIM(HGRIB),', error code ', IRET_GRIB
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+  CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE',YMSG)
 END IF
 ! count the messages in the file
 CALL GRIB_COUNT_IN_FILE(IUNIT,ICOUNT,IRET_GRIB)
 IF (IRET_GRIB /= 0) THEN
-  !callabortstop
   WRITE(YMSG,*) 'Error in reading the grib file ',TRIM(HGRIB),', error code ', IRET_GRIB
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+  CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE',YMSG)
 END IF
 ALLOCATE(IGRIB(ICOUNT))
 ! initialize the tabular with a negativ number 
@@ -419,9 +418,8 @@ IGRIB(:)=-12
 DO JLOOP=1,ICOUNT
 CALL GRIB_NEW_FROM_FILE(IUNIT,IGRIB(JLOOP),IRET_GRIB)
 IF (IRET_GRIB /= 0) THEN
-  !callabortstop
   WRITE(YMSG,*) 'Error in reading the grib file - ILOOP=',JLOOP,' - error code ', IRET_GRIB
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+  CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE',YMSG)
 END IF
 END DO
 ! close the grib file
@@ -434,15 +432,13 @@ CALL GRIB_CLOSE_FILE(IUNIT)
 !
 CALL GRIB_GET(IGRIB(1),'centre',ICENTER,IRET_GRIB)
 IF (IRET_GRIB /= 0) THEN
-  !callabortstop
   WRITE(YMSG,*) 'Error in reading center - error code ', IRET_GRIB
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+  CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE',YMSG)
 END IF
 CALL GRIB_GET(IGRIB(1),'typeOfGrid',HGRID,IRET_GRIB)
 IF (IRET_GRIB /= 0) THEN
-  !callabortstop
   WRITE(YMSG,*) 'Error in reading type of grid - error code ', IRET_GRIB
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+  CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE',YMSG)
 END IF
 !
 IMODEL = -1
@@ -494,8 +490,7 @@ SELECT CASE (ICENTER)
     ALLOCATE(ZPARAM(6))
 END SELECT
 IF (IMODEL==-1) THEN
-!callabortstop
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE','unsupported Grib file format')
+  CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE','unsupported Grib file format')
 END IF
 !
 !---------------------------------------------------------------------------------------
@@ -638,11 +633,7 @@ SELECT CASE (IMODEL)
   CASE(10) ! NCEP
       CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=134)
 END SELECT
-IF(INUM < 0) THEN
-   WRITE (ILUOUT0,'(A)')'Surface pressure is missing - abort'
-   CALL ABORT
-   STOP
-ENDIF 
+IF( INUM < 0 ) call Print_msg( NVERB_FATAL, 'IO', 'READ_ALL_DATA_GRIB_CASE', 'surface pressure is missing' )
 ! recuperation du tableau de valeurs
 CALL GRIB_GET_SIZE(IGRIB(INUM),'values',ISIZE)
 ALLOCATE(ZVALUE(ISIZE))
@@ -671,13 +662,12 @@ CALL GRIB_GET(IGRIB(INUM_ZS),'Nj',INJ_ZS)
 !
 IF ( HGRID(1:7)=='regular' .AND. HGRID_ZS(1:7)=='reduced' .AND.&
      INJ == INJ_ZS) THEN
-   WRITE (ILUOUT0,'(A)')'HGRID(1:7)==regular .AND. HGRID_ZS(1:7)==reduced .AND. INJ == INJ_ZS - abort'
-   CALL ABORT
-   STOP
+  call Print_msg( NVERB_FATAL, 'IO', 'READ_ALL_DATA_GRIB_CASE', &
+                  'HGRID(1:7)==regular .AND. HGRID_ZS(1:7)==reduced .AND. INJ == INJ_ZS' )
 ELSE
    ALLOCATE(ZWORK_LNPS(SIZE(ZLNPS_G)))
    ZWORK_LNPS(:) = ZLNPS_G(:)
-ENDIF   
+ENDIF
 !
 IF (HFILE(1:3)=='ATM') THEN
   ALLOCATE (XPS_LS(IIU,IJU))
@@ -737,33 +727,17 @@ IF (IMODEL/=10) THEN
     ISTARTLEVEL=0
     CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IT,KLEV1=ISTARTLEVEL)
   ENDIF
-  IF(INUM < 0) THEN
-    WRITE (ILUOUT0,'(A)')'Air temperature is missing - abort'
-    CALL ABORT
-    STOP
-  ENDIF      
+  IF(INUM < 0) call Print_msg( NVERB_FATAL, 'IO', 'READ_ALL_DATA_GRIB_CASE', 'air temperature is missing' )
   CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IQ,KLEV1=ISTARTLEVEL)
-  IF(INUM < 0) THEN
-    WRITE (ILUOUT0,'(A)')'Atmospheric specific humidity is missing - abort'
-    CALL ABORT
-    STOP
-  ENDIF 
+  IF(INUM < 0) call Print_msg( NVERB_FATAL, 'IO', 'READ_ALL_DATA_GRIB_CASE', 'atmospheric specific humidity is missing' )
 ELSE ! NCEP
   ISTARTLEVEL=10
   IT=130
   IQ=157
   CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IT,KLEV1=ISTARTLEVEL)
-  IF(INUM < 0) THEN
-    WRITE (ILUOUT0,'(A)')'Air temperature is missing - abort'
-    CALL ABORT
-    STOP
-  ENDIF      
+  IF(INUM < 0) call Print_msg( NVERB_FATAL, 'IO', 'READ_ALL_DATA_GRIB_CASE', 'air temperature is missing' )
   CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IQ,KLEV1=ISTARTLEVEL)
-  IF(INUM < 0) THEN
-    WRITE (ILUOUT0,'(A)')'Atmospheric relative humidity is missing - abort'
-    CALL ABORT
-    STOP
-  ENDIF 
+  IF(INUM < 0) call Print_msg( NVERB_FATAL, 'IO', 'READ_ALL_DATA_GRIB_CASE', 'atmospheric relative humidity is missing' )
 ENDIF
 !
 IF (IMODEL/=10) THEN ! others than NCEP
@@ -782,16 +756,14 @@ IF (IMODEL/=10) THEN ! others than NCEP
     ILEV1 = JLOOP1-1+ISTARTLEVEL
     CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IQ,KLEV1=ILEV1)
     IF (INUM< 0) THEN
-    !callabortstop
       WRITE(YMSG,*) 'atmospheric humidity level ',JLOOP1,' is missing'
-      CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+      CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE',YMSG)
     END IF
     CALL GRIB_GET(IGRIB(INUM),'values',ZQ_G(:,INLEVEL-JLOOP1+1))
     CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IT,KLEV1=ILEV1)
     IF (INUM< 0) THEN
-      !callabortstop
       WRITE(YMSG,*) 'atmospheric temperature level ',JLOOP1,' is missing'
-      CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+      CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE',YMSG)
     END IF
     CALL GRIB_GET(IGRIB(INUM),'values',ZT_G(:,INLEVEL-JLOOP1+1))
     CALL GRIB_GET(IGRIB(INUM),'Nj',INJ,IRET_GRIB)
@@ -801,17 +773,15 @@ ELSE ! NCEP
     ILEV1 = IP_GFS(JLOOP1)
     CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IQ,KLEV1=ILEV1)
     IF (INUM< 0) THEN
-    !callabortstop
       WRITE(YMSG,*) 'atmospheric humidity level ',JLOOP1,' is missing'
-      CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+      CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE',YMSG)
     END IF
     CALL GRIB_GET(IGRIB(INUM),'values',ZQ_G(:,JLOOP1),IRET_GRIB)
     WRITE (ILUOUT0,*) 'Q ',ILEV1,IRET_GRIB
     CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IT,KLEV1=ILEV1)
     IF (INUM< 0) THEN
-      !callabortstop
       WRITE(YMSG,*) 'atmospheric temperature level ',JLOOP1,' is missing'
-      CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+      CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE',YMSG)
     END IF
     CALL GRIB_GET(IGRIB(INUM),'values',ZT_G(:,JLOOP1),IRET_GRIB)
     WRITE (ILUOUT0,*) 'T ',ILEV1,IRET_GRIB
@@ -848,8 +818,7 @@ IF (IMODEL/=10) THEN ! others than NCEP
        ALLOCATE(ZPV(IPV))
        CALL GRIB_GET(IGRIB(INUM),'pv',ZPV)
     ELSE
-       !callabortstop
-      CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE','there is no PV value in this message')
+      CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE','there is no PV value in this message')
     ENDIF
     SELECT CASE (IMODEL)
       CASE (0,3,4,6,7)
@@ -877,8 +846,7 @@ IF (IMODEL/=10) THEN ! others than NCEP
         END DO
     END SELECT
   ELSE
-   !callabortstop
-    CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE','level definition section is missing')
+    CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE','level definition section is missing')
   END IF
 ELSE
   ALLOCATE (XA_LS(INLEVEL))
@@ -1128,9 +1096,8 @@ IF (NRR >1) THEN
         CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IPAR,KLEV1=ILEV1)
 
         IF (INUM < 0) THEN
-          !callabortstop
           WRITE(YMSG,*) 'Specific ratio ',IPAR,' at level ',JLOOP1,' is missing'
-          CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+          CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE',YMSG)
         END IF
         CALL GRIB_GET_SIZE(IGRIB(INUM),'values',ISIZE)
         ALLOCATE(ZVALUE(ISIZE))
@@ -1150,9 +1117,8 @@ IF (NRR >1) THEN
       CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=6,KNUMBER=6,KLEV1=ILEV1)
 
       IF (INUM < 0) THEN
-        !callabortstop
         WRITE(YMSG,*) 'Specific ratio ',IPAR,' at level ',JLOOP1,' is missing'
-        CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+        CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE',YMSG)
       END IF
       CALL GRIB_GET_SIZE(IGRIB(INUM),'values',ISIZE)
       ALLOCATE(ZVALUE(ISIZE))
@@ -1170,9 +1136,8 @@ IF (NRR >1) THEN
       CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=1,KNUMBER=85,KLEV1=ILEV1)
 
       IF (INUM < 0) THEN
-        !callabortstop
         WRITE(YMSG,*) 'Specific ratio for rain at level ',JLOOP1,' is missing'
-        CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+        CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE',YMSG)
       END IF
       CALL GRIB_GET_SIZE(IGRIB(INUM),'values',ISIZE)
       ALLOCATE(ZVALUE(ISIZE))
@@ -1190,9 +1155,8 @@ IF (NRR >1) THEN
       ILEV1 = JLOOP1-1+ISTARTLEVEL
       CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=1,KNUMBER=82,KLEV1=ILEV1)
       IF (INUM < 0) THEN
-        !callabortstop
         WRITE(YMSG,*) 'Specific ratio for ICE at level ',JLOOP1,' is missing'
-        CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+        CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE',YMSG)
       END IF
       CALL GRIB_GET_SIZE(IGRIB(INUM),'values',ISIZE)
       ALLOCATE(ZVALUE(ISIZE))
@@ -1210,9 +1174,8 @@ IF (NRR >1) THEN
       ILEV1 = JLOOP1-1+ISTARTLEVEL
       CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=1,KNUMBER=86,KLEV1=ILEV1)
       IF (INUM < 0) THEN
-        !callabortstop
         WRITE(YMSG,*) 'Specific ratio ',IPAR,' at level ',JLOOP1,' is missing'
-        CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+        CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE',YMSG)
       END IF
       CALL GRIB_GET_SIZE(IGRIB(INUM),'values',ISIZE)
       ALLOCATE(ZVALUE(ISIZE))
@@ -1230,9 +1193,8 @@ IF (NRR >1) THEN
       ILEV1 = JLOOP1-1+ISTARTLEVEL
       CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=1,KNUMBER=32,KLEV1=ILEV1)
       IF (INUM < 0) THEN
-        !callabortstop
         WRITE(YMSG,*) 'Specific ratio ',IPAR,' at level ',JLOOP1,' is missing'
-        CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+        CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE',YMSG)
       END IF
       CALL GRIB_GET_SIZE(IGRIB(INUM),'values',ISIZE)
       ALLOCATE(ZVALUE(ISIZE))
@@ -1257,9 +1219,8 @@ IF (CTURB=='TKEL') THEN
       CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=19,KNUMBER=11,KLEV1=ILEV1)
     END IF
     IF (INUM <  0) THEN
-      !callabortstop
       WRITE(YMSG,*) 'TKE at level ',JLOOP1,' is missing'
-      CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+      CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE',YMSG)
     END IF
     CALL GRIB_GET_SIZE(IGRIB(INUM),'values',ISIZE)
     ALLOCATE(ZVALUE(ISIZE))
@@ -1296,8 +1257,7 @@ IF (IMODEL==5) THEN
     DEALLOCATE(XSV_LS)
     ALLOCATE (XSV_LS(IIU,IJU,INLEVEL,NSV))
   ELSE
-    !callabortstop
-    CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE','Mocage model: Bad input argument in read_all_data_grib_case')
+    CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE','Mocage model: Bad input argument in read_all_data_grib_case')
   END IF
   XSV_LS(:,:,:,:) = 0.
   ILEV1=-1
@@ -1357,9 +1317,8 @@ IF (IMODEL==5) THEN
         ILEV1 = JLOOP1
         CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=INUMGRIB(JN),KLEV1=ILEV1)
         IF (INUM <  0) THEN
-          !callabortstop
           WRITE(YMSG,*) 'Atmospheric ',INUMGRIB(JN),' grib chemical species level ',JLOOP1,' is missing'
-          CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+          CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE',YMSG)
         END IF
         CALL GRIB_GET(IGRIB(INUM),'Nj',INJ,IRET_GRIB)
         ALLOCATE(IINLO(INJ))
@@ -1460,9 +1419,8 @@ DO JLOOP1 = ISTARTLEVEL, ISTARTLEVEL+INLEVEL-1
   ! read component u 
   CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IPAR,KLEV1=ILEV1)
   IF (INUM < 0) THEN
-    !callabortstop
     WRITE(YMSG,*) 'wind vector component "u" at level ',JLOOP1,' is missing'
-    CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+    CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE',YMSG)
   END IF
   CALL GRIB_GET_SIZE(IGRIB(INUM),'values',ISIZE)
   ALLOCATE(ZVALUE(ISIZE))
@@ -1492,9 +1450,8 @@ DO JLOOP1 = ISTARTLEVEL, ISTARTLEVEL+INLEVEL-1
   END IF
   CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IPAR+1,KLEV1=ILEV1)
   IF (INUM < 0) THEN
-    !callabortstop
     WRITE(YMSG,*) 'wind vector component "v" at level ',JLOOP1,' is missing'
-    CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+    CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE',YMSG)
   END IF
   CALL GRIB_GET_SIZE(IGRIB(INUM),'values',ISIZE)
   ALLOCATE(ZVALUE(ISIZE))
@@ -1795,9 +1752,8 @@ IF (ODUMMY_REAL) THEN
   !
   IF (IVAR /= IMOC) THEN
     WRITE (ILUOUT0,'(A,I3,A,I3,A)') ' -> Number of correct lines (',IVAR,') is different of ',IMOC,' - abort'
-   !callabortstop
     WRITE(YMSG,*) 'number of correct lines (',IVAR,') is different of ',IMOC
-    CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+    CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE',YMSG)
   END IF
   !
   !* 2.10.2 read and interpolate variables onto dummy variables XDUMMY_2D
@@ -1807,9 +1763,8 @@ IF (ODUMMY_REAL) THEN
     CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IPAR,KLEV1=ILEV1)
     IF (INUM < 0) THEN
       WRITE (ILUOUT0,'(A,I3,A,I2,A)') ' -> 2D field ',INUMGRIB(JI),' is missing - abort'
-      !callabortstop
       WRITE(YMSG,*) '2D field ',INUMGRIB(JI),' is missing'
-      CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+      CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE',YMSG)
     END IF
     CALL GRIB_GET(IGRIB(INUM),'Nj',INJ,IRET_GRIB)
     ALLOCATE(IINLO(INJ))
@@ -1884,7 +1839,6 @@ INTEGER                 :: JLOOP2_A1T2
 INTEGER                 :: JPOS_A1T2
 !
 IF (KN1 < KL1*KL2) THEN
- !callabortstop
   CALL PRINT_MSG(NVERB_FATAL,'GEN','ARRAY_1D_TO_2D','sizes do not match')
 END IF
 JPOS_A1T2 = 1

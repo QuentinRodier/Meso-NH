@@ -5,8 +5,11 @@
 !-----------------------------------------------------------------
 ! Modifications:
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !-----------------------------------------------------------------
 MODULE MODE_READ_SURF_MNH_TOOLS
+
+use mode_msg
 
 IMPLICIT NONE
 
@@ -15,7 +18,6 @@ CONTAINS
 SUBROUTINE PREPARE_METADATA_READ_SURF(HREC,HDIR,KGRID,KTYPE,KDIMS,HSUBR,TPFIELD)
 !
 USE MODE_FIELD, ONLY: FIND_FIELD_ID_FROM_MNHNAME, TFIELDDATA, TFIELDLIST, TYPECHAR, TYPEDATE, TYPELOG
-USE MODE_MSG
 !
 CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
 CHARACTER(LEN=2),       INTENT(IN)  :: HDIR     ! Expected type of the data field (XX,XY,--...)
@@ -898,8 +900,8 @@ END SUBROUTINE READ_SURFX2COV_MNH
 !             ------------
 !
 USE MODE_FIELD,         ONLY: TFIELDDATA,TYPELOG,TYPEREAL
-USE MODE_ll
 USE MODE_IO_FIELD_READ, only: IO_Field_read
+USE MODE_ll
 USE MODE_MSG
 !
 USE MODD_CST,           ONLY: XPI
@@ -1019,11 +1021,7 @@ IF (.NOT. GCOVER_PACKED) THEN
   TZFIELD%LTIMEDEP   = .FALSE.
   CALL IO_Field_read(TPINFILE,TZFIELD,ZWORK2D,KRESP)
 ELSE
-  WRITE(ILUOUT,*) 'WARNING'
-  WRITE(ILUOUT,*) '-------'
-  WRITE(ILUOUT,*) 'error : GCOVER_PACKED = ', GCOVER_PACKED, ' and we try to read the covers one by one '
-  WRITE(ILUOUT,*) ' '
-  CALL ABORT
+  call Print_msg( NVERB_FATAL, 'IO', 'READ_SURFX2COV_1COV_MNH', 'GCOVER_PACKED=TRUE and we try to read the covers one by one' )
 END IF
 !
 IF (KRESP /=0) THEN

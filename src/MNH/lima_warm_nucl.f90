@@ -102,6 +102,7 @@ END MODULE MODI_LIMA_WARM_NUCL
 !!      Original             ??/??/13 
 !!      J. Escobar : 10/2017 , for real*4 use XMNH_EPSILON
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !-------------------------------------------------------------------------------
 !
@@ -606,6 +607,8 @@ CONTAINS
 !*       0. DECLARATIONS
 !
 !
+use mode_msg
+!
 IMPLICIT NONE
 !
 !*       0.1 declarations of arguments and result
@@ -673,7 +676,6 @@ DO JL = 1, NPTS
             PRINT*, 'PX2 ALWAYS too small, we put a greater one : PX2 =',PX2
             fh(JL)   = SINGL_FUNCSMAX(PX2,PZZW3(JL),JL)
             go to 100
-            STOP
          end if
          if (abs(xh-xl) <= PXACC) then
             GO TO 101 
@@ -685,7 +687,7 @@ DO JL = 1, NPTS
 !!$      endif   
 !!SB
       end do
-      STOP
+      call Print_msg( NVERB_FATAL, 'GEN', 'ZRIDDR', 'exceeded maximum iterations' )
    else if (fl(JL) == 0.0) then
       PZRIDDR(JL)=PX1
    else if (fh(JL) == 0.0) then

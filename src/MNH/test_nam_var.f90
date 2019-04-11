@@ -80,10 +80,13 @@ END MODULE MODI_TEST_NAM_VAR
 !!      original                                                     17/04/98
 !!      10/2016 (C.Lac) Increase of the number of values
 !!      P.Wautelet 22/01/2019: use standard FLUSH statement instead of non standard intrinsics
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !----------------------------------------------------------------------------
 !
 !*      0.    DECLARATIONS
 !             ------------
+!
+use mode_msg
 !
 IMPLICIT NONE
 !
@@ -183,8 +186,6 @@ IF ( PRESENT (HVALUE11) ) WRITE (KLUOUT,*) '"',HVALUE11,'"'
 IF ( PRESENT (HVALUE12) ) WRITE (KLUOUT,*) '"',HVALUE12,'"'
 FLUSH(unit=KLUOUT)
 !
- !callabortstop
-CALL ABORT
-STOP
+call Print_msg( NVERB_FATAL, 'GEN', 'TEST_NAM_VARC0', trim(HVAR)//' is not allowed for variable '//trim(HNAME) )
 !-------------------------------------------------------------------------------
 END SUBROUTINE TEST_NAM_VARC0

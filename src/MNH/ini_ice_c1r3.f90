@@ -1,6 +1,6 @@
 !MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !      ########################
@@ -88,6 +88,7 @@ END MODULE MODI_INI_ICE_C1R3
 !!      J.-P. Pinty 23/10/2001 Add XRHORSMIN
 !!      J.-P. Pinty 05/04/2002 Add computation of the effective radius
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !-------------------------------------------------------------------------------
 !
@@ -101,9 +102,11 @@ USE MODD_LUNIT, ONLY: TLUOUT0
 USE MODD_PARAMETERS
 USE MODD_PARAM_C1R3
 USE MODD_PARAM_C2R2,      ONLY : XALPHAC,XNUC,XALPHAR,XNUR
-USe MODD_RAIN_C2R2_DESCR, ONLY : XAR,XBR,XCR,XDR,XF0R,XF1R,XAC,XBC,XCC,XDC, &
+USE MODD_RAIN_C2R2_DESCR, ONLY : XAR,XBR,XCR,XDR,XF0R,XF1R,XAC,XBC,XCC,XDC, &
                                  XLBC,XLBEXC,XLBR,XLBEXR
 USE MODD_REF
+!
+use mode_msg
 !
 USE MODI_GAMMA
 USE MODI_GAMMA_INC
@@ -464,10 +467,8 @@ IF (XALPHAC == 3.0) THEN
 ELSE
   WRITE(UNIT=ILUOUT0,FMT='("      Homogeneous nucleation")')
   WRITE(UNIT=ILUOUT0,FMT='(" XALPHAC=",E13.6," IS NOT 3.0")') XALPHAC
-  WRITE(UNIT=ILUOUT0,FMT='(" No algorithm yet developped in this case !")')
-!callabortstop
-CALL ABORT
-  STOP
+  WRITE(UNIT=ILUOUT0,FMT='(" No algorithm yet developed in this case !")')
+  call Print_msg(NVERB_FATAL,'GEN','INI_ICE_C1R3','')
 END IF
 !
 GFLAG = .TRUE.

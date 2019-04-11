@@ -119,6 +119,7 @@ CONTAINS
 !!      J.Escobar 20/07/2018 : for real*4 compilation, convert with REAL(X) argument to SUM_DD... 
 !!      P.Wautelet 22/01/2019: use standard FLUSH statement instead of non standard intrinsics
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -154,6 +155,7 @@ USE MODE_DUSTOPT
 USE MODE_FIELD,          ONLY: TFIELDDATA,TYPEREAL
 USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 USE MODE_ll
+use mode_msg
 USE MODE_REPRO_SUM,      ONLY : SUM_DD_R2_R1_ll,SUM_DD_R1_ll
 !
 #ifdef MNH_PGI
@@ -581,7 +583,8 @@ IF ( ZMINVAL <= 0.0 ) THEN
    WRITE(ILUOUT,*) ' radiation.f90 STOP :: SOMETHING WRONG WITH PRESSURE , ZDZPABST <= 0.0 '  
    WRITE(ILUOUT,*) ' radiation :: ZDZPABST ', ZMINVAL,' located at ',   IMINLOC
    FLUSH(unit=ILUOUT)
-   STOP ' radiation.f90 STOP :: SOMETHING WRONG WITH PRESSURE , ZDZPABST < 0.0  '
+   call Print_msg( NVERB_FATAL, 'GEN', 'RADIATIONS', 'something wrong with pressure: ZDZPABST <= 0.0' )
+
 ENDIF
 !------------------------------------------------------------------------------
 ALLOCATE(ZLAT(KDLON))
@@ -1846,9 +1849,9 @@ DEALLOCATE(ZWORK_GRID)
 ALLOCATE(ZQSAVE(SIZE(ZTAVE,1),SIZE(ZTAVE,2)))
 !
 WHERE (ZTAVE(:,:) > XTT)
-  ZQSAVE(:,:) = QSATW_2D(ZTAVE, ZPAVE)
+  ZQSAVE(:,:) = QSAT(ZTAVE, ZPAVE)
 ELSEWHERE
-  ZQSAVE(:,:) = QSATI_2D(ZTAVE, ZPAVE)
+  ZQSAVE(:,:) = QSATI(ZTAVE, ZPAVE)
 END WHERE
 !
 ! allocations for the radiation code outputs

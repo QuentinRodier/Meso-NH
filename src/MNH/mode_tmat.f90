@@ -16,6 +16,7 @@
 !     Modif par Olivier Caumont (04/2008) pour interfaçage avec diagnostic 
 !     radar de Méso-NH.
 !     P. Wautelet 22/01/2019: replace double precision declarations by real(kind(0.0d0)) (to allow compilation by NAG compiler)
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !
 !****************************************************************************
 
@@ -292,6 +293,8 @@
                            XIT11,XIT12,XIT21,XIT22,&
                            XTR1,XTI1,NPN1,NPNG1,NPNG2,NPN2,NPN4,NPN6
 
+      use mode_msg
+
       IMPLICIT REAL*8 (A-H,O-Z)
 
 !!      Parameter (NPN1=200, NPNG1=600, NPNG2=2*NPNG1, NPN2=2*NPN1,&
@@ -553,7 +556,7 @@
       INM1=MAX0(4,IXXX)
       
 !C     IF (INM1.GE.NPN1)WRITE(10,7333) NPN1
-      IF (INM1.GE.NPN1) STOP
+      if ( INM1 >= NPN1 ) call Print_msg( NVERB_FATAL, 'GEN', 'TMD', 'INM1 >= NPN1' )
       
 ! 7333 FORMAT('CONVERGENCE IS NOT OBTAINED FOR NPN1=',I3,  &
 !          '.  EXECUTION TERMINATED')
@@ -569,12 +572,9 @@
          NMAX=NMA
 !c         MMAX=1
          NGAUSS=NMAX*NDGS
-         
-!C     IF (NGAUSS.GT.NPNG1) WRITE(10,7340) NGAUSS
-         IF (NGAUSS.GT.NPNG1) STOP
-         
-!c 7340    FORMAT('NGAUSS =',I3,' I.E. IS GREATER THAN NPNG1.',
-!c     &        '  EXECUTION TERMINATED')
+
+         if ( NGAUSS > NPNG1 ) call Print_msg( NVERB_FATAL, 'GEN', 'TMD', 'NGAUSS > NPNG1' )
+
 !c 7334    FORMAT(' NMAX =', I3,'  DSCA=',D8.2,'   DEXT=',D8.2)
          
          CALL CONST(NGAUSS,NMAX,X,W,AN,ANN,S,SS)
@@ -614,7 +614,7 @@
          
          IF(.not.(DSCA.LE.DDELT.AND.DEXT.LE.DDELT)) THEN
 !C     IF (NMA.EQ.NPN1) WRITE(10,7333) NPN1
-            IF (NMA.EQ.NPN1) STOP      
+            if ( NMA == NPN1 ) call Print_msg( NVERB_FATAL, 'GEN', 'TMD', 'NMA == NPN1' )
          ELSE
             SORTIE1=.TRUE.
          ENDIF
@@ -1189,12 +1189,9 @@
           TL1.LT.0D0.OR.TL1.GT.180D0.OR.&
           PL.LT.0D0.OR.PL.GT.360D0.OR.&
           PL1.LT.0D0.OR.PL1.GT.360D0) THEN 
-!C      WRITE (10,2000)
-         STOP
-      ENDIF  
+          call Print_msg( NVERB_FATAL, 'GEN', 'AMPL', 'an angular parameter is outside its allowable range' )
+      END IF
 
-! 2000 FORMAT ('AN ANGULAR PARAMETER IS OUTSIDE ITS',&
-!             ' ALLOWABLE RANGE')
       PIN=ACOS(-1D0)
 
       PIN2=PIN*0.5D0
@@ -1635,10 +1632,8 @@
       ENDDO
 
 
-!C      IF (NMAX.GT.NPN1) WRITE (10,9000) NMAX,NPN1 
-      IF (NMAX.GT.NPN1) STOP
+      if ( NMAX > NPN1 ) call Print_msg( NVERB_FATAL, 'GEN', 'VARY', 'NMAX > NPN1' )
 
- 9000 FORMAT(' NMAX = ',I2,', i.e., greater than ',I3)
       TB=TA*SQRT(MRR*MRR+MRI*MRI)
       TB=MAX(TB,FLOAT(NMAX))
       NNMAX1=1.2D0*SQRT(MAX(TA,FLOAT(NMAX)))+3D0

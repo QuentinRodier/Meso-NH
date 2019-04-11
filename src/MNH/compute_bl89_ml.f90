@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2006-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !    ###########################
      MODULE MODI_COMPUTE_BL89_ML
 !    ###########################
@@ -55,6 +56,7 @@ END MODULE MODI_COMPUTE_BL89_ML
 !!     S. Riette Jan 2012: support for both order of vertical levels and cleaning
 !!     R.Honnert Oct 2016 : Update with AROME
 !!     Q.Rodier  01/2019 : support RM17 mixing length as in bl89.f90 
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !-------------------------------------------------------------------------------
 !
@@ -74,6 +76,9 @@ END MODULE MODI_COMPUTE_BL89_ML
 !
 USE MODD_CTURB
 USE MODD_PARAMETERS, ONLY: JPVEXT
+!
+use mode_msg
+!
 USE MODI_SHUMAN_MF
 !
 IMPLICIT NONE
@@ -209,12 +214,7 @@ ENDIF
 !
 
 IF (OUPORDN.EQV..FALSE.) THEN 
- IF(OFLUX) THEN
-   WRITE(*,*) ' STOP'                                                     
-   WRITE(*,*) ' OFLUX OPTION NOT CODED FOR DOWNWARD MIXING LENGTH' 
-   CALL ABORT
-   STOP
- ENDIF
+ IF(OFLUX) call Print_msg(NVERB_FATAL,'GEN','COMPUTE_BL89_ML','OFLUX option not coded for downward mixing length')
  ZINTE(:)=PTKEM_DEP(:)
  PLWORK=0.
  ZTESTM=1.

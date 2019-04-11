@@ -56,6 +56,7 @@ END MODULE MODI_MNHOPEN_AUX_IO_SURF
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
 !                          (nsubfiles_ioz is now determined in IO_File_add2list)
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -143,10 +144,9 @@ IF (HFILE/=YFILE .AND. HFILE/=YPGDFILE) THEN
   CALL IO_File_add2list(TPINFILE,TRIM(HFILE),'PGD','READ',KLFITYPE=2,KLFIVERB=5,OOLD=.TRUE.)
   CALL IO_File_open(TPINFILE,KRESP=IRESP)
   !
-  IF (IRESP .NE. 0) THEN
-    PRINT*," /!\  MNHOPEN_AUX_IO_SURF :: FATAL PROBLEM OPENING INPUT/READ FILES =", HFILE
-    STOP '/!\ MNHOPEN_AUX_IO_SURF :: FATAL PROBLEM OPENING INPUT/READ FILES , CHECK OUTPUT_LISTING* !!!'
-  ENDIF
+  if ( iresp /= 0 ) then
+    call Print_msg( NVERB_FATAL, 'GEN', 'MNHOPEN_AUX_IO_SURF', 'unable to open file '//trim(HFILE) )
+  end if
   CACTION = 'OPEN  '
 ELSE
   CALL IO_File_find_byname(TRIM(HFILE),TPINFILE,IRESP)

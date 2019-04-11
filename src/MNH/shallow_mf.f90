@@ -1,7 +1,8 @@
 !MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ######spl
      MODULE MODI_SHALLOW_MF
 !    ######################
@@ -167,6 +168,7 @@ END MODULE MODI_SHALLOW_MF
 !!      Philippe Wautelet 28/05/2018: corrected truncated integer division (2/3 -> 2./3.)
 !!      Q.Rodier  01/2019 : support RM17 mixing length
 !!      R.Honnert 1/2019  : remove SURF 
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -393,9 +395,7 @@ ELSEIF (HMF_UPDRAFT == 'HRIO') THEN
                        PEMF,PDETR,                               &
                        PENTR,ZBUO_INTEG,KKLCL,KKETL,KKCTL,ZDEPTH )
 ELSE
-  WRITE(*,*) ' STOP'                                                     
-  WRITE(*,*) ' NO UPDRAFT MODEL FOR EDKF : CMF_UPDRAFT =',HMF_UPDRAFT 
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','SHALLOW_MF','')  
+  call Print_msg( NVERB_FATAL, 'GEN', 'SHALLOW_MF', 'no updraft model for EDKF: CMF_UPDRAFT='//trim(HMF_UPDRAFT) )
 ENDIF
 
 !!! 5. Compute diagnostic convective cloud fraction and content
@@ -450,10 +450,8 @@ ENDIF
                 PFLXZTHMF,PFLXZTHVMF,PFLXZRMF,PFLXZUMF,PFLXZVMF,         &
                 ZFLXZSVMF                                                )
        ELSE
-         WRITE(*,*) ' STOP'                                                     
-         WRITE(*,*) ' NO UPDRAFT MODEL FOR EDKF : CMF_UPDRAFT =',HMF_UPDRAFT 
-         CALL PRINT_MSG(NVERB_FATAL,'GEN','SHALLOW_MF','') 
-       ENDIF  
+         call Print_msg( NVERB_FATAL, 'GEN', 'SHALLOW_MF', 'no updraft model for EDKF: CMF_UPDRAFT='//trim(HMF_UPDRAFT) )
+       END IF
 
      IF (HMF_UPDRAFT == 'BOUT') THEN
       !! calcul de la hauteur de la couche limite ou de L_up

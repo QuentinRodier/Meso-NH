@@ -114,6 +114,7 @@ END MODULE MODI_CH_MONITOR_n
 !!    01/10/17 (C.Lac) add correction of negativity
 !!    Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 12/02/2019: bugfix: ZINPRR was not initialized all the time
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !!    EXTERNAL
 !!    --------
@@ -143,6 +144,7 @@ USE MODI_CH_AER_DEPOS
 !
 USE MODE_ll
 USE MODE_MODELN_HANDLER
+use mode_msg
 !
 USE MODI_WRITE_TS1D
 USE MODD_CST, ONLY : XMNH_TINY
@@ -625,9 +627,7 @@ SELECT CASE (CCH_TDISCRETIZATION)
     IF (KVERB >= 10) WRITE(KLUOUT,*) "CH_MONITOR_n: using LAGGED option"
   CASE DEFAULT
     ! the following line should never be reached:
-    ! callabortstop
-    CALL ABORT
-    STOP "CH_MONITOR_n: CCH_TDISCRETIZATION option not valid"
+    call Print_msg( NVERB_FATAL, 'GEN', 'CH_MONITOR_n', 'invalid CCH_TDISCRETIZATION option ('//trim(CCH_TDISCRETIZATION)//')' )
 END SELECT
 !
 !

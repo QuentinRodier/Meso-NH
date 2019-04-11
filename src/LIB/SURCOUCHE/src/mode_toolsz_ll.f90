@@ -1,7 +1,11 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
+! Modifications:
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!-----------------------------------------------------------------
 !     ########################
       MODULE MODE_TOOLSZ_ll
 !     ########################
@@ -214,6 +218,7 @@
     USE MODD_VAR_ll, ONLY : IP
     USE MODD_CONFZ , ONLY : NZ_VERB,NZ_SPLITTING ! for debug IZ=1=flat_inv;  IZ=2=flat_invz ;  IZ=1+2=the two
 
+    use mode_msg
     USE  MODE_SPLITTING_ll , ONLY : def_splitting2
     USE MODE_TOOLS_ll   ,    ONLY : SLIDE_COORD
     !JUAN
@@ -235,6 +240,7 @@
     !
     !*       0.2   declarations of local variables
     !
+    character(len=10)       :: yval1, yval2 ! Strings for error message
     INTEGER                 :: X_DOMAINS,Y_DOMAINS,Z_DOMAINS,X_DOMAINS_NEW
     LOGICAL                 :: PREM
     INTEGER                 :: IK
@@ -245,11 +251,9 @@
     !        0. CHECK NB_PROC/NZ_PROC
     PREM = .FALSE.
     IF ( MOD(NB_PROC,KZ_PROC) .NE. 0 ) THEN
-       PRINT*
-       WRITE(*,1000) NB_PROC, KZ_PROC
-       PRINT*
-1000   FORMAT("MODE_SPLITTINGZ::SPLITZ --> NB_PROC=", I4 ," NOT DIVISIBLE BY KZ_PROC=", I4)
-       STOP
+       write( yval1, '( I10 )' ) nb_proc
+       write( yval2, '( I10 )' ) kz_proc
+       call Print_msg( NVERB_FATAL, 'GEN', 'SPLITZ', 'NB_PROC='//trim(yval1)//' not divisible by KZ_PROC='//trim(yval2) )
     ENDIF
     !
     !   Splitting in Z possible so
@@ -280,7 +284,7 @@
     !
     IF(HSPLITTING.EQ."P2P1SPLITT") THEN
        IF ((PREM).AND.(NB_PROC_XY.GT.2)) THEN
-          STOP "mode_toolsz_ll.f90::SPLITZ: NPROC PREMIER NON PREVUE !!! "
+          call Print_msg( NVERB_FATAL, 'GEN', 'SPLITZ', 'unexpected: NB_PROC_XY is a prime number' )
           !
           !   split x direction only on NB_PROC_XY - 1 processors
           !   and on reducted x-size = X_DIM - X_DIM/NB_PROC_XY -1
@@ -365,7 +369,6 @@
           ENDIF
        END IF
     END IF
-    !    STOP
     !
     ! Add 'Halo points' to global coordonne in X & Y direction
     !

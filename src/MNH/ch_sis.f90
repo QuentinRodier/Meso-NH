@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 chimie 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !!    ################## 
       MODULE MODI_CH_SIS
@@ -60,9 +55,12 @@ END MODULE MODI_CH_SIS
 !!    Original 24/04/95
 !!    31/07/96 (K. Suhre) restructured
 !!    01/12/03 (D. Gazen)   change Chemical scheme interface
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !!    EXTERNAL
 !!    --------
+use mode_msg
+
 USE MODI_CH_FCN
 USE MODI_CH_JAC
 USE MODI_CH_GAUSS
@@ -127,11 +125,7 @@ ENDDO
 !
 IFAIL = 1
 CALL CH_GAUSS(ZWORK,ZINV,KEQ,IFAIL)
-IF (IFAIL.NE.0) THEN
-!callabortstop
-CALL ABORT
-  STOP 'CH_SIS ERROR: matrix cannot be inverted by CH_GAUSS'
-ENDIF
+if ( ifail /= 0 ) call Print_msg( NVERB_FATAL,   'GEN', 'CH_SIS', 'matrix cannot be inverted by CH_GAUSS' )
 !
 !*       4.   CALCULATE (1-dt/2 J^n)^-1 f^n
 !        -----------------------------------

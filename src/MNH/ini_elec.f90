@@ -38,6 +38,7 @@
 !!    -------------
 !!      Original     29/11/02
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -55,6 +56,7 @@ USE MODD_REF
 USE MODD_TIME
 !
 USE MODE_ll
+use mode_msg
 !
 USE MODI_INI_CLOUD
 !
@@ -92,11 +94,7 @@ INTEGER             :: ILUOUT  ! Logical unit number of output-listing
 !              --------
 !
 !
-PRINT *,' INI_ELEC IS NOT YET DEVELOPPED'
-!
-!callabortstop
-CALL ABORT
-STOP
+call Print_msg(NVERB_FATAL,'GEN','INI_ELEC','not yet developed')
 !
 !-------------------------------------------------------------------------------
 !

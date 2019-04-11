@@ -1,4 +1,9 @@
-!!    ########################### 
+!MNH_LIC Copyright 2016-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+!MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
+!!    ###########################
       MODULE MODI_CH_INIT_BUDGET_n
 !!    ########################### 
 !!
@@ -43,16 +48,19 @@ END MODULE MODI_CH_INIT_BUDGET_n
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    October 2016                   
+!!      Original    October 2016
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
-USE MODD_CH_MNHC_n,  ONLY: LUSECHAQ, CSPEC_BUDGET
-USE MODD_CH_M9_n,    ONLY: CNAMES, NEQ
 USE MODD_CH_BUDGET_n, ONLY: NEQ_BUDGET, CNAMES_BUDGET, NSPEC_BUDGET
+USE MODD_CH_M9_n,    ONLY: CNAMES, NEQ
+USE MODD_CH_MNHC_n,  ONLY: LUSECHAQ, CSPEC_BUDGET
 USE MODD_DIAG_FLAG, ONLY : LCHEMDIAG, CSPEC_BU_DIAG
-!
+
+use mode_msg
+
 IMPLICIT NONE 
 
 INTEGER, INTENT(IN)  :: KLUOUT   ! output listing channel
@@ -112,9 +120,7 @@ IF (YWORKSTR /= '') THEN
       END IF
    END DO
    IF (GCHECKFAILED) THEN
-      WRITE(KLUOUT,*) 'Wrong (misspelled) CSPEC_BUDGET encountered...ABORTING !'
-      CALL ABORT
-      STOP 
+     call Print_msg( NVERB_FATAL, 'GEN', 'CH_INIT_BUDGET_n', 'wrong (misspelled) CSPEC_BUDGET encountered' )
    END IF
 ELSE
    DEALLOCATE(CNAMES_BUDGET)

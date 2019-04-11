@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 microph 2006/08/10 17:06:04
 !-----------------------------------------------------------------
 !      ######################
        MODULE MODI_ICE_C1R3
@@ -184,12 +179,12 @@ END MODULE MODI_ICE_C1R3
 !!      Jean-Pierre PINTY     8/10/01  Revise limits in sedim. and review S->I
 !!      Jean-Pierre PINTY    18/10/01  Revise Snow to Ice conversion
 !!      Jean-Pierre PINTY    18/12/01  Revise Graupel wet growth (limitation)
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !-------------------------------------------------------------------------------
 !
-PRINT *,'ICE_C1R3 IS NOT YET DEVELOPPED'
-!callabortstop
-CALL ABORT
-STOP
+use mode_msg
+!
+call Print_msg(NVERB_FATAL,'GEN','ICE_C1R3','not yet developed')
 !
 END SUBROUTINE ICE_C1R3

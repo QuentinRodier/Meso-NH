@@ -35,6 +35,7 @@ END MODULE MODI_INIT_AEROSOL_PROPERTIES
 !!      Original             ??/??/13 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!  Philippe Wautelet: 22/01/2019: bugs correction: incorrect writes + unauthorized goto
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !-------------------------------------------------------------------------------
 !
@@ -52,6 +53,8 @@ USE MODD_PARAM_LIMA,      ONLY : LWARM, LACTI, NMOD_CCN, HINI_CCN, HTYPE_CCN,   
                                  XMDIAM_IFN, XSIGMA_IFN, XRHO_IFN, XFRAC, XFRAC_REF, &
                                  CINT_MIXING, NMOD_IMM, NINDICE_CCN_IMM, NIMM,        &
                                  NPHILLIPS
+!
+use mode_msg
 !
 USE MODI_GAMMA
 !
@@ -218,9 +221,8 @@ IF ( NMOD_CCN .GE. 1 ) THEN
           XACTEMP0   = 290.16
           XALPHA6    = 3.076
        CASE DEFAULT
-          WRITE(UNIT=ILUOUT0,FMT='("You must specify HTYPE_CNN(JMOD)=C or M &
-               &in EXSEG1.nam for each CCN mode")')
-          CALL ABORT
+          call Print_msg(NVERB_FATAL,'GEN','INIT_AEROSOL_PROPERTIES','HTYPE_CNN(JMOD)=C or M must be specified'// &
+                                                                     ' in EXSEG1.nam for each CCN mode')
        ENDSELECT
 !
       XKHEN_MULTI(JMOD)   =   XKHEN0*(XLOGSIG_CCN(JMOD)/XLOGSIG0)**XALPHA1

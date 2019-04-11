@@ -140,12 +140,14 @@ SUBROUTINE INI_ONE_WAY_n(KDAD,PTSTEP,KMI,KTCOUNT,                        &
 !!      B.VIE   2016 : LIMA
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
 !            ------------
 USE MODE_ll
+use mode_msg
 USE MODE_MODELN_HANDLER
 !
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
@@ -412,7 +414,7 @@ IF (HCLOUD=="LIMA"  ) THEN
               &ZTSVM(:,:,:,JSV-1+NSV_LIMA_BEG_A(KMI)),KMI)
       ENDDO   
    ELSE
-      IF (NSV_LIMA_A(KMI)/=NSV_LIMA_A(KDAD)) CALL ABORT
+      IF (NSV_LIMA_A(KMI)/=NSV_LIMA_A(KDAD)) call Print_msg(NVERB_FATAL,'GEN','INI_ONE_WAY_n','NSV_LIMA_A(KMI)/=NSV_LIMA_A(KDAD)')
       DO JSV=1,NSV_LIMA_A(KMI)
          CALL SET_LSFIELD_1WAY_ll(XSVT(:,:,:,JSV-1+NSV_LIMA_BEG_A(KDAD)),&
               &ZTSVM(:,:,:,JSV-1+NSV_LIMA_BEG_A(KMI)),KMI)

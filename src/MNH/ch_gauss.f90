@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 chimie 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !!    ############################# 
       MODULE MODI_CH_GAUSS
@@ -58,10 +53,11 @@ END MODULE MODI_CH_GAUSS
 !!    -------------
 !!    Original 24/02/95 (adapted from FORTRAN77 version in tools.k)
 !!    27/02/95 (K. Suhre) put in some more array syntax
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 
 !!    EXTERNAL
 !!    --------
-!!    none
+use mode_msg
 
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -109,14 +105,11 @@ elimination_loop : DO JJ = 1, KDIM
 !*    check for singulary matrix, print error message and stop 
 !*    if this is requested by KFAIL (see above for possible values for KFAIL)
   error : IF (ZMAX.LE.PPEPS) THEN
-    IF (KFAIL.GE.0) THEN
-      PRINT *, "Error message from subroutine CH_GAUSS: ", &
-	       "singulary matrix cannot be inverted!"
+    IF ( KFAIL > 0 ) THEN
+      call Print_msg( NVERB_WARNING, 'GEN', 'CH_GAUSS', 'singulary matrix cannot be inverted' )
     ENDIF
-    IF (KFAIL.EQ.0) THEN
-       !callabortstop
-      CALL ABORT
-      STOP 1
+    IF ( KFAIL == 0 ) THEN
+      call Print_msg( NVERB_FATAL,   'GEN', 'CH_GAUSS', 'singulary matrix cannot be inverted' )
     ENDIF
     KFAIL = 1
     RETURN

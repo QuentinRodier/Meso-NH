@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2009-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ######spl
      MODULE MODI_COMPUTE_MF_CLOUD
 !    ############################
@@ -99,14 +100,17 @@ END MODULE MODI_COMPUTE_MF_CLOUD
 !!      S. Riette Dec 2010 BIGA case
 !!      S. Riette Aug 2011 code is split into subroutines
 !!      S. Riette Jan 2012: support for both order of vertical levels
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
 !          ------------
 !
+use mode_msg
+!
+USE MODI_COMPUTE_MF_CLOUD_BIGAUS
 USE MODI_COMPUTE_MF_CLOUD_DIRECT
 USE MODI_COMPUTE_MF_CLOUD_STAT
-USE MODI_COMPUTE_MF_CLOUD_BIGAUS
 !
 
 IMPLICIT NONE
@@ -186,11 +190,7 @@ ELSEIF  (HMF_CLOUD == 'NONE') THEN
   ! No CONVECTIVE CLOUD SCHEME
   ! Nothing to do: PRC_MF, PRI_MF, PCF_MF, PSIGMF are already filled with zero
 ELSE
-  WRITE(*,*) ' STOP'
-  WRITE(*,*) ' Shallow convection cloud scheme not valid : HMF_CLOUD =',TRIM(HMF_CLOUD)
-  CALL ABORT
-  STOP
+  call Print_msg(NVERB_FATAL,'GEN','COMPUTE_MF_CLOUD','Shallow convection cloud scheme not valid: HMF_CLOUD='//TRIM(HMF_CLOUD))
 ENDIF
-
 
 END SUBROUTINE COMPUTE_MF_CLOUD

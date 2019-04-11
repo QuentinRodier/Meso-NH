@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2006-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 newsrc 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ####################
       MODULE MODI_ZDIFFUSETUP
@@ -54,8 +49,10 @@ END MODULE MODI_ZDIFFUSETUP
 !!    ------
 !!
 !!      G. Zängl       * University of Munich*
-!!      J.Escobar 7/10/2015 : remove print
-!!
+!
+! Modifications:
+!  J. Escobar  07/10/2015: remove print
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !
 !*       0.    DECLARATIONS
 !              ------------ 
@@ -278,6 +275,8 @@ CONTAINS
 
 SUBROUTINE INDINT_HALO2(KII,KIJ,PZMASS,PKIND,KKMIN,KIB,KJB)
 
+use mode_msg
+
 IMPLICIT NONE
 
 INTEGER, INTENT(IN) :: KII,KIJ    ! Relative position of remote points
@@ -322,9 +321,7 @@ ELSE IF ((KIJ.EQ.0).AND.(KII.NE.0)) THEN
 
 
 ELSE
- !callabortstop
-CALL ABORT
-  STOP 'Error in zdiffusetup'
+  call Print_msg( NVERB_FATAL, 'GEN', 'INDINT_HALO2', 'KII=0 and KIJ=0' )
 ENDIF
 
 DO JI = II1,II2
@@ -372,21 +369,15 @@ DO JI = II1,II2
     ENDDO
   ENDDO
 ENDDO
-IF (MINVAL(KKMIN) .EQ. 0 ) THEN
-print *," zdiffusetup::PROBLEME MINVAL(KKMIN) .EQ. 0 "
-call abort()
-STOP
-ELSE
-!print *," zdiffusetup:: OK "
+
+IF ( MINVAL(KKMIN) == 0 ) THEN
+  call Print_msg( NVERB_FATAL, 'GEN', 'INDINT_HALO2', 'MINVAL(KKMIN)=0' )
 ENDIF
-IF (MINVAL(INT(PKIND)) .EQ. 0 ) THEN
-print *," zdiffusetup::PROBLEME MINVAL(INT(PKIND)) .EQ. 0 "
-!PKIND = MAX (1.00001,PKIND)
-call abort()
-STOP
-ELSE
-!print *," zdiffusetup:: OK "
+
+IF ( MINVAL(INT(PKIND)) == 0 ) THEN
+  call Print_msg( NVERB_FATAL, 'GEN', 'INDINT_HALO2', 'MINVAL(INT(PKIND))=0' )
 ENDIF
+
 END SUBROUTINE INDINT_HALO2
 
 END SUBROUTINE ZDIFFUSETUP

@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
 !-----------------------------------------------------------------
 !!    ############################### 
       MODULE MODI_CH_METEO_TRANS_KESS
@@ -99,6 +95,7 @@ SUBROUTINE CH_METEO_TRANS_KESS(KL, PRHODJ, PRHODREF, PRTSM, PTHT, PABST, &
 !!    14/05/08 (M. Leriche) include raindrops and cloud droplets mean radius
 !!    05/06/08 (M. Leriche) calculate LWC and LWR in coherence with time spliting scheme
 !!    05/11/08 (M. Leriche) split in two routines for 1-moment and 2-moment cloud schemes
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !!    EXTERNAL
 !!    --------
@@ -125,6 +122,8 @@ USE MODD_RAIN_ICE_DESCR,  ONLY: XNUC, XALPHAC,  & !Cloud droplets distrib. param
                                 XLBR,  XLBEXR,  & !shape param. of the raindrops
                                 XCONC_LAND
 !!
+use mode_msg
+
 USE MODI_GAMMA
 !
 !-------------------------------------------------------------------------------
@@ -185,7 +184,8 @@ firstcall : IF (GSFIRSTCALL) THEN
     WRITE(KLUOUT,*) "     NMETEOVARS expected:   ", NMETEOVARS
     WRITE(KLUOUT,*) "Check the definition of NMETEOVARS in your .chf file."
     WRITE(KLUOUT,*) "The program will be stopped now!"
-    STOP 1
+    call Print_msg( NVERB_FATAL, 'GEN', 'CH_METEO_TRANS_KESS', &
+                    'number of meteovars to transfer does not correspond to the expected number.' )
   END IF
 !
 !*       1.2   initialize names of meteo vars

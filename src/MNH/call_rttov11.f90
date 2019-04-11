@@ -82,6 +82,7 @@ SUBROUTINE CALL_RTTOV11(KDLON, KFLEV, PEMIS, PTSRAD,     &
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!      JP Chaboureau 30/05/2017 exclude the first layer when considering clouds
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!----------------------------------------------------------------------------
 !!
 !!*       0.    DECLARATIONS
@@ -421,8 +422,7 @@ DO JSAT=1,IJSAT ! loop over sensors
  ! Ensure the options and coefficients are consistent
   CALL rttov_user_options_checkinput(errorstatus, opts, coef_rttov)
   IF (errorstatus /= 0) THEN
-    WRITE(*,*) 'error in rttov options'
-    STOP
+    call Print_msg( NVERB_FATAL, 'GEN', 'CALL_RTTOV11', 'error in rttov options' )
   ENDIF
 
 !!  opts%interpolation%reg_limit_extrap = .TRUE.

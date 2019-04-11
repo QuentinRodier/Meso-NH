@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #####################
@@ -103,24 +103,27 @@ END MODULE MODI_ADVECUVW_RK
 !!                  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!                  F.Auguste and C.Lac : 08/16 : CEN4TH with RKC4
 !!                  C.Lac   10/16 : Correction on RK loop
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_ARGSLIST_ll, ONLY: LIST_ll, HALO2LIST_ll
+USE MODD_CONF,        ONLY: NHALO
+USE MODD_PARAMETERS,  ONLY: JPVEXT
+!
 USE MODE_ll
-USE MODD_ARGSLIST_ll, ONLY : LIST_ll, HALO2LIST_ll
-USE MODD_PARAMETERS,  ONLY : JPVEXT
-USE MODD_CONF,        ONLY : NHALO
-!
-USE MODI_SHUMAN
-USE MODI_ADVECUVW_WENO_K
-USE MODI_ADV_BOUNDARIES
-USE MODI_GET_HALO
 USE MODE_MPPDB
+use mode_msg
 !
+USE MODI_ADV_BOUNDARIES
 USE MODI_ADVECUVW_4TH
+USE MODI_ADVECUVW_WENO_K
+USE MODI_GET_HALO
+USE MODI_SHUMAN
+!
 !
 !-------------------------------------------------------------------------------
 !
@@ -222,8 +225,7 @@ SELECT CASE (HTEMP_SCHEME)
  CASE('RK65')
   ISPL = 6
  CASE DEFAULT
-  PRINT *,'ERROR: UNKNOWN HTEMP_SCHEME'
-  CALL ABORT()
+  call Print_msg(NVERB_FATAL,'GEN','ADVECUVW_RK','unknown HTEMP_SCHEME')
 END SELECT
 !
 !

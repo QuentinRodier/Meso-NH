@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !##############################################################
 !OPTION! -Ni
 SUBROUTINE ECMWF_RADIATION_VERS2 ( KLON,KLEV,KRAD_DIAG, KAER, &
@@ -71,6 +72,7 @@ SUBROUTINE ECMWF_RADIATION_VERS2 ( KLON,KLEV,KRAD_DIAG, KAER, &
 !         B.VIE 2016 : LIMA
 !         J.Escobar 30/03/2017  : Management of compilation of ECMWF_RAD in REAL*8 with MNH_REAL=R4
 !!        Q.Libois  02/2018 : ECRAD
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !-----------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -126,6 +128,8 @@ USE MODD_PARAM_LIMA, ONLY : ZRTMIN=>XRTMIN, ZCTMIN=>XCTMIN, &
 USE MODD_PARAM_LIMA_WARM, ONLY : ZCREC=>XCREC, ZCRER=>XCRER, ZFREFFR=>XFREFFR, &
                                  ZAC=>XAC, ZAR=>XAR, ZLBEXC=>XLBEXC, ZLBEXR=>XLBEXR
 USE MODD_PARAM_LIMA_COLD, ONLY : ZFREFFI=>XFREFFI, ZLBEXI=>XLBEXI
+!
+use mode_msg
 !
 IMPLICIT NONE
 !
@@ -751,9 +755,7 @@ DO JK = 1 , KLEV
                  write(*,*)'YOU USE A PARAMATERESISATION OF THE SW OPTICAL PROPERTIES'
                  write(*,*)'INADAPTED FOR THE 1 MOMENT SCHEME: SEE THE CEFRADL VARIABLE'
                  write(*,*)'IN YOUR NAMELIST'
-!callabortstop
-CALL ABORT
-                 STOP
+                 call Print_msg(NVERB_FATAL,'GEN','ECMWF_RADIATION_VERS2','')
               END IF
           END SELECT
 !

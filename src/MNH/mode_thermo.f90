@@ -34,13 +34,22 @@
 !!      Original    28/08/94 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!  J.Escobar : 5/10/2018 : add FLUSH , for better logging in case of PB
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !--------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
 !-------------------------------------------------------------------------------
-!
+
+use mode_msg
+
+implicit none
+
+private
+
+public :: DQSAT, DQSATI, QSAT, QSATI, SM_FOES, SM_PMR_HU
+
 INTERFACE SM_FOES
   MODULE PROCEDURE SM_FOES_0D
   MODULE PROCEDURE SM_FOES_1D
@@ -378,8 +387,7 @@ IF ( ANY(ZDT > ZEPS) ) THEN
   WRITE(ILUOUT,*) 'T AT THIS MAXIMUM : ', ZT(IMAXLOC(1),IMAXLOC(2),IMAXLOC(3))
   WRITE(ILUOUT,*) 'JOB ABORTED '
   FLUSH(unit=ILUOUT)
-  CALL ABORT
-  STOP 
+  call Print_msg( NVERB_FATAL, 'GEN', 'SM_PMR_HU_3D', 'failed to converge' )
 END IF
 !-------------------------------------------------------------------------------
 END FUNCTION SM_PMR_HU_3D
@@ -517,8 +525,7 @@ IF (ANY(ZDT>ZEPS)) THEN
   WRITE(ILUOUT,*) 'MR AT THIS MAXIMUM : ', PMR(IMAXLOC)
   WRITE(ILUOUT,*) 'T AT THIS MAXIMUM : ', ZT(IMAXLOC)
   WRITE(ILUOUT,*) 'JOB ABORTED '
-  CALL ABORT
-  STOP 
+  call Print_msg( NVERB_FATAL, 'GEN', 'SM_PMR_HU_1D', 'failed to converge' )
 END IF
 !-------------------------------------------------------------------------------
 END FUNCTION SM_PMR_HU_1D

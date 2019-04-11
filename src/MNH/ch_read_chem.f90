@@ -1,6 +1,6 @@
 !MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !!    ######################## 
@@ -57,10 +57,14 @@ END MODULE MODI_CH_READ_CHEM
 !!    M.Leriche 2015 : masse molaire Black carbon à 12 g/mol
 !!    Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!    Philippe Wautelet: 10/01/2019: use newunit argument to open files
+!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !!
 !!    EXTERNAL
 !!    --------
+use ISO_FORTRAN_ENV, only: IOSTAT_END
+
 USE MODE_IO_FILE,    ONLY: IO_File_close
+use mode_msg
 !
 USE MODI_CH_OPEN_INPUT
 USE MODI_CH_READ_VECTOR
@@ -83,9 +87,12 @@ CHARACTER(LEN=*), INTENT(IN)      :: HFILE ! name of the file to be read from
 !
 !!    DECLARATION OF LOCAL VARIABLES
 !!    ------------------------------
+character(len=10) ::  yval1, yval2
+character(len=256) :: yioerrmsg
 CHARACTER(LEN=32) :: YVARNAME
 CHARACTER(LEN=80) :: YINPUT
 INTEGER :: ILU ! unit number for IO
+integer :: iresp
 INTEGER :: JI, JJ, IIN
 REAL :: ZMD
 REAL, DIMENSION(NSP+NCARB+NSOA) :: ZMI ! aerosol molecular mass in g/mol
@@ -124,36 +131,40 @@ ELSE
 !
 ! read line by line and check variable names
 !
-  outer_loop : DO JI = 1, NEQ
-    READ(UNIT=ILU,FMT=*,END=999) YVARNAME, PCONC(JI)
-    check_loop : DO JJ = 1, 32
-      IF (YVARNAME(JJ:JJ).NE.CNAMES(JI)(JJ:JJ)) THEN
-        PRINT *, 'CH_READ_CHEM: Error: variable names do not match:'
-        PRINT *, 'CNAMES = >>>', CNAMES(JI), '<<<'
-        PRINT *, 'read   = >>>', YVARNAME, '<<<'
-!callabortstop
-        CALL ABORT
-        STOP 'Program stopped by CH_READ_CHEM'
-      ENDIF
-    ENDDO check_loop
-  ENDDO outer_loop
+  DO JI = 1, NEQ
+    READ( UNIT=ILU, FMT=*, iostat=iresp, iomsg=yioerrmsg ) YVARNAME, PCONC(JI)
+    if ( iresp == IOSTAT_END) then
+      write( yval1, '( I10 )' ) NEQ
+      write( yval2, '( I10 )' ) JI-1
+      call Print_msg( NVERB_FATAL, 'GEN', 'CH_READ_CHEM', 'not enough variables defined in file '//trim(HFILE)// &
+                      ': number of gas lines in that file should be '//trim(yval1)//' but is '//trim(yval2) )
+    else if ( iresp/= 0 ) then
+      call Print_msg( NVERB_FATAL, 'IO', 'CH_READ_CHEM', 'when reading '//trim(HFILE)//': '//trim(yioerrmsg) )
+    end if
+    IF ( trim(YVARNAME) /= trim(CNAMES(JI)) ) THEN
+      call Print_msg( NVERB_FATAL, 'GEN', 'CH_READ_CHEM', 'variable names do not match: '//trim(CNAMES(JI))// &
+                      ' /= '//trim(YVARNAME) )
+    END IF
+  END DO
 
 !Conversion ppb to ppp
  PCONC(:) =  PCONC(:) * 1E-9
 IF (LORILAM) THEN
-  outer_loop2 : DO JI = 1, SIZE(PAERO,1)
-    READ(UNIT=ILU,FMT=*,END=997) YVARNAME, PAERO(JI)
-    check_loop2 : DO JJ = 1, 32
-      IF (YVARNAME(JJ:JJ).NE.CAERONAMES(JI)(JJ:JJ)) THEN
-        PRINT *, 'CH_READ_CHEM: Error: variable names do not match:'
-        PRINT *, 'CAERONAMES = >>>', CAERONAMES(JI), '<<<'
-        PRINT *, 'read   = >>>', YVARNAME, '<<<'
-!callabortstop
-        CALL ABORT
-        STOP 'Program stopped by CH_READ_CHEM'
-      ENDIF
-    ENDDO check_loop2
-  ENDDO outer_loop2
+  DO JI = 1, SIZE(PAERO,1)
+    READ( UNIT=ILU, FMT=*, iostat=iresp, iomsg=yioerrmsg ) YVARNAME, PAERO(JI)
+    if ( iresp == IOSTAT_END) then
+      write( yval1, '( I10 )' ) SIZE(PAERO,1)
+      write( yval2, '( I10 )' ) JI-1
+      call Print_msg( NVERB_FATAL, 'GEN', 'CH_READ_CHEM', 'not enough variables defined in file '//trim(HFILE)// &
+                      ': number of aerosol lines in that file should be '//trim(yval1)//' but is '//trim(yval2) )
+    else if ( iresp/= 0 ) then
+      call Print_msg( NVERB_FATAL, 'IO', 'CH_READ_CHEM', 'when reading '//trim(HFILE)//': '//trim(yioerrmsg) )
+    end if
+    IF ( trim(YVARNAME) /= trim(CAERONAMES(JI)) ) THEN
+      call Print_msg( NVERB_FATAL, 'GEN', 'CH_READ_CHEM', 'variable names do not match: '//trim(CAERONAMES(JI))// &
+                      ' /= '//trim(YVARNAME) )
+    END IF
+  END DO
 !Conversion  microgram/m3 to ppp
 ZMD    = 28.9644E-3
 ! Constants initialization
@@ -268,26 +279,6 @@ END IF
 
 END IF
 !
-RETURN
-!
 !-----------------------------------------------------------------------------
-!
-999  PRINT *, 'CH_READ_CHEM: Error: not enough variables defined in file', &
-               HFILE
-PRINT *, 'number of gas lines in that file should be ', NEQ, &
-         ', but is ', JI-1
-!callabortstop
-CALL ABORT
-STOP 'Program stopped by CH_READ_CHEM'
-!
-998 STOP "CH_READ_CHEM: ERROR - keyword INITCHEM not found in CHCONTROL1.nam"  
-!
-997  PRINT *, 'CH_READ_CHEM: Error: not enough variables defined in file', &
-               HFILE
-PRINT *, 'number of aerosols lines in that file should be ', SIZE(PAERO,1), &
-         ', but is ', JI-1
-!callabortstop
-CALL ABORT
-STOP 'Program stopped by CH_READ_CHEM'
 !
 END SUBROUTINE CH_READ_CHEM
