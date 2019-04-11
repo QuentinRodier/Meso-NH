@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ###############################
@@ -56,6 +56,7 @@ END MODULE MODI_COMPUTE_R00
 !!                              change of YCOMMENT
 !!     Mai 2016 (G.Delautier) replace LG?M by LG?T
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 11/04/2019: bugfix: nullify TZTRACFILE when appropriate
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -123,6 +124,7 @@ TYPE(TFILEDATA),POINTER            :: TZTRACFILE
 !*       1.0    INITIALIZATION
 !               --------------
 !
+TZTRACFILE => NULL()
 ZSPVAL=-1.E+11
 IKU=SIZE(XZHAT)
 !
@@ -238,6 +240,7 @@ END IF
 ! is performed
 DO JFILECUR=1,NFILES
   !
+  TZTRACFILE => NULL()
   CALL IO_FILE_ADD2LIST(TZTRACFILE,CFILES(NBRFILES(JFILECUR)),'UNKNOWN','READ',KLFITYPE=2,KLFIVERB=NVERB)
   CALL IO_FILE_OPEN_ll(TZTRACFILE)
 !
