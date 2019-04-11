@@ -1,7 +1,10 @@
-!MNH_LIC Copyright 2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
+! Modifications:
+!  P. Wautelet 22/02/2019: use MOD intrinsics with same kind for all arguments (to respect Fortran standard)
 !-----------------------------------------------------------------
 MODULE MODE_DATETIME
 !
@@ -57,7 +60,7 @@ IDAY_CUR   = TZDATE%TDATE%DAY
 ZSEC = TZDATE%TIME
 !
 !Compute number of days since beginning of the year
-IF ( ((MOD(IYEAR_CUR,4)==0).AND.(MOD(IYEAR_CUR,100)/=0)) .OR. (MOD(IYEAR_CUR,400)==0)) ILEAPS=1
+IF ( ((MOD(IYEAR_CUR,4_8)==0).AND.(MOD(IYEAR_CUR,100_8)/=0)) .OR. (MOD(IYEAR_CUR,400_8)==0)) ILEAPS=1
 SELECT CASE(IMONTH_CUR)
   CASE(1)
     IDAYS = IDAY_CUR-1

@@ -1,12 +1,10 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 solver 2006/05/18 13:07:25
+! Modifications:
+!  P. Wautelet 22/02/2019: replace Hollerith edit descriptor (deleted from Fortran 95 standard)
 !-----------------------------------------------------------------
       SUBROUTINE SET99(TRIGS,IFAX,N)
       IMPLICIT LOGICAL (L)
@@ -55,7 +53,7 @@ C     LOOK FOR SIXES FIRST, STORE FACTORS IN DESCENDING ORDER
       IF (IFAC.GT.1) GO TO 20
 C
       WRITE(6,40) N
-   40 FORMAT(4H1N =,I4,27H - CONTAINS ILLEGAL FACTORS)
+   40 FORMAT('1N =', I4, ' - CONTAINS ILLEGAL FACTORS')
       RETURN
 C
 C     NOW REVERSE ORDER OF FACTORS

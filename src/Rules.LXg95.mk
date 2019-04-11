@@ -1,6 +1,6 @@
-#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 #MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 #MNH_LIC for details. version 1.
 ##########################################################
 #                                                        #
@@ -23,9 +23,7 @@ OPT_BASE_I4       := $(OPT_BASE)
 ifeq "$(MNH_INT)" "8"
 OPT_BASE          += $(OPT_I8)
 LFI_INT           ?=8
-MNH_MPI_RANK_KIND ?=8
 else
-MNH_MPI_RANK_KIND ?=4
 LFI_INT           ?=4
 endif
 #
@@ -64,7 +62,7 @@ CPP = cpp -P -traditional -Wcomment
 #
 LFI_INT  ?=4
 CPPFLAGS_SURFEX    =
-CPPFLAGS_SURCOUCHE = -DMNH_MPI_DOUBLE_PRECISION -DMNH_MPI_BSEND -DDEV_NULL -DMNH_MPI_RANK_KIND=$(MNH_MPI_RANK_KIND)
+CPPFLAGS_SURCOUCHE = -DMNH_MPI_BSEND -DDEV_NULL
 CPPFLAGS_RAD       =
 CPPFLAGS_NEWLFI    = -DSWAPIO -DLINUX  -DLFI_INT=${LFI_INT}
 CPPFLAGS_MNH       = -DAINT=INT -DAMOD=MOD -DMNH -DSFX_MNH

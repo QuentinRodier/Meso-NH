@@ -371,6 +371,7 @@ USE MODD_PASPOL_n
 USE MODD_DRAG_n
 USE MODD_BLOWSNOW
 USE MODD_BLOWSNOW_n
+use modd_precision, only: LFIINT
 !
 !
 USE MODI_INI_BUDGET
@@ -1674,9 +1675,9 @@ IF (KMI == 1) THEN
   DO IMI = 1 , NMODEL
     WRITE(IO_SURF_MNH_MODEL(IMI)%COUTFILE,'(A,".",I1,".",A)') CEXP,IMI,TRIM(ADJUSTL(CSEG))
     WRITE(YNAME, '(A,".",I1,".",A)') CEXP,IMI,TRIM(ADJUSTL(CSEG))//'.000'
-    CALL IO_File_add2list(LUNIT_MODEL(IMI)%TDIAFILE,YNAME,'MNHDIACHRONIC','WRITE',  &
-                          HDIRNAME=CIO_DIR,                                         &
-                          KLFINPRAR=INT(50,KIND=LFI_INT),KLFITYPE=1,KLFIVERB=NVERB, &
+    CALL IO_File_add2list(LUNIT_MODEL(IMI)%TDIAFILE,YNAME,'MNHDIACHRONIC','WRITE', &
+                          HDIRNAME=CIO_DIR,                                        &
+                          KLFINPRAR=INT(50,KIND=LFIINT),KLFITYPE=1,KLFIVERB=NVERB, &
                           TPDADFILE=LUNIT_MODEL(NDAD(IMI))%TDIAFILE )
   END DO
   !

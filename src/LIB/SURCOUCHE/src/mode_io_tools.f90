@@ -25,8 +25,8 @@ FUNCTION IO_Level2filenumber_get(k,nb_proc_io)
   ! return the file number where to write the K level of data
   !
   IMPLICIT NONE
-  INTEGER(kind=MNH_MPI_RANK_KIND)                   :: k,nb_proc_io
-  INTEGER(kind=MNH_MPI_RANK_KIND)                   :: IO_Level2filenumber_get
+  INTEGER :: k,nb_proc_io
+  INTEGER :: IO_Level2filenumber_get
 
   IO_Level2filenumber_get = MOD ((k-1) , nb_proc_io )
 
@@ -37,12 +37,12 @@ FUNCTION IO_Rank_master_get(IFILE,nb_proc,nb_proc_io,offset_rank)
   ! return the proc number which must write the 'IFILE' file
   !
   IMPLICIT NONE
-  INTEGER(kind=MNH_MPI_RANK_KIND)                  :: IFILE,nb_proc,nb_proc_io
-  INTEGER(kind=MNH_MPI_RANK_KIND),OPTIONAL         :: offset_rank
+  INTEGER,           INTENT(IN) :: IFILE, nb_proc, nb_proc_io
+  INTEGER, OPTIONAL, INTENT(IN) :: offset_rank
 
-  INTEGER(kind=MNH_MPI_RANK_KIND)                  :: IO_Rank_master_get
+  INTEGER                       :: IO_Rank_master_get
 
-  INTEGER(kind=MNH_MPI_RANK_KIND)                  :: ipas,irest
+  INTEGER                       :: ipas, irest
 
   ipas  =        nb_proc / nb_proc_io
   irest =  MOD ( nb_proc , nb_proc_io )

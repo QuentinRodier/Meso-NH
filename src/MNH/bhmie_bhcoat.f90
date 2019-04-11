@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !      ########################
        MODULE MODI_BHMIE_BHCOAT
@@ -46,6 +46,7 @@ END MODULE MODI_BHMIE_BHCOAT
 !!
 !! History:
 !! 92/11/24 (BTD) Explicit declaration of all variables
+!  P. Wautelet 22/02/2019: add kind parameter for CMPLX intrinsics (if not it default to single precision)
 !!***********************************************************************
 !
 !*       0.    DECLARATIONS
@@ -114,8 +115,8 @@ ZPSI0Y = COS(PSIZE_PARAM_COAT)
 ZPSI1Y = SIN(PSIZE_PARAM_COAT)
 ZCHI0Y =-SIN(PSIZE_PARAM_COAT)
 ZCHI1Y = COS(PSIZE_PARAM_COAT)
-ZZXI0Y = CMPLX(ZPSI0Y,-ZCHI0Y)
-ZZXI1Y = CMPLX(ZPSI1Y,-ZCHI1Y)
+ZZXI0Y = CMPLX(ZPSI0Y,-ZCHI0Y,kind=kind(ZZXI0Y))
+ZZXI1Y = CMPLX(ZPSI1Y,-ZCHI1Y,kind=kind(ZZXI1Y))
 !
 ZZCHI0Y2 =-SIN(ZZY2)
 ZZCHI1Y2 = COS(ZZY2)
@@ -130,7 +131,7 @@ DO JJ = 1,ISTOP
   ZEN = FLOAT(JJ)
   ZPSIY = (2.0*ZEN-1.)*ZPSI1Y/PSIZE_PARAM_COAT - ZPSI0Y
   ZCHIY = (2.0*ZEN-1.)*ZCHI1Y/PSIZE_PARAM_COAT - ZCHI0Y
-  ZZXIY = CMPLX(ZPSIY,-ZCHIY)
+  ZZXIY = CMPLX(ZPSIY,-ZCHIY,kind=kind(ZZXIY))
 !
   ZZD1Y2 = 1.0/(ZEN/ZZY2-ZZD0Y2) - ZEN/ZZY2
 !
@@ -179,7 +180,7 @@ DO JJ = 1,ISTOP
   ZPSI1Y = ZPSIY
   ZCHI0Y = ZCHI1Y
   ZCHI1Y = ZCHIY
-  ZZXI1Y = CMPLX(ZPSI1Y,-ZCHI1Y)
+  ZZXI1Y = CMPLX(ZPSI1Y,-ZCHI1Y,kind=kind(ZZXI1Y))
 !
   ZZCHI0X2 = ZZCHI1X2
   ZZCHI1X2 = ZZCHIX2

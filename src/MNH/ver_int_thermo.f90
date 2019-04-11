@@ -134,6 +134,7 @@ END MODULE MODI_VER_INT_THERMO
 !!                   08/2015 (M.Moge)    add UPDATE_HALO_ll(PR(:,:,:,1)) in part 6.3
 !!                  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 22/02/2019: replace Hollerith edit descriptor (deleted from Fortran 95 standard)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -589,13 +590,13 @@ IF (NVERB>=1) THEN
   WRITE(ILUOUT0,*) ' '
   WRITE(ILUOUT0,*) 'Altitude and humidity on shifted grid     (I=',IIJ(1),';J=',IIJ(2),')'
   DO JK=IKB,IKE
-    WRITE(ILUOUT0,'(6Hlevel ,F6.0,5H m : ,F6.2,2H %)') ZZMASS_SH(IIJ(1),IIJ(2),JK),ZHU_SH(IIJ(1),IIJ(2),JK)
+    WRITE(ILUOUT0,'( "level ", F6.0, " m : ", F6.2, " %" )') ZZMASS_SH(IIJ(1),IIJ(2),JK),ZHU_SH(IIJ(1),IIJ(2),JK)
   END DO
   !
   WRITE(ILUOUT0,*) ' '
   WRITE(ILUOUT0,*) 'Altitude and humidity on MESO-NH grid     (I=',IIJ(1),';J=',IIJ(2),')'
   DO JK=IKB,IKE
-    WRITE(ILUOUT0,'(6Hlevel ,F6.0,5H m : ,F6.2,2H %)') ZZMASS   (IIJ(1),IIJ(2),JK),ZHU   (IIJ(1),IIJ(2),JK)
+    WRITE(ILUOUT0,'( "level ", F6.0, " m : ", F6.2, " %" )') ZZMASS   (IIJ(1),IIJ(2),JK),ZHU   (IIJ(1),IIJ(2),JK)
   END DO
 END IF
 !

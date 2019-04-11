@@ -7,9 +7,10 @@
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-----------------------------------------------------------------
 MODULE MODD_NETCDF
-IMPLICIT NONE 
 
-INTEGER,PARAMETER :: IDCDF_KIND = SELECTED_INT_KIND(8)
+use modd_precision, only: CDFINT
+
+IMPLICIT NONE
 
 TYPE IOCDF
    TYPE(DIMCDF), POINTER :: DIM_NI      => NULL()
@@ -26,10 +27,10 @@ TYPE IOCDF
 END TYPE IOCDF
 
 TYPE DIMCDF
-   CHARACTER(LEN=32)        :: NAME = ''
-   INTEGER(KIND=IDCDF_KIND) :: LEN  = 0
-   INTEGER(KIND=IDCDF_KIND) :: ID   = -1
-   TYPE(DIMCDF), POINTER    :: NEXT => NULL()
+   CHARACTER(LEN=32)     :: NAME = ''
+   INTEGER(KIND=CDFINT)  :: LEN  = 0
+   INTEGER(KIND=CDFINT)  :: ID   = -1
+   TYPE(DIMCDF), POINTER :: NEXT => NULL()
 END TYPE DIMCDF
 
 TYPE TPTR2DIMCDF

@@ -310,9 +310,11 @@
 !!  06/2016     (G.Delautier) phasage surfex 8
 !!      P.Wautelet : 08/07/2016 : removed MNH_NCWRIT define
 !!  01/2018      (G.Delautier) SURFEX 8.1
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
+!  P. Wautelet 28/03/2019: use MNHTIME for time measurement variables
+!  P. Wautelet 28/03/2019: use TFILE instead of unit number for set_iluout_timing
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -351,6 +353,7 @@ USE MODD_IO,        ONLY: NIO_VERB, NVERB_DEBUG, TFILE_DUMMY, TFILE_OUTPUTLISTIN
 USE MODD_CONF_n
 USE MODD_NSV,      ONLY : NSV,NSV_CHEM,           &
                           NSV_DSTEND, NSV_DSTBEG
+use modd_precision, only: LFIINT, MNHREAL_MPI, MNHTIME
 !
 USE MODN_BLANK
 !
@@ -449,7 +452,7 @@ INTEGER :: NLUPRE,NLUOUT           ! Logical unit numbers for EXPRE file
                                    ! and for output_listing file
 INTEGER :: NRESP                   ! return code in FM routines
 INTEGER :: NTYPE                   ! type of file (cpio or not)
-INTEGER(KIND=LFI_INT) :: NNPRAR    ! number of articles predicted in the LFIFM file
+INTEGER(KIND=LFIINT) :: NNPRAR     ! number of articles predicted in the LFIFM file
 LOGICAL :: GFOUND                  ! Return code when searching namelist
 !
 INTEGER :: JLOOP,JILOOP,JJLOOP     ! Loop indexes
@@ -555,7 +558,7 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE ::ZTHL,ZT,ZRT,ZFRAC_ICE,&
 REAL                :: ZDIST
 !
 !JUAN TIMING
-REAL*8,DIMENSION(2)         :: ZTIME1,ZTIME2,ZEND,ZTOT
+REAL(kind=MNHTIME), DIMENSION(2) :: ZTIME1, ZTIME2, ZEND, ZTOT
 CHARACTER                 :: YMI
 INTEGER                   :: IMI
 INTEGER::JK                                 
@@ -623,8 +626,8 @@ CALL VERSION
 CPROGRAM='IDEAL '
 !
 !JUAN TIMING
-  XT_START     = 0.0
-  XT_STORE     = 0.0
+  XT_START     = 0.0_MNHTIME
+  XT_STORE     = 0.0_MNHTIME
 !
   CALL SECOND_MNH2(ZEND)
 !
@@ -1211,7 +1214,7 @@ IF( LEN_TRIM(CPGD_FILE) /= 0 ) THEN
 ! determine whether the model is flat or no
 !
   ZZS_MAX = ABS( MAXVAL(XZS(NIB:NIU-JPHEXT,NJB:NJU-JPHEXT)))
-  CALL MPI_ALLREDUCE(ZZS_MAX, ZZS_MAX_ll, 1, MPI_PRECISION, MPI_MAX,  &
+  CALL MPI_ALLREDUCE(ZZS_MAX, ZZS_MAX_ll, 1, MNHREAL_MPI, MPI_MAX,  &
                      NMNH_COMM_WORLD,IINFO_ll)
   IF( ABS(ZZS_MAX_ll)  < 1.E-10 ) THEN
     LFLAT=.TRUE.
@@ -1872,7 +1875,7 @@ END IF
   !
   ! Set File Timing OUTPUT
   !
-  CALL SET_ILUOUT_TIMING(NLUOUT)
+  CALL SET_ILUOUT_TIMING(TLUOUT0)
   !
   ! Compute global time
   !

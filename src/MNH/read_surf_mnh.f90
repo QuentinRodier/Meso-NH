@@ -5,6 +5,7 @@
 !-----------------------------------------------------------------
 ! Modifications:
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 22/02/2019: set HCOMMENT for all subroutines (dummy argument with intent OUT)
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !-----------------------------------------------------------------
 MODULE MODE_READ_SURF_MNH_TOOLS
@@ -158,7 +159,7 @@ IMPLICIT NONE
 CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to be read
 REAL,                   INTENT(OUT) :: PFIELD   ! the real scalar to be read
 INTEGER,                INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
-CHARACTER(LEN=100),     INTENT(OUT) :: HCOMMENT ! comment
+CHARACTER(LEN=*),       INTENT(OUT) :: HCOMMENT ! comment
 !
 !*      0.2   Declarations of local variables
 !
@@ -176,6 +177,7 @@ TYPE(TFIELDDATA)  :: TZFIELD
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFX0_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
 !
 ILUOUT = TOUT%NLU
+HCOMMENT=''
 !
 IF (HREC=='LONORI' .OR. HREC=='LATORI') THEN
   IF (TPINFILE%NMNHVERSION(1)<4 .OR. (TPINFILE%NMNHVERSION(1)==4 .AND. TPINFILE%NMNHVERSION(2)<=5)) THEN
@@ -232,6 +234,7 @@ IF ( HREC=='LAT0' .OR. HREC=='LON0' .OR. HREC=='RPK' .OR. HREC=='BETA'  &
 ELSE
   CALL PREPARE_METADATA_READ_SURF(HREC,'--',0,TYPEREAL,0,'READ_SURFX0_MNH',TZFIELD)
   CALL IO_Field_read(TPINFILE,TZFIELD,PFIELD,KRESP)
+  HCOMMENT = TZFIELD%CCOMMENT
 END IF
 
 IF (KRESP /=0) THEN
@@ -312,7 +315,7 @@ CHARACTER(LEN=LEN_HREC),INTENT(IN) :: HREC     ! name of the article to be read
 INTEGER,                INTENT(IN) :: KL       !  number of points
 REAL, DIMENSION(KL),    INTENT(OUT):: PFIELD   ! array containing the data field
 INTEGER,                INTENT(OUT):: KRESP    ! KRESP  : return-code if a problem appears
-CHARACTER(LEN=100),     INTENT(OUT):: HCOMMENT ! comment
+CHARACTER(LEN=*),       INTENT(OUT):: HCOMMENT ! comment
 CHARACTER(LEN=1),       INTENT(IN) :: HDIR     ! type of field :
 !                                           ! 'H' for HOR : with hor. dim.; and  distributed.
 !                                           ! 'A' for ALL : with hor. dim.; and not distributed.
@@ -344,6 +347,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFX1_MNH',TRIM(TPINFILE%CNAME)//': readi
 !
 KRESP = 0
 ILUOUT = TOUT%NLU
+HCOMMENT = ' '
 !
 IF (HDIR=='A'.OR.HDIR=='E') THEN
   IIU = NIU_ALL
@@ -380,7 +384,6 @@ ELSE IF (HREC=='LON') THEN
 ELSE IF (HREC=='MESH_SIZE') THEN
 
   PFIELD(:) = 0.
-  HCOMMENT = ' '
 
 ELSE IF (HREC=='XX') THEN
 !! reading of a 1D field along X in the file
@@ -395,6 +398,7 @@ ELSE IF (HREC=='XX') THEN
     TZFIELD%CDIR       = '--'
   END IF
   CALL IO_Field_read(TPINFILE,TZFIELD,ZWORK1D,KRESP)
+  HCOMMENT = TZFIELD%CCOMMENT
   DO JJ = 1,IJU
     ZWORK(IIB:IIE,JJ) = 0.5 * ZWORK1D(IIB:IIE) + 0.5 * ZWORK1D(IIB+1:IIE+1)
   END DO
@@ -414,6 +418,7 @@ ELSE IF (HREC=='DX') THEN
     TZFIELD%CDIR       = '--'
   END IF
   CALL IO_Field_read(TPINFILE,TZFIELD,ZWORK1D,KRESP)
+  HCOMMENT = TZFIELD%CCOMMENT
   DO JJ = 1,IJU
     ZWORK(IIB:IIE,JJ) = - ZWORK1D(IIB:IIE) + ZWORK1D(IIB+1:IIE+1)
   END DO
@@ -433,6 +438,7 @@ ELSE IF (HREC=='YY') THEN
     TZFIELD%CDIR       = '--'
   END IF
   CALL IO_Field_read(TPINFILE,TZFIELD,ZWORK1D,KRESP)
+  HCOMMENT = TZFIELD%CCOMMENT
   DO JI = 1,IIU
     ZWORK(JI,IJB:IJE) = 0.5 * ZWORK1D(IJB:IJE) + 0.5 * ZWORK1D(IJB+1:IJE+1)
   END DO
@@ -452,6 +458,7 @@ ELSE IF (HREC=='DY') THEN
     TZFIELD%CDIR       = '--'
   END IF
   CALL IO_Field_read(TPINFILE,TZFIELD,ZWORK1D,KRESP)
+  HCOMMENT = TZFIELD%CCOMMENT
   DO JI = 1,IIU
     ZWORK(JI,IJB:IJE) = - ZWORK1D(IJB:IJE) + ZWORK1D(IJB+1:IJE+1)
   END DO
@@ -501,6 +508,7 @@ ELSE
     CALL PREPARE_METADATA_READ_SURF(YREC,'--',4,TYPEREAL,1,'READ_SURFX1_MNH',TZFIELD)
     CALL IO_Field_read(TPINFILE,TZFIELD,PFIELD,KRESP)
   END IF
+  HCOMMENT = TZFIELD%CCOMMENT
 !
   IF (KRESP /=0) THEN
     WRITE(ILUOUT,*) 'WARNING'
@@ -595,7 +603,7 @@ INTEGER,                 INTENT(IN)  :: KL1      ! number of points
 INTEGER,                 INTENT(IN)  :: KL2      ! second dimension
 REAL, DIMENSION(KL1,KL2),INTENT(OUT) :: PFIELD   ! array containing the data field
 INTEGER,                 INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
-CHARACTER(LEN=100),      INTENT(OUT) :: HCOMMENT ! comment
+CHARACTER(LEN=*),        INTENT(OUT) :: HCOMMENT ! comment
 CHARACTER(LEN=1),        INTENT(IN)  :: HDIR     ! type of field :
 !                                                ! 'H' for HOR : with hor. dim.; and  distributed.
 !                                                ! 'A' for ALL : with hor. dim.; and not distributed.
@@ -637,6 +645,8 @@ ELSE
   CALL PREPARE_METADATA_READ_SURF(HREC,'--',4,TYPEREAL,2,'READ_SURFX2_MNH',TZFIELD)
   CALL IO_Field_read(TPINFILE,TZFIELD,PFIELD,KRESP)
 END IF
+!
+HCOMMENT = TZFIELD%CCOMMENT
 !
 IF (KRESP /=0) THEN
     WRITE(ILUOUT,*) 'WARNING'
@@ -731,7 +741,7 @@ INTEGER,                   INTENT(IN) :: KL1,KL2  !  number of points
 REAL, DIMENSION(KL1,KL2),  INTENT(OUT):: PFIELD   ! array containing the data field
 LOGICAL,DIMENSION(JPCOVER),INTENT(IN) :: OFLAG    ! mask for array filling
 INTEGER,                   INTENT(OUT):: KRESP    ! KRESP  : return-code if a problem appears
-CHARACTER(LEN=100),        INTENT(OUT):: HCOMMENT ! comment
+CHARACTER(LEN=*),          INTENT(OUT):: HCOMMENT ! comment
 CHARACTER(LEN=1),          INTENT(IN) :: HDIR     ! type of field :
 !                                           ! 'H' for HOR : with hor. dim.; and  distributed.
 !                                           ! 'A' for ALL : with hor. dim.; and not distributed.
@@ -839,6 +849,8 @@ ELSE
   CALL IO_Field_read(TPINFILE,TZFIELD,ZWORK3D(:,:,:),KRESP)
 END IF
 !
+HCOMMENT = TZFIELD%CCOMMENT
+!
 IF (KRESP /=0) THEN
   WRITE(ILUOUT,*) 'WARNING'
   WRITE(ILUOUT,*) '-------'
@@ -923,7 +935,7 @@ INTEGER,                INTENT(IN) :: KL1      !  number of points
 INTEGER,                INTENT(IN) :: KCOVER   ! index of the vertical level, it should be a index such that LCOVER(KCOVER)=.TRUE.
 REAL, DIMENSION(KL1),   INTENT(OUT):: PFIELD   ! array containing the data field
 INTEGER,                INTENT(OUT):: KRESP    ! KRESP  : return-code if a problem appears
-CHARACTER(LEN=100),     INTENT(OUT):: HCOMMENT ! comment
+CHARACTER(LEN=*),       INTENT(OUT):: HCOMMENT ! comment
 CHARACTER(LEN=1),       INTENT(IN) :: HDIR     ! type of field :
 !                                           ! 'H' for HOR : with hor. dim.; and  distributed.
 !                                           ! 'A' for ALL : with hor. dim.; and not distributed.
@@ -1024,6 +1036,8 @@ ELSE
   call Print_msg( NVERB_FATAL, 'IO', 'READ_SURFX2COV_1COV_MNH', 'GCOVER_PACKED=TRUE and we try to read the covers one by one' )
 END IF
 !
+HCOMMENT = TZFIELD%CCOMMENT
+!
 IF (KRESP /=0) THEN
   WRITE(ILUOUT,*) 'WARNING'
   WRITE(ILUOUT,*) '-------'
@@ -1100,7 +1114,7 @@ IMPLICIT NONE
 CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to be read
 INTEGER,                INTENT(OUT) :: KFIELD   ! the integer to be read
 INTEGER,                INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
-CHARACTER(LEN=100),     INTENT(OUT) :: HCOMMENT ! comment
+CHARACTER(LEN=*),       INTENT(OUT) :: HCOMMENT ! comment
 !
 !*      0.2   Declarations of local variables
 !
@@ -1114,6 +1128,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFN0_MNH',TRIM(TPINFILE%CNAME)//': readi
 !
 KRESP=0
 ILUOUT = TOUT%NLU
+HCOMMENT=''
 !
 IF (HREC=='DIM_FULL' .AND. ( CPROGRAM=='IDEAL ' .OR.  &
                                   CPROGRAM=='SPAWN ' .OR. CPROGRAM=='ZOOMPG' ))THEN
@@ -1123,6 +1138,7 @@ IF (HREC=='DIM_FULL' .AND. ( CPROGRAM=='IDEAL ' .OR.  &
 ELSE
    CALL PREPARE_METADATA_READ_SURF(HREC,'--',0,TYPEINT,0,'READ_SURFN0_MNH',TZFIELD)
    CALL IO_Field_read(TPINFILE,TZFIELD,KFIELD,KRESP)
+   HCOMMENT = TZFIELD%CCOMMENT
 
     IF (KRESP /=0) THEN
       WRITE(ILUOUT,*) 'WARNING'
@@ -1195,7 +1211,7 @@ CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to be read
 INTEGER,                INTENT(IN)  :: KL       ! number of points
 INTEGER, DIMENSION(KL), INTENT(OUT) :: KFIELD   ! the integer to be read
 INTEGER,                INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
-CHARACTER(LEN=100),     INTENT(OUT) :: HCOMMENT ! comment
+CHARACTER(LEN=*),       INTENT(OUT) :: HCOMMENT ! comment
 CHARACTER(LEN=1),       INTENT(IN)  :: HDIR     ! type of field :
 !                                               ! 'H' : field with
 !                                               !       horizontal spatial dim.
@@ -1236,9 +1252,11 @@ ELSE IF (HDIR=='H') THEN
     CALL PACK_2D_1D(NMASK,IWORK(NIB:NIE,NJB:NJE),KFIELD)
  END IF
 !
-DEALLOCATE(IWORK)
-
+ DEALLOCATE(IWORK)
 ENDIF
+
+HCOMMENT = TZFIELD%CCOMMENT
+
 !-------------------------------------------------------------------------------
 END SUBROUTINE READ_SURFN1_MNH
 !
@@ -1302,7 +1320,7 @@ IMPLICIT NONE
 CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC      ! name of the article to be read
 CHARACTER(LEN=40),      INTENT(OUT) :: HFIELD    ! the integer to be read
 INTEGER,                INTENT(OUT) :: KRESP     ! KRESP  : return-code if a problem appears
-CHARACTER(LEN=100),     INTENT(OUT) :: HCOMMENT  ! comment
+CHARACTER(LEN=*),       INTENT(OUT) :: HCOMMENT  ! comment
 !
 !*      0.2   Declarations of local variables
 !
@@ -1325,6 +1343,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFC0_MNH',TRIM(TPINFILE%CNAME)//': readi
 !
 KRESP = 0
 ILUOUT = TOUT%NLU
+HCOMMENT = ''
 !
 IF (TPINFILE%NMNHVERSION(1)<4 .OR. (TPINFILE%NMNHVERSION(1)==4 .AND. TPINFILE%NMNHVERSION(2)<6)) THEN
   SELECT CASE(TRIM(HREC))
@@ -1387,6 +1406,7 @@ ELSE IF ( HREC=='GRID_TYPE'.AND. ( &
 ELSE
   CALL PREPARE_METADATA_READ_SURF(HREC,'--',0,TYPECHAR,0,'READ_SURFC0_MNH',TZFIELD)
   CALL IO_Field_read(TPINFILE,TZFIELD,HFIELD,KRESP)
+  HCOMMENT = TZFIELD%CCOMMENT
   !
   IF (KRESP /=0) THEN
         CALL PRINT_MSG(NVERB_FATAL,'IO','READ_SURFC0_MNH',TRIM(TPINFILE%CNAME)//': error when reading article '//TRIM(HREC)// &
@@ -1458,7 +1478,7 @@ CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to be read
 INTEGER,                INTENT(IN)  :: KL       ! number of points
 LOGICAL, DIMENSION(KL), INTENT(OUT) :: OFIELD   ! array containing the data field
 INTEGER,                INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
-CHARACTER(LEN=100),     INTENT(OUT) :: HCOMMENT ! comment
+CHARACTER(LEN=*),       INTENT(OUT) :: HCOMMENT ! comment
 CHARACTER(LEN=1),       INTENT(IN)  :: HDIR     ! type of field :
 !                                               ! 'H' : field with
 !                                               !       horizontal spatial dim.
@@ -1510,6 +1530,9 @@ ELSE IF (HDIR=='H') THEN
 !
   DEALLOCATE(GWORK)
 END IF
+
+HCOMMENT = TZFIELD%CCOMMENT
+
 !-------------------------------------------------------------------------------
 END SUBROUTINE READ_SURFL1_MNH
 !
@@ -1568,7 +1591,7 @@ IMPLICIT NONE
 CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to be read
 LOGICAL,                INTENT(OUT) :: OFIELD   ! array containing the data field
 INTEGER,                INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
-CHARACTER(LEN=100),     INTENT(OUT) :: HCOMMENT ! comment
+CHARACTER(LEN=*),       INTENT(OUT) :: HCOMMENT ! comment
 !
 !*      0.2   Declarations of local variables
 !
@@ -1668,7 +1691,7 @@ INTEGER,                INTENT(OUT)   :: KMONTH   ! month
 INTEGER,                INTENT(OUT)   :: KDAY     ! day
 REAL,                   INTENT(OUT)   :: PTIME    ! time
 INTEGER,                INTENT(OUT)   :: KRESP    ! KRESP  : return-code if a problem appears
-CHARACTER(LEN=100),     INTENT(OUT)   :: HCOMMENT ! comment
+CHARACTER(LEN=*),       INTENT(OUT)   :: HCOMMENT ! comment
 
 !*      0.2   Declarations of local variables
 !
@@ -1687,6 +1710,7 @@ TYPE(DATE_TIME)        :: TZDATETIME
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFT0_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
 !
 ILUOUT = TOUT%NLU
+HCOMMENT = ''
 !
 IF (TPINFILE%NMNHVERSION(1)<4 .OR. (TPINFILE%NMNHVERSION(1)==4 .AND. TPINFILE%NMNHVERSION(2)<6)) THEN
   CALL IO_Field_read(TPINFILE,'STORAGE_TYPE',YFILETYPE2)
@@ -1792,7 +1816,7 @@ INTEGER, DIMENSION(KL1), INTENT(OUT)   :: KMONTH   ! month
 INTEGER, DIMENSION(KL1), INTENT(OUT)   :: KDAY     ! day
 REAL,    DIMENSION(KL1), INTENT(OUT)   :: PTIME    ! time
 INTEGER,                 INTENT(OUT)   :: KRESP    ! KRESP  : return-code if a problem appears
-CHARACTER(LEN=100),      INTENT(OUT)   :: HCOMMENT ! comment
+CHARACTER(LEN=*),        INTENT(OUT)   :: HCOMMENT ! comment
 
 !*      0.2   Declarations of local variables
 !
@@ -1810,6 +1834,7 @@ TYPE(TFIELDDATA)       :: TZFIELD
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFT1_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
 !
 ILUOUT = TOUT%NLU
+HCOMMENT = ''
 !
 IF (TPINFILE%NMNHVERSION(1)<4 .OR. (TPINFILE%NMNHVERSION(1)==4 .AND. TPINFILE%NMNHVERSION(2)<6)) THEN
   CALL IO_Field_read(TPINFILE,'STORAGE_TYPE',YFILETYPE2)
@@ -1842,7 +1867,7 @@ TZFIELD%CSTDNAME   = ''
 TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
 TZFIELD%CUNITS     = ''
 TZFIELD%CDIR       = '--'
-TZFIELD%CCOMMENT   = TRIM(HCOMMENT)
+TZFIELD%CCOMMENT   = ''
 TZFIELD%NGRID      = 0
 TZFIELD%NTYPE      = TYPEINT
 TZFIELD%NDIMS      = 2
@@ -1867,7 +1892,7 @@ TZFIELD%CSTDNAME   = ''
 TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
 TZFIELD%CUNITS     = ''
 TZFIELD%CDIR       = '--'
-TZFIELD%CCOMMENT   = TRIM(HCOMMENT)
+TZFIELD%CCOMMENT   = ''
 TZFIELD%NGRID      = 0
 TZFIELD%NTYPE      = TYPEREAL
 TZFIELD%NDIMS      = 1

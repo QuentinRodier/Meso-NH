@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 ! Modifications:
@@ -37,7 +37,6 @@
 !       IP - Number of local processor=subdomain
 !       TCRRT_COMDATA - Current communication data structure for current model
 !                       and local processor
-!       MPI_PRECISION - mpi precision
 !       JPHALO - size of the halo
 !       NCOMBUFFSIZE1 - buffer sizs
 !       NHALO_COM - mpi communicator
@@ -68,7 +67,7 @@
 !!    Modifications
 !!    -------------
 !       Original     May 19, 1998
-!       R. Guivarch June 29, 1998 MPI_PRECISION
+!       R. Guivarch June 29, 1998 MNHREAL_MPI
 !       N. Gicquel, P. Kloos - October 01, 1998 - COPY_CRSPD, 
 !                 COPY_ZONE, COPY_CRSPD_TRANS, COPY_ZONE_TRANS
 !       M. Moge  01/12/14   UPDATE_HALO_EXTENDED
@@ -398,7 +397,6 @@
 !     Module MODD_VAR_ll
 !       TCRRT_COMDATA - Current communication data structure for current model
 !                        and local processor
-!       MPI_PRECISION - mpi precision
 !       JPHALO - size of the halo
 !
 !     Module MODD_DIM_ll
@@ -418,7 +416,8 @@
 !*       0.    DECLARATIONS
 !
   USE MODD_DIM_ll, ONLY : CLBCX, CLBCY
-  USE MODD_VAR_ll, ONLY : TCRRT_COMDATA, MPI_PRECISION, JPHALO
+  use modd_precision, only: MNHREAL_MPI
+  USE MODD_VAR_ll, ONLY : TCRRT_COMDATA, JPHALO
 !
   USE MODE_TOOLS_ll, ONLY : GET_INDICE_ll, LEAST_ll, LWEST_ll
 !JUANZ
@@ -475,12 +474,12 @@ INTEGER                                               :: NB_REQ
 !
 !if defined(MNH_MPI_BSEND)
      IF (LMNH_MPI_BSEND) THEN
-        CALL MPI_BSEND(PFIELD(IXOR), JPHALO, MPI_PRECISION, &
+        CALL MPI_BSEND(PFIELD(IXOR), JPHALO, MNHREAL_MPI, &
              TCRRT_COMDATA%HALO1DX%NSEND_WEST(J)-1, &
              1, NMNH_COMM_WORLD, KINFO)
      else
         NB_REQ = NB_REQ + 1
-        CALL MPI_ISEND(PFIELD(IXOR), JPHALO, MPI_PRECISION, &
+        CALL MPI_ISEND(PFIELD(IXOR), JPHALO, MNHREAL_MPI, &
              TCRRT_COMDATA%HALO1DX%NSEND_WEST(J)-1, &
              1, NMNH_COMM_WORLD, REQ_TAB(NB_REQ), KINFO)
         
@@ -492,14 +491,14 @@ INTEGER                                               :: NB_REQ
 !
 !if defined(MNH_MPI_BSEND)
      IF (LMNH_MPI_BSEND) THEN
-        CALL MPI_BSEND(PFIELD(IXEND-JPHALO+1), JPHALO, MPI_PRECISION, &
+        CALL MPI_BSEND(PFIELD(IXEND-JPHALO+1), JPHALO, MNHREAL_MPI, &
              TCRRT_COMDATA%HALO1DX%NSEND_EAST(J)-1, &
              2, NMNH_COMM_WORLD, KINFO) 
      else
         !JUAN
         !if defined(MNH_MPI_ISEND)
         NB_REQ = NB_REQ + 1
-        CALL MPI_ISEND(PFIELD(IXEND-JPHALO+1), JPHALO, MPI_PRECISION, &
+        CALL MPI_ISEND(PFIELD(IXEND-JPHALO+1), JPHALO, MNHREAL_MPI, &
              TCRRT_COMDATA%HALO1DX%NSEND_EAST(J)-1, &
              2, NMNH_COMM_WORLD, REQ_TAB(NB_REQ), KINFO) 
         
@@ -519,11 +518,11 @@ INTEGER                                               :: NB_REQ
 !if defined(MNH_MPI_ISEND)
      IF ( .NOT. LMNH_MPI_BSEND) THEN
         NB_REQ = NB_REQ + 1
-        CALL MPI_IRECV(PFIELD(IXEND+1), JPHALO, MPI_PRECISION, &
+        CALL MPI_IRECV(PFIELD(IXEND+1), JPHALO, MNHREAL_MPI, &
              TCRRT_COMDATA%HALO1DX%NRECV_EAST-1, 1, &
              NMNH_COMM_WORLD, REQ_TAB(NB_REQ), KINFO)
      else
-        CALL MPI_RECV(PFIELD(IXEND+1), JPHALO, MPI_PRECISION, &
+        CALL MPI_RECV(PFIELD(IXEND+1), JPHALO, MNHREAL_MPI, &
              TCRRT_COMDATA%HALO1DX%NRECV_EAST-1, 1, &
              NMNH_COMM_WORLD, ISTATUS, KINFO)
      endif
@@ -537,11 +536,11 @@ INTEGER                                               :: NB_REQ
 !if defined(MNH_MPI_ISEND)
      IF ( .NOT. LMNH_MPI_BSEND) THEN
         NB_REQ = NB_REQ + 1
-        CALL MPI_IRECV(PFIELD(1), JPHALO, MPI_PRECISION, &
+        CALL MPI_IRECV(PFIELD(1), JPHALO, MNHREAL_MPI, &
              TCRRT_COMDATA%HALO1DX%NRECV_WEST-1, 2, &
              NMNH_COMM_WORLD, REQ_TAB(NB_REQ), KINFO)
      else
-        CALL MPI_RECV(PFIELD(1), JPHALO, MPI_PRECISION, &
+        CALL MPI_RECV(PFIELD(1), JPHALO, MNHREAL_MPI, &
              TCRRT_COMDATA%HALO1DX%NRECV_WEST-1, 2, &
              NMNH_COMM_WORLD, ISTATUS, KINFO)
      endif
@@ -586,7 +585,6 @@ INTEGER                                               :: NB_REQ
 !     Module MODD_VAR_ll
 !       TCRRT_COMDATA - Current communication data structure for current model
 !                        and local processor
-!       MPI_PRECISION - mpi precision
 !       JPHALO - size of the halo
 !
 !     Module MODD_DIM_ll
@@ -598,7 +596,8 @@ INTEGER                                               :: NB_REQ
 !*       0.    DECLARATIONS
 !
   USE MODD_DIM_ll, ONLY : CLBCX, CLBCY
-  USE MODD_VAR_ll, ONLY : TCRRT_COMDATA, JPHALO, MPI_PRECISION
+  use modd_precision, only: MNHREAL_MPI
+  USE MODD_VAR_ll, ONLY : TCRRT_COMDATA, JPHALO
 !
   USE MODE_TOOLS_ll, ONLY : GET_INDICE_ll, LNORTH_ll, LSOUTH_ll
 !
@@ -654,13 +653,13 @@ INTEGER                                               :: NB_REQ
 !
 !if defined(MNH_MPI_BSEND)
      IF (LMNH_MPI_BSEND) THEN
-        CALL MPI_BSEND(PFIELD(IYOR), JPHALO, MPI_PRECISION, &
+        CALL MPI_BSEND(PFIELD(IYOR), JPHALO, MNHREAL_MPI, &
              TCRRT_COMDATA%HALO1DY%NSEND_SOUTH(J)-1, &
              1, NMNH_COMM_WORLD, KINFO)
      else
         
         NB_REQ = NB_REQ + 1
-        CALL MPI_ISEND(PFIELD(IYOR), JPHALO, MPI_PRECISION, &
+        CALL MPI_ISEND(PFIELD(IYOR), JPHALO, MNHREAL_MPI, &
              TCRRT_COMDATA%HALO1DY%NSEND_SOUTH(J)-1, &
              1, NMNH_COMM_WORLD, REQ_TAB(NB_REQ), KINFO)
         
@@ -672,14 +671,14 @@ INTEGER                                               :: NB_REQ
 !
 !if defined(MNH_MPI_BSEND)
      IF (LMNH_MPI_BSEND) THEN
-        CALL MPI_BSEND(PFIELD(IYEND-JPHALO+1), JPHALO, MPI_PRECISION, &
+        CALL MPI_BSEND(PFIELD(IYEND-JPHALO+1), JPHALO, MNHREAL_MPI, &
              TCRRT_COMDATA%HALO1DY%NSEND_NORTH(J)-1, &
              2, NMNH_COMM_WORLD, KINFO) 
      else
         !JUAN
         !if defined(MNH_MPI_ISEND)
         NB_REQ = NB_REQ + 1
-        CALL MPI_ISEND(PFIELD(IYEND-JPHALO+1), JPHALO, MPI_PRECISION, &
+        CALL MPI_ISEND(PFIELD(IYEND-JPHALO+1), JPHALO, MNHREAL_MPI, &
              TCRRT_COMDATA%HALO1DY%NSEND_NORTH(J)-1, &
              2, NMNH_COMM_WORLD, REQ_TAB(NB_REQ), KINFO)
         
@@ -698,11 +697,11 @@ INTEGER                                               :: NB_REQ
 !if defined(MNH_MPI_ISEND)
      IF ( .NOT. LMNH_MPI_BSEND) THEN
         NB_REQ = NB_REQ + 1
-        CALL MPI_IRECV(PFIELD(IYEND+1), JPHALO, MPI_PRECISION, &
+        CALL MPI_IRECV(PFIELD(IYEND+1), JPHALO, MNHREAL_MPI, &
              TCRRT_COMDATA%HALO1DY%NRECV_NORTH-1, 1, &
              NMNH_COMM_WORLD, REQ_TAB(NB_REQ), KINFO)
      else
-        CALL MPI_RECV(PFIELD(IYEND+1), JPHALO, MPI_PRECISION, &
+        CALL MPI_RECV(PFIELD(IYEND+1), JPHALO, MNHREAL_MPI, &
              TCRRT_COMDATA%HALO1DY%NRECV_NORTH-1, 1, &
              NMNH_COMM_WORLD, ISTATUS, KINFO)
      endif
@@ -716,11 +715,11 @@ INTEGER                                               :: NB_REQ
 !if defined(MNH_MPI_ISEND)
      IF ( .NOT. LMNH_MPI_BSEND) THEN
         NB_REQ = NB_REQ + 1
-        CALL MPI_IRECV(PFIELD(1), JPHALO, MPI_PRECISION, &
+        CALL MPI_IRECV(PFIELD(1), JPHALO, MNHREAL_MPI, &
              TCRRT_COMDATA%HALO1DY%NRECV_SOUTH-1, 2, &
              NMNH_COMM_WORLD, REQ_TAB(NB_REQ), KINFO)
      else
-        CALL MPI_RECV(PFIELD(1), JPHALO, MPI_PRECISION, &
+        CALL MPI_RECV(PFIELD(1), JPHALO, MNHREAL_MPI, &
              TCRRT_COMDATA%HALO1DY%NRECV_SOUTH-1, 2, &
              NMNH_COMM_WORLD, ISTATUS, KINFO)
      endif
@@ -1898,7 +1897,6 @@ INTEGER                                               :: NB_REQ
 !       IP - Number of local processor=subdomain
 !       NCOMBUFFSIZE1 - buffer size
 !       NTRANS_COM - mpi communicator
-!       MPI_PRECISION - mpi precision
 !       NNEXTTAG, NMAXTAG - variable to define message tag
 !
 !     Module MODD_PARAMETERS_ll
@@ -1921,8 +1919,9 @@ INTEGER                                               :: NB_REQ
 !              ------------
 !
   USE MODD_ARGSLIST_ll, ONLY : LIST_ll
+  use modd_precision,    only: MNHREAL_MPI
   USE MODD_STRUCTURE_ll, ONLY : CRSPD_ll, ZONE_ll
-  USE MODD_VAR_ll, ONLY : NCOMBUFFSIZE1, IP, NTRANS_COM, MPI_PRECISION, &
+  USE MODD_VAR_ll, ONLY : NCOMBUFFSIZE1, IP, NTRANS_COM, &
                           NNEXTTAG, NMAXTAG
   USE MODD_PARAMETERS_ll, ONLY : JPVEXT
   USE MODD_DIM_ll, ONLY : NKMAX_TMP_ll
@@ -2095,11 +2094,11 @@ INTEGER                                               :: NB_REQ,NFIRST_REQ_RECV
 !
 !if defined(MNH_MPI_BSEND)
            IF (LMNH_MPI_BSEND) THEN
-              CALL MPI_BSEND(TZBUFFER, JINC, MPI_PRECISION, TZZONESEND%NUMBER - 1, &
+              CALL MPI_BSEND(TZBUFFER, JINC, MNHREAL_MPI, TZZONESEND%NUMBER - 1, &
                    TZZONESEND%MSSGTAG + ITAGOFFSET, NTRANS_COM, KERROR)
            else
               
-              CALL MPI_ISEND(TZBUFFER(1,NB_REQ), JINC, MPI_PRECISION, TZZONESEND%NUMBER - 1, &
+              CALL MPI_ISEND(TZBUFFER(1,NB_REQ), JINC, MNHREAL_MPI, TZZONESEND%NUMBER - 1, &
                    TZZONESEND%MSSGTAG + ITAGOFFSET, NTRANS_COM, REQ_TAB(NB_REQ), KERROR)
               
            endif
@@ -2127,13 +2126,13 @@ INTEGER                                               :: NB_REQ,NFIRST_REQ_RECV
         !if defined (MNH_MPI_ISEND)
         IF ( .NOT. LMNH_MPI_BSEND) THEN
            NB_REQ = NB_REQ + 1
-           !JUAN NZ   CALL MPI_IRECV(TZBUFFER(1,NB_REQ), NCOMBUFFSIZE1, MPI_PRECISION, &
-           CALL MPI_IRECV(TZBUFFER(1,NB_REQ), IBUFFSIZE, MPI_PRECISION, &
+           !JUAN NZ   CALL MPI_IRECV(TZBUFFER(1,NB_REQ), NCOMBUFFSIZE1, MNHREAL_MPI, &
+           CALL MPI_IRECV(TZBUFFER(1,NB_REQ), IBUFFSIZE, MNHREAL_MPI, &
                 TZZONERECV%NUMBER-1, TZZONERECV%MSSGTAG + ITAGOFFSET, &
                 NTRANS_COM, REQ_TAB(NB_REQ), KERROR)
         else
-           !JUAN NZ        CALL MPI_RECV(TZBUFFER, NCOMBUFFSIZE1, MPI_PRECISION, TZZONERECV%NUMBER-1, &
-           CALL MPI_RECV(TZBUFFER, IBUFFSIZE, MPI_PRECISION, TZZONERECV%NUMBER-1, &
+           !JUAN NZ        CALL MPI_RECV(TZBUFFER, NCOMBUFFSIZE1, MNHREAL_MPI, TZZONERECV%NUMBER-1, &
+           CALL MPI_RECV(TZBUFFER, IBUFFSIZE, MNHREAL_MPI, TZZONERECV%NUMBER-1, &
                 TZZONERECV%MSSGTAG + ITAGOFFSET, NTRANS_COM, IRECVSTATUS, KERROR)
            !JUAN 
            !       Z axe
@@ -2291,7 +2290,6 @@ INTEGER                                               :: NB_REQ,NFIRST_REQ_RECV
 !       IP - Number of local processor=subdomain
 !       NCOMBUFFSIZE1 - buffer size
 !       NTRANS_COM - mpi communicator
-!       MPI_PRECISION - mpi precision
 !       NNEXTTAG, NMAXTAG - variable to define message tag
 !
 !     Module MODD_PARAMETERS_ll
@@ -2310,8 +2308,9 @@ INTEGER                                               :: NB_REQ,NFIRST_REQ_RECV
 !-------------------------------------------------------------------------------
 !
   USE MODD_ARGSLIST_ll, ONLY : LIST_ll
+  use modd_precision, only: MNHREAL_MPI
   USE MODD_STRUCTURE_ll, ONLY : CRSPD_ll, ZONE_ll
-  USE MODD_VAR_ll, ONLY : NCOMBUFFSIZE1, IP, MPI_PRECISION, NNEXTTAG, NMAXTAG
+  USE MODD_VAR_ll, ONLY : NCOMBUFFSIZE1, IP, NNEXTTAG, NMAXTAG
   USE MODD_DIM_ll, ONLY : NKMAX_TMP_ll
   USE MODD_PARAMETERS_ll, ONLY : JPVEXT
 !
@@ -2454,12 +2453,12 @@ endif
           ! JUAN 
 !if defined(MNH_MPI_BSEND)
           IF (LMNH_MPI_BSEND) THEN
-             CALL MPI_BSEND(TZBUFFER, JINC, MPI_PRECISION, TZZONESEND%NUMBER - 1,  &
+             CALL MPI_BSEND(TZBUFFER, JINC, MNHREAL_MPI, TZZONESEND%NUMBER - 1,  &
                   TZZONESEND%MSSGTAG + ITAGOFFSET, KMPI_COMM,  KERROR)
           else
              ! JUAN
              !if defined (MNH_MPI_ISEND)
-             CALL MPI_ISEND(TZBUFFER(1,NB_REQ), JINC, MPI_PRECISION, TZZONESEND%NUMBER - 1,  &
+             CALL MPI_ISEND(TZBUFFER(1,NB_REQ), JINC, MNHREAL_MPI, TZZONESEND%NUMBER - 1,  &
                   TZZONESEND%MSSGTAG + ITAGOFFSET, KMPI_COMM, REQ_TAB(NB_REQ), KERROR)
              
           endif
@@ -2485,12 +2484,12 @@ endif
 !if defined (MNH_MPI_ISEND)
         IF ( .NOT. LMNH_MPI_BSEND) THEN
            NB_REQ = NB_REQ + 1
-           CALL MPI_IRECV(TZBUFFER(1,NB_REQ), IBUFFSIZE, MPI_PRECISION, &
+           CALL MPI_IRECV(TZBUFFER(1,NB_REQ), IBUFFSIZE, MNHREAL_MPI, &
                 TPMAILRECV%TELT%NUMBER -1 , &
                 TPMAILRECV%TELT%MSSGTAG + ITAGOFFSET, &
                 KMPI_COMM, REQ_TAB(NB_REQ), KERROR)
         else
-           CALL MPI_RECV(TZBUFFER, IBUFFSIZE, MPI_PRECISION, &
+           CALL MPI_RECV(TZBUFFER, IBUFFSIZE, MNHREAL_MPI, &
                 TPMAILRECV%TELT%NUMBER -1 , &
                 TPMAILRECV%TELT%MSSGTAG + ITAGOFFSET, &
                 KMPI_COMM, IRECVSTATUS, KERROR)

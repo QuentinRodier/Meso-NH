@@ -14,8 +14,9 @@
 #if defined(MNH_IOCDF4)
 module mode_io_tools_nc4
 
-use modd_io,     only: tfiledata
-use modd_netcdf, only: dimcdf, IDCDF_KIND, iocdf, tdim_dummy
+use modd_io,        only: tfiledata
+use modd_netcdf,    only: dimcdf, iocdf, tdim_dummy
+use modd_precision, only: CDFINT
 
 use mode_field,  only: tfielddata
 use mode_msg
@@ -329,7 +330,7 @@ END SUBROUTINE IO_Knowndims_set_nc4
 SUBROUTINE IO_Iocdf_dealloc_nc4(PIOCDF)
 TYPE(IOCDF),  POINTER :: PIOCDF
 
-INTEGER(KIND=IDCDF_KIND) :: IRESP
+INTEGER(KIND=CDFINT) :: IRESP
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Iocdf_dealloc_nc4','called')
 
@@ -357,10 +358,10 @@ END SUBROUTINE IO_Iocdf_dealloc_nc4
 
 
 SUBROUTINE IO_Vdims_fill_nc4(TPFILE, TPFIELD, KSHAPE, KVDIMS)
-TYPE(TFILEDATA),                      INTENT(IN)  :: TPFILE
-TYPE(TFIELDDATA),                     INTENT(IN)  :: TPFIELD
-INTEGER(KIND=IDCDF_KIND),DIMENSION(:),INTENT(IN)  :: KSHAPE
-INTEGER(KIND=IDCDF_KIND),DIMENSION(:),ALLOCATABLE,INTENT(OUT) :: KVDIMS
+TYPE(TFILEDATA),                              INTENT(IN)  :: TPFILE
+TYPE(TFIELDDATA),                             INTENT(IN)  :: TPFIELD
+INTEGER(KIND=CDFINT),DIMENSION(:),            INTENT(IN)  :: KSHAPE
+INTEGER(KIND=CDFINT),DIMENSION(:),ALLOCATABLE,INTENT(OUT) :: KVDIMS
 !
 INTEGER               :: IGRID
 INTEGER               :: JI
@@ -431,19 +432,19 @@ END SUBROUTINE IO_Vdims_fill_nc4
 
 
 FUNCTION IO_Dimcdf_get_nc4(TPFILE, KLEN, HDIMNAME)
-TYPE(TFILEDATA),         INTENT(IN) :: TPFILE
-INTEGER(KIND=IDCDF_KIND),INTENT(IN) :: KLEN
-CHARACTER(LEN=*), OPTIONAL :: HDIMNAME ! When provided don't search but
-                                       ! simply create with name HDIMNAME
+TYPE(TFILEDATA),            INTENT(IN) :: TPFILE
+INTEGER(KIND=CDFINT),       INTENT(IN) :: KLEN
+CHARACTER(LEN=*), OPTIONAL, INTENT(IN) :: HDIMNAME ! When provided don't search but
+                                                   ! simply create with name HDIMNAME
 TYPE(DIMCDF), POINTER   :: IO_Dimcdf_get_nc4
 
 TYPE(DIMCDF), POINTER :: TMP
 INTEGER               :: COUNT
 CHARACTER(LEN=16)     :: YSUFFIX
 CHARACTER(LEN=20)     :: YDIMNAME
-INTEGER(KIND=IDCDF_KIND) :: STATUS
-LOGICAL                  :: GCHKLEN !Check if KLEN is valid
-TYPE(IOCDF), POINTER     :: PIOCDF
+INTEGER(KIND=CDFINT)  :: STATUS
+LOGICAL               :: GCHKLEN !Check if KLEN is valid
+TYPE(IOCDF), POINTER  :: PIOCDF
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Dimcdf_get_nc4','called')
 
@@ -497,14 +498,14 @@ END FUNCTION IO_Dimcdf_get_nc4
 
 
 FUNCTION IO_Strdimid_get_nc4(TPFILE,KLEN)
-TYPE(TFILEDATA),         INTENT(IN) :: TPFILE
-INTEGER(KIND=IDCDF_KIND),INTENT(IN) :: KLEN
-INTEGER(KIND=IDCDF_KIND)            :: IO_Strdimid_get_nc4
+TYPE(TFILEDATA),      INTENT(IN) :: TPFILE
+INTEGER(KIND=CDFINT), INTENT(IN) :: KLEN
+INTEGER(KIND=CDFINT)             :: IO_Strdimid_get_nc4
 
 TYPE(DIMCDF), POINTER :: TMP
 TYPE(IOCDF),  POINTER :: TZIOCDF
 CHARACTER(LEN=16)     :: YSUFFIX
-INTEGER(KIND=IDCDF_KIND) :: STATUS
+INTEGER(KIND=CDFINT)  :: STATUS
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Strdimid_get_nc4','called')
 
@@ -557,11 +558,11 @@ END FUNCTION IO_Iocdf_alloc_nc4
 
 
 subroutine IO_Err_handle_nc4(kstatus,hsubr,hncsubr,hvar,kresp)
-integer(kind=IDCDF_KIND),intent(in)  :: kstatus
-character(len=*),        intent(in)  :: hsubr
-character(len=*),        intent(in)  :: hncsubr
-character(len=*),        intent(in)  :: hvar
-integer, optional,       intent(out) :: kresp
+integer(kind=CDFINT), intent(in)  :: kstatus
+character(len=*),     intent(in)  :: hsubr
+character(len=*),     intent(in)  :: hncsubr
+character(len=*),     intent(in)  :: hvar
+integer, optional,    intent(out) :: kresp
 
 ! Don't stop (by default) the code when kresp is present
 ! and ensure kresp is a negative integer

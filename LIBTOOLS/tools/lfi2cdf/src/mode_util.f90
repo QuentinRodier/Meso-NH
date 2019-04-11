@@ -9,8 +9,9 @@
 !-----------------------------------------------------------------
 MODULE mode_util
   USE MODD_IO,         ONLY: TFILE_ELT
-  USE MODD_NETCDF,     ONLY: DIMCDF, IDCDF_KIND
+  USE MODD_NETCDF,     ONLY: DIMCDF, CDFINT
   USE MODD_PARAMETERS, ONLY: NLFIMAXCOMMENTLENGTH, NMNHNAMELGTMAX
+  use modd_precision,  only: LFIINT
 
   USE MODE_FIELD
   USE MODE_IO_FIELD_READ
@@ -50,8 +51,8 @@ MODULE mode_util
      TYPE(DIMCDF),DIMENSION(:),ALLOCATABLE :: TDIMS  ! Dimensions of the field
   END TYPE workfield
 
-  LOGICAL(KIND=LFI_INT), PARAMETER :: ltrue  = .TRUE.
-  LOGICAL(KIND=LFI_INT), PARAMETER :: lfalse = .FALSE.
+  LOGICAL(KIND=LFIINT), PARAMETER :: ltrue  = .TRUE.
+  LOGICAL(KIND=LFIINT), PARAMETER :: lfalse = .FALSE.
 
   CHARACTER(LEN=6) :: CPROGRAM_ORIG
 
@@ -87,9 +88,9 @@ CONTAINS
     INTEGER                                  :: leng
     INTEGER                                  :: IID, IRESP, IDATES, ICURDATE
     INTEGER                                  :: IDXDATE, IDXTIME
-    INTEGER(KIND=LFI_INT)                    :: iresp2,ilu,ileng,ipos
-    INTEGER(KIND=IDCDF_KIND)                 :: kcdf_id, kcdf_id2, var_id
-    INTEGER(KIND=IDCDF_KIND)                 :: status
+    INTEGER(KIND=LFIINT)                     :: iresp2,ilu,ileng,ipos
+    INTEGER(KIND=CDFINT)                     :: kcdf_id, kcdf_id2, var_id
+    INTEGER(KIND=CDFINT)                     :: status
     LOGICAL                                  :: ladvan
     LOGICAL                                  :: GOK
     TYPE(TLFIDATE),DIMENSION(MAXDATES)       :: TLFIDATES
@@ -629,8 +630,8 @@ END DO
     CHARACTER(LEN=16) :: YMNHVERSION
     CHARACTER(LEN=:),ALLOCATABLE :: YHISTORY
     INTEGER :: ilen, ji
-    INTEGER(KIND=IDCDF_KIND) :: status
-    INTEGER(KIND=IDCDF_KIND) :: kcdf_id
+    INTEGER(KIND=CDFINT) :: status
+    INTEGER(KIND=CDFINT) :: kcdf_id
 
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','def_ncdf','called')
@@ -683,7 +684,7 @@ END DO
     INTEGER                                  :: IDIMS
     INTEGER                                  :: INSRC
     INTEGER                                  :: ISRC
-    INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: IDIMLEN
+    INTEGER(KIND=CDFINT),DIMENSION(NF90_MAX_VAR_DIMS) :: IDIMLEN
     logical,dimension(knaf)                  :: gtimedep_in, gtimedep_out
 
     CHARACTER(LEN=:),       ALLOCATABLE :: YTAB0D
@@ -959,10 +960,10 @@ END DO
     TYPE(option),DIMENSION(:),   INTENT(IN)  :: options
     INTEGER,                     INTENT(IN)  :: runmode
 
-    INTEGER                     :: idx, IRESP2
-    INTEGER(KIND=IDCDF_KIND)    :: omode
-    INTEGER(KIND=IDCDF_KIND)    :: status
-    INTEGER(KIND=LFI_INT)       :: ilu,iresp
+    INTEGER              :: idx, IRESP2
+    INTEGER(KIND=CDFINT) :: omode
+    INTEGER(KIND=CDFINT) :: status
+    INTEGER(KIND=LFIINT) :: ilu,iresp
 
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_FILES','called')
@@ -1112,8 +1113,8 @@ END DO
     CHARACTER(LEN=NMNHNAMELGTMAX),DIMENSION(nbvar) :: YVARS
     INTEGER                  :: ji
     INTEGER                  :: idx1, idx2
-    INTEGER(KIND=IDCDF_KIND) :: status
-    INTEGER(KIND=IDCDF_KIND) :: omode
+    INTEGER(KIND=CDFINT)     :: status
+    INTEGER(KIND=CDFINT)     :: omode
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_SPLIT_NCFILES_OUT','called')
 
@@ -1184,14 +1185,14 @@ END DO
     USE MODD_DIM_n,      ONLY: NKMAX
     USE MODD_PARAMETERS, ONLY: JPVEXT
 
-    INTEGER(KIND=IDCDF_KIND), INTENT(IN)    :: KFILE_ID
-    INTEGER(KIND=IDCDF_KIND), INTENT(IN)    :: KVAR_ID
-    TYPE(workfield),          INTENT(INOUT) :: TPREC
+    INTEGER(KIND=CDFINT), INTENT(IN)    :: KFILE_ID
+    INTEGER(KIND=CDFINT), INTENT(IN)    :: KVAR_ID
+    TYPE(workfield),      INTENT(INOUT) :: TPREC
 
     INTEGER                                  :: ILENG
     INTEGER                                  :: JDIM
-    INTEGER(KIND=IDCDF_KIND)                 :: ISTATUS
-    INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: IDIMS_ID
+    INTEGER(KIND=CDFINT)                     :: ISTATUS
+    INTEGER(KIND=CDFINT),DIMENSION(NF90_MAX_VAR_DIMS) :: IDIMS_ID
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Metadata_get_nc4','called')
 

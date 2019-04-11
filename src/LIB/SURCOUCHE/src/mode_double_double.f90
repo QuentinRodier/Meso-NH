@@ -43,24 +43,13 @@ MODULE mode_repro_sum
 CONTAINS
 
   SUBROUTINE INIT_DD(KINFO)
+    use modd_precision, only: MNHREAL_MPI
     IMPLICIT NONE
     INTEGER, INTENT(OUT) :: KINFO ! MPI return status
-    REAL                 :: REAL_DEFAULT
-    INTEGER,PARAMETER    :: REAL_KIND=KIND(REAL_DEFAULT)
-    INTEGER              :: MNH_MPI_REAL
-
-    !
-    ! find the default type of REAL for MESONH on MPI
-    !
-     IF (REAL_KIND .EQ. 4 ) THEN
-        MNH_MPI_REAL = MPI_REAL4
-     ELSE
-        MNH_MPI_REAL = MPI_REAL8
-    END IF
     !
     ! define the double-double for MPI
     !
-    CALL MPI_TYPE_CONTIGUOUS(2, MNH_MPI_REAL ,MNH_DOUBLE_DOUBLE , KINFO)
+    CALL MPI_TYPE_CONTIGUOUS(2, MNHREAL_MPI ,MNH_DOUBLE_DOUBLE , KINFO)
     CALL MPI_TYPE_COMMIT(MNH_DOUBLE_DOUBLE , KINFO)
     !
     ! define the double-double sum = MNH_SUM_DD  for MPI 

@@ -103,9 +103,10 @@ END MODULE MODI_SPAWN_ZS
 !*       0.     DECLARATIONS
 !               ------------
 !
-USE MODD_PARAMETERS, ONLY : JPHEXT       ! Declarative modules
-USE MODD_CONF,       ONLY : NVERB
+USE MODD_PARAMETERS, ONLY: JPHEXT       ! Declarative modules
+USE MODD_CONF,       ONLY: NVERB
 USE MODD_LUNIT_n,    ONLY: TLUOUT
+use modd_precision,  only: MNHREAL_MPI
 !
 USE MODD_BIKHARDT_n
 !
@@ -191,7 +192,7 @@ INTEGER                :: KDXRATIO_C, KDYRATIO_C
 !$20140704
 !$20140711 not INT, REAL !!
 REAL                   :: ZMAXVAL
-REAL                   :: LOCMAXVAL
+REAL                   :: ZLOCMAXVAL
 !$20140801
 INTEGER                :: IORX, IORY, IIBINT,IJBINT,IIEINT,IJEINT
 INTEGER                :: IXOR_C_ll, IXEND_C_ll  ! origin and end of the local subdomain of the child model 2
@@ -413,8 +414,8 @@ IF (KDXRATIO/=1 .OR. KDYRATIO/=1) THEN
 !
     ALLOCATE(ZDZS_3D(SIZE(ZDZS_C,1),SIZE(ZDZS_C,2),1))  ! WARNING : this is highly inefficient, this copy is unecessary
     ZDZS_3D(:,:,1)=ZDZS_C(:,:)                          ! We could write a function MAX2D_ll or use a POINTER for ZDZS_3D
-    LOCMAXVAL=MAXVAL(ABS(ZDZS_C))
-    CALL MPI_ALLREDUCE(LOCMAXVAL,ZMAXVAL,1,MPI_PRECISION,MPI_MAX,NMNH_COMM_WORLD,IINFO_ll)
+    ZLOCMAXVAL=MAXVAL(ABS(ZDZS_C))
+    CALL MPI_ALLREDUCE(ZLOCMAXVAL,ZMAXVAL,1,MNHREAL_MPI,MPI_MAX,NMNH_COMM_WORLD,IINFO_ll)
     IF (ZMAXVAL<1.E-3) THEN
       EXIT
     ENDIF

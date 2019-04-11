@@ -14,6 +14,7 @@ module mode_io_read_lfi
 !
 USE MODD_IO
 USE MODD_PARAMETERS, ONLY: NLFIMAXCOMMENTLENGTH
+use modd_precision,  only: LFIINT
 !
 USE MODE_FIELD, ONLY : TFIELDDATA
 USE MODE_MSG
@@ -55,7 +56,7 @@ INTEGER,          INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFI_INT)                    :: IRESP,ITOTAL
+INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
 INTEGER                                  :: ILENG
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 LOGICAL                                  :: GGOOD
@@ -94,7 +95,7 @@ INTEGER,          INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFI_INT)                    :: IRESP,ITOTAL
+INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
 INTEGER                                  :: ILENG
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 LOGICAL                                  :: GGOOD
@@ -128,7 +129,7 @@ INTEGER,            INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFI_INT)                    :: IRESP,ITOTAL
+INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
 INTEGER                                  :: ILENG
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 LOGICAL                                  :: GGOOD
@@ -162,7 +163,7 @@ INTEGER,              INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFI_INT)                    :: IRESP,ITOTAL
+INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
 INTEGER                                  :: ILENG
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 LOGICAL                                  :: GGOOD
@@ -196,7 +197,7 @@ INTEGER,                INTENT(OUT)   :: KRESP   ! return-code if problems occur
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFI_INT)                    :: IRESP,ITOTAL
+INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
 INTEGER                                  :: ILENG
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 LOGICAL                                  :: GGOOD
@@ -230,7 +231,7 @@ INTEGER,                  INTENT(OUT)   :: KRESP   ! return-code if problems occ
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFI_INT)                    :: IRESP,ITOTAL
+INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
 INTEGER                                  :: ILENG
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 LOGICAL                                  :: GGOOD
@@ -264,7 +265,7 @@ INTEGER,                    INTENT(OUT)   :: KRESP   ! return-code if problems o
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFI_INT)                    :: IRESP,ITOTAL
+INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
 INTEGER                                  :: ILENG
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 LOGICAL                                  :: GGOOD
@@ -298,7 +299,7 @@ INTEGER,         INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFI_INT)                    :: IRESP,ITOTAL
+INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
 INTEGER                                  :: ILENG
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 LOGICAL                                  :: GGOOD
@@ -332,7 +333,7 @@ INTEGER,             INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFI_INT)                    :: IRESP,ITOTAL
+INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
 INTEGER                                  :: ILENG
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 LOGICAL                                  :: GGOOD
@@ -366,7 +367,7 @@ INTEGER,               INTENT(OUT)   :: KRESP   ! return-code if problems occure
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFI_INT)                    :: IRESP,ITOTAL
+INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
 INTEGER                                  :: ILENG
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 LOGICAL                                  :: GGOOD
@@ -400,7 +401,7 @@ INTEGER,         INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFI_INT)                    :: IRESP,ITOTAL
+INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
 INTEGER                                  :: ILENG
 INTEGER                                  :: IFIELD
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
@@ -447,7 +448,7 @@ INTEGER,             INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFI_INT)                    :: IRESP,ITOTAL
+INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
 INTEGER                                  :: ILENG
 INTEGER                                  :: JI
 INTEGER, DIMENSION(SIZE(OFIELD))         :: IFIELD
@@ -502,7 +503,7 @@ INTEGER,         INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFI_INT)                    :: IRESP,ITOTAL
+INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
 INTEGER                                  :: ILENG, ILENGMAX, JLOOP
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 LOGICAL                                  :: GGOOD
@@ -552,7 +553,7 @@ INTEGER,         INTENT(OUT)   :: KRESP   ! return-code if problems occured
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER(KIND=LFI_INT)                    :: IRESP, ITOTAL
+INTEGER(KIND=LFIINT)                     :: IRESP, ITOTAL
 INTEGER                                  :: ILENG
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 LOGICAL                                  :: GGOOD
@@ -616,13 +617,13 @@ TYPE(TFILEDATA),                         INTENT(IN)    :: TPFILE
 TYPE(TFIELDDATA),                        INTENT(INOUT) :: TPFIELD
 INTEGER,                                 INTENT(IN)    :: KLENG
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE,INTENT(OUT)   :: KWORK
-INTEGER(KIND=LFI_INT),                   INTENT(OUT)   :: KTOTAL
-INTEGER(KIND=LFI_INT),                   INTENT(OUT)   :: KRESP
+INTEGER(KIND=LFIINT),                    INTENT(OUT)   :: KTOTAL
+INTEGER(KIND=LFIINT),                    INTENT(OUT)   :: KRESP
 LOGICAL,                                 INTENT(OUT)   :: OGOOD
 !
 INTEGER                      :: IERRLEVEL,IROW,J
 INTEGER,DIMENSION(JPXKRK)    :: ICOMMENT
-INTEGER(KIND=LFI_INT)        :: ICOMLEN,INUMBR,IPOSEX
+INTEGER(KIND=LFIINT)         :: ICOMLEN,INUMBR,IPOSEX
 CHARACTER(LEN=:),ALLOCATABLE :: YMSG
 CHARACTER(LEN=12)            :: YRECLENGTH_FILE, YRECLENGTH_MEM
 CHARACTER(LEN=12)            :: YVAL_FILE, YVAL_MEM

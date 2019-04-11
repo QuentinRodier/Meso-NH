@@ -3,15 +3,6 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-
-#ifdef MNH_MPI_DOUBLE_PRECISION
-#define MNH_MPI_REAL MPI_DOUBLE_PRECISION
-#define MNH_MPI_2REAL MPI_2DOUBLE_PRECISION
-#else
-#define MNH_MPI_REAL MPI_REAL
-#define MNH_MPI_2REAL MPI_2REAL
-#endif
-
 !       ########################
 MODULE MODE_SPLITTINGZ_ll
   !     ########################
@@ -179,9 +170,6 @@ CONTAINS
     CALL MPI_COMM_DUP(NMNH_COMM_WORLD, NTRANS_COM, KINFO_ll)
     !
     CALL MPI_COMM_DUP(NMNH_COMM_WORLD, NGRID_COM, KINFO_ll)
-    !
-    MPI_PRECISION  = MNH_MPI_REAL
-    MPI_2PRECISION = MNH_MPI_2REAL
     !
     ! For bug with intelmpi+ilp64+i8 declare MNH_STATUSES_IGNORE
     !
@@ -1813,12 +1801,10 @@ END FUNCTION LSOUTHZ_ll
     SUBROUTINE ALL_SEND_RECV(TSEND_BOX_FROM,TRECV_BOX_TO, &
          PFIELDIN, PFIELDOUT, KINFO)
       !
-      USE MODD_STRUCTURE_ll , ONLY : BOX_ll
-      USE MODD_VAR_ll       , ONLY : MPI_PRECISION
-      !JUANZ
-      !USE MODD_MPIF         , ONLY : MPI_COMM_WORLD
-      USE MODD_VAR_ll        , ONLY : NMNH_COMM_WORLD
-      !JUANZ
+      use modd_precision,    only: MNHREAL_MPI
+      USE MODD_STRUCTURE_ll, ONLY: BOX_ll
+      USE MODD_VAR_ll,       ONLY: NMNH_COMM_WORLD
+      !
       IMPLICIT NONE
       !
       ! Argument
@@ -1851,8 +1837,8 @@ END FUNCTION LSOUTHZ_ll
          END IF
       END DO
       !
-      CALL mpi_alltoallv(ZSEND,TSEND_BOX_FROM%NCNT,TSEND_BOX_FROM%NSTRT,MPI_PRECISION,&
-                         ZRECV,TRECV_BOX_TO%NCNT  ,TRECV_BOX_TO%NSTRT  ,MPI_PRECISION,&
+      CALL mpi_alltoallv(ZSEND,TSEND_BOX_FROM%NCNT,TSEND_BOX_FROM%NSTRT,MNHREAL_MPI,&
+                         ZRECV,TRECV_BOX_TO%NCNT  ,TRECV_BOX_TO%NSTRT  ,MNHREAL_MPI,&
                          TSEND_BOX_FROM%NCOM,KINFO)
       !
       JCNT = 0

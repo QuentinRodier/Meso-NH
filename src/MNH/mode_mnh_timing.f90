@@ -2,42 +2,56 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!------------------------------------------------------------------------
 MODULE MODE_MNH_TIMING
 !
-! Modification :
-! J.ESCOBAR 13/11/2008 : change (2) in (:) for bug in IBM-SP6 compiler
-! J.Escobar 1/09/2011  : reduce 'timing' format
-! J.Escobar 12/02/2013 : tribulle to slow on large BG partition , inhib it by a early return in the code 
-! Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
-!
+! Modifications:
+!  J. escobar  13/11/2008: change (2) in (:) for bug in IBM-SP6 compiler
+!  J. Escobar  01/09/2011: reduce 'timing' format
+!  J. Escobar  12/02/2013: triabulle too slow on large BG partition, inhib it by a early return in the code
+!  P. Wautelet 10/01/2019: use NEWUNIT argument of OPEN
+!  P. Wautelet 22/03/2019: use MNHREAL64 and MNHREAL64_MPI + typo corrections
+!  P. Wautelet 27/03/2019: use MNHTIME and MNHTIME_MPI instead of MNHREAL64 and MNHREAL64_MPI
+!  P. Wautelet 28/03/2019: use TFILE instead of unit number for set_iluout_timing
+!------------------------------------------------------------------------
 
-INTEGER     :: NLUOUT_TIMING
+implicit none
+
+private
+
+public :: SECOND_MNH2, SET_ILUOUT_TIMING, TIME_HEADER_ll, TIME_STAT_ll
+public :: TIMING_SEPARATOR, TIMING_LEGEND
+
+INTEGER :: NLUOUT_TIMING
 
 CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+subroutine second_mnh2(xt)
 
-SUBROUTINE SECOND_MNH2(XT)
-!
 USE modd_mpif
-!
-REAL*8,DIMENSION(2)           :: XT
-!
-CALL CPU_TIME(XT(1))
-XT(2) = MPI_Wtime()
-END SUBROUTINE SECOND_MNH2
+use modd_precision, only: MNHTIME
 
+real(kind=MNHTIME),dimension(2) :: xt
+
+call cpu_time( xt(1) )
+xt(2) = MPI_WTIME()
+
+end subroutine second_mnh2
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+subroutine set_iluout_timing(tfile)
 
-!JUAN
-      SUBROUTINE SET_ILUOUT_TIMING(KLUOUT)
-        IMPLICIT NONE
-        INTEGER, INTENT(IN) :: KLUOUT
-        NLUOUT_TIMING = KLUOUT
-      END SUBROUTINE SET_ILUOUT_TIMING
+use modd_io, only: tfiledata
 
+implicit none
+
+type(tfiledata), intent(in) :: tfile
+
+nluout_timing = tfile%nlu
+
+end subroutine set_iluout_timing
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -53,7 +67,7 @@ END SUBROUTINE SECOND_MNH2
       
       SUBROUTINE TIMING_LEGEND()
         CALL  TIMING_SEPARATOR('-')
-        WRITE(NLUOUT_TIMING,FMT="( '|     CPUTIM/ELAPSE                     |&
+        WRITE(NLUOUT_TIMING,FMT="( '|     CPUTIME/ELAPSED                   |&
          &|   SUM(PROC)   |MEAN(PROC)| MIN(PROC | MAX(PROC)| PERCENT %|')" ) 
         CALL  TIMING_SEPARATOR('-')
       END SUBROUTINE TIMING_LEGEND
@@ -84,33 +98,30 @@ END SUBROUTINE SECOND_MNH2
 !*       0.    DECLARATIONS
 !
   USE MODD_MPIF
-  USE MODD_VAR_ll, ONLY : MPI_PRECISION, NPROC, IP
-  !JUANZ
-  USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD
-  !JUANZ
+  use modd_precision, only: MNHTIME, MNHTIME_MPI
+  USE MODD_VAR_ll,    ONLY: IP, NMNH_COMM_WORLD, NPROC
   !
   IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 ! 
-  REAL*8,DIMENSION(:), INTENT(IN)         :: PRES ! (1)=CPU & (2)=ELAPSE Proccessors Timing
-!
-  REAL*8,DIMENSION(:), INTENT(INOUT)      :: PSUM ! (1)=SUM(CPU) & (2)=SUM(ELAPSE) Timing
-!
-  CHARACTER(len=*),  INTENT(IN),OPTIONAL :: HPRINT
-  CHARACTER       ,  INTENT(IN),OPTIONAL :: HSEP
-  CHARACTER(len=*),  INTENT(IN),OPTIONAL :: HFULL
+  REAL(kind=MNHTIME), DIMENSION(:), INTENT(IN)    :: PRES ! (1)=CPU & (2)=ELAPSED Processes Timing
+  REAL(kind=MNHTIME), DIMENSION(:), INTENT(INOUT) :: PSUM ! (1)=SUM(CPU) & (2)=SUM(ELAPSED) Timing
+  CHARACTER(len=*), OPTIONAL,       INTENT(IN)    :: HPRINT
+  CHARACTER       , OPTIONAL,       INTENT(IN)    :: HSEP
+  CHARACTER(len=*), OPTIONAL,       INTENT(IN)    :: HFULL
 !
 !*       0.2   Declarations of local variables :
 !
   INTEGER,PARAMETER         :: NSTAT=5
-  REAL*8,DIMENSION(2,NSTAT) :: ZSTAT ! (1)=Sum(proc),(2)=Sum/Nproc,(3)=Min(proc),(4)=Max(proc),(5)=Purcent(1)
+
   INTEGER                   :: INFO,IROOT,JP
   CHARACTER(len=30)         :: VIDE = ""
-  CHARACTER(len=30)        :: FILE = ""
+  CHARACTER(len=30)         :: FILE = ""
   INTEGER                   :: IC
 
-  REAL*8,DIMENSION(2,NPROC)   :: ZSTAT_ALL 
+  REAL(kind=MNHTIME), DIMENSION(2,NSTAT) :: ZSTAT ! (1)=Sum(proc),(2)=Sum/Nproc,(3)=Min(proc),(4)=Max(proc),(5)=Percent(1)
+  REAL(kind=MNHTIME), DIMENSION(2,NPROC) :: ZSTAT_ALL
   INTEGER, DIMENSION(NPROC) :: IND
   INTEGER :: ILU
 !
@@ -120,15 +131,15 @@ END SUBROUTINE SECOND_MNH2
 !           ------------------------------
 INFO = -1
 ! 1.1 Sum(Proc)
-  CALL MPI_ALLREDUCE(PRES, ZSTAT(:,1), 2, MPI_REAL8, &
+  CALL MPI_ALLREDUCE(PRES, ZSTAT(:,1), 2, MNHTIME_MPI, &
                      MPI_SUM, NMNH_COMM_WORLD, INFO)
 ! 1.2 Sum/Proc
   ZSTAT(:,2) = ZSTAT(:,1 ) / NPROC
 ! 1.3 Min(Proc)
-  CALL MPI_ALLREDUCE(PRES, ZSTAT(:,3), 2, MPI_REAL8, &
+  CALL MPI_ALLREDUCE(PRES, ZSTAT(:,3), 2, MNHTIME_MPI, &
                      MPI_MIN, NMNH_COMM_WORLD, INFO)
 ! 1.4 Max(Proc)
-  CALL MPI_ALLREDUCE(PRES, ZSTAT(:,4), 2, MPI_REAL8, &
+  CALL MPI_ALLREDUCE(PRES, ZSTAT(:,4), 2, MNHTIME_MPI, &
                      MPI_MAX, NMNH_COMM_WORLD, INFO)
 
 
@@ -138,8 +149,8 @@ INFO = -1
   !
 
   ELSEIF ( ZSTAT(1,1) > 0.0 ) THEN
-   ! use Psum , for print stat & pourcent
-   ! Purcent
+   ! use Psum , for print stat & percent
+   ! Percent
      WHERE ( PSUM /= 0.0 )
         ZSTAT(:,5) = 100.0 * ZSTAT(:,1) / PSUM(:)
      ELSEWHERE
@@ -148,14 +159,14 @@ INFO = -1
    ! print stat
    !
    IF (PRESENT(HSEP)) CALL  TIMING_SEPARATOR(HSEP)
-   WRITE(NLUOUT_TIMING,FMT= "('|',A30,'| CPUTIM ||',F15.3,'|',4(F10.3,'|'),F7.3,'|')" ) HPRINT//VIDE,ZSTAT(1,:)
-   WRITE(NLUOUT_TIMING,FMT= "('|',A30,'| ELAPSE ||',F15.3,'|',4(F10.3,'|'),F7.3,'|')" ) HPRINT//VIDE,ZSTAT(2,:)
+   WRITE(NLUOUT_TIMING,FMT= "('|',A29,'| CPUTIME ||',F15.3,'|',4(F10.3,'|'),F7.3,'|')" ) HPRINT//VIDE,ZSTAT(1,:)
+   WRITE(NLUOUT_TIMING,FMT= "('|',A29,'| ELAPSED ||',F15.3,'|',4(F10.3,'|'),F7.3,'|')" ) HPRINT//VIDE,ZSTAT(2,:)
 
    IF (PRESENT(HFULL)) THEN
       ! gather all data
       !CALL  TIMING_SEPARATOR(HSEP)
       IROOT = 0
-      CALL MPI_GATHER(PRES(:),2,MPI_REAL8,ZSTAT_ALL(:,1),2,MPI_REAL8,&
+      CALL MPI_GATHER(PRES(:),2,MNHTIME_MPI,ZSTAT_ALL(:,1),2,MNHTIME_MPI,&
            IROOT,NMNH_COMM_WORLD, INFO)
       IF (IP.EQ.1) THEN
          FILE = trim(adjustl(HPRINT))
@@ -188,17 +199,17 @@ INFO = -1
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 subroutine triabulle(vec,ind)
+use modd_precision, only: MNHTIME
+
 implicit none
 
-real*8   , intent(inout)   :: vec(:)
-integer, intent(out)  :: ind(:)
-
-
-integer               :: n 
+real(kind=MNHTIME), dimension(:), intent(inout) :: vec
+integer,            dimension(:), intent(out)   :: ind
 
 logical :: a
 integer :: i
 integer :: mem
+integer :: n
 
 n = size(vec)
 a = .true.
@@ -207,7 +218,7 @@ do i=1,n
 enddo
 
 return
-!JUAN TO SLOW ON BG !!!
+!JUAN TOO SLOW ON BG !!!
 
 do while (a)
    a=.false.

@@ -20,6 +20,8 @@
 MODULE MODE_IO_MANAGE_STRUCT
 !
 USE MODD_IO
+use modd_precision, only: LFIINT
+!
 USE MODE_MSG
 !
 IMPLICIT NONE
@@ -660,7 +662,7 @@ CHARACTER(LEN=*),       OPTIONAL,INTENT(IN)    :: HFORM     !Formatted/unformatt
 CHARACTER(LEN=*),       OPTIONAL,INTENT(IN)    :: HACCESS   !Direct/sequential/stream
 CHARACTER(LEN=*),       OPTIONAL,INTENT(IN)    :: HFORMAT   !Fileformat (NETCDF4, LFI, LFICDF4...)
 CHARACTER(LEN=*),       OPTIONAL,INTENT(IN)    :: HDIRNAME  !File directory
-INTEGER(KIND=LFI_INT),  OPTIONAL,INTENT(IN)    :: KLFINPRAR !Number of predicted articles of the LFI file (non crucial)
+INTEGER(KIND=LFIINT),   OPTIONAL,INTENT(IN)    :: KLFINPRAR !Number of predicted articles of the LFI file (non crucial)
 INTEGER,                OPTIONAL,INTENT(IN)    :: KLFITYPE  !Type of the file (used to generate list of files to transfers)
 INTEGER,                OPTIONAL,INTENT(IN)    :: KLFIVERB  !LFI verbosity level
 INTEGER,                OPTIONAL,INTENT(IN)    :: KRECL     !Record length
@@ -673,7 +675,7 @@ LOGICAL,                OPTIONAL,INTENT(IN)    :: OOLD      !FALSE if new file (
 logical,                optional,intent(in)    :: osplit_ioz !Is the file split vertically
 !
 INTEGER :: IMI,IRESP
-INTEGER(KIND=LFI_INT) :: ILFINPRAR
+INTEGER(KIND=LFIINT) :: ILFINPRAR
 INTEGER :: ILFITYPE
 INTEGER :: ILFIVERB
 LOGICAL :: GOLD

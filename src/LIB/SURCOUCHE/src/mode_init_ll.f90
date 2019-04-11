@@ -3,15 +3,6 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-
-#ifdef MNH_MPI_DOUBLE_PRECISION
-#define MNH_MPI_REAL MPI_DOUBLE_PRECISION
-#define MNH_MPI_2REAL MPI_2DOUBLE_PRECISION
-#else
-#define MNH_MPI_REAL MPI_REAL
-#define MNH_MPI_2REAL MPI_2REAL
-#endif
-
 !     ###################
       MODULE MODE_INIT_ll
 !     ###################
@@ -61,8 +52,6 @@
   USE MODD_MPIF
 !
   IMPLICIT NONE
-!
-!  INCLUDE 'mpif.h'
 !
   CONTAINS
 !
@@ -554,9 +543,6 @@
         CALL MPI_COMM_DUP(NMNH_COMM_WORLD, NGRID_COM, KINFO_ll)
         !
         IP = IP + 1
-        !
-        MPI_PRECISION  = MNH_MPI_REAL
-        MPI_2PRECISION = MNH_MPI_2REAL
         !
         !-------------------------------------------------------------------------------
         !

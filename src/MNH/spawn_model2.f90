@@ -193,7 +193,8 @@ END MODULE MODI_SPAWN_MODEL2
 !!                    10/2016 (C.Lac) Add droplet deposition
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
-!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  S. Bielli      02/2019:  sea salt: significant sea wave height influences salt emission; 5 salt modes
+!  P. Wautelet 22/02/2019: replace Hollerith edit descriptor (deleted from Fortran 95 standard)
 !  P. Wautelet 14/03/2019: correct ZWS when variable not present in file
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !-------------------------------------------------------------------------------
@@ -234,6 +235,7 @@ USE MODD_PASPOL_n
 !$20140515
 USE MODD_VAR_ll, ONLY : NPROC
 USE MODD_IO, ONLY: TFILEDATA,TFILE_DUMMY,TFILE_SURFEX
+use modd_precision, only: MNHREAL_MPI
 !
 USE MODE_GRIDCART         ! Executive modules
 USE MODE_GRIDPROJ
@@ -290,6 +292,7 @@ USE MODD_PASPOL, ONLY : LPASPOL
 !
 USE MODD_MPIF
 USE MODD_VAR_ll
+use modd_precision, only: LFIINT
 !
 IMPLICIT NONE
 !
@@ -317,7 +320,7 @@ LOGICAL,               INTENT(IN) :: OSPAWN_SURF  ! flag to spawn surface fields
 !
 !
 INTEGER :: ILUOUT   ! Logical unit number for the output listing 
-INTEGER(KIND=LFI_INT) :: INPRAR ! Number of articles predicted in the LFIFM file
+INTEGER(KIND=LFIINT) :: INPRAR ! Number of articles predicted in the LFIFM file
 !
 !
 INTEGER             :: IIU            ! Upper dimension in x direction
@@ -1158,7 +1161,7 @@ ZTIME1  = ZTIME2
 !* vertical interpolation
 !
 ZZS_MAX = ABS( MAXVAL(XZS(:,:)))
-CALL MPI_ALLREDUCE(ZZS_MAX, ZZS_MAX_ll, 1, MPI_PRECISION, MPI_MAX,  &
+CALL MPI_ALLREDUCE(ZZS_MAX, ZZS_MAX_ll, 1, MNHREAL_MPI, MPI_MAX,  &
                      NMNH_COMM_WORLD,IINFO_ll)
 IF ( (ZZS_MAX_ll>0.) .AND. (NDXRATIO/=1 .OR. NDYRATIO/=1) )  THEN
   CALL MPPDB_CHECK3D(XUT,"SPAWN_M2 before VER_INTERP_FIELD:XUT",PRECISION)
@@ -1203,7 +1206,7 @@ IF (NVERB>=2) THEN
   WRITE(ILUOUT,*) ' '
   WRITE(ILUOUT,*) 'humidity     (I=',IIJ(1),';J=',IIJ(2),')'
   DO JK=IKB,IKE
-    WRITE(ILUOUT,'(F6.2,2H %)') ZHUT(IIJ(1),IIJ(2),JK)
+    WRITE(ILUOUT,'(F6.2," %")') ZHUT(IIJ(1),IIJ(2),JK)
   END DO
 END IF
 !*       5.8    Retrieve model thermodynamical variables :

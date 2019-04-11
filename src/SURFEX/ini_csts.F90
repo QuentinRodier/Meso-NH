@@ -54,6 +54,9 @@
 !              ------------
 !
 USE MODD_CSTS
+#ifdef SFX_MNH
+USE MODD_PRECISION, ONLY: MNHREAL
+#endif
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -78,10 +81,12 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('INI_CSTS',0,ZHOOK_HANDLE)
 
 #ifdef SFX_MNH
-#ifdef MNH_MPI_DOUBLE_PRECISION
-XSURF_TINY    = 1.0e-80
-#else
+#if (MNH_REAL == 8)
+XSURF_TINY    = 1.0e-80_MNHREAL
+#elif (MNH_REAL == 4)
 XSURF_TINY    = TINY    (XSURF_TINY    )
+#else
+#error "Invalid MNH_REAL"
 #endif
 #else
 XSURF_TINY    = 1.0e-80

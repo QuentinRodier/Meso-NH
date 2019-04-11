@@ -13,8 +13,9 @@
 
 MODULE MODD_IO
 !
-USE MODD_NETCDF,     ONLY: IDCDF_KIND, IOCDF, TPTR2DIMCDF
+USE MODD_NETCDF,     ONLY: IOCDF, TPTR2DIMCDF
 USE MODD_PARAMETERS, ONLY: NDIRNAMELGTMAX, NFILENAMELGTMAX
+use modd_precision,  only: CDFINT, LFIINT
 !
 IMPLICIT NONE 
 !
@@ -94,20 +95,20 @@ TYPE TFILEDATA
   INTEGER,DIMENSION(3) :: NMNHVERSION = (/0,0,0/) !MesoNH version used to create the file
   !
   ! Fields for LFI files
-  INTEGER(KIND=LFI_INT) :: NLFININAR = 0  !Number of articles of the LFI file (only accurate if file opened in read mode)
-  INTEGER(KIND=LFI_INT) :: NLFINPRAR = 0  !Number of predicted articles of the LFI file (non crucial)
-  INTEGER               :: NLFITYPE  = -1 !Type of the file (used to generate list of files to transfer)
-  INTEGER               :: NLFIVERB  = 1  !LFI verbosity level
-  INTEGER(KIND=LFI_INT) :: NLFIFLU   = -1 !File identifier
+  INTEGER(KIND=LFIINT) :: NLFININAR = 0  !Number of articles of the LFI file (only accurate if file opened in read mode)
+  INTEGER(KIND=LFIINT) :: NLFINPRAR = 0  !Number of predicted articles of the LFI file (non crucial)
+  INTEGER              :: NLFITYPE  = -1 !Type of the file (used to generate list of files to transfers)
+  INTEGER              :: NLFIVERB  = 1  !LFI verbosity level
+  INTEGER(KIND=LFIINT) :: NLFIFLU   = -1 !File identifier
   !
   ! Fields for netCDF files
-  INTEGER(KIND=IDCDF_KIND) :: NNCID = -1 !File identifier
-  INTEGER(KIND=IDCDF_KIND) :: NNCNAR = 0 !Number of articles of the netCDF file (only accurate if file opened in read mode)
-  LOGICAL                  :: LNCREDUCE_FLOAT_PRECISION = .FALSE. ! Reduce the precision of floats to single precision
+  INTEGER(KIND=CDFINT) :: NNCID = -1 !File identifier
+  INTEGER(KIND=CDFINT) :: NNCNAR = 0 !Number of articles of the netCDF file (only accurate if file opened in read mode)
+  LOGICAL              :: LNCREDUCE_FLOAT_PRECISION = .FALSE. ! Reduce the precision of floats to single precision
                                                                   ! instead of double precision
-  LOGICAL                  :: LNCCOMPRESS = .FALSE. ! Do compression on fields
-  INTEGER(KIND=IDCDF_KIND) :: NNCCOMPRESS_LEVEL = 0 ! Compression level
-  TYPE(IOCDF),POINTER      :: TNCDIMS => NULL()     ! Structure containing netCDF dimensions
+  LOGICAL              :: LNCCOMPRESS = .FALSE. ! Do compression on fields
+  INTEGER(KIND=CDFINT) :: NNCCOMPRESS_LEVEL = 0 ! Compression level
+  TYPE(IOCDF),POINTER  :: TNCDIMS => NULL()     ! Structure containing netCDF dimensions
   TYPE(TPTR2DIMCDF),DIMENSION(:,:),ALLOCATABLE :: TNCCOORDS ! Structure pointing to the coordinates variables
   !
   !Fields for other files

@@ -15,7 +15,8 @@
 !
 !     Modif par Olivier Caumont (04/2008) pour interfaçage avec diagnostic 
 !     radar de Méso-NH.
-!     P. Wautelet 22/01/2019: replace double precision declarations by real(kind(0.0d0)) (to allow compilation by NAG compiler)
+!  P. Wautelet 22/01/2019: replace double precision declarations by real(kind(0.0d0)) (to allow compilation by NAG compiler)
+!  P. Wautelet 22/02/2019: add kind parameter for CMPLX intrinsics (if not it default to single precision)
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !
 !****************************************************************************
@@ -1385,8 +1386,8 @@
                DV1N=M*DV1(N)
                DV2N=DV2(N)
                
-               CT11=CMPLX(XRT11(M1,N,NN),XIT11(M1,N,NN))
-               CT22=CMPLX(XRT22(M1,N,NN),XIT22(M1,N,NN))
+               CT11=CMPLX(XRT11(M1,N,NN),XIT11(M1,N,NN),kind=kind(CT11))
+               CT22=CMPLX(XRT22(M1,N,NN),XIT22(M1,N,NN),kind=kind(CT22))
                
                IF (M.EQ.0) THEN
                   
@@ -1397,8 +1398,8 @@
                   
                ELSE
                   
-                  CT12=CMPLX(XRT12(M1,N,NN),XIT12(M1,N,NN))
-                  CT21=CMPLX(XRT21(M1,N,NN),XIT21(M1,N,NN))
+                  CT12=CMPLX(XRT12(M1,N,NN),XIT12(M1,N,NN),kind=kind(CT12))
+                  CT21=CMPLX(XRT21(M1,N,NN),XIT21(M1,N,NN),kind=kind(CT21))
                   
                   CN1=CAL(N,NN)*FC
                   CN2=CAL(N,NN)*FS

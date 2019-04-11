@@ -19,6 +19,7 @@
 module mode_io_file_lfi
 
 use modd_io,     only: tfiledata
+use modd_precision, only: LFIINT
 
 use mode_msg
 
@@ -45,9 +46,9 @@ subroutine IO_File_create_lfi(tpfile, kstatus)
 
   character(len=:), allocatable :: yfilem        ! name of the file
   character(len=:), allocatable :: yforstatus    ! Status for open of a file (for LFI) ('OLD','NEW','UNKNOWN','SCRATCH','REPLACE')
-  integer(kind=LFI_INT)         :: iresou, inumbr
-  integer(kind=LFI_INT)         :: imelev, inprar
-  integer(kind=LFI_INT)         :: ininar        ! Number of articles present in LFI file
+  integer(kind=LFIINT)          :: iresou, inumbr
+  integer(kind=LFIINT)          :: imelev, inprar
+  integer(kind=LFIINT)          :: ininar        ! Number of articles present in LFI file
   logical                       :: gnewfi
   logical                       :: gnamfi, gfater, gstats
 
@@ -92,7 +93,7 @@ subroutine IO_File_close_lfi(tpfile, kstatus)
 
   character(len=*), parameter :: YSTATUS = 'KEEP'
 
-  integer(kind=LFI_INT) :: istatus
+  integer(kind=LFIINT) :: istatus
 
   call print_msg(NVERB_DEBUG,'IO','IO_File_close_lfi','called for '//trim(tpfile%cname))
 
@@ -124,9 +125,9 @@ subroutine IO_File_open_lfi(tpfile, kstatus)
   character(len=:),allocatable :: yfilem        ! name of the file
   character(len=:),allocatable :: yforstatus    ! Status for open of a file (for LFI) ('OLD','NEW','UNKNOWN','SCRATCH','REPLACE')
   integer                      :: istatus
-  integer(kind=LFI_INT)        :: iresou, inumbr
-  integer(kind=LFI_INT)        :: imelev, inprar
-  integer(kind=LFI_INT)        :: ininar        ! Number of articles present in LFI file
+  integer(kind=LFIINT)         :: iresou, inumbr
+  integer(kind=LFIINT)         :: imelev, inprar
+  integer(kind=LFIINT)         :: ininar        ! Number of articles present in LFI file
   logical                      :: gnewfi
   logical                      :: gnamfi, gfater, gstats
 

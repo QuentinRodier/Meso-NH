@@ -92,8 +92,9 @@ END MODULE MODI_FLASH_GEOM_ELEC_n
 !!      J.Escobar : 20/06/2018 : Correction of computation of global index I8VECT
 !!      J.Escobar : 10/12/2018 : // Correction , mpi_bcast CG & CG_POS parameter 
 !!                               & initialize INBLIGHT on all proc for filling/saving AREA* arrays
-!!      Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
-!!      Philippe Wautelet: 22/01/2019: use standard FLUSH statement instead of non standard intrinsics!!
+!  P. Wautelet 10/01/2019: use NEWUNIT argument of OPEN
+!  P. Wautelet 22/01/2019: use standard FLUSH statement instead of non standard intrinsics!!
+!  P. Wautelet 22/02/2019: use MOD intrinsics with same kind for all arguments (to respect Fortran standard)
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !-------------------------------------------------------------------------------
 !
@@ -119,6 +120,7 @@ USE MODD_LMA_SIMULATOR
 USE MODD_METRICS_n,      ONLY: XDXX, XDYY, XDZZ ! in linox_production
 USE MODD_NSV,            ONLY: NSV_ELECBEG, NSV_ELECEND, NSV_ELEC
 USE MODD_PARAMETERS,     ONLY: JPHEXT, JPVEXT
+use MODD_PRECISION,      only: MNHREAL_MPI
 USE MODD_RAIN_ICE_DESCR, ONLY: XLBR, XLBEXR, XLBS, XLBEXS, &
                                XLBG, XLBEXG, XLBH, XLBEXH, &
                                XRTMIN
@@ -852,9 +854,9 @@ ENDIF
        CALL MPPDB_CHECK3DM("flash:: 5. ZFLASH(IL)",PRECISION,&
              ZFLASH(:,:,:,IL))
 !
-        CALL MPI_BCAST (GNEW_FLASH(IL),1, MPI_LOGICAL, IPROC_TRIG(IL), &
+        CALL MPI_BCAST (GNEW_FLASH(IL),1,   MPI_LOGICAL, IPROC_TRIG(IL), &
                         NMNH_COMM_WORLD, IERR)
-        CALL MPI_BCAST (ZEM_TRIG(IL), 1, MPI_PRECISION, IPROC_TRIG(IL), &
+        CALL MPI_BCAST (ZEM_TRIG(IL), 1,    MNHREAL_MPI, IPROC_TRIG(IL), &
                         NMNH_COMM_WORLD, IERR)
         CALL MPI_BCAST (INB_FL_REAL(IL), 1, MPI_INTEGER, IPROC_TRIG(IL), &
                         NMNH_COMM_WORLD, IERR)
@@ -1689,11 +1691,11 @@ DO IL = 1, INB_CELL
 !               ----------------------------
 !
     CALL MPI_BCAST (ZEM_TRIG(IL), 1, &
-                    MPI_PRECISION, IPROC_TRIG(IL), NMNH_COMM_WORLD, IERR)
-    CALL MPI_BCAST (ISEG_LOC(:,IL), 3*SIZE(PRT,3), &     
+                    MNHREAL_MPI, IPROC_TRIG(IL), NMNH_COMM_WORLD, IERR)
+    CALL MPI_BCAST (ISEG_LOC(:,IL), 3*SIZE(PRT,3), &
                     MPI_INTEGER, IPROC_TRIG(IL), NMNH_COMM_WORLD, IERR)
     CALL MPI_BCAST (ZCOORD_TRIG(:,IL), 3, &
-                    MPI_PRECISION, IPROC_TRIG(IL), NMNH_COMM_WORLD, IERR)
+                    MNHREAL_MPI, IPROC_TRIG(IL), NMNH_COMM_WORLD, IERR)
     CALL MPI_BCAST (ISIGNE_EZ(IL), 1, &
                     MPI_INTEGER, IPROC_TRIG(IL), NMNH_COMM_WORLD, IERR)
 !
@@ -1959,7 +1961,7 @@ DO IL = 1, INB_CELL
     END DO
   END IF
 !
-  CALL MPI_BCAST (ZSIGN(IL), 1, MPI_PRECISION, IPROC_TRIG(IL), &
+  CALL MPI_BCAST (ZSIGN(IL), 1, MNHREAL_MPI, IPROC_TRIG(IL), &
                   NMNH_COMM_WORLD, IERR)
 END DO
 !
@@ -2192,7 +2194,7 @@ DO WHILE (IM .LE. IDELTA_IND .AND. ISTOP .NE. 1)
                  IF (IRANK_LL(IORDER_LL(ICHOICE)) .EQ. IPROC) THEN
                     JK = 1 +     (I8VECT_LL(ICHOICE)-1) / ( IJU_ll*IIU_ll ) 
                     JJ = 1 + (   (I8VECT_LL(ICHOICE)-1) - IJU_ll*IIU_ll*(JK-1) ) / IIU_ll  - IYOR +1
-                    JI = 1 + MOD((I8VECT_LL(ICHOICE)-1)                          , IIU_ll) - IXOR +1
+                    JI = 1 + MOD((I8VECT_LL(ICHOICE)-1)                          , int(IIU_ll,kind(I8VECT_LL(1)))) - IXOR +1
                     !print*,"OUT => I8VECT_LL(ICHOICE)=",I8VECT_ll(ICHOICE),JI,JJ,JK,ICHOICE
                     ZFLASH(JI,JJ,JK,IL) = 2.
                  END IF
@@ -2307,8 +2309,8 @@ IF (IPROC .EQ. 0) THEN
   INBSEG_PROC_X3(:) = 3 * INBSEG_PROC(:)
 END IF
 !
-CALL MPI_GATHERV (ZSEND, 3*INSEGPROC, MPI_PRECISION, ZRECV, INBSEG_PROC_X3, &
-                  IDECAL3, MPI_PRECISION, 0, NMNH_COMM_WORLD, IERR)
+CALL MPI_GATHERV (ZSEND, 3*INSEGPROC, MNHREAL_MPI, ZRECV, INBSEG_PROC_X3, &
+                  IDECAL3, MNHREAL_MPI, 0, NMNH_COMM_WORLD, IERR)
 !
 IF (IPROC .EQ. 0) THEN
   ZCOORD_SEG_ALL(1:3*INSEGCELL,IL) = ZRECV(1:3*INSEGCELL)
@@ -2380,15 +2382,15 @@ IF (LLMA) THEN
 !
   ALLOCATE (ZRECV(INSEGCELL))
 !
-  CALL MPI_GATHERV (ZLMAPOS, INSEGPROC, MPI_PRECISION, ZRECV, INBSEG_PROC,  &
-                    IDECAL, MPI_PRECISION, 0, NMNH_COMM_WORLD, IERR)
+  CALL MPI_GATHERV (ZLMAPOS, INSEGPROC, MNHREAL_MPI, ZRECV, INBSEG_PROC,  &
+                    IDECAL, MNHREAL_MPI, 0, NMNH_COMM_WORLD, IERR)
 !
   IF (IPROC .EQ. 0) THEN
     ZLMA_NEUT_POS(1:INSEGCELL,IL) = ZRECV(1:INSEGCELL)
   END IF
 !
-  CALL MPI_GATHERV (ZLMANEG, INSEGPROC, MPI_PRECISION, ZRECV, INBSEG_PROC,  &
-                    IDECAL, MPI_PRECISION, 0, NMNH_COMM_WORLD, IERR)
+  CALL MPI_GATHERV (ZLMANEG, INSEGPROC, MNHREAL_MPI, ZRECV, INBSEG_PROC,  &
+                    IDECAL, MNHREAL_MPI, 0, NMNH_COMM_WORLD, IERR)
 !
   IF (IPROC .EQ. 0) THEN
     ZLMA_NEUT_NEG(1:INSEGCELL,IL) = ZRECV(1:INSEGCELL)
@@ -2408,17 +2410,17 @@ IF (LLMA) THEN
     INBSEG_PROC_XNSV(:) = NSV_ELEC * INBSEG_PROC(:)
   END IF
 !
-  CALL MPI_GATHERV (ZLMAQMT, NSV_ELEC*INSEGPROC, MPI_PRECISION, ZRECV, &
-                    INBSEG_PROC_XNSV,                                  &
-                    IDECALN, MPI_PRECISION, 0, NMNH_COMM_WORLD, IERR    )
+  CALL MPI_GATHERV (ZLMAQMT, NSV_ELEC*INSEGPROC, MNHREAL_MPI, ZRECV, &
+                    INBSEG_PROC_XNSV,                                &
+                    IDECALN, MNHREAL_MPI, 0, NMNH_COMM_WORLD, IERR   )
 !
   IF (IPROC .EQ. 0) THEN
     ZLMA_QMT(1:NSV_ELEC*INSEGCELL,IL) = ZRECV(1:NSV_ELEC*INSEGCELL)
   END IF
 !
-  CALL MPI_GATHERV (ZLMAPRT, NSV_ELEC*INSEGPROC, MPI_PRECISION, ZRECV, &
-                    INBSEG_PROC_XNSV,                                  &
-                    IDECALN, MPI_PRECISION, 0, NMNH_COMM_WORLD, IERR)
+  CALL MPI_GATHERV (ZLMAPRT, NSV_ELEC*INSEGPROC, MNHREAL_MPI, ZRECV, &
+                    INBSEG_PROC_XNSV,                                &
+                    IDECALN, MNHREAL_MPI, 0, NMNH_COMM_WORLD, IERR   )
 !
   IF (IPROC .EQ. 0) THEN
     ZLMA_PRT(1:NSV_ELEC*INSEGCELL,IL) = ZRECV(1:NSV_ELEC*INSEGCELL)

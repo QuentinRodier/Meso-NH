@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ######spl
@@ -60,6 +60,7 @@ END MODULE MODI_ERROR_ON_TEMPERATURE
 !!                  26/08/97 (V. Masson) call to new linear vertical
 !!                                       interpolation routine
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 22/02/2019: replace Hollerith edit descriptor (deleted from Fortran 95 standard)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -198,7 +199,7 @@ WRITE(ILUOUT0,*) ''
 WRITE(ILUOUT0,*) 'Temperature RMS between begin and end of PREP_REAL_CASE :'
 WRITE(ILUOUT0,*) ''
 DO JP=20,1,-1
-  WRITE(ILUOUT0,'(6Hlevel ,F5.0,7H hPa : ,F5.3,2H K)') ZPLEVELS(JP)/100.,ZTRMS(JP)
+  WRITE(ILUOUT0,'( "level", F5.0, " hPa : ", F5.3, " K")') ZPLEVELS(JP)/100.,ZTRMS(JP)
 END DO
 WRITE(ILUOUT0,*) ''
 !

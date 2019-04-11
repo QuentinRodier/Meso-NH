@@ -1,15 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for CVS information
-!-----------------------------------------------------------------
-! $Source$
-! $Name$ 
-! $Revision$ 
-! $Date$
-!-----------------------------------------------------------------
 !-----------------------------------------------------------------
 
 !     ###################
@@ -576,7 +568,6 @@ ENDIF
 !
 !     Module MODD_VAR_ll
 !       IP -
-!       MPI_2PRECISION
 !
 !!    Author
 !!    ------
@@ -590,7 +581,8 @@ ENDIF
 !
 !*       0.    DECLARATIONS
 !
-  USE MODD_VAR_ll, ONLY : IP, MPI_2PRECISION
+  use modd_precision, only: MNH2REAL_MPI
+  USE MODD_VAR_ll,    ONLY: IP
 !
   IMPLICIT NONE
 !
@@ -623,7 +615,7 @@ ENDIF
 !
   ZBUFIN (1) = PVALUE
   ZBUFIN (2) = IP
-  CALL MPI_ALLREDUCE(ZBUFIN, ZBUFOUT, 1, MPI_2PRECISION, MPI_MAXLOC, &
+  CALL MPI_ALLREDUCE(ZBUFIN, ZBUFOUT, 1, MNH2REAL_MPI, MPI_MAXLOC, &
                      NMNH_COMM_WORLD, IERR)
 !
 !
@@ -675,7 +667,6 @@ ENDIF
 !     Module MODD_VAR_ll
 !       TCRRT_PROCONF - Current configuration for current model
 !       IP -
-!       MPI_2PRECISION
 !
 !!    Author
 !!    ------
@@ -689,9 +680,9 @@ ENDIF
 !
 !*       0.    DECLARATIONS
 !
-  USE MODD_VAR_ll, ONLY : IP, MPI_2PRECISION, TCRRT_PROCONF
-!
-  USE MODD_STRUCTURE_ll, ONLY : MODELSPLITTING_ll
+  use modd_precision,    only: MNH2REAL_MPI
+  USE MODD_STRUCTURE_ll, ONLY: MODELSPLITTING_ll
+  USE MODD_VAR_ll,       ONLY: IP, TCRRT_PROCONF
 !
   IMPLICIT NONE
 !
@@ -731,7 +722,7 @@ ENDIF
   ZBUFIN (1) = PVALUE
   ZBUFIN (2) = IP
 ! 
-  CALL MPI_ALLREDUCE(ZBUFIN, ZBUFOUT, 1, MPI_2PRECISION, MPI_MAXLOC, &
+  CALL MPI_ALLREDUCE(ZBUFIN, ZBUFOUT, 1, MNH2REAL_MPI, MPI_MAXLOC, &
                      NMNH_COMM_WORLD, INFO_ll)
 !
 !-------------------------------------------------------------------------------

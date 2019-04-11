@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2015-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     #############################################################
       SUBROUTINE EXTEND_GRID_PARAMETERX1_MNH(HGRID,HREC,KDIM,KSIZE,KIMAX,KJMAX,PFIELD,PFIELD_EXTEND)
 !     #############################################################
@@ -16,10 +17,13 @@
 !  07/2015   (M.Moge) initializing ZY and ZY to zero
 !  08/2015   (M.Moge) bug fix in the call to UPDATE_NHALO1D : IIMAX_ll instead of IJMAX_ll
 !
-USE MODD_IO_SURF_MNH, ONLY : NHALO
-USE MODD_VAR_ll, ONLY : NPROC, IP, MPI_PRECISION, NMNH_COMM_WORLD
+USE MODD_IO_SURF_MNH, ONLY: NHALO
 USE MODD_MPIF
-USE MODE_TOOLS_ll, ONLY : INTERSECTION, LWEST_ll, LEAST_ll, LNORTH_ll, LSOUTH_ll
+use MODD_PRECISION,   only: MNHREAL_MPI
+USE MODD_VAR_ll,      ONLY: NPROC, IP, NMNH_COMM_WORLD
+!
+USE MODE_TOOLS_ll,    ONLY: INTERSECTION, LWEST_ll, LEAST_ll, LNORTH_ll, LSOUTH_ll
+!
 USE MODI_UPDATE_NHALO1D
 !
 IMPLICIT NONE
@@ -76,7 +80,7 @@ IF (HREC=='XX' .OR. HREC=='DX') THEN
     IF (NIMAX>1) ZDX = PFIELD(2) - PFIELD(1)
     IF (NIMAX==1) ZDX = PFIELD(1) ! in 1D conf, one assumes that grid
                                      ! is located between X=DX/2 and X=3DX/2
-    CALL MPI_BCAST(ZDX, 1, MPI_PRECISION, 0, NMNH_COMM_WORLD, IINFO_ll)
+    CALL MPI_BCAST(ZDX, 1, MNHREAL_MPI, 0, NMNH_COMM_WORLD, IINFO_ll)
     IF( LWEST_ll() ) THEN
       DO JI=NHALO,1,-1
 	ZX(JI) = ZX(JI+1) - ZDX
@@ -119,7 +123,7 @@ ELSEIF (HREC=='YY' .OR. HREC=='DY') THEN
     IF (NJMAX>1) ZDY = PFIELD(1+KIMAX) - PFIELD(1)
     IF (NJMAX==1) ZDY = PFIELD(1) ! in 1D or 2D conf, one assumes that grid
                                      ! is located between Y=DY/2 and Y=3DY/2
-    CALL MPI_BCAST(ZDY, 1, MPI_PRECISION, 0, NMNH_COMM_WORLD, IINFO_ll)
+    CALL MPI_BCAST(ZDY, 1, MNHREAL_MPI, 0, NMNH_COMM_WORLD, IINFO_ll)
     IF( LSOUTH_ll() ) THEN
       DO JJ=NHALO,1,-1
 	ZY(JJ) = ZY(JJ+1) - ZDY

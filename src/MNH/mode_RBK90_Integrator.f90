@@ -61,6 +61,7 @@ MODULE MODE_RBK90_Integrator
   USE MODD_RBK90_JacobianSP_n, ONLY: LU_DIM_SPECIES
   USE MODD_RBK90_Parameters_n, ONLY: NVAR
   USE MODD_RBK90_Global_n,     ONLY: STEPMIN
+  use modd_precision,          only: MNHREAL
   IMPLICIT NONE
   PUBLIC
   SAVE
@@ -737,11 +738,7 @@ Stage: DO istage = 1, ros_S
    END DO
    Err  = SQRT(Err/N)
 
-#if (MNH_REAL == 8)
-   ros_ErrorNorm = MAX(Err,1.0e-10)
-#else
-   ros_ErrorNorm = MAX(Err,1.0d-10)
-#endif
+   ros_ErrorNorm = MAX(Err,1.0e-10_MNHREAL)
 
   END FUNCTION ros_ErrorNorm
 

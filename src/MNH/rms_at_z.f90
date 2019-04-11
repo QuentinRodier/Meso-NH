@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1996-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !###################
@@ -62,6 +62,7 @@ END MODULE MODI_RMS_AT_Z
 !!                  26/08/97 (V. Masson) call to new linear vertical
 !!                                       interpolation routine
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 22/02/2019: replace Hollerith edit descriptor (deleted from Fortran 95 standard)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -172,7 +173,7 @@ WRITE(ILUOUT0,*) ''
 WRITE(ILUOUT0,*) HTITLE
 WRITE(ILUOUT0,*) ''
 DO JZ=1,40
-  WRITE(ILUOUT0,'(6Hlevel ,F6.0,5H m : ,F9.3)') ZZLEVELS(JZ),ZRMS(JZ)
+  WRITE(ILUOUT0,'( "level ", F6.0, " m : ", F9.3 )') ZZLEVELS(JZ),ZRMS(JZ)
 END DO
 WRITE(ILUOUT0,*) ''
 !
