@@ -1,14 +1,12 @@
+visu
 ! directives de presentation
 LINVWB=T NIGRNC=10 nhi=0 lminmax=t xsizel=0.015
-! fenetre graphique
-visu
 ! plages de couleur, pas d isolignes
 LCOLAREA=T LISO=F               
 ! gestion des vecteurs (1 vecteur sur 4)
 NISKIP=4 XVRL=0.15                                                              
 ! 1er fichier a ouvrir
 _file1_'KWRAI.1.SEG01.004dg'                                                    
-!visu                     
 ! couleur de fond pour le 1er intervalle
 LCOLZERO=T NCOLZERO=1                                                           
 ! precipitations explicites instantanees
