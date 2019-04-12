@@ -10,5 +10,5 @@ for ECH in '000001' '000002' '000003' '000004' '000005' '000006' '000007' '00000
 
 
 do
-display visu_dust.${ECH}.png
+${POSTRUN} display visu_dust.${ECH}.png
 done

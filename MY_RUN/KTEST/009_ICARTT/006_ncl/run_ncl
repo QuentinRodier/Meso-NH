@@ -12,7 +12,7 @@ rm -f *.png
 ncl plot_ICARTT.ncl
 ncl plot_ICARTT_budget.ncl
 
-display zsection_1250.*.png
-display zsection_1250_bud.*.png
+${POSTRUN} display zsection_1250.*.png
+${POSTRUN} display zsection_1250_bud.*.png
 
 exit 0

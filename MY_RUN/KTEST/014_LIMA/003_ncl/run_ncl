@@ -9,13 +9,12 @@ ln -sf ../002_mesonh/XPREF.1.SEG01.000.nc .
 rm -f visu_LIMA.*.png
 
 ncl  plot_LIMA.ncl
-display visu_LIMA.*.png
 
-#display visu_LIMA.000001.png
-#display visu_LIMA.000002.png
-#display visu_LIMA.000003.png
-#display visu_LIMA.000004.png
-#display visu_LIMA.000005.png
-#display visu_LIMA.000006.png
-#display visu_LIMA.000007.png
+${POSTRUN} display visu_LIMA.000001.png
+${POSTRUN} display visu_LIMA.000002.png
+${POSTRUN} display visu_LIMA.000003.png
+${POSTRUN} display visu_LIMA.000004.png
+${POSTRUN} display visu_LIMA.000005.png
+${POSTRUN} display visu_LIMA.000006.png
+${POSTRUN} display visu_LIMA.000007.png
 exit 0

@@ -1,11 +1,10 @@
+visu
 ! directives de presentation
 LINVWB=T NIGRNC=10 nhi=0 lminmax=t xsizel=0.015 LCOLAREA=T LISO=F               
 ! gestion des vectuers
 NISKIP=4 XVRL=0.15                                                              
 ! nom du fichier a ouvrir
 _file_'REUNI.1.00A20.004dg'                                                   
-! ouverture de la fenetre d affichage
-visu                                                                            
 ! module du vent et vecteurs du niveau K=2
 MUTVT_K_2_ON_UTVT_K_2                                                           
 ! temperature potentielle a 1500m
