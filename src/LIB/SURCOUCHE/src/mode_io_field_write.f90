@@ -11,6 +11,7 @@
 !  P. Wautelet 05/03/2019: rename IO subroutines and modules
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 12/04/2019: added pointers for C1D, L1D, N1D, X5D and X6D structures in TFIELDDATA
+!  P. Wautelet 12/04/2019: use MNHTIME for time measurement variables
 !-----------------------------------------------------------------
 
 #define MNH_SCALARS_IN_SPLITFILES 0
@@ -19,7 +20,7 @@ MODULE MODE_IO_FIELD_WRITE
 
   USE MODD_IO,        ONLY: TFILEDATA, TOUTBAK
   USE MODD_MPIF
-  use modd_precision, only: MNHINT_MPI, MNHREAL_MPI
+  use modd_precision, only: MNHINT_MPI, MNHREAL_MPI, MNHTIME
 
   USE MODE_FIELD
   USE MODE_IO_WRITE_LFI
@@ -511,14 +512,14 @@ CONTAINS
     LOGICAL                                  :: GALLOC
     LOGICAL                                  :: GLFI, GNC4
     !
-    REAL*8,DIMENSION(2) :: T0,T1,T2
-    REAL*8,DIMENSION(2) :: T11,T22
+    REAL(kind=MNHTIME), DIMENSION(2)         :: T0, T1, T2
+    REAL(kind=MNHTIME), DIMENSION(2)         :: T11, T22
 #ifdef MNH_GA
-    REAL,DIMENSION(:,:),POINTER            :: ZFIELD_GA
+    REAL,DIMENSION(:,:),POINTER              :: ZFIELD_GA
 #endif
-    INTEGER                                :: IHEXTOT
-    CHARACTER(LEN=:),ALLOCATABLE           :: YMSG
-    CHARACTER(LEN=6)                       :: YRESP
+    INTEGER                                  :: IHEXTOT
+    CHARACTER(LEN=:),ALLOCATABLE             :: YMSG
+    CHARACTER(LEN=6)                         :: YRESP
     !
     YFILEM   = TPFILE%CNAME
     YRECFM   = TPFIELD%CMNHNAME
@@ -701,13 +702,13 @@ CONTAINS
     INTEGER,ALLOCATABLE,DIMENSION(:)         :: REQ_TAB
     INTEGER                                  :: NB_REQ
     TYPE TX_2DP
-       REAL,DIMENSION(:,:), POINTER    :: X
+       REAL, DIMENSION(:,:), POINTER :: X
     END TYPE TX_2DP
-    TYPE(TX_2DP),ALLOCATABLE,DIMENSION(:) :: T_TX2DP
-    REAL*8,DIMENSION(2) :: T0,T1,T2
-    REAL*8,DIMENSION(2) :: T11,T22
+    TYPE(TX_2DP),ALLOCATABLE,DIMENSION(:)    :: T_TX2DP
+    REAL(kind=MNHTIME), DIMENSION(2)         :: T0, T1, T2
+    REAL(kind=MNHTIME), DIMENSION(2)         :: T11, T22
 #ifdef MNH_GA
-    REAL,DIMENSION(:,:,:),POINTER          :: ZFIELD_GA
+    REAL,DIMENSION(:,:,:),POINTER            :: ZFIELD_GA
 #endif
     INTEGER                                  :: IHEXTOT
     CHARACTER(LEN=:),ALLOCATABLE             :: YMSG
@@ -1629,8 +1630,8 @@ CONTAINS
     LOGICAL                                  :: GALLOC
     LOGICAL                                  :: GLFI, GNC4
     !
-    REAL*8,DIMENSION(2) :: T0,T1,T2
-    REAL*8,DIMENSION(2) :: T11,T22
+    REAL(kind=MNHTIME), DIMENSION(2)         :: T0, T1, T2
+    REAL(kind=MNHTIME), DIMENSION(2)         :: T11, T22
     INTEGER                                  :: IHEXTOT
     CHARACTER(LEN=:),ALLOCATABLE             :: YMSG
     CHARACTER(LEN=6)                         :: YRESP
@@ -1776,7 +1777,7 @@ CONTAINS
     LOGICAL                                  :: GALLOC
     LOGICAL                                  :: GLFI, GNC4
     !
-    REAL*8,DIMENSION(2) :: T11,T22
+    REAL(kind=MNHTIME), DIMENSION(2)         :: T11, T22
     INTEGER                                  :: IHEXTOT
     CHARACTER(LEN=:),ALLOCATABLE             :: YMSG
     CHARACTER(LEN=6)                         :: YRESP

@@ -12,13 +12,14 @@
 !  P. Wautelet 29/01/2019: small bug correction in time measurement in IO_Field_read_byfield_X2
 !  P. Wautelet 05/03/2019: rename IO subroutines and modules
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 12/04/2019: use MNHTIME for time measurement variables
 !-----------------------------------------------------------------
 
 MODULE MODE_IO_FIELD_READ
 !
 USE MODD_IO, ONLY : NVERB_FATAL,NVERB_ERROR,NVERB_WARNING,NVERB_INFO,NVERB_DEBUG,TFILEDATA
 USE MODD_MPIF
-use modd_precision, only: MNHREAL_MPI
+use modd_precision, only: MNHREAL_MPI, MNHTIME
 !
 USE MODE_FIELD
 USE MODE_IO_READ_LFI
@@ -347,8 +348,8 @@ REAL,DIMENSION(:,:),POINTER  :: ZFIELDP
 LOGICAL                      :: GALLOC
 INTEGER                      :: IRESP
 INTEGER                      :: IHEXTOT
-REAL(KIND=8),DIMENSION(2)    :: T0,T1,T2
-REAL(KIND=8),DIMENSION(2)    :: T11,T22
+REAL(kind=MNHTIME), DIMENSION(2) :: T0, T1, T2
+REAL(kind=MNHTIME), DIMENSION(2) :: T11, T22
 #ifdef MNH_GA
 REAL,DIMENSION(:,:),POINTER    :: ZFIELD_GA
 #endif
@@ -522,8 +523,8 @@ LOGICAL                               :: GALLOC, GALLOC_ll
 REAL,DIMENSION(:,:),POINTER           :: TX2DP
 REAL,DIMENSION(:,:),POINTER           :: ZSLICE_ll,ZSLICE
 REAL,DIMENSION(:,:,:),POINTER         :: ZFIELDP
-REAL(KIND=8),DIMENSION(2)             :: T0,T1,T2
-REAL(KIND=8),DIMENSION(2)             :: T11,T22
+REAL(kind=MNHTIME), DIMENSION(2)      :: T0, T1, T2
+REAL(kind=MNHTIME), DIMENSION(2)      :: T11, T22
 CHARACTER(LEN=2)                      :: YDIR
 CHARACTER(LEN=4)                      :: YK
 CHARACTER(LEN=NMNHNAMELGTMAX+4)       :: YRECZSLICE
@@ -1846,8 +1847,8 @@ INTEGER, ALLOCATABLE,DIMENSION(:,:)      :: STATUSES
 INTEGER,ALLOCATABLE,DIMENSION(:)         :: REQ_TAB
 REAL,DIMENSION(:,:,:),ALLOCATABLE,TARGET :: Z3D
 REAL,DIMENSION(:,:,:), POINTER           :: TX3DP
-REAL(KIND=8),DIMENSION(2)                :: T0,T1,T2,T3
-REAL(KIND=8),DIMENSION(2)                :: T11,T22
+REAL(kind=MNHTIME), DIMENSION(2)         :: T0, T1, T2, T3
+REAL(kind=MNHTIME), DIMENSION(2)         :: T11, T22
 TYPE(TX_3DP),ALLOCATABLE,DIMENSION(:)    :: T_TX3DP
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_byfield_lb','reading '//TRIM(TPFIELD%CMNHNAME))
