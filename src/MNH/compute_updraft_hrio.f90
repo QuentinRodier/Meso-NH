@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ######spl
      MODULE MODI_COMPUTE_UPDRAFT_HRIO
 !    ###########################
@@ -135,6 +136,7 @@ END MODULE MODI_COMPUTE_UPDRAFT_HRIO!     ######spl
 !!     S. Riette Jan 2012: support for both order of vertical levels
 !!     V.Masson, C.Lac : 02/2011 : SV_UP initialized by a non-zero value
 !!     Q.Rodier  01/2019 : support RM17 mixing length 
+!  P. Wautelet 12/04/2019: replace ABORT and STOP calls by Print_msg
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -149,6 +151,8 @@ USE MODD_PARAM_MFSHALL_n, ONLY : XPRES_UV,XALP_PERT,XCMF,XFRAC_UP_MAX,XA1,XB,&
 USE MODD_GRID_n, ONLY : XDXHAT, XDYHAT
 USE MODD_BLANK
 USE MODD_TURB_n, ONLY :CTURBLEN
+
+use mode_msg
 
 !USE MODI_COMPUTE_ENTR_DETR
 USE MODI_TH_R_FROM_THL_RT_1D
@@ -394,7 +398,7 @@ PSV_DO(:,:,:)=0.
 PTHL_UP(:,KKB)= ZTHLM_F(:,KKB)+MAX(0.,MIN(ZTMAX,(PSFTH(:)/SQRT(ZTKEM_F(:,KKB)))*XALP_PERT))
 PRT_UP(:,KKB) = ZRTM_F(:,KKB)+MAX(0.,MIN(ZRMAX,(PSFRV(:)/SQRT(ZTKEM_F(:,KKB)))*XALP_PERT)) 
 !------------------------
-print*,OENTR_DETR
+! print*,OENTR_DETR
 !------------------------
 IF (OENTR_DETR) THEN
   ZTHM_F (:,:) = MZM_MF(KKA,KKU,KKL,PTHM (:,:))
@@ -767,7 +771,8 @@ DO JK=KKB,KKE-KKL,KKL
         ! on cherche à savoir s'il y a des vitesses verticales non définies
         ! je n'utilise que ZW_UP2 pour pouvoir avoir une valeur si ZW_UP
         ! n'est pas défini 
-IF (maxval(ZW_UP2(:,JK+KKL)) .NE. maxval(ZW_UP2(:,JK+KKL))) STOP 'probleme ici'
+IF (maxval(ZW_UP2(:,JK+KKL)) .NE. maxval(ZW_UP2(:,JK+KKL))) &
+  call Print_msg( NVERB_FATAL, 'GEN', 'COMPUTE_UPDRAFT_HRIO', 'maxval(ZW_UP2(:,JK+KKL)) /= maxval(ZW_UP2(:,JK+KKL))' )
 ! si on est dans la zone grise la définition du flux de masse change
 ! donc celle de alpha aussi
 WHERE(GTEST)
@@ -858,6 +863,6 @@ ENDDO ! boucle JK
 GWORK1(:)= (GTESTLCL(:) .AND. (PDEPTH(:) > ZDEPTH_MAX1) )
 GWORK2(:,:) = SPREAD( GWORK1(:), DIM=2, NCOPIES=MAX(KKU,KKA) )
 ZCOEF(:,:) = SPREAD( (1.-(PDEPTH(:)-ZDEPTH_MAX1)/(ZDEPTH_MAX2-ZDEPTH_MAX1)), DIM=2, NCOPIES=SIZE(ZCOEF,2))
-print*,"je sors de compute_updraft"
+! print*,"je sors de compute_updraft"
 
 END SUBROUTINE COMPUTE_UPDRAFT_HRIO

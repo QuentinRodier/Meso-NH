@@ -339,11 +339,10 @@
     END IF
     IF (      ( (1+TPROC(IP)%NXEND-TPROC(IP)%NXOR) == 0 )  &
          .OR. ( (1+TPROC(IP)%NYEND-TPROC(IP)%NYOR) == 0 )  ) THEN
-       PRINT*, "/!\ SPLITZ: some proc have 0 size local domaine , to much processors used for domaine size ", &
-            " IP="  ,IP , &
-            " DIMX=",1+TPROC(IP)%NXEND-TPROC(IP)%NXOR, &
-            " DIMY=",1+TPROC(IP)%NYEND-TPROC(IP)%NYOR
-       CALL ABORT()
+       write( yval1, '( I10 )' ) 1+TPROC(IP)%NXEND-TPROC(IP)%NXOR
+       write( yval2, '( I10 )' ) 1+TPROC(IP)%NYEND-TPROC(IP)%NYOR
+       call Print_msg( NVERB_FATAL, 'GEN', 'SPLITZ', 'zero-size local-domain dimensions: DIMX='// &
+                       trim(yval1)//', DIMY='//trim(yval2)//'. Too many processes for this domain size.')
     END IF
     !
     !*       3.     shift from physical to extended domain
