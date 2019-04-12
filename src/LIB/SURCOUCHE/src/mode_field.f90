@@ -11,6 +11,7 @@
 !  C. Lac         02/2019: add rain fraction as an output field
 !  S. Bielli      02/2019: sea salt: significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 06/03/2019: correct ZWS entry
+!  P. Wautelet 12/04/2019: added pointers for C1D, L1D, N1D, X5D and X6D structures in TFIELDDATA
 !-----------------------------------------------------------------
 MODULE MODE_FIELD
 !
@@ -33,13 +34,25 @@ TYPE TFIELDPTR_C0D
   CHARACTER(LEN=:),     POINTER :: DATA => NULL()
 END TYPE TFIELDPTR_C0D
 !
+TYPE TFIELDPTR_C1D
+  CHARACTER(LEN=:),DIMENSION(:),POINTER :: DATA => NULL()
+END TYPE TFIELDPTR_C1D
+!
 TYPE TFIELDPTR_L0D
   LOGICAL,              POINTER :: DATA => NULL()
 END TYPE TFIELDPTR_L0D
 !
+TYPE TFIELDPTR_L1D
+  LOGICAL,DIMENSION(:), POINTER :: DATA => NULL()
+END TYPE TFIELDPTR_L1D
+!
 TYPE TFIELDPTR_N0D
   INTEGER,              POINTER :: DATA => NULL()
 END TYPE TFIELDPTR_N0D
+!
+TYPE TFIELDPTR_N1D
+  INTEGER,DIMENSION(:),   POINTER :: DATA => NULL()
+END TYPE TFIELDPTR_N1D
 !
 TYPE TFIELDPTR_N2D
   INTEGER,DIMENSION(:,:), POINTER :: DATA => NULL()
@@ -68,6 +81,14 @@ END TYPE TFIELDPTR_X3D
 TYPE TFIELDPTR_X4D
   REAL,DIMENSION(:,:,:,:),POINTER :: DATA => NULL()
 END TYPE TFIELDPTR_X4D
+!
+TYPE TFIELDPTR_X5D
+  REAL,DIMENSION(:,:,:,:,:),POINTER :: DATA => NULL()
+END TYPE TFIELDPTR_X5D
+!
+TYPE TFIELDPTR_X6D
+  REAL,DIMENSION(:,:,:,:,:,:),POINTER :: DATA => NULL()
+END TYPE TFIELDPTR_X6D
 !
 TYPE TFIELDPTR_T0D
   TYPE(DATE_TIME),      POINTER :: DATA => NULL()
@@ -103,10 +124,13 @@ TYPE TFIELDDATA
   REAL               :: XVALIDMAX  =  1.E36 !Maximum valid value for real fields
   !
   TYPE(TFIELDPTR_C0D),DIMENSION(:),ALLOCATABLE :: TFIELD_C0D !Pointer to the character string fields (one per nested mesh)
+  TYPE(TFIELDPTR_C1D),DIMENSION(:),ALLOCATABLE :: TFIELD_C1D !Pointer to the character string 1D fields (one per nested mesh)
   !
   TYPE(TFIELDPTR_L0D),DIMENSION(:),ALLOCATABLE :: TFIELD_L0D !Pointer to the scalar logical fields (one per nested mesh)
+  TYPE(TFIELDPTR_L1D),DIMENSION(:),ALLOCATABLE :: TFIELD_L1D !Pointer to the logical 1D fields (one per nested mesh)
   !
   TYPE(TFIELDPTR_N0D),DIMENSION(:),ALLOCATABLE :: TFIELD_N0D !Pointer to the scalar integer fields (one per nested mesh)
+  TYPE(TFIELDPTR_N1D),DIMENSION(:),ALLOCATABLE :: TFIELD_N1D !Pointer to the integer 1D fields (one per nested mesh)
   TYPE(TFIELDPTR_N2D),DIMENSION(:),ALLOCATABLE :: TFIELD_N2D !Pointer to the integer 2D fields (one per nested mesh)
   TYPE(TFIELDPTR_N3D),DIMENSION(:),ALLOCATABLE :: TFIELD_N3D !Pointer to the integer 3D fields (one per nested mesh)
   !
@@ -115,6 +139,8 @@ TYPE TFIELDDATA
   TYPE(TFIELDPTR_X2D),DIMENSION(:),ALLOCATABLE :: TFIELD_X2D !Pointer to the real 2D fields (one per nested mesh)
   TYPE(TFIELDPTR_X3D),DIMENSION(:),ALLOCATABLE :: TFIELD_X3D !Pointer to the real 3D fields (one per nested mesh)
   TYPE(TFIELDPTR_X4D),DIMENSION(:),ALLOCATABLE :: TFIELD_X4D !Pointer to the real 4D fields (one per nested mesh)
+  TYPE(TFIELDPTR_X5D),DIMENSION(:),ALLOCATABLE :: TFIELD_X5D !Pointer to the real 5D fields (one per nested mesh)
+  TYPE(TFIELDPTR_X6D),DIMENSION(:),ALLOCATABLE :: TFIELD_X6D !Pointer to the real 6D fields (one per nested mesh)
   !
   TYPE(TFIELDPTR_T0D),DIMENSION(:),ALLOCATABLE :: TFIELD_T0D !Pointer to the scalar date/time fields (one per nested mesh)
 END TYPE TFIELDDATA
