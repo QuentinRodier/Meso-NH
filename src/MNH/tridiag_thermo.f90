@@ -217,15 +217,13 @@ ZY(:,:,IKB) = PRHODJ(:,:,IKB)*PVARM(:,:,IKB)/PTSTEP                  &
     + ZRHODJ_DFDDTDZ_O_DZ2(:,:,IKB+KKL) * PIMPL * PVARM(:,:,IKB+KKL) &
     - ZRHODJ_DFDDTDZ_O_DZ2(:,:,IKB+KKL) * PIMPL * PVARM(:,:,IKB  )
 !
-DO JK=IKTB+1,IKTE-1
-  ZY(:,:,JK) = PRHODJ(:,:,JK)*PVARM(:,:,JK)/PTSTEP                 &
-    - ZMZM_RHODJ(:,:,JK+KKL) * PF(:,:,JK+KKL)/PDZZ(:,:,JK+KKL)     &
-    + ZMZM_RHODJ(:,:,JK  ) * PF(:,:,JK  )/PDZZ(:,:,JK  )           &
-    + ZRHODJ_DFDDTDZ_O_DZ2(:,:,JK+KKL) * PIMPL * PVARM(:,:,JK+KKL) &
-    - ZRHODJ_DFDDTDZ_O_DZ2(:,:,JK+KKL) * PIMPL * PVARM(:,:,JK  )   &
-    - ZRHODJ_DFDDTDZ_O_DZ2(:,:,JK    ) * PIMPL * PVARM(:,:,JK  )   &
-    + ZRHODJ_DFDDTDZ_O_DZ2(:,:,JK    ) * PIMPL * PVARM(:,:,JK-KKL)
-END DO
+  ZY(:,:,IKTB+1:IKTE-1) = PRHODJ(:,:,IKTB+1:IKTE-1)*PVARM(:,:,IKTB+1:IKTE-1)/PTSTEP                 &
+    - ZMZM_RHODJ(:,:,IKTB+1+KKL:IKTE-1+KKL) * PF(:,:,IKTB+1+KKL:IKTE-1+KKL)/PDZZ(:,:,IKTB+1+KKL:IKTE-1+KKL)     &
+    + ZMZM_RHODJ(:,:,IKTB+1:IKTE-1  ) * PF(:,:,IKTB+1:IKTE-1  )/PDZZ(:,:,IKTB+1:IKTE-1  )           &
+    + ZRHODJ_DFDDTDZ_O_DZ2(:,:,IKTB+1+KKL:IKTE-1+KKL) * PIMPL * PVARM(:,:,IKTB+1+KKL:IKTE-1+KKL) &
+    - ZRHODJ_DFDDTDZ_O_DZ2(:,:,IKTB+1+KKL:IKTE-1+KKL) * PIMPL * PVARM(:,:,IKTB+1:IKTE-1  )   &
+    - ZRHODJ_DFDDTDZ_O_DZ2(:,:,IKTB+1:IKTE-1    ) * PIMPL * PVARM(:,:,IKTB+1:IKTE-1  )   &
+    + ZRHODJ_DFDDTDZ_O_DZ2(:,:,IKTB+1:IKTE-1    ) * PIMPL * PVARM(:,:,IKTB+1-KKL:IKTE-1-KKL)
 ! 
 ZY(:,:,IKE) = PRHODJ(:,:,IKE)*PVARM(:,:,IKE)/PTSTEP               &
     - ZMZM_RHODJ(:,:,IKE+KKL) * PF(:,:,IKE+KKL)/PDZZ(:,:,IKE+KKL) &
@@ -245,15 +243,13 @@ IF ( PIMPL > 1.E-10 ) THEN
   ZB(:,:,IKB) =   PRHODJ(:,:,IKB)/PTSTEP                   &
                 - ZRHODJ_DFDDTDZ_O_DZ2(:,:,IKB+KKL) * PIMPL
   ZC(:,:,IKB) =   ZRHODJ_DFDDTDZ_O_DZ2(:,:,IKB+KKL) * PIMPL
-
-  DO JK=IKTB+1,IKTE-1
-    ZA(:,:,JK) =   ZRHODJ_DFDDTDZ_O_DZ2(:,:,JK  ) * PIMPL
-    ZB(:,:,JK) =   PRHODJ(:,:,JK)/PTSTEP                   &
-                 - ZRHODJ_DFDDTDZ_O_DZ2(:,:,JK+KKL) * PIMPL &
-                 - ZRHODJ_DFDDTDZ_O_DZ2(:,:,JK  ) * PIMPL
-    ZC(:,:,JK) =   ZRHODJ_DFDDTDZ_O_DZ2(:,:,JK+KKL) * PIMPL
-  END DO
-
+!
+  ZA(:,:,IKTB+1:IKTE-1) =   ZRHODJ_DFDDTDZ_O_DZ2(:,:,IKTB+1:IKTE-1) * PIMPL
+  ZB(:,:,IKTB+1:IKTE-1) =   PRHODJ(:,:,IKTB+1:IKTE-1)/PTSTEP                        &
+                          - ZRHODJ_DFDDTDZ_O_DZ2(:,:,IKTB+1+KKL:IKTE-1+KKL) * PIMPL &
+                          - ZRHODJ_DFDDTDZ_O_DZ2(:,:,IKTB+1:IKTE-1) * PIMPL
+  ZC(:,:,IKTB+1:IKTE-1) =   ZRHODJ_DFDDTDZ_O_DZ2(:,:,IKTB+1+KKL:IKTE-1+KKL) * PIMPL
+!
   ZA(:,:,IKE) =   ZRHODJ_DFDDTDZ_O_DZ2(:,:,IKE  ) * PIMPL
   ZB(:,:,IKE) =   PRHODJ(:,:,IKE)/PTSTEP                   &
                 - ZRHODJ_DFDDTDZ_O_DZ2(:,:,IKE  ) * PIMPL

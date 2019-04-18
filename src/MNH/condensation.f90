@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !     ######spl
       MODULE MODI_CONDENSATION
@@ -181,17 +181,19 @@ REAL, DIMENSION(KIU,KJU,KKU) :: ZLV, ZLS, ZCPD
 REAL :: ZTEMP, ZPV, ZQSL, ZPIV, ZQSI, ZCOND, ZLVS ! thermodynamics
 REAL :: ZLL, DZZ, ZZZ                           ! used for length scales
 REAL :: ZAH, ZA, ZB, ZSBAR, ZQ1, ZSIGMA, ZDRW, ZDTL, ZSIG_CONV ! related to computation of Sig_s
+INTEGER  :: INQ1
+REAL :: ZINC
 !
 !*       0.3  Definition of constants :
 !
 !-------------------------------------------------------------------------------
 !
-REAL :: ZL0     = 600.        ! tropospheric length scale
-REAL :: ZCSIGMA = 0.2         ! constant in sigma_s parameterization
-REAL :: ZCSIG_CONV = 0.30E-2  ! scaling factor for ZSIG_CONV as function of mass flux
+REAL,PARAMETER :: ZL0     = 600.        ! tropospheric length scale
+REAL,PARAMETER :: ZCSIGMA = 0.2         ! constant in sigma_s parameterization
+REAL,PARAMETER :: ZCSIG_CONV = 0.30E-2  ! scaling factor for ZSIG_CONV as function of mass flux
 !
 
-REAL, DIMENSION(-22:11) :: ZSRC_1D =(/                                   &
+REAL, DIMENSION(-22:11),PARAMETER :: ZSRC_1D =(/                         &
        0.           ,  0.           ,  2.0094444E-04,   0.316670E-03,    &
        4.9965648E-04,  0.785956E-03 ,  1.2341294E-03,   0.193327E-02,    &
        3.0190963E-03,  0.470144E-02 ,  7.2950651E-03,   0.112759E-01,    &
@@ -201,8 +203,6 @@ REAL, DIMENSION(-22:11) :: ZSRC_1D =(/                                   &
        0.8413813    ,  0.933222E+00 ,  0.9772662    ,   0.993797E+00,    &
        0.9986521    ,  0.999768E+00 ,  0.9999684    ,   0.999997E+00,    &
        1.0000000    ,  1.000000     /)
-INTEGER  :: INQ1
-REAL :: ZINC
 !
 !-------------------------------------------------------------------------------
 !
@@ -303,11 +303,12 @@ END IF
 !
 !Ice fraction
 ZFRAC(:,:,:) = 0.
-WHERE(PRC(:,:,:)+PRI(:,:,:) > 1.E-20)
-  ZFRAC(:,:,:) = PRI(:,:,:) / (PRC(:,:,:)+PRI(:,:,:))
-ENDWHERE
-CALL COMPUTE_FRAC_ICE(HFRAC_ICE, ZFRAC, PT)
-IF(.NOT. OUSERI) ZFRAC(:,:,:)=0.
+IF (OUSERI) THEN
+  WHERE(PRC(:,:,:)+PRI(:,:,:) > 1.E-20)
+    ZFRAC(:,:,:) = PRI(:,:,:) / (PRC(:,:,:)+PRI(:,:,:))
+  ENDWHERE
+  CALL COMPUTE_FRAC_ICE(HFRAC_ICE, ZFRAC, PT)
+ENDIF
 !
 DO JK=IKTB,IKTE
   JKP=MAX(MIN(JK+KKL,IKTE),IKTB)

@@ -235,6 +235,7 @@ REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZFPOS, ZFNEG
 !BEG JUAN PPM_LL
 INTEGER                          :: IJS,IJN
 !END JUAN PPM_LL
+LOGICAL                :: GWEST , GEAST
 !-------------------------------------------------------------------------------
 !
 !*       0.3.     COMPUTES THE DOMAIN DIMENSIONS
@@ -243,6 +244,9 @@ INTEGER                          :: IJS,IJN
 CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 IJS=IJB
 IJN=IJE
+!
+GWEST = LWEST_ll()
+GEAST = LEAST_ll()
 !
 !BEG JUAN PPM_LL
 !
@@ -399,13 +403,13 @@ CASE('OPEN')
 !
 !  WEST BOUND
 !
-  IF (LWEST_ll()) THEN
+  IF (GWEST) THEN
    ZDMQ(IIB-1,IJS:IJN,:) = -ZDMQ(IIB,IJS:IJN,:)
   ENDIF
 !
 !  EAST BOUND
 !
-  IF (LEAST_ll()) THEN
+  IF (GEAST) THEN 
    ZDMQ(IIE+1,IJS:IJN,:) = -ZDMQ(IIE,IJS:IJN,:)
   ENDIF
 !
@@ -451,7 +455,7 @@ CASE('OPEN')
 !  
 !  WEST BOUND
 !
-  IF (LWEST_ll()) THEN
+  IF (GWEST) THEN
    ZQL0(IIB-1,IJS:IJN,:) = ZQL0(IIB,IJS:IJN,:)
   ENDIF
 !
@@ -461,7 +465,7 @@ CASE('OPEN')
 !
 !  EAST BOUND
 !
-  IF (LEAST_ll()) THEN
+  IF (GEAST) THEN
    ZQR0(IIE+1,IJS:IJN,:) = ZQR0(IIE,IJS:IJN,:)
   ENDIF
 !
@@ -504,7 +508,8 @@ CASE('OPEN')
 !!$   ZFPOS(IIB+1:IIE+1,:,:) = ZQR(IIB:IIE,:,:) - 0.5*PCR(IIB+1:IIE+1,:,:) * &            
 !!$        (ZDQ(IIB:IIE,:,:) - (1.0 - 2.0*PCR(IIB+1:IIE+1,:,:)/3.0)          &
 !!$        * ZQ6(IIB:IIE,:,:))
-   ZFPOS(IIB:IIE+1,IJS:IJN,:) = ZQR(IIB-1:IIE,IJS:IJN,:) - 0.5*PCR(IIB:IIE+1,IJS:IJN,:) * &            
+
+  ZFPOS(IIB:IIE+1,IJS:IJN,:) = ZQR(IIB-1:IIE,IJS:IJN,:) - 0.5*PCR(IIB:IIE+1,IJS:IJN,:) * &
         (ZDQ(IIB-1:IIE,IJS:IJN,:) - (1.0 - 2.0*PCR(IIB:IIE+1,IJS:IJN,:)/3.0)        &
         * ZQ6(IIB-1:IIE,IJS:IJN,:))
 !
@@ -515,7 +520,7 @@ CASE('OPEN')
 !
 ! advection flux at open boundary when u(IIB) > 0
 ! 
-  IF (LWEST_ll()) THEN 
+  IF (GWEST) THEN
    ZFPOS(IIB,IJS:IJN,:) = (PSRC(IIB-1,IJS:IJN,:) - ZQR(IIB-1,IJS:IJN,:))*PCR(IIB,IJS:IJN,:) + &
                     ZQR(IIB-1,IJS:IJN,:)
 ! PPOSX(IIB-1,:,:) is not important for the calc of advection so 
@@ -534,7 +539,7 @@ CASE('OPEN')
 !  EAST BOUND
 !
 ! advection flux at open boundary when u(IIE+1) < 0
-  IF (LEAST_ll()) THEN
+  IF (GEAST) THEN
    ZFNEG(IIE+1,IJS:IJN,:) = (ZQR(IIE,IJS:IJN,:)-PSRC(IIE+1,IJS:IJN,:))*PCR(IIE+1,IJS:IJN,:) + &
                       ZQR(IIE,IJS:IJN,:)
   ENDIF
@@ -660,6 +665,8 @@ REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: PR
 INTEGER:: IIB,IJB    ! Begining useful area in x,y,z directions
 INTEGER:: IIE,IJE    ! End useful area in x,y,z directions
 !
+LOGICAL                          :: GSOUTH , GNORTH
+!
 ! terms used in parabolic interpolation, dmq, qL, qR, dq, q6
 REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZQL,ZQR
 REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZDQ,ZQ6
@@ -682,6 +689,10 @@ INTEGER                          :: IIW,IIA
 CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 IIW=IIB
 IIA=IIE
+!
+GSOUTH=LSOUTH_ll()
+GNORTH=LNORTH_ll()
+!
 CALL GET_HALO(PSRC)
 
 !
@@ -830,13 +841,13 @@ CASE('OPEN')
 !
 !  SOUTH BOUND
 !
-   IF (LSOUTH_ll()) THEN
+   IF (GSOUTH) THEN
     ZDMQ(IIW:IIA,IJB-1,:) = -ZDMQ(IIW:IIA,IJB,:)
    ENDIF
 !
 !  NORTH BOUND
 !
-   IF (LNORTH_ll()) THEN
+   IF (GNORTH) THEN
     ZDMQ(IIW:IIA,IJE+1,:) = -ZDMQ(IIW:IIA,IJE,:)
    ENDIF
 !
@@ -870,7 +881,7 @@ CASE('OPEN')
 !  
 !  SOUTH BOUND
 !
-   IF (LSOUTH_ll()) THEN
+   IF (GSOUTH) THEN
     ZQL0(IIW:IIA,IJB-1,:) = ZQL0(IIW:IIA,IJB,:)
    ENDIF
 !
@@ -878,7 +889,7 @@ CASE('OPEN')
 !
 !  NORTH BOUND
 !
-   IF (LNORTH_ll()) THEN
+   IF (GNORTH) THEN
     ZQR0(IIW:IIA,IJE+1,:) = ZQR0(IIW:IIA,IJE,:)
    ENDIF
 !
@@ -928,7 +939,7 @@ CASE('OPEN')
 !  
 !  SOUTH BOUND
 !
-   IF (LSOUTH_ll()) THEN
+   IF (GSOUTH) THEN
     ZFPOS(IIW:IIA,IJB,:) = (PSRC(IIW:IIA,IJB-1,:) - ZQR(IIW:IIA,IJB-1,:))*PCR(IIW:IIA,IJB,:) + &
                       ZQR(IIW:IIA,IJB-1,:)
    ENDIF
@@ -949,7 +960,7 @@ CASE('OPEN')
 !
 !  NORTH BOUND
 !
-   IF (LNORTH_ll()) THEN
+   IF (GNORTH) THEN
     ZFNEG(IIW:IIA,IJE+1,:) = (ZQR(IIW:IIA,IJE,:)-PSRC(IIW:IIA,IJE+1,:))*PCR(IIW:IIA,IJE+1,:) + &
                         ZQR(IIW:IIA,IJE,:)
    ENDIF
@@ -1187,7 +1198,7 @@ ZFNEG(:,:,IKE+1) = (ZQR(:,:,IKE)-PSRC(:,:,IKE+1))*PCR(:,:,IKE+1) + &
 !
 PR = DZF(1,IKU,1, PCR*MZM(1,IKU,1,PRHO)*( ZFPOS*(0.5+SIGN(0.5,PCR)) + & 
                           ZFNEG*(0.5-SIGN(0.5,PCR)) ) )
-CALL GET_HALO(PR)
+!Unnecessary CALL GET_HALO(PR)
 !
 CONTAINS
 !
@@ -1303,6 +1314,7 @@ REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: PR
 INTEGER:: IIB,IJB    ! Begining useful area in x,y,z directions
 INTEGER:: IIE,IJE    ! End useful area in x,y,z directions
 !
+LOGICAL :: GWEST, GEAST
 ! advection fluxes
 REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZFPOS, ZFNEG
 !
@@ -1324,6 +1336,9 @@ IJN=IJE
 !!$IJS=IJB-1
 !!$IJN=IJE+1
 !
+GWEST = LWEST_ll()
+GEAST = LEAST_ll()
+!
 !BEG JUAN PPM_LL
 !
 !*              initialise & update halo & halo2 for PSRC
@@ -1333,7 +1348,6 @@ ZPHAT=PSRC
 ZFPOS=PSRC
 ZFNEG=PSRC
 PR=PSRC
-!!$!
 !
 !END JUAN PPM_LL
 !-------------------------------------------------------------------------------
@@ -1416,7 +1430,7 @@ CASE ('OPEN')
 !
 !  WEST BOUND 
 !
-  IF (.NOT. LWEST_ll()) THEN
+IF (.NOT. GWEST) THEN
    ZPHAT(IIB  ,IJS:IJN,:) = ( 7.0 * &
                       ( PSRC(IIB  ,IJS:IJN,:) + PSRC(IIB-1,IJS:IJN,:)                  ) - &
                       ( PSRC(IIB+1,IJS:IJN,:) + TZ_PSRC_HALO2_ll%HALO2%WEST(IJS:IJN,:) ) ) / 12.0
@@ -1425,18 +1439,18 @@ CASE ('OPEN')
 !
 CALL  GET_HALO(ZPHAT)
 !
-  IF (LWEST_ll()) THEN
+  IF (GWEST) THEN
    ZPHAT(IIB  ,IJS:IJN,:) = 0.5*(PSRC(IIB-1,IJS:IJN,:) + PSRC(IIB,IJS:IJN,:))
    ZPHAT(IIB-1,IJS:IJN,:) = ZPHAT(IIB,IJS:IJN,:)
   ENDIF
 !
 ! EAST BOUND
 !
-  IF (LEAST_ll()) THEN
+  IF (GEAST) THEN
    ZPHAT(IIE+1,IJS:IJN,:) = 0.5*(PSRC(IIE,IJS:IJN,:) + PSRC(IIE+1,IJS:IJN,:))
   ENDIF
 !
-!   update ZPHAT HALO before next/further  utilisation 
+! update ZPHAT HALO before next/further  utilisation
 !
 !!$CALL  GET_HALO(ZPHAT)
 !
@@ -1452,7 +1466,7 @@ CALL  GET_HALO(ZPHAT)
 CALL GET_HALO(ZFPOS) ! JUAN
 !
 ! positive flux on the WEST boundary
-  IF (LWEST_ll()) THEN
+  IF (GWEST) THEN
    ZFPOS(IIB,IJS:IJN,:) = (PSRC(IIB-1,IJS:IJN,:) - ZPHAT(IIB,IJS:IJN,:))*PCR(IIB,IJS:IJN,:) + &
                      ZPHAT(IIB,IJS:IJN,:) 
 ! this is not used
@@ -1471,7 +1485,7 @@ CALL GET_HALO(ZFPOS) ! JUAN
 !
    CALL GET_HALO(ZFNEG) ! JUAN
 !
-  IF (LEAST_ll()) THEN
+  IF (GEAST) THEN
 !
 ! in OPEN case PCR(IIB-1) is not used, so we also set ZFNEG(IIB-1) = 0
 !
@@ -1492,7 +1506,7 @@ CALL GET_HALO(ZFPOS) ! JUAN
 !
 ! in OPEN case fix boundary conditions
 !
-  IF (LWEST_ll()) THEN
+  IF (GWEST) THEN
    WHERE ( PCR(IIB,IJS:IJN,:) <= 0. ) !  OUTFLOW condition
       PR(IIB-1,IJS:IJN,:) = 2.*PR(IIB,IJS:IJN,:) - PR(IIB+1,IJS:IJN,:)
    ELSEWHERE
@@ -1500,7 +1514,7 @@ CALL GET_HALO(ZFPOS) ! JUAN
    END WHERE
   ENDIF
 !
-  IF (LEAST_ll()) THEN 
+  IF (GEAST) THEN 
    WHERE ( PCR(IIE,IJS:IJN,:) >= 0. ) !  OUTFLOW condition
       PR(IIE+1,IJS:IJN,:) = 2.*PR(IIE,IJS:IJN,:) - PR(IIE-1,IJS:IJN,:)
    ELSEWHERE
@@ -1565,6 +1579,8 @@ REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: PR
 INTEGER:: IIB,IJB    ! Begining useful area in x,y,z directions
 INTEGER:: IIE,IJE    ! End useful area in x,y,z directions
 !
+LOGICAL :: GNORTH, GSOUTH
+!
 ! advection fluxes
 REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZFPOS, ZFNEG
 !
@@ -1587,6 +1603,9 @@ IIW=IIB
 IIA=IIE
 !!$IIW=IIB-1
 !!$IIA=IIE+1
+!
+GNORTH = LNORTH_ll()
+GSOUTH = LSOUTH_ll()
 !
 !-------------------------------------------------------------------------------
 !
@@ -1679,7 +1698,7 @@ CASE ('OPEN')
 !
 !  SOUTH BOUND 
 !
-  IF ( .NOT. LSOUTH_ll()) THEN
+  IF ( .NOT. GSOUTH) THEN
    ZPHAT(IIW:IIA,IJB  ,:) = (7.0 * &
                       (PSRC(IIW:IIA,IJB  ,:) + PSRC(IIW:IIA,IJB-1,:)) - &
                       (PSRC(IIW:IIA,IJB+1,:) + TZ_PSRC_HALO2_ll%HALO2%SOUTH(IIW:IIA,:) )) / 12.0
@@ -1688,14 +1707,14 @@ CASE ('OPEN')
 !
 CALL  GET_HALO(ZPHAT)
 !
-  IF (LSOUTH_ll()) THEN
+  IF (GSOUTH) THEN
    ZPHAT(IIW:IIA,IJB  ,:) = 0.5*(PSRC(IIW:IIA,IJB-1,:) + PSRC(IIW:IIA,IJB,:))
    ZPHAT(IIW:IIA,IJB-1,:) = ZPHAT(IIW:IIA,IJB,:)
   ENDIF
 !
 ! NORTH BOUND
 !
-  IF (LNORTH_ll()) THEN
+  IF (GNORTH) THEN
    ZPHAT(IIW:IIA,IJE+1,:) =  0.5*(PSRC(IIW:IIA,IJE,:) + PSRC(IIW:IIA,IJE+1,:))
   ENDIF
 !
@@ -1718,7 +1737,7 @@ ZFPOS(IIW:IIA,IJB:IJE+1,:) = ZPHAT(IIW:IIA,IJB:IJE+1,:) - &
 CALL GET_HALO(ZFPOS) ! JUAN
 !
 ! positive flux on the SOUTH boundary
-  IF (LSOUTH_ll()) THEN
+  IF (GSOUTH) THEN
    ZFPOS(IIW:IIA,IJB,:) = (PSRC(IIW:IIA,IJB-1,:) - ZPHAT(IIW:IIA,IJB,:))*PCR(IIW:IIA,IJB,:) + &
                      ZPHAT(IIW:IIA,IJB,:)
 !
@@ -1738,7 +1757,7 @@ CALL GET_HALO(ZFPOS) ! JUAN
 !
    CALL GET_HALO(ZFNEG) ! JUAN
 !
-  IF (LNORTH_ll()) THEN
+  IF (GNORTH) THEN
 ! this is not used
    ZFNEG(IIW:IIA,IJB-1,:) = 0.0
 !
@@ -1755,7 +1774,7 @@ CALL GET_HALO(ZFPOS) ! JUAN
 !
 ! in OPEN case fix boundary conditions
 !
-  IF (LSOUTH_ll()) THEN
+  IF (GSOUTH) THEN
    WHERE ( PCR(IIW:IIA,IJB,:) <= 0. ) !  OUTFLOW condition
       PR(IIW:IIA,IJB-1,:) = 1.0 * 2.*PR(IIW:IIA,IJB,:) - PR(IIW:IIA,IJB+1,:)
    ELSEWHERE
@@ -1763,7 +1782,7 @@ CALL GET_HALO(ZFPOS) ! JUAN
    END WHERE
   ENDIF
 !
-  IF (LNORTH_ll()) THEN
+  IF (GNORTH) THEN
    WHERE ( PCR(IIW:IIA,IJE,:) >= 0. ) !  OUTFLOW condition
       PR(IIW:IIA,IJE+1,:) = 1.0 * 2.*PR(IIW:IIA,IJE,:) - PR(IIW:IIA,IJE-1,:)
    ELSEWHERE
@@ -1898,7 +1917,7 @@ ZFNEG(:,:,IKE+1) = (ZPHAT(:,:,IKE+1) - PSRC(:,:,IKE+1))*PCR(:,:,IKE+1) + &
 ! calculate the advection
 !
 PR = PSRC * PRHO - &
-     DZF(1,IKU,1, PCR*MZM(1,IKU,1,PRHO)*( ZFPOS*(0.5+SIGN(0.5,PCR)) + & 
+     DZF(1,IKU,1, PCR*MZM(1,IKU,1,PRHO)*( ZFPOS(:,:,:)*(0.5+SIGN(0.5,PCR)) + & 
                           ZFNEG*(0.5-SIGN(0.5,PCR)) ) )
 !
 ! in OPEN case fix boundary conditions

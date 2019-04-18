@@ -1,18 +1,18 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 MODULE MODI_ICE4_RSRIMCG_OLD
 INTERFACE
-SUBROUTINE ICE4_RSRIMCG_OLD(KSIZE, LDSOFT, LDCOMPUTE, &
+SUBROUTINE ICE4_RSRIMCG_OLD(KSIZE, ODSOFT, ODCOMPUTE, &
                            &PRHODREF, &
                            &PLBDAS, &
                            &PT, PRCT, PRST, &
                            &PRSRIMCG_MR, PB_RS, PB_RG)
 IMPLICIT NONE
 INTEGER, INTENT(IN) :: KSIZE
-LOGICAL,                      INTENT(IN)    :: LDSOFT
-LOGICAL, DIMENSION(KSIZE),    INTENT(IN)    :: LDCOMPUTE
+LOGICAL,                      INTENT(IN)    :: ODSOFT
+LOGICAL, DIMENSION(KSIZE),    INTENT(IN)    :: ODCOMPUTE
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRHODREF ! Reference density
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLBDAS   ! Slope parameter of the aggregate distribution
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PT       ! Temperature
@@ -24,7 +24,7 @@ REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PB_RG
 END SUBROUTINE ICE4_RSRIMCG_OLD
 END INTERFACE
 END MODULE MODI_ICE4_RSRIMCG_OLD
-SUBROUTINE ICE4_RSRIMCG_OLD(KSIZE, LDSOFT, LDCOMPUTE, &
+SUBROUTINE ICE4_RSRIMCG_OLD(KSIZE, ODSOFT, ODCOMPUTE, &
                            &PRHODREF, &
                            &PLBDAS, &
                            &PT, PRCT, PRST, &
@@ -46,18 +46,18 @@ SUBROUTINE ICE4_RSRIMCG_OLD(KSIZE, LDSOFT, LDCOMPUTE, &
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_CST
-USE MODD_RAIN_ICE_PARAM
-USE MODD_RAIN_ICE_DESCR
-USE MODD_PARAM_ICE, ONLY : CSNOWRIMING
+USE MODD_CST,            ONLY: XTT
+USE MODD_PARAM_ICE,      ONLY: CSNOWRIMING
+USE MODD_RAIN_ICE_DESCR, ONLY: XRTMIN
+USE MODD_RAIN_ICE_PARAM, ONLY: NGAMINC,XEXSRIMCG,XGAMINC_RIM2,XRIMINTP1,XRIMINTP2,XSRIMCG
 !
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
 INTEGER, INTENT(IN) :: KSIZE
-LOGICAL,                      INTENT(IN)    :: LDSOFT
-LOGICAL, DIMENSION(KSIZE),    INTENT(IN)    :: LDCOMPUTE
+LOGICAL,                      INTENT(IN)    :: ODSOFT
+LOGICAL, DIMENSION(KSIZE),    INTENT(IN)    :: ODCOMPUTE
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRHODREF ! Reference density
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLBDAS   ! Slope parameter of the aggregate distribution
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PT       ! Temperature
@@ -84,8 +84,8 @@ INTEGER :: JJ
 !
 PRSRIMCG_MR(:)=0.
 !
-IF(.NOT. LDSOFT) THEN
-  GRIM(:) = PRCT(:)>XRTMIN(2) .AND. PRST(:)>XRTMIN(5) .AND. LDCOMPUTE(:) .AND. PT(:)<XTT
+IF(.NOT. ODSOFT) THEN
+  GRIM(:) = PRCT(:)>XRTMIN(2) .AND. PRST(:)>XRTMIN(5) .AND. ODCOMPUTE(:) .AND. PT(:)<XTT
   IGRIM = COUNT(GRIM(:))
   !
   IF(IGRIM>0 .AND. CSNOWRIMING=='OLD ') THEN

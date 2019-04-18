@@ -1,17 +1,17 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 MODULE MODI_ICE4_WARM
 INTERFACE
 SUBROUTINE ICE4_WARM(KSIZE, LDSOFT, LDCOMPUTE, HSUBG_RC_RR_ACCR, HSUBG_RR_EVAP, &
-                    &PRHODREF, PLVFACT, PT, PPRES, PTHT, &
-                    &PLBDAR, PLBDAR_RF, PKA, PDV, PCJ, &
-                    &PHLC_LCF, PHLC_HCF, PHLC_LRC, PHLC_HRC, &
-                    &PCF, PRF, &
-                    &PRVT, PRCT, PRRT, &
-                    &PRCAUTR, PRCACCR, PRREVAV, &
-                    &PA_TH, PA_RV, PA_RC, PA_RR)
+                     PRHODREF, PLVFACT, PT, PPRES, PTHT, &
+                     PLBDAR, PLBDAR_RF, PKA, PDV, PCJ, &
+                     PHLC_LCF, PHLC_HCF, PHLC_LRC, PHLC_HRC, &
+                     PCF, PRF, &
+                     PRVT, PRCT, PRRT, &
+                     PRCAUTR, PRCACCR, PRREVAV, &
+                     PA_TH, PA_RV, PA_RC, PA_RR)
 IMPLICIT NONE
 INTEGER,                      INTENT(IN)    :: KSIZE
 LOGICAL,                      INTENT(IN)    :: LDSOFT
@@ -48,13 +48,13 @@ END SUBROUTINE ICE4_WARM
 END INTERFACE
 END MODULE MODI_ICE4_WARM
 SUBROUTINE ICE4_WARM(KSIZE, LDSOFT, LDCOMPUTE, HSUBG_RC_RR_ACCR, HSUBG_RR_EVAP, &
-                    &PRHODREF, PLVFACT, PT, PPRES, PTHT, &
-                    &PLBDAR, PLBDAR_RF, PKA, PDV, PCJ, &
-                    &PHLC_LCF, PHLC_HCF, PHLC_LRC, PHLC_HRC, &
-                    &PCF, PRF, &
-                    &PRVT, PRCT, PRRT, &
-                    &PRCAUTR, PRCACCR, PRREVAV, &
-                    &PA_TH, PA_RV, PA_RC, PA_RR)
+                     PRHODREF, PLVFACT, PT, PPRES, PTHT, &
+                     PLBDAR, PLBDAR_RF, PKA, PDV, PCJ, &
+                     PHLC_LCF, PHLC_HCF, PHLC_LRC, PHLC_HRC, &
+                     PCF, PRF, &
+                     PRVT, PRCT, PRRT, &
+                     PRCAUTR, PRCACCR, PRREVAV, &
+                     PA_TH, PA_RV, PA_RC, PA_RR)
 !!
 !!**  PURPOSE
 !!    -------
@@ -72,9 +72,10 @@ SUBROUTINE ICE4_WARM(KSIZE, LDSOFT, LDCOMPUTE, HSUBG_RC_RR_ACCR, HSUBG_RR_EVAP, 
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_CST
-USE MODD_RAIN_ICE_PARAM
-USE MODD_RAIN_ICE_DESCR
+USE MODD_CST,            ONLY: XALPW,XBETAW,XCL,XCPD,XCPV,XGAMW,XLVTT,XMD,XMV,XRV,XTT
+USE MODD_RAIN_ICE_DESCR, ONLY: XCEXVT,XRTMIN
+USE MODD_RAIN_ICE_PARAM, ONLY: X0EVAR,X1EVAR,XCRIAUTC,XEX0EVAR,XEX1EVAR,XEXCACCR,XFCACCR,XTIMAUTC
+!
 USE MODE_MSG
 !
 IMPLICIT NONE
@@ -115,12 +116,10 @@ REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PA_RR
 !
 !*       0.2  declaration of local variables
 !
-REAL, DIMENSION(SIZE(PRHODREF)) :: ZZW2, ZZW3, ZZW4
-REAL, DIMENSION(SIZE(PRHODREF)) :: ZUSW ! Undersaturation over water
-REAL, DIMENSION(SIZE(PRHODREF)) :: ZTHLT    ! Liquid potential temperature
-REAL            :: ZTIMAUTIC
 LOGICAL, DIMENSION(SIZE(PRHODREF)) :: GMASK, GMASK1, GMASK2
-!-------------------------------------------------------------------------------
+REAL, DIMENSION(SIZE(PRHODREF))    :: ZZW2, ZZW3, ZZW4
+REAL, DIMENSION(SIZE(PRHODREF))    :: ZUSW ! Undersaturation over water
+REAL, DIMENSION(SIZE(PRHODREF))    :: ZTHLT    ! Liquid potential temperature
 !
 !
 !
@@ -142,7 +141,6 @@ ELSE
 ENDIF
 PA_RC(:) = PA_RC(:) - PRCAUTR(:)
 PA_RR(:) = PA_RR(:) + PRCAUTR(:)
-!
 !
 !*       4.3    compute the accretion of r_c for r_r production: RCACCR
 !
@@ -195,11 +193,9 @@ ELSEIF (HSUBG_RC_RR_ACCR=='PRFR') THEN
     END WHERE
   ENDIF
 ELSE
-  !wrong HSUBG_RC_RR_ACCR case
-  
-  WRITE(*,*) 'wrong HSUBG_RC_RR_ACCR case'
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','ICE4_WARM','')
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','ICE4_WARM','wrong HSUBG_RC_RR_ACCR case')
 ENDIF
+!
 PA_RC(:) = PA_RC(:) - PRCACCR(:)
 PA_RR(:) = PA_RR(:) + PRCACCR(:)
 !
@@ -277,8 +273,7 @@ ELSEIF (HSUBG_RR_EVAP=='CLFR' .OR. HSUBG_RR_EVAP=='PRFR') THEN
   ENDIF
 
 ELSE
-  WRITE(*,*) 'wrong HSUBG_RR_EVAP case'
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','ICE4_WARM','')
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','ICE4_WARM','wrong HSUBG_RR_EVAP case')
 END IF
 PA_RR(:) = PA_RR(:) - PRREVAV(:)
 PA_RV(:) = PA_RV(:) + PRREVAV(:)

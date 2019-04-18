@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 MODULE MODI_ICE4_FAST_RI
 INTERFACE
@@ -66,9 +66,8 @@ SUBROUTINE ICE4_FAST_RI(KSIZE, LDSOFT, LDCOMPUTE, &
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_CST
-USE MODD_RAIN_ICE_PARAM
-USE MODD_RAIN_ICE_DESCR
+USE MODD_RAIN_ICE_DESCR, ONLY: XDI,XLBEXI,XLBI,XRTMIN
+USE MODD_RAIN_ICE_PARAM, ONLY: X0DEPI,X2DEPI
 !
 IMPLICIT NONE
 !
@@ -93,7 +92,6 @@ REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PA_RI
 !
 !*       0.2  declaration of local variables
 !
-REAL, DIMENSION(SIZE(PRHODREF)) :: ZZW
 LOGICAL, DIMENSION(SIZE(PRHODREF)) :: GMASK
 !
 !-------------------------------------------------------------------------------

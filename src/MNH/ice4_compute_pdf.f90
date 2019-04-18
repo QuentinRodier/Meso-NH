@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 MODULE MODI_ICE4_COMPUTE_PDF
 INTERFACE
@@ -10,7 +10,7 @@ SUBROUTINE ICE4_COMPUTE_PDF(KSIZE, HSUBG_AUCV, HSUBG_PR_PDF, &
 IMPLICIT NONE
 INTEGER,                INTENT(IN)  :: KSIZE
 CHARACTER(LEN=4),       INTENT(IN)  :: HSUBG_AUCV     ! Kind of Subgrid autoconversion method
-CHARACTER*80,           INTENT(IN)  :: HSUBG_PR_PDF   ! pdf for subgrid precipitation
+CHARACTER(LEN=80),      INTENT(IN)  :: HSUBG_PR_PDF   ! pdf for subgrid precipitation
 REAL, DIMENSION(KSIZE), INTENT(IN)  :: PRHODREF   ! Reference density
 REAL, DIMENSION(KSIZE), INTENT(IN)  :: PRCT       ! Cloud water m.r. at t
 REAL, DIMENSION(KSIZE), INTENT(IN)  :: PCF        ! Cloud fraction
@@ -46,9 +46,9 @@ SUBROUTINE ICE4_COMPUTE_PDF(KSIZE, HSUBG_AUCV, HSUBG_PR_PDF, &
 !          ------------
 !
 !
-USE MODD_RAIN_ICE_DESCR
-USE MODD_RAIN_ICE_PARAM
-USE MODD_LUNIT_n, ONLY : TLUOUT
+USE MODD_RAIN_ICE_DESCR, ONLY: XRTMIN
+USE MODD_RAIN_ICE_PARAM, ONLY: XCRIAUTC
+!
 USE MODE_MSG
 !
 IMPLICIT NONE
@@ -57,7 +57,7 @@ IMPLICIT NONE
 !
 INTEGER,                INTENT(IN)  :: KSIZE
 CHARACTER(LEN=4),       INTENT(IN)  :: HSUBG_AUCV     ! Kind of Subgrid autoconversion method
-CHARACTER*80,           INTENT(IN)  :: HSUBG_PR_PDF   ! pdf for subgrid precipitation
+CHARACTER(LEN=80),      INTENT(IN)  :: HSUBG_PR_PDF   ! pdf for subgrid precipitation
 REAL, DIMENSION(KSIZE), INTENT(IN)  :: PRHODREF   ! Reference density
 REAL, DIMENSION(KSIZE), INTENT(IN)  :: PRCT       ! Cloud water m.r. at t
 REAL, DIMENSION(KSIZE), INTENT(IN)  :: PCF        ! Cloud fraction

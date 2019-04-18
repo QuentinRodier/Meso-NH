@@ -212,15 +212,13 @@ ZY(:,:,IKB) = ZMZM_RHODJ(:,:,IKB)*PVARM(:,:,IKB)/PTSTEP              &
     + ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKB) * PVARM(:,:,IKB+1)&
     - ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKB) * PVARM(:,:,IKB  )
 !
-DO JK=IKB+1,IKE-1
-  ZY(:,:,JK) = ZMZM_RHODJ(:,:,JK)*PVARM(:,:,JK)/PTSTEP               &
-    - PRHODJ(:,:,JK  ) * PF(:,:,JK  )/PMZF_DZZ(:,:,JK  )              &
-    + PRHODJ(:,:,JK-1) * PF(:,:,JK-1)/PMZF_DZZ(:,:,JK-1)              &
-    + ZRHODJ_DFDDWDZ_O_DZ2(:,:,JK  ) * PVARM(:,:,JK+1)  &
-    - ZRHODJ_DFDDWDZ_O_DZ2(:,:,JK  ) * PVARM(:,:,JK  )  &
-    - ZRHODJ_DFDDWDZ_O_DZ2(:,:,JK-1) * PVARM(:,:,JK  )  &
-    + ZRHODJ_DFDDWDZ_O_DZ2(:,:,JK-1) * PVARM(:,:,JK-1)
-END DO
+  ZY(:,:,IKB+1:IKE-1) = ZMZM_RHODJ(:,:,IKB+1:IKE-1)*PVARM(:,:,IKB+1:IKE-1)/PTSTEP               &
+    - PRHODJ(:,:,IKB+1:IKE-1  ) * PF(:,:,IKB+1:IKE-1  )/PMZF_DZZ(:,:,IKB+1:IKE-1  )              &
+    + PRHODJ(:,:,IKB:IKE-2) * PF(:,:,IKB:IKE-2)/PMZF_DZZ(:,:,IKB:IKE-2)              &
+    + ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKB+1:IKE-1  ) * PVARM(:,:,IKB+2:IKE)  &
+    - ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKB+1:IKE-1  ) * PVARM(:,:,IKB+1:IKE-1  )  &
+    - ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKB:IKE-2) * PVARM(:,:,IKB+1:IKE-1  )  &
+    + ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKB:IKE-2) * PVARM(:,:,IKB:IKE-2)
 ! 
 ZY(:,:,IKE) = ZMZM_RHODJ(:,:,IKE)*PVARM(:,:,IKE)/PTSTEP              &
     - PRHODJ(:,:,IKE  ) * PF(:,:,IKE  )/PMZF_DZZ(:,:,IKE  )           &
@@ -247,13 +245,11 @@ ZY(:,:,IKE) = ZMZM_RHODJ(:,:,IKE)*PVARM(:,:,IKE)/PTSTEP              &
                 - ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKB)
   ZC(:,:,IKB) =   ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKB)
 
-  DO JK=IKB+1,IKE-1
-    ZA(:,:,JK) =   ZRHODJ_DFDDWDZ_O_DZ2(:,:,JK-1)
-    ZB(:,:,JK) =   ZMZM_RHODJ(:,:,JK)/PTSTEP      &
-                 - ZRHODJ_DFDDWDZ_O_DZ2(:,:,JK  ) &
-                 - ZRHODJ_DFDDWDZ_O_DZ2(:,:,JK-1)
-    ZC(:,:,JK) =   ZRHODJ_DFDDWDZ_O_DZ2(:,:,JK  )
-  END DO
+    ZA(:,:,IKB+1:IKE-1) =   ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKB:IKE-2)
+    ZB(:,:,IKB+1:IKE-1) =   ZMZM_RHODJ(:,:,IKB+1:IKE-1)/PTSTEP      &
+                 - ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKB+1:IKE-1  ) &
+                 - ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKB:IKE-2)
+    ZC(:,:,IKB+1:IKE-1) =   ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKB+1:IKE-1  )
 
   ZA(:,:,IKE) =   ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKE-1)
   ZB(:,:,IKE) =   ZMZM_RHODJ(:,:,IKE)/PTSTEP      &

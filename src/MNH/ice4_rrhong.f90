@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 MODULE MODI_ICE4_RRHONG
 INTERFACE
@@ -48,10 +48,9 @@ SUBROUTINE ICE4_RRHONG(KSIZE, LDSOFT, LDCOMPUTE, &
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_CST
-USE MODD_RAIN_ICE_PARAM
-USE MODD_RAIN_ICE_DESCR
-USE MODD_PARAM_ICE, ONLY : LFEEDBACKT
+USE MODD_CST,            ONLY: XTT
+USE MODD_RAIN_ICE_DESCR, ONLY: XRTMIN
+USE MODD_PARAM_ICE,      ONLY: LFEEDBACKT
 !
 IMPLICIT NONE
 !

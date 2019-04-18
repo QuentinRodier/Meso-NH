@@ -154,6 +154,7 @@ REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRUCT ! contrav. comp. on MASS GRID
 !
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PR
 TYPE(HALO2_ll), OPTIONAL, POINTER :: TPHALO2      ! halo2 for the field at t
+REAL, DIMENSION(:,:), POINTER :: TWEST, TEAST
 !
 !*       0.2   Declarations of local variables :
 !
@@ -200,6 +201,11 @@ CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 !*       0.4.   INITIALIZE THE FIELD 
 !               ---------------------
 !
+IF (PRESENT(TPHALO2)) THEN
+  TWEST => TPHALO2%WEST
+  TEAST => TPHALO2%EAST
+END IF
+!
 PR(:,:,:) = 0.0
 !
 ZFPOS1  = 0.0
@@ -232,34 +238,34 @@ CASE ('CYCL')          ! In that case one must have HLBCX(1) == HLBCX(2)
 ! (r=1 for the first stencil ZFPOS1, r=0 for the second ZFPOS2)
 !
    ZFPOS1(IW:IE+1,:,:) = 0.5 * (3.0*PSRC(IW:IE+1,:,:) - PSRC(IW-1:IE,:,:))
-   ZFPOS1(IW-1,   :,:) = 0.5 * (3.0*PSRC(IW-1,   :,:) - TPHALO2%WEST(:,:))
+   ZFPOS1(IW-1,   :,:) = 0.5 * (3.0*PSRC(IW-1,   :,:) - TWEST(:,:))
 !
    ZFPOS2(IW-1:IE,:,:) = 0.5 * (PSRC(IW-1:IE,:,:) + PSRC(IW:IE+1,:,:))
-   ZFPOS2(IE+1,   :,:) = 0.5 * (PSRC(IE+1,   :,:) + TPHALO2%EAST(:,:))
+   ZFPOS2(IE+1,   :,:) = 0.5 * (PSRC(IE+1,   :,:) + TEAST(:,:))
 !
 ! intermediate flux at the mass point on Ugrid (i+1/2,j,k) for negative wind 
 ! case (from the right to the left)
 ! (r=0 for the second stencil ZFNEG2=ZFPOS2, r=-1 for the first ZFNEG1)  
 !
-  ZFNEG1(IW-1:IE-1,:,:) = 0.5 * (3.0*PSRC(IW:IE,:,:) - PSRC(IW+1:IE+1,:,:))
-  ZFNEG1(IE,   :,:) = 0.5 * (3.0*PSRC(IE+1,   :,:) - TPHALO2%EAST(:,:))
-  ZFNEG2(IW-1:IE,:,:) = 0.5 * (PSRC(IW-1:IE,:,:) + PSRC(IW:IE+1,:,:))
-  ZFNEG2(IE+1,   :,:) = 0.5 * (PSRC(IE+1,   :,:) + TPHALO2%EAST(:,:))
+  ZFNEG1(IW-1:IE-1,:,:) = 0.5 * (3.0*PSRC(IW:IE,:,:)   - PSRC(IW+1:IE+1,:,:))
+  ZFNEG1(IE,   :,:)     = 0.5 * (3.0*PSRC(IE+1,   :,:) - TEAST(:,:))
+  ZFNEG2(IW-1:IE,:,:)   = 0.5 * (PSRC(IW-1:IE,:,:) + PSRC(IW:IE+1,:,:))
+  ZFNEG2(IE+1,   :,:)   = 0.5 * (PSRC(IE+1,   :,:) + TEAST(:,:))
 !
 ! smoothness indicators for positive wind case
 !
   ZBPOS1(IW:IE+1,:,:) = (PSRC(IW:IE+1,:,:) - PSRC(IW-1:IE,:,:))**2
-  ZBPOS1(IW-1,   :,:) = (PSRC(IW-1,   :,:) - TPHALO2%WEST(:,:))**2
+  ZBPOS1(IW-1,   :,:) = (PSRC(IW-1,   :,:) - TWEST(:,:))**2
 !
   ZBPOS2(IW-1:IE,:,:) = (PSRC(IW:IE+1,:,:) - PSRC(IW-1:IE,:,:))**2
-  ZBPOS2(IE+1,   :,:) = (TPHALO2%EAST(:,:) - PSRC(IE+1,   :,:))**2
+  ZBPOS2(IE+1,   :,:) = (TEAST(:,:)        - PSRC(IE+1,   :,:))**2
 !
 ! smoothness indicators for negative wind case
-!       
+!
   ZBNEG1(IW-1:IE-1,:,:) = (PSRC(IW:IE,:,:)   - PSRC(IW+1:IE+1,:,:))**2
-  ZBNEG1(IE,   :,:)     = (PSRC(IE+1,   :,:) - TPHALO2%EAST(:,:))**2
+  ZBNEG1(IE,   :,:)     = (PSRC(IE+1,   :,:) - TEAST(:,:))**2
   ZBNEG2(IW-1:IE,:,:)   = (PSRC(IW-1:IE,:,:) - PSRC(IW:IE+1,:,:))**2
-  ZBNEG2(IE+1,   :,:)   = (PSRC(IE+1,   :,:) - TPHALO2%EAST(:,:))**2
+  ZBNEG2(IE+1,   :,:)   = (PSRC(IE+1,   :,:) - TEAST(:,:))**2
 !
 ! WENO weights
 !
@@ -290,9 +296,9 @@ CASE ('OPEN','WALL','NEST')
 !
 !!$  ELSEIF (NHALO == 1) THEN
   ELSE 
-    ZFPOS1(IW-1,:,:) = 0.5 * (3.0*PSRC(IW-1,:,:) - TPHALO2%WEST(:,:))
+    ZFPOS1(IW-1,:,:) = 0.5 * (3.0*PSRC(IW-1,:,:) - TWEST(:,:))
     ZFPOS2(IW-1,:,:) = 0.5 * (PSRC(IW-1,    :,:) + PSRC(IW,:,:))
-    ZBPOS1(IW-1,:,:) = (PSRC(IW-1,:,:) - TPHALO2%WEST(:,:))**2
+    ZBPOS1(IW-1,:,:) = (PSRC(IW-1,:,:) - TWEST(:,:))**2
     ZBPOS2(IW-1,:,:) = (PSRC(IW,  :,:) - PSRC(IW-1,:,:))**2
 !
     ZFNEG1(IW-1,:,:) = 0.5 * (3.0*PSRC(IW,:,:) - PSRC(IW+1,:,:))
@@ -318,13 +324,13 @@ CASE ('OPEN','WALL','NEST')
 !!$  ELSEIF (NHALO == 1) THEN
   ELSE
     ZFPOS1(IE,:,:) = 0.5 * (3.0*PSRC(IE,:,:) - PSRC(IE-1,:,:))
-    ZFPOS2(IE,:,:) = 0.5 * (PSRC(IE,    :,:) + PSRC(IE+1,:,:)) 
+    ZFPOS2(IE,:,:) = 0.5 * (PSRC(IE,    :,:) + PSRC(IE+1,:,:))
     ZBPOS1(IE,:,:) = (PSRC(IE,:,:) - PSRC(IE-1,:,:))**2
     ZBPOS2(IE,:,:) = (PSRC(IE+1,:,:) - PSRC(IE,:,:))**2
 !
-    ZFNEG1(IE,:,:) = 0.5 * (3.0*PSRC(IE+1,:,:) - TPHALO2%EAST(:,:))
+    ZFNEG1(IE,:,:) = 0.5 * (3.0*PSRC(IE+1,:,:) - TEAST(:,:))
     ZFNEG2(IE,:,:) = 0.5 * (PSRC(IE,:,:) + PSRC(IE+1,:,:))
-    ZBNEG1(IE,:,:) = (PSRC(IE+1,:,:) - TPHALO2%EAST(:,:))**2
+    ZBNEG1(IE,:,:) = (PSRC(IE+1,:,:) - TEAST(:,:))**2
     ZBNEG2(IE,:,:) = (PSRC(IE,  :,:) - PSRC(IE+1,:,:))**2
 !
     ZOMP1(IE,:,:) = ZGAMMA1 / (ZEPS + ZBPOS1(IE,:,:))**2
@@ -407,6 +413,7 @@ REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRUCT ! contrav. comp. on MASS GRID
 !
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PR
 TYPE(HALO2_ll), OPTIONAL, POINTER :: TPHALO2      ! halo2 for the field at t
+REAL, DIMENSION(:,:), POINTER :: TWEST, TEAST
 !
 !*       0.2   Declarations of local variables :
 !
@@ -454,6 +461,11 @@ CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 !*       0.4.   INITIALIZE THE FIELD 
 !               ---------------------
 !
+IF (PRESENT(TPHALO2)) THEN
+  TWEST => TPHALO2%WEST
+  TEAST => TPHALO2%EAST
+END IF
+!
 PR(:,:,:) = 0.0
 !
 ZFPOS1 = 0.0
@@ -483,36 +495,36 @@ CASE ('CYCL')          ! In that case one must have HLBCX(1) == HLBCX(2)
 ! intermediate fluxes for positive wind case
 !
   ZFPOS1(IW+1:IE+1,:,:) = 0.5 * (3.0*PSRC(IW:IE,:,:) - PSRC(IW-1:IE-1,:,:))
-  ZFPOS1(IW,       :,:) = 0.5 * (3.0*PSRC(IW-1, :,:) - TPHALO2%WEST(:,:))
+  ZFPOS1(IW,       :,:) = 0.5 * (3.0*PSRC(IW-1, :,:) - TWEST(:,:))
 !!  ZFPOS1(IW-1,     :,:) = - 999.
 !
   ZFPOS2(IW:IE+1,:,:) = 0.5 * (PSRC(IW-1:IE,:,:) + PSRC(IW:IE+1,:,:))
-  ZFPOS2(IW-1,   :,:) = 0.5 * (TPHALO2%WEST(:,:) + PSRC(IW-1,   :,:))
+  ZFPOS2(IW-1,   :,:) = 0.5 * (TWEST(:,:)        + PSRC(IW-1,   :,:))
 !
 ! intermediate flux for negative wind case
 !
   ZFNEG1(IW-1:IE,:,:) = 0.5 * (3.0*PSRC(IW-1:IE,:,:) - PSRC(IW:IE+1,:,:))
-  ZFNEG1(IE+1,   :,:) = 0.5 * (3.0*PSRC(IE+1,   :,:) - TPHALO2%EAST(:,:))
+  ZFNEG1(IE+1,   :,:) = 0.5 * (3.0*PSRC(IE+1,   :,:) - TEAST(:,:))
 !
   ZFNEG2(IW:IE+1,:,:) = 0.5 * (PSRC(IW:IE+1,:,:) + PSRC(IW-1:IE,:,:))
-  ZFNEG2(IW-1,       :,:) = 0.5 * (PSRC(IW-1, :,:) + TPHALO2%WEST(:,:))
-! 
+  ZFNEG2(IW-1,       :,:) = 0.5 * (PSRC(IW-1, :,:) + TWEST(:,:))
+!
 ! smoothness indicators for positive wind case
 !
   ZBPOS1(IW+1:IE+1,:,:) = (PSRC(IW:IE,:,:) - PSRC(IW-1:IE-1,:,:))**2
-  ZBPOS1(IW,       :,:) = (PSRC(IW-1, :,:) - TPHALO2%WEST(:,:))**2
+  ZBPOS1(IW,       :,:) = (PSRC(IW-1, :,:) - TWEST(:,:))**2
 !!  ZBPOS1(IW-1,     :,:) = - 999.
 !
   ZBPOS2(IW:IE+1,:,:) = (PSRC(IW:IE+1,:,:) - PSRC(IW-1:IE,:,:))**2
-  ZBPOS2(IW-1,   :,:) = (PSRC(IW-1,   :,:) - TPHALO2%WEST(:,:))**2
+  ZBPOS2(IW-1,   :,:) = (PSRC(IW-1,   :,:) - TWEST(:,:))**2
 !
 ! smoothness indicators for negative wind case
-!       
+!
   ZBNEG1(IW-1:IE,:,:) = (PSRC(IW-1:IE,:,:) - PSRC(IW:IE+1,:,:))**2
-  ZBNEG1(IE+1,   :,:) = (PSRC(IE+1,   :,:) - TPHALO2%EAST(:,:))**2
+  ZBNEG1(IE+1,   :,:) = (PSRC(IE+1,   :,:) - TEAST(:,:))**2
 !
   ZBNEG2(IW:IE+1,:,:) = (PSRC(IW-1:IE,:,:) - PSRC(IW:IE+1,:,:))**2
-  ZBNEG2(IW-1,   :,:) = (TPHALO2%WEST(:,:) - PSRC(IW-1,:,:))**2
+  ZBNEG2(IW-1,   :,:) = (TWEST(:,:)        - PSRC(IW-1,:,:))**2
 !
 ! WENO weights
 !
@@ -543,9 +555,9 @@ CASE ('OPEN','WALL','NEST')
 !
 !!$  ELSEIF (NHALO == 1) THEN
   ELSE
-    ZFPOS1(IW,:,:) = 0.5 * (3.0*PSRC(IW-1, :,:) - TPHALO2%WEST(:,:))
+    ZFPOS1(IW,:,:) = 0.5 * (3.0*PSRC(IW-1, :,:) - TWEST(:,:))
     ZFPOS2(IW,:,:) = 0.5 * (PSRC(IW-1,     :,:) + PSRC(IW,     :,:))
-    ZBPOS1(IW,:,:) = (PSRC(IW-1,:,:) - TPHALO2%WEST(:,:))**2
+    ZBPOS1(IW,:,:) = (PSRC(IW-1,:,:) - TWEST(:,:))**2
     ZBPOS2(IW,:,:) = (PSRC(IW,  :,:) - PSRC(IW-1,:,:))**2
 !
     ZFNEG1(IW,:,:) = 0.5 * (3.0*PSRC(IW,:,:) - PSRC(IW+1,:,:))
@@ -575,9 +587,9 @@ CASE ('OPEN','WALL','NEST')
     ZBPOS1(IE+1,:,:) = (PSRC(IE,:,:) - PSRC(IE-1,:,:))**2
     ZBPOS2(IE+1,:,:) = (PSRC(IE+1,:,:) - PSRC(IE,:,:))**2
 !
-    ZFNEG1(IE+1,:,:) = 0.5 * (3.0*PSRC(IE+1,:,:) - TPHALO2%EAST(:,:))
+    ZFNEG1(IE+1,:,:) = 0.5 * (3.0*PSRC(IE+1,:,:) - TEAST(:,:))
     ZFNEG2(IE+1,:,:) = 0.5 * (PSRC(IE+1,    :,:) + PSRC(IE,:,:))
-    ZBNEG1(IE+1,:,:) = (PSRC(IE+1,:,:) - TPHALO2%EAST(:,:))**2
+    ZBNEG1(IE+1,:,:) = (PSRC(IE+1,:,:) - TEAST(:,:))**2
     ZBNEG2(IE+1,:,:) = (PSRC(IE,  :,:) - PSRC(IE+1,:,:))**2
 !
     ZOMP1(IE+1,:,:) = ZGAMMA1 / (ZEPS + ZBPOS1(IE+1,:,:))**2
@@ -660,6 +672,7 @@ REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRVCT ! contrav. comp. on MASS GRID
 !
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PR
 TYPE(HALO2_ll), OPTIONAL, POINTER :: TPHALO2 ! halo2 for the field at t
+REAL, DIMENSION(:,:), POINTER :: TNORTH, TSOUTH
 !
 !
 !*       0.2   Declarations of local variables :
@@ -708,6 +721,11 @@ CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 !*       0.4.   INITIALIZE THE FIELD 
 !               ---------------------
 !
+IF (PRESENT(TPHALO2)) THEN
+  TNORTH => TPHALO2%NORTH
+  TSOUTH => TPHALO2%SOUTH
+END IF
+!
 PR(:,:,:) = 0.0
 !
 ZFPOS1 = 0.0
@@ -737,34 +755,34 @@ CASE ('CYCL')          ! In that case one must have HLBCY(1) == HLBCY(2)
 ! intermediate fluxes for positive wind case
 !
   ZFPOS1(:,IS+1:IN+1,:) = 0.5 * (3.0*PSRC(:,IS:IN,:) - PSRC(:,IS-1:IN-1,:))
-  ZFPOS1(:,IS,       :) = 0.5 * (3.0*PSRC(:,IS-1, :) - TPHALO2%SOUTH(:,:))
+  ZFPOS1(:,IS,       :) = 0.5 * (3.0*PSRC(:,IS-1, :) - TSOUTH(:,:))
 !!  ZFPOS1(:,IS-1,     :) = - 999.
 !
   ZFPOS2(:,IS:IN+1,:) = 0.5 * (PSRC(:,IS-1:IN,:) + PSRC(:,IS:IN+1,:))
-  ZFPOS2(:,IS-1,   :) = 0.5 * (TPHALO2%SOUTH(:,:) + PSRC(:,IS-1,   :))
+  ZFPOS2(:,IS-1,   :) = 0.5 * (TSOUTH(:,:)       + PSRC(:,IS-1,   :))
 !
   ZFNEG1(:,IS-1:IN,:) = 0.5 * (3.0*PSRC(:,IS-1:IN,:) - PSRC(:,IS:IN+1,:))
-  ZFNEG1(:,IN+1,   :) = 0.5 * (3.0*PSRC(:,IN+1,   :) - TPHALO2%NORTH(:,:))
+  ZFNEG1(:,IN+1,   :) = 0.5 * (3.0*PSRC(:,IN+1,   :) - TNORTH(:,:))
 !
   ZFNEG2(:,IS:IN+1,:) = 0.5 * (PSRC(:,IS:IN+1,:) + PSRC(:,IS-1:IN,:))
-  ZFNEG2(:,IS-1,   :) = 0.5 * (PSRC(:,IS-1,   :) + TPHALO2%SOUTH(:,:))
+  ZFNEG2(:,IS-1,   :) = 0.5 * (PSRC(:,IS-1,   :) + TSOUTH(:,:))
 !
 ! smoothness indicators for positive wind case
 !
   ZBPOS1(:,IS+1:IN+1,:) = (PSRC(:,IS:IN,:) - PSRC(:,IS-1:IN-1,:))**2
-  ZBPOS1(:,IS,       :) = (PSRC(:,IS-1,   :) - TPHALO2%SOUTH(:,:))**2
-!!  ZBPOS1(:,IS-1,     :) = - 999. 
+  ZBPOS1(:,IS,       :) = (PSRC(:,IS-1,   :) - TSOUTH(:,:))**2
+!!  ZBPOS1(:,IS-1,     :) = - 999.
 !
   ZBPOS2(:,IS:IN+1,:) = (PSRC(:,IS:IN+1,:) - PSRC(:,IS-1:IN,:))**2
-  ZBPOS2(:,IS-1,   :) = (PSRC(:,IS-1,   :) - TPHALO2%SOUTH(:,:))**2
+  ZBPOS2(:,IS-1,   :) = (PSRC(:,IS-1,   :) - TSOUTH(:,:))**2
 !
 ! smoothness indicators for negative wind case
 !
   ZBNEG1(:,IS-1:IN,:) = (PSRC(:,IS-1:IN,:) - PSRC(:,IS:IN+1,:))**2
-  ZBNEG1(:,IN+1,   :) = (PSRC(:,IN+1,   :) - TPHALO2%NORTH(:,:))**2
+  ZBNEG1(:,IN+1,   :) = (PSRC(:,IN+1,   :) - TNORTH(:,:))**2
 !
   ZBNEG2(:,IS:IN+1,:) = (PSRC(:,IS-1:IN,:) - PSRC(:,IS:IN+1,:))**2
-  ZBNEG2(:,IS-1,   :) = (TPHALO2%SOUTH(:,:) - PSRC(:,IS-1,:))**2
+  ZBNEG2(:,IS-1,   :) = (TSOUTH(:,:)       - PSRC(:,IS-1,:))**2
 !
 ! WENO weights
 !
@@ -795,9 +813,9 @@ CASE ('OPEN','WALL','NEST')
 !
 !!$  ELSEIF (NHALO == 1) THEN
   ELSE
-    ZFPOS1(:,IS,:) = 0.5 * (3.0*PSRC(:,IS-1,:) - TPHALO2%SOUTH(:,:))
+    ZFPOS1(:,IS,:) = 0.5 * (3.0*PSRC(:,IS-1,:) - TSOUTH(:,:))
     ZFPOS2(:,IS,:) = 0.5 * (PSRC(:,IS-1,:) + PSRC(:,IS,:))
-    ZBPOS1(:,IS,:) = (PSRC(:,IS-1,:) - TPHALO2%SOUTH(:,:))**2
+    ZBPOS1(:,IS,:) = (PSRC(:,IS-1,:) - TSOUTH(:,:))**2
     ZBPOS2(:,IS,:) = (PSRC(:,IS,  :) - PSRC(:,IS-1,:))**2
 !
     ZFNEG1(:,IS,:) = 0.5 * (3.0*PSRC(:,IS,:) - PSRC(:,IS+1,:))
@@ -827,9 +845,9 @@ CASE ('OPEN','WALL','NEST')
     ZBPOS1(:,IN+1,:) = (PSRC(:,IN,:) - PSRC(:,IN-1,:))**2
     ZBPOS2(:,IN+1,:) = (PSRC(:,IN+1,:) - PSRC(:,IN,:))**2
 !
-    ZFNEG1(:,IN+1,:) = 0.5 * (3.0*PSRC(:,IN+1,:) - TPHALO2%NORTH(:,:))
+    ZFNEG1(:,IN+1,:) = 0.5 * (3.0*PSRC(:,IN+1,:) - TNORTH(:,:))
     ZFNEG2(:,IN+1,:) = 0.5 * (PSRC(:,IN+1,    :) + PSRC(:,IN,:))
-    ZBNEG1(:,IN+1,:) = (PSRC(:,IN+1,:) - TPHALO2%NORTH(:,:))**2
+    ZBNEG1(:,IN+1,:) = (PSRC(:,IN+1,:) - TNORTH(:,:))**2
     ZBNEG2(:,IN+1,:) = (PSRC(:,IN,  :) - PSRC(:,IN+1,:))**2
 !
     ZOMP1(:,IN+1,:) = ZGAMMA1 / (ZEPS + ZBPOS1(:,IN+1,:))**2
@@ -909,6 +927,7 @@ REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRVCT ! contrav. comp. on MASS GRID
 ! output source term
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PR
 TYPE(HALO2_ll), OPTIONAL, POINTER :: TPHALO2      ! halo2 for the field at t
+REAL, DIMENSION(:,:), POINTER :: TNORTH, TSOUTH
 !
 !*       0.2   Declarations of local variables :
 !
@@ -956,6 +975,11 @@ CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 !*       0.4.   INITIALIZE THE FIELD 
 !               ---------------------
 !
+IF (PRESENT(TPHALO2)) THEN
+  TNORTH => TPHALO2%NORTH
+  TSOUTH => TPHALO2%SOUTH
+END IF
+!
 PR(:,:,:) = 0.0
 !
 ZFPOS1 = 0.0
@@ -985,34 +1009,34 @@ CASE ('CYCL')          ! In that case one must have HLBCX(1) == HLBCX(2)
 ! intermediate fluxes for positive wind case
 !
   ZFPOS1(:,IS:IN+1,:) = 0.5 * (3.0*PSRC(:,IS:IN+1,:) - PSRC(:,IS-1:IN,:))
-  ZFPOS1(:,IS-1,   :) = 0.5 * (3.0*PSRC(:,IS-1,   :) - TPHALO2%SOUTH(:,:))
+  ZFPOS1(:,IS-1,   :) = 0.5 * (3.0*PSRC(:,IS-1,   :) - TSOUTH(:,:))
 !
   ZFPOS2(:,IS-1:IN,:) = 0.5 * (PSRC(:,IS-1:IN,:) + PSRC(:,IS:IN+1,:))
-  ZFPOS2(:,IN+1,   :) = 0.5 * (PSRC(:,IN+1,   :) + TPHALO2%NORTH(:,:))
+  ZFPOS2(:,IN+1,   :) = 0.5 * (PSRC(:,IN+1,   :) + TNORTH(:,:))
 !
 ! intermediate flux for negative wind case
 !
   ZFNEG1(:,IS-1:IN-1,:) = 0.5 * (3.0*PSRC(:,IS:IN,:) - PSRC(:,IS+1:IN+1,:))
-  ZFNEG1(:,IN,   :) = 0.5 * (3.0*PSRC(:,IN+1,   :) - TPHALO2%NORTH(:,:))
+  ZFNEG1(:,IN,   :)     = 0.5 * (3.0*PSRC(:,IN+1,   :) - TNORTH(:,:))
 !
   ZFNEG2(:,IS-1:IN,:) = 0.5 * (PSRC(:,IS-1:IN,:) + PSRC(:,IS:IN+1,:))
-  ZFNEG2(:,IN+1,   :) = 0.5 * (PSRC(:,IN+1,   :) + TPHALO2%NORTH(:,:))
+  ZFNEG2(:,IN+1,   :) = 0.5 * (PSRC(:,IN+1,   :) + TNORTH(:,:))
 !
 ! smoothness indicators for positive wind case
 !
   ZBPOS1(:,IS:IN+1,:) = (PSRC(:,IS:IN+1,:) - PSRC(:,IS-1:IN,:))**2
-  ZBPOS1(:,IS-1,   :) = (PSRC(:,IS-1,   :) - TPHALO2%SOUTH(:,:))**2
+  ZBPOS1(:,IS-1,   :) = (PSRC(:,IS-1,   :) - TSOUTH(:,:))**2
 !
   ZBPOS2(:,IS-1:IN,:) = (PSRC(:,IS:IN+1,:) - PSRC(:,IS-1:IN,:))**2
-  ZBPOS2(:,IN+1,   :) = (TPHALO2%NORTH(:,:) - PSRC(:,IN+1,     :))**2
+  ZBPOS2(:,IN+1,   :) = (TNORTH(:,:)       - PSRC(:,IN+1,     :))**2
 !
 ! smoothness indicators for negative wind case
 !
   ZBNEG1(:,IS-1:IN-1,:) = (PSRC(:,IS:IN,:) - PSRC(:,IS+1:IN+1,:))**2
-  ZBNEG1(:,IN,       :) = (PSRC(:,IN+1, :) - TPHALO2%NORTH(:,:))**2
+  ZBNEG1(:,IN,       :) = (PSRC(:,IN+1, :) - TNORTH(:,:))**2
 !
   ZBNEG2(:,IS-1:IN,:) = (PSRC(:,IS-1:IN,:) - PSRC(:,IS:IN+1,:))**2
-  ZBNEG2(:,IN+1,   :) = (PSRC(:,IN+1,   :) - TPHALO2%NORTH(:,:))**2 
+  ZBNEG2(:,IN+1,   :) = (PSRC(:,IN+1,   :) - TNORTH(:,:))**2
 !
 ! WENO weights
 !
@@ -1041,9 +1065,9 @@ CASE ('OPEN','WALL','NEST')
 !
 !!$  ELSEIF (NHALO == 1) THEN
   ELSE
-    ZFPOS1(:,IS-1,:) = 0.5 * (3.0*PSRC(:,IS-1,:) - TPHALO2%SOUTH(:,:))
+    ZFPOS1(:,IS-1,:) = 0.5 * (3.0*PSRC(:,IS-1,:) - TSOUTH(:,:))
     ZFPOS2(:,IS-1,:) = 0.5 * (PSRC(:,IS-1,    :) + PSRC(:,IS,:))
-    ZBPOS1(:,IS-1,:) = (PSRC(:,IS-1,:) - TPHALO2%SOUTH(:,:))**2
+    ZBPOS1(:,IS-1,:) = (PSRC(:,IS-1,:) - TSOUTH(:,:))**2
     ZBPOS2(:,IS-1,:) = (PSRC(:,IS,  :) - PSRC(:,IS-1,:))**2
 !
     ZFNEG1(:,IS-1,:) = 0.5 * (3.0*PSRC(:,IS,:) - PSRC(:,IS+1,:))
@@ -1073,9 +1097,9 @@ CASE ('OPEN','WALL','NEST')
     ZBPOS1(:,IN,:) = (PSRC(:,IN,  :) - PSRC(:,IN-1,:))**2
     ZBPOS2(:,IN,:) = (PSRC(:,IN+1,:) - PSRC(:,IN,  :))**2
 !
-    ZFNEG1(:,IN,:) = 0.5 * (3.0*PSRC(:,IN+1,:) - TPHALO2%NORTH(:,:))
+    ZFNEG1(:,IN,:) = 0.5 * (3.0*PSRC(:,IN+1,:) - TNORTH(:,:))
     ZFNEG2(:,IN,:) = 0.5 * (PSRC(:,IN,      :) + PSRC(:,IN+1,:))
-    ZBNEG1(:,IN,:) = (PSRC(:,IN+1,:) - TPHALO2%NORTH(:,:))**2
+    ZBNEG1(:,IN,:) = (PSRC(:,IN+1,:) - TNORTH(:,:))**2
     ZBNEG2(:,IN,:) = (PSRC(:,IN,  :) - PSRC(:,IN+1,:))**2
 !
     ZOMP1(:,IN,:) = ZGAMMA1 / (ZEPS + ZBPOS1(:,IN,:))**2
@@ -1096,8 +1120,8 @@ CASE ('OPEN','WALL','NEST')
   ZFPOS2(:,IS:IN-1,:) = 0.5 * (PSRC(:,IS:IN-1,    :) + PSRC(:,IS+1:IN,  :))
   ZBPOS1(:,IS:IN-1,:) = (PSRC(:,IS:IN-1,:) - PSRC(:,IS-1:IN-2,:))**2
   ZBPOS2(:,IS:IN-1,:) = (PSRC(:,IS+1:IN,:) - PSRC(:,IS:IN-1,  :))**2
-!  
-  ZFNEG1(:,IS:IN-1,:) = 0.5 * (3.0*PSRC(:,IS+1:IN,:) - PSRC(:,IS+2:IN+1,:))  
+!
+  ZFNEG1(:,IS:IN-1,:) = 0.5 * (3.0*PSRC(:,IS+1:IN,:) - PSRC(:,IS+2:IN+1,:))
   ZFNEG2(:,IS:IN-1,:) = 0.5 * (PSRC(:,IS:IN-1,    :) + PSRC(:,IS+1:IN,  :))
   ZBNEG1(:,IS:IN-1,:) = (PSRC(:,IS+1:IN,:) - PSRC(:,IS+2:IN+1,:))**2
   ZBNEG2(:,IS:IN-1,:) = (PSRC(:,IS:IN-1,:) - PSRC(:,IS+1:IN,  :))**2

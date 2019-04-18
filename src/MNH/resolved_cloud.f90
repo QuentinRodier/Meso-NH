@@ -68,23 +68,23 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PSIGS   ! Sigma_s at time t
 REAL,                     INTENT(IN)   :: PSIGQSAT! coeff applied to qsat variance contribution
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PMFCONV ! convective mass flux
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PTHM    ! Theta at time t-Dt
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PPABSM   ! Pressure time t-Dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PPABSM  ! Pressure time t-Dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PRCM    ! Cloud water m.r. at time t-Dt
 !
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_ACT ! W for CCN activation
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD ! THeta RADiative Tendancy
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS  ! Theta source
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRS   ! Moist  variable sources
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVT  ! Scalar variable at time t
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVS  ! Scalar variable sources
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD! THeta RADiative Tendancy
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS   ! Theta source
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRS    ! Moist  variable sources
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVT   ! Scalar variable at time t
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVS   ! Scalar variable sources
 !
 !
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSRCS ! Second-order flux
                                                  ! s'rc'/2Sigma_s2 at time t+1
                                                  ! multiplied by Lambda_3
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PCLDFR! Cloud fraction
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PCIT  ! Pristine ice number
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCLDFR! Cloud fraction
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCIT  ! Pristine ice number
                                                  ! concentration at time t
 LOGICAL,                  INTENT(IN)    :: OSEDIC! Switch to activate the
                                                  ! cloud droplet sedimentation
@@ -106,36 +106,36 @@ LOGICAL,                  INTENT(IN)    :: OHHONI! enable haze freezing
 LOGICAL,                  INTENT(IN)    :: OCONVHG! Switch for conversion from
                                                   ! hail to graupel
 !
-REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PCF_MF! Convective Mass Flux Cloud fraction 
-REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PRC_MF! Convective Mass Flux liquid mixing ratio
-REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PRI_MF! Convective Mass Flux solid mixing ratio
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCF_MF! Convective Mass Flux Cloud fraction 
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRC_MF! Convective Mass Flux liquid mixing ratio
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRI_MF! Convective Mass Flux solid mixing ratio
 !
-REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRC! Cloud instant precip
-REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRR! Rain instant precip
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRR3D ! sed flux of precip
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PEVAP3D  ! evap profile
-REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRS! Snow instant precip
-REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRG! Graupel instant precip
-REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRH! Hail instant precip
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRC3D ! sed flux of precip
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRS3D ! sed flux of precip
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRG3D ! sed flux of precip
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRH3D ! sed flux of precip
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSOLORG ![%] solubility fraction of soa
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PMI !
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRC   ! Cloud instant precip
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRR   ! Rain instant precip
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PINPRR3D ! sed flux of precip
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PEVAP3D  ! evap profile
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRS   ! Snow instant precip
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRG   ! Graupel instant precip
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRH   ! Hail instant precip
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PINPRC3D ! sed flux of precip
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PINPRS3D ! sed flux of precip
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PINPRG3D ! sed flux of precip
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PINPRH3D ! sed flux of precip
+REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSOLORG  ![%] solubility fraction of soa
+REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PMI
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDC ! Cloud sedimentation speed
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDR ! Rain sedimentation speed
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDS ! Snow sedimentation speed
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDG ! Graupel sedimentation speed
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDH ! Hail sedimentation speed
-REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINDEP! Cloud instant deposition
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINDEP   ! Cloud instant deposition
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSUPSAT  !sursat
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNACT  !concentrtaion d'aérosols activés au temps t
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNPRO  !concentrtaion d'aérosols activés au temps t
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNACT    !concentrtaion d'aérosols activés au temps t
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNPRO    !concentrtaion d'aérosols activés au temps t
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSSPRO   !sursat
-REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PRAINFR ! Rain fraction                
-REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA      ! Land Sea mask
-REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PTOWN      ! Town fraction
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PRAINFR  ! Rain fraction
+REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA  ! Land Sea mask
+REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PTOWN ! Town fraction
 !
 END SUBROUTINE RESOLVED_CLOUD
 END INTERFACE
@@ -300,10 +300,10 @@ USE MODI_ICE_ADJUST
 USE MODI_ICE_C1R3
 USE MODI_KHKO_NOTADJUST
 USE MODI_LIMA
-USE MODI_LIMA_WARM
+USE MODI_LIMA_ADJUST
 USE MODI_LIMA_COLD
 USE MODI_LIMA_MIXED
-USE MODI_LIMA_ADJUST
+USE MODI_LIMA_WARM
 USE MODI_RAIN_C2R2_KHKO
 USE MODI_RAIN_ICE
 USE MODI_RAIN_ICE_RED
@@ -316,9 +316,8 @@ IMPLICIT NONE
 !
 !
 !
-CHARACTER(LEN=4),         INTENT(IN)   :: HCLOUD   ! kind of cloud
-                                                   ! paramerization
-CHARACTER(LEN=4),         INTENT(IN)   :: HACTCCN  ! kind of CCN activation
+CHARACTER(LEN=4),         INTENT(IN)   :: HCLOUD   ! kind of cloud paramerization
+CHARACTER(LEN=4),         INTENT(IN)   :: HACTCCN  ! kind of CCN activation scheme
 CHARACTER(LEN=4),         INTENT(IN)   :: HSCONV   ! Shallow convection scheme
 CHARACTER(LEN=4),         INTENT(IN)   :: HMF_CLOUD! Type of statistical cloud
 INTEGER,                  INTENT(IN)   :: KRR      ! Number of moist variables
@@ -357,23 +356,23 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PSIGS   ! Sigma_s at time t
 REAL,                     INTENT(IN)   :: PSIGQSAT! coeff applied to qsat variance contribution
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PMFCONV ! convective mass flux
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PTHM    ! Theta at time t-Dt
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PPABSM   ! Pressure time t-Dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PPABSM  ! Pressure time t-Dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PRCM    ! Cloud water m.r. at time t-Dt
 !
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_ACT ! W for CCN activation
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD ! THeta RADiative Tendancy
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS  ! Theta source
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRS   ! Moist  variable sources
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVT  ! Scalar variable at time t
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVS  ! Scalar variable sources
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD! THeta RADiative Tendancy
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS   ! Theta source
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRS    ! Moist  variable sources
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVT   ! Scalar variable at time t
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVS   ! Scalar variable sources
 !
 !
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSRCS ! Second-order flux
                                                  ! s'rc'/2Sigma_s2 at time t+1
                                                  ! multiplied by Lambda_3
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PCLDFR! Cloud fraction
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PCIT  ! Pristine ice number
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCLDFR! Cloud fraction
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCIT  ! Pristine ice number
                                                  ! concentration at time t
 LOGICAL,                  INTENT(IN)    :: OSEDIC! Switch to activate the
                                                  ! cloud droplet sedimentation
@@ -394,36 +393,36 @@ LOGICAL,                  INTENT(IN)    :: OHHONI! enable haze freezing
 LOGICAL,                  INTENT(IN)    :: OCONVHG! Switch for conversion from
                                                   ! hail to graupel
 !
-REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PCF_MF! Convective Mass Flux Cloud fraction 
-REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PRC_MF! Convective Mass Flux liquid mixing ratio
-REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PRI_MF! Convective Mass Flux solid mixing ratio
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCF_MF! Convective Mass Flux Cloud fraction 
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRC_MF! Convective Mass Flux liquid mixing ratio
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRI_MF! Convective Mass Flux solid mixing ratio
 !
-REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRC! Cloud instant precip
-REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRR! Rain instant precip
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRR3D ! sed flux of precip
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PEVAP3D  ! evap profile
-REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRS! Snow instant precip
-REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRG! Graupel instant precip
-REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRH! Hail instant precip
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRC3D ! sed flux of precip
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRS3D ! sed flux of precip
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRG3D ! sed flux of precip
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRH3D ! sed flux of precip
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSOLORG ![%] solubility fraction of soa
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PMI !
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRC   ! Cloud instant precip
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRR   ! Rain instant precip
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PINPRR3D ! sed flux of precip
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PEVAP3D  ! evap profile
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRS   ! Snow instant precip
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRG   ! Graupel instant precip
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRH   ! Hail instant precip
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PINPRC3D ! sed flux of precip
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PINPRS3D ! sed flux of precip
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PINPRG3D ! sed flux of precip
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PINPRH3D ! sed flux of precip
+REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSOLORG  ![%] solubility fraction of soa
+REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PMI
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDC ! Cloud sedimentation speed
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDR ! Rain sedimentation speed
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDS ! Snow sedimentation speed
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDG ! Graupel sedimentation speed
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDH ! Hail sedimentation speed
-REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINDEP! Cloud instant deposition
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINDEP   ! Cloud instant deposition
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSUPSAT  !sursat
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNACT  !concentrtaion d'aérosols activés au temps t
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNPRO  !concentrtaion d'aérosols activés au temps t
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNACT    !concentrtaion d'aérosols activés au temps t
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNPRO    !concentrtaion d'aérosols activés au temps t
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSSPRO   !sursat
-REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PRAINFR ! Rain fraction                
-REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA      ! Land Sea mask
-REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PTOWN      ! Town fraction
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PRAINFR  ! Rain fraction
+REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA  ! Land Sea mask
+REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PTOWN ! Town fraction
 !
 !
 !*       0.2   Declarations of local variables :
@@ -462,6 +461,7 @@ LOGICAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: LLMICRO ! mask to limi
 REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3), KRR) :: ZFPR
 !
 INTEGER                               :: JMOD, JMOD_IFN
+LOGICAL                               :: GWEST,GEAST,GNORTH,GSOUTH
 ! BVIE work array waiting for PINPRI
 REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2)):: ZINPRI
 !
@@ -474,6 +474,11 @@ CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB=1+JPVEXT
 IKE=SIZE(PZZ,3) - JPVEXT
 IKU=SIZE(PZZ,3)
+!
+GWEST  = LWEST_ll()
+GEAST  = LEAST_ll()
+GSOUTH = LSOUTH_ll()
+GNORTH = LNORTH_ll()
 !
 IF (HCLOUD == 'C2R2' .OR. HCLOUD == 'KHKO') THEN
   ISVBEG = NSV_C2R2BEG
@@ -495,7 +500,7 @@ IF (HCLOUD=='C2R2' .OR. HCLOUD=='C3R5' .OR. HCLOUD=='KHKO' .OR. HCLOUD=='LIMA') 
   ZSVT(:,:,:,:) = PSVT(:,:,:,ISVBEG:ISVEND)
   ZSVS(:,:,:,:) = PSVS(:,:,:,ISVBEG:ISVEND)
 END IF
-IF (HCLOUD(1:3)=='ICE') THEN
+IF (HCLOUD(1:3)=='ICE' .AND. LRED) THEN
   ALLOCATE(ZRSMIN(SIZE(XRTMIN)))
   ZRSMIN(:) = XRTMIN(:) / PTSTEP
 END IF
@@ -530,10 +535,10 @@ END DO
 !
 !  complete the physical boundaries to avoid some computations
 !
-IF(LWEST_ll()  .AND. HLBCX(1) /= 'CYCL')  PRT(:IIB-1,:,:,2:) = 0.0
-IF(LEAST_ll()  .AND. HLBCX(2) /= 'CYCL')  PRT(IIE+1:,:,:,2:) = 0.0
-IF(LSOUTH_ll() .AND. HLBCY(1) /= 'CYCL')  PRT(:,:IJB-1,:,2:) = 0.0
-IF(LNORTH_ll() .AND. HLBCY(2) /= 'CYCL')  PRT(:,IJE+1:,:,2:) = 0.0
+IF(GWEST  .AND. HLBCX(1) /= 'CYCL')  PRT(:IIB-1,:,:,2:) = 0.0
+IF(GEAST  .AND. HLBCX(2) /= 'CYCL')  PRT(IIE+1:,:,:,2:) = 0.0
+IF(GSOUTH .AND. HLBCY(1) /= 'CYCL')  PRT(:,:IJB-1,:,2:) = 0.0
+IF(GNORTH .AND. HLBCY(2) /= 'CYCL')  PRT(:,IJE+1:,:,2:) = 0.0
 !
 IF (HCLOUD=='C2R2' .OR. HCLOUD=='C3R5' .OR. HCLOUD=='KHKO' .OR. HCLOUD=='LIMA') THEN
 DO JI=1,JPHEXT
@@ -545,10 +550,10 @@ END DO
  !
 !  complete the physical boundaries to avoid some computations
 !
-  IF(LWEST_ll()  .AND. HLBCX(1) /= 'CYCL')  ZSVT(:IIB-1,:,:,:) = 0.0
-  IF(LEAST_ll()  .AND. HLBCX(2) /= 'CYCL')  ZSVT(IIE+1:,:,:,:) = 0.0
-  IF(LSOUTH_ll() .AND. HLBCY(1) /= 'CYCL')  ZSVT(:,:IJB-1,:,:) = 0.0
-  IF(LNORTH_ll() .AND. HLBCY(2) /= 'CYCL')  ZSVT(:,IJE+1:,:,:) = 0.0
+  IF(GWEST  .AND. HLBCX(1) /= 'CYCL')  ZSVT(:IIB-1,:,:,:) = 0.0
+  IF(GEAST  .AND. HLBCX(2) /= 'CYCL')  ZSVT(IIE+1:,:,:,:) = 0.0
+  IF(GSOUTH .AND. HLBCY(1) /= 'CYCL')  ZSVT(:,:IJB-1,:,:) = 0.0
+  IF(GNORTH .AND. HLBCY(2) /= 'CYCL')  ZSVT(:,IJE+1:,:,:) = 0.0
 ENDIF
 !
 !  complete the vertical boundaries
@@ -1003,8 +1008,8 @@ SELECT CASE ( HCLOUD )
                    PRS(:,:,:,5)>ZRSMIN(5) .OR. &
                    PRS(:,:,:,6)>ZRSMIN(6) .OR. &
                    PRS(:,:,:,7)>ZRSMIN(7)
-      CALL RAIN_ICE_RED ( OSEDIC,CSEDIM, HSUBG_AUCV, OWARM,1,IKU,1,             &
-                    PTSTEP, KRR, LLMICRO, ZEXN,             &
+      CALL RAIN_ICE_RED ( OSEDIC,CSEDIM, HSUBG_AUCV, OWARM,1,IKU,1,       &
+                    PTSTEP, KRR, LLMICRO, ZEXN,                           &
                     ZDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR,&
                     PTHT, PRT(:,:,:,1), PRT(:,:,:,2),                     &
                     PRT(:,:,:,3), PRT(:,:,:,4),                           &
@@ -1015,7 +1020,7 @@ SELECT CASE ( HCLOUD )
                     PINPRS, PINPRG, PSIGS, PINDEP, PRAINFR, PSEA, PTOWN,  &
                     PRT(:,:,:,7), PRS(:,:,:,7), PINPRH, PFPR=ZFPR         )
     ELSE
-      CALL RAIN_ICE ( OSEDIC,CSEDIM, HSUBG_AUCV, OWARM,1,IKU,1,         &
+      CALL RAIN_ICE ( OSEDIC,CSEDIM, HSUBG_AUCV, OWARM,1,IKU,1,           &
                     KSPLITR, PTSTEP, KRR,                                 &
                     ZDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR,&
                     PTHT, PRT(:,:,:,1), PRT(:,:,:,2),                     &
@@ -1023,7 +1028,7 @@ SELECT CASE ( HCLOUD )
                     PRT(:,:,:,5), PRT(:,:,:,6),                           &
                     PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),       &
                     PRS(:,:,:,4), PRS(:,:,:,5), PRS(:,:,:,6),             &
-                    PINPRC, PINPRR, PINPRR3D, PEVAP3D,           &
+                    PINPRC, PINPRR, PINPRR3D, PEVAP3D,                    &
                     PINPRS, PINPRG, PSIGS,PINDEP, PRAINFR,                &
                     PSEA, PTOWN,                                          &
                     PRT(:,:,:,7),  PRS(:,:,:,7), PINPRH,PFPR=ZFPR )
@@ -1034,7 +1039,7 @@ SELECT CASE ( HCLOUD )
 !*       10.2   Perform the saturation adjustment over cloud ice and cloud water
 !
     IF (.NOT. LRED .OR. (LRED .AND. LADJ_AFTER) ) THEN
-     CALL ICE_ADJUST (1,IKU,1, KRR, CFRAC_ICE_ADJUST, 'DEPI',                 &
+     CALL ICE_ADJUST (1,IKU,1, KRR, CFRAC_ICE_ADJUST, 'DEPI',                &
                     OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,                    &
                     PRHODJ, PEXNREF, PSIGS, PMFCONV, PPABST, ZZZ,            &
                     ZEXN, PCF_MF,PRC_MF,PRI_MF,                              &                     

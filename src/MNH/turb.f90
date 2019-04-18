@@ -460,7 +460,6 @@ REAL, INTENT(IN)      ::  PCOEF_AMPL_SAT ! saturation of the amplification coeff
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PTHLT       ! conservative pot. temp.
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) ::  PRT         ! water var.  where 
                              ! PRT(:,:,:,1) is the conservative mixing ratio        
-!
 ! sources of momentum, conservative potential temperature, Turb. Kin. Energy, 
 ! TKE dissipation
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PRUS,PRVS,PRWS,PRTHLS,PRTKES
@@ -471,7 +470,7 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) ::  PRRS
 ! Source terms for all passive scalar variables
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) ::  PRSVS
 ! Sigma_s at time t+1 : square root of the variance of the deviation to the 
-! saturation 
+! saturation
 REAL, DIMENSION(:,:,:), INTENT(OUT)     ::  PSIGS
 REAL, DIMENSION(:,:,:), INTENT(IN)      ::  PFLXZTHVMF 
 !                                           MF contribution for vert. turb. transport
@@ -495,9 +494,8 @@ REAL, ALLOCATABLE, DIMENSION(:,:,:) ::&
           ZEXN,                       &  ! EXN at t-1
           ZT,                         &  ! T at t-1
           ZLOCPEXNM,                  &  ! Lv/Cp/EXNREF at t-1
-          ZLM,                        &  ! Turbulent mixing length
           ZLEPS,                      &  ! Dissipative length
-          ZDP,ZTP, ZTRH,              &  ! Dynamic and Thermal Production of TKE
+          ZTRH,                       &  ! Dynamic and Thermal Production of TKE
           ZATHETA,ZAMOIST,            &  ! coefficients for s = f (Thetal,Rnp)
           ZCOEF_DISS,                 &  ! 1/(Cph*Exner) for dissipative heating
           ZFRAC_ICE,                  &  ! ri fraction of rc+ri
@@ -549,10 +547,7 @@ ALLOCATE (                                                        &
           ZEXN(SIZE(PTHLT,1),SIZE(PTHLT,2),SIZE(PTHLT,3)),        &  
           ZT(SIZE(PTHLT,1),SIZE(PTHLT,2),SIZE(PTHLT,3)),          &  
           ZLOCPEXNM(SIZE(PTHLT,1),SIZE(PTHLT,2),SIZE(PTHLT,3)),   & 
-          ZLM(SIZE(PTHLT,1),SIZE(PTHLT,2),SIZE(PTHLT,3)),         & 
           ZLEPS(SIZE(PTHLT,1),SIZE(PTHLT,2),SIZE(PTHLT,3)),       &  
-          ZDP(SIZE(PTHLT,1),SIZE(PTHLT,2),SIZE(PTHLT,3)),         &
-          ZTP(SIZE(PTHLT,1),SIZE(PTHLT,2),SIZE(PTHLT,3)),         &
           ZTRH(SIZE(PTHLT,1),SIZE(PTHLT,2),SIZE(PTHLT,3)),        &  
           ZATHETA(SIZE(PTHLT,1),SIZE(PTHLT,2),SIZE(PTHLT,3)),     &
           ZAMOIST(SIZE(PTHLT,1),SIZE(PTHLT,2),SIZE(PTHLT,3)),     & 
@@ -603,8 +598,11 @@ ZEXPL = 1.- PIMPL
 ZRVORD= XRV / XRD
 !
 !
-ZTHLM(:,:,:) = PTHLT(:,:,:)
-ZRM(:,:,:,:) = PRT(:,:,:,:)
+!Copy data into ZTHLM and ZRM only if needed
+IF (HTURBLEN=='BL89' .OR. HTURBLEN=='RM17' .OR. ORMC01) THEN
+  ZTHLM(:,:,:) = PTHLT(:,:,:)
+  ZRM(:,:,:,:) = PRT(:,:,:,:)
+END IF
 !
 !
 !
@@ -742,7 +740,7 @@ SELECT CASE (HTURBLEN)
 
   CASE ('BL89')
     ZSHEAR=0.
-    CALL BL89(KKA,KKU,KKL,PZZ,PDZZ,PTHVREF,ZTHLM,KRR,ZRM,PTKET,ZSHEAR,ZLM)
+    CALL BL89(KKA,KKU,KKL,PZZ,PDZZ,PTHVREF,ZTHLM,KRR,ZRM,PTKET,ZSHEAR,PLEM)
 !
 !*      3.2 RM17 mixing length
 !           ------------------
@@ -751,37 +749,37 @@ SELECT CASE (HTURBLEN)
     ZDUDZ = MXF(MZF(1,KKU,1,GZ_U_UW(1,KKU,1,PUT,PDZZ)))
     ZDVDZ = MYF(MZF(1,KKU,1,GZ_V_VW(1,KKU,1,PVT,PDZZ)))
     ZSHEAR = SQRT(ZDUDZ*ZDUDZ + ZDVDZ*ZDVDZ)
-    CALL BL89(KKA,KKU,KKL,PZZ,PDZZ,PTHVREF,ZTHLM,KRR,ZRM,PTKET,ZSHEAR,ZLM)
+    CALL BL89(KKA,KKU,KKL,PZZ,PDZZ,PTHVREF,ZTHLM,KRR,ZRM,PTKET,ZSHEAR,PLEM)
 !
 !*      3.3 Delta mixing length
 !           -------------------
 !
   CASE ('DELT')
-    CALL DELT(ZLM)
+    CALL DELT(PLEM)
 !
 !*      3.4 Deardorff mixing length
 !           -----------------------
 !
   CASE ('DEAR')
-    CALL DEAR(ZLM)
+    CALL DEAR(PLEM)
 !
 !*      3.5 Blackadar mixing length
 !           -----------------------
 !
   CASE ('BLKR')
    ZL0 = 100.
-   ZLM(:,:,:) = ZL0
+   PLEM(:,:,:) = ZL0
 
    ZALPHA=0.5**(-1.5)
    !
    DO JK=IKTB,IKTE
-     ZLM(:,:,JK) = ( 0.5*(PZZ(:,:,JK)+PZZ(:,:,JK+KKL)) - &
+     PLEM(:,:,JK) = ( 0.5*(PZZ(:,:,JK)+PZZ(:,:,JK+KKL)) - &
      & PZZ(:,:,KKA+JPVEXT_TURB*KKL) ) * PDIRCOSZW(:,:)
-     ZLM(:,:,JK) = ZALPHA  * ZLM(:,:,JK) * ZL0 / ( ZL0 + ZALPHA*ZLM(:,:,JK) )
+     PLEM(:,:,JK) = ZALPHA  * PLEM(:,:,JK) * ZL0 / ( ZL0 + ZALPHA*PLEM(:,:,JK) )
    END DO
 !
-   ZLM(:,:,IKTB-1) = ZLM(:,:,IKTB)
-   ZLM(:,:,IKTE+1) = ZLM(:,:,IKTE)
+   PLEM(:,:,IKTB-1) = PLEM(:,:,IKTB)
+   PLEM(:,:,IKTE+1) = PLEM(:,:,IKTE)
 !
 !
 !
@@ -797,7 +795,7 @@ IF (KMODEL_CL==KMI .AND. HTURBLEN_CL/='NONE') CALL CLOUD_MODIF_LM
 !*      3.6 Dissipative length
 !           ------------------
 !
-ZLEPS(:,:,:)=ZLM(:,:,:)
+ZLEPS(:,:,:)=PLEM(:,:,:)
 !
 !*      3.7 Correction in the Surface Boundary Layer (Redelsperger 2001)
 !           ----------------------------------------
@@ -812,14 +810,14 @@ IF (ORMC01) THEN
     ZSFRV=0.
     ZLMO=LMO(ZUSTAR,ZTHLM(:,:,IKB),ZRVM,PSFTH,ZSFRV)
   END IF
-  CALL RMC01(HTURBLEN,KKA,KKU,KKL,PZZ,PDXX,PDYY,PDZZ,PDIRCOSZW,PSBL_DEPTH,ZLMO,ZLM,ZLEPS)
+  CALL RMC01(HTURBLEN,KKA,KKU,KKL,PZZ,PDXX,PDYY,PDZZ,PDIRCOSZW,PSBL_DEPTH,ZLMO,PLEM,ZLEPS)
 END IF
 !
 !*      3.8 Mixing length in external points (used if HTURBDIM="3DIM")
 !           ----------------------------------------------------------
 !
 IF (HTURBDIM=="3DIM") THEN
-  CALL UPDATE_LM(HLBCX,HLBCY,ZLM,ZLEPS)
+  CALL UPDATE_LM(HLBCX,HLBCY,PLEM,ZLEPS)
 END IF
 !----------------------------------------------------------------------------
 !
@@ -831,10 +829,7 @@ END IF
 !
 !
 !
-  IF (CPROGRAM=='AROME ') THEN
-    ZUSLOPE=PUT(:,:,KKA)
-    ZVSLOPE=PVT(:,:,KKA)
-  ELSE
+  IF (CPROGRAM/='AROME ') THEN
     CALL ROTATE_WIND(PUT,PVT,PWT,                       &
                      PDIRCOSXW, PDIRCOSYW, PDIRCOSZW,   &
                      PCOSSLOPE,PSINSLOPE,               &
@@ -842,14 +837,16 @@ END IF
                      ZUSLOPE,ZVSLOPE                    )
 !
     CALL UPDATE_ROTATE_WIND(ZUSLOPE,ZVSLOPE)
+  ELSE
+    ZUSLOPE=PUT(:,:,KKA)
+    ZVSLOPE=PVT(:,:,KKA)
   END IF
 !
 !
 !*      4.2 compute the proportionality coefficient between wind and stress
 !
-  ZCDUEFF(:,:) =-SQRT ( (PSFU(:,:)**2 + PSFV(:,:)**2) /               &
-                        (XMNH_TINY + ZUSLOPE(:,:)**2 + ZVSLOPE(:,:)**2 )   &
-                      )
+  ZCDUEFF(:,:) =-SQRT ( (PSFU(:,:)**2 + PSFV(:,:)**2) /                  &
+                        (XMNH_TINY + ZUSLOPE(:,:)**2 + ZVSLOPE(:,:)**2 ) )
 !
 !*       4.6 compute the surface tangential fluxes
 !
@@ -917,12 +914,12 @@ CALL TURB_VER(KKA,KKU,KKL,KRR, KRRL, KRRI,               &
           PSFTH,PSFRV,PSFSV,PSFTH,PSFRV,PSFSV,           &
           ZCDUEFF,ZTAU11M,ZTAU12M,ZTAU33M,               &
           PUT,PVT,PWT,ZUSLOPE,ZVSLOPE,PTHLT,PRT,PSVT,    &
-          PTKET,ZLM,ZLEPS,                               &
+          PTKET,PLEM,ZLEPS,                              &
           ZLOCPEXNM,ZATHETA,ZAMOIST,PSRCT,ZFRAC_ICE,     &
           ZFWTH,ZFWR,ZFTH2,ZFR2,ZFTHR,PBL_DEPTH,         &
           PSBL_DEPTH,ZLMO,                               &
           PRUS,PRVS,PRWS,PRTHLS,PRRS,PRSVS,              &
-          ZDP,ZTP,PSIGS,PWTH,PWRC,PWSV                   )
+          PDYP,PTHP,PSIGS,PWTH,PWRC,PWSV                 )
 !
 
 IF (LBUDGET_U) CALL BUDGET (PRUS,1,'VTURB_BU_RU')
@@ -966,9 +963,9 @@ IF (HTURBDIM=='3DIM') THEN
           PSFTH,PSFRV,PSFSV,                                   &
           ZCDUEFF,ZTAU11M,ZTAU12M,ZTAU22M,ZTAU33M,             &
           PUT,PVT,PWT,ZUSLOPE,ZVSLOPE,PTHLT,PRT,PSVT,          &
-          PTKET,ZLM,ZLEPS,                                     &
+          PTKET,PLEM,ZLEPS,                                    &
           ZLOCPEXNM,ZATHETA,ZAMOIST,PSRCT,ZFRAC_ICE,           &
-          ZDP,ZTP,PSIGS,                                       &
+          PDYP,PTHP,PSIGS,                                     &
           ZTRH,                                                &
           PRUS,PRVS,PRWS,PRTHLS,PRRS,PRSVS                     )
 END IF
@@ -1012,19 +1009,16 @@ IF (LBUDGET_RI) CALL BUDGET (PRRS(:,:,:,4),9,'HTURB_BU_RRI')
 !  6.1 Contribution of mass-flux in the TKE buoyancy production if 
 !      cloud computation is not statistical 
 
-       ZTP = ZTP + XG / PTHVREF * MZF(KKA,KKU,KKL, PFLXZTHVMF )
+       PTHP = PTHP + XG / PTHVREF * MZF(KKA,KKU,KKL, PFLXZTHVMF )
 
 !  6.2 TKE evolution equation
 
-CALL TKE_EPS_SOURCES(KKA,KKU,KKL,KMI,PTKET,ZLM,ZLEPS,ZDP,ZTRH,       &
+CALL TKE_EPS_SOURCES(KKA,KKU,KKL,KMI,PTKET,PLEM,ZLEPS,PDYP,ZTRH,     &
                      PRHODJ,PDZZ,PDXX,PDYY,PDZX,PDZY,PZZ,            &
                      PTSTEP,PIMPL,ZEXPL,                             &
                      HTURBLEN,HTURBDIM,                              &
                      TPFILE,OCLOSE_OUT,OTURB_DIAG,                   &
-                     ZTP,PRTKES,PRTKEMS,PRTHLS,ZCOEF_DISS,PTR,PDISS  )
-!
-PDYP = ZDP
-PTHP = ZTP
+                     PTHP,PRTKES,PRTKEMS,PRTHLS,ZCOEF_DISS,PTR,PDISS )
 !
 IF (LBUDGET_TH)  THEN
   IF ( KRRI >= 1 .AND. KRRL >= 1 ) THEN
@@ -1042,8 +1036,6 @@ END IF
 !*      7. STORES SOME INFORMATIONS RELATED TO THE TURBULENCE SCHEME
 !          ---------------------------------------------------------
 !
-PLEM = ZLM
-!
 IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
 ! 
 ! stores the mixing length
@@ -1058,7 +1050,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_Field_write(TPFILE,TZFIELD,ZLM)
+  CALL IO_Field_write(TPFILE,TZFIELD,PLEM)
 !
   IF (KRR /= 0) THEN
 !
@@ -1196,13 +1188,13 @@ IF (LLES_CALL) THEN
 !*     12. LES mixing end dissipative lengths, presso-correlations
 !          -------------------------------------------------------
 !
-  CALL LES_MEAN_SUBGRID(ZLM,X_LES_SUBGRID_LMix)
+  CALL LES_MEAN_SUBGRID(PLEM,X_LES_SUBGRID_LMix)
   CALL LES_MEAN_SUBGRID(ZLEPS,X_LES_SUBGRID_LDiss)
 !
 !* presso-correlations for subgrid Tke are equal to zero.
 !
-  ZLM = 0.
-  CALL LES_MEAN_SUBGRID(ZLM,X_LES_SUBGRID_WP)
+  ZLEPS = 0. !ZLEPS is used as a work array (not used anymore)
+  CALL LES_MEAN_SUBGRID(ZLEPS,X_LES_SUBGRID_WP)
 !
   CALL SECOND_MNH(ZTIME2)
   XTIME_LES = XTIME_LES + ZTIME2 - ZTIME1
@@ -1482,9 +1474,8 @@ REAL, DIMENSION(SIZE(PTHLT,1),SIZE(PTHLT,2),SIZE(PTHLT,3)) ::     &
 !-------------------------------------------------------------------------------
 !
 !   initialize the mixing length with the mesh grid
-DO JK = IKTB,IKTE ! 1D turbulence scheme
-  PLM(:,:,JK) = PZZ(:,:,JK+KKL) - PZZ(:,:,JK)
-END DO
+! 1D turbulence scheme
+PLM(:,:,IKTB:IKTE) = PZZ(:,:,IKTB+KKL:IKTE+KKL) - PZZ(:,:,IKTB:IKTE)
 PLM(:,:,KKU) = PLM(:,:,IKE)
 PLM(:,:,KKA) = PZZ(:,:,IKB) - PZZ(:,:,KKA)
 IF ( HTURBDIM /= '1DIM' ) THEN  ! 3D turbulence scheme
@@ -1665,7 +1656,7 @@ WHERE ( PCEI(:,:,:) <  PCEI_MAX .AND.                                        &
 !              ------------------------------------------
 !
 IF (HTURBLEN_CL == HTURBLEN) THEN
-  ZLM_CLOUD(:,:,:) = ZLM(:,:,:)
+  ZLM_CLOUD(:,:,:) = PLEM(:,:,:)
 ELSE
   SELECT CASE (HTURBLEN_CL)
 !
@@ -1703,16 +1694,16 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_Field_write(TPFILE,TZFIELD,ZLM)
+  CALL IO_Field_write(TPFILE,TZFIELD,PLEM)
 ENDIF
 !
 ! Amplification of the mixing length when the criteria are verified
 !
-WHERE (ZCOEF_AMPL(:,:,:) /= 1.) ZLM(:,:,:) = ZCOEF_AMPL(:,:,:)*ZLM_CLOUD(:,:,:)
+WHERE (ZCOEF_AMPL(:,:,:) /= 1.) PLEM(:,:,:) = ZCOEF_AMPL(:,:,:)*ZLM_CLOUD(:,:,:)
 !
 ! Cloud mixing length in the clouds at the points which do not verified the CEI
 !
-WHERE (PCEI(:,:,:) == -1.) ZLM(:,:,:) = ZLM_CLOUD(:,:,:)
+WHERE (PCEI(:,:,:) == -1.) PLEM(:,:,:) = ZLM_CLOUD(:,:,:)
 !
 !
 !*       5.    IMPRESSION

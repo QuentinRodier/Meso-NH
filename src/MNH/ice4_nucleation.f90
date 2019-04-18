@@ -1,17 +1,17 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 MODULE MODI_ICE4_NUCLEATION
 INTERFACE
-SUBROUTINE ICE4_NUCLEATION(KSIZE, LDSOFT, LDCOMPUTE, &
+SUBROUTINE ICE4_NUCLEATION(KSIZE, ODSOFT, ODCOMPUTE, &
                            PTHT, PPABST, PRHODREF, PEXN, PLSFACT, PT, &
                            PRVT, &
                            PCIT, PRVHENI_MR, PB_TH, PB_RV, PB_RI)
 IMPLICIT NONE
 INTEGER,                  INTENT(IN)    :: KSIZE
-LOGICAL,                  INTENT(IN)    :: LDSOFT
-LOGICAL, DIMENSION(KSIZE),INTENT(IN)    :: LDCOMPUTE
+LOGICAL,                  INTENT(IN)    :: ODSOFT
+LOGICAL, DIMENSION(KSIZE),INTENT(IN)    :: ODCOMPUTE
 REAL, DIMENSION(KSIZE),   INTENT(IN)    :: PTHT    ! Theta at t
 REAL, DIMENSION(KSIZE),   INTENT(IN)    :: PPABST  ! absolute pressure at t
 REAL, DIMENSION(KSIZE),   INTENT(IN)    :: PRHODREF! Reference density
@@ -27,7 +27,7 @@ REAL, DIMENSION(KSIZE),   INTENT(INOUT) :: PB_RI
 END SUBROUTINE ICE4_NUCLEATION
 END INTERFACE
 END MODULE MODI_ICE4_NUCLEATION
-SUBROUTINE ICE4_NUCLEATION(KSIZE, LDSOFT, LDCOMPUTE, &
+SUBROUTINE ICE4_NUCLEATION(KSIZE, ODSOFT, ODCOMPUTE, &
                            PTHT, PPABST, PRHODREF, PEXN, PLSFACT, PT, &
                            PRVT, &
                            PCIT, PRVHENI_MR, PB_TH, PB_RV, PB_RI)
@@ -48,18 +48,20 @@ SUBROUTINE ICE4_NUCLEATION(KSIZE, LDSOFT, LDCOMPUTE, &
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_CST
-USE MODD_RAIN_ICE_PARAM
-USE MODD_RAIN_ICE_DESCR, ONLY : XRTMIN
-USE MODD_PARAM_ICE, ONLY : LFEEDBACKT
+USE MODD_CST,            ONLY: XALPI,XALPW,XBETAI,XBETAW,XGAMI,XGAMW,XMD,XMV,XTT
+USE MODD_PARAM_ICE,      ONLY: LFEEDBACKT
+USE MODD_RAIN_ICE_PARAM, ONLY: XALPHA1,XALPHA2,XBETA1,XBETA2,XMNU0,XNU10,XNU20
+USE MODD_RAIN_ICE_DESCR, ONLY: XRTMIN
+!
+USE MODE_MPPDB
 !
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
 INTEGER,                  INTENT(IN)    :: KSIZE
-LOGICAL,                  INTENT(IN)    :: LDSOFT
-LOGICAL, DIMENSION(KSIZE),INTENT(IN)    :: LDCOMPUTE
+LOGICAL,                  INTENT(IN)    :: ODSOFT
+LOGICAL, DIMENSION(KSIZE),INTENT(IN)    :: ODCOMPUTE
 REAL, DIMENSION(KSIZE),   INTENT(IN)    :: PTHT    ! Theta at t
 REAL, DIMENSION(KSIZE),   INTENT(IN)    :: PPABST  ! absolute pressure at t
 REAL, DIMENSION(KSIZE),   INTENT(IN)    :: PRHODREF! Reference density
@@ -77,15 +79,15 @@ REAL, DIMENSION(KSIZE),   INTENT(INOUT) :: PB_RI
 !
 REAL, DIMENSION(KSIZE) :: ZW ! work array
 LOGICAL, DIMENSION(KSIZE) :: GNEGT  ! Test where to compute the HEN process
-REAL, DIMENSION(KSIZE)  :: ZZW,      & ! Work array
-                           ZUSW,     & ! Undersaturation over water
-                           ZSSI        ! Supersaturation over ice
+REAL, DIMENSION(KSIZE)    :: ZZW,      & ! Work array
+                             ZUSW,     & ! Undersaturation over water
+                             ZSSI        ! Supersaturation over ice
 !-------------------------------------------------------------------------------
 !
 !
 PRVHENI_MR(:)=0.
-IF(.NOT. LDSOFT) THEN
-  GNEGT(:)=PT(:)<XTT .AND. PRVT>XRTMIN(1) .AND. LDCOMPUTE(:)
+IF(.NOT. ODSOFT) THEN
+  GNEGT(:)=PT(:)<XTT .AND. PRVT>XRTMIN(1) .AND. ODCOMPUTE(:)
   PRVHENI_MR(:)=0.
   ZSSI(:)=0.
   ZUSW(:)=0.

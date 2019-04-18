@@ -197,14 +197,12 @@ IKE=KKU-JPVEXT_TURB*KKL
 ZY(:,:,IKB) = PVARM(:,:,IKB)  + PTSTEP*PSOURCE(:,:,IKB) -   &
   PEXPL / PRHODJA(:,:,IKB) * PA(:,:,IKB+KKL) * (PVARM(:,:,IKB+KKL) - PVARM(:,:,IKB))
 !
-DO JK=IKTB+1,IKTE-1
-  ZY(:,:,JK)= PVARM(:,:,JK)  + PTSTEP*PSOURCE(:,:,JK) -               &
-      PEXPL / PRHODJA(:,:,JK) *                                          &
-                             ( PVARM(:,:,JK-KKL)*PA(:,:,JK)                &
-                              -PVARM(:,:,JK)*(PA(:,:,JK)+PA(:,:,JK+KKL))   &
-                              +PVARM(:,:,JK+KKL)*PA(:,:,JK+KKL)              &
+  ZY(:,:,IKTB+1:IKTE-1)= PVARM(:,:,IKTB+1:IKTE-1)  + PTSTEP*PSOURCE(:,:,IKTB+1:IKTE-1) -               &
+      PEXPL / PRHODJA(:,:,IKTB+1:IKTE-1) *                                          &
+                             ( PVARM(:,:,IKTB+1-KKL:IKTE-1-KKL)*PA(:,:,IKTB+1:IKTE-1)                &
+                              -PVARM(:,:,IKTB+1:IKTE-1)*(PA(:,:,IKTB+1:IKTE-1)+PA(:,:,IKTB+1+KKL:IKTE-1+KKL))   &
+                              +PVARM(:,:,IKTB+1+KKL:IKTE-1+KKL)*PA(:,:,IKTB+1+KKL:IKTE-1+KKL)              &
                              ) 
-END DO
 ! 
 ZY(:,:,IKE)= PVARM(:,:,IKE) + PTSTEP*PSOURCE(:,:,IKE) +               &
   PEXPL / PRHODJA(:,:,IKE) * PA(:,:,IKE) * (PVARM(:,:,IKE)-PVARM(:,:,IKE-KKL))

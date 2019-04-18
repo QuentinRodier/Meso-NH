@@ -861,7 +861,7 @@ IF (STATUS /= NF90_NOERR) THEN
 
    ! Define the variable
    STATUS = NF90_DEF_VAR(INCID, YVARNAME, MNHINT_NF90, IVDIMS, IVARID)
-   IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_WRITE_FIELD_NC4_N1','NF90_DEF_VAR',trim(YVARNAME))
+   IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_N1','NF90_DEF_VAR',trim(YVARNAME))
 ELSE
    GEXISTED = .TRUE.
    CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_N1',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)//' already defined')

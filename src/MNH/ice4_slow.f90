@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 MODULE MODI_ICE4_SLOW
 INTERFACE
@@ -67,9 +67,10 @@ SUBROUTINE ICE4_SLOW(KSIZE, LDSOFT, LDCOMPUTE, PRHODREF, PT, &
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_CST
-USE MODD_RAIN_ICE_PARAM
-USE MODD_RAIN_ICE_DESCR
+USE MODD_CST,            ONLY: XTT
+USE MODD_RAIN_ICE_DESCR, ONLY: XCEXVT,XRTMIN
+USE MODD_RAIN_ICE_PARAM, ONLY: X0DEPG,X0DEPS,X1DEPG,X1DEPS,XACRIAUTI,XALPHA3,XBCRIAUTI,XBETA3,XCOLEXIS,XCRIAUTI, &
+                               XEX0DEPG,XEX0DEPS,XEX1DEPG,XEX1DEPS,XEXIAGGS,XFIAGGS,XHON,XTEXAUTI,XTIMAUTI
 !
 IMPLICIT NONE
 !
@@ -106,10 +107,9 @@ REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PA_RG
 !
 !*       0.2  declaration of local variables
 !
-REAL, DIMENSION(SIZE(PRHODREF)) :: ZCRIAUTI
-REAL            :: ZTIMAUTIC
 LOGICAL, DIMENSION(SIZE(PRHODREF)) :: GMASK
-!-------------------------------------------------------------------------------
+REAL, DIMENSION(SIZE(PRHODREF))    :: ZCRIAUTI
+REAL                               :: ZTIMAUTIC
 !
 !
 !-------------------------------------------------------------------------------

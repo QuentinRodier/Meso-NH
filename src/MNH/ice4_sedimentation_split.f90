@@ -77,12 +77,14 @@ SUBROUTINE ICE4_SEDIMENTATION_SPLIT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_CST
-USE MODD_RAIN_ICE_DESCR
-USE MODD_RAIN_ICE_PARAM
-USE MODD_PARAM_ICE
-USE MODI_GAMMA
+USE MODD_CST,            ONLY: XCPD,XP00,XRD,XRHOLW
+USE MODD_PARAM_ICE,      ONLY: XSPLIT_MAXCFL
+USE MODD_RAIN_ICE_DESCR, ONLY: XALPHAC,XALPHAC2,XCONC_LAND,XCONC_SEA,XCONC_URBAN,XLBC,XNUC,XNUC2,XRTMIN
+USE MODD_RAIN_ICE_PARAM, ONLY: XFSEDC
+!
 USE MODE_MSG
+!
+USE MODI_GAMMA
 !
 IMPLICIT NONE
 !
@@ -464,23 +466,24 @@ CONTAINS
         ENDIF
       ENDDO
     ELSE
-      ! ******* for other species
-      IF(KSPE==3) THEN
+    ! ******* for other species
+    SELECT CASE(KSPE)
+      CASE(3)
         ZFSED=XFSEDR
         ZEXSED=XEXSEDR
-      ELSEIF(KSPE==5) THEN
+      CASE(5)
         ZFSED=XFSEDS
         ZEXSED=XEXSEDS
-      ELSEIF(KSPE==6) THEN
+      CASE(6)
         ZFSED=XFSEDG
         ZEXSED=XEXSEDG
-      ELSEIF(KSPE==7) THEN
+      CASE(7)
         ZFSED=XFSEDH
         ZEXSED=XEXSEDH
-      ELSE
+      CASE DEFAULT
         write( yspe, '( I10 )' ) kspe
         call Print_msg( NVERB_FATAL, 'GEN', 'ICE4_SEDIMENTATION_SPLIT', 'no sedimentation parameter for KSPE='//trim(yspe) )
-      ENDIF
+    END SELECT
       PWSED(:,:,:) = 0.
       DO JL=1, KSEDIM
         JI=I1(JL)

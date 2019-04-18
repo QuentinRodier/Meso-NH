@@ -334,7 +334,6 @@ DO JITER =1,ITERMAX
     !CALL ADJUST_LANGLOIS(IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE, KKL,                &
     !                     PPABST, ZT, ZRV, ZRC, ZRI, ZLV, ZLS, ZCPH) HFRAC_ICE must be implemented in Langlois before using it again
     ZSIGS=0.
-    ZSRCS=0.
     CALL CONDENSATION(IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE, KKL,        &
          HFRAC_ICE,                                                            &
          PPABST, PZZ, ZT, ZRV, ZRC, ZRI, PRS, PRG, ZSIGS, PMFCONV, PCLDFR,     &

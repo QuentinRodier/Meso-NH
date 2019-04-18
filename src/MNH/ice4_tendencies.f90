@@ -1,11 +1,11 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 MODULE MODI_ICE4_TENDENCIES
 INTERFACE
 SUBROUTINE ICE4_TENDENCIES(KSIZE, KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKL, &
-                          &KRR, LDSOFT, LDCOMPUTE, &
+                          &KRR, ODSOFT, ODCOMPUTE, &
                           &OWARM, HSUBG_RC_RR_ACCR, HSUBG_RR_EVAP, HSUBG_AUCV_RC, HSUBG_PR_PDF, &
                           &PEXN, PRHODREF, PLVFACT, PLSFACT, LDMICRO, K1, K2, K3, &
                           &PPRES, PCF, PSIGMA_RC, &
@@ -28,8 +28,8 @@ SUBROUTINE ICE4_TENDENCIES(KSIZE, KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, K
 IMPLICIT NONE
 INTEGER,                      INTENT(IN)    :: KSIZE, KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKL
 INTEGER,                      INTENT(IN)    :: KRR
-LOGICAL,                      INTENT(IN)    :: LDSOFT
-LOGICAL, DIMENSION(KSIZE),    INTENT(IN)    :: LDCOMPUTE
+LOGICAL,                      INTENT(IN)    :: ODSOFT
+LOGICAL, DIMENSION(KSIZE),    INTENT(IN)    :: ODCOMPUTE
 LOGICAL,                      INTENT(IN)    :: OWARM
 CHARACTER*80,                 INTENT(IN)    :: HSUBG_RC_RR_ACCR
 CHARACTER*80,                 INTENT(IN)    :: HSUBG_RR_EVAP
@@ -132,7 +132,7 @@ END SUBROUTINE ICE4_TENDENCIES
 END INTERFACE
 END MODULE MODI_ICE4_TENDENCIES
 SUBROUTINE ICE4_TENDENCIES(KSIZE, KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKL, &
-                          &KRR, LDSOFT, LDCOMPUTE, &
+                          &KRR, ODSOFT, ODCOMPUTE, &
                           &OWARM, HSUBG_RC_RR_ACCR, HSUBG_RR_EVAP, HSUBG_AUCV_RC, HSUBG_PR_PDF, &
                           &PEXN, PRHODREF, PLVFACT, PLSFACT, LDMICRO, K1, K2, K3, &
                           &PPRES, PCF, PSIGMA_RC, &
@@ -169,23 +169,22 @@ SUBROUTINE ICE4_TENDENCIES(KSIZE, KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, K
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_CST
-USE MODD_RAIN_ICE_PARAM
-USE MODD_RAIN_ICE_DESCR
-
-USE MODI_ICE4_NUCLEATION
-USE MODI_ICE4_RRHONG
-USE MODI_ICE4_RIMLTC
-USE MODI_ICE4_RSRIMCG_OLD
+USE MODD_CST,            ONLY: XALPI,XBETAI,XCI,XCPV,XGAMI,XLSTT,XMD,XMV,XP00,XRV,XTT
+USE MODD_RAIN_ICE_DESCR, ONLY: XLBDAS_MAX,XLBEXG,XLBEXH,XLBEXR,XLBEXS,XLBG,XLBH,XLBR,XLBS,XRTMIN
+USE MODD_RAIN_ICE_PARAM, ONLY: XSCFAC
+!
 USE MODI_ICE4_COMPUTE_PDF
-USE MODI_ICE4_RAINFR_VERT
-USE MODI_ICE4_SLOW
-USE MODI_ICE4_WARM
-USE MODI_ICE4_FAST_RS
 USE MODI_ICE4_FAST_RG
 USE MODI_ICE4_FAST_RH
 USE MODI_ICE4_FAST_RI
-
+USE MODI_ICE4_FAST_RS
+USE MODI_ICE4_NUCLEATION
+USE MODI_ICE4_RAINFR_VERT
+USE MODI_ICE4_RIMLTC
+USE MODI_ICE4_RRHONG
+USE MODI_ICE4_RSRIMCG_OLD
+USE MODI_ICE4_SLOW
+USE MODI_ICE4_WARM
 !
 IMPLICIT NONE
 !
@@ -193,8 +192,8 @@ IMPLICIT NONE
 !
 INTEGER,                      INTENT(IN)    :: KSIZE, KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKL
 INTEGER,                      INTENT(IN)    :: KRR
-LOGICAL,                      INTENT(IN)    :: LDSOFT
-LOGICAL, DIMENSION(KSIZE),    INTENT(IN)    :: LDCOMPUTE
+LOGICAL,                      INTENT(IN)    :: ODSOFT
+LOGICAL, DIMENSION(KSIZE),    INTENT(IN)    :: ODCOMPUTE
 LOGICAL,                      INTENT(IN)    :: OWARM
 CHARACTER*80,                 INTENT(IN)    :: HSUBG_RC_RR_ACCR
 CHARACTER*80,                 INTENT(IN)    :: HSUBG_RR_EVAP
@@ -335,7 +334,7 @@ ZT(:)=PT(:)
 !
 !*       2.     COMPUTES THE SLOW COLD PROCESS SOURCES
 !               --------------------------------------
-CALL ICE4_NUCLEATION(KSIZE, LDSOFT, LDCOMPUTE, &
+CALL ICE4_NUCLEATION(KSIZE, ODSOFT, ODCOMPUTE, &
                      ZTHT, PPRES, PRHODREF, PEXN, PLSFACT, ZT, &
                      ZRVT, &
                      PCIT, PRVHENI_MR, PB_TH, PB_RV, PB_RI)
@@ -346,7 +345,7 @@ ZT(:) = ZTHT(:) * PEXN(:)
 !
 !*       3.3     compute the spontaneous freezing source: RRHONG
 !
-CALL ICE4_RRHONG(KSIZE, LDSOFT, LDCOMPUTE, &
+CALL ICE4_RRHONG(KSIZE, ODSOFT, ODCOMPUTE, &
                 &PEXN, PLVFACT, PLSFACT, &
                 &ZT,   ZRRT, &
                 &ZTHT, &
@@ -358,7 +357,7 @@ ZT(:) = ZTHT(:) * PEXN(:)
 !
 !*       7.1    cloud ice melting
 !
-CALL ICE4_RIMLTC(KSIZE, LDSOFT, LDCOMPUTE, &
+CALL ICE4_RIMLTC(KSIZE, ODSOFT, ODCOMPUTE, &
                 &PEXN, PLVFACT, PLSFACT, &
                 &ZT, &
                 &ZTHT, ZRIT, &
@@ -374,7 +373,7 @@ ZLBDAS(:)=0.
 WHERE(ZRST(:)>0.)
   ZLBDAS(:)  = MIN(XLBDAS_MAX, XLBS*(PRHODREF(:)*MAX(ZRST(:), XRTMIN(5)))**XLBEXS)
 END WHERE
-CALL ICE4_RSRIMCG_OLD(KSIZE, LDSOFT, LDCOMPUTE, &
+CALL ICE4_RSRIMCG_OLD(KSIZE, ODSOFT, ODCOMPUTE, &
                      &PRHODREF, &
                      &ZLBDAS, &
                      &ZT, ZRCT, ZRST, &
@@ -401,8 +400,7 @@ IF(KSIZE>0) THEN
                         PRHODREF, ZRCT, PCF, PSIGMA_RC,&
                         PHLC_HCF, PHLC_LCF, PHLC_HRC, PHLC_LRC, ZRF)
   !Diagnostic of precipitation fraction
-  PRAINFR(:,:,:)=0.
-  PRAINFR(:,:,:)=UNPACK(ZRF(:), MASK=LDMICRO(:,:,:), FIELD=PRAINFR(:,:,:))
+  PRAINFR(:,:,:)=UNPACK(ZRF(:), MASK=LDMICRO(:,:,:), FIELD=0.)
   ZRRT3D(:,:,:)=PRRT3D(:,:,:)-UNPACK(PRRHONG_MR(:), MASK=LDMICRO(:,:,:), FIELD=0.)
   CALL ICE4_RAINFR_VERT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKL, PRAINFR(:,:,:), ZRRT3D(:,:,:))
   DO JL=1,KSIZE
@@ -438,7 +436,7 @@ IF(KSIZE>0) THEN
 ENDIF
 !
 !
-CALL ICE4_SLOW(KSIZE, LDSOFT, LDCOMPUTE, PRHODREF, ZT, &
+CALL ICE4_SLOW(KSIZE, ODSOFT, ODCOMPUTE, PRHODREF, ZT, &
               &ZSSI, PLVFACT, PLSFACT, &
               &ZRVT, ZRCT, ZRIT, ZRST, ZRGT, &
               &ZLBDAS, ZLBDAG, &
@@ -455,7 +453,7 @@ CALL ICE4_SLOW(KSIZE, LDSOFT, LDCOMPUTE, PRHODREF, ZT, &
 !
 IF(OWARM) THEN    !  Check if the formation of the raindrops by the slow
                   !  warm processes is allowed
-  CALL ICE4_WARM(KSIZE, LDSOFT, LDCOMPUTE, HSUBG_RC_RR_ACCR, HSUBG_RR_EVAP, &
+  CALL ICE4_WARM(KSIZE, ODSOFT, ODCOMPUTE, HSUBG_RC_RR_ACCR, HSUBG_RR_EVAP, &
                 &PRHODREF, PLVFACT, ZT, PPRES, ZTHT,&
                 &ZLBDAR, ZLBDAR_RF, ZKA, ZDV, ZCJ, &
                 &PHLC_LCF, PHLC_HCF, PHLC_LRC, PHLC_HRC, &
@@ -475,7 +473,7 @@ END IF
 !*       4.     COMPUTES THE FAST COLD PROCESS SOURCES FOR r_s
 !               ----------------------------------------------
 !
-CALL ICE4_FAST_RS(KSIZE, LDSOFT, LDCOMPUTE, &
+CALL ICE4_FAST_RS(KSIZE, ODSOFT, ODCOMPUTE, &
                  &PRHODREF, PLVFACT, PLSFACT, PPRES, &
                  &ZDV, ZKA, ZCJ, &
                  &ZLBDAR, ZLBDAS, &
@@ -495,7 +493,7 @@ CALL ICE4_FAST_RS(KSIZE, LDSOFT, LDCOMPUTE, &
 !
 ZRGSI(:) = PRVDEPG(:) + PRSMLTG(:) + PRRACCSG(:) + PRSACCRG(:) + PRCRIMSG(:) + PRSRIMCG(:)
 ZRGSI_MR(:) = PRRHONG_MR(:) + PRSRIMCG_MR(:)
-CALL ICE4_FAST_RG(KSIZE, LDSOFT, LDCOMPUTE, KRR, &
+CALL ICE4_FAST_RG(KSIZE, ODSOFT, ODCOMPUTE, KRR, &
                  &PRHODREF, PLVFACT, PLSFACT, PPRES, &
                  &ZDV, ZKA, ZCJ, PCIT, &
                  &ZLBDAR, ZLBDAS, ZLBDAG, &
@@ -514,7 +512,7 @@ CALL ICE4_FAST_RG(KSIZE, LDSOFT, LDCOMPUTE, KRR, &
 !               ----------------------------------------------
 !
 IF (KRR==7) THEN
-  CALL ICE4_FAST_RH(KSIZE, LDSOFT, LDCOMPUTE, LLWETG, &
+  CALL ICE4_FAST_RH(KSIZE, ODSOFT, ODCOMPUTE, LLWETG, &
                    &PRHODREF, PLVFACT, PLSFACT, PPRES, &
                    &ZDV, ZKA, ZCJ, &
                    &ZLBDAS, ZLBDAG, ZLBDAR, ZLBDAH, &
@@ -544,7 +542,7 @@ END IF
 !*       7.     COMPUTES SPECIFIC SOURCES OF THE WARM AND COLD CLOUDY SPECIES
 !               -------------------------------------------------------------
 !
-CALL ICE4_FAST_RI(KSIZE, LDSOFT, LDCOMPUTE, &
+CALL ICE4_FAST_RI(KSIZE, ODSOFT, ODCOMPUTE, &
                  &PRHODREF, PLVFACT, PLSFACT, &
                  &ZAI, ZCJ, PCIT, &
                  &ZSSI, &
