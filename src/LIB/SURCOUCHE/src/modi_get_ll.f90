@@ -1,15 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for CVS information
-!-----------------------------------------------------------------
-! $Source$
-! $Name$ 
-! $Revision$ 
-! $Date$
-!-----------------------------------------------------------------
 !-----------------------------------------------------------------
 
 !     ##################
@@ -22,7 +14,7 @@ INTERFACE
        SUBROUTINE  GET_DIM_EXT_ll( HSPLIT, KXDIM, KYDIM )
 !!     ##################################################
 !
-  CHARACTER*1, INTENT(IN) :: HSPLIT
+  CHARACTER(len=1), INTENT(IN) :: HSPLIT
   INTEGER, INTENT(OUT) :: KXDIM, KYDIM
 !
        END SUBROUTINE GET_DIM_EXT_ll
@@ -31,7 +23,7 @@ INTERFACE
        SUBROUTINE  GET_DIM_PHYS_ll( HSPLIT, KXDIM, KYDIM )
 !!     ###################################################
 !
-  CHARACTER*1, INTENT(IN) :: HSPLIT
+  CHARACTER(len=1), INTENT(IN) :: HSPLIT
   INTEGER, INTENT(OUT) :: KXDIM, KYDIM
 !
        END SUBROUTINE GET_DIM_PHYS_ll
@@ -40,7 +32,7 @@ INTERFACE
        SUBROUTINE GET_OR_ll( HSPLIT, KXOR, KYOR )
 !!     ##########################################
 !
-  CHARACTER*1, INTENT(IN) :: HSPLIT
+  CHARACTER(len=1), INTENT(IN) :: HSPLIT
   INTEGER, INTENT(OUT) :: KXOR, KYOR
 !
        END SUBROUTINE GET_OR_ll

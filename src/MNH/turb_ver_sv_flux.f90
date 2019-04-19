@@ -30,7 +30,7 @@ LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
                                                       ! file opening       
 LOGICAL,                INTENT(IN)   ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
-CHARACTER*4,            INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
+CHARACTER(len=4),       INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
                                                       ! turbulence scheme
 REAL,                   INTENT(IN)   ::  PIMPL, PEXPL ! Coef. for temporal disc.
 REAL,                   INTENT(IN)   ::  PTSTEP       ! Double Time Step
@@ -306,7 +306,7 @@ LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
                                                       ! file opening       
 LOGICAL,                INTENT(IN)   ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
-CHARACTER*4,            INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
+CHARACTER(len=4),       INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
                                                       ! turbulence scheme
 REAL,                   INTENT(IN)   ::  PIMPL, PEXPL ! Coef. for temporal disc.
 REAL,                   INTENT(IN)   ::  PTSTEP       ! Double Time Step

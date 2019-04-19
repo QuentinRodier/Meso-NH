@@ -63,17 +63,17 @@ REAL :: XTNEXTMETEO   ! time of next meteo update
 !
 !*       0.2  file names, formats and I/O channels
 !
-CHARACTER*128 :: CINITFILE  = "CHCONTROL1.nam" ! name of initial value file
-CHARACTER*128 :: CMETEOFILE = "CHCONTROL1.nam" ! meteo update file
+CHARACTER(len=128) :: CINITFILE  = "CHCONTROL1.nam" ! name of initial value file
+CHARACTER(len=128) :: CMETEOFILE = "CHCONTROL1.nam" ! meteo update file
 TYPE(TFILEDATA),POINTER :: TMETEOFILE => NULL() ! meteo update file
 !
-CHARACTER*128 :: COUTFILE    = "BOX.OUT"      ! name of final output file 
-CHARACTER*128 :: CRESULTFILE = "BOX.RESULT"   ! regular output file 
-CHARACTER*128 :: CDIAGFILE   = "BOX.DIAG"     ! diagnostics output file 
+CHARACTER(len=128) :: COUTFILE    = "BOX.OUT"      ! name of final output file
+CHARACTER(len=128) :: CRESULTFILE = "BOX.RESULT"   ! regular output file
+CHARACTER(len=128) :: CDIAGFILE   = "BOX.DIAG"     ! diagnostics output file
 !
-CHARACTER*80  :: CRUNID        = "no runid specified" ! runid for output file
-CHARACTER*40  :: CRESULTFORMAT = "(5E16.8)" ! Format for results
-CHARACTER*40  :: CDIAGFORMAT   = "(5E16.8)" ! Format for diagnostics
+CHARACTER(len=80)  :: CRUNID        = "no runid specified" ! runid for output file
+CHARACTER(len=40)  :: CRESULTFORMAT = "(5E16.8)" ! Format for results
+CHARACTER(len=40)  :: CDIAGFORMAT   = "(5E16.8)" ! Format for diagnostics
 !
 INTEGER :: NRESULTIO = -1 ! channel to be used for all regular result file I/O (set in CH_INIT_OUTPUT)
 INTEGER :: NDIAGIO   = -1 ! channel to be used for all diagnostics file I/O (set in CH_INIT_DIAGNOSTICS)
@@ -85,18 +85,18 @@ INTEGER :: NVERB     = 5  ! verbosity level: 0 (lowest) <= NVERB <= 10 (highest)
 !*       0.4  parameters for TUV
 !
 LOGICAL      :: LCH_TUV_ONLINE = .TRUE.        ! switch online/lookup table
-CHARACTER*80 :: CCH_TUV_LOOKUP = "PHOTO.TUV39" ! name of lookup table file
-CHARACTER*4  :: CCH_TUV_CLOUDS = "NONE"        ! method for calculating the
-					       ! impact of clouds on radiation
-					       ! "FOUQ" (model clouds, only 1-D)
-					       ! "RADM" (parameterized, for 3-D)
+CHARACTER(len=80) :: CCH_TUV_LOOKUP = "PHOTO.TUV39" ! name of lookup table file
+CHARACTER(len=4)  :: CCH_TUV_CLOUDS = "NONE"        ! method for calculating the
+                                                    ! impact of clouds on radiation
+                                                    ! "FOUQ" (model clouds, only 1-D)
+                                                    ! "RADM" (parameterized, for 3-D)
 REAL :: XCH_TUV_ALBNEW  = -1.  ! surface albedo (if negative the albedo
-			       ! will be read from DATAX/albedo.dat)
+                               ! will be read from DATAX/albedo.dat)
 REAL :: XCH_TUV_DOBNEW  = -1.  ! scaling factor for ozone column dobson
                                ! (if negative, no scaling will be performed,
-			       ! note: the O3 profile will be read from 
-			       ! DATAX/O3.profile, if this file is empty, the
-			       ! US standard O3 profile will be used)
+                               ! note: the O3 profile will be read from
+                               ! DATAX/O3.profile, if this file is empty, the
+                               ! US standard O3 profile will be used)
 REAL :: XCH_TUV_TUPDATE = 600. ! update frequency for TUV (in seconds)
 !
 LOGICAL :: LCH_SURFACE0D = .FALSE. ! switch to activate surface fluxes

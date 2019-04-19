@@ -145,14 +145,14 @@ REAL              :: ZX, ZY                 ! poisition of each profile
 REAL, DIMENSION(SIZE(XCHEMLAT)) ::  ZLAT, ZLON
 TYPE(TFILEDATA),POINTER,SAVE :: TZFILE
 !
-CHARACTER*8  :: YDATE  ! for retrieval of date and time
-CHARACTER*10 :: YTIME  ! dito
-CHARACTER*13 :: YLATLON  ! dito
-CHARACTER*13 :: YCLATLON  ! dito
-CHARACTER*4  :: YCYEAR  ! current year
-CHARACTER*2  :: YCMONTH ! current month
-CHARACTER*2  :: YCDAY   ! current day
-CHARACTER*5  :: YCTIME  ! current time
+CHARACTER(len=8)  :: YDATE  ! for retrieval of date and time
+CHARACTER(len=10) :: YTIME  ! dito
+CHARACTER(len=13) :: YLATLON  ! dito
+CHARACTER(len=13) :: YCLATLON  ! dito
+CHARACTER(len=4)  :: YCYEAR  ! current year
+CHARACTER(len=2)  :: YCMONTH ! current month
+CHARACTER(len=2)  :: YCDAY   ! current day
+CHARACTER(len=5)  :: YCTIME  ! current time
 !!
 !!    EXECUTABLE STATEMENTS
 !!    ---------------------

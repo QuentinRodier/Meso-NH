@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1987-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 c/////////////////////////////////////////////////////////////////////////////
@@ -826,7 +826,7 @@ C....................................................................
       INTEGER    XSTAT3       ! Special  error
       PARAMETER (XSTAT3 = 3)
 
-      CHARACTER*120 XMSG
+      CHARACTER(len=120) XMSG
 
 C...........PARAMETERS and their descriptions:
 
@@ -846,7 +846,7 @@ C...........ARGUMENTS and their descriptions
 
 C...........SCRATCH LOCAL VARIABLES and their descriptions:
 
-      CHARACTER*16 PNAME            ! driver program name
+      CHARACTER(len=16) PNAME            ! driver program name
       SAVE         PNAME
 
       INTEGER      IAN                  ! anion indX

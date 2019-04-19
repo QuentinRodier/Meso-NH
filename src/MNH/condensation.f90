@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -23,7 +23,7 @@ INTEGER,                      INTENT(IN)    :: KJE    ! value of the last  point
 INTEGER,                      INTENT(IN)    :: KKB    ! value of the first point in z
 INTEGER,                      INTENT(IN)    :: KKE    ! value of the last  point in z
 INTEGER,                      INTENT(IN)    :: KKL    ! +1 if grid goes from ground to atmosphere top, -1 otherwise
-CHARACTER*1,                  INTENT(IN)    :: HFRAC_ICE
+CHARACTER(len=1),             INTENT(IN)    :: HFRAC_ICE
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PPABS  ! pressure (Pa)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PZZ    ! height of model levels (m)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(INOUT) :: PT     ! grid scale T  (K)
@@ -143,7 +143,7 @@ INTEGER,                      INTENT(IN)    :: KJE    ! value of the last  point
 INTEGER,                      INTENT(IN)    :: KKB    ! value of the first point in z
 INTEGER,                      INTENT(IN)    :: KKE    ! value of the last  point in z
 INTEGER,                      INTENT(IN)    :: KKL    ! +1 if grid goes from ground to atmosphere top, -1 otherwise
-CHARACTER*1,                  INTENT(IN)    :: HFRAC_ICE
+CHARACTER(len=1),             INTENT(IN)    :: HFRAC_ICE
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PPABS  ! pressure (Pa)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PZZ    ! height of model levels (m)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(INOUT) :: PT     ! grid scale T  (K)

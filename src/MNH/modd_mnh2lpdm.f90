@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ######spl
         MODULE MODD_MNH2LPDM
 !	##################
@@ -25,7 +26,7 @@ CHARACTER(LEN=50), SAVE                      :: CFGRI  ! Nom du fichier GRILLE.
 CHARACTER(LEN=50), SAVE                      :: CFDAT  ! Nom du fichier DATE.
 CHARACTER(LEN=28), SAVE, DIMENSION(JPMNHMAX) :: CFMNH  ! Noms des FM.
 !
-CHARACTER*10, SAVE :: CTURBPARAM="ISOTROPE"   ! ISOTROPE ou HANNA
+CHARACTER(len=10), SAVE :: CTURBPARAM="ISOTROPE"   ! ISOTROPE ou HANNA
 !
 NAMELIST/NAM_FIC/ CFMTO,CFGRI,CFDAT,CFMNH
 NAMELIST/NAM_TURB/ CTURBPARAM

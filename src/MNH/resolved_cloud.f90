@@ -41,8 +41,8 @@ INTEGER,                  INTENT(IN)   :: KMI      ! Model index
 INTEGER,                  INTENT(IN)   :: KTCOUNT  ! Temporal loop counter
 CHARACTER(LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX,HLBCY   ! X and Y-direc. LBC type
 TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE   ! Output file
-CHARACTER*4,              INTENT(IN)   :: HRAD     ! Radiation scheme name
-CHARACTER*4,              INTENT(IN)   :: HTURBDIM ! Dimensionality of the
+CHARACTER(len=4),         INTENT(IN)   :: HRAD     ! Radiation scheme name
+CHARACTER(len=4),         INTENT(IN)   :: HTURBDIM ! Dimensionality of the
                                                    ! turbulence scheme
 LOGICAL,                  INTENT(IN)   :: OCLOSE_OUT ! Conditional closure of
                                                    ! the OUTPUT FM-file
@@ -329,8 +329,8 @@ INTEGER,                  INTENT(IN)   :: KMI      ! Model index
 INTEGER,                  INTENT(IN)   :: KTCOUNT  ! Temporal loop counter
 CHARACTER(LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX,HLBCY   ! X and Y-direc. LBC type
 TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE   ! Output file
-CHARACTER*4,              INTENT(IN)   :: HRAD     ! Radiation scheme name
-CHARACTER*4,              INTENT(IN)   :: HTURBDIM ! Dimensionality of the
+CHARACTER(len=4),         INTENT(IN)   :: HRAD     ! Radiation scheme name
+CHARACTER(len=4),         INTENT(IN)   :: HTURBDIM ! Dimensionality of the
                                                    ! turbulence scheme
 LOGICAL,                  INTENT(IN)   :: OCLOSE_OUT ! Conditional closure of
                                                    ! the OUTPUT FM-file

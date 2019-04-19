@@ -16,51 +16,46 @@ INTERFACE
                              PRVS, PRCS, PRRS, PRIS, PRSS, PRGS, PRHS,         &
                              PCCT, PCIT, PCNUCS, PCCS, PINUCS, PCIS,           &
                              PTHS, PSRCS, PCLDFR                               )
-         !
-INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
-INTEGER,                  INTENT(IN)    :: KMI      ! Model index 
-CHARACTER*4,              INTENT(IN)    :: HTURBDIM ! Dimensionality of the
-                                                    ! turbulence scheme
-CHARACTER*4,              INTENT(IN)    :: HRAD     ! Radiation scheme name
-LOGICAL,                  INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid 
-                                                    ! Condensation
-REAL,                     INTENT(IN)    :: PTSTEP   ! Time step          
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODREF! Dry density of the 
-                                                   ! reference state
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODJ  ! Dry density * Jacobian
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PEXNREF ! Reference Exner function
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PSIGS   ! Sigma_s at time t
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABST  ! Absolute Pressure at t     
+INTEGER,                          INTENT(IN)    :: KRR        ! Number of moist variables
+INTEGER,                          INTENT(IN)    :: KMI        ! Model index
+CHARACTER(len=4),                 INTENT(IN)    :: HTURBDIM   ! Dimensionality of the turbulence scheme
+CHARACTER(len=4),                 INTENT(IN)    :: HRAD       ! Radiation scheme name
+LOGICAL,                          INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid Condensation
+REAL,                             INTENT(IN)    :: PTSTEP     ! Time step
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRVT    ! Water vapor m.r. at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRCT    ! Cloud water m.r. at t
-REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)   ::  PRRT ! Rain water m.r. at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRIT    ! Cloud ice  m.r. at t
-REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)   ::  PRST ! Aggregate  m.r. at t
-REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)   ::  PRGT ! Graupel    m.r. at t
-REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)   ::  PRHT ! Hail       m.r. at t
+REAL, DIMENSION(:,:,:),           INTENT(IN)    :: PRHODREF   ! Dry density of the reference state
+REAL, DIMENSION(:,:,:),           INTENT(IN)    :: PRHODJ     ! Dry density * Jacobian
+REAL, DIMENSION(:,:,:),           INTENT(IN)    :: PEXNREF    ! Reference Exner function
+REAL, DIMENSION(:,:,:),           INTENT(IN)    :: PSIGS      ! Sigma_s at time t
+REAL, DIMENSION(:,:,:),           INTENT(IN)    :: PPABST     ! Absolute Pressure at t
 !
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRVS    ! Water vapor m.r. source
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRCS    ! Cloud water m.r. source
-REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)   ::  PRRS ! Rain water m.r. at t+1
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRIS    ! Cloud ice  m.r. at t+1
-REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)   ::  PRSS ! Aggregate  m.r. at t+1
-REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)   ::  PRGS ! Graupel    m.r. at t+1
-REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)   ::  PRHS ! Hail       m.r. at t+1
+REAL, DIMENSION(:,:,:),           INTENT(IN)    ::  PRVT      ! Water vapor m.r. at t
+REAL, DIMENSION(:,:,:),           INTENT(IN)    ::  PRCT      ! Cloud water m.r. at t
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    ::  PRRT      ! Rain water m.r. at t
+REAL, DIMENSION(:,:,:),           INTENT(IN)    ::  PRIT      ! Cloud ice  m.r. at t
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    ::  PRST      ! Aggregate  m.r. at t
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    ::  PRGT      ! Graupel    m.r. at t
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    ::  PRHT      ! Hail       m.r. at t
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)       :: PCCT    ! Cloud water conc. at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)       :: PCIT    ! Cloud ice   conc. at t
-REAL, DIMENSION(:,:,:),   INTENT(INOUT)    :: PCNUCS  ! Nucl. aero. conc. source
-REAL, DIMENSION(:,:,:),   INTENT(INOUT)    :: PCCS    ! Cloud water conc. source
-REAL, DIMENSION(:,:,:),   INTENT(INOUT)    :: PINUCS  ! Ice Nucl.   conc. source
-REAL, DIMENSION(:,:,:),   INTENT(INOUT)    :: PCIS    ! Cloud ice   conc. source
+REAL, DIMENSION(:,:,:),           INTENT(INOUT) :: PRVS       ! Water vapor m.r. source
+REAL, DIMENSION(:,:,:),           INTENT(INOUT) :: PRCS       ! Cloud water m.r. source
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    :: PRRS       ! Rain water m.r. at t+1
+REAL, DIMENSION(:,:,:),           INTENT(INOUT) :: PRIS       ! Cloud ice  m.r. at t+1
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    :: PRSS       ! Aggregate  m.r. at t+1
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    :: PRGS       ! Graupel    m.r. at t+1
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    :: PRHS       ! Hail       m.r. at t+1
 !
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS    ! Theta source
-REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSRCS   ! Second-order flux
-                                                   ! s'rc'/2Sigma_s2 at time t+1
-                                                   ! multiplied by Lambda_3
-REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PCLDFR  ! Cloud fraction          
+REAL, DIMENSION(:,:,:),           INTENT(IN)    :: PCCT       ! Cloud water conc. at t
+REAL, DIMENSION(:,:,:),           INTENT(IN)    :: PCIT       ! Cloud ice   conc. at t
+REAL, DIMENSION(:,:,:),           INTENT(INOUT) :: PCNUCS     ! Nucl. aero. conc. source
+REAL, DIMENSION(:,:,:),           INTENT(INOUT) :: PCCS       ! Cloud water conc. source
+REAL, DIMENSION(:,:,:),           INTENT(INOUT) :: PINUCS     ! Ice Nucl.   conc. source
+REAL, DIMENSION(:,:,:),           INTENT(INOUT) :: PCIS       ! Cloud ice   conc. source
+!
+REAL, DIMENSION(:,:,:),           INTENT(INOUT) :: PTHS       ! Theta source
+REAL, DIMENSION(:,:,:),           INTENT(OUT)   :: PSRCS      ! Second-order flux: s'rc'/2Sigma_s2 at time t+1 times Lambda_3
+REAL, DIMENSION(:,:,:),           INTENT(OUT)   :: PCLDFR     ! Cloud fraction
 !
 END SUBROUTINE C3R5_ADJUST
 !

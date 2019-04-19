@@ -21,11 +21,11 @@ INTERFACE
 !
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 INTEGER,                  INTENT(IN)    :: KMI      ! Model index 
-CHARACTER*4,              INTENT(IN)    :: HTURBDIM ! Dimensionality of the
+CHARACTER(len=4),         INTENT(IN)    :: HTURBDIM ! Dimensionality of the
                                                     ! turbulence scheme
 CHARACTER(LEN=4),         INTENT(IN)    :: HSCONV   ! Shallow convection scheme
 CHARACTER(LEN=4),         INTENT(IN)    :: HMF_CLOUD! Type of statistical cloud
-CHARACTER*4,              INTENT(IN)    :: HRAD     ! Radiation scheme name
+CHARACTER(len=4),         INTENT(IN)    :: HRAD     ! Radiation scheme name
 LOGICAL,                  INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid 
                                                     ! Condensation
 LOGICAL                                 :: OSIGMAS  ! Switch for Sigma_s: 
@@ -191,11 +191,11 @@ IMPLICIT NONE
 !
 INTEGER,                INTENT(IN)    :: KRR      ! Number of moist variables
 INTEGER,                INTENT(IN)    :: KMI      ! Model index 
-CHARACTER*4,            INTENT(IN)    :: HTURBDIM ! Dimensionality of the
+CHARACTER(len=4),       INTENT(IN)    :: HTURBDIM ! Dimensionality of the
                                                   ! turbulence scheme
 CHARACTER(LEN=4),       INTENT(IN)    :: HSCONV   ! Shallow convection scheme
 CHARACTER(LEN=4),       INTENT(IN)    :: HMF_CLOUD! Type of statistical cloud
-CHARACTER*4,            INTENT(IN)    :: HRAD     ! Radiation scheme name
+CHARACTER(len=4),       INTENT(IN)    :: HRAD     ! Radiation scheme name
 LOGICAL,                INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid 
                                                     ! Condensation
 LOGICAL                               :: OSIGMAS  ! Switch for Sigma_s: 

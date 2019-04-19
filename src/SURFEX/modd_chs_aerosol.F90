@@ -1,6 +1,6 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
-!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
 !!     ######################
        MODULE MODD_CHS_AEROSOL
@@ -180,8 +180,8 @@ REAL         :: XEMISSIGI     = 1.86   ! dispersion of primary aerosol
                                        ! emission for I mode
 REAL         :: XEMISSIGJ     = 1.29   ! dispersion of primary aerosol
                                        ! emission for J mode
- CHARACTER*4  :: CRGUNIT   = 'NUMB'    ! type of log-normal geometric mean radius given
-!                                     ! in nameliste (mass on number)
+ CHARACTER(len=4) :: CRGUNIT  = 'NUMB' ! type of log-normal geometric mean radius given
+!                                      ! in namelist (mass on number)
 
 
 

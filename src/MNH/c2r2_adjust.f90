@@ -17,33 +17,27 @@ INTERFACE
 !
 USE MODD_IO, ONLY: TFILEDATA
 !
-INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
-TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE   ! Output file
-CHARACTER*4,              INTENT(IN)    :: HTURBDIM ! Dimensionality of the
-                                                    ! turbulence scheme
-CHARACTER*4,              INTENT(IN)    :: HRAD     ! Radiation scheme name
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                    ! the OUTPUT FM-file
-LOGICAL,                  INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid 
-                                                    ! Condensation
-REAL,                     INTENT(IN)    :: PTSTEP   ! Double Time step
-                                                   ! (single if cold start)
+INTEGER,                          INTENT(IN)    :: KRR        ! Number of moist variables
+TYPE(TFILEDATA),                  INTENT(IN)    :: TPFILE     ! Output file
+CHARACTER(len=4),                 INTENT(IN)    :: HTURBDIM   ! Dimensionality of the turbulence scheme
+CHARACTER(len=4),                 INTENT(IN)    :: HRAD       ! Radiation scheme name
+LOGICAL,                          INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of the OUTPUT file
+LOGICAL,                          INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid condensation
+REAL,                             INTENT(IN)    :: PTSTEP     ! Double Time step (single if cold start)
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODJ  ! Dry density * Jacobian
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PSIGS   ! Sigma_s at time t
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABST  ! Absolute Pressure at t     
+REAL, DIMENSION(:,:,:),           INTENT(IN)    :: PRHODJ     ! Dry density * Jacobian
+REAL, DIMENSION(:,:,:),           INTENT(IN)    :: PSIGS      ! Sigma_s at time t
+REAL, DIMENSION(:,:,:),           INTENT(IN)    :: PPABST     ! Absolute Pressure at t
 !
-REAL, DIMENSION(:,:,:),   INTENT(INOUT)       :: PTHS  ! Theta source
-REAL, DIMENSION(:,:,:),   INTENT(INOUT)       :: PRVS  ! Water vapor m.r. source
-REAL, DIMENSION(:,:,:),   INTENT(INOUT)       :: PRCS  ! Cloud water m.r. source
-REAL, DIMENSION(:,:,:),   INTENT(INOUT)    :: PCNUCS  ! Nucl. aero. conc. source
-REAL, DIMENSION(:,:,:),   INTENT(INOUT)    :: PCCS    ! Cloud water conc. source
+REAL, DIMENSION(:,:,:),           INTENT(INOUT) :: PTHS       ! Theta source
+REAL, DIMENSION(:,:,:),           INTENT(INOUT) :: PRVS       ! Water vapor m.r. source
+REAL, DIMENSION(:,:,:),           INTENT(INOUT) :: PRCS       ! Cloud water m.r. source
+REAL, DIMENSION(:,:,:),           INTENT(INOUT) :: PCNUCS     ! Nucl. aero. conc. source
+REAL, DIMENSION(:,:,:),           INTENT(INOUT) :: PCCS       ! Cloud water conc. source
 !
-REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSRCS   ! Second-order flux
-                                                   ! s'rc'/2Sigma_s2 at time t+1
-                                                   ! multiplied by Lambda_3
-REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PCLDFR  ! Cloud fraction          
-REAL, DIMENSION(:,:,:), OPTIONAL,  INTENT(IN) :: PRRS  ! Rain  water m.r. source
+REAL, DIMENSION(:,:,:),           INTENT(OUT)   :: PSRCS      ! Second-order flux s'rc'/2Sigma_s2 at time t+1 times Lambda_3
+REAL, DIMENSION(:,:,:),           INTENT(OUT)   :: PCLDFR     ! Cloud fraction
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    :: PRRS       ! Rain  water m.r. source
 !
 END SUBROUTINE C2R2_ADJUST
 !
@@ -168,36 +162,27 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
+INTEGER,                          INTENT(IN)    :: KRR        ! Number of moist variables
+TYPE(TFILEDATA),                  INTENT(IN)    :: TPFILE     ! Output file
+CHARACTER(len=4),                 INTENT(IN)    :: HTURBDIM   ! Dimensionality of the turbulence scheme
+CHARACTER(len=4),                 INTENT(IN)    :: HRAD       ! Radiation scheme name
+LOGICAL,                          INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of the OUTPUT file
+LOGICAL,                          INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid condensation
+REAL,                             INTENT(IN)    :: PTSTEP     ! Double Time step (single if cold start)
 !
-INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
-TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE   ! Output file
-CHARACTER*4,              INTENT(IN)    :: HTURBDIM ! Dimensionality of the
-                                                    ! turbulence scheme
-CHARACTER*4,              INTENT(IN)    :: HRAD     ! Radiation scheme name
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                    ! the OUTPUT FM-file
-LOGICAL,                  INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid 
-                                                    ! Condensation
-REAL,                     INTENT(IN)    :: PTSTEP   ! Double Time step
-                                                   ! (single if cold start)
+REAL, DIMENSION(:,:,:),           INTENT(IN)    :: PRHODJ     ! Dry density * Jacobian
+REAL, DIMENSION(:,:,:),           INTENT(IN)    :: PSIGS      ! Sigma_s at time t
+REAL, DIMENSION(:,:,:),           INTENT(IN)    :: PPABST     ! Absolute Pressure at t
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODJ  ! Dry density * Jacobian
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PSIGS   ! Sigma_s at time t
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABST  ! Absolute Pressure at t     
+REAL, DIMENSION(:,:,:),           INTENT(INOUT) :: PTHS       ! Theta source
+REAL, DIMENSION(:,:,:),           INTENT(INOUT) :: PRVS       ! Water vapor m.r. source
+REAL, DIMENSION(:,:,:),           INTENT(INOUT) :: PRCS       ! Cloud water m.r. source
+REAL, DIMENSION(:,:,:),           INTENT(INOUT) :: PCNUCS     ! Nucl. aero. conc. source
+REAL, DIMENSION(:,:,:),           INTENT(INOUT) :: PCCS       ! Cloud water conc. source
 !
-REAL, DIMENSION(:,:,:),   INTENT(INOUT)       :: PTHS  ! Theta source
-REAL, DIMENSION(:,:,:),   INTENT(INOUT)       :: PRVS  ! Water vapor m.r. source
-REAL, DIMENSION(:,:,:),   INTENT(INOUT)       :: PRCS  ! Cloud water m.r. source
-REAL, DIMENSION(:,:,:),   INTENT(INOUT)    :: PCNUCS  ! Nucl. aero. conc. source
-REAL, DIMENSION(:,:,:),   INTENT(INOUT)    :: PCCS    ! Cloud water conc. source
-!
-REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSRCS   ! Second-order flux
-                                                   ! s'rc'/2Sigma_s2 at time t+1
-                                                   ! multiplied by Lambda_3
-REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PCLDFR  ! Cloud fraction          
-REAL, DIMENSION(:,:,:), OPTIONAL,  INTENT(IN) :: PRRS  ! Rain  water m.r. source
-!
-!
+REAL, DIMENSION(:,:,:),           INTENT(OUT)   :: PSRCS      ! Second-order flux s'rc'/2Sigma_s2 at time t+1 times Lambda_3
+REAL, DIMENSION(:,:,:),           INTENT(OUT)   :: PCLDFR     ! Cloud fraction
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    :: PRRS       ! Rain  water m.r. source
 !
 !*       0.2   Declarations of local variables :
 !

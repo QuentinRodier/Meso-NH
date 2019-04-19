@@ -143,7 +143,7 @@
 !*       0.1   declarations of arguments
 !
   INTEGER, INTENT(IN), OPTIONAL :: K ! number of the subdomain
-  CHARACTER*1, INTENT(IN), OPTIONAL :: HSPLITTING ! kind of splitting
+  CHARACTER(len=1), INTENT(IN), OPTIONAL :: HSPLITTING ! kind of splitting
 !
 !*       0.2   declarations of local variables
 !
@@ -225,7 +225,7 @@
 !*       0.1   declarations of arguments
 !
   INTEGER, INTENT(IN), OPTIONAL :: K ! number of the subdomain
-  CHARACTER*1, INTENT(IN), OPTIONAL :: HSPLITTING ! kind of splitting
+  CHARACTER(len=1), INTENT(IN), OPTIONAL :: HSPLITTING ! kind of splitting
 
 !!
 !*       0.2   declarations of local variables
@@ -308,7 +308,7 @@
 !*       0.1   declarations of arguments
 !
   INTEGER, INTENT(IN), OPTIONAL :: K ! number of the subdomain
-  CHARACTER*1, INTENT(IN), OPTIONAL :: HSPLITTING ! kind of splitting
+  CHARACTER(len=1), INTENT(IN), OPTIONAL :: HSPLITTING ! kind of splitting
  
 !!
 !*       0.2   declarations of local variables
@@ -392,7 +392,7 @@
 !*       0.1   declarations of arguments
 !
   INTEGER, INTENT(IN), OPTIONAL :: K ! number of the subdomain
-  CHARACTER*1, INTENT(IN), OPTIONAL :: HSPLITTING ! kind of splitting
+  CHARACTER(len=1), INTENT(IN), OPTIONAL :: HSPLITTING ! kind of splitting
  
 !!
 !*       0.2   declarations of local variables
@@ -475,7 +475,7 @@
 !
 !*       0.1   declarations of arguments
 !
-  CHARACTER*1, INTENT(IN) :: HSPLIT
+  CHARACTER(len=1), INTENT(IN) :: HSPLIT
 !
   INTEGER, INTENT(OUT) :: KXDIM, KYDIM
 !
@@ -549,7 +549,7 @@
 !
 !*       0.1   declarations of arguments
 !
-  CHARACTER*1, INTENT(IN) :: HSPLIT
+  CHARACTER(len=1), INTENT(IN) :: HSPLIT
 !
   INTEGER, INTENT(OUT) :: KXDIM, KYDIM
 !
@@ -623,7 +623,7 @@
 !
 !*       0.1   declarations of arguments
 !
-  CHARACTER*1, INTENT(IN) :: HSPLIT
+  CHARACTER(len=1), INTENT(IN) :: HSPLIT
 !
   INTEGER, INTENT(OUT) :: KXOR, KYOR
 !
@@ -3081,7 +3081,7 @@ ENDIF
 !
 !*       0.1   declarations of arguments
 !
-  CHARACTER*1, INTENT(IN) :: HSPLIT
+  CHARACTER(len=1), INTENT(IN) :: HSPLIT
   INTEGER, INTENT(OUT) :: KOR
 !
 !*       0.2   declarations of local variables
@@ -3347,7 +3347,7 @@ PMEANSQRT = PMEANSQRT / KSIZEGLB
 !
 !*       0.0   declarations of arguments
 !
-  CHARACTER*1, INTENT(IN) :: HSPLIT ! Splitting flag (B, X or Y)
+  CHARACTER(len=1), INTENT(IN) :: HSPLIT ! Splitting flag (B, X or Y)
 !
   REAL, DIMENSION(:), INTENT(IN) :: PSOURCE ! x-vector
 !
@@ -3458,7 +3458,7 @@ PMEANSQRT = PMEANSQRT / KSIZEGLB
 !
 !*       0.0   declarations of arguments
 !
-  CHARACTER*1, INTENT(IN) :: HSPLIT ! Splitting flag (B, X or Y)
+  CHARACTER(len=1), INTENT(IN) :: HSPLIT ! Splitting flag (B, X or Y)
 !
   REAL, DIMENSION(:), INTENT(IN) :: PSOURCE ! x-vector
 !
@@ -3570,7 +3570,7 @@ PMEANSQRT = PMEANSQRT / KSIZEGLB
 !
 !*       0.0   declarations of arguments
 !
-  CHARACTER*1, INTENT(IN) :: HSPLIT ! Splitting flag (B, X or Y)
+  CHARACTER(len=1), INTENT(IN) :: HSPLIT ! Splitting flag (B, X or Y)
 !
   REAL, DIMENSION(:,:), INTENT(IN) :: PSOURCE ! x-vector
 !

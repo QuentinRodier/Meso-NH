@@ -34,7 +34,7 @@ LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
                                                       ! file opening
 LOGICAL,                INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
                                  ! diagnostic fields in the syncronous FM-file
-CHARACTER*4           , INTENT(IN)   ::  HTURBDIM     ! Kind of turbulence param.
+CHARACTER(len=4),       INTENT(IN)   ::  HTURBDIM     ! Kind of turbulence param.
 TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
 REAL, DIMENSION(:,:,:), INTENT(IN)   ::  PDXX,PDYY,PDZZ,PDZX,PDZY
                                                   ! metric coefficients
@@ -224,7 +224,7 @@ LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
                                                       ! file opening
 LOGICAL,                INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
                                  ! diagnostic fields in the syncronous FM-file
-CHARACTER*4           , INTENT(IN)   ::  HTURBDIM     ! Kind of turbulence param.
+CHARACTER(len=4),       INTENT(IN)   ::  HTURBDIM     ! Kind of turbulence param.
 TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
 REAL, DIMENSION(:,:,:), INTENT(IN)   ::  PDXX,PDYY,PDZZ,PDZX,PDZY
                                                   ! metric coefficients

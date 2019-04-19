@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1981-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 microph 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ######spl
       MODULE MODI_CONDENS
@@ -16,7 +11,7 @@ INTERFACE
 !
      SUBROUTINE CONDENS(HTURBDIM, PQ1, PN, PRC, PSRC)
 
-CHARACTER*4,             INTENT(IN)  ::   HTURBDIM ! dimensionality of the
+CHARACTER(len=4),        INTENT(IN)  ::   HTURBDIM ! dimensionality of the
                                                    ! turbulence scheme
 REAL, DIMENSION(:,:,:),  INTENT(IN)  ::   PQ1      ! Saturation
 REAL, DIMENSION(:,:,:),  INTENT(OUT) ::   PN       ! Cloud fraction
@@ -95,7 +90,7 @@ IMPLICIT NONE
 !
 !*       0.1 declarations of arguments and result
 !
-CHARACTER*4,             INTENT(IN)  ::   HTURBDIM ! dimensionality of the
+CHARACTER(len=4),        INTENT(IN)  ::   HTURBDIM ! dimensionality of the
                                                    ! turbulence scheme
 REAL, DIMENSION(:,:,:),  INTENT(IN)  ::   PQ1      ! Saturation
 REAL, DIMENSION(:,:,:),  INTENT(OUT) ::   PN       ! Cloud fraction

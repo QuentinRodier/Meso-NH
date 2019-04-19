@@ -31,8 +31,8 @@ INTEGER,                  INTENT(IN)   :: KMI      ! Model index
 INTEGER,                  INTENT(IN)   :: KTCOUNT  ! Temporal loop counter
 LOGICAL,                  INTENT(IN)   :: OEXIT    ! switch for the end of the temporal loop
 CHARACTER(LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX,HLBCY   ! X and Y-direc. LBC type
-CHARACTER*4,              INTENT(IN)   :: HRAD     ! Radiation scheme name
-CHARACTER*4,              INTENT(IN)   :: HTURBDIM ! Dimensionality of the
+CHARACTER(len=4),         INTENT(IN)   :: HRAD     ! Radiation scheme name
+CHARACTER(len=4),         INTENT(IN)   :: HTURBDIM ! Dimensionality of the
                                                    ! turbulence scheme
 LOGICAL,                  INTENT(IN)   :: OSUBG_COND ! Switch for Subgrid Cond.
 LOGICAL,                  INTENT(IN)   :: OSIGMAS  ! Switch for Sigma_s:
@@ -227,8 +227,8 @@ INTEGER,                  INTENT(IN)   :: KMI      ! Model index
 INTEGER,                  INTENT(IN)   :: KTCOUNT  ! Temporal loop counter
 LOGICAL,                  INTENT(IN)   :: OEXIT    ! switch for the end of the temporal loop
 CHARACTER(LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX,HLBCY   ! X and Y-direc. LBC type
-CHARACTER*4,              INTENT(IN)   :: HRAD     ! Radiation scheme name
-CHARACTER*4,              INTENT(IN)   :: HTURBDIM ! Dimensionality of the
+CHARACTER(len=4),         INTENT(IN)   :: HRAD     ! Radiation scheme name
+CHARACTER(len=4),         INTENT(IN)   :: HTURBDIM ! Dimensionality of the
                                                    ! turbulence scheme
 LOGICAL,                  INTENT(IN)   :: OSUBG_COND ! Switch for Subgrid Cond.
 LOGICAL,                  INTENT(IN)   :: OSIGMAS  ! Switch for Sigma_s:

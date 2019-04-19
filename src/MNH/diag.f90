@@ -181,10 +181,8 @@ CHARACTER (LEN=28), DIMENSION(1) :: YINIFILEPGD ! names of the INPUT FM-file
 CHARACTER (LEN=5)  :: YSUFFIX   ! character string for the OUTPUT FM-file number
 CHARACTER (LEN=4)  :: YRAD      ! initial flag to call to radiation schemes
 CHARACTER (LEN=4)  :: YDCONV    ! initial flag to call to deep convection schemes
-CHARACTER (LEN=4)  :: YSCONV    ! initial flag to call to shallow convection schemes
 CHARACTER (LEN=4)  :: YTURB     ! initial flag to call to turbulence schemes
-CHARACTER (LEN=40) :: YFMT,YFMT2! format for cpu analysis printing
-INTEGER  :: IRESP               ! return code in FM routines
+! CHARACTER (LEN=40) :: YFMT,YFMT2! format for cpu analysis printing
 INTEGER  :: ILUOUT0             ! Logical unit number for the output listing
 REAL(kind=MNHTIME), DIMENSION(2) :: ZTIME0, ZTIME1, ZTIME2, ZRAD, ZDCONV, ZSHADOWS, ZGROUND, &
                                     ZTRACER, ZDRAG, ZTURB, ZMAFL, ZCHEM, ZTIME_BU ! CPU times
@@ -591,7 +589,6 @@ IF (CTURB /= 'NONE')    XRTKES(:,:,:) = 0.
 !
 YTURB  = CTURB
 YDCONV = CDCONV
-YSCONV = CSCONV
 YRAD   = CRAD
 !
 !* turbulence scheme

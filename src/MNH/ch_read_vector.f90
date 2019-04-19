@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1999-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 chimie 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !!    ##########################
       MODULE MODI_CH_READ_VECTOR
@@ -17,20 +12,13 @@ INTERFACE
 SUBROUTINE CH_READ_VECTOR(KEQ, HNAMES, PVAR, PDEFAULT, KIN, KOUT, KVERB)
 IMPLICIT NONE
 !!
-INTEGER,                       INTENT(IN) :: KEQ    
-					  ! number of variables to be defined
-CHARACTER*(*), DIMENSION(KEQ), INTENT(IN) :: HNAMES 
-					  ! names of the variables to be defined
-REAL,          DIMENSION(KEQ), INTENT(OUT):: PVAR
-					  ! value of the variable to be read
-REAL,                          INTENT(IN) :: PDEFAULT
-					  ! default value 
-INTEGER,                       INTENT(IN) :: KIN   
-					  ! I/O channel for file input
-INTEGER,                       INTENT(IN) :: KOUT
-					  ! I/O channel for printing
-INTEGER,                       INTENT(IN) :: KVERB   
-					  ! verbosity level
+INTEGER,                          INTENT(IN)  :: KEQ      ! number of variables to be defined
+CHARACTER(len=*), DIMENSION(KEQ), INTENT(IN)  :: HNAMES   ! names of the variables to be defined
+REAL,             DIMENSION(KEQ), INTENT(OUT) :: PVAR     ! value of the variable to be read
+REAL,                             INTENT(IN)  :: PDEFAULT ! default value
+INTEGER,                          INTENT(IN)  :: KIN      ! I/O channel for file input
+INTEGER,                          INTENT(IN)  :: KOUT     ! I/O channel for printing
+INTEGER,                          INTENT(IN)  :: KVERB    ! verbosity level
 END SUBROUTINE CH_READ_VECTOR
 !!
 END INTERFACE
@@ -90,20 +78,13 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
-INTEGER,                       INTENT(IN) :: KEQ    
-					  ! number of variables to be defined
-CHARACTER*(*), DIMENSION(KEQ), INTENT(IN) :: HNAMES 
-					  ! names of the variables to be defined
-REAL,          DIMENSION(KEQ), INTENT(OUT):: PVAR
-					  ! value of the variable to be read
-REAL,                          INTENT(IN) :: PDEFAULT
-					  ! default value 
-INTEGER,                       INTENT(IN) :: KIN   
-					  ! I/O channel for file input
-INTEGER,                       INTENT(IN) :: KOUT
-					  ! I/O channel for printing
-INTEGER,                       INTENT(IN) :: KVERB   
-					  ! verbosity level
+INTEGER,                          INTENT(IN)  :: KEQ      ! number of variables to be defined
+CHARACTER(len=*), DIMENSION(KEQ), INTENT(IN)  :: HNAMES   ! names of the variables to be defined
+REAL,             DIMENSION(KEQ), INTENT(OUT) :: PVAR     ! value of the variable to be read
+REAL,                             INTENT(IN)  :: PDEFAULT ! default value
+INTEGER,                          INTENT(IN)  :: KIN      ! I/O channel for file input
+INTEGER,                          INTENT(IN)  :: KOUT     ! I/O channel for printing
+INTEGER,                          INTENT(IN)  :: KVERB    ! verbosity level
 !
 !*      0.2    declarations of local variables
 !

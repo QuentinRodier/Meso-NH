@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modn_ch_mnhcn.f90,v $ $Revision: 1.2.4.1.2.1.12.2 $ $Date: 2014/01/09 15:01:56 $
 !-----------------------------------------------------------------
 !!    #####################
       MODULE MODN_CH_MNHC_n
@@ -77,22 +73,22 @@ LOGICAL  :: LCH_PH
 lOGICAL  :: LCH_RET_ICE
 REAL  :: XCH_PHINIT
 REAL  :: XRTMIN_AQ
-CHARACTER(LEN=80)  :: CCHEM_INPUT_FILE
-CHARACTER(LEN=10)  :: CCH_TDISCRETIZATION
+CHARACTER(LEN=80)   :: CCHEM_INPUT_FILE
+CHARACTER(LEN=10)   :: CCH_TDISCRETIZATION
 INTEGER  :: NCH_SUBSTEPS
 LOGICAL  :: LCH_TUV_ONLINE
-CHARACTER*80  :: CCH_TUV_LOOKUP
-CHARACTER*4  :: CCH_TUV_CLOUDS
+CHARACTER(len=80)   :: CCH_TUV_LOOKUP
+CHARACTER(len=4)    :: CCH_TUV_CLOUDS
 REAL  :: XCH_TUV_ALBNEW
 REAL  :: XCH_TUV_DOBNEW
 REAL  :: XCH_TUV_TUPDATE
-CHARACTER*3  :: CCH_VEC_METHOD
+CHARACTER(len=3)    :: CCH_VEC_METHOD
 INTEGER  :: NCH_VEC_LENGTH
 REAL  :: XCH_TS1D_TSTEP
-CHARACTER*80  :: CCH_TS1D_COMMENT
-CHARACTER*80  :: CCH_TS1D_FILENAME
-CHARACTER(LEN=1024)   :: CSPEC_PRODLOSS 
-CHARACTER(LEN=1024)   :: CSPEC_BUDGET 
+CHARACTER(len=80)   :: CCH_TS1D_COMMENT
+CHARACTER(len=80)   :: CCH_TS1D_FILENAME
+CHARACTER(LEN=1024) :: CSPEC_PRODLOSS
+CHARACTER(LEN=1024) :: CSPEC_BUDGET
 !
 NAMELIST/NAM_CH_MNHCn/LUSECHEM,LUSECHAQ,LUSECHIC,LCH_INIT_FIELD,LCH_CONV_SCAV,&
                       LCH_CONV_LINOX,LCH_PH,LCH_RET_ICE,XCH_PHINIT,XRTMIN_AQ, &

@@ -74,8 +74,8 @@ TYPE(METEOTRANSTYPE), INTENT(IN) :: TPM  ! the meteo variables
 !
 !*       0.2  declaration of local variables
 !
-CHARACTER*8            :: YDATE  ! for retrieval of date and time
-CHARACTER*10           :: YTIME  ! dito
+CHARACTER(len=8)       :: YDATE  ! for retrieval of date and time
+CHARACTER(len=10)      :: YTIME  ! dito
 INTEGER                :: JI     ! loop control
 INTEGER                :: NAERO
 !

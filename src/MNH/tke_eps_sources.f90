@@ -30,9 +30,9 @@ REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PDXX,PDYY,PDZZ,PDZX,PDZY
 REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PZZ          ! physical height w-pt
 REAL,                    INTENT(IN)   ::  PTSTEP       ! Time step 
 REAL,                    INTENT(IN)   ::  PEXPL, PIMPL ! Coef. temporal. disc.
-CHARACTER*4,             INTENT(IN)   ::  HTURBDIM     ! dimensionality of the 
+CHARACTER(len=4),        INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
                                                        ! turbulence scheme
-CHARACTER*4,             INTENT(IN)   ::  HTURBLEN     ! kind of mixing length 
+CHARACTER(len=4),        INTENT(IN)   ::  HTURBLEN     ! kind of mixing length
 TYPE(TFILEDATA),         INTENT(IN)   ::  TPFILE       ! Output file
 LOGICAL,                 INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
                                                        ! file opening
@@ -218,9 +218,9 @@ REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PDXX,PDYY,PDZZ,PDZX,PDZY
 REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PZZ          ! physical height w-pt
 REAL,                    INTENT(IN)   ::  PTSTEP       ! Time step 
 REAL,                    INTENT(IN)   ::  PEXPL, PIMPL ! Coef. temporal. disc.
-CHARACTER*4,             INTENT(IN)   ::  HTURBDIM     ! dimensionality of the 
+CHARACTER(len=4),        INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
                                                        ! turbulence scheme
-CHARACTER*4,             INTENT(IN)   ::  HTURBLEN     ! kind of mixing length 
+CHARACTER(len=4),        INTENT(IN)   ::  HTURBLEN     ! kind of mixing length
 TYPE(TFILEDATA),         INTENT(IN)   ::  TPFILE       ! Output file
 LOGICAL,                 INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
                                                        ! file opening

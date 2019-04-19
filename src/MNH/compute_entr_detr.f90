@@ -26,7 +26,7 @@ INTEGER,                INTENT(IN)   :: KKE          ! uppest atmosphere physica
 INTEGER,                INTENT(IN)   :: KKL          ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 LOGICAL,DIMENSION(:),   INTENT(IN)   :: OTEST ! test to see if updraft is running
 LOGICAL,DIMENSION(:),   INTENT(IN)   :: OTESTLCL !test of condensation 
-CHARACTER*1,            INTENT(IN)   :: HFRAC_ICE ! frac_ice can be compute using
+CHARACTER(len=1),       INTENT(IN)   :: HFRAC_ICE ! frac_ice can be compute using
                                               ! Temperature (T) or prescribed
                                               ! (Y)
 REAL, DIMENSION(:), INTENT(IN)      :: PFRAC_ICE ! fraction of ice
@@ -146,7 +146,7 @@ INTEGER,                INTENT(IN)   :: KKE          ! uppest atmosphere physica
 INTEGER,                INTENT(IN)   :: KKL          ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 LOGICAL,DIMENSION(:),   INTENT(IN)   :: OTEST ! test to see if updraft is running
 LOGICAL,DIMENSION(:),   INTENT(IN)   :: OTESTLCL !test of condensation 
-CHARACTER*1,            INTENT(IN)   :: HFRAC_ICE ! frac_ice can be compute using
+CHARACTER(len=1),       INTENT(IN)   :: HFRAC_ICE ! frac_ice can be compute using
                                               ! Temperature (T) or prescribed
                                               ! (Y)
 REAL, DIMENSION(:), INTENT(IN)      :: PFRAC_ICE ! fraction of ice

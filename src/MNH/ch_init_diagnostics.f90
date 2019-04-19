@@ -62,8 +62,8 @@ IMPLICIT NONE
 !*       0.2 Declaration of local variables
 !        ----------------------------------
 !
-CHARACTER*8  :: YDATE  ! for retrieval of date and time
-CHARACTER*10 :: YTIME  ! dito
+CHARACTER(len=8)  :: YDATE  ! for retrieval of date and time
+CHARACTER(len=10) :: YTIME  ! dito
 !
 INTEGER :: JI
 !INTEGER, DIMENSION(2, NNONZEROTERMS) :: IINDEX ! indices of non-zero terms

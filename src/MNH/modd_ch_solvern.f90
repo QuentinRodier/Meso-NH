@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! NEC0 masdev4_7 2007/06/16 01:41:59
 !-----------------------------------------------------------------
 !!    ######################### 
       MODULE MODD_CH_SOLVER_n
@@ -43,7 +38,7 @@ TYPE CH_SOLVER_t
 !
 !*       0.1  choice of the stiff solver
 !
-  CHARACTER*32 :: CSOLVER = 'EXQSSA'  ! name of the solver to be used
+  CHARACTER(len=32) :: CSOLVER = 'EXQSSA'  ! name of the solver to be used
 !
 !*       0.2  parameters for LinSSA solver
 !
@@ -78,10 +73,10 @@ TYPE CH_SOLVER_t
 !
   INTEGER     :: NMAXORD = 5   ! maximum order for the BDF method (0<NMAXORD<=5)
   LOGICAL     :: LPETZLD = .TRUE. ! perform Petzold local error test (recommended)
-  CHARACTER*1 :: CMETHOD = "N" ! method to use non-linear system
+  CHARACTER(len=1) :: CMETHOD = "N" ! method to use non-linear system
 			     ! N or D for modified Newton iteration
                              ! F for functional iteration
-  CHARACTER*1 :: CNORM = "A"   ! type of norm to be used
+  CHARACTER(len=1) :: CNORM = "A"   ! type of norm to be used
                              ! A or D for averaged L2 norm
 			     ! M for maximum norm
   INTEGER     :: NTRACE = 0    ! level of output from D02NBF
@@ -110,7 +105,7 @@ TYPE(CH_SOLVER_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: CH_SOLVER_MODEL
 LOGICAL          , DIMENSION(JPMODELMAX),         SAVE :: CH_SOLVER_FIRST_CALL = .TRUE.
 !JUAN
 
-CHARACTER*32, POINTER :: CSOLVER=>NULL()
+CHARACTER(len=32), POINTER :: CSOLVER=>NULL()
 INTEGER, POINTER :: NSSA=>NULL()
 INTEGER, DIMENSION(:), POINTER :: NSSAINDEX=>NULL()
 REAL, POINTER :: XRTOL=>NULL()
@@ -119,8 +114,8 @@ INTEGER, POINTER :: NRELAB=>NULL()
 INTEGER, POINTER :: NPED=>NULL()
 INTEGER, POINTER :: NMAXORD=>NULL()
 LOGICAL, POINTER :: LPETZLD=>NULL()
-CHARACTER*1, POINTER :: CMETHOD=>NULL()
-CHARACTER*1, POINTER :: CNORM=>NULL()
+CHARACTER(len=1), POINTER :: CMETHOD=>NULL()
+CHARACTER(len=1), POINTER :: CNORM=>NULL()
 INTEGER, POINTER :: NTRACE=>NULL()
 REAL, POINTER :: XALPHA=>NULL()
 REAL, POINTER :: XSLOW=>NULL()

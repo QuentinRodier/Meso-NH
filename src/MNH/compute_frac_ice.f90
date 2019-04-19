@@ -11,7 +11,7 @@ INTERFACE COMPUTE_FRAC_ICE
 !
     SUBROUTINE COMPUTE_FRAC_ICE3D(HFRAC_ICE,PFRAC_ICE,PT)
 !
-CHARACTER*1           , INTENT(IN) :: HFRAC_ICE
+CHARACTER(len=1),       INTENT(IN) :: HFRAC_ICE
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PT
 REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PFRAC_ICE                                             
 !
@@ -19,7 +19,7 @@ REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PFRAC_ICE
 !
    SUBROUTINE COMPUTE_FRAC_ICE2D(HFRAC_ICE,PFRAC_ICE,PT)
 !
-CHARACTER*1           , INTENT(IN) :: HFRAC_ICE
+CHARACTER(len=1),     INTENT(IN) :: HFRAC_ICE
 REAL, DIMENSION(:,:), INTENT(IN) :: PT
 REAL, DIMENSION(:,:), INTENT(INOUT) :: PFRAC_ICE                                             
 !
@@ -27,7 +27,7 @@ REAL, DIMENSION(:,:), INTENT(INOUT) :: PFRAC_ICE
 
    SUBROUTINE COMPUTE_FRAC_ICE1D(HFRAC_ICE,PFRAC_ICE,PT)
 !
-CHARACTER*1           , INTENT(IN) :: HFRAC_ICE
+CHARACTER(len=1),   INTENT(IN) :: HFRAC_ICE
 REAL, DIMENSION(:), INTENT(IN) :: PT
 REAL, DIMENSION(:), INTENT(INOUT) :: PFRAC_ICE                                             
 
@@ -45,7 +45,7 @@ INTERFACE
 !
     SUBROUTINE COMPUTE_FRAC_ICE3D(HFRAC_ICE,PFRAC_ICE,PT)
 !
-CHARACTER*1           , INTENT(IN) :: HFRAC_ICE
+CHARACTER(len=1),       INTENT(IN) :: HFRAC_ICE
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PT
 REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PFRAC_ICE                                             
 !
@@ -61,7 +61,7 @@ INTERFACE
 !
     SUBROUTINE COMPUTE_FRAC_ICE1D(HFRAC_ICE,PFRAC_ICE,PT)
 !
-CHARACTER*1       , INTENT(IN)    :: HFRAC_ICE
+CHARACTER(len=1),   INTENT(IN)    :: HFRAC_ICE
 REAL, DIMENSION(:), INTENT(IN)    :: PT
 REAL, DIMENSION(:), INTENT(INOUT) :: PFRAC_ICE
 !
@@ -113,7 +113,7 @@ IMPLICIT NONE
 !
 !*      0.1  declarations of arguments
 !
-CHARACTER*1           , INTENT(IN)    :: HFRAC_ICE ! scheme to use
+CHARACTER(len=1),       INTENT(IN)    :: HFRAC_ICE ! scheme to use
 REAL, DIMENSION(:,:,:), INTENT(IN)    :: PT        ! Temperature
 REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PFRAC_ICE ! Ice fraction (1 for ice only, 0 for liquid only)
 !-------------------------------------------------------------------------
@@ -183,7 +183,7 @@ IMPLICIT NONE
 !
 !*      0.1  declarations of arguments
 !
-CHARACTER*1         , INTENT(IN)    :: HFRAC_ICE ! scheme to use
+CHARACTER(len=1),     INTENT(IN)    :: HFRAC_ICE ! scheme to use
 REAL, DIMENSION(:,:), INTENT(IN)    :: PT        ! Temperature
 REAL, DIMENSION(:,:), INTENT(INOUT) :: PFRAC_ICE ! Ice fraction (1 for ice only, 0 for liquid only)
 !-------------------------------------------------------------------------
@@ -255,7 +255,7 @@ IMPLICIT NONE
 !
 !*      0.1  declarations of arguments
 !
-CHARACTER*1       , INTENT(IN)    :: HFRAC_ICE  ! scheme to use
+CHARACTER(len=1),   INTENT(IN)    :: HFRAC_ICE  ! scheme to use
 REAL, DIMENSION(:), INTENT(IN)    :: PT         ! temperature
 REAL, DIMENSION(:), INTENT(INOUT) :: PFRAC_ICE  ! Ice fraction (1 for ice only, 0 for liquid only)
 !

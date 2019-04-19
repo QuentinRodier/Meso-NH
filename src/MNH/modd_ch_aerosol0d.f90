@@ -1,12 +1,7 @@
-!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 modd 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !!     ######################
        MODULE MODD_CH_AEROSOL0D
@@ -124,8 +119,8 @@ REAL         :: XEMISSIGJ     = 1.60   ! dispersion of primary aerosol
                                        ! emission for J mode
 REAL         :: XEMISSIGK     = 1.60   ! dispersion of primary aerosol
                                        ! emission for K mode
-CHARACTER*4  :: CRGUNIT   = 'MASS'    ! type of log-normal geometric mean radius given
-!                                     ! in nameliste (mass on number)
+CHARACTER(len=4) :: CRGUNIT   = 'MASS' ! type of log-normal geometric mean radius given
+!                                      ! in nameliste (mass on number)
 
 
 

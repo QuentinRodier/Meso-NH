@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2001-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ######spl
       MODULE MODD_PASPOL
 !     ##################
@@ -28,18 +29,16 @@ LOGICAL      :: LPASPOL = .FALSE.  ! Switch to active passive pollutants
 INTEGER, PARAMETER :: JPRELEASEMAX = 100
 !
 INTEGER                               :: NRELEASE     ! Number of releases
-CHARACTER*3,  DIMENSION(JPRELEASEMAX) :: CPPINIT        ! Type of initialiZation.
+CHARACTER(len=3),  DIMENSION(JPRELEASEMAX) :: CPPINIT        ! Type of initialiZation.
 REAL,         DIMENSION(JPRELEASEMAX) :: XPPLAT         ! Latitude  of the release
 REAL,         DIMENSION(JPRELEASEMAX) :: XPPLON         ! Longitude of the release
-REAL,         DIMENSION(JPRELEASEMAX) :: XPPMASS        ! Released mass     
+REAL,         DIMENSION(JPRELEASEMAX) :: XPPMASS        ! Released mass
 REAL,         DIMENSION(JPRELEASEMAX) :: XPPBOT         ! Bottom of release
-REAL,         DIMENSION(JPRELEASEMAX) :: XPPTOP         ! Top of release   
-CHARACTER*14, DIMENSION(JPRELEASEMAX) :: CPPT1          ! Begin of release
-CHARACTER*14, DIMENSION(JPRELEASEMAX) :: CPPT2          ! Begin of constant
-                                                             ! release
-CHARACTER*14, DIMENSION(JPRELEASEMAX) :: CPPT3          ! End of constant 
-                                                             ! release
-CHARACTER*14, DIMENSION(JPRELEASEMAX) :: CPPT4          ! End of release 
+REAL,         DIMENSION(JPRELEASEMAX) :: XPPTOP         ! Top of release
+CHARACTER(len=14), DIMENSION(JPRELEASEMAX) :: CPPT1          ! Begin of release
+CHARACTER(len=14), DIMENSION(JPRELEASEMAX) :: CPPT2          ! Begin of constant release
+CHARACTER(len=14), DIMENSION(JPRELEASEMAX) :: CPPT3          ! End of constant release
+CHARACTER(len=14), DIMENSION(JPRELEASEMAX) :: CPPT4          ! End of release
 !
 !
 END MODULE MODD_PASPOL

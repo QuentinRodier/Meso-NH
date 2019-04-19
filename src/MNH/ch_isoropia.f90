@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2006-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 chimie 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !!   ########################
      MODULE MODI_CH_ISOROPIA
@@ -132,7 +127,7 @@ END MODULE MODI_CH_ISOROPIA
 !     AERSLD(09) - (NH4)4H(SO4)2(s)
 !
 !  5. [SCASI]
-!     CHARACTER*15 variable.
+!     CHARACTER(len=15) variable.
 !     Returns the subcase which the input corresponds to.
 !
 !  6. [OTHER]

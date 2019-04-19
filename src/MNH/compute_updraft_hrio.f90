@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -37,7 +37,7 @@ INTEGER,                INTENT(IN)   :: KKB          ! near ground physical inde
 INTEGER,                INTENT(IN)   :: KKE          ! uppest atmosphere physical index
 INTEGER,                INTENT(IN)   :: KKU          ! uppest atmosphere array index
 INTEGER,                INTENT(IN)   :: KKL          ! +1 if grid goes from ground to atmosphere top, -1 otherwise
-CHARACTER*1,            INTENT(IN)   :: HFRAC_ICE    ! partition liquid/ice scheme
+CHARACTER(len=1),       INTENT(IN)   :: HFRAC_ICE    ! partition liquid/ice scheme
 LOGICAL,                INTENT(IN) :: OENTR_DETR! flag to recompute entrainment, detrainment and mass flux
 LOGICAL,                INTENT(IN) :: OMIXUV    ! True if mixing of momentum
 LOGICAL,                INTENT(IN)   :: ONOMIXLG  ! False if mixing of lagrangian tracer
@@ -171,7 +171,7 @@ INTEGER,                INTENT(IN)   :: KKB          ! near ground physical inde
 INTEGER,                INTENT(IN)   :: KKE          ! uppest atmosphere physical index
 INTEGER,                INTENT(IN)   :: KKU          ! uppest atmosphere array index
 INTEGER,                INTENT(IN)   :: KKL          ! +1 if grid goes from ground to atmosphere top, -1 otherwise
-CHARACTER*1,            INTENT(IN)   :: HFRAC_ICE    ! partition liquid/ice scheme
+CHARACTER(len=1),       INTENT(IN)   :: HFRAC_ICE    ! partition liquid/ice scheme
 LOGICAL,                INTENT(IN) :: OENTR_DETR! flag to recompute entrainment, detrainment and mass flux
 LOGICAL,                INTENT(IN) :: OMIXUV    ! True if mixing of momentum
 LOGICAL,                INTENT(IN)   :: ONOMIXLG  ! False if mixing of lagrangian tracer

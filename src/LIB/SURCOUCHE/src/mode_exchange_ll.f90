@@ -157,7 +157,7 @@
   TYPE(LIST_ll), POINTER :: TZFIELD
 !
   INTEGER                :: ICOUNT
-  CHARACTER*2            :: YCOUNT
+  CHARACTER(len=2)       :: YCOUNT
 !
 !-------------------------------------------------------------------------------
 !

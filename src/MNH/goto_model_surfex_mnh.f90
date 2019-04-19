@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2015-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/goto_model_surfex_mnh.f90
 !-----------------------------------------------------------------
 !#######################
 MODULE MODI_GOTO_MODEL_SURFEX_MNH
@@ -128,7 +124,7 @@ INTEGER,                         INTENT(OUT)    :: KINFO_ll
 !
 !INTEGER :: IINFO_ll ! return code of // routines
 INTEGER :: IMI ! return code of // routines
-CHARACTER*1 :: HSPLIT
+CHARACTER(len=1) :: HSPLIT
 !
 !------------------------------------------------------------------------------
 !

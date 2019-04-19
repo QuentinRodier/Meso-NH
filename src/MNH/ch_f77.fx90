@@ -1104,7 +1104,7 @@ C
      1   PT2, RH, RTOLI, SIZE, TCRIT, TNEXT, TOLSF, TP, TWO, ZERO
       INTEGER I, IER, IFLAG, IMXER, JCO, KGO, LENIW, LENJ, LENP, LENRW,
      1   LENWM, LF0, MBAND, ML, MORD, MU, MXHNL0, MXSTP0, NITER, NSLAST
-      CHARACTER*80 MSG
+      CHARACTER(len=80) MSG
 C
 C Type declaration for function subroutines called ---------------------
 C
@@ -1943,7 +1943,7 @@ C Type declarations for local variables --------------------------------
 C
       REAL C, HUN, R, S, TFUZZ, TN1, TP, ZERO
       INTEGER I, IC, J, JB, JB2, JJ, JJ1, JP1
-      CHARACTER*80 MSG
+      CHARACTER(len=80) MSG
 C-----------------------------------------------------------------------
 C The following Fortran-77 declaration is to cause the values of the
 C listed (local) variables to be saved between calls to this integrator.
@@ -3660,8 +3660,8 @@ C     ##################################################################
       INTEGER NMES, NERR, LEVEL, NI, I1, I2, NR
 C
 CKS:  changed to adapt to Fortran90
-C     CHARACTER*1 MSG(NMES)
-      CHARACTER*(*) MSG
+C     CHARACTER(len=1) MSG(NMES)
+      CHARACTER(len=*) MSG
 C-----------------------------------------------------------------------
 C Subroutines XERRWV, XSETF, XSETUN, and the two function routines
 C MFLGSV and LUNSAV, as given here, constitute a simplified version of
@@ -4650,7 +4650,7 @@ c      INCLUDE 'params'
       INTEGER nj, ij
       REAL sj(kj,kz,kw), valj(kj,kz)
       REAL djdw
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER tpflag(kj)
 
 **** Re-scaling factors (can be read from input file)
@@ -4685,13 +4685,13 @@ c      INCLUDE 'params'
 * input/output control
 
       LOGICAL intrct
-      CHARACTER*6 inpfil, outfil
+      CHARACTER(len=6) inpfil, outfil
 
       INTEGER iout
 
       REAL dirsun, difdn, difup
 
-      CHARACTER*1 again
+      CHARACTER(len=1) again
 
 * Save arrays for output:
 
@@ -4720,7 +4720,7 @@ C
       REAL,         INTENT(IN) :: lwc(nlevel)
       INTEGER,      INTENT(IN) :: njout
       REAL,         INTENT(OUT) :: jout(nlevel,njout)
-      CHARACTER*40, INTENT(OUT) :: jlabelout(njout)
+      CHARACTER(len=40), INTENT(OUT) :: jlabelout(njout)
 C
       LOGICAL LFIRSTCALL
       DATA LFIRSTCALL /.TRUE./
@@ -5403,8 +5403,8 @@ c      INCLUDE 'params'
       REAL wincr
       INTEGER iw, i
 
-      CHARACTER*40 fi
-      CHARACTER*20 wlabel
+      CHARACTER(len=40) fi
+      CHARACTER(len=20) wlabel
 
       REAL airout
       INTEGER mrefr
@@ -8860,7 +8860,7 @@ c      c      INCLUDE 'params'
 
 * work arrays for input data files:
 
-      CHARACTER*40 fil
+      CHARACTER(len=40) fil
       REAL x1(kdata)
       REAL y1(kdata)
       INTEGER nhead, n, i, ierr
@@ -9513,7 +9513,7 @@ c      c      INCLUDE 'params'
       REAL lambda
       INTEGER ierr
       INTEGER i, j, n
-      CHARACTER*40 FIL
+      CHARACTER(len=40) FIL
 
 *_______________________________________________________________________
 
@@ -11235,7 +11235,7 @@ c     INCLUDE 'params'
       REAL dum
       INTEGER ierr
       INTEGER i, n, idum
-      CHARACTER*40 fil
+      CHARACTER(len=40) fil
 
 ************* NO2 absorption cross sections
 *     measurements by:
@@ -11877,7 +11877,7 @@ c     INCLUDE 'params'
       REAL dum
       INTEGER ierr
       INTEGER i, l, n, idum
-      CHARACTER*40 fil
+      CHARACTER(len=40) fil
 *_______________________________________________________________________
 
 ************* absorption cross sections:
@@ -17790,7 +17790,7 @@ c        after making symbolic dump (machine-specific)
       use mode_msg
 
       LOGICAL       FATAL, MsgLim, Cray
-      CHARACTER*(*) MESSAG
+      CHARACTER(len=*) MESSAG
       INTEGER       MaxMsg, NumMsg
       SAVE          MaxMsg, NumMsg, MsgLim
       DATA NumMsg / 0 /,  MaxMsg / 100 /,  MsgLim / .FALSE. /
@@ -17826,7 +17826,7 @@ c      INPUT :   VarNam = Name of erroneous variable to be written
 c                         ( CHARACTER, any length )
       IMPLICIT NONE
 
-      CHARACTER*(*)  VarNam
+      CHARACTER(len=*)  VarNam
       LOGICAL WrtBad
       INTEGER        MaxMsg, NumMsg
       SAVE  NumMsg, MaxMsg
@@ -17856,7 +17856,7 @@ c               Minval = Value to which that dimension should be
 c                        increased (at least)
       IMPLICIT NONE
 
-      CHARACTER*(*)  DimNam
+      CHARACTER(len=*)  DimNam
       INTEGER        MinVal
       LOGICAL WrtDim
 
@@ -17877,7 +17877,7 @@ c       Write name (VarNam) of variable failing self-test and its
 c       percent error from the correct value;  return  'FALSE'.
       IMPLICIT NONE
 
-      CHARACTER*(*)  VarNam
+      CHARACTER(len=*)  VarNam
       REAL           RelErr
       LOGICAL TstBad
 
@@ -19728,7 +19728,7 @@ CCC FILE rxn.f
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -19802,7 +19802,7 @@ c     INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -20188,7 +20188,7 @@ c      myld = kjpl00
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -20262,7 +20262,7 @@ c     INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -20431,7 +20431,7 @@ c     INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -20504,7 +20504,7 @@ c     INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -20841,7 +20841,7 @@ c     INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -20915,7 +20915,7 @@ c     INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -21046,7 +21046,7 @@ c     INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 *=  EDIT HISTORY:                                                            =*
@@ -21123,7 +21123,7 @@ c     INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -21248,7 +21248,7 @@ c     INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -21322,7 +21322,7 @@ c     INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -21458,7 +21458,7 @@ C      ENDDO
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -21532,7 +21532,7 @@ c     INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -21622,7 +21622,7 @@ C* local
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -21696,7 +21696,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -21860,7 +21860,7 @@ C      ENDIF
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -21934,7 +21934,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -22210,7 +22210,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -22287,7 +22287,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -22832,7 +22832,7 @@ c         ENDDO
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -22906,7 +22906,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -23328,7 +23328,7 @@ c         x = yg4(iw)
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -23402,7 +23402,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -23587,7 +23587,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -23661,7 +23661,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -24021,7 +24021,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -24095,7 +24095,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -24505,7 +24505,7 @@ c               kq = 1.93e4 * EXP(-5639/wc(iw))
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -24579,7 +24579,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -24928,7 +24928,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -25002,7 +25002,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -25224,7 +25224,7 @@ c     $        STATUS='old')
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -25298,7 +25298,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -25646,7 +25646,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -25720,7 +25720,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -25863,7 +25863,7 @@ C      ENDIF
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -25937,7 +25937,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -26027,7 +26027,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -26101,7 +26101,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -26261,7 +26261,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -26335,7 +26335,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -26426,7 +26426,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -26500,7 +26500,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -26592,7 +26592,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -26666,7 +26666,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -26786,7 +26786,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -26860,7 +26860,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -26979,7 +26979,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -27053,7 +27053,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -27146,7 +27146,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -27220,7 +27220,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -27317,7 +27317,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -27391,7 +27391,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -27488,7 +27488,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -27562,7 +27562,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -27655,7 +27655,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -27729,7 +27729,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -27873,7 +27873,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -27947,7 +27947,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -28090,7 +28090,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -28164,7 +28164,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -28258,7 +28258,7 @@ C     INTEGER n1, n2, n3, n4, n5
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -28332,7 +28332,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -28346,7 +28346,7 @@ c      INCLUDE 'params'
       INTEGER i, iw, idum
       INTEGER iz, k
       REAL lambda, sum
-      CHARACTER*120 inline
+      CHARACTER(len=120) inline
 
       REAL coeff(4,3), TBar, LBar
 
@@ -28466,7 +28466,7 @@ C the measurements beyond 220 nm are very large (Orlando, priv.comm.)
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -28537,7 +28537,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -28554,7 +28554,7 @@ c      INCLUDE 'params'
       INTEGER i, iw, n, idum
       INTEGER iz, k
       REAL lambda, sum
-      CHARACTER*120 inline
+      CHARACTER(len=120) inline
 
       REAL coeff(4,3), TBar, LBar
 
@@ -28670,7 +28670,7 @@ C     ENDDO
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -28744,7 +28744,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -28839,7 +28839,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -28912,7 +28912,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -28927,7 +28927,7 @@ c      INCLUDE 'params'
       INTEGER ierr
       INTEGER iz, k
       REAL lambda, sum
-      CHARACTER*80 inline
+      CHARACTER(len=80) inline
 
       REAL coeff(4,3), TBar, LBar
 
@@ -29053,7 +29053,7 @@ c             sq(j,iz,iw) = qy * EXP(sum)
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -29127,7 +29127,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -29222,7 +29222,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -29296,7 +29296,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -29391,7 +29391,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -29465,7 +29465,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -29653,7 +29653,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -29727,7 +29727,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -29829,7 +29829,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -29903,7 +29903,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -29998,7 +29998,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -30072,7 +30072,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -30167,7 +30167,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -30241,7 +30241,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -30336,7 +30336,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -30410,7 +30410,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -30506,7 +30506,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -30578,7 +30578,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -30667,7 +30667,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -30741,7 +30741,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -30876,7 +30876,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -30950,7 +30950,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -31049,7 +31049,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -31123,7 +31123,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -31252,7 +31252,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -31326,7 +31326,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -31468,7 +31468,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -31542,7 +31542,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -31675,7 +31675,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -31749,7 +31749,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -31880,7 +31880,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -31954,7 +31954,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -32057,7 +32057,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -32131,7 +32131,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -32260,7 +32260,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -32334,7 +32334,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -32446,7 +32446,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -32520,7 +32520,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -32631,7 +32631,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -32703,7 +32703,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -32779,7 +32779,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -32851,7 +32851,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -32927,7 +32927,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -32999,7 +32999,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -33073,7 +33073,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -33147,7 +33147,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -33242,7 +33242,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -33316,7 +33316,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -33442,7 +33442,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -33514,7 +33514,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -33578,7 +33578,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -33651,7 +33651,7 @@ c      INCLUDE 'params'
 * output weighting functions
 
       INTEGER j
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -33724,7 +33724,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -33799,7 +33799,7 @@ c      INCLUDE 'params'
 * output weighting functions
 
       INTEGER j
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -33942,7 +33942,7 @@ c      INCLUDE 'params'
       REAL wl(kw), wc(kw), tlev(kz), airden(kz)
 
 * weighting functions
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -34105,7 +34105,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -34179,7 +34179,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -34278,7 +34278,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -34352,7 +34352,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -34472,7 +34472,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -34546,7 +34546,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -34646,7 +34646,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -34720,7 +34720,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -34826,7 +34826,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -34900,7 +34900,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -34999,7 +34999,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -35073,7 +35073,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -35167,7 +35167,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -35241,7 +35241,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -35383,7 +35383,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -35457,7 +35457,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -35581,7 +35581,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -35655,7 +35655,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -35748,7 +35748,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -35823,7 +35823,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -35917,7 +35917,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -35991,7 +35991,7 @@ C     INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -36088,7 +36088,7 @@ C     INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -36162,7 +36162,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -36254,7 +36254,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -36328,7 +36328,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -36539,7 +36539,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -36613,7 +36613,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -36764,7 +36764,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -36838,7 +36838,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -36938,7 +36938,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -37012,7 +37012,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -37111,7 +37111,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -37185,7 +37185,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -37282,7 +37282,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -37356,7 +37356,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -37458,7 +37458,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -37532,7 +37532,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -37628,7 +37628,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -37704,7 +37704,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -37889,7 +37889,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -37963,7 +37963,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -38058,7 +38058,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -38132,7 +38132,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -38227,7 +38227,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -38301,7 +38301,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -38420,7 +38420,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -38494,7 +38494,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -38613,7 +38613,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -38687,7 +38687,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -38787,7 +38787,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -38861,7 +38861,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -38961,7 +38961,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -39035,7 +39035,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -39133,7 +39133,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -39207,7 +39207,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -39303,7 +39303,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -39377,7 +39377,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -39491,7 +39491,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -39565,7 +39565,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -39658,7 +39658,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -39732,7 +39732,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -39827,7 +39827,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 *= Routine added by M. Leriche for specie KETH and KETL of CACM, ReLACS2     =*
@@ -39904,7 +39904,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -40003,7 +40003,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 *= Routine added by M. Leriche for BALD in RACM2 mecanism - March 2018       =*
@@ -40079,7 +40079,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -40175,7 +40175,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 *= Routine added by M. Leriche for ReLACS-AQ and ReLACS3 mecanisms           =*
@@ -40252,7 +40252,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -40355,7 +40355,7 @@ c      INCLUDE 'params'
 *=  SQ     - REAL, cross section x quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 *= Routine added by M. Leriche for ReLACS-AQ and ReLACS3 mecanisms           =*
@@ -40432,7 +40432,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       INTEGER TPFLAG(kj)
       REAL sq(kj,kz,kw)
 
@@ -41794,7 +41794,7 @@ c      INCLUDE 'params'
       REAL a1, a2, dum
       INTEGER ierr
       INTEGER i,l,m, n, idum
-      CHARACTER*40 fil
+      CHARACTER(len=40) fil
 *_______________________________________________________________________
 
 ************* absorption cross sections:
@@ -42440,7 +42440,7 @@ CCC FILE swchem.f
 *=  SQ     - REAL, cross section * quantum yield (cm^2) for each          (O)=*
 *=           photolysis reaction defined, at each defined wavelength and     =*
 *=           at each defined altitude level                                  =*
-*=  JLABEL - CHARACTER*50, string identifier for each photolysis reaction (O)=*
+*=  JLABEL - CHARACTER(len=50), string identifier for each photolysis reaction (O)=*
 *=           defined                                                         =*
 *-----------------------------------------------------------------------------*
 
@@ -42514,7 +42514,7 @@ c      INCLUDE 'params'
 
 * weighting functions
 
-      CHARACTER*50 jlabel(kj)
+      CHARACTER(len=50) jlabel(kj)
       REAL sq(kj,kz,kw)
       INTEGER tpflag(kj)
 

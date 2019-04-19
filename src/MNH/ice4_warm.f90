@@ -2,6 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 MODULE MODI_ICE4_WARM
 INTERFACE
 SUBROUTINE ICE4_WARM(KSIZE, LDSOFT, LDCOMPUTE, HSUBG_RC_RR_ACCR, HSUBG_RR_EVAP, &
@@ -16,8 +17,8 @@ IMPLICIT NONE
 INTEGER,                      INTENT(IN)    :: KSIZE
 LOGICAL,                      INTENT(IN)    :: LDSOFT
 LOGICAL, DIMENSION(KSIZE),    INTENT(IN)    :: LDCOMPUTE
-CHARACTER*80,                 INTENT(IN)    :: HSUBG_RC_RR_ACCR ! subgrid rc-rr accretion
-CHARACTER*80,                 INTENT(IN)    :: HSUBG_RR_EVAP ! subgrid rr evaporation
+CHARACTER(len=80),            INTENT(IN)    :: HSUBG_RC_RR_ACCR ! subgrid rc-rr accretion
+CHARACTER(len=80),            INTENT(IN)    :: HSUBG_RR_EVAP ! subgrid rr evaporation
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRHODREF ! Reference density
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLVFACT
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PT       ! Temperature
@@ -85,8 +86,8 @@ IMPLICIT NONE
 INTEGER,                      INTENT(IN)    :: KSIZE
 LOGICAL,                      INTENT(IN)    :: LDSOFT
 LOGICAL, DIMENSION(KSIZE),    INTENT(IN)    :: LDCOMPUTE
-CHARACTER*80,                 INTENT(IN)    :: HSUBG_RC_RR_ACCR ! subgrid rc-rr accretion
-CHARACTER*80,                 INTENT(IN)    :: HSUBG_RR_EVAP ! subgrid rr evaporation
+CHARACTER(len=80),            INTENT(IN)    :: HSUBG_RC_RR_ACCR ! subgrid rc-rr accretion
+CHARACTER(len=80),            INTENT(IN)    :: HSUBG_RR_EVAP ! subgrid rr evaporation
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRHODREF ! Reference density
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLVFACT
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PT       ! Temperature

@@ -20,9 +20,9 @@ USE MODD_IO, ONLY: TFILEDATA
 INTEGER,                  INTENT(IN)   :: KRR        ! Number of moist variables
 INTEGER,                  INTENT(IN)   :: KMI        ! Model index 
 TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE     ! Output file
-CHARACTER*4,              INTENT(IN)   :: HTURBDIM   ! Dimensionality of the
+CHARACTER(len=4),         INTENT(IN)   :: HTURBDIM   ! Dimensionality of the
                                                      ! turbulence scheme
-CHARACTER*4,              INTENT(IN)   :: HRAD       ! Radiation scheme name
+CHARACTER(len=4),         INTENT(IN)   :: HRAD       ! Radiation scheme name
 LOGICAL,                  INTENT(IN)   :: OCLOSE_OUT ! Conditional closure of 
                                                      ! the OUTPUT FM-file
 LOGICAL,                  INTENT(IN)   :: OSUBG_COND ! Switch for Subgrid 
@@ -170,9 +170,9 @@ IMPLICIT NONE
 INTEGER,                  INTENT(IN)   :: KRR        ! Number of moist variables
 INTEGER,                  INTENT(IN)   :: KMI        ! Model index 
 TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE     ! Output file
-CHARACTER*4,              INTENT(IN)   :: HTURBDIM   ! Dimensionality of the
+CHARACTER(len=4),         INTENT(IN)   :: HTURBDIM   ! Dimensionality of the
                                                      ! turbulence scheme
-CHARACTER*4,              INTENT(IN)   :: HRAD       ! Radiation scheme name
+CHARACTER(len=4),         INTENT(IN)   :: HRAD       ! Radiation scheme name
 LOGICAL,                  INTENT(IN)   :: OCLOSE_OUT ! Conditional closure of 
                                                      ! the OUTPUT FM-file
 LOGICAL,                  INTENT(IN)   :: OSUBG_COND ! Switch for Subgrid 

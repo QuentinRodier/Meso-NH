@@ -14,7 +14,7 @@ IMPLICIT NONE
 REAL,                 INTENT(IN)  :: PTIME      ! time of simulation in sec UTC
                                                 ! (counting from midnight)
 REAL, DIMENSION(NEQ), INTENT(OUT) :: PFLUX      ! emission flux in ppp*m/s
-CHARACTER*(*),        INTENT(IN)  :: HINPUTFILE ! name of the input file
+CHARACTER(len=*),     INTENT(IN)  :: HINPUTFILE ! name of the input file
 INTEGER,              INTENT(IN)  :: KLUOUT     ! output listing channel
 INTEGER,              INTENT(IN)  :: KVERB      ! verbosity level
 END SUBROUTINE CH_EMISSION_FLUX0D
@@ -97,15 +97,15 @@ IMPLICIT NONE
 REAL,                 INTENT(IN)  :: PTIME      ! time of simulation in sec UTC
                                                 ! (counting from midnight)
 REAL, DIMENSION(NEQ), INTENT(OUT) :: PFLUX      ! emission flux in ppp*m/s
-CHARACTER*(*),        INTENT(IN)  :: HINPUTFILE ! name of the input file
+CHARACTER(len=*),     INTENT(IN)  :: HINPUTFILE ! name of the input file
 INTEGER,              INTENT(IN)  :: KLUOUT     ! output listing channel
 INTEGER,              INTENT(IN)  :: KVERB      ! verbosity level
 !
 !*       0.2  declaration of local variables
 !
 INTEGER       :: JI, JJ      ! loop control
-CHARACTER*80  :: YCOMMENT    ! comment line in the input file
-CHARACTER*80  :: YFORMAT     ! format of the input data
+CHARACTER(len=80) :: YCOMMENT    ! comment line in the input file
+CHARACTER(len=80) :: YFORMAT     ! format of the input data
 INTEGER       :: ICHEMIS     ! number of variables for which a flux is given
                              ! in the input file
 INTEGER       :: IIO         ! I/O channel

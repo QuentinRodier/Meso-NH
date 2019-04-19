@@ -1,14 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for CVS information
-!-----------------------------------------------------------------
-! $Source$
-! $Name$ 
-! $Revision$ 
-! $Date$
 !-----------------------------------------------------------------
 !!    Authors
 !!    -------
@@ -181,7 +174,7 @@
 !
   USE MODE_TOOLS_ll, ONLY : E_GET_DIM_EXT_ll => GET_DIM_EXT_ll
 !
-  CHARACTER*1, INTENT(IN) :: HSPLIT
+  CHARACTER(len=1), INTENT(IN) :: HSPLIT
   INTEGER, INTENT(OUT)    :: KXDIM, KYDIM
 !
   CALL E_GET_DIM_EXT_ll( HSPLIT, KXDIM, KYDIM )
@@ -194,7 +187,7 @@
 !
   USE MODE_TOOLS_ll, ONLY : E_GET_DIM_PHYS_ll => GET_DIM_PHYS_ll
 !
-  CHARACTER*1, INTENT(IN) :: HSPLIT
+  CHARACTER(len=1), INTENT(IN) :: HSPLIT
   INTEGER, INTENT(OUT)    :: KXDIM, KYDIM
 !
   CALL E_GET_DIM_PHYS_ll( HSPLIT, KXDIM, KYDIM )
@@ -207,7 +200,7 @@
 !
   USE MODE_TOOLS_ll, ONLY : E_GET_OR_ll => GET_OR_ll
 !
-  CHARACTER*1, INTENT(IN) :: HSPLIT
+  CHARACTER(len=1), INTENT(IN) :: HSPLIT
   INTEGER, INTENT(OUT)    :: KXOR, KYOR
 !
   CALL E_GET_OR_ll( HSPLIT, KXOR, KYOR )
@@ -577,7 +570,7 @@
 !
   LOGICAL                           :: LNORTH_ll
   INTEGER, INTENT(IN), OPTIONAL     :: K
-  CHARACTER*1, INTENT(IN), OPTIONAL :: HSPLITTING
+  CHARACTER(len=1), INTENT(IN), OPTIONAL :: HSPLITTING
 !
   LNORTH_ll=E_LNORTH_ll( K, HSPLITTING )
 !
@@ -591,7 +584,7 @@
 !
   LOGICAL                           :: LWEST_ll  
   INTEGER, INTENT(IN), OPTIONAL     :: K
-  CHARACTER*1, INTENT(IN), OPTIONAL :: HSPLITTING
+  CHARACTER(len=1), INTENT(IN), OPTIONAL :: HSPLITTING
 !
   LWEST_ll=E_LWEST_ll( K, HSPLITTING )
 !
@@ -605,7 +598,7 @@
 !
   LOGICAL                           :: LEAST_ll
   INTEGER, INTENT(IN), OPTIONAL     :: K
-  CHARACTER*1, INTENT(IN), OPTIONAL :: HSPLITTING
+  CHARACTER(len=1), INTENT(IN), OPTIONAL :: HSPLITTING
 !
   LEAST_ll=E_LEAST_ll( K, HSPLITTING )
 !
@@ -619,7 +612,7 @@
 !
   LOGICAL                           :: LSOUTH_ll
   INTEGER, INTENT(IN), OPTIONAL     :: K
-  CHARACTER*1, INTENT(IN), OPTIONAL :: HSPLITTING
+  CHARACTER(len=1), INTENT(IN), OPTIONAL :: HSPLITTING
 !
   LSOUTH_ll=E_LSOUTH_ll( K, HSPLITTING )
 !
@@ -1354,7 +1347,7 @@
   USE MODE_BOUNDARIES_ll, ONLY : E_UPDATE_BOUNDARIES_ll => UPDATE_BOUNDARIES_ll
   USE MODD_ARGSLIST_ll, ONLY : LIST_ll
 !
-  CHARACTER*2, INTENT(IN) :: HDIRECTION
+  CHARACTER(len=2), INTENT(IN) :: HDIRECTION
   TYPE(LIST_ll), POINTER  :: TPLIST
   INTEGER                 :: KINFO
 !

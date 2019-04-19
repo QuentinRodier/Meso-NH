@@ -36,9 +36,9 @@ LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
                                                       ! file opening       
 LOGICAL,                INTENT(IN)   ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
-CHARACTER*4,            INTENT(IN)   ::  HTURBDIM     ! dimensionality of the 
+CHARACTER(len=4),       INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
                                                       ! turbulence scheme
-CHARACTER*4,            INTENT(IN)   ::  HTOM         ! type of Third Order Moment
+CHARACTER(len=4),       INTENT(IN)   ::  HTOM         ! type of Third Order Moment
 REAL,                   INTENT(IN)   ::  PIMPL, PEXPL ! Coef. for temporal disc.
 REAL,                   INTENT(IN)   ::  PTSTEP       ! timestep 
 TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
@@ -368,9 +368,9 @@ LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
                                                       ! file opening       
 LOGICAL,                INTENT(IN)   ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
-CHARACTER*4,            INTENT(IN)   ::  HTURBDIM     ! dimensionality of the 
+CHARACTER(len=4),       INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
                                                       ! turbulence scheme
-CHARACTER*4,            INTENT(IN)   ::  HTOM         ! type of Third Order Moment
+CHARACTER(len=4),       INTENT(IN)   ::  HTOM         ! type of Third Order Moment
 REAL,                   INTENT(IN)   ::  PIMPL, PEXPL ! Coef. for temporal disc.
 REAL,                   INTENT(IN)   ::  PTSTEP       ! timestep 
 TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file

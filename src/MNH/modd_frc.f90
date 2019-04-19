@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 modd 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ###############
       MODULE MODD_FRC
@@ -98,7 +93,7 @@ LOGICAL, SAVE     :: LRELAX_UV_FRC      ! enables  horizontal  wind  relaxation
 REAL,    SAVE     :: XRELAX_TIME_FRC    ! e-folding time for relaxation 
 REAL,    SAVE     :: XRELAX_HEIGHT_FRC  ! height below which relaxation
                                         ! is never applied
-CHARACTER*4, SAVE :: CRELAX_HEIGHT_TYPE ! "THGR" relax. above maximal dTH/dz
+CHARACTER(len=4), SAVE :: CRELAX_HEIGHT_TYPE ! "THGR" relax. above maximal dTH/dz
 					                    ! (but always above XRELAX_HEIGHT_FRC)
 					                    ! "FIXE" relax. above XRELAX_HEIGHT_FRC
 !

@@ -229,7 +229,7 @@
     !*       0.1   declarations of arguments
     !
     INTEGER, INTENT(IN) :: NB_PROC,X_DIM,Y_DIM,Z_DIM
-    CHARACTER*10, INTENT(IN) :: HSPLITTING ! kind of splitting
+    CHARACTER(len=10), INTENT(IN) :: HSPLITTING ! kind of splitting
     TYPE(ZONE_LL), INTENT(OUT), DIMENSION(NB_PROC),TARGET  :: TPROC
     !
     !JUAN

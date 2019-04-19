@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -20,7 +20,7 @@ USE MODD_IO, ONLY: TFILEDATA
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 INTEGER,                  INTENT(IN)    :: KTCOUNT      ! Number of moist variables
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE   ! Output file
-CHARACTER*4,              INTENT(IN)    :: HRAD     ! Radiation scheme name
+CHARACTER(len=4),         INTENT(IN)    :: HRAD     ! Radiation scheme name
 LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
                                                     ! the OUTPUT FM-file
                                                     ! Condensation
@@ -121,7 +121,7 @@ IMPLICIT NONE
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 INTEGER,                  INTENT(IN)    :: KTCOUNT      ! Number of moist variables
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE   ! Output file
-CHARACTER*4,              INTENT(IN)    :: HRAD     ! Radiation scheme name
+CHARACTER(len=4),         INTENT(IN)    :: HRAD     ! Radiation scheme name
 LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
                                                     ! the OUTPUT FM-file
                                                     ! Condensation

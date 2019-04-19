@@ -1,17 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for CVS information
-!-----------------------------------------------------------------
-! $Source$
-! $Name$ 
-! $Revision$ 
-! $Date$
-!-----------------------------------------------------------------
-!-----------------------------------------------------------------
-
 !     ########################
 MODULE MODE_SPLITTING_ll
   !     ########################
@@ -659,9 +650,9 @@ CONTAINS
     !
     !*       0.1   declarations of arguments
     !
-    INTEGER, INTENT(IN) :: NB_PROC,X_DIM,Y_DIM,Z_DIM
-    CHARACTER*10, INTENT(IN) :: HSPLITTING ! kind of splitting
-    TYPE(ZONE_LL), INTENT(OUT), DIMENSION(NB_PROC)  :: TPROC
+    INTEGER,                           INTENT(IN)  :: NB_PROC, X_DIM, Y_DIM, Z_DIM
+    CHARACTER(len=10),                 INTENT(IN)  :: HSPLITTING ! kind of splitting
+    TYPE(ZONE_LL), DIMENSION(NB_PROC), INTENT(OUT) :: TPROC
     !
     !*       0.2   declarations of local variables
     !

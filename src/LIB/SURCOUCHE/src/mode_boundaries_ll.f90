@@ -1,15 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for CVS information
-!-----------------------------------------------------------------
-! $Source$
-! $Name$ 
-! $Revision$ 
-! $Date$
-!-----------------------------------------------------------------
 !-----------------------------------------------------------------
 
 !     #########################
@@ -120,10 +112,10 @@
 !
 !*       0.1   declarations of arguments
 !
-  CHARACTER*2, INTENT(IN) :: HDIRECTION
-  TYPE(LIST_ll), POINTER  :: TPLIST ! pointer to the list of fields
-                                    ! to be updated
-  INTEGER                 :: KINFO  ! return status
+  CHARACTER(len=2), INTENT(IN) :: HDIRECTION
+  TYPE(LIST_ll), POINTER       :: TPLIST ! pointer to the list of fields
+                                         ! to be updated
+  INTEGER                      :: KINFO  ! return status
 !
 !*       0.2   declarations of local variables
 !

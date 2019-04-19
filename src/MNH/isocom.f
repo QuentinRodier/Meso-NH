@@ -1,4 +1,4 @@
-CMNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+CMNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 CMNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 CMNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 CMNH_LIC for details. version 1.
@@ -94,7 +94,7 @@ C     AERSLD(08) - NH4HSO4(s)
 C     AERSLD(09) - (NH4)4H(SO4)2(s)
 C
 C  5. [SCASI]
-C     CHARACTER*15 variable.
+C     CHARACTER(len=15) variable.
 C     Returns the subcase which the input corresponds to.
 C
 C  6. [OTHER]
@@ -3465,7 +3465,7 @@ CC
       SUBROUTINE CHRBLN (STR, IBLK)
 CC
 CC***********************************************************************
-      CHARACTER*(*) STR
+      CHARACTER(len=*) STR
 C
       IBLK = 1                       ! Substring pointer (default=1)
       ILEN = LEN(STR)                ! Length of string 
@@ -3730,7 +3730,7 @@ CC
       SUBROUTINE Appendext (Filename, Defext, Overwrite)
 CC
 CC***********************************************************************
-      CHARACTER*(*) Filename, Defext
+      CHARACTER(len=*) Filename, Defext
       LOGICAL       Overwrite
 C
       CALL CHRBLN (Filename, Iend)
@@ -4412,7 +4412,7 @@ C ======================== ARGUMENTS / USAGE ===========================
 C
 C  OUTPUT:
 C  1. [VERSI]
-C     CHARACTER*14 variable. 
+C     CHARACTER(len=14) variable. 
 C     Contains version-date information of ISORROPIA 
 C
 C  2. [NCMP]
@@ -4454,7 +4454,7 @@ C
       SUBROUTINE ISORINF (VERSI, NCMP, NION, NAQGAS, NSOL, NERR, TIN,
      &                    GRT)
       INCLUDE 'isrpia.inc'
-      CHARACTER*14 VERSI
+      CHARACTER(len=14) VERSI
 C
 C *** ASSIGN INFO *******************************************************
 C

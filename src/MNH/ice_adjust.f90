@@ -22,8 +22,8 @@ INTEGER,                  INTENT(IN)    :: KKA   !near ground array index
 INTEGER,                  INTENT(IN)    :: KKU   !uppest atmosphere array index
 INTEGER,                  INTENT(IN)    :: KKL   !vert. levels type 1=MNH -1=ARO
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
-CHARACTER*1,              INTENT(IN)    :: HFRAC_ICE
-CHARACTER*4,              INTENT(IN)    :: HBUNAME  ! Name of the budget
+CHARACTER(len=1),         INTENT(IN)    :: HFRAC_ICE
+CHARACTER(len=4),         INTENT(IN)    :: HBUNAME  ! Name of the budget
 LOGICAL,                  INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid 
                                                     ! Condensation
 LOGICAL                                 :: OSIGMAS  ! Switch for Sigma_s: 
@@ -189,8 +189,8 @@ INTEGER,                  INTENT(IN)    :: KKA  !near ground array index
 INTEGER,                  INTENT(IN)    :: KKU  !uppest atmosphere array index
 INTEGER,                  INTENT(IN)    :: KKL  !vert. levels type 1=MNH -1=ARO
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
-CHARACTER*1,              INTENT(IN)    :: HFRAC_ICE
-CHARACTER*4,              INTENT(IN)    :: HBUNAME  ! Name of the budget
+CHARACTER(len=1),         INTENT(IN)    :: HFRAC_ICE
+CHARACTER(len=4),         INTENT(IN)    :: HBUNAME  ! Name of the budget
 LOGICAL,                  INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid 
                                                     ! Condensation
 LOGICAL                                 :: OSIGMAS  ! Switch for Sigma_s: 

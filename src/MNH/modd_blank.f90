@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 modd 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     #################
       MODULE MODD_BLANK
@@ -60,12 +55,12 @@ INTEGER, SAVE      :: NDUMMY1, NDUMMY2, NDUMMY3, NDUMMY4, &
                       NDUMMY5, NDUMMY6, NDUMMY7, NDUMMY8
 LOGICAL, SAVE      :: LDUMMY1, LDUMMY2, LDUMMY3, LDUMMY4, &
                       LDUMMY5, LDUMMY6, LDUMMY7, LDUMMY8
-CHARACTER*80, SAVE :: CDUMMY1, CDUMMY2, CDUMMY3, CDUMMY4, &
-                      CDUMMY5, CDUMMY6, CDUMMY7, CDUMMY8
+CHARACTER(len=80), SAVE :: CDUMMY1, CDUMMY2, CDUMMY3, CDUMMY4, &
+                           CDUMMY5, CDUMMY6, CDUMMY7, CDUMMY8
 !
 REAL,    SAVE, DIMENSION(JPDUMMY) :: XDUMMY
 INTEGER, SAVE, DIMENSION(JPDUMMY) :: NDUMMY
 LOGICAL, SAVE, DIMENSION(JPDUMMY) :: LDUMMY
-CHARACTER*80, SAVE, DIMENSION(JPDUMMY) :: CDUMMY
+CHARACTER(len=80), SAVE, DIMENSION(JPDUMMY) :: CDUMMY
 !
 END MODULE MODD_BLANK

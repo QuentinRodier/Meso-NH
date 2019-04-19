@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+  !MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -46,11 +46,11 @@ LOGICAL,                INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
 LOGICAL,                INTENT(IN)   ::  OSUBG_COND   ! switch for SUBGrid 
                                  ! CONDensation
 LOGICAL,                INTENT(IN)   ::  ORMC01       ! switch for RMC01 lengths in SBL
-CHARACTER*4           , INTENT(IN)      ::  HTURBDIM  ! dimensionality of the 
-                                 ! turbulence scheme
-CHARACTER*4           , INTENT(IN)   ::  HTURBLEN     ! kind of mixing length
-CHARACTER*4           , INTENT(IN)   ::  HTOM         ! kind of Third Order Moment
-CHARACTER*4           , INTENT(IN)   ::  HTURBLEN_CL  ! kind of cloud mixing length
+CHARACTER(len=4),       INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
+                                                      ! turbulence scheme
+CHARACTER(len=4),       INTENT(IN)   ::  HTURBLEN     ! kind of mixing length
+CHARACTER(len=4),       INTENT(IN)   ::  HTOM         ! kind of Third Order Moment
+CHARACTER(len=4),       INTENT(IN)   ::  HTURBLEN_CL  ! kind of cloud mixing length
                                                       ! surface friction flux
 REAL,                   INTENT(IN)   ::  PIMPL        ! degree of implicitness
 CHARACTER (LEN=4),      INTENT(IN)   ::  HCLOUD       ! Kind of microphysical scheme
@@ -407,11 +407,11 @@ LOGICAL,                INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
 LOGICAL,                INTENT(IN)   ::  OSUBG_COND   ! switch for SUBGrid 
                                  ! CONDensation
 LOGICAL,                INTENT(IN)   ::  ORMC01       ! switch for RMC01 lengths in SBL
-CHARACTER*4           , INTENT(IN)      ::  HTURBDIM  ! dimensionality of the 
-                                 ! turbulence scheme
-CHARACTER*4           , INTENT(IN)   ::  HTURBLEN     ! kind of mixing length
-CHARACTER*4           , INTENT(IN)   ::  HTOM         ! kind of Third Order Moment
-CHARACTER*4           , INTENT(IN)   ::  HTURBLEN_CL  ! kind of cloud mixing length
+CHARACTER(len=4),       INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
+                                                      ! turbulence scheme
+CHARACTER(len=4),       INTENT(IN)   ::  HTURBLEN     ! kind of mixing length
+CHARACTER(len=4),       INTENT(IN)   ::  HTOM         ! kind of Third Order Moment
+CHARACTER(len=4),       INTENT(IN)   ::  HTURBLEN_CL  ! kind of cloud mixing length
 REAL,                   INTENT(IN)   ::  PIMPL        ! degree of implicitness
 CHARACTER (LEN=4),      INTENT(IN)   ::  HCLOUD       ! Kind of microphysical scheme
 REAL,                   INTENT(IN)   ::  PTSTEP       ! timestep 

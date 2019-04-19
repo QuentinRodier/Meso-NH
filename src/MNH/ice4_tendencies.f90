@@ -2,6 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 MODULE MODI_ICE4_TENDENCIES
 INTERFACE
 SUBROUTINE ICE4_TENDENCIES(KSIZE, KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKL, &
@@ -31,10 +32,10 @@ INTEGER,                      INTENT(IN)    :: KRR
 LOGICAL,                      INTENT(IN)    :: ODSOFT
 LOGICAL, DIMENSION(KSIZE),    INTENT(IN)    :: ODCOMPUTE
 LOGICAL,                      INTENT(IN)    :: OWARM
-CHARACTER*80,                 INTENT(IN)    :: HSUBG_RC_RR_ACCR
-CHARACTER*80,                 INTENT(IN)    :: HSUBG_RR_EVAP
+CHARACTER(len=80),            INTENT(IN)    :: HSUBG_RC_RR_ACCR
+CHARACTER(len=80),            INTENT(IN)    :: HSUBG_RR_EVAP
 CHARACTER(len=4),             INTENT(IN)    :: HSUBG_AUCV_RC
-CHARACTER*80,                 INTENT(IN)    :: HSUBG_PR_PDF ! pdf for subgrid precipitation
+CHARACTER(len=80),            INTENT(IN)    :: HSUBG_PR_PDF ! pdf for subgrid precipitation
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PEXN
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRHODREF
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLVFACT
@@ -195,10 +196,10 @@ INTEGER,                      INTENT(IN)    :: KRR
 LOGICAL,                      INTENT(IN)    :: ODSOFT
 LOGICAL, DIMENSION(KSIZE),    INTENT(IN)    :: ODCOMPUTE
 LOGICAL,                      INTENT(IN)    :: OWARM
-CHARACTER*80,                 INTENT(IN)    :: HSUBG_RC_RR_ACCR
-CHARACTER*80,                 INTENT(IN)    :: HSUBG_RR_EVAP
+CHARACTER(len=80),            INTENT(IN)    :: HSUBG_RC_RR_ACCR
+CHARACTER(len=80),            INTENT(IN)    :: HSUBG_RR_EVAP
 CHARACTER(len=4),             INTENT(IN)    :: HSUBG_AUCV_RC
-CHARACTER*80,                 INTENT(IN)    :: HSUBG_PR_PDF ! pdf for subgrid precipitation
+CHARACTER(len=80),            INTENT(IN)    :: HSUBG_PR_PDF ! pdf for subgrid precipitation
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PEXN
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRHODREF
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLVFACT
