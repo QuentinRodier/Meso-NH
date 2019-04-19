@@ -339,11 +339,9 @@ IF( IMICRO >= 1 ) THEN
       WHERE ( ZLBDAS(:)<XLBDASCNVI_MAX .AND. (ZRST(:)>XRTMIN(5)) &
                                        .AND. (ZSSI(:)<0.0)       )
          ZZW(:) = (ZLBDAS(:)*XDSCNVI_LIM)**(XALPHAS)
-         ZZX(:) = ( -ZSSI(:)/ZAI(:) ) * (XCCS*ZLBDAS(:)**XCXS) * (ZZW(:)**XNUI) &
+         ZZX(:) = ( -ZSSI(:)/ZAI(:) ) * (XCCS*ZLBDAS(:)**XCXS)/ZRHODREF(:) * (ZZW(:)**XNUI) &
                                                                * EXP(-ZZW(:))
 !
-! Correction BVIE RHODREF
-!         ZZW(:) = MIN( ( XR0DEPSI+XR1DEPSI*ZCJ(:) )*ZZX(:)/ZRHODREF(:),ZRSS(:) )
          ZZW(:) = MIN( ( XR0DEPSI+XR1DEPSI*ZCJ(:) )*ZZX(:),ZRSS(:) )
          ZRIS(:) = ZRIS(:) + ZZW(:)
          ZRSS(:) = ZRSS(:) - ZZW(:)
@@ -372,9 +370,7 @@ IF( IMICRO >= 1 ) THEN
 !
       ZZW(:) = 0.0
       WHERE ( (ZRST(:)>XRTMIN(5)) .AND. (ZRSS(:)>ZRTMIN(5)) )
-!Correction BVIE rhodref
-!         ZZW(:) = ( ZSSI(:)/(ZRHODREF(:)*ZAI(:)) ) *                               &
-         ZZW(:) = ( ZSSI(:)/(ZAI(:)) ) *                               &
+         ZZW(:) = ( ZSSI(:)/(ZRHODREF(:)*ZAI(:)) ) *                               &
                   ( X0DEPS*ZLBDAS(:)**XEX0DEPS + X1DEPS*ZCJ(:)*ZLBDAS(:)**XEX1DEPS )
          ZZW(:) =    MIN( ZRVS(:),ZZW(:)      )*(0.5+SIGN(0.5,ZZW(:))) &
                    - MIN( ZRSS(:),ABS(ZZW(:)) )*(0.5-SIGN(0.5,ZZW(:)))
@@ -440,7 +436,7 @@ IF( IMICRO >= 1 ) THEN
       WHERE ( (ZRIT(:)>XRTMIN(4)) .AND. (ZRST(:)>XRTMIN(5)) .AND. (ZRIS(:)>ZRTMIN(4)) &
                                                             .AND. (ZCIS(:)>ZCTMIN(4)) )
          ZZW1(:,3) = (ZLBDAI(:) / ZLBDAS(:))**3
-         ZZW1(:,1) = (ZCIT(:)*(XCCS*ZLBDAS(:)**XCXS)*EXP( XCOLEXIS*(ZZT(:)-XTT) )) &
+         ZZW1(:,1) = (ZCIT(:)*(XCCS*ZLBDAS(:)**XCXS)/ZRHODREF(:)*EXP( XCOLEXIS*(ZZT(:)-XTT) )) &
                                                     / (ZLBDAI(:)**3)
          ZZW1(:,2) = MIN( ZZW1(:,1)*(XAGGS_CLARGE1+XAGGS_CLARGE2*ZZW1(:,3)),ZCIS(:) )
          ZCIS(:) = ZCIS(:) - ZZW1(:,2)

@@ -181,9 +181,7 @@ INTEGER :: JMOD_IFN
 IF (LSNOW) THEN
    ZZW(:) = 0.0
    WHERE ( (ZRGT(:)>XRTMIN(6)) .AND. (ZRGS(:)>XRTMIN(6)/PTSTEP) )
-!Correction BVIE RHODREF
-!      ZZW(:) = ( ZSSI(:)/(ZRHODREF(:)*ZAI(:)) ) *                               &
-      ZZW(:) = ( ZSSI(:)/(ZAI(:)) ) *                               &
+      ZZW(:) = ( ZSSI(:)/ZAI(:)/ZRHODREF(:) ) *                               &
                ( X0DEPG*ZLBDAG(:)**XEX0DEPG + X1DEPG*ZCJ(:)*ZLBDAG(:)**XEX1DEPG )
       ZZW(:) =         MIN( ZRVS(:),ZZW(:)      )*(0.5+SIGN(0.5,ZZW(:))) &
                      - MIN( ZRGS(:),ABS(ZZW(:)) )*(0.5-SIGN(0.5,ZZW(:)))

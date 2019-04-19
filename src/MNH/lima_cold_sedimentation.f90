@@ -263,9 +263,7 @@ DO JN = 1 , KSPLITG
             ZRSS(JL) = PRSS(I1(JL),I2(JL),I3(JL))
          END DO
          WHERE( ZRSS(:)>XRTMIN(5) )
-! Correction BVIE ZRHODREF
-!            ZZW(:) = XFSEDS * ZRSS(:)**XEXSEDS * ZRHODREF(:)**(XEXSEDS-XCEXVT)
-            ZZW(:) = XFSEDS * ZRSS(:)**XEXSEDS * ZRHODREF(:)**(-XCEXVT) * ZRHODREF(:)
+            ZZW(:) = XFSEDS * (ZRSS(:)*ZRHODREF(:))**XEXSEDS * ZRHODREF(:)**(-XCEXVT)
          END WHERE
          ZWSEDR(:,:,:) = UNPACK( ZZW(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
          ZWSEDR(:,:,IKB:IKE) = MIN( ZWSEDR(:,:,IKB:IKE), PRSS(:,:,IKB:IKE) * PRHODREF(:,:,IKB:IKE) / ZW(:,:,IKB:IKE) )
@@ -289,9 +287,7 @@ DO JN = 1 , KSPLITG
             ZRGS(JL) = PRGS(I1(JL),I2(JL),I3(JL))
          END DO
          WHERE( ZRGS(:)>XRTMIN(6) )
-! Correction BVIE ZRHODREF
-!            ZZW(:) = XFSEDG * ZRGS(:)**XEXSEDG * ZRHODREF(:)**(XEXSEDG-XCEXVT)
-            ZZW(:) = XFSEDG * ZRGS(:)**XEXSEDG * ZRHODREF(:)**(-XCEXVT) * ZRHODREF(:)
+            ZZW(:) = XFSEDG * (ZRGS(:)*ZRHODREF(:))**XEXSEDG * ZRHODREF(:)**(-XCEXVT)
          END WHERE
          ZWSEDR(:,:,:) = UNPACK( ZZW(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
          ZWSEDR(:,:,IKB:IKE) = MIN( ZWSEDR(:,:,IKB:IKE), PRGS(:,:,IKB:IKE) * PRHODREF(:,:,IKB:IKE) / ZW(:,:,IKB:IKE) )
@@ -315,9 +311,7 @@ DO JN = 1 , KSPLITG
             ZRHS(JL) = PRHS(I1(JL),I2(JL),I3(JL))
          END DO
          WHERE( ZRHS(:)>XRTMIN(7) )
-! Correction BVIE ZRHODREF
-!            ZZW(:) = XFSEDH * ZRHS(:)**XEXSEDH * ZRHODREF(:)**(XEXSEDH-XCEXVT)
-            ZZW(:) = XFSEDH * ZRHS(:)**XEXSEDH * ZRHODREF(:)**(-XCEXVT) * ZRHODREF(:)
+            ZZW(:) = XFSEDH * (ZRHS(:)*ZRHODREF(:))**XEXSEDH * ZRHODREF(:)**(-XCEXVT)
          END WHERE
          ZWSEDR(:,:,:) = UNPACK( ZZW(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
          ZWSEDR(:,:,IKB:IKE) = MIN( ZWSEDR(:,:,IKB:IKE), PRHS(:,:,IKB:IKE) * PRHODREF(:,:,IKB:IKE) / ZW(:,:,IKB:IKE) )
