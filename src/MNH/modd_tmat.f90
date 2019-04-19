@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-------------------------------------------------------------------------------
 !     #################
       MODULE MODD_TMAT
 !     #################
@@ -28,7 +29,8 @@
 !!    -------------
 !!
 !!    Original 23/03/2010
-!!
+!  P. Wautelet 19/04/2019: use kind(0.0d0) instead of kind=8
+!
 !-------------------------------------------------------------------------------
 !
 
@@ -57,16 +59,16 @@ REAL,DIMENSION(:,:,:),ALLOCATABLE,SAVE :: XIT21,XIT22
 
 
 !COMMON /CT/ dimensions : (NPN2,NPN2)
-REAL(KIND=8),DIMENSION(:,:),ALLOCATABLE,SAVE :: XTR1,XTI1
+REAL(kind(0.0d0)),DIMENSION(:,:),ALLOCATABLE,SAVE :: XTR1,XTI1
 
 
 !COMMON /CTT/ dimensions : (NPN2,NPN2)
-REAL(KIND=8),DIMENSION(:,:),ALLOCATABLE,SAVE :: XQR,XQI,XRGQR,XRGQI
+REAL(kind(0.0d0)),DIMENSION(:,:),ALLOCATABLE,SAVE :: XQR,XQI,XRGQR,XRGQI
 
 !
 !COMMON /CBESS/ dimensions (NPNG2,NPN1)
-REAL(KIND=8),DIMENSION(:,:),ALLOCATABLE,SAVE ::XJ,XY,XJR,XJI,XDJ
-REAL(KIND=8),DIMENSION(:,:),ALLOCATABLE,SAVE ::XDJR,XDJI,XDY
+REAL(kind(0.0d0)),DIMENSION(:,:),ALLOCATABLE,SAVE ::XJ,XY,XJR,XJI,XDJ
+REAL(kind(0.0d0)),DIMENSION(:,:),ALLOCATABLE,SAVE ::XDJR,XDJI,XDY
              
 
 END MODULE MODD_TMAT      

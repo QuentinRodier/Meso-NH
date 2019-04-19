@@ -5,6 +5,7 @@
 !-----------------------------------------------------------------
 ! Modifications:
 !  P. Wautelet 22/02/2019: use MOD intrinsics with same kind for all arguments (to respect Fortran standard)
+!  P. Wautelet 19/04/2019: use modd_precision kinds
 !-----------------------------------------------------------------
 MODULE MODE_DATETIME
 !
@@ -38,29 +39,31 @@ SUBROUTINE DATETIME_TIME2REFERENCE(TPDATE,PDIST)
 !
 !Compute number of seconds since reference date (and time)
 !
+use modd_precision, only: MNHINT64
+
 TYPE(DATE_TIME), INTENT(IN)  :: TPDATE
 REAL,            INTENT(OUT) :: PDIST
 !
-INTEGER(KIND=8) :: ILEAPS                          !Number of leap days
-INTEGER(KIND=8) :: IDAYS                           !Number of days since reference date
-INTEGER(KIND=8) :: IYEARS                          !Number of years since reference date
-INTEGER(KIND=8) :: IDAY_CUR, IMONTH_CUR, IYEAR_CUR !Currrent day, month and year
-REAL            :: ZSEC                            !Current time of the day (in seconds)
-TYPE(DATE_TIME) :: TZDATE
+INTEGER(KIND=MNHINT64) :: ILEAPS                          !Number of leap days
+INTEGER(KIND=MNHINT64) :: IDAYS                           !Number of days since reference date
+INTEGER(KIND=MNHINT64) :: IYEARS                          !Number of years since reference date
+INTEGER(KIND=MNHINT64) :: IDAY_CUR, IMONTH_CUR, IYEAR_CUR !Currrent day, month and year
+REAL                   :: ZSEC                            !Current time of the day (in seconds)
+TYPE(DATE_TIME)        :: TZDATE
 !
-ILEAPS = 0
-IDAYS  = 0
+ILEAPS = 0_MNHINT64
+IDAYS  = 0_MNHINT64
 !
 TZDATE = TPDATE
 CALL DATETIME_CORRECTDATE(TZDATE)
 !
-IYEAR_CUR  = TZDATE%TDATE%YEAR
-IMONTH_CUR = TZDATE%TDATE%MONTH
-IDAY_CUR   = TZDATE%TDATE%DAY
+IYEAR_CUR  = int( TZDATE%TDATE%YEAR,  kind=MNHINT64 )
+IMONTH_CUR = int( TZDATE%TDATE%MONTH, kind=MNHINT64 )
+IDAY_CUR   = int( TZDATE%TDATE%DAY,   kind=MNHINT64 )
 ZSEC = TZDATE%TIME
 !
 !Compute number of days since beginning of the year
-IF ( ((MOD(IYEAR_CUR,4_8)==0).AND.(MOD(IYEAR_CUR,100_8)/=0)) .OR. (MOD(IYEAR_CUR,400_8)==0)) ILEAPS=1
+IF ( ((MOD(IYEAR_CUR,4_MNHINT64)==0).AND.(MOD(IYEAR_CUR,100_MNHINT64)/=0)) .OR. (MOD(IYEAR_CUR,400_MNHINT64)==0)) ILEAPS=1
 SELECT CASE(IMONTH_CUR)
   CASE(1)
     IDAYS = IDAY_CUR-1
@@ -88,8 +91,8 @@ SELECT CASE(IMONTH_CUR)
     IDAYS = IDAY_CUR-1+31+28+ILEAPS+31+30+31+30+31+31+30+31+30
 END SELECT
 !
-IYEARS = IYEAR_CUR-TPREFERENCE_DATE%TDATE%YEAR
-IF (IYEARS<0) THEN
+IYEARS = IYEAR_CUR - int( TPREFERENCE_DATE%TDATE%YEAR, kind=MNHINT64 )
+IF ( IYEARS < 0_MNHINT64 ) THEN
   CALL PRINT_MSG(NVERB_WARNING,'GEN','DATETIME_TIME2REFERENCE', &
                  'input year is smaller than reference year => result could be invalid')
 END IF

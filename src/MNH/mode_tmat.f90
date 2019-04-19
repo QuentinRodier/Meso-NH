@@ -2,7 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
+!-------------------------------------------------------------------------------
 !     algorithme initial créé par Michael Mishchenko (2000)
 !
 !     algorithme modifié par Corinne Burlaud (2000) puis Olivier Brunau (2002)
@@ -18,6 +18,7 @@
 !  P. Wautelet 22/01/2019: replace double precision declarations by real(kind(0.0d0)) (to allow compilation by NAG compiler)
 !  P. Wautelet 22/02/2019: add kind parameter for CMPLX intrinsics (if not it default to single precision)
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 19/04/2019: use kind(0.0d0) instead of kind=8
 !
 !****************************************************************************
 
@@ -296,7 +297,7 @@
 
       use mode_msg
 
-      IMPLICIT REAL*8 (A-H,O-Z)
+      IMPLICIT REAL(kind(0.0d0)) (A-H,O-Z)
 
 !!      Parameter (NPN1=200, NPNG1=600, NPNG2=2*NPNG1, NPN2=2*NPN1,&
 !!          NPN4=NPN1, NPN6=NPN4+1)
@@ -304,32 +305,32 @@
 
 
       INTEGER param,oscil
-      REAL*8 SIGBETA,Fbeta
-      REAL*8 PDtotal,PDalpha,PDbeta,Poids
+      REAL(kind(0.0d0)) SIGBETA,Fbeta
+      REAL(kind(0.0d0)) PDtotal,PDalpha,PDbeta,Poids
 
-      REAL*8  LAM,MRR,MRI,Deq,X(NPNG2),W(NPNG2),S(NPNG2),SS(NPNG2),&
+      REAL(kind(0.0d0))  LAM,MRR,MRI,Deq,X(NPNG2),W(NPNG2),S(NPNG2),SS(NPNG2),&
              AN(NPN1),R(NPNG2),DR(NPNG2),&
              DDR(NPNG2),DRR(NPNG2),DRI(NPNG2),ANN(NPN1,NPN1)
 
-      REAL*8 NUMZ,DENZ,NUMTZ,DENTZ,ZDRT,NTotal
-      REAL*8 NUMD,DEND,DELTA,NUMTD,DENTD,DELTAT
-      REAL*8 PAS,KDP
+      REAL(kind(0.0d0)) NUMZ,DENZ,NUMTZ,DENTZ,ZDRT,NTotal
+      REAL(kind(0.0d0)) NUMD,DEND,DELTA,NUMTD,DENTD,DELTAT
+      REAL(kind(0.0d0)) PAS,KDP
 
-      REAL*8 THET0,THET,Elev,AXI
+      REAL(kind(0.0d0)) THET0,THET,Elev,AXI
 
-      REAL*8 MYS11cr,MYS22cr
+      REAL(kind(0.0d0)) MYS11cr,MYS22cr
 
 
-!!      REAL*8 TR1(NPN2,NPN2),TI1(NPN2,NPN2)
+!!      REAL(kind(0.0d0)) TR1(NPN2,NPN2),TI1(NPN2,NPN2)
 !!     REAL*4 RT11(NPN6,NPN4,NPN4),RT12(NPN6,NPN4,NPN4),&
 !!          RT21(NPN6,NPN4,NPN4),RT22(NPN6,NPN4,NPN4),&
 ! !         IT11(NPN6,NPN4,NPN4),IT12(NPN6,NPN4,NPN4),&
 !!          IT21(NPN6,NPN4,NPN4),IT22(NPN6,NPN4,NPN4)
-      COMPLEX*16 S11,S12,S21,S22
-      COMPLEX*16 S11u,S12u,S21u,S22u
+      COMPLEX(kind(0.0d0)) S11,S12,S21,S22
+      COMPLEX(kind(0.0d0)) S11u,S12u,S21u,S22u
 
-      REAL*8 S11carre,S22carre
-      COMPLEX*16 NUMrhoAB,NUMTrhoAB
+      REAL(kind(0.0d0)) S11carre,S22carre
+      COMPLEX(kind(0.0d0)) NUMrhoAB,NUMTrhoAB
       
 !!      COMMON /CT/ TR1,TI1
 !!      COMMON /TMAT/ RT11,RT12,RT21,RT22,IT11,IT12,IT21,IT22
@@ -1171,17 +1172,17 @@
 
 !c      INCLUDE 'ampld.par.f'
 !!      Parameter (NPN1=200,NPN4=NPN1, NPN6=NPN4+1)
-      IMPLICIT REAL*8 (A-B,D-H,O-Z), COMPLEX*16 (C)
-      REAL*8 AL(3,2),AL1(3,2),AP(2,3),AP1(2,3),B(3,3),&
+      IMPLICIT REAL(kind(0.0d0)) (A-B,D-H,O-Z), COMPLEX(kind(0.0d0)) (C)
+      REAL(kind(0.0d0)) AL(3,2),AL1(3,2),AP(2,3),AP1(2,3),B(3,3),&
             R(2,2),R1(2,2),C(3,2),CA,CB,CT,CP,CTP,CPP,CT1,CP1,&
             CTP1,CPP1
-!C       REAL*8 ZDR,NUM,DEN
-      REAL*8 DV1(NPN6),DV2(NPN6),DV01(NPN6),DV02(NPN6)
+!C       REAL(kind(0.0d0)) ZDR,NUM,DEN
+      REAL(kind(0.0d0)) DV1(NPN6),DV2(NPN6),DV01(NPN6),DV02(NPN6)
 !!      REAL*4 TR11(NPN6,NPN4,NPN4),TR12(NPN6,NPN4,NPN4),&
 !!          TR21(NPN6,NPN4,NPN4),TR22(NPN6,NPN4,NPN4),&
 !!          TI11(NPN6,NPN4,NPN4),TI12(NPN6,NPN4,NPN4),&
 !!          TI21(NPN6,NPN4,NPN4),TI22(NPN6,NPN4,NPN4)
-      COMPLEX*16 CAL(NPN4,NPN4),VV,VH,HV,HH
+      COMPLEX(kind(0.0d0)) CAL(NPN4,NPN4),VV,VH,HV,HH
 !!      COMMON /TMAT/ TR11,TR12,TR21,TR22,TI11,TI12,TI21,TI22
 
       IF (ALPHA.LT.0D0.OR.ALPHA.GT.360D0.OR.&
@@ -1477,8 +1478,8 @@
 
       USE MODD_TMAT,   ONLY: NPN1,NPN4,NPN6
 !!      Parameter (NPN1=200,NPN4=NPN1, NPN6=NPN4+1)
-      IMPLICIT REAL*8 (A-H,O-Z)
-      REAL*8 DV1(NPN6), DV2(NPN6)
+      IMPLICIT REAL(kind(0.0d0)) (A-H,O-Z)
+      REAL(kind(0.0d0)) DV1(NPN6), DV2(NPN6)
 
       DO N=1,NMAX
       DV1(N)=0D0
@@ -1550,9 +1551,9 @@
       SUBROUTINE CONST(NGAUSS,NMAX,X,W,AN,ANN,S,SS)
 
       USE MODD_TMAT,   ONLY: NPN1,NPNG1,NPNG2
-      IMPLICIT REAL*8 (A-H,O-Z)
+      IMPLICIT REAL(kind(0.0d0)) (A-H,O-Z)
 !!      Parameter (NPN1=200, NPNG1=600, NPNG2=2*NPNG1)
-      REAL*8 X(NPNG2),W(NPNG2),&
+      REAL(kind(0.0d0)) X(NPNG2),W(NPNG2),&
              S(NPNG2),SS(NPNG2),&
              AN(NPN1),ANN(NPN1,NPN1),DD(NPN1)
  
@@ -1592,8 +1593,8 @@
        USE MODD_TMAT,   ONLY: NPN1,NPNG1,NPNG2
               
 !!      Parameter (NPN1=200, NPNG1=600, NPNG2=2*NPNG1)
-      IMPLICIT REAL*8 (A-H,O-Z)
-      REAL*8  X(NPNG2),R(NPNG2),DR(NPNG2),MRR,MRI,LAM,&
+      IMPLICIT REAL(kind(0.0d0)) (A-H,O-Z)
+      REAL(kind(0.0d0))  X(NPNG2),R(NPNG2),DR(NPNG2),MRR,MRI,LAM,&
              Z(NPNG2),ZR(NPNG2),ZI(NPNG2),&
              DDR(NPNG2),DRR(NPNG2),DRI(NPNG2)
              
@@ -1648,8 +1649,8 @@
 !C**********************************************************************
  
       SUBROUTINE RSP1(X,NG,NGAUSS,REV,EPS,R,DR)
-      IMPLICIT REAL*8 (A-H,O-Z)
-      REAL*8 X(NG),R(NG),DR(NG)
+      IMPLICIT REAL(kind(0.0d0)) (A-H,O-Z)
+      REAL(kind(0.0d0)) X(NG),R(NG),DR(NG)
 
       A=REV*EPS**(1D0/3D0)
       AA=A*A
@@ -1678,8 +1679,8 @@
 
       USE MODD_TMAT,ONLY : XJ,XY,XJR,XJI,XDJ,XDY,XDJR,XDJI,NPN1,NPNG1,NPNG2
 !!      Parameter (NPN1=200, NPNG1=600, NPNG2=2*NPNG1)
-      IMPLICIT REAL*8 (A-H,O-Z)
-      REAL*8 X(NG),XR(NG),XI(NG),&
+      IMPLICIT REAL(kind(0.0d0)) (A-H,O-Z)
+      REAL(kind(0.0d0)) X(NG),XR(NG),XI(NG),&
 !!             J(NPNG2,NPN1),Y(NPNG2,NPN1),JR(NPNG2,NPN1),&
 !!             JI(NPNG2,NPN1),DJ(NPNG2,NPN1),DY(NPNG2,NPN1),&
 !!             DJR(NPNG2,NPN1),DJI(NPNG2,NPN1),&
@@ -1717,8 +1718,8 @@
 !C**********************************************************************
  
       SUBROUTINE RJB(X,Y,U,NMAX,NNMAX)
-      IMPLICIT REAL*8 (A-H,O-Z)
-      REAL*8 Y(NMAX),U(NMAX),Z(800)
+      IMPLICIT REAL(kind(0.0d0)) (A-H,O-Z)
+      REAL(kind(0.0d0)) Y(NMAX),U(NMAX),Z(800)
 
       L=NMAX+NNMAX
       XX=1D0/X
@@ -1749,8 +1750,8 @@
 !C**********************************************************************
  
       SUBROUTINE RYB(X,Y,V,NMAX)
-      IMPLICIT REAL*8 (A-H,O-Z)
-      REAL*8 Y(NMAX),V(NMAX)
+      IMPLICIT REAL(kind(0.0d0)) (A-H,O-Z)
+      REAL(kind(0.0d0)) Y(NMAX),V(NMAX)
 
       C=COS(X)
       S=SIN(X)
@@ -1787,9 +1788,9 @@
 
       USE MODD_TMAT,ONLY:NPN1
 !!      Parameter (NPN1=200)
-      IMPLICIT REAL*8 (A-H,O-Z)
-      REAL*8 YR(NMAX),YI(NMAX),UR(NMAX),UI(NMAX)
-      REAL*8 CYR(NPN1),CYI(NPN1),CZR(1200),CZI(1200)
+      IMPLICIT REAL(kind(0.0d0)) (A-H,O-Z)
+      REAL(kind(0.0d0)) YR(NMAX),YI(NMAX),UR(NMAX),UI(NMAX)
+      REAL(kind(0.0d0)) CYR(NPN1),CYI(NPN1),CZR(1200),CZI(1200)
 
       L=NMAX+NNMAX
       XRXI=1D0/(XR*XR+XI*XI)
@@ -1869,8 +1870,8 @@
                            NPN1,NPNG1,NPNG2,NPN2,NPN4,NPN6
 !!      Parameter (NPN1=200, NPNG1=600, NPNG2=2*NPNG1, NPN2=2*NPN1,&   
 !!          NPN4=NPN1,NPN6=NPN4+1)
-      IMPLICIT REAL*8 (A-H,O-Z)
-      REAL*8  X(NPNG2),W(NPNG2),AN(NPN1),&
+      IMPLICIT REAL(kind(0.0d0)) (A-H,O-Z)
+      REAL(kind(0.0d0))  X(NPNG2),W(NPNG2),AN(NPN1),&
              R(NPNG2),DR(NPNG2),SIG(NPN2),&
 !!             J(NPNG2,NPN1),Y(NPNG2,NPN1),&
 !!             JR(NPNG2,NPN1),JI(NPNG2,NPN1),DJ(NPNG2,NPN1),&
@@ -1880,12 +1881,12 @@
              D1(NPNG2,NPN1),D2(NPNG2,NPN1),&
              DRI(NPNG2),RR(NPNG2),&
              DV1(NPN1),DV2(NPN1)
-        REAL(KIND=8),DIMENSION(:,:),ALLOCATABLE :: R11,R12,R21,R22
-        REAL(KIND=8),DIMENSION(:,:),ALLOCATABLE :: I11,I12,I21,I22
-        REAL(KIND=8),DIMENSION(:,:),ALLOCATABLE :: RG11,RG12,RG21,RG22
-        REAL(KIND=8),DIMENSION(:,:),ALLOCATABLE :: IG11,IG12,IG21,IG22
+        REAL(kind(0.0d0)),DIMENSION(:,:),ALLOCATABLE :: R11,R12,R21,R22
+        REAL(kind(0.0d0)),DIMENSION(:,:),ALLOCATABLE :: I11,I12,I21,I22
+        REAL(kind(0.0d0)),DIMENSION(:,:),ALLOCATABLE :: RG11,RG12,RG21,RG22
+        REAL(kind(0.0d0)),DIMENSION(:,:),ALLOCATABLE :: IG11,IG12,IG21,IG22
 
-     REAL*8  ANN(NPN1,NPN1),&
+     REAL(kind(0.0d0))  ANN(NPN1,NPN1),&
 !!             QR(NPN2,NPN2),QI(NPN2,NPN2),&
 !!             RGQR(NPN2,NPN2),RGQI(NPN2,NPN2),&
              TQR(NPN2,NPN2),TQI(NPN2,NPN2),&
@@ -2129,8 +2130,8 @@ DEALLOCATE(IG22)
 !c      INCLUDE 'ampld.par.f'
 !!      Parameter (NPN1=200, NPNG1=600, NPNG2=2*NPNG1, NPN2=2*NPN1, & 
 !!           NPN4=NPN1, NPN6=NPN4+1)
-      IMPLICIT REAL*8 (A-H,O-Z)
-      REAL*8  X(NPNG2),W(NPNG2),AN(NPN1),S(NPNG2),SS(NPNG2),&
+      IMPLICIT REAL(kind(0.0d0)) (A-H,O-Z)
+      REAL(kind(0.0d0))  X(NPNG2),W(NPNG2),AN(NPN1),S(NPNG2),SS(NPNG2),&
              R(NPNG2),DR(NPNG2),SIG(NPN2),&
 !!             J(NPNG2,NPN1),Y(NPNG2,NPN1),&
 !!             JR(NPNG2,NPN1),JI(NPNG2,NPN1),DJ(NPNG2,NPN1),&
@@ -2140,12 +2141,12 @@ DEALLOCATE(IG22)
              D1(NPNG2,NPN1),D2(NPNG2,NPN1),&
              DRI(NPNG2),DS(NPNG2),DSS(NPNG2),RR(NPNG2),&
              DV1(NPN1),DV2(NPN1)
-      REAL(KIND=8),DIMENSION(:,:),ALLOCATABLE :: R11,R12,R21,R22
-      REAL(KIND=8),DIMENSION(:,:),ALLOCATABLE :: I11,I12,I21,I22
-      REAL(KIND=8),DIMENSION(:,:),ALLOCATABLE :: RG11,RG12,RG21,RG22
-      REAL(KIND=8),DIMENSION(:,:),ALLOCATABLE :: IG11,IG12,IG21,IG22
+      REAL(kind(0.0d0)),DIMENSION(:,:),ALLOCATABLE :: R11,R12,R21,R22
+      REAL(kind(0.0d0)),DIMENSION(:,:),ALLOCATABLE :: I11,I12,I21,I22
+      REAL(kind(0.0d0)),DIMENSION(:,:),ALLOCATABLE :: RG11,RG12,RG21,RG22
+      REAL(kind(0.0d0)),DIMENSION(:,:),ALLOCATABLE :: IG11,IG12,IG21,IG22
 
-      REAL*8  ANN(NPN1,NPN1),&
+      REAL(kind(0.0d0))  ANN(NPN1,NPN1),&
 !!             QR(NPN2,NPN2),QI(NPN2,NPN2),&
 !!             RGQR(NPN2,NPN2),RGQI(NPN2,NPN2),&
              TQR(NPN2,NPN2),TQI(NPN2,NPN2),&
@@ -2458,8 +2459,8 @@ DEALLOCATE(IG22)
 
       USE MODD_TMAT, ONLY:NPN1
 !!      Parameter (NPN1=200)
-      IMPLICIT REAL*8 (A-H,O-Z)
-      REAL*8 DV1(NPN1),DV2(NPN1)
+      IMPLICIT REAL(kind(0.0d0)) (A-H,O-Z)
+      REAL(kind(0.0d0)) DV1(NPN1),DV2(NPN1)
  
       A=1D0
       QS=SQRT(1D0-X*X)
@@ -2523,12 +2524,12 @@ DEALLOCATE(IG22)
 
 
 !!      Parameter (NPN1=200, NPN2=2*NPN1)
-      IMPLICIT REAL*8 (A-H,O-Z)
-      REAL*8 F(NPN2,NPN2),&
+      IMPLICIT REAL(kind(0.0d0)) (A-H,O-Z)
+      REAL(kind(0.0d0)) F(NPN2,NPN2),&
 !!            QR(NPN2,NPN2),QI(NPN2,NPN2),&
 !!            RGQR(NPN2,NPN2),RGQI(NPN2,NPN2),&
             A(NPN2,NPN2),C(NPN2,NPN2),D(NPN2,NPN2),E(NPN2,NPN2)
-!!      REAL*8 TR1(NPN2,NPN2),TI1(NPN2,NPN2)
+!!      REAL(kind(0.0d0)) TR1(NPN2,NPN2),TI1(NPN2,NPN2)
 !c      INTEGER IPVT(NPN2)
 !!      COMMON /CT/ TR1,TI1
 !!      COMMON /CTT/ QR,QI,RGQR,RGQI
@@ -2587,7 +2588,7 @@ DEALLOCATE(IG22)
 !C********************************************************************
       SUBROUTINE PROD(A,B,C,NDIM,N)
 
-      REAL*8 A(NDIM,N),B(NDIM,N),C(NDIM,N),cij
+      REAL(kind(0.0d0)) A(NDIM,N),B(NDIM,N),C(NDIM,N),cij
 
       DO I=1,N
           DO J=1,N
@@ -2607,9 +2608,9 @@ DEALLOCATE(IG22)
       SUBROUTINE INV1(NMAX,F,A)
 
       USE MODD_TMAT,ONLY : NPN1,NPN2
-      IMPLICIT REAL*8 (A-H,O-Z)
+      IMPLICIT REAL(kind(0.0d0)) (A-H,O-Z)
 !!      Parameter (NPN1=200, NPN2=2*NPN1)
-      REAL*8  A(NPN2,NPN2),F(NPN2,NPN2),B(NPN1),&
+      REAL(kind(0.0d0))  A(NPN2,NPN2),F(NPN2,NPN2),B(NPN1),&
              WORK(NPN1),Q1(NPN1,NPN1),Q2(NPN1,NPN1),&
              P1(NPN1,NPN1),P2(NPN1,NPN1)
       INTEGER IPVT(NPN1),IND1(NPN1),IND2(NPN1)
@@ -2663,8 +2664,8 @@ DEALLOCATE(IG22)
 !C*********************************************************************
  
       SUBROUTINE INVERT(NDIM,N,A,X,COND,IPVT,WORK,B)
-      IMPLICIT REAL*8 (A-H,O-Z)
-      REAL*8 A(NDIM,N),X(NDIM,N),WORK(N),B(N)
+      IMPLICIT REAL(kind(0.0d0)) (A-H,O-Z)
+      REAL(kind(0.0d0)) A(NDIM,N),X(NDIM,N),WORK(N),B(N)
       INTEGER IPVT(N)
 
       CALL DECOMP (NDIM,N,A,COND,IPVT,WORK)
@@ -2693,8 +2694,8 @@ DEALLOCATE(IG22)
 !C********************************************************************
  
       SUBROUTINE DECOMP (NDIM,N,A,COND,IPVT,WORK)
-      IMPLICIT REAL*8 (A-H,O-Z)
-      REAL*8 A(NDIM,N),COND,WORK(N)
+      IMPLICIT REAL(kind(0.0d0)) (A-H,O-Z)
+      REAL(kind(0.0d0)) A(NDIM,N),COND,WORK(N)
       INTEGER IPVT(N)
 
       IPVT(N)=1
@@ -2804,8 +2805,8 @@ DEALLOCATE(IG22)
 !C**********************************************************************
  
       SUBROUTINE SOLVE (NDIM,N,A,B,IPVT)
-      IMPLICIT REAL*8 (A-H,O-Z)
-      REAL*8 A(NDIM,N),B(N)
+      IMPLICIT REAL(kind(0.0d0)) (A-H,O-Z)
+      REAL(kind(0.0d0)) A(NDIM,N),B(N)
       INTEGER IPVT(N)
 
       IF (N.NE.1) THEN
@@ -2846,8 +2847,8 @@ DEALLOCATE(IG22)
 !C**********************************************************************
  
       SUBROUTINE GAUSS(N,IND1,IND2,Z,W)
-      IMPLICIT REAL*8 (A-H,P-Z)
-      REAL*8 Z(N),W(N)
+      IMPLICIT REAL(kind(0.0d0)) (A-H,P-Z)
+      REAL(kind(0.0d0)) Z(N),W(N)
       DATA A,B,C /1D0,2D0,3D0/
     
       IND=MOD(N,2)
@@ -2915,11 +2916,3 @@ DEALLOCATE(IG22)
 
       RETURN
       END
-
-
-
-
-
-
-
-

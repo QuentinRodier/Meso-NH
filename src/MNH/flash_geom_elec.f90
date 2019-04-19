@@ -96,6 +96,7 @@ END MODULE MODI_FLASH_GEOM_ELEC_n
 !  P. Wautelet 22/01/2019: use standard FLUSH statement instead of non standard intrinsics!!
 !  P. Wautelet 22/02/2019: use MOD intrinsics with same kind for all arguments (to respect Fortran standard)
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 19/04/2019: use modd_precision kinds
 !-------------------------------------------------------------------------------
 !
 !*      0.      DECLARATIONS
@@ -2067,6 +2068,8 @@ END SUBROUTINE CHARGE_POCKET
 !*      0.      DECLARATIONS
 !               ------------
 !
+use modd_precision, only: MNHINT64, MNHINT64_MPI
+
 IMPLICIT NONE
 !
 !*      0.1     declaration of dummy arguments
@@ -2086,10 +2089,10 @@ LOGICAL :: GRANDOM           ! T = the gridpoints are chosen randomly
 INTEGER, DIMENSION(NPROC) :: INBPT_PROC
 REAL, DIMENSION(:), ALLOCATABLE :: ZAUX
 !
-INTEGER*8, DIMENSION(:), ALLOCATABLE :: I8VECT , I8VECT_LL 
-INTEGER  , DIMENSION(:), ALLOCATABLE :: IRANK  , IRANK_LL , IORDER_LL
-INTEGER  :: JI,JJ,JK,JIL , ICHOICE,IPOINT
-INTEGER, DIMENSION(NPROC+1) :: IDISPL
+INTEGER                                           :: JI,JJ,JK,JIL , ICHOICE,IPOINT
+INTEGER,                DIMENSION(NPROC+1)        :: IDISPL
+INTEGER(kind=MNHINT64), DIMENSION(:), ALLOCATABLE :: I8VECT , I8VECT_LL
+INTEGER,                DIMENSION(:), ALLOCATABLE :: IRANK  , IRANK_LL , IORDER_LL
 !
 !
 !
@@ -2175,8 +2178,8 @@ DO WHILE (IM .LE. IDELTA_IND .AND. ISTOP .NE. 1)
         ALLOCATE(I8VECT_LL(IPT_DIST_GLOB))
         ALLOCATE(IRANK_LL(IPT_DIST_GLOB))
         ALLOCATE(IORDER_LL(IPT_DIST_GLOB))
-        CALL MPI_ALLGATHERV(I8VECT,IPT_DIST, MPI_INTEGER8,I8VECT_LL , &
-                        INBPT_PROC, IDISPL, MPI_INTEGER8, NMNH_COMM_WORLD, IERR)
+        CALL MPI_ALLGATHERV(I8VECT,IPT_DIST, MNHINT64_MPI,I8VECT_LL , &
+                        INBPT_PROC, IDISPL, MNHINT64_MPI, NMNH_COMM_WORLD, IERR)
         CALL MPI_ALLGATHERV(IRANK,IPT_DIST, MPI_INTEGER,IRANK_LL , &
                         INBPT_PROC, IDISPL, MPI_INTEGER, NMNH_COMM_WORLD, IERR)
         CALL N8QUICK_SORT(I8VECT_LL, IORDER_LL)
@@ -2198,7 +2201,7 @@ DO WHILE (IM .LE. IDELTA_IND .AND. ISTOP .NE. 1)
                     !print*,"OUT => I8VECT_LL(ICHOICE)=",I8VECT_ll(ICHOICE),JI,JJ,JK,ICHOICE
                     ZFLASH(JI,JJ,JK,IL) = 2.
                  END IF
-                 I8VECT_LL(ICHOICE) = 0.
+                 I8VECT_LL(ICHOICE) = 0
               ENDIF
            END DO
         END DO
@@ -2622,9 +2625,11 @@ RECURSIVE SUBROUTINE N8QUICK_SORT(PLIST, KORDER)
 ! Modified by Alan Miller to include an associated integer array which gives
 ! the positions of the elements in the original order.
 !
+use modd_precision, only: MNHINT64
+
 IMPLICIT NONE
 !
-INTEGER*8, DIMENSION (:), INTENT(INOUT)  :: PLIST
+INTEGER(kind=MNHINT64), DIMENSION (:), INTENT(INOUT)  :: PLIST
 INTEGER, DIMENSION (:), INTENT(OUT)  :: KORDER
 !
 ! Local variable
@@ -2642,13 +2647,18 @@ END SUBROUTINE N8QUICK_SORT
 !
 RECURSIVE SUBROUTINE N8QUICK_SORT_1(KLEFT_END, KRIGHT_END, PLIST1, KORDER1)
 
-INTEGER, INTENT(IN) :: KLEFT_END, KRIGHT_END
-INTEGER*8, DIMENSION (:), INTENT(INOUT)  :: PLIST1
-INTEGER, DIMENSION (:), INTENT(INOUT)  :: KORDER1
+use modd_precision, only: MNHINT64
+
+implicit none
+
+INTEGER,                               INTENT(IN)    :: KLEFT_END, KRIGHT_END
+INTEGER(kind=MNHINT64), DIMENSION (:), INTENT(INOUT) :: PLIST1
+INTEGER,                DIMENSION (:), INTENT(INOUT) :: KORDER1
 !     Local variables
-INTEGER             :: JI, JJ, ITEMP
-INTEGER*8                :: ZREF, ZTEMP
-INTEGER, PARAMETER  :: IMAX_SIMPLE_SORT_SIZE = 6
+INTEGER, PARAMETER     :: IMAX_SIMPLE_SORT_SIZE = 6
+
+INTEGER                :: JI, JJ, ITEMP
+INTEGER(kind=MNHINT64) :: ZREF, ZTEMP
 
 IF (KRIGHT_END < KLEFT_END + IMAX_SIMPLE_SORT_SIZE) THEN
   ! Use interchange sort for small PLISTs
@@ -2691,8 +2701,8 @@ ELSE
     END IF
   END DO
 
-  IF (KLEFT_END < JJ) CALL N8QUICK_SORT_1(KLEFT_END, JJ, PLIST1, KORDER1)
-  IF (JI < KRIGHT_END) CALL N8QUICK_SORT_1(JI, KRIGHT_END,PLIST1,KORDER1)
+  IF ( KLEFT_END < JJ )         CALL N8QUICK_SORT_1( KLEFT_END, JJ,         PLIST1, KORDER1 )
+  IF ( JI        < KRIGHT_END ) CALL N8QUICK_SORT_1( JI,        KRIGHT_END, PLIST1, KORDER1 )
 END IF
 
 END SUBROUTINE N8QUICK_SORT_1
@@ -2701,12 +2711,16 @@ END SUBROUTINE N8QUICK_SORT_1
 !
 SUBROUTINE N8INTERCHANGE_SORT(KLEFT_END, KRIGHT_END, PLIST2, KORDER2)
 
-INTEGER, INTENT(IN) :: KLEFT_END, KRIGHT_END
-INTEGER*8, DIMENSION (:), INTENT(INOUT)  :: PLIST2
-INTEGER, DIMENSION (:), INTENT(INOUT)  :: KORDER2
+use modd_precision, only: MNHINT64
+
+implicit none
+
+INTEGER,                              INTENT(IN)    :: KLEFT_END, KRIGHT_END
+INTEGER(kind=MNHINT64), DIMENSION(:), INTENT(INOUT) :: PLIST2
+INTEGER,                DIMENSION(:), INTENT(INOUT) :: KORDER2
 !     Local variables
-INTEGER             :: JI, JJ, ITEMP
-INTEGER*8                :: ZTEMP
+INTEGER                :: JI, JJ, ITEMP
+INTEGER(kind=MNHINT64) :: ZTEMP
 
 ! boucle sur tous les points
 DO JI = KLEFT_END, KRIGHT_END - 1
@@ -2738,10 +2752,12 @@ END SUBROUTINE N8INTERCHANGE_SORT
 !-------------------------------------------------------------------------------
   SUBROUTINE MNH_RANDOM_NUMBER(ZRANDOM)
 
-    REAL          :: ZRANDOM
-    INTEGER ,SAVE :: NSEED_MNH = 26032012
+    use modd_precision, only: MNHINT32
 
-    ZRANDOM = r8_uniform_01 (NSEED_MNH)
+    REAL                         :: ZRANDOM
+    INTEGER(kind=MNHINT32), SAVE :: NSEED_MNH = 26032012_MNHINT32
+
+    ZRANDOM = real( r8_uniform_01( NSEED_MNH ), kind(ZRANDOM) )
 
   END SUBROUTINE MNH_RANDOM_NUMBER
 
@@ -2820,37 +2836,39 @@ END SUBROUTINE N8INTERCHANGE_SORT
     !
     !  Parameters:
     !
-    !    Input/output, integer ( kind = 4 ) SEED, the "seed" value, which should
+    !    Input/output, integer ( kind = MNHINT32 ) SEED, the "seed" value, which should
     !    NOT be 0. On output, SEED has been updated.
     !
-    !    Output, real ( kind = 8 ) R8_UNIFORM_01, a new pseudorandom variate,
+    !    Output, real ( kind = MNHREAL64 ) R8_UNIFORM_01, a new pseudorandom variate,
     !    strictly between 0 and 1.
     !
-    use mode_msg
+    use modd_precision, only: MNHINT32, MNHREAL64
 
-    IMPLICIT NONE
+    implicit none
 
-    INTEGER ( kind = 4 ), PARAMETER :: i4_huge = 2147483647
-    INTEGER ( kind = 4 ) k
-    REAL   r8_uniform_01
-    INTEGER ( kind = 4 ) seed
+    integer(kind = MNHINT32), intent(inout) :: seed
+    real(kind=MNHREAL64)                    :: r8_uniform_01
 
-    IF ( seed == 0 ) THEN
+    integer(kind = MNHINT32), parameter :: i4_huge = 2147483647_MNHINT32
+
+    integer(kind = MNHINT32) :: k
+
+    if ( seed == 0_MNHINT32 ) THEN
       call Print_msg( NVERB_FATAL, 'GEN', 'r8_uniform_01', 'seed dummy argument must be different of 0' )
-    END IF
+    end if
 
-    k = seed / 127773
+    k = seed / 127773_MNHINT32
 
-    seed = 16807 * ( seed - k * 127773 ) - k * 2836
+    seed = 16807_MNHINT32 * ( seed - k * 127773_MNHINT32 ) - k * 2836_MNHINT32
 
-    IF ( seed < 0 ) THEN
+    if ( seed < 0_MNHINT32 ) then
        seed = seed + i4_huge
-    END IF
+    end if
 
-    r8_uniform_01 = REAL ( seed ) * 4.656612875D-10
+    r8_uniform_01 = real(seed) * 4.656612875d-10
 
-    RETURN
-  END FUNCTION r8_uniform_01
+    return
+  end function r8_uniform_01
 !
 END SUBROUTINE FLASH_GEOM_ELEC_n
 !

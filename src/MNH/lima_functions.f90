@@ -4,8 +4,8 @@
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 ! Modifications:
-!  P.Wautelet 22/01/2019: replace double precision declarations by real(kind(0.0d0)) (to allow compilation by NAG compiler)
-!
+!  P. Wautelet 22/01/2019: replace double precision declarations by real(kind(0.0d0)) (to allow compilation by NAG compiler)
+!  P. Wautelet 19/04/2019: use modd_precision kinds
 !-----------------------------------------------------------------
 !#################################
         MODULE MODI_LIMA_FUNCTIONS
@@ -222,13 +222,15 @@ END FUNCTION DELTA_VEC
 !###########################
 SUBROUTINE gaulag(x,w,n,alf)
 !###########################
+  use modd_precision, only: MNHREAL64
+
   INTEGER n,MAXIT
   REAL alf,w(n),x(n)
-  REAL(kind=8) :: EPS
+  REAL(kind=MNHREAL64) :: EPS
   PARAMETER (EPS=3.D-14,MAXIT=10)
   INTEGER i,its,j
   REAL ai
-  REAL(kind=8) :: p1,p2,p3,pp,z,z1
+  REAL(kind=MNHREAL64) :: p1,p2,p3,pp,z,z1
 !
   REAL SUMW
 !
@@ -277,12 +279,14 @@ END SUBROUTINE gaulag
 !##########################################
 SUBROUTINE gauher(x,w,n)
 !##########################################
+  use modd_precision, only: MNHREAL64
+
   INTEGER n,MAXIT
   REAL w(n),x(n)
-  REAL(kind=8) :: EPS,PIM4
+  REAL(kind=MNHREAL64) :: EPS,PIM4
   PARAMETER (EPS=3.D-14,PIM4=.7511255444649425D0,MAXIT=10)
   INTEGER i,its,j,m
-  REAL(kind=8) :: p1,p2,p3,pp,z,z1
+  REAL(kind=MNHREAL64) :: p1,p2,p3,pp,z,z1
 !
   REAL SUMW
 !

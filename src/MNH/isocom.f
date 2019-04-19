@@ -13,7 +13,7 @@ C ======================== ARGUMENTS / USAGE ===========================
 C
 C  INPUT:
 C  1. [WI] 
-C     REAL*8           array of length [5].
+C     REAL(kind(0.0d0))           array of length [5].
 C     Concentrations, expressed in moles/m3. Depending on the type of
 C     problem solved (specified in CNTRL(1)), WI contains either 
 C     GAS+AEROSOL or AEROSOL only concentratios.
@@ -24,15 +24,15 @@ C     WI(4) - nitrate
 C     WI(5) - chloride
 C
 C  2. [RHI] 
-C     REAL*8           variable.  
+C     REAL(kind(0.0d0))           variable.
 C     Ambient relative humidity expressed on a (0,1) scale.
 C
 C  3. [TEMPI]
-C     REAL*8           variable. 
+C     REAL(kind(0.0d0))           variable.
 C     Ambient temperature expressed in Kelvins. 
 C
 C  4. [CNTRL]
-C     REAL*8           array of length [2].
+C     REAL(kind(0.0d0))           array of length [2].
 C     Parameters that control the type of problem solved.
 C
 C     CNTRL(1): Defines the type of problem solved.
@@ -47,7 +47,7 @@ C     1 - The aerosol is in only liquid state (metastable aerosol)
 C
 C  OUTPUT:
 C  1. [WT] 
-C     REAL*8           array of length [5].
+C     REAL(kind(0.0d0))           array of length [5].
 C     Total concentrations (GAS+AEROSOL) of species, expressed in moles/m3. 
 C     If the foreward probelm is solved (CNTRL(1)=0), array WT is 
 C     identical to array WI.
@@ -58,14 +58,14 @@ C     WT(4) - total nitrate
 C     WT(5) - total chloride
 C
 C  2. [GAS]
-C     REAL*8           array of length [03]. 
+C     REAL(kind(0.0d0))           array of length [03].
 C     Gaseous species concentrations, expressed in moles/m3. 
 C     GAS(1) - NH3
 C     GAS(2) - HNO3
 C     GAS(3) - HCl 
 C
 C  3. [AERLIQ]
-C     REAL*8           array of length [11]. 
+C     REAL(kind(0.0d0))           array of length [11].
 C     Liquid aerosol species concentrations, expressed in moles/m3. 
 C     AERLIQ(01) - H+(aq)          
 C     AERLIQ(02) - Na+(aq)         
@@ -81,7 +81,7 @@ C     AERLIQ(11) - HNO3(aq) (undissociated)
 C     AERLIQ(12) - OH-(aq)
 C
 C  4. [AERSLD]
-C     REAL*8           array of length [09]. 
+C     REAL(kind(0.0d0))           array of length [09].
 C     Solid aerosol species concentrations, expressed in moles/m3. 
 C     AERSLD(01) - NaNO3(s)
 C     AERSLD(02) - NH4NO3(s)
@@ -98,7 +98,7 @@ C     CHARACTER(len=15) variable.
 C     Returns the subcase which the input corresponds to.
 C
 C  6. [OTHER]
-C     REAL*8           array of length [6].
+C     REAL(kind(0.0d0))           array of length [6].
 C     Returns solution information.
 C
 C     OTHER(1): Shows if aerosol water exists.
@@ -126,6 +126,7 @@ C
 C Modifications:
 C  P. Wautelet 13/02/2018: use ifdef MNH_REAL to prevent problems with intrinsics on Blue Gene/Q
 C  P. Wautelet 22/01/2019: replace obsolete SNGL intrinsics by REAL intrinsics
+C  P. Wautelet 19/04/2019: use kind(0.0d0) instead of kind=8
 C=======================================================================
 C
       SUBROUTINE ISOROPIA (WI, RHI, TEMPI,  CNTRL, 
@@ -280,7 +281,7 @@ C     Defines the maximum number of iterations for activity coefficient
 C     calculations.
 C 
 C  6. [EPSACTI] 
-C     REAL*8           variable.
+C     REAL(kind(0.0d0))           variable.
 C     Defines the convergence criterion for activity coefficient 
 C     calculations.
 C 
@@ -1379,12 +1380,12 @@ C *** WRITTEN BY ATHANASIOS NENES
 C
 C=======================================================================
 C
-C     REAL*8           FUNCTION GETASR (SO4I, RHI)
+C     REAL(kind(0.0d0))           FUNCTION GETASR (SO4I, RHI)
                        FUNCTION GETASR (SO4I, RHI)
       PARAMETER (NSO4S=14, NRHS=20, NASRD=NSO4S*NRHS)
       COMMON /ASRC/ ASRAT(NASRD), ASSO4(NSO4S)
-      REAL*8           SO4I, RHI
-      REAL*8           GETASR 
+      REAL(kind(0.0d0))           SO4I, RHI
+      REAL(kind(0.0d0))           GETASR
 CCC
 CCC *** SOLVE USING FULL COMPUTATIONS, NOT LOOK-UP TABLES **************
 CCC
@@ -1531,7 +1532,7 @@ C=======================================================================
 C
       SUBROUTINE CALCHA
       INCLUDE 'isrpia.inc'
-      REAL*8           KAPA
+      REAL(kind(0.0d0))           KAPA
 CC      CHARACTER ERRINF*40
 C
 C *** CALCULATE HCL DISSOLUTION *****************************************
@@ -1628,7 +1629,7 @@ C=======================================================================
 C
       SUBROUTINE CALCNA
       INCLUDE 'isrpia.inc'
-      REAL*8           KAPA
+      REAL(kind(0.0d0))           KAPA
 CC      CHARACTER ERRINF*40
 C
 C *** CALCULATE HNO3 DISSOLUTION ****************************************
@@ -1809,7 +1810,7 @@ C=======================================================================
 C
       SUBROUTINE CALCNHA
       INCLUDE 'isrpia.inc'
-      REAL*8           M1, M2, M3
+      REAL(kind(0.0d0))           M1, M2, M3
       CHARACTER ERRINF*40     
 C
 C *** SPECIAL CASE; WATER=ZERO ******************************************
@@ -1968,7 +1969,7 @@ C=======================================================================
 C
       SUBROUTINE CALCAMAQ (NH4I, OHI, DELT)
       INCLUDE 'isrpia.inc'
-      REAL*8           NH4I
+      REAL(kind(0.0d0))           NH4I
 CC      CHARACTER ERRINF*40
 C
 C *** EQUILIBRIUM CONSTANTS
@@ -2028,7 +2029,7 @@ C=======================================================================
 C
       SUBROUTINE CALCAMAQ2 (GGNH3, NH4I, OHI, NH3AQ)
       INCLUDE 'isrpia.inc'
-      REAL*8           NH4I, NH3AQ
+      REAL(kind(0.0d0))           NH4I, NH3AQ
 C
 C *** EQUILIBRIUM CONSTANTS
 C
@@ -2072,7 +2073,7 @@ C=======================================================================
 C
       SUBROUTINE CALCCLAQ (CLI, HI, DELT)
       INCLUDE 'isrpia.inc'
-      REAL*8           CLI
+      REAL(kind(0.0d0))           CLI
 C
 C *** EQUILIBRIUM CONSTANTS
 C
@@ -2123,7 +2124,7 @@ C=======================================================================
 C
       SUBROUTINE CALCCLAQ2 (GGCL, CLI, HI, CLAQ)
       INCLUDE 'isrpia.inc'
-      REAL*8           CLI
+      REAL(kind(0.0d0))           CLI
 C
 C *** EQUILIBRIUM CONSTANTS
 C
@@ -2166,7 +2167,7 @@ C=======================================================================
 C
       SUBROUTINE CALCNIAQ (NO3I, HI, DELT)
       INCLUDE 'isrpia.inc'
-      REAL*8           NO3I
+      REAL(kind(0.0d0))           NO3I
 C
 C *** EQUILIBRIUM CONSTANTS
 C
@@ -2220,7 +2221,7 @@ C=======================================================================
 C
       SUBROUTINE CALCNIAQ2 (GGNO3, NO3I, HI, NO3AQ)
       INCLUDE 'isrpia.inc'
-      REAL*8           NO3I, NO3AQ
+      REAL(kind(0.0d0))           NO3I, NO3AQ
 C
 C *** EQUILIBRIUM CONSTANTS
 C
@@ -2816,7 +2817,7 @@ C
 C
       REAL EX10, URF
       REAL G0(3,4),ZPL,ZMI,AGAMA,SION,H,CH,F1(3),F2(4)
-      REAL*8           MPL, XIJ, YJI
+      REAL(kind(0.0d0))           MPL, XIJ, YJI
       PARAMETER (URF=0.5)
 C
       G(I,J)= (F1(I)/Z(I) + F2(J)/Z(J+3)) / (Z(I)+Z(J+3)) - H
@@ -3591,8 +3592,8 @@ CC  Author         : Athanasios Nenes
 CC
 CC  ======================= ARGUMENTS / USAGE =============================
 CC
-CC  VAR        is the REAL*8           variable which value is to be saved 
-CC  DEF        is a REAL*8           variable, with the default value of VAR.        
+CC  VAR        is the REAL(kind(0.0d0))           variable which value is to be saved
+CC  DEF        is a REAL(kind(0.0d0))           variable, with the default value of VAR.
 CC  PROMPT     is a CHARACTER varible containing the prompt string.     
 CC  PRFMT      is a CHARACTER variable containing the FORMAT specifier
 CC             for the default value DEF.
@@ -3615,7 +3616,7 @@ CC
 CC
 CC***********************************************************************
       CHARACTER PROMPT*(*), PRFMT*(*), BUFFER*128
-      REAL*8           DEF, VAR
+      REAL(kind(0.0d0))           DEF, VAR
       INTEGER IERR
 C
       IERR = 0
@@ -3778,10 +3779,10 @@ C=======================================================================
 C
       SUBROUTINE POLY3 (A1, A2, A3, ROOT, ISLV)
 C
-      IMPLICIT REAL*8           (A-H, O-Z)
+      IMPLICIT REAL(kind(0.0d0))           (A-H, O-Z)
       PARAMETER (EXPON=1.D0/3.D0,     ZERO=0.D0, THET1=120.D0/180.D0, 
      &           THET2=240.D0/180.D0, PI=3.14159265358932, EPS=1D-50)
-      REAL*8            X(3)
+      REAL(kind(0.0d0))            X(3)
 C
 C *** SPECIAL CASE : QUADRATIC*X EQUATION *****************************
 C
@@ -3878,7 +3879,7 @@ C=======================================================================
 C
       SUBROUTINE POLY3B (A1, A2, A3, RTLW, RTHI, ROOT, ISLV)
 C
-      IMPLICIT REAL*8           (A-H, O-Z)
+      IMPLICIT REAL(kind(0.0d0))           (A-H, O-Z)
       PARAMETER (ZERO=0.D0, EPS=1D-15, MAXIT=100, NDIV=5)
 C
       FUNC(X) = X**3.d0 + A1*X**2.0 + A2*X + A3
@@ -3944,7 +3945,7 @@ C
 
 
 ccc      PROGRAM DRIVER
-ccc      REAL*8           ROOT
+ccc      REAL(kind(0.0d0))           ROOT
 cccC
 ccc      CALL POLY3 (-1.d0, 1.d0, -1.d0, ROOT, ISLV)
 ccc      IF (ISLV.NE.0) STOP 'Error in POLY3'
@@ -4093,7 +4094,7 @@ C ======================== ARGUMENTS / USAGE ===========================
 C
 C  INPUT:
 C  1. [WI] 
-C     REAL*8           array of length [5].
+C     REAL(kind(0.0d0))           array of length [5].
 C     Concentrations, expressed in moles/m3. Depending on the type of
 C     problem solved, WI contains either GAS+AEROSOL or AEROSOL only 
 C     concentratios.
@@ -4104,11 +4105,11 @@ C     WI(4) - nitrate
 C     WI(5) - chloride
 C
 C  2. [RHI] 
-C     REAL*8           variable.  
+C     REAL(kind(0.0d0))           variable.
 C     Ambient relative humidity expressed in a (0,1) scale.
 C
 C  3. [TEMPI]
-C     REAL*8           variable. 
+C     REAL(kind(0.0d0))           variable.
 C     Ambient temperature expressed in Kelvins. 
 C
 C  4. [IPROB]
@@ -4121,14 +4122,14 @@ C                  contains AEROSOL concentrations only.
 C
 C  OUTPUT:
 C  1. [GAS]
-C     REAL*8           array of length [03]. 
+C     REAL(kind(0.0d0))           array of length [03].
 C     Gaseous species concentrations, expressed in moles/m3. 
 C     GAS(1) - NH3
 C     GAS(2) - HNO3
 C     GAS(3) - HCl 
 C
 C  2. [AERLIQ]
-C     REAL*8           array of length [11]. 
+C     REAL(kind(0.0d0))           array of length [11].
 C     Liquid aerosol species concentrations, expressed in moles/m3. 
 C     AERLIQ(01) - H+(aq)          
 C     AERLIQ(02) - Na+(aq)         
@@ -4143,7 +4144,7 @@ C     AERLIQ(10) - HNCl(aq) (undissociated)
 C     AERLIQ(11) - HNO3(aq) (undissociated)
 C
 C  3. [AERSLD]
-C     REAL*8           array of length [09]. 
+C     REAL(kind(0.0d0))           array of length [09].
 C     Solid aerosol species concentrations, expressed in moles/m3. 
 C     AERSLD(01) - NaNO3(s)
 C     AERSLD(02) - NH4NO3(s)
@@ -4439,11 +4440,11 @@ C     The size of the error stack (maximum number of errors that can
 C     be stored before the stack exhausts).
 C
 C  7. [TIN]
-C     REAL*8           variable
+C     REAL(kind(0.0d0))           variable
 C     The value used for a very small number.
 C
 C  8. [GRT]
-C     REAL*8           variable
+C     REAL(kind(0.0d0))           variable
 C     The value used for a very large number.
 C 
 C *** COPYRIGHT 1996-2000, UNIVERSITY OF MIAMI, CARNEGIE MELLON UNIVERSITY
