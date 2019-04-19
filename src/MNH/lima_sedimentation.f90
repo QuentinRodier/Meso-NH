@@ -67,9 +67,7 @@ END MODULE MODI_LIMA_SEDIMENTATION
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAM_LIMA_COLD,  ONLY : XLBEXI, XLBI, XDI,                 &
-                                  XFSEDRI, XFSEDCI, XFSEDS, XEXSEDS
-USE MODD_PARAM_LIMA_MIXED, ONLY : XFSEDG, XEXSEDG, XFSEDH, XEXSEDH
+USE MODD_PARAM_LIMA_COLD,  ONLY : XLBEXI, XLBI, XDI
 USE MODD_PARAM_LIMA,       ONLY : XCEXVT, XRTMIN, XCTMIN, NSPLITSED, &
                                   XLB, XLBEX, XD, XFSEDR, XFSEDC,    &
                                   XALPHAC, XNUC

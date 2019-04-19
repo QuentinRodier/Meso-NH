@@ -8,7 +8,7 @@
 !
 INTERFACE
    SUBROUTINE LIMA_ICE_AGGREGATION_SNOW (LDCOMPUTE,                      &
-                                         PT,                             &
+                                         PT, PRHODREF,                   &
                                          PRIT, PRST, PCIT, PLBDI, PLBDS, &
                                          P_RI_AGGS, P_CI_AGGS,           &
                                          PA_RI, PA_CI, PA_RS             )
@@ -16,6 +16,7 @@ INTERFACE
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
 !
 REAL, DIMENSION(:),   INTENT(IN)    :: PT
+REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF
 !
 REAL, DIMENSION(:),   INTENT(IN)    :: PRIT
 REAL, DIMENSION(:),   INTENT(IN)    :: PRST
@@ -36,7 +37,7 @@ END MODULE MODI_LIMA_ICE_AGGREGATION_SNOW
 !
 !     #######################################################################
       SUBROUTINE LIMA_ICE_AGGREGATION_SNOW (LDCOMPUTE,                      &
-                                            PT,                             &
+                                            PT, PRHODREF,                   &
                                             PRIT, PRST, PCIT, PLBDI, PLBDS, &
                                             P_RI_AGGS, P_CI_AGGS,           &
                                             PA_RI, PA_CI, PA_RS             )
@@ -74,6 +75,7 @@ IMPLICIT NONE
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
 !
 REAL, DIMENSION(:),   INTENT(IN)    :: PT
+REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF
 !
 REAL, DIMENSION(:),   INTENT(IN)    :: PRIT
 REAL, DIMENSION(:),   INTENT(IN)    :: PRST
@@ -108,7 +110,7 @@ P_CI_AGGS(:) = 0.
 !
 WHERE ( (PRIT(:)>XRTMIN(4)) .AND. (PRST(:)>XRTMIN(5)) .AND. LDCOMPUTE(:) )
    ZZW1(:) = (PLBDI(:) / PLBDS(:))**3
-   ZZW2(:) = (PCIT(:)*(XCCS*PLBDS(:)**XCXS)*EXP( XCOLEXIS*(PT(:)-XTT) )) &
+   ZZW2(:) = (PCIT(:)*(XCCS*PLBDS(:)**XCXS)/PRHODREF(:)*EXP( XCOLEXIS*(PT(:)-XTT) )) &
         / (PLBDI(:)**3)
    ZZW3(:) = ZZW2(:)*(XAGGS_CLARGE1+XAGGS_CLARGE2*ZZW1(:))
 !

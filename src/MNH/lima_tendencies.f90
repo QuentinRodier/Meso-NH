@@ -550,14 +550,14 @@ ZLBDS(:) = MIN( XLBDAS_MAX, ZLBDS(:))
 !
 IF (LCOLD .AND. LSNOW) THEN
    CALL LIMA_ICE_AGGREGATION_SNOW (LDCOMPUTE,                      &
-                                   ZT,                             &
+                                   ZT, PRHODREF,                   &
                                    PRIT, PRST, PCIT, ZLBDI, ZLBDS, &
                                    P_RI_AGGS, P_CI_AGGS,           &
                                    PA_RI, PA_CI, PA_RS             )
 END IF
 !
 IF (LWARM .AND. LCOLD) THEN
-   CALL LIMA_GRAUPEL_DEPOSITION (LDCOMPUTE,                            &
+   CALL LIMA_GRAUPEL_DEPOSITION (LDCOMPUTE, PRHODREF,                  &
                                  PRGT, ZSSI, ZLBDG, ZAI, ZCJ, ZLSFACT, &
                                  P_TH_DEPG, P_RG_DEPG,                 &
                                  PA_TH, PA_RV, PA_RG                   )

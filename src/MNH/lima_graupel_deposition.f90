@@ -7,19 +7,20 @@
 !      #################################
 !
 INTERFACE
-   SUBROUTINE LIMA_GRAUPEL_DEPOSITION (LDCOMPUTE,                            &
+   SUBROUTINE LIMA_GRAUPEL_DEPOSITION (LDCOMPUTE, PRHODREF,                  &
                                        PRGT, PSSI, PLBDG, PAI, PCJ, PLSFACT, &
                                        P_TH_DEPG, P_RG_DEPG,                 &
                                        PA_TH, PA_RV, PA_RG                   )
 !
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
+REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF ! 
 !
-REAL, DIMENSION(:),   INTENT(IN)    :: PRGT    ! Cloud water C. at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PSSI    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDG   ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PAI     ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PCJ     ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLSFACT ! 
+REAL, DIMENSION(:),   INTENT(IN)    :: PRGT     ! Cloud water C. at t
+REAL, DIMENSION(:),   INTENT(IN)    :: PSSI     ! 
+REAL, DIMENSION(:),   INTENT(IN)    :: PLBDG    ! 
+REAL, DIMENSION(:),   INTENT(IN)    :: PAI      ! 
+REAL, DIMENSION(:),   INTENT(IN)    :: PCJ      ! 
+REAL, DIMENSION(:),   INTENT(IN)    :: PLSFACT  ! 
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_DEPG
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_DEPG
@@ -33,7 +34,7 @@ END INTERFACE
 END MODULE MODI_LIMA_GRAUPEL_DEPOSITION
 !
 !     ###########################################################################
-      SUBROUTINE LIMA_GRAUPEL_DEPOSITION (LDCOMPUTE,                            &
+      SUBROUTINE LIMA_GRAUPEL_DEPOSITION (LDCOMPUTE, PRHODREF,                  &
                                           PRGT, PSSI, PLBDG, PAI, PCJ, PLSFACT, &
                                           P_TH_DEPG, P_RG_DEPG,                 &
                                           PA_TH, PA_RV, PA_RG                   )
@@ -68,13 +69,14 @@ IMPLICIT NONE
 !*       0.1   Declarations of dummy arguments :
 !
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
+REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF ! 
 !
-REAL, DIMENSION(:),   INTENT(IN)    :: PRGT    ! Cloud water C. at t
-REAL, DIMENSION(:),   INTENT(IN)    :: PSSI    ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLBDG   ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PAI     ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PCJ     ! 
-REAL, DIMENSION(:),   INTENT(IN)    :: PLSFACT ! 
+REAL, DIMENSION(:),   INTENT(IN)    :: PRGT     ! Cloud water C. at t
+REAL, DIMENSION(:),   INTENT(IN)    :: PSSI     ! 
+REAL, DIMENSION(:),   INTENT(IN)    :: PLBDG    ! 
+REAL, DIMENSION(:),   INTENT(IN)    :: PAI      ! 
+REAL, DIMENSION(:),   INTENT(IN)    :: PCJ      ! 
+REAL, DIMENSION(:),   INTENT(IN)    :: PLSFACT  ! 
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_DEPG
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_DEPG
@@ -93,7 +95,7 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RG
 P_TH_DEPG(:) = 0.0
 P_RG_DEPG(:) = 0.0
 WHERE ( (PRGT(:)>XRTMIN(6)) .AND. LDCOMPUTE(:) )
-   P_RG_DEPG(:) = ( PSSI(:)/(PAI(:)) ) *                               &
+   P_RG_DEPG(:) = ( PSSI(:)/PAI(:)/PRHODREF(:) ) *                       &
         ( X0DEPG*PLBDG(:)**XEX0DEPG + X1DEPG*PCJ(:)*PLBDG(:)**XEX1DEPG )
    P_TH_DEPG(:) = P_RG_DEPG(:)*PLSFACT(:)
 END WHERE

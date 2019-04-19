@@ -166,7 +166,7 @@ WHERE( GMICRO )
    WHERE ( PLBDS(:)<XLBDASCNVI_MAX .AND. (PRST(:)>XRTMIN(5)) &
                                    .AND. (PSSI(:)<0.0)       )
       ZZW(:) = (PLBDS(:)*XDSCNVI_LIM)**(XALPHAS)
-      ZZX(:) = ( -PSSI(:)/PAI(:) ) * (XCCS*PLBDS(:)**XCXS) * (ZZW(:)**XNUS) * EXP(-ZZW(:))
+      ZZX(:) = ( -PSSI(:)/PAI(:) ) * (XCCS*PLBDS(:)**XCXS)/PRHODREF(:) * (ZZW(:)**XNUS) * EXP(-ZZW(:))
 !
       ZZW(:) = ( XR0DEPSI+XR1DEPSI*PCJ(:) )*ZZX(:)
 !
@@ -187,7 +187,7 @@ WHERE( GMICRO )
 !
    ZZW(:) = 0.0
    WHERE ( (PRST(:)>XRTMIN(5)) )
-      ZZW(:) = ( PSSI(:)/(PAI(:)) ) * &
+      ZZW(:) = ( PSSI(:)/(PAI(:))/PRHODREF(:) ) * &
            ( X0DEPS*PLBDS(:)**XEX0DEPS + X1DEPS*PCJ(:)*PLBDS(:)**XEX1DEPS )
       ZZW(:) =    ZZW(:)*(0.5+SIGN(0.5,ZZW(:))) - ABS(ZZW(:))*(0.5-SIGN(0.5,ZZW(:)))
    END WHERE
