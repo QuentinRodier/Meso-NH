@@ -36,6 +36,10 @@ USE MODD_SSO_n, ONLY : SSO_t
 !
 USE MODD_PGD_GRID,   ONLY : LLATLONMASK
 !
+#ifdef SFX_MNH
+use modd_precision, only: MNHINT32
+#endif
+!
 USE MODI_OPEN_FILE
 USE MODI_CLOSE_FILE
 USE MODI_PT_BY_PT_TREATMENT
@@ -68,11 +72,23 @@ INTEGER      :: JLAT, JLON                 ! indexes of OLATLONMASK array
 !
 INTEGER, PARAMETER :: ILONG=1000
 !
+#ifdef SFX_MNH
+REAL(kind=MNHINT32) :: ZVALUER
+#else
 REAL*4         :: ZVALUER
+#endif
 REAL, DIMENSION(ILONG) :: ZVALUE          ! values of a data point
+#ifdef SFX_MNH
+REAL(kind=MNHINT32) :: ZLATR
+#else
 REAL*4         :: ZLATR
+#endif
 REAL, DIMENSION(ILONG) :: ZLAT              ! latitude of data point
+#ifdef SFX_MNH
+REAL(kind=MNHINT32) :: ZLONR, ZLONR2
+#else
 REAL*4         :: ZLONR, ZLONR2
+#endif
 REAL, DIMENSION(ILONG) :: ZLON              ! longitude of data point
 !
 INTEGER :: ICPT, ISTAT

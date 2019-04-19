@@ -67,7 +67,7 @@ INTEGER      :: IGLB                       ! logical unit
 !
 INTEGER      :: JLAT, JLON                 ! indexes of OLATLONMASK array
 !
-INTEGER*4, PARAMETER :: ILONG=200000
+INTEGER, PARAMETER :: ILONG=200000
 !
 REAL         :: ZVALUER
 REAL, DIMENSION(ILONG) :: ZVALUE          ! values of a data point
