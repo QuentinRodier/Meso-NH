@@ -315,6 +315,7 @@
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !  P. Wautelet 28/03/2019: use MNHTIME for time measurement variables
 !  P. Wautelet 28/03/2019: use TFILE instead of unit number for set_iluout_timing
+!  P. Wautelet 19/04/2019: removed unused dummy arguments and variables
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -340,8 +341,7 @@ USE MODD_DYN_n
 USE MODD_LBC_n
 USE MODD_LSFIELD_n
 USE MODD_PARAM_n
-USE MODD_CH_MNHC_n, ONLY:  LUSECHEM, LUSECHAQ, LUSECHIC, LCH_PH,  &
-                           LCH_INIT_FIELD, CCHEM_INPUT_FILE 
+USE MODD_CH_MNHC_n,        ONLY:  LUSECHEM, LUSECHAQ, LUSECHIC, LCH_PH, LCH_INIT_FIELD
 USE MODD_CH_AEROSOL,ONLY:  LORILAM, CORGANIC, LVARSIGI, LVARSIGJ, LINITPM, XINIRADIUSI, &
                            XINIRADIUSJ, XINISIGI, XINISIGJ, XN0IMIN, XN0JMIN, CRGUNIT
 USE MODD_DUST,      ONLY:  LDUST, NMODE_DST, CRGUNITD, XINISIG, XINIRADIUS, XN0MIN 
@@ -351,8 +351,7 @@ USE MODD_LUNIT,     ONLY:  TLUOUT0, TOUTDATAFILE
 USE MODD_LUNIT_n
 USE MODD_IO,        ONLY: NIO_VERB, NVERB_DEBUG, TFILE_DUMMY, TFILE_OUTPUTLISTING
 USE MODD_CONF_n
-USE MODD_NSV,      ONLY : NSV,NSV_CHEM,           &
-                          NSV_DSTEND, NSV_DSTBEG
+USE MODD_NSV,              ONLY: NSV
 use modd_precision, only: LFIINT, MNHREAL_MPI, MNHTIME
 !
 USE MODN_BLANK
@@ -485,9 +484,6 @@ LOGICAL            :: LGEOSBAL =.FALSE. ! Logical to satisfy the geostrophic
                                         ! balance
                                         ! .TRUE. for geostrophic balance
                                         ! .FALSE. to ignore this balance
-LOGICAL            :: LPV_PERT =.FALSE. ! Logical to add a PV pertubation
-LOGICAL            :: LRMV_BL  =.FALSE. ! Logical to remove the boundary layer
-                                        ! before PV inversion
 LOGICAL            :: LSHIFT   =.FALSE.  ! flag to perform vertical shift or not.        
 CHARACTER(LEN=3)   :: CFUNU ='ZZZ'      ! CHARACTER STRING for variation of
                                         ! U in y direction
@@ -538,7 +534,6 @@ LOGICAL  :: LREAD_ZS = .TRUE.,                & ! switch to use orography
 INTEGER           :: NSLEVE   =12         ! number of iteration for smooth orography
 REAL              :: XSMOOTH_ZS = XUNDEF  ! optional uniform smooth orography for SLEVE coordinate
 CHARACTER(LEN=28) :: YPGD_NAME, YPGD_DAD_NAME   ! general information
-CHARACTER(LEN=8)  :: YKIND                      ! Kind of radiosounding data
 CHARACTER(LEN=2)  :: YPGD_TYPE
 !
 INTEGER           :: IINFO_ll                   ! return code of // routines
@@ -561,15 +556,10 @@ REAL                :: ZDIST
 REAL(kind=MNHTIME), DIMENSION(2) :: ZTIME1, ZTIME2, ZEND, ZTOT
 CHARACTER                 :: YMI
 INTEGER                   :: IMI
-INTEGER::JK                                 
 !JUAN TIMING
 !
 REAL, DIMENSION(:),   ALLOCATABLE :: ZZS_ll
-INTEGER                           :: IJ 
-INTEGER           :: NZSFILTER=1          ! number of iteration for filter for fine   orography
-LOGICAL           :: LHSLOP=.FALSE.       ! filtering of slopes higher than XHSLOP   
-REAL              :: XHSLOP=1.2           ! if LHSLOP filtering of slopes higher than XHSLOP
-
+INTEGER                           :: IJ
 !
 REAL              :: ZZS_MAX, ZZS_MAX_ll
 INTEGER           :: IJPHEXT
@@ -582,8 +572,8 @@ TYPE(TFILEDATA),POINTER :: TZEXPREFILE  => NULL()
 NAMELIST/NAM_CONF_PRE/ LTHINSHELL,LCARTESIAN,    &! Declarations in MODD_CONF
                        LPACK,                    &!
                        NVERB,CIDEAL,CZS,         &!+global variables initialized
-                       LBOUSS,LPERTURB,LPV_PERT, &! at their declarations
-                       LRMV_BL,LFORCING,CEQNSYS, &! at their declarations
+                       LBOUSS,LPERTURB,          &! at their declarations
+                       LFORCING,CEQNSYS,         &! at their declarations
                        LSHIFT,L2D_ADV_FRC,L2D_REL_FRC, &
                        NHALO , JPHEXT
 NAMELIST/NAM_GRID_PRE/ XLON0,XLAT0,            & ! Declarations in MODD_GRID
@@ -1462,15 +1452,6 @@ END IF
 !*       5.2    Prognostic variables (not multiplied by  rhoJ) : u,v,w,theta,r
 !               and 1D anelastic reference state
 !
-IF(LPV_PERT .AND. .NOT.(LGEOSBAL)) THEN
-   !callabortstop
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','PREP_IDEAL_CASE','for PV inversion, LGEOSBAL has to be true')
-ENDIF
-!
-IF(LPV_PERT .AND. NPROC>1) THEN
-  !callabortstop
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','PREP_IDEAL_CASE','PV inversion has to be performed in monoprocess mode')
-ENDIF
 !
 !*       5.2.1  Use a Radiosounding : CIDEAL='RSOU''
 !
@@ -1482,15 +1463,13 @@ IF (CIDEAL == 'RSOU') THEN
   TDTEXP = TDTCUR
   TDTSEG = TDTCUR
   TDTMOD = TDTCUR
-  READ(NLUPRE,*) YKIND
-  BACKSPACE(NLUPRE)    ! because YKIND read again in set_rsou
   WRITE(NLUOUT,FMT=*) 'CIDEAL="RSOU", ATTEMPT TO PROCESS THE SOUNDING DATA'
   IF (LGEOSBAL) THEN
-    CALL SET_RSOU(TFILE_DUMMY,TZEXPREFILE,CFUNU,CFUNV,NILOC(1),NJLOC(1),LBOUSS,LPV_PERT,&
-                  LRMV_BL,XJ,LSHIFT,XCORIOZ)
+    CALL SET_RSOU(TFILE_DUMMY,TZEXPREFILE,CFUNU,CFUNV,NILOC(1),NJLOC(1),LBOUSS, &
+                  XJ,LSHIFT,XCORIOZ)
   ELSE
-    CALL SET_RSOU(TFILE_DUMMY,TZEXPREFILE,CFUNU,CFUNV,NILOC(1),NJLOC(1),LBOUSS,LPV_PERT,&
-                  LRMV_BL,XJ,LSHIFT)
+    CALL SET_RSOU(TFILE_DUMMY,TZEXPREFILE,CFUNU,CFUNV,NILOC(1),NJLOC(1),LBOUSS, &
+                  XJ,LSHIFT)
   END IF
 !
 !*       5.2.2  N=cste  and U(z) : CIDEAL='CSTN'
@@ -1505,11 +1484,11 @@ ELSE IF (CIDEAL == 'CSTN') THEN
   TDTMOD = TDTCUR
   WRITE(NLUOUT,FMT=*) 'CIDEAL="CSTN", ATTEMPT TO PROCESS THE SOUNDING DATA'
   IF (LGEOSBAL) THEN
-    CALL SET_CSTN(TFILE_DUMMY,TZEXPREFILE,CFUNU,CFUNV,NILOC(1),NJLOC(1),LBOUSS,LPV_PERT,&
-                  LRMV_BL,XJ,LSHIFT,XCORIOZ)
+    CALL SET_CSTN(TFILE_DUMMY,TZEXPREFILE,CFUNU,CFUNV,NILOC(1),NJLOC(1),LBOUSS, &
+                  XJ,LSHIFT,XCORIOZ)
   ELSE
-    CALL SET_CSTN(TFILE_DUMMY,TZEXPREFILE,CFUNU,CFUNV,NILOC(1),NJLOC(1),LBOUSS,LPV_PERT,&
-                  LRMV_BL,XJ,LSHIFT)
+    CALL SET_CSTN(TFILE_DUMMY,TZEXPREFILE,CFUNU,CFUNV,NILOC(1),NJLOC(1),LBOUSS, &
+                  XJ,LSHIFT)
   END IF
 !
 END IF 

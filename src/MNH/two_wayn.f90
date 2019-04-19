@@ -9,16 +9,14 @@
 !
 INTERFACE 
 !
-      SUBROUTINE TWO_WAY_n (KRR,KSV,KTCOUNT,PRHODJ,KMI,PTSTEP,                     &
-                            PUM ,PVM, PWM, PTHM, PRM, PTKEM, PSVM,                 &
-                            PRUS,PRVS,PRWS,PRTHS,PRRS,PRTKES,PRSVS,                &
+      SUBROUTINE TWO_WAY_n (KRR,KSV,PRHODJ,KMI,PTSTEP,                             &
+                            PUM ,PVM, PWM, PTHM, PRM, PSVM,                        &
+                            PRUS,PRVS,PRWS,PRTHS,PRRS,PRSVS,                       &
                             PINPRC,PINPRR,PINPRS,PINPRG,PINPRH,PPRCONV,PPRSCONV,   &
                             PDIRFLASWD,PSCAFLASWD,PDIRSRFSWD,OMASKkids             )
 ! 
 INTEGER,                  INTENT(IN)  :: KRR     ! Number of moist variables
 INTEGER,                  INTENT(IN)  :: KSV     ! Number of Scalar Variables
-INTEGER,                  INTENT(IN)  :: KTCOUNT ! Temporal loop COUNTer
-                                                 ! (=1 at the segment beginning)
 INTEGER,                  INTENT(IN)  :: KMI     ! Model index     
 !
 REAL,                     INTENT(IN)  :: PTSTEP  ! Timestep duration
@@ -26,11 +24,11 @@ REAL,                     INTENT(IN)  :: PTSTEP  ! Timestep duration
 REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PRHODJ         ! (Rho) dry * Jacobian
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PUM, PVM, PWM  ! Variables at t-dt 
-REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PTHM, PTKEM
+REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PTHM
 REAL, DIMENSION(:,:,:,:), INTENT(IN)  :: PRM, PSVM
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRUS, PRVS, PRWS         ! Source
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTHS, PRTKES
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTHS
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS, PRSVS              !  terms
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRC,PINPRR,PINPRS,PINPRG,PINPRH, &
                                            PPRCONV,PPRSCONV     !  precipitating variables
@@ -44,9 +42,9 @@ END INTERFACE
 !
 END MODULE MODI_TWO_WAY_n
 !     #######################################################################
-      SUBROUTINE TWO_WAY_n (KRR,KSV,KTCOUNT,PRHODJ,KMI,PTSTEP,                     &
-                            PUM ,PVM, PWM, PTHM, PRM, PTKEM, PSVM,                 &
-                            PRUS,PRVS,PRWS,PRTHS,PRRS,PRTKES,PRSVS,                &
+      SUBROUTINE TWO_WAY_n (KRR,KSV,PRHODJ,KMI,PTSTEP,                             &
+                            PUM ,PVM, PWM, PTHM, PRM, PSVM,                        &
+                            PRUS,PRVS,PRWS,PRTHS,PRRS,PRSVS,                       &
                             PINPRC,PINPRR,PINPRS,PINPRG,PINPRH,PPRCONV,PPRSCONV,   &
                             PDIRFLASWD,PSCAFLASWD,PDIRSRFSWD,OMASKkids             )
 !     #######################################################################
@@ -145,8 +143,6 @@ IMPLICIT NONE
 ! 
 INTEGER,                  INTENT(IN)  :: KRR     ! Number of moist variables
 INTEGER,                  INTENT(IN)  :: KSV     ! Number of SV (father model)
-INTEGER,                  INTENT(IN)  :: KTCOUNT ! Temporal loop COUNTer
-                                                 ! (=1 at the segment beginning)
 INTEGER,                  INTENT(IN)  :: KMI     ! Model index     
 !
 REAL,                     INTENT(IN)  :: PTSTEP  ! Timestep duration
@@ -154,11 +150,11 @@ REAL,                     INTENT(IN)  :: PTSTEP  ! Timestep duration
 REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PRHODJ         ! (Rho) dry * Jacobian
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PUM, PVM, PWM  ! Variables at t-dt 
-REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PTHM, PTKEM
+REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PTHM
 REAL, DIMENSION(:,:,:,:), INTENT(IN)  :: PRM, PSVM
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRUS, PRVS, PRWS         ! Source
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTHS, PRTKES
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTHS
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS, PRSVS              !  terms
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRC,PINPRR,PINPRS,PINPRG,PINPRH &
                                           ,PPRCONV,PPRSCONV     !  precipitating variables

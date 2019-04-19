@@ -9,8 +9,8 @@
 !
 INTERFACE
 !
-      SUBROUTINE SET_RSOU(TPFILE,TPEXPREFILE,HFUNU,HFUNV,KILOC,KJLOC,OBOUSS,OPV_PERT,&
-                          ORMV_BL,PJ,OSHIFT,PCORIOZ) 
+      SUBROUTINE SET_RSOU(TPFILE,TPEXPREFILE,HFUNU,HFUNV,KILOC,KJLOC,OBOUSS,&
+                          PJ,OSHIFT,PCORIOZ)
 !
 USE MODD_IO, ONLY : TFILEDATA
 !
@@ -23,8 +23,6 @@ CHARACTER(LEN=*),       INTENT(IN)  :: HFUNV  ! type of variation of V
 INTEGER,                INTENT(IN)  :: KILOC  ! I Localisation of vertical profile
 INTEGER,                INTENT(IN)  :: KJLOC  ! J Localisation of vertical profile
 LOGICAL,                INTENT(IN)  :: OBOUSS ! logical switch for Boussinesq version
-LOGICAL,                INTENT(IN)  :: OPV_PERT! logical switch for PV inversion
-LOGICAL,                INTENT(IN)  :: ORMV_BL! logical switch for remouve boundary layer
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PJ ! jacobien 
 LOGICAL,                INTENT(IN)  :: OSHIFT ! logical switch for vertical shift
 !
@@ -37,10 +35,10 @@ END INTERFACE
 !
 END MODULE MODI_SET_RSOU
 !
-!     ###########################################################################
-      SUBROUTINE SET_RSOU(TPFILE,TPEXPREFILE,HFUNU,HFUNV,KILOC,KJLOC,OBOUSS,OPV_PERT,&
-                          ORMV_BL,PJ,OSHIFT,PCORIOZ) 
-!     ###########################################################################
+!     ########################################################################
+      SUBROUTINE SET_RSOU(TPFILE,TPEXPREFILE,HFUNU,HFUNV,KILOC,KJLOC,OBOUSS, &
+                          PJ,OSHIFT,PCORIOZ)
+!     ########################################################################
 !
 !!****  *SET_RSOU * -  to initialize mass fiels from a radiosounding 
 !!
@@ -243,6 +241,7 @@ END MODULE MODI_SET_RSOU
 !!      V.Masson    12/08/13  Parallelization of the initilization profile
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 19/04/2019: removed unused dummy arguments and variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -255,9 +254,7 @@ USE MODD_FIELD_n
 USE MODD_GRID
 USE MODD_GRID_n
 USE MODD_IO,         ONLY: TFILEDATA
-USE MODD_LUNIT_n
 USE MODD_PARAMETERS, ONLY: JPHEXT
-USE MODD_PARAM_n,    ONLY: CCLOUD
 !
 USE MODE_ll
 USE MODE_MSG
@@ -286,8 +283,6 @@ CHARACTER(LEN=*),       INTENT(IN)  :: HFUNV  ! type of variation of V
 INTEGER,                INTENT(IN)  :: KILOC  ! I Localisation of vertical profile
 INTEGER,                INTENT(IN)  :: KJLOC  ! J Localisation of vertical profile
 LOGICAL,                INTENT(IN)  :: OBOUSS ! logical switch for Boussinesq version
-LOGICAL,                INTENT(IN)  :: OPV_PERT! logical switch for PV inversion
-LOGICAL,                INTENT(IN)  :: ORMV_BL! logical switch for remouve boundary layer
 LOGICAL,                INTENT(IN)  :: OSHIFT ! logical switch for vertical shift
 REAL, DIMENSION(:,:,:), INTENT(OUT), OPTIONAL :: PCORIOZ ! Coriolis parameter
                                                ! (exceptionnaly 3D array)
@@ -296,10 +291,7 @@ REAL, DIMENSION(:,:,:), INTENT(IN) :: PJ ! jacobien
 !
 !*       0.2   Declarations of local variables :
 !
-INTEGER                         :: ILUPRE,IRESP ! logical unit number of the 
-                                                ! EXPRE and FM return code
-INTEGER                         :: ILUOUT    ! Logical unit number for
-                                             ! output-listing   
+INTEGER                         :: ILUPRE ! logical unit number
 !
 !  variables read in EXPRE file at the RS levels
 !
@@ -310,14 +302,13 @@ REAL, DIMENSION(:), ALLOCATABLE :: ZHEIGHTU  ! Height at wind levels
 REAL, DIMENSION(:), ALLOCATABLE :: ZPRESSU   ! Pressure at wind levels
 REAL, DIMENSION(:), ALLOCATABLE :: ZTHVU     ! Thetav at wind levels
 REAL, DIMENSION(:), ALLOCATABLE :: ZU,ZV     ! wind components
-REAL, DIMENSION(:), ALLOCATABLE :: ZU_TURN,ZV_TURN     ! wind components on MESONH grid 
 REAL, DIMENSION(:), ALLOCATABLE :: ZDD,ZFF   ! dd (direction) and ff(force)
                                              !     for wind
 REAL                            :: ZZGROUND,ZPGROUND ! height and Pressure at ground  
 REAL                            :: ZTGROUND,ZTHVGROUND,ZTHDGROUND,ZTHLGROUND,    & 
                                    ZTDGROUND,ZMRGROUND,ZHUGROUND        
                                                   ! temperature and moisture
-                                                  ! variables at ground                                                                
+                                                  ! variables at ground
 INTEGER                         :: ILEVELM   ! number of mass levels
 REAL, DIMENSION(:), ALLOCATABLE :: ZHEIGHTM  ! Height at mass levels
 REAL, DIMENSION(:), ALLOCATABLE :: ZPRESSM   ! Pressure at mass levels
@@ -371,9 +362,7 @@ LOGICAL         :: GPROFILE_IN_PROC   ! T : initialization profile is in current
 !
 REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT))   ::ZZS_LS
 REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT)) ::ZZFLUX_MX,ZZMASS_MX ! mixed grid
-INTEGER :: JJ,JI
 INTEGER :: JLOOP
-CHARACTER(LEN=100) :: YMSG
 !-------------------------------------------------------------------------------
 !
 !*	 1.     PROLOGUE : INITIALIZE SOME CONSTANTS, RETRIEVE LOGICAL
@@ -394,7 +383,6 @@ ZRDSRV = XRD/XRV
 !
 !                           
 ILUPRE = TPEXPREFILE%NLU
-ILUOUT = TLUOUT%NLU
 !
 !*       1.3  Read data kind in EXPRE file 
 !
@@ -402,9 +390,7 @@ READ(ILUPRE,*) YKIND
 !
 !
 IF(LUSERC .AND. YKIND/='PUVTHDMR' .AND. YKIND/='ZUVTHDMR' .AND.  YKIND/='ZUVTHLMR') THEN 
-  WRITE(YMSG,*) 'hydrometeors are not allowed for YKIND = ', YKIND
- !callabortstop
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','SET_RSOU',YMSG)
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','SET_RSOU','hydrometeors are not allowed for YKIND = '//trim(YKIND))
 ENDIF
 ! Demande Thierry Bergot Sept 2012 
 !IF(LUSERC .AND.(YKIND == 'PUVTHDMR' .OR. YKIND == 'ZUVTHDMR').AND. .NOT. L1D) THEN
@@ -1106,9 +1092,7 @@ SELECT CASE(YKIND)
      ZRT(:)=ZMR(:)
      ZTHL(:)=ZTHV(:)*(1+ZRT(:))/(1+ZRVSRD*ZRT(:))
   CASE DEFAULT
- !callabortstop
-    WRITE(YMSG,*) 'data type YKIND=',TRIM(YKIND),' in PREFILE unknown'
-    CALL PRINT_MSG(NVERB_FATAL,'GEN','SET_RSOU',YMSG)
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','SET_RSOU','data type YKIND='//TRIM(YKIND)//' in PREFILE unknown')
 END SELECT
 !
 !-------------------------------------------------------------------------------
@@ -1243,19 +1227,12 @@ DEALLOCATE(ZMRT)
 
 !-------------------------------------------------------------------------------
 !
-!*	 4.     COMPUTE FIELDS ON THE MODEL GRID (WITH OROGRAPHY)
-!	        -------------------------------------------------
-IF (PRESENT(PCORIOZ)) THEN
-  CALL SET_MASS(TPFILE,GPROFILE_IN_PROC, ZZFLUX_PROFILE,                      &
-                KILOC+JPHEXT,KJLOC+JPHEXT,ZZS_LS,ZZMASS_MX,ZZFLUX_MX,ZPGROUND,&
-                ZTHVM,ZMRM,ZUW,ZVW,OSHIFT,OBOUSS,PJ,HFUNU,HFUNV,              &
-                PMRCM=ZMRCM,PMRIM=ZMRIM,PCORIOZ=PCORIOZ)
-ELSE  
-  CALL SET_MASS(TPFILE,GPROFILE_IN_PROC, ZZFLUX_PROFILE,                      &
-                KILOC+JPHEXT,KJLOC+JPHEXT,ZZS_LS,ZZMASS_MX,ZZFLUX_MX,ZPGROUND,&
-                ZTHVM,ZMRM,ZUW,ZVW,OSHIFT,OBOUSS,PJ,HFUNU,HFUNV,              &
-                PMRCM=ZMRCM,PMRIM=ZMRIM)
-ENDIF
+!* 4.     COMPUTE FIELDS ON THE MODEL GRID (WITH OROGRAPHY)
+!         -------------------------------------------------
+CALL SET_MASS(TPFILE,GPROFILE_IN_PROC, ZZFLUX_PROFILE,                      &
+              KILOC+JPHEXT,KJLOC+JPHEXT,ZZS_LS,ZZMASS_MX,ZZFLUX_MX,ZPGROUND,&
+              ZTHVM,ZMRM,ZUW,ZVW,OSHIFT,OBOUSS,PJ,HFUNU,HFUNV,              &
+              PMRCM=ZMRCM,PMRIM=ZMRIM,PCORIOZ=PCORIOZ)
 !
 !-------------------------------------------------------------------------------
 !

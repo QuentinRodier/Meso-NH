@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2015-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -35,9 +35,10 @@ END MODULE MODI_INI_SPECTRE_n
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 08/02/2019: allocate to zero-size non associated pointers
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
-!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  S. Bielli      02/2019: sea salt: significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
-!!
+!  P. Wautelet 19/04/2019: removed unused dummy arguments and variables
+!
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -49,8 +50,7 @@ USE MODD_BUDGET
 USE MODD_CH_AERO_n,     ONLY: XSOLORG,XMI
 USE MODD_CH_AEROSOL,    ONLY: LORILAM
 USE MODD_CH_MNHC_n,     ONLY: LUSECHEM, LUSECHAQ, LUSECHIC, LCH_INIT_FIELD, &
-                              CCHEM_INPUT_FILE, LCH_CONV_LINOX,             &
-                              XCH_TUV_DOBNEW, LCH_PH
+                              LCH_CONV_LINOX, XCH_TUV_DOBNEW, LCH_PH
 USE MODD_CH_PH_n
 USE MODD_CLOUD_MF_n
 USE MODD_CST
@@ -75,13 +75,13 @@ USE MODD_GET_n
 USE MODD_GRID,          ONLY: XLONORI,XLATORI
 USE MODD_GRID_n
 USE MODD_IO,            ONLY: TFILEDATA
-USE MODD_LBC_n
+USE MODD_LBC_n,         only: CLBCX, CLBCY
 USE MODD_LSFIELD_n
 USE MODD_LUNIT_n,       ONLY: COUTFILE, TLUOUT
 USE MODD_MEAN_FIELD
 USE MODD_MEAN_FIELD_n
 USE MODD_METRICS_n
-USE MODD_NESTING
+USE MODD_NESTING,       only: CDAD_NAME, NDAD, NDT_2_WAY, NDTRATIO, NDXRATIO_ALL, NDYRATIO_ALL
 USE MODD_NSV
 USE MODD_NUDGING_n,     ONLY: LNUDGING
 USE MODD_OUT_n
@@ -89,7 +89,6 @@ USE MODD_PARAMETERS
 USE MODD_PARAM_KAFR_n
 USE MODD_PARAM_MFSHALL_n
 USE MODD_PARAM_n
-USE MODD_PARAM_RAD_n,   ONLY: CLW, CAER
 USE MODD_PASPOL
 USE MODD_PASPOL_n
 USE MODD_BLOWSNOW
@@ -705,12 +704,7 @@ CALL INI_BIKHARDT_n (NDXRATIO_ALL(KMI),NDYRATIO_ALL(KMI),KMI)
 !*       6.    INITIALIZE GRIDS AND METRIC COEFFICIENTS
 !              ----------------------------------------
 !
-CALL SET_GRID(KMI,TPINIFILE,IIU,IJU,IKU,NIMAX_ll,NJMAX_ll,               &
-              XBMX1,XBMX2,XBMX3,XBMX4,XBMY1,XBMY2,XBMY3,XBMY4,           &
-              XBFX1,XBFX2,XBFX3,XBFX4,XBFY1,XBFY2,XBFY3,XBFY4,           &
-              NXOR_ALL(KMI),NYOR_ALL(KMI),NXEND_ALL(KMI),NYEND_ALL(KMI), &
-              NDXRATIO_ALL(KMI),NDYRATIO_ALL(KMI),                       &
-              CLBCX,CLBCY,                                               &
+CALL SET_GRID(KMI,TPINIFILE,IKU,NIMAX_ll,NJMAX_ll,                       &
               XTSTEP,XSEGLEN,                                            &
               XLONORI,XLATORI,XLON,XLAT,                                 &
               XXHAT,XYHAT,XDXHAT,XDYHAT, XMAP,                           &

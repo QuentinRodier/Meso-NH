@@ -127,6 +127,7 @@ SUBROUTINE FLAT_INVZ(HLBCX,HLBCY,PDXHATM,PDYHATM,PRHOM,PAF,PBF,PCF,   &
   !!      Modification   Lugato, Guivarch (June 1998) Parallelisation
   !!                     Escobar, Stein   (July 2000) optimisation
 !  P. Wautelet 28/03/2019: use MNHTIME for time measurement variables
+!  P. Wautelet 19/04/2019: removed unused dummy arguments and variables
   !-------------------------------------------------------------------------------
   !
   !*       0.    DECLARATIONS
@@ -140,7 +141,7 @@ SUBROUTINE FLAT_INVZ(HLBCX,HLBCY,PDXHATM,PDYHATM,PRHOM,PAF,PBF,PCF,   &
   USE MODD_ARGSLIST_ll, ONLY : LIST_ll
   !JUAN Z_SPLI
   USE MODE_SPLITTINGZ_ll 
-  USE MODD_VAR_ll, ONLY : IP , NTRANS_COM
+!   USE MODD_VAR_ll, ONLY : IP , NTRANS_COM
   USE MODD_CONFZ , ONLY : NZ_SPLITTING ! for debug IZ=1=flat_inv;  IZ=2=flat_invz ;  IZ=1+2=the two
   USE MODD_TIMEZ , ONLY : TIMEZ
   USE MODE_MNH_TIMING
@@ -206,15 +207,11 @@ SUBROUTINE FLAT_INVZ(HLBCX,HLBCY,PDXHATM,PDYHATM,PRHOM,PAF,PBF,PCF,   &
   INTEGER :: IKB          ! indice K for the first inner mass point along z
   INTEGER :: IKE          ! indice K for the last inner mass point along z
   INTEGER :: IKU          ! size of the arrays along z
-  INTEGER :: IKMAX        ! number of inner mass points along the z direction
   !
   REAL :: ZDXM2,ZDYM2     ! respectively equal to PDXHATM*PDXHATM 
   ! and PDYHATM*PDYHATM                         
   INTEGER :: JI,JJ,JK     ! loop indexes along x, y, z respectively
   !
-  !
-  INTEGER :: IIE_INT,IJE_INT   ! highest indice I  and J values for the x y modes.
-  ! They  depend on the l.b.c. !
   !
   INTEGER :: ILOTX,ILOTY ! number of data vectors along x, y resp. computed 
   ! in parallel during the FFT process 
@@ -261,7 +258,7 @@ SUBROUTINE FLAT_INVZ(HLBCX,HLBCY,PDXHATM,PDYHATM,PRHOM,PAF,PBF,PCF,   &
   !
   !
   !
-  INTEGER :: IH   ! HALO to use 
+!   INTEGER :: IH   ! HALO to use
   INTEGER :: II_B ,IJ_B ,IK_B  ! dimensions of B  slices
   INTEGER :: II_SXP1_YP2_Z,IJ_SXP1_YP2_Z,IK_SXP1_YP2_Z ! dimensions of SXP1_YP2_Z  slices
   INTEGER :: II_SXP2_YP1_Z,IJ_SXP2_YP1_Z,IK_SXP2_YP1_Z ! dimensions of SXP2_YP1_Z slices
@@ -278,7 +275,6 @@ SUBROUTINE FLAT_INVZ(HLBCX,HLBCY,PDXHATM,PDYHATM,PRHOM,PAF,PBF,PCF,   &
 
   REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZWORK_SX_YP2_ZP1  ! work array for SX_YP2_ZP1 FFT
   REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZWORK_SXP2_Y_ZP1  ! work array for SXP2_Y_ZP1 FFT
-  REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZWORK_SXP2_Y_ZP1R ! work array for SXP2_Y_ZP1 FFT
   REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZBAND_SXP2_Y_ZP1T  ! array in SXP2_Y_ZP1T slices distribution transpose
   REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZBAND_SXP2_Y_ZP1RT ! array in SXP2_Y_ZP1T slices distribution transpose
   REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZAF_B     ! work array in  B slices for expand PAF
@@ -293,11 +289,8 @@ SUBROUTINE FLAT_INVZ(HLBCX,HLBCY,PDXHATM,PDYHATM,PRHOM,PAF,PBF,PCF,   &
   REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZBAND_SXP2_YP1_ZR
   REAL, DIMENSION(:,:)  , ALLOCATABLE :: ZBETX_SXP2_YP1_Z
   !
-  ! UPDATE HALO --> pour voir si ca marche
-  TYPE(LIST_ll), POINTER :: TZFIELDS_ll   ! list of fields to exchange
-  !
   INTEGER                            :: IIBI,IJBI,IIEI,IJEI
-  INTEGER                            :: IERROR
+!   INTEGER                            :: IERROR
   !JUAN
   !-------------------------------------------------------------------------------
   !
@@ -316,7 +309,6 @@ SUBROUTINE FLAT_INVZ(HLBCX,HLBCY,PDXHATM,PDYHATM,PRHOM,PAF,PBF,PCF,   &
   IKU=SIZE(PY,3)
   IKB=1+JPVEXT
   IKE=IKU - JPVEXT
-  IKMAX=IKE-IKB+1
   !
   !
   IF ( IAND(NZ_SPLITTING,1) > 0 ) THEN 

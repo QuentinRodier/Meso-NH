@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1999-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1999-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ###################
@@ -10,8 +10,8 @@
 INTERFACE 
 !
       SUBROUTINE TWO_WAY   (     KRR,KSV,KTCOUNT,PRHODJ,KMI,PTSTEP,                &
-                            PUM ,PVM, PWM, PTHM, PRM, PTKEM, PSVM,                 &
-                            PRUS,PRVS,PRWS,PRTHS,PRRS,PRTKES,PRSVS,                &
+                            PUM ,PVM, PWM, PTHM, PRM, PSVM,                        &
+                            PRUS,PRVS,PRWS,PRTHS,PRRS,PRSVS,                       &
                             PINPRC,PINPRR,PINPRS,PINPRG,PINPRH,PPRCONV,PPRSCONV,   &
                             PDIRFLASWD,PSCAFLASWD,PDIRSRFSWD,OMASKkids             )
 ! 
@@ -26,11 +26,11 @@ REAL,                     INTENT(IN)  :: PTSTEP  ! Timestep duration
 REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PRHODJ         ! (Rho) dry * Jacobian
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PUM, PVM, PWM  ! Variables at t-dt 
-REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PTHM, PTKEM
+REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PTHM
 REAL, DIMENSION(:,:,:,:), INTENT(IN)  :: PRM, PSVM
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRUS, PRVS, PRWS         ! Source
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTHS, PRTKES
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTHS
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS, PRSVS              !  terms
 !
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRC,PINPRR,PINPRS,PINPRG,PINPRH &
@@ -48,8 +48,8 @@ END MODULE MODI_TWO_WAY
 !
 !     ########################################################################
       SUBROUTINE TWO_WAY   (     KRR,KSV,KTCOUNT,PRHODJ,KMI,PTSTEP,                &
-                            PUM ,PVM, PWM, PTHM, PRM, PTKEM, PSVM,                 &
-                            PRUS,PRVS,PRWS,PRTHS,PRRS,PRTKES,PRSVS,                &
+                            PUM ,PVM, PWM, PTHM, PRM, PSVM,                        &
+                            PRUS,PRVS,PRWS,PRTHS,PRRS,PRSVS,                       &
                             PINPRC,PINPRR,PINPRS,PINPRG,PINPRH,PPRCONV,PPRSCONV,   &
                             PDIRFLASWD,PSCAFLASWD,PDIRSRFSWD,OMASKkids             )
 !     ########################################################################
@@ -126,11 +126,11 @@ REAL,                     INTENT(IN)  :: PTSTEP  ! Timestep duration
 REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PRHODJ         ! (Rho) dry * Jacobian
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PUM, PVM, PWM  ! Variables at t-dt 
-REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PTHM, PTKEM
+REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PTHM
 REAL, DIMENSION(:,:,:,:), INTENT(IN)  :: PRM, PSVM
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRUS, PRVS, PRWS         ! Source
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTHS, PRTKES
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTHS
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS, PRSVS              !  terms
 !
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRC,PINPRR,PINPRS,PINPRG,PINPRH &
@@ -153,9 +153,9 @@ DO JKID = KMI+1,NMODEL  ! min value of the possible kids
   IF (KMI == NDAD(JKID) .AND. (XWAY(JKID) == 2. ) &
    .AND. (CCONF == 'RESTA' .OR. (CCONF == 'START' .AND. KTCOUNT /= 1))) THEN
     CALL GOTO_MODEL(JKID)
-    CALL TWO_WAY_n (KRR,KSV,KTCOUNT,PRHODJ,KMI,PTSTEP,                     &
-                    PUM ,PVM, PWM, PTHM, PRM, PTKEM, PSVM,                 &
-                    PRUS,PRVS,PRWS,PRTHS,PRRS,PRTKES,PRSVS,                &
+    CALL TWO_WAY_n (KRR,KSV,PRHODJ,KMI,PTSTEP,                             &
+                    PUM ,PVM, PWM, PTHM, PRM, PSVM,                        &
+                    PRUS,PRVS,PRWS,PRTHS,PRRS,PRSVS,                       &
                     PINPRC,PINPRR,PINPRS,PINPRG,PINPRH,PPRCONV,PPRSCONV,   &
                     PDIRFLASWD,PSCAFLASWD,PDIRSRFSWD,OMASKkids             )
   END IF

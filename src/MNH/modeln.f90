@@ -256,9 +256,9 @@ END MODULE MODI_MODEL_n
 !  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
 !                          (nsubfiles_ioz is now determined in IO_File_add2list)
 !!                   02/2019 C.Lac add rain fraction as an output field
-!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 28/03/2019: use MNHTIME for time measurement variables
 !  P. Wautelet 28/03/2019: use TFILE instead of unit number for set_iluout_timing
+!  P. Wautelet 19/04/2019: removed unused dummy arguments and variables
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -269,18 +269,17 @@ USE MODD_ADV_n
 USE MODD_AIRCRAFT_BALLOON
 USE MODD_BAKOUT
 USE MODD_BIKHARDT_n
-USE MODD_BLANK 
+USE MODD_BLANK
 USE MODD_BUDGET
 USE MODD_CH_AERO_n,      ONLY: XSOLORG, XMI
 USE MODD_CH_MNHC_n,      ONLY: LUSECHEM,LCH_CONV_LINOX,LUSECHAQ,LUSECHIC, &
                                LCH_INIT_FIELD
-USE MODD_CLOUD_MF_n  
+USE MODD_CLOUD_MF_n
 USE MODD_VISCOSITY
 USE MODD_DRAG_n
 USE MODD_CLOUDPAR_n
 USE MODD_CONF
 USE MODD_CONF_n
-USE MODD_CST, ONLY: XMD
 USE MODD_CURVCOR_n
 USE MODD_DEEP_CONVECTION_n
 USE MODD_DIM_n
@@ -317,9 +316,9 @@ USE MODD_PARAM_C1R3,     ONLY: NSEDI => LSEDI, NHHONI => LHHONI
 USE MODD_PARAM_C2R2,     ONLY: NSEDC => LSEDC, NRAIN => LRAIN, NACTIT => LACTIT,LACTTKE,LDEPOC
 USE MODD_PARAMETERS
 USE MODD_PARAM_ICE,      ONLY: LWARM,LSEDIC,LCONVHG,LDEPOSC
-USE MODD_PARAM_LIMA,     ONLY: MSEDC => LSEDC, MWARM => LWARM, MRAIN => LRAIN, LACTI,  &
-                               MACTIT => LACTIT, LSCAV, NMOD_CCN, LCOLD,               &
-                               MSEDI => LSEDI, MHHONI => LHHONI, NMOD_IFN, LHAIL,      &
+USE MODD_PARAM_LIMA,     ONLY: MSEDC => LSEDC, MWARM => LWARM, MRAIN => LRAIN, &
+                               MACTIT => LACTIT, LSCAV, LCOLD,                 &
+                               MSEDI => LSEDI, MHHONI => LHHONI, LHAIL,        &
                                XRTMIN_LIMA=>XRTMIN, MACTTKE=>LACTTKE
 USE MODD_BLOWSNOW_n
 USE MODD_BLOWSNOW
@@ -361,6 +360,7 @@ USE MODI_ADVECTION_UVW_CEN
 USE MODI_ADV_FORCING_n
 USE MODI_AER_MONITOR_n
 USE MODI_AIRCRAFT_BALLOON
+USE MODI_BLOWSNOW
 USE MODI_BOUNDARIES
 USE MODI_BUDGET_FLAGS
 USE MODI_CART_COMPRESS
@@ -420,8 +420,6 @@ USE MODI_WRITE_LFIFMN_FORDIACHRO_n
 USE MODI_WRITE_PROFILER_n
 USE MODI_WRITE_SERIES_n
 USE MODI_WRITE_STATION_n
-USE MODI_BLOWSNOW
-
 USE MODI_WRITE_SURF_ATM_N
 !
 IMPLICIT NONE
@@ -437,10 +435,9 @@ LOGICAL, INTENT(INOUT):: OEXIT
 !
 INTEGER :: ILUOUT      ! Logical unit number for the output listing
 INTEGER :: IIU,IJU,IKU ! array size in first, second and third dimensions
-INTEGER :: IIB,IIE,IJB,IJE,IKB,IKE ! index values for the physical subdomain
+INTEGER :: IIB,IIE,IJB,IJE ! index values for the physical subdomain
 INTEGER :: JSV,JRR     ! Loop index for scalar and moist variables
 INTEGER  :: INBVAR              ! number of HALO2_lls to allocate
-INTEGER  :: IRESP               ! return code in FM routines
 INTEGER  :: IINFO_ll            ! return code of parallel routine
 INTEGER :: IVERB                ! LFI verbosity level
 LOGICAL :: GSTEADY_DMASS        ! conditional call to mass computation
@@ -451,29 +448,6 @@ REAL(kind=MNHTIME), DIMENSION(2) :: ZTIME_STEP,ZTIME_STEP_PTS
 CHARACTER                 :: YMI
 INTEGER                   :: IPOINTS
 CHARACTER(len=16)         :: YTCOUNT,YPOINTS
-
-REAL         :: ZSTAT_CSTORE,ZSTAT_CBOUND,ZSTAT_CGUESS,ZSTAT_CADV,ZSTAT_CSOURCES
-REAL         :: ZSTAT_CDIFF,ZSTAT_CRELAX,ZSTAT_CPARAM
-REAL         :: ZSTAT_CSPECTRA,ZSTAT_CRAD_BOUND,ZSTAT_CPRESS
-REAL         :: ZSTAT_CCLOUD,ZSTAT_CSTEP_SWA,ZSTAT_CSTEP_MISC
-REAL         :: ZSTAT_CCOUPL,ZSTAT_CSTEP_BUD,ZSTAT_CSTEP_CDRAG
-REAL         :: ZSTAT_CSTEP_CTRACER,ZSTAT_CSTEP_CELEC
-REAL         :: SCONV_CTURB,ZSTAT_C1WAY,ZSTAT_C2WAY,ZSTAT_CMAFL
-REAL         :: ZSTAT_CRAD,ZSTAT_CDCONV,ZSTAT_CGROUND,ZSTAT_CHALO
-REAL         :: ZSTAT_CFORCING,ZSTAT_CNUDGING,ZSTAT_CCHEM
-!
-REAL         :: ZPERCALL,ZPRICE
-REAL         :: ZPERCSTORE,ZPERCBOUND,ZPERCGUESS,ZPERCADV,ZPERCSOURCES,ZPERCDRAG
-REAL         :: ZPERCDIFF,ZPERCRELAX,ZPERCPARAM
-REAL         :: ZPERCSPECTRA,ZPERCRAD_BOUND,ZPERCPRESS
-REAL         :: ZPERCCLOUD,ZPERCSTEP_SWA,ZPERCSTEP_MISC
-REAL         :: ZPERCELEC
-REAL         :: ZPERCCOUPL,ZPERCSTEP_BUD
-REAL         :: ZPERCTURB,ZPERC1WAY,ZPERC2WAY
-REAL         :: ZPERCRAD,ZPERCSHADOWS,ZPERCKAFR,ZPERCGROUND,ZPERCHALO,ZPERCMAFL,ZPERTRACER
-REAL         :: ZPERCFORCING,ZPERCNUDGING,ZPERCCHEM
-REAL         :: ZTSTEP_UVW   ! Double timestep except for cold start (single)
-REAL         :: ZTSTEP_MET,ZTSTEP_SV ! Effective time step for advection
 !
 INTEGER :: ISYNCHRO          ! model synchronic index relative to its father
                              ! = 1  for the first time step in phase with DAD
@@ -532,23 +506,11 @@ LOGICAL :: KSEDC
 LOGICAL :: KACTIT
 LOGICAL :: KSEDI
 LOGICAL :: KHHONI
-REAL :: TEMPS
-INTEGER :: NSV_END
-CHARACTER (LEN=100) :: YCOMMENT   ! Comment string in LFIFM file
-CHARACTER (LEN=LEN_HREC)  :: YRECFM     ! Name of the desired field in LFIFM file
-!
-INTEGER             :: ILENG      ! Length of comment string in LFIFM file
-INTEGER             :: IGRID      ! C-grid indicator in LFIFM file
-INTEGER             :: ILENCH     ! Length of comment string in LFIFM file
 !
 REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ZRUS,ZRVS,ZRWS
 REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ZPABST !To give pressure at t 
                                                      ! (and not t+1) to resolved_cloud
 REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ZJ
-!
-! for various testing
-INTEGER :: IK
-REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ZTMP
 !
 TYPE(LIST_ll), POINTER :: TZFIELDC_ll   ! list of fields to exchange
 TYPE(HALO2LIST_ll), POINTER :: TZHALO2C_ll   ! list of fields to exchange
@@ -614,8 +576,6 @@ ILUOUT = TLUOUT%NLU
 CALL GET_DIM_EXT_ll('B',IIU,IJU)
 IKU=NKMAX+2*JPVEXT
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
-IKB=1+JPVEXT
-IKE=IKU-JPVEXT
 !
 IF (IMI==1) THEN
   GSTEADY_DMASS=LSTEADYLS
@@ -1121,8 +1081,8 @@ IF (NMODEL>1) THEN
   DPTR_GMASKkids=>GMASKkids
   !
   CALL TWO_WAY(     NRR,NSV,KTCOUNT,DPTR_XRHODJ,IMI,XTSTEP,                                    &
-       DPTR_XUM ,DPTR_XVM ,DPTR_XWM , DPTR_XTHM, DPTR_XRM, DPTR_XTKEM, DPTR_XSVM,              &        
-       DPTR_XRUS,DPTR_XRVS,DPTR_XRWS,DPTR_XRTHS,DPTR_XRRS,DPTR_XRTKES,DPTR_XRSVS,              &
+       DPTR_XUM ,DPTR_XVM ,DPTR_XWM , DPTR_XTHM, DPTR_XRM,DPTR_XSVM,                           &
+       DPTR_XRUS,DPTR_XRVS,DPTR_XRWS,DPTR_XRTHS,DPTR_XRRS,DPTR_XRSVS,                          &
        DPTR_XINPRC,DPTR_XINPRR,DPTR_XINPRS,DPTR_XINPRG,DPTR_XINPRH,DPTR_XPRCONV,DPTR_XPRSCONV, &
        DPTR_XDIRFLASWD,DPTR_XSCAFLASWD,DPTR_XDIRSRFSWD,DPTR_GMASKkids           )
 END IF

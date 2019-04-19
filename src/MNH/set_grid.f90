@@ -10,11 +10,7 @@
 INTERFACE
 !
       SUBROUTINE SET_GRID(KMI,TPINIFILE,                                      &
-                          KIU,KJU,KKU,KIMAX_ll,KJMAX_ll,                      &
-                          PBMX1,PBMX2,PBMX3,PBMX4,PBMY1,PBMY2,PBMY3,PBMY4,    &
-                          PBFX1,PBFX2,PBFX3,PBFX4,PBFY1,PBFY2,PBFY3,PBFY4,    &
-                          KXOR,KYOR,KXEND,KYEND,KDXRATIO,KDYRATIO,            &
-                          HLBCX,HLBCY,                                        &
+                          KKU,KIMAX_ll,KJMAX_ll,                              &
                           PTSTEP,PSEGLEN,                                     &
                           PLONORI,PLATORI,PLON,PLAT,                          &
                           PXHAT,PYHAT,PDXHAT,PDYHAT, PMAP,                    &
@@ -28,26 +24,12 @@ USE MODD_IO, ONLY: TFILEDATA,TOUTBAK
 !
 INTEGER,                INTENT(IN)  :: KMI       ! Model index
 TYPE(TFILEDATA),        INTENT(IN)  :: TPINIFILE !Initial file
-INTEGER,                INTENT(IN)  :: KIU       ! Upper dimension in x direction
-                                                 ! for sub-domain arrays
-INTEGER,                INTENT(IN)  :: KJU       ! Upper dimension in y direction
-                                                 ! for sub-domain arrays
 INTEGER,                INTENT(IN)  :: KKU       ! Upper dimension in z direction
                                                  ! for domain arrays
 INTEGER,                INTENT(IN)  :: KIMAX_ll  !  Dimensions  in x direction
                                                  ! of the physical domain,
 INTEGER,                INTENT(IN)  :: KJMAX_ll  !  Dimensions  in y direction
                                                  ! of the physical domain,
-REAL, DIMENSION(:), INTENT(IN) :: PBMX1,PBMX2,PBMX3,PBMX4 ! Mass points in X-direc.
-REAL, DIMENSION(:), INTENT(IN) :: PBMY1,PBMY2,PBMY3,PBMY4 ! Mass points in Y-direc.
-REAL, DIMENSION(:), INTENT(IN) :: PBFX1,PBFX2,PBFX3,PBFX4 ! Flux points in X-direc.
-REAL, DIMENSION(:), INTENT(IN) :: PBFY1,PBFY2,PBFY3,PBFY4 ! Flux points in Y-direc.
-INTEGER,   INTENT(IN)  :: KXOR,KXEND !  horizontal position (i,j) of the ORigin and END
-INTEGER,   INTENT(IN)  :: KYOR,KYEND ! of the inner model domain, relative to outer model
-INTEGER,   INTENT(IN)  :: KDXRATIO   !  x and y-direction resolution RATIO
-INTEGER,   INTENT(IN)  :: KDYRATIO   ! between inner model and outer model
-CHARACTER (LEN=4), DIMENSION (2), INTENT(IN) :: HLBCX   ! type of lateral
-CHARACTER (LEN=4), DIMENSION (2), INTENT(IN) :: HLBCY   ! boundary conditions
 !
 REAL,                   INTENT(IN)  :: PTSTEP    ! time step of model KMI
 REAL,                   INTENT(INOUT) :: PSEGLEN ! segment duration (in seconds)
@@ -100,11 +82,7 @@ END MODULE MODI_SET_GRID
 !
 !     #########################################################################
       SUBROUTINE SET_GRID(KMI,TPINIFILE,                                      &
-                          KIU,KJU,KKU,KIMAX_ll,KJMAX_ll,                      &
-                          PBMX1,PBMX2,PBMX3,PBMX4,PBMY1,PBMY2,PBMY3,PBMY4,    &
-                          PBFX1,PBFX2,PBFX3,PBFX4,PBFY1,PBFY2,PBFY3,PBFY4,    &
-                          KXOR,KYOR,KXEND,KYEND,KDXRATIO,KDYRATIO,            &
-                          HLBCX,HLBCY,                                        &
+                          KKU,KIMAX_ll,KJMAX_ll,                              &
                           PTSTEP,PSEGLEN,                                     &
                           PLONORI,PLATORI,PLON,PLAT,                          &
                           PXHAT,PYHAT,PDXHAT,PDYHAT, PMAP,                    &
@@ -228,6 +206,7 @@ END MODULE MODI_SET_GRID
 !!                            grid-nesting lbc
 !!     V.MASSON 12/10/00 read of the orography in all cases, even if LFLAT=T
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 19/04/2019: removed unused dummy arguments and variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -258,26 +237,12 @@ IMPLICIT NONE
 !
 INTEGER,                INTENT(IN)  :: KMI       ! Model index
 TYPE(TFILEDATA),        INTENT(IN)  :: TPINIFILE !Initial file
-INTEGER,                INTENT(IN)  :: KIU       ! Upper dimension in x direction
-                                                 ! for sub-domain arrays
-INTEGER,                INTENT(IN)  :: KJU       ! Upper dimension in y direction
-                                                 ! for sub-domain arrays
 INTEGER,                INTENT(IN)  :: KKU       ! Upper dimension in z direction
                                                  ! for domain arrays
 INTEGER,               INTENT(IN)   :: KIMAX_ll  !  Dimensions  in x direction
                                                  ! of the physical domain,
 INTEGER,               INTENT(IN)   :: KJMAX_ll  !  Dimensions  in y direction
                                                  ! of the physical domain,
-REAL, DIMENSION(:), INTENT(IN) :: PBMX1,PBMX2,PBMX3,PBMX4 ! Mass points in X-direc.
-REAL, DIMENSION(:), INTENT(IN) :: PBMY1,PBMY2,PBMY3,PBMY4 ! Mass points in Y-direc.
-REAL, DIMENSION(:), INTENT(IN) :: PBFX1,PBFX2,PBFX3,PBFX4 ! Flux points in X-direc.
-REAL, DIMENSION(:), INTENT(IN) :: PBFY1,PBFY2,PBFY3,PBFY4 ! Flux points in Y-direc.
-INTEGER,   INTENT(IN)  :: KXOR,KXEND !  horizontal position (i,j) of the ORigin and END
-INTEGER,   INTENT(IN)  :: KYOR,KYEND ! of the inner model domain, relative to outer model
-INTEGER,   INTENT(IN)  :: KDXRATIO   !  x and y-direction resolution RATIO
-INTEGER,   INTENT(IN)  :: KDYRATIO   ! between inner model and outer model
-CHARACTER (LEN=4), DIMENSION (2), INTENT(IN) :: HLBCX   ! type of lateral
-CHARACTER (LEN=4), DIMENSION (2), INTENT(IN) :: HLBCY   ! boundary conditions
 !
 REAL,                   INTENT(IN)  :: PTSTEP    ! time step of model KMI
 REAL,                   INTENT(INOUT) :: PSEGLEN ! segment duration (in seconds)

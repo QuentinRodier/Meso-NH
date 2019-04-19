@@ -9,7 +9,7 @@
 !
 INTERFACE
 !
-SUBROUTINE SET_CSTN(TPFILE,TPEXPREFILE,HFUNU,HFUNV,KILOC,KJLOC,OBOUSS,OPV_PERT,ORMV_BL,PJ,OSHIFT,PCORIOZ) 
+SUBROUTINE SET_CSTN(TPFILE,TPEXPREFILE,HFUNU,HFUNV,KILOC,KJLOC,OBOUSS,PJ,OSHIFT,PCORIOZ)
 !
 USE MODD_IO, ONLY : TFILEDATA
 !
@@ -22,8 +22,6 @@ CHARACTER(LEN=*),       INTENT(IN)  :: HFUNV  ! type of variation of V
 INTEGER,                INTENT(IN)  :: KILOC  ! I Localisation of vertical profile
 INTEGER,                INTENT(IN)  :: KJLOC  ! J Localisation of vertical profile
 LOGICAL,                INTENT(IN)  :: OBOUSS ! logical switch for Boussinesq version
-LOGICAL,                INTENT(IN)  :: OPV_PERT! logical switch for PV inversion
-LOGICAL,                INTENT(IN)  :: ORMV_BL! logical switch for remouve boundary layer
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PJ ! jacobien 
 LOGICAL,                INTENT(IN)  :: OSHIFT ! logical switch for vertical shift
 !
@@ -39,7 +37,7 @@ END MODULE MODI_SET_CSTN
 !
 !
 !     ##################################################################################
-      SUBROUTINE SET_CSTN(TPFILE,TPEXPREFILE,HFUNU,HFUNV,KILOC,KJLOC,OBOUSS,OPV_PERT,ORMV_BL,PJ,OSHIFT,PCORIOZ) 
+      SUBROUTINE SET_CSTN(TPFILE,TPEXPREFILE,HFUNU,HFUNV,KILOC,KJLOC,OBOUSS,PJ,OSHIFT,PCORIOZ)
 !     ##################################################################################
 !
 !!****  *SET_CSTN * - routine to initialize mass and wind fields from a Nv=cste 
@@ -164,6 +162,7 @@ END MODULE MODI_SET_CSTN
 !!      V.Masson    12/08/13  Parallelization of the initilization profile
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 19/04/2019: removed unused dummy arguments and variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -198,8 +197,6 @@ CHARACTER(LEN=*),       INTENT(IN)  :: HFUNV  ! type of variation of V
 INTEGER,                INTENT(IN)  :: KILOC  ! I Localisation of vertical profile
 INTEGER,                INTENT(IN)  :: KJLOC  ! J Localisation of vertical profile
 LOGICAL,                INTENT(IN)  :: OBOUSS ! logical switch for Boussinesq version
-LOGICAL,                INTENT(IN)  :: OPV_PERT! logical switch for PV inversion
-LOGICAL,                INTENT(IN)  :: ORMV_BL! logical switch for remouve boundary layer
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PJ ! jacobien 
 LOGICAL,                INTENT(IN)  :: OSHIFT ! logical switch for vertical shift
 !
@@ -211,10 +208,7 @@ REAL, DIMENSION(:,:,:), INTENT(OUT), OPTIONAL :: PCORIOZ ! Coriolis parameter
 !
 ! fields and data on the sounding levels
 !
-INTEGER                         :: ILUPRE,IRESP ! logical unit number of the 
-                                                ! EXPRE and FM return code
-INTEGER                         :: ILUOUT    ! Logical unit number for
-                                             ! output-listing   
+INTEGER                         :: ILUPRE   ! logical unit number
 INTEGER                         :: ILEVEL   ! number of levels 
 INTEGER                         :: ILAYER   ! number of layers
 REAL                            :: ZPGROUND ! pressure at the ground level
@@ -228,8 +222,6 @@ INTEGER                         :: JK,JKLEV ! Loop indexes
 !
 !  variables on the grid without orography
 !
-REAL, DIMENSION(SIZE(XZHAT))    :: ZZHATM  ! Height of mass model grid levels 
-                                           ! without orography 
 REAL, DIMENSION(SIZE(XZHAT))    :: ZTHVM   ! Virtual potential Temperature
                                            ! at mass model grid levels
 REAL, DIMENSION(SIZE(XZHAT))    :: ZTVM    ! Virtual Temperature at mass model
@@ -266,7 +258,6 @@ LOGICAL         :: GPROFILE_IN_PROC   ! T : initialization profile is in current
 !	        ------------------------------------------------------------
 !
 ILUPRE = TPEXPREFILE%NLU
-ILUOUT = TLUOUT%NLU
 !
 CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 CALL GET_OR_ll('B',IXOR_ll,IYOR_ll)
