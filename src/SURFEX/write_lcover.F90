@@ -1,4 +1,4 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
@@ -36,6 +36,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      J. Pianezze 08/2016 replacement of MPI_COMM_WOLRD by NMNH_COMM_WORLD
+!  P. Wautelet 26/04/2019: use modd_precision parameters for datatypes of MPI communications
 !!
 !-------------------------------------------------------------------------------
 !
@@ -43,7 +44,9 @@
 !              ------------
 !
 #ifdef MNH_PARALLEL
-USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD
+use modd_mpif
+use modd_precision,      only: MNHLOG_MPI
+USE MODD_VAR_ll,         ONLY: NMNH_COMM_WORLD
 #endif
 !
 USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
@@ -55,11 +58,6 @@ USE PARKIND1  ,ONLY : JPRB
 !
 IMPLICIT NONE
 !
-#ifdef MNH_PARALLEL
-#ifndef NOMPI
-INCLUDE "mpif.h"
-#endif
-#endif
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
@@ -83,10 +81,8 @@ INTEGER   :: IINFO
 !* ascendant compatibility
 IF (LHOOK) CALL DR_HOOK('WRITE_LCOVER',0,ZHOOK_HANDLE)
 #ifdef MNH_PARALLEL
-#ifndef NOMPI
-CALL MPI_ALLREDUCE(OCOVER, GCOVER, SIZE(OCOVER),MPI_LOGICAL, MPI_LOR, NMNH_COMM_WORLD, IINFO)
+CALL MPI_ALLREDUCE(OCOVER, GCOVER, SIZE(OCOVER), MNHLOG_MPI, MPI_LOR, NMNH_COMM_WORLD, IINFO)
 OCOVER(:)=GCOVER(:)
-#endif
 #endif
 YRECFM='COVER_LIST'
 YCOMMENT='(LOGICAL LIST)'

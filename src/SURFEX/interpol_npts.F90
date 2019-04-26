@@ -46,7 +46,8 @@
 !!    Original    03/2004
 !!    Modification
 !!    B. Decharme  2014  scan all point case if gaussien grid or NHALO = 0
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 26/04/2019: use modd_precision parameters for datatypes of MPI communications
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -70,6 +71,8 @@ USE PARKIND1  ,ONLY : JPRB
 !
 #ifdef SFX_MNH
 USE MODD_IO, ONLY : ISP, ISNPROC, NIO_RANK
+use modd_mpif
+use modd_precision,    only: MNHINT_MPI, MNHREAL_MPI
 USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD
 USE MODE_GATHER_ll
 USE MODE_TOOLS_ll,     ONLY : GET_GLOBALDIMS_ll
@@ -80,7 +83,7 @@ USE MODD_IO_SURF_MNH, ONLY : NIU, NJU
 !
 IMPLICIT NONE
 !
-#if defined(SFX_MPI) || defined(SFX_MNH)
+#if defined(SFX_MPI)
 INCLUDE "mpif.h"
 #endif
 !
@@ -206,8 +209,10 @@ ENDIF
 !
 !...known by all tasks
 IF (NPROC>1) THEN
-#if defined(SFX_MPI) || defined(SFX_MNH)
+#if defined(SFX_MPI)
   CALL MPI_BCAST(ISIZE_TOT,IDIM_FULL*KIND(ISIZE_TOT)/4,MPI_INTEGER,NPIO,NCOMM,INFOMPI)
+#elif defined(SFX_MNH)
+  CALL MPI_BCAST(ISIZE_TOT,IDIM_FULL,MNHINT_MPI,NPIO,NCOMM,INFOMPI)
 #endif
 ENDIF
 !
@@ -289,10 +294,10 @@ IF (IOLD==2) THEN
   DEALLOCATE(ZCOORD_2D,ZCOORD_2D_ALL)
   !
   IF (NPROC>1) THEN
-    CALL MPI_BCAST(INUM_TOT,IDIM_FULL*KIND(INUM_TOT)/4,MPI_INTEGER,NPIO,NCOMM,INFOMPI)
-    CALL MPI_BCAST(IINDEX_TOT,IDIM_FULL*KIND(IINDEX_TOT)/4,MPI_INTEGER,NPIO,NCOMM,INFOMPI)
-    CALL MPI_BCAST(ZX,IDIM_FULL*KIND(ZX)/4,MPI_REAL,NPIO,NCOMM,INFOMPI)
-    CALL MPI_BCAST(ZY,IDIM_FULL*KIND(ZY)/4,MPI_REAL,NPIO,NCOMM,INFOMPI)
+    CALL MPI_BCAST(INUM_TOT,IDIM_FULL,MNHINT_MPI,NPIO,NCOMM,INFOMPI)
+    CALL MPI_BCAST(IINDEX_TOT,IDIM_FULL,MNHINT_MPI,NPIO,NCOMM,INFOMPI)
+    CALL MPI_BCAST(ZX,IDIM_FULL,MNHREAL_MPI,NPIO,NCOMM,INFOMPI)
+    CALL MPI_BCAST(ZY,IDIM_FULL,MNHREAL_MPI,NPIO,NCOMM,INFOMPI)
   ENDIF
 !
 #endif
@@ -437,9 +442,11 @@ ALLOCATE(ISIZE(0:NPROC-1))
 
 !numbers of points to interpolated are gathered
 IF (NPROC>1) THEN
-#if defined(SFX_MPI) || defined(SFX_MNH)
+#if defined(SFX_MPI)
   CALL MPI_ALLGATHER(ICPT,KIND(ICPT)/4,MPI_INTEGER,&
                      ISIZE,KIND(ISIZE)/4,MPI_INTEGER,NCOMM,INFOMPI)
+#elif  defined(SFX_MNH)
+  CALL MPI_ALLGATHER(ICPT,1,MNHINT_MPI,ISIZE,1,MNHINT_MPI,NCOMM,INFOMPI)
 #endif
 ELSE
   ISIZE(:) = ICPT
@@ -474,11 +481,15 @@ ALLOCATE(ININD_ALL(MAXVAL(ISIZE),KNPTS,0:NPROC-1))
 IF (NPROC>1) THEN
   !for each task
   DO JP=0,NPROC-1
-#if defined(SFX_MPI) || defined(SFX_MNH)  
+#if defined(SFX_MPI)
     !inind_all receives from all tasks the points they need that are
     !located in it
     CALL MPI_GATHER(ININD0(:,:,JP),MAXVAL(ISIZE)*KNPTS*KIND(ININD0)/4,MPI_INTEGER,&
                     ININD_ALL,MAXVAL(ISIZE)*KNPTS*KIND(ININD_ALL)/4,MPI_INTEGER,&
+                    JP,NCOMM,INFOMPI)
+#elif defined(SFX_MNH)
+    CALL MPI_GATHER(ININD0(:,:,JP),MAXVAL(ISIZE)*KNPTS,MNHINT_MPI,&
+                    ININD_ALL,     MAXVAL(ISIZE)*KNPTS,MNHINT_MPI,&
                     JP,NCOMM,INFOMPI)
 #endif
   ENDDO
@@ -514,9 +525,12 @@ DEALLOCATE(ININD_ALL)
 ALLOCATE(ZFIELD2(ICPT,KNPTS,SIZE(PFIELD,2),0:NPROC-1))
 IF (NPROC>1) THEN
   DO JP=0,NPROC-1
-#if defined(SFX_MPI) || defined(SFX_MNH)
+#if defined(SFX_MPI)
     CALL MPI_GATHER(ZFIELD(1:ISIZE(JP),:,:,JP),SIZE(ZFIELD(1:ISIZE(JP),:,:,JP))*KIND(ZFIELD)/4,MPI_REAL,&
                     ZFIELD2,ISIZE(JP)*KNPTS*SIZE(PFIELD,2)*KIND(ZFIELD2)/4,MPI_REAL,JP,NCOMM,INFOMPI)
+#elif defined(SFX_MNH)
+    CALL MPI_GATHER(ZFIELD(1:ISIZE(JP),:,:,JP),SIZE(ZFIELD(1:ISIZE(JP),:,:,JP)),MNHREAL_MPI,&
+                    ZFIELD2,ISIZE(JP)*KNPTS*SIZE(PFIELD,2),MNHREAL_MPI,JP,NCOMM,INFOMPI)
 #endif
   ENDDO
 ELSE

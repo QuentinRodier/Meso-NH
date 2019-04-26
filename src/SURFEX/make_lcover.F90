@@ -33,7 +33,8 @@
 !!    ------------
 !!
 !!    Original    10/12/97
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 26/04/2019: use modd_precision parameters for datatypes of MPI communications
 !!
 !----------------------------------------------------------------------------
 !
@@ -47,12 +48,14 @@ USE PARKIND1  ,ONLY : JPRB
 !
 #ifdef SFX_MNH
 USE MODD_IO, ONLY : ISP, ISNPROC, NIO_RANK
+use modd_mpif
+use modd_precision,   only: MNHLOG_MPI
 USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD
 #endif
 !
 IMPLICIT NONE
 !
-#if defined(SFX_MPI) || defined(SFX_MNH)
+#if defined(SFX_MPI)
 INCLUDE "mpif.h"
 #endif
 !
@@ -96,9 +99,12 @@ ALLOCATE(GCOVER_ALL(SIZE(OCOVER),0:NPROC-1))
 !
 !
 IF (NPROC>1) THEN
-#if defined(SFX_MPI) || defined(SFX_MNH)
+#if defined(SFX_MPI)
   CALL MPI_ALLGATHER(OCOVER,SIZE(OCOVER),MPI_LOGICAL,GCOVER_ALL,SIZE(OCOVER),&
                   MPI_LOGICAL,NCOMM,INFOMPI)
+#elif defined(SFX_MNH)
+  CALL MPI_ALLGATHER(OCOVER,SIZE(OCOVER),MNHLOG_MPI,GCOVER_ALL,SIZE(OCOVER),&
+                  MNHLOG_MPI,NCOMM,INFOMPI)
 #endif
 ELSE
   GCOVER_ALL(:,0) = OCOVER(:)
@@ -116,8 +122,10 @@ DEALLOCATE(GCOVER_ALL)
 !
 !
 IF (NPROC>1) THEN
-#if defined(SFX_MPI) || defined(SFX_MNH)
+#if defined(SFX_MPI)
   CALL MPI_BCAST(OCOVER,SIZE(OCOVER),MPI_LOGICAL,NPIO,NCOMM,INFOMPI)
+#elif defined(SFX_MNH)
+  CALL MPI_BCAST(OCOVER,SIZE(OCOVER),MNHLOG_MPI,NPIO,NCOMM,INFOMPI)
 #endif
 ENDIF
 !

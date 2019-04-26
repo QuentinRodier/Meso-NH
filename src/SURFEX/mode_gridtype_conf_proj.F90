@@ -1,4 +1,4 @@
-!SFX_LIC Copyright 2004-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 2004-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
@@ -33,7 +33,8 @@ CONTAINS
 !!    -------------
 !!      Original    01/2004
 !!        M.Moge    06/2015 broadcast the space step to all MPI processes (necessary for reproductibility)
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 26/04/2019: use modd_precision parameters for datatypes of MPI communications
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -42,7 +43,7 @@ CONTAINS
 USE MODD_SURF_PAR, ONLY : XUNDEF, NUNDEF
 #ifdef MNH_PARALLEL
 USE MODD_MPIF
-use modd_precision, only: MNHREAL_MPI
+use modd_precision, only: MNHINT_MPI, MNHREAL_MPI
 USE MODE_SPLITTINGZ_ll, ONLY : LINI_PARAZ
 USE MODE_TOOLS_ll, ONLY : GET_OR_ll
 USE MODD_VAR_ll, ONLY : NPROC, IP, NMNH_COMM_WORLD, YSPLITTING
@@ -129,24 +130,24 @@ IF ( NPROC > 1 .AND. LINI_PARAZ) THEN
     IYOR = NUNDEF
   ENDIF
   ! get the processes with IL>0 with the westmost points
-  CALL MPI_ALLREDUCE(IXOR, IXORMIN, 1, MPI_INTEGER, MPI_MIN, NMNH_COMM_WORLD, IINFO_ll) 
+  CALL MPI_ALLREDUCE(IXOR, IXORMIN, 1, MNHINT_MPI, MPI_MIN, NMNH_COMM_WORLD, IINFO_ll)
   IF ( IXOR == IXORMIN ) THEN
     IROOT = IP-1
   ELSE
     IROOT = NPROC
   ENDIF
-  CALL MPI_ALLREDUCE(IROOT, IROOTPROC, 1, MPI_INTEGER, MPI_MIN, NMNH_COMM_WORLD, IINFO_ll) 
+  CALL MPI_ALLREDUCE(IROOT, IROOTPROC, 1, MNHINT_MPI, MPI_MIN, NMNH_COMM_WORLD, IINFO_ll)
 ! Then this process broadcasts the space steps in X direction in order to have the same space steps on all processes
   CALL MPI_BCAST(PGRID_PAR(9), 1, MNHREAL_MPI, IROOTPROC, NMNH_COMM_WORLD, IINFO_ll)
   !
   ! get the processes with IL>0 with the southmost points
-  CALL MPI_ALLREDUCE(IYOR, IYORMIN, 1, MPI_INTEGER, MPI_MIN, NMNH_COMM_WORLD, IINFO_ll) 
+  CALL MPI_ALLREDUCE(IYOR, IYORMIN, 1, MNHINT_MPI, MPI_MIN, NMNH_COMM_WORLD, IINFO_ll)
   IF ( IYOR == IYORMIN ) THEN
     IROOT = IP-1
   ELSE
     IROOT = NPROC
   ENDIF
-  CALL MPI_ALLREDUCE(IROOT, IROOTPROC, 1, MPI_INTEGER, MPI_MIN, NMNH_COMM_WORLD, IINFO_ll) 
+  CALL MPI_ALLREDUCE(IROOT, IROOTPROC, 1, MNHINT_MPI, MPI_MIN, NMNH_COMM_WORLD, IINFO_ll)
 ! Then this process broadcasts the space steps in Y direction in order to have the same space steps on all processes
   CALL MPI_BCAST(PGRID_PAR(10), 1, MNHREAL_MPI, IROOTPROC, NMNH_COMM_WORLD, IINFO_ll)
 ENDIF
