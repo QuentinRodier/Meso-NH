@@ -15,6 +15,7 @@ MODULE MODE_MPPDB
 !  Philippe Wautelet: 22/01/2019: use standard FLUSH statement instead of non standard intrinsics
 !  Philippe Wautelet: 22/01/2019: use sleep_c subroutine instead of non-standard call system
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 26/04/2019: use modd_precision parameters for datatypes of MPI communications
 !-----------------------------------------------------------------
 !
   use ISO_FORTRAN_ENV, only: OUTPUT_UNIT
@@ -273,8 +274,8 @@ CONTAINS
   SUBROUTINE MPPDB_CHECK3D(PTAB,MESSAGE,PRECISION)
 
     USE MODD_PARAMETERS_ll, ONLY : JPHEXT
-    use modd_precision, only: MNHREAL_MPI
-    USE MODD_MPIF      , ONLY : MPI_INTEGER, MPI_STATUS_IGNORE, MPI_SUM
+    use modd_precision,     only: MNHINT_MPI, MNHREAL_MPI
+    USE MODD_MPIF      , ONLY : MPI_STATUS_IGNORE, MPI_SUM
     USE MODE_GATHER_ll
 
     IMPLICIT NONE
@@ -314,7 +315,7 @@ CONTAINS
 #else
     IF ( ( .NOT. MPPDB_INITIALIZED ) ) RETURN
     !get the global size of PTAB
-    CALL MPI_ALLREDUCE(SIZE(PTAB), IGLBSIZEPTAB, 1,MPI_INTEGER, MPI_SUM, MPPDB_INTER_COMM, IINFO_ll)
+    CALL MPI_ALLREDUCE(SIZE(PTAB), IGLBSIZEPTAB, 1,MNHINT_MPI, MPI_SUM, MPPDB_INTER_COMM, IINFO_ll)
     IF ( IGLBSIZEPTAB == 0 ) RETURN
     !
     CALL MPPDB_BARRIER()
@@ -342,7 +343,7 @@ CONTAINS
           !
           ! recieve JPHEXT from son if different
           !
-          CALL MPI_RECV(IHEXT_SON_ll,1,MPI_INTEGER,I_FIRST_SON, &
+          CALL MPI_RECV(IHEXT_SON_ll,1,MNHINT_MPI,I_FIRST_SON, &
                ITAG1, MPPDB_INTRA_COMM,MPI_STATUS_IGNORE, IINFO_ll)
 
           !IHEXT_SON_ll = JPHEXT
@@ -412,7 +413,7 @@ CONTAINS
           !
           I_FIRST_FATHER = 0
           IHEXT_SON_ll = JPHEXT
-          CALL MPI_BSEND(IHEXT_SON_ll,1,MPI_INTEGER,I_FIRST_FATHER, &
+          CALL MPI_BSEND(IHEXT_SON_ll,1,MNHINT_MPI,I_FIRST_FATHER, &
                ITAG1, MPPDB_INTRA_COMM, IINFO_ll)
 
           CALL MPI_BSEND(TAB_ll,SIZE(TAB_ll),MNHREAL_MPI,I_FIRST_FATHER, &
@@ -469,8 +470,8 @@ CONTAINS
 
     USE MODD_PARAMETERS_ll, ONLY : JPHEXT
     USE MODE_GATHER_ll
-    USE MODD_MPIF      , ONLY : MPI_INTEGER, MPI_STATUS_IGNORE, MPI_SUM
-    use modd_precision, only: MNHREAL_MPI
+    USE MODD_MPIF      , ONLY : MPI_STATUS_IGNORE, MPI_SUM
+    use modd_precision,     only: MNHINT_MPI, MNHREAL_MPI
 
     USE  MODD_VAR_ll    , ONLY :  NMNH_COMM_WORLD
 
@@ -507,7 +508,7 @@ CONTAINS
     RETURN           
 #else
     IF ( ( .NOT. MPPDB_INITIALIZED ) ) RETURN
-    CALL MPI_ALLREDUCE(SIZE(PTAB), IGLBSIZEPTAB, 1,MPI_INTEGER, MPI_SUM, MPPDB_INTRA_COMM, IINFO_ll)
+    CALL MPI_ALLREDUCE(SIZE(PTAB), IGLBSIZEPTAB, 1,MNHINT_MPI, MPI_SUM, MPPDB_INTRA_COMM, IINFO_ll)
     IF ( IGLBSIZEPTAB == 0 ) RETURN
 
     CALL MPPDB_BARRIER()
@@ -534,7 +535,7 @@ CONTAINS
           !
           ! recieve JPHEXT from son if different
           !
-          CALL MPI_RECV(IHEXT_SON_ll,1,MPI_INTEGER,I_FIRST_SON, &
+          CALL MPI_RECV(IHEXT_SON_ll,1,MNHINT_MPI,I_FIRST_SON, &
                ITAG, MPPDB_INTRA_COMM,MPI_STATUS_IGNORE, IINFO_ll)
 
           IIU_SON_ll = IIMAX_ll+2*IHEXT_SON_ll
@@ -598,7 +599,7 @@ CONTAINS
           ! first son --> send the good array to the first father
           !
           I_FIRST_FATHER = 0
-          CALL MPI_BSEND(JPHEXT,1,MPI_INTEGER,I_FIRST_FATHER, &
+          CALL MPI_BSEND(JPHEXT,1,MNHINT_MPI,I_FIRST_FATHER, &
                ITAG, MPPDB_INTRA_COMM, IINFO_ll)
           CALL MPI_BSEND(TAB_ll,SIZE(TAB_ll),MNHREAL_MPI,I_FIRST_FATHER, &
                ITAG, MPPDB_INTRA_COMM, IINFO_ll)
@@ -617,10 +618,10 @@ CONTAINS
   SUBROUTINE MPPDB_CHECKLB(PLB,MESSAGE,PRECISION,HLBTYPE,KRIM)
 
     USE MODD_IO,            ONLY: GSMONOPROC, ISP, ISNPROC, L2D, LPACK
-    USE MODD_MPIF,          ONLY: MPI_INTEGER, MPI_STATUS_IGNORE
+    USE MODD_MPIF,          ONLY: MPI_STATUS_IGNORE
     USE MODD_PARAMETERS_ll, ONLY: JPHEXT
     USE MODD_VAR_ll,        ONLY: NMNH_COMM_WORLD
-    use modd_precision,     only: MNHREAL_MPI
+    use modd_precision,     only: MNHINT_MPI, MNHREAL_MPI
 
     USE MODE_DISTRIB_LB
     USE MODE_TOOLS_ll,      ONLY: GET_GLOBALDIMS_ll
@@ -719,7 +720,7 @@ CONTAINS
           !
           ! recieve JPHEXT from son if different
           !
-          CALL MPI_RECV(IHEXT_SON_ll,1,MPI_INTEGER,I_FIRST_SON, &
+          CALL MPI_RECV(IHEXT_SON_ll,1,MNHINT_MPI,I_FIRST_SON, &
                ITAG, MPPDB_INTRA_COMM,MPI_STATUS_IGNORE, IINFO_ll)
 
           IIU_SON_ll = IIMAX_ll+2*IHEXT_SON_ll
@@ -786,7 +787,7 @@ CONTAINS
           !
           I_FIRST_FATHER = 0
           IHEXT_SON_ll = JPHEXT
-          CALL MPI_BSEND(IHEXT_SON_ll,1,MPI_INTEGER,I_FIRST_FATHER, &
+          CALL MPI_BSEND(IHEXT_SON_ll,1,MNHINT_MPI,I_FIRST_FATHER, &
                ITAG, MPPDB_INTRA_COMM, IINFO_ll)
           CALL MPI_BSEND(PLB,SIZE(PLB),MNHREAL_MPI,I_FIRST_FATHER, &
                ITAG, MPPDB_INTRA_COMM, IINFO_ll)
@@ -904,8 +905,9 @@ CONTAINS
     USE MODI_GET_SURF_MASK_n
     USE MODD_IO_SURF_MNH, ONLY : NHALO
     USE MODD_CONFZ     , ONLY : MPI_BUFFER_SIZE
-    USE MODD_MPIF      , ONLY : MPI_INTEGER, MPI_STATUS_IGNORE, MPI_SUM
+    USE MODD_MPIF      , ONLY : MPI_STATUS_IGNORE, MPI_SUM
     USE MODD_MNH_SURFEX_n
+    use modd_precision,   only: MNHINT_MPI
 !
     IMPLICIT NONE
 !
@@ -932,7 +934,7 @@ CONTAINS
     INTEGER                              :: IINFO_ll
     !
     IF ( ( .NOT. MPPDB_INITIALIZED ) ) RETURN
-    CALL MPI_ALLREDUCE(SIZE(PTAB), IGLBSIZEPTAB, 1,MPI_INTEGER, MPI_SUM, MPPDB_INTRA_COMM, IINFO_ll)
+    CALL MPI_ALLREDUCE(SIZE(PTAB), IGLBSIZEPTAB, 1,MNHINT_MPI, MPI_SUM, MPPDB_INTRA_COMM, IINFO_ll)
     IF ( IGLBSIZEPTAB == 0 ) RETURN
     !
     IF ( SIZE(PTAB) == 0 ) THEN   !if the local size of the field is 0, we need to define ZFIELD3D filled with default value 1e20

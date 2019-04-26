@@ -21,17 +21,15 @@
 !!    Modifications
 !!    -------------
 !!    Original 08/02/2010
-!!
+!  P. Wautelet 26/04/2019: use modd_precision parameters for datatypes of MPI communications
+!
 !------------------------------------------------------------------------
 !
 USE MODD_MPIF
-use modd_precision, only: MNHREAL_MPI
+use modd_precision, only: MNHINT_MPI, MNHREAL_MPI
 USE MODD_VAR_ll,    ONLY: NMNH_COMM_WORLD
 !
 IMPLICIT NONE
-!
-!include "mpif.h"
-!
 !
 INTEGER, PARAMETER :: IFIRST_PROC = 0   ! 0/1 to increase numerotation of proc number 
 !
@@ -166,7 +164,7 @@ ENDIF
 !
 !*     1.3    broadcast to all proc 
 !
-CALL MPI_ALLREDUCE(KPROC_LOCAL, KPROC,IDIM , MPI_INTEGER, &
+CALL MPI_ALLREDUCE(KPROC_LOCAL, KPROC,IDIM , MNHINT_MPI, &
                    MPI_MAX, NMNH_COMM_WORLD, INFO) 
 !
 END SUBROUTINE RMIN0_ELEC_ll
@@ -216,7 +214,7 @@ ENDIF
 !
 !*     1.3    broadcast to all proc 
 !
-CALL MPI_ALLREDUCE(KPROC_LOCAL, KPROC,IDIM , MPI_INTEGER, &
+CALL MPI_ALLREDUCE(KPROC_LOCAL, KPROC,IDIM , MNHINT_MPI, &
                    MPI_MAX, NMNH_COMM_WORLD, INFO) 
 !
 END SUBROUTINE RMAX0_ELEC_ll
@@ -253,7 +251,7 @@ INFO = -1
 !
 !*     1.1    min(Proc)
 !
-CALL MPI_ALLREDUCE(ITAB, KMIN_INOUT, IDIM, MPI_INTEGER, &
+CALL MPI_ALLREDUCE(ITAB, KMIN_INOUT, IDIM, MNHINT_MPI, &
                    MPI_MIN, NMNH_COMM_WORLD, INFO)
 !
 !*     1.2    find the proc number of the maximum
@@ -266,7 +264,7 @@ ENDIF
 !
 !*     1.3    broadcast to all proc 
 !
-CALL MPI_ALLREDUCE(IPROC_LOCAL, KPROC,IDIM, MPI_INTEGER, &
+CALL MPI_ALLREDUCE(IPROC_LOCAL, KPROC,IDIM, MNHINT_MPI, &
                    MPI_MAX, NMNH_COMM_WORLD, INFO) 
 !
 END SUBROUTINE IMIN0_ELEC_ll
@@ -303,7 +301,7 @@ INFO = -1
 !
 !*     1.1    min(Proc)
 !
-CALL MPI_ALLREDUCE(ITAB, KMAX_INOUT, IDIM, MPI_INTEGER, &
+CALL MPI_ALLREDUCE(ITAB, KMAX_INOUT, IDIM, MNHINT_MPI, &
                    MPI_MAX, NMNH_COMM_WORLD, INFO)
 !
 !*     1.2    find the proc number of the maximum
@@ -316,7 +314,7 @@ ENDIF
 !
 !*     1.3    brodcast to all proc 
 !
-CALL MPI_ALLREDUCE(IPROC_LOCAL, KPROC, IDIM, MPI_INTEGER, &
+CALL MPI_ALLREDUCE(IPROC_LOCAL, KPROC, IDIM, MNHINT_MPI, &
                    MPI_MAX, NMNH_COMM_WORLD, INFO) 
 !
 END SUBROUTINE IMAX0_ELEC_ll
@@ -351,7 +349,7 @@ INFO = -1
 !
 !*     1.1    sum(Proc)
 !
-CALL MPI_ALLREDUCE(ITAB, KSUM_INOUT, IDIM, MPI_INTEGER, &
+CALL MPI_ALLREDUCE(ITAB, KSUM_INOUT, IDIM, MNHINT_MPI, &
                    MPI_SUM, NMNH_COMM_WORLD, INFO)
 !
 END SUBROUTINE ISUM_ELEC_ll
@@ -386,7 +384,7 @@ INFO = -1
 !
 !*     1.1    sum(Proc)
 !
-CALL MPI_ALLREDUCE(ITAB, KSUM_INOUT, IDIM, MPI_INTEGER, &
+CALL MPI_ALLREDUCE(ITAB, KSUM_INOUT, IDIM, MNHINT_MPI, &
                    MPI_SUM, NMNH_COMM_WORLD, INFO)
 !
 END SUBROUTINE ISUM0_ELEC_ll
@@ -477,8 +475,8 @@ JCENT_GLOB = IYOR + JCENT_LOC - 1
 !
 ! The proc with the center of the cell broadcast the global coord of the cell
 !
-CALL MPI_BCAST(ICENT_GLOB, 1, MPI_INTEGER, KPROC_COORD, NMNH_COMM_WORLD, IERR)
-CALL MPI_BCAST(JCENT_GLOB, 1, MPI_INTEGER, KPROC_COORD, NMNH_COMM_WORLD, IERR)
+CALL MPI_BCAST(ICENT_GLOB, 1, MNHINT_MPI, KPROC_COORD, NMNH_COMM_WORLD, IERR)
+CALL MPI_BCAST(JCENT_GLOB, 1, MNHINT_MPI, KPROC_COORD, NMNH_COMM_WORLD, IERR)
 !
 IS_GLOB = KIS + IXOR -1
 IE_GLOB = KIE + IXOR -1

@@ -6,6 +6,7 @@
 ! Modifications:
 !  J. Escobar  15/09/2015: WENO5 & JPHEXT <> 1
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 26/04/2019: use modd_precision parameters for datatypes of MPI communications
 !-----------------------------------------------------------------
 
 !     ####################
@@ -47,7 +48,7 @@
 !     J. Escobar  27/06/2011  correction for gridnesting with different SHAPE 
 ! 
   USE MODD_MPIF
-  use modd_precision, only: MNHREAL_MPI
+  use modd_precision, only: MNHINT_MPI, MNHREAL_MPI
   USE MODD_STRUCTURE_ll
   !JUANZ
   USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD
@@ -1274,8 +1275,8 @@ ENDIF
 !
 !*        2.3    Gather values of INUMPROC 
 !
-  CALL MPI_ALLGATHER( (/ INUMPROC /) , 1, MPI_INTEGER, IGLOBALSLICEPROC, 1, &
-                     MPI_INTEGER, NMNH_COMM_WORLD, IERR)
+  CALL MPI_ALLGATHER( (/ INUMPROC /) , 1, MNHINT_MPI, IGLOBALSLICEPROC, 1, &
+                     MNHINT_MPI, NMNH_COMM_WORLD, IERR)
 !
 !*        2.4     Get MPI world group
 !
@@ -1308,7 +1309,7 @@ ENDIF
 !
     ALLOCATE(ISIZES(ICOUNT))
     ISIZES = 0
-    CALL MPI_ALLGATHER( (/ ISIZE /) , 1, MPI_INTEGER, ISIZES, 1, MPI_INTEGER, &
+    CALL MPI_ALLGATHER( (/ ISIZE /) , 1, MNHINT_MPI, ISIZES, 1, MNHINT_MPI, &
                      ICOMM_GLOBALSLICE, IERR)
 !
 !*        3.2     Compute array of displacements in the slice relative to the 
@@ -1355,7 +1356,7 @@ ENDIF
 !
   IF (ICOMM .NE. MPI_COMM_NULL) THEN
 !
-    CALL MPI_BCAST(IGLOBALSLICELENGTH, 1, MPI_INTEGER, IPROCS(1), ICOMM, IERR)
+    CALL MPI_BCAST(IGLOBALSLICELENGTH, 1, MNHINT_MPI, IPROCS(1), ICOMM, IERR)
     CALL MPI_BCAST(PGLOBALSLICE(IDISPL1+1), IGLOBALSLICELENGTH, MNHREAL_MPI, &
                     IPROCS(1), ICOMM, IERR)
 !
@@ -1601,8 +1602,8 @@ ENDIF
 !
 !*        2.3    Gather values of INUMPROC
 !
-  CALL MPI_ALLGATHER( (/ INUMPROC /) , 1, MPI_INTEGER, IGLOBALSLICEPROC, 1, &
-                     MPI_INTEGER, NMNH_COMM_WORLD, IERR)
+  CALL MPI_ALLGATHER( (/ INUMPROC /) , 1, MNHINT_MPI, IGLOBALSLICEPROC, 1, &
+                     MNHINT_MPI, NMNH_COMM_WORLD, IERR)
 !
 !*        2.4     Get MPI world group
 !
@@ -1637,7 +1638,7 @@ ENDIF
 !
     ALLOCATE(ISIZES(ICOUNT))
     ISIZES = 0
-    CALL MPI_ALLGATHER( (/ ISIZE /) , 1, MPI_INTEGER, ISIZES, 1, MPI_INTEGER, &
+    CALL MPI_ALLGATHER( (/ ISIZE /) , 1, MNHINT_MPI, ISIZES, 1, MNHINT_MPI, &
                      ICOMM_GLOBALSLICE, IERR)
 !
 !*        3.2     Compute array of displacements in the slice relative to the
@@ -1689,7 +1690,7 @@ ENDIF
 !
   IF (ICOMM .NE. MPI_COMM_NULL) THEN
 !
-    CALL MPI_BCAST(IGLOBALSLICELENGTH, 1, MPI_INTEGER, IPROCS(1), ICOMM, IERR)
+    CALL MPI_BCAST(IGLOBALSLICELENGTH, 1, MNHINT_MPI, IPROCS(1), ICOMM, IERR)
     DO JK = 1, IGLOBALSLICEHEIGHT
       CALL MPI_BCAST(PGLOBALSLICE(1,JK), IGLOBALSLICELENGTH, MNHREAL_MPI, &
                     IPROCS(1), ICOMM, IERR)
@@ -1956,7 +1957,7 @@ ENDIF
 !
 !*        2.3    Gather values of INUMPROC 
 !
-  CALL MPI_ALLGATHER( (/ INUMPROC /) , 1, MPI_INTEGER, ISLICEPROC, 1, MPI_INTEGER, &
+  CALL MPI_ALLGATHER( (/ INUMPROC /) , 1, MNHINT_MPI, ISLICEPROC, 1, MNHINT_MPI, &
                      NMNH_COMM_WORLD, IERR)
 !
 !*        2.4     Get MPI world group
@@ -1990,7 +1991,7 @@ ENDIF
 !
     ALLOCATE(ISIZES(ICOUNT))
     ISIZES = 0
-    CALL MPI_ALLGATHER( (/ ISIZE /) , 1, MPI_INTEGER, ISIZES, 1, MPI_INTEGER, &
+    CALL MPI_ALLGATHER( (/ ISIZE /) , 1, MNHINT_MPI, ISIZES, 1, MNHINT_MPI, &
                      ICOMM_SLICE, IERR)
 !
 !*        3.2     Compute array of displacements in the slice relative to the 
@@ -2039,7 +2040,7 @@ ENDIF
 !
   IF (ICOMM .NE. MPI_COMM_NULL) THEN
 !
-    CALL MPI_BCAST(ISLICELENGTH, 1, MPI_INTEGER, IPROCS(1), ICOMM, IERR)
+    CALL MPI_BCAST(ISLICELENGTH, 1, MNHINT_MPI, IPROCS(1), ICOMM, IERR)
     CALL MPI_BCAST(ITOTALSLICE, ISLICELENGTH, MNHREAL_MPI, &
                     IPROCS(1), ICOMM, IERR)
     CALL MPI_COMM_FREE(ICOMM, IERR)
@@ -2309,7 +2310,7 @@ ENDIF
 !
 !*        2.3    Gather values of INUMPROC
 !
-  CALL MPI_ALLGATHER( (/ INUMPROC /) , 1, MPI_INTEGER, ISLICEPROC, 1, MPI_INTEGER, &
+  CALL MPI_ALLGATHER( (/ INUMPROC /) , 1, MNHINT_MPI, ISLICEPROC, 1, MNHINT_MPI, &
                      NMNH_COMM_WORLD, IERR)
 !
 !*        2.4     Get MPI world group
@@ -2343,7 +2344,7 @@ ENDIF
 !
     ALLOCATE(ISIZES(ICOUNT))
     ISIZES = 0
-    CALL MPI_ALLGATHER( (/ ISIZE /) , 1, MPI_INTEGER, ISIZES, 1, MPI_INTEGER, &
+    CALL MPI_ALLGATHER( (/ ISIZE /) , 1, MNHINT_MPI, ISIZES, 1, MNHINT_MPI, &
                      ICOMM_SLICE, IERR)
 !
 !*        3.2     Compute array of displacements in the slice relative to the
@@ -2395,7 +2396,7 @@ ENDIF
 !
   IF (ICOMM .NE. MPI_COMM_NULL) THEN
 !
-    CALL MPI_BCAST(ISLICELENGTH, 1, MPI_INTEGER, IPROCS(1), ICOMM, IERR)
+    CALL MPI_BCAST(ISLICELENGTH, 1, MNHINT_MPI, IPROCS(1), ICOMM, IERR)
     DO JK = 1, ISLICEHEIGHT
       CALL MPI_BCAST(ITOTALSLICE(1,JK), ISLICELENGTH, MNHREAL_MPI, &
                     IPROCS(1), ICOMM, IERR)

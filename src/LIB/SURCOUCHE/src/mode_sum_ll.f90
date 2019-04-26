@@ -3,8 +3,9 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!Correction :
-!  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+! Modifications:
+!  J. Escobar  15/09/2015: WENO5 & JPHEXT <> 1
+!  P. Wautelet 26/04/2019: use modd_precision parameters for datatypes of MPI communications
 !-----------------------------------------------------------------
 
 !     ##################
@@ -57,7 +58,7 @@
 !------------------------------------------------------------------------------
 !
    USE MODD_MPIF
-   use modd_precision, only: MNHREAL_MPI
+   use modd_precision, only: MNHINT_MPI, MNHREAL_MPI
    USE MODD_VAR_ll,    ONLY: NMNH_COMM_WORLD
 !
   CONTAINS
@@ -1302,8 +1303,8 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !
 !*        1.5  Get global begin and end
 !
-  CALL MPI_ALLREDUCE(IB, IGB, 1, MPI_INTEGER, MPI_MIN, NMNH_COMM_WORLD, IERR)
-  CALL MPI_ALLREDUCE(IE, IGE, 1, MPI_INTEGER, MPI_MAX, NMNH_COMM_WORLD, IERR)
+  CALL MPI_ALLREDUCE(IB, IGB, 1, MNHINT_MPI, MPI_MIN, NMNH_COMM_WORLD, IERR)
+  CALL MPI_ALLREDUCE(IE, IGE, 1, MNHINT_MPI, MPI_MAX, NMNH_COMM_WORLD, IERR)
 !
 !-------------------------------------------------------------------------------
 !
@@ -1313,10 +1314,10 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !*        2.1  Have the sizes and global positions known by all procs
 !
   ISIZE = IE - IB + 1
-  CALL MPI_ALLGATHER( (/ ISIZE /) , 1, MPI_INTEGER, ISIZES, 1, MPI_INTEGER, &
+  CALL MPI_ALLGATHER( (/ ISIZE /) , 1, MNHINT_MPI, ISIZES, 1, MNHINT_MPI, &
                      NMNH_COMM_WORLD, IERR)
 !
-  CALL MPI_ALLGATHER( (/ IB-IGB /), 1, MPI_INTEGER, IDISPL, 1, MPI_INTEGER, &
+  CALL MPI_ALLGATHER( (/ IB-IGB /), 1, MNHINT_MPI, IDISPL, 1, MNHINT_MPI, &
                      NMNH_COMM_WORLD, IERR)
 ! 
 !*        2.2  Get the global field
@@ -2820,7 +2821,7 @@ END SUBROUTINE REDUCE_SUM_1DD_ll
 !*       1. CALL THE MPI_ALLREDUCE ROUTINE
 !           ------------------------------
 !
-  CALL MPI_ALLREDUCE(PRES, ZRES, 1, MPI_INTEGER, &
+  CALL MPI_ALLREDUCE(PRES, ZRES, 1, MNHINT_MPI, &
                      MPI_SUM, NMNH_COMM_WORLD, KINFO)
 !
   PRES = ZRES
@@ -2883,7 +2884,7 @@ END SUBROUTINE REDUCE_SUM_1DD_ll
 !*       1. CALL THE MPI_ALLREDUCE ROUTINE
 !           ------------------------------
 !
-  CALL MPI_ALLREDUCE(PRES, ZRES, SIZE(PRES,1), MPI_INTEGER, &
+  CALL MPI_ALLREDUCE(PRES, ZRES, SIZE(PRES,1), MNHINT_MPI, &
                      MPI_SUM, NMNH_COMM_WORLD, KINFO)
 !
   PRES = ZRES
@@ -2950,7 +2951,7 @@ END SUBROUTINE REDUCE_SUM_1DD_ll
 !
   IDIM = SIZE(PRES,1) * SIZE(PRES,2)
 !
-  CALL MPI_ALLREDUCE(PRES, ZRES, IDIM, MPI_INTEGER, MPI_SUM, &
+  CALL MPI_ALLREDUCE(PRES, ZRES, IDIM, MNHINT_MPI, MPI_SUM, &
                      NMNH_COMM_WORLD, KINFO)
 !
   PRES = ZRES
@@ -3018,7 +3019,7 @@ END SUBROUTINE REDUCE_SUM_1DD_ll
 !
   IDIM = SIZE(PRES,1) * SIZE(PRES,2) * SIZE(PRES,3)
 !
-  CALL MPI_ALLREDUCE(PRES, ZRES, IDIM, MPI_INTEGER, MPI_SUM, &
+  CALL MPI_ALLREDUCE(PRES, ZRES, IDIM, MNHINT_MPI, MPI_SUM, &
                      NMNH_COMM_WORLD, KINFO)
 !
   PRES = ZRES

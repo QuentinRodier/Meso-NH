@@ -53,23 +53,24 @@ END MODULE MODI_ZDIFFUSETUP
 ! Modifications:
 !  J. Escobar  07/10/2015: remove print
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 26/04/2019: use modd_precision parameters for datatypes of MPI communications
 !
 !*       0.    DECLARATIONS
 !              ------------ 
+USE MODD_ARGSLIST_ll, ONLY: LIST_ll, HALO2LIST_ll
+USE MODD_CONF
 USE MODD_CST
 USE MODD_PARAMETERS
-USE MODD_CONF
-USE MODI_RELAX
+use modd_precision,   only: MNHINT_MPI
+USE MODD_VAR_ll,      ONLY: NMNH_COMM_WORLD
+!
 USE MODE_ll
-USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD
-USE MODI_SHUMAN
-USE MODD_ARGSLIST_ll, ONLY : LIST_ll, HALO2LIST_ll
-!
-!
-!JUAN
-USE MODE_TYPE_ZDIFFU
 USE MODE_SUM_LL
-!JUAN 
+USE MODE_TYPE_ZDIFFU
+!
+USE MODI_RELAX
+USE MODI_SHUMAN
+!
 IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
@@ -219,7 +220,7 @@ IKMAX_HALO2 = MAX(PZDIFFU_HALO2%NZDI,PZDIFFU_HALO2%NZDJ)
 PZDIFFU_HALO2%NZDLB = MAXVAL(IKMAX_HALO2) ! Model level, above which a truly horizontal computation of diffusion
                               ! is possible at all grid points
 !JUAN
-CALL MPI_ALLREDUCE(PZDIFFU_HALO2%NZDLB ,KZDLB_ll, 1, MPI_INTEGER, MPI_MAX, NMNH_COMM_WORLD, IERR)
+CALL MPI_ALLREDUCE(PZDIFFU_HALO2%NZDLB ,KZDLB_ll, 1, MNHINT_MPI, MPI_MAX, NMNH_COMM_WORLD, IERR)
 
 !print*,"zdiffusetup:: PZDIFFU_HALO2%NZDLB=",PZDIFFU_HALO2%NZDLB,KZDLB_ll
 PZDIFFU_HALO2%NZDLB = KZDLB_ll

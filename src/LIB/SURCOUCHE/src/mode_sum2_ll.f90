@@ -3,6 +3,9 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
+! Modifications:
+!  P. Wautelet 26/04/2019: use modd_precision parameters for datatypes of MPI communications
+!-----------------------------------------------------------------
 
 !     ###################
       MODULE MODE_SUM2_ll
@@ -581,7 +584,7 @@ ENDIF
 !
 !*       0.    DECLARATIONS
 !
-  use modd_precision, only: MNH2REAL_MPI
+  use modd_precision, only: MNH2REAL_MPI, MNHINT_MPI
   USE MODD_VAR_ll,    ONLY: IP
 !
   IMPLICIT NONE
@@ -627,7 +630,7 @@ ENDIF
   IPROCMAX = ZBUFOUT(2)
   IMAXLOC = KLOCALMAX
   ISIZE=SIZE(KLOCALMAX)
-  CALL MPI_BCAST(IMAXLOC, ISIZE, MPI_INTEGER, IPROCMAX-1, &
+  CALL MPI_BCAST(IMAXLOC, ISIZE, MNHINT_MPI, IPROCMAX-1, &
                  NMNH_COMM_WORLD, INFO_ll)
 !
   KPROC=IPROCMAX
@@ -680,7 +683,7 @@ ENDIF
 !
 !*       0.    DECLARATIONS
 !
-  use modd_precision,    only: MNH2REAL_MPI
+  use modd_precision,    only: MNH2REAL_MPI, MNHINT_MPI
   USE MODD_STRUCTURE_ll, ONLY: MODELSPLITTING_ll
   USE MODD_VAR_ll,       ONLY: IP, TCRRT_PROCONF
 !
@@ -732,7 +735,7 @@ ENDIF
 !
   IPROCMAX = ZBUFOUT(2)
   IMAXLOC = KLOCALMAX
-  CALL MPI_BCAST(IMAXLOC, ISIZE, MPI_INTEGER, IPROCMAX-1, &
+  CALL MPI_BCAST(IMAXLOC, ISIZE, MNHINT_MPI, IPROCMAX-1, &
                  NMNH_COMM_WORLD, INFO_ll)
 !
 !-------------------------------------------------------------------------------

@@ -3,16 +3,15 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
+! Modifications:
+!  J. Escobar  10/02/2012: bug in MPI_RECV: replace MPI_STATUSES_IGNORE with MPI_STATUS_IGNORE
+!  P. Wautelet 26/04/2019: use modd_precision parameters for datatypes of MPI communications
+!-----------------------------------------------------------------
 
 MODULE MODE_SCATTER_ll
 
-!
-!   J.Escobar 10/02/2012 : Bug , in MPI_RECV replace MPI_STATUSES_IGNORE
-!                          with MPI_STATUS_IGNORE
-!
-
 USE MODD_MPIF
-use modd_precision, only: MNHREAL_MPI
+use modd_precision, only: MNHINT_MPI, MNHREAL_MPI
 
 IMPLICIT NONE 
 
@@ -322,14 +321,14 @@ IF (ISP == KROOT) THEN
     END IF
     
     IF (ISP /= JI) THEN 
-      CALL MPI_BSEND(TI2DP,SIZE(TI2DP),MPI_INTEGER,JI-1,199+KROOT,KCOMM&
+      CALL MPI_BSEND(TI2DP,SIZE(TI2DP),MNHINT_MPI,JI-1,199+KROOT,KCOMM&
            & ,IERR)
     ELSE 
       KRECV(:) = TI2DP(:)
     END IF
   END DO
 ELSE
-  CALL MPI_RECV(KRECV,SIZE(KRECV),MPI_INTEGER,KROOT-1,199+KROOT,KCOMM&
+  CALL MPI_RECV(KRECV,SIZE(KRECV),MNHINT_MPI,KROOT-1,199+KROOT,KCOMM&
        & ,MPI_STATUS_IGNORE,IERR)
 END IF
   
@@ -359,14 +358,14 @@ IF (ISP == KROOT) THEN
     END IF
     
     IF (ISP /= JI) THEN 
-      CALL MPI_BSEND(TI2DP,SIZE(TI2DP),MPI_INTEGER,JI-1,199+KROOT,KCOMM&
+      CALL MPI_BSEND(TI2DP,SIZE(TI2DP),MNHINT_MPI,JI-1,199+KROOT,KCOMM&
            & ,IERR)
     ELSE 
       KRECV(:,:) = TI2DP(:,:)
     END IF
   END DO
 ELSE
-  CALL MPI_RECV(KRECV,SIZE(KRECV),MPI_INTEGER,KROOT-1,199+KROOT,KCOMM&
+  CALL MPI_RECV(KRECV,SIZE(KRECV),MNHINT_MPI,KROOT-1,199+KROOT,KCOMM&
        & ,MPI_STATUS_IGNORE,IERR)
 END IF
 
@@ -572,14 +571,14 @@ IF (ISP == KROOT) THEN
     TI3DP=>KSEND(IXO:IXE,IYO:IYE)
     
     IF (ISP /= JI) THEN 
-      CALL MPI_BSEND(TI3DP,SIZE(TI3DP),MPI_INTEGER,JI-1,199+KROOT,KCOMM&
+      CALL MPI_BSEND(TI3DP,SIZE(TI3DP),MNHINT_MPI,JI-1,199+KROOT,KCOMM&
            & ,IERR)
     ELSE 
       KRECV(:,:) = TI3DP(:,:)
     END IF
   END DO
 ELSE
-  CALL MPI_RECV(KRECV,SIZE(KRECV),MPI_INTEGER,KROOT-1,199+KROOT,KCOMM&
+  CALL MPI_RECV(KRECV,SIZE(KRECV),MNHINT_MPI,KROOT-1,199+KROOT,KCOMM&
        & ,MPI_STATUS_IGNORE,IERR)
 END IF
 
