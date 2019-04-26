@@ -8,6 +8,7 @@
 ! Modifications:
 !  P. Wautelet 22/03/2019: add MNHINT/REAL32/64_MPI, MNH2REAL32/64_MPI + more public parameters
 !  P. Wautelet 27/03/2019: add MNHTIME and MNHTIME_MPI
+!  P. Wautelet 26/04/2019: add MNHLOG and MNHLOG_MPI/MNHLOG32_MPI/MNHLOG64_MPI
 !-----------------------------------------------------------------
 module modd_precision
 
@@ -24,11 +25,12 @@ private
 public :: MNHINT32, MNHINT64, MNHREAL32, MNHREAL64, MNHREAL128
 
 public :: MNHINT32_MPI,   MNHINT64_MPI
+public :: MNHLOG32_MPI,   MNHLOG64_MPI
 public :: MNHREAL32_MPI,  MNHREAL64_MPI
 public :: MNH2REAL32_MPI, MNH2REAL64_MPI
 
-public :: MNHINT, MNHREAL
-public :: MNHINT_MPI, MNHREAL_MPI, MNH2REAL_MPI
+public :: MNHINT, MNHLOG, MNHREAL
+public :: MNHINT_MPI, MNHLOG_MPI, MNHREAL_MPI, MNH2REAL_MPI
 public :: MNHTIME, MNHTIME_MPI
 
 public :: LFIINT
@@ -37,9 +39,12 @@ public :: LFIINT
 public :: CDFINT, MNHINT_NF90, MNHREAL_NF90
 #endif
 
-
 integer, parameter :: MNHINT32 = selected_int_kind( r = 9 )
 integer, parameter :: MNHINT64 = selected_int_kind( r = 18 )
+
+! There is no standard way to define a 32 or 64-bit logical
+! Therefore, we define only the default MNHLOG type
+integer, parameter :: MNHLOG = kind( .true. )
 
 integer, parameter :: MNHREAL32  = selected_real_kind( p = 6,  r = 37 )
 integer, parameter :: MNHREAL64  = selected_real_kind( p = 15, r = 307 )
@@ -47,6 +52,9 @@ integer, parameter :: MNHREAL128 = selected_real_kind( p = 33, r = 4931 )
 
 integer, parameter :: MNHINT32_MPI  = MPI_INTEGER4
 integer, parameter :: MNHINT64_MPI  = MPI_INTEGER8
+
+integer, parameter :: MNHLOG32_MPI  = MPI_LOGICAL4
+integer, parameter :: MNHLOG64_MPI  = MPI_LOGICAL8
 
 integer, parameter :: MNHREAL32_MPI  = MPI_REAL4
 integer, parameter :: MNHREAL64_MPI  = MPI_REAL8
@@ -56,12 +64,16 @@ integer, parameter :: MNH2REAL64_MPI  = MPI_2DOUBLE_PRECISION
 
 
 ! Kinds for MesoNH
+
+!For logicals, all compilers seem to set the same default size for INTEGER and LOGICAL
 #if ( MNH_INT == 4 )
 integer, parameter :: MNHINT     = MNHINT32
 integer, parameter :: MNHINT_MPI = MNHINT32_MPI
+integer, parameter :: MNHLOG_MPI = MNHLOG32_MPI
 #elif ( MNH_INT == 8 )
 integer, parameter :: MNHINT     = MNHINT64
 integer, parameter :: MNHINT_MPI = MNHINT64_MPI
+integer, parameter :: MNHLOG_MPI = MNHLOG64_MPI
 #else
 #error "Invalid MNH_INT"
 #endif
