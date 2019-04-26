@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 init 2007/02/19 11:21:57
 !-----------------------------------------------------------------
 !     ######################
        MODULE MODI_INI_CLOUD 
@@ -92,6 +87,7 @@ END MODULE MODI_INI_CLOUD
 !!      (J.Stein)   30/06/95  use 2*PTSTEP to compute the number of small 
 !!                            timesteps for the rain sedimentation
 !!      (N. Asencio) 11/08/98 parallel code: PDZMIN is computed outside in ini_modeln
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -204,7 +200,7 @@ ZVTRMAX = 10.
 !               -------------------------------------------------
 KSPLITR = 1
 SPLIT : DO
-  ZT = PTSTEP / FLOAT(KSPLITR)
+  ZT = PTSTEP / REAL(KSPLITR)
   IF ( ZT * ZVTRMAX / PDZMIN .LT. 1.) EXIT SPLIT
   KSPLITR = KSPLITR + 1
 END DO SPLIT

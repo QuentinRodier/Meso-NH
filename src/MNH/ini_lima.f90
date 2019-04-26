@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !      ####################
@@ -44,7 +44,8 @@ END MODULE MODI_INI_LIMA
 !!    -------------
 !!      Original             ??/??/13 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -102,7 +103,7 @@ ZVTRMAX(7) = 30.         ! Maximum hail fall speed
 DO JI=2,7
    NSPLITSED(JI) = 1
    SPLIT : DO
-      ZT = PTSTEP / FLOAT(NSPLITSED(JI))
+      ZT = PTSTEP / REAL(NSPLITSED(JI))
       IF ( ZT * ZVTRMAX(JI) / PDZMIN < 1.0) EXIT SPLIT
       NSPLITSED(JI) = NSPLITSED(JI) + 1
    END DO SPLIT
@@ -112,7 +113,7 @@ END DO
 !
 KSPLITR = 1
 SPLITR : DO
-   ZT = PTSTEP / FLOAT(KSPLITR)
+   ZT = PTSTEP / REAL(KSPLITR)
    IF ( ZT * ZVTRMAX(7) / PDZMIN < 1.0) EXIT SPLITR
    KSPLITR = KSPLITR + 1
 END DO SPLITR
@@ -122,7 +123,7 @@ END DO SPLITR
 !
 KSPLITG = 1
 SPLITG : DO
-   ZT = 2.* PTSTEP / FLOAT(KSPLITG)
+   ZT = 2.* PTSTEP / REAL(KSPLITG)
    IF ( ZT * ZVTRMAX(7) / PDZMIN .LT. 1.) EXIT SPLITG
    KSPLITG = KSPLITG + 1
 END DO SPLITG

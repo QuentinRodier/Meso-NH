@@ -19,6 +19,7 @@
 !  P. Wautelet 22/02/2019: add kind parameter for CMPLX intrinsics (if not it default to single precision)
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 19/04/2019: use kind(0.0d0) instead of kind=8
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !
 !****************************************************************************
 
@@ -593,7 +594,7 @@
             TI1NN=XTI1(N,N)
             TR1NN1=XTR1(N1,N1)
             TI1NN1=XTI1(N1,N1)
-            DN1=FLOAT(2*N+1)
+            DN1=REAL(2*N+1)
             QSCA=QSCA+DN1*(TR1NN*TR1NN+TI1NN*TI1NN+&
                 TR1NN1*TR1NN1+TI1NN1*TI1NN1)
             QEXT=QEXT+(TR1NN+TR1NN1)*DN1
@@ -601,7 +602,7 @@
 !            TI1NN=TI1(N,N)
 !            TR1NN1=TR1(N1,N1)
 !            TI1NN1=TI1(N1,N1)
-!            DN1=FLOAT(2*N+1)
+!            DN1=REAL(2*N+1)
 !            QSCA=QSCA+DN1*(TR1NN*TR1NN+TI1NN*TI1NN+&
 !                TR1NN1*TR1NN1+TI1NN1*TI1NN1)
 !            QEXT=QEXT+(TR1NN+TR1NN1)*DN1
@@ -654,7 +655,7 @@
                TI1NN=XTI1(N,N)
                TR1NN1=XTR1(N1,N1)
                TI1NN1=XTI1(N1,N1)
-               DN1=FLOAT(2*N+1)
+               DN1=REAL(2*N+1)
                QSCA=QSCA+DN1*(TR1NN*TR1NN+TI1NN*TI1NN+&
                     TR1NN1*TR1NN1+TI1NN1*TI1NN1)
                QEXT=QEXT+(TR1NN+TR1NN1)*DN1
@@ -1107,7 +1108,7 @@
             
 !****mclock gives the time of execution (CPU)in centieme of second
 !c            ITIME=MCLOCK()
-!c            TIME=FLOAT(ITIME)/6000D0
+!c            TIME=REAL(ITIME)/6000D0
 !C     WRITE(10,1001)TIME
 !c 1001       FORMAT (' time =',F8.2,' min')
             
@@ -1355,8 +1356,8 @@
       DO NN=1,NMAX
           DO N=1,NMAX
           CN=CI**(NN-N-1)
-          DNN=FLOAT((2*N+1)*(2*NN+1)) 
-          DNN=DNN/FLOAT( N*NN*(N+1)*(NN+1) ) 
+          DNN=REAL((2*N+1)*(2*NN+1)) 
+          DNN=DNN/REAL( N*NN*(N+1)*(NN+1) ) 
           RN=SQRT(DNN)
           CAL(N,NN)=CN*RN
           ENDDO
@@ -1497,9 +1498,9 @@
            D1=1D0
            D2=X  
                DO N=1,NMAX  
-               QN=FLOAT(N)
-               QN1=FLOAT(N+1)
-               QN2=FLOAT(2*N+1)
+               QN=REAL(N)
+               QN1=REAL(N+1)
+               QN2=REAL(2*N+1)
                D3=(QN2*X*D2-QN*D1)/QN1 
                DER=QS1*(QN1*QN/QN2)*(-D1+D3)
                DV1(N)=D2*DSI
@@ -1508,17 +1509,17 @@
                D2=D3
                ENDDO
            ELSE
-           QMM=FLOAT(M*M)
+           QMM=REAL(M*M)
                DO I=1,M
                I2=I*2
-               A=A*SQRT(FLOAT(I2-1)/FLOAT(I2))*QS
+               A=A*SQRT(REAL(I2-1)/REAL(I2))*QS
                ENDDO
            D1=0D0
            D2=A 
                DO N=M,NMAX
-               QN=FLOAT(N)
-               QN2=FLOAT(2*N+1)
-               QN1=FLOAT(N+1)
+               QN=REAL(N)
+               QN2=REAL(2*N+1)
+               QN1=REAL(N+1)
                QNM=SQRT(QN*QN-QMM)
                QNM1=SQRT(QN1*QN1-QMM)
                D3=(QN2*X*D2-QNM*D1)/QNM1
@@ -1533,7 +1534,7 @@
           IF (M.EQ.1) THEN
 
               DO N=1,NMAX
-              DN=FLOAT(N*(N+1))
+              DN=REAL(N*(N+1))
               DN=0.5D0*SQRT(DN)
                   IF (X.LT.0D0) DN=DN*(-1)**(N+1)
               DV1(N)=DN
@@ -1559,8 +1560,8 @@
  
       DO N=1,NMAX
          NN=N*(N+1)
-         AN(N)=FLOAT(NN)
-         D=SQRT(FLOAT(2*N+1)/FLOAT(NN))
+         AN(N)=REAL(NN)
+         D=SQRT(REAL(2*N+1)/REAL(NN))
          DD(N)=D
          DO N1=1,N
             DDD=D*DD(N1)*0.5D0
@@ -1637,8 +1638,8 @@
       if ( NMAX > NPN1 ) call Print_msg( NVERB_FATAL, 'GEN', 'VARY', 'NMAX > NPN1' )
 
       TB=TA*SQRT(MRR*MRR+MRI*MRI)
-      TB=MAX(TB,FLOAT(NMAX))
-      NNMAX1=1.2D0*SQRT(MAX(TA,FLOAT(NMAX)))+3D0
+      TB=MAX(TB,REAL(NMAX))
+      NNMAX1=1.2D0*SQRT(MAX(TA,REAL(NMAX)))+3D0
       NNMAX2=(TB+4D0*(TB**0.33333D0)+1.2D0*SQRT(TB))
       NNMAX2=NNMAX2-NMAX+5
       CALL BESS(Z,ZR,ZI,NG,NMAX,NNMAX1,NNMAX2)
@@ -1723,12 +1724,12 @@
 
       L=NMAX+NNMAX
       XX=1D0/X
-      Z(L)=1D0/(FLOAT(2*L+1)*XX)
+      Z(L)=1D0/(REAL(2*L+1)*XX)
       L1=L-1
 
       DO I=1,L1
       I1=L-I
-      Z(I1)=1D0/(FLOAT(2*I1+1)*XX-Z(I1+1))
+      Z(I1)=1D0/(REAL(2*I1+1)*XX-Z(I1+1))
       ENDDO
 
       Z0=1D0/(XX-Z(1))
@@ -1740,7 +1741,7 @@
       DO I=2,NMAX
       YI1=Y(I-1)
       YI=YI1*Z(I)
-      U(I)=YI1-FLOAT(I)*YI*XX
+      U(I)=YI1-REAL(I)*YI*XX
       Y(I)=YI
       ENDDO
 
@@ -1764,12 +1765,12 @@
       NMAX1=NMAX-1
 
       DO I=2,NMAX1
-      Y(I+1)=FLOAT(2*I+1)*X1*Y(I)-Y(I-1)
+      Y(I+1)=REAL(2*I+1)*X1*Y(I)-Y(I-1)
       ENDDO
 
       V(1)=-X1*(C+Y1)
       DO  I=2,NMAX
-      V(I)=Y(I-1)-FLOAT(I)*X1*Y(I)
+      V(I)=Y(I-1)-REAL(I)*X1*Y(I)
       ENDDO
 
       RETURN
@@ -1796,14 +1797,14 @@
       XRXI=1D0/(XR*XR+XI*XI)
       CXXR=XR*XRXI
       CXXI=-XI*XRXI 
-      QF=1D0/FLOAT(2*L+1)
+      QF=1D0/REAL(2*L+1)
       CZR(L)=XR*QF
       CZI(L)=XI*QF
       L1=L-1
 
       DO I=1,L1
       I1=L-I
-      QF=FLOAT(2*I1+1)
+      QF=REAL(2*I1+1)
       AR=QF*CXXR-CZR(I1+1)
       AI=QF*CXXI-CZI(I1+1)
       ARI=1D0/(AR*AR+AI*AI)
@@ -1838,7 +1839,7 @@
       UI(1)=CU1I
 
       DO I=2,NMAX
-      QI=FLOAT(I)
+      QI=REAL(I)
       CYI1R=CYR(I-1)
       CYI1I=CYI(I-1)
       CYIR=CYI1R*CZR(I)-CYI1I*CZI(I)
@@ -2155,7 +2156,7 @@ DEALLOCATE(IG22)
 !!      COMMON /CTT/ QR,QI,RGQR,RGQI
 
       MM1=M
-      QM=FLOAT(M)
+      QM=REAL(M)
       QMM=QM*QM
 !c      NG=2*NGAUSS
 !c      NGSS=NG
@@ -2471,17 +2472,17 @@ DEALLOCATE(IG22)
       ENDDO   
 
       IF (M.NE.0) THEN
-      QMM=FLOAT(M*M)
+      QMM=REAL(M*M)
           DO I=1,M
           I2=I*2
-          A=A*SQRT(FLOAT(I2-1)/FLOAT(I2))*QS
+          A=A*SQRT(REAL(I2-1)/REAL(I2))*QS
           ENDDO   
       D1=0D0
       D2=A
           DO N=M,NMAX
-          QN=FLOAT(N)
-          QN2=FLOAT(2*N+1)
-          QN1=FLOAT(N+1)
+          QN=REAL(N)
+          QN2=REAL(2*N+1)
+          QN1=REAL(N+1)
           QNM=SQRT(QN*QN-QMM)
           QNM1=SQRT(QN1*QN1-QMM)
           D3=(QN2*X*D2-QNM*D1)/QNM1
@@ -2495,9 +2496,9 @@ DEALLOCATE(IG22)
       D1=1D0
       D2=X  
           DO N=1,NMAX  
-          QN=FLOAT(N)
-          QN1=FLOAT(N+1)
-          QN2=FLOAT(2*N+1)
+          QN=REAL(N)
+          QN1=REAL(N+1)
+          QN2=REAL(2*N+1)
           D3=(QN2*X*D2-QN*D1)/QN1 
           DER=QS1*(QN1*QN/QN2)*(-D1+D3)
           DV1(N)=D2
@@ -2616,7 +2617,7 @@ DEALLOCATE(IG22)
       INTEGER IPVT(NPN1),IND1(NPN1),IND2(NPN1)
 
       NDIM=NPN1
-      NN1=(FLOAT(NMAX)-0.1D0)*0.5D0+1D0 
+      NN1=(REAL(NMAX)-0.1D0)*0.5D0+1D0 
       NN2=NMAX-NN1
       DO I=1,NMAX
       IND1(I)=2*I-1
@@ -2853,7 +2854,7 @@ DEALLOCATE(IG22)
     
       IND=MOD(N,2)
       K=N/2+IND
-      F=FLOAT(N)
+      F=REAL(N)
 
 !*****DO 1
       DO I=1,K

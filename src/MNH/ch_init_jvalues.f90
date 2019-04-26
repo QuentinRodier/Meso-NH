@@ -64,6 +64,7 @@ END MODULE MODI_CH_INIT_JVALUES
 !!                              interpolation
 !!          01/12/04 (P. Tulet) update for arome
 !!          19/06/2014(J.Escobar & M.Leriche) write(kout,...) to OUTPUT_LISTING file
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !!
 !!    EXTERNAL
 !!    --------
@@ -123,7 +124,7 @@ IF (.NOT.ALLOCATED(XJDATA)) ALLOCATE(XJDATA(NSZA_INCR,NZZ_JVAL,JPJVMAX,NBALB))
   !
   IF (.NOT. ALLOCATED(XSZA_JVAL)) ALLOCATE(XSZA_JVAL(NSZA_INCR))
   DO JSZA = 1, NSZA_INCR 
-   XSZA_JVAL(JSZA) = FLOAT(JSZA-1)
+   XSZA_JVAL(JSZA) = REAL(JSZA-1)
   ENDDO
   !
   !* Ozone Column
@@ -136,10 +137,10 @@ IF (.NOT.ALLOCATED(XJDATA)) ALLOCATE(XJDATA(NSZA_INCR,NZZ_JVAL,JPJVMAX,NBALB))
   !
   !* Vertical Levels
   !
-  ZDZ = ZMAX / FLOAT(NZZ_JVAL - 1)
+  ZDZ = ZMAX / REAL(NZZ_JVAL - 1)
   IF(.NOT.ALLOCATED(XZZ_JVAL))  ALLOCATE(XZZ_JVAL(NZZ_JVAL))
   DO JKLEV = 1, NZZ_JVAL
-    XZZ_JVAL(JKLEV) = FLOAT(JKLEV-1) * ZDZ
+    XZZ_JVAL(JKLEV) = REAL(JKLEV-1) * ZDZ
     ZLWC(JKLEV)= 0.0
   ENDDO
   !
@@ -147,7 +148,7 @@ IF (.NOT.ALLOCATED(XJDATA)) ALLOCATE(XJDATA(NSZA_INCR,NZZ_JVAL,JPJVMAX,NBALB))
   !        --------------
   !
   DO JALB=1,NBALB
-    ZALBLOOP=0.02+0.20*FLOAT(JALB-1)/FLOAT(NBALB-1) 
+    ZALBLOOP=0.02+0.20*REAL(JALB-1)/REAL(NBALB-1) 
     DO JSZA = 1, NSZA_INCR
       ZSZALOOP = XSZA_JVAL(JSZA)
       CALL TUVMAIN(  ZSZALOOP, IDATE,           &

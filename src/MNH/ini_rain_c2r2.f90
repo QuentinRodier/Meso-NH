@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !      #########################
@@ -89,6 +89,7 @@ END MODULE MODI_INI_RAIN_C2R2
 !!      G.Delautier 09/2014   fusion MODD_RAIN_C2R2_PARAM et MODD_RAIN_KHKO_PARAM
 !!      M.Mazoyer   10/2016 Constants for Droplet sedimentation adapted to fog for KHKO
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -173,7 +174,7 @@ ZVTRMAX = 30.
 !
 KSPLITR = 1
 SPLIT : DO
-  ZT = PTSTEP / FLOAT(KSPLITR)
+  ZT = PTSTEP / REAL(KSPLITR)
   IF ( ZT * ZVTRMAX / PDZMIN < 1.0) EXIT SPLIT
   KSPLITR = KSPLITR + 1
 END DO SPLIT
@@ -353,12 +354,12 @@ ALLOCATE (XHYPF32(NHYP))
 !
 ZSMIN = 1.0E-5  ! soit Smin=0.001 %
 ZSMAX = 1.0E-1  ! soit Smax=   10 %
-XHYPINTP1 = FLOAT(NHYP-1)/LOG(ZSMAX/ZSMIN)
-XHYPINTP2 = FLOAT(NHYP)-XHYPINTP1*LOG(ZSMAX)
+XHYPINTP1 = REAL(NHYP-1)/LOG(ZSMAX/ZSMIN)
+XHYPINTP2 = REAL(NHYP)-XHYPINTP1*LOG(ZSMAX)
 IF (HPARAM_CCN == 'CPB') THEN ! CPB98's case 
   TAB_HYP : DO J1 = 1,NHYP    ! tabulation using a logarithmic scale for the
                       ! supersaturations (0.00001<S<0.1 in "no unit")
-              ZSS =ZSMAX*(ZSMIN/ZSMAX)**(FLOAT(NHYP-J1)/FLOAT(NHYP-1))
+              ZSS =ZSMAX*(ZSMIN/ZSMAX)**(REAL(NHYP-J1)/REAL(NHYP-1))
               XHYPF12(J1) = HYPGEO(XMUHEN,XKHEN/2.0,(XKHEN+2.0)/2.0,XBETAHEN, &
                                    100.*ZSS)
               XHYPF32(J1) = HYPGEO(XMUHEN,XKHEN/2.0,(XKHEN+3.0)/2.0,XBETAHEN*100**2, &
@@ -385,7 +386,7 @@ END IF
 !
 NAHEN = 81 ! Tabulation for each Kelvin degree in the range XTT-40 to XTT+40
 XAHENINTP1 = 1.0
-XAHENINTP2 = 0.5*FLOAT(NAHEN-1) - XTT
+XAHENINTP2 = 0.5*REAL(NAHEN-1) - XTT
 IF (HPARAM_CCN == 'TFH') THEN
   ALLOCATE (XAHENY(NAHEN))
   ALLOCATE (XAHENF(NAHEN))
@@ -395,7 +396,7 @@ IF (HPARAM_CCN == 'TFH') THEN
 !
   XCSTHEN = 1.0 / ( XRHOLW*4.0*XPI*XCHEN*(100.0)**XKHEN )
   DO J1 = 1,NAHEN
-    ZTT = XTT + FLOAT(J1-(NAHEN-1)/2)                    ! T
+    ZTT = XTT + REAL(J1-(NAHEN-1)/2)                     ! T
     ZLV = XLVTT+(XCPV-XCL)*(ZTT-XTT)                     ! Lv
     ZPSI1 = (XG/(XRD*ZTT))*(XMV*ZLV/(XMD*XCPD*ZTT)-1.)   ! Psi1
     ZG    = 1.E-4*(6.224E-7 + 0.281E-7 * ZTT + 2.320E-10 * ZTT**2) *  & ! G
@@ -430,7 +431,7 @@ ELSE
   XCSTHEN = 1.0 / ( XRHOLW*2.0*XPI*XKHEN*XCHEN*(100.0)**XKHEN * &
                     GAMMA(XKHEN/2.0)*GAMMA(3.0/2.0)/GAMMA((XKHEN+3.0)/2.0) )
   DO J1 = 1,NAHEN
-    ZTT = XTT + FLOAT(J1-(NAHEN-1)/2)                    ! T
+    ZTT = XTT + REAL(J1-(NAHEN-1)/2)                     ! T
     ZLV = XLVTT+(XCPV-XCL)*(ZTT-XTT)                     ! Lv
     XPSI1(J1) = (XG/(XRD*ZTT))*(XMV*ZLV/(XMD*XCPD*ZTT)-1.)   ! Psi1
     XPSI3(J1) = -1*XMV*ZLV/(XMD*XRD*(ZTT**2))   ! Psi3

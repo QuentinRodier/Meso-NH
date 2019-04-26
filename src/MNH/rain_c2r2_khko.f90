@@ -213,6 +213,7 @@ END MODULE MODI_RAIN_C2R2_KHKO
 !!      C.Lac     : 07/2016 : Add droplet deposition
 !!      C.Lac     : 01/2017 : Correction on droplet deposition
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -522,7 +523,7 @@ IF (LBUDGET_SV) &
 !*       6.1 Calculation of the mean volumic radius (ZRAY) and
 !             the terminal vertical velocity ZCC for precipitating clouds
 !
-ZTSPLITR = PTSTEP / FLOAT(KSPLITR)       ! Small time step
+ZTSPLITR = PTSTEP / REAL(KSPLITR)       ! Small time step
 !
 !
 !*       6.2    compute the sedimentation velocities for rain
@@ -686,10 +687,10 @@ INUCT = COUNTJV( GNUCT(:,:,:),I1(:),I2(:),I3(:))
 !
 !*       3.1.1   compute the constant term (ZZW3)
 !
-  ZVEC1(:) = MAX( 1.00001, MIN( FLOAT(NAHEN)-0.00001, &
+  ZVEC1(:) = MAX( 1.00001, MIN( REAL(NAHEN)-0.00001, &
                   XAHENINTP1 * ZZT(:) + XAHENINTP2 )  )
   IVEC1(:) = INT( ZVEC1(:) )
-  ZVEC1(:) = ZVEC1(:) - FLOAT( IVEC1(:) )
+  ZVEC1(:) = ZVEC1(:) - REAL( IVEC1(:) )
   ALLOCATE(ZSMAX(INUCT))
 !
 !
@@ -771,10 +772,10 @@ INUCT = COUNTJV( GNUCT(:,:,:),I1(:),I2(:),I3(:))
     IF( HPARAM_CCN == 'CPB' ) THEN
       DO J1 = 1,4
        WHERE (ZZW5(:) > 0.)
-        ZVEC1(:) = MAX( 1.00001, MIN( FLOAT(NHYP)-0.00001,      &
+        ZVEC1(:) = MAX( 1.00001, MIN( REAL(NHYP)-0.00001,      &
                         XHYPINTP1*LOG(ZSMAX(:))+XHYPINTP2 ) )
         IVEC1(:) = INT( ZVEC1(:) )
-        ZVEC1(:) = ZVEC1(:) - FLOAT( IVEC1(:) )
+        ZVEC1(:) = ZVEC1(:) - REAL( IVEC1(:) )
         ZZW2(:)  =   XHYPF32( IVEC1(:)+1 )* ZVEC1(:)      &
                    - XHYPF32( IVEC1(:)   )*(ZVEC1(:) - 1.0)
         ZSMAX(:) = (ZZW3(:)/ZZW2(:))**(1.0/(XKHEN+2.0))

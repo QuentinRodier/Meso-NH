@@ -1,12 +1,7 @@
-!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 2006-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 chimie 2006/10/18 12:20:58
 !-----------------------------------------------------------------
 !!   ##############################
      MODULE MODI_CH_AER_SEDIM_n
@@ -52,7 +47,8 @@ END MODULE MODI_CH_AER_SEDIM_n
 !!   MODIFICATIONS
 !!    -------------
 !!   Original
-!!
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!
 ! Entry variables:
 !
 ! PM(IN)       -Array of moments
@@ -184,7 +180,7 @@ DO JN=1,JPIN
   ISPLITA = INT(ZVSMAX*PDTMONITOR/ZHMIN)+1
   ISPLITA = MIN(50, ISPLITA)
   !
-  ZTSPLITR  = PDTMONITOR / FLOAT(ISPLITA)   
+  ZTSPLITR  = PDTMONITOR / REAL(ISPLITA)   
   !
   DO JT=1,ISPLITA
     ZFLUXSED(:,:,1:ILU+1,JN)= ZVGK(:,:,1:ILU+1,JN)* ZPM(:,:,1:ILU+1,JN)

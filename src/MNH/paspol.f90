@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2008-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ######spl
@@ -60,7 +60,8 @@ END MODULE MODI_PASPOL
 !!    C.Lac 11/11 Remove instant M
 !!    P.Wautelet 28/03/2018 Replace TEMPORAL_DIST by DATETIME_DISTANCE
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!! --------------------------------------------------------------------------
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+! --------------------------------------------------------------------------
 !       
 !!    EXTERNAL
 !!    --------
@@ -218,8 +219,8 @@ IF (GPPFIRSTCALL) THEN
       CALL SM_XYHAT(XLATORI,XLONORI,XPPLAT(JSV),XPPLON(JSV),ZSRCX,ZSRCY)
       II=MAX(MIN(COUNT(XXHAT(:)<ZSRCX),IIU-1),1)
       IJ=MAX(MIN(COUNT(XYHAT(:)<ZSRCY),IJU-1),1)
-      ZSRCI=(ZSRCX-XXHAT(II))/(XXHAT(II+1)-XXHAT(II))+FLOAT(II)
-      ZSRCJ=(ZSRCY-XYHAT(IJ))/(XYHAT(IJ+1)-XYHAT(IJ))+FLOAT(IJ)
+      ZSRCI=(ZSRCX-XXHAT(II))/(XXHAT(II+1)-XXHAT(II))+REAL(II)
+      ZSRCJ=(ZSRCY-XYHAT(IJ))/(XYHAT(IJ+1)-XYHAT(IJ))+REAL(IJ)
       !
       IPIGI(JSV)=INT(ZSRCI)
       IPIGJ(JSV)=INT(ZSRCJ)
@@ -275,9 +276,9 @@ IF (GPPFIRSTCALL) THEN
 !              IF (CPPINIT(JSV)=='9PT') THEN
                   !
 !                 DO J9PTI= -1,1
-!                    ZX=ABS(FLOAT(J9PTI)*XPI/4.) 
+!                    ZX=ABS(REAL(J9PTI)*XPI/4.) 
 !                    DO J9PTJ= -1,1
-!                       ZY=ABS(FLOAT(J9PTJ)*XPI/4.)
+!                       ZY=ABS(REAL(J9PTJ)*XPI/4.)
 !                       Z9PT(J9PTI,J9PTJ)=COS(ZX)*COS(ZY)
 !                    END DO
 !                 END DO
@@ -315,10 +316,10 @@ IF (GPPFIRSTCALL) THEN
          READ(CPPT2(JSV),'(I4,5I2)') I2YY,I2MM,I2DD,I2HH,I2MN,I2SS
          READ(CPPT3(JSV),'(I4,5I2)') I3YY,I3MM,I3DD,I3HH,I3MN,I3SS
          READ(CPPT4(JSV),'(I4,5I2)') I4YY,I4MM,I4DD,I4HH,I4MN,I4SS
-         Z1SEC=FLOAT(I1SS+I1MN*60+I1HH*3600)
-         Z2SEC=FLOAT(I2SS+I2MN*60+I2HH*3600)
-         Z3SEC=FLOAT(I3SS+I3MN*60+I3HH*3600)
-         Z4SEC=FLOAT(I4SS+I4MN*60+I4HH*3600)
+         Z1SEC=REAL(I1SS+I1MN*60+I1HH*3600)
+         Z2SEC=REAL(I2SS+I2MN*60+I2HH*3600)
+         Z3SEC=REAL(I3SS+I3MN*60+I3HH*3600)
+         Z4SEC=REAL(I4SS+I4MN*60+I4HH*3600)
          !
          ! Chrono relative au debut du rejet en secondes.
          !

@@ -43,6 +43,7 @@
 !!    24/24/14 (M. Leriche) add ReLACS3
 !!    M.Leriche 2015 : masse molaire Black carbon à 12 g/mol
 !!    Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !!
 !!    EXTERNAL
 !!    --------
@@ -354,10 +355,10 @@ DO JI=1,11
   IBIS(JI) = INOBIS(JI)+1
 END DO
 IF( MOD(IYEAR,4).EQ.0 ) THEN
-  ZDATE = FLOAT(IDAY +   IBIS(IMONTH-1)) - 1
+  ZDATE = REAL(IDAY +   IBIS(IMONTH-1)) - 1
   ZAD = 2.0*ZPI*ZDATE/366.0
 ELSE
-  ZDATE = FLOAT(IDAY + INOBIS(IMONTH-1)) - 1
+  ZDATE = REAL(IDAY + INOBIS(IMONTH-1)) - 1
   ZAD = 2.0*ZPI*ZDATE/365.0
 END IF
 ZDECSOL = 0.006918-0.399912*COS(ZAD)   +0.070257*SIN(ZAD)    &

@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2001-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2001-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ##########################
@@ -68,6 +68,7 @@ END MODULE MODI_REMOVAL_VORTEX
 !!    -------------
 !!      Original              01/12/01
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -226,8 +227,8 @@ IF (NVERB>=5) WRITE(ILUOUT0,'(A)')'localizing the position of the fix given'
 CALL SM_XYHAT(XLATORI,XLONORI,XLATGUESS,XLONGUESS,ZXHAT,ZYHAT)
 II=MAX(MIN(COUNT(XXHAT(:)<ZXHAT),IIU-1),1)
 IJ=MAX(MIN(COUNT(XYHAT(:)<ZYHAT),IJU-1),1)
-ZI=(ZXHAT-XXHAT(II))/(XXHAT(II+1)-XXHAT(II))+FLOAT(II)
-ZJ=(ZYHAT-XYHAT(IJ))/(XYHAT(IJ+1)-XYHAT(IJ))+FLOAT(IJ)
+ZI=(ZXHAT-XXHAT(II))/(XXHAT(II+1)-XXHAT(II))+REAL(II)
+ZJ=(ZYHAT-XYHAT(IJ))/(XYHAT(IJ+1)-XYHAT(IJ))+REAL(IJ)
 IIMIN = INT(ZI)
 IJMIN = INT(ZJ)
 IF (NVERB>=5) WRITE(ILUOUT0,'(A,I3,A,I3)')' equivalent indexes in the Meso-NH grid: I= ',IIMIN,' J= ',IJMIN

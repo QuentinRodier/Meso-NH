@@ -2,6 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !      #################
        MODULE MODI_BHMIE
 !      #################
@@ -65,6 +66,7 @@ END MODULE MODI_BHMIE
 !! 93/06/01 (BTD): Changed AMAX1 to generic function MAX
 !  P. Wautelet 22/01/2019: correct kind of complex datatype
 !  P. Wautelet 22/02/2019: add kind parameter for CMPLX intrinsics (if not it default to single precision)
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !!***********************************************************************
 !
 !*       0.    DECLARATIONS
@@ -118,9 +120,9 @@ ISTOP = INT(ZSIZE_PARAM_STOP)
 !
 ALLOCATE(ZTAU(KNANG))
 ALLOCATE(ZAMU(KNANG))
-ZDELTA_ANGLE = 0.5*XPI/FLOAT(KNANG-1)
+ZDELTA_ANGLE = 0.5*XPI/REAL(KNANG-1)
 DO J = 1,KNANG
-  ZAMU(J) = COS( ZDELTA_ANGLE*FLOAT(J-1) )
+  ZAMU(J) = COS( ZDELTA_ANGLE*REAL(J-1) )
 ENDDO
 !
 ALLOCATE(ZPI(KNANG))
@@ -141,7 +143,7 @@ ZZD(INMX) = (0.,0.)
 !
 DO J = 1,INMX-1
   IEN = INMX-J+1
-  ZZEN = FLOAT(IEN)/ZZY
+  ZZEN = REAL(IEN)/ZZY
   ZZD(INMX-J) = ZZEN-(1.0/(ZZD(IEN)+ZZEN))
 ENDDO
 !
@@ -158,7 +160,7 @@ ZONE = -1.
 ZZAN1 = CMPLX(0.0d0,0.0d0,kind=kind(ZZAN1))
 ZZBN1 = CMPLX(0.0d0,0.0d0,kind=kind(ZZBN1))
 DO J = 1,ISTOP
-  ZEN = FLOAT(J)
+  ZEN = REAL(J)
   ZFN = (2.0*ZEN+1.0)/(ZEN*(ZEN+1.0))
 !
 ! for given N, ZPSI  = psi_n        ZCHI  = chi_n

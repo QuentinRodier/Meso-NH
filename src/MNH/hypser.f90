@@ -63,6 +63,7 @@ END MODULE MODI_HYPSER
 !!    -------------
 !!      Original     31/12/96
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !
 !------------------------------------------------------------------------------
 !
@@ -99,7 +100,7 @@ ZZC = PC
 JFLAG = 0
 SERIE: DO JN = 1,5000
          ZFAC = ZFAC * ZZA * ZZB / ZZC
-         ZFAC = ZFAC * ZXH / FLOAT(JN)
+         ZFAC = ZFAC * ZXH / REAL(JN)
          PHYP = ZTEMP + ZFAC
          IF (ABS(PHYP-ZTEMP).LE.ZPREC) THEN
 	   JFLAG = 1

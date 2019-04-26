@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !      ###################################
@@ -75,7 +75,8 @@ END MODULE MODI_LIMA_COLD_SEDIMENTATION
 !!      Original             ??/??/13 
 !!      C. Barthe  * LACy *  jan. 2014   add budgets
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -170,7 +171,7 @@ IKE=SIZE(PZZ,3) - JPVEXT
 ALLOCATE(ZRTMIN(SIZE(XRTMIN)))
 ZRTMIN(:) = XRTMIN(:) / PTSTEP
 !
-ZTSPLITG= PTSTEP / FLOAT(KSPLITG)
+ZTSPLITG= PTSTEP / REAL(KSPLITG)
 !
 PINPRS(:,:) = 0.
 PINPRG(:,:) = 0.

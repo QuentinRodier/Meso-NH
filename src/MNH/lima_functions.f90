@@ -6,6 +6,7 @@
 ! Modifications:
 !  P. Wautelet 22/01/2019: replace double precision declarations by real(kind(0.0d0)) (to allow compilation by NAG compiler)
 !  P. Wautelet 19/04/2019: use modd_precision kinds
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-----------------------------------------------------------------
 !#################################
         MODULE MODI_LIMA_FUNCTIONS
@@ -258,7 +259,7 @@ SUBROUTINE gaulag(x,w,n,alf)
         if(abs(z-z1).le.EPS)goto 1
 12   continue
 1    x(i)=z
-     w(i)=-exp(gammln(alf+n)-gammln(float(n)))/(pp*n*p2)
+     w(i)=-exp(gammln(alf+n)-gammln(real(n)))/(pp*n*p2)
 13 continue
 !
 ! NORMALISATION
@@ -293,7 +294,7 @@ SUBROUTINE gauher(x,w,n)
   m=(n+1)/2
   do 13 i=1,m
      if(i.eq.1)then
-        z=sqrt(float(2*n+1))-1.85575*(2*n+1)**(-.16667)
+        z=sqrt(real(2*n+1))-1.85575*(2*n+1)**(-.16667)
      else if(i.eq.2)then
         z=z-1.14*n**.426/z
      else if (i.eq.3)then

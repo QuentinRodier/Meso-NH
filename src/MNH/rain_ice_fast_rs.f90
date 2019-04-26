@@ -5,6 +5,7 @@
 !-----------------------------------------------------------------
 ! Modifications:
 !  P. Wautelet 25/02/2019: split rain_ice (cleaner and easier to maintain/debug)
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-----------------------------------------------------------------
 MODULE MODE_RAIN_ICE_FAST_RS
 
@@ -101,10 +102,10 @@ REAL,    DIMENSION(size(PRHODREF),4) :: ZZW1              ! Work arrays
 !               set of Lbda_s used to tabulate some moments of the incomplete
 !               gamma function
 !
-    ZVEC2(1:IGRIM) = MAX( 1.00001, MIN( FLOAT(NGAMINC)-0.00001,           &
+    ZVEC2(1:IGRIM) = MAX( 1.00001, MIN( REAL(NGAMINC)-0.00001,           &
                           XRIMINTP1 * LOG( ZVEC1(1:IGRIM) ) + XRIMINTP2 ) )
     IVEC2(1:IGRIM) = INT( ZVEC2(1:IGRIM) )
-    ZVEC2(1:IGRIM) = ZVEC2(1:IGRIM) - FLOAT( IVEC2(1:IGRIM) )
+    ZVEC2(1:IGRIM) = ZVEC2(1:IGRIM) - REAL( IVEC2(1:IGRIM) )
 !
 !        5.1.3  perform the linear interpolation of the normalized
 !               "2+XDS"-moment of the incomplete gamma function
@@ -192,15 +193,15 @@ REAL,    DIMENSION(size(PRHODREF),4) :: ZZW1              ! Work arrays
 !               in the geometrical set of (Lbda_s,Lbda_r) couplet use to
 !               tabulate the RACCSS-kernel
 !
-    ZVEC1(1:IGACC) = MAX( 1.00001, MIN( FLOAT(NACCLBDAS)-0.00001,           &
+    ZVEC1(1:IGACC) = MAX( 1.00001, MIN( REAL(NACCLBDAS)-0.00001,           &
                           XACCINTP1S * LOG( ZVEC1(1:IGACC) ) + XACCINTP2S ) )
     IVEC1(1:IGACC) = INT( ZVEC1(1:IGACC) )
-    ZVEC1(1:IGACC) = ZVEC1(1:IGACC) - FLOAT( IVEC1(1:IGACC) )
+    ZVEC1(1:IGACC) = ZVEC1(1:IGACC) - REAL( IVEC1(1:IGACC) )
 !
-    ZVEC2(1:IGACC) = MAX( 1.00001, MIN( FLOAT(NACCLBDAR)-0.00001,           &
+    ZVEC2(1:IGACC) = MAX( 1.00001, MIN( REAL(NACCLBDAR)-0.00001,           &
                           XACCINTP1R * LOG( ZVEC2(1:IGACC) ) + XACCINTP2R ) )
     IVEC2(1:IGACC) = INT( ZVEC2(1:IGACC) )
-    ZVEC2(1:IGACC) = ZVEC2(1:IGACC) - FLOAT( IVEC2(1:IGACC) )
+    ZVEC2(1:IGACC) = ZVEC2(1:IGACC) - REAL( IVEC2(1:IGACC) )
 !
 !        5.2.3  perform the bilinear interpolation of the normalized
 !               RACCSS-kernel

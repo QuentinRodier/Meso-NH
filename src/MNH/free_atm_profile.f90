@@ -86,6 +86,7 @@ END MODULE MODI_FREE_ATM_PROFILE
 !!      C.Lac  04/2016  Modification of the free atm gradient when the top of
 !!                      the model is too low
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -343,7 +344,7 @@ END DO
 !  modified
 !
 IWK_BL_TOP(:,:)=IK_BL_TOP(:,:)
-ZK_BL_TOP(:,:)=FLOAT(IK_BL_TOP(:,:))
+ZK_BL_TOP(:,:)=REAL(IK_BL_TOP(:,:))
 CALL MPPDB_CHECK2D(ZK_BL_TOP,"FREE_ATM_PROFILE:8.1:ZK_BL_TOP",PRECISION)
 !
 !!$DO JI=1,IIU
@@ -360,13 +361,13 @@ CALL MPPDB_CHECK2D(ZK_BL_TOP,"FREE_ATM_PROFILE:8.1:ZK_BL_TOP",PRECISION)
 !!$END DO
 !!$IK_BL_TOP(:,:)=IWK_BL_TOP(:,:)
 
-ZK_BL_TOP(:,:)=FLOAT(IK_BL_TOP(:,:))
+ZK_BL_TOP(:,:)=REAL(IK_BL_TOP(:,:))
 CALL MPPDB_CHECK2D(ZK_BL_TOP,"FREE_ATM_PROFILE:8.2:ZK_BL_TOP",PRECISION)
 !
 !*       8.2  spatial filtering is applied (4 times) for boundary layer top
 !             -------------------------------------------------------------
 !
-ZK_BL_TOP(:,:)=FLOAT(IK_BL_TOP(:,:))
+ZK_BL_TOP(:,:)=REAL(IK_BL_TOP(:,:))
 CALL PGDFILTER(ZK_BL_TOP(:,:),4)
 CALL MPPDB_CHECK2D(ZK_BL_TOP,"FREE_ATM_PROFILE:ZK_BL_TOP",PRECISION)
 IK_BL_TOP(:,:)=NINT(ZK_BL_TOP(:,:))

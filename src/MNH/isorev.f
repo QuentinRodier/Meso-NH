@@ -1,6 +1,6 @@
-CMNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+CMNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 CMNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-CMNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+CMNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 CMNH_LIC for details. version 1.
 C=======================================================================
 C
@@ -17,6 +17,7 @@ C
 C Modifications:
 C   J.Escobar : 10/2017 , for real*4 replace DOUBLE => REAL
 C  Philippe 13/02/2018: use ifdef MNH_REAL to prevent problems with intrinsics on Blue Gene/Q
+C  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 C
 C=======================================================================
 C
@@ -769,7 +770,7 @@ C
 C
 C *** ROOT TRACKING ; FOR THE RANGE OF HI AND LO **********************
 C
-      DX = (PSI1HI-PSI1LO)/FLOAT(NDIV)
+      DX = (PSI1HI-PSI1LO)/REAL(NDIV)
       DO 10 I=1,NDIV
          X2 = MAX(X1-DX, ZERO)
          Y2 = FUNCN2 (X2)

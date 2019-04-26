@@ -1,11 +1,7 @@
-!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 2006-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
 !-----------------------------------------------------------------
 !!   ##############################
      MODULE MODI_SEDIM_SALT
@@ -56,6 +52,8 @@ END MODULE MODI_SEDIM_SALT
 !!    -------------
 !!   Original
 !!
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!
 ! Entry variables:
 !
 ! PSVTS(INOUT)       -Array of moments included in PSVTS
@@ -192,7 +190,7 @@ DO JN=1,NMODE_SLT*3
   ISPLITA = INT(ZVSMAX*PDTMONITOR/ZHMIN)+1
   ISPLITA = MIN(20, ISPLITA)
   !
-  ZTSPLITR  = PDTMONITOR / FLOAT(ISPLITA)   
+  ZTSPLITR  = PDTMONITOR / REAL(ISPLITA)
   !
   ZFLUXSED(:,:,ILU+1,JN) = 0.
   

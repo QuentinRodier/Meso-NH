@@ -98,6 +98,7 @@ END MODULE MODI_FLASH_GEOM_ELEC_n
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 19/04/2019: use modd_precision kinds
 !  P. Wautelet 26/04/2019: use modd_precision parameters for datatypes of MPI communications
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-------------------------------------------------------------------------------
 !
 !*      0.      DECLARATIONS
@@ -979,7 +980,7 @@ ENDIF
 !
           DO IM = 1, IDELTA_IND
             IF (IHIST_GLOB(IM) .GT. 0) THEN
-              ZHIST_PERCENT(IM) = FLOAT(IHIST_LOC(IM)) / FLOAT(IHIST_GLOB(IM))
+              ZHIST_PERCENT(IM) = REAL(IHIST_LOC(IM)) / REAL(IHIST_GLOB(IM))
             END IF
 !
 !
@@ -991,7 +992,7 @@ ENDIF
 !*      8.1     max number of branches at distance d from the triggering point
 !
             ZMAX_BRANCH(IM) = (XDFRAC_L / ZMEAN_GRID) * &
-                              FLOAT(IIND_MIN+IM-1)**(XDFRAC_ECLAIR - 1.)
+                              REAL(IIND_MIN+IM-1)**(XDFRAC_ECLAIR - 1.)
             ZMAX_BRANCH(IM) = ANINT(ZMAX_BRANCH(IM))
 ! all procs know the max total number of branches at distance d
 ! => the max number of branches / proc is proportional to the percentage of 
@@ -1062,7 +1063,7 @@ ENDIF
         END IF
 !
         IF (GNEUTRALIZATION .AND. (.NOT. GCG) .AND. ZQNET .NE. 0.) THEN
-          ZQNET = ZQNET / FLOAT(INB_NEUT) 
+          ZQNET = ZQNET / REAL(INB_NEUT) 
           WHERE (ZSIGLOB(IIB:IIE,IJB:IJE,IKB:IKE) .GE. ZSIGMIN .AND. &
                  ZQFLASH(IIB:IIE,IJB:IJE,IKB:IKE) .NE. 0.)
             ZQFLASH(IIB:IIE,IJB:IJE,IKB:IKE) = ZQFLASH(IIB:IIE,IJB:IJE,IKB:IKE) - &
@@ -1474,7 +1475,7 @@ ENDIF
                                                                      ! implicit
       END IF
       CALL SUM_ELEC_ll (XLNOX_ECLAIR)
-      XLNOX_ECLAIR = XLNOX_ECLAIR / (XAVOGADRO * FLOAT(IFLASH_COUNT_GLOB))
+      XLNOX_ECLAIR = XLNOX_ECLAIR / (XAVOGADRO * REAL(IFLASH_COUNT_GLOB))
     END IF
     DEALLOCATE (ZLNOX)
   END IF
@@ -1954,10 +1955,10 @@ DO IL = 1, INB_CELL
       IKBL     = ISEG_LOC(IIDECAL+3,IL)
 !
       IF (ZQMTOT(IIBL_LOC,IJBL_LOC,IKBL) .GT. 0. .AND. GPOSITIVE) THEN
-        ZSIGN_AREA(IIBL_LOC,IJBL_LOC,IKBL) = 1. * FLOAT(IL)
+        ZSIGN_AREA(IIBL_LOC,IJBL_LOC,IKBL) = 1. * REAL(IL)
         ZSIGN(IL) = ZSIGN_AREA(IIBL_LOC,IJBL_LOC,IKBL)
       ELSE IF (ZQMTOT(IIBL_LOC,IJBL_LOC,IKBL) .LT. 0. .AND. .NOT.GPOSITIVE) THEN
-        ZSIGN_AREA(IIBL_LOC,IJBL_LOC,IKBL) = -1. * FLOAT(IL)
+        ZSIGN_AREA(IIBL_LOC,IJBL_LOC,IKBL) = -1. * REAL(IL)
         ZSIGN(IL) = ZSIGN_AREA(IIBL_LOC,IJBL_LOC,IKBL)
       END IF
     END DO

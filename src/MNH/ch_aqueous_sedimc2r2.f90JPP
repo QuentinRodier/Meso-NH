@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !      ################################
        MODULE MODI_CH_AQUEOUS_SEDIMC2R2
@@ -192,7 +192,7 @@ firstcall : IF (GSFIRSTCALL) THEN
   ZDZMIN = MINVAL(PZZ(IIB:IIE,IJB:IJE,IKB+1:IKE+1)-PZZ(IIB:IIE,IJB:IJE,IKB:IKE))
   ISPLITR = 1
   SPLIT : DO
-    ZT = PTSTEP / FLOAT(ISPLITR)
+    ZT = PTSTEP / REAL(ISPLITR)
     IF ( ZT * ZVTRMAX / ZDZMIN .LT. 1.) EXIT SPLIT
     ISPLITR = ISPLITR + 1
   END DO SPLIT
@@ -212,7 +212,7 @@ END IF firstcall
 !
 !*       3.3    time splitting loop initialization
 !
-ZTSPLITR = PTSTEP / FLOAT(ISPLITR)       ! Small time step
+ZTSPLITR = PTSTEP / REAL(ISPLITR)       ! Small time step
 !
 !*       3.4    compute the fluxes
 ! 

@@ -1,6 +1,6 @@
-CMNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+CMNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 CMNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-CMNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+CMNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 CMNH_LIC for details. version 1.
 C=======================================================================
 C
@@ -17,6 +17,7 @@ C
 C Modifications:
 C   J.Escobar : 10/2017 , for real*4 replace DOUBLE => REAL
 C  Philippe 13/02/2018: use ifdef MNH_REAL to prevent problems with intrinsics on Blue Gene/Q
+C  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 C
 C=======================================================================
 C
@@ -473,7 +474,7 @@ C
 C
 C *** ROOT TRACKING ; FOR THE RANGE OF HI AND LO **********************
 C
-      DX = (OMEHI-OMELO)/FLOAT(NDIV)
+      DX = (OMEHI-OMELO)/REAL(NDIV)
       DO 10 I=1,NDIV
          X2 = MAX(X1-DX, OMELO)
          Y2 = FUNCA2 (X2)
@@ -759,7 +760,7 @@ C
 C
 C *** ROOT TRACKING ; FOR THE RANGE OF HI AND LO ***********************
 C
-      DZ = (ZHI-ZLO)/FLOAT(NDIV)
+      DZ = (ZHI-ZLO)/REAL(NDIV)
       DO 10 I=1,NDIV
          Z2 = Z1+DZ
          Y2 = FUNCB3A (Z2, TLC, TNH42S4)
@@ -1495,7 +1496,7 @@ C
 C
 C *** ROOT TRACKING ; FOR THE RANGE OF HI AND LO ***********************
 C
-      DX = (KHI-KLO)/FLOAT(NDIV)
+      DX = (KHI-KLO)/REAL(NDIV)
       DO 10 I=1,NDIV
          X2 = X1+DX
          Y2 = FUNCC1 (X2)
@@ -1671,7 +1672,7 @@ C
 C
 C *** ROOT TRACKING ; FOR THE RANGE OF HI AND LO **********************
 C
-      DX = (PSI4HI-PSI4LO)/FLOAT(NDIV)
+      DX = (PSI4HI-PSI4LO)/REAL(NDIV)
       DO 10 I=1,NDIV
          X2 = X1+DX
          Y2 = FUNCD3 (X2)
@@ -1889,7 +1890,7 @@ C
 C
 C *** ROOT TRACKING ; FOR THE RANGE OF HI AND LO **********************
 C
-      DX   = (PSI4HI-PSI4LO)/FLOAT(NDIV)
+      DX   = (PSI4HI-PSI4LO)/REAL(NDIV)
       DO 10 I=1,NDIV
          X2 = X1+DX
          Y2 = FUNCD2 (X2)
@@ -2212,7 +2213,7 @@ ccc      IF (WATER .LE. TINY) RETURN                    ! No water
 C
 C *** ROOT TRACKING ; FOR THE RANGE OF HI AND LO **********************
 C
-      DX = (PSI6HI-PSI6LO)/FLOAT(NDIV)
+      DX = (PSI6HI-PSI6LO)/REAL(NDIV)
       DO 10 I=1,NDIV
          X2 = X1+DX 
          Y2 = FUNCG5A (X2)
@@ -2419,7 +2420,7 @@ CCC      IF (WATER .LE. TINY) RETURN                    ! No water
 C
 C *** ROOT TRACKING ; FOR THE RANGE OF HI AND LO **********************
 C
-      DX = (PSI6HI-PSI6LO)/FLOAT(NDIV)
+      DX = (PSI6HI-PSI6LO)/REAL(NDIV)
       DO 10 I=1,NDIV
          X2  = X1+DX
          Y2  = FUNCG4A (X2)
@@ -2704,7 +2705,7 @@ CCC      IF (WATER .LE. TINY) RETURN                    ! No water
 C
 C *** ROOT TRACKING ; FOR THE RANGE OF HI AND LO **********************
 C
-      DX = (PSI6HI-PSI6LO)/FLOAT(NDIV)
+      DX = (PSI6HI-PSI6LO)/REAL(NDIV)
       DO 10 I=1,NDIV
          X2  = X1+DX 
          Y2  = FUNCG3A (X2)
@@ -3005,7 +3006,7 @@ CCC      IF (WATER .LE. TINY) GOTO 50               ! No water
 C
 C *** ROOT TRACKING ; FOR THE RANGE OF HI AND LO **********************
 C
-      DX = (PSI6HI-PSI6LO)/FLOAT(NDIV)
+      DX = (PSI6HI-PSI6LO)/REAL(NDIV)
       DO 10 I=1,NDIV
          X2 = X1+DX 
          Y2 = FUNCG2A (X2)
@@ -3442,7 +3443,7 @@ C
 C
 C *** ROOT TRACKING ; FOR THE RANGE OF HI AND LO **********************
 C
-      DX = (PSI6HI-PSI6LO)/FLOAT(NDIV)
+      DX = (PSI6HI-PSI6LO)/REAL(NDIV)
       DO 10 I=1,NDIV
          X2 = X1+DX 
          Y2 = FUNCH6A (X2)
@@ -3659,7 +3660,7 @@ C
 C
 C *** ROOT TRACKING ; FOR THE RANGE OF HI AND LO **********************
 C
-      DX = (PSI6HI-PSI6LO)/FLOAT(NDIV)
+      DX = (PSI6HI-PSI6LO)/REAL(NDIV)
       DO 10 I=1,NDIV
          X2 = X1+DX 
          Y2 = FUNCH5A (X2)
@@ -3888,7 +3889,7 @@ C
 C
 C *** ROOT TRACKING ; FOR THE RANGE OF HI AND LO **********************
 C
-      DX = (PSI6HI-PSI6LO)/FLOAT(NDIV)
+      DX = (PSI6HI-PSI6LO)/REAL(NDIV)
       DO 10 I=1,NDIV
          X2 = X1+DX 
          Y2 = FUNCH4A (X2)
@@ -4142,7 +4143,7 @@ C
 C
 C *** ROOT TRACKING ; FOR THE RANGE OF HI AND LO **********************
 C
-      DX = (PSI6HI-PSI6LO)/FLOAT(NDIV)
+      DX = (PSI6HI-PSI6LO)/REAL(NDIV)
       DO 10 I=1,NDIV
          X2 = X1+DX 
          Y2 = FUNCH3A (X2)
@@ -4451,7 +4452,7 @@ C
 C
 C *** ROOT TRACKING ; FOR THE RANGE OF HI AND LO **********************
 C
-      DX = (PSI6HI-PSI6LO)/FLOAT(NDIV)
+      DX = (PSI6HI-PSI6LO)/REAL(NDIV)
       DO 10 I=1,NDIV
          X2 = X1+DX 
          Y2 = FUNCH2A (X2)
@@ -4995,7 +4996,7 @@ C
 C
 C *** ROOT TRACKING ; FOR THE RANGE OF HI AND LO **********************
 C
-      DX = (PSI4HI-PSI4LO)/FLOAT(NDIV)
+      DX = (PSI4HI-PSI4LO)/REAL(NDIV)
       DO 10 I=1,NDIV
          X2 = X1-DX
          Y2 = FUNCI5A (X2)
@@ -5186,7 +5187,7 @@ C
 C
 C *** ROOT TRACKING ; FOR THE RANGE OF HI AND LO **********************
 C
-      DX = (PSI4HI-PSI4LO)/FLOAT(NDIV)
+      DX = (PSI4HI-PSI4LO)/REAL(NDIV)
       DO 10 I=1,NDIV
          X2 = X1-DX
          Y2 = FUNCI4A (X2)
@@ -5438,7 +5439,7 @@ C
 C
 C *** ROOT TRACKING ; FOR THE RANGE OF HI AND LO **********************
 C
-      DX = (PSI2HI-PSI2LO)/FLOAT(NDIV)
+      DX = (PSI2HI-PSI2LO)/REAL(NDIV)
       DO 10 I=1,NDIV
          X2 = MAX(X1-DX, PSI2LO)
          Y2 = FUNCI3A (X2)
@@ -5532,7 +5533,7 @@ C
 C
 C *** ROOT TRACKING ; FOR THE RANGE OF HI AND LO **********************
 C
-      DX = (PSI4HI-PSI4LO)/FLOAT(NDIV)
+      DX = (PSI4HI-PSI4LO)/REAL(NDIV)
       DO 10 I=1,NDIV
          X2 = MAX(X1-DX, PSI4LO)
          Y2 = FUNCI3B (X2)
@@ -5781,7 +5782,7 @@ C
 C
 C *** ROOT TRACKING ; FOR THE RANGE OF HI AND LO **********************
 C
-      DX = (PSI2HI-PSI2LO)/FLOAT(NDIV)
+      DX = (PSI2HI-PSI2LO)/REAL(NDIV)
       DO 10 I=1,NDIV
          X2 = MAX(X1-DX, PSI2LO)
          Y2 = FUNCI2A (X2)
@@ -6163,7 +6164,7 @@ C
 C
 C *** ROOT TRACKING ; FOR THE RANGE OF HI AND LO **********************
 C
-      DX = (PSI1HI-PSI1LO)/FLOAT(NDIV)
+      DX = (PSI1HI-PSI1LO)/REAL(NDIV)
       DO 10 I=1,NDIV
          X2 = X1-DX
          Y2 = FUNCJ2 (X2)
@@ -6334,7 +6335,7 @@ C
 C
 C *** ROOT TRACKING ; FOR THE RANGE OF HI AND LO **********************
 C
-      DX = (PSI1HI-PSI1LO)/FLOAT(NDIV)
+      DX = (PSI1HI-PSI1LO)/REAL(NDIV)
       DO 10 I=1,NDIV
          X2 = X1-DX
          Y2 = FUNCJ1 (X2)

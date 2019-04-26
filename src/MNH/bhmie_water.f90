@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2007-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !      #######################
        MODULE MODI_BHMIE_WATER
 !      #######################
@@ -71,6 +72,7 @@ END MODULE MODI_BHMIE_WATER
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/04/07
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -118,7 +120,7 @@ REAL,    DIMENSION(:), ALLOCATABLE ::  ZABSCISSI,ZWEIGHTS
 !
 !-------------------------------------------------------------------------------
 !
-ZDELTANGLE=0.5E0*XPI/FLOAT(KANGLE-1)
+ZDELTANGLE=0.5E0*XPI/REAL(KANGLE-1)
 ALLOCATE(ZZS1(2*KANGLE-1))
 ALLOCATE(ZZS2(2*KANGLE-1))
 PEXTINCTION_COEF = 0.0 

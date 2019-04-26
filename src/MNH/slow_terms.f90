@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODI_SLOW_TERMS
@@ -154,6 +150,7 @@ END MODULE MODI_SLOW_TERMS
 !!                     14/09/97 (V. Masson) removes low rr non-physical values
 !!                     06/11/02 (V. Masson) update the budget calls
 !!     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -238,7 +235,7 @@ END DO
 !
 !*       2.1    time splitting loop initialization        
 !
-ZTSPLITR = PTSTEP / FLOAT(KSPLITR)       ! Small time step
+ZTSPLITR = PTSTEP / REAL(KSPLITR)       ! Small time step
 ! 
 ZW1(:,:,:) = PRRS(:,:,:) * PTSTEP
 ZW2(:,:,:) = 0.

@@ -120,6 +120,7 @@ CONTAINS
 !!      P.Wautelet 22/01/2019: use standard FLUSH statement instead of non standard intrinsics
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1207,7 +1208,7 @@ IF(OCLOUD_ONLY .OR. OCLEAR_SKY) THEN
   GCLEAR(:,:) = SPREAD( GCLEAR_2D(:),DIM=2,NCOPIES=KFLEV )  ! vertical extension of clear columns 2D map
   ICLOUD_COL = KDLON - ICLEAR_COL                           ! number of  cloudy columns
 !
-  ZCLEAR_COL_ll = FLOAT(ICLEAR_COL)
+  ZCLEAR_COL_ll = REAL(ICLEAR_COL)
   CALL REDUCESUM_ll(ZCLEAR_COL_ll,IINFO_ll)
   !ZDLON_ll = KDLON
   !CALL REDUCESUM_ll(ZDLON_ll,IINFO_ll)
@@ -2038,7 +2039,7 @@ ELSE
 !
 ! the splitting of the arrays will be performed
 !
-  INUM_CALL = CEILING( FLOAT( IDIM ) / FLOAT( KRAD_COLNBR ) )
+  INUM_CALL = CEILING( REAL( IDIM ) / REAL( KRAD_COLNBR ) )
   IDIM_RESIDUE = IDIM
 !
   DO JI_SPLIT = 1 , INUM_CALL

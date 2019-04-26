@@ -244,6 +244,7 @@ END MODULE MODI_SET_GEOSBAL
 !!    crée à partir de l'ancienne routine set_mass.f90 en prenant la partie
 !!    concernant la balance geostrophique uniquement
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -430,7 +431,7 @@ ZTHV3D(:,:,:) = SPREAD(SPREAD(PTHVM(:),1,IIU),2,IJU)  ! initialize  with
 !  compute the anelastic reference state when the geostrophic equilibrium is
 !  taken into account
       XTHVREFZ(:)= SUM2D_ll(ZTHV3D,1,2,IINFO_ll,1,1,1,IIU_ll,IJU_ll,IKU) &
-                                  /FLOAT(IIU_ll*IJU_ll)
+                                  /REAL(IIU_ll*IJU_ll)
     END IF
 !
 !*       3.1 Integration from I=ILOC to I=IIU

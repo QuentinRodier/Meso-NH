@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2008-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for SCCS information
-!-----------------------------------------------------------------
-!      %Z% Lib:%F%, Version:%I%, Date:%D%, Last modified:%E%
 !-----------------------------------------------------------------
 !     ############################
       MODULE MODI_FORC_SQUALL_LINE
@@ -51,6 +47,8 @@ END MODULE MODI_FORC_SQUALL_LINE
 !!    ------
 !!      J-P Pinty, Lab. Aerologie, 25/01/08 
 !!
+! Modifications:
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -82,7 +80,7 @@ INTEGER          :: JIBEG,JIEND    ! Loop indexes for the cooling area
 !
 ! SIZE OF THE COLD POOL
 !
-JIBEG = INT(XDUMMY4*FLOAT(SIZE(PDXHAT)))
+JIBEG = INT(XDUMMY4*REAL(SIZE(PDXHAT)))
 JIEND = JIBEG + NINT(XDUMMY3/PDXHAT(JIBEG))
 !
 DO JK = 1+JPVEXT,SIZE(PZHAT)-JPVEXT

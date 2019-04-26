@@ -14,6 +14,7 @@
 ! Modifications:
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  Philippe Wautelet 28/05/2018: corrected truncated integer division (1/3 -> 1./3.)
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-----------------------------------------------------------------------
 !
 !*	0.  DECLARATIONS.
@@ -87,7 +88,7 @@ ICURMM=TZDTCUR%TDATE%MONTH
 ICURJJ=TZDTCUR%TDATE%DAY
 ICURSS=NINT(TZDTCUR%TIME)
 !
-ICURMN = NINT( (FLOAT(ICURSS)/60.0)/5.0 )*5   ! Heure arrondie a 5 minutes pres.
+ICURMN = NINT( (REAL(ICURSS)/60.0)/5.0 )*5   ! Heure arrondie a 5 minutes pres.
 ICURSS = 0
 ICURHH =ICURMN/60
 ICURMN =ICURMN-ICURHH*60

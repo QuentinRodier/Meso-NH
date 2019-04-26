@@ -58,7 +58,8 @@ END MODULE MODI_PROGNOS
 !!     2014 G.Delautier : remplace MODD_RAIN_C2R2_PARAM par MODD_RAIN_C2R2_KHKO_PARAM
 !!     2015 M.Mazoyer and O.Thouron : Physical tunings
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -120,10 +121,10 @@ IVEC2(:) =0.0
 !
 DO J1 = 1,4
   WHERE (PS0(:).GT.0.0)
-   ZVEC2(:) = MAX( 1.00001, MIN( FLOAT(NHYP)-0.00001,      &
+   ZVEC2(:) = MAX( 1.00001, MIN( REAL(NHYP)-0.00001,      &
                    XHYPINTP1*LOG(PS0(:))+XHYPINTP2 ) )
    IVEC2(:) = INT( ZVEC2(:) )
-   ZVEC2(:) = ZVEC2(:) - FLOAT( IVEC2(:) )
+   ZVEC2(:) = ZVEC2(:) - REAL( IVEC2(:) )
   END WHERE
 END DO
 ZZW1(:) =0.0

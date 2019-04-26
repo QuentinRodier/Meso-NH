@@ -259,6 +259,7 @@ END MODULE MODI_MODEL_n
 !  P. Wautelet 28/03/2019: use MNHTIME for time measurement variables
 !  P. Wautelet 28/03/2019: use TFILE instead of unit number for set_iluout_timing
 !  P. Wautelet 19/04/2019: removed unused dummy arguments and variables
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -2181,7 +2182,7 @@ IF (OEXIT) THEN
   !
   ! Timing/ Steps
   !
-  ZTIME_STEP     =  XT_START / FLOAT(KTCOUNT)
+  ZTIME_STEP     =  XT_START / REAL(KTCOUNT)
   WRITE(YTCOUNT,FMT="(I0)") KTCOUNT
   CALL TIME_STAT_ll(ZTIME_STEP,ZTOT,     ' SECOND/STEP='//YTCOUNT,'=')
   !
@@ -2189,7 +2190,7 @@ IF (OEXIT) THEN
   !
   IPOINTS = NIMAX_ll*NJMAX_ll*NKMAX
   WRITE(YPOINTS,FMT="(I0)") IPOINTS
-  ZTIME_STEP_PTS =  ZTIME_STEP / FLOAT(IPOINTS) * 1e6
+  ZTIME_STEP_PTS =  ZTIME_STEP / REAL(IPOINTS) * 1e6
   CALL TIME_STAT_ll(ZTIME_STEP_PTS,ZTOT_PT)
   CALL TIME_STAT_ll(ZTIME_STEP_PTS,ZTOT_PT,  ' MICROSEC/STP/PT='//YPOINTS,'-')
   !

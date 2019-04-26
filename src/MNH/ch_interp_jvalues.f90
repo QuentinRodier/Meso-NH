@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2001-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 chimie 2006/07/20 11:45:57
 !-----------------------------------------------------------------
 !      #############################
        MODULE MODI_CH_INTERP_JVALUES
@@ -63,6 +58,7 @@ USE MODD_CH_INIT_JVALUES, ONLY : JPJVMAX
 !!    P. Tulet 01/11/03  externalisation surface/ UV albedos from
 !                        radiations
 !!    P. Tulet 01/06/05  updates for arome
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !!
 !!------------------------------------------------------------------------------
 !!
@@ -243,8 +239,8 @@ PJVALUES(:,:,:,:) =  ZJDATAALB(:,:,:,:,1)
 !
 
 DO JALB=1,NBALB-1
-  ZALB1(:,:) = 0.02+0.20*FLOAT(JALB-1)/FLOAT(NBALB-1)
-  ZALB2(:,:) = 0.02+0.20*FLOAT(JALB  )/FLOAT(NBALB-1)
+  ZALB1(:,:) = 0.02+0.20*REAL(JALB-1)/REAL(NBALB-1)
+  ZALB2(:,:) = 0.02+0.20*REAL(JALB  )/REAL(NBALB-1)
   
   DO JJVAL = 1, JPJVMAX
     DO JH = IKB, IKE

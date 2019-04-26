@@ -23,6 +23,7 @@ C                       real(kind(0.0d0)) (to allow compilation by NAG compiler)
 C**MODIFIED: 08/02/2019 (P.Wautelet) bug fixes: missing argument
 C                                             + wrong use of an non initialized value
 C**MODIFIED: P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+C  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 C!
 C!
 C!
@@ -5457,9 +5458,9 @@ c      INCLUDE 'params'
 
       wlabel = 'equal spacing'
       nw = nwint + 1
-      wincr = (wstop - wstart) / FLOAT (nwint)
+      wincr = (wstop - wstart) / REAL (nwint)
       DO iw = 1, nw-1
-         wl(iw) = wstart + wincr*FLOAT(iw-1)
+         wl(iw) = wstart + wincr*REAL(iw-1)
          wu(iw) = wl(iw) + wincr
          wc(iw) = ( wl(iw) + wu(iw) )/2.
       ENDDO
@@ -5562,7 +5563,7 @@ c      wlabel = 'isaksen.grid'
       DO i = 1, 3859
          iw = 3859 - i + 39
          wn(iw) = 10000 + 10*(i-1)
-         wl(iw) = 1.E7/float(wn(iw))
+         wl(iw) = 1.E7/real(wn(iw))
       ENDDO
 
       nw = 3859 + 38
@@ -5598,9 +5599,9 @@ c      wlabel = 'isaksen.grid'
 
       wlabel = 'grid in air wavelengths'
       nw = nwint + 1
-      wincr = (wstop - wstart) / FLOAT (nwint)
+      wincr = (wstop - wstart) / REAL (nwint)
       DO iw = 1, nw-1
-         wl(iw) = wstart + wincr*FLOAT(iw-1)
+         wl(iw) = wstart + wincr*REAL(iw-1)
          wu(iw) = wl(iw) + wincr
          wc(iw) = ( wl(iw) + wu(iw) )/2.
       ENDDO
@@ -5822,10 +5823,10 @@ c      wlabel = 'isaksen.grid'
 
  1    CONTINUE
       WRITE(*,*) 'equally spaced z-grid'
-      zincr = (zstop - zstart) / FLOAT(nz - 1)
+      zincr = (zstop - zstart) / REAL(nz - 1)
       z(1) = zstart
       DO i = 2, nz
-         z(i) = z(1) + zincr*FLOAT(i-1)
+         z(i) = z(1) + zincr*REAL(i-1)
       ENDDO
       GOTO 10
 
@@ -5834,7 +5835,7 @@ c      wlabel = 'isaksen.grid'
 
  2    CONTINUE
       WRITE(*,*) 'equally spaced z-grid'
-      zincr = (zstop - zstart) / FLOAT(nz - 1)
+      zincr = (zstop - zstart) / REAL(nz - 1)
       nlev = nz-1
       n = 1
       CALL buildz(zincr, nlev, n, z)
@@ -5921,19 +5922,19 @@ c      wlabel = 'isaksen.grid'
       nz = 99
       z(1) = zstart
       DO i = 2, 41
-         z(i) = z(1) + 0.1*FLOAT(i-1)
+         z(i) = z(1) + 0.1*REAL(i-1)
       ENDDO
       DO i = 42, 61
-         z(i) = z(41) + 0.2*FLOAT(i-41)
+         z(i) = z(41) + 0.2*REAL(i-41)
       ENDDO
       DO i = 62, 83
-         z(i) = z(61) + 1.*FLOAT(i-61)
+         z(i) = z(61) + 1.*REAL(i-61)
       ENDDO
       DO i = 84, 93
-         z(i) = z(83) + 2.*FLOAT(i-83)
+         z(i) = z(83) + 2.*REAL(i-83)
       ENDDO
       DO i = 94, 99
-         z(i) = z(93) + 5.*FLOAT(i-93)
+         z(i) = z(93) + 5.*REAL(i-93)
       ENDDO
       GOTO 10
 		
@@ -6100,7 +6101,7 @@ c      INCLUDE 'params'
       j = 0
       DO i = n + 1, n + nlev
         j = j + 1
-        z(i) = z(n) + FLOAT(j)*zincr
+        z(i) = z(n) + REAL(j)*zincr
       ENDDO
       n = n + nlev
 
@@ -6210,11 +6211,11 @@ c
 c       IF(nt .EQ. 1) THEN
 c          dt = 0.
 c       ELSE
-c          dt = (tstop - tstart) / FLOAT(nt - 1)
+c          dt = (tstop - tstart) / REAL(nt - 1)
 c       ENDIF
 c 
 c       DO 10 it = 1, nt
-c          t(it) = tstart + dt * FLOAT(it - 1)
+c          t(it) = tstart + dt * REAL(it - 1)
 c 
 c * solar zenith angle calculation:
 c *  If lzenit = .TRUE., use selected solar zenith angles, also
@@ -9549,7 +9550,7 @@ c      c      INCLUDE 'params'
 
       n = 559*10
       DO 13, i = 1, n
-         lambda_hi(i)=120.5 + FLOAT(i-1)*.05
+         lambda_hi(i)=120.5 + REAL(i-1)*.05
          irrad_hi(i) = irrad_hi(i)  /  1000.
    13 CONTINUE
 *_______________________________________________________________________
@@ -11499,7 +11500,7 @@ c     INCLUDE 'params'
       n = 135
       DO i = 1, n
          READ(UNIT=ilu,FMT=*) idum, y1(i)
-         x1(i) = FLOAT(idum)
+         x1(i) = REAL(idum)
       ENDDO
       CLOSe(UNIT=ilu)
 
@@ -15080,7 +15081,7 @@ c     .. External Subroutines ..
 c     ..
 c     .. Intrinsic Functions ..
 
-      INTRINSIC FLOAT, SQRT
+      INTRINSIC REAL, SQRT
 c     ..
       SAVE      SQT, PASS1
       DATA      PASS1 / .TRUE. /
@@ -15091,7 +15092,7 @@ c     ..
          PASS1  = .FALSE.
 
          DO 10 NS = 1, MAXSQT
-            SQT( NS ) = SQRT( FLOAT( NS ) )
+            SQT( NS ) = SQRT( REAL( NS ) )
    10    CONTINUE
 
       END IF
@@ -15520,7 +15521,7 @@ c     .. External Subroutines ..
 c     ..
 c     .. Intrinsic Functions ..
 
-      INTRINSIC ABS, ASIN, COS, FLOAT, MOD, TAN
+      INTRINSIC ABS, ASIN, COS, MOD, REAL, TAN
 c     ..
       SAVE      PI, TOL
 
@@ -15549,7 +15550,7 @@ c     ..
       EN   = M
       NP1  = M + 1
       NNP1 = M*NP1
-      CONA = FLOAT( M - 1 ) / ( 8*M**3 )
+      CONA = REAL( M - 1 ) / ( 8*M**3 )
 
       LIM  = M / 2
 
@@ -19101,24 +19102,24 @@ C     ##############################
 *=   I       -  INTEGER, identifies the machine constant (0<I<5)         (I) =*
 *=   D1MACH  -  REAL, machine constant in single precision               (O) =*
 *=      I=1     - the smallest non-vanishing normalized floating-point       =*
-*=                power of the radix, i.e., D1MACH=FLOAT(IBETA)**MINEXP      =*
+*=                power of the radix, i.e., D1MACH=REAL(IBETA)**MINEXP      =*
 *=      I=2     - the largest finite floating-point number.  In              =*
-*=                particular D1MACH=(1.0-EPSNEG)*FLOAT(IBETA)**MAXEXP        =*
+*=                particular D1MACH=(1.0-EPSNEG)*REAL(IBETA)**MAXEXP        =*
 *=                Note - on some machines D1MACH will be only the            =*
 *=                second, or perhaps third, largest number, being            =*
 *=                too small by 1 or 2 units in the last digit of             =*
 *=                the significand.                                           =*
 *=      I=3     - A small positive floating-point number such that           =*
 *=                1.0-D1MACH .NE. 1.0. In particular, if IBETA = 2           =*
-*=                or  IRND = 0, D1MACH = FLOAT(IBETA)**NEGEPS.               =*
+*=                or  IRND = 0, D1MACH = REAL(IBETA)**NEGEPS.               =*
 *=                Otherwise,  D1MACH = (IBETA**NEGEPS)/2.  Because           =*
 *=                NEGEPS is bounded below by -(IT+3), D1MACH may not         =*
 *=                be the smallest number that can alter 1.0 by               =*
 *=                subtraction.                                               =*
 *=      I=4     - the smallest positive floating-point number such           =*
 *=                that  1.0+D1MACH .NE. 1.0. In particular, if either        =*
-*=                IBETA = 2  or  IRND = 0, D1MACH=FLOAT(IBETA)**MACHEP.      =*
-*=                Otherwise, D1MACH=(FLOAT(IBETA)**MACHEP)/2                 =*
+*=                IBETA = 2  or  IRND = 0, D1MACH=REAL(IBETA)**MACHEP.      =*
+*=                Otherwise, D1MACH=(REAL(IBETA)**MACHEP)/2                 =*
 *=  (see routine T665D for more information on different constants)          =*
 *-----------------------------------------------------------------------------*
 
@@ -19366,24 +19367,24 @@ C---------- LAST CARD OF T665D ----------
 *=   I       -  INTEGER, identifies the machine constant (0<I<5)         (I) =*
 *=   R1MACH  -  REAL, machine constant in single precision               (O) =*
 *=      I=1     - the smallest non-vanishing normalized floating-point       =*
-*=                power of the radix, i.e., R1MACH=FLOAT(IBETA)**MINEXP      =*
+*=                power of the radix, i.e., R1MACH=REAL(IBETA)**MINEXP      =*
 *=      I=2     - the largest finite floating-point number.  In              =*
-*=                particular R1MACH=(1.0-EPSNEG)*FLOAT(IBETA)**MAXEXP        =*
+*=                particular R1MACH=(1.0-EPSNEG)*REAL(IBETA)**MAXEXP        =*
 *=                Note - on some machines R1MACH will be only the            =*
 *=                second, or perhaps third, largest number, being            =*
 *=                too small by 1 or 2 units in the last digit of             =*
 *=                the significand.                                           =*
 *=      I=3     - A small positive floating-point number such that           =*
 *=                1.0-R1MACH .NE. 1.0. In particular, if IBETA = 2           =*
-*=                or  IRND = 0, R1MACH = FLOAT(IBETA)**NEGEPS.               =*
+*=                or  IRND = 0, R1MACH = REAL(IBETA)**NEGEPS.               =*
 *=                Otherwise,  R1MACH = (IBETA**NEGEPS)/2.  Because           =*
 *=                NEGEPS is bounded below by -(IT+3), R1MACH may not         =*
 *=                be the smallest number that can alter 1.0 by               =*
 *=                subtraction.                                               =*
 *=      I=4     - the smallest positive floating-point number such           =*
 *=                that  1.0+R1MACH .NE. 1.0. In particular, if either        =*
-*=                IBETA = 2  or  IRND = 0, R1MACH=FLOAT(IBETA)**MACHEP.      =*
-*=                Otherwise, R1MACH=(FLOAT(IBETA)**MACHEP)/2                 =*
+*=                IBETA = 2  or  IRND = 0, R1MACH=REAL(IBETA)**MACHEP.      =*
+*=                Otherwise, R1MACH=(REAL(IBETA)**MACHEP)/2                 =*
 *=  (see routine T665R for more information on different constants)          =*
 *-----------------------------------------------------------------------------*
 
@@ -19459,33 +19460,33 @@ C                   than  IT  base  IBETA  digits participate in the
 C                   post-normalization shift of the floating-point
 C                   significand in multiplication.
 C       MACHEP  - the largest negative integer such that
-C                 1.0+FLOAT(IBETA)**MACHEP .NE. 1.0, except that
+C                 1.0+REAL(IBETA)**MACHEP .NE. 1.0, except that
 C                 MACHEP is bounded below by  -(IT+3)
 C       NEGEPS  - the largest negative integer such that
-C                 1.0-FLOAT(IBETA)**NEGEPS .NE. 1.0, except that
+C                 1.0-REAL(IBETA)**NEGEPS .NE. 1.0, except that
 C                 NEGEPS is bounded below by  -(IT+3)
 C       IEXP    - the number of bits (decimal places if IBETA = 10)
 C                 reserved for the representation of the exponent
 C                 (including the bias or sign) of a floating-point
 C                 number
 C       MINEXP  - the largest in magnitude negative integer such that
-C                 FLOAT(IBETA)**MINEXP is positive and normalized
+C                 REAL(IBETA)**MINEXP is positive and normalized
 C       MAXEXP  - the smallest positive power of  BETA  that overflows
 C       EPS     - the smallest positive floating-point number such
 C                 that  1.0+EPS .NE. 1.0. In particular, if either
-C                 IBETA = 2  or  IRND = 0, EPS = FLOAT(IBETA)**MACHEP.
-C                 Otherwise,  EPS = (FLOAT(IBETA)**MACHEP)/2
+C                 IBETA = 2  or  IRND = 0, EPS = REAL(IBETA)**MACHEP.
+C                 Otherwise,  EPS = (REAL(IBETA)**MACHEP)/2
 C       EPSNEG  - A small positive floating-point number such that
 C                 1.0-EPSNEG .NE. 1.0. In particular, if IBETA = 2
-C                 or  IRND = 0, EPSNEG = FLOAT(IBETA)**NEGEPS.
+C                 or  IRND = 0, EPSNEG = REAL(IBETA)**NEGEPS.
 C                 Otherwise,  EPSNEG = (IBETA**NEGEPS)/2.  Because
 C                 NEGEPS is bounded below by -(IT+3), EPSNEG may not
 C                 be the smallest number that can alter 1.0 by
 C                 subtraction.
 C       XMIN    - the smallest non-vanishing normalized floating-point
-C                 power of the radix, i.e.,  XMIN = FLOAT(IBETA)**MINEXP
+C                 power of the radix, i.e.,  XMIN = REAL(IBETA)**MINEXP
 C       XMAX    - the largest finite floating-point number.  In
-C                 particular  XMAX = (1.0-EPSNEG)*FLOAT(IBETA)**MAXEXP
+C                 particular  XMAX = (1.0-EPSNEG)*REAL(IBETA)**MAXEXP
 C                 Note - on some machines  XMAX  will be only the
 C                 second, or perhaps third, largest number, being
 C                 too small by 1 or 2 units in the last digit of
@@ -20573,7 +20574,7 @@ c     INCLUDE 'params'
         CLOSE (UNIT=ilu)
         DO i = 1, n
           y1(i) =  y1(i) * 1.E-19
-          x1(i) = 400. + 1.*FLOAT(i-1)
+          x1(i) = 400. + 1.*REAL(i-1)
         ENDDO
 
         CALL addpnt(x1,y1,kdata,n,x1(1)*(1.-deltax),0.)
@@ -35296,7 +35297,7 @@ c      INCLUDE 'params'
       CLOSE(UNIT=ilu)
 
       DO m = 1, 12
-         tmp(m) = 190. + 10.*FLOAT(m-1)
+         tmp(m) = 190. + 10.*REAL(m-1)
          IF(m .EQ. 1) tmp(m) = 180.
 
          DO i = 1, nn
@@ -40664,7 +40665,7 @@ c      INCLUDE 'params'
       WRITE(kout,*)'aerosols:  Elterman (1968) continental profile'
       nd = 51
       DO 22, i = 1, nd
-         zd(i) = FLOAT(i-1)
+         zd(i) = REAL(i-1)
    22 CONTINUE
 
 * assume these are point values (at each level), so find column

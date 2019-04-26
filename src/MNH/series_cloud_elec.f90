@@ -81,7 +81,8 @@ END MODULE MODI_SERIES_CLOUD_ELEC
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!      Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
 !!      Philippe Wautelet: 22/01/2019: use standard FLUSH statement instead of non standard intrinsics
-!!
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!
 !-------------------------------------------------------------------------------
 !
 !*	0.	DECLARATIONS
@@ -462,7 +463,7 @@ CALL SUM_ELEC_ll(ZICE_MASS)
 CALL SUM_ELEC_ll(ICOUNT)
 !
 IF (ICOUNT .GT. 0) THEN
-  ZIWP = ZIWP + ZICE_MASS / (FLOAT(ICOUNT) * XDXHATM * XDYHATM)
+  ZIWP = ZIWP + ZICE_MASS / (REAL(ICOUNT) * XDXHATM * XDYHATM)
 END IF
 !
 !
@@ -546,25 +547,25 @@ IF (JCOUNT == JCOUNT_STOP) THEN
     ILU = TPFILE_SERIES_CLOUD_ELEC%NLU
     WRITE (ILU, FMT='(I6,19(E12.4))') &
              INT(KTCOUNT*PTSTEP),         & ! time
-             ZCTH_REF/FLOAT(JCOUNT),      & ! cloud top height from Z
-             ZCTH_MR/FLOAT(JCOUNT),       & ! cloud top height from m.r.
-             ZDBZMAX/FLOAT(JCOUNT),       & ! maximum radar reflectivity
-             ZWMAX/FLOAT(JCOUNT),         & ! maximum vertical velocity
-             ZVOL_UP5/FLOAT(JCOUNT),      & ! updraft volume for W > 5 m/s
-             ZVOL_UP10/FLOAT(JCOUNT),     & ! updraft volume for W > 10 m/s
-             ZMASS_C/FLOAT(JCOUNT),       & ! cloud droplets mass
-             ZMASS_R/FLOAT(JCOUNT),       & ! rain mass
-             ZMASS_I/FLOAT(JCOUNT),       & ! ice crystal mass
-             ZMASS_S/FLOAT(JCOUNT),       & ! snow mass
-             ZMASS_G/FLOAT(JCOUNT),       & ! graupel mass
-             ZMASS_ICE_P/FLOAT(JCOUNT),   & ! precipitation ice mass
-             ZFLUX_PROD/FLOAT(JCOUNT),    & ! ice mass flux product
-             ZFLUX_PRECIP/FLOAT(JCOUNT),  & ! precipitation ice mass flux
-             ZFLUX_NPRECIP/FLOAT(JCOUNT), & ! non-precipitation ice mass flux
-             ZIWP/FLOAT(JCOUNT),          & ! ice water path
-             ZCLD_VOL/FLOAT(JCOUNT),      & ! cloud volume
-             ZINPRR/FLOAT(JCOUNT),        & ! Rain instant precip
-             ZMAX_INPRR/FLOAT(JCOUNT)       ! maximum rain instant. precip.
+             ZCTH_REF/REAL(JCOUNT),      & ! cloud top height from Z
+             ZCTH_MR/REAL(JCOUNT),       & ! cloud top height from m.r.
+             ZDBZMAX/REAL(JCOUNT),       & ! maximum radar reflectivity
+             ZWMAX/REAL(JCOUNT),         & ! maximum vertical velocity
+             ZVOL_UP5/REAL(JCOUNT),      & ! updraft volume for W > 5 m/s
+             ZVOL_UP10/REAL(JCOUNT),     & ! updraft volume for W > 10 m/s
+             ZMASS_C/REAL(JCOUNT),       & ! cloud droplets mass
+             ZMASS_R/REAL(JCOUNT),       & ! rain mass
+             ZMASS_I/REAL(JCOUNT),       & ! ice crystal mass
+             ZMASS_S/REAL(JCOUNT),       & ! snow mass
+             ZMASS_G/REAL(JCOUNT),       & ! graupel mass
+             ZMASS_ICE_P/REAL(JCOUNT),   & ! precipitation ice mass
+             ZFLUX_PROD/REAL(JCOUNT),    & ! ice mass flux product
+             ZFLUX_PRECIP/REAL(JCOUNT),  & ! precipitation ice mass flux
+             ZFLUX_NPRECIP/REAL(JCOUNT), & ! non-precipitation ice mass flux
+             ZIWP/REAL(JCOUNT),          & ! ice water path
+             ZCLD_VOL/REAL(JCOUNT),      & ! cloud volume
+             ZINPRR/REAL(JCOUNT),        & ! Rain instant precip
+             ZMAX_INPRR/REAL(JCOUNT)       ! maximum rain instant. precip.
     FLUSH(UNIT=ILU)
   END IF
 !

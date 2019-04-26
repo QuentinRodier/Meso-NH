@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 interpol 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !######################## 
 MODULE MODI_INI_BIKHARDT_n
@@ -68,7 +63,8 @@ END MODULE MODI_INI_BIKHARDT_n
 !!    -------------
 !!
 !!      Original     10/06/96 
-!!
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -121,13 +117,13 @@ ALLOCATE (XBFY4(KDYRATIO))
 !*       2.     Bikhardt interpolation coefficients computation :
 !
 DO JI = 1,KDXRATIO
-  ZX = FLOAT(JI-1)/FLOAT(KDXRATIO)
+  ZX = REAL(JI-1)/REAL(KDXRATIO)
   XBFX1(JI) = -0.5*ZX*ZX*ZX  +    ZX*ZX  -0.5*ZX
   XBFX2(JI) =  1.5*ZX*ZX*ZX  -2.5*ZX*ZX           +1.
   XBFX3(JI) = -1.5*ZX*ZX*ZX  +2.0*ZX*ZX  +0.5*ZX
   XBFX4(JI) =  0.5*ZX*ZX*ZX  -0.5*ZX*ZX
 !
-  IF (MOD(KDXRATIO,2).EQ.0)  ZX = ZX + .5/FLOAT(KDXRATIO)
+  IF (MOD(KDXRATIO,2).EQ.0)  ZX = ZX + .5/REAL(KDXRATIO)
   XBMX1(JI) = -0.5*ZX*ZX*ZX  +    ZX*ZX  -0.5*ZX
   XBMX2(JI) =  1.5*ZX*ZX*ZX  -2.5*ZX*ZX           +1.
   XBMX3(JI) = -1.5*ZX*ZX*ZX  +2.0*ZX*ZX  +0.5*ZX
@@ -136,13 +132,13 @@ DO JI = 1,KDXRATIO
 END DO
 !
 DO JJ = 1,KDYRATIO
-  ZY = FLOAT(JJ-1)/FLOAT(KDYRATIO)
+  ZY = REAL(JJ-1)/REAL(KDYRATIO)
   XBFY1(JJ) = -0.5*ZY*ZY*ZY  +    ZY*ZY  -0.5*ZY
   XBFY2(JJ) =  1.5*ZY*ZY*ZY  -2.5*ZY*ZY           +1.
   XBFY3(JJ) = -1.5*ZY*ZY*ZY  +2.0*ZY*ZY  +0.5*ZY
   XBFY4(JJ) =  0.5*ZY*ZY*ZY  -0.5*ZY*ZY
 !
-  IF (MOD(KDYRATIO,2).EQ.0)  ZY = ZY + .5/FLOAT(KDYRATIO)
+  IF (MOD(KDYRATIO,2).EQ.0)  ZY = ZY + .5/REAL(KDYRATIO)
   XBMY1(JJ) = -0.5*ZY*ZY*ZY  +    ZY*ZY  -0.5*ZY
   XBMY2(JJ) =  1.5*ZY*ZY*ZY  -2.5*ZY*ZY           +1.
   XBMY3(JJ) = -1.5*ZY*ZY*ZY  +2.0*ZY*ZY  +0.5*ZY

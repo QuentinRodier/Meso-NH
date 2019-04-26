@@ -2,6 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 MODULE MODI_ICE4_RSRIMCG_OLD
 INTERFACE
 SUBROUTINE ICE4_RSRIMCG_OLD(KSIZE, ODSOFT, ODCOMPUTE, &
@@ -41,6 +42,7 @@ SUBROUTINE ICE4_RSRIMCG_OLD(KSIZE, ODSOFT, ODCOMPUTE, &
 !!    MODIFICATIONS
 !!    -------------
 !!
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !
 !
 !*      0. DECLARATIONS
@@ -98,10 +100,10 @@ IF(.NOT. ODSOFT) THEN
     !               set of Lbda_s used to tabulate some moments of the incomplete
     !               gamma function
     !
-    ZVEC2(1:IGRIM) = MAX( 1.00001, MIN( FLOAT(NGAMINC)-0.00001,           &
+    ZVEC2(1:IGRIM) = MAX( 1.00001, MIN( REAL(NGAMINC)-0.00001,           &
                           XRIMINTP1 * LOG( ZVEC1(1:IGRIM) ) + XRIMINTP2 ) )
     IVEC2(1:IGRIM) = INT( ZVEC2(1:IGRIM) )
-    ZVEC2(1:IGRIM) = ZVEC2(1:IGRIM) - FLOAT( IVEC2(1:IGRIM) )
+    ZVEC2(1:IGRIM) = ZVEC2(1:IGRIM) - REAL( IVEC2(1:IGRIM) )
 
     !
     !        5.1.5  perform the linear interpolation of the normalized

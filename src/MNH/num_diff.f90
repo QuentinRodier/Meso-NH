@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
-!-----------------------------------------------------------------
 !-----------------------------------------------------------------
 !     ####################
       MODULE MODI_NUM_DIFF
@@ -215,7 +210,8 @@ END MODULE MODI_NUM_DIFF
 !!                 07/09    (C.Lac)        Correction on budget calls
 !!     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!     J.Escobar : 05/12/2017 : Pb SegFault , correct IF(ONUMDIFTH/OZDIFFU) nesting
-!!
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -753,7 +749,7 @@ DO JI = IWZ,IEZ
                           6*PZDIFFU_HALO2%XZZ(JI,JJ,JK) )
 ! Weighting factor for z-diffusion
       ZWGTFAC(JI,JJ,JK) = MAX(0,JK-PZDIFFU_HALO2%NZDI(JI,JJ)+1)/&
-                        FLOAT(PZDIFFU_HALO2%NZDLB-PZDIFFU_HALO2%NZDI(JI,JJ)+1)
+                        REAL(PZDIFFU_HALO2%NZDLB-PZDIFFU_HALO2%NZDI(JI,JJ)+1)
     ENDDO
   ENDDO
 ENDDO
@@ -946,7 +942,7 @@ DO JI = IIB-1,IIE+1
                           6*PZDIFFU_HALO2%XZZ(JI,JJ,JK) )
 ! Weighting factor for z-diffusion
       ZWGTFAC(JI,JJ,JK) = MAX(0,JK-PZDIFFU_HALO2%NZDJ(JI,JJ)+1)/ & 
-                        FLOAT(PZDIFFU_HALO2%NZDLB-PZDIFFU_HALO2%NZDJ(JI,JJ)+1)
+                        REAL(PZDIFFU_HALO2%NZDLB-PZDIFFU_HALO2%NZDJ(JI,JJ)+1)
     ENDDO
   ENDDO
 ENDDO

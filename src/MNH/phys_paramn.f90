@@ -233,6 +233,7 @@ END MODULE MODI_PHYS_PARAM_n
 !  P. Wautelet 28/03/2018: replace TEMPORAL_DIST by DATETIME_DISTANCE
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 28/03/2019: use MNHTIME for time measurement variables
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -683,7 +684,7 @@ CALL SUNPOS_n   ( XZENITH, ZCOSZEN, ZSINZEN, ZAZIMSOL )
 !
       XFLALWD   (:,:)   = 300.
       DO JSWB=1,NSWB_MNH
-        XDIRFLASWD(:,:,JSWB) = XI0 * MAX(COS(XZENITH(:,:)),0.)/FLOAT(NSWB_MNH)
+        XDIRFLASWD(:,:,JSWB) = XI0 * MAX(COS(XZENITH(:,:)),0.)/REAL(NSWB_MNH)
         XSCAFLASWD(:,:,JSWB) = 0.
       END DO
       XDTHRAD(:,:,:) = 0.
@@ -696,8 +697,8 @@ CALL SUNPOS_n   ( XZENITH, ZCOSZEN, ZSINZEN, ZAZIMSOL )
       ZTIME = MOD(TDTCUR%TIME +XLON0*240., XDAY)
       IHOUR = INT( ZTIME/3600. )
       IF (IHOUR < 0) IHOUR=IHOUR + 24
-      ZDT = ZTIME/3600. - FLOAT(IHOUR)
-      XDIRFLASWD(:,:,:) =(( ZRG_HOUR(IHOUR+1)-ZRG_HOUR(IHOUR) )*ZDT + ZRG_HOUR(IHOUR)) / FLOAT(NSWB_MNH)
+      ZDT = ZTIME/3600. - REAL(IHOUR)
+      XDIRFLASWD(:,:,:) =(( ZRG_HOUR(IHOUR+1)-ZRG_HOUR(IHOUR) )*ZDT + ZRG_HOUR(IHOUR)) / REAL(NSWB_MNH)
       XFLALWD   (:,:)   = (ZRAT_HOUR(IHOUR+1)-ZRAT_HOUR(IHOUR))*ZDT + ZRAT_HOUR(IHOUR)
       DO JSWB=1,NSWB_MNH
         WHERE(ZCOSZEN(:,:)<0.) XDIRFLASWD(:,:,JSWB) = 0.

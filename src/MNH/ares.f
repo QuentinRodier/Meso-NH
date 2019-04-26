@@ -3,6 +3,9 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
+! Modifications:
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!-----------------------------------------------------------------
 c/////////////////////////////////////////////////////////////////////////////
             
 C    Calculate the aerosol chemical speciation and water content.
@@ -1246,7 +1249,7 @@ c *** check range of per cent relative humidity
        irh = irhx
        irh = max(1,irh)
        irh = min(irh,100)
-       aw  = float(irh) / 100.0 ! water activity = fractional relative humidity
+       aw  = real(irh) / 100.0 ! water activity = fractional relative humidity
        tso4 = max( mso4 , 0.0 )
        tnh4 = max( mnh4 , 0.0 )
        tno3 = max( mno3 , 0.0 )

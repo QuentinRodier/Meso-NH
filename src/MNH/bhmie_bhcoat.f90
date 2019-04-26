@@ -2,6 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !      ########################
        MODULE MODI_BHMIE_BHCOAT
 !      ########################
@@ -47,6 +48,7 @@ END MODULE MODI_BHMIE_BHCOAT
 !! History:
 !! 92/11/24 (BTD) Explicit declaration of all variables
 !  P. Wautelet 22/02/2019: add kind parameter for CMPLX intrinsics (if not it default to single precision)
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !!***********************************************************************
 !
 !*       0.    DECLARATIONS
@@ -128,7 +130,7 @@ ZZBAK = (0.0,0.0)
 ZONE  = 1.0
 IFLAG = 0
 DO JJ = 1,ISTOP
-  ZEN = FLOAT(JJ)
+  ZEN = REAL(JJ)
   ZPSIY = (2.0*ZEN-1.)*ZPSI1Y/PSIZE_PARAM_COAT - ZPSI0Y
   ZCHIY = (2.0*ZEN-1.)*ZCHI1Y/PSIZE_PARAM_COAT - ZCHI0Y
   ZZXIY = CMPLX(ZPSIY,-ZCHIY,kind=kind(ZZXIY))

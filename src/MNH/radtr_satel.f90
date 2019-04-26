@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/radtr_satel.f90,v $ $Revision: 1.2.4.1.16.1.2.2 $
 !-----------------------------------------------------------------
 !    #######################
      MODULE MODI_RADTR_SATEL 
@@ -106,6 +102,7 @@ END MODULE MODI_RADTR_SATEL
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!      G.Delautier 04/2016 : BUG JPHEXT
 !!      S. Riette 11/2016 : Condensation interface changed
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -625,7 +622,7 @@ ELSE
    !
    ! the splitting of the arrays will be performed
    !
-   INUM_CALL = CEILING( FLOAT( IDIM ) / FLOAT( KRAD_COLNBR ) )
+   INUM_CALL = CEILING( REAL( IDIM ) / REAL( KRAD_COLNBR ) )
    IDIM_RESIDUE = IDIM
    DO JI_SPLIT = 1 , INUM_CALL
      IDIM_EFF = MIN( IDIM_RESIDUE,KRAD_COLNBR )

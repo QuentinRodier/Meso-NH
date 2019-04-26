@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !      #################################
        MODULE MODI_LIMA_RAIN_ACCR_SNOW
 !      #################################
@@ -66,7 +67,8 @@ END MODULE MODI_LIMA_RAIN_ACCR_SNOW
 !!    MODIFICATIONS
 !!    -------------
 !!      Original             15/03/2018
-!!
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -160,15 +162,15 @@ WHERE( GACC )
 !               in the geometrical set of (Lbda_s,Lbda_r) couplet use to
 !               tabulate the RACCSS-kernel
 !
-   ZVEC1(:) = MAX( 1.0001, MIN( FLOAT(NACCLBDAS)-0.0001,           &
+   ZVEC1(:) = MAX( 1.0001, MIN( REAL(NACCLBDAS)-0.0001,           &
                          XACCINTP1S * LOG( ZVEC1(:) ) + XACCINTP2S ) )
    IVEC1(:) = INT( ZVEC1(:) )
-   ZVEC1(:) = ZVEC1(:) - FLOAT( IVEC1(:) )
+   ZVEC1(:) = ZVEC1(:) - REAL( IVEC1(:) )
 !
-   ZVEC2(:) = MAX( 1.0001, MIN( FLOAT(NACCLBDAR)-0.0001,           &
+   ZVEC2(:) = MAX( 1.0001, MIN( REAL(NACCLBDAR)-0.0001,           &
                          XACCINTP1R * LOG( ZVEC2(:) ) + XACCINTP2R ) )
    IVEC2(:) = INT( ZVEC2(:) )
-   ZVEC2(:) = ZVEC2(:) - FLOAT( IVEC2(:) )
+   ZVEC2(:) = ZVEC2(:) - REAL( IVEC2(:) )
 !
 !        1.3.3  perform the bilinear interpolation of the normalized
 !               RACCSS-kernel : for small rain drops transformed into snow

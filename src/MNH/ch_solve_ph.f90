@@ -60,6 +60,7 @@ END MODULE MODI_CH_SOLVE_PH
 !!    J.-P. Pinty 11/07/07 add CO3-- and SO3--
 !!    M. Leriche 05/06/08 add sum of ions
 !  P. Wautelet 22/02/2019: add kind parameter for CMPLX intrinsics (if not it default to single precision)
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !!
 !!    EXTERNAL
 !!    --------
@@ -249,7 +250,7 @@ END DO
 IF( .not.GPH_TOT ) THEN
   WRITE(UNIT=KLUOUT,FMT='("CH_SOLVE_PH: no convergence in the range ", &
                         & "0<pH<12,  Nunber of case =",F6.2," %")')    &
-                           100.0*( 1.0-(FLOAT(ITRUE)/FLOAT(KLW)) )
+                           100.0*( 1.0-(REAL(ITRUE)/REAL(KLW)) )
 ENDIF
 !
 DEALLOCATE(ZCOEFS)

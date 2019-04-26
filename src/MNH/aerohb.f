@@ -1,12 +1,10 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2006-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 aerosol 2006/05/18 13:07:25
+! Modifications:
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-----------------------------------------------------------------
       subroutine aeroeq(gas,caero,tempk,rh,ICOLUMN,err)
 C***********************************************************************
@@ -137,10 +135,10 @@ c Reserve the old aerosol concentrations
         enddo
       enddo
 c Calculate mass transport factor
-      delmu=(alog(Dpup)-alog(Dplow))/float(nasect)
+      delmu=(alog(Dpup)-alog(Dplow))/real(nasect)
       fact = 0.
       do inasect = 1, nasect
-        Dp=alog(Dplow)+(float(inasect)-0.5)*delmu
+        Dp=alog(Dplow)+(real(inasect)-0.5)*delmu
         Dp=exp(Dp)*1.e-6
         DPINDEX(INASECT) = dp
         totmass=0.
@@ -215,7 +213,7 @@ c moving sections to the fixed caero(i,j)
       enddo
 c        
       do inasect = 1, nasect
-        Dp=alog(Dplow)+(float(inasect)-0.5)*delmu
+        Dp=alog(Dplow)+(real(inasect)-0.5)*delmu
         Dp=exp(Dp)*1.e-6
          newvol = Dp**3 + 6./pi*dmass(inasect)/NN(inasect)*1.e-12/densp
          if(newvol .lt. 0.) newvol = 0.
@@ -225,9 +223,9 @@ c        write(6,*)icolumn,inasect,Dp*1.e6,Dp1
          Dp1 = max(Dp1, Dplow)
          Dpmove = (alog(Dp1) - alog(Dplow))/delmu + 0.5
          if(Dpmove .lt. 1.) Dpmove = 1.000001
-         if(Dpmove .gt. float(nasect)) Dpmove = float(nasect)+0.000001
+         if(Dpmove .gt. real(nasect)) Dpmove = real(nasect)+0.000001
          imove = int(Dpmove)
-         distr = Dpmove - float(imove)
+         distr = Dpmove - real(imove)
          do j = 1, naspec
            caero(imove,j)=caero(imove,j) + (1.-distr)*caero0(inasect,j)
            if(imove .ne. nasect) caero(imove+1,j) = caero(imove+1,j) 

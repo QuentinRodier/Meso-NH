@@ -55,6 +55,7 @@
 !!    + changes call to READ_HGRID
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -158,8 +159,8 @@ DO
 !
   II=MAX(MIN(INT(ZI),NPGDIMAX+2*JPHEXT-1),1)
   IJ=MAX(MIN(INT(ZJ),NPGDJMAX+2*JPHEXT-1),1)
-  ZXHAT=XPGDXHAT(II) + (ZI-FLOAT(II)) * ( XPGDXHAT(II+1) - XPGDXHAT(II) )
-  ZYHAT=XPGDYHAT(IJ) + (ZJ-FLOAT(IJ)) * ( XPGDYHAT(IJ+1) - XPGDYHAT(IJ) )
+  ZXHAT=XPGDXHAT(II) + (ZI-REAL(II)) * ( XPGDXHAT(II+1) - XPGDXHAT(II) )
+  ZYHAT=XPGDYHAT(IJ) + (ZJ-REAL(IJ)) * ( XPGDYHAT(IJ+1) - XPGDYHAT(IJ) )
 !
   WRITE(*,*) 'x=', ZXHAT
   WRITE(*,*) 'y=', ZYHAT

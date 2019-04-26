@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
 !-----------------------------------------------------------------
 !     #################
       MODULE MODI_ZSECT
@@ -63,6 +59,7 @@ END MODULE MODI_ZSECT
 !!      Original    08/12/94
 !!      J. Escobar  24/03/2012 modif for reprod sum
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -145,7 +142,7 @@ ENDDO
 !
    PHORSECT = SUM_DD_R2_ll(ZVARZSECT) ! mask included with 0.0 value
 
-   ZCOUNT   = FLOAT(COUNT(GMASK))
+   ZCOUNT   = REAL(COUNT(GMASK))
    CALL REDUCESUM_ll(ZCOUNT,IINFO_ll)
 
 IF (ZCOUNT > 0.0 ) THEN

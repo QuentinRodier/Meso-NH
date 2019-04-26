@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2002-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !      #########################
@@ -225,7 +225,8 @@ END MODULE MODI_RAIN_ICE_ELEC
 !!         J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!         J.Escobar : 10/2017 : for real*4 , limit exp() in RAIN_ICE_ELEC_SLOW with XMNH_HUGE_12_LOG
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1254,7 +1255,7 @@ END IF
 !
 !*       8.1    time splitting loop initialization
 !
-ZTSPLITR = PTSTEP / FLOAT(KSPLITR)
+ZTSPLITR = PTSTEP / REAL(KSPLITR)
 !
 !
 IF (CSEDIM == 'STAT') THEN
@@ -2974,10 +2975,10 @@ IMPLICIT NONE
 !*              set of Lbda_s used to tabulate some moments of the incomplete 
 !               gamma function
 !
-    ZVEC2(1:IGRIM) = MAX( 1.00001, MIN( FLOAT(NGAMINC)-0.00001,           &
+    ZVEC2(1:IGRIM) = MAX( 1.00001, MIN( REAL(NGAMINC)-0.00001,           &
                           XRIMINTP1 * LOG( ZVEC1(1:IGRIM) ) + XRIMINTP2 ) )
     IVEC2(1:IGRIM) = INT( ZVEC2(1:IGRIM) )
-    ZVEC2(1:IGRIM) = ZVEC2(1:IGRIM) - FLOAT( IVEC2(1:IGRIM) )
+    ZVEC2(1:IGRIM) = ZVEC2(1:IGRIM) - REAL( IVEC2(1:IGRIM) )
 !
 !*       5.1.3  perform the linear interpolation of the normalized
 !*              "2+XDS"-moment of the incomplete gamma function
@@ -3125,15 +3126,15 @@ IMPLICIT NONE
 !               in the geometrical set of (Lbda_s,Lbda_r) couplet use to
 !               tabulate the RACCSS-kernel
 !
-    ZVEC1(1:IGACC) = MAX( 1.00001, MIN( FLOAT(NACCLBDAS)-0.00001,           &
+    ZVEC1(1:IGACC) = MAX( 1.00001, MIN( REAL(NACCLBDAS)-0.00001,           &
                           XACCINTP1S * LOG( ZVEC1(1:IGACC) ) + XACCINTP2S ) )
     IVEC1(1:IGACC) = INT( ZVEC1(1:IGACC) )
-    ZVEC1(1:IGACC) = ZVEC1(1:IGACC) - FLOAT( IVEC1(1:IGACC) )
+    ZVEC1(1:IGACC) = ZVEC1(1:IGACC) - REAL( IVEC1(1:IGACC) )
 !
-    ZVEC2(1:IGACC) = MAX( 1.00001, MIN( FLOAT(NACCLBDAR)-0.00001,           &
+    ZVEC2(1:IGACC) = MAX( 1.00001, MIN( REAL(NACCLBDAR)-0.00001,           &
                           XACCINTP1R * LOG( ZVEC2(1:IGACC) ) + XACCINTP2R ) )
     IVEC2(1:IGACC) = INT( ZVEC2(1:IGACC) )
-    ZVEC2(1:IGACC) = ZVEC2(1:IGACC) - FLOAT( IVEC2(1:IGACC) )
+    ZVEC2(1:IGACC) = ZVEC2(1:IGACC) - REAL( IVEC2(1:IGACC) )
 !
 !        5.2.3  perform the bilinear interpolation of the normalized
 !               RACCSS-kernel
@@ -3467,15 +3468,15 @@ IMPLICIT NONE
 !                 in the geometrical set of (Lbda_g,Lbda_s) couplet use to
 !                 tabulate the SDRYG-kernel
 !
-    ZVEC1(1:IGDRY) = MAX( 1.00001, MIN( FLOAT(NDRYLBDAG)-0.00001,           &
+    ZVEC1(1:IGDRY) = MAX( 1.00001, MIN( REAL(NDRYLBDAG)-0.00001,           &
                           XDRYINTP1G * LOG( ZVEC1(1:IGDRY) ) + XDRYINTP2G ) )
     IVEC1(1:IGDRY) = INT( ZVEC1(1:IGDRY) )
-    ZVEC1(1:IGDRY) = ZVEC1(1:IGDRY) - FLOAT( IVEC1(1:IGDRY) )
+    ZVEC1(1:IGDRY) = ZVEC1(1:IGDRY) - REAL( IVEC1(1:IGDRY) )
 !
-    ZVEC2(1:IGDRY) = MAX( 1.00001, MIN( FLOAT(NDRYLBDAS)-0.00001,           &
+    ZVEC2(1:IGDRY) = MAX( 1.00001, MIN( REAL(NDRYLBDAS)-0.00001,           &
                           XDRYINTP1S * LOG( ZVEC2(1:IGDRY) ) + XDRYINTP2S ) )
     IVEC2(1:IGDRY) = INT( ZVEC2(1:IGDRY) )
-    ZVEC2(1:IGDRY) = ZVEC2(1:IGDRY) - FLOAT( IVEC2(1:IGDRY) )
+    ZVEC2(1:IGDRY) = ZVEC2(1:IGDRY) - REAL( IVEC2(1:IGDRY) )
 !
 !        6.2.3.4  perform the bilinear interpolation of the normalized
 !                 SDRYG-kernel
@@ -3582,15 +3583,15 @@ IMPLICIT NONE
 !                 in the geometrical set of (Lbda_g,Lbda_r) couplet use to
 !                 tabulate the RDRYG-kernel
 !
-    ZVEC1(1:IGDRY) = MAX( 1.00001, MIN( FLOAT(NDRYLBDAG)-0.00001,           &
+    ZVEC1(1:IGDRY) = MAX( 1.00001, MIN( REAL(NDRYLBDAG)-0.00001,           &
                           XDRYINTP1G * LOG( ZVEC1(1:IGDRY) ) + XDRYINTP2G ) )
     IVEC1(1:IGDRY) = INT( ZVEC1(1:IGDRY) )
-    ZVEC1(1:IGDRY) = ZVEC1(1:IGDRY) - FLOAT( IVEC1(1:IGDRY) )
+    ZVEC1(1:IGDRY) = ZVEC1(1:IGDRY) - REAL( IVEC1(1:IGDRY) )
 !
-    ZVEC2(1:IGDRY) = MAX( 1.00001, MIN( FLOAT(NDRYLBDAR)-0.00001,           &
+    ZVEC2(1:IGDRY) = MAX( 1.00001, MIN( REAL(NDRYLBDAR)-0.00001,           &
                           XDRYINTP1R * LOG( ZVEC2(1:IGDRY) ) + XDRYINTP2R ) )
     IVEC2(1:IGDRY) = INT( ZVEC2(1:IGDRY) )
-    ZVEC2(1:IGDRY) = ZVEC2(1:IGDRY) - FLOAT( IVEC2(1:IGDRY) )
+    ZVEC2(1:IGDRY) = ZVEC2(1:IGDRY) - REAL( IVEC2(1:IGDRY) )
 !
 !        6.2.4.4  perform the bilinear interpolation of the normalized
 !                 RDRYG-kernel
@@ -3966,15 +3967,15 @@ IMPLICIT NONE
 !               in the geometrical set of (Lbda_h,Lbda_s) couplet use to
 !               tabulate the SWETH-kernel
 !
-      ZVEC1(1:IGWET) = MAX( 1.00001, MIN( FLOAT(NWETLBDAH)-0.00001,           &
+      ZVEC1(1:IGWET) = MAX( 1.00001, MIN( REAL(NWETLBDAH)-0.00001,           &
                             XWETINTP1H * LOG( ZVEC1(1:IGWET) ) + XWETINTP2H ) )
       IVEC1(1:IGWET) = INT( ZVEC1(1:IGWET) )
-      ZVEC1(1:IGWET) = ZVEC1(1:IGWET) - FLOAT( IVEC1(1:IGWET) )
+      ZVEC1(1:IGWET) = ZVEC1(1:IGWET) - REAL( IVEC1(1:IGWET) )
 !
-      ZVEC2(1:IGWET) = MAX( 1.00001, MIN( FLOAT(NWETLBDAS)-0.00001,           &
+      ZVEC2(1:IGWET) = MAX( 1.00001, MIN( REAL(NWETLBDAS)-0.00001,           &
                             XWETINTP1S * LOG( ZVEC2(1:IGWET) ) + XWETINTP2S ) )
       IVEC2(1:IGWET) = INT( ZVEC2(1:IGWET) )
-      ZVEC2(1:IGWET) = ZVEC2(1:IGWET) - FLOAT( IVEC2(1:IGWET) )
+      ZVEC2(1:IGWET) = ZVEC2(1:IGWET) - REAL( IVEC2(1:IGWET) )
 !
 !*       7.2.5  perform the bilinear interpolation of the normalized
 !               SWETH-kernel
@@ -4021,15 +4022,15 @@ IMPLICIT NONE
 !               in the geometrical set of (Lbda_h,Lbda_g) couplet use to
 !               tabulate the GWETH-kernel
 !
-      ZVEC1(1:IGWET) = MAX( 1.00001, MIN( FLOAT(NWETLBDAG)-0.00001,           &
+      ZVEC1(1:IGWET) = MAX( 1.00001, MIN( REAL(NWETLBDAG)-0.00001,           &
                             XWETINTP1H * LOG( ZVEC1(1:IGWET) ) + XWETINTP2H ) )
       IVEC1(1:IGWET) = INT( ZVEC1(1:IGWET) )
-      ZVEC1(1:IGWET) = ZVEC1(1:IGWET) - FLOAT( IVEC1(1:IGWET) )
+      ZVEC1(1:IGWET) = ZVEC1(1:IGWET) - REAL( IVEC1(1:IGWET) )
 !
-      ZVEC2(1:IGWET) = MAX( 1.00001, MIN( FLOAT(NWETLBDAG)-0.00001,           &
+      ZVEC2(1:IGWET) = MAX( 1.00001, MIN( REAL(NWETLBDAG)-0.00001,           &
                             XWETINTP1G * LOG( ZVEC2(1:IGWET) ) + XWETINTP2G ) )
       IVEC2(1:IGWET) = INT( ZVEC2(1:IGWET) )
-      ZVEC2(1:IGWET) = ZVEC2(1:IGWET) - FLOAT( IVEC2(1:IGWET) )
+      ZVEC2(1:IGWET) = ZVEC2(1:IGWET) - REAL( IVEC2(1:IGWET) )
 !
 !*       7.2.10 perform the bilinear interpolation of the normalized
 !               GWETH-kernel
@@ -5066,31 +5067,31 @@ REAL, DIMENSION(:), INTENT(INOUT) :: ZDQLWC_AUX  ! q= f(RAR or EW,T) in Saunders
   ZDQLWC_OPT(:) = PACK( ZDQLWC_AUX(:), MASK=GSAUN )
 !
 ! Temperature index (0C --> -40C)
-  ZVEC1(1:IGSAUN) = MAX( 1.00001, MIN( FLOAT(NIND_TEMP)-0.00001, &
+  ZVEC1(1:IGSAUN) = MAX( 1.00001, MIN( REAL(NIND_TEMP)-0.00001, &
                                      (ZVEC1(1:IGSAUN) - XTT - 1.)/(-1.) ) )
   IVEC1(1:IGSAUN) = INT( ZVEC1(1:IGSAUN) )
-  ZVEC1(1:IGSAUN) = ZVEC1(1:IGSAUN) - FLOAT(IVEC1(1:IGSAUN))
+  ZVEC1(1:IGSAUN) = ZVEC1(1:IGSAUN) - REAL(IVEC1(1:IGSAUN))
 !
 ! LWC index (0.01 g.m^-3 --> 10 g.m^-3)
   WHERE (ZVEC2(:) >= 0.01 .AND. ZVEC2(:) < 0.1)
-    ZVEC2(:) = MAX( 1.00001, MIN( FLOAT(10)-0.00001, &
+    ZVEC2(:) = MAX( 1.00001, MIN( REAL(10)-0.00001, &
                                   ZVEC2(:) * 100. ))
     IVEC2(:) = INT(ZVEC2(:))
-    ZVEC2(:) = ZVEC2(:) - FLOAT(IVEC2(:))
+    ZVEC2(:) = ZVEC2(:) - REAL(IVEC2(:))
   ENDWHERE
 !
   WHERE (ZVEC2(:) >= 0.1 .AND. ZVEC2(:) < 1. .AND. IVEC2(:) == 0)
-    ZVEC2(:) = MAX( 10.00001, MIN( FLOAT(19)-0.00001, &
+    ZVEC2(:) = MAX( 10.00001, MIN( REAL(19)-0.00001, &
                                    ZVEC2(:) * 10. + 9. ) )
     IVEC2(:) = INT(ZVEC2(:))
-    ZVEC2(:) = ZVEC2(:) - FLOAT(IVEC2(:))
+    ZVEC2(:) = ZVEC2(:) - REAL(IVEC2(:))
   ENDWHERE
 !
   WHERE ((ZVEC2(:) >= 1.) .AND. ZVEC2(:) <= 10.)
-    ZVEC2(:) = MAX( 19.00001, MIN( FLOAT(NIND_LWC)-0.00001, &
+    ZVEC2(:) = MAX( 19.00001, MIN( REAL(NIND_LWC)-0.00001, &
                                    ZVEC2(:) + 18. ) )
     IVEC2(:) = INT(ZVEC2(:))
-    ZVEC2(:) = ZVEC2(:) - FLOAT(IVEC2(:))
+    ZVEC2(:) = ZVEC2(:) - REAL(IVEC2(:))
   ENDWHERE
 !
 ! Interpolate XSAUNDER
@@ -5132,31 +5133,31 @@ REAL, DIMENSION(NIND_LWC+1,NIND_TEMP+1) :: XTAKA_AUX  !XMANSELL or XTAKA_TM)
   ZDQTAKA_OPT(:) = PACK( ZDQTAKA_AUX(:), MASK=GTAKA )
 !
 ! Temperature index (0C --> -40C)
-  ZVEC1(1:IGTAKA) = MAX( 1.00001, MIN( FLOAT(NIND_TEMP)-0.00001, &
+  ZVEC1(1:IGTAKA) = MAX( 1.00001, MIN( REAL(NIND_TEMP)-0.00001, &
                                      (ZVEC1(1:IGTAKA) - XTT - 1.)/(-1.) ) )
   IVEC1(1:IGTAKA) = INT( ZVEC1(1:IGTAKA) )
-  ZVEC1(1:IGTAKA) = ZVEC1(1:IGTAKA) - FLOAT(IVEC1(1:IGTAKA))
+  ZVEC1(1:IGTAKA) = ZVEC1(1:IGTAKA) - REAL(IVEC1(1:IGTAKA))
 !
 ! LWC index (0.01 g.m^-3 --> 10 g.m^-3)
   WHERE (ZVEC2(:) >= 0.01 .AND. ZVEC2(:) < 0.1)
-    ZVEC2(:) = MAX( 1.00001, MIN( FLOAT(10)-0.00001, &
+    ZVEC2(:) = MAX( 1.00001, MIN( REAL(10)-0.00001, &
                                   ZVEC2(:) * 100. ))
     IVEC2(:) = INT(ZVEC2(:))
-    ZVEC2(:) = ZVEC2(:) - FLOAT(IVEC2(:))
+    ZVEC2(:) = ZVEC2(:) - REAL(IVEC2(:))
   ENDWHERE
 !
   WHERE (ZVEC2(:) >= 0.1 .AND. ZVEC2(:) < 1. .AND. IVEC2(:) == 0)
-    ZVEC2(:) = MAX( 10.00001, MIN( FLOAT(19)-0.00001, &
+    ZVEC2(:) = MAX( 10.00001, MIN( REAL(19)-0.00001, &
                                    ZVEC2(:) * 10. + 9. ) )
     IVEC2(:) = INT(ZVEC2(:))
-    ZVEC2(:) = ZVEC2(:) - FLOAT(IVEC2(:))
+    ZVEC2(:) = ZVEC2(:) - REAL(IVEC2(:))
   ENDWHERE
 !
   WHERE (ZVEC2(:) >= 1. .AND. ZVEC2(:) <= 10.)
-    ZVEC2(:) = MAX( 19.00001, MIN( FLOAT(NIND_LWC)-0.00001, &
+    ZVEC2(:) = MAX( 19.00001, MIN( REAL(NIND_LWC)-0.00001, &
                                    ZVEC2(:) + 18. ) )
     IVEC2(:) = INT(ZVEC2(:))
-    ZVEC2(:) = ZVEC2(:) - FLOAT(IVEC2(:))
+    ZVEC2(:) = ZVEC2(:) - REAL(IVEC2(:))
   ENDWHERE
 !
 ! Interpolate XMANSELL or XTAKA_TM

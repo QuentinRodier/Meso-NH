@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for SCCS information
-!-----------------------------------------------------------------
-!      %Z% Lib:%F%, Version:%I%, Date:%D%, Last modified:%E%
 !-----------------------------------------------------------------
 !     	###################
         MODULE MODI_VQZCOLX
@@ -122,7 +118,8 @@ END MODULE MODI_VQZCOLX
 !!    -------------
 !!      Original    8/11/95
 !!
-!!
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!
 !-------------------------------------------------------------------------------
 !
 !
@@ -203,8 +200,8 @@ REAL    :: ZFUNC   ! Ancillary function
 !
 !*       1.1     Compute the growth rate of the slope factors LAMBDA
 !
-ZDLBDAX = EXP( LOG(PLBDAXMAX / PLBDAXMIN) / FLOAT(SIZE(PRZCOLX(:,:),1) - 1) )
-ZDLBDAZ = EXP( LOG(PLBDAZMAX / PLBDAZMIN) / FLOAT(SIZE(PRZCOLX(:,:),2) - 1) )
+ZDLBDAX = EXP( LOG(PLBDAXMAX / PLBDAXMIN) / REAL(SIZE(PRZCOLX(:,:),1) - 1) )
+ZDLBDAZ = EXP( LOG(PLBDAZMAX / PLBDAZMIN) / REAL(SIZE(PRZCOLX(:,:),2) - 1) )
 !
 !*       1.2     Scan the slope factors LAMBDAX and LAMBDAZ
 !
@@ -220,18 +217,18 @@ DO JLBDAX = 1, SIZE(PRZCOLX(:,:),1)
 !
 !*       1.4     Compute the diameter steps
 !
-    ZDDX = PDINFTY / (FLOAT(KND) * ZLBDAX)
-    ZDDZ = PDINFTY / (FLOAT(KND) * ZLBDAZ)
+    ZDDX = PDINFTY / (REAL(KND) * ZLBDAX)
+    ZDDZ = PDINFTY / (REAL(KND) * ZLBDAZ)
 !
 !*       1.5     Scan over the diameters DX and DZ
 !
     DO JDX = 1, KND-1
-      ZDX = ZDDX * FLOAT(JDX)
+      ZDX = ZDDX * REAL(JDX)
 !
       ZSCALZ = 0.0
       ZCOLLZ = 0.0
       DO JDZ = 1, KND-1
-        ZDZ = ZDDZ * FLOAT(JDZ)
+        ZDZ = ZDDZ * REAL(JDZ)
 !
 !*       1.6     Compute the normalization factor by integration over the
 !                dimensional spectrum of specy Z  

@@ -53,6 +53,7 @@
 !!    -------------
 !!    Original 01/03/99
 !!    Philippe Wautelet: 10/01/2019: use newunit argument to open files
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !!
 !!    EXTERNAL
 !!    --------
@@ -100,14 +101,14 @@ NAMELIST /NAM_TUV/ ALAT, ALONG, IDATE, ALBNEW, DOBNEW
 !        -------------------
 !
 !      initialize az and atime
-DZ = ZMAX / FLOAT(NLEVEL - 1)
+DZ = ZMAX / REAL(NLEVEL - 1)
 DO J = 1, NLEVEL
-  AZ(J) = FLOAT(J-1) * DZ
+  AZ(J) = REAL(J-1) * DZ
   LWC(J)= 0.0
 ENDDO
-DT = 24.00 / FLOAT(NTIME - 1)
+DT = 24.00 / REAL(NTIME - 1)
 DO I = 1, NTIME
-  ATIME(I) = FLOAT(I-1) * DT
+  ATIME(I) = REAL(I-1) * DT
 ENDDO
 !
 !      initialize default values

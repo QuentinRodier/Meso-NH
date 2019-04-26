@@ -172,6 +172,7 @@ END MODULE MODI_INI_RADIATIONS_ECMWF
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !  P. Wautelet 14/02/2019: remove HINIFILE dummy argument
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -326,7 +327,7 @@ CALL INI_STAND_ATM
 IF(.NOT.LCARTESIAN) THEN
   ! . global sum
   ZLATMEAN = SUM_DD_R2_ll( PLAT(IIB:IIE,IJB:IJE))
-  ZLATMEAN = ZLATMEAN /FLOAT(IIMAX_ll*IJMAX_ll)
+  ZLATMEAN = ZLATMEAN /REAL(IIMAX_ll*IJMAX_ll)
 ELSE 
   ZLATMEAN = XLAT0
 ENDIF

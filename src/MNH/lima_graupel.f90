@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !      #################################
        MODULE MODI_LIMA_GRAUPEL
 !      #################################
@@ -127,7 +128,8 @@ END MODULE MODI_LIMA_GRAUPEL
 !!    MODIFICATIONS
 !!    -------------
 !!      Original             15/03/2018
-!!
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -303,15 +305,15 @@ WHERE( GDRY )
 !        in the geometrical set of (Lbda_g,Lbda_s) couplet use to
 !        tabulate the SDRYG-kernel
 !
-   ZVEC1(:) = MAX( 1.0001, MIN( FLOAT(NDRYLBDAG)-0.0001,           &
+   ZVEC1(:) = MAX( 1.0001, MIN( REAL(NDRYLBDAG)-0.0001,           &
                          XDRYINTP1G * LOG( ZVEC1(:) ) + XDRYINTP2G ) )
    IVEC1(:) = INT( ZVEC1(:) )
-   ZVEC1(:) = ZVEC1(:) - FLOAT( IVEC1(:) )
+   ZVEC1(:) = ZVEC1(:) - REAL( IVEC1(:) )
 !
-   ZVEC2(:) = MAX( 1.0001, MIN( FLOAT(NDRYLBDAS)-0.0001,           &
+   ZVEC2(:) = MAX( 1.0001, MIN( REAL(NDRYLBDAS)-0.0001,           &
                          XDRYINTP1S * LOG( ZVEC2(:) ) + XDRYINTP2S ) )
    IVEC2(:) = INT( ZVEC2(:) )
-   ZVEC2(:) = ZVEC2(:) - FLOAT( IVEC2(:) )
+   ZVEC2(:) = ZVEC2(:) - REAL( IVEC2(:) )
 !
 !*       perform the bilinear interpolation of the normalized
 !        SDRYG-kernel
@@ -352,15 +354,15 @@ WHERE( GDRY )
 !        in the geometrical set of (Lbda_g,Lbda_r) couplet use to
 !        tabulate the RDRYG-kernel
 !
-   ZVEC1(:) = MAX( 1.0001, MIN( FLOAT(NDRYLBDAG)-0.0001,           &
+   ZVEC1(:) = MAX( 1.0001, MIN( REAL(NDRYLBDAG)-0.0001,           &
                          XDRYINTP1G * LOG( ZVEC1(:) ) + XDRYINTP2G ) )
    IVEC1(:) = INT( ZVEC1(:) )
-   ZVEC1(:) = ZVEC1(:) - FLOAT( IVEC1(:) )
+   ZVEC1(:) = ZVEC1(:) - REAL( IVEC1(:) )
 !
-   ZVEC2(:) = MAX( 1.0001, MIN( FLOAT(NDRYLBDAR)-0.0001,           &
+   ZVEC2(:) = MAX( 1.0001, MIN( REAL(NDRYLBDAR)-0.0001,           &
                          XDRYINTP1R * LOG( ZVEC2(:) ) + XDRYINTP2R ) )
    IVEC2(:) = INT( ZVEC2(:) )
-   ZVEC2(:) = ZVEC2(:) - FLOAT( IVEC2(:) )
+   ZVEC2(:) = ZVEC2(:) - REAL( IVEC2(:) )
 !
 !*       Perform the bilinear interpolation of the normalized
 !        RDRYG-kernel
@@ -478,10 +480,10 @@ IVEC2(:)=0
 WHERE( GDRY(:) )
 !
    ZVEC1(:) = PLBDC(:)
-   ZVEC2(:) = MAX( 1.0001, MIN( FLOAT(NGAMINC)-0.0001,           &
+   ZVEC2(:) = MAX( 1.0001, MIN( REAL(NGAMINC)-0.0001,           &
                          XHMLINTP1 * LOG( ZVEC1(:) ) + XHMLINTP2 ) )
    IVEC2(:) = INT( ZVEC2(:) )
-   ZVEC2(:) = ZVEC2(:) - FLOAT( IVEC2(:) )
+   ZVEC2(:) = ZVEC2(:) - REAL( IVEC2(:) )
    ZVEC1(:) =   XGAMINC_HMC( IVEC2(:)+1 )* ZVEC2(:)      &
                     - XGAMINC_HMC( IVEC2(:)   )*(ZVEC2(:) - 1.0)
    ZZX(:) = ZVEC1(:) ! Large droplets

@@ -118,7 +118,8 @@ SUBROUTINE SET_MASS(TPFILE,OPROFILE_IN_PROC, PZFLUX_PROFILE,                    
 !!    M.Moge      08/2015   add UPDATE_HALO_ll on XTHT, ZTHV3D, XRT(:,:,1,:) after computation
 !!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!    
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!
 !-------------------------------------------------------------------------------
 !!
 ! use des modules
@@ -284,7 +285,7 @@ ZPMASS_MX(:,:,:)=XP00*(ZHEXNMASS_MX(:,:,:))**(XCPD/XRD)
 ZRHOD_MX(:,:,:)=ZPMASS_MX(:,:,:)/(ZPMASS_MX(:,:,:)/XP00)**(XRD/XCPD) &
                  /(XRD*ZTHV3D_MX(:,:,:)*(1.+WATER_SUM(ZMR3D_MX(:,:,:,:))))
 
-XEXNTOP=SUM_DD_R2_ll(ZHEXNFLUX_MX(IIB:IIE,IJB:IJE,IKE+1))/FLOAT(NIMAX_ll*NJMAX_ll)
+XEXNTOP=SUM_DD_R2_ll(ZHEXNFLUX_MX(IIB:IIE,IJB:IJE,IKE+1))/REAL(NIMAX_ll*NJMAX_ll)
 
 
 !------------------------------
@@ -521,7 +522,7 @@ ELSE
   CALL COMPUTE_EXNER_FROM_GROUND(ZTHVREF3D,PZFLUX_MX,&
           ZEXNSURF2D_MX,ZHEXNFLUX,ZHEXNMASS)
 
-  XEXNTOP=SUM_DD_R2_ll(ZHEXNFLUX(IIB:IIE,IJB:IJE,IKE+1))/FLOAT(NIMAX_ll*NJMAX_ll)
+  XEXNTOP=SUM_DD_R2_ll(ZHEXNFLUX(IIB:IIE,IJB:IJE,IKE+1))/REAL(NIMAX_ll*NJMAX_ll)
 
   ZEXNTOP2D=ZHEXNFLUX(:,:,IKE+1)
   CALL COMPUTE_EXNER_FROM_TOP(ZTHVREF3D,XZZ,ZEXNTOP2D,ZHEXNFLUX,ZHEXNMASS)

@@ -1,7 +1,11 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
+! Modifications:
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!-----------------------------------------------------------------
       SUBROUTINE gaulag(x,w,n,alf)
       INTEGER n,MAXIT
       REAL alf,w(n),x(n)
@@ -38,7 +42,7 @@ C
           if(abs(z-z1).le.EPS)goto 1
 12      continue
 1       x(i)=z
-        w(i)=-exp(gammln(alf+n)-gammln(float(n)))/(pp*n*p2)
+        w(i)=-exp(gammln(alf+n)-gammln(real(n)))/(pp*n*p2)
 13    continue
 C
 C NORMALISATION

@@ -61,6 +61,7 @@ END MODULE MODI_GAMMA_INC
 !!    -------------
 !!      Original     7/12/95
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !
 !*       0. DECLARATIONS
 !           ------------
@@ -117,7 +118,7 @@ IF( (PX.LT.PA+1.0) ) THEN
   JN = 1
 !
   LOOP_FRACTION: DO
-    ZAN = -FLOAT(JN)*(FLOAT(JN)-PA)
+    ZAN = -REAL(JN)*(REAL(JN)-PA)
     ZB = ZB + 2.0
     ZD = ZAN*ZD + ZB
     IF( ABS(ZD).LT.TINY(PX) ) THEN

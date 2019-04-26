@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !######################
 MODULE MODE_NEIGHBORAVG
 !######################
@@ -21,7 +22,8 @@ SUBROUTINE BLOCKAVG(PMATIN,KDX,KDY,PMATOUT)
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -123,7 +125,7 @@ DO II = 1, KDX-1
 END DO
 
 CALL GET_HALO(ZTMP)
-PMATOUT(:,:,:) = ZTMP(:,:,:) / float(KDX*KDY)
+PMATOUT(:,:,:) = ZTMP(:,:,:) / real(KDX*KDY)
 
 END SUBROUTINE BLOCKAVG
 
@@ -194,7 +196,7 @@ DO IJ = 1 , 2*KDY +1
   ISX = - ISX
 END DO
     
-PMATOUT(:,:,:) = ZSUMP1(:,:,:) / FLOAT((1+2*KDX)*(1+2*KDY))
+PMATOUT(:,:,:) = ZSUMP1(:,:,:) / REAL((1+2*KDX)*(1+2*KDY))
   
 END SUBROUTINE MOVINGAVG
 

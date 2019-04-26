@@ -103,7 +103,8 @@ END MODULE MODI_LIMA_WARM_NUCL
 !!      J. Escobar : 10/2017 , for real*4 use XMNH_EPSILON
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
-!!
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -332,10 +333,10 @@ IF( INUCT >= 1 ) THEN
 !  Remark : in LIMA's nucleation parameterization, Smax=0.01 for a supersaturation of 1% !
 !
 !
-   ZVEC1(:) = MAX( 1.0001, MIN( FLOAT(NAHEN)-0.0001, &
+   ZVEC1(:) = MAX( 1.0001, MIN( REAL(NAHEN)-0.0001, &
                                  XAHENINTP1 * ZZT(:) + XAHENINTP2 )  )
    IVEC1(:) = INT( ZVEC1(:) )
-   ZVEC1(:) = ZVEC1(:) - FLOAT( IVEC1(:) )
+   ZVEC1(:) = ZVEC1(:) - REAL( IVEC1(:) )
    ALLOCATE(ZSMAX(INUCT))
 !
 !
@@ -419,10 +420,10 @@ IF( INUCT >= 1 ) THEN
 ! Modified values for Beta and C (see in init_aerosol_properties) account for that
 !
    WHERE (ZZW5(:) > 0. .AND. ZSMAX(:) > 0.)
-      ZVEC1(:) = MAX( 1.0001, MIN( FLOAT(NHYP)-0.0001,  &
+      ZVEC1(:) = MAX( 1.0001, MIN( REAL(NHYP)-0.0001,  &
                                     XHYPINTP1*LOG(ZSMAX(:))+XHYPINTP2 ) )
       IVEC1(:) = INT( ZVEC1(:) )
-      ZVEC1(:) = ZVEC1(:) - FLOAT( IVEC1(:) )
+      ZVEC1(:) = ZVEC1(:) - REAL( IVEC1(:) )
    END WHERE
    ZZW6(:)  = 0. ! initialize the change of cloud droplet concentration
 !
@@ -789,10 +790,10 @@ INTEGER                        :: PIVEC1
 ALLOCATE(PFUNCSMAX(NPTS))
 !
 PFUNCSMAX(:) = 0.
-PZVEC1 = MAX( ( 1.0 + 10.0 * XMNH_EPSILON ) ,MIN( FLOAT(NHYP)*( 1.0 - 10.0 * XMNH_EPSILON ) ,               &
+PZVEC1 = MAX( ( 1.0 + 10.0 * XMNH_EPSILON ) ,MIN( REAL(NHYP)*( 1.0 - 10.0 * XMNH_EPSILON ) ,               &
                            XHYPINTP1*LOG(PPZSMAX)+XHYPINTP2 ) )
 PIVEC1 = INT( PZVEC1 )
-PZVEC1 = PZVEC1 - FLOAT( PIVEC1 )
+PZVEC1 = PZVEC1 - REAL( PIVEC1 )
 DO JMOD = 1, NMOD_CCN
    ZHYPF        = 0.          ! XHYPF32 is tabulated with ZSMAX in [NO UNITS]
    ZHYPF        =   XHYPF32( PIVEC1+1,JMOD ) * PZVEC1              &
@@ -845,10 +846,10 @@ REAL                           :: PZVEC1
 INTEGER                        :: PIVEC1
 !
 PSINGL_FUNCSMAX = 0.
-PZVEC1    = MAX( 1.0001,MIN( FLOAT(NHYP)-0.0001,               &
+PZVEC1    = MAX( 1.0001,MIN( REAL(NHYP)-0.0001,               &
                               XHYPINTP1*LOG(PPZSMAX)+XHYPINTP2 ) )
 PIVEC1 = INT( PZVEC1 )
-PZVEC1 = PZVEC1 - FLOAT( PIVEC1 )
+PZVEC1 = PZVEC1 - REAL( PIVEC1 )
 DO JMOD = 1, NMOD_CCN
    ZHYPF        = 0.          ! XHYPF32 is tabulated with ZSMAX in [NO UNITS]
    ZHYPF        =   XHYPF32( PIVEC1+1,JMOD ) * PZVEC1              &

@@ -108,6 +108,7 @@ END MODULE MODI_INI_RADIATIONS
 !!                               but the day stays the same during the whole run 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -205,18 +206,18 @@ DO JI=1,11
 END DO
 IF ( LFIX_DAT ) THEN   ! Ajout PP 
    IF( MOD(TPDTEXP%TDATE%YEAR,4).EQ.0 ) THEN
-    ZDATE = FLOAT(TPDTEXP%TDATE%DAY +   IBIS(TPDTEXP%TDATE%MONTH-1)) - 1
+    ZDATE = REAL(TPDTEXP%TDATE%DAY +   IBIS(TPDTEXP%TDATE%MONTH-1)) - 1
      ZAD = 2.0*XPI*ZDATE/366.0
    ELSE
-     ZDATE = FLOAT(TPDTEXP%TDATE%DAY + INOBIS(TPDTEXP%TDATE%MONTH-1)) - 1
+     ZDATE = REAL(TPDTEXP%TDATE%DAY + INOBIS(TPDTEXP%TDATE%MONTH-1)) - 1
      ZAD = 2.0*XPI*ZDATE/365.0
    END IF
 ELSE
    IF( MOD(TPDTCUR%TDATE%YEAR,4).EQ.0 ) THEN
-     ZDATE = FLOAT(TPDTCUR%TDATE%DAY +   IBIS(TPDTCUR%TDATE%MONTH-1)) - 1
+     ZDATE = REAL(TPDTCUR%TDATE%DAY +   IBIS(TPDTCUR%TDATE%MONTH-1)) - 1
      ZAD = 2.0*XPI*ZDATE/366.0
    ELSE
-     ZDATE = FLOAT(TPDTCUR%TDATE%DAY + INOBIS(TPDTCUR%TDATE%MONTH-1)) - 1
+     ZDATE = REAL(TPDTCUR%TDATE%DAY + INOBIS(TPDTCUR%TDATE%MONTH-1)) - 1
      ZAD = 2.0*XPI*ZDATE/365.0
    END IF
 END IF

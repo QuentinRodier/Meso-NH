@@ -84,7 +84,8 @@ END MODULE MODI_INI_PARAM_ELEC
 !!        J.-P. Pinty jan 2015  tabulate the equations for Saunders
 !!        J. Escobar 8/01/2016 bug , missing YDIR='XY' in READ 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!
 !-------------------------------------------------------------------------------
 !
 !*	0.	DECLARATIONS
@@ -564,7 +565,7 @@ IF (CNI_CHARGING == 'SAUN1' .OR. CNI_CHARGING == 'SAUN2' .OR.  &
   ALLOCATE(ZT(NIND_TEMP+1))    ! Kelvin
   ALLOCATE(ZLWCC(NIND_TEMP+1))
   DO JTEMP = 1, NIND_TEMP+1
-    ZT(JTEMP)=1.0-FLOAT(JTEMP)+XTT
+    ZT(JTEMP)=1.0-REAL(JTEMP)+XTT
   END DO
   ZLWCC(:) = MIN( MAX( -0.49 + 6.64E-2*(XTT-ZT(:)),0.22 ),1.1 )   ! (g m^-3)
   ALLOCATE(ZEW(NIND_LWC+1))
@@ -574,13 +575,13 @@ IF (CNI_CHARGING == 'SAUN1' .OR. CNI_CHARGING == 'SAUN2' .OR.  &
 !                                  0.10 to 0.90 every 0.10 (9 values)
 !                                  1.00 to 10.0 every 1.00 (10 values)
   DO JLWC = 1, 9
-    ZEW(JLWC)=0.01*FLOAT(JLWC)
+    ZEW(JLWC)=0.01*REAL(JLWC)
   END DO
   DO JLWC = 10, 18
-    ZEW(JLWC)=0.1 + 0.1*FLOAT(JLWC-10)
+    ZEW(JLWC)=0.1 + 0.1*REAL(JLWC-10)
   END DO
   DO JLWC = 19, NIND_LWC+1
-    ZEW(JLWC)=1.0 + FLOAT(JLWC-19)
+    ZEW(JLWC)=1.0 + REAL(JLWC-19)
   END DO
 !
 !
@@ -701,17 +702,17 @@ IF (CNI_CHARGING == 'TEEWC' .OR. CNI_CHARGING == 'TERAR') THEN
   ALLOCATE(ZT(NIND_TEMP+1))    ! Kelvin
   ALLOCATE(ZEW(NIND_LWC+1))
   DO JTEMP = 1, NIND_TEMP+1
-    ZT(JTEMP) = 1.0 - FLOAT(JTEMP) + XTT
+    ZT(JTEMP) = 1.0 - REAL(JTEMP) + XTT
   END DO
 
   DO JLWC = 1, 9
-    ZEW(JLWC) = 0.01 * FLOAT(JLWC)
+    ZEW(JLWC) = 0.01 * REAL(JLWC)
   END DO
   DO JLWC = 10, 18
-    ZEW(JLWC) = 0.1 + 0.1 * FLOAT(JLWC-10)
+    ZEW(JLWC) = 0.1 + 0.1 * REAL(JLWC-10)
   END DO
   DO JLWC = 19, NIND_LWC+1
-    ZEW(JLWC) = 1.0 + FLOAT(JLWC-19)
+    ZEW(JLWC) = 1.0 + REAL(JLWC-19)
   END DO
 !
   XTAKA_TM(:,:) = 0.0

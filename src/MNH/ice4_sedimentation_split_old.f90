@@ -68,6 +68,7 @@ SUBROUTINE ICE4_SEDIMENTATION_SPLIT_OLD(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, 
 !!    -------------
 !!
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !
 !
 !*      0. DECLARATIONS
@@ -151,7 +152,7 @@ INTEGER :: JJ, JK, JN, JL
 !        O. Initialization of for sedimentation
 !
 ZINVTSTEP=1./PTSTEP
-ZTSPLITR=PTSTEP/FLOAT(KSPLITR)
+ZTSPLITR=PTSTEP/REAL(KSPLITR)
 IF (OSEDIC) PINPRC (:,:) = 0.
 PINPRR (:,:) = 0.
 PINPRI (:,:) = 0.

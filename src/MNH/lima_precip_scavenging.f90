@@ -1,3 +1,8 @@
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+!MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !      ##################################
        MODULE MODI_LIMA_PRECIP_SCAVENGING
 !      ##################################
@@ -91,6 +96,7 @@ END MODULE MODI_LIMA_PRECIP_SCAVENGING
 !!      Original             ??/??/13 
 !!
 !!  Philippe Wautelet 28/05/2018: corrected truncated integer division (3/2 -> 1.5)
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-------------------------------------------------------------------------------
 !
 !*                  0.DECLARATIONS          
@@ -700,7 +706,7 @@ firstcall : IF (GSFIRSTCALL) THEN
    ZDZMIN = MINVAL(PZZ(IIB:IIE,IJB:IJE,IKB+1:IKE+1)-PZZ(IIB:IIE,IJB:IJE,IKB:IKE))
    ISPLITR = 1
    SPLIT : DO
-      ZT = 2.* PTSTEP / FLOAT(ISPLITR)
+      ZT = 2.* PTSTEP / REAL(ISPLITR)
       IF ( ZT * ZVTRMAX / ZDZMIN .LT. 1.) EXIT SPLIT
       ISPLITR = ISPLITR + 1
    END DO SPLIT
@@ -712,10 +718,10 @@ END IF firstcall
 !*       2.2    time splitting loop initialization        
 !
 IF( (KTCOUNT==1) .AND. (CCONF=='START') ) THEN
-  ZTSPLITR = PTSTEP / FLOAT(ISPLITR)       ! Small time step
+  ZTSPLITR = PTSTEP / REAL(ISPLITR)       ! Small time step
   ZTSTEP   = PTSTEP                        ! Large time step
   ELSE
-  ZTSPLITR= 2. * PTSTEP / FLOAT(ISPLITR)
+  ZTSPLITR= 2. * PTSTEP / REAL(ISPLITR)
   ZTSTEP  = 2. * PTSTEP
 END IF
 !

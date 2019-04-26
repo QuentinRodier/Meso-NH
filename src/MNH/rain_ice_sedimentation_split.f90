@@ -5,6 +5,7 @@
 !-----------------------------------------------------------------
 ! Modifications:
 !  P. Wautelet 25/02/2019: split rain_ice (cleaner and easier to maintain/debug)
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-----------------------------------------------------------------
 MODULE MODE_RAIN_ICE_SEDIMENTATION_SPLIT
 
@@ -146,7 +147,7 @@ REAL,    DIMENSION(SIZE(PRCS,1),SIZE(PRCS,2),0:SIZE(PRCS,3)+1)   &
 !        O. Initialization of for sedimentation
 !
 ZINVTSTEP=1./PTSTEP
-ZTSPLITR= PTSTEP / FLOAT(KSPLITR)
+ZTSPLITR= PTSTEP / REAL(KSPLITR)
 !
 IF (OSEDIC) PINPRC (:,:) = 0.
 IF (ODEPOSC) PINDEP (:,:) = 0.

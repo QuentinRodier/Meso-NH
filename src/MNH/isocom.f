@@ -127,6 +127,7 @@ C Modifications:
 C  P. Wautelet 13/02/2018: use ifdef MNH_REAL to prevent problems with intrinsics on Blue Gene/Q
 C  P. Wautelet 22/01/2019: replace obsolete SNGL intrinsics by REAL intrinsics
 C  P. Wautelet 19/04/2019: use kind(0.0d0) instead of kind=8
+C  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 C=======================================================================
 C
       SUBROUTINE ISOROPIA (WI, RHI, TEMPI,  CNTRL, 
@@ -3895,7 +3896,7 @@ C
 C
 C *** ROOT TRACKING ; FOR THE RANGE OF HI AND LO ***********************
 C
-      DX = (RTHI-RTLW)/FLOAT(NDIV)
+      DX = (RTHI-RTLW)/REAL(NDIV)
       DO 10 I=1,NDIV
          X2 = X1+DX
          Y2 = FUNC (X2)

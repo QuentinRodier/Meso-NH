@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !   ##############################
@@ -58,8 +58,7 @@ END MODULE MODI_SEDIM_BLOWSNOW
 !!    -------------
 !!   Original
 !!
-!!
-!!   IMPLICIT ARGUMENTS
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !
 USE MODD_BLOWSNOW
 USE MODD_CSTS_BLOWSNOW
@@ -150,11 +149,11 @@ ZHMIN=MINVAL(ZH(:,:,1:ILU))
 ZVSMAX = 2.      
 ISPLITA = 1
 SPLIT : DO
-  ZT = PDTMONITOR / FLOAT(ISPLITA)
+  ZT = PDTMONITOR / REAL(ISPLITA)
   IF ( ZT * ZVSMAX / ZHMIN .LT. 1.) EXIT SPLIT
   ISPLITA = ISPLITA + 1
 END DO SPLIT
-ZTSPLITR  = PDTMONITOR / FLOAT(ISPLITA)
+ZTSPLITR  = PDTMONITOR / REAL(ISPLITA)
 
 ZFLUXSED(:,:,:,:) = 0.
 ZFLUXMAX(:,:,:,:) = 0.

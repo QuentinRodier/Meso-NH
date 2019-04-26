@@ -2,6 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-------------------------------------------------------------------------------
 !      ################################
        MODULE MODI_CH_AQUEOUS_SEDIM1MOM
 !      ################################
@@ -80,7 +81,8 @@ END MODULE MODI_CH_AQUEOUS_SEDIM1MOM
 !!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!    16/12/15 (M Leriche) compute instantaneous rain at the surface
 !  P. Wautelet 12/02/2019: bugfix: ZRR_SEDIM was not initialized everywhere
-!!
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -231,7 +233,7 @@ END IF firstcall
 !
 !*       3.2    time splitting loop initialization
 !
-ZTSPLITR = PTSTEP / FLOAT(KSPLITR)       ! Small time step
+ZTSPLITR = PTSTEP / REAL(KSPLITR)       ! Small time step
 !
 !*       3.3    compute the fluxes
 !

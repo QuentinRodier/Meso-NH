@@ -170,7 +170,8 @@ END MODULE MODI_RESOLVED_ELEC_n
 !  P. Wautelet 10/01/2019: use NEWUNIT argument of OPEN
 !  P. Wautelet 22/01/2019: use standard FLUSH statement instead of non standard intrinsics
 !  P. Wautelet 14/03/2019: bugfix: correct management of files
-!!
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -953,7 +954,7 @@ IF (LFLASH_GEOM .AND. LLMA) THEN
     TDTLMA%TIME = TDTLMA%TIME - XDTLMA
     WRITE (YNAME,FMT='(3I2.2,A1,3I2.2,A1,I4.4)')                               &
           ABS(TDTCUR%TDATE%YEAR-2000),TDTCUR%TDATE%MONTH,TDTCUR%TDATE%DAY,'_', &
-            INT(TDTLMA%TIME/3600.),INT(FLOAT(MOD(INT(TDTLMA%TIME),3600))/60.), &
+            INT(TDTLMA%TIME/3600.),INT(REAL(MOD(INT(TDTLMA%TIME),3600))/60.),  &
                                       MOD(INT(TDTLMA%TIME),60), '_', INT(XDTLMA)
     TDTLMA%TIME = MOD(TDTLMA%TIME + XDTLMA,86400.)
     CLMA_FILE = CEXP//"_SIMLMA_"//YNAME//".dat"

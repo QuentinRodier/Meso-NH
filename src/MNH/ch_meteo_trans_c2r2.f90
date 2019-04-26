@@ -98,6 +98,7 @@ SUBROUTINE CH_METEO_TRANS_C2R2(KL, PRHODJ, PRHODREF, PRTSM, PCCTSM, PCRTSM,   &
 !!    05/06/08 (M. Leriche) calculate LWC and LWR in coherence with time spliting scheme
 !!    05/11/08 (M. Leriche) split in two routines for 1-moment and 2-moment cloud schemes
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !!
 !!    EXTERNAL
 !!    --------
@@ -327,9 +328,9 @@ DO JM=0,KVECNPT-1
 !
 !  "Current date"
 !
-  TPM(JM+1)%XMETEOVAR(8) = FLOAT(KYEAR)
-  TPM(JM+1)%XMETEOVAR(9) = FLOAT(KMONTH)
-  TPM(JM+1)%XMETEOVAR(10)= FLOAT(KDAY)
+  TPM(JM+1)%XMETEOVAR(8) = REAL(KYEAR)
+  TPM(JM+1)%XMETEOVAR(9) = REAL(KMONTH)
+  TPM(JM+1)%XMETEOVAR(10)= REAL(KDAY)
 !
 ! "Rain water (kg/kg)"
 !

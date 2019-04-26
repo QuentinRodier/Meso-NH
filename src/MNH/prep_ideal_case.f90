@@ -316,6 +316,7 @@
 !  P. Wautelet 28/03/2019: use MNHTIME for time measurement variables
 !  P. Wautelet 28/03/2019: use TFILE instead of unit number for set_iluout_timing
 !  P. Wautelet 19/04/2019: removed unused dummy arguments and variables
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -1253,14 +1254,14 @@ ELSE
     CALL GET_DIM_EXT_ll('B',IXDIM,IYDIM)
     IBEG = IXOR-JPHEXT-1
     IEND = IBEG+IXDIM-1
-    XXHAT(:) = (/ (FLOAT(JLOOP)*XDELTAX, JLOOP=IBEG,IEND) /)
+    XXHAT(:) = (/ (REAL(JLOOP)*XDELTAX, JLOOP=IBEG,IEND) /)
     IBEG = IYOR-JPHEXT-1
     IEND = IBEG+IYDIM-1
-    XYHAT(:) = (/ (FLOAT(JLOOP)*XDELTAY, JLOOP=IBEG,IEND) /)
+    XYHAT(:) = (/ (REAL(JLOOP)*XDELTAY, JLOOP=IBEG,IEND) /)
 !
   ELSE
-    XXHAT(:) = (/ (FLOAT(JLOOP-NIB)*XDELTAX, JLOOP=1,NIU) /)
-    XYHAT(:) = (/ (FLOAT(JLOOP-NJB)*XDELTAY, JLOOP=1,NJU) /)
+    XXHAT(:) = (/ (REAL(JLOOP-NIB)*XDELTAX, JLOOP=1,NIU) /)
+    XYHAT(:) = (/ (REAL(JLOOP-NJB)*XDELTAY, JLOOP=1,NJU) /)
   END IF
 END IF
 !
@@ -1289,11 +1290,11 @@ IF (    LEN_TRIM(CPGD_FILE) == 0  .OR. .NOT. LREAD_ZS) THEN
     LFLAT = .FALSE.
     IF(.NOT.L2D) THEN                ! three-dimensional case
       XZS(:,:) = XHMAX  / ( 1.                                           &
-        + ( (SPREAD(XXHAT(1:NIU),2,NJU) - FLOAT(NIZS) * XDELTAX) /XAX ) **2  &
-        + ( (SPREAD(XYHAT(1:NJU),1,NIU) - FLOAT(NJZS) * XDELTAY) /XAY ) **2  ) **1.5
+        + ( (SPREAD(XXHAT(1:NIU),2,NJU) - REAL(NIZS) * XDELTAX) /XAX ) **2  &
+        + ( (SPREAD(XYHAT(1:NJU),1,NIU) - REAL(NJZS) * XDELTAY) /XAY ) **2  ) **1.5
     ELSE                             ! two-dimensional case
       XZS(:,:) = XHMAX  / ( 1.                                          &
-        + ( (SPREAD(XXHAT(1:NIU),2,NJU) - FLOAT(NIZS) * XDELTAX) /XAX ) **2 )
+        + ( (SPREAD(XXHAT(1:NIU),2,NJU) - REAL(NIZS) * XDELTAX) /XAX ) **2 )
     ENDIF
     IF(L1D) THEN                     ! one-dimensional case
       XZS(:,:) = XHMAX 
@@ -1303,7 +1304,7 @@ IF (    LEN_TRIM(CPGD_FILE) == 0  .OR. .NOT. LREAD_ZS) THEN
     LFLAT = .FALSE.
     IF(L2D) THEN                     ! two-dimensional case
       DO JILOOP = 1, NIU
-        ZDIST = XXHAT(JILOOP)-FLOAT(NIZS)*XDELTAX
+        ZDIST = XXHAT(JILOOP)-REAL(NIZS)*XDELTAX
         IF( ABS(ZDIST)<(4.0*XAX) ) THEN
           XZS(JILOOP,:) = (XHMAX/16.0)*( 1.0 + COS((XPI*ZDIST)/(4.0*XAX)) )**4
         ELSE
@@ -1316,7 +1317,7 @@ IF (    LEN_TRIM(CPGD_FILE) == 0  .OR. .NOT. LREAD_ZS) THEN
     LFLAT = .FALSE.
     IF(L2D) THEN                     ! two-dimensional case
       DO JILOOP = 1, NIU
-        ZDIST = XXHAT(JILOOP)-FLOAT(NIZS)*XDELTAX
+        ZDIST = XXHAT(JILOOP)-REAL(NIZS)*XDELTAX
         IF( ABS(ZDIST)<(4.0*XAX) ) THEN
           XZS(JILOOP,:) = XHMAX*EXP(-(ZDIST/XAY)**2)*COS((XPI*ZDIST)/XAX)**2
         ELSE
@@ -1328,12 +1329,12 @@ IF (    LEN_TRIM(CPGD_FILE) == 0  .OR. .NOT. LREAD_ZS) THEN
     LFLAT = .FALSE.
     IF(L2D) THEN                     ! two-dimensional case
       DO JILOOP = 1, NIU
-        ZDIST = XXHAT(JILOOP)-FLOAT(NIZS)*XDELTAX
+        ZDIST = XXHAT(JILOOP)-REAL(NIZS)*XDELTAX
           XZS(JILOOP,:) = XHMAX*(XAX**2)/(XAX**2+ZDIST**2)
       END DO
 		ELSE		! three dimensionnal case - infinite profile in y direction
 			DO JILOOP = 1, NIU
-        ZDIST = XXHAT(JILOOP)-FLOAT(NIZS)*XDELTAX
+        ZDIST = XXHAT(JILOOP)-REAL(NIZS)*XDELTAX
           XZS(JILOOP,:) = XHMAX*(XAX**2)/(XAX**2+ZDIST**2)
       END DO
     ENDIF

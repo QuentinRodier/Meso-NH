@@ -1,7 +1,11 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
+! Modifications:
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!-----------------------------------------------------------------
       SUBROUTINE gauher(x,w,n)
       INTEGER n,MAXIT
       REAL w(n),x(n)
@@ -15,7 +19,7 @@ C
       m=(n+1)/2
       do 13 i=1,m
         if(i.eq.1)then
-          z=sqrt(float(2*n+1))-1.85575*(2*n+1)**(-.16667)
+          z=sqrt(real(2*n+1))-1.85575*(2*n+1)**(-.16667)
         else if(i.eq.2)then
           z=z-1.14*n**.426/z
         else if (i.eq.3)then

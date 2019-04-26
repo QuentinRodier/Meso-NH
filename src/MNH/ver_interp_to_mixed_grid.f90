@@ -161,6 +161,7 @@ END MODULE MODI_VER_INTERP_TO_MIXED_GRID
 !!                  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 22/02/2019: replace Hollerith edit descriptor (deleted from Fortran 95 standard)
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -408,12 +409,12 @@ IF (HFILE=='ATM ') THEN
 !*       4.    COMPUTATION OF THE REFERENCE STATE TOP EXNER FUNCTION
 !              -----------------------------------------------------
 !
-!!$  XEXNTOP=SUM(ZHEXNFLUX_MX(IIB:IIE,IJB:IJE,IKE+1))/FLOAT((IIE-IIB+1)*(IJE-IJB+1))
+!!$  XEXNTOP=SUM(ZHEXNFLUX_MX(IIB:IIE,IJB:IJE,IKE+1))/REAL((IIE-IIB+1)*(IJE-IJB+1))
 !JUAN REALZ
 !!!  XEXNTOP  = SUM(ZHEXNFLUX_MX(IIB:IIE,IJB:IJE,IKE+1))
 !20131028 in Mymodif --> 20131129 in MNHorig
 XEXNTOP=SUM_DD_R2_ll(ZHEXNFLUX_MX(IIB:IIE,IJB:IJE,IKE+1))
-ZCOUNT   = FLOAT((IIE-IIB+1)*(IJE-IJB+1))
+ZCOUNT   = REAL((IIE-IIB+1)*(IJE-IJB+1))
 !$20140227 disable reduce no xexntop !!
 !$ CALL REDUCESUM_ll(XEXNTOP,IINFO_ll)
   CALL REDUCESUM_ll(ZCOUNT,IINFO_ll)

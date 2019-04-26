@@ -67,7 +67,8 @@ END MODULE MODI_SET_BOGUS_VORTEX
 !!                                          and use modd_hurr_param for Holland's parameters
 !!                     20/02/08 (D.Barbary) Change condition of ZRADBOGMAX
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -179,8 +180,8 @@ IF (NVERB>=5) WRITE(ILUOUT0,'(A)')'Localizing the position of the bogus vortex'
 CALL SM_XYHAT(XLATORI,XLONORI,XLATBOG,XLONBOG,ZXHAT,ZYHAT)
 II=MAX(MIN(COUNT(XXHAT(:)<ZXHAT),IIU-1),1)
 IJ=MAX(MIN(COUNT(XYHAT(:)<ZYHAT),IJU-1),1)
-ZI=(ZXHAT-XXHAT(II))/(XXHAT(II+1)-XXHAT(II))+FLOAT(II)
-ZJ=(ZYHAT-XYHAT(IJ))/(XYHAT(IJ+1)-XYHAT(IJ))+FLOAT(IJ)
+ZI=(ZXHAT-XXHAT(II))/(XXHAT(II+1)-XXHAT(II))+REAL(II)
+ZJ=(ZYHAT-XYHAT(IJ))/(XYHAT(IJ+1)-XYHAT(IJ))+REAL(IJ)
 IIBOG = INT(ZI)
 IJBOG = INT(ZJ)
 IF (NVERB>=5) WRITE(ILUOUT0,'(A,I3,A,I3)')' equivalent indexes in the Meso-NH grid: I= ',IIBOG,' J= ',IJBOG

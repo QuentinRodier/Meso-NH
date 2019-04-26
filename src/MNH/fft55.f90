@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1987-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 solver 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ######spl
       SUBROUTINE FFT55(PA,PWORK,PTRIGS,KIFAX,KINC,KJUMP,KN,KLOT,KISIGN)
@@ -68,6 +63,7 @@
 !!                   RFFTMLT by the arpege routine FFT991
 !!      Revision J. Stein and P. Jabouille (juillet 96) extend the pre- 
 !!                   and post-processing to the odd number
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -137,7 +133,7 @@ IF (KISIGN.EQ.1) THEN
 !      2.1     preprocessing
 !              -------------
 !
-    ZSCALE=0.5*FLOAT(KN)
+    ZSCALE=0.5*REAL(KN)
 ! this loop works for odd and even case
     DO JK=1,(KN-1)/2
       IJA=JK+1
@@ -261,7 +257,7 @@ ELSE
 !      3.3     postprocessing
 !              --------------
 !
-    ZSCALE=0.5/FLOAT(KN)
+    ZSCALE=0.5/REAL(KN)
 ! this loop works for odd and even case
     DO JK=1,(KN-1)/2
       IIA=JK+1

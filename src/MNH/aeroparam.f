@@ -1,12 +1,10 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2006-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 aerosol 2006/05/18 13:07:25
+! Modifications:
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-----------------------------------------------------------------
       subroutine aeroparam(tempE, iaero, Ustar, Kn, Sc, St, Vsett)
 C     This subroutine calculates the Knudson, Schmidt, and Stokes numbers
@@ -47,8 +45,8 @@ C        Ustar   : Friction velocity
       data KBolzm,grav/1.38e-23, 9.80/
       data alfa,beta,gama/1.257,0.40,-1.10/
          tempK = tempE + 273.15
-         delmu=(alog(Dpup)-alog(Dplow))/float(nasect)
-         Dp1=alog(Dplow)+(float(iaero)-1.0)*delmu
+         delmu=(alog(Dpup)-alog(Dplow))/real(nasect)
+         Dp1=alog(Dplow)+(real(iaero)-1.0)*delmu
          Dp2=Dp1+delmu
          Dp1=exp(Dp1)*1.e-6
          Dp2=exp(Dp2)*1.e-6

@@ -1,6 +1,6 @@
 !MNH_LIC Copyright 2007-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !     ##########################
       MODULE MODI_CH_PH_POLYROOT
@@ -35,6 +35,7 @@ END MODULE MODI_CH_PH_POLYROOT
 !!    -------------
 !!      Original    26/03/07
 !  P. Wautelet 22/02/2019: add kind parameter for CMPLX intrinsics (if not it default to single precision)
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -143,7 +144,7 @@ CONTAINS
       ZZG  = ZZD/ZZB
       ZZG2 = ZZG*ZZG
       ZZH  = ZZG2 - 2.0*(ZZF/ZZB)
-      ZZSQ = SQRT( FLOAT(IM-1)*(FLOAT(IM)*ZZH-ZZG2) ) 
+      ZZSQ = SQRT( REAL(IM-1)*(REAL(IM)*ZZH-ZZG2) ) 
       ZZGP = ZZG + ZZSQ
       ZZGM = ZZG - ZZSQ
 !
@@ -153,7 +154,7 @@ CONTAINS
         ZZGP = ZZGM
       END IF
       IF(MAX(ZABP,ZABM) > 0.0) THEN
-        ZZDX = FLOAT(IM)/ZZGP
+        ZZDX = REAL(IM)/ZZGP
         ELSE
         ZZDX = EXP(CMPLX(LOG(1.0+ZABX),REAL(JITER,kind=kind(ZZDX)),kind=kind(ZZDX)))
       END IF 

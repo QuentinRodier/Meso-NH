@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !      ###################################
        MODULE MODI_LIMA_SEDIMENTATION
 !      ###################################
@@ -62,6 +63,7 @@ END MODULE MODI_LIMA_SEDIMENTATION
 !!      Original             15/03/2018
 !!
 !!      B.Vie  02/2019  Desactivate (comment) the heat transport by droplets
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -131,7 +133,7 @@ REAL    :: ZC                             ! Cpl or Cpi
 !
 ! Time splitting
 !
-ZTSPLITG= PTSTEP / FLOAT(NSPLITSED(KID))
+ZTSPLITG= PTSTEP / REAL(NSPLITSED(KID))
 !
 ZWDT=0.
 PINPR(:,:) = 0.

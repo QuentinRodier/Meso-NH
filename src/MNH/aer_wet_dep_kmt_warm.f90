@@ -1,7 +1,8 @@
-!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 2007-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
+!-----------------------------------------------------------------
 !     ################################
       MODULE MODI_AER_WET_DEP_KMT_WARM
 !!    ################################
@@ -114,6 +115,7 @@ END MODULE MODI_AER_WET_DEP_KMT_WARM
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    09/05/07
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -539,7 +541,7 @@ INTEGER                           :: JKAQ     ! counter for acquous aerosols
 !-------------------------------------------------------------------------------
 !
 !*         Time splitting initialization
-ZTSPLITR = PTSTEP / FLOAT(KSPLITR)
+ZTSPLITR = PTSTEP / REAL(KSPLITR)
 !
 ZW(:,:,:)=0.
 ZRRS(:,:,:) = MAX(PRRS(:,:,:), 0.)

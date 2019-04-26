@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !      #################################
        MODULE MODI_LIMA_DROPLETS_RIMING_SNOW
@@ -74,7 +74,8 @@ END MODULE MODI_LIMA_DROPLETS_RIMING_SNOW
 !!    MODIFICATIONS
 !!    -------------
 !!      Original             15/03/2018 
-!!
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -165,10 +166,10 @@ WHERE( GRIM )
 !               set of Lbda_s used to tabulate some moments of the incomplete 
 !               gamma function
 !
-   ZVEC2(:) = MAX( 1.0001, MIN( FLOAT(NGAMINC)-0.0001,           &
+   ZVEC2(:) = MAX( 1.0001, MIN( REAL(NGAMINC)-0.0001,           &
                        XRIMINTP1 * LOG( ZVEC1(:) ) + XRIMINTP2 ) )
    IVEC2(:) = INT( ZVEC2(:) )
-   ZVEC2(:) = ZVEC2(:) - FLOAT( IVEC2(:) )
+   ZVEC2(:) = ZVEC2(:) - REAL( IVEC2(:) )
 !
 !        2.     perform the linear interpolation of the normalized
 !               "2+XDS"-moment of the incomplete gamma function
@@ -217,10 +218,10 @@ GRIM(:) = (PT(:)<XHMTMAX)     .AND. (PT(:)>XHMTMIN)     .AND. &
 WHERE ( GRIM )
 !
    ZVEC1(:) = PLBDC(:)
-   ZVEC2(:) = MAX( 1.0001, MIN( FLOAT(NGAMINC)-0.0001,           &
+   ZVEC2(:) = MAX( 1.0001, MIN( REAL(NGAMINC)-0.0001,           &
                          XHMLINTP1 * LOG( ZVEC1(:) ) + XHMLINTP2 ) )
    IVEC2(:) = INT( ZVEC2(:) )
-   ZVEC2(:) = ZVEC2(:) - FLOAT( IVEC2(:) )
+   ZVEC2(:) = ZVEC2(:) - REAL( IVEC2(:) )
    ZVEC1(:) =   XGAMINC_HMC( IVEC2(:)+1 )* ZVEC2(:)      &
                     - XGAMINC_HMC( IVEC2(:)   )*(ZVEC2(:) - 1.0)
    ZZW4(:) = ZVEC1(:) ! Large droplets

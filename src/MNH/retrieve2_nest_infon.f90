@@ -92,6 +92,7 @@ END MODULE MODI_RETRIEVE2_NEST_INFO_n
 !!      J.Escobar : 01/06/2016 : Bug in type of ZBUF INTEGER => REAL & use MNHREAL_MPI for r4/R8 compatibility
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 26/04/2019: use modd_precision parameters for datatypes of MPI communications
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -704,13 +705,13 @@ ZPGDYHAT(0)        = 2.* XPGDYHAT(1) - XPGDYHAT(2)
 #if 0
 DO JI=1,NIMAX+2*JPHEXT
   JIBOX=(JI+KDXRATIO-1-JPHEXT)/KDXRATIO + KXOR_C_ll
-  ZCOEF= FLOAT(MOD(JI+KDXRATIO-1-JPHEXT,KDXRATIO))/FLOAT(KDXRATIO)
+  ZCOEF= REAL(MOD(JI+KDXRATIO-1-JPHEXT,KDXRATIO))/REAL(KDXRATIO)
   ZXHAT(JI)=(1.-ZCOEF)*ZPGDXHAT(JIBOX+JPHEXT-1)+ZCOEF*ZPGDXHAT(JIBOX+JPHEXT) ! +1
 END DO
 !
 DO JJ=1,NJMAX+2*JPHEXT
   JJBOX=(JJ+KDYRATIO-1-JPHEXT)/KDYRATIO + KYOR_C_ll
-  ZCOEF= FLOAT(MOD(JJ+KDYRATIO-1-JPHEXT,KDYRATIO))/FLOAT(KDYRATIO)
+  ZCOEF= REAL(MOD(JJ+KDYRATIO-1-JPHEXT,KDYRATIO))/REAL(KDYRATIO)
   ZYHAT(JJ)=(1.-ZCOEF)*ZPGDYHAT(JJBOX+JPHEXT-1)+ZCOEF*ZPGDYHAT(JJBOX+JPHEXT) ! +1
 END DO
 !

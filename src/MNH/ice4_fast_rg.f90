@@ -2,6 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 MODULE MODI_ICE4_FAST_RG
 INTERFACE
 SUBROUTINE ICE4_FAST_RG(KSIZE, LDSOFT, LDCOMPUTE, KRR, &
@@ -91,6 +92,7 @@ SUBROUTINE ICE4_FAST_RG(KSIZE, LDSOFT, LDCOMPUTE, KRR, &
 !!    MODIFICATIONS
 !!    -------------
 !!
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !
 !
 !*      0. DECLARATIONS
@@ -266,15 +268,15 @@ ELSE
     !               in the geometrical set of (Lbda_g,Lbda_s) couplet use to
     !               tabulate the SDRYG-kernel
     !
-    ZVEC1(1:IGDRY)=MAX(1.00001, MIN(FLOAT(NDRYLBDAG)-0.00001,           &
+    ZVEC1(1:IGDRY)=MAX(1.00001, MIN(REAL(NDRYLBDAG)-0.00001,           &
                           XDRYINTP1G*LOG(ZVEC1(1:IGDRY))+XDRYINTP2G))
     IVEC1(1:IGDRY)=INT(ZVEC1(1:IGDRY) )
-    ZVEC1(1:IGDRY)=ZVEC1(1:IGDRY)-FLOAT(IVEC1(1:IGDRY))
+    ZVEC1(1:IGDRY)=ZVEC1(1:IGDRY)-REAL(IVEC1(1:IGDRY))
     !
-    ZVEC2(1:IGDRY)=MAX(1.00001, MIN( FLOAT(NDRYLBDAS)-0.00001,           &
+    ZVEC2(1:IGDRY)=MAX(1.00001, MIN( REAL(NDRYLBDAS)-0.00001,           &
                           XDRYINTP1S*LOG(ZVEC2(1:IGDRY))+XDRYINTP2S))
     IVEC2(1:IGDRY)=INT(ZVEC2(1:IGDRY))
-    ZVEC2(1:IGDRY)=ZVEC2(1:IGDRY)-FLOAT(IVEC2(1:IGDRY))
+    ZVEC2(1:IGDRY)=ZVEC2(1:IGDRY)-REAL(IVEC2(1:IGDRY))
     !
     !*       6.2.5  perform the bilinear interpolation of the normalized
     !               SDRYG-kernel
@@ -324,15 +326,15 @@ ELSE
     !               in the geometrical set of (Lbda_g,Lbda_r) couplet use to
     !               tabulate the RDRYG-kernel
     !
-    ZVEC1(1:IGDRY)=MAX(1.00001, MIN( FLOAT(NDRYLBDAG)-0.00001,           &
+    ZVEC1(1:IGDRY)=MAX(1.00001, MIN( REAL(NDRYLBDAG)-0.00001,           &
                           XDRYINTP1G*LOG(ZVEC1(1:IGDRY))+XDRYINTP2G))
     IVEC1(1:IGDRY)=INT(ZVEC1(1:IGDRY))
-    ZVEC1(1:IGDRY)=ZVEC1(1:IGDRY)-FLOAT(IVEC1(1:IGDRY))
+    ZVEC1(1:IGDRY)=ZVEC1(1:IGDRY)-REAL(IVEC1(1:IGDRY))
     !
-    ZVEC2(1:IGDRY)=MAX(1.00001, MIN( FLOAT(NDRYLBDAR)-0.00001,           &
+    ZVEC2(1:IGDRY)=MAX(1.00001, MIN( REAL(NDRYLBDAR)-0.00001,           &
                           XDRYINTP1R*LOG(ZVEC2(1:IGDRY))+XDRYINTP2R))
     IVEC2(1:IGDRY)=INT(ZVEC2(1:IGDRY))
-    ZVEC2(1:IGDRY)=ZVEC2(1:IGDRY)-FLOAT(IVEC2(1:IGDRY))
+    ZVEC2(1:IGDRY)=ZVEC2(1:IGDRY)-REAL(IVEC2(1:IGDRY))
     !
     !*       6.2.10 perform the bilinear interpolation of the normalized
     !               RDRYG-kernel

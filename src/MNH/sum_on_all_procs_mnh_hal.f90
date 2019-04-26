@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2011-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     #########
       SUBROUTINE SUM_ON_ALL_PROCS_MNH_HAL(KSIZE,KIN,KOUT)
 !     #######################################################
@@ -33,6 +34,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    07/2011 
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -72,7 +74,7 @@ ZIN = 0.
 DO JJ=1,NJMAX+2*NHALO
   DO JI=1,NIMAX+2*NHALO
     IINDEX = JI + (JJ-1) * (NIMAX+2*NHALO)
-    ZIN = ZIN + FLOAT(KIN(IINDEX))
+    ZIN = ZIN + REAL(KIN(IINDEX))
   END DO
 END DO
 !

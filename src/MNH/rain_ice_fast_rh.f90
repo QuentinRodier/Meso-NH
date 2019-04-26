@@ -5,6 +5,7 @@
 !-----------------------------------------------------------------
 ! Modifications:
 !  P. Wautelet 25/02/2019: split rain_ice (cleaner and easier to maintain/debug)
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-----------------------------------------------------------------
 MODULE MODE_RAIN_ICE_FAST_RH
 
@@ -125,15 +126,15 @@ REAL,    DIMENSION(size(PRHODREF),6) :: ZZW1              ! Work arrays
 !               in the geometrical set of (Lbda_h,Lbda_s) couplet use to
 !               tabulate the SWETH-kernel
 !
-      ZVEC1(1:IGWET) = MAX( 1.00001, MIN( FLOAT(NWETLBDAH)-0.00001,           &
+      ZVEC1(1:IGWET) = MAX( 1.00001, MIN( REAL(NWETLBDAH)-0.00001,           &
                             XWETINTP1H * LOG( ZVEC1(1:IGWET) ) + XWETINTP2H ) )
       IVEC1(1:IGWET) = INT( ZVEC1(1:IGWET) )
-      ZVEC1(1:IGWET) = ZVEC1(1:IGWET) - FLOAT( IVEC1(1:IGWET) )
+      ZVEC1(1:IGWET) = ZVEC1(1:IGWET) - REAL( IVEC1(1:IGWET) )
 !
-      ZVEC2(1:IGWET) = MAX( 1.00001, MIN( FLOAT(NWETLBDAS)-0.00001,           &
+      ZVEC2(1:IGWET) = MAX( 1.00001, MIN( REAL(NWETLBDAS)-0.00001,           &
                             XWETINTP1S * LOG( ZVEC2(1:IGWET) ) + XWETINTP2S ) )
       IVEC2(1:IGWET) = INT( ZVEC2(1:IGWET) )
-      ZVEC2(1:IGWET) = ZVEC2(1:IGWET) - FLOAT( IVEC2(1:IGWET) )
+      ZVEC2(1:IGWET) = ZVEC2(1:IGWET) - REAL( IVEC2(1:IGWET) )
 !
 !*       7.2.5  perform the bilinear interpolation of the normalized
 !               SWETH-kernel
@@ -187,15 +188,15 @@ REAL,    DIMENSION(size(PRHODREF),6) :: ZZW1              ! Work arrays
 !               in the geometrical set of (Lbda_h,Lbda_g) couplet use to
 !               tabulate the GWETH-kernel
 !
-      ZVEC1(1:IGWET) = MAX( 1.00001, MIN( FLOAT(NWETLBDAG)-0.00001,           &
+      ZVEC1(1:IGWET) = MAX( 1.00001, MIN( REAL(NWETLBDAG)-0.00001,           &
                             XWETINTP1H * LOG( ZVEC1(1:IGWET) ) + XWETINTP2H ) )
       IVEC1(1:IGWET) = INT( ZVEC1(1:IGWET) )
-      ZVEC1(1:IGWET) = ZVEC1(1:IGWET) - FLOAT( IVEC1(1:IGWET) )
+      ZVEC1(1:IGWET) = ZVEC1(1:IGWET) - REAL( IVEC1(1:IGWET) )
 !
-      ZVEC2(1:IGWET) = MAX( 1.00001, MIN( FLOAT(NWETLBDAG)-0.00001,           &
+      ZVEC2(1:IGWET) = MAX( 1.00001, MIN( REAL(NWETLBDAG)-0.00001,           &
                             XWETINTP1G * LOG( ZVEC2(1:IGWET) ) + XWETINTP2G ) )
       IVEC2(1:IGWET) = INT( ZVEC2(1:IGWET) )
-      ZVEC2(1:IGWET) = ZVEC2(1:IGWET) - FLOAT( IVEC2(1:IGWET) )
+      ZVEC2(1:IGWET) = ZVEC2(1:IGWET) - REAL( IVEC2(1:IGWET) )
 !
 !*       7.2.10 perform the bilinear interpolation of the normalized
 !               GWETH-kernel

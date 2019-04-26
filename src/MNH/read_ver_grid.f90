@@ -96,6 +96,7 @@ END MODULE MODI_READ_VER_GRID
 !!                  Oct, 25, 1996 (V.Masson) deallocations
 !!                  Oct. 10, 2001 (I.Mallet) allow namelists in different orders
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -255,7 +256,7 @@ CASE('FUNCTN')
   IF (.NOT. ASSOCIATED(XZHAT)) ALLOCATE(XZHAT(IKU))
 !
   IF (ABS(ZDZTOP-ZDZGRD) < 1.E-10) THEN
-    XZHAT(:) = (/ (FLOAT(JK-IKB)*ZDZGRD, JK=1,IKU) /)
+    XZHAT(:) = (/ (REAL(JK-IKB)*ZDZGRD, JK=1,IKU) /)
 !
   ELSE
     IF (ZDZGRD>ZDZTOP) THEN

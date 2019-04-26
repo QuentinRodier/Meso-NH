@@ -2,6 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!--------------------------------------------------------------------------
 !     ######spl
         SUBROUTINE MNH2LPDM_INI(TPFILE1,TPFILE2,TPLOGFILE,TPGRIDFILE,TPDATEFILE)
 !--------------------------------------------------------------------------
@@ -20,6 +21,7 @@
 !
 ! Modifications:
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !--------------------------------------------------------------------------
 !
 !
@@ -136,7 +138,7 @@ NMDLSS=NINT(TZDTEXP1%TIME)
 !
 !*	Heure du modele arrondie a 5 minutes pres.
 !
-NMDLMN = NINT( (FLOAT(NMDLSS)/60.0)/5.0 )*5
+NMDLMN = NINT( (REAL(NMDLSS)/60.0)/5.0 )*5
 NMDLSS = 0
 NMDLHH =NMDLMN/60
 NMDLMN =NMDLMN-NMDLHH*60

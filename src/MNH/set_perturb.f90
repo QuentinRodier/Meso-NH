@@ -97,7 +97,8 @@ END MODULE MODI_SET_PERTURB
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      C.Lac, V.Masson       1/2018 : White noise in the LBC
 !!      Q.Rodier              10/2018 : move allocate(ZWHITE) for NKWH>2
-!!
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -432,7 +433,7 @@ SELECT CASE(CPERT_KIND)
     END DO
     DEALLOCATE(ZCX_ll,ZSX_ll,ZCY_ll,ZSY_ll)
 !
-    ZVAR= SUM_DD_R2_ll( (ZWHITE(IIB:IIE,IJB:IJE))**2 )/FLOAT(NIMAX_ll*NJMAX_ll)
+    ZVAR= SUM_DD_R2_ll( (ZWHITE(IIB:IIE,IJB:IJE))**2 )/REAL(NIMAX_ll*NJMAX_ll)
     CALL MPPDB_CHECK2D(ZWHITE,"SET_PERTURB::ZWHITE",PRECISION)
     ZWHITE(:,:) = ZWHITE(:,:)/SQRT(ZVAR)
 !
@@ -537,9 +538,9 @@ SELECT CASE(CPERT_KIND)
 !
   CASE('SH')  !    Shock (Burger's Equation)
 !
-    ZOMEGA = 2.0*XPI/FLOAT(IIE-IIB)
+    ZOMEGA = 2.0*XPI/REAL(IIE-IIB)
     DO JI = IIB, IIE
-      XUT(JI,:,:) = XUT(JI,:,:) + XAMPLIUV*SIN( ZOMEGA*FLOAT(JI-IIB) )
+      XUT(JI,:,:) = XUT(JI,:,:) + XAMPLIUV*SIN( ZOMEGA*REAL(JI-IIB) )
     END DO
     XVT(:,:,:) = 0.0
     XWT(:,:,:) = 0.0

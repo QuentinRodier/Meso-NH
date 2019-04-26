@@ -5,6 +5,7 @@
 !-----------------------------------------------------------------
 ! Modifications:
 !  P. Wautelet 22/02/2019: replace Hollerith edit descriptor (deleted from Fortran 95 standard)
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-----------------------------------------------------------------
       SUBROUTINE SET99(TRIGS,IFAX,N)
       IMPLICIT LOGICAL (L)
@@ -20,11 +21,11 @@ C
 C
       IXXX=1
 C
-      DEL=4.0*ASIN(1.0)/FLOAT(N)
+      DEL=4.0*ASIN(1.0)/REAL(N)
       NIL=0
       NHL=(N/2)-1
       DO 10 K=NIL,NHL
-      ANGLE=FLOAT(K)*DEL
+      ANGLE=REAL(K)*DEL
       TRIGS(2*K+1)=COS(ANGLE)
       TRIGS(2*K+2)=SIN(ANGLE)
    10 CONTINUE
@@ -1225,7 +1226,7 @@ CDIR$ IVDEP
       GO TO 900
 C
   290 CONTINUE
-      Z=1.0/FLOAT(N)
+      Z=1.0/REAL(N)
       DO 294 JL=1,ILA
       I=IBASE
       J=JBASE
@@ -1338,7 +1339,7 @@ CDIR$ IVDEP
       GO TO 900
 C
   390 CONTINUE
-      Z=1.0/FLOAT(N)
+      Z=1.0/REAL(N)
       ZSIN60=Z*SIN60
       DO 394 JL=1,ILA
       I=IBASE
@@ -1467,7 +1468,7 @@ CDIR$ IVDEP
       GO TO 900
 C
   490 CONTINUE
-      Z=1.0/FLOAT(N)
+      Z=1.0/REAL(N)
       DO 494 JL=1,ILA
       I=IBASE
       J=JBASE
@@ -1630,7 +1631,7 @@ CDIR$ IVDEP
       GO TO 900
 C
   590 CONTINUE
-      Z=1.0/FLOAT(N)
+      Z=1.0/REAL(N)
       ZQRT5=Z*QRT5
       ZSIN36=Z*SIN36
       ZSIN72=Z*SIN72
@@ -1806,7 +1807,7 @@ CDIR$ IVDEP
       GO TO 900
 C
   690 CONTINUE
-      Z=1.0/FLOAT(N)
+      Z=1.0/REAL(N)
       ZSIN60=Z*SIN60
       DO 694 JL=1,ILA
       I=IBASE
@@ -1849,7 +1850,7 @@ C     -------------------
       JC=JB+2*M*INC2
       JD=JC+2*M*INC2
       JE=JD+2*M*INC2
-      Z=1.0/FLOAT(N)
+      Z=1.0/REAL(N)
       ZSIN45=Z*SQRT(0.5)
 C
       DO 820 JL=1,ILA

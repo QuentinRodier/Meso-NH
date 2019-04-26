@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2008-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !      ################################
        MODULE MODI_CH_AQUEOUS_SEDIM2MOM
 !      ################################
@@ -79,6 +80,7 @@ END MODULE MODI_CH_AQUEOUS_SEDIM2MOM
 !!   12/15 M.Leriche : compute instantaneous rain at the surface 
 !!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1      
 !!   01/16 M. Leriche : Fusion C2R2 and KHKO
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !!
 !-------------------------------------------------------------------------------
 !
@@ -178,7 +180,7 @@ PINPRR(:,:) = 0. ! initialize instantaneous precip.
 !
 !*       3.1    time splitting loop initialization
 !
-ZTSPLITR = PTSTEP / FLOAT(KSPLITR)       ! Small time step
+ZTSPLITR = PTSTEP / REAL(KSPLITR)       ! Small time step
 !
 !
 !*       3.2    compute the sedimentation velocities for rain

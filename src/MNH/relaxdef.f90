@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ####################
       MODULE MODI_RELAXDEF
 !     ####################
@@ -227,6 +228,7 @@ END MODULE MODI_RELAXDEF
 !!      V. Masson, C.Lac 09/2010 reproducibility : replacement of SUM3D_ll to SUMALL_ll
 !!                             and of PZZ(IIB,IJB,IKE+1) to PZHAT(IKE+1)
 !!      J.Escobar   30/09/2010  introduction of CPP MACRO(REAL16) for reproductibility test 
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -505,12 +507,12 @@ IF ( ANY(GHORELAXR) .OR. ANY(GHORELAXSV) .OR. ANY(OHORELAX_SV) &
 !*       4.1   some settings
 !
   IF ( KRIMX /= 0 ) THEN 
-    ZXDEPTH  = (1.0/FLOAT(KRIMX))**2
+    ZXDEPTH  = (1.0/REAL(KRIMX))**2
   ELSE
     ZXDEPTH  = 0.
   END IF
   IF ( KRIMY /= 0 ) THEN 
-    ZYDEPTH  = (1.0/FLOAT(KRIMY))**2
+    ZYDEPTH  = (1.0/REAL(KRIMY))**2
   ELSE
     ZYDEPTH  = 0.
   END IF
@@ -575,14 +577,14 @@ IF ( ANY(GHORELAXR) .OR. ANY(GHORELAXSV) .OR. ANY(OHORELAX_SV) &
 !
     DO JJ=IJBINT,IJSENDINT
       !  in global landmarks
-      ZYUPOS = (FLOAT(JJ+IORY-1 - IJSEND_ll) + 0.5)**2
-      ZYVPOS = (FLOAT(JJ+IORY-1 - IJSEND_ll)      )**2
-      ZYWPOS = (FLOAT(JJ+IORY-1 - IJSEND_ll) + 0.5)**2
+      ZYUPOS = (REAL(JJ+IORY-1 - IJSEND_ll) + 0.5)**2
+      ZYVPOS = (REAL(JJ+IORY-1 - IJSEND_ll)      )**2
+      ZYWPOS = (REAL(JJ+IORY-1 - IJSEND_ll) + 0.5)**2
       !
       DO JI=IIBINT,IIWENDINT-1
-        ZXUPOS = (FLOAT(JI+IORX-1 - IIWEND_ll)     )**2
-        ZXVPOS = (FLOAT(JI+IORX-1 - IIWEND_ll)+ 0.5)**2
-        ZXWPOS = (FLOAT(JI+IORX-1 - IIWEND_ll)+ 0.5)**2
+        ZXUPOS = (REAL(JI+IORX-1 - IIWEND_ll)     )**2
+        ZXVPOS = (REAL(JI+IORX-1 - IIWEND_ll)+ 0.5)**2
+        ZXWPOS = (REAL(JI+IORX-1 - IIWEND_ll)+ 0.5)**2
         !
         ZPOS = MIN(1.,SQRT(ZXUPOS*ZXDEPTH+ZYUPOS*ZYDEPTH))
         PKURELAX(JI,JJ) = PRIMKMAX*RELAX(ZPOS,IKRIMAX)
@@ -606,9 +608,9 @@ IF ( ANY(GHORELAXR) .OR. ANY(GHORELAXSV) .OR. ANY(OHORELAX_SV) &
       END DO
       !
       DO JI=IIEENDINT,IIEINT
-        ZXUPOS = (FLOAT(JI+IORX-1 - IIEEND_ll)     )**2
-        ZXVPOS = (FLOAT(JI+IORX-1 - IIEEND_ll)+ 0.5)**2
-        ZXWPOS = (FLOAT(JI+IORX-1 - IIEEND_ll)+ 0.5)**2
+        ZXUPOS = (REAL(JI+IORX-1 - IIEEND_ll)     )**2
+        ZXVPOS = (REAL(JI+IORX-1 - IIEEND_ll)+ 0.5)**2
+        ZXWPOS = (REAL(JI+IORX-1 - IIEEND_ll)+ 0.5)**2
         !
         ZPOS = MIN(1.,SQRT(ZXUPOS*ZXDEPTH+ZYUPOS*ZYDEPTH))
         PKURELAX(JI,JJ) = PRIMKMAX*RELAX(ZPOS,IKRIMAX)
@@ -642,14 +644,14 @@ IF ( ANY(GHORELAXR) .OR. ANY(GHORELAXSV) .OR. ANY(OHORELAX_SV) &
 !
     DO JJ=IJNENDINT,IJEINT
       ! in global landmarks
-      ZYUPOS = (FLOAT(JJ+IORY-1 - IJNEND_ll) + 0.5)**2
-      ZYVPOS = (FLOAT(JJ+IORY-1 - IJNEND_ll)      )**2
-      ZYWPOS = (FLOAT(JJ+IORY-1 - IJNEND_ll) + 0.5)**2
+      ZYUPOS = (REAL(JJ+IORY-1 - IJNEND_ll) + 0.5)**2
+      ZYVPOS = (REAL(JJ+IORY-1 - IJNEND_ll)      )**2
+      ZYWPOS = (REAL(JJ+IORY-1 - IJNEND_ll) + 0.5)**2
       !
       DO JI=IIBINT,IIWENDINT-1
-        ZXUPOS = (FLOAT(JI+IORX-1 - IIWEND_ll)     )**2
-        ZXVPOS = (FLOAT(JI+IORX-1 - IIWEND_ll)+ 0.5)**2
-        ZXWPOS = (FLOAT(JI+IORX-1 - IIWEND_ll)+ 0.5)**2
+        ZXUPOS = (REAL(JI+IORX-1 - IIWEND_ll)     )**2
+        ZXVPOS = (REAL(JI+IORX-1 - IIWEND_ll)+ 0.5)**2
+        ZXWPOS = (REAL(JI+IORX-1 - IIWEND_ll)+ 0.5)**2
         !
         ZPOS = MIN(1.,SQRT(ZXUPOS*ZXDEPTH+ZYUPOS*ZYDEPTH))
         PKURELAX(JI,JJ) = PRIMKMAX*RELAX(ZPOS,IKRIMAX)
@@ -674,9 +676,9 @@ IF ( ANY(GHORELAXR) .OR. ANY(GHORELAXSV) .OR. ANY(OHORELAX_SV) &
       END DO
       !
       DO JI=IIEENDINT,IIEINT
-        ZXUPOS = (FLOAT(JI+IORX-1 - IIEEND_ll)     )**2
-        ZXVPOS = (FLOAT(JI+IORX-1 - IIEEND_ll)+ 0.5)**2
-        ZXWPOS = (FLOAT(JI+IORX-1 - IIEEND_ll)+ 0.5)**2
+        ZXUPOS = (REAL(JI+IORX-1 - IIEEND_ll)     )**2
+        ZXVPOS = (REAL(JI+IORX-1 - IIEEND_ll)+ 0.5)**2
+        ZXWPOS = (REAL(JI+IORX-1 - IIEEND_ll)+ 0.5)**2
         !
         ZPOS = MIN(1.,SQRT(ZXUPOS*ZXDEPTH+ZYUPOS*ZYDEPTH))
         PKURELAX(JI,JJ) = PRIMKMAX*RELAX(ZPOS,IKRIMAX)
@@ -701,9 +703,9 @@ IF ( ANY(GHORELAXR) .OR. ANY(GHORELAXSV) .OR. ANY(OHORELAX_SV) &
     ! intersection limits : IIBINT,IIWENDINT along x and IJSENDINT,IJNENDINT along y
 !   
     DO JI=IIBINT,IIWENDINT
-      ZXUPOS = (FLOAT(JI+IORX-1 - IIWEND_ll)     )**2
-      ZXVPOS = (FLOAT(JI+IORX-1 - IIWEND_ll)+ 0.5)**2
-      ZXWPOS = (FLOAT(JI+IORX-1 - IIWEND_ll)+ 0.5)**2
+      ZXUPOS = (REAL(JI+IORX-1 - IIWEND_ll)     )**2
+      ZXVPOS = (REAL(JI+IORX-1 - IIWEND_ll)+ 0.5)**2
+      ZXWPOS = (REAL(JI+IORX-1 - IIWEND_ll)+ 0.5)**2
       DO JJ=IJSENDINT,IJNENDINT
        !
         ZPOS = MIN(1.,SQRT(ZXUPOS*ZXDEPTH))
@@ -727,9 +729,9 @@ IF ( ANY(GHORELAXR) .OR. ANY(GHORELAXSV) .OR. ANY(OHORELAX_SV) &
     ! intersection limits : IIENDINT,IIEINT along x and IJSENDINT,IJNENDINT along y
 !
     DO JI=IIEENDINT,IIEINT
-      ZXUPOS = (FLOAT(JI+IORX-1 - IIEEND_ll)     )**2
-      ZXVPOS = (FLOAT(JI+IORX-1 - IIEEND_ll)+ 0.5)**2
-      ZXWPOS = (FLOAT(JI+IORX-1 - IIEEND_ll)+ 0.5)**2
+      ZXUPOS = (REAL(JI+IORX-1 - IIEEND_ll)     )**2
+      ZXVPOS = (REAL(JI+IORX-1 - IIEEND_ll)+ 0.5)**2
+      ZXWPOS = (REAL(JI+IORX-1 - IIEEND_ll)+ 0.5)**2
       DO JJ=IJSENDINT,IJNENDINT
        !
         ZPOS = MIN(1.,SQRT(ZXUPOS*ZXDEPTH))
