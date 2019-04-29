@@ -109,7 +109,7 @@ ZS(5) = 2.9092306039
 !
 !*       1 Compute coefficients
 !
-IF( PX<0.0 .OR. PA>=0.0 ) call Print_msg(NVERB_FATAL,'GEN','GAMMA_INC_LOW','invalid arguments: PX<0.0 .OR. PA>=0.0')
+IF( PX<0.0 .OR. PA<=0.0 ) call Print_msg(NVERB_FATAL,'GEN','GAMMA_INC_LOW','invalid arguments: PX<0.0 .OR. PA<=0.0')
 !
 ZC(1) = 1.+ZP(1)*PA+ZP(2)*PA**2+ZP(3)*PA**3+ZP(4)*PA**4+ZP(5)*(EXP(-ZP(6)*PA)-1)
 !

@@ -87,7 +87,7 @@ REAL                                 :: ZFPMIN=1.E-30
 REAL                                 :: ZAP,ZDEL,ZSUM
 REAL                                 :: ZAN,ZB,ZC,ZD,ZH
 !
-IF( PX<0.0 .OR. PA>=0.0 ) call Print_msg(NVERB_FATAL,'GEN','GAMMA_INC','invalid arguments: PX<0.0 .OR. PA>=0.0')
+IF( PX<0.0 .OR. PA<=0.0 ) call Print_msg(NVERB_FATAL,'GEN','GAMMA_INC','invalid arguments: PX<0.0 .OR. PA<=0.0')
 !
 IF( (PX.LT.PA+1.0) ) THEN
   ZAP = PA
