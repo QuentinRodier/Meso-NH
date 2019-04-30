@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 MODULE MODI_ICE4_NUCLEATION_WRAPPER
 INTERFACE
@@ -64,20 +64,24 @@ REAL, DIMENSION(KIT,KJT,KKT),   INTENT(OUT)   :: PRVHENI_MR ! Mixing ratio chang
 !
 !*       0.2  declaration of local variables
 !
-INTEGER                           :: JL       ! and PACK intrinsics
-LOGICAL, DIMENSION(SIZE(PRVT,1),SIZE(PRVT,2),SIZE(PRVT,3)) :: GNEGT  ! Test where to compute the HEN process
-INTEGER :: INEGT
-INTEGER, DIMENSION(COUNT(PT<XTT .AND. LDMASK)) :: I1,I2,I3 ! Used to replace the COUNT
-REAL, DIMENSION(COUNT(PT<XTT .AND. LDMASK))  :: ZZT,      & ! Temperature
-                                   ZPRES,    & ! Pressure
-                                   ZRVT,     & ! Water vapor m.r. at t
-                                   ZCIT,     & ! Pristine ice conc. at t
-                                   ZTHT,     & ! Theta at t
-                                   ZRHODREF, &
-                                   ZEXN,     &
-                                   ZLSFACT,  &
-                                   ZRVHENI_MR, &
-                                   ZB_TH, ZB_RV, ZB_RI
+INTEGER                            :: IDX, JI, JJ, JK
+INTEGER                            :: JL
+INTEGER                            :: INEGT, INEGT_TMP
+INTEGER, DIMENSION(:), ALLOCATABLE :: I1,I2,I3
+LOGICAL                            :: GDSOFT
+LOGICAL, DIMENSION(:), ALLOCATABLE :: GLDCOMPUTE
+LOGICAL, DIMENSION(KIT,KJT,KKT)    :: GNEGT  ! Test where to compute the HEN process
+REAL, DIMENSION(:), ALLOCATABLE    :: ZZT,       & ! Temperature
+                                      ZPRES,      & ! Pressure
+                                      ZRVT,       & ! Water vapor m.r. at t
+                                      ZCIT,       & ! Pristine ice conc. at t
+                                      ZTHT,       & ! Theta at t
+                                      ZRHODREF,   &
+                                      ZEXN,       &
+                                      ZLSFACT,    &
+                                      ZRVHENI_MR, &
+                                      ZB_TH, ZB_RV, ZB_RI
+!
 !-------------------------------------------------------------------------------
 !
 !
@@ -86,15 +90,31 @@ REAL, DIMENSION(COUNT(PT<XTT .AND. LDMASK))  :: ZZT,      & ! Temperature
 !  the temperature is negative only !!!
 !
 GNEGT(:,:,:)=PT(:,:,:)<XTT .AND. LDMASK
-INEGT=0
-IF(COUNT(GNEGT)/=0) INEGT=ICE4_NUCLEATION_COUNTJV(GNEGT(:,:,:), KIT, KJT, KKT, SIZE(I1), I1(:), I2(:), I3(:))
+INEGT = COUNT(GNEGT(:,:,:))
+!
+ALLOCATE(GLDCOMPUTE(INEGT))
+ALLOCATE(I1(INEGT),I2(INEGT),I3(INEGT))
+ALLOCATE(ZZT(INEGT))
+ALLOCATE(ZPRES(INEGT))
+ALLOCATE(ZRVT(INEGT))
+ALLOCATE(ZCIT(INEGT))
+ALLOCATE(ZTHT(INEGT))
+ALLOCATE(ZRHODREF(INEGT))
+ALLOCATE(ZEXN(INEGT))
+ALLOCATE(ZLSFACT(INEGT))
+ALLOCATE(ZRVHENI_MR(INEGT))
+ALLOCATE(ZB_TH(INEGT))
+ALLOCATE(ZB_RV(INEGT))
+ALLOCATE(ZB_RI(INEGT))
 !
 ZB_TH(:) = 0.
 ZB_RV(:) = 0.
 ZB_RI(:) = 0.
 !
+IF(INEGT>0) INEGT_TMP=ICE4_NUCLEATION_COUNTJV(GNEGT(:,:,:), KIT, KJT, KKT, SIZE(I1), I1(:), I2(:), I3(:))
+!
 PRVHENI_MR(:,:,:)=0.
-IF(INEGT>=1) THEN
+IF(INEGT>0) THEN
   DO JL=1, INEGT
     ZRVT(JL)=PRVT(I1(JL), I2(JL), I3(JL))
     ZCIT(JL)=PCIT(I1(JL), I2(JL), I3(JL))
@@ -105,15 +125,20 @@ IF(INEGT>=1) THEN
     ZEXN(JL)=PEXN(I1(JL), I2(JL), I3(JL))
     ZLSFACT(JL)=PLSFACT(I1(JL), I2(JL), I3(JL))
   ENDDO
-  CALL ICE4_NUCLEATION(INEGT, .FALSE., ZZT(:)<XTT, &
+  GDSOFT = .FALSE.
+  GLDCOMPUTE(:) = ZZT(:)<XTT
+  CALL ICE4_NUCLEATION(INEGT, GDSOFT, GLDCOMPUTE, &
                        ZTHT, ZPRES, ZRHODREF, ZEXN, ZLSFACT, ZZT, &
                        ZRVT, &
                        ZCIT, ZRVHENI_MR, ZB_TH, ZB_RV, ZB_RI)
   PRVHENI_MR(:,:,:)=UNPACK(ZRVHENI_MR(:), MASK=GNEGT(:,:,:), FIELD=0.0)
-  PCIT(:,:,:)=UNPACK(ZCIT(:), MASK=GNEGT(:,:,:), FIELD=PCIT(:,:,:))
+  PCIT(:,:,:)      =UNPACK(ZCIT(:),       MASK=GNEGT(:,:,:), FIELD=PCIT(:,:,:))
 END IF
 !
-
+DEALLOCATE(GLDCOMPUTE)
+DEALLOCATE(I1,I2,I3)
+DEALLOCATE(ZZT,ZPRES,ZRVT,ZCIT,ZTHT,ZRHODREF,ZEXN,ZLSFACT,ZRVHENI_MR,ZB_TH,ZB_RV,ZB_RI)
+!
 CONTAINS
   FUNCTION ICE4_NUCLEATION_COUNTJV(LTAB,KIT,KJT,KKT,KSIZE,I1,I2,I3) RESULT(IC)
   IMPLICIT NONE
