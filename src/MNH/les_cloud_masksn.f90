@@ -38,6 +38,7 @@
 !!      P. Aumond        10/2009 Add possibility of user maskS
 !!       F.Couvreux      06/2011 : Conditional sampling
 !!       C.Lac           10/2014 : Correction on user masks   
+!!       Q.Rodier        05/2019 : Missing parallelization 
 !!
 !! --------------------------------------------------------------------------
 !       
@@ -66,7 +67,7 @@ IMPLICIT NONE
 !
 INTEGER :: JK                                  ! vertical loop counter
 INTEGER :: JI                                  ! loop index on masks  
-INTEGER :: IIU, IJU                            ! hor. indices
+INTEGER :: IIU, IJU,IIB,IJB,IIE,IJE            ! hor. indices
 INTEGER :: IKU, KBASE, KTOP                    ! ver. index
 INTEGER :: IRR, IRRC, IRRR, IRRI, IRRS, IRRG   ! moist variables indices
 INTEGER :: JSV                                  ! ind of scalars
@@ -92,6 +93,7 @@ REAL, DIMENSION(:),       ALLOCATABLE :: ZMEANRC
 !-------------------------------------------------------------------------------
 !
 CALL GET_DIM_EXT_ll('B',IIU,IJU)
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 !
 IKU = SIZE(XTHT,3)
 !
@@ -215,8 +217,8 @@ DEALLOCATE(ZWORK1D)
 IF (LLES_NEB_MASK) THEN
   ALLOCATE(LLES_CURRENT_NEB_MASK(IIU,IJU,NLES_K))
   LLES_CURRENT_NEB_MASK (:,:,:) = .FALSE.
-  WHERE ((ZRC_LES>1.E-6 .OR. ZRI_LES>1.E-6) .AND. ZW_LES>0.)
-    LLES_CURRENT_NEB_MASK (:,:,:) = .TRUE.
+  WHERE ((ZRC_LES(IIB:IIE,IJB:IJE,:)>1.E-6 .OR. ZRI_LES(IIB:IIE,IJB:IJE,:)>1.E-6) .AND. ZW_LES(IIB:IIE,IJB:IJE,:)>0.)
+    LLES_CURRENT_NEB_MASK (IIB:IIE,IJB:IJE,:) = .TRUE.
   END WHERE
 END IF
 !
@@ -228,9 +230,9 @@ END IF
 IF (LLES_CORE_MASK) THEN
   ALLOCATE(LLES_CURRENT_CORE_MASK(IIU,IJU,NLES_K))
   LLES_CURRENT_CORE_MASK (:,:,:) = .FALSE.
-  WHERE ((ZRC_LES>1.E-6 .OR. ZRI_LES>1.E-6) &
-         .AND. ZW_LES>0. .AND. ZTHV_ANOM>0.)  
-    LLES_CURRENT_CORE_MASK (:,:,:) = .TRUE.
+  WHERE ((ZRC_LES(IIB:IIE,IJB:IJE,:)>1.E-6 .OR. ZRI_LES(IIB:IIE,IJB:IJE,:)>1.E-6) &
+         .AND. ZW_LES(IIB:IIE,IJB:IJE,:)>0. .AND. ZTHV_ANOM(IIB:IIE,IJB:IJE,:)>0.)  
+    LLES_CURRENT_CORE_MASK (IIB:IIE,IJB:IJE,:) = .TRUE.
   END WHERE
 END IF
 !
@@ -243,10 +245,10 @@ IF (LLES_CS_MASK) THEN
 !
   CALL LES_MEAN_ll(ZRC_LES, LLES_CURRENT_CART_MASK, ZMEANRC  )
   ALLOCATE(LLES_CURRENT_CS1_MASK(IIU,IJU,NLES_K))
-  LLES_CURRENT_CS1_MASK (:,:,:) = .FALSE.
+  LLES_CURRENT_CS1_MASK(:,:,:) = .FALSE.
   IF (NSV_CS >= 2) THEN
     ALLOCATE(LLES_CURRENT_CS2_MASK(IIU,IJU,NLES_K))
-    LLES_CURRENT_CS2_MASK (:,:,:) = .FALSE.
+    LLES_CURRENT_CS2_MASK(:,:,:) = .FALSE.
     IF (NSV_CS == 3) THEN
       ALLOCATE(LLES_CURRENT_CS3_MASK(IIU,IJU,NLES_K))
       LLES_CURRENT_CS3_MASK (:,:,:) = .FALSE.
@@ -271,73 +273,73 @@ IF (LLES_CS_MASK) THEN
 ! case no cloud top and base                    
     IF (JSV == NSV_CSBEG) THEN
      IF ((KBASE ==2) .AND. (KTOP == NLES_K)) THEN
-      WHERE (ZW_LES(:,:,JK)>0. .AND. ZSV_ANOM(:,:,JK,JSV-NSV_CSBEG+1) >  &
+      WHERE (ZW_LES(IIB:IIE,IJB:IJE,JK)>0. .AND. ZSV_ANOM(IIB:IIE,IJB:IJE,JK,JSV-NSV_CSBEG+1) >  &
              XSCAL(JSV-NSV_CSBEG+1) * ZSTD_SV(JK,JSV-NSV_CSBEG+1))
-          LLES_CURRENT_CS1_MASK (:,:,JK) = .TRUE.
+          LLES_CURRENT_CS1_MASK (IIB:IIE,IJB:IJE,JK) = .TRUE.
       END WHERE       
      END IF
 !
 ! case cloud top and base defined                    
 !
      IF (XZHAT(JK) < XZHAT(KBASE)+(XZHAT(KTOP)-XZHAT(KBASE))/4.) THEN      
-      WHERE (ZW_LES(:,:,JK)>0. .AND. ZSV_ANOM(:,:,JK,JSV-NSV_CSBEG+1) > &
+      WHERE (ZW_LES(IIB:IIE,IJB:IJE,JK)>0. .AND. ZSV_ANOM(IIB:IIE,IJB:IJE,JK,JSV-NSV_CSBEG+1) > &
              XSCAL(JSV-NSV_CSBEG+1) *ZSTD_SV(JK,JSV-NSV_CSBEG+1))
-          LLES_CURRENT_CS1_MASK (:,:,JK) = .TRUE.
+          LLES_CURRENT_CS1_MASK (IIB:IIE,IJB:IJE,JK) = .TRUE.
       END WHERE
      END IF     
 !
      IF (XZHAT(JK) >= XZHAT(KBASE)+(XZHAT(KTOP)-XZHAT(KBASE))/4.) THEN
-      WHERE (ZW_LES(:,:,JK)>0. .AND. ZSV_ANOM(:,:,JK,JSV-NSV_CSBEG+1) > &
+      WHERE (ZW_LES(IIB:IIE,IJB:IJE,JK)>0. .AND. ZSV_ANOM(IIB:IIE,IJB:IJE,JK,JSV-NSV_CSBEG+1) > &
              XSCAL(JSV-NSV_CSBEG+1) * ZSTD_SV(JK,JSV-NSV_CSBEG+1) .AND. &
-          ZRC_LES(:,:,JK)>1.E-6)
-          LLES_CURRENT_CS1_MASK (:,:,JK) = .TRUE.
+          ZRC_LES(IIB:IIE,IJB:IJE,JK)>1.E-6)
+          LLES_CURRENT_CS1_MASK (IIB:IIE,IJB:IJE,JK) = .TRUE.
       END WHERE  
      END IF
     ELSE IF ( JSV == NSV_CSBEG + 1 ) THEN
      IF ((KBASE ==2) .AND. (KTOP == NLES_K)) THEN
-      WHERE ( ZSV_ANOM(:,:,JK,JSV-NSV_CSBEG+1) > &
+      WHERE ( ZSV_ANOM(IIB:IIE,IJB:IJE,JK,JSV-NSV_CSBEG+1) > &
               XSCAL(JSV-NSV_CSBEG+1) * ZSTD_SV(JK,JSV-NSV_CSBEG+1))
-          LLES_CURRENT_CS2_MASK (:,:,JK) = .TRUE.
+          LLES_CURRENT_CS2_MASK (IIB:IIE,IJB:IJE,JK) = .TRUE.
       END WHERE       
      END IF
 !
 ! case cloud top and base defined                    
 !
      IF (XZHAT(JK) < XZHAT(KBASE)+(XZHAT(KTOP)-XZHAT(KBASE))/4.) THEN      
-      WHERE (ZSV_ANOM(:,:,JK,JSV-NSV_CSBEG+1) >  &
+      WHERE (ZSV_ANOM(IIB:IIE,IJB:IJE,JK,JSV-NSV_CSBEG+1) >  &
              XSCAL(JSV-NSV_CSBEG+1) *ZSTD_SV(JK,JSV-NSV_CSBEG+1))
-          LLES_CURRENT_CS2_MASK (:,:,JK) = .TRUE.
+          LLES_CURRENT_CS2_MASK (IIB:IIE,IJB:IJE,JK) = .TRUE.
       END WHERE
      END IF     
 !
      IF (XZHAT(JK) >= XZHAT(KBASE)+(XZHAT(KTOP)-XZHAT(KBASE))/4.) THEN
-      WHERE (ZSV_ANOM(:,:,JK,JSV-NSV_CSBEG+1) > &
+      WHERE (ZSV_ANOM(IIB:IIE,IJB:IJE,JK,JSV-NSV_CSBEG+1) > &
              XSCAL(JSV-NSV_CSBEG+1) * ZSTD_SV(JK,JSV-NSV_CSBEG+1)) 
-          LLES_CURRENT_CS2_MASK (:,:,JK) = .TRUE.
+          LLES_CURRENT_CS2_MASK (IIB:IIE,IJB:IJE,JK) = .TRUE.
       END WHERE  
      END IF
 !
     ELSE 
      IF ((KBASE ==2) .AND. (KTOP == NLES_K)) THEN
-      WHERE ( ZSV_ANOM(:,:,JK,JSV-NSV_CSBEG+1) > &
+      WHERE ( ZSV_ANOM(IIB:IIE,IJB:IJE,JK,JSV-NSV_CSBEG+1) > &
               XSCAL(JSV-NSV_CSBEG+1) * ZSTD_SV(JK,JSV-NSV_CSBEG+1))
-          LLES_CURRENT_CS3_MASK (:,:,JK) = .TRUE.
+          LLES_CURRENT_CS3_MASK (IIB:IIE,IJB:IJE,JK) = .TRUE.
       END WHERE       
      END IF
 !
 ! case cloud top and base defined                    
 !
      IF (XZHAT(JK) < XZHAT(KBASE)+(XZHAT(KTOP)-XZHAT(KBASE))/4.) THEN      
-      WHERE (ZSV_ANOM(:,:,JK,JSV-NSV_CSBEG+1) > &
+      WHERE (ZSV_ANOM(IIB:IIE,IJB:IJE,JK,JSV-NSV_CSBEG+1) > &
              XSCAL(JSV-NSV_CSBEG+1) *ZSTD_SV(JK,JSV-NSV_CSBEG+1))
-          LLES_CURRENT_CS3_MASK (:,:,JK) = .TRUE.
+          LLES_CURRENT_CS3_MASK (IIB:IIE,IJB:IJE,JK) = .TRUE.
       END WHERE
      END IF     
 !
      IF (XZHAT(JK) >= XZHAT(KBASE)+(XZHAT(KTOP)-XZHAT(KBASE))/4.) THEN
-      WHERE (ZSV_ANOM(:,:,JK,JSV-NSV_CSBEG+1) > &
+      WHERE (ZSV_ANOM(IIB:IIE,IJB:IJE,JK,JSV-NSV_CSBEG+1) > &
              XSCAL(JSV-NSV_CSBEG+1) * ZSTD_SV(JK,JSV-NSV_CSBEG+1)) 
-          LLES_CURRENT_CS3_MASK (:,:,JK) = .TRUE.
+          LLES_CURRENT_CS3_MASK (IIB:IIE,IJB:IJE,JK) = .TRUE.
       END WHERE  
      END IF
     END IF
@@ -353,7 +355,7 @@ END IF
 IF (LLES_MY_MASK) THEN
   ALLOCATE(LLES_CURRENT_MY_MASKS(IIU,IJU,NLES_K,NLES_MASKS_USER))
   DO JI=1,NLES_MASKS_USER
-    LLES_CURRENT_MY_MASKS (:,:,:,JI) = .FALSE.
+    LLES_CURRENT_MY_MASKS (IIB:IIE,IJB:IJE,:,JI) = .FALSE.
   END DO
 ! WHERE ((ZRC_LES + ZRI_LES) > 1.E-06) 
 !    LLES_CURRENT_MY_MASKS (:,:,:,1) = .TRUE.
