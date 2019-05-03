@@ -2,6 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !#######################
 MODULE MODI_SPAWN_FIELD2
 !#######################
@@ -187,6 +188,7 @@ USE MODD_RELFRC_n
 USE MODD_SALT,            ONLY: CSALTNAMES
 USE MODD_SPAWN
 !
+use mode_bikhardt
 USE MODE_FIELD,           ONLY: TFIELDDATA,TYPEREAL
 USE MODE_IO_FIELD_READ,   only: IO_Field_read
 USE MODE_ll
@@ -195,8 +197,6 @@ USE MODE_MODELN_HANDLER
 USE MODE_MPPDB
 USE MODE_THERMO
 USE MODE_TOOLS,           ONLY: UPCASE
-!
-USE MODI_BIKHARDT
 !
 IMPLICIT NONE
 !

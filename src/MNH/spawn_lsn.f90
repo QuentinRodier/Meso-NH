@@ -23,7 +23,7 @@ INTERFACE
 INTEGER,   INTENT(IN)  :: KDAD      ! number of the DAD model
 REAL,             INTENT(IN)    :: PTSTEP   !  Time step
 INTEGER,          INTENT(IN)    :: KMI      ! model number
-                                    ! interpolation coefficients 
+                                    ! interpolation coefficients
 REAL, DIMENSION(:), INTENT(IN) :: PBMX1,PBMX2,PBMX3,PBMX4 ! Mass points in X-direc.
 REAL, DIMENSION(:), INTENT(IN) :: PBMY1,PBMY2,PBMY3,PBMY4 ! Mass points in Y-direc.
 REAL, DIMENSION(:), INTENT(IN) :: PBFX1,PBFX2,PBFX3,PBFX4 ! Flux points in X-direc.
@@ -129,6 +129,7 @@ END MODULE MODI_SPAWN_LS_n
 !
 !*      0.   DECLARATIONS
 !            ------------
+use mode_bikhardt
 USE MODE_ll
 USE MODE_MODELN_HANDLER
 !
@@ -139,7 +140,6 @@ USE MODD_LSFIELD_n
 USE MODD_FIELD_n      ! modules relative to the outer model _n
 USE MODD_GRID_n   
 !
-USE MODI_BIKHARDT
 USE MODI_COEF_VER_INTERP_LIN
 USE MODI_VER_INTERP_LIN
 USE MODI_SHUMAN

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1996-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -195,6 +195,7 @@ SUBROUTINE ONE_WAY_n(KDAD,PTSTEP,KMI,KTCOUNT,                            &
 USE MODE_ll
 USE MODE_MODELN_HANDLER
 use mode_msg
+use mode_bikhardt
 !
 USE MODD_PARAMETERS
 USE MODD_NESTING
@@ -206,7 +207,6 @@ USE MODD_PARAM_n
 USE MODD_CH_MNHC_n, ONLY: LUSECHAQ, LUSECHIC
 USE MODD_NSV
 !
-USE MODI_BIKHARDT
 USE MODI_VER_INTERP_LIN
 USE MODI_SET_CONC_RAIN_C2R2
 USE MODI_SET_CONC_ICE_C1R3

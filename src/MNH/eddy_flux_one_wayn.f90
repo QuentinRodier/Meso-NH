@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2011-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ###############################
@@ -65,11 +65,10 @@ USE MODD_METRICS_n
 USE MODI_GRADIENT_W
 USE MODI_GRADIENT_U
 !
-! For the horizontal interpolation
-USE MODI_BIKHARDT
 USE MODD_BIKHARDT_n
 USE MODD_NESTING
 !
+use mode_bikhardt
 USE MODE_FIELD, ONLY : TFIELDLIST, FIND_FIELD_ID_FROM_MNHNAME
 !
 IMPLICIT NONE

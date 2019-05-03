@@ -1,6 +1,6 @@
 !MNH_LIC Copyright 1997-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !#######################
@@ -122,11 +122,11 @@ USE MODD_VER_INTERP_LIN
 USE MODD_SPAWN
 !
 USE MODI_SHUMAN
-USE MODI_BIKHARDT
 USE MODI_COMPUTE_EXNER_FROM_TOP
 USE MODI_COEF_VER_INTERP_LIN
 USE MODI_VER_INTERP_LIN
 !
+use mode_bikhardt
 USE MODE_MODELN_HANDLER
 USE MODE_ll
 USE MODE_MPPDB

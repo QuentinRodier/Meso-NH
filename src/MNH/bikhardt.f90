@@ -1,126 +1,27 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 interpol 2006/05/18 13:07:25
+! Modifications:
+!  P. Wautelet 03/05/2019: modi_bikhardt -> mode_bikhardt
 !-----------------------------------------------------------------
 !###################
-MODULE MODI_BIKHARDT
+module mode_bikhardt
 !###################
-!
-INTERFACE BIKHARDT
-!
-      SUBROUTINE BIKHARDT4D (PBMX1,PBMX2,PBMX3,PBMX4,PBMY1,PBMY2,PBMY3,PBMY4, &
-                             PBFX1,PBFX2,PBFX3,PBFX4,PBFY1,PBFY2,PBFY3,PBFY4, &
-                             KXOR,KYOR,KXEND,KYEND,KDXRATIO,KDYRATIO,KGRID,   &
-                             HLBCX,HLBCY,PFIELD1,PFIELD2)
-!
-                                    ! interpolation coefficients 
-REAL, DIMENSION(:), INTENT(IN) :: PBMX1,PBMX2,PBMX3,PBMX4 ! Mass points in X-direc.
-REAL, DIMENSION(:), INTENT(IN) :: PBMY1,PBMY2,PBMY3,PBMY4 ! Mass points in Y-direc.
-REAL, DIMENSION(:), INTENT(IN) :: PBFX1,PBFX2,PBFX3,PBFX4 ! Flux points in X-direc.
-REAL, DIMENSION(:), INTENT(IN) :: PBFY1,PBFY2,PBFY3,PBFY4 ! Flux points in Y-direc.
-!
-INTEGER,   INTENT(IN)  :: KXOR,KXEND !  horizontal position (i,j) of the ORigin and END  
-INTEGER,   INTENT(IN)  :: KYOR,KYEND ! of the model domain, relative to the outer model
-INTEGER,   INTENT(IN)  :: KDXRATIO   !  x and y-direction Resolution ratio
-INTEGER,   INTENT(IN)  :: KDYRATIO   ! between inner model and outer model
-INTEGER,   INTENT(IN)  :: KGRID      ! code of grid point
-CHARACTER (LEN=4), DIMENSION (2), INTENT(IN) :: HLBCX   ! type of lateral
-CHARACTER (LEN=4), DIMENSION (2), INTENT(IN) :: HLBCY   ! boundary conditions
-REAL, DIMENSION(:,:,:,:),         INTENT(IN) :: PFIELD1 ! field of outer model
-REAL, DIMENSION(:,:,:,:),         INTENT(OUT):: PFIELD2 ! field of inner model
-!
-END SUBROUTINE BIKHARDT4D
-!
-      SUBROUTINE BIKHARDT3D (PBMX1,PBMX2,PBMX3,PBMX4,PBMY1,PBMY2,PBMY3,PBMY4, &
-                             PBFX1,PBFX2,PBFX3,PBFX4,PBFY1,PBFY2,PBFY3,PBFY4, &
-                             KXOR,KYOR,KXEND,KYEND,KDXRATIO,KDYRATIO,KGRID,   &
-                             HLBCX,HLBCY,PFIELD1,PFIELD2)
-!
-                                    ! interpolation coefficients  
-REAL, DIMENSION(:), INTENT(IN) :: PBMX1,PBMX2,PBMX3,PBMX4 ! Mass points in X-direc.
-REAL, DIMENSION(:), INTENT(IN) :: PBMY1,PBMY2,PBMY3,PBMY4 ! Mass points in Y-direc.
-REAL, DIMENSION(:), INTENT(IN) :: PBFX1,PBFX2,PBFX3,PBFX4 ! Flux points in X-direc.
-REAL, DIMENSION(:), INTENT(IN) :: PBFY1,PBFY2,PBFY3,PBFY4 ! Flux points in Y-direc.
-!
-INTEGER,   INTENT(IN)  :: KXOR,KXEND !  horizontal position (i,j) of the ORigin and END  
-INTEGER,   INTENT(IN)  :: KYOR,KYEND ! of the inner model domain, relative to outer model
-INTEGER,   INTENT(IN)  :: KDXRATIO   !  x and y-direction Resolution ratio
-INTEGER,   INTENT(IN)  :: KDYRATIO   ! between inner model and outer model
-INTEGER,   INTENT(IN)  :: KGRID      ! code of grid point
-CHARACTER (LEN=4), DIMENSION (2), INTENT(IN) :: HLBCX   ! type of lateral
-CHARACTER (LEN=4), DIMENSION (2), INTENT(IN) :: HLBCY   ! boundary conditions
-REAL, DIMENSION(:,:,:),           INTENT(IN) :: PFIELD1 ! field of outer model
-REAL, DIMENSION(:,:,:),           INTENT(OUT):: PFIELD2 ! field of inner model
-!
-END SUBROUTINE BIKHARDT3D
-!
-      SUBROUTINE BIKHARDT2D (PBMX1,PBMX2,PBMX3,PBMX4,PBMY1,PBMY2,PBMY3,PBMY4, &
-                             PBFX1,PBFX2,PBFX3,PBFX4,PBFY1,PBFY2,PBFY3,PBFY4, &
-                             KXOR,KYOR,KXEND,KYEND,KDXRATIO,KDYRATIO,KGRID,   &
-                             HLBCX,HLBCY,PFIELD1,PFIELD2)
-!
-                                    ! interpolation coefficients  
-REAL, DIMENSION(:), INTENT(IN) :: PBMX1,PBMX2,PBMX3,PBMX4 ! Mass points in X-direc.
-REAL, DIMENSION(:), INTENT(IN) :: PBMY1,PBMY2,PBMY3,PBMY4 ! Mass points in Y-direc.
-REAL, DIMENSION(:), INTENT(IN) :: PBFX1,PBFX2,PBFX3,PBFX4 ! Flux points in X-direc.
-REAL, DIMENSION(:), INTENT(IN) :: PBFY1,PBFY2,PBFY3,PBFY4 ! Flux points in Y-direc.
-!
-INTEGER,   INTENT(IN)  :: KXOR,KXEND !  horizontal position (i,j) of the ORigin and END  
-INTEGER,   INTENT(IN)  :: KYOR,KYEND ! of the inner model domain, relative to outer model
-INTEGER,   INTENT(IN)  :: KDXRATIO   !  x and y-direction Resolution ratio
-INTEGER,   INTENT(IN)  :: KDYRATIO   ! between inner model  and outer model
-INTEGER,   INTENT(IN)  :: KGRID      ! code of grid point
-CHARACTER (LEN=4), DIMENSION (2), INTENT(IN) :: HLBCX   ! type of lateral
-CHARACTER (LEN=4), DIMENSION (2), INTENT(IN) :: HLBCY   ! boundary conditions
-REAL, DIMENSION(:,:),             INTENT(IN) :: PFIELD1 ! field of outer model
-REAL, DIMENSION(:,:),             INTENT(OUT):: PFIELD2 ! field of inner model
-!
-END SUBROUTINE BIKHARDT2D
-!
-END INTERFACE
-!
-END MODULE MODI_BIKHARDT
-!
-!#####################
-MODULE MODI_BIKHARDT4D
-!#####################
-!
-INTERFACE
-!
-      SUBROUTINE BIKHARDT4D (PBMX1,PBMX2,PBMX3,PBMX4,PBMY1,PBMY2,PBMY3,PBMY4, &
-                             PBFX1,PBFX2,PBFX3,PBFX4,PBFY1,PBFY2,PBFY3,PBFY4, &
-                             KXOR,KYOR,KXEND,KYEND,KDXRATIO,KDYRATIO,KGRID,   &
-                             HLBCX,HLBCY,PFIELD1,PFIELD2)
-!
-                                    ! interpolation coefficients  
-REAL, DIMENSION(:), INTENT(IN) :: PBMX1,PBMX2,PBMX3,PBMX4 ! Mass points in X-direc.
-REAL, DIMENSION(:), INTENT(IN) :: PBMY1,PBMY2,PBMY3,PBMY4 ! Mass points in Y-direc.
-REAL, DIMENSION(:), INTENT(IN) :: PBFX1,PBFX2,PBFX3,PBFX4 ! Flux points in X-direc.
-REAL, DIMENSION(:), INTENT(IN) :: PBFY1,PBFY2,PBFY3,PBFY4 ! Flux points in Y-direc.
-!
-INTEGER,   INTENT(IN)  :: KXOR,KXEND !  horizontal position (i,j) of the ORigin and END  
-INTEGER,   INTENT(IN)  :: KYOR,KYEND ! of the inner model domain, relative to outer model
-INTEGER,   INTENT(IN)  :: KDXRATIO   !  x and y-direction Resolution ratio
-INTEGER,   INTENT(IN)  :: KDYRATIO   ! between inner model  and outer model
-INTEGER,   INTENT(IN)  :: KGRID      ! code of grid point
-CHARACTER (LEN=4), DIMENSION (2), INTENT(IN) :: HLBCX   ! type of lateral
-CHARACTER (LEN=4), DIMENSION (2), INTENT(IN) :: HLBCY   ! boundary conditions
-REAL, DIMENSION(:,:,:,:),         INTENT(IN) :: PFIELD1 ! field of outer model
-REAL, DIMENSION(:,:,:,:),         INTENT(OUT):: PFIELD2 ! field of inner model
-!
-END SUBROUTINE BIKHARDT4D
-!
-END INTERFACE
-!
-END MODULE MODI_BIKHARDT4D
-!
-!
+
+implicit none
+
+private
+
+public :: Bikhardt
+
+interface Bikhardt
+  module procedure Bikhardt2d, Bikhardt3d, Bikhardt4d
+end interface
+
+contains
+
 !     #########################################################################
       SUBROUTINE BIKHARDT4D (PBMX1,PBMX2,PBMX3,PBMX4,PBMY1,PBMY2,PBMY3,PBMY4, &
                              PBFX1,PBFX2,PBFX3,PBFX4,PBFY1,PBFY2,PBFY3,PBFY4, &
@@ -183,7 +84,7 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
-                                    ! interpolation coefficients  
+                                    ! interpolation coefficients
 REAL, DIMENSION(:), INTENT(IN) :: PBMX1,PBMX2,PBMX3,PBMX4 ! Mass points in X-direc.
 REAL, DIMENSION(:), INTENT(IN) :: PBMY1,PBMY2,PBMY3,PBMY4 ! Mass points in Y-direc.
 REAL, DIMENSION(:), INTENT(IN) :: PBFX1,PBFX2,PBFX3,PBFX4 ! Flux points in X-direc.
@@ -489,13 +390,11 @@ END SUBROUTINE BIKHARDT4D
 !*       0.     DECLARATIONS
 !               ------------
 !
-USE MODI_BIKHARDT4D      
-!
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
-                                    ! interpolation coefficients  
+                                    ! interpolation coefficients
 REAL, DIMENSION(:), INTENT(IN) :: PBMX1,PBMX2,PBMX3,PBMX4 ! Mass points in X-direc.
 REAL, DIMENSION(:), INTENT(IN) :: PBMY1,PBMY2,PBMY3,PBMY4 ! Mass points in Y-direc.
 REAL, DIMENSION(:), INTENT(IN) :: PBFX1,PBFX2,PBFX3,PBFX4 ! Flux points in X-direc.
@@ -578,13 +477,11 @@ END SUBROUTINE BIKHARDT3D
 !*       0.     DECLARATIONS
 !               ------------
 !
-USE MODI_BIKHARDT4D      
-!
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
-                                    ! interpolation coefficients  
+                                    ! interpolation coefficients
 REAL, DIMENSION(:), INTENT(IN) :: PBMX1,PBMX2,PBMX3,PBMX4 ! Mass points in X-direc.
 REAL, DIMENSION(:), INTENT(IN) :: PBMY1,PBMY2,PBMY3,PBMY4 ! Mass points in Y-direc.
 REAL, DIMENSION(:), INTENT(IN) :: PBFX1,PBFX2,PBFX3,PBFX4 ! Flux points in X-direc.
@@ -614,3 +511,5 @@ PFIELD2(:,:)  =ZFIELD2(:,:,1,1)
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE BIKHARDT2D
+
+end module mode_bikhardt

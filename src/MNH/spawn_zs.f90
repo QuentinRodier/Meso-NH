@@ -110,7 +110,7 @@ use modd_precision,  only: MNHREAL_MPI
 !
 USE MODD_BIKHARDT_n
 !
-USE MODI_BIKHARDT
+use mode_bikhardt
 USE MODI_ZS_BOUNDARY
 !
 USE MODE_MODELN_HANDLER

@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1997-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
 !-----------------------------------------------------------------
 !     #########################
       MODULE MODI_INI_SPAWN_LS_n
@@ -147,6 +143,7 @@ END MODULE MODI_INI_SPAWN_LS_n
 !
 !*      0.   DECLARATIONS
 !            ------------
+use mode_bikhardt
 USE MODE_ll
 USE MODE_MODELN_HANDLER
 !
@@ -158,7 +155,6 @@ USE MODD_FIELD_n     ! modules relative to the outer model $n
 USE MODD_LSFIELD_n
 USE MODD_GRID_n   
 !
-USE MODI_BIKHARDT
 USE MODI_SHUMAN
 USE MODI_COEF_VER_INTERP_LIN
 USE MODI_VER_INTERP_LIN
