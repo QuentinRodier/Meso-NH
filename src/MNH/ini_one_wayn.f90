@@ -3,78 +3,25 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!     #######################
-      MODULE MODI_INI_ONE_WAY_n
-!     #######################
-!
-INTERFACE 
-!
-      SUBROUTINE INI_ONE_WAY_n( KDAD,PTSTEP,KMI,KTCOUNT,                 &
-                    PBMX1,PBMX2,PBMX3,PBMX4,PBMY1,PBMY2,PBMY3,PBMY4,     &
-                    PBFX1,PBFX2,PBFX3,PBFX4,PBFY1,PBFY2,PBFY3,PBFY4,     &
-                    KDXRATIO,KDYRATIO,KDTRATIO,                          &
-                    HLBCX,HLBCY,KRIMX,KRIMY,                             &
-                    KKLIN_LBXU,PCOEFLIN_LBXU,KKLIN_LBYU,PCOEFLIN_LBYU,   &
-                    KKLIN_LBXV,PCOEFLIN_LBXV,KKLIN_LBYV,PCOEFLIN_LBYV,   &
-                    KKLIN_LBXW,PCOEFLIN_LBXW,KKLIN_LBYW,PCOEFLIN_LBYW,   &
-                    KKLIN_LBXM,PCOEFLIN_LBXM,KKLIN_LBYM,PCOEFLIN_LBYM,   &
-                    HCLOUD, OUSECHAQ, OUSECHIC,                          &
-                    PLBXUM,PLBYUM,PLBXVM,PLBYVM,PLBXWM,PLBYWM,           &
-                    PLBXTHM,PLBYTHM,                                     &
-                    PLBXTKEM,PLBYTKEM,                                   &
-                    PLBXRM,PLBYRM,PLBXSVM,PLBYSVM                        )
-!
-!
-INTEGER,          INTENT(IN)    :: KDAD     !  Number of the DAD model
-REAL,             INTENT(IN)    :: PTSTEP   !  Time step
-INTEGER,          INTENT(IN)    :: KMI      ! model number
-INTEGER,          INTENT(IN)    :: KTCOUNT  !  Temporal loop COUNTer
-                                            ! (=1 at the segment beginning)
-!
-                                    ! interpolation coefficients 
-REAL, DIMENSION(:), INTENT(IN) :: PBMX1,PBMX2,PBMX3,PBMX4 ! Mass points in X-direc.
-REAL, DIMENSION(:), INTENT(IN) :: PBMY1,PBMY2,PBMY3,PBMY4 ! Mass points in Y-direc.
-REAL, DIMENSION(:), INTENT(IN) :: PBFX1,PBFX2,PBFX3,PBFX4 ! Flux points in X-direc.
-REAL, DIMENSION(:), INTENT(IN) :: PBFY1,PBFY2,PBFY3,PBFY4 ! Flux points in Y-direc.
-!
-INTEGER,   INTENT(IN)  :: KDXRATIO   !  x and y-direction resolution RATIO
-INTEGER,   INTENT(IN)  :: KDYRATIO   ! between inner model and outer model
-INTEGER,   INTENT(IN)  :: KDTRATIO   !  Time step resolution RATIO
-CHARACTER (LEN=4), DIMENSION (2), INTENT(IN) :: HLBCX   ! type of lateral
-CHARACTER (LEN=4), DIMENSION (2), INTENT(IN) :: HLBCY   ! boundary conditions
-INTEGER,          INTENT(IN)    :: KRIMX,KRIMY ! size of the RIM area
-!  coefficients for the vertical interpolation of the LB fields
-INTEGER, DIMENSION(:,:,:), INTENT(  IN ) :: KKLIN_LBXU,KKLIN_LBYU 
-REAL,    DIMENSION(:,:,:), INTENT(  IN ) :: PCOEFLIN_LBXU,PCOEFLIN_LBYU
-INTEGER, DIMENSION(:,:,:), INTENT(  IN ) :: KKLIN_LBXV,KKLIN_LBYV 
-REAL,    DIMENSION(:,:,:), INTENT(  IN ) :: PCOEFLIN_LBXV,PCOEFLIN_LBYV
-INTEGER, DIMENSION(:,:,:), INTENT(  IN ) :: KKLIN_LBXW,KKLIN_LBYW 
-REAL,    DIMENSION(:,:,:), INTENT(  IN ) :: PCOEFLIN_LBXW,PCOEFLIN_LBYW
-INTEGER, DIMENSION(:,:,:), INTENT(  IN ) :: KKLIN_LBXM,KKLIN_LBYM 
-REAL,    DIMENSION(:,:,:), INTENT(  IN ) :: PCOEFLIN_LBXM,PCOEFLIN_LBYM
-CHARACTER (LEN=4), INTENT(IN)           :: HCLOUD        ! Indicator of the cloud scheme
-LOGICAL,           INTENT(IN)           :: OUSECHAQ      ! logical for aqueous phase chemistry
-LOGICAL,           INTENT(IN)           :: OUSECHIC      ! logical for ice phase chemistry
-!  
-REAL, DIMENSION(:,:,:), INTENT(OUT)    :: PLBXUM,PLBXVM,PLBXWM ! Large Scale fields at t-dt
-REAL, DIMENSION(:,:,:), INTENT(OUT)    :: PLBYUM,PLBYVM,PLBYWM 
-REAL, DIMENSION(:,:,:),  INTENT(OUT)  :: PLBXTHM ,PLBYTHM  ! Large Scale fields at t-dt
-REAL, DIMENSION(:,:,:),  INTENT(OUT)  :: PLBXTKEM,PLBYTKEM ! Theta, TKE
-REAL, DIMENSION(:,:,:,:),INTENT(OUT)  :: PLBXRM  ,PLBYRM   ! Moisture and SV
-REAL, DIMENSION(:,:,:,:),INTENT(OUT)  :: PLBXSVM ,PLBYSVM  ! in x and y-dir.
-!
-END SUBROUTINE INI_ONE_WAY_n
-!
-END INTERFACE
-!
-END MODULE MODI_INI_ONE_WAY_n
-!
+!########################
+MODULE MODE_INI_ONE_WAY_n
+!########################
+
+use mode_msg
+
+implicit none
+
+private
+
+public :: INI_ONE_WAY_n, Compute_ini_LB
+
+contains
 
 !     ####################################################################
-SUBROUTINE INI_ONE_WAY_n(KDAD,PTSTEP,KMI,KTCOUNT,                        &
+SUBROUTINE INI_ONE_WAY_n(KDAD,KMI,                                       &
                     PBMX1,PBMX2,PBMX3,PBMX4,PBMY1,PBMY2,PBMY3,PBMY4,     &
                     PBFX1,PBFX2,PBFX3,PBFX4,PBFY1,PBFY2,PBFY3,PBFY4,     &
-                    KDXRATIO,KDYRATIO,KDTRATIO,                          &
+                    KDXRATIO,KDYRATIO,                                   &
                     HLBCX,HLBCY,KRIMX,KRIMY,                             &
                     KKLIN_LBXU,PCOEFLIN_LBXU,KKLIN_LBYU,PCOEFLIN_LBYU,   &
                     KKLIN_LBXV,PCOEFLIN_LBXV,KKLIN_LBYV,PCOEFLIN_LBYV,   &
@@ -141,100 +88,96 @@ SUBROUTINE INI_ONE_WAY_n(KDAD,PTSTEP,KMI,KTCOUNT,                        &
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
-!!
+!  P. Wautelet 03/05/2019: restructuration of one_wayn and ini_one_wayn
+!
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
 !            ------------
-USE MODE_ll
-use mode_msg
-USE MODE_MODELN_HANDLER
 !
-USE MODD_ARGSLIST_ll, ONLY : LIST_ll
-USE MODD_PARAMETERS
-USE MODD_CONF
-USE MODD_CST
-USE MODD_FIELD_n      ! modules relative to the outer model $n
-USE MODD_PARAM_n
-USE MODD_CH_MNHC_n, ONLY: LUSECHAQ, LUSECHIC
-USE MODD_REF_n
-USE MODD_NSV
-!
-USE MODI_VER_INTERP_LIN
-USE MODI_SET_CONC_RAIN_C2R2
-USE MODI_SET_CONC_ICE_C1R3
-USE MODI_SET_CHEMAQ_1WAY
+USE MODD_CH_MNHC_n,      only: LUSECHAQ, LUSECHIC
+USE MODD_CST,            only: XTH00
+USE MODD_FIELD_n,        only: XRT, XSVT, XUT, XVT, XWT, XTHT, XTKET
+USE MODD_NSV,            only: NSV_A, NSV_C1R3BEG_A, NSV_C1R3_A, NSV_C2R2BEG_A, NSV_C2R2_A, NSV_CHEMBEG_A, NSV_CHEMEND_A,     &
+                               NSV_CHEM_A, NSV_CHICBEG_A, NSV_CHIC_A, NSV_DSTBEG_A, NSV_DSTDEPBEG_A, NSV_DSTDEP_A, NSV_DST_A, &
+                               NSV_ELECBEG_A, NSV_ELEC_A, NSV_LGBEG_A, NSV_LG_A, NSV_LIMA_A, NSV_LIMA_BEG_A,                  &
+                               NSV_LNOXBEG_A, NSV_LNOX_A, NSV_PPBEG_A, NSV_PP_A,                                              &
+                               NSV_SLTBEG_A, NSV_SLTDEPBEG_A, NSV_SLTDEP_A, NSV_SLT_A, NSV_USER_A
+
+USE MODD_PARAM_n,        only: CCLOUD
+USE MODD_REF_n,          only: XRHODJ, XRHODREF
 !
 use mode_bikhardt
+use mode_ll,             only: LS_FORCING_ll, LWEST_ll, LEAST_ll, LNORTH_ll, LSOUTH_ll, SET_LSFIELD_1WAY_ll
+USE MODE_MODELN_HANDLER, only: GOTO_MODEL
+!
+USE MODI_SET_CHEMAQ_1WAY
+USE MODI_SET_CONC_ICE_C1R3
 USE MODI_SET_CONC_LIMA
+USE MODI_SET_CONC_RAIN_C2R2
+!
 !
 IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
 !
 !
-INTEGER,          INTENT(IN)    :: KDAD     !  Number of the DAD model
-REAL,             INTENT(IN)    :: PTSTEP   !  Time step
-INTEGER,          INTENT(IN)    :: KMI      ! model number
-INTEGER,          INTENT(IN)    :: KTCOUNT  !  Temporal loop COUNTer
-                                            ! (=1 at the segment beginning)
+INTEGER,                          INTENT(IN)  :: KDAD     !  Number of the DAD model
+INTEGER,                          INTENT(IN)  :: KMI      ! model number
+! interpolation coefficients
+REAL,    DIMENSION(:),            INTENT(IN)  :: PBMX1,PBMX2,PBMX3,PBMX4 ! Mass points in X-direc.
+REAL,    DIMENSION(:),            INTENT(IN)  :: PBMY1,PBMY2,PBMY3,PBMY4 ! Mass points in Y-direc.
+REAL,    DIMENSION(:),            INTENT(IN)  :: PBFX1,PBFX2,PBFX3,PBFX4 ! Flux points in X-direc.
+REAL,    DIMENSION(:),            INTENT(IN)  :: PBFY1,PBFY2,PBFY3,PBFY4 ! Flux points in Y-direc.
 !
-                                    ! interpolation coefficients
-REAL, DIMENSION(:), INTENT(IN) :: PBMX1,PBMX2,PBMX3,PBMX4 ! Mass points in X-direc.
-REAL, DIMENSION(:), INTENT(IN) :: PBMY1,PBMY2,PBMY3,PBMY4 ! Mass points in Y-direc.
-REAL, DIMENSION(:), INTENT(IN) :: PBFX1,PBFX2,PBFX3,PBFX4 ! Flux points in X-direc.
-REAL, DIMENSION(:), INTENT(IN) :: PBFY1,PBFY2,PBFY3,PBFY4 ! Flux points in Y-direc.
-!
-INTEGER,   INTENT(IN)  :: KDXRATIO   !  x and y-direction resolution RATIO
-INTEGER,   INTENT(IN)  :: KDYRATIO   ! between inner model and outer model
-INTEGER,   INTENT(IN)  :: KDTRATIO   !  Time step resolution RATIO
-CHARACTER (LEN=4), DIMENSION (2), INTENT(IN) :: HLBCX   ! type of lateral
-CHARACTER (LEN=4), DIMENSION (2), INTENT(IN) :: HLBCY   ! boundary conditions
-INTEGER,          INTENT(IN)    :: KRIMX,KRIMY ! size of the RIM area
+INTEGER,                          INTENT(IN)  :: KDXRATIO   !  x and y-direction resolution RATIO
+INTEGER,                          INTENT(IN)  :: KDYRATIO   ! between inner model and outer model
+CHARACTER (LEN=4), DIMENSION (2), INTENT(IN)  :: HLBCX      ! type of lateral
+CHARACTER (LEN=4), DIMENSION (2), INTENT(IN)  :: HLBCY      ! boundary conditions
+INTEGER,          INTENT(IN)    :: KRIMX,KRIMY              ! size of the RIM area
 !  coefficients for the vertical interpolation of the LB fields
-INTEGER, DIMENSION(:,:,:), INTENT(  IN ) :: KKLIN_LBXU,KKLIN_LBYU
-REAL,    DIMENSION(:,:,:), INTENT(  IN ) :: PCOEFLIN_LBXU,PCOEFLIN_LBYU
-INTEGER, DIMENSION(:,:,:), INTENT(  IN ) :: KKLIN_LBXV,KKLIN_LBYV
-REAL,    DIMENSION(:,:,:), INTENT(  IN ) :: PCOEFLIN_LBXV,PCOEFLIN_LBYV
-INTEGER, DIMENSION(:,:,:), INTENT(  IN ) :: KKLIN_LBXW,KKLIN_LBYW
-REAL,    DIMENSION(:,:,:), INTENT(  IN ) :: PCOEFLIN_LBXW,PCOEFLIN_LBYW
-INTEGER, DIMENSION(:,:,:), INTENT(  IN ) :: KKLIN_LBXM,KKLIN_LBYM
-REAL,    DIMENSION(:,:,:), INTENT(  IN ) :: PCOEFLIN_LBXM,PCOEFLIN_LBYM
-CHARACTER (LEN=4), INTENT(IN)  :: HCLOUD        ! Indicator of the cloud scheme
-LOGICAL,           INTENT(IN)  :: OUSECHAQ      ! logical for aqueous phase
-LOGICAL,           INTENT(IN)  :: OUSECHIC      ! logical for ice phase chemistry
+INTEGER, DIMENSION(:,:,:),        INTENT(IN)  :: KKLIN_LBXU,KKLIN_LBYU
+REAL,    DIMENSION(:,:,:),        INTENT(IN)  :: PCOEFLIN_LBXU,PCOEFLIN_LBYU
+INTEGER, DIMENSION(:,:,:),        INTENT(IN)  :: KKLIN_LBXV,KKLIN_LBYV
+REAL,    DIMENSION(:,:,:),        INTENT(IN)  :: PCOEFLIN_LBXV,PCOEFLIN_LBYV
+INTEGER, DIMENSION(:,:,:),        INTENT(IN)  :: KKLIN_LBXW,KKLIN_LBYW
+REAL,    DIMENSION(:,:,:),        INTENT(IN)  :: PCOEFLIN_LBXW,PCOEFLIN_LBYW
+INTEGER, DIMENSION(:,:,:),        INTENT(IN)  :: KKLIN_LBXM,KKLIN_LBYM
+REAL,    DIMENSION(:,:,:),        INTENT(IN)  :: PCOEFLIN_LBXM,PCOEFLIN_LBYM
+CHARACTER (LEN=4),                INTENT(IN)  :: HCLOUD        ! Indicator of the cloud scheme
+LOGICAL,                          INTENT(IN)  :: OUSECHAQ      ! logical for aqueous phase
+LOGICAL,                          INTENT(IN)  :: OUSECHIC      ! logical for ice phase chemistry
 !
-REAL, DIMENSION(:,:,:), INTENT(OUT)    :: PLBXUM,PLBXVM,PLBXWM ! Large Scale fields at t-dt
-REAL, DIMENSION(:,:,:), INTENT(OUT)    :: PLBYUM,PLBYVM,PLBYWM
-REAL, DIMENSION(:,:,:),  INTENT(OUT)  :: PLBXTHM ,PLBYTHM  ! Large Scale fields at t-dt
-REAL, DIMENSION(:,:,:),  INTENT(OUT)  :: PLBXTKEM,PLBYTKEM ! Theta, TKE
-REAL, DIMENSION(:,:,:,:),INTENT(OUT)  :: PLBXRM  ,PLBYRM   ! Moisture and SV
-REAL, DIMENSION(:,:,:,:),INTENT(OUT)  :: PLBXSVM ,PLBYSVM  ! in x and y-dir.
+REAL,    DIMENSION(:,:,:),        INTENT(OUT) :: PLBXUM,PLBXVM,PLBXWM ! Large Scale fields at t-dt
+REAL,    DIMENSION(:,:,:),        INTENT(OUT) :: PLBYUM,PLBYVM,PLBYWM
+REAL,    DIMENSION(:,:,:),        INTENT(OUT) :: PLBXTHM ,PLBYTHM  ! Large Scale fields at t-dt
+REAL,    DIMENSION(:,:,:),        INTENT(OUT) :: PLBXTKEM,PLBYTKEM ! Theta, TKE
+REAL,    DIMENSION(:,:,:,:),      INTENT(OUT) :: PLBXRM  ,PLBYRM   ! Moisture and SV
+REAL,    DIMENSION(:,:,:,:),      INTENT(OUT) :: PLBXSVM ,PLBYSVM  ! in x and y-dir.
 !
 !
 !*       0.2   declarations of local variables
 !
-INTEGER                :: IIB,IIE,IJB,IJE,IIU,IJU
-INTEGER                :: ILBX,ILBY,ILBX2,ILBY2
-REAL,   DIMENSION(:,:,:), ALLOCATABLE  :: ZWORK
-LOGICAL  :: GVERT_INTERP
+INTEGER                                  :: IIB,IIE,IJB,IJE,IIU,IJU
+REAL,   DIMENSION(:,:,:),    ALLOCATABLE :: ZWORK
 !
-INTEGER           :: IRR,ISV_USER          !  Number of moist and user scalar variables
-INTEGER           :: JRR,JSV          !  Loop index
+INTEGER                                  :: IRR,ISV_USER !  Number of moist and user scalar variables
+INTEGER                                  :: JRR,JSV      !  Loop index
+INTEGER                                  :: IGRID
 !
 ! reduced array for the interpolation coefficients
-REAL, DIMENSION(:,:,:), ALLOCATABLE ::  ZCOEFLIN_LBXM_RED,ZCOEFLIN_LBYM_RED
-INTEGER, DIMENSION(:,:,:), ALLOCATABLE :: IKLIN_LBXM_RED,IKLIN_LBYM_RED
+REAL,    DIMENSION(:,:,:),   ALLOCATABLE :: ZCOEFLIN_LBXM_RED,ZCOEFLIN_LBYM_RED
+INTEGER, DIMENSION(:,:,:),   ALLOCATABLE :: IKLIN_LBXM_RED,IKLIN_LBYM_RED
 !
 ! Variables used for LS communications
-INTEGER :: IINFO_ll, IDIMX, IDIMY
-REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZTUM, ZTVM, ZTWM, ZTTHM, ZTTKEM
-REAL, DIMENSION(:,:,:,:), ALLOCATABLE ::ZTRM,ZTSVM
+INTEGER                                  :: IINFO_ll, IDIMX, IDIMY
+REAL,    DIMENSION(:,:,:),   ALLOCATABLE :: ZTUM, ZTVM, ZTWM, ZTTHM, ZTTKEM
+REAL,    DIMENSION(:,:,:,:), ALLOCATABLE :: ZTRM,ZTSVM
 !
-CHARACTER(LEN=4)                    :: ZINIT_TYPE ! type of C2R2 initialisation
-REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZCONCM  ! C2R2 concentrations
-REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZCHEMM  ! chemical concentrations
-REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZCHEMMI  ! chemical ice phase concentrations
+CHARACTER(LEN=4)                         :: ZINIT_TYPE ! type of C2R2 initialisation
+REAL,    DIMENSION(:,:,:,:), ALLOCATABLE :: ZCONCM  ! C2R2 concentrations
+REAL,    DIMENSION(:,:,:,:), ALLOCATABLE :: ZCHEMM  ! chemical concentrations
+REAL,    DIMENSION(:,:,:,:), ALLOCATABLE :: ZCHEMMI  ! chemical ice phase concentrations
 !-------------------------------------------------------------------------------
 !
 !*      0.   INITIALISATION
@@ -270,8 +213,6 @@ ELSE
   ALLOCATE (  IKLIN_LBYM_RED(SIZE(PLBYTHM,1),1,SIZE(PLBYTHM,3)))
 ENDIF
 !
-!
-GVERT_INTERP=.TRUE.
 !
 IRR=MIN(SIZE(XRT,4),SIZE(PLBXRM,4))
 ISV_USER=MIN(NSV_USER_A(KDAD),NSV_USER_A(KMI))
@@ -551,190 +492,69 @@ IF (ALLOCATED(ZCHEMMI)) DEALLOCATE(ZCHEMMI)
 !*      1.   U FIELD TREATMENT
 !            -----------------
 !
-!*      1.1  Horizontal Bikhardt interpolation
-!
-PLBXUM=0.
-PLBYUM=0.
-!
-CALL BIKHARDT (PBMX1,PBMX2,PBMX3,PBMX4,PBMY1,PBMY2,PBMY3,PBMY4, &
-               PBFX1,PBFX2,PBFX3,PBFX4,PBFY1,PBFY2,PBFY3,PBFY4, &
-               2,2,IDIMX-1,IDIMY-1,KDXRATIO,KDYRATIO,2,       &
-                                           HLBCX,HLBCY,ZTUM,ZWORK)
+IGRID = 2
+CALL Compute_ini_LB( PLBXUM, PLBYUM, ZTUM, ZWORK,                                  &
+                     PBMX1, PBMX2, PBMX3, PBMX4, PBMY1, PBMY2, PBMY3, PBMY4,       &
+                     PBFX1, PBFX2, PBFX3, PBFX4, PBFY1, PBFY2, PBFY3, PBFY4,       &
+                     IIB, IIE, IJB, IJE, IGRID,                                    &
+                     IDIMX, IDIMY, KDXRATIO, KDYRATIO, HLBCX, HLBCY, KRIMX, KRIMY, &
+                     KKLIN_LBXU, KKLIN_LBYU,                                       &
+                     PCOEFLIN_LBXU, PCOEFLIN_LBYU )
 DEALLOCATE(ZTUM)
-!
-ILBX2=SIZE(PLBXUM,1)
-IF(LWEST_ll( ).AND.LEAST_ll( )) THEN
-  ILBX=ILBX2/2
-ELSE
-  ILBX=ILBX2
-ENDIF
-!
-IF(LWEST_ll( ) .AND. ILBX/=0) THEN
-  PLBXUM(1:ILBX,IJB:IJE,:)=ZWORK(IIB+1:IIB+ILBX,IJB:IJE,:)  !  C grid
-ENDIF
-!
-IF(LEAST_ll( ) .AND. ILBX/=0) THEN
-  PLBXUM(ILBX2-ILBX+1:ILBX2,IJB:IJE,:)=ZWORK(IIE+1-ILBX:IIE,IJB:IJE,:)
-ENDIF
-!
-ILBY2=SIZE(PLBYUM,2)
-IF(LSOUTH_ll( ).AND.LNORTH_ll( )) THEN
-  ILBY=ILBY2/2
-ELSE
-  ILBY=ILBY2
-ENDIF
-!
-IF(LSOUTH_ll( ) .AND. ILBY/=0) THEN
-  PLBYUM(IIB:IIE,1:ILBY,:)=ZWORK(IIB:IIE,IJB:IJB-1+ILBY,:)
-ENDIF
-!
-IF(LNORTH_ll( ) .AND. ILBY/=0) THEN
-  PLBYUM(IIB:IIE,ILBY2-ILBY+1:ILBY2,:)=ZWORK(IIB:IIE,IJE+1-ILBY:IJE,:)
-ENDIF
-!
-!*      1.2  Vertical interpolation
-!
-IF ( SIZE(PLBXUM,1) /= 0 .AND. GVERT_INTERP) THEN
-  PLBXUM(:,:,:) = VER_INTERP_LIN(PLBXUM(:,:,:),   &
-                                   KKLIN_LBXU(:,:,:),PCOEFLIN_LBXU(:,:,:))
-END IF
-!
-IF ( SIZE(PLBYUM,1) /= 0 .AND. GVERT_INTERP) THEN
-  PLBYUM(:,:,:) = VER_INTERP_LIN(PLBYUM(:,:,:),   &
-                                   KKLIN_LBYU(:,:,:),PCOEFLIN_LBYU(:,:,:))
-END IF
 !
 !-------------------------------------------------------------------------------
 !
 !*      2.   V FIELD TREATMENT
 !            -----------------
 !
-!*      2.1  Horizontal Bikhardt interpolation
-!
-PLBXVM=0.
-PLBYVM=0.
-!
-CALL BIKHARDT (PBMX1,PBMX2,PBMX3,PBMX4,PBMY1,PBMY2,PBMY3,PBMY4, &
-               PBFX1,PBFX2,PBFX3,PBFX4,PBFY1,PBFY2,PBFY3,PBFY4, &
-               2,2,IDIMX-1,IDIMY-1,KDXRATIO,KDYRATIO,3,       &
-                                           HLBCX,HLBCY,ZTVM,ZWORK)
+IGRID = 3
+CALL Compute_ini_LB( PLBXVM, PLBYVM, ZTVM, ZWORK,                                  &
+                     PBMX1, PBMX2, PBMX3, PBMX4, PBMY1, PBMY2, PBMY3, PBMY4,       &
+                     PBFX1, PBFX2, PBFX3, PBFX4, PBFY1, PBFY2, PBFY3, PBFY4,       &
+                     IIB, IIE, IJB, IJE, IGRID,                                    &
+                     IDIMX, IDIMY, KDXRATIO, KDYRATIO, HLBCX, HLBCY, KRIMX, KRIMY, &
+                     KKLIN_LBXV, KKLIN_LBYV,                                       &
+                     PCOEFLIN_LBXV, PCOEFLIN_LBYV )
 DEALLOCATE(ZTVM)
 !
-ILBX2=SIZE(PLBXVM,1)
-IF(LWEST_ll( ).AND.LEAST_ll( )) THEN
-  ILBX=ILBX2/2
-ELSE
-  ILBX=ILBX2
-ENDIF
-!
-IF(LWEST_ll( ) .AND. ILBX/=0) THEN
-  PLBXVM(1:ILBX,IJB:IJE,:)=ZWORK(IIB:IIB-1+ILBX,IJB:IJE,:)
-ENDIF
-!
-IF(LEAST_ll( ) .AND. ILBX/=0) THEN
-  PLBXVM(ILBX2-ILBX+1:ILBX2,IJB:IJE,:)=ZWORK(IIE+1-ILBX:IIE,IJB:IJE,:)
-ENDIF
-!
-ILBY2=SIZE(PLBYVM,2)
-IF(LSOUTH_ll( ).AND.LNORTH_ll( )) THEN
-  ILBY=ILBY2/2
-ELSE
-  ILBY=ILBY2
-ENDIF
-!
-IF(LSOUTH_ll( ) .AND. ILBY/=0) THEN
-  PLBYVM(IIB:IIE,1:ILBY,:)=ZWORK(IIB:IIE,IJB+1:IJB+ILBY,:)  !  C grid
-ENDIF
-!
-IF(LNORTH_ll( ) .AND. ILBY/=0) THEN
-  PLBYVM(IIB:IIE,ILBY2-ILBY+1:ILBY2,:)=ZWORK(IIB:IIE,IJE+1-ILBY:IJE,:)
-ENDIF
-!
-!*      1.2  Vertical interpolation
-!
-IF ( SIZE(PLBXVM,1) /= 0 .AND. GVERT_INTERP) THEN
-  PLBXVM(:,:,:) = VER_INTERP_LIN(PLBXVM(:,:,:),   &
-                                   KKLIN_LBXV(:,:,:),PCOEFLIN_LBXV(:,:,:))
-END IF
-!
-IF ( SIZE(PLBYVM,1) /= 0 .AND. GVERT_INTERP) THEN
-  PLBYVM(:,:,:) = VER_INTERP_LIN(PLBYVM(:,:,:),   &
-                                   KKLIN_LBYV(:,:,:),PCOEFLIN_LBYV(:,:,:))
-END IF
-
 !-------------------------------------------------------------------------------
 !
 !*      3.   W FIELD TREATMENT
 !            -----------------
 !
-!*      3.1  Horizontal Bikhardt interpolation
-!
-PLBXWM=0.
-PLBYWM=0.
-!
-CALL BIKHARDT (PBMX1,PBMX2,PBMX3,PBMX4,PBMY1,PBMY2,PBMY3,PBMY4, &
-               PBFX1,PBFX2,PBFX3,PBFX4,PBFY1,PBFY2,PBFY3,PBFY4, &
-               2,2,IDIMX-1,IDIMY-1,KDXRATIO,KDYRATIO,4,       &
-                                           HLBCX,HLBCY,ZTWM,ZWORK)
+IGRID = 4
+CALL Compute_ini_LB( PLBXWM, PLBYWM, ZTWM, ZWORK,                                  &
+                     PBMX1, PBMX2, PBMX3, PBMX4, PBMY1, PBMY2, PBMY3, PBMY4,       &
+                     PBFX1, PBFX2, PBFX3, PBFX4, PBFY1, PBFY2, PBFY3, PBFY4,       &
+                     IIB, IIE, IJB, IJE, IGRID,                                    &
+                     IDIMX, IDIMY, KDXRATIO, KDYRATIO, HLBCX, HLBCY, KRIMX, KRIMY, &
+                     KKLIN_LBXW, KKLIN_LBYW,                                       &
+                     PCOEFLIN_LBXW, PCOEFLIN_LBYW )
 DEALLOCATE(ZTWM)
-!
-ILBX2=SIZE(PLBXWM,1)
-IF(LWEST_ll( ).AND.LEAST_ll( )) THEN
-  ILBX=ILBX2/2
-ELSE
-  ILBX=ILBX2
-ENDIF
-!
-IF(LWEST_ll( ) .AND. ILBX/=0) THEN
-  PLBXWM(1:ILBX,IJB:IJE,:)=ZWORK(IIB:IIB-1+ILBX,IJB:IJE,:)
-ENDIF
-!
-IF(LEAST_ll( ) .AND. ILBX/=0) THEN
-  PLBXWM(ILBX2-ILBX+1:ILBX2,IJB:IJE,:)=ZWORK(IIE+1-ILBX:IIE,IJB:IJE,:)
-ENDIF
-!
-ILBY2=SIZE(PLBYWM,2)
-IF(LSOUTH_ll( ).AND.LNORTH_ll( )) THEN
-  ILBY=ILBY2/2
-ELSE
-  ILBY=ILBY2
-ENDIF
-!
-IF(LSOUTH_ll( ) .AND. ILBY/=0) THEN
-  PLBYWM(IIB:IIE,1:ILBY,:)=ZWORK(IIB:IIE,IJB:IJB-1+ILBY,:)
-ENDIF
-!
-IF(LNORTH_ll( ) .AND. ILBY/=0) THEN
-  PLBYWM(IIB:IIE,ILBY2-ILBY+1:ILBY2,:)=ZWORK(IIB:IIE,IJE+1-ILBY:IJE,:)
-ENDIF
-!
-!*      1.2  Vertical interpolation
-!
-IF ( SIZE(PLBXWM,1) /= 0 .AND. GVERT_INTERP) THEN
-  PLBXWM(:,:,:) = VER_INTERP_LIN(PLBXWM(:,:,:),   &
-                                   KKLIN_LBXW(:,:,:),PCOEFLIN_LBXW(:,:,:))
-END IF
-!
-IF ( SIZE(PLBYWM,1) /= 0 .AND. GVERT_INTERP) THEN
-  PLBYWM(:,:,:) = VER_INTERP_LIN(PLBYWM(:,:,:),   &
-                                   KKLIN_LBYW(:,:,:),PCOEFLIN_LBYW(:,:,:))
-END IF
-!
-!
 !
 !-------------------------------------------------------------------------------
 !
-!*      5.   COMPUTE LARGE SCALE SOURCES FOR POTENTIAL TEMPERATURE
+!*      4.   COMPUTE LARGE SCALE SOURCES FOR POTENTIAL TEMPERATURE
 !            -----------------------------------------------------
 !
-CALL COMPUTE_LB_M(PLBXTHM,PLBYTHM,ZTTHM,XTH00)
+IGRID = 1
+CALL Compute_ini_LB( PLBXTHM, PLBYTHM, ZTTHM, ZWORK,                                            &
+                     PBMX1, PBMX2, PBMX3, PBMX4, PBMY1, PBMY2, PBMY3, PBMY4,                    &
+                     PBFX1, PBFX2, PBFX3, PBFX4, PBFY1, PBFY2, PBFY3, PBFY4,                    &
+                     IIB, IIE, IJB, IJE, IGRID,                                                 &
+                     IDIMX, IDIMY, KDXRATIO, KDYRATIO, HLBCX, HLBCY, KRIMX, KRIMY,              &
+                     KKLIN_LBXM, KKLIN_LBYM,                                                    &
+                     PCOEFLIN_LBXM, PCOEFLIN_LBYM,                                              &
+                     PTH00 = XTH00,                                                             &
+                     KKLIN_LBX_RED    = IKLIN_LBXM_RED,    KKLIN_LBY_RED    = IKLIN_LBYM_RED,   &
+                     PCOEFLIN_LBX_RED = ZCOEFLIN_LBXM_RED, PCOEFLIN_LBY_RED = ZCOEFLIN_LBYM_RED )
 !
 DEALLOCATE(ZTTHM)
 !
 !
 !-------------------------------------------------------------------------------
 !
-!*      6.   COMPUTE LARGE SCALE SOURCES FOR TURBULENT KINETIC ENERGY
+!*      5.   COMPUTE LARGE SCALE SOURCES FOR TURBULENT KINETIC ENERGY
 !            --------------------------------------------------------
 !
 !
@@ -742,13 +562,22 @@ IF (SIZE(XTKET,3) == 0 .OR. SIZE(PLBXTKEM,3) == 0) THEN
   PLBXTKEM(:,:,:) = 0.                      ! turbulence not activated
   PLBYTKEM(:,:,:) = 0.
 ELSE
-  CALL COMPUTE_LB_M(PLBXTKEM,PLBYTKEM,ZTTKEM)
+  IGRID = 1
+  CALL Compute_ini_LB( PLBXTKEM, PLBYTKEM, ZTTKEM, ZWORK,                                         &
+                       PBMX1, PBMX2, PBMX3, PBMX4, PBMY1, PBMY2, PBMY3, PBMY4,                    &
+                       PBFX1, PBFX2, PBFX3, PBFX4, PBFY1, PBFY2, PBFY3, PBFY4,                    &
+                       IIB, IIE, IJB, IJE, IGRID,                                                 &
+                       IDIMX, IDIMY, KDXRATIO, KDYRATIO, HLBCX, HLBCY, KRIMX, KRIMY,              &
+                       KKLIN_LBXM, KKLIN_LBYM,                                                    &
+                       PCOEFLIN_LBXM, PCOEFLIN_LBYM,                                              &
+                       KKLIN_LBX_RED    = IKLIN_LBXM_RED,    KKLIN_LBY_RED    = IKLIN_LBYM_RED,   &
+                       PCOEFLIN_LBX_RED = ZCOEFLIN_LBXM_RED, PCOEFLIN_LBY_RED = ZCOEFLIN_LBYM_RED )
   DEALLOCATE(ZTTKEM)
 ENDIF
 !
 !-------------------------------------------------------------------------------
 !
-!*      7.   COMPUTE LARGE SCALE SOURCES FOR MOIST VARIABLES
+!*      6.   COMPUTE LARGE SCALE SOURCES FOR MOIST VARIABLES
 !            -----------------------------------------------
 !
 !
@@ -756,8 +585,17 @@ IF (IRR == 0 ) THEN
   PLBXRM(:,:,:,:) = 0.                      ! water cycle not activated
   PLBYRM(:,:,:,:) = 0.
 ELSE
+  IGRID = 1
   DO JRR = 1,IRR
-    CALL COMPUTE_LB_M(PLBXRM(:,:,:,JRR),PLBYRM(:,:,:,JRR),ZTRM(:,:,:,JRR))
+    CALL Compute_ini_LB( PLBXRM(:,:,:,JRR), PLBYRM(:,:,:,JRR), ZTRM(:,:,:,JRR), ZWORK,              &
+                         PBMX1, PBMX2, PBMX3, PBMX4, PBMY1, PBMY2, PBMY3, PBMY4,                    &
+                         PBFX1, PBFX2, PBFX3, PBFX4, PBFY1, PBFY2, PBFY3, PBFY4,                    &
+                         IIB, IIE, IJB, IJE, IGRID,                                                 &
+                         IDIMX, IDIMY, KDXRATIO, KDYRATIO, HLBCX, HLBCY, KRIMX, KRIMY,              &
+                         KKLIN_LBXM, KKLIN_LBYM,                                                    &
+                         PCOEFLIN_LBXM, PCOEFLIN_LBYM,                                              &
+                         KKLIN_LBX_RED    = IKLIN_LBXM_RED,    KKLIN_LBY_RED    = IKLIN_LBYM_RED,   &
+                         PCOEFLIN_LBX_RED = ZCOEFLIN_LBXM_RED, PCOEFLIN_LBY_RED = ZCOEFLIN_LBYM_RED )
   END DO
   DEALLOCATE(ZTRM)
 !
@@ -768,13 +606,22 @@ END IF
 !
 !-------------------------------------------------------------------------------
 !
-!*      8.   COMPUTE LARGE SCALE SOURCES FOR SCALAR VARIABLES
+!*      7.   COMPUTE LARGE SCALE SOURCES FOR SCALAR VARIABLES
 !            ------------------------------------------------
 !
 !
 IF (NSV_A(KMI) > 0) THEN
+  IGRID = 1
   DO JSV = 1,NSV_A(KMI)
-    CALL COMPUTE_LB_M(PLBXSVM(:,:,:,JSV),PLBYSVM(:,:,:,JSV),ZTSVM(:,:,:,JSV))
+    CALL Compute_ini_LB( PLBXSVM(:,:,:,JSV),PLBYSVM(:,:,:,JSV),ZTSVM(:,:,:,JSV), ZWORK,             &
+                         PBMX1, PBMX2, PBMX3, PBMX4, PBMY1, PBMY2, PBMY3, PBMY4,                    &
+                         PBFX1, PBFX2, PBFX3, PBFX4, PBFY1, PBFY2, PBFY3, PBFY4,                    &
+                         IIB, IIE, IJB, IJE, IGRID,                                                 &
+                         IDIMX, IDIMY, KDXRATIO, KDYRATIO, HLBCX, HLBCY, KRIMX, KRIMY,              &
+                         KKLIN_LBXM, KKLIN_LBYM,                                                    &
+                         PCOEFLIN_LBXM, PCOEFLIN_LBYM,                                              &
+                         KKLIN_LBX_RED    = IKLIN_LBXM_RED,    KKLIN_LBY_RED    = IKLIN_LBYM_RED,   &
+                         PCOEFLIN_LBX_RED = ZCOEFLIN_LBXM_RED, PCOEFLIN_LBY_RED = ZCOEFLIN_LBYM_RED )
   END DO
   DEALLOCATE(ZTSVM)
 ELSE
@@ -788,20 +635,67 @@ DEALLOCATE(ZCOEFLIN_LBXM_RED,ZCOEFLIN_LBYM_RED,IKLIN_LBXM_RED,IKLIN_LBYM_RED)
 CALL GOTO_MODEL(KMI)
 !------------------------------------------------------------------------------
 !
-CONTAINS
+END SUBROUTINE INI_ONE_WAY_n
+
+
+
+!#################################################################################
+SUBROUTINE Compute_ini_LB(PLBX,PLBY,PTFIELD,PWORK,                               &
+                          PBMX1,PBMX2,PBMX3,PBMX4,PBMY1,PBMY2,PBMY3,PBMY4,       &
+                          PBFX1,PBFX2,PBFX3,PBFX4,PBFY1,PBFY2,PBFY3,PBFY4,       &
+                          KIB,KIE,KJB,KJE, KGRID,                                &
+                          KDIMX,KDIMY,KDXRATIO,KDYRATIO,HLBCX,HLBCY,KRIMX,KRIMY, &
+                          KKLIN_LBX,KKLIN_LBY,                                   &
+                          PCOEFLIN_LBX,PCOEFLIN_LBY,                             &
+                          PTH00,                                                 &
+                          KKLIN_LBX_RED,KKLIN_LBY_RED,                           &
+                          PCOEFLIN_LBX_RED,PCOEFLIN_LBY_RED )
+!#################################################################################
 !
+use modd_parameters, only: jphext
+
+use mode_bikhardt
+use mode_ll,         only: LWEST_ll, LEAST_ll, LNORTH_ll, LSOUTH_ll
+
+use modi_ver_interp_lin
+
+IMPLICIT NONE
 !
-!     ################################################
-      SUBROUTINE COMPUTE_LB_M(PLBX,PLBY,PTFIELD,PTH00)
-!     ################################################
+!*       0.1   declarations of arguments
 !
-REAL, DIMENSION(:,:,:), INTENT(OUT) :: PLBX,PLBY ! source term
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: PTFIELD   ! ls forcing array
-REAL, OPTIONAL, INTENT(IN)          :: PTH00 ! reference temperature
+REAL,    DIMENSION(:,:,:),           INTENT(OUT) :: PLBX,PLBY ! source term
+REAL,    DIMENSION(:,:,:),           INTENT(IN)  :: PTFIELD   ! ls forcing array
+REAL,    DIMENSION(:,:,:),           INTENT(OUT) :: PWORK
+! interpolation coefficients
+REAL,    DIMENSION(:),               INTENT(IN)  :: PBMX1,PBMX2,PBMX3,PBMX4 ! Mass points in X-direc.
+REAL,    DIMENSION(:),               INTENT(IN)  :: PBMY1,PBMY2,PBMY3,PBMY4 ! Mass points in Y-direc.
+REAL,    DIMENSION(:),               INTENT(IN)  :: PBFX1,PBFX2,PBFX3,PBFX4 ! Flux points in X-direc.
+REAL,    DIMENSION(:),               INTENT(IN)  :: PBFY1,PBFY2,PBFY3,PBFY4 ! Flux points in Y-direc.
+INTEGER,                             INTENT(IN)  :: KIB,KIE,KJB,KJE
+INTEGER,                             INTENT(IN)  :: KGRID      ! code of grid point
+INTEGER,                             INTENT(IN)  :: KDIMX, KDIMY
+INTEGER,                             INTENT(IN)  :: KDXRATIO   !  x and y-direction resolution RATIO
+INTEGER,                             INTENT(IN)  :: KDYRATIO   ! between inner model and outer model
+CHARACTER (LEN=4), DIMENSION (2),    INTENT(IN)  :: HLBCX   ! type of lateral
+CHARACTER (LEN=4), DIMENSION (2),    INTENT(IN)  :: HLBCY   ! boundary conditions
+INTEGER,                             INTENT(IN)  :: KRIMX,KRIMY ! size of the RIM area
+INTEGER, DIMENSION(:,:,:),           INTENT(IN)  :: KKLIN_LBX,KKLIN_LBY
+REAL,    DIMENSION(:,:,:),           INTENT(IN)  :: PCOEFLIN_LBX,PCOEFLIN_LBY
+REAL,                      OPTIONAL, INTENT(IN)  :: PTH00 ! reference temperature
+INTEGER, DIMENSION(:,:,:), optional, INTENT(IN)  :: KKLIN_LBX_RED,KKLIN_LBY_RED
+REAL,    DIMENSION(:,:,:), optional, INTENT(in)  :: PCOEFLIN_LBX_RED,PCOEFLIN_LBY_RED
 !
+!*       0.2   declarations of local variables
+!
+INTEGER :: ILBX, ILBY, ILBX2, ILBY2
+INTEGER :: IW, IE, IN, IS
+!
+
+if ( kgrid<1 .or. kgrid>4 ) call Print_msg( NVERB_FATAL, 'GEN', 'Compute_LB', 'invalid kgrid dummy argument' )
+
 IF(PRESENT(PTH00)) THEN
-  PLBX=PTH00 ! to avoid undefined computation
-  PLBY=PTH00
+  PLBX(:,:,:) = PTH00 ! to avoid undefined computation
+  PLBY(:,:,:) = PTH00
 ELSE
   PLBX=0.
   PLBY=0.
@@ -812,8 +706,8 @@ ENDIF
 !
 CALL BIKHARDT (PBMX1,PBMX2,PBMX3,PBMX4,PBMY1,PBMY2,PBMY3,PBMY4, &
                PBFX1,PBFX2,PBFX3,PBFX4,PBFY1,PBFY2,PBFY3,PBFY4, &
-               2,2,IDIMX-1,IDIMY-1,KDXRATIO,KDYRATIO,1,       &
-                                           HLBCX,HLBCY,PTFIELD,ZWORK)
+               2,2,KDIMX-1,KDIMY-1,KDXRATIO,KDYRATIO,KGRID,     &
+               HLBCX,HLBCY,PTFIELD,PWORK)
 !
 ILBX2=SIZE(PLBX,1)
 IF(LWEST_ll( ).AND.LEAST_ll( )) THEN
@@ -823,11 +717,19 @@ ELSE
 ENDIF
 !
 IF(LWEST_ll( ) .AND. ILBX/=0) THEN
-  PLBX(1:ILBX,IJB:IJE,:)=ZWORK(IIB:IIB-1+ILBX,IJB:IJE,:)
+  iw = kib
+  ie = kib -1 + ilbx
+  if ( kgrid == 2 ) then
+    iw = iw + 1
+    ie = ie + 1
+  end if
+  PLBX(1:ILBX,KJB:KJE,:) = PWORK(iw:ie,KJB:KJE,: )
 ENDIF
 !
 IF(LEAST_ll( ) .AND. ILBX/=0) THEN
-  PLBX(ILBX2-ILBX+1:ILBX2,IJB:IJE,:)=ZWORK(IIE+1-ILBX:IIE,IJB:IJE,:)
+  iw = kie + 1 - ilbx
+  ie = kie
+  PLBX(ILBX2-ILBX+1:ILBX2,KJB:KJE,:) = PWORK(iw:ie,KJB:KJE,:)
 ENDIF
 !
 ILBY2=SIZE(PLBY,2)
@@ -838,36 +740,39 @@ ELSE
 ENDIF
 !
 IF(LSOUTH_ll( ) .AND. ILBY/=0) THEN
-  PLBY(IIB:IIE,1:ILBY,:)=ZWORK(IIB:IIE,IJB:IJB-1+ILBY,:)
+  is = kjb
+  in = kjb - 1 + ilby
+  if ( kgrid == 3 ) then
+    is = is + 1
+    in = in + 1
+  end if
+  PLBY(KIB:KIE,1:ILBY,:) = PWORK(KIB:KIE,is:in,:)
 ENDIF
 !
 IF(LNORTH_ll( ) .AND. ILBY/=0) THEN
-  PLBY(IIB:IIE,ILBY2-ILBY+1:ILBY2,:)=ZWORK(IIB:IIE,IJE+1-ILBY:IJE,:)
+  is = kje + 1 - ilby
+  in = kje
+  PLBY(KIB:KIE,ILBY2-ILBY+1:ILBY2,:) = PWORK(KIB:KIE,is:in,:)
 ENDIF
 !
 !*    Vertical interpolation
 !
-IF ( SIZE(PLBX,1) /= 0 .AND. GVERT_INTERP) THEN
-  IF ( ILBX == KRIMX+JPHEXT ) THEN
-    PLBX(:,:,:) = VER_INTERP_LIN(PLBX(:,:,:),   &
-                             KKLIN_LBXM(:,:,:),PCOEFLIN_LBXM(:,:,:))
-  ELSE
-    PLBX(:,:,:) = VER_INTERP_LIN(PLBX(:,:,:),  &
-                          IKLIN_LBXM_RED(:,:,:),ZCOEFLIN_LBXM_RED(:,:,:))
-  END IF
+IF ( SIZE(PLBX,1) /= 0 ) THEN
+  if ( present( kklin_lbx_red ) .and. ilbx /= krimx+jphext ) then
+    PLBX(:,:,:) = VER_INTERP_LIN( PLBX(:,:,:), KKLIN_LBX_RED(:,:,:), PCOEFLIN_LBX_RED(:,:,:) )
+  else
+    PLBX(:,:,:) = VER_INTERP_LIN( PLBX(:,:,:), KKLIN_LBX(:,:,:),     PCOEFLIN_LBX(:,:,:) )
+  end if
 END IF
 !
-IF ( SIZE(PLBY,1) /= 0 .AND. GVERT_INTERP) THEN
-  IF ( ILBY == KRIMY+JPHEXT ) THEN
-    PLBY(:,:,:) = VER_INTERP_LIN(PLBY(:,:,:),   &
-                                   KKLIN_LBYM(:,:,:),PCOEFLIN_LBYM(:,:,:))
-  ELSE
-    PLBY(:,:,:) = VER_INTERP_LIN(PLBY(:,:,:),   &
-                          IKLIN_LBYM_RED(:,:,:),ZCOEFLIN_LBYM_RED(:,:,:))
-  END IF
+IF ( SIZE(PLBY,1) /= 0 ) THEN
+  if ( present( kklin_lby_red ) .and. ilby /= krimy+jphext ) then
+    PLBY(:,:,:) = VER_INTERP_LIN( PLBY(:,:,:), KKLIN_LBY_RED(:,:,:), PCOEFLIN_LBY_RED(:,:,:) )
+  else
+    PLBY(:,:,:) = VER_INTERP_LIN( PLBY(:,:,:), KKLIN_LBY(:,:,:),     PCOEFLIN_LBY(:,:,:) )
+  end if
 END IF
 !
-!
-END SUBROUTINE  COMPUTE_LB_M
-!
-END SUBROUTINE INI_ONE_WAY_n
+END SUBROUTINE Compute_ini_LB
+
+END MODULE MODE_INI_ONE_WAY_n

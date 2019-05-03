@@ -45,12 +45,10 @@ END MODULE MODI_INI_SPECTRE_n
 !              ------------
 !
 USE MODD_ADV_n
+USE MODD_ARGSLIST_ll,   ONLY: LIST_ll
 USE MODD_BIKHARDT_n
 USE MODD_BUDGET
-USE MODD_CH_AERO_n,     ONLY: XSOLORG,XMI
-USE MODD_CH_AEROSOL,    ONLY: LORILAM
-USE MODD_CH_MNHC_n,     ONLY: LUSECHEM, LUSECHAQ, LUSECHIC, LCH_INIT_FIELD, &
-                              LCH_CONV_LINOX, XCH_TUV_DOBNEW, LCH_PH
+USE MODD_CH_MNHC_n,     ONLY: LUSECHAQ, LUSECHIC, LCH_INIT_FIELD
 USE MODD_CH_PH_n
 USE MODD_CLOUD_MF_n
 USE MODD_CST
@@ -59,7 +57,6 @@ USE MODD_CONF_n
 USE MODD_CTURB
 USE MODD_CURVCOR_n
 USE MODD_DEEP_CONVECTION_n
-USE MODD_DIAG_FLAG,     ONLY: LCHEMDIAG
 USE MODD_DIM_n
 USE MODD_DRAGTREE
 USE MODD_DUST
@@ -67,7 +64,6 @@ USE MODD_DYN
 USE MODD_DYN_n
 USE MODD_DYNZD
 USE MODD_DYNZD_n
-USE MODD_ELEC_n,        ONLY: XCION_POS_FW, XCION_NEG_FW
 USE MODD_FIELD_n
 USE MODD_FRC
 USE MODD_FRC_n
@@ -81,9 +77,8 @@ USE MODD_LUNIT_n,       ONLY: COUTFILE, TLUOUT
 USE MODD_MEAN_FIELD
 USE MODD_MEAN_FIELD_n
 USE MODD_METRICS_n
-USE MODD_NESTING,       only: CDAD_NAME, NDAD, NDT_2_WAY, NDTRATIO, NDXRATIO_ALL, NDYRATIO_ALL
+USE MODD_NESTING,       only: NDAD, NDT_2_WAY, NDXRATIO_ALL, NDYRATIO_ALL
 USE MODD_NSV
-USE MODD_NUDGING_n,     ONLY: LNUDGING
 USE MODD_OUT_n
 USE MODD_PARAMETERS
 USE MODD_PARAM_KAFR_n
@@ -97,18 +92,15 @@ USE MODD_PAST_FIELD_n
 USE MODD_RADIATIONS_n
 USE MODD_REF
 USE MODD_REF_n
-USE MODD_SERIES,        ONLY: LSERIES
 USE MODD_SHADOWS_n
 USE MODD_SPECTRE
-USE MODD_STAND_ATM,     ONLY: XSTROATM, XSMLSATM, XSMLWATM, XSPOSATM, XSPOWATM
 USE MODD_TIME
 USE MODD_TIME_n
-USE MODD_TURB_CLOUD,    ONLY: NMODEL_CLOUD, CTURBLEN_CLOUD,XCEI
 USE MODD_TURB_n
 USE MODD_VAR_ll,        ONLY: IP
 !
-USE MODD_ARGSLIST_ll,   ONLY: LIST_ll
 USE MODE_GATHER_ll
+USE MODE_INI_ONE_WAY_n
 USE MODE_IO_FIELD_READ, only: IO_Field_read
 USE MODE_ll
 USE MODE_MODELN_HANDLER
@@ -119,7 +111,6 @@ USE MODE_TYPE_ZDIFFU
 USE MODI_INI_BIKHARDT_n
 USE MODI_INI_CPL
 USE MODI_INI_DYNAMICS
-USE MODI_INI_ONE_WAY_n
 USE MODI_INI_SPAWN_LS_n
 USE MODI_GET_SIZEX_LB
 USE MODI_GET_SIZEY_LB
@@ -139,7 +130,6 @@ TYPE(TFILEDATA),   INTENT(IN) :: TPINIFILE ! Initial file
 !
 !*       0.2   declarations of local variables
 !
-INTEGER             :: JSV     ! Loop index
 INTEGER             :: ILUOUT  ! Logical unit number of output-listing
 INTEGER             :: IIU     ! Upper dimension in x direction (local)
 INTEGER             :: IJU     ! Upper dimension in y direction (local)
@@ -147,10 +137,6 @@ INTEGER             :: IIU_ll  ! Upper dimension in x direction (global)
 INTEGER             :: IJU_ll  ! Upper dimension in y direction (global)
 INTEGER             :: IKU     ! Upper dimension in z direction
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZJ ! Jacobian
-LOGICAL             :: GINIDCONV ! logical switch for the deep convection
-                               ! initialization
-LOGICAL             :: GINIRAD ! logical switch for the radiation
-                               ! initialization
 !
 !
 TYPE(LIST_ll), POINTER :: TZINITHALO2D_ll ! pointer for the list of 2D fields
@@ -167,14 +153,6 @@ INTEGER :: IIY,IJY
 INTEGER :: IIU_B,IJU_B
 INTEGER :: IIU_SXP2_YP1_Z_ll,IJU_SXP2_YP1_Z_ll,IKU_SXP2_YP1_Z_ll
 !
-REAL, DIMENSION(:,:),   ALLOCATABLE :: ZCO2   ! CO2 concentration near the surface
-REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZCOVER ! surface cover types
-INTEGER                             :: ICOVER ! number of cover types
-!
-REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZDIR_ALB ! direct albedo
-REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZSCA_ALB ! diffuse albedo
-REAL, DIMENSION(:,:),   ALLOCATABLE :: ZEMIS    ! emissivity
-REAL, DIMENSION(:,:),   ALLOCATABLE :: ZTSRAD   ! surface temperature
 !------------------------------------------
 ! Dummy pointers needed to correct an ifort Bug
 REAL, DIMENSION(:), POINTER :: DPTR_XZHAT
@@ -884,20 +862,20 @@ IF ( KMI > 1) THEN
   DPTR_XLBYRM=>XLBYRM
   DPTR_XLBXSVM=>XLBXSVM
   DPTR_XLBYSVM=>XLBYSVM
-  CALL INI_ONE_WAY_n(NDAD(KMI),XTSTEP,KMI,1,                         &
-       DPTR_XBMX1,DPTR_XBMX2,DPTR_XBMX3,DPTR_XBMX4,DPTR_XBMY1,DPTR_XBMY2,DPTR_XBMY3,DPTR_XBMY4,        &
-       DPTR_XBFX1,DPTR_XBFX2,DPTR_XBFX3,DPTR_XBFX4,DPTR_XBFY1,DPTR_XBFY2,DPTR_XBFY3,DPTR_XBFY4,        &
-       NDXRATIO_ALL(KMI),NDYRATIO_ALL(KMI),NDTRATIO(KMI),      &
-       DPTR_CLBCX,DPTR_CLBCY,NRIMX,NRIMY,                                &
-       DPTR_NKLIN_LBXU,DPTR_XCOEFLIN_LBXU,DPTR_NKLIN_LBYU,DPTR_XCOEFLIN_LBYU,      &
-       DPTR_NKLIN_LBXV,DPTR_XCOEFLIN_LBXV,DPTR_NKLIN_LBYV,DPTR_XCOEFLIN_LBYV,      &
-       DPTR_NKLIN_LBXW,DPTR_XCOEFLIN_LBXW,DPTR_NKLIN_LBYW,DPTR_XCOEFLIN_LBYW,      &
-       DPTR_NKLIN_LBXM,DPTR_XCOEFLIN_LBXM,DPTR_NKLIN_LBYM,DPTR_XCOEFLIN_LBYM,      &
-       CCLOUD, LUSECHAQ, LUSECHIC,                                                 &
-       DPTR_XLBXUM,DPTR_XLBYUM,DPTR_XLBXVM,DPTR_XLBYVM,DPTR_XLBXWM,DPTR_XLBYWM,    &
-       DPTR_XLBXTHM,DPTR_XLBYTHM,                                                  &
-       DPTR_XLBXTKEM,DPTR_XLBYTKEM,                                                &
-       DPTR_XLBXRM,DPTR_XLBYRM,DPTR_XLBXSVM,DPTR_XLBYSVM                           )
+  CALL INI_ONE_WAY_n(NDAD(KMI),KMI,                                                             &
+       DPTR_XBMX1,DPTR_XBMX2,DPTR_XBMX3,DPTR_XBMX4,DPTR_XBMY1,DPTR_XBMY2,DPTR_XBMY3,DPTR_XBMY4, &
+       DPTR_XBFX1,DPTR_XBFX2,DPTR_XBFX3,DPTR_XBFX4,DPTR_XBFY1,DPTR_XBFY2,DPTR_XBFY3,DPTR_XBFY4, &
+       NDXRATIO_ALL(KMI),NDYRATIO_ALL(KMI),                                                     &
+       DPTR_CLBCX,DPTR_CLBCY,NRIMX,NRIMY,                                                       &
+       DPTR_NKLIN_LBXU,DPTR_XCOEFLIN_LBXU,DPTR_NKLIN_LBYU,DPTR_XCOEFLIN_LBYU,                   &
+       DPTR_NKLIN_LBXV,DPTR_XCOEFLIN_LBXV,DPTR_NKLIN_LBYV,DPTR_XCOEFLIN_LBYV,                   &
+       DPTR_NKLIN_LBXW,DPTR_XCOEFLIN_LBXW,DPTR_NKLIN_LBYW,DPTR_XCOEFLIN_LBYW,                   &
+       DPTR_NKLIN_LBXM,DPTR_XCOEFLIN_LBXM,DPTR_NKLIN_LBYM,DPTR_XCOEFLIN_LBYM,                   &
+       CCLOUD, LUSECHAQ, LUSECHIC,                                                              &
+       DPTR_XLBXUM,DPTR_XLBYUM,DPTR_XLBXVM,DPTR_XLBYVM,DPTR_XLBXWM,DPTR_XLBYWM,                 &
+       DPTR_XLBXTHM,DPTR_XLBYTHM,                                                               &
+       DPTR_XLBXTKEM,DPTR_XLBYTKEM,                                                             &
+       DPTR_XLBXRM,DPTR_XLBYRM,DPTR_XLBXSVM,DPTR_XLBYSVM                                        )
 END IF
 !
 !
@@ -958,4 +936,3 @@ DEALLOCATE(ZJ)
 !
 
 END SUBROUTINE INI_SPECTRE_n
-
