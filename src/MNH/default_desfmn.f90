@@ -228,6 +228,8 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!                   07/2017 (V. Vionnet) add blowing snow variables
 !!                   01/2019 (R. Honnert) add reduction of the mass-flux surface closure with the resolution
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!!                   05/2019 F.Brient add tracer emission from the top of the boundary-layer
+!!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1417,6 +1419,9 @@ IF (KMI == 1) THEN
   XDEPTH_BASE  = 100.
   XHEIGHT_TOP  = 100.
   XDEPTH_TOP   = 100.
+  NFINDTOP     = 0
+  XTHVP        = 0.25
+  LTPLUS       = .TRUE.
 ENDIF  
 !-------------------------------------------------------------------------------
 !
