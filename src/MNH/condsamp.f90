@@ -52,6 +52,8 @@ END MODULE MODI_CONDSAMP
 !!
 !!    MODIFICATIONS
 !!    -------------
+!!      F.Brient                  * Tracer emission from the top
+!!                                   of the boundary-layer * 05/2019
 !!
 !! --------------------------------------------------------------------------
 !       
@@ -61,12 +63,13 @@ END MODULE MODI_CONDSAMP
 USE MODD_PARAMETERS , ONLY : JPVEXT
 USE MODD_NSV        , ONLY : NSV_CSBEG, NSV_CSEND, NSV_CS
 USE MODD_CONF_n     , ONLY : LUSERC
-USE MODD_FIELD_n    , ONLY : XSVT, XRT,XRSVS
+USE MODD_FIELD_n    , ONLY : XSVT, XRT, XRSVS, XTHT
 USE MODD_GRID_n     , ONLY : XZHAT
 USE MODD_REF_n      , ONLY : XRHODJ
 USE MODD_DYN        , ONLY : XTSTEP_MODEL1
 USE MODD_CONDSAMP
 USE MODE_ll
+USE MODD_CST
 !
 !*      0. DECLARATIONS
 !          ------------
@@ -86,10 +89,16 @@ INTEGER, INTENT(IN)          :: KVERB      ! verbosity level
 
 INTEGER :: IIB,IIE,IJB,IJE, IKB, IKE
 INTEGER :: IIU, IJU, IKU                      ! dimensional indexes
-INTEGER :: JK,JSV,IBOT,ITOP ! Loop indice
+INTEGER :: JK,JSV,IBOT,ITOP,IEMIS ! Loop indice
+INTEGER :: INTOP,INBOT
+REAL    :: ZDT,ZMAXZDT,ZTHVMEAN,ZOFFSET !       For tracer emission
+INTEGER :: JRR
 INTEGER :: IINFO_ll       ! return code of parallel routine
 REAL, DIMENSION(SIZE(XRT,1),SIZE(XRT,2),SIZE(XRT,3)) :: ZRT
 REAL, DIMENSION(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),SIZE(XSVT,4)) :: ZSVT
+REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ZSUM,ZTHV
+REAL, DIMENSION(:,:,:), ALLOCATABLE  :: ZLVOCPEXNM,ZLSOCPEXNM ! Lv/Cp/EXNREF and Ls/Cp/EXNREF at t-1
+
 !
 !--------------------------------------------------------------------------------------
 !
@@ -115,23 +124,76 @@ ZSVT(:,:,:,:) = XSVT(:,:,:,:)
 !
 IBOT=0
 ITOP=0
+ZMAXZDT=0.
+INTOP=0
+INBOT=0
 
-IF (( NSV_CS >= 2) .AND.LUSERC .AND.  MAX_ll(XRT(:,:,:,2),IINFO_ll) > 1.E-6 )  THEN
-   ! calcul de la base et du sommet des nuages
-   ! on ne considere que l'eau liquide car que pour nuages de couche limite
-   DO JK=1,IKE
-    ZRT(:,:,:) = SPREAD(XRT(:,:,JK,2),3,IKU)
-    IF ((MAX_ll(ZRT(:,:,:),IINFO_ll) > 1.E-6).AND.(IBOT == 0)) IBOT=JK
-    IF ( MAX_ll(ZRT(:,:,:),IINFO_ll) > 1.E-6) ITOP=JK
-   END DO
-   IF (KVERB >= 10) THEN
-    WRITE(KLUOUT,'(A)') ' '
-    WRITE(KLUOUT,'(A,F7.1)') 'Base nuage  : ',XZHAT(IBOT)
-    WRITE(KLUOUT,'(A,F7.1)') 'Sommet nuage: ',XZHAT(ITOP)
-    WRITE(KLUOUT,'(A,I3.1)') 'JK Base   : ',IBOT
-    WRITE(KLUOUT,'(A,I3.1)') 'JK Sommet : ',ITOP
-   END IF
-   !
+IF ( NSV_CS >= 2 ) THEN
+ IF ( NFINDTOP==0 .AND. LUSERC .AND.  MAX_ll(XRT(:,:,:,2),IINFO_ll) > 1.E-6 )  THEN
+  ! calcul de la base et du sommet des nuages
+  ! on ne considere que l'eau liquide car que pour nuages de couche limite
+  DO JK=1,IKE
+   ZRT(:,:,:) = SPREAD(XRT(:,:,JK,2),3,IKU)
+   IF ((MAX_ll(ZRT(:,:,:),IINFO_ll) > 1.E-6).AND.(IBOT == 0)) IBOT=JK
+   IF ( MAX_ll(ZRT(:,:,:),IINFO_ll) > 1.E-6) ITOP=JK
+  END DO
+  IF (KVERB >= 10) THEN
+   WRITE(KLUOUT,'(A)') ' '
+   WRITE(KLUOUT,'(A,F7.1)') 'Base nuage  : ',XZHAT(IBOT)
+   WRITE(KLUOUT,'(A,F7.1)') 'Sommet nuage: ',XZHAT(ITOP)
+   WRITE(KLUOUT,'(A,I3.1)') 'JK Base   : ',IBOT
+   WRITE(KLUOUT,'(A,I3.1)') 'JK Sommet : ',ITOP
+  END IF
+  !
+ ELSEIF ( NFINDTOP==2 ) THEN
+  !  Find the first layer z from the surface where
+  !  THV is larger is the average below z + ZTHV (0.25K by default)
+  ZTHVMEAN = 0
+  ZSUM(:,:,:) = 0.
+  ZOFFSET  = XTHVP 
+  JRR     = SIZE(XRT,4) 
+  DO JK=1,JRR
+   ZSUM(:,:,:) = ZSUM(:,:,:)+XRT(:,:,:,JRR)
+  ENDDO
+  DO JK=1,IKE
+    ZTHV(:,:,JK)=XTHT(:,:,JK) * ( 1. + XRV/XRD*XRT(:,:,JK,1) )  &
+                           / ( 1. + ZSUM(:,:,JK) )
+  END DO
+  ZTHVMEAN = SUM(ZTHV(:,:,2))/SIZE(ZTHV(:,:,2)) 
+  DO JK=3,IKE
+     IF (ITOP == 0) THEN
+      ZDT     =  SUM(ZTHV(:,:,JK))/SIZE(ZTHV(:,:,JK))   
+      ZTHVMEAN =   (1.0/XZHAT(JK+1))* & 
+                  (XZHAT(JK)*ZTHVMEAN + (XZHAT(JK+1)-XZHAT(JK))*ZDT)
+      IF (ZDT > ZTHVMEAN + ZOFFSET ) THEN
+        ITOP=JK
+      ENDIF
+    ENDIF
+  END DO
+  !
+ ELSE
+  ! BY DEFAULT IF NO CLOUDS
+  ! or only when NFINDTOP==1 
+  ! Identification of the layer where lies the stronger gradient
+  !  of potential temperature
+  !  (need to replace by liquid water potential temperature)
+  ! No clouds is defined as MAX_ll(XRT(:,:,:,2),IINFO_ll) < 1.E-6
+  !
+  DO JK=1,IKE
+    ! ZDT need to become positive at least once
+    ZDT = SUM((XTHT(:,:,JK+1)-XTHT(:,:,JK)))/SIZE(XTHT(:,:,JK))
+    ZDT = ZDT/(XZHAT(JK+1)-XZHAT(JK))
+    IF ( ZDT > ZMAXZDT ) THEN
+      ITOP=JK
+      ZMAXZDT=ZDT
+    END IF
+  END DO
+  IF (KVERB >= 10) THEN
+   WRITE(KLUOUT,'(A)') ' '
+   WRITE(KLUOUT,'(A,F7.1)') 'Sommet BL: ',XZHAT(ITOP)
+   WRITE(KLUOUT,'(A,I3.1)') 'JK Sommet BL : ',ITOP
+  END IF
+ END IF
 END IF
 
 DO JSV=NSV_CSBEG, NSV_CSEND
@@ -147,26 +209,43 @@ DO JSV=NSV_CSBEG, NSV_CSEND
     DO JK=1,IKE
      IF ((XZHAT(JK) > XZHAT(IBOT) - XHEIGHT_BASE - XDEPTH_BASE/2. ).AND. &
          (XZHAT(JK) < XZHAT(IBOT) - XHEIGHT_BASE + XDEPTH_BASE/2. )) THEN
+         INBOT = 1
          ZSVT(IIB:IIE,IJB:IJE,JK,JSV) =  &
            XSVT(IIB:IIE,IJB:IJE,JK,JSV)+1.  
      END IF
     END DO
- END IF    
-
+    IF (INBOT == 0) THEN
+      IEMIS = IBOT
+      IF (LTPLUS) THEN
+        IEMIS = IBOT - 1
+      END IF
+      ZSVT(IIB:IIE,IJB:IJE,IEMIS,JSV) = &
+        XSVT(IIB:IIE,IJB:IJE,IEMIS,JSV)+1.
+    END IF
+ END IF
+!    
  IF ((JSV == NSV_CSBEG + 2 ).AND.(ITOP > 2)) THEN
-    ! emission XHEIGHT_TOP(m) above the top on XDEPTH_TOP(m)
-    !
-    DO JK=1,IKE
-     IF ((XZHAT(JK) > XZHAT(ITOP) + XHEIGHT_TOP - XDEPTH_TOP/2. ).AND. &
-         (XZHAT(JK) < XZHAT(ITOP) + XHEIGHT_TOP + XDEPTH_TOP/2. )) THEN
-         ZSVT(IIB:IIE,IJB:IJE,JK,JSV) = &
-           XSVT(IIB:IIE,IJB:IJE,JK,JSV)+1. 
-     END IF
-    END DO
- END IF    !
+   ! emission XHEIGHT_TOP(m) above the top on XDEPTH_TOP(m)
+   !
+   DO JK=1,IKE
+    IF ((XZHAT(JK) > XZHAT(ITOP) + XHEIGHT_TOP - XDEPTH_TOP/2. ).AND. &
+        (XZHAT(JK) < XZHAT(ITOP) + XHEIGHT_TOP + XDEPTH_TOP/2. )) THEN
+        INTOP = 1
+        ZSVT(IIB:IIE,IJB:IJE,JK,JSV) = &
+          XSVT(IIB:IIE,IJB:IJE,JK,JSV)+1. 
+    END IF
+   END DO
+    IF (INTOP == 0) THEN
+      IEMIS = ITOP
+      IF (LTPLUS .AND.(ITOP < IKE)) THEN
+        IEMIS = ITOP + 1
+      END IF
+      ZSVT(IIB:IIE,IJB:IJE,IEMIS,JSV) = &
+        XSVT(IIB:IIE,IJB:IJE,IEMIS,JSV)+1.
+    END IF
+ END IF
 !
 END DO            
-         !
 !
 ! correction d'eventuelle concentration négative
 WHERE (ZSVT(:,:,:,NSV_CSBEG:NSV_CSEND) <0.0) &

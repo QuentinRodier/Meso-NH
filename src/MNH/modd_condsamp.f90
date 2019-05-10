@@ -13,6 +13,10 @@
 !	           : C.Lac                               
 !	Creation   : 01/06/2011
 !
+!!    MODIFICATIONS
+!!    -------------
+!!      F.Brient                  * Tracer emission from the top
+!!                                   of the boundary-layer * 05/2019
 !-------------------------------------------------------------------------------
 !
 !
@@ -39,5 +43,16 @@ REAL                               :: XHEIGHT_TOP          ! Distance above the
                               !         cloud top  where the 3rd tracer is emitted
 REAL                               :: XDEPTH_TOP           ! Depth in which the
                               !         3rd tracer is emitted
+INTEGER                            :: NFINDTOP             ! Options for
+                              !         the method for identifying the altitude 
+                              !         where the 3rd tracer is emitted
+REAL                               :: XTHVP                ! Threshold for 
+                              !         identifying the PBL top based on virtual
+                              !         potential temperature (IF NFINDTOP==2)
+LOGICAL                            :: LTPLUS               ! Options for
+                              !         allowing an emission of tracers one layer
+                              !         below the cloud base and one level above
+                              !         the PBL top (when the layers of emission 
+                              !         are not detected)
 !
 END MODULE MODD_CONDSAMP

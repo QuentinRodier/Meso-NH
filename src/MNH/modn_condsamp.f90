@@ -12,6 +12,11 @@
 !!    ------
 !	           : C.Lac                            
 !	Creation   : 05.06.2011
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      F.Brient                  * Tracer emission from the top
+!!                                   of the boundary-layer * 05/2019
 !-------------------------------------------------------------------------------
 !
 !
@@ -24,6 +29,6 @@ IMPLICIT NONE
 !
 NAMELIST /NAM_CONDSAMP/ &
      LCONDSAMP,NCONDSAMP,XRADIO,XSCAL,XHEIGHT_BASE,XDEPTH_BASE, &
-     XHEIGHT_TOP,XDEPTH_TOP
+     XHEIGHT_TOP,XDEPTH_TOP,NFINDTOP,XTHVP,LTPLUS
 !
 END MODULE MODN_CONDSAMP
