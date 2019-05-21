@@ -109,6 +109,7 @@ END MODULE MODI_INI_RADIATIONS
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -278,8 +279,8 @@ END IF
 !
 !   5.2 Update halo of PSLOPANG and PSLOPAZI at the end of ini_modeln
 !
-CALL ADD2DFIELD_ll (TPINITHALO2D_ll,PSLOPANG)
-CALL ADD2DFIELD_ll (TPINITHALO2D_ll,PSLOPAZI)
+CALL ADD2DFIELD_ll ( TPINITHALO2D_ll, PSLOPANG, 'INI_RADIATIONS::PSLOPANG' )
+CALL ADD2DFIELD_ll ( TPINITHALO2D_ll, PSLOPAZI, 'INI_RADIATIONS::PSLOPAZI' )
 !
 !-------------------------------------------------------------------------------
 !

@@ -52,6 +52,7 @@ END MODULE MODI_ZSMT_PIC
 !!    MODIFICATIONS
 !!    -------------
 !!      Original        nov 2005
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -121,8 +122,8 @@ ELSE
     ENDDO
     XZSMT(:,1) = ZZS(:,1)
     XZSMT(:,IJU) = ZZS(:,IJU)
-    CALL ADD2DFIELD_ll(TZFIELDS_ll,ZZS)
-    CALL ADD2DFIELD_ll(TZFIELDS_ll,XZSMT)
+    CALL ADD2DFIELD_ll( TZFIELDS_ll, ZZS,   'ZSMT_PIC::ZZS'   )
+    CALL ADD2DFIELD_ll( TZFIELDS_ll, XZSMT, 'ZSMT_PIC::XZSMT' )
     CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
     CALL CLEANLIST_ll(TZFIELDS_ll)
   ENDDO

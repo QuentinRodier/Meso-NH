@@ -5,6 +5,7 @@
 !-----------------------------------------------------------------
 ! Modifications:
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !-----------------------------------------------------------------
 MODULE MODE_EXTRAPOL
 
@@ -184,6 +185,7 @@ CONTAINS
     !
     !*       0.2   Declarations of local variables
     !
+    character(len=6) :: ynum
     INTEGER          :: IIB,IJB,IKB     ! Begining useful area  in x,y,z directions
     INTEGER          :: IIE,IJE,IKE     ! End useful area in x,y,z directions
     INTEGER          :: IDIMX_C,IDIMY_C ! size of the child domain (in the father grid)
@@ -219,7 +221,8 @@ CONTAINS
       CALL GO_TOMODEL_ll(1, IINFO_ll)
       DO II=1,SIZE(PTAB,3)
         NULLIFY(TZZSFIELD_ll)
-        CALL ADD2DFIELD_ll(TZZSFIELD_ll, PTAB(:,:,II))
+        write ( ynum, '( I6 )' ) ii
+        CALL ADD2DFIELD_ll( TZZSFIELD_ll, PTAB(:,:,II), 'EXTRAPOL_ON_PSEUDO_HALO3D::PTAB:'//trim( adjustl( ynum ) ) )
         CALL UPDATE_HALO_EXTENDED_ll(TZZSFIELD_ll,IINFO_ll)
         CALL CLEANLIST_ll(TZZSFIELD_ll)
       ENDDO
@@ -355,7 +358,7 @@ CONTAINS
       CALL GOTO_MODEL(1)
       CALL GO_TOMODEL_ll(1, IINFO_ll)
       NULLIFY(TZZSFIELD_ll)
-      CALL ADD2DFIELD_ll(TZZSFIELD_ll, PTAB)
+      CALL ADD2DFIELD_ll( TZZSFIELD_ll, PTAB, 'EXTRAPOL_ON_PSEUDO_HALO3D::PTAB' )
       CALL UPDATE_HALO_EXTENDED_ll(TZZSFIELD_ll,IINFO_ll)
       CALL CLEANLIST_ll(TZZSFIELD_ll)
       CALL GO_TOMODEL_ll(2, IINFO_ll)

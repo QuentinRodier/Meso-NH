@@ -382,6 +382,7 @@
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 20/03/2019: missing use MODI_INIT_SALT
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -841,7 +842,7 @@ ALLOCATE(XDZZ(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT)))
 !
 !20131024 add update halo
 !=> corrects on PDXX calculation in metrics and XDXX !!
-CALL ADD3DFIELD_ll(TZFIELDS_ll,XZZ)
+CALL ADD3DFIELD_ll( TZFIELDS_ll, XZZ, 'PREP_REAL_CASE::XZZ' )
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZFIELDS_ll)
 !
@@ -855,10 +856,10 @@ CALL MPPDB_CHECK3D(XDZY,"prc8-beforeupdate_metrics:PDZY",PRECISION)
 CALL UPDATE_METRICS(CLBCX,CLBCY,XDXX,XDYY,XDZX,XDZY,XDZZ)
 !
 !20131112 add update_halo for XDYY and XDZY!!
-CALL ADD3DFIELD_ll(TZFIELDS_ll,XDXX)
-CALL ADD3DFIELD_ll(TZFIELDS_ll,XDZX)
-CALL ADD3DFIELD_ll(TZFIELDS_ll,XDYY)
-CALL ADD3DFIELD_ll(TZFIELDS_ll,XDZY)
+CALL ADD3DFIELD_ll( TZFIELDS_ll, XDXX, 'PREP_REAL_CASE::XDXX' )
+CALL ADD3DFIELD_ll( TZFIELDS_ll, XDZX, 'PREP_REAL_CASE::XDZX' )
+CALL ADD3DFIELD_ll( TZFIELDS_ll, XDYY, 'PREP_REAL_CASE::XDYY' )
+CALL ADD3DFIELD_ll( TZFIELDS_ll, XDZY, 'PREP_REAL_CASE::XDZY' )
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZFIELDS_ll)
 

@@ -83,7 +83,8 @@ END MODULE MODI_ZS_BOUNDARY_n
 !!    MODIFICATIONS
 !!    -------------
 !!      Original     1/2/99 
-!!                 
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -194,7 +195,7 @@ IF(HLBCY(1)/='CYCL' .AND. LSOUTH_ll()) PZS(IIB:IIE,1)   = ZZSLS(IIB:IIE,1,1)
 IF(HLBCY(2)/='CYCL' .AND. LNORTH_ll()) PZS(IIB:IIE,IJU) = ZZSLS(IIB:IIE,IJU,1)
 !
 NULLIFY(TZLSFIELD_ll)
-CALL ADD2DFIELD_ll(TZLSFIELD_ll, PZS)
+CALL ADD2DFIELD_ll( TZLSFIELD_ll, PZS, 'ZS_BOUNDARY_n::PZS' )
 CALL UPDATE_HALO_ll(TZLSFIELD_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZLSFIELD_ll)
 !

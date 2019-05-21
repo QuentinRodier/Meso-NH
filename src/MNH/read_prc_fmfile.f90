@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1996-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ###########################
@@ -92,6 +92,7 @@ END MODULE MODI_READ_PRC_FMFILE
 !!                      2014     (M.Faivre)
 !!                      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -367,7 +368,7 @@ END IF
 CALL MPPDB_CHECK3D(XU_LS,"read_prc_fmfile7.1::XU_LS",PRECISION)  !ok calculated in 3. using trunc_field
 !
 !20131105 use ADD3DFIELD and UPDATE_HALO
-CALL ADD3DFIELD_ll(TZFIELDS_ll, XU_LS)
+CALL ADD3DFIELD_ll( TZFIELDS_ll, XU_LS, 'READ_PRC_FMFILE::XU_LS' )
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 !20131112 add cleanlist
 CALL CLEANLIST_ll(TZFIELDS_ll)
@@ -388,7 +389,7 @@ CALL MPPDB_CHECK3D(XU_LS,"read_prc_fmfile7.1::XU_LS",PRECISION)
 !              --------------------------------
 !
 !20131112 update_halo_ll for XV_LS
-CALL ADD3DFIELD_ll(TZFIELDS_ll, XV_LS)
+CALL ADD3DFIELD_ll( TZFIELDS_ll, XV_LS, 'READ_PRC_FMFILE::XV_LS')
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 !20131112 add cleanlist
 CALL CLEANLIST_ll(TZFIELDS_ll)
@@ -405,7 +406,7 @@ CALL MPPDB_CHECK3D(XV_LS,"read_prc_fmfile7.2::XV_LS",PRECISION)
 !20131106 : also here
 IF (LWEST_ll()) XU_LS(IIB-1  ,:,:)=2.*XU_LS(  IIB  ,:,:)-XU_LS(  IIB+1  ,:,:)
 !20131105 use UPDATE_HALO
-CALL ADD3DFIELD_ll(TZFIELDS_ll, XU_LS)
+CALL ADD3DFIELD_ll( TZFIELDS_ll, XU_LS, 'READ_PRC_FMFILE::XU_LS' )
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 !20131105 use LEAST_ll() as in pressurez or phys_paramn
 IF (LEAST_ll()) XU_LS(IIE+1,:,:)=2.*XU_LS(IIE,:,:)-XU_LS(IIE-1,:,:)

@@ -5,6 +5,7 @@
 !-----------------------------------------------------------------
 ! Modifications:
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !-----------------------------------------------------------------
 
 !     #################
@@ -209,7 +210,7 @@
 !
   DO WHILE (ASSOCIATED(TZCHILD))
     IF (TZCHILD%NWIDTH == ICOARSE) THEN
-      CALL ADD2DFIELD_ll(TZCHILD%TLIST, PTFIELD)
+      CALL ADD2DFIELD_ll( TZCHILD%TLIST, PTFIELD, 'SET_LB2DFIELD_ll::PTFIELD' )
       EXIT
     ENDIF
     TZCHILD => TZCHILD%TNEXT
@@ -217,7 +218,7 @@
 !
   DO WHILE (ASSOCIATED(TZPAR)) 
     IF (ICOARSE == TZPAR%NWIDTH) THEN
-      CALL ADD2DFIELD_ll(TZPAR%TLIST, P2DFIELD)
+      CALL ADD2DFIELD_ll(TZPAR%TLIST, P2DFIELD, 'SET_LB2DFIELD_ll::P2DFIELD' )
       EXIT
     ENDIF
     TZPAR => TZPAR%TNEXT
@@ -373,7 +374,7 @@
 !
   DO WHILE (ASSOCIATED(TZCHILD))
     IF (TZCHILD%NWIDTH == ICOARSE) THEN
-      CALL ADD3DFIELD_ll(TZCHILD%TLIST, PTFIELD)
+      CALL ADD3DFIELD_ll(TZCHILD%TLIST, PTFIELD, 'SET_LB3DFIELD_ll::PTFIELD' )
       EXIT
     ENDIF
     TZCHILD => TZCHILD%TNEXT
@@ -381,7 +382,7 @@
 !
   DO WHILE (ASSOCIATED(TZPAR)) 
     IF (ICOARSE == TZPAR%NWIDTH) THEN
-      CALL ADD3DFIELD_ll(TZPAR%TLIST, P3DFIELD)
+      CALL ADD3DFIELD_ll(TZPAR%TLIST, P3DFIELD, 'SET_LB3DFIELD_ll::P3DFIELD' )
       EXIT
     ENDIF
     TZPAR => TZPAR%TNEXT

@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2006-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
 !-----------------------------------------------------------------
 !     ###################
       MODULE MODI_UPDATE_METRICS
@@ -61,6 +57,7 @@ END MODULE MODI_UPDATE_METRICS
 !!      Original    april 2006
 !!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -126,11 +123,11 @@ END IF
 !
 !
 !!$IF(NHALO == 1) THEN
-  CALL ADD3DFIELD_ll(TZMETRICS_ll,PDXX)
-  CALL ADD3DFIELD_ll(TZMETRICS_ll,PDYY)
-  CALL ADD3DFIELD_ll(TZMETRICS_ll,PDZX)
-  CALL ADD3DFIELD_ll(TZMETRICS_ll,PDZY)
-  CALL ADD3DFIELD_ll(TZMETRICS_ll,PDZZ)
+  CALL ADD3DFIELD_ll( TZMETRICS_ll, PDXX, 'UPDATE_METRICS::PDXX' )
+  CALL ADD3DFIELD_ll( TZMETRICS_ll, PDYY, 'UPDATE_METRICS::PDYY' )
+  CALL ADD3DFIELD_ll( TZMETRICS_ll, PDZX, 'UPDATE_METRICS::PDZX' )
+  CALL ADD3DFIELD_ll( TZMETRICS_ll, PDZY, 'UPDATE_METRICS::PDZY' )
+  CALL ADD3DFIELD_ll( TZMETRICS_ll, PDZZ, 'UPDATE_METRICS::PDZZ' )
   CALL UPDATE_HALO_ll(TZMETRICS_ll,IINFO_ll)
   CALL CLEANLIST_ll(TZMETRICS_ll)
 !!$END IF

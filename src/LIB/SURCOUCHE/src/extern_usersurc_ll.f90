@@ -13,6 +13,7 @@
 !!    -------------
 !     Original 01/05/98
 !     Juan 19/08/2005:  modification INTENT -> INTENT(INOUT)
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !-----------------------------------------------------------------
 
 !
@@ -48,9 +49,9 @@
        END SUBROUTINE DEL_FIELD2_ll
 
 !
-!!     ################################################
-       SUBROUTINE ADD1DFIELD_ll( HDIR, TPLIST, PFIELD )
-!!     ################################################
+!!     #######################################################
+       SUBROUTINE ADD1DFIELD_ll( HDIR, TPLIST, PFIELD, HNAME )
+!!     #######################################################
 !
   USE MODE_ARGSLIST_ll, ONLY : E_ADD1DFIELD_ll => ADD1DFIELD_ll
 !
@@ -59,14 +60,15 @@
   CHARACTER(LEN=1), INTENT(IN) :: HDIR
   TYPE(LIST1D_ll), POINTER     :: TPLIST
   REAL, DIMENSION(:), TARGET   :: PFIELD
+  character(len=*), intent(in) :: HNAME ! Name of the field to be added
 !
-  CALL E_ADD1DFIELD_ll( HDIR, TPLIST, PFIELD )
+  CALL E_ADD1DFIELD_ll( HDIR, TPLIST, PFIELD, HNAME )
 !
        END SUBROUTINE ADD1DFIELD_ll
 !
-!!     ##########################################
-       SUBROUTINE ADD2DFIELD_ll( TPLIST, PFIELD )
-!!     ##########################################
+!!     #################################################
+       SUBROUTINE ADD2DFIELD_ll( TPLIST, PFIELD, HNAME )
+!!     #################################################
 !
   USE MODE_ARGSLIST_ll, ONLY : E_ADD2DFIELD_ll => ADD2DFIELD_ll
 !
@@ -74,14 +76,15 @@
 !
   TYPE(LIST_ll), POINTER       :: TPLIST
   REAL, DIMENSION(:,:), TARGET :: PFIELD
+  character(len=*), intent(in) :: HNAME ! Name of the field to be added
 !
-  CALL E_ADD2DFIELD_ll( TPLIST, PFIELD )
+  CALL E_ADD2DFIELD_ll( TPLIST, PFIELD, HNAME )
 !
        END SUBROUTINE ADD2DFIELD_ll
 !
-!!     ##########################################
-       SUBROUTINE ADD3DFIELD_ll( TPLIST, PFIELD )
-!!     ##########################################
+!!     #################################################
+       SUBROUTINE ADD3DFIELD_ll( TPLIST, PFIELD, HNAME )
+!!     #################################################
 !
   USE MODE_ARGSLIST_ll, ONLY : E_ADD3DFIELD_ll => ADD3DFIELD_ll
 !
@@ -89,10 +92,27 @@
 !
   TYPE(LIST_ll), POINTER         :: TPLIST
   REAL, DIMENSION(:,:,:), TARGET :: PFIELD
+  character(len=*), intent(in) :: HNAME ! Name of the field to be added
 !
-  CALL E_ADD3DFIELD_ll( TPLIST, PFIELD )
+  CALL E_ADD3DFIELD_ll( TPLIST, PFIELD, HNAME )
 !
        END SUBROUTINE ADD3DFIELD_ll
+!
+!!     #################################################
+       SUBROUTINE ADD4DFIELD_ll( TPLIST, PFIELD, HNAME )
+!!     #################################################
+!
+  USE MODE_ARGSLIST_ll, ONLY : E_ADD4DFIELD_ll => ADD4DFIELD_ll
+!
+  USE MODD_ARGSLIST_ll, ONLY : LIST_ll
+!
+  type(list_ll), pointer   :: tplist   ! list of fields
+  real, dimension(:,:,:,:),   intent(in) :: pfield   ! field to be added to the list of fields
+  character(len=*), intent(in) :: hname ! name of the field to be added
+!
+  CALL E_ADD4DFIELD_ll( TPLIST, PFIELD, HNAME )
+!
+       END SUBROUTINE ADD4DFIELD_ll
 !
 !!     #################################################
        SUBROUTINE DEL1DFIELD_ll( TPLIST, PFIELD, KINFO )

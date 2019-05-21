@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ####################
@@ -34,6 +34,7 @@
 !!      Original    06/05/94 
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !--------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -200,8 +201,8 @@ ZBOUNDZ(:,:) = 2.*PZZ(:,:,IKU) - PZZ(:,:,IKU-1)
 PDXHAT(:)  = EOSHIFT(PXHAT(:) ,1,ZBOUNDX)      - PXHAT(:)
 PDYHAT(:)  = EOSHIFT(PYHAT(:) ,1,ZBOUNDY)      - PYHAT(:)
 ! update PDXHAT and PDYHAT 
-CALL ADD1DFIELD_ll("X",TZHALO1_ll,PDXHAT)
-CALL ADD1DFIELD_ll("Y",TZHALO1_ll,PDYHAT)
+CALL ADD1DFIELD_ll( 'X', TZHALO1_ll, PDXHAT, 'SM_GRIDCART::PDXHAT')
+CALL ADD1DFIELD_ll( 'Y', TZHALO1_ll, PDYHAT, 'SM_GRIDCART::PDYHAT')
 CALL UPDATE_1DHALO_ll(TZHALO1_ll,IINFO_ll)
 DEALLOCATE(TZHALO1_ll)
 !

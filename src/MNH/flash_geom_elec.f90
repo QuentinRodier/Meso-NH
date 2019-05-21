@@ -99,6 +99,7 @@ END MODULE MODI_FLASH_GEOM_ELEC_n
 !  P. Wautelet 19/04/2019: use modd_precision kinds
 !  P. Wautelet 26/04/2019: use modd_precision parameters for datatypes of MPI communications
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !-------------------------------------------------------------------------------
 !
 !*      0.      DECLARATIONS
@@ -520,9 +521,9 @@ DO WHILE (.NOT. GEND_DOMAIN .AND. INB_CELL .LT. NMAX_CELL)
       GEND_CELL = .FALSE.
       DO WHILE (.NOT. GEND_CELL)
 !
-        CALL ADD2DFIELD_ll  (TZFIELDS_ll, ZCELL(:,:,IK,INB_CELL))
-        CALL UPDATE_HALO_ll (TZFIELDS_ll, IINFO_ll)
-        CALL CLEANLIST_ll   (TZFIELDS_ll)
+        CALL ADD2DFIELD_ll  ( TZFIELDS_ll, ZCELL(:,:,IK,INB_CELL), 'FLASH_GEOM_ELEC_n::ZCELL(:,:,IK,INB_CELL)' )
+        CALL UPDATE_HALO_ll ( TZFIELDS_ll, IINFO_ll )
+        CALL CLEANLIST_ll   ( TZFIELDS_ll )
 !
         COUNT_BEF = COUNT(ZCELL(IIB:IIE,IJB:IJE,IK,INB_CELL) .EQ. 1.)
         CALL SUM_ELEC_ll (COUNT_BEF)
@@ -1970,9 +1971,9 @@ END DO
 !
 DO WHILE (IEND_GLOB .NE. INB_CELL)
   DO IL = 1, INB_CELL
-    CALL ADD3DFIELD_ll  (TZFIELDS_ll, ZSIGN_AREA)
-    CALL UPDATE_HALO_ll (TZFIELDS_ll, IINFO_ll)
-    CALL CLEANLIST_ll   (TZFIELDS_ll)
+    CALL ADD3DFIELD_ll  ( TZFIELDS_ll, ZSIGN_AREA, 'FLASH_GEOM_ELEC_n::ZSIGN_AREA' )
+    CALL UPDATE_HALO_ll ( TZFIELDS_ll, IINFO_ll)
+    CALL CLEANLIST_ll   ( TZFIELDS_ll)
 !
     IF (GNEW_FLASH(IL) .AND. (IEND(IL) .NE. 1)) THEN
       COUNT_BEF2(IL) = COUNT(ZSIGN_AREA(IIB:IIE,IJB:IJE,IKB:IKE) .EQ. ZSIGN(IL))

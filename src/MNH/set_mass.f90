@@ -2,6 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ########################
       MODULE MODI_SET_MASS
 !     ########################
@@ -119,6 +120,7 @@ SUBROUTINE SET_MASS(TPFILE,OPROFILE_IN_PROC, PZFLUX_PROFILE,                    
 !!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !
 !-------------------------------------------------------------------------------
 !!
@@ -465,9 +467,9 @@ ELSE
   XTHT(:,:,1)=XTHT(:,:,2)
   XRT(:,:,1,:)=XRT(:,:,2,:)
 NULLIFY( TZFIELDS_ll )
-CALL ADD3DFIELD_ll(TZFIELDS_ll,XTHT)
-CALL ADD3DFIELD_ll(TZFIELDS_ll,ZTHV3D)
-CALL ADD3DFIELD_ll(TZFIELDS_ll,XRT(:,:,1,:))
+CALL ADD3DFIELD_ll( TZFIELDS_ll, XTHT,         'SET_MASS::XTHT' )
+CALL ADD3DFIELD_ll( TZFIELDS_ll, ZTHV3D,       'SET_MASS::ZTHV3D' )
+CALL ADD3DFIELD_ll( TZFIELDS_ll, XRT(:,:,1,:), 'SET_MASS::XRT(:,:,1,:)' )
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZFIELDS_ll)
 

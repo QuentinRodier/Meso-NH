@@ -2,6 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ##########################
       MODULE MODI_INI_FIELD_ELEC
 !     ##########################
@@ -59,6 +60,7 @@ END MODULE MODI_INI_FIELD_ELEC
 !!                             (JGR, 1987, 5661-5675)
 !!      J.-P. Pinty 01/07/12   Add a non-homogeneous Neuman fair-weather 
 !!                             boundary condition at the top
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !!
 !!-------------------------------------------------------------------------------
 !
@@ -250,9 +252,9 @@ XEFIELDW(:,:,SIZE(PDZZ,3)) = 0. ! either the ground or the ionosphere!
 !*       3.    FAIR WEATHER SPACE CHARGE
 !              -------------------------
 !
-CALL ADD3DFIELD_ll(TZFIELDS_ll,XEFIELDU)
-CALL ADD3DFIELD_ll(TZFIELDS_ll,XEFIELDV)
-CALL ADD3DFIELD_ll(TZFIELDS_ll,XEFIELDW)
+CALL ADD3DFIELD_ll( TZFIELDS_ll, XEFIELDU, 'INI_FIELD_ELEC::XEFIELDU' )
+CALL ADD3DFIELD_ll( TZFIELDS_ll, XEFIELDV, 'INI_FIELD_ELEC::XEFIELDV' )
+CALL ADD3DFIELD_ll( TZFIELDS_ll, XEFIELDW, 'INI_FIELD_ELEC::XEFIELDW' )
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZFIELDS_ll)
 !

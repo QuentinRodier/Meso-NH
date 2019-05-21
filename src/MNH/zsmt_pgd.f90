@@ -62,6 +62,7 @@ END MODULE MODI_ZSMT_PGD
 !!      J.Escobar  23/06/2015 : correction for JPHEXT<>1
 !!      Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      Q. Rodier 01/2019 : add a new filtering for very high slopes (applied locally)
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -177,7 +178,7 @@ ZMASK(:,IJE+JI) = ZMASK(:,IJE)
 ENDDO
 !
 ZMASK= 1.-ZMASK
-CALL ADD2DFIELD_ll(THALO_ll,ZMASK)
+CALL ADD2DFIELD_ll( THALO_ll, ZMASK, 'ZSMT_PGD::ZMASK' )
 CALL UPDATE_HALO_ll(THALO_ll,INFO_ll)
 CALL CLEANLIST_ll(THALO_ll)
 !
@@ -189,10 +190,10 @@ CALL CLEANLIST_ll(THALO_ll)
 !
 ZSMOOTH_ZS = ZZS
 !
-CALL ADD2DFIELD_ll(THALO_ll,ZZS)
-CALL ADD2DFIELD_ll(THALO_ll,ZSMOOTH_ZS)
-CALL ADD2DFIELD_ll(THALO_ll,ZSLOPEX)
-CALL ADD2DFIELD_ll(THALO_ll,ZSLOPEY)
+CALL ADD2DFIELD_ll( THALO_ll, ZZS,        'ZSMT_PGD::ZZS' )
+CALL ADD2DFIELD_ll( THALO_ll, ZSMOOTH_ZS, 'ZSMT_PGD::ZSMOOTH_ZS' )
+CALL ADD2DFIELD_ll( THALO_ll, ZSLOPEX,    'ZSMT_PGD::ZSLOPEX' )
+CALL ADD2DFIELD_ll( THALO_ll, ZSLOPEY,    'ZSMT_PGD::ZSLOPEY' )
 !
 CALL UPDATE_HALO_ll(THALO_ll,INFO_ll)
 

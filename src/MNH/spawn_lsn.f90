@@ -125,6 +125,7 @@ END MODULE MODI_SPAWN_LS_n
 !!      J.Escobar : 18/12/2015 : Correction of bug in bound in // for NHALO <>1 
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 20/03/2019: fixes: wrong order of the dummy arguments + double deallocate
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -475,12 +476,12 @@ IF(GVERT_INTERP) DEALLOCATE(ZTZS,ZZS)
 IF(GVERT_INTERP) DEALLOCATE(ZTZSMT,ZZSMT)
 !
 NULLIFY(TZLSFIELD_ll)
-CALL ADD3DFIELD_ll(TZLSFIELD_ll, PLSUS)
-CALL ADD3DFIELD_ll(TZLSFIELD_ll, PLSVS)
-CALL ADD3DFIELD_ll(TZLSFIELD_ll, PLSWS)
-CALL ADD3DFIELD_ll(TZLSFIELD_ll, PLSTHS)
-IF(SIZE(PLSRVM) /= 0) CALL ADD3DFIELD_ll(TZLSFIELD_ll, PLSRVS)
-IF(SIZE(PLSZWSM) /= 0) CALL ADD2DFIELD_ll(TZLSFIELD_ll, PLSZWSS)
+CALL ADD3DFIELD_ll( TZLSFIELD_ll, PLSUS, 'SPAWN_LS_n::PLSUS' )
+CALL ADD3DFIELD_ll( TZLSFIELD_ll, PLSVS, 'SPAWN_LS_n::PLSVS' )
+CALL ADD3DFIELD_ll( TZLSFIELD_ll, PLSWS, 'SPAWN_LS_n::PLSWS' )
+CALL ADD3DFIELD_ll( TZLSFIELD_ll, PLSTHS,'SPAWN_LS_n::PLSTHS' )
+IF(SIZE(PLSRVM) /= 0)  CALL ADD3DFIELD_ll( TZLSFIELD_ll, PLSRVS,  'SPAWN_LS_n::PLSRVS' )
+IF(SIZE(PLSZWSM) /= 0) CALL ADD2DFIELD_ll( TZLSFIELD_ll, PLSZWSS, 'SPAWN_LS_n::PLSZWSS' )
 CALL UPDATE_HALO_ll(TZLSFIELD_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZLSFIELD_ll)
 !------------------------------------------------------------------------------

@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 init 2006/07/19 10:33:46
 !-----------------------------------------------------------------
 !     #######################
       MODULE MODI_INI_TKE_EPS
@@ -88,6 +83,7 @@ END MODULE MODI_INI_TKE_EPS
 !!                          to compute a real gradient and allow RESTA conf.                
 !!                          Aug 10, 1998 (N. Asencio) add parallel code
 !!                          May 2006  Remove KEPS
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !! -------------------------------------------------------------------------
 !
 !*          0. DECLARATIONS
@@ -164,7 +160,7 @@ IF (HGETTKET == 'INIT' ) THEN
   !
   ! Add PTKET to TPINITHALO3D_ll list of fields updated at the
   ! end of initialization
-  CALL ADD3DFIELD_ll (TPINITHALO3D_ll,PTKET)
+  CALL ADD3DFIELD_ll ( TPINITHALO3D_ll, PTKET, 'INI_TKE_EPS::PTKET' )
 END IF
 !
 !

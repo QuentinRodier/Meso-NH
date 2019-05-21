@@ -6,6 +6,7 @@
 ! Modifications:
 !  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !  Philippe 12/01/2018: renamed dimension variables NKMAX_ll->NKMAX_TMP_ll in modd_dim_ll to prevent mix-up with modd_dimn
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !-----------------------------------------------------------------
 
 !     ########################
@@ -899,7 +900,7 @@ INTEGER                                               :: NB_REQ
 !              -----------
 !
   NULLIFY(TZLIST)
-  CALL ADD3DFIELD_ll(TZLIST,PFIELDOUT)
+  CALL ADD3DFIELD_ll( TZLIST, PFIELDOUT, 'REMAP_X_2WAY_ll::PFIELDOUT' )
 !
   CALL UPDATE_HALO_ll(TZLIST, KINFO)
   CALL CLEANLIST_ll(TZLIST)

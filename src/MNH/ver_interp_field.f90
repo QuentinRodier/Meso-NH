@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1997-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 spawn 2006/05/19 18:48:54
 !-----------------------------------------------------------------
 !#######################
 MODULE MODI_VER_INTERP_FIELD
@@ -86,6 +81,7 @@ END MODULE MODI_VER_INTERP_FIELD
 !!                  14/09/97 (V. Masson) Interpolation of relative humidity
 !!                  05/06     Remobe KEPS
 !!                  2014  (M.Faivre)
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -181,8 +177,8 @@ DO JI=JPHEXT,1,-1
 ENDDO
 !$20140710 update_halo
 NULLIFY(TZLSFIELD_ll)
-CALL ADD3DFIELD_ll(TZLSFIELD_ll,ZGRID1)
-CALL ADD3DFIELD_ll(TZLSFIELD_ll,ZGRID2)
+CALL ADD3DFIELD_ll( TZLSFIELD_ll, ZGRID1, 'VER_INTERP_FIELD::ZGRID1' )
+CALL ADD3DFIELD_ll( TZLSFIELD_ll, ZGRID2, 'VER_INTERP_FIELD::ZGRID2' )
 CALL UPDATE_HALO_ll(TZLSFIELD_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZLSFIELD_ll)
 !
@@ -219,8 +215,8 @@ DO JJ=JPHEXT,1,-1
 ENDDO
 !$20140711 updatehalo(zg1,2) also here
 NULLIFY(TZLSFIELD_ll)
-CALL ADD3DFIELD_ll(TZLSFIELD_ll,ZGRID1)
-CALL ADD3DFIELD_ll(TZLSFIELD_ll,ZGRID2)
+CALL ADD3DFIELD_ll( TZLSFIELD_ll, ZGRID1, 'VER_INTERP_FIELD::ZGRID1' )
+CALL ADD3DFIELD_ll( TZLSFIELD_ll, ZGRID2, 'VER_INTERP_FIELD::ZGRID2' )
 CALL UPDATE_HALO_ll(TZLSFIELD_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZLSFIELD_ll)
 !$

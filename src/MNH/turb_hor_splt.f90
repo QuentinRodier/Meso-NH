@@ -249,6 +249,7 @@ END MODULE MODI_TURB_HOR_SPLT
 !!                              advection schemes
 !!                     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -422,21 +423,13 @@ IF (KSPLIT>1 .AND. CPROGRAM=='MESONH') THEN
 !*       2.2  list for parallel exchanges
 !             ---------------------------
 !
-  CALL ADD3DFIELD_ll(TZFIELDS_ll,ZUM)
-  CALL ADD3DFIELD_ll(TZFIELDS_ll,ZVM)
-  CALL ADD3DFIELD_ll(TZFIELDS_ll,ZWM)
-  CALL ADD3DFIELD_ll(TZFIELDS_ll,ZTHLM)
-  CALL ADD3DFIELD_ll(TZFIELDS_ll,ZTKEM)
-  IF (ISV>0) THEN
-    DO JSV=1,ISV
-      CALL ADD3DFIELD_ll(TZFIELDS_ll,ZSVM(:,:,:,JSV))
-    END DO
-  END IF
-  IF (KRR>0) THEN
-    DO JRR=1,KRR
-      CALL ADD3DFIELD_ll(TZFIELDS_ll,ZRM(:,:,:,JRR))
-    END DO
-  END IF
+  CALL ADD3DFIELD_ll( TZFIELDS_ll, ZUM,               'TURB_HOR_SPLT::ZUM'               )
+  CALL ADD3DFIELD_ll( TZFIELDS_ll, ZVM,               'TURB_HOR_SPLT::ZVM'               )
+  CALL ADD3DFIELD_ll( TZFIELDS_ll, ZWM,               'TURB_HOR_SPLT::ZWM'               )
+  CALL ADD3DFIELD_ll( TZFIELDS_ll, ZTHLM,             'TURB_HOR_SPLT::ZTHLM'             )
+  CALL ADD3DFIELD_ll( TZFIELDS_ll, ZTKEM,             'TURB_HOR_SPLT::ZTKEM'             )
+  CALL ADD4DFIELD_ll( TZFIELDS_ll, ZSVM(:,:,:,1:ISV), 'TURB_HOR_SPLT::ZSVM(:,:,:,1:ISV)' )
+  CALL ADD4DFIELD_ll( TZFIELDS_ll, ZRM(:,:,:,1:KRR),  'TURB_HOR_SPLT::ZRM(:,:,:,1:KRR)'  )
 !
 !
 !*       2.3  initializations

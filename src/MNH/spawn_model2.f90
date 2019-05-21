@@ -197,6 +197,7 @@ END MODULE MODI_SPAWN_MODEL2
 !  P. Wautelet 22/02/2019: replace Hollerith edit descriptor (deleted from Fortran 95 standard)
 !  P. Wautelet 14/03/2019: correct ZWS when variable not present in file
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -1080,7 +1081,7 @@ END IF
 !
 !*       5.4  Compute the metric coefficients
 !
-CALL ADD3DFIELD_ll(TZFIELDS_ll,XZZ)
+CALL ADD3DFIELD_ll( TZFIELDS_ll, XZZ, 'SPAWN_MODEL2::XZZ' )
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZFIELDS_ll)
 !

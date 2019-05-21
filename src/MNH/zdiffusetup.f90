@@ -54,6 +54,7 @@ END MODULE MODI_ZDIFFUSETUP
 !  J. Escobar  07/10/2015: remove print
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 26/04/2019: use modd_precision parameters for datatypes of MPI communications
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !
 !*       0.    DECLARATIONS
 !              ------------ 
@@ -153,7 +154,7 @@ NULLIFY(TZHGTMASS_ll,TZHGTHALO2_ll)
 ZZMASS = MZF(1,IKU,1,PZZ)
 
 CALL INIT_HALO2_ll(TZHGTHALO2_ll,1,IIU,IJU,IKU)
-CALL ADD3DFIELD_ll(TZHGTMASS_ll,ZZMASS)
+CALL ADD3DFIELD_ll( TZHGTMASS_ll, ZZMASS, 'ZDIFFUSETUP::ZZMASS' )
 
 CALL UPDATE_HALO2_ll(TZHGTMASS_ll,TZHGTHALO2_ll,IERROR)
 !JUAN

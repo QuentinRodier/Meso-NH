@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #########################
@@ -91,6 +91,7 @@ END MODULE MODI_ADVECTION_UVW
 !!                  J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !!                  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!                  C.LAC 10/2016 : Add OSPLIT_WENO
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -208,8 +209,8 @@ ZRWT = PWT(:,:,:) * ZMZM_RHODJ
 !
 NULLIFY(TZFIELD_ll)
 !!$IF(NHALO == 1) THEN
-  CALL ADD3DFIELD_ll(TZFIELD_ll, ZRUT)
-  CALL ADD3DFIELD_ll(TZFIELD_ll, ZRVT)
+  CALL ADD3DFIELD_ll( TZFIELD_ll, ZRUT, 'ADVECTION_UVW::ZRUT' )
+  CALL ADD3DFIELD_ll( TZFIELD_ll, ZRVT, 'ADVECTION_UVW::ZRVT' )
   CALL UPDATE_HALO_ll(TZFIELD_ll,IINFO_ll)
   CALL CLEANLIST_ll(TZFIELD_ll)
 !!$END IF
@@ -218,9 +219,9 @@ CALL CONTRAV (HLBCX,HLBCY,ZRUT,ZRVT,ZRWT,PDXX,PDYY,PDZZ,PDZX,PDZY,ZRUCT,ZRVCT,ZR
 !
 NULLIFY(TZFIELDS_ll)
 !!$IF(NHALO == 1) THEN
-  CALL ADD3DFIELD_ll(TZFIELDS_ll, ZRWCT)
-  CALL ADD3DFIELD_ll(TZFIELDS_ll, ZRUCT)
-  CALL ADD3DFIELD_ll(TZFIELDS_ll, ZRVCT)
+  CALL ADD3DFIELD_ll( TZFIELDS_ll, ZRWCT, 'ADVECTION_UVW::ZRWCT' )
+  CALL ADD3DFIELD_ll( TZFIELDS_ll, ZRUCT, 'ADVECTION_UVW::ZRUCT' )
+  CALL ADD3DFIELD_ll( TZFIELDS_ll, ZRVCT, 'ADVECTION_UVW::ZRVCT' )
   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
   CALL CLEANLIST_ll(TZFIELDS_ll)
 !!$END IF
@@ -244,9 +245,9 @@ ZRWS_OTHER(:,:,IKE+1) = 0.
 
 NULLIFY(TZFIELDS0_ll)
 !!$IF(NHALO == 1) THEN
-  CALL ADD3DFIELD_ll(TZFIELDS0_ll, ZRUS_OTHER)
-  CALL ADD3DFIELD_ll(TZFIELDS0_ll, ZRVS_OTHER)
-  CALL ADD3DFIELD_ll(TZFIELDS0_ll, ZRWS_OTHER)
+  CALL ADD3DFIELD_ll( TZFIELDS0_ll, ZRUS_OTHER, 'ADVECTION_UVW::ZRUS_OTHER' )
+  CALL ADD3DFIELD_ll( TZFIELDS0_ll, ZRVS_OTHER, 'ADVECTION_UVW::ZRVS_OTHER' )
+  CALL ADD3DFIELD_ll( TZFIELDS0_ll, ZRWS_OTHER, 'ADVECTION_UVW::ZRWS_OTHER' )
   CALL UPDATE_HALO_ll(TZFIELDS0_ll,IINFO_ll)
   CALL CLEANLIST_ll(TZFIELDS0_ll)
 !!$END IF

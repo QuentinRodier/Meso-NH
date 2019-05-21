@@ -5,6 +5,7 @@
 !-----------------------------------------------------------------
 ! Modifications:
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !-----------------------------------------------------------------
 
 !     #################
@@ -169,9 +170,9 @@
 !
 !*       3.    Put P2DFIELD and PTFIELD in the list of fields
 !
-   CALL ADD2DFIELD_ll(TZCHILD%TLIST, PTFIELD)
+   CALL ADD2DFIELD_ll(TZCHILD%TLIST, PTFIELD,  'SET_LS2DFIELD_1WAY_ll::PTFIELD'  )
 !
-   CALL ADD2DFIELD_ll(TZPAR%TLIST, P2DFIELD)
+   CALL ADD2DFIELD_ll(TZPAR%TLIST,   P2DFIELD, 'SET_LS2DFIELD_1WAY_ll::P2DFIELD' )
 !
 !-------------------------------------------------------------------------------
 !
@@ -287,9 +288,9 @@
 !
 !*       3.    Put P3DFIELD and PTFIELD in the list of fields
 !
-   CALL ADD3DFIELD_ll(TZCHILD%TLIST, PTFIELD)
+   CALL ADD3DFIELD_ll(TZCHILD%TLIST, PTFIELD,  'SET_LS3DFIELD_1WAY_ll::PTFIELD'  )
 !
-   CALL ADD3DFIELD_ll(TZPAR%TLIST, P3DFIELD)
+   CALL ADD3DFIELD_ll(TZPAR%TLIST,   P3DFIELD, 'SET_LS3DFIELD_1WAY_ll::P3DFIELD' )
 !
 !-------------------------------------------------------------------------------
 !
@@ -463,9 +464,9 @@
 !
 !*       2.   Put P2DFIELD and PTFIELD in the list of fields
 !
-   CALL ADD2DFIELD_ll(TZCHILD%TLIST, PTFIELD)
+   CALL ADD2DFIELD_ll(TZCHILD%TLIST, PTFIELD,  'SET_LS2DFIELD_2WAY_ll::PTFIELD'  )
 !
-   CALL ADD2DFIELD_ll(TZPAR%TLIST, P2DFIELD)
+   CALL ADD2DFIELD_ll(TZPAR%TLIST,   P2DFIELD, 'SET_LS2DFIELD_2WAY_ll::P2DFIELD' )
 !
 !-------------------------------------------------------------------------------
 !
@@ -551,9 +552,9 @@
 !
 !*       2.   Put P3DFIELD and PTFIELD in the list of fields
 !
-   CALL ADD3DFIELD_ll(TZCHILD%TLIST, PTFIELD)
+   CALL ADD3DFIELD_ll(TZCHILD%TLIST, PTFIELD,  'SET_LS3DFIELD_2WAY_ll::PTFIELD'  )
 !
-   CALL ADD3DFIELD_ll(TZPAR%TLIST, P3DFIELD)
+   CALL ADD3DFIELD_ll(TZPAR%TLIST,   P3DFIELD, 'SET_LS3DFIELD_2WAY_ll::P3DFIELD' )
 !
 !-------------------------------------------------------------------------------
 !

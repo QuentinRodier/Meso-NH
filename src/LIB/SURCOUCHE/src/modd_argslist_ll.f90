@@ -1,17 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for CVS information
-!-----------------------------------------------------------------
-! $Source$
-! $Name$ 
-! $Revision$ 
-! $Date$
-!-----------------------------------------------------------------
-!-----------------------------------------------------------------
-
 !      #######################
        MODULE MODD_ARGSLIST_ll
 !      #######################
@@ -42,11 +33,16 @@
 !!    Modifications
 !     -------------
 !!    Original 04/05/98
+!  P. Wautelet 20/05/2019: add cname field + set initial values
 !
 !-------------------------------------------------------------------------------
 !
-  USE MODD_STRUCTURE2_ll, ONLY : HALO2_ll
-!
+ USE MODD_STRUCTURE2_ll, ONLY : HALO2_ll
+
+implicit none
+
+integer,parameter :: NLISTTYPENAMESIZE = 32
+
 !     ############
       TYPE LIST_ll
 !     ############
@@ -61,14 +57,18 @@
 !
 !-------------------------------------------------------------------------------
 !
-  INTEGER :: NCARD
-  LOGICAL :: L1D, L2D, L3D
+  INTEGER :: NCARD = -1
+  LOGICAL :: L1D = .false.
+  LOGICAL :: L2D = .false.
+  LOGICAL :: L3D = .false.
+
+  character(len=NLISTTYPENAMESIZE) :: cname = 'UNKNOWN'
+
+  REAL, DIMENSION(:),     POINTER :: ARRAY1D => null()
+  REAL, DIMENSION(:,:),   POINTER :: ARRAY2D => null()
+  REAL, DIMENSION(:,:,:), POINTER :: ARRAY3D => null()
 !
-  REAL, DIMENSION(:,:,:), POINTER :: ARRAY3D
-  REAL, DIMENSION(:,:), POINTER :: ARRAY2D
-  REAL, DIMENSION(:), POINTER :: ARRAY1D
-!
-  TYPE(LIST_ll), POINTER :: NEXT
+  TYPE(LIST_ll), POINTER :: NEXT => null()
 !
       END TYPE LIST_ll
 !
@@ -87,12 +87,14 @@
 !
 !-------------------------------------------------------------------------------
 !
-  INTEGER :: NCARD
+  INTEGER :: NCARD = -1
+
+  character(len=NLISTTYPENAMESIZE) :: cname = 'UNKNOWN'
+
+  REAL, DIMENSION(:), POINTER :: ARRAY1D => null()
+  CHARACTER(LEN=1) :: CDIR = ' '
 !
-  REAL, DIMENSION(:), POINTER :: ARRAY1D
-  CHARACTER(LEN=1) :: CDIR
-!
-  TYPE(LIST1D_ll), POINTER :: NEXT
+  TYPE(LIST1D_ll), POINTER :: NEXT => null()
 !
       END TYPE LIST1D_ll
 !
@@ -111,11 +113,11 @@
 !
 !-------------------------------------------------------------------------------
 !
-  INTEGER :: NCARD
+  INTEGER :: NCARD = -1
 !
-  TYPE(HALO2_ll), POINTER :: HALO2
+  TYPE(HALO2_ll), POINTER :: HALO2 => null()
 !
-  TYPE(HALO2LIST_ll), POINTER :: NEXT
+  TYPE(HALO2LIST_ll), POINTER :: NEXT => null()
 !
       END TYPE HALO2LIST_ll
 !

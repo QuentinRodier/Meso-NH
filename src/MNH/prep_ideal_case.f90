@@ -317,6 +317,7 @@
 !  P. Wautelet 28/03/2019: use TFILE instead of unit number for set_iluout_timing
 !  P. Wautelet 19/04/2019: removed unused dummy arguments and variables
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -1358,7 +1359,7 @@ IF (    LEN_TRIM(CPGD_FILE) == 0  .OR. .NOT. LREAD_ZS) THEN
     CALL PRINT_MSG(NVERB_FATAL,'GEN','PREP_IDEAL_CASE','erroneous terrain type')
   END SELECT
 !
-  CALL ADD2DFIELD_ll(TZ_FIELDS_ll, XZS)
+  CALL ADD2DFIELD_ll( TZ_FIELDS_ll, XZS, 'PREP_IDEAL_CASE::XZS' )
   CALL UPDATE_HALO_ll(TZ_FIELDS_ll,IINFO_ll)
   CALL CLEANLIST_ll(TZ_FIELDS_ll)
 !

@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !      ###########################
        MODULE MODI_TO_ELEC_FIELD_n
 !      ###########################
@@ -63,6 +64,7 @@ END MODULE MODI_TO_ELEC_FIELD_n
 !!      Original    2002
 !!      C. Barthe   06/11/09   update to version 4.8.1
 !!      M. Chong    26/01/10   Add Small ions 
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !!
 !-------------------------------------------------------------------------------
 !
@@ -155,7 +157,7 @@ ZW(:,:,1:IKB-1)        = 0.0 ! Setup to neutralize the computation on the
                              ! at IKB-1 
 ZW(:,:,IKE:IKE+JPVEXT) = XESOURCEFW(:,:,IKE:IKE+JPVEXT)
 !
-CALL ADD3DFIELD_ll(TZFIELDS_ll, ZW)
+CALL ADD3DFIELD_ll( TZFIELDS_ll, ZW, 'TO_ELEC_FIELD_n::ZW' )
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZFIELDS_ll)
 !

@@ -1,8 +1,8 @@
-
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-------------------------------------------------------------------------------
 !     #####################
       MODULE MODI_ION_DRIFT
 !     #####################
@@ -36,7 +36,8 @@ END MODULE MODI_ION_DRIFT
 !!    ------
 !!          M. Chong      01/2010
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
-!!
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -118,16 +119,16 @@ IF (LNORTH_ll()) THEN
   XEFIELDV(:,IJE+1,:) = XEFIELDV(:,IJE,:)
 ENDIF   
 !
-CALL ADD3DFIELD_ll(TZFIELDS_ll,XEFIELDU)
-CALL ADD3DFIELD_ll(TZFIELDS_ll,XEFIELDV)
+CALL ADD3DFIELD_ll( TZFIELDS_ll, XEFIELDU, 'ION_DRIFT::XEFIELDU' )
+CALL ADD3DFIELD_ll( TZFIELDS_ll, XEFIELDV, 'ION_DRIFT::XEFIELDV' )
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZFIELDS_ll)
 !
 !  specify lateral boundary ion mixing ratio
 CALL ION_BOUND4DRIFT (HLBCX,HLBCY,XEFIELDU,XEFIELDV,PSVT)
 !
-CALL ADD3DFIELD_ll(TZFIELDS_ll,PSVT(:,:,:,NSV_ELECBEG))
-CALL ADD3DFIELD_ll(TZFIELDS_ll,PSVT(:,:,:,NSV_ELECEND))
+CALL ADD3DFIELD_ll( TZFIELDS_ll, PSVT(:,:,:,NSV_ELECBEG), 'ION_DRIFT::PSVT(:,:,:,NSV_ELECBEG)' )
+CALL ADD3DFIELD_ll( TZFIELDS_ll, PSVT(:,:,:,NSV_ELECEND), 'ION_DRIFT::PSVT(:,:,:,NSV_ELECEND)' )
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZFIELDS_ll)
 !

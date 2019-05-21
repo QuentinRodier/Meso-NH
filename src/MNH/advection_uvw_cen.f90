@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #####################
@@ -88,8 +88,8 @@ END MODULE MODI_ADVECTION_UVW_CEN
 !!      Original    01/2013  (from ADVECTION routine)
 !!      Modif
 !!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
+! P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !
-!!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -199,9 +199,9 @@ END IF
 !
 NULLIFY(TZFIELDS_ll)
 !!$IF(NHALO == 1) THEN
-  CALL ADD3DFIELD_ll(TZFIELDS_ll, ZRWCT)
-  CALL ADD3DFIELD_ll(TZFIELDS_ll, ZRUCT)
-  CALL ADD3DFIELD_ll(TZFIELDS_ll, ZRVCT)
+  CALL ADD3DFIELD_ll( TZFIELDS_ll, ZRWCT, 'ADVECTION_UVW_CEN::ZRWCT' )
+  CALL ADD3DFIELD_ll( TZFIELDS_ll, ZRUCT, 'ADVECTION_UVW_CEN::ZRUCT' )
+  CALL ADD3DFIELD_ll( TZFIELDS_ll, ZRVCT, 'ADVECTION_UVW_CEN::ZRVCT' )
   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
   CALL CLEANLIST_ll(TZFIELDS_ll)
 !!$END IF

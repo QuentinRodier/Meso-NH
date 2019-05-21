@@ -340,6 +340,7 @@ END MODULE MODI_TURB
 !!                     04/2016  (C.Lac) correction of negativity for KHKO
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!                     01/2018 (Q.Rodier) Introduction of RM17
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -1254,8 +1255,8 @@ CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 !         2 Update halo if necessary
 !
 !!$IF (NHALO == 1) THEN
-  CALL ADD2DFIELD_ll(TZFIELDS_ll,PUSLOPE)
-  CALL ADD2DFIELD_ll(TZFIELDS_ll,PVSLOPE)
+  CALL ADD2DFIELD_ll( TZFIELDS_ll, PUSLOPE, 'UPDATE_ROTATE_WIND::PUSLOPE' )
+  CALL ADD2DFIELD_ll( TZFIELDS_ll, PVSLOPE, 'UPDATE_ROTATE_WIND::PVSLOPE' )
   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
   CALL CLEANLIST_ll(TZFIELDS_ll)
 !!$ENDIF

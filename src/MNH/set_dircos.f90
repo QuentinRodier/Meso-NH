@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
 !-----------------------------------------------------------------
 !     ######################  
       MODULE MODI_SET_DIRCOS
@@ -118,6 +114,7 @@ END MODULE MODI_SET_DIRCOS
 !!      (J.Stein)        15/11/95  add the slope angle
 !!      V. DUCROCQ       14/08/98  //
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -197,9 +194,9 @@ PDIRCOSXW(:,:) = - ZWORK1(:,:,IKB) * PDIRCOSZW(:,:)
 !
 PDIRCOSYW(:,:) = - ZWORK2(:,:,IKB) * PDIRCOSZW(:,:)
 !
-CALL ADD2DFIELD_ll(TPINITHALO2D_ll,PDIRCOSZW)
-CALL ADD2DFIELD_ll(TPINITHALO2D_ll,PDIRCOSXW)
-CALL ADD2DFIELD_ll(TPINITHALO2D_ll,PDIRCOSYW)
+CALL ADD2DFIELD_ll( TPINITHALO2D_ll, PDIRCOSZW, 'SET_DIRCOS::PDIRCOSZW' )
+CALL ADD2DFIELD_ll( TPINITHALO2D_ll, PDIRCOSXW, 'SET_DIRCOS::PDIRCOSXW' )
+CALL ADD2DFIELD_ll( TPINITHALO2D_ll, PDIRCOSYW, 'SET_DIRCOS::PDIRCOSYW' )
 !
 !*      2. COMPUTE THE SLOPE COSINUS AND SINUS
 !          -----------------------------------
@@ -215,8 +212,8 @@ ELSEWHERE
   PSINSLOPE(:,:) = ZWORK2(:,:,IKB) /                &
     SQRT ( ZWORK1(:,:,IKB)**2 + ZWORK2(:,:,IKB)**2 )
 END WHERE
-CALL ADD2DFIELD_ll(TPINITHALO2D_ll,PCOSSLOPE)
-CALL ADD2DFIELD_ll(TPINITHALO2D_ll,PSINSLOPE)
+CALL ADD2DFIELD_ll( TPINITHALO2D_ll, PCOSSLOPE, 'SET_DIRCOS::PCOSSLOPE' )
+CALL ADD2DFIELD_ll( TPINITHALO2D_ll, PSINSLOPE, 'SET_DIRCOS::PSINSLOPE' )
 !
 !
 !------------------------------------------------------------------------------

@@ -104,6 +104,7 @@ END MODULE MODI_ADVECUVW_RK
 !!                  F.Auguste and C.Lac : 08/16 : CEN4TH with RKC4
 !!                  C.Lac   10/16 : Correction on RK loop
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !!
 !-------------------------------------------------------------------------------
 !
@@ -161,7 +162,8 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRUS_OTHER , PRVS_OTHER, PRWS_OTHER
 !*       0.2   declarations of local variables
 !
 !
-!  
+!
+character(len=3)    :: ynum
 INTEGER             :: IKE       ! indice K End       in z direction
 !
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: ZUT, ZVT, ZWT
@@ -336,11 +338,11 @@ ZWT = PW
 CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZUT, PUT, 'U' )    
 CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZVT, PVT, 'V' )    
 CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZWT, PWT, 'W' )
-
-NULLIFY(TZFIELDMT_ll)    
-CALL ADD3DFIELD_ll(TZFIELDMT_ll, ZUT)
-CALL ADD3DFIELD_ll(TZFIELDMT_ll, ZVT)
-CALL ADD3DFIELD_ll(TZFIELDMT_ll, ZWT)
+!
+NULLIFY(TZFIELDMT_ll)
+CALL ADD3DFIELD_ll( TZFIELDMT_ll, ZUT, 'ADVECUVW_RK::ZUT' )
+CALL ADD3DFIELD_ll( TZFIELDMT_ll, ZVT, 'ADVECUVW_RK::ZVT' )
+CALL ADD3DFIELD_ll( TZFIELDMT_ll, ZWT, 'ADVECUVW_RK::ZWT' )
 INBVAR = 3
 CALL INIT_HALO2_ll(TZHALO2MT_ll,INBVAR,SIZE(PUT,1),SIZE(PUT,2),SIZE(PWT,3))
 !
@@ -379,9 +381,10 @@ ZRWS = 0.
 !
      NULLIFY(TZFIELDS4_ll)
 !
-    CALL ADD3DFIELD_ll(TZFIELDS4_ll, ZRUS(:,:,:,JS))
-    CALL ADD3DFIELD_ll(TZFIELDS4_ll, ZRVS(:,:,:,JS))
-    CALL ADD3DFIELD_ll(TZFIELDS4_ll, ZRWS(:,:,:,JS))
+    write ( ynum, '( I3 )' ) js
+    CALL ADD3DFIELD_ll( TZFIELDS4_ll, ZRUS(:,:,:,JS), 'ADVECUVW_RK::ZRUS(:,:,:,'//trim( adjustl( ynum ) )//')' )
+    CALL ADD3DFIELD_ll( TZFIELDS4_ll, ZRVS(:,:,:,JS), 'ADVECUVW_RK::ZRVS(:,:,:,'//trim( adjustl( ynum ) )//')' )
+    CALL ADD3DFIELD_ll( TZFIELDS4_ll, ZRWS(:,:,:,JS), 'ADVECUVW_RK::ZRWS(:,:,:,'//trim( adjustl( ynum ) )//')' )
     CALL UPDATE_HALO_ll(TZFIELDS4_ll,IINFO_ll)
     CALL CLEANLIST_ll(TZFIELDS4_ll)
 !		

@@ -98,6 +98,7 @@ END MODULE MODI_SPAWN_ZS
 !      Modification    10/02/15 M. Moge : paralellization
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -507,7 +508,7 @@ IF (KDXRATIO/=1 .OR. KDYRATIO/=1) THEN
     END DO
     !
     NULLIFY(TZZSFIELD_ll)
-    CALL ADD2DFIELD_ll(TZZSFIELD_ll, ZZS1CHILDGRID_C)
+    CALL ADD2DFIELD_ll( TZZSFIELD_ll, ZZS1CHILDGRID_C, 'SPAWN_ZS::ZZS1CHILDGRID_C' )
     CALL UPDATE_HALO_EXTENDED_ll(TZZSFIELD_ll,IINFO)
     CALL CLEANLIST_ll(TZZSFIELD_ll)
     ! west and east boundaries - distant points

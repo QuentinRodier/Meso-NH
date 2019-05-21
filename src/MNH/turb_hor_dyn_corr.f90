@@ -136,6 +136,7 @@ END MODULE MODI_TURB_HOR_DYN_CORR
 !!                                               mass and flux position
 !!                     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -279,7 +280,7 @@ GZ_W_M_PWM = GZ_W_M(1,IKU,1,PWM,PDZZ)
 !
 ZMZF_DZZ = MZF(1,IKU,1,PDZZ)
 !
-CALL ADD3DFIELD_ll(TZFIELDS_ll, ZFLX)
+CALL ADD3DFIELD_ll( TZFIELDS_ll, ZFLX, 'TURB_HOR_DYN_CORR::ZFLX' )
 
 
 !  compute the coefficients for the uncentred gradient computation near the 

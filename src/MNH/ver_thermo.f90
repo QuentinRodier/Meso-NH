@@ -148,6 +148,7 @@ END MODULE MODI_VER_THERMO
 !!                                              because we now do it in SET_REF
 !!                     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -271,7 +272,7 @@ END IF
 XTHT(:,:,:)=ZTHV(:,:,:)*(1.+WATER_SUM(XRT(:,:,:,:)))/(1.+XRV/XRD*XRT(:,:,:,1))
 !
 !20131113 add update_halo here
-CALL ADD3DFIELD_ll(TZFIELDS_ll,XTHT )
+CALL ADD3DFIELD_ll( TZFIELDS_ll, XTHT, 'VER_THERMO::XTHT' )
    CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
       CALL CLEANLIST_ll(TZFIELDS_ll)
 CALL MPPDB_CHECK3D(XTHT,"PGDFILTER9:XTHT",PRECISION)

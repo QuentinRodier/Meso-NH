@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
 !-----------------------------------------------------------------
 !     ################
       MODULE MODI_QLAP
@@ -113,6 +109,7 @@ END MODULE MODI_QLAP
 !!                              at the lbc ( Stein )
 !!                     06/12 V.Masson : update_halo due to CONTRAV changes
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1  
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -254,9 +251,9 @@ END IF
 !              ----------------------
 !
 NULLIFY(TZFIELDS_ll)
-CALL ADD3DFIELD_ll(TZFIELDS_ll, ZU)
-CALL ADD3DFIELD_ll(TZFIELDS_ll, ZV)
-CALL ADD3DFIELD_ll(TZFIELDS_ll, ZW)
+CALL ADD3DFIELD_ll( TZFIELDS_ll, ZU, 'QLAP::ZU' )
+CALL ADD3DFIELD_ll( TZFIELDS_ll, ZV, 'QLAP::ZV' )
+CALL ADD3DFIELD_ll( TZFIELDS_ll, ZW, 'QLAP::ZW' )
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZFIELDS_ll)
 !

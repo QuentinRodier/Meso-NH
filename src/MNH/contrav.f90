@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 operators 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ####################
       MODULE MODI_CONTRAV
@@ -105,6 +100,7 @@ END MODULE MODI_CONTRAV
 !!      Corrections 19/01/11 (by J.P. Pinty) WC 4th order
 !!      Corrections 28/03/11 (by V.Masson) // of WC 4th order
 !!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !----------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -181,15 +177,15 @@ IF (KADV_ORDER == 4 ) THEN
  IF( .NOT. LFLAT) THEN 
   NULLIFY(TZFIELD_U)
   NULLIFY(TZFIELD_V)
-  CALL ADD3DFIELD_ll(TZFIELD_U, PRUCT)
-  CALL ADD3DFIELD_ll(TZFIELD_V, PRVCT)
+  CALL ADD3DFIELD_ll( TZFIELD_U, PRUCT, 'CONTRAV::PRUCT' )
+  CALL ADD3DFIELD_ll( TZFIELD_V, PRVCT, 'CONTRAV::PRVCT' )
   CALL UPDATE_HALO_ll(TZFIELD_U,IINFO_ll)
   CALL UPDATE_HALO_ll(TZFIELD_V,IINFO_ll)
 !!$ IF( NHALO==1 ) THEN 
   NULLIFY(TZFIELD_DZX)
   NULLIFY(TZFIELD_DZY)
-  CALL ADD3DFIELD_ll(TZFIELD_DZX, PDZX)
-  CALL ADD3DFIELD_ll(TZFIELD_DZY, PDZY)
+  CALL ADD3DFIELD_ll( TZFIELD_DZX, PDZX, 'CONTRAV::PDZX' )
+  CALL ADD3DFIELD_ll( TZFIELD_DZY, PDZY, 'CONTRAV::PDZY' )
   NULLIFY(TZHALO2_U)
   NULLIFY(TZHALO2_V)
   NULLIFY(TZHALO2_DZX)

@@ -106,6 +106,7 @@ END MODULE MODI_READ_ALL_DATA_MESONH_CASE
 !!                  19/03/2008 (J.Escobar) rename INIT to INIT_MNH --> grib problem
 !!                  2014 (M.Faivre)
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !!-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -329,9 +330,9 @@ XPS_LS(:,:) = XP00* (                                                     &
                      )**(XCPD/XRD)
 !
 !20131113 add update_halo
-CALL ADD2DFIELD_ll(TZFIELDS_ll,XPS_LS )
-   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
-      CALL CLEANLIST_ll(TZFIELDS_ll)
+CALL ADD2DFIELD_ll( TZFIELDS_ll, XPS_LS, 'READ_ALL_DATA_MESONH_CASE::XPS_LS' )
+CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+CALL CLEANLIST_ll(TZFIELDS_ll)
 CALL MPPDB_CHECK2D(XPS_LS,"PGDFILTER9:XPS_LS",PRECISION)
 !
 !

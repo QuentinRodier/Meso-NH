@@ -167,6 +167,7 @@ END MODULE MODI_TKE_EPS_SOURCES
 !!                     2015-01 (J. Escobar) missing get_halo(ZRES) for JPHEXT<> 1 
 !!     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !! --------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -329,7 +330,7 @@ CALL GET_HALO(ZRES)
 IF (LDIAG_IN_RUN) THEN
   XCURRENT_TKE_DISS = ZFLX(:,:,:) * PTKEM(:,:,:) &
                                   *(PEXPL*PTKEM(:,:,:) + PIMPL*ZRES(:,:,:))
-  CALL ADD3DFIELD_ll(TZFIELDDISS_ll,XCURRENT_TKE_DISS)
+  CALL ADD3DFIELD_ll( TZFIELDDISS_ll, XCURRENT_TKE_DISS, 'TKE_EPS_SOURCES::XCURRENT_TKE_DISS' )
   CALL UPDATE_HALO_ll(TZFIELDDISS_ll,IINFO_ll)
   CALL CLEANLIST_ll(TZFIELDDISS_ll)
 ENDIF

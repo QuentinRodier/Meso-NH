@@ -38,8 +38,8 @@
 !!                    05/02/15   M.Moge (LA-CNRS)
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
-!!
-!!    
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!
 !------------------------------------------------------------------------------
 !
 !*                0.  DECLARATIONS
@@ -348,8 +348,8 @@ ZYHATM(2:IIU,:)   = SPREAD(ZYHATM(1,:),1,IIU-1)
 IF(CPROGRAM/='SPAWN ')&
 CALL MPPDB_CHECK2D(ZYHATM,"GRIDPROJ:ZYHATM",PRECISION)
 ! ZXHATM and ZXHATM have to be updated
-CALL ADD2DFIELD_ll(TZHALO_ll,ZXHATM)
-CALL ADD2DFIELD_ll(TZHALO_ll,ZYHATM)
+CALL ADD2DFIELD_ll( TZHALO_ll, ZXHATM, 'SM_GRIDPROJ::ZXHATM' )
+CALL ADD2DFIELD_ll( TZHALO_ll, ZYHATM, 'SM_GRIDPROJ::ZYHATM' )
 CALL UPDATE_HALO_ll(TZHALO_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZHALO_ll)
 !
@@ -367,8 +367,8 @@ PDYHAT(IJU)      = PDYHAT(IJU-1)
 ZDZ(:,:,1:IKU-1) = PZZ(:,:,2:IKU) - PZZ(:,:,1:IKU-1)
 ZDZ(:,:,IKU)     = ZDZ(:,:,IKU-1)
 !  PDXHAT and PDYHAT have to be updated
-CALL ADD1DFIELD_ll("X",TZHALO1_ll,PDXHAT)
-CALL ADD1DFIELD_ll("Y",TZHALO1_ll,PDYHAT)
+CALL ADD1DFIELD_ll( 'X', TZHALO1_ll, PDXHAT, 'SM_GRIDPROJ::PDXHAT' )
+CALL ADD1DFIELD_ll( 'Y', TZHALO1_ll, PDYHAT, 'SM_GRIDPROJ::PDYHAT' )
 CALL UPDATE_1DHALO_ll(TZHALO1_ll,IINFO_ll)
 DEALLOCATE(TZHALO1_ll)
 CALL MPPDB_CHECK3D(ZDZ,"GRIDPROJ:ZDZ",PRECISION)

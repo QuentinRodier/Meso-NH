@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 chimie 2006/07/06 15:28:51
 !-----------------------------------------------------------------
 !!    ########################### 
       MODULE MODI_CH_INIT_FIELD_n
@@ -75,6 +70,7 @@ END MODULE MODI_CH_INIT_FIELD_n
 !!    22/01/01 (D. Gazen) add NSV_CHEMBEG and NSV_CHEMEND indices to handle SV
 !!    04/06/07 (M. Leriche & JP Pinty) add pH initialization
 !!    20/04/10 (M. Leriche) remove pH initialization to ini_modeln
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !!
 !!    EXTERNAL
 !!    --------
@@ -331,12 +327,8 @@ IF ((LCH_INIT_FIELD).AND.(CPROGRAM/='DIAG  ')) THEN
 ENDIF
 !
 !
-DO JN = NSV_CHEMBEG,NSV_CHEMEND
-  CALL ADD3DFIELD_ll(TZFIELDS_ll, XSVT(:,:,:,JN))
-END DO
-DO JN = NSV_AERBEG,NSV_AEREND
-  CALL ADD3DFIELD_ll(TZFIELDS_ll, XSVT(:,:,:,JN))
-END DO
+CALL ADD4DFIELD_ll(TZFIELDS_ll, XSVT(:,:,:,NSV_CHEMBEG:NSV_CHEMEND), 'CH_INIT_FIELD_n::XSVT(:,:,:,NSV_CHEMBEG:NSV_CHEMEND)' )
+CALL ADD4DFIELD_ll(TZFIELDS_ll, XSVT(:,:,:,NSV_AERBEG:NSV_AEREND),   'CH_INIT_FIELD_n::XSVT(:,:,:,NSV_AERBEG:NSV_AEREND)'   )
 !
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZFIELDS_ll)
@@ -362,12 +354,8 @@ IF (LORILAM) THEN
       XM3D(:,:,IKE+JPVEXT,JN) =  XM3D(:,:,IKE,JN)
   END DO
   !
-  DO JN = NSV_CHEMBEG,NSV_CHEMEND
-    CALL ADD3DFIELD_ll(TZFIELDS_ll, XSVT(:,:,:,JN))
-  END DO
-  DO JN = NSV_AERBEG,NSV_AEREND
-    CALL ADD3DFIELD_ll(TZFIELDS_ll, XSVT(:,:,:,JN))
-  END DO
+  CALL ADD4DFIELD_ll(TZFIELDS_ll, XSVT(:,:,:,NSV_CHEMBEG:NSV_CHEMEND), 'CH_INIT_FIELD_n::XSVT(:,:,:,NSV_CHEMBEG,NSV_CHEMEND)' )
+  CALL ADD4DFIELD_ll(TZFIELDS_ll, XSVT(:,:,:,NSV_AERBEG:NSV_AEREND),   'CH_INIT_FIELD_n::XSVT(:,:,:,NSV_AERBEG:NSV_AEREND)'   )
   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
   CALL CLEANLIST_ll(TZFIELDS_ll)
 END IF

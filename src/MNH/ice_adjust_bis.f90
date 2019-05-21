@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2012-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ######spl
      MODULE MODI_ICE_ADJUST_BIS
 !    ###############################
@@ -57,6 +58,7 @@ END MODULE MODI_ICE_ADJUST_BIS
 !!    -------------
 !!      Original         09/2012
 !!      M.Moge           08/2015 UPDATE_HALO_ll on PTH, ZRV, ZRC, ZRI
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !!
 !! --------------------------------------------------------------------------
 !
@@ -129,15 +131,15 @@ CALL TH_R_FROM_THL_RT_3D(YFRAC_ICE,ZFRAC_ICE(:,:,:),PP(:,:,:), &
                          ZTHL(:,:,:), ZRW(:,:,:), PTH(:,:,:),  &
                          ZRV(:,:,:), ZRC(:,:,:), ZRI(:,:,:),   &
                          ZRSATW(:,:,:), ZRSATI(:,:,:)          )
-CALL ADD3DFIELD_ll(TZFIELDS_ll,PTH)
+CALL ADD3DFIELD_ll( TZFIELDS_ll, PTH, 'ICE_ADJUST_BIS::PTH')
 IF (IRR>=1) THEN
-  CALL ADD3DFIELD_ll(TZFIELDS_ll,ZRV)
+  CALL ADD3DFIELD_ll( TZFIELDS_ll, ZRV, 'ICE_ADJUST_BIS::ZRV' )
 ENDIF
 IF (IRR>=2) THEN
-  CALL ADD3DFIELD_ll(TZFIELDS_ll,ZRC)
+  CALL ADD3DFIELD_ll( TZFIELDS_ll, ZRC, 'ICE_ADJUST_BIS::ZRC' )
 ENDIF
 IF (IRR>=4) THEN
-  CALL ADD3DFIELD_ll(TZFIELDS_ll,ZRI)
+  CALL ADD3DFIELD_ll( TZFIELDS_ll, ZRI, 'ICE_ADJUST_BIS::ZRI' )
 ENDIF
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZFIELDS_ll)

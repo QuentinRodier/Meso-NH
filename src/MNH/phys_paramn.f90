@@ -234,6 +234,7 @@ END MODULE MODI_PHYS_PARAM_n
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 28/03/2019: use MNHTIME for time measurement variables
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -392,6 +393,8 @@ REAL, DIMENSION(0:24) :: ZRAT_HOUR = (/ 326.00, 325.93, 325.12, 324.41,     &
                                       347.00, 342.00, 337.00, 332.00,       &
                                       326.00     /)
 !
+!
+character(len=6) :: ynum
 INTEGER  :: IHOUR               ! parameters necessary for the temporal
 REAL     :: ZTIME, ZDT          ! interpolation
 REAL     :: ZTEMP_DIST          ! time between 2 instants (in seconds)
@@ -1265,19 +1268,20 @@ IF (LLES_CALL) CALL SWITCH_SBG_LES_n
 IF ( CTURB == 'TKEL' ) THEN
 !
 
-!*        6.1 complete surface fluxe fields on the border
+!*        6.1 complete surface flux fields on the border
 !
 !!$  IF(NHALO == 1) THEN
-    CALL ADD2DFIELD_ll(TZFIELDS_ll,ZSFTH)
-    CALL ADD2DFIELD_ll(TZFIELDS_ll,ZSFRV)
-    CALL ADD2DFIELD_ll(TZFIELDS_ll,ZSFU)
-    CALL ADD2DFIELD_ll(TZFIELDS_ll,ZSFV)
+    CALL ADD2DFIELD_ll( TZFIELDS_ll, ZSFTH, 'PHYS_PARAM_n::ZSFTH' )
+    CALL ADD2DFIELD_ll( TZFIELDS_ll, ZSFRV, 'PHYS_PARAM_n::ZSFRV' )
+    CALL ADD2DFIELD_ll( TZFIELDS_ll, ZSFU,  'PHYS_PARAM_n::ZSFU' )
+    CALL ADD2DFIELD_ll( TZFIELDS_ll, ZSFV,  'PHYS_PARAM_n::ZSFV' )
     IF(NSV >0)THEN
       DO JSV=1,NSV
-        CALL ADD2DFIELD_ll(TZFIELDS_ll,ZSFSV(:,:,JSV))
+        write ( ynum, '( I6 ) ' ) jsv
+        CALL ADD2DFIELD_ll( TZFIELDS_ll, ZSFSV(:,:,JSV), 'PHYS_PARAM_n::ZSFSV:'//trim( adjustl( ynum ) ) )
       END DO
     END IF
-    CALL ADD2DFIELD_ll(TZFIELDS_ll,ZSFCO2)
+    CALL ADD2DFIELD_ll( TZFIELDS_ll, ZSFCO2, 'PHYS_PARAM_n::ZSFCO2' )
     CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
     CALL CLEANLIST_ll(TZFIELDS_ll)
 !!$  END IF
@@ -1379,7 +1383,7 @@ END IF
       XTHW_FLUX, XRCW_FLUX, XSVW_FLUX,XDYP, XTHP, XTR, XDISS,  XLEM         )
 !
 IF (LRMC01) THEN
-  CALL ADD2DFIELD_ll(TZFIELDS_ll,XSBL_DEPTH)
+  CALL ADD2DFIELD_ll( TZFIELDS_ll, XSBL_DEPTH, 'PHYS_PARAM_n::XSBL_DEPTH' )
   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
   CALL CLEANLIST_ll(TZFIELDS_ll)
   IF ( CLBCX(1) /= "CYCL" .AND. LWEST_ll()) THEN
@@ -1410,7 +1414,7 @@ IF (CSCONV == 'EDKF') THEN
      ZEXN(:,:,:)=(XPABST(:,:,:)/XP00)**(XRD/XCPD)  
      !$20131113 check3d on ZEXN
      CALL MPPDB_CHECK3D(ZEXN,"physparan.7::ZEXN",PRECISION)
-     CALL ADD3DFIELD_ll(TZFIELDS_ll, ZEXN)
+     CALL ADD3DFIELD_ll( TZFIELDS_ll, ZEXN, 'PHYS_PARAM_n::ZEXN' )
      !$20131113 add update_halo_ll
      CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
      CALL CLEANLIST_ll(TZFIELDS_ll)

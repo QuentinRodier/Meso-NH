@@ -3,6 +3,9 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
+! Modifications:
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!-----------------------------------------------------------------
 !      ########################
        MODULE MODI_ELEC_FIELD_n
 !      ########################
@@ -160,8 +163,8 @@ END DO
 !*       3.1   Compute the electrostatic potential
 !              -----------------------------------
 !
-CALL ADD3DFIELD_ll(TZFIELDS_ll,ZPHIT)
-CALL ADD3DFIELD_ll(TZFIELDS_ll,ZDV_SOURCE)
+CALL ADD3DFIELD_ll( TZFIELDS_ll, ZPHIT,      'ELEC_FIELD_n::ZPHIT' )
+CALL ADD3DFIELD_ll( TZFIELDS_ll, ZDV_SOURCE, 'ELEC_FIELD_n::ZDV_SOURCE' )
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZFIELDS_ll)
 !
@@ -219,7 +222,7 @@ ZPHIT(:,:,IKB-1) = -ZPHIT(:,:,IKB)
 !
 ! E =  rhodj * Nabla V  
 !
-CALL ADD3DFIELD_ll(TZFIELDS_ll,ZPHIT)
+CALL ADD3DFIELD_ll( TZFIELDS_ll, ZPHIT, 'ELEC_FIELD_n::ZPHIT' )
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZFIELDS_ll)
 !

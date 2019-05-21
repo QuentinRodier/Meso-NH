@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
 !-----------------------------------------------------------------
 !     ##########################
       MODULE MODI_DFLUX_CORR 
@@ -112,6 +108,7 @@ END MODULE MODI_DFLUX_CORR
 !!    J. Stein &    20/03/01 : bug for the open case at the boundary
 !!      P. Jabouille 
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -244,7 +241,7 @@ ZBETAOUT(:,:,IKU) = 1.      ! because no velocity is available
 !
 !!$IF(NHALO == 1 .OR. HLBCX(1)=='CYCL' .OR. HLBCY(1)=='CYCL') THEN
 IF(HLBCX(1)=='CYCL' .OR. HLBCY(1)=='CYCL') THEN
-  CALL ADD3DFIELD_ll(TZFIELDS_ll, ZBETAOUT)
+  CALL ADD3DFIELD_ll( TZFIELDS_ll, ZBETAOUT, 'DFLUX_CORR::ZBETAOUT' )
 !!$  IF(NHALO == 1) THEN
     CALL UPDATE_HALO_ll(TZFIELDS_ll, IINFO_ll)
 !!$  ELSE
@@ -294,13 +291,13 @@ PFZ(:,:,:) =  MIN(1., ZFOUT(:,:,:))    * MAX(0.,PFZ(:,:,:)) &
 !
                                                       ! x-direction
 IF (HLBCX(1)=='CYCL') THEN
-  CALL ADD3DFIELD_ll(TZFIELDS_ll, PFX)
+  CALL ADD3DFIELD_ll( TZFIELDS_ll, PFX, 'DFLUX_CORR::PFX' )
   CALL UPDATE_BOUNDARIES_ll('XX',TZFIELDS_ll, IINFO_ll)
   CALL CLEANLIST_ll(TZFIELDS_ll) 
 ENDIF
                                                       ! y-direction
 IF (HLBCY(1)=='CYCL') THEN
-  CALL ADD3DFIELD_ll(TZFIELDS_ll, PFY)
+  CALL ADD3DFIELD_ll( TZFIELDS_ll, PFY, 'DFLUX_CORR::PFY' )
   CALL UPDATE_BOUNDARIES_ll('YY',TZFIELDS_ll, IINFO_ll)
   CALL CLEANLIST_ll(TZFIELDS_ll)
 ENDIF

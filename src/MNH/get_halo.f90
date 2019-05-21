@@ -1,12 +1,10 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 newsrc 2007/03/01 13:18:33
+! Modifications:
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !-----------------------------------------------------------------
 !     ####################
       MODULE MODI_GET_HALO
@@ -62,7 +60,7 @@ IKU = SIZE(PSRC,3)
 NULLIFY( TZ_PSRC_ll,TP_PSRC_HALO2_ll)
 CALL INIT_HALO2_ll(TP_PSRC_HALO2_ll,1,IIU,IJU,IKU)
 !
-CALL ADD3DFIELD_ll(TZ_PSRC_ll,PSRC)
+CALL ADD3DFIELD_ll( TZ_PSRC_ll, PSRC, 'GET_HALO2::PSRC' )
 CALL UPDATE_HALO_ll(TZ_PSRC_ll,IERROR)
 CALL UPDATE_HALO2_ll(TZ_PSRC_ll,TP_PSRC_HALO2_ll,IERROR)
 !
@@ -89,7 +87,7 @@ INTEGER                          :: IERROR                 ! error return code
 !
 NULLIFY( TZ_PSRC_ll)
 !
-CALL ADD3DFIELD_ll(TZ_PSRC_ll,PSRC)
+CALL ADD3DFIELD_ll( TZ_PSRC_ll, PSRC, 'GET_HALO::PSRC' )
 CALL UPDATE_HALO_ll(TZ_PSRC_ll,IERROR)
 CALL CLEANLIST_ll(TZ_PSRC_ll)
 !

@@ -218,6 +218,7 @@ END MODULE MODI_PRESSUREZ
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!  Philippe Wautelet: 22/01/2019: use standard FLUSH statement instead of non standard intrinsics
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -421,9 +422,9 @@ CALL MPPDB_CHECK3D(PRUS,"pressurez 4-before update_halo_ll::PRUS",PRECISION)
 CALL MPPDB_CHECK3D(PRVS,"pressurez 4-before update_halo_ll::PRVS",PRECISION)
 CALL MPPDB_CHECK3D(PRWS,"pressurez 4-before update_halo_ll::PRWS",PRECISION)
 NULLIFY(TZFIELDS_ll)
-CALL ADD3DFIELD_ll(TZFIELDS_ll, PRUS)
-CALL ADD3DFIELD_ll(TZFIELDS_ll, PRVS)
-CALL ADD3DFIELD_ll(TZFIELDS_ll, PRWS)
+CALL ADD3DFIELD_ll( TZFIELDS_ll, PRUS, 'PRESSUREZ::PRUS' )
+CALL ADD3DFIELD_ll( TZFIELDS_ll, PRVS, 'PRESSUREZ::PRVS' )
+CALL ADD3DFIELD_ll( TZFIELDS_ll, PRWS, 'PRESSUREZ::PRWS' )
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZFIELDS_ll)
 CALL MPPDB_CHECK3D(PRUS,"pressurez 4-after update_halo_ll::PRUS",PRECISION)
@@ -623,9 +624,9 @@ END IF
     PRVS(:,:,IKE+1)=PRVS(:,:,IKE)
 !
 NULLIFY(TZFIELDS2_ll)
-CALL ADD3DFIELD_ll(TZFIELDS2_ll, PRUS)
-CALL ADD3DFIELD_ll(TZFIELDS2_ll, PRVS)
-CALL ADD3DFIELD_ll(TZFIELDS2_ll, PRWS)
+CALL ADD3DFIELD_ll( TZFIELDS2_ll, PRUS, 'PRESSUREZ::PRUS' )
+CALL ADD3DFIELD_ll( TZFIELDS2_ll, PRVS, 'PRESSUREZ::PRVS' )
+CALL ADD3DFIELD_ll( TZFIELDS2_ll, PRWS, 'PRESSUREZ::PRWS' )
 CALL UPDATE_HALO_ll(TZFIELDS2_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZFIELDS2_ll)
 !
@@ -724,7 +725,7 @@ IF ((ZMAX_ll > 1.E-12) .AND. KTCOUNT >0 ) THEN
 !
   END IF
 !
-  CALL ADD3DFIELD_ll(TZFIELDS_ll, PPABST)
+  CALL ADD3DFIELD_ll( TZFIELDS_ll, PPABST, 'PRESSUREZ::PPABST' )
   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
   CALL CLEANLIST_ll(TZFIELDS_ll)
 !

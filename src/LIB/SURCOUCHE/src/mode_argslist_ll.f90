@@ -48,6 +48,7 @@
 !!    -------------
 !     Original    May 19, 1998
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !
 !-------------------------------------------------------------------------------
 !
@@ -57,9 +58,9 @@
 !
   CONTAINS
 !
-!!    ##############################################
-      SUBROUTINE ADD1DFIELD_ll(HDIR, TPLIST, PFIELD)
-!!    ##############################################
+!!    #####################################################
+      SUBROUTINE ADD1DFIELD_ll(HDIR, TPLIST, PFIELD, HNAME)
+!!    #####################################################
 !
 !!****  *ADD1DFIELD_ll* -
 !
@@ -97,10 +98,11 @@
 
   IMPLICIT NONE
 !
+  CHARACTER(LEN=1), INTENT(IN) :: HDIR ! direction of the field ("X" or "Y")
   TYPE(LIST1D_ll), POINTER     :: TPLIST ! list of fields
   REAL, DIMENSION(:), TARGET   :: PFIELD ! field to be added
                                          ! to the list of fields
-  CHARACTER(LEN=1), INTENT(IN) :: HDIR ! direction of the field ("X" or "Y")
+  character(len=*), intent(in) :: HNAME ! Name of the field to be added
 !
 !*       0.2   declarations of local variables
 !
@@ -125,6 +127,7 @@
     NULLIFY(TPLIST%NEXT)
     TPLIST%NCARD = 1
     TPLIST%CDIR = HDIR
+    tplist%cname = hname
 !
   ELSE 
 !
@@ -144,6 +147,7 @@
     TZLIST%ARRAY1D => PFIELD
     TZLIST%NCARD = 0
     TZLIST%CDIR = HDIR
+    tzlist%cname = hname
     NULLIFY(TZLIST%NEXT)
 !
     TPLIST%NCARD = TPLIST%NCARD + 1
@@ -154,9 +158,9 @@
 !
       END SUBROUTINE ADD1DFIELD_ll
 !
-!!    ########################################
-      SUBROUTINE ADD2DFIELD_ll(TPLIST, PFIELD)
-!!    ########################################
+!!    ###############################################
+      SUBROUTINE ADD2DFIELD_ll(TPLIST, PFIELD, HNAME)
+!!    ###############################################
 !
 !!****  *ADD2DFIELD_ll* -
 !
@@ -196,6 +200,7 @@
   TYPE(LIST_ll), POINTER       :: TPLIST ! list of fields
   REAL, DIMENSION(:,:), TARGET :: PFIELD ! field to be added
                                          ! to the list of fields
+  character(len=*), intent(in) :: HNAME ! Name of the field to be added
 !
 !*       0.2   declarations of local variables
 !
@@ -213,6 +218,7 @@
     TPLIST%ARRAY2D => PFIELD
     NULLIFY(TPLIST%NEXT)
     TPLIST%NCARD = 1
+    tplist%cname  = hname
     TPLIST%L1D = .FALSE.
     TPLIST%L2D = .TRUE.
     TPLIST%L3D = .FALSE.
@@ -235,6 +241,7 @@
     NULLIFY(TZLIST%ARRAY3D)
     TZLIST%ARRAY2D => PFIELD
     TZLIST%NCARD = 0
+    tzlist%cname = hname
     TZLIST%L1D = .FALSE.
     TZLIST%L2D = .TRUE.
     TZLIST%L3D = .FALSE.
@@ -248,9 +255,9 @@
 !
       END SUBROUTINE ADD2DFIELD_ll
 !
-!!    ########################################
-      SUBROUTINE ADD3DFIELD_ll(TPLIST, PFIELD)
-!!    ########################################
+!!    ###############################################
+      SUBROUTINE ADD3DFIELD_ll(TPLIST, PFIELD, HNAME)
+!!    ###############################################
 !
 !!****  *ADD3DFIELD_ll* -
 !
@@ -290,6 +297,7 @@
   TYPE(LIST_ll), POINTER         :: TPLIST   ! list of fields
   REAL, DIMENSION(:,:,:), TARGET :: PFIELD   ! field to be added to the list
 !                                              of fields
+  character(len=*), intent(in) :: HNAME ! Name of the field to be added
 !
 !*       0.2   declarations of local variables
 !
@@ -308,6 +316,7 @@
     TPLIST%ARRAY3D => PFIELD
     NULLIFY(TPLIST%NEXT)
     TPLIST%NCARD = 1
+    tplist%cname = hname
     TPLIST%L1D = .FALSE.
     TPLIST%L2D = .FALSE.
     TPLIST%L3D = .TRUE.
@@ -331,6 +340,7 @@
     NULLIFY(TZLIST%ARRAY2D)
     TZLIST%ARRAY3D => PFIELD
     TZLIST%NCARD = 0
+    tzlist%cname = hname
     TZLIST%L1D = .FALSE.
     TZLIST%L2D = .FALSE.
     TZLIST%L3D = .TRUE.
@@ -343,7 +353,66 @@
 !-------------------------------------------------------------------------------
 !
       END SUBROUTINE ADD3DFIELD_ll
+
+
+
+!################################################
+subroutine add4dfield_ll( tplist, pfield, hname )
+!################################################
 !
+!!****  *ADD3DFIELD_ll* -
+!
+!!    Purpose
+!!    -------
+!     This routine is used to add a 4D field (PFIELD) to a list of
+!     4D fields (TPLIST).
+!     For the moment, it is split in a series of 3D fields
+!
+!!    Reference
+!!    ---------
+!
+!     User interface for the Meso-NH parallel package
+!
+!!    Implicit Arguments
+!!    ------------------
+!
+!     Module MODD_ARGSLIST :
+!         LIST_ll : list of fields
+!
+!!    Author
+!!    ------
+!
+!  P. Wautelet 20/05/2019
+!
+!!    Modifications
+!    -------------
+!
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!
+!*       0.1   declarations of arguments
+!
+  implicit none
+!
+  type(list_ll), pointer   :: tplist   ! list of fields
+  real, dimension(:,:,:,:),   intent(in) :: pfield   ! field to be added to the list of fields
+  character(len=*), intent(in) :: hname ! name of the field to be added
+!
+!*       0.2   declarations of local variables
+!
+  character(len=6)              :: ynum
+  integer                       :: ji
+
+  do ji = 1, size( pfield, 4 )
+    write ( ynum, '( I6.3 )' ) ji
+    call add3dfield_ll(tplist, pfield(:,:,:,ji), trim( hname )//':'//trim( adjustl( ynum ) ) )
+  end do
+
+end subroutine add4dfield_ll
+
+
+
 !!    ###############################################
       SUBROUTINE DEL1DFIELD_ll(TPLIST, PFIELD, KINFO)
 !!    ###############################################

@@ -61,6 +61,7 @@ END MODULE MODI_CLUSTERING
 !!      Modified    13/06/17    T. Dauhut   to start volume scan from top
 !!      Modified    04/10/17    T. Dauhut   to be added to next MNH versions
 !  P. Wautelet 26/04/2019: use modd_precision parameters for datatypes of MPI communications
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !
 !-------------------------------------------------------------------------------
 !
@@ -421,9 +422,9 @@ DO JH=1,9999            ! update halo until there is no more changes anywhere
 ZMAPIDT_ll=IMAPIDT_ll
 ZMAPLVL_ll=IMAPLVL_ll
 ZMAPAFL_ll=IMAPAFL_ll
-CALL ADD2DFIELD_ll(TZFIELDS_ll,ZMAPIDT_ll)
-CALL ADD2DFIELD_ll(TZFIELDS_ll,ZMAPLVL_ll)
-CALL ADD2DFIELD_ll(TZFIELDS_ll,ZMAPAFL_ll)
+CALL ADD2DFIELD_ll( TZFIELDS_ll, ZMAPIDT_ll, 'CLUSTERING::ZMAPIDT_ll' )
+CALL ADD2DFIELD_ll( TZFIELDS_ll, ZMAPLVL_ll, 'CLUSTERING::ZMAPLVL_ll' )
+CALL ADD2DFIELD_ll( TZFIELDS_ll, ZMAPAFL_ll, 'CLUSTERING::ZMAPAFL_ll' )
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 IMAPIDT_ll=NINT(ZMAPIDT_ll)
 IMAPLVL_ll=NINT(ZMAPLVL_ll)

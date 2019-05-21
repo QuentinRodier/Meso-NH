@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !###################
@@ -199,7 +199,8 @@ END MODULE MODI_PRESSURE
 !!                                             to save it before UPDATE_HALO
 !!                    06/2011 (J.escobar ) Bypass Bug with ifort11/12 on  HLBCX,HLBCY 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -378,9 +379,9 @@ END IF
 !              --------------------------------------------------
 !
 !
-CALL ADD3DFIELD_ll(TZFIELDS_ll, PRUS)
-CALL ADD3DFIELD_ll(TZFIELDS_ll, PRVS)
-CALL ADD3DFIELD_ll(TZFIELDS_ll, PRWS)
+CALL ADD3DFIELD_ll( TZFIELDS_ll, PRUS, 'PRESSURE::PRUS' )
+CALL ADD3DFIELD_ll( TZFIELDS_ll, PRVS, 'PRESSURE::PRVS' )
+CALL ADD3DFIELD_ll( TZFIELDS_ll, PRWS, 'PRESSURE::PRWS' )
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZFIELDS_ll)
 !
@@ -653,7 +654,7 @@ IF (      ABS(PRHODREF(IIB,IJB,IKB)-PRHODREF(IIB,IJB,IKE)) > 1.E-12 &
 !
   END IF
 !
-  CALL ADD3DFIELD_ll(TZFIELDS_2_ll, PPABST)
+  CALL ADD3DFIELD_ll( TZFIELDS_2_ll, PPABST, 'PRESSURE::PPABST' )
   CALL UPDATE_HALO_ll(TZFIELDS_2_ll,IINFO_ll)
   CALL CLEANLIST_ll(TZFIELDS_2_ll)
 !

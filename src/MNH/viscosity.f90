@@ -90,6 +90,7 @@ SUBROUTINE VISCOSITY(HLBCX, HLBCY, KRR, KSV, PNU, PPRANDTL,          &
 !!    MODIFICATIONS
 !!    -------------
 !!      01/18 (C.Lac) Add budgets
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -260,7 +261,7 @@ IF (OVISC_UVW) THEN
                    PDZY,PDZZ,PRHODJ,ZY1)
 !! Update halo to compute the source term
  NULLIFY(TZFIELDS_ll)
- CALL ADD3DFIELD_ll(TZFIELDS_ll,ZLAPu)
+ CALL ADD3DFIELD_ll( TZFIELDS_ll, ZLAPu, 'VISCOSITY::ZLAPu' )
  CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
  CALL CLEANLIST_ll(TZFIELDS_ll)
 !
@@ -281,7 +282,7 @@ IF (OVISC_UVW) THEN
 !! Update halo to compute the source term
 !
  NULLIFY(TZFIELDS_ll)
- CALL ADD3DFIELD_ll(TZFIELDS_ll,ZLAPv)
+ CALL ADD3DFIELD_ll( TZFIELDS_ll, ZLAPv, 'VISCOSITY::ZLAPv' )
  CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
  CALL CLEANLIST_ll(TZFIELDS_ll)
 !

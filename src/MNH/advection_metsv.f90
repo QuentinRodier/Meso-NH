@@ -136,6 +136,7 @@ END MODULE MODI_ADVECTION_METSV
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!                  07/2017  (V. Vionnet)  : add advection of 2D variables at
 !!                                      the surface for the blowing snow scheme
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -494,19 +495,11 @@ END IF
 !
 NULLIFY(TZFIELDS0_ll)
 !!$IF(NHALO == 1) THEN
-  CALL ADD3DFIELD_ll(TZFIELDS0_ll, ZRTHS_OTHER)
-  IF (GTKE) CALL ADD3DFIELD_ll(TZFIELDS0_ll, ZRTKES_OTHER)
-  DO JR=1,KRR
-    CALL ADD3DFIELD_ll(TZFIELDS0_ll, ZRRS_OTHER(:,:,:,JR))
-  END DO
-  DO JSV=1,KSV
-    CALL ADD3DFIELD_ll(TZFIELDS0_ll, ZRSVS_OTHER(:,:,:,JSV))
-  END DO
-  IF(LBLOWSNOW) THEN
-    DO JSV = 1, (NBLOWSNOW_2D)  
-      CALL ADD3DFIELD_ll(TZFIELDS0_ll, ZRSNWCS_OTHER(:,:,:,JSV))
-    END DO
-  END IF
+  CALL ADD3DFIELD_ll( TZFIELDS0_ll, ZRTHS_OTHER, 'ADVECTION_METSV::ZRTHS_OTHER' )
+  IF (GTKE) CALL ADD3DFIELD_ll( TZFIELDS0_ll, ZRTKES_OTHER, 'ADVECTION_METSV::ZRTKES_OTHER' )
+  IF ( KRR>0 )  CALL ADD4DFIELD_ll( TZFIELDS0_ll, ZRRS_OTHER(:,:,:,1:KRR),             'ADVECTION_METSV::ZRRS_OTHER'    )
+  IF ( KSV>0 )  CALL ADD4DFIELD_ll( TZFIELDS0_ll, ZRSVS_OTHER(:,:,:,1:KSV),            'ADVECTION_METSV::ZRSVS_OTHER'   )
+  IF(LBLOWSNOW) CALL ADD4DFIELD_ll( TZFIELDS0_ll, ZRSNWCS_OTHER(:,:,:,1:NBLOWSNOW_2D), 'ADVECTION_METSV::ZRSNWCS_OTHER' )
   CALL UPDATE_HALO_ll(TZFIELDS0_ll,IINFO_ll)
   CALL CLEANLIST_ll(TZFIELDS0_ll)
 !!$END IF
@@ -615,19 +608,11 @@ DO JSPL=1,KSPLIT
 !
    NULLIFY(TZFIELDS1_ll)
 !!$   IF(NHALO == 1) THEN
-    CALL ADD3DFIELD_ll(TZFIELDS1_ll, ZTH)
-    IF (GTKE) CALL ADD3DFIELD_ll(TZFIELDS1_ll, ZTKE)
-    DO JR=1,KRR
-      CALL ADD3DFIELD_ll(TZFIELDS1_ll, ZR(:,:,:,JR))
-    END DO
-    DO JSV=1,KSV
-      CALL ADD3DFIELD_ll(TZFIELDS1_ll, ZSV(:,:,:,JSV))
-    END DO
-    IF(LBLOWSNOW) THEN
-       DO JSV=1,(NBLOWSNOW_2D)
-         CALL ADD3DFIELD_ll(TZFIELDS1_ll, ZSNWC(:,:,:,JSV))
-       END DO
-    END IF
+    CALL ADD3DFIELD_ll( TZFIELDS1_ll, ZTH, 'ZTH' )
+    IF (GTKE)        CALL ADD3DFIELD_ll( TZFIELDS1_ll, ZTKE,                        'ADVECTION_METSV::ZTKE' )
+    IF ( KRR>0 )     CALL ADD4DFIELD_ll( TZFIELDS1_ll, ZR (:,:,:,1:KRR),            'ADVECTION_METSV::ZR'    )
+    IF ( KSV>0 )     CALL ADD4DFIELD_ll( TZFIELDS1_ll, ZSV(:,:,:,1:KSV),            'ADVECTION_METSV::ZSV'   )
+    IF ( LBLOWSNOW ) CALL ADD4DFIELD_ll( TZFIELDS1_ll, ZSNWC(:,:,:,1:NBLOWSNOW_2D), 'ADVECTION_METSV::ZSNWC' )
     CALL UPDATE_HALO_ll(TZFIELDS1_ll,IINFO_ll)
     CALL CLEANLIST_ll(TZFIELDS1_ll)
 !!$   END IF

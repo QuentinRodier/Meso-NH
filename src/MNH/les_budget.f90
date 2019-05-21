@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 les 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !    ######################
      MODULE MODI_LES_BUDGET
@@ -52,6 +47,7 @@ END MODULE MODI_LES_BUDGET
 !!    -------------
 !!      Original    September 19, 2002
 !!      25/11/2016  Q.Rodier correction bug variance u'^2  v'^2  w'^2
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -410,7 +406,7 @@ INTEGER :: IINFO_ll
     END SELECT
 
     NULLIFY(TZFIELDS_ll)
-    CALL ADD3DFIELD_ll(TZFIELDS_ll, ZS)
+    CALL ADD3DFIELD_ll( TZFIELDS_ll, ZS, 'LES_BUDGET_ANOMALY::ZS' )
     CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
     CALL CLEANLIST_ll(TZFIELDS_ll)
     !

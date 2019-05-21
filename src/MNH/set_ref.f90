@@ -149,6 +149,7 @@ END MODULE MODI_SET_REF
 !!      Modification    07/13     (M.Moge) calling UPDATE_HALO_ll on PRHODJ, PRVREF, 
 !!                                PRHODREF, PEXNREF, PTHVREF after computation
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -390,11 +391,11 @@ END IF
 ! update halo of PRHODJ and PRVREF for future use ( notably in anel_balance_n )
 !
 NULLIFY( TZFIELDS_ll )
-CALL ADD3DFIELD_ll(TZFIELDS_ll,PRHODJ)
-IF ( SIZE(PRVREF,1) /= 0 ) CALL ADD3DFIELD_ll(TZFIELDS_ll,PRVREF)
-CALL ADD3DFIELD_ll(TZFIELDS_ll,PRHODREF)
-CALL ADD3DFIELD_ll(TZFIELDS_ll,PEXNREF)
-CALL ADD3DFIELD_ll(TZFIELDS_ll,PTHVREF)
+CALL ADD3DFIELD_ll( TZFIELDS_ll, PRHODJ,   'SET_REF::PRHODJ' )
+IF ( SIZE(PRVREF,1) /= 0 ) CALL ADD3DFIELD_ll( TZFIELDS_ll, PRVREF, 'SET_REF::PRVREF' )
+CALL ADD3DFIELD_ll( TZFIELDS_ll, PRHODREF, 'SET_REF::PRHODREF')
+CALL ADD3DFIELD_ll( TZFIELDS_ll, PEXNREF,  'SET_REF::PEXNREF')
+CALL ADD3DFIELD_ll( TZFIELDS_ll, PTHVREF,  'SET_REF::PTHVREF')
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZFIELDS_ll)
 !
