@@ -17,16 +17,69 @@ module mode_tools
 !    ------
 !     P. Wautelet 14/02/2019
 !
+! Modifications:
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 
 implicit none
 
 private
 
-public :: upcase
+public :: Countjv
+public :: Upcase
+
+interface Countjv
+  module procedure Countjv2d, Countjv3d
+end interface
+
 
 contains
 
-function upcase(hstring)
+function Countjv2d(ltab,i1,i2) result(ic)
+  logical, dimension(:,:), intent(in)  :: ltab   ! Mask
+  integer, dimension(:),   intent(out) :: i1, i2 ! Positions of elements with 'true' value
+  integer                              :: ic     ! Total number of 'true' values
+
+  integer :: ji, jj
+
+  ic = 0
+
+  do jj = 1, size( ltab, 2 )
+    do ji = 1, size( ltab, 1 )
+      if ( ltab(ji, jj ) ) then
+        ic = ic +1
+        i1(ic) = ji
+        i2(ic) = jj
+      end if
+    end do
+  end do
+end function Countjv2d
+
+
+function Countjv3d(ltab,i1,i2,i3) result(ic)
+  logical, dimension(:,:,:), intent(in)  :: ltab       ! Mask
+  integer, dimension(:),     intent(out) :: i1, i2, i3 ! Positions of elements with 'true' value
+  integer                                :: ic         ! Total number of 'true' values
+
+  integer :: ji, jj, jk
+
+  ic = 0
+
+  do jk = 1, size( ltab, 3 )
+    do jj = 1, size( ltab, 2 )
+      do ji = 1, size( ltab, 1 )
+        if ( ltab(ji, jj, jk ) ) then
+          ic = ic +1
+          i1(ic) = ji
+          i2(ic) = jj
+          i3(ic) = jk
+        end if
+      end do
+    end do
+  end do
+end function Countjv3d
+
+
+function Upcase(hstring)
   character(len=*), intent(in) :: hstring
   character(len=len(hstring))  :: upcase
 
@@ -41,6 +94,6 @@ function upcase(hstring)
       upcase(jc:jc) = hstring(jc:jc)
     end if
   end do
-end function upcase
+end function Upcase
 
 end module mode_tools

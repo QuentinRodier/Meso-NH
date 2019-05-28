@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !      ##########################
@@ -96,22 +96,23 @@ END MODULE MODI_LIMA_WARM_COAL
 !!      Original             ??/??/13 
 !!      C. Barthe  * LACy *  jan. 2014   add budgets
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAMETERS,     ONLY : JPHEXT, JPVEXT
+USE MODD_BUDGET
+USE MODD_NSV,             ONLY: NSV_LIMA_NC, NSV_LIMA_NR
+USE MODD_PARAMETERS,      ONLY: JPHEXT, JPVEXT
 USE MODD_PARAM_LIMA
 USE MODD_PARAM_LIMA_WARM
-!
-USE MODD_NSV, ONLY : NSV_LIMA_NC, NSV_LIMA_NR
-USE MODD_BUDGET
+
+use mode_tools,           only: Countjv
+
 USE MODI_BUDGET
-!
-USE MODI_LIMA_FUNCTIONS, ONLY : COUNTJV
-!
+
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :

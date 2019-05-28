@@ -64,19 +64,22 @@ END MODULE MODI_LIMA_SEDIMENTATION
 !!
 !!      B.Vie  02/2019  Desactivate (comment) the heat transport by droplets
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAM_LIMA_COLD,  ONLY : XLBEXI, XLBI, XDI
-USE MODD_PARAM_LIMA,       ONLY : XCEXVT, XRTMIN, XCTMIN, NSPLITSED, &
-                                  XLB, XLBEX, XD, XFSEDR, XFSEDC,    &
-                                  XALPHAC, XNUC
-USE MODD_CST,              ONLY : XRHOLW, XCL, XCI
-USE MODD_PARAMETERS,       ONLY : JPHEXT, JPVEXT
-USE MODI_LIMA_FUNCTIONS,   ONLY : COUNTJV
-USE MODI_GAMMA,            ONLY : GAMMA_X0D
+USE MODD_CST,              ONLY: XRHOLW, XCL, XCI
+USE MODD_PARAMETERS,       ONLY: JPHEXT, JPVEXT
+USE MODD_PARAM_LIMA,       ONLY: XCEXVT, XRTMIN, XCTMIN, NSPLITSED, &
+                                 XLB, XLBEX, XD, XFSEDR, XFSEDC,    &
+                                 XALPHAC, XNUC
+USE MODD_PARAM_LIMA_COLD,  ONLY: XLBEXI, XLBI, XDI
+
+use mode_tools,            only: Countjv
+
+USE MODI_GAMMA,            ONLY: GAMMA_X0D
 !
 IMPLICIT NONE
 !

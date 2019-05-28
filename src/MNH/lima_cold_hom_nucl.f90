@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !      ######################
@@ -91,28 +91,30 @@ END MODULE MODI_LIMA_COLD_HOM_NUCL
 !!      C. Barthe  * LACy*   jan. 2014  add budgets
 !!      B.Vie 10/2016 Bug zero division
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAMETERS,      ONLY : JPHEXT, JPVEXT
-USE MODD_CST,             ONLY : XP00, XRD, XRV, XMV, XMD, XCPD, XCPV, XCL, XCI,   &
-                                 XTT, XLSTT, XLVTT, XALPI, XBETAI, XGAMI,          &
-                                 XG
-USE MODD_PARAM_LIMA,      ONLY : NMOD_CCN, NMOD_IMM, XRTMIN, XCTMIN, XNUC, LWARM, LRAIN
-USE MODD_PARAM_LIMA_COLD, ONLY : XRCOEF_HONH, XCEXP_DIFVAP_HONH, XCOEF_DIFVAP_HONH,&
-                                 XCRITSAT1_HONH, XCRITSAT2_HONH, XTMAX_HONH,       &
-                                 XTMIN_HONH, XC1_HONH, XC2_HONH, XC3_HONH,         &
-                                 XDLNJODT1_HONH, XDLNJODT2_HONH, XRHOI_HONH,       &
-                                 XC_HONC, XTEXP1_HONC, XTEXP2_HONC, XTEXP3_HONC,   &
-                                 XTEXP4_HONC, XTEXP5_HONC 
-USE MODD_PARAM_LIMA_WARM, ONLY : XLBC
-USE MODI_LIMA_FUNCTIONS,  ONLY : COUNTJV
-!
-USE MODD_NSV
 USE MODD_BUDGET
+USE MODD_CST,             ONLY: XP00, XRD, XRV, XMV, XMD, XCPD, XCPV, XCL, XCI,   &
+                                XTT, XLSTT, XLVTT, XALPI, XBETAI, XGAMI,          &
+                                XG
+USE MODD_NSV
+USE MODD_PARAMETERS,      ONLY: JPHEXT, JPVEXT
+USE MODD_PARAM_LIMA,      ONLY: NMOD_CCN, NMOD_IMM, XRTMIN, XCTMIN, XNUC, LWARM, LRAIN
+USE MODD_PARAM_LIMA_COLD, ONLY: XRCOEF_HONH, XCEXP_DIFVAP_HONH, XCOEF_DIFVAP_HONH,&
+                                XCRITSAT1_HONH, XCRITSAT2_HONH, XTMAX_HONH,       &
+                                XTMIN_HONH, XC1_HONH, XC2_HONH, XC3_HONH,         &
+                                XDLNJODT1_HONH, XDLNJODT2_HONH, XRHOI_HONH,       &
+                                XC_HONC, XTEXP1_HONC, XTEXP2_HONC, XTEXP3_HONC,   &
+                                XTEXP4_HONC, XTEXP5_HONC
+USE MODD_PARAM_LIMA_WARM, ONLY: XLBC
+!
+use mode_tools,           only: Countjv
+!
 USE MODI_BUDGET
 !
 IMPLICIT NONE

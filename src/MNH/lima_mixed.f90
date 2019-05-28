@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !      ######################
@@ -98,25 +98,23 @@ END MODULE MODI_LIMA_MIXED
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAMETERS,       ONLY : JPHEXT, JPVEXT
-USE MODD_CST,              ONLY : XP00, XRD, XRV, XMV, XMD, XCPD, XCPV,       &
-                                  XCL, XCI, XTT, XLSTT, XLVTT,                &
-                                  XALPI, XBETAI, XGAMI
-USE MODD_PARAM_LIMA,       ONLY : NMOD_IFN, XRTMIN, XCTMIN, LWARM, LCOLD,     &
-                                  NMOD_CCN, NMOD_IMM, LRAIN, LSNOW, LHAIL
-USE MODD_PARAM_LIMA_WARM,  ONLY : XLBC, XLBEXC, XLBR, XLBEXR
-USE MODD_PARAM_LIMA_COLD,  ONLY : XLBI, XLBEXI, XLBS, XLBEXS, XSCFAC
-USE MODD_PARAM_LIMA_MIXED, ONLY : XLBG, XLBEXG, XLBH, XLBEXH
-!USE MODD_BUDGET,           ONLY : LBU_ENABLE, NBUMOD
-!
-USE MODD_NSV
-!
 USE MODD_BUDGET
+USE MODD_CST,              ONLY: XP00, XRD, XRV, XMV, XMD, XCPD, XCPV,       &
+                                 XCL, XCI, XTT, XLSTT, XLVTT,                &
+                                 XALPI, XBETAI, XGAMI
+USE MODD_NSV
+USE MODD_PARAMETERS,       ONLY: JPHEXT, JPVEXT
+USE MODD_PARAM_LIMA,       ONLY: NMOD_IFN, XRTMIN, XCTMIN, LWARM, LCOLD,     &
+                                 NMOD_CCN, NMOD_IMM, LRAIN, LSNOW, LHAIL
+USE MODD_PARAM_LIMA_WARM,  ONLY: XLBC, XLBEXC, XLBR, XLBEXR
+USE MODD_PARAM_LIMA_COLD,  ONLY: XLBI, XLBEXI, XLBS, XLBEXS, XSCFAC
+USE MODD_PARAM_LIMA_MIXED, ONLY: XLBG, XLBEXG, XLBH, XLBEXH
+
+use mode_tools,            only: Countjv
+
 USE MODI_BUDGET
-!
-USE MODI_LIMA_FUNCTIONS,   ONLY : COUNTJV
-USE MODI_LIMA_MIXED_SLOW_PROCESSES
 USE MODI_LIMA_MIXED_FAST_PROCESSES
+USE MODI_LIMA_MIXED_SLOW_PROCESSES
 !
 IMPLICIT NONE
 !

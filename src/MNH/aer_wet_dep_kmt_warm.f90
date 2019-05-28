@@ -116,6 +116,7 @@ END MODULE MODI_AER_WET_DEP_KMT_WARM
 !!    -------------
 !!      Original    09/05/07
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -307,6 +308,8 @@ SUBROUTINE AER_WET_MASS_TRANSFER
 !*      0. DECLARATIONS
 !          ------------
 !
+use mode_tools, only: Countjv
+
 IMPLICIT NONE
 !
 !*       0.2  declaration of local variables
@@ -767,46 +770,6 @@ IMPLICIT NONE
                 ZDENSITY_AER(:,:))       ! aerosol density
 !
 END SUBROUTINE AER_WET_DEP_KMT_EFFIC
-
-!
-!-------------------------------------------------------------------------------
-!
-!
-  FUNCTION COUNTJV(LTAB,I1,I2,I3) RESULT(IC)
-!
-!*      0. DECLARATIONS
-!          ------------
-!
-IMPLICIT NONE
-!
-!*        declaration of local variables
-!
-!
-LOGICAL, DIMENSION(:,:,:) :: LTAB ! Mask
-INTEGER, DIMENSION(:) :: I1,I2,I3 ! Used to replace the COUNT and PACK
-INTEGER :: JI,JJ,JK,IC
-!  
-!-------------------------------------------------------------------------------
-!
-I1(:)=0 
-I2(:)=0 
-I3(:)=0                
-!ktk
-IC = 0
-DO JK = 1,SIZE(LTAB,3)
-  DO JJ = 1,SIZE(LTAB,2)
-    DO JI = 1,SIZE(LTAB,1)
-      IF( LTAB(JI,JJ,JK) ) THEN
-        IC = IC +1
-        I1(IC) = JI
-        I2(IC) = JJ
-        I3(IC) = JK
-      END IF
-    END DO
-  END DO
-END DO
-!
-END FUNCTION COUNTJV
 !
 !-------------------------------------------------------------------------------
 !

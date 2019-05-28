@@ -226,35 +226,36 @@ END MODULE MODI_RAIN_ICE_ELEC
 !!         J.Escobar : 10/2017 : for real*4 , limit exp() in RAIN_ICE_ELEC_SLOW with XMNH_HUGE_12_LOG
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_REF, ONLY : XTHVREFZ
-USE MODD_PARAMETERS
-USE MODD_CST
-USE MODD_CONF
-USE MODD_RAIN_ICE_DESCR
-USE MODD_RAIN_ICE_PARAM
-USE MODD_PARAM_ICE
 USE MODD_BUDGET
-USE MODD_LES
-USE MODE_ll
-!
-USE MODD_ELEC_PARAM
+USE MODD_CONF
+USE MODD_CST
 USE MODD_ELEC_DESCR
 USE MODD_ELEC_n
-USE MODD_NSV, ONLY : NSV_ELECBEG, NSV_ELECEND ! variables scalaires pour bilans
-!
-USE MODI_BUDGET
-USE MODI_MOMG
-!
+USE MODD_ELEC_PARAM
+USE MODD_LES
+USE MODE_ll
+USE MODD_NSV,             ONLY: NSV_ELECBEG, NSV_ELECEND ! Scalar variables for budgets
+USE MODD_PARAMETERS
+USE MODD_PARAM_ICE
+USE MODD_RAIN_ICE_DESCR
+USE MODD_RAIN_ICE_PARAM
+USE MODD_REF,             ONLY: XTHVREFZ
+
 #ifdef MNH_PGI
 USE MODE_PACK_PGI
 #endif
-!
+use mode_tools,           only: Countjv
+
+USE MODI_BUDGET
+USE MODI_MOMG
+
 IMPLICIT NONE
 !
 !
@@ -5781,41 +5782,6 @@ IMPLICIT NONE
 END SUBROUTINE INDUCTIVE_PROCESS
 !
 !------------------------------------------------------------------------------
-!
-!
-  FUNCTION COUNTJV(LTAB,I1,I2,I3) RESULT(IC)
-!
-!*      0. DECLARATIONS
-!          ------------
-!
-IMPLICIT NONE
-!
-!*       0.2  declaration of local variables
-!
-!
-LOGICAL, DIMENSION(:,:,:) :: LTAB ! Mask
-INTEGER, DIMENSION(:) :: I1,I2,I3 ! Used to replace the COUNT and PACK
-INTEGER :: JI,JJ,JK,IC
-!
-!-------------------------------------------------------------------------------
-!
-IC = 0
-DO JK = 1,SIZE(LTAB,3)
-  DO JJ = 1,SIZE(LTAB,2)
-    DO JI = 1,SIZE(LTAB,1)
-      IF( LTAB(JI,JJ,JK) ) THEN
-        IC = IC +1
-        I1(IC) = JI
-        I2(IC) = JJ
-        I3(IC) = JK
-      END IF
-    END DO
-  END DO
-END DO
-!
-END FUNCTION COUNTJV
-!
-!-------------------------------------------------------------------------------
 !
 !
   FUNCTION BI_LIN_INTP_V(ZT, KI, KJ, PDX, PDY, KN)  RESULT(Y)

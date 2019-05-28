@@ -103,7 +103,8 @@ END MODULE MODI_CH_AQUEOUS_TMICICE
 !!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!    M.Leriche 2015 correction bug
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
-!!
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -135,6 +136,7 @@ USE MODD_CH_ICE_n                            ! index for ice phase chemistry wit
 #ifdef MNH_PGI
 USE MODE_PACK_PGI
 #endif
+use mode_tools,           only: Countjv
 !
 IMPLICIT NONE
 !
@@ -1296,43 +1298,6 @@ IF( IMICRO >= 1 ) THEN
 !
 END IF
 !
-!
 !-------------------------------------------------------------------------------
-!
-!
-CONTAINS
-!
-!
-  FUNCTION COUNTJV(LTAB,I1,I2,I3) RESULT(IC)
-!
-!*      0. DECLARATIONS
-!          ------------
-!
-IMPLICIT NONE
-!
-!*       0.2  declaration of local variables
-!
-!
-LOGICAL, DIMENSION(:,:,:) :: LTAB ! Mask
-INTEGER, DIMENSION(:) :: I1,I2,I3 ! Used to replace the COUNT and PACK
-INTEGER :: JI,JJ,JK,IC
-!  
-!-------------------------------------------------------------------------------
-!
-IC = 0
-DO JK = 1,SIZE(LTAB,3)
-  DO JJ = 1,SIZE(LTAB,2)
-    DO JI = 1,SIZE(LTAB,1)
-      IF( LTAB(JI,JJ,JK) ) THEN
-        IC = IC +1
-        I1(IC) = JI
-        I2(IC) = JJ
-        I3(IC) = JK
-      END IF
-    END DO
-  END DO
-END DO
-!
-END FUNCTION COUNTJV
 !
 END SUBROUTINE CH_AQUEOUS_TMICICE

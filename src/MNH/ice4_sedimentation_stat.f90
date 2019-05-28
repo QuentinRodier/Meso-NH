@@ -73,16 +73,19 @@ SUBROUTINE ICE4_SEDIMENTATION_STAT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB,
 !!    -------------
 !!
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !
 !
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_CST
-USE MODI_BUDGET
 USE MODD_BUDGET
+USE MODD_CST
+
 USE MODE_MSG
-!
+
+USE MODI_BUDGET
+
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
@@ -252,10 +255,13 @@ CONTAINS
     !*      0. DECLARATIONS
     !          ------------
     !
-    USE MODI_GAMMA
+    use mode_tools,  only: Countjv
+
     USE MODD_RAIN_ICE_DESCR
     USE MODD_RAIN_ICE_PARAM
-    !
+
+    USE MODI_GAMMA
+
     IMPLICIT NONE
     !
     !*       0.1   Declarations of dummy arguments :
@@ -333,8 +339,7 @@ CONTAINS
     DO JK = KKE , KKB, -1*KKL
       !estimation of q' taking into account incomming PWSED
       ZQP(:,:)=PWSED(:,:,JK+KKL)*PTSORHODZ(:,:,JK)
-      JCOUNT=COUNTJV2((PRXT(:,:,JK) > XRTMIN(KSPE)) .OR. &
-                       (ZQP(:,:) > XRTMIN(KSPE)),KIT,KJT,SIZE(I1),I1(:),I2(:))
+      JCOUNT=COUNTJV( (PRXT(:,:,JK) > XRTMIN(KSPE)) .OR. (ZQP(:,:) > XRTMIN(KSPE)) ,I1(:),I2(:))
       IF(KSPE==2) THEN
         !******* for cloud
         DO JL=1, JCOUNT
@@ -432,36 +437,4 @@ CONTAINS
     ENDDO
   END SUBROUTINE INTERNAL_SEDIM_STAT
   !
-  FUNCTION COUNTJV2(LTAB,KIT,KJT,KSIZE,I1,I2) RESULT(IC)
-    !
-    !*      0. DECLARATIONS
-    !          ------------
-    !
-    IMPLICIT NONE
-    !
-    !*       0.1   Declarations of dummy arguments :
-    !
-    INTEGER, INTENT(IN) :: KIT, KJT, KSIZE
-    LOGICAL, DIMENSION(KIT,KJT), INTENT(IN) :: LTAB ! Mask
-    INTEGER, DIMENSION(KSIZE), INTENT(OUT) :: I1,I2 ! Used to replace the COUNT and PACK
-    !
-    !*       0.2  declaration of local variables
-    !
-    !
-    INTEGER :: JI,JJ,IC
-    !
-    !-------------------------------------------------------------------------------
-    !
-    IC = 0
-    DO JJ = 1,SIZE(LTAB,2)
-      DO JI = 1,SIZE(LTAB,1)
-        IF( LTAB(JI,JJ) ) THEN
-          IC = IC +1
-          I1(IC) = JI
-          I2(IC) = JJ
-        END IF
-      END DO
-    END DO
-    !
-  END FUNCTION COUNTJV2
 END SUBROUTINE ICE4_SEDIMENTATION_STAT

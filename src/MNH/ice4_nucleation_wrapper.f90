@@ -2,6 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 MODULE MODI_ICE4_NUCLEATION_WRAPPER
 INTERFACE
 SUBROUTINE ICE4_NUCLEATION_WRAPPER(KIT, KJT,KKT, LDMASK, &
@@ -38,14 +39,17 @@ SUBROUTINE ICE4_NUCLEATION_WRAPPER(KIT, KJT, KKT, LDMASK, &
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
+!
 !
 !
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_CST, ONLY : XTT
-!
+USE MODD_CST,   ONLY: XTT
+
+use mode_tools, only: Countjv
+
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
@@ -111,7 +115,7 @@ ZB_TH(:) = 0.
 ZB_RV(:) = 0.
 ZB_RI(:) = 0.
 !
-IF(INEGT>0) INEGT_TMP=ICE4_NUCLEATION_COUNTJV(GNEGT(:,:,:), KIT, KJT, KKT, SIZE(I1), I1(:), I2(:), I3(:))
+IF(INEGT>0) INEGT_TMP=COUNTJV(GNEGT(:,:,:), I1(:), I2(:), I3(:))
 !
 PRVHENI_MR(:,:,:)=0.
 IF(INEGT>0) THEN
@@ -139,27 +143,4 @@ DEALLOCATE(GLDCOMPUTE)
 DEALLOCATE(I1,I2,I3)
 DEALLOCATE(ZZT,ZPRES,ZRVT,ZCIT,ZTHT,ZRHODREF,ZEXN,ZLSFACT,ZRVHENI_MR,ZB_TH,ZB_RV,ZB_RI)
 !
-CONTAINS
-  FUNCTION ICE4_NUCLEATION_COUNTJV(LTAB,KIT,KJT,KKT,KSIZE,I1,I2,I3) RESULT(IC)
-  IMPLICIT NONE
-  INTEGER, INTENT(IN) :: KIT, KJT, KKT, KSIZE
-  LOGICAL, DIMENSION(KIT,KJT,KKT), INTENT(IN) :: LTAB ! Mask
-  INTEGER, DIMENSION(KSIZE), INTENT(OUT) :: I1, I2, I3 ! Used to replace the COUNT and PACK
-  INTEGER :: IC
-  INTEGER :: JI, JJ, JK
-  IC=0
-  DO JK=1, SIZE(LTAB,3)
-    DO JJ=1, SIZE(LTAB,2)
-      DO JI=1, SIZE(LTAB,1)
-        IF(LTAB(JI,JJ,JK)) THEN
-          IC=IC+1
-          I1(IC)=JI
-          I2(IC)=JJ
-          I3(IC)=JK
-        END IF
-      END DO
-    END DO
-  END DO
-  END FUNCTION ICE4_NUCLEATION_COUNTJV
-  !
 END SUBROUTINE ICE4_NUCLEATION_WRAPPER

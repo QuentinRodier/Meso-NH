@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !      #####################
@@ -78,30 +78,32 @@ END MODULE MODI_LIMA_COLD_SLOW_PROCESSES
 !!      Original             ??/??/13 
 !!      C. Barthe  * LACy *  jan. 2014   add budgets
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAMETERS,      ONLY : JPHEXT, JPVEXT
-USE MODD_CST,             ONLY : XP00, XRD, XRV, XMV, XMD, XCPD, XCPV,        &
-                                 XCL, XCI, XTT, XLSTT, XALPI, XBETAI, XGAMI
-USE MODD_PARAM_LIMA,      ONLY : LSNOW, XRTMIN, XCTMIN, XALPHAI, XALPHAS,     &
-                                 XNUI 
-USE MODD_PARAM_LIMA_COLD, ONLY : XLBI, XLBEXI, XLBS, XLBEXS, XBI, XCXS, XCCS, &
-                                 XLBDAS_MAX, XDSCNVI_LIM, XLBDASCNVI_MAX,     &
-                                 XC0DEPSI, XC1DEPSI, XR0DEPSI, XR1DEPSI,      &
-                                 XSCFAC, X1DEPS, X0DEPS, XEX1DEPS, XEX0DEPS,  &
-                                 XDICNVS_LIM, XLBDAICNVS_LIM,                 &
-                                 XC0DEPIS, XC1DEPIS, XR0DEPIS, XR1DEPIS,      &
-                                 XCOLEXIS, XAGGS_CLARGE1, XAGGS_CLARGE2,      &
-                                 XAGGS_RLARGE1, XAGGS_RLARGE2  
-USE MODI_LIMA_FUNCTIONS,  ONLY : COUNTJV
 USE MODD_BUDGET
-USE MODD_NSV, ONLY : NSV_LIMA_NI
-USE MODI_BUDGET
+USE MODD_CST,             ONLY: XP00, XRD, XRV, XMV, XMD, XCPD, XCPV,        &
+                                XCL, XCI, XTT, XLSTT, XALPI, XBETAI, XGAMI
+USE MODD_NSV,             ONLY: NSV_LIMA_NI
+USE MODD_PARAMETERS,      ONLY: JPHEXT, JPVEXT
+USE MODD_PARAM_LIMA,      ONLY: LSNOW, XRTMIN, XCTMIN, XALPHAI, XALPHAS,     &
+                                XNUI
+USE MODD_PARAM_LIMA_COLD, ONLY: XLBI, XLBEXI, XLBS, XLBEXS, XBI, XCXS, XCCS, &
+                                XLBDAS_MAX, XDSCNVI_LIM, XLBDASCNVI_MAX,     &
+                                XC0DEPSI, XC1DEPSI, XR0DEPSI, XR1DEPSI,      &
+                                XSCFAC, X1DEPS, X0DEPS, XEX1DEPS, XEX0DEPS,  &
+                                XDICNVS_LIM, XLBDAICNVS_LIM,                 &
+                                XC0DEPIS, XC1DEPIS, XR0DEPIS, XR1DEPIS,      &
+                                XCOLEXIS, XAGGS_CLARGE1, XAGGS_CLARGE2,      &
+                                XAGGS_RLARGE1, XAGGS_RLARGE2
 
+use mode_tools,           only: Countjv
+
+USE MODI_BUDGET
 !
 IMPLICIT NONE
 !

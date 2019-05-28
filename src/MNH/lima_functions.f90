@@ -7,18 +7,13 @@
 !  P. Wautelet 22/01/2019: replace double precision declarations by real(kind(0.0d0)) (to allow compilation by NAG compiler)
 !  P. Wautelet 19/04/2019: use modd_precision kinds
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !-----------------------------------------------------------------
 !#################################
         MODULE MODI_LIMA_FUNCTIONS
 !#################################
 !
 INTERFACE
-!
-FUNCTION COUNTJV(LTAB,I1,I2,I3) RESULT(IC)
-  LOGICAL, DIMENSION(:,:,:),   INTENT(IN)           :: LTAB 
-  INTEGER, DIMENSION(:),       INTENT(INOUT)        :: I1,I2,I3 
-  INTEGER                                           :: IC
-END FUNCTION COUNTJV
 !
 FUNCTION MOMG (PALPHA,PNU,PP) RESULT (PMOMG)
   REAL,                        INTENT(IN)           :: PALPHA 
@@ -68,34 +63,6 @@ END SUBROUTINE GAUHER
 END INTERFACE
 !
 END MODULE MODI_LIMA_FUNCTIONS
-!
-!------------------------------------------------------------------------------
-!
-!#########################################
-FUNCTION COUNTJV(LTAB,I1,I2,I3) RESULT(IC)
-!#########################################
-!
-  IMPLICIT NONE
-!
-  LOGICAL, DIMENSION(:,:,:) :: LTAB ! Mask
-  INTEGER, DIMENSION(:) :: I1,I2,I3 ! Used to replace the COUNT and PACK
-  INTEGER :: JI,JJ,JK,IC
-!
-  IC = 0
-  DO JK = 1,SIZE(LTAB,3)
-     DO JJ = 1,SIZE(LTAB,2)
-        DO JI = 1,SIZE(LTAB,1)
-           IF( LTAB(JI,JJ,JK) ) THEN
-              IC = IC +1
-              I1(IC) = JI
-              I2(IC) = JJ
-              I3(IC) = JK
-           END IF
-        END DO
-     END DO
-  END DO
-!
-END FUNCTION COUNTJV
 !
 !------------------------------------------------------------------------------
 !

@@ -136,7 +136,8 @@ END MODULE MODI_LIMA_ADJUST
 !!      JP Chaboureau *LA*   March 2014  fix the calculation of icy cloud fraction
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
-!!
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -157,6 +158,7 @@ USE MODD_PARAM_LIMA_WARM
 USE MODE_FIELD,            ONLY: TFIELDDATA, TYPEREAL
 USE MODE_IO_FIELD_WRITE,   only: IO_Field_write
 use mode_msg
+use mode_tools,            only: Countjv
 !
 USE MODI_BUDGET
 USE MODI_CONDENS

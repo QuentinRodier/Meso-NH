@@ -82,6 +82,7 @@ END MODULE MODI_CH_AQUEOUS_SEDIM1MOM
 !!    16/12/15 (M Leriche) compute instantaneous rain at the surface
 !  P. Wautelet 12/02/2019: bugfix: ZRR_SEDIM was not initialized everywhere
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !
 !-------------------------------------------------------------------------------
 !
@@ -96,6 +97,8 @@ USE MODD_RAIN_ICE_DESCR,  ONLY : WCEXVT=>XCEXVT, WRTMIN=>XRTMIN
 USE MODD_RAIN_ICE_PARAM,  ONLY : XFSEDR, XEXSEDR, &
                                  XFSEDS, XEXSEDS, &
                                  XFSEDG, XEXSEDG
+
+use mode_tools,           only: Countjv
 !
 IMPLICIT NONE
 !
@@ -372,43 +375,6 @@ IF (OUSECHIC) THEN
                                         *PSGRSVS(:,:,:,JL) )
   ENDDO
 ENDIF
-!
-CONTAINS
-!
-!-------------------------------------------------------------------------------
-!
-  FUNCTION COUNTJV(LTAB,I1,I2,I3) RESULT(IC)
-!
-!*      0. DECLARATIONS
-!          ------------
-!
-IMPLICIT NONE
-!
-!*       0.2  declaration of local variables
-!
-!
-LOGICAL, DIMENSION(:,:,:) :: LTAB ! Mask
-INTEGER, DIMENSION(:) :: I1,I2,I3 ! Used to replace the COUNT and PACK
-INTEGER :: IC
-INTEGER :: JI,JJ,JK
-!  
-!-------------------------------------------------------------------------------
-!
-IC = 0
-DO JK = 1,SIZE(LTAB,3)
-  DO JJ = 1,SIZE(LTAB,2)
-    DO JI = 1,SIZE(LTAB,1)
-      IF( LTAB(JI,JJ,JK) ) THEN
-        IC = IC +1
-        I1(IC) = JI
-        I2(IC) = JJ
-        I3(IC) = JK
-      END IF
-    END DO
-  END DO
-END DO
-!
-END FUNCTION COUNTJV
 !
 !-------------------------------------------------------------------------------
 !

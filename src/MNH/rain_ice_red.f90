@@ -2,6 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ######spl
        MODULE MODI_RAIN_ICE_RED
 !      ########################
@@ -240,6 +241,7 @@ END MODULE MODI_RAIN_ICE_RED
 !!      (S. Riette) Source code split into several files
 !!                  02/2019 C.Lac add rain fraction as an output field
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !
 !*       0.    DECLARATIONS
 !              ------------
@@ -251,21 +253,21 @@ USE MODD_PARAM_ICE,      ONLY: CSUBG_PR_PDF,CSUBG_RC_RR_ACCR,CSUBG_RR_EVAP,LDEPO
                                NMAXITER,XMRSTEP,XTSTEP_TS,XVDEPOSC
 USE MODD_RAIN_ICE_DESCR, ONLY: XRTMIN
 USE MODD_VAR_ll,         ONLY: IP
-!
+
+USE MODE_ll
+USE MODE_MSG
+#ifdef MNH_PGI
+USE MODE_PACK_PGI
+#endif
+use mode_tools,          only: Countjv
+
 USE MODI_BUDGET
 USE MODI_ICE4_NUCLEATION_WRAPPER
 USE MODI_ICE4_RAINFR_VERT
 USE MODI_ICE4_SEDIMENTATION_STAT
 USE MODI_ICE4_SEDIMENTATION_SPLIT
 USE MODI_ICE4_TENDENCIES
-!
-USE MODE_ll
-USE MODE_MSG
-!
-#ifdef MNH_PGI
-USE MODE_PACK_PGI
-#endif
-!
+
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
@@ -607,8 +609,8 @@ ENDIF
 !  optimization by looking for locations where
 !  the microphysical fields are larger than a minimal value only !!!
 !
-IMICRO=0
-IF(COUNT(ODMICRO)/=0) IMICRO=RAIN_ICE_COUNTJV(ODMICRO(:,:,:), IIT, IJT, IKT, SIZE(I1), I1(:), I2(:), I3(:))
+! IMICRO=0
+IMICRO=COUNTJV(ODMICRO(:,:,:), I1(:), I2(:), I3(:))
 !Packing
 IF(IMICRO>0) THEN
   DO JL=1, IMICRO
@@ -1536,40 +1538,6 @@ ENDIF
 !
 !
 CONTAINS
-  FUNCTION RAIN_ICE_COUNTJV(LTAB, KIT, KJT, KKT, KSIZE, I1,I2,I3) RESULT(IC)
-  !
-  !*      0. DECLARATIONS
-  !          ------------
-  !
-  IMPLICIT NONE
-  !
-  !*       0.2  declaration of local variables
-  !
-  !
-  INTEGER, INTENT(IN) :: KIT, KJT, KKT, KSIZE
-  LOGICAL, DIMENSION(KIT,KJT,KKT), INTENT(IN) :: LTAB ! Mask
-  INTEGER, DIMENSION(KSIZE), INTENT(OUT) :: I1,I2,I3 ! Used to replace the COUNT and PACK
-  INTEGER :: JI,JJ,JK,IC
-  !
-  !-------------------------------------------------------------------------------
-  !
-  IC = 0
-  DO JK = 1, SIZE(LTAB,3)
-    DO JJ = 1, SIZE(LTAB,2)
-      DO JI = 1, SIZE(LTAB,1)
-        IF(LTAB(JI,JJ,JK)) THEN
-          IC = IC +1
-          I1(IC) = JI
-          I2(IC) = JJ
-          I3(IC) = JK
-        END IF
-      END DO
-    END DO
-  END DO
-  !
-  !
-  END FUNCTION RAIN_ICE_COUNTJV
-  !
   !
   SUBROUTINE CORRECT_NEGATIVITIES(KRR, PRV, PRC, PRR, &
                                  &PRI, PRS, PRG, &

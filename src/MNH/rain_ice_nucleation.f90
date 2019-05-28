@@ -5,6 +5,7 @@
 !-----------------------------------------------------------------
 ! Modifications:
 !  P. Wautelet 25/02/2019: split rain_ice (cleaner and easier to maintain/debug)
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !-----------------------------------------------------------------
 MODULE MODE_RAIN_ICE_NUCLEATION
 
@@ -23,13 +24,15 @@ SUBROUTINE RAIN_ICE_NUCLEATION(KIB, KIE, KJB, KJE, KKTB, KKTE,KRR,PTSTEP,&
 !*      0. DECLARATIONS
 !          ------------
 !
-use MODD_BUDGET,         only: LBUDGET_RI, LBUDGET_RV, LBUDGET_TH
-use MODD_CST,            only: XALPI, XALPW, XBETAI, XBETAW, XCI, XCL, XCPD, XCPV, XGAMI, XGAMW, &
-                               XLSTT, XMD, XMV, XP00, XRD, XTT
-use MODD_RAIN_ICE_PARAM, only: XALPHA1, XALPHA2, XBETA1, XBETA2, XMNU0, XNU10, XNU20
-!
+use MODD_BUDGET,          only: LBUDGET_RI, LBUDGET_RV, LBUDGET_TH
+use MODD_CST,             only: XALPI, XALPW, XBETAI, XBETAW, XCI, XCL, XCPD, XCPV, XGAMI, XGAMW, &
+                                XLSTT, XMD, XMV, XP00, XRD, XTT
+use MODD_RAIN_ICE_PARAM,  only: XALPHA1, XALPHA2, XBETA1, XBETA2, XMNU0, XNU10, XNU20
+
+use mode_tools,           only: Countjv
+
 use MODI_BUDGET
-!
+
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
@@ -162,37 +165,5 @@ IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),6,'HENU_BU_RRV')
 IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),9,'HENU_BU_RRI')
 !
 END SUBROUTINE RAIN_ICE_NUCLEATION
-
-FUNCTION COUNTJV(LTAB,I1,I2,I3) RESULT(IC)
-!
-!*      0. DECLARATIONS
-!          ------------
-!
-IMPLICIT NONE
-!
-!*       0.2  declaration of local variables
-!
-!
-LOGICAL, DIMENSION(:,:,:) :: LTAB ! Mask
-INTEGER, DIMENSION(:) :: I1,I2,I3 ! Used to replace the COUNT and PACK
-INTEGER :: JI,JJ,JK,IC
-!
-!-------------------------------------------------------------------------------
-!
-IC = 0
-DO JK = 1,SIZE(LTAB,3)
-  DO JJ = 1,SIZE(LTAB,2)
-    DO JI = 1,SIZE(LTAB,1)
-      IF( LTAB(JI,JJ,JK) ) THEN
-        IC = IC +1
-        I1(IC) = JI
-        I2(IC) = JJ
-        I3(IC) = JK
-      END IF
-    END DO
-  END DO
-END DO
-!
-END FUNCTION COUNTJV
 
 END MODULE MODE_RAIN_ICE_NUCLEATION

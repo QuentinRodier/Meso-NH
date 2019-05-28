@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2008-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !      ####################################
        MODULE MODI_CH_AQUEOUS_TMICKESS
 !      ####################################
@@ -69,7 +70,8 @@ END MODULE MODI_CH_AQUEOUS_TMICKESS
 !!    -------------
 !!      Original    26/03/08
 !!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
-!!
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -80,7 +82,9 @@ USE MODD_PARAMETERS,      ONLY : JPHEXT,    &! number of horizontal External poi
 USE MODD_CLOUDPAR,        ONLY : XC1RC, XC2RC, &! autoconversion param.
                                  XCEXRA, XCRA, &! accrection param.
                                  XCEXVT         ! constant in the rain drop fall velocity
-!
+
+use mode_tools,           only: Countjv
+
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
@@ -281,43 +285,6 @@ IF( IMICRO >= 1 ) THEN
 !
 END IF
 !
-!
 !-------------------------------------------------------------------------------
-!
-!
-CONTAINS
-!
-!
-  FUNCTION COUNTJV(LTAB,I1,I2,I3) RESULT(IC)
-!
-!*      0. DECLARATIONS
-!          ------------
-!
-IMPLICIT NONE
-!
-!*       0.2  declaration of local variables
-!
-!
-LOGICAL, DIMENSION(:,:,:) :: LTAB ! Mask
-INTEGER, DIMENSION(:) :: I1,I2,I3 ! Used to replace the COUNT and PACK
-INTEGER :: JI,JJ,JK,IC
-!  
-!-------------------------------------------------------------------------------
-!
-IC = 0
-DO JK = 1,SIZE(LTAB,3)
-  DO JJ = 1,SIZE(LTAB,2)
-    DO JI = 1,SIZE(LTAB,1)
-      IF( LTAB(JI,JJ,JK) ) THEN
-        IC = IC +1
-        I1(IC) = JI
-        I2(IC) = JJ
-        I3(IC) = JK
-      END IF
-    END DO
-  END DO
-END DO
-!
-END FUNCTION COUNTJV
 !
 END SUBROUTINE CH_AQUEOUS_TMICKESS

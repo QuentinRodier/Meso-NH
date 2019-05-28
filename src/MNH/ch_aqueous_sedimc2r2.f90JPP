@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2008-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !      ################################
        MODULE MODI_CH_AQUEOUS_SEDIMC2R2
 !      ################################
@@ -71,6 +72,7 @@ END MODULE MODI_CH_AQUEOUS_SEDIMC2R2
 !!    -------------
 !!      Original    30/10/08
 !!
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -84,6 +86,8 @@ USE MODD_RAIN_C2R2_DESCR, ONLY : XCEXVT, XRTMIN, XCTMIN, &
                                  XLBR, XLBEXR, XDR
 USE MODD_RAIN_C2R2_PARAM, ONLY : XFSEDRR, XFSEDCR
 USE MODD_CH_MNHC_n, ONLY: XRTMIN_AQ
+!
+use mode_tools,           only: Countjv
 !
 IMPLICIT NONE
 !
@@ -299,43 +303,6 @@ END DO
 DO JL= 1, SIZE(PRSVS,4)
   PRSVS(:,:,:,JL) = MAX( 0.0,ZSV_SEDIM_FACT(:,:,:)*PRSVS(:,:,:,JL) )
 END DO
-!
-CONTAINS
-!
-!-------------------------------------------------------------------------------
-!
-  FUNCTION COUNTJV(LTAB,I1,I2,I3) RESULT(IC)
-!
-!*      0. DECLARATIONS
-!          ------------
-!
-IMPLICIT NONE
-!
-!*       0.2  declaration of local variables
-!
-!
-LOGICAL, DIMENSION(:,:,:) :: LTAB ! Mask
-INTEGER, DIMENSION(:) :: I1,I2,I3 ! Used to replace the COUNT and PACK
-INTEGER :: IC
-INTEGER :: JI,JJ,JK
-!  
-!-------------------------------------------------------------------------------
-!
-IC = 0
-DO JK = 1,SIZE(LTAB,3)
-  DO JJ = 1,SIZE(LTAB,2)
-    DO JI = 1,SIZE(LTAB,1)
-      IF( LTAB(JI,JJ,JK) ) THEN
-        IC = IC +1
-        I1(IC) = JI
-        I2(IC) = JJ
-        I3(IC) = JK
-      END IF
-    END DO
-  END DO
-END DO
-!
-END FUNCTION COUNTJV
 !
 !-------------------------------------------------------------------------------
 !

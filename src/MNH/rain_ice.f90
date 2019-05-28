@@ -242,21 +242,25 @@ END MODULE MODI_RAIN_ICE
 !!                   02/2019 C.Lac add rain fraction as an output field
 !  P. Wautelet 25/02/2019: split rain_ice (cleaner and easier to maintain/debug)
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
 use MODD_BUDGET,         only: LBU_ENABLE, LBUDGET_RC, LBUDGET_RG, LBUDGET_RH, LBUDGET_RI, &
                                LBUDGET_RR, LBUDGET_RS, LBUDGET_RV, LBUDGET_TH
-use MODD_CST,            only: XCI, XCL, XCPD, XCPV, XLSTT, XLVTT, XTT
-use MODD_CST,            only: XALPI, XBETAI, XGAMI, XMD, XMV, XTT
+use MODD_CST,            only: XCI, XCL, XCPD, XCPV, XLSTT, XLVTT, XTT, &
+                               XALPI, XBETAI, XGAMI, XMD, XMV, XTT
 use MODD_LES,            only: LLES_CALL
 use MODD_PARAMETERS,     only: JPVEXT
 use MODD_PARAM_ICE,      only: CSUBG_PR_PDF, LDEPOSC
 use MODD_RAIN_ICE_DESCR, only: XLBEXR, XLBR, XRTMIN
 use MODD_RAIN_ICE_PARAM, only: XCRIAUTC
-!
+
 use MODE_MSG
+#ifdef MNH_PGI
+USE MODE_PACK_PGI
+#endif
 use MODE_RAIN_ICE_FAST_RG,             only: RAIN_ICE_FAST_RG
 use MODE_RAIN_ICE_FAST_RH,             only: RAIN_ICE_FAST_RH
 use MODE_RAIN_ICE_FAST_RI,             only: RAIN_ICE_FAST_RI
@@ -266,14 +270,11 @@ use MODE_RAIN_ICE_SEDIMENTATION_SPLIT, only: RAIN_ICE_SEDIMENTATION_SPLIT
 use MODE_RAIN_ICE_SEDIMENTATION_STAT,  only: RAIN_ICE_SEDIMENTATION_STAT
 use MODE_RAIN_ICE_SLOW,                only: RAIN_ICE_SLOW
 use MODE_RAIN_ICE_WARM,                only: RAIN_ICE_WARM
-!
-#ifdef MNH_PGI
-USE MODE_PACK_PGI
-#endif
-!
+use mode_tools,                        only: Countjv
+
 use MODI_BUDGET
 USE MODI_ICE4_RAINFR_VERT
-!
+
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
@@ -1054,45 +1055,6 @@ ELSE
 END IF
 !sedimentation of rain fraction
 CALL ICE4_RAINFR_VERT(IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKT, KKL, PRAINFR, PRRS(:,:,:)*PTSTEP)
-!
-!
-!-------------------------------------------------------------------------------
-!
-CONTAINS
-!
-!-------------------------------------------------------------------------------
-!
-  FUNCTION COUNTJV(LTAB,I1,I2,I3) RESULT(IC)
-!
-!*      0. DECLARATIONS
-!          ------------
-!
-IMPLICIT NONE
-!
-!*       0.2  declaration of local variables
-!
-!
-LOGICAL, DIMENSION(:,:,:) :: LTAB ! Mask
-INTEGER, DIMENSION(:) :: I1,I2,I3 ! Used to replace the COUNT and PACK
-INTEGER :: JI,JJ,JK,IC
-!
-!-------------------------------------------------------------------------------
-!
-IC = 0
-DO JK = 1,SIZE(LTAB,3)
-  DO JJ = 1,SIZE(LTAB,2)
-    DO JI = 1,SIZE(LTAB,1)
-      IF( LTAB(JI,JJ,JK) ) THEN
-        IC = IC +1
-        I1(IC) = JI
-        I2(IC) = JJ
-        I3(IC) = JK
-      END IF
-    END DO
-  END DO
-END DO
-!
-END FUNCTION COUNTJV
 !
 !-------------------------------------------------------------------------------
 !

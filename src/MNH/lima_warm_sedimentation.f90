@@ -91,21 +91,24 @@ END MODULE MODI_LIMA_WARM_SEDIMENTATION
 !!    -------------
 !!      Original             ??/??/13 
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAMETERS,      ONLY : JPHEXT, JPVEXT
-USE MODD_CST,             ONLY : XRHOLW
-USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, XALPHAC, XNUC, XCEXVT
-USE MODD_PARAM_LIMA_WARM, ONLY : XLBC, XLBEXC, XLBR, XLBEXR,        &
+USE MODD_CST,             ONLY: XRHOLW
+USE MODD_PARAMETERS,      ONLY: JPHEXT, JPVEXT
+USE MODD_PARAM_LIMA,      ONLY: XRTMIN, XCTMIN, XALPHAC, XNUC, XCEXVT
+USE MODD_PARAM_LIMA_WARM, ONLY: XLBC, XLBEXC, XLBR, XLBEXR,        &
                                  XFSEDRC, XFSEDCC, XFSEDRR, XFSEDCR,&
                                  XDC, XDR
-USE MODI_LIMA_FUNCTIONS,  ONLY : COUNTJV
-USE MODI_GAMMA,           ONLY : GAMMA_X0D
-!
+
+use mode_tools,           only: Countjv
+
+USE MODI_GAMMA,           ONLY: GAMMA_X0D
+
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :

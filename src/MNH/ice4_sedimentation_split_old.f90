@@ -69,18 +69,22 @@ SUBROUTINE ICE4_SEDIMENTATION_SPLIT_OLD(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, 
 !!
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !
 !
 !*      0. DECLARATIONS
 !          ------------
 !
+USE MODD_BUDGET
 USE MODD_CST
 USE MODD_RAIN_ICE_DESCR
 USE MODD_RAIN_ICE_PARAM
-USE MODI_BUDGET
-USE MODD_BUDGET
-USE MODI_GAMMA
+
 USE MODE_MSG
+use mode_tools,           only: Countjv
+
+USE MODI_BUDGET
+USE MODI_GAMMA
 !
 IMPLICIT NONE
 !
@@ -220,8 +224,7 @@ DO JN = 1 , KSPLITR
     GSEDIM(:,:,:)=.FALSE.
     GSEDIM(KIB:KIE,KJB:KJE,KKTB:KKTE) =                            &
                     ZRCT(KIB:KIE,KJB:KJE,KKTB:KKTE)>XRTMIN(2)
-    ISEDIM = ICE4_SEDIMENTATION_SPLIT_COUNTJV(GSEDIM(:,:,:),KIT,KJT,KKT,&
-                                             &SIZE(I1),I1(:),I2(:),I3(:))
+    ISEDIM = COUNTJV(GSEDIM(:,:,:),I1(:),I2(:),I3(:))
     CALL INTERNAL_SEDIM_SPLI(KIT, KJT, KKT, KKL, &
                           &ISEDIM, GSEDIM, I1, I2, I3, &
                           &PRHODREF, ZW, PPABST, PTHT, PSEA, PTOWN, ZTSPLITR, PTSTEP, &
@@ -241,8 +244,7 @@ DO JN = 1 , KSPLITR
   GSEDIM(:,:,:)=.FALSE.
   GSEDIM(KIB:KIE,KJB:KJE,KKTB:KKTE) =                            &
                   ZRRT(KIB:KIE,KJB:KJE,KKTB:KKTE)>XRTMIN(3)
-  ISEDIM = ICE4_SEDIMENTATION_SPLIT_COUNTJV(GSEDIM(:,:,:),KIT,KJT,KKT,&
-                                           &SIZE(I1),I1(:),I2(:),I3(:))
+  ISEDIM = COUNTJV(GSEDIM(:,:,:),I1(:),I2(:),I3(:))
   CALL INTERNAL_SEDIM_SPLI(KIT, KJT, KKT, KKL, &
                           &ISEDIM, GSEDIM, I1, I2, I3, &
                           &PRHODREF, ZW, PPABST, PTHT, PSEA, PTOWN, ZTSPLITR, PTSTEP, &
@@ -260,8 +262,7 @@ DO JN = 1 , KSPLITR
   GSEDIM(:,:,:)=.FALSE.
   GSEDIM(KIB:KIE,KJB:KJE,KKTB:KKTE) =                            &
                   ZRIT(KIB:KIE,KJB:KJE,KKTB:KKTE)>XRTMIN(4)
-  ISEDIM = ICE4_SEDIMENTATION_SPLIT_COUNTJV(GSEDIM(:,:,:),KIT,KJT,KKT,&
-                                           &SIZE(I1),I1(:),I2(:),I3(:))
+  ISEDIM = COUNTJV(GSEDIM(:,:,:),I1(:),I2(:),I3(:))
   CALL INTERNAL_SEDIM_SPLI(KIT, KJT, KKT, KKL, &
                           &ISEDIM, GSEDIM, I1, I2, I3, &
                           &PRHODREF, ZW, PPABST, PTHT, PSEA, PTOWN, ZTSPLITR, PTSTEP, &
@@ -279,8 +280,7 @@ DO JN = 1 , KSPLITR
   GSEDIM(:,:,:)=.FALSE.
   GSEDIM(KIB:KIE,KJB:KJE,KKTB:KKTE) =                            &
                   ZRST(KIB:KIE,KJB:KJE,KKTB:KKTE)>XRTMIN(5)
-  ISEDIM = ICE4_SEDIMENTATION_SPLIT_COUNTJV(GSEDIM(:,:,:),KIT,KJT,KKT,&
-                                           &SIZE(I1),I1(:),I2(:),I3(:))
+  ISEDIM = COUNTJV(GSEDIM(:,:,:),I1(:),I2(:),I3(:))
   CALL INTERNAL_SEDIM_SPLI(KIT, KJT, KKT, KKL, &
                           &ISEDIM, GSEDIM, I1, I2, I3, &
                           &PRHODREF, ZW, PPABST, PTHT, PSEA, PTOWN, ZTSPLITR, PTSTEP, &
@@ -298,8 +298,7 @@ DO JN = 1 , KSPLITR
   GSEDIM(:,:,:)=.FALSE.
   GSEDIM(KIB:KIE,KJB:KJE,KKTB:KKTE) =                            &
                   ZRGT(KIB:KIE,KJB:KJE,KKTB:KKTE)>XRTMIN(6)
-  ISEDIM = ICE4_SEDIMENTATION_SPLIT_COUNTJV(GSEDIM(:,:,:),KIT,KJT,KKT,&
-                                           &SIZE(I1),I1(:),I2(:),I3(:))
+  ISEDIM = COUNTJV(GSEDIM(:,:,:),I1(:),I2(:),I3(:))
   CALL INTERNAL_SEDIM_SPLI(KIT, KJT, KKT, KKL, &
                           &ISEDIM, GSEDIM, I1, I2, I3, &
                           &PRHODREF, ZW, PPABST, PTHT, PSEA, PTOWN, ZTSPLITR, PTSTEP, &
@@ -318,8 +317,7 @@ DO JN = 1 , KSPLITR
     GSEDIM(:,:,:)=.FALSE.
     GSEDIM(KIB:KIE,KJB:KJE,KKTB:KKTE) =                            &
                     ZRHT(KIB:KIE,KJB:KJE,KKTB:KKTE)>XRTMIN(7)
-    ISEDIM = ICE4_SEDIMENTATION_SPLIT_COUNTJV(GSEDIM(:,:,:),KIT,KJT,KKT,&
-                                             &SIZE(I1),I1(:),I2(:),I3(:))
+    ISEDIM = COUNTJV(GSEDIM(:,:,:),I1(:),I2(:),I3(:))
     CALL INTERNAL_SEDIM_SPLI(KIT, KJT, KKT, KKL, &
                             &ISEDIM, GSEDIM, I1, I2, I3, &
                             &PRHODREF, ZW, PPABST, PTHT, PSEA, PTOWN, ZTSPLITR, PTSTEP, &
@@ -461,37 +459,5 @@ CONTAINS
        PRXS(:,:,JK) = PRXS(:,:,JK) + ZMRCHANGE(:,:) * ZINVTOTAL_TSTEP
     ENDDO
   END SUBROUTINE INTERNAL_SEDIM_SPLI
-  !
-  FUNCTION ICE4_SEDIMENTATION_SPLIT_COUNTJV(LTAB,KIT,KJT,KKT,KSIZE,I1,I2,I3) RESULT(IC)
-  !
-  !*      0. DECLARATIONS
-  !          ------------
-  !
-  IMPLICIT NONE
-  !
-  !*       0.2  declaration of local variables
-  !
-  INTEGER, INTENT(IN) :: KIT,KJT,KKT,KSIZE
-  LOGICAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)  :: LTAB ! Mask
-  INTEGER, DIMENSION(KSIZE), INTENT(OUT) :: I1,I2,I3 ! Used to replace the COUNT and PACK
-  INTEGER :: JI,JJ,JK,IC
-  !
-  !-------------------------------------------------------------------------------
-  !
-  IC = 0
-  DO JK = 1,SIZE(LTAB,3)
-    DO JJ = 1,SIZE(LTAB,2)
-      DO JI = 1,SIZE(LTAB,1)
-        IF( LTAB(JI,JJ,JK) ) THEN
-          IC = IC +1
-          I1(IC) = JI
-          I2(IC) = JJ
-          I3(IC) = JK
-        END IF
-      END DO
-    END DO
-  END DO
-  !
-  END FUNCTION ICE4_SEDIMENTATION_SPLIT_COUNTJV
   !
 END SUBROUTINE ICE4_SEDIMENTATION_SPLIT_OLD

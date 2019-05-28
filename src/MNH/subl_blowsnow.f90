@@ -1,7 +1,12 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
+! Modifications:
+!  P. Wautelet 28/05/2018: corrected truncated integer division (1*10**(-6) -> 1E-6)
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
+!-----------------------------------------------------------------
 !      ####################
        MODULE MODI_SUBL_BLOWSNOW
 !      ####################
@@ -43,20 +48,18 @@ END MODULE MODI_SUBL_BLOWSNOW
       SUBROUTINE SUBL_BLOWSNOW(PZZ, PRHODJ , PRHODREF, PEXNREF , PPABST,    &
                          PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PSVT,     &
                          PTHS, PRVS, PSVS,PSNWSUBL3D,PVGK)
-!!   MODIFICATIONS
-!!    -------------
-!!  Philippe Wautelet 28/05/2018: corrected truncated integer division (1*10**(-6) -> 1E-6)
 
-USE MODD_PARAMETERS
+USE MODD_BLOWSNOW
 USE MODD_CST
 USE MODD_CSTS_BLOWSNOW
-USE MODD_BLOWSNOW
+USE MODD_PARAMETERS
+
+USE MODE_BLOWSNOW_PSD
+use mode_tools,           only: Countjv
 
 USE MODI_GAMMA
 USE MODI_GAMMA_INC
 USE MODI_GAMMA_INC_LOW
-
-USE MODE_BLOWSNOW_PSD
 
 IMPLICIT NONE
 !
@@ -728,44 +731,6 @@ END FUNCTION NUSSELT
 !
 !-------------------------------------------------------------------------------
 !
-
-!
-!-------------------------------------------------------------------------------
-!
-
- FUNCTION COUNTJV(LTAB,I1,I2,I3) RESULT(IC)
-!
-!*      0. DECLARATIONS
-!          ------------
-!
-IMPLICIT NONE
-!
-!*       0.2  declaration of local variables
-!
-!
-LOGICAL, DIMENSION(:,:,:) :: LTAB ! Mask
-INTEGER, DIMENSION(:) :: I1,I2,I3 ! Used to replace the COUNT and PACK
-INTEGER :: JI,JJ,JK,IC
-!
-!-------------------------------------------------------------------------------
-!
-IC = 0
-DO JK = 1,SIZE(LTAB,3)
-  DO JJ = 1,SIZE(LTAB,2)
-    DO JI = 1,SIZE(LTAB,1)
-      IF( LTAB(JI,JJ,JK) ) THEN
-        IC = IC +1
-        I1(IC) = JI
-        I2(IC) = JJ
-        I3(IC) = JK
-      END IF
-    END DO
-  END DO
-END DO
-!
-END FUNCTION COUNTJV
-!
-!-------------------------------------------------------------------------------
 END SUBROUTINE SUBL_BLOWSNOW
 
 

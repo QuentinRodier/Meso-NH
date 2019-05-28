@@ -89,26 +89,27 @@ END MODULE MODI_LIMA_CCN_ACTIVATION
 !!      Original             ??/??/13 
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAMETERS,      ONLY: JPHEXT, JPVEXT
 USE MODD_CST,             ONLY: XALPW, XBETAW, XCL, XCPD, XCPV, XGAMW, XLVTT, XMD, XMV, XRV, XTT
+USE MODD_IO,              ONLY: TFILEDATA
+USE MODD_LUNIT_n,         ONLY: TLUOUT
+USE MODD_PARAMETERS,      ONLY: JPHEXT, JPVEXT
 USE MODD_PARAM_LIMA,      ONLY: LACTIT, NMOD_CCN, XKHEN_MULTI, XCTMIN, XLIMIT_FACTOR
 USE MODD_PARAM_LIMA_WARM, ONLY: XWMIN, NAHEN, NHYP, XAHENINTP1, XAHENINTP2, XCSTDCRIT, XHYPF12, &
                                 XHYPINTP1, XHYPINTP2, XTMIN, XHYPF32, XPSI3, XAHENG, XPSI1
-!
-USE MODI_GAMMA
-USE MODI_LIMA_FUNCTIONS,  ONLY : COUNTJV
-!
-USE MODD_IO,              ONLY: TFILEDATA
-USE MODD_LUNIT_n,         ONLY: TLUOUT
+
 USE MODE_FIELD,           ONLY: TFIELDDATA, TYPEREAL
 USE MODE_IO_FIELD_WRITE,  only: IO_Field_write
-!
+use mode_tools,           only: Countjv
+
+USE MODI_GAMMA
+
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :

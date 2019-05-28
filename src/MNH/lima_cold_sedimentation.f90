@@ -76,24 +76,25 @@ END MODULE MODI_LIMA_COLD_SEDIMENTATION
 !!      C. Barthe  * LACy *  jan. 2014   add budgets
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_CST,              ONLY : XRHOLW
+USE MODD_NSV
+USE MODD_PARAMETERS,       ONLY : JPHEXT, JPVEXT
+USE MODD_PARAM_LIMA,       ONLY : XCEXVT, XRTMIN, XCTMIN
 USE MODD_PARAM_LIMA_COLD,  ONLY : XLBEXI, XLBI, XDI,                 &
                                   XFSEDRI, XFSEDCI, XFSEDS, XEXSEDS
 USE MODD_PARAM_LIMA_MIXED, ONLY : XFSEDG, XEXSEDG, XFSEDH, XEXSEDH
-USE MODD_PARAM_LIMA,       ONLY : XCEXVT, XRTMIN, XCTMIN
-USE MODD_CST,              ONLY : XRHOLW
-USE MODD_PARAMETERS,       ONLY : JPHEXT, JPVEXT
-USE MODI_LIMA_FUNCTIONS,   ONLY : COUNTJV
 !
-USE MODD_NSV
-!++cb++
+use mode_tools,           only: Countjv
+!
 IMPLICIT NONE
-!--cb--
+!
 
 !
 !*       0.1   Declarations of dummy arguments :

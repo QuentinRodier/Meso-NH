@@ -97,32 +97,32 @@ END MODULE MODI_LIMA_PRECIP_SCAVENGING
 !!
 !!  Philippe Wautelet 28/05/2018: corrected truncated integer division (3/2 -> 1.5)
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !-------------------------------------------------------------------------------
 !
 !*                  0.DECLARATIONS          
 !                   --------------
 !
-USE MODD_NSV
-USE MODD_CST
-USE MODD_PARAMETERS
-USE MODI_INI_NSV
-USE MODI_GAMMA
-USE MODI_LIMA_FUNCTIONS
-!
-! Previous versions by S. Berthet were compatible with all schemes
-! Here : Compatibility with LIMA only
-USE MODD_PARAM_LIMA,      ONLY : NMOD_IFN, NSPECIE, XFRAC,                         &
-                                 XMDIAM_IFN, XSIGMA_IFN, XRHO_IFN,                 &
-                                 NMOD_CCN, XR_MEAN_CCN, XLOGSIG_CCN, XRHO_CCN,     &
-                                 XALPHAR, XNUR,                                    &
-                                 LAERO_MASS, NDIAMR, NDIAMP, XT0SCAV, XTREF, XNDO, &
-                                 XMUA0, XT_SUTH_A, XMFPA0, XVISCW, XRHO00,         &
-                                 XRTMIN, XCTMIN
-USE MODD_PARAM_LIMA_WARM, ONLY : XCR, XDR
-!
 USE MODD_BUDGET
+USE MODD_CST
+USE MODD_NSV
+USE MODD_PARAMETERS
+USE MODD_PARAM_LIMA,      ONLY: NMOD_IFN, NSPECIE, XFRAC,                         &
+                                XMDIAM_IFN, XSIGMA_IFN, XRHO_IFN,                 &
+                                NMOD_CCN, XR_MEAN_CCN, XLOGSIG_CCN, XRHO_CCN,     &
+                                XALPHAR, XNUR,                                    &
+                                LAERO_MASS, NDIAMR, NDIAMP, XT0SCAV, XTREF, XNDO, &
+                                XMUA0, XT_SUTH_A, XMFPA0, XVISCW, XRHO00,         &
+                                XRTMIN, XCTMIN
+USE MODD_PARAM_LIMA_WARM, ONLY: XCR, XDR
+
+use mode_tools,           only: Countjv
+
 USE MODI_BUDGET
-!
+USE MODI_GAMMA
+USE MODI_INI_NSV
+USE MODI_LIMA_FUNCTIONS
+
 IMPLICIT NONE
 !
 !*                 0.1 declarations of dummy arguments :

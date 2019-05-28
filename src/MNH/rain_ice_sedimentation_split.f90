@@ -6,6 +6,7 @@
 ! Modifications:
 !  P. Wautelet 25/02/2019: split rain_ice (cleaner and easier to maintain/debug)
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !-----------------------------------------------------------------
 MODULE MODE_RAIN_ICE_SEDIMENTATION_SPLIT
 
@@ -32,9 +33,11 @@ use MODD_RAIN_ICE_DESCR, only: XCC, XCONC_LAND, xconc_sea, xconc_urban, XDC, XCE
                                XALPHAC, XNUC, XALPHAC2, XNUC2, XLBEXC, XRTMIN, XLBEXC, XLBC
 use MODD_RAIN_ICE_PARAM, only: XEXSEDG, XEXSEDH, XEXCSEDI, XEXSEDR, XEXSEDS, &
                                XFSEDG, XFSEDH, XFSEDI, XFSEDR, XFSEDS, XFSEDC
-!
+
+use mode_tools,           only: Countjv
+
 use MODI_BUDGET
-!
+
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
@@ -608,37 +611,5 @@ IF ( LBUDGET_RC .AND. ODEPOSC ) &
 !
 
   END SUBROUTINE RAIN_ICE_SEDIMENTATION_SPLIT
-
-  FUNCTION COUNTJV(LTAB,I1,I2,I3) RESULT(IC)
-!
-!*      0. DECLARATIONS
-!          ------------
-!
-IMPLICIT NONE
-!
-!*       0.2  declaration of local variables
-!
-!
-LOGICAL, DIMENSION(:,:,:) :: LTAB ! Mask
-INTEGER, DIMENSION(:) :: I1,I2,I3 ! Used to replace the COUNT and PACK
-INTEGER :: JI,JJ,JK,IC
-!
-!-------------------------------------------------------------------------------
-!
-IC = 0
-DO JK = 1,SIZE(LTAB,3)
-  DO JJ = 1,SIZE(LTAB,2)
-    DO JI = 1,SIZE(LTAB,1)
-      IF( LTAB(JI,JJ,JK) ) THEN
-        IC = IC +1
-        I1(IC) = JI
-        I2(IC) = JJ
-        I3(IC) = JK
-      END IF
-    END DO
-  END DO
-END DO
-!
-END FUNCTION COUNTJV
 
 END MODULE MODE_RAIN_ICE_SEDIMENTATION_SPLIT

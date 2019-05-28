@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2007-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !      ############################
        MODULE MODI_CH_AQUEOUS_CHECK
 !      ############################
@@ -70,16 +71,18 @@ END MODULE MODI_CH_AQUEOUS_CHECK
 !!      21/11/07 (M. Leriche) correct threshold for aqueous phase chemistry
 !!      20/09/10 (M. Leriche) add ice phase chemical species
 !!      04/11/13 (M. Leriche) add transfer back to the gas phase if evaporation
-!!
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAMETERS,ONLY: JPHEXT,    &! number of horizontal External points
-                          JPVEXT      ! number of vertical External points
-USE MODD_NSV,       ONLY : NSV_CHACBEG, NSV_CHACEND, NSV_CHICBEG, NSV_CHICEND, &
+USE MODD_NSV,        ONLY: NSV_CHACBEG, NSV_CHACEND, NSV_CHICBEG, NSV_CHICEND, &
                            NSV_CHGSBEG
+USE MODD_PARAMETERS, ONLY: JPHEXT,    & ! number of horizontal External points
+                           JPVEXT       ! number of vertical External points
+
+use mode_tools,      only: Countjv
 !
 IMPLICIT NONE
 !
@@ -286,42 +289,6 @@ IF (OUSECHIC) THEN
     ENDDO
   ENDIF
 ENDIF
-!
-CONTAINS
-!
-!-------------------------------------------------------------------------------
-!
-  FUNCTION COUNTJV(GTAB,I1,I2,I3) RESULT(IC)
-!
-!*      0. DECLARATIONS
-!          ------------
-!
-IMPLICIT NONE
-!
-!*       0.2  declaration of local variables
-!
-!
-LOGICAL, DIMENSION(:,:,:) :: GTAB ! Mask
-INTEGER, DIMENSION(:) :: I1,I2,I3 ! Used to replace the COUNT and PACK
-INTEGER :: JI,JJ,JK,IC
-!  
-!-------------------------------------------------------------------------------
-!
-IC = 0
-DO JK = 1,SIZE(GTAB,3)
-  DO JJ = 1,SIZE(GTAB,2)
-    DO JI = 1,SIZE(GTAB,1)
-      IF( GTAB(JI,JJ,JK) ) THEN
-        IC = IC +1
-        I1(IC) = JI
-        I2(IC) = JJ
-        I3(IC) = JK
-      END IF
-    END DO
-  END DO
-END DO
-!
-END FUNCTION COUNTJV
 !
 !-------------------------------------------------------------------------------
 !

@@ -5,6 +5,7 @@
 !-----------------------------------------------------------------
 ! Modifications:
 !  P. Wautelet 25/02/2019: split rain_ice (cleaner and easier to maintain/debug)
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !-----------------------------------------------------------------
 MODULE MODE_RAIN_ICE_SEDIMENTATION_STAT
 
@@ -32,9 +33,11 @@ use MODD_RAIN_ICE_PARAM, only: XEXSEDG, XEXSEDH, XEXCSEDI, XEXSEDR, XEXSEDS, &
                                XFSEDC, XFSEDG, XFSEDH, XFSEDI, XFSEDR, XFSEDS
 use MODD_RAIN_ICE_DESCR, only: XALPHAC, XALPHAC2, XCC, XCEXVT, XCONC_LAND, XCONC_SEA, XCONC_URBAN, &
                                XDC, XLBC, XLBEXC, XNUC, XNUC2, XRTMIN
-!
+
+use mode_tools,          only: Countjv
+
 use MODI_BUDGET
-!
+
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
@@ -184,8 +187,8 @@ PINPRR3D (:,:,:) = 0.
        !estimation of q' taking into account incomming ZWSED
        ZQP(:,:)=ZWSED(:,:,JK+KKL)*ZW(:,:,JK)
 
-       JCOUNT=COUNTJV2((PRCS(:,:,JK) > ZRTMIN(2) .AND. PRCT(:,:,JK) > ZRTMIN(2)) .OR. &
-                       (ZQP(:,:) > ZRTMIN(2)),I1(:),I2(:))
+       JCOUNT=COUNTJV((PRCS(:,:,JK) > ZRTMIN(2) .AND. PRCT(:,:,JK) > ZRTMIN(2)) .OR. &
+                      (ZQP(:,:) > ZRTMIN(2)),I1(:),I2(:))
        DO JL=1, JCOUNT
          JI=I1(JL)
          JJ=I2(JL)
@@ -256,8 +259,8 @@ PINPRR3D (:,:,:) = 0.
      !estimation of q' taking into account incomming ZWSED
      ZQP(:,:)=ZWSED(:,:,JK+KKL)*ZW(:,:,JK)
 
-     JCOUNT=COUNTJV2((PRRS(:,:,JK) > ZRTMIN(3)) .OR. &
-                     (ZQP(:,:) > ZRTMIN(3)),I1(:),I2(:))
+     JCOUNT=COUNTJV((PRRS(:,:,JK) > ZRTMIN(3)) .OR. &
+                    (ZQP(:,:) > ZRTMIN(3)),I1(:),I2(:))
      DO JL=1, JCOUNT
        JI=I1(JL)
        JJ=I2(JL)
@@ -313,8 +316,8 @@ PINPRR3D (:,:,:) = 0.
      !estimation of q' taking into account incomming ZWSED
      ZQP(:,:)=ZWSED(:,:,JK+KKL)*ZW(:,:,JK)
 
-     JCOUNT=COUNTJV2((PRIS(:,:,JK) > MAX(ZRTMIN(4),1.0E-7 )) .OR. &
-                     (ZQP(:,:) > MAX(ZRTMIN(4),1.0E-7 )),I1(:),I2(:))
+     JCOUNT=COUNTJV((PRIS(:,:,JK) > MAX(ZRTMIN(4),1.0E-7 )) .OR. &
+                    (ZQP(:,:) > MAX(ZRTMIN(4),1.0E-7 )),I1(:),I2(:))
      DO JL=1, JCOUNT
        JI=I1(JL)
        JJ=I2(JL)
@@ -375,8 +378,8 @@ PINPRR3D (:,:,:) = 0.
      !estimation of q' taking into account incomming ZWSED
      ZQP(:,:)=ZWSED(:,:,JK+KKL)*ZW(:,:,JK)
 
-     JCOUNT=COUNTJV2((PRSS(:,:,JK) > ZRTMIN(5)) .OR. &
-                     (ZQP(:,:) > ZRTMIN(5)),I1(:),I2(:))
+     JCOUNT=COUNTJV((PRSS(:,:,JK) > ZRTMIN(5)) .OR. &
+                    (ZQP(:,:) > ZRTMIN(5)),I1(:),I2(:))
      DO JL=1, JCOUNT
        JI=I1(JL)
        JJ=I2(JL)
@@ -435,8 +438,8 @@ PINPRR3D (:,:,:) = 0.
      !estimation of q' taking into account incomming ZWSED
      ZQP(:,:)=ZWSED(:,:,JK+KKL)*ZW(:,:,JK)
 
-     JCOUNT=COUNTJV2((PRGS(:,:,JK) > ZRTMIN(6)) .OR. &
-                     (ZQP(:,:) > ZRTMIN(6)),I1(:),I2(:))
+     JCOUNT=COUNTJV((PRGS(:,:,JK) > ZRTMIN(6)) .OR. &
+                    (ZQP(:,:) > ZRTMIN(6)),I1(:),I2(:))
      DO JL=1, JCOUNT
        JI=I1(JL)
        JJ=I2(JL)
@@ -493,8 +496,8 @@ PINPRR3D (:,:,:) = 0.
      !estimation of q' taking into account incomming ZWSED
      ZQP(:,:)=ZWSED(:,:,JK+KKL)*ZW(:,:,JK)
 
-     JCOUNT=COUNTJV2((PRHS(:,:,JK)+ZQP(JI,JJ) > ZRTMIN(7)) .OR. &
-                     (ZQP(:,:) > ZRTMIN(7)),I1(:),I2(:))
+     JCOUNT=COUNTJV((PRHS(:,:,JK)+ZQP(JI,JJ) > ZRTMIN(7)) .OR. &
+                    (ZQP(:,:) > ZRTMIN(7)),I1(:),I2(:))
      DO JL=1, JCOUNT
        JI=I1(JL)
        JJ=I2(JL)
@@ -572,35 +575,5 @@ IF ( LBUDGET_RC .AND. LDEPOSC ) &
    CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7 ,'DEPO_BU_RRC')
 !
 END SUBROUTINE RAIN_ICE_SEDIMENTATION_STAT
-
-
-FUNCTION COUNTJV2(LTAB,I1,I2) RESULT(IC)
-!
-!*      0. DECLARATIONS
-!          ------------
-!
-IMPLICIT NONE
-!
-!*       0.2  declaration of local variables
-!
-!
-LOGICAL, DIMENSION(:,:) :: LTAB ! Mask
-INTEGER, DIMENSION(:) :: I1,I2 ! Used to replace the COUNT and PACK
-INTEGER :: JI,JJ,IC
-!
-!-------------------------------------------------------------------------------
-!
-IC = 0
-DO JJ = 1,SIZE(LTAB,2)
-  DO JI = 1,SIZE(LTAB,1)
-    IF( LTAB(JI,JJ) ) THEN
-      IC = IC +1
-      I1(IC) = JI
-      I2(IC) = JJ
-    END IF
-  END DO
-END DO
-!
-END FUNCTION COUNTJV2
 
 END MODULE MODE_RAIN_ICE_SEDIMENTATION_STAT

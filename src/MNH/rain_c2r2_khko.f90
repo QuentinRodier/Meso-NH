@@ -214,29 +214,31 @@ END MODULE MODI_RAIN_C2R2_KHKO
 !!      C.Lac     : 01/2017 : Correction on droplet deposition
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAMETERS
-USE MODD_CST
+USE MODD_BUDGET
+USE MODD_CH_AEROSOL
 USE MODD_CONF
-USE MODD_IO, ONLY: TFILEDATA
+USE MODD_CST
+USE MODD_DUST
+USE MODD_IO,                   ONLY: TFILEDATA
+USE MODD_NSV,                  ONLY : NSV_C2R2BEG
 USE MODD_PARAM_C2R2
+USE MODD_PARAMETERS
 USE MODD_RAIN_C2R2_DESCR
 USE MODD_RAIN_C2R2_KHKO_PARAM
-USE MODD_BUDGET
-USE MODD_NSV, ONLY : NSV_C2R2BEG
-USE MODD_CH_AEROSOL
-USE MODD_DUST
 USE MODD_SALT
-!
-USE MODI_BUDGET
-!
+
 USE MODE_FIELD
+USE MODE_IO_FIELD_WRITE,       only: IO_Field_write
 USE MODE_ll
-USE MODE_IO_FIELD_WRITE, only: IO_Field_write
+use mode_tools,                only: Countjv
+
+USE MODI_BUDGET
 USE MODI_GAMMA
 !
 IMPLICIT NONE
@@ -1959,40 +1961,5 @@ IF ( LBUDGET_SV .AND. LDEPOC ) &
 !
   END SUBROUTINE C2R2_KHKO_SEDIMENTATION
 !-------------------------------------------------------------------------------
-!
-!
-  FUNCTION COUNTJV(LTAB,I1,I2,I3) RESULT(IC)
-!
-!*      0. DECLARATIONS
-!          ------------
-!
-IMPLICIT NONE
-!
-!*       0.2  declaration of local variables
-!
-!
-LOGICAL, DIMENSION(:,:,:) :: LTAB ! Mask
-INTEGER, DIMENSION(:) :: I1,I2,I3 ! Used to replace the COUNT and PACK
-INTEGER :: JI,JJ,JK,IC
-!
-!-------------------------------------------------------------------------------
-!
-IC = 0
-DO JK = 1,SIZE(LTAB,3)
-  DO JJ = 1,SIZE(LTAB,2)
-    DO JI = 1,SIZE(LTAB,1)
-      IF( LTAB(JI,JJ,JK) ) THEN
-        IC = IC +1
-        I1(IC) = JI
-        I2(IC) = JJ
-        I3(IC) = JK
-      END IF
-    END DO
-  END DO
-END DO
-!
-END FUNCTION COUNTJV 
-!
-!------------------------------------------------------------------------------
 !
 END SUBROUTINE RAIN_C2R2_KHKO

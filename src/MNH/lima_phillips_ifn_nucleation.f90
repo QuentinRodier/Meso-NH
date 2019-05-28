@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !      ########################################
        MODULE MODI_LIMA_PHILLIPS_IFN_NUCLEATION
 !      ########################################
@@ -101,30 +102,30 @@ END MODULE MODI_LIMA_PHILLIPS_IFN_NUCLEATION
 !!    MODIFICATIONS
 !!    -------------
 !!      Original             15/03/2018
-!!
+!  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAMETERS,      ONLY : JPHEXT, JPVEXT
+USE MODD_BUDGET
 USE MODD_CST,             ONLY : XP00, XRD, XMV, XMD, XCPD, XCPV, XCL, XCI,        &
                                  XTT, XLSTT, XLVTT, XALPI, XBETAI, XGAMI,          &
                                  XALPW, XBETAW, XGAMW, XPI
+USE MODD_NSV, ONLY : NSV_LIMA_NC, NSV_LIMA_NI, NSV_LIMA_IFN_FREE
+USE MODD_PARAMETERS,      ONLY : JPHEXT, JPVEXT
 USE MODD_PARAM_LIMA,      ONLY : NMOD_IFN, NSPECIE, XFRAC,                         &
-                                 NMOD_CCN, NMOD_IMM, NIND_SPECIE, NINDICE_CCN_IMM,  & 
+                                 NMOD_CCN, NMOD_IMM, NIND_SPECIE, NINDICE_CCN_IMM,  &
                                  XDSI0, XRTMIN, XCTMIN, NPHILLIPS
 USE MODD_PARAM_LIMA_COLD, ONLY : XMNU0
-!
-USE MODI_LIMA_FUNCTIONS,  ONLY : COUNTJV
-USE MODI_LIMA_PHILLIPS_REF_SPECTRUM
-USE MODI_LIMA_PHILLIPS_INTEG
-!
-USE MODD_BUDGET
+
+use mode_tools,           only: Countjv
+
 USE MODI_BUDGET
-USE MODD_NSV, ONLY : NSV_LIMA_NC, NSV_LIMA_NI, NSV_LIMA_IFN_FREE
-!
-!
+USE MODI_LIMA_PHILLIPS_INTEG
+USE MODI_LIMA_PHILLIPS_REF_SPECTRUM
+
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
