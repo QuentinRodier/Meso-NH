@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 conv 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODI_SHALLOW_CONVECTION
@@ -158,7 +153,7 @@ END MODULE MODI_SHALLOW_CONVECTION
 !!         "        01/01/02 Apply conservation correction
 !!   F Bouyssel     05/11/08 Modifications for reproductibility
 !!   E. Bazile      20/07/09 Input of TKECLS.
-!!     Juan 24/09/2012: for BUG Pgi rewrite PACK function on mode_pack_pgi
+!  P. Wautelet 03/06/2019: simplify code (remove always true masks) + replace PACK intrinsics
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -173,10 +168,6 @@ USE MODI_CONVECT_TRIGGER_SHAL
 USE MODI_CONVECT_UPDRAFT_SHAL
 USE MODI_CONVECT_CLOSURE_SHAL
 USE MODI_CONVECT_CHEM_TRANSPORT
-!
-#ifdef MNH_PGI
-USE MODE_PACK_PGI
-#endif
 !
 IMPLICIT NONE
 !
@@ -229,7 +220,7 @@ REAL, DIMENSION(KLON,KLEV,KCH1), INTENT(INOUT):: PCH1TEN! species conv. tendency
 !
 !*       0.2   Declarations of local fixed memory variables :
 !
-INTEGER  :: ITEST, ICONV            ! number of convective columns
+INTEGER  :: ICONV                   ! number of convective columns
 INTEGER  :: IIB, IIE                ! horizontal loop bounds
 INTEGER  :: IKB, IKE                ! vertical loop bounds
 INTEGER  :: IKS                     ! vertical dimension
@@ -240,8 +231,6 @@ INTEGER  :: IFTSTEPS                ! only used for chemical tracers
 REAL     :: ZEPS, ZEPSA             ! R_d / R_v, R_v / R_d
 REAL     :: ZRDOCP                  ! R_d/C_p
 !
-LOGICAL, DIMENSION(KLON, KLEV)     :: GTRIG3 ! 3D logical mask for convection 
-LOGICAL, DIMENSION(KLON)           :: GTRIG  ! 2D logical mask for trigger test
 REAL, DIMENSION(KLON,KLEV)         :: ZTHT, ZSTHV, ZSTHES  ! grid scale theta, theta_v
 REAL, DIMENSION(KLON)              :: ZWORK2, ZWORK2B ! work array 
 REAL                               :: ZW1     ! work variable
@@ -317,9 +306,8 @@ REAL, DIMENSION(:,:), ALLOCATABLE  :: ZRCC    ! conv. adj. grid scale r_c
 REAL, DIMENSION(:,:), ALLOCATABLE  :: ZRIC    ! conv. adj. grid scale r_i 
 REAL, DIMENSION(:,:), ALLOCATABLE  :: ZWSUB   ! envir. compensating subsidence (Pa/s)
 !
-LOGICAL, DIMENSION(:),ALLOCATABLE  :: GTRIG1  ! logical mask for convection    
-LOGICAL, DIMENSION(:),ALLOCATABLE  :: GWORK   ! logical work array
-INTEGER, DIMENSION(:),ALLOCATABLE  :: IINDEX, IJINDEX, IJSINDEX, IJPINDEX!hor.index
+LOGICAL, DIMENSION(:),ALLOCATABLE  :: GTRIG1  ! logical mask for convection
+INTEGER, DIMENSION(:),ALLOCATABLE  :: IJINDEX ! hor.index
 REAL, DIMENSION(:),   ALLOCATABLE  :: ZCPH    ! specific heat C_ph 
 REAL, DIMENSION(:),   ALLOCATABLE  :: ZLV, ZLS! latent heat of vaporis., sublim.
 REAL                               :: ZES     ! saturation vapor mixng ratio
@@ -328,7 +316,6 @@ REAL                               :: ZES     ! saturation vapor mixng ratio
 REAL, DIMENSION(:,:,:), ALLOCATABLE:: ZCH1    ! grid scale chemical specy (kg/kg)
 REAL, DIMENSION(:,:,:), ALLOCATABLE:: ZCH1C   ! conv. adjust. chemical specy 1
 REAL, DIMENSION(:,:),   ALLOCATABLE:: ZWORK3  ! conv. adjust. chemical specy 1
-LOGICAL, DIMENSION(:,:,:),ALLOCATABLE::GTRIG4 ! logical mask
 !
 !-------------------------------------------------------------------------------
 !
@@ -345,42 +332,21 @@ JCVEXT = MAX( 0, KTDIA - 1)
 IKE = IKS - JCVEXT 
 !
 !
-!*       0.5    Update convective counter ( where KCOUNT > 0 
-!               convection is still active ).
-!               ---------------------------------------------
-!
-GTRIG(:) = .FALSE.
-GTRIG(IIB:IIE) = .TRUE.
-ITEST = COUNT( GTRIG(:) )
-IF ( ITEST == 0 )  THEN  
-  RETURN
-ENDIF
-                        
-!
-!
 !*       0.7    Reset convective tendencies to zero if convective
 !               counter becomes negative
 !               -------------------------------------------------
 !
-GTRIG3(:,:) = SPREAD( GTRIG(:), DIM=2, NCOPIES=IKS )
-WHERE ( GTRIG3(:,:) ) 
-  PTTEN(:,:)  = 0.
-  PRVTEN(:,:) = 0.
-  PRCTEN(:,:) = 0.
-  PRITEN(:,:) = 0.
+PTTEN(:,:)  = 0.
+PRVTEN(:,:) = 0.
+PRCTEN(:,:) = 0.
+PRITEN(:,:) = 0.
 ! PUTEN(:,:)  = 0.
 ! PVTEN(:,:)  = 0.
-  PUMF(:,:)   = 0.
-END WHERE
-WHERE ( GTRIG(:) ) 
-  KCLTOP(:)  = 0
-  KCLBAS(:)  = 0
-END WHERE
+PUMF(:,:)   = 0.
+KCLTOP(:)  = 0
+KCLBAS(:)  = 0
 IF ( OCH1CONV ) THEN
-  ALLOCATE( GTRIG4(KLON,KLEV,KCH1) )
-  GTRIG4(:,:,:) = SPREAD( GTRIG3(:,:), DIM=3, NCOPIES=KCH1 )
-  WHERE( GTRIG4(:,:,:) ) PCH1TEN(:,:,:) = 0.
-  DEALLOCATE( GTRIG4 )
+  PCH1TEN(:,:,:) = 0.
 END IF
 !
 !
@@ -429,47 +395,38 @@ END DO
 !               at the moment.
 !               --------------------------------------------------------------
 !
-ALLOCATE( ZPRES(ITEST,IKS) )
-ALLOCATE( ZZ(ITEST,IKS) )
-ALLOCATE( ZW(ITEST,IKS) )
-ALLOCATE( ZTH(ITEST,IKS) )
-ALLOCATE( ZTHV(ITEST,IKS) )
-ALLOCATE( ZTHEST(ITEST,IKS) )
-ALLOCATE( ZRV(ITEST,IKS) )
-ALLOCATE( ZSTHLCL(ITEST) )
-ALLOCATE( ZSTLCL(ITEST) )
-ALLOCATE( ZSRVLCL(ITEST) )
-ALLOCATE( ZSWLCL(ITEST) )
-ALLOCATE( ZSZLCL(ITEST) )
-ALLOCATE( ZSTHVELCL(ITEST) )
-ALLOCATE( ISDPL(ITEST) )
-ALLOCATE( ISPBL(ITEST) )
-ALLOCATE( ISLCL(ITEST) )
-ALLOCATE( ZSDXDY(ITEST) )
-ALLOCATE( GTRIG1(ITEST) )
-ALLOCATE( IINDEX(KLON) )
-ALLOCATE( IJSINDEX(ITEST) )
-DO JI = 1, KLON
-  IINDEX(JI) = JI
-END DO
-IJSINDEX(:) = PACK( IINDEX(:), MASK=GTRIG(:) )
+ALLOCATE( ZPRES(KLON,IKS) )
+ALLOCATE( ZZ(KLON,IKS) )
+ALLOCATE( ZW(KLON,IKS) )
+ALLOCATE( ZTH(KLON,IKS) )
+ALLOCATE( ZTHV(KLON,IKS) )
+ALLOCATE( ZTHEST(KLON,IKS) )
+ALLOCATE( ZRV(KLON,IKS) )
+ALLOCATE( ZSTHLCL(KLON) )
+ALLOCATE( ZSTLCL(KLON) )
+ALLOCATE( ZSRVLCL(KLON) )
+ALLOCATE( ZSWLCL(KLON) )
+ALLOCATE( ZSZLCL(KLON) )
+ALLOCATE( ZSTHVELCL(KLON) )
+ALLOCATE( ISDPL(KLON) )
+ALLOCATE( ISPBL(KLON) )
+ALLOCATE( ISLCL(KLON) )
+ALLOCATE( ZSDXDY(KLON) )
+ALLOCATE( GTRIG1(KLON) )
 !
 DO JK = IKB, IKE
-DO JI = 1, ITEST
-  JL = IJSINDEX(JI)
-  ZPRES(JI,JK)  = PPABST(JL,JK)
-  ZZ(JI,JK)     = PZZ(JL,JK)
-  ZTH(JI,JK)    = ZTHT(JL,JK)
-  ZTHV(JI,JK)   = ZSTHV(JL,JK)
-  ZTHEST(JI,JK) = ZSTHES(JL,JK)
-  ZRV(JI,JK)    = MAX( 0., PRVT(JL,JK) )
-  ZW(JI,JK)     = PWT(JL,JK)
+DO JI = 1, KLON
+  JL = JI
+  ZPRES(JI,JK)  = PPABST(JI,JK)
+  ZZ(JI,JK)     = PZZ(JI,JK)
+  ZTH(JI,JK)    = ZTHT(JI,JK)
+  ZTHV(JI,JK)   = ZSTHV(JI,JK)
+  ZTHEST(JI,JK) = ZSTHES(JI,JK)
+  ZRV(JI,JK)    = MAX( 0., PRVT(JI,JK) )
+  ZW(JI,JK)     = PWT(JI,JK)
 END DO
 END DO
-DO JI = 1, ITEST
-  JL = IJSINDEX(JI)
-  ZSDXDY(JI)    = XA25
-END DO
+ZSDXDY(:)    = XA25
 !
 !*       2.2    Compute environm. enthalpy and total water = r_v + r_i + r_c
 !               and envir. saturation theta_e
@@ -483,7 +440,7 @@ ISLCL(:) = MAX( IKB, 2 )   ! initialize DPL PBL and LCL
 ISDPL(:) = IKB
 ISPBL(:) = IKB
 !
-CALL CONVECT_TRIGGER_SHAL(  ITEST, KLEV,                              &
+CALL CONVECT_TRIGGER_SHAL(  KLON, KLEV,                              &
                             ZPRES, ZTH, ZTHV, ZTHEST,                 &
                             ZRV, ZW, ZZ, ZSDXDY, PTKECLS,             &
                             ZSTHLCL, ZSTLCL, ZSRVLCL, ZSWLCL, ZSZLCL, &
@@ -518,8 +475,6 @@ IF ( ICONV == 0 )  THEN
   DEALLOCATE( ISDPL )
   DEALLOCATE( ISPBL )
   DEALLOCATE( GTRIG1 )
-  DEALLOCATE( IINDEX )
-  DEALLOCATE( IJSINDEX )
   RETURN   ! no convective column has been found, exit DEEP_CONVECTION
 ENDIF
 !
@@ -569,7 +524,6 @@ ALLOCATE( ZCAPE(ICONV) )
          ! work variables
 !
 ALLOCATE( IJINDEX(ICONV) )
-ALLOCATE( IJPINDEX(ICONV) )
 ALLOCATE( ZCPH(ICONV) )
 ALLOCATE( ZLV(ICONV) )
 ALLOCATE( ZLS(ICONV) )
@@ -579,8 +533,13 @@ ALLOCATE( ZLS(ICONV) )
 !                   arrays using mask GTRIG
 !                   ---------------------------------------------------
 !
-GTRIG(:)      = UNPACK( GTRIG1(:), MASK=GTRIG, FIELD=.FALSE. )  
-IJINDEX(:)    = PACK( IINDEX(:), MASK=GTRIG(:) )
+JL = 1
+DO JI = 1, KLON
+  IF ( GTRIG1(JI) ) THEN
+    IJINDEX(JL) = JI
+    JL = JL +1
+  END IF
+END DO
 !
 DO JK = IKB, IKE
 DO JI = 1, ICONV
@@ -597,12 +556,8 @@ DO JI = 1, ICONV
 END DO
 END DO
 !
-DO JI = 1, ITEST
-  IJSINDEX(JI) = JI	
-END DO
-IJPINDEX(:) = PACK( IJSINDEX(:), MASK=GTRIG1(:) )
 DO JI = 1, ICONV
-  JL = IJPINDEX(JI)
+  JL = IJINDEX(JI)
   IDPL(JI)      = ISDPL(JL)
   IPBL(JI)      = ISPBL(JL)
   ILCL(JI)      = ISLCL(JL)
@@ -614,14 +569,11 @@ DO JI = 1, ICONV
   ZTHVELCL(JI)  = ZSTHVELCL(JL)
   ZDXDY(JI)     = ZSDXDY(JL)
 END DO
-ALLOCATE( GWORK(ICONV) )
-GWORK(:)      = PACK( GTRIG1(:),  MASK=GTRIG1(:) ) 
+
 DEALLOCATE( GTRIG1 )
 ALLOCATE( GTRIG1(ICONV) )
-GTRIG1(:)     = GWORK(:)
-!                 
-DEALLOCATE( GWORK )
-DEALLOCATE( IJPINDEX )
+GTRIG1(:) = .true.
+
 DEALLOCATE( ISDPL )
 DEALLOCATE( ISPBL )
 DEALLOCATE( ISLCL )
@@ -1014,9 +966,7 @@ DEALLOCATE( ZCAPE )
 !
 ! work arrays
 !
-DEALLOCATE( IINDEX )
 DEALLOCATE( IJINDEX )
-DEALLOCATE( IJSINDEX )
 DEALLOCATE( GTRIG1 )
 !
 !
