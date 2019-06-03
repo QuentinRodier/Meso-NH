@@ -5,6 +5,7 @@
 !-----------------------------------------------------------------
 ! Modifications:
 !  P. Wautelet 25/02/2019: split rain_ice (cleaner and easier to maintain/debug)
+!  P. Wautelet 03/06/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
 !-----------------------------------------------------------------
 MODULE MODE_RAIN_ICE_WARM
 
@@ -16,7 +17,8 @@ MODULE MODE_RAIN_ICE_WARM
 
 CONTAINS
 
-SUBROUTINE RAIN_ICE_WARM(OMICRO, PRHODREF, PRVT, PRCT, PRRT, PHLC_HCF, PHLC_LCF, PHLC_HRC, PHLC_LRC,           &
+SUBROUTINE RAIN_ICE_WARM(OMICRO, KMICRO, K1, K2, K3,                                                           &
+                         PRHODREF, PRVT, PRCT, PRRT, PHLC_HCF, PHLC_LCF, PHLC_HRC, PHLC_LRC,                   &
                          PRHODJ, PPRES, PZT, PLBDAR, PLBDAR_RF, PLVFACT, PCJ, PKA, PDV, PRF, PCF, PTHT, PTHLT, &
                          PRHODJ3D, PTHS3D, PRVS3D, PRVS, PRCS, PRRS, PTHS, PUSW, PEVAP3D)
 !
@@ -38,6 +40,10 @@ IMPLICIT NONE
 !*       0.1   Declarations of dummy arguments :
 !
 LOGICAL,  DIMENSION(:,:,:), intent(in)    :: OMICRO   ! Test where to compute all processes
+INTEGER,                    intent(in)    :: KMICRO
+INTEGER,  DIMENSION(:),     intent(in)    :: K1
+INTEGER,  DIMENSION(:),     intent(in)    :: K2
+INTEGER,  DIMENSION(:),     intent(in)    :: K3
 REAL,     DIMENSION(:),     intent(in)    :: PRHODREF ! RHO Dry REFerence
 REAL,     DIMENSION(:),     intent(in)    :: PRVT     ! Water vapor m.r. at t
 REAL,     DIMENSION(:),     intent(in)    :: PRCT     ! Cloud water m.r. at t
@@ -73,6 +79,7 @@ REAL,     DIMENSION(:,:,:), INTENT(INOUT) :: PEVAP3D  ! Rain evap profile
 !
 !*       0.2  declaration of local variables
 !
+INTEGER                         :: JL
 REAL, DIMENSION(size(PRHODREF)) :: ZZW  ! Work array
 REAL, DIMENSION(size(PRHODREF)) :: ZZW2 ! Work array
 REAL, DIMENSION(size(PRHODREF)) :: ZZW3 ! Work array
@@ -230,7 +237,10 @@ REAL, DIMENSION(size(PRHODREF)) :: ZZW4 ! Work array
     IF (LBUDGET_RR) CALL BUDGET (                                               &
                      UNPACK(PRRS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
                                                               8,'REVA_BU_RRR')
-    PEVAP3D(:,:,:)=UNPACK(ZZW(:),MASK=OMICRO(:,:,:),FIELD=PEVAP3D(:,:,:))
+
+    DO JL = 1, KMICRO
+      PEVAP3D(K1(JL), K2(JL), K3(JL)) = ZZW( JL )
+    END DO
 !
   END SUBROUTINE RAIN_ICE_WARM
 

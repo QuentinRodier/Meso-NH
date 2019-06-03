@@ -6,6 +6,7 @@
 ! Modifications:
 !  P. Wautelet 25/02/2019: split rain_ice (cleaner and easier to maintain/debug)
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 03/06/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
 !-----------------------------------------------------------------
 MODULE MODE_RAIN_ICE_FAST_RH
 
@@ -72,6 +73,7 @@ REAL,     DIMENSION(:),     intent(inout) :: PUSW     ! Undersaturation over wat
 !
 INTEGER                              :: IHAIL, IGWET
 INTEGER                              :: JJ
+INTEGER, DIMENSION(size(PRHODREF))   :: I1
 INTEGER, DIMENSION(:), ALLOCATABLE   :: IVEC1, IVEC2      ! Vectors of indices for interpolations
 LOGICAL, DIMENSION(size(PRHODREF))   :: GWET              ! Test where to compute wet growth
 LOGICAL, DIMENSION(size(PRHODREF))   :: GHAIL             ! Test where to compute hail growth
@@ -81,8 +83,16 @@ REAL,    DIMENSION(size(PRHODREF),6) :: ZZW1              ! Work arrays
 !
 !-------------------------------------------------------------------------------
 !
-  GHAIL(:) = PRHT(:)>XRTMIN(7)
-  IHAIL = COUNT(GHAIL(:))
+  IHAIL = 0
+  DO JJ = 1, SIZE(GHAIL)
+    IF ( PRHT(JJ)>XRTMIN(7) ) THEN
+      IHAIL = IHAIL + 1
+      I1(IHAIL) = JJ
+      GHAIL(JJ) = .TRUE.
+    ELSE
+      GHAIL(JJ) = .FALSE.
+    END IF
+  END DO
 !
   IF( IHAIL>0 ) THEN
 !
@@ -104,8 +114,16 @@ REAL,    DIMENSION(size(PRHODREF),6) :: ZZW1              ! Work arrays
 !
 !*       7.2.1  accretion of aggregates on the hailstones
 !
-    GWET(:) = GHAIL(:) .AND. (PRST(:)>XRTMIN(5) .AND. PRSS(:)>0.0)
-    IGWET = COUNT( GWET(:) )
+    IGWET = 0
+    DO JJ = 1, SIZE(GWET)
+      IF ( GHAIL(JJ) .AND. PRST(JJ)>XRTMIN(5) .AND. PRSS(JJ)>0.0 ) THEN
+        IGWET = IGWET + 1
+        I1(IGWET) = JJ
+        GWET(JJ) = .TRUE.
+      ELSE
+        GWET(JJ) = .FALSE.
+      END IF
+    END DO
 !
     IF( IGWET>0 ) THEN
 !
@@ -119,8 +137,10 @@ REAL,    DIMENSION(size(PRHODREF),6) :: ZZW1              ! Work arrays
 !
 !*       7.2.3  select the (PLBDAH,PLBDAS) couplet
 !
-      ZVEC1(:) = PACK( PLBDAH(:),MASK=GWET(:) )
-      ZVEC2(:) = PACK( PLBDAS(:),MASK=GWET(:) )
+      DO JJ = 1, IGWET
+        ZVEC1(JJ) = PLBDAH(I1(JJ))
+        ZVEC2(JJ) = PLBDAS(I1(JJ))
+      END DO
 !
 !*       7.2.4  find the next lower indice for the PLBDAG and for the PLBDAS
 !               in the geometrical set of (Lbda_h,Lbda_s) couplet use to
@@ -147,7 +167,10 @@ REAL,    DIMENSION(size(PRHODREF),6) :: ZZW1              ! Work arrays
                      - XKER_SWETH(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
                                                           * (ZVEC1(JJ) - 1.0)
       END DO
-      ZZW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GWET,FIELD=0.0 )
+      ZZW(:) = 0.
+      DO JJ = 1, IGWET
+        ZZW(I1(JJ)) = ZVEC3(JJ)
+      END DO
 !
       WHERE( GWET(:) )
         ZZW1(:,3) = MIN( PRSS(:),XFSWETH*ZZW(:)                       & ! RSWETH
@@ -166,8 +189,16 @@ REAL,    DIMENSION(size(PRHODREF),6) :: ZZW1              ! Work arrays
 !
 !*       7.2.6  accretion of graupeln on the hailstones
 !
-    GWET(:) = GHAIL(:) .AND. (PRGT(:)>XRTMIN(6) .AND. PRGS(:)>0.0)
-    IGWET = COUNT( GWET(:) )
+    IGWET = 0
+    DO JJ = 1, SIZE(GWET)
+      IF ( GHAIL(JJ) .AND. PRGT(JJ)>XRTMIN(6) .AND. PRGS(JJ)>0.0 ) THEN
+        IGWET = IGWET + 1
+        I1(IGWET) = JJ
+        GWET(JJ) = .TRUE.
+      ELSE
+        GWET(JJ) = .FALSE.
+      END IF
+    END DO
 !
     IF( IGWET>0 ) THEN
 !
@@ -181,8 +212,10 @@ REAL,    DIMENSION(size(PRHODREF),6) :: ZZW1              ! Work arrays
 !
 !*       7.2.8  select the (PLBDAH,PLBDAG) couplet
 !
-      ZVEC1(:) = PACK( PLBDAH(:),MASK=GWET(:) )
-      ZVEC2(:) = PACK( PLBDAG(:),MASK=GWET(:) )
+      DO JJ = 1, IGWET
+        ZVEC1(JJ) = PLBDAH(I1(JJ))
+        ZVEC2(JJ) = PLBDAG(I1(JJ))
+      END DO
 !
 !*       7.2.9  find the next lower indice for the PLBDAH and for the PLBDAG
 !               in the geometrical set of (Lbda_h,Lbda_g) couplet use to
@@ -209,7 +242,10 @@ REAL,    DIMENSION(size(PRHODREF),6) :: ZZW1              ! Work arrays
                      - XKER_GWETH(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
                                                           * (ZVEC1(JJ) - 1.0)
       END DO
-      ZZW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GWET,FIELD=0.0 )
+      ZZW(:) = 0.
+      DO JJ = 1, IGWET
+        ZZW(I1(JJ)) = ZVEC3(JJ)
+      END DO
 !
       WHERE( GWET(:) )
         ZZW1(:,5) = MAX(MIN( PRGS(:),XFGWETH*ZZW(:)                       & ! RGWETH

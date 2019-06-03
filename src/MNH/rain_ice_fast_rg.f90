@@ -6,6 +6,7 @@
 ! Modifications:
 !  P. Wautelet 25/02/2019: split rain_ice (cleaner and easier to maintain/debug)
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 03/06/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
 !-----------------------------------------------------------------
 MODULE MODE_RAIN_ICE_FAST_RG
 
@@ -78,6 +79,7 @@ REAL,     DIMENSION(:),     intent(out)   :: PRWETG   ! Wet growth rate of the g
 !
 INTEGER                              :: IGDRY
 INTEGER                              :: JJ
+INTEGER, DIMENSION(size(PRHODREF))   :: I1
 INTEGER, DIMENSION(:), ALLOCATABLE   :: IVEC1, IVEC2      ! Vectors of indices for interpolations
 LOGICAL, DIMENSION(size(PRHODREF))   :: GDRY              ! Test where to compute dry growth
 REAL,    DIMENSION(size(PRHODREF))   :: ZZW               ! Work array
@@ -130,9 +132,17 @@ REAL,    DIMENSION(size(PRHODREF),7) :: ZZW1              ! Work arrays
 !
 !*       6.2.1  accretion of aggregates on the graupeln
 !
-  GDRY(:) = (PRST(:)>XRTMIN(5)) .AND. (PRGT(:)>XRTMIN(6)) .AND. (PRSS(:)>0.0)
-  IGDRY = COUNT( GDRY(:) )
-!
+  IGDRY = 0
+  DO JJ = 1, SIZE(GDRY)
+    IF ( PRST(JJ)>XRTMIN(5) .AND. PRGT(JJ)>XRTMIN(6) .AND. PRSS(JJ)>0.0 ) THEN
+      IGDRY = IGDRY + 1
+      I1(IGDRY) = JJ
+      GDRY(JJ) = .TRUE.
+    ELSE
+      GDRY(JJ) = .FALSE.
+    END IF
+  END DO
+
   IF( IGDRY>0 ) THEN
 !
 !*       6.2.2  allocations
@@ -145,8 +155,10 @@ REAL,    DIMENSION(size(PRHODREF),7) :: ZZW1              ! Work arrays
 !
 !*       6.2.3  select the (PLBDAG,PLBDAS) couplet
 !
-    ZVEC1(:) = PACK( PLBDAG(:),MASK=GDRY(:) )
-    ZVEC2(:) = PACK( PLBDAS(:),MASK=GDRY(:) )
+    DO JJ = 1, IGDRY
+      ZVEC1(JJ) = PLBDAG(I1(JJ))
+      ZVEC2(JJ) = PLBDAS(I1(JJ))
+    END DO
 !
 !*       6.2.4  find the next lower indice for the PLBDAG and for the PLBDAS
 !               in the geometrical set of (Lbda_g,Lbda_s) couplet use to
@@ -173,7 +185,10 @@ REAL,    DIMENSION(size(PRHODREF),7) :: ZZW1              ! Work arrays
                     - XKER_SDRYG(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
                                                          * (ZVEC1(JJ) - 1.0)
     END DO
-    ZZW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GDRY,FIELD=0.0 )
+    ZZW(:) = 0.
+    DO JJ = 1, IGDRY
+      ZZW(I1(JJ)) = ZVEC3(JJ)
+    END DO
 !
     WHERE( GDRY(:) )
       ZZW1(:,3) = MIN( PRSS(:),XFSDRYG*ZZW(:)                         & ! RSDRYG
@@ -193,8 +208,16 @@ REAL,    DIMENSION(size(PRHODREF),7) :: ZZW1              ! Work arrays
 !
 !*       6.2.6  accretion of raindrops on the graupeln
 !
-  GDRY(:) = (PRRT(:)>XRTMIN(3)) .AND. (PRGT(:)>XRTMIN(6)) .AND. (PRRS(:)>0.0)
-  IGDRY = COUNT( GDRY(:) )
+  IGDRY = 0
+  DO JJ = 1, SIZE(GDRY)
+    IF ( PRRT(JJ)>XRTMIN(3) .AND. PRGT(JJ)>XRTMIN(6) .AND. PRRS(JJ)>0.0 ) THEN
+      IGDRY = IGDRY + 1
+      I1(IGDRY) = JJ
+      GDRY(JJ) = .TRUE.
+    ELSE
+      GDRY(JJ) = .FALSE.
+    END IF
+  END DO
 !
   IF( IGDRY>0 ) THEN
 !
@@ -208,8 +231,10 @@ REAL,    DIMENSION(size(PRHODREF),7) :: ZZW1              ! Work arrays
 !
 !*       6.2.8  select the (PLBDAG,PLBDAR) couplet
 !
-    ZVEC1(:) = PACK( PLBDAG(:),MASK=GDRY(:) )
-    ZVEC2(:) = PACK( PLBDAR(:),MASK=GDRY(:) )
+    DO JJ = 1, IGDRY
+      ZVEC1(JJ) = PLBDAG(I1(JJ))
+      ZVEC2(JJ) = PLBDAR(I1(JJ))
+    END DO
 !
 !*       6.2.9  find the next lower indice for the PLBDAG and for the PLBDAR
 !               in the geometrical set of (Lbda_g,Lbda_r) couplet use to
@@ -236,7 +261,10 @@ REAL,    DIMENSION(size(PRHODREF),7) :: ZZW1              ! Work arrays
                     - XKER_RDRYG(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
                                                          * (ZVEC1(JJ) - 1.0)
     END DO
-    ZZW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GDRY,FIELD=0.0 )
+    ZZW(:) = 0.
+    DO JJ = 1, IGDRY
+      ZZW(I1(JJ)) = ZVEC3(JJ)
+    END DO
 !
     WHERE( GDRY(:) )
       ZZW1(:,4) = MIN( PRRS(:),XFRDRYG*ZZW(:)                    & ! RRDRYG

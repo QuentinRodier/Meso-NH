@@ -83,6 +83,7 @@ SUBROUTINE ICE4_FAST_RH(KSIZE, LDSOFT, LDCOMPUTE, LDWETG, &
 !!    -------------
 !!
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 29/05/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
 !
 !
 !*      0. DECLARATIONS
@@ -153,6 +154,7 @@ INTEGER, PARAMETER :: IRCWETH=1, IRRWETH=2, IRIDRYH=3, IRIWETH=4, IRSDRYH=5, IRS
 LOGICAL, DIMENSION(SIZE(PRHODREF)) :: GHAIL, GWET, GMASK, LLWETH, LLDRYH
 INTEGER :: IHAIL, IGWET
 REAL, DIMENSION(SIZE(PRHODREF)) :: ZVEC1, ZVEC2, ZVEC3
+INTEGER, DIMENSION(SIZE(PRHODREF)) :: I1
 INTEGER, DIMENSION(SIZE(PRHODREF)) :: IVEC1, IVEC2
 REAL, DIMENSION(SIZE(PRHODREF)) :: ZZW, &
                                    ZRDRYH_INIT, ZRWETH_INIT, &
@@ -195,7 +197,17 @@ ENDIF
 !
 !*       7.2.1  accretion of aggregates on the hailstones
 !
-GWET(:) = PRHT(:)>XRTMIN(7) .AND. PRST(:)>XRTMIN(5) .AND. LDCOMPUTE(:)
+IGWET = 0
+DO JJ = 1, SIZE(GWET)
+  IF (PRHT(JJ)>XRTMIN(7) .AND. PRST(JJ)>XRTMIN(5) .AND. LDCOMPUTE(JJ)) THEN
+    IGWET = IGWET + 1
+    I1(IGWET) = JJ
+    GWET(JJ) = .TRUE.
+  ELSE
+    GWET(JJ) = .FALSE.
+  END IF
+END DO
+
 IF(LDSOFT) THEN
   WHERE(.NOT. GWET(:))
     PRH_TEND(:, IRSWETH)=0.
@@ -204,13 +216,14 @@ IF(LDSOFT) THEN
 ELSE
   PRH_TEND(:, IRSWETH)=0.
   PRH_TEND(:, IRSDRYH)=0.
-  IGWET=COUNT(GWET(:))
   IF(IGWET>0)THEN
     !
     !*       7.2.3  select the (PLBDAH,PLBDAS) couplet
     !
-    ZVEC1(1:IGWET) = PACK( PLBDAH(:),MASK=GWET(:) )
-    ZVEC2(1:IGWET) = PACK( PLBDAS(:),MASK=GWET(:) )
+    DO JJ = 1, IGWET
+      ZVEC1(JJ) = PLBDAH(I1(JJ))
+      ZVEC2(JJ) = PLBDAS(I1(JJ))
+    END DO
     !
     !*       7.2.4  find the next lower indice for the PLBDAG and for the PLBDAS
     !               in the geometrical set of (Lbda_h,Lbda_s) couplet use to
@@ -237,7 +250,10 @@ ELSE
                   - XKER_SWETH(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
                                                          * (ZVEC1(JJ) - 1.0)
     END DO
-    ZZW(:) = UNPACK( VECTOR=ZVEC3(1:IGWET),MASK=GWET,FIELD=0.0 )
+    ZZW(:) = 0.
+    DO JJ = 1, IGWET
+      ZZW(I1(JJ)) = ZVEC3(JJ)
+    END DO
     !
     WHERE(GWET(:))
       PRH_TEND(:, IRSWETH)=XFSWETH*ZZW(:)                       & ! RSWETH
@@ -253,7 +269,17 @@ ENDIF
 !
 !*       7.2.6  accretion of graupeln on the hailstones
 !
-GWET(:) = PRHT(:)>XRTMIN(7) .AND. PRGT(:)>XRTMIN(6) .AND. LDCOMPUTE(:)
+IGWET = 0
+DO JJ = 1, SIZE(GWET)
+  IF (PRHT(JJ)>XRTMIN(7) .AND. PRGT(JJ)>XRTMIN(6) .AND. LDCOMPUTE(JJ)) THEN
+    IGWET = IGWET + 1
+    I1(IGWET) = JJ
+    GWET(JJ) = .TRUE.
+  ELSE
+    GWET(JJ) = .FALSE.
+  END IF
+END DO
+
 IF(LDSOFT) THEN
   WHERE(.NOT. GWET(:))
     PRH_TEND(:, IRGWETH)=0.
@@ -262,13 +288,14 @@ IF(LDSOFT) THEN
 ELSE
   PRH_TEND(:, IRGWETH)=0.
   PRH_TEND(:, IRGDRYH)=0.
-  IGWET=COUNT(GWET(:))
   IF(IGWET>0)THEN
     !
     !*       7.2.8  select the (PLBDAH,PLBDAG) couplet
     !
-    ZVEC1(1:IGWET) = PACK( PLBDAH(:),MASK=GWET(:) )
-    ZVEC2(1:IGWET) = PACK( PLBDAG(:),MASK=GWET(:) )
+    DO JJ = 1, IGWET
+      ZVEC1(JJ) = PLBDAH(I1(JJ))
+      ZVEC2(JJ) = PLBDAG(I1(JJ))
+    END DO
     !
     !*       7.2.9  find the next lower indice for the PLBDAH and for the PLBDAG
     !               in the geometrical set of (Lbda_h,Lbda_g) couplet use to
@@ -295,7 +322,10 @@ ELSE
                    - XKER_GWETH(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
                                                         * (ZVEC1(JJ) - 1.0)
     END DO
-    ZZW(:) = UNPACK( VECTOR=ZVEC3(1:IGWET),MASK=GWET,FIELD=0.0 )
+    ZZW(:) = 0.
+    DO JJ = 1, IGWET
+      ZZW(I1(JJ)) = ZVEC3(JJ)
+    END DO
     !
     WHERE(GWET(:))
       PRH_TEND(:, IRGWETH)=XFGWETH*ZZW(:)                       & ! RGWETH
@@ -315,20 +345,31 @@ ENDIF
 !
 !*       7.2.11  accretion of raindrops on the hailstones
 !
-GWET(:) = PRHT(:)>XRTMIN(7) .AND. PRRT(:)>XRTMIN(3) .AND. LDCOMPUTE(:)
+IGWET = 0
+DO JJ = 1, SIZE(GWET)
+  IF (PRHT(JJ)>XRTMIN(7) .AND. PRRT(JJ)>XRTMIN(3) .AND. LDCOMPUTE(JJ)) THEN
+    IGWET = IGWET + 1
+    I1(IGWET) = JJ
+    GWET(JJ) = .TRUE.
+  ELSE
+    GWET(JJ) = .FALSE.
+  END IF
+END DO
+
 IF(LDSOFT) THEN
   WHERE(.NOT. GWET(:))
     PRH_TEND(:, IRRWETH)=0.
   END WHERE
 ELSE
   PRH_TEND(:, IRRWETH)=0.
-  IGWET=COUNT(GWET(:))
   IF(IGWET>0)THEN
     !
     !*       7.2.12  select the (PLBDAH,PLBDAR) couplet
     !
-    ZVEC1(1:IGWET)=PACK(PLBDAH(:), MASK=GWET(:))
-    ZVEC2(1:IGWET)=PACK(PLBDAR(:), MASK=GWET(:))
+    DO JJ = 1, IGWET
+      ZVEC1(JJ) = PLBDAH(I1(JJ))
+      ZVEC2(JJ) = PLBDAR(I1(JJ))
+    END DO
     !
     !*       7.2.13 find the next lower indice for the PLBDAH and for the PLBDAR
     !               in the geometrical set of (Lbda_h,Lbda_r) couplet use to
@@ -355,7 +396,10 @@ ELSE
                     - XKER_RWETH(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
                                                          *(ZVEC1(JJ) - 1.0)
     END DO
-    ZZW(:)=UNPACK(VECTOR=ZVEC3(1:IGWET), MASK=GWET, FIELD=0.)
+    ZZW(:) = 0.
+    DO JJ = 1, IGWET
+      ZZW(I1(JJ)) = ZVEC3(JJ)
+    END DO
     !
     WHERE(GWET(:))
       PRH_TEND(:, IRRWETH) = XFRWETH*ZZW(:)                    & ! RRWETH

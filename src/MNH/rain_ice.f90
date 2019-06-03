@@ -227,7 +227,6 @@ END MODULE MODI_RAIN_ICE
 !!                      land, sea and urban areas in the cloud sedimentation.
 !!      (D. Degrauwe), 2013-11: Export upper-air precipitation fluxes PFPR.
 !!      (S. Riette) Nov 2013 Protection against null sigma
-!!      Juan 24/09/2012: for BUG Pgi rewrite PACK function on mode_pack_pgi
 !!      (C. Lac) FIT temporal scheme : instant M removed
 !!      (JP Pinty), 01-2014 : ICE4 : partial reconversion of hail to graupel
 !!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
@@ -243,6 +242,7 @@ END MODULE MODI_RAIN_ICE
 !  P. Wautelet 25/02/2019: split rain_ice (cleaner and easier to maintain/debug)
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
+!  P. Wautelet 29/05/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
 !
 !*       0.    DECLARATIONS
 !              ------------
@@ -258,9 +258,6 @@ use MODD_RAIN_ICE_DESCR, only: XLBEXR, XLBR, XRTMIN
 use MODD_RAIN_ICE_PARAM, only: XCRIAUTC
 
 use MODE_MSG
-#ifdef MNH_PGI
-USE MODE_PACK_PGI
-#endif
 use MODE_RAIN_ICE_FAST_RG,             only: RAIN_ICE_FAST_RG
 use MODE_RAIN_ICE_FAST_RH,             only: RAIN_ICE_FAST_RH
 use MODE_RAIN_ICE_FAST_RI,             only: RAIN_ICE_FAST_RI
@@ -580,7 +577,9 @@ IF( IMICRO >= 0 ) THEN
 !
   IF (LBU_ENABLE .OR. LLES_CALL) THEN
     ALLOCATE(ZRHODJ(IMICRO))
-    ZRHODJ(:) = PACK( PRHODJ(:,:,:),MASK=GMICRO(:,:,:) )
+    DO JL=1,IMICRO
+      ZRHODJ(JL) = PRHODJ(I1(JL),I2(JL),I3(JL))
+    END DO
   ELSE
     ALLOCATE(ZRHODJ(0))
   END IF
@@ -773,8 +772,10 @@ IF( IMICRO >= 0 ) THEN
   ENDIF
 
   !Diagnostic of precipitation fraction
-  ZW(:,:,:) = 0.
-  PRAINFR(:,:,:) = UNPACK( ZRF(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
+  PRAINFR(:,:,:) = 0.
+  DO JL=1,IMICRO
+    PRAINFR(I1(JL),I2(JL),I3(JL)) = ZRF(JL)
+  END DO
   CALL ICE4_RAINFR_VERT(IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKT, KKL, PRAINFR, PRRT(:,:,:))
   DO JL=1,IMICRO
     ZRF(JL)=PRAINFR(I1(JL),I2(JL),I3(JL))
@@ -809,7 +810,8 @@ IF( IMICRO >= 0 ) THEN
   IF( OWARM ) THEN    !  Check if the formation of the raindrops by the slow
                       !  warm processes is allowed
     PEVAP3D(:,:,:)= 0.
-    CALL RAIN_ICE_WARM(GMICRO, ZRHODREF, ZRVT, ZRCT, ZRRT, ZHLC_HCF, ZHLC_LCF, ZHLC_HRC, ZHLC_LRC,           &
+    CALL RAIN_ICE_WARM(GMICRO, IMICRO, I1, I2, I3,                                                           &
+                       ZRHODREF, ZRVT, ZRCT, ZRRT, ZHLC_HCF, ZHLC_LCF, ZHLC_HRC, ZHLC_LRC,                   &
                        ZRHODJ, ZPRES, ZZT, ZLBDAR, ZLBDAR_RF, ZLVFACT, ZCJ, ZKA, ZDV, ZRF, ZCF, ZTHT, ZTHLT, &
                        PRHODJ, PTHS, PRVS, ZRVS, ZRCS, ZRRS, ZTHS, ZUSW, PEVAP3D)
   END IF
@@ -861,29 +863,23 @@ IF( IMICRO >= 0 ) THEN
 !
 !
 !
-  ZW(:,:,:) = PRVS(:,:,:)
-  PRVS(:,:,:) = UNPACK( ZRVS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
-  ZW(:,:,:) = PRCS(:,:,:)
-  PRCS(:,:,:) = UNPACK( ZRCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
-  ZW(:,:,:) = PRRS(:,:,:)
-  PRRS(:,:,:) = UNPACK( ZRRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
-  ZW(:,:,:) = PRIS(:,:,:)
-  PRIS(:,:,:) = UNPACK( ZRIS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
-  ZW(:,:,:) = PRSS(:,:,:)
-  PRSS(:,:,:) = UNPACK( ZRSS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
-  ZW(:,:,:) = PRGS(:,:,:)
-  PRGS(:,:,:) = UNPACK( ZRGS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
+  DO JL=1,IMICRO
+    PRVS(I1(JL),I2(JL),I3(JL)) = ZRVS(JL)
+    PRCS(I1(JL),I2(JL),I3(JL)) = ZRCS(JL)
+    PRRS(I1(JL),I2(JL),I3(JL)) = ZRRS(JL)
+    PRIS(I1(JL),I2(JL),I3(JL)) = ZRIS(JL)
+    PRSS(I1(JL),I2(JL),I3(JL)) = ZRSS(JL)
+    PRGS(I1(JL),I2(JL),I3(JL)) = ZRGS(JL)
+    PTHS(I1(JL),I2(JL),I3(JL)) = ZTHS(JL)
+    PCIT(I1(JL),I2(JL),I3(JL)) = ZCIT(JL)
+    !
+    PRAINFR(I1(JL),I2(JL),I3(JL)) = ZRF(JL)
+  END DO
   IF ( KRR == 7 ) THEN
-    ZW(:,:,:) = PRHS(:,:,:)
-    PRHS(:,:,:) = UNPACK( ZRHS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
+    DO JL=1,IMICRO
+      PRHS(I1(JL),I2(JL),I3(JL)) = ZRHS(JL)
+    END DO
   END IF
-  ZW(:,:,:) = PTHS(:,:,:)
-  PTHS(:,:,:) = UNPACK( ZTHS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
-  ZW(:,:,:) = PCIT(:,:,:)
-  PCIT(:,:,:) = UNPACK( ZCIT(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
-!
-  ZW(:,:,:) = PRAINFR(:,:,:)
-  PRAINFR(:,:,:) = UNPACK( ZRF(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
 !
 !
 !

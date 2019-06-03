@@ -8,7 +8,7 @@ INTERFACE
 SUBROUTINE ICE4_TENDENCIES(KSIZE, KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKL, &
                           &KRR, ODSOFT, ODCOMPUTE, &
                           &OWARM, HSUBG_RC_RR_ACCR, HSUBG_RR_EVAP, HSUBG_AUCV_RC, HSUBG_PR_PDF, &
-                          &PEXN, PRHODREF, PLVFACT, PLSFACT, LDMICRO, K1, K2, K3, &
+                          &PEXN, PRHODREF, PLVFACT, PLSFACT, K1, K2, K3, &
                           &PPRES, PCF, PSIGMA_RC, &
                           &PCIT, &
                           &PT, PTHT, &
@@ -40,7 +40,6 @@ REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PEXN
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRHODREF
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLVFACT
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLSFACT
-LOGICAL, DIMENSION(KIT,KJT,KKT), INTENT(IN) :: LDMICRO
 INTEGER, DIMENSION(KSIZE),    INTENT(IN)    :: K1
 INTEGER, DIMENSION(KSIZE),    INTENT(IN)    :: K2
 INTEGER, DIMENSION(KSIZE),    INTENT(IN)    :: K3
@@ -135,7 +134,7 @@ END MODULE MODI_ICE4_TENDENCIES
 SUBROUTINE ICE4_TENDENCIES(KSIZE, KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKL, &
                           &KRR, ODSOFT, ODCOMPUTE, &
                           &OWARM, HSUBG_RC_RR_ACCR, HSUBG_RR_EVAP, HSUBG_AUCV_RC, HSUBG_PR_PDF, &
-                          &PEXN, PRHODREF, PLVFACT, PLSFACT, LDMICRO, K1, K2, K3, &
+                          &PEXN, PRHODREF, PLVFACT, PLSFACT, K1, K2, K3, &
                           &PPRES, PCF, PSIGMA_RC, &
                           &PCIT, &
                           &PT, PTHT, &
@@ -164,7 +163,8 @@ SUBROUTINE ICE4_TENDENCIES(KSIZE, KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, K
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!
+!
+!  P. Wautelet 29/05/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
 !
 !
 !*      0. DECLARATIONS
@@ -204,7 +204,6 @@ REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PEXN
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRHODREF
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLVFACT
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLSFACT
-LOGICAL, DIMENSION(KIT,KJT,KKT), INTENT(IN) :: LDMICRO
 INTEGER, DIMENSION(KSIZE),    INTENT(IN)    :: K1
 INTEGER, DIMENSION(KSIZE),    INTENT(IN)    :: K2
 INTEGER, DIMENSION(KSIZE),    INTENT(IN)    :: K3
@@ -401,8 +400,12 @@ IF(KSIZE>0) THEN
                         PRHODREF, ZRCT, PCF, PSIGMA_RC,&
                         PHLC_HCF, PHLC_LCF, PHLC_HRC, PHLC_LRC, ZRF)
   !Diagnostic of precipitation fraction
-  PRAINFR(:,:,:)=UNPACK(ZRF(:), MASK=LDMICRO(:,:,:), FIELD=0.)
-  ZRRT3D(:,:,:)=PRRT3D(:,:,:)-UNPACK(PRRHONG_MR(:), MASK=LDMICRO(:,:,:), FIELD=0.)
+  PRAINFR(:,:,:) = 0.
+  ZRRT3D (:,:,:) = PRRT3D(:,:,:)
+  DO JL=1,KSIZE
+    PRAINFR(K1(JL), K2(JL), K3(JL)) = ZRF(JL)
+    ZRRT3D (K1(JL), K2(JL), K3(JL)) = ZRRT3D(K1(JL), K2(JL), K3(JL)) - PRRHONG_MR(JL)
+  END DO
   CALL ICE4_RAINFR_VERT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKL, PRAINFR(:,:,:), ZRRT3D(:,:,:))
   DO JL=1,KSIZE
     ZRF(JL)=PRAINFR(K1(JL), K2(JL), K3(JL))

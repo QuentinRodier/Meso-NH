@@ -40,6 +40,7 @@ SUBROUTINE ICE4_NUCLEATION_WRAPPER(KIT, KJT, KKT, LDMASK, &
 !!    MODIFICATIONS
 !!    -------------
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
+!  P. Wautelet 29/05/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
 !
 !
 !
@@ -135,8 +136,11 @@ IF(INEGT>0) THEN
                        ZTHT, ZPRES, ZRHODREF, ZEXN, ZLSFACT, ZZT, &
                        ZRVT, &
                        ZCIT, ZRVHENI_MR, ZB_TH, ZB_RV, ZB_RI)
-  PRVHENI_MR(:,:,:)=UNPACK(ZRVHENI_MR(:), MASK=GNEGT(:,:,:), FIELD=0.0)
-  PCIT(:,:,:)      =UNPACK(ZCIT(:),       MASK=GNEGT(:,:,:), FIELD=PCIT(:,:,:))
+  PRVHENI_MR(:,:,:)= 0.0
+  DO JL=1, INEGT
+    PRVHENI_MR(I1(JL), I2(JL), I3(JL)) = ZRVHENI_MR(JL)
+    PCIT      (I1(JL), I2(JL), I3(JL)) = ZCIT      (JL)
+  END DO
 END IF
 !
 DEALLOCATE(GLDCOMPUTE)

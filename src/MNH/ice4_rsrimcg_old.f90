@@ -43,6 +43,7 @@ SUBROUTINE ICE4_RSRIMCG_OLD(KSIZE, ODSOFT, ODCOMPUTE, &
 !!    -------------
 !!
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 29/05/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
 !
 !
 !*      0. DECLARATIONS
@@ -76,7 +77,7 @@ INTEGER :: IGRIM, IGACC
 REAL, DIMENSION(SIZE(PRHODREF)) :: ZVEC1, ZVEC2, ZVEC3
 INTEGER, DIMENSION(SIZE(PRHODREF)) :: IVEC1, IVEC2
 REAL, DIMENSION(SIZE(PRHODREF)) :: ZZW, ZZW2, ZZW6
-INTEGER :: JJ
+INTEGER :: JL
 !-------------------------------------------------------------------------------
 !
 !
@@ -87,14 +88,23 @@ INTEGER :: JJ
 PRSRIMCG_MR(:)=0.
 !
 IF(.NOT. ODSOFT) THEN
-  GRIM(:) = PRCT(:)>XRTMIN(2) .AND. PRST(:)>XRTMIN(5) .AND. ODCOMPUTE(:) .AND. PT(:)<XTT
-  IGRIM = COUNT(GRIM(:))
+  IGRIM = 0
+  GRIM(:) = .FALSE.
+  DO JL = 1, SIZE(GRIM)
+    IF ( PRCT(JL)>XRTMIN(2) .AND. PRST(JL)>XRTMIN(5) .AND. ODCOMPUTE(JL) .AND. PT(JL)<XTT ) THEN
+      IGRIM = IGRIM + 1
+      IVEC1(IGRIM) = Jl
+      GRIM(JL) = .TRUE.
+    END IF
+  END DO
   !
   IF(IGRIM>0 .AND. CSNOWRIMING=='OLD ') THEN
     !
     !        5.1.1  select the PLBDAS
     !
-    ZVEC1(1:IGRIM) = PACK( PLBDAS(:),MASK=GRIM(:) )
+    DO JL = 1, IGRIM
+      ZVEC1(JL) = PLBDAS(IVEC1(JL))
+    END DO
     !
     !        5.1.2  find the next lower indice for the PLBDAS in the geometrical
     !               set of Lbda_s used to tabulate some moments of the incomplete
@@ -111,7 +121,10 @@ IF(.NOT. ODSOFT) THEN
     !
     ZVEC1(1:IGRIM) =  XGAMINC_RIM2( IVEC2(1:IGRIM)+1 )* ZVEC2(1:IGRIM)      &
                     - XGAMINC_RIM2( IVEC2(1:IGRIM)   )*(ZVEC2(1:IGRIM) - 1.0)
-    ZZW(:) = UNPACK( VECTOR=ZVEC1(1:IGRIM),MASK=GRIM,FIELD=0.0 )
+    ZZW(:) = 0.
+    DO JL = 1, IGRIM
+      ZZW(IVEC1(JL)) = ZVEC1(JL)
+    END DO
 
     !
     !        5.1.6  riming-conversion of the large sized aggregates into graupeln

@@ -93,6 +93,7 @@ SUBROUTINE ICE4_FAST_RG(KSIZE, LDSOFT, LDCOMPUTE, KRR, &
 !!    -------------
 !!
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 29/05/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
 !
 !
 !*      0. DECLARATIONS
@@ -167,6 +168,7 @@ INTEGER, PARAMETER :: IRCDRYG=1, IRIDRYG=2, IRIWETG=3, IRSDRYG=4, IRSWETG=5, IRR
 LOGICAL, DIMENSION(SIZE(PRHODREF)) :: GDRY, LLDRYG, GMASK
 INTEGER :: IGDRY
 REAL, DIMENSION(SIZE(PRHODREF)) :: ZVEC1, ZVEC2, ZVEC3
+INTEGER, DIMENSION(SIZE(PRHODREF)) :: I1
 INTEGER, DIMENSION(SIZE(PRHODREF)) :: IVEC1, IVEC2
 REAL, DIMENSION(SIZE(PRHODREF)) :: ZZW, &
                                    ZRDRYG_INIT, & !Initial dry growth rate of the graupeln
@@ -247,7 +249,17 @@ ELSE
 ENDIF
 
 ! Wet and dry collection of rs on graupel (6.2.1)
-GDRY(:)=PRST(:)>XRTMIN(5) .AND. PRGT(:)>XRTMIN(6) .AND. LDCOMPUTE(:)
+IGDRY = 0
+DO JJ = 1, SIZE(GDRY)
+  IF (PRST(JJ)>XRTMIN(5) .AND. PRGT(JJ)>XRTMIN(6) .AND. LDCOMPUTE(JJ)) THEN
+    IGDRY = IGDRY + 1
+    I1(IGDRY) = JJ
+    GDRY(JJ) = .TRUE.
+  ELSE
+    GDRY(JJ) = .FALSE.
+  END IF
+END DO
+
 IF(LDSOFT) THEN
   WHERE(.NOT. GDRY(:))
     PRG_TEND(:, IRSDRYG)=0.
@@ -256,13 +268,14 @@ IF(LDSOFT) THEN
 ELSE
   PRG_TEND(:, IRSDRYG)=0.
   PRG_TEND(:, IRSWETG)=0.
-  IGDRY=COUNT(GDRY(:))
   IF(IGDRY>0)THEN
     !
     !*       6.2.3  select the (PLBDAG,PLBDAS) couplet
     !
-    ZVEC1(1:IGDRY)=PACK(PLBDAG(:), MASK=GDRY(:))
-    ZVEC2(1:IGDRY)=PACK(PLBDAS(:), MASK=GDRY(:))
+    DO JJ = 1, IGDRY
+      ZVEC1(JJ) = PLBDAG(I1(JJ))
+      ZVEC2(JJ) = PLBDAS(I1(JJ))
+    END DO
     !
     !*       6.2.4  find the next lower indice for the PLBDAG and for the PLBDAS
     !               in the geometrical set of (Lbda_g,Lbda_s) couplet use to
@@ -289,7 +302,10 @@ ELSE
                     - XKER_SDRYG(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
                                                          *(ZVEC1(JJ) - 1.0)
     END DO
-    ZZW(:)=UNPACK(VECTOR=ZVEC3(1:IGDRY), MASK=GDRY(:), FIELD=0.0)
+    ZZW(:) = 0.
+    DO JJ = 1, IGDRY
+      ZZW(I1(JJ)) = ZVEC3(JJ)
+    END DO
     !
     WHERE(GDRY(:))
       PRG_TEND(:, IRSWETG)=XFSDRYG*ZZW(:)                         & ! RSDRYG
@@ -306,21 +322,32 @@ ENDIF
 !
 !*       6.2.6  accretion of raindrops on the graupeln
 !
-GDRY(:)=PRRT(:)>XRTMIN(3) .AND. PRGT(:)>XRTMIN(6) .AND. LDCOMPUTE(:)
+IGDRY = 0
+DO JJ = 1, SIZE(GDRY)
+  IF (PRRT(JJ)>XRTMIN(3) .AND. PRGT(JJ)>XRTMIN(6) .AND. LDCOMPUTE(JJ)) THEN
+    IGDRY = IGDRY + 1
+    I1(IGDRY) = JJ
+    GDRY(JJ) = .TRUE.
+  ELSE
+    GDRY(JJ) = .FALSE.
+  END IF
+END DO
+
 IF(LDSOFT) THEN
   WHERE(.NOT. GDRY(:))
     PRG_TEND(:, IRRDRYG)=0.
   END WHERE
 ELSE
   PRG_TEND(:, IRRDRYG)=0.
-  IGDRY=COUNT(GDRY(:))
   !
   IF(IGDRY>0) THEN
     !
     !*       6.2.8  select the (PLBDAG,PLBDAR) couplet
     !
-    ZVEC1(1:IGDRY)=PACK(PLBDAG(:), MASK=GDRY(:))
-    ZVEC2(1:IGDRY)=PACK(PLBDAR(:), MASK=GDRY(:))
+    DO JJ = 1, IGDRY
+      ZVEC1(JJ) = PLBDAG(I1(JJ))
+      ZVEC2(JJ) = PLBDAR(I1(JJ))
+    END DO
     !
     !*       6.2.9  find the next lower indice for the PLBDAG and for the PLBDAR
     !               in the geometrical set of (Lbda_g,Lbda_r) couplet use to
@@ -347,7 +374,10 @@ ELSE
                     - XKER_RDRYG(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
                                                          *(ZVEC1(JJ) - 1.0)
     END DO
-    ZZW(:)=UNPACK(VECTOR=ZVEC3(1:IGDRY), MASK=GDRY, FIELD=0.)
+    ZZW(:) = 0.
+    DO JJ = 1, IGDRY
+      ZZW(I1(JJ)) = ZVEC3(JJ)
+    END DO
     !
     WHERE(GDRY(:))
       PRG_TEND(:, IRRDRYG) = XFRDRYG*ZZW(:)                    & ! RRDRYG

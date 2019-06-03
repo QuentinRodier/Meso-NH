@@ -76,6 +76,7 @@ SUBROUTINE ICE4_FAST_RS(KSIZE, LDSOFT, LDCOMPUTE, &
 !!    -------------
 !!
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 29/05/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
 !
 !
 !*      0. DECLARATIONS
@@ -134,6 +135,7 @@ INTEGER, PARAMETER :: IRCRIMS=1, IRCRIMSS=2, IRSRIMCG=3, IRRACCS=4, IRRACCSS=5, 
 LOGICAL, DIMENSION(SIZE(PRHODREF)) :: GRIM, GACC, GMASK
 INTEGER :: IGRIM, IGACC
 REAL, DIMENSION(SIZE(PRHODREF)) :: ZVEC1, ZVEC2, ZVEC3
+INTEGER, DIMENSION(SIZE(PRHODREF)) :: I1
 INTEGER, DIMENSION(SIZE(PRHODREF)) :: IVEC1, IVEC2
 REAL, DIMENSION(SIZE(PRHODREF)) :: ZZW, ZZW2, ZZW6, ZFREEZ_RATE
 INTEGER :: JJ
@@ -169,7 +171,16 @@ END WHERE
 !
 !*       5.1    cloud droplet riming of the aggregates
 !
-GRIM(:) = PRCT(:)>XRTMIN(2) .AND. PRST(:)>XRTMIN(5) .AND. LDCOMPUTE(:)
+IGRIM = 0
+DO JJ = 1, SIZE(GRIM)
+  IF (PRCT(JJ)>XRTMIN(2) .AND. PRST(JJ)>XRTMIN(5) .AND. LDCOMPUTE(JJ)) THEN
+    IGRIM = IGRIM + 1
+    I1(IGRIM) = JJ
+    GRIM(JJ) = .TRUE.
+  ELSE
+    GRIM(JJ) = .FALSE.
+  END IF
+END DO
 !
 ! Collection of cloud droplets by snow: this rate is used for riming (T<0) and for conversion/melting (T>0)
 IF(LDSOFT) THEN
@@ -182,13 +193,14 @@ ELSE
   PRS_TEND(:, IRCRIMS)=0.
   PRS_TEND(:, IRCRIMSS)=0.
   PRS_TEND(:, IRSRIMCG)=0.
-  IGRIM = COUNT(GRIM(:))
   !
   IF(IGRIM>0) THEN
     !
     !        5.1.1  select the PLBDAS
     !
-    ZVEC1(1:IGRIM) = PACK( PLBDAS(:),MASK=GRIM(:) )
+    DO JJ = 1, IGRIM
+      ZVEC1(JJ) = PLBDAS(I1(JJ))
+    END DO
     !
     !        5.1.2  find the next lower indice for the PLBDAS in the geometrical
     !               set of Lbda_s used to tabulate some moments of the incomplete
@@ -204,7 +216,10 @@ ELSE
     !
     ZVEC1(1:IGRIM) =   XGAMINC_RIM1( IVEC2(1:IGRIM)+1 )* ZVEC2(1:IGRIM)      &
                      - XGAMINC_RIM1( IVEC2(1:IGRIM)   )*(ZVEC2(1:IGRIM) - 1.0)
-    ZZW(:) = UNPACK( VECTOR=ZVEC1(1:IGRIM),MASK=GRIM,FIELD=0.0 )
+    ZZW(:) = 0.
+    DO JJ = 1, IGRIM
+      ZZW(I1(JJ)) = ZVEC1(JJ)
+    END DO
     !
     !        5.1.4  riming of the small sized aggregates
     !
@@ -220,11 +235,17 @@ ELSE
     !
     ZVEC1(1:IGRIM) =  XGAMINC_RIM2( IVEC2(1:IGRIM)+1 )* ZVEC2(1:IGRIM)      &
                     - XGAMINC_RIM2( IVEC2(1:IGRIM)   )*(ZVEC2(1:IGRIM) - 1.0)
-    ZZW(:) = UNPACK( VECTOR=ZVEC1(1:IGRIM),MASK=GRIM,FIELD=0.0 )
+    ZZW(:) = 0.
+    DO JJ = 1, IGRIM
+      ZZW(I1(JJ)) = ZVEC1(JJ)
+    END DO
 
     ZVEC1(1:IGRIM) =  XGAMINC_RIM4( IVEC2(1:IGRIM)+1 )* ZVEC2(1:IGRIM)      &
                     - XGAMINC_RIM4( IVEC2(1:IGRIM)   )*(ZVEC2(1:IGRIM) - 1.0)
-    ZZW2(:) = UNPACK( VECTOR=ZVEC1(1:IGRIM),MASK=GRIM,FIELD=0.0)
+    ZZW2(:) = 0.
+    DO JJ = 1, IGRIM
+      ZZW2(I1(JJ)) = ZVEC1(JJ)
+    END DO
     !
     !        5.1.6  riming-conversion of the large sized aggregates into graupeln
     !
@@ -277,7 +298,17 @@ PA_TH(:) = PA_TH(:) + PRCRIMSG(:)*(PLSFACT(:)-PLVFACT(:))
 !
 !*       5.2    rain accretion onto the aggregates
 !
-GACC(:) = PRRT(:)>XRTMIN(3) .AND. PRST(:)>XRTMIN(5) .AND. LDCOMPUTE(:)
+IGACC = 0
+DO JJ = 1, SIZE(GACC)
+  IF (PRRT(JJ)>XRTMIN(3) .AND. PRST(JJ)>XRTMIN(5) .AND. LDCOMPUTE(JJ)) THEN
+    IGACC = IGACC + 1
+    I1(IGACC) = JJ
+    GACC(JJ) = .TRUE.
+  ELSE
+    GACC(JJ) = .FALSE.
+  END IF
+END DO
+
 IF(LDSOFT) THEN
   WHERE(.NOT. GACC(:))
     PRS_TEND(:, IRRACCS)=0.
@@ -288,14 +319,15 @@ ELSE
   PRS_TEND(:, IRRACCS)=0.
   PRS_TEND(:, IRRACCSS)=0.
   PRS_TEND(:, IRSACCRG)=0.
-  IGACC = COUNT(GACC(:))
   IF(IGACC>0)THEN
     !
     !
     !        5.2.1  select the (PLBDAS,PLBDAR) couplet
     !
-    ZVEC1(1:IGACC) = PACK( PLBDAS(:),MASK=GACC(:) )
-    ZVEC2(1:IGACC) = PACK( PLBDAR(:),MASK=GACC(:) )
+    DO JJ = 1, IGACC
+      ZVEC1(JJ) = PLBDAS(I1(JJ))
+      ZVEC2(JJ) = PLBDAR(I1(JJ))
+    END DO
     !
     !        5.2.2  find the next lower indice for the PLBDAS and for the PLBDAR
     !               in the geometrical set of (Lbda_s,Lbda_r) couplet use to
@@ -322,7 +354,10 @@ ELSE
                     - XKER_RACCSS(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
                                                           * (ZVEC1(JJ) - 1.0)
     END DO
-    ZZW(:) = UNPACK( VECTOR=ZVEC3(1:IGACC),MASK=GACC,FIELD=0.0 )
+    ZZW(:) = 0.
+    DO JJ = 1, IGACC
+      ZZW(I1(JJ)) = ZVEC3(JJ)
+    END DO
     !
     !        5.2.4  raindrop accretion on the small sized aggregates
     !
@@ -346,7 +381,10 @@ ELSE
                     -  XKER_RACCS(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
                                                            * (ZVEC1(JJ) - 1.0)
     END DO
-    ZZW(:) = UNPACK( VECTOR=ZVEC3(1:IGACC),MASK=GACC(:),FIELD=0.0 )
+    ZZW(:) = 0.
+    DO JJ = 1, IGACC
+      ZZW(I1(JJ)) = ZVEC3(JJ)
+    END DO
     WHERE(GACC(:))
       PRS_TEND(:, IRRACCS) = ZZW(:)*ZZW6(:)
     END WHERE
@@ -361,7 +399,10 @@ ELSE
                       - XKER_SACCRG(IVEC2(JJ)  ,IVEC1(JJ)  )*(ZVEC1(JJ) - 1.0) ) &
                                                             * (ZVEC2(JJ) - 1.0)
     END DO
-    ZZW(:) = UNPACK( VECTOR=ZVEC3(1:IGACC),MASK=GACC,FIELD=0.0 )
+    ZZW(:) = 0.
+    DO JJ = 1, IGACC
+      ZZW(I1(JJ)) = ZVEC3(JJ)
+    END DO
     !
     !        5.2.6  raindrop accretion-conversion of the large sized aggregates
     !               into graupeln

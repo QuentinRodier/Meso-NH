@@ -6,6 +6,7 @@
 ! Modifications:
 !  P. Wautelet 25/02/2019: split rain_ice (cleaner and easier to maintain/debug)
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
+!  P. Wautelet 29/05/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
 !-----------------------------------------------------------------
 MODULE MODE_RAIN_ICE_NUCLEATION
 
@@ -131,7 +132,10 @@ IF( INEGT >= 1 ) THEN
 !*       3.1.2   update the r_i and r_v mixing ratios
 !
     ZZW(:) = MIN( ZZW(:),50.E3 ) ! limitation provisoire a 50 l^-1
-    ZW(:,:,:) = UNPACK( ZZW(:),MASK=GNEGT(:,:,:),FIELD=0.0 )
+    ZW(:,:,:) = 0.0
+    DO JL=1, INEGT
+      ZW(I1(JL), I2(JL), I3(JL)) = ZZW( JL )
+    END DO
     ZW(:,:,:) = MAX( ZW(:,:,:) ,0.0 ) *XMNU0/(PRHODREF(:,:,:)*PTSTEP)
     PRIS(:,:,:) = PRIS(:,:,:) + ZW(:,:,:)
     PRVS(:,:,:) = PRVS(:,:,:) - ZW(:,:,:)
@@ -146,8 +150,10 @@ IF( INEGT >= 1 ) THEN
     END IF
                                  ! f(L_s*(RVHENI))
     ZZW(:) = MAX( ZZW(:)+ZCIT(:),ZCIT(:) )
-    PCIT(:,:,:) = MAX( UNPACK( ZZW(:),MASK=GNEGT(:,:,:),FIELD=0.0 ) , &
-                       PCIT(:,:,:) )
+    PCIT(:,:,:) = MAX( PCIT(:,:,:), 0.0 )
+    DO JL=1, INEGT
+      PCIT(I1(JL), I2(JL), I3(JL)) = MAX( ZZW( JL ), PCIT(I1(JL), I2(JL), I3(JL)), 0.0 )
+    END DO
   END IF
   DEALLOCATE(ZSSI)
   DEALLOCATE(ZUSW)

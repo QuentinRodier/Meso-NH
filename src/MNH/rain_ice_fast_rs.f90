@@ -6,6 +6,7 @@
 ! Modifications:
 !  P. Wautelet 25/02/2019: split rain_ice (cleaner and easier to maintain/debug)
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 03/06/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
 !-----------------------------------------------------------------
 MODULE MODE_RAIN_ICE_FAST_RS
 
@@ -69,6 +70,7 @@ REAL,     DIMENSION(:),     INTENT(INOUT) :: PTHS     ! Theta source
 !
 INTEGER                              :: IGRIM, IGACC
 INTEGER                              :: JJ
+INTEGER, DIMENSION(size(PRHODREF))   :: I1
 INTEGER, DIMENSION(:), ALLOCATABLE   :: IVEC1, IVEC2      ! Vectors of indices for interpolations
 LOGICAL, DIMENSION(size(PRHODREF))   :: GRIM              ! Test where to compute riming
 LOGICAL, DIMENSION(size(PRHODREF))   :: GACC              ! Test where to compute accretion
@@ -81,11 +83,17 @@ REAL,    DIMENSION(size(PRHODREF),4) :: ZZW1              ! Work arrays
 !
   ZZW1(:,:) = 0.0
 !
-! GRIM(:) = (PRCT(:)>0.0) .AND. (PRST(:)>0.0) .AND.            &
-  GRIM(:) = (PRCT(:)>XRTMIN(2)) .AND. (PRST(:)>XRTMIN(5)) .AND.            &
-                                (PRCS(:)>0.0) .AND. (PZT(:)<XTT)
-  IGRIM = COUNT( GRIM(:) )
-!
+  IGRIM = 0
+  DO JJ = 1, SIZE(GRIM)
+    IF (PRCT(JJ)>XRTMIN(2) .AND. PRST(JJ)>XRTMIN(5) .AND. PRCS(JJ)>0.0 .AND. PZT(JJ)<XTT ) THEN
+      IGRIM = IGRIM + 1
+      I1(IGRIM) = JJ
+      GRIM(JJ) = .TRUE.
+    ELSE
+      GRIM(JJ) = .FALSE.
+    END IF
+  END DO
+  !
   IF( IGRIM>0 ) THEN
 !
 !        5.1.0  allocations
@@ -96,7 +104,9 @@ REAL,    DIMENSION(size(PRHODREF),4) :: ZZW1              ! Work arrays
 !
 !        5.1.1  select the PLBDAS
 !
-    ZVEC1(:) = PACK( PLBDAS(:),MASK=GRIM(:) )
+    DO JJ = 1, IGRIM
+      ZVEC1(JJ) = PLBDAS(I1(JJ))
+    END DO
 !
 !        5.1.2  find the next lower indice for the PLBDAS in the geometrical
 !               set of Lbda_s used to tabulate some moments of the incomplete
@@ -112,7 +122,10 @@ REAL,    DIMENSION(size(PRHODREF),4) :: ZZW1              ! Work arrays
 !
     ZVEC1(1:IGRIM) =   XGAMINC_RIM1( IVEC2(1:IGRIM)+1 )* ZVEC2(1:IGRIM)      &
                      - XGAMINC_RIM1( IVEC2(1:IGRIM)   )*(ZVEC2(1:IGRIM) - 1.0)
-    ZZW(:) = UNPACK( VECTOR=ZVEC1(:),MASK=GRIM,FIELD=0.0 )
+    ZZW(:) = 0.
+    DO JJ = 1, IGRIM
+      ZZW(I1(JJ)) = ZVEC1(JJ)
+    END DO
 !
 !        5.1.4  riming of the small sized aggregates
 !
@@ -131,7 +144,10 @@ REAL,    DIMENSION(size(PRHODREF),4) :: ZZW1              ! Work arrays
 !
     ZVEC1(1:IGRIM) =  XGAMINC_RIM2( IVEC2(1:IGRIM)+1 )* ZVEC2(1:IGRIM)      &
                     - XGAMINC_RIM2( IVEC2(1:IGRIM)   )*(ZVEC2(1:IGRIM) - 1.0)
-    ZZW(:) = UNPACK( VECTOR=ZVEC1(:),MASK=GRIM,FIELD=0.0 )
+    ZZW(:) = 0.
+    DO JJ = 1, IGRIM
+      ZZW(I1(JJ)) = ZVEC1(JJ)
+    END DO
 !
 !        5.1.6  riming-conversion of the large sized aggregates into graupeln
 !
@@ -170,10 +186,18 @@ REAL,    DIMENSION(size(PRHODREF),4) :: ZZW1              ! Work arrays
 !*       5.2    rain accretion onto the aggregates
 !
   ZZW1(:,2:3) = 0.0
-   GACC(:) = (PRRT(:)>XRTMIN(3)) .AND. (PRST(:)>XRTMIN(5)) .AND.            &
-                            (PRRS(:)>0.0) .AND. (PZT(:)<XTT)
-  IGACC = COUNT( GACC(:) )
-!
+
+  IGACC = 0
+  DO JJ = 1, SIZE(GACC)
+    IF (PRRT(JJ)>XRTMIN(3) .AND. PRST(JJ)>XRTMIN(5) .AND. PRRS(JJ)>0.0 .AND. PZT(JJ)<XTT ) THEN
+      IGACC = IGACC + 1
+      I1(IGACC) = JJ
+      GACC(JJ) = .TRUE.
+    ELSE
+      GACC(JJ) = .FALSE.
+    END IF
+  END DO
+  !
   IF( IGACC>0 ) THEN
 !
 !        5.2.0  allocations
@@ -186,8 +210,10 @@ REAL,    DIMENSION(size(PRHODREF),4) :: ZZW1              ! Work arrays
 !
 !        5.2.1  select the (PLBDAS,PLBDAR) couplet
 !
-    ZVEC1(:) = PACK( PLBDAS(:),MASK=GACC(:) )
-    ZVEC2(:) = PACK( PLBDAR(:),MASK=GACC(:) )
+    DO JJ = 1, IGACC
+      ZVEC1(JJ) = PLBDAS(I1(JJ))
+      ZVEC2(JJ) = PLBDAR(I1(JJ))
+    END DO
 !
 !        5.2.2  find the next lower indice for the PLBDAS and for the PLBDAR
 !               in the geometrical set of (Lbda_s,Lbda_r) couplet use to
@@ -214,7 +240,10 @@ REAL,    DIMENSION(size(PRHODREF),4) :: ZZW1              ! Work arrays
                     - XKER_RACCSS(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
                                                           * (ZVEC1(JJ) - 1.0)
     END DO
-    ZZW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GACC,FIELD=0.0 )
+    ZZW(:) = 0.
+    DO JJ = 1, IGACC
+      ZZW(I1(JJ)) = ZVEC3(JJ)
+    END DO
 !
 !        5.2.4  raindrop accretion on the small sized aggregates
 !
@@ -241,7 +270,9 @@ REAL,    DIMENSION(size(PRHODREF),4) :: ZZW1              ! Work arrays
                     -  XKER_RACCS(IVEC2(JJ)  ,IVEC1(JJ)  )*(ZVEC1(JJ) - 1.0) ) &
                                                            * (ZVEC2(JJ) - 1.0)
     END DO
-    ZZW1(:,2) = ZZW1(:,2)*UNPACK( VECTOR=ZVEC3(:),MASK=GACC(:),FIELD=0.0 )
+    DO JJ = 1, IGACC
+      ZZW1(I1(JJ), 2) =  ZZW1(I1(JJ), 2 ) * ZVEC3(JJ)
+    END DO
                                                                        !! RRACCS!
 !        5.2.5  perform the bilinear interpolation of the normalized
 !               SACCRG-kernel
@@ -254,7 +285,10 @@ REAL,    DIMENSION(size(PRHODREF),4) :: ZZW1              ! Work arrays
                     - XKER_SACCRG(IVEC2(JJ)  ,IVEC1(JJ)  )*(ZVEC1(JJ) - 1.0) ) &
                                                           * (ZVEC2(JJ) - 1.0)
     END DO
-    ZZW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GACC,FIELD=0.0 )
+    ZZW(:) = 0.
+    DO JJ = 1, IGACC
+      ZZW(I1(JJ)) = ZVEC3(JJ)
+    END DO
 !
 !        5.2.6  raindrop accretion-conversion of the large sized aggregates
 !               into graupeln
