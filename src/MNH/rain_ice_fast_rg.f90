@@ -7,6 +7,7 @@
 !  P. Wautelet 25/02/2019: split rain_ice (cleaner and easier to maintain/debug)
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 03/06/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
+!  P. Wautelet 05/06/2019: optimisations
 !-----------------------------------------------------------------
 MODULE MODE_RAIN_ICE_FAST_RG
 
@@ -78,19 +79,18 @@ REAL,     DIMENSION(:),     intent(out)   :: PRWETG   ! Wet growth rate of the g
 !*       0.2  declaration of local variables
 !
 INTEGER                              :: IGDRY
-INTEGER                              :: JJ
+INTEGER                              :: JJ, JL
 INTEGER, DIMENSION(size(PRHODREF))   :: I1
 INTEGER, DIMENSION(:), ALLOCATABLE   :: IVEC1, IVEC2      ! Vectors of indices for interpolations
-LOGICAL, DIMENSION(size(PRHODREF))   :: GDRY              ! Test where to compute dry growth
 REAL,    DIMENSION(size(PRHODREF))   :: ZZW               ! Work array
 REAL,    DIMENSION(:), ALLOCATABLE   :: ZVEC1,ZVEC2,ZVEC3 ! Work vectors for interpolations
+REAL,    DIMENSION(:), ALLOCATABLE   :: ZVECLBDAG, ZVECLBDAR, ZVECLBDAS
 REAL,    DIMENSION(size(PRHODREF),7) :: ZZW1              ! Work arrays
 !
 !-------------------------------------------------------------------------------
 !
 !*       6.1    rain contact freezing
 !
-  ZZW1(:,3:4) = 0.0
   WHERE( (PRIT(:)>XRTMIN(4)) .AND. (PRRT(:)>XRTMIN(3)) .AND.  &
                              (PRIS(:)>0.0) .AND. (PRRS(:)>0.0) )
     ZZW1(:,3) = MIN( PRIS(:),XICFRR * PRIT(:)                & ! RICFRRG
@@ -120,11 +120,11 @@ REAL,    DIMENSION(size(PRHODREF),7) :: ZZW1              ! Work arrays
 !*       6.2    compute the Dry growth case
 !
   ZZW1(:,:) = 0.0
-  WHERE( (PRGT(:)>XRTMIN(6)) .AND. ((PRCT(:)>XRTMIN(2) .AND. PRCS(:)>0.0)) )
+  WHERE( PRGT(:)>XRTMIN(6) .AND. PRCT(:)>XRTMIN(2) .AND. PRCS(:)>0.0 )
     ZZW(:) = PLBDAG(:)**(XCXG-XDG-2.0) * PRHODREF(:)**(-XCEXVT)
     ZZW1(:,1) = MIN( PRCS(:),XFCDRYG * PRCT(:) * ZZW(:) )             ! RCDRYG
   END WHERE
-  WHERE( (PRGT(:)>XRTMIN(6)) .AND. ((PRIT(:)>XRTMIN(4) .AND. PRIS(:)>0.0)) )
+  WHERE( (PRGT(:)>XRTMIN(6)) .AND. PRIT(:)>XRTMIN(4) .AND. PRIS(:)>0.0 )
     ZZW(:) = PLBDAG(:)**(XCXG-XDG-2.0) * PRHODREF(:)**(-XCEXVT)
     ZZW1(:,2) = MIN( PRIS(:),XFIDRYG * EXP( XCOLEXIG*(PZT(:)-XTT) ) &
                                      * PRIT(:) * ZZW(:) )             ! RIDRYG
@@ -133,13 +133,10 @@ REAL,    DIMENSION(size(PRHODREF),7) :: ZZW1              ! Work arrays
 !*       6.2.1  accretion of aggregates on the graupeln
 !
   IGDRY = 0
-  DO JJ = 1, SIZE(GDRY)
+  DO JJ = 1, SIZE(PRST)
     IF ( PRST(JJ)>XRTMIN(5) .AND. PRGT(JJ)>XRTMIN(6) .AND. PRSS(JJ)>0.0 ) THEN
       IGDRY = IGDRY + 1
       I1(IGDRY) = JJ
-      GDRY(JJ) = .TRUE.
-    ELSE
-      GDRY(JJ) = .FALSE.
     END IF
   END DO
 
@@ -147,6 +144,8 @@ REAL,    DIMENSION(size(PRHODREF),7) :: ZZW1              ! Work arrays
 !
 !*       6.2.2  allocations
 !
+    ALLOCATE(ZVECLBDAG(IGDRY))
+    ALLOCATE(ZVECLBDAS(IGDRY))
     ALLOCATE(ZVEC1(IGDRY))
     ALLOCATE(ZVEC2(IGDRY))
     ALLOCATE(ZVEC3(IGDRY))
@@ -155,22 +154,20 @@ REAL,    DIMENSION(size(PRHODREF),7) :: ZZW1              ! Work arrays
 !
 !*       6.2.3  select the (PLBDAG,PLBDAS) couplet
 !
-    DO JJ = 1, IGDRY
-      ZVEC1(JJ) = PLBDAG(I1(JJ))
-      ZVEC2(JJ) = PLBDAS(I1(JJ))
-    END DO
+    ZVECLBDAG(1:IGDRY) = PLBDAG(I1(1:IGDRY))
+    ZVECLBDAS(1:IGDRY) = PLBDAS(I1(1:IGDRY))
 !
 !*       6.2.4  find the next lower indice for the PLBDAG and for the PLBDAS
 !               in the geometrical set of (Lbda_g,Lbda_s) couplet use to
 !               tabulate the SDRYG-kernel
 !
     ZVEC1(1:IGDRY) = MAX( 1.00001, MIN( REAL(NDRYLBDAG)-0.00001,           &
-                          XDRYINTP1G * LOG( ZVEC1(1:IGDRY) ) + XDRYINTP2G ) )
+                          XDRYINTP1G * LOG( ZVECLBDAG(1:IGDRY) ) + XDRYINTP2G ) )
     IVEC1(1:IGDRY) = INT( ZVEC1(1:IGDRY) )
     ZVEC1(1:IGDRY) = ZVEC1(1:IGDRY) - REAL( IVEC1(1:IGDRY) )
 !
     ZVEC2(1:IGDRY) = MAX( 1.00001, MIN( REAL(NDRYLBDAS)-0.00001,           &
-                          XDRYINTP1S * LOG( ZVEC2(1:IGDRY) ) + XDRYINTP2S ) )
+                          XDRYINTP1S * LOG( ZVECLBDAS(1:IGDRY) ) + XDRYINTP2S ) )
     IVEC2(1:IGDRY) = INT( ZVEC2(1:IGDRY) )
     ZVEC2(1:IGDRY) = ZVEC2(1:IGDRY) - REAL( IVEC2(1:IGDRY) )
 !
@@ -185,20 +182,19 @@ REAL,    DIMENSION(size(PRHODREF),7) :: ZZW1              ! Work arrays
                     - XKER_SDRYG(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
                                                          * (ZVEC1(JJ) - 1.0)
     END DO
-    ZZW(:) = 0.
-    DO JJ = 1, IGDRY
-      ZZW(I1(JJ)) = ZVEC3(JJ)
-    END DO
 !
-    WHERE( GDRY(:) )
-      ZZW1(:,3) = MIN( PRSS(:),XFSDRYG*ZZW(:)                         & ! RSDRYG
-                                      * EXP( XCOLEXSG*(PZT(:)-XTT) )  &
-                    *( PLBDAS(:)**(XCXS-XBS) )*( PLBDAG(:)**XCXG )    &
-                    *( PRHODREF(:)**(-XCEXVT-1.) )                    &
-                         *( XLBSDRYG1/( PLBDAG(:)**2              ) + &
-                            XLBSDRYG2/( PLBDAG(:)   * PLBDAS(:)   ) + &
-                            XLBSDRYG3/(               PLBDAS(:)**2) ) )
-    END WHERE
+    DO JJ = 1, IGDRY
+      JL = I1(JJ)
+      ZZW1(JL,3) = MIN( PRSS(JL),XFSDRYG*ZVEC3(JJ)                         & ! RSDRYG
+                                      * EXP( XCOLEXSG*(PZT(JL)-XTT) )  &
+                    *( ZVECLBDAS(JJ)**(XCXS-XBS) )*( ZVECLBDAG(JJ)**XCXG )    &
+                    *( PRHODREF(JL)**(-XCEXVT-1.) )                    &
+                         *( XLBSDRYG1/( ZVECLBDAG(JJ)**2              ) + &
+                            XLBSDRYG2/( ZVECLBDAG(JJ)   * ZVECLBDAS(JJ)   ) + &
+                            XLBSDRYG3/(               ZVECLBDAS(JJ)**2) ) )
+    END DO
+    DEALLOCATE(ZVECLBDAS)
+    DEALLOCATE(ZVECLBDAG)
     DEALLOCATE(IVEC2)
     DEALLOCATE(IVEC1)
     DEALLOCATE(ZVEC3)
@@ -209,13 +205,10 @@ REAL,    DIMENSION(size(PRHODREF),7) :: ZZW1              ! Work arrays
 !*       6.2.6  accretion of raindrops on the graupeln
 !
   IGDRY = 0
-  DO JJ = 1, SIZE(GDRY)
+  DO JJ = 1, SIZE(PRRT)
     IF ( PRRT(JJ)>XRTMIN(3) .AND. PRGT(JJ)>XRTMIN(6) .AND. PRRS(JJ)>0.0 ) THEN
       IGDRY = IGDRY + 1
       I1(IGDRY) = JJ
-      GDRY(JJ) = .TRUE.
-    ELSE
-      GDRY(JJ) = .FALSE.
     END IF
   END DO
 !
@@ -223,6 +216,8 @@ REAL,    DIMENSION(size(PRHODREF),7) :: ZZW1              ! Work arrays
 !
 !*       6.2.7  allocations
 !
+    ALLOCATE(ZVECLBDAG(IGDRY))
+    ALLOCATE(ZVECLBDAR(IGDRY))
     ALLOCATE(ZVEC1(IGDRY))
     ALLOCATE(ZVEC2(IGDRY))
     ALLOCATE(ZVEC3(IGDRY))
@@ -231,22 +226,20 @@ REAL,    DIMENSION(size(PRHODREF),7) :: ZZW1              ! Work arrays
 !
 !*       6.2.8  select the (PLBDAG,PLBDAR) couplet
 !
-    DO JJ = 1, IGDRY
-      ZVEC1(JJ) = PLBDAG(I1(JJ))
-      ZVEC2(JJ) = PLBDAR(I1(JJ))
-    END DO
+    ZVECLBDAG(1:IGDRY) = PLBDAG(I1(1:IGDRY))
+    ZVECLBDAR(1:IGDRY) = PLBDAR(I1(1:IGDRY))
 !
 !*       6.2.9  find the next lower indice for the PLBDAG and for the PLBDAR
 !               in the geometrical set of (Lbda_g,Lbda_r) couplet use to
 !               tabulate the RDRYG-kernel
 !
     ZVEC1(1:IGDRY) = MAX( 1.00001, MIN( REAL(NDRYLBDAG)-0.00001,           &
-                          XDRYINTP1G * LOG( ZVEC1(1:IGDRY) ) + XDRYINTP2G ) )
+                          XDRYINTP1G * LOG( ZVECLBDAG(1:IGDRY) ) + XDRYINTP2G ) )
     IVEC1(1:IGDRY) = INT( ZVEC1(1:IGDRY) )
     ZVEC1(1:IGDRY) = ZVEC1(1:IGDRY) - REAL( IVEC1(1:IGDRY) )
 !
     ZVEC2(1:IGDRY) = MAX( 1.00001, MIN( REAL(NDRYLBDAR)-0.00001,           &
-                          XDRYINTP1R * LOG( ZVEC2(1:IGDRY) ) + XDRYINTP2R ) )
+                          XDRYINTP1R * LOG( ZVECLBDAR(1:IGDRY) ) + XDRYINTP2R ) )
     IVEC2(1:IGDRY) = INT( ZVEC2(1:IGDRY) )
     ZVEC2(1:IGDRY) = ZVEC2(1:IGDRY) - REAL( IVEC2(1:IGDRY) )
 !
@@ -261,19 +254,18 @@ REAL,    DIMENSION(size(PRHODREF),7) :: ZZW1              ! Work arrays
                     - XKER_RDRYG(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
                                                          * (ZVEC1(JJ) - 1.0)
     END DO
-    ZZW(:) = 0.
-    DO JJ = 1, IGDRY
-      ZZW(I1(JJ)) = ZVEC3(JJ)
-    END DO
 !
-    WHERE( GDRY(:) )
-      ZZW1(:,4) = MIN( PRRS(:),XFRDRYG*ZZW(:)                    & ! RRDRYG
-                        *( PLBDAR(:)**(-4) )*( PLBDAG(:)**XCXG ) &
-                               *( PRHODREF(:)**(-XCEXVT-1.) )   &
-                    *( XLBRDRYG1/( PLBDAG(:)**2              ) + &
-                       XLBRDRYG2/( PLBDAG(:)   * PLBDAR(:)   ) + &
-                       XLBRDRYG3/(               PLBDAR(:)**2) ) )
-    END WHERE
+    DO JJ = 1, IGDRY
+      JL = I1(JJ)
+      ZZW1(JL,4) = MIN( PRRS(JL),XFRDRYG*ZVEC3(JJ)                    & ! RRDRYG
+                        *( ZVECLBDAR(JJ)**(-4) )*( ZVECLBDAG(JJ)**XCXG ) &
+                               *( PRHODREF(JL)**(-XCEXVT-1.) )   &
+                    *( XLBRDRYG1/( ZVECLBDAG(JJ)**2              ) + &
+                       XLBRDRYG2/( ZVECLBDAG(JJ)   * ZVECLBDAR(JJ)   ) + &
+                       XLBRDRYG3/(               ZVECLBDAR(JJ)**2) ) )
+    END DO
+    DEALLOCATE(ZVECLBDAR)
+    DEALLOCATE(ZVECLBDAG)
     DEALLOCATE(IVEC2)
     DEALLOCATE(IVEC1)
     DEALLOCATE(ZVEC3)
@@ -285,7 +277,6 @@ REAL,    DIMENSION(size(PRHODREF),7) :: ZZW1              ! Work arrays
 !
 !*       6.3    compute the Wet growth case
 !
-  ZZW(:) = 0.0
   PRWETG(:) = 0.0
   WHERE( PRGT(:)>XRTMIN(6) )
     ZZW1(:,5) = MIN( PRIS(:),                                    &
@@ -310,7 +301,6 @@ REAL,    DIMENSION(size(PRHODREF),7) :: ZZW1              ! Work arrays
 !
 !*       6.4    Select Wet or Dry case
 !
-   ZZW(:) = 0.0
   IF     ( KRR == 7 ) THEN
    WHERE( PRGT(:)>XRTMIN(6) .AND. PZT(:)<XTT                            &
                                         .AND.                          & ! Wet
@@ -344,14 +334,13 @@ REAL,    DIMENSION(size(PRHODREF),7) :: ZZW1              ! Work arrays
      WHERE( PRGT(:)>XRTMIN(6) .AND. PZT(:)<XTT                            &
                                         .AND.                          & ! Wet
                               PRDRYG(:)>=PRWETG(:) .AND. PRWETG(:)>0.0 ) ! case
-    ZZW(:)  = PRWETG(:)
     PRCS(:) = PRCS(:) - ZZW1(:,1)
     PRIS(:) = PRIS(:) - ZZW1(:,5)
     PRSS(:) = PRSS(:) - ZZW1(:,6)
-    PRGS(:) = PRGS(:) + ZZW(:)
+    PRGS(:) = PRGS(:) + PRWETG(:)
 !
-    PRRS(:) = PRRS(:) - ZZW(:) + ZZW1(:,5) + ZZW1(:,6) + ZZW1(:,1)
-    PTHS(:) = PTHS(:) + (ZZW(:)-ZZW1(:,5)-ZZW1(:,6))*(PLSFACT(:)-PLVFACT(:))
+    PRRS(:) = PRRS(:) - PRWETG(:) + ZZW1(:,5) + ZZW1(:,6) + ZZW1(:,1)
+    PTHS(:) = PTHS(:) + (PRWETG(:)-ZZW1(:,5)-ZZW1(:,6))*(PLSFACT(:)-PLVFACT(:))
                                                  ! f(L_f*(RCWETG+RRWETG))
    END WHERE
  END IF
@@ -417,8 +406,7 @@ REAL,    DIMENSION(size(PRHODREF),7) :: ZZW1              ! Work arrays
 !
 !*       6.5    Melting of the graupeln
 !
-  ZZW(:) = 0.0
-   WHERE( (PRGT(:)>XRTMIN(6)) .AND. (PRGS(:)>0.0) .AND. (PZT(:)>XTT) )
+   WHERE( PRGT(:)>XRTMIN(6) .AND. PRGS(:)>0.0 .AND. PZT(:)>XTT )
     ZZW(:) = PRVT(:)*PPRES(:)/((XMV/XMD)+PRVT(:)) ! Vapor pressure
     ZZW(:) =  PKA(:)*(XTT-PZT(:)) +                                 &
                ( PDV(:)*(XLVTT + ( XCPV - XCL ) * ( PZT(:) - XTT )) &

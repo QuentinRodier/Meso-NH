@@ -7,6 +7,7 @@
 !  P. Wautelet 25/02/2019: split rain_ice (cleaner and easier to maintain/debug)
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 03/06/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
+!  P. Wautelet 05/06/2019: optimisations
 !-----------------------------------------------------------------
 MODULE MODE_RAIN_ICE_FAST_RS
 
@@ -69,28 +70,22 @@ REAL,     DIMENSION(:),     INTENT(INOUT) :: PTHS     ! Theta source
 !*       0.2  declaration of local variables
 !
 INTEGER                              :: IGRIM, IGACC
-INTEGER                              :: JJ
+INTEGER                              :: JJ, JL
 INTEGER, DIMENSION(size(PRHODREF))   :: I1
 INTEGER, DIMENSION(:), ALLOCATABLE   :: IVEC1, IVEC2      ! Vectors of indices for interpolations
-LOGICAL, DIMENSION(size(PRHODREF))   :: GRIM              ! Test where to compute riming
-LOGICAL, DIMENSION(size(PRHODREF))   :: GACC              ! Test where to compute accretion
 REAL,    DIMENSION(size(PRHODREF))   :: ZZW               ! Work array
 REAL,    DIMENSION(:), ALLOCATABLE   :: ZVEC1,ZVEC2,ZVEC3 ! Work vectors for interpolations
-REAL,    DIMENSION(size(PRHODREF),4) :: ZZW1              ! Work arrays
+REAL,    DIMENSION(:), ALLOCATABLE   :: ZVECLBDAR, ZVECLBDAS
+REAL,    DIMENSION(:), ALLOCATABLE :: ZZW1, ZZW2, ZZW3, ZZW4 ! Work arrays
 !-------------------------------------------------------------------------------
 !
 !*       5.1    cloud droplet riming of the aggregates
 !
-  ZZW1(:,:) = 0.0
-!
   IGRIM = 0
-  DO JJ = 1, SIZE(GRIM)
-    IF (PRCT(JJ)>XRTMIN(2) .AND. PRST(JJ)>XRTMIN(5) .AND. PRCS(JJ)>0.0 .AND. PZT(JJ)<XTT ) THEN
+  DO JJ = 1, SIZE(PRCT)
+    IF ( PRCT(JJ)>XRTMIN(2) .AND. PRST(JJ)>XRTMIN(5) .AND. PRCS(JJ)>0.0 .AND. PZT(JJ)<XTT ) THEN
       IGRIM = IGRIM + 1
       I1(IGRIM) = JJ
-      GRIM(JJ) = .TRUE.
-    ELSE
-      GRIM(JJ) = .FALSE.
     END IF
   END DO
   !
@@ -98,22 +93,24 @@ REAL,    DIMENSION(size(PRHODREF),4) :: ZZW1              ! Work arrays
 !
 !        5.1.0  allocations
 !
+    ALLOCATE(ZVECLBDAS(IGRIM))
     ALLOCATE(ZVEC1(IGRIM))
     ALLOCATE(ZVEC2(IGRIM))
     ALLOCATE(IVEC2(IGRIM))
+    ALLOCATE(ZZW1(IGRIM))
+    ALLOCATE(ZZW2(IGRIM))
+    ALLOCATE(ZZW3(IGRIM))
 !
 !        5.1.1  select the PLBDAS
 !
-    DO JJ = 1, IGRIM
-      ZVEC1(JJ) = PLBDAS(I1(JJ))
-    END DO
+    ZVECLBDAS(1:IGRIM) = PLBDAS(I1(1:IGRIM))
 !
 !        5.1.2  find the next lower indice for the PLBDAS in the geometrical
 !               set of Lbda_s used to tabulate some moments of the incomplete
 !               gamma function
 !
     ZVEC2(1:IGRIM) = MAX( 1.00001, MIN( REAL(NGAMINC)-0.00001,           &
-                          XRIMINTP1 * LOG( ZVEC1(1:IGRIM) ) + XRIMINTP2 ) )
+                          XRIMINTP1 * LOG( ZVECLBDAS(1:IGRIM) ) + XRIMINTP2 ) )
     IVEC2(1:IGRIM) = INT( ZVEC2(1:IGRIM) )
     ZVEC2(1:IGRIM) = ZVEC2(1:IGRIM) - REAL( IVEC2(1:IGRIM) )
 !
@@ -122,53 +119,53 @@ REAL,    DIMENSION(size(PRHODREF),4) :: ZZW1              ! Work arrays
 !
     ZVEC1(1:IGRIM) =   XGAMINC_RIM1( IVEC2(1:IGRIM)+1 )* ZVEC2(1:IGRIM)      &
                      - XGAMINC_RIM1( IVEC2(1:IGRIM)   )*(ZVEC2(1:IGRIM) - 1.0)
-    ZZW(:) = 0.
-    DO JJ = 1, IGRIM
-      ZZW(I1(JJ)) = ZVEC1(JJ)
-    END DO
 !
 !        5.1.4  riming of the small sized aggregates
 !
-    WHERE ( GRIM(:) )
-      ZZW1(:,1) = MIN( PRCS(:),                                &
-                     XCRIMSS * ZZW(:) * PRCT(:)                & ! RCRIMSS
-                                      *   PLBDAS(:)**XEXCRIMSS &
-                                      * PRHODREF(:)**(-XCEXVT) )
-      PRCS(:) = PRCS(:) - ZZW1(:,1)
-      PRSS(:) = PRSS(:) + ZZW1(:,1)
-      PTHS(:) = PTHS(:) + ZZW1(:,1)*(PLSFACT(:)-PLVFACT(:)) ! f(L_f*(RCRIMSS))
-    END WHERE
+    DO JJ = 1, IGRIM
+      JL = I1(JJ)
+      ZZW1(JJ) = MIN( PRCS(JL),                                &
+                     XCRIMSS * ZVEC1(JJ) * PRCT(JL)                & ! RCRIMSS
+                                       *   ZVECLBDAS(JJ)**XEXCRIMSS &
+                                       * PRHODREF(JL)**(-XCEXVT) )
+      PRCS(JL) = PRCS(JL) - ZZW1(JJ)
+      PRSS(JL) = PRSS(JL) + ZZW1(JJ)
+      PTHS(JL) = PTHS(JL) + ZZW1(JJ)*(PLSFACT(JL)-PLVFACT(JL)) ! f(L_f*(RCRIMSS))
+    END DO
 !
 !        5.1.5  perform the linear interpolation of the normalized
 !               "XBS"-moment of the incomplete gamma function
 !
     ZVEC1(1:IGRIM) =  XGAMINC_RIM2( IVEC2(1:IGRIM)+1 )* ZVEC2(1:IGRIM)      &
                     - XGAMINC_RIM2( IVEC2(1:IGRIM)   )*(ZVEC2(1:IGRIM) - 1.0)
-    ZZW(:) = 0.
-    DO JJ = 1, IGRIM
-      ZZW(I1(JJ)) = ZVEC1(JJ)
-    END DO
 !
 !        5.1.6  riming-conversion of the large sized aggregates into graupeln
 !
 !
-    WHERE ( GRIM(:) .AND. (PRSS(:)>0.0) )
-      ZZW1(:,2) = MIN( PRCS(:),                     &
-                   XCRIMSG * PRCT(:)                & ! RCRIMSG
-                           *  PLBDAS(:)**XEXCRIMSG  &
-                           * PRHODREF(:)**(-XCEXVT) &
-                           - ZZW1(:,1)              )
-      ZZW1(:,3) = MIN( PRSS(:),                         &
-                       XSRIMCG * PLBDAS(:)**XEXSRIMCG   & ! RSRIMCG
-                               * (1.0 - ZZW(:) )/(PTSTEP*PRHODREF(:)) )
-      PRCS(:) = PRCS(:) - ZZW1(:,2)
-      PRSS(:) = PRSS(:) - ZZW1(:,3)
-      PRGS(:) = PRGS(:) + ZZW1(:,2)+ZZW1(:,3)
-      PTHS(:) = PTHS(:) + ZZW1(:,2)*(PLSFACT(:)-PLVFACT(:)) ! f(L_f*(RCRIMSG))
-    END WHERE
+    DO JJ = 1, IGRIM
+      JL = I1(JJ)
+      IF ( PRSS(JL) > 0.0 ) THEN
+        ZZW2(JJ) = MIN( PRCS(JL),                     &
+                    XCRIMSG * PRCT(JL)                & ! RCRIMSG
+                            *  ZVECLBDAS(JJ)**XEXCRIMSG  &
+                            * PRHODREF(JL)**(-XCEXVT) &
+                            - ZZW1(JJ)              )
+        ZZW3(JJ) = MIN( PRSS(JL),                         &
+                        XSRIMCG * ZVECLBDAS(JJ)**XEXSRIMCG   & ! RSRIMCG
+                                * (1.0 - ZVEC1(JJ) )/(PTSTEP*PRHODREF(JL)) )
+        PRCS(JL) = PRCS(JL) - ZZW2(JJ)
+        PRSS(JL) = PRSS(JL) - ZZW3(JJ)
+        PRGS(JL) = PRGS(JL) + ZZW2(JJ)+ZZW3(JJ)
+        PTHS(JL) = PTHS(JL) + ZZW2(JJ)*(PLSFACT(JL)-PLVFACT(JL)) ! f(L_f*(RCRIMSG))
+      END IF
+    END DO
+    DEALLOCATE(ZZW3)
+    DEALLOCATE(ZZW2)
+    DEALLOCATE(ZZW1)
     DEALLOCATE(IVEC2)
     DEALLOCATE(ZVEC2)
     DEALLOCATE(ZVEC1)
+    DEALLOCATE(ZVECLBDAS)
   END IF
   IF (LBUDGET_TH) CALL BUDGET (                                               &
                UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),   &
@@ -185,16 +182,11 @@ REAL,    DIMENSION(size(PRHODREF),4) :: ZZW1              ! Work arrays
 !
 !*       5.2    rain accretion onto the aggregates
 !
-  ZZW1(:,2:3) = 0.0
-
   IGACC = 0
-  DO JJ = 1, SIZE(GACC)
-    IF (PRRT(JJ)>XRTMIN(3) .AND. PRST(JJ)>XRTMIN(5) .AND. PRRS(JJ)>0.0 .AND. PZT(JJ)<XTT ) THEN
+  DO JJ = 1, SIZE(PRRT)
+    IF ( PRRT(JJ)>XRTMIN(3) .AND. PRST(JJ)>XRTMIN(5) .AND. PRRS(JJ)>0.0 .AND. PZT(JJ)<XTT ) THEN
       IGACC = IGACC + 1
       I1(IGACC) = JJ
-      GACC(JJ) = .TRUE.
-    ELSE
-      GACC(JJ) = .FALSE.
     END IF
   END DO
   !
@@ -202,30 +194,33 @@ REAL,    DIMENSION(size(PRHODREF),4) :: ZZW1              ! Work arrays
 !
 !        5.2.0  allocations
 !
+    ALLOCATE(ZVECLBDAR(IGACC))
+    ALLOCATE(ZVECLBDAS(IGACC))
     ALLOCATE(ZVEC1(IGACC))
     ALLOCATE(ZVEC2(IGACC))
     ALLOCATE(ZVEC3(IGACC))
     ALLOCATE(IVEC1(IGACC))
     ALLOCATE(IVEC2(IGACC))
+    ALLOCATE(ZZW2(IGACC))
+    ALLOCATE(ZZW3(IGACC))
+    ALLOCATE(ZZW4(IGACC))
 !
 !        5.2.1  select the (PLBDAS,PLBDAR) couplet
 !
-    DO JJ = 1, IGACC
-      ZVEC1(JJ) = PLBDAS(I1(JJ))
-      ZVEC2(JJ) = PLBDAR(I1(JJ))
-    END DO
+    ZVECLBDAS(1:IGACC) = PLBDAS(I1(1:IGACC))
+    ZVECLBDAR(1:IGACC) = PLBDAR(I1(1:IGACC))
 !
 !        5.2.2  find the next lower indice for the PLBDAS and for the PLBDAR
 !               in the geometrical set of (Lbda_s,Lbda_r) couplet use to
 !               tabulate the RACCSS-kernel
 !
     ZVEC1(1:IGACC) = MAX( 1.00001, MIN( REAL(NACCLBDAS)-0.00001,           &
-                          XACCINTP1S * LOG( ZVEC1(1:IGACC) ) + XACCINTP2S ) )
+                          XACCINTP1S * LOG( ZVECLBDAS(1:IGACC) ) + XACCINTP2S ) )
     IVEC1(1:IGACC) = INT( ZVEC1(1:IGACC) )
     ZVEC1(1:IGACC) = ZVEC1(1:IGACC) - REAL( IVEC1(1:IGACC) )
 !
     ZVEC2(1:IGACC) = MAX( 1.00001, MIN( REAL(NACCLBDAR)-0.00001,           &
-                          XACCINTP1R * LOG( ZVEC2(1:IGACC) ) + XACCINTP2R ) )
+                          XACCINTP1R * LOG( ZVECLBDAR(1:IGACC) ) + XACCINTP2R ) )
     IVEC2(1:IGACC) = INT( ZVEC2(1:IGACC) )
     ZVEC2(1:IGACC) = ZVEC2(1:IGACC) - REAL( IVEC2(1:IGACC) )
 !
@@ -240,24 +235,21 @@ REAL,    DIMENSION(size(PRHODREF),4) :: ZZW1              ! Work arrays
                     - XKER_RACCSS(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
                                                           * (ZVEC1(JJ) - 1.0)
     END DO
-    ZZW(:) = 0.
-    DO JJ = 1, IGACC
-      ZZW(I1(JJ)) = ZVEC3(JJ)
-    END DO
 !
 !        5.2.4  raindrop accretion on the small sized aggregates
 !
-    WHERE ( GACC(:) )
-      ZZW1(:,2) =                                            & !! coef of RRACCS
-              XFRACCSS*( PLBDAS(:)**XCXS )*( PRHODREF(:)**(-XCEXVT-1.) ) &
-         *( XLBRACCS1/((PLBDAS(:)**2)               ) +                  &
-            XLBRACCS2/( PLBDAS(:)    * PLBDAR(:)    ) +                  &
-            XLBRACCS3/(               (PLBDAR(:)**2)) )/PLBDAR(:)**4
-      ZZW1(:,4) = MIN( PRRS(:),ZZW1(:,2)*ZZW(:) )           ! RRACCSS
-      PRRS(:) = PRRS(:) - ZZW1(:,4)
-      PRSS(:) = PRSS(:) + ZZW1(:,4)
-      PTHS(:) = PTHS(:) + ZZW1(:,4)*(PLSFACT(:)-PLVFACT(:)) ! f(L_f*(RRACCSS))
-    END WHERE
+    DO JJ = 1, IGACC
+      JL = I1(JJ)
+      ZZW2(JJ) =                                            & !! coef of RRACCS
+              XFRACCSS*( ZVECLBDAS(JJ)**XCXS )*( PRHODREF(JL)**(-XCEXVT-1.) ) &
+         *( XLBRACCS1/((ZVECLBDAS(JJ)**2)               ) +                  &
+            XLBRACCS2/( ZVECLBDAS(JJ)    * ZVECLBDAR(JJ)    ) +                  &
+            XLBRACCS3/(               (ZVECLBDAR(JJ)**2)) )/ZVECLBDAR(JJ)**4
+      ZZW4(JJ) = MIN( PRRS(JL),ZZW2(JJ)*ZVEC3(JJ) )           ! RRACCSS
+      PRRS(JL) = PRRS(JL) - ZZW4(JJ)
+      PRSS(JL) = PRSS(JL) + ZZW4(JJ)
+      PTHS(JL) = PTHS(JL) + ZZW4(JJ)*(PLSFACT(JL)-PLVFACT(JL)) ! f(L_f*(RRACCSS))
+    END DO
 !
 !        5.2.4b perform the bilinear interpolation of the normalized
 !               RACCS-kernel
@@ -271,7 +263,7 @@ REAL,    DIMENSION(size(PRHODREF),4) :: ZZW1              ! Work arrays
                                                            * (ZVEC2(JJ) - 1.0)
     END DO
     DO JJ = 1, IGACC
-      ZZW1(I1(JJ), 2) =  ZZW1(I1(JJ), 2 ) * ZVEC3(JJ)
+      ZZW2(JJ) = ZZW2(JJ) * ZVEC3(JJ)
     END DO
                                                                        !! RRACCS!
 !        5.2.5  perform the bilinear interpolation of the normalized
@@ -285,34 +277,38 @@ REAL,    DIMENSION(size(PRHODREF),4) :: ZZW1              ! Work arrays
                     - XKER_SACCRG(IVEC2(JJ)  ,IVEC1(JJ)  )*(ZVEC1(JJ) - 1.0) ) &
                                                           * (ZVEC2(JJ) - 1.0)
     END DO
-    ZZW(:) = 0.
-    DO JJ = 1, IGACC
-      ZZW(I1(JJ)) = ZVEC3(JJ)
-    END DO
 !
 !        5.2.6  raindrop accretion-conversion of the large sized aggregates
 !               into graupeln
 !
-    WHERE ( GACC(:) .AND. (PRSS(:)>0.0) )
-      ZZW1(:,2) = MAX( MIN( PRRS(:),ZZW1(:,2)-ZZW1(:,4) ),0.0 )       ! RRACCSG
-    END WHERE
-    WHERE ( GACC(:) .AND. (PRSS(:)>0.0) .AND. ZZW1(:,2)>0.0 )
-      ZZW1(:,3) = MIN( PRSS(:),XFSACCRG*ZZW(:)*                     & ! RSACCRG
-            ( PLBDAS(:)**(XCXS-XBS) )*( PRHODREF(:)**(-XCEXVT-1.) ) &
-           *( XLBSACCR1/((PLBDAR(:)**2)               ) +           &
-              XLBSACCR2/( PLBDAR(:)    * PLBDAS(:)    ) +           &
-              XLBSACCR3/(               (PLBDAS(:)**2)) )/PLBDAR(:) )
-      PRRS(:) = PRRS(:) - ZZW1(:,2)
-      PRSS(:) = PRSS(:) - ZZW1(:,3)
-      PRGS(:) = PRGS(:) + ZZW1(:,2)+ZZW1(:,3)
-      PTHS(:) = PTHS(:) + ZZW1(:,2)*(PLSFACT(:)-PLVFACT(:)) !
-                               ! f(L_f*(RRACCSG))
-    END WHERE
+    DO JJ = 1, IGACC
+      JL = I1(JJ)
+      IF ( PRSS(JL) > 0.0 ) THEN
+        ZZW2(JJ) = MAX( MIN( PRRS(JL),ZZW2(JJ)-ZZW4(JJ) ),0.0 )       ! RRACCSG
+        IF ( ZZW2(JJ) > 0.0 ) THEN
+          ZZW3(JJ) = MIN( PRSS(JL),XFSACCRG*ZVEC3(JJ)*                     & ! RSACCRG
+                ( ZVECLBDAS(JJ)**(XCXS-XBS) )*( PRHODREF(JL)**(-XCEXVT-1.) ) &
+              *( XLBSACCR1/((ZVECLBDAR(JJ)**2)               ) +           &
+                  XLBSACCR2/( ZVECLBDAR(JJ)    * ZVECLBDAS(JJ)    ) +           &
+                  XLBSACCR3/(               (ZVECLBDAS(JJ)**2)) )/ZVECLBDAR(JJ) )
+          PRRS(JL) = PRRS(JL) - ZZW2(JJ)
+          PRSS(JL) = PRSS(JL) - ZZW3(JJ)
+          PRGS(JL) = PRGS(JL) + ZZW2(JJ)+ZZW3(JJ)
+          PTHS(JL) = PTHS(JL) + ZZW2(JJ)*(PLSFACT(JL)-PLVFACT(JL)) !
+                                ! f(L_f*(RRACCSG))
+        END IF
+      END IF
+    END DO
+    DEALLOCATE(ZZW4)
+    DEALLOCATE(ZZW3)
+    DEALLOCATE(ZZW2)
     DEALLOCATE(IVEC2)
     DEALLOCATE(IVEC1)
     DEALLOCATE(ZVEC3)
     DEALLOCATE(ZVEC2)
     DEALLOCATE(ZVEC1)
+    DEALLOCATE(ZVECLBDAS)
+    DEALLOCATE(ZVECLBDAR)
   END IF
   IF (LBUDGET_TH) CALL BUDGET (                                               &
                UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),   &
@@ -329,8 +325,7 @@ REAL,    DIMENSION(size(PRHODREF),4) :: ZZW1              ! Work arrays
 !
 !*       5.3    Conversion-Melting of the aggregates
 !
-  ZZW(:) = 0.0
-  WHERE( (PRST(:)>XRTMIN(5)) .AND. (PRSS(:)>0.0) .AND. (PZT(:)>XTT) )
+  WHERE( PRST(:)>XRTMIN(5) .AND. PRSS(:)>0.0 .AND. PZT(:)>XTT )
     ZZW(:) = PRVT(:)*PPRES(:)/((XMV/XMD)+PRVT(:)) ! Vapor pressure
     ZZW(:) =  PKA(:)*(XTT-PZT(:)) +                                 &
                ( PDV(:)*(XLVTT + ( XCPV - XCL ) * ( PZT(:) - XTT )) &
@@ -340,9 +335,7 @@ REAL,    DIMENSION(size(PRHODREF),4) :: ZZW1              ! Work arrays
 !
     ZZW(:)  = MIN( PRSS(:), XFSCVMG*MAX( 0.0,( -ZZW(:) *             &
                            ( X0DEPS*       PLBDAS(:)**XEX0DEPS +     &
-                             X1DEPS*PCJ(:)*PLBDAS(:)**XEX1DEPS ) -   &
-                                     ( ZZW1(:,1)+ZZW1(:,4) ) *       &
-                              ( PRHODREF(:)*XCL*(XTT-PZT(:))) ) /    &
+                             X1DEPS*PCJ(:)*PLBDAS(:)**XEX1DEPS ) ) / &
                                              ( PRHODREF(:)*XLMTT ) ) )
 !
 ! note that RSCVMG = RSMLT*XFSCVMG but no heat is exchanged (at the rate RSMLT)

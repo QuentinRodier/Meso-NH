@@ -5,6 +5,7 @@
 !-----------------------------------------------------------------
 ! Modifications:
 !  P. Wautelet 25/02/2019: split rain_ice (cleaner and easier to maintain/debug)
+!  P. Wautelet 05/06/2019: optimisations
 !-----------------------------------------------------------------
 MODULE MODE_RAIN_ICE_FAST_RI
 
@@ -57,9 +58,7 @@ REAL, DIMENSION(size(PRHODREF)) :: ZZW  ! Work array
 !
 !*       7.1    cloud ice melting
 !
-  ZZW(:) = 0.0
-  WHERE( (PRIS(:)>0.0) .AND. (PZT(:)>XTT) )
-    ZZW(:)  = PRIS(:)
+  WHERE( PRIS(:)>0.0 .AND. PZT(:)>XTT )
     PRCS(:) = PRCS(:) + PRIS(:)
     PTHS(:) = PTHS(:) - PRIS(:)*(PLSFACT(:)-PLVFACT(:)) ! f(L_f*(-RIMLTC))
     PRIS(:) = 0.0
@@ -77,9 +76,7 @@ REAL, DIMENSION(size(PRHODREF)) :: ZZW  ! Work array
 !
 !*       7.2    Bergeron-Findeisen effect: RCBERI
 !
-  ZZW(:) = 0.0
-  WHERE( (PRCS(:)>0.0) .AND. (PSSI(:)>0.0) .AND. &
-         (PRIT(:)>XRTMIN(4)) .AND. (PCIT(:)>0.0)       )
+  WHERE( PRCS(:)>0.0 .AND. PSSI(:)>0.0 .AND. PRIT(:)>XRTMIN(4) .AND. PCIT(:)>0.0 )
     ZZW(:) = MIN(1.E8,XLBI*( PRHODREF(:)*PRIT(:)/PCIT(:) )**XLBEXI) ! Lbda_i
     ZZW(:) = MIN( PRCS(:),( PSSI(:) / (PRHODREF(:)*PAI(:)) ) * PCIT(:) * &
                   ( X0DEPI/ZZW(:) + X2DEPI*PCJ(:)*PCJ(:)/ZZW(:)**(XDI+2.0) ) )
