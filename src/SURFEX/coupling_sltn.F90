@@ -297,21 +297,21 @@ DO JN = 1, JPMODE_SLT
   IF (LVARSIG_SLT) THEN ! cas 3 moment
 
     PSFSLT(:,2+(JN-1)*3) = ZSFSLT_MDE(:,JORDER_SLT(JN)) &
-                            * ((SLT%XEMISRADIUS_SLT(JORDER_SLT(JN))**3) &
-                            * EXP(4.5 * LOG(SLT%XEMISSIG_SLT(JORDER_SLT(JN)))**2)) &
+                            * ((SLT%XEMISRADIUS_SLT(JN)**3) &
+                            * EXP(4.5 * LOG(SLT%XEMISSIG_SLT(JN))**2)) &
                             * ZCONVERTFACM3_SLT
 
   ELSEIF (LRGFIX_SLT) THEN ! cas 1 moment
     PSFSLT(:,JN) =  ZSFSLT_MDE(:,JORDER_SLT(JN)) &
-                      * (SLT%XEMISRADIUS_SLT(JORDER_SLT(JN))**3) &
-                      * EXP(4.5 * LOG(SLT%XEMISSIG_SLT(JORDER_SLT(JN)))**2) &
+                      * (SLT%XEMISRADIUS_SLT(JN)**3) &
+                      * EXP(4.5 * LOG(SLT%XEMISSIG_SLT(JN))**2) &
                       * ZCONVERTFACM3_SLT
 
   ELSE ! cas 2 moments
 
     PSFSLT(:,2+(JN-1)*2) = ZSFSLT_MDE(:,JORDER_SLT(JN)) &
-                            * ((SLT%XEMISRADIUS_SLT(JORDER_SLT(JN))**3) &
-                            * EXP(4.5 * LOG(SLT%XEMISSIG_SLT(JORDER_SLT(JN)))**2)) &
+                            * ((SLT%XEMISRADIUS_SLT(JN)**3) &
+                            * EXP(4.5 * LOG(SLT%XEMISSIG_SLT(JN))**2)) &
                             * ZCONVERTFACM3_SLT
 ! -- PIERRE / MARINE SSA - MODIF --
   END IF
