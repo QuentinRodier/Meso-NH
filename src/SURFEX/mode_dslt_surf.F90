@@ -301,7 +301,7 @@ DO JN=1,SIZE(KM0)
     ZSIGMA(:) = PEMISSIG(JN)
 
     ZM(:,J0) = ZM(:,J3) /               &
-              ((PEMISRADIUS(KM3(JN))**3)*EXP(4.5 * LOG(ZSIGMA(:))**2))  
+              ((PEMISRADIUS(JN)**3)*EXP(4.5 * LOG(ZSIGMA(:))**2))  
 
   ELSE ! compute M6 from M0, M3 and SIGMA
           
