@@ -1,4 +1,4 @@
-!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 2011-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
@@ -23,7 +23,12 @@ END MODULE MODI_INI_AEROSET1
 
 USE MODD_AEROSET
 
+use mode_msg
+
 IMPLICIT NONE
+
+if ( .not.allocated( POLYTAU ) ) &
+      call Print_msg( NVERB_FATAL, 'GEN', 'INI_AEROSET1', 'POLYTAU not allocated')
 
 POLYTAU(1, 1,1,1,1:13 )=(/     -733.61139,  -13649.90625,  -99755.00000, &
  -355288.34375, -608672.87500, -390948.84375,     -22.75222,     156.46201, &

@@ -1,12 +1,7 @@
-!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 2011-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 modd 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !!     ########################
        MODULE MODD_SALT_OPT_LKT
@@ -42,6 +37,7 @@
 !!     MODIFICATIONS
 !!     -------------
 !!
+!  P. Wautelet 07/06/2019: arrays are now ALLOCATABLE to save memory when not used
 !!--------------------------------------------------------------------
 !!     DECLARATIONS
 !!     ------------
@@ -54,10 +50,10 @@
   INTEGER, PARAMETER    :: NMAX_WVL_SW=6       !Max number of wavelengths in lkt
 
   !Declaration of the look up tables 
-  REAL, DIMENSION(NMAX_RADIUS_LKT,NMAX_SIGMA_LKT,NMAX_WVL_SW) :: XEXT_COEFF_WVL_LKT
-  REAL, DIMENSION(NMAX_RADIUS_LKT,NMAX_SIGMA_LKT)             :: XEXT_COEFF_550_LKT
-  REAL, DIMENSION(NMAX_RADIUS_LKT,NMAX_SIGMA_LKT,NMAX_WVL_SW) :: XPIZA_LKT
-  REAL, DIMENSION(NMAX_RADIUS_LKT,NMAX_SIGMA_LKT,NMAX_WVL_SW) :: XCGA_LKT
+  REAL, SAVE, DIMENSION(:,:,:), ALLOCATABLE :: XEXT_COEFF_WVL_LKT
+  REAL, SAVE, DIMENSION(:,:),   ALLOCATABLE :: XEXT_COEFF_550_LKT
+  REAL, SAVE, DIMENSION(:,:,:), ALLOCATABLE :: XPIZA_LKT
+  REAL, SAVE, DIMENSION(:,:,:), ALLOCATABLE :: XCGA_LKT
 
   !Declaration of the max and min values taken into account in the tables
   REAL, PARAMETER      :: XRADIUS_LKT_MIN = 0.01  ![um] smallest number median radius taken into account

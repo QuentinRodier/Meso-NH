@@ -1,10 +1,7 @@
-!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 2011-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
 !-----------------------------------------------------------------
 !        ###################
          MODULE MODE_SALTOPT
@@ -336,8 +333,13 @@ CONTAINS
 
     USE MODD_SALT_OPT_LKT
 
+    use mode_msg
+
     IMPLICIT NONE
-    
+
+    if ( .not.allocated( XEXT_COEFF_WVL_LKT ) ) &
+      call Print_msg( NVERB_FATAL, 'GEN', 'SALT_OPT_LKT_SET1', 'XEXT_COEFF_WVL_LKT not allocated')
+
     !Here are the output values from the mie program:
 XEXT_COEFF_WVL_LKT(1,1,1:6)=(/ 44.560000,11.638000,0.691110,0.260970,0.532810,132.670000 /)
 XPIZA_LKT(1,1,1:6)=(/ 0.236252,0.196169,0.900,0.900,0.900,0.000010 /)

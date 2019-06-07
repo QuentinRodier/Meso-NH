@@ -1,12 +1,7 @@
-!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 2006-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! masdev4_7 BUG1 2007/06/29 12:06:27
 !-----------------------------------------------------------------
 !        ###################
          MODULE MODE_DUSTOPT
@@ -325,8 +320,13 @@ CONTAINS
 
     USE MODD_DUST_OPT_LKT
 
+    use mode_msg
+
     IMPLICIT NONE
-    
+
+    if ( .not.allocated( XEXT_COEFF_WVL_LKT ) ) &
+      call Print_msg( NVERB_FATAL, 'GEN', 'DUST_OPT_LKT_SET1', 'XEXT_COEFF_WVL_LKT not allocated')
+
     !Here are the output values from the mie program:
 XEXT_COEFF_WVL_LKT(1,1,1:6)=(/ 92.520000,37.760000,21.553000,5.277700,2.711100,1.337700 /)
 XPIZA_LKT(1,1,1:6)=(/ 0.431792,0.157096,0.049108,0.030213,0.005366,0.000659 /)

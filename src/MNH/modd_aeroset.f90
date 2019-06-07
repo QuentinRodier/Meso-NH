@@ -1,12 +1,7 @@
-!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 2011-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 modd 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !!     ########################
        MODULE MODD_AEROSET
@@ -39,14 +34,15 @@
 !!     MODIFICATIONS
 !!     -------------
 !!
+!  P. Wautelet 07/06/2019: arrays are now ALLOCATABLE to save memory when not used
 !!--------------------------------------------------------------------
 !!     DECLARATIONS
 !!     ------------
 
   IMPLICIT NONE
 
-  REAL,SAVE,DIMENSION(6,10,8,6,13) ::POLYTAU
-  REAL,SAVE,DIMENSION(6,10,8,6,13) ::POLYSSA
-  REAL,SAVE,DIMENSION(6,10,8,6,13) ::POLYG
+  REAL,SAVE,DIMENSION(:,:,:,:,:),ALLOCATABLE ::POLYTAU
+  REAL,SAVE,DIMENSION(:,:,:,:,:),ALLOCATABLE ::POLYSSA
+  REAL,SAVE,DIMENSION(:,:,:,:,:),ALLOCATABLE ::POLYG
 
 END MODULE MODD_AEROSET
