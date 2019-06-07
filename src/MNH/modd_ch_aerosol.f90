@@ -1,12 +1,7 @@
-!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 2006-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modd_ch_aerosol.f90,v $ $Revision: 1.1.2.2.2.1.2.1.2.1.2.2 $
-! MASDEV4_7 modd 2007/03/02 13:59:38
 !-----------------------------------------------------------------
 !!     ######################
        MODULE MODD_CH_AEROSOL
@@ -35,7 +30,8 @@
 !!     -------------
 !!     (30-01-01) P.Tulet (LA) * modifications for secondary biogenics aerosols
 !!     (25-08-16) M.Leriche (LA) * NM6_AER is now in SAVE and assign in ini_nsv
-!!
+!  P. Wautelet: 07/06/2019: allocate weights only when needed!!
+!
 !!--------------------------------------------------------------------
 !!     DECLARATIONS
 !!     ------------
@@ -231,12 +227,12 @@ REAL, SAVE, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: zf
 ! Declaration of  the neuronal coefficients
 
 !     .. weights 
-REAL, SAVE, DIMENSION(100,100) :: W1IJA,W1JKA,W2IJA,W2JKA
-REAL, SAVE, DIMENSION(100,100) :: W1IJB,W1JKB,W2IJB,W2JKB
-REAL, SAVE, DIMENSION(100,100) :: W1IJC,W1JKC,W2IJC,W2JKC
-REAL, SAVE, DIMENSION(2,100) :: X1MINA,X1MAXA,X1MODA,X2MINA,X2MAXA,X2MODA
-REAL, SAVE, DIMENSION(2,100) :: X1MINB,X1MAXB,X1MODB,X2MINB,X2MAXB,X2MODB
-REAL, SAVE, DIMENSION(2,100) :: X1MINC,X1MAXC,X1MODC,X2MINC,X2MAXC,X2MODC
+REAL, SAVE, DIMENSION(:,:), ALLOCATABLE :: W1IJA,W1JKA,W2IJA,W2JKA
+REAL, SAVE, DIMENSION(:,:), ALLOCATABLE :: W1IJB,W1JKB,W2IJB,W2JKB
+REAL, SAVE, DIMENSION(:,:), ALLOCATABLE :: W1IJC,W1JKC,W2IJC,W2JKC
+REAL, SAVE, DIMENSION(:,:), ALLOCATABLE :: X1MINA,X1MAXA,X1MODA,X2MINA,X2MAXA,X2MODA
+REAL, SAVE, DIMENSION(:,:), ALLOCATABLE :: X1MINB,X1MAXB,X1MODB,X2MINB,X2MAXB,X2MODB
+REAL, SAVE, DIMENSION(:,:), ALLOCATABLE :: X1MINC,X1MAXC,X1MODC,X2MINC,X2MAXC,X2MODC
 
 !     .. counters and indices
 INTEGER, SAVE :: I1IA,J1JA,K1KA,I2IA,J2JA,K2KA

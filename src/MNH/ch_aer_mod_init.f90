@@ -1,4 +1,4 @@
-!ORILAM_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 2006-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
@@ -41,6 +41,7 @@ END MODULE MODI_CH_AER_MOD_INIT
 !!    -------------
 !!    20/03/03   P . Tulet (CNRM/GMEI)   add  initialization tabulation
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet: 07/06/2019: allocate weights only when needed
 !!
 !!    EXTERNAL
 !!    --------
@@ -83,6 +84,12 @@ TZFILE => NULL()
 !
 ! Initialize the mineral tabulation 
 IF (CMINERAL == 'NARES') THEN
+        ALLOCATE( W1IJA(100,100), W1JKA(100,100), W2IJA(100,100), W2JKA(100,100) )
+        ALLOCATE( W1IJB(100,100), W1JKB(100,100), W2IJB(100,100), W2JKB(100,100) )
+        ALLOCATE( W1IJC(100,100), W1JKC(100,100), W2IJC(100,100), W2JKC(100,100) )
+        ALLOCATE( X1MINA(2,100), X1MAXA(2,100), X1MODA(2,100), X2MINA(2,100), X2MAXA(2,100), X2MODA(2,100) )
+        ALLOCATE( X1MINB(2,100), X1MAXB(2,100), X1MODB(2,100), X2MINB(2,100), X2MAXB(2,100), X2MODB(2,100) )
+        ALLOCATE( X1MINC(2,100), X1MAXC(2,100), X1MODC(2,100), X2MINC(2,100), X2MAXC(2,100), X2MODC(2,100) )
 !       .. the file ares.w contains the weights of the model
         CALL IO_File_add2list(TZFILE,'ares1A.w','CHEMTAB','READ')
         CALL IO_File_open(TZFILE)
