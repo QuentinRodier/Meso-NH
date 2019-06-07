@@ -67,6 +67,7 @@ END MODULE MODI_DEALLOCATE_MODEL1
 !!                   10/2016 M.Mazoyer New KHKO output fields
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!                   02/2019 C.Lac add rain fraction as an output field
+!  P. Wautelet 07/06/2019: bugfix: deallocate XLSRVM only if allocated
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -306,7 +307,7 @@ IF ( KCALL == 3 ) THEN
   DEALLOCATE(XLSVM)
   DEALLOCATE(XLSWM)
   DEALLOCATE(XLSTHM)
-  DEALLOCATE(XLSRVM)
+  IF(ASSOCIATED(XLSRVM)) DEALLOCATE(XLSRVM)
   IF (ASSOCIATED(XLBXUM)) THEN
     DEALLOCATE(XLBXUM)
     DEALLOCATE(XLBYUM)
