@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -x
 rm -f KWRAIN.* OUTPUT_LISTING* pipe* *.tex
 rm -f file_for_xtransfer
