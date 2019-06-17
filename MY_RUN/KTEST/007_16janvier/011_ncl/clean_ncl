@@ -1,3 +1,4 @@
+#!/bin/bash
 set -x
 rm -f 16JAN* 
 rm -f *.ps

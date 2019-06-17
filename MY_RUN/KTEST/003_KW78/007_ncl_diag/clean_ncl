@@ -1,2 +1,3 @@
+#!/bin/bash
 set -x
 rm -f KWRAI.1.SEG01.004* visu_KW78_diag.png

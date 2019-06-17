@@ -1,3 +1,4 @@
+#!/bin/bash
 set -x
 
 rm -f ICART* CPLCH* OUTPUT_LISTING* pipe* file_for_xtransfer 

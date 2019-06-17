@@ -1,3 +1,4 @@
+#!/bin/bash
 PREP_PGD_FILES=$HOME/PREP_PGD_FILES_WWW ; export PREP_PGD_FILES
 [ ! -d "$PREP_PGD_FILES" ] && exit
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"

@@ -1,3 +1,4 @@
+#!/bin/bash
 set -x
 #### Get highres coastline data for ncl
 ./get_ncl_highres_files

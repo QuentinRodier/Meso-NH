@@ -1,3 +1,4 @@
+#!/bin/bash
 set -x
 ln -sf ../004_restart/DUST7.1.SEG02.004.nc .
 

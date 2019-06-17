@@ -1,3 +1,4 @@
+#!/bin/bash
 target=${1:-"all"}
 set -e
 make clean

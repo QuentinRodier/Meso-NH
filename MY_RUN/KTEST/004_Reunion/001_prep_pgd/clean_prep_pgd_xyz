@@ -1,2 +1,3 @@
+#!/bin/bash
 set -x
 rm -f  *.dir *.hdr REUNION_PGD_1km5* OUTPUT_* pipe* *.tex file_for_xtransfer

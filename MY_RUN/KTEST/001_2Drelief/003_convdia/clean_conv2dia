@@ -1,3 +1,4 @@
+#!/bin/bash
 rm -f dirconv.elim  FICJD  LISTING_DIA  OUT_DIA  pipe_name 
 rm -f EXPER.1.HYD2D*                            
 

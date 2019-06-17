@@ -1,3 +1,4 @@
+#!/bin/bash
 set -x
 rm -f DATAE1 DATAJ1 DATAS1      
 rm -f KWRAI* OUT* pipe_name PRESSURE REMAP*

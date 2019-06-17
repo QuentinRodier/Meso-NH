@@ -1,3 +1,4 @@
+#!/bin/bash
 NCARG_RANGS=`pwd`
 export NCARG_RANGS
 echo 
