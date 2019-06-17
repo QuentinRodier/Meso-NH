@@ -1,3 +1,4 @@
+#!/bin/bash
 set -x
 rm -f PRESSURE 
 rm -f KWRAI* OUT* pipe_name file_for_xtransfer

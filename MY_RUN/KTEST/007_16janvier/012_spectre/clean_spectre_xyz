@@ -1,1 +1,2 @@
+#!/bin/bash
 rm -f spectra* OUTPUT_LISTING* pipe* fort* 16JAN* *.bin

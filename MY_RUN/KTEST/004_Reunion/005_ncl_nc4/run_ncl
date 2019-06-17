@@ -1,3 +1,4 @@
+#!/bin/bash
 set -x
 #### Get highres coastline data for ncl
 # If you don't have internet connexion, comment the next line

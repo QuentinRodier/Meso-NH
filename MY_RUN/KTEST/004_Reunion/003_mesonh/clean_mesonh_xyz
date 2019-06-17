@@ -1,3 +1,4 @@
+#!/bin/bash
 set -x
 rm -f PRESSURE      
 rm -f REUNION_IDEA.{des,lfi,nc} 

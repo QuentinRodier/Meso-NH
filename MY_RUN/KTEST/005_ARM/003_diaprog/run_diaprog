@@ -1,3 +1,4 @@
+#!/bin/bash
 set -x
 set -e
 ln -sf ../002_mesonh/ARM__.1.CEN4T.000.* .
