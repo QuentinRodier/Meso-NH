@@ -18,15 +18,17 @@
 
 MODULE MODE_IO_FIELD_WRITE
 
-  USE MODD_IO,        ONLY: TFILEDATA, TOUTBAK
+  USE MODD_IO,         ONLY: TFILEDATA, TOUTBAK
   USE MODD_MPIF
-  use modd_precision, only: MNHINT_MPI, MNHREAL_MPI, MNHTIME
+  use modd_parameters, only: NMNHNAMELGTMAX
+  use modd_precision,  only: MNHINT_MPI, MNHREAL_MPI, MNHTIME
 
   USE MODE_FIELD
   USE MODE_IO_WRITE_LFI
 #if defined(MNH_IOCDF4)
   USE MODE_IO_WRITE_NC4
 #endif
+  use mode_msg
 
   IMPLICIT NONE 
 
@@ -2264,6 +2266,7 @@ CONTAINS
 
 
   SUBROUTINE IO_Field_write_byname_T0(TPFILE,HNAME,TFIELD,KRESP)
+    USE MODD_TYPE_DATE, only: DATE_TIME
     !
     !*      0.1   Declarations of arguments
     !
@@ -2290,7 +2293,7 @@ CONTAINS
 
   SUBROUTINE IO_Field_write_byfield_T0(TPFILE,TPFIELD,TFIELD,KRESP)
     USE MODD_IO, ONLY: GSMONOPROC, ISP
-    USE MODD_TYPE_DATE
+    USE MODD_TYPE_DATE, only: DATE_TIME
     !
     !*      0.    DECLARATIONS
     !             ------------

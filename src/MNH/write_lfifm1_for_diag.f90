@@ -240,6 +240,7 @@ USE MODE_IO_FIELD_WRITE,   only: IO_Field_write
 USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
 USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list
 USE MODE_ll
+use mode_msg
 USE MODE_THERMO
 USE MODE_TOOLS,            ONLY: UPCASE
 USE MODE_MODELN_HANDLER
