@@ -13,12 +13,13 @@
 !  P. Wautelet 06/03/2019: correct ZWS entry
 !  P. Wautelet 12/04/2019: added pointers for C1D, L1D, N1D, X5D and X6D structures in TFIELDDATA
 !  P. Wautelet 06/06/2019: bug correction in FIELDLIST_GOTO_MODEL (XLSTHM was overwritten if LUSERV=.FALSE. due to wrong IF block)
+!  P. Wautelet 19/06/2019: add Fieldlist_nmodel_resize subroutine + provide KMODEL to INI_FIELD_LIST when known
 !-----------------------------------------------------------------
 MODULE MODE_FIELD
 !
 USE MODD_CONF,      ONLY : CPROGRAM
 USE MODD_IO,        ONLY : NVERB_DEBUG, NVERB_INFO, NVERB_WARNING, NVERB_ERROR, NVERB_FATAL
-USE MODD_PARAMETERS
+USE MODD_PARAMETERS, only: JPMODELMAX, NGRIDUNKNOWN, NMNHNAMELGTMAX, NSTDNAMELGTMAX
 USE MODD_TYPE_DATE, ONLY : DATE_TIME
 #if defined(MNH_IOCDF4)
 USE NETCDF,         ONLY : NF90_FILL_INT, NF90_FILL_REAL
@@ -28,7 +29,21 @@ USE MODE_MSG
 !
 IMPLICIT NONE
 !
-INTEGER,PRIVATE,PARAMETER :: MAXFIELDS = 250
+#if 0
+!if enabled: crash of GCC 8.3 and 9.1 (and others?) in mode_io_field_read.f90
+private
+!
+public :: TYPEUNDEF, TYPEINT, TYPELOG, TYPEREAL, TYPECHAR, TYPEDATE
+public :: TFIELDDATA
+public :: TFIELDLIST
+public :: INI_FIELD_LIST
+public :: FIND_FIELD_ID_FROM_MNHNAME
+public :: ALLOC_FIELD_SCALARS
+public :: FIELDLIST_GOTO_MODEL
+public :: Fieldlist_nmodel_resize
+#endif
+!
+INTEGER,PARAMETER :: MAXFIELDS = 250
 INTEGER,PARAMETER :: TYPEUNDEF = -1, TYPEINT = 1, TYPELOG = 2, TYPEREAL = 3, TYPECHAR = 4, TYPEDATE = 5
 !
 TYPE TFIELDPTR_C0D
@@ -146,7 +161,8 @@ TYPE TFIELDDATA
   TYPE(TFIELDPTR_T0D),DIMENSION(:),ALLOCATABLE :: TFIELD_T0D !Pointer to the scalar date/time fields (one per nested mesh)
 END TYPE TFIELDDATA
 !
-LOGICAL,SAVE :: LFIELDLIST_ISINIT = .FALSE.
+integer, save :: NMODEL_ALLOCATED
+LOGICAL, SAVE :: LFIELDLIST_ISINIT = .FALSE.
 TYPE(TFIELDDATA),DIMENSION(MAXFIELDS),SAVE :: TFIELDLIST
 !
 CONTAINS
@@ -177,16 +193,21 @@ LFIELDLIST_ISINIT = .TRUE.
 IF (PRESENT(KMODEL)) THEN
   IMODEL = KMODEL
 ELSE
-  IF (NMODEL/=1) THEN
-    IMODEL = NMODEL
-  ELSE !NMODEL is not necessary known here => allocating for max allowed number of models
-    IMODEL = JPMODELMAX
-  END IF
+  !NMODEL is not necessary known here => allocating for max allowed number of models
+  !WARNING: if known, the value could change after this subroutine (ie for a restart
+  !         with more models) because READ_DESFM_n is called before READ_EXSEG_n
+  !Structures can be resized with a call to Fieldlist_nmodel_resize
+  IMODEL = JPMODELMAX
 END IF
+!
 IF (IMODEL==0) CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_FIELD_LIST','allocating fields for zero models not allowed')
+if ( imodel > JPMODELMAX ) &
+  call Print_msg( NVERB_FATAL, 'GEN', 'INI_FIELD_LIST', 'allocating fields for more than JPMODELMAX models not allowed' )
 !
 WRITE(YMSG,'("allocating fields for up to ",I4," model(s)")') IMODEL
 CALL PRINT_MSG(NVERB_DEBUG,'GEN','INI_FIELD_LIST',YMSG)
+!
+NMODEL_ALLOCATED = IMODEL
 !
 IDX = 1
 !
@@ -4641,5 +4662,435 @@ END IF
 END IF !KFROM/=KTO
 !
 END SUBROUTINE FIELDLIST_GOTO_MODEL
-!
+
+
+subroutine Fieldlist_nmodel_resize( kmodelnew )
+
+implicit none
+
+integer, intent(in) :: kmodelnew
+
+character(len=10) :: ymsg
+integer           :: imodelmax
+integer           :: ji, jj
+type(tfieldptr_c0d), dimension(:), allocatable :: tfield_save_c0d
+type(tfieldptr_c1d), dimension(:), allocatable :: tfield_save_c1d
+type(tfieldptr_l0d), dimension(:), allocatable :: tfield_save_l0d
+type(tfieldptr_l1d), dimension(:), allocatable :: tfield_save_l1d
+type(tfieldptr_n0d), dimension(:), allocatable :: tfield_save_n0d
+type(tfieldptr_n1d), dimension(:), allocatable :: tfield_save_n1d
+type(tfieldptr_n2d), dimension(:), allocatable :: tfield_save_n2d
+type(tfieldptr_n3d), dimension(:), allocatable :: tfield_save_n3d
+type(tfieldptr_x0d), dimension(:), allocatable :: tfield_save_x0d
+type(tfieldptr_x1d), dimension(:), allocatable :: tfield_save_x1d
+type(tfieldptr_x2d), dimension(:), allocatable :: tfield_save_x2d
+type(tfieldptr_x3d), dimension(:), allocatable :: tfield_save_x3d
+type(tfieldptr_x4d), dimension(:), allocatable :: tfield_save_x4d
+type(tfieldptr_x5d), dimension(:), allocatable :: tfield_save_x5d
+type(tfieldptr_x6d), dimension(:), allocatable :: tfield_save_x6d
+type(tfieldptr_t0d), dimension(:), allocatable :: tfield_save_t0d
+
+write( ymsg, '( i4,"->",i4 )') nmodel_allocated, kmodelnew
+call Print_msg( NVERB_DEBUG, 'GEN', 'Fieldlist_nmodel_resize', trim( ymsg ) )
+
+!Nothing to do
+if ( kmodelnew == nmodel_allocated ) return
+
+imodelmax = max( kmodelnew, nmodel_allocated )
+
+allocate( tfield_save_c0d( imodelmax ) )
+allocate( tfield_save_c1d( imodelmax ) )
+allocate( tfield_save_l0d( imodelmax ) )
+allocate( tfield_save_l1d( imodelmax ) )
+allocate( tfield_save_n0d( imodelmax ) )
+allocate( tfield_save_n1d( imodelmax ) )
+allocate( tfield_save_n2d( imodelmax ) )
+allocate( tfield_save_n3d( imodelmax ) )
+allocate( tfield_save_x0d( imodelmax ) )
+allocate( tfield_save_x1d( imodelmax ) )
+allocate( tfield_save_x2d( imodelmax ) )
+allocate( tfield_save_x3d( imodelmax ) )
+allocate( tfield_save_x4d( imodelmax ) )
+allocate( tfield_save_x5d( imodelmax ) )
+allocate( tfield_save_x6d( imodelmax ) )
+allocate( tfield_save_t0d( imodelmax ) )
+
+do ji = 1, imodelmax
+  tfield_save_c0d(ji)%data => null()
+  tfield_save_c1d(ji)%data => null()
+  tfield_save_l0d(ji)%data => null()
+  tfield_save_l1d(ji)%data => null()
+  tfield_save_n0d(ji)%data => null()
+  tfield_save_n1d(ji)%data => null()
+  tfield_save_n2d(ji)%data => null()
+  tfield_save_n3d(ji)%data => null()
+  tfield_save_x0d(ji)%data => null()
+  tfield_save_x1d(ji)%data => null()
+  tfield_save_x2d(ji)%data => null()
+  tfield_save_x3d(ji)%data => null()
+  tfield_save_x4d(ji)%data => null()
+  tfield_save_x5d(ji)%data => null()
+  tfield_save_x6d(ji)%data => null()
+  tfield_save_t0d(ji)%data => null()
+end do
+
+do ji = 1, size( tfieldlist )
+  if ( allocated( tfieldlist(ji)%tfield_c0d ) ) then
+    !Save existing pointers to temporary structure
+    do jj = 1, nmodel_allocated
+      tfield_save_c0d(jj)%data => tfieldlist(ji)%tfield_c0d(jj)%data
+    end do
+    !Reallocate
+    deallocate( tfieldlist(ji)%tfield_c0d )
+    allocate(   tfieldlist(ji)%tfield_c0d(kmodelnew) )
+    !Restore pointers
+    do jj = 1, kmodelnew
+      tfieldlist(ji)%tfield_c0d(jj)%data => tfield_save_c0d(jj)%data
+      tfield_save_c0d(jj)%data => null()
+    end do
+    !Check no used pointers if nmodel is decreazed
+    do jj = kmodelnew + 1, nmodel_allocated
+      if ( associated(tfield_save_c0d(jj)%data ) ) then
+        call Print_msg( NVERB_ERROR, 'GEN', 'Fieldlist_nmodel_resize', 'data loss due to reduction in number of models' )
+        tfield_save_c0d(jj)%data => null()
+      end if
+    end do
+  end if
+
+  if ( allocated( tfieldlist(ji)%tfield_c1d ) ) then
+    !Save existing pointers to temporary structure
+    do jj = 1, nmodel_allocated
+      tfield_save_c1d(jj)%data => tfieldlist(ji)%tfield_c1d(jj)%data
+    end do
+    !Reallocate
+    deallocate( tfieldlist(ji)%tfield_c1d )
+    allocate(   tfieldlist(ji)%tfield_c1d(kmodelnew) )
+    !Restore pointers
+    do jj = 1, kmodelnew
+      tfieldlist(ji)%tfield_c1d(jj)%data => tfield_save_c1d(jj)%data
+      tfield_save_c1d(jj)%data => null()
+    end do
+    !Check no used pointers if nmodel is decreazed
+    do jj = kmodelnew + 1, nmodel_allocated
+      if ( associated(tfield_save_c1d(jj)%data ) ) then
+        call Print_msg( NVERB_ERROR, 'GEN', 'Fieldlist_nmodel_resize', 'data loss due to reduction in number of models' )
+        tfield_save_c1d(jj)%data => null()
+      end if
+    end do
+  end if
+
+  if ( allocated( tfieldlist(ji)%tfield_l0d ) ) then
+    !Save existing pointers to temporary structure
+    do jj = 1, nmodel_allocated
+      tfield_save_l0d(jj)%data => tfieldlist(ji)%tfield_l0d(jj)%data
+    end do
+    !Reallocate
+    deallocate( tfieldlist(ji)%tfield_l0d )
+    allocate(   tfieldlist(ji)%tfield_l0d(kmodelnew) )
+    !Restore pointers
+    do jj = 1, kmodelnew
+      tfieldlist(ji)%tfield_l0d(jj)%data => tfield_save_l0d(jj)%data
+      tfield_save_l0d(jj)%data => null()
+    end do
+    !Check no used pointers if nmodel is decreazed
+    do jj = kmodelnew + 1, nmodel_allocated
+      if ( associated(tfield_save_l0d(jj)%data ) ) then
+        call Print_msg( NVERB_ERROR, 'GEN', 'Fieldlist_nmodel_resize', 'data loss due to reduction in number of models' )
+        tfield_save_l0d(jj)%data => null()
+      end if
+    end do
+  end if
+
+  if ( allocated( tfieldlist(ji)%tfield_l1d ) ) then
+    !Save existing pointers to temporary structure
+    do jj = 1, nmodel_allocated
+      tfield_save_l1d(jj)%data => tfieldlist(ji)%tfield_l1d(jj)%data
+    end do
+    !Reallocate
+    deallocate( tfieldlist(ji)%tfield_l1d )
+    allocate(   tfieldlist(ji)%tfield_l1d(kmodelnew) )
+    !Restore pointers
+    do jj = 1, kmodelnew
+      tfieldlist(ji)%tfield_l1d(jj)%data => tfield_save_l1d(jj)%data
+      tfield_save_l1d(jj)%data => null()
+    end do
+    !Check no used pointers if nmodel is decreazed
+    do jj = kmodelnew + 1, nmodel_allocated
+      if ( associated(tfield_save_l1d(jj)%data ) ) then
+        call Print_msg( NVERB_ERROR, 'GEN', 'Fieldlist_nmodel_resize', 'data loss due to reduction in number of models' )
+        tfield_save_l1d(jj)%data => null()
+      end if
+    end do
+  end if
+
+  if ( allocated( tfieldlist(ji)%tfield_n0d ) ) then
+    !Save existing pointers to temporary structure
+    do jj = 1, nmodel_allocated
+      tfield_save_n0d(jj)%data => tfieldlist(ji)%tfield_n0d(jj)%data
+    end do
+    !Reallocate
+    deallocate( tfieldlist(ji)%tfield_n0d )
+    allocate(   tfieldlist(ji)%tfield_n0d(kmodelnew) )
+    !Restore pointers
+    do jj = 1, kmodelnew
+      tfieldlist(ji)%tfield_n0d(jj)%data => tfield_save_n0d(jj)%data
+      tfield_save_n0d(jj)%data => null()
+    end do
+    !Check no used pointers if nmodel is decreazed
+    do jj = kmodelnew + 1, nmodel_allocated
+      if ( associated(tfield_save_n0d(jj)%data ) ) then
+        call Print_msg( NVERB_ERROR, 'GEN', 'Fieldlist_nmodel_resize', 'data loss due to reduction in number of models' )
+        tfield_save_n0d(jj)%data => null()
+      end if
+    end do
+  end if
+
+  if ( allocated( tfieldlist(ji)%tfield_n1d ) ) then
+    !Save existing pointers to temporary structure
+    do jj = 1, nmodel_allocated
+      tfield_save_n1d(jj)%data => tfieldlist(ji)%tfield_n1d(jj)%data
+    end do
+    !Reallocate
+    deallocate( tfieldlist(ji)%tfield_n1d )
+    allocate(   tfieldlist(ji)%tfield_n1d(kmodelnew) )
+    !Restore pointers
+    do jj = 1, kmodelnew
+      tfieldlist(ji)%tfield_n1d(jj)%data => tfield_save_n1d(jj)%data
+      tfield_save_n1d(jj)%data => null()
+    end do
+    !Check no used pointers if nmodel is decreazed
+    do jj = kmodelnew + 1, nmodel_allocated
+      if ( associated(tfield_save_n1d(jj)%data ) ) then
+        call Print_msg( NVERB_ERROR, 'GEN', 'Fieldlist_nmodel_resize', 'data loss due to reduction in number of models' )
+        tfield_save_n1d(jj)%data => null()
+      end if
+    end do
+  end if
+
+  if ( allocated( tfieldlist(ji)%tfield_n2d ) ) then
+    !Save existing pointers to temporary structure
+    do jj = 1, nmodel_allocated
+      tfield_save_n2d(jj)%data => tfieldlist(ji)%tfield_n2d(jj)%data
+    end do
+    !Reallocate
+    deallocate( tfieldlist(ji)%tfield_n2d )
+    allocate(   tfieldlist(ji)%tfield_n2d(kmodelnew) )
+    !Restore pointers
+    do jj = 1, kmodelnew
+      tfieldlist(ji)%tfield_n2d(jj)%data => tfield_save_n2d(jj)%data
+      tfield_save_n2d(jj)%data => null()
+    end do
+    !Check no used pointers if nmodel is decreazed
+    do jj = kmodelnew + 1, nmodel_allocated
+      if ( associated(tfield_save_n2d(jj)%data ) ) then
+        call Print_msg( NVERB_ERROR, 'GEN', 'Fieldlist_nmodel_resize', 'data loss due to reduction in number of models' )
+        tfield_save_n2d(jj)%data => null()
+      end if
+    end do
+  end if
+
+  if ( allocated( tfieldlist(ji)%tfield_n3d ) ) then
+    !Save existing pointers to temporary structure
+    do jj = 1, nmodel_allocated
+      tfield_save_n3d(jj)%data => tfieldlist(ji)%tfield_n3d(jj)%data
+    end do
+    !Reallocate
+    deallocate( tfieldlist(ji)%tfield_n3d )
+    allocate(   tfieldlist(ji)%tfield_n3d(kmodelnew) )
+    !Restore pointers
+    do jj = 1, kmodelnew
+      tfieldlist(ji)%tfield_n3d(jj)%data => tfield_save_n3d(jj)%data
+      tfield_save_n3d(jj)%data => null()
+    end do
+    !Check no used pointers if nmodel is decreazed
+    do jj = kmodelnew + 1, nmodel_allocated
+      if ( associated(tfield_save_n3d(jj)%data ) ) then
+        call Print_msg( NVERB_ERROR, 'GEN', 'Fieldlist_nmodel_resize', 'data loss due to reduction in number of models' )
+        tfield_save_n3d(jj)%data => null()
+      end if
+    end do
+  end if
+
+  if ( allocated( tfieldlist(ji)%tfield_x0d ) ) then
+    !Save existing pointers to temporary structure
+    do jj = 1, nmodel_allocated
+      tfield_save_x0d(jj)%data => tfieldlist(ji)%tfield_x0d(jj)%data
+    end do
+    !Reallocate
+    deallocate( tfieldlist(ji)%tfield_x0d )
+    allocate(   tfieldlist(ji)%tfield_x0d(kmodelnew) )
+    !Restore pointers
+    do jj = 1, kmodelnew
+      tfieldlist(ji)%tfield_x0d(jj)%data => tfield_save_x0d(jj)%data
+      tfield_save_x0d(jj)%data => null()
+    end do
+    !Check no used pointers if nmodel is decreazed
+    do jj = kmodelnew + 1, nmodel_allocated
+      if ( associated(tfield_save_x0d(jj)%data ) ) then
+        call Print_msg( NVERB_ERROR, 'GEN', 'Fieldlist_nmodel_resize', 'data loss due to reduction in number of models' )
+        tfield_save_x0d(jj)%data => null()
+      end if
+    end do
+  end if
+
+  if ( allocated( tfieldlist(ji)%tfield_x1d ) ) then
+    !Save existing pointers to temporary structure
+    do jj = 1, nmodel_allocated
+      tfield_save_x1d(jj)%data => tfieldlist(ji)%tfield_x1d(jj)%data
+    end do
+    !Reallocate
+    deallocate( tfieldlist(ji)%tfield_x1d )
+    allocate(   tfieldlist(ji)%tfield_x1d(kmodelnew) )
+    !Restore pointers
+    do jj = 1, kmodelnew
+      tfieldlist(ji)%tfield_x1d(jj)%data => tfield_save_x1d(jj)%data
+      tfield_save_x1d(jj)%data => null()
+    end do
+    !Check no used pointers if nmodel is decreazed
+    do jj = kmodelnew + 1, nmodel_allocated
+      if ( associated(tfield_save_x1d(jj)%data ) ) then
+        call Print_msg( NVERB_ERROR, 'GEN', 'Fieldlist_nmodel_resize', 'data loss due to reduction in number of models' )
+        tfield_save_x1d(jj)%data => null()
+      end if
+    end do
+  end if
+
+  if ( allocated( tfieldlist(ji)%tfield_x2d ) ) then
+    !Save existing pointers to temporary structure
+    do jj = 1, nmodel_allocated
+      tfield_save_x2d(jj)%data => tfieldlist(ji)%tfield_x2d(jj)%data
+    end do
+    !Reallocate
+    deallocate( tfieldlist(ji)%tfield_x2d )
+    allocate(   tfieldlist(ji)%tfield_x2d(kmodelnew) )
+    !Restore pointers
+    do jj = 1, kmodelnew
+      tfieldlist(ji)%tfield_x2d(jj)%data => tfield_save_x2d(jj)%data
+      tfield_save_x2d(jj)%data => null()
+    end do
+    !Check no used pointers if nmodel is decreazed
+    do jj = kmodelnew + 1, nmodel_allocated
+      if ( associated(tfield_save_x2d(jj)%data ) ) then
+        call Print_msg( NVERB_ERROR, 'GEN', 'Fieldlist_nmodel_resize', 'data loss due to reduction in number of models' )
+        tfield_save_x2d(jj)%data => null()
+      end if
+    end do
+  end if
+
+  if ( allocated( tfieldlist(ji)%tfield_x3d ) ) then
+    !Save existing pointers to temporary structure
+    do jj = 1, nmodel_allocated
+      tfield_save_x3d(jj)%data => tfieldlist(ji)%tfield_x3d(jj)%data
+    end do
+    !Reallocate
+    deallocate( tfieldlist(ji)%tfield_x3d )
+    allocate(   tfieldlist(ji)%tfield_x3d(kmodelnew) )
+    !Restore pointers
+    do jj = 1, kmodelnew
+      tfieldlist(ji)%tfield_x3d(jj)%data => tfield_save_x3d(jj)%data
+      tfield_save_x3d(jj)%data => null()
+    end do
+    !Check no used pointers if nmodel is decreazed
+    do jj = kmodelnew + 1, nmodel_allocated
+      if ( associated(tfield_save_x3d(jj)%data ) ) then
+        call Print_msg( NVERB_ERROR, 'GEN', 'Fieldlist_nmodel_resize', 'data loss due to reduction in number of models' )
+        tfield_save_x3d(jj)%data => null()
+      end if
+    end do
+  end if
+
+  if ( allocated( tfieldlist(ji)%tfield_x4d ) ) then
+    !Save existing pointers to temporary structure
+    do jj = 1, nmodel_allocated
+      tfield_save_x4d(jj)%data => tfieldlist(ji)%tfield_x4d(jj)%data
+    end do
+    !Reallocate
+    deallocate( tfieldlist(ji)%tfield_x4d )
+    allocate(   tfieldlist(ji)%tfield_x4d(kmodelnew) )
+    !Restore pointers
+    do jj = 1, kmodelnew
+      tfieldlist(ji)%tfield_x4d(jj)%data => tfield_save_x4d(jj)%data
+      tfield_save_x4d(jj)%data => null()
+    end do
+    !Check no used pointers if nmodel is decreazed
+    do jj = kmodelnew + 1, nmodel_allocated
+      if ( associated(tfield_save_x4d(jj)%data ) ) then
+        call Print_msg( NVERB_ERROR, 'GEN', 'Fieldlist_nmodel_resize', 'data loss due to reduction in number of models' )
+        tfield_save_x4d(jj)%data => null()
+      end if
+    end do
+  end if
+
+  if ( allocated( tfieldlist(ji)%tfield_x5d ) ) then
+    !Save existing pointers to temporary structure
+    do jj = 1, nmodel_allocated
+      tfield_save_x5d(jj)%data => tfieldlist(ji)%tfield_x5d(jj)%data
+    end do
+    !Reallocate
+    deallocate( tfieldlist(ji)%tfield_x5d )
+    allocate(   tfieldlist(ji)%tfield_x5d(kmodelnew) )
+    !Restore pointers
+    do jj = 1, kmodelnew
+      tfieldlist(ji)%tfield_x5d(jj)%data => tfield_save_x5d(jj)%data
+      tfield_save_x5d(jj)%data => null()
+    end do
+    !Check no used pointers if nmodel is decreazed
+    do jj = kmodelnew + 1, nmodel_allocated
+      if ( associated(tfield_save_x5d(jj)%data ) ) then
+        call Print_msg( NVERB_ERROR, 'GEN', 'Fieldlist_nmodel_resize', 'data loss due to reduction in number of models' )
+        tfield_save_x5d(jj)%data => null()
+      end if
+    end do
+  end if
+
+  if ( allocated( tfieldlist(ji)%tfield_x6d ) ) then
+    !Save existing pointers to temporary structure
+    do jj = 1, nmodel_allocated
+      tfield_save_x6d(jj)%data => tfieldlist(ji)%tfield_x6d(jj)%data
+    end do
+    !Reallocate
+    deallocate( tfieldlist(ji)%tfield_x6d )
+    allocate(   tfieldlist(ji)%tfield_x6d(kmodelnew) )
+    !Restore pointers
+    do jj = 1, kmodelnew
+      tfieldlist(ji)%tfield_x6d(jj)%data => tfield_save_x6d(jj)%data
+      tfield_save_x6d(jj)%data => null()
+    end do
+    !Check no used pointers if nmodel is decreazed
+    do jj = kmodelnew + 1, nmodel_allocated
+      if ( associated(tfield_save_x6d(jj)%data ) ) then
+        call Print_msg( NVERB_ERROR, 'GEN', 'Fieldlist_nmodel_resize', 'data loss due to reduction in number of models' )
+        tfield_save_x6d(jj)%data => null()
+      end if
+    end do
+  end if
+
+  if ( allocated( tfieldlist(ji)%tfield_t0d ) ) then
+    !Save existing pointers to temporary structure
+    do jj = 1, nmodel_allocated
+      tfield_save_t0d(jj)%data => tfieldlist(ji)%tfield_t0d(jj)%data
+    end do
+    !Reallocate
+    deallocate( tfieldlist(ji)%tfield_t0d )
+    allocate(   tfieldlist(ji)%tfield_t0d(kmodelnew) )
+    !Restore pointers
+    do jj = 1, kmodelnew
+      tfieldlist(ji)%tfield_t0d(jj)%data => tfield_save_t0d(jj)%data
+      tfield_save_t0d(jj)%data => null()
+    end do
+    !Check no used pointers if nmodel is decreazed
+    do jj = kmodelnew + 1, nmodel_allocated
+      if ( associated(tfield_save_t0d(jj)%data ) ) then
+        call Print_msg( NVERB_ERROR, 'GEN', 'Fieldlist_nmodel_resize', 'data loss due to reduction in number of models' )
+        tfield_save_t0d(jj)%data => null()
+      end if
+    end do
+  end if
+
+end do
+
+nmodel_allocated = kmodelnew
+
+end subroutine Fieldlist_nmodel_resize
+
 END MODULE MODE_FIELD

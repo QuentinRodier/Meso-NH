@@ -164,6 +164,7 @@ END MODULE MODI_INI_SEG_n
 !!                       07/2017   add GBLOWSNOW (V. Vionnet)
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
+!  P. Wautelet 19/06/2019: add Fieldlist_nmodel_resize subroutine + provide KMODEL to INI_FIELD_LIST when known
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -369,6 +370,8 @@ CALL READ_DESFM_n(KMI,TPINIFILE,YCONF,GFLAT,GUSERV,GUSERC,                  &
 IF (KMI==1) THEN !Do this only 1 time
   IF (CPROGRAM=='SPAWN ') THEN
     CALL INI_FIELD_LIST(2)
+  ELSE IF (CPROGRAM=='DIAG  ' .OR. CPROGRAM=='SPEC  ') THEN
+    CALL INI_FIELD_LIST(1)
   ELSE IF (CPROGRAM/='REAL  ' .AND. CPROGRAM/='IDEAL ' ) THEN
     CALL INI_FIELD_LIST()
   END IF
@@ -450,6 +453,9 @@ CALL READ_EXSEG_n(KMI,TZFILE_DES,YCONF,GFLAT,GUSERV,GUSERC,                 &
                 YTURB,YTOM,GRMC01,YRAD,YDCONV,YSCONV,YCLOUD,YELEC,YEQNSYS,  &
                 PTSTEP_ALL,CSTORAGE_TYPE,CINIFILEPGD_n                      )
 !
+if ( cprogram == 'MESONH' .and. kmi == 1 ) then !Do this only once
+  call Fieldlist_nmodel_resize(NMODEL)
+end if
 !
 IF (CPROGRAM=='SPAWN ' .OR. CPROGRAM=='DIAG  ' .OR. CPROGRAM=='SPEC  '      &
      .OR. CPROGRAM=='REAL  ') THEN
