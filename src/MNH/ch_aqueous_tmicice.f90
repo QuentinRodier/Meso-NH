@@ -137,6 +137,7 @@ USE MODD_CH_ICE_n                            ! index for ice phase chemistry wit
 USE MODE_PACK_PGI
 #endif
 use mode_tools,           only: Countjv
+use mode_tools_ll,        only: GET_INDICE_ll
 !
 IMPLICIT NONE
 !

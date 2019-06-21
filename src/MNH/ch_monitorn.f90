@@ -2,6 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !!    ########################
       MODULE MODI_CH_MONITOR_n
 !!    ########################
@@ -133,7 +134,6 @@ USE MODI_CH_AQUEOUS_TMICKHKO
 USE MODI_CH_AQUEOUS_SEDIM1MOM
 USE MODI_CH_AQUEOUS_SEDIM2MOM
 USE MODI_CH_AQUEOUS_CHECK
-USE MODI_SUM_ll
 USE MODI_CH_AER_SEDIM_n
 USE MODI_CH_AER_WETDEP_n
 USE MODI_CH_ORILAM
@@ -145,6 +145,7 @@ USE MODI_CH_AER_DEPOS
 USE MODE_ll
 USE MODE_MODELN_HANDLER
 use mode_msg
+USE MODE_SUM_ll
 !
 USE MODI_WRITE_TS1D
 USE MODD_CST, ONLY : XMNH_TINY

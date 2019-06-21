@@ -90,6 +90,7 @@ USE MODD_PARAMETERS,     ONLY: JPVEXT
 !
 USE MODE_FIELD,          ONLY: TFIELDDATA,TYPEREAL
 USE MODE_IO_FIELD_WRITE, only: IO_Field_write
+use mode_tools_ll,       only: GET_INDICE_ll
 !
 USE MODI_GRADIENT_M
 !

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2011-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -40,6 +40,7 @@ USE MODE_POS
 USE MODE_IO,               only: IO_Config_set, IO_Init
 USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
 USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list, IO_Filelist_print
+use mode_init_ll,          only: END_PARA_ll
 USE MODE_MODELN_HANDLER
 !USE MODD_TYPE_DATE
 USE MODI_VERSION

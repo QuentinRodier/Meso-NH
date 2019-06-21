@@ -1,13 +1,7 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/exchange.f90,v $ $Revision: 1.2.2.2.2.2.16.1.2.5.2.1 $ $Date: 2015/12/01 15:26:23 $
-!-----------------------------------------------------------------
-!-----------------------------------------------------------------
 !-----------------------------------------------------------------
 !     ####################
       MODULE MODI_EXCHANGE
@@ -99,7 +93,7 @@ END MODULE MODI_EXCHANGE
 !*      0.   DECLARATIONS
 !            ------------
 !
-USE MODE_ll
+! USE MODE_ll
 !
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
 USE MODD_GRID_n
@@ -108,7 +102,8 @@ USE MODD_BUDGET,      ONLY : LBUDGET_SV
 USE MODD_CST,         ONLY : XMNH_TINY
 USE MODD_LUNIT_n,     ONLY : TLUOUT
 USE MODI_SHUMAN
-USE MODI_SUM_ll
+use mode_exchange_ll, only: UPDATE_HALO_ll
+USE MODE_SUM_ll
 USE MODI_BUDGET
 USE MODD_CH_MNHC_n,   ONLY : LUSECHEM, LUSECHAQ, LUSECHIC
 USE MODD_CH_AEROSOL,  ONLY : LORILAM, NM6_AER

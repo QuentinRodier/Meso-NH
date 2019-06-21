@@ -99,7 +99,8 @@ USE MODD_RAIN_ICE_PARAM,  ONLY : XFSEDR, XEXSEDR, &
                                  XFSEDG, XEXSEDG
 
 use mode_tools,           only: Countjv
-!
+use mode_tools_ll,        only: GET_INDICE_ll
+
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :

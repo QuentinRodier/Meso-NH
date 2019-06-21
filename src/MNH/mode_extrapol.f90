@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2011-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -35,7 +35,7 @@ CONTAINS
 
   SUBROUTINE EXTRAPOL3D(HBORD,PTAB)
     USE MODD_LBC_n
-    USE MODE_ll
+    USE MODE_TOOLS_ll
     !
     IMPLICIT NONE
     !
@@ -93,7 +93,7 @@ CONTAINS
 
   SUBROUTINE EXTRAPOL2D(HBORD,PTAB)
     USE MODD_LBC_n
-    USE MODE_ll
+    USE MODE_TOOLS_ll
     !
     IMPLICIT NONE
     !
@@ -170,10 +170,12 @@ CONTAINS
 !!      J.Escobar 2/05/2016 : add STOP in case of problem with decomposition
 !-------------------------------------------------------------------------------
     USE MODD_LBC_n
+    use mode_argslist_ll,    only: ADD2DFIELD_ll, CLEANLIST_ll
     USE MODE_MODELN_HANDLER
-    USE MODE_ll
-    USE MODD_PARAMETERS, ONLY : JPHEXT
-    USE MODE_EXCHANGE_ll, ONLY : UPDATE_HALO_EXTENDED_ll
+    use mode_nest_ll,        only: GET_CHILD_DIM_ll, GO_TOMODEL_ll
+    USE MODE_TOOLS_ll
+    USE MODD_PARAMETERS,     ONLY: JPHEXT
+    USE MODE_EXCHANGE_ll,    ONLY: UPDATE_HALO_EXTENDED_ll
     !
     IMPLICIT NONE
     !
@@ -311,10 +313,12 @@ CONTAINS
 !!      J.Escobar 2/05/2016 : add STOP in case of problem with decomposition
 !-------------------------------------------------------------------------------
     USE MODD_LBC_n
+    use mode_argslist_ll,    only: ADD2DFIELD_ll, CLEANLIST_ll
     USE MODE_MODELN_HANDLER
-    USE MODE_ll
-    USE MODD_PARAMETERS, ONLY : JPHEXT
-    USE MODE_EXCHANGE_ll, ONLY : UPDATE_HALO_EXTENDED_ll
+    use mode_nest_ll,        only: GET_CHILD_DIM_ll, GO_TOMODEL_ll
+    USE MODE_TOOLS_ll
+    USE MODD_PARAMETERS,     ONLY: JPHEXT
+    USE MODE_EXCHANGE_ll,    ONLY: UPDATE_HALO_EXTENDED_ll
     !
     IMPLICIT NONE
     !

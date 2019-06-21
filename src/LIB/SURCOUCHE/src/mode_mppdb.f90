@@ -20,6 +20,7 @@ MODULE MODE_MPPDB
 !
   use ISO_FORTRAN_ENV, only: OUTPUT_UNIT
 
+  use MODE_TOOLS_ll, only: GET_GLOBALDIMS_ll, GET_INDICE_ll
   use mode_msg
 
   use modi_tools_c
@@ -624,7 +625,6 @@ CONTAINS
     use modd_precision,     only: MNHINT_MPI, MNHREAL_MPI
 
     USE MODE_DISTRIB_LB
-    USE MODE_TOOLS_ll,      ONLY: GET_GLOBALDIMS_ll
 
     IMPLICIT NONE
 

@@ -1,7 +1,8 @@
-!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 2008-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
+!-----------------------------------------------------------------
 !!    ########################
       MODULE MODI_AER_MONITOR_n
 !!    ########################
@@ -120,7 +121,7 @@ USE MODD_CONF_n,    ONLY: LUSERC,&    ! Logical to use clouds
                           NRR         ! Total number of water variables
 USE MODD_PARAM_n,    ONLY: CCLOUD
 USE MODD_PRECIP_n, ONLY: XEVAP3D
-USE MODI_SUM_ll
+USE MODE_SUM_ll
 USE MODI_SEDIM_DUST
 USE MODI_SEDIM_SALT
 USE MODI_DUST_FILTER

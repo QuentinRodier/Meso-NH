@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2005-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ######################
@@ -70,6 +70,7 @@ USE MODI_INI_BIKHARDT_n
 USE MODI_SPAWN_ZS
 USE MODE_MODELN_HANDLER
 !
+use mode_nest_ll,      only: GO_TOMODEL_ll
 USE MODE_SPLITTING_ll, ONLY : SPLIT2, DEF_SPLITTING2
 USE MODD_VAR_ll, ONLY : NPROC, IP, YSPLITTING, NMNH_COMM_WORLD
 USE MODD_STRUCTURE_ll, ONLY : ZONE_ll

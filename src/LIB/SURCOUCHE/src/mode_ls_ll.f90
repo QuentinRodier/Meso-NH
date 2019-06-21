@@ -54,11 +54,21 @@
 !
 !------------------------------------------------------------------------------
 !
-  USE MODD_STRUCTURE_ll
+USE MODD_STRUCTURE_ll
 
-  use mode_msg
-!
-  CONTAINS
+use mode_msg
+
+implicit none
+
+interface SET_LSFIELD_1WAY_ll
+  module procedure SET_LS2DFIELD_1WAY_ll, SET_LS3DFIELD_1WAY_ll
+end interface
+
+interface SET_LSFIELD_2WAY_ll
+  module procedure SET_LS2DFIELD_2WAY_ll, SET_LS3DFIELD_2WAY_ll
+end interface
+
+CONTAINS
 !
 !     ###########################################################
       SUBROUTINE SET_LS2DFIELD_1WAY_ll(P2DFIELD, PTFIELD, KMODEL)

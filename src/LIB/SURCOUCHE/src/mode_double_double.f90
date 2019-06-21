@@ -1,17 +1,26 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !Correction :
 !  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-----------------------------------------------------------------
 MODULE modd_repro_sum
+
+  implicit none
+
   TYPE DOUBLE_DOUBLE
      SEQUENCE
      REAL :: R , E
   END TYPE DOUBLE_DOUBLE
+
+  LOGICAL, save :: FIRST_CALL_DD     = .TRUE.
+  INTEGER, save :: MNH_DOUBLE_DOUBLE
+  INTEGER, save :: MNH_SUM_DD
+
 END MODULE modd_repro_sum
+
 
 MODULE mode_repro_sum
 
@@ -20,9 +29,6 @@ MODULE mode_repro_sum
 
   IMPLICIT NONE
 
-  LOGICAL :: FIRST_CALL_DD     = .TRUE.
-  INTEGER :: MNH_DOUBLE_DOUBLE 
-  INTEGER :: MNH_SUM_DD  
 
 !!$  INTERFACE ADD   
 !!$     MODULE PROCEDURE RPDD 
@@ -41,66 +47,6 @@ MODULE mode_repro_sum
 !!$  END INTERFACE
 
 CONTAINS
-
-  SUBROUTINE INIT_DD(KINFO)
-    use modd_precision, only: MNHREAL_MPI
-    IMPLICIT NONE
-    INTEGER, INTENT(OUT) :: KINFO ! MPI return status
-    !
-    ! define the double-double for MPI
-    !
-    CALL MPI_TYPE_CONTIGUOUS(2, MNHREAL_MPI ,MNH_DOUBLE_DOUBLE , KINFO)
-    CALL MPI_TYPE_COMMIT(MNH_DOUBLE_DOUBLE , KINFO)
-    !
-    ! define the double-double sum = MNH_SUM_DD  for MPI 
-    !
-    CALL MPI_OP_CREATE(DDPDD, .TRUE., MNH_SUM_DD, KINFO)
-    FIRST_CALL_DD = .FALSE.
-    !
-  END SUBROUTINE INIT_DD
-  
-  PURE SUBROUTINE DDPDD (dda, ddb, len, itype)
-    !----------------------------------------------------------------------
-    ! 
-    ! Purpose: 
-    ! Modification of original codes written by David H. Bailey    
-    ! This subroutine computes ddb(i) = dda(i)+ddb(i)
-    ! for use with MPI_*_REDUCE
-    ! 
-    !----------------------------------------------------------------------
-    !
-    ! Arguments
-    !
-    INTEGER, INTENT(in)                :: len       ! array length
-    TYPE(DOUBLE_DOUBLE), INTENT(in)    :: dda(len)  ! input
-    TYPE(DOUBLE_DOUBLE), INTENT(inout) :: ddb(len)  ! result
-    INTEGER, INTENT(in)                :: itype     ! unused
-    !
-    ! Local workspace
-    !
-    REAL e, t1, t2
-    INTEGER i
-    !
-    !-----------------------------------------------------------------------
-    !
-    DO i = 1, len
-       !
-       !   Compute dda + ddb using Knuth's trick.
-       !
-       t1 = dda(i)%R + ddb(i)%R
-       e  = t1 - dda(i)%R
-       t2 = ((ddb(i)%R - e) + (dda(i)%R - (t1 - e))) &
-            + dda(i)%E + ddb(i)%E
-       !
-       !   The result is t1 + t2, after normalization.
-       !
-       ddb(i)%R = t1 + t2
-       ddb(i)%E = t2 - ((t1 + t2) - t1) 
-    ENDDO
-
-    RETURN
-
-  END SUBROUTINE DDPDD
 
   ELEMENTAL SUBROUTINE RPDD (a, ddb)
     !----------------------------------------------------------------------
@@ -232,7 +178,7 @@ CONTAINS
     ! Could be inlined by compiler <=> elemental function
     ! 
     !----------------------------------------------------------------------
-    USE MODE_ll , ONLY : REDUCESUM_ll
+    USE mode_reduce_sum, ONLY: REDUCESUM_ll
     !
     ! Arguments
     !
@@ -277,7 +223,7 @@ CONTAINS
     ! This subroutine computes c(1:n2) = sum_dd(a(:,1:n2)) on all processors
     ! 
     !----------------------------------------------------------------------
-    USE MODE_ll , ONLY : REDUCESUM_ll
+    USE mode_reduce_sum, ONLY: REDUCESUM_ll
     !
     ! Arguments
     !
@@ -320,7 +266,7 @@ CONTAINS
     ! This subroutine computes c = sum_dd(a(:)) on all processors
     ! 
     !----------------------------------------------------------------------
-    USE MODE_ll , ONLY : REDUCESUM_ll
+    USE mode_reduce_sum, ONLY: REDUCESUM_ll
     !
     ! Arguments
     !

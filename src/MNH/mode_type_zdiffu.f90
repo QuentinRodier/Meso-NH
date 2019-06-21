@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2006-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 MODULE MODE_TYPE_ZDIFFU
@@ -17,6 +17,8 @@ SUBROUTINE INIT_TYPE_ZDIFFU_HALO2(PTYPE_ZDIFFU_HALO2,KSIZE_ZERO)
 !              ------------
 USE MODD_PARAMETERS , ONLY : JPVEXT
 USE MODD_DIM_ll     , ONLY : NKMAX_TMP_ll
+
+use mode_tools_ll,   only: GET_DIM_EXT_ll, GET_INDICE_ll
 !
 IMPLICIT NONE
 !

@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODI_CONVECTION
@@ -166,6 +162,9 @@ END MODULE MODI_CONVECTION
 !
 USE MODD_PARAMETERS
 USE MODD_CST
+
+use mode_tools_ll,        only: GET_INDICE_ll
+
 USE MODI_SHUMAN
 USE MODI_DEEP_CONVECTION
 USE MODI_SHALLOW_CONVECTION

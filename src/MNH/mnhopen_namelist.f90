@@ -60,6 +60,7 @@ USE MODD_IO_NAM,           ONLY: TNAM
 USE MODE_IO_FILE,          ONLY: IO_File_open
 USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_add2list
 USE MODE_MSG
+use mode_nest_ll,          only: GET_MODEL_NUMBER_ll
 !
 IMPLICIT NONE
 !

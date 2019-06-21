@@ -69,6 +69,7 @@ USE MODD_NESTING
 !
 use mode_bikhardt
 USE MODE_FIELD, ONLY : TFIELDLIST, FIND_FIELD_ID_FROM_MNHNAME
+use mode_tools_ll,        only: GET_INDICE_ll
 !
 IMPLICIT NONE
 !

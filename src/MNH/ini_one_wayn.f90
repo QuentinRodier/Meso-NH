@@ -108,7 +108,9 @@ USE MODD_PARAM_n,        only: CCLOUD
 USE MODD_REF_n,          only: XRHODJ, XRHODREF
 !
 use mode_bikhardt
-use mode_ll,             only: LS_FORCING_ll, LWEST_ll, LEAST_ll, LNORTH_ll, LSOUTH_ll, SET_LSFIELD_1WAY_ll
+use mode_ll,             only: GET_CHILD_DIM_ll, GET_DIM_EXT_ll, GO_TOMODEL_ll,         &
+                               LS_FORCING_ll, LWEST_ll, LEAST_ll, LNORTH_ll, LSOUTH_ll, &
+                               SET_LSFIELD_1WAY_ll, UNSET_LSFIELD_1WAY_ll
 USE MODE_MODELN_HANDLER, only: GOTO_MODEL
 !
 USE MODI_SET_CHEMAQ_1WAY

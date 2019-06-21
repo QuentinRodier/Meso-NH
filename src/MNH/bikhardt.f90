@@ -79,6 +79,8 @@ contains
 !               ------------
 !
 USE MODD_PARAMETERS       ! Declarative modules
+
+use mode_tools_ll,        only: GET_INDICE_ll
 !
 IMPLICIT NONE
 !

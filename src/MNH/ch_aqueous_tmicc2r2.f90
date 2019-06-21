@@ -94,6 +94,7 @@ USE MODD_RAIN_C2R2_KHKO_PARAM, ONLY : XAUTO1, XAUTO2,               &
                                  XACCR_RSMALL1, XACCR_RSMALL2
 
 use mode_tools,                only: Countjv
+use mode_tools_ll,             only: GET_INDICE_ll
 
 IMPLICIT NONE
 !

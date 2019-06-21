@@ -47,16 +47,24 @@
 !     Juan/Didier 12/03/2009: array bound bug correction with 1proc/MPIVIDE
 !     J. Escobar  27/06/2011  correction for gridnesting with different SHAPE 
 ! 
-  USE MODD_MPIF
-  use modd_precision, only: MNHINT_MPI, MNHREAL_MPI
-  USE MODD_STRUCTURE_ll
-  !JUANZ
-  USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD
-  !JUANZ
+USE MODD_MPIF
+use modd_precision, only: MNHINT_MPI, MNHREAL_MPI
+USE MODD_STRUCTURE_ll
+USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD
 
-  use mode_msg
-!
-  CONTAINS
+use mode_msg
+
+implicit none
+
+interface GET_GLOBALSLICE_ll
+  module procedure GET_1DGLOBALSLICE_ll, GET_2DGLOBALSLICE_ll
+end interface
+
+interface GET_SLICE_ll
+  module procedure GET_1DSLICE_ll, GET_2DSLICE_ll
+end interface
+
+CONTAINS
 
   SUBROUTINE SLIDE_COORD(KDIM_DATA,KDIM_PROC,THIS_PROC,KOR,KEND)
 

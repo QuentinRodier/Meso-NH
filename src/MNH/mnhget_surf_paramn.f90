@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 surfex 2006/10/24 10:43:18
 !-----------------------------------------------------------------
 !     #######################
       MODULE MODI_MNHGET_SURF_PARAM_n
@@ -88,6 +83,8 @@ USE MODD_PARAMETERS,     ONLY : XUNDEF
 !
 USE MODD_IO_SURF_MNH,    ONLY : NHALO
 !
+use mode_tools_ll,        only: GET_INDICE_ll
+
 USE MODI_GET_COVER_N
 USE MODI_GET_FRAC_N
 USE MODI_GET_JCOVER_N

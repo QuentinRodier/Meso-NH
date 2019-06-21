@@ -84,6 +84,7 @@ USE MODD_CLOUDPAR,        ONLY : XC1RC, XC2RC, &! autoconversion param.
                                  XCEXVT         ! constant in the rain drop fall velocity
 
 use mode_tools,           only: Countjv
+use mode_tools_ll,        only: GET_INDICE_ll
 
 IMPLICIT NONE
 !

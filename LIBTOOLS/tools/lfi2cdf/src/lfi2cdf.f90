@@ -13,6 +13,7 @@ program LFI2CDF
 
   USE MODE_FIELD,         ONLY: INI_FIELD_LIST
   USE MODE_IO,            ONLY: IO_Init, IO_Config_set
+  use mode_ll
   USE mode_options
   USE MODE_SPLITTINGZ_ll, ONLY: INI_PARAZ_ll
   USE mode_util

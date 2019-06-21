@@ -268,6 +268,7 @@ use MODE_RAIN_ICE_SEDIMENTATION_STAT,  only: RAIN_ICE_SEDIMENTATION_STAT
 use MODE_RAIN_ICE_SLOW,                only: RAIN_ICE_SLOW
 use MODE_RAIN_ICE_WARM,                only: RAIN_ICE_WARM
 use mode_tools,                        only: Countjv
+use mode_tools_ll,                     only: GET_INDICE_ll
 
 use MODI_BUDGET
 USE MODI_ICE4_RAINFR_VERT

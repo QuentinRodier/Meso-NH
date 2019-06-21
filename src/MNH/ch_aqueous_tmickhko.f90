@@ -85,6 +85,7 @@ USE MODD_PARAMETERS,ONLY: JPHEXT,    &! number of horizontal External points
 USE MODD_RAIN_C2R2_DESCR, ONLY : XRTMIN, XCTMIN 
 
 use mode_tools,           only: Countjv
+use mode_tools_ll,        only: GET_INDICE_ll
 
 IMPLICIT NONE
 !

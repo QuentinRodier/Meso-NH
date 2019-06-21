@@ -37,12 +37,18 @@
 !
 !------------------------------------------------------------------------------
 !
-   USE MODD_MPIF
-   !JUANZ
-   USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD
-   !JUANZ
-!
-!  INCLUDE 'mpif.h'
+USE MODD_MPIF
+USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD
+
+implicit none
+
+interface GMAXLOC_ll
+  module procedure GMAXLOC1D_ll, GMAXLOC2D_ll, GMAXLOC3D_ll
+end interface
+
+interface GMINLOC_ll
+  module procedure GMINLOC1D_ll, GMINLOC2D_ll, GMINLOC3D_ll
+end interface
 !
   CONTAINS
 !

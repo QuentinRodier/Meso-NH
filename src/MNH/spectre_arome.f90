@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2011-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -30,6 +30,7 @@ SUBROUTINE SPECTRE_AROME(HINIFILE,HOUTFILE,PDELTAX,PDELTAY,KI,KJ,KK)
 !
 USE MODD_CONF
 USE MODE_IO, only: IO_Pack_set
+use mode_init_ll, only: SET_DAD0_ll, SET_JP_ll, SET_SPLITTING_ll
 USE MODD_SPECTRE
 USE MODI_COMPUTE_SPECTRE
 USE MODD_PARAMETERS

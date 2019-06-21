@@ -2,6 +2,7 @@
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     #########
       SUBROUTINE INTERPOL_NPTS (UG, U, HPROGRAM,KLUOUT,KNPTS,KCODE,PX,PY,PFIELD,KNEAR_NBR)
 !     #########################################################
@@ -75,7 +76,7 @@ use modd_mpif
 use modd_precision,    only: MNHINT_MPI, MNHREAL_MPI
 USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD
 USE MODE_GATHER_ll
-USE MODE_TOOLS_ll,     ONLY : GET_GLOBALDIMS_ll
+USE MODE_TOOLS_ll,     ONLY : GET_DIM_PHYS_ll, GET_GLOBALDIMS_ll
 USE MODD_PARAMETERS_ll,ONLY : JPHEXT
 !
 USE MODD_IO_SURF_MNH, ONLY : NIU, NJU

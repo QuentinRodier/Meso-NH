@@ -146,6 +146,8 @@ USE MODD_RADAR            , ONLY: XLAT_RAD,XLON_RAD,XALT_RAD,XDT_RAD,XELEV,&
 !
 USE MODE_INTERPOL_BEAM
 USE MODE_FGAU             , ONLY: GAULEG,GAUHER
+use mode_tools_ll,        only: GET_INDICE_ll
+
 USE MODI_RADAR_SCATTERING
 ! convective/stratiform
 USE MODI_SET_MSK 

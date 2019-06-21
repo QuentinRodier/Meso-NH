@@ -111,6 +111,7 @@ USE MODE_FIELD,           ONLY: TFIELDDATA,TYPEREAL
 USE MODE_IO_FIELD_WRITE,  only: IO_Field_write
 USE MODE_MSG
 use mode_tools,           only: Countjv
+use mode_tools_ll,        only: GET_INDICE_ll
 !
 USE MODI_BUDGET
 USE MODI_PROGNOS

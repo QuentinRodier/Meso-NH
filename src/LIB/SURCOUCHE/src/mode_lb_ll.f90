@@ -1809,7 +1809,7 @@
 !*       0.     DECLARATIONS
 !               ------------
 !
-  USE MODE_ll
+  USE MODE_TOOLS_ll, only: LWEST_ll, LEAST_ll
   !
   IMPLICIT NONE
   !
@@ -1846,7 +1846,7 @@
 !*       0.     DECLARATIONS
 !               ------------
 !
-  USE MODE_ll
+  USE MODE_TOOLS_ll, only: LNORTH_ll, LSOUTH_ll
   !
   IMPLICIT NONE
   !
