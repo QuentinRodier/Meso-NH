@@ -6,11 +6,12 @@
 ! Modifications:
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_FILE_ADD2LIST
 !  P. Wautelet 10/04/2019: use IO_Err_handle_nc4 to handle netCDF errors
+!  P. Wautelet 25/06/2019: add support for 3D integer arrays
 !-----------------------------------------------------------------
 MODULE mode_util
   USE MODD_IO,         ONLY: TFILE_ELT
   USE MODD_NETCDF,     ONLY: DIMCDF, CDFINT
-  USE MODD_PARAMETERS, ONLY: NLFIMAXCOMMENTLENGTH, NMNHNAMELGTMAX
+  USE MODD_PARAMETERS, ONLY: JPVEXT, NLFIMAXCOMMENTLENGTH, NMNHNAMELGTMAX
   use modd_precision,  only: LFIINT
 
   USE MODE_FIELD
@@ -687,14 +688,15 @@ END DO
     INTEGER(KIND=CDFINT),DIMENSION(NF90_MAX_VAR_DIMS) :: IDIMLEN
     logical,dimension(knaf)                  :: gtimedep_in, gtimedep_out
 
-    CHARACTER(LEN=:),       ALLOCATABLE :: YTAB0D
-    INTEGER,DIMENSION(:),   ALLOCATABLE :: ITAB1D, ITAB1D2
-    INTEGER,DIMENSION(:,:), ALLOCATABLE :: ITAB2D, ITAB2D2
-    LOGICAL,DIMENSION(:),   ALLOCATABLE :: GTAB1D
-    REAL,DIMENSION(:),      ALLOCATABLE :: XTAB1D, XTAB1D2
-    REAL,DIMENSION(:,:),    ALLOCATABLE :: XTAB2D, XTAB2D2
-    REAL,DIMENSION(:,:,:),  ALLOCATABLE :: XTAB3D, XTAB3D2
-    REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: XTAB4D, XTAB4D2
+    CHARACTER(LEN=:),            ALLOCATABLE :: YTAB0D
+    INTEGER, DIMENSION(:),       ALLOCATABLE :: ITAB1D, ITAB1D2
+    INTEGER, DIMENSION(:,:),     ALLOCATABLE :: ITAB2D, ITAB2D2
+    INTEGER, DIMENSION(:,:,:),   ALLOCATABLE :: ITAB3D, ITAB3D2
+    LOGICAL, DIMENSION(:),       ALLOCATABLE :: GTAB1D
+    REAL,    DIMENSION(:),       ALLOCATABLE :: XTAB1D, XTAB1D2
+    REAL,    DIMENSION(:,:),     ALLOCATABLE :: XTAB2D, XTAB2D2
+    REAL,    DIMENSION(:,:,:),   ALLOCATABLE :: XTAB3D, XTAB3D2
+    REAL,    DIMENSION(:,:,:,:), ALLOCATABLE :: XTAB4D, XTAB4D2
     TYPE(DATE_TIME)                     :: TZDATE
 
 
@@ -742,6 +744,10 @@ END DO
           ALLOCATE(ITAB2D(IDIMLEN(1),IDIMLEN(2)))
           IF (tpreclist(ji)%calc) ALLOCATE(ITAB2D2(IDIMLEN(1),IDIMLEN(2)))
           CALL IO_Field_read(INFILES(1)%TFILE,tpreclist(ISRC)%TFIELD,ITAB2D)
+        CASE (3)
+          ALLOCATE(ITAB3D(IDIMLEN(1),IDIMLEN(2),IDIMLEN(3)))
+          IF (tpreclist(ji)%calc) ALLOCATE(ITAB3D2(IDIMLEN(1),IDIMLEN(2),IDIMLEN(3)))
+          CALL IO_Field_read(INFILES(1)%TFILE,tpreclist(ISRC)%TFIELD,ITAB3D)
         CASE DEFAULT
           CALL PRINT_MSG(NVERB_WARNING,'IO','fill_files','too many dimensions for ' &
                          //TRIM(tpreclist(ISRC)%name)//' => ignored')
@@ -762,6 +768,9 @@ END DO
           CASE (2)
             CALL IO_Field_read(INFILES(1)%TFILE,tpreclist(ISRC)%TFIELD,ITAB2D2)
             ITAB2D(:,:) = ITAB2D(:,:) + ITAB2D2(:,:)
+          CASE (3)
+            CALL IO_Field_read(INFILES(1)%TFILE,tpreclist(ISRC)%TFIELD,ITAB3D2)
+            ITAB3D(:,:,:) = ITAB3D(:,:,:) + ITAB3D2(:,:,:)
           END SELECT
         END DO
 
@@ -779,6 +788,10 @@ END DO
           CALL IO_Field_write(outfiles(idx)%TFILE,tpreclist(ji)%TFIELD,ITAB2D)
           DEALLOCATE(ITAB2D)
           IF (tpreclist(ji)%calc) DEALLOCATE(ITAB2D2)
+        CASE (3)
+          CALL IO_Field_write(outfiles(idx)%TFILE,tpreclist(ji)%TFIELD,ITAB3D)
+          DEALLOCATE(ITAB3D)
+          IF (tpreclist(ji)%calc) DEALLOCATE(ITAB3D2)
         END SELECT
 
 
