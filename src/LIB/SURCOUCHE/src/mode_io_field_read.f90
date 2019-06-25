@@ -14,6 +14,7 @@
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 12/04/2019: use MNHTIME for time measurement variables
 !  P. Wautelet 26/04/2019: use modd_precision parameters for datatypes of MPI communications
+!  P. Wautelet 25/06/2019: added IO_Field_read for 3D integer arrays (IO_Field_read_byname_N3 and IO_Field_read_byfield_N3)
 !-----------------------------------------------------------------
 
 MODULE MODE_IO_FIELD_READ
@@ -41,7 +42,7 @@ INTERFACE IO_Field_read
                     IO_Field_read_byname_X4, IO_Field_read_byname_X5,  &
                     IO_Field_read_byname_X6,                           &
                     IO_Field_read_byname_N0, IO_Field_read_byname_N1,  &
-                    IO_Field_read_byname_N2,                           &
+                    IO_Field_read_byname_N2, IO_Field_read_byname_N3,  &
                     IO_Field_read_byname_L0, IO_Field_read_byname_L1,  &
                     IO_Field_read_byname_C0,                           &
                     IO_Field_read_byname_T0,                           &
@@ -50,7 +51,7 @@ INTERFACE IO_Field_read
                     IO_Field_read_byfield_X4,IO_Field_read_byfield_X5, &
                     IO_Field_read_byfield_X6,                          &
                     IO_Field_read_byfield_N0,IO_Field_read_byfield_N1, &
-                    IO_Field_read_byfield_N2,                          &
+                    IO_Field_read_byfield_N2,IO_Field_read_byfield_N3, &
                     IO_Field_read_byfield_L0,IO_Field_read_byfield_L1, &
                     IO_Field_read_byfield_C0,                          &
                     IO_Field_read_byfield_T0
@@ -1466,6 +1467,129 @@ IF (IRESP==-111) IRESP = 0 !-111 is not really an error (metadata has changed)
 IF (PRESENT(KRESP)) KRESP = IRESP
 !
 END SUBROUTINE IO_Field_read_byfield_N2
+
+
+SUBROUTINE IO_Field_read_byname_N3(TPFILE,HNAME,KFIELD,KRESP)
+!
+TYPE(TFILEDATA),         INTENT(IN)    :: TPFILE
+CHARACTER(LEN=*),        INTENT(IN)    :: HNAME    ! name of the field to write
+INTEGER,DIMENSION(:,:,:),INTENT(INOUT) :: KFIELD   ! array containing the data field
+INTEGER,OPTIONAL,        INTENT(OUT)   :: KRESP    ! return-code
+!
+INTEGER :: ID    ! Index of the field
+INTEGER :: IRESP ! return_code
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_byname_N3',TRIM(TPFILE%CNAME)//': reading '//TRIM(HNAME))
+!
+CALL FIND_FIELD_ID_FROM_MNHNAME(HNAME,ID,IRESP)
+!
+IF(IRESP==0) CALL IO_Field_read(TPFILE,TFIELDLIST(ID),KFIELD,IRESP)
+!
+IF (PRESENT(KRESP)) KRESP = IRESP
+!
+END SUBROUTINE IO_Field_read_byname_N3
+
+SUBROUTINE IO_Field_read_byfield_N3(TPFILE,TPFIELD,KFIELD,KRESP)
+!
+USE MODD_IO,            ONLY: GSMONOPROC, ISP, LPACK, L1D, L2D
+USE MODD_PARAMETERS_ll, ONLY: JPHEXT
+USE MODD_TIMEZ,         ONLY: TIMEZ
+!
+USE MODE_ALLOCBUFFER_ll
+USE MODE_SCATTER_ll
+!
+TYPE(TFILEDATA),                INTENT(IN)    :: TPFILE
+TYPE(TFIELDDATA),               INTENT(INOUT) :: TPFIELD
+INTEGER,DIMENSION(:,:,:),TARGET,INTENT(INOUT) :: KFIELD   ! array containing the data field
+INTEGER, OPTIONAL,              INTENT(OUT)   :: KRESP    ! return-code
+!
+INTEGER                           :: IERR
+INTEGER,DIMENSION(:,:,:),POINTER  :: IFIELDP
+LOGICAL                           :: GALLOC
+INTEGER                           :: IRESP
+INTEGER                           :: IHEXTOT
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_byfield_N3',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
+!
+GALLOC = .FALSE.
+IRESP = 0
+IFIELDP => NULL()
+!
+IHEXTOT = 2*JPHEXT+1
+CALL IO_File_read_check(TPFILE,'IO_Field_read_byfield_N3',IRESP)
+!
+IF (IRESP==0) THEN
+  IF (GSMONOPROC) THEN ! sequential execution
+    IF (LPACK .AND. L1D .AND. SIZE(KFIELD,1)==IHEXTOT .AND. SIZE(KFIELD,2)==IHEXTOT) THEN
+      IFIELDP=>KFIELD(JPHEXT+1:JPHEXT+1,JPHEXT+1:JPHEXT+1,:)
+    ELSE IF (LPACK .AND. L2D .AND. SIZE(KFIELD,2)==IHEXTOT) THEN
+      IFIELDP=>KFIELD(:,JPHEXT+1:JPHEXT+1,:)
+    ELSE
+      IFIELDP=>KFIELD(:,:,:)
+    END IF
+    IF (TPFILE%CFORMAT=='NETCDF4') THEN
+      CALL IO_Field_read_nc4(TPFILE,TPFIELD,IFIELDP,IRESP)
+    ELSE IF (TPFILE%CFORMAT=='LFI') THEN
+      CALL IO_Field_read_lfi(TPFILE,TPFIELD,IFIELDP,IRESP)
+    ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
+      CALL IO_Field_read_nc4(TPFILE,TPFIELD,IFIELDP,IRESP)
+    END IF
+    IF (LPACK .AND. L1D .AND. SIZE(KFIELD,1)==IHEXTOT .AND. SIZE(KFIELD,2)==IHEXTOT) THEN
+      KFIELD(:,:,:)=SPREAD(SPREAD(KFIELD(JPHEXT+1,JPHEXT+1,:),DIM=1,NCOPIES=IHEXTOT),DIM=2,NCOPIES=IHEXTOT)
+    ELSE IF (LPACK .AND. L2D .AND. SIZE(KFIELD,2)==IHEXTOT) THEN
+      KFIELD(:,:,:)=SPREAD(KFIELD(:,JPHEXT+1,:),DIM=2,NCOPIES=IHEXTOT)
+    END IF
+  ELSE
+    IF (ISP == TPFILE%NMASTER_RANK)  THEN
+      ! I/O process case
+      CALL ALLOCBUFFER_ll(IFIELDP,KFIELD,TPFIELD%CDIR,GALLOC)
+      IF (TPFILE%CFORMAT=='NETCDF4') THEN
+         CALL IO_Field_read_nc4(TPFILE,TPFIELD,IFIELDP,IRESP)
+      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
+         CALL IO_Field_read_lfi(TPFILE,TPFIELD,IFIELDP,IRESP)
+      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
+        CALL IO_Field_read_nc4(TPFILE,TPFIELD,IFIELDP,IRESP)
+      END IF
+    ELSE
+      !Not really necessary but useful to suppress alerts with Valgrind
+      ALLOCATE(IFIELDP(0,0,0))
+      GALLOC = .TRUE.
+    END IF
+    !
+    CALL MPI_BCAST(IRESP,1,MNHINT_MPI,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
+    !
+    !Broadcast header only if IRESP==-111
+    !because metadata of field has been modified in IO_Field_read_xxx
+    IF (IRESP==-111) CALL IO_Field_metadata_bcast(TPFILE,TPFIELD)
+    !
+    IF (TPFIELD%CDIR == 'XX' .OR. TPFIELD%CDIR == 'YY') THEN
+      ! XX or YY Scatter Field
+      CALL SCATTER_XXFIELD(TPFIELD%CDIR,IFIELDP,KFIELD,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
+      ! Broadcast Field
+      CALL MPI_BCAST(KFIELD,SIZE(KFIELD),MNHREAL_MPI,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
+    ELSE IF (TPFIELD%CDIR == 'XY') THEN
+      IF (LPACK .AND. L2D) THEN
+        ! 2D compact case
+        CALL SCATTER_XXFIELD('XX',IFIELDP(:,1,:),KFIELD(:,JPHEXT+1,:),TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
+        KFIELD(:,:,:) = SPREAD(KFIELD(:,JPHEXT+1,:),DIM=2,NCOPIES=IHEXTOT)
+      ELSE
+        ! XY Scatter Field
+        CALL SCATTER_XYFIELD(IFIELDP,KFIELD,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
+      END IF
+    ELSE
+      IF (ISP == TPFILE%NMASTER_RANK) KFIELD = IFIELDP
+      CALL MPI_BCAST(KFIELD,SIZE(KFIELD),MNHINT_MPI,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
+    END IF
+  END IF
+END IF
+!
+IF (GALLOC) DEALLOCATE (IFIELDP)
+!
+IF (IRESP==-111) IRESP = 0 !-111 is not really an error (metadata has changed)
+!
+IF (PRESENT(KRESP)) KRESP = IRESP
+!
+END SUBROUTINE IO_Field_read_byfield_N3
 
 
 SUBROUTINE IO_Field_read_byname_L0(TPFILE,HNAME,OFIELD,KRESP)

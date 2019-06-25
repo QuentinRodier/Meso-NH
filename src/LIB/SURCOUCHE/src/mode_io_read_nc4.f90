@@ -11,6 +11,7 @@
 !  P. Wautelet 10/01/2019: replace handle_err by IO_Err_handle_nc4 for better netCDF error messages
 !  P. Wautelet 21/02/2019: bugfix: intent of read fields: OUT->INOUT to keep initial value if not found in file
 !  P. Wautelet 05/03/2019: rename IO subroutines and modules
+!  P. Wautelet 25/06/2019: added IO_Field_read for 3D integer arrays (IO_Field_read_nc4_N3)
 !-----------------------------------------------------------------
 #if defined(MNH_IOCDF4)
 module mode_io_read_nc4
@@ -39,7 +40,7 @@ INTERFACE IO_Field_read_nc4
                     IO_Field_read_nc4_X4,IO_Field_read_nc4_X5, &
                     IO_Field_read_nc4_X6,                      &
                     IO_Field_read_nc4_N0,IO_Field_read_nc4_N1, &
-                    IO_Field_read_nc4_N2,                      &
+                    IO_Field_read_nc4_N2,IO_Field_read_nc4_N3, &
                     IO_Field_read_nc4_L0,IO_Field_read_nc4_L1, &
                     IO_Field_read_nc4_C0,                      &
                     IO_Field_read_nc4_T0
@@ -967,6 +968,77 @@ END IF
 KRESP = IRESP
 
 END SUBROUTINE IO_Field_read_nc4_N2
+
+SUBROUTINE IO_Field_read_nc4_N3(TPFILE, TPFIELD, KFIELD, KRESP)
+TYPE(TFILEDATA),           INTENT(IN)    :: TPFILE
+TYPE(TFIELDDATA),          INTENT(INOUT) :: TPFIELD
+INTEGER, DIMENSION(:,:,:), INTENT(INOUT) :: KFIELD
+INTEGER,                   INTENT(OUT)   :: KRESP  ! return-code
+
+INTEGER(KIND=CDFINT)                              :: STATUS
+INTEGER(KIND=CDFINT)                              :: INCID
+INTEGER(KIND=CDFINT)                              :: IVARID
+INTEGER(KIND=CDFINT)                              :: ITYPE   ! variable type
+INTEGER(KIND=CDFINT)                              :: IDIMS   ! number of dimensions
+INTEGER(KIND=CDFINT),DIMENSION(NF90_MAX_VAR_DIMS) :: IVDIMS
+CHARACTER(LEN=30)                                 :: YVARNAME
+INTEGER(KIND=CDFINT),DIMENSION(3)                 :: IDIMLEN
+INTEGER                                           :: IRESP
+
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_nc4_N3',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
+
+IRESP = 0
+! Get the Netcdf file ID
+INCID = TPFILE%NNCID
+
+CALL IO_Mnhname_clean(TPFIELD%CMNHNAME,YVARNAME)
+
+! Get variable ID, NDIMS and TYPE
+STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
+IF (STATUS /= NF90_NOERR) THEN
+  CALL IO_Err_handle_nc4(status,'IO_Field_read_nc4_N3','NF90_INQ_VARID',TRIM(YVARNAME),IRESP)
+  GOTO 1000
+END IF
+STATUS = NF90_INQUIRE_VARIABLE(INCID, IVARID, XTYPE=ITYPE, NDIMS=IDIMS, DIMIDS=IVDIMS)
+IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_read_nc4_N3','NF90_INQUIRE_VARIABLE',TRIM(YVARNAME))
+
+!Neglect the time dimension (of size 1)
+IF (TPFIELD%LTIMEDEP) IDIMS=IDIMS-1
+
+!NF90_INT1 is for the case a boolean was written
+IF (IDIMS == SIZE(SHAPE(KFIELD)) .AND. (ITYPE == NF90_INT .OR. ITYPE == NF90_INT64 .OR. ITYPE == NF90_INT1) ) THEN
+  ! Check size of variable before reading
+  STATUS = NF90_INQUIRE_DIMENSION(INCID, IVDIMS(1), LEN=IDIMLEN(1))
+  IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_read_nc4_N3','NF90_INQUIRE_DIMENSION',TRIM(YVARNAME))
+  STATUS = NF90_INQUIRE_DIMENSION(INCID, IVDIMS(2), LEN=IDIMLEN(2))
+  IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_read_nc4_N3','NF90_INQUIRE_DIMENSION',TRIM(YVARNAME))
+  STATUS = NF90_INQUIRE_DIMENSION(INCID, IVDIMS(3), LEN=IDIMLEN(3))
+  IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_read_nc4_N3','NF90_INQUIRE_DIMENSION',TRIM(YVARNAME))
+
+  IF (IDIMLEN(1) == SIZE(KFIELD,1) .AND. IDIMLEN(2) == SIZE(KFIELD,2) .AND. IDIMLEN(3) == SIZE(KFIELD,3)) THEN
+    ! Read variable
+    STATUS = NF90_GET_VAR(INCID, IVARID, KFIELD)
+    IF (STATUS /= NF90_NOERR) THEN
+      CALL IO_Err_handle_nc4(status,'IO_Field_read_nc4_N3','NF90_GET_VAR',TRIM(YVARNAME),IRESP)
+      GOTO 1000
+    END IF
+    ! Read and check attributes of variable
+    CALL IO_Field_attr_read_check_nc4(TPFILE,TPFIELD,IVARID,IRESP)
+  ELSE
+    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Field_read_nc4_N3',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)// &
+                                                           ' not read (wrong size)')
+    IRESP = -3
+  END IF
+ELSE
+  CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Field_read_nc4_N3',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)// &
+                                                         ' not read (wrong number of dimensions or wrong type)')
+  IRESP = -3
+END IF
+
+1000 CONTINUE
+KRESP = IRESP
+
+END SUBROUTINE IO_Field_read_nc4_N3
 
 SUBROUTINE IO_Field_read_nc4_L0(TPFILE, TPFIELD, OFIELD, KRESP)
 TYPE(TFILEDATA),  INTENT(IN)    :: TPFILE

@@ -9,6 +9,7 @@
 !  P. Wautelet 14/12/2018: split fmreadwrit.f90
 !  P. Wautelet 21/02/2019: bugfix: intent of read fields: OUT->INOUT to keep initial value if not found in file
 !  P. Wautelet 05/03/2019: rename IO subroutines and modules
+!  P. Wautelet 25/06/2019: added IO_Field_read for 3D integer arrays (IO_Field_read_lfi_N3)
 !-----------------------------------------------------------------
 module mode_io_read_lfi
 !
@@ -34,7 +35,7 @@ INTERFACE IO_Field_read_lfi
                     IO_Field_read_lfi_X4, IO_Field_read_lfi_X5, &
                     IO_Field_read_lfi_X6,                       &
                     IO_Field_read_lfi_N0, IO_Field_read_lfi_N1, &
-                    IO_Field_read_lfi_N2,                       &
+                    IO_Field_read_lfi_N2, IO_Field_read_lfi_N3, &
                     IO_Field_read_lfi_L0, IO_Field_read_lfi_L1, &
                     IO_Field_read_lfi_C0,                       &
                     IO_Field_read_lfi_T0
@@ -385,6 +386,40 @@ KRESP=IRESP
 IF (ALLOCATED(IWORK)) DEALLOCATE(IWORK)
 !
 END SUBROUTINE IO_Field_read_lfi_N2
+!
+!
+SUBROUTINE IO_Field_read_lfi_N3(TPFILE,TPFIELD,KFIELD,KRESP)
+USE MODE_MSG
+!
+IMPLICIT NONE
+!
+!*      0.1   Declarations of arguments
+!
+TYPE(TFILEDATA),         INTENT(IN)    :: TPFILE
+TYPE(TFIELDDATA),        INTENT(INOUT) :: TPFIELD
+INTEGER,DIMENSION(:,:,:),INTENT(INOUT) :: KFIELD  ! array containing the data field
+INTEGER,                 INTENT(OUT)   :: KRESP   ! return-code if problems occured
+!
+!*      0.2   Declarations of local variables
+!
+INTEGER(KIND=LFIINT)                     :: IRESP,ITOTAL
+INTEGER                                  :: ILENG
+INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
+LOGICAL                                  :: GGOOD
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_lfi_N3',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
+!
+ILENG = SIZE(KFIELD)
+!
+CALL IO_Field_read_check_lfi(TPFILE,TPFIELD,ILENG,IWORK,ITOTAL,IRESP,GGOOD)
+!
+IF (GGOOD) KFIELD(:,:,:) = RESHAPE(IWORK(IWORK(2)+3:),SHAPE(KFIELD))
+!
+KRESP=IRESP
+!
+IF (ALLOCATED(IWORK)) DEALLOCATE(IWORK)
+!
+END SUBROUTINE IO_Field_read_lfi_N3
 !
 !
 SUBROUTINE IO_Field_read_lfi_L0(TPFILE,TPFIELD,OFIELD,KRESP)
