@@ -873,7 +873,6 @@ IF (KMI == 1) THEN
   NHTURBSV = 0
   NCHEMSV  = 0
   NNEGASV  = 0
-  NDEPOSV  = 0
   NDEPOTRSV  = 0
 !
 !
