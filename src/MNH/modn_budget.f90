@@ -313,7 +313,7 @@ NAMELIST/NAM_BU_RSV/ LBU_RSV, NASSESV, NNESTSV, NADVSV, NFRCSV, &
                      NDEPSQS, NAGGSQS, NAUTSQS, NRIMQS, NACCQS, NCMELQS, NWETGQS,          &
                      NDRYGQS, NNIISQS, NSEDIQS, NNEUTQS,                                   &
                      NDEPGQG, NRIMQG, NACCQG, NCMELQG, NCFRZQG, NWETGQG, NDRYGQG,          &
-                     NGMLTQG, NINDQG, NSEDIQG, NNEUTQG,NDEPOSV,NDEPOTRSV
+                     NGMLTQG, NINDQG, NSEDIQG, NNEUTQG, NDEPOTRSV
 ! must add budget for hail
 !
 END MODULE MODN_BUDGET

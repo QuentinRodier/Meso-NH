@@ -555,7 +555,6 @@ INTEGER, SAVE :: NDIFSV     ! numerical diffusion
 INTEGER, SAVE :: NRELSV     ! relaxation
 INTEGER, SAVE :: NDCONVSV   !  Deep CONVection
 INTEGER, SAVE :: NMAFLSV    ! mass flux            
-INTEGER, SAVE :: NDEPOSV    ! deposition on the ground
 INTEGER, SAVE :: NDEPOTRSV  ! deposition on tree    
 INTEGER, SAVE :: NHTURBSV   ! horizontal turbulence
 INTEGER, SAVE :: NVTURBSV   ! vertical turbulence
