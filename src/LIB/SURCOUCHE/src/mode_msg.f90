@@ -8,6 +8,7 @@
 ! Modifications:
 !  P. Wautelet 27/02/2019: module extracted from mode_io.f90
 !  P. Wautelet 04/04/2019: force write on stderr for all processes in print_msg if abort
+!  P. Wautelet 02/07/2019: flush messages also for files opened with newunit (logical unit can be negative)
 !-----------------------------------------------------------------
 MODULE MODE_MSG
 !
@@ -114,11 +115,11 @@ IF (KVERB<=IABORTLEVEL) THEN
   WRITE(UNIT=ERROR_UNIT,FMT="(A8,': ',A9,A30,A)") ADJUSTL(YPRC),YPRE,YSUBR,HMSG
   WRITE(UNIT=ERROR_UNIT,FMT="(A8,': ',A)")        ADJUSTL(YPRC),'ABORT asked by application '//TRIM(CPROGRAM)
 #if 0
-  !Problem: loop dependency between MODE_MSG and MODE_IO_FILE (IO_File_close call PRINT_MSG)
+  !Problem: loop dependency between MODE_MSG and MODE_FM (IO_FILE_CLOSE_ll call PRINT_MSG)
   NIO_VERB = 0 !To not get further messages (ABORT should be the last for readability)
-  IF (ILU>0) CALL IO_File_close(TFILE_OUTPUTLISTING) !To flush it
+  IF ( ILU /= -1 ) CALL IO_FILE_CLOSE_ll(TFILE_OUTPUTLISTING) !To flush it
 #else
-  IF (ILU>0) FLUSH(UNIT=ILU) !OK in F2003
+  IF ( ILU /= -1 ) FLUSH(UNIT=ILU) !OK in F2003
   IF (ASSOCIATED(TLUOUT0)) FLUSH(UNIT=TLUOUT0%NLU)
 #endif
   !Add a sleep to ensure that the process(es) that have to write to stderr and to file
