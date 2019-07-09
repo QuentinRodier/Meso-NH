@@ -17,5 +17,4 @@ ${POSTRUN} display visu_LIMA.000003.png
 ${POSTRUN} display visu_LIMA.000004.png
 ${POSTRUN} display visu_LIMA.000005.png
 ${POSTRUN} display visu_LIMA.000006.png
-${POSTRUN} display visu_LIMA.000007.png
 exit 0
