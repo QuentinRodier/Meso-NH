@@ -240,6 +240,7 @@ END MODULE MODI_RAIN_ICE
 !!      J.Escobar : 8/2018 : for real*4 , bis => limit exp() in RAIN_ICE_SLOW with XMNH_HUGE_12_LOG
 !!      P.Wautelet 01/02/2019: add missing initialization for PFPR
 !!                   02/2019 C.Lac add rain fraction as an output field
+!!      J.Escobar 09/07/2019 : for reproductiblity MPPDB_CHECK , add missing LCHECK test in ZRHODJ de/allocate
 !
 !*       0.    DECLARATIONS
 !              ------------
@@ -615,7 +616,7 @@ IF( IMICRO >= 0 ) THEN
     ALLOCATE(ZZW1(IMICRO,6))
   ENDIF
 !
-  IF (LBU_ENABLE .OR. LLES_CALL) THEN
+  IF (LBU_ENABLE .OR. LLES_CALL .OR. LCHECK ) THEN
     ALLOCATE(ZRHODJ(IMICRO))
     ZRHODJ(:) = PACK( PRHODJ(:,:,:),MASK=GMICRO(:,:,:) )
   END IF
@@ -940,7 +941,7 @@ IF( IMICRO >= 0 ) THEN
   DEALLOCATE(ZPRES)
   DEALLOCATE(ZRHODREF)
   DEALLOCATE(ZZT)
-  IF(LBU_ENABLE .OR. LLES_CALL) DEALLOCATE(ZRHODJ)
+  IF(LBU_ENABLE .OR. LLES_CALL .OR. LCHECK ) DEALLOCATE(ZRHODJ)
   DEALLOCATE(ZTHS)
   DEALLOCATE(ZTHT)
   DEALLOCATE(ZTHLT)

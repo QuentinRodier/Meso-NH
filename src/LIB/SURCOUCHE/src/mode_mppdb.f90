@@ -14,6 +14,7 @@ MODULE MODE_MPPDB
 !  Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
 !  Philippe Wautelet: 22/01/2019: use standard FLUSH statement instead of non standard intrinsics
 !  Philippe Wautelet: 22/01/2019: use sleep_c subroutine instead of non-standard call system
+!  Juan Escobar     : 09/07/2019: Bug, in MPPDB_CHECK_SURFEX3D , recompute IKSIZE_ll for local 0 size array
 !
   use ISO_FORTRAN_ENV, only: OUTPUT_UNIT
   use modi_tools_c
@@ -898,7 +899,7 @@ CONTAINS
     USE MODI_GET_SURF_MASK_n
     USE MODD_IO_SURF_MNH, ONLY : NHALO
     USE MODD_CONFZ     , ONLY : MPI_BUFFER_SIZE
-    USE MODD_MPIF      , ONLY : MPI_INTEGER, MPI_STATUS_IGNORE, MPI_SUM
+    USE MODD_MPIF      , ONLY : MPI_INTEGER, MPI_STATUS_IGNORE, MPI_SUM , MPI_MAX
     USE MODD_MNH_SURFEX_n
 !
     IMPLICIT NONE
@@ -917,23 +918,25 @@ CONTAINS
     INTEGER                              :: IIU,IJU,IKU
     INTEGER                              :: KXOR, KYOR, KXEND, KYEND  ! origin and end of the local physical subdomain
     INTEGER                              :: II,IJ,IK
-    INTEGER, ALLOCATABLE, DIMENSION(:)       :: KMASK
+    INTEGER, ALLOCATABLE, DIMENSION(:)   :: KMASK
     INTEGER                              :: KSIZE
     INTEGER                              :: KSIZEBUF
     INTEGER                              :: KSIZE_FULL
     INTEGER                              :: IGLBSIZEPTAB
     INTEGER                              :: INBSLICES
     INTEGER                              :: IINFO_ll
+    INTEGER                              :: IKSIZE_ll
     !
     IF ( ( .NOT. MPPDB_INITIALIZED ) ) RETURN
     CALL MPI_ALLREDUCE(SIZE(PTAB), IGLBSIZEPTAB, 1,MPI_INTEGER, MPI_SUM, MPPDB_INTRA_COMM, IINFO_ll)
     IF ( IGLBSIZEPTAB == 0 ) RETURN
+    CALL MPI_ALLREDUCE(SIZE(PTAB,2),IKSIZE_ll, 1,MPI_INTEGER, MPI_MAX, MPPDB_INTRA_COMM, IINFO_ll)
     !
     IF ( SIZE(PTAB) == 0 ) THEN   !if the local size of the field is 0, we need to define ZFIELD3D filled with default value 1e20
       CALL GET_INDICE_ll( KXOR, KYOR, KXEND, KYEND )
       IIU = KXEND-KXOR+1+2*JPHEXT
       IJU = KYEND-KYOR+1+2*JPHEXT
-      IKU = KZSIZE
+      IKU = IKSIZE_ll
       ALLOCATE(ZFIELD3D(IIU,IJU,IKU))
       ZFIELD3D = 1.E20
     ELSE
