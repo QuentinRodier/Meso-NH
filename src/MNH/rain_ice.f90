@@ -243,12 +243,14 @@ END MODULE MODI_RAIN_ICE
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !  P. Wautelet 29/05/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
+!  J. Escobar  09/07/2019: for reproductiblity MPPDB_CHECK, add missing LCHECK test in ZRHODJ de/allocate
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
 use MODD_BUDGET,         only: LBU_ENABLE, LBUDGET_RC, LBUDGET_RG, LBUDGET_RH, LBUDGET_RI, &
                                LBUDGET_RR, LBUDGET_RS, LBUDGET_RV, LBUDGET_TH
+use MODD_CONF,           only: LCHECK
 use MODD_CST,            only: XCI, XCL, XCPD, XCPV, XLSTT, XLVTT, XTT, &
                                XALPI, XBETAI, XGAMI, XMD, XMV, XTT
 use MODD_LES,            only: LLES_CALL
@@ -576,7 +578,7 @@ IF( IMICRO >= 0 ) THEN
     ALLOCATE(ZZW1(IMICRO,6))
   ENDIF
 !
-  IF (LBU_ENABLE .OR. LLES_CALL) THEN
+  IF (LBU_ENABLE .OR. LLES_CALL .OR. LCHECK ) THEN
     ALLOCATE(ZRHODJ(IMICRO))
     DO JL=1,IMICRO
       ZRHODJ(JL) = PRHODJ(I1(JL),I2(JL),I3(JL))
@@ -903,7 +905,7 @@ IF( IMICRO >= 0 ) THEN
   DEALLOCATE(ZPRES)
   DEALLOCATE(ZRHODREF)
   DEALLOCATE(ZZT)
-  IF(LBU_ENABLE .OR. LLES_CALL) DEALLOCATE(ZRHODJ)
+  DEALLOCATE(ZRHODJ)
   DEALLOCATE(ZTHS)
   DEALLOCATE(ZTHT)
   DEALLOCATE(ZTHLT)

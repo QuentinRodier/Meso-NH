@@ -77,6 +77,7 @@ END MODULE MODI_BUDGET
 !!      V. Masson   06/10/02  add LES budgets
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      J.Escobar : 09/07/2019 : for bit reproductiblity use MPPDB_CHECK with PRECISION=0.0 error
 !!      
 !-------------------------------------------------------------------------------
 !
@@ -117,18 +118,15 @@ INTEGER  :: IRESP   ! Return code of FM-routines
 REAL     :: ZTIME1  ! CPU time counter
 REAL     :: ZTIME2  ! CPU time counter
 !
-REAL     :: XPRECISION ! for reproductibility checks
-
 !-------------------------------------------------------------------------------
 !
 !* Reproductivity checks
 !  Warning: requires an adaptation of the makefile in order to run two runs in
 !  parallel for comparison
 !
-XPRECISION = 1E-10
 IF (LCHECK) THEN
   print*,'BUDGET :',HBUVAR
-  CALL MPPDB_CHECK3D(PVARS,HBUVAR,XPRECISION)
+  CALL MPPDB_CHECK3D(PVARS,HBUVAR,PRECISION)
 END IF
 !
 !

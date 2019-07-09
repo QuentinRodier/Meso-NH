@@ -211,7 +211,8 @@ END MODULE MODI_NUM_DIFF
 !!     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!     J.Escobar : 05/12/2017 : Pb SegFault , correct IF(ONUMDIFTH/OZDIFFU) nesting
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
-!
+!  J. Escobar  09/07/2019: add TTZHALO2*LIST structure, to match all cases of diffusion/U/TH activation T/F
+!!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -284,6 +285,7 @@ INTEGER :: IKU
 LOGICAL     :: GTKEALLOC                 ! true if TKE arrays are not zero-sized
 !
 TYPE(HALO2LIST_ll), POINTER :: TZHALO2LIST, TZHALO2LSLIST
+TYPE(HALO2LIST_ll), TARGET  :: TTZHALO2LIST, TTZHALO2LSLIST
 !
 INTEGER :: IGRID ! localisation on the model grid
 !
@@ -301,11 +303,19 @@ GTKEALLOC = SIZE(PTKEM,1) /= 0
 !*       2.     CALL THE NUM_DIFF_ALGO ROUTINE FOR EACH FIELD
 !               ---------------------------------------------
 !
+!
+! Initialized TZHALO2*LIST%NEXT to match all case of diffusion activation T/F
+!
+TTZHALO2LIST%NEXT => TPHALO2LIST
+TTZHALO2LSLIST%NEXT => TPHALO2LSLIST
+TZHALO2LIST => TTZHALO2LIST
+TZHALO2LSLIST => TTZHALO2LSLIST
+!
 IF (ONUMDIFU) THEN
  IGRID = 2
 !!$ IF(NHALO == 1) THEN
-  TZHALO2LIST => TPHALO2LIST
-  TZHALO2LSLIST => TPHALO2LSLIST
+  TZHALO2LIST => TZHALO2LIST%NEXT
+  TZHALO2LSLIST => TZHALO2LSLIST%NEXT
   CALL NUM_DIFF_ALGO(PRUS, PUM, IGRID, MXM(PRHODJ), PDK2U, PDK4U, &
                      PLSUM,TZHALO2LIST%HALO2, TZHALO2LSLIST%HALO2)
 !!$ ELSE

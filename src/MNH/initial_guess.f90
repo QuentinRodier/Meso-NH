@@ -144,6 +144,7 @@ END MODULE MODI_INITIAL_GUESS
 !!                  20/05/06                Remove KEPS
 !!                  10/09    (C.Lac)        FIT for variables advected with PPM
 !!                  04/13    (C.Lac)        FIT for all variables 
+!!                  07/19    (J.Escobar)    add reproductiblity test => MPPDB_CHECK( PRRS/RT/RHO )
 !!
 !-------------------------------------------------------------------------------
 !
@@ -158,6 +159,7 @@ USE MODD_BLOWSNOW_n
 !
 USE MODI_SHUMAN
 USE MODI_BUDGET
+USE MODE_MPPDB
 !
 IMPLICIT NONE
 !
@@ -218,6 +220,7 @@ END IF
 DO JRR=1,KRR
   PRRS(:,:,:,JRR) = PRT(:,:,:,JRR) * ZINVTSTEP * PRHODJ(:,:,:) 
 END DO
+CALL MPPDB_CHECK3DM("initial_guess:PRRS/RT/RHO",PRECISION,PRRS(:,:,:,1) , PRT(:,:,:,1) , PRHODJ)
 !
 ! *** passive tracers
 !

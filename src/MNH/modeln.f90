@@ -256,11 +256,14 @@ END MODULE MODI_MODEL_n
 !  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
 !                          (nsubfiles_ioz is now determined in IO_File_add2list)
 !!                   02/2019 C.Lac add rain fraction as an output field
+!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 28/03/2019: use MNHTIME for time measurement variables
 !  P. Wautelet 28/03/2019: use TFILE instead of unit number for set_iluout_timing
 !  P. Wautelet 19/04/2019: removed unused dummy arguments and variables
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!  J. Escobar  09/07/2019: norme Doctor -> Rename Module Type variable TZ -> T
+!  J. Escobar  09/07/2019: for bug in management of XLSZWSM variable, add/use specific 2D TLSFIELD2D_ll pointer
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -589,10 +592,11 @@ END IF
 !
 IF (KTCOUNT == 1) THEN
 !
-  NULLIFY(TZFIELDS_ll,TZLSFIELD_ll,TZFIELDT_ll)
-  NULLIFY(TZHALO2T_ll)
-  NULLIFY(TZLSHALO2_ll)
-  NULLIFY(TZFIELDSC_ll)
+  NULLIFY(TFIELDS_ll,TLSFIELD_ll,TFIELDT_ll)
+  NULLIFY(TLSFIELD2D_ll)
+  NULLIFY(THALO2T_ll)
+  NULLIFY(TLSHALO2_ll)
+  NULLIFY(TFIELDSC_ll)
 !
   ALLOCATE(ZWT_ACT_NUC(SIZE(XWT,1),SIZE(XWT,2),SIZE(XWT,3)))
   ALLOCATE(GMASKkids(SIZE(XWT,1),SIZE(XWT,2)))
@@ -613,57 +617,57 @@ IF (KTCOUNT == 1) THEN
 !
 !                 a) Sources terms
 !
-  CALL ADD3DFIELD_ll( TZFIELDS_ll, XRUS,      'MODEL_n::XRUS' )
-  CALL ADD3DFIELD_ll( TZFIELDS_ll, XRVS,      'MODEL_n::XRVS' )
-  CALL ADD3DFIELD_ll( TZFIELDS_ll, XRWS,      'MODEL_n::XRWS' )
-  CALL ADD3DFIELD_ll( TZFIELDS_ll, XRTHS,     'MODEL_n::XRTHS' )
-  CALL ADD3DFIELD_ll( TZFIELDS_ll, XRUS_PRES, 'MODEL_n::XRUS_PRES' )
-  CALL ADD3DFIELD_ll( TZFIELDS_ll, XRVS_PRES, 'MODEL_n::XRVS_PRES' )
-  CALL ADD3DFIELD_ll( TZFIELDS_ll, XRWS_PRES, 'MODEL_n::XRWS_PRES' )
-  CALL ADD3DFIELD_ll( TZFIELDS_ll, XRTHS_CLD, 'MODEL_n::XRTHS_CLD' )
-  IF (SIZE(XRTKES,1) /= 0) CALL ADD3DFIELD_ll( TZFIELDS_ll, XRTKES, 'MODEL_n::XRTKES' )
-  CALL ADD4DFIELD_ll( TZFIELDS_ll, XRRS     (:,:,:,1:NRR), 'MODEL_n::XRRS' )
-  CALL ADD4DFIELD_ll( TZFIELDS_ll, XRRS_CLD (:,:,:,1:NRR), 'MODEL_n::XRRS_CLD' )
-  CALL ADD4DFIELD_ll( TZFIELDS_ll, XRSVS    (:,:,:,1:NSV), 'MODEL_n::XRSVS')
-  CALL ADD4DFIELD_ll( TZFIELDS_ll, XRSVS_CLD(:,:,:,1:NSV), 'MODEL_n::XRSVS_CLD')
-  IF (SIZE(XSRCT,1) /= 0) CALL ADD3DFIELD_ll( TZFIELDS_ll, XSRCT, 'MODEL_n::XSRCT' )
+  CALL ADD3DFIELD_ll( TFIELDS_ll, XRUS,      'MODEL_n::XRUS' )
+  CALL ADD3DFIELD_ll( TFIELDS_ll, XRVS,      'MODEL_n::XRVS' )
+  CALL ADD3DFIELD_ll( TFIELDS_ll, XRWS,      'MODEL_n::XRWS' )
+  CALL ADD3DFIELD_ll( TFIELDS_ll, XRTHS,     'MODEL_n::XRTHS' )
+  CALL ADD3DFIELD_ll( TFIELDS_ll, XRUS_PRES, 'MODEL_n::XRUS_PRES' )
+  CALL ADD3DFIELD_ll( TFIELDS_ll, XRVS_PRES, 'MODEL_n::XRVS_PRES' )
+  CALL ADD3DFIELD_ll( TFIELDS_ll, XRWS_PRES, 'MODEL_n::XRWS_PRES' )
+  CALL ADD3DFIELD_ll( TFIELDS_ll, XRTHS_CLD, 'MODEL_n::XRTHS_CLD' )
+  IF (SIZE(XRTKES,1) /= 0) CALL ADD3DFIELD_ll( TFIELDS_ll, XRTKES, 'MODEL_n::XRTKES' )
+  CALL ADD4DFIELD_ll( TFIELDS_ll, XRRS     (:,:,:,1:NRR), 'MODEL_n::XRRS' )
+  CALL ADD4DFIELD_ll( TFIELDS_ll, XRRS_CLD (:,:,:,1:NRR), 'MODEL_n::XRRS_CLD' )
+  CALL ADD4DFIELD_ll( TFIELDS_ll, XRSVS    (:,:,:,1:NSV), 'MODEL_n::XRSVS')
+  CALL ADD4DFIELD_ll( TFIELDS_ll, XRSVS_CLD(:,:,:,1:NSV), 'MODEL_n::XRSVS_CLD')
+  IF (SIZE(XSRCT,1) /= 0) CALL ADD3DFIELD_ll( TFIELDS_ll, XSRCT, 'MODEL_n::XSRCT' )
   !
   IF ((LNUMDIFU .OR. LNUMDIFTH .OR. LNUMDIFSV) ) THEN
   !
   !                 b) LS fields
   !
-    CALL ADD3DFIELD_ll( TZLSFIELD_ll, XLSUM,   'MODEL_n::XLSUM'   )
-    CALL ADD3DFIELD_ll( TZLSFIELD_ll, XLSVM,   'MODEL_n::XLSVM'   )
-    CALL ADD3DFIELD_ll( TZLSFIELD_ll, XLSWM,   'MODEL_n::XLSWM'   )
-    CALL ADD3DFIELD_ll( TZLSFIELD_ll, XLSTHM,  'MODEL_n::XLSTHM'  )
-    CALL ADD2DFIELD_ll( TZLSFIELD_ll, XLSZWSM, 'MODEL_n::XLSZWSM' )
+    CALL ADD3DFIELD_ll( TLSFIELD_ll, XLSUM,   'MODEL_n::XLSUM'   )
+    CALL ADD3DFIELD_ll( TLSFIELD_ll, XLSVM,   'MODEL_n::XLSVM'   )
+    CALL ADD3DFIELD_ll( TLSFIELD_ll, XLSWM,   'MODEL_n::XLSWM'   )
+    CALL ADD3DFIELD_ll( TLSFIELD_ll, XLSTHM,  'MODEL_n::XLSTHM'  )
+    CALL ADD2DFIELD_ll( TLSFIELD_ll, XLSZWSM, 'MODEL_n::XLSZWSM' )
     IF (NRR >= 1) THEN
-      CALL ADD3DFIELD_ll( TZLSFIELD_ll, XLSRVM, 'MODEL_n::XLSRVM' )
+      CALL ADD3DFIELD_ll( TLSFIELD_ll, XLSRVM, 'MODEL_n::XLSRVM' )
     ENDIF
   !
   !                 c) Fields at t
   !
-    CALL ADD3DFIELD_ll( TZFIELDT_ll, XUT,  'MODEL_n::XUT'  )
-    CALL ADD3DFIELD_ll( TZFIELDT_ll, XVT,  'MODEL_n::XVT'  )
-    CALL ADD3DFIELD_ll( TZFIELDT_ll, XWT,  'MODEL_n::XWT'  )
-    CALL ADD3DFIELD_ll( TZFIELDT_ll, XTHT, 'MODEL_n::XTHT' )
-    IF (SIZE(XRTKES,1) /= 0) CALL ADD3DFIELD_ll( TZFIELDT_ll, XTKET, 'MODEL_n::XTKET' )
-    CALL ADD4DFIELD_ll(TZFIELDT_ll, XRT (:,:,:,1:NRR), 'MODEL_n::XSV'  )
-    CALL ADD4DFIELD_ll(TZFIELDT_ll, XSVT(:,:,:,1:NSV), 'MODEL_n::XSVT' )
+    CALL ADD3DFIELD_ll( TFIELDT_ll, XUT,  'MODEL_n::XUT'  )
+    CALL ADD3DFIELD_ll( TFIELDT_ll, XVT,  'MODEL_n::XVT'  )
+    CALL ADD3DFIELD_ll( TFIELDT_ll, XWT,  'MODEL_n::XWT'  )
+    CALL ADD3DFIELD_ll( TFIELDT_ll, XTHT, 'MODEL_n::XTHT' )
+    IF (SIZE(XRTKES,1) /= 0) CALL ADD3DFIELD_ll( TFIELDT_ll, XTKET, 'MODEL_n::XTKET' )
+    CALL ADD4DFIELD_ll(TFIELDT_ll, XRT (:,:,:,1:NRR), 'MODEL_n::XSV'  )
+    CALL ADD4DFIELD_ll(TFIELDT_ll, XSVT(:,:,:,1:NSV), 'MODEL_n::XSVT' )
   !
   !*       1.5   Initialize the list of fields for the halo updates (2nd layer)
   !
     INBVAR = 4+NRR+NSV
     IF (SIZE(XRTKES,1) /= 0) INBVAR=INBVAR+1
-    CALL INIT_HALO2_ll(TZHALO2T_ll,INBVAR,IIU,IJU,IKU)
-    CALL INIT_HALO2_ll(TZLSHALO2_ll,4+MIN(1,NRR),IIU,IJU,IKU)
+    CALL INIT_HALO2_ll(THALO2T_ll,INBVAR,IIU,IJU,IKU)
+    CALL INIT_HALO2_ll(TLSHALO2_ll,4+MIN(1,NRR),IIU,IJU,IKU)
   !
   !*       1.6   Initialise the 2nd layer of the halo of the LS fields
   !
     IF ( LSTEADYLS ) THEN
-       CALL UPDATE_HALO_ll(TZLSFIELD_ll, IINFO_ll)
-       CALL DEL2DFIELD_ll(TZLSFIELD_ll,XLSZWSM,IINFO_ll) 
-       CALL UPDATE_HALO2_ll(TZLSFIELD_ll, TZLSHALO2_ll, IINFO_ll)
+       CALL UPDATE_HALO_ll(TLSFIELD_ll, IINFO_ll)
+       CALL UPDATE_HALO_ll(TLSFIELD2D_ll,IINFO_ll) 
+       CALL UPDATE_HALO2_ll(TLSFIELD_ll, TLSHALO2_ll, IINFO_ll)
     END IF
   END IF
   !
@@ -1185,11 +1189,12 @@ XTIME_LES_BU_PROCESS = 0.
 !
 IF ( LNUMDIFU .OR. LNUMDIFTH .OR. LNUMDIFSV ) THEN
 !
-  CALL UPDATE_HALO_ll(TZFIELDT_ll, IINFO_ll)
-  CALL UPDATE_HALO2_ll(TZFIELDT_ll, TZHALO2T_ll, IINFO_ll)
+  CALL UPDATE_HALO_ll(TFIELDT_ll, IINFO_ll)
+  CALL UPDATE_HALO2_ll(TFIELDT_ll, THALO2T_ll, IINFO_ll)
   IF ( .NOT. LSTEADYLS ) THEN
-     CALL UPDATE_HALO_ll(TZLSFIELD_ll, IINFO_ll)
-     CALL UPDATE_HALO2_ll(TZLSFIELD_ll, TZLSHALO2_ll, IINFO_ll)
+     CALL UPDATE_HALO_ll(TLSFIELD_ll, IINFO_ll)
+     CALL UPDATE_HALO_ll(TLSFIELD2D_ll,IINFO_ll) 
+     CALL UPDATE_HALO2_ll(TLSFIELD_ll, TLSHALO2_ll, IINFO_ll)
   END IF
   CALL NUM_DIFF ( CLBCX, CLBCY, NRR, NSV,                               &
                   XDK2U, XDK4U, XDK2TH, XDK4TH, XDK2SV, XDK4SV, IMI,    &
@@ -1197,7 +1202,7 @@ IF ( LNUMDIFU .OR. LNUMDIFTH .OR. LNUMDIFSV ) THEN
                   XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM,XRHODJ,               &
                   XRUS, XRVS, XRWS, XRTHS, XRTKES, XRRS, XRSVS,         &
                   LZDIFFU,LNUMDIFU, LNUMDIFTH, LNUMDIFSV,               &
-                  TZHALO2T_ll, TZLSHALO2_ll,XZDIFFU_HALO2      )
+                  THALO2T_ll, TLSHALO2_ll,XZDIFFU_HALO2      )
 END IF
 !
 DO JSV = NSV_CHEMBEG,NSV_CHEMEND
@@ -1922,7 +1927,7 @@ END IF
 !
 ZTIME1 = ZTIME2
 !
-CALL EXCHANGE (XTSTEP,NRR,NSV,XRHODJ,TZFIELDS_ll,     &
+CALL EXCHANGE (XTSTEP,NRR,NSV,XRHODJ,TFIELDS_ll,     &
                XRUS, XRVS,XRWS,XRTHS,XRRS,XRTKES,XRSVS)
 !
 CALL SECOND_MNH2(ZTIME2)
