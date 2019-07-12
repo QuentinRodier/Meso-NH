@@ -14,6 +14,7 @@
 !  P. Wautelet 12/04/2019: added pointers for C1D, L1D, N1D, X5D and X6D structures in TFIELDDATA
 !  P. Wautelet 06/06/2019: bug correction in FIELDLIST_GOTO_MODEL (XLSTHM was overwritten if LUSERV=.FALSE. due to wrong IF block)
 !  P. Wautelet 19/06/2019: add Fieldlist_nmodel_resize subroutine + provide KMODEL to INI_FIELD_LIST when known
+!  P. Wautelet 12/07/2019: add pointers for T1D structure in TFIELDDATA
 !-----------------------------------------------------------------
 MODULE MODE_FIELD
 !
@@ -110,6 +111,10 @@ TYPE TFIELDPTR_T0D
   TYPE(DATE_TIME),      POINTER :: DATA => NULL()
 END TYPE TFIELDPTR_T0D
 !
+TYPE TFIELDPTR_T1D
+  TYPE(DATE_TIME), DIMENSION(:), POINTER :: DATA => NULL()
+END TYPE TFIELDPTR_T1D
+!
 !Structure describing the characteristics of a field
 TYPE TFIELDDATA
   CHARACTER(LEN=NMNHNAMELGTMAX) :: CMNHNAME  = '' !Name of the field (for MesoNH, non CF convention)
@@ -159,6 +164,7 @@ TYPE TFIELDDATA
   TYPE(TFIELDPTR_X6D),DIMENSION(:),ALLOCATABLE :: TFIELD_X6D !Pointer to the real 6D fields (one per nested mesh)
   !
   TYPE(TFIELDPTR_T0D),DIMENSION(:),ALLOCATABLE :: TFIELD_T0D !Pointer to the scalar date/time fields (one per nested mesh)
+  TYPE(TFIELDPTR_T1D),DIMENSION(:),ALLOCATABLE :: TFIELD_T1D !Pointer to the date/time 1D fields (one per nested mesh)
 END TYPE TFIELDDATA
 !
 integer, save :: NMODEL_ALLOCATED

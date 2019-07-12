@@ -9,6 +9,7 @@
 !  P. Wautelet 14/12/2018: split fmreadwrit.f90
 !  P. Wautelet 11/01/2019: do not write variables with a zero size
 !  P. Wautelet 05/03/2019: rename IO subroutines and modules
+!  P. Wautelet 12/07/2019: add support for 1D array of dates
 !-----------------------------------------------------------------
 module mode_io_write_lfi
 !
@@ -37,7 +38,7 @@ INTERFACE IO_Field_write_lfi
                     IO_Field_write_lfi_N2,IO_Field_write_lfi_N3, &
                     IO_Field_write_lfi_L0,IO_Field_write_lfi_L1, &
                     IO_Field_write_lfi_C0,                       &
-                    IO_Field_write_lfi_T0
+                    IO_Field_write_lfi_T0,IO_Field_write_lfi_T1
 END INTERFACE IO_Field_write_lfi
 !
 CONTAINS
@@ -780,6 +781,97 @@ KRESP=IRESP
 IF (ALLOCATED(IWORK)) DEALLOCATE(IWORK)
 !
 END SUBROUTINE IO_Field_write_lfi_T0
+!
+SUBROUTINE IO_Field_write_lfi_T1(TPFILE,TPFIELD,TPDATA,KRESP)
+!
+USE MODD_TYPE_DATE
+!
+IMPLICIT NONE
+!
+!*      0.1   Declarations of arguments
+!
+TYPE(TFILEDATA),                INTENT(IN) :: TPFILE
+TYPE(TFIELDDATA),               INTENT(IN) :: TPFIELD
+TYPE (DATE_TIME), DIMENSION(:), INTENT(IN) :: TPDATA ! array containing the data field
+INTEGER,                        INTENT(OUT):: KRESP  ! return-code if problems araised
+!
+!*      0.2   Declarations of local variables
+!
+INTEGER                                  :: ILENG, IPOS
+INTEGER                                  :: JI
+INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
+TYPE(TFIELDDATA)                         :: TZFIELD
+INTEGER, DIMENSION(:), ALLOCATABLE       :: ITDATE    ! date array
+INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
+CHARACTER(LEN=LEN_HREC)                  :: YRECFM
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_lfi_T1','writing '//TRIM(TPFIELD%CMNHNAME))
+!
+ILENG = 3 * SIZE( TPDATA )
+!
+IF ( ILENG==0 ) THEN
+  CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_lfi_T1','ignoring variable with a zero size ('//TRIM(TPFIELD%CMNHNAME)//')')
+  KRESP = 0
+  RETURN
+END IF
+!
+ALLOCATE( ITDATE( ILENG ) )
+!
+TZFIELD = TPFIELD
+!
+! Write date
+!
+TZFIELD%CMNHNAME = TRIM(TPFIELD%CMNHNAME)//'%TDATE'
+TZFIELD%CCOMMENT = 'YYYYMMDD'
+!
+DO JI = 1, SIZE( TPDATA )
+  IPOS = 1 + 3 * ( JI - 1 )
+  ITDATE(IPOS )     = TPDATA(JI)%TDATE%YEAR
+  ITDATE(IPOS + 1 ) = TPDATA(JI)%TDATE%MONTH
+  ITDATE(IPOS + 2 ) = TPDATA(JI)%TDATE%DAY
+END DO
+!
+CALL WRITE_PREPARE(TZFIELD,ILENG,IWORK,ITOTAL,IRESP)
+!
+IF (IRESP==0) THEN
+  IWORK(LEN(TZFIELD%CCOMMENT)+3:)=ITDATE(:)
+  YRECFM=TRIM(TZFIELD%CMNHNAME)
+  IF( LEN_TRIM(TZFIELD%CMNHNAME) > LEN(YRECFM) ) &
+    CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_lfi_T1','field name was truncated to '&
+                   //YRECFM//' for '//TRIM(TZFIELD%CMNHNAME))
+  CALL LFIECR(IRESP,TPFILE%NLFIFLU,YRECFM,IWORK,ITOTAL)
+ENDIF
+!
+IF (ALLOCATED(IWORK)) DEALLOCATE(IWORK)
+!
+IF (IRESP/=0) THEN
+  KRESP = IRESP
+  RETURN
+END IF
+!
+! Write time
+!
+TZFIELD%CMNHNAME = TRIM(TPFIELD%CMNHNAME)//'%TIME'
+TZFIELD%CCOMMENT = 'SECONDS'
+ILENG = SIZE( TPDATA )
+!
+CALL WRITE_PREPARE(TZFIELD,ILENG,IWORK,ITOTAL,IRESP)
+!
+IF (IRESP==0) THEN
+  CALL TRANSFER_R_I8(TPDATA(:)%TIME,IWORK(LEN(TPFIELD%CCOMMENT)+3:))
+  YRECFM=TRIM(TZFIELD%CMNHNAME)
+  IF( LEN_TRIM(TZFIELD%CMNHNAME) > LEN(YRECFM) ) &
+    CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_lfi_T1','field name was truncated to '&
+                   //YRECFM//' for '//TRIM(TZFIELD%CMNHNAME))
+  CALL LFIECR(IRESP,TPFILE%NLFIFLU,YRECFM,IWORK,ITOTAL)
+ENDIF
+!
+KRESP=IRESP
+!
+IF (ALLOCATED(IWORK)) DEALLOCATE(IWORK)
+DEALLOCATE( ITDATE )
+!
+END SUBROUTINE IO_Field_write_lfi_T1
 !
 SUBROUTINE WRITE_PREPARE(TPFIELD,KLENG,KWORK,KTOTAL,KRESP)
 !
