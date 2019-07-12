@@ -12,6 +12,7 @@
 !  P. Wautelet 11/01/2019: NVERB_INFO->NVERB_WARNING for zero size fields
 !  P. Wautelet 01/02/2019: IO_Coordvar_write_nc4: bug: use of non-associated pointers (PIOCDF%DIM_Nx_y)
 !  P. Wautelet 05/03/2019: rename IO subroutines and modules
+!  P. Wautelet 12/07/2019: add support for 1D array of dates
 !-----------------------------------------------------------------
 #if defined(MNH_IOCDF4)
 module mode_io_write_nc4
@@ -45,7 +46,7 @@ INTERFACE IO_Field_write_nc4
                     IO_Field_write_nc4_N2,IO_Field_write_nc4_N3, &
                     IO_Field_write_nc4_L0,IO_Field_write_nc4_L1, &
                     IO_Field_write_nc4_C0,IO_Field_write_nc4_C1, &
-                    IO_Field_write_nc4_T0
+                    IO_Field_write_nc4_T0,IO_Field_write_nc4_T1
 END INTERFACE IO_Field_write_nc4
 
 integer,parameter :: NSTRINGCHUNKSIZE = 16 !Dimension of the chunks of strings
@@ -1371,7 +1372,7 @@ INTEGER(KIND=CDFINT)                 :: STATUS
 INTEGER(KIND=CDFINT)                 :: INCID
 CHARACTER(LEN=LEN(TPFIELD%CMNHNAME)) :: YVARNAME
 INTEGER(KIND=CDFINT)                 :: IVARID
-INTEGER(KIND=CDFINT), DIMENSION(1)   :: IVDIMS
+INTEGER(KIND=CDFINT), DIMENSION(:), ALLOCATABLE :: IVDIMS
 INTEGER                              :: IRESP
 TYPE(TFIELDDATA)                     :: TZFIELD
 CHARACTER(LEN=40)                    :: YUNITS
@@ -1501,6 +1502,112 @@ IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_T0',
 
 KRESP = IRESP
 END SUBROUTINE IO_Field_write_nc4_T0
+
+SUBROUTINE IO_Field_write_nc4_T1(TPFILE,TPFIELD,TPDATA,KRESP)
+!
+USE MODD_TIME_n,     ONLY: TDTMOD
+USE MODD_TYPE_DATE
+!
+USE MODE_DATETIME
+!
+TYPE(TFILEDATA),                INTENT(IN) :: TPFILE
+TYPE(TFIELDDATA),               INTENT(IN) :: TPFIELD
+TYPE (DATE_TIME), DIMENSION(:), INTENT(IN) :: TPDATA
+INTEGER,                        INTENT(OUT):: KRESP
+!
+INTEGER                              :: JI
+INTEGER(KIND=CDFINT)                 :: STATUS
+INTEGER(KIND=CDFINT)                 :: INCID
+CHARACTER(LEN=LEN(TPFIELD%CMNHNAME)) :: YVARNAME
+INTEGER(KIND=CDFINT)                 :: IVARID
+INTEGER(KIND=CDFINT), DIMENSION(:), ALLOCATABLE :: IVDIMS
+INTEGER                              :: IRESP
+TYPE(TFIELDDATA)                     :: TZFIELD
+CHARACTER(LEN=40)                    :: YUNITS
+LOGICAL                              :: GEXISTED !True if variable was already defined
+REAL, DIMENSION(:), ALLOCATABLE      :: ZDELTATIME !Distance in seconds since reference date and time
+TYPE(DATE_TIME)                      :: TZREF
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_T1',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
+!
+IRESP = 0
+!
+TZFIELD = TPFIELD
+!
+! Get the Netcdf file ID
+INCID = TPFILE%NNCID
+!
+GEXISTED = .FALSE.
+!
+CALL IO_Mnhname_clean(TPFIELD%CMNHNAME,YVARNAME)
+!
+TZFIELD%CMNHNAME = TRIM(YVARNAME)
+!
+! Model beginning date (TDTMOD%TDATE) is used as the reference date
+! Reference time is set to 0.
+IF (.NOT.ASSOCIATED(TDTMOD)) THEN
+  CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_T1',TRIM(TPFILE%CNAME)// &
+                 ': '//TRIM(TZFIELD%CMNHNAME)//': DTMOD is not associated and not known. Reference date set to 2000/01/01')
+  TZREF%TDATE%YEAR  = 2000
+  TZREF%TDATE%MONTH = 1
+  TZREF%TDATE%DAY   = 1
+  TZREF%TIME        = 0.
+ELSE
+  TZREF = TDTMOD
+  TZREF%TIME = 0.
+END IF
+WRITE(YUNITS,'( "seconds since ",I4.4,"-",I2.2,"-",I2.2," 00:00:00 +0:00" )') &
+      TZREF%TDATE%YEAR, TZREF%TDATE%MONTH, TZREF%TDATE%DAY
+TZFIELD%CUNITS = TRIM(YUNITS)
+!
+IF (TPFIELD%LTIMEDEP) &
+  CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_T1',TRIM(TPFILE%CNAME)// &
+                 ': time dependent variable not (yet) possible for 1D variable '//TRIM(TPFIELD%CMNHNAME))
+!
+! The variable should not already exist but who knows ?
+STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
+IF (STATUS /= NF90_NOERR) THEN
+   IF (SIZE(TPDATA)==0) THEN
+     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_T1','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
+     KRESP = 0
+     RETURN
+   END IF
+
+   ! Get the netcdf dimensions
+   CALL IO_Vdims_fill_nc4(TPFILE, TPFIELD, INT(SHAPE(TPDATA),KIND=CDFINT), IVDIMS)
+
+   ! Define the variable
+   STATUS = NF90_DEF_VAR(INCID, YVARNAME, MNHREAL_NF90, IVDIMS, IVARID)
+   IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_T1','NF90_DEF_VAR',trim(YVARNAME))
+ELSE
+   GEXISTED = .TRUE.
+   CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_N1',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)//' already defined')
+END IF
+
+! Write metadata
+CALL IO_Field_attr_write_nc4(TPFILE,TZFIELD,IVARID,GEXISTED,HCALENDAR='standard')
+!
+! Compute the temporal distances from reference
+ALLOCATE( ZDELTATIME( SIZE( TPDATA ) ) )
+
+DO JI = 1, SIZE( TPDATA )
+  CALL DATETIME_DISTANCE( TZREF, TPDATA(JI ), ZDELTATIME(JI) )
+END DO
+
+! Write the data
+STATUS = NF90_PUT_VAR( INCID, IVARID, ZDELTATIME(:) )
+IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_T1','NF90_PUT_VAR',trim(YVARNAME),IRESP)
+
+IF( ALLOCATED( IVDIMS ) ) DEALLOCATE( IVDIMS )
+DEALLOCATE( ZDELTATIME )
+
+IF (IRESP/=0) THEN
+  KRESP = IRESP
+  RETURN
+END IF
+
+KRESP = IRESP
+END SUBROUTINE IO_Field_write_nc4_T1
 
 SUBROUTINE IO_Coordvar_write_nc4(TPFILE,HPROGRAM_ORIG)
 USE MODD_CONF,       ONLY: CPROGRAM, LCARTESIAN

@@ -12,6 +12,7 @@
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 12/04/2019: added pointers for C1D, L1D, N1D, X5D and X6D structures in TFIELDDATA
 !  P. Wautelet 12/04/2019: use MNHTIME for time measurement variables
+!  P. Wautelet 12/07/2019: add support for 1D array of dates
 !-----------------------------------------------------------------
 
 #define MNH_SCALARS_IN_SPLITFILES 0
@@ -47,7 +48,7 @@ MODULE MODE_IO_FIELD_WRITE
                       IO_Field_write_byname_N2, IO_Field_write_byname_N3,  &
                       IO_Field_write_byname_L0, IO_Field_write_byname_L1,  &
                       IO_Field_write_byname_C0, IO_Field_write_byname_C1,  &
-                      IO_Field_write_byname_T0,                            &
+                      IO_Field_write_byname_T0, IO_Field_write_byname_T1,  &
                       IO_Field_write_byfield_X0,IO_Field_write_byfield_X1, &
                       IO_Field_write_byfield_X2,IO_Field_write_byfield_X3, &
                       IO_Field_write_byfield_X4,IO_Field_write_byfield_X5, &
@@ -56,7 +57,7 @@ MODULE MODE_IO_FIELD_WRITE
                       IO_Field_write_byfield_N2,IO_Field_write_byfield_N3, &
                       IO_Field_write_byfield_L0,IO_Field_write_byfield_L1, &
                       IO_Field_write_byfield_C0,IO_Field_write_byfield_C1, &
-                      IO_Field_write_byfield_T0
+                      IO_Field_write_byfield_T0,IO_Field_write_byfield_T1
   END INTERFACE
 
   INTERFACE IO_Field_write_box
@@ -2352,6 +2353,88 @@ CONTAINS
   END SUBROUTINE IO_Field_write_byfield_T0
 
 
+  SUBROUTINE IO_Field_write_byname_T1(TPFILE,HNAME,TFIELD,KRESP)
+    USE MODD_TYPE_DATE, only: DATE_TIME
+    !
+    !*      0.1   Declarations of arguments
+    !
+    TYPE(TFILEDATA),               INTENT(IN) :: TPFILE
+    CHARACTER(LEN=*),              INTENT(IN) :: HNAME    ! name of the field to write
+    TYPE (DATE_TIME),DIMENSION(:), INTENT(IN) :: TFIELD   ! array containing the data field
+    INTEGER,OPTIONAL,              INTENT(OUT):: KRESP    ! return-code
+    !
+    !*      0.2   Declarations of local variables
+    !
+    INTEGER :: ID ! Index of the field
+    INTEGER :: IRESP ! return_code
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_byname_T1',TRIM(TPFILE%CNAME)//': writing '//TRIM(HNAME))
+    !
+    CALL FIND_FIELD_ID_FROM_MNHNAME(HNAME,ID,IRESP)
+    !
+    IF(IRESP==0) CALL IO_Field_write(TPFILE,TFIELDLIST(ID),TFIELD,IRESP)
+    !
+    IF (PRESENT(KRESP)) KRESP = IRESP
+    !
+  END SUBROUTINE IO_Field_write_byname_T1
+
+
+  SUBROUTINE IO_Field_write_byfield_T1(TPFILE,TPFIELD,TFIELD,KRESP)
+    USE MODD_IO, ONLY: GSMONOPROC, ISP
+    USE MODD_TYPE_DATE, only: DATE_TIME
+    !
+    !*      0.    DECLARATIONS
+    !             ------------
+    !
+    !
+    !*      0.1   Declarations of arguments
+    !
+    TYPE(TFILEDATA),               INTENT(IN) :: TPFILE
+    TYPE(TFIELDDATA),              INTENT(IN) :: TPFIELD
+    TYPE (DATE_TIME),DIMENSION(:), INTENT(IN) :: TFIELD   ! array containing the data field
+    INTEGER,OPTIONAL,              INTENT(OUT):: KRESP    ! return-code
+    !
+    !*      0.2   Declarations of local variables
+    !
+    INTEGER                      :: IERR
+    INTEGER                      :: IRESP
+    LOGICAL                      :: GLFI, GNC4
+    CHARACTER(LEN=:),ALLOCATABLE :: YMSG
+    CHARACTER(LEN=6)             :: YRESP
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_byfield_T1',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
+    !
+    CALL IO_Field_metadata_check(TPFIELD,TYPEDATE,1,'IO_Field_write_byfield_T1')
+    !
+    IRESP = 0
+    !
+    CALL IO_File_write_check(TPFILE,'IO_Field_write_byfield_T1',IRESP)
+    !
+    CALL IO_Format_write_select(TPFILE,GLFI,GNC4)
+    !
+    IF (IRESP==0) THEN
+       IF (GSMONOPROC) THEN ! sequential execution
+          IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,TFIELD,IRESP)
+          IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,TFIELD,IRESP)
+       ELSE
+          IF (ISP == TPFILE%NMASTER_RANK)  THEN
+             IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,TFIELD,IRESP)
+             IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,TFIELD,IRESP)
+          END IF
+          !
+          CALL MPI_BCAST(IRESP,1,MNHINT_MPI,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
+       END IF
+    END IF
+    !
+    IF (IRESP.NE.0) THEN
+      WRITE(YRESP, '( I6 )') IRESP
+      YMSG = 'RESP='//YRESP//' when writing '//TRIM(TPFIELD%CMNHNAME)//' in '//TRIM(TPFILE%CNAME)
+      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Field_write_byfield_T1',YMSG)
+    END IF
+    IF (PRESENT(KRESP)) KRESP = IRESP
+  END SUBROUTINE IO_Field_write_byfield_T1
+
+
   SUBROUTINE IO_Field_write_byname_lb(TPFILE,HNAME,KL3D,PLB,KRESP)
     !
     !*      0.1   Declarations of arguments
@@ -2802,6 +2885,24 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
           ELSE
             call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
                             ': CLBTYPE/=NONE not allowed for 1D character fields' )
+          END IF
+        !
+        !1D date/time
+        !
+        CASE (TYPEDATE)
+          IF ( .NOT.ALLOCATED(TFIELDLIST(IDX)%TFIELD_T1D) ) THEN
+            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
+                            ': TFIELD_T1D is NOT allocated ' )
+          END IF
+          IF ( .NOT.ASSOCIATED(TFIELDLIST(IDX)%TFIELD_T1D(IMI)%DATA) ) THEN
+            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
+                            ': TFIELD_T1D%DATA is NOT associated' )
+          END IF
+          IF ( TFIELDLIST(IDX)%CLBTYPE == 'NONE' ) THEN
+            CALL IO_Field_write(TPOUTPUT%TFILE,TFIELDLIST(IDX),TFIELDLIST(IDX)%TFIELD_T1D(IMI)%DATA)
+          ELSE
+            call Print_msg( NVERB_ERROR, 'IO', 'IO_Fieldlist_write', trim(tfieldlist(idx)%cmnhname)// &
+                            ': CLBTYPE/=NONE not allowed for 1D date/time fields' )
           END IF
         !
         !1D other types
