@@ -139,31 +139,31 @@ IF (LLES_CALL) CALL LES_BUDGET(PVARS,KBUDN,HBUVAR)
 IF (.NOT. LBU_ENABLE) RETURN
 !
 SELECT CASE (KBUDN)
-  CASE (1) 
+  CASE ( NBUDGET_U )
     IF (.NOT. LBU_RU) RETURN 
-  CASE (2) 
+  CASE ( NBUDGET_V )
     IF (.NOT. LBU_RV) RETURN 
-  CASE (3) 
-    IF (.NOT. LBU_RW) RETURN 
-  CASE (4) 
+  CASE ( NBUDGET_W )
+    IF (.NOT. LBU_RW) RETURN
+  CASE (NBUDGET_TH)
     IF (.NOT. LBU_RTH) RETURN 
-  CASE (5) 
+  CASE ( NBUDGET_TKE )
     IF (.NOT. LBU_RTKE) RETURN 
-  CASE (6) 
+  CASE ( NBUDGET_RV )
     IF (.NOT. LBU_RRV) RETURN 
-  CASE (7) 
+  CASE ( NBUDGET_RC )
     IF (.NOT. LBU_RRC) RETURN 
-  CASE (8) 
+  CASE (NBUDGET_RR )
     IF (.NOT. LBU_RRR) RETURN 
-  CASE (9) 
+  CASE ( NBUDGET_RI )
     IF (.NOT. LBU_RRI) RETURN 
-  CASE (10) 
+  CASE ( NBUDGET_RS )
     IF (.NOT. LBU_RRS) RETURN 
-  CASE (11) 
+  CASE ( NBUDGET_RG )
     IF (.NOT. LBU_RRG) RETURN 
-  CASE (12) 
+  CASE ( NBUDGET_RH )
     IF (.NOT. LBU_RRH) RETURN 
-  CASE (13:) 
+  CASE ( NBUDGET_SV1 : )
     IF (.NOT. LBU_RSV) RETURN 
 END SELECT
 !
@@ -173,44 +173,44 @@ CALL SECOND_MNH(ZTIME1)
 !
 SELECT CASE (KBUDN)
 !
-  CASE (1)  !            ==>  RU BUDGET
+  CASE ( NBUDGET_U )   !            ==>  RU BUDGET
     CALL BUDGET_CASE(XBURU)
 !
-  CASE (2)  !            ==>  RV BUDGET
+  CASE ( NBUDGET_V )   !            ==>  RV BUDGET
     CALL BUDGET_CASE(XBURV)
 !
-  CASE (3)  !            ==>  RW BUDGET
+  CASE ( NBUDGET_W )   !            ==>  RW BUDGET
     CALL BUDGET_CASE(XBURW)
 !
-  CASE (4)  !            ==>  RTH BUDGET
+  CASE ( NBUDGET_TH )  !            ==>  RTH BUDGET
     CALL BUDGET_CASE(XBURTH)
 !
-  CASE (5)  !            ==>  RTKE BUDGET
+  CASE ( NBUDGET_TKE ) !            ==>  RTKE BUDGET
     CALL BUDGET_CASE(XBURTKE)
 !
-  CASE (6)  !            ==>  RRV BUDGET
+  CASE ( NBUDGET_RV )  !            ==>  RRV BUDGET
     CALL BUDGET_CASE(XBURRV)
 !
-  CASE (7)  !            ==>  RRC BUDGET
+  CASE ( NBUDGET_RC )  !            ==>  RRC BUDGET
     CALL BUDGET_CASE(XBURRC)
 !
-  CASE (8)  !            ==>  RRR BUDGET
+  CASE ( NBUDGET_RR )  !            ==>  RRR BUDGET
     CALL BUDGET_CASE(XBURRR)
 !
-  CASE (9)  !            ==>  RRI BUDGET
+  CASE ( NBUDGET_RI )  !            ==>  RRI BUDGET
     CALL BUDGET_CASE(XBURRI)
 !
-  CASE (10) !            ==>  RRS BUDGET
+  CASE ( NBUDGET_RS )  !            ==>  RRS BUDGET
     CALL BUDGET_CASE(XBURRS)
 !
-  CASE (11) !            ==>  RRG BUDGET
+  CASE ( NBUDGET_RG )  !            ==>  RRG BUDGET
     CALL BUDGET_CASE(XBURRG)
 !
-  CASE (12) !            ==>  RRH BUDGET
+  CASE ( NBUDGET_RH )  !            ==>  RRH BUDGET
     CALL BUDGET_CASE(XBURRH)
 !
-  CASE (13:)!            ==>  RSVx BUDGET
-    IBUSV = KBUDN - 12
+  CASE ( NBUDGET_SV1 : ) !          ==>  RSVx BUDGET
+    IBUSV = KBUDN - ( NBUDGET_SV1 - 1 )
     IF( IBUSV <= NSV ) THEN 
       CALL BUDGET_CASE(XBURSV(:,:,:,:,IBUSV))
     ELSE

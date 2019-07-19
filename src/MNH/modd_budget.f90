@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ##################
       MODULE MODD_BUDGET
 !     ##################
@@ -10,8 +11,8 @@
 !!
 !!    PURPOSE
 !!    -------
-!       The purpose of this declarative module is to specify  the budget 
-!     variables.     
+!       The purpose of this declarative module is to specify  the budget
+!     variables
 !
 !!
 !!**  IMPLICIT ARGUMENTS
@@ -41,15 +42,32 @@
 !!      C. Barthe            /16    add budget terms for LIMA
 !!      C. LAc          10/2016 add droplets deposition
 !!      S. Riette       11/2016  New budgets for ICE3/ICE4
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 19/07/2019: parameters to identify budget number
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
 USE MODD_PARAMETERS, ONLY :JPBUMAX, JPBUPROMAX, NMNHNAMELGTMAX
-!
-IMPLICIT NONE
-!
+
+implicit none
+
+public
+
+integer, parameter :: NBUDGET_U   = 1  ! Reference number for budget of RhoJu  and/or LES budgets with u
+integer, parameter :: NBUDGET_V   = 2  ! Reference number for budget of RhoJv  and/or LES budgets with u
+integer, parameter :: NBUDGET_W   = 3  ! Reference number for budget of RhoJw  and/or LES budgets with u
+integer, parameter :: NBUDGET_TH  = 4  ! Reference number for budget of RhoJTh and/or LES budgets with th
+integer, parameter :: NBUDGET_TKE = 5  ! Reference number for budget of RhoJTke and/or LES budgets with Tke
+integer, parameter :: NBUDGET_RV  = 6  ! Reference number for budget of RhoJrv and/or LES budgets with rv
+integer, parameter :: NBUDGET_RC  = 7  ! Reference number for budget of RhoJrc and/or LES budgets with rc
+integer, parameter :: NBUDGET_RR  = 8  ! Reference number for budget of RhoJrr and/or LES budgets with rr
+integer, parameter :: NBUDGET_RI  = 9  ! Reference number for budget of RhoJri and/or LES budgets with ri
+integer, parameter :: NBUDGET_RS  = 10 ! Reference number for budget of RhoJrs and/or LES budgets with rs
+integer, parameter :: NBUDGET_RG  = 11 ! Reference number for budget of RhoJrg and/or LES budgets with rg
+integer, parameter :: NBUDGET_RH  = 12 ! Reference number for budget of RhoJrh and/or LES budgets with rh
+integer, parameter :: NBUDGET_SV1 = 13 ! Reference number for 1st budget of RhoJsv and/or LES budgets with sv
+
 !                       General variables
 LOGICAL, SAVE :: LBU_ENABLE
 !
