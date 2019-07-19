@@ -3,6 +3,15 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
+module mode_write_diachro
+
+implicit none
+
+private
+
+public :: Write_diachro
+
+contains
 !     #################################################################
       SUBROUTINE WRITE_DIACHRO(TPDIAFILE,TPLUOUTDIA,HGROUP,HTYPE,     &
       KGRID,PDATIME,PVAR,PTRAJT,                                     &
@@ -81,8 +90,7 @@ USE MODD_PARAMETERS,     ONLY: JPHEXT
 USE MODE_FIELD
 USE MODE_IO_FIELD_WRITE, only: IO_Field_write, IO_Field_write_box
 USE MODE_ll
-!
-USE MODI_MENU_DIACHRO
+use mode_menu_diachro,   only: MENU_DIACHRO
 !
 IMPLICIT NONE
 !
@@ -526,3 +534,5 @@ LPACK=GPACK
 ! 
 RETURN
 END SUBROUTINE WRITE_DIACHRO
+
+end module mode_write_diachro

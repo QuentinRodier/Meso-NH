@@ -3,6 +3,15 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
+module mode_menu_diachro
+
+implicit none
+
+private
+
+public :: Menu_diachro
+
+contains
 !     ##################################################
       SUBROUTINE MENU_DIACHRO(TPDIAFILE,HGROUP)
 !     ##################################################
@@ -186,11 +195,7 @@ ELSE
 ENDIF
 
 LPACK=GPACK
-!
-!-----------------------------------------------------------------------------
-!
-!*       2.       EXITS
-!                 -----
-!
-RETURN
+
 END SUBROUTINE MENU_DIACHRO
+
+end module mode_menu_diachro

@@ -3,6 +3,15 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
+module mode_write_lfifmn_fordiachro_n
+
+implicit none
+
+private
+
+public :: Write_lfifmn_fordiachro_n
+
+contains
 !     #############################################
       SUBROUTINE WRITE_LFIFMN_FORDIACHRO_n(TPFILE)
 !     #############################################
@@ -209,3 +218,5 @@ LPACK=GPACK
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE WRITE_LFIFMN_FORDIACHRO_n
+
+end module mode_write_lfifmn_fordiachro_n
