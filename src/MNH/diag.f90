@@ -89,6 +89,7 @@
 !!  V.Vionnet 07/2017 add LWIND_CONTRAV
 !!  11/2017      (D. Ricard, P. Marquet) add diagnostics for THETAS 
 !  P. Wautelet 11/02/2019: added missing use of MODI_CH_MONITOR_n
+!  P. Wautelet 26/07/2019: bug correction: deallocate of zsea and ztown done too early
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -544,19 +545,16 @@ IF ( LAIRCRAFT_BALLOON ) THEN
   ZTOWN(:,:)= 0.
   CALL MNHGET_SURF_PARAM_n (PSEA=ZSEA(:,:),PTOWN=ZTOWN(:,:))
   DO ISTEPBAL=1,NTIME_AIRCRAFT_BALLOON,INT(XSTEP_AIRCRAFT_BALLOON)
-!
     CALL AIRCRAFT_BALLOON(XSTEP_AIRCRAFT_BALLOON,                &
                       TDTEXP, TDTMOD, TDTCUR, TXDTBAL,           &
                       XXHAT, XYHAT, XZZ, XMAP, XLONORI, XLATORI, &
                       XUT, XVT, XWT, XPABST, XTHT, XRT, XSVT,    &
                       XTKET, XTSRAD, XRHODREF,XCIT,ZSEA)
-  DEALLOCATE (ZSEA,ZTOWN)
-!
-!-----------------------------
 !
     TXDTBAL%TIME=TXDTBAL%TIME + XSTEP_AIRCRAFT_BALLOON
     CALL DATETIME_CORRECTDATE(TXDTBAL)
   ENDDO
+  DEALLOCATE (ZSEA,ZTOWN)
   CALL IO_WRITE_HEADER(TZDIACFILE)
   CALL WRITE_LFIFMN_FORDIACHRO_n(TZDIACFILE)
   CALL WRITE_AIRCRAFT_BALLOON(TZDIACFILE)
