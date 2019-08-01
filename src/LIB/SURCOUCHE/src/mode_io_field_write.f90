@@ -913,6 +913,11 @@ CONTAINS
                 END IF
              END DO
              !
+             ! Write the variable attributes in the non-split file
+             !
+             if ( tpfile%nmaster_rank==isp .and. gnc4 ) &
+               call IO_Field_header_split_write_nc4( tpfile, tpfield, size( pfield, 3 ) )
+             !
              ! write the data
              !
              DO JKK=JK,JK_MAX
