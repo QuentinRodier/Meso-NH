@@ -31,6 +31,7 @@ implicit none
 
 private
 
+public :: IO_Write_field_header_split_nc4
 public :: io_write_coordvar_nc4, io_write_field_nc4, io_write_header_nc4
 
 INTERFACE IO_WRITE_FIELD_NC4
@@ -52,6 +53,96 @@ integer(kind=IDCDF_KIND),parameter :: SHUFFLE = 1 !Set to 1 for (usually) better
 integer(kind=IDCDF_KIND),parameter :: DEFLATE = 1
 
 contains
+
+subroutine IO_Write_field_header_split_nc4( tpfile, tpfield, knblocks )
+use modd_parameters, only : jphext
+
+use mode_field,      only: TYPEREAL
+use mode_tools_ll,   only: Get_globaldims_ll
+
+type(tfiledata),       intent(in) :: tpfile
+type(tfielddata),      intent(in) :: tpfield
+integer,               intent(in) :: knblocks
+
+character(len=len(tpfield%cmnhname))  :: yvarname
+integer                               :: iimax, ijmax
+integer(kind=idcdf_kind)              :: istatus
+integer(kind=idcdf_kind)              :: incid
+integer(kind=idcdf_kind)              :: ivarid
+integer(kind=idcdf_kind),dimension(3) :: ishape
+
+call Print_msg( NVERB_DEBUG, 'IO', 'IO_Write_field_header_split_nc4', 'called for field '//trim( tpfield%cmnhname ) )
+
+if ( tpfield%ntype /= TYPEREAL ) then
+  call Print_msg( NVERB_ERROR, 'IO', 'IO_Write_field_header_split_nc4', 'invalid ntype for field '//trim( tpfield%cmnhname ) )
+  return
+end if
+
+! Get the Netcdf file ID
+incid = tpfile%nncid
+
+call Cleanmnhname( tpfield%cmnhname, yvarname )
+
+istatus = NF90_INQ_VARID( incid, yvarname, ivarid )
+if ( istatus /= NF90_NOERR ) then
+
+#if (MNH_REAL == 8)
+  istatus = NF90_DEF_VAR( incid, yvarname, NF90_DOUBLE, ivarid)
+#else
+  istatus = NF90_DEF_VAR( incid, yvarname, NF90_FLOAT,  ivarid)
+#endif
+
+  if ( tpfield%ndims /= 3 ) call Print_msg( NVERB_FATAL, 'IO', 'IO_Write_field_header_split_nc4', &
+                  trim( tpfile%cname )//': '//trim( yvarname )//': NDIMS should be 3' )
+
+  if ( tpfield%cdir /= 'XY' ) call Print_msg( NVERB_FATAL, 'IO', 'IO_Write_field_header_split_nc4', &
+                  trim( tpfile%cname )//': '//trim( yvarname )//': CDIR should be XY' )
+
+  call Get_globaldims_ll( iimax, ijmax )
+  ishape(1) = int( iimax + 2 * jphext, kind = idcdf_kind )
+  ishape(2) = int( ijmax + 2 * jphext, kind = idcdf_kind )
+  ishape(3) = knblocks
+  call IO_Write_field_attr_nc4( tpfile, tpfield, ivarid, .false., kshape = ishape )
+
+  if ( istatus /= NF90_NOERR ) call IO_Handle_err_nc4( istatus, 'IO_Write_field_header_split_nc4', 'NF90_DEF_VAR', trim(yvarname) )
+
+  istatus = NF90_PUT_ATT( incid, ivarid,'split_variable', 'yes')
+  if ( istatus /= NF90_NOERR ) call IO_HANDLE_ERR_NC4( istatus, 'IO_Write_field_header_split_nc4', 'NF90_PUT_ATT', &
+                                                     'split_variable for '//trim( tpfield%cmnhname ) )
+
+  istatus = NF90_PUT_ATT( incid, ivarid,'split_mode', 'Z')
+  if ( istatus /= NF90_NOERR ) call IO_HANDLE_ERR_NC4( istatus, 'IO_Write_field_header_split_nc4', 'NF90_PUT_ATT', &
+                                                     'split_mode for '//trim( tpfield%cmnhname ) )
+
+  istatus = NF90_PUT_ATT( incid, ivarid,'split_nblocks', knblocks )
+  if ( istatus /= NF90_NOERR ) call IO_HANDLE_ERR_NC4( istatus, 'IO_Write_field_header_split_nc4', 'NF90_PUT_ATT', &
+                                                     'split_nblocks for '//trim( tpfield%cmnhname ) )
+
+  istatus = NF90_PUT_ATT( incid, ivarid,'split_nfiles', tpfile%nsubfiles_ioz )
+  if ( istatus /= NF90_NOERR ) call IO_HANDLE_ERR_NC4( istatus, 'IO_Write_field_header_split_nc4', 'NF90_PUT_ATT', &
+                                                     'split_nfiles for '//trim( tpfield%cmnhname ) )
+
+  istatus = NF90_PUT_ATT( incid, ivarid,'split_distribution', 'round-robin' )
+  if ( istatus /= NF90_NOERR ) call IO_HANDLE_ERR_NC4( istatus, 'IO_Write_field_header_split_nc4', 'NF90_PUT_ATT', &
+                                                     'split_distribution for '//trim( tpfield%cmnhname ) )
+
+  istatus = NF90_PUT_ATT( incid, ivarid,'ndims', tpfield%ndims )
+  if ( istatus /= NF90_NOERR ) call IO_HANDLE_ERR_NC4( istatus, 'IO_Write_field_header_split_nc4', 'NF90_PUT_ATT', &
+                                                     'ndims for '//trim( tpfield%cmnhname ) )
+
+  if ( tpfield%ltimedep ) then
+    istatus = NF90_PUT_ATT( incid, ivarid,'time_dependent', 'yes' )
+  else
+    istatus = NF90_PUT_ATT( incid, ivarid,'time_dependent', 'no' )
+  end if
+  if ( istatus /= NF90_NOERR ) call IO_HANDLE_ERR_NC4( istatus, 'IO_Write_field_header_split_nc4', 'NF90_PUT_ATT', &
+                                                     'time_dependent for '//trim( tpfield%cmnhname ) )
+else
+  call Print_msg( NVERB_WARNING, 'IO', 'IO_Write_field_header_split_nc4', &
+                  trim( tpfile%cname )//': '//trim( yvarname )//' already defined' )
+end if
+
+end subroutine IO_Write_field_header_split_nc4
 
 SUBROUTINE IO_WRITE_FIELD_ATTR_NC4(TPFILE,TPFIELD,KVARID,OEXISTED,KSHAPE,HCALENDAR,OISCOORD)
 !
