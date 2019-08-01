@@ -278,12 +278,6 @@ subroutine check_options(options,infile,runmode)
     call help()
   end if
 
-  !Merge flag only supported if -v is set
-  if (options(OPTMERGE)%set .AND. .NOT.options(OPTVAR)%set) then
-    print *,'Error: merge option must be used with var option'
-    call help()
-  end if
-
   !Split flag only supported if -v is set
   if (options(OPTSPLIT)%set .AND. .NOT.options(OPTVAR)%set) then
       options(OPTSPLIT)%set = .false.
