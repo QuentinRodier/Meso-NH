@@ -11,6 +11,7 @@
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  Philippe Wautelet: 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll
 !                                 to allow to disable writes (for bench purposes)
+!  P. Wautelet 12/03/2019: add TMAINFILE field in TFILEDATA
 !-----------------------------------------------------------------
 MODULE MODE_IO_MANAGE_STRUCT
 !
@@ -618,6 +619,7 @@ SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN)
             ELSE
               CALL PRINT_MSG(NVERB_FATAL,'IO','POPULATE_STRUCT','unknown backup/output fileformat')
             ENDIF
+            TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(JI)%TFILE%TMAINFILE => TPBAKOUTN(IPOS)%TFILE
           END DO
         END IF
         !

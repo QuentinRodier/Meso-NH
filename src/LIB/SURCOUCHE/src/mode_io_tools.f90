@@ -6,6 +6,8 @@
 !  Modifications:
 !    P. Wautelet : 13/12/2018 : extracted from mode_io.f90
 !    P. Wautelet : 14/12/2018 : added io_construct_filename
+!  P. Wautelet 05/09/2019: io_get_mnhversion: Z-split files: to prevent serialization between files,
+!                          nmnhversion is taken from the main file
 !-----------------------------------------------------------------
 module mode_io_tools
 
@@ -118,6 +120,7 @@ contains
     if ( trim(tpfile%cmode) /= 'READ' ) &
       call print_msg(NVERB_FATAL,'IO','io_get_mnhversion',trim(tpfile%cname)// 'not opened in read mode')
 
+  if ( .not. associated( tpfile%tmainfile ) ) then
     imnhversion(:) = 0
     !use tzfield because tfieldlist could be not initialised
     tzfield%cmnhname   = 'MNHVERSION'
@@ -182,6 +185,11 @@ contains
       end if
       !
       tpfile%nmnhversion(:) = imnhversion(:)
+  else ! associated( tpfile%tmainfile )
+    if ( .not. tpfile%tmainfile%lopened ) &
+      call Print_msg( NVERB_FATAL, 'IO', 'io_get_mnhversion', 'tmainfile should be opened' )
+    tpfile%nmnhversion(:) = tpfile%tmainfile%nmnhversion(:)
+  end if
   end subroutine io_get_mnhversion
 
 

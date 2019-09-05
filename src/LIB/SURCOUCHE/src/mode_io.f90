@@ -168,7 +168,7 @@ CONTAINS
   USE MODE_IO_MANAGE_STRUCT,    ONLY: IO_FILE_ADD2LIST, IO_FILE_FIND_BYNAME
   use mode_io_tools,            only: io_rank
 
-    TYPE(TFILEDATA), INTENT(INOUT)         :: TPFILE
+    TYPE(TFILEDATA), pointer, INTENT(INOUT)         :: TPFILE
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: MODE
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: STATUS
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: ACCESS
@@ -604,6 +604,8 @@ CONTAINS
                                        KLFINPRAR=TPFILE%NLFINPRAR,KLFITYPE=TPFILE%NLFITYPE,KLFIVERB=TPFILE%NLFIVERB, &
                                        HFORMAT=TPFILE%CFORMAT)
                END IF
+
+               TZSPLITFILE%TMAINFILE => TPFILE
              END IF
 
              IF (ALLOCATED(TPFILE%CDIRNAME)) THEN

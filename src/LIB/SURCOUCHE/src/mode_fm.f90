@@ -174,7 +174,7 @@ use mode_io_file_nc4, only: io_create_file_nc4, io_open_file_nc4
 #endif
 use mode_io_file_lfi, only: io_create_file_lfi, io_open_file_lfi
 
-TYPE(TFILEDATA), INTENT(INOUT) :: TPFILE ! File structure
+TYPE(TFILEDATA), pointer, INTENT(INOUT) :: TPFILE ! File structure
 INTEGER,         INTENT(OUT)   :: KRESP  ! return-code
 LOGICAL,         INTENT(IN),  OPTIONAL :: OPARALLELIO
 CHARACTER(LEN=*),INTENT(IN),  OPTIONAL :: HPROGRAM_ORIG !To emulate a file coming from this program

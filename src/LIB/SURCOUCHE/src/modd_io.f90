@@ -7,6 +7,7 @@
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN (removed ISTDOUT, ISTDERR, added NNULLUNIT, CNULLFILE)
 !  Philippe Wautelet: 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll to allow to disable writes (for bench purposes)
+!  P. Wautelet 12/03/2019: add TMAINFILE field in TFILEDATA
 !-----------------------------------------------------------------
 
 MODULE MODD_IO_ll
@@ -117,6 +118,7 @@ TYPE TFILEDATA
   TYPE(TFILEDATA),POINTER :: TDADFILE   => NULL() !Corresponding dad file
   TYPE(TFILEDATA),POINTER :: TDESFILE   => NULL() !Corresponding .des file
   TYPE(TFILEDATA),POINTER :: TDATAFILE  => NULL() !Corresponding data file (if .des file)
+  TYPE(TFILEDATA),POINTER :: TMAINFILE  => NULL() !Corresponding main file if the file is an sub-file
   TYPE(TFILEDATA),POINTER :: TFILE_PREV => NULL()
   TYPE(TFILEDATA),POINTER :: TFILE_NEXT => NULL()
 END TYPE TFILEDATA
