@@ -27,6 +27,7 @@
 !                                    to disable writes (for bench purposes)
 !  P. Wautelet 04/04/2019: force write on stderr for all processes in print_msg if abort
 !  P. Wautelet 02/07/2019: flush messages also for files opened with newunit (logical unit can be negative)
+!  P. Wautelet 05/09/2019: disable IO_WRITE_COORDVAR_NC4 for Z-split files
 !
 MODULE MODE_IO_ll
 
@@ -721,10 +722,12 @@ CONTAINS
       DO IFILE=1,TPFILE%NSUBFILES_IOZ
         TZFILE => TPFILE%TFILES_IOZ(IFILE)%TFILE
 #if defined(MNH_IOCDF4)
-        !Write coordinates variables in netCDF file
-        IF (TZFILE%CMODE == 'WRITE' .AND. (TZFILE%CFORMAT=='NETCDF4' .OR. TZFILE%CFORMAT=='LFICDF4')) THEN
-          CALL IO_WRITE_COORDVAR_NC4(TZFILE,HPROGRAM_ORIG=HPROGRAM_ORIG)
-        END IF
+!Remark: IO_WRITE_COORDVAR_NC4 disabled (for the moment) for Z-split files
+!        because it introduce a serialization due to MPI communications inside the call
+!         !Write coordinates variables in netCDF file
+!         IF (TZFILE%CMODE == 'WRITE' .AND. (TZFILE%CFORMAT=='NETCDF4' .OR. TZFILE%CFORMAT=='LFICDF4')) THEN
+!           CALL IO_WRITE_COORDVAR_NC4(TZFILE,HPROGRAM_ORIG=HPROGRAM_ORIG)
+!         END IF
 #endif
         IF (TZFILE%LMASTER) THEN
           if (tzfile%cformat == 'LFI'     .or. tzfile%cformat == 'LFICDF4') call io_close_file_lfi(tzfile,iresp2)
