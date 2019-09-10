@@ -13,8 +13,9 @@
 !  P. Wautelet 01/02/2019: IO_Coordvar_write_nc4: bug: use of non-associated pointers (PIOCDF%DIM_Nx_y)
 !  P. Wautelet 05/03/2019: rename IO subroutines and modules
 !  P. Wautelet 12/07/2019: add support for 1D array of dates
+!  P. Wautelet 10/09/2019: IO_Coordvar_write_nc4: split communication and file write operations
 !-----------------------------------------------------------------
-#if defined(MNH_IOCDF4)
+#ifdef MNH_IOCDF4
 module mode_io_write_nc4
 
 use modd_io,           only: gsmonoproc, tfiledata
@@ -1638,11 +1639,25 @@ REAL,DIMENSION(:,:),POINTER     :: ZLAT, ZLON
 type(dimcdf), pointer           :: tzdim_ni, tzdim_nj, tzdim_ni_u, tzdim_nj_u, tzdim_ni_v, tzdim_nj_v
 TYPE(IOCDF),  POINTER           :: PIOCDF
 
+real, dimension(:),   pointer :: zxhat_glob,  zyhat_glob
+real, dimension(:),   pointer :: zxhatm_glob, zyhatm_glob
+real, dimension(:,:), pointer :: zlatm_glob,  zlonm_glob
+real, dimension(:,:), pointer :: zlatu_glob,  zlonu_glob
+real, dimension(:,:), pointer :: zlatv_glob,  zlonv_glob
+real, dimension(:,:), pointer :: zlatf_glob,  zlonf_glob
+
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Coordvar_write_nc4','called for '//TRIM(TPFILE%CNAME))
 
 ZXHAT => NULL()
 ZYHAT => NULL()
 ZZHAT => NULL()
+
+zxhat_glob  => null(); zyhat_glob  => null()
+zxhatm_glob => null(); zyhatm_glob => null()
+zlatm_glob  => null(); zlonm_glob  => null()
+zlatu_glob  => null(); zlonu_glob  => null()
+zlatv_glob  => null(); zlonv_glob  => null()
+zlatf_glob  => null(); zlonf_glob  => null()
 
 PIOCDF => TPFILE%TNCDIMS
 
@@ -1712,32 +1727,50 @@ tzdim_ni_v => null()
 tzdim_nj_v => null()
 end if
 
-CALL WRITE_HOR_COORD(tzdim_ni,'x-dimension of the grid',TRIM(YSTDNAMEPREFIX)//'_x_coordinate','X',0.,JPHEXT,JPHEXT,ZXHATM)
-CALL WRITE_HOR_COORD(tzdim_nj,'y-dimension of the grid',TRIM(YSTDNAMEPREFIX)//'_y_coordinate','Y',0.,JPHEXT,JPHEXT,ZYHATM)
-CALL WRITE_HOR_COORD(tzdim_ni_u,'x-dimension of the grid at u location', &
-                     TRIM(YSTDNAMEPREFIX)//'_x_coordinate_at_u_location','X',-0.5,JPHEXT,0,     ZXHAT)
-CALL WRITE_HOR_COORD(tzdim_nj_u,'y-dimension of the grid at u location', &
-                     TRIM(YSTDNAMEPREFIX)//'_y_coordinate_at_u_location','Y', 0., JPHEXT,JPHEXT,ZYHATM)
-CALL WRITE_HOR_COORD(tzdim_ni_v,'x-dimension of the grid at v location', &
-                     TRIM(YSTDNAMEPREFIX)//'_x_coordinate_at_v_location','X', 0., JPHEXT,JPHEXT,ZXHATM)
-CALL WRITE_HOR_COORD(tzdim_nj_v,'y-dimension of the grid at v location', &
-                     TRIM(YSTDNAMEPREFIX)//'_y_coordinate_at_v_location','Y',-0.5,JPHEXT,0,     ZYHAT)
+call Gather_hor_coord1d( 'X', zxhat,  zxhat_glob  )
+call Gather_hor_coord1d( 'X', zxhatm, zxhatm_glob )
+call Gather_hor_coord1d( 'Y', zyhat,  zyhat_glob  )
+call Gather_hor_coord1d( 'Y', zyhatm, zyhatm_glob )
+
+call Write_hor_coord1d( tzdim_ni,   'x-dimension of the grid', &
+                        trim(ystdnameprefix)//'_x_coordinate',              'x', 0.,    jphext, jphext, zxhatm_glob )
+call Write_hor_coord1d( tzdim_nj,   'y-dimension of the grid', &
+                        trim(ystdnameprefix)//'_y_coordinate',               'y', 0.,   jphext, jphext, zyhatm_glob )
+call Write_hor_coord1d( tzdim_ni_u, 'x-dimension of the grid at u location', &
+                        trim(ystdnameprefix)//'_x_coordinate_at_u_location', 'x', -0.5, jphext, 0,      zxhat_glob  )
+call Write_hor_coord1d( tzdim_nj_u, 'y-dimension of the grid at u location', &
+                        trim(ystdnameprefix)//'_y_coordinate_at_u_location', 'y', 0.,   jphext, jphext, zyhatm_glob )
+call Write_hor_coord1d( tzdim_ni_v, 'x-dimension of the grid at v location', &
+                        trim(ystdnameprefix)//'_x_coordinate_at_v_location', 'x', 0.,   jphext, jphext, zxhatm_glob )
+call Write_hor_coord1d( tzdim_nj_v, 'y-dimension of the grid at v location', &
+                        trim(ystdnameprefix)//'_y_coordinate_at_v_location', 'y', -0.5, jphext, 0,      zyhat_glob  )
+
+!The z?hat*_glob were allocated in Gather_hor_coord1d calls
+deallocate( zxhat_glob, zxhatm_glob, zyhat_glob, zyhatm_glob )
 
 IF (.NOT.LCARTESIAN) THEN
-  ALLOCATE(ZLAT(IIU,IJU),ZLON(IIU,IJU))
   !
   !Compute latitude/longitude for the Arakawa points
   !
+  ALLOCATE(ZLAT(IIU,IJU),ZLON(IIU,IJU))
+
+  call Gather_hor_coord2d( zxhatm, zyhatm, zlatm_glob, zlonm_glob )
+  call Gather_hor_coord2d( zxhat,  zyhatm, zlatu_glob, zlonu_glob )
+  call Gather_hor_coord2d( zxhatm, zyhat,  zlatv_glob, zlonv_glob )
+  call Gather_hor_coord2d( zxhat,  zyhat,  zlatf_glob, zlonf_glob )
   ! Mass point
-  CALL WRITE_HOR_2DCOORD(ZXHATM,ZYHATM,'latitude',  'longitude')
+  call Write_hor_coord2d( zlatm_glob, zlonm_glob, 'latitude',  'longitude')
   ! u point
-  CALL WRITE_HOR_2DCOORD(ZXHAT, ZYHATM,'latitude_u','longitude_u')
+  call Write_hor_coord2d( zlatu_glob, zlonu_glob, 'latitude_u','longitude_u')
   ! v point
-  CALL WRITE_HOR_2DCOORD(ZXHATM,ZYHAT, 'latitude_v','longitude_v')
+  call Write_hor_coord2d( zlatv_glob, zlonv_glob, 'latitude_v','longitude_v')
   ! xi vorticity point (=f point =uv point)
-  CALL WRITE_HOR_2DCOORD(ZXHAT, ZYHAT, 'latitude_f','longitude_f')
-  !
+  call Write_hor_coord2d( zlatf_glob, zlonf_glob, 'latitude_f','longitude_f')
+
   DEALLOCATE(ZLAT,ZLON)
+
+  !The zlat/lon._glob were allocated in Gather_hor_coord2d calls
+  deallocate( zlatm_glob, zlonm_glob, zlatu_glob, zlonu_glob, zlatv_glob, zlonv_glob, zlatf_glob, zlonf_glob )
 END IF
 !
 DEALLOCATE(ZXHATM,ZYHATM)
@@ -1772,151 +1805,156 @@ END IF
 IF (GCHANGEMODEL) CALL GO_TOMODEL_ll(IMI,IRESP)
 
 CONTAINS
-SUBROUTINE WRITE_HOR_COORD(TDIM,HLONGNAME,HSTDNAME,HAXIS,PSHIFT,KBOUNDLOW,KBOUNDHIGH,PCOORDS)
+subroutine Gather_hor_coord1d( haxis, pcoords_loc, pcoords_glob )
+  use mode_allocbuffer_ll, only: Allocbuffer_ll
+  use mode_gather_ll,      only: Gather_xxfield
+
+  character(len=*),            intent(in)  :: haxis
+  real, dimension(:),          intent(in)  :: pcoords_loc
+  real, dimension(:), pointer, intent(out) :: pcoords_glob
+
+  character(len=2) :: ydir
+  logical          :: galloc
+
+  if ( haxis == 'X' ) then
+    ydir = 'XX'
+  else if ( haxis == 'Y' ) then
+    ydir = 'YY'
+  else
+    call Print_msg( NVERB_FATAL, 'IO', 'Gather_hor_coord1d', 'invalid haxis ('//trim(haxis)//')' )
+  end if
+
+  if ( .not. tpfile%lmaster ) then
+    allocate( pcoords_glob(0 ) ) !to prevent false positive with valgrind
+    call Gather_xxfield( ydir, pcoords_loc, pcoords_glob, tpfile%nmaster_rank, tpfile%nmpicomm )
+  else !tpfile%lmaster
+    if ( gsmonoproc ) then ! sequential execution
+      allocate( pcoords_glob( size( pcoords_loc) ) )
+      pcoords_glob(: ) = pcoords_loc(: )
+    else ! multiprocesses execution
+      call Allocbuffer_ll( pcoords_glob, pcoords_loc, ydir, galloc )
+      call Gather_xxfield( ydir, pcoords_loc, pcoords_glob, tpfile%nmaster_rank, tpfile%nmpicomm )
+    endif
+  end if
+end subroutine Gather_hor_coord1d
+
+
+subroutine Gather_hor_coord2d( px, py, plat_glob, plon_glob )
+  use mode_allocbuffer_ll, only: Allocbuffer_ll
+  use mode_gather_ll,      only: Gather_xyfield
+
+  real,dimension(:), intent(in) :: px
+  real,dimension(:), intent(in) :: py
+  real, dimension(:,:), pointer, intent(out) :: plat_glob
+  real, dimension(:,:), pointer, intent(out) :: plon_glob
+
+  logical :: galloc1, galloc2
+
+  call Sm_latlon( xlatori, xlonori,                             &
+                  spread( source = px, dim = 2, ncopies = iju), &
+                  spread( source = py, dim = 1, ncopies = iiu), &
+                  zlat, zlon )
+
+  if ( .not. tpfile%lmaster ) then
+    allocate( plat_glob( 0, 0 ), plon_glob( 0, 0 ) ) !to prevent false positive with valgrind
+    call Gather_xyfield( zlat, plat_glob, tpfile%nmaster_rank, tpfile%nmpicomm )
+    call Gather_xyfield( zlon, plon_glob, tpfile%nmaster_rank, tpfile%nmpicomm )
+  else !tpfile%lmaster
+    if ( gsmonoproc ) then ! sequential execution
+      allocate( plat_glob( size( zlat, 1 ), size( zlat, 2 ) ) )
+      allocate( plon_glob( size( zlon, 1 ), size( zlon, 2 ) ) )
+      plat_glob = zlat
+      plon_glob = zlon
+    else ! multiprocesses execution
+      call Allocbuffer_ll( plat_glob, zlat, 'XY', galloc1 )
+      call Allocbuffer_ll( plon_glob, zlon, 'XY', galloc2 )
+      call Gather_xyfield( zlat, plat_glob, tpfile%nmaster_rank, tpfile%nmpicomm )
+      call Gather_xyfield( zlon, plon_glob, tpfile%nmaster_rank, tpfile%nmpicomm )
+    endif
+  end if
+end subroutine Gather_hor_coord2d
+
+
+subroutine Write_hor_coord1d(TDIM,HLONGNAME,HSTDNAME,HAXIS,PSHIFT,KBOUNDLOW,KBOUNDHIGH,PCOORDS)
   USE MODE_ALLOCBUFFER_ll, ONLY: ALLOCBUFFER_ll
   USE MODE_GATHER_ll,      ONLY: GATHER_XXFIELD
 
-  TYPE(DIMCDF), POINTER,            INTENT(IN) :: TDIM
-  CHARACTER(LEN=*),                 INTENT(IN) :: HLONGNAME
-  CHARACTER(LEN=*),                 INTENT(IN) :: HSTDNAME
-  CHARACTER(LEN=*),                 INTENT(IN) :: HAXIS
-  REAL,                             INTENT(IN) :: PSHIFT
-  INTEGER,                          INTENT(IN) :: KBOUNDLOW
-  INTEGER,                          INTENT(IN) :: KBOUNDHIGH
-  REAL,DIMENSION(:),TARGET,OPTIONAL,INTENT(IN) :: PCOORDS
+  TYPE(DIMCDF), POINTER,      INTENT(IN) :: TDIM
+  CHARACTER(LEN=*),           INTENT(IN) :: HLONGNAME
+  CHARACTER(LEN=*),           INTENT(IN) :: HSTDNAME
+  CHARACTER(LEN=*),           INTENT(IN) :: HAXIS
+  REAL,                       INTENT(IN) :: PSHIFT
+  INTEGER,                    INTENT(IN) :: KBOUNDLOW
+  INTEGER,                    INTENT(IN) :: KBOUNDHIGH
+  REAL, DIMENSION(:), TARGET, INTENT(IN) :: PCOORDS
 
-  CHARACTER(LEN=2)              :: YDIR
   CHARACTER(LEN=64)             :: YRANGE
   CHARACTER(LEN=:),ALLOCATABLE  :: YVARNAME
   INTEGER                       :: IRESP
   INTEGER                       :: ISIZE
-  INTEGER                       :: JI
   INTEGER(KIND=CDFINT)          :: IVARID
   INTEGER(KIND=CDFINT)          :: IVDIM
-  INTEGER(KIND=CDFINT)          :: STATUS
-  LOGICAL                       :: GALLOC
-  REAL,DIMENSION(:),POINTER     :: ZTAB
+  INTEGER(KIND=CDFINT)          :: ISTATUS
 
-  GALLOC = .FALSE.
-  ZTAB => NULL()
-
-  IF (HAXIS=='X') THEN
-    YDIR = 'XX'
-  ELSE IF (HAXIS=='Y') THEN
-    YDIR = 'YY'
-  ELSE
-    CALL PRINT_MSG(NVERB_FATAL,'IO','WRITE_HOR_COORD','invalid HAXIS ('//TRIM(HAXIS)//')')
-  END IF
-
-  IF (.NOT.TPFILE%LMASTER) THEN
-    IF (PRESENT(PCOORDS)) THEN
-      ALLOCATE(ZTAB(0)) !To prevent false positive with valgrind
-      GALLOC = .TRUE.
-      CALL GATHER_XXFIELD(YDIR,PCOORDS,ZTAB,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
-    END IF
-  ELSE !TPFILE%LMASTER
+  IF (TPFILE%LMASTER) THEN
     ISIZE = TDIM%LEN
     YVARNAME = TRIM(TDIM%NAME)
     IVDIM = TDIM%ID
 
-    IF (.NOT.PRESENT(PCOORDS)) THEN
-      ALLOCATE(ZTAB(ISIZE))
-      GALLOC = .TRUE.
-      DO JI=1,ISIZE
-        ZTAB(JI) = REAL(JI,KIND=KIND(ZTAB(1)))+PSHIFT
-      END DO
-    ELSE
-      IF (GSMONOPROC) THEN ! sequential execution
-        ZTAB => PCOORDS
-      ELSE ! multiprocesses execution
-        CALL ALLOCBUFFER_ll(ZTAB,PCOORDS,YDIR,GALLOC)
-        CALL GATHER_XXFIELD(YDIR,PCOORDS,ZTAB,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
-      ENDIF
-    END IF
-
-    STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
-    IF (STATUS /= NF90_NOERR) THEN
+    ISTATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
+    IF (ISTATUS /= NF90_NOERR) THEN
       ! Define the coordinate variable
-      STATUS = NF90_DEF_VAR(INCID, YVARNAME, MNHREAL_NF90, IVDIM, IVARID)
-      IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_HOR_COORD','NF90_DEF_VAR',trim(YVARNAME))
+      ISTATUS = NF90_DEF_VAR(INCID, YVARNAME, MNHREAL_NF90, IVDIM, IVARID)
+      IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'Write_hor_coord1d','NF90_DEF_VAR',trim(YVARNAME))
     ELSE
-      CALL PRINT_MSG(NVERB_ERROR,'IO','WRITE_HOR_COORD',TRIM(YVARNAME)//' already defined')
+      CALL PRINT_MSG(NVERB_ERROR,'IO','Write_hor_coord1d',TRIM(YVARNAME)//' already defined')
     END IF
 
     ! Write metadata
-    STATUS = NF90_PUT_ATT(INCID, IVARID, 'long_name',HLONGNAME)
-    IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_HOR_COORD','NF90_PUT_ATT','long_name for '//trim(YVARNAME))
-    STATUS = NF90_PUT_ATT(INCID, IVARID, 'standard_name',HSTDNAME)
-    IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_HOR_COORD','NF90_PUT_ATT','standard_name for '//trim(YVARNAME))
-    IF (PRESENT(PCOORDS)) THEN
-      STATUS = NF90_PUT_ATT(INCID, IVARID, 'units','m')
-      IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_HOR_COORD','NF90_PUT_ATT','units for '//trim(YVARNAME))
-    END IF
-    STATUS = NF90_PUT_ATT(INCID, IVARID, 'axis',HAXIS)
-    IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_HOR_COORD','NF90_PUT_ATT','axis for '//trim(YVARNAME))
-    STATUS = NF90_PUT_ATT(INCID, IVARID, 'c_grid_axis_shift',PSHIFT)
-    IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_HOR_COORD','NF90_PUT_ATT','c_grid_axis_shift for ' &
+    ISTATUS = NF90_PUT_ATT(INCID, IVARID, 'long_name',HLONGNAME)
+    IF (ISTATUS /= NF90_NOERR) &
+      CALL IO_Err_handle_nc4(istatus,'Write_hor_coord1d','NF90_PUT_ATT','long_name for '//trim(YVARNAME))
+
+    ISTATUS = NF90_PUT_ATT(INCID, IVARID, 'standard_name',HSTDNAME)
+    IF (ISTATUS /= NF90_NOERR) &
+      CALL IO_Err_handle_nc4(istatus,'Write_hor_coord1d','NF90_PUT_ATT','standard_name for '//trim(YVARNAME))
+
+    ISTATUS = NF90_PUT_ATT(INCID, IVARID, 'units','m')
+    IF (ISTATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'Write_hor_coord1d','NF90_PUT_ATT','units for '//trim(YVARNAME))
+
+    ISTATUS = NF90_PUT_ATT(INCID, IVARID, 'axis',HAXIS)
+    IF (ISTATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'Write_hor_coord1d','NF90_PUT_ATT','axis for '//trim(YVARNAME))
+
+    ISTATUS = NF90_PUT_ATT(INCID, IVARID, 'c_grid_axis_shift',PSHIFT)
+    IF (ISTATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'Write_hor_coord1d','NF90_PUT_ATT','c_grid_axis_shift for ' &
                                                      //trim(YVARNAME))
+
     WRITE(YRANGE,'( I0,":",I0 )') 1+KBOUNDLOW,ISIZE-KBOUNDHIGH
-    STATUS = NF90_PUT_ATT(INCID, IVARID, 'c_grid_dynamic_range',TRIM(YRANGE))
-    IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_HOR_COORD','NF90_PUT_ATT','c_grid_dynamic_range for ' &
+    ISTATUS = NF90_PUT_ATT(INCID, IVARID, 'c_grid_dynamic_range',TRIM(YRANGE))
+    IF (ISTATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'Write_hor_coord1d','NF90_PUT_ATT','c_grid_dynamic_range for ' &
                                                      //trim(YVARNAME))
 
     ! Write the data
-    STATUS = NF90_PUT_VAR(INCID, IVARID, ZTAB)
-    IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_HOR_COORD','NF90_PUT_VAR',trim(YVARNAME),IRESP)
+    ISTATUS = NF90_PUT_VAR(INCID, IVARID, PCOORDS)
+    IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'Write_hor_coord1d','NF90_PUT_VAR',trim(YVARNAME),IRESP)
   END IF
+end subroutine Write_hor_coord1d
 
-  IF (GALLOC) DEALLOCATE(ZTAB)
-END SUBROUTINE WRITE_HOR_COORD
 
-SUBROUTINE WRITE_HOR_2DCOORD(PX,PY,HLAT,HLON)
-  USE MODE_ALLOCBUFFER_ll, ONLY: ALLOCBUFFER_ll
-  USE MODE_GATHER_ll,      ONLY: GATHER_XYFIELD
+subroutine Write_hor_coord2d( plat, plon, hlat, hlon )
+  real,dimension(:,:), intent(in) :: plat
+  real,dimension(:,:), intent(in) :: plon
+  character(len=*),    intent(in) :: hlat
+  character(len=*),    intent(in) :: hlon
 
-  REAL,DIMENSION(:), INTENT(IN) :: PX
-  REAL,DIMENSION(:), INTENT(IN) :: PY
-  CHARACTER(LEN=*),  INTENT(IN) :: HLAT
-  CHARACTER(LEN=*),  INTENT(IN) :: HLON
+  if ( tpfile%lmaster ) then
+    call Find_field_id_from_mnhname( hlat, id, iresp )
+    call IO_Field_write_nc4_x2( tpfile, tfieldlist(id ), plat, iresp, oiscoord = .true. )
+    call Find_field_id_from_mnhname( hlon, id, iresp )
+    call IO_Field_write_nc4_x2( tpfile, tfieldlist(id ), plon, iresp, oiscoord = .true. )
+  end if
+end subroutine Write_hor_coord2d
 
-  LOGICAL                       :: GALLOC1, GALLOC2
-  REAL,DIMENSION(:,:),POINTER   :: ZTAB1, ZTAB2
-
-  GALLOC1 = .FALSE.
-  GALLOC2 = .FALSE.
-  ZTAB1 => NULL()
-  ZTAB2 => NULL()
-
-  CALL SM_LATLON(XLATORI,XLONORI,                     &
-                 SPREAD(SOURCE=PX,DIM=2,NCOPIES=IJU), &
-                 SPREAD(SOURCE=PY,DIM=1,NCOPIES=IIU), &
-                 ZLAT,ZLON)
-
-  IF (.NOT.TPFILE%LMASTER) THEN
-    ALLOCATE(ZTAB1(0,0),ZTAB2(0,0)) !To prevent false positive with valgrind
-    GALLOC1 = .TRUE. ; GALLOC2 = .TRUE.
-    CALL GATHER_XYFIELD(ZLAT,ZTAB1,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
-    CALL GATHER_XYFIELD(ZLON,ZTAB2,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
-  ELSE !TPFILE%LMASTER
-    IF (GSMONOPROC) THEN ! sequential execution
-      ZTAB1 => ZLAT
-      ZTAB2 => ZLON
-    ELSE ! multiprocesses execution
-      CALL ALLOCBUFFER_ll(ZTAB1,ZLAT,'XY',GALLOC1)
-      CALL ALLOCBUFFER_ll(ZTAB2,ZLON,'XY',GALLOC2)
-      CALL GATHER_XYFIELD(ZLAT,ZTAB1,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
-      CALL GATHER_XYFIELD(ZLON,ZTAB2,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
-    ENDIF
-    !
-    CALL FIND_FIELD_ID_FROM_MNHNAME(HLAT,ID,IRESP)
-    CALL IO_Field_write_nc4_X2(TPFILE,TFIELDLIST(ID),ZTAB1,IRESP,OISCOORD=.TRUE.)
-    CALL FIND_FIELD_ID_FROM_MNHNAME(HLON,ID,IRESP)
-    CALL IO_Field_write_nc4_X2(TPFILE,TFIELDLIST(ID),ZTAB2,IRESP,OISCOORD=.TRUE.)
-  END IF
-
-  IF (GALLOC1) DEALLOCATE(ZTAB1)
-  IF (GALLOC2) DEALLOCATE(ZTAB2)
-END SUBROUTINE WRITE_HOR_2DCOORD
 
 SUBROUTINE WRITE_VER_COORD(TDIM,HLONGNAME,HSTDNAME,HCOMPNAME,PSHIFT,KBOUNDLOW,KBOUNDHIGH,PCOORDS)
   TYPE(DIMCDF), POINTER, INTENT(IN) :: TDIM
