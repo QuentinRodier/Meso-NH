@@ -14,13 +14,14 @@
 !  P. Wautelet 05/03/2019: rename IO subroutines and modules
 !  P. Wautelet 12/07/2019: add support for 1D array of dates
 !  P. Wautelet 10/09/2019: IO_Coordvar_write_nc4: split communication and file write operations
+!                          + no more process coordination for Z-split files
 !-----------------------------------------------------------------
 #ifdef MNH_IOCDF4
 module mode_io_write_nc4
 
 use modd_io,           only: gsmonoproc, tfiledata
 use modd_netcdf,       only: dimcdf, iocdf
-use modd_precision,    only: CDFINT, MNHINT_NF90, MNHREAL_NF90
+use modd_precision,    only: CDFINT, MNHINT_NF90, MNHREAL_MPI, MNHREAL_NF90
 
 use mode_field,        only: tfielddata
 use mode_io_tools_nc4, only: IO_Mnhname_clean, IO_Vdims_fill_nc4, IO_Dimcdf_get_nc4, IO_Strdimid_get_nc4, IO_Err_handle_nc4
@@ -1632,6 +1633,7 @@ INTEGER                         :: ID, IID, IRESP
 INTEGER                         :: IMI
 INTEGER(KIND=CDFINT)            :: INCID
 LOGICAL                         :: GCHANGEMODEL
+logical                         :: gdealloc
 LOGICAL,POINTER                 :: GSLEVE
 REAL,DIMENSION(:),POINTER       :: ZXHAT, ZYHAT, ZZHAT
 REAL,DIMENSION(:),ALLOCATABLE   :: ZXHATM, ZYHATM,ZZHATM !Coordinates at mass points in the transformed space
@@ -1639,25 +1641,19 @@ REAL,DIMENSION(:,:),POINTER     :: ZLAT, ZLON
 type(dimcdf), pointer           :: tzdim_ni, tzdim_nj, tzdim_ni_u, tzdim_nj_u, tzdim_ni_v, tzdim_nj_v
 TYPE(IOCDF),  POINTER           :: PIOCDF
 
-real, dimension(:),   pointer :: zxhat_glob,  zyhat_glob
-real, dimension(:),   pointer :: zxhatm_glob, zyhatm_glob
-real, dimension(:,:), pointer :: zlatm_glob,  zlonm_glob
-real, dimension(:,:), pointer :: zlatu_glob,  zlonu_glob
-real, dimension(:,:), pointer :: zlatv_glob,  zlonv_glob
-real, dimension(:,:), pointer :: zlatf_glob,  zlonf_glob
+!These variables are save: they are populated once for the master Z-split file and freed after the last file has been written
+real, dimension(:),   pointer, save :: zxhat_glob  => null(), zyhat_glob  => null()
+real, dimension(:),   pointer, save :: zxhatm_glob => null(), zyhatm_glob => null()
+real, dimension(:,:), pointer, save :: zlatm_glob  => null(), zlonm_glob  => null()
+real, dimension(:,:), pointer, save :: zlatu_glob  => null(), zlonu_glob  => null()
+real, dimension(:,:), pointer, save :: zlatv_glob  => null(), zlonv_glob  => null()
+real, dimension(:,:), pointer, save :: zlatf_glob  => null(), zlonf_glob  => null()
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Coordvar_write_nc4','called for '//TRIM(TPFILE%CNAME))
 
 ZXHAT => NULL()
 ZYHAT => NULL()
 ZZHAT => NULL()
-
-zxhat_glob  => null(); zyhat_glob  => null()
-zxhatm_glob => null(); zyhatm_glob => null()
-zlatm_glob  => null(); zlonm_glob  => null()
-zlatu_glob  => null(); zlonu_glob  => null()
-zlatv_glob  => null(); zlonv_glob  => null()
-zlatf_glob  => null(); zlonf_glob  => null()
 
 PIOCDF => TPFILE%TNCDIMS
 
@@ -1727,10 +1723,14 @@ tzdim_ni_v => null()
 tzdim_nj_v => null()
 end if
 
-call Gather_hor_coord1d( 'X', zxhat,  zxhat_glob  )
-call Gather_hor_coord1d( 'X', zxhatm, zxhatm_glob )
-call Gather_hor_coord1d( 'Y', zyhat,  zyhat_glob  )
-call Gather_hor_coord1d( 'Y', zyhatm, zyhatm_glob )
+
+!If the file is a Z-split subfile, coordinates are already collected
+if ( .not. associated( tpfile%tmainfile ) ) then
+  call Gather_hor_coord1d( 'X', zxhat,  zxhat_glob  )
+  call Gather_hor_coord1d( 'X', zxhatm, zxhatm_glob )
+  call Gather_hor_coord1d( 'Y', zyhat,  zyhat_glob  )
+  call Gather_hor_coord1d( 'Y', zyhatm, zyhatm_glob )
+end if
 
 call Write_hor_coord1d( tzdim_ni,   'x-dimension of the grid', &
                         trim(ystdnameprefix)//'_x_coordinate',              'x', 0.,    jphext, jphext, zxhatm_glob )
@@ -1746,7 +1746,15 @@ call Write_hor_coord1d( tzdim_nj_v, 'y-dimension of the grid at v location', &
                         trim(ystdnameprefix)//'_y_coordinate_at_v_location', 'y', -0.5, jphext, 0,      zyhat_glob  )
 
 !The z?hat*_glob were allocated in Gather_hor_coord1d calls
-deallocate( zxhat_glob, zxhatm_glob, zyhat_glob, zyhatm_glob )
+!Deallocate only if it is a non Z-split file or the last Z-split subfile
+gdealloc = .false.
+if ( associated( tpfile%tmainfile ) ) then
+  if ( tpfile%cname == tpfile%tmainfile%tfiles_ioz(tpfile%tmainfile%nsubfiles_ioz)%tfile%cname ) gdealloc = .true.
+else if ( tpfile%nsubfiles_ioz == 0 .and. .not. associated( tpfile%tmainfile ) ) then
+  gdealloc = .true.
+end if
+
+if ( gdealloc ) deallocate( zxhat_glob, zxhatm_glob, zyhat_glob, zyhatm_glob )
 
 IF (.NOT.LCARTESIAN) THEN
   !
@@ -1754,10 +1762,14 @@ IF (.NOT.LCARTESIAN) THEN
   !
   ALLOCATE(ZLAT(IIU,IJU),ZLON(IIU,IJU))
 
-  call Gather_hor_coord2d( zxhatm, zyhatm, zlatm_glob, zlonm_glob )
-  call Gather_hor_coord2d( zxhat,  zyhatm, zlatu_glob, zlonu_glob )
-  call Gather_hor_coord2d( zxhatm, zyhat,  zlatv_glob, zlonv_glob )
-  call Gather_hor_coord2d( zxhat,  zyhat,  zlatf_glob, zlonf_glob )
+  !If the file is a Z-split subfile, coordinates are already collected
+  if ( .not. associated( tpfile%tmainfile ) ) then
+    call Gather_hor_coord2d( zxhatm, zyhatm, zlatm_glob, zlonm_glob )
+    call Gather_hor_coord2d( zxhat,  zyhatm, zlatu_glob, zlonu_glob )
+    call Gather_hor_coord2d( zxhatm, zyhat,  zlatv_glob, zlonv_glob )
+    call Gather_hor_coord2d( zxhat,  zyhat,  zlatf_glob, zlonf_glob )
+  end if
+
   ! Mass point
   call Write_hor_coord2d( zlatm_glob, zlonm_glob, 'latitude',  'longitude')
   ! u point
@@ -1770,7 +1782,8 @@ IF (.NOT.LCARTESIAN) THEN
   DEALLOCATE(ZLAT,ZLON)
 
   !The zlat/lon._glob were allocated in Gather_hor_coord2d calls
-  deallocate( zlatm_glob, zlonm_glob, zlatu_glob, zlonu_glob, zlatv_glob, zlonv_glob, zlatf_glob, zlonf_glob )
+  !Deallocate only if it is non Z-split file or the last Z-split subfile
+  if ( gdealloc ) deallocate( zlatm_glob, zlonm_glob, zlatu_glob, zlonu_glob, zlatv_glob, zlonv_glob, zlatf_glob, zlonf_glob )
 END IF
 !
 DEALLOCATE(ZXHATM,ZYHATM)
@@ -1814,6 +1827,7 @@ subroutine Gather_hor_coord1d( haxis, pcoords_loc, pcoords_glob )
   real, dimension(:), pointer, intent(out) :: pcoords_glob
 
   character(len=2) :: ydir
+  integer          :: ierr
   logical          :: galloc
 
   if ( haxis == 'X' ) then
@@ -1824,18 +1838,29 @@ subroutine Gather_hor_coord1d( haxis, pcoords_loc, pcoords_glob )
     call Print_msg( NVERB_FATAL, 'IO', 'Gather_hor_coord1d', 'invalid haxis ('//trim(haxis)//')' )
   end if
 
-  if ( .not. tpfile%lmaster ) then
+  ! Allocate pcoords_glob
+  if ( gsmonoproc ) then ! sequential execution
+    allocate( pcoords_glob( size( pcoords_loc) ) )
+  else if ( tpfile%nsubfiles_ioz > 0 ) then
+    !If there are Z-split subfiles, all subfile writers need the coordinates
+    call Allocbuffer_ll( pcoords_glob, pcoords_loc, ydir, galloc )
+  else if ( .not. tpfile%lmaster ) then
     allocate( pcoords_glob(0 ) ) !to prevent false positive with valgrind
-    call Gather_xxfield( ydir, pcoords_loc, pcoords_glob, tpfile%nmaster_rank, tpfile%nmpicomm )
-  else !tpfile%lmaster
-    if ( gsmonoproc ) then ! sequential execution
-      allocate( pcoords_glob( size( pcoords_loc) ) )
-      pcoords_glob(: ) = pcoords_loc(: )
-    else ! multiprocesses execution
-      call Allocbuffer_ll( pcoords_glob, pcoords_loc, ydir, galloc )
-      call Gather_xxfield( ydir, pcoords_loc, pcoords_glob, tpfile%nmaster_rank, tpfile%nmpicomm )
-    endif
+  else !Master process
+    call Allocbuffer_ll( pcoords_glob, pcoords_loc, ydir, galloc )
   end if
+
+  !Gather coordinates
+  if ( gsmonoproc ) then ! sequential execution
+      pcoords_glob(: ) = pcoords_loc(: )
+  else ! multiprocesses execution
+      call Gather_xxfield( ydir, pcoords_loc, pcoords_glob, tpfile%nmaster_rank, tpfile%nmpicomm )
+  endif
+
+  !If the file has Z-split subfiles, broadcast the coordinates to all processes
+  !PW: TODO: broadcast only to subfile writers
+  if ( tpfile%nsubfiles_ioz > 0 ) &
+    call MPI_BCAST( pcoords_glob, size( pcoords_glob ), MNHREAL_MPI, tpfile%nmaster_rank - 1,  tpfile%nmpicomm, ierr )
 end subroutine Gather_hor_coord1d
 
 
@@ -1848,6 +1873,7 @@ subroutine Gather_hor_coord2d( px, py, plat_glob, plon_glob )
   real, dimension(:,:), pointer, intent(out) :: plat_glob
   real, dimension(:,:), pointer, intent(out) :: plon_glob
 
+  integer          :: ierr
   logical :: galloc1, galloc2
 
   call Sm_latlon( xlatori, xlonori,                             &
@@ -1855,22 +1881,35 @@ subroutine Gather_hor_coord2d( px, py, plat_glob, plon_glob )
                   spread( source = py, dim = 1, ncopies = iiu), &
                   zlat, zlon )
 
-  if ( .not. tpfile%lmaster ) then
+  ! Allocate coordinate arrays
+  if ( gsmonoproc ) then ! sequential execution
+    allocate( plat_glob( size( zlat, 1 ), size( zlat, 2 ) ) )
+    allocate( plon_glob( size( zlon, 1 ), size( zlon, 2 ) ) )
+  else if ( tpfile%nsubfiles_ioz > 0 ) then
+    !If there are Z-split subfiles, all subfile writers need the coordinates
+    call Allocbuffer_ll( plat_glob, zlat, 'XY', galloc1 )
+    call Allocbuffer_ll( plon_glob, zlon, 'XY', galloc2 )
+  else if ( .not. tpfile%lmaster ) then
     allocate( plat_glob( 0, 0 ), plon_glob( 0, 0 ) ) !to prevent false positive with valgrind
-    call Gather_xyfield( zlat, plat_glob, tpfile%nmaster_rank, tpfile%nmpicomm )
-    call Gather_xyfield( zlon, plon_glob, tpfile%nmaster_rank, tpfile%nmpicomm )
-  else !tpfile%lmaster
-    if ( gsmonoproc ) then ! sequential execution
-      allocate( plat_glob( size( zlat, 1 ), size( zlat, 2 ) ) )
-      allocate( plon_glob( size( zlon, 1 ), size( zlon, 2 ) ) )
-      plat_glob = zlat
-      plon_glob = zlon
-    else ! multiprocesses execution
-      call Allocbuffer_ll( plat_glob, zlat, 'XY', galloc1 )
-      call Allocbuffer_ll( plon_glob, zlon, 'XY', galloc2 )
+  else !Master process
+    call Allocbuffer_ll( plat_glob, zlat, 'XY', galloc1 )
+    call Allocbuffer_ll( plon_glob, zlon, 'XY', galloc2 )
+  end if
+
+  !Gather coordinates
+  if ( gsmonoproc ) then ! sequential execution
+      plat_glob(:, : ) = zlat(:, : )
+      plon_glob(:, : ) = zlon(:, : )
+  else ! multiprocesses execution
       call Gather_xyfield( zlat, plat_glob, tpfile%nmaster_rank, tpfile%nmpicomm )
       call Gather_xyfield( zlon, plon_glob, tpfile%nmaster_rank, tpfile%nmpicomm )
-    endif
+  endif
+
+  !If the file has Z-split subfiles, broadcast the coordinates to all processes
+  !PW: TODO: broadcast only to subfile writers
+  if ( tpfile%nsubfiles_ioz > 0 ) then
+    call MPI_BCAST( plat_glob, size( plat_glob ), MNHREAL_MPI, tpfile%nmaster_rank - 1,  tpfile%nmpicomm, ierr )
+    call MPI_BCAST( plon_glob, size( plon_glob ), MNHREAL_MPI, tpfile%nmaster_rank - 1,  tpfile%nmpicomm, ierr )
   end if
 end subroutine Gather_hor_coord2d
 
