@@ -106,31 +106,6 @@ IJU_ll = IJMAX_ll+2*JPHEXT
 !
 ILUOUT = TLUOUT%NLU
 !
-NLES_TOTADV  = 1
-NLES_RELA  = 2
-NLES_RAD   = 3
-NLES_GRAV  = 4
-NLES_COR   = 5
-NLES_MICR  = 6
-NLES_HTURB = 7
-NLES_VTURB = 8
-NLES_FORC  = 9
-NLES_PRES  = 10
-NLES_DIFF  = 11
-NLES_CURV  = 12
-NLES_PREF  = 13
-NLES_DP    = 14
-NLES_TP    = 15
-NLES_TR    = 16
-NLES_DISS  = 17
-NLES_TEND  = 18
-NLES_ADVR  = 19
-NLES_ADVM  = 20
-NLES_NEST  = 21
-NLES_MISC  = 22
-!
-NLES_TOT = 22
-!
 !-------------------------------------------------------------------------------
 !
 !*      1.   Does LES computations are used?

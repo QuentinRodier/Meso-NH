@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 modd 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ###############
       MODULE MODD_LES_BUDGET
@@ -113,30 +108,30 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: X_LES_BU_SBG_Tke
 !
 !* index for each processus taken into account in the budgets
 !
-INTEGER :: NLES_TOTADV
-INTEGER :: NLES_RELA
-INTEGER :: NLES_RAD
-INTEGER :: NLES_GRAV
-INTEGER :: NLES_COR
-INTEGER :: NLES_MICR
-INTEGER :: NLES_HTURB
-INTEGER :: NLES_VTURB
-INTEGER :: NLES_FORC
-INTEGER :: NLES_PRES
-INTEGER :: NLES_DIFF
-INTEGER :: NLES_CURV
-INTEGER :: NLES_PREF
-INTEGER :: NLES_DP
-INTEGER :: NLES_TP
-INTEGER :: NLES_TR
-INTEGER :: NLES_DISS
-INTEGER :: NLES_TEND
-INTEGER :: NLES_MISC
-INTEGER :: NLES_ADVR
-INTEGER :: NLES_ADVM
-INTEGER :: NLES_NEST
-!
-INTEGER :: NLES_TOT
+integer, parameter :: NLES_TOTADV= 1
+integer, parameter :: NLES_RELA  = 2
+integer, parameter :: NLES_RAD   = 3
+integer, parameter :: NLES_GRAV  = 4
+integer, parameter :: NLES_COR   = 5
+integer, parameter :: NLES_MICR  = 6
+integer, parameter :: NLES_HTURB = 7
+integer, parameter :: NLES_VTURB = 8
+integer, parameter :: NLES_FORC  = 9
+integer, parameter :: NLES_PRES  = 10
+integer, parameter :: NLES_DIFF  = 11
+integer, parameter :: NLES_CURV  = 12
+integer, parameter :: NLES_PREF  = 13
+integer, parameter :: NLES_DP    = 14
+integer, parameter :: NLES_TP    = 15
+integer, parameter :: NLES_TR    = 16
+integer, parameter :: NLES_DISS  = 17
+integer, parameter :: NLES_TEND  = 18
+integer, parameter :: NLES_ADVR  = 19
+integer, parameter :: NLES_ADVM  = 20
+integer, parameter :: NLES_NEST  = 21
+integer, parameter :: NLES_MISC  = 22
+
+integer, parameter :: NLES_TOT   = 22
 !
 !-------------------------------------------------------------------------------
 !
