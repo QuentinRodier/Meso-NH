@@ -14,9 +14,9 @@ public :: Write_diachro
 contains
 !     #################################################################
       SUBROUTINE WRITE_DIACHRO(TPDIAFILE,TPLUOUTDIA,HGROUP,HTYPE,     &
-      KGRID,PDATIME,PVAR,PTRAJT,                                     &
-      HTITRE,HUNITE,HCOMMENT,OICP,OJCP,OKCP,KIL,KIH,KJL,KJH,KKL,KKH, &
-      PTRAJX,PTRAJY,PTRAJZ,PMASK)
+      KGRID, tpdates, PVAR,                                           &
+      HTITRE,HUNITE,HCOMMENT,OICP,OJCP,OKCP,KIL,KIH,KJL,KJH,KKL,KKH,  &
+      PTRAJX,PTRAJY,PTRAJZ  )
 !     #################################################################
 !
 !!****  *WRITE_DIACHRO* - Ecriture d'un enregistrement dans un fichier
@@ -78,6 +78,7 @@ contains
 !!                                  and better comment (true comment + units)
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
+!  P. Wautelet 13/09/2019: remove never used PMASK optional dummy-argument
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -115,7 +116,6 @@ INTEGER,                      INTENT(IN),OPTIONAL :: KKL, KKH
 REAL,DIMENSION(:,:,:),        INTENT(IN),OPTIONAL :: PTRAJX
 REAL,DIMENSION(:,:,:),        INTENT(IN),OPTIONAL :: PTRAJY
 REAL,DIMENSION(:,:,:),        INTENT(IN),OPTIONAL :: PTRAJZ
-REAL,DIMENSION(:,:,:,:,:,:),  INTENT(IN),OPTIONAL :: PMASK
 !
 !*       0.1   Local variables
 !              ---------------
@@ -203,17 +203,10 @@ IF(HTYPE == 'MASK')THEN
   CALL GET_GLOBALDIMS_ll (IIMAX_ll,IJMAX_ll)
   IIMASK=IIMAX_ll + 2 * JPHEXT
   IJMASK=IJMAX_ll + 2 * JPHEXT
-  IF(PRESENT(PMASK))THEN
-    IKMASK=SIZE(PMASK,3)
-    ITMASK=SIZE(PMASK,4)
-    INMASK=SIZE(PMASK,5)
-    IPMASK=SIZE(PMASK,6)
-  ELSE
-    IKMASK=1
-    ITMASK=NBUWRNB
-    INMASK=NBUMASK
-    IPMASK=1
-  ENDIF
+  IKMASK=1
+  ITMASK=NBUWRNB
+  INMASK=NBUMASK
+  IPMASK=1
 ENDIF
 
 ILENTITRE = LEN(HTITRE)
@@ -473,22 +466,6 @@ IF(PRESENT(PTRAJX))THEN
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .FALSE.
   CALL IO_Field_write(TPDIAFILE,TZFIELD,PTRAJX)
-ENDIF
-!
-!                        ou
-!
-IF(PRESENT(PMASK))THEN
-  TZFIELD%CMNHNAME   = TRIM(HGROUP)//'.MASK'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = TRIM(HGROUP)//'.MASK'
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = 'XY'
-  TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
-  TZFIELD%NGRID      = KGRID(1)
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 6
-  TZFIELD%LTIMEDEP   = .FALSE.
-  CALL IO_Field_write(TPDIAFILE,TZFIELD,PMASK)
 ENDIF
 !
 ! 9eme enregistrement TRAJY
