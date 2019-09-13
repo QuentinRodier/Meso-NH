@@ -125,14 +125,16 @@ END MODULE MODI_WRITE_BUDGET
 !!      11/09/2015  (C.Lac)    Correction due to FIT temporal scheme
 !!      28/03/2018  (P.Wautelet) Replace TEMPORAL_DIST by DATETIME_DISTANCE
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
+!
 !-------------------------------------------------------------------------------
 !
-!*       0.    
+!*       0.
 !              ------------
 USE MODD_BUDGET
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_LUNIT_n,        ONLY: TLUOUT
+use modd_type_date,      only: date_time
 !
 USE MODE_DATETIME
 USE MODE_FIELD,          ONLY: TFIELDDATA, TYPEREAL
@@ -167,20 +169,19 @@ REAL, ALLOCATABLE  , DIMENSION(:,:,:,:,:,:) :: ZWORK, ZWORKT,  ZWORKMASK  ! loca
             ! and for the masks
 LOGICAL :: GNOCOMPRESS !  If  TRUE : no compress along x and y direction in the CART option
 REAL,    ALLOCATABLE              , DIMENSION(:)  :: ZCONVERT      ! unit conversion coefficient
-REAL,    ALLOCATABLE              , DIMENSION(:,:):: ZWORKTEMP     ! time
+REAL,    ALLOCATABLE              , DIMENSION(:)  :: ZWORKTEMP     ! time
 INTEGER, ALLOCATABLE              , DIMENSION(:)  :: IWORKGRID     ! grid label
 CHARACTER (LEN=99),  ALLOCATABLE  , DIMENSION(:)  :: YBUCOMMENT    ! comment   
 CHARACTER (LEN=100), ALLOCATABLE  , DIMENSION(:)  :: YWORKCOMMENT  ! comment   
 CHARACTER (LEN=100), ALLOCATABLE  , DIMENSION(:)  :: YWORKUNIT     ! comment
 CHARACTER (LEN=9)                                 :: YGROUP_NAME   ! group name                                    
 CHARACTER(LEN=28)                                 :: YFILEDIA
-REAL,    ALLOCATABLE              , DIMENSION(:,:):: ZWORKDATIME   ! global time
-                                                                   !     info
 INTEGER                                           :: JSV           ! loop index
                                                                    ! over the 
                                                                    ! KSV  SVx
 INTEGER :: IP
 TYPE(TFIELDDATA) :: TZFIELD
+type(date_time), dimension(:), allocatable :: tzdates
 !
 !-------------------------------------------------------------------------------
 !
@@ -231,30 +232,19 @@ SELECT CASE (CBUTYPE)
 !
 !*	 2.1    Initialization
 !
-    ALLOCATE(ZWORKTEMP(1,1))
-    ALLOCATE(ZWORKDATIME(16,1))
+    ALLOCATE( ZWORKTEMP( 1 ) )
+    allocate( tzdates( 1 ) )
 !
-    ZWORKDATIME(1,1)=TDTEXP%TDATE%YEAR
-    ZWORKDATIME(2,1)=TDTEXP%TDATE%MONTH
-    ZWORKDATIME(3,1)=TDTEXP%TDATE%DAY
-    ZWORKDATIME(4,1)=TDTEXP%TIME
-    ZWORKDATIME(5,1)=TDTSEG%TDATE%YEAR
-    ZWORKDATIME(6,1)=TDTSEG%TDATE%MONTH
-    ZWORKDATIME(7,1)=TDTSEG%TDATE%DAY
-    ZWORKDATIME(8,1)=TDTSEG%TIME
-    ZWORKDATIME(9,1)=TPDTMOD%TDATE%YEAR
-    ZWORKDATIME(10,1)=TPDTMOD%TDATE%MONTH
-    ZWORKDATIME(11,1)=TPDTMOD%TDATE%DAY
-    ZWORKDATIME(12,1)=TPDTMOD%TIME
+    !Compute time at the middle of the temporally-averaged budget timestep
+    !This time is computed from the beginning of the experiment
+    CALL DATETIME_DISTANCE(TDTEXP,TPDTCUR,ZWORKTEMP(1))
 !
-    CALL DATETIME_DISTANCE(TDTEXP,TPDTCUR,ZWORKTEMP(1,1))
+    ZWORKTEMP(1)=ZWORKTEMP(1)+(1.-NBUSTEP*0.5)*PTSTEP
 !
-    ZWORKTEMP(1,1)=ZWORKTEMP(1,1)+(1.-NBUSTEP*0.5)*PTSTEP
-!
-    ZWORKDATIME(13,1)=TDTEXP%TDATE%YEAR
-    ZWORKDATIME(14,1)=TDTEXP%TDATE%MONTH
-    ZWORKDATIME(15,1)=TDTEXP%TDATE%DAY
-    ZWORKDATIME(16,1)=TDTEXP%TIME+ZWORKTEMP(1,1)
+    tzdates(1)%tdate%year  = tdtexp%tdate%year
+    tzdates(1)%tdate%month = tdtexp%tdate%month
+    tzdates(1)%tdate%day   = tdtexp%tdate%day
+    tzdates(1)%time        = tdtexp%time + zworktemp(1)
 !
 !*	 2.2    storage of the budgets array
 !
@@ -301,11 +291,11 @@ SELECT CASE (CBUTYPE)
 
       WRITE(YGROUP_NAME,FMT="('UU___',I4.4)") NBUTSHIFT
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID,  &
-                         ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(1, :),  &
-                         YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-                         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID,                           &
+                          tzdates, ZWORKT, CBUCOMMENT(1, :),                                           &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
 !
 ! XBURHODJU storage
@@ -324,11 +314,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(1)       = 2
       WRITE(YGROUP_NAME,FMT="('RJX__',I4.4)") NBUTSHIFT
 ! 
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME,'CART', IWORKGRID,   &
-                         ZWORKDATIME, ZWORK, ZWORKTEMP, YBUCOMMENT,         &
-                         YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-                         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID,                           &
+                          tzdates, ZWORK, YBUCOMMENT,                                                  &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(ZWORK, YBUCOMMENT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
     END IF
 !
@@ -373,11 +363,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(:)       = 3
       WRITE(YGROUP_NAME,FMT="('VV___',I4.4)") NBUTSHIFT
                                 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(IP, :),   &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID,                           &
+                          tzdates, ZWORKT, CBUCOMMENT(IP, :),                                          &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
 !                     XBURHODJV storage
       IF (GNOCOMPRESS) THEN
@@ -395,11 +385,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(1)       = 3
       WRITE(YGROUP_NAME,FMT="('RJY__',I4.4)") NBUTSHIFT
 ! 
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME,'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORK, ZWORKTEMP, YBUCOMMENT,         &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID,                           &
+                          tzdates, ZWORK, YBUCOMMENT,                                                  &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(YBUCOMMENT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
       DEALLOCATE(ZWORK)
     END IF
@@ -444,11 +434,11 @@ SELECT CASE (CBUTYPE)
       YWORKCOMMENT(:)    = 'Budget of momentum along Z axis'
       IWORKGRID(:)       = 4
       WRITE(YGROUP_NAME,FMT="('WW___',I4.4)") NBUTSHIFT
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(IP, :),   &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID,                           &
+                          tzdates, ZWORKT, CBUCOMMENT(IP, :),                                          &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
 !                     XBURHODJW storage
       IF (GNOCOMPRESS) THEN
@@ -465,16 +455,15 @@ SELECT CASE (CBUTYPE)
       YWORKCOMMENT(1)    = 'RhodJ for momentum along Z axis'
       IWORKGRID(1)       = 4
       WRITE(YGROUP_NAME,FMT="('RJZ__',I4.4)") NBUTSHIFT
-! 
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME,'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORK, ZWORKTEMP, YBUCOMMENT,         &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
+!
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID,                           &
+                          tzdates, ZWORK, YBUCOMMENT,                                                  &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(YBUCOMMENT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
       DEALLOCATE(ZWORK)
     END IF
-  
 !
 !*	 2.2.3'  XBURHODJ storage for Scalars
 !
@@ -499,11 +488,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(1)       = 1
       WRITE(YGROUP_NAME,FMT="('RJS__',I4.4)") NBUTSHIFT
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORK, ZWORKTEMP, YBUCOMMENT,         &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID,                           &
+                          tzdates, ZWORK, YBUCOMMENT,                                                  &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       IF (GNOCOMPRESS) THEN
         DEALLOCATE(ZWORK, YBUCOMMENT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
       ELSE
@@ -549,11 +538,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('TH___',I4.4)") NBUTSHIFT
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(IP, :),   &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID,                           &
+                          tzdates, ZWORKT, CBUCOMMENT(IP, :),                                          &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
 !
     END IF
@@ -595,11 +584,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('TK___',I4.4)") NBUTSHIFT 
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(IP, :),   &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID,                           &
+                          tzdates, ZWORKT, CBUCOMMENT(IP, :),                                          &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
 !
     END IF   
@@ -641,11 +630,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RV___',I4.4)") NBUTSHIFT
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(IP, :),   &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID,                           &
+                          tzdates, ZWORKT, CBUCOMMENT(IP, :),                                          &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
 !
     END IF
@@ -687,11 +676,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RC___',I4.4)") NBUTSHIFT 
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(IP, :),   &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID,                           &
+                          tzdates, ZWORKT, CBUCOMMENT(IP, :),                                          &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
 !
     END IF
@@ -732,11 +721,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RR___',I4.4)") NBUTSHIFT
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(IP, :),   &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID,                           &
+                          tzdates, ZWORKT, CBUCOMMENT(IP, :),                                          &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
 !
     END IF
@@ -777,11 +766,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RI___',I4.4)") NBUTSHIFT
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(IP, :),   &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID,                           &
+                          tzdates, ZWORKT, CBUCOMMENT(IP, :),                                          &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
 !
     END IF
@@ -822,11 +811,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RS___',I4.4)") NBUTSHIFT
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(IP, :),   &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID,                           &
+                          tzdates, ZWORKT, CBUCOMMENT(IP, :),                                          &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
 !
     END IF
@@ -867,11 +856,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RG___',I4.4)") NBUTSHIFT
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(IP, :),   &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID,                           &
+                          tzdates, ZWORKT, CBUCOMMENT(IP, :),                                          &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
 !
     END IF
@@ -912,11 +901,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RH___',I4.4)") NBUTSHIFT
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(IP, :),   &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID,                           &
+                          tzdates, ZWORKT, CBUCOMMENT(IP, :),                                          &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
 !
     END IF
@@ -961,26 +950,27 @@ SELECT CASE (CBUTYPE)
         IWORKGRID(:)       = 1
         WRITE(YGROUP_NAME,FMT="('SV',I3.3,I4.4)") JSV,NBUTSHIFT
 !
-        CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID, &
-             ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(IP, :),   &
-             YWORKUNIT, YWORKCOMMENT,                           &
-             LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-             NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
+        CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID,                           &
+                            tzdates, ZWORKT, CBUCOMMENT(IP, :),                                          &
+                            YWORKUNIT, YWORKCOMMENT,                                                     &
+                            OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                            KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
         DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
 !
       END DO
     END IF
 !
     IF (ALLOCATED(ZWORK)) DEALLOCATE(ZWORK)
-    DEALLOCATE (ZWORKTEMP, ZWORKDATIME)
+    DEALLOCATE (ZWORKTEMP)
+    deallocate( tzdates )
 !-------------------------------------------------------------------------------
 !
 !*	 3.     'MASK' CASE
 !	        -----------
 !
   CASE('MASK')
-    ALLOCATE(ZWORKTEMP(NBUWRNB,1))
-    ALLOCATE(ZWORKDATIME(16,NBUWRNB))
+    ALLOCATE(ZWORKTEMP(NBUWRNB))
+    allocate( tzdates( NBUWRNB ) )
     ALLOCATE(ZWORKMASK(SIZE(XBUSURF,1),SIZE(XBUSURF,2),1,NBUWRNB,NBUMASK,1))
 !
 ! local array
@@ -990,33 +980,20 @@ SELECT CASE (CBUTYPE)
       END DO
     END DO
 !
-    ZWORKDATIME(1,:)=TDTEXP%TDATE%YEAR
-    ZWORKDATIME(2,:)=TDTEXP%TDATE%MONTH
-    ZWORKDATIME(3,:)=TDTEXP%TDATE%DAY
-    ZWORKDATIME(4,:)=TDTEXP%TIME
-    ZWORKDATIME(5,:)=TDTSEG%TDATE%YEAR
-    ZWORKDATIME(6,:)=TDTSEG%TDATE%MONTH
-    ZWORKDATIME(7,:)=TDTSEG%TDATE%DAY
-    ZWORKDATIME(8,:)=TDTSEG%TIME
-    ZWORKDATIME(9,:)=TPDTMOD%TDATE%YEAR
-    ZWORKDATIME(10,:)=TPDTMOD%TDATE%MONTH
-    ZWORKDATIME(11,:)=TPDTMOD%TDATE%DAY
-    ZWORKDATIME(12,:)=TPDTMOD%TIME
+    CALL DATETIME_DISTANCE(TDTEXP,TPDTCUR,ZWORKTEMP(NBUWRNB))
 !
-    CALL DATETIME_DISTANCE(TDTEXP,TPDTCUR,ZWORKTEMP(NBUWRNB,1))
+    ZWORKTEMP(NBUWRNB)=ZWORKTEMP(NBUWRNB)+(1.-NBUSTEP*0.5)*PTSTEP
 !
-    ZWORKTEMP(NBUWRNB,1)=ZWORKTEMP(NBUWRNB,1)+(1.-NBUSTEP*0.5)*PTSTEP
-!
-    ZWORKDATIME(13,NBUWRNB)=TDTEXP%TDATE%YEAR
-    ZWORKDATIME(14,NBUWRNB)=TDTEXP%TDATE%MONTH
-    ZWORKDATIME(15,NBUWRNB)=TDTEXP%TDATE%DAY
-    ZWORKDATIME(16,NBUWRNB)=TDTEXP%TIME+ZWORKTEMP(NBUWRNB,1)
+    tzdates(NBUWRNB )%tdate%year  = tdtexp%tdate%year
+    tzdates(NBUWRNB )%tdate%month = tdtexp%tdate%month
+    tzdates(NBUWRNB )%tdate%day   = tdtexp%tdate%day
+    tzdates(NBUWRNB )%time        = tdtexp%time + zworktemp(NBUWRNB )
     DO JT=1,NBUWRNB-1
-      ZWORKTEMP(JT,1) = ZWORKTEMP(NBUWRNB,1)-NBUSTEP*PTSTEP*(NBUWRNB-JT)
-      ZWORKDATIME(13,JT)=TDTEXP%TDATE%YEAR
-      ZWORKDATIME(14,JT)=TDTEXP%TDATE%MONTH
-      ZWORKDATIME(15,JT)=TDTEXP%TDATE%DAY
-      ZWORKDATIME(16,JT)=TDTEXP%TIME  + ZWORKTEMP(JT,1)
+      ZWORKTEMP(JT) = ZWORKTEMP(NBUWRNB)-NBUSTEP*PTSTEP*(NBUWRNB-JT)
+      tzdates(jt )%tdate%year  = tdtexp%tdate%year
+      tzdates(jt )%tdate%month = tdtexp%tdate%month
+      tzdates(jt )%tdate%day   = tdtexp%tdate%day
+      tzdates(jt )%time        = tdtexp%time + zworktemp(jt )
     END DO
 !
 !*     3.1    storage of the masks  array
@@ -1057,11 +1034,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(:)       = 2
       WRITE(YGROUP_NAME,FMT="('RJX__',I4.4)") NBUTSHIFT
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                         ZWORKDATIME, ZWORK, ZWORKTEMP, CBUCOMMENT(1, :),   &
-                         YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-                         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID,                          &
+                          tzdates, ZWORK, CBUCOMMENT(1, :),                                            &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE( YWORKUNIT, YWORKCOMMENT, IWORKGRID)
 !
 !                 unit conversion of RU budgets and storage
@@ -1088,11 +1065,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(:)       = 2
       WRITE(YGROUP_NAME,FMT="('UU___',I4.4)") NBUTSHIFT
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                         ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(1, :),   &
-                         YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID,                          &
+                          tzdates, ZWORKT, CBUCOMMENT(1, :),                                           &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
     END IF
 !
@@ -1115,11 +1092,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(:)       = 3
       WRITE(YGROUP_NAME,FMT="('RJY__',I4.4)") NBUTSHIFT
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                	 ZWORKDATIME, ZWORK, ZWORKTEMP, CBUCOMMENT(1, :),   &
-	       		 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID,                          &
+                          tzdates, ZWORK, CBUCOMMENT(1, :),                                            &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE( YWORKUNIT, YWORKCOMMENT, IWORKGRID)
 !
 !                 unit conversion of RU budgets and storage
@@ -1144,11 +1121,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(:)       = 3
       WRITE(YGROUP_NAME,FMT="('VV___',I4.4)") NBUTSHIFT
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                         ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(2, :),   &
-	        	 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID,                          &
+                          tzdates, ZWORKT, CBUCOMMENT(2, :),                                           &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
     END IF
 !
@@ -1171,11 +1148,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(:)       = 4
       WRITE(YGROUP_NAME,FMT="('RJZ__',I4.4)") NBUTSHIFT
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                	 ZWORKDATIME, ZWORK, ZWORKTEMP, CBUCOMMENT(1, :),   &
-	        	 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID,                          &
+                          tzdates, ZWORK, CBUCOMMENT(1, :),                                            &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE( YWORKUNIT, YWORKCOMMENT, IWORKGRID)
 !
 !                 unit conversion of RU budgets and storage
@@ -1200,11 +1177,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(:)       = 4
       WRITE(YGROUP_NAME,FMT="('WW___',I4.4)") NBUTSHIFT
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                	 ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(3, :),   &
-	        	 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID,                          &
+                          tzdates, ZWORKT, CBUCOMMENT(3, :),                                           &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
     END IF
 !
@@ -1227,11 +1204,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RJS__',I4.4)") NBUTSHIFT
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                	 ZWORKDATIME, ZWORK, ZWORKTEMP, CBUCOMMENT(1, :),   &
-	        	 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID,                          &
+                          tzdates, ZWORK, CBUCOMMENT(1, :),                                            &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE( YWORKUNIT, YWORKCOMMENT, IWORKGRID)
     END IF
 !
@@ -1258,11 +1235,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('TH___',I4.4)") NBUTSHIFT
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                	 ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(4, :),   &
-	         	 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID,                          &
+                          tzdates, ZWORKT, CBUCOMMENT(4, :),                                           &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
     END IF
 !
@@ -1289,11 +1266,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('TK___',I4.4)") NBUTSHIFT
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                	 ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(5, :),   &
-	        	 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID,                          &
+                          tzdates, ZWORKT, CBUCOMMENT(5, :),                                           &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
     END IF   
 !
@@ -1320,11 +1297,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RV___',I4.4)") NBUTSHIFT
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                	 ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(6, :),   &
-	        	 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID,                          &
+                          tzdates, ZWORKT, CBUCOMMENT(6, :),                                           &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
     END IF
 !
@@ -1351,11 +1328,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RC___',I4.4)") NBUTSHIFT
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                	 ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(7, :),   &
-	        	 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID,                          &
+                          tzdates, ZWORKT, CBUCOMMENT(7, :),                                           &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
     END IF
 !
@@ -1382,11 +1359,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RR___',I4.4)") NBUTSHIFT
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                	 ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(8, :),   &
-	        	 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID,                          &
+                          tzdates, ZWORKT, CBUCOMMENT(8, :),                                           &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
     END IF
 !
@@ -1413,11 +1390,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RI___',I4.4)") NBUTSHIFT
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                	 ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(9, :),   &
-	        	 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID,                          &
+                          tzdates, ZWORKT, CBUCOMMENT(9, :),                                           &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
     END IF
 !
@@ -1444,11 +1421,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RS___',I4.4)") NBUTSHIFT
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                	 ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(10, :),   &
-	        	 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID,                          &
+                          tzdates, ZWORKT, CBUCOMMENT(10, :),                                          &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
     END IF
 !
@@ -1475,11 +1452,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RG___',I4.4)") NBUTSHIFT
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                	 ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(11, :),   &
-	         	 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID,                          &
+                          tzdates, ZWORKT, CBUCOMMENT(11, :),                                          &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
     END IF
 !
@@ -1506,11 +1483,11 @@ SELECT CASE (CBUTYPE)
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RH___',I4.4)") NBUTSHIFT
 !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                	 ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(12, :),   &
-	        	 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID,                          &
+                          tzdates, ZWORKT, CBUCOMMENT(12, :),                                          &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
       DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
     END IF
 !
@@ -1540,11 +1517,11 @@ SELECT CASE (CBUTYPE)
         IWORKGRID(:)       = 1
         WRITE(YGROUP_NAME,FMT="('SV',I3.3,I4.4)") JSV,NBUTSHIFT
 !
-        CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID,  &
-                  	   ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(12+JSV,:),&
-		           YWORKUNIT, YWORKCOMMENT,                            &
-                           LBU_ICP, LBU_JCP, LBU_KCP,                          &
-		           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
+      CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID,                          &
+                          tzdates, ZWORKT, CBUCOMMENT(12 + JSV, :),                                    &
+                          YWORKUNIT, YWORKCOMMENT,                                                     &
+                          OICP = LBU_ICP, OJCP = LBU_JCP, OKCP = LBU_KCP,                              &
+                          KIL = NBUIL, KIH = NBUIH, KJL = NBUJL, KJH = NBUJH, KKL = NBUKL, KKH = NBUKH )
         DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
       END DO
     END IF
@@ -1554,7 +1531,8 @@ SELECT CASE (CBUTYPE)
       DEALLOCATE(ZWORK)
     END IF
 !
-  DEALLOCATE (ZWORKTEMP, ZWORKDATIME)
+  DEALLOCATE (ZWORKTEMP)
+  deallocate( tzdates )
 !
 END SELECT   
 !

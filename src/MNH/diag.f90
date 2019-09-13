@@ -92,6 +92,7 @@
 !  P. Wautelet 11/02/2019: added missing use of MODI_CH_MONITOR_n
 !  P. Wautelet 28/03/2019: use MNHTIME for time measurement variables
 !  P. Wautelet 26/07/2019: bug correction: deallocate of zsea and ztown done too early
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -177,6 +178,7 @@ IMPLICIT NONE
 !*       0.1   declarations of local variables
 !
 TYPE(DATE_TIME)   :: TXDTBAL   ! current time and date for BALLOON and AIRCRAFT trajectories
+TYPE(DATE_TIME)   :: TPDTCUR_SAVE
 CHARACTER (LEN=28), DIMENSION(1) :: YINIFILE ! names of the INPUT FM-file
 CHARACTER (LEN=28), DIMENSION(1) :: YINIFILEPGD ! names of the INPUT FM-file
 CHARACTER (LEN=5)  :: YSUFFIX   ! character string for the OUTPUT FM-file number
@@ -533,11 +535,14 @@ IF ( LAIRCRAFT_BALLOON ) THEN
   WRITE(ILUOUT0,*) 'DIAG AFTER OPEN DIACHRONIC FILE'
   WRITE(ILUOUT0,*) ' '
 !
+  TPDTCUR_SAVE = TDTCUR
+!
   TXDTBAL%TDATE%YEAR  = TDTCUR%TDATE%YEAR
   TXDTBAL%TDATE%MONTH = TDTCUR%TDATE%MONTH
   TXDTBAL%TDATE%DAY   = TDTCUR%TDATE%DAY
   TXDTBAL%TIME        = TDTCUR%TIME - NTIME_AIRCRAFT_BALLOON/2.
   CALL DATETIME_CORRECTDATE(TXDTBAL)
+  TDTCUR = TXDTBAL !TDTCUR is used in AIRCRAFT_BALLOON
 !
   ALLOCATE (ZSEA(SIZE(XRHODJ,1),SIZE(XRHODJ,2)))
   ALLOCATE (ZTOWN(SIZE(XRHODJ,1),SIZE(XRHODJ,2)))
@@ -546,15 +551,18 @@ IF ( LAIRCRAFT_BALLOON ) THEN
   CALL MNHGET_SURF_PARAM_n (PSEA=ZSEA(:,:),PTOWN=ZTOWN(:,:))
   DO ISTEPBAL=1,NTIME_AIRCRAFT_BALLOON,INT(XSTEP_AIRCRAFT_BALLOON)
     CALL AIRCRAFT_BALLOON(XSTEP_AIRCRAFT_BALLOON,                &
-                      TDTEXP, TDTMOD, TDTCUR, TXDTBAL,           &
                       XXHAT, XYHAT, XZZ, XMAP, XLONORI, XLATORI, &
                       XUT, XVT, XWT, XPABST, XTHT, XRT, XSVT,    &
                       XTKET, XTSRAD, XRHODREF,XCIT,ZSEA)
-!
+
     TXDTBAL%TIME=TXDTBAL%TIME + XSTEP_AIRCRAFT_BALLOON
     CALL DATETIME_CORRECTDATE(TXDTBAL)
+    TDTCUR = TXDTBAL !TDTCUR is used in AIRCRAFT_BALLOON
   ENDDO
   DEALLOCATE (ZSEA,ZTOWN)
+!
+  TDTCUR = TPDTCUR_SAVE
+!
   CALL IO_Header_write(TZDIACFILE)
   CALL WRITE_LFIFMN_FORDIACHRO_n(TZDIACFILE)
   CALL WRITE_AIRCRAFT_BALLOON(TZDIACFILE)

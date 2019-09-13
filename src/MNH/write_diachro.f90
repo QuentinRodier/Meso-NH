@@ -77,6 +77,7 @@ contains
 !!      P. Wautelet     09/06/2017: name of the variable added to the name of the written field
 !!                                  and better comment (true comment + units)
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -86,7 +87,11 @@ USE MODD_BUDGET
 USE MODD_CONF
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_PARAMETERS,     ONLY: JPHEXT
+use modd_time,           only: tdtexp, tdtseg
+use modd_time_n,         only: tdtmod
+use modd_type_date,      only: date_time
 !
+use mode_datetime,       only: Datetime_distance
 USE MODE_FIELD
 USE MODE_IO_FIELD_WRITE, only: IO_Field_write, IO_Field_write_box
 USE MODE_ll
@@ -100,9 +105,8 @@ TYPE(TFILEDATA),              INTENT(IN)          :: TPDIAFILE    ! file to writ
 TYPE(TFILEDATA),              INTENT(IN)          :: TPLUOUTDIA
 CHARACTER(LEN=*),             INTENT(IN)          :: HGROUP, HTYPE
 INTEGER,DIMENSION(:),         INTENT(IN)          :: KGRID
-REAL,DIMENSION(:,:),          INTENT(IN)          :: PDATIME
+type(date_time), dimension(:), intent(in)           :: tpdates
 REAL,DIMENSION(:,:,:,:,:,:),  INTENT(IN)          :: PVAR
-REAL,DIMENSION(:,:),          INTENT(IN)          :: PTRAJT
 CHARACTER(LEN=*),DIMENSION(:),INTENT(IN)          :: HTITRE, HUNITE, HCOMMENT
 LOGICAL,                      INTENT(IN),OPTIONAL :: OICP, OJCP, OKCP
 INTEGER,                      INTENT(IN),OPTIONAL :: KIL, KIH
@@ -126,43 +130,52 @@ INTEGER   ::   INTRAJX, INTRAJY, INTRAJZ
 INTEGER   ::   IIMASK, IJMASK, IKMASK, ITMASK, INMASK, IPMASK
 INTEGER   ::   ICOMPX, ICOMPY, ICOMPZ
 INTEGER   ::   IIMAX_ll, IJMAX_ll ! size of the physical global domain
+integer   ::   ji
 INTEGER,DIMENSION(:),ALLOCATABLE :: ITABCHAR
+logical   :: gicp, gjcp, gkcp
 LOGICAL   ::   GPACK
+real, dimension(:,:), allocatable :: ztimes
+real, dimension(:,:), allocatable :: zdatime
 TYPE(TFIELDDATA)  :: TZFIELD
 !------------------------------------------------------------------------------
-!
+
+if ( present( oicp ) ) then
+  gicp = oicp
+else
+  gicp = .false.
+end if
+
+if ( present( ojcp ) ) then
+  gjcp = ojcp
+else
+  gjcp = .false.
+end if
+
+if ( present( okcp ) ) then
+  gkcp = okcp
+else
+  gkcp = .false.
+end if
+
 GPACK=LPACK
 LPACK=.FALSE.
 YCOMMENT='NOTHING'
 !
 ILUOUTDIA = TPLUOUTDIA%NLU
 !
-! BUG ...ca passe que si PRESENT(OICP) sinon OICP non defini 
-! Question: doit-on mettre condition comme:
-!  IF(HTYPE == 'CART' .AND. .NOT. PRESENT(OICP) .AND. .NOT. PRESENT(OJCP)) THEN
-
-! en attendant correction on debranche avec un IF Present. ENDIF av
-! RETURN
-IF (PRESENT(OICP) .AND. PRESENT(OJCP)) THEN
-  IF(HTYPE == 'CART' .AND. .NOT. OICP .AND. .NOT. OJCP) THEN
+II = SIZE(PVAR,1)
+IJ = SIZE(PVAR,2)
+IF(HTYPE == 'CART' .AND. .NOT. GICP .AND. .NOT. GJCP) THEN
                               !for parallel execution, PVAR is distributed on several proc
-    II=KIH-KIL+1
-    IJ=KJH-KJL+1
-  ELSE
-    II = SIZE(PVAR,1)
-    IJ = SIZE(PVAR,2)
-  ENDIF
-ELSE
-    II = SIZE(PVAR,1)
-    IJ = SIZE(PVAR,2)
-
+  II=KIH-KIL+1
+  IJ=KJH-KJL+1
 ENDIF
 IK = SIZE(PVAR,3)
 IT = SIZE(PVAR,4)
 IN = SIZE(PVAR,5)
 IP = SIZE(PVAR,6)
 
-INTRAJT=SIZE(PTRAJT,2)
+INTRAJT=SIZE(tpdates)
 
 IKTRAJX=0; IKTRAJY=0; IKTRAJZ=0
 ITTRAJX=0; ITTRAJY=0; ITTRAJZ=0
@@ -208,16 +221,20 @@ ILENUNITE = LEN(HUNITE)
 ILENCOMMENT = LEN(HCOMMENT)
 
 ICOMPX=0; ICOMPY=0; ICOMPZ=0
-IF(PRESENT(OICP))THEN
-IF(OICP)THEN
-  ICOMPX=1
+IF ( GICP ) THEN
+  ICOMPX = 1
+ELSE
+  ICOMPX = 0
 ENDIF
-IF(OJCP)THEN
-  ICOMPY=1
+IF ( GJCP ) THEN
+  ICOMPY = 1
+ELSE
+  ICOMPY = 0
 ENDIF
-IF(OKCP)THEN
+IF ( GKCP ) THEN
   ICOMPZ=1
-ENDIF
+ELSE
+  ICOMPZ = 0
 ENDIF
 !
 IF (NVERB>=5) THEN
@@ -377,9 +394,7 @@ DO J = 1,IP
   ELSE IF(J >= 100 .AND. J < 1000) THEN 
           WRITE(YJ,'(I3)')J
   ENDIF
-! BUG ...ca passe que si PRESENT(OICP) sinon OICP non defini 
-IF (PRESENT(OICP) .AND. PRESENT(OJCP)) THEN
-  IF(HTYPE == 'CART' .AND. .NOT. OICP .AND. .NOT. OJCP) THEN
+  IF(HTYPE == 'CART' .AND. .NOT. GICP .AND. .NOT. GJCP) THEN
     TZFIELD%CMNHNAME   = TRIM(HGROUP)//'.PROC'//YJ
     TZFIELD%CSTDNAME   = ''
     TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
@@ -405,19 +420,6 @@ IF (PRESENT(OICP) .AND. PRESENT(OJCP)) THEN
     TZFIELD%LTIMEDEP   = .FALSE.
     CALL IO_Field_write(TPDIAFILE,TZFIELD,PVAR(:,:,:,:,:,J))
   ENDIF
-ELSE
-    TZFIELD%CMNHNAME   = TRIM(HGROUP)//'.PROC'//YJ
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-  TZFIELD%CUNITS     = TRIM(HUNITE(J))
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = TRIM(HTITRE(J))//' - '//TRIM(HCOMMENT(J))//' ('//TRIM(HUNITE(J))//')'
-  TZFIELD%NGRID      = KGRID(J)
-  TZFIELD%NTYPE      = TYPEREAL
-  TZFIELD%NDIMS      = 5
-  TZFIELD%LTIMEDEP   = .FALSE.
-  CALL IO_Field_write(TPDIAFILE,TZFIELD,PVAR(:,:,:,:,:,J))
-END IF
   IF (NVERB>=5) THEN
     WRITE(ILUOUTDIA,*)J,TRIM(TZFIELD%CMNHNAME)
   ENDIF
@@ -438,7 +440,17 @@ TZFIELD%NGRID      = KGRID(1)
 TZFIELD%NTYPE      = TYPEREAL
 TZFIELD%NDIMS      = 2
 TZFIELD%LTIMEDEP   = .FALSE.
-CALL IO_Field_write(TPDIAFILE,TZFIELD,PTRAJT)
+
+!Reconstitute old diachro format
+allocate( ztimes( size( tpdates ), 1 ) )
+
+do ji=1,size(tpdates)
+  call Datetime_distance( tdtexp, tpdates(ji ), ztimes(ji, 1 ) )
+end do
+
+call IO_Field_write( tpdiafile, tzfield, ztimes )
+
+deallocate( ztimes )
 
 IF (NVERB>=5) THEN
   WRITE(ILUOUTDIA,*)'  7th record (',TRIM(TZFIELD%CMNHNAME),'): OK'
@@ -523,7 +535,30 @@ TZFIELD%NGRID      = KGRID(1)
 TZFIELD%NTYPE      = TYPEREAL
 TZFIELD%NDIMS      = 2
 TZFIELD%LTIMEDEP   = .FALSE.
-CALL IO_Field_write(TPDIAFILE,TZFIELD,PDATIME)
+
+!Reconstitute old diachro format
+allocate( zdatime( 16, size(tpdates) ) )
+
+zdatime(1,  : ) = tdtexp%tdate%year
+zdatime(2,  : ) = tdtexp%tdate%month
+zdatime(3,  : ) = tdtexp%tdate%day
+zdatime(4,  : ) = tdtexp%time
+zdatime(5,  : ) = tdtseg%tdate%year
+zdatime(6,  : ) = tdtseg%tdate%month
+zdatime(7,  : ) = tdtseg%tdate%day
+zdatime(8,  : ) = tdtseg%time
+zdatime(9,  : ) = tdtmod%tdate%year
+zdatime(10, : ) = tdtmod%tdate%month
+zdatime(11, : ) = tdtmod%tdate%day
+zdatime(12, : ) = tdtmod%time
+zdatime(13, : ) = tpdates(:)%tdate%year
+zdatime(14, : ) = tpdates(:)%tdate%month
+zdatime(15, : ) = tpdates(:)%tdate%day
+zdatime(16, : ) = tpdates(:)%time
+
+call IO_Field_write( tpdiafile, tzfield, zdatime )
+
+deallocate( zdatime )
 !
 CALL MENU_DIACHRO(TPDIAFILE,HGROUP)
 LPACK=GPACK

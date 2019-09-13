@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ############### 
@@ -42,6 +42,7 @@
 !!       P. Aumond   Oct     ,2009  User multimaskS + 4th order
 !!       C.Lac       Oct     ,2014  Correction on user masks
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -136,9 +137,6 @@ INTEGER :: NLES_CURRENT_TCOUNT
 INTEGER :: NLES_CURRENT_TIMES
 ! current model NLES_TIMES (number of LES samplings)
 !
-REAL, DIMENSION(:,:), ALLOCATABLE :: XLES_CURRENT_TRAJT
-! trajt array for write_diachro routine
-!
 INTEGER :: NLES_CURRENT_IINF, NLES_CURRENT_ISUP, NLES_CURRENT_JINF, NLES_CURRENT_JSUP
 ! coordinates for write_diachro, set to NLESn_IINF(current model), etc...
 !
@@ -150,9 +148,6 @@ CHARACTER(LEN=4), DIMENSION(2) :: CLES_CURRENT_LBCX
 !
 CHARACTER(LEN=4), DIMENSION(2) :: CLES_CURRENT_LBCY
 ! current model Y boundary conditions for 2 points correlations computations
-!
-REAL, DIMENSION(:,:), ALLOCATABLE :: XLES_CURRENT_DATIME 
-!  date array for diachro
 !
 REAL, DIMENSION(:),   ALLOCATABLE :: XLES_CURRENT_Z
 ! altitudes for diachro

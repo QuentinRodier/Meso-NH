@@ -63,9 +63,10 @@ END MODULE MODI_WRITE_AIRCRAFT_BALLOON
 !!     Oct 2016 : G.Delautier LIMA
 !!     August 2016 (M.Leriche) Add mass concentration of aerosol species
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!     P. Wautelet 29/01/2019: bug: moved an instruction later (to prevent access to a not allocated array)
-!!
-!! --------------------------------------------------------------------------
+!  P. Wautelet 29/01/2019: bug: moved an instruction later (to prevent access to a not allocated array)
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
+!
+! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
 !          ------------
@@ -173,7 +174,6 @@ TYPE(FLYER),        INTENT(IN)       :: TPFLYER
 !
 !*      0.2  declaration of local variables for diachro
 !
-REAL, DIMENSION(:,:),         ALLOCATABLE :: ZTRAJT ! localization of the
 REAL, DIMENSION(:,:,:),       ALLOCATABLE :: ZTRAJX ! temporal series
 REAL, DIMENSION(:,:,:),       ALLOCATABLE :: ZTRAJY ! in t,x,y and z.
 REAL, DIMENSION(:,:,:),       ALLOCATABLE :: ZTRAJZ !
@@ -231,23 +231,21 @@ IF (LORILAM) IPROC = IPROC + JPMODE*3
 IF (LDUST) IPROC = IPROC + NMODE_DST*3
 IF (SIZE(TPFLYER%TSRAD)>0) IPROC = IPROC + 1
 !
-ALLOCATE (ZTRAJT(  SIZE(TPFLYER%TIME),1))
-ALLOCATE (ZTRAJX(1,SIZE(TPFLYER%TIME),1))
-ALLOCATE (ZTRAJY(1,SIZE(TPFLYER%TIME),1))
-ALLOCATE (ZTRAJZ(1,SIZE(TPFLYER%TIME),1))
-ALLOCATE (ZWORK6(1,1,1,SIZE(TPFLYER%TIME),1,IPROC))
+ALLOCATE (ZTRAJX(1,size(tpflyer%tpdates),1))
+ALLOCATE (ZTRAJY(1,size(tpflyer%tpdates),1))
+ALLOCATE (ZTRAJZ(1,size(tpflyer%tpdates),1))
+ALLOCATE (ZWORK6(1,1,1,size(tpflyer%tpdates),1,IPROC))
 ALLOCATE (YCOMMENT(IPROC))
 ALLOCATE (YTITLE  (IPROC))
 ALLOCATE (YUNIT   (IPROC))
 ALLOCATE (IGRID   (IPROC))
-ALLOCATE (ZWORKZ6(1,1,IKU,SIZE(TPFLYER%TIME),1,IPROCZ))
+ALLOCATE (ZWORKZ6(1,1,IKU,size(tpflyer%tpdates),1,IPROCZ))
 ALLOCATE (YCOMMENTZ(IPROCZ))
 ALLOCATE (YTITLEZ (IPROCZ))
 ALLOCATE (YUNITZ  (IPROCZ))
 ALLOCATE (IGRIDZ  (IPROCZ))
 
 !
-ZTRAJT  (:,1) = TPFLYER%TIME
 ZTRAJX(1,:,1) = TPFLYER%X
 ZTRAJY(1,:,1) = TPFLYER%Y
 ZTRAJZ(1,:,1) = TPFLYER%Z
@@ -347,7 +345,7 @@ END DO
 !
 !add cloud liquid water content in g/m3 to compare to measurements from FSSP
 !IF (.NOT.(ANY(TPFLYER%P(:) == 0.))) THEN
-ALLOCATE (ZRHO(1,1,SIZE(TPFLYER%TIME)))
+ALLOCATE (ZRHO(1,1,size(tpflyer%tpdates)))
 IF (SIZE(TPFLYER%R,2) >1) THEN !cloud water is present
   ZRHO(1,1,:) = 0.
   DO JRR=1,SIZE(TPFLYER%R,2)
@@ -355,7 +353,7 @@ IF (SIZE(TPFLYER%R,2) >1) THEN !cloud water is present
   ENDDO
   ZRHO(1,1,:) = TPFLYER%TH(:) * ( 1. + XRV/XRD*TPFLYER%R(:,1) )  &
                                 / ( 1. + ZRHO(1,1,:)              )
-  DO JPT=1,SIZE(TPFLYER%TIME)
+  DO JPT=1,size(tpflyer%tpdates)
     IF (TPFLYER%P(JPT) == 0.) THEN
       ZRHO(1,1,JPT) = 0.
     ELSE
@@ -503,12 +501,12 @@ IF (SIZE(TPFLYER%SV,2)>=1) THEN
   END DO
   IF ((LORILAM).AND. .NOT.(ANY(TPFLYER%P(:) == 0.))) THEN
 
-    ALLOCATE (ZSV(1,1,SIZE(TPFLYER%TIME),NSV_AER)) 
-    ALLOCATE (ZRHO(1,1,SIZE(TPFLYER%TIME))) 
-    ALLOCATE (ZN0(1,1,SIZE(TPFLYER%TIME),JPMODE)) 
-    ALLOCATE (ZRG(1,1,SIZE(TPFLYER%TIME),JPMODE)) 
-    ALLOCATE (ZSIG(1,1,SIZE(TPFLYER%TIME),JPMODE)) 
-    ALLOCATE (ZPTOTA(1,1,SIZE(TPFLYER%TIME),NSP+NCARB+NSOA,JPMODE))    
+    ALLOCATE (ZSV(1,1,size(tpflyer%tpdates),NSV_AER))
+    ALLOCATE (ZRHO(1,1,size(tpflyer%tpdates)))
+    ALLOCATE (ZN0(1,1,size(tpflyer%tpdates),JPMODE))
+    ALLOCATE (ZRG(1,1,size(tpflyer%tpdates),JPMODE))
+    ALLOCATE (ZSIG(1,1,size(tpflyer%tpdates),JPMODE))
+    ALLOCATE (ZPTOTA(1,1,size(tpflyer%tpdates),NSP+NCARB+NSOA,JPMODE))
     ZSV(1,1,:,1:NSV_AER) = TPFLYER%SV(:,NSV_AERBEG:NSV_AEREND)
     IF (SIZE(TPFLYER%R,2) >0) THEN
       ZRHO(1,1,:) = 0.
@@ -526,7 +524,7 @@ IF (SIZE(TPFLYER%SV,2)>=1) THEN
     ZRG = 0.
     ZN0 = 0.
     ZPTOTA = 0.
-    DO JPT=1,SIZE(TPFLYER%TIME) ! prevent division by zero if ZSV = 0.
+    DO JPT=1,size(tpflyer%tpdates) ! prevent division by zero if ZSV = 0.
       IF (ALL(ZSV(1,1,JPT,:)/=0.)) THEN
         CALL PPP2AERO(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0, PCTOTA=ZPTOTA)
       ENDIF
@@ -668,11 +666,11 @@ IF (SIZE(TPFLYER%SV,2)>=1) THEN
     ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%SV(:,JSV) * 1.E9
   END DO
   IF ((LDUST).AND. .NOT.(ANY(TPFLYER%P(:) == 0.))) THEN
-    ALLOCATE (ZSV(1,1,SIZE(TPFLYER%TIME),NSV_DST)) 
-    ALLOCATE (ZRHO(1,1,SIZE(TPFLYER%TIME))) 
-    ALLOCATE (ZN0(1,1,SIZE(TPFLYER%TIME),NMODE_DST)) 
-    ALLOCATE (ZRG(1,1,SIZE(TPFLYER%TIME),NMODE_DST)) 
-    ALLOCATE (ZSIG(1,1,SIZE(TPFLYER%TIME),NMODE_DST)) 
+    ALLOCATE (ZSV(1,1,size(tpflyer%tpdates),NSV_DST))
+    ALLOCATE (ZRHO(1,1,size(tpflyer%tpdates)))
+    ALLOCATE (ZN0(1,1,size(tpflyer%tpdates),NMODE_DST))
+    ALLOCATE (ZRG(1,1,size(tpflyer%tpdates),NMODE_DST))
+    ALLOCATE (ZSIG(1,1,size(tpflyer%tpdates),NMODE_DST))
     ZSV(1,1,:,1:NSV_DST) = TPFLYER%SV(:,NSV_DSTBEG:NSV_DSTEND)
     IF (SIZE(TPFLYER%R,2) >0) THEN
       ZRHO(1,1,:) = 0.
@@ -833,23 +831,22 @@ DO IK=1, IKU
 END DO
 !----------------------------------------------------------------------------
 !
-ALLOCATE (ZW6(1,1,1,SIZE(TPFLYER%TIME),1,JPROC))
+ALLOCATE (ZW6(1,1,1,size(tpflyer%tpdates),1,JPROC))
 ZW6  = ZWORK6(:,:,:,:,:,:JPROC)
 DEALLOCATE(ZWORK6)
-ALLOCATE (ZWZ6(1,1,IKU,SIZE(TPFLYER%TIME),1,JPROCZ))
+ALLOCATE (ZWZ6(1,1,IKU,size(tpflyer%tpdates),1,JPROCZ))
 ZWZ6 = ZWORKZ6(:,:,:,:,:,:JPROCZ)
 DEALLOCATE(ZWORKZ6)
 !
-CALL WRITE_DIACHRO(TPDIAFILE,TLUOUT0,YGROUP,"RSPL",IGRID, TPFLYER%DATIME, ZW6, &
-                   ZTRAJT,YTITLE,YUNIT,YCOMMENT,                               &
-                   PTRAJX=ZTRAJX, PTRAJY=ZTRAJY, PTRAJZ=ZTRAJZ                 )
+CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "RSPL", IGRID, tpflyer%tpdates, &
+                    ZW6, YTITLE(:), YUNIT(:), YCOMMENT(:),                      &
+                    PTRAJX = ZTRAJX, PTRAJY = ZTRAJY, PTRAJZ = ZTRAJZ           )
 !
-CALL WRITE_DIACHRO(TPDIAFILE,TLUOUT0,YGROUPZ,"CART",IGRIDZ, TPFLYER%DATIME,  &
-                   ZWZ6,ZTRAJT,YTITLEZ,YUNITZ,YCOMMENTZ,                     &
-                   .TRUE.,.TRUE.,.FALSE.,                                    &
-                   KIL=1,KIH=1,KJL=1,KJH=1,KKL=1,KKH=IKU                     )
+CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUPZ, "CART", IGRIDZ, tpflyer%tpdates, &
+                    ZWZ6, YTITLEZ(:), YUNITZ(:), YCOMMENTZ(:),                    &
+                    OICP = .TRUE., OJCP = .TRUE., OKCP = .FALSE.,                 &
+                    KIL = 1, KIH = 1, KJL = 1, KJH = 1, KKL = 1, KKH = IKU        )
 
-DEALLOCATE (ZTRAJT)
 DEALLOCATE (ZTRAJX)
 DEALLOCATE (ZTRAJY)
 DEALLOCATE (ZTRAJZ)

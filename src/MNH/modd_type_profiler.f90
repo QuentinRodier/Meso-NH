@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modd_type_profiler.f90,v $ $Revision: 1.2.4.1.2.1.10.2.2.1 $
-! MASDEV4_7 modd 2006/06/27 12:27:06
 !-----------------------------------------------------------------
 !     ############################
       MODULE MODD_TYPE_PROFILER
@@ -22,9 +17,7 @@
 !!
 !!**  IMPLICIT ARGUMENTS
 !!    ------------------
-!!      NONE 
 !!
-IMPLICIT NONE
 !!
 !!    REFERENCE
 !!    --------- 
@@ -37,13 +30,16 @@ IMPLICIT NONE
 !!    -------------
 !!      Original    15/01/02
 !!     C.Lac 10/2016  Add visibility diagnostic
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
 !
-!
-!
+use modd_type_date, only: date_time
+
+implicit none
+
 TYPE PROFILER
 !
 !
@@ -61,8 +57,8 @@ REAL                          :: STEP   ! storage time step
 CHARACTER(LEN=8),DIMENSION(:), POINTER   :: NAME=>NULL()   ! station name
 CHARACTER(LEN=8),DIMENSION(:), POINTER   :: TYPE=>NULL()   ! station type
 !
-REAL, DIMENSION(:),       POINTER :: TIME=>NULL()     ! t(n)  (n: recording instants)
-LOGICAL, DIMENSION(:),    POINTER :: ERROR=>NULL()  
+type(date_time), dimension(:), pointer :: tpdates => NULL() ! dates(n) (n: recording instants)
+LOGICAL, DIMENSION(:),    POINTER :: ERROR=>NULL()
 REAL, DIMENSION(:),       POINTER :: X=>NULL()        ! X(n)
 REAL, DIMENSION(:),       POINTER :: Y=>NULL()        ! Y(n)
 REAL, DIMENSION(:),       POINTER :: LON=>NULL()      ! longitude(n)
@@ -70,7 +66,7 @@ REAL, DIMENSION(:),       POINTER :: LAT=>NULL()      ! latitude (n)
 REAL, DIMENSION(:),       POINTER :: ALT=>NULL()      ! altitude (n)
 REAL, DIMENSION(:,:,:),   POINTER :: ZON=>NULL()      ! zonal wind(n)
 REAL, DIMENSION(:,:,:),   POINTER :: MER=>NULL()      ! meridian wind(n)
-REAL, DIMENSION(:,:,:),   POINTER :: FF=>NULL()       ! wind intensity  
+REAL, DIMENSION(:,:,:),   POINTER :: FF=>NULL()       ! wind intensity
 REAL, DIMENSION(:,:,:),   POINTER :: DD=>NULL()       ! wind direction
 REAL, DIMENSION(:,:,:),   POINTER :: W=>NULL()        ! w(n)  (air vertical speed)
 REAL, DIMENSION(:,:,:),   POINTER :: P=>NULL()        ! p(n)
@@ -85,7 +81,6 @@ REAL, DIMENSION(:,:,:),   POINTER :: RHOD=>NULL()     ! density of dry air/moist
 REAL, DIMENSION(:,:,:,:), POINTER :: R=>NULL()        ! r*(n)
 REAL, DIMENSION(:,:,:,:), POINTER :: SV=>NULL()       ! Sv*(n)
 REAL, DIMENSION(:,:,:,:), POINTER :: AER=>NULL()      ! AER*(n) aerosol extinction
-REAL, DIMENSION(:,:),     POINTER :: DATIME=>NULL()   ! record for diachro
 !
 REAL, DIMENSION(:,:),     POINTER :: T2M=>NULL()      ! 2 m air temperature (°C)
 REAL, DIMENSION(:,:),     POINTER :: Q2M=>NULL()      ! 2 m humidity (kg/kg)

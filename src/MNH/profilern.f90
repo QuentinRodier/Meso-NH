@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2002-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !      ##########################
@@ -10,18 +10,11 @@ MODULE MODI_PROFILER_n
 INTERFACE
 !
       SUBROUTINE PROFILER_n(PTSTEP,                               &
-                            TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,   &
                             PXHAT, PYHAT, PZ,PRHODREF,            &
                             PU, PV, PW, PTH, PR, PSV, PTKE,       &
                             PTS,PP, PAER, PCLDFR, PCIT)
 !
-USE MODD_TYPE_DATE
-!
 REAL,                     INTENT(IN)     :: PTSTEP ! time step
-TYPE(DATE_TIME),          INTENT(IN)     :: TPDTEXP! experiment date and time
-TYPE(DATE_TIME),          INTENT(IN)     :: TPDTMOD! model start date and time
-TYPE(DATE_TIME),          INTENT(IN)     :: TPDTSEG! segment date and time
-TYPE(DATE_TIME),          INTENT(IN)     :: TPDTCUR! current date and time
 REAL, DIMENSION(:),       INTENT(IN)     :: PXHAT  ! x coordinate
 REAL, DIMENSION(:),       INTENT(IN)     :: PYHAT  ! y coordinate
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PZ     ! z array
@@ -49,7 +42,6 @@ END MODULE MODI_PROFILER_n
 !
 !  ########################################################
       SUBROUTINE PROFILER_n(PTSTEP,                               &
-                            TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,   &
                             PXHAT, PYHAT, PZ,PRHODREF,            &
                             PU, PV, PW, PTH, PR, PSV, PTKE,       &
                             PTS, PP, PAER, PCLDFR, PCIT)
@@ -90,33 +82,31 @@ END MODULE MODI_PROFILER_n
 !!     C.Lac 10/2016  Add visibility diagnostic
 !!     March,28, 2018 (P. Wautelet) replace TEMPORAL_DIST by DATETIME_DISTANCE
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
-!! --------------------------------------------------------------------------
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
+!
+! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_TYPE_DATE
-USE MODD_PROFILER_n
-USE MODD_SUB_PROFILER_n
-USE MODD_TIME
-USE MODD_PARAMETERS
-USE MODD_CST
-USE MODD_GRID
-USE MODD_DIAG_IN_RUN
 USE MODD_CONF
+USE MODD_CST
+USE MODD_DIAG_IN_RUN
+USE MODD_GRID
+USE MODD_SUB_PROFILER_n
 USE MODD_NSV
+USE MODD_PARAMETERS
+USE MODD_PARAM_n,        ONLY : CCLOUD
+USE MODD_PROFILER_n
+USE MODD_TIME,           only: tdtexp
+USE MODD_TIME_n,         only: tdtcur
 !
-USE MODE_DATETIME
 USE MODE_ll
 !
-USE MODI_WATER_SUM
-USE MODI_RADAR_RAIN_ICE
-USE MODI_LIDAR
-USE MODI_WATER_SUM
 USE MODI_GPS_ZENITH_GRID
-USE MODD_PARAM_n, ONLY : CCLOUD
-!
+USE MODI_LIDAR
+USE MODI_RADAR_RAIN_ICE
+USE MODI_WATER_SUM
 !
 IMPLICIT NONE
 !
@@ -125,10 +115,6 @@ IMPLICIT NONE
 !
 !
 REAL,                     INTENT(IN)     :: PTSTEP ! time step
-TYPE(DATE_TIME),          INTENT(IN)     :: TPDTEXP! experiment date and time
-TYPE(DATE_TIME),          INTENT(IN)     :: TPDTMOD! model start date and time
-TYPE(DATE_TIME),          INTENT(IN)     :: TPDTSEG! segment date and time
-TYPE(DATE_TIME),          INTENT(IN)     :: TPDTCUR! current date and time
 REAL, DIMENSION(:),       INTENT(IN)     :: PXHAT  ! x coordinate
 REAL, DIMENSION(:),       INTENT(IN)     :: PYHAT  ! y coordinate
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PZ     ! z array
@@ -160,7 +146,6 @@ INTEGER :: IKE
 INTEGER :: IIU
 INTEGER :: IJU
 INTEGER :: IKU
-REAL    :: ZTIMEEXP
 !
 !
 REAL, DIMENSION(SIZE(PXHAT))        :: ZXHATM ! mass point coordinates
@@ -257,7 +242,6 @@ IF ( TPROFILER%T_CUR == XUNDEF ) TPROFILER%T_CUR = TPROFILER%STEP - PTSTEP
 !
 TPROFILER%T_CUR = TPROFILER%T_CUR + PTSTEP
 !
-CALL DATETIME_DISTANCE(TDTEXP,TDTSEG,ZTIMEEXP)
 IF ( TPROFILER%T_CUR >= TPROFILER%STEP - 1.E-10 ) THEN
   GSTORE = .TRUE.
   TPROFILER%T_CUR = TPROFILER%T_CUR - TPROFILER%STEP
@@ -268,23 +252,14 @@ ELSE
 END IF
 !
 IF (GSTORE) THEN
-  TPROFILER%TIME(IN)      = (IN-1) * TPROFILER%STEP + ZTIMEEXP
-  TPROFILER%DATIME( 1,IN) = TPDTEXP%TDATE%YEAR
-  TPROFILER%DATIME( 2,IN) = TPDTEXP%TDATE%MONTH
-  TPROFILER%DATIME( 3,IN) = TPDTEXP%TDATE%DAY
-  TPROFILER%DATIME( 4,IN) = TPDTEXP%TIME
-  TPROFILER%DATIME( 5,IN) = TPDTSEG%TDATE%YEAR
-  TPROFILER%DATIME( 6,IN) = TPDTSEG%TDATE%MONTH
-  TPROFILER%DATIME( 7,IN) = TPDTSEG%TDATE%DAY
-  TPROFILER%DATIME( 8,IN) = TPDTSEG%TIME
-  TPROFILER%DATIME( 9,IN) = TPDTMOD%TDATE%YEAR
-  TPROFILER%DATIME(10,IN) = TPDTMOD%TDATE%MONTH
-  TPROFILER%DATIME(11,IN) = TPDTMOD%TDATE%DAY
-  TPROFILER%DATIME(12,IN) = TPDTMOD%TIME
-  TPROFILER%DATIME(13,IN) = TPDTCUR%TDATE%YEAR
-  TPROFILER%DATIME(14,IN) = TPDTCUR%TDATE%MONTH
-  TPROFILER%DATIME(15,IN) = TPDTCUR%TDATE%DAY
-  TPROFILER%DATIME(16,IN) = TPDTCUR%TIME
+#if 0
+  tprofiler%tpdates(in)%date%year  = tdtexp%date%year
+  tprofiler%tpdates(in)%date%month = tdtexp%date%month
+  tprofiler%tpdates(in)%date%day   = tdtexp%date%day
+  tprofiler%tpdates(in)%time       = tdtexp%time + ( in - 1 ) * tprofiler%step
+#else
+  tprofiler%tpdates(in) = tdtcur
+#endif
 END IF
 !
 !
@@ -410,7 +385,6 @@ IF ((SIZE(PR,4) >= 2) .AND. NSV_C2R2END /= 0 ) THEN
 END IF
 !
 IF (GSTORE) THEN
- IF (TPROFILER%TIME(IN) /= XUNDEF) THEN
   DO I=1,NUMBPROFILER
     IF ((ZTHIS_PROCS(I)==1.).AND.(.NOT. TPROFILER%ERROR(I))) THEN
       !
@@ -605,8 +579,6 @@ IF (GSTORE) THEN
   IF (SIZE(PTKE)>0) CALL DISTRIBUTE_PROFILER(TPROFILER%TKE  (IN,JK,I))
  ENDDO
 ENDDO
-!
-END IF
 !
 END IF
 !

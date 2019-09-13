@@ -287,6 +287,7 @@ END MODULE MODI_INI_MODEL_n
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 19/04/2019: removed unused dummy arguments and variables
 !  P. Wautelet 07/06/2019: allocate lookup tables for optical properties only when needed
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -2397,18 +2398,18 @@ CALL INI_AIRCRAFT_BALLOON(TPINIFILE,XTSTEP, TDTSEG, XSEGLEN, NRR, NSV, &
 !*      24.     STATION initializations
 !              -----------------------
 !
-CALL INI_SURFSTATION_n(XTSTEP, TDTSEG, XSEGLEN, NRR, NSV, &
-                       CTURB=="TKEL" ,                    &
-                       XLATORI, XLONORI                   )
+CALL INI_SURFSTATION_n(XTSTEP, XSEGLEN, NRR, NSV, &
+                       CTURB=="TKEL" ,            &
+                       XLATORI, XLONORI           )
 !
 !-------------------------------------------------------------------------------
 !
 !*      25.     PROFILER initializations
 !              ------------------------
 !
-CALL INI_POSPROFILER_n(XTSTEP, TDTSEG, XSEGLEN, NRR, NSV,  &
-                       CTURB=="TKEL",                      &
-                       XLATORI, XLONORI                    )
+CALL INI_POSPROFILER_n(XTSTEP, XSEGLEN, NRR, NSV,  &
+                       CTURB=="TKEL",              &
+                       XLATORI, XLONORI            )
 !
 !-------------------------------------------------------------------------------
 !

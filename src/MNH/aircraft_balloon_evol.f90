@@ -10,20 +10,14 @@ MODULE MODI_AIRCRAFT_BALLOON_EVOL
 INTERFACE
 !
       SUBROUTINE AIRCRAFT_BALLOON_EVOL(PTSTEP,               &
-                       TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,   &
                        PXHAT, PYHAT, PZ,                     &
                        PMAP, PLONOR, PLATOR,                 &
                        PU, PV, PW, PP, PTH, PR, PSV, PTKE,   &
                        PTS, PRHODREF, PCIT,TPFLYER, PSEA     )
 !
-USE MODD_TYPE_DATE
 USE MODD_AIRCRAFT_BALLOON
 !
 REAL,                     INTENT(IN)     :: PTSTEP ! time step
-TYPE(DATE_TIME),          INTENT(IN)     :: TPDTEXP! experiment date and time
-TYPE(DATE_TIME),          INTENT(IN)     :: TPDTMOD! model start date and time
-TYPE(DATE_TIME),          INTENT(IN)     :: TPDTSEG! segment date and time
-TYPE(DATE_TIME),          INTENT(IN)     :: TPDTCUR! current date and time
 REAL, DIMENSION(:),       INTENT(IN)     :: PXHAT  ! x coordinate
 REAL, DIMENSION(:),       INTENT(IN)     :: PYHAT  ! y coordinate
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PZ     ! z array
@@ -55,7 +49,6 @@ END MODULE MODI_AIRCRAFT_BALLOON_EVOL
 !
 !     ########################################################
       SUBROUTINE AIRCRAFT_BALLOON_EVOL(PTSTEP,               &
-                       TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,   &
                        PXHAT, PYHAT, PZ,                     &
                        PMAP, PLONOR, PLATOR,                 &
                        PU, PV, PW, PP, PTH, PR, PSV, PTKE,   &
@@ -128,7 +121,8 @@ END MODULE MODI_AIRCRAFT_BALLOON_EVOL
 !!      October, 2016 (G.DELAUTIER) LIMA
 !!     March,28, 2018 (P. Wautelet) replace TEMPORAL_DIST by DATETIME_DISTANCE
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
+!
 !! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -167,9 +161,9 @@ USE MODD_RAIN_ICE_DESCR,   ONLY: XALPHAR_I=>XALPHAR,XNUR_I=>XNUR,XLBEXR_I=>XLBEX
                                  XLBI_I=>XLBI,XAI_I=>XAI,XBI_I=>XBI,XC_I_I=>XC_I,&
                                  XRTMIN_I=>XRTMIN,XCONC_LAND,XCONC_SEA
 USE MODD_REF_n,            ONLY: XRHODREF
-USE MODD_TIME
+USE MODD_TIME,             only: tdtexp
+USE MODD_TIME_n,           only: tdtcur
 USE MODD_TURB_FLUX_AIRCRAFT_BALLOON
-USE MODD_TYPE_DATE
 !
 USE MODE_DATETIME
 USE MODE_FGAU,             ONLY: GAULAG
@@ -188,10 +182,6 @@ IMPLICIT NONE
 !
 !
 REAL,                     INTENT(IN)     :: PTSTEP ! time step
-TYPE(DATE_TIME),          INTENT(IN)     :: TPDTEXP! experiment date and time
-TYPE(DATE_TIME),          INTENT(IN)     :: TPDTMOD! model start date and time
-TYPE(DATE_TIME),          INTENT(IN)     :: TPDTSEG! segment date and time
-TYPE(DATE_TIME),          INTENT(IN)     :: TPDTCUR! current date and time
 REAL, DIMENSION(:),       INTENT(IN)     :: PXHAT  ! x coordinate
 REAL, DIMENSION(:),       INTENT(IN)     :: PYHAT  ! y coordinate
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PZ     ! z array
@@ -220,7 +210,6 @@ REAL, DIMENSION(:,:),     INTENT(IN)     :: PSEA
 !
 INTEGER :: IMI        ! model index
 REAL    :: ZTHIS_PROC ! 1 if balloon is currently treated by this proc., else 0
-REAL    :: ZTIMEEXP   ! elpased time between start of experiment and segment
 !
 INTEGER :: IIB        ! current processor domain sizes
 INTEGER :: IJB
@@ -398,7 +387,7 @@ ZYHATM(  IJU  )=1.5*PYHAT(  IJU  )-0.5*PYHAT(  IJU-1)
 !*      2.3  Compute time until launch by comparison of dates and times
 !            ----------------------------------------------------------
 !
-CALL DATETIME_DISTANCE(TPFLYER%LAUNCH,TPDTCUR,ZTDIST)
+CALL DATETIME_DISTANCE(TPFLYER%LAUNCH,TDTCUR,ZTDIST)
 !
 !*      3.   LAUNCH
 !            ------
@@ -412,7 +401,7 @@ IF (.NOT. TPFLYER%FLY) THEN
 !*      3.1  comparison of dates and times
 !            -----------------------------
 !
-!  CALL DATETIME_DISTANCE(TPFLYER%LAUNCH,TPDTCUR,ZTDIST)
+!  CALL DATETIME_DISTANCE(TPFLYER%LAUNCH,TDTCUR,ZTDIST)
 !
 !*      3.2  launch/takeoff is effective
 !            ---------------------------
@@ -446,8 +435,8 @@ IF (.NOT. TPFLYER%FLY) THEN
         IF (ZTDIST <= PTSTEP ) THEN
           WRITE(ILUOUT,*) '-------------------------------------------------------------------'
           WRITE(ILUOUT,*) 'Aircraft ',TPFLYER%TITLE,' takes off the   ',      &
-                      TPDTCUR%TDATE%DAY,'/',TPDTCUR%TDATE%MONTH,'/',      &
-                      TPDTCUR%TDATE%YEAR,' at ',NINT(TPDTCUR%TIME),' sec.'
+                      TDTCUR%TDATE%DAY,'/',TDTCUR%TDATE%MONTH,'/',      &
+                      TDTCUR%TDATE%YEAR,' at ',NINT(TDTCUR%TIME),' sec.'
           WRITE(ILUOUT,*) '-------------------------------------------------------------------'
         ENDIF
       ENDIF
@@ -456,8 +445,8 @@ IF (.NOT. TPFLYER%FLY) THEN
       GLAUNCH     = .TRUE.
       WRITE(ILUOUT,*) '-------------------------------------------------------------------'
       WRITE(ILUOUT,*) 'Balloon  ',TPFLYER%TITLE,' is launched the ',      &
-                    TPDTCUR%TDATE%DAY,'/',TPDTCUR%TDATE%MONTH,'/',      &
-                    TPDTCUR%TDATE%YEAR,' at ',NINT(TPDTCUR%TIME),' sec.'
+                    TDTCUR%TDATE%DAY,'/',TDTCUR%TDATE%MONTH,'/',      &
+                    TDTCUR%TDATE%YEAR,' at ',NINT(TDTCUR%TIME),' sec.'
       WRITE(ILUOUT,*) '-------------------------------------------------------------------'
     END IF
 !
@@ -502,25 +491,14 @@ END IF
 !
 IF (GSTORE) THEN
   IN = TPFLYER%N_CUR
-  CALL DATETIME_DISTANCE(TDTEXP,TDTSEG,ZTIMEEXP)
-  !
-  TPFLYER%TIME(IN) = (IN-1) * TPFLYER%STEP + ZTIMEEXP
-  TPFLYER%DATIME( 1,IN) = TPDTEXP%TDATE%YEAR
-  TPFLYER%DATIME( 2,IN) = TPDTEXP%TDATE%MONTH
-  TPFLYER%DATIME( 3,IN) = TPDTEXP%TDATE%DAY
-  TPFLYER%DATIME( 4,IN) = TPDTEXP%TIME
-  TPFLYER%DATIME( 5,IN) = TPDTSEG%TDATE%YEAR
-  TPFLYER%DATIME( 6,IN) = TPDTSEG%TDATE%MONTH
-  TPFLYER%DATIME( 7,IN) = TPDTSEG%TDATE%DAY
-  TPFLYER%DATIME( 8,IN) = TPDTSEG%TIME
-  TPFLYER%DATIME( 9,IN) = TPDTMOD%TDATE%YEAR
-  TPFLYER%DATIME(10,IN) = TPDTMOD%TDATE%MONTH
-  TPFLYER%DATIME(11,IN) = TPDTMOD%TDATE%DAY
-  TPFLYER%DATIME(12,IN) = TPDTMOD%TIME
-  TPFLYER%DATIME(13,IN) = TPDTCUR%TDATE%YEAR
-  TPFLYER%DATIME(14,IN) = TPDTCUR%TDATE%MONTH
-  TPFLYER%DATIME(15,IN) = TPDTCUR%TDATE%DAY
-  TPFLYER%DATIME(16,IN) = TPDTCUR%TIME
+#if 0
+  tpflyer%tpdates(in)%date%year  = tdtexp%date%year
+  tpflyer%tpdates(in)%date%month = tdtexp%date%month
+  tpflyer%tpdates(in)%date%day   = tdtexp%date%day
+  tpflyer%tpdates(in)%time       = tdtexp%time + ( in - 1 ) * tpflyer%step
+#else
+  tpflyer%tpdates(in) = tdtcur
+#endif
 END IF
 !
 IF ( TPFLYER%FLY) THEN
@@ -829,19 +807,19 @@ IF ( TPFLYER%FLY) THEN
     TPFLYER%FLY = .FALSE.
     IF (TPFLYER%TYPE=='AIRCRA' .AND. .NOT. GLAUNCH ) THEN
       WRITE(ILUOUT,*) 'Aircraft ',TPFLYER%TITLE,' flew out of the domain the ', &
-                    TPDTCUR%TDATE%DAY,'/',TPDTCUR%TDATE%MONTH,'/',            &
-                    TPDTCUR%TDATE%YEAR,' at ',TPDTCUR%TIME,' sec.'
+                    TDTCUR%TDATE%DAY,'/',TDTCUR%TDATE%MONTH,'/',            &
+                    TDTCUR%TDATE%YEAR,' at ',TDTCUR%TIME,' sec.'
     ELSE IF (TPFLYER%TYPE /= 'AIRCRA') THEN
       WRITE(ILUOUT,*) 'Balloon ',TPFLYER%TITLE,' crashed the ',                 &
-                    TPDTCUR%TDATE%DAY,'/',TPDTCUR%TDATE%MONTH,'/',            &
-                    TPDTCUR%TDATE%YEAR,' at ',TPDTCUR%TIME,' sec.'
+                    TDTCUR%TDATE%DAY,'/',TDTCUR%TDATE%MONTH,'/',            &
+                    TDTCUR%TDATE%YEAR,' at ',TDTCUR%TIME,' sec.'
     END IF
   ELSE
     IF (TPFLYER%TYPE=='AIRCRA' .AND. .NOT. GLAUNCH .AND. ZTDIST > PTSTEP ) THEN
       WRITE(ILUOUT,*) '-------------------------------------------------------------------'
       WRITE(ILUOUT,*) 'Aircraft ',TPFLYER%TITLE,' flies  in leg',TPFLYER%SEGCURN ,' the ',  &
-        TPDTCUR%TDATE%DAY,'/',TPDTCUR%TDATE%MONTH,'/',      &
-        TPDTCUR%TDATE%YEAR,' at ',NINT(TPDTCUR%TIME),' sec.'
+        TDTCUR%TDATE%DAY,'/',TDTCUR%TDATE%MONTH,'/',      &
+        TDTCUR%TDATE%YEAR,' at ',NINT(TDTCUR%TIME),' sec.'
       WRITE(ILUOUT,*) '-------------------------------------------------------------------'
     ENDIF
 !
@@ -1708,12 +1686,12 @@ IF (TPFLYER%NMODEL /= IMODEL) THEN
    IF (NDAD(IMODEL) == TPFLYER%NMODEL) THEN
       WRITE(ILUOUT,*) '-------------------------------------------------------------------'
       WRITE(ILUOUT,*) TPFLYER%TITLE,' comes from model ',IMODEL,' in  model ',&
-             TPFLYER%NMODEL,' at ',NINT(TPDTCUR%TIME),' sec.'
+             TPFLYER%NMODEL,' at ',NINT(TDTCUR%TIME),' sec.'
       WRITE(ILUOUT,*) '-------------------------------------------------------------------'
    ELSE
       WRITE(ILUOUT,*) '-------------------------------------------------------------------'
       WRITE(ILUOUT,*) TPFLYER%TITLE,' goes from model ',IMODEL,' to  model ',&
-             TPFLYER%NMODEL,' at ',NINT(TPDTCUR%TIME),' sec.'
+             TPFLYER%NMODEL,' at ',NINT(TDTCUR%TIME),' sec.'
       WRITE(ILUOUT,*) '-------------------------------------------------------------------'
    ENDIF
 ENDIF

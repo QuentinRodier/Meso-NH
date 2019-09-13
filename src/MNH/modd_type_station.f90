@@ -1,8 +1,9 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!     ######spl
+!-----------------------------------------------------------------
+!     ############################
       MODULE MODD_TYPE_STATION
 !     ############################
 !
@@ -28,12 +29,17 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    15/01/02
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
 !
 !
+use modd_type_date, only: date_time
+
+implicit none
+
 TYPE STATION
 !
 !
@@ -50,8 +56,8 @@ REAL                          :: STEP   ! storage time step
 !
 CHARACTER(LEN=8),DIMENSION(:), POINTER   :: NAME=>NULL()   ! station name
 CHARACTER(LEN=8),DIMENSION(:), POINTER   :: TYPE=>NULL()   ! station type
-REAL, DIMENSION(:),   POINTER :: TIME=>NULL()     ! t(n)  (n: recording instants)
-LOGICAL, DIMENSION(:),  POINTER :: ERROR=>NULL()  ! 
+type(date_time), dimension(:), pointer :: tpdates => NULL() ! dates(n) (n: recording instants)
+LOGICAL, DIMENSION(:),  POINTER :: ERROR=>NULL()  !
 REAL, DIMENSION(:),     POINTER :: X=>NULL()      ! X(n)
 REAL, DIMENSION(:),     POINTER :: Y=>NULL()      ! Y(n)
 REAL, DIMENSION(:),     POINTER :: Z=>NULL()      ! Z(n)
@@ -67,7 +73,6 @@ REAL, DIMENSION(:,:,:), POINTER :: R=>NULL()      ! r*(n)
 REAL, DIMENSION(:,:,:), POINTER :: SV=>NULL()     ! Sv*(n)
 REAL, DIMENSION(:),     POINTER :: ZS=>NULL()     ! zs(n)
 REAL, DIMENSION(:,:),   POINTER :: TSRAD=>NULL()  ! Ts(n)
-REAL, DIMENSION(:,:),   POINTER :: DATIME=>NULL() ! record for diachro
 !
 REAL, DIMENSION(:,:),   POINTER :: T2M=>NULL()    ! 
 REAL, DIMENSION(:,:),   POINTER :: Q2M=>NULL()    ! 

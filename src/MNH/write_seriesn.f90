@@ -60,7 +60,8 @@ END MODULE MODI_WRITE_SERIES_n
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!      P.Wautelet: 11/07/2016 : removed MNH_NCWRIT define
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
+!
 !-------------------------------------------------------------------------------
 !
 !
@@ -235,11 +236,11 @@ ENDIF
 !*      2.3  Write in diachro file
 !
 GICP=.TRUE. ; GJCP=.TRUE. ; GKCP=.TRUE.
-CALL WRITE_DIACHRO(TPDIAFILE,TLUOUT,'TSERIES','CART',NSGRIDD1,XSDATIME(:,1:NSNBSTEPT),   &
-                   XSSERIES1(1:1,1:1,1:1,1:NSNBSTEPT,:,:),               &
-                   XSTRAJT(1:NSNBSTEPT,:),CSTITLE1,CSUNIT1,CSCOMMENT1,   &
-                   GICP,GJCP,GKCP,                               &
-                   KIL=1,KIH=1,KJL=1,KJH=1,KKL=1,KKH=1)
+CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, 'TSERIES', 'CART', NSGRIDD1, tpsdates(1:nsnbstept), &
+                    XSSERIES1(1:1,1:1,1:1,1:NSNBSTEPT,:,:),                                &
+                    CSTITLE1(:), CSUNIT1(:), CSCOMMENT1(:),                                &
+                    OICP = GICP, OJCP = GJCP, OKCP = GKCP,                                 &
+                    KIL = 1, KIH = 1, KJL = 1, KJH = 1, KKL = 1, KKH = 1                   )
 !
 !----------------------------------------------------------------------------
 !
@@ -289,11 +290,11 @@ DEALLOCATE(ZVAR3D)
 !*      3.2  Write in diachro file
 !
 GICP=.TRUE. ; GJCP=.TRUE. ; GKCP=.FALSE.
-CALL WRITE_DIACHRO(TPDIAFILE,TLUOUT,'ZTSERIES','CART',NSGRIDD2,XSDATIME(:,1:NSNBSTEPT),   &
-                   XSSERIES2(1:1,1:1,1:IKMAX,1:NSNBSTEPT,:,:),            &
-                   XSTRAJT(1:NSNBSTEPT,:),CSTITLE2,CSUNIT2,CSCOMMENT2,    &
-                   GICP,GJCP,GKCP,                 &
-                   KIL=1,KIH=1,KJL=1,KJH=1,KKL=IKB,KKH=IKE)
+CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, 'ZTSERIES', 'CART', NSGRIDD2, tpsdates(1:nsnbstept), &
+                    XSSERIES2(1:1,1:1,1:1,1:NSNBSTEPT,:,:),                                 &
+                    CSTITLE2(:), CSUNIT2(:), CSCOMMENT2(:),                                 &
+                    OICP = GICP, OJCP = GJCP, OKCP = GKCP,                                  &
+                    KIL = 1, KIH = 1, KJL = 1, KJH = 1, KKL = IKB, KKH = IKE                )
 !
 !----------------------------------------------------------------------------
 !
@@ -347,11 +348,11 @@ DO JS=1,NBJSLICE
     YSTITLE3S(JT)=ADJUSTL(ADJUSTR(CSTITLE3(JT))//'Y'//YSL//'-'//YSH)
   END DO
   GICP=.FALSE. ; GJCP=.TRUE. ; GKCP=.TRUE.
-  CALL WRITE_DIACHRO(TPDIAFILE,TLUOUT,YGROUP,'CART',NSGRIDD3,XSDATIME(:,1:NSNBSTEPT),    &
-                      ZSERIES3_ll(1:IIU_ll,1:1,1:1,1:NSNBSTEPT,1:1,ISB1:ISB2),&
-                      XSTRAJT(1:NSNBSTEPT,:),YSTITLE3S,CSUNIT3,CSCOMMENT3,     &
-                      GICP,GJCP,GKCP,                               &
-                      KIL=1,KIH=IIU_ll,KJL=1,KJH=1,KKL=1,KKH=1)
+  CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP, 'CART', NSGRIDD3, tpsdates(1:nsnbstept), &
+                      ZSERIES3_ll(1:IIU_ll,1:1,1:1,1:NSNBSTEPT,1:1,ISB1:ISB2),            &
+                      YSTITLE3S(:), CSUNIT3(:), CSCOMMENT3(:),                            &
+                      OICP = GICP, OJCP = GJCP, OKCP = GKCP,                              &
+                      KIL = 1, KIH = IIU_ll, KJL = 1, KJH = 1, KKL = 1, KKH = 1           )
 END DO
 DEALLOCATE(ZVAR3D,ZWORK2D,ZSERIES3_ll)
 !

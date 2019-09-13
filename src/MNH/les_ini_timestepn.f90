@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 les 2006/08/30 18:38:45
 !-----------------------------------------------------------------
 !      #######################
 MODULE MODI_LES_INI_TIMESTEP_n
@@ -53,6 +48,7 @@ END MODULE MODI_LES_INI_TIMESTEP_n
 !!    MODIFICATIONS
 !!    -------------
 !!      Original         06/11/02
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !!
 !! --------------------------------------------------------------------------
 !
@@ -73,6 +69,7 @@ USE MODD_TIME
 USE MODD_CONF
 USE MODD_LES_BUDGET
 !
+use mode_datetime,       only: Datetime_distance
 USE MODE_ll
 USE MODE_MODELN_HANDLER
 !
@@ -148,25 +145,8 @@ NLES_TCOUNT = NLES_TCOUNT + 1
 !
 NLES_CURRENT_TCOUNT = NLES_TCOUNT
 !
-!
-XLES_DATIME( 1,NLES_TCOUNT) = TDTEXP%TDATE%YEAR
-XLES_DATIME( 2,NLES_TCOUNT) = TDTEXP%TDATE%MONTH
-XLES_DATIME( 3,NLES_TCOUNT) = TDTEXP%TDATE%DAY
-XLES_DATIME( 4,NLES_TCOUNT) = TDTEXP%TIME
-XLES_DATIME( 5,NLES_TCOUNT) = TDTSEG%TDATE%YEAR
-XLES_DATIME( 6,NLES_TCOUNT) = TDTSEG%TDATE%MONTH
-XLES_DATIME( 7,NLES_TCOUNT) = TDTSEG%TDATE%DAY
-XLES_DATIME( 8,NLES_TCOUNT) = TDTSEG%TIME
-XLES_DATIME( 9,NLES_TCOUNT) = TDTMOD%TDATE%YEAR
-XLES_DATIME(10,NLES_TCOUNT) = TDTMOD%TDATE%MONTH
-XLES_DATIME(11,NLES_TCOUNT) = TDTMOD%TDATE%DAY
-XLES_DATIME(12,NLES_TCOUNT) = TDTMOD%TIME
-XLES_DATIME(13,NLES_TCOUNT) = TDTCUR%TDATE%YEAR
-XLES_DATIME(14,NLES_TCOUNT) = TDTCUR%TDATE%MONTH
-XLES_DATIME(15,NLES_TCOUNT) = TDTCUR%TDATE%DAY
-XLES_DATIME(16,NLES_TCOUNT) = TDTCUR%TIME
-!
-XLES_TRAJT(NLES_TCOUNT,1) = (KTCOUNT-1) * XTSTEP
+xles_dates(nles_tcount ) = tdtcur
+call Datetime_distance( tdtseg, tdtcur, xles_times(nles_tcount ) )
 !
 !* forward-in-time time-step
 !

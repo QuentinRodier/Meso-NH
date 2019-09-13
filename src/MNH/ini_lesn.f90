@@ -35,6 +35,7 @@
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!                     02/2019 (C. Lac) Add rain fraction as a LES diagnostic
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -338,17 +339,13 @@ NLES_TIMES = ( INT( (XSEGLEN-XTSTEP+1.E-6) / XTSTEP ) ) / NLES_DTCOUNT
 !
 NLES_TCOUNT = 0
 !
-!*      3.6  date array for diachro
+!*      3.6  dates array for diachro
 !            ----------------------
 !
-ALLOCATE(XLES_DATIME(16,NLES_TIMES))
+allocate( xles_dates( nles_times ) )
+allocate( xles_times( nles_times ) )
 !
-!*      3.7  sampling times array for diachro
-!            --------------------------------
-!
-ALLOCATE(XLES_TRAJT(NLES_TIMES,1))
-!
-!*      3.8  No data
+!*      3.7  No data
 !            -------
 !
 IF (NLES_TIMES==0) THEN
