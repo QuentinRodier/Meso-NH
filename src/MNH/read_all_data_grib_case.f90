@@ -130,6 +130,7 @@ END MODULE MODI_READ_ALL_DATA_GRIB_CASE
 !!                   01/2019 (G.Delautier via Q.Rodier) for GRIB2 ARPEGE and AROME from EPYGRAM
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 14/03/2019: correct ZWS when variable not present in file
+!  Q. Rodier   16/09/2019: switch of GRIB number ID for Orograpgy in ARPEGE/AROME in EPyGrAM 
 !-------------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -520,7 +521,7 @@ SELECT CASE (IMODEL)
          WRITE (ILUOUT0,'(A)')'Orography is missing - abort'
        ENDIF 
   CASE(6,7) !  arpege and arome GRIB2
-      CALL SEARCH_FIELD(IGRIB,INUM_ZS,KDIS=0,KCAT=3,KNUMBER=5)
+      CALL SEARCH_FIELD(IGRIB,INUM_ZS,KDIS=0,KCAT=3,KNUMBER=4)
        IF(INUM_ZS < 0) THEN
          WRITE (ILUOUT0,'(A)')'Orography is missing - abort'
        ENDIF 
