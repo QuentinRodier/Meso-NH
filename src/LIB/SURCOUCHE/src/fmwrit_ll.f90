@@ -832,6 +832,11 @@ CONTAINS
          CALL SECOND_MNH2(T1)
          TIMEZ%T_WRIT3D_SEND=TIMEZ%T_WRIT3D_SEND + T1 - T0
          !
+         ! Write the variable attributes in the non-split file
+         !
+         if ( tpfile%nmaster_rank==isp .and. gnc4 ) &
+           call IO_Write_field_header_split_nc4( tpfile, tpfield, size( pfield, 3 ) )
+         !
          ! write the data
          !
          ALLOCATE(ZSLICE_ll(0,0)) ! to avoid bug on test of size
