@@ -212,6 +212,8 @@ END MODULE MODI_INI_CPL
 !!                     (P.Wautelet)28/03/2018 replace TEMPORAL_DIST by DATETIME_DISTANCE
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!!      Q.Rodier 09/2019 add missing abort if coupling files date not ordered 
+!!                       or before date of the segment 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -372,6 +374,7 @@ DO JCI=1,NCPL_NBR
     YTITLE='CURRENT DATE AND TIME OF THE FILE'//YCI
     CALL SM_PRINT_TIME(TDTCPL(JCI),TLUOUT,YTITLE)
     GSKIP(JCI)=.TRUE.      ! flag to skip after this coupling file
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_CPL','')      
   ELSE
     NCPL_TIMES(JCI,1) = NINT( ZDIST / PTSTEP ) + 2
   END IF
@@ -388,7 +391,8 @@ DO JCI=1,NCPL_NBR
       WRITE(YCI,'(I2.0)') JCI-1        
       YTITLE='CURRENT DATE AND TIME OF THE FILE'//YCI
       CALL SM_PRINT_TIME(TDTCPL(JCI-1),TLUOUT,YTITLE)
-      GEND=.TRUE.           ! error flag set to true   
+      GEND=.TRUE.           ! error flag set to true
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_CPL','')      
     END IF
   !   
   END IF
