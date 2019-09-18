@@ -6,11 +6,12 @@
 !  Modifications:
 !    P. Wautelet : may 2016   : use NetCDF Fortran module
 !    J.Escobar   : 14/12/2017 : Correction for MNH_INT=8
-!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!    P. Wautelet : 13/12/2018 : split of mode_netcdf into multiple modules/files
-!  Philippe Wautelet: 10/01/2019: replace handle_err by io_handle_err_nc4 for better netCDF error messages
-!    P. Wautelet : 11/01/2019 : NVERB_INFO->NVERB_WARNING for zero size fields
-!    P. Wautelet : 01/02/2019 : IO_WRITE_COORDVAR_NC4: bug: use of non-associated pointers (PIOCDF%DIM_Nx_y)
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 13/12/2018: split of mode_netcdf into multiple modules/files
+!  P. Wautelet 10/01/2019: replace handle_err by io_handle_err_nc4 for better netCDF error messages
+!  P. Wautelet 11/01/2019: NVERB_INFO->NVERB_WARNING for zero size fields
+!  P. Wautelet 01/02/2019: IO_WRITE_COORDVAR_NC4: bug: use of non-associated pointers (PIOCDF%DIM_Nx_y)
+!  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
 !-----------------------------------------------------------------
 #if defined(MNH_IOCDF4)
 module mode_io_write_nc4
@@ -2081,6 +2082,7 @@ INTEGER,PARAMETER :: YEAR=1, MONTH=2, DAY=3, HH=5, MM=6, SS=7
 CHARACTER(len=5)             :: YZONE
 CHARACTER(LEN=:),ALLOCATABLE :: YCMD, YHISTORY, YHISTORY_NEW, YHISTORY_PREV
 INTEGER                      :: ILEN_CMD, ILEN_PREV
+INTEGER(KIND=IDCDF_KIND)     :: ILEN_NC
 INTEGER(KIND=IDCDF_KIND)     :: ISTATUS
 INTEGER,DIMENSION(8)         :: IDATETIME
 !
@@ -2090,7 +2092,8 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_APPEND_HISTORY_NC4','called for file '//TRIM
 !
 IF (TPFILE%LMASTER)  THEN
   !Check if history attribute already exists in file and read it
-  ISTATUS = NF90_INQUIRE_ATTRIBUTE(TPFILE%NNCID, NF90_GLOBAL, 'history', LEN=ILEN_PREV)
+  ISTATUS = NF90_INQUIRE_ATTRIBUTE(TPFILE%NNCID, NF90_GLOBAL, 'history', LEN=ILEN_NC)
+  ILEN_PREV = int( ILEN_NC, kind=kind(ILEN_PREV) )
   IF (ISTATUS == NF90_NOERR) THEN
     ALLOCATE(CHARACTER(LEN=ILEN_PREV) :: YHISTORY_PREV)
     ISTATUS = NF90_GET_ATT(TPFILE%NNCID, NF90_GLOBAL, 'history', YHISTORY_PREV)

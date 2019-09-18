@@ -6,9 +6,10 @@
 !  Modifications:
 !    P. Wautelet : may 2016   : use NetCDF Fortran module
 !    J.Escobar   : 14/12/2017 : Correction for MNH_INT=8
-!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!    P. Wautelet : 13/12/2018 : split of mode_netcdf into multiple modules/files
-!  Philippe Wautelet: 10/01/2019: replace handle_err by io_handle_err_nc4 for better netCDF error messages
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 13/12/2018 : split of mode_netcdf into multiple modules/files
+!  P. Wautelet 10/01/2019: replace handle_err by io_handle_err_nc4 for better netCDF error messages
+!  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
 !-----------------------------------------------------------------
 #if defined(MNH_IOCDF4)
 module mode_io_tools_nc4
@@ -75,7 +76,7 @@ TYPE(DIMCDF),DIMENSION(:),            INTENT(OUT) :: TPDIMS
 INTEGER,                              INTENT(OUT) :: KRESP
 !
 INTEGER               :: IGRID
-INTEGER               :: ILEN, ISIZE
+INTEGER(kind=IDCDF_KIND) :: ILEN, ISIZE
 INTEGER               :: JI
 CHARACTER(LEN=32)     :: YINT
 CHARACTER(LEN=2)      :: YDIR
@@ -109,7 +110,7 @@ IF (IGRID==0) THEN
         ILEN = 1
       END IF
     CASE (1)
-      PTDIM => GETDIMCDF(TPFILE,KLEN)
+      PTDIM => GETDIMCDF( TPFILE, int( KLEN, kind=IDCDF_KIND ) )
       TPDIMS(1) = PTDIM
       ILEN      = PTDIM%LEN
     CASE DEFAULT
@@ -162,7 +163,7 @@ ELSE
       ELSE IF ( YDIR == 'ZZ' ) THEN
         PTDIM => TPFILE%TNCCOORDS(3,IGRID)%TDIM
       ELSE IF (JI==TPFIELD%NDIMS) THEN !Guess last dimension
-        PTDIM => GETDIMCDF(TPFILE, KLEN)
+        PTDIM => GETDIMCDF(TPFILE, int( KLEN, kind=IDCDF_KIND ) )
       END IF
       ILEN       = PTDIM%LEN
       TPDIMS(JI) = PTDIM
@@ -260,16 +261,16 @@ IIU_ll = NIMAX_ll + 2*JPHEXT
 IJU_ll = NJMAX_ll + 2*JPHEXT
 IKU    = NKMAX    + 2*JPVEXT
 
-IF (.NOT. ASSOCIATED(PIOCDF%DIM_NI))      PIOCDF%DIM_NI      => GETDIMCDF(TPFILE, IIU_ll, 'ni')
-IF (.NOT. ASSOCIATED(PIOCDF%DIM_NJ))      PIOCDF%DIM_NJ      => GETDIMCDF(TPFILE, IJU_ll, 'nj')
-IF (.NOT. ASSOCIATED(PIOCDF%DIM_NI_U))    PIOCDF%DIM_NI_U    => GETDIMCDF(TPFILE, IIU_ll, 'ni_u')
-IF (.NOT. ASSOCIATED(PIOCDF%DIM_NJ_U))    PIOCDF%DIM_NJ_U    => GETDIMCDF(TPFILE, IJU_ll, 'nj_u')
-IF (.NOT. ASSOCIATED(PIOCDF%DIM_NI_V))    PIOCDF%DIM_NI_V    => GETDIMCDF(TPFILE, IIU_ll, 'ni_v')
-IF (.NOT. ASSOCIATED(PIOCDF%DIM_NJ_V))    PIOCDF%DIM_NJ_V    => GETDIMCDF(TPFILE, IJU_ll, 'nj_v')
+IF (.NOT. ASSOCIATED(PIOCDF%DIM_NI))      PIOCDF%DIM_NI      => GETDIMCDF(TPFILE, int( IIU_ll, kind=IDCDF_KIND ), 'ni')
+IF (.NOT. ASSOCIATED(PIOCDF%DIM_NJ))      PIOCDF%DIM_NJ      => GETDIMCDF(TPFILE, int( IJU_ll, kind=IDCDF_KIND ), 'nj')
+IF (.NOT. ASSOCIATED(PIOCDF%DIM_NI_U))    PIOCDF%DIM_NI_U    => GETDIMCDF(TPFILE, int( IIU_ll, kind=IDCDF_KIND ), 'ni_u')
+IF (.NOT. ASSOCIATED(PIOCDF%DIM_NJ_U))    PIOCDF%DIM_NJ_U    => GETDIMCDF(TPFILE, int( IJU_ll, kind=IDCDF_KIND ), 'nj_u')
+IF (.NOT. ASSOCIATED(PIOCDF%DIM_NI_V))    PIOCDF%DIM_NI_V    => GETDIMCDF(TPFILE, int( IIU_ll, kind=IDCDF_KIND ), 'ni_v')
+IF (.NOT. ASSOCIATED(PIOCDF%DIM_NJ_V))    PIOCDF%DIM_NJ_V    => GETDIMCDF(TPFILE, int( IJU_ll, kind=IDCDF_KIND ), 'nj_v')
 IF (TRIM(YPROGRAM)/='PGD' .AND. TRIM(YPROGRAM)/='NESPGD' .AND. TRIM(YPROGRAM)/='ZOOMPG' &
     .AND. .NOT.(TRIM(YPROGRAM)=='REAL' .AND. CSTORAGE_TYPE=='SU') ) THEN !condition to detect PREP_SURFEX
-  IF (.NOT. ASSOCIATED(PIOCDF%DIM_LEVEL))   PIOCDF%DIM_LEVEL   => GETDIMCDF(TPFILE, IKU   , 'level')
-  IF (.NOT. ASSOCIATED(PIOCDF%DIM_LEVEL_W)) PIOCDF%DIM_LEVEL_W => GETDIMCDF(TPFILE, IKU   , 'level_w')
+  IF (.NOT. ASSOCIATED(PIOCDF%DIM_LEVEL))   PIOCDF%DIM_LEVEL   => GETDIMCDF(TPFILE, int( IKU, kind=IDCDF_KIND ),  'level')
+  IF (.NOT. ASSOCIATED(PIOCDF%DIM_LEVEL_W)) PIOCDF%DIM_LEVEL_W => GETDIMCDF(TPFILE, int( IKU, kind=IDCDF_KIND ),  'level_w')
   IF (.NOT. ASSOCIATED(PIOCDF%DIMTIME)) PIOCDF%DIMTIME => GETDIMCDF(TPFILE, NF90_UNLIMITED, 'time')
 ELSE
   !PGD and SURFEX files for MesoNH have no vertical levels or time scale

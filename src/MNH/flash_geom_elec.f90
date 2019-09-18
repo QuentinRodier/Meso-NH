@@ -93,6 +93,7 @@ END MODULE MODI_FLASH_GEOM_ELEC_n
 !!                               & initialize INBLIGHT on all proc for filling/saving AREA* arrays
 !!      Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
 !!      Philippe Wautelet: 22/01/2019: use standard FLUSH statement instead of non standard intrinsics!!
+!  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
 !-------------------------------------------------------------------------------
 !
 !*      0.      DECLARATIONS
@@ -2736,7 +2737,7 @@ END SUBROUTINE N8INTERCHANGE_SORT
   SUBROUTINE MNH_RANDOM_NUMBER(ZRANDOM)
 
     REAL          :: ZRANDOM
-    INTEGER ,SAVE :: NSEED_MNH = 26032012
+    INTEGER ( kind = 4 ), SAVE :: NSEED_MNH = 26032012
 
     ZRANDOM = r8_uniform_01 (NSEED_MNH)
 

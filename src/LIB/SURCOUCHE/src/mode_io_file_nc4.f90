@@ -14,6 +14,7 @@
 !                                    + move management of NNCID and NLFIFLU to the nc4 and lfi subroutines
 !     Philippe Wautelet: 10/01/2019: replace handle_err by io_handle_err_nc4 for better netCDF error messages
 !  P. Wautelet 07/03/2019: bugfix: io_set_mnhversion must be called by all the processes
+!  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
 !
 !-----------------------------------------------------------------
 #if defined(MNH_IOCDF4)
@@ -67,8 +68,8 @@ end subroutine io_create_file_nc4
 subroutine io_close_file_nc4(tpfile,kstatus)
   use mode_io_tools_nc4, only: cleaniocdf
 
-  type(tfiledata),                    intent(inout) :: tpfile
-  integer(kind=IDCDF_KIND), optional, intent(out)   :: kstatus
+  type(tfiledata),           intent(inout) :: tpfile
+  integer,         optional, intent(out)   :: kstatus
 
   integer(kind=IDCDF_KIND) :: istatus
 
@@ -90,7 +91,7 @@ subroutine io_close_file_nc4(tpfile,kstatus)
     end if
   end if
 
-  if (present(kstatus)) kstatus = istatus
+  if (present(kstatus)) kstatus = int ( istatus, kind=kind(kstatus) )
 end subroutine io_close_file_nc4
 
 

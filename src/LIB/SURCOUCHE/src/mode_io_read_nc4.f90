@@ -10,6 +10,7 @@
 !  P. Wautelet 13/12/2018: split of mode_netcdf into multiple modules/files
 !  P. Wautelet 10/01/2019: replace handle_err by io_handle_err_nc4 for better netCDF error messages
 !  P. Wautelet 21/02/2019: bugfix: intent of read fields: OUT->INOUT to keep initial value if not found in file
+!  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
 !-----------------------------------------------------------------
 #if defined(MNH_IOCDF4)
 module mode_io_read_nc4
@@ -57,8 +58,8 @@ INTEGER,                  INTENT(OUT)   :: KRESP  ! return-code
 CHARACTER(LEN=*),OPTIONAL,INTENT(IN)    :: HCALENDAR
 !
 INTEGER                      :: IERRLEVEL
-INTEGER                      :: ILEN
 INTEGER                      :: IGRID
+INTEGER(KIND=IDCDF_KIND)     :: ILEN
 INTEGER(KIND=IDCDF_KIND)     :: INCID
 INTEGER(KIND=IDCDF_KIND)     :: STATUS
 CHARACTER(LEN=12)            :: YVAL_FILE, YVAL_MEM

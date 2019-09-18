@@ -1,10 +1,11 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 ! Modifications:
 !  P. Wautelet 01/08/2019: allow merge of entire Z-split files
+!  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
 !-----------------------------------------------------------------
 MODULE mode_util
   USE MODD_IO_ll,  ONLY: TFILE_ELT, TFILEDATA
@@ -36,12 +37,12 @@ MODULE mode_util
      LOGICAL                               :: LSPLIT = .FALSE. ! TRUE if variable is split by vertical level
      INTEGER                               :: NSIZE = 0 ! Size of the variable (in number of elements)
      INTEGER                               :: NSRC = 0 ! Number of variables used to compute the variable (needed only if calc=.true.)
-     INTEGER                               :: NDIMS_FILE  ! Number of dims (as present in input file)
-     INTEGER,DIMENSION(:),ALLOCATABLE      :: NDIMSIZES_FILE  ! Dimensions sizes (as present in input file)
+     INTEGER(kind=IDCDF_KIND)              :: NDIMS_FILE  ! Number of dims (as present in input file)
+     INTEGER(kind=IDCDF_KIND),    DIMENSION(:),ALLOCATABLE :: NDIMSIZES_FILE  ! Dimensions sizes (as present in input file)
      CHARACTER(LEN=NF90_MAX_NAME),DIMENSION(:),ALLOCATABLE :: CDIMNAMES_FILE  ! Dimensions names (as present in input file)
      CHARACTER(LEN=40)                     :: CUNITS_FILE = '' ! Units (as present in input file)
      INTEGER                               :: NGRID_FILE  ! Grid  number (as present in input file)
-     INTEGER                               :: NTYPE_FILE  ! netCDF datatype (NF90_CHAR, NF90_INT...) (as present in input file)
+     INTEGER(kind=IDCDF_KIND)              :: NTYPE_FILE  ! netCDF datatype (NF90_CHAR, NF90_INT...) (as present in input file)
      INTEGER,DIMENSION(MAXRAW)             :: src    ! List of variables used to compute the variable (needed only if calc=.true.)
      INTEGER                               :: tgt    ! Target: id of the variable that use it (calc variable)
      TYPE(TFIELDDATA)                      :: TFIELD ! Metadata about the field
@@ -616,7 +617,8 @@ END DO
   END SUBROUTINE parse_infiles
   
   SUBROUTINE HANDLE_ERR(status,line)
-    INTEGER :: status,line
+    integer(kind=IDCDF_KIND), intent(in) :: status
+    integer                 , intent(in) :: line
 
     IF (status /= NF90_NOERR) THEN
        PRINT *, 'line ',line,': ',NF90_STRERROR(status)
@@ -636,7 +638,8 @@ END DO
 
     CHARACTER(LEN=16) :: YMNHVERSION
     CHARACTER(LEN=:),ALLOCATABLE :: YHISTORY
-    INTEGER :: ilen, ji
+    integer                  :: ji
+    INTEGER(kind=IDCDF_KIND) :: ilen
     INTEGER(KIND=IDCDF_KIND) :: status
     INTEGER(KIND=IDCDF_KIND) :: kcdf_id
 
@@ -1209,8 +1212,8 @@ END DO
     character(len=:), allocatable            :: YSPLIT
     character(len=:), allocatable            :: YTIMEDEP
     integer                                  :: iblocks
-    INTEGER                                  :: ILENG
-    INTEGER                                  :: JDIM
+    INTEGER(kind=IDCDF_KIND)                 :: ILENG
+    INTEGER(kind=IDCDF_KIND)                 :: JDIM
     INTEGER(KIND=IDCDF_KIND)                 :: ISTATUS
     INTEGER(KIND=IDCDF_KIND)                 :: IFILE_ID
     INTEGER(KIND=IDCDF_KIND)                 :: IVAR_ID
