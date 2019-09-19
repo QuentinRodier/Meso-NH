@@ -1,7 +1,11 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
-!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
+!-------------------------------------------------------------------
+! Modifications:
+!  P. Wautelet 19/09/2019: correct support of 64bit integers (MNH_INT=8)
+!-------------------------------------------------------------------
 !     #####################
 MODULE MODE_READ_GRIB
 !     #####################
@@ -694,7 +698,7 @@ INTEGER,            INTENT(IN)    :: KLUOUT    ! logical unit of output listing
 REAL, DIMENSION(:), INTENT(IN)    :: PMASK     ! grib land mask
 REAL, DIMENSION(:), POINTER       :: PSST      ! 
 !
-INTEGER :: IRET
+INTEGER(kind=kindOfInt) :: IRET
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:READ_GRIB_SST',0,ZHOOK_HANDLE)
@@ -732,7 +736,7 @@ INTEGER,            INTENT(IN)    :: KLUOUT    ! logical unit of output listing
 REAL, DIMENSION(:), INTENT(IN)    :: PMASK     ! grib land mask
 REAL, DIMENSION(:), POINTER       :: PTS     ! 
 !
-INTEGER :: IRET
+INTEGER(kind=kindOfInt) :: IRET
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:READ_GRIB_TSWATER',0,ZHOOK_HANDLE)

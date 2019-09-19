@@ -1,6 +1,6 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 2008-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
-!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE READ_NETCDF (UG, U, USS, &
@@ -23,12 +23,14 @@
 !!
 !!    Original    01/2008
 !!
+!  P. Wautelet 19/09/2019: correct support of 64bit integers (MNH_INT=8)
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
 !            -----------
 !
 !
+use modd_netcdf_sfx, only : IDCDF_KIND
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_SSO_n, ONLY : SSO_t
@@ -73,7 +75,7 @@ REAL, DIMENSION(:),ALLOCATABLE :: ZLATI    ! array of values extract from netcdf
 !
 INTEGER      :: ILUOUT                     ! output listing
 INTEGER      :: JLOOP                      ! loop indice
-INTEGER      :: JDIMENSION                 ! dimensions of ZVALU,ZLAT, 
+INTEGER(kind=IDCDF_KIND) :: JDIMENSION     ! dimensions of ZVALU,ZLAT,
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
                                            ! and ZLON arrays
 !----------------------------------------------------------------------------

@@ -1,6 +1,6 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
-!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
 MODULE MODE_SNOWCRO_FLANNER
 
@@ -24,6 +24,10 @@ MODULE MODE_SNOWCRO_FLANNER
 !!    -------------
 !!      Original    01/2013
 !
+! Modifications:
+!  P. Wautelet 19/09/2019: correct support of 64bit integers (MNH_INT=8)
+!
+use modd_netcdf_sfx, only : IDCDF_KIND
 USE MODD_SURFEX_OMP, ONLY : NBLOCK
 USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO, NPROC, NCOMM
 !
@@ -72,7 +76,7 @@ IMPLICIT NONE
 !*      2.    declarations of local variables
 !
 INTEGER :: INFOMPI
-INTEGER :: IERROR !error status
+INTEGER(kind=IDCDF_KIND) :: IERROR !error status
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -115,14 +119,14 @@ USE NETCDF
 !
 IMPLICIT NONE
 !
-INTEGER,INTENT(IN) :: ID_FILE
+INTEGER(kind=IDCDF_KIND),INTENT(IN) :: ID_FILE
  CHARACTER(LEN=5),INTENT(IN) :: HSURF
 REAL, DIMENSION(:,:,:), POINTER :: PVAR
 !
 INTEGER :: INFOMPI
-INTEGER, DIMENSION(:), ALLOCATABLE :: IVARDIMSID
+INTEGER(kind=IDCDF_KIND), DIMENSION(:), ALLOCATABLE :: IVARDIMSID
 !
-INTEGER :: IERROR !error status
+INTEGER(kind=IDCDF_KIND) :: IERROR !error status
 !
 IF (NRANK==NPIO) THEN
   ! Look for variable ID

@@ -1,6 +1,6 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 2008-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
-!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
 ! ajoutEB
 ! correction de l'erreur interversion de XVTANG2 et XVTANG3
@@ -31,10 +31,13 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original       02/2008                
+!  P. Wautelet 19/09/2019: correct support of 64bit integers (MNH_INT=8)
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
+!
+use modd_netcdf_sfx, only: IDCDF_KIND
 !
 IMPLICIT NONE
 !
@@ -138,11 +141,11 @@ REAL, PARAMETER                 :: XVTELV1 = 0.005
 !
 INTEGER,PARAMETER               :: NVDENT1 = 3
 !
-INTEGER :: NVARDIMS !number of dimensions of netcdf input variable
-INTEGER :: NLENDIM1,NLENDIM2,NLENDIM3
-INTEGER :: NID_VAR ! Netcdf IDs for  variable
+INTEGER(kind=IDCDF_KIND) :: NVARDIMS !number of dimensions of netcdf input variable
+INTEGER(kind=IDCDF_KIND) :: NLENDIM1,NLENDIM2,NLENDIM3
+INTEGER(kind=IDCDF_KIND) :: NID_VAR ! Netcdf IDs for  variable
 !
-INTEGER :: NID_FILE
+INTEGER(kind=IDCDF_KIND) :: NID_FILE
 REAL, DIMENSION(:,:,:), POINTER :: XDRDT0,XTAU,XKAPPA   ! field read
 !
 END MODULE MODD_SNOW_METAMO

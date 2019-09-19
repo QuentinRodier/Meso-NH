@@ -1,6 +1,6 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 2014-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
-!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE READ_Z1D_NETCDF
@@ -21,12 +21,14 @@
 !!
 !!    Original    11/2014
 !!      initialisation of NOCKMAX,XZHOC
-!!
+!  P. Wautelet 19/09/2019: correct support of 64bit integers (MNH_INT=8)
+!
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
 !            -----------
 !
+use modd_netcdf_sfx, only : IDCDF_KIND
 USE MODD_OCEAN_GRID
 USE MODD_SURF_PAR, ONLY : NUNDEF
 USE MODD_PREP_SEAFLUX, ONLY : CFILE_SEAFLX,CTYPE_SEAFLX
@@ -42,7 +44,7 @@ IMPLICIT NONE
 !
 CHARACTER (LEN=28) :: YFILENAME
 CHARACTER (LEN=28)  :: YNCVARNAME
-INTEGER :: JDIMENSION
+INTEGER(kind=IDCDF_KIND) :: JDIMENSION
 !
 !*    0.2    Declaration of local variables
 !            ------------------------------

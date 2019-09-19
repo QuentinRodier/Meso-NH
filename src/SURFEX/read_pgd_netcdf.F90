@@ -1,6 +1,6 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 2012-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
-!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
 !#################################################################################
 SUBROUTINE READ_PGD_NETCDF (UG, U, USS, &
@@ -26,13 +26,17 @@ SUBROUTINE READ_PGD_NETCDF (UG, U, USS, &
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    11/2012
+!  P. Wautelet 19/09/2019: correct support of 64bit integers (MNH_INT=8)
 !!------------------------------------------------------------------
 !
 !
+use modd_netcdf_sfx, only : IDCDF_KIND
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_SSO_n, ONLY : SSO_t
 !
+USE MODE_READ_CDF, ONLY : IDCDF_KIND
+
 USE MODI_ABOR1_SFX
 
 USE MODI_READ_AND_SEND_MPI
@@ -73,9 +77,9 @@ REAL, DIMENSION(:), ALLOCATABLE :: ZFIELD0
 !
 ! CHARACTER(LEN=28) :: YNCVAR
 !
-INTEGER::IERROR !error status
-INTEGER::ID_FILE ! id of netcdf file
-INTEGER::INFIELD,INLAT,INLON ! dimension lengths
+INTEGER(kind=IDCDF_KIND)::IERROR !error status
+INTEGER(kind=IDCDF_KIND)::ID_FILE ! id of netcdf file
+INTEGER(kind=IDCDF_KIND)::INFIELD,INLAT,INLON ! dimension lengths
 INTEGER::ILUOUT
 INTEGER::JPOINT !loop counter
 !
@@ -175,17 +179,17 @@ USE NETCDF
 IMPLICIT NONE
 
 
-INTEGER,INTENT(IN)::ID_FILE
+INTEGER(kind=IDCDF_KIND),INTENT(IN)::ID_FILE
  CHARACTER(LEN=20),   INTENT(IN)  :: HFIELD     ! name of variable
 REAL,DIMENSION(:),POINTER::PFIELD
 
-INTEGER::ID_VAR ! Netcdf IDs for file and variable
-INTEGER::INVARDIMS !number of dimensions of netcdf input variable
-INTEGER,DIMENSION(:),ALLOCATABLE::IVARDIMSID
-INTEGER::ILENDIM1,ILENDIM2
-INTEGER,INTENT(OUT)::ILENDIM
-INTEGER::IERROR !error status
-INTEGER::ITYPE
+INTEGER(kind=IDCDF_KIND)::ID_VAR ! Netcdf IDs for file and variable
+INTEGER(kind=IDCDF_KIND)::INVARDIMS !number of dimensions of netcdf input variable
+INTEGER(kind=IDCDF_KIND),DIMENSION(:),ALLOCATABLE::IVARDIMSID
+INTEGER(kind=IDCDF_KIND)::ILENDIM1,ILENDIM2
+INTEGER(kind=IDCDF_KIND),INTENT(OUT)::ILENDIM
+INTEGER(kind=IDCDF_KIND)::IERROR !error status
+INTEGER(kind=IDCDF_KIND)::ITYPE
 
 ! Look for variable ID for HFIELD
 IERROR=NF90_INQ_VARID(ID_FILE,TRIM(HFIELD),ID_VAR)
