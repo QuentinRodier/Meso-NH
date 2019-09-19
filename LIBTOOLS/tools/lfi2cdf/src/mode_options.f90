@@ -1,20 +1,23 @@
-!MNH_LIC Copyright 2015-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2015-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
+! Modifications:
+!  P. Wautelet 19/09/2019: add possibility to provide a fallback file if some information are not found in the input file
 !-----------------------------------------------------------------
 module mode_options
   USE MODE_FIELD, ONLY: TYPEUNDEF, TYPEINT, TYPELOG, TYPEREAL, TYPECHAR, TYPEDATE
 
   implicit none
 
-  integer,parameter :: nbavailoptions = 10
+  integer,parameter :: NBAVAILOPTIONS = 11
   integer,parameter :: MODEUNDEF = -11, MODECDF2CDF = 11, MODELFI2CDF = 12, MODECDF2LFI = 13
 
-  integer,parameter :: OPTCOMPRESS = 1, OPTHELP   = 2, OPTLIST   = 3
-  integer,parameter :: OPTMERGE    = 4, OPTOUTPUT = 5, OPTREDUCE = 6
-  integer,parameter :: OPTMODE     = 7, OPTSPLIT  = 8, OPTVAR    = 9
-  integer,parameter :: OPTVERBOSE  = 10
+  integer,parameter :: OPTCOMPRESS = 1,  OPTHELP     = 2,  OPTLIST   = 3
+  integer,parameter :: OPTMERGE    = 4,  OPTOUTPUT   = 5,  OPTREDUCE = 6
+  integer,parameter :: OPTMODE     = 7,  OPTSPLIT    = 8,  OPTVAR    = 9
+  integer,parameter :: OPTVERBOSE  = 10, OPTFALLBACK = 11
 
   type option
     logical :: set = .false.
@@ -153,6 +156,12 @@ subroutine init_options(options)
   options(OPTVERBOSE)%long_name    = "verbose"
   options(OPTVERBOSE)%short_name   = 'V'
   options(OPTVERBOSE)%has_argument = .false.
+
+  options(OPTFALLBACK)%long_name    = "fallback-file"
+  options(OPTFALLBACK)%short_name   = 'f'
+  options(OPTFALLBACK)%has_argument = .true.
+  options(OPTFALLBACK)%type         = TYPECHAR
+
 end subroutine init_options
 
 subroutine get_option(options,finished)
@@ -323,18 +332,21 @@ subroutine help()
 !TODO: -l option for cdf2cdf and cdf2lfi
   print *,"Usage : lfi2cdf [-h --help] [-l] [-v --var var1[,...]] [-r --reduce-precision]"
   print *,"                [-m --merge number_of_z_levels] [-s --split] [-o --output output-file.nc]"
-  print *,"                [-R --runmode mode] [-V --verbose]"
+  print *,"                [-R --runmode mode] [-V --verbose] [-f --fallback-file fallback-file]"
   print *,"                [-c --compress compression_level] input-file.lfi"
   print *,"        cdf2cdf [-h --help] [-v --var var1[,...]] [-r --reduce-precision]"
   print *,"                [-m --merge number_of_split_files] [-s --split] [-o --output output-file.nc]"
-  print *,"                [-R --runmode mode] [-V --verbose]"
+  print *,"                [-R --runmode mode] [-V --verbose] [-f --fallback-file fallback-file]"
   print *,"                [-c --compress compression_level] input-file.nc"
-  print *,"        cdf2lfi [-o --output output-file.lfi] [-R --runmode mode]  [-V --verbose] input-file.nc"
+  print *,"        cdf2lfi [-o --output output-file.lfi] [-R --runmode mode]  [-V --verbose]"
+  print *,"                [-f --fallback-file fallback-file] input-file.nc"
   print *,""
   print *,"Options:"
   print *,"  --compress, -c compression_level"
   print *,"     Compress data. The compression level should be in the 1 to 9 interval."
   print *,"     Only supported with the netCDF format (cdf2cdf and lfi2cdf only)"
+  print *,"  -f --fallback-file fallback-file"
+  print *,"     File to use to read some grid information if not found in input-file"
   print *,"  --help, -h"
   print *,"     Print this text"
   print *,"  --list, -l"

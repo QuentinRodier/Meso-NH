@@ -1,7 +1,10 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
+! Modifications:
+!  P. Wautelet 19/09/2019: add possibility to provide a fallback file if some information are not found in the input file
 !-----------------------------------------------------------------
 program LFI2CDF
   USE MODD_CONF,          ONLY: CPROGRAM
@@ -31,7 +34,7 @@ program LFI2CDF
   INTEGER :: IINFO_ll         ! return code of // routines
   INTEGER :: nfiles_out   = 0 ! number of output files
   CHARACTER(LEN=:),allocatable :: hvarlist
-  TYPE(TFILE_ELT),DIMENSION(1)        :: infiles
+  TYPE(TFILE_ELT),DIMENSION(2)        :: infiles
   TYPE(TFILE_ELT),DIMENSION(MAXFILES) :: outfiles
 
   TYPE(workfield), DIMENSION(:), POINTER :: tzreclist
@@ -150,7 +153,11 @@ program LFI2CDF
      CALL fill_files(infiles,outfiles,tzreclist,nbvar,options)
   END IF
 
-  CALL CLOSE_FILES(infiles, 1)
+  if ( options( OPTFALLBACK )%set ) then
+    CALL CLOSE_FILES(infiles, 2)
+  else
+    CALL CLOSE_FILES(infiles, 1)
+  end if
   CALL CLOSE_FILES(outfiles,nfiles_out)
-  
+
 end program LFI2CDF

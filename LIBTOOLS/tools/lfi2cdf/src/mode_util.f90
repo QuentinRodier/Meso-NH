@@ -6,6 +6,7 @@
 ! Modifications:
 !  P. Wautelet 01/08/2019: allow merge of entire Z-split files
 !  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
+!  P. Wautelet 19/09/2019: add possibility to provide a fallback file if some information are not found in the input file
 !-----------------------------------------------------------------
 MODULE mode_util
   USE MODD_IO_ll,  ONLY: TFILE_ELT, TFILEDATA
@@ -960,6 +961,7 @@ END DO
   SUBROUTINE OPEN_FILES(infiles,outfiles,KNFILES_OUT,hinfile,houtfile,nbvar_infile,options,runmode)
     USE MODD_CONF,          ONLY: LCARTESIAN
     USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
+    USE MODD_CONFZ,         ONLY: NB_PROCIO_R
     USE MODD_DIM_n,         ONLY: NIMAX_ll, NJMAX_ll, NKMAX
     USE MODD_GRID,          ONLY: XBETA, XRPK, XLAT0, XLON0, XLATORI, XLONORI
     USE MODD_GRID_n,        ONLY: LSLEVE, XXHAT, XYHAT, XZHAT
@@ -981,6 +983,7 @@ END DO
     INTEGER,                     INTENT(IN)  :: runmode
 
     INTEGER                     :: idx, IRESP2
+    integer                     :: inb_procio_r_save
     INTEGER(KIND=IDCDF_KIND)    :: omode
     INTEGER(KIND=IDCDF_KIND)    :: status
     INTEGER(KIND=LFI_INT)       :: ilu,iresp
@@ -1000,6 +1003,15 @@ END DO
        CALL IO_FILE_OPEN_ll(INFILES(1)%TFILE)
 
        nbvar_infile = INFILES(1)%TFILE%NNCNAR
+
+       !Open fallback file if provided
+       if ( options( OPTFALLBACK )%set ) then
+         inb_procio_r_save = NB_PROCIO_R
+         NB_PROCIO_R = 1
+         CALL IO_FILE_ADD2LIST(INFILES(2)%TFILE,options( OPTFALLBACK )%cvalue,'UNKNOWN','READ',HFORMAT='NETCDF4')
+         CALL IO_FILE_OPEN_ll(INFILES(2)%TFILE)
+         NB_PROCIO_R = inb_procio_r_save
+       end if
    ELSE
        !
        ! LFI
@@ -1017,49 +1029,122 @@ END DO
           CALL IO_FILE_CLOSE_ll(INFILES(1)%TFILE)
           return
        END IF
+
+       !Open fallback file if provided
+       if ( options( OPTFALLBACK )%set ) then
+         inb_procio_r_save = NB_PROCIO_R
+         NB_PROCIO_R = 1
+         CALL IO_FILE_ADD2LIST(INFILES(2)%TFILE,options( OPTFALLBACK )%cvalue,'UNKNOWN','READ', &
+                               HFORMAT='LFI',KLFIVERB=0)
+         CALL IO_FILE_OPEN_ll(INFILES(2)%TFILE)
+         NB_PROCIO_R = inb_procio_r_save
+       end if
    END IF
    !
    !Read problem dimensions and some grid variables (needed to determine domain size and also by IO_FILE_OPEN_ll to create netCDF files)
-   CALL IO_READ_FIELD(INFILES(1)%TFILE,'JPHEXT',JPHEXT)
+   JPHEXT = 1
+   CALL IO_READ_FIELD(INFILES(1)%TFILE,'JPHEXT',JPHEXT,IRESP2)
+   !If not found in main file, try the fallback one
+   if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_READ_FIELD(INFILES(2)%TFILE,'JPHEXT',JPHEXT,IRESP2)
+   if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'JPHEXT not found')
+
    JPHEXT_ll = JPHEXT
    JPVEXT_ll = JPVEXT
    !
    ALLOCATE(NIMAX_ll,NJMAX_ll,NKMAX)
-   CALL IO_READ_FIELD(INFILES(1)%TFILE,'IMAX',NIMAX_ll)
-   CALL IO_READ_FIELD(INFILES(1)%TFILE,'JMAX',NJMAX_ll)
+   CALL IO_READ_FIELD(INFILES(1)%TFILE,'IMAX',NIMAX_ll,IRESP2)
+   !If not found in main file, try the fallback one
+   if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_READ_FIELD(INFILES(2)%TFILE,'IMAX',NIMAX_ll,IRESP2)
+   if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'IMAX not found')
+
+   CALL IO_READ_FIELD(INFILES(1)%TFILE,'JMAX',NJMAX_ll,IRESP2)
+   !If not found in main file, try the fallback one
+   if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_READ_FIELD(INFILES(2)%TFILE,'JMAX',NJMAX_ll,IRESP2)
+   if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'JMAX not found')
+
    CALL IO_READ_FIELD(INFILES(1)%TFILE,'KMAX',NKMAX,IRESP2)
+   !If not found in main file, try the fallback one
+   if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_READ_FIELD(INFILES(2)%TFILE,'KMAX',NKMAX,IRESP2)
    IF (IRESP2/=0) NKMAX = 0
    !
-   CALL IO_READ_FIELD(INFILES(1)%TFILE,'PROGRAM',CPROGRAM_ORIG)
+   CALL IO_READ_FIELD(INFILES(1)%TFILE,'PROGRAM',CPROGRAM_ORIG,IRESP2)
+   !If not found in main file, try the fallback one
+   if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_READ_FIELD(INFILES(2)%TFILE,'PROGRAM',CPROGRAM_ORIG,IRESP2)
+   if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'PROGRAM not found')
    !
    ALLOCATE(CSTORAGE_TYPE)
-   CALL IO_READ_FIELD(INFILES(1)%TFILE,'STORAGE_TYPE',CSTORAGE_TYPE)
+   CALL IO_READ_FIELD(INFILES(1)%TFILE,'STORAGE_TYPE',CSTORAGE_TYPE,IRESP2)
+   !If not found in main file, try the fallback one
+   if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_READ_FIELD(INFILES(2)%TFILE,'STORAGE_TYPE',CSTORAGE_TYPE,IRESP2)
+   if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'STORAGE_TYPE not found')
    !
    ALLOCATE(XXHAT(NIMAX_ll+2*JPHEXT))
-   CALL IO_READ_FIELD(INFILES(1)%TFILE,'XHAT',XXHAT)
+   CALL IO_READ_FIELD(INFILES(1)%TFILE,'XHAT',XXHAT,IRESP2)
+   !If not found in main file, try the fallback one
+   if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_READ_FIELD(INFILES(2)%TFILE,'XHAT',XXHAT,IRESP2)
+   if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'XHAT not found')
+
    ALLOCATE(XYHAT(NJMAX_ll+2*JPHEXT))
-   CALL IO_READ_FIELD(INFILES(1)%TFILE,'YHAT',XYHAT)
-   CALL IO_READ_FIELD(INFILES(1)%TFILE,'CARTESIAN',LCARTESIAN)
-   !
-   CALL IO_READ_FIELD(INFILES(1)%TFILE,'LAT0',XLAT0)
-   CALL IO_READ_FIELD(INFILES(1)%TFILE,'LON0',XLON0)
-   CALL IO_READ_FIELD(INFILES(1)%TFILE,'BETA',XBETA)
-   !
+   CALL IO_READ_FIELD(INFILES(1)%TFILE,'YHAT',XYHAT,IRESP2)
+   !If not found in main file, try the fallback one
+   if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_READ_FIELD(INFILES(2)%TFILE,'YHAT',XYHAT,IRESP2)
+   if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'YHAT not found')
+
+   CALL IO_READ_FIELD(INFILES(1)%TFILE,'CARTESIAN',LCARTESIAN,IRESP2)
+   !If not found in main file, try the fallback one
+   if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_READ_FIELD(INFILES(2)%TFILE,'CARTESIAN',LCARTESIAN,IRESP2)
+   if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'CARTESIAN not found')
+
+   CALL IO_READ_FIELD(INFILES(1)%TFILE,'LAT0',XLAT0,IRESP2)
+   !If not found in main file, try the fallback one
+   if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_READ_FIELD(INFILES(2)%TFILE,'LAT0',XLAT0,IRESP2)
+   if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'LAT0 not found')
+
+   CALL IO_READ_FIELD(INFILES(1)%TFILE,'LON0',XLON0,IRESP2)
+   !If not found in main file, try the fallback one
+   if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_READ_FIELD(INFILES(2)%TFILE,'LON0',XLON0,IRESP2)
+   if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'LON0 not found')
+
+   CALL IO_READ_FIELD(INFILES(1)%TFILE,'BETA',XBETA,IRESP2)
+   !If not found in main file, try the fallback one
+   if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_READ_FIELD(INFILES(2)%TFILE,'BETA',XBETA,IRESP2)
+   if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'BETA not found')
+
    IF (.NOT.LCARTESIAN) THEN
-     CALL IO_READ_FIELD(INFILES(1)%TFILE,'RPK',   XRPK)
-     CALL IO_READ_FIELD(INFILES(1)%TFILE,'LATORI',XLATORI)
-     CALL IO_READ_FIELD(INFILES(1)%TFILE,'LONORI',XLONORI)
+     CALL IO_READ_FIELD(INFILES(1)%TFILE,'RPK',   XRPK,   IRESP2)
+    !If not found in main file, try the fallback one
+    if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_READ_FIELD(INFILES(2)%TFILE,'RPK',   XRPK,IRESP2)
+    if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'RPK not found')
+
+     CALL IO_READ_FIELD(INFILES(1)%TFILE,'LATORI',XLATORI,IRESP2)
+    !If not found in main file, try the fallback one
+    if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_READ_FIELD(INFILES(2)%TFILE,'LATORI',XLATORI,IRESP2)
+    if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'LATORI not found')
+
+     CALL IO_READ_FIELD(INFILES(1)%TFILE,'LONORI',XLONORI,IRESP2)
+    !If not found in main file, try the fallback one
+    if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_READ_FIELD(INFILES(2)%TFILE,'LONORI',XLONORI,IRESP2)
+    if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'LONORI not found')
    ENDIF
    !
    IF (TRIM(CPROGRAM_ORIG)/='PGD' .AND. TRIM(CPROGRAM_ORIG)/='NESPGD' .AND. TRIM(CPROGRAM_ORIG)/='ZOOMPG' &
        .AND. .NOT.(TRIM(CPROGRAM_ORIG)=='REAL' .AND. CSTORAGE_TYPE=='SU') ) THEN !condition to detect PREP_SURFEX
      ALLOCATE(XZHAT(NKMAX+2*JPVEXT))
-     CALL IO_READ_FIELD(INFILES(1)%TFILE,'ZHAT',XZHAT)
+     CALL IO_READ_FIELD(INFILES(1)%TFILE,'ZHAT',XZHAT,IRESP2)
+     !If not found in main file, try the fallback one
+     if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_READ_FIELD(INFILES(2)%TFILE,'ZHAT',XZHAT,IRESP2)
+     if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'ZHAT not found')
+
      ALLOCATE(LSLEVE)
-     CALL IO_READ_FIELD(INFILES(1)%TFILE,'SLEVE',LSLEVE)
+     CALL IO_READ_FIELD(INFILES(1)%TFILE,'SLEVE',LSLEVE,IRESP2)
+     !If not found in main file, try the fallback one
+     if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_READ_FIELD(INFILES(2)%TFILE,'SLEVE',LSLEVE,IRESP2)
+     if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'SLEVE not found')
+
      ALLOCATE(TDTMOD)
      CALL IO_READ_FIELD(INFILES(1)%TFILE,'DTMOD',TDTMOD,IRESP2)
      IF(IRESP2/=0) DEALLOCATE(TDTMOD)
+
      ALLOCATE(TDTCUR)
      CALL IO_READ_FIELD(INFILES(1)%TFILE,'DTCUR',TDTCUR,IRESP2)
      IF(IRESP2/=0) DEALLOCATE(TDTCUR)
