@@ -808,7 +808,7 @@ IF (LLES_SUBGRID) THEN
        "Subgrid vert. flux of liquid potential temperature"//YSUBTITLE(:),"m K s-1",XLES_SUBGRID_WThl,HLES_AVG)
 
   CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_WP  ",YSUBTITLE(:), &
-     "Subgrid <wp> vertical Flux"//YSUBTITLE(:),"mPa/s",XLES_SUBGRID_WP,HLES_AVG)
+     "Subgrid <wp> vertical Flux"//YSUBTITLE(:),"m Pa s-1",XLES_SUBGRID_WP,HLES_AVG)
 !!
 !!
   CALL LES_DIACHRO_MASKS(TPDIAFILE,"THLUP_MF",YSUBTITLE(:), &
