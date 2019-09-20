@@ -4,9 +4,10 @@
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 ! Modifications
-! G. TANGUY 19/05/2014 : correctoin DATIME in case of time average
-!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  G. Tanguy   19/05/2014: correct DATIME in case of time average
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
+!  P. Wautelet 20/09/2019: rewrite normalization of LES budgets
 !-----------------------------------------------------------------
 !#######################
 MODULE MODE_LES_DIACHRO
@@ -14,6 +15,8 @@ MODULE MODE_LES_DIACHRO
 
 USE MODD_LUNIT
 use modd_les_n, only: xles_dates, xles_times
+
+use mode_msg
 
 implicit none
 
@@ -27,198 +30,78 @@ CONTAINS
 !---------------------------------------------------------------------
 !
 !########################################################
-SUBROUTINE MAKE_NORM(HUNIT, KC, ODIV, PA_NORM, PLES_NORM)
+subroutine Make_norm( pa_norm, ples_norm, kpower )
 !########################################################
-!
-USE MODD_PARAMETERS
-USE MODD_LES
-IMPLICIT NONE
-!
-CHARACTER(LEN=50),       INTENT(IN)    :: HUNIT     ! physical unit of field
-INTEGER,                 INTENT(IN)    :: KC        ! character counter
-LOGICAL,                 INTENT(INOUT) :: ODIV      ! flag to make a division
-REAL, DIMENSION(:,:,:,:),INTENT(INOUT) :: PA_NORM   ! normalized field
-REAL, DIMENSION(:),      INTENT(IN)    :: PLES_NORM ! normalization coefficient
 
-INTEGER :: JK ! z counter
-INTEGER :: JT ! time counter
-INTEGER :: JP ! process counter
-INTEGER :: JN ! variable number counter (larger than 1 only for scalar var.)
-CHARACTER(LEN=50) :: YUNIT
-!
-!------------------------------------------------------------------------
-!
-YUNIT=HUNIT
-!
-IF ( ANY(PLES_NORM(:)==0.) ) THEN
-  PA_NORM(:,:,:,:)=XUNDEF
-  ODIV=.FALSE.
-  RETURN
-END IF
+use modd_les,        only: nles_current_times, nles_k
+use modd_parameters, only: XUNDEF
 
-DO JN=1,SIZE(PA_NORM,4)
-  IF (YUNIT(KC+1:KC+1)=='3') THEN
-    IF (ODIV) THEN
-      DO JP=1,SIZE(PA_NORM,3)
-        DO JT=1,NLES_CURRENT_TIMES
-          DO JK=1,NLES_K
-            IF (PA_NORM(JK,JT,JP,JN)/=XUNDEF) &
-            PA_NORM(JK,JT,JP,JN) = PA_NORM(JK,JT,JP,JN) * PLES_NORM(JT)**3
-          END DO
-        END DO
-      END DO
-    ELSE
-      DO JP=1,SIZE(PA_NORM,3)
-        DO JT=1,NLES_CURRENT_TIMES
-          DO JK=1,NLES_K
-            IF (PA_NORM(JK,JT,JP,JN)/=XUNDEF) &
-            PA_NORM(JK,JT,JP,JN) = PA_NORM(JK,JT,JP,JN) / PLES_NORM(JT)**3
-          END DO
-        END DO
-      END DO
-    END IF
-  ELSE IF  (YUNIT(KC+1:KC+1)=='2') THEN
-    IF (ODIV) THEN
-      DO JP=1,SIZE(PA_NORM,3)
-        DO JT=1,NLES_CURRENT_TIMES
-          DO JK=1,NLES_K
-            IF (PA_NORM(JK,JT,JP,JN)/=XUNDEF) &
-            PA_NORM(JK,JT,JP,JN) = PA_NORM(JK,JT,JP,JN) * PLES_NORM(JT)**2
-          END DO
-        END DO
-      END DO
-    ELSE
-      DO JP=1,SIZE(PA_NORM,3)
-        DO JT=1,NLES_CURRENT_TIMES
-          DO JK=1,NLES_K
-            IF (PA_NORM(JK,JT,JP,JN)/=XUNDEF) &
-            PA_NORM(JK,JT,JP,JN) = PA_NORM(JK,JT,JP,JN) / PLES_NORM(JT)**2
-          END DO
-        END DO
-      END DO
-    END IF
-  ELSE
-    IF (ODIV) THEN
-      DO JP=1,SIZE(PA_NORM,3)
-        DO JT=1,NLES_CURRENT_TIMES
-          DO JK=1,NLES_K
-            IF (PA_NORM(JK,JT,JP,JN)/=XUNDEF) &
-            PA_NORM(JK,JT,JP,JN) = PA_NORM(JK,JT,JP,JN) * PLES_NORM(JT)
-          END DO
-        END DO
-      END DO
-    ELSE
-      DO JP=1,SIZE(PA_NORM,3)
-        DO JT=1,NLES_CURRENT_TIMES
-          DO JK=1,NLES_K
-            IF (PA_NORM(JK,JT,JP,JN)/=XUNDEF) &
-            PA_NORM(JK,JT,JP,JN) = PA_NORM(JK,JT,JP,JN) / PLES_NORM(JT)
-          END DO
-        END DO
-      END DO
-    END IF
-  END IF
-END DO
-!
-ODIV=.FALSE.
-!
-END SUBROUTINE MAKE_NORM
-!
-!###########################################################
-SUBROUTINE MAKE_NORM_SV(HUNIT, KC, ODIV, PA_NORM, PLES_NORM)
-!###########################################################
-!
-USE MODD_PARAMETERS
-USE MODD_LES
-IMPLICIT NONE
-!
-CHARACTER(LEN=50),       INTENT(IN)    :: HUNIT     ! physical unit of field
-INTEGER,                 INTENT(IN)    :: KC        ! character counter
-LOGICAL,                 INTENT(INOUT) :: ODIV      ! flag to make a division
-REAL, DIMENSION(:,:,:,:),INTENT(INOUT) :: PA_NORM   ! normalized field
-REAL, DIMENSION(:,:),    INTENT(IN)    :: PLES_NORM ! normalization coefficient
+real, dimension(:,:,:,:), intent(inout) :: pa_norm   ! normalized field
+real, dimension(:),       intent(in)    :: ples_norm ! normalization coefficient
+integer,                  intent(in)    :: kpower    ! normalization power
 
-INTEGER :: JK ! z counter
-INTEGER :: JT ! time counter
-INTEGER :: JP ! process counter
-INTEGER :: JSV! scalar variables counter
-CHARACTER(LEN=50) :: YUNIT
-!
-!-------------------------------------------------------------------
-!
-YUNIT=HUNIT
-!
-DO JSV=1,SIZE(PLES_NORM,2)
-  IF (ANY(PLES_NORM(:,JSV)==0.)) THEN
-    PA_NORM(:,:,:,JSV)=XUNDEF
-    CYCLE
-  END IF
-  IF (YUNIT(KC+1:KC+1)=='3') THEN
-    IF (ODIV) THEN
-      DO JP=1,SIZE(PA_NORM,3)
-        DO JT=1,NLES_CURRENT_TIMES
-          DO JK=1,NLES_K
-            IF (PA_NORM(JK,JT,JP,JSV)/=XUNDEF) &
-            PA_NORM(JK,JT,JP,JSV) = PA_NORM(JK,JT,JP,JSV) * PLES_NORM(JT,JSV)**3
-          END DO
-        END DO
-      END DO
-    ELSE
-      DO JP=1,SIZE(PA_NORM,3)
-        DO JT=1,NLES_CURRENT_TIMES
-          DO JK=1,NLES_K
-            IF (PA_NORM(JK,JT,JP,JSV)/=XUNDEF) &
-            PA_NORM(JK,JT,JP,JSV) = PA_NORM(JK,JT,JP,JSV) / PLES_NORM(JT,JSV)**3
-          END DO
-        END DO
-      END DO
-    END IF
-  ELSE IF  (YUNIT(KC+1:KC+1)=='2') THEN
-    IF (ODIV) THEN
-      DO JP=1,SIZE(PA_NORM,3)
-        DO JT=1,NLES_CURRENT_TIMES
-          DO JK=1,NLES_K
-            IF (PA_NORM(JK,JT,JP,JSV)/=XUNDEF) &
-            PA_NORM(JK,JT,JP,JSV) = PA_NORM(JK,JT,JP,JSV) * PLES_NORM(JT,JSV)**2
-            END DO
-        END DO
-      END DO
-    ELSE
-      DO JP=1,SIZE(PA_NORM,3)
-        DO JT=1,NLES_CURRENT_TIMES
-          DO JK=1,NLES_K
-            IF (PA_NORM(JK,JT,JP,JSV)/=XUNDEF) &
-            PA_NORM(JK,JT,JP,JSV) = PA_NORM(JK,JT,JP,JSV) / PLES_NORM(JT,JSV)**2
-            END DO
-        END DO
-      END DO
-    END IF
-  ELSE
-    IF (ODIV) THEN
-      DO JP=1,SIZE(PA_NORM,3)
-        DO JT=1,NLES_CURRENT_TIMES
-          DO JK=1,NLES_K
-            IF (PA_NORM(JK,JT,JP,JSV)/=XUNDEF) &
-            PA_NORM(JK,JT,JP,JSV) = PA_NORM(JK,JT,JP,JSV) * PLES_NORM(JT,JSV)
-            END DO
-        END DO
-      END DO
-    ELSE
-      DO JP=1,SIZE(PA_NORM,3)
-        DO JT=1,NLES_CURRENT_TIMES
-          DO JK=1,NLES_K
-            IF (PA_NORM(JK,JT,JP,JSV)/=XUNDEF) &
-            PA_NORM(JK,JT,JP,JSV) = PA_NORM(JK,JT,JP,JSV) / PLES_NORM(JT,JSV)
-          END DO
-        END DO
-      END DO
-    END IF
-  END IF
-END DO
-!
-ODIV=.FALSE.
-!
-END SUBROUTINE MAKE_NORM_SV
+integer :: jk ! z counter
+integer :: jt ! time counter
+integer :: jp ! process counter
+integer :: jn ! variable number counter (larger than 1 only for scalar var.)
+
+if ( kpower == 0 ) return
+
+!normalization is not possible if some values are zero
+if ( any( ples_norm(: ) == 0. ) ) then
+  pa_norm(:, :, :, : ) = XUNDEF
+  return
+end if
+
+do jn = 1, size( pa_norm, 4 )
+  do jp = 1, size( pa_norm, 3 )
+    do jt = 1, nles_current_times
+      do jk = 1, nles_k
+        if ( pa_norm(jk, jt, jp, jn ) /= XUNDEF ) &
+          pa_norm(jk, jt, jp, jn ) = pa_norm(jk, jt, jp, jn ) * ples_norm(jt )**( -kpower )
+      end do
+    end do
+  end do
+end do
+
+end subroutine Make_norm
+
+!########################################################
+subroutine Make_norm_sv( pa_norm, ples_norm, kpower )
+!########################################################
+
+use modd_les,        only: nles_current_times, nles_k
+use modd_parameters, only: XUNDEF
+
+real, dimension(:,:,:,:), intent(inout) :: pa_norm   ! normalized field
+real, dimension(:,:),     intent(in)    :: ples_norm ! normalization coefficient
+integer,                  intent(in)    :: kpower    ! normalization power
+
+integer :: jk ! z counter
+integer :: jt ! time counter
+integer :: jp ! process counter
+integer :: jsv! scalar variables counter
+
+if ( kpower == 0 ) return
+
+!normalization is not possible if some values are zero
+do jsv = 1, size( ples_norm, 2 )
+  if ( any( ples_norm(:, jsv ) == 0. ) ) then
+    pa_norm(:, :, :, jsv) = xundef
+    cycle
+  end if
+
+  do jp = 1, size( pa_norm, 3 )
+    do jt = 1, nles_current_times
+      do jk = 1, nles_k
+        if ( pa_norm(jk, jt, jp, jsv) /= xundef ) &
+            pa_norm(jk, jt,jp, jsv ) = pa_norm(jk, jt, jp, jsv ) * ples_norm(jt, jsv )**( -kpower )
+      end do
+    end do
+  end do
+end do
+
+end subroutine Make_norm_sv
 !
 !     ###################################################
       SUBROUTINE LES_NORM_4D(HUNIT, PA_LES, PA_NORM, OSV)
@@ -267,69 +150,125 @@ LOGICAL, OPTIONAL,           INTENT(IN)  :: OSV     ! flag for scalar variables
 !
 !       0.2  declaration of local variables
 !
-INTEGER :: JC    ! character counter
-LOGICAL :: GDIV  ! flag to make a division
-INTEGER :: IKG   ! number of 'kg' in the field unit
-!
-CHARACTER(LEN=50) :: YUNIT
-!
+integer, parameter :: NMAXUNITS = 10
+
+integer, parameter :: NNORM_K  = 1
+integer, parameter :: NNORM_KG = 2
+integer, parameter :: NNORM_M  = 3
+integer, parameter :: NNORM_PA = 4
+integer, parameter :: NNORM_S  = 5
+integer, parameter :: NNORM_RV = 6
+integer, parameter :: NNORM_SV = 7
+integer, parameter :: NNORMS   = 7
+
+integer :: idx, ispace
+integer :: ikg   ! number of 'kg' in the field unit
+integer :: inunits
+integer :: ipower
+integer :: ipower_kg_1st
+integer :: ji
+integer, dimension ( NNORMS ) :: ipowers
+character( len = 8 ) :: yun, yname, ypower
+character( len = 8 ), dimension( NMAXUNITS ) :: yunits
+logical :: gsv
 !------------------------------------------------------------------------------
-YUNIT=HUNIT//'                                              '
-!
-PA_NORM = PA_LES
-!
-IKG=0
-!
-DO JC=1,50
-  IF (YUNIT(JC:JC)=='g') THEN
-    IKG=IKG+1
-  ELSE IF (YUNIT(JC:JC)==' ') THEN
-    EXIT
-  END IF
-END DO
-!
-GDIV=.FALSE.
-!
-DO JC=1,49
-  !
-  SELECT CASE (YUNIT(JC:JC))
-    CASE('m')
-      CALL MAKE_NORM(YUNIT, JC, GDIV, PA_NORM, XLES_NORM_M)
-    CASE('g')
-      IF (IKG==1) THEN
-        CALL MAKE_NORM(YUNIT, JC, GDIV, PA_NORM, XLES_NORM_RHO)
-      ELSE
-        IF (PRESENT(OSV)) THEN
-          IF (OSV) THEN
-            IF (.NOT. GDIV) &
-            CALL MAKE_NORM_SV(YUNIT, JC, GDIV, PA_NORM, XLES_NORM_SV)
-            GDIV=.FALSE.
-          ELSE
-            IF (.NOT. GDIV) &
-            CALL MAKE_NORM(YUNIT, JC, GDIV, PA_NORM, XLES_NORM_RV)
-            GDIV=.FALSE.
-          END IF
-        ELSE 
-          IF (.NOT. GDIV) &
-          CALL MAKE_NORM(YUNIT, JC, GDIV, PA_NORM, XLES_NORM_RV)
-          GDIV=.FALSE.
-        END IF
-      END IF
-    CASE('K')
-      CALL MAKE_NORM(YUNIT, JC, GDIV, PA_NORM, XLES_NORM_K)
-    CASE('s')
-      CALL MAKE_NORM(YUNIT, JC, GDIV, PA_NORM, XLES_NORM_S)
-    CASE('a')
-      CALL MAKE_NORM(YUNIT, JC, GDIV, PA_NORM, XLES_NORM_P)
-    CASE('/')
-      GDIV=.TRUE.
-    CASE(' ')
-      EXIT
-  END SELECT
-END DO
-!
-WHERE(PA_NORM==XUNDEF) PA_NORM = PA_LES
-!
+
+gsv = .false.
+if ( present( osv ) ) gsv = osv
+
+pa_norm(:, :, :, : ) = pa_les(:, :, :, : )
+
+!Parse units
+!Each unit is separated by blanks
+!First part: unit, second part: power (and sign of it)
+ipowers(: ) = 0
+inunits = 0
+ikg = 0
+idx = 1
+
+!Separate units
+do
+  ispace = scan( hunit(idx: ), ' ' )
+  if ( ispace == 0 ) then
+    inunits = inunits + 1
+    if (inunits > NMAXUNITS ) call Print_msg( NVERB_FATAL, 'GEN', 'LES_NORM_4D', 'inunits > NMAXUNITS' )
+    yunits(inunits ) = hunit(idx:)
+    exit
+  else if ( ispace == len(hunit(idx: )) ) then
+    exit
+  else
+    inunits = inunits + 1
+    if (inunits > NMAXUNITS ) call Print_msg( NVERB_FATAL, 'GEN', 'LES_NORM_4D', 'inunits > NMAXUNITS' )
+    yunits(inunits ) =  hunit( idx : idx+ispace-1 )
+    idx = idx + ispace
+  end if
+end do
+
+!Treat units and their power
+!kg are special: they can appear twice with opposite power signs (kg kg-1)
+!In that case, they are normalized with xles_norm_rv or xles_norm_sv
+do ji = 1, inunits
+  yun = yunits(ji )
+
+  !Non dimensional unit
+  if ( trim( yun ) == '-' .or. trim( yun ) == '1' .or. trim( yun ) == 'percent') then
+    cycle
+  end if
+
+  !Separate unit and its power
+  idx = scan( yun, '-1234567890' )
+  if ( idx == 0 ) then
+    yname = trim( yun )
+    ypower = ''
+    ipower = 1
+  else
+    yname  = yun( 1 : idx - 1 )
+    ypower = yun( idx : )
+    read (ypower,'(I8)') ipower
+  end if
+
+  select case( trim( yname ) )
+    case ( 'K' )
+      ipowers(NNORM_K  ) = ipowers(NNORM_K  ) + ipower
+    case ( 'kg' )
+      ikg = ikg + 1
+      if ( ikg == 1 ) ipower_kg_1st = ipower
+      ipowers(NNORM_KG ) = ipowers(NNORM_KG ) + ipower
+    case ( 'm' )
+      ipowers(NNORM_M  ) = ipowers(NNORM_M  ) + ipower
+    case ( 'Pa' )
+      ipowers(NNORM_PA ) = ipowers(NNORM_PA ) + ipower
+    case ( 's' )
+      ipowers(NNORM_S  ) = ipowers(NNORM_S  ) + ipower
+    case default
+      call Print_msg( NVERB_WARNING, 'IO', 'LES_NORM_4D', 'unknown unit: '//trim(yname)//'. Conversion could be wrong.' )
+  end select
+end do
+
+if ( ikg > 1 .and. ipowers(NNORM_KG ) /= 0 ) &
+  call Print_msg( NVERB_ERROR, 'IO', 'LES_NORM_4D', 'if kg appears more than one time, it should be admimensional' )
+
+if ( ikg > 2 ) &
+  call Print_msg( NVERB_ERROR, 'IO', 'LES_NORM_4D', 'kg should not appear more than 2 times' )
+
+if ( ikg == 2 ) then
+  if ( gsv ) then
+    ipowers(NNORM_SV ) = ipower_kg_1st
+  else
+    ipowers(NNORM_RV ) = ipower_kg_1st
+  end if
+end if
+
+if (ipowers(NNORM_K  ) /= 0 ) call Make_norm   ( pa_norm, xles_norm_k,   ipowers(NNORM_K  ) )
+if (ipowers(NNORM_KG ) /= 0 ) call Make_norm   ( pa_norm, xles_norm_rho, ipowers(NNORM_KG ) )
+if (ipowers(NNORM_M  ) /= 0 ) call Make_norm   ( pa_norm, xles_norm_m,   ipowers(NNORM_M  ) )
+if (ipowers(NNORM_PA ) /= 0 ) call Make_norm   ( pa_norm, xles_norm_p,   ipowers(NNORM_PA ) )
+if (ipowers(NNORM_S  ) /= 0 ) call Make_norm   ( pa_norm, xles_norm_s,   ipowers(NNORM_S  ) )
+if (ipowers(NNORM_RV ) /= 0 ) call Make_norm   ( pa_norm, xles_norm_rv,  ipowers(NNORM_RV ) )
+if (ipowers(NNORM_SV ) /= 0 ) call Make_norm_sv( pa_norm, xles_norm_sv,  ipowers(NNORM_SV ) )
+
+where( pa_norm == XUNDEF ) pa_norm = pa_les
+
 END SUBROUTINE LES_NORM_4D
 !
 !------------------------------------------------------------------------------
