@@ -44,6 +44,21 @@ cd ${LOCAL}/conf
 TARG=$(uname -s -n)
 #
 case "$TARG" in
+'Linux jean-zay'*)
+                export ARCH=${ARCH:-LXifort}
+                export VER_MPI=${VER_MPI:-MPIINTEL}
+                export OPTLEVEL=${OPTLEVEL:-O2}
+                export MVWORK=${MVWORK:-NO}
+                export VER_CDF=${VER_CDF:-CDFAUTO}
+                export MNHENV=${MNHENV:-"
+module purge
+module load intel-compilers-19/19.0.4.243
+module load intel-mpi-19/19.0.4.243
+ulimit -s unlimited
+export SLURM_CPU_BIND=none
+export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
+"}
+              ;;
 'Linux'*'occigen'*)
                 export     ARCH=${ARCH:-LXifort}
                 export  VER_MPI=${VER_MPI:-MPIINTEL}
