@@ -257,6 +257,7 @@ END MODULE MODI_MODEL_n
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !!  J. Escobar : 09/07/2019 , Norme Doctor -> Rename Module Type variable TZ -> T
 !!  J. Escobar : 09/07/2019 , for bug in management of XLSZWSM variable , add/use specific 2D TLSFIELD2D_ll pointer
+!!  J. Escobar : 27/09/2019 , add missing report timing of RESOLVED_ELEC       
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -2186,6 +2187,7 @@ IF (OEXIT) THEN
     CALL TIME_STAT_ll(TIMEZ%T_MAP_SX_YP2_ZP1_B,ZTOT,          '   REMAP FFTXZ-1=>B     ' ,'-','F')
   ! JUAN P1/P2
   CALL TIME_STAT_ll(XT_CLOUD,ZTOT,      ' RESOLVED_CLOUD','=')
+  CALL TIME_STAT_ll(XT_ELEC,ZTOT,      ' RESOLVED_ELEC','=')
   CALL TIME_STAT_ll(XT_HALO,ZTOT,       ' EXCHANGE_HALO','=')
   CALL TIME_STAT_ll(XT_STEP_SWA,ZTOT,   ' ENDSTEP','=')
   CALL TIME_STAT_ll(XT_STEP_BUD,ZTOT,   ' BUDGETS','=')
@@ -2198,8 +2200,8 @@ IF (OEXIT) THEN
            XT_ADV  + XT_FORCING + XT_NUDGING + XT_SOURCES  +  XT_DIFF   + &
            XT_ADVUVW  + XT_GRAV +                                         &
            XT_RELAX+ XT_PARAM   + XT_COUPL   + XT_RAD_BOUND+XT_PRESS    + &
-           XT_CLOUD+  XT_HALO   + XT_SPECTRA + XT_STEP_SWA +XT_STEP_MISC+ &
-           XT_STEP_BUD
+           XT_CLOUD+ XT_ELEC    + XT_HALO    + XT_SPECTRA + XT_STEP_SWA + &
+           XT_STEP_MISC+ XT_STEP_BUD
   CALL TIME_STAT_ll(ZALL,ZTOT,          ' SUM(CALL)','=')
   CALL  TIMING_SEPARATOR('=')
   !
