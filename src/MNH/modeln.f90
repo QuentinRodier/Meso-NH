@@ -632,7 +632,7 @@ IF (KTCOUNT == 1) THEN
   NULLIFY(TLSHALO2_ll)
   NULLIFY(TFIELDSC_ll)
 !
-  ALLOCATE(ZWT_ACT_NUC(SIZE(XWT,1),SIZE(XWT,2),SIZE(XWT,3)))
+  ALLOCATE(XWT_ACT_NUC(SIZE(XWT,1),SIZE(XWT,2),SIZE(XWT,3)))
   ALLOCATE(GMASKkids(SIZE(XWT,1),SIZE(XWT,2)))
 !
 ! initialization of the FM file backup/output number
@@ -1776,19 +1776,19 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
   IF (CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO' .OR. CCLOUD == 'C3R5' &
                                              .OR. CCLOUD == "LIMA" ) THEN
     IF ( LFORCING ) THEN
-      ZWT_ACT_NUC(:,:,:) = XWT(:,:,:) + XWTFRC(:,:,:)
+      XWT_ACT_NUC(:,:,:) = XWT(:,:,:) + XWTFRC(:,:,:)
     ELSE
-      ZWT_ACT_NUC(:,:,:) = XWT(:,:,:)
+      XWT_ACT_NUC(:,:,:) = XWT(:,:,:)
     END IF
     IF (CTURB /= 'NONE' ) THEN
      IF ( ((CCLOUD=='C2R2'.OR.CCLOUD=='KHKO').AND.LACTTKE) .OR. (CCLOUD=='LIMA'.AND.MACTTKE) ) THEN 
-       ZWT_ACT_NUC(:,:,:) = ZWT_ACT_NUC(:,:,:) +  (2./3. * XTKET(:,:,:))**0.5
+       XWT_ACT_NUC(:,:,:) = XWT_ACT_NUC(:,:,:) +  (2./3. * XTKET(:,:,:))**0.5
      ELSE
-       ZWT_ACT_NUC(:,:,:) = ZWT_ACT_NUC(:,:,:) 
+       XWT_ACT_NUC(:,:,:) = XWT_ACT_NUC(:,:,:) 
      ENDIF
     ENDIF
   ELSE
-    ZWT_ACT_NUC(:,:,:) = 0.
+    XWT_ACT_NUC(:,:,:) = 0.
   END IF
 !
   XRTHS_CLD  = XRTHS
@@ -1806,7 +1806,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           GCLOSE_OUT, LSUBG_COND,LSIGMAS,CSUBG_AUCV,XTSTEP,    &
                           XZZ, XRHODJ, XRHODREF, XEXNREF,                      &
                           ZPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
-                          XPABSM, ZWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
+                          XPABSM, XWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
                           XSVT, XRSVS,                                         &
                           XSRCT, XCLDFR,XCIT,                                  &
                           LSEDIC,KACTIT, KSEDC, KSEDI, KRAIN, KWARM, KHHONI,   &
@@ -1824,7 +1824,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           GCLOSE_OUT, LSUBG_COND,LSIGMAS,CSUBG_AUCV,           &
                           XTSTEP,XZZ, XRHODJ, XRHODREF, XEXNREF,               &
                           ZPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
-                          XPABSM, ZWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
+                          XPABSM, XWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
                           XSVT, XRSVS,                                         &
                           XSRCT, XCLDFR,XCIT,                                  &
                           LSEDIC,KACTIT, KSEDC, KSEDI, KRAIN, KWARM, KHHONI,   &
@@ -1884,7 +1884,7 @@ XTIME_BU_PROCESS = 0.
 XTIME_LES_BU_PROCESS = 0.
 !
 IF (CELEC /= 'NONE' .AND. (CCLOUD(1:3) == 'ICE')) THEN
-  ZWT_ACT_NUC(:,:,:) = 0.
+  XWT_ACT_NUC(:,:,:) = 0.
 !
   XRTHS_CLD = XRTHS
   XRRS_CLD  = XRRS
