@@ -294,7 +294,6 @@ IF(TPFIELD%NTYPE==TYPEINT .AND. TPFIELD%NDIMS>0) THEN
 !BUG: NF90_PUT_ATT does not work for NF90_INT64 and _FillValue attribute if netCDF-fortran version < 4.4.5 (bug in netCDF)
 !     (see https://github.com/Unidata/netcdf-fortran/issues/62)
   IF(.NOT.OEXISTED) THEN
-  print *,'PW: IO_WRITE_FIELD_ATTR_NC4: put att fillvalue=',TPFIELD%NFILLVALUE
     STATUS = NF90_PUT_ATT(INCID, KVARID,'_FillValue', TPFIELD%NFILLVALUE)
     IF (STATUS /= NF90_NOERR) CALL IO_HANDLE_ERR_NC4(status,'IO_WRITE_FIELD_ATTR_NC4','NF90_PUT_ATT','_FillValue')
   END IF
