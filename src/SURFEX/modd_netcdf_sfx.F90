@@ -5,14 +5,8 @@
 ! Author: P. Wautelet 18/09/2019
 module modd_netcdf_sfx
 
-#ifdef SFX_MNH
-use modd_netcdf, only: IDCDF_KIND
-#endif
-
 implicit none
 
-#ifndef SFX_MNH
 integer, parameter :: IDCDF_KIND = selected_int_kind( 8 )
-#endif
 
 end module modd_netcdf_sfx
