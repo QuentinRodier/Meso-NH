@@ -54,6 +54,7 @@ implicit none
 
 public
 
+integer, parameter :: NBUDGET_RHO = 0  ! Reference number for budget of RhoJ
 integer, parameter :: NBUDGET_U   = 1  ! Reference number for budget of RhoJu  and/or LES budgets with u
 integer, parameter :: NBUDGET_V   = 2  ! Reference number for budget of RhoJv  and/or LES budgets with u
 integer, parameter :: NBUDGET_W   = 3  ! Reference number for budget of RhoJw  and/or LES budgets with u
