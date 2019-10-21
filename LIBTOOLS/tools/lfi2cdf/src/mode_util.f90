@@ -8,6 +8,7 @@
 !  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
 !  P. Wautelet 19/09/2019: add possibility to provide a fallback file if some information are not found in the input file
 !  P. Wautelet 21/10/2019: add OPTDIR option to set directory for writing outfiles
+!  P. Wautelet 21/10/2019: if DTMOD and DTCUR not found, try to read the time coordinate
 !-----------------------------------------------------------------
 MODULE mode_util
   USE MODD_IO_ll,  ONLY: TFILE_ELT, TFILEDATA
@@ -983,11 +984,16 @@ END DO
     TYPE(option),DIMENSION(:),   INTENT(IN)  :: options
     INTEGER,                     INTENT(IN)  :: runmode
 
+    character(len=:), allocatable :: yunits
     INTEGER                     :: idx, IRESP2
     integer                     :: inb_procio_r_save
     INTEGER(KIND=IDCDF_KIND)    :: omode
-    INTEGER(KIND=IDCDF_KIND)    :: status
+    INTEGER(KIND=IDCDF_KIND)    :: istatus
+    INTEGER(KIND=IDCDF_KIND)    :: ivar_id
+    integer(kind=IDCDF_KIND)    :: ilen
     INTEGER(KIND=LFI_INT)       :: ilu,iresp
+    logical                     :: gok
+    type(tfielddata)            :: tzfield
 
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_FILES','called')
@@ -1149,6 +1155,39 @@ END DO
      ALLOCATE(TDTCUR)
      CALL IO_READ_FIELD(INFILES(1)%TFILE,'DTCUR',TDTCUR,IRESP2)
      IF(IRESP2/=0) DEALLOCATE(TDTCUR)
+
+     !If time values were not found, try to get it from the time coordinate
+     if ( .not. associated( tdtcur ) .and. infiles(1)%tfile%cformat == 'NETCDF4' ) then
+       gok = .false.
+
+       istatus = NF90_INQ_VARID( infiles(1)%tfile%nncid, 'time', ivar_id )
+       if ( istatus == NF90_NOERR ) then
+         allocate( tdtcur )
+         istatus = NF90_GET_VAR( infiles(1)%tfile%nncid, ivar_id, tdtcur%time )
+         if ( istatus == NF90_NOERR ) then
+           istatus = NF90_INQUIRE_ATTRIBUTE( infiles(1)%tfile%nncid, ivar_id, 'units', len = ilen )
+           if ( istatus == NF90_NOERR ) then
+             allocate( character(len = ilen ) :: yunits )
+             istatus = NF90_GET_ATT( infiles(1)%tfile%nncid, ivar_id, 'units', yunits )
+             ! Extract date from yunits
+             idx =  INDEX( yunits, 'since ' )
+             Read( yunits(idx+6 :idx+9 ) , '( I4.4 )' ) tdtcur%tdate%year
+             Read( yunits(idx+11:idx+12 ), '( I2.2 )' ) tdtcur%tdate%month
+             Read( yunits(idx+14:idx+15 ), '( I2.2 )' ) tdtcur%tdate%day
+
+             if ( .not. associated( tdtmod ) ) then
+               allocate( tdtmod )
+               tdtmod = tdtcur
+               tdtmod%time = 0.
+             end if
+
+             gok = .true.
+           end if
+         end if
+       end if
+
+       if ( .not. gok ) deallocate( tdtcur )
+     end if
    END IF
    !
    ! Outfiles
