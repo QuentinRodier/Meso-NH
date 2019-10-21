@@ -7,6 +7,7 @@
 !  P. Wautelet 01/08/2019: allow merge of entire Z-split files
 !  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
 !  P. Wautelet 19/09/2019: add possibility to provide a fallback file if some information are not found in the input file
+!  P. Wautelet 21/10/2019: add OPTDIR option to set directory for writing outfiles
 !-----------------------------------------------------------------
 MODULE mode_util
   USE MODD_IO_ll,  ONLY: TFILE_ELT, TFILEDATA
@@ -1160,8 +1161,13 @@ END DO
          KNFILES_OUT = KNFILES_OUT + 1
 
          idx = KNFILES_OUT
-         CALL IO_FILE_ADD2LIST(outfiles(idx)%TFILE,HOUTFILE,'UNKNOWN','WRITE', &
-                               HFORMAT='NETCDF4',OOLD=.TRUE.)
+         if ( options(OPTDIR)%set ) then
+           CALL IO_FILE_ADD2LIST(outfiles(idx)%TFILE,HOUTFILE,'UNKNOWN','WRITE', &
+                                 HFORMAT='NETCDF4',OOLD=.TRUE., hdirname = options(OPTDIR)%cvalue )
+         else
+           CALL IO_FILE_ADD2LIST(outfiles(idx)%TFILE,HOUTFILE,'UNKNOWN','WRITE', &
+                                 HFORMAT='NETCDF4',OOLD=.TRUE.)
+         end if
          CALL IO_FILE_OPEN_ll(outfiles(idx)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
 
          IF (options(OPTCOMPRESS)%set) THEN
@@ -1173,8 +1179,8 @@ END DO
            outfiles(idx)%tfile%LNCREDUCE_FLOAT_PRECISION = .TRUE.
          END IF
 
-         status = NF90_SET_FILL(outfiles(idx)%TFILE%NNCID,NF90_NOFILL,omode)
-         IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+         istatus = NF90_SET_FILL(outfiles(idx)%TFILE%NNCID,NF90_NOFILL,omode)
+         IF (istatus /= NF90_NOERR) CALL HANDLE_ERR(istatus,__LINE__)
        END IF ! .NOT.osplit
     ELSE
        !
@@ -1182,8 +1188,13 @@ END DO
        !
        KNFILES_OUT = KNFILES_OUT + 1
        idx = KNFILES_OUT
-       CALL IO_FILE_ADD2LIST(outfiles(idx)%TFILE,houtfile,'UNKNOWN','WRITE', &
-                             HFORMAT='LFI',KLFIVERB=0,OOLD=.TRUE.)
+       if ( options(OPTDIR)%set ) then
+         CALL IO_FILE_ADD2LIST(outfiles(idx)%TFILE,houtfile,'UNKNOWN','WRITE', &
+                               HFORMAT='LFI',KLFIVERB=0,OOLD=.TRUE., hdirname = options(OPTDIR)%cvalue )
+       else
+         CALL IO_FILE_ADD2LIST(outfiles(idx)%TFILE,houtfile,'UNKNOWN','WRITE', &
+                               HFORMAT='LFI',KLFIVERB=0,OOLD=.TRUE.)
+       end if
        LIOCDF4 = .FALSE. !Necessary to open correctly the LFI file
        CALL IO_FILE_OPEN_ll(outfiles(idx)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
        LIOCDF4 = .TRUE.
@@ -1194,8 +1205,13 @@ END DO
      KNFILES_OUT = KNFILES_OUT + 1
 
      idx = KNFILES_OUT
-     CALL IO_FILE_ADD2LIST(outfiles(idx)%TFILE,'dummy_file','UNKNOWN','WRITE', &
-                           HFORMAT='NETCDF4',OOLD=.TRUE.)
+     if ( options(OPTDIR)%set ) then
+       CALL IO_FILE_ADD2LIST(outfiles(idx)%TFILE,'dummy_file','UNKNOWN','WRITE', &
+                             HFORMAT='NETCDF4',OOLD=.TRUE., hdirname = options(OPTDIR)%cvalue )
+     else
+       CALL IO_FILE_ADD2LIST(outfiles(idx)%TFILE,'dummy_file','UNKNOWN','WRITE', &
+                             HFORMAT='NETCDF4',OOLD=.TRUE.)
+     end if
      CALL IO_FILE_OPEN_ll(outfiles(idx)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
    END IF
 
@@ -1249,8 +1265,13 @@ END DO
 
     DO ji = 1,nbvar
       filename = trim(houtfile)//'.'//TRIM(YVARS(ji))
-      CALL IO_FILE_ADD2LIST(outfiles(ji)%TFILE,filename,'UNKNOWN','WRITE', &
-                            HFORMAT='NETCDF4')
+      if ( options(OPTDIR)%set ) then
+        CALL IO_FILE_ADD2LIST(outfiles(ji)%TFILE,filename,'UNKNOWN','WRITE', &
+                              HFORMAT='NETCDF4', hdirname = options(OPTDIR)%cvalue )
+      else
+        CALL IO_FILE_ADD2LIST(outfiles(ji)%TFILE,filename,'UNKNOWN','WRITE', &
+                              HFORMAT='NETCDF4')
+      end if
       CALL IO_FILE_OPEN_ll(outfiles(ji)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
 
       IF (options(OPTCOMPRESS)%set) THEN
@@ -1321,7 +1342,7 @@ END DO
     !split_variable and other attributes were added in MesoNH > 5.4.2
     ISTATUS = NF90_INQUIRE_ATTRIBUTE(IFILE_ID, KVAR_ID, 'split_variable', LEN=ILENG)
     IF (ISTATUS == NF90_NOERR) THEN
-      IF (GSPLIT_AT_ENTRY) CALL PRINT_MSG(NVERB_ERROR,'IO','IO_GET_METADATA_NC4','split variable delcaration inside a split file')
+      IF (GSPLIT_AT_ENTRY) CALL PRINT_MSG(NVERB_ERROR,'IO','IO_GET_METADATA_NC4','split variable declaration inside a split file')
 
       ALLOCATE(CHARACTER(LEN=ILENG) :: YSPLIT)
       ISTATUS = NF90_GET_ATT(IFILE_ID, KVAR_ID, 'split_variable', YSPLIT)

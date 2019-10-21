@@ -5,19 +5,20 @@
 !-----------------------------------------------------------------
 ! Modifications:
 !  P. Wautelet 19/09/2019: add possibility to provide a fallback file if some information are not found in the input file
+!  P. Wautelet 21/10/2019: add OPTDIR option to set directory for writing outfiles
 !-----------------------------------------------------------------
 module mode_options
   USE MODE_FIELD, ONLY: TYPEUNDEF, TYPEINT, TYPELOG, TYPEREAL, TYPECHAR, TYPEDATE
 
   implicit none
 
-  integer,parameter :: NBAVAILOPTIONS = 11
+  integer,parameter :: NBAVAILOPTIONS = 12
   integer,parameter :: MODEUNDEF = -11, MODECDF2CDF = 11, MODELFI2CDF = 12, MODECDF2LFI = 13
 
   integer,parameter :: OPTCOMPRESS = 1,  OPTHELP     = 2,  OPTLIST   = 3
   integer,parameter :: OPTMERGE    = 4,  OPTOUTPUT   = 5,  OPTREDUCE = 6
   integer,parameter :: OPTMODE     = 7,  OPTSPLIT    = 8,  OPTVAR    = 9
-  integer,parameter :: OPTVERBOSE  = 10, OPTFALLBACK = 11
+  integer,parameter :: OPTVERBOSE  = 10, OPTFALLBACK = 11, OPTDIR    = 12
 
   type option
     logical :: set = .false.
@@ -161,6 +162,11 @@ subroutine init_options(options)
   options(OPTFALLBACK)%short_name   = 'f'
   options(OPTFALLBACK)%has_argument = .true.
   options(OPTFALLBACK)%type         = TYPECHAR
+
+  options(OPTDIR)%long_name    = "outdir"
+  options(OPTDIR)%short_name   = 'd'
+  options(OPTDIR)%has_argument = .true.
+  options(OPTDIR)%type         = TYPECHAR
 
 end subroutine init_options
 
