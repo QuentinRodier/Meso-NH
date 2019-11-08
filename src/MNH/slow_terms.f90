@@ -324,7 +324,7 @@ PRRS(:,:,:) = ZW1(:,:,:) / PTSTEP
 ! 
 !*       2.5     budget storage
 !
-IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),8,'SEDI_BU_RRR')
+IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'SEDI_BU_RRR')
 !
 !-------------------------------------------------------------------------------
 !
@@ -348,8 +348,8 @@ END WHERE
 !
 !*       3.2     budget storage
 !
-IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7,'ACCR_BU_RRC')
-IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),8,'ACCR_BU_RRR')
+IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'ACCR_BU_RRC')
+IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'ACCR_BU_RRR')
 !
 !-------------------------------------------------------------------------------
 !
@@ -379,8 +379,8 @@ END IF
 !
 !*       4.2     budget storage
 !
-IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7,'AUTO_BU_RRC')
-IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),8,'AUTO_BU_RRR')
+IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'AUTO_BU_RRC')
+IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'AUTO_BU_RRR')
 !
 !-------------------------------------------------------------------------------
 !
@@ -436,9 +436,9 @@ END WHERE
 !
 !*       5.8     budget storage
 !
-IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),6,'REVA_BU_RRV')
-IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),8,'REVA_BU_RRR')
-IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),4,'REVA_BU_RTH')
+IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RV,'REVA_BU_RRV')
+IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'REVA_BU_RRR')
+IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'REVA_BU_RTH')
 !
 !-------------------------------------------------------------------------------
 !

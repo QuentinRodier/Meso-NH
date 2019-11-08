@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ########################
       MODULE MODI_RELAX2FW_ION
 !     ########################
@@ -102,16 +103,16 @@ END MODULE MODI_RELAX2FW_ION
 !*       0.    DECLARATIONS
 !              ------------
 !
+use modd_budget,     only: lbudget_sv, NBUDGET_SV1
+USE MODD_CONF
+USE MODD_ELEC_n,     ONLY: XCION_POS_FW, XCION_NEG_FW
+USE MODD_NSV,        ONLY: NSV_ELECBEG, NSV_ELECEND
 USE MODD_PARAMETERS
-USE MODD_CONF 
-USE MODD_BUDGET 
-USE MODD_NSV, ONLY: NSV_ELECBEG, NSV_ELECEND
-USE MODD_ELEC_n, ONLY: XCION_POS_FW, XCION_NEG_FW
 !
 USE MODE_ll
 !
-USE MODI_SHUMAN     
-USE MODI_BUDGET     
+USE MODI_BUDGET
+USE MODI_SHUMAN
 !
 IMPLICIT NONE
 !
@@ -212,10 +213,8 @@ END IF
 !	        ------------------------------
 !
 IF (LBUDGET_SV) THEN
-  JSV = NSV_ELECBEG
-  CALL BUDGET (PRSVS(:,:,:,JSV),JSV+12,'REL_BU_RSV')
-  JSV = NSV_ELECEND
-  CALL BUDGET (PRSVS(:,:,:,JSV),JSV+12,'REL_BU_RSV')
+  CALL BUDGET( PRSVS(:, :, :, NSV_ELECBEG ), NBUDGET_SV1 - 1 + NSV_ELECBEG, 'REL_BU_RSV' )
+  CALL BUDGET( PRSVS(:, :, :, NSV_ELECEND ), NBUDGET_SV1 - 1 + NSV_ELECEND, 'REL_BU_RSV' )
 END IF
 !
 !

@@ -341,16 +341,16 @@ IF( INEGT >= 1 ) THEN
   IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
     IF (LBUDGET_TH) CALL BUDGET (                                                 &
                     UNPACK(ZTHS(:),MASK=GNEGT(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
-                                                                4,'HIND_BU_RTH')
+                                                                NBUDGET_TH,'HIND_BU_RTH')
     IF (LBUDGET_RV) CALL BUDGET (                                                 &
                     UNPACK(ZRVS(:),MASK=GNEGT(:,:,:),FIELD=PRVS)*PRHODJ(:,:,:),&
-                                                                6,'HIND_BU_RRV')
+                                                                NBUDGET_RV,'HIND_BU_RRV')
     IF (LBUDGET_RI) CALL BUDGET (                                                 &
                     UNPACK(ZRIS(:),MASK=GNEGT(:,:,:),FIELD=PRIS)*PRHODJ(:,:,:),&
-                                                                9,'HIND_BU_RRI')
+                                                                NBUDGET_RI,'HIND_BU_RRI')
     IF (LBUDGET_SV) THEN
       CALL BUDGET ( UNPACK(ZCIS(:),MASK=GNEGT(:,:,:),FIELD=PCIS)*PRHODJ(:,:,:),&
-                                                   12+NSV_LIMA_NI,'HIND_BU_RSV')
+                                                 NBUDGET_SV1-1+NSV_LIMA_NI,'HIND_BU_RSV')
     END IF
   END IF
 !
@@ -397,12 +397,12 @@ IF( INEGT >= 1 ) THEN
 !
 ! Budget storage
   IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
-    IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:), 4,'HINC_BU_RTH')
-    IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), 7,'HINC_BU_RRC')
-    IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:), 9,'HINC_BU_RRI')
+    IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_TH,'HINC_BU_RTH')
+    IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,'HINC_BU_RRC')
+    IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RI,'HINC_BU_RRI')
     IF (LBUDGET_SV) THEN
-      CALL BUDGET ( PCCS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NC,'HINC_BU_RSV')
-      CALL BUDGET ( PCIS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NI,'HINC_BU_RSV')
+      CALL BUDGET ( PCCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NC,'HINC_BU_RSV')
+      CALL BUDGET ( PCIS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NI,'HINC_BU_RSV')
     END IF
   END IF
 
@@ -445,36 +445,32 @@ ELSE
   IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
     IF (LBUDGET_TH) THEN
       ZW(:,:,:) = PTHS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,4,'HIND_BU_RTH')
-      CALL BUDGET (ZW,4,'HINC_BU_RTH')
+      CALL BUDGET (ZW,NBUDGET_TH,'HIND_BU_RTH')
+      CALL BUDGET (ZW,NBUDGET_TH,'HINC_BU_RTH')
     ENDIF
     IF (LBUDGET_RV) THEN
       ZW(:,:,:) = PRVS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,6,'HIND_BU_RRV')
+      CALL BUDGET (ZW,NBUDGET_RV,'HIND_BU_RRV')
     ENDIF
     IF (LBUDGET_RC) THEN
       ZW(:,:,:) = PRCS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,7,'HINC_BU_RRC')
+      CALL BUDGET (ZW,NBUDGET_RC,'HINC_BU_RRC')
     ENDIF
     IF (LBUDGET_RI) THEN
       ZW(:,:,:) = PRIS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,9,'HIND_BU_RRI')
-      CALL BUDGET (ZW,9,'HINC_BU_RRI')
+      CALL BUDGET (ZW,NBUDGET_RI,'HIND_BU_RRI')
+      CALL BUDGET (ZW,NBUDGET_RI,'HINC_BU_RRI')
     ENDIF
     IF (LBUDGET_SV) THEN
       ZW(:,:,:) = PCCS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,12+NSV_LIMA_NC,'HINC_BU_RSV')
+      CALL BUDGET (ZW,NBUDGET_SV1-1+NSV_LIMA_NC,'HINC_BU_RSV')
       ZW(:,:,:) = PCIS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,12+NSV_LIMA_NI,'HIND_BU_RSV')
-      CALL BUDGET (ZW,12+NSV_LIMA_NI,'HINC_BU_RSV')
+      CALL BUDGET (ZW,NBUDGET_SV1-1+NSV_LIMA_NI,'HIND_BU_RSV')
+      CALL BUDGET (ZW,NBUDGET_SV1-1+NSV_LIMA_NI,'HINC_BU_RSV')
     END IF
   END IF
 !
 END IF
-
-
-
-
 !
 !-------------------------------------------------------------------------------
 !

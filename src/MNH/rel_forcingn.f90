@@ -249,8 +249,8 @@ END IF
 !
 !*       3.     BUDGET CALLS
 !   	        ------------
-IF (LBUDGET_TH)  CALL BUDGET (PRTHS,4,'2DREL_BU_RTH')
-IF (LBUDGET_RV)  CALL BUDGET (PRRS(:,:,:,1),6,'2DREL_BU_RRV')
+IF (LBUDGET_TH)  CALL BUDGET (PRTHS,NBUDGET_TH,'2DREL_BU_RTH')
+IF (LBUDGET_RV)  CALL BUDGET (PRRS(:,:,:,1),NBUDGET_RV,'2DREL_BU_RRV')
 !----------------------------------------------------------------------------
 !
 END SUBROUTINE REL_FORCING_n

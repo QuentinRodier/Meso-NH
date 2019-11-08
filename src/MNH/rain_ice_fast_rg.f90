@@ -28,7 +28,8 @@ SUBROUTINE RAIN_ICE_FAST_RG(KRR, OMICRO, PRHODREF, PRVT, PRCT, PRRT, PRIT, PRST,
 !*      0. DECLARATIONS
 !          ------------
 !
-use MODD_BUDGET,         only: LBUDGET_RC, LBUDGET_RG, LBUDGET_RH, LBUDGET_RI, LBUDGET_RR, LBUDGET_RS, LBUDGET_TH
+use MODD_BUDGET,         only: LBUDGET_TH, LBUDGET_RC, LBUDGET_RR, LBUDGET_RI, LBUDGET_RS, LBUDGET_RG, LBUDGET_RH, &
+                               NBUDGET_TH, NBUDGET_RC, NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH
 use MODD_CST,            only: XCI, XCL, XCPV, XESTT, XLMTT, XLVTT, XMD, XMV, XRV, XTT
 use MODD_RAIN_ICE_DESCR, only: XBS, XCEXVT, XCXG, XCXS, XDG, XRTMIN
 use MODD_RAIN_ICE_PARAM, only: NDRYLBDAG, NDRYLBDAR, NDRYLBDAS, X0DEPG, X1DEPG, XCOLEXIG, XCOLEXSG, XCOLIG, XCOLSG, XDRYINTP1G, &
@@ -106,16 +107,16 @@ REAL,    DIMENSION(size(PRHODREF),7) :: ZZW1              ! Work arrays
   END WHERE
   IF (LBUDGET_TH) CALL BUDGET (                                                 &
                  UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),   &
-                                                              4,'CFRZ_BU_RTH')
+                                                        NBUDGET_TH,'CFRZ_BU_RTH')
   IF (LBUDGET_RR) CALL BUDGET (                                                 &
                      UNPACK(PRRS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                              8,'CFRZ_BU_RRR')
+                                                        NBUDGET_RR,'CFRZ_BU_RRR')
   IF (LBUDGET_RI) CALL BUDGET (                                                 &
                      UNPACK(PRIS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                              9,'CFRZ_BU_RRI')
+                                                        NBUDGET_RI,'CFRZ_BU_RRI')
   IF (LBUDGET_RG) CALL BUDGET (                                                 &
                      UNPACK(PRGS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                             11,'CFRZ_BU_RRG')
+                                                        NBUDGET_RG,'CFRZ_BU_RRG')
 !
 !*       6.2    compute the Dry growth case
 !
@@ -346,26 +347,26 @@ REAL,    DIMENSION(size(PRHODREF),7) :: ZZW1              ! Work arrays
  END IF
   IF (LBUDGET_TH) CALL BUDGET (                                                 &
                  UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),   &
-                                                              4,'WETG_BU_RTH')
+                                                        NBUDGET_TH,'WETG_BU_RTH')
   IF (LBUDGET_RC) CALL BUDGET (                                                 &
                      UNPACK(PRCS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                              7,'WETG_BU_RRC')
+                                                        NBUDGET_RC,'WETG_BU_RRC')
   IF (LBUDGET_RR) CALL BUDGET (                                                 &
                      UNPACK(PRRS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                              8,'WETG_BU_RRR')
+                                                        NBUDGET_RR,'WETG_BU_RRR')
   IF (LBUDGET_RI) CALL BUDGET (                                                 &
                      UNPACK(PRIS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                              9,'WETG_BU_RRI')
+                                                        NBUDGET_RI,'WETG_BU_RRI')
   IF (LBUDGET_RS) CALL BUDGET (                                                 &
                      UNPACK(PRSS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                             10,'WETG_BU_RRS')
+                                                        NBUDGET_RS,'WETG_BU_RRS')
   IF (LBUDGET_RG) CALL BUDGET (                                                 &
                      UNPACK(PRGS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                             11,'WETG_BU_RRG')
+                                                        NBUDGET_RG,'WETG_BU_RRG')
   IF ( KRR == 7 ) THEN
-    IF (LBUDGET_RH) CALL BUDGET (                                                 &
+    IF (LBUDGET_RH) CALL BUDGET (                                               &
                      UNPACK(PRHS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                             12,'WETG_BU_RRH')
+                                                        NBUDGET_RH,'WETG_BU_RRH')
   END IF
 
 !
@@ -382,22 +383,22 @@ REAL,    DIMENSION(size(PRHODREF),7) :: ZZW1              ! Work arrays
   END WHERE
   IF (LBUDGET_TH) CALL BUDGET (                                                    &
                  UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),   &
-                                                              4,'DRYG_BU_RTH')
+                                                        NBUDGET_TH,'DRYG_BU_RTH')
   IF (LBUDGET_RC) CALL BUDGET (                                                 &
                      UNPACK(PRCS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                              7,'DRYG_BU_RRC')
+                                                        NBUDGET_RC,'DRYG_BU_RRC')
   IF (LBUDGET_RR) CALL BUDGET (                                                 &
                      UNPACK(PRRS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                              8,'DRYG_BU_RRR')
+                                                        NBUDGET_RR,'DRYG_BU_RRR')
   IF (LBUDGET_RI) CALL BUDGET (                                                 &
                      UNPACK(PRIS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                              9,'DRYG_BU_RRI')
+                                                        NBUDGET_RI,'DRYG_BU_RRI')
   IF (LBUDGET_RS) CALL BUDGET (                                                 &
                      UNPACK(PRSS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                             10,'DRYG_BU_RRS')
+                                                        NBUDGET_RS,'DRYG_BU_RRS')
   IF (LBUDGET_RG) CALL BUDGET (                                                 &
                      UNPACK(PRGS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                             11,'DRYG_BU_RRG')
+                                                        NBUDGET_RG,'DRYG_BU_RRG')
 !
 !      WHERE ( PZT(:) > XTT ) ! RSWETG case only
 !        PRSS(:) = PRSS(:) - ZZW1(:,6)
@@ -426,13 +427,13 @@ REAL,    DIMENSION(size(PRHODREF),7) :: ZZW1              ! Work arrays
   END WHERE
     IF (LBUDGET_TH) CALL BUDGET (                                                 &
                    UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),   &
-                                                                4,'GMLT_BU_RTH')
+                                                          NBUDGET_TH,'GMLT_BU_RTH')
     IF (LBUDGET_RR) CALL BUDGET (                                                 &
                        UNPACK(PRRS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                                8,'GMLT_BU_RRR')
+                                                          NBUDGET_RR,'GMLT_BU_RRR')
     IF (LBUDGET_RG) CALL BUDGET (                                                 &
                        UNPACK(PRGS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                               11,'GMLT_BU_RRG')
+                                                          NBUDGET_RG,'GMLT_BU_RRG')
 !
 END SUBROUTINE RAIN_ICE_FAST_RG
 

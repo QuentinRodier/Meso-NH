@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2006-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 newsrc 2006/05/24 18:05:52
 !-----------------------------------------------------------------
 !     ###################
       MODULE MODI_NUDGING
@@ -129,10 +124,10 @@ IF (OUSERV) &
 !*       2.     BUDGET CALLS
 !   	        ------------
 !
-IF (LBUDGET_U)   CALL BUDGET (PRUS,1,'NUD_BU_RU')
-IF (LBUDGET_V)   CALL BUDGET (PRVS,2,'NUD_BU_RV')
-IF (LBUDGET_W)   CALL BUDGET (PRWS,3,'NUD_BU_RW')
-IF (LBUDGET_TH)  CALL BUDGET (PRTHS,4,'NUD_BU_RTH')
-IF (LBUDGET_RV)  CALL BUDGET (PRRS(:,:,:,1),6,'NUD_BU_RRV')
+IF (LBUDGET_U)   CALL BUDGET (PRUS,NBUDGET_U,'NUD_BU_RU')
+IF (LBUDGET_V)   CALL BUDGET (PRVS,NBUDGET_V,'NUD_BU_RV')
+IF (LBUDGET_W)   CALL BUDGET (PRWS,NBUDGET_W,'NUD_BU_RW')
+IF (LBUDGET_TH)  CALL BUDGET (PRTHS,NBUDGET_TH,'NUD_BU_RTH')
+IF (LBUDGET_RV)  CALL BUDGET (PRRS(:,:,:,1),NBUDGET_RV,'NUD_BU_RRV')
 !
 END SUBROUTINE NUDGING

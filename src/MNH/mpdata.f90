@@ -164,6 +164,7 @@ REAL, DIMENSION(SIZE(PRUCT,1),SIZE(PRUCT,2),SIZE(PRUCT,3)):: ZFADVV  !  budget
 REAL, DIMENSION(SIZE(PRUCT,1),SIZE(PRUCT,2),SIZE(PRUCT,3)):: ZFADVW  ! purpose
 REAL, DIMENSION(SIZE(PRUCT,1),SIZE(PRUCT,2),SIZE(PRUCT,3)):: ZRVARS  !   only
 !
+integer,            dimension(7)                          :: irx
 CHARACTER (LEN=3) , DIMENSION(7)                          :: YRX
 CHARACTER (LEN=20)                                        :: YBURX
 LOGICAL           , DIMENSION(7)                          :: LBUDGET_R
@@ -197,6 +198,13 @@ LBUDGET_R(5) = LBUDGET_RS
 LBUDGET_R(6) = LBUDGET_RG
 LBUDGET_R(7) = LBUDGET_RH
 !
+irx(1) = NBUDGET_RV
+irx(2) = NBUDGET_RC
+irx(3) = NBUDGET_RR
+irx(4) = NBUDGET_RI
+irx(5) = NBUDGET_RS
+irx(6) = NBUDGET_RG
+irx(7) = NBUDGET_RH
 !
 !-------------------------------------------------------------------------------
 !
@@ -263,11 +271,11 @@ LBUDGET_R(7) = LBUDGET_RH
 !
   IF (LBUDGET_TH)  THEN
     ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVU(:,:,:)
-    CALL BUDGET (ZRVARS,4,'ADVX_BU_RTH')
+    CALL BUDGET (ZRVARS,NBUDGET_TH,'ADVX_BU_RTH')
     ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVV(:,:,:)
-    CALL BUDGET (ZRVARS,4,'ADVY_BU_RTH')
+    CALL BUDGET (ZRVARS,NBUDGET_TH,'ADVY_BU_RTH')
     ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVW(:,:,:)
-    CALL BUDGET (ZRVARS,4,'ADVZ_BU_RTH')
+    CALL BUDGET (ZRVARS,NBUDGET_TH,'ADVZ_BU_RTH')
   END IF
 !
 !-------------------------------------------------------------------------------
@@ -327,13 +335,13 @@ LBUDGET_R(7) = LBUDGET_RH
     IF (LBUDGET_R(JRR)) THEN
       ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVU(:,:,:)
       YBURX = 'ADVX_BU_'//YRX(JRR)
-      CALL BUDGET (ZRVARS(:,:,:),JRR+5 ,YBURX)
+      CALL BUDGET (ZRVARS(:,:,:), irx(jrr ), YBURX)
       ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVV(:,:,:)
       YBURX = 'ADVY_BU_'//YRX(JRR)
-      CALL BUDGET (ZRVARS(:,:,:),JRR+5 ,YBURX)
+      CALL BUDGET (ZRVARS(:,:,:), irx(jrr ), YBURX)
       ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVW(:,:,:)
       YBURX = 'ADVZ_BU_'//YRX(JRR)
-      CALL BUDGET (ZRVARS(:,:,:),JRR+5 ,YBURX)
+      CALL BUDGET (ZRVARS(:,:,:), irx(jrr ), YBURX)
     END IF
   END DO
 !
@@ -393,11 +401,11 @@ LBUDGET_R(7) = LBUDGET_RH
 !  
     IF (LBUDGET_TKE)  THEN
       ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVU(:,:,:)
-      CALL BUDGET (ZRVARS,5,'ADVX_BU_RTKE')
+      CALL BUDGET (ZRVARS,NBUDGET_TKE,'ADVX_BU_RTKE')
       ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVV(:,:,:)
-      CALL BUDGET (ZRVARS,5,'ADVY_BU_RTKE')
+      CALL BUDGET (ZRVARS,NBUDGET_TKE,'ADVY_BU_RTKE')
       ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVW(:,:,:)
-      CALL BUDGET (ZRVARS,5,'ADVZ_BU_RTKE')
+      CALL BUDGET (ZRVARS,NBUDGET_TKE,'ADVZ_BU_RTKE')
     END IF
   END IF
 !

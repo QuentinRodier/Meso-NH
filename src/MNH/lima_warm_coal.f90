@@ -262,7 +262,7 @@ IF (LRAIN) THEN
   ZW(:,:,:) = PCCS(:,:,:)
   IF (LBUDGET_SV) CALL BUDGET (                                 &
                    UNPACK(ZCCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:))&
-                   &*PRHODJ(:,:,:),12+NSV_LIMA_NC,'SELF_BU_RSV') 
+                   &*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NC,'SELF_BU_RSV')
 !
 !
 !-------------------------------------------------------------------------------
@@ -297,20 +297,20 @@ IF (LRAIN) THEN
    ZW(:,:,:) = PRCS(:,:,:)
    IF (LBUDGET_RC) CALL BUDGET (                                  &
                UNPACK(ZRCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:)) &
-                            *PRHODJ(:,:,:),7 ,'AUTO_BU_RRC')
+                            *PRHODJ(:,:,:), NBUDGET_RC,'AUTO_BU_RRC')
 
    ZW(:,:,:) = PRRS(:,:,:)
    IF (LBUDGET_RR) CALL BUDGET (                                  &
                UNPACK(ZRRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:)) &
-                            *PRHODJ(:,:,:),8 ,'AUTO_BU_RRR')
+                            *PRHODJ(:,:,:), NBUDGET_RR,'AUTO_BU_RRR')
    ZW(:,:,:) = PCRS(:,:,:)
    IF (LBUDGET_SV) THEN
       ZW(:,:,:) = PCRS(:,:,:)
       CALL BUDGET (UNPACK(ZCRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:)) &
-               *PRHODJ(:,:,:),12+NSV_LIMA_NR,'AUTO_BU_RSV')
+               *PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NR,'AUTO_BU_RSV')
       ZW(:,:,:) = PCCS(:,:,:)
       CALL BUDGET (UNPACK(ZCCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:)) &
-               *PRHODJ(:,:,:),12+NSV_LIMA_NC,'AUTO_BU_RSV')
+               *PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NC,'AUTO_BU_RSV')
    END IF
 !
 !
@@ -364,15 +364,15 @@ IF (LRAIN) THEN
    ZW(:,:,:) = PRCS(:,:,:)
    IF (LBUDGET_RC) CALL BUDGET (                                  &
                UNPACK(ZRCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:)) &
-                              *PRHODJ(:,:,:),7 ,'ACCR_BU_RRC')
+                              *PRHODJ(:,:,:), NBUDGET_RC,'ACCR_BU_RRC')
    ZW(:,:,:) = PRRS(:,:,:)
    IF (LBUDGET_RR) CALL BUDGET (                                  &
                UNPACK(ZRRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:)) &
-                              *PRHODJ(:,:,:),8 ,'ACCR_BU_RRR')
+                              *PRHODJ(:,:,:), NBUDGET_RR,'ACCR_BU_RRR')
    ZW(:,:,:) = PCCS(:,:,:)
    IF (LBUDGET_SV) CALL BUDGET (                                  &
                UNPACK(ZCCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:)) &
-                  *PRHODJ(:,:,:),12+NSV_LIMA_NC,'ACCR_BU_RSV')
+                  *PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NC,'ACCR_BU_RSV')
 !
 !
 !-------------------------------------------------------------------------------
@@ -422,7 +422,7 @@ IF (LRAIN) THEN
    ZW(:,:,:) = PCRS(:,:,:)
    IF (LBUDGET_SV) CALL BUDGET (                                  &
                UNPACK(ZCRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:)) &
-                  *PRHODJ(:,:,:),12+NSV_LIMA_NR,'SCBU_BU_RSV')
+                  *PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NR,'SCBU_BU_RSV')
 !
 END IF ! LRAIN
 !
@@ -473,18 +473,18 @@ ELSE
 !        ------------------------
 !
 !
-   IF (LBUDGET_SV .AND. LRAIN) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NC,'SELF_BU_RSV')
+   IF (LBUDGET_SV .AND. LRAIN) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_LIMA_NC, 'SELF_BU_RSV')
 !
-   IF (LBUDGET_RC .AND. LRAIN) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7 ,'AUTO_BU_RRC')
-   IF (LBUDGET_RR .AND. LRAIN) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),8 ,'AUTO_BU_RRR')
-   IF (LBUDGET_SV .AND. LRAIN) CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NR,'AUTO_BU_RSV')
-   IF (LBUDGET_SV .AND. LRAIN) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NC,'AUTO_BU_RSV')
+   IF (LBUDGET_RC .AND. LRAIN) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,                'AUTO_BU_RRC')
+   IF (LBUDGET_RR .AND. LRAIN) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR,                'AUTO_BU_RRR')
+   IF (LBUDGET_SV .AND. LRAIN) CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_LIMA_NR, 'AUTO_BU_RSV')
+   IF (LBUDGET_SV .AND. LRAIN) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_LIMA_NC, 'AUTO_BU_RSV')
 !
-   IF (LBUDGET_RC .AND. LRAIN) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7 ,'ACCR_BU_RRC')
-   IF (LBUDGET_RR .AND. LRAIN) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),8 ,'ACCR_BU_RRR')
-   IF (LBUDGET_SV .AND. LRAIN) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NC,'ACCR_BU_RSV')
+   IF (LBUDGET_RC .AND. LRAIN) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,                'ACCR_BU_RRC')
+   IF (LBUDGET_RR .AND. LRAIN) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR,                'ACCR_BU_RRR')
+   IF (LBUDGET_SV .AND. LRAIN) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_LIMA_NC, 'ACCR_BU_RSV')
 !
-   IF (LBUDGET_SV .AND. LRAIN) CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NR,'SCBU_BU_RSV')
+   IF (LBUDGET_SV .AND. LRAIN) CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_LIMA_NR, 'SCBU_BU_RSV')
 
 END IF ! IMICRO
 !

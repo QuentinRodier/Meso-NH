@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 adiab 2006/05/22 19:02:00
 !-----------------------------------------------------------------
 !     #######################
       MODULE MODI_ADVECMET 
@@ -174,15 +169,15 @@ IKU=SIZE(XZHAT)
                                         ! Thermodynamical variable
 PRTHS(:,:,:) = PRTHS(:,:,:)                            &
               -DXF( PRUCT(:,:,:) * MXM (PTHT(:,:,:)) ) 
-IF (LBUDGET_TH) CALL BUDGET (PRTHS,4,'ADVX_BU_RTH')
+IF (LBUDGET_TH) CALL BUDGET (PRTHS,NBUDGET_TH,'ADVX_BU_RTH')
 !
 PRTHS(:,:,:) = PRTHS(:,:,:)                            &
               -DYF( PRVCT(:,:,:) * MYM (PTHT(:,:,:)) ) 
-IF (LBUDGET_TH) CALL BUDGET (PRTHS,4,'ADVY_BU_RTH')
+IF (LBUDGET_TH) CALL BUDGET (PRTHS,NBUDGET_TH,'ADVY_BU_RTH')
 !
 PRTHS(:,:,:) = PRTHS(:,:,:)                            &
               -DZF(1,IKU,1, PRWCT(:,:,:) * MZM (1,IKU,1,PTHT(:,:,:)) )
-IF (LBUDGET_TH) CALL BUDGET (PRTHS,4,'ADVZ_BU_RTH')
+IF (LBUDGET_TH) CALL BUDGET (PRTHS,NBUDGET_TH,'ADVZ_BU_RTH')
 !
                                         ! Case with KRR moist variables 
 DO JRR=1,KRR
@@ -190,53 +185,53 @@ DO JRR=1,KRR
                    -DXF( PRUCT(:,:,:) * MXM (PRT(:,:,:,JRR)) ) 
 END DO
 !
-IF (LBUDGET_RV) CALL BUDGET (PRRS(:,:,:,1),6 ,'ADVX_BU_RRV')
-IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2),7 ,'ADVX_BU_RRC')
-IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:,3),8 ,'ADVX_BU_RRR')
-IF (LBUDGET_RI) CALL BUDGET (PRRS(:,:,:,4),9 ,'ADVX_BU_RRI')
-IF (LBUDGET_RS) CALL BUDGET (PRRS(:,:,:,5),10,'ADVX_BU_RRS')
-IF (LBUDGET_RG) CALL BUDGET (PRRS(:,:,:,6),11,'ADVX_BU_RRG')
-IF (LBUDGET_RH) CALL BUDGET (PRRS(:,:,:,7),12,'ADVX_BU_RRH')
+IF (LBUDGET_RV) CALL BUDGET (PRRS(:,:,:,1),NBUDGET_RV,'ADVX_BU_RRV')
+IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2),NBUDGET_RC,'ADVX_BU_RRC')
+IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:,3),NBUDGET_RR,'ADVX_BU_RRR')
+IF (LBUDGET_RI) CALL BUDGET (PRRS(:,:,:,4),NBUDGET_RI,'ADVX_BU_RRI')
+IF (LBUDGET_RS) CALL BUDGET (PRRS(:,:,:,5),NBUDGET_RS,'ADVX_BU_RRS')
+IF (LBUDGET_RG) CALL BUDGET (PRRS(:,:,:,6),NBUDGET_RG,'ADVX_BU_RRG')
+IF (LBUDGET_RH) CALL BUDGET (PRRS(:,:,:,7),NBUDGET_RH,'ADVX_BU_RRH')
 !
 DO JRR=1,KRR
   PRRS(:,:,:,JRR) = PRRS(:,:,:,JRR)                            &
                    -DYF( PRVCT(:,:,:) * MYM (PRT(:,:,:,JRR)) ) 
 END DO
 !
-IF (LBUDGET_RV) CALL BUDGET (PRRS(:,:,:,1),6 ,'ADVY_BU_RRV')
-IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2),7 ,'ADVY_BU_RRC')
-IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:,3),8 ,'ADVY_BU_RRR')
-IF (LBUDGET_RI) CALL BUDGET (PRRS(:,:,:,4),9 ,'ADVY_BU_RRI')
-IF (LBUDGET_RS) CALL BUDGET (PRRS(:,:,:,5),10,'ADVY_BU_RRS')
-IF (LBUDGET_RG) CALL BUDGET (PRRS(:,:,:,6),11,'ADVY_BU_RRG')
-IF (LBUDGET_RH) CALL BUDGET (PRRS(:,:,:,7),12,'ADVY_BU_RRH')
+IF (LBUDGET_RV) CALL BUDGET (PRRS(:,:,:,1),NBUDGET_RV,'ADVY_BU_RRV')
+IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2),NBUDGET_RC,'ADVY_BU_RRC')
+IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:,3),NBUDGET_RR,'ADVY_BU_RRR')
+IF (LBUDGET_RI) CALL BUDGET (PRRS(:,:,:,4),NBUDGET_RI,'ADVY_BU_RRI')
+IF (LBUDGET_RS) CALL BUDGET (PRRS(:,:,:,5),NBUDGET_RS,'ADVY_BU_RRS')
+IF (LBUDGET_RG) CALL BUDGET (PRRS(:,:,:,6),NBUDGET_RG,'ADVY_BU_RRG')
+IF (LBUDGET_RH) CALL BUDGET (PRRS(:,:,:,7),NBUDGET_RH,'ADVY_BU_RRH')
 !
 DO JRR=1,KRR
   PRRS(:,:,:,JRR) = PRRS(:,:,:,JRR)                            &
                    -DZF(1,IKU,1, PRWCT(:,:,:) * MZM (1,IKU,1,PRT(:,:,:,JRR)) )
 END DO
 !
-IF (LBUDGET_RV) CALL BUDGET (PRRS(:,:,:,1),6 ,'ADVZ_BU_RRV')
-IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2),7 ,'ADVZ_BU_RRC')
-IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:,3),8 ,'ADVZ_BU_RRR')
-IF (LBUDGET_RI) CALL BUDGET (PRRS(:,:,:,4),9 ,'ADVZ_BU_RRI')
-IF (LBUDGET_RS) CALL BUDGET (PRRS(:,:,:,5),10,'ADVZ_BU_RRS')
-IF (LBUDGET_RG) CALL BUDGET (PRRS(:,:,:,6),11,'ADVZ_BU_RRG')
-IF (LBUDGET_RH) CALL BUDGET (PRRS(:,:,:,7),12,'ADVZ_BU_RRH')
+IF (LBUDGET_RV) CALL BUDGET (PRRS(:,:,:,1),NBUDGET_RV,'ADVZ_BU_RRV')
+IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2),NBUDGET_RC,'ADVZ_BU_RRC')
+IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:,3),NBUDGET_RR,'ADVZ_BU_RRR')
+IF (LBUDGET_RI) CALL BUDGET (PRRS(:,:,:,4),NBUDGET_RI,'ADVZ_BU_RRI')
+IF (LBUDGET_RS) CALL BUDGET (PRRS(:,:,:,5),NBUDGET_RS,'ADVZ_BU_RRS')
+IF (LBUDGET_RG) CALL BUDGET (PRRS(:,:,:,6),NBUDGET_RG,'ADVZ_BU_RRG')
+IF (LBUDGET_RH) CALL BUDGET (PRRS(:,:,:,7),NBUDGET_RH,'ADVZ_BU_RRH')
 !
                                         ! TKE variable
 IF (SIZE(PTKET,1) /= 0) THEN
   PRTKES(:,:,:) = PRTKES(:,:,:)                            &
                  -DXF( PRUCT(:,:,:) * MXM (PTKET(:,:,:)) ) 
-  IF (LBUDGET_TKE) CALL BUDGET (PRTKES,5,'ADVX_BU_RTKE')
+  IF (LBUDGET_TKE) CALL BUDGET (PRTKES,NBUDGET_TKE,'ADVX_BU_RTKE')
 !
   PRTKES(:,:,:) = PRTKES(:,:,:)                            &
                  -DYF( PRVCT(:,:,:) * MYM (PTKET(:,:,:)) ) 
-  IF (LBUDGET_TKE) CALL BUDGET (PRTKES,5,'ADVY_BU_RTKE')
+  IF (LBUDGET_TKE) CALL BUDGET (PRTKES,NBUDGET_TKE,'ADVY_BU_RTKE')
 !
    PRTKES(:,:,:) = PRTKES(:,:,:)                           &
                  -DZF(1,IKU,1, PRWCT(:,:,:) * MZM (1,IKU,1,PTKET(:,:,:)) )
-  IF (LBUDGET_TKE) CALL BUDGET (PRTKES,5,'ADVZ_BU_RTKE')
+  IF (LBUDGET_TKE) CALL BUDGET (PRTKES,NBUDGET_TKE,'ADVZ_BU_RTKE')
 END IF
 !
 ! 

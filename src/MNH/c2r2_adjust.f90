@@ -420,12 +420,12 @@ END IF
 !            ----------------------
 !
 !
-IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:) * PRHODJ(:,:,:),6,'COND_BU_RRV')
-IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:) * PRHODJ(:,:,:),7,'COND_BU_RRC')
-IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:) * PRHODJ(:,:,:),4,'COND_BU_RTH')
+IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:) * PRHODJ(:,:,:),NBUDGET_RV,'COND_BU_RRV')
+IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:) * PRHODJ(:,:,:),NBUDGET_RC,'COND_BU_RRC')
+IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:) * PRHODJ(:,:,:),NBUDGET_TH,'COND_BU_RTH')
 IF (LBUDGET_SV) THEN
-  CALL BUDGET (PCNUCS(:,:,:) * PRHODJ(:,:,:),13+(NSV_C2R2BEG-1),'CEVA_BU_RSV') ! RCN
-  CALL BUDGET (PCCS(:,:,:) * PRHODJ(:,:,:),14+(NSV_C2R2BEG-1),'CEVA_BU_RSV') ! RCC
+  CALL BUDGET (PCNUCS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1+(NSV_C2R2BEG-1),  'CEVA_BU_RSV') ! RCN
+  CALL BUDGET (PCCS(:,:,:)   * PRHODJ(:,:,:),NBUDGET_SV1+(NSV_C2R2BEG-1)+1,'CEVA_BU_RSV') ! RCC
 END IF
 !
 !------------------------------------------------------------------------------

@@ -1,3 +1,8 @@
+!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+!MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !      #####################################
        MODULE MODI_LIMA_MIXED_SLOW_PROCESSES
 !      #####################################
@@ -194,13 +199,13 @@ IF (LSNOW) THEN
    IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
      IF (LBUDGET_TH) CALL BUDGET (                                                 &
                    UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
-                                                                4,'DEPG_BU_RTH')
+                                                                NBUDGET_TH,'DEPG_BU_RTH')
      IF (LBUDGET_RV) CALL BUDGET (                                                 &
                    UNPACK(ZRVS(:),MASK=GMICRO(:,:,:),FIELD=PRVS)*PRHODJ(:,:,:),&
-                                                                6,'DEPG_BU_RRV')
+                                                                NBUDGET_RV,'DEPG_BU_RRV')
      IF (LBUDGET_RG) CALL BUDGET (                                                 &
                    UNPACK(ZRGS(:),MASK=GMICRO(:,:,:),FIELD=PRGS)*PRHODJ(:,:,:), &
-                                                               11,'DEPG_BU_RRG')
+                                                                NBUDGET_RG,'DEPG_BU_RRG')
   END IF
 END IF
 !
@@ -229,18 +234,18 @@ END IF
    IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
      IF (LBUDGET_TH) CALL BUDGET (                                                 &
                    UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
-                                                                4,'IMLT_BU_RTH')
+                                                                NBUDGET_TH,'IMLT_BU_RTH')
      IF (LBUDGET_RC) CALL BUDGET (                                                 &
                    UNPACK(ZRCS(:),MASK=GMICRO(:,:,:),FIELD=PRCS)*PRHODJ(:,:,:), &
-                                                                7,'IMLT_BU_RRC')
+                                                                NBUDGET_RC,'IMLT_BU_RRC')
      IF (LBUDGET_RI) CALL BUDGET (                                                 &
                    UNPACK(ZRIS(:),MASK=GMICRO(:,:,:),FIELD=PRIS)*PRHODJ(:,:,:), &
-                                                                9,'IMLT_BU_RRI')
+                                                                NBUDGET_RI,'IMLT_BU_RRI')
      IF (LBUDGET_SV) THEN
        CALL BUDGET (UNPACK(ZCCS(:),MASK=GMICRO(:,:,:),FIELD=PCCS)*PRHODJ(:,:,:), &
-                                                               12+NSV_LIMA_NC,'IMLT_BU_RSV')
+                                                 NBUDGET_SV1-1+NSV_LIMA_NC,'IMLT_BU_RSV')
        CALL BUDGET (UNPACK(ZCIS(:),MASK=GMICRO(:,:,:),FIELD=PCIS)*PRHODJ(:,:,:), &
-                                                               12+NSV_LIMA_NI,'IMLT_BU_RSV')
+                                                 NBUDGET_SV1-1+NSV_LIMA_NI,'IMLT_BU_RSV')
      END IF
    END IF
 !
@@ -265,13 +270,13 @@ END IF
    IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
      IF (LBUDGET_TH) CALL BUDGET (                                                 &
                    UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
-                                                               4,'BERFI_BU_RTH')
+                                                               NBUDGET_TH,'BERFI_BU_RTH')
      IF (LBUDGET_RC) CALL BUDGET (                                                 &
                    UNPACK(ZRCS(:),MASK=GMICRO(:,:,:),FIELD=PRCS)*PRHODJ(:,:,:), &
-                                                               7,'BERFI_BU_RRC')
+                                                               NBUDGET_RC,'BERFI_BU_RRC')
      IF (LBUDGET_RI) CALL BUDGET (                                                 &
                    UNPACK(ZRIS(:),MASK=GMICRO(:,:,:),FIELD=PRIS)*PRHODJ(:,:,:), &
-                                                               9,'BERFI_BU_RRI')
+                                                               NBUDGET_RI,'BERFI_BU_RRI')
    END IF
 !
 !------------------------------------------------------------------------------

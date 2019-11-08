@@ -323,11 +323,11 @@ CALL LIMA_WARM_SEDIMENTATION (OSEDC, KSPLITR, PTSTEP, KMI,  &
                               PINPRC, PINPRR,               &
                               PINPRR3D    )
 !
-IF (LBUDGET_RC .AND. OSEDC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7 ,'SEDI_BU_RRC')
-IF (LBUDGET_RR .AND. ORAIN) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),8 ,'SEDI_BU_RRR')
+IF (LBUDGET_RC .AND. OSEDC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,'SEDI_BU_RRC')
+IF (LBUDGET_RR .AND. ORAIN) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR,'SEDI_BU_RRR')
 IF (LBUDGET_SV) THEN
-  IF (OSEDC) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NC,'SEDI_BU_RSV')
-  IF (ORAIN) CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NR,'SEDI_BU_RSV')
+  IF (OSEDC) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NC,'SEDI_BU_RSV')
+  IF (ORAIN) CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NR,'SEDI_BU_RSV')
 END IF
 !
 ! 2.bis Deposition at 1st level above ground
@@ -343,8 +343,8 @@ IF (LDEPOC) THEN
      PINDEP(:,:) = XVDEPOC * PRCT(:,:,2) *  PRHODREF(:,:,2) /XRHOLW
   END WHERE
 !
-  IF ( LBUDGET_RC ) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7             ,'DEPO_BU_RRC')
-  IF ( LBUDGET_SV ) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NC,'DEPO_BU_RSV') 
+  IF ( LBUDGET_RC ) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,                'DEPO_BU_RRC')
+  IF ( LBUDGET_SV ) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_LIMA_NC, 'DEPO_BU_RSV')
 END IF
 ! 
 !-------------------------------------------------------------------------------
@@ -360,13 +360,13 @@ IF (LACTI .AND. NMOD_CCN.GE.1) THEN
                         PRCM, PRVT, PRCT, PRRT,                          &
                         PTHS, PRVS, PRCS, PCCS, PNFS, PNAS               )
 !
-   IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),4,'HENU_BU_RTH')
-   IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),6,'HENU_BU_RRV')
-   IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7,'HENU_BU_RRC')
+   IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'HENU_BU_RTH')
+   IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RV,'HENU_BU_RRV')
+   IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'HENU_BU_RRC')
    IF (LBUDGET_SV) THEN
-      CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NC,'HENU_BU_RSV') ! RCN
+      CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NC,'HENU_BU_RSV') ! RCN
          DO JL=1, NMOD_CCN
-            CALL BUDGET ( PNFS(:,:,:,JL)*PRHODJ(:,:,:),12+NSV_LIMA_CCN_FREE+JL-1,'HENU_BU_RSV') 
+            CALL BUDGET ( PNFS(:,:,:,JL)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_CCN_FREE+JL-1,'HENU_BU_RSV')
          END DO
    END IF
 !
@@ -401,12 +401,12 @@ IF (ORAIN) THEN
                         PRVS, PRCS, PRRS, PCCS, PCRS, PTHS,         &
                         PEVAP3D                                     )
 !
-   IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),6 ,'REVA_BU_RRV')
-   IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7 ,'REVA_BU_RRC')
-   IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),8 ,'REVA_BU_RRR')
-   IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),4 ,'REVA_BU_RTH')
-   IF (LBUDGET_SV) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NC,'REVA_BU_RSV')
-   IF (LBUDGET_SV) CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NR,'REVA_BU_RSV')
+   IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RV,'REVA_BU_RRV')
+   IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,'REVA_BU_RRC')
+   IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR,'REVA_BU_RRR')
+   IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_TH,'REVA_BU_RTH')
+   IF (LBUDGET_SV) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NC,'REVA_BU_RSV')
+   IF (LBUDGET_SV) CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NR,'REVA_BU_RSV')
 !
 !
 !-------------------------------------------------------------------------------
@@ -426,7 +426,7 @@ IF (ORAIN) THEN
 !
 ! Budget storage
    IF (LBUDGET_SV) &
-      CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NR,&
+      CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NR,&
                     &'BRKU_BU_RSV') 
 
 !

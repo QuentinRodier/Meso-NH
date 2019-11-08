@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -559,13 +559,13 @@ IF (LBUDGET_SV) THEN
    IF (NMOD_CCN.GE.1) THEN
       DO JL=1, NMOD_CCN
          CALL BUDGET ( PRSVS(:,:,:,NSV_LIMA_CCN_FREE+JL-1), &
-              12+NSV_LIMA_CCN_FREE+JL-1,'SCAV_BU_RSV') 
+              NBUDGET_SV1-1+NSV_LIMA_CCN_FREE+JL-1,'SCAV_BU_RSV')
       END DO
    END IF
    IF (NMOD_IFN.GE.1) THEN
       DO JL=1, NMOD_IFN
          CALL BUDGET ( PRSVS(:,:,:,NSV_LIMA_IFN_FREE+JL-1), &
-              12+NSV_LIMA_IFN_FREE+JL-1,'SCAV_BU_RSV') 
+              NBUDGET_SV1-1+NSV_LIMA_IFN_FREE+JL-1,'SCAV_BU_RSV')
       END DO
    END IF
 END IF

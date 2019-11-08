@@ -515,7 +515,7 @@ IF (ORAIN) THEN
 ENDIF
 !
 IF (LBUDGET_SV) &         
-  CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),15+(NSV_C2R2BEG-1),&
+  CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_C2R2BEG+2,&
                     &'BRKU_BU_RSV') ! RCR
             
 !-------------------------------------------------------------------------------
@@ -888,12 +888,12 @@ END IF
 !
 !*       3.4   budget storage
 !
-IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),4,'HENU_BU_RTH')
-IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),6,'HENU_BU_RRV')
-IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7,'HENU_BU_RRC')
+IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'HENU_BU_RTH')
+IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RV,'HENU_BU_RRV')
+IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'HENU_BU_RRC')
 IF (LBUDGET_SV) THEN
-  CALL BUDGET (PCNS(:,:,:)*PRHODJ(:,:,:),13+(NSV_C2R2BEG-1),'HENU_BU_RSV') ! RCN
-  CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),14+(NSV_C2R2BEG-1),'HENU_BU_RSV') ! RCC
+  CALL BUDGET (PCNS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_C2R2BEG,  'HENU_BU_RSV') ! RCN
+  CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_C2R2BEG+2,'HENU_BU_RSV') ! RCC
 END IF
 !
 END SUBROUTINE C2R2_KHKO_NUCLEATION
@@ -1088,12 +1088,12 @@ END IF
 !*             budget storage
 !
 !
-IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),4,'HENU_BU_RTH')
-IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),6,'HENU_BU_RRV')
-IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7,'HENU_BU_RRC')
+IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'HENU_BU_RTH')
+IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RV,'HENU_BU_RRV')
+IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'HENU_BU_RRC')
 IF (LBUDGET_SV) THEN
-  CALL BUDGET (PCNS(:,:,:)*PRHODJ(:,:,:),13+(NSV_C2R2BEG-1),'HENU_BU_RSV') ! RCN
-  CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),14+(NSV_C2R2BEG-1),'HENU_BU_RSV') ! RCC
+  CALL BUDGET (PCNS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_C2R2BEG,  'HENU_BU_RSV') ! RCN
+  CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_C2R2BEG+1,'HENU_BU_RSV') ! RCC
 END IF
 
   END SUBROUTINE AER_NUCLEATION
@@ -1175,7 +1175,7 @@ IF( IMICRO >= 1 ) THEN
   ZW(:,:,:) = PCCS(:,:,:)
   IF (LBUDGET_SV) CALL BUDGET (                                 &
                    UNPACK(ZCCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:))&
-                   &*PRHODJ(:,:,:),14+(NSV_C2R2BEG-1),'SELF_BU_RSV') ! RCC
+                   &*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_C2R2BEG+1,'SELF_BU_RSV') ! RCC
 !
 !*       4.2   Autoconversion of cloud droplets
 !              using a Berry-Reinhardt parameterization
@@ -1204,16 +1204,16 @@ IF( IMICRO >= 1 ) THEN
   ZW(:,:,:) = PRCS(:,:,:)
   IF (LBUDGET_RC) CALL BUDGET (                                            &
                UNPACK(ZRCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:))       &
-                            *PRHODJ(:,:,:),7 ,'AUTO_BU_RRC')
+                            *PRHODJ(:,:,:), NBUDGET_RC,'AUTO_BU_RRC')
 
   ZW(:,:,:) = PRRS(:,:,:)
   IF (LBUDGET_RR) CALL BUDGET (                                            &
                UNPACK(ZRRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:))       &
-                            *PRHODJ(:,:,:),8 ,'AUTO_BU_RRR')
+                            *PRHODJ(:,:,:), NBUDGET_RR,'AUTO_BU_RRR')
   ZW(:,:,:) = PCRS(:,:,:)
   IF (LBUDGET_SV) CALL BUDGET (                                       &
                UNPACK(ZCRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:))  &
-               &*PRHODJ(:,:,:),15+(NSV_C2R2BEG-1),'AUTO_BU_RSV') ! RCR
+               &*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_C2R2BEG+2,'AUTO_BU_RSV') ! RCR
 !
 !
 !*       4.3    Accretion sources
@@ -1263,15 +1263,15 @@ IF( IMICRO >= 1 ) THEN
   ZW(:,:,:) = PRCS(:,:,:)
   IF (LBUDGET_RC) CALL BUDGET (                                            &
                UNPACK(ZRCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:))       &
-                              *PRHODJ(:,:,:),7 ,'ACCR_BU_RRC')
+                              *PRHODJ(:,:,:), NBUDGET_RC,'ACCR_BU_RRC')
   ZW(:,:,:) = PRRS(:,:,:)
   IF (LBUDGET_RR) CALL BUDGET (                                            &
                UNPACK(ZRRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:))       &
-                              *PRHODJ(:,:,:),8 ,'ACCR_BU_RRR')
+                              *PRHODJ(:,:,:), NBUDGET_RR,'ACCR_BU_RRR')
   ZW(:,:,:) = PCCS(:,:,:)
   IF (LBUDGET_SV) CALL BUDGET (                                            &
                UNPACK(ZCCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:))       &
-                  *PRHODJ(:,:,:),14+(NSV_C2R2BEG-1),'ACCR_BU_RSV') ! RCC
+                  *PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_C2R2BEG+1,'ACCR_BU_RSV') ! RCC
 
 !
 !*       4.4   Self collection - Coalescence/Break-up
@@ -1323,7 +1323,7 @@ IF( IMICRO >= 1 ) THEN
   PCRS(:,:,:) = UNPACK( ZCRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
 !
   IF (LBUDGET_SV) CALL BUDGET(PCRS(:,:,:)*PRHODJ(:,:,:)&
-       &,15+(NSV_C2R2BEG-1),'SCBU_BU_RSV') ! RCR
+       &,NBUDGET_SV1-1+NSV_C2R2BEG+2,'SCBU_BU_RSV') ! RCR
 !
   DEALLOCATE(ZRCT)
   DEALLOCATE(ZRRT)
@@ -1354,20 +1354,20 @@ ELSE
 !
 !*       4.5    Budgets are forwarded
 !
-  IF (LBUDGET_SV) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),14+(NSV_C2R2BEG-1),&
+  IF (LBUDGET_SV) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_C2R2BEG+1,&
        &'SELF_BU_RSV') ! RCC
 !
-  IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7 ,'AUTO_BU_RRC')
-  IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),8 ,'AUTO_BU_RRR')
-  IF (LBUDGET_SV) CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),15+(NSV_C2R2BEG-1),&
+  IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,'AUTO_BU_RRC')
+  IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR,'AUTO_BU_RRR')
+  IF (LBUDGET_SV) CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_C2R2BEG+2,&
        &'AUTO_BU_RSV') ! RCR
 !
-  IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7 ,'ACCR_BU_RRC')
-  IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),8 ,'ACCR_BU_RRR')
-  IF (LBUDGET_SV) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),14+(NSV_C2R2BEG-1),&
+  IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,'ACCR_BU_RRC')
+  IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR,'ACCR_BU_RRR')
+  IF (LBUDGET_SV) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_C2R2BEG+1,&
        &'ACCR_BU_RSV') ! RCC
 !
-  IF (LBUDGET_SV) CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),15+(NSV_C2R2BEG-1),&
+  IF (LBUDGET_SV) CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_C2R2BEG+2,&
        &'SCBU_BU_RSV') ! RCR
 END IF
 !
@@ -1447,11 +1447,11 @@ IF( IMICRO >= 1 ) THEN
 !
 !*       4.1.2   budget storage
 !
-  IF (LBUDGET_SV) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),14+(NSV_C2R2BEG-1),&
+  IF (LBUDGET_SV) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_C2R2BEG+1,&
                                &'SELF_BU_RSV') ! RCC
-  IF (LBUDGET_RC) CALL BUDGET (PRCS*PRHODJ(:,:,:),7 ,'AUTO_BU_RRC')
-  IF (LBUDGET_SV) CALL BUDGET (PCRS*PRHODJ(:,:,:),15+(NSV_C2R2BEG-1),'AUTO_BU_RSV')
-  IF (LBUDGET_RR) CALL BUDGET (PRRS*PRHODJ(:,:,:),8 ,'AUTO_BU_RRR')
+  IF (LBUDGET_RC) CALL BUDGET (PRCS*PRHODJ(:,:,:), NBUDGET_RC,'AUTO_BU_RRC')
+  IF (LBUDGET_SV) CALL BUDGET (PCRS*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_C2R2BEG+2,'AUTO_BU_RSV')
+  IF (LBUDGET_RR) CALL BUDGET (PRRS*PRHODJ(:,:,:), NBUDGET_RR,'AUTO_BU_RRR')
 !
 !*       4.2.1    Accretion sources
 !
@@ -1487,24 +1487,24 @@ IF( IMICRO >= 1 ) THEN
 !
 !*       4.2.2   budget storage
 !
-  IF (LBUDGET_SV) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),14+(NSV_C2R2BEG-1),&
+  IF (LBUDGET_SV) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_C2R2BEG+1,&
                                &'ACCR_BU_RSV') ! RCC
-  IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7 ,'ACCR_BU_RRC')
-  IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),8 ,'ACCR_BU_RRR')
+  IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,'ACCR_BU_RRC')
+  IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR,'ACCR_BU_RRR')
 !
 ELSE
 !
 !*       4.3    Budgets are forwarded
 !
-  IF (LBUDGET_SV) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),14+(NSV_C2R2BEG-1),&
+  IF (LBUDGET_SV) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_C2R2BEG+1,&
                                &'SELF_BU_RSV') ! RCC
-  IF (LBUDGET_RC) CALL BUDGET (PRCS*PRHODJ(:,:,:),7 ,'AUTO_BU_RRC')
-  IF (LBUDGET_SV) CALL BUDGET (PCRS*PRHODJ(:,:,:),15+(NSV_C2R2BEG-1),'AUTO_BU_RSV')
-  IF (LBUDGET_RR) CALL BUDGET (PRRS*PRHODJ(:,:,:),8 ,'AUTO_BU_RRR')
-  IF (LBUDGET_SV) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),14+(NSV_C2R2BEG-1),&
+  IF (LBUDGET_RC) CALL BUDGET (PRCS*PRHODJ(:,:,:), NBUDGET_RC,'AUTO_BU_RRC')
+  IF (LBUDGET_SV) CALL BUDGET (PCRS*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_C2R2BEG+2,'AUTO_BU_RSV')
+  IF (LBUDGET_RR) CALL BUDGET (PRRS*PRHODJ(:,:,:), NBUDGET_RR,'AUTO_BU_RRR')
+  IF (LBUDGET_SV) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_C2R2BEG+1,&
                                &'ACCR_BU_RSV') ! RCC
-  IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7 ,'ACCR_BU_RRC')
-  IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),8 ,'ACCR_BU_RRR')
+  IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,'ACCR_BU_RRC')
+  IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR,'ACCR_BU_RRR')
 
 END IF
 !
@@ -1715,10 +1715,10 @@ ELSE ! KHKO
   END WHERE
 ENDIF
 !
-IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),6 ,'REVA_BU_RRV')
-IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),8 ,'REVA_BU_RRR')
-IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),4 ,'REVA_BU_RTH')
-IF (LBUDGET_SV) CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),15+(NSV_C2R2BEG-1),'CEVA_BU_RSV')
+IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RV,'REVA_BU_RRV')
+IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR,'REVA_BU_RRR')
+IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_TH,'REVA_BU_RTH')
+IF (LBUDGET_SV) CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_C2R2BEG+2,'CEVA_BU_RSV')
 !
   END SUBROUTINE C2R2_KHKO_EVAPORATION
 !
@@ -1929,12 +1929,12 @@ END DO
 !*       2.5     budget storage
 !
 IF (LBUDGET_RC.AND.OSEDC)                                              &
-               CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7 ,'SEDI_BU_RRC')
-IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),8 ,'SEDI_BU_RRR')
+                CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,'SEDI_BU_RRC')
+IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR,'SEDI_BU_RRR')
 IF (LBUDGET_SV) THEN
-  IF (OSEDC) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),14+(NSV_C2R2BEG-1),&
+  IF (OSEDC) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_C2R2BEG+1,&
                     &'SEDI_BU_RSV') ! RCC
-  CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),15+(NSV_C2R2BEG-1),&
+  CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_C2R2BEG+2,&
                     &'SEDI_BU_RSV') ! RCR
 END IF
 !
@@ -1955,9 +1955,9 @@ END IF
 !*       2.7     budget storage
 !
 IF ( LBUDGET_RC .AND. LDEPOC ) &
-   CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7 ,'DEPO_BU_RRC')
+   CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,'DEPO_BU_RRC')
 IF ( LBUDGET_SV .AND. LDEPOC ) &
-   CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),14+(NSV_C2R2BEG-1),'DEPO_BU_RSV') 
+   CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_C2R2BEG+1,'DEPO_BU_RSV')
 !
   END SUBROUTINE C2R2_KHKO_SEDIMENTATION
 !-------------------------------------------------------------------------------

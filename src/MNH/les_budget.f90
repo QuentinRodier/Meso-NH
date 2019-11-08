@@ -53,12 +53,13 @@ END MODULE MODI_LES_BUDGET
 !*       0.   DECLARATIONS
 !             ------------
 !
+use modd_budget,      only: NBUDGET_U, NBUDGET_V, NBUDGET_W, NBUDGET_TH, NBUDGET_TKE, &
+                            NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, NBUDGET_SV1
 USE MODD_LES
 USE MODD_LES_BUDGET
 USE MODD_NSV
 !
 USE MODI_SHUMAN
-USE MODI_THL_RT_FROM_TH_R
 USE MODI_LES_VER_INT
 USE MODI_LES_MEAN_ll
 !
@@ -122,7 +123,7 @@ SELECT CASE (KBUDN)
 !
 !* u
 !
-  CASE(1)
+  CASE( NBUDGET_U )
     CALL LES_BUDGET_ANOMALY(PVARS,'X',ZANOM)
     !
     !* action in KE budget
@@ -136,7 +137,7 @@ SELECT CASE (KBUDN)
 !
 !* v
 !
-  CASE(2)
+  CASE( NBUDGET_V )
     CALL LES_BUDGET_ANOMALY(PVARS,'Y',ZANOM)
     !
     !* action in KE budget
@@ -150,7 +151,7 @@ SELECT CASE (KBUDN)
 !
 !* w
 !
-  CASE(3)
+  CASE( NBUDGET_W )
     CALL LES_BUDGET_ANOMALY(PVARS,'Z',ZANOM)
     !
     !* action in KE budget
@@ -183,7 +184,7 @@ SELECT CASE (KBUDN)
 !
 !* Th
 !
-  CASE(4)
+  CASE( NBUDGET_TH )
     XCURRENT_RTHLS = XCURRENT_RTHLS + PVARS - XCURRENT_RTHS
     CALL LES_BUDGET_ANOMALY(XCURRENT_RTHLS,'-',ZANOM)
     !
@@ -211,7 +212,7 @@ SELECT CASE (KBUDN)
 !
 !* Tke
 !
-  CASE(5)
+  CASE( NBUDGET_TKE )
     ALLOCATE(ZTEND(IIU,IJU,IKU))
     ZTEND(:,:,:) = (PVARS(:,:,:)-XCURRENT_RTKES(:,:,:)) / XCURRENT_RHODJ
     XCURRENT_RTKES = PVARS
@@ -222,7 +223,7 @@ SELECT CASE (KBUDN)
 !
 !* Rv, Rr, Ri, Rs, Rg, Rh
 !
-  CASE(6,8,9,10,11,12)
+  CASE( NBUDGET_RV, NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH )
     !* transformation into conservative variables: RT
     XCURRENT_RRTS = XCURRENT_RRTS + PVARS(:,:,:) - XCURRENT_RRS(:,:,:,KBUDN-5)
     CALL LES_BUDGET_ANOMALY(XCURRENT_RRTS,'-',ZANOM)
@@ -249,7 +250,7 @@ SELECT CASE (KBUDN)
 !
 !* Rc
 !
-  CASE(7)
+  CASE( NBUDGET_RC )
     !* transformation into conservative variables: theta_l; RT
     XCURRENT_RRTS  = XCURRENT_RRTS  + PVARS(:,:,:) - XCURRENT_RRS(:,:,:,KBUDN-5)
     XCURRENT_RTHLS = XCURRENT_RTHLS - XCURRENT_L_O_EXN_CP &
@@ -298,7 +299,7 @@ SELECT CASE (KBUDN)
 !
 !* SV
 !
-  CASE(13:)
+  CASE( NBUDGET_SV1: )
     CALL LES_BUDGET_ANOMALY(PVARS,'-',ZANOM)
     !
     !* action in WSV budget

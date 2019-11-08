@@ -23,7 +23,8 @@ SUBROUTINE RAIN_ICE_FAST_RI(OMICRO, PRHODREF, PRIT, PRHODJ, PZT, PSSI, PLSFACT, 
 !*      0. DECLARATIONS
 !          ------------
 !
-use MODD_BUDGET,         only: LBUDGET_RC, LBUDGET_RI, LBUDGET_TH
+use MODD_BUDGET,         only: LBUDGET_TH, LBUDGET_RC, LBUDGET_RI, &
+                               NBUDGET_TH, NBUDGET_RC, NBUDGET_RI
 use MODD_CST,            only: XTT
 use MODD_RAIN_ICE_DESCR, only: XDI, XLBEXI, XLBI, XRTMIN
 use MODD_RAIN_ICE_PARAM, only: X0DEPI, X2DEPI
@@ -66,13 +67,13 @@ REAL, DIMENSION(size(PRHODREF)) :: ZZW  ! Work array
   END WHERE
   IF (LBUDGET_TH) CALL BUDGET (                                                 &
                  UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),   &
-                                                              4,'IMLT_BU_RTH')
+                                                        NBUDGET_TH,'IMLT_BU_RTH')
   IF (LBUDGET_RC) CALL BUDGET (                                                 &
                      UNPACK(PRCS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                              7,'IMLT_BU_RRC')
+                                                        NBUDGET_RC,'IMLT_BU_RRC')
   IF (LBUDGET_RI) CALL BUDGET (                                                 &
                      UNPACK(PRIS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                              9,'IMLT_BU_RRI')
+                                                        NBUDGET_RI,'IMLT_BU_RRI')
 !
 !*       7.2    Bergeron-Findeisen effect: RCBERI
 !
@@ -86,13 +87,13 @@ REAL, DIMENSION(size(PRHODREF)) :: ZZW  ! Work array
   END WHERE
   IF (LBUDGET_TH) CALL BUDGET (                                                 &
                  UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),   &
-                                                             4,'BERFI_BU_RTH')
+                                                        NBUDGET_TH,'BERFI_BU_RTH')
   IF (LBUDGET_RC) CALL BUDGET (                                                 &
                      UNPACK(PRCS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                             7,'BERFI_BU_RRC')
+                                                        NBUDGET_RC,'BERFI_BU_RRC')
   IF (LBUDGET_RI) CALL BUDGET (                                                 &
                      UNPACK(PRIS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                             9,'BERFI_BU_RRI')
+                                                        NBUDGET_RI,'BERFI_BU_RRI')
 !
 END SUBROUTINE RAIN_ICE_FAST_RI
 

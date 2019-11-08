@@ -375,18 +375,18 @@ IF (LBUDGET_TKE) THEN
 ! add the dynamical production
 !
   PRTKES(:,:,:) = PRTKES(:,:,:) + PDP(:,:,:) * PRHODJ(:,:,:)
-  CALL BUDGET (PRTKES(:,:,:),5,'DP_BU_RTKE')
+  CALL BUDGET (PRTKES(:,:,:),NBUDGET_TKE,'DP_BU_RTKE')
 !
 ! add the thermal production
 !
   PRTKES(:,:,:) = PRTKES(:,:,:) + PTP(:,:,:) * PRHODJ(:,:,:)
-  CALL BUDGET (PRTKES(:,:,:),5,'TP_BU_RTKE')
+  CALL BUDGET (PRTKES(:,:,:),NBUDGET_TKE,'TP_BU_RTKE')
 !
 ! add the dissipation
 !
 PRTKES(:,:,:) = PRTKES(:,:,:) - XCED * SQRT(PTKEM(:,:,:)) / PLEPS(:,:,:) * &
                 (PEXPL*PTKEM(:,:,:) + PIMPL*ZRES(:,:,:)) * PRHODJ(:,:,:)
-CALL BUDGET (PRTKES(:,:,:),5,'DISS_BU_RTKE')
+CALL BUDGET (PRTKES(:,:,:),NBUDGET_TKE,'DISS_BU_RTKE')
 END IF 
 !
 !*       2.5  computes the final RTKE and stores the whole turbulent transport
@@ -395,7 +395,7 @@ PRTKES(:,:,:) = ZRES(:,:,:) * PRHODJ(:,:,:) / PTSTEP -  PRTKESM(:,:,:)
 !
 ! stores the whole turbulent transport
 !
-IF (LBUDGET_TKE) CALL BUDGET (PRTKES(:,:,:),5,'TR_BU_RTKE')
+IF (LBUDGET_TKE) CALL BUDGET (PRTKES(:,:,:),NBUDGET_TKE,'TR_BU_RTKE')
 !
 !
 !----------------------------------------------------------------------------
