@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-------------------------------------------------------------------------------
 ! 
 !     #####################
       MODULE MODI_VISCOSITY
@@ -89,6 +90,7 @@ SUBROUTINE VISCOSITY(HLBCX, HLBCY, KRR, KSV, PNU, PPRANDTL,          &
 !!    MODIFICATIONS
 !!    -------------
 !!      01/18 (C.Lac) Add budgets
+!  P. Wautelet 08/11/2019: corrected wrong budget name VISC_BU_RU -> VISC_BU_RTH
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -192,7 +194,7 @@ IF (OVISC_TH) THEN
 !
 END IF
 !
-IF (LBUDGET_TH) CALL BUDGET (PRTHS,4,'VISC_BU_RU')
+IF (LBUDGET_TH) CALL BUDGET (PRTHS,4,'VISC_BU_RTH')
 !
 !-------------------------------------------------------------------------------
 !
