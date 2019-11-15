@@ -225,7 +225,7 @@ SELECT CASE (KBUDN)
 !
   CASE( NBUDGET_RV, NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH )
     !* transformation into conservative variables: RT
-    XCURRENT_RRTS = XCURRENT_RRTS + PVARS(:,:,:) - XCURRENT_RRS(:,:,:,KBUDN-5)
+    XCURRENT_RRTS = XCURRENT_RRTS + PVARS(:,:,:) - XCURRENT_RRS(:,:,:,KBUDN-(NBUDGET_RV-1))
     CALL LES_BUDGET_ANOMALY(XCURRENT_RRTS,'-',ZANOM)
     !
     !* action in WRT budget
@@ -245,16 +245,16 @@ SELECT CASE (KBUDN)
     X_LES_BU_RES_THLRT(:,ILES_BU) = X_LES_BU_RES_THLRT(:,ILES_BU) + ZLES_PROF(:)
     !
     !* update fields
-    XCURRENT_RRS(:,:,:,KBUDN-5) = PVARS
+    XCURRENT_RRS(:,:,:,KBUDN-(NBUDGET_RV-1)) = PVARS
     XRT_ANOM = ZANOM
 !
 !* Rc
 !
   CASE( NBUDGET_RC )
     !* transformation into conservative variables: theta_l; RT
-    XCURRENT_RRTS  = XCURRENT_RRTS  + PVARS(:,:,:) - XCURRENT_RRS(:,:,:,KBUDN-5)
+    XCURRENT_RRTS  = XCURRENT_RRTS  + PVARS(:,:,:) - XCURRENT_RRS(:,:,:,KBUDN-(NBUDGET_RV-1))
     XCURRENT_RTHLS = XCURRENT_RTHLS - XCURRENT_L_O_EXN_CP &
-                                    * (PVARS(:,:,:) - XCURRENT_RRS(:,:,:,KBUDN-5))
+                                    * (PVARS(:,:,:) - XCURRENT_RRS(:,:,:,KBUDN-(NBUDGET_RV-1)))
 
     !* anomaly of THL
     ALLOCATE(ZTHL_ANOM(IIU,IJU,NLES_K))
@@ -292,7 +292,7 @@ SELECT CASE (KBUDN)
     !
     !
     !* update fields
-    XCURRENT_RRS(:,:,:,KBUDN-5) = PVARS
+    XCURRENT_RRS(:,:,:,KBUDN-(NBUDGET_RV-1)) = PVARS
     XRT_ANOM = ZANOM
     XTHL_ANOM = ZTHL_ANOM
     DEALLOCATE(ZTHL_ANOM)
@@ -303,20 +303,20 @@ SELECT CASE (KBUDN)
     CALL LES_BUDGET_ANOMALY(PVARS,'-',ZANOM)
     !
     !* action in WSV budget
-    ZWORK_LES = ( ZANOM * XW_ANOM - XSV_ANOM(:,:,:,KBUDN-12) * XW_ANOM ) / &
+    ZWORK_LES = ( ZANOM * XW_ANOM - XSV_ANOM(:,:,:,KBUDN-(NBUDGET_SV1-1)) * XW_ANOM ) / &
                   XCURRENT_TSTEP
     CALL LES_MEAN_ll( ZWORK_LES, LLES_CURRENT_CART_MASK, ZLES_PROF)
-    X_LES_BU_RES_WSV(:,ILES_BU,KBUDN-12) = X_LES_BU_RES_WSV(:,ILES_BU,KBUDN-12) + ZLES_PROF(:)
+    X_LES_BU_RES_WSV(:,ILES_BU,KBUDN-(NBUDGET_SV1-1)) = X_LES_BU_RES_WSV(:,ILES_BU,KBUDN-(NBUDGET_SV1-1)) + ZLES_PROF(:)
     !
     !* action in SV2 budget
-    ZWORK_LES = ( ZANOM **2 - XSV_ANOM(:,:,:,KBUDN-12) **2 ) / &
+    ZWORK_LES = ( ZANOM **2 - XSV_ANOM(:,:,:,KBUDN-(NBUDGET_SV1-1)) **2 ) / &
                   XCURRENT_TSTEP
     CALL LES_MEAN_ll( ZWORK_LES, LLES_CURRENT_CART_MASK, ZLES_PROF)
-    X_LES_BU_RES_SV2(:,ILES_BU,KBUDN-12) = X_LES_BU_RES_SV2(:,ILES_BU,KBUDN-12) + ZLES_PROF(:)
+    X_LES_BU_RES_SV2(:,ILES_BU,KBUDN-(NBUDGET_SV1-1)) = X_LES_BU_RES_SV2(:,ILES_BU,KBUDN-(NBUDGET_SV1-1)) + ZLES_PROF(:)
     !
     !* update fields
-    XCURRENT_RSVS(:,:,:,KBUDN-12) = PVARS
-    XSV_ANOM(:,:,:,KBUDN-12) = ZANOM
+    XCURRENT_RSVS(:,:,:,KBUDN-(NBUDGET_SV1-1)) = PVARS
+    XSV_ANOM(:,:,:,KBUDN-(NBUDGET_SV1-1)) = ZANOM
 
 END SELECT
 !
