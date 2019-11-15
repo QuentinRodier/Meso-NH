@@ -154,6 +154,7 @@ END MODULE MODI_INI_BUDGET
 !!      S. Riette        11/2016  New budgets for ICE3/ICE4
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 15/11/2019: remove unused CBURECORD variable
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -232,7 +233,6 @@ INTEGER, DIMENSION(JPBUMAX,JPBUPROMAX+1) :: IPROACTV      ! switches set by the
                                                           ! activation
 INTEGER :: JI, JJ, JK , JJJ                               ! loop indices
 INTEGER :: IIMAX_ll, IJMAX_ll ! size of the physical global domain
-INTEGER :: ITEN                                           ! tens for CBURECORD
 INTEGER :: IPROC                                          ! counter for processes
 INTEGER :: IIU, IJU                                       ! size along x and y directions
                                                           ! of the extended subdomain
@@ -395,12 +395,10 @@ ALLOCATE( NBUPROCNBR(JPBUMAX) )
 ALLOCATE( NBUPROCCTR(JPBUMAX) )
 ALLOCATE( CBUACTION(JPBUMAX, JPBUPROMAX) )
 ALLOCATE( CBUCOMMENT(JPBUMAX, JPBUPROMAX) )
-ALLOCATE( CBURECORD(JPBUMAX, JPBUPROMAX) )
 NBUPROCCTR(:) = 0
 NBUCTR_ACTV(:) = 0
 NBUPROCNBR(:) = 0
 CBUACTION(:,:) = 'OF' 
-CBURECORD(:,:) = ' '
 CBUCOMMENT(:,:) = ' '
 LBU_BEG =.TRUE. 
 !
@@ -2664,12 +2662,7 @@ END DO
 !              -----------------------------------------------------------
 !
 !
-DO JI=1,JPBUMAX                                ! loop on the allowed budgets
-                                               ! names of recording files for:
-  CBURECORD(JI,1) = ADJUSTL( CBUCOMMENT(JI,1) )   ! initial guess
-  CBURECORD(JI,2) = ADJUSTL( CBUCOMMENT(JI,2) )   ! source cumul
-  CBURECORD(JI,3) = ADJUSTL( CBUCOMMENT(JI,3) )   ! end step
-!
+DO JI=1,JPBUMAX                                ! loop on the allowed budgets names of recording files
   IF (IPROACTV(JI,4) >= 2) THEN
     WRITE(UNIT=KLUOUT,FMT= '("Error in budget specification of ",A7,/," &
     & The first source either is the first element of a group of sources or &
@@ -2702,10 +2695,6 @@ DO JI=1,JPBUMAX                                ! loop on the allowed budgets
                                    ADJUSTR( CBUCOMMENT(JI,NBUPROCNBR(JI)) ) // &
                                    ADJUSTL( ADJUSTR( YWORK2(JI,JJ) ) //        &
                                             ADJUSTL( YEND_COMMENT(JI) ) ) )
-        ITEN=INT(NBUPROCNBR(JI)/10)
-        CBURECORD(JI,NBUPROCNBR(JI)) = 'S' // CHAR( ITEN + 48 )               &
-                  // CHAR(  48+ MODULO( NBUPROCNBR(JI),10*MAX(1,ITEN) )  )    &
-                  // '_' // ADJUSTL( YEND_COMMENT(JI) )
       ELSE IF (IPROACTV(JI,JJJ) == 0) THEN
         NBUPROCNBR(JI) = NBUPROCNBR(JI)+1
         CBUACTION(JI,JJ) = 'DD'
@@ -2713,10 +2702,6 @@ DO JI=1,JPBUMAX                                ! loop on the allowed budgets
                                    ADJUSTR( CBUCOMMENT(JI,NBUPROCNBR(JI)) ) // &
                                    ADJUSTL( ADJUSTR( YWORK2(JI,JJ) ) //        &
                                             ADJUSTL( YEND_COMMENT(JI) ) ) )
-        ITEN=INT(NBUPROCNBR(JI)/10)
-        CBURECORD(JI,NBUPROCNBR(JI)) = 'S' // CHAR( ITEN + 48 )               &
-                  // CHAR(  48+ MODULO( NBUPROCNBR(JI),10*MAX(1,ITEN) )  )    &
-                  // '_' // ADJUSTL( YEND_COMMENT(JI) )
       ELSE IF (IPROACTV(JI,JJJ) == 2) THEN
         CBUACTION(JI,JJ) = 'NO'
         CBUCOMMENT(JI,NBUPROCNBR(JI)+1) =           ADJUSTL(                   &

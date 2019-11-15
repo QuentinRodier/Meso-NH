@@ -85,7 +85,6 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
 !!       Module MODD_BUDGET
 !!
 !!         CBUTYPE     : Budget type (CART,MASK,SKIP or NONE)
-!!         CBURECORD   : name of output recording files for the budgets
 !!         CBUCOMMENT  : name of a process for a budget
 !!         NBUPROCNBR  : number of processes for each variable
 !!         NBUTIME     : number of the budget time intervals ('MASK' case)

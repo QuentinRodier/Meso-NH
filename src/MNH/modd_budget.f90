@@ -44,6 +44,7 @@
 !!      S. Riette       11/2016  New budgets for ICE3/ICE4
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 19/07/2019: parameters to identify budget number
+!  P. Wautelet 15/11/2019: remove unused CBURECORD variable
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -95,8 +96,6 @@ CHARACTER(LEN=2), SAVE, DIMENSION(:,:),  & ! resulting string character of the
         ALLOCATABLE :: CBUACTION           ! transcription of the budget actions 
                                            ! (integer) read in  namelists or 
                                            ! set by default
-CHARACTER (LEN=NMNHNAMELGTMAX), SAVE, DIMENSION(:,:),& ! names of records on the FM file 
-                 ALLOCATABLE :: CBURECORD  ! for the budgets 
 !
 CHARACTER (LEN=99), SAVE, DIMENSION(:,:),& ! name of a process for a budget. It
                  ALLOCATABLE :: CBUCOMMENT ! will appear in the comment part of 
