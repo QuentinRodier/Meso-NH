@@ -55,11 +55,11 @@ END MODULE MODI_WRITE_LES_n
 !!                       10/10/09 (P. Aumond) Add user multimaskS
 !!                          11/15 (C.Lac) Add production terms of TKE
 !!                    10/2016 (C.Lac) Add droplet deposition
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!!!                     02/2019 (C. Lac) Add rain fraction as a LES diagnostic
-
-!! --------------------------------------------------------------------------
-!       
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  C. Lac         02/2019: add rain fraction as a LES diagnostic
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
+! --------------------------------------------------------------------------
+!
 !*      0. DECLARATIONS
 !          ------------
 !
@@ -217,12 +217,8 @@ END IF
 !
 NLES_CURRENT_TIMES=NLES_TIMES
 !
-ALLOCATE(XLES_CURRENT_TRAJT(NLES_TIMES,1))
-XLES_CURRENT_TRAJT(:,:) = XLES_TRAJT(:,:)
 ALLOCATE(XLES_CURRENT_Z(NLES_K))
 XLES_CURRENT_Z(:) = XLES_Z(:)
-ALLOCATE(XLES_CURRENT_DATIME(16,NLES_TIMES))
-XLES_CURRENT_DATIME(:,:) = XLES_DATIME(:,:)
 !
 XLES_CURRENT_ZS = XLES_ZS
 !
@@ -812,7 +808,7 @@ IF (LLES_SUBGRID) THEN
        "Subgrid vert. flux of liquid potential temperature"//YSUBTITLE(:),"m K s-1",XLES_SUBGRID_WThl,HLES_AVG)
 
   CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_WP  ",YSUBTITLE(:), &
-     "Subgrid <wp> vertical Flux"//YSUBTITLE(:),"mPa/s",XLES_SUBGRID_WP,HLES_AVG)
+     "Subgrid <wp> vertical Flux"//YSUBTITLE(:),"m Pa s-1",XLES_SUBGRID_WP,HLES_AVG)
 !!
 !!
   CALL LES_DIACHRO_MASKS(TPDIAFILE,"THLUP_MF",YSUBTITLE(:), &
@@ -1488,9 +1484,7 @@ IF (HLES_AVG==' ') CALL LES_SPEC_n(TPDIAFILE)
 !*      7.   deallocations
 !            -------------
 !
-DEALLOCATE(XLES_CURRENT_TRAJT )
 DEALLOCATE(XLES_CURRENT_Z     )
-DEALLOCATE(XLES_CURRENT_DATIME)
 
 IF (CLES_NORM_TYPE/='NONE' ) THEN
   DEALLOCATE(XLES_NORM_M  )

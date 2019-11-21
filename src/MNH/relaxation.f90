@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ######################
       MODULE MODI_RELAXATION 
 !     ######################
@@ -706,21 +707,21 @@ END DO
 !	        ------------------------------
 !
 CALL EXTRAPOL('W ', PRUS)
-IF (LBUDGET_U) CALL BUDGET  (PRUS,1,'REL_BU_RU')
-IF (LBUDGET_V) CALL BUDGET  (PRVS,2,'REL_BU_RV')
-IF (LBUDGET_W) CALL BUDGET  (PRWS,3,'REL_BU_RW')
-IF (LBUDGET_TH) CALL BUDGET (PRTHS,4,'REL_BU_RTH')
-IF (LBUDGET_TKE) CALL BUDGET (PRTKES,5,'REL_BU_RTKE')
-IF (LBUDGET_RV)  CALL BUDGET (PRRS(:,:,:,1),6,'REL_BU_RRV')
-IF (LBUDGET_RC)  CALL BUDGET (PRRS(:,:,:,2),7,'REL_BU_RRC')
-IF (LBUDGET_RR)  CALL BUDGET (PRRS(:,:,:,3),8,'REL_BU_RRR')
-IF (LBUDGET_RI)  CALL BUDGET (PRRS(:,:,:,4),9,'REL_BU_RRI')
-IF (LBUDGET_RS)  CALL BUDGET (PRRS(:,:,:,5),10,'REL_BU_RRS')
-IF (LBUDGET_RG)  CALL BUDGET (PRRS(:,:,:,6),11,'REL_BU_RRG')
-IF (LBUDGET_RH)  CALL BUDGET (PRRS(:,:,:,7),12,'REL_BU_RRH')
-IF (LBUDGET_SV) THEN
+IF ( LBUDGET_U   ) CALL BUDGET( PRUS,                 NBUDGET_U,             'REL_BU_RU')
+IF ( LBUDGET_V   ) CALL BUDGET( PRVS,                 NBUDGET_V,             'REL_BU_RV')
+IF ( LBUDGET_W   ) CALL BUDGET( PRWS,                 NBUDGET_W,             'REL_BU_RW')
+IF ( LBUDGET_TH  ) CALL BUDGET( PRTHS,                NBUDGET_TH,            'REL_BU_RTH')
+IF ( LBUDGET_TKE ) CALL BUDGET( PRTKES,               NBUDGET_TKE,           'REL_BU_RTKE')
+IF ( LBUDGET_RV  ) CALL BUDGET( PRRS(:, :, :, 1 ),    NBUDGET_RV,            'REL_BU_RRV')
+IF ( LBUDGET_RC  ) CALL BUDGET( PRRS(:, :, :, 2 ),    NBUDGET_RC,            'REL_BU_RRC')
+IF ( LBUDGET_RR  ) CALL BUDGET( PRRS(:, :, :, 3 ),    NBUDGET_RR,            'REL_BU_RRR')
+IF ( LBUDGET_RI  ) CALL BUDGET( PRRS(:, :, :, 4 ),    NBUDGET_RI,            'REL_BU_RRI')
+IF ( LBUDGET_RS  ) CALL BUDGET( PRRS(:, :, :, 5 ),    NBUDGET_RS,            'REL_BU_RRS')
+IF ( LBUDGET_RG  ) CALL BUDGET( PRRS(:, :, :, 6 ),    NBUDGET_RG,            'REL_BU_RRG')
+IF ( LBUDGET_RH  ) CALL BUDGET( PRRS(:, :, :, 7 ),    NBUDGET_RH,            'REL_BU_RRH')
+IF ( LBUDGET_SV  ) THEN
   DO JSV=1,KSV 
-    CALL BUDGET (PRSVS(:,:,:,JSV),JSV+12,'REL_BU_RSV')
+                   CALL BUDGET( PRSVS(:, :, :, JSV ), NBUDGET_SV1 - 1 + JSV, 'REL_BU_RSV' )
   END DO
 END IF
 !

@@ -72,11 +72,12 @@ SUBROUTINE LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, OCLOSE_OUT, PRHODJ,           
 !!
 !-------------------------------------------------------------------------------
 !
-USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LMEYERS, LSNOW, LWARM, LACTI, LRAIN, LHHONI, &
+USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LMEYERS, LSNOW, LWARM, LACTI, LRAIN, LHHONI,  &
                             NMOD_CCN, NMOD_IFN, NMOD_IMM
-USE MODD_BUDGET,     ONLY : LBU_ENABLE, LBUDGET_TH, LBUDGET_RV, LBUDGET_RC, LBUDGET_RR,&
-                            LBUDGET_RI, LBUDGET_RS, LBUDGET_RG, LBUDGET_RH, LBUDGET_SV
-USE MODD_NSV,        ONLY : NSV_LIMA_NC, NSV_LIMA_NR, NSV_LIMA_CCN_FREE,               &
+USE MODD_BUDGET,     ONLY : LBU_ENABLE, LBUDGET_TH, LBUDGET_RV, LBUDGET_RC, LBUDGET_RR, &
+                            LBUDGET_RI, LBUDGET_RS, LBUDGET_RG, LBUDGET_RH, LBUDGET_SV, &
+                            NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RI, NBUDGET_SV1
+USE MODD_NSV,        ONLY : NSV_LIMA_NC, NSV_LIMA_NR, NSV_LIMA_CCN_FREE,                &
                             NSV_LIMA_NI, NSV_LIMA_IFN_FREE
 !
 USE MODD_IO,         ONLY: TFILEDATA
@@ -169,13 +170,13 @@ IF (LWARM .AND. LACTI .AND. NMOD_CCN.GE.1) THEN
 ! Call budgets
 !
    IF (LBU_ENABLE) THEN
-      IF (LBUDGET_TH) CALL BUDGET (PTHT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,   4,                        'HENU_BU_RTH')
-      IF (LBUDGET_RV) CALL BUDGET (PRVT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,   6,                        'HENU_BU_RRV')
-      IF (LBUDGET_RC) CALL BUDGET (PRCT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,   7,                        'HENU_BU_RRC')
+      IF (LBUDGET_TH) CALL BUDGET (PTHT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,   NBUDGET_TH,                           'HENU_BU_RTH')
+      IF (LBUDGET_RV) CALL BUDGET (PRVT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,   NBUDGET_RV,                           'HENU_BU_RRV')
+      IF (LBUDGET_RC) CALL BUDGET (PRCT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,   NBUDGET_RC,                           'HENU_BU_RRC')
       IF (LBUDGET_SV) THEN
-                      CALL BUDGET (PCCT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,   12+NSV_LIMA_NC,           'HENU_BU_RSV')
+                      CALL BUDGET (PCCT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,   NBUDGET_SV1-1+NSV_LIMA_NC,            'HENU_BU_RSV')
             DO JL=1, NMOD_CCN
-                      CALL BUDGET (PNFT(:,:,:,JL)*PRHODJ(:,:,:)/PTSTEP,12+NSV_LIMA_CCN_FREE+JL-1,'HENU_BU_RSV') 
+                      CALL BUDGET (PNFT(:,:,:,JL)*PRHODJ(:,:,:)/PTSTEP,NBUDGET_SV1-1+NSV_LIMA_CCN_FREE+JL-1, 'HENU_BU_RSV')
             END DO
       END IF
    END IF
@@ -194,24 +195,24 @@ IF (LCOLD .AND. LNUCL .AND. .NOT.LMEYERS .AND. NMOD_IFN.GE.1) THEN
 ! Call budgets
 !
    IF (LBU_ENABLE) THEN
-      IF (LBUDGET_TH) CALL BUDGET ((PTHT(:,:,:)+Z_TH_HIND(:,:,:))*PRHODJ(:,:,:)/PTSTEP,4,                        'HIND_BU_RTH')
-      IF (LBUDGET_RV) CALL BUDGET ((PRVT(:,:,:)-Z_RI_HIND(:,:,:))*PRHODJ(:,:,:)/PTSTEP,6,                        'HIND_BU_RRV')
-      IF (LBUDGET_RI) CALL BUDGET ((PRIT(:,:,:)+Z_RI_HIND(:,:,:))*PRHODJ(:,:,:)/PTSTEP,9,                        'HIND_BU_RRI')
+      IF (LBUDGET_TH) CALL BUDGET ((PTHT(:,:,:)+Z_TH_HIND(:,:,:))*PRHODJ(:,:,:)/PTSTEP,NBUDGET_TH, 'HIND_BU_RTH')
+      IF (LBUDGET_RV) CALL BUDGET ((PRVT(:,:,:)-Z_RI_HIND(:,:,:))*PRHODJ(:,:,:)/PTSTEP,NBUDGET_RV, 'HIND_BU_RRV')
+      IF (LBUDGET_RI) CALL BUDGET ((PRIT(:,:,:)+Z_RI_HIND(:,:,:))*PRHODJ(:,:,:)/PTSTEP,NBUDGET_RI, 'HIND_BU_RRI')
       IF (LBUDGET_SV) THEN
-                      CALL BUDGET ((PCIT(:,:,:)+Z_CI_HIND(:,:,:))*PRHODJ(:,:,:)/PTSTEP,12+NSV_LIMA_NI,           'HIND_BU_RSV')
+                      CALL BUDGET ((PCIT(:,:,:)+Z_CI_HIND(:,:,:))*PRHODJ(:,:,:)/PTSTEP,NBUDGET_SV1-1+NSV_LIMA_NI, 'HIND_BU_RSV')
          IF (NMOD_IFN.GE.1) THEN
             DO JL=1, NMOD_IFN
-                      CALL BUDGET ((ZIFT(:,:,:,JL))*PRHODJ(:,:,:)/PTSTEP,              12+NSV_LIMA_IFN_FREE+JL-1,'HIND_BU_RSV') 
+                      CALL BUDGET ((ZIFT(:,:,:,JL))*PRHODJ(:,:,:)/PTSTEP,     NBUDGET_SV1-1+NSV_LIMA_IFN_FREE+JL-1,'HIND_BU_RSV')
             END DO
          END IF
       END IF
 !
-      IF (LBUDGET_TH) CALL BUDGET (ZTHT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,4,'HINC_BU_RTH')
-      IF (LBUDGET_RC) CALL BUDGET (ZRCT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,7,'HINC_BU_RRC')
-      IF (LBUDGET_RI) CALL BUDGET (ZRIT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,9,'HINC_BU_RRI')
+      IF (LBUDGET_TH) CALL BUDGET (ZTHT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,NBUDGET_TH,'HINC_BU_RTH')
+      IF (LBUDGET_RC) CALL BUDGET (ZRCT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,NBUDGET_RC,'HINC_BU_RRC')
+      IF (LBUDGET_RI) CALL BUDGET (ZRIT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,NBUDGET_RI,'HINC_BU_RRI')
       IF (LBUDGET_SV) THEN
-         CALL BUDGET (ZCCT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,12+NSV_LIMA_NC,'HINC_BU_RSV')
-         CALL BUDGET (ZCIT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,12+NSV_LIMA_NI,'HINC_BU_RSV')
+         CALL BUDGET (ZCCT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,NBUDGET_SV1-1+NSV_LIMA_NC,'HINC_BU_RSV')
+         CALL BUDGET (ZCIT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,NBUDGET_SV1-1+NSV_LIMA_NI,'HINC_BU_RSV')
       END IF
    END IF
 !
@@ -240,17 +241,17 @@ IF (LCOLD .AND. LNUCL .AND. LMEYERS) THEN
 ! Call budgets
 !
    IF (LBU_ENABLE) THEN
-      IF (LBUDGET_TH) CALL BUDGET ((PTHT(:,:,:)+Z_TH_HIND(:,:,:))*PRHODJ(:,:,:)/PTSTEP,4,             'HIND_BU_RTH')
-      IF (LBUDGET_RV) CALL BUDGET ((PRVT(:,:,:)-Z_RI_HIND(:,:,:))*PRHODJ(:,:,:)/PTSTEP,6,             'HIND_BU_RRV')
-      IF (LBUDGET_RI) CALL BUDGET ((PRIT(:,:,:)+Z_RI_HIND(:,:,:))*PRHODJ(:,:,:)/PTSTEP,9,             'HIND_BU_RRI')
-      IF (LBUDGET_SV) CALL BUDGET ((PCIT(:,:,:)+Z_CI_HIND(:,:,:))*PRHODJ(:,:,:)/PTSTEP,12+NSV_LIMA_NI,'HIND_BU_RSV')
+      IF (LBUDGET_TH) CALL BUDGET ((PTHT(:,:,:)+Z_TH_HIND(:,:,:))*PRHODJ(:,:,:)/PTSTEP,NBUDGET_TH,               'HIND_BU_RTH')
+      IF (LBUDGET_RV) CALL BUDGET ((PRVT(:,:,:)-Z_RI_HIND(:,:,:))*PRHODJ(:,:,:)/PTSTEP,NBUDGET_RV,               'HIND_BU_RRV')
+      IF (LBUDGET_RI) CALL BUDGET ((PRIT(:,:,:)+Z_RI_HIND(:,:,:))*PRHODJ(:,:,:)/PTSTEP,NBUDGET_RI,               'HIND_BU_RRI')
+      IF (LBUDGET_SV) CALL BUDGET ((PCIT(:,:,:)+Z_CI_HIND(:,:,:))*PRHODJ(:,:,:)/PTSTEP,NBUDGET_SV1-1+NSV_LIMA_NI,'HIND_BU_RSV')
 !
-      IF (LBUDGET_TH) CALL BUDGET (ZTHT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,4,'HINC_BU_RTH')
-      IF (LBUDGET_RC) CALL BUDGET (ZRCT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,7,'HINC_BU_RRC')
-      IF (LBUDGET_RI) CALL BUDGET (ZRIT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,9,'HINC_BU_RRI')
+      IF (LBUDGET_TH) CALL BUDGET (ZTHT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,NBUDGET_TH,'HINC_BU_RTH')
+      IF (LBUDGET_RC) CALL BUDGET (ZRCT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,NBUDGET_RC,'HINC_BU_RRC')
+      IF (LBUDGET_RI) CALL BUDGET (ZRIT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,NBUDGET_RI,'HINC_BU_RRI')
       IF (LBUDGET_SV) THEN
-         CALL BUDGET (ZCCT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,12+NSV_LIMA_NC,'HINC_BU_RSV')
-         CALL BUDGET (ZCIT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,12+NSV_LIMA_NI,'HINC_BU_RSV')
+         CALL BUDGET (ZCCT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,NBUDGET_SV1-1+NSV_LIMA_NC,'HINC_BU_RSV')
+         CALL BUDGET (ZCIT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,NBUDGET_SV1-1+NSV_LIMA_NI,'HINC_BU_RSV')
       END IF
    END IF
 !
@@ -273,13 +274,13 @@ IF (LCOLD .AND. LNUCL .AND. LHHONI .AND. NMOD_CCN.GE.1) THEN
 ! Call budgets
 !
    IF (LBU_ENABLE) THEN
-     IF (LBUDGET_TH) CALL BUDGET (ZTHT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,   4,                        'HONH_BU_RTH')
-     IF (LBUDGET_RV) CALL BUDGET (ZRVT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,   6,                        'HONH_BU_RRV')
-     IF (LBUDGET_RI) CALL BUDGET (ZRIT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,   9,                        'HONH_BU_RRI')
+     IF (LBUDGET_TH) CALL BUDGET (ZTHT(:,:,:)*PRHODJ(:,:,:)/PTSTEP, NBUDGET_TH,                            'HONH_BU_RTH')
+     IF (LBUDGET_RV) CALL BUDGET (ZRVT(:,:,:)*PRHODJ(:,:,:)/PTSTEP, NBUDGET_RV,                            'HONH_BU_RRV')
+     IF (LBUDGET_RI) CALL BUDGET (ZRIT(:,:,:)*PRHODJ(:,:,:)/PTSTEP, NBUDGET_RI,                            'HONH_BU_RRI')
      IF (LBUDGET_SV) THEN
-                     CALL BUDGET (ZCIT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,   12+NSV_LIMA_NI,           'HONH_BU_RSV')
+                     CALL BUDGET (ZCIT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,   NBUDGET_SV1-1+NSV_LIMA_NI,           'HONH_BU_RSV')
           DO JL=1, NMOD_CCN
-                     CALL BUDGET (ZNFT(:,:,:,JL)*PRHODJ(:,:,:)/PTSTEP,12+NSV_LIMA_CCN_FREE+JL-1,'HONH_BU_RSV') 
+                     CALL BUDGET (ZNFT(:,:,:,JL)*PRHODJ(:,:,:)/PTSTEP,NBUDGET_SV1-1+NSV_LIMA_CCN_FREE+JL-1,'HONH_BU_RSV')
           END DO
      END IF
   END IF

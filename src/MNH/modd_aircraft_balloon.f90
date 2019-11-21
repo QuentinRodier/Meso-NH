@@ -33,14 +33,17 @@
 !!              March, 2013 : O.Caumont, C.Lac : add vertical profiles
 !!              Oct,2016 : G.DELAUTIER LIMA
 !  P. Wautelet 08/02/2019: add missing NULL association for pointers
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
 !
 !
-USE MODD_TYPE_DATE
-!
+use modd_type_date, only: date_time
+
+implicit none
+
 TYPE FLYER
 !
 !
@@ -109,7 +112,7 @@ REAL                          :: P_CUR    ! current p (if 'AIRCRA' and 'ALTDEF' 
 !
 !* data records
 !
-REAL, DIMENSION(:),    POINTER :: TIME      => NULL() ! t(n)  (n: recording instants)
+type(date_time), dimension(:), pointer :: tpdates => NULL() ! dates(n) (n: recording instants)
 REAL, DIMENSION(:),    POINTER :: X         => NULL() ! X(n)
 REAL, DIMENSION(:),    POINTER :: Y         => NULL() ! Y(n)
 REAL, DIMENSION(:),    POINTER :: Z         => NULL() ! Z(n)
@@ -140,7 +143,6 @@ REAL, DIMENSION(:,:),  POINTER :: AER       => NULL() ! Extinction at 550 nm
 REAL, DIMENSION(:,:),  POINTER :: DST_WL    => NULL() ! Extinction by wavelength
 REAL, DIMENSION(:),    POINTER :: ZS        => NULL() ! zs(n)
 REAL, DIMENSION(:),    POINTER :: TSRAD     => NULL() ! Ts(n)
-REAL, DIMENSION(:,:),  POINTER :: DATIME    => NULL() ! record for diachro
 !
 REAL, DIMENSION(:)  ,   POINTER :: THW_FLUX => NULL() ! thw_flux(n)
 REAL, DIMENSION(:)  ,   POINTER :: RCW_FLUX => NULL() ! rcw_flux(n)

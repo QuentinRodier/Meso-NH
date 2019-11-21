@@ -4,212 +4,104 @@
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 ! Modifications
-! G. TANGUY 19/05/2014 : correctoin DATIME in case of time average
-!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  G. Tanguy   19/05/2014: correct DATIME in case of time average
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
+!  P. Wautelet 20/09/2019: rewrite normalization of LES budgets
 !-----------------------------------------------------------------
 !#######################
 MODULE MODE_LES_DIACHRO
 !#######################
-!
+
 USE MODD_LUNIT
-!
+use modd_les_n, only: xles_dates, xles_times
+
+use mode_msg
+
+implicit none
+
+private
+
+public :: LES_DIACHRO, LES_DIACHRO_2PT, LES_DIACHRO_MASKS, LES_DIACHRO_SPEC, &
+          LES_DIACHRO_SURF, LES_DIACHRO_SURF_SV, LES_DIACHRO_SV, LES_DIACHRO_SV_MASKS
+
 CONTAINS
 !
 !---------------------------------------------------------------------
 !
 !########################################################
-SUBROUTINE MAKE_NORM(HUNIT, KC, ODIV, PA_NORM, PLES_NORM)
+subroutine Make_norm( pa_norm, ples_norm, kpower )
 !########################################################
-!
-USE MODD_PARAMETERS
-USE MODD_LES
-IMPLICIT NONE
-!
-CHARACTER(LEN=50),       INTENT(IN)    :: HUNIT     ! physical unit of field
-INTEGER,                 INTENT(IN)    :: KC        ! character counter
-LOGICAL,                 INTENT(INOUT) :: ODIV      ! flag to make a division
-REAL, DIMENSION(:,:,:,:),INTENT(INOUT) :: PA_NORM   ! normalized field
-REAL, DIMENSION(:),      INTENT(IN)    :: PLES_NORM ! normalization coefficient
 
-INTEGER :: JK ! z counter
-INTEGER :: JT ! time counter
-INTEGER :: JP ! process counter
-INTEGER :: JN ! variable number counter (larger than 1 only for scalar var.)
-CHARACTER(LEN=50) :: YUNIT
-!
-!------------------------------------------------------------------------
-!
-YUNIT=HUNIT
-!
-IF ( ANY(PLES_NORM(:)==0.) ) THEN
-  PA_NORM(:,:,:,:)=XUNDEF
-  ODIV=.FALSE.
-  RETURN
-END IF
+use modd_les,        only: nles_current_times, nles_k
+use modd_parameters, only: XUNDEF
 
-DO JN=1,SIZE(PA_NORM,4)
-  IF (YUNIT(KC+1:KC+1)=='3') THEN
-    IF (ODIV) THEN
-      DO JP=1,SIZE(PA_NORM,3)
-        DO JT=1,NLES_CURRENT_TIMES
-          DO JK=1,NLES_K
-            IF (PA_NORM(JK,JT,JP,JN)/=XUNDEF) &
-            PA_NORM(JK,JT,JP,JN) = PA_NORM(JK,JT,JP,JN) * PLES_NORM(JT)**3
-          END DO
-        END DO
-      END DO
-    ELSE
-      DO JP=1,SIZE(PA_NORM,3)
-        DO JT=1,NLES_CURRENT_TIMES
-          DO JK=1,NLES_K
-            IF (PA_NORM(JK,JT,JP,JN)/=XUNDEF) &
-            PA_NORM(JK,JT,JP,JN) = PA_NORM(JK,JT,JP,JN) / PLES_NORM(JT)**3
-          END DO
-        END DO
-      END DO
-    END IF
-  ELSE IF  (YUNIT(KC+1:KC+1)=='2') THEN
-    IF (ODIV) THEN
-      DO JP=1,SIZE(PA_NORM,3)
-        DO JT=1,NLES_CURRENT_TIMES
-          DO JK=1,NLES_K
-            IF (PA_NORM(JK,JT,JP,JN)/=XUNDEF) &
-            PA_NORM(JK,JT,JP,JN) = PA_NORM(JK,JT,JP,JN) * PLES_NORM(JT)**2
-          END DO
-        END DO
-      END DO
-    ELSE
-      DO JP=1,SIZE(PA_NORM,3)
-        DO JT=1,NLES_CURRENT_TIMES
-          DO JK=1,NLES_K
-            IF (PA_NORM(JK,JT,JP,JN)/=XUNDEF) &
-            PA_NORM(JK,JT,JP,JN) = PA_NORM(JK,JT,JP,JN) / PLES_NORM(JT)**2
-          END DO
-        END DO
-      END DO
-    END IF
-  ELSE
-    IF (ODIV) THEN
-      DO JP=1,SIZE(PA_NORM,3)
-        DO JT=1,NLES_CURRENT_TIMES
-          DO JK=1,NLES_K
-            IF (PA_NORM(JK,JT,JP,JN)/=XUNDEF) &
-            PA_NORM(JK,JT,JP,JN) = PA_NORM(JK,JT,JP,JN) * PLES_NORM(JT)
-          END DO
-        END DO
-      END DO
-    ELSE
-      DO JP=1,SIZE(PA_NORM,3)
-        DO JT=1,NLES_CURRENT_TIMES
-          DO JK=1,NLES_K
-            IF (PA_NORM(JK,JT,JP,JN)/=XUNDEF) &
-            PA_NORM(JK,JT,JP,JN) = PA_NORM(JK,JT,JP,JN) / PLES_NORM(JT)
-          END DO
-        END DO
-      END DO
-    END IF
-  END IF
-END DO
-!
-ODIV=.FALSE.
-!
-END SUBROUTINE MAKE_NORM
-!
-!###########################################################
-SUBROUTINE MAKE_NORM_SV(HUNIT, KC, ODIV, PA_NORM, PLES_NORM)
-!###########################################################
-!
-USE MODD_PARAMETERS
-USE MODD_LES
-IMPLICIT NONE
-!
-CHARACTER(LEN=50),       INTENT(IN)    :: HUNIT     ! physical unit of field
-INTEGER,                 INTENT(IN)    :: KC        ! character counter
-LOGICAL,                 INTENT(INOUT) :: ODIV      ! flag to make a division
-REAL, DIMENSION(:,:,:,:),INTENT(INOUT) :: PA_NORM   ! normalized field
-REAL, DIMENSION(:,:),    INTENT(IN)    :: PLES_NORM ! normalization coefficient
+real, dimension(:,:,:,:), intent(inout) :: pa_norm   ! normalized field
+real, dimension(:),       intent(in)    :: ples_norm ! normalization coefficient
+integer,                  intent(in)    :: kpower    ! normalization power
 
-INTEGER :: JK ! z counter
-INTEGER :: JT ! time counter
-INTEGER :: JP ! process counter
-INTEGER :: JSV! scalar variables counter
-CHARACTER(LEN=50) :: YUNIT
-!
-!-------------------------------------------------------------------
-!
-YUNIT=HUNIT
-!
-DO JSV=1,SIZE(PLES_NORM,2)
-  IF (ANY(PLES_NORM(:,JSV)==0.)) THEN
-    PA_NORM(:,:,:,JSV)=XUNDEF
-    CYCLE
-  END IF
-  IF (YUNIT(KC+1:KC+1)=='3') THEN
-    IF (ODIV) THEN
-      DO JP=1,SIZE(PA_NORM,3)
-        DO JT=1,NLES_CURRENT_TIMES
-          DO JK=1,NLES_K
-            IF (PA_NORM(JK,JT,JP,JSV)/=XUNDEF) &
-            PA_NORM(JK,JT,JP,JSV) = PA_NORM(JK,JT,JP,JSV) * PLES_NORM(JT,JSV)**3
-          END DO
-        END DO
-      END DO
-    ELSE
-      DO JP=1,SIZE(PA_NORM,3)
-        DO JT=1,NLES_CURRENT_TIMES
-          DO JK=1,NLES_K
-            IF (PA_NORM(JK,JT,JP,JSV)/=XUNDEF) &
-            PA_NORM(JK,JT,JP,JSV) = PA_NORM(JK,JT,JP,JSV) / PLES_NORM(JT,JSV)**3
-          END DO
-        END DO
-      END DO
-    END IF
-  ELSE IF  (YUNIT(KC+1:KC+1)=='2') THEN
-    IF (ODIV) THEN
-      DO JP=1,SIZE(PA_NORM,3)
-        DO JT=1,NLES_CURRENT_TIMES
-          DO JK=1,NLES_K
-            IF (PA_NORM(JK,JT,JP,JSV)/=XUNDEF) &
-            PA_NORM(JK,JT,JP,JSV) = PA_NORM(JK,JT,JP,JSV) * PLES_NORM(JT,JSV)**2
-            END DO
-        END DO
-      END DO
-    ELSE
-      DO JP=1,SIZE(PA_NORM,3)
-        DO JT=1,NLES_CURRENT_TIMES
-          DO JK=1,NLES_K
-            IF (PA_NORM(JK,JT,JP,JSV)/=XUNDEF) &
-            PA_NORM(JK,JT,JP,JSV) = PA_NORM(JK,JT,JP,JSV) / PLES_NORM(JT,JSV)**2
-            END DO
-        END DO
-      END DO
-    END IF
-  ELSE
-    IF (ODIV) THEN
-      DO JP=1,SIZE(PA_NORM,3)
-        DO JT=1,NLES_CURRENT_TIMES
-          DO JK=1,NLES_K
-            IF (PA_NORM(JK,JT,JP,JSV)/=XUNDEF) &
-            PA_NORM(JK,JT,JP,JSV) = PA_NORM(JK,JT,JP,JSV) * PLES_NORM(JT,JSV)
-            END DO
-        END DO
-      END DO
-    ELSE
-      DO JP=1,SIZE(PA_NORM,3)
-        DO JT=1,NLES_CURRENT_TIMES
-          DO JK=1,NLES_K
-            IF (PA_NORM(JK,JT,JP,JSV)/=XUNDEF) &
-            PA_NORM(JK,JT,JP,JSV) = PA_NORM(JK,JT,JP,JSV) / PLES_NORM(JT,JSV)
-          END DO
-        END DO
-      END DO
-    END IF
-  END IF
-END DO
-!
-ODIV=.FALSE.
-!
-END SUBROUTINE MAKE_NORM_SV
+integer :: jk ! z counter
+integer :: jt ! time counter
+integer :: jp ! process counter
+integer :: jn ! variable number counter (larger than 1 only for scalar var.)
+
+if ( kpower == 0 ) return
+
+!normalization is not possible if some values are zero
+if ( any( ples_norm(: ) == 0. ) ) then
+  pa_norm(:, :, :, : ) = XUNDEF
+  return
+end if
+
+do jn = 1, size( pa_norm, 4 )
+  do jp = 1, size( pa_norm, 3 )
+    do jt = 1, nles_current_times
+      do jk = 1, nles_k
+        if ( pa_norm(jk, jt, jp, jn ) /= XUNDEF ) &
+          pa_norm(jk, jt, jp, jn ) = pa_norm(jk, jt, jp, jn ) * ples_norm(jt )**( -kpower )
+      end do
+    end do
+  end do
+end do
+
+end subroutine Make_norm
+
+!########################################################
+subroutine Make_norm_sv( pa_norm, ples_norm, kpower )
+!########################################################
+
+use modd_les,        only: nles_current_times, nles_k
+use modd_parameters, only: XUNDEF
+
+real, dimension(:,:,:,:), intent(inout) :: pa_norm   ! normalized field
+real, dimension(:,:),     intent(in)    :: ples_norm ! normalization coefficient
+integer,                  intent(in)    :: kpower    ! normalization power
+
+integer :: jk ! z counter
+integer :: jt ! time counter
+integer :: jp ! process counter
+integer :: jsv! scalar variables counter
+
+if ( kpower == 0 ) return
+
+!normalization is not possible if some values are zero
+do jsv = 1, size( ples_norm, 2 )
+  if ( any( ples_norm(:, jsv ) == 0. ) ) then
+    pa_norm(:, :, :, jsv) = xundef
+    cycle
+  end if
+
+  do jp = 1, size( pa_norm, 3 )
+    do jt = 1, nles_current_times
+      do jk = 1, nles_k
+        if ( pa_norm(jk, jt, jp, jsv) /= xundef ) &
+            pa_norm(jk, jt,jp, jsv ) = pa_norm(jk, jt, jp, jsv ) * ples_norm(jt, jsv )**( -kpower )
+      end do
+    end do
+  end do
+end do
+
+end subroutine Make_norm_sv
 !
 !     ###################################################
       SUBROUTINE LES_NORM_4D(HUNIT, PA_LES, PA_NORM, OSV)
@@ -258,69 +150,125 @@ LOGICAL, OPTIONAL,           INTENT(IN)  :: OSV     ! flag for scalar variables
 !
 !       0.2  declaration of local variables
 !
-INTEGER :: JC    ! character counter
-LOGICAL :: GDIV  ! flag to make a division
-INTEGER :: IKG   ! number of 'kg' in the field unit
-!
-CHARACTER(LEN=50) :: YUNIT
-!
+integer, parameter :: NMAXUNITS = 10
+
+integer, parameter :: NNORM_K  = 1
+integer, parameter :: NNORM_KG = 2
+integer, parameter :: NNORM_M  = 3
+integer, parameter :: NNORM_PA = 4
+integer, parameter :: NNORM_S  = 5
+integer, parameter :: NNORM_RV = 6
+integer, parameter :: NNORM_SV = 7
+integer, parameter :: NNORMS   = 7
+
+integer :: idx, ispace
+integer :: ikg   ! number of 'kg' in the field unit
+integer :: inunits
+integer :: ipower
+integer :: ipower_kg_1st
+integer :: ji
+integer, dimension ( NNORMS ) :: ipowers
+character( len = 8 ) :: yun, yname, ypower
+character( len = 8 ), dimension( NMAXUNITS ) :: yunits
+logical :: gsv
 !------------------------------------------------------------------------------
-YUNIT=HUNIT//'                                              '
-!
-PA_NORM = PA_LES
-!
-IKG=0
-!
-DO JC=1,50
-  IF (YUNIT(JC:JC)=='g') THEN
-    IKG=IKG+1
-  ELSE IF (YUNIT(JC:JC)==' ') THEN
-    EXIT
-  END IF
-END DO
-!
-GDIV=.FALSE.
-!
-DO JC=1,49
-  !
-  SELECT CASE (YUNIT(JC:JC))
-    CASE('m')
-      CALL MAKE_NORM(YUNIT, JC, GDIV, PA_NORM, XLES_NORM_M)
-    CASE('g')
-      IF (IKG==1) THEN
-        CALL MAKE_NORM(YUNIT, JC, GDIV, PA_NORM, XLES_NORM_RHO)
-      ELSE
-        IF (PRESENT(OSV)) THEN
-          IF (OSV) THEN
-            IF (.NOT. GDIV) &
-            CALL MAKE_NORM_SV(YUNIT, JC, GDIV, PA_NORM, XLES_NORM_SV)
-            GDIV=.FALSE.
-          ELSE
-            IF (.NOT. GDIV) &
-            CALL MAKE_NORM(YUNIT, JC, GDIV, PA_NORM, XLES_NORM_RV)
-            GDIV=.FALSE.
-          END IF
-        ELSE 
-          IF (.NOT. GDIV) &
-          CALL MAKE_NORM(YUNIT, JC, GDIV, PA_NORM, XLES_NORM_RV)
-          GDIV=.FALSE.
-        END IF
-      END IF
-    CASE('K')
-      CALL MAKE_NORM(YUNIT, JC, GDIV, PA_NORM, XLES_NORM_K)
-    CASE('s')
-      CALL MAKE_NORM(YUNIT, JC, GDIV, PA_NORM, XLES_NORM_S)
-    CASE('a')
-      CALL MAKE_NORM(YUNIT, JC, GDIV, PA_NORM, XLES_NORM_P)
-    CASE('/')
-      GDIV=.TRUE.
-    CASE(' ')
-      EXIT
-  END SELECT
-END DO
-!
-WHERE(PA_NORM==XUNDEF) PA_NORM = PA_LES
-!
+
+gsv = .false.
+if ( present( osv ) ) gsv = osv
+
+pa_norm(:, :, :, : ) = pa_les(:, :, :, : )
+
+!Parse units
+!Each unit is separated by blanks
+!First part: unit, second part: power (and sign of it)
+ipowers(: ) = 0
+inunits = 0
+ikg = 0
+idx = 1
+
+!Separate units
+do
+  ispace = scan( hunit(idx: ), ' ' )
+  if ( ispace == 0 ) then
+    inunits = inunits + 1
+    if (inunits > NMAXUNITS ) call Print_msg( NVERB_FATAL, 'GEN', 'LES_NORM_4D', 'inunits > NMAXUNITS' )
+    yunits(inunits ) = hunit(idx:)
+    exit
+  else if ( ispace == len(hunit(idx: )) ) then
+    exit
+  else
+    inunits = inunits + 1
+    if (inunits > NMAXUNITS ) call Print_msg( NVERB_FATAL, 'GEN', 'LES_NORM_4D', 'inunits > NMAXUNITS' )
+    yunits(inunits ) =  hunit( idx : idx+ispace-1 )
+    idx = idx + ispace
+  end if
+end do
+
+!Treat units and their power
+!kg are special: they can appear twice with opposite power signs (kg kg-1)
+!In that case, they are normalized with xles_norm_rv or xles_norm_sv
+do ji = 1, inunits
+  yun = yunits(ji )
+
+  !Non dimensional unit
+  if ( trim( yun ) == '-' .or. trim( yun ) == '1' .or. trim( yun ) == 'percent') then
+    cycle
+  end if
+
+  !Separate unit and its power
+  idx = scan( yun, '-1234567890' )
+  if ( idx == 0 ) then
+    yname = trim( yun )
+    ypower = ''
+    ipower = 1
+  else
+    yname  = yun( 1 : idx - 1 )
+    ypower = yun( idx : )
+    read (ypower,'(I8)') ipower
+  end if
+
+  select case( trim( yname ) )
+    case ( 'K' )
+      ipowers(NNORM_K  ) = ipowers(NNORM_K  ) + ipower
+    case ( 'kg' )
+      ikg = ikg + 1
+      if ( ikg == 1 ) ipower_kg_1st = ipower
+      ipowers(NNORM_KG ) = ipowers(NNORM_KG ) + ipower
+    case ( 'm' )
+      ipowers(NNORM_M  ) = ipowers(NNORM_M  ) + ipower
+    case ( 'Pa' )
+      ipowers(NNORM_PA ) = ipowers(NNORM_PA ) + ipower
+    case ( 's' )
+      ipowers(NNORM_S  ) = ipowers(NNORM_S  ) + ipower
+    case default
+      call Print_msg( NVERB_WARNING, 'IO', 'LES_NORM_4D', 'unknown unit: '//trim(yname)//'. Conversion could be wrong.' )
+  end select
+end do
+
+if ( ikg > 1 .and. ipowers(NNORM_KG ) /= 0 ) &
+  call Print_msg( NVERB_ERROR, 'IO', 'LES_NORM_4D', 'if kg appears more than one time, it should be admimensional' )
+
+if ( ikg > 2 ) &
+  call Print_msg( NVERB_ERROR, 'IO', 'LES_NORM_4D', 'kg should not appear more than 2 times' )
+
+if ( ikg == 2 ) then
+  if ( gsv ) then
+    ipowers(NNORM_SV ) = ipower_kg_1st
+  else
+    ipowers(NNORM_RV ) = ipower_kg_1st
+  end if
+end if
+
+if (ipowers(NNORM_K  ) /= 0 ) call Make_norm   ( pa_norm, xles_norm_k,   ipowers(NNORM_K  ) )
+if (ipowers(NNORM_KG ) /= 0 ) call Make_norm   ( pa_norm, xles_norm_rho, ipowers(NNORM_KG ) )
+if (ipowers(NNORM_M  ) /= 0 ) call Make_norm   ( pa_norm, xles_norm_m,   ipowers(NNORM_M  ) )
+if (ipowers(NNORM_PA ) /= 0 ) call Make_norm   ( pa_norm, xles_norm_p,   ipowers(NNORM_PA ) )
+if (ipowers(NNORM_S  ) /= 0 ) call Make_norm   ( pa_norm, xles_norm_s,   ipowers(NNORM_S  ) )
+if (ipowers(NNORM_RV ) /= 0 ) call Make_norm   ( pa_norm, xles_norm_rv,  ipowers(NNORM_RV ) )
+if (ipowers(NNORM_SV ) /= 0 ) call Make_norm_sv( pa_norm, xles_norm_sv,  ipowers(NNORM_SV ) )
+
+where( pa_norm == XUNDEF ) pa_norm = pa_les
+
 END SUBROUTINE LES_NORM_4D
 !
 !------------------------------------------------------------------------------
@@ -477,8 +425,9 @@ SUBROUTINE LES_Z_NORM(OAVG,PTRAJZ,PWORK6)
 !* this subroutine interpolates the normalized field PWORK6 to the
 !  vertical normalized coordinate.
 !
-USE MODD_PARAMETERS, ONLY : XUNDEF, JPVEXT
 USE MODD_LES
+USE MODD_PARAMETERS, ONLY: XUNDEF, JPVEXT
+use modd_time,       only: tdtseg
 !
 USE MODI_COEF_VER_INTERP_LIN
 USE MODI_VER_INTERP_LIN
@@ -515,8 +464,10 @@ REAL    :: ZMAX_NORM_M
 !* normalization height (usually maximum BL height)
 !
 IF (OAVG) THEN
-  ITEMP_MEAN_START = COUNT( XLES_CURRENT_TRAJT(:,1)<=XLES_TEMP_MEAN_START ) + 1
-  ITEMP_MEAN_END   = COUNT( XLES_CURRENT_TRAJT(:,1)<=XLES_TEMP_MEAN_END   )
+
+  ITEMP_MEAN_START = COUNT( xles_times(:)<=XLES_TEMP_MEAN_START ) + 1
+  ITEMP_MEAN_END   = COUNT( xles_times(:)<=XLES_TEMP_MEAN_END   )
+
   IF (ITEMP_MEAN_START > ITEMP_MEAN_END) THEN
     ITEMP_MEAN_START = 1
     ITEMP_MEAN_END   = NLES_CURRENT_TIMES
@@ -596,7 +547,7 @@ END SUBROUTINE LES_Z_NORM
 !------------------------------------------------------------------------------
 !
 !########################################################
-SUBROUTINE LES_TIME_AVG(PTRAJT,PWORK6,KRESP,PDATIME_AVG)
+SUBROUTINE LES_TIME_AVG(PWORK6,tpdates,KRESP)
 !########################################################
 !
 ! this routine computes time averaging
@@ -604,16 +555,16 @@ SUBROUTINE LES_TIME_AVG(PTRAJT,PWORK6,KRESP,PDATIME_AVG)
 ! Modifications:
 !  03/2018     (P.Wautelet)   replace ADD_FORECAST_TO_DATE by DATETIME_CORRECTDATE
 !
+use modd_time,      only: tdtseg
 USE MODD_LES
-USE MODD_TYPE_DATE
+USE MODD_TYPE_DATE, only: date_time
 !
-USE MODE_DATETIME
+use mode_datetime,  only: Datetime_correctdate
 !
 IMPLICIT NONE
 !
-REAL, DIMENSION(:,:),         POINTER     :: PTRAJT ! time
-REAL, DIMENSION(:,:),         POINTER     :: PDATIME_AVG ! date
 REAL, DIMENSION(:,:,:,:,:,:), POINTER     :: PWORK6 ! contains physical field
+type(date_time), dimension(:), allocatable, intent(inout) :: tpdates
 INTEGER,                      INTENT(OUT) :: KRESP  ! return code (0 is OK)
 !------------------------------------------------------------------------------
 INTEGER                                :: JT       ! time counter
@@ -628,8 +579,6 @@ INTEGER :: JP                            ! process loop counter
 INTEGER :: JSV                           ! scalar loop counter
 INTEGER :: JX                            ! first  spatial or spectral coordinate loop counter
 INTEGER :: JY                            ! second spatial or spectral coordinate loop counter
-REAL, DIMENSION(16)  :: ZDATIME_SAVE ! date
-TYPE(DATE_TIME) :: TZDATE
 !------------------------------------------------------------------------------
 !
 IF (     XLES_TEMP_MEAN_END==XUNDEF   &
@@ -645,28 +594,12 @@ IF (IAVG<=0) THEN
   RETURN
 END IF
 !
-ZDATIME_SAVE(:)=PDATIME_AVG(:,1)
-DEALLOCATE(PTRAJT)
-DEALLOCATE(PDATIME_AVG)
+deallocate( tpdates )
 !
-ALLOCATE (PTRAJT(IAVG,1))
-ALLOCATE (PDATIME_AVG(16,IAVG))
+allocate( tpdates( iavg ) )
 ALLOCATE (ZWORK6(SIZE(PWORK6,1),SIZE(PWORK6,2),NLES_K,IAVG,SIZE(PWORK6,5),SIZE(PWORK6,6)))
 !
 ZWORK6(:,:,:,:,:,:) = 0.
-!
-PDATIME_AVG(1,:)=ZDATIME_SAVE(1)
-PDATIME_AVG(2,:)=ZDATIME_SAVE(2)
-PDATIME_AVG(3,:)=ZDATIME_SAVE(3)
-PDATIME_AVG(4,:)=ZDATIME_SAVE(4)
-PDATIME_AVG(5,:)=ZDATIME_SAVE(5)
-PDATIME_AVG(6,:)=ZDATIME_SAVE(6)
-PDATIME_AVG(7,:)=ZDATIME_SAVE(7)
-PDATIME_AVG(8,:)=ZDATIME_SAVE(8)
-PDATIME_AVG(9,:)=ZDATIME_SAVE(9)
-PDATIME_AVG(10,:)=ZDATIME_SAVE(10)
-PDATIME_AVG(11,:)=ZDATIME_SAVE(11)
-PDATIME_AVG(12,:)=ZDATIME_SAVE(12)
 !
 DO JAVG=1,IAVG
   ZLES_TEMP_MEAN_START=XLES_TEMP_MEAN_START + (JAVG-1) * XLES_TEMP_MEAN_STEP
@@ -679,8 +612,8 @@ DO JAVG=1,IAVG
           DO JX=1,SIZE(PWORK6,1)
             ITIME=0
             DO JT=1,NLES_CURRENT_TIMES
-              IF ( XLES_CURRENT_TRAJT(JT,1) >= ZLES_TEMP_MEAN_START .AND. &
-                 XLES_CURRENT_TRAJT(JT,1) <= ZLES_TEMP_MEAN_END) THEN
+              IF ( xles_times(JT) >= ZLES_TEMP_MEAN_START .AND. &
+                   xles_times(JT) <= ZLES_TEMP_MEAN_END         ) THEN
                 IF (PWORK6(JX,JY,JK,JT,JSV,JP) /= XUNDEF) THEN
                  ZWORK6(JX,JY,JK,JAVG,JSV,JP) =  ZWORK6(JX,JY,JK,JAVG,JSV,JP) &
                                               + PWORK6(JX,JY,JK,JT,JSV,JP)
@@ -693,23 +626,19 @@ DO JAVG=1,IAVG
                             ZWORK6(JX,JY,JK,JAVG,JSV,JP) / ITIME
             END IF
             IF (ITIME == 0) THEN
-                   ZWORK6(JX,JY,JK,JAVG,JSV,JP)= XUNDEF 
+                   ZWORK6(JX,JY,JK,JAVG,JSV,JP)= XUNDEF
             END IF
           END DO
         END DO
       END DO
     END DO
   END DO
-  PTRAJT(JAVG,1)=(ZLES_TEMP_MEAN_START+ZLES_TEMP_MEAN_END)/2.
-  TZDATE%TDATE%YEAR  = PDATIME_AVG(5,JAVG)
-  TZDATE%TDATE%MONTH = PDATIME_AVG(6,JAVG)
-  TZDATE%TDATE%DAY   = PDATIME_AVG(7,JAVG)
-  TZDATE%TIME        = PDATIME_AVG(8,JAVG)+PTRAJT(JAVG,1)
-  CALL DATETIME_CORRECTDATE(TZDATE)
-  PDATIME_AVG(13,JAVG) = TZDATE%TDATE%YEAR
-  PDATIME_AVG(14,JAVG) = TZDATE%TDATE%MONTH
-  PDATIME_AVG(15,JAVG) = TZDATE%TDATE%DAY
-  PDATIME_AVG(16,JAVG) = TZDATE%TIME
+
+  tpdates(javg )%tdate%year  = tdtseg%tdate%year
+  tpdates(javg )%tdate%month = tdtseg%tdate%month
+  tpdates(javg )%tdate%day   = tdtseg%tdate%day
+  tpdates(javg )%time        = tdtseg%time + ( zles_temp_mean_start + zles_temp_mean_end ) / 2.
+  call Datetime_correctdate( tpdates(javg ) )
 END DO
 !
 DEALLOCATE(PWORK6)
@@ -726,9 +655,11 @@ END SUBROUTINE LES_TIME_AVG
 SUBROUTINE LES_DIACHRO(TPDIAFILE,HGROUP,HCOMMENT,HUNIT,PFIELD,HAVG)
 !########################################################
 !
-USE MODD_IO, ONLY: TFILEDATA
-USE MODD_LES
 USE MODD_GRID
+USE MODD_IO,            ONLY: TFILEDATA
+USE MODD_LES
+use modd_type_date,     only: date_time
+
 USE MODE_WRITE_DIACHRO, only: WRITE_DIACHRO
 !
 IMPLICIT NONE
@@ -748,8 +679,6 @@ CHARACTER(LEN=1),     INTENT(IN)       :: HAVG     ! flag to compute avg.
 REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJX ! localization of the temporal
 REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJY ! series in x,y and z. remark:
 REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJZ ! x and y are not used for LES
-REAL,    DIMENSION(:,:),   POINTER     :: ZTRAJT ! time
-REAL,    DIMENSION(:,:),   POINTER     :: ZDATIME ! date
 !
 INTEGER, DIMENSION(1)                  :: IGRID    ! grid indicator
 CHARACTER(LEN= 10)                     :: YGROUP   ! group title
@@ -769,6 +698,7 @@ INTEGER :: JK                            ! vertical loop counter
 !
 LOGICAL :: GAVG                          ! flag to compute time averagings
 LOGICAL :: GNORM                         ! flag to compute normalizations
+type(date_time), dimension(:), allocatable :: tzdates
 !
 !-------------------------------------------------------------------------------
 !
@@ -788,8 +718,7 @@ ALLOCATE (ZTRAJY(1,1,1))
 ALLOCATE (ZTRAJZ(NLES_K,1,1))
 !
 ALLOCATE(ZWORK6(1,1,NLES_K,NLES_CURRENT_TIMES,1,1))
-ALLOCATE(ZTRAJT(NLES_CURRENT_TIMES,1))
-ALLOCATE(ZDATIME(16,NLES_CURRENT_TIMES))
+allocate( tzdates( NLES_CURRENT_TIMES ) )
 !
 IIL = NLES_CURRENT_IINF
 IIH = NLES_CURRENT_ISUP
@@ -809,8 +738,7 @@ YUNIT (1) = HUNIT
 YGROUP    = HGROUP
 !
 ZWORK6(1,1,:,:,1,1) = ZFIELD (:,:)
-ZTRAJT(:,:) = XLES_CURRENT_TRAJT(:,:)
-ZDATIME(:,:)=XLES_CURRENT_DATIME(:,:)
+tzdates(:) = xles_dates(:)
 !
 !* normalization of vertical dimension
 !
@@ -822,7 +750,7 @@ END IF
 !* time average
 !
 IRESP = 0
-IF (GAVG) CALL LES_TIME_AVG(ZTRAJT,ZWORK6,IRESP,ZDATIME)
+IF (GAVG) CALL LES_TIME_AVG( ZWORK6, tzdates, IRESP )
 !
 IF (HAVG/=' ')  YGROUP=HAVG//'_'//YGROUP
 YTITLE(1) = YGROUP
@@ -831,10 +759,11 @@ YTITLE(1) = YGROUP
 !            ----------------------
 !
 IF (IRESP==0 .AND. ANY(ZWORK6/=XUNDEF)) &
-CALL WRITE_DIACHRO(TPDIAFILE,TLUOUT0,YGROUP,"SSOL",IGRID,ZDATIME, ZWORK6,     &
-                   ZTRAJT,YTITLE,YUNIT,YCOMMENT,.FALSE.,.FALSE.,.FALSE.,   &
-                   IIL,IIH,IJL,IJH,IKL,IKH,                                    &
-                   PTRAJX=ZTRAJX,PTRAJY=ZTRAJY,PTRAJZ=ZTRAJZ                   )
+CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "SSOL", IGRID, tzdates,               &
+                    ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
+                    OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
+                    KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH, &
+                    PTRAJX = ZTRAJX, PTRAJY = ZTRAJY, PTRAJZ = ZTRAJZ                 )
 !
 !
 !*      3.0  Deallocations
@@ -843,9 +772,8 @@ CALL WRITE_DIACHRO(TPDIAFILE,TLUOUT0,YGROUP,"SSOL",IGRID,ZDATIME, ZWORK6,     &
 DEALLOCATE (ZTRAJX)
 DEALLOCATE (ZTRAJY)
 DEALLOCATE (ZTRAJZ)
-DEALLOCATE (ZTRAJT)
 DEALLOCATE (ZWORK6)
-DEALLOCATE (ZDATIME)
+deallocate( tzdates )
 !
 !-------------------------------------------------------------------------------
 END SUBROUTINE LES_DIACHRO
@@ -854,10 +782,12 @@ END SUBROUTINE LES_DIACHRO
 SUBROUTINE LES_DIACHRO_SV(TPDIAFILE,HGROUP,HCOMMENT,HUNIT,PFIELD,HAVG)
 !###########################################################
 !
-USE MODD_IO, ONLY: TFILEDATA
-USE MODD_LES
 USE MODD_GRID
-USE MODI_WRITE_DIACHRO
+USE MODD_IO,            ONLY: TFILEDATA
+USE MODD_LES
+use modd_type_date,     only: date_time
+
+USE MODE_WRITE_DIACHRO
 !
 IMPLICIT NONE
 !
@@ -876,8 +806,6 @@ CHARACTER(LEN=1),       INTENT(IN)       :: HAVG     ! flag to compute avg.
 REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJX ! localization of the temporal
 REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJY ! series in x,y and z. remark:
 REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJZ ! x and y are not used for LES
-REAL,    DIMENSION(:,:),   POINTER     :: ZTRAJT ! time
-REAL,    DIMENSION(:,:),   POINTER     :: ZDATIME ! date
 !
 INTEGER, DIMENSION(1)                  :: IGRID    ! grid indicator
 CHARACTER(LEN= 10)                     :: YGROUP   ! group title
@@ -897,6 +825,7 @@ INTEGER :: JSV                           ! scalar loop counter
 !
 LOGICAL :: GAVG                          ! flag to compute time averagings
 LOGICAL :: GNORM                         ! flag to compute normalizations
+type(date_time), dimension(:), allocatable :: tzdates
 !
 !-------------------------------------------------------------------------------
 !
@@ -915,8 +844,7 @@ ALLOCATE (ZTRAJX(1,1,SIZE(PFIELD,3)))
 ALLOCATE (ZTRAJY(1,1,SIZE(PFIELD,3)))
 ALLOCATE (ZTRAJZ(NLES_K,1,SIZE(PFIELD,3)))
 ALLOCATE(ZWORK6(1,1,NLES_K,NLES_CURRENT_TIMES,SIZE(PFIELD,3),1))
-ALLOCATE(ZTRAJT(NLES_CURRENT_TIMES,1))
-ALLOCATE(ZDATIME(16,NLES_CURRENT_TIMES))
+allocate( tzdates( NLES_CURRENT_TIMES ) )
 !
 IIL = NLES_CURRENT_IINF
 IIH = NLES_CURRENT_ISUP
@@ -936,8 +864,7 @@ YUNIT (1) = HUNIT
 YGROUP    = HGROUP
 !
 ZWORK6(1,1,:,:,:,1) = ZFIELD (:,:,:)
-ZTRAJT(:,:) = XLES_CURRENT_TRAJT(:,:)
-ZDATIME(:,:)=XLES_CURRENT_DATIME(:,:)
+tzdates(:) = xles_dates(:)
 !
 IF (GNORM) THEN
   IF (HUNIT(1:1)/=' ') YUNIT='-'
@@ -947,7 +874,7 @@ END IF
 !* time average
 !
 IRESP = 0
-IF (GAVG) CALL LES_TIME_AVG(ZTRAJT,ZWORK6,IRESP,ZDATIME)
+IF (GAVG) CALL LES_TIME_AVG( ZWORK6, tzdates, IRESP )
 !
 IF (HAVG/=' ')  YGROUP=HAVG//'_'//YGROUP
 YTITLE(1) = YGROUP
@@ -957,10 +884,11 @@ YTITLE(1) = YGROUP
 !
 !
 IF (IRESP==0 .AND. ANY(ZWORK6/=XUNDEF)) &
-CALL WRITE_DIACHRO(TPDIAFILE,TLUOUT0,YGROUP,"SSOL",IGRID,ZDATIME, ZWORK6,     &
-                   ZTRAJT,YTITLE,YUNIT,YCOMMENT,.FALSE.,.FALSE.,.FALSE.,   &
-                   IIL,IIH,IJL,IJH,IKL,IKH,                                    &
-                   PTRAJX=ZTRAJX,PTRAJY=ZTRAJY,PTRAJZ=ZTRAJZ                   )
+CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "SSOL", IGRID, tzdates,               &
+                    ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
+                    OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
+                    KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH, &
+                    PTRAJX = ZTRAJX, PTRAJY = ZTRAJY, PTRAJZ = ZTRAJZ                 )
 !
 !
 !*      3.0  Deallocations
@@ -969,9 +897,8 @@ CALL WRITE_DIACHRO(TPDIAFILE,TLUOUT0,YGROUP,"SSOL",IGRID,ZDATIME, ZWORK6,     &
 DEALLOCATE (ZTRAJX)
 DEALLOCATE (ZTRAJY)
 DEALLOCATE (ZTRAJZ)
-DEALLOCATE (ZTRAJT)
 DEALLOCATE(ZWORK6)
-DEALLOCATE(ZDATIME)
+deallocate( tzdates )
 !
 !-------------------------------------------------------------------------------
 END SUBROUTINE LES_DIACHRO_SV
@@ -980,10 +907,12 @@ END SUBROUTINE LES_DIACHRO_SV
 SUBROUTINE LES_DIACHRO_MASKS(TPDIAFILE,HGROUP,HTITLE,HCOMMENT,HUNIT,PFIELD,HAVG)
 !#####################################################################
 !
+USE MODD_GRID
 USE MODD_IO, ONLY: TFILEDATA
 USE MODD_LES
-USE MODD_GRID
-USE MODI_WRITE_DIACHRO
+use modd_type_date,     only: date_time
+
+USE MODE_WRITE_DIACHRO
 !
 IMPLICIT NONE
 !
@@ -1003,8 +932,6 @@ CHARACTER(LEN=1),                   INTENT(IN) :: HAVG     ! flag to compute avg
 REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJX ! localization of the temporal
 REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJY ! series in x,y and z. remark:
 REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJZ ! x and y are not used for LES
-REAL,    DIMENSION(:,:),   POINTER     :: ZTRAJT ! time
-REAL,    DIMENSION(:,:),   POINTER     :: ZDATIME ! date
 !
 INTEGER,            DIMENSION(SIZE(PFIELD,3)) :: IGRID    ! grid indicator
 CHARACTER(LEN= 10)                            :: YGROUP   ! group title
@@ -1024,6 +951,7 @@ INTEGER :: JMASK                         ! Mask loop counter
 !
 LOGICAL :: GAVG                          ! flag to compute time averagings
 LOGICAL :: GNORM                         ! flag to compute normalizations
+type(date_time), dimension(:), allocatable :: tzdates
 !
 !-------------------------------------------------------------------------------
 !
@@ -1042,9 +970,7 @@ ALLOCATE (ZTRAJX(1,1,1))
 ALLOCATE (ZTRAJY(1,1,1))
 ALLOCATE (ZTRAJZ(NLES_K,1,1))
 ALLOCATE(ZWORK6(1,1,NLES_K,NLES_CURRENT_TIMES,1,SIZE(PFIELD,3)))
-ALLOCATE(ZTRAJT(NLES_CURRENT_TIMES,1))
-ALLOCATE(ZDATIME(16,NLES_CURRENT_TIMES))
-
+allocate( tzdates( NLES_CURRENT_TIMES ) )
 !
 IIL = NLES_CURRENT_IINF
 IIH = NLES_CURRENT_ISUP
@@ -1065,9 +991,7 @@ YUNIT   (:) = HUNIT
 YGROUP      = HGROUP
 !
 ZWORK6(1,1,:,:,1,:) = ZFIELD (:,:,:)
-ZTRAJT(:,:) = XLES_CURRENT_TRAJT(:,:)
-ZDATIME(:,:)= XLES_CURRENT_DATIME(:,:)
-
+tzdates(:) = xles_dates(:)
 !
 IF (GNORM) THEN
   IF (HUNIT(1:1)/=' ') YUNIT='-'
@@ -1078,7 +1002,7 @@ END IF
 !* time average
 !
 IRESP = 0
-IF (GAVG) CALL LES_TIME_AVG(ZTRAJT,ZWORK6,IRESP,ZDATIME)
+IF (GAVG) CALL LES_TIME_AVG( ZWORK6, tzdates, IRESP )
 !
 IF (HAVG/=' ')  YGROUP=HAVG//'_'//YGROUP
 YTITLE  (:) = YGROUP//HTITLE(:)
@@ -1088,10 +1012,11 @@ YTITLE  (:) = YGROUP//HTITLE(:)
 !            ----------------------
 !
 IF (IRESP==0 .AND. ANY(ZWORK6/=XUNDEF)) &
-CALL WRITE_DIACHRO(TPDIAFILE,TLUOUT0,YGROUP,"SSOL",IGRID,ZDATIME, ZWORK6,     &
-                   ZTRAJT,YTITLE,YUNIT,YCOMMENT,.FALSE.,.FALSE.,.FALSE.,   &
-                   IIL,IIH,IJL,IJH,IKL,IKH,                                    &
-                   PTRAJX=ZTRAJX,PTRAJY=ZTRAJY,PTRAJZ=ZTRAJZ                   )
+CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "SSOL", IGRID, tzdates,               &
+                    ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
+                    OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
+                    KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH, &
+                    PTRAJX = ZTRAJX, PTRAJY = ZTRAJY, PTRAJZ = ZTRAJZ                 )
 !
 !
 !*      3.0  Deallocations
@@ -1100,9 +1025,8 @@ CALL WRITE_DIACHRO(TPDIAFILE,TLUOUT0,YGROUP,"SSOL",IGRID,ZDATIME, ZWORK6,     &
 DEALLOCATE (ZTRAJX)
 DEALLOCATE (ZTRAJY)
 DEALLOCATE (ZTRAJZ)
-DEALLOCATE (ZTRAJT)
 DEALLOCATE(ZWORK6)
-DEALLOCATE(ZDATIME)
+deallocate( tzdates )
 !
 !-------------------------------------------------------------------------------
 END SUBROUTINE LES_DIACHRO_MASKS
@@ -1111,10 +1035,12 @@ END SUBROUTINE LES_DIACHRO_MASKS
 SUBROUTINE LES_DIACHRO_SV_MASKS(TPDIAFILE,HGROUP,HTITLE,HCOMMENT,HUNIT,PFIELD,HAVG)
 !########################################################################
 !
-USE MODD_IO, ONLY: TFILEDATA
-USE MODD_LES
 USE MODD_GRID
-USE MODI_WRITE_DIACHRO
+USE MODD_IO,            ONLY: TFILEDATA
+USE MODD_LES
+use modd_type_date,     only: date_time
+
+USE MODE_WRITE_DIACHRO
 !
 IMPLICIT NONE
 !
@@ -1134,8 +1060,6 @@ CHARACTER(LEN=1),                     INTENT(IN) :: HAVG     ! flag to compute a
 REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJX ! localization of the temporal
 REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJY ! series in x,y and z. remark:
 REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJZ ! x and y are not used for LES
-REAL,    DIMENSION(:,:),   POINTER     :: ZTRAJT ! time
-REAL,    DIMENSION(:,:),   POINTER     :: ZDATIME! date
 !
 INTEGER,            DIMENSION(SIZE(PFIELD,3)) :: IGRID    ! grid indicator
 CHARACTER(LEN= 10)                            :: YGROUP   ! group title
@@ -1157,6 +1081,7 @@ INTEGER :: JMASK                         ! mask loop counter
 !
 LOGICAL :: GAVG                          ! flag to compute time averagings
 LOGICAL :: GNORM                         ! flag to compute normalizations
+type(date_time), dimension(:), allocatable :: tzdates
 !
 !-------------------------------------------------------------------------------
 !
@@ -1175,8 +1100,7 @@ ALLOCATE (ZTRAJX(1,1,SIZE(PFIELD,4)))
 ALLOCATE (ZTRAJY(1,1,SIZE(PFIELD,4)))
 ALLOCATE (ZTRAJZ(NLES_K,1,SIZE(PFIELD,4)))
 ALLOCATE(ZWORK6(1,1,NLES_K,NLES_CURRENT_TIMES,SIZE(PFIELD,4),SIZE(PFIELD,3)))
-ALLOCATE(ZTRAJT(NLES_CURRENT_TIMES,1))
-ALLOCATE(ZDATIME(16,NLES_CURRENT_TIMES))
+allocate( tzdates( NLES_CURRENT_TIMES ) )
 !
 IIL = NLES_CURRENT_IINF
 IIH = NLES_CURRENT_ISUP
@@ -1201,8 +1125,7 @@ DO JSV=1,SIZE(PFIELD,4)
     ZWORK6(1,1,:,:,JSV,JP) = ZFIELD (:,:,JP,JSV)
   END DO
 END DO
-ZTRAJT(:,:) = XLES_CURRENT_TRAJT(:,:)
-ZDATIME(:,:)= XLES_CURRENT_DATIME(:,:)
+tzdates(:) = xles_dates(:)
 !
 IF (GNORM) THEN
   IF (HUNIT(1:1)/=' ') YUNIT='-'
@@ -1213,7 +1136,7 @@ END IF
 !* time average
 !
 IRESP = 0
-IF (GAVG) CALL LES_TIME_AVG(ZTRAJT,ZWORK6,IRESP,ZDATIME)
+IF (GAVG) CALL LES_TIME_AVG( ZWORK6, tzdates, IRESP )
 !
 IF (HAVG/=' ')  YGROUP=HAVG//'_'//YGROUP
 YTITLE  (:) = YGROUP//HTITLE(:)
@@ -1223,10 +1146,11 @@ YTITLE  (:) = YGROUP//HTITLE(:)
 !
 !
 IF (IRESP==0 .AND. ANY(ZWORK6/=XUNDEF)) &
-CALL WRITE_DIACHRO(TPDIAFILE,TLUOUT0,YGROUP,"SSOL",IGRID,ZDATIME, ZWORK6,     &
-                   ZTRAJT,YTITLE,YUNIT,YCOMMENT,.FALSE.,.FALSE.,.FALSE.,   &
-                   IIL,IIH,IJL,IJH,IKL,IKH,                                    &
-                   PTRAJX=ZTRAJX,PTRAJY=ZTRAJY,PTRAJZ=ZTRAJZ                   )
+CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "SSOL", IGRID, tzdates,               &
+                    ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
+                    OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
+                    KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH, &
+                    PTRAJX = ZTRAJX, PTRAJY = ZTRAJY, PTRAJZ = ZTRAJZ                 )
 !
 !
 !*      3.0  Deallocations
@@ -1235,9 +1159,8 @@ CALL WRITE_DIACHRO(TPDIAFILE,TLUOUT0,YGROUP,"SSOL",IGRID,ZDATIME, ZWORK6,     &
 DEALLOCATE (ZTRAJX)
 DEALLOCATE (ZTRAJY)
 DEALLOCATE (ZTRAJZ)
-DEALLOCATE (ZTRAJT)
 DEALLOCATE(ZWORK6)
-DEALLOCATE(ZDATIME)
+deallocate( tzdates )
 !
 !-------------------------------------------------------------------------------
 END SUBROUTINE LES_DIACHRO_SV_MASKS
@@ -1247,10 +1170,12 @@ END SUBROUTINE LES_DIACHRO_SV_MASKS
 SUBROUTINE LES_DIACHRO_SURF(TPDIAFILE,HGROUP,HCOMMENT,HUNIT,PFIELD,HAVG)
 !#############################################################
 !
-USE MODD_IO, ONLY: TFILEDATA
-USE MODD_LES
 USE MODD_GRID
-USE MODI_WRITE_DIACHRO
+USE MODD_IO,            ONLY: TFILEDATA
+USE MODD_LES
+use modd_type_date,     only: date_time
+
+USE MODE_WRITE_DIACHRO
 !
 IMPLICIT NONE
 !
@@ -1270,8 +1195,6 @@ CHARACTER(LEN=1),     INTENT(IN)       :: HAVG     ! flag to compute avg.
 REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJX ! localization of the temporal
 REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJY ! series in x,y and z. remark:
 REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJZ ! x and y are not used for LES
-REAL,    DIMENSION(:,:),   POINTER     :: ZTRAJT ! time
-REAL,    DIMENSION(:,:),   POINTER     :: ZDATIME ! DATE
 !
 INTEGER, DIMENSION(1)                  :: IGRID    ! grid indicator
 CHARACTER(LEN= 10)                     :: YGROUP   ! group title
@@ -1287,6 +1210,7 @@ INTEGER :: IIL, IIH, IJL, IJH, IKL, IKH  ! cartesian area relatively to the
 !
 LOGICAL :: GAVG                          ! flag to compute time averagings
 LOGICAL :: GNORM                         ! flag to compute normalizations
+type(date_time), dimension(:), allocatable :: tzdates
 !-------------------------------------------------------------------------------
 !
 GAVG =(HAVG=='A' .OR. HAVG=='H')
@@ -1304,8 +1228,7 @@ ALLOCATE (ZTRAJX(1,1,1))
 ALLOCATE (ZTRAJY(1,1,1))
 ALLOCATE (ZTRAJZ(1,1,1))
 ALLOCATE(ZWORK6(1,1,1,NLES_CURRENT_TIMES,1,1))
-ALLOCATE(ZTRAJT(NLES_CURRENT_TIMES,1))
-ALLOCATE(ZDATIME(16,NLES_CURRENT_TIMES))
+allocate( tzdates( NLES_CURRENT_TIMES ) )
 !
 IIL = NLES_CURRENT_IINF
 IIH = NLES_CURRENT_ISUP
@@ -1323,13 +1246,12 @@ YUNIT (1) = HUNIT
 YGROUP    = HGROUP
 !
 ZWORK6(1,1,1,:,1,1) = PFIELD (:)
-ZTRAJT(:,:) = XLES_CURRENT_TRAJT(:,:)
-ZDATIME(:,:)=XLES_CURRENT_DATIME(:,:)
+tzdates(:) = xles_dates(:)
 !
 !* time average
 !
 IRESP = 0
-IF (GAVG) CALL LES_TIME_AVG(ZTRAJT,ZWORK6,IRESP,ZDATIME)
+IF (GAVG) CALL LES_TIME_AVG( ZWORK6, tzdates, IRESP )
 !
 IF (HAVG/=' ')  YGROUP=HAVG//'_'//YGROUP
 YTITLE(1) = HGROUP
@@ -1338,10 +1260,11 @@ YTITLE(1) = HGROUP
 !            ----------------------
 !
 IF (IRESP==0) &
-CALL WRITE_DIACHRO(TPDIAFILE,TLUOUT0,YGROUP,"SSOL",IGRID,ZDATIME, ZWORK6,     &
-                   ZTRAJT,YTITLE,YUNIT,YCOMMENT,.FALSE.,.FALSE.,.FALSE.,   &
-                   IIL,IIH,IJL,IJH,IKL,IKH,                                    &
-                   PTRAJX=ZTRAJX,PTRAJY=ZTRAJY,PTRAJZ=ZTRAJZ                   )
+CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "SSOL", IGRID, tzdates,               &
+                    ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
+                    OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
+                    KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH, &
+                    PTRAJX = ZTRAJX, PTRAJY = ZTRAJY, PTRAJZ = ZTRAJZ                 )
 !
 !
 !*      3.0  Deallocations
@@ -1350,9 +1273,8 @@ CALL WRITE_DIACHRO(TPDIAFILE,TLUOUT0,YGROUP,"SSOL",IGRID,ZDATIME, ZWORK6,     &
 DEALLOCATE (ZTRAJX)
 DEALLOCATE (ZTRAJY)
 DEALLOCATE (ZTRAJZ)
-DEALLOCATE (ZTRAJT)
 DEALLOCATE(ZWORK6)
-DEALLOCATE(ZDATIME)
+deallocate( tzdates )
 !
 !-------------------------------------------------------------------------------
 END SUBROUTINE LES_DIACHRO_SURF
@@ -1361,10 +1283,12 @@ END SUBROUTINE LES_DIACHRO_SURF
 SUBROUTINE LES_DIACHRO_SURF_SV(TPDIAFILE,HGROUP,HCOMMENT,HUNIT,PFIELD,HAVG)
 !################################################################
 !
-USE MODD_IO, ONLY: TFILEDATA
-USE MODD_LES
 USE MODD_GRID
-USE MODI_WRITE_DIACHRO
+USE MODD_IO,            ONLY: TFILEDATA
+USE MODD_LES
+use modd_type_date,     only: date_time
+
+USE MODE_WRITE_DIACHRO
 !
 IMPLICIT NONE
 !
@@ -1383,8 +1307,6 @@ CHARACTER(LEN=1),       INTENT(IN)       :: HAVG     ! flag to compute avg.
 REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJX ! localization of the temporal
 REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJY ! series in x,y and z. remark:
 REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJZ ! x and y are not used for LES
-REAL,    DIMENSION(:,:),   POINTER     :: ZTRAJT ! time
-REAL,    DIMENSION(:,:),   POINTER     :: ZDATIME ! date
 INTEGER, DIMENSION(1)                  :: IGRID    ! grid indicator
 CHARACTER(LEN= 10)                     :: YGROUP   ! group title
 CHARACTER(LEN=100), DIMENSION(1)       :: YCOMMENT ! comment string
@@ -1399,6 +1321,7 @@ INTEGER :: IIL, IIH, IJL, IJH, IKL, IKH  ! cartesian area relatively to the
 !
 LOGICAL :: GAVG                          ! flag to compute time averagings
 LOGICAL :: GNORM                         ! flag to compute normalizations
+type(date_time), dimension(:), allocatable :: tzdates
 !-------------------------------------------------------------------------------
 !
 GAVG =(HAVG=='A' .OR. HAVG=='H')
@@ -1415,9 +1338,7 @@ ALLOCATE (ZTRAJX(1,1,SIZE(PFIELD,2)))
 ALLOCATE (ZTRAJY(1,1,SIZE(PFIELD,2)))
 ALLOCATE (ZTRAJZ(1,1,SIZE(PFIELD,2)))
 ALLOCATE(ZWORK6(1,1,1,NLES_CURRENT_TIMES,SIZE(PFIELD,2),1))
-ALLOCATE(ZTRAJT(NLES_CURRENT_TIMES,1))
-ALLOCATE(ZDATIME(16,NLES_CURRENT_TIMES))
-
+allocate( tzdates( NLES_CURRENT_TIMES ) )
 !
 IIL = NLES_CURRENT_IINF
 IIH = NLES_CURRENT_ISUP
@@ -1436,14 +1357,11 @@ YGROUP    = HGROUP
 !
 IRESP = 0
 ZWORK6(1,1,1,:,:,1) = PFIELD (:,:)
-ZTRAJT(:,:) = XLES_CURRENT_TRAJT(:,:)
-ZDATIME(:,:)=XLES_CURRENT_DATIME(:,:)
-!
-
+tzdates(:) = xles_dates(:)
 !
 !* time average
 !
-IF (GAVG) CALL LES_TIME_AVG(ZTRAJT,ZWORK6,IRESP,ZDATIME)
+IF (GAVG) CALL LES_TIME_AVG( ZWORK6, tzdates, IRESP )
 !
 !
 IF (HAVG/=' ')  YGROUP=HAVG//'_'//YGROUP
@@ -1453,10 +1371,11 @@ YTITLE(1) = HGROUP
 !            ----------------------
 !
 IF (IRESP==0) &
-CALL WRITE_DIACHRO(TPDIAFILE,TLUOUT0,YGROUP,"SSOL",IGRID,ZDATIME, ZWORK6,     &
-                   ZTRAJT,YTITLE,YUNIT,YCOMMENT,.FALSE.,.FALSE.,.FALSE.,   &
-                   IIL,IIH,IJL,IJH,IKL,IKH,                                    &
-                   PTRAJX=ZTRAJX,PTRAJY=ZTRAJY,PTRAJZ=ZTRAJZ                   )
+CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "SSOL", IGRID, tzdates,               &
+                    ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
+                    OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
+                    KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH, &
+                    PTRAJX = ZTRAJX, PTRAJY = ZTRAJY, PTRAJZ = ZTRAJZ                 )
 !
 !
 !*      3.0  Deallocations
@@ -1465,9 +1384,8 @@ CALL WRITE_DIACHRO(TPDIAFILE,TLUOUT0,YGROUP,"SSOL",IGRID,ZDATIME, ZWORK6,     &
 DEALLOCATE (ZTRAJX)
 DEALLOCATE (ZTRAJY)
 DEALLOCATE (ZTRAJZ)
-DEALLOCATE (ZTRAJT)
 DEALLOCATE(ZWORK6)
-DEALLOCATE(ZDATIME)
+deallocate( tzdates )
 !
 !-------------------------------------------------------------------------------
 END SUBROUTINE LES_DIACHRO_SURF_SV
@@ -1479,11 +1397,13 @@ SUBROUTINE LES_DIACHRO_2PT(TPDIAFILE,HGROUP,HCOMMENT,HUNIT,PFIELDX,PFIELDY,HAVG)
 !* Modification 01/04/03 (V. Masson) safer use of ZWORK6 with loops
 !
 !
-USE MODD_IO, ONLY: TFILEDATA
-USE MODD_LES
-USE MODD_GRID
 USE MODD_CONF
-USE MODI_WRITE_DIACHRO
+USE MODD_GRID
+USE MODD_IO,            ONLY: TFILEDATA
+USE MODD_LES
+use modd_type_date,     only: date_time
+
+USE MODE_WRITE_DIACHRO
 !
 IMPLICIT NONE
 !
@@ -1511,9 +1431,6 @@ REAL, DIMENSION(SIZE(PFIELDY,1),SIZE(PFIELDY,2)) :: ZAVG_FIELDY
 INTEGER                          :: JT       ! time counter
 INTEGER                          :: JK       ! level counter
 INTEGER                          :: IRESP    ! return code
-REAL, DIMENSION(:,:),POINTER     :: ZTRAJT   ! time
-REAL, DIMENSION(:,:),POINTER     :: ZDATIME   ! date
-
 !
 REAL, DIMENSION(:,:,:,:,:,:), POINTER :: ZWORK6 ! contains physical field
 !
@@ -1523,6 +1440,7 @@ INTEGER :: IIL, IIH, IJL, IJH, IKL, IKH  ! cartesian area relatively to the
 CHARACTER(len=6) :: YSTRING
 !
 LOGICAL :: GAVG                          ! flag to compute time averagings
+type(date_time), dimension(:), allocatable :: tzdates
 !-------------------------------------------------------------------------------
 !
 IF (HAVG/=' '.AND. HAVG/='A') RETURN
@@ -1535,8 +1453,7 @@ IF (GAVG .AND. (XLES_TEMP_MEAN_START==XUNDEF .OR. XLES_TEMP_MEAN_END==XUNDEF)) R
 !            ----------------------------------------------------------
 !
 ALLOCATE(ZWORK6(SIZE(PFIELDX,1),1,NSPECTRA_K,NLES_CURRENT_TIMES,2,1))
-ALLOCATE(ZTRAJT(NLES_CURRENT_TIMES,1))
-ALLOCATE(ZDATIME(16,NLES_CURRENT_TIMES))
+allocate( tzdates( NLES_CURRENT_TIMES ) )
 !
 IGRID(:)=1
 !
@@ -1562,12 +1479,13 @@ DO JT=1,SIZE(PFIELDX,3)
       ZWORK6(:,1,JK,JT,2,1) = 0.
     END DO
 END DO
-ZTRAJT(:,:) = XLES_CURRENT_TRAJT(:,:)
-ZDATIME(:,:)= XLES_CURRENT_DATIME(:,:)
+
+tzdates(:) = xles_dates(:)
+
 !* time average
 !
 IF (GAVG) THEN
-  CALL LES_TIME_AVG(ZTRAJT,ZWORK6,IRESP,ZDATIME)
+  CALL LES_TIME_AVG( ZWORK6, tzdates, IRESP )
   YGROUP    = 'T_'//YGROUP
 END IF
 !
@@ -1576,20 +1494,19 @@ END IF
 !            ----------------------
 !
 IF (IRESP==0) &
-CALL WRITE_DIACHRO(TPDIAFILE,TLUOUT0,YGROUP,"SPXY",IGRID,ZDATIME, ZWORK6,     &
-                   ZTRAJT,YTITLE,YUNIT,YCOMMENT,.FALSE.,.FALSE.,.FALSE.,   &
-                   IIL,IIH,IJL,IJH,IKL,IKH                                     )
+CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "SPXY", IGRID, tzdates,               &
+                    ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
+                    OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
+                    KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH  )
 !
 !
-DEALLOCATE (ZTRAJT)
-DEALLOCATE(ZDATIME)
+deallocate( tzdates )
 DEALLOCATE(ZWORK6)
 !
 IF (L2D) RETURN
 !
 ALLOCATE(ZWORK6(1,SIZE(PFIELDY,1),NSPECTRA_K,NLES_CURRENT_TIMES,2,1))
-ALLOCATE(ZTRAJT(NLES_CURRENT_TIMES,1))
-ALLOCATE(ZDATIME(16,NLES_CURRENT_TIMES))
+allocate( tzdates( NLES_CURRENT_TIMES ) )
 !
 IIL = 1
 IIH = 1
@@ -1602,8 +1519,8 @@ DO JT=1,SIZE(PFIELDY,3)
       ZWORK6(1,:,JK,JT,2,1) = 0.
     END DO
 END DO
-ZTRAJT(:,:) = XLES_CURRENT_TRAJT(:,:)
-ZDATIME(:,:)= XLES_CURRENT_DATIME(:,:)
+
+tzdates(:) = xles_dates(:)
 !
 YGROUP    = 'CJ_'//HGROUP
 YTITLE(:) = YGROUP
@@ -1614,18 +1531,17 @@ YCOMMENT(:) = " DOMEGAY="//YSTRING//' '//HCOMMENT
 !* time average
 !
 IF (GAVG) THEN
-  CALL LES_TIME_AVG(ZTRAJT,ZWORK6,IRESP,ZDATIME)
+  CALL LES_TIME_AVG( ZWORK6, tzdates, IRESP )
   YGROUP    = 'T_'//YGROUP
 END IF
 !
-CALL WRITE_DIACHRO(TPDIAFILE,TLUOUT0,YGROUP,"SPXY",IGRID,ZDATIME, ZWORK6,     &
-                   ZTRAJT,YTITLE,YUNIT,YCOMMENT,.FALSE.,.FALSE.,.FALSE.,   &
-                   IIL,IIH,IJL,IJH,IKL,IKH                                     )
+CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "SPXY", IGRID, tzdates,               &
+                    ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
+                    OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
+                    KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH  )
 !
-DEALLOCATE (ZTRAJT)
 DEALLOCATE(ZWORK6)
-DEALLOCATE(ZDATIME)
-
+deallocate( tzdates )
 !
 !-------------------------------------------------------------------------------
 END SUBROUTINE LES_DIACHRO_2PT
@@ -1638,11 +1554,13 @@ SUBROUTINE LES_DIACHRO_SPEC(TPDIAFILE,HGROUP,HCOMMENT,HUNIT,PSPECTRAX,PSPECTRAY)
 !* Modification 01/04/03 (V. Masson) safer use of ZWORK6 with loops
 !
 !
-USE MODD_IO, ONLY: TFILEDATA
-USE MODD_LES
-USE MODD_GRID
 USE MODD_CONF
-USE MODI_WRITE_DIACHRO
+USE MODD_GRID
+USE MODD_IO,            ONLY: TFILEDATA
+USE MODD_LES
+use modd_type_date,     only: date_time
+
+USE MODE_WRITE_DIACHRO
 !
 IMPLICIT NONE
 !
@@ -1667,8 +1585,6 @@ CHARACTER(LEN=100), DIMENSION(1) :: YUNIT    ! physical unit
 INTEGER                          :: IRESP    ! return code
 !
 REAL, DIMENSION(:,:,:,:,:,:), POINTER     :: ZWORK6 ! contains physical field
-REAL, DIMENSION(:,:),         POINTER     :: ZTRAJT ! time
-REAL, DIMENSION(:,:),         POINTER     :: ZDATIME ! date
 
 !
 INTEGER :: IIL, IIH, IJL, IJH, IKL, IKH  ! cartesian area relatively to the
@@ -1677,6 +1593,7 @@ INTEGER :: IIL, IIH, IJL, IJH, IKL, IKH  ! cartesian area relatively to the
 CHARACTER(len=6) :: YSTRING
 INTEGER          :: JT       ! time counter
 INTEGER          :: JK       ! level counter
+type(date_time), dimension(:), allocatable :: tzdates
 !
 !-------------------------------------------------------------------------------
 !
@@ -1695,12 +1612,9 @@ IKH=NSPECTRA_K
 !* spectra in X direction
 !
 ALLOCATE(ZWORK6(SIZE(PSPECTRAX,1),1,NSPECTRA_K,NLES_CURRENT_TIMES,2,1))
-ALLOCATE(ZTRAJT(NLES_CURRENT_TIMES,1))
-ALLOCATE(ZDATIME(16,NLES_CURRENT_TIMES))
-
+allocate( tzdates( NLES_CURRENT_TIMES ) )
 !
-ZTRAJT(:,:) = XLES_CURRENT_TRAJT(:,:)
-ZDATIME(:,:)= XLES_CURRENT_DATIME(:,:)
+tzdates(:) = xles_dates(:)
 !
 IIL = NLES_CURRENT_IINF
 IIH = NLES_CURRENT_ISUP
@@ -1720,24 +1634,25 @@ WRITE(YSTRING,FMT="(I6.6)") NINT( XLES_CURRENT_DOMEGAX )
 YCOMMENT(:) = " DOMEGAX="//YSTRING//' '//HCOMMENT
 !
 !
-CALL WRITE_DIACHRO(TPDIAFILE,TLUOUT0,YGROUP,"SPXY",IGRID,ZDATIME, ZWORK6,     &
-                   ZTRAJT,YTITLE,YUNIT,YCOMMENT,.FALSE.,.FALSE.,.FALSE.,   &
-                   IIL,IIH,IJL,IJH,IKL,IKH                                     )
+CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "SPXY", IGRID, tzdates,               &
+                    ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
+                    OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
+                    KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH  )
 !
 !
 !* time average
 !
 IRESP=0
-CALL LES_TIME_AVG(ZTRAJT,ZWORK6,IRESP,ZDATIME)
+CALL LES_TIME_AVG( ZWORK6, tzdates, IRESP )
 YGROUP    = 'T_'//YGROUP
 !
 IF (IRESP==0) &
-CALL WRITE_DIACHRO(TPDIAFILE,TLUOUT0,YGROUP,"SPXY",IGRID,ZDATIME, ZWORK6,     &
-                   ZTRAJT,YTITLE,YUNIT,YCOMMENT,.FALSE.,.FALSE.,.FALSE.,   &
-                   IIL,IIH,IJL,IJH,IKL,IKH                                     )
+CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "SPXY", IGRID, tzdates,               &
+                    ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
+                    OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
+                    KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH  )
 DEALLOCATE(ZWORK6)
-DEALLOCATE(ZTRAJT)
-DEALLOCATE(ZDATIME)
+deallocate( tzdates )
 !
 !* spectra in Y direction
 !
@@ -1745,11 +1660,9 @@ DEALLOCATE(ZDATIME)
 IF (L2D) RETURN
 !
 ALLOCATE(ZWORK6(1,SIZE(PSPECTRAY,1),NSPECTRA_K,NLES_CURRENT_TIMES,2,1))
-ALLOCATE(ZTRAJT(NLES_CURRENT_TIMES,1))
-ALLOCATE(ZDATIME(16,NLES_CURRENT_TIMES))
+allocate( tzdates( NLES_CURRENT_TIMES ) )
 !
-ZTRAJT(:,:) = XLES_CURRENT_TRAJT(:,:)
-ZDATIME(:,:)= XLES_CURRENT_DATIME(:,:)
+tzdates(:) = xles_dates(:)
 !
 IIL = 1
 IIH = 1
@@ -1768,25 +1681,25 @@ YTITLE(:) = YGROUP
 WRITE(YSTRING,FMT="(I6.6)") NINT( XLES_CURRENT_DOMEGAY )
 YCOMMENT(:) = " DOMEGAY="//YSTRING//' '//HCOMMENT
 !
-CALL WRITE_DIACHRO(TPDIAFILE,TLUOUT0,YGROUP,"SPXY",IGRID,ZDATIME, ZWORK6,     &
-                   ZTRAJT,YTITLE,YUNIT,YCOMMENT,.FALSE.,.FALSE.,.FALSE.,   &
-                   IIL,IIH,IJL,IJH,IKL,IKH                                     )
+CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "SPXY", IGRID, tzdates,               &
+                    ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
+                    OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
+                    KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH  )
 !
 !
 !* time average
 !
-CALL LES_TIME_AVG(ZTRAJT,ZWORK6,IRESP,ZDATIME)
+CALL LES_TIME_AVG( ZWORK6, tzdates, IRESP )
 YGROUP    = 'T_'//YGROUP
 !
 IF (IRESP==0) &
-CALL WRITE_DIACHRO(TPDIAFILE,TLUOUT0,YGROUP,"SPXY",IGRID,ZDATIME, ZWORK6,     &
-                   ZTRAJT,YTITLE,YUNIT,YCOMMENT,.FALSE.,.FALSE.,.FALSE.,   &
-                   IIL,IIH,IJL,IJH,IKL,IKH                                     )                   
+CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "SPXY", IGRID, tzdates,               &
+                    ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
+                    OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
+                    KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH  )
 !
 DEALLOCATE(ZWORK6)
-DEALLOCATE(ZTRAJT)
-DEALLOCATE(ZDATIME)
-
+deallocate( tzdates )
 !
 !-------------------------------------------------------------------------------
 END SUBROUTINE LES_DIACHRO_SPEC

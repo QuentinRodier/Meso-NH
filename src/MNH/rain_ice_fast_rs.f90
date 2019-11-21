@@ -26,7 +26,8 @@ SUBROUTINE RAIN_ICE_FAST_RS(PTSTEP, OMICRO, PRHODREF, PRVT, PRCT, PRRT, PRST, PR
 !*      0. DECLARATIONS
 !          ------------
 !
-use MODD_BUDGET,         only: LBUDGET_RC, LBUDGET_RG, LBUDGET_RR, LBUDGET_RS, LBUDGET_TH
+use MODD_BUDGET,         only: LBUDGET_TH, LBUDGET_RC, LBUDGET_RR, LBUDGET_RS, LBUDGET_RG, &
+                               NBUDGET_TH, NBUDGET_RC, NBUDGET_RR, NBUDGET_RS, NBUDGET_RG
 use MODD_CST,            only: XCL, XCPV, XESTT, XLMTT, XLVTT, XMD, XMV, XRV, XTT
 use MODD_RAIN_ICE_DESCR, only: XBS, XCEXVT, XCXS, XRTMIN
 use MODD_RAIN_ICE_PARAM, only: NACCLBDAR, NACCLBDAS, NGAMINC, X0DEPS, X1DEPS, XACCINTP1R, XACCINTP1S, XACCINTP2R, XACCINTP2S, &
@@ -169,16 +170,16 @@ REAL,    DIMENSION(:), ALLOCATABLE :: ZZW1, ZZW2, ZZW3, ZZW4 ! Work arrays
   END IF
   IF (LBUDGET_TH) CALL BUDGET (                                               &
                UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),   &
-                                                             4,'RIM_BU_RTH')
+                                                      NBUDGET_TH,'RIM_BU_RTH')
   IF (LBUDGET_RC) CALL BUDGET (                                               &
                    UNPACK(PRCS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                             7,'RIM_BU_RRC')
+                                                      NBUDGET_RC,'RIM_BU_RRC')
   IF (LBUDGET_RS) CALL BUDGET (                                               &
                    UNPACK(PRSS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                            10,'RIM_BU_RRS')
+                                                      NBUDGET_RS,'RIM_BU_RRS')
   IF (LBUDGET_RG) CALL BUDGET (                                               &
                    UNPACK(PRGS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                            11,'RIM_BU_RRG')
+                                                      NBUDGET_RG,'RIM_BU_RRG')
 !
 !*       5.2    rain accretion onto the aggregates
 !
@@ -312,16 +313,16 @@ REAL,    DIMENSION(:), ALLOCATABLE :: ZZW1, ZZW2, ZZW3, ZZW4 ! Work arrays
   END IF
   IF (LBUDGET_TH) CALL BUDGET (                                               &
                UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),   &
-                                                             4,'ACC_BU_RTH')
+                                                        NBUDGET_TH,'ACC_BU_RTH')
   IF (LBUDGET_RR) CALL BUDGET (                                               &
                    UNPACK(PRRS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                             8,'ACC_BU_RRR')
+                                                        NBUDGET_RR,'ACC_BU_RRR')
   IF (LBUDGET_RS) CALL BUDGET (                                               &
                    UNPACK(PRSS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                            10,'ACC_BU_RRS')
+                                                        NBUDGET_RS,'ACC_BU_RRS')
   IF (LBUDGET_RG) CALL BUDGET (                                               &
                    UNPACK(PRGS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                            11,'ACC_BU_RRG')
+                                                        NBUDGET_RG,'ACC_BU_RRG')
 !
 !*       5.3    Conversion-Melting of the aggregates
 !
@@ -346,10 +347,10 @@ REAL,    DIMENSION(:), ALLOCATABLE :: ZZW1, ZZW2, ZZW3, ZZW4 ! Work arrays
   END WHERE
   IF (LBUDGET_RS) CALL BUDGET (                                                 &
                      UNPACK(PRSS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                             10,'CMEL_BU_RRS')
+                                                             NBUDGET_RS,'CMEL_BU_RRS')
   IF (LBUDGET_RG) CALL BUDGET (                                                 &
                      UNPACK(PRGS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                             11,'CMEL_BU_RRG')
+                                                             NBUDGET_RG,'CMEL_BU_RRG')
 !
 END SUBROUTINE RAIN_ICE_FAST_RS
 

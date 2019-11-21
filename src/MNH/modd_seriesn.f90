@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! NEC0 masdev4_7 2007/06/16 01:41:59
 !-----------------------------------------------------------------
 !     ####################
       MODULE MODD_SERIES_n
@@ -37,12 +32,15 @@
 !!      Original      29/01/98
 !!                Oct. 10,1998 (Lafore) adaptation of Diagnostics 
 !!                                      to the sequential nesting version
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
 !
 USE MODD_PARAMETERS, ONLY: JPMODELMAX
+use modd_type_date,  only: date_time
+
 IMPLICIT NONE
 
 TYPE SERIES_t
@@ -68,8 +66,7 @@ TYPE SERIES_t
   REAL, DIMENSION(:,:,:,:,:,:), POINTER  :: XSSERIES1=>NULL() ! 1st group: temporal serie (t)
   REAL, DIMENSION(:,:,:,:,:,:), POINTER  :: XSSERIES2=>NULL() ! 2nd group:temporal serie (z,t)
   REAL, DIMENSION(:,:,:,:,:,:), POINTER  :: XSSERIES3=>NULL() ! 3rd group:temporal serie (x,t)
-  REAL, DIMENSION(:,:)        , POINTER  :: XSTRAJT=>NULL() ! time trajectory
-  REAL, DIMENSION(:,:),          POINTER :: XSDATIME=>NULL() ! Dates of exp, seg and current
+  type(date_time), dimension(:), pointer :: tpsdates => NULL() ! dates
   CHARACTER(LEN=50),DIMENSION(:),POINTER :: CSCOMMENT1=>NULL() ! strings
 !     associated with the 1st group
   CHARACTER(LEN=50),DIMENSION(:),POINTER :: CSCOMMENT2=>NULL() ! with the 2nd
@@ -128,8 +125,7 @@ INTEGER, POINTER :: NSTEMP_SERIE3=>NULL()
 REAL, DIMENSION(:,:,:,:,:,:), POINTER  :: XSSERIES1=>NULL()
 REAL, DIMENSION(:,:,:,:,:,:), POINTER  :: XSSERIES2=>NULL()
 REAL, DIMENSION(:,:,:,:,:,:), POINTER  :: XSSERIES3=>NULL()
-REAL, DIMENSION(:,:),         POINTER  :: XSTRAJT=>NULL()
-REAL, DIMENSION(:,:),         POINTER  :: XSDATIME=>NULL()
+type(date_time), dimension(:), pointer :: tpsdates => NULL()
 CHARACTER(LEN=50),DIMENSION(:),POINTER :: CSCOMMENT1=>NULL()
 CHARACTER(LEN=50),DIMENSION(:),POINTER :: CSCOMMENT2=>NULL()
 CHARACTER(LEN=50),DIMENSION(:),POINTER :: CSCOMMENT3=>NULL()
@@ -175,8 +171,7 @@ ENDIF
 SERIES_MODEL(KFROM)%XSSERIES1=>XSSERIES1
 SERIES_MODEL(KFROM)%XSSERIES2=>XSSERIES2
 SERIES_MODEL(KFROM)%XSSERIES3=>XSSERIES3
-SERIES_MODEL(KFROM)%XSTRAJT=>XSTRAJT
-SERIES_MODEL(KFROM)%XSDATIME=>XSDATIME
+series_model(kfrom)%tpsdates=>tpsdates
 SERIES_MODEL(KFROM)%CSCOMMENT1=>CSCOMMENT1
 SERIES_MODEL(KFROM)%CSCOMMENT2=>CSCOMMENT2
 SERIES_MODEL(KFROM)%CSCOMMENT3=>CSCOMMENT3
@@ -215,8 +210,7 @@ NSTEMP_SERIE3=>SERIES_MODEL(KTO)%NSTEMP_SERIE3
 XSSERIES1=>SERIES_MODEL(KTO)%XSSERIES1
 XSSERIES2=>SERIES_MODEL(KTO)%XSSERIES2
 XSSERIES3=>SERIES_MODEL(KTO)%XSSERIES3
-XSTRAJT=>SERIES_MODEL(KTO)%XSTRAJT
-XSDATIME=>SERIES_MODEL(KTO)%XSDATIME
+tpsdates=>series_model(kto)%tpsdates
 CSCOMMENT1=>SERIES_MODEL(KTO)%CSCOMMENT1
 CSCOMMENT2=>SERIES_MODEL(KTO)%CSCOMMENT2
 CSCOMMENT3=>SERIES_MODEL(KTO)%CSCOMMENT3

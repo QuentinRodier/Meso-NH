@@ -3,38 +3,53 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!######################## 
- MODULE MODI_WRITE_BUDGET
-!########################
+! Author:
+!  J. Nicolau (Meteo-France) 27/02/1995
+! Modifications:
+!  J. Stein    09/09/1996: add the writings in the diachronic file
+!  J.-P. Pinty 18/12/1996: clarify the coding
+!  J.-P. Pinty 18/03/1997: correction for the SVx
+!  V. Gouget M. Chong J.-P. Lafore 10/02/1998: add the BURHODJ, TSTEP and BULEN and writes in physical units
+!  V. Ducrocq  07/06/1999: //
+!  N. Asencio  18/06/1999: // budget with MASK case
+!                         delete ZTORE arrays no longer used, so delete
+!                         KIU,KJU,KKU arguments
+!                         the mask is written once with a FMWRIT call outside
+!                         write_diachro: its name is MASK_(value of NBUTSHIFT).MASK
+!                         MENU_DIACHRO must be called after FMWRIT to be read in
+!                         read_diachro.
+!                         NBUTSHIFT is incremented at the beginning of the routine
+!                         The dimensions of the XBUR.. arrays are : first one
+!                         is the dimension along K, second one is the time, the
+!                         third one is the number of the masks.
+!  G. Tanguy      10/2009: add ILENCH=LEN(YCOMMENT) after change of YCOMMENT
+!  J. Escobar  24/03/2014: misplaced deallocate in RSV budget
+!  C. Lac      11/09/2015: orrection due to FIT temporal scheme
+!  P. Wautelet 28/03/2018: Replace TEMPORAL_DIST by DATETIME_DISTANCE
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
+!  P. Wautelet 14/10/2019: complete restructuration and deduplication of code
+!-----------------------------------------------------------------
+
+!#######################
+module mode_write_budget
+!#######################
+
+use mode_msg
+
+implicit none
+
+private
+
+public :: Write_budget
+
+contains
+
+!#########################################################
+subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
+!#########################################################
 !
-INTERFACE
-!
-      SUBROUTINE WRITE_BUDGET(TPDIAFILE,TPDTCUR, &
-                              TPDTMOD,PTSTEP, KSV)
-!
-USE MODD_IO, ONLY: TFILEDATA
-USE MODD_TYPE_DATE
-!
-TYPE(TFILEDATA),    INTENT(IN) :: TPDIAFILE    ! file to write
-TYPE (DATE_TIME),   INTENT(IN) :: TPDTCUR      ! Current date and time
-TYPE (DATE_TIME),   INTENT(IN) :: TPDTMOD      ! Creation date and time
-REAL,               INTENT(IN) :: PTSTEP       ! time step
-INTEGER,            INTENT(IN) :: KSV          ! Number of Scalar Variables
-!
-END SUBROUTINE WRITE_BUDGET  
-!
-END INTERFACE
-!
-END MODULE MODI_WRITE_BUDGET
-!
-!
-!
-!     ############################################
-      SUBROUTINE WRITE_BUDGET(TPDIAFILE,TPDTCUR, &
-                              TPDTMOD,PTSTEP, KSV)
-!     ############################################
-!
-!!****  *WRITE_BUDGET* - routine to write a LFIFM file for the budget. 
+!!****  *WRITE_BUDGET* - routine to write a budget file
 !!                           
 !!
 !!    PURPOSE
@@ -58,8 +73,8 @@ END MODULE MODI_WRITE_BUDGET
 !!        IGRID = 3 for V grid point
 !!        IGRID = 4 for w grid point
 !!        IGRID = 0 for meaningless case
-!!            
-!!      
+!!
+!!
 !!
 !!    EXTERNAL
 !!    --------
@@ -68,9 +83,8 @@ END MODULE MODI_WRITE_BUDGET
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
 !!       Module MODD_BUDGET
-!!         
+!!
 !!         CBUTYPE     : Budget type (CART,MASK,SKIP or NONE)
-!!         CBURECORD   : name of output recording files for the budgets
 !!         CBUCOMMENT  : name of a process for a budget
 !!         NBUPROCNBR  : number of processes for each variable
 !!         NBUTIME     : number of the budget time intervals ('MASK' case)
@@ -88,1476 +102,550 @@ END MODULE MODI_WRITE_BUDGET
 !!         XBURRG      : budget array of the variable RRG
 !!         XBURRH      : budget array of the variable RRH
 !!         XBURSV      : budget array of the variable RSVx
-!!         
+!!
 !!
 !!    REFERENCE
 !!    ---------
 !!      Book2 of MESO-NH documentation (routine WRITE_BUDGET)
 !!
-!!
-!!    AUTHOR
-!!    ------
-!!	J. Nicolau       * Meteo France *
-!!
-!!    MODIFICATIONS
-!!    -------------
-!!      Original     27/02/95
-!!      J. Stein     9/9/96     add the writings in the diachronic file 
-!!      J.-P. Pinty  18/12/96   clarify the coding
-!!      J.-P. Pinty  18/03/97   correction for the SVx
-!!      V. Gouget M. Chong J.-P. Lafore  add the BURHODJ, TSTEP and BULEN
-!!                   10/02/98              and writes in physical units
-!!      V. Ducrocq   07/06/99   //
-!!      N. Asencio   18/06/99  // budget with MASK case 
-!!                             delete ZTORE arrays no longer used, so delete
-!!                             KIU,KJU,KKU arguments
-!!                             the mask is written once with a FMWRIT call outside
-!!                             write_diachro: its name is MASK_(value of NBUTSHIFT).MASK
-!!                             MENU_DIACHRO must be called after FMWRIT to be read in
-!!                             read_diachro.
-!!                             NBUTSHIFT is incremented at the beginning of the routine
-!!                             The dimensions of the XBUR.. arrays are : first one
-!!                             is the dimension along K, second one is the time, the
-!!                             third one is the number of the masks.
-!!      October 2009 (G. Tanguy) add ILENCH=LEN(YCOMMENT) after
-!!                                              change of YCOMMENT
-!!      24/03/2014  (J.Escobar ) miss placed deallocate in RSV budget
-!!      11/09/2015  (C.Lac)    Correction due to FIT temporal scheme
-!!      28/03/2018  (P.Wautelet) Replace TEMPORAL_DIST by DATETIME_DISTANCE
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
 !-------------------------------------------------------------------------------
-!
-!*       0.    
-!              ------------
-USE MODD_BUDGET
-USE MODD_IO,             ONLY: TFILEDATA
-USE MODD_LUNIT_n,        ONLY: TLUOUT
-!
-USE MODE_DATETIME
-USE MODE_FIELD,          ONLY: TFIELDDATA, TYPEREAL
-USE MODE_IO_FIELD_WRITE, only: IO_Field_write
-use mode_menu_diachro,   only: MENU_DIACHRO
-USE MODE_TIME
-USE MODE_WRITE_DIACHRO,  only: WRITE_DIACHRO
-!
-USE MODI_END_CART_COMPRESS
-USE MODI_END_MASK_COMPRESS
-!
-!
-IMPLICIT NONE
-!  
-!  
-!*       0.1   Declarations of arguments :
-!
-TYPE(TFILEDATA),    INTENT(IN) :: TPDIAFILE    ! file to write
-TYPE (DATE_TIME),   INTENT(IN) :: TPDTCUR      ! Current date and time
-TYPE (DATE_TIME),   INTENT(IN) :: TPDTMOD      ! Creation date and time
-REAL,               INTENT(IN) :: PTSTEP       ! time step
-INTEGER,            INTENT(IN) :: KSV          ! Number of Scalar Variables
-!  
-!*       0.2   Declarations of local variables :
-!
-CHARACTER(LEN=NMNHNAMELGTMAX) :: YRECFM        ! Name of the article to be written
-INTEGER           :: JT,JPROC,JMASK
-!
-!
-REAL, ALLOCATABLE  , DIMENSION(:,:,:,:,:,:) :: ZWORK, ZWORKT,  ZWORKMASK  ! local array 
-            ! conformal to what is asked by the diachro format for the fields
-            ! and for the masks
-LOGICAL :: GNOCOMPRESS !  If  TRUE : no compress along x and y direction in the CART option
-REAL,    ALLOCATABLE              , DIMENSION(:)  :: ZCONVERT      ! unit conversion coefficient
-REAL,    ALLOCATABLE              , DIMENSION(:,:):: ZWORKTEMP     ! time
-INTEGER, ALLOCATABLE              , DIMENSION(:)  :: IWORKGRID     ! grid label
-CHARACTER (LEN=99),  ALLOCATABLE  , DIMENSION(:)  :: YBUCOMMENT    ! comment   
-CHARACTER (LEN=100), ALLOCATABLE  , DIMENSION(:)  :: YWORKCOMMENT  ! comment   
-CHARACTER (LEN=100), ALLOCATABLE  , DIMENSION(:)  :: YWORKUNIT     ! comment
-CHARACTER (LEN=9)                                 :: YGROUP_NAME   ! group name                                    
-CHARACTER(LEN=28)                                 :: YFILEDIA
-REAL,    ALLOCATABLE              , DIMENSION(:,:):: ZWORKDATIME   ! global time
-                                                                   !     info
-INTEGER                                           :: JSV           ! loop index
-                                                                   ! over the 
-                                                                   ! KSV  SVx
-INTEGER :: IP
-TYPE(TFIELDDATA) :: TZFIELD
-!
-!-------------------------------------------------------------------------------
-!
-YFILEDIA = TPDIAFILE%CNAME
-!
-!*	 1.     write TSTEP and BULEN
-!	        ---------------------
-!
-TZFIELD%CMNHNAME   = 'TSTEP'
-TZFIELD%CSTDNAME   = ''
-TZFIELD%CLONGNAME  = 'TSTEP'
-TZFIELD%CUNITS     = 's'
-TZFIELD%CDIR       = '--'
-TZFIELD%CCOMMENT   = 'Time step'
-TZFIELD%NGRID      = 0
-TZFIELD%NTYPE      = TYPEREAL
-TZFIELD%NDIMS      = 0
-TZFIELD%LTIMEDEP   = .FALSE.
-CALL IO_Field_write(TPDIAFILE,TZFIELD,PTSTEP)
-!
-TZFIELD%CMNHNAME   = 'BULEN'
-TZFIELD%CSTDNAME   = ''
-TZFIELD%CLONGNAME  = 'BULEN'
-TZFIELD%CUNITS     = 's'
-TZFIELD%CDIR       = '--'
-TZFIELD%CCOMMENT   = 'Time step'
-TZFIELD%NGRID      = 0
-TZFIELD%NTYPE      = TYPEREAL
-TZFIELD%NDIMS      = 0
-TZFIELD%LTIMEDEP   = .FALSE.
-CALL IO_Field_write(TPDIAFILE,TZFIELD,XBULEN)
-!
-!*   1.1   initialize NBUTSHIFT
-!           ---------------------
-!
-NBUTSHIFT = NBUTSHIFT+1
-!
-!
-SELECT CASE (CBUTYPE)
-!
-!-------------------------------------------------------------------------------
-!
-!*	 2.     'CART' CASE
-!	        -----------
-!
-  CASE('CART','SKIP')
-    GNOCOMPRESS=(.NOT.LBU_ICP .AND. .NOT.LBU_JCP)
-!
-!*	 2.1    Initialization
-!
-    ALLOCATE(ZWORKTEMP(1,1))
-    ALLOCATE(ZWORKDATIME(16,1))
-!
-    ZWORKDATIME(1,1)=TDTEXP%TDATE%YEAR
-    ZWORKDATIME(2,1)=TDTEXP%TDATE%MONTH
-    ZWORKDATIME(3,1)=TDTEXP%TDATE%DAY
-    ZWORKDATIME(4,1)=TDTEXP%TIME
-    ZWORKDATIME(5,1)=TDTSEG%TDATE%YEAR
-    ZWORKDATIME(6,1)=TDTSEG%TDATE%MONTH
-    ZWORKDATIME(7,1)=TDTSEG%TDATE%DAY
-    ZWORKDATIME(8,1)=TDTSEG%TIME
-    ZWORKDATIME(9,1)=TPDTMOD%TDATE%YEAR
-    ZWORKDATIME(10,1)=TPDTMOD%TDATE%MONTH
-    ZWORKDATIME(11,1)=TPDTMOD%TDATE%DAY
-    ZWORKDATIME(12,1)=TPDTMOD%TIME
-!
-    CALL DATETIME_DISTANCE(TDTEXP,TPDTCUR,ZWORKTEMP(1,1))
-!
-    ZWORKTEMP(1,1)=ZWORKTEMP(1,1)+(1.-NBUSTEP*0.5)*PTSTEP
-!
-    ZWORKDATIME(13,1)=TDTEXP%TDATE%YEAR
-    ZWORKDATIME(14,1)=TDTEXP%TDATE%MONTH
-    ZWORKDATIME(15,1)=TDTEXP%TDATE%DAY
-    ZWORKDATIME(16,1)=TDTEXP%TIME+ZWORKTEMP(1,1)
-!
-!*	 2.2    storage of the budgets array
-!
-!*	 2.2.1  RU budget
-!
-    IF (LBU_RU) THEN   
-!                         XBURHODJU and RU  budgets 
-!
-      IP=1
-! unit conversion for  RU budgets 
-      ALLOCATE(ZCONVERT(NBUPROCNBR(IP)))
-      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(3)       = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(4:NBUPROCNBR(IP)) = 1.
-! 
-      IF (GNOCOMPRESS) THEN
-        ALLOCATE(ZWORKT(NBUIMAX,NBUJMAX,NBUKMAX,1,1,NBUPROCNBR(IP))) ! local budget of RU
-        DO JPROC=1,NBUPROCNBR(IP)
-          ZWORKT(:,:,:,1,1,JPROC) = XBURU(:,:,:,JPROC) * ZCONVERT(JPROC)    &
-                                                    / XBURHODJU(:,:,:)
+
+  use modd_budget,         only: cbutype, nbumask, nbutshift, nbustep, nbuwrnb, xbulen, xbusurf,                                  &
+                                 lbu_icp, lbu_jcp,                                                                                &
+                                 lbu_ru, lbu_rv, lbu_rw, lbu_rth, lbu_rtke, lbu_rrv, lbu_rrc, lbu_rrr,                            &
+                                 lbu_rri, lbu_rrs, lbu_rrg, lbu_rrh, lbu_rsv,                                                     &
+                                 NBUDGET_RHO, NBUDGET_U, NBUDGET_V, NBUDGET_W, NBUDGET_TH, NBUDGET_TKE,                           &
+                                 NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, NBUDGET_SV1, &
+                                 xburhodj, xburhodju, xburhodjv, xburhodjw,                                                       &
+                                 xburu, xburv, xburw, xburth, xburtke,                                                            &
+                                 xburrv, xburrc, xburrr, xburri, xburrs, xburrg, xburrh, xbursv
+  use modd_io,             only: tfiledata
+  use modd_lunit_n,        only: tluout
+  use modd_parameters,     only: NMNHNAMELGTMAX
+  use modd_type_date,      only: date_time
+
+  use mode_datetime,       only: datetime_distance
+  use mode_field,          only: tfielddata, TYPEREAL
+  use mode_io_field_write, only: IO_Field_write
+  use mode_menu_diachro,   only: Menu_diachro
+  use mode_time,           only: tdtexp
+
+  implicit none
+
+  type(tfiledata), intent(in) :: tpdiafile    ! file to write
+  type(date_time), intent(in) :: tpdtcur      ! current date and time
+  real,            intent(in) :: ptstep       ! time step
+  integer,         intent(in) :: ksv          ! number of scalar variables
+
+  character(len=NMNHNAMELGTMAX)                        :: yrecfm        ! name of the article to be written
+  integer                                              :: jt, jmask
+  integer                                              :: jsv           ! loop index over the ksv svx
+  logical                                              :: gnocompress   ! true: no compression along x and y direction (cart option)
+  real,            dimension(:),           allocatable :: zworktemp
+  real,            dimension(:,:,:,:,:,:), allocatable :: zrhodjn, zworkmask
+  type(date_time), dimension(:),           allocatable :: tzdates
+  type(tfielddata) :: tzfield
+  !
+  !-------------------------------------------------------------------------------
+  !
+  gnocompress = .true.
+  !
+  !* Write TSTEP and BULEN
+  !  ---------------------
+  !
+  TZFIELD%CMNHNAME   = 'TSTEP'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'TSTEP'
+  TZFIELD%CUNITS     = 's'
+  TZFIELD%CDIR       = '--'
+  TZFIELD%CCOMMENT   = 'Time step'
+  TZFIELD%NGRID      = 0
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 0
+  TZFIELD%LTIMEDEP   = .FALSE.
+  CALL IO_Field_write(TPDIAFILE,TZFIELD,PTSTEP)
+  !
+  TZFIELD%CMNHNAME   = 'BULEN'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'BULEN'
+  TZFIELD%CUNITS     = 's'
+  TZFIELD%CDIR       = '--'
+  TZFIELD%CCOMMENT   = 'Time step'
+  TZFIELD%NGRID      = 0
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 0
+  TZFIELD%LTIMEDEP   = .FALSE.
+  CALL IO_Field_write(TPDIAFILE,TZFIELD,XBULEN)
+  !
+  ! Initialize NBUTSHIFT
+  NBUTSHIFT = NBUTSHIFT+1
+  !
+  !
+  SELECT CASE (CBUTYPE)
+  !
+  !-------------------------------------------------------------------------------
+  !
+  !* 2.     'CART' CASE
+  !         -----------
+  !
+    CASE('CART','SKIP')
+      GNOCOMPRESS=(.NOT.LBU_ICP .AND. .NOT.LBU_JCP)
+  !
+  !* 2.1    Initialization
+  !
+      ALLOCATE( ZWORKTEMP( 1 ) )
+      allocate( tzdates( 1 ) )
+  !
+      !Compute time at the middle of the temporally-averaged budget timestep
+      !This time is computed from the beginning of the experiment
+      CALL DATETIME_DISTANCE(TDTEXP,TPDTCUR,ZWORKTEMP(1))
+  !
+      ZWORKTEMP(1)=ZWORKTEMP(1)+(1.-NBUSTEP*0.5)*PTSTEP
+  !
+      tzdates(1)%tdate%year  = tdtexp%tdate%year
+      tzdates(1)%tdate%month = tdtexp%tdate%month
+      tzdates(1)%tdate%day   = tdtexp%tdate%day
+      tzdates(1)%time        = tdtexp%time + zworktemp(1)
+
+      DEALLOCATE ( ZWORKTEMP )
+  !
+  !-------------------------------------------------------------------------------
+  !
+  !* 3.     'MASK' CASE
+  !         -----------
+  !
+    CASE('MASK')
+      ALLOCATE(ZWORKTEMP(NBUWRNB))
+      allocate( tzdates( NBUWRNB ) )
+      ALLOCATE(ZWORKMASK(SIZE(XBUSURF,1),SIZE(XBUSURF,2),1,NBUWRNB,NBUMASK,1))
+  !
+  ! local array
+      DO JMASK=1,NBUMASK
+        DO JT=1,NBUWRNB
+          ZWORKMASK(:,:,1,JT,JMASK,1) = XBUSURF(:,:,JMASK,JT)
         END DO
-      ELSE
-        ALLOCATE(ZWORK(NBUIMAX_ll,NBUJMAX_ll,NBUKMAX,1,1,1)) ! global budget of RhodjU
-        ZWORK(:,:,:,1,1,1)=END_CART_COMPRESS(XBURHODJU(:,:,:))
-!
-        ALLOCATE(ZWORKT(NBUIMAX_ll,NBUJMAX_ll,NBUKMAX,1,1,NBUPROCNBR(IP))) ! global budget of RU
-!      
-        DO JPROC=1,NBUPROCNBR(IP)
-          ZWORKT(:,:,:,1,1,JPROC) = END_CART_COMPRESS(XBURU(:,:,:,JPROC))
-          ZWORKT(:,:,:,1,1,JPROC) = ZWORKT(:,:,:,1,1,JPROC)* ZCONVERT(JPROC)   &
-                                                    / ZWORK(:,:,:,1,1,1)
-        END DO
-      ENDIF
-      DEALLOCATE(ZCONVERT)
+      END DO
+  !
+      CALL DATETIME_DISTANCE(TDTEXP,TPDTCUR,ZWORKTEMP(NBUWRNB))
+  !
+      ZWORKTEMP(NBUWRNB)=ZWORKTEMP(NBUWRNB)+(1.-NBUSTEP*0.5)*PTSTEP
+  !
+      tzdates(NBUWRNB )%tdate%year  = tdtexp%tdate%year
+      tzdates(NBUWRNB )%tdate%month = tdtexp%tdate%month
+      tzdates(NBUWRNB )%tdate%day   = tdtexp%tdate%day
+      tzdates(NBUWRNB )%time        = tdtexp%time + zworktemp(NBUWRNB )
+      DO JT=1,NBUWRNB-1
+        ZWORKTEMP(JT) = ZWORKTEMP(NBUWRNB)-NBUSTEP*PTSTEP*(NBUWRNB-JT)
+        tzdates(jt )%tdate%year  = tdtexp%tdate%year
+        tzdates(jt )%tdate%month = tdtexp%tdate%month
+        tzdates(jt )%tdate%day   = tdtexp%tdate%day
+        tzdates(jt )%time        = tdtexp%time + zworktemp(jt )
+      END DO
+
+      DEALLOCATE( ZWORKTEMP )
+  !
+  !*     3.1    storage of the masks  array
+  !
+      WRITE(TZFIELD%CMNHNAME,FMT="('MASK_',I4.4,'.MASK')" ) nbutshift
+      TZFIELD%CSTDNAME   = ''
+      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+      TZFIELD%CUNITS     = ''
+      TZFIELD%CDIR       = 'XY'
+      WRITE(TZFIELD%CCOMMENT,FMT="('X_Y_MASK',I4.4)" ) nbutshift
+      TZFIELD%NGRID      = 1
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%NDIMS      = 6
+      TZFIELD%LTIMEDEP   = .FALSE.
+      CALL IO_Field_write(TPDIAFILE,TZFIELD,ZWORKMASK(:,:,:,:,:,:))
+      WRITE(YRECFM,FMT="('MASK_',I4.4)" ) nbutshift
+      CALL MENU_DIACHRO(TPDIAFILE,YRECFM)
+      DEALLOCATE(ZWORKMASK)
+  !
+  END SELECT
+  !
+  if ( cbutype == 'CART' .or. cbutype == 'SKIP' .or. cbutype == 'MASK' ) then
+  !
+  !* Storage of the budgets array
+  !
+  !* XBURHODJU and RU budgets
+  !
+    IF (LBU_RU) THEN
+      call Store_one_budget_rho( tpdiafile, tzdates, xburhodju, NBUDGET_U, gnocompress, zrhodjn )
+      call Store_one_budget( tpdiafile, tzdates, xburu, zrhodjn, NBUDGET_U, gnocompress, ptstep )
+    END IF
+  !
+  !* XBURHODJV and RV budgets
+  !
+    IF (LBU_RV) THEN
+      call Store_one_budget_rho( tpdiafile, tzdates, xburhodjv, NBUDGET_V, gnocompress, zrhodjn )
+      call Store_one_budget( tpdiafile, tzdates, xburv, zrhodjn, NBUDGET_V, gnocompress, ptstep )
+    END IF
+  !
+  !* XBURHODJW and RW budgets
+  !
+    IF (LBU_RW) THEN
+      call Store_one_budget_rho( tpdiafile, tzdates, xburhodjw, NBUDGET_W, gnocompress, zrhodjn )
+      call Store_one_budget( tpdiafile, tzdates, xburw, zrhodjn, NBUDGET_W, gnocompress, ptstep )
+    END IF
+  !
+  !* XBURHODJ storage for Scalars
+  !
+    IF (LBU_RTH .OR. LBU_RTKE .OR. LBU_RRV .OR. LBU_RRC .OR. LBU_RRR .OR. &
+        LBU_RRI .OR. LBU_RRS  .OR. LBU_RRG .OR. LBU_RRH .OR. LBU_RSV      ) THEN
+      call Store_one_budget_rho( tpdiafile, tzdates, xburhodj, NBUDGET_RHO, gnocompress, zrhodjn )
+    ENDIF
+  !
+  !* RTH budget
+  !
+    IF (LBU_RTH) THEN
+      call Store_one_budget( tpdiafile, tzdates, xburth, zrhodjn, NBUDGET_TH, gnocompress, ptstep )
+    END IF
+  !
+  !* RTKE budget
+  !
+    IF (LBU_RTKE) THEN
+      call Store_one_budget( tpdiafile, tzdates, xburtke, zrhodjn, NBUDGET_TKE, gnocompress, ptstep )
+    END IF
+  !
+  !* RRV budget
+  !
+    IF (LBU_RRV) THEN
+      call Store_one_budget( tpdiafile, tzdates, xburrv, zrhodjn, NBUDGET_RV, gnocompress, ptstep )
+    END IF
+  !
+  !* RRC budget
+  !
+    IF (LBU_RRC) THEN
+      call Store_one_budget( tpdiafile, tzdates, xburrc, zrhodjn, NBUDGET_RC, gnocompress, ptstep )
+    END IF
+  !
+  !* RRR budget
+  !
+    IF (LBU_RRR) THEN
+      call Store_one_budget( tpdiafile, tzdates, xburrr, zrhodjn, NBUDGET_RR, gnocompress, ptstep )
+    END IF
+  !
+  !* RRI budget
+  !
+    IF (LBU_RRI) THEN
+      call Store_one_budget( tpdiafile, tzdates, xburri, zrhodjn, NBUDGET_RI, gnocompress, ptstep )
+    END IF
+  !
+  !* RRS budget
+  !
+    IF (LBU_RRS) THEN
+      call Store_one_budget( tpdiafile, tzdates, xburrs, zrhodjn, NBUDGET_RS, gnocompress, ptstep )
+    END IF
+  !
+  !* RRG budget
+  !
+    IF (LBU_RRG) THEN
+      call Store_one_budget( tpdiafile, tzdates, xburrg, zrhodjn, NBUDGET_RG, gnocompress, ptstep )
+    END IF
+  !
+  !* RRH budget
+  !
+    IF (LBU_RRH) THEN
+      call Store_one_budget( tpdiafile, tzdates, xburrh, zrhodjn, NBUDGET_RH, gnocompress, ptstep )
+    END IF
+  !
+  !* RSV budgets
+  !
+    IF (LBU_RSV) THEN
+      DO JSV = 1,KSV
+        call Store_one_budget( tpdiafile, tzdates, xbursv(:, :, :, :, jsv ), zrhodjn, &
+                               NBUDGET_SV1 + jsv - 1, gnocompress, ptstep )
+      END DO
+    END IF
+  end if
+
+end subroutine Write_budget
+
+
+subroutine Store_one_budget_rho( tpdiafile, tpdates, pburhodj, kp, knocompress, prhodjn )
+  use modd_budget,            only: cbutype,                                                      &
+                                    lbu_icp, lbu_jcp, lbu_kcp,                                    &
+                                    nbuil, nbuih, nbujl, nbujh, nbukl, nbukh,                     &
+                                    nbuimax, nbuimax_ll, nbujmax, nbujmax_ll, nbukmax, nbutshift, &
+                                    nbumask, nbuwrnb,                                             &
+                                    NBUDGET_RHO, NBUDGET_U, NBUDGET_V, NBUDGET_W
+  use modd_io,                only: tfiledata
+  use modd_lunit_n,           only: tluout
+  use modd_parameters,        only: XNEGUNDEF
+  use modd_type_date,         only: date_time
+
+  use mode_write_diachro,     only: Write_diachro
+
+  use modi_end_cart_compress, only: End_cart_compress
+  use modi_end_mask_compress, only: End_mask_compress
+
+  implicit none
+
+  type(tfiledata),                                      intent(in)  :: tpdiafile   ! file to write
+  type(date_time), dimension(:),                        intent(in)  :: tpdates
+  real,            dimension(:,:,:),                    intent(in)  :: pburhodj    ! budget arrays for rhodj
+  integer,                                              intent(in)  :: kp          ! reference number of budget
+  logical,                                              intent(in)  :: knocompress ! compression for the cart option
+  real,            dimension(:,:,:,:,:,:), allocatable, intent(out) :: prhodjn
+
+  character(len=4)                               :: ybutype
+  character(len=9)                               :: ygroup_name   ! group name
+  character(len=99),  dimension(:), allocatable  :: ybucomment    ! comment
+  character(len=100), dimension(:), allocatable  :: yworkcomment  ! comment
+  character(len=100), dimension(:), allocatable  :: yworkunit     ! comment
+  integer,            dimension(:), allocatable  :: iworkgrid     ! grid label
+
+  if ( allocated( prhodjn ) ) deallocate( prhodjn )
+
+  ! pburhodj storage
+  select case ( cbutype )
+    case( 'CART', 'SKIP' )
+      ybutype = 'CART'
+        if ( knocompress ) then
+          allocate( prhodjn(nbuimax, nbujmax, nbukmax, 1, 1, 1 ) ) ! local budget of RHODJU
+          prhodjn(:, :, :, 1, 1, 1 ) = pburhodj(:, :, : )
+        else
+          allocate( prhodjn(nbuimax_ll, nbujmax_ll, nbukmax, 1, 1, 1 ) ) ! global budget of RhodjU
+          prhodjn(:,:,:,1,1,1)=end_cart_compress(pburhodj(:,:,:))
+        end if
+    case('MASK')
+      ybutype = 'MASK'
+        allocate( prhodjn(1, 1, nbukmax, nbuwrnb, nbumask, 1 ) )
+        prhodjn(1, 1, :, :, :, 1 ) = End_mask_compress( pburhodj(:, :, : ) )
+        where  ( prhodjn(1, 1, :, :, :, 1) <= 0. )
+            prhodjn(1, 1, :, :, :, 1 ) = XNEGUNDEF
+        end where
+
+    case default
+      call Print_msg( NVERB_ERROR, 'GEN', 'Store_one_budget_rho', 'unknown CBUTYPE' )
+  end select
+
+  allocate( ybucomment(1 ) )
+  allocate( yworkunit(1 ) )
+  allocate( yworkcomment(1 ) )
+  allocate( iworkgrid(1 ) )
+
+  select case( kp )
+    case( NBUDGET_RHO )
+      ybucomment(1)      = 'RhodJS'
+      yworkunit(1)       = 'kg'
+      yworkcomment(1)    = 'RhodJ for Scalars variables'
+      iworkgrid(1)       = 1
+      write( ygroup_name, fmt = "('RJS__',I4.4)" ) nbutshift
+
+    case( NBUDGET_U )
+      ybucomment(1)      = 'RhodJX'
+      yworkunit(1)       = 'kg'
+      yworkcomment(1)    = 'RhodJ for momentum along X axis'
+      iworkgrid(1)       = 2
+      write( ygroup_name, fmt = "('RJX__',I4.4)" ) nbutshift
+
+    case( NBUDGET_V )
+      ybucomment(1)      = 'RhodJY'
+      yworkunit(1)       = 'kg'
+      yworkcomment(1)    = 'RhodJ for momentum along Y axis'
+      iworkgrid(1)       = 3
+      write( ygroup_name, fmt = "('RJX__',I4.4)" ) nbutshift
+
+    case( NBUDGET_W )
+      ybucomment(1)      = 'RhodJZ'
+      yworkunit(1)       = 'kg'
+      yworkcomment(1)    = 'RhodJ for momentum along Z axis'
+      iworkgrid(1)       = 4
+      write( ygroup_name, fmt = "('RJZ__',I4.4)" ) nbutshift
+
+    case default
+      call Print_msg( NVERB_ERROR, 'GEN', 'Store_one_budget_rho', 'unknown budget type' )
+  end select
+
+  call Write_diachro( tpdiafile, tluout, ygroup_name, ybutype, iworkgrid,                          &
+                      tpdates, prhodjn, ybucomment,                                                &
+                      yworkunit, yworkcomment,                                                     &
+                      oicp = lbu_icp, ojcp = lbu_jcp, okcp = lbu_kcp,                              &
+                      kil = nbuil, kih = nbuih, kjl = nbujl, kjh = nbujh, kkl = nbukl, kkh = nbukh )
+  deallocate( ybucomment, yworkunit, yworkcomment, iworkgrid )
+
+end subroutine Store_one_budget_rho
+
+
+subroutine Store_one_budget( tpdiafile, tpdates, pbudarray, prhodjn, kp, knocompress, ptstep )
+  use modd_budget,            only: cbucomment, cbutype,                                                                          &
+                                    lbu_icp, lbu_jcp, lbu_kcp,                                                                    &
+                                    nbuil, nbuih, nbujl, nbujh, nbukl, nbukh,                                                     &
+                                    nbuimax, nbuimax_ll, nbujmax, nbujmax_ll, nbukmax, nbuprocnbr, nbustep, nbutshift,            &
+                                    nbumask, nbuwrnb,                                                                             &
+                                    NBUDGET_U, NBUDGET_V, NBUDGET_W, NBUDGET_TH, NBUDGET_TKE, NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, &
+                                    NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, NBUDGET_SV1
+  use modd_io,                only: tfiledata
+  use modd_lunit_n,           only: tluout
+  use modd_type_date,         only: date_time
+
+  use mode_write_diachro,     only: Write_diachro
+
+  use modi_end_cart_compress, only: End_cart_compress
+  use modi_end_mask_compress, only: End_mask_compress
+
+  implicit none
+
+  type(tfiledata),                                      intent(in) :: tpdiafile   ! file to write
+  type(date_time), dimension(:),                        intent(in) :: tpdates
+  real,            dimension(:,:,:,:),                  intent(in) :: pbudarray   ! budget array
+  real,            dimension(:,:,:,:,:,:), allocatable, intent(in) :: prhodjn
+  integer,                                              intent(in) :: kp          ! reference number of budget
+  logical,                                              intent(in) :: knocompress ! compression for the cart option
+  real,                                                 intent(in) :: ptstep      ! time step
+
+  character(len=4)                                        :: ybutype
+  character(len=9)                                        :: ygroup_name
+  character(len=100), dimension(:),           allocatable :: yworkcomment
+  character(len=100), dimension(:),           allocatable :: yworkunit
+  integer                                                 :: jproc
+  integer                                                 :: jsv
+  integer                                                 :: jt
+  integer,            dimension(:),           allocatable :: iworkgrid  ! grid label
+  real,               dimension(:),           allocatable :: zconvert   ! unit conversion coefficient
+  real,               dimension(:,:,:,:,:,:), allocatable :: zworkt
+
+  if( .not. allocated( prhodjn ) ) then
+    call Print_msg( NVERB_ERROR, 'GEN', 'Store_one_budget', 'prhodjn not allocated' )
+    return
+  end if
+
+  ! unit conversion for  ru budgets
+  allocate( zconvert( nbuprocnbr( kp ) ) )
+  zconvert(1 : 2 )                = ptstep * Real( nbustep )
+  zconvert(3 )                    = ptstep * Real( nbustep )
+  zconvert(4 : nbuprocnbr( kp ) ) = 1.
+
+  select case ( cbutype )
+    case( 'CART', 'SKIP' )
+      ybutype = 'CART'
+        if ( knocompress ) then
+          allocate( zworkt(nbuimax, nbujmax, nbukmax, 1, 1, nbuprocnbr(kp ) ) ) ! local budget of ru
+          do jproc = 1, nbuprocnbr(kp )
+            zworkt(:, :, :, 1, 1, jproc ) = pbudarray(:, :, :, jproc ) * zconvert(jproc ) / prhodjn(:, :, :, 1, 1, 1 )
+          end do
+        else
+          allocate( zworkt(nbuimax_ll, nbujmax_ll, nbukmax, 1, 1, nbuprocnbr(kp ) ) ) ! global budget of ru
+  !
+          do jproc = 1, nbuprocnbr(kp )
+            zworkt(:, :, :, 1, 1, jproc ) = End_cart_compress( pbudarray(:, :, :, jproc ) )
+            zworkt(:, :, :, 1, 1, jproc ) = zworkt(:, :, :, 1, 1, jproc ) * zconvert(jproc ) / prhodjn(:, :, :, 1, 1, 1 )
+          end do
+        endif
+    case('MASK')
+      ybutype = 'MASK'
+        allocate( zworkt(1, 1, nbukmax, nbuwrnb, nbumask, nbuprocnbr(kp ) ) )
+        do jproc = 1, nbuprocnbr(kp )
+          zworkt(1, 1, :, :, :, jproc ) = End_mask_compress( pbudarray(:, :, :, jproc ) ) &
+                                          * zconvert(jproc ) / prhodjn(1, 1, :, :, :, 1 )
+        end do
+
+    case default
+      call Print_msg( NVERB_ERROR, 'GEN', 'Store_one_budget', 'unknown CBUTYPE' )
+  end select
+
+  deallocate(zconvert)
 !
 !  RU budgets storage
-      ALLOCATE(YWORKUNIT(NBUPROCNBR(IP)))
-      ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
-      ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
+  allocate( yworkunit( nbuprocnbr(kp ) ) )
+  allocate( yworkcomment( nbuprocnbr(kp ) ) )
+  allocate( iworkgrid( nbuprocnbr(kp ) ) )
 !
-      YWORKUNIT(:)       = 'm s-2'; YWORKUNIT(1:3) = 'm s-1'
-      YWORKCOMMENT(:)    = 'Budget of momentum along X axis'
-      IWORKGRID(:)       = 2
+  select case( kp )
+    case ( NBUDGET_U )
+      yworkunit(:)       = 'm s-2'; yworkunit(1:3) = 'm s-1'
+      yworkcomment(:)    = 'Budget of momentum along X axis'
+      iworkgrid(:)       = 2
+      write( ygroup_name, fmt = "('UU___',I4.4)" ) nbutshift
 
-      WRITE(YGROUP_NAME,FMT="('UU___',I4.4)") NBUTSHIFT
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID,  &
-                         ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(1, :),  &
-                         YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-                         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
-      DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-!
-! XBURHODJU storage
-      IF (GNOCOMPRESS) THEN
-        ALLOCATE(ZWORK(NBUIMAX,NBUJMAX,NBUKMAX,1,1,1)) ! local budget of RHODJU
-        ZWORK(:,:,:,1,1,1) = XBURHODJU(:,:,:)
-      END IF
-      ALLOCATE(YBUCOMMENT(1))
-      ALLOCATE(YWORKUNIT(1))
-      ALLOCATE(YWORKCOMMENT(1))
-      ALLOCATE(IWORKGRID(1))
-!
-      YBUCOMMENT(1)      = 'RhodJX'
-      YWORKUNIT(1)       = 'kg'
-      YWORKCOMMENT(1)    = 'RhodJ for momentum along X axis'
-      IWORKGRID(1)       = 2
-      WRITE(YGROUP_NAME,FMT="('RJX__',I4.4)") NBUTSHIFT
-! 
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME,'CART', IWORKGRID,   &
-                         ZWORKDATIME, ZWORK, ZWORKTEMP, YBUCOMMENT,         &
-                         YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-                         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
-      DEALLOCATE(ZWORK, YBUCOMMENT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-    END IF
-!
-!*	 2.2.2  RV budget
-!
-    IF (LBU_RV) THEN 
-                       ! XBURHODJV and RV budgets
-!
-      IP=2
-      ALLOCATE(ZCONVERT(NBUPROCNBR(IP)))
-      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(3)       = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(4:NBUPROCNBR(IP)) = 1.
-! 
-      IF (GNOCOMPRESS) THEN
-        ALLOCATE(ZWORKT(NBUIMAX,NBUJMAX,NBUKMAX,1,1,NBUPROCNBR(IP))) ! local budget of RV
-        DO JPROC=1,NBUPROCNBR(IP)
-          ZWORKT(:,:,:,1,1,JPROC) = XBURV(:,:,:,JPROC) * ZCONVERT(JPROC)    &
-                                                    / XBURHODJV(:,:,:)
-        END DO
-      ELSE
-        ALLOCATE(ZWORK(NBUIMAX_ll,NBUJMAX_ll,NBUKMAX,1,1,1)) ! global budget of RhodjV
-        ZWORK(:,:,:,1,1,1)=END_CART_COMPRESS(XBURHODJV(:,:,:))
-!
-        ALLOCATE(ZWORKT(NBUIMAX_ll,NBUJMAX_ll,NBUKMAX,1,1,NBUPROCNBR(IP))) ! global budget of RV
-!      
-        DO JPROC=1,NBUPROCNBR(IP)
-          ZWORKT(:,:,:,1,1,JPROC) = END_CART_COMPRESS(XBURV(:,:,:,JPROC))
-          ZWORKT(:,:,:,1,1,JPROC) = ZWORKT(:,:,:,1,1,JPROC)* ZCONVERT(JPROC)  &
-                                                    / ZWORK(:,:,:,1,1,1)
-        END DO
-      ENDIF
-      DEALLOCATE(ZCONVERT)
-!
-!  RV budgets storage
-      ALLOCATE(YWORKUNIT(NBUPROCNBR(IP)))
-      ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
-      ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
-                                !
-      YWORKUNIT(:)       = 'm s-2'; YWORKUNIT(1:3) = 'm s-1'
-      YWORKCOMMENT(:)    = 'Budget of momentum along Y axis'
-      IWORKGRID(:)       = 3
-      WRITE(YGROUP_NAME,FMT="('VV___',I4.4)") NBUTSHIFT
-                                !
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(IP, :),   &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
-      DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-!                     XBURHODJV storage
-      IF (GNOCOMPRESS) THEN
-        ALLOCATE(ZWORK(NBUIMAX,NBUJMAX,NBUKMAX,1,1,1)) ! local budget of RHODJV
-        ZWORK(:,:,:,1,1,1) = XBURHODJV(:,:,:)
-      END IF
-      ALLOCATE(YBUCOMMENT(1))
-      ALLOCATE(YWORKUNIT(1))
-      ALLOCATE(YWORKCOMMENT(1))
-      ALLOCATE(IWORKGRID(1))
-!
-      YBUCOMMENT(1)      = 'RhodJY'
-      YWORKUNIT(1)       = 'kg'
-      YWORKCOMMENT(1)    = 'RhodJ for momentum along Y axis'
-      IWORKGRID(1)       = 3
-      WRITE(YGROUP_NAME,FMT="('RJY__',I4.4)") NBUTSHIFT
-! 
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME,'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORK, ZWORKTEMP, YBUCOMMENT,         &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
-      DEALLOCATE(YBUCOMMENT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-      DEALLOCATE(ZWORK)
-    END IF
-!
-!
-!*	 2.2.3  RW budget
-!
-    IF (LBU_RW) THEN
-! 
-      IP=3
-      ALLOCATE(ZCONVERT(NBUPROCNBR(IP)))
-      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(3)       = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(4:NBUPROCNBR(IP)) = 1.
-! 
-      IF (GNOCOMPRESS) THEN
-        ALLOCATE(ZWORKT(NBUIMAX,NBUJMAX,NBUKMAX,1,1,NBUPROCNBR(IP))) ! local budget of RW
-        DO JPROC=1,NBUPROCNBR(IP)
-          ZWORKT(:,:,:,1,1,JPROC) = XBURW(:,:,:,JPROC) * ZCONVERT(JPROC)    &
-               / XBURHODJW(:,:,:)
-        END DO
-      ELSE
-        ALLOCATE(ZWORK(NBUIMAX_ll,NBUJMAX_ll,NBUKMAX,1,1,1)) ! global budget of RhodjW
-        ZWORK(:,:,:,1,1,1)=END_CART_COMPRESS(XBURHODJW(:,:,:))
-                                !
-        ALLOCATE(ZWORKT(NBUIMAX_ll,NBUJMAX_ll,NBUKMAX,1,1,NBUPROCNBR(IP))) ! global budget of RW
-!      
-        DO JPROC=1,NBUPROCNBR(IP)
-          ZWORKT(:,:,:,1,1,JPROC) = END_CART_COMPRESS(XBURW(:,:,:,JPROC))
-          ZWORKT(:,:,:,1,1,JPROC) = ZWORKT(:,:,:,1,1,JPROC)* ZCONVERT(JPROC)  &
-               / ZWORK(:,:,:,1,1,1)
-        END DO
-      ENDIF
-      DEALLOCATE(ZCONVERT)
-!
-!  RW budgets storage
-      ALLOCATE(YWORKUNIT(NBUPROCNBR(IP)))
-      ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
-      ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
-!
-      YWORKUNIT(:)       = 'm s-2'; YWORKUNIT(1:3) = 'm s-1'
-      YWORKCOMMENT(:)    = 'Budget of momentum along Z axis'
-      IWORKGRID(:)       = 4
-      WRITE(YGROUP_NAME,FMT="('WW___',I4.4)") NBUTSHIFT
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(IP, :),   &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
-      DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-!                     XBURHODJW storage
-      IF (GNOCOMPRESS) THEN
-        ALLOCATE(ZWORK(NBUIMAX,NBUJMAX,NBUKMAX,1,1,1)) ! local budget of RHODJW
-        ZWORK(:,:,:,1,1,1) = XBURHODJW(:,:,:)
-      END IF
-      ALLOCATE(YBUCOMMENT(1))
-      ALLOCATE(YWORKUNIT(1))
-      ALLOCATE(YWORKCOMMENT(1))
-      ALLOCATE(IWORKGRID(1))
-!
-      YBUCOMMENT(1)      = 'RhodJZ'
-      YWORKUNIT(1)       = 'kg'
-      YWORKCOMMENT(1)    = 'RhodJ for momentum along Z axis'
-      IWORKGRID(1)       = 4
-      WRITE(YGROUP_NAME,FMT="('RJZ__',I4.4)") NBUTSHIFT
-! 
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME,'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORK, ZWORKTEMP, YBUCOMMENT,         &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
-      DEALLOCATE(YBUCOMMENT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-      DEALLOCATE(ZWORK)
-    END IF
-  
-!
-!*	 2.2.3'  XBURHODJ storage for Scalars
-!
-    IF (LBU_RTH .OR. LBU_RTKE .OR. LBU_RRV .OR. LBU_RRC .OR. LBU_RRR .OR. &
-        LBU_RRI .OR. LBU_RRS  .OR. LBU_RRG .OR. LBU_RRH .OR. LBU_RSV      ) THEN
-!      
-      IF (GNOCOMPRESS) THEN
-        ALLOCATE(ZWORK(NBUIMAX,NBUJMAX,NBUKMAX,1,1,1)) ! local budget of RHODJ
-        ZWORK(:,:,:,1,1,1) = XBURHODJ(:,:,:)
-      ELSE
-        ALLOCATE(ZWORK(NBUIMAX_ll,NBUJMAX_ll,NBUKMAX,1,1,1)) ! global budget of RodhjW
-        ZWORK(:,:,:,1,1,1)=END_CART_COMPRESS(XBURHODJ(:,:,:))
-      END IF
-      ALLOCATE(YBUCOMMENT(1))
-      ALLOCATE(YWORKUNIT(1))
-      ALLOCATE(YWORKCOMMENT(1))
-      ALLOCATE(IWORKGRID(1))
-!
-      YBUCOMMENT(1)      = 'RhodJS'
-      YWORKUNIT(1)       = 'kg'
-      YWORKCOMMENT(1)    = 'RhodJ for Scalars variables'
-      IWORKGRID(1)       = 1
-      WRITE(YGROUP_NAME,FMT="('RJS__',I4.4)") NBUTSHIFT
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORK, ZWORKTEMP, YBUCOMMENT,         &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
-      IF (GNOCOMPRESS) THEN
-        DEALLOCATE(ZWORK, YBUCOMMENT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-      ELSE
-        DEALLOCATE(YBUCOMMENT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-      ENDIF
-!
-    ENDIF
-!
-!*	 2.2.4  RTH budget
-!
-    IF (LBU_RTH) THEN
-!  RTH budgets storage
-      IP=4
-      ALLOCATE(ZCONVERT(NBUPROCNBR(IP)))
-      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(3)       = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(4:NBUPROCNBR(IP)) = 1.
-! 
-      IF (GNOCOMPRESS) THEN
-        ALLOCATE(ZWORKT(NBUIMAX,NBUJMAX,NBUKMAX,1,1,NBUPROCNBR(IP))) ! local budget of RTH
-        DO JPROC=1,NBUPROCNBR(IP)
-          ZWORKT(:,:,:,1,1,JPROC) = XBURTH(:,:,:,JPROC) * ZCONVERT(JPROC)    &
-               / XBURHODJ(:,:,:)
-        END DO
-      ELSE
-!
-        ALLOCATE(ZWORKT(NBUIMAX_ll,NBUJMAX_ll,NBUKMAX,1,1,NBUPROCNBR(IP))) ! global budget of RTH
-!      
-        DO JPROC=1,NBUPROCNBR(IP)
-          ZWORKT(:,:,:,1,1,JPROC) = END_CART_COMPRESS(XBURTH(:,:,:,JPROC))
-          ZWORKT(:,:,:,1,1,JPROC) = ZWORKT(:,:,:,1,1,JPROC)* ZCONVERT(JPROC)   &
-             / ZWORK(:,:,:,1,1,1)
-        END DO
-      ENDIF
-      DEALLOCATE(ZCONVERT)
-! 
-      ALLOCATE(YWORKUNIT(NBUPROCNBR(IP)))
-      ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
-      ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
-!
-      YWORKUNIT(:)       = 'K s-1' ; YWORKUNIT(1:3) = 'K'
-      YWORKCOMMENT(:)    = 'Budget of potential temperature'
-      IWORKGRID(:)       = 1
-      WRITE(YGROUP_NAME,FMT="('TH___',I4.4)") NBUTSHIFT
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(IP, :),   &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
-      DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-!
-    END IF
-!
-!*	 2.2.5  RTKE budget
-!
-    IF (LBU_RTKE) THEN
-!  RTKE budgets storage
-      IP=5
-      ALLOCATE(ZCONVERT(NBUPROCNBR(IP)))
-      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(3)       = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(4:NBUPROCNBR(IP)) = 1.
-! 
-      IF (GNOCOMPRESS) THEN
-        ALLOCATE(ZWORKT(NBUIMAX,NBUJMAX,NBUKMAX,1,1,NBUPROCNBR(IP))) ! local budget of RTKE
-        DO JPROC=1,NBUPROCNBR(IP)
-          ZWORKT(:,:,:,1,1,JPROC) = XBURTKE(:,:,:,JPROC) * ZCONVERT(JPROC)    &
-             / XBURHODJ(:,:,:)
-        END DO
-      ELSE
-!
-        ALLOCATE(ZWORKT(NBUIMAX_ll,NBUJMAX_ll,NBUKMAX,1,1,NBUPROCNBR(IP))) ! global budget of RTKE
-!      
-        DO JPROC=1,NBUPROCNBR(IP)
-          ZWORKT(:,:,:,1,1,JPROC) = END_CART_COMPRESS(XBURTKE(:,:,:,JPROC))
-          ZWORKT(:,:,:,1,1,JPROC) = ZWORKT(:,:,:,1,1,JPROC)* ZCONVERT(JPROC)  &
-             / ZWORK(:,:,:,1,1,1)
-        END DO
-      ENDIF
-      DEALLOCATE(ZCONVERT)
-! 
-      ALLOCATE(YWORKUNIT(NBUPROCNBR(IP)))
-      ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
-      ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
-!
-      YWORKUNIT(:)       = 'm2 s-3' ; YWORKUNIT(1:3) = 'm2 s-1'
-      YWORKCOMMENT(:)    = 'Budget of turbulent kinetic energy'
-      IWORKGRID(:)       = 1
-      WRITE(YGROUP_NAME,FMT="('TK___',I4.4)") NBUTSHIFT 
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(IP, :),   &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
-      DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-!
-    END IF   
-!
-!*	 2.2.6  RRV budget
-!
-    IF (LBU_RRV) THEN
-!  RRV budgets storage
-      IP=6
-      ALLOCATE(ZCONVERT(NBUPROCNBR(IP)))
-      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(3)       = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(4:NBUPROCNBR(IP)) = 1.
-! 
-      IF (GNOCOMPRESS) THEN
-        ALLOCATE(ZWORKT(NBUIMAX,NBUJMAX,NBUKMAX,1,1,NBUPROCNBR(IP))) ! local budget of RTKE
-        DO JPROC=1,NBUPROCNBR(IP)
-          ZWORKT(:,:,:,1,1,JPROC) = XBURRV(:,:,:,JPROC) * ZCONVERT(JPROC)    &
-             / XBURHODJ(:,:,:)
-        END DO
-      ELSE
-!
-        ALLOCATE(ZWORKT(NBUIMAX_ll,NBUJMAX_ll,NBUKMAX,1,1,NBUPROCNBR(IP))) ! global budget of RTKE
-!      
-        DO JPROC=1,NBUPROCNBR(IP)
-          ZWORKT(:,:,:,1,1,JPROC) = END_CART_COMPRESS(XBURRV(:,:,:,JPROC))
-          ZWORKT(:,:,:,1,1,JPROC) = ZWORKT(:,:,:,1,1,JPROC)* ZCONVERT(JPROC)  &
-             / ZWORK(:,:,:,1,1,1)
-        END DO
-      ENDIF
-      DEALLOCATE(ZCONVERT)
-! 
-      ALLOCATE(YWORKUNIT(NBUPROCNBR(IP)))
-      ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
-      ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
-!
-      YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = 'kg kg-1'
-      YWORKCOMMENT(:)    = 'Budget of water vapor mixing ratio'
-      IWORKGRID(:)       = 1
-      WRITE(YGROUP_NAME,FMT="('RV___',I4.4)") NBUTSHIFT
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(IP, :),   &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
-      DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-!
-    END IF
-!
-!*	 2.2.7  RRC budget
-!
-    IF (LBU_RRC) THEN
-!  RRV budgets storage
-      IP=7
-      ALLOCATE(ZCONVERT(NBUPROCNBR(IP)))
-      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(3)       = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(4:NBUPROCNBR(IP)) = 1.
-! 
-      IF (GNOCOMPRESS) THEN
-        ALLOCATE(ZWORKT(NBUIMAX,NBUJMAX,NBUKMAX,1,1,NBUPROCNBR(IP))) ! local budget of RRC
-        DO JPROC=1,NBUPROCNBR(IP)
-          ZWORKT(:,:,:,1,1,JPROC) = XBURRC(:,:,:,JPROC) * ZCONVERT(JPROC)    &
-             / XBURHODJ(:,:,:)
-        END DO
-      ELSE
-!
-        ALLOCATE(ZWORKT(NBUIMAX_ll,NBUJMAX_ll,NBUKMAX,1,1,NBUPROCNBR(IP))) ! global budget of RRC
-!      
-        DO JPROC=1,NBUPROCNBR(IP)
-          ZWORKT(:,:,:,1,1,JPROC) = END_CART_COMPRESS(XBURRC(:,:,:,JPROC))
-          ZWORKT(:,:,:,1,1,JPROC) = ZWORKT(:,:,:,1,1,JPROC)* ZCONVERT(JPROC)  &
-             / ZWORK(:,:,:,1,1,1)
-        END DO
-      ENDIF
-      DEALLOCATE(ZCONVERT)
-! 
-      ALLOCATE(YWORKUNIT(NBUPROCNBR(IP)))
-      ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
-      ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
-!
-      YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = 'kg kg-1'
-      YWORKCOMMENT(:)    = 'Budget of cloud water mixing ratio'
-      IWORKGRID(:)       = 1
-      WRITE(YGROUP_NAME,FMT="('RC___',I4.4)") NBUTSHIFT 
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(IP, :),   &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
-      DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-!
-    END IF
-!
-!*	 2.2.8  RRR budget
-!
-    IF (LBU_RRR) THEN
-      IP=8
-      ALLOCATE(ZCONVERT(NBUPROCNBR(IP)))
-      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(3)       = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(4:NBUPROCNBR(IP)) = 1.
-! 
-      IF (GNOCOMPRESS) THEN
-        ALLOCATE(ZWORKT(NBUIMAX,NBUJMAX,NBUKMAX,1,1,NBUPROCNBR(IP))) ! local budget of RRR
-        DO JPROC=1,NBUPROCNBR(IP)
-          ZWORKT(:,:,:,1,1,JPROC) = XBURRR(:,:,:,JPROC) * ZCONVERT(JPROC)    &
-             / XBURHODJ(:,:,:)
-        END DO
-      ELSE
-!
-        ALLOCATE(ZWORKT(NBUIMAX_ll,NBUJMAX_ll,NBUKMAX,1,1,NBUPROCNBR(IP))) ! global budget of RRR
-!      
-        DO JPROC=1,NBUPROCNBR(IP)
-          ZWORKT(:,:,:,1,1,JPROC) = END_CART_COMPRESS(XBURRR(:,:,:,JPROC))
-          ZWORKT(:,:,:,1,1,JPROC) = ZWORKT(:,:,:,1,1,JPROC)* ZCONVERT(JPROC)  &
-             / ZWORK(:,:,:,1,1,1)
-        END DO
-      ENDIF
-      DEALLOCATE(ZCONVERT)
-! 
-      ALLOCATE(YWORKUNIT(NBUPROCNBR(IP)))
-      ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
-      ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
-!
-      YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = 'kg kg-1'
-      YWORKCOMMENT(:)    = 'Budget of rain water mixing ratio'
-      IWORKGRID(:)       = 1
-      WRITE(YGROUP_NAME,FMT="('RR___',I4.4)") NBUTSHIFT
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(IP, :),   &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
-      DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-!
-    END IF
-!
-!*	 2.2.9  RRI budget
-!
-    IF (LBU_RRI) THEN
-      IP=9
-      ALLOCATE(ZCONVERT(NBUPROCNBR(IP)))
-      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(3)       = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(4:NBUPROCNBR(IP)) = 1.
-! 
-      IF (GNOCOMPRESS) THEN
-        ALLOCATE(ZWORKT(NBUIMAX,NBUJMAX,NBUKMAX,1,1,NBUPROCNBR(IP))) ! local budget of RRI
-        DO JPROC=1,NBUPROCNBR(IP)
-          ZWORKT(:,:,:,1,1,JPROC) = XBURRI(:,:,:,JPROC) * ZCONVERT(JPROC)    &
-               / XBURHODJ(:,:,:)
-        END DO
-      ELSE
-!
-        ALLOCATE(ZWORKT(NBUIMAX_ll,NBUJMAX_ll,NBUKMAX,1,1,NBUPROCNBR(IP))) ! global budget of RRI
-!      
-        DO JPROC=1,NBUPROCNBR(IP)
-          ZWORKT(:,:,:,1,1,JPROC) = END_CART_COMPRESS(XBURRI(:,:,:,JPROC))
-          ZWORKT(:,:,:,1,1,JPROC) = ZWORKT(:,:,:,1,1,JPROC)* ZCONVERT(JPROC)  &
-             / ZWORK(:,:,:,1,1,1)
-        END DO
-      ENDIF
-      DEALLOCATE(ZCONVERT)
-! 
-      ALLOCATE(YWORKUNIT(NBUPROCNBR(IP)))
-      ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
-      ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
-!
-      YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = 'kg kg-1'
-      YWORKCOMMENT(:)    = 'Budget of cloud ice mixing ratio'
-      IWORKGRID(:)       = 1
-      WRITE(YGROUP_NAME,FMT="('RI___',I4.4)") NBUTSHIFT
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(IP, :),   &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
-      DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-!
-    END IF
-!
-!*	 2.2.10  RRS budget
-!
-    IF (LBU_RRS) THEN
-      IP=10
-      ALLOCATE(ZCONVERT(NBUPROCNBR(IP)))
-      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(3)       = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(4:NBUPROCNBR(IP)) = 1.
-! 
-      IF (GNOCOMPRESS) THEN
-        ALLOCATE(ZWORKT(NBUIMAX,NBUJMAX,NBUKMAX,1,1,NBUPROCNBR(IP))) ! local budget of RRS
-        DO JPROC=1,NBUPROCNBR(IP)
-          ZWORKT(:,:,:,1,1,JPROC) = XBURRS(:,:,:,JPROC) * ZCONVERT(JPROC)    &
-             / XBURHODJ(:,:,:)
-        END DO
-      ELSE
-!
-        ALLOCATE(ZWORKT(NBUIMAX_ll,NBUJMAX_ll,NBUKMAX,1,1,NBUPROCNBR(IP))) ! global budget of RRS
-!      
-        DO JPROC=1,NBUPROCNBR(IP)
-          ZWORKT(:,:,:,1,1,JPROC) = END_CART_COMPRESS(XBURRS(:,:,:,JPROC))
-          ZWORKT(:,:,:,1,1,JPROC) = ZWORKT(:,:,:,1,1,JPROC)* ZCONVERT(JPROC)  &
-             / ZWORK(:,:,:,1,1,1)
-        END DO
-      ENDIF
-      DEALLOCATE(ZCONVERT)
-! 
-      ALLOCATE(YWORKUNIT(NBUPROCNBR(IP)))
-      ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
-      ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
-!
-      YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = 'kg kg-1'
-      YWORKCOMMENT(:)    = 'Budget of snow/aggregate mixing ratio'
-      IWORKGRID(:)       = 1
-      WRITE(YGROUP_NAME,FMT="('RS___',I4.4)") NBUTSHIFT
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(IP, :),   &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
-      DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-!
-    END IF
-!
-!*	 2.2.11  RRG budget
-!
-    IF (LBU_RRG) THEN
-      IP=11
-      ALLOCATE(ZCONVERT(NBUPROCNBR(IP)))
-      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(3)       = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(4:NBUPROCNBR(IP)) = 1.
-! 
-      IF (GNOCOMPRESS) THEN
-        ALLOCATE(ZWORKT(NBUIMAX,NBUJMAX,NBUKMAX,1,1,NBUPROCNBR(IP))) ! local budget of RRG
-        DO JPROC=1,NBUPROCNBR(IP)
-          ZWORKT(:,:,:,1,1,JPROC) = XBURRG(:,:,:,JPROC) * ZCONVERT(JPROC)    &
-             / XBURHODJ(:,:,:)
-        END DO
-      ELSE
-!
-        ALLOCATE(ZWORKT(NBUIMAX_ll,NBUJMAX_ll,NBUKMAX,1,1,NBUPROCNBR(IP))) ! global budget of RRG
-!      
-        DO JPROC=1,NBUPROCNBR(IP)
-          ZWORKT(:,:,:,1,1,JPROC) = END_CART_COMPRESS(XBURRG(:,:,:,JPROC))
-          ZWORKT(:,:,:,1,1,JPROC) = ZWORKT(:,:,:,1,1,JPROC)* ZCONVERT(JPROC)  &
-             / ZWORK(:,:,:,1,1,1)
-        END DO
-      ENDIF
-      DEALLOCATE(ZCONVERT)
-! 
-      ALLOCATE(YWORKUNIT(NBUPROCNBR(IP)))
-      ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
-      ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
-!
-      YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = 'kg kg-1'
-      YWORKCOMMENT(:)    = 'Budget of graupel mixing ratio'
-      IWORKGRID(:)       = 1
-      WRITE(YGROUP_NAME,FMT="('RG___',I4.4)") NBUTSHIFT
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(IP, :),   &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
-      DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-!
-    END IF
-!
-!*	 2.2.12  RRH budget
-!
-    IF (LBU_RRH) THEN
-      IP=12
-      ALLOCATE(ZCONVERT(NBUPROCNBR(IP)))
-      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(3)       = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(4:NBUPROCNBR(IP)) = 1.
-! 
-      IF (GNOCOMPRESS) THEN
-        ALLOCATE(ZWORKT(NBUIMAX,NBUJMAX,NBUKMAX,1,1,NBUPROCNBR(IP))) ! local budget of RRH
-        DO JPROC=1,NBUPROCNBR(IP)
-          ZWORKT(:,:,:,1,1,JPROC) = XBURRH(:,:,:,JPROC) * ZCONVERT(JPROC)    &
-             / XBURHODJ(:,:,:)
-        END DO
-      ELSE
-!
-        ALLOCATE(ZWORKT(NBUIMAX_ll,NBUJMAX_ll,NBUKMAX,1,1,NBUPROCNBR(IP))) ! global budget of RRH
-!      
-        DO JPROC=1,NBUPROCNBR(IP)
-          ZWORKT(:,:,:,1,1,JPROC) = END_CART_COMPRESS(XBURRH(:,:,:,JPROC))
-          ZWORKT(:,:,:,1,1,JPROC) = ZWORKT(:,:,:,1,1,JPROC)* ZCONVERT(JPROC)  &
-             / ZWORK(:,:,:,1,1,1)
-        END DO
-      ENDIF
-      DEALLOCATE(ZCONVERT)
-! 
-      ALLOCATE(YWORKUNIT(NBUPROCNBR(IP)))
-      ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
-      ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
-!
-      YWORKUNIT(:)       = 's-1' ; YWORKUNIT(1:3) = 'kg kg-1'
-      YWORKCOMMENT(:)    = 'Budget of hail mixing ratio'
-      IWORKGRID(:)       = 1
-      WRITE(YGROUP_NAME,FMT="('RH___',I4.4)") NBUTSHIFT
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID, &
-           ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(IP, :),   &
-           YWORKUNIT, YWORKCOMMENT,                           &
-           LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
-      DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-!
-    END IF
-!
-!*	 2.2.13  RSV budget
-!
-    IF (LBU_RSV) THEN
-      DO JSV = 1,KSV
-        IP=12+JSV
-        ALLOCATE(ZCONVERT(NBUPROCNBR(IP)))
-        ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
-        ZCONVERT(3)       = PTSTEP * REAL(NBUSTEP)
-        ZCONVERT(4:NBUPROCNBR(IP)) = 1.
-! 
-        IF (GNOCOMPRESS) THEN
-          ALLOCATE(ZWORKT(NBUIMAX,NBUJMAX,NBUKMAX,1,1,NBUPROCNBR(IP))) ! local budget of RRH
-          DO JPROC=1,NBUPROCNBR(IP)
-            ZWORKT(:,:,:,1,1,JPROC) = XBURSV(:,:,:,JPROC,JSV) * ZCONVERT(JPROC)  &
-               / XBURHODJ(:,:,:)
-          END DO
-        ELSE
-!
-          ALLOCATE(ZWORKT(NBUIMAX_ll,NBUJMAX_ll,NBUKMAX,1,1,NBUPROCNBR(IP))) ! global budget of RRH
-!      
-          DO JPROC=1,NBUPROCNBR(IP)
-            ZWORKT(:,:,:,1,1,JPROC) = END_CART_COMPRESS(XBURSV(:,:,:,JPROC,JSV))
-            ZWORKT(:,:,:,1,1,JPROC) = ZWORKT(:,:,:,1,1,JPROC)* ZCONVERT(JPROC)    &
-               / ZWORK(:,:,:,1,1,1)
-          END DO
-         DEALLOCATE(ZWORK)
-        ENDIF
-        DEALLOCATE(ZCONVERT)
-!   
-        ALLOCATE(YWORKUNIT(NBUPROCNBR(IP)))
-        ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
-        ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
-!
-        YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = '  '
-        DO JT = 1,NBUPROCNBR(IP)
-          WRITE(YWORKCOMMENT(JT),FMT="('Budget of SVx=',I3.3)") JSV
-        END DO
-        IWORKGRID(:)       = 1
-        WRITE(YGROUP_NAME,FMT="('SV',I3.3,I4.4)") JSV,NBUTSHIFT
-!
-        CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, 'CART', IWORKGRID, &
-             ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(IP, :),   &
-             YWORKUNIT, YWORKCOMMENT,                           &
-             LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-             NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH           )
-        DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-!
+    case ( NBUDGET_V )
+      yworkunit(:)       = 'm s-2'; yworkunit(1:3) = 'm s-1'
+      yworkcomment(:)    = 'Budget of momentum along Y axis'
+      iworkgrid(:)       = 3
+      write( ygroup_name, fmt = "('VV___',I4.4)" ) nbutshift
+
+    case ( NBUDGET_W )
+      yworkunit(:)       = 'm s-2'; yworkunit(1:3) = 'm s-1'
+      yworkcomment(:)    = 'Budget of momentum along Z axis'
+      iworkgrid(:)       = 4
+      write( ygroup_name, fmt = "('WW___',I4.4)" ) nbutshift
+
+    case ( NBUDGET_TH )
+      yworkunit(:)       = 'K s-1' ; yworkunit(1:3) = 'K'
+      yworkcomment(:)    = 'Budget of potential temperature'
+      iworkgrid(:)       = 1
+      write( ygroup_name, fmt = "('TH___',I4.4)" ) nbutshift
+
+    case ( NBUDGET_TKE )
+      yworkunit(:)       = 'm2 s-3' ; yworkunit(1:3) = 'm2 s-1'
+      yworkcomment(:)    = 'Budget of turbulent kinetic energy'
+      iworkgrid(:)       = 1
+      write( ygroup_name, fmt = "('TK___',I4.4)" ) nbutshift
+
+    case ( NBUDGET_RV )
+      yworkunit(:)       = 's-1' ;  yworkunit(1:3) = 'kg kg-1'
+      yworkcomment(:)    = 'Budget of water vapor mixing ratio'
+      iworkgrid(:)       = 1
+      write( ygroup_name, fmt = "('RV___',I4.4)" ) nbutshift
+
+    case ( NBUDGET_RC )
+      yworkunit(:)       = 's-1' ;  yworkunit(1:3) = 'kg kg-1'
+      yworkcomment(:)    = 'Budget of cloud water mixing ratio'
+      iworkgrid(:)       = 1
+      write( ygroup_name, fmt = "('RC___',I4.4)" ) nbutshift
+
+    case ( NBUDGET_RR )
+      yworkunit(:)       = 's-1' ;  yworkunit(1:3) = 'kg kg-1'
+      yworkcomment(:)    = 'Budget of rain water mixing ratio'
+      iworkgrid(:)       = 1
+      write( ygroup_name, fmt = "('RR___',I4.4)" ) nbutshift
+
+    case ( NBUDGET_RI )
+      yworkunit(:)       = 's-1' ;  yworkunit(1:3) = 'kg kg-1'
+      yworkcomment(:)    = 'Budget of cloud ice mixing ratio'
+      iworkgrid(:)       = 1
+      write( ygroup_name, fmt = "('RI___',I4.4)" ) nbutshift
+
+    case ( NBUDGET_RS )
+      yworkunit(:)       = 's-1' ;  yworkunit(1:3) = 'kg kg-1'
+      yworkcomment(:)    = 'Budget of snow/aggregate mixing ratio'
+      iworkgrid(:)       = 1
+      write( ygroup_name, fmt = "('RS___',I4.4)" ) nbutshift
+
+    case ( NBUDGET_RG )
+      yworkunit(:)       = 's-1' ;  yworkunit(1:3) = 'kg kg-1'
+      yworkcomment(:)    = 'Budget of graupel mixing ratio'
+      iworkgrid(:)       = 1
+      write( ygroup_name, fmt = "('RG___',I4.4)" ) nbutshift
+
+    case ( NBUDGET_RH )
+      yworkunit(:)       = 's-1' ;  yworkunit(1:3) = 'kg kg-1'
+      yworkcomment(:)    = 'Budget of hail mixing ratio'
+      iworkgrid(:)       = 1
+      write( ygroup_name, fmt = "('RH___',I4.4)" ) nbutshift
+
+    case ( NBUDGET_SV1 : )
+      jsv = kp - NBUDGET_SV1 + 1
+      yworkunit(:)       = 's-1' ;  yworkunit(1:3) = '  '
+      DO JT = 1,nbuprocnbr(kp)
+        WRITE(yworkcomment(JT),FMT="('Budget of SVx=',I3.3)") jsv
       END DO
-    END IF
-!
-    IF (ALLOCATED(ZWORK)) DEALLOCATE(ZWORK)
-    DEALLOCATE (ZWORKTEMP, ZWORKDATIME)
-!-------------------------------------------------------------------------------
-!
-!*	 3.     'MASK' CASE
-!	        -----------
-!
-  CASE('MASK')
-    ALLOCATE(ZWORKTEMP(NBUWRNB,1))
-    ALLOCATE(ZWORKDATIME(16,NBUWRNB))
-    ALLOCATE(ZWORKMASK(SIZE(XBUSURF,1),SIZE(XBUSURF,2),1,NBUWRNB,NBUMASK,1))
-!
-! local array
-    DO JMASK=1,NBUMASK
-      DO JT=1,NBUWRNB
-        ZWORKMASK(:,:,1,JT,JMASK,1) = XBUSURF(:,:,JMASK,JT)
-      END DO
-    END DO
-!
-    ZWORKDATIME(1,:)=TDTEXP%TDATE%YEAR
-    ZWORKDATIME(2,:)=TDTEXP%TDATE%MONTH
-    ZWORKDATIME(3,:)=TDTEXP%TDATE%DAY
-    ZWORKDATIME(4,:)=TDTEXP%TIME
-    ZWORKDATIME(5,:)=TDTSEG%TDATE%YEAR
-    ZWORKDATIME(6,:)=TDTSEG%TDATE%MONTH
-    ZWORKDATIME(7,:)=TDTSEG%TDATE%DAY
-    ZWORKDATIME(8,:)=TDTSEG%TIME
-    ZWORKDATIME(9,:)=TPDTMOD%TDATE%YEAR
-    ZWORKDATIME(10,:)=TPDTMOD%TDATE%MONTH
-    ZWORKDATIME(11,:)=TPDTMOD%TDATE%DAY
-    ZWORKDATIME(12,:)=TPDTMOD%TIME
-!
-    CALL DATETIME_DISTANCE(TDTEXP,TPDTCUR,ZWORKTEMP(NBUWRNB,1))
-!
-    ZWORKTEMP(NBUWRNB,1)=ZWORKTEMP(NBUWRNB,1)+(1.-NBUSTEP*0.5)*PTSTEP
-!
-    ZWORKDATIME(13,NBUWRNB)=TDTEXP%TDATE%YEAR
-    ZWORKDATIME(14,NBUWRNB)=TDTEXP%TDATE%MONTH
-    ZWORKDATIME(15,NBUWRNB)=TDTEXP%TDATE%DAY
-    ZWORKDATIME(16,NBUWRNB)=TDTEXP%TIME+ZWORKTEMP(NBUWRNB,1)
-    DO JT=1,NBUWRNB-1
-      ZWORKTEMP(JT,1) = ZWORKTEMP(NBUWRNB,1)-NBUSTEP*PTSTEP*(NBUWRNB-JT)
-      ZWORKDATIME(13,JT)=TDTEXP%TDATE%YEAR
-      ZWORKDATIME(14,JT)=TDTEXP%TDATE%MONTH
-      ZWORKDATIME(15,JT)=TDTEXP%TDATE%DAY
-      ZWORKDATIME(16,JT)=TDTEXP%TIME  + ZWORKTEMP(JT,1)
-    END DO
-!
-!*     3.1    storage of the masks  array
-!
-        WRITE(TZFIELD%CMNHNAME,FMT="('MASK_',I4.4,'.MASK')") NBUTSHIFT
-        TZFIELD%CSTDNAME   = ''
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        TZFIELD%CUNITS     = ''
-        TZFIELD%CDIR       = 'XY'
-        WRITE(TZFIELD%CCOMMENT,FMT="('X_Y_MASK',I4.4)") NBUTSHIFT
-        TZFIELD%NGRID      = 1
-        TZFIELD%NTYPE      = TYPEREAL
-        TZFIELD%NDIMS      = 6
-        TZFIELD%LTIMEDEP   = .FALSE.
-        CALL IO_Field_write(TPDIAFILE,TZFIELD,ZWORKMASK(:,:,:,:,:,:))
-        WRITE(YRECFM,FMT="('MASK_',I4.4)") NBUTSHIFT
-        CALL MENU_DIACHRO(TPDIAFILE,YRECFM)
-        DEALLOCATE(ZWORKMASK)
-!
-!*	 3.2    storage of the budgets array
-!
-!*	 3.2.1  RU budget
-!
-    IF (LBU_RU) THEN
-                       ! XBURHODJU storage
-!
-      ALLOCATE(ZWORK(1,1,NBUKMAX,NBUWRNB,NBUMASK,1))
-      ALLOCATE(YWORKUNIT(1))
-      ALLOCATE(YWORKCOMMENT(1))
-      ALLOCATE(IWORKGRID(1))
-!
-      ZWORK(1,1,:,:,:,1) = END_MASK_COMPRESS(XBURHODJU(:,:,:))
-      WHERE  (ZWORK(1,1,:,:,:,1) <= 0.)
-          ZWORK(1,1,:,:,:,1)=-999.
-      END WHERE
-      YWORKUNIT(:)       = 'kg'
-      YWORKCOMMENT(:)    = 'RhodJ for momentum along X axis'
-      IWORKGRID(:)       = 2
-      WRITE(YGROUP_NAME,FMT="('RJX__',I4.4)") NBUTSHIFT
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                         ZWORKDATIME, ZWORK, ZWORKTEMP, CBUCOMMENT(1, :),   &
-                         YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-                         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
-      DEALLOCATE( YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-!
-!                 unit conversion of RU budgets and storage
-!                 -----------------------------------------
-!
-      ALLOCATE(ZWORKT(1,1,NBUKMAX,NBUWRNB,NBUMASK,NBUPROCNBR(1)))
-      ALLOCATE(YWORKUNIT(NBUPROCNBR(1)))
-      ALLOCATE(YWORKCOMMENT(NBUPROCNBR(1)))
-      ALLOCATE(IWORKGRID(NBUPROCNBR(1)))
-!
-      ALLOCATE(ZCONVERT(NBUPROCNBR(1)))
-      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(3)       =  PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(4:NBUPROCNBR(1)) = 1.
-      DO JPROC=1,NBUPROCNBR(1)
-        ZWORKT(1,1,:,:,:,JPROC) = END_MASK_COMPRESS( XBURU(:,:,:,JPROC)) &
-                               * ZCONVERT(JPROC) / ZWORK(1,1,:,:,:,1)
-      END DO
-      DEALLOCATE(ZCONVERT, ZWORK)
-      
-!
-      YWORKUNIT(:)       = 'm s-2'; YWORKUNIT(1:3) = 'm s-1'
-      YWORKCOMMENT(:)    = 'Budget of momentum along X axis'
-      IWORKGRID(:)       = 2
-      WRITE(YGROUP_NAME,FMT="('UU___',I4.4)") NBUTSHIFT
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                         ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(1, :),   &
-                         YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
-      DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-    END IF
-!
-!*	 3.2.2  RV budget
-!
-    IF (LBU_RV) THEN
-                       ! XBURHODJV storage
-!
-      ALLOCATE(ZWORK(1,1,NBUKMAX,NBUWRNB,NBUMASK,1))
-      ALLOCATE(YWORKUNIT(1))
-      ALLOCATE(YWORKCOMMENT(1))
-      ALLOCATE(IWORKGRID(1))
-!
-      ZWORK(1,1,:,:,:,1)= END_MASK_COMPRESS( XBURHODJV(:,:,:))
-      WHERE ( ZWORK(1,1,:,:,:,1) <= 0.)
-        ZWORK(1,1,:,:,:,1)=-999.
-      END WHERE
-      YWORKUNIT(:)       = 'kg'
-      YWORKCOMMENT(:)    = 'RhodJ for momentum along Y axis'
-      IWORKGRID(:)       = 3
-      WRITE(YGROUP_NAME,FMT="('RJY__',I4.4)") NBUTSHIFT
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                	 ZWORKDATIME, ZWORK, ZWORKTEMP, CBUCOMMENT(1, :),   &
-	       		 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
-      DEALLOCATE( YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-!
-!                 unit conversion of RU budgets and storage
-!
-      ALLOCATE(ZWORKT(1,1,NBUKMAX,NBUWRNB,NBUMASK,NBUPROCNBR(2)))
-      ALLOCATE(YWORKUNIT(NBUPROCNBR(2)))
-      ALLOCATE(YWORKCOMMENT(NBUPROCNBR(2)))
-      ALLOCATE(IWORKGRID(NBUPROCNBR(2)))
-!
-      ALLOCATE(ZCONVERT(NBUPROCNBR(2)))
-      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(3)       = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(4:NBUPROCNBR(2)) = 1.
-      DO JPROC=1,NBUPROCNBR(2)
-        ZWORKT(1,1,:,:,:,JPROC) = END_MASK_COMPRESS( XBURV  (:,:,:,JPROC)) &
-                         * ZCONVERT(JPROC) / ZWORK(1,1,:,:,:,1) 
-      END DO
-      DEALLOCATE(ZCONVERT, ZWORK)
-!
-      YWORKUNIT(:)       = 'm s-2'; YWORKUNIT(1:3) = 'm s-1'
-      YWORKCOMMENT(:)    = 'Budget of momentum along Y axis'
-      IWORKGRID(:)       = 3
-      WRITE(YGROUP_NAME,FMT="('VV___',I4.4)") NBUTSHIFT
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                         ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(2, :),   &
-	        	 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
-      DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-    END IF
-!
-!*	 3.2.3  RW budget
-!
-    IF (LBU_RW) THEN
-                       ! XBURHODJW storage
-!
-      ALLOCATE(ZWORK(1,1,NBUKMAX,NBUWRNB,NBUMASK,1))
-      ALLOCATE(YWORKUNIT(1))
-      ALLOCATE(YWORKCOMMENT(1))
-      ALLOCATE(IWORKGRID(1))
-!
-      ZWORK(1,1,:,:,:,1)=END_MASK_COMPRESS(XBURHODJW(:,:,:))
-      WHERE (ZWORK(1,1,:,:,:,1) <= 0.)
-        ZWORK(1,1,:,:,:,1)=-999.
-      END WHERE
-      YWORKUNIT(:)       = 'kg'
-      YWORKCOMMENT(:)    = 'RhodJ for momentum along Z axis'
-      IWORKGRID(:)       = 4
-      WRITE(YGROUP_NAME,FMT="('RJZ__',I4.4)") NBUTSHIFT
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                	 ZWORKDATIME, ZWORK, ZWORKTEMP, CBUCOMMENT(1, :),   &
-	        	 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
-      DEALLOCATE( YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-!
-!                 unit conversion of RU budgets and storage
-!
-      ALLOCATE(ZWORKT(1,1,NBUKMAX,NBUWRNB,NBUMASK,NBUPROCNBR(3)))
-      ALLOCATE(YWORKUNIT(NBUPROCNBR(3)))
-      ALLOCATE(YWORKCOMMENT(NBUPROCNBR(3)))
-      ALLOCATE(IWORKGRID(NBUPROCNBR(3)))
-!
-      ALLOCATE(ZCONVERT(NBUPROCNBR(3)))
-      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(3)       = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(4:NBUPROCNBR(3)) = 1.
-      DO JPROC=1,NBUPROCNBR(3)
-        ZWORKT(1,1,:,:,:,JPROC) = END_MASK_COMPRESS( XBURW (:,:,:,JPROC)) &
-                         * ZCONVERT(JPROC) / ZWORK(1,1,:,:,:,1)
-      END DO
-      DEALLOCATE(ZCONVERT, ZWORK)
-!
-      YWORKUNIT(:)       = 'm s-2'; YWORKUNIT(1:3) = 'm s-1'
-      YWORKCOMMENT(:)    = 'Budget of momentum along Z axis'
-      IWORKGRID(:)       = 4
-      WRITE(YGROUP_NAME,FMT="('WW___',I4.4)") NBUTSHIFT
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                	 ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(3, :),   &
-	        	 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
-      DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-    END IF
-!
-!*	 3.2.3'  XBURHODJ storage for Scalars
-!
-    IF (LBU_RTH .OR. LBU_RTKE .OR. LBU_RRV .OR. LBU_RRC .OR. LBU_RRR .OR. &
-        LBU_RRI .OR. LBU_RRS  .OR. LBU_RRG .OR. LBU_RRH .OR. LBU_RSV      ) THEN
-!
-      ALLOCATE(ZWORK(1,1,NBUKMAX,NBUWRNB,NBUMASK,1))
-      ALLOCATE(YWORKUNIT(1))
-      ALLOCATE(YWORKCOMMENT(1))
-      ALLOCATE(IWORKGRID(1))
-!
-        ZWORK(1,1,:,:,:,1) = END_MASK_COMPRESS(XBURHODJ(:,:,:))
-        WHERE (ZWORK(1,1,:,:,:,1) <= 0.)
-         ZWORK(1,1,:,:,:,1)=-999.
-        END WHERE
-      YWORKUNIT(:)       = 'kg'
-      YWORKCOMMENT(:)    = 'RhodJ for Scalars'
-      IWORKGRID(:)       = 1
-      WRITE(YGROUP_NAME,FMT="('RJS__',I4.4)") NBUTSHIFT
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                	 ZWORKDATIME, ZWORK, ZWORKTEMP, CBUCOMMENT(1, :),   &
-	        	 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
-      DEALLOCATE( YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-    END IF
-!
-!*	 3.2.4  RTH budget
-!
-    IF (LBU_RTH) THEN
-      ALLOCATE(ZWORKT(1,1,NBUKMAX,NBUWRNB,NBUMASK,NBUPROCNBR(4)))
-      ALLOCATE(YWORKUNIT(NBUPROCNBR(4)))
-      ALLOCATE(YWORKCOMMENT(NBUPROCNBR(4)))
-      ALLOCATE(IWORKGRID(NBUPROCNBR(4)))
-!
-      ALLOCATE(ZCONVERT(NBUPROCNBR(4)))
-      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(3)       = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(4:NBUPROCNBR(4)) = 1.
-      DO JPROC=1,NBUPROCNBR(4)
-        ZWORKT(1,1,:,:,:,JPROC) = END_MASK_COMPRESS( XBURTH  (:,:,:,JPROC)) &
-                         * ZCONVERT(JPROC) / ZWORK(1,1,:,:,:,1)
-      END DO
-      DEALLOCATE(ZCONVERT)
-!
-      YWORKUNIT(:)       = 'K s-1' ; YWORKUNIT(1:3) = 'K'
-      YWORKCOMMENT(:)    = 'Budget of potential temperature'
-      IWORKGRID(:)       = 1
-      WRITE(YGROUP_NAME,FMT="('TH___',I4.4)") NBUTSHIFT
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                	 ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(4, :),   &
-	         	 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
-      DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-    END IF
-!
-!*	 3.2.5  RTKE budget
-!
-    IF (LBU_RTKE) THEN
-      ALLOCATE(ZWORKT(1,1,NBUKMAX,NBUWRNB,NBUMASK,NBUPROCNBR(5)))
-      ALLOCATE(YWORKUNIT(NBUPROCNBR(5)))
-      ALLOCATE(YWORKCOMMENT(NBUPROCNBR(5)))
-      ALLOCATE(IWORKGRID(NBUPROCNBR(5)))
-!
-      ALLOCATE(ZCONVERT(NBUPROCNBR(5)))
-      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(3)       = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(4:NBUPROCNBR(5)) = 1.
-      DO JPROC=1,NBUPROCNBR(5)
-        ZWORKT(1,1,:,:,:,JPROC) = END_MASK_COMPRESS( XBURTKE (:,:,:,JPROC)) &
-                         * ZCONVERT(JPROC) / ZWORK(1,1,:,:,:,1)
-      END DO
-      DEALLOCATE(ZCONVERT)
-!
-      YWORKUNIT(:)       = 'm2 s-3' ; YWORKUNIT(1:3) = 'm2 s-2'
-      YWORKCOMMENT(:)    = 'Budget of turbulent kinetic energy'
-      IWORKGRID(:)       = 1
-      WRITE(YGROUP_NAME,FMT="('TK___',I4.4)") NBUTSHIFT
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                	 ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(5, :),   &
-	        	 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
-      DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-    END IF   
-!
-!*	 3.2.6  RRV budget
-!
-    IF (LBU_RRV) THEN
-      ALLOCATE(ZWORKT(1,1,NBUKMAX,NBUWRNB,NBUMASK,NBUPROCNBR(6)))
-      ALLOCATE(YWORKUNIT(NBUPROCNBR(6)))
-      ALLOCATE(YWORKCOMMENT(NBUPROCNBR(6)))
-      ALLOCATE(IWORKGRID(NBUPROCNBR(6)))
-!
-      ALLOCATE(ZCONVERT(NBUPROCNBR(6)))
-      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(3)       = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(4:NBUPROCNBR(6)) = 1.
-      DO JPROC=1,NBUPROCNBR(6)
-        ZWORKT(1,1,:,:,:,JPROC) = END_MASK_COMPRESS( XBURRV  (:,:,:,JPROC)) &
-                         * ZCONVERT(JPROC) / ZWORK(1,1,:,:,:,1)
-      END DO
-      DEALLOCATE(ZCONVERT)
-!
-      YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = 'kg kg-1'
-      YWORKCOMMENT(:)    = 'Budget of water vapor mixing ratio'
-      IWORKGRID(:)       = 1
-      WRITE(YGROUP_NAME,FMT="('RV___',I4.4)") NBUTSHIFT
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                	 ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(6, :),   &
-	        	 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
-      DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-    END IF
-!
-!*	 3.2.7  RRC budget
-!
-    IF (LBU_RRC) THEN
-      ALLOCATE(ZWORKT(1,1,NBUKMAX,NBUWRNB,NBUMASK,NBUPROCNBR(7)))
-      ALLOCATE(YWORKUNIT(NBUPROCNBR(7)))
-      ALLOCATE(YWORKCOMMENT(NBUPROCNBR(7)))
-      ALLOCATE(IWORKGRID(NBUPROCNBR(7)))
-!
-      ALLOCATE(ZCONVERT(NBUPROCNBR(7)))
-      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(3)       = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(4:NBUPROCNBR(7)) = 1.
-      DO JPROC=1,NBUPROCNBR(7)
-        ZWORKT(1,1,:,:,:,JPROC) = END_MASK_COMPRESS( XBURRC  (:,:,:,JPROC)) &
-                         * ZCONVERT(JPROC) / ZWORK(1,1,:,:,:,1)
-      END DO
-      DEALLOCATE(ZCONVERT)
-!
-      YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = 'kg kg-1'
-      YWORKCOMMENT(:)    = 'Budget of cloud water mixing ratio'
-      IWORKGRID(:)       = 1
-      WRITE(YGROUP_NAME,FMT="('RC___',I4.4)") NBUTSHIFT
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                	 ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(7, :),   &
-	        	 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
-      DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-    END IF
-!
-!*	 3.2.8  RRR budget
-!
-    IF (LBU_RRR) THEN
-      ALLOCATE(ZWORKT(1,1,NBUKMAX,NBUWRNB,NBUMASK,NBUPROCNBR(8)))
-      ALLOCATE(YWORKUNIT(NBUPROCNBR(8)))
-      ALLOCATE(YWORKCOMMENT(NBUPROCNBR(8)))
-      ALLOCATE(IWORKGRID(NBUPROCNBR(8)))
-!
-      ALLOCATE(ZCONVERT(NBUPROCNBR(8)))
-      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(3)       = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(4:NBUPROCNBR(8)) = 1.
-      DO JPROC=1,NBUPROCNBR(8)
-        ZWORKT(1,1,:,:,:,JPROC) = END_MASK_COMPRESS( XBURRR  (:,:,:,JPROC)) &
-                         * ZCONVERT(JPROC) / ZWORK(1,1,:,:,:,1)
-      END DO
-      DEALLOCATE(ZCONVERT)
-!
-      YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = 'kg kg-1'
-      YWORKCOMMENT(:)    = 'Budget of rain water mixing ratio'
-      IWORKGRID(:)       = 1
-      WRITE(YGROUP_NAME,FMT="('RR___',I4.4)") NBUTSHIFT
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                	 ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(8, :),   &
-	        	 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
-      DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-    END IF
-!
-!*	 3.2.9  RRI budget
-!
-    IF (LBU_RRI) THEN
-      ALLOCATE(ZWORKT(1,1,NBUKMAX,NBUWRNB,NBUMASK,NBUPROCNBR(9)))
-      ALLOCATE(YWORKUNIT(NBUPROCNBR(9)))
-      ALLOCATE(YWORKCOMMENT(NBUPROCNBR(9)))
-      ALLOCATE(IWORKGRID(NBUPROCNBR(9)))
-!
-      ALLOCATE(ZCONVERT(NBUPROCNBR(9)))
-      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(3)       = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(4:NBUPROCNBR(9)) = 1.
-      DO JPROC=1,NBUPROCNBR(9)
-        ZWORKT(1,1,:,:,:,JPROC) = END_MASK_COMPRESS( XBURRI  (:,:,:,JPROC)) &
-                         * ZCONVERT(JPROC) / ZWORK(1,1,:,:,:,1)
-      END DO
-      DEALLOCATE(ZCONVERT)
-!
-      YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = 'kg kg-1'
-      YWORKCOMMENT(:)    = 'Budget of cloud ice mixing ratio'
-      IWORKGRID(:)       = 1
-      WRITE(YGROUP_NAME,FMT="('RI___',I4.4)") NBUTSHIFT
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                	 ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(9, :),   &
-	        	 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
-      DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-    END IF
-!
-!*	 3.2.10  RRS budget
-!
-    IF (LBU_RRS) THEN
-      ALLOCATE(ZWORKT(1,1,NBUKMAX,NBUWRNB,NBUMASK,NBUPROCNBR(10)))
-      ALLOCATE(YWORKUNIT(NBUPROCNBR(10)))
-      ALLOCATE(YWORKCOMMENT(NBUPROCNBR(10)))
-      ALLOCATE(IWORKGRID(NBUPROCNBR(10)))
-!
-      ALLOCATE(ZCONVERT(NBUPROCNBR(10)))
-      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(3)       = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(4:NBUPROCNBR(10)) = 1.
-      DO JPROC=1,NBUPROCNBR(10)
-        ZWORKT(1,1,:,:,:,JPROC) = END_MASK_COMPRESS( XBURRS  (:,:,:,JPROC)) &
-                         * ZCONVERT(JPROC) / ZWORK(1,1,:,:,:,1)
-      END DO
-      DEALLOCATE(ZCONVERT)
-!
-      YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = 'kg kg-1'
-      YWORKCOMMENT(:)    = 'Budget of snow/aggregate mixing ratio'
-      IWORKGRID(:)       = 1
-      WRITE(YGROUP_NAME,FMT="('RS___',I4.4)") NBUTSHIFT
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                	 ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(10, :),   &
-	        	 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
-      DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-    END IF
-!
-!*	 3.2.11  RRG budget
-!
-    IF (LBU_RRG) THEN
-      ALLOCATE(ZWORKT(1,1,NBUKMAX,NBUWRNB,NBUMASK,NBUPROCNBR(11)))
-      ALLOCATE(YWORKUNIT(NBUPROCNBR(11)))
-      ALLOCATE(YWORKCOMMENT(NBUPROCNBR(11)))
-      ALLOCATE(IWORKGRID(NBUPROCNBR(11)))
-!
-      ALLOCATE(ZCONVERT(NBUPROCNBR(11)))
-      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(3)       = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(4:NBUPROCNBR(11)) = 1.
-      DO JPROC=1,NBUPROCNBR(11)
-        ZWORKT(1,1,:,:,:,JPROC) = END_MASK_COMPRESS( XBURRG  (:,:,:,JPROC)) &
-                         * ZCONVERT(JPROC) / ZWORK(1,1,:,:,:,1)
-      END DO
-      DEALLOCATE(ZCONVERT )
-!
-      YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = 'kg kg-1'
-      YWORKCOMMENT(:)    = 'Budget of graupel mixing ratio'
-      IWORKGRID(:)       = 1
-      WRITE(YGROUP_NAME,FMT="('RG___',I4.4)") NBUTSHIFT
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                	 ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(11, :),   &
-	         	 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
-      DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-    END IF
-!
-!*	 3.2.12  RRH budget
-!
-    IF (LBU_RRH) THEN
-      ALLOCATE(ZWORKT(1,1,NBUKMAX,NBUWRNB,NBUMASK,NBUPROCNBR(12)))
-      ALLOCATE(YWORKUNIT(NBUPROCNBR(12)))
-      ALLOCATE(YWORKCOMMENT(NBUPROCNBR(12)))
-      ALLOCATE(IWORKGRID(NBUPROCNBR(12)))
-!
-      ALLOCATE(ZCONVERT(NBUPROCNBR(12)))
-      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(3)       = PTSTEP * REAL(NBUSTEP)
-      ZCONVERT(4:NBUPROCNBR(12)) = 1.
-      DO JPROC=1,NBUPROCNBR(12)
-        ZWORKT(1,1,:,:,:,JPROC) = END_MASK_COMPRESS( XBURRH (:,:,:,JPROC)) &
-                         * ZCONVERT(JPROC) / ZWORK(1,1,:,:,:,1)
-      END DO
-      DEALLOCATE(ZCONVERT)
-!
-      YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = 'kg kg-1'
-      YWORKCOMMENT(:)    = 'Budget of hail mixing ratio'
-      IWORKGRID(:)       = 1
-      WRITE(YGROUP_NAME,FMT="('RH___',I4.4)") NBUTSHIFT
-!
-      CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID, &
-                	 ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(12, :),   &
-	        	 YWORKUNIT, YWORKCOMMENT,                           &
-                         LBU_ICP, LBU_JCP, LBU_KCP,                         & 
-		         NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
-      DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-    END IF
-!
-!*	 3.2.13  RSV budget
-!
-    IF (LBU_RSV) THEN
-      DO JSV = 1,KSV
-        ALLOCATE(ZWORKT(1,1,NBUKMAX,NBUWRNB,NBUMASK,NBUPROCNBR(12+JSV)))
-        ALLOCATE(YWORKUNIT(NBUPROCNBR(12+JSV)))
-        ALLOCATE(YWORKCOMMENT(NBUPROCNBR(12+JSV)))
-        ALLOCATE(IWORKGRID(NBUPROCNBR(12+JSV)))
-!
-        ALLOCATE(ZCONVERT(NBUPROCNBR(12+JSV)))
-        ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
-        ZCONVERT(3)       = PTSTEP * REAL(NBUSTEP)
-        ZCONVERT(4:NBUPROCNBR(12+JSV)) = 1.
-        DO JPROC=1,NBUPROCNBR(12+JSV)
-          ZWORKT(1,1,:,:,:,JPROC) = END_MASK_COMPRESS( XBURSV  (:,:,:,JPROC,JSV)) &
-                           * ZCONVERT(JPROC) / ZWORK(1,1,:,:,:,1)
-        END DO
-        DEALLOCATE(ZCONVERT)
-!
-        YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = '  '
-        DO JT = 1,NBUPROCNBR(12+JSV)
-          WRITE(YWORKCOMMENT(JT),FMT="('Budget of SVx=',I3.3)") JSV
-        END DO
-        IWORKGRID(:)       = 1
-        WRITE(YGROUP_NAME,FMT="('SV',I3.3,I4.4)") JSV,NBUTSHIFT
-!
-        CALL WRITE_DIACHRO(TPDIAFILE, TLUOUT, YGROUP_NAME, CBUTYPE, IWORKGRID,  &
-                  	   ZWORKDATIME, ZWORKT, ZWORKTEMP, CBUCOMMENT(12+JSV,:),&
-		           YWORKUNIT, YWORKCOMMENT,                            &
-                           LBU_ICP, LBU_JCP, LBU_KCP,                          &
-		           NBUIL, NBUIH, NBUJL, NBUJH, NBUKL, NBUKH )
-        DEALLOCATE(ZWORKT, YWORKUNIT, YWORKCOMMENT, IWORKGRID)
-      END DO
-    END IF
-!
-    IF (LBU_RTH .OR. LBU_RTKE .OR. LBU_RRV .OR. LBU_RRC .OR. LBU_RRR .OR. &
-        LBU_RRI .OR. LBU_RRS  .OR. LBU_RRG .OR. LBU_RRH .OR. LBU_RSV      ) THEN
-      DEALLOCATE(ZWORK)
-    END IF
-!
-  DEALLOCATE (ZWORKTEMP, ZWORKDATIME)
-!
-END SELECT   
-!
-!-------------------------------------------------------------------------------
-!
-END SUBROUTINE WRITE_BUDGET
+      iworkgrid(:)       = 1
+      write( ygroup_name, fmt = "('SV',I3.3,I4.4)") jsv, nbutshift
+
+    case default
+      call Print_msg( NVERB_ERROR, 'GEN', 'Store_one_budget', 'unknown budget type' )
+  end select
+
+  CALL Write_diachro( tpdiafile, tluout, ygroup_name, ybutype, iworkgrid,                              &
+                          tpdates, zworkt, cbucomment(kp, :),                                          &
+                          yworkunit, yworkcomment,                                                     &
+                          oicp = lbu_icp, ojcp = lbu_jcp, okcp = lbu_kcp,                              &
+                          kil = nbuil, kih = nbuih, kjl = nbujl, kjh = nbujh, kkl = nbukl, kkh = nbukh )
+
+  deallocate( zworkt, yworkunit, yworkcomment, iworkgrid )
+
+end subroutine Store_one_budget
+
+end module mode_write_budget

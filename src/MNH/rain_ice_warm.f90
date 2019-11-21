@@ -25,7 +25,8 @@ SUBROUTINE RAIN_ICE_WARM(OMICRO, KMICRO, K1, K2, K3,                            
 !*      0. DECLARATIONS
 !          ------------
 !
-use MODD_BUDGET,         only: LBUDGET_RC, LBUDGET_RR, LBUDGET_RV, LBUDGET_TH
+use MODD_BUDGET,         only: LBUDGET_TH, LBUDGET_RV, LBUDGET_RC, LBUDGET_RR, &
+                               NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RR
 use MODD_CST,            only: XALPW, XBETAW, XCL, XCPV, XGAMW, XLVTT, XMD, XMV, XRV, XTT
 use MODD_PARAM_ICE,      only: CSUBG_RC_RR_ACCR, CSUBG_RR_EVAP
 use MODD_RAIN_ICE_DESCR, only: XCEXVT, XRTMIN
@@ -99,10 +100,10 @@ REAL, DIMENSION(size(PRHODREF)) :: ZZW4 ! Work array
 !
       IF (LBUDGET_RC) CALL BUDGET (                                               &
                        UNPACK(PRCS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                                7,'AUTO_BU_RRC')
+                                                          NBUDGET_RC,'AUTO_BU_RRC')
       IF (LBUDGET_RR) CALL BUDGET (                                               &
                        UNPACK(PRRS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                                8,'AUTO_BU_RRR')
+                                                          NBUDGET_RR,'AUTO_BU_RRR')
 !
 !*       4.3    compute the accretion of r_c for r_r production: RCACCR
 !
@@ -153,10 +154,10 @@ REAL, DIMENSION(size(PRHODREF)) :: ZZW4 ! Work array
 
     IF (LBUDGET_RC) CALL BUDGET (                                               &
                      UNPACK(PRCS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                              7,'ACCR_BU_RRC')
+                                                        NBUDGET_RC,'ACCR_BU_RRC')
     IF (LBUDGET_RR) CALL BUDGET (                                               &
                      UNPACK(PRRS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                              8,'ACCR_BU_RRR')
+                                                        NBUDGET_RR,'ACCR_BU_RRR')
 !
 !*       4.4    compute the evaporation of r_r: RREVAV
 !
@@ -230,13 +231,13 @@ REAL, DIMENSION(size(PRHODREF)) :: ZZW4 ! Work array
 
     IF (LBUDGET_TH) CALL BUDGET (                                               &
                  UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),   &
-                                                              4,'REVA_BU_RTH')
+                                                        NBUDGET_TH,'REVA_BU_RTH')
     IF (LBUDGET_RV) CALL BUDGET (                                               &
                  UNPACK(PRVS(:),MASK=OMICRO(:,:,:),FIELD=PRVS3D)*PRHODJ3D(:,:,:),   &
-                                                              6,'REVA_BU_RRV')
+                                                        NBUDGET_RV,'REVA_BU_RRV')
     IF (LBUDGET_RR) CALL BUDGET (                                               &
                      UNPACK(PRRS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                              8,'REVA_BU_RRR')
+                                                        NBUDGET_RR,'REVA_BU_RRR')
 
     DO JL = 1, KMICRO
       PEVAP3D(K1(JL), K2(JL), K3(JL)) = ZZW( JL )

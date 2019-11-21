@@ -9,14 +9,11 @@ MODULE MODI_INI_POSPROFILER_n
 !
 INTERFACE
 !
-      SUBROUTINE INI_POSPROFILER_n(PTSTEP, TPDTSEG, PSEGLEN, &
+      SUBROUTINE INI_POSPROFILER_n(PTSTEP, PSEGLEN,          &
                                    KRR, KSV, OUSETKE,        &
                                    PLATOR, PLONOR            )
 !
-USE MODD_TYPE_DATE
-!
 REAL,               INTENT(IN) :: PTSTEP  ! time step
-TYPE(DATE_TIME),    INTENT(IN) :: TPDTSEG ! segment date and time
 REAL,               INTENT(IN) :: PSEGLEN ! segment length
 INTEGER,            INTENT(IN) :: KRR     ! number of moist variables
 INTEGER,            INTENT(IN) :: KSV     ! number of scalar variables
@@ -33,7 +30,7 @@ END INTERFACE
 END MODULE MODI_INI_POSPROFILER_n
 !
 !     ########################################################
-      SUBROUTINE INI_POSPROFILER_n(PTSTEP, TPDTSEG, PSEGLEN, &
+      SUBROUTINE INI_POSPROFILER_n(PTSTEP, PSEGLEN,          &
                                    KRR, KSV, OUSETKE,        &
                                    PLATOR, PLONOR            )
 !     ########################################################
@@ -67,6 +64,7 @@ END MODULE MODI_INI_POSPROFILER_n
 !!     P. Tulet 15/01/2002  
 !!     C.Lac 10/2016  Add visibility diagnostic
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -81,7 +79,6 @@ USE MODD_PARAMETERS
 USE MODD_PROFILER_n
 USE MODD_RADIATIONS_n, ONLY: NAER
 USE MODD_TYPE_PROFILER
-USE MODD_TYPE_DATE
 !
 USE MODE_GRIDPROJ
 USE MODE_ll
@@ -96,7 +93,6 @@ IMPLICIT NONE
 !
 !
 REAL,               INTENT(IN) :: PTSTEP  ! time step
-TYPE(DATE_TIME),    INTENT(IN) :: TPDTSEG ! segment date and time
 REAL,               INTENT(IN) :: PSEGLEN ! segment length
 INTEGER,            INTENT(IN) :: KRR     ! number of moist variables
 INTEGER,            INTENT(IN) :: KSV     ! number of scalar variables
@@ -161,7 +157,7 @@ TYPE(PROFILER), INTENT(INOUT) :: TPROFILER
 !
 ISTORE = INT ( (PSEGLEN-XTSTEP) / TPROFILER%STEP ) + 1
 !
-ALLOCATE(TPROFILER%TIME  (ISTORE))
+allocate( tprofiler%tpdates( istore ) )
 ALLOCATE(TPROFILER%ERROR (NUMBPROFILER))
 ALLOCATE(TPROFILER%X     (NUMBPROFILER))
 ALLOCATE(TPROFILER%Y     (NUMBPROFILER))
@@ -186,7 +182,6 @@ IF (OUSETKE) THEN
 ELSE
   ALLOCATE(TPROFILER%TKE (0,IKU,0))
 END IF
-ALLOCATE(TPROFILER%DATIME(16,ISTORE))
 ALLOCATE(TPROFILER%T2M     (ISTORE,NUMBPROFILER))
 ALLOCATE(TPROFILER%Q2M     (ISTORE,NUMBPROFILER))
 ALLOCATE(TPROFILER%HU2M    (ISTORE,NUMBPROFILER))
@@ -209,7 +204,6 @@ ALLOCATE(TPROFILER%TKE_DISS(ISTORE,IKU,NUMBPROFILER))
 !
 !
 TPROFILER%ERROR= .FALSE.
-TPROFILER%TIME = XUNDEF
 TPROFILER%ZON  = XUNDEF
 TPROFILER%MER  = XUNDEF
 TPROFILER%FF   = XUNDEF

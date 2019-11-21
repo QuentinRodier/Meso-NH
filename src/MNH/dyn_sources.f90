@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
 !-----------------------------------------------------------------
 !     #######################
       MODULE MODI_DYN_SOURCES
@@ -267,9 +263,9 @@ IF ((.NOT.L1D).AND.(.NOT.LCARTESIAN) )  THEN
 !
 END IF
 !
-IF (LBUDGET_U) CALL BUDGET (PRUS,1,'CURV_BU_RU')
-IF (LBUDGET_V) CALL BUDGET (PRVS,2,'CURV_BU_RV')
-IF (LBUDGET_W) CALL BUDGET (PRWS,3,'CURV_BU_RW')
+IF (LBUDGET_U) CALL BUDGET (PRUS,NBUDGET_U,'CURV_BU_RU')
+IF (LBUDGET_V) CALL BUDGET (PRVS,NBUDGET_V,'CURV_BU_RV')
+IF (LBUDGET_W) CALL BUDGET (PRWS,NBUDGET_W,'CURV_BU_RW')
 !
 !-------------------------------------------------------------------------------
 !
@@ -298,9 +294,9 @@ IF (LCORIO)   THEN
 !
 END IF                      
 !
-IF (LBUDGET_U) CALL BUDGET (PRUS,1,'COR_BU_RU')
-IF (LBUDGET_V) CALL BUDGET (PRVS,2,'COR_BU_RV')
-IF (LBUDGET_W) CALL BUDGET (PRWS,3,'COR_BU_RW')
+IF (LBUDGET_U) CALL BUDGET (PRUS,NBUDGET_U,'COR_BU_RU')
+IF (LBUDGET_V) CALL BUDGET (PRVS,NBUDGET_V,'COR_BU_RV')
+IF (LBUDGET_W) CALL BUDGET (PRWS,NBUDGET_W,'COR_BU_RW')
 !
 !-------------------------------------------------------------------------------
 !
@@ -339,7 +335,7 @@ IF( .NOT.L1D ) THEN
 !
   END IF
 !
-  IF (LBUDGET_TH) CALL BUDGET (PRTHS,4,'PREF_BU_RTH')
+  IF (LBUDGET_TH) CALL BUDGET (PRTHS,NBUDGET_TH,'PREF_BU_RTH')
 !
 END IF
 !

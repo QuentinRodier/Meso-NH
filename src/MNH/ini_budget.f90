@@ -154,6 +154,7 @@ END MODULE MODI_INI_BUDGET
 !!      S. Riette        11/2016  New budgets for ICE3/ICE4
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 15/11/2019: remove unused CBURECORD variable
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -232,7 +233,6 @@ INTEGER, DIMENSION(JPBUMAX,JPBUPROMAX+1) :: IPROACTV      ! switches set by the
                                                           ! activation
 INTEGER :: JI, JJ, JK , JJJ                               ! loop indices
 INTEGER :: IIMAX_ll, IJMAX_ll ! size of the physical global domain
-INTEGER :: ITEN                                           ! tens for CBURECORD
 INTEGER :: IPROC                                          ! counter for processes
 INTEGER :: IIU, IJU                                       ! size along x and y directions
                                                           ! of the extended subdomain
@@ -395,12 +395,10 @@ ALLOCATE( NBUPROCNBR(JPBUMAX) )
 ALLOCATE( NBUPROCCTR(JPBUMAX) )
 ALLOCATE( CBUACTION(JPBUMAX, JPBUPROMAX) )
 ALLOCATE( CBUCOMMENT(JPBUMAX, JPBUPROMAX) )
-ALLOCATE( CBURECORD(JPBUMAX, JPBUPROMAX) )
 NBUPROCCTR(:) = 0
 NBUCTR_ACTV(:) = 0
 NBUPROCNBR(:) = 0
 CBUACTION(:,:) = 'OF' 
-CBURECORD(:,:) = ' '
 CBUCOMMENT(:,:) = ' '
 LBU_BEG =.TRUE. 
 !
@@ -2664,12 +2662,7 @@ END DO
 !              -----------------------------------------------------------
 !
 !
-DO JI=1,JPBUMAX                                ! loop on the allowed budgets
-                                               ! names of recording files for:
-  CBURECORD(JI,1) = ADJUSTL( CBUCOMMENT(JI,1) )   ! initial guess
-  CBURECORD(JI,2) = ADJUSTL( CBUCOMMENT(JI,2) )   ! source cumul
-  CBURECORD(JI,3) = ADJUSTL( CBUCOMMENT(JI,3) )   ! end step
-!
+DO JI=1,JPBUMAX                                ! loop on the allowed budgets names of recording files
   IF (IPROACTV(JI,4) >= 2) THEN
     WRITE(UNIT=KLUOUT,FMT= '("Error in budget specification of ",A7,/," &
     & The first source either is the first element of a group of sources or &
@@ -2702,10 +2695,6 @@ DO JI=1,JPBUMAX                                ! loop on the allowed budgets
                                    ADJUSTR( CBUCOMMENT(JI,NBUPROCNBR(JI)) ) // &
                                    ADJUSTL( ADJUSTR( YWORK2(JI,JJ) ) //        &
                                             ADJUSTL( YEND_COMMENT(JI) ) ) )
-        ITEN=INT(NBUPROCNBR(JI)/10)
-        CBURECORD(JI,NBUPROCNBR(JI)) = 'S' // CHAR( ITEN + 48 )               &
-                  // CHAR(  48+ MODULO( NBUPROCNBR(JI),10*MAX(1,ITEN) )  )    &
-                  // '_' // ADJUSTL( YEND_COMMENT(JI) )
       ELSE IF (IPROACTV(JI,JJJ) == 0) THEN
         NBUPROCNBR(JI) = NBUPROCNBR(JI)+1
         CBUACTION(JI,JJ) = 'DD'
@@ -2713,10 +2702,6 @@ DO JI=1,JPBUMAX                                ! loop on the allowed budgets
                                    ADJUSTR( CBUCOMMENT(JI,NBUPROCNBR(JI)) ) // &
                                    ADJUSTL( ADJUSTR( YWORK2(JI,JJ) ) //        &
                                             ADJUSTL( YEND_COMMENT(JI) ) ) )
-        ITEN=INT(NBUPROCNBR(JI)/10)
-        CBURECORD(JI,NBUPROCNBR(JI)) = 'S' // CHAR( ITEN + 48 )               &
-                  // CHAR(  48+ MODULO( NBUPROCNBR(JI),10*MAX(1,ITEN) )  )    &
-                  // '_' // ADJUSTL( YEND_COMMENT(JI) )
       ELSE IF (IPROACTV(JI,JJJ) == 2) THEN
         CBUACTION(JI,JJ) = 'NO'
         CBUCOMMENT(JI,NBUPROCNBR(JI)+1) =           ADJUSTL(                   &
@@ -2740,7 +2725,7 @@ DO JI=1,JPBUMAX                            ! loop over the allowed budgets
   YSTRING = ADJUSTL( YEND_COMMENT(JI) )
   ILEN    = LEN_TRIM(YSTRING)
   IF( ILEN /= 0 ) THEN
-    IF( JI <= 12 ) THEN
+    IF( JI < NBUDGET_SV1 ) THEN
       WRITE (UNIT=KLUOUT,FMT='(/,"budget ",A7," with ",I2," vectors")')        &
                                                   YSTRING(1:ILEN),NBUPROCNBR(JI)
       DO JJ=1,3
@@ -2756,7 +2741,7 @@ DO JI=1,JPBUMAX                            ! loop over the allowed budgets
     ELSE
       WRITE (UNIT=KLUOUT,                                                      &
              FMT='(/,"budget ",A7," (number ",I3,") with ",I2," vectors")')    &
-                                            YSTRING(1:ILEN),JI-12,NBUPROCNBR(JI)
+                                   YSTRING(1:ILEN),JI-NBUDGET_SV1+1,NBUPROCNBR(JI)
       DO JJ=1,3
         YSTRING = CBUCOMMENT(JI,JJ)
         ILEN    = LEN_TRIM(YSTRING)
@@ -2802,21 +2787,21 @@ ENDIF
 !*       5.    ALLOCATE MEMORY FOR BUDGET STORAGE ARRAYS
 !              -----------------------------------------
 IF (LBU_RU) THEN
-  ALLOCATE ( XBURU(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(1)) )
+  ALLOCATE ( XBURU(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(NBUDGET_U)) )
   XBURU(:,:,:,:)=0.
   ALLOCATE ( XBURHODJU(IBUDIM1, IBUDIM2, IBUDIM3) )
   XBURHODJU(:,:,:)=0.
 END IF
 !
 IF (LBU_RV) THEN
-  ALLOCATE ( XBURV(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(2)) )
+  ALLOCATE ( XBURV(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(NBUDGET_V)) )
   XBURV(:,:,:,:)=0.
   ALLOCATE ( XBURHODJV(IBUDIM1, IBUDIM2, IBUDIM3) )
   XBURHODJV(:,:,:)=0.
 END IF
 !
 IF (LBU_RW) THEN
-  ALLOCATE ( XBURW(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(3)) )
+  ALLOCATE ( XBURW(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(NBUDGET_W)) )
   XBURW(:,:,:,:)=0.
   ALLOCATE ( XBURHODJW(IBUDIM1, IBUDIM2, IBUDIM3) )
   XBURHODJW(:,:,:)=0.
@@ -2829,47 +2814,47 @@ IF (LBU_RTH .OR. LBU_RTKE .OR. LBU_RRV .OR. LBU_RRC .OR. LBU_RRR .OR. &
 END IF
 !
 IF (LBU_RTH) THEN
-  ALLOCATE ( XBURTH(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(4)) )
+  ALLOCATE ( XBURTH(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(NBUDGET_TH)) )
   XBURTH(:,:,:,:)=0.
 END IF
 !
 IF (LBU_RTKE) THEN
-  ALLOCATE ( XBURTKE(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(5)) )
+  ALLOCATE ( XBURTKE(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(NBUDGET_TKE)) )
   XBURTKE(:,:,:,:)=0.
 END IF
 !
 IF (LBU_RRV) THEN
-  ALLOCATE ( XBURRV(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(6)) )
+  ALLOCATE ( XBURRV(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(NBUDGET_RV)) )
   XBURRV(:,:,:,:)=0.
 END IF
 !
 IF (LBU_RRC) THEN
-  ALLOCATE ( XBURRC(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(7)) )
+  ALLOCATE ( XBURRC(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(NBUDGET_RC)) )
   XBURRC(:,:,:,:)=0.
 END IF
 !
 IF (LBU_RRR) THEN
-  ALLOCATE ( XBURRR(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(8)) )
+  ALLOCATE ( XBURRR(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(NBUDGET_RR)) )
   XBURRR(:,:,:,:)=0.
 END IF
 !
 IF (LBU_RRI) THEN
-  ALLOCATE ( XBURRI(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(9)) )
+  ALLOCATE ( XBURRI(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(NBUDGET_RI)) )
   XBURRI(:,:,:,:)=0.
 END IF
 !
 IF (LBU_RRS) THEN
-  ALLOCATE ( XBURRS(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(10)) )
+  ALLOCATE ( XBURRS(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(NBUDGET_RS)) )
   XBURRS(:,:,:,:)=0.
 END IF
 !
 IF (LBU_RRG) THEN
-  ALLOCATE ( XBURRG(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(11)) )
+  ALLOCATE ( XBURRG(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(NBUDGET_RG)) )
   XBURRG(:,:,:,:)=0.
 END IF
 !
 IF (LBU_RRH) THEN
-  ALLOCATE ( XBURRH(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(12)) )
+  ALLOCATE ( XBURRH(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(NBUDGET_RH)) )
   XBURRH(:,:,:,:)=0.
 END IF
 !

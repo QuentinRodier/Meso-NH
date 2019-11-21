@@ -60,9 +60,10 @@ END MODULE MODI_WRITE_PROFILER_n
 !!              Oct, 2016 (C.Lac) Add visibility diagnostics for fog
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!  J. Escobar : 16/08/2018: From Pierre & Maud , correction use CNAMES(JSV-NSV_CHEMBEG+1)
-!!
-!! --------------------------------------------------------------------------
-!       
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
+!
+! --------------------------------------------------------------------------
+!
 !*      0. DECLARATIONS
 !          ------------
 !
@@ -130,7 +131,6 @@ INTEGER,            INTENT(IN)       :: II
 !
 REAL,    DIMENSION(:,:,:,:,:,:),  ALLOCATABLE :: ZWORK6   ! contains temporal serie
 REAL,    DIMENSION(:,:,:,:,:,:),  ALLOCATABLE :: ZW6      ! contains temporal serie to write
-REAL,    DIMENSION(:,:),          ALLOCATABLE :: ZTRAJT   ! localization of the
 REAL, DIMENSION(:,:,:,:),         ALLOCATABLE :: ZSV, ZN0, ZSIG, ZRG
 REAL, DIMENSION(:,:,:),           ALLOCATABLE :: ZRHO
 !
@@ -161,14 +161,11 @@ IF (LDUST) IPROC = IPROC + NMODE_DST*3
 IF (LDUST .OR. LORILAM .OR. LSALT) IPROC=IPROC+NAER
 IF (SIZE(TPROFILER%TKE  )>0) IPROC = IPROC + 1
 !
-ALLOCATE (ZTRAJT(  SIZE(TPROFILER%TIME),1))
-ALLOCATE (ZWORK6(1,1,IKU,SIZE(TPROFILER%TIME),1,IPROC))
+ALLOCATE (ZWORK6(1,1,IKU,size(tprofiler%tpdates),1,IPROC))
 ALLOCATE (YCOMMENT(IPROC))
 ALLOCATE (YTITLE  (IPROC))
 ALLOCATE (YUNIT   (IPROC))
 ALLOCATE (IGRID   (IPROC))
-!
-ZTRAJT  (:,1) = TPROFILER%TIME(:)
 !
 IGRID  = 1
 YGROUP = TPROFILER%NAME(II)
@@ -507,11 +504,11 @@ IF (SIZE(TPROFILER%SV,4)>=1) THEN
     ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SV(:,IK,II,JSV) * 1.E9
   END DO
   IF ((LORILAM).AND. .NOT.(ANY(TPROFILER%P(:,IK,II) == 0.))) THEN
-    ALLOCATE (ZSV(1,1,SIZE(TPROFILER%TIME),NSV_AER)) 
-    ALLOCATE (ZRHO(1,1,SIZE(TPROFILER%TIME))) 
-    ALLOCATE (ZN0(1,1,SIZE(TPROFILER%TIME),JPMODE)) 
-    ALLOCATE (ZRG(1,1,SIZE(TPROFILER%TIME),JPMODE)) 
-    ALLOCATE (ZSIG(1,1,SIZE(TPROFILER%TIME),JPMODE)) 
+    ALLOCATE (ZSV(1,1,size(tprofiler%tpdates),NSV_AER))
+    ALLOCATE (ZRHO(1,1,size(tprofiler%tpdates)))
+    ALLOCATE (ZN0(1,1,size(tprofiler%tpdates),JPMODE))
+    ALLOCATE (ZRG(1,1,size(tprofiler%tpdates),JPMODE))
+    ALLOCATE (ZSIG(1,1,size(tprofiler%tpdates),JPMODE))
     ZSV(1,1,:,1:NSV_AER) = TPROFILER%SV(:,IK,II,NSV_AERBEG:NSV_AEREND)
     IF (SIZE(TPROFILER%R,4) >0) THEN
       ZRHO(1,1,:) = 0.
@@ -558,11 +555,11 @@ IF (SIZE(TPROFILER%SV,4)>=1) THEN
     ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SV(:,IK,II,JSV) * 1.E9
   END DO
   IF ((LDUST).AND. .NOT.(ANY(TPROFILER%P(:,IK,II) == 0.))) THEN
-    ALLOCATE (ZSV(1,1,SIZE(TPROFILER%TIME),NSV_DST)) 
-    ALLOCATE (ZRHO(1,1,SIZE(TPROFILER%TIME))) 
-    ALLOCATE (ZN0(1,1,SIZE(TPROFILER%TIME),NMODE_DST)) 
-    ALLOCATE (ZRG(1,1,SIZE(TPROFILER%TIME),NMODE_DST)) 
-    ALLOCATE (ZSIG(1,1,SIZE(TPROFILER%TIME),NMODE_DST)) 
+    ALLOCATE (ZSV(1,1,size(tprofiler%tpdates),NSV_DST))
+    ALLOCATE (ZRHO(1,1,size(tprofiler%tpdates)))
+    ALLOCATE (ZN0(1,1,size(tprofiler%tpdates),NMODE_DST))
+    ALLOCATE (ZRG(1,1,size(tprofiler%tpdates),NMODE_DST))
+    ALLOCATE (ZSIG(1,1,size(tprofiler%tpdates),NMODE_DST))
     ZSV(1,1,:,1:NSV_DST) = TPROFILER%SV(:,IK,II,NSV_DSTBEG:NSV_DSTEND)
     IF (SIZE(TPROFILER%R,4) >0) THEN
       ZRHO(1,1,:) = 0.
@@ -624,16 +621,15 @@ END DO
 !----------------------------------------------------------------------------
 !
 
-ALLOCATE (ZW6(1,1,IKU,SIZE(TPROFILER%TIME),1,JPROC))
+ALLOCATE (ZW6(1,1,IKU,size(tprofiler%tpdates),1,JPROC))
 ZW6 = ZWORK6(:,:,:,:,:,:JPROC)
 DEALLOCATE(ZWORK6)
 
-CALL WRITE_DIACHRO(TPDIAFILE,TLUOUT0,YGROUP,"CART",IGRID(:JPROC), TPROFILER%DATIME,&
-                   ZW6,ZTRAJT,YTITLE(:JPROC),YUNIT(:JPROC),YCOMMENT(:JPROC),     &
-                   .TRUE.,.TRUE.,.FALSE.,                                        &
-                   KIL=1,KIH=1,KJL=1,KJH=1,KKL=1,KKH=IKU                         )
-!
-DEALLOCATE (ZTRAJT  )
+CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "CART", IGRID(:JPROC), tprofiler%tpdates, &
+                    ZW6, YTITLE(:JPROC), YUNIT(:JPROC), YCOMMENT(:JPROC),                 &
+                    OICP = .TRUE., OJCP = .TRUE., OKCP = .FALSE.,                         &
+                    KIL = 1, KIH = 1, KJL = 1, KJH = 1, KKL = 1, KKH = IKU                )
+
 DEALLOCATE (ZW6     )
 DEALLOCATE (YCOMMENT)
 DEALLOCATE (YTITLE  )

@@ -9,13 +9,12 @@ MODULE MODI_INI_SURFSTATION_n
 !
 INTERFACE
 !
-      SUBROUTINE INI_SURFSTATION_n(PTSTEP, TPDTSEG, PSEGLEN, &
+      SUBROUTINE INI_SURFSTATION_n(PTSTEP, PSEGLEN,          &
                                    KRR, KSV, OUSETKE,        &
                                    PLATOR, PLONOR            )
 !
 USE MODD_TYPE_DATE
 REAL,               INTENT(IN) :: PTSTEP  ! time step
-TYPE(DATE_TIME),    INTENT(IN) :: TPDTSEG ! segment date and time
 REAL,               INTENT(IN) :: PSEGLEN ! segment length
 INTEGER,            INTENT(IN) :: KRR     ! number of moist variables
 INTEGER,            INTENT(IN) :: KSV     ! number of scalar variables
@@ -32,7 +31,7 @@ END INTERFACE
 END MODULE MODI_INI_SURFSTATION_n
 !
 !     ########################################################
-      SUBROUTINE INI_SURFSTATION_n(PTSTEP, TPDTSEG, PSEGLEN, &
+      SUBROUTINE INI_SURFSTATION_n(PTSTEP, PSEGLEN,          &
                                    KRR, KSV, OUSETKE,        &
                                    PLATOR, PLONOR            )
 !     ########################################################
@@ -66,7 +65,8 @@ END MODULE MODI_INI_SURFSTATION_n
 !!     P. Tulet 15/01/2002 
 !!     A. Lemonsu 19/11/2002 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
+!
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -94,7 +94,6 @@ IMPLICIT NONE
 !
 !
 REAL,               INTENT(IN) :: PTSTEP  ! time step
-TYPE(DATE_TIME),    INTENT(IN) :: TPDTSEG ! segment date and time
 REAL,               INTENT(IN) :: PSEGLEN ! segment length
 INTEGER,            INTENT(IN) :: KRR     ! number of moist variables
 INTEGER,            INTENT(IN) :: KSV     ! number of scalar variables
@@ -158,16 +157,13 @@ TYPE(STATION), INTENT(INOUT) :: TSTATION   !
 !
 ISTORE = INT ( (PSEGLEN-XTSTEP) / TSTATION%STEP ) + 1
 !
-!
-!
-ALLOCATE(TSTATION%TIME(ISTORE))
+allocate( tstation%tpdates( istore ) )
 ALLOCATE(TSTATION%ERROR (NUMBSTAT))
 ALLOCATE(TSTATION%X   (NUMBSTAT))
 ALLOCATE(TSTATION%Y   (NUMBSTAT))
 ALLOCATE(TSTATION%SV  (ISTORE,NUMBSTAT,KSV))
 ALLOCATE(TSTATION%TSRAD (ISTORE,NUMBSTAT))
 ALLOCATE(TSTATION%ZS  (NUMBSTAT))
-ALLOCATE(TSTATION%DATIME(16,ISTORE))
 ALLOCATE(TSTATION%ZON   (ISTORE,NUMBSTAT))
 ALLOCATE(TSTATION%MER   (ISTORE,NUMBSTAT))
 ALLOCATE(TSTATION%W     (ISTORE,NUMBSTAT))
@@ -197,7 +193,6 @@ ALLOCATE(TSTATION%DSTAOD  (ISTORE,NUMBSTAT))
 ALLOCATE(TSTATION%SFCO2   (ISTORE,NUMBSTAT))
 !
 TSTATION%ERROR = .FALSE.
-TSTATION%TIME  = XUNDEF
 TSTATION%ZON   = XUNDEF
 TSTATION%MER   = XUNDEF
 TSTATION%W     = XUNDEF

@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2002-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !      ##########################
@@ -10,18 +10,11 @@ MODULE MODI_STATION_n
 INTERFACE
 !
       SUBROUTINE STATION_n(PTSTEP,                               &
-                           TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,   &
                            PXHAT, PYHAT, PZ,                     &
                            PU, PV, PW, PTH, PR, PSV, PTKE,       &
                            PTS,PP ) 
 !
-USE MODD_TYPE_DATE
-!
 REAL,                     INTENT(IN)     :: PTSTEP ! time step
-TYPE(DATE_TIME),          INTENT(IN)     :: TPDTEXP! experiment date and time
-TYPE(DATE_TIME),          INTENT(IN)     :: TPDTMOD! model start date and time
-TYPE(DATE_TIME),          INTENT(IN)     :: TPDTSEG! segment date and time
-TYPE(DATE_TIME),          INTENT(IN)     :: TPDTCUR! current date and time
 REAL, DIMENSION(:),       INTENT(IN)     :: PXHAT  ! x coordinate
 REAL, DIMENSION(:),       INTENT(IN)     :: PYHAT  ! y coordinate
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PZ     ! z array
@@ -45,9 +38,8 @@ END MODULE MODI_STATION_n
 !
 !     ########################################################
       SUBROUTINE STATION_n(PTSTEP,                           &
-                       TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,   &
                        PXHAT, PYHAT, PZ,                     &
-                       PU, PV, PW, PTH, PR, PSV, PTKE,   &
+                       PU, PV, PW, PTH, PR, PSV, PTKE,       &
                        PTS, PP )
 !     ########################################################
 !
@@ -86,23 +78,24 @@ END MODULE MODI_STATION_n
 !!     C.Lac       04/2013 : Add I/J positioning                   
 !!     P.Wautelet 28/03/2018 : Replace TEMPORAL_DIST by DATETIME_DISTANCE
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
-!! --------------------------------------------------------------------------
-!       
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
+!
+! --------------------------------------------------------------------------
+!
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_TYPE_DATE
+USE MODD_CONF
+USE MODD_CST
+USE MODD_DIAG_IN_RUN
+USE MODD_GRID
+USE MODD_PARAMETERS
 USE MODD_STATION_n
 USE MODD_SUB_STATION_n
-USE MODD_DIAG_IN_RUN
-USE MODD_PARAMETERS
-USE MODD_CST
-USE MODD_GRID
-USE MODD_TIME
-USE MODD_CONF
+use modd_time,          only: tdtexp
+use modd_time_n,        only: tdtcur
+USE MODD_TYPE_DATE
 !
-USE MODE_DATETIME
 USE MODE_ll
 !
 USE MODI_WATER_SUM
@@ -116,10 +109,6 @@ IMPLICIT NONE
 !
 !
 REAL,                     INTENT(IN)     :: PTSTEP ! time step
-TYPE(DATE_TIME),          INTENT(IN)     :: TPDTEXP! experiment date and time
-TYPE(DATE_TIME),          INTENT(IN)     :: TPDTMOD! model start date and time
-TYPE(DATE_TIME),          INTENT(IN)     :: TPDTSEG! segment date and time
-TYPE(DATE_TIME),          INTENT(IN)     :: TPDTCUR! current date and time
 REAL, DIMENSION(:),       INTENT(IN)     :: PXHAT  ! x coordinate
 REAL, DIMENSION(:),       INTENT(IN)     :: PYHAT  ! y coordinate
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PZ     ! z array
@@ -144,7 +133,6 @@ INTEGER :: IIE        !
 INTEGER :: IJE        !   
 INTEGER :: IIU        ! 
 INTEGER :: IJU        ! 
-REAL    :: ZTIMEEXP   ! 
 !
 REAL, DIMENSION(SIZE(PXHAT))        :: ZXHATM ! mass point coordinates
 REAL, DIMENSION(SIZE(PYHAT))        :: ZYHATM ! mass point coordinates
@@ -199,7 +187,6 @@ IF ( TSTATION%T_CUR == XUNDEF ) TSTATION%T_CUR = TSTATION%STEP - PTSTEP
 !
 TSTATION%T_CUR = TSTATION%T_CUR + PTSTEP
 !
-CALL DATETIME_DISTANCE(TDTEXP,TDTSEG,ZTIMEEXP)
 IF ( TSTATION%T_CUR >= TSTATION%STEP - 1.E-10 ) THEN
      GSTORE = .TRUE.
      TSTATION%T_CUR = TSTATION%T_CUR - TSTATION%STEP
@@ -210,24 +197,14 @@ ELSE
 END IF
 !
 IF (GSTORE) THEN
-  !
-     TSTATION%TIME(IN)      = (IN-1) * TSTATION%STEP + ZTIMEEXP
-     TSTATION%DATIME( 1,IN) = TPDTEXP%TDATE%YEAR
-     TSTATION%DATIME( 2,IN) = TPDTEXP%TDATE%MONTH
-     TSTATION%DATIME( 3,IN) = TPDTEXP%TDATE%DAY
-     TSTATION%DATIME( 4,IN) = TPDTEXP%TIME
-     TSTATION%DATIME( 5,IN) = TPDTSEG%TDATE%YEAR
-     TSTATION%DATIME( 6,IN) = TPDTSEG%TDATE%MONTH
-     TSTATION%DATIME( 7,IN) = TPDTSEG%TDATE%DAY
-     TSTATION%DATIME( 8,IN) = TPDTSEG%TIME
-     TSTATION%DATIME( 9,IN) = TPDTMOD%TDATE%YEAR
-     TSTATION%DATIME(10,IN) = TPDTMOD%TDATE%MONTH
-     TSTATION%DATIME(11,IN) = TPDTMOD%TDATE%DAY
-     TSTATION%DATIME(12,IN) = TPDTMOD%TIME
-     TSTATION%DATIME(13,IN) = TPDTCUR%TDATE%YEAR
-     TSTATION%DATIME(14,IN) = TPDTCUR%TDATE%MONTH
-     TSTATION%DATIME(15,IN) = TPDTCUR%TDATE%DAY
-     TSTATION%DATIME(16,IN) = TPDTCUR%TIME
+#if 0
+  tstation%tpdates(in)%date%year  = tdtexp%date%year
+  tstation%tpdates(in)%date%month = tdtexp%date%month
+  tstation%tpdates(in)%date%day   = tdtexp%date%day
+  tstation%tpdates(in)%time       = tdtexp%time + ( in - 1 ) * tstation%step
+#else
+  tstation%tpdates(in) = tdtcur
+#endif
 END IF
 !
 !
@@ -339,10 +316,7 @@ END IF
 !            --------------
 !
 IF (GSTORE) THEN
-
-  IF (TSTATION%TIME(IN) /= XUNDEF) THEN     
-
- DO I=1,NUMBSTAT                  
+  DO I=1,NUMBSTAT
      !
      IF ((ZTHIS_PROCS(I)==1.).AND.(.NOT. TSTATION%ERROR(I))) THEN
        IF (TSTATION%K(I)/= XUNDEF) THEN
@@ -497,8 +471,6 @@ IF (GSTORE) THEN
   ENDIF
   !
  ENDDO
-  !
- END IF
   !
 END IF
 !

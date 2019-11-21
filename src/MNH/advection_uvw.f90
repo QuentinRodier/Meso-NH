@@ -319,9 +319,9 @@ END DO
 !*       4.     BUDGETS              
 !	        -------
 !
-IF (LBUDGET_U)  CALL BUDGET (PRUS,1,'ADV_BU_RU')
-IF (LBUDGET_V)  CALL BUDGET (PRVS,2,'ADV_BU_RV')
-IF (LBUDGET_W)  CALL BUDGET (PRWS,3,'ADV_BU_RW')
+IF (LBUDGET_U)  CALL BUDGET (PRUS,NBUDGET_U,'ADV_BU_RU')
+IF (LBUDGET_V)  CALL BUDGET (PRVS,NBUDGET_V,'ADV_BU_RV')
+IF (LBUDGET_W)  CALL BUDGET (PRWS,NBUDGET_W,'ADV_BU_RW')
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE ADVECTION_UVW

@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2009-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     #######################
        MODULE MODI_DRAG_VEG
 !     #######################
@@ -270,10 +271,10 @@ IF (ODEPOTREE) THEN
 !
 END IF
 !
-IF (LBUDGET_U) CALL BUDGET (PRUS,1,'DRAG_BU_RU')
-IF (LBUDGET_V) CALL BUDGET (PRVS,2,'DRAG_BU_RV')
-IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2),7,'DEPOTR_BU_RRC')
-IF (LBUDGET_SV) CALL BUDGET (PSVS(:,:,:,NSV_C2R2BEG+1),14+(NSV_C2R2BEG-1),'DEPOTR_BU_RSV')
+IF (LBUDGET_U) CALL BUDGET (PRUS,NBUDGET_U,'DRAG_BU_RU')
+IF (LBUDGET_V) CALL BUDGET (PRVS,NBUDGET_V,'DRAG_BU_RV')
+IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2),NBUDGET_RC,'DEPOTR_BU_RRC')
+IF (LBUDGET_SV) CALL BUDGET (PSVS(:,:,:,NSV_C2R2BEG+1),NBUDGET_SV1+(NSV_C2R2BEG-1)+1,'DEPOTR_BU_RSV')
 !
 !
 !*      3.     Computations of TKE  tendency due to canopy drag
@@ -300,6 +301,6 @@ ZTKES(:,:,:)=  (ZTKET(:,:,:) + (ZCDRAG(:,:,:)* ZDENSITY(:,:,:) &
 !
 PRTKES(:,:,:)=PRTKES(:,:,:)+((ZTKES(:,:,:)-ZTKET(:,:,:))*PRHODJ(:,:,:)/PTSTEP)
 !
-IF (LBUDGET_TKE) CALL BUDGET (PRTKES(:,:,:),5,'DRAG_BU_RTKE')
+IF (LBUDGET_TKE) CALL BUDGET (PRTKES(:,:,:),NBUDGET_TKE,'DRAG_BU_RTKE')
 !
 END SUBROUTINE DRAG_VEG

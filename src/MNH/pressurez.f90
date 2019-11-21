@@ -677,9 +677,9 @@ ENDIF
 !*       7.    STORAGE OF THE FIELDS IN BUDGET ARRAYS
 !              --------------------------------------
 !
-IF (LBUDGET_U) CALL BUDGET (PRUS,1,'PRES_BU_RU')
-IF (LBUDGET_V) CALL BUDGET (PRVS,2,'PRES_BU_RV')
-IF (LBUDGET_W) CALL BUDGET (PRWS,3,'PRES_BU_RW')
+IF (LBUDGET_U) CALL BUDGET (PRUS,NBUDGET_U,'PRES_BU_RU')
+IF (LBUDGET_V) CALL BUDGET (PRVS,NBUDGET_V,'PRES_BU_RV')
+IF (LBUDGET_W) CALL BUDGET (PRWS,NBUDGET_W,'PRES_BU_RW')
 !
 !-------------------------------------------------------------------------------
 !

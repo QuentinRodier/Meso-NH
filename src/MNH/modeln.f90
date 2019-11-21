@@ -264,6 +264,7 @@ END MODULE MODI_MODEL_n
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !  J. Escobar  09/07/2019: norme Doctor -> Rename Module Type variable TZ -> T
 !  J. Escobar  09/07/2019: for bug in management of XLSZWSM variable, add/use specific 2D TLSFIELD2D_ll pointer
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -636,11 +637,11 @@ IF (KTCOUNT == 1) THEN
   !
   !                 b) LS fields
   !
-    CALL ADD3DFIELD_ll( TLSFIELD_ll, XLSUM,   'MODEL_n::XLSUM'   )
-    CALL ADD3DFIELD_ll( TLSFIELD_ll, XLSVM,   'MODEL_n::XLSVM'   )
-    CALL ADD3DFIELD_ll( TLSFIELD_ll, XLSWM,   'MODEL_n::XLSWM'   )
-    CALL ADD3DFIELD_ll( TLSFIELD_ll, XLSTHM,  'MODEL_n::XLSTHM'  )
-    CALL ADD2DFIELD_ll( TLSFIELD_ll, XLSZWSM, 'MODEL_n::XLSZWSM' )
+    CALL ADD3DFIELD_ll( TLSFIELD_ll,   XLSUM,   'MODEL_n::XLSUM'   )
+    CALL ADD3DFIELD_ll( TLSFIELD_ll,   XLSVM,   'MODEL_n::XLSVM'   )
+    CALL ADD3DFIELD_ll( TLSFIELD_ll,   XLSWM,   'MODEL_n::XLSWM'   )
+    CALL ADD3DFIELD_ll( TLSFIELD_ll,   XLSTHM,  'MODEL_n::XLSTHM'  )
+    CALL ADD2DFIELD_ll( TLSFIELD2D_ll, XLSZWSM, 'MODEL_n::XLSZWSM' )
     IF (NRR >= 1) THEN
       CALL ADD3DFIELD_ll( TLSFIELD_ll, XLSRVM, 'MODEL_n::XLSRVM' )
     ENDIF
@@ -1975,7 +1976,6 @@ ZTIME1 = ZTIME2
 !
 IF (LFLYER)                                                                   &
   CALL AIRCRAFT_BALLOON(XTSTEP,                                               &
-                      TDTEXP, TDTMOD, TDTSEG, TDTCUR,                         &
                       XXHAT, XYHAT, XZZ, XMAP, XLONORI, XLATORI,              &
                       XUT, XVT, XWT, XPABST, XTHT, XRT, XSVT, XTKET, XTSRAD,  &
                       XRHODREF,XCIT,PSEA=ZSEA(:,:))
@@ -1988,7 +1988,6 @@ IF (LFLYER)                                                                   &
 !
 IF (LSTATION)                                                            &
   CALL STATION_n(XTSTEP,                                                 &
-                 TDTEXP, TDTMOD, TDTSEG, TDTCUR,                         &
                  XXHAT, XYHAT, XZZ,                                      &
                  XUT, XVT, XWT, XTHT, XRT, XSVT, XTKET, XTSRAD, XPABST   )
 !
@@ -1999,7 +1998,6 @@ IF (LSTATION)                                                            &
 !
 IF (LPROFILER)                                                           &
   CALL PROFILER_n(XTSTEP,                                                &
-                  TDTEXP, TDTMOD, TDTSEG, TDTCUR,                        &
                   XXHAT, XYHAT, XZZ,XRHODREF,                            &
                   XUT, XVT, XWT, XTHT, XRT, XSVT, XTKET, XTSRAD, XPABST, &
                   XAER, XCLDFR, XCIT)
@@ -2026,7 +2024,7 @@ ZTIME1 = ZTIME2
 !
 IF ( .NOT. LIO_NO_WRITE ) THEN
   IF (NBUMOD==IMI .AND. CBUTYPE/='NONE') THEN
-    CALL ENDSTEP_BUDGET(TDIAFILE,KTCOUNT,TDTCUR,TDTMOD,XTSTEP,NSV)
+    CALL ENDSTEP_BUDGET(TDIAFILE,KTCOUNT,TDTCUR,XTSTEP,NSV)
   END IF
 END IF
 !

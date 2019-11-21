@@ -57,9 +57,10 @@ END MODULE MODI_WRITE_STATION_n
 !!    -------------
 !!     Original 15/02/2002
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
-!! --------------------------------------------------------------------------
-!       
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
+!
+! --------------------------------------------------------------------------
+!
 !*      0. DECLARATIONS
 !          ------------
 !
@@ -124,9 +125,8 @@ INTEGER,              INTENT(IN)       :: II
 !
 !*      0.2  declaration of local variables for diachro
 !
-REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: ZWORK6 ! contains temporal serie
-REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: ZW6    ! contains temporal serie to write
-REAL, DIMENSION(:,:),         ALLOCATABLE :: ZTRAJT ! localization of the
+REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: ZWORK6 ! contains temporal series
+REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: ZW6    ! contains temporal series to write
 REAL, DIMENSION(:,:,:,:),     ALLOCATABLE :: ZSV, ZN0, ZSIG, ZRG
 REAL, DIMENSION(:,:,:,:,:),     ALLOCATABLE :: ZPTOTA
 REAL, DIMENSION(:,:,:),       ALLOCATABLE :: ZRHO
@@ -158,15 +158,11 @@ IF (LSALT) IPROC = IPROC + NMODE_SLT*3
 IF (SIZE(TSTATION%TSRAD)>0) IPROC = IPROC + 1
 IF (SIZE(TSTATION%SFCO2,1)>0) IPROC = IPROC +1
 !
-ALLOCATE (ZTRAJT(  SIZE(TSTATION%TIME),1))
-ALLOCATE (ZWORK6(1,1,1,SIZE(TSTATION%TIME),1,IPROC)) 
+ALLOCATE (ZWORK6(1,1,1,SIZE(tstation%tpdates),1,IPROC))
 ALLOCATE (YCOMMENT(IPROC))
 ALLOCATE (YTITLE  (IPROC))
 ALLOCATE (YUNIT   (IPROC))
 ALLOCATE (IGRID   (IPROC))
-!
-ZTRAJT  (:,1) = TSTATION%TIME(:)
-!
 !
 IGRID  = 1
 YGROUP = TSTATION%NAME(II)
@@ -422,12 +418,12 @@ IF (SIZE(TSTATION%SV,3)>=1) THEN
   END DO
 
   IF ((LORILAM).AND. .NOT.(ANY(TSTATION%P(:,II) == 0.))) THEN
-    ALLOCATE (ZSV(1,1,SIZE(TSTATION%TIME),NSV_AER)) 
-    ALLOCATE (ZRHO(1,1,SIZE(TSTATION%TIME))) 
-    ALLOCATE (ZN0(1,1,SIZE(TSTATION%TIME),JPMODE)) 
-    ALLOCATE (ZRG(1,1,SIZE(TSTATION%TIME),JPMODE)) 
-    ALLOCATE (ZSIG(1,1,SIZE(TSTATION%TIME),JPMODE)) 
-    ALLOCATE (ZPTOTA(1,1,SIZE(TSTATION%TIME),NSP+NCARB+NSOA,JPMODE)) 
+    ALLOCATE (ZSV(1,1,SIZE(tstation%tpdates),NSV_AER))
+    ALLOCATE (ZRHO(1,1,SIZE(tstation%tpdates)))
+    ALLOCATE (ZN0(1,1,SIZE(tstation%tpdates),JPMODE))
+    ALLOCATE (ZRG(1,1,SIZE(tstation%tpdates),JPMODE))
+    ALLOCATE (ZSIG(1,1,SIZE(tstation%tpdates),JPMODE))
+    ALLOCATE (ZPTOTA(1,1,SIZE(tstation%tpdates),NSP+NCARB+NSOA,JPMODE))
     ZSV(1,1,:,1:NSV_AER) = TSTATION%SV(:,II,NSV_AERBEG:NSV_AEREND)
     IF (SIZE(TSTATION%R,3) >0) THEN
       ZRHO(1,1,:) = 0.
@@ -570,11 +566,11 @@ IF (SIZE(TSTATION%SV,3)>=1) THEN
     ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SV(:,II,JSV) *1.E9
   END DO
   IF ((LDUST).AND. .NOT.(ANY(TSTATION%P(:,II) == 0.))) THEN
-    ALLOCATE (ZSV(1,1,SIZE(TSTATION%TIME),NSV_DST)) 
-    ALLOCATE (ZRHO(1,1,SIZE(TSTATION%TIME))) 
-    ALLOCATE (ZN0(1,1,SIZE(TSTATION%TIME),NMODE_DST)) 
-    ALLOCATE (ZRG(1,1,SIZE(TSTATION%TIME),NMODE_DST)) 
-    ALLOCATE (ZSIG(1,1,SIZE(TSTATION%TIME),NMODE_DST)) 
+    ALLOCATE (ZSV(1,1,SIZE(tstation%tpdates),NSV_DST))
+    ALLOCATE (ZRHO(1,1,SIZE(tstation%tpdates)))
+    ALLOCATE (ZN0(1,1,SIZE(tstation%tpdates),NMODE_DST))
+    ALLOCATE (ZRG(1,1,SIZE(tstation%tpdates),NMODE_DST))
+    ALLOCATE (ZSIG(1,1,SIZE(tstation%tpdates),NMODE_DST))
     ZSV(1,1,:,1:NSV_DST) = TSTATION%SV(:,II,NSV_DSTBEG:NSV_DSTEND)
     IF (SIZE(TSTATION%R,3) >0) THEN
       ZRHO(1,1,:) = 0.
@@ -623,11 +619,11 @@ IF (SIZE(TSTATION%SV,3)>=1) THEN
 ENDIF
 !
   IF ((LSALT).AND. .NOT.(ANY(TSTATION%P(:,II) == 0.))) THEN
-    ALLOCATE (ZSV(1,1,SIZE(TSTATION%TIME),NSV_SLT)) 
-    ALLOCATE (ZRHO(1,1,SIZE(TSTATION%TIME))) 
-    ALLOCATE (ZN0(1,1,SIZE(TSTATION%TIME),NMODE_SLT)) 
-    ALLOCATE (ZRG(1,1,SIZE(TSTATION%TIME),NMODE_SLT)) 
-    ALLOCATE (ZSIG(1,1,SIZE(TSTATION%TIME),NMODE_SLT)) 
+    ALLOCATE (ZSV(1,1,SIZE(tstation%tpdates),NSV_SLT))
+    ALLOCATE (ZRHO(1,1,SIZE(tstation%tpdates)))
+    ALLOCATE (ZN0(1,1,SIZE(tstation%tpdates),NMODE_SLT))
+    ALLOCATE (ZRG(1,1,SIZE(tstation%tpdates),NMODE_SLT))
+    ALLOCATE (ZSIG(1,1,SIZE(tstation%tpdates),NMODE_SLT))
     ZSV(1,1,:,1:NSV_SLT) = TSTATION%SV(:,II,NSV_SLTBEG:NSV_SLTEND)
     IF (SIZE(TSTATION%R,3) >0) THEN
       ZRHO(1,1,:) = 0.
@@ -685,16 +681,15 @@ END IF
 !----------------------------------------------------------------------------
 !
 !
-ALLOCATE (ZW6(1,1,1,SIZE(TSTATION%TIME),1,JPROC))
+ALLOCATE (ZW6(1,1,1,SIZE(tstation%tpdates),1,JPROC))
 ZW6 = ZWORK6(:,:,:,:,:,:JPROC)
 DEALLOCATE(ZWORK6)
 !
-  CALL WRITE_DIACHRO(TPDIAFILE,TLUOUT0,YGROUP,"CART",IGRID, TSTATION%DATIME,&
-                     ZW6,ZTRAJT,YTITLE,YUNIT,YCOMMENT,&
-                     .TRUE.,.TRUE.,.FALSE.,                             &
-                     KIL=1,KIH=1,KJL=1,KJH=1,KKL=1,KKH=1   )
+CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "CART", IGRID, tstation%tpdates, &
+                    ZW6(:,:,:,:,:,:), YTITLE(:), YUNIT(:), YCOMMENT(:),          &
+                    OICP = .TRUE., OJCP = .TRUE., OKCP = .FALSE.,                &
+                    KIL = 1, KIH = 1, KJL = 1, KJH = 1, KKL = 1, KKH = 1         )
 !
-DEALLOCATE (ZTRAJT)
 DEALLOCATE (ZW6)
 DEALLOCATE (YCOMMENT)
 DEALLOCATE (YTITLE  )

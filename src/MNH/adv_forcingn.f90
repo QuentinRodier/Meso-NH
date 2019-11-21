@@ -2,6 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     #####################
       MODULE MODI_ADV_FORCING_n
 !     #####################
@@ -227,8 +228,8 @@ END IF
 !
 !*       3.     BUDGET CALLS
 !   	        ------------
-IF (LBUDGET_TH)  CALL BUDGET (PRTHS,4,'2DADV_BU_RTH')
-IF (LBUDGET_RV)  CALL BUDGET (PRRS(:,:,:,1),6,'2DADV_BU_RRV')
+IF (LBUDGET_TH)  CALL BUDGET (PRTHS,NBUDGET_TH,'2DADV_BU_RTH')
+IF (LBUDGET_RV)  CALL BUDGET (PRRS(:,:,:,1),NBUDGET_RV,'2DADV_BU_RRV')
 !----------------------------------------------------------------------------
 !
 END SUBROUTINE ADV_FORCING_n

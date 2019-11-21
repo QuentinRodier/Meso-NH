@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 adiab 2006/06/06 12:01:31
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODI_FCT_SCALAR
@@ -157,15 +152,15 @@ IKU=SIZE(XZHAT)
 !
     PRSVS(:,:,:,JSV) = PRSVS(:,:,:,JSV) - DXF(ZFX(:,:,:))        
     IF (LBUDGET_SV)                               &
-                            CALL BUDGET (PRSVS(:,:,:,JSV),JSV+12,'ADVX_BU_RSV')
+                            CALL BUDGET (PRSVS(:,:,:,JSV),NBUDGET_SV1-1+JSV,'ADVX_BU_RSV')
 !
     PRSVS(:,:,:,JSV) = PRSVS(:,:,:,JSV) - DYF(ZFY(:,:,:))        
     IF (LBUDGET_SV)                               &
-                            CALL BUDGET (PRSVS(:,:,:,JSV),JSV+12,'ADVY_BU_RSV')
+                            CALL BUDGET (PRSVS(:,:,:,JSV),NBUDGET_SV1-1+JSV,'ADVY_BU_RSV')
 !
     PRSVS(:,:,:,JSV) = PRSVS(:,:,:,JSV) - DZF(1,IKU,1,ZFZ(:,:,:)) 
     IF (LBUDGET_SV)                               &
-                            CALL BUDGET (PRSVS(:,:,:,JSV),JSV+12,'ADVZ_BU_RSV')
+                            CALL BUDGET (PRSVS(:,:,:,JSV),NBUDGET_SV1-1+JSV,'ADVZ_BU_RSV')
   END DO
 !
 !-------------------------------------------------------------------------------

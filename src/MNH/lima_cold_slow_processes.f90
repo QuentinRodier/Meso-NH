@@ -356,13 +356,13 @@ IF( IMICRO >= 1 ) THEN
       IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
         IF (LBUDGET_RI) CALL BUDGET (                                          &
                    UNPACK(ZRIS(:),MASK=GMICRO(:,:,:),FIELD=PRIS)*PRHODJ(:,:,:),&
-                                                                9,'CNVI_BU_RRI')
+                                                                NBUDGET_RI,'CNVI_BU_RRI')
         IF (LBUDGET_RS) CALL BUDGET (                                          &
                    UNPACK(ZRSS(:),MASK=GMICRO(:,:,:),FIELD=PRSS)*PRHODJ(:,:,:),&
-                                                               10,'CNVI_BU_RRS')
+                                                                NBUDGET_RS,'CNVI_BU_RRS')
         IF (LBUDGET_SV) CALL BUDGET (                                          &
                    UNPACK(ZCIS(:),MASK=GMICRO(:,:,:),FIELD=PCIS)*PRHODJ(:,:,:), &
-                                                   12+NSV_LIMA_NI,'CNVI_BU_RSV')
+                                                 NBUDGET_SV1-1+NSV_LIMA_NI,'CNVI_BU_RSV')
         END IF
 !
 !
@@ -385,13 +385,13 @@ IF( IMICRO >= 1 ) THEN
       IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
         IF (LBUDGET_TH) CALL BUDGET (                                                 &
                    UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
-                                                                4,'DEPS_BU_RTH')
+                                                                NBUDGET_TH,'DEPS_BU_RTH')
         IF (LBUDGET_RV) CALL BUDGET (                                                 &
                    UNPACK(ZRVS(:),MASK=GMICRO(:,:,:),FIELD=PRVS)*PRHODJ(:,:,:),&
-                                                                6,'DEPS_BU_RRV')
+                                                                NBUDGET_RV,'DEPS_BU_RRV')
         IF (LBUDGET_RS) CALL BUDGET (                                                 &
                    UNPACK(ZRSS(:),MASK=GMICRO(:,:,:),FIELD=PRSS)*PRHODJ(:,:,:),&
-                                                               10,'DEPS_BU_RRS')
+                                                                NBUDGET_RS,'DEPS_BU_RRS')
       END IF
 !
 !
@@ -421,13 +421,13 @@ IF( IMICRO >= 1 ) THEN
       IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
         IF (LBUDGET_RI) CALL BUDGET (                                          &
                    UNPACK(ZRIS(:),MASK=GMICRO(:,:,:),FIELD=PRIS)*PRHODJ(:,:,:),&
-                                                                9,'CNVS_BU_RRI')
+                                                                NBUDGET_RI,'CNVS_BU_RRI')
         IF (LBUDGET_RS) CALL BUDGET (                                          &
                    UNPACK(ZRSS(:),MASK=GMICRO(:,:,:),FIELD=PRSS)*PRHODJ(:,:,:),&
-                                                               10,'CNVS_BU_RRS')
+                                                                NBUDGET_RS,'CNVS_BU_RRS')
         IF (LBUDGET_SV) CALL BUDGET (                                           &
                    UNPACK(ZCIS(:),MASK=GMICRO(:,:,:),FIELD=PCIS)*PRHODJ(:,:,:), &
-                                                   12+NSV_LIMA_NI,'CNVS_BU_RSV')
+                                                 NBUDGET_SV1-1+NSV_LIMA_NI,'CNVS_BU_RSV')
       END IF
 !
 !
@@ -453,13 +453,13 @@ IF( IMICRO >= 1 ) THEN
       IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
         IF (LBUDGET_RI) CALL BUDGET (                                               &
                        UNPACK(ZRIS(:),MASK=GMICRO(:,:,:),FIELD=PRIS)*PRHODJ(:,:,:), &
-                                                                9,'AGGS_BU_RRI')
+                                                                NBUDGET_RI,'AGGS_BU_RRI')
         IF (LBUDGET_RS) CALL BUDGET (                                               &
                        UNPACK(ZRSS(:),MASK=GMICRO(:,:,:),FIELD=PRSS)*PRHODJ(:,:,:), &
-                                                               10,'AGGS_BU_RRS')
+                                                                NBUDGET_RS,'AGGS_BU_RRS')
         IF (LBUDGET_SV) CALL BUDGET (                                               &
                        UNPACK(ZCIS(:),MASK=GMICRO(:,:,:),FIELD=PCIS)*PRHODJ(:,:,:), &
-                                                   12+NSV_LIMA_NI,'AGGS_BU_RSV')
+                                                 NBUDGET_SV1-1+NSV_LIMA_NI,'AGGS_BU_RSV')
       END IF
 !
 !
@@ -521,30 +521,30 @@ ELSE
   IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
     IF (LBUDGET_TH) THEN
       ZW(:,:,:) = PTHS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,4,'DEPS_BU_RTH')
+      CALL BUDGET (ZW,NBUDGET_TH,'DEPS_BU_RTH')
     ENDIF
     IF (LBUDGET_RV) THEN
       ZW(:,:,:) = PRVS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,6,'DEPS_BU_RRV')
+      CALL BUDGET (ZW,NBUDGET_RV,'DEPS_BU_RRV')
     ENDIF
     IF (LBUDGET_RI) THEN
       ZW(:,:,:) = PRIS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,9,'CNVI_BU_RRI')
-      CALL BUDGET (ZW,9,'CNVS_BU_RRI')
-      CALL BUDGET (ZW,9,'AGGS_BU_RRI')
+      CALL BUDGET (ZW,NBUDGET_RI,'CNVI_BU_RRI')
+      CALL BUDGET (ZW,NBUDGET_RI,'CNVS_BU_RRI')
+      CALL BUDGET (ZW,NBUDGET_RI,'AGGS_BU_RRI')
     ENDIF
     IF (LBUDGET_RS) THEN
       ZW(:,:,:) = PRSS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,10,'CNVI_BU_RRS')
-      CALL BUDGET (ZW,10,'DEPS_BU_RRS')
-      CALL BUDGET (ZW,10,'CNVS_BU_RRS')
-      CALL BUDGET (ZW,10,'AGGS_BU_RRS')
+      CALL BUDGET (ZW,NBUDGET_RS,'CNVI_BU_RRS')
+      CALL BUDGET (ZW,NBUDGET_RS,'DEPS_BU_RRS')
+      CALL BUDGET (ZW,NBUDGET_RS,'CNVS_BU_RRS')
+      CALL BUDGET (ZW,NBUDGET_RS,'AGGS_BU_RRS')
     ENDIF
     IF (LBUDGET_SV) THEN
       ZW(:,:,:) = PCIS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,12+NSV_LIMA_NI,'CNVI_BU_RSV')
-      CALL BUDGET (ZW,12+NSV_LIMA_NI,'CNVS_BU_RSV')
-      CALL BUDGET (ZW,12+NSV_LIMA_NI,'AGGS_BU_RSV')
+      CALL BUDGET (ZW,NBUDGET_SV1-1+NSV_LIMA_NI,'CNVI_BU_RSV')
+      CALL BUDGET (ZW,NBUDGET_SV1-1+NSV_LIMA_NI,'CNVS_BU_RSV')
+      CALL BUDGET (ZW,NBUDGET_SV1-1+NSV_LIMA_NI,'AGGS_BU_RSV')
     ENDIF
   ENDIF
 !

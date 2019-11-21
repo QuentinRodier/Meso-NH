@@ -40,7 +40,8 @@
 !!       O.Thouron  June,     2008  New radiation diagnostics
 !!                    10/2016 (C.Lac) Add droplet deposition
 !  P. Wautelet 08/02/2019: add missing NULL association for pointers
-!!                    02/2019 (C. Lac) Add rain fraction as a LES diagnostic
+!  C. Lac         02/2019: add rain fraction as a LES diagnostic
+!  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -63,8 +64,8 @@ TYPE LES_t
   INTEGER :: NSPECTRA_NI        ! number of wave lengths in I direction
   INTEGER :: NSPECTRA_NJ        ! number of wave lengths in J direction
 !
-  REAL, DIMENSION(:,:), POINTER :: XLES_DATIME=>NULL() !  date array for diachro
-  REAL, DIMENSION(:,:), POINTER :: XLES_TRAJT=>NULL()  !  sampling times array for diachro
+  type(date_time), dimension(:), pointer :: xles_dates => null() !Dates array
+  real,            dimension(:), pointer :: xles_times => null() !Times from the start of the segment
 !
   REAL, DIMENSION(:),   POINTER :: XLES_Z=>NULL()      ! altitudes
   REAL                              :: XLES_ZS     ! mean orography
@@ -670,8 +671,8 @@ INTEGER, POINTER :: NLES_DTCOUNT=>NULL()
 INTEGER, POINTER :: NLES_TCOUNT=>NULL()
 INTEGER, POINTER :: NSPECTRA_NI=>NULL()
 INTEGER, POINTER :: NSPECTRA_NJ=>NULL()
-REAL, DIMENSION(:,:), POINTER :: XLES_DATIME=>NULL()
-REAL, DIMENSION(:,:), POINTER :: XLES_TRAJT=>NULL()
+type(date_time), dimension(:), pointer :: xles_dates => null()
+real,            dimension(:), pointer :: xles_times => null()
 REAL, DIMENSION(:),   POINTER :: XLES_Z=>NULL()
 REAL, POINTER :: XLES_ZS=>NULL()
 REAL,    DIMENSION(:,:,:), POINTER :: XCOEFLIN_LES=>NULL()
@@ -1099,8 +1100,8 @@ SUBROUTINE LES_GOTO_MODEL(KFROM, KTO)
 INTEGER, INTENT(IN) :: KFROM, KTO
 !
 ! Save current state for allocated arrays
-LES_MODEL(KFROM)%XLES_DATIME=>XLES_DATIME
-LES_MODEL(KFROM)%XLES_TRAJT=>XLES_TRAJT
+les_model(kfrom)%xles_dates=>xles_dates
+les_model(kfrom)%xles_times=>xles_times
 LES_MODEL(KFROM)%XLES_Z=>XLES_Z
 LES_MODEL(KFROM)%XCOEFLIN_LES=>XCOEFLIN_LES
 LES_MODEL(KFROM)%NKLIN_LES=>NKLIN_LES
@@ -1527,8 +1528,8 @@ NLES_DTCOUNT=>LES_MODEL(KTO)%NLES_DTCOUNT
 NLES_TCOUNT=>LES_MODEL(KTO)%NLES_TCOUNT
 NSPECTRA_NI=>LES_MODEL(KTO)%NSPECTRA_NI
 NSPECTRA_NJ=>LES_MODEL(KTO)%NSPECTRA_NJ
-XLES_DATIME=>LES_MODEL(KTO)%XLES_DATIME
-XLES_TRAJT=>LES_MODEL(KTO)%XLES_TRAJT
+xles_dates=>les_model(kto)%xles_dates
+xles_times=>les_model(kto)%xles_times
 XLES_Z=>LES_MODEL(KTO)%XLES_Z
 XLES_ZS=>LES_MODEL(KTO)%XLES_ZS
 XCOEFLIN_LES=>LES_MODEL(KTO)%XCOEFLIN_LES
