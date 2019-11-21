@@ -230,8 +230,9 @@ END MODULE MODI_PHYS_PARAM_n
 !!      C.Lac  10/2017 : ch_monitor and aer_monitor extracted from phys_param
 !!                       to be called directly by modeln as the last process 
 !!                   02/2018 Q.Libois ECRAD
-!!     28/03/2018 P. Wautelet: replace TEMPORAL_DIST by DATETIME_DISTANCE
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 28/03/2018: replace TEMPORAL_DIST by DATETIME_DISTANCE
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 21/11/2019: ZRG_HOUR and ZRAT_HOUR are now parameter arrays
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -379,19 +380,19 @@ REAL, DIMENSION(:,:,:,:), ALLOCATABLE  :: ZSVT
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZEXN   ! Atmospheric density and Exner
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZSIGMF   ! MF contribution to XSIGS
 !
-REAL, DIMENSION(0:24) :: ZRG_HOUR =  (/ 0., 0., 0., 0., 0., 32.04, 114.19,  &
-                                      228.01, 351.25, 465.49, 557.24,       &
-                                      616.82, 638.33, 619.43, 566.56,       &
-                                      474.71, 359.20, 230.87, 115.72,       &
-                                      32.48, 0., 0., 0., 0., 0. /)
+REAL, DIMENSION(0:24), parameter :: ZRG_HOUR =  (/ 0., 0., 0., 0., 0., 32.04, 114.19, &
+                                                   228.01, 351.25, 465.49, 557.24,    &
+                                                   616.82, 638.33, 619.43, 566.56,    &
+                                                   474.71, 359.20, 230.87, 115.72,    &
+                                                   32.48, 0., 0., 0., 0., 0. /)
 !
-REAL, DIMENSION(0:24) :: ZRAT_HOUR = (/ 326.00, 325.93, 325.12, 324.41,     &
-                                      323.16, 321.95, 322.51, 325.16,       &
-                                      328.01, 331.46, 335.58, 340.00,       &
-                                      345.20, 350.32, 354.20, 356.58,       &
-                                      356.56, 355.33, 352.79, 351.34,       &
-                                      347.00, 342.00, 337.00, 332.00,       &
-                                      326.00     /)
+REAL, DIMENSION(0:24), parameter :: ZRAT_HOUR = (/ 326.00, 325.93, 325.12, 324.41, &
+                                                   323.16, 321.95, 322.51, 325.16, &
+                                                   328.01, 331.46, 335.58, 340.00, &
+                                                   345.20, 350.32, 354.20, 356.58, &
+                                                   356.56, 355.33, 352.79, 351.34, &
+                                                   347.00, 342.00, 337.00, 332.00, &
+                                                   326.00     /)
 !
 INTEGER  :: IHOUR               ! parameters necessary for the temporal
 REAL     :: ZTIME, ZDT          ! interpolation
