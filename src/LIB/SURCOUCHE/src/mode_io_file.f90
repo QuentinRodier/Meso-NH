@@ -36,6 +36,7 @@
 !  P. Wautelet 01/03/2019: move open/close subroutines to mode_io_file.f90
 !  P. Wautelet 05/03/2019: rename IO subroutines and modules
 !  P. Wautelet 12/03/2019: simplify opening of IO split files
+!  P. Wautelet 05/09/2019: disable IO_Coordvar_write_nc4 for Z-split files
 !-----------------------------------------------------------------
 module mode_io_file
 
@@ -580,10 +581,12 @@ SELECT CASE(TPFILE%CTYPE)
       TZFILE_IOZ%NOPEN_CURRENT = 0
       TZFILE_IOZ%NCLOSE        = TZFILE_IOZ%NCLOSE + 1
 #if defined(MNH_IOCDF4)
-      !Write coordinates variables in netCDF file
-      IF (TZFILE_IOZ%CMODE == 'WRITE' .AND. (TZFILE_IOZ%CFORMAT=='NETCDF4' .OR. TZFILE_IOZ%CFORMAT=='LFICDF4')) THEN
-        CALL IO_Coordvar_write_nc4(TZFILE_IOZ,HPROGRAM_ORIG=HPROGRAM_ORIG)
-      END IF
+!Remark: IO_Coordvar_write_nc4 disabled (for the moment) for Z-split files
+!        because it introduce a serialization due to MPI communications inside the call
+!       !Write coordinates variables in netCDF file
+!       IF (TZFILE_IOZ%CMODE == 'WRITE' .AND. (TZFILE_IOZ%CFORMAT=='NETCDF4' .OR. TZFILE_IOZ%CFORMAT=='LFICDF4')) THEN
+!         CALL IO_Coordvar_write_nc4(TZFILE_IOZ,HPROGRAM_ORIG=HPROGRAM_ORIG)
+!       END IF
 #endif
       IF (TZFILE_IOZ%LMASTER) THEN
         if (tzfile_ioz%cformat == 'LFI'     .or. tzfile_ioz%cformat == 'LFICDF4') call IO_File_close_lfi(tzfile_ioz,iresp)

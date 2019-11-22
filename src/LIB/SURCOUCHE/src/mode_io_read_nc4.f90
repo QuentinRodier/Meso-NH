@@ -12,6 +12,7 @@
 !  P. Wautelet 21/02/2019: bugfix: intent of read fields: OUT->INOUT to keep initial value if not found in file
 !  P. Wautelet 05/03/2019: rename IO subroutines and modules
 !  P. Wautelet 25/06/2019: added IO_Field_read for 3D integer arrays (IO_Field_read_nc4_N3)
+!  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
 !-----------------------------------------------------------------
 #if defined(MNH_IOCDF4)
 module mode_io_read_nc4
@@ -59,9 +60,9 @@ INTEGER,                  INTENT(OUT)   :: KRESP  ! return-code
 CHARACTER(LEN=*),OPTIONAL,INTENT(IN)    :: HCALENDAR
 !
 INTEGER                      :: IERRLEVEL
-INTEGER                      :: ILEN
 INTEGER                      :: IGRID
 INTEGER(KIND=CDFINT)         :: INCID
+INTEGER(KIND=CDFINT)         :: ILEN
 INTEGER(KIND=CDFINT)         :: STATUS
 CHARACTER(LEN=12)            :: YVAL_FILE, YVAL_MEM
 CHARACTER(LEN=:),ALLOCATABLE :: YVALUE

@@ -100,6 +100,7 @@ END MODULE MODI_FLASH_GEOM_ELEC_n
 !  P. Wautelet 26/04/2019: use modd_precision parameters for datatypes of MPI communications
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
 !-------------------------------------------------------------------------------
 !
 !*      0.      DECLARATIONS

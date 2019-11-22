@@ -3,13 +3,12 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!!    MODIFICATIONS
-!!    -------------
-!!
-!!  J.Escobar 3/12/2014 : typo form -> from
-!!  Philippe 03/10/2017: set IP and NPROC in INIT_NMNH_COMM_WORLD
-!!  Philippe Wautelet: 10/01/2019: use NEWUNIT argument of OPEN
-!!
+! Modifications:
+!  J. Escobar  03/12/2014: typo form -> from
+!  P. Wautelet 03/10/2017: set IP and NPROC in INIT_NMNH_COMM_WORLD
+!  P. Wautelet 10/01/2019: use NEWUNIT argument of OPEN
+!  P. Wautelet 21/11/2019: bugfix: close call could be done on a non-opened file
+!-----------------------------------------------------------------
 MODULE MODE_MNH_WORLD
   IMPLICIT NONE
   CHARACTER(len=*), parameter   :: conf_mnh_world="conf_mnh_world.nam"
@@ -69,8 +68,8 @@ CONTAINS
           IF (IERR.EQ.0) THEN
              READ(unit=ilu,NML=NAM_CONF_MNH_WORLD)
              WRITE(*,NAM_CONF_MNH_WORLD)
+             CLOSE(unit=ILU)
           ENDIF
-          CLOSE(unit=ILU)
        ENDIF
        iroot = 0
        ! Brodcast mapping

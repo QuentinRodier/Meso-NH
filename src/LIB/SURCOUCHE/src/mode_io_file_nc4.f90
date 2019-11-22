@@ -16,6 +16,7 @@
 !  P. Wautelet 10/01/2019: replace handle_err by IO_Err_handle_nc4 for better netCDF error messages
 !  P. Wautelet 05/03/2019: rename IO subroutines and modules
 !  P. Wautelet 07/03/2019: bugfix: io_set_mnhversion must be called by all the processes
+!  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
 !
 !-----------------------------------------------------------------
 #if defined(MNH_IOCDF4)

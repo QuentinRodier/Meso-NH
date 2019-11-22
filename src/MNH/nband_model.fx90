@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 diag 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 ***FILE:     nband_model.f
 ***AUTHOR:   J.-P. Chaboureau *LA*
@@ -17,6 +12,8 @@
 *                               indicated by "*MNH"
 *                                named nband_model.f90 and compiled with -Fixed
 *           J.Escobar (1/12/2017) bug => intialized all ZV=0.0 in spectr
+*           P. Wautelet 21/11/2019: replace several CONTINUE (workaround of problems with gfortran OpenACC)
+*
       SUBROUTINE NBMVEC
      I ( KIDIA  ,KFDIA ,KLON,KLEV,KGL,KCABS,KNG1,KUABS
      I , KH2O   ,KCO2  ,KO3,KCNT,KN2O,KCH4,KCO,KC11,KC12,KCFC
@@ -145,20 +142,20 @@ C     IF (NIMP.EQ.0) STOP
 *MNH       PCMCH4 = CVCH4 * RCH4M / RAIRM
       PCMCH4 = XCH4 * XCH4M / XAIRM
 C      
-      DO 103 JA=1,8
-      DO 102 JK=1,KGL+1  
-      DO 101 JL=KIDIA,KFDIA
-      ZU(JL,JA,JK)=0.
- 101  CONTINUE
- 102  CONTINUE
- 103  CONTINUE     
-      DO 106 JA=1,3
-      DO 105 JK=1,KGL+1  
-      DO 104 JL=KIDIA,KFDIA
-      ZXT(JL,JA,JK)=0.
- 104  CONTINUE
- 105  CONTINUE
- 106  CONTINUE 
+      DO JA=1,8
+        DO JK=1,KGL+1
+          DO JL=KIDIA,KFDIA
+            ZU(JL,JA,JK)=0.
+          END DO
+        END DO
+      END DO
+      DO JA=1,3
+        DO JK=1,KGL+1
+          DO JL=KIDIA,KFDIA
+            ZXT(JL,JA,JK)=0.
+          END DO
+        END DO
+      END DO
 c      DO 113 JNIV=1,2
 c      DO 112 JSI=1,10  
 c      DO 111 JL=KIDIA,KFDIA
@@ -178,26 +175,26 @@ C
  200  CONTINUE
 C
       IG1P1=KNG1+1
-      DO 201 JL=KIDIA,KFDIA
+      DO JL=KIDIA,KFDIA
       ZSSIG(JL,1)=PPL(JL,1)
- 201  CONTINUE
+      END DO
 C      
-      DO 206 JK = 1 , KLEV
-      JKJ=(JK-1)*IG1P1+1
-      JKJR = JKJ
-      JKJP = JKJ + IG1P1
-      DO 203 JL = KIDIA,KFDIA
-      ZSSIG(JL,JKJP)=PPL(JL,JK+1)
- 203  CONTINUE
-      DO 205 IG1=1,KNG1
-      JKJ=JKJ+1
-      DO 204 JL = KIDIA,KFDIA
-      ZSSIG(JL,JKJ)= (ZSSIG(JL,JKJR)+ZSSIG(JL,JKJP))*0.5
+      DO JK = 1 , KLEV
+        JKJ=(JK-1)*IG1P1+1
+        JKJR = JKJ
+        JKJP = JKJ + IG1P1
+        DO JL = KIDIA,KFDIA
+          ZSSIG(JL,JKJP)=PPL(JL,JK+1)
+        END DO
+        DO IG1=1,KNG1
+          JKJ=JKJ+1
+          DO JL = KIDIA,KFDIA
+            ZSSIG(JL,JKJ)= (ZSSIG(JL,JKJR)+ZSSIG(JL,JKJP))*0.5
 *MNH     S  + RT1(IG1) * (ZSSIG(JL,JKJP) - ZSSIG(JL,JKJR)) * 0.5
-     S  + XRT1(IG1) * (ZSSIG(JL,JKJP) - ZSSIG(JL,JKJR)) * 0.5
- 204  CONTINUE
- 205  CONTINUE
- 206  CONTINUE
+     S      + XRT1(IG1) * (ZSSIG(JL,JKJP) - ZSSIG(JL,JKJR)) * 0.5
+          END DO
+        END DO
+      END DO
 C      
 C-----------------------------------------------------------------------
 C
@@ -219,39 +216,39 @@ C 9301 FORMAT(1X,I4,2E13.6)
 C      END IF     
  302  CONTINUE
 C
-      DO 306 JK = 1 , KLEV
-      JKP1=JK+1
-      JKL = KLEV+1 - JK
-      DO 303 JL = KIDIA,KFDIA
-      ZXWV(JL) = MAX (PQVAVE(JL,JK) , ZEPSCQ )
-      ZXOZ(JL) = MAX (PO3AVE(JL,JK) , ZEPSCO )
- 303  CONTINUE
-      JKJ=(JK-1)*IG1P1+1
-      JKJPN=JKJ+KNG1
-      DO 305 JKK=JKJ,JKJPN
-      DO 304 JL = KIDIA,KFDIA
-      ZUPMH2O = ( ZUPM(JL,JKK) + PVGH2O ) * ZDPM(JL,JKK) / 101325.
-      ZUPMCO2 = ( ZUPM(JL,JKK) + PVGCO2 ) * ZDPM(JL,JKK) / 101325.
-      ZUPMO3  = ( ZUPM(JL,JKK) + PVGO3  ) * ZDPM(JL,JKK) / 101325. 
-      ZDUC(JL,JKK)= ZDPM(JL,JK)
-      ZU6= ZXWV(JL) * ZUPMH2O
-      ZFPPW= 1.6078 * ZXWV(JL) / (1.+0.608*ZXWV(JL))
-      ZU(JL, 1,JKK) = ZXWV(JL) * ZDPM(JL,JKK)
-      ZU(JL, 2,JKK) = ZXWV(JL) * ZUPMH2O
-      ZU(JL, 3,JKK) = PCMCO2    * ZDPM(JL,JKK)
-      ZU(JL, 4,JKK) = PCMCO2    * ZUPMCO2
-      ZU(JL, 5,JKK) = ZXOZ(JL) * ZDPM(JL,JKK)
-      ZU(JL, 6,JKK) = ZXOZ(JL) * ZUPMO3
-      ZU(JL, 7,JKK) = ZU6      * ZFPPW
-      ZU(JL, 8,JKK) = ZU6      * (1.-ZFPPW)
- 304  CONTINUE
- 305  CONTINUE
- 306  CONTINUE
-      DO 308 JA=1,8
-      DO 307 JL=KIDIA,KFDIA
-      ZU(JL,JA,KGL+1) = 0.
- 307  CONTINUE     
- 308  CONTINUE     
+      DO JK = 1 , KLEV
+        JKP1=JK+1
+        JKL = KLEV+1 - JK
+        DO JL = KIDIA,KFDIA
+          ZXWV(JL) = MAX (PQVAVE(JL,JK) , ZEPSCQ )
+          ZXOZ(JL) = MAX (PO3AVE(JL,JK) , ZEPSCO )
+        END DO
+        JKJ=(JK-1)*IG1P1+1
+        JKJPN=JKJ+KNG1
+        DO JKK=JKJ,JKJPN
+          DO JL = KIDIA,KFDIA
+            ZUPMH2O = ( ZUPM(JL,JKK) + PVGH2O ) * ZDPM(JL,JKK) / 101325.
+            ZUPMCO2 = ( ZUPM(JL,JKK) + PVGCO2 ) * ZDPM(JL,JKK) / 101325.
+            ZUPMO3  = ( ZUPM(JL,JKK) + PVGO3  ) * ZDPM(JL,JKK) / 101325.
+            ZDUC(JL,JKK)= ZDPM(JL,JK)
+            ZU6= ZXWV(JL) * ZUPMH2O
+            ZFPPW= 1.6078 * ZXWV(JL) / (1.+0.608*ZXWV(JL))
+            ZU(JL, 1,JKK) = ZXWV(JL) * ZDPM(JL,JKK)
+            ZU(JL, 2,JKK) = ZXWV(JL) * ZUPMH2O
+            ZU(JL, 3,JKK) = PCMCO2    * ZDPM(JL,JKK)
+            ZU(JL, 4,JKK) = PCMCO2    * ZUPMCO2
+            ZU(JL, 5,JKK) = ZXOZ(JL) * ZDPM(JL,JKK)
+            ZU(JL, 6,JKK) = ZXOZ(JL) * ZUPMO3
+            ZU(JL, 7,JKK) = ZU6      * ZFPPW
+            ZU(JL, 8,JKK) = ZU6      * (1.-ZFPPW)
+          END DO
+        END DO
+      END DO
+      DO JA=1,8
+        DO JL=KIDIA,KFDIA
+          ZU(JL,JA,KGL+1) = 0.
+        END DO
+      END DO
 C      IF (NIMP.EQ.0) THEN
 C      DO 312 JK=1,KGL+1
 C      PRINT 9312,JK,(ZU(KIDIA,JA,JK),JA=1,8)
@@ -1681,37 +1678,35 @@ C     ------------------------------------------------------------------
 C
 C          1.
 C
- 100  CONTINUE
-C
-      DO 101 JL=KIDIA,KFDIA
-      PTAU(JL)=0.
- 101  CONTINUE
+      DO JL=KIDIA,KFDIA
+        PTAU(JL)=0.
+      END DO
 C
 *MNH      IF (PWVN.GT.CLIM(1)  .AND. PWVN.LT.CLIM(2)) THEN
       IF (PWVN.GT.XCLIM(1)  .AND. PWVN.LT.XCLIM(2)) THEN
 C
          ZCOEF=4.18 + 5578.*EXP(-7.87e-03*PWVN)
-         DO 102 JL=KIDIA,KFDIA
-         ZE(JL)=PV(JL,11,KINF)-PV(JL,11,KSUP)
-         ZP(JL)=PV(JL,12,KINF)-PV(JL,12,KSUP)
-         ZTAUE(JL)=PANGLE(JL)*ZCOEF*ZE(JL)
-         ZTAUP(JL)=PANGLE(JL)*ZCOEF*ZP(JL)*0.002
- 102     CONTINUE
+         DO JL=KIDIA,KFDIA
+           ZE(JL)=PV(JL,11,KINF)-PV(JL,11,KSUP)
+           ZP(JL)=PV(JL,12,KINF)-PV(JL,12,KSUP)
+           ZTAUE(JL)=PANGLE(JL)*ZCOEF*ZE(JL)
+           ZTAUP(JL)=PANGLE(JL)*ZCOEF*ZP(JL)*0.002
+         END DO
 C
          IF (KCABS.EQ.20) THEN
-            DO 103 JL=KIDIA,KFDIA
-            ZTAUE(JL)=0.
- 103        CONTINUE
+            DO JL=KIDIA,KFDIA
+              ZTAUE(JL)=0.
+            END DO
          END IF
          IF (KCABS.EQ.21) THEN
-            DO 104 JL=KIDIA,KFDIA
-            ZTAUP(JL)=0.
- 104        CONTINUE
+            DO JL=KIDIA,KFDIA
+              ZTAUP(JL)=0.
+            END DO
          END IF
 C
-         DO 105 JL=KIDIA,KFDIA
-         PTAU(JL)=ZTAUE(JL)+ZTAUP(JL)
- 105     CONTINUE
+         DO JL=KIDIA,KFDIA
+           PTAU(JL)=ZTAUE(JL)+ZTAUP(JL)
+         END DO
       END IF
 C
 C     ------------------------------------------------------------------
@@ -2043,86 +2038,78 @@ C
 C*         1.      INITIALIZE TO CLEAR-SKY FLUXES
 C                  ------------------------------
 C
- 100  CONTINUE
       IMAXC=KLEV
       REPSEC=1.E-12
       REPSEC=1.e-7 ! JPChaboureau's modification to avoid division by zero
 C
-      DO 102 JK = 1 , KLEV+1
-      DO 101 JL = KIDIA,KFDIA
-      PFDT(JL,JK) = PFDC(JL,JK)
-      PFUT(JL,JK) = PFUC(JL,JK)
- 101  CONTINUE
- 102  CONTINUE
+      DO JK = 1 , KLEV+1
+        DO JL = KIDIA,KFDIA
+          PFDT(JL,JK) = PFDC(JL,JK)
+          PFUT(JL,JK) = PFUC(JL,JK)
+        END DO
+      END DO
 C
-      DO 105 JK1=1,KLEV+1
-      DO 104 JK2=1,KLEV+1
-      DO 103 JL = KIDIA,KFDIA
-      ZUPF(JL,JK2,JK1)=PFUC(JL,JK1)
-      ZDNF(JL,JK2,JK1)=PFDC(JL,JK1)
- 103  CONTINUE
- 104  CONTINUE
- 105  CONTINUE
+      DO JK1=1,KLEV+1
+        DO JK2=1,KLEV+1
+          DO JL = KIDIA,KFDIA
+            ZUPF(JL,JK2,JK1)=PFUC(JL,JK1)
+            ZDNF(JL,JK2,JK1)=PFDC(JL,JK1)
+          END DO
+        END DO
+      END DO
 C
 C     ------------------------------------------------------------------
 C
 C*         2.      FLUXES FOR ONE OVERCAST UNITY EMISSIVITY CLOUD
 C                  ----------------------------------------------
 C
- 200  CONTINUE
-C
-      DO 229 JKC = 1 , IMAXC
-      JCLOUD=JKC
-      JKCP1=JCLOUD+1
+      DO JKC = 1 , IMAXC
+        JCLOUD=JKC
+        JKCP1=JCLOUD+1
 C
 C*         2.1     ABOVE THE CLOUD
 C                  ---------------
 C
- 210  CONTINUE
+        DO JK=JKCP1,KLEV+1
+          JKM1=JK-1
+          DO JL = KIDIA,KFDIA
+            ZFU(JL)=0.
+          END DO
+          IF (JK .GT. JKCP1) THEN
+            DO JKJ=JKCP1,JKM1
+              DO JL = KIDIA,KFDIA
+                ZFU(JL) = ZFU(JL) + PCNTRB(JL,JK,JKJ)
+              END DO
+            END DO
+          END IF
 C
-      DO 215 JK=JKCP1,KLEV+1
-      JKM1=JK-1
-      DO 211 JL = KIDIA,KFDIA
-      ZFU(JL)=0.
- 211  CONTINUE
-      IF (JK .GT. JKCP1) THEN
-         DO 213 JKJ=JKCP1,JKM1
-         DO 212 JL = KIDIA,KFDIA
-         ZFU(JL) = ZFU(JL) + PCNTRB(JL,JK,JKJ)
- 212     CONTINUE
- 213     CONTINUE
-      END IF
-C
-      DO 214 JL = KIDIA,KFDIA
-      ZUPF(JL,JKCP1,JK)=PBLEV(JL,JK)-ZFU(JL)
- 214  CONTINUE
- 215  CONTINUE
+          DO JL = KIDIA,KFDIA
+            ZUPF(JL,JKCP1,JK)=PBLEV(JL,JK)-ZFU(JL)
+          END DO
+        END DO
 C
 C
 C*         2.2     BELOW THE CLOUD
 C                  ---------------
 C
- 220  CONTINUE
+        DO JK=1,JCLOUD
+          JKP1=JK+1
+          DO JL = KIDIA,KFDIA
+            ZFD(JL)=0.
+          END DO
 C
-      DO 225 JK=1,JCLOUD
-      JKP1=JK+1
-      DO 221 JL = KIDIA,KFDIA
-      ZFD(JL)=0.
- 221  CONTINUE
-C
-      IF (JK .LT. JCLOUD) THEN
-         DO 223 JKJ=JKP1,JCLOUD
-         DO 222 JL = KIDIA,KFDIA
-         ZFD(JL) = ZFD(JL) + PCNTRB(JL,JK,JKJ)
- 222     CONTINUE
- 223     CONTINUE
-      END IF
-      DO 224 JL = KIDIA,KFDIA
-      ZDNF(JL,JKCP1,JK)=-PBLEV(JL,JK)-ZFD(JL)
- 224  CONTINUE
- 225  CONTINUE
-C
- 229  CONTINUE
+          IF (JK .LT. JCLOUD) THEN
+            DO JKJ=JKP1,JCLOUD
+              DO JL = KIDIA,KFDIA
+                ZFD(JL) = ZFD(JL) + PCNTRB(JL,JK,JKJ)
+              END DO
+            END DO
+          END IF
+          DO JL = KIDIA,KFDIA
+            ZDNF(JL,JKCP1,JK)=-PBLEV(JL,JK)-ZFD(JL)
+          END DO
+        END DO
+      END DO
 C
 C     ------------------------------------------------------------------
 C
@@ -2132,84 +2119,78 @@ C
 C*    ZCLM(JK1,JK2) IS THE OBSCURATION FACTOR BY CLOUD LAYERS BETWEEN
 C     HALF-LEVELS JK1 AND JK2 AS SEEN FROM JK1
 C
- 300  CONTINUE
-C
-      DO 303 JK1 = 1 , KLEV+1
-      DO 302 JK2 = 1 , KLEV+1
-      DO 301 JL = KIDIA,KFDIA
-      ZCLM(JL,JK1,JK2) = 0.
- 301  CONTINUE
- 302  CONTINUE
- 303  CONTINUE
+      DO JK1 = 1 , KLEV+1
+        DO JK2 = 1 , KLEV+1
+          DO JL = KIDIA,KFDIA
+            ZCLM(JL,JK1,JK2) = 0.
+          END DO
+        END DO
+      END DO
 C
 C
 C
 C*         3.1     CLOUD COVER BELOW THE LEVEL OF CALCULATION
 C                  ------------------------------------------
 C
- 310  CONTINUE
-C
-      DO 314 JK1 = 2 , KLEV+1
-      DO 311 JL = KIDIA,KFDIA
-      ZCLEAR(JL)=1.
-      ZCLOUD(JL)=0.
- 311  CONTINUE
-      DO 313 JK = JK1 - 1 , 1 , -1
-      DO 312 JL = KIDIA,KFDIA
-      IF (KOVLP.EQ.1) THEN
-c* maximum-random       
-         ZCLEAR(JL)=ZCLEAR(JL)*(1.0-MAX(PCLDLU(JL,JK),ZCLOUD(JL)))
+      DO JK1 = 2 , KLEV+1
+        DO JL = KIDIA,KFDIA
+          ZCLEAR(JL)=1.
+          ZCLOUD(JL)=0.
+        END DO
+        DO JK = JK1 - 1 , 1 , -1
+          DO JL = KIDIA,KFDIA
+            IF (KOVLP.EQ.1) THEN
+c* maximum-random
+              ZCLEAR(JL)=ZCLEAR(JL)*(1.0-MAX(PCLDLU(JL,JK),ZCLOUD(JL)))
      *                        /(1.0-MIN(ZCLOUD(JL),1.-REPSEC))
-         ZCLM(JL,JK1,JK) = 1.0 - ZCLEAR(JL)
-         ZCLOUD(JL) = PCLDLU(JL,JK)
-      ELSE IF (KOVLP.EQ.2) THEN 
-c* maximum      
-c         ZCLOUD(JL) = AMAX1(ZCLOUD(JL) , PCLDLU(JL,JK))
-	ZCLOUD(JL)=MAX(ZCLOUD(JL),PCLDLU(JL,JK))
-         ZCLM(JL,JK1,JK) = ZCLOUD(JL)
-      ELSE IF (KOVLP.EQ.3) THEN
-c* random      
-         ZCLEAR(JL) = ZCLEAR(JL)*(1.0 - PCLDLU(JL,JK))
-         ZCLOUD(JL) = 1.0 - ZCLEAR(JL)
-         ZCLM(JL,JK1,JK) = ZCLOUD(JL)
-      END IF
- 312  CONTINUE
- 313  CONTINUE
- 314  CONTINUE
+              ZCLM(JL,JK1,JK) = 1.0 - ZCLEAR(JL)
+              ZCLOUD(JL) = PCLDLU(JL,JK)
+            ELSE IF (KOVLP.EQ.2) THEN
+c* maximum
+c             ZCLOUD(JL) = AMAX1(ZCLOUD(JL) , PCLDLU(JL,JK))
+              ZCLOUD(JL)=MAX(ZCLOUD(JL),PCLDLU(JL,JK))
+              ZCLM(JL,JK1,JK) = ZCLOUD(JL)
+            ELSE IF (KOVLP.EQ.3) THEN
+c* random
+              ZCLEAR(JL) = ZCLEAR(JL)*(1.0 - PCLDLU(JL,JK))
+              ZCLOUD(JL) = 1.0 - ZCLEAR(JL)
+              ZCLM(JL,JK1,JK) = ZCLOUD(JL)
+            END IF
+          END DO
+        END DO
+      END DO
 C
 C
 C*         3.2     CLOUD COVER ABOVE THE LEVEL OF CALCULATION
 C                  ------------------------------------------
 C
- 320  CONTINUE
-C
-      DO 324 JK1 = 1 , KLEV
-      DO 321 JL = KIDIA,KFDIA
-      ZCLEAR(JL)=1.
-      ZCLOUD(JL)=0.
- 321  CONTINUE
-      DO 323 JK = JK1 , KLEV
-      DO 322 JL = KIDIA,KFDIA
-      IF (KOVLP.EQ.1) THEN
-c* maximum-random       
-         ZCLEAR(JL)=ZCLEAR(JL)*(1.0-MAX(PCLDLD(JL,JK),ZCLOUD(JL)))
+      DO JK1 = 1 , KLEV
+        DO JL = KIDIA,KFDIA
+          ZCLEAR(JL)=1.
+          ZCLOUD(JL)=0.
+        END DO
+        DO JK = JK1 , KLEV
+          DO JL = KIDIA,KFDIA
+            IF (KOVLP.EQ.1) THEN
+c* maximum-random
+              ZCLEAR(JL)=ZCLEAR(JL)*(1.0-MAX(PCLDLD(JL,JK),ZCLOUD(JL)))
      *                        /(1.0-MIN(ZCLOUD(JL),1.-REPSEC))
-         ZCLM(JL,JK1,JK) = 1.0 - ZCLEAR(JL)
-         ZCLOUD(JL) = PCLDLD(JL,JK)
-      ELSE IF (KOVLP.EQ.2) THEN 
-c* maximum      
-c         ZCLOUD(JL) = AMAX1(ZCLOUD(JL) , PCLDLD(JL,JK))
-	ZCLOUD(JL)=MAX(ZCLOUD(JL) , PCLDLD(JL,JK))
-         ZCLM(JL,JK1,JK) = ZCLOUD(JL)
-      ELSE IF (KOVLP.EQ.3) THEN
-c* random      
-         ZCLEAR(JL) = ZCLEAR(JL)*(1.0 - PCLDLD(JL,JK))
-         ZCLOUD(JL) = 1.0 - ZCLEAR(JL)
-         ZCLM(JL,JK1,JK) = ZCLOUD(JL)
-      END IF
- 322  CONTINUE
- 323  CONTINUE
- 324  CONTINUE
+              ZCLM(JL,JK1,JK) = 1.0 - ZCLEAR(JL)
+              ZCLOUD(JL) = PCLDLD(JL,JK)
+            ELSE IF (KOVLP.EQ.2) THEN
+c* maximum
+c               ZCLOUD(JL) = AMAX1(ZCLOUD(JL) , PCLDLD(JL,JK))
+              ZCLOUD(JL)=MAX(ZCLOUD(JL) , PCLDLD(JL,JK))
+              ZCLM(JL,JK1,JK) = ZCLOUD(JL)
+            ELSE IF (KOVLP.EQ.3) THEN
+c* random
+              ZCLEAR(JL) = ZCLEAR(JL)*(1.0 - PCLDLD(JL,JK))
+              ZCLOUD(JL) = 1.0 - ZCLEAR(JL)
+              ZCLM(JL,JK1,JK) = ZCLOUD(JL)
+            END IF
+          END DO
+        END DO
+      END DO
 C
 C
 C     ------------------------------------------------------------------
@@ -2217,45 +2198,41 @@ C
 C*         4.      FLUXES FOR PARTIAL/MULTIPLE LAYERED CLOUDINESS
 C                  ----------------------------------------------
 C
- 400  CONTINUE
-C
 C*         4.1     DOWNWARD FLUXES
 C                  ---------------
 C
- 410  CONTINUE
+      DO JL = KIDIA,KFDIA
+        PFDT(JL,KLEV+1) = 0.
+      END DO
 C
-      DO 411 JL = KIDIA,KFDIA
-      PFDT(JL,KLEV+1) = 0.
- 411  CONTINUE
-C
-      DO 417 JK1 = KLEV , 1 , -1
+      DO JK1 = KLEV , 1 , -1
 C
 C*                 CONTRIBUTION FROM CLEAR-SKY FRACTION
 C
-      DO 412 JL = KIDIA,KFDIA
-      ZFD (JL) = (1. - ZCLM(JL,JK1,KLEV)) * ZDNF(JL,1,JK1)
- 412  CONTINUE
+        DO JL = KIDIA,KFDIA
+          ZFD (JL) = (1. - ZCLM(JL,JK1,KLEV)) * ZDNF(JL,1,JK1)
+        END DO
 C
 C*                 CONTRIBUTION FROM ADJACENT CLOUD
 C
-      DO 413 JL = KIDIA,KFDIA
-      ZFD(JL) = ZFD(JL) + ZCLM(JL,JK1,JK1) * ZDNF(JL,JK1+1,JK1)
- 413  CONTINUE
+        DO JL = KIDIA,KFDIA
+          ZFD(JL) = ZFD(JL) + ZCLM(JL,JK1,JK1) * ZDNF(JL,JK1+1,JK1)
+        END DO
 C
 C*                 CONTRIBUTION FROM OTHER CLOUDY FRACTIONS
 C
-      DO 415 JK = KLEV-1 , JK1 , -1
-      DO 414 JL = KIDIA,KFDIA
-      ZCFRAC = ZCLM(JL,JK1,JK+1) - ZCLM(JL,JK1,JK)
-      ZFD(JL) =  ZFD(JL) + ZCFRAC * ZDNF(JL,JK+2,JK1)
- 414  CONTINUE
- 415  CONTINUE
+        DO JK = KLEV-1 , JK1 , -1
+          DO JL = KIDIA,KFDIA
+            ZCFRAC = ZCLM(JL,JK1,JK+1) - ZCLM(JL,JK1,JK)
+            ZFD(JL) =  ZFD(JL) + ZCFRAC * ZDNF(JL,JK+2,JK1)
+          END DO
+        END DO
 C
-      DO 416 JL = KIDIA,KFDIA
-      PFDT(JL,JK1) = ZFD (JL)
- 416  CONTINUE
+        DO JL = KIDIA,KFDIA
+          PFDT(JL,JK1) = ZFD (JL)
+        END DO
 C
- 417  CONTINUE
+      END DO
 C
 C
 C
@@ -2263,11 +2240,9 @@ C
 C*         4.2     UPWARD FLUX AT THE SURFACE
 C                  --------------------------
 C
- 420  CONTINUE
-C
-      DO 421 JL = KIDIA,KFDIA
-      PFUT(JL,1) = PEM0(JL)*PBSUR(JL)-(1.-PEM0(JL))*PFDT(JL,1)
- 421  CONTINUE
+      DO JL = KIDIA,KFDIA
+        PFUT(JL,1) = PEM0(JL)*PBSUR(JL)-(1.-PEM0(JL))*PFDT(JL,1)
+      END DO
 C
 C
 C
@@ -2275,36 +2250,34 @@ C
 C*         4.3     UPWARD FLUXES
 C                  -------------
 C
- 430  CONTINUE
-C
-      DO 437 JK1 = 2 , KLEV+1
+      DO JK1 = 2 , KLEV+1
 C
 C*                 CONTRIBUTION FROM CLEAR-SKY FRACTION
 C
-      DO 432 JL = KIDIA,KFDIA
-      ZFU (JL) = (1. - ZCLM(JL,JK1,1)) * ZUPF(JL,1,JK1)
- 432  CONTINUE
+        DO JL = KIDIA,KFDIA
+          ZFU (JL) = (1. - ZCLM(JL,JK1,1)) * ZUPF(JL,1,JK1)
+        END DO
 C
 C*                 CONTRIBUTION FROM ADJACENT CLOUD
 C
-      DO 433 JL = KIDIA,KFDIA
-      ZFU(JL) =  ZFU(JL) + ZCLM(JL,JK1,JK1-1) * ZUPF(JL,JK1,JK1)
- 433  CONTINUE
+        DO JL = KIDIA,KFDIA
+          ZFU(JL) =  ZFU(JL) + ZCLM(JL,JK1,JK1-1) * ZUPF(JL,JK1,JK1)
+        END DO
 C
 C*                 CONTRIBUTION FROM OTHER CLOUDY FRACTIONS
 C
-      DO 435 JK = 2 , JK1-1
-      DO 434 JL = KIDIA,KFDIA
-      ZCFRAC = ZCLM(JL,JK1,JK-1) - ZCLM(JL,JK1,JK)
-      ZFU(JL) =  ZFU(JL) + ZCFRAC * ZUPF(JL,JK  ,JK1)
- 434  CONTINUE
- 435  CONTINUE
+        DO JK = 2 , JK1-1
+          DO JL = KIDIA,KFDIA
+            ZCFRAC = ZCLM(JL,JK1,JK-1) - ZCLM(JL,JK1,JK)
+            ZFU(JL) =  ZFU(JL) + ZCFRAC * ZUPF(JL,JK  ,JK1)
+          END DO
+        END DO
 C
-      DO 436 JL = KIDIA,KFDIA
-      PFUT(JL,JK1) = ZFU (JL)
- 436  CONTINUE
+        DO JL = KIDIA,KFDIA
+          PFUT(JL,JK1) = ZFU (JL)
+        END DO
 C
- 437  CONTINUE
+      END DO
 C
 C-----------------------------------------------------------------------
 C

@@ -24,6 +24,7 @@ C**MODIFIED: 08/02/2019 (P.Wautelet) bug fixes: missing argument
 C                                             + wrong use of an non initialized value
 C**MODIFIED: P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 C  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+C  P. Wautelet 21/11/2019: replace several CONTINUE (workaround of problems with gfortran OpenACC)
 C!
 C!
 C!
@@ -5440,21 +5441,10 @@ c      INCLUDE 'params'
       IF(nwint .eq. -12) mopt = 12
       IF(nwint .eq. -13) mopt = 13
 
-      IF (mopt .EQ. 1) GO TO 1
-      IF (mopt .EQ. 2) GO TO 2
-      IF (mopt .EQ. 3) GO TO 3
-      IF (mopt .EQ. 4) GO TO 4
-      IF (mopt .EQ. 5) GO TO 5
-      IF (mopt .EQ. 6) GO TO 6
-
-      IF (mopt .EQ. 10) GO TO 10
-      IF (mopt .EQ. 11) GO TO 11
-      IF (mopt .EQ. 12) GO TO 12
-      IF (mopt .EQ. 13) GO TO 13
-
+      select case( mopt )
 *_______________________________________________________________________
 
- 1    CONTINUE
+      case ( 1 )
 
       wlabel = 'equal spacing'
       nw = nwint + 1
@@ -5465,11 +5455,10 @@ c      INCLUDE 'params'
          wc(iw) = ( wl(iw) + wu(iw) )/2.
       ENDDO
       wl(nw) = wu(nw-1)
-      GO TO 9
 
 *_______________________________________________________________________
 
- 2    CONTINUE
+      case ( 2 )
 
 * Input from table.  In this example:
 * Wavelength grid will be read from a file.
@@ -5491,11 +5480,10 @@ c      wlabel = 'isaksen.grid'
          wu(iw) = wl(iw+1)
          wc(iw) = 0.5*(wl(iw) + wu(iw))
       ENDDO
-      GO TO 9
 
 *_______________________________________________________________________
 
- 3    CONTINUE
+      case ( 3 )
 
 * user-defined grid.  In this example, a single calculation is used to 
 * obtain results for two 1 nm wide intervals centered at 310 and 400 nm:
@@ -5512,11 +5500,11 @@ c      wlabel = 'isaksen.grid'
          wu(iw) = wl(iw+1)
          wc(iw) = 0.5*(wl(iw) + wu(iw))
       ENDDO
-      GO TO 9
 
 *_______________________________________________________________________
 
- 4    CONTINUE
+      case ( 4 )
+
       wlabel = 'fast-TUV tropospheric grid'
       
       fi = 'DATAE1/GRIDS/fast_tuv.grid'
@@ -5542,11 +5530,9 @@ c      wlabel = 'isaksen.grid'
          wc(iw) = 0.5*(wl(iw) + wu(iw))
       ENDDO
 
-      GO TO 9
-
 *_______________________________________________________________________
 
- 5    continue
+      case ( 5 )
 
 * use standard grid up to 205.8 nm
 * elsewhere, use 10 cm-1 grid to 1000 nm
@@ -5574,11 +5560,9 @@ c      wlabel = 'isaksen.grid'
          wc(iw) = (wl(iw) + wu(iw))/2.
       ENDDO
 
-      GO TO 9
-
 *_______________________________________________________________________
 
- 6    CONTINUE
+      case ( 6 )
 
 ***** Correction for air-vacuum wavelength shift:
 * The TUV code assumes that all working wavelengths are strictly IN-VACUUM. This is for ALL
@@ -5615,10 +5599,10 @@ c      wlabel = 'isaksen.grid'
       CALL wshift(mrefr, nwint, wc, airout, kout)
       CALL wshift(mrefr, nwint, wu, airout, kout)
 
-      GO TO 9
 *_______________________________________________________________________
 * Landgraf and Crutzen 1998
- 10   CONTINUE
+      case ( 10 )
+
       nw = 6
       wl(1) = 289.0
       wl(2) = 305.5
@@ -5630,10 +5614,10 @@ c      wlabel = 'isaksen.grid'
          wu(iw) = wl(iw+1)
          wc(iw) = 0.5*(wl(iw) + wu(iw))
       ENDDO
-      GO TO 9
 *_______________________________________________________________________
 * Wild 2000
- 11   CONTINUE
+      case ( 11 )
+
       nw = 8
       wl(1) = 289.00
       wl(2) = 298.25
@@ -5648,10 +5632,11 @@ c      wlabel = 'isaksen.grid'
          wu(iw) = wl(iw+1)
          wc(iw) = 0.5*(wl(iw) + wu(iw))
       ENDDO
-      GO TO 9
+
 *_______________________________________________________________________
 * Bian and Prather 2002
- 12   CONTINUE
+      case ( 12 )
+
       nw = 8
       wl(1) = 291.0
       wl(2) = 298.3
@@ -5666,13 +5651,12 @@ c      wlabel = 'isaksen.grid'
          wu(iw) = wl(iw+1)
          wc(iw) = 0.5*(wl(iw) + wu(iw))
       ENDDO
-      GO TO 9
-*_______________________________________________________________________
 
 *_______________________________________________________________________
 * UV-b, UV-A, Vis
 
- 13   CONTINUE
+      case ( 13 )
+
       nw = 4
       wl(1) = 280.0
       wl(2) = 315.0
@@ -5683,10 +5667,10 @@ c      wlabel = 'isaksen.grid'
          wu(iw) = wl(iw+1)
          wc(iw) = 0.5*(wl(iw) + wu(iw))
       ENDDO
-      GO TO 9
+
 *_______________________________________________________________________
 
- 9    CONTINUE
+      end select
 
 * check grid for assorted improprieties:
 
@@ -5816,12 +5800,13 @@ c      wlabel = 'isaksen.grid'
 * 4 = mirage z-grid for Mexico City
 * 5 = arbitrary user-defined grid
 
+#if 0
       GO TO 5
 
 *-----grid option 2: manual -----------------
 * entire grid (nz levels) in increments zincr 
 
- 1    CONTINUE
+  1   CONTINUE
       WRITE(*,*) 'equally spaced z-grid'
       zincr = (zstop - zstart) / REAL(nz - 1)
       z(1) = zstart
@@ -5941,28 +5926,27 @@ c      wlabel = 'isaksen.grid'
 *-----grid option 5: user defined
 
  5    CONTINUE
+#endif
 
 * insert your grid values here:
 * specify:
 *  nz = total number of altitudes
 * Table:  z(iz), where iz goes from 1 to nz
 C      use model levels for vertical grid where available
-       do 12, i = 1, nlevel
+       do i = 1, nlevel
          z(i) = zin(i) *1E-3
-12     continue
+       end do
        nz = nlevel
 C      fill up between model top and 50km with 1km grid spacing
-20     continue
-       if (z(nz) .ge. 50.) goto 30
+       do while (z(nz) < 50.)
          nz = nz + 1
          if (nz .gt. kz)
      &     call Print_msg( NVERB_FATAL, 'GEN', 'gridz',
      &                     'not enough memory, increase kz' )
          z(nz) = z(nz-1) + 1.
-       goto 20
-C
-30     continue
+       end do
 
+#if 0
 C
       GOTO 10
 
@@ -5983,6 +5967,7 @@ C
 *------------------------------------------------
 
  10   CONTINUE      
+#endif
 
 * Insert additional altitude for selected outputs.
 
@@ -7127,17 +7112,21 @@ C       locals
 	OPEN (NEWUNIT=IN_LUN, FILE=
      $       'DATAE1/O2/effxstex.txt',FORM='FORMATTED')
 
-	READ( IN_LUN, 901 )
+C	READ( IN_LUN, 901 )
+	READ( IN_LUN, '( / )' )
 	DO I = 1,20
-	  READ( IN_LUN, 903 ) ( AC(I,J), J=1,17 )
+C	  READ( IN_LUN, 903 ) ( AC(I,J), J=1,17 )
+	  READ( IN_LUN, '( 17(E23.14,1x) )' ) ( AC(I,J), J=1,17 )
 	ENDDO
-	READ( IN_LUN, 901 )
+C	READ( IN_LUN, 901 )
+	READ( IN_LUN, '( / )' )
 	DO I = 1,20
-	  READ( IN_LUN, 903 ) ( BC(I,J), J=1,17 )
+C	  READ( IN_LUN, 903 ) ( BC(I,J), J=1,17 )
+	  READ( IN_LUN, '( 17(E23.14,1x) )' ) ( BC(I,J), J=1,17 )
 	ENDDO
 
- 901    FORMAT( / )
- 903    FORMAT( 17(E23.14,1x))
+C   901 FORMAT( / )
+C   903 FORMAT( 17(E23.14,1x))
 
  998	CLOSE (IN_LUN)
 	
@@ -7174,11 +7163,11 @@ c	  WRITE(6,*) 'X NOT IN RANGE IN CHEBEV', X
         DD=0.
         Y=(2.*X-A-B)/(B-A)
         Y2=2.*Y
-        DO 11 J=M,2,-1
+        DO J=M,2,-1
           SV=D
           D=Y2*D-DD+C(J)
           DD=SV
- 11     CONTINUE
+        END DO
         CHEBEV=Y*D-DD+0.5*C(1)
       
 	RETURN
@@ -7839,7 +7828,7 @@ CCC FILE numer.f
 * also, use this loop to find the point at which xnew needs to be inserted
 * into vector x, if x is sorted.
 
- 10   CONTINUE
+   10 CONTINUE
       IF (i .LT. n) THEN
         IF (x(i) .LT. x(i-1)) THEN
           call Print_msg( NVERB_FATAL, 'GEN', 'addpnt',
