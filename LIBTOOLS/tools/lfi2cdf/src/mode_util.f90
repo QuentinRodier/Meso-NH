@@ -8,11 +8,15 @@
 !  P. Wautelet 10/04/2019: use IO_Err_handle_nc4 to handle netCDF errors
 !  P. Wautelet 25/06/2019: add support for 3D integer arrays
 !  P. Wautelet 01/08/2019: allow merge of entire Z-split files
+!  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
+!  P. Wautelet 19/09/2019: add possibility to provide a fallback file if some information are not found in the input file
+!  P. Wautelet 21/10/2019: add OPTDIR option to set directory for writing outfiles
+!  P. Wautelet 21/10/2019: if DTMOD and DTCUR not found, try to read the time coordinate
 !-----------------------------------------------------------------
 MODULE mode_util
   USE MODD_IO,         ONLY: TFILEDATA, TFILE_ELT
   USE MODD_NETCDF,     ONLY: DIMCDF, CDFINT
-  USE MODD_PARAMETERS, ONLY: JPVEXT, NLFIMAXCOMMENTLENGTH, NMNHNAMELGTMAX
+  USE MODD_PARAMETERS, ONLY: NLFIMAXCOMMENTLENGTH, NMNHNAMELGTMAX
   use modd_precision,  only: LFIINT
 
   USE MODE_FIELD
@@ -41,12 +45,12 @@ MODULE mode_util
      LOGICAL                               :: LSPLIT = .FALSE. ! TRUE if variable is split by vertical level
      INTEGER                               :: NSIZE = 0 ! Size of the variable (in number of elements)
      INTEGER                               :: NSRC = 0 ! Number of variables used to compute the variable (needed only if calc=.true.)
-     INTEGER                               :: NDIMS_FILE  ! Number of dims (as present in input file)
-     INTEGER,DIMENSION(:),ALLOCATABLE      :: NDIMSIZES_FILE  ! Dimensions sizes (as present in input file)
+     INTEGER(kind=CDFINT)                  :: NDIMS_FILE  ! Number of dims (as present in input file)
+     INTEGER(kind=CDFINT),    DIMENSION(:),ALLOCATABLE :: NDIMSIZES_FILE  ! Dimensions sizes (as present in input file)
      CHARACTER(LEN=NF90_MAX_NAME),DIMENSION(:),ALLOCATABLE :: CDIMNAMES_FILE  ! Dimensions names (as present in input file)
      CHARACTER(LEN=40)                     :: CUNITS_FILE = '' ! Units (as present in input file)
      INTEGER                               :: NGRID_FILE  ! Grid  number (as present in input file)
-     INTEGER                               :: NTYPE_FILE  ! netCDF datatype (NF90_CHAR, NF90_INT...) (as present in input file)
+     INTEGER(kind=CDFINT)                  :: NTYPE_FILE  ! netCDF datatype (NF90_CHAR, NF90_INT...) (as present in input file)
      INTEGER,DIMENSION(MAXRAW)             :: src    ! List of variables used to compute the variable (needed only if calc=.true.)
      INTEGER                               :: tgt    ! Target: id of the variable that use it (calc variable)
      TYPE(TFIELDDATA)                      :: TFIELD ! Metadata about the field
@@ -634,7 +638,8 @@ END DO
 
     CHARACTER(LEN=16) :: YMNHVERSION
     CHARACTER(LEN=:),ALLOCATABLE :: YHISTORY
-    INTEGER :: ilen, ji
+    INTEGER              :: ji
+    INTEGER(KIND=CDFINT) :: ilen
     INTEGER(KIND=CDFINT) :: status
     INTEGER(KIND=CDFINT) :: kcdf_id
 
@@ -853,8 +858,8 @@ END DO
           ALLOCATE(XTAB3D(IDIMLEN(1),IDIMLEN(2),IDIMLEN(3)))
           IF (tpreclist(ji)%calc) ALLOCATE(XTAB3D2(IDIMLEN(1),IDIMLEN(2),IDIMLEN(3)))
           !Hack not very clean: 3D LB fields are not split
-          !If NSUBFILES_IOZ is set to 0, IO_READ_FIELD will read it as a non-split field
-          !CAUTION: there are no guarantee the IO_READ_FIELD will continue to use this information that way...
+          !If NSUBFILES_IOZ is set to 0, IO_Field_read will read it as a non-split field
+          !CAUTION: there are no guarantee the IO_Field_read will continue to use this information that way...
           if ( tpreclist(ji)%tfield%clbtype /= 'NONE' .or. tpreclist(ji)%name(1:2) == 'LB' ) then
             tzfile = infiles(1)%tfile
             tzfile%nsubfiles_ioz=0
@@ -967,6 +972,7 @@ END DO
   SUBROUTINE OPEN_FILES(infiles,outfiles,KNFILES_OUT,hinfile,houtfile,nbvar_infile,options,runmode)
     USE MODD_CONF,          ONLY: LCARTESIAN
     USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
+    USE MODD_CONFZ,         ONLY: NB_PROCIO_R
     USE MODD_DIM_n,         ONLY: NIMAX_ll, NJMAX_ll, NKMAX
     USE MODD_GRID,          ONLY: XBETA, XRPK, XLAT0, XLON0, XLATORI, XLONORI
     USE MODD_GRID_n,        ONLY: LSLEVE, XXHAT, XYHAT, XZHAT
@@ -987,10 +993,15 @@ END DO
     TYPE(option),DIMENSION(:),   INTENT(IN)  :: options
     INTEGER,                     INTENT(IN)  :: runmode
 
-    INTEGER              :: idx, IRESP2
-    INTEGER(KIND=CDFINT) :: omode
-    INTEGER(KIND=CDFINT) :: status
-    INTEGER(KIND=LFIINT) :: ilu,iresp
+    character(len=:), allocatable :: yunits
+    INTEGER                       :: idx, IRESP2
+    integer                       :: inb_procio_r_save
+    INTEGER(KIND=CDFINT)          :: ioldmode
+    INTEGER(KIND=CDFINT)          :: istatus
+    INTEGER(KIND=CDFINT)          :: ivar_id
+    integer(kind=CDFINT)          :: ilen
+    INTEGER(KIND=LFIINT)          :: ilu,iresp
+    logical                       :: gok
 
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_FILES','called')
@@ -1007,6 +1018,15 @@ END DO
        CALL IO_FILE_OPEN(INFILES(1)%TFILE)
 
        nbvar_infile = INFILES(1)%TFILE%NNCNAR
+
+       !Open fallback file if provided
+       if ( options( OPTFALLBACK )%set ) then
+         inb_procio_r_save = NB_PROCIO_R
+         NB_PROCIO_R = 1
+         CALL IO_FILE_ADD2LIST(INFILES(2)%TFILE,options( OPTFALLBACK )%cvalue,'UNKNOWN','READ',HFORMAT='NETCDF4')
+         CALL IO_FILE_OPEN(INFILES(2)%TFILE)
+         NB_PROCIO_R = inb_procio_r_save
+       end if
    ELSE
        !
        ! LFI
@@ -1024,52 +1044,158 @@ END DO
           CALL IO_FILE_CLOSE(INFILES(1)%TFILE)
           return
        END IF
+
+       !Open fallback file if provided
+       if ( options( OPTFALLBACK )%set ) then
+         inb_procio_r_save = NB_PROCIO_R
+         NB_PROCIO_R = 1
+         CALL IO_FILE_ADD2LIST(INFILES(2)%TFILE,options( OPTFALLBACK )%cvalue,'UNKNOWN','READ', &
+                               HFORMAT='LFI',KLFIVERB=0)
+         CALL IO_FILE_OPEN(INFILES(2)%TFILE)
+         NB_PROCIO_R = inb_procio_r_save
+       end if
    END IF
    !
    !Read problem dimensions and some grid variables (needed to determine domain size and also by IO_FILE_OPEN to create netCDF files)
-   CALL IO_Field_read(INFILES(1)%TFILE,'JPHEXT',JPHEXT)
+   JPHEXT = 1
+   CALL IO_Field_read(INFILES(1)%TFILE,'JPHEXT',JPHEXT,IRESP2)
+   !If not found in main file, try the fallback one
+   if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_Field_read(INFILES(2)%TFILE,'JPHEXT',JPHEXT,IRESP2)
+   if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'JPHEXT not found')
+
    JPHEXT_ll = JPHEXT
    JPVEXT_ll = JPVEXT
    !
    ALLOCATE(NIMAX_ll,NJMAX_ll,NKMAX)
-   CALL IO_Field_read(INFILES(1)%TFILE,'IMAX',NIMAX_ll)
-   CALL IO_Field_read(INFILES(1)%TFILE,'JMAX',NJMAX_ll)
+   CALL IO_Field_read(INFILES(1)%TFILE,'IMAX',NIMAX_ll,IRESP2)
+   !If not found in main file, try the fallback one
+   if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_Field_read(INFILES(2)%TFILE,'IMAX',NIMAX_ll,IRESP2)
+   if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'IMAX not found')
+
+   CALL IO_Field_read(INFILES(1)%TFILE,'JMAX',NJMAX_ll,IRESP2)
+   !If not found in main file, try the fallback one
+   if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_Field_read(INFILES(2)%TFILE,'JMAX',NJMAX_ll,IRESP2)
+   if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'JMAX not found')
+
    CALL IO_Field_read(INFILES(1)%TFILE,'KMAX',NKMAX,IRESP2)
+   !If not found in main file, try the fallback one
+   if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_Field_read(INFILES(2)%TFILE,'KMAX',NKMAX,IRESP2)
    IF (IRESP2/=0) NKMAX = 0
    !
-   CALL IO_Field_read(INFILES(1)%TFILE,'PROGRAM',CPROGRAM_ORIG)
+   CALL IO_Field_read(INFILES(1)%TFILE,'PROGRAM',CPROGRAM_ORIG,IRESP2)
+   !If not found in main file, try the fallback one
+   if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_Field_read(INFILES(2)%TFILE,'PROGRAM',CPROGRAM_ORIG,IRESP2)
+   if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'PROGRAM not found')
    !
    ALLOCATE(CSTORAGE_TYPE)
-   CALL IO_Field_read(INFILES(1)%TFILE,'STORAGE_TYPE',CSTORAGE_TYPE)
+   CALL IO_Field_read(INFILES(1)%TFILE,'STORAGE_TYPE',CSTORAGE_TYPE,IRESP2)
+   !If not found in main file, try the fallback one
+   if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_Field_read(INFILES(2)%TFILE,'STORAGE_TYPE',CSTORAGE_TYPE,IRESP2)
+   if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'STORAGE_TYPE not found')
    !
    ALLOCATE(XXHAT(NIMAX_ll+2*JPHEXT))
-   CALL IO_Field_read(INFILES(1)%TFILE,'XHAT',XXHAT)
+   CALL IO_Field_read(INFILES(1)%TFILE,'XHAT',XXHAT,IRESP2)
+   !If not found in main file, try the fallback one
+   if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_Field_read(INFILES(2)%TFILE,'XHAT',XXHAT,IRESP2)
+   if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'XHAT not found')
+
    ALLOCATE(XYHAT(NJMAX_ll+2*JPHEXT))
-   CALL IO_Field_read(INFILES(1)%TFILE,'YHAT',XYHAT)
-   CALL IO_Field_read(INFILES(1)%TFILE,'CARTESIAN',LCARTESIAN)
-   !
-   CALL IO_Field_read(INFILES(1)%TFILE,'LAT0',XLAT0)
-   CALL IO_Field_read(INFILES(1)%TFILE,'LON0',XLON0)
-   CALL IO_Field_read(INFILES(1)%TFILE,'BETA',XBETA)
-   !
+   CALL IO_Field_read(INFILES(1)%TFILE,'YHAT',XYHAT,IRESP2)
+   !If not found in main file, try the fallback one
+   if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_Field_read(INFILES(2)%TFILE,'YHAT',XYHAT,IRESP2)
+   if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'YHAT not found')
+
+   CALL IO_Field_read(INFILES(1)%TFILE,'CARTESIAN',LCARTESIAN,IRESP2)
+   !If not found in main file, try the fallback one
+   if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_Field_read(INFILES(2)%TFILE,'CARTESIAN',LCARTESIAN,IRESP2)
+   if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'CARTESIAN not found')
+
+   CALL IO_Field_read(INFILES(1)%TFILE,'LAT0',XLAT0,IRESP2)
+   !If not found in main file, try the fallback one
+   if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_Field_read(INFILES(2)%TFILE,'LAT0',XLAT0,IRESP2)
+   if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'LAT0 not found')
+
+   CALL IO_Field_read(INFILES(1)%TFILE,'LON0',XLON0,IRESP2)
+   !If not found in main file, try the fallback one
+   if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_Field_read(INFILES(2)%TFILE,'LON0',XLON0,IRESP2)
+   if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'LON0 not found')
+
+   CALL IO_Field_read(INFILES(1)%TFILE,'BETA',XBETA,IRESP2)
+   !If not found in main file, try the fallback one
+   if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_Field_read(INFILES(2)%TFILE,'BETA',XBETA,IRESP2)
+   if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'BETA not found')
+
    IF (.NOT.LCARTESIAN) THEN
-     CALL IO_Field_read(INFILES(1)%TFILE,'RPK',   XRPK)
-     CALL IO_Field_read(INFILES(1)%TFILE,'LATORI',XLATORI)
-     CALL IO_Field_read(INFILES(1)%TFILE,'LONORI',XLONORI)
+     CALL IO_Field_read(INFILES(1)%TFILE,'RPK',   XRPK,   IRESP2)
+    !If not found in main file, try the fallback one
+    if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_Field_read(INFILES(2)%TFILE,'RPK',   XRPK,IRESP2)
+    if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'RPK not found')
+
+     CALL IO_Field_read(INFILES(1)%TFILE,'LATORI',XLATORI,IRESP2)
+    !If not found in main file, try the fallback one
+    if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_Field_read(INFILES(2)%TFILE,'LATORI',XLATORI,IRESP2)
+    if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'LATORI not found')
+
+     CALL IO_Field_read(INFILES(1)%TFILE,'LONORI',XLONORI,IRESP2)
+    !If not found in main file, try the fallback one
+    if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_Field_read(INFILES(2)%TFILE,'LONORI',XLONORI,IRESP2)
+    if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'LONORI not found')
    ENDIF
    !
    IF (TRIM(CPROGRAM_ORIG)/='PGD' .AND. TRIM(CPROGRAM_ORIG)/='NESPGD' .AND. TRIM(CPROGRAM_ORIG)/='ZOOMPG' &
        .AND. .NOT.(TRIM(CPROGRAM_ORIG)=='REAL' .AND. CSTORAGE_TYPE=='SU') ) THEN !condition to detect PREP_SURFEX
      ALLOCATE(XZHAT(NKMAX+2*JPVEXT))
-     CALL IO_Field_read(INFILES(1)%TFILE,'ZHAT',XZHAT)
+     CALL IO_Field_read(INFILES(1)%TFILE,'ZHAT',XZHAT,IRESP2)
+     !If not found in main file, try the fallback one
+     if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_Field_read(INFILES(2)%TFILE,'ZHAT',XZHAT,IRESP2)
+     if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'ZHAT not found')
+
      ALLOCATE(LSLEVE)
-     CALL IO_Field_read(INFILES(1)%TFILE,'SLEVE',LSLEVE)
+     CALL IO_Field_read(INFILES(1)%TFILE,'SLEVE',LSLEVE,IRESP2)
+     !If not found in main file, try the fallback one
+     if ( options( OPTFALLBACK )%set .and. iresp2 /= 0 ) CALL IO_Field_read(INFILES(2)%TFILE,'SLEVE',LSLEVE,IRESP2)
+     if ( iresp2 /= 0 ) call Print_msg( NVERB_ERROR, 'IO', 'OPEN_FILES', 'SLEVE not found')
+
      ALLOCATE(TDTMOD)
      CALL IO_Field_read(INFILES(1)%TFILE,'DTMOD',TDTMOD,IRESP2)
      IF(IRESP2/=0) DEALLOCATE(TDTMOD)
+
      ALLOCATE(TDTCUR)
      CALL IO_Field_read(INFILES(1)%TFILE,'DTCUR',TDTCUR,IRESP2)
      IF(IRESP2/=0) DEALLOCATE(TDTCUR)
+
+     !If time values were not found, try to get it from the time coordinate
+     if ( .not. associated( tdtcur ) .and. infiles(1)%tfile%cformat == 'NETCDF4' ) then
+       gok = .false.
+
+       istatus = NF90_INQ_VARID( infiles(1)%tfile%nncid, 'time', ivar_id )
+       if ( istatus == NF90_NOERR ) then
+         allocate( tdtcur )
+         istatus = NF90_GET_VAR( infiles(1)%tfile%nncid, ivar_id, tdtcur%time )
+         if ( istatus == NF90_NOERR ) then
+           istatus = NF90_INQUIRE_ATTRIBUTE( infiles(1)%tfile%nncid, ivar_id, 'units', len = ilen )
+           if ( istatus == NF90_NOERR ) then
+             allocate( character(len = ilen ) :: yunits )
+             istatus = NF90_GET_ATT( infiles(1)%tfile%nncid, ivar_id, 'units', yunits )
+             ! Extract date from yunits
+             idx =  INDEX( yunits, 'since ' )
+             Read( yunits(idx+6 :idx+9 ) , '( I4.4 )' ) tdtcur%tdate%year
+             Read( yunits(idx+11:idx+12 ), '( I2.2 )' ) tdtcur%tdate%month
+             Read( yunits(idx+14:idx+15 ), '( I2.2 )' ) tdtcur%tdate%day
+
+             if ( .not. associated( tdtmod ) ) then
+               allocate( tdtmod )
+               tdtmod = tdtcur
+               tdtmod%time = 0.
+             end if
+
+             gok = .true.
+           end if
+         end if
+       end if
+
+       if ( .not. gok ) deallocate( tdtcur )
+     end if
    END IF
    !
    ! Outfiles
@@ -1082,8 +1208,13 @@ END DO
          KNFILES_OUT = KNFILES_OUT + 1
 
          idx = KNFILES_OUT
-         CALL IO_FILE_ADD2LIST(outfiles(idx)%TFILE,HOUTFILE,'MNH','WRITE', &
-                               HFORMAT='NETCDF4',OOLD=.TRUE.)
+         if ( options(OPTDIR)%set ) then
+           CALL IO_FILE_ADD2LIST(outfiles(idx)%TFILE,HOUTFILE,'MNH','WRITE', &
+                                 HFORMAT='NETCDF4',OOLD=.TRUE., hdirname = options(OPTDIR)%cvalue )
+         else
+           CALL IO_FILE_ADD2LIST(outfiles(idx)%TFILE,HOUTFILE,'MNH','WRITE', &
+                                 HFORMAT='NETCDF4',OOLD=.TRUE.)
+         end if
          CALL IO_FILE_OPEN(outfiles(idx)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
 
          IF (options(OPTCOMPRESS)%set) THEN
@@ -1095,8 +1226,8 @@ END DO
            outfiles(idx)%tfile%LNCREDUCE_FLOAT_PRECISION = .TRUE.
          END IF
 
-         status = NF90_SET_FILL(outfiles(idx)%TFILE%NNCID,NF90_NOFILL,omode)
-         if ( status /= NF90_NOERR ) call IO_Err_handle_nc4( status, 'OPEN_FILES', 'NF90_SET_FILL', '' )
+         istatus = NF90_SET_FILL(outfiles(idx)%TFILE%NNCID,NF90_NOFILL,ioldmode)
+         if ( istatus /= NF90_NOERR ) call IO_Err_handle_nc4( istatus, 'OPEN_FILES', 'NF90_SET_FILL', '' )
        END IF ! .NOT.osplit
     ELSE
        !
@@ -1104,8 +1235,13 @@ END DO
        !
        KNFILES_OUT = KNFILES_OUT + 1
        idx = KNFILES_OUT
-       CALL IO_FILE_ADD2LIST(outfiles(idx)%TFILE,houtfile,'MNH','WRITE', &
-                             HFORMAT='LFI',KLFIVERB=0,OOLD=.TRUE.)
+       if ( options(OPTDIR)%set ) then
+         CALL IO_FILE_ADD2LIST(outfiles(idx)%TFILE,houtfile,'MNH','WRITE', &
+                               HFORMAT='LFI',KLFIVERB=0,OOLD=.TRUE., hdirname = options(OPTDIR)%cvalue )
+       else
+         CALL IO_FILE_ADD2LIST(outfiles(idx)%TFILE,houtfile,'MNH','WRITE', &
+                               HFORMAT='LFI',KLFIVERB=0,OOLD=.TRUE.)
+       end if
        LIOCDF4 = .FALSE. !Necessary to open correctly the LFI file
        CALL IO_FILE_OPEN(outfiles(idx)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
        LIOCDF4 = .TRUE.
@@ -1116,8 +1252,13 @@ END DO
      KNFILES_OUT = KNFILES_OUT + 1
 
      idx = KNFILES_OUT
-     CALL IO_FILE_ADD2LIST(outfiles(idx)%TFILE,'dummy_file','MNH','WRITE', &
-                           HFORMAT='NETCDF4',OOLD=.TRUE.)
+     if ( options(OPTDIR)%set ) then
+       CALL IO_FILE_ADD2LIST(outfiles(idx)%TFILE,'dummy_file','MNH','WRITE', &
+                             HFORMAT='NETCDF4',OOLD=.TRUE., hdirname = options(OPTDIR)%cvalue )
+     else
+       CALL IO_FILE_ADD2LIST(outfiles(idx)%TFILE,'dummy_file','MNH','WRITE', &
+                             HFORMAT='NETCDF4',OOLD=.TRUE.)
+     end if
      CALL IO_FILE_OPEN(outfiles(idx)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
    END IF
 
@@ -1141,7 +1282,7 @@ END DO
     INTEGER                  :: ji
     INTEGER                  :: idx1, idx2
     INTEGER(KIND=CDFINT)     :: status
-    INTEGER(KIND=CDFINT)     :: omode
+    INTEGER(KIND=CDFINT)     :: ioldmode
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_SPLIT_NCFILES_OUT','called')
 
@@ -1171,8 +1312,13 @@ END DO
 
     DO ji = 1,nbvar
       filename = trim(houtfile)//'.'//TRIM(YVARS(ji))
-      CALL IO_FILE_ADD2LIST(outfiles(ji)%TFILE,filename,'MNH','WRITE', &
-                            HFORMAT='NETCDF4')
+      if ( options(OPTDIR)%set ) then
+        CALL IO_FILE_ADD2LIST(outfiles(ji)%TFILE,filename,'MNH','WRITE', &
+                              HFORMAT='NETCDF4', hdirname = options(OPTDIR)%cvalue )
+      else
+        CALL IO_FILE_ADD2LIST(outfiles(ji)%TFILE,filename,'MNH','WRITE', &
+                              HFORMAT='NETCDF4')
+      end if
       CALL IO_FILE_OPEN(outfiles(ji)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
 
       IF (options(OPTCOMPRESS)%set) THEN
@@ -1184,7 +1330,7 @@ END DO
         outfiles(ji)%tfile%LNCREDUCE_FLOAT_PRECISION = .TRUE.
       END IF
 
-      status = NF90_SET_FILL(outfiles(ji)%TFILE%NNCID,NF90_NOFILL,omode)
+      status = NF90_SET_FILL(outfiles(ji)%TFILE%NNCID,NF90_NOFILL,ioldmode)
       if ( status /= NF90_NOERR ) call IO_Err_handle_nc4( status, 'OPEN_SPLIT_NCFILES_OUT', 'NF90_SET_FILL', '' )
     END DO
 
@@ -1243,7 +1389,7 @@ END DO
     !split_variable and other attributes were added in MesoNH > 5.4.2
     ISTATUS = NF90_INQUIRE_ATTRIBUTE(IFILE_ID, KVAR_ID, 'split_variable', LEN=ILENG)
     IF (ISTATUS == NF90_NOERR) THEN
-      IF (GSPLIT_AT_ENTRY) CALL PRINT_MSG(NVERB_ERROR,'IO','IO_GET_METADATA_NC4','split variable delcaration inside a split file')
+      IF (GSPLIT_AT_ENTRY) CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Metadata_get_nc4','split variable delcaration inside a split file')
 
       ALLOCATE(CHARACTER(LEN=ILENG) :: YSPLIT)
       ISTATUS = NF90_GET_ATT(IFILE_ID, KVAR_ID, 'split_variable', YSPLIT)
@@ -1253,7 +1399,7 @@ END DO
 
         ISTATUS = NF90_GET_ATT(IFILE_ID, KVAR_ID, 'ndims', TPREC%NDIMS_FILE)
         IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4( istatus, 'IO_Metadata_get_nc4', 'NF90_GET_ATT', 'ndims' )
-        IF ( TPREC%NDIMS_FILE/=3 ) CALL PRINT_MSG(NVERB_ERROR,'IO','IO_GET_METADATA_NC4', &
+        IF ( TPREC%NDIMS_FILE/=3 ) CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Metadata_get_nc4', &
                                                   'split variable with ndims/=3 not supported')
 
         ISTATUS = NF90_INQUIRE_ATTRIBUTE(IFILE_ID, KVAR_ID, 'time_dependent', LEN=ILENG)
@@ -1267,7 +1413,7 @@ END DO
         ELSE IF ( YTIMEDEP == 'no' ) THEN
           TPREC%TFIELD%LTIMEDEP = .FALSE.
         ELSE
-          CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GET_METADATA_NC4','unknown value '//trim(YTIMEDEP)// &
+          CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Metadata_get_nc4','unknown value '//trim(YTIMEDEP)// &
                                                                   ' for time_dependent attribute' )
         END IF
 
@@ -1286,7 +1432,67 @@ END DO
 
         DEALLOCATE(YTIMEDEP)
       ELSE IF ( YSPLIT /= 'no' ) THEN
-        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GET_METADATA_NC4','unknown value '//trim(YSPLIT)//' for split_variable attribute' )
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Metadata_get_nc4','unknown value '//trim(YSPLIT)//' for split_variable attribute' )
+      END IF
+
+      DEALLOCATE(YSPLIT)
+    END IF
+
+    ISTATUS = NF90_GET_ATT(IFILE_ID,KVAR_ID,'grid',TPREC%NGRID_FILE)
+    !On MesoNH versions < 5.4.0, the grid number was stored in 'GRID' instead of 'grid'
+    IF (ISTATUS /= NF90_NOERR) ISTATUS = NF90_GET_ATT(IFILE_ID,KVAR_ID,'GRID',TPREC%NGRID_FILE)
+    IF (ISTATUS /= NF90_NOERR) TPREC%NGRID_FILE = 0
+
+    ISTATUS = NF90_GET_ATT(IFILE_ID,KVAR_ID,'units',TPREC%CUNITS_FILE)
+    IF (ISTATUS /= NF90_NOERR) TPREC%CUNITS_FILE = ''
+
+    !split_variable and other attributes were added in MesoNH > 5.4.2
+    ISTATUS = NF90_INQUIRE_ATTRIBUTE(IFILE_ID, KVAR_ID, 'split_variable', LEN=ILENG)
+    IF (ISTATUS == NF90_NOERR) THEN
+      IF (GSPLIT_AT_ENTRY) CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Metadata_get_nc4','split variable declaration inside a split file')
+
+      ALLOCATE(CHARACTER(LEN=ILENG) :: YSPLIT)
+      ISTATUS = NF90_GET_ATT(IFILE_ID, KVAR_ID, 'split_variable', YSPLIT)
+      IF (istatus /= NF90_NOERR) call IO_Err_handle_nc4( istatus, 'IO_Metadata_get_nc4', 'NF90_GET_ATT', 'split_variable' )
+      IF ( YSPLIT == 'yes' ) then
+        TPREC%LSPLIT = .true.
+
+        ISTATUS = NF90_GET_ATT(IFILE_ID, KVAR_ID, 'ndims', TPREC%NDIMS_FILE)
+        IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4( istatus, 'IO_Metadata_get_nc4', 'NF90_GET_ATT', 'ndims' )
+        IF ( TPREC%NDIMS_FILE/=3 ) CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Metadata_get_nc4', &
+                                                  'split variable with ndims/=3 not supported')
+
+        ISTATUS = NF90_INQUIRE_ATTRIBUTE(IFILE_ID, KVAR_ID, 'time_dependent', LEN=ILENG)
+        IF (istatus /= NF90_NOERR) &
+          CALL IO_Err_handle_nc4( istatus, 'IO_Metadata_get_nc4', 'NF90_INQUIRE_ATTRIBUTE', 'time_dependent' )
+        ALLOCATE(CHARACTER(LEN=ILENG) :: YTIMEDEP)
+        ISTATUS = NF90_GET_ATT(IFILE_ID, KVAR_ID, 'time_dependent', YTIMEDEP)
+        IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4( istatus, 'IO_Metadata_get_nc4', 'NF90_GET_ATT', 'time_dependent' )
+        IF ( YTIMEDEP == 'yes' ) then
+          TPREC%TFIELD%LTIMEDEP = .TRUE.
+        ELSE IF ( YTIMEDEP == 'no' ) THEN
+          TPREC%TFIELD%LTIMEDEP = .FALSE.
+        ELSE
+          CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Metadata_get_nc4','unknown value '//trim(YTIMEDEP)// &
+                                                                  ' for time_dependent attribute' )
+        END IF
+
+        ISTATUS = NF90_GET_ATT(IFILE_ID, KVAR_ID, 'split_nblocks', iblocks)
+        IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4( istatus, 'IO_Metadata_get_nc4', 'NF90_GET_ATT', 'split_nblocks' )
+
+!PW: todo:check tfiles_ioz exist
+        IFILE_ID = TPFILE%TFILES_IOZ(1)%TFILE%NNCID
+
+        istatus = NF90_INQ_VARID(IFILE_ID,trim(TPREC%NAME)//'0001',ivar_id)
+        IF (ISTATUS /= NF90_NOERR) &
+          CALL IO_Err_handle_nc4( istatus, 'IO_Metadata_get_nc4', 'NF90_INQ_VARID', trim(TPREC%NAME)//'0001' )
+        ISTATUS = NF90_INQUIRE_VARIABLE(IFILE_ID, IVAR_ID, DIMIDS = IDIMS_ID)
+        IF (ISTATUS /= NF90_NOERR) &
+          CALL IO_Err_handle_nc4( istatus, 'IO_Metadata_get_nc4', 'NF90_INQUIRE_VARIABLE', trim(TPREC%NAME)//'0001' )
+
+        DEALLOCATE(YTIMEDEP)
+      ELSE IF ( YSPLIT /= 'no' ) THEN
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Metadata_get_nc4','unknown value '//trim(YSPLIT)//' for split_variable attribute' )
       END IF
 
       DEALLOCATE(YSPLIT)
@@ -1345,7 +1551,7 @@ END DO
       IF (TPREC%LSPLIT) THEN
         IF(     (.NOT.TPREC%TFIELD%LTIMEDEP .AND.  TPREC%NDIMS_FILE/=2)   &
             .OR. (     TPREC%TFIELD%LTIMEDEP .AND.  TPREC%NDIMS_FILE/=3) ) &
-          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_GET_METADATA_NC4',trim(TPREC%NAME)//': split variables can only be 3D')
+          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_Metadata_get_nc4',trim(TPREC%NAME)//': split variables can only be 3D')
         !Split variables are Z-split
         !Move time dimension to last (4th) position
         IF (TPREC%TFIELD%LTIMEDEP) THEN
@@ -1369,7 +1575,7 @@ END DO
 
           if (TPREC%NGRID_FILE/=0 .and. iblocks/=NKMAX+2*JPVEXT) THEN
             !If size is not as expected, reset its name
-            CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GET_METADATA_NC4',trim(TPREC%NAME)//': strange nblocks size')
+            CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Metadata_get_nc4',trim(TPREC%NAME)//': strange nblocks size')
             TPREC%CDIMNAMES_FILE(3) = 'unknown'
           end if
           TPREC%NDIMSIZES_FILE(3) = iblocks

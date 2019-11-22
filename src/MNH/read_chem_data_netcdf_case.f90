@@ -85,6 +85,7 @@ END MODULE MODI_READ_CHEM_DATA_NETCDF_CASE
 !!      P. Wautelet 30/10/17 use F90 module for netCDF
 !!      J.Pianezzej 13/02/2019 : correction for use of MEGAN
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
 !-------------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -169,7 +170,7 @@ REAL,DIMENSION(:,:),ALLOCATABLE    :: ZVALUE        ! Intermediate array
 REAL,DIMENSION(:),ALLOCATABLE      :: ZVALUE1D        ! Intermediate array
 REAL,DIMENSION(:,:),ALLOCATABLE    :: ZOUT          ! Intermediate arrays
 REAL,DIMENSION(:),ALLOCATABLE      :: ZOUT1D          ! Intermediate arrays
-INTEGER                            :: ind_netcdf    ! Indice for netcdf var.
+INTEGER(kind=CDFINT)               :: ind_netcdf    ! Indice for netcdf var.
 !chemistry field infile MOZ1.nam
 INTEGER                                       :: ICHANNEL
 CHARACTER(LEN=8)                              :: YMOZ="MOZ1.nam"
@@ -195,14 +196,14 @@ integer(kind=CDFINT) :: status, ncid, varid
 integer(kind=CDFINT) :: lat_varid, lon_varid, lev_varid, time_varid
 integer(kind=CDFINT) :: hyam_varid, hybm_varid, p0_varid, t_varid, q_varid, ps_varid
 integer(kind=CDFINT) :: recid, latid, lonid, levid, timeid
-integer(kind=CDFINT) :: latlen, lonlen, levlen, nrecs,timelen
-integer(kind=CDFINT) :: itimeindex, KILEN, jrec
+integer(kind=CDFINT) :: latlen, lonlen, levlen, nrecs, timelen
+integer(kind=CDFINT) :: itimeindex, KILEN
 CHARACTER(LEN=40)                     :: recname
 REAL, DIMENSION(:), ALLOCATABLE       :: lats
 REAL, DIMENSION(:), ALLOCATABLE       :: lons 
 REAL, DIMENSION(:), ALLOCATABLE       :: levs 
-INTEGER, DIMENSION(:), ALLOCATABLE    :: count3d, start3d
-INTEGER, DIMENSION(:), ALLOCATABLE    :: count2d, start2d 
+INTEGER(kind=CDFINT), DIMENSION(:), ALLOCATABLE :: count3d, start3d
+INTEGER(kind=CDFINT), DIMENSION(:), ALLOCATABLE :: count2d, start2d
 REAL, DIMENSION(:), ALLOCATABLE       :: time, hyam, hybm 
 REAL                                  :: p0 
 INTEGER, DIMENSION(:), ALLOCATABLE    :: kinlo 
@@ -573,7 +574,7 @@ DO JI = 1,IMOZ               !for every MNH species existing in MOZ1.nam
            JLOOP1 = JLOOP1+lonlen
          ENDDO                                                                                           
          CALL HORIBL(lats(1),lons(1),lats(latlen),lons(lonlen), &
-                     latlen,kinlo,KILEN,                        &
+                     int(latlen,kind=kind(1)),kinlo,KILEN,      &
                      ZVALUE(JK,:),INO,ZLONOUT,ZLATOUT,          &
                      ZOUT(JK,:),.FALSE.,PTIME_HORI,.TRUE.)
          CALL ARRAY_1D_TO_2D(INO,ZOUT(JK,:),IIU,IJU, &
@@ -654,7 +655,7 @@ DO JI = 1,IMOZ               !for every MNH species existing in MOZ1.nam
            JLOOP1 = JLOOP1+lonlen
          ENDDO                                                                                           
          CALL HORIBL(lats(1),lons(1),lats(latlen),lons(lonlen), &
-                     latlen,kinlo,KILEN,                        &
+                     int(latlen,kind=kind(1)),kinlo,KILEN,      &
                      ZVALUE(JK,:),INO,ZLONOUT,ZLATOUT,          &
                      ZOUT(JK,:),.FALSE.,PTIME_HORI,.TRUE.)
          CALL ARRAY_1D_TO_2D(INO,ZOUT(JK,:),IIU,IJU, &
@@ -678,7 +679,7 @@ DO JK = 1, levlen
     JLOOP1 = JLOOP1 + lonlen
   ENDDO
   CALL HORIBL(lats(1),lons(1),lats(latlen),lons(lonlen), &
-              latlen,kinlo,KILEN,                        &
+              int(latlen,kind=kind(1)),kinlo,KILEN,      &
               ZVALUE(JK,:),INO,ZLONOUT,ZLATOUT,          &
               ZOUT(JK,:),.FALSE.,PTIME_HORI,.FALSE.)
 !
@@ -694,7 +695,7 @@ DO JK = 1, levlen
     JLOOP1 = JLOOP1 + lonlen
   ENDDO
   CALL HORIBL(lats(1),lons(1),lats(latlen),lons(lonlen), &
-              latlen,kinlo,KILEN,                                &
+              int(latlen,kind=kind(1)),kinlo,KILEN,      &
               ZVALUE(JK,:),INO,ZLONOUT,ZLATOUT,                  &
               ZOUT(JK,:),.FALSE.,PTIME_HORI,.FALSE.)
 !
@@ -709,7 +710,7 @@ DO JJ = 1, latlen
   JLOOP1 = JLOOP1 + lonlen
 ENDDO
 CALL HORIBL(lats(1),lons(1),lats(latlen),lons(lonlen), &
-            latlen,kinlo,KILEN,                                &
+            int(latlen,kind=kind(1)),kinlo,KILEN,      &
             ZVALUE1D(:),INO,ZLONOUT,ZLATOUT,                  &
             ZOUT1D(:),.FALSE.,PTIME_HORI,.FALSE.)
 !

@@ -78,6 +78,7 @@ USE MODD_DUST,            ONLY: CDUSTNAMES, LDUST, NMODE_DST
 USE MODD_SALT,            ONLY: CSALTNAMES, LSALT, NMODE_SLT
 USE MODD_NSV
 USE MODD_DIAG_IN_RUN
+USE MODD_PARAM_n,         ONLY: CRAD        
 !
 USE MODD_DIM_n             
 USE MODD_GRID_n           
@@ -278,6 +279,7 @@ IF (LDIAG_IN_RUN) THEN
   YCOMMENT (JPROC) = 'Storage heat flux'     
   ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%GFLUX(:,II)
   !
+ IF (CRAD /= 'NONE') THEN
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'SWD'   
   YUNIT    (JPROC) = 'W m-2'
@@ -320,6 +322,7 @@ IF (LDIAG_IN_RUN) THEN
   YCOMMENT (JPROC) = 'Dust aerosol optical depth'
   ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%DSTAOD(:,II)
   !
+ END IF
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'LEI'  
   YUNIT    (JPROC) = 'W m-2'

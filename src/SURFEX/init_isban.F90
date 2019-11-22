@@ -1,6 +1,6 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 2004-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
-!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
 !#############################################################
 SUBROUTINE INIT_ISBA_n (DTCO, OREAD_BUDGETC, UG, U, USS, GCP, IM, DTZ,&
@@ -58,6 +58,7 @@ SUBROUTINE INIT_ISBA_n (DTCO, OREAD_BUDGETC, UG, U, USS, GCP, IM, DTZ,&
 !!      V.VIonnet       2017 : Blow snow
 !!      P.Tulet        06/16 : add MEGAN coupling  
 !!      J.Pianezzej    02/2019 : correction for use of MEGAN
+!  P. Wautelet 21/11/2019: initialize YSNOW_SCHEME
 !!
 !-------------------------------------------------------------------------------
 !
@@ -266,6 +267,8 @@ CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'FULL  ','ISBA  ','READ ')
 IM%O%NNBYEARSOLD = 1
 IM%O%NSPINS      = 1
 IM%O%NSPINW      = 1
+!
+YSNOW_SCHEME='   '
 !
 IF (HINIT=='PRE') THEN 
   CALL READ_PREP_ISBA_SNOW(HPROGRAM,YSNOW_SCHEME,ISNOW_NLAYER)

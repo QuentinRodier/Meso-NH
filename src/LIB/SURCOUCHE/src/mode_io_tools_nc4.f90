@@ -10,6 +10,7 @@
 !  P. Wautelet 13/12/2018: split of mode_netcdf into multiple modules/files
 !  P. Wautelet 10/01/2019: replace handle_err by IO_Err_handle_nc4 for better netCDF error messages
 !  P. Wautelet 05/03/2019: rename IO subroutines and modules
+!  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
 !-----------------------------------------------------------------
 #if defined(MNH_IOCDF4)
 module mode_io_tools_nc4
@@ -78,7 +79,7 @@ TYPE(DIMCDF),DIMENSION(:),            INTENT(OUT) :: TPDIMS
 INTEGER,                              INTENT(OUT) :: KRESP
 !
 INTEGER               :: IGRID
-INTEGER               :: ILEN, ISIZE
+INTEGER(kind=CDFINT)  :: ILEN, ISIZE
 INTEGER               :: JI
 CHARACTER(LEN=32)     :: YINT
 CHARACTER(LEN=2)      :: YDIR
@@ -112,7 +113,7 @@ IF (IGRID==0) THEN
         ILEN = 1
       END IF
     CASE (1)
-      PTDIM => IO_Dimcdf_get_nc4(TPFILE,KLEN)
+      PTDIM => IO_Dimcdf_get_nc4(TPFILE, int( KLEN, kind=CDFINT ) )
       TPDIMS(1) = PTDIM
       ILEN      = PTDIM%LEN
     CASE DEFAULT
@@ -165,7 +166,7 @@ ELSE
       ELSE IF ( YDIR == 'ZZ' ) THEN
         PTDIM => TPFILE%TNCCOORDS(3,IGRID)%TDIM
       ELSE IF (JI==TPFIELD%NDIMS) THEN !Guess last dimension
-        PTDIM => IO_Dimcdf_get_nc4(TPFILE, KLEN)
+        PTDIM => IO_Dimcdf_get_nc4(TPFILE, int( KLEN, kind=CDFINT ) )
       END IF
       ILEN       = PTDIM%LEN
       TPDIMS(JI) = PTDIM
@@ -263,16 +264,16 @@ IIU_ll = NIMAX_ll + 2*JPHEXT
 IJU_ll = NJMAX_ll + 2*JPHEXT
 IKU    = NKMAX    + 2*JPVEXT
 
-IF (.NOT. ASSOCIATED(PIOCDF%DIM_NI))      PIOCDF%DIM_NI      => IO_Dimcdf_get_nc4(TPFILE, IIU_ll, 'ni')
-IF (.NOT. ASSOCIATED(PIOCDF%DIM_NJ))      PIOCDF%DIM_NJ      => IO_Dimcdf_get_nc4(TPFILE, IJU_ll, 'nj')
-IF (.NOT. ASSOCIATED(PIOCDF%DIM_NI_U))    PIOCDF%DIM_NI_U    => IO_Dimcdf_get_nc4(TPFILE, IIU_ll, 'ni_u')
-IF (.NOT. ASSOCIATED(PIOCDF%DIM_NJ_U))    PIOCDF%DIM_NJ_U    => IO_Dimcdf_get_nc4(TPFILE, IJU_ll, 'nj_u')
-IF (.NOT. ASSOCIATED(PIOCDF%DIM_NI_V))    PIOCDF%DIM_NI_V    => IO_Dimcdf_get_nc4(TPFILE, IIU_ll, 'ni_v')
-IF (.NOT. ASSOCIATED(PIOCDF%DIM_NJ_V))    PIOCDF%DIM_NJ_V    => IO_Dimcdf_get_nc4(TPFILE, IJU_ll, 'nj_v')
+IF (.NOT. ASSOCIATED(PIOCDF%DIM_NI))      PIOCDF%DIM_NI      => IO_Dimcdf_get_nc4(TPFILE, int( IIU_ll, kind=CDFINT ), 'ni')
+IF (.NOT. ASSOCIATED(PIOCDF%DIM_NJ))      PIOCDF%DIM_NJ      => IO_Dimcdf_get_nc4(TPFILE, int( IJU_ll, kind=CDFINT ), 'nj')
+IF (.NOT. ASSOCIATED(PIOCDF%DIM_NI_U))    PIOCDF%DIM_NI_U    => IO_Dimcdf_get_nc4(TPFILE, int( IIU_ll, kind=CDFINT ), 'ni_u')
+IF (.NOT. ASSOCIATED(PIOCDF%DIM_NJ_U))    PIOCDF%DIM_NJ_U    => IO_Dimcdf_get_nc4(TPFILE, int( IJU_ll, kind=CDFINT ), 'nj_u')
+IF (.NOT. ASSOCIATED(PIOCDF%DIM_NI_V))    PIOCDF%DIM_NI_V    => IO_Dimcdf_get_nc4(TPFILE, int( IIU_ll, kind=CDFINT ), 'ni_v')
+IF (.NOT. ASSOCIATED(PIOCDF%DIM_NJ_V))    PIOCDF%DIM_NJ_V    => IO_Dimcdf_get_nc4(TPFILE, int( IJU_ll, kind=CDFINT ), 'nj_v')
 IF (TRIM(YPROGRAM)/='PGD' .AND. TRIM(YPROGRAM)/='NESPGD' .AND. TRIM(YPROGRAM)/='ZOOMPG' &
     .AND. .NOT.(TRIM(YPROGRAM)=='REAL' .AND. CSTORAGE_TYPE=='SU') ) THEN !condition to detect PREP_SURFEX
-  IF (.NOT. ASSOCIATED(PIOCDF%DIM_LEVEL))   PIOCDF%DIM_LEVEL   => IO_Dimcdf_get_nc4(TPFILE, IKU   , 'level')
-  IF (.NOT. ASSOCIATED(PIOCDF%DIM_LEVEL_W)) PIOCDF%DIM_LEVEL_W => IO_Dimcdf_get_nc4(TPFILE, IKU   , 'level_w')
+  IF (.NOT. ASSOCIATED(PIOCDF%DIM_LEVEL))   PIOCDF%DIM_LEVEL   => IO_Dimcdf_get_nc4(TPFILE, int( IKU, kind=CDFINT ), 'level')
+  IF (.NOT. ASSOCIATED(PIOCDF%DIM_LEVEL_W)) PIOCDF%DIM_LEVEL_W => IO_Dimcdf_get_nc4(TPFILE, int( IKU, kind=CDFINT ), 'level_w')
   IF (.NOT. ASSOCIATED(PIOCDF%DIMTIME)) PIOCDF%DIMTIME => IO_Dimcdf_get_nc4(TPFILE, NF90_UNLIMITED, 'time')
 ELSE
   !PGD and SURFEX files for MesoNH have no vertical levels or time scale

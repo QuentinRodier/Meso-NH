@@ -264,6 +264,7 @@ END MODULE MODI_MODEL_n
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !  J. Escobar  09/07/2019: norme Doctor -> Rename Module Type variable TZ -> T
 !  J. Escobar  09/07/2019: for bug in management of XLSZWSM variable, add/use specific 2D TLSFIELD2D_ll pointer
+!  J. Escobar  27/09/2019: add missing report timing of RESOLVED_ELEC       
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -598,7 +599,7 @@ IF (KTCOUNT == 1) THEN
   NULLIFY(TLSHALO2_ll)
   NULLIFY(TFIELDSC_ll)
 !
-  ALLOCATE(ZWT_ACT_NUC(SIZE(XWT,1),SIZE(XWT,2),SIZE(XWT,3)))
+  ALLOCATE(XWT_ACT_NUC(SIZE(XWT,1),SIZE(XWT,2),SIZE(XWT,3)))
   ALLOCATE(GMASKkids(SIZE(XWT,1),SIZE(XWT,2)))
 !
 ! initialization of the FM file backup/output number
@@ -1734,19 +1735,19 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
   IF (CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO' .OR. CCLOUD == 'C3R5' &
                                              .OR. CCLOUD == "LIMA" ) THEN
     IF ( LFORCING ) THEN
-      ZWT_ACT_NUC(:,:,:) = XWT(:,:,:) + XWTFRC(:,:,:)
+      XWT_ACT_NUC(:,:,:) = XWT(:,:,:) + XWTFRC(:,:,:)
     ELSE
-      ZWT_ACT_NUC(:,:,:) = XWT(:,:,:)
+      XWT_ACT_NUC(:,:,:) = XWT(:,:,:)
     END IF
     IF (CTURB /= 'NONE' ) THEN
      IF ( ((CCLOUD=='C2R2'.OR.CCLOUD=='KHKO').AND.LACTTKE) .OR. (CCLOUD=='LIMA'.AND.MACTTKE) ) THEN 
-       ZWT_ACT_NUC(:,:,:) = ZWT_ACT_NUC(:,:,:) +  (2./3. * XTKET(:,:,:))**0.5
+       XWT_ACT_NUC(:,:,:) = XWT_ACT_NUC(:,:,:) +  (2./3. * XTKET(:,:,:))**0.5
      ELSE
-       ZWT_ACT_NUC(:,:,:) = ZWT_ACT_NUC(:,:,:) 
+       XWT_ACT_NUC(:,:,:) = XWT_ACT_NUC(:,:,:) 
      ENDIF
     ENDIF
   ELSE
-    ZWT_ACT_NUC(:,:,:) = 0.
+    XWT_ACT_NUC(:,:,:) = 0.
   END IF
 !
   XRTHS_CLD  = XRTHS
@@ -1764,7 +1765,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           GCLOSE_OUT, LSUBG_COND,LSIGMAS,CSUBG_AUCV,XTSTEP,    &
                           XZZ, XRHODJ, XRHODREF, XEXNREF,                      &
                           ZPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
-                          XPABSM, ZWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
+                          XPABSM, XWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
                           XSVT, XRSVS,                                         &
                           XSRCT, XCLDFR,XCIT,                                  &
                           LSEDIC,KACTIT, KSEDC, KSEDI, KRAIN, KWARM, KHHONI,   &
@@ -1782,7 +1783,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           GCLOSE_OUT, LSUBG_COND,LSIGMAS,CSUBG_AUCV,           &
                           XTSTEP,XZZ, XRHODJ, XRHODREF, XEXNREF,               &
                           ZPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
-                          XPABSM, ZWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
+                          XPABSM, XWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
                           XSVT, XRSVS,                                         &
                           XSRCT, XCLDFR,XCIT,                                  &
                           LSEDIC,KACTIT, KSEDC, KSEDI, KRAIN, KWARM, KHHONI,   &
@@ -1842,7 +1843,7 @@ XTIME_BU_PROCESS = 0.
 XTIME_LES_BU_PROCESS = 0.
 !
 IF (CELEC /= 'NONE' .AND. (CCLOUD(1:3) == 'ICE')) THEN
-  ZWT_ACT_NUC(:,:,:) = 0.
+  XWT_ACT_NUC(:,:,:) = 0.
 !
   XRTHS_CLD = XRTHS
   XRRS_CLD  = XRRS
@@ -2145,6 +2146,7 @@ IF (OEXIT) THEN
     CALL TIME_STAT_ll(TIMEZ%T_MAP_SX_YP2_ZP1_B,ZTOT,          '   REMAP FFTXZ-1=>B     ' ,'-','F')
   ! JUAN P1/P2
   CALL TIME_STAT_ll(XT_CLOUD,ZTOT,      ' RESOLVED_CLOUD','=')
+  CALL TIME_STAT_ll(XT_ELEC,ZTOT,      ' RESOLVED_ELEC','=')
   CALL TIME_STAT_ll(XT_HALO,ZTOT,       ' EXCHANGE_HALO','=')
   CALL TIME_STAT_ll(XT_STEP_SWA,ZTOT,   ' ENDSTEP','=')
   CALL TIME_STAT_ll(XT_STEP_BUD,ZTOT,   ' BUDGETS','=')
@@ -2157,8 +2159,8 @@ IF (OEXIT) THEN
            XT_ADV  + XT_FORCING + XT_NUDGING + XT_SOURCES  +  XT_DIFF   + &
            XT_ADVUVW  + XT_GRAV +                                         &
            XT_RELAX+ XT_PARAM   + XT_COUPL   + XT_RAD_BOUND+XT_PRESS    + &
-           XT_CLOUD+  XT_HALO   + XT_SPECTRA + XT_STEP_SWA +XT_STEP_MISC+ &
-           XT_STEP_BUD
+           XT_CLOUD+ XT_ELEC    + XT_HALO    + XT_SPECTRA + XT_STEP_SWA + &
+           XT_STEP_MISC+ XT_STEP_BUD
   CALL TIME_STAT_ll(ZALL,ZTOT,          ' SUM(CALL)','=')
   CALL  TIMING_SEPARATOR('=')
   !

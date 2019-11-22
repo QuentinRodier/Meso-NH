@@ -12,6 +12,8 @@
 !  P. Wautelet 11/01/2019: NVERB_INFO->NVERB_WARNING for zero size fields
 !  P. Wautelet 01/02/2019: IO_Coordvar_write_nc4: bug: use of non-associated pointers (PIOCDF%DIM_Nx_y)
 !  P. Wautelet 05/03/2019: rename IO subroutines and modules
+!  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
+!  P. Wautelet 19/09/2019: temporary workaround for netCDF bug if MNH_INT=8 (if netCDF fortran < 4.4.5)
 !-----------------------------------------------------------------
 #if defined(MNH_IOCDF4)
 module mode_io_write_nc4
@@ -286,10 +288,14 @@ IF(TPFIELD%NTYPE==TYPEINT .AND. TPFIELD%NDIMS>0) THEN
   ! Remarks: * the attribute '_FillValue' is also recognized by the netCDF library
   !            and is used when pre-filling a variable
   !          * it cannot be modified if some data has already been written (->check OEXISTED)
+#if ( MNH_INT == 4 )
+!BUG: NF90_PUT_ATT does not work for NF90_INT64 and _FillValue attribute if netCDF-fortran version < 4.4.5 (bug in netCDF)
+!     (see https://github.com/Unidata/netcdf-fortran/issues/62)
   IF(.NOT.OEXISTED) THEN
     STATUS = NF90_PUT_ATT(INCID, KVARID,'_FillValue', TPFIELD%NFILLVALUE)
     IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_attr_write_nc4','NF90_PUT_ATT','_FillValue')
   END IF
+#endif
   !
   ! Valid_min/max (CF/COMODO convention)
   STATUS = NF90_PUT_ATT(INCID, KVARID,'valid_min', TPFIELD%NVALIDMIN)
@@ -2009,6 +2015,7 @@ INTEGER,PARAMETER :: YEAR=1, MONTH=2, DAY=3, HH=5, MM=6, SS=7
 CHARACTER(len=5)             :: YZONE
 CHARACTER(LEN=:),ALLOCATABLE :: YCMD, YHISTORY, YHISTORY_NEW, YHISTORY_PREV
 INTEGER                      :: ILEN_CMD, ILEN_PREV
+INTEGER(KIND=CDFINT)         :: ILEN_NC
 INTEGER(KIND=CDFINT)         :: ISTATUS
 INTEGER,DIMENSION(8)         :: IDATETIME
 !
@@ -2018,7 +2025,8 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_History_append_nc4','called for file '//TRIM
 !
 IF (TPFILE%LMASTER)  THEN
   !Check if history attribute already exists in file and read it
-  ISTATUS = NF90_INQUIRE_ATTRIBUTE(TPFILE%NNCID, NF90_GLOBAL, 'history', LEN=ILEN_PREV)
+  ISTATUS = NF90_INQUIRE_ATTRIBUTE(TPFILE%NNCID, NF90_GLOBAL, 'history', LEN=ILEN_NC)
+  ILEN_PREV = int( ILEN_NC, kind=kind(ILEN_PREV) )
   IF (ISTATUS == NF90_NOERR) THEN
     ALLOCATE(CHARACTER(LEN=ILEN_PREV) :: YHISTORY_PREV)
     ISTATUS = NF90_GET_ATT(TPFILE%NNCID, NF90_GLOBAL, 'history', YHISTORY_PREV)

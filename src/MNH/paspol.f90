@@ -61,6 +61,7 @@ END MODULE MODI_PASPOL
 !!    P.Wautelet 28/03/2018 Replace TEMPORAL_DIST by DATETIME_DISTANCE
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  Q. Rodier      09/2019: correction for the emission if restart
 ! --------------------------------------------------------------------------
 !       
 !!    EXTERNAL
@@ -528,7 +529,7 @@ DO JSV=1,NSV_PP
 
             !
             !
-            IF (.NOT.GBEGEMIS(JSV)) THEN
+            IF (.NOT.GBEGEMIS(JSV) .AND. CCONF=='START') THEN
                XRSVS(:,:,:,IP) =  XRSVS(:,:,:,IP) &
                                  +XRHODJ(:,:,:)*XSVT(:,:,:,IP)/PTSTEP
                GBEGEMIS(JSV)= .TRUE.
