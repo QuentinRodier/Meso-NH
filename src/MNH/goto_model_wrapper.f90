@@ -15,6 +15,7 @@
 !                   02/2018 Q.Libois ECRAD
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !                  2017 V.Vionnet blow snow
+!                  11/2019 C.Lac correction in the drag formula and application to building in addition to tree
 !-----------------------------------------------------------------
 MODULE MODI_GOTO_MODEL_WRAPPER
 
@@ -42,6 +43,8 @@ USE MODD_CONF_n
 USE MODD_CURVCOR_n
 !USE MODD_DEEP_CONVECTION_n
 USE MODD_DIM_n
+USE MODD_DRAGTREE_n
+USE MODD_DRAGBLDG_n
 USE MODD_DUMMY_GR_FIELD_n
 USE MODD_DYN_n
 USE MODD_DYNZD_n
@@ -151,6 +154,8 @@ CALL CONF_GOTO_MODEL(KFROM, KTO)
 CALL CURVCOR_GOTO_MODEL(KFROM, KTO)
 !CALL DEEP_CONVECTION_GOTO_MODEL(KFROM, KTO)
 CALL DIM_GOTO_MODEL(KFROM, KTO)
+CALL DRAGTREE_GOTO_MODEL(KFROM, KTO)
+CALL DRAGBLDG_GOTO_MODEL(KFROM, KTO)
 CALL DUMMY_GR_FIELD_GOTO_MODEL(KFROM, KTO)
 CALL DYN_GOTO_MODEL(KFROM, KTO)
 CALL DYNZD_GOTO_MODEL(KFROM,KTO)

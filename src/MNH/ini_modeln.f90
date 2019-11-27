@@ -284,6 +284,7 @@ END MODULE MODI_INI_MODEL_n
 !!                   02/2019 C.Lac add rain fraction as an output field
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 14/03/2019: correct ZWS when variable not present in file (set to XZWS_DEFAULT)
+!  11/2019 C.Lac correction in the drag formula and application to building in addition to tree
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -317,7 +318,7 @@ USE MODD_TIME
 USE MODD_TURB_CLOUD, ONLY: NMODEL_CLOUD, CTURBLEN_CLOUD,XCEI
 USE MODD_NESTING
 USE MODD_PASPOL
-USE MODD_DRAGTREE
+USE MODD_DRAGTREE_n
 USE MODD_METRICS_n
 USE MODD_DYN_n
 USE MODD_DYNZD_n

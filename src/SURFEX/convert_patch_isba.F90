@@ -46,6 +46,7 @@
 !!                           coupled to atmosphere)
 !!    P Samuelsson  10/2014  MEB
 !  P. Wautelet 15/02/2019: bugfix: allocate ZSTRESS only when its size has a meaning
+!!  11/2019 C.Lac correction in the drag formula and application to building in addition to tree
 !
 !----------------------------------------------------------------------------
 !
@@ -215,7 +216,6 @@ IF (OFIX) THEN
                 PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)
   ENDIF
 !
-  IF (IO%CPHOTO/='NON'.OR.LTREEDRAG) THEN
     IF (GDATA .AND. ANY(DTV%LDATA_H_TREE)) THEN
       CALL AV_PGD_PARAM(DTV%XPAR_LAI, DTV%XPAR_VEG, &
                       PK%XH_TREE,DTV%XPAR_VEGTYPE,DTV%XPAR_H_TREE,YTREE,'ARI',PK%NR_P,IO%NPATCH,KPATCH)
@@ -223,7 +223,6 @@ IF (OFIX) THEN
       CALL AV_PGD_1P(DTCO, PK%XH_TREE,PCOVER,XDATA_H_TREE(:,:),YTREE,'ARI',OCOVER,&
                 PK%NR_P,IO%NPATCH,KPATCH,KDECADE=KDEC)
     ENDIF
-  ENDIF
 !
   IF (IO%CPHOTO/='NON') THEN
     !

@@ -229,6 +229,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!                   01/2019 (R. Honnert) add reduction of the mass-flux surface closure with the resolution
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !!                   05/2019 F.Brient add tracer emission from the top of the boundary-layer
+!!                   11/2019 C.Lac correction in the drag formula and application to building in addition to tree
 !!
 !-------------------------------------------------------------------------------
 !
@@ -272,7 +273,8 @@ USE MODD_SALT
 USE MODD_PASPOL
 USE MODD_CONDSAMP
 USE MODD_MEAN_FIELD
-USE MODD_DRAGTREE
+USE MODD_DRAGTREE_n
+USE MODD_DRAGBLDG_n
 !
 !
 USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LSEDI, LHHONI, LSNOW, LHAIL, LMEYERS,&
@@ -544,6 +546,12 @@ VSIGQSAT  = 0.02
 LDRAGTREE = .FALSE.
 LDEPOTREE = .FALSE.
 XVDEPOTREE = 0.02 ! 2 cm/s 
+!------------------------------------------------------------------------------
+!
+!*      10c.   SET DEFAULT VALUES FOR MODD_DRAGB
+!             ----------------------------------
+!
+LDRAGBLDG = .FALSE.
 !
 !-------------------------------------------------------------------------------
 !
