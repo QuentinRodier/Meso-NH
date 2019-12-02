@@ -174,23 +174,27 @@ CALL IO_READ_FIELD(TZFMFILE,'RPK', ZRPK_LS)
 CALL IO_READ_FIELD(TZFMFILE,'LAT0',ZLAT0_LS)
 CALL IO_READ_FIELD(TZFMFILE,'BETA',ZBETA_LS)
 !
-IF (     (ABS(ZLAT0_LS-XLAT0)>ZEPS*MAX(1.,ABS(XLAT0)))               &
-   .OR.  (ABS(ZLON0_LS-XLON0)>ZEPS*MAX(1.,ABS(XLON0)))               &
-   .OR.  (ABS(ABS(ZRPK_LS)-ABS(XRPK))>ZEPS*MAX(1.,ABS(XRPK)))        &
-   .OR.  (ABS(ZBETA_LS-XBETA)>ZEPS*MAX(1.,ABS(XBETA)))               ) THEN
-!
-  WRITE(ILUOUT0,FMT=*) ' '
-  WRITE(ILUOUT0,FMT=*) '***************************************************************'
-  WRITE(ILUOUT0,FMT=*) 'Projection are different between MESONH input file and PGD file'
-  WRITE(ILUOUT0,FMT=*) 'You must recompute a PGD file with PREP_PGD,'
-  WRITE(ILUOUT0,FMT=*) 'using the input MESONH file to define its domain.'
-  WRITE(ILUOUT0,FMT=*) '***************************************************************'
-  WRITE(ILUOUT0,FMT=*) ' '
-  WRITE(ILUOUT0,FMT=*) '        input file     physiographic data'
-  WRITE(ILUOUT0,1) 'LAT0  ',ZLAT0_LS, ' ',XLAT0
-  WRITE(ILUOUT0,1) 'LON0  ',ZLON0_LS, ' ',XLON0
-  WRITE(ILUOUT0,1) 'RPK   ',ZRPK_LS,  ' ',XRPK
-  WRITE(ILUOUT0,1) 'BETA  ',ZBETA_LS, ' ',XBETA
+IF(.NOT.LCARTESIAN) THEN
+  !
+  IF (     (ABS(ZLAT0_LS-XLAT0)>ZEPS*MAX(1.,ABS(XLAT0)))              &
+    .OR.  (ABS(ZLON0_LS-XLON0)>ZEPS*MAX(1.,ABS(XLON0)))               &
+    .OR.  (ABS(ABS(ZRPK_LS)-ABS(XRPK))>ZEPS*MAX(1.,ABS(XRPK)))        &
+    .OR.  (ABS(ZBETA_LS-XBETA)>ZEPS*MAX(1.,ABS(XBETA)))               ) THEN
+   !
+    WRITE(ILUOUT0,FMT=*) ' '
+    WRITE(ILUOUT0,FMT=*) '***************************************************************'
+    WRITE(ILUOUT0,FMT=*) 'Projection are different between MESONH input file and PGD file'
+    WRITE(ILUOUT0,FMT=*) 'You must recompute a PGD file with PREP_PGD,'
+    WRITE(ILUOUT0,FMT=*) 'using the input MESONH file to define its domain.'
+    WRITE(ILUOUT0,FMT=*) '***************************************************************'
+    WRITE(ILUOUT0,FMT=*) ' '
+    WRITE(ILUOUT0,FMT=*) '        input file     physiographic data'
+    WRITE(ILUOUT0,1) 'LAT0  ',ZLAT0_LS, ' ',XLAT0
+    WRITE(ILUOUT0,1) 'LON0  ',ZLON0_LS, ' ',XLON0
+    WRITE(ILUOUT0,1) 'RPK   ',ZRPK_LS,  ' ',XRPK
+    WRITE(ILUOUT0,1) 'BETA  ',ZBETA_LS, ' ',XBETA
+  END IF
+  !
 END IF
 !
 !*       2.2    Horizontal grid:
