@@ -247,7 +247,7 @@ ENDDO
 ZND(:,:,:) = MXM(ZND(:,:,:))
 !! latitudinal gradient of TH
 ZDTHM_DY(:,:,:) = GX_M_U(1,IKU,1,PTHM,XDXX,XDZZ,XDZX)
-ZDTHM_DZ(:,:,:) = MXM(GZ_M_M(1,IKU,1,PTHM,XDZZ))
+ZDTHM_DZ(:,:,:) = MXM(GZ_M_M(PTHM,XDZZ))
 ! density scale height
 ZH(:,:,:) = PTHM(:,:,:) * XRD * (XG**(-1))
 ZH(:,:,:) = MXM(ZH)
@@ -432,9 +432,9 @@ ENDIF
 !      --------------------      
 ! operator GX_U_M used for gradient of v'T' (flux point) placed at a mass point        
 !
-ZDIV_YTHFLUX(:,:,:) = GX_U_M(1,IKU,1,ZVTH_FLUX,XDXX,XDZZ,XDZX) 
+ZDIV_YTHFLUX(:,:,:) = GX_U_M(ZVTH_FLUX,XDXX,XDZZ,XDZX)
 !
-ZDIV_ZTHFLUX(:,:,:) = GZ_W_M(1,IKU,1,ZWTH_FLUX,XDZZ)
+ZDIV_ZTHFLUX(:,:,:) = GZ_W_M(ZWTH_FLUX,XDZZ)
 
 !
 ! Control test for the sign of the flux 

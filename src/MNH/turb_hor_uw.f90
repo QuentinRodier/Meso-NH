@@ -202,7 +202,7 @@ IKE = SIZE(PWM,3)-JPVEXT
 IKU = SIZE(PWM,3)
 !
 !
-GX_W_UW_PWM = GX_W_UW(1,IKU,1,PWM,PDXX,PDZZ,PDZX)
+GX_W_UW_PWM = GX_W_UW(PWM,PDXX,PDZZ,PDZX)
 !
 !
 !*      13.   < U'W'>
@@ -256,7 +256,7 @@ IF (KSPLT==1) THEN
   !Contribution to the dynamic production of TKE:
   !
   ZWORK(:,:,:) =-MZF( MXF(                               &
-     ZFLX *( GZ_U_UW(1,IKU,1,PUM,PDZZ) + GX_W_UW_PWM ) ) )
+     ZFLX *( GZ_U_UW(PUM,PDZZ) + GX_W_UW_PWM ) ) )
   !
   !
   ! evaluate the dynamic production at w(IKB+1) in PDP(IKB)
@@ -283,7 +283,7 @@ END IF
 IF (LLES_CALL .AND. KSPLT==1) THEN
   CALL SECOND_MNH(ZTIME1)
   CALL LES_MEAN_SUBGRID( MZF(MXF(ZFLX)), X_LES_SUBGRID_WU , .TRUE. )
-  CALL LES_MEAN_SUBGRID( MZF(MXF(GZ_U_UW(1,IKU,1,PUM,PDZZ)*ZFLX)), X_LES_RES_ddxa_U_SBG_UaU , .TRUE.)
+  CALL LES_MEAN_SUBGRID( MZF(MXF(GZ_U_UW(PUM,PDZZ)*ZFLX)), X_LES_RES_ddxa_U_SBG_UaU , .TRUE.)
   CALL LES_MEAN_SUBGRID( MZF(MXF(GX_W_UW_PWM*ZFLX)), X_LES_RES_ddxa_W_SBG_UaW , .TRUE.)
   CALL LES_MEAN_SUBGRID( MXF(GX_M_U(1,IKU,1,PTHLM,PDXX,PDZZ,PDZX)*MZF(ZFLX)),&
                          X_LES_RES_ddxa_Thl_SBG_UaW , .TRUE.)

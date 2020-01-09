@@ -10,9 +10,8 @@
 INTERFACE
 !
 !
-FUNCTION GX_M_M(KKA,KKU,KL,PA,PDXX,PDZZ,PDZX)      RESULT(PGX_M_M)
-INTEGER,              INTENT(IN)     :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)     :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
+FUNCTION GX_M_M(PA,PDXX,PDZZ,PDZX)      RESULT(PGX_M_M)
+!
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the mass point
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDXX    ! metric coefficient dxx
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
@@ -23,9 +22,8 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGX_M_M ! result mass point
 END FUNCTION GX_M_M
 !
 !
-FUNCTION GY_M_M(KKA,KKU,KL,PA,PDYY,PDZZ,PDZY)      RESULT(PGY_M_M)
-INTEGER,              INTENT(IN)     :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)     :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
+FUNCTION GY_M_M(PA,PDYY,PDZZ,PDZY)      RESULT(PGY_M_M)
+!
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the mass point
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDYY    ! metric coefficient dyy
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
@@ -36,10 +34,8 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGY_M_M ! result mass point
 END FUNCTION GY_M_M
 !
 !
-FUNCTION GZ_M_M(KKA,KKU,KL,PA,PDZZ)      RESULT(PGZ_M_M)
+FUNCTION GZ_M_M(PA,PDZZ)      RESULT(PGZ_M_M)
 !
-INTEGER,              INTENT(IN)     :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)     :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the mass point
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
 !
@@ -103,7 +99,7 @@ END MODULE MODI_GRADIENT_M
 !
 !
 !     #######################################################
-      FUNCTION GX_M_M(KKA,KKU,KL,PA,PDXX,PDZZ,PDZX)      RESULT(PGX_M_M)
+      FUNCTION GX_M_M(PA,PDXX,PDZZ,PDZX)      RESULT(PGX_M_M)
 !     #######################################################
 !
 !!****  *GX_M_M* - Cartesian Gradient operator: 
@@ -169,8 +165,6 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments and result
 !
-INTEGER,                 INTENT(IN)  :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,                 INTENT(IN)  :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the mass point
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDXX    ! metric coefficient dxx
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
@@ -202,7 +196,7 @@ END FUNCTION GX_M_M
 !
 !
 !     #######################################################
-      FUNCTION GY_M_M(KKA,KKU,KL,PA,PDYY,PDZZ,PDZY)      RESULT(PGY_M_M)
+      FUNCTION GY_M_M(PA,PDYY,PDZZ,PDZY)      RESULT(PGY_M_M)
 !     #######################################################
 !
 !!****  *GY_M_M* - Cartesian Gradient operator: 
@@ -266,8 +260,6 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments and result
 !
-INTEGER,                 INTENT(IN)  :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,                 INTENT(IN)  :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the mass point
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDYY    ! metric coefficient dyy
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
@@ -300,9 +292,9 @@ END FUNCTION GY_M_M
 !
 !
 !
-!     #######################################################
-      FUNCTION GZ_M_M(KKA,KKU,KL,PA,PDZZ)      RESULT(PGZ_M_M)
-!     #######################################################
+!     #############################################
+      FUNCTION GZ_M_M(PA,PDZZ)      RESULT(PGZ_M_M)
+!     #############################################
 !
 !!****  *GZ_M_M* - Cartesian Gradient operator: 
 !!                          computes the gradient in the cartesian Z
@@ -360,8 +352,6 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments and result
 !
-INTEGER,              INTENT(IN)     :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)     :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the mass point
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
 !

@@ -10,9 +10,7 @@
 INTERFACE
 !
 !     
-FUNCTION GY_VW_W(KKA,KKU,KL,PA,PDYY,PDZZ,PDZY)      RESULT(PGY_VW_W)
-INTEGER,              INTENT(IN)     :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)     :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
+FUNCTION GY_VW_W(PA,PDYY,PDZZ,PDZY)      RESULT(PGY_VW_W)
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the VW point
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDYY    ! metric coefficient dyy
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
@@ -23,10 +21,8 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGY_VW_W ! result W point
 END FUNCTION GY_VW_W
 !
 !     
-FUNCTION GZ_VW_V(KKA,KKU,KL,PA,PDZZ)      RESULT(PGZ_VW_V)
+FUNCTION GZ_VW_V(PA,PDZZ)      RESULT(PGZ_VW_V)
 !
-INTEGER,              INTENT(IN)     :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)     :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the VW point
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
 !
@@ -42,7 +38,7 @@ END MODULE MODI_GRADIENT_VW
 !
 !
 !     #########################################################
-      FUNCTION GY_VW_W(KKA,KKU,KL,PA,PDYY,PDZZ,PDZY)      RESULT(PGY_VW_W)
+      FUNCTION GY_VW_W(PA,PDYY,PDZZ,PDZY)      RESULT(PGY_VW_W)
 !     #########################################################
 !
 !!****  *GY_VW_W* - Cartesian Gradient operator: 
@@ -106,8 +102,6 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments and result
 !
-INTEGER,              INTENT(IN)     :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)     :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the VW point
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDYY    ! metric coefficient dyy
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
@@ -139,7 +133,7 @@ END FUNCTION GY_VW_W
 !
 ! 
 !     ###############################################
-      FUNCTION GZ_VW_V(KKA,KKU,KL,PA,PDZZ)      RESULT(PGZ_VW_V)
+      FUNCTION GZ_VW_V(PA,PDZZ)      RESULT(PGZ_VW_V)
 !     ###############################################
 !
 !!****  *GZ_VW_V* - Cartesian Gradient operator: 
@@ -200,8 +194,6 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments and result
 !
-INTEGER,              INTENT(IN)     :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)     :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the VW point
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
 !

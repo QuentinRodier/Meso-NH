@@ -204,7 +204,7 @@ REAL, DIMENSION(SIZE(PUM,1),SIZE(PUM,2),SIZE(PUM,3))       &
 !   
 REAL, DIMENSION(SIZE(PUM,1),SIZE(PUM,2)) ::ZDIRSINZW 
       ! sinus of the angle between the vertical and the normal to the orography
-INTEGER             :: IKB,IKE,IKU
+INTEGER             :: IKB,IKE
                                     ! Index values for the Beginning and End
                                     ! mass points of the domain  
 !
@@ -220,12 +220,11 @@ TYPE(TFIELDDATA) :: TZFIELD
 !
 IKB = 1+JPVEXT               
 IKE = SIZE(PUM,3)-JPVEXT    
-IKU = SIZE(PUM,3)
 !
 ZDIRSINZW(:,:) = SQRT( 1. - PDIRCOSZW(:,:)**2 )
 !
-GX_V_UV_PVM = GX_V_UV(1,IKU,1,PVM,PDXX,PDZZ,PDZX)
-IF (.NOT. L2D) GY_U_UV_PUM = GY_U_UV(1,IKU,1,PUM,PDYY,PDZZ,PDZY)
+GX_V_UV_PVM = GX_V_UV(PVM,PDXX,PDZZ,PDZX)
+IF (.NOT. L2D) GY_U_UV_PUM = GY_U_UV(PUM,PDYY,PDZZ,PDZY)
 !
 !
 !*      12.   < U'V'>
@@ -350,8 +349,8 @@ END IF
 IF (LLES_CALL .AND. KSPLT==1) THEN
   CALL SECOND_MNH(ZTIME1)
   CALL LES_MEAN_SUBGRID( MXF(MYF(ZFLX)), X_LES_SUBGRID_UV ) 
-  CALL LES_MEAN_SUBGRID( MXF(MYF(GY_U_UV(1,IKU,1,PUM,PDYY,PDZZ,PDZY)*ZFLX)), X_LES_RES_ddxa_U_SBG_UaU , .TRUE.)
-  CALL LES_MEAN_SUBGRID( MXF(MYF(GX_V_UV(1,IKU,1,PVM,PDXX,PDZZ,PDZX)*ZFLX)), X_LES_RES_ddxa_V_SBG_UaV , .TRUE.)
+  CALL LES_MEAN_SUBGRID( MXF(MYF(GY_U_UV(PUM,PDYY,PDZZ,PDZY)*ZFLX)), X_LES_RES_ddxa_U_SBG_UaU , .TRUE.)
+  CALL LES_MEAN_SUBGRID( MXF(MYF(GX_V_UV(PVM,PDXX,PDZZ,PDZX)*ZFLX)), X_LES_RES_ddxa_V_SBG_UaV , .TRUE.)
   CALL SECOND_MNH(ZTIME2)
   XTIME_LES = XTIME_LES + ZTIME2 - ZTIME1
 END IF

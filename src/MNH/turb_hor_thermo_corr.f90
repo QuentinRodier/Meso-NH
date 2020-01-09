@@ -194,7 +194,7 @@ REAL, DIMENSION(SIZE(PTHLM,1),SIZE(PTHLM,2),SIZE(PTHLM,3))       &
                                      :: ZFLX,ZWORK,ZA
     ! work arrays
 !   
-INTEGER             :: IKB,IKE,IKU
+INTEGER             :: IKB,IKE
                                     ! Index values for the Beginning and End
                                     ! mass points of the domain  
 REAL, DIMENSION(SIZE(PDZZ,1),SIZE(PDZZ,2),1+JPVEXT:3+JPVEXT) :: ZCOEFF 
@@ -210,7 +210,6 @@ TYPE(TFIELDDATA) :: TZFIELD
 !
 IKB = 1+JPVEXT               
 IKE = SIZE(PTHLM,3)-JPVEXT   
-IKU = SIZE(PTHLM,3)
 !
 !
 !
@@ -237,10 +236,10 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. OCLOSE_OUT ) &
   ! Computes the horizontal variance <THl THl>
   IF (.NOT. L2D) THEN
     ZFLX(:,:,:) = XCTV * PLM(:,:,:) * PLEPS(:,:,:) *                           &
-       ( GX_M_M(1,IKU,1,PTHLM,PDXX,PDZZ,PDZX)**2 + GY_M_M(1,IKU,1,PTHLM,PDYY,PDZZ,PDZY)**2 )
+       ( GX_M_M(PTHLM,PDXX,PDZZ,PDZX)**2 + GY_M_M(PTHLM,PDYY,PDZZ,PDZY)**2 )
   ELSE
     ZFLX(:,:,:) = XCTV * PLM(:,:,:) * PLEPS(:,:,:) *                           &
-         GX_M_M(1,IKU,1,PTHLM,PDXX,PDZZ,PDZX)**2
+         GX_M_M(PTHLM,PDXX,PDZZ,PDZX)**2
   END IF
 !
 ! Compute the flux at the first inner U-point with an uncentred vertical  
@@ -306,13 +305,13 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. OCLOSE_OUT ) &
     IF (.NOT. L2D) THEN
       ZFLX(:,:,:)=                                                               &
             PLM(:,:,:) * PLEPS(:,:,:) *                                          &
-            (GX_M_M(1,IKU,1,PTHLM,PDXX,PDZZ,PDZX) * GX_M_M(1,IKU,1,PRM(:,:,:,1),PDXX,PDZZ,PDZX)  &
-           + GY_M_M(1,IKU,1,PTHLM,PDYY,PDZZ,PDZY) * GY_M_M(1,IKU,1,PRM(:,:,:,1),PDYY,PDZZ,PDZY)  &
+            (GX_M_M(PTHLM,PDXX,PDZZ,PDZX) * GX_M_M(PRM(:,:,:,1),PDXX,PDZZ,PDZX)  &
+           + GY_M_M(PTHLM,PDYY,PDZZ,PDZY) * GY_M_M(PRM(:,:,:,1),PDYY,PDZZ,PDZY)  &
             ) * (XCHT1+XCHT2)
     ELSE
       ZFLX(:,:,:)=                                                               &
             PLM(:,:,:) * PLEPS(:,:,:) *                                          &
-            (GX_M_M(1,IKU,1,PTHLM,PDXX,PDZZ,PDZX) * GX_M_M(1,IKU,1,PRM(:,:,:,1),PDXX,PDZZ,PDZX)  &
+            (GX_M_M(PTHLM,PDXX,PDZZ,PDZX) * GX_M_M(PRM(:,:,:,1),PDXX,PDZZ,PDZX)  &
             ) * (XCHT1+XCHT2)
 
     END IF
@@ -393,11 +392,11 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. OCLOSE_OUT ) &
     ! Computes the horizontal variance <Rnp Rnp>
     IF (.NOT. L2D) THEN
       ZFLX(:,:,:) = XCHV * PLM(:,:,:) * PLEPS(:,:,:) *                      &
-           ( GX_M_M(1,IKU,1,PRM(:,:,:,1),PDXX,PDZZ,PDZX)**2 +                       &
-             GY_M_M(1,IKU,1,PRM(:,:,:,1),PDYY,PDZZ,PDZY)**2 )
+           ( GX_M_M(PRM(:,:,:,1),PDXX,PDZZ,PDZX)**2 +                       &
+             GY_M_M(PRM(:,:,:,1),PDYY,PDZZ,PDZY)**2 )
     ELSE
       ZFLX(:,:,:) = XCHV * PLM(:,:,:) * PLEPS(:,:,:) *                      &
-           ( GX_M_M(1,IKU,1,PRM(:,:,:,1),PDXX,PDZZ,PDZX)**2  )
+           ( GX_M_M(PRM(:,:,:,1),PDXX,PDZZ,PDZX)**2  )
     END IF
 !
 ! Compute the flux at the first inner U-point with an uncentred vertical  

@@ -747,8 +747,8 @@ SELECT CASE (HTURBLEN)
 !           ------------------
 
   CASE ('RM17')
-    ZDUDZ = MXF(MZF(GZ_U_UW(1,KKU,1,PUT,PDZZ)))
-    ZDVDZ = MYF(MZF(GZ_V_VW(1,KKU,1,PVT,PDZZ)))
+    ZDUDZ = MXF(MZF(GZ_U_UW(PUT,PDZZ)))
+    ZDVDZ = MYF(MZF(GZ_V_VW(PVT,PDZZ)))
     ZSHEAR = SQRT(ZDUDZ*ZDUDZ + ZDVDZ*ZDVDZ)
     CALL BL89(KKA,KKU,KKL,PZZ,PDZZ,PTHVREF,ZTHLM,KRR,ZRM,PTKET,ZSHEAR,PLEM)
 !
@@ -875,9 +875,9 @@ IF (HTOM=='TM06') THEN
 !
   ZFWTH = -GZ_M_W(KKA,KKU,KKL,ZMWTH,PDZZ)    ! -d(w'2th' )/dz
   !ZFWR  = -GZ_M_W(KKA,KKU,KKL,ZMWR, PDZZ)    ! -d(w'2r'  )/dz
-  ZFTH2 = -GZ_W_M(KKA,KKU,KKL,ZMTH2,PDZZ)    ! -d(w'th'2 )/dz
-  !ZFR2  = -GZ_W_M(KKA,KKU,KKL,ZMR2, PDZZ)    ! -d(w'r'2  )/dz
-  !ZFTHR = -GZ_W_M(KKA,KKU,KKL,ZMTHR,PDZZ)    ! -d(w'th'r')/dz
+  ZFTH2 = -GZ_W_M(ZMTH2,PDZZ)    ! -d(w'th'2 )/dz
+  !ZFR2  = -GZ_W_M(ZMR2, PDZZ)    ! -d(w'r'2  )/dz
+  !ZFTHR = -GZ_W_M(ZMTHR,PDZZ)    ! -d(w'th'r')/dz
 !
   ZFWTH(:,:,IKTE:) = 0.
   ZFWTH(:,:,:IKTB) = 0.

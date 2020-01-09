@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2011-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2011-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -96,7 +96,6 @@ INTEGER:: IDTRATIO_KMI_1 ! Ratio between the time step of the son and the model 
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZFLUX2 ! Work array=Dad interpolated flux field
                                               ! on the son grid
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZDIV_UV! Work array=DIV of ZFLUX2
-INTEGER :: IKU
 !
 INTEGER :: IDIMX,IDIMY
 INTEGER :: IID, IRESP
@@ -105,7 +104,6 @@ INTEGER :: IID, IRESP
 !
 ! test of temporal synchronisation between the model 1 and the son KMI
 !
-IKU=SIZE(XZHAT)
 IDTRATIO_KMI_1=1
 DO JMI=2,KMI
    IDTRATIO_KMI_1=IDTRATIO_KMI_1*NDTRATIO(JMI)
@@ -138,7 +136,7 @@ IF (ISYNCHRO==1 .OR. IDTRATIO_KMI_1 == 1) THEN
    ZFLUX2(IIE,:,:)    = ZFLUX2(IIE-1,:,:) 
    ZFLUX2(IIE+1,:,:)  = ZFLUX2(IIE,:,:)
 
-   ZDIV_UV(:,:,:) = GX_U_M(1,IKU,1,ZFLUX2,XDXX,XDZZ,XDZX)
+   ZDIV_UV(:,:,:) = GX_U_M(ZFLUX2,XDXX,XDZZ,XDZX)
 
    ! Lateral boundary conditions
    ZDIV_UV(IIB,:,:)  =0.0

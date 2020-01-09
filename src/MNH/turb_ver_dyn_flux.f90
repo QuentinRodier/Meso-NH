@@ -531,7 +531,7 @@ PWU(:,:,:) = ZFLXZ(:,:,:)
 ! Contribution to the dynamic production of TKE
 ! compute the dynamic production at the mass point
 !
-PDP(:,:,:) = - MZF( MXF ( ZFLXZ * GZ_U_UW(KKA,KKU,KKL,PUM,PDZZ) )  )
+PDP(:,:,:) = - MZF( MXF ( ZFLXZ * GZ_U_UW(PUM,PDZZ) )  )
 !
 ! evaluate the dynamic production at w(IKB+KKL) in PDP(IKB)
 PDP(:,:,IKB:IKB) = - MXF (                                                      &
@@ -544,7 +544,7 @@ PDP(:,:,IKB:IKB) = - MXF (                                                      
 IF (LLES_CALL) THEN
   CALL SECOND_MNH(ZTIME1)
   CALL LES_MEAN_SUBGRID( MZF(MXF(ZFLXZ)), X_LES_SUBGRID_WU )
-  CALL LES_MEAN_SUBGRID( MZF(MXF(GZ_U_UW(KKA,KKU,KKL,PUM,PDZZ) &
+  CALL LES_MEAN_SUBGRID( MZF(MXF(GZ_U_UW(PUM,PDZZ) &
                           & *ZFLXZ)), X_LES_RES_ddxa_U_SBG_UaU )
   CALL LES_MEAN_SUBGRID( XCMFS * ZKEFF, X_LES_SUBGRID_Km )
   CALL SECOND_MNH(ZTIME2)
@@ -571,7 +571,7 @@ IF(HTURBDIM=='3DIM') THEN
   !
   ! Complete the Dynamical production with the W wind component 
   !
-  ZA(:,:,:)=-MZF( MXF ( ZFLXZ * GX_W_UW(KKA,KKU,KKL, PWM,PDXX,PDZZ,PDZX) )  )
+  ZA(:,:,:)=-MZF( MXF ( ZFLXZ * GX_W_UW( PWM,PDXX,PDZZ,PDZX) )  )
   !
   !
   ! evaluate the dynamic production at w(IKB+KKL) in PDP(IKB)
@@ -593,16 +593,16 @@ IF(HTURBDIM=='3DIM') THEN
   ! 
   IF (LLES_CALL) THEN
     CALL SECOND_MNH(ZTIME1)
-    CALL LES_MEAN_SUBGRID( MZF(MXF(GX_W_UW(KKA,KKU,KKL,PWM,PDXX,&
+    CALL LES_MEAN_SUBGRID( MZF(MXF(GX_W_UW(PWM,PDXX,&
       PDZZ,PDZX)*ZFLXZ)), X_LES_RES_ddxa_W_SBG_UaW )
     CALL LES_MEAN_SUBGRID( MXF(GX_M_U(KKA,KKU,KKL,PTHLM,PDXX,PDZZ,PDZX)&
       * MZF(ZFLXZ)), X_LES_RES_ddxa_Thl_SBG_UaW )
     IF (KRR>=1) THEN
-      CALL LES_MEAN_SUBGRID(MXF(GX_U_M(KKA,KKU,KKL,PRM(:,:,:,1),PDXX,PDZZ,PDZX)&
+      CALL LES_MEAN_SUBGRID(MXF(GX_U_M(PRM(:,:,:,1),PDXX,PDZZ,PDZX)&
       *MZF(ZFLXZ)),X_LES_RES_ddxa_Rt_SBG_UaW )
     END IF
     DO JSV=1,NSV
-      CALL LES_MEAN_SUBGRID( MXF(GX_U_M(KKA,KKU,KKL,PSVM(:,:,:,JSV),PDXX,PDZZ,&
+      CALL LES_MEAN_SUBGRID( MXF(GX_U_M(PSVM(:,:,:,JSV),PDXX,PDZZ,&
       PDZX)*MZF(ZFLXZ)),X_LES_RES_ddxa_Sv_SBG_UaW(:,:,:,JSV) )
     END DO
     CALL SECOND_MNH(ZTIME2)
@@ -705,7 +705,7 @@ PWV(:,:,:) = ZFLXZ(:,:,:)
 !  Contribution to the dynamic production of TKE
 ! compute the dynamic production contribution at the mass point
 !
-ZA(:,:,:) = - MZF( MYF ( ZFLXZ * GZ_V_VW(KKA,KKU,KKL,PVM,PDZZ) ) )
+ZA(:,:,:) = - MZF( MYF ( ZFLXZ * GZ_V_VW(PVM,PDZZ) ) )
 !
 ! evaluate the dynamic production at w(IKB+KKL) in PDP(IKB)
 ZA(:,:,IKB:IKB)  =                                                 &
@@ -721,7 +721,7 @@ PDP(:,:,:)=PDP(:,:,:)+ZA(:,:,:)
 IF (LLES_CALL) THEN
   CALL SECOND_MNH(ZTIME1)
   CALL LES_MEAN_SUBGRID( MZF(MYF(ZFLXZ)), X_LES_SUBGRID_WV )
-  CALL LES_MEAN_SUBGRID( MZF(MYF(GZ_V_VW(KKA,KKU,KKL,PVM,PDZZ)*&
+  CALL LES_MEAN_SUBGRID( MZF(MYF(GZ_V_VW(PVM,PDZZ)*&
                     & ZFLXZ)), X_LES_RES_ddxa_V_SBG_UaV )
   CALL SECOND_MNH(ZTIME2)
   XTIME_LES = XTIME_LES + ZTIME2 - ZTIME1
@@ -748,7 +748,7 @@ IF(HTURBDIM=='3DIM') THEN
   ! 
   ! Complete the Dynamical production with the W wind component 
   IF (.NOT. L2D) THEN
-    ZA(:,:,:) = - MZF( MYF ( ZFLXZ * GY_W_VW(KKA,KKU,KKL, PWM,PDYY,PDZZ,PDZY) )  )
+    ZA(:,:,:) = - MZF( MYF ( ZFLXZ * GY_W_VW( PWM,PDYY,PDZZ,PDZY) )  )
   !
   ! evaluate the dynamic production at w(IKB+KKL) in PDP(IKB)
     ZA(:,:,IKB:IKB) = - MYF (                                              &
@@ -771,12 +771,12 @@ IF(HTURBDIM=='3DIM') THEN
   !
   IF (LLES_CALL) THEN
     CALL SECOND_MNH(ZTIME1)
-    CALL LES_MEAN_SUBGRID( MZF(MYF(GY_W_VW(KKA,KKU,KKL,PWM,PDYY,&
+    CALL LES_MEAN_SUBGRID( MZF(MYF(GY_W_VW(PWM,PDYY,&
     PDZZ,PDZY)*ZFLXZ)), X_LES_RES_ddxa_W_SBG_UaW , .TRUE. )
     CALL LES_MEAN_SUBGRID( MYF(GY_M_V(KKA,KKU,KKL,PTHLM,PDYY,PDZZ,PDZY)&
     *MZF(ZFLXZ)), X_LES_RES_ddxa_Thl_SBG_UaW , .TRUE. )
     IF (KRR>=1) THEN
-      CALL LES_MEAN_SUBGRID( MYF(GY_V_M(KKA,KKU,KKL,PRM(:,:,:,1),PDYY,PDZZ,&
+      CALL LES_MEAN_SUBGRID( MYF(GY_V_M(PRM(:,:,:,1),PDYY,PDZZ,&
       PDZY)*MZF(ZFLXZ)),X_LES_RES_ddxa_Rt_SBG_UaW , .TRUE. )
     END IF
     CALL SECOND_MNH(ZTIME2)
@@ -793,7 +793,7 @@ END IF
 !
 IF ( OTURB_FLX .AND. OCLOSE_OUT .AND. HTURBDIM == '1DIM') THEN
   ZFLXZ(:,:,:)= (2./3.) * PTKEM(:,:,:)                     &
-     -XCMFS*PLM(:,:,:)*SQRT(PTKEM(:,:,:))*GZ_W_M(KKA,KKU,KKL,PWM,PDZZ)
+     -XCMFS*PLM(:,:,:)*SQRT(PTKEM(:,:,:))*GZ_W_M(PWM,PDZZ)
   ! to be tested &
   !   +XCMFB*(4./3.)*PLM(:,:,:)/SQRT(PTKEM(:,:,:))*PTP(:,:,:) 
   ! stores the W variance

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -135,7 +135,6 @@ REAL, DIMENSION(SIZE(PRM,1),SIZE(PRM,2),SIZE(PRM,3),2) :: ZG_RVCI,ZQ_RVCI
 INTEGER             :: JI,JJ,JK     ! loop counters
 INTEGER             :: IIB,IJB,IKB  ! Begin of physical dimensions
 INTEGER             :: IIE,IJE,IKE  ! End   of physical dimensions
-INTEGER             :: IKU          ! array size in k
 INTEGER, DIMENSION(SIZE(PRM,1),SIZE(PRM,2),SIZE(PRM,3)) :: IMASK_CLOUD
                              ! 0 except cloudy points or adjacent points (1)
 TYPE(TFIELDDATA)    :: TZFIELD
@@ -147,8 +146,7 @@ TYPE(TFIELDDATA)    :: TZFIELD
 !
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB = 1   + JPVEXT
-IKU = SIZE(PRM,3)
-IKE = IKU - JPVEXT
+IKE = SIZE(PRM,3) - JPVEXT
 !
 IMASK_CLOUD(:,:,:) = 0
 PCEI(:,:,:) = 0.
@@ -167,8 +165,8 @@ ZRVCI0(:,:,:) = MAX ( PRRS(:,:,:,1) , 0. ) + MAX ( PRRS(:,:,:,2) , 0. )
 IF (KRRI>=1) ZRVCI0(:,:,:) = ZRVCI0(:,:,:) + MAX ( PRRS(:,:,:,4) , 0. )
 !
 ZRVCI(:,:,:)= PTSTEP *ZRVCI0(:,:,:) /PRHODJ(:,:,:)
-ZG_RVCI(:,:,:,1) = GX_M_M(1,IKU,1,ZRVCI,PDXX,PDZZ,PDZX)
-ZG_RVCI(:,:,:,2) = GY_M_M(1,IKU,1,ZRVCI,PDYY,PDZZ,PDZY)
+ZG_RVCI(:,:,:,1) = GX_M_M(ZRVCI,PDXX,PDZZ,PDZX)
+ZG_RVCI(:,:,:,2) = GY_M_M(ZRVCI,PDYY,PDZZ,PDZY)
 !
 ZGNORM_RVCI(:,:,:) = SQRT( ZG_RVCI(:,:,:,1)*ZG_RVCI(:,:,:,1) +        &
                            ZG_RVCI(:,:,:,2)*ZG_RVCI(:,:,:,2) )
@@ -185,8 +183,8 @@ ZWORK(:,:,:) = ZRVCI0 / PRHODJ(:,:,:) -   &
                ( PRM(:,:,:,1)+ PRM(:,:,:,2) ) / PTSTEP
 IF (KRRI>=1) ZWORK(:,:,:) = ZWORK(:,:,:) - PRM(:,:,:,4) / PTSTEP
 !
-ZQ_RVCI(:,:,:,1) = GX_M_M(1,IKU,1,ZWORK,PDXX,PDZZ,PDZX)
-ZQ_RVCI(:,:,:,2) = GY_M_M(1,IKU,1,ZWORK,PDYY,PDZZ,PDZY)
+ZQ_RVCI(:,:,:,1) = GX_M_M(ZWORK,PDXX,PDZZ,PDZX)
+ZQ_RVCI(:,:,:,2) = GY_M_M(ZWORK,PDYY,PDZZ,PDZY)
 !
 ZQNORM_RVCI(:,:,:) = SQRT( ZQ_RVCI(:,:,:,1)*ZQ_RVCI(:,:,:,1) +         &
                            ZQ_RVCI(:,:,:,2)*ZQ_RVCI(:,:,:,2) )

@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #########################
@@ -211,7 +211,7 @@ ZCORIOZ(:,:,:)= SPREAD(XCORIOZ(:,:),3,IKU)
 ZLAT3D(:,:,:) = SPREAD(XLAT(:,:),3,IKU)
 ! 
 ! relative vorticity
-ZVOZ(:,:,:)=GX_V_UV(1,IKU,1,PVM,XDXX,XDZZ,XDZX)
+ZVOZ(:,:,:)=GX_V_UV(PVM,XDXX,XDZZ,XDZX)
 ZVOZ(:,:,2)=ZVOZ(:,:,3)
 ZVOZ(:,:,1)=ZVOZ(:,:,3)
 !
@@ -424,7 +424,7 @@ PVU_FLUX_M(:,:,:) = ZUV_FLUX(:,:,:)
 !             -----------------------------
 !
 ! Take the divergence of the momentum flux 
-ZDIV_UV(:,:,:) = GX_U_M(1,IKU,1,ZUV_FLUX,XDXX,XDZZ,XDZX)
+ZDIV_UV(:,:,:) = GX_U_M(ZUV_FLUX,XDXX,XDZZ,XDZX)
 
 ! Lateral boundary conditions
 ZDIV_UV(IIB,:,:)=0.0

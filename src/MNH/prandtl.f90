@@ -376,22 +376,22 @@ ELSE IF (L2D) THEN                      ! 3D case in a 2D model
 !
   IF (KRR /= 0) THEN                 ! moist 3D case
     PRED2TH3(:,:,:)= PREDTH1(:,:,:)**2+(XCTV*PBLL_O_E(:,:,:)*PETHETA(:,:,:) )**2 * &
-      MZM( GX_M_M(KKA,KKU,KKL,PTHLM,PDXX,PDZZ,PDZX)**2 )
+      MZM( GX_M_M(PTHLM,PDXX,PDZZ,PDZX)**2 )
     PRED2TH3(:,:,IKB)=PRED2TH3(:,:,IKB+KKL)
 !
     PRED2R3(:,:,:)= PREDR1(:,:,:)**2 + (XCTV*PBLL_O_E(:,:,:)*PEMOIST(:,:,:))**2 * &
-        MZM( GX_M_M(KKA,KKU,KKL,PRM(:,:,:,1),PDXX,PDZZ,PDZX)**2 )
+        MZM( GX_M_M(PRM(:,:,:,1),PDXX,PDZZ,PDZX)**2 )
     PRED2R3(:,:,IKB)=PRED2R3(:,:,IKB+KKL)
 !
     PRED2THR3(:,:,:)= PREDR1(:,:,:) * PREDTH1(:,:,:) +  XCTV**2*PBLL_O_E(:,:,:)**2 *   &
                   PEMOIST(:,:,:) * PETHETA(:,:,:) *                         &
-      MZM( GX_M_M(KKA,KKU,KKL,PRM(:,:,:,1),PDXX,PDZZ,PDZX)*     &
-                     GX_M_M(KKA,KKU,KKL,PTHLM,PDXX,PDZZ,PDZX))
+      MZM( GX_M_M(PRM(:,:,:,1),PDXX,PDZZ,PDZX)*     &
+                     GX_M_M(PTHLM,PDXX,PDZZ,PDZX))
     PRED2THR3(:,:,IKB)=PRED2THR3(:,:,IKB+KKL)
 !
   ELSE                 ! dry 3D case in a 2D model
     PRED2TH3(:,:,:) = PREDTH1(:,:,:)**2 +  XCTV**2*PBLL_O_E(:,:,:)**2 *     &
-      MZM( GX_M_M(KKA,KKU,KKL,PTHLM,PDXX,PDZZ,PDZX)**2 )
+      MZM( GX_M_M(PTHLM,PDXX,PDZZ,PDZX)**2 )
     PRED2TH3(:,:,IKB)=PRED2TH3(:,:,IKB+KKL)
 !
     PRED2R3(:,:,:) = 0.
@@ -404,27 +404,27 @@ ELSE                                 ! 3D case in a 3D model
 !
   IF (KRR /= 0) THEN                 ! moist 3D case
     PRED2TH3(:,:,:)= PREDTH1(:,:,:)**2 +  ( XCTV*PBLL_O_E(:,:,:)*PETHETA(:,:,:) )**2 * &
-      MZM( GX_M_M(KKA,KKU,KKL,PTHLM,PDXX,PDZZ,PDZX)**2 &
-      + GY_M_M(KKA,KKU,KKL,PTHLM,PDYY,PDZZ,PDZY)**2 )
+      MZM( GX_M_M(PTHLM,PDXX,PDZZ,PDZX)**2 &
+      + GY_M_M(PTHLM,PDYY,PDZZ,PDZY)**2 )
     PRED2TH3(:,:,IKB)=PRED2TH3(:,:,IKB+KKL)
 !
     PRED2R3(:,:,:)= PREDR1(:,:,:)**2 + (XCTV*PBLL_O_E(:,:,:)*PEMOIST(:,:,:))**2 *      &
-        MZM( GX_M_M(KKA,KKU,KKL,PRM(:,:,:,1),PDXX,PDZZ,PDZX)**2 + &
-        GY_M_M(KKA,KKU,KKL,PRM(:,:,:,1),PDYY,PDZZ,PDZY)**2 )
+        MZM( GX_M_M(PRM(:,:,:,1),PDXX,PDZZ,PDZX)**2 + &
+        GY_M_M(PRM(:,:,:,1),PDYY,PDZZ,PDZY)**2 )
     PRED2R3(:,:,IKB)=PRED2R3(:,:,IKB+KKL)
 !
     PRED2THR3(:,:,:)= PREDR1(:,:,:) * PREDTH1(:,:,:) +  XCTV**2*PBLL_O_E(:,:,:)**2 *   &
          PEMOIST(:,:,:) * PETHETA(:,:,:) *                            &
-         MZM( GX_M_M(KKA,KKU,KKL,PRM(:,:,:,1),PDXX,PDZZ,PDZX)*   &
-         GX_M_M(KKA,KKU,KKL,PTHLM,PDXX,PDZZ,PDZX)+                           &
-         GY_M_M(KKA,KKU,KKL,PRM(:,:,:,1),PDYY,PDZZ,PDZY)*                    &
-         GY_M_M(KKA,KKU,KKL,PTHLM,PDYY,PDZZ,PDZY) )
+         MZM( GX_M_M(PRM(:,:,:,1),PDXX,PDZZ,PDZX)*   &
+         GX_M_M(PTHLM,PDXX,PDZZ,PDZX)+                           &
+         GY_M_M(PRM(:,:,:,1),PDYY,PDZZ,PDZY)*                    &
+         GY_M_M(PTHLM,PDYY,PDZZ,PDZY) )
     PRED2THR3(:,:,IKB)=PRED2THR3(:,:,IKB+KKL)
 !
   ELSE                 ! dry 3D case in a 3D model
     PRED2TH3(:,:,:) = PREDTH1(:,:,:)**2 +  XCTV**2*PBLL_O_E(:,:,:)**2 *                &
-      MZM( GX_M_M(KKA,KKU,KKL,PTHLM,PDXX,PDZZ,PDZX)**2 &
-      + GY_M_M(KKA,KKU,KKL,PTHLM,PDYY,PDZZ,PDZY)**2 )
+      MZM( GX_M_M(PTHLM,PDXX,PDZZ,PDZX)**2 &
+      + GY_M_M(PTHLM,PDYY,PDZZ,PDZY)**2 )
     PRED2TH3(:,:,IKB)=PRED2TH3(:,:,IKB+KKL)
 !
     PRED2R3(:,:,:) = 0.
@@ -461,15 +461,15 @@ ELSE  IF (L2D) THEN ! 3D case in a 2D model
     END IF
     PRED2THS3(:,:,:,JSV) = PREDTH1(:,:,:) * PREDS1(:,:,:,JSV)   +        &
                        ZW1*                                              &
-                       MZM(GX_M_M(KKA,KKU,KKL,PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)*       &
-                           GX_M_M(KKA,KKU,KKL,PTHLM,PDXX,PDZZ,PDZX)                  &
+                       MZM(GX_M_M(PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)*       &
+                           GX_M_M(PTHLM,PDXX,PDZZ,PDZX)                  &
                           )
 !
     IF (KRR /= 0) THEN
       PRED2RS3(:,:,:,JSV) = PREDR1(:,:,:) * PREDS1(:,:,:,JSV)   +        &
                        ZW1 * PEMOIST *                                   &
-                       MZM(GX_M_M(KKA,KKU,KKL,PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)*       &
-                           GX_M_M(KKA,KKU,KKL,PRM(:,:,:,1),PDXX,PDZZ,PDZX)           &
+                       MZM(GX_M_M(PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)*       &
+                           GX_M_M(PRM(:,:,:,1),PDXX,PDZZ,PDZX)           &
                           )
     ELSE
       PRED2RS3(:,:,:,JSV) = 0.
@@ -486,19 +486,19 @@ ELSE ! 3D case in a 3D model
     END IF
     PRED2THS3(:,:,:,JSV) = PREDTH1(:,:,:) * PREDS1(:,:,:,JSV)   +        &
                        ZW1*                                              &
-                       MZM(GX_M_M(KKA,KKU,KKL,PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)*       &
-                           GX_M_M(KKA,KKU,KKL,PTHLM,PDXX,PDZZ,PDZX)                  &
-                          +GY_M_M(KKA,KKU,KKL,PSVM(:,:,:,JSV),PDYY,PDZZ,PDZY)*       &
-                           GY_M_M(KKA,KKU,KKL,PTHLM,PDYY,PDZZ,PDZY)                  &
+                       MZM(GX_M_M(PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)*       &
+                           GX_M_M(PTHLM,PDXX,PDZZ,PDZX)                  &
+                          +GY_M_M(PSVM(:,:,:,JSV),PDYY,PDZZ,PDZY)*       &
+                           GY_M_M(PTHLM,PDYY,PDZZ,PDZY)                  &
                           )
 !
     IF (KRR /= 0) THEN
       PRED2RS3(:,:,:,JSV) = PREDR1(:,:,:) * PREDS1(:,:,:,JSV)   +        &
                        ZW1 * PEMOIST *                                   &
-                       MZM(GX_M_M(KKA,KKU,KKL,PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)*       &
-                           GX_M_M(KKA,KKU,KKL,PRM(:,:,:,1),PDXX,PDZZ,PDZX)           &
-                          +GY_M_M(KKA,KKU,KKL,PSVM(:,:,:,JSV),PDYY,PDZZ,PDZY)*       &
-                           GY_M_M(KKA,KKU,KKL,PRM(:,:,:,1),PDYY,PDZZ,PDZY)           &
+                       MZM(GX_M_M(PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)*       &
+                           GX_M_M(PRM(:,:,:,1),PDXX,PDZZ,PDZX)           &
+                          +GY_M_M(PSVM(:,:,:,JSV),PDYY,PDZZ,PDZY)*       &
+                           GY_M_M(PRM(:,:,:,1),PDYY,PDZZ,PDZY)           &
                           )
     ELSE
       PRED2RS3(:,:,:,JSV) = 0.
