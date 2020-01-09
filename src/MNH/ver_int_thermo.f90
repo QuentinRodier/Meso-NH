@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -198,7 +198,7 @@ REAL,DIMENSION(:,:,:), OPTIONAL, INTENT(OUT) :: PLSRVM  ! Large scale vapor
 !              ------------------------------
 !
 INTEGER                    ::ILUOUT0, IRESP
-INTEGER                    ::IKB,IKE,IIB,IIE,IJB,IJE,IKU
+INTEGER                    ::IKB,IKE,IIB,IIE,IJB,IJE
 INTEGER, DIMENSION(2)      ::IIJ
 INTEGER                    :: IK4000
 INTEGER                    ::JK
@@ -270,7 +270,6 @@ ILUOUT0 = TLUOUT0%NLU
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB=JPVEXT+1
 IKE=SIZE(XZZ,3)-JPVEXT
-IKU=SIZE(XZZ,3)
 !
 !
 !-------------------------------------------------------------------------------
@@ -515,7 +514,7 @@ PDIAG = ZTIME2 - ZTIME1
 !
 !20140217 upgrade shuman fct MZF
 !$ZZMASS(:,:,:)=MZF(XZZ(:,:,:))
-ZZMASS(:,:,:)=MZF(1,IKU,1,XZZ(:,:,:))
+ZZMASS(:,:,:)=MZF(XZZ(:,:,:))
 !20131113 check
 CALL MPPDB_CHECK3D(ZZMASS,"ver_int_thermo6::ZZMASS",PRECISION)
 ZZMASS(:,:,SIZE(XZZ,3))=1.5*XZZ(:,:,SIZE(XZZ,3))-0.5*XZZ(:,:,SIZE(XZZ,3)-1)

@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 les 2006/08/30 18:38:45
 !-----------------------------------------------------------------
 !      #######################
 MODULE MODI_LES_INI_TIMESTEP_n
@@ -377,7 +372,7 @@ CALL THL_RT_FROM_TH_R(LUSERV, LUSERC, LUSERR,             &
 !
 CALL LES_ANOMALY_FIELD(MXF(XUT),XU_ANOM)
 CALL LES_ANOMALY_FIELD(MYF(XVT),XV_ANOM)
-CALL LES_ANOMALY_FIELD(MZF(1,IKU,1,XWT),XW_ANOM)
+CALL LES_ANOMALY_FIELD(MZF(XWT),XW_ANOM)
 CALL LES_ANOMALY_FIELD(ZTHL,XTHL_ANOM)
 IF (LUSERV) CALL LES_ANOMALY_FIELD(ZRT,XRT_ANOM)
 DO JSV=1,NSV

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -900,7 +900,7 @@ SELECT CASE ( HCLOUD )
     DO JK=IKB,IKE
       ZDZZ(:,:,JK)=PZZ(:,:,JK+1)-PZZ(:,:,JK)    
     ENDDO
-    ZZZ = MZF(1,IKU,1, PZZ )
+    ZZZ = MZF( PZZ )
     IF(LRED .AND. LADJ_BEFORE) THEN
       CALL ICE_ADJUST (1,IKU,1, KRR, CFRAC_ICE_ADJUST, 'ADJU',                 &
                       OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,                    &
@@ -979,7 +979,7 @@ SELECT CASE ( HCLOUD )
     DO JK=IKB,IKE
       ZDZZ(:,:,JK)=PZZ(:,:,JK+1)-PZZ(:,:,JK)    
     ENDDO
-    ZZZ = MZF(1,IKU,1, PZZ )
+    ZZZ = MZF( PZZ )
     IF(LRED .AND. LADJ_BEFORE) THEN
             CALL ICE_ADJUST (1,IKU,1, KRR, CFRAC_ICE_ADJUST, 'ADJU',                 &
                       OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,                    &
@@ -1065,7 +1065,7 @@ SELECT CASE ( HCLOUD )
     DO JK=IKB,IKE
       ZDZZ(:,:,JK)=PZZ(:,:,JK+1)-PZZ(:,:,JK)    
     ENDDO
-    ZZZ = MZF(1,IKU,1, PZZ )
+    ZZZ = MZF( PZZ )
      IF (LPTSPLIT) THEN
         CALL LIMA (1, IKU, 1,                                              &
                    PTSTEP, TPFILE, OCLOSE_OUT,                             &

@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 operators 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     #######################
       MODULE MODI_GRADIENT_VW
@@ -132,10 +127,10 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGY_VW_W ! result W point
 !
 IF (.NOT. LFLAT) THEN
   PGY_VW_W(:,:,:)= ( DYF(PA)        -                          &
-                    MZF(KKA,KKU,KL, MYF(MZF(KKA,KKU,KL,PDZY)*DZF(KKA,KKU,KL,PA)) / MZF(KKA,KKU,KL,PDZZ) )  &
-                  ) / MYF(MZM(KKA,KKU,KL,PDYY))
+                    MZF( MYF(MZF(PDZY)*DZF(PA)) / MZF(PDZZ) )  &
+                  ) / MYF(MZM(PDYY))
 ELSE
-  PGY_VW_W(:,:,:)= DYF(PA) /  MYF(MZM(KKA,KKU,KL,PDYY))
+  PGY_VW_W(:,:,:)= DYF(PA) /  MYF(MZM(PDYY))
 END IF
 !
 !----------------------------------------------------------------------------
@@ -222,7 +217,7 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGZ_VW_V ! result V point
 !*       1.    DEFINITION of GZ_VW_V
 !              ---------------------
 !
-PGZ_VW_V(:,:,:)= DZF(KKA,KKU,KL,PA) / MYM(MZF(KKA,KKU,KL,PDZZ))
+PGZ_VW_V(:,:,:)= DZF(PA) / MYM(MZF(PDZZ))
 !
 !----------------------------------------------------------------------------
 !

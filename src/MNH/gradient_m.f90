@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODI_GRADIENT_M
@@ -194,7 +190,7 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGX_M_M ! result mass point
 !
 IF (.NOT. LFLAT) THEN 
   PGX_M_M(:,:,:)= (DXF(MXM(PA(:,:,:)))   -                     &
-                   MZF(KKA,KKU,KL,MXF(PDZX)*DZM(KKA,KKU,KL,PA(:,:,:)) &
+                   MZF(MXF(PDZX)*DZM(PA(:,:,:)) &
                   /PDZZ(:,:,:)) )        /MXF(PDXX(:,:,:))
 ELSE
   PGX_M_M(:,:,:)=DXF(MXM(PA(:,:,:))) / MXF(PDXX(:,:,:)) 
@@ -291,7 +287,7 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGY_M_M ! result mass point
 !
 !
 IF (.NOT. LFLAT) THEN 
-  PGY_M_M(:,:,:)= (DYF(MYM(PA))-MZF(KKA,KKU,KL,MYF(PDZY)*DZM(KKA,KKU,KL,PA)&
+  PGY_M_M(:,:,:)= (DYF(MYM(PA))-MZF(MYF(PDZY)*DZM(PA)&
                 /PDZZ) ) /MYF(PDYY)
 ELSE
   PGY_M_M(:,:,:)= DYF(MYM(PA))/MYF(PDYY)
@@ -381,7 +377,7 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGZ_M_M ! result mass point
 !*       1.    DEFINITION of GZ_M_M
 !              --------------------
 !
-PGZ_M_M(:,:,:)= MZF(KKA,KKU,KL, DZM(KKA,KKU,KL,PA(:,:,:))/PDZZ(:,:,:) )
+PGZ_M_M(:,:,:)= MZF( DZM(PA(:,:,:))/PDZZ(:,:,:) )
 !
 !----------------------------------------------------------------------------
 !

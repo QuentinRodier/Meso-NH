@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 operators 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODI_GRADIENT_W
@@ -131,7 +126,7 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGZ_W_M ! result mass point
 !*       1.    DEFINITION of GZ_W_M
 !              --------------------
 !
-PGZ_W_M(:,:,:)= DZF(KKA,KKU,KL,PA(:,:,:))/(MZF(KKA,KKU,KL,PDZZ(:,:,:)))
+PGZ_W_M(:,:,:)= DZF(PA(:,:,:))/(MZF(PDZZ(:,:,:)))
 !
 !----------------------------------------------------------------------------
 !
@@ -214,11 +209,11 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGX_W_UW ! result UW point
 !              ---------------------
 !
 IF (.NOT. LFLAT) THEN
-  PGX_W_UW(:,:,:)= DXM(PA(:,:,:))/(MZM(KKA,KKU,KL,PDXX(:,:,:)))    &
-                 -DZM(KKA,KKU,KL,MXM(MZF(KKA,KKU,KL,PA(:,:,:))))*PDZX(:,:,:)  &
-                  /( MZM(KKA,KKU,KL,PDXX(:,:,:))*MXM(PDZZ(:,:,:)) )
+  PGX_W_UW(:,:,:)= DXM(PA(:,:,:))/(MZM(PDXX(:,:,:)))    &
+                 -DZM(MXM(MZF(PA(:,:,:))))*PDZX(:,:,:)  &
+                  /( MZM(PDXX(:,:,:))*MXM(PDZZ(:,:,:)) )
 ELSE
-  PGX_W_UW(:,:,:)= DXM(PA(:,:,:))/(MZM(KKA,KKU,KL,PDXX(:,:,:)))
+  PGX_W_UW(:,:,:)= DXM(PA(:,:,:))/(MZM(PDXX(:,:,:)))
 END IF
 !
 !----------------------------------------------------------------------------
@@ -302,11 +297,11 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGY_W_VW ! result VW point
 !              ---------------------
 !
 IF (.NOT. LFLAT) THEN
-  PGY_W_VW(:,:,:)= DYM(PA(:,:,:))/(MZM(KKA,KKU,KL,PDYY(:,:,:)))    &
-                 -DZM(KKA,KKU,KL,MYM(MZF(KKA,KKU,KL,PA(:,:,:))))*PDZY(:,:,:)  &
-                  /( MZM(KKA,KKU,KL,PDYY(:,:,:))*MYM(PDZZ(:,:,:)) )
+  PGY_W_VW(:,:,:)= DYM(PA(:,:,:))/(MZM(PDYY(:,:,:)))    &
+                 -DZM(MYM(MZF(PA(:,:,:))))*PDZY(:,:,:)  &
+                  /( MZM(PDYY(:,:,:))*MYM(PDZZ(:,:,:)) )
 ELSE
-  PGY_W_VW(:,:,:)= DYM(PA(:,:,:))/(MZM(KKA,KKU,KL,PDYY(:,:,:)))
+  PGY_W_VW(:,:,:)= DYM(PA(:,:,:))/(MZM(PDYY(:,:,:)))
 END IF
 !
 !----------------------------------------------------------------------------

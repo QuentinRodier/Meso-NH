@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 operators 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODI_GRADIENT_U
@@ -147,7 +142,7 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGX_U_M ! result mass point
 !
 IF (.NOT. LFLAT) THEN
   PGX_U_M(:,:,:)= ( DXF(PA)        -                 &
-                    MZF(KKA,KKU,KL,MXF(PDZX*DZM(KKA,KKU,KL,PA)) / PDZZ )  &
+                    MZF(MXF(PDZX*DZM(PA)) / PDZZ )  &
                   ) / MXF(PDXX)
 ELSE
   PGX_U_M(:,:,:)= DXF(PA) /  MXF(PDXX)
@@ -245,7 +240,7 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGY_U_UV ! result UV point
 !              ---------------------
 !
 IF (.NOT. LFLAT) THEN
-  PGY_U_UV(:,:,:)=  (DYM(PA)- MZF(KKA,KKU,KL, MYM( DZM(KKA,KKU,KL,PA)/&
+  PGY_U_UV(:,:,:)=  (DYM(PA)- MZF( MYM( DZM(PA)/&
                  MXM(PDZZ) ) *MXM(PDZY) )   ) / MXM(PDYY)
 ELSE
   PGY_U_UV(:,:,:)= DYM(PA) / MXM(PDYY)
@@ -332,7 +327,7 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGZ_U_UW ! result UW point
 !*       1.    DEFINITION of GZ_U_UW
 !              ---------------------
 !
-PGZ_U_UW(:,:,:)= DZM(KKA,KKU,KL,PA) / MXM(PDZZ)
+PGZ_U_UW(:,:,:)= DZM(PA) / MXM(PDZZ)
 !
 !----------------------------------------------------------------------------
 !

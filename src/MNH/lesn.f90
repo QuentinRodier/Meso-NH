@@ -1,8 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/lesn.f90,v $
 !-----------------------------------------------------------------
 !     #################
       SUBROUTINE  LES_n
@@ -485,7 +484,7 @@ ELSE
 END IF
 !
 ! computation of mass flux
-ZMASSF=MZM(1,IKU,1,ZRHO)*XWT
+ZMASSF=MZM(ZRHO)*XWT
 !
 !-------------------------------------------------------------------------------
 !
@@ -516,11 +515,11 @@ CALL LES_VER_INT( GZ_M_M(1,IKU,1,XPABST,XDZZ), ZDPDZ_LES )
 !
 CALL LES_VER_INT( MXF(XUT)  ,ZU_LES  )
 CALL LES_VER_INT( MYF(XVT)  ,ZV_LES  )
-CALL LES_VER_INT( MZF(1,IKU,1,XWT)  ,ZW_LES  )
-CALL LES_VER_INT( MZF(1,IKU,1,ZMASSF) ,ZMF_LES)
+CALL LES_VER_INT( MZF(XWT)  ,ZW_LES  )
+CALL LES_VER_INT( MZF(ZMASSF) ,ZMF_LES)
 CALL LES_VER_INT(     XTHT  ,ZTH_LES )
-CALL LES_VER_INT( MXF(MZF(1,IKU,1,GZ_U_UW(1,IKU,1,XUT,XDZZ))), ZDUDZ_LES )
-CALL LES_VER_INT( MYF(MZF(1,IKU,1,GZ_V_VW(1,IKU,1,XVT,XDZZ))), ZDVDZ_LES )
+CALL LES_VER_INT( MXF(MZF(GZ_U_UW(1,IKU,1,XUT,XDZZ))), ZDUDZ_LES )
+CALL LES_VER_INT( MYF(MZF(GZ_V_VW(1,IKU,1,XVT,XDZZ))), ZDVDZ_LES )
 CALL LES_VER_INT( GZ_W_M(1,IKU,1,XWT,XDZZ), ZDWDZ_LES )
 CALL LES_VER_INT( ZEXN, ZEXN_LES)  
 !
@@ -870,7 +869,7 @@ END DO
 !
 IF (NLES_CURRENT_TCOUNT==1) THEN
   ALLOCATE(ZZ_LES    (IIU,IJU,NLES_K))
-  CALL LES_VER_INT( MZF(1,IKU,1,XZZ)  ,ZZ_LES   )
+  CALL LES_VER_INT( MZF(XZZ)  ,ZZ_LES   )
   CALL LES_MEAN_ll ( ZZ_LES, LLES_CURRENT_CART_MASK, XLES_Z  )
   DEALLOCATE(ZZ_LES)
   CALL LES_MEAN_ll ( XZS,    LLES_CURRENT_CART_MASK(:,:,1), XLES_ZS )
@@ -885,7 +884,7 @@ END IF
 !
 CALL SPEC_VER_INT(IMI, MXF(XUT)  ,ZU_SPEC  )
 CALL SPEC_VER_INT(IMI, MYF(XVT)  ,ZV_SPEC  )
-CALL SPEC_VER_INT(IMI, MZF(1,IKU,1,XWT)  ,ZW_SPEC  )
+CALL SPEC_VER_INT(IMI, MZF(XWT)  ,ZW_SPEC  )
 CALL SPEC_VER_INT(IMI,     XTHT  ,ZTH_SPEC )
 IF (LUSERC) CALL SPEC_VER_INT(IMI,     ZTHL  ,ZTHL_SPEC)
 IRR = 0

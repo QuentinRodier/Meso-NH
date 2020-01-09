@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -488,7 +488,7 @@ GUSERV = (KRR/=0)
 !  compute the coefficients for the uncentred gradient computation near the 
 !  ground
 !
-ZKEFF(:,:,:) = MZM(KKA,KKU,KKL, PLM(:,:,:) * SQRT(PTKEM(:,:,:)) )
+ZKEFF(:,:,:) = MZM( PLM(:,:,:) * SQRT(PTKEM(:,:,:)) )
 !
 ! Flags for 3rd order quantities
 !
@@ -515,7 +515,7 @@ END IF
 !
 ! Compute the turbulent flux F and F' at time t-dt.
 !
-ZF      (:,:,:) = -XCSHF*PPHI3*ZKEFF*DZM(KKA,KKU,KKL,PTHLM)/PDZZ
+ZF      (:,:,:) = -XCSHF*PPHI3*ZKEFF*DZM(PTHLM)/PDZZ
 ZDFDDTDZ(:,:,:) = -XCSHF*ZKEFF*D_PHI3DTDZ_O_DDTDZ(PPHI3,PREDTH1,PREDR1,PRED2TH3,PRED2THR3,HTURBDIM,GUSERV)
 
 !
@@ -534,9 +534,9 @@ END IF
 IF (GFTH2) THEN
   Z3RDMOMENT= M3_WTH_WTH2(PREDTH1,PREDR1,PD,PBLL_O_E,PETHETA)
 !
-  ZF       = ZF       + Z3RDMOMENT * MZM(KKA,KKU,KKL,PFTH2)
+  ZF       = ZF       + Z3RDMOMENT * MZM(PFTH2)
   ZDFDDTDZ = ZDFDDTDZ + D_M3_WTH_WTH2_O_DDTDZ(Z3RDMOMENT,PREDTH1,PREDR1,&
-    & PD,PBLL_O_E,PETHETA) * MZM(KKA,KKU,KKL,PFTH2)
+    & PD,PBLL_O_E,PETHETA) * MZM(PFTH2)
 END IF
 !
 ! d(w'2r')/dz
@@ -550,9 +550,9 @@ END IF
 ! d(w'r'2)/dz
 IF (GFR2) THEN
   ZF       = ZF       + M3_WTH_WR2(KKA,KKU,KKL,PREDTH1,PREDR1,PD,ZKEFF,PTKEM,&
-    & PSQRT_TKE,PBLL_O_E,PBETA,PLEPS,PEMOIST,PDTH_DZ) * MZM(KKA,KKU,KKL,PFR2)
+    & PSQRT_TKE,PBLL_O_E,PBETA,PLEPS,PEMOIST,PDTH_DZ) * MZM(PFR2)
   ZDFDDTDZ = ZDFDDTDZ + D_M3_WTH_WR2_O_DDTDZ(KKA,KKU,KKL,PREDTH1,PREDR1,PD,&
-    & ZKEFF,PTKEM,PSQRT_TKE,PBLL_O_E,PBETA,PLEPS,PEMOIST) * MZM(KKA,KKU,KKL,PFR2)
+    & ZKEFF,PTKEM,PSQRT_TKE,PBLL_O_E,PBETA,PLEPS,PEMOIST) * MZM(PFR2)
 END IF
 !
 ! d(w'th'r')/dz
@@ -560,9 +560,9 @@ IF (GFTHR) THEN
   Z3RDMOMENT= M3_WTH_WTHR(KKA,KKU,KKL,PREDR1,PD,ZKEFF,PTKEM,PSQRT_TKE,PBETA,&
     & PLEPS,PEMOIST)
 !
-  ZF       = ZF       + Z3RDMOMENT * MZM(KKA,KKU,KKL,PFTHR)
+  ZF       = ZF       + Z3RDMOMENT * MZM(PFTHR)
   ZDFDDTDZ = ZDFDDTDZ + D_M3_WTH_WTHR_O_DDTDZ(Z3RDMOMENT,PREDTH1,&
-    & PREDR1,PD,PBLL_O_E,PETHETA) * MZM(KKA,KKU,KKL,PFTHR)
+    & PREDR1,PD,PBLL_O_E,PETHETA) * MZM(PFTHR)
 END IF
 !
 !* in 3DIM case, a part of the flux goes vertically, and another goes horizontally
@@ -593,7 +593,7 @@ PRTHLS(:,:,:)= PRTHLS(:,:,:)  +    &
 !  Conservative potential temperature flux : 
 !
 ZFLXZ(:,:,:)   = ZF                                                &
-               + PIMPL * ZDFDDTDZ * DZM(KKA,KKU,KKL,PTHLP - PTHLM) / PDZZ 
+               + PIMPL * ZDFDDTDZ * DZM(PTHLP - PTHLM) / PDZZ
 !
 ZFLXZ(:,:,KKA) = ZFLXZ(:,:,IKB) 
 !  
@@ -622,16 +622,16 @@ END IF
 !
 ! Contribution of the conservative temperature flux to the buoyancy flux
 IF (KRR /= 0) THEN
-  PTP(:,:,:)  =  PBETA * MZF(KKA,KKU,KKL, MZM(KKA,KKU,KKL,PETHETA) * ZFLXZ )
+  PTP(:,:,:)  =  PBETA * MZF( MZM(PETHETA) * ZFLXZ )
   PTP(:,:,IKB)=  PBETA(:,:,IKB) * PETHETA(:,:,IKB) *   &
                  0.5 * ( ZFLXZ (:,:,IKB) + ZFLXZ (:,:,IKB+KKL) )  
 ELSE
-  PTP(:,:,:)=  PBETA * MZF(KKA,KKU,KKL, ZFLXZ )
+  PTP(:,:,:)=  PBETA * MZF( ZFLXZ )
 END IF
 !
 ! Buoyancy flux at flux points
 ! 
-PWTHV = MZM(KKA,KKU,KKL,PETHETA) * ZFLXZ
+PWTHV = MZM(PETHETA) * ZFLXZ
 PWTHV(:,:,IKB) = PETHETA(:,:,IKB) * ZFLXZ(:,:,IKB)
 !
 !*       2.3  Partial vertical divergence of the < Rc w > flux
@@ -639,14 +639,14 @@ PWTHV(:,:,IKB) = PETHETA(:,:,IKB) * ZFLXZ(:,:,IKB)
 IF ( KRRL >= 1 ) THEN
   IF ( KRRI >= 1 ) THEN
     PRRS(:,:,:,2) = PRRS(:,:,:,2) -                                        &
-                    DZF(KKA,KKU,KKL, MZM(KKA,KKU,KKL, PRHODJ*PATHETA*2.*PSRCM )*ZFLXZ/PDZZ )       &
+                    DZF( MZM( PRHODJ*PATHETA*2.*PSRCM )*ZFLXZ/PDZZ )       &
                     *(1.0-PFRAC_ICE(:,:,:))
     PRRS(:,:,:,4) = PRRS(:,:,:,4) -                                        &
-                    DZF(KKA,KKU,KKL, MZM(KKA,KKU,KKL, PRHODJ*PATHETA*2.*PSRCM )*ZFLXZ/PDZZ )       &
+                    DZF( MZM( PRHODJ*PATHETA*2.*PSRCM )*ZFLXZ/PDZZ )       &
                     *PFRAC_ICE(:,:,:)
   ELSE
     PRRS(:,:,:,2) = PRRS(:,:,:,2) -                                        &
-                    DZF(KKA,KKU,KKL, MZM(KKA,KKU,KKL, PRHODJ*PATHETA*2.*PSRCM )*ZFLXZ/PDZZ ) 
+                    DZF( MZM( PRHODJ*PATHETA*2.*PSRCM )*ZFLXZ/PDZZ )
   END IF
 END IF
 !
@@ -654,22 +654,22 @@ END IF
 ! 
 IF (LLES_CALL) THEN
   CALL SECOND_MNH(ZTIME1)
-  CALL LES_MEAN_SUBGRID( MZF(KKA,KKU,KKL,ZFLXZ), X_LES_SUBGRID_WThl ) 
-  CALL LES_MEAN_SUBGRID( MZF(KKA,KKU,KKL,PWM*ZFLXZ), X_LES_RES_W_SBG_WThl )
-  CALL LES_MEAN_SUBGRID( GZ_W_M(KKA,KKU,KKL,PWM,PDZZ)*MZF(KKA,KKU,KKL,ZFLXZ),&
+  CALL LES_MEAN_SUBGRID( MZF(ZFLXZ), X_LES_SUBGRID_WThl )
+  CALL LES_MEAN_SUBGRID( MZF(PWM*ZFLXZ), X_LES_RES_W_SBG_WThl )
+  CALL LES_MEAN_SUBGRID( GZ_W_M(KKA,KKU,KKL,PWM,PDZZ)*MZF(ZFLXZ),&
       & X_LES_RES_ddxa_W_SBG_UaThl )
-  CALL LES_MEAN_SUBGRID( MZF(KKA,KKU,KKL,PDTH_DZ*ZFLXZ), X_LES_RES_ddxa_Thl_SBG_UaThl )
-  CALL LES_MEAN_SUBGRID( -XCTP*PSQRT_TKE/PLM*MZF(KKA,KKU,KKL,ZFLXZ), X_LES_SUBGRID_ThlPz ) 
-  CALL LES_MEAN_SUBGRID( MZF(KKA,KKU,KKL,MZM(KKA,KKU,KKL,PETHETA)*ZFLXZ), X_LES_SUBGRID_WThv ) 
+  CALL LES_MEAN_SUBGRID( MZF(PDTH_DZ*ZFLXZ), X_LES_RES_ddxa_Thl_SBG_UaThl )
+  CALL LES_MEAN_SUBGRID( -XCTP*PSQRT_TKE/PLM*MZF(ZFLXZ), X_LES_SUBGRID_ThlPz )
+  CALL LES_MEAN_SUBGRID( MZF(MZM(PETHETA)*ZFLXZ), X_LES_SUBGRID_WThv )
   IF (KRR>=1) THEN
-    CALL LES_MEAN_SUBGRID( MZF(KKA,KKU,KKL,PDR_DZ*ZFLXZ), X_LES_RES_ddxa_Rt_SBG_UaThl )
+    CALL LES_MEAN_SUBGRID( MZF(PDR_DZ*ZFLXZ), X_LES_RES_ddxa_Rt_SBG_UaThl )
   END IF
   !* diagnostic of mixing coefficient for heat
-  ZA = DZM(KKA,KKU,KKL,PTHLP)
+  ZA = DZM(PTHLP)
   WHERE (ZA==0.) ZA=1.E-6
   ZA = - ZFLXZ / ZA * PDZZ
   ZA(:,:,IKB) = XCSHF*PPHI3(:,:,IKB)*ZKEFF(:,:,IKB)
-  ZA = MZF(KKA,KKU,KKL, ZA )
+  ZA = MZF( ZA )
   ZA = MIN(MAX(ZA,-1000.),1000.)
   CALL LES_MEAN_SUBGRID( ZA, X_LES_SUBGRID_Kh   ) 
   !
@@ -694,7 +694,7 @@ IF (HTOM=='TM06') CALL TM06_H(IKB,IKTB,IKTE,PTSTEP,PZZ,ZFLXZ,PBL_DEPTH)
 IF (KRR /= 0) THEN
   ! Compute the turbulent flux F and F' at time t-dt.
   !
-  ZF      (:,:,:) = -XCSHF*PPSI3*ZKEFF*DZM(KKA,KKU,KKL,PRM(:,:,:,1))/PDZZ
+  ZF      (:,:,:) = -XCSHF*PPSI3*ZKEFF*DZM(PRM(:,:,:,1))/PDZZ
   ZDFDDRDZ(:,:,:) = -XCSHF*ZKEFF*D_PSI3DRDZ_O_DDRDZ(PPSI3,PREDR1,PREDTH1,PRED2R3,PRED2THR3,HTURBDIM,GUSERV)
   !
   ! Effect of 3rd order terms in temperature flux (at flux point)
@@ -712,9 +712,9 @@ IF (KRR /= 0) THEN
   IF (GFR2) THEN
     Z3RDMOMENT= M3_WR_WR2(PREDR1,PREDTH1,PD,PBLL_O_E,PEMOIST)
   !
-    ZF       = ZF       + Z3RDMOMENT * MZM(KKA,KKU,KKL,PFR2)
+    ZF       = ZF       + Z3RDMOMENT * MZM(PFR2)
     ZDFDDRDZ = ZDFDDRDZ + D_M3_WR_WR2_O_DDRDZ(Z3RDMOMENT,PREDR1,&
-     & PREDTH1,PD,PBLL_O_E,PEMOIST) * MZM(KKA,KKU,KKL,PFR2)
+     & PREDTH1,PD,PBLL_O_E,PEMOIST) * MZM(PFR2)
   END IF
   !
   ! d(w'2th')/dz
@@ -728,9 +728,9 @@ IF (KRR /= 0) THEN
   ! d(w'th'2)/dz
   IF (GFTH2) THEN
     ZF       = ZF       + M3_WR_WTH2(KKA,KKU,KKL,PREDR1,PREDTH1,PD,ZKEFF,PTKEM,&
-    & PSQRT_TKE,PBLL_O_E,PBETA,PLEPS,PETHETA,PDR_DZ) * MZM(KKA,KKU,KKL,PFTH2)
+    & PSQRT_TKE,PBLL_O_E,PBETA,PLEPS,PETHETA,PDR_DZ) * MZM(PFTH2)
     ZDFDDRDZ = ZDFDDRDZ + D_M3_WR_WTH2_O_DDRDZ(KKA,KKU,KKL,PREDR1,PREDTH1,PD,&
-     &ZKEFF,PTKEM,PSQRT_TKE,PBLL_O_E,PBETA,PLEPS,PETHETA) * MZM(KKA,KKU,KKL,PFTH2)
+     &ZKEFF,PTKEM,PSQRT_TKE,PBLL_O_E,PBETA,PLEPS,PETHETA) * MZM(PFTH2)
   END IF
   !
   ! d(w'th'r')/dz
@@ -738,9 +738,9 @@ IF (KRR /= 0) THEN
     Z3RDMOMENT= M3_WR_WTHR(KKA,KKU,KKL,PREDTH1,PD,ZKEFF,PTKEM,PSQRT_TKE,PBETA,&
      & PLEPS,PETHETA)
   !
-    ZF       = ZF       + Z3RDMOMENT * MZM(KKA,KKU,KKL,PFTHR)
+    ZF       = ZF       + Z3RDMOMENT * MZM(PFTHR)
     ZDFDDRDZ = ZDFDDRDZ + D_M3_WR_WTHR_O_DDRDZ(KKA,KKU,KKL,Z3RDMOMENT,PREDR1, &
-     & PREDTH1,PD,PBLL_O_E,PEMOIST) * MZM(KKA,KKU,KKL,PFTHR)
+     & PREDTH1,PD,PBLL_O_E,PEMOIST) * MZM(PFTHR)
   END IF
   !
   !* in 3DIM case, a part of the flux goes vertically, and another goes horizontally
@@ -771,7 +771,7 @@ IF (KRR /= 0) THEN
   ! cons. mixing ratio flux :
   !
   ZFLXZ(:,:,:)   = ZF                                                &
-                 + PIMPL * ZDFDDRDZ * DZM(KKA,KKU,KKL,PRP - PRM(:,:,:,1)) / PDZZ 
+                 + PIMPL * ZDFDDRDZ * DZM(PRP - PRM(:,:,:,1)) / PDZZ
   !
   ZFLXZ(:,:,KKA) = ZFLXZ(:,:,IKB) 
   !
@@ -799,14 +799,14 @@ IF (KRR /= 0) THEN
   END IF
   !
   ! Contribution of the conservative water flux to the Buoyancy flux
-  ZA(:,:,:)   =  PBETA * MZF(KKA,KKU,KKL, MZM(KKA,KKU,KKL,PEMOIST) * ZFLXZ )
+  ZA(:,:,:)   =  PBETA * MZF( MZM(PEMOIST) * ZFLXZ )
   ZA(:,:,IKB) =  PBETA(:,:,IKB) * PEMOIST(:,:,IKB) *   &
                  0.5 * ( ZFLXZ (:,:,IKB) + ZFLXZ (:,:,IKB+KKL) )
   PTP(:,:,:) = PTP(:,:,:) + ZA(:,:,:)
   !
   ! Buoyancy flux at flux points
   ! 
-  PWTHV          = PWTHV          + MZM(KKA,KKU,KKL,PEMOIST) * ZFLXZ
+  PWTHV          = PWTHV          + MZM(PEMOIST) * ZFLXZ
   PWTHV(:,:,IKB) = PWTHV(:,:,IKB) + PEMOIST(:,:,IKB) * ZFLXZ(:,:,IKB)
 !
 !*       3.3  Complete vertical divergence of the < Rc w > flux
@@ -814,14 +814,14 @@ IF (KRR /= 0) THEN
   IF ( KRRL >= 1 ) THEN
     IF ( KRRI >= 1 ) THEN
       PRRS(:,:,:,2) = PRRS(:,:,:,2) -                                        &
-                      DZF(KKA,KKU,KKL, MZM(KKA,KKU,KKL, PRHODJ*PAMOIST*2.*PSRCM )*ZFLXZ/PDZZ )       &
+                      DZF( MZM( PRHODJ*PAMOIST*2.*PSRCM )*ZFLXZ/PDZZ )       &
                       *(1.0-PFRAC_ICE(:,:,:))
       PRRS(:,:,:,4) = PRRS(:,:,:,4) -                                        &
-                      DZF(KKA,KKU,KKL, MZM(KKA,KKU,KKL, PRHODJ*PAMOIST*2.*PSRCM )*ZFLXZ/PDZZ )       &
+                      DZF( MZM( PRHODJ*PAMOIST*2.*PSRCM )*ZFLXZ/PDZZ )       &
                       *PFRAC_ICE(:,:,:)
     ELSE
       PRRS(:,:,:,2) = PRRS(:,:,:,2) -                                        &
-                      DZF(KKA,KKU,KKL, MZM(KKA,KKU,KKL, PRHODJ*PAMOIST*2.*PSRCM )*ZFLXZ/PDZZ ) 
+                      DZF( MZM( PRHODJ*PAMOIST*2.*PSRCM )*ZFLXZ/PDZZ )
     END IF
   END IF
 !
@@ -829,14 +829,14 @@ IF (KRR /= 0) THEN
 ! 
   IF (LLES_CALL) THEN
     CALL SECOND_MNH(ZTIME1)
-    CALL LES_MEAN_SUBGRID( MZF(KKA,KKU,KKL,ZFLXZ), X_LES_SUBGRID_WRt ) 
-    CALL LES_MEAN_SUBGRID( MZF(KKA,KKU,KKL,PWM*ZFLXZ), X_LES_RES_W_SBG_WRt )
-    CALL LES_MEAN_SUBGRID( GZ_W_M(KKA,KKU,KKL,PWM,PDZZ)*MZF(KKA,KKU,KKL,ZFLXZ),&
+    CALL LES_MEAN_SUBGRID( MZF(ZFLXZ), X_LES_SUBGRID_WRt )
+    CALL LES_MEAN_SUBGRID( MZF(PWM*ZFLXZ), X_LES_RES_W_SBG_WRt )
+    CALL LES_MEAN_SUBGRID( GZ_W_M(KKA,KKU,KKL,PWM,PDZZ)*MZF(ZFLXZ),&
     & X_LES_RES_ddxa_W_SBG_UaRt )
-    CALL LES_MEAN_SUBGRID( MZF(KKA,KKU,KKL,PDTH_DZ*ZFLXZ), X_LES_RES_ddxa_Thl_SBG_UaRt )
-    CALL LES_MEAN_SUBGRID( MZF(KKA,KKU,KKL,PDR_DZ*ZFLXZ), X_LES_RES_ddxa_Rt_SBG_UaRt )
-    CALL LES_MEAN_SUBGRID( MZF(KKA,KKU,KKL,MZM(KKA,KKU,KKL,PEMOIST)*ZFLXZ), X_LES_SUBGRID_WThv , .TRUE. ) 
-    CALL LES_MEAN_SUBGRID( -XCTP*PSQRT_TKE/PLM*MZF(KKA,KKU,KKL,ZFLXZ), X_LES_SUBGRID_RtPz ) 
+    CALL LES_MEAN_SUBGRID( MZF(PDTH_DZ*ZFLXZ), X_LES_RES_ddxa_Thl_SBG_UaRt )
+    CALL LES_MEAN_SUBGRID( MZF(PDR_DZ*ZFLXZ), X_LES_RES_ddxa_Rt_SBG_UaRt )
+    CALL LES_MEAN_SUBGRID( MZF(MZM(PEMOIST)*ZFLXZ), X_LES_SUBGRID_WThv , .TRUE. )
+    CALL LES_MEAN_SUBGRID( -XCTP*PSQRT_TKE/PLM*MZF(ZFLXZ), X_LES_SUBGRID_RtPz )
     CALL SECOND_MNH(ZTIME2)
     XTIME_LES = XTIME_LES + ZTIME2 - ZTIME1
   END IF
@@ -855,14 +855,14 @@ END IF
 IF ( ((OTURB_FLX .AND. OCLOSE_OUT) .OR. LLES_CALL) .AND. (KRRL > 0) ) THEN
   !  
   ! recover the Conservative potential temperature flux : 
-  ZA(:,:,:)   = DZM(KKA,KKU,KKL,PIMPL * PTHLP + PEXPL * PTHLM) / PDZZ *       &
-                  (-PPHI3*MZM(KKA,KKU,KKL,PLM*PSQRT_TKE)) * XCSHF 
+  ZA(:,:,:)   = DZM(PIMPL * PTHLP + PEXPL * PTHLM) / PDZZ *       &
+                  (-PPHI3*MZM(PLM*PSQRT_TKE)) * XCSHF
   ZA(:,:,IKB) = ( PIMPL*PSFTHP(:,:) + PEXPL*PSFTHM(:,:) ) &
                * PDIRCOSZW(:,:)
   !  
   ! compute <w Rc>
-  ZFLXZ(:,:,:) = MZM(KKA,KKU,KKL, PAMOIST * 2.* PSRCM ) * ZFLXZ(:,:,:) + &
-                 MZM(KKA,KKU,KKL, PATHETA * 2.* PSRCM ) * ZA(:,:,:)
+  ZFLXZ(:,:,:) = MZM( PAMOIST * 2.* PSRCM ) * ZFLXZ(:,:,:) + &
+                 MZM( PATHETA * 2.* PSRCM ) * ZA(:,:,:)
   ZFLXZ(:,:,KKA) = ZFLXZ(:,:,IKB) 
   !                 
   ! store the liquid water mixing ratio vertical flux
@@ -884,7 +884,7 @@ IF ( ((OTURB_FLX .AND. OCLOSE_OUT) .OR. LLES_CALL) .AND. (KRRL > 0) ) THEN
 !
   IF (LLES_CALL) THEN
     CALL SECOND_MNH(ZTIME1)
-    CALL LES_MEAN_SUBGRID( MZF(KKA,KKU,KKL,ZFLXZ), X_LES_SUBGRID_WRc ) 
+    CALL LES_MEAN_SUBGRID( MZF(ZFLXZ), X_LES_SUBGRID_WRc )
     CALL SECOND_MNH(ZTIME2)
     XTIME_LES = XTIME_LES + ZTIME2 - ZTIME1
   END IF

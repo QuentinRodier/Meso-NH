@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -169,19 +169,13 @@ REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: ZMZM_RHODJ
 !
 INTEGER                     :: IINFO_ll    ! return code of parallel routine
 TYPE(LIST_ll), POINTER      :: TZFIELDS_ll ! list of fields to exchange
-INTEGER :: IKU
-INTEGER :: IIB,IIE,IJB,IJE,IKB,IKE ! index values for the physical subdomain
 
 !
 !-------------------------------------------------------------------------------
 !
-CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
-IKU = SIZE(XZHAT)
-IKB=1+JPVEXT
-IKE=IKU-JPVEXT
 ZMXM_RHODJ = MXM(PRHODJ)
 ZMYM_RHODJ = MYM(PRHODJ)
-ZMZM_RHODJ = MZM(1,IKU,1,PRHODJ)
+ZMZM_RHODJ = MZM(PRHODJ)
 !
 !*       1.     COMPUTES THE CONTRAVARIANT COMPONENTS
 !	        -------------------------------------

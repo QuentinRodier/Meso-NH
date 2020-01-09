@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2010-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -143,11 +143,9 @@ REAL, DIMENSION(SIZE(PRTHS,1),SIZE(PRTHS,2),SIZE(PRTHS,3)) :: ZXADVTHFRC,ZXADVRV
 REAL, DIMENSION(SIZE(PRTHS,1),SIZE(PRTHS,2),SIZE(PRTHS,3)) :: ZTHREL,ZRVREL
 LOGICAL,DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2),SIZE(PTHM,3)) :: GRELAX_MASK_FRC ! MAsk for relaxation
 REAL :: ZRELAX_HEIGHT_TOP,ZRELAX_HEIGHT_BOT, ZRELAX_TIME
-INTEGER :: IKU
 
 !----------------------------------------------------------------------------
 !
-IKU = SIZE(PTHM,3)
 !*        1.   PREPARATION OF FORCING
 !              ----------------------
 !
@@ -234,7 +232,7 @@ END IF
  ! Corresponds to CASE=FIXE of forcing.f90
  !
   GRELAX_MASK_FRC(:,:,:) = .TRUE.
-  WHERE ((MZF(1,IKU,1,PZZ).LT.ZRELAX_HEIGHT_BOT).OR.(MZF(1,IKU,1,PZZ).GT.ZRELAX_HEIGHT_TOP)) 
+  WHERE ((MZF(PZZ).LT.ZRELAX_HEIGHT_BOT).OR.(MZF(PZZ).GT.ZRELAX_HEIGHT_TOP))
     GRELAX_MASK_FRC = .FALSE.
   END WHERE
 !

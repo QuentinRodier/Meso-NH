@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -294,7 +294,7 @@ END IF
 IF (.NOT. LFLAT) THEN
   PRUS(:,:,:) = PRUS(:,:,:)                                &
               - DYF(ZFLX * MXM(MYM(PRHODJ) * PINV_PDYY) )         &
-              + DZF(1,IKU,1, MYF( MZM(1,IKU,1,ZFLX)*MXM(PDZY/MZM(1,IKU,1,PDYY)))   &
+              + DZF( MYF( MZM(ZFLX)*MXM(PDZY/MZM(PDYY)))   &
                     * MXM(PMZM_PRHODJ * PINV_PDZZ) )
 ELSE
   PRUS(:,:,:) = PRUS(:,:,:) - DYF(ZFLX * MXM(MYM(PRHODJ) * PINV_PDYY) )
@@ -304,7 +304,7 @@ END IF
 IF (.NOT. LFLAT) THEN
   PRVS(:,:,:) = PRVS(:,:,:)                             &
                 - DXF(ZFLX * MYM(MXM(PRHODJ) * PINV_PDXX) )    &
-                + DZF(1,IKU,1, MXF( MZM(1,IKU,1,ZFLX)*MYM(PDZX/MZM(1,IKU,1,PDXX))) & 
+                + DZF( MXF( MZM(ZFLX)*MYM(PDZX/MZM(PDXX))) &
                       * MYM(PMZM_PRHODJ * PINV_PDZZ) )
 ELSE
   PRVS(:,:,:) = PRVS(:,:,:) - DXF(ZFLX * MYM(MXM(PRHODJ) * PINV_PDXX) )

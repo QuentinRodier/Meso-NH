@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -428,7 +428,7 @@ ZDIRSINZW(:,:) = SQRT(1.-PDIRCOSZW(:,:)**2)
 !  compute the coefficients for the uncentred gradient computation near the 
 !  ground
 !
-ZKEFF(:,:,:) = MZM(KKA,KKU,KKL, PLM(:,:,:) * SQRT(PTKEM(:,:,:)) )
+ZKEFF(:,:,:) = MZM( PLM(:,:,:) * SQRT(PTKEM(:,:,:)) )
 !
 ZUSLOPEM(:,:,1)=PUSLOPEM(:,:)
 ZVSLOPEM(:,:,1)=PVSLOPEM(:,:)
@@ -444,7 +444,7 @@ ZVSLOPEM(:,:,1)=PVSLOPEM(:,:)
 ! Preparation of the arguments for TRIDIAG_WIND 
 !
 ZA(:,:,:)    = -PTSTEP * XCMFS *                              &
-              MXM( ZKEFF ) * MXM(MZM(KKA,KKU,KKL, PRHODJ )) / &
+              MXM( ZKEFF ) * MXM(MZM( PRHODJ )) / &
               MXM( PDZZ )**2
 !
 !
@@ -498,7 +498,7 @@ PRUS(:,:,:)=PRUS(:,:,:)+MXM(PRHODJ(:,:,:))*(ZRES(:,:,:)-PUM(:,:,:))/PTSTEP
 ! vertical flux of the U wind component
 !
 ZFLXZ(:,:,:)     = -XCMFS * MXM(ZKEFF) * &
-                  DZM (KKA,KKU,KKL,PIMPL*ZRES + PEXPL*PUM) / MXM(PDZZ)
+                  DZM (PIMPL*ZRES + PEXPL*PUM) / MXM(PDZZ)
 !
 ! surface flux 
 ZFLXZ(:,:,IKB:IKB)   =   MXM(PDZZ(:,:,IKB:IKB))  *                &
@@ -531,7 +531,7 @@ PWU(:,:,:) = ZFLXZ(:,:,:)
 ! Contribution to the dynamic production of TKE
 ! compute the dynamic production at the mass point
 !
-PDP(:,:,:) = - MZF(KKA,KKU,KKL, MXF ( ZFLXZ * GZ_U_UW(KKA,KKU,KKL,PUM,PDZZ) )  )
+PDP(:,:,:) = - MZF( MXF ( ZFLXZ * GZ_U_UW(KKA,KKU,KKL,PUM,PDZZ) )  )
 !
 ! evaluate the dynamic production at w(IKB+KKL) in PDP(IKB)
 PDP(:,:,IKB:IKB) = - MXF (                                                      &
@@ -543,8 +543,8 @@ PDP(:,:,IKB:IKB) = - MXF (                                                      
 ! 
 IF (LLES_CALL) THEN
   CALL SECOND_MNH(ZTIME1)
-  CALL LES_MEAN_SUBGRID( MZF(KKA,KKU,KKL,MXF(ZFLXZ)), X_LES_SUBGRID_WU ) 
-  CALL LES_MEAN_SUBGRID( MZF(KKA,KKU,KKL,MXF(GZ_U_UW(KKA,KKU,KKL,PUM,PDZZ) &
+  CALL LES_MEAN_SUBGRID( MZF(MXF(ZFLXZ)), X_LES_SUBGRID_WU )
+  CALL LES_MEAN_SUBGRID( MZF(MXF(GZ_U_UW(KKA,KKU,KKL,PUM,PDZZ) &
                           & *ZFLXZ)), X_LES_RES_ddxa_U_SBG_UaU )
   CALL LES_MEAN_SUBGRID( XCMFS * ZKEFF, X_LES_SUBGRID_Km )
   CALL SECOND_MNH(ZTIME2)
@@ -561,17 +561,17 @@ IF(HTURBDIM=='3DIM') THEN
   !
   IF (.NOT. LFLAT) THEN
     PRWS(:,:,:)= PRWS                                      &
-                -DXF( MZM(KKA,KKU,KKL, MXM(PRHODJ) /PDXX )  * ZFLXZ )  &
-                +DZM(KKA,KKU,KKL, PRHODJ / MZF(KKA,KKU,KKL,PDZZ ) *                &
-                      MXF( MZF(KKA,KKU,KKL, ZFLXZ*PDZX ) / PDXX )      &
+                -DXF( MZM( MXM(PRHODJ) /PDXX )  * ZFLXZ )  &
+                +DZM( PRHODJ / MZF(PDZZ ) *                &
+                      MXF( MZF( ZFLXZ*PDZX ) / PDXX )      &
                     )
   ELSE
-    PRWS(:,:,:)= PRWS -DXF( MZM(KKA,KKU,KKL, MXM(PRHODJ) /PDXX )  * ZFLXZ )
+    PRWS(:,:,:)= PRWS -DXF( MZM( MXM(PRHODJ) /PDXX )  * ZFLXZ )
   END IF
   !
   ! Complete the Dynamical production with the W wind component 
   !
-  ZA(:,:,:)=-MZF(KKA,KKU,KKL, MXF ( ZFLXZ * GX_W_UW(KKA,KKU,KKL, PWM,PDXX,PDZZ,PDZX) )  )
+  ZA(:,:,:)=-MZF( MXF ( ZFLXZ * GX_W_UW(KKA,KKU,KKL, PWM,PDXX,PDZZ,PDZX) )  )
   !
   !
   ! evaluate the dynamic production at w(IKB+KKL) in PDP(IKB)
@@ -593,17 +593,17 @@ IF(HTURBDIM=='3DIM') THEN
   ! 
   IF (LLES_CALL) THEN
     CALL SECOND_MNH(ZTIME1)
-    CALL LES_MEAN_SUBGRID( MZF(KKA,KKU,KKL,MXF(GX_W_UW(KKA,KKU,KKL,PWM,PDXX,&
+    CALL LES_MEAN_SUBGRID( MZF(MXF(GX_W_UW(KKA,KKU,KKL,PWM,PDXX,&
       PDZZ,PDZX)*ZFLXZ)), X_LES_RES_ddxa_W_SBG_UaW )
     CALL LES_MEAN_SUBGRID( MXF(GX_M_U(KKA,KKU,KKL,PTHLM,PDXX,PDZZ,PDZX)&
-      * MZF(KKA,KKU,KKL,ZFLXZ)), X_LES_RES_ddxa_Thl_SBG_UaW )
+      * MZF(ZFLXZ)), X_LES_RES_ddxa_Thl_SBG_UaW )
     IF (KRR>=1) THEN
       CALL LES_MEAN_SUBGRID(MXF(GX_U_M(KKA,KKU,KKL,PRM(:,:,:,1),PDXX,PDZZ,PDZX)&
-      *MZF(KKA,KKU,KKL,ZFLXZ)),X_LES_RES_ddxa_Rt_SBG_UaW )
+      *MZF(ZFLXZ)),X_LES_RES_ddxa_Rt_SBG_UaW )
     END IF
     DO JSV=1,NSV
       CALL LES_MEAN_SUBGRID( MXF(GX_U_M(KKA,KKU,KKL,PSVM(:,:,:,JSV),PDXX,PDZZ,&
-      PDZX)*MZF(KKA,KKU,KKL,ZFLXZ)),X_LES_RES_ddxa_Sv_SBG_UaW(:,:,:,JSV) )
+      PDZX)*MZF(ZFLXZ)),X_LES_RES_ddxa_Sv_SBG_UaW(:,:,:,JSV) )
     END DO
     CALL SECOND_MNH(ZTIME2)
     XTIME_LES = XTIME_LES + ZTIME2 - ZTIME1
@@ -621,7 +621,7 @@ END IF
 ! Preparation of the arguments for TRIDIAG_WIND
 !!
 ZA(:,:,:)    = - PTSTEP * XCMFS *                              &
-              MYM( ZKEFF ) * MYM(MZM(KKA,KKU,KKL, PRHODJ )) /  &
+              MYM( ZKEFF ) * MYM(MZM( PRHODJ )) /  &
               MYM( PDZZ )**2
 !
 !
@@ -673,7 +673,7 @@ PRVS(:,:,:)=PRVS(:,:,:)+MYM(PRHODJ(:,:,:))*(ZRES(:,:,:)-PVM(:,:,:))/PTSTEP
 !  vertical flux of the V wind component
 !
 ZFLXZ(:,:,:)   = -XCMFS * MYM(ZKEFF) * &
-                DZM(KKA,KKU,KKL, PIMPL*ZRES + PEXPL*PVM ) / MYM(PDZZ)
+                DZM( PIMPL*ZRES + PEXPL*PVM ) / MYM(PDZZ)
 !
 ZFLXZ(:,:,IKB:IKB)   =   MYM(PDZZ(:,:,IKB:IKB))  *                       &
   ( ZSOURCE(:,:,IKB:IKB)                                                 &
@@ -705,7 +705,7 @@ PWV(:,:,:) = ZFLXZ(:,:,:)
 !  Contribution to the dynamic production of TKE
 ! compute the dynamic production contribution at the mass point
 !
-ZA(:,:,:) = - MZF(KKA,KKU,KKL, MYF ( ZFLXZ * GZ_V_VW(KKA,KKU,KKL,PVM,PDZZ) ) )
+ZA(:,:,:) = - MZF( MYF ( ZFLXZ * GZ_V_VW(KKA,KKU,KKL,PVM,PDZZ) ) )
 !
 ! evaluate the dynamic production at w(IKB+KKL) in PDP(IKB)
 ZA(:,:,IKB:IKB)  =                                                 &
@@ -720,8 +720,8 @@ PDP(:,:,:)=PDP(:,:,:)+ZA(:,:,:)
 !
 IF (LLES_CALL) THEN
   CALL SECOND_MNH(ZTIME1)
-  CALL LES_MEAN_SUBGRID( MZF(KKA,KKU,KKL,MYF(ZFLXZ)), X_LES_SUBGRID_WV ) 
-  CALL LES_MEAN_SUBGRID( MZF(KKA,KKU,KKL,MYF(GZ_V_VW(KKA,KKU,KKL,PVM,PDZZ)*&
+  CALL LES_MEAN_SUBGRID( MZF(MYF(ZFLXZ)), X_LES_SUBGRID_WV )
+  CALL LES_MEAN_SUBGRID( MZF(MYF(GZ_V_VW(KKA,KKU,KKL,PVM,PDZZ)*&
                     & ZFLXZ)), X_LES_RES_ddxa_V_SBG_UaV )
   CALL SECOND_MNH(ZTIME2)
   XTIME_LES = XTIME_LES + ZTIME2 - ZTIME1
@@ -737,18 +737,18 @@ IF(HTURBDIM=='3DIM') THEN
   IF (.NOT. L2D) THEN 
     IF (.NOT. LFLAT) THEN
       PRWS(:,:,:)= PRWS(:,:,:)                               &
-                  -DYF( MZM(KKA,KKU,KKL, MYM(PRHODJ) /PDYY ) * ZFLXZ )   &
-                  +DZM(KKA,KKU,KKL, PRHODJ / MZF(KKA,KKU,KKL,PDZZ ) *                &
-                        MYF( MZF(KKA,KKU,KKL, ZFLXZ*PDZY ) / PDYY )      &
+                  -DYF( MZM( MYM(PRHODJ) /PDYY ) * ZFLXZ )   &
+                  +DZM( PRHODJ / MZF(PDZZ ) *                &
+                        MYF( MZF( ZFLXZ*PDZY ) / PDYY )      &
                       )
     ELSE
-      PRWS(:,:,:)= PRWS(:,:,:) -DYF( MZM(KKA,KKU,KKL, MYM(PRHODJ) /PDYY ) * ZFLXZ )
+      PRWS(:,:,:)= PRWS(:,:,:) -DYF( MZM( MYM(PRHODJ) /PDYY ) * ZFLXZ )
     END IF
   END IF
   ! 
   ! Complete the Dynamical production with the W wind component 
   IF (.NOT. L2D) THEN
-    ZA(:,:,:) = - MZF(KKA,KKU,KKL, MYF ( ZFLXZ * GY_W_VW(KKA,KKU,KKL, PWM,PDYY,PDZZ,PDZY) )  )
+    ZA(:,:,:) = - MZF( MYF ( ZFLXZ * GY_W_VW(KKA,KKU,KKL, PWM,PDYY,PDZZ,PDZY) )  )
   !
   ! evaluate the dynamic production at w(IKB+KKL) in PDP(IKB)
     ZA(:,:,IKB:IKB) = - MYF (                                              &
@@ -771,13 +771,13 @@ IF(HTURBDIM=='3DIM') THEN
   !
   IF (LLES_CALL) THEN
     CALL SECOND_MNH(ZTIME1)
-    CALL LES_MEAN_SUBGRID( MZF(KKA,KKU,KKL,MYF(GY_W_VW(KKA,KKU,KKL,PWM,PDYY,&
+    CALL LES_MEAN_SUBGRID( MZF(MYF(GY_W_VW(KKA,KKU,KKL,PWM,PDYY,&
     PDZZ,PDZY)*ZFLXZ)), X_LES_RES_ddxa_W_SBG_UaW , .TRUE. )
     CALL LES_MEAN_SUBGRID( MYF(GY_M_V(KKA,KKU,KKL,PTHLM,PDYY,PDZZ,PDZY)&
-    *MZF(KKA,KKU,KKL,ZFLXZ)), X_LES_RES_ddxa_Thl_SBG_UaW , .TRUE. )
+    *MZF(ZFLXZ)), X_LES_RES_ddxa_Thl_SBG_UaW , .TRUE. )
     IF (KRR>=1) THEN
       CALL LES_MEAN_SUBGRID( MYF(GY_V_M(KKA,KKU,KKL,PRM(:,:,:,1),PDYY,PDZZ,&
-      PDZY)*MZF(KKA,KKU,KKL,ZFLXZ)),X_LES_RES_ddxa_Rt_SBG_UaW , .TRUE. )
+      PDZY)*MZF(ZFLXZ)),X_LES_RES_ddxa_Rt_SBG_UaW , .TRUE. )
     END IF
     CALL SECOND_MNH(ZTIME2)
     XTIME_LES = XTIME_LES + ZTIME2 - ZTIME1

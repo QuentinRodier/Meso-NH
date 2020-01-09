@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -174,7 +174,7 @@ IKE=IKU-JPVEXT
 !*       2.    ALTITUDE OF THE MASS POINTS
 !              ---------------------------
 !
-ZZMASS(:,:,:)=MZF(1,IKU,1,XZZ(:,:,:))
+ZZMASS(:,:,:)=MZF(XZZ(:,:,:))
 ZZMASS(:,:,IKU)=1.5*XZZ(:,:,IKU)-0.5*XZZ(:,:,IKU-1)
 !
 !20131024 check zzmass and pthv

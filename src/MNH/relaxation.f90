@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ######################
       MODULE MODI_RELAXATION 
 !     ######################
@@ -442,7 +443,7 @@ IJU_ll=IJU_ll+2*JPHEXT
 !
 ZRHODJU(:,:,:) = MXM(PRHODJ)
 ZRHODJV(:,:,:) = MYM(PRHODJ)
-ZRHODJW(:,:,:) = MZM(1,IKU,1,PRHODJ)
+ZRHODJW(:,:,:) = MZM(PRHODJ)
 !
 GHORELAXR(1) = OHORELAX_RV
 GHORELAXR(2) = OHORELAX_RC

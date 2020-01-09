@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -150,7 +150,7 @@ ZGSCPD = XG/XCPD
 !*       2.   COMPUTATION OF THE EXNER FUNCTION AT FLUX POINTS
 !             ------------------------------------------------
 !
-ZZM=MZF(1,IKU,1,PZFLUX)
+ZZM=MZF(PZFLUX)
 PEXNFLUX(:,:,IKB)=PEXNSURF2D(:,:)
 IF (LCARTESIAN .OR. LTHINSHELL) THEN
   ZD1=0.

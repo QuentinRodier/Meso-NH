@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 operators 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     #######################
       MODULE MODI_GRADIENT_UV
@@ -133,7 +128,7 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGX_UV_V ! result V point
 !
 IF (.NOT. LFLAT) THEN
   PGX_UV_V(:,:,:)= ( DXF(PA)        -                         &
-                    MZF(KKA,KKU,KL, MXF( MYM(PDZX)*DZM(KKA,KKU,KL,PA)/MYM(PDZZ) ) ) &
+                    MZF( MXF( MYM(PDZX)*DZM(PA)/MYM(PDZZ) ) ) &
                    ) / MXF(MYM(PDXX))
 ELSE
   PGX_UV_V(:,:,:)= DXF(PA) /  MXF(MYM(PDXX))
@@ -237,7 +232,7 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGY_UV_U ! result U point
 !
 IF (.NOT. LFLAT) THEN
   PGY_UV_U(:,:,:)= ( DYF(PA)        -                         &
-                    MZF(KKA,KKU,KL, MYF( MXM(PDZY)*DZM(KKA,KKU,KL,PA)/MXM(PDZZ) ) ) &
+                    MZF( MYF( MXM(PDZY)*DZM(PA)/MXM(PDZZ) ) ) &
                    ) / MYF(MXM(PDYY))
 ELSE
   PGY_UV_U(:,:,:)= DYF(PA) / MYF(MXM(PDYY))

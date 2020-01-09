@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
-!-----------------------------------------------------------------
 !-----------------------------------------------------------------
 !     #########################
       MODULE MODI_INITIAL_GUESS
@@ -188,12 +183,10 @@ REAL, DIMENSION(:,:,:,:), INTENT(IN)  :: PRT, PSVT
 !*       0.2   declarations of local variables
 !
 INTEGER                               :: JRR, JSV
-INTEGER                               :: IKU
 REAL                                  :: ZINVTSTEP
 !
 !-------------------------------------------------------------------------------
 !
-IKU=SIZE(XZHAT)
 !*       1.     COMPUTES THE INVERSE OF THE APPLICABLE TIMESTEP
 !   	        -----------------------------------------------
 !
@@ -207,7 +200,7 @@ ZINVTSTEP = 1./PTSTEP
 ! forward-in-time time-marching scheme
 PRUS = PUT * ZINVTSTEP * MXM(PRHODJ)
 PRVS = PVT * ZINVTSTEP * MYM(PRHODJ)
-PRWS = PWT * ZINVTSTEP * MZM(1,IKU,1,PRHODJ)
+PRWS = PWT * ZINVTSTEP * MZM(PRHODJ)
 !
 ! *** meteorological variables
 !

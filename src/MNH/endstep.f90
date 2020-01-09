@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/endstep.f90,v $ $Revision: 1.2.2.2.2.2.16.1.2.5 $ $Date: 2014/04/22 14:31:38 $
 !-----------------------------------------------------------------
 !     ###################
       MODULE MODI_ENDSTEP
@@ -280,14 +276,12 @@ REAL, DIMENSION(:,:),     INTENT(INOUT) :: PZWS                  ! significant w
 !*      0.2  DECLARATIONS OF LOCAL VARIABLES
 !
 INTEGER:: JSV                  ! loop counters
-INTEGER :: IKU
 INTEGER :: IIB, IIE  ! index of first and last inner mass points along x
 INTEGER :: IJB, IJE  ! index of first and last inner mass points along y
 !
 !------------------------------------------------------------------------------
 !
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
-IKU=SIZE(XZHAT)
 !
 !*      1.   ASSELIN FILTER
 !
@@ -544,7 +538,7 @@ IF (LBU_ENABLE) THEN
 !
   IF (LBUDGET_U)   CALL BUDGET (PUS*MXM(PRHODJ)/PTSTEP,1,'ENDF_BU_RU')
   IF (LBUDGET_V)   CALL BUDGET (PVS*MYM(PRHODJ)/PTSTEP,2,'ENDF_BU_RV')
-  IF (LBUDGET_W)   CALL BUDGET (PWS*MZM(1,IKU,1,PRHODJ)/PTSTEP,3,'ENDF_BU_RW')
+  IF (LBUDGET_W)   CALL BUDGET (PWS*MZM(PRHODJ)/PTSTEP,3,'ENDF_BU_RW')
   IF (LBUDGET_TH)  CALL BUDGET (PTHS*PRHODJ/PTSTEP,4,'ENDF_BU_RTH')
   IF (LBUDGET_TKE) CALL BUDGET (PTKES*PRHODJ/PTSTEP,5,'ENDF_BU_RTKE')
   IF (LBUDGET_RV)  CALL BUDGET (PRS(:,:,:,1)*PRHODJ/PTSTEP,6,'ENDF_BU_RRV')

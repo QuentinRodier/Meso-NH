@@ -225,13 +225,7 @@ END MODULE MODI_TURB_VER
 !!                               field to be derivated
 !!                               _(M,UW,...) represent the localization of the 
 !!                               field	derivated
-!!                               
 !!
-!!      MXM,MXF,MYM,MYF,MZM,MZF
-!!                             :  Shuman functions (mean operators)     
-!!      DXF,DYF,DZF,DZM
-!!                             :  Shuman functions (difference operators)     
-!!                               
 !!      SUBROUTINE TRIDIAG     : to compute the splitted implicit evolution
 !!                               of a variable located at a mass point
 !!

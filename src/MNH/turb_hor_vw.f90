@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -207,7 +207,7 @@ IF (.NOT. L2D) GY_W_VW_PWM = GY_W_VW(1,IKU,1,PWM,PDYY,PDZZ,PDZY)
 !
 IF (.NOT. L2D) THEN
   ZFLX(:,:,:) =                                                      &
-    - XCMFS * MYM(MZM(1,IKU,1,PK)) * GY_W_VW_PWM
+    - XCMFS * MYM(MZM(PK)) * GY_W_VW_PWM
   !! &  to be tested
   !!  - (2./3.) * XCMFB * MZM( ZVPTV * MYM( PLM / SQRT(PTKEM) * XG / PTHVREF ) )
 ELSE
@@ -242,16 +242,16 @@ END IF
 ! compute the source for rho*V due to this residual flux ( the other part is
 ! taken into account in TURB_VER)
 IF (.NOT. L2D) &
-PRVS(:,:,:) = PRVS(:,:,:) - DZF(1,IKU,1, ZFLX* MYM( PMZM_PRHODJ ) / MYM ( PDZZ ) )
+PRVS(:,:,:) = PRVS(:,:,:) - DZF( ZFLX* MYM( PMZM_PRHODJ ) / MYM ( PDZZ ) )
 !
 !computation of the source for rho*W due to this flux
 IF (.NOT. L2D) THEN 
   IF (.NOT. LFLAT) THEN
     PRWS(:,:,:) = PRWS(:,:,:)                              &
-          -DYF( MZM(1,IKU,1, MYM(PRHODJ) * PINV_PDYY) * ZFLX)           &
-          +DZM(1,IKU,1, PRHODJ * MYF( MZF(1,IKU,1, ZFLX*PDZY ) * PINV_PDYY ) / MZF(1,IKU,1,PDZZ) )
+          -DYF( MZM( MYM(PRHODJ) * PINV_PDYY) * ZFLX)           &
+          +DZM( PRHODJ * MYF( MZF( ZFLX*PDZY ) * PINV_PDYY ) / MZF(PDZZ) )
   ELSE
-    PRWS(:,:,:) = PRWS(:,:,:) - DYF( MZM(1,IKU,1, MYM(PRHODJ) * PINV_PDYY) * ZFLX)
+    PRWS(:,:,:) = PRWS(:,:,:) - DYF( MZM( MYM(PRHODJ) * PINV_PDYY) * ZFLX)
   END IF
 END IF
 !
@@ -260,7 +260,7 @@ IF (KSPLT==1) THEN
   !Contribution to the dynamic production of TKE:
   !
   IF (.NOT. L2D) THEN
-    ZWORK(:,:,:) =-MZF(1,IKU,1, MYF( ZFLX *( GZ_V_VW(1,IKU,1,PVM,PDZZ) + GY_W_VW_PWM ) ) )
+    ZWORK(:,:,:) =-MZF( MYF( ZFLX *( GZ_V_VW(1,IKU,1,PVM,PDZZ) + GY_W_VW_PWM ) ) )
   !
   !
   ! evaluate the dynamic production at w(IKB+1) in PDP(IKB)
@@ -287,19 +287,19 @@ END IF
 !
 IF (LLES_CALL .AND. KSPLT==1) THEN
   CALL SECOND_MNH(ZTIME1)
-  CALL LES_MEAN_SUBGRID( MZF(1,IKU,1,MYF(ZFLX)), X_LES_SUBGRID_WV , .TRUE. ) 
-  CALL LES_MEAN_SUBGRID( MZF(1,IKU,1,MYF(GZ_V_VW(1,IKU,1,PVM,PDZZ)*ZFLX)),&
+  CALL LES_MEAN_SUBGRID( MZF(MYF(ZFLX)), X_LES_SUBGRID_WV , .TRUE. )
+  CALL LES_MEAN_SUBGRID( MZF(MYF(GZ_V_VW(1,IKU,1,PVM,PDZZ)*ZFLX)),&
                          X_LES_RES_ddxa_V_SBG_UaV , .TRUE.)
-  CALL LES_MEAN_SUBGRID( MZF(1,IKU,1,MYF(GY_W_VW(1,IKU,1,PWM,PDYY,PDZZ,PDZY)*ZFLX)),&
+  CALL LES_MEAN_SUBGRID( MZF(MYF(GY_W_VW(1,IKU,1,PWM,PDYY,PDZZ,PDZY)*ZFLX)),&
                          X_LES_RES_ddxa_W_SBG_UaW , .TRUE.)
-  CALL LES_MEAN_SUBGRID( MXF(GY_M_V(1,IKU,1,PTHLM,PDYY,PDZZ,PDZY)*MZF(1,IKU,1,ZFLX)),&
+  CALL LES_MEAN_SUBGRID( MXF(GY_M_V(1,IKU,1,PTHLM,PDYY,PDZZ,PDZY)*MZF(ZFLX)),&
                          X_LES_RES_ddxa_Thl_SBG_UaW , .TRUE.)
   IF (KRR>=1) THEN
-    CALL LES_MEAN_SUBGRID( MXF(GY_M_V(1,IKU,1,PRM(:,:,:,1),PDYY,PDZZ,PDZY)*MZF(1,IKU,1,ZFLX)), &
+    CALL LES_MEAN_SUBGRID( MXF(GY_M_V(1,IKU,1,PRM(:,:,:,1),PDYY,PDZZ,PDZY)*MZF(ZFLX)), &
                            X_LES_RES_ddxa_Rt_SBG_UaW , .TRUE.)
   END IF
   DO JSV=1,NSV
-    CALL LES_MEAN_SUBGRID( MXF(GY_M_V(1,IKU,1,PSVM(:,:,:,JSV),PDYY,PDZZ,PDZY)*MZF(1,IKU,1,ZFLX)), &
+    CALL LES_MEAN_SUBGRID( MXF(GY_M_V(1,IKU,1,PSVM(:,:,:,JSV),PDYY,PDZZ,PDZY)*MZF(ZFLX)), &
                            X_LES_RES_ddxa_Sv_SBG_UaW(:,:,:,JSV), .TRUE.)
   END DO
   CALL SECOND_MNH(ZTIME2)

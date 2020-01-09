@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -174,7 +174,6 @@ REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: ZMZM_RHODJ
 INTEGER :: ISPLIT              ! Number of splitting loops
 INTEGER :: JSPL                ! Loop index
 REAL    :: ZTSTEP              ! Sub Time step 
-INTEGER :: IIU, IJU, IKU ! array sizes
 !
 INTEGER                     :: IINFO_ll    ! return code of parallel routine
 TYPE(LIST_ll), POINTER      :: TZFIELD_ll  ! list of fields to exchange
@@ -189,14 +188,9 @@ TYPE(LIST_ll), POINTER      :: TZFIELDS0_ll ! list of fields to exchange
 !
 IKE = SIZE(PWT,3) - JPVEXT
 !
-IIU = SIZE(PWT,1)
-IJU = SIZE(PWT,2)
-IKU = SIZE(PWT,3)
-!
-!
 ZMXM_RHODJ = MXM(PRHODJ)
 ZMYM_RHODJ = MYM(PRHODJ)
-ZMZM_RHODJ = MZM(1,IKU,1,PRHODJ)
+ZMZM_RHODJ = MZM(PRHODJ)
 !
 !-------------------------------------------------------------------------------
 !

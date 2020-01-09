@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -204,7 +204,7 @@ PFY(:,:,:) = (0.5+SIGN(0.5,PRVCT(:,:,:)))*MIN( PFY(:,:,:),ZFOUT(:,:,:) )  &
 ZFOUT(:,:,2:IKU) = -ZBETAOUT(:,:,1:IKU-1) ! Second limiter
 ZFOUT(:,:,1)     = 0.0
 !
-PFZ(:,:,:) = PRWCT(:,:,:) * MZM (1,IKU,1,PAT(:,:,:))  
+PFZ(:,:,:) = PRWCT(:,:,:) * MZM (PAT(:,:,:))
 PFZ(:,:,:) = (0.5+SIGN(0.5,PRWCT(:,:,:)))*MIN( PFZ(:,:,:),ZFOUT(:,:,:) )  &
             +(0.5-SIGN(0.5,PRWCT(:,:,:)))*MAX( PFZ(:,:,:),ZBETAOUT(:,:,:) )
 !

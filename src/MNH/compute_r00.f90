@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -113,7 +113,6 @@ LOGICAL                            :: GSTART
 INTEGER                            :: INBR_START
 REAL                               :: ZXMAX,ZYMAX,ZZMAX  ! domain extrema
 INTEGER, DIMENSION(100)            :: NBRFILES 
-INTEGER                            :: IKU
 TYPE(TFIELDDATA)                   :: TZFIELD
 TYPE(TFILEDATA),POINTER            :: TZTRACFILE
 !
@@ -124,7 +123,6 @@ TYPE(TFILEDATA),POINTER            :: TZTRACFILE
 !
 TZTRACFILE => NULL()
 ZSPVAL=-1.E+11
-IKU=SIZE(XZHAT)
 !
 !-------------------------------------------------------------------------------
 !
@@ -193,7 +191,7 @@ ZXOR=0.5 * (XXHAT(2)+XXHAT(3))
 ZYOR=0.5 * (XYHAT(2)+XYHAT(3))
 ZDX= XXHAT(3)-XXHAT(2)
 ZDY= XYHAT(3)-XYHAT(2)
-ZZL=MZF(1,IKU,1,XZZ)
+ZZL=MZF(XZZ)
 ZZL(:,:,NKU)=2*XZZ(:,:,NKU)-ZZL(:,:,NKU-1)
 ZXMAX=ZXOR+(NIU-3)*ZDX
 ZYMAX=ZYOR+(NJU-3)*ZDY

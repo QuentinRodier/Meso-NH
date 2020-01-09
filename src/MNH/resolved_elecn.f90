@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2009-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2009-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -299,7 +299,6 @@ INTEGER :: IJB           !
 INTEGER :: IJE           !
 INTEGER :: IKB           !
 INTEGER :: IKE           !
-INTEGER :: IKU
 INTEGER :: IINFO_ll      ! return code of parallel routine
 INTEGER :: IPROC         ! my proc number
 INTEGER :: IERR          ! error status
@@ -371,7 +370,6 @@ END IF
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB = 1 + JPVEXT
 IKE = SIZE(PZZ,3) - JPVEXT
-IKU = SIZE(PZZ,3)
 !
 !
 !------------------------------------------------------------------------------
@@ -703,7 +701,7 @@ SELECT CASE (HCLOUD)
 !
 !*       5.2    Perform the saturation adjustment over cloud ice and cloud water
 !
-    ZZZ = MZF(1,IKU,1, PZZ )
+    ZZZ = MZF( PZZ )
     CALL ICE_ADJUST_ELEC (KRR, KMI, HRAD, HTURBDIM,                           &
                           HSCONV, HMF_CLOUD,                                  &
                           OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,               &
@@ -767,7 +765,7 @@ SELECT CASE (HCLOUD)
 !
 !*       6.2    Perform the saturation adjustment over cloud ice and cloud water
 !
-    ZZZ = MZF(1,IKU,1, PZZ )
+    ZZZ = MZF( PZZ )
     CALL ICE_ADJUST_ELEC (KRR, KMI, HRAD,                                     &
                           HTURBDIM, HSCONV, HMF_CLOUD,                        &
                           OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,               &

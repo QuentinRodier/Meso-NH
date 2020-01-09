@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 turb 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !    ####################  
      MODULE MODI_TURB_HOR_TKE
@@ -183,7 +178,7 @@ ZFLX(:,:,IKU) =  ZFLX(:,:,IKU-1)
 !
 IF (.NOT. LFLAT) THEN
   PTRH =-(  DXF( MXM(PRHODJ) * ZFLX                             * PINV_PDXX)&
-          - DZF(1,IKU,1, PMZM_PRHODJ * MXF( PDZX * MZM(1,IKU,1,ZFLX*PINV_PDXX)) * PINV_PDZZ)&
+          - DZF( PMZM_PRHODJ * MXF( PDZX * MZM(ZFLX*PINV_PDXX)) * PINV_PDZZ)&
          ) /PRHODJ
 ELSE
   PTRH =-(  DXF( MXM(PRHODJ) * ZFLX                             * PINV_PDXX)&
@@ -230,7 +225,7 @@ IF (.NOT. L2D) THEN
 !
   IF (.NOT. LFLAT) THEN
     PTRH = PTRH - (  DYF( MYM(PRHODJ) * ZFLX                              * PINV_PDYY )  &
-                   - DZF(1,IKU,1, PMZM_PRHODJ * MYF( PDZY * MZM(1,IKU,1,ZFLX*PINV_PDYY) ) * PINV_PDZZ )  &
+                   - DZF( PMZM_PRHODJ * MYF( PDZY * MZM(ZFLX*PINV_PDYY) ) * PINV_PDZZ )  &
                   ) /PRHODJ
   ELSE
     PTRH = PTRH - (  DYF( MYM(PRHODJ) * ZFLX                              * PINV_PDYY )  &

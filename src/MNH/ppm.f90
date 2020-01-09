@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 ! Modifications:
@@ -1083,7 +1083,6 @@ REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: PR
 !
 INTEGER:: IKB    ! Begining useful area in x,y,z directions
 INTEGER:: IKE    ! End useful area in x,y,z directions
-INTEGER:: IKU
 !
 ! terms used in parabolic interpolation, dmq, qL, qR, dq, q6
 REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZQL,ZQR
@@ -1103,7 +1102,6 @@ REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZFPOS, ZFNEG
 !
 IKB = 1 + JPVEXT
 IKE = SIZE(PSRC,3) - JPVEXT
-IKU = SIZE(PSRC,3)
 !
 !-------------------------------------------------------------------------------
 !
@@ -1196,7 +1194,7 @@ ZFNEG(:,:,IKE+1) = (ZQR(:,:,IKE)-PSRC(:,:,IKE+1))*PCR(:,:,IKE+1) + &
 !
 ! advect the actual field in Z direction by W*dt
 !
-PR = DZF(1,IKU,1, PCR*MZM(1,IKU,1,PRHO)*( ZFPOS*(0.5+SIGN(0.5,PCR)) + & 
+PR = DZF( PCR*MZM(PRHO)*( ZFPOS*(0.5+SIGN(0.5,PCR)) + &
                           ZFNEG*(0.5-SIGN(0.5,PCR)) ) )
 !Unnecessary CALL GET_HALO(PR)
 !
@@ -1846,7 +1844,6 @@ REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: PR
 !
 INTEGER:: IKB    ! Begining useful area in x,y,z directions
 INTEGER:: IKE    ! End useful area in x,y,z directions
-INTEGER:: IKU
 !
 ! advection fluxes
 REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZFPOS, ZFNEG
@@ -1861,7 +1858,6 @@ REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZPHAT
 !
 IKB = 1 + JPVEXT
 IKE = SIZE(PSRC,3) - JPVEXT
-IKU = SIZE(PSRC,3)
 !
 !-------------------------------------------------------------------------------
 !
@@ -1917,7 +1913,7 @@ ZFNEG(:,:,IKE+1) = (ZPHAT(:,:,IKE+1) - PSRC(:,:,IKE+1))*PCR(:,:,IKE+1) + &
 ! calculate the advection
 !
 PR = PSRC * PRHO - &
-     DZF(1,IKU,1, PCR*MZM(1,IKU,1,PRHO)*( ZFPOS(:,:,:)*(0.5+SIGN(0.5,PCR)) + & 
+     DZF( PCR*MZM(PRHO)*( ZFPOS(:,:,:)*(0.5+SIGN(0.5,PCR)) + &
                           ZFNEG*(0.5-SIGN(0.5,PCR)) ) )
 !
 ! in OPEN case fix boundary conditions
@@ -2481,7 +2477,6 @@ REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: PR
 !
 INTEGER:: IIB,IJB,IKB   ! Begining useful area in x,y,z directions
 INTEGER:: IIE,IJE,IKE   ! End useful area in x,y,z directions
-INTEGER:: IKU
 !
 ! variable at cell edges
 REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZPHAT, ZRVT
@@ -2507,11 +2502,10 @@ INTEGER :: II, IJ, IK
 CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 IKB = 1 + JPVEXT
 IKE = SIZE(PSRC,3) - JPVEXT
-IKU =  SIZE(PSRC,3)
 !
 !-------------------------------------------------------------------------------
 !
-ZRVT = PCR/PTSTEP * MZM(1,IKU,1,PRHO)
+ZRVT = PCR/PTSTEP * MZM(PRHO)
 !
 ! calculate 4th order fluxes at cell edges in the inner domain !
 ZPHAT(:,:,IKB+1:IKE) = (7.0 * &
@@ -2618,7 +2612,7 @@ END WHERE
 !
 ! 1. calculate upwind tendency of the source
 !
-PR = PSRC*PRHO - PTSTEP*DZF(1,IKU,1,ZFUP)
+PR = PSRC*PRHO - PTSTEP*DZF(ZFUP)
 !
 !-------------------------------------------------------------------------------
 ! compute and apply the limiters
@@ -2746,7 +2740,7 @@ ZFCOR(:,:,IKB-1) = MIN( &
 !-------------------------------------------------------------------------------
 ! 6. apply the limited flux correction to scalar field
 !
-PR = PR - PTSTEP*DZF(1,IKU,1,ZFCOR)
+PR = PR - PTSTEP*DZF(ZFCOR)
 !
 !
 END FUNCTION PPM_S1_Z

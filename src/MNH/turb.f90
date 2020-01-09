@@ -1,4 +1,4 @@
-  !MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+  !MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -747,8 +747,8 @@ SELECT CASE (HTURBLEN)
 !           ------------------
 
   CASE ('RM17')
-    ZDUDZ = MXF(MZF(1,KKU,1,GZ_U_UW(1,KKU,1,PUT,PDZZ)))
-    ZDVDZ = MYF(MZF(1,KKU,1,GZ_V_VW(1,KKU,1,PVT,PDZZ)))
+    ZDUDZ = MXF(MZF(GZ_U_UW(1,KKU,1,PUT,PDZZ)))
+    ZDVDZ = MYF(MZF(GZ_V_VW(1,KKU,1,PVT,PDZZ)))
     ZSHEAR = SQRT(ZDUDZ*ZDUDZ + ZDVDZ*ZDVDZ)
     CALL BL89(KKA,KKU,KKL,PZZ,PDZZ,PTHVREF,ZTHLM,KRR,ZRM,PTKET,ZSHEAR,PLEM)
 !
@@ -1010,7 +1010,7 @@ IF (LBUDGET_RI) CALL BUDGET (PRRS(:,:,:,4),9,'HTURB_BU_RRI')
 !  6.1 Contribution of mass-flux in the TKE buoyancy production if 
 !      cloud computation is not statistical 
 
-       PTHP = PTHP + XG / PTHVREF * MZF(KKA,KKU,KKL, PFLXZTHVMF )
+       PTHP = PTHP + XG / PTHVREF * MZF( PFLXZTHVMF )
 
 !  6.2 TKE evolution equation
 
@@ -1173,13 +1173,13 @@ IF (LLES_CALL) THEN
     CALL LES_MEAN_SUBGRID(2./3.*PTKET,X_LES_SUBGRID_U2)
     X_LES_SUBGRID_V2 = X_LES_SUBGRID_U2
     X_LES_SUBGRID_W2 = X_LES_SUBGRID_U2
-    CALL LES_MEAN_SUBGRID(2./3.*PTKET*MZF(KKA,KKU,KKL,&
+    CALL LES_MEAN_SUBGRID(2./3.*PTKET*MZF(&
                & GZ_M_W(KKA,KKU,KKL,PTHLT,PDZZ)),X_LES_RES_ddz_Thl_SBG_W2)
     IF (KRR>=1) &
-    CALL LES_MEAN_SUBGRID(2./3.*PTKET*MZF(KKA,KKU,KKL,&
+    CALL LES_MEAN_SUBGRID(2./3.*PTKET*MZF(&
                & GZ_M_W(KKA,KKU,KKL,PRT(:,:,:,1),PDZZ)),X_LES_RES_ddz_Rt_SBG_W2)
     DO JSV=1,NSV
-      CALL LES_MEAN_SUBGRID(2./3.*PTKET*MZF(KKA,KKU,KKL,&
+      CALL LES_MEAN_SUBGRID(2./3.*PTKET*MZF(&
  & GZ_M_W(KKA,KKU,KKL,PSVT(:,:,:,JSV),PDZZ)),X_LES_RES_ddz_Sv_SBG_W2(:,:,:,JSV))
     END DO
   END IF

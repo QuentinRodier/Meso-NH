@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -100,7 +100,6 @@ CHARACTER(LEN=4), DIMENSION(2) :: ZLBCY  ! y-direction LBC type
 !
 INTEGER :: JK     ! loop over the vertical levels
 INTEGER :: IINFO_ll ! 
-INTEGER :: IKB,IKE,IKU      ! Indices for the first and last point along vertical
 !
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZZMASS, ZWORK, ZWORK1, ZWORK2
 !
@@ -112,9 +111,6 @@ TYPE(LIST_ll),POINTER  :: TZFIELDS_ll ! list of fields to exchange
 !*      1.    INITIALIZATIONS
 !             ---------------
 ! 
-IKB = 1 + JPVEXT
-IKE = SIZE(PZZ,3) - JPVEXT
-IKU = SIZE(PZZ,3)
 ZLBCX = 'OPEN'  ! forced LBC
 ZLBCY = 'OPEN'  ! forced LBC
 !
@@ -172,7 +168,7 @@ XEFIELDW(:,:,SIZE(PDZZ,3)) = 2. * XEFIELDW(:,:,SIZE(PDZZ,3)-1) -  &
                                   XEFIELDW(:,:,SIZE(PDZZ,3)-2)
 
 ! Computing the mobility of small positive (negative) ions at Mass-point
-ZZMASS = MZF(1,IKU,1, PZZ )   ! altitude at mass point
+ZZMASS = MZF( PZZ )   ! altitude at mass point
 
 DO JK = 2,SIZE(PZZ,3)-1
   XMOBIL_POS(:,:,JK) = XF_POS * EXP( XEXPMOB* ZZMASS(:,:,JK) )

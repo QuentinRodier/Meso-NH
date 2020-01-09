@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1997-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1997-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -157,9 +157,9 @@ CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 !               -----------
 !
 !* shift of grids to mass points
-ZGRID1(:,:,:)=MZF(1,IKU,1,PZZ_LS(:,:,:))
+ZGRID1(:,:,:)=MZF(PZZ_LS(:,:,:))
 ZGRID1(:,:,IKU)=2.*ZGRID1(:,:,IKU-1)-ZGRID1(:,:,IKU-2)
-ZGRID2(:,:,:)=MZF(1,IKU,1,PZZ(:,:,:))
+ZGRID2(:,:,:)=MZF(PZZ(:,:,:))
 ZGRID2(:,:,IKU)=2.*ZGRID2(:,:,IKU-1)-ZGRID2(:,:,IKU-2)
 !* move the first physical level if above the target grid
 ZGRID1(:,:,1:IKB)=MIN(ZGRID1(:,:,1:IKB),ZGRID2(:,:,1:IKB))
@@ -199,9 +199,9 @@ CALL MPPDB_CHECK3D(PUT,"VERINTERPFIELD:PUT",PRECISION)
 !               -----------
 !
 !* shift of grids to mass points
-ZGRID1(:,:,:)=MZF(1,IKU,1,PZZ_LS(:,:,:))
+ZGRID1(:,:,:)=MZF(PZZ_LS(:,:,:))
 ZGRID1(:,:,IKU)=2.*ZGRID1(:,:,IKU-1)-ZGRID1(:,:,IKU-2)
-ZGRID2(:,:,:)=MZF(1,IKU,1,PZZ(:,:,:))
+ZGRID2(:,:,:)=MZF(PZZ(:,:,:))
 ZGRID2(:,:,IKU)=2.*ZGRID2(:,:,IKU-1)-ZGRID2(:,:,IKU-2)
 !* move the first physical level if above the target grid
 ZGRID1(:,:,1:IKB)=MIN(ZGRID1(:,:,1:IKB),ZGRID2(:,:,1:IKB))
@@ -246,9 +246,9 @@ PLSWM (:,:,:)  =  VER_INTERP_LIN(PLSWM (:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
 !               -------------------------
 !
 !* shift of grids to mass points
-ZGRID1(:,:,:)=MZF(1,IKU,1,PZZ_LS(:,:,:))
+ZGRID1(:,:,:)=MZF(PZZ_LS(:,:,:))
 ZGRID1(:,:,IKU)=2.*ZGRID1(:,:,IKU-1)-ZGRID1(:,:,IKU-2)
-ZGRID2(:,:,:)=MZF(1,IKU,1,PZZ(:,:,:))
+ZGRID2(:,:,:)=MZF(PZZ(:,:,:))
 ZGRID2(:,:,IKU)=2.*ZGRID2(:,:,IKU-1)-ZGRID2(:,:,IKU-2)
 !
 CALL COEF_VER_INTERP_LIN(ZGRID1(:,:,:),ZGRID2(:,:,:))
@@ -292,9 +292,9 @@ END DO
 !               ------------
 !
 !* shift of grids to mass points
-ZGRID1(:,:,:)=MZF(1,IKU,1,PZZ_LS(:,:,:))
+ZGRID1(:,:,:)=MZF(PZZ_LS(:,:,:))
 ZGRID1(:,:,IKU)=2.*ZGRID1(:,:,IKU-1)-ZGRID1(:,:,IKU-2)
-ZGRID2(:,:,:)=MZF(1,IKU,1,PZZ(:,:,:))
+ZGRID2(:,:,:)=MZF(PZZ(:,:,:))
 ZGRID2(:,:,IKU)=2.*ZGRID2(:,:,IKU-1)-ZGRID2(:,:,IKU-2)
 !* move the first physical level if above the target grid
 ZGRID1(:,:,1:IKB)=MIN(ZGRID1(:,:,1:IKB),ZGRID2(:,:,1:IKB))

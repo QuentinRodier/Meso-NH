@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2007-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     #################
       MODULE MODI_LAP_M
 !     #################
@@ -211,7 +212,7 @@ IF(.NOT. L2D) THEN
    ZV = MYM(PRHODJ) * ZV
 ENDIF
 !
-ZW = MZM(1,IKU,1,PRHODJ) * GZ_M_W(1,IKU,1,PY,PDZZ)
+ZW = MZM(PRHODJ) * GZ_M_W(1,IKU,1,PY,PDZZ)
 !
 !-------------------------------------------------------------------------------
 !

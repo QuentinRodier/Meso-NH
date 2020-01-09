@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -990,7 +990,7 @@ IF (NBUMOD==IMI .AND. CBUTYPE=='MASK' ) THEN
   IF (LBU_RV)   XBURHODJV(:,NBUTIME,:) = XBURHODJV(:,NBUTIME,:)    &
                             + MASK_COMPRESS(MYM(XRHODJ))
   IF (LBU_RW)   XBURHODJW(:,NBUTIME,:) = XBURHODJW(:,NBUTIME,:)    &
-                            + MASK_COMPRESS(MZM(1,IKU,1,XRHODJ))
+                            + MASK_COMPRESS(MZM(XRHODJ))
   IF (ALLOCATED(XBURHODJ))                                         &
                 XBURHODJ (:,NBUTIME,:) = XBURHODJ (:,NBUTIME,:)    &
                               + MASK_COMPRESS(XRHODJ)
@@ -1002,7 +1002,7 @@ IF (NBUMOD==IMI .AND. CBUTYPE=='CART' ) THEN
   IF (LBU_RV)   XBURHODJV(:,:,:) = XBURHODJV(:,:,:)    &
                 + CART_COMPRESS(MYM(XRHODJ))
   IF (LBU_RW)   XBURHODJW(:,:,:) = XBURHODJW(:,:,:)    &
-                + CART_COMPRESS(MZM(1,IKU,1,XRHODJ))
+                + CART_COMPRESS(MZM(XRHODJ))
   IF (ALLOCATED(XBURHODJ))                             &
                 XBURHODJ (:,:,:) = XBURHODJ (:,:,:)    &
                 + CART_COMPRESS(XRHODJ)

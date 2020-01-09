@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 operators 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     #######################
       MODULE MODI_GRADIENT_UW
@@ -132,10 +127,10 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGX_UW_W ! result W point
 !
 IF (.NOT. LFLAT) THEN
   PGX_UW_W(:,:,:)= ( DXF(PA)        -                          &
-                    MZF(KKA,KKU,KL, MXF(MZF(KKA,KKU,KL, PDZX)*DZF(KKA,KKU,KL,PA)) / MZF(KKA,KKU,KL,PDZZ) )  &
-                  ) / MXF(MZM(KKA,KKU,KL,PDXX))
+                    MZF( MXF(MZF( PDZX)*DZF(PA)) / MZF(PDZZ) )  &
+                  ) / MXF(MZM(PDXX))
 ELSE
-  PGX_UW_W(:,:,:)= DXF(PA) /  MXF(MZM(KKA,KKU,KL,PDXX))
+  PGX_UW_W(:,:,:)= DXF(PA) /  MXF(MZM(PDXX))
 END IF
 !
 !----------------------------------------------------------------------------
@@ -222,7 +217,7 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGZ_UW_U ! result U point
 !*       1.    DEFINITION of GZ_UW_U
 !              ---------------------
 !
-PGZ_UW_U(:,:,:)= DZF(KKA,KKU,KL,PA) / MXM(MZF(KKA,KKU,KL,PDZZ))
+PGZ_UW_U(:,:,:)= DZF(PA) / MXM(MZF(PDZZ))
 !
 !----------------------------------------------------------------------------
 !

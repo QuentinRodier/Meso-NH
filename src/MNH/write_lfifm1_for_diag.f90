@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -491,8 +491,8 @@ ZVOZ(:,:,1)=ZVOZ(:,:,3)
 ZWORK31(:,:,:)=GX_M_M(1,IKU,1,XTHT,XDXX,XDZZ,XDZX)
 ZWORK32(:,:,:)=GY_M_M(1,IKU,1,XTHT,XDYY,XDZZ,XDZY)
 ZWORK33(:,:,:)=GZ_M_M(1,IKU,1,XTHT,XDZZ)
-ZPOVO(:,:,:)= ZWORK31(:,:,:)*MZF(1,IKU,1,MYF(ZVOX(:,:,:)))     &
-             + ZWORK32(:,:,:)*MZF(1,IKU,1,MXF(ZVOY(:,:,:)))     &
+ZPOVO(:,:,:)= ZWORK31(:,:,:)*MZF(MYF(ZVOX(:,:,:)))     &
+             + ZWORK32(:,:,:)*MZF(MXF(ZVOY(:,:,:)))     &
              + ZWORK33(:,:,:)*(MYF(MXF(ZVOZ(:,:,:))) + ZCORIOZ(:,:,:))
 ZPOVO(:,:,:)= ZPOVO(:,:,:)*1E6/XRHODREF(:,:,:)
 ZPOVO(:,:,1)  =-1.E+11
@@ -704,7 +704,7 @@ IF (LVAR_PR ) THEN
   ZWORK21(:,:) = 0.
   ZWORK22(:,:) = 0.
   ZWORK23(:,:) = 0.
-  ZWORK31(:,:,:) = DZF(1,IKU,1,XZZ(:,:,:))
+  ZWORK31(:,:,:) = DZF(XZZ(:,:,:))
   DO JK = IKB,IKE
     !* Calcul de qtot
     IF  (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'LIMA') THEN
@@ -760,7 +760,7 @@ IF (LHU_FLX) THEN
       IKTOP(:,:)=JK
     END WHERE
   END DO
-  ZDELTAZ(:,:,:)=DZF(1,IKU,1,XZZ) 
+  ZDELTAZ(:,:,:)=DZF(XZZ)
   ZWORK21(:,:) = 0.
   ZWORK22(:,:) = 0.
   ZWORK25(:,:) = 0.  
@@ -2274,7 +2274,7 @@ IF (LTPZH .OR. LCOREF) THEN
       TZFIELD%LTIMEDEP   = .TRUE.
       CALL IO_Field_write(TPFILE,TZFIELD,ZWORK33)
       !
-      ZWORK33(:,:,:)=ZWORK33(:,:,:)+MZF(1,IKU,1,XZZ(:,:,:))*1E6/XRADIUS
+      ZWORK33(:,:,:)=ZWORK33(:,:,:)+MZF(XZZ(:,:,:))*1E6/XRADIUS
       TZFIELD%CMNHNAME   = 'MCOREF'
       TZFIELD%CSTDNAME   = ''
       TZFIELD%CLONGNAME  = 'MCOREF'
@@ -2584,7 +2584,7 @@ END IF
 !
 IF (LVORT) THEN
 ! Vorticity x
-  ZWORK31(:,:,:)=MYF(MZF(1,IKU,1,MXM(ZVOX(:,:,:))))
+  ZWORK31(:,:,:)=MYF(MZF(MXM(ZVOX(:,:,:))))
   TZFIELD%CMNHNAME   = 'UM1'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = 'UM1'
@@ -2598,7 +2598,7 @@ IF (LVORT) THEN
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
 !    
 ! Vorticity y
-  ZWORK32(:,:,:)=MZF(1,IKU,1,MXF(MYM(ZVOY(:,:,:))))
+  ZWORK32(:,:,:)=MZF(MXF(MYM(ZVOY(:,:,:))))
   TZFIELD%CMNHNAME   = 'VM1'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = 'VM1'
@@ -2638,7 +2638,7 @@ IF (LVORT) THEN
   ENDIF
 !    
 ! Vorticity z
-  ZWORK31(:,:,:)=MXF(MYF(MZM(1,IKU,1,ZVOZ(:,:,:))))
+  ZWORK31(:,:,:)=MXF(MYF(MZM(ZVOZ(:,:,:))))
   TZFIELD%CMNHNAME   = 'WM1'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = 'WM1'
@@ -2703,8 +2703,8 @@ IF (LMOIST_V .AND. (NRR>0) ) THEN
   ZWORK31(:,:,:)=GX_M_M(1,IKU,1,ZTHETAV,XDXX,XDZZ,XDZX)
   ZWORK32(:,:,:)=GY_M_M(1,IKU,1,ZTHETAV,XDYY,XDZZ,XDZY)
   ZWORK33(:,:,:)=GZ_M_M(1,IKU,1,ZTHETAV,XDZZ)
-  ZWORK34(:,:,:)= ZWORK31(:,:,:)*MZF(1,IKU,1,MYF(ZVOX(:,:,:)))     &
-               + ZWORK32(:,:,:)*MZF(1,IKU,1,MXF(ZVOY(:,:,:)))     &
+  ZWORK34(:,:,:)= ZWORK31(:,:,:)*MZF(MYF(ZVOX(:,:,:)))     &
+               + ZWORK32(:,:,:)*MZF(MXF(ZVOY(:,:,:)))     &
                + ZWORK33(:,:,:)*(MYF(MXF(ZVOZ(:,:,:))) + ZCORIOZ(:,:,:))
   ZWORK34(:,:,:)=ZWORK34(:,:,:)*1E6/XRHODREF(:,:,:)
   TZFIELD%CMNHNAME   = 'POVOV'
@@ -2749,8 +2749,8 @@ IF (LMOIST_E .AND. (NRR>0) ) THEN
   ZWORK31(:,:,:)=GX_M_M(1,IKU,1,ZTHETAE,XDXX,XDZZ,XDZX)
   ZWORK32(:,:,:)=GY_M_M(1,IKU,1,ZTHETAE,XDYY,XDZZ,XDZY)
   ZWORK33(:,:,:)=GZ_M_M(1,IKU,1,ZTHETAE,XDZZ)
-  ZWORK34(:,:,:)= ZWORK31(:,:,:)*MZF(1,IKU,1,MYF(ZVOX(:,:,:)))     &
-                + ZWORK32(:,:,:)*MZF(1,IKU,1,MXF(ZVOY(:,:,:)))     &
+  ZWORK34(:,:,:)= ZWORK31(:,:,:)*MZF(MYF(ZVOX(:,:,:)))     &
+                + ZWORK32(:,:,:)*MZF(MXF(ZVOY(:,:,:)))     &
                 + ZWORK33(:,:,:)*(MYF(MXF(ZVOZ(:,:,:))) + ZCORIOZ(:,:,:))
   ZWORK34(:,:,:)=ZWORK34(:,:,:)*1E6/XRHODREF(:,:,:)
   TZFIELD%CMNHNAME   = 'POVOE'
@@ -2796,8 +2796,8 @@ IF (LMOIST_ES .AND. (NRR>0) ) THEN
   ZWORK31(:,:,:)=GX_M_M(1,IKU,1,ZTHETAES,XDXX,XDZZ,XDZX)
   ZWORK32(:,:,:)=GY_M_M(1,IKU,1,ZTHETAES,XDYY,XDZZ,XDZY)
   ZWORK33(:,:,:)=GZ_M_M(1,IKU,1,ZTHETAES,XDZZ)
-  ZWORK34(:,:,:)= ZWORK31(:,:,:)*MZF(1,IKU,1,MYF(ZVOX(:,:,:)))     &
-                + ZWORK32(:,:,:)*MZF(1,IKU,1,MXF(ZVOY(:,:,:)))     &
+  ZWORK34(:,:,:)= ZWORK31(:,:,:)*MZF(MYF(ZVOX(:,:,:)))     &
+                + ZWORK32(:,:,:)*MZF(MXF(ZVOY(:,:,:)))     &
                 + ZWORK33(:,:,:)*(MYF(MXF(ZVOZ(:,:,:))) + ZCORIOZ(:,:,:))
   ZWORK34(:,:,:)=ZWORK34(:,:,:)*1E6/XRHODREF(:,:,:)
   TZFIELD%CMNHNAME   = 'POVOES'
@@ -3496,7 +3496,7 @@ ENDIF
 !* B-V frequency to assess thermal tropopause
 !
 IF (LBV_FR) THEN
-  ZWORK32(:,:,:)=DZM(1,IKU,1,XTHT(:,:,:))/ MZM(1,IKU,1,XTHT(:,:,:))
+  ZWORK32(:,:,:)=DZM(XTHT(:,:,:))/ MZM(XTHT(:,:,:))
   DO JK=1,IKU
    DO JJ=1,IJU
     DO JI=1,IIU
@@ -3522,7 +3522,7 @@ IF (LBV_FR) THEN
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
 !  
   IF (NRR > 0) THEN
-    ZWORK32(:,:,:)=DZM(1,IKU,1,ZTHETAE(:,:,:))/ MZM(1,IKU,1,ZTHETAE(:,:,:))
+    ZWORK32(:,:,:)=DZM(ZTHETAE(:,:,:))/ MZM(ZTHETAE(:,:,:))
     DO JK=1,IKU
      DO JJ=1,IJU
       DO JI=1,IIU

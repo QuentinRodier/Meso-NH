@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 adiab 2006/06/06 12:01:31
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODI_FCT_SCALAR
@@ -140,11 +135,9 @@ INTEGER                                  :: JSV
 !
 REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3))  &
                      :: ZFX  ,ZFY  ,ZFZ    ! Advective flux components for each
-INTEGER :: IKU                     
 !
 !-------------------------------------------------------------------------------
 !
-IKU=SIZE(XZHAT)
 !*       1.   FLUX-CORRECTED TRANSPORT ADVECTION SCHEME for the HSV group
 !
 !
@@ -163,7 +156,7 @@ IKU=SIZE(XZHAT)
     IF (LBUDGET_SV)                               &
                             CALL BUDGET (PRSVS(:,:,:,JSV),JSV+12,'ADVY_BU_RSV')
 !
-    PRSVS(:,:,:,JSV) = PRSVS(:,:,:,JSV) - DZF(1,IKU,1,ZFZ(:,:,:)) 
+    PRSVS(:,:,:,JSV) = PRSVS(:,:,:,JSV) - DZF(ZFZ(:,:,:))
     IF (LBUDGET_SV)                               &
                             CALL BUDGET (PRSVS(:,:,:,JSV),JSV+12,'ADVZ_BU_RSV')
   END DO

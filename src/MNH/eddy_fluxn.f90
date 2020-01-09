@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #######################
@@ -232,7 +232,7 @@ ZBETA(:,:,:) = GX_M_U(1,IKU,1,ZCORIOZ(:,:,:),XDXX,XDZZ,XDZX)
 ZCORIOZ(:,:,:)= MXM(ZCORIOZ(:,:,:))
 ! Dry Brunt Vaisal frequency
 
-ZWORK32(:,:,:)=DZM(1,IKU,1,PTHM(:,:,:))/ MZM(1,IKU,1,PTHM(:,:,:))
+ZWORK32(:,:,:)=DZM(PTHM(:,:,:))/ MZM(PTHM(:,:,:))
 DO JK=1,(IKE+1)
    DO JJ=1,(IJE+1)
       DO JI=1,(IIE+1)

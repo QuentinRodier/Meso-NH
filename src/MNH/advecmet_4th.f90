@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2005-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 adiab 2006/05/22 19:00:38
 !-----------------------------------------------------------------
 !     ###############################
       MODULE MODI_ADVECMET_4TH
@@ -199,7 +194,6 @@ TYPE(HALO2LIST_ll), POINTER :: TPHALO2LIST ! list for diffusion
 INTEGER :: JRR           ! Loop index for  moist variables
 INTEGER:: IIB,IJB        ! Begining useful area  in x,y,z directions
 INTEGER:: IIE,IJE        ! End useful area in x,y,z directions
-INTEGER :: IKU
 !
 LOGICAL     :: GTKEALLOC                 ! true if TKE arrays are not zero-sized
 !
@@ -216,7 +210,6 @@ REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) :: ZMEANX, ZMEANY ! flux
 CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 !
 GTKEALLOC = SIZE(PTKET,1) /= 0
-IKU=SIZE(XZHAT)
 !
 !-------------------------------------------------------------------------------
 !
@@ -244,7 +237,7 @@ PRTHS(:,:,:) = PRTHS(:,:,:)                      &
 IF (LBUDGET_TH) CALL BUDGET (PRTHS,4,'ADVY_BU_RTH')
 !
 PRTHS(:,:,:) = PRTHS(:,:,:)                           &
-              -DZF(1,IKU,1, PRWCT(:,:,:) * MZM4(PTHT(:,:,:)) )
+              -DZF( PRWCT(:,:,:) * MZM4(PTHT(:,:,:)) )
 IF (LBUDGET_TH) CALL BUDGET (PRTHS,4,'ADVZ_BU_RTH')
 !
 ! Turbulence variables
@@ -267,7 +260,7 @@ IF ( GTKEALLOC ) THEN
   IF (LBUDGET_TKE) CALL BUDGET (PRTKES,5,'ADVY_BU_RTKE')
 !
    PRTKES(:,:,:) = PRTKES(:,:,:) 	                  &
-                 -DZF(1,IKU,1, PRWCT(:,:,:) * MZM4(PTKET(:,:,:)) )
+                 -DZF( PRWCT(:,:,:) * MZM4(PTKET(:,:,:)) )
   IF (LBUDGET_TKE) CALL BUDGET (PRTKES,5,'ADVZ_BU_RTKE')
 ENDIF
 !
@@ -304,7 +297,7 @@ DO JRR=1, KRR
   IF (JRR==7 .AND. LBUDGET_RH) CALL BUDGET (PRRS(:,:,:,7),12,'ADVY_BU_RRH')
 !
   PRRS(:,:,:,JRR) = PRRS(:,:,:,JRR)                            &
-                    -DZF(1,IKU,1, PRWCT(:,:,:) * MZM4(PRT(:,:,:,JRR)) )
+                    -DZF( PRWCT(:,:,:) * MZM4(PRT(:,:,:,JRR)) )
   IF (JRR==1 .AND. LBUDGET_RV) CALL BUDGET (PRRS(:,:,:,1),6 ,'ADVZ_BU_RRV')
   IF (JRR==2 .AND. LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2),7 ,'ADVZ_BU_RRC')
   IF (JRR==3 .AND. LBUDGET_RR) CALL BUDGET (PRRS(:,:,:,3),8 ,'ADVZ_BU_RRR')

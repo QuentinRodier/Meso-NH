@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
 !-----------------------------------------------------------------
 !     #######################
       MODULE MODI_DYN_SOURCES
@@ -240,28 +236,28 @@ IF ((.NOT.L1D).AND.(.NOT.LCARTESIAN) )  THEN
 !
   ELSE                           !  NO THINSHELL approximation
 !
-    ZWORK3(:,:,:) = 1.0 / ( XRADIUS + MZF(1,IKU,1,PZZ(:,:,:)) )
+    ZWORK3(:,:,:) = 1.0 / ( XRADIUS + MZF(PZZ(:,:,:)) )
     ZWORK1(:,:,:) = SPREAD( PCURVX(:,:),DIM=3,NCOPIES=IKU )
     ZWORK2(:,:,:) = SPREAD( PCURVY(:,:),DIM=3,NCOPIES=IKU )
     CALL MPPDB_CHECK3DM("DYN_SOOURCES:ZWORK3,ZWORK1,ZWORK2",PRECISION,&
                       & ZWORK3,ZWORK1,ZWORK2,&
                       & MXM( MYF(ZRVT*PVT) * ZWORK2 * ZWORK3 ) , &
-                      & MXM( ( MYF(PVT) * ZWORK1 - MZF(1,IKU,1,PWT) ) * ZWORK3 ) ,&
-                      & MYF(PVT) * ZWORK1 - MZF(1,IKU,1,PWT) , &
-                      & MYF(PVT) , MZF(1,IKU,1,PWT) , MXM(PWT) , MYM(PWT) )
+                      & MXM( ( MYF(PVT) * ZWORK1 - MZF(PWT) ) * ZWORK3 ) ,&
+                      & MYF(PVT) * ZWORK1 - MZF(PWT) , &
+                      & MYF(PVT) , MZF(PWT) , MXM(PWT) , MYM(PWT) )
     CALL MPPDB_CHECK3DM("DYN_SOOURCES:SUITE",PRECISION,&
          &  MXM(ZRVT),MXM(PVT),MXM(PWT),MXM(ZWORK1),MXM(ZWORK2),MXM(ZWORK3)  )
 !
     PRUS(:,:,:) = PRUS                                              &
     + MXM( MYF(ZRVT*PVT) * ZWORK2 * ZWORK3 )                        &
-    + ZRUT * MXM( ( MYF(PVT) * ZWORK1 - MZF(1,IKU,1,PWT) ) * ZWORK3 ) 
+    + ZRUT * MXM( ( MYF(PVT) * ZWORK1 - MZF(PWT) ) * ZWORK3 )
 !
     PRVS(:,:,:) = PRVS                                              &
     - MYM( MXF(ZRUT*PUT) * ZWORK1 * ZWORK3 )                        &
-    - ZRVT * MYM( (MXF(PUT) * ZWORK2 + MZF(1,IKU,1,PWT) ) * ZWORK3 )
+    - ZRVT * MYM( (MXF(PUT) * ZWORK2 + MZF(PWT) ) * ZWORK3 )
 !
     PRWS(:,:,:) = PRWS                                              &
-    +MZM(1,IKU,1, ( MXF(ZRUT*PUT) + MYF(ZRVT*PVT) ) * ZWORK3 ) 
+    +MZM( ( MXF(ZRUT*PUT) + MYF(ZRVT*PVT) ) * ZWORK3 )
 !
   END IF
 !
@@ -288,11 +284,11 @@ IF (LCORIO)   THEN
     ZWORK1(:,:,:) = SPREAD( PCORIOX(:,:),DIM=3,NCOPIES=IKU) * PRHODJ(:,:,:) 
     ZWORK2(:,:,:) = SPREAD( PCORIOY(:,:),DIM=3,NCOPIES=IKU) * PRHODJ(:,:,:)
 !
-    PRUS(:,:,:) = PRUS - MXM( ZWORK2 * MZF(1,IKU,1,PWT) ) 
+    PRUS(:,:,:) = PRUS - MXM( ZWORK2 * MZF(PWT) )
 !
-    PRVS(:,:,:) = PRVS - MYM( ZWORK1 * MZF(1,IKU,1,PWT) )
+    PRVS(:,:,:) = PRVS - MYM( ZWORK1 * MZF(PWT) )
 !
-    PRWS(:,:,:) = PRWS + MZM( 1,IKU,1,ZWORK2 * MXF(PUT) + ZWORK1 * MYF(PVT) )
+    PRWS(:,:,:) = PRWS + MZM( ZWORK2 * MXF(PUT) + ZWORK1 * MYF(PVT) )
 !
   END IF
 !
@@ -334,8 +330,8 @@ IF( .NOT.L1D ) THEN
 !
     PRTHS(:,:,:) = PRTHS(:,:,:) +  PRHODJ(:,:,:)                             &
       * ( ( XRD + XRV * PRT(:,:,:,1) ) * ZCPD_OV_RD / ZWORK1(:,:,:)  - 1. )  &
-      * PTHT(:,:,:)/PEXNREF(:,:,:)*MZF(1,IKU,1,PWT(:,:,:))*(ZG_OV_CPD/PTHVREF(:,:,:) &
-      -ZD1*4./7.*PEXNREF(:,:,:)/( XRADIUS+MZF(1,IKU,1,PZZ(:,:,:)) ))
+      * PTHT(:,:,:)/PEXNREF(:,:,:)*MZF(PWT(:,:,:))*(ZG_OV_CPD/PTHVREF(:,:,:) &
+      -ZD1*4./7.*PEXNREF(:,:,:)/( XRADIUS+MZF(PZZ(:,:,:)) ))
 !
   END IF
 !

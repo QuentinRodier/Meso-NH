@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -474,7 +474,7 @@ ELSE
 !
   ALLOCATE(ZZA(SIZE(PWT,1),SIZE(PWT,2),SIZE(PWT,3)))
   ALLOCATE(ZZF(SIZE(PWT,1),SIZE(PWT,2),SIZE(PWT,3)))
-  ZZA(:,:,:)   = MZF(1,IKU,1, PZZ(:,:,:) )
+  ZZA(:,:,:)   = MZF( PZZ(:,:,:) )
   ZZA(:,:,IKU) = 2.0*PZZ(:,:,IKU) - ZZA(:,:,IKU-1)
   ZDZHAT_INV_IKU = 1.0 / ( PZHAT(IKU)-PZHAT(IKU-1) )
 !
@@ -544,7 +544,7 @@ ELSE
   END DO
   CALL GET_HALO(ZWF)
 !
-  ZZF(:,:,:)   = MZF(1,IKU,1, PZZ(:,:,:) )
+  ZZF(:,:,:)   = MZF( PZZ(:,:,:) )
   ZZF(:,:,IKU) = 2.0*PZZ(:,:,IKU)-ZZF(:,:,IKU-1)
 !
   DO JL=1,IKU-1
@@ -583,7 +583,7 @@ END IF
 !!
 !! Ligne to add if you want W in Pa/s in namelist instead of m/s (omega = - w/(rho*g))
 !!
-!ZWF(:,:,:) = - ZWF(:,:,:)/(XG*MZM(1,IKU,1,(PRHODJ(:,:,:)/PJ(:,:,:))))
+!ZWF(:,:,:) = - ZWF(:,:,:)/(XG*MZM((PRHODJ(:,:,:)/PJ(:,:,:))))
 !
 !!============================
 !
@@ -634,49 +634,49 @@ ALLOCATE(ZRWCF(SIZE(PWT,1),SIZE(PWT,2),SIZE(PWT,3)))
 !*       4.1    integration of vertical motion (upstream scheme)
 !
 IF (LVERT_MOTION_FRC) THEN
-  ZDZZ(:,:,:) = DZM(1,IKU,1,MZF(1,IKU,1,PZZ(:,:,:)))
+  ZDZZ(:,:,:) = DZM(MZF(PZZ(:,:,:)))
   ZDZZ(:,:,IKU) = PZZ(:,:,IKU) - PZZ(:,:,IKU-1) ! same delta z in IKU and IKU -1
 !
-  ZRWCF(:,:,:) =   ZWF(:,:,:) * MZM(1,IKU,1,PRHODJ(:,:,:)) / ZDZZ(:,:,:)
+  ZRWCF(:,:,:) =   ZWF(:,:,:) * MZM(PRHODJ(:,:,:)) / ZDZZ(:,:,:)
   ZRWCF(:,:,1) = - ZRWCF(:,:,3)     ! Mirror hypothesis
 !
 ! forced vertical transport of U and V
 !
-  ZDZZ(:,:,:) = MXF(ZRWCF(:,:,:)) *DZM(1,IKU,1,PUT(:,:,:))
+  ZDZZ(:,:,:) = MXF(ZRWCF(:,:,:)) *DZM(PUT(:,:,:))
   PRUS(:,:,:) = PRUS(:,:,:) - UPSTREAM_Z(ZDZZ(:,:,:),ZRWCF(:,:,:))
-  ZDZZ(:,:,:) = MYF(ZRWCF(:,:,:)) *DZM(1,IKU,1,PVT(:,:,:))
+  ZDZZ(:,:,:) = MYF(ZRWCF(:,:,:)) *DZM(PVT(:,:,:))
   PRVS(:,:,:) = PRVS(:,:,:) - UPSTREAM_Z(ZDZZ(:,:,:),ZRWCF(:,:,:))
 !
 ! forced vertical transport of W
 !
   IF( .NOT.L1D ) THEN
-    ZDZZ(:,:,:) = MZF(1,IKU,1,ZRWCF(:,:,:)) *DZF(1,IKU,1,PWT(:,:,:))
+    ZDZZ(:,:,:) = MZF(ZRWCF(:,:,:)) *DZF(PWT(:,:,:))
     PRWS(:,:,:) = PRWS(:,:,:) - UPSTREAM_Z(ZDZZ(:,:,:),ZRWCF(:,:,:))
   END IF
 !
 ! forced vertical transport of THETA
 !
-  ZDZZ(:,:,:) = ZRWCF(:,:,:)  *DZM(1,IKU,1,PTHT(:,:,:))
+  ZDZZ(:,:,:) = ZRWCF(:,:,:)  *DZM(PTHT(:,:,:))
   PRTHS(:,:,:) = PRTHS(:,:,:) - UPSTREAM_Z(ZDZZ(:,:,:),ZRWCF(:,:,:))
 !
 ! forced vertical transport of TKE (if allocated)
 !
   IF( SIZE(PTKET) == SIZE(ZDZZ) ) THEN
-    ZDZZ(:,:,:) = ZRWCF(:,:,:)  *DZM(1,IKU,1,PTKET(:,:,:))
+    ZDZZ(:,:,:) = ZRWCF(:,:,:)  *DZM(PTKET(:,:,:))
     PRTKES(:,:,:) = PRTKES(:,:,:) - UPSTREAM_Z(ZDZZ(:,:,:),ZRWCF(:,:,:))
   END IF
 !
 ! forced vertical transport of water variables
 !
   DO JL = 1 , SIZE(PRRS,4)
-    ZDZZ(:,:,:) = ZRWCF(:,:,:) *DZM(1,IKU,1,PRT(:,:,:,JL))
+    ZDZZ(:,:,:) = ZRWCF(:,:,:) *DZM(PRT(:,:,:,JL))
     PRRS(:,:,:,JL) = PRRS(:,:,:,JL) - UPSTREAM_Z(ZDZZ(:,:,:),ZRWCF(:,:,:))
   END DO
 !
 ! forced vertical transport of scalar variables
 !
   DO JL = 1 , SIZE(PRSVS,4)
-    ZDZZ(:,:,:) = ZRWCF(:,:,:) *DZM(1,IKU,1,PSVT(:,:,:,JL))
+    ZDZZ(:,:,:) = ZRWCF(:,:,:) *DZM(PSVT(:,:,:,JL))
     PRSVS(:,:,:,JL) = PRSVS(:,:,:,JL) - UPSTREAM_Z(ZDZZ(:,:,:),ZRWCF(:,:,:))
   END DO
 !
@@ -757,7 +757,7 @@ PVFRC_PAST(:,:,:) = ZVF(:,:,:)
 !
 IF( LRELAX_THRV_FRC .OR. LRELAX_UV_FRC ) THEN
 !
-  ZDZZ(:,:,:) = DZM(1,IKU,1,MZF(1,IKU,1,PZZ(:,:,:)))
+  ZDZZ(:,:,:) = DZM(MZF(PZZ(:,:,:)))
   ZDZZ(:,:,IKU) = PZZ(:,:,IKU) - PZZ(:,:,IKU-1)
 !
 ! define the mask where the relaxation is to be applied
@@ -772,7 +772,7 @@ IF( LRELAX_THRV_FRC .OR. LRELAX_UV_FRC ) THEN
 !callabortstop
       CALL PRINT_MSG(NVERB_FATAL,'GEN','FORCING','wrong CRELAX_HEIGHT_TYPE option')
   END SELECT
-  WHERE ( MZF(1,IKU,1,PZZ(:,:,:)) .LE. XRELAX_HEIGHT_FRC )
+  WHERE ( MZF(PZZ(:,:,:)) .LE. XRELAX_HEIGHT_FRC )
     GRELAX_MASK_FRC = .FALSE.
   END WHERE
 !

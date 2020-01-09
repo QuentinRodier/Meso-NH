@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1997-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1997-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -1286,7 +1286,7 @@ ZRHODJ(IXOR:IXEND,IYOR:IYEND,IKB) = 2.*ZRHODJ(IXOR:IXEND,IYOR:IYEND,IKB)
 ZRHODJ(IXOR:IXEND,IYOR:IYEND,IKB+1:IKU) = ZRHODJ(IXOR:IXEND,IYOR:IYEND,IKB+1:IKU)   &
                                          +ZRHODJ(IXOR:IXEND,IYOR:IYEND,IKB:IKU-1)
 !
-ZAVE_RHODJ=MZM(1,IKU,1,PRHODJ)
+ZAVE_RHODJ=MZM(PRHODJ)
 PRWS(IXOR:IXEND,IYOR:IYEND,:) = PRWS(IXOR:IXEND,IYOR:IYEND,:)        &
      - ZK2W * ZAVE_RHODJ(IXOR:IXEND,IYOR:IYEND,:) * ( PWM(IXOR:IXEND,IYOR:IYEND,:) &
                  -ZWM(IXOR:IXEND,IYOR:IYEND,:)/ZRHODJ(IXOR:IXEND,IYOR:IYEND,:) )

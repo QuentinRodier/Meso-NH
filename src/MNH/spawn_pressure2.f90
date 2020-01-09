@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1997-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1997-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -339,9 +339,9 @@ IKE=IKU-JPVEXT
 !
   ALLOCATE(ZGRIDA(IIU,IJU,IKU))
   ALLOCATE(ZGRIDB(IIU,IJU,IKU))
-  ZGRIDA(:,:,:)=MZF(1,IKU,1,PZZ_LS(:,:,:))
+  ZGRIDA(:,:,:)=MZF(PZZ_LS(:,:,:))
   ZGRIDA(:,:,IKU)=2.*ZGRIDA(:,:,IKU-1)-ZGRIDA(:,:,IKU-2)
-  ZGRIDB(:,:,:)=MZF(1,IKU,1,PZZ(:,:,:))
+  ZGRIDB(:,:,:)=MZF(PZZ(:,:,:))
   ZGRIDB(:,:,IKU)=2.*ZGRIDB(:,:,IKU-1)-ZGRIDB(:,:,IKU-2)
   CALL COEF_VER_INTERP_LIN(ZGRIDA(:,:,:),ZGRIDB(:,:,:))
 !

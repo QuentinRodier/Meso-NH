@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -569,10 +569,10 @@ END IF
 CALL MPPDB_CHECK3DM("before MXM PRESSUREZ :PRU/V/WS",PRECISION,PRUS,PRVS,PRWS)
 IF(CEQNSYS=='MAE' .OR. CEQNSYS=='DUR') THEN
   PRUS = PRUS - MXM(PRHODJ * XCPD * ZTHETAV) * ZDV_SOURCE
-  PRWS = PRWS - MZM(1,IKU,1,PRHODJ * XCPD * ZTHETAV) * GZ_M_W(1,IKU,1,ZPHIT,PDZZ)
+  PRWS = PRWS - MZM(PRHODJ * XCPD * ZTHETAV) * GZ_M_W(1,IKU,1,ZPHIT,PDZZ)
 ELSEIF(CEQNSYS=='LHE') THEN
   PRUS = PRUS - MXM(PRHODJ) * ZDV_SOURCE
-  PRWS = PRWS - MZM(1,IKU,1,PRHODJ) * GZ_M_W(1,IKU,1,ZPHIT,PDZZ)
+  PRWS = PRWS - MZM(PRHODJ) * GZ_M_W(1,IKU,1,ZPHIT,PDZZ)
 END IF
 !
 IF(.NOT. L2D) THEN

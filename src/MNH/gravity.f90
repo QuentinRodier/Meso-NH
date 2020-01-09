@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
 !-----------------------------------------------------------------
 !     ###################
       MODULE MODI_GRAVITY    
@@ -141,15 +137,12 @@ REAL       ::  ZRV_OV_RD    ! = RV / RD
 INTEGER    ::  JWATER       ! loop index on the different types of water
 REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) ::           &
                               ZWORK1, ZWORK2
-INTEGER :: IKU
 !
 !-------------------------------------------------------------------------------
 !
 !
 !*       1.     COMPUTES THE GRAVITY TERM
 !	        -------------------------
-!
-IKU=SIZE(PTHT,3)
 !
 IF( .NOT.L1D ) THEN     ! no buoyancy for 1D case
 !
@@ -179,7 +172,7 @@ IF( .NOT.L1D ) THEN     ! no buoyancy for 1D case
 !
 !   compute the gravity term
 !
-  PRWS(:,:,:) = PRWS + XG * MZM(1,IKU,1, ( (ZWORK2/PTHVREF) - 1. ) * PRHODJ )
+  PRWS(:,:,:) = PRWS + XG * MZM( ( (ZWORK2/PTHVREF) - 1. ) * PRHODJ )
 !
 !    the extrapolation for the PTHT and the THVREF must be the same at the
 !    ground

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -317,7 +317,7 @@ ZSOURCE(:,:,:) = PRTKES(:,:,:) / PRHODJ(:,:,:)  +  PRTKESM(:,:,:) / PRHODJ(:,:,:
 ! matrix inverted in TRIDIAG 
 !
 ZA(:,:,:)     = - PTSTEP * XCET * &
-                MZM(KKA,KKU,KKL,ZKEFF) * MZM(KKA,KKU,KKL,PRHODJ) / PDZZ**2
+                MZM(ZKEFF) * MZM(PRHODJ) / PDZZ**2
 !
 ! Compute TKE at time t+deltat: ( stored in ZRES )
 !
@@ -349,20 +349,20 @@ IF ( LLES_CALL .OR.                         &
 ! Compute the cartesian vertical flux of TKE in ZFLX
 !
 
-  ZFLX(:,:,:)   = - XCET * MZM(KKA,KKU,KKL,ZKEFF) *   &
-                  DZM(KKA,KKU,KKL,PIMPL * ZRES + PEXPL * PTKEM ) / PDZZ
+  ZFLX(:,:,:)   = - XCET * MZM(ZKEFF) *   &
+                  DZM(PIMPL * ZRES + PEXPL * PTKEM ) / PDZZ
 !
   ZFLX(:,:,IKB) = 0.
   ZFLX(:,:,KKA) = 0.
 !
 ! Compute the whole turbulent TRansport of TKE:
 !
-  PTR(:,:,:)= PTR - DZF(KKA,KKU,KKL, MZM(KKA,KKU,KKL,PRHODJ) * ZFLX / PDZZ ) /PRHODJ
+  PTR(:,:,:)= PTR - DZF( MZM(PRHODJ) * ZFLX / PDZZ ) /PRHODJ
 !
 ! Storage in the LES configuration
 !
   IF (LLES_CALL) THEN
-    CALL LES_MEAN_SUBGRID( MZF(KKA,KKU,KKL,ZFLX), X_LES_SUBGRID_WTke )
+    CALL LES_MEAN_SUBGRID( MZF(ZFLX), X_LES_SUBGRID_WTke )
     CALL LES_MEAN_SUBGRID( -PTR, X_LES_SUBGRID_ddz_WTke )
   END IF
 !

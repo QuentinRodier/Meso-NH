@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -377,7 +377,7 @@ IKTB =1+JPVEXT_TURB
 !
 ISV=SIZE(PSVM,4)
 !
-ZKEFF(:,:,:) = MZM(KKA,KKU,KKL, PLM(:,:,:) * SQRT(PTKEM(:,:,:)) )
+ZKEFF(:,:,:) = MZM( PLM(:,:,:) * SQRT(PTKEM(:,:,:)) )
 !
 IF(LBLOWSNOW) THEN
 ! See Vionnet (PhD, 2012) for a complete discussion around the value of the Schmidt number for blowing snow variables           
@@ -396,7 +396,7 @@ DO JSV=1,ISV
 !
 ! Preparation of the arguments for TRIDIAG 
   ZA(:,:,:)    = -PTSTEP*ZCSV*PPSI_SV(:,:,:,JSV) *   &
-                 ZKEFF * MZM(KKA,KKU,KKL,PRHODJ) /   &
+                 ZKEFF * MZM(PRHODJ) /   &
                  PDZZ**2
   ZSOURCE(:,:,:) = 0.
 !
@@ -431,8 +431,8 @@ DO JSV=1,ISV
   IF ( (OTURB_FLX .AND. OCLOSE_OUT) .OR. LLES_CALL ) THEN
     ! Diagnostic of the cartesian vertical flux
     !
-    ZFLXZ(:,:,:) = -ZCSV * PPSI_SV(:,:,:,JSV) * MZM(KKA,KKU,KKL,PLM*SQRT(PTKEM)) / PDZZ * &
-                  DZM(KKA,KKU,KKL, PIMPL*ZRES(:,:,:) + PEXPL*PSVM(:,:,:,JSV) )
+    ZFLXZ(:,:,:) = -ZCSV * PPSI_SV(:,:,:,JSV) * MZM(PLM*SQRT(PTKEM)) / PDZZ * &
+                  DZM( PIMPL*ZRES(:,:,:) + PEXPL*PSVM(:,:,:,JSV) )
     ! surface flux
     !* in 3DIM case, a part of the flux goes vertically, and another goes horizontally
     ! (in presence of slopes)
@@ -476,13 +476,13 @@ DO JSV=1,ISV
   !
   IF (LLES_CALL) THEN
     CALL SECOND_MNH(ZTIME1)
-    CALL LES_MEAN_SUBGRID( MZF(KKA,KKU,KKL,ZFLXZ), X_LES_SUBGRID_WSv(:,:,:,JSV) )
-    CALL LES_MEAN_SUBGRID( GZ_W_M(KKA,KKU,KKL,PWM,PDZZ)*MZF(KKA,KKU,KKL,ZFLXZ), &
+    CALL LES_MEAN_SUBGRID( MZF(ZFLXZ), X_LES_SUBGRID_WSv(:,:,:,JSV) )
+    CALL LES_MEAN_SUBGRID( GZ_W_M(KKA,KKU,KKL,PWM,PDZZ)*MZF(ZFLXZ), &
                            X_LES_RES_ddxa_W_SBG_UaSv(:,:,:,JSV) )
-    CALL LES_MEAN_SUBGRID( MZF(KKA,KKU,KKL,GZ_M_W(KKA,KKU,KKL,PSVM(:,:,:,JSV),PDZZ)*ZFLXZ), &
+    CALL LES_MEAN_SUBGRID( MZF(GZ_M_W(KKA,KKU,KKL,PSVM(:,:,:,JSV),PDZZ)*ZFLXZ), &
                            X_LES_RES_ddxa_Sv_SBG_UaSv(:,:,:,JSV) )
-    CALL LES_MEAN_SUBGRID( -ZCSVP*SQRT(PTKEM)/PLM*MZF(KKA,KKU,KKL,ZFLXZ), X_LES_SUBGRID_SvPz(:,:,:,JSV) )
-    CALL LES_MEAN_SUBGRID( MZF(KKA,KKU,KKL,PWM*ZFLXZ), X_LES_RES_W_SBG_WSv(:,:,:,JSV) )
+    CALL LES_MEAN_SUBGRID( -ZCSVP*SQRT(PTKEM)/PLM*MZF(ZFLXZ), X_LES_SUBGRID_SvPz(:,:,:,JSV) )
+    CALL LES_MEAN_SUBGRID( MZF(PWM*ZFLXZ), X_LES_RES_W_SBG_WSv(:,:,:,JSV) )
     CALL SECOND_MNH(ZTIME2)
     XTIME_LES = XTIME_LES + ZTIME2 - ZTIME1
   END IF

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2006-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2006-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -151,7 +151,7 @@ ALLOCATE (ZN4HGTI_HALO2(IIB-2:IIE+2,IJB-2:IJE+2),ZN4HGTJ_HALO2(IIB-2:IIE+2,IJB-2
 NULLIFY(TZHGTMASS_ll,TZHGTHALO2_ll)
 
 ! Compute height field at mass points
-ZZMASS = MZF(1,IKU,1,PZZ)
+ZZMASS = MZF(PZZ)
 
 CALL INIT_HALO2_ll(TZHGTHALO2_ll,1,IIU,IJU,IKU)
 CALL ADD3DFIELD_ll( TZHGTMASS_ll, ZZMASS, 'ZDIFFUSETUP::ZZMASS' )

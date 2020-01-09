@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2006-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 les 2006/10/16 14:59:17
 !-----------------------------------------------------------------
 !     #######################
       SUBROUTINE  LES_CLOUD_MASKS_n
@@ -170,7 +165,7 @@ ZWORK1D=0.
 ZWORK3D=0.  
 ZWORK3DB=0.
 !
-CALL LES_VER_INT(MZF(1,IKU,1,XWT), ZW_LES)
+CALL LES_VER_INT(MZF(XWT), ZW_LES)
 IF (NSV_CS>0) THEN
   DO JSV=NSV_CSBEG, NSV_CSEND
     CALL LES_VER_INT(  XSVT(:,:,:,JSV),  &

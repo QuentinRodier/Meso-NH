@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -130,14 +130,12 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS,PRSVS         !
 INTEGER   :: IINFO_ll              ! return code of parallel routine
 INTEGER   :: JRR,JSV              ! loop counters
 !
-INTEGER   :: IKU
 INTEGER   :: ILUOUT         ! logical unit numbers of output-listing
 INTEGER   :: IRESP          ! IRESP  : return-code if a problem appears
                                     !in LFI subroutines at the open of the file
 REAL      :: ZRATIO, ZMASSTOT, ZMASSPOS
 !------------------------------------------------------------------------------
 !
-IKU=SIZE(XZHAT)
 ILUOUT = TLUOUT%NLU
 !
 !*       1.     TRANSFORMS THE SOURCE TERMS INTO PROGNOSTIC VARIABLES
@@ -147,7 +145,7 @@ ILUOUT = TLUOUT%NLU
 !
 PRUS(:,:,:) = PRUS(:,:,:)*PTSTEP / MXM(PRHODJ)
 PRVS(:,:,:) = PRVS(:,:,:)*PTSTEP / MYM(PRHODJ)
-PRWS(:,:,:) = PRWS(:,:,:)*PTSTEP / MZM(1,IKU,1,PRHODJ)
+PRWS(:,:,:) = PRWS(:,:,:)*PTSTEP / MZM(PRHODJ)
 !
 !        1.b Meteorological scalar variables
 !

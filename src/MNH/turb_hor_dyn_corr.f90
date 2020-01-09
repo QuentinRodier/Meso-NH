@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -278,7 +278,7 @@ GX_U_M_PUM = GX_U_M(1,IKU,1,PUM,PDXX,PDZZ,PDZX)
 IF (.NOT. L2D) GY_V_M_PVM = GY_V_M(1,IKU,1,PVM,PDYY,PDZZ,PDZY)
 GZ_W_M_PWM = GZ_W_M(1,IKU,1,PWM,PDZZ)
 !
-ZMZF_DZZ = MZF(1,IKU,1,PDZZ)
+ZMZF_DZZ = MZF(PDZZ)
 !
 CALL ADD3DFIELD_ll( TZFIELDS_ll, ZFLX, 'TURB_HOR_DYN_CORR::ZFLX' )
 
@@ -395,7 +395,7 @@ CALL MPPDB_CHECK3DM("before turb_corr:PRUS,PRHODJ,ZFLX,PDXX,PDZX,PINV_PDZZ",PREC
 
   PRUS(:,:,:)=PRUS                                            &
               -DXM(PRHODJ * ZFLX / MXF(PDXX) )                &
-              +DZF(1,IKU,1, PDZX / MZM(1,IKU,1,PDXX) * MXM( MZM(1,IKU,1,PRHODJ*ZFLX) * PINV_PDZZ ) )
+              +DZF( PDZX / MZM(PDXX) * MXM( MZM(PRHODJ*ZFLX) * PINV_PDZZ ) )
 CALL MPPDB_CHECK3DM("after  turb_corr:PRUS,PRHODJ,ZFLX,PDXX,PDZX,PINV_PDZZ",PRECISION,&
                    & PRUS,PRHODJ,ZFLX,PDXX,PDZX,PINV_PDZZ )
 ELSE
@@ -488,8 +488,8 @@ IF (.NOT. L2D) THEN
   IF (.NOT. LFLAT) THEN
     PRVS(:,:,:)=PRVS                                          &
                 -DYM(PRHODJ * ZFLX / MYF(PDYY) )              &
-                +DZF(1,IKU,1, PDZY / MZM(1,IKU,1,PDYY) *                      &
-                MYM( MZM(1,IKU,1,PRHODJ*ZFLX) * PINV_PDZZ ) )
+                +DZF( PDZY / MZM(PDYY) *                      &
+                MYM( MZM(PRHODJ*ZFLX) * PINV_PDZZ ) )
   ELSE
     PRVS(:,:,:)=PRVS -DYM(PRHODJ * ZFLX / MYF(PDYY) )
   END IF
@@ -572,13 +572,13 @@ END IF
 !
 ! Complete the W tendency
 !
-!PRWS(:,:,:)=PRWS(:,:,:) - DZM(1,IKU,1, PRHODJ*ZFLX/MZF(1,IKU,1,PDZZ) )
+!PRWS(:,:,:)=PRWS(:,:,:) - DZM( PRHODJ*ZFLX/MZF(PDZZ) )
 ZDFDDWDZ(:,:,:)    = - XCMFS * PK(:,:,:) * (4./3.)
 ZDFDDWDZ(:,:,:IKB) = 0.
 !
 CALL TRIDIAG_W(PWM,ZFLX,ZDFDDWDZ,PTSTEP,ZMZF_DZZ,PRHODJ,ZWP)
 !
-PRWS = PRWS(:,:,:) + MZM(1,IKU,1,PRHODJ(:,:,:))*(ZWP(:,:,:)-PWM(:,:,:))/PTSTEP
+PRWS = PRWS(:,:,:) + MZM(PRHODJ(:,:,:))*(ZWP(:,:,:)-PWM(:,:,:))/PTSTEP
 !
 !* recomputes flux using guess of W
 !
@@ -606,17 +606,17 @@ IF (LLES_CALL .AND. KSPLT==1) THEN
   CALL LES_MEAN_SUBGRID( ZFLX, X_LES_SUBGRID_W2 ) 
   CALL LES_MEAN_SUBGRID( -ZWORK, X_LES_RES_ddxa_W_SBG_UaW , .TRUE.)
   CALL LES_MEAN_SUBGRID( GZ_M_M(1,IKU,1,PTHLM,PDZZ)*ZFLX, X_LES_RES_ddxa_Thl_SBG_UaW , .TRUE.)
-  CALL LES_MEAN_SUBGRID(ZFLX*MZF(1,IKU,1,GZ_M_W(1,IKU,1,PTHLM,PDZZ)),X_LES_RES_ddz_Thl_SBG_W2)
+  CALL LES_MEAN_SUBGRID(ZFLX*MZF(GZ_M_W(1,IKU,1,PTHLM,PDZZ)),X_LES_RES_ddz_Thl_SBG_W2)
   IF (KRR>=1) THEN
     CALL LES_MEAN_SUBGRID( GZ_M_M(1,IKU,1,PRM(:,:,:,1),PDZZ)*ZFLX, &
                            X_LES_RES_ddxa_Rt_SBG_UaW , .TRUE.)
-    CALL LES_MEAN_SUBGRID(ZFLX*MZF(1,IKU,1,GZ_M_W(1,IKU,1,PRM(:,:,:,1),PDZZ)), &
+    CALL LES_MEAN_SUBGRID(ZFLX*MZF(GZ_M_W(1,IKU,1,PRM(:,:,:,1),PDZZ)), &
                            X_LES_RES_ddz_Rt_SBG_W2)
   END IF
   DO JSV=1,NSV
     CALL LES_MEAN_SUBGRID( GZ_M_M(1,IKU,1,PSVM(:,:,:,JSV),PDZZ)*ZFLX, &
                            X_LES_RES_ddxa_Sv_SBG_UaW(:,:,:,JSV) , .TRUE.)
-    CALL LES_MEAN_SUBGRID(ZFLX*MZF(1,IKU,1,GZ_M_W(1,IKU,1,PSVM(:,:,:,JSV),PDZZ)), &
+    CALL LES_MEAN_SUBGRID(ZFLX*MZF(GZ_M_W(1,IKU,1,PSVM(:,:,:,JSV),PDZZ)), &
                            X_LES_RES_ddz_Sv_SBG_W2(:,:,:,JSV))
   END DO
   CALL SECOND_MNH(ZTIME2)
