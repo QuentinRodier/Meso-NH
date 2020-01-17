@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -45,11 +45,12 @@
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 19/07/2019: parameters to identify budget number
 !  P. Wautelet 15/11/2019: remove unused CBURECORD variable
+!  P. Wautelet 17/01/2020: add new budget data types
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
-USE MODD_PARAMETERS, ONLY :JPBUMAX, JPBUPROMAX, NMNHNAMELGTMAX
+USE MODD_PARAMETERS, ONLY :JPBUMAX, JPBUPROMAX, NBUNAMELGTMAX, NCOMMENTLGTMAX
 
 implicit none
 
@@ -69,6 +70,45 @@ integer, parameter :: NBUDGET_RS  = 10 ! Reference number for budget of RhoJrs a
 integer, parameter :: NBUDGET_RG  = 11 ! Reference number for budget of RhoJrg and/or LES budgets with rg
 integer, parameter :: NBUDGET_RH  = 12 ! Reference number for budget of RhoJrh and/or LES budgets with rh
 integer, parameter :: NBUDGET_SV1 = 13 ! Reference number for 1st budget of RhoJsv and/or LES budgets with sv
+
+integer :: nbudgets ! Number of budget categories
+
+
+type tbudgetdata
+  character(len=NBUNAMELGTMAX)  :: cname    = ''
+  character(len=NCOMMENTLGTMAX) :: ccomment = ''
+  integer :: ngroups     = 0 !Number of groups of source terms to store
+  integer :: nsources    = 0 !Number of source terms
+  integer :: nsourcesmax = 0 !Maximum number of source terms
+  integer :: ntmpstoresource = 0 !Reference of the source term using the xtmpstore array
+  logical :: lenabled = .false. ! True if corresponding budget flag is set to true
+  real, dimension(:,:,:), allocatable :: xtmpstore ! Array to store temporary data
+                                                   !  (to allow to store the difference between 2 places)
+  type(tbusourcedata), dimension(:), allocatable :: tsources ! Full list of source terms (used or not)
+  type(tbugroupdata),  dimension(:), allocatable :: tgroups  ! Full list of groups of source terms (to be written)
+end type tbudgetdata
+
+
+type tbusourcedata
+  character(len=NBUNAMELGTMAX)  :: cname    = ''
+  integer :: ngroup = 0 ! Number of the source term group in which storing the source term
+                        !  (0: no store, 1: individual store, >1: number of the group)
+  logical :: lenabled   = .false.
+  logical :: ldonotinit = .false. ! if true, does not need a call to Budget_store_init
+                                  ! It may be true only if the source term is in a group not containing other sources
+  logical :: loverwrite = .false. ! if true, source term values will overwrite the previuos ones
+                                  ! It may be true only if the source term is in a group not containing other sources
+end type tbusourcedata
+
+type tbugroupdata
+  character(len=NBUNAMELGTMAX)  :: cname    = ''
+  integer :: nsources = 0 ! Number of source terms composing this group
+  integer, dimension(:),     allocatable :: nsourcelist ! List of the source terms composing this group
+  real,    dimension(:,:,:), allocatable :: xdata ! Array to store the budget data
+end type tbugroupdata
+
+type(tbudgetdata), dimension(:), allocatable, save :: tbudgets
+
 
 !                       General variables
 LOGICAL, SAVE :: LBU_ENABLE
