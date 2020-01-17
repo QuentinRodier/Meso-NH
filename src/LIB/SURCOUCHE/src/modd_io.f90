@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -9,6 +9,7 @@
 !  P. Wautelet 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll to allow to disable writes (for bench purposes)
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !  P. Wautelet 12/03/2019: add TMAINFILE field in TFILEDATA
+!  P. Wautelet 17/01/2020: add 'BUD' category for Print_msg + corresponding namelist variables
 !-----------------------------------------------------------------
 
 MODULE MODD_IO
@@ -41,6 +42,8 @@ LOGICAL, SAVE :: LLFIREAD   = .FALSE. ! TRUE will force LFI read (instead of Net
 LOGICAL, SAVE :: LVERB_OUTLST = .TRUE.  ! TRUE will PRINT_MSG in OUTPUT_LISTINGn files
 LOGICAL, SAVE :: LVERB_STDOUT = .FALSE. ! TRUE will also PRINT_MSG on standard output
 LOGICAL, SAVE :: LVERB_ALLPRC = .FALSE. ! FALSE: only process 0 do PRINT_MSG, TRUE: all processes
+INTEGER, SAVE :: NBUD_VERB        = NVERB_WARNING ! Verbosity level for budgets
+INTEGER, SAVE :: NBUD_ABORT_LEVEL = NVERB_ERROR   ! Level of budget error necessary to force stop of application
 INTEGER, SAVE :: NIO_VERB        = NVERB_WARNING ! Verbosity level for IO
 INTEGER, SAVE :: NIO_ABORT_LEVEL = NVERB_ERROR   ! Level of IO error necessary to force stop of application
 

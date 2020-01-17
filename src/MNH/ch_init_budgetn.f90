@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2016-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2016-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -120,7 +120,7 @@ IF (YWORKSTR /= '') THEN
       END IF
    END DO
    IF (GCHECKFAILED) THEN
-     call Print_msg( NVERB_FATAL, 'GEN', 'CH_INIT_BUDGET_n', 'wrong (misspelled) CSPEC_BUDGET encountered' )
+     call Print_msg( NVERB_FATAL, 'BUD', 'CH_INIT_BUDGET_n', 'wrong (misspelled) CSPEC_BUDGET encountered' )
    END IF
 ELSE
    DEALLOCATE(CNAMES_BUDGET)

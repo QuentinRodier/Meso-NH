@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -417,7 +417,7 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, pburhodj, kp, knocompress, 
         end where
 
     case default
-      call Print_msg( NVERB_ERROR, 'GEN', 'Store_one_budget_rho', 'unknown CBUTYPE' )
+      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_rho', 'unknown CBUTYPE' )
   end select
 
   allocate( ybucomment(1 ) )
@@ -455,7 +455,7 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, pburhodj, kp, knocompress, 
       write( ygroup_name, fmt = "('RJZ__',I4.4)" ) nbutshift
 
     case default
-      call Print_msg( NVERB_ERROR, 'GEN', 'Store_one_budget_rho', 'unknown budget type' )
+      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_rho', 'unknown budget type' )
   end select
 
   call Write_diachro( tpdiafile, tluout, ygroup_name, ybutype, iworkgrid,                          &
@@ -507,7 +507,7 @@ subroutine Store_one_budget( tpdiafile, tpdates, pbudarray, prhodjn, kp, knocomp
   real,               dimension(:,:,:,:,:,:), allocatable :: zworkt
 
   if( .not. allocated( prhodjn ) ) then
-    call Print_msg( NVERB_ERROR, 'GEN', 'Store_one_budget', 'prhodjn not allocated' )
+    call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget', 'prhodjn not allocated' )
     return
   end if
 
@@ -542,7 +542,7 @@ subroutine Store_one_budget( tpdiafile, tpdates, pbudarray, prhodjn, kp, knocomp
         end do
 
     case default
-      call Print_msg( NVERB_ERROR, 'GEN', 'Store_one_budget', 'unknown CBUTYPE' )
+      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget', 'unknown CBUTYPE' )
   end select
 
   deallocate(zconvert)
@@ -635,7 +635,7 @@ subroutine Store_one_budget( tpdiafile, tpdates, pbudarray, prhodjn, kp, knocomp
       write( ygroup_name, fmt = "('SV',I3.3,I4.4)") jsv, nbutshift
 
     case default
-      call Print_msg( NVERB_ERROR, 'GEN', 'Store_one_budget', 'unknown budget type' )
+      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget', 'unknown budget type' )
   end select
 
   CALL Write_diachro( tpdiafile, tluout, ygroup_name, ybutype, iworkgrid,                              &

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -2736,7 +2736,7 @@ IF (CBUTYPE=='MASK') THEN
   WRITE(UNIT=KLUOUT, FMT= '("BUMASK = ",I4.4)' ) NBUMASK
 END IF
 IF (GERROR) THEN
-  call Print_msg( NVERB_FATAL, 'GEN', 'INI_BUDGET', '' )
+  call Print_msg( NVERB_FATAL, 'BUD', 'INI_BUDGET', '' )
 ENDIF
 !-------------------------------------------------------------------------------
 !*       5.    ALLOCATE MEMORY FOR BUDGET STORAGE ARRAYS

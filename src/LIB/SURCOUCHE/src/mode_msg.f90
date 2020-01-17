@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2017-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2017-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -9,6 +9,7 @@
 !  P. Wautelet 27/02/2019: module extracted from mode_io.f90
 !  P. Wautelet 04/04/2019: force write on stderr for all processes in print_msg if abort
 !  P. Wautelet 02/07/2019: flush messages also for files opened with newunit (logical unit can be negative)
+!  P. Wautelet 17/01/2020: add 'BUD' category for Print_msg
 !-----------------------------------------------------------------
 MODULE MODE_MSG
 !
@@ -23,7 +24,7 @@ SUBROUTINE PRINT_MSG(KVERB,HDOMAIN,HSUBR,HMSG)
 USE ISO_FORTRAN_ENV, ONLY: ERROR_UNIT, OUTPUT_UNIT
 !
 USE MODD_CONF,       ONLY: CPROGRAM
-USE MODD_IO,         ONLY: NIO_VERB, NIO_ABORT_LEVEL, NGEN_VERB, NGEN_ABORT_LEVEL, &
+USE MODD_IO,         ONLY: NBUD_VERB, NBUD_ABORT_LEVEL, NIO_VERB, NIO_ABORT_LEVEL, NGEN_VERB, NGEN_ABORT_LEVEL, &
                            LVERB_OUTLST, LVERB_STDOUT, LVERB_ALLPRC, TFILE_OUTPUTLISTING
 USE MODD_LUNIT,      ONLY: TLUOUT0
 USE MODD_VAR_ll,     ONLY: IP, NMNH_COMM_WORLD
@@ -67,6 +68,10 @@ ELSE
 END IF
 !
 SELECT CASE(HDOMAIN)
+  CASE('BUD')
+    !Budget messages
+    IMAXVERB    = NBUD_VERB
+    IABORTLEVEL = NBUD_ABORT_LEVEL
   CASE('IO')
     IMAXVERB    = NIO_VERB
     IABORTLEVEL = NIO_ABORT_LEVEL
