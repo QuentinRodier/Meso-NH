@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2019-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2019-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -19,12 +19,14 @@ module mode_tools
 !
 ! Modifications:
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
+!  P. Wautelet 17/01/2020: move Quicksort to tools.f90
 
 implicit none
 
 private
 
 public :: Countjv
+public :: Quicksort
 public :: Upcase
 
 interface Countjv
@@ -77,6 +79,44 @@ function Countjv3d(ltab,i1,i2,i3) result(ic)
     end do
   end do
 end function Countjv3d
+
+
+recursive subroutine Quicksort( ka, kbeg, kend, kpos )
+  integer, dimension(:),           intent(inout) :: ka
+  integer,                         intent(in)    :: kbeg, kend
+  integer, dimension(:), optional, intent(inout) :: kpos
+
+  integer :: ji, jj
+  integer :: itmp, itmp2, ival
+
+  ival = ka( ( kbeg + kend ) / 2 )
+  ji = kbeg
+  jj = kend
+  do
+     do while ( ka(ji) < ival )
+        ji = ji + 1
+     end do
+     do while ( ival < ka(jj) )
+        jj = jj - 1
+     end do
+     if ( ji >= jj ) exit
+
+     itmp = ka(ji)
+     ka(ji) = ka(jj)
+     ka(jj) = itmp
+
+     if ( present( kpos ) ) then
+      itmp2 = kpos(ji)
+      kpos(ji) = kpos(jj)
+      kpos(jj) = itmp2
+     end if
+
+     ji=ji+1
+     jj=jj-1
+  end do
+  if ( kbeg   < ji - 1 ) call Quicksort( ka, kbeg,   ji - 1, kpos )
+  if ( jj + 1 < kend   ) call Quicksort( ka, jj + 1, kend,   kpos )
+end subroutine Quicksort
 
 
 function Upcase(hstring)
