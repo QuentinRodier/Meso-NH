@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -242,6 +242,7 @@ END MODULE MODI_RAIN_ICE_RED
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !  P. Wautelet 29/05/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
+!  P. Wautelet 17/01/2020: move Quicksort to tools.f90
 !
 !*       0.    DECLARATIONS
 !              ------------
@@ -1729,30 +1730,5 @@ CONTAINS
   !
   !
   END SUBROUTINE CORRECT_NEGATIVITIES
-!
-  recursive subroutine quicksort(a, first, last)
-  implicit none
-  integer  a(*), x, t
-  integer first, last
-  integer i, j
-
-  x = a( (first+last) / 2 )
-  i = first
-  j = last
-  do
-     do while (a(i) < x)
-        i=i+1
-     end do
-     do while (x < a(j))
-        j=j-1
-     end do
-     if (i >= j) exit
-     t = a(i);  a(i) = a(j);  a(j) = t
-     i=i+1
-     j=j-1
-  end do
-  if (first < i-1) call quicksort(a, first, i-1)
-  if (j+1 < last)  call quicksort(a, j+1, last)
-  end subroutine quicksort
 
 END SUBROUTINE RAIN_ICE_RED
