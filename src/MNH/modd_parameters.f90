@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ######################
@@ -29,7 +29,7 @@
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    4/07/94                      
+!!      Original    4/07/94
 !!      Modification 10/03/95 (I.Mallet)   add the coupling files maximum number
 !!      Modification 10/04/95 (Ph. Hereil) add the budget related informations
 !!      Modification 15/03/99 (V. Masson)  add default value
@@ -39,8 +39,9 @@
 !!      Modification 17/05/04 (P.Jabouille) add JPOUTMAX
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!      B.VIE 2016 LIMA
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!      Q. Rodier : 29/03/2019 : increase maximum number of outputs to 999
+! P. Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+! Q. Rodier   29/03/2019: increase maximum number of outputs to 999
+! P. Wautelet 17/01/2020: add NBUNAMELGTMAX and NCOMMENTLGTMAX parameters
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -78,8 +79,10 @@ INTEGER, PARAMETER :: JPDUMMY  = 20   ! Size of dummy array
 INTEGER, PARAMETER :: JPOUTMAX = 999    ! Maximum allowed number of OUTput files
 INTEGER, PARAMETER :: JPOUTVARMAX = 192 ! Maximum allowed number of variables in an output file
 !
-INTEGER, PARAMETER :: NMNHNAMELGTMAX = 32 ! Maximum length of a MNH variable name
-INTEGER, PARAMETER :: NSTDNAMELGTMAX = 64 ! Maximum length of the standard name of a variable (CF convention)
+INTEGER, PARAMETER :: NBUNAMELGTMAX  = 32  ! Maximum length of a budget name
+INTEGER, PARAMETER :: NCOMMENTLGTMAX = 100 ! Maximum length of a comment
+INTEGER, PARAMETER :: NMNHNAMELGTMAX = 32  ! Maximum length of a MNH variable name
+INTEGER, PARAMETER :: NSTDNAMELGTMAX = 64  ! Maximum length of the standard name of a variable (CF convention)
 !
 INTEGER, PARAMETER :: NDIRNAMELGTMAX = 512 ! Maximum length of a directory name
 INTEGER, PARAMETER :: NFILENAMELGTMAX = 32 ! Maximum length of a file name (must be at least NFILENAMELGTMAXLFI)
