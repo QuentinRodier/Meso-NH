@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -9,8 +9,8 @@
 INTERFACE UV_TO_ZONAL_AND_MERID
       SUBROUTINE UV_TO_ZONAL_AND_MERID3D(PU,PV,KGRID,PZC,PMC,TPFILE,TZFIELDS)
 !
-USE MODD_IO, ONLY: TFILEDATA
-USE MODE_FIELD, ONLY: TFIELDDATA
+use modd_field, only: tfielddata
+use modd_io,    only: tfiledata
 !
 REAL, DIMENSION(:,:,:),                  INTENT(IN)  :: PU       ! Input U component
 REAL, DIMENSION(:,:,:),                  INTENT(IN)  :: PV       ! Input V component
@@ -24,8 +24,8 @@ END SUBROUTINE UV_TO_ZONAL_AND_MERID3D
 !
       SUBROUTINE UV_TO_ZONAL_AND_MERID2D(PU,PV,KGRID,PZC,PMC,TPFILE,TZFIELDS)
 !
-USE MODD_IO,    ONLY: TFILEDATA
-USE MODE_FIELD, ONLY: TFIELDDATA
+use modd_field, only: tfielddata
+use modd_io,    only: tfiledata
 !
 REAL, DIMENSION(:,:),                    INTENT(IN)  :: PU       ! Input U component
 REAL, DIMENSION(:,:),                    INTENT(IN)  :: PV       ! Input V component
@@ -47,8 +47,8 @@ INTERFACE
 !
       SUBROUTINE UV_TO_ZONAL_AND_MERID3D(PU,PV,KGRID,PZC,PMC,TPFILE,TZFIELDS)
 !
-USE MODD_IO,    ONLY: TFILEDATA
-USE MODE_FIELD, ONLY: TFIELDDATA
+use modd_field, only: tfielddata
+use modd_io,    only: tfiledata
 !
 REAL, DIMENSION(:,:,:),                  INTENT(IN)  :: PU       ! Input U component
 REAL, DIMENSION(:,:,:),                  INTENT(IN)  :: PV       ! Input V component
@@ -103,13 +103,13 @@ END MODULE MODI_UV_TO_ZONAL_AND_MERID3D
 USE MODD_CONF
 USE MODD_CST
 USE MODD_DIM_n
+use modd_field,          only: tfielddata
 USE MODD_GRID
 USE MODD_GRID_n
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_LUNIT_n,        ONLY: TLUOUT
 USE MODD_PARAMETERS
 !
-USE MODE_FIELD,          ONLY: TFIELDDATA
 USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 USE MODE_MSG
 !
@@ -276,10 +276,10 @@ END SUBROUTINE UV_TO_ZONAL_AND_MERID3D
 !*       0.     DECLARATIONS
 !               ------------
 !
+use modd_field,          only: tfielddata
 USE MODD_IO,             ONLY: TFILEDATA, NVERB_WARNING
 USE MODD_LUNIT_n,        ONLY: TLUOUT
 !
-USE MODE_FIELD,          ONLY: TFIELDDATA
 USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 USE MODE_MSG
 !

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -17,10 +17,10 @@
 #if defined(MNH_IOCDF4)
 module mode_io_read_nc4
 
+use modd_field,        only: tfielddata
 use modd_io,           only: tfiledata
 use modd_precision,    only: CDFINT
 
-use mode_field,        only: tfielddata
 use mode_io_tools_nc4, only: IO_Mnhname_clean, IO_Err_handle_nc4
 use mode_msg
 

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2004-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -42,7 +42,7 @@ USE MODD_MNH_SURFEX_n
 USE MODD_PARAMETERS,  ONLY : JPMODELMAX,JPHEXT,JPVEXT, NUNDEF, XUNDEF
 USE MODD_TIME_n,      ONLY : TDTCUR
 !
-USE MODE_FIELD
+use mode_field,            only: Ini_field_list, Ini_field_scalars
 USE MODE_IO,               only: IO_Init
 USE MODE_IO_FIELD_READ,    only: IO_Field_read
 USE MODE_IO_FIELD_WRITE,   only: IO_Field_write, IO_Header_write

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2005-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2005-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -67,6 +67,7 @@ END MODULE MODI_ZSMT_PGD
 !
 !*       0.    DECLARATIONS
 !
+use modd_field,          only: tfielddata, TYPEREAL
 USE MODD_IO,         ONLY : TFILEDATA
 USE MODD_PARAMETERS, ONLY : JPHEXT, XUNDEF
 !
@@ -77,7 +78,6 @@ USE MODE_ll        , ONLY : GET_DIM_EXT_ll , ADD2DFIELD_ll , CLEANLIST_ll , UPDA
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll 
 USE MODE_SUM_ll
 use mode_tools_ll,        only: GET_INDICE_ll
-USE MODE_FIELD, ONLY: TFIELDDATA, TYPEREAL
 !
 IMPLICIT NONE
 !

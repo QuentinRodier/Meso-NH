@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1997-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1997-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -11,7 +11,9 @@ CONTAINS
 
 SUBROUTINE PREPARE_METADATA_WRITE_SURF(HREC,HDIR,HCOMMENT,KGRID,KTYPE,KDIMS,HSUBR,TPFIELD)
 !
-USE MODE_FIELD, ONLY: FIND_FIELD_ID_FROM_MNHNAME, TFIELDDATA, TFIELDLIST, TYPECHAR, TYPEDATE, TYPELOG
+use modd_field, only: tfielddata, tfieldlist, TYPECHAR, TYPEDATE, TYPELOG
+
+use mode_field, only: Find_field_id_from_mnhname
 USE MODE_MSG
 !
 CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
@@ -171,16 +173,16 @@ END MODULE MODE_WRITE_SURF_MNH_TOOLS
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FIELD,          ONLY: TFIELDDATA,TYPEREAL
+USE MODD_CONF,           ONLY: CPROGRAM
+USE MODD_CONF_n,         ONLY: CSTORAGE_TYPE
+use modd_field,          only: tfielddata,TYPEREAL
+USE MODD_GRID
+USE MODD_IO,             ONLY: TFILE_SURFEX
+
 use MODE_IO_FIELD_WRITE, only: IO_Field_write
 USE MODE_MSG
 USE MODE_WRITE_SURF_MNH_TOOLS
-!
-USE MODD_CONF,           ONLY: CPROGRAM
-USE MODD_CONF_n,         ONLY: CSTORAGE_TYPE
-USE MODD_GRID
-USE MODD_IO,             ONLY: TFILE_SURFEX
-!
+
 IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
@@ -282,13 +284,8 @@ END SUBROUTINE WRITE_SURFX0_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FIELD,          ONLY: FIND_FIELD_ID_FROM_MNHNAME,TFIELDDATA,TFIELDLIST,TYPEREAL
-use MODE_IO_FIELD_WRITE, only: IO_Field_write
-USE MODE_MSG
-USE MODE_TOOLS_ll
-USE MODE_WRITE_SURF_MNH_TOOLS
-!
 USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
+use modd_field,         only: tfielddata, tfieldlist, TYPEREAL
 USE MODD_GRID_n,        ONLY: XXHAT, XYHAT
 USE MODD_IO,            ONLY: TFILE_SURFEX
 USE MODD_IO_SURF_MNH,   ONLY :NMASK, CMASK,                          &
@@ -296,10 +293,16 @@ USE MODD_IO_SURF_MNH,   ONLY :NMASK, CMASK,                          &
                               NIU_ALL, NJU_ALL, NIB_ALL, NJB_ALL,    &
                               NIE_ALL, NJE_ALL, NMASK_ALL, NHALO
 USE MODD_PARAMETERS,    ONLY: XUNDEF, JPHEXT
-!
+
+use mode_field,          only: Find_field_id_from_mnhname
+use MODE_IO_FIELD_WRITE, only: IO_Field_write
+USE MODE_MSG
+USE MODE_TOOLS_ll
+USE MODE_WRITE_SURF_MNH_TOOLS
+
 USE MODI_GET_SURF_UNDEF
 USE MODI_UNPACK_1D_2D
-!
+
 IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
@@ -545,13 +548,8 @@ END SUBROUTINE WRITE_SURFX1_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FIELD,          ONLY: TFIELDDATA,TYPELOG,TYPEREAL
-use MODE_IO_FIELD_WRITE, only: IO_Field_write
-USE MODE_MSG
-USE MODE_TOOLS_ll
-USE MODE_WRITE_SURF_MNH_TOOLS
-!
 USE MODD_CONF_n,         ONLY: CSTORAGE_TYPE
+use modd_field,          only: tfielddata, TYPELOG, TYPEREAL
 USE MODD_DATA_COVER_PAR, ONLY: JPCOVER
 USE MODD_IO,             ONLY: TFILE_SURFEX
 USE MODD_IO_SURF_MNH,    ONLY: NMASK, CMASK,                          &
@@ -559,10 +557,15 @@ USE MODD_IO_SURF_MNH,    ONLY: NMASK, CMASK,                          &
                                NIU_ALL, NJU_ALL, NIB_ALL, NJB_ALL,    &
                                NIE_ALL, NJE_ALL, NMASK_ALL, NHALO
 USE MODD_PARAMETERS,     ONLY: XUNDEF, JPHEXT
-!
+
+use MODE_IO_FIELD_WRITE, only: IO_Field_write
+USE MODE_MSG
+USE MODE_TOOLS_ll
+USE MODE_WRITE_SURF_MNH_TOOLS
+
 USE MODI_GET_SURF_UNDEF
 USE MODI_UNPACK_1D_2D
-!
+
 IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
@@ -746,24 +749,24 @@ END SUBROUTINE WRITE_SURFX2COV_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FIELD,          ONLY: TFIELDDATA,TYPEREAL
-use MODE_IO_FIELD_WRITE, only: IO_Field_write
-USE MODE_MSG
-USE MODE_TOOLS_ll
-USE MODE_WRITE_SURF_MNH_TOOLS
-!
 USE MODD_CONF_n,         ONLY: CSTORAGE_TYPE
 USE MODD_DATA_COVER_PAR, ONLY: JPCOVER
+use modd_field,          only: tfielddata, TYPEREAL
 USE MODD_IO,             ONLY: TFILE_SURFEX
 USE MODD_IO_SURF_MNH,    ONLY: NMASK, CMASK,                          &
                                NIU, NJU, NIB, NJB, NIE, NJE,          &
                                NIU_ALL, NJU_ALL, NIB_ALL, NJB_ALL,    &
                                NIE_ALL, NJE_ALL, NMASK_ALL, NHALO
 USE MODD_PARAMETERS,     ONLY: XUNDEF
-!
+
+use MODE_IO_FIELD_WRITE, only: IO_Field_write
+USE MODE_MSG
+USE MODE_TOOLS_ll
+USE MODE_WRITE_SURF_MNH_TOOLS
+
 USE MODI_GET_SURF_UNDEF
 USE MODI_UNPACK_1D_2D
-!
+
 IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
@@ -897,16 +900,16 @@ END SUBROUTINE WRITE_SURFX2_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FIELD,          ONLY: TFIELDDATA,TYPEINT
-use MODE_IO_FIELD_WRITE, only: IO_Field_write
-USE MODE_MSG
-USE MODE_WRITE_SURF_MNH_TOOLS
-!
 USE MODD_CONF_n,         ONLY: CSTORAGE_TYPE
+use modd_field,          only: tfielddata, TYPEINT
 USE MODD_IO,             ONLY: TFILE_SURFEX
 USE MODD_IO_SURF_MNH,    ONLY: NIU_ALL, NJU_ALL
 USE MODD_PARAMETERS,     ONLY: JPHEXT
-!
+
+use MODE_IO_FIELD_WRITE, only: IO_Field_write
+USE MODE_MSG
+USE MODE_WRITE_SURF_MNH_TOOLS
+
 IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
@@ -992,18 +995,18 @@ END SUBROUTINE WRITE_SURFN0_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FIELD,          ONLY: TFIELDDATA,TYPEINT
-use MODE_IO_FIELD_WRITE, only: IO_Field_write
-USE MODE_MSG
-USE MODE_WRITE_SURF_MNH_TOOLS
-!
+use modd_field,          only: tfielddata, TYPEINT
 USE MODD_IO,             ONLY: TFILE_SURFEX
 USE MODD_IO_SURF_MNH,    ONLY: NMASK, CMASK, &
                                NIU, NJU, NIB, NJB, NIE, NJE
 USE MODD_PARAMETERS,     ONLY: NUNDEF
-!
+
+use MODE_IO_FIELD_WRITE, only: IO_Field_write
+USE MODE_MSG
+USE MODE_WRITE_SURF_MNH_TOOLS
+
 USE MODI_UNPACK_1D_2D
-!
+
 IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
@@ -1095,15 +1098,15 @@ END SUBROUTINE WRITE_SURFN1_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FIELD,          ONLY: TFIELDDATA,TYPECHAR,TYPELOG
+USE MODD_CONF_n,         ONLY: CSTORAGE_TYPE
+use modd_field,          only: tfielddata, TYPECHAR, TYPELOG
+USE MODD_IO,             ONLY: TFILE_SURFEX
+USE MODD_IO_SURF_MNH,    ONLY: NIU_ALL, NJU_ALL
+
 use MODE_IO_FIELD_WRITE, only: IO_Field_write
 USE MODE_MSG
 USE MODE_WRITE_SURF_MNH_TOOLS
-!
-USE MODD_CONF_n,         ONLY: CSTORAGE_TYPE
-USE MODD_IO,             ONLY: TFILE_SURFEX
-USE MODD_IO_SURF_MNH,    ONLY: NIU_ALL, NJU_ALL
-!
+
 IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
@@ -1191,18 +1194,18 @@ END SUBROUTINE WRITE_SURFC0_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FIELD,          ONLY: TFIELDDATA,TYPEINT,TYPELOG
-use MODE_IO_FIELD_WRITE, only: IO_Field_write
-USE MODE_MSG
-USE MODE_WRITE_SURF_MNH_TOOLS
-!
 USE MODD_CONF_n,         ONLY: CSTORAGE_TYPE
+use modd_field,          only: tfielddata, TYPEINT, TYPELOG
 USE MODD_IO,             ONLY: TFILE_SURFEX
 USE MODD_IO_SURF_MNH,    ONLY: NMASK, CMASK, &
                                NIU, NJU, NIB, NJB, NIE, NJE
-!
+
+use MODE_IO_FIELD_WRITE, only: IO_Field_write
+USE MODE_MSG
+USE MODE_WRITE_SURF_MNH_TOOLS
+
 USE MODI_UNPACK_1D_2D
-!
+
 IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
@@ -1306,15 +1309,15 @@ END SUBROUTINE WRITE_SURFL1_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FIELD,          ONLY: TFIELDDATA,TYPELOG
+USE MODD_CONF_n,         ONLY: CSTORAGE_TYPE
+use modd_field,          only: tfielddata, TYPELOG
+USE MODD_IO,             ONLY: TFILE_SURFEX
+USE MODD_IO_SURF_MNH,    ONLY: CMASK
+
 use MODE_IO_FIELD_WRITE, only: IO_Field_write
 USE MODE_MSG
 USE MODE_WRITE_SURF_MNH_TOOLS
-!
-USE MODD_CONF_n,         ONLY: CSTORAGE_TYPE
-USE MODD_IO,             ONLY: TFILE_SURFEX
-USE MODD_IO_SURF_MNH,    ONLY: CMASK
-!
+
 IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
@@ -1389,17 +1392,16 @@ END SUBROUTINE WRITE_SURFL0_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FIELD,          ONLY: TFIELDDATA, TYPEDATE
+USE MODD_CONF_n,         ONLY: CSTORAGE_TYPE
+use modd_field,          only: tfielddata, TYPEDATE
+USE MODD_IO,             ONLY: TFILE_SURFEX
+USE MODD_TYPE_DATE
+
 use MODE_IO_FIELD_WRITE, only: IO_Field_write
 USE MODE_IO_FILE
 USE MODE_MSG
 USE MODE_WRITE_SURF_MNH_TOOLS
-!
-USE MODD_CONF_n,         ONLY: CSTORAGE_TYPE
-USE MODD_IO,             ONLY: TFILE_SURFEX
-USE MODD_TYPE_DATE
-!
-!
+
 IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
@@ -1483,15 +1485,14 @@ END SUBROUTINE WRITE_SURFT0_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FIELD,          ONLY: TFIELDDATA, TYPEINT, TYPEREAL
+use modd_field,          only: tfielddata, TYPEINT, TYPEREAL
+USE MODD_IO,             ONLY: TFILE_SURFEX
+USE MODD_CONF_n,         ONLY: CSTORAGE_TYPE
+
 use MODE_IO_FIELD_WRITE, only: IO_Field_write
 USE MODE_IO_FILE
 USE MODE_MSG
-!
-USE MODD_IO,             ONLY: TFILE_SURFEX
-USE MODD_CONF_n,         ONLY: CSTORAGE_TYPE
-!
-!
+
 IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments

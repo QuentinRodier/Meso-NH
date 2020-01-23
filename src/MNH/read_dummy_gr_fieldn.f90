@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -74,7 +74,7 @@ END MODULE MODI_READ_DUMMY_GR_FIELD_n
 !*       0.    DECLARATIONS
 !
 USE MODD_DUMMY_GR_FIELD_n
-USE MODE_FIELD,         ONLY: TFIELDDATA, TYPEINT, TYPEREAL
+use modd_field,         only: tfielddata, TYPEINT, TYPEREAL
 USE MODD_GRID_n
 USE MODD_IO,            ONLY: TFILEDATA
 USE MODD_PARAMETERS,    ONLY: JPHEXT, NMNHNAMELGTMAX

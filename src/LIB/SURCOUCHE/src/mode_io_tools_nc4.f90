@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -15,11 +15,11 @@
 #if defined(MNH_IOCDF4)
 module mode_io_tools_nc4
 
+use modd_field,     only: tfielddata
 use modd_io,        only: tfiledata
 use modd_netcdf,    only: dimcdf, iocdf, tdim_dummy
 use modd_precision, only: CDFINT
 
-use mode_field,  only: tfielddata
 use mode_msg
 
 use NETCDF,      only: NF90_NOERR, NF90_UNLIMITED, &
@@ -69,7 +69,7 @@ END SUBROUTINE IO_Dim_find_byname_nc4
 
 SUBROUTINE IO_Dimids_guess_nc4(TPFILE, TPFIELD, KLEN, TPDIMS, KRESP)
 !
-USE MODE_FIELD, ONLY: TYPECHAR
+USE MODD_FIELD, ONLY: TYPECHAR
 !
 !Used by LFI2CDF
 TYPE(TFILEDATA),                      INTENT(IN)  :: TPFILE

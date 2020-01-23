@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -97,12 +97,14 @@ END MODULE MODI_READ_PRECIP_FIELD
 !-----------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
+
+use modd_field,         only: tfielddata, tfieldlist
 USE MODD_IO,            ONLY: TFILEDATA
 USE MODD_PARAM_ICE,     ONLY: LDEPOSC
 USE MODD_PARAM_C2R2,    ONLY: LDEPOC
 USE MODD_PARAM_LIMA,    ONLY: MDEPOC=>LDEPOC
 !
-USE MODE_FIELD,         ONLY: TFIELDDATA, TFIELDLIST, FIND_FIELD_ID_FROM_MNHNAME
+use mode_field,         only: Find_field_id_from_mnhname
 USE MODE_IO_FIELD_READ, only: IO_Field_read
 !
 IMPLICIT NONE

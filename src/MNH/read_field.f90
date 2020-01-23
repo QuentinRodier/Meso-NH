@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ######################
       MODULE MODI_READ_FIELD
 !     ######################
@@ -246,6 +247,9 @@ END MODULE MODI_READ_FIELD
 !              ------------
 !
 USE MODD_2D_FRC
+USE MODD_ADV_n
+USE MODD_BLOWSNOW
+USE MODD_BLOWSNOW_n
 USE MODD_CH_AEROSOL
 USE MODD_CH_M9_n,         ONLY: CNAMES, CICNAMES
 USE MODD_CONF
@@ -254,13 +258,11 @@ USE MODD_CST
 USE MODD_CTURB
 USE MODD_DUST
 USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
+use modd_field,           only: tfielddata, tfieldlist, TYPEDATE, TYPEREAL
 USE MODD_FIELD_n,         only: XZWS_DEFAULT
 #ifdef MNH_FOREFIRE
 USE MODD_FOREFIRE
 #endif
-USE MODD_BLOWSNOW
-USE MODD_BLOWSNOW_n
-
 USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
 USE MODD_IO,              ONLY: TFILEDATA
 USE MODD_LATZ_EDFLX
@@ -274,13 +276,12 @@ USE MODD_PARAM_LIMA     , ONLY: NMOD_CCN, LSCAV, LAERO_MASS,                &
 USE MODD_PARAM_LIMA_COLD, ONLY: CLIMA_COLD_NAMES
 USE MODD_PARAM_LIMA_WARM, ONLY: CLIMA_WARM_NAMES, CAERO_MASS
 USE MODD_PARAM_n,           ONLY: CSCONV
-USE MODD_ADV_n
 USE MODD_PASPOL
 USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
 USE MODD_SALT
 USE MODD_TIME ! for type DATE_TIME
 !
-USE MODE_FIELD,           ONLY: TFIELDDATA, TFIELDLIST, FIND_FIELD_ID_FROM_MNHNAME, TYPEDATE, TYPEREAL
+use mode_field,           only: Find_field_id_from_mnhname
 USE MODE_IO_FIELD_READ,   only: IO_Field_read
 USE MODE_MSG
 USE MODE_TOOLS,           ONLY: UPCASE

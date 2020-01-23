@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -63,10 +63,10 @@ END MODULE MODI_WRITE_DUMMY_GR_FIELD_n
 !
 USE MODD_DUMMY_GR_FIELD_n, ONLY: NDUMMY_GR_NBR, CDUMMY_GR_NAME,    &
                                  CDUMMY_GR_AREA, XDUMMY_GR_FIELDS
+use modd_field,            only: tfielddata, TYPEINT, TYPEREAL
 USE MODD_IO,               ONLY: TFILEDATA
 USE MODD_PARAMETERS,       ONLY: NMNHNAMELGTMAX
 !
-USE MODE_FIELD,            ONLY: TFIELDDATA,TYPEINT,TYPEREAL
 USE MODE_IO_FIELD_WRITE,   only: IO_Field_write
 !
 IMPLICIT NONE

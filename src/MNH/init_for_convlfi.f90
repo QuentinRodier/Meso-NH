@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -71,6 +71,7 @@ USE MODD_PARAMETERS
 USE MODD_CONF
 USE MODD_CST
 USE MODD_DIM_n
+use modd_field,         only: tfielddata, tfieldlist
 USE MODD_FIELD_n
 USE MODD_GRID
 USE MODD_GRID_n
@@ -79,20 +80,17 @@ USE MODD_TIME
 USE MODD_TIME_n
 USE MODD_VAR_ll,        ONLY: NPROC
 !
-USE MODE_FIELD,         ONLY: TFIELDDATA, TFIELDLIST, FIND_FIELD_ID_FROM_MNHNAME
-USE MODE_TIME
-USE MODE_GRIDPROJ
-USE MODE_GRIDCART
-!
+use mode_field,         only: Find_field_id_from_mnhname
 USE MODE_GATHER_ll
+USE MODE_GRIDCART
+USE MODE_GRIDPROJ
 USE MODE_IO,            only: IO_Pack_set
 USE MODE_IO_FIELD_READ, only: IO_Field_read
 USE MODE_ll
+USE MODE_SPLITTINGZ_ll
+USE MODE_TIME
 !
 USE MODI_INI_CST
-!JUANZ
-USE MODE_SPLITTINGZ_ll
-!JUANZ
 !
 IMPLICIT NONE
 !

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -419,7 +419,7 @@ USE MODD_SALT,             ONLY:  LSALT, NMODE_SLT, CRGUNITS, XINISIG_SLT, XINIR
 USE MODD_TURB_n
 !
 USE MODE_EXTRAPOL
-USE MODE_FIELD
+use mode_field,            only: Alloc_field_scalars, Ini_field_list, Ini_field_scalars
 USE MODE_GRIDCART
 USE MODE_GRIDPROJ
 USE MODE_IO,               only: IO_Init

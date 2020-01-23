@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -112,13 +112,13 @@ END MODULE MODI_LIMA_WARM_NUCL
 !              ------------
 !
 USE MODD_CST
+use modd_field,           only: TFIELDDATA, TYPEREAL
 USE MODD_IO,              ONLY: TFILEDATA
 USE MODD_LUNIT_n,         ONLY: TLUOUT
 USE MODD_PARAMETERS,      ONLY : JPHEXT, JPVEXT
 USE MODD_PARAM_LIMA
 USE MODD_PARAM_LIMA_WARM
 
-USE MODE_FIELD,           ONLY: TFIELDDATA, TYPEREAL
 USE MODE_IO_FIELD_WRITE,  only: IO_Field_write
 use mode_tools,           only: Countjv
 

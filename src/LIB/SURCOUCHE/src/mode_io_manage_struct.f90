@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2016-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2016-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -41,13 +41,15 @@ USE MODD_CONF
 USE MODD_CONF_n
 USE MODD_DYN,        ONLY : XSEGLEN
 USE MODD_DYN_n,      ONLY : DYN_MODEL
+use modd_field,      only: tfieldlist
 USE MODD_IO_SURF_MNH,ONLY : IO_SURF_MNH_MODEL
 USE MODD_NESTING,    ONLY : CDAD_NAME,NDAD
 USE MODD_NSV,        ONLY: NSV
 USE MODD_OUT_n,      ONLY : OUT_MODEL
 USE MODD_VAR_ll,     ONLY : IP
-USE MODE_FIELD
-!
+
+use mode_field, only: Find_field_id_from_mnhname
+
 IMPLICIT NONE
 !
 INTEGER, INTENT(IN) :: KSUP    ! supp. time steps

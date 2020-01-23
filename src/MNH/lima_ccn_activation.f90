@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -97,6 +97,7 @@ END MODULE MODI_LIMA_CCN_ACTIVATION
 !              ------------
 !
 USE MODD_CST,             ONLY: XALPW, XBETAW, XCL, XCPD, XCPV, XGAMW, XLVTT, XMD, XMV, XRV, XTT
+use modd_field,           only: TFIELDDATA, TYPEREAL
 USE MODD_IO,              ONLY: TFILEDATA
 USE MODD_LUNIT_n,         ONLY: TLUOUT
 USE MODD_PARAMETERS,      ONLY: JPHEXT, JPVEXT
@@ -104,7 +105,6 @@ USE MODD_PARAM_LIMA,      ONLY: LACTIT, NMOD_CCN, XKHEN_MULTI, XCTMIN, XLIMIT_FA
 USE MODD_PARAM_LIMA_WARM, ONLY: XWMIN, NAHEN, NHYP, XAHENINTP1, XAHENINTP2, XCSTDCRIT, XHYPF12, &
                                 XHYPINTP1, XHYPINTP2, XTMIN, XHYPF32, XPSI3, XAHENG, XPSI1
 
-USE MODE_FIELD,           ONLY: TFIELDDATA, TYPEREAL
 USE MODE_IO_FIELD_WRITE,  only: IO_Field_write
 use mode_tools,           only: Countjv
 

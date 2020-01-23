@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -101,6 +101,7 @@ END MODULE MODI_READ_PRC_FMFILE
 USE MODD_CST
 USE MODD_CONF
 USE MODD_CONF_n
+use modd_field,         only: tfieldlist
 USE MODD_PARAM_n
 USE MODD_LUNIT
 USE MODD_REF
@@ -114,7 +115,7 @@ USE MODD_GRID_n
 USE MODD_TIME_n
 USE MODD_PREP_REAL
 !
-USE MODE_FIELD
+use mode_field,         only: Find_field_id_from_mnhname
 !
 USE MODI_TRUNC_FIELD
 USE MODI_DEALLOCATE_MODEL1

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2004-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -66,11 +66,12 @@ END MODULE MODI_COMPARE_DAD
 !
 !
 USE MODD_CONF
+use modd_field,            only: tfielddata, tfieldlist
 USE MODD_IO,               ONLY: TFILEDATA
 USE MODD_LUNIT_n,          ONLY: TLUOUT
 USE MODD_PARAMETERS,       ONLY: JPHEXT, JPVEXT, NMNHNAMELGTMAX
 !
-USE MODE_FIELD,            ONLY: TFIELDDATA,TFIELDLIST,FIND_FIELD_ID_FROM_MNHNAME
+use mode_field,            only: Find_field_id_from_mnhname
 USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
 USE MODE_IO_FIELD_READ,    only: IO_Field_read
 USE MODE_GRIDPROJ

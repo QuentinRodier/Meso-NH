@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -170,6 +170,7 @@ USE MODD_CST
 USE MODD_CONF_n,          ONLY: CONF_MODEL
 USE MODD_DUST,            ONLY: CDUSTNAMES
 USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
+use modd_field,           only: tfielddata, TYPEREAL
 USE MODD_FIELD_n,         ONLY: FIELD_MODEL, XZWS_DEFAULT
 USE MODD_IO,              ONLY: TFILEDATA
 USE MODD_LATZ_EDFLX
@@ -189,7 +190,6 @@ USE MODD_SALT,            ONLY: CSALTNAMES
 USE MODD_SPAWN
 !
 use mode_bikhardt
-USE MODE_FIELD,           ONLY: TFIELDDATA,TYPEREAL
 USE MODE_IO_FIELD_READ,   only: IO_Field_read
 USE MODE_ll
 USE MODE_MSG

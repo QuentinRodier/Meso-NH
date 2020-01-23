@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -21,11 +21,11 @@
 #ifdef MNH_IOCDF4
 module mode_io_write_nc4
 
+use modd_field,        only: tfielddata
 use modd_io,           only: gsmonoproc, tfiledata
 use modd_netcdf,       only: dimcdf, iocdf
 use modd_precision,    only: CDFINT, MNHINT_NF90, MNHREAL_MPI, MNHREAL_NF90
 
-use mode_field,        only: tfielddata
 use mode_io_tools_nc4, only: IO_Mnhname_clean, IO_Vdims_fill_nc4, IO_Dimcdf_get_nc4, IO_Strdimid_get_nc4, IO_Err_handle_nc4
 use mode_msg
 
@@ -62,9 +62,9 @@ integer(kind=CDFINT),parameter :: DEFLATE = 1
 contains
 
 subroutine IO_Field_header_split_write_nc4( tpfile, tpfield, knblocks )
-use modd_parameters, only : jphext
+use modd_field,      only: TYPEREAL
+use modd_parameters, only: jphext
 
-use mode_field,      only: TYPEREAL
 use mode_tools_ll,   only: Get_globaldims_ll
 
 type(tfiledata),       intent(in) :: tpfile
@@ -151,8 +151,7 @@ SUBROUTINE IO_Field_attr_write_nc4(TPFILE,TPFIELD,KVARID,OEXISTED,KSHAPE,HCALEND
 !
 USE MODD_CONF,   ONLY: CPROGRAM, LCARTESIAN
 USE MODD_CONF_n, ONLY: CSTORAGE_TYPE
-!
-USE MODE_FIELD,  ONLY: TYPEINT, TYPEREAL
+use modd_field,  only: TYPEINT, TYPEREAL
 !
 TYPE(TFILEDATA),                              INTENT(IN) :: TPFILE
 TYPE(TFIELDDATA),                             INTENT(IN) :: TPFIELD
@@ -1620,12 +1619,13 @@ END SUBROUTINE IO_Field_write_nc4_T1
 SUBROUTINE IO_Coordvar_write_nc4(TPFILE,HPROGRAM_ORIG)
 USE MODD_CONF,       ONLY: CPROGRAM, LCARTESIAN
 USE MODD_CONF_n,     ONLY: CSTORAGE_TYPE
+use modd_field,      only: tfieldlist
 USE MODD_GRID,       ONLY: XLATORI, XLONORI
 USE MODD_GRID_n,     ONLY: LSLEVE, XXHAT, XYHAT, XZHAT
 use modd_netcdf,     only: dimcdf
 USE MODD_PARAMETERS, ONLY: JPHEXT, JPVEXT
 
-USE MODE_FIELD,      ONLY: TFIELDLIST,FIND_FIELD_ID_FROM_MNHNAME
+use mode_field,      only: Find_field_id_from_mnhname
 USE MODE_GRIDPROJ
 USE MODE_NEST_ll,    ONLY: GET_MODEL_NUMBER_ll, GO_TOMODEL_ll
 
@@ -2082,11 +2082,12 @@ SUBROUTINE WRITE_VER_COORD(TDIM,HLONGNAME,HSTDNAME,HCOMPNAME,PSHIFT,KBOUNDLOW,KB
 END SUBROUTINE WRITE_VER_COORD
 
 SUBROUTINE WRITE_TIME_COORD(TDIM)
+  use modd_field,      only: tfieldlist
   USE MODD_TIME_n,     ONLY: TDTMOD, TDTCUR
   USE MODD_TYPE_DATE
 
   USE MODE_DATETIME
-  USE MODE_FIELD,      ONLY: TFIELDLIST,FIND_FIELD_ID_FROM_MNHNAME
+  use mode_field,      only: Find_field_id_from_mnhname
   USE MODE_GRIDPROJ
 
   TYPE(DIMCDF), POINTER, INTENT(IN) :: TDIM

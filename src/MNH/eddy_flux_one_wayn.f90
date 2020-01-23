@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2011-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2011-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -56,21 +56,21 @@ END MODULE MODI_EDDY_FLUX_ONE_WAY_n
 !!
 !     ##################################################################################
 !
+USE MODD_BIKHARDT_n
 USE MODD_DEF_EDDY_FLUX_n
-USE MODD_FIELD_n,               ONLY:XRTHS
-USE MODD_REF_n,                 ONLY:XRHODJ
+use modd_field,           only: tfieldlist
+USE MODD_FIELD_n,         ONLY: XRTHS
 USE MODD_GRID_n
-
 USE MODD_METRICS_n
+USE MODD_NESTING
+USE MODD_REF_n,           ONLY: XRHODJ
+
+use mode_bikhardt
+use mode_field,           only: Find_field_id_from_mnhname
+
 USE MODI_GRADIENT_W
 USE MODI_GRADIENT_U
-!
-USE MODD_BIKHARDT_n
-USE MODD_NESTING
-!
-use mode_bikhardt
-USE MODE_FIELD, ONLY : TFIELDLIST, FIND_FIELD_ID_FROM_MNHNAME
-!
+
 IMPLICIT NONE
 !
 INTEGER, INTENT(IN) :: KMI     ! Model index

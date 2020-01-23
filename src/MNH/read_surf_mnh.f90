@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2003-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -18,7 +18,8 @@ CONTAINS
 
 SUBROUTINE PREPARE_METADATA_READ_SURF(HREC,HDIR,KGRID,KTYPE,KDIMS,HSUBR,TPFIELD)
 !
-USE MODE_FIELD, ONLY: FIND_FIELD_ID_FROM_MNHNAME, TFIELDDATA, TFIELDLIST, TYPECHAR, TYPEDATE, TYPELOG
+use modd_field, only: tfielddata, tfieldlist, TYPECHAR, TYPEDATE, TYPELOG
+use mode_field, only: Find_field_id_from_mnhname
 !
 CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
 CHARACTER(LEN=2),       INTENT(IN)  :: HDIR     ! Expected type of the data field (XX,XY,--...)
@@ -140,13 +141,14 @@ END MODULE MODE_READ_SURF_MNH_TOOLS
 !             ------------
 !
 USE MODD_CONF,          ONLY: CPROGRAM
+use modd_field,         only: tfielddata, tfieldlist, TYPEREAL
 USE MODD_GRID,          ONLY: XRPK,XBETA,XLAT0,XLON0
 USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE
 USE MODD_PARAMETERS,    ONLY: JPHEXT, XUNDEF
 !
-USE MODE_FIELD,         ONLY: TFIELDDATA,TFIELDLIST,FIND_FIELD_ID_FROM_MNHNAME,TYPEREAL
-USE MODE_IO_FIELD_READ, only: IO_Field_read
+use mode_field,         only: Find_field_id_from_mnhname
 USE MODE_GRIDPROJ
+USE MODE_IO_FIELD_READ, only: IO_Field_read
 USE MODE_MSG
 USE MODE_READ_SURF_MNH_TOOLS
 !
@@ -288,24 +290,23 @@ END SUBROUTINE READ_SURFX0_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FIELD,         ONLY: FIND_FIELD_ID_FROM_MNHNAME,TFIELDDATA,TFIELDLIST,TYPEREAL
-USE MODE_IO_FIELD_READ, only: IO_Field_read
-USE MODE_ll
-USE MODE_MSG
-USE MODE_READ_SURF_MNH_TOOLS
-!
 USE MODD_CST,           ONLY: XPI
-!
+use modd_field,         only: tfielddata, tfieldlist, TYPEREAL
 USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE, NMASK, &
                               NIU, NJU, NIB, NJB, NIE, NJE, &
                               NIU_ALL, NJU_ALL, NIB_ALL,    &
                               NJB_ALL, NIE_ALL, NJE_ALL,    &
                               NMASK_ALL
 USE MODD_PARAMETERS,    ONLY: XUNDEF
-!
-USE MODI_PACK_2D_1D
+
+use mode_field,         only: Find_field_id_from_mnhname
+USE MODE_IO_FIELD_READ, only: IO_Field_read
+USE MODE_ll
+USE MODE_MSG
+USE MODE_READ_SURF_MNH_TOOLS
 !
 USE MODI_GET_SURF_UNDEF
+USE MODI_PACK_2D_1D
 !
 IMPLICIT NONE
 !
@@ -580,19 +581,18 @@ END SUBROUTINE READ_SURFX1_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_ll
-USE MODE_FIELD,         ONLY: TFIELDDATA,TYPEREAL
-USE MODE_IO_FIELD_READ, only: IO_Field_read
-USE MODE_MSG
-USE MODE_READ_SURF_MNH_TOOLS
-!
+use modd_field,         only: tfielddata, TYPEREAL
 USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE, NMASK, NIU, NJU, NIB, NJB, NIE, NJE, &
                               NIU_ALL, NJU_ALL, NIB_ALL, NJB_ALL, NIE_ALL, NJE_ALL, NMASK_ALL
 USE MODD_PARAMETERS,    ONLY: XUNDEF
-!
-USE MODI_PACK_2D_1D
+
+USE MODE_IO_FIELD_READ, only: IO_Field_read
+USE MODE_ll
+USE MODE_MSG
+USE MODE_READ_SURF_MNH_TOOLS
 !
 USE MODI_GET_SURF_UNDEF
+USE MODI_PACK_2D_1D
 !
 IMPLICIT NONE
 !
@@ -715,20 +715,19 @@ END SUBROUTINE READ_SURFX2_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_ll
-USE MODE_FIELD,          ONLY: TFIELDDATA,TYPELOG,TYPEREAL
-USE MODE_IO_FIELD_READ,  only: IO_Field_read
-USE MODE_MSG
-USE MODE_READ_SURF_MNH_TOOLS
-!
-USE MODD_DATA_COVER_PAR, ONLY: JPCOVER
 USE MODD_CST,            ONLY: XPI
-!
+USE MODD_DATA_COVER_PAR, ONLY: JPCOVER
+use modd_field,          only: tfielddata, TYPELOG, TYPEREAL
 USE MODD_IO_SURF_MNH,    ONLY: TOUT, TPINFILE, NMASK, &
                                NIU, NJU, NIB, NJB, NIE, NJE, &
                                NIU_ALL, NJU_ALL, NIB_ALL,    &
                                NJB_ALL, NIE_ALL, NJE_ALL,    &
                                NMASK_ALL
+!
+USE MODE_IO_FIELD_READ,  only: IO_Field_read
+USE MODE_ll
+USE MODE_MSG
+USE MODE_READ_SURF_MNH_TOOLS
 !
 USE MODI_PACK_2D_1D
 !
@@ -911,18 +910,17 @@ END SUBROUTINE READ_SURFX2COV_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FIELD,         ONLY: TFIELDDATA,TYPELOG,TYPEREAL
-USE MODE_IO_FIELD_READ, only: IO_Field_read
-USE MODE_ll
-USE MODE_MSG
-!
 USE MODD_CST,           ONLY: XPI
-!
+use modd_field,         only: tfielddata, TYPELOG, TYPEREAL
 USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE, NMASK,        &
                               NIU, NJU, NIB, NJB, NIE, NJE, &
                               NIU_ALL, NJU_ALL, NIB_ALL,    &
                               NJB_ALL, NIE_ALL, NJE_ALL,    &
                               NMASK_ALL
+!
+USE MODE_IO_FIELD_READ, only: IO_Field_read
+USE MODE_ll
+USE MODE_MSG
 !
 USE MODI_PACK_2D_1D
 !
@@ -1095,18 +1093,16 @@ END SUBROUTINE READ_SURFX2COV_1COV_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FIELD,         ONLY: TFIELDDATA,TYPEINT
+USE MODD_CONF,          ONLY: CPROGRAM
+use modd_field,         only: tfielddata, TYPEINT
+USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE, NMASK, &
+                              NIU, NJU, NIB, NJB, NIE, NJE
+
 USE MODE_IO_FIELD_READ, only: IO_Field_read
 USE MODE_ll
 USE MODE_MSG
 USE MODE_READ_SURF_MNH_TOOLS
-!
-USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE, NMASK, &
-                              NIU, NJU, NIB, NJB, NIE, NJE
-USE MODD_CONF,          ONLY: CPROGRAM
-!
-!
-!
+
 IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
@@ -1193,13 +1189,13 @@ END SUBROUTINE READ_SURFN0_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FIELD,         ONLY: TFIELDDATA,TYPEINT
+use modd_field,         only: tfielddata, TYPEINT
+USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE, NMASK, &
+                              NIU, NJU, NIB, NJB, NIE, NJE
+!
 USE MODE_IO_FIELD_READ, only: IO_Field_read
 USE MODE_MSG
 USE MODE_READ_SURF_MNH_TOOLS
-!
-USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE, NMASK, &
-                              NIU, NJU, NIB, NJB, NIE, NJE
 !
 USE MODI_PACK_2D_1D
 !
@@ -1301,18 +1297,17 @@ END SUBROUTINE READ_SURFN1_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FIELD,         ONLY: TFIELDDATA, TYPECHAR
+USE MODD_CONF,          ONLY: LCARTESIAN, CPROGRAM
+use modd_field,         only: tfielddata, TYPECHAR
+USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE
+USE MODD_LUNIT,         ONLY: TPGDFILE
+
 USE MODE_IO_FIELD_READ, only: IO_Field_read
 USE MODE_ll
 USE MODE_MSG
 USE MODE_POS
 USE MODE_READ_SURF_MNH_TOOLS
-!
-USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE
-USE MODD_CONF,          ONLY: LCARTESIAN, CPROGRAM
-USE MODD_LUNIT,         ONLY: TPGDFILE
-!
-!
+
 IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
@@ -1458,17 +1453,15 @@ END SUBROUTINE READ_SURFC0_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
+use modd_field,         only: tfielddata, TYPEINT, TYPELOG
 USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE, NMASK, &
                               NIU, NJU, NIB, NJB, NIE, NJE
 !
-USE MODE_FIELD,         ONLY: TFIELDDATA,TYPEINT,TYPELOG
 USE MODE_IO_FIELD_READ, only: IO_Field_read
 USE MODE_MSG
 USE MODE_READ_SURF_MNH_TOOLS
 !
 USE MODI_PACK_2D_1D
-!
-!
 !
 IMPLICIT NONE
 !
@@ -1576,14 +1569,13 @@ END SUBROUTINE READ_SURFL1_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FIELD,         ONLY: TFIELDDATA,TYPELOG
+use modd_field,         only: tfielddata, TYPELOG
+USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE
+
 USE MODE_IO_FIELD_READ, only: IO_Field_read
 USE MODE_MSG
 USE MODE_READ_SURF_MNH_TOOLS
-!
-USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE
-!
-!
+
 IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
@@ -1673,14 +1665,13 @@ END SUBROUTINE READ_SURFL0_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FIELD,         ONLY: TFIELDDATA,TYPECHAR
+use modd_field,         only: tfielddata, TYPECHAR
+USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE
+USE MODD_TYPE_DATE
+
 USE MODE_IO_FIELD_READ, only: IO_Field_read
 USE MODE_MSG
-!
-USE MODD_TYPE_DATE
-USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE
-!
-!
+
 IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
@@ -1797,13 +1788,12 @@ END SUBROUTINE READ_SURFT0_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FIELD,         ONLY: TFIELDDATA, TYPECHAR, TYPEINT, TYPEREAL
+use modd_field,         only: tfielddata, TYPECHAR, TYPEINT, TYPEREAL
+USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE
+
 USE MODE_IO_FIELD_READ, only: IO_Field_read
 USE MODE_MSG
-!
-USE MODD_IO_SURF_MNH,   ONLY: TOUT, TPINFILE
-!
-!
+
 IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments

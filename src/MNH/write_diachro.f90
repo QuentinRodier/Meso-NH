@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -86,6 +86,7 @@ contains
 !
 USE MODD_BUDGET
 USE MODD_CONF
+use modd_field,          only: tfielddata, TYPECHAR, TYPEDATE, TYPEINT, TYPEREAL
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_PARAMETERS,     ONLY: JPHEXT
 use modd_time,           only: tdtexp, tdtseg
@@ -93,7 +94,6 @@ use modd_time_n,         only: tdtmod
 use modd_type_date,      only: date_time
 !
 use mode_datetime,       only: Datetime_distance
-USE MODE_FIELD
 USE MODE_IO_FIELD_WRITE, only: IO_Field_write, IO_Field_write_box
 USE MODE_ll
 use mode_menu_diachro,   only: MENU_DIACHRO

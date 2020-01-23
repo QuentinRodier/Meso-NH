@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2003-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -63,9 +63,10 @@ END MODULE MODI_INI_SURF_RAD
 !*       0.    DECLARATIONS
 !              ------------
 !
+use modd_field,         only: tfielddata, tfieldlist
 USE MODD_IO,            ONLY: TFILEDATA
 !
-USE MODE_FIELD,         ONLY: FIND_FIELD_ID_FROM_MNHNAME, TFIELDDATA, TFIELDLIST
+use mode_field,         only: Find_field_id_from_mnhname
 USE MODE_IO_FIELD_READ, only: IO_Field_read
 USE MODE_MSG
 !

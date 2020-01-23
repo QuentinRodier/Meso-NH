@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -215,6 +215,7 @@ USE MODD_BUDGET
 USE MODD_CONF
 USE MODD_CONF_n
 USE MODD_DYN
+use modd_field,            only: tfielddata, tfieldlist
 USE MODD_GRID
 USE MODD_IO,      ONLY: TFILEDATA,TOUTBAK
 USE MODD_LUNIT_n, ONLY: TLUOUT
@@ -222,7 +223,7 @@ USE MODD_OUT_n,   ONLY: OUT_MODEL
 USE MODD_PARAMETERS
 USE MODD_NESTING
 !
-USE MODE_FIELD,            ONLY: TFIELDDATA, TFIELDLIST, FIND_FIELD_ID_FROM_MNHNAME
+use mode_field,            only: Find_field_id_from_mnhname
 USE MODE_GATHER_ll
 USE MODE_GRIDCART
 USE MODE_GRIDPROJ

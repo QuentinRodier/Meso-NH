@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2001-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2001-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -96,7 +96,7 @@ CONTAINS
 !-------------------------------------------------------------------------------
 SUBROUTINE WRITE_LFI_BALLOON(TPFLYER)
 !
-USE MODE_FIELD,          ONLY: TFIELDDATA, TYPEREAL
+use modd_field,          only: tfielddata, TYPEREAL
 USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 !
 TYPE(FLYER),        INTENT(IN)       :: TPFLYER

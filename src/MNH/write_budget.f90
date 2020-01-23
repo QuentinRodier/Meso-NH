@@ -119,13 +119,13 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
                                  xburhodj, xburhodju, xburhodjv, xburhodjw,                                                       &
                                  xburu, xburv, xburw, xburth, xburtke,                                                            &
                                  xburrv, xburrc, xburrr, xburri, xburrs, xburrg, xburrh, xbursv
+  use modd_field,          only: tfielddata, TYPEREAL
   use modd_io,             only: tfiledata
   use modd_lunit_n,        only: tluout
   use modd_parameters,     only: NMNHNAMELGTMAX
   use modd_type_date,      only: date_time
 
   use mode_datetime,       only: datetime_distance
-  use mode_field,          only: tfielddata, TYPEREAL
   use mode_io_field_write, only: IO_Field_write
   use mode_menu_diachro,   only: Menu_diachro
   use mode_time,           only: tdtexp

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -100,6 +100,7 @@ END MODULE MODI_KHKO_NOTADJUST
 USE MODD_BUDGET
 USE MODD_CONF
 USE MODD_CST
+use modd_field,           only: TFIELDDATA,TYPEREAL
 USE MODD_IO,              ONLY: TFILEDATA
 USE MODD_LUNIT_n,         ONLY: TLUOUT
 USE MODD_NSV,             ONLY: NSV_C2R2BEG
@@ -107,7 +108,6 @@ USE MODD_PARAMETERS
 USE MODD_RAIN_C2R2_DESCR, ONLY: XRTMIN
 
 !
-USE MODE_FIELD,           ONLY: TFIELDDATA,TYPEREAL
 USE MODE_IO_FIELD_WRITE,  only: IO_Field_write
 USE MODE_MSG
 use mode_tools,           only: Countjv

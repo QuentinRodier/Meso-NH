@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1997-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1997-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -93,13 +93,13 @@ END MODULE MODI_FREE_ATM_PROFILE
 !              ------------
 !
 USE MODD_CONF
+use modd_field,          only: tfielddata, TYPEINT, TYPEREAL
 USE MODD_GRID_n
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_LUNIT,          ONLY: TLUOUT0
 USE MODD_PARAMETERS
 USE MODD_VER_INTERP_LIN
 !
-USE MODE_FIELD,          ONLY: TFIELDDATA, TYPEINT, TYPEREAL
 USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 USE MODE_MPPDB
 !
