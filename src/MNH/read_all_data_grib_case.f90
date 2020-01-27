@@ -130,7 +130,7 @@ END MODULE MODI_READ_ALL_DATA_GRIB_CASE
 !!                   01/2019 (G.Delautier via Q.Rodier) for GRIB2 ARPEGE and AROME from EPYGRAM
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 14/03/2019: correct ZWS when variable not present in file
-!  Q. Rodier   16/09/2019: switch of GRIB number ID for Orograpgy in ARPEGE/AROME in EPyGrAM 
+!  Q. Rodier   27/01/2020: switch of GRIB number ID for Orograpgy and hydrometeors in ARPEGE/AROME in EPyGrAM v1.3.7
 !-------------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -523,7 +523,11 @@ SELECT CASE (IMODEL)
   CASE(6,7) !  arpege and arome GRIB2
       CALL SEARCH_FIELD(IGRIB,INUM_ZS,KDIS=0,KCAT=3,KNUMBER=4)
        IF(INUM_ZS < 0) THEN
-         WRITE (ILUOUT0,'(A)')'Orography is missing - abort'
+        ! Old version of EPyGraM (bug corrected since 01/2020)
+        CALL SEARCH_FIELD(IGRIB,INUM_ZS,KDIS=0,KCAT=3,KNUMBER=5)
+         IF(INUM_ZS < 0) THEN
+           WRITE (ILUOUT0,'(A)')'Orography is missing - abort'
+         END IF
        ENDIF 
   CASE(10) ! NCEP
       DO IVAR=0,222
@@ -952,6 +956,10 @@ IF (IMODEL==6) THEN ! GRIB2 AROME
     ISTARTLEVEL = 0
     CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=6,KNUMBER=6,KLEV1=ISTARTLEVEL)
   END IF
+  IF (INUM < 0) THEN
+    ISTARTLEVEL = 1
+    CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=1,KNUMBER=83,KLEV1=ISTARTLEVEL)
+  END IF
   IF (INUM > 0) THEN
     WRITE (ILUOUT0,'(A)') ' | Grib file from French Weather Service - Arome model (forecast)'
     LCPL_AROME=.TRUE.
@@ -1148,7 +1156,7 @@ IF (NRR >1) THEN
     WRITE (ILUOUT0,'(A)') ' | Reading Q fields (except humidity)'
     DO JLOOP1=1, INLEVEL
       ILEV1 = JLOOP1-1+ISTARTLEVEL
-      CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=6,KNUMBER=6,KLEV1=ILEV1)
+      CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=1,KNUMBER=83,KLEV1=ILEV1)
 
       IF (INUM < 0) THEN
         !callabortstop
@@ -1189,7 +1197,7 @@ IF (NRR >1) THEN
 
     DO JLOOP1=1, INLEVEL
       ILEV1 = JLOOP1-1+ISTARTLEVEL
-      CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=1,KNUMBER=82,KLEV1=ILEV1)
+      CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=1,KNUMBER=84,KLEV1=ILEV1)
       IF (INUM < 0) THEN
         !callabortstop
         WRITE(YMSG,*) 'Specific ratio for ICE at level ',JLOOP1,' is missing'

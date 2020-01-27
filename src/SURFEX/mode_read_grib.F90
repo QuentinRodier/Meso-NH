@@ -5,6 +5,7 @@
 !-------------------------------------------------------------------
 ! Modifications:
 !  P. Wautelet 19/09/2019: correct support of 64bit integers (MNH_INT=8)
+!  Q. Rodier   27/01/2020: switch of GRIB number ID for Orography in ARPEGE in EPyGrAM v1.3.7
 !-------------------------------------------------------------------
 !     #####################
 MODULE MODE_READ_GRIB
@@ -516,7 +517,11 @@ SELECT CASE (HINMODEL)
     CALL READ_GRIB(HGRIB,HINMODEL,KLUOUT,228002,IRET,PZS)               
   CASE ('ARPEGE','MOCAGE')
     IF (HINMODEL=='ARPEGE' .AND. NGRIB_VERSION==2) THEN
-      CALL READ_GRIB(HGRIB,HINMODEL,KLUOUT,5,IRET,PZS)
+      CALL READ_GRIB(HGRIB,HINMODEL,KLUOUT,4,IRET,PZS)
+      IF (IRET /= 0) THEN
+        ! Old version of EPyGraM (bug corrected since 01/2020)
+        CALL READ_GRIB(HGRIB,HINMODEL,KLUOUT,5,IRET,PZS)
+      END IF
     ELSE
       CALL READ_GRIB(HGRIB,HINMODEL,KLUOUT,8,IRET,PZS)               
     ENDIF
