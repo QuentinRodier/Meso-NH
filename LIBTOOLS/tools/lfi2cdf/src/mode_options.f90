@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2015-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2015-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -8,7 +8,7 @@
 !  P. Wautelet 21/10/2019: add OPTDIR option to set directory for writing outfiles
 !-----------------------------------------------------------------
 module mode_options
-  USE MODE_FIELD, ONLY: TYPEUNDEF, TYPEINT, TYPELOG, TYPEREAL, TYPECHAR, TYPEDATE
+  use modd_field, only: TYPEUNDEF, TYPEINT, TYPELOG, TYPEREAL, TYPECHAR, TYPEDATE
 
   implicit none
 

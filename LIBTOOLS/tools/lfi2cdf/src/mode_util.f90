@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -14,17 +14,19 @@
 !  P. Wautelet 21/10/2019: if DTMOD and DTCUR not found, try to read the time coordinate
 !-----------------------------------------------------------------
 MODULE mode_util
+  use modd_field,      only: tfielddata, tfieldlist
   USE MODD_IO,         ONLY: TFILEDATA, TFILE_ELT
   USE MODD_NETCDF,     ONLY: DIMCDF, CDFINT
   USE MODD_PARAMETERS, ONLY: NLFIMAXCOMMENTLENGTH, NMNHNAMELGTMAX
   use modd_precision,  only: LFIINT
 
-  USE MODE_FIELD
+  use mode_field,          only: Find_field_id_from_mnhname
   USE MODE_IO_FIELD_READ
   USE MODE_IO_FIELD_WRITE
   use mode_io_tools_nc4,   only: IO_Err_handle_nc4
-
+  use mode_msg
   USE mode_options
+
 
   USE NETCDF
 

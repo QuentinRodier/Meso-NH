@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -14,7 +14,7 @@ program LFI2CDF
   USE MODD_PARAMETERS,    ONLY: JPHEXT, JPVEXT
   USE MODD_TIMEZ,         ONLY: TIMEZ
 
-  USE MODE_FIELD,         ONLY: INI_FIELD_LIST
+  use mode_field,         only: Ini_field_list
   USE MODE_IO,            ONLY: IO_Init, IO_Config_set
   use mode_ll
   USE mode_options
