@@ -9,6 +9,7 @@
 !  P. Wautelet 12/04/2019: added pointers for C1D, L1D, N1D, X5D and X6D structures in TFIELDDATA
 !  P. Wautelet 12/07/2019: add pointers for T1D structure in TFIELDDATA
 !  P. Wautelet 23/01/2020: split in modd_field.f90 and mode_field.f90
+!  P. Wautelet 27/01/2020: create the tfield_metadata_base abstract datatype
 !-----------------------------------------------------------------
 module modd_field
 
@@ -91,20 +92,15 @@ TYPE TFIELDPTR_T1D
   TYPE(DATE_TIME), DIMENSION(:), POINTER :: DATA => NULL()
 END TYPE TFIELDPTR_T1D
 !
-!Structure describing the characteristics of a field
-TYPE :: TFIELDDATA
+type, abstract :: tfield_metadata_base
   CHARACTER(LEN=NMNHNAMELGTMAX) :: CMNHNAME  = '' !Name of the field (for MesoNH, non CF convention)
   CHARACTER(LEN=NSTDNAMELGTMAX) :: CSTDNAME  = '' !Standard name (CF convention)
   CHARACTER(LEN=32)  :: CLONGNAME = '' !Long name (CF convention)
   CHARACTER(LEN=40)  :: CUNITS    = '' !Canonical units (CF convention)
-  CHARACTER(LEN=2)   :: CDIR      = '' !Type of the data field (XX,XY,--...)
-  CHARACTER(LEN=4)   :: CLBTYPE   = 'NONE' !Type of the lateral boundary (LBX,LBY,LBXU,LBYV)
   CHARACTER(LEN=100) :: CCOMMENT  = '' !Comment (for MesoNH, non CF convention)
   INTEGER            :: NGRID     = NGRIDUNKNOWN !Localization on the model grid
   INTEGER            :: NTYPE     = TYPEUNDEF !Datatype
   INTEGER            :: NDIMS     = 0  !Number of dimensions
-  LOGICAL            :: LTIMEDEP  = .FALSE. !Is the field time-dependent?
-  !
 #if defined(MNH_IOCDF4)
   INTEGER            :: NFILLVALUE =  NF90_FILL_INT  !Fill value for integer fields
   REAL               :: XFILLVALUE =  NF90_FILL_REAL !Fill value for real fields
@@ -119,6 +115,13 @@ TYPE :: TFIELDDATA
   INTEGER            :: NVALIDMAX  =  2147483647 !Maximum valid value for integer fields
   REAL               :: XVALIDMIN  = -1.E36 !Minimum valid value for real fields
   REAL               :: XVALIDMAX  =  1.E36 !Maximum valid value for real fields
+end type tfield_metadata_base
+
+!Structure describing the characteristics of a field
+TYPE, extends( tfield_metadata_base ) :: TFIELDDATA
+  CHARACTER(LEN=2)   :: CDIR      = '' !Type of the data field (XX,XY,--...)
+  CHARACTER(LEN=4)   :: CLBTYPE   = 'NONE' !Type of the lateral boundary (LBX,LBY,LBXU,LBYV)
+  LOGICAL            :: LTIMEDEP  = .FALSE. !Is the field time-dependent?
   !
   TYPE(TFIELDPTR_C0D),DIMENSION(:),ALLOCATABLE :: TFIELD_C0D !Pointer to the character string fields (one per nested mesh)
   TYPE(TFIELDPTR_C1D),DIMENSION(:),ALLOCATABLE :: TFIELD_C1D !Pointer to the character string 1D fields (one per nested mesh)

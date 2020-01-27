@@ -46,11 +46,14 @@
 !  P. Wautelet 19/07/2019: parameters to identify budget number
 !  P. Wautelet 15/11/2019: remove unused CBURECORD variable
 !  P. Wautelet 17/01/2020: add new budget data types
+!  P. Wautelet 27/01/2020: use the tfield_metadata_base abstract datatype
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
-USE MODD_PARAMETERS, ONLY :JPBUMAX, JPBUPROMAX, NBUNAMELGTMAX, NCOMMENTLGTMAX
+
+use modd_field,      only: tfield_metadata_base
+use modd_parameters, only: JPBUMAX, JPBUPROMAX, NBUNAMELGTMAX, NCOMMENTLGTMAX
 
 implicit none
 
@@ -89,8 +92,7 @@ type tbudgetdata
 end type tbudgetdata
 
 
-type tbusourcedata
-  character(len=NBUNAMELGTMAX)  :: cname    = ''
+type, extends( tfield_metadata_base ) :: tbusourcedata
   integer :: ngroup = 0 ! Number of the source term group in which storing the source term
                         !  (0: no store, 1: individual store, >1: number of the group)
   logical :: lenabled   = .false.
@@ -100,8 +102,7 @@ type tbusourcedata
                                   ! It may be true only if the source term is in a group not containing other sources
 end type tbusourcedata
 
-type tbugroupdata
-  character(len=NBUNAMELGTMAX)  :: cname    = ''
+type, extends( tfield_metadata_base ) :: tbugroupdata
   integer :: nsources = 0 ! Number of source terms composing this group
   integer, dimension(:),     allocatable :: nsourcelist ! List of the source terms composing this group
   real,    dimension(:,:,:), allocatable :: xdata ! Array to store the budget data
