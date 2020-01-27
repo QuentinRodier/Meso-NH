@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -20,8 +20,6 @@ USE MODD_VAR_ll,    ONLY: NMNH_COMM_WORLD
 IMPLICIT NONE 
 
 PRIVATE
-
-!INCLUDE 'mpif.h'
 
 INTERFACE GATHERALL_FIELD_ll
   MODULE PROCEDURE GATHERALL_X1, GATHERALL_X2, GATHERALL_X3,&
@@ -55,8 +53,6 @@ INTEGER,           INTENT(INOUT):: KRESP
 
 INTEGER :: IROOT
 
-!INCLUDE 'mpif.h'
-
 KRESP = 0
 IROOT = 1
 
@@ -78,8 +74,6 @@ REAL,DIMENSION(:,:), INTENT(INOUT):: PRECV
 INTEGER,             INTENT(INOUT):: KRESP
 
 INTEGER :: IROOT
-
-!INCLUDE 'mpif.h'
 
 KRESP = 0
 IROOT = 1
@@ -103,8 +97,6 @@ REAL,DIMENSION(:,:,:), INTENT(INOUT):: PRECV
 INTEGER,               INTENT(INOUT):: KRESP
 
 INTEGER :: IROOT
-
-!INCLUDE 'mpif.h'
 
 KRESP = 0
 IROOT = 1
@@ -131,8 +123,6 @@ INTEGER,              INTENT(INOUT):: KRESP
 
 INTEGER :: IROOT
 
-!INCLUDE 'mpif.h'
-
 KRESP = 0
 IROOT = 1
 
@@ -153,8 +143,6 @@ INTEGER,DIMENSION(:,:), INTENT(INOUT):: KRECV
 INTEGER,                INTENT(INOUT):: KRESP
 
 INTEGER :: IROOT
-
-!INCLUDE 'mpif.h'
 
 KRESP = 0
 IROOT = 1
@@ -184,8 +172,6 @@ REAL,DIMENSION(:),TARGET,INTENT(IN) :: PSEND
 REAL,DIMENSION(:),TARGET,INTENT(INOUT):: PRECV
 INTEGER,                 INTENT(IN) :: KROOT
 INTEGER,                 INTENT(IN) :: KCOMM
-
-!INCLUDE 'mpif.h'
 
 INTEGER                     :: JI
 INTEGER                     :: IXO,IXE,IYO,IYE
@@ -258,8 +244,6 @@ REAL,DIMENSION(:,:),TARGET,INTENT(INOUT):: PRECV
 INTEGER,                   INTENT(IN) :: KROOT
 INTEGER,                   INTENT(IN) :: KCOMM
 
-!INCLUDE 'mpif.h'
-
 INTEGER                     :: JI
 INTEGER                     :: IXO,IXE,IYO,IYE
 INTEGER                     :: IGXO,IGXE,IGYO,IGYE
@@ -320,8 +304,6 @@ REAL,DIMENSION(:,:,:),TARGET,INTENT(IN) :: PSEND
 REAL,DIMENSION(:,:,:),TARGET,INTENT(INOUT):: PRECV
 INTEGER,                     INTENT(IN) :: KROOT
 INTEGER,                     INTENT(IN) :: KCOMM
-
-!INCLUDE 'mpif.h'
 
 INTEGER                     :: JI
 INTEGER                     :: IXO,IXE,IYO,IYE
@@ -384,8 +366,6 @@ REAL,DIMENSION(:,:,:,:),TARGET,INTENT(INOUT):: PRECV
 INTEGER,                       INTENT(IN) :: KROOT
 INTEGER,                       INTENT(IN) :: KCOMM
 
-!INCLUDE 'mpif.h'
-
 INTEGER                     :: JI
 INTEGER                     :: IXO,IXE,IYO,IYE
 INTEGER                     :: IGXO,IGXE,IGYO,IGYE
@@ -446,8 +426,6 @@ REAL,DIMENSION(:,:,:,:,:),TARGET,INTENT(IN) :: PSEND
 REAL,DIMENSION(:,:,:,:,:),TARGET,INTENT(INOUT):: PRECV
 INTEGER,                         INTENT(IN) :: KROOT
 INTEGER,                         INTENT(IN) :: KCOMM
-
-!INCLUDE 'mpif.h'
 
 INTEGER                     :: JI
 INTEGER                     :: IXO,IXE,IYO,IYE
@@ -510,8 +488,6 @@ REAL,DIMENSION(:,:,:,:,:,:),TARGET,INTENT(INOUT):: PRECV
 INTEGER,                           INTENT(IN) :: KROOT
 INTEGER,                           INTENT(IN) :: KCOMM
 
-!INCLUDE 'mpif.h'
-
 INTEGER                     :: JI
 INTEGER                     :: IXO,IXE,IYO,IYE
 INTEGER                     :: IGXO,IGXE,IGYO,IGYE
@@ -572,8 +548,6 @@ INTEGER,DIMENSION(:),TARGET,INTENT(IN) :: KSEND
 INTEGER,DIMENSION(:),TARGET,INTENT(INOUT):: KRECV
 INTEGER,                    INTENT(IN) :: KROOT
 INTEGER,                    INTENT(IN) :: KCOMM
-
-!INCLUDE 'mpif.h'
 
 INTEGER                         :: JI
 INTEGER                         :: IXO,IXE,IYO,IYE
@@ -637,8 +611,6 @@ INTEGER,DIMENSION(:,:),TARGET,INTENT(IN) :: KSEND
 INTEGER,DIMENSION(:,:),TARGET,INTENT(INOUT):: KRECV
 INTEGER,                      INTENT(IN) :: KROOT
 INTEGER,                      INTENT(IN) :: KCOMM
-
-!INCLUDE 'mpif.h'
 
 INTEGER                         :: JI
 INTEGER                         :: IXO,IXE,IYO,IYE
@@ -763,8 +735,6 @@ LOGICAL,DIMENSION(:),TARGET,INTENT(INOUT) :: ORECV
 INTEGER,                    INTENT(IN)    :: KROOT
 INTEGER,                    INTENT(IN)    :: KCOMM
 
-!INCLUDE 'mpif.h'
-
 INTEGER                         :: JI
 INTEGER                         :: IXO,IXE,IYO,IYE
 INTEGER                         :: IGXO,IGXE,IGYO,IGYE
@@ -832,8 +802,6 @@ INTEGER,                   INTENT(IN) :: KCOMM
 INTEGER,          OPTIONAL,INTENT(IN) :: KXOBOX,KXEBOX,KYOBOX,KYEBOX
 CHARACTER(LEN=*), OPTIONAL,INTENT(IN) :: HINTER
 
-!INCLUDE 'mpif.h'
-
 INTEGER                       :: JI
 INTEGER                       :: IXO,IXE,IYO,IYE
 REAL, DIMENSION(:,:), POINTER :: XP
@@ -886,8 +854,6 @@ INTEGER,                     INTENT(IN) :: KCOMM
 INTEGER,            OPTIONAL,INTENT(IN) :: KXOBOX,KXEBOX,KYOBOX,KYEBOX
 CHARACTER(LEN=*),   OPTIONAL,INTENT(IN) :: HINTER
 
-!INCLUDE 'mpif.h'
-
 INTEGER                       :: JI
 INTEGER                       :: IXO,IXE,IYO,IYE
 REAL, DIMENSION(:,:,:),POINTER:: XP
@@ -928,8 +894,6 @@ INTEGER,                       INTENT(IN) :: KROOT
 INTEGER,                       INTENT(IN) :: KCOMM
 INTEGER,              OPTIONAL,INTENT(IN) :: KXOBOX,KXEBOX,KYOBOX,KYEBOX
 CHARACTER(LEN=*),     OPTIONAL,INTENT(IN) :: HINTER
-
-!INCLUDE 'mpif.h'
 
 INTEGER                         :: JI
 INTEGER                         :: IXO,IXE,IYO,IYE
@@ -972,8 +936,6 @@ INTEGER,                         INTENT(IN) :: KCOMM
 INTEGER,                OPTIONAL,INTENT(IN) :: KXOBOX,KXEBOX,KYOBOX,KYEBOX
 CHARACTER(LEN=*),       OPTIONAL,INTENT(IN) :: HINTER
 
-!INCLUDE 'mpif.h'
-
 INTEGER                           :: JI
 INTEGER                           :: IXO,IXE,IYO,IYE
 REAL, DIMENSION(:,:,:,:,:),POINTER:: XP
@@ -1015,8 +977,6 @@ INTEGER,                           INTENT(IN) :: KCOMM
 INTEGER,                  OPTIONAL,INTENT(IN) :: KXOBOX,KXEBOX,KYOBOX,KYEBOX
 CHARACTER(LEN=*),         OPTIONAL,INTENT(IN) :: HINTER
 
-!INCLUDE 'mpif.h'
-
 INTEGER                             :: JI
 INTEGER                             :: IXO,IXE,IYO,IYE
 REAL, DIMENSION(:,:,:,:,:,:),POINTER:: XP
@@ -1055,8 +1015,6 @@ INTEGER,DIMENSION(:,:),TARGET,INTENT(IN) :: KSEND
 INTEGER,DIMENSION(:,:),TARGET,INTENT(INOUT):: KRECV
 INTEGER,                      INTENT(IN) :: KROOT
 INTEGER,                      INTENT(IN) :: KCOMM
-
-!INCLUDE 'mpif.h'
 
 INTEGER                        :: JI
 INTEGER                        :: IXO,IXE,IYO,IYE
@@ -1134,7 +1092,6 @@ REAL,DIMENSION(:,:),TARGET,INTENT(INOUT):: PRECV
 INTEGER,                   INTENT(IN) :: KROOT
 INTEGER,                   INTENT(IN) :: KCOMM
 INTEGER,                   INTENT(IN) :: KXOBOX,KXEBOX,KYOBOX,KYEBOX                    
-!INCLUDE 'mpif.h'
 
 INTEGER                       :: JI
 INTEGER                       :: IXO,IXE,IYO,IYE
