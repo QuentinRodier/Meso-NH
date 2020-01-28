@@ -130,6 +130,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   use mode_datetime,       only: datetime_distance
   use mode_io_field_write, only: IO_Field_write
   use mode_menu_diachro,   only: Menu_diachro
+  use mode_msg
   use mode_time,           only: tdtexp
 
   implicit none
@@ -272,90 +273,90 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   !* XBURHODJU and RU budgets
   !
     IF (LBU_RU) THEN
-      call Store_one_budget_rho_new( tpdiafile, tzdates, tbudgets(NBUDGET_U),          NBUDGET_U, gnocompress, zrhodjn )
-      call Store_one_budget_new    ( tpdiafile, tzdates, tbudgets(NBUDGET_U), zrhodjn, NBUDGET_U, gnocompress, ptstep  )
+      call Store_one_budget_rho( tpdiafile, tzdates, tbudgets(NBUDGET_U),          NBUDGET_U, gnocompress, zrhodjn )
+      call Store_one_budget    ( tpdiafile, tzdates, tbudgets(NBUDGET_U), zrhodjn, NBUDGET_U, gnocompress, ptstep  )
     END IF
   !
   !* XBURHODJV and RV budgets
   !
     IF (LBU_RV) THEN
-      call Store_one_budget_rho( tpdiafile, tzdates, xburhodjv, NBUDGET_V, gnocompress, zrhodjn )
-      call Store_one_budget( tpdiafile, tzdates, xburv, zrhodjn, NBUDGET_V, gnocompress, ptstep )
+      call Store_one_budget_rho_old( tpdiafile, tzdates, xburhodjv, NBUDGET_V, gnocompress, zrhodjn )
+      call Store_one_budget_old( tpdiafile, tzdates, xburv, zrhodjn, NBUDGET_V, gnocompress, ptstep )
     END IF
   !
   !* XBURHODJW and RW budgets
   !
     IF (LBU_RW) THEN
-      call Store_one_budget_rho( tpdiafile, tzdates, xburhodjw, NBUDGET_W, gnocompress, zrhodjn )
-      call Store_one_budget( tpdiafile, tzdates, xburw, zrhodjn, NBUDGET_W, gnocompress, ptstep )
+      call Store_one_budget_rho_old( tpdiafile, tzdates, xburhodjw, NBUDGET_W, gnocompress, zrhodjn )
+      call Store_one_budget_old( tpdiafile, tzdates, xburw, zrhodjn, NBUDGET_W, gnocompress, ptstep )
     END IF
   !
   !* XBURHODJ storage for Scalars
   !
     IF (LBU_RTH .OR. LBU_RTKE .OR. LBU_RRV .OR. LBU_RRC .OR. LBU_RRR .OR. &
         LBU_RRI .OR. LBU_RRS  .OR. LBU_RRG .OR. LBU_RRH .OR. LBU_RSV      ) THEN
-      call Store_one_budget_rho( tpdiafile, tzdates, xburhodj, NBUDGET_RHO, gnocompress, zrhodjn )
+      call Store_one_budget_rho_old( tpdiafile, tzdates, xburhodj, NBUDGET_RHO, gnocompress, zrhodjn )
     ENDIF
   !
   !* RTH budget
   !
     IF (LBU_RTH) THEN
-      call Store_one_budget( tpdiafile, tzdates, xburth, zrhodjn, NBUDGET_TH, gnocompress, ptstep )
+      call Store_one_budget_old( tpdiafile, tzdates, xburth, zrhodjn, NBUDGET_TH, gnocompress, ptstep )
     END IF
   !
   !* RTKE budget
   !
     IF (LBU_RTKE) THEN
-      call Store_one_budget( tpdiafile, tzdates, xburtke, zrhodjn, NBUDGET_TKE, gnocompress, ptstep )
+      call Store_one_budget_old( tpdiafile, tzdates, xburtke, zrhodjn, NBUDGET_TKE, gnocompress, ptstep )
     END IF
   !
   !* RRV budget
   !
     IF (LBU_RRV) THEN
-      call Store_one_budget( tpdiafile, tzdates, xburrv, zrhodjn, NBUDGET_RV, gnocompress, ptstep )
+      call Store_one_budget_old( tpdiafile, tzdates, xburrv, zrhodjn, NBUDGET_RV, gnocompress, ptstep )
     END IF
   !
   !* RRC budget
   !
     IF (LBU_RRC) THEN
-      call Store_one_budget( tpdiafile, tzdates, xburrc, zrhodjn, NBUDGET_RC, gnocompress, ptstep )
+      call Store_one_budget_old( tpdiafile, tzdates, xburrc, zrhodjn, NBUDGET_RC, gnocompress, ptstep )
     END IF
   !
   !* RRR budget
   !
     IF (LBU_RRR) THEN
-      call Store_one_budget( tpdiafile, tzdates, xburrr, zrhodjn, NBUDGET_RR, gnocompress, ptstep )
+      call Store_one_budget_old( tpdiafile, tzdates, xburrr, zrhodjn, NBUDGET_RR, gnocompress, ptstep )
     END IF
   !
   !* RRI budget
   !
     IF (LBU_RRI) THEN
-      call Store_one_budget( tpdiafile, tzdates, xburri, zrhodjn, NBUDGET_RI, gnocompress, ptstep )
+      call Store_one_budget_old( tpdiafile, tzdates, xburri, zrhodjn, NBUDGET_RI, gnocompress, ptstep )
     END IF
   !
   !* RRS budget
   !
     IF (LBU_RRS) THEN
-      call Store_one_budget( tpdiafile, tzdates, xburrs, zrhodjn, NBUDGET_RS, gnocompress, ptstep )
+      call Store_one_budget_old( tpdiafile, tzdates, xburrs, zrhodjn, NBUDGET_RS, gnocompress, ptstep )
     END IF
   !
   !* RRG budget
   !
     IF (LBU_RRG) THEN
-      call Store_one_budget( tpdiafile, tzdates, xburrg, zrhodjn, NBUDGET_RG, gnocompress, ptstep )
+      call Store_one_budget_old( tpdiafile, tzdates, xburrg, zrhodjn, NBUDGET_RG, gnocompress, ptstep )
     END IF
   !
   !* RRH budget
   !
     IF (LBU_RRH) THEN
-      call Store_one_budget( tpdiafile, tzdates, xburrh, zrhodjn, NBUDGET_RH, gnocompress, ptstep )
+      call Store_one_budget_old( tpdiafile, tzdates, xburrh, zrhodjn, NBUDGET_RH, gnocompress, ptstep )
     END IF
   !
   !* RSV budgets
   !
     IF (LBU_RSV) THEN
       DO JSV = 1,KSV
-        call Store_one_budget( tpdiafile, tzdates, xbursv(:, :, :, :, jsv ), zrhodjn, &
+        call Store_one_budget_old( tpdiafile, tzdates, xbursv(:, :, :, :, jsv ), zrhodjn, &
                                NBUDGET_SV1 + jsv - 1, gnocompress, ptstep )
       END DO
     END IF
@@ -364,7 +365,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
 end subroutine Write_budget
 
 
-subroutine Store_one_budget_rho( tpdiafile, tpdates, pburhodj, kp, knocompress, prhodjn )
+subroutine Store_one_budget_rho_old( tpdiafile, tpdates, pburhodj, kp, knocompress, prhodjn )
   use modd_budget,            only: cbutype,                                                      &
                                     lbu_icp, lbu_jcp, lbu_kcp,                                    &
                                     nbuil, nbuih, nbujl, nbujh, nbukl, nbukh,                     &
@@ -376,6 +377,7 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, pburhodj, kp, knocompress, 
   use modd_parameters,        only: XNEGUNDEF
   use modd_type_date,         only: date_time
 
+  use mode_msg
   use mode_write_diachro,     only: Write_diachro
 
   use modi_end_cart_compress, only: End_cart_compress
@@ -419,7 +421,7 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, pburhodj, kp, knocompress, 
         end where
 
     case default
-      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_rho', 'unknown CBUTYPE' )
+      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_rho_old', 'unknown CBUTYPE' )
   end select
 
   allocate( ybucomment(1) )
@@ -457,7 +459,7 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, pburhodj, kp, knocompress, 
       write( ygroup_name, fmt = "('RJZ__',I4.4)" ) nbutshift
 
     case default
-      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_rho', 'unknown budget type' )
+      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_rho_old', 'unknown budget type' )
   end select
 
   call Write_diachro( tpdiafile, tluout, ygroup_name, ybutype, iworkgrid,                          &
@@ -467,10 +469,10 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, pburhodj, kp, knocompress, 
                       kil = nbuil, kih = nbuih, kjl = nbujl, kjh = nbujh, kkl = nbukl, kkh = nbukh )
   deallocate( ybucomment, yworkunit, yworkcomment, iworkgrid )
 
-end subroutine Store_one_budget_rho
+end subroutine Store_one_budget_rho_old
 
 
-subroutine Store_one_budget_rho_new( tpdiafile, tpdates, tpbudget, kp, knocompress, prhodjn )
+subroutine Store_one_budget_rho( tpdiafile, tpdates, tpbudget, kp, knocompress, prhodjn )
   use modd_budget,            only: cbutype,                                                      &
                                     lbu_icp, lbu_jcp, lbu_kcp,                                    &
                                     nbuil, nbuih, nbujl, nbujh, nbukl, nbukh,                     &
@@ -483,6 +485,7 @@ subroutine Store_one_budget_rho_new( tpdiafile, tpdates, tpbudget, kp, knocompre
   use modd_parameters,        only: XNEGUNDEF
   use modd_type_date,         only: date_time
 
+  use mode_msg
   use mode_write_diachro,     only: Write_diachro
 
   use modi_end_cart_compress, only: End_cart_compress
@@ -526,7 +529,7 @@ subroutine Store_one_budget_rho_new( tpdiafile, tpdates, tpbudget, kp, knocompre
         end where
 
     case default
-      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_rho', 'unknown CBUTYPE' )
+      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_rho_old', 'unknown CBUTYPE' )
   end select
 
   allocate( ybucomment(1) )
@@ -553,7 +556,7 @@ subroutine Store_one_budget_rho_new( tpdiafile, tpdates, tpbudget, kp, knocompre
       write( ygroup_name, fmt = "('RJZ__',I4.4)" ) nbutshift
 
     case default
-      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_rho', 'unknown budget type' )
+      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_rho_old', 'unknown budget type' )
   end select
 
   call Write_diachro( tpdiafile, tluout, ygroup_name, ybutype, iworkgrid,                          &
@@ -563,10 +566,10 @@ subroutine Store_one_budget_rho_new( tpdiafile, tpdates, tpbudget, kp, knocompre
                       kil = nbuil, kih = nbuih, kjl = nbujl, kjh = nbujh, kkl = nbukl, kkh = nbukh )
   deallocate( ybucomment, yworkunit, yworkcomment, iworkgrid )
 
-end subroutine Store_one_budget_rho_new
+end subroutine Store_one_budget_rho
 
 
-subroutine Store_one_budget( tpdiafile, tpdates, pbudarray, prhodjn, kp, knocompress, ptstep )
+subroutine Store_one_budget_old( tpdiafile, tpdates, pbudarray, prhodjn, kp, knocompress, ptstep )
   use modd_budget,            only: cbucomment, cbutype,                                                                          &
                                     lbu_icp, lbu_jcp, lbu_kcp,                                                                    &
                                     nbuil, nbuih, nbujl, nbujh, nbukl, nbukh,                                                     &
@@ -578,6 +581,7 @@ subroutine Store_one_budget( tpdiafile, tpdates, pbudarray, prhodjn, kp, knocomp
   use modd_lunit_n,           only: tluout
   use modd_type_date,         only: date_time
 
+  use mode_msg
   use mode_write_diachro,     only: Write_diachro
 
   use modi_end_cart_compress, only: End_cart_compress
@@ -604,8 +608,9 @@ subroutine Store_one_budget( tpdiafile, tpdates, pbudarray, prhodjn, kp, knocomp
   real,               dimension(:),           allocatable :: zconvert   ! unit conversion coefficient
   real,               dimension(:,:,:,:,:,:), allocatable :: zworkt
 
+
   if( .not. allocated( prhodjn ) ) then
-    call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget', 'prhodjn not allocated' )
+    call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_old', 'prhodjn not allocated' )
     return
   end if
 
@@ -640,7 +645,7 @@ subroutine Store_one_budget( tpdiafile, tpdates, pbudarray, prhodjn, kp, knocomp
         end do
 
     case default
-      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget', 'unknown CBUTYPE' )
+      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_old', 'unknown CBUTYPE' )
   end select
 
   deallocate(zconvert)
@@ -733,7 +738,7 @@ subroutine Store_one_budget( tpdiafile, tpdates, pbudarray, prhodjn, kp, knocomp
       write( ygroup_name, fmt = "('SV',I3.3,I4.4)") jsv, nbutshift
 
     case default
-      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget', 'unknown budget type' )
+      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_old', 'unknown budget type' )
   end select
 
   CALL Write_diachro( tpdiafile, tluout, ygroup_name, ybutype, iworkgrid,                              &
@@ -744,10 +749,10 @@ subroutine Store_one_budget( tpdiafile, tpdates, pbudarray, prhodjn, kp, knocomp
 
   deallocate( zworkt, yworkunit, yworkcomment, iworkgrid )
 
-end subroutine Store_one_budget
+end subroutine Store_one_budget_old
 
 
-subroutine Store_one_budget_new( tpdiafile, tpdates, tpbudget, prhodjn, kp, knocompress, ptstep )
+subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, kp, knocompress, ptstep )
   use modd_budget,            only: cbutype,                                                                                      &
                                     lbu_icp, lbu_jcp, lbu_kcp,                                                                    &
                                     nbuil, nbuih, nbujl, nbujh, nbukl, nbukh,                                                     &
@@ -761,6 +766,7 @@ subroutine Store_one_budget_new( tpdiafile, tpdates, tpbudget, prhodjn, kp, knoc
   use modd_parameters,        only: NBUNAMELGTMAX
   use modd_type_date,         only: date_time
 
+  use mode_msg
   use mode_write_diachro,     only: Write_diachro
 
   use modi_end_cart_compress, only: End_cart_compress
@@ -789,8 +795,9 @@ subroutine Store_one_budget_new( tpdiafile, tpdates, tpbudget, prhodjn, kp, knoc
   real,               dimension(:),           allocatable :: zconvert   ! unit conversion coefficient
   real,               dimension(:,:,:,:,:,:), allocatable :: zworkt
 
+
   if( .not. allocated( prhodjn ) ) then
-    call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_new', 'prhodjn not allocated' )
+    call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget', 'prhodjn not allocated' )
     return
   end if
 
@@ -834,7 +841,7 @@ subroutine Store_one_budget_new( tpdiafile, tpdates, tpbudget, prhodjn, kp, knoc
         end do
 
     case default
-      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_new', 'unknown CBUTYPE' )
+      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget', 'unknown CBUTYPE' )
   end select
 
   deallocate(zconvert)
@@ -894,7 +901,7 @@ subroutine Store_one_budget_new( tpdiafile, tpdates, tpbudget, prhodjn, kp, knoc
       write( ygroup_name, fmt = "('SV',I3.3,I4.4)") jsv, nbutshift
 
     case default
-      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_new', 'unknown budget type' )
+      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget', 'unknown budget type' )
   end select
 
   do jproc = 1, igroups
@@ -909,6 +916,6 @@ subroutine Store_one_budget_new( tpdiafile, tpdates, tpbudget, prhodjn, kp, knoc
 
   deallocate( zworkt, yworkunit, yworkcomment, iworkgrid )
 
-end subroutine Store_one_budget_new
+end subroutine Store_one_budget
 
 end module mode_write_budget
