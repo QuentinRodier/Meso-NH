@@ -193,8 +193,8 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   !
   !* 2.1    Initialization
   !
-      ALLOCATE( ZWORKTEMP( 1 ) )
-      allocate( tzdates( 1 ) )
+      ALLOCATE( ZWORKTEMP(1) )
+      allocate( tzdates(1) )
   !
       !Compute time at the middle of the temporally-averaged budget timestep
       !This time is computed from the beginning of the experiment
@@ -402,28 +402,28 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, pburhodj, kp, knocompress, 
     case( 'CART', 'SKIP' )
       ybutype = 'CART'
         if ( knocompress ) then
-          allocate( prhodjn(nbuimax, nbujmax, nbukmax, 1, 1, 1 ) ) ! local budget of RHODJU
-          prhodjn(:, :, :, 1, 1, 1 ) = pburhodj(:, :, : )
+          allocate( prhodjn(nbuimax, nbujmax, nbukmax, 1, 1, 1) ) ! local budget of RHODJU
+          prhodjn(:, :, :, 1, 1, 1) = pburhodj(:, :, :)
         else
-          allocate( prhodjn(nbuimax_ll, nbujmax_ll, nbukmax, 1, 1, 1 ) ) ! global budget of RhodjU
+          allocate( prhodjn(nbuimax_ll, nbujmax_ll, nbukmax, 1, 1, 1) ) ! global budget of RhodjU
           prhodjn(:,:,:,1,1,1)=end_cart_compress(pburhodj(:,:,:))
         end if
     case('MASK')
       ybutype = 'MASK'
-        allocate( prhodjn(1, 1, nbukmax, nbuwrnb, nbumask, 1 ) )
-        prhodjn(1, 1, :, :, :, 1 ) = End_mask_compress( pburhodj(:, :, : ) )
+        allocate( prhodjn(1, 1, nbukmax, nbuwrnb, nbumask, 1) )
+        prhodjn(1, 1, :, :, :, 1) = End_mask_compress( pburhodj(:, :, :) )
         where  ( prhodjn(1, 1, :, :, :, 1) <= 0. )
-            prhodjn(1, 1, :, :, :, 1 ) = XNEGUNDEF
+            prhodjn(1, 1, :, :, :, 1) = XNEGUNDEF
         end where
 
     case default
       call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_rho', 'unknown CBUTYPE' )
   end select
 
-  allocate( ybucomment(1 ) )
-  allocate( yworkunit(1 ) )
-  allocate( yworkcomment(1 ) )
-  allocate( iworkgrid(1 ) )
+  allocate( ybucomment(1) )
+  allocate( yworkunit(1) )
+  allocate( yworkcomment(1) )
+  allocate( iworkgrid(1) )
 
   select case( kp )
     case( NBUDGET_RHO )
@@ -466,6 +466,102 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, pburhodj, kp, knocompress, 
   deallocate( ybucomment, yworkunit, yworkcomment, iworkgrid )
 
 end subroutine Store_one_budget_rho
+
+
+subroutine Store_one_budget_rho_new( tpdiafile, tpdates, tpbudget, kp, knocompress, prhodjn )
+  use modd_budget,            only: cbutype,                                                      &
+                                    lbu_icp, lbu_jcp, lbu_kcp,                                    &
+                                    nbuil, nbuih, nbujl, nbujh, nbukl, nbukh,                     &
+                                    nbuimax, nbuimax_ll, nbujmax, nbujmax_ll, nbukmax, nbutshift, &
+                                    nbumask, nbuwrnb,                                             &
+                                    tbudgetdata,                                                  &
+                                    NBUDGET_RHO, NBUDGET_U, NBUDGET_V, NBUDGET_W
+  use modd_io,                only: tfiledata
+  use modd_lunit_n,           only: tluout
+  use modd_parameters,        only: XNEGUNDEF
+  use modd_type_date,         only: date_time
+
+  use mode_write_diachro,     only: Write_diachro
+
+  use modi_end_cart_compress, only: End_cart_compress
+  use modi_end_mask_compress, only: End_mask_compress
+
+  implicit none
+
+  type(tfiledata),                                      intent(in)  :: tpdiafile   ! file to write
+  type(date_time), dimension(:),                        intent(in)  :: tpdates
+  type(tbudgetdata),                                    intent(in)  :: tpbudget    ! Budget datastructure
+  integer,                                              intent(in)  :: kp          ! reference number of budget
+  logical,                                              intent(in)  :: knocompress ! compression for the cart option
+  real,            dimension(:,:,:,:,:,:), allocatable, intent(out) :: prhodjn
+
+  character(len=4)                               :: ybutype
+  character(len=9)                               :: ygroup_name   ! group name
+  character(len=99),  dimension(:), allocatable  :: ybucomment    ! comment
+  character(len=100), dimension(:), allocatable  :: yworkcomment  ! comment
+  character(len=100), dimension(:), allocatable  :: yworkunit     ! comment
+  integer,            dimension(:), allocatable  :: iworkgrid     ! grid label
+
+  if ( allocated( prhodjn ) ) deallocate( prhodjn )
+
+  ! pburhodj storage
+  select case ( cbutype )
+    case( 'CART', 'SKIP' )
+      ybutype = 'CART'
+        if ( knocompress ) then
+          allocate( prhodjn(nbuimax, nbujmax, nbukmax, 1, 1, 1) ) ! local budget of RHODJU
+          prhodjn(:, :, :, 1, 1, 1) = tpbudget%trhodj%xdata(:, :, :)
+        else
+          allocate( prhodjn(nbuimax_ll, nbujmax_ll, nbukmax, 1, 1, 1) ) ! global budget of RhodjU
+          prhodjn(:,:,:,1,1,1)=End_cart_compress( tpbudget%trhodj%xdata(:,:,:) )
+        end if
+    case('MASK')
+      ybutype = 'MASK'
+        allocate( prhodjn(1, 1, nbukmax, nbuwrnb, nbumask, 1) )
+        prhodjn(1, 1, :, :, :, 1) = End_mask_compress( tpbudget%trhodj%xdata(:, :, :) )
+        where  ( prhodjn(1, 1, :, :, :, 1) <= 0. )
+            prhodjn(1, 1, :, :, :, 1) = XNEGUNDEF
+        end where
+
+    case default
+      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_rho', 'unknown CBUTYPE' )
+  end select
+
+  allocate( ybucomment(1) )
+  allocate( yworkunit(1) )
+  allocate( yworkcomment(1) )
+  allocate( iworkgrid(1) )
+
+  ybucomment(1)   = tpbudget%trhodj%cmnhname
+  yworkunit(1)    = tpbudget%trhodj%cunits
+  yworkcomment(1) = tpbudget%trhodj%ccomment
+  iworkgrid(1)    = tpbudget%trhodj%ngrid
+
+  select case( kp )
+    case( NBUDGET_RHO )
+      write( ygroup_name, fmt = "('RJS__',I4.4)" ) nbutshift
+
+    case( NBUDGET_U )
+      write( ygroup_name, fmt = "('RJX__',I4.4)" ) nbutshift
+
+    case( NBUDGET_V )
+      write( ygroup_name, fmt = "('RJX__',I4.4)" ) nbutshift
+
+    case( NBUDGET_W )
+      write( ygroup_name, fmt = "('RJZ__',I4.4)" ) nbutshift
+
+    case default
+      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_rho', 'unknown budget type' )
+  end select
+
+  call Write_diachro( tpdiafile, tluout, ygroup_name, ybutype, iworkgrid,                          &
+                      tpdates, prhodjn, ybucomment,                                                &
+                      yworkunit, yworkcomment,                                                     &
+                      oicp = lbu_icp, ojcp = lbu_jcp, okcp = lbu_kcp,                              &
+                      kil = nbuil, kih = nbuih, kjl = nbujl, kjh = nbujh, kkl = nbukl, kkh = nbukh )
+  deallocate( ybucomment, yworkunit, yworkcomment, iworkgrid )
+
+end subroutine Store_one_budget_rho_new
 
 
 subroutine Store_one_budget( tpdiafile, tpdates, pbudarray, prhodjn, kp, knocompress, ptstep )
@@ -512,33 +608,33 @@ subroutine Store_one_budget( tpdiafile, tpdates, pbudarray, prhodjn, kp, knocomp
   end if
 
   ! unit conversion for  ru budgets
-  allocate( zconvert( nbuprocnbr( kp ) ) )
+  allocate( zconvert( nbuprocnbr(kp) ) )
   zconvert(1 : 2 )                = ptstep * Real( nbustep )
   zconvert(3 )                    = ptstep * Real( nbustep )
-  zconvert(4 : nbuprocnbr( kp ) ) = 1.
+  zconvert(4 : nbuprocnbr(kp) ) = 1.
 
   select case ( cbutype )
     case( 'CART', 'SKIP' )
       ybutype = 'CART'
         if ( knocompress ) then
-          allocate( zworkt(nbuimax, nbujmax, nbukmax, 1, 1, nbuprocnbr(kp ) ) ) ! local budget of ru
-          do jproc = 1, nbuprocnbr(kp )
-            zworkt(:, :, :, 1, 1, jproc ) = pbudarray(:, :, :, jproc ) * zconvert(jproc ) / prhodjn(:, :, :, 1, 1, 1 )
+          allocate( zworkt(nbuimax, nbujmax, nbukmax, 1, 1, nbuprocnbr(kp)) ) ! local budget of ru
+          do jproc = 1, nbuprocnbr(kp)
+            zworkt(:, :, :, 1, 1, jproc) = pbudarray(:, :, :, jproc) * zconvert(jproc) / prhodjn(:, :, :, 1, 1, 1)
           end do
         else
-          allocate( zworkt(nbuimax_ll, nbujmax_ll, nbukmax, 1, 1, nbuprocnbr(kp ) ) ) ! global budget of ru
+          allocate( zworkt(nbuimax_ll, nbujmax_ll, nbukmax, 1, 1, nbuprocnbr(kp)) ) ! global budget of ru
   !
-          do jproc = 1, nbuprocnbr(kp )
-            zworkt(:, :, :, 1, 1, jproc ) = End_cart_compress( pbudarray(:, :, :, jproc ) )
-            zworkt(:, :, :, 1, 1, jproc ) = zworkt(:, :, :, 1, 1, jproc ) * zconvert(jproc ) / prhodjn(:, :, :, 1, 1, 1 )
+          do jproc = 1, nbuprocnbr(kp)
+            zworkt(:, :, :, 1, 1, jproc) = End_cart_compress( pbudarray(:, :, :, jproc) )
+            zworkt(:, :, :, 1, 1, jproc) = zworkt(:, :, :, 1, 1, jproc) * zconvert(jproc) / prhodjn(:, :, :, 1, 1, 1)
           end do
         endif
     case('MASK')
       ybutype = 'MASK'
-        allocate( zworkt(1, 1, nbukmax, nbuwrnb, nbumask, nbuprocnbr(kp ) ) )
-        do jproc = 1, nbuprocnbr(kp )
-          zworkt(1, 1, :, :, :, jproc ) = End_mask_compress( pbudarray(:, :, :, jproc ) ) &
-                                          * zconvert(jproc ) / prhodjn(1, 1, :, :, :, 1 )
+        allocate( zworkt(1, 1, nbukmax, nbuwrnb, nbumask, nbuprocnbr(kp) ) )
+        do jproc = 1, nbuprocnbr(kp)
+          zworkt(1, 1, :, :, :, jproc) = End_mask_compress( pbudarray(:, :, :, jproc) ) &
+                                          * zconvert(jproc) / prhodjn(1, 1, :, :, :, 1)
         end do
 
     case default
@@ -548,9 +644,9 @@ subroutine Store_one_budget( tpdiafile, tpdates, pbudarray, prhodjn, kp, knocomp
   deallocate(zconvert)
 !
 !  RU budgets storage
-  allocate( yworkunit( nbuprocnbr(kp ) ) )
-  allocate( yworkcomment( nbuprocnbr(kp ) ) )
-  allocate( iworkgrid( nbuprocnbr(kp ) ) )
+  allocate( yworkunit(   nbuprocnbr(kp)) )
+  allocate( yworkcomment(nbuprocnbr(kp)) )
+  allocate( iworkgrid(   nbuprocnbr(kp)) )
 !
   select case( kp )
     case ( NBUDGET_U )
@@ -647,5 +743,170 @@ subroutine Store_one_budget( tpdiafile, tpdates, pbudarray, prhodjn, kp, knocomp
   deallocate( zworkt, yworkunit, yworkcomment, iworkgrid )
 
 end subroutine Store_one_budget
+
+
+subroutine Store_one_budget_new( tpdiafile, tpdates, tpbudget, prhodjn, kp, knocompress, ptstep )
+  use modd_budget,            only: cbutype,                                                                                      &
+                                    lbu_icp, lbu_jcp, lbu_kcp,                                                                    &
+                                    nbuil, nbuih, nbujl, nbujh, nbukl, nbukh,                                                     &
+                                    nbuimax, nbuimax_ll, nbujmax, nbujmax_ll, nbukmax, nbustep, nbutshift,                        &
+                                    nbumask, nbuwrnb,                                                                             &
+                                    NBUDGET_U, NBUDGET_V, NBUDGET_W, NBUDGET_TH, NBUDGET_TKE, NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, &
+                                    NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, NBUDGET_SV1,                                  &
+                                    tbudgetdata
+  use modd_io,                only: tfiledata
+  use modd_lunit_n,           only: tluout
+  use modd_parameters,        only: NBUNAMELGTMAX
+  use modd_type_date,         only: date_time
+
+  use mode_write_diachro,     only: Write_diachro
+
+  use modi_end_cart_compress, only: End_cart_compress
+  use modi_end_mask_compress, only: End_mask_compress
+
+  implicit none
+
+  type(tfiledata),                                      intent(in) :: tpdiafile   ! file to write
+  type(date_time), dimension(:),                        intent(in) :: tpdates
+  type(tbudgetdata),                                    intent(in) :: tpbudget ! Budget datastructure
+  real,            dimension(:,:,:,:,:,:), allocatable, intent(in) :: prhodjn
+  integer,                                              intent(in) :: kp          ! reference number of budget
+  logical,                                              intent(in) :: knocompress ! compression for the cart option
+  real,                                                 intent(in) :: ptstep      ! time step
+
+  character(len=4)                                        :: ybutype
+  character(len=9)                                        :: ygroup_name
+  character(len=NBUNAMELGTMAX), dimension(:), allocatable :: ytitles
+  character(len=100), dimension(:),           allocatable :: yworkcomment
+  character(len=100), dimension(:),           allocatable :: yworkunit
+  integer                                                 :: igroups
+  integer                                                 :: jproc
+  integer                                                 :: jsv
+  integer                                                 :: jt
+  integer,            dimension(:),           allocatable :: iworkgrid  ! grid label
+  real,               dimension(:),           allocatable :: zconvert   ! unit conversion coefficient
+  real,               dimension(:,:,:,:,:,:), allocatable :: zworkt
+
+  if( .not. allocated( prhodjn ) ) then
+    call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_new', 'prhodjn not allocated' )
+    return
+  end if
+
+  igroups = tpbudget%ngroups
+
+  ! unit conversion for  ru budgets
+  allocate( zconvert( igroups ) )
+  do jproc = 1, igroups
+    if (      tpbudget%tgroups(jproc)%cmnhname == 'INIF' &
+         .or. tpbudget%tgroups(jproc)%cmnhname == 'ENDF' &
+         .or. tpbudget%tgroups(jproc)%cmnhname == 'AVEF' ) then
+      zconvert(jproc) = ptstep * Real( nbustep )
+    else
+      zconvert(jproc) = 1.
+    end if
+  end do
+
+  select case ( cbutype )
+    case( 'CART', 'SKIP' )
+      ybutype = 'CART'
+        if ( knocompress ) then
+          allocate( zworkt(nbuimax, nbujmax, nbukmax, 1, 1, igroups ) ) ! local budget of ru
+          do jproc = 1, igroups
+            zworkt(:, :, :, 1, 1, jproc) = tpbudget%tgroups(jproc)%xdata(:, :, :) &
+                                           * zconvert(jproc) / prhodjn(:, :, :, 1, 1, 1)
+          end do
+        else
+          allocate( zworkt(nbuimax_ll, nbujmax_ll, nbukmax, 1, 1, igroups ) ) ! global budget of ru
+
+          do jproc = 1, igroups
+            zworkt(:, :, :, 1, 1, jproc) = End_cart_compress( tpbudget%tgroups(jproc)%xdata(:, :, :) )
+            zworkt(:, :, :, 1, 1, jproc) = zworkt(:, :, :, 1, 1, jproc) * zconvert(jproc) / prhodjn(:, :, :, 1, 1, 1)
+          end do
+        endif
+    case('MASK')
+      ybutype = 'MASK'
+        allocate( zworkt(1, 1, nbukmax, nbuwrnb, nbumask, igroups ) )
+        do jproc = 1, igroups
+          zworkt(1, 1, :, :, :, jproc) = End_mask_compress( tpbudget%tgroups(jproc)%xdata(:, :, :) ) &
+                                        * zconvert(jproc) / prhodjn(1, 1, :, :, :, 1)
+        end do
+
+    case default
+      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_new', 'unknown CBUTYPE' )
+  end select
+
+  deallocate(zconvert)
+
+  allocate( ytitles( igroups ) )
+  allocate( yworkunit( igroups ) )
+  allocate( yworkcomment( igroups ) )
+  allocate( iworkgrid( igroups ) )
+
+  yworkunit(:)    = tpbudget%tgroups(:)%cunits
+  yworkcomment(:) = tpbudget%tgroups(:)%ccomment
+  iworkgrid(:)    = tpbudget%tgroups(:)%ngrid
+
+  select case( kp )
+    case ( NBUDGET_U )
+      write( ygroup_name, fmt = "('UU___',I4.4)" ) nbutshift
+
+    case ( NBUDGET_V )
+      write( ygroup_name, fmt = "('VV___',I4.4)" ) nbutshift
+
+    case ( NBUDGET_W )
+      write( ygroup_name, fmt = "('WW___',I4.4)" ) nbutshift
+
+    case ( NBUDGET_TH )
+      write( ygroup_name, fmt = "('TH___',I4.4)" ) nbutshift
+
+    case ( NBUDGET_TKE )
+      write( ygroup_name, fmt = "('TK___',I4.4)" ) nbutshift
+
+    case ( NBUDGET_RV )
+      write( ygroup_name, fmt = "('RV___',I4.4)" ) nbutshift
+
+    case ( NBUDGET_RC )
+      write( ygroup_name, fmt = "('RC___',I4.4)" ) nbutshift
+
+    case ( NBUDGET_RR )
+      write( ygroup_name, fmt = "('RR___',I4.4)" ) nbutshift
+
+    case ( NBUDGET_RI )
+      write( ygroup_name, fmt = "('RI___',I4.4)" ) nbutshift
+
+    case ( NBUDGET_RS )
+      write( ygroup_name, fmt = "('RS___',I4.4)" ) nbutshift
+
+    case ( NBUDGET_RG )
+      write( ygroup_name, fmt = "('RG___',I4.4)" ) nbutshift
+
+    case ( NBUDGET_RH )
+      write( ygroup_name, fmt = "('RH___',I4.4)" ) nbutshift
+
+    case ( NBUDGET_SV1 : )
+      jsv = kp - NBUDGET_SV1 + 1
+!       yworkunit(:)       = 's-1' ;  yworkunit(1:3) = '  '
+!       DO JT = 1, igroups
+!         WRITE(yworkcomment(JT),FMT="('Budget of SVx=',I3.3)") jsv
+!       END DO
+      write( ygroup_name, fmt = "('SV',I3.3,I4.4)") jsv, nbutshift
+
+    case default
+      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_new', 'unknown budget type' )
+  end select
+
+  do jproc = 1, igroups
+    ytitles(jproc) = trim( tpbudget%tgroups(jproc)%cmnhname )
+  end do
+
+  call Write_diachro( tpdiafile, tluout, ygroup_name, ybutype, iworkgrid,                              &
+                          tpdates, zworkt, ytitles,                                                    &
+                          yworkunit, yworkcomment,                                                     &
+                          oicp = lbu_icp, ojcp = lbu_jcp, okcp = lbu_kcp,                              &
+                          kil = nbuil, kih = nbuih, kjl = nbujl, kjh = nbujh, kkl = nbukl, kkh = nbukh )
+
+  deallocate( zworkt, yworkunit, yworkcomment, iworkgrid )
+
+end subroutine Store_one_budget_new
 
 end module mode_write_budget
