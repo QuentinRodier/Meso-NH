@@ -97,6 +97,7 @@ use mode_datetime,       only: Datetime_distance
 USE MODE_IO_FIELD_WRITE, only: IO_Field_write, IO_Field_write_box
 USE MODE_ll
 use mode_menu_diachro,   only: MENU_DIACHRO
+use mode_msg
 !
 IMPLICIT NONE
 !
@@ -138,6 +139,8 @@ real, dimension(:,:), allocatable :: ztimes
 real, dimension(:,:), allocatable :: zdatime
 TYPE(TFIELDDATA)  :: TZFIELD
 !------------------------------------------------------------------------------
+
+call Print_msg( NVERB_DEBUG, 'BUD', 'Write_diachro', 'called' )
 
 if ( present( oicp ) ) then
   gicp = oicp

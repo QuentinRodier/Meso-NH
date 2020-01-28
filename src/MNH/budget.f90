@@ -298,6 +298,8 @@ REAL     :: ZTIME2  ! CPU time counter
 !
 !-------------------------------------------------------------------------------
 !
+call Print_msg( NVERB_DEBUG, 'BUD', 'Budget', 'called for '//trim( hbuvar ) )
+
 !* Reproductivity checks
 !  Warning: requires an adaptation of the makefile in order to run two runs in
 !  parallel for comparison
@@ -660,7 +662,7 @@ CONTAINS
           NBUCTR_ACTV(KBUDN) = NBUCTR_ACTV(KBUDN)             &
                              + NBUINC(KBUDN,NBUCTR_ACTV(KBUDN))
           RETURN
-      END SELECT          
+      END SELECT
   END SELECT
 !
   END SUBROUTINE BUDGET_CASE

@@ -3443,6 +3443,8 @@ subroutine Budget_source_add( tpbudget, tpsource, ocond, kgroupin, odonotinit, o
 
   integer :: isourcenumber
 
+  call Print_msg( NVERB_DEBUG, 'BUD', 'Budget_source_add', 'called for '//trim( tpbudget%cname )//': '//trim( tpsource%cmnhname ) )
+
   isourcenumber = tpbudget%nsources + 1
   if ( isourcenumber > tpbudget%nsourcesmax ) then
     call Print_msg( NVERB_FATAL, 'BUD', 'Budget_source_add', 'insufficient number of source terms' )
@@ -3499,6 +3501,8 @@ subroutine Ini_budget_groups( tpbudgets, kbudim1, kbudim2, kbudim3 )
   integer, dimension(:), allocatable :: ipos    ! Temporary array to store initial position of group numbers
   real                               :: zval
   real                               :: zvalmax, zvalmin
+
+  call Print_msg( NVERB_DEBUG, 'BUD', 'Ini_budget_groups', 'called' )
 
   BUDGETS: do ji = 1, size( tpbudgets )
     ENABLED: if ( tpbudgets(ji)%lenabled ) then

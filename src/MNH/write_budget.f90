@@ -151,6 +151,8 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   !
   !-------------------------------------------------------------------------------
   !
+  call Print_msg( NVERB_DEBUG, 'BUD', 'Write_budget', 'called' )
+
   gnocompress = .true.
   !
   !* Write TSTEP and BULEN
@@ -399,6 +401,8 @@ subroutine Store_one_budget_rho_old( tpdiafile, tpdates, pburhodj, kp, knocompre
   character(len=100), dimension(:), allocatable  :: yworkunit     ! comment
   integer,            dimension(:), allocatable  :: iworkgrid     ! grid label
 
+  call Print_msg( NVERB_DEBUG, 'BUD', 'Store_one_budget_rho_old', 'called' )
+
   if ( allocated( prhodjn ) ) deallocate( prhodjn )
 
   ! pburhodj storage
@@ -507,6 +511,8 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tpbudget, kp, knocompress, 
   character(len=100), dimension(:), allocatable  :: yworkunit     ! comment
   integer,            dimension(:), allocatable  :: iworkgrid     ! grid label
 
+  call Print_msg( NVERB_DEBUG, 'BUD', 'Store_one_budget_rho', 'called for '//trim( tpbudget%trhodj%cmnhname ) )
+
   if ( allocated( prhodjn ) ) deallocate( prhodjn )
 
   ! pburhodj storage
@@ -608,6 +614,7 @@ subroutine Store_one_budget_old( tpdiafile, tpdates, pbudarray, prhodjn, kp, kno
   real,               dimension(:),           allocatable :: zconvert   ! unit conversion coefficient
   real,               dimension(:,:,:,:,:,:), allocatable :: zworkt
 
+  call Print_msg( NVERB_DEBUG, 'BUD', 'Store_one_budget_old', 'called' )
 
   if( .not. allocated( prhodjn ) ) then
     call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_old', 'prhodjn not allocated' )
@@ -795,6 +802,7 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, kp, knocompr
   real,               dimension(:),           allocatable :: zconvert   ! unit conversion coefficient
   real,               dimension(:,:,:,:,:,:), allocatable :: zworkt
 
+  call Print_msg( NVERB_DEBUG, 'BUD', 'Store_one_budget', 'called for '//trim( tpbudget%cname ) )
 
   if( .not. allocated( prhodjn ) ) then
     call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget', 'prhodjn not allocated' )
