@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/modn_budget.f90,v $ $Revision: 1.2.2.1.2.1.2.1.10.1.2.3 $ $Date: 2014/01/09 15:01:56 $
 !-----------------------------------------------------------------
 !     ##################
       MODULE MODN_BUDGET
@@ -219,7 +215,7 @@
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    01/03/95                      
+!!      Original    01/03/95
 !!      J. Stein    29/06/95  new processes' list
 !!      J.-P. Pinty 11/01/97  add several SVx
 !!      J.-P. Pinty 18/02/97  add forcing and ice
@@ -229,6 +225,7 @@
 !!      C. Barthe        /16  add budget terms for LIMA
 !!      C.Lac        10/2016  Add droplet deposition
 !!      S. Riette   11/2016 New budgets for ICE3/ICE4
+!  P. Wautelet 28/01/2020: add missing budgets for viscosity
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -242,13 +239,13 @@ NAMELIST/NAM_BUDGET/CBUTYPE, NBUMOD, XBULEN, NBUKL, NBUKH, LBU_KCP, XBUWRI, &
                     NBUIL, NBUIH, NBUJL, NBUJH, LBU_ICP, LBU_JCP, NBUMASK 
 !
 NAMELIST/NAM_BU_RU/LBU_RU, NASSEU, NNESTU, NADVU, NFRCU, NNUDU, &
-                   NCURVU, NCORU, NDIFU, NRELU, NDRAGU, NHTURBU, NVTURBU, NMAFLU, NPRESU  
+                   NCURVU, NCORU, NDIFU, NRELU, NDRAGU, NHTURBU, NVTURBU, NMAFLU, NPRESU, NVISCU
 !
 NAMELIST/NAM_BU_RV/LBU_RV, NASSEV, NNESTV, NADVV, NFRCV, NNUDV, &
-                   NCURVV, NCORV, NDIFV, NRELV, NDRAGV, NHTURBV, NVTURBV, NMAFLV, NPRESV  
+                   NCURVV, NCORV, NDIFV, NRELV, NDRAGV, NHTURBV, NVTURBV, NMAFLV, NPRESV, NVISCV
 
 NAMELIST/NAM_BU_RW/LBU_RW, NASSEW, NNESTW, NADVW, NFRCW, NNUDW, &
-                   NCURVW, NCORW, NGRAVW, NDIFW, NRELW, NHTURBW, NVTURBW, NPRESW
+                   NCURVW, NCORW, NGRAVW, NDIFW, NRELW, NHTURBW, NVTURBW, NPRESW, NVISCW
 !
 NAMELIST/NAM_BU_RTH/LBU_RTH, NASSETH, NNESTTH, NADVTH, NFRCTH, &
                    NNUDTH, NPREFTH, NDIFTH, NRELTH, NRADTH, NDCONVTH, NHTURBTH, &
@@ -256,7 +253,7 @@ NAMELIST/NAM_BU_RTH/LBU_RTH, NASSETH, NNESTTH, NADVTH, NFRCTH, &
                    NSFRTH, NDEPSTH, NDEPGTH,NRIMTH, NACCTH, NCFRZTH, NWETGTH, &
                    NDRYGTH, NGMLTTH, NIMLTTH, NBERFITH, NCDEPITH, NWETHTH, NHMLTTH, &
                    NMAFLTH, NNETURTH, NNEADVTH,NNECONTH, NDRYHTH, NADJUTH, NCORRTH, &
-                   NHINDTH, NHINCTH, NHONHTH, NHONCTH, NHONRTH, NCEDSTH, NSEDITH
+                   NHINDTH, NHINCTH, NHONHTH, NHONCTH, NHONRTH, NCEDSTH, NSEDITH, NVISCTH
 !
 NAMELIST/NAM_BU_RTKE/LBU_RTKE, NASSETKE, NADVTKE,    &
                      NFRCTKE, NDIFTKE, NRELTKE, NDRAGTKE,                           &
@@ -265,7 +262,7 @@ NAMELIST/NAM_BU_RTKE/LBU_RTKE, NASSETKE, NADVTKE,    &
 NAMELIST/NAM_BU_RRV/LBU_RRV, NASSERV, NNESTRV, NADVRV, NFRCRV, &
                     NNUDRV, NDIFRV, NRELRV, NDCONVRV, NHTURBRV, NVTURBRV, NNEGARV, &
                     NREVARV, NCONDRV, NHENURV, NDEPSRV, NDEPGRV, NCDEPIRV, NMAFLRV, &
-                    NNETURRV, NNEADVRV,NNECONRV, NADJURV, NCORRRV, NHINDRV, NHONHRV, NCEDSRV
+                    NNETURRV, NNEADVRV,NNECONRV, NADJURV, NCORRRV, NHINDRV, NHONHRV, NCEDSRV, NVISCRV
 ! 
 NAMELIST/NAM_BU_RRC/LBU_RRC, NASSERC, NNESTRC, NADVRC, NFRCRC, &
                     NDIFRC, NRELRC, NDCONVRC, NHTURBRC, NVTURBRC, NNEGARC, NACCRRC, &
@@ -273,37 +270,37 @@ NAMELIST/NAM_BU_RRC/LBU_RRC, NASSERC, NNESTRC, NADVRC, NFRCRC, &
                     NBERFIRC, NCDEPIRC, NHENURC, NSEDIRC, NWETHRC, NNETURRC, &
                     NNEADVRC,NNECONRC, NDRYHRC, NADJURC, NCORRRC, NCMELRC, &
                     NHINCRC, NHONCRC, NCEDSRC, NREVARC, NDEPORC,NDEPOTRRC, &
-                    NCORRRC, NR2C1RC, NCVRCRC
+                    NCORRRC, NR2C1RC, NCVRCRC, NVISCRC
 ! 
 NAMELIST/NAM_BU_RRR/LBU_RRR, NASSERR, NNESTRR, NADVRR, NFRCRR, &
                     NDIFRR, NRELRR, NNEGARR, NACCRRR, NAUTORR, NREVARR, NSEDIRR,    &
                     NSFRRR, NACCRR, NCFRZRR, NWETGRR, NDRYGRR, NGMLTRR, NWETHRR,    &
-                    NHMLTRR, NDRYHRR, NCORRRR, NCMELRR,NHONRRR, NCORRRR, NR2C1RR, NCVRCRR
+                    NHMLTRR, NDRYHRR, NCORRRR, NCMELRR,NHONRRR, NCORRRR, NR2C1RR, NCVRCRR, NVISCRR
 ! 
 NAMELIST/NAM_BU_RRI/LBU_RRI, NASSERI, NNESTRI, NADVRI, NFRCRI, &
                     NDIFRI, NRELRI, NDCONVRI, NHTURBRI, NVTURBRI, NNEGARI, NSEDIRI, &
                     NHENURI, NHONRI, NAGGSRI, NAUTSRI, NCFRZRI, NWETGRI, NDRYGRI,   &
                     NIMLTRI, NBERFIRI, NCDEPIRI, NWETHRI, NDRYHRI, NADJURI, NCORRRI, &
                     NHINDRI, NHINCRI, NHONHRI, NHONCRI, NCNVIRI, NCNVSRI, &
-                    NHMSRI, NHMGRI, NCEDSRI, NCORRRI
+                    NHMSRI, NHMGRI, NCEDSRI, NCORRRI, NVISCRI
 ! 
 NAMELIST/NAM_BU_RRS/LBU_RRS, NASSERS, NNESTRS, NADVRS, NFRCRS, &
                     NDIFRS, NRELRS, NNEGARS, NSEDIRS, NDEPSRS, NAGGSRS, NAUTSRS,    &
                     NRIMRS, NACCRS, NCMELRS, NWETGRS, NDRYGRS, NWETHRS, NDRYHRS,    &
-                    NCORRRS, NCNVIRS, NCNVSRS, NHMSRS, NCORRRS
+                    NCORRRS, NCNVIRS, NCNVSRS, NHMSRS, NCORRRS, NVISCRS
 ! 
 NAMELIST/NAM_BU_RRG/LBU_RRG, NASSERG, NNESTRG, NADVRG, NFRCRG, &
                     NDIFRG, NRELRG, NNEGARG, NSEDIRG, NSFRRG, NDEPGRG, NRIMRG, NACCRG,    &
                     NCMELRG, NCFRZRG, NWETGRG, NDRYGRG, NGMLTRG, NWETHRG, &
-                    NDRYHRG, NCORRRG, NHGCVRG, NGHCVRG,NHONRRG, NHMGRG, NCOHGRG 
+                    NDRYHRG, NCORRRG, NHGCVRG, NGHCVRG,NHONRRG, NHMGRG, NCOHGRG, NVISCRG
 ! 
 NAMELIST/NAM_BU_RRH/LBU_RRH, NASSERH, NNESTRH, NADVRH, NFRCRH, &
                     NDIFRH, NRELRH, NNEGARH, NSEDIRH, NWETGRH, NWETHRH, NDRYHRH, NHMLTRH, &
-                    NCORRRH, NHGCVRH, NGHCVRH, NCOHGRH, NHMLTRH
+                    NCORRRH, NHGCVRH, NGHCVRH, NCOHGRH, NHMLTRH, NVISCRH
 ! 
 NAMELIST/NAM_BU_RSV/ LBU_RSV, NASSESV, NNESTSV, NADVSV, NFRCSV, &
                      NDIFSV, NRELSV, NDCONVSV, NVTURBSV, NHTURBSV, NCHEMSV, NMAFLSV,       &
-                     NNEGASV,                                                              & 
+                     NVISCSV, NNEGASV,                                                     &
                      NAUTOQC, NACCRQC, NRIMQC, NWETGQC, NDRYGQC, NIMLTQC, NBERFIQC,        &
                      NDEPIQC, NINDQC, NSEDIQC, NNEUTQC,                                    &
                      NAUTOQR, NACCRQR, NREVAQR, NACCQR, NCFRZQR, NWETGQR, NDRYGQR,         &

@@ -47,6 +47,7 @@
 !  P. Wautelet 15/11/2019: remove unused CBURECORD variable
 !  P. Wautelet 17/01/2020: add new budget data types
 !  P. Wautelet 27/01/2020: use the tfield_metadata_base abstract datatype
+!  P. Wautelet 28/01/2020: add missing budgets for viscosity
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -249,7 +250,8 @@ INTEGER, SAVE :: NVTURBU    ! vertical turbulence
 INTEGER, SAVE :: NDRAGU     ! vegetation drag        
 INTEGER, SAVE :: NMAFLU     ! mass flux            
 INTEGER, SAVE :: NPRESU     ! pressure term
-!     
+INTEGER, SAVE :: NVISCU     ! viscosity
+!
 !      Allowed processes for the budget of RV (wind component along y)
 !                                                  
 ! Courant namelist: NAM_BURV
@@ -270,6 +272,7 @@ INTEGER, SAVE :: NVTURBV    ! vertical turbulence
 INTEGER, SAVE :: NDRAGV     ! vegetation drag         
 INTEGER, SAVE :: NMAFLV     ! mass flux            
 INTEGER, SAVE :: NPRESV     ! pressure term
+INTEGER, SAVE :: NVISCV     ! viscosity
 !
 !      Allowed processes for the budget of RW (wind vertical component)
 !                                                  
@@ -290,6 +293,7 @@ INTEGER, SAVE :: NRELW      ! relaxation
 INTEGER, SAVE :: NHTURBW    ! horizontal turbulence 
 INTEGER, SAVE :: NVTURBW    ! vertical turbulence 
 INTEGER, SAVE :: NPRESW     ! pressure term
+INTEGER, SAVE :: NVISCW     ! viscosity
 !
 !      Allowed processes for the budget of RTH (potential temperature)
 !                                                  
@@ -346,6 +350,7 @@ INTEGER, SAVE :: NHONCTH    ! droplet homogeneous nucleation         LIMA
 INTEGER, SAVE :: NHONRTH    ! drop homogeneous nucleation            LIMA
 INTEGER, SAVE :: NCEDSTH    ! adjustment
 INTEGER, SAVE :: NSEDITH    ! Temperature transport by hydrometeors sedimentation
+INTEGER, SAVE :: NVISCTH    ! viscosity
 !
 !      Allowed processes for the budget of RTKE (kinetic energy)
 !                                                  
@@ -399,6 +404,7 @@ INTEGER, SAVE :: NCORRRV    ! tendencies correction after ICE3
 INTEGER, SAVE :: NHINDRV   ! Heterogeneous Nucleation by Deposition LIMA
 INTEGER, SAVE :: NHONHRV   ! Haze Homogeneous Nucleation            LIMA
 INTEGER, SAVE :: NCEDSRV   ! adjustement 
+INTEGER, SAVE :: NVISCRV   ! viscosity
 !
 !      Allowed processes for the budget of moist variable RRC (cloud water)
 !                                                  
@@ -444,6 +450,7 @@ INTEGER, SAVE :: NREVARC    ! evaporation of rain drops
 INTEGER, SAVE :: NCORRRC    ! rain <-> cloud transfer at the beginning of LIMA
 INTEGER, SAVE :: NR2C1RC    ! rain -> cloud change after sedimentation in LIMA
 INTEGER, SAVE :: NCVRCRC    ! rain -> cloud change after other microphysical processes in LIMA
+INTEGER, SAVE :: NVISCRC    ! viscosity
 !
 !      Allowed processes for the budget of moist variable RRR (rain water)
 !
@@ -476,6 +483,7 @@ INTEGER, SAVE :: NCORRRR    ! tendencies correction after ICE3
 INTEGER, SAVE :: NHONRRR    ! drop homogeneous nucleation LIMA
 INTEGER, SAVE :: NR2C1RR    ! rain -> cloud change after sedimentation in LIMA
 INTEGER, SAVE :: NCVRCRR    ! rain -> cloud change after other microphysical processes in LIMA
+INTEGER, SAVE :: NVISCRR    ! viscosity
 !
 !      Allowed processes for the budget of moist variable RRI (ice)
 !
@@ -517,6 +525,7 @@ INTEGER, SAVE :: NHMSRI  ! Hallett-Mossop ice multiplication process due to snow
 INTEGER, SAVE :: NHMGRI  ! Hallett-Mossop ice multiplication process due to graupel riming LIMA
 INTEGER, SAVE :: NCEDSRI ! adjustement LIMA
 INTEGER, SAVE :: NCORRRI    ! ice <-> snow transfer at the beginning of LIMA
+INTEGER, SAVE :: NVISCRI    ! viscosity
 !
 !      Allowed processes for the budget of moist variable RRS (snow)
 !
@@ -546,6 +555,7 @@ INTEGER, SAVE :: NCNVIRS   ! Conversion of snow to r_i         LIMA
 INTEGER, SAVE :: NCNVSRS   ! Conversion of pristine ice to r_s LIMA
 INTEGER, SAVE :: NHMSRS    ! Hallett-Mossop ice multiplication process due to snow riming LIMA
 INTEGER, SAVE :: NCORRRS    ! ice <-> snow transfer at the beginning of LIMA
+INTEGER, SAVE :: NVISCRS    ! viscosity
 !
 !      Allowed processes for the budget of moist variable RRG (graupel)
 !
@@ -578,6 +588,7 @@ INTEGER, SAVE :: NGHCVRG    ! Graupel to Hail ConVersion ICE4
 INTEGER, SAVE :: NHONRRG    ! drop homogeneous nucleation LIMA
 INTEGER, SAVE :: NHMGRG     ! Hallett-Mossop ice multiplication process due to graupel riming
 INTEGER, SAVE :: NCOHGRG    ! conversion of hail to graupel
+INTEGER, SAVE :: NVISCRG    ! viscosity
 !
 !      Allowed processes for the budget of moist variable RRH (hail)
 !
@@ -601,6 +612,7 @@ INTEGER, SAVE :: NHMLTRH    ! melting
 INTEGER, SAVE :: NCORRRH    ! tendencies correction after ICE3
 INTEGER, SAVE :: NHGCVRH    ! Hail to Graupel ConVersion ICE4
 INTEGER, SAVE :: NGHCVRH    ! Graupel to Hail ConVersion ICE4
+INTEGER, SAVE :: NVISCRH    ! viscosity
 !
 ! Courant namelist: NAM_BURSV
 !
@@ -618,6 +630,7 @@ INTEGER, SAVE :: NDEPOTRSV  ! deposition on tree
 INTEGER, SAVE :: NHTURBSV   ! horizontal turbulence
 INTEGER, SAVE :: NVTURBSV   ! vertical turbulence
 INTEGER, SAVE :: NCHEMSV    ! chemistry activity
+INTEGER, SAVE :: NVISCSV    ! viscosity
 !
 INTEGER, SAVE :: NNEGASV
 !
