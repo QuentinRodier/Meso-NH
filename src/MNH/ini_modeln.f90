@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -391,6 +391,7 @@ USE MODD_TURB_n
 USE MODD_VAR_ll,            only: IP
 
 USE MODE_GATHER_ll
+use mode_ini_budget,        only: Ini_budget
 USE MODE_INI_ONE_WAY_n
 USE MODE_IO
 USE MODE_IO_FIELD_READ,     only: IO_Field_read
@@ -419,7 +420,6 @@ USE MODI_INI_AEROSET6
 USE MODI_INI_AIRCRAFT_BALLOON
 USE MODI_INI_AIRCRAFT_BALLOON
 USE MODI_INI_BIKHARDT_n
-USE MODI_INI_BUDGET
 USE MODI_INI_CPL
 USE MODI_INI_DEEP_CONVECTION
 USE MODI_INI_DRAG
