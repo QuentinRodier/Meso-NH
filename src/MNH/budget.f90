@@ -3,6 +3,184 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
+! Modifications
+!  P. Wautelet 28/01/2020: new subroutines: Budget_store_init, Budget_store_end and Budget_source_id_find in new module mode_budget
+!-----------------------------------------------------------------
+
+!#################
+module mode_budget
+!#################
+
+use modd_budget, only: cbutype, nbutime, tbudgetdata
+
+use modi_cart_compress, only: Cart_compress
+use modi_mask_compress, only: Mask_compress
+
+use mode_msg
+
+implicit none
+
+private
+
+public :: Budget_store_init
+public :: Budget_store_end
+
+
+contains
+
+subroutine Budget_store_init( tpbudget, hsource, pvars )
+  type(tbudgetdata),      intent(inout) :: tpbudget ! Budget datastructure
+  character(len=*),       intent(in)    :: hsource  ! Name of the source term
+  real, dimension(:,:,:), intent(in)    :: pvars    ! Current value to be stored
+
+  integer :: iid ! Reference number of the current source term
+
+  call Print_msg( NVERB_DEBUG, 'BUD', 'Budget_store_init', trim( tpbudget%cname )//':'//trim( hsource ) )
+
+  call Budget_source_id_find( tpbudget, hsource, iid )
+
+  if ( tpbudget%ntmpstoresource /= 0 ) then
+    call Print_msg( NVERB_ERROR, 'BUD', 'Budget_store_init', 'ntmpstoresource already set (previous call to ' &
+                    //'Budget_store_end missing?) for '//trim( tpbudget%cname )//':'//trim( hsource ) )
+  end if
+
+  if ( tpbudget%tsources(iid)%ldonotinit ) then
+    ! If ldonotinit is set, this subroutine should not be called
+    call Print_msg( NVERB_ERROR, 'BUD', 'Budget_store_init', 'should not be called for ' &
+                    //trim( tpbudget%cname )//':'//trim( hsource ) )
+    return
+  end if
+
+  if ( tpbudget%tsources(iid)%lenabled ) then
+    if ( tpbudget%ntmpstoresource /= 0 ) then
+      call Print_msg( NVERB_ERROR, 'BUD', 'Budget_store_init', 'xtmpstore already used by ' &
+                      //trim( tpbudget%tsources(tpbudget%ntmpstoresource)%cmnhname ) )
+      return
+    end if
+
+    tpbudget%ntmpstoresource = iid
+
+    !Store data into the budget temporary array
+    !This value will be subtracted from the next one (in Budget_store_end) to get the evolution of the array between the 2 calls
+    if ( cbutype == 'CART' ) then
+      tpbudget%xtmpstore(:, :, : ) = Cart_compress( pvars(:, :, : ) )
+    else if ( cbutype == 'MASK' ) then
+      tpbudget%xtmpstore(:, nbutime, : ) = Mask_compress( pvars(:, :, : ) )
+    else
+      call Print_msg( NVERB_ERROR, 'BUD', 'Budget_store_init', 'unknown cbutype: '//trim( cbutype ) )
+    end if
+  end if
+
+end subroutine Budget_store_init
+
+
+subroutine Budget_store_end( tpbudget, hsource, pvars )
+use modd_budget,only:nbusil,NBUSJL,NBUKL
+  type(tbudgetdata),      intent(inout) :: tpbudget ! Budget datastructure
+  character(len=*),       intent(in) :: hsource     ! Name of the source term
+  real, dimension(:,:,:), intent(in) :: pvars       ! Current value to be stored
+
+  integer :: iid    ! Reference number of the current source term
+  integer :: igroup ! Number of the group where to store the source term
+
+  call Print_msg( NVERB_DEBUG, 'BUD', 'Budget_store_end', trim( tpbudget%cname )//':'//trim( hsource ) )
+
+  call Budget_source_id_find( tpbudget, hsource, iid )
+
+  if ( tpbudget%tsources(iid )%lenabled ) then
+    if ( iid /= tpbudget%ntmpstoresource .and. .not.tpbudget%tsources(iid )%ldonotinit ) then
+      if ( tpbudget%ntmpstoresource == 0 ) then
+        call Print_msg( NVERB_ERROR, 'BUD', 'Budget_store_end', 'ntmpstoresource not set for ' &
+                        //trim( tpbudget%tsources(iid)%cmnhname ) )
+      else
+        call Print_msg( NVERB_ERROR, 'BUD', 'Budget_store_end', 'xtmpstore used by an other source: '    &
+                        //trim( tpbudget%tsources(tpbudget%ntmpstoresource)%cmnhname )//', expected: '   &
+                        //trim( tpbudget%tsources(iid)%cmnhname ) )
+      end if
+    end if
+
+    !Store data into the budget array
+    !The values are computed by the difference between the values stored in the temporary array (filled in Budget_store_init)
+    !and the current values added to the already stored ones.
+    !Except if ldonotinit is true. In that case, overwrite the array.
+    igroup = tpbudget%tsources(iid)%ngroup
+    if ( cbutype == 'CART' ) then
+      if ( tpbudget%tsources(iid )%ldonotinit ) then
+        if ( tpbudget%tsources(iid )%loverwrite ) then
+          tpbudget%tgroups(igroup )%xdata(:, :, : ) =   Cart_compress( pvars(:, :, : ) )
+        else
+          tpbudget%tgroups(igroup )%xdata(:, :, : ) =   tpbudget%tgroups(igroup )%xdata(:, :, : ) &
+                                                      + Cart_compress( pvars(:, :, : ) )
+        end if
+      else
+        if ( tpbudget%tsources(iid )%loverwrite ) then
+          tpbudget%tgroups(igroup )%xdata(:, :, : ) =   Cart_compress( pvars(:, :, : ) )          &
+                                                      - tpbudget%xtmpstore(:, :, : )
+        else
+          tpbudget%tgroups(igroup )%xdata(:, :, : ) =   tpbudget%tgroups(igroup )%xdata(:, :, : ) &
+                                                      + Cart_compress( pvars(:, :, : ) )          &
+                                                      - tpbudget%xtmpstore(:, :, : )
+        end if
+      end if
+    else if ( cbutype == 'MASK' ) then
+      if ( tpbudget%tsources(iid )%ldonotinit ) then
+        if ( tpbudget%tsources(iid )%loverwrite ) then
+          tpbudget%tgroups(igroup )%xdata(:, nbutime, : ) =   Mask_compress( pvars(:, :, : ) )
+        else
+          tpbudget%tgroups(igroup )%xdata(:, nbutime, : ) =   tpbudget%tgroups(igroup )%xdata(:, nbutime, : ) &
+                                                            + Mask_compress( pvars(:, :, : ) )
+        end if
+      else
+        if ( tpbudget%tsources(iid )%loverwrite ) then
+          tpbudget%tgroups(igroup )%xdata(:, nbutime, : ) =   Mask_compress( pvars(:, :, : ) )   &
+                                                            - tpbudget%xtmpstore(:, nbutime, : )
+        else
+          tpbudget%tgroups(igroup )%xdata(:, nbutime, : ) =   tpbudget%tgroups(igroup )%xdata(:, nbutime, : ) &
+                                                            + Mask_compress( pvars(:, :, : ) )                &
+                                                            - tpbudget%xtmpstore(:, nbutime, : )
+        end if
+      end if
+    else
+      call Print_msg( NVERB_ERROR, 'BUD', 'Budget_store_end', 'unknown cbutype: '//trim( cbutype ) )
+    end if
+
+    ! Release the budget temporary array
+    tpbudget%ntmpstoresource = 0
+  end if
+
+end subroutine Budget_store_end
+
+
+subroutine Budget_source_id_find( tpbudget, hsource, kid )
+  type(tbudgetdata), intent(in)  :: tpbudget ! Budget datastructure
+  character(len=*),  intent(in)  :: hsource  ! Name of the source term
+  integer,           intent(out) :: kid      ! Reference number of the current source term
+
+  integer :: iid
+  integer :: ji
+
+  call Print_msg( NVERB_DEBUG, 'BUD', 'Budget_source_id_find', trim( tpbudget%cname )//':'//trim( hsource ) )
+
+  iid = 0
+  do ji = 1, tpbudget%nsources
+    if ( trim( hsource ) == trim( tpbudget%tsources(ji)%cmnhname ) ) then
+      iid = ji
+      exit
+    end if
+  end do
+
+  if ( iid > 0 ) then
+    call Print_msg( NVERB_DEBUG, 'BUD', 'Budget_source_id_find', trim( tpbudget%cname )//':'//trim( hsource )//' found' )
+  else
+    call Print_msg( NVERB_ERROR, 'BUD', 'Budget_source_id_find', trim( tpbudget%cname )//':'//trim( hsource )//' not found' )
+  end if
+
+  kid = iid
+end subroutine Budget_source_id_find
+
+end module mode_budget
+
+
 !##################
  MODULE MODI_BUDGET
 !##################
