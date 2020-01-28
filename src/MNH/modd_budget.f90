@@ -48,6 +48,7 @@
 !  P. Wautelet 17/01/2020: add new budget data types
 !  P. Wautelet 27/01/2020: use the tfield_metadata_base abstract datatype
 !  P. Wautelet 28/01/2020: add missing budgets for viscosity
+!  P. Wautelet 28/01/2020: add trhodj in tbudgetdata datatype
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -90,6 +91,7 @@ type tbudgetdata
                                                    !  (to allow to store the difference between 2 places)
   type(tbusourcedata), dimension(:), allocatable :: tsources ! Full list of source terms (used or not)
   type(tbugroupdata),  dimension(:), allocatable :: tgroups  ! Full list of groups of source terms (to be written)
+  type(tburhodata),    pointer                   :: trhodj => null() ! Budget array for rhodj
 end type tbudgetdata
 
 
@@ -108,6 +110,10 @@ type, extends( tfield_metadata_base ) :: tbugroupdata
   integer, dimension(:),     allocatable :: nsourcelist ! List of the source terms composing this group
   real,    dimension(:,:,:), allocatable :: xdata ! Array to store the budget data
 end type tbugroupdata
+
+type, extends( tfield_metadata_base ) :: tburhodata
+  real, dimension(:,:,:), allocatable :: xdata ! Array to store the budget data
+end type tburhodata
 
 type(tbudgetdata), dimension(:), allocatable, save :: tbudgets
 
