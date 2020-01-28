@@ -3418,4 +3418,298 @@ ELSE IF (JSV >= NSV_CHEMBEG .AND. JSV <= NSV_CHEMEND) THEN
 !
 END SUBROUTINE INI_BUDGET
 
+
+subroutine Budget_source_add( tpbudget, tpsource, ocond, kgroupin, odonotinit, ooverwrite )
+  use modd_budget, only: tbudgetdata, tbusourcedata
+
+  use mode_msg
+
+  type(tbudgetdata),   intent(inout) :: tpbudget
+  type(tbusourcedata), intent(in)    :: tpsource ! Metadata basis
+  logical,             intent(in)    :: ocond    ! Necessary condition for availability of the source term
+  integer,             intent(in)    :: kgroupin ! Requested group for the source term
+  logical, optional,   intent(in)    :: odonotinit
+  logical, optional,   intent(in)    :: ooverwrite
+
+  integer :: isourcenumber
+
+  isourcenumber = tpbudget%nsources + 1
+  if ( isourcenumber > tpbudget%nsourcesmax ) then
+    call Print_msg( NVERB_FATAL, 'BUD', 'Budget_source_add', 'insufficient number of source terms' )
+  else
+    tpbudget%nsources = tpbudget%nsources + 1
+  end if
+
+  ! Copy metadata from provided tpsource
+  ! Modifications to source term metadata done with the other dummy arguments
+  tpbudget%tsources(isourcenumber) = tpsource
+
+  if( ocond ) then
+    tpbudget%tsources(isourcenumber)%ngroup = kgroupin
+  else
+    tpbudget%tsources(isourcenumber)%ngroup = 0
+    if ( kgroupin/=0 ) call Print_msg( NVERB_WARNING, 'BUD', 'Budget_source_add', 'source term '//trim( tpbudget%cname ) &
+                                       //': '//trim( tpbudget%tsources(isourcenumber)%cmnhname )//' not available' )
+  end if
+
+  if ( present( odonotinit ) ) tpbudget%tsources(isourcenumber)%ldonotinit = odonotinit
+
+  if ( present( ooverwrite ) ) tpbudget%tsources(isourcenumber)%loverwrite = ooverwrite
+end subroutine Budget_source_add
+
+
+subroutine Ini_budget_groups( tpbudgets, kbudim1, kbudim2, kbudim3 )
+  use modd_budget,     only: tbudgetdata
+  use modd_field,      only: TYPEINT, TYPEREAL
+  use modd_parameters, only: NMNHNAMELGTMAX, NSTDNAMELGTMAX
+
+  use mode_msg
+  use mode_tools,  only: Quicksort
+
+  type(tbudgetdata), dimension(:), intent(inout) :: tpbudgets
+  integer,                         intent(in)    :: kbudim1
+  integer,                         intent(in)    :: kbudim2
+  integer,                         intent(in)    :: kbudim3
+
+  character(len=NMNHNAMELGTMAX)      :: ymnhname
+  character(len=NSTDNAMELGTMAX)      :: ystdname
+  character(len=32)                  :: ylongname
+  character(len=40)                  :: yunits
+  character(len=100)                 :: ycomment
+  integer                            :: ji, jj, jk
+  integer                            :: isources ! Number of source terms in a budget
+  integer                            :: inbgroups ! Number of budget groups
+  integer                            :: ival
+  integer                            :: icount
+  integer                            :: ivalmax, ivalmin
+  integer                            :: igrid
+  integer                            :: itype
+  integer                            :: idims
+  integer, dimension(:), allocatable :: igroups ! Temporary array to store sorted group numbers
+  integer, dimension(:), allocatable :: ipos    ! Temporary array to store initial position of group numbers
+  real                               :: zval
+  real                               :: zvalmax, zvalmin
+
+  BUDGETS: do ji = 1, size( tpbudgets )
+    ENABLED: if ( tpbudgets(ji)%lenabled ) then
+      isources = size( tpbudgets(ji)%tsources )
+      do jj = 1, isources
+        ! Check if ngroup is an allowed value
+        if ( tpbudgets(ji)%tsources(jj)%ngroup < 0 ) then
+          call Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'negative group value is not allowed' )
+          tpbudgets(ji)%tsources(jj)%ngroup = 0
+        end if
+
+        if ( tpbudgets(ji)%tsources(jj)%ngroup > 0 ) tpbudgets(ji)%tsources(jj)%lenabled = .true.
+      end do
+
+      !Count the number of groups of source terms
+      !ngroup=1 is for individual entries, >1 values are groups
+      allocate( igroups(isources ) )
+      allocate( ipos   (isources ) )
+      igroups(:) = tpbudgets(ji)%tsources(:)%ngroup
+      ipos(:) = [ ( jj, jj = 1, isources ) ]
+
+      !Sort the group list number
+      call Quicksort( igroups, 1, isources, ipos )
+
+      !Count the number of different groups
+      !and renumber the entries (from 1 to inbgroups)
+      inbgroups = 0
+      ival = igroups(1)
+      if ( igroups(1) /= 0 ) then
+        inbgroups = 1
+        igroups(1) = inbgroups
+      end if
+      do jj = 2, isources
+        if ( igroups(jj) == 1 ) then
+          inbgroups = inbgroups + 1
+          igroups(jj) = inbgroups
+        else if ( igroups(jj) > 0 ) then
+          if ( igroups(jj) /= ival ) then
+            ival = igroups(jj)
+            inbgroups = inbgroups + 1
+          end if
+          igroups(jj) = inbgroups
+        end if
+      end do
+
+      !Write the igroups values to the budget structure
+      do jj = 1, isources
+        tpbudgets(ji)%tsources(ipos(jj))%ngroup = igroups(jj)
+      end do
+
+      !Allocate the group structure + populate it
+      tpbudgets(ji)%ngroups = inbgroups
+      allocate( tpbudgets(ji)%tgroups(inbgroups) )
+
+      do jj = 1, inbgroups
+        !Search the list of sources for each group
+        !not the most efficient algorithm but do the job
+        icount = 0
+        do jk = 1, isources
+          if ( tpbudgets(ji)%tsources(jk)%ngroup == jj ) then
+            icount = icount + 1
+            ipos(icount) = jk !ipos is reused as a temporary work array
+          end if
+        end do
+        tpbudgets(ji)%tgroups(jj)%nsources = icount
+
+        allocate( tpbudgets(ji)%tgroups(jj)%nsourcelist(icount) )
+        tpbudgets(ji)%tgroups(jj)%nsourcelist(:) = ipos(1 : icount)
+
+        ! Set the name of the field
+        ymnhname = tpbudgets(ji)%tsources(ipos(1))%cmnhname
+        do jk = 2, tpbudgets(ji)%tgroups(jj)%nsources
+          ymnhname = trim( ymnhname ) // '_' // trim( tpbudgets(ji)%tsources(ipos(jk))%cmnhname )
+        end do
+        tpbudgets(ji)%tgroups(jj)%cmnhname = ymnhname
+
+        ! Set the standard name (CF convention)
+        if ( tpbudgets(ji)%tgroups(jj)%nsources == 1 ) then
+          ystdname = tpbudgets(ji)%tsources(ipos(1))%cstdname
+        else
+          ! The CF standard name is probably wrong if combining several source terms => set to ''
+          ystdname = ''
+        end if
+        tpbudgets(ji)%tgroups(jj)%cstdname = ystdname
+
+        ! Set the long name (CF convention)
+        ylongname = tpbudgets(ji)%tsources(ipos(1))%clongname
+        do jk = 2, tpbudgets(ji)%tgroups(jj)%nsources
+          ylongname = trim( ylongname ) // ' + ' // tpbudgets(ji)%tsources(ipos(jk))%clongname
+        end do
+        tpbudgets(ji)%tgroups(jj)%clongname = ylongname
+
+        ! Set the units
+        yunits = tpbudgets(ji)%tsources(ipos(1))%cunits
+        do jk = 2, tpbudgets(ji)%tgroups(jj)%nsources
+          if ( trim( yunits ) /= trim( tpbudgets(ji)%tsources(ipos(jk))%cunits ) ) then
+            call Print_msg( NVERB_WARNING, 'BUD', 'Ini_budget',                               &
+                            'incompatible units for the different source terms of the group ' &
+                            //trim( tpbudgets(ji)%tgroups(jj)%cmnhname ) )
+            yunits = 'unknown'
+          end if
+        end do
+        tpbudgets(ji)%tgroups(jj)%cunits = yunits
+
+        ! Set the comment
+        ! It is composed of the source comment followed by the clongnames of the different sources
+        ycomment = trim( tpbudgets(ji)%tsources(ipos(1))%ccomment ) // ': '// trim( tpbudgets(ji)%tsources(ipos(1))%clongname )
+        do jk = 2, tpbudgets(ji)%tgroups(jj)%nsources
+          ycomment = trim( ycomment ) // ', ' // trim( tpbudgets(ji)%tsources(ipos(jk))%clongname )
+        end do
+        ycomment = trim( ycomment ) // ' source term'
+        if ( tpbudgets(ji)%tgroups(jj)%nsources > 1 ) ycomment = trim( ycomment ) // 's'
+        tpbudgets(ji)%tgroups(jj)%ccomment = ycomment
+
+        ! Set the Arakawa grid
+        igrid = tpbudgets(ji)%tsources(ipos(1))%ngrid
+        do jk = 2, tpbudgets(ji)%tgroups(jj)%nsources
+          if ( igrid /= tpbudgets(ji)%tsources(ipos(jk))%ngrid ) then
+            call Print_msg( NVERB_WARNING, 'BUD', 'Ini_budget',                                             &
+                            'different Arakawa grid positions for the different source terms of the group ' &
+                            //trim( tpbudgets(ji)%tgroups(jj)%cmnhname ) )
+          end if
+        end do
+        tpbudgets(ji)%tgroups(jj)%ngrid = igrid
+
+        ! Set the data type
+        itype = tpbudgets(ji)%tsources(ipos(1))%ntype
+        do jk = 2, tpbudgets(ji)%tgroups(jj)%nsources
+          if ( itype /= tpbudgets(ji)%tsources(ipos(jk))%ntype ) then
+            call Print_msg( NVERB_FATAL, 'BUD', 'Ini_budget',                                             &
+                            'incompatible data types for the different source terms of the group ' &
+                            //trim( tpbudgets(ji)%tgroups(jj)%cmnhname ) )
+          end if
+        end do
+        tpbudgets(ji)%tgroups(jj)%ntype = itype
+
+        ! Set the number of dimensions
+        idims = tpbudgets(ji)%tsources(ipos(1))%ndims
+        do jk = 2, tpbudgets(ji)%tgroups(jj)%nsources
+          if ( idims /= tpbudgets(ji)%tsources(ipos(jk))%ndims ) then
+            call Print_msg( NVERB_FATAL, 'BUD', 'Ini_budget',                                             &
+                            'incompatible number of dimensions for the different source terms of the group ' &
+                            //trim( tpbudgets(ji)%tgroups(jj)%cmnhname ) )
+          end if
+        end do
+        tpbudgets(ji)%tgroups(jj)%ndims = idims
+
+        ! Set the fill values
+        if ( tpbudgets(ji)%tgroups(jj)%ntype == TYPEINT ) then
+          ival = tpbudgets(ji)%tsources(ipos(1))%nfillvalue
+          do jk = 2, tpbudgets(ji)%tgroups(jj)%nsources
+            if ( ival /= tpbudgets(ji)%tsources(ipos(jk))%nfillvalue ) then
+              call Print_msg( NVERB_WARNING, 'BUD', 'Ini_budget',                                             &
+                              'different (integer) fill values for the different source terms of the group ' &
+                              //trim( tpbudgets(ji)%tgroups(jj)%cmnhname ) )
+            end if
+          end do
+          tpbudgets(ji)%tgroups(jj)%nfillvalue = ival
+        end if
+
+        if ( tpbudgets(ji)%tgroups(jj)%ntype == TYPEREAL ) then
+          zval = tpbudgets(ji)%tsources(ipos(1))%xfillvalue
+          do jk = 2, tpbudgets(ji)%tgroups(jj)%nsources
+            if ( zval /= tpbudgets(ji)%tsources(ipos(jk))%xfillvalue ) then
+              call Print_msg( NVERB_WARNING, 'BUD', 'Ini_budget',                                             &
+                              'different (real) fill values for the different source terms of the group ' &
+                              //trim( tpbudgets(ji)%tgroups(jj)%cmnhname ) )
+            end if
+          end do
+          tpbudgets(ji)%tgroups(jj)%xfillvalue = zval
+        end if
+
+        ! Set the valid min/max values
+        ! Take the min or max of all the sources
+        ! Maybe, it would be better to take the sum? (if same sign, if not already the maximum allowed value for this type)
+        if ( tpbudgets(ji)%tgroups(jj)%ntype == TYPEINT ) then
+          ivalmin = tpbudgets(ji)%tsources(ipos(1))%nvalidmin
+          ivalmax = tpbudgets(ji)%tsources(ipos(1))%nvalidmax
+          do jk = 2, tpbudgets(ji)%tgroups(jj)%nsources
+            ivalmin = min( ivalmin, tpbudgets(ji)%tsources(ipos(jk))%nvalidmin )
+            ivalmax = max( ivalmax, tpbudgets(ji)%tsources(ipos(jk))%nvalidmax )
+          end do
+          tpbudgets(ji)%tgroups(jj)%nvalidmin = ivalmin
+          tpbudgets(ji)%tgroups(jj)%nvalidmax = ivalmax
+        end if
+
+        if ( tpbudgets(ji)%tgroups(jj)%ntype == TYPEREAL ) then
+          zvalmin = tpbudgets(ji)%tsources(ipos(1))%xvalidmin
+          zvalmax = tpbudgets(ji)%tsources(ipos(1))%xvalidmax
+          do jk = 2, tpbudgets(ji)%tgroups(jj)%nsources
+            zvalmin = min( zvalmin, tpbudgets(ji)%tsources(ipos(jk))%xvalidmin )
+            zvalmax = max( zvalmax, tpbudgets(ji)%tsources(ipos(jk))%xvalidmax )
+          end do
+          tpbudgets(ji)%tgroups(jj)%xvalidmin = zvalmin
+          tpbudgets(ji)%tgroups(jj)%xvalidmax = zvalmax
+        end if
+
+        allocate( tpbudgets(ji)%tgroups(jj)%xdata(kbudim1, kbudim2, kbudim3 ) )
+        tpbudgets(ji)%tgroups(jj)%xdata(:, :, :) = 0.
+      end do
+
+      deallocate( igroups )
+      deallocate( ipos )
+
+      !Check that a group does not contain more than 1 source term with ldonotinit=.true.
+      do jj = 1, inbgroups
+        if ( tpbudgets(ji)%tgroups(jj)%nsources > 1 ) then
+          do jk = 1, tpbudgets(ji)%tgroups(jj)%nsources
+            if ( tpbudgets(ji)%tsources(tpbudgets(ji)%tgroups(jj)%nsourcelist(jk) )%ldonotinit ) &
+              call Print_msg( NVERB_FATAL, 'BUD', 'Ini_budget', &
+                              'a group with more than 1 source term may not contain sources with ldonotinit=true' )
+            if ( tpbudgets(ji)%tsources(tpbudgets(ji)%tgroups(jj)%nsourcelist(jk) )%loverwrite ) &
+              call Print_msg( NVERB_FATAL, 'BUD', 'Ini_budget', &
+                              'a group with more than 1 source term may not contain sources with loverwrite=true' )
+          end do
+        end if
+      end do
+
+    end if ENABLED
+  end do BUDGETS
+
+end subroutine Ini_budget_groups
+
 end module mode_ini_budget
