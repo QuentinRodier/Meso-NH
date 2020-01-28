@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -92,22 +92,25 @@ END MODULE MODI_ADVECTION_UVW
 !!                  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!                  C.LAC 10/2016 : Add OSPLIT_WENO
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_ll
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll, HALO2LIST_ll
-USE MODD_PARAMETERS,  ONLY : JPVEXT
+use modd_budget,      only: lbudget_u, lbudget_v, lbudget_w, NBUDGET_U, NBUDGET_V, NBUDGET_W, tbudgets
 USE MODD_CONF,        ONLY : NHALO
-USE MODD_BUDGET
-!
-USE MODI_SHUMAN
-USE MODI_CONTRAV
-USE MODI_ADVECUVW_RK
+USE MODD_PARAMETERS,  ONLY : JPVEXT
+
+use mode_budget,      only: Budget_store_init, Budget_store_end
+USE MODE_ll
+
 USE MODI_ADV_BOUNDARIES
+USE MODI_ADVECUVW_RK
 USE MODI_BUDGET
+USE MODI_CONTRAV
+USE MODI_SHUMAN
 !
 !-------------------------------------------------------------------------------
 !
@@ -197,7 +200,9 @@ IKU = SIZE(PWT,3)
 ZMXM_RHODJ = MXM(PRHODJ)
 ZMYM_RHODJ = MYM(PRHODJ)
 ZMZM_RHODJ = MZM(1,IKU,1,PRHODJ)
-!
+
+if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'ADV', prus )
+
 !-------------------------------------------------------------------------------
 !
 !*       1.     COMPUTES THE CONTRAVARIANT COMPONENTS
@@ -319,7 +324,8 @@ END DO
 !*       4.     BUDGETS              
 !	        -------
 !
-IF (LBUDGET_U)  CALL BUDGET (PRUS,NBUDGET_U,'ADV_BU_RU')
+if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'ADV', prus )
+
 IF (LBUDGET_V)  CALL BUDGET (PRVS,NBUDGET_V,'ADV_BU_RV')
 IF (LBUDGET_W)  CALL BUDGET (PRWS,NBUDGET_W,'ADV_BU_RW')
 !-------------------------------------------------------------------------------

@@ -29,6 +29,7 @@
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !  P. Wautelet 14/10/2019: complete restructuration and deduplication of code
+!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
 !-----------------------------------------------------------------
 
 !#######################
@@ -116,6 +117,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
                                  lbu_rri, lbu_rrs, lbu_rrg, lbu_rrh, lbu_rsv,                                                     &
                                  NBUDGET_RHO, NBUDGET_U, NBUDGET_V, NBUDGET_W, NBUDGET_TH, NBUDGET_TKE,                           &
                                  NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, NBUDGET_SV1, &
+                                 tbudgets,                                                                                        &
                                  xburhodj, xburhodju, xburhodjv, xburhodjw,                                                       &
                                  xburu, xburv, xburw, xburth, xburtke,                                                            &
                                  xburrv, xburrc, xburrr, xburri, xburrs, xburrg, xburrh, xbursv
@@ -270,8 +272,8 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   !* XBURHODJU and RU budgets
   !
     IF (LBU_RU) THEN
-      call Store_one_budget_rho( tpdiafile, tzdates, xburhodju, NBUDGET_U, gnocompress, zrhodjn )
-      call Store_one_budget( tpdiafile, tzdates, xburu, zrhodjn, NBUDGET_U, gnocompress, ptstep )
+      call Store_one_budget_rho_new( tpdiafile, tzdates, tbudgets(NBUDGET_U),          NBUDGET_U, gnocompress, zrhodjn )
+      call Store_one_budget_new    ( tpdiafile, tzdates, tbudgets(NBUDGET_U), zrhodjn, NBUDGET_U, gnocompress, ptstep  )
     END IF
   !
   !* XBURHODJV and RV budgets

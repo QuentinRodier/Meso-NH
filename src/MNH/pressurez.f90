@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -219,13 +219,14 @@ END MODULE MODI_PRESSUREZ
 !!  Philippe Wautelet: 22/01/2019: use standard FLUSH statement instead of non standard intrinsics
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
 USE MODD_ARGSLIST_ll, ONLY: LIST_ll
-USE MODD_BUDGET
+use modd_budget,      only: lbudget_u, lbudget_v, lbudget_w, NBUDGET_U, NBUDGET_V, NBUDGET_W, tbudgets
 USE MODD_CST
 USE MODD_CONF
 USE MODD_DYN_n,       ONLY: LRES, XRES
@@ -236,6 +237,7 @@ use modd_precision,   only: MNHREAL_MPI
 USE MODD_REF,         ONLY: LBOUSS
 USE MODD_VAR_ll,      ONLY: NMNH_COMM_WORLD , NPROC
 !
+use mode_budget,     only: Budget_store_end
 USE MODE_ll
 USE MODE_MPPDB
 USE MODE_MSG
@@ -401,8 +403,10 @@ ZPABS_S(:,:) = 0.
 ZPABS_N(:,:) = 0.
 ZPABS_E(:,:) = 0.
 ZPABS_W(:,:) = 0.
-!
-!
+
+! Done in model_n before call to Rad_bound
+! if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'PRES', prus )
+
 !-------------------------------------------------------------------------------
 !
 !*       3.    COMPUTE THE LINEIC MASS
@@ -677,7 +681,8 @@ ENDIF
 !*       7.    STORAGE OF THE FIELDS IN BUDGET ARRAYS
 !              --------------------------------------
 !
-IF (LBUDGET_U) CALL BUDGET (PRUS,NBUDGET_U,'PRES_BU_RU')
+if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'PRES', prus )
+
 IF (LBUDGET_V) CALL BUDGET (PRVS,NBUDGET_V,'PRES_BU_RV')
 IF (LBUDGET_W) CALL BUDGET (PRWS,NBUDGET_W,'PRES_BU_RW')
 !

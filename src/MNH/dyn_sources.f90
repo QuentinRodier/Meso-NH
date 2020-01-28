@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -147,22 +147,26 @@ END MODULE MODI_DYN_SOURCES
 !!  Correction     06/10  (C.Lac) Exclude L1D for Coriolis term 
 !!  Modification   03/11  (C.Lac) Split the gravity term due to buoyancy
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_BUDGET
+use modd_budget,      only: lbudget_u, lbudget_v, lbudget_w, lbudget_th, &
+                            NBUDGET_U, NBUDGET_V, NBUDGET_W, NBUDGET_TH, &
+                            tbudgets
 USE MODD_CONF
 USE MODD_CST
 USE MODD_DYN
-!
-USE MODI_SHUMAN
-USE MODI_GRADIENT_M
-USE MODI_BUDGET
-!
+
+use mode_budget,     only: Budget_store_init, Budget_store_end
 USE MODE_MPPDB
-!  
+
+USE MODI_BUDGET
+USE MODI_GRADIENT_M
+USE MODI_SHUMAN
+
 IMPLICIT NONE
 !  
 !*       0.1   Declarations of dummy arguments :
@@ -220,7 +224,9 @@ IKU = SIZE(PUT,3)
 !
 ! Only when earth rotation is considered but not in 1D and CARTESIAN cases
 !
-IF ((.NOT.L1D).AND.(.NOT.LCARTESIAN) )  THEN 
+if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'CURV', prus )
+
+IF ((.NOT.L1D).AND.(.NOT.LCARTESIAN) )  THEN
   IF ( LTHINSHELL ) THEN           !  THINSHELL approximation  
 !
     ZWORK1(:,:,:) = SPREAD( PCURVX(:,:),DIM=3,NCOPIES=IKU ) / XRADIUS
@@ -263,7 +269,8 @@ IF ((.NOT.L1D).AND.(.NOT.LCARTESIAN) )  THEN
 !
 END IF
 !
-IF (LBUDGET_U) CALL BUDGET (PRUS,NBUDGET_U,'CURV_BU_RU')
+if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'CURV', prus )
+
 IF (LBUDGET_V) CALL BUDGET (PRVS,NBUDGET_V,'CURV_BU_RV')
 IF (LBUDGET_W) CALL BUDGET (PRWS,NBUDGET_W,'CURV_BU_RW')
 !
@@ -272,6 +279,8 @@ IF (LBUDGET_W) CALL BUDGET (PRWS,NBUDGET_W,'CURV_BU_RW')
 !*       3.     COMPUTES THE CORIOLIS TERMS
 !	        ---------------------------
 !
+if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'COR', prus )
+
 IF (LCORIO)   THEN 
 !
   ZWORK3(:,:,:) = SPREAD( PCORIOZ(:,:),DIM=3,NCOPIES=IKU ) * PRHODJ(:,:,:)
@@ -294,7 +303,8 @@ IF (LCORIO)   THEN
 !
 END IF                      
 !
-IF (LBUDGET_U) CALL BUDGET (PRUS,NBUDGET_U,'COR_BU_RU')
+if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'COR', prus )
+
 IF (LBUDGET_V) CALL BUDGET (PRVS,NBUDGET_V,'COR_BU_RV')
 IF (LBUDGET_W) CALL BUDGET (PRWS,NBUDGET_W,'COR_BU_RW')
 !

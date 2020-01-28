@@ -103,6 +103,7 @@ contains
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 15/11/2019: remove unused CBURECORD variable
+!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -112,6 +113,7 @@ USE MODD_PARAMETERS
 USE MODD_BUDGET
 USE MODD_DYN
 USE MODD_CONF
+use modd_field,      only: TYPEREAL
 USE MODD_PARAM_ICE
 USE MODD_PARAM_C2R2
 USE MODD_ELEC_DESCR, ONLY : LINDUCTIVE
@@ -122,6 +124,7 @@ USE MODD_PARAM_LIMA, ONLY : OWARM=>LWARM, OCOLD=>LCOLD, OSEDI=>LSEDI,   &
                             OHAIL=>LHAIL, OSCAV=>LSCAV, OMEYERS=>LMEYERS,&
                             ODEPOC=>LDEPOC, OPTSPLIT=>LPTSPLIT,          &
                             NMOD_CCN
+use modd_viscosity,  only: lvisc
 !
 USE MODE_ll
 USE MODE_MSG
@@ -206,18 +209,13 @@ INTEGER :: JSV               ! loop indice for the SVs
 INTEGER :: IBUPROCNBR_SV_MAX ! Max number of processes for the SVs
 INTEGER :: ILAST_PROC_NBR    ! Index of the last process number
 INTEGER :: IINFO_ll ! return status of the interface routine
-INTEGER :: IRESP   ! Return code of FM-routines
-! 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!
-!!! the lines below must be update as soon as MODD_BUDGET is updated
-!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!-------------------------------------------------------------------------------
+integer :: isourcesmax          ! Maximum number of source terms in a budget
+type(tbusourcedata) :: tzsource ! Used to prepare metadate of source terms
+
+call Print_msg( NVERB_DEBUG, 'BUD', 'Ini_budget', 'called' )
+
+nbudgets = NBUDGET_SV1 - 1 + ksv
+allocate( tbudgets( nbudgets ) )
 !
 !*       1.    COMPUTE BUDGET VARIABLES
 !              ------------------------
@@ -361,110 +359,119 @@ IPROACTV(:,JPBUPROMAX+1) = 0
 GERROR=.FALSE.
 YWORK2(:,:) = ' '
 YEND_COMMENT(:) = ' '
-!
-!                        Budget of RU
-IF (LBU_RU) THEN
-  YWORK2(NBUDGET_U, 1) = 'INIF_'
 
-  YWORK2(NBUDGET_U, 2) = 'ENDF_'
+tzsource%ntype    = TYPEREAL
+tzsource%ndims    = 3
 
-  YWORK2(NBUDGET_U, 3) = 'AVEF_'
+! Budget of RU
+tbudgets(NBUDGET_U  )%cname    = "BU_RU"
+tbudgets(NBUDGET_U  )%ccomment = "Budget for U"
 
-  IPROC=4
-  YWORK2(NBUDGET_U, IPROC) = 'ASSE_'
-  IPROACTV(NBUDGET_U, IPROC) = NASSEU
+tbudgets(NBUDGET_U)%lenabled = lbu_ru
 
-  IPROC=IPROC+1
-  YWORK2(NBUDGET_U, IPROC) = 'NEST_'
-  IF( NMODEL>1 ) IPROACTV(NBUDGET_U, IPROC) = NNESTU
+if (lbu_ru) then
+  allocate( tbudgets(NBUDGET_U)%trhodj )
+  tbudgets(NBUDGET_U)%trhodj%cmnhname  = 'RhodJX'
+  tbudgets(NBUDGET_U)%trhodj%cstdname  = ''
+  tbudgets(NBUDGET_U)%trhodj%clongname = 'RhodJX'
+  tbudgets(NBUDGET_U)%trhodj%cunits    = 'kg'
+  tbudgets(NBUDGET_U)%trhodj%ccomment  = 'RhodJ for momentum along X axis'
+  tbudgets(NBUDGET_U)%trhodj%ngrid     = 2
+  tbudgets(NBUDGET_U)%trhodj%ntype     = TYPEREAL
+  tbudgets(NBUDGET_U)%trhodj%ndims     = 3
 
-  IPROC=IPROC+1
-  YWORK2(NBUDGET_U, IPROC) = 'FRC_'
-  IF( LFORCING ) IPROACTV(NBUDGET_U, IPROC)  = NFRCU
+  allocate( tbudgets(NBUDGET_U)%trhodj%xdata(ibudim1, ibudim2, ibudim3) )
+  tbudgets(NBUDGET_U)%trhodj%xdata(:, :, :) = 0.
 
-  IPROC=IPROC+1
-  YWORK2(NBUDGET_U, IPROC) = 'NUD_'
-  IF( ONUDGING ) IPROACTV(NBUDGET_U, IPROC)  = NNUDU
+  !Allocate all basic source terms (used or not)
+  !The size should be large enough (bigger than necessary is OK)
+  isourcesmax = 18
+  tbudgets(NBUDGET_U)%nsourcesmax = isourcesmax
+  allocate( tbudgets(NBUDGET_U)%tsources(isourcesmax) )
 
-  IPROC=IPROC+1
-  YWORK2(NBUDGET_U, IPROC) = 'CURV_'
-  IF ( .NOT. LCARTESIAN ) THEN
-    IPROACTV(NBUDGET_U, IPROC) = NCURVU
-  ELSE
-    IPROACTV(NBUDGET_U, IPROC) = 4
-  END IF
+  allocate( tbudgets(NBUDGET_U)%xtmpstore(ibudim1, ibudim2, ibudim3) )
 
-  IPROC=IPROC+1
-  YWORK2(NBUDGET_U, IPROC) = 'COR_'
-  IF ( LCORIO ) THEN
-    IPROACTV(NBUDGET_U, IPROC) = NCORU
-  ELSE
-    IPROACTV(NBUDGET_U, IPROC) = 4
-  END IF
+  tbudgets(NBUDGET_U)%tsources(:)%ngroup = 0
 
-  IPROC=IPROC+1
-  YWORK2(NBUDGET_U, IPROC) = 'DIF_'
-  IF ( ONUMDIFU ) IPROACTV(NBUDGET_U, IPROC) = NDIFU
+  tzsource%ccomment = 'Budget of momentum along X axis'
+  tzsource%ngrid    = 2
 
-  IPROC=IPROC+1
-  YWORK2(NBUDGET_U, IPROC) = 'REL_'
-  IF ( OHORELAX_UVWTH .OR. OVE_RELAX ) THEN
-    IPROACTV(NBUDGET_U, IPROC) = NRELU
-  ELSE
-    IF(OVE_RELAX .OR. OHORELAX_UVWTH .OR. OHORELAX_RV .OR.                 &
-     OHORELAX_RC .OR. OHORELAX_RR .OR. OHORELAX_RI .OR. OHORELAX_RS .OR.   &
-     OHORELAX_RG .OR. OHORELAX_RH .OR. OHORELAX_TKE .OR. ANY(OHORELAX_SV)) THEN
-      IPROACTV(NBUDGET_U, IPROC) = 4
-    ELSE
-      IPROACTV(NBUDGET_U, IPROC) = 3
-    END IF
-  END IF
+  tzsource%cunits   = 'm s-1'
 
-  IPROC=IPROC+1
-  YWORK2(NBUDGET_U, IPROC) = 'DRAG_'
-  IF( ODRAGTREE ) IPROACTV(NBUDGET_U, IPROC)  = NDRAGU
+  tzsource%cmnhname  = 'INIF'
+  tzsource%clongname = 'initial state'
+  call Budget_source_add( tbudgets(NBUDGET_U), tzsource, .true., 1, odonotinit = .true., ooverwrite = .true.  )
 
-  IPROC=IPROC+1
-  YWORK2(NBUDGET_U, IPROC) = 'VTURB_'
-  IF ( HTURB /= 'NONE' ) IPROACTV(NBUDGET_U, IPROC) = NVTURBU
+  tzsource%cmnhname  = 'ENDF'
+  tzsource%clongname = 'final state'
+  call Budget_source_add( tbudgets(NBUDGET_U), tzsource, .true., 1, odonotinit = .true., ooverwrite = .true.  )
 
-  IPROC=IPROC+1
-  YWORK2(NBUDGET_U, IPROC) = 'HTURB_'
-  IF ( HTURB /= 'NONE' .AND. HTURBDIM == '3DIM' ) THEN
-    IPROACTV(NBUDGET_U, IPROC) = NHTURBU
-  ELSE
-    IF ( HTURB /= 'NONE' ) THEN
-      IPROACTV(NBUDGET_U, IPROC) = 4
-    ELSE
-      IPROACTV(NBUDGET_U, IPROC) = 3
-    END IF
-  END IF 
+  tzsource%cmnhname  = 'AVEF'
+  tzsource%clongname = 'averaged state'
+  call Budget_source_add( tbudgets(NBUDGET_U), tzsource, .true., 1, odonotinit = .true., ooverwrite = .false. )
 
-  IPROC=IPROC+1
-  YWORK2(NBUDGET_U, IPROC) = 'MAFL_'
-  IF ( HSCONV == 'EDKF' ) IPROACTV(NBUDGET_U, IPROC) = NMAFLU
+  tzsource%cunits   = 'm s-2'
 
-  IPROC=IPROC+1
-  YWORK2(NBUDGET_U, IPROC) = 'ADV_'
-  IPROACTV(NBUDGET_U, IPROC) = NADVU
+  tzsource%cmnhname  = 'ASSE'
+  tzsource%clongname = 'time filter (Asselin)'
+  call Budget_source_add( tbudgets(NBUDGET_U), tzsource, .true.,                                   nasseu   )
 
-  IPROC=IPROC+1
-  YWORK2(NBUDGET_U, IPROC) = 'PRES_'
-  IPROACTV(NBUDGET_U, IPROC) = NPRESU
-!
-  YEND_COMMENT(NBUDGET_U) = 'BU_RU'
-  NBUPROCNBR(NBUDGET_U) = 3 !Initial number of budgets, will be increazed later if necessary
-!
-  CBUACTION(NBUDGET_U, 1) = 'IG'
-  CBUACTION(NBUDGET_U, 2) = 'CC'
-  CBUACTION(NBUDGET_U, 3) = 'ES'
-!
-  DO JJ=1,3
-    CBUCOMMENT(NBUDGET_U, JJ) = ADJUSTL( ADJUSTR( YWORK2(NBUDGET_U, JJ) ) // &
-                                ADJUSTL( YEND_COMMENT(NBUDGET_U) ) )
-  END DO
-!
-END IF
+  tzsource%cmnhname  = 'NEST'
+  tzsource%clongname = 'nesting'
+  call Budget_source_add( tbudgets(NBUDGET_U), tzsource, nmodel > 1,                               nnestu   )
+
+  tzsource%cmnhname  = 'FRC'
+  tzsource%clongname = 'forcing'
+  call Budget_source_add( tbudgets(NBUDGET_U), tzsource, lforcing,                                 nfrcu    )
+
+  tzsource%cmnhname  = 'NUD'
+  tzsource%clongname = 'nudging'
+  call Budget_source_add( tbudgets(NBUDGET_U), tzsource, onudging,                                 nnudu    )
+
+  tzsource%cmnhname  = 'CURV'
+  tzsource%clongname = 'curvature'
+  call Budget_source_add( tbudgets(NBUDGET_U), tzsource, .not. lcartesian,                         ncurvu   )
+
+  tzsource%cmnhname  = 'COR'
+  tzsource%clongname = 'Coriolis'
+  call Budget_source_add( tbudgets(NBUDGET_U), tzsource, lcorio,                                   ncoru    )
+
+  tzsource%cmnhname  = 'DIF'
+  tzsource%clongname = 'numerical diffusion'
+  call Budget_source_add( tbudgets(NBUDGET_U), tzsource, onumdifu,                                 ndifu    )
+
+  tzsource%cmnhname  = 'REL'
+  tzsource%clongname = 'relaxation'
+  call Budget_source_add( tbudgets(NBUDGET_U), tzsource, ohorelax_uvwth .or. ove_relax,            nrelu    )
+
+  tzsource%cmnhname  = 'DRAG'
+  tzsource%clongname = 'drag force'
+  call Budget_source_add( tbudgets(NBUDGET_U), tzsource, odragtree,                                ndragu   )
+
+  tzsource%cmnhname  = 'VTURB'
+  tzsource%clongname = 'vertical turbulent diffusion'
+  call Budget_source_add( tbudgets(NBUDGET_U), tzsource, hturb /= 'NONE',                          nvturbu  )
+
+  tzsource%cmnhname  = 'HTURB'
+  tzsource%clongname = 'horizontal turbulent diffusion'
+  call Budget_source_add( tbudgets(NBUDGET_U), tzsource, hturb /= 'NONE' .and. HTURBDIM == '3DIM', nhturbu  )
+
+  tzsource%cmnhname  = 'MAFL'
+  tzsource%clongname = 'mass flux'
+  call Budget_source_add( tbudgets(NBUDGET_U), tzsource, hsconv == 'EDKF',                         nmaflu   )
+
+  tzsource%cmnhname  = 'VISC'
+  tzsource%clongname = 'viscosity'
+  call Budget_source_add( tbudgets(NBUDGET_U), tzsource, lvisc,                                    nviscu   )
+
+  tzsource%cmnhname  = 'ADV'
+  tzsource%clongname = 'advection'
+  call Budget_source_add( tbudgets(NBUDGET_U), tzsource, .true.,                                   nadvu    )
+
+  tzsource%cmnhname  = 'PRES'
+  tzsource%clongname = 'pressure'
+  call Budget_source_add( tbudgets(NBUDGET_U), tzsource, .true.,                                   npresu   )
+end if
 !
 !                        Budget of RV
 IF (LBU_RV) THEN
@@ -2686,6 +2693,9 @@ END IF
 IF (GERROR) THEN
   call Print_msg( NVERB_FATAL, 'BUD', 'INI_BUDGET', '' )
 ENDIF
+
+call Ini_budget_groups( tbudgets, ibudim1, ibudim2, ibudim3 )
+
 !-------------------------------------------------------------------------------
 !*       5.    ALLOCATE MEMORY FOR BUDGET STORAGE ARRAYS
 !              -----------------------------------------

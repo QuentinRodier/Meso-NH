@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -93,21 +93,21 @@ END MODULE MODI_ENDSTEP_BUDGET
 !!      N. Asensio  22/06/99  // MASK case : delete KIU,KJU,KKU arguments
 !!                            and change the write_budget call
 !!      C.Lac       11/09/15 adaptation to FIT temporal scheme
-!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!  P. Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_BUDGET
 USE MODD_IO, ONLY: TFILEDATA
 USE MODD_TIME
-USE MODD_BUDGET
 !
+use mode_msg
 use mode_write_budget, only: Write_budget
 !
 IMPLICIT NONE
-!  
 !  
 !*       0.1   Declarations of arguments :
 !
@@ -116,9 +116,13 @@ INTEGER,           INTENT(IN) :: KTCOUNT    ! temporal loop counter
 TYPE (DATE_TIME),  INTENT(IN) :: TPDTCUR    ! Current date and time
 REAL,              INTENT(IN) :: PTSTEP     ! time step
 INTEGER,           INTENT(IN) :: KSV        ! Number of Scalar Variables
-!
+
+integer :: jbu, jgrp
+
 !-------------------------------------------------------------------------------
 !
+call Print_msg( NVERB_DEBUG, 'BUD', 'Endstep_budget', 'called' )
+
 SELECT CASE(CBUTYPE)
 !
 !
@@ -151,6 +155,14 @@ SELECT CASE(CBUTYPE)
       IF (ALLOCATED(XBURHODJV)) XBURHODJV=0.
       IF (ALLOCATED(XBURHODJW)) XBURHODJW=0.
       IF (ALLOCATED(XBURHODJ)) XBURHODJ =0.
+
+      if ( tbudgets(NBUDGET_U)%lenabled ) tbudgets(NBUDGET_U)%trhodj%xdata(:, :, :) = 0.
+
+      do jbu = 1, nbudgets
+        do jgrp = 1, tbudgets(jbu)%ngroups
+          tbudgets(jbu)%tgroups(jgrp)%xdata(:, :, : ) = 0.
+        end do
+      end do
 !
 !*	 1.3    reset  budget beginning flag to TRUE
 !
@@ -187,6 +199,12 @@ SELECT CASE(CBUTYPE)
       IF (ALLOCATED(XBURHODJV)) XBURHODJV=0.
       IF (ALLOCATED(XBURHODJW)) XBURHODJW=0.
       IF (ALLOCATED(XBURHODJ)) XBURHODJ =0.
+
+      do jbu = 1, nbudgets
+        do jgrp = 1, tbudgets(jbu)%ngroups
+          tbudgets(jbu)%tgroups(jgrp)%xdata(:, :, : ) = 0.
+        end do
+      end do
 !
       NBUTIME=0
 !       

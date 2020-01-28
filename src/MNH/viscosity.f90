@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -91,21 +91,29 @@ SUBROUTINE VISCOSITY(HLBCX, HLBCY, KRR, KSV, PNU, PPRANDTL,          &
 !!      01/18 (C.Lac) Add budgets
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !  P. Wautelet 08/11/2019: corrected wrong budget name VISC_BU_RU -> VISC_BU_RTH
+!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-  USE MODI_LAP_M
-  USE MODI_SHUMAN  
-  USE MODD_PARAMETERS
+  USE MODD_ARGSLIST_ll, ONLY: LIST_ll
+  use modd_budget,      only: lbudget_u,  lbudget_v,  lbudget_w,  lbudget_th, lbudget_rv,  lbudget_rc,  &
+                              lbudget_rr, lbudget_ri, lbudget_rs, lbudget_rg, lbudget_rh,  lbudget_sv,  &
+                              NBUDGET_U,  NBUDGET_V,  NBUDGET_W,  NBUDGET_TH, NBUDGET_RV,  NBUDGET_RC,  &
+                              NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH,  NBUDGET_SV1, &
+                              tbudgets
   USE MODD_CONF
-  USE MODD_VISCOSITY
   USE MODD_DRAG_n
-  USE MODD_BUDGET
+  USE MODD_PARAMETERS
+  USE MODD_VISCOSITY
+
+  use mode_budget,      only: Budget_store_init, Budget_store_end
   USE MODE_ll
-  USE MODD_ARGSLIST_ll, ONLY : LIST_ll
+
   USE MODI_BUDGET
+  USE MODI_SHUMAN
+  USE MODI_LAP_M
 !
 !-------------------------------------------------------------------------------
 !
@@ -179,6 +187,8 @@ TYPE(LIST_ll), POINTER :: TZFIELDS_ll   ! list of fields to exchange
 IIU=SIZE(PWT,1)
 IJU=SIZE(PWT,2)
 IKU=SIZE(PWT,3)
+
+if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'VISC', prus )
 
 !*       1.    Viscous forcing for potential temperature
 !	       -----------------------------------------
@@ -334,7 +344,8 @@ ENDIF
   ENDIF
 END IF
 !
-IF (LBUDGET_U) CALL BUDGET (PRUS,NBUDGET_U,'VISC_BU_RU')
+if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'VISC', prus )
+
 IF (LBUDGET_V) CALL BUDGET (PRVS,NBUDGET_V,'VISC_BU_RV')
 IF (LBUDGET_W) CALL BUDGET (PRWS,NBUDGET_V,'VISC_BU_RW')
 !

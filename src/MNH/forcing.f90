@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -143,15 +143,20 @@ END MODULE MODI_FORCING
 !!      06/2012  V. Masson            Adds tendency of geostrophic wind itself to wind tendency
 !!      01/2014  J. escobar           correction for // initialisation geostrophic ZUF,ZVF,ZWF 
 !!      09/2017 Q.Rodier add LTEND_UV_FRC
-!!      28/03/2018 P. Wautelet        Replace TEMPORAL_DIST by DATETIME_DISTANCE
-!!                                    use overloaded comparison operator for date_time
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 28/03/2018: replace TEMPORAL_DIST by DATETIME_DISTANCE
+!                          use overloaded comparison operator for date_time
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_BUDGET
+use modd_budget,     only: lbudget_u,  lbudget_v,  lbudget_w,  lbudget_th, lbudget_tke, lbudget_rv,  lbudget_rc, &
+                           lbudget_rr, lbudget_ri, lbudget_rs, lbudget_rg, lbudget_rh,  lbudget_sv,              &
+                           NBUDGET_U,  NBUDGET_V,  NBUDGET_W,  NBUDGET_TH, NBUDGET_TKE, NBUDGET_RV,  NBUDGET_RC, &
+                           NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH,  NBUDGET_SV1,             &
+                           tbudgets
 USE MODD_CONF
 USE MODD_CST
 USE MODD_DYN
@@ -160,6 +165,7 @@ USE MODD_LUNIT
 USE MODD_PARAMETERS
 USE MODD_TIME
 !
+use mode_budget,     only: Budget_store_init, Budget_store_end
 USE MODE_DATETIME
 USE MODE_MSG
 !
@@ -246,6 +252,8 @@ IJU=SIZE(PUT,2)
 IKU=SIZE(PUT,3) 
 !
 ILUOUT0 = TLUOUT0%NLU
+
+if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'FRC', prus )
 !
 !*        1.   PREPARATION OF FORCING
 !              ----------------------
@@ -827,7 +835,8 @@ END IF
 !   	        ------------
 !
 !
-IF (LBUDGET_U)   CALL BUDGET (PRUS,         NBUDGET_U,  'FRC_BU_RU')
+if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'FRC', prus )
+
 IF (LBUDGET_V)   CALL BUDGET (PRVS,         NBUDGET_V,  'FRC_BU_RV')
 IF (LBUDGET_W)   CALL BUDGET (PRWS,         NBUDGET_W,  'FRC_BU_RW')
 IF (LBUDGET_TH)  CALL BUDGET (PRTHS,        NBUDGET_TH, 'FRC_BU_RTH')

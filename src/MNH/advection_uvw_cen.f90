@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -88,27 +88,28 @@ END MODULE MODI_ADVECTION_UVW_CEN
 !!      Original    01/2013  (from ADVECTION routine)
 !!      Modif
 !!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
-! P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
-!
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_ll
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll, HALO2LIST_ll
 USE MODD_CONF
-USE MODD_PARAMETERS
+use modd_budget,      only: lbudget_u, lbudget_v, lbudget_w, NBUDGET_U, NBUDGET_V, NBUDGET_W, tbudgets
 USE MODD_GRID_n
-!
-USE MODI_SHUMAN
-USE MODI_CONTRAV
+USE MODD_PARAMETERS
+
+use mode_budget,     only: Budget_store_init, Budget_store_end
+USE MODE_ll
+
 USE MODI_ADVECUVW_2ND
 USE MODI_ADVECUVW_4TH
-!
-USE MODD_BUDGET
 USE MODI_BUDGET
-!
+USE MODI_CONTRAV
+USE MODI_SHUMAN
+
 !-------------------------------------------------------------------------------
 !
 IMPLICIT NONE
@@ -179,6 +180,9 @@ CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKU = SIZE(XZHAT)
 IKB=1+JPVEXT
 IKE=IKU-JPVEXT
+
+if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'ADV', prus )
+
 ZMXM_RHODJ = MXM(PRHODJ)
 ZMYM_RHODJ = MYM(PRHODJ)
 ZMZM_RHODJ = MZM(1,IKU,1,PRHODJ)
@@ -247,8 +251,9 @@ PRWS(:,:,:) = PRWS(:,:,:) + ( ZWS(:,:,:) - PWM(:,:,:) - 0.5* PDWM) * ZMZM_RHODJ/
 PDUM = ZUS(:,:,:) - PUM(:,:,:)
 PDVM = ZVS(:,:,:) - PVM(:,:,:)
 PDWM = ZWS(:,:,:) - PWM(:,:,:)
-!
-IF (LBUDGET_U)  CALL BUDGET (PRUS,NBUDGET_U,'ADV_BU_RU')
+
+if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'ADV', prus )
+
 IF (LBUDGET_V)  CALL BUDGET (PRVS,NBUDGET_V,'ADV_BU_RV')
 IF (LBUDGET_W)  CALL BUDGET (PRWS,NBUDGET_W,'ADV_BU_RW')
 !

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2006-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2006-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -74,13 +74,18 @@ END MODULE MODI_NUDGING
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    15/05/06
+!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_BUDGET
-!
+use modd_budget,     only: lbudget_u, lbudget_v, lbudget_w, lbudget_th, lbudget_rv, &
+                           NBUDGET_U, NBUDGET_V, NBUDGET_W, NBUDGET_TH, NBUDGET_RV, &
+                           tbudgets
+
+use mode_budget,     only: Budget_store_init, Budget_store_end
+
 USE MODI_BUDGET
 !
 IMPLICIT NONE
@@ -109,6 +114,8 @@ REAL :: ZINVTAU ! inverse of nudging time scale
 !
 !
 ZINVTAU=1./PTNUDGING
+
+if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'NUD', prus )
 !
 !*        1.   NUGDGING TOWARDS LS FIELDS
 !              --------------------------
@@ -124,7 +131,8 @@ IF (OUSERV) &
 !*       2.     BUDGET CALLS
 !   	        ------------
 !
-IF (LBUDGET_U)   CALL BUDGET (PRUS,NBUDGET_U,'NUD_BU_RU')
+if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'NUD', prus )
+
 IF (LBUDGET_V)   CALL BUDGET (PRVS,NBUDGET_V,'NUD_BU_RV')
 IF (LBUDGET_W)   CALL BUDGET (PRWS,NBUDGET_W,'NUD_BU_RW')
 IF (LBUDGET_TH)  CALL BUDGET (PRTHS,NBUDGET_TH,'NUD_BU_RTH')

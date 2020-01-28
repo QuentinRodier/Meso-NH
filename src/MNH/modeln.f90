@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -265,7 +265,8 @@ END MODULE MODI_MODEL_n
 !  J. Escobar  09/07/2019: norme Doctor -> Rename Module Type variable TZ -> T
 !  J. Escobar  09/07/2019: for bug in management of XLSZWSM variable, add/use specific 2D TLSFIELD2D_ll pointer
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
-!  J. Escobar  27/09/2019: add missing report timing of RESOLVED_ELEC       
+!  J. Escobar  27/09/2019: add missing report timing of RESOLVED_ELEC
+!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -277,19 +278,20 @@ USE MODD_AIRCRAFT_BALLOON
 USE MODD_BAKOUT
 USE MODD_BIKHARDT_n
 USE MODD_BLANK
+USE MODD_BLOWSNOW
+USE MODD_BLOWSNOW_n
 USE MODD_BUDGET
 USE MODD_CH_AERO_n,      ONLY: XSOLORG, XMI
 USE MODD_CH_MNHC_n,      ONLY: LUSECHEM,LCH_CONV_LINOX,LUSECHAQ,LUSECHIC, &
                                LCH_INIT_FIELD
 USE MODD_CLOUD_MF_n
-USE MODD_VISCOSITY
-USE MODD_DRAG_n
 USE MODD_CLOUDPAR_n
 USE MODD_CONF
 USE MODD_CONF_n
 USE MODD_CURVCOR_n
 USE MODD_DEEP_CONVECTION_n
 USE MODD_DIM_n
+USE MODD_DRAG_n
 USE MODD_DUST,           ONLY: LDUST
 USE MODD_DYN
 USE MODD_DYN_n
@@ -327,8 +329,6 @@ USE MODD_PARAM_LIMA,     ONLY: MSEDC => LSEDC, MWARM => LWARM, MRAIN => LRAIN, &
                                MACTIT => LACTIT, LSCAV, LCOLD,                 &
                                MSEDI => LSEDI, MHHONI => LHHONI, LHAIL,        &
                                XRTMIN_LIMA=>XRTMIN, MACTTKE=>LACTTKE
-USE MODD_BLOWSNOW_n
-USE MODD_BLOWSNOW
 USE MODD_PARAM_MFSHALL_n
 USE MODD_PARAM_n
 USE MODD_PAST_FIELD_n
@@ -348,7 +348,9 @@ USE MODD_TIME_n
 USE MODD_TIMEZ
 USE MODD_TURB_CLOUD,     ONLY: NMODEL_CLOUD,CTURBLEN_CLOUD,XCEI
 USE MODD_TURB_n
+USE MODD_VISCOSITY
 !
+use mode_budget,           only: Budget_store_init
 USE MODE_DATETIME
 USE MODE_ELEC_ll
 USE MODE_GRIDCART
@@ -392,7 +394,6 @@ USE MODI_INI_MEAN_FIELD
 USE MODI_INITIAL_GUESS
 USE MODI_LES_INI_TIMESTEP_n
 USE MODI_LES_N
-USE MODI_VISCOSITY
 USE MODI_LIMA_PRECIP_SCAVENGING
 USE MODI_LS_COUPLING
 USE MODI_MASK_COMPRESS
@@ -419,6 +420,7 @@ USE MODI_STATION_n
 USE MODI_TURB_CLOUD_INDEX
 USE MODI_TWO_WAY
 USE MODI_UPDATE_NSV
+USE MODI_VISCOSITY
 USE MODI_WRITE_AIRCRAFT_BALLOON
 USE MODI_WRITE_DESFM_n
 USE MODI_WRITE_DIAG_SURF_ATM_N
@@ -995,6 +997,10 @@ IF (NBUMOD==IMI .AND. CBUTYPE=='MASK' ) THEN
   IF (ALLOCATED(XBURHODJ))                                         &
                 XBURHODJ (:,NBUTIME,:) = XBURHODJ (:,NBUTIME,:)    &
                               + MASK_COMPRESS(XRHODJ)
+  if ( lbu_ru ) then
+    tbudgets(NBUDGET_U)%trhodj%xdata(:, nbutime, :) = tbudgets(NBUDGET_U)%trhodj%xdata(:, nbutime, :) &
+                                                      + Mask_compress( Mxm( xrhodj(:, :, :) ) )
+  end if
 END IF
 !
 IF (NBUMOD==IMI .AND. CBUTYPE=='CART' ) THEN
@@ -1007,6 +1013,9 @@ IF (NBUMOD==IMI .AND. CBUTYPE=='CART' ) THEN
   IF (ALLOCATED(XBURHODJ))                             &
                 XBURHODJ (:,:,:) = XBURHODJ (:,:,:)    &
                 + CART_COMPRESS(XRHODJ)
+  if ( lbu_ru ) then
+    tbudgets(NBUDGET_U)%trhodj%xdata(:, :, :) = tbudgets(NBUDGET_U)%trhodj%xdata(:, :, :) + Cart_compress( Mxm( xrhodj(:, :, :) ) )
+  end if
 END IF
 !
 CALL BUDGET_FLAGS(LUSERV, LUSERC, LUSERR,         &
@@ -1607,7 +1616,9 @@ ZRUS=XRUS
 ZRVS=XRVS
 ZRWS=XRWS
 !
-  CALL RAD_BOUND (CLBCX,CLBCY,CTURB,XCARPKMAX,           &
+if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'PRES', xrus )
+
+CALL RAD_BOUND (CLBCX,CLBCY,CTURB,XCARPKMAX,             &
                 XTSTEP,                                  &
                 XDXHAT, XDYHAT, XZHAT,                   &
                 XUT, XVT,                                &

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -212,24 +212,30 @@ END MODULE MODI_NUM_DIFF
 !!     J.Escobar : 05/12/2017 : Pb SegFault , correct IF(ONUMDIFTH/OZDIFFU) nesting
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  J. Escobar  09/07/2019: add TTZHALO2*LIST structure, to match all cases of diffusion/U/TH activation T/F
-!!
+!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_ll
 !
-USE MODD_PARAMETERS
-USE MODD_CONF
-USE MODD_BUDGET
 USE MODD_ARGSLIST_ll, ONLY : HALO2LIST_ll
-!
-USE MODI_SHUMAN
-USE MODI_BUDGET
-!
+use modd_budget,     only: lbudget_u,  lbudget_v,  lbudget_w,  lbudget_th, lbudget_tke, lbudget_rv,  lbudget_rc, &
+                           lbudget_rr, lbudget_ri, lbudget_rs, lbudget_rg, lbudget_rh,  lbudget_sv,              &
+                           NBUDGET_U,  NBUDGET_V,  NBUDGET_W,  NBUDGET_TH, NBUDGET_TKE, NBUDGET_RV,  NBUDGET_RC, &
+                           NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH,  NBUDGET_SV1,             &
+                           tbudgets
+USE MODD_CONF
+USE MODD_PARAMETERS
+
+use mode_budget,     only: Budget_store_init, Budget_store_end
+USE MODE_ll
 USE MODE_TYPE_ZDIFFU
-!
+
+USE MODI_BUDGET
+USE MODI_SHUMAN
+
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
@@ -297,7 +303,9 @@ CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 IKU=SIZE(PUM,3)
 !
 GTKEALLOC = SIZE(PTKEM,1) /= 0
-!
+
+if ( lbudget_u .and. onumdifu ) call Budget_store_init( tbudgets(NBUDGET_U), 'DIF', prus )
+
 !-------------------------------------------------------------------------------
 !
 !*       2.     CALL THE NUM_DIFF_ALGO ROUTINE FOR EACH FIELD
@@ -440,7 +448,8 @@ END IF
 !*       3.     STORES FIELDS IN BUDGET ARRAYS
 !           ------------------------------
 !
-IF ( LBUDGET_U   .AND. ONUMDIFU  ) CALL BUDGET( PRUS,              NBUDGET_U,   'DIF_BU_RU'   )
+if ( lbudget_u .and. onumdifu ) call Budget_store_end( tbudgets(NBUDGET_U), 'DIF', prus )
+
 IF ( LBUDGET_V   .AND. ONUMDIFU  ) CALL BUDGET( PRVS,              NBUDGET_V,   'DIF_BU_RV'   )
 IF ( LBUDGET_W   .AND. ONUMDIFU  ) CALL BUDGET( PRWS,              NBUDGET_W,   'DIF_BU_RW'   )
 IF ( LBUDGET_TH  .AND. ONUMDIFTH ) CALL BUDGET( PRTHS,             NBUDGET_TH,  'DIF_BU_RTH'  )

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -192,28 +192,35 @@ END MODULE MODI_ENDSTEP
 !!                 04/2014  (C.Lac)       Check on the positivity of PSVT
 !!                 J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!                 02/2019  (S. Bielli)  Sea salt : significant sea wave height influences salt emission; 5 salt modes
-!!
+!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
 !            ------------
 !
-USE MODD_DYN 
-USE MODD_CONF
-USE MODD_CTURB
-USE MODD_GRID_n
-USE MODD_BUDGET
-USE MODD_NSV, ONLY : XSVMIN, NSV_CHEMBEG, NSV_CHEMEND, &
-                     NSV_AERBEG, NSV_AEREND,&
-                     NSV_DSTBEG, NSV_DSTEND,&
-                     NSV_SNWBEG, NSV_SNWEND
-USE MODD_CH_AEROSOL, ONLY : LORILAM
-USE MODD_DUST,       ONLY : LDUST
-USE MODD_PARAM_C2R2, ONLY : LACTIT
-USE MODD_PARAM_LIMA, ONLY : LACTIT_LIMA=>LACTIT
-USE MODD_LBC_n, ONLY : CLBCX, CLBCY
 USE MODD_BLOWSNOW
 USE MODD_BLOWSNOW_n
+use modd_budget,     only: lbudget_u,  lbudget_v,  lbudget_w,  lbudget_th, lbudget_tke, lbudget_rv,  lbudget_rc, &
+                           lbudget_rr, lbudget_ri, lbudget_rs, lbudget_rg, lbudget_rh,  lbudget_sv,  lbu_enable, &
+                           NBUDGET_U,  NBUDGET_V,  NBUDGET_W,  NBUDGET_TH, NBUDGET_TKE, NBUDGET_RV,  NBUDGET_RC, &
+                           NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH,  NBUDGET_SV1,             &
+                           nbuctr_actv, nbuprocctr, nbustep, tbudgets
+USE MODD_CH_AEROSOL, ONLY: LORILAM
+USE MODD_CONF
+USE MODD_CTURB
+USE MODD_DUST,       ONLY: LDUST
+USE MODD_DYN
+USE MODD_GRID_n
+USE MODD_LBC_n,      ONLY: CLBCX, CLBCY
+USE MODD_NSV,        ONLY: XSVMIN, NSV_CHEMBEG, NSV_CHEMEND, &
+                           NSV_AERBEG, NSV_AEREND,&
+                           NSV_DSTBEG, NSV_DSTEND,&
+                           NSV_SNWBEG, NSV_SNWEND
+USE MODD_PARAM_C2R2, ONLY: LACTIT
+USE MODD_PARAM_LIMA, ONLY: LACTIT_LIMA=>LACTIT
+
+use mode_budget,     only: Budget_store_end, Budget_store_init
+
 USE MODI_BUDGET
 USE MODI_SHUMAN
 !
@@ -516,8 +523,10 @@ END IF
 IF (LBU_ENABLE) THEN
   NBUPROCCTR (1 : NBUDGET_SV1 - 1 + KSV ) = 3
   NBUCTR_ACTV(1 : NBUDGET_SV1 - 1 + KSV ) = 3
-!
-  IF (LBUDGET_U)   CALL BUDGET( PUT(:,:,:)   * PRHODJ(:,:,:) / PTSTEP, NBUDGET_U,   'AVEF_BU_RU'   )
+
+  !Division by nbustep to compute average on the selected time period
+  if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'AVEF', put(:, :, :) * prhodj(:, :, :) / ( ptstep * nbustep ) )
+
   IF (LBUDGET_V)   CALL BUDGET( PVT(:,:,:)   * PRHODJ(:,:,:) / PTSTEP, NBUDGET_V,   'AVEF_BU_RV'   )
   IF (LBUDGET_W)   CALL BUDGET( PWT(:,:,:)   * PRHODJ(:,:,:) / PTSTEP, NBUDGET_W,   'AVEF_BU_RW'   )
   IF (LBUDGET_TH)  CALL BUDGET( PTHT(:,:,:)  * PRHODJ(:,:,:) / PTSTEP, NBUDGET_TH,  'AVEF_BU_RTH'  )
@@ -537,8 +546,11 @@ IF (LBU_ENABLE) THEN
 !
   NBUPROCCTR (1 : NBUDGET_SV1 - 1 + KSV ) = 2
   NBUCTR_ACTV(1 : NBUDGET_SV1 - 1 + KSV ) = 2
-!
-  IF (LBUDGET_U)   CALL BUDGET( PUS          * MXM(PRHODJ)         / PTSTEP, NBUDGET_U,   'ENDF_BU_RU'   )
+
+  if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'ENDF', pus(:, :, :) * Mxm( prhodj(:, :, :) ) / ptstep )
+
+  if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'ASSE', pus(:, :, :) * Mxm( prhodj(:, :, :) ) / ptstep )
+
   IF (LBUDGET_V)   CALL BUDGET( PVS          * MYM(PRHODJ)         / PTSTEP, NBUDGET_V,   'ENDF_BU_RV'   )
   IF (LBUDGET_W)   CALL BUDGET( PWS          * MZM(1,IKU,1,PRHODJ) / PTSTEP, NBUDGET_W,   'ENDF_BU_RW'   )
   IF (LBUDGET_TH)  CALL BUDGET( PTHS         * PRHODJ              / PTSTEP, NBUDGET_TH,  'ENDF_BU_RTH'  )

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1999-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1999-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -92,22 +92,28 @@ END MODULE MODI_TWO_WAY
 !!                             hydrometeors, the Short and Long Wave 
 !!                              + MASKkids array
 !!                   20/05/06 Remove EPS
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!                 
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
+!
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
 !            ------------
 !
+use modd_budget,     only: lbudget_u,  lbudget_v,  lbudget_w,  lbudget_th, lbudget_rv,  lbudget_rc,  &
+                           lbudget_rr, lbudget_ri, lbudget_rs, lbudget_rg, lbudget_rh,  lbudget_sv,  &
+                           NBUDGET_U,  NBUDGET_V,  NBUDGET_W,  NBUDGET_TH, NBUDGET_RV,  NBUDGET_RC,  &
+                           NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH,  NBUDGET_SV1, &
+                           tbudgets
 USE MODD_CONF
 USE MODD_NESTING
-USE MODD_BUDGET
+
+use mode_budget,     only: Budget_store_init, Budget_store_end
+USE MODE_MODELN_HANDLER
 
 USE MODI_BUDGET
-!
 USE MODI_TWO_WAY_n
-USE MODE_MODELN_HANDLER
-!
+
 IMPLICIT NONE
 !
 !
@@ -145,6 +151,9 @@ INTEGER :: JKID        ! loop index to look for the KID models
 INTEGER :: JSV,JRR     ! Loop index for scalar and moist variables
 !
 !-------------------------------------------------------------------------------
+
+if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'NEST', prus )
+
 !
 !*       1.    CALL THE RIGHT TWO_WAY$n
 !              ------------------------
@@ -165,7 +174,8 @@ CALL GOTO_MODEL(KMI)
 !*       2.    BUDGET COMPUTATION
 !              ------------------
 !
-IF (LBUDGET_U)  CALL BUDGET (PRUS,NBUDGET_U,'NEST_BU_RU')
+if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'NEST', prus )
+
 IF (LBUDGET_V)  CALL BUDGET (PRVS,NBUDGET_V,'NEST_BU_RV')
 IF (LBUDGET_W)  CALL BUDGET (PRWS,NBUDGET_W,'NEST_BU_RW')
 IF (LBUDGET_TH) CALL BUDGET (PRTHS,NBUDGET_TH,'NEST_BU_RTH')

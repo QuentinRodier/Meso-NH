@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -338,15 +338,18 @@ END MODULE MODI_TURB
 !!                     10/2012 (J. Colin) Correct bug in DearDoff for dry simulations
 !!                     10/2012 J.Escobar Bypass PGI bug , redefine some allocatable array inplace of automatic
 !!                     04/2016  (C.Lac) correction of negativity for KHKO
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!                     01/2018 (Q.Rodier) Introduction of RM17
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  Q. Rodier      01/2018: introduction of RM17
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
-!! --------------------------------------------------------------------------
-!       
+!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
+! --------------------------------------------------------------------------
+!
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_BUDGET
+use modd_budget,      only: lbudget_u, lbudget_v, lbudget_w, lbudget_th, lbudget_rv, lbudget_rc, lbudget_ri, lbudget_sv,  &
+                            NBUDGET_U, NBUDGET_V, NBUDGET_W, NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RI, NBUDGET_SV1, &
+                            tbudgets
 USE MODD_CONF
 USE MODD_CST
 USE MODD_CTURB
@@ -374,6 +377,7 @@ USE MODI_TM06
 USE MODI_UPDATE_LM
 USE MODI_GET_HALO
 !
+use mode_budget,         only: Budget_store_init, Budget_store_end
 USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 USE MODE_SBL
 !
@@ -905,6 +909,8 @@ ENDIF
 !*      5. TURBULENT SOURCES
 !          -----------------
 !
+if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'VTURB', prus )
+
 CALL TURB_VER(KKA,KKU,KKL,KRR, KRRL, KRRI,               &
           OCLOSE_OUT,OTURB_FLX,                          &
           HTURBDIM,HTOM,PIMPL,ZEXPL,                     &
@@ -921,9 +927,9 @@ CALL TURB_VER(KKA,KKU,KKL,KRR, KRRL, KRRI,               &
           PSBL_DEPTH,ZLMO,                               &
           PRUS,PRVS,PRWS,PRTHLS,PRRS,PRSVS,              &
           PDYP,PTHP,PSIGS,PWTH,PWRC,PWSV                 )
-!
 
-IF (LBUDGET_U) CALL BUDGET (PRUS,NBUDGET_U,'VTURB_BU_RU')
+if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'VTURB', prus )
+
 IF (LBUDGET_V) CALL BUDGET (PRVS,NBUDGET_V,'VTURB_BU_RV')
 IF (LBUDGET_W) CALL BUDGET (PRWS,NBUDGET_W,'VTURB_BU_RW')
 IF (LBUDGET_TH)  THEN
@@ -953,6 +959,8 @@ IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2),NBUDGET_RC,'VTURB_BU_RRC')
 IF (LBUDGET_RI) CALL BUDGET (PRRS(:,:,:,4),NBUDGET_RI,'VTURB_BU_RRI')
 !
 !
+if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'HTURB', prus )
+
 IF (HTURBDIM=='3DIM') THEN
     CALL TURB_HOR_SPLT(KSPLIT, KRR, KRRL, KRRI, PTSTEP,        &
           HLBCX,HLBCY,OCLOSE_OUT,OTURB_FLX,OSUBG_COND,         &
@@ -970,9 +978,9 @@ IF (HTURBDIM=='3DIM') THEN
           ZTRH,                                                &
           PRUS,PRVS,PRWS,PRTHLS,PRRS,PRSVS                     )
 END IF
-!
-!
-IF (LBUDGET_U) CALL BUDGET (PRUS,NBUDGET_U,'HTURB_BU_RU')
+
+if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'HTURB', prus )
+
 IF (LBUDGET_V) CALL BUDGET (PRVS,NBUDGET_V,'HTURB_BU_RV')
 IF (LBUDGET_W) CALL BUDGET (PRWS,NBUDGET_W,'HTURB_BU_RW')
 IF (LBUDGET_TH)  THEN

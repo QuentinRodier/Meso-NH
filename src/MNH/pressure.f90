@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -200,6 +200,7 @@ END MODULE MODI_PRESSURE
 !!                    06/2011 (J.escobar ) Bypass Bug with ifort11/12 on  HLBCX,HLBCY 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
 !
 !-------------------------------------------------------------------------------
 !
@@ -207,7 +208,7 @@ END MODULE MODI_PRESSURE
 !              ------------
 !
 USE MODD_PARAMETERS
-USE MODD_BUDGET
+use modd_budget,      only: lbudget_u, lbudget_v, lbudget_w, NBUDGET_U, NBUDGET_V, NBUDGET_W, tbudgets
 USE MODD_CONF
 USE MODD_CST
 USE MODD_LUNIT_n, ONLY: TLUOUT
@@ -223,6 +224,8 @@ USE MODI_P_ABS
 USE MODI_BUDGET
 !
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
+
+use mode_budget,     only: Budget_store_end
 USE MODE_ll
 !
 IMPLICIT NONE
@@ -362,8 +365,9 @@ ZPABS_S(:,:) = 0.
 ZPABS_N(:,:) = 0.
 ZPABS_E(:,:) = 0.
 ZPABS_W(:,:) = 0.
-!
-!
+
+! if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'PRES', prus )
+
 !-------------------------------------------------------------------------------
 !
 !*       3.    COMPUTE THE LINEIC MASS
@@ -610,7 +614,8 @@ ENDIF
 !*       7.    STORAGE OF THE FIELDS IN BUDGET ARRAYS
 !              --------------------------------------
 !
-IF (LBUDGET_U) CALL BUDGET (PRUS,NBUDGET_U,'PRES_BU_RU')
+if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'PRES', prus )
+
 IF (LBUDGET_V) CALL BUDGET (PRVS,NBUDGET_V,'PRES_BU_RV')
 IF (LBUDGET_W) CALL BUDGET (PRWS,NBUDGET_W,'PRES_BU_RW')
 !

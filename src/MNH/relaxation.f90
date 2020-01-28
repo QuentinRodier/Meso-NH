@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -256,27 +256,31 @@ END MODULE MODI_RELAXATION
 !!                 06/2011 (M.Chong)     Case of ELEC
 !!                 11/2011 (C.Lac)       Adaptation to FIT temporal scheme
 !!                 J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
-!!
+!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAMETERS
-USE MODD_CONF 
-USE MODD_BUDGET 
-USE MODD_NSV, ONLY : NSV_ELECBEG, NSV_ELECEND      
-USE MODD_ELEC_DESCR, ONLY: LRELAX2FW_ION          
-!
-USE MODE_ll
-!
-USE MODI_SHUMAN     
-USE MODI_BUDGET
-USE MODE_EXTRAPOL
-!
+use modd_budget,     only: lbudget_u, lbudget_v, lbudget_w, lbudget_th, lbudget_tke,                                        &
+                           lbudget_rv, lbudget_rc, lbudget_rr, lbudget_ri, lbudget_rs, lbudget_rg, lbudget_rh, lbudget_sv,  &
+                           NBUDGET_U, NBUDGET_V, NBUDGET_W, NBUDGET_TH, NBUDGET_TKE,                                        &
+                           NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, NBUDGET_SV1, &
+                           tbudgets
+USE MODD_CONF,       only: cconf
+USE MODD_ELEC_DESCR, ONLY: LRELAX2FW_ION
+USE MODD_NSV,        ONLY: NSV_ELECBEG, NSV_ELECEND
+USE MODD_PARAMETERS, only: jphext, jpvext
+
+use mode_budget,     only: Budget_store_init, Budget_store_end
+USE MODE_EXTRAPOL,   only: Extrapol
+USE MODE_ll,         only: Get_intersection_ll
 USE MODE_MPPDB
-!
-!
+
+USE MODI_BUDGET
+USE MODI_SHUMAN
+
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
@@ -441,6 +445,8 @@ CALL GET_GLOBALDIMS_ll(IIU_ll,IJU_ll)
 IIU_ll=IIU_ll+2*JPHEXT
 IJU_ll=IJU_ll+2*JPHEXT
 !
+if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'REL', prus )
+
 ZRHODJU(:,:,:) = MXM(PRHODJ)
 ZRHODJV(:,:,:) = MYM(PRHODJ)
 ZRHODJW(:,:,:) = MZM(1,IKU,1,PRHODJ)
@@ -707,7 +713,9 @@ END DO
 !	        ------------------------------
 !
 CALL EXTRAPOL('W ', PRUS)
-IF ( LBUDGET_U   ) CALL BUDGET( PRUS,                 NBUDGET_U,             'REL_BU_RU')
+
+if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'REL', prus )
+
 IF ( LBUDGET_V   ) CALL BUDGET( PRVS,                 NBUDGET_V,             'REL_BU_RV')
 IF ( LBUDGET_W   ) CALL BUDGET( PRWS,                 NBUDGET_W,             'REL_BU_RW')
 IF ( LBUDGET_TH  ) CALL BUDGET( PRTHS,                NBUDGET_TH,            'REL_BU_RTH')

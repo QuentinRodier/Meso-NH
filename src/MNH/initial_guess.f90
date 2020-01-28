@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
-!-----------------------------------------------------------------
 !-----------------------------------------------------------------
 !     #########################
       MODULE MODI_INITIAL_GUESS
@@ -144,22 +139,28 @@ END MODULE MODI_INITIAL_GUESS
 !!                  20/05/06                Remove KEPS
 !!                  10/09    (C.Lac)        FIT for variables advected with PPM
 !!                  04/13    (C.Lac)        FIT for all variables 
-!!                  07/19    (J.Escobar)    add reproductiblity test => MPPDB_CHECK( PRRS/RT/RHO )
-!!
+!  J. Escobar)    07/2019: add reproductiblity test => MPPDB_CHECK( PRRS/RT/RHO )
+!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_CONF 
-USE MODD_GRID_n
-USE MODD_BUDGET
 USE MODD_BLOWSNOW
 USE MODD_BLOWSNOW_n
-!
-USE MODI_SHUMAN
-USE MODI_BUDGET
+use modd_budget,     only: lbudget_u,  lbudget_v,  lbudget_w,  lbudget_th, lbudget_tke, lbudget_rv,  lbudget_rc, &
+                           lbudget_rr, lbudget_ri, lbudget_rs, lbudget_rg, lbudget_rh,  lbudget_sv,              &
+                           NBUDGET_U,  NBUDGET_V,  NBUDGET_W,  NBUDGET_TH, NBUDGET_TKE, NBUDGET_RV,  NBUDGET_RC, &
+                           NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH,  NBUDGET_SV1,             &
+                           lbu_beg, lbu_enable, nbuctr_actv, nbuprocctr, tbudgets
+USE MODD_CONF
+USE MODD_GRID_n
+
+use mode_budget,     only: Budget_store_init, Budget_store_end
 USE MODE_MPPDB
+
+USE MODI_BUDGET
+USE MODI_SHUMAN
 !
 IMPLICIT NONE
 !
@@ -239,8 +240,10 @@ IF (LBU_ENABLE) THEN
   IF (LBU_BEG) THEN
     NBUPROCCTR(:)=1
     NBUCTR_ACTV(:)=1
-!
-    IF (LBUDGET_U)   CALL BUDGET( PRUS,          NBUDGET_U,   'INIF_BU_RU'   )
+
+    !Remark: does not need a call to Budget_store_init because the budget array is overwritten for this source term
+    if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'INIF', prus )
+
     IF (LBUDGET_V)   CALL BUDGET( PRVS,          NBUDGET_V,   'INIF_BU_RV'   )
     IF (LBUDGET_W)   CALL BUDGET( PRWS,          NBUDGET_W,   'INIF_BU_RW'   )
     IF (LBUDGET_TH)  CALL BUDGET( PRTHS,         NBUDGET_TH,  'INIF_BU_RTH'  )
@@ -259,7 +262,6 @@ IF (LBU_ENABLE) THEN
     NBUPROCCTR(:)=2
     NBUCTR_ACTV(:)=2
 !
-    IF (LBUDGET_U)   CALL BUDGET( PRUS,          NBUDGET_U,   'ENDF_BU_RU'   )
     IF (LBUDGET_V)   CALL BUDGET( PRVS,          NBUDGET_V,   'ENDF_BU_RV'   )
     IF (LBUDGET_W)   CALL BUDGET( PRWS,          NBUDGET_W,   'ENDF_BU_RW'   )
     IF (LBUDGET_TH)  CALL BUDGET( PRTHS,         NBUDGET_TH,  'ENDF_BU_RTH'  )
@@ -274,8 +276,6 @@ IF (LBU_ENABLE) THEN
     DO JSV=1,KSV
       IF (LBUDGET_SV) CALL BUDGET( PRSVS(:,:,:,JSV), JSV + NBUDGET_SV1 - 1, 'ENDF_BU_RSV' )
     END DO
-!
-    LBU_BEG=.FALSE.
   END IF
 !
   NBUPROCCTR(:)=4
@@ -283,7 +283,12 @@ IF (LBU_ENABLE) THEN
 !
 !  stores the Asselin source term
 !
-  IF (LBUDGET_U)   CALL BUDGET( PRUS,          NBUDGET_U,   'ASSE_BU_RU'   )
+  !The Asselin source term is computed from the end of the previous time step to now
+  !Therefore, it has to be stored only if not the 1st timestep of the budget
+  if ( .not. lbu_beg ) then
+    if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'ASSE', prus )
+  end if
+
   IF (LBUDGET_V)   CALL BUDGET( PRVS,          NBUDGET_V,   'ASSE_BU_RV'   )
   IF (LBUDGET_W)   CALL BUDGET( PRWS,          NBUDGET_W,   'ASSE_BU_RW'   )
   IF (LBUDGET_TH)  CALL BUDGET( PRTHS,         NBUDGET_TH,  'ASSE_BU_RTH'  )
@@ -299,7 +304,9 @@ IF (LBU_ENABLE) THEN
     IF (LBUDGET_SV) CALL BUDGET( PRSVS(:,:,:,JSV), JSV + NBUDGET_SV1 - 1, 'ASSE_BU_RSV' )
   END DO
 END IF
-!
+
+LBU_BEG=.FALSE.
+
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE INITIAL_GUESS

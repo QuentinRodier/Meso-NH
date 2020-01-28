@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2009-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2009-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -74,29 +74,32 @@ SUBROUTINE DRAG_VEG(PTSTEP,PUT,PVT,PTKET,ODEPOTREE, PVDEPOTREE, &
 !!       S. Donier  06/2015 : bug surface aerosols
 !!       C.Lac      07/2016 : Add droplet deposition
 !!       C.Lac      10/2017 : Correction on deposition
+!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
 !!---------------------------------------------------------------
 !
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
+use modd_budget,      only: lbudget_u, lbudget_v, lbudget_rc, lbudget_sv,  lbudget_tke, &
+                            NBUDGET_U, NBUDGET_V, NBUDGET_RC, NBUDGET_SV1, NBUDGET_TKE, &
+                            tbudgets
 USE MODD_CONF
 USE MODD_CST
 USE MODD_DYN
 USE MODD_DYN_n
-USE MODD_VEG_n
-USE MODD_BUDGET
-USE MODD_PARAM_C2R2
-USE MODD_NSV
-
-!
-USE MODI_SHUMAN
-USE MODD_PGDFIELDS
 USE MODD_GROUND_PAR
-USE MODI_MNHGET_SURF_PARAM_n
-USE MODI_BUDGET
+USE MODD_NSV
+USE MODD_PARAM_C2R2
+USE MODD_PGDFIELDS
+USE MODD_VEG_n
 
-!  
+use mode_budget,     only: Budget_store_init, Budget_store_end
+
+USE MODI_BUDGET
+USE MODI_MNHGET_SURF_PARAM_n
+USE MODI_SHUMAN
+
 IMPLICIT NONE
 !  
 !*       0.1   Declarations of dummy arguments :
@@ -149,6 +152,8 @@ REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZWDEPR,ZWDEPS
 IIU = SIZE(PUT,1)
 IJU = SIZE(PUT,2)
 IKU = SIZE(PUT,3)
+
+if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'DRAG', prus )
 !
 !*       0.3     Initialisation de kelkes variables
 !	       
@@ -270,8 +275,9 @@ IF (ODEPOTREE) THEN
 !
 !
 END IF
-!
-IF (LBUDGET_U) CALL BUDGET (PRUS,NBUDGET_U,'DRAG_BU_RU')
+
+if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'DRAG', prus )
+
 IF (LBUDGET_V) CALL BUDGET (PRVS,NBUDGET_V,'DRAG_BU_RV')
 IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2),NBUDGET_RC,'DEPOTR_BU_RRC')
 IF (LBUDGET_SV) CALL BUDGET (PSVS(:,:,:,NSV_C2R2BEG+1),NBUDGET_SV1+(NSV_C2R2BEG-1)+1,'DEPOTR_BU_RSV')
