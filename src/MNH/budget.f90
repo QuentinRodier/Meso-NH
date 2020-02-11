@@ -24,6 +24,7 @@ private
 
 public :: Budget_store_init
 public :: Budget_store_end
+public :: Budget_store_add
 
 
 contains
@@ -63,9 +64,9 @@ subroutine Budget_store_init( tpbudget, hsource, pvars )
     !Store data into the budget temporary array
     !This value will be subtracted from the next one (in Budget_store_end) to get the evolution of the array between the 2 calls
     if ( cbutype == 'CART' ) then
-      tpbudget%xtmpstore(:, :, : ) = Cart_compress( pvars(:, :, : ) )
+      tpbudget%xtmpstore(:, :, :) = Cart_compress( pvars(:, :, :) )
     else if ( cbutype == 'MASK' ) then
-      tpbudget%xtmpstore(:, nbutime, : ) = Mask_compress( pvars(:, :, : ) )
+      tpbudget%xtmpstore(:, nbutime, :) = Mask_compress( pvars(:, :, :) )
     else
       call Print_msg( NVERB_ERROR, 'BUD', 'Budget_store_init', 'unknown cbutype: '//trim( cbutype ) )
     end if
@@ -75,7 +76,6 @@ end subroutine Budget_store_init
 
 
 subroutine Budget_store_end( tpbudget, hsource, pvars )
-use modd_budget,only:nbusil,NBUSJL,NBUKL
   type(tbudgetdata),      intent(inout) :: tpbudget ! Budget datastructure
   character(len=*),       intent(in) :: hsource     ! Name of the source term
   real, dimension(:,:,:), intent(in) :: pvars       ! Current value to be stored
@@ -87,8 +87,8 @@ use modd_budget,only:nbusil,NBUSJL,NBUKL
 
   call Budget_source_id_find( tpbudget, hsource, iid )
 
-  if ( tpbudget%tsources(iid )%lenabled ) then
-    if ( iid /= tpbudget%ntmpstoresource .and. .not.tpbudget%tsources(iid )%ldonotinit ) then
+  if ( tpbudget%tsources(iid)%lenabled ) then
+    if ( iid /= tpbudget%ntmpstoresource .and. .not.tpbudget%tsources(iid)%ldonotinit ) then
       if ( tpbudget%ntmpstoresource == 0 ) then
         call Print_msg( NVERB_ERROR, 'BUD', 'Budget_store_end', 'ntmpstoresource not set for ' &
                         //trim( tpbudget%tsources(iid)%cmnhname ) )
@@ -105,39 +105,39 @@ use modd_budget,only:nbusil,NBUSJL,NBUKL
     !Except if ldonotinit is true. In that case, overwrite the array.
     igroup = tpbudget%tsources(iid)%ngroup
     if ( cbutype == 'CART' ) then
-      if ( tpbudget%tsources(iid )%ldonotinit ) then
-        if ( tpbudget%tsources(iid )%loverwrite ) then
-          tpbudget%tgroups(igroup )%xdata(:, :, : ) =   Cart_compress( pvars(:, :, : ) )
+      if ( tpbudget%tsources(iid)%ldonotinit ) then
+        if ( tpbudget%tsources(iid)%loverwrite ) then
+          tpbudget%tgroups(igroup)%xdata(:, :, :) =   Cart_compress( pvars(:, :, :) )
         else
-          tpbudget%tgroups(igroup )%xdata(:, :, : ) =   tpbudget%tgroups(igroup )%xdata(:, :, : ) &
-                                                      + Cart_compress( pvars(:, :, : ) )
+          tpbudget%tgroups(igroup)%xdata(:, :, :) =   tpbudget%tgroups(igroup)%xdata(:, :, :) &
+                                                    + Cart_compress( pvars(:, :, :) )
         end if
       else
-        if ( tpbudget%tsources(iid )%loverwrite ) then
-          tpbudget%tgroups(igroup )%xdata(:, :, : ) =   Cart_compress( pvars(:, :, : ) )          &
-                                                      - tpbudget%xtmpstore(:, :, : )
+        if ( tpbudget%tsources(iid)%loverwrite ) then
+          tpbudget%tgroups(igroup)%xdata(:, :, :) =   Cart_compress( pvars(:, :, :) )          &
+                                                    - tpbudget%xtmpstore(:, :, :)
         else
-          tpbudget%tgroups(igroup )%xdata(:, :, : ) =   tpbudget%tgroups(igroup )%xdata(:, :, : ) &
-                                                      + Cart_compress( pvars(:, :, : ) )          &
-                                                      - tpbudget%xtmpstore(:, :, : )
+          tpbudget%tgroups(igroup)%xdata(:, :, :) =   tpbudget%tgroups(igroup)%xdata(:, :, :) &
+                                                     + Cart_compress( pvars(:, :, :) )          &
+                                                     - tpbudget%xtmpstore(:, :, :)
         end if
       end if
     else if ( cbutype == 'MASK' ) then
-      if ( tpbudget%tsources(iid )%ldonotinit ) then
-        if ( tpbudget%tsources(iid )%loverwrite ) then
-          tpbudget%tgroups(igroup )%xdata(:, nbutime, : ) =   Mask_compress( pvars(:, :, : ) )
+      if ( tpbudget%tsources(iid)%ldonotinit ) then
+        if ( tpbudget%tsources(iid)%loverwrite ) then
+          tpbudget%tgroups(igroup)%xdata(:, nbutime, :) =   Mask_compress( pvars(:, :, :) )
         else
-          tpbudget%tgroups(igroup )%xdata(:, nbutime, : ) =   tpbudget%tgroups(igroup )%xdata(:, nbutime, : ) &
-                                                            + Mask_compress( pvars(:, :, : ) )
+          tpbudget%tgroups(igroup)%xdata(:, nbutime, :) =   tpbudget%tgroups(igroup)%xdata(:, nbutime, :) &
+                                                           + Mask_compress( pvars(:, :, :) )
         end if
       else
-        if ( tpbudget%tsources(iid )%loverwrite ) then
-          tpbudget%tgroups(igroup )%xdata(:, nbutime, : ) =   Mask_compress( pvars(:, :, : ) )   &
-                                                            - tpbudget%xtmpstore(:, nbutime, : )
+        if ( tpbudget%tsources(iid)%loverwrite ) then
+          tpbudget%tgroups(igroup)%xdata(:, nbutime, :) =   Mask_compress( pvars(:, :, :) )   &
+                                                          - tpbudget%xtmpstore(:, nbutime, :)
         else
-          tpbudget%tgroups(igroup )%xdata(:, nbutime, : ) =   tpbudget%tgroups(igroup )%xdata(:, nbutime, : ) &
-                                                            + Mask_compress( pvars(:, :, : ) )                &
-                                                            - tpbudget%xtmpstore(:, nbutime, : )
+          tpbudget%tgroups(igroup)%xdata(:, nbutime, :) =   tpbudget%tgroups(igroup)%xdata(:, nbutime, :) &
+                                                          + Mask_compress( pvars(:, :, :) )                &
+                                                          - tpbudget%xtmpstore(:, nbutime, :)
         end if
       end if
     else
@@ -149,6 +149,38 @@ use modd_budget,only:nbusil,NBUSJL,NBUKL
   end if
 
 end subroutine Budget_store_end
+
+
+subroutine Budget_store_add( tpbudget, hsource, pvars )
+  type(tbudgetdata),      intent(inout) :: tpbudget ! Budget datastructure
+  character(len=*),       intent(in) :: hsource     ! Name of the source term
+  real, dimension(:,:,:), intent(in) :: pvars       ! Current value to be stored
+
+  integer :: iid    ! Reference number of the current source term
+  integer :: igroup ! Number of the group where to store the source term
+
+  call Print_msg( NVERB_DEBUG, 'BUD', 'Budget_store_add', trim( tpbudget%cname )//':'//trim( hsource ) )
+
+  call Budget_source_id_find( tpbudget, hsource, iid )
+
+  if ( tpbudget%tsources(iid)%lenabled ) then
+    if ( tpbudget%tsources(iid)%loverwrite ) &
+      call Print_msg( NVERB_ERROR, 'BUD', 'Budget_store_add', 'loverwrite=.true. is not allowed' )
+
+    !Store data into the budget array
+    igroup = tpbudget%tsources(iid)%ngroup
+    if ( cbutype == 'CART' ) then
+      tpbudget%tgroups(igroup)%xdata(:, :, :) =   tpbudget%tgroups(igroup)%xdata(:, :, :) &
+                                                + Cart_compress( pvars(:, :, :) )
+    else if ( cbutype == 'MASK' ) then
+      tpbudget%tgroups(igroup)%xdata(:, nbutime, :) =   tpbudget%tgroups(igroup)%xdata(:, nbutime, :) &
+                                                      + Mask_compress( pvars(:, :, :) )
+    else
+      call Print_msg( NVERB_ERROR, 'BUD', 'Budget_store_add', 'unknown cbutype: '//trim( cbutype ) )
+    end if
+  end if
+
+end subroutine Budget_store_add
 
 
 subroutine Budget_source_id_find( tpbudget, hsource, kid )
