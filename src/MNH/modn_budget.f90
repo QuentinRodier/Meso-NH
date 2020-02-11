@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/modn_budget.f90,v $ $Revision: 1.2.2.1.2.1.2.1.10.1.2.3 $ $Date: 2014/01/09 15:01:56 $
 !-----------------------------------------------------------------
 !     ##################
       MODULE MODN_BUDGET
@@ -304,6 +300,7 @@ NAMELIST/NAM_BU_RRH/LBU_RRH, NASSERH, NNESTRH, NADVRH, NFRCRH, &
 NAMELIST/NAM_BU_RSV/ LBU_RSV, NASSESV, NNESTSV, NADVSV, NFRCSV, &
                      NDIFSV, NRELSV, NDCONVSV, NVTURBSV, NHTURBSV, NCHEMSV, NMAFLSV,       &
                      NNEGASV,                                                              & 
+                     NDEPSQV, NDEPGQV, NREVAQV, NDEPIQV, NNEUTQV,                          &
                      NAUTOQC, NACCRQC, NRIMQC, NWETGQC, NDRYGQC, NIMLTQC, NBERFIQC,        &
                      NDEPIQC, NINDQC, NSEDIQC, NNEUTQC,                                    &
                      NAUTOQR, NACCRQR, NREVAQR, NACCQR, NCFRZQR, NWETGQR, NDRYGQR,         &
