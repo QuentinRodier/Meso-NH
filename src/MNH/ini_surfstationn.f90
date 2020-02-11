@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !      #########################
@@ -73,24 +73,24 @@ END MODULE MODI_INI_SURFSTATION_n
 !          ------------
 !
 USE MODD_CONF
+USE MODD_DIM_n
 USE MODD_DYN_n
 USE MODD_GRID
 USE MODD_GRID_n
 USE MODD_LUNIT_n, ONLY: TLUOUT
 USE MODD_PARAMETERS
+USE MODD_SHADOWS_n
 USE MODD_STATION_n
 USE MODD_TYPE_DATE
+USE MODD_VAR_ll,          ONLY: IP
 !
+USE MODE_GATHER_ll
 USE MODE_GRIDPROJ
 USE MODE_IO_ll
 USE MODE_ll
-USE MODE_GATHER_ll
 USE MODE_MSG
 !
 USE MODI_INI_STATION_N
-USE MODD_VAR_ll,          ONLY: IP
-USE MODD_SHADOWS_n
-USE MODD_DIM_n
 !
 IMPLICIT NONE
 !
