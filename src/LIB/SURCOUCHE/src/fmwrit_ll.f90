@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -812,6 +812,11 @@ CONTAINS
              RETURN
           END IF
           !
+          ! Write the variable attributes in the non-split file
+          !
+          if ( tpfile%nmaster_rank==isp .and. gnc4 ) &
+            call IO_Write_field_header_split_nc4( tpfile, tpfield, size( pfield, 3 ) )
+          !
           !JUAN BG Z SLICE
           !
           !
@@ -831,11 +836,6 @@ CONTAINS
          call ga_sync
          CALL SECOND_MNH2(T1)
          TIMEZ%T_WRIT3D_SEND=TIMEZ%T_WRIT3D_SEND + T1 - T0
-         !
-         ! Write the variable attributes in the non-split file
-         !
-         if ( tpfile%nmaster_rank==isp .and. gnc4 ) &
-           call IO_Write_field_header_split_nc4( tpfile, tpfield, size( pfield, 3 ) )
          !
          ! write the data
          !
@@ -931,11 +931,6 @@ CONTAINS
                    END IF
                 END IF
              END DO
-             !
-             ! Write the variable attributes in the non-split file
-             !
-             if ( tpfile%nmaster_rank==isp .and. gnc4 ) &
-               call IO_Write_field_header_split_nc4( tpfile, tpfield, size( pfield, 3 ) )
              !
              ! write the data
              !
