@@ -1,17 +1,16 @@
-!MNH_LIC Copyright 2016-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2016-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!!    Authors
-!!    -------
-!
-!     P. Wautelet : 2016: original version
+! Author
+!  P. Wautelet 2016: original version
 ! Modifications:
-!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!  Philippe Wautelet: 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll
-!                                 to allow to disable writes (for bench purposes)
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll
+!                          to allow to disable writes (for bench purposes)
 !  P. Wautelet 12/03/2019: add TMAINFILE field in TFILEDATA
+!  P. Wautelet 11/02/2020: bugfix: TDADFILE was wrongly constructed for output files
 !-----------------------------------------------------------------
 MODULE MODE_IO_MANAGE_STRUCT
 !
@@ -243,7 +242,7 @@ DO IMI = 1, NMODEL
       IF (IDX>0) THEN
         OUT_MODEL(IMI)%TOUTPUTN(IPOS)%NOUTDAD = IDX
         WRITE (YDADNUMBER,FMT="('.',I3.3)") OUT_MODEL(IMI)%TOUTPUTN(IPOS)%NOUTDAD
-        OUT_MODEL(IMI)%TOUTPUTN(IPOS)%TFILE%TDADFILE => OUT_MODEL(NDAD(IMI))%TBACKUPN(IDX)%TFILE
+        OUT_MODEL(IMI)%TOUTPUTN(IPOS)%TFILE%TDADFILE => OUT_MODEL(NDAD(IMI))%TOUTPUTN(IDX)%TFILE
       ELSE
         OUT_MODEL(IMI)%TOUTPUTN(IPOS)%NOUTDAD = -1
         NULLIFY(OUT_MODEL(IMI)%TOUTPUTN(IPOS)%TFILE%TDADFILE) !No dad file
