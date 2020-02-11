@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ################
@@ -75,6 +75,7 @@
 !!  06/2016     (G.Delautier) phasage surfex 8
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  P. Wautelet 11/02/2020: bugfix: close TINIFILEPGD only if previously opened
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -206,7 +207,7 @@ CALL INIT_MNH
 !
 CALL IO_FILE_FIND_BYNAME(TRIM(CINIFILE),TZINIFILE,IRESP)
 CALL IO_FILE_CLOSE_ll(TZINIFILE)
-CALL IO_FILE_CLOSE_ll(TINIFILEPGD,OPARALLELIO=.FALSE.)
+IF ( TINIFILEPGD%LOPENED ) CALL IO_FILE_CLOSE_ll(TINIFILEPGD,OPARALLELIO=.FALSE.)
 !-------------------------------------------------------------------------------
 !
 !*       4.    INITIALIZATION OF OUTER POINTS OF MODEL 1
