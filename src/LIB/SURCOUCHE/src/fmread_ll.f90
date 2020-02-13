@@ -20,6 +20,7 @@ MODULE MODE_FMREAD
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  J.Escobar : 17/07/2018 : reintroduce needed MPI_BARRIER in IO_READ_FIELD_BYFIELD_X3
 !  P.Wautelet: 29/01/2019 : small bug correction in time measurement in IO_READ_FIELD_BYFIELD_X2
+!  J.Escobar : 11/02/2020 : For GA & // IO , add update_halo + sync , & mpi_allreduce for error handling in // IO
 !
 USE MODD_IO_ll, ONLY : NVERB_FATAL,NVERB_ERROR,NVERB_WARNING,NVERB_INFO,NVERB_DEBUG,TFILEDATA
 USE MODD_MPIF
@@ -338,6 +339,11 @@ USE MODE_GA
 USE MODE_MNH_TIMING,   ONLY : SECOND_MNH2
 USE MODE_SCATTER_ll
 !
+#ifdef MNH_GA
+USE MODD_ARGSLIST_ll, ONLY : LIST_ll
+USE MODE_ll         , ONLY : ADD2DFIELD_ll,UPDATE_HALO_ll,CLEANLIST_ll
+#endif
+!
 TYPE(TFILEDATA),           INTENT(IN)    :: TPFILE
 TYPE(TFIELDDATA),          INTENT(INOUT) :: TPFIELD
 REAL,DIMENSION(:,:),TARGET,INTENT(INOUT) :: PFIELD   ! array containing the data field
@@ -354,7 +360,9 @@ INTEGER                      :: IHEXTOT
 REAL(KIND=8),DIMENSION(2)    :: T0,T1,T2
 REAL(KIND=8),DIMENSION(2)    :: T11,T22
 #ifdef MNH_GA
-REAL,DIMENSION(:,:),POINTER    :: ZFIELD_GA
+REAL,DIMENSION(:,:),POINTER  :: ZFIELD_GA
+TYPE(LIST_ll)      ,POINTER  :: TZFIELD_ll
+INTEGER                      :: IINFO_ll
 #endif
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_BYFIELD_X2',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
@@ -434,16 +442,23 @@ IF (IRESP==0) THEN
           !
           lo_zplan(JPIZ) = 1
           hi_zplan(JPIZ) = 1
+          !print*,"IO_READ_FIELD_BYFIELD_X2::nga_put=",g_a, lo_zplan, hi_zplan, ld_zplan, TPFIELD%CMNHNAME ; call flush(6)
           call nga_put(g_a, lo_zplan, hi_zplan,ZFIELDP, ld_zplan)
         END IF
-        call ga_sync
+        call ga_sync()
         !
         ! get the columun data in this proc
         !
         ! temp buf to avoid problem with none stride PFIELDS buffer  with HALO 
         ALLOCATE (ZFIELD_GA (SIZE(PFIELD,1),SIZE(PFIELD,2)))
+        !print*,"IO_READ_FIELD_BYFIELD_X2::nga_get=",g_a, lo_col, hi_col, ld_col, TPFIELD%CMNHNAME ; call flush(6)
         call nga_get(g_a, lo_col, hi_col,ZFIELD_GA(1,1) , ld_col)
         PFIELD = ZFIELD_GA
+        call ga_sync()
+        NULLIFY(TZFIELD_ll)
+        CALL ADD2DFIELD_ll(TZFIELD_ll,PFIELD )
+        CALL UPDATE_HALO_ll(TZFIELD_ll,IINFO_ll)
+        CALL CLEANLIST_ll(TZFIELD_ll)
         DEALLOCATE(ZFIELD_GA)
 #else
         ! XY Scatter Field
@@ -499,6 +514,7 @@ USE MODD_VAR_ll,       ONLY : MNH_STATUSES_IGNORE
 USE MODE_ALLOCBUFFER_ll
 #ifdef MNH_GA
 USE MODE_GA
+USE MODI_GET_HALO
 #endif
 USE MODE_IO_TOOLS,         ONLY : IO_FILE
 USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_FIND_BYNAME
@@ -514,7 +530,7 @@ TYPE TX_2DP
    REAL,DIMENSION(:,:), POINTER :: X
 END TYPE TX_2DP
 !
-INTEGER                               :: IERR,IRESP,IRESP_TMP
+INTEGER                               :: IERR,IRESP,IRESP_TMP,IRESP_ISP
 INTEGER                               :: IHEXTOT
 INTEGER                               :: IK_FILE,IK_RANK,INB_PROC_REAL,JK_MAX
 INTEGER                               :: JI,IXO,IXE,IYO,IYE
@@ -630,7 +646,8 @@ IF (IRESP==0) THEN
     !
     ALLOCATE(ZSLICE_ll(0,0)) ! to avoid bug on test of size
     GALLOC_ll = .TRUE.
-    DO JKK=1,IKU_ll
+    IRESP_ISP=0
+    DO JKK=1,SIZE(PFIELD,3) ! IKU_ll
       IK_FILE = IO_FILE(JKK,TPFILE%NSUBFILES_IOZ)
       TZFILE => TPFILE%TFILES_IOZ(IK_FILE+1)%TFILE
       TZFIELD = TPFIELD
@@ -658,6 +675,7 @@ IF (IRESP==0) THEN
         ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
           CALL IO_READ_FIELD_NC4(TZFILE,TZFIELD,ZSLICE_ll,IRESP_TMP)
         END IF
+        IF (IRESP_TMP .NE. 0 ) IRESP_ISP = IRESP_TMP
         CALL SECOND_MNH2(T1)
         TIMEZ%T_READ3D_READ=TIMEZ%T_READ3D_READ + T1 - T0
         !
@@ -665,25 +683,30 @@ IF (IRESP==0) THEN
         !
         LO_ZPLAN(JPIZ) = JKK
         HI_ZPLAN(JPIZ) = JKK
+        !print*,"IO_READ_FIELD_BYFIELD_X3::nga_put=",g_a, lo_zplan, hi_zplan, ld_zplan, TZFIELD%CMNHNAME ; call flush(6)
         CALL NGA_PUT(G_A, LO_ZPLAN, HI_ZPLAN,ZSLICE_LL, LD_ZPLAN)
       END IF
       TZFILE => NULL()
     END DO
-    CALL GA_SYNC
+    CALL GA_SYNC()
     !
-    CALL MPI_BCAST(IRESP_TMP,1,MPI_INTEGER,IK_RANK-1,TZFILE%NMPICOMM,IERR)
+    CALL MPI_ALLREDUCE(-ABS(IRESP_ISP),IRESP_TMP,1,MPI_INTEGER,MPI_MIN,TPFILE%NMPICOMM,IRESP)
     IF (IRESP_TMP/=0) IRESP = IRESP_TMP !Keep last "error"
     !
     ! get the columun data in this proc
     !
     ! temp buf to avoid problem with none stride PFIELDS buffer  with HALO
     ALLOCATE (ZFIELD_GA (SIZE(PFIELD,1),SIZE(PFIELD,2),SIZE(PFIELD,3)))
+    !print*,"IO_READ_FIELD_BYFIELD_X3::nga_get=",g_a, lo_col, hi_col, ld_col, TPFIELD%CMNHNAME ; call flush(6)
     CALL NGA_GET(G_A, LO_COL, HI_COL,ZFIELD_GA(1,1,1) , LD_COL)
     PFIELD = ZFIELD_GA
+    call ga_sync()
+    CALL GET_HALO(PFIELD)
     DEALLOCATE(ZFIELD_GA)
 #else
     ALLOCATE(ZSLICE_ll(0,0))
     GALLOC_ll = .TRUE.
+    IRESP_ISP=0
     INB_PROC_REAL = MIN(TPFILE%NSUBFILES_IOZ,ISNPROC)
     ALLOCATE(REQ_TAB((ISNPROC-1)*INB_PROC_REAL))
     ALLOCATE(T_TX2DP((ISNPROC-1)*INB_PROC_REAL))
@@ -724,6 +747,7 @@ IF (IRESP==0) THEN
           ELSE IF (TZFILE%CFORMAT=='LFICDF4') THEN
             CALL IO_READ_FIELD_NC4(TZFILE,TZFIELD,ZSLICE_ll,IRESP_TMP)
           END IF
+          IF (IRESP_TMP .NE. 0 ) IRESP_ISP = IRESP_TMP
           CALL SECOND_MNH2(T1)
           TIMEZ%T_READ3D_READ=TIMEZ%T_READ3D_READ + T1 - T0
           DO JI = 1,ISNPROC
@@ -744,8 +768,6 @@ IF (IRESP==0) THEN
           TIMEZ%T_READ3D_SEND=TIMEZ%T_READ3D_SEND + T2 - T1
         END IF
         !
-        CALL MPI_BCAST(IRESP_TMP,1,MPI_INTEGER,IK_RANK-1,TZFILE%NMPICOMM,IERR)
-        IF (IRESP_TMP/=0) IRESP = IRESP_TMP !Keep last "error"
         TZFILE => NULL()
       END DO
       !
@@ -807,6 +829,8 @@ IF (IRESP==0) THEN
     DEALLOCATE(T_TX2DP)
     DEALLOCATE(REQ_TAB)
     !
+    CALL MPI_ALLREDUCE(-ABS(IRESP_ISP),IRESP_TMP,1,MPI_INTEGER,MPI_MIN,TPFILE%NMPICOMM,IRESP)
+    IF (IRESP_TMP/=0) IRESP = IRESP_TMP !Keep last "error"
     !Broadcast header only if IRESP==-111
     !because metadata of field has been modified in IO_READ_FIELD_xxx
     IF (IRESP==-111) CALL IO_BCAST_FIELD_METADATA(TPFILE,TPFIELD)

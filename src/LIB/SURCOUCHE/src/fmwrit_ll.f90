@@ -8,6 +8,7 @@
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  Philippe Wautelet: 10/01/2019: do not write scalars in Z-split files
 !  Philippe Wautelet: 10/01/2019: write header also for Z-split files
+!  J.Escobar : 11/02/2020 : for GA & // IO , add sync , & mpi_allreduce for error handling in // IO
 !-----------------------------------------------------------------
 
 #ifdef MNH_MPI_DOUBLE_PRECISION
@@ -596,8 +597,10 @@ CONTAINS
          !
          ALLOCATE (ZFIELD_GA (SIZE(PFIELD,1),SIZE(PFIELD,2)))
          ZFIELD_GA = PFIELD
+         !print*,"IO_WRITE_FIELD_BYFIELD_X2::nga_put=",g_a, lo_col, hi_col,NIXO_L,NIYO_L , ld_col, YRECFM ; call flush(6)
+         call ga_sync()
          call nga_put(g_a, lo_col, hi_col,ZFIELD_GA(NIXO_L,NIYO_L) , ld_col)  
-         call ga_sync
+         call ga_sync()
          DEALLOCATE (ZFIELD_GA)
          IF (ISP == TPFILE%NMASTER_RANK) THEN
             !
@@ -605,6 +608,7 @@ CONTAINS
             !
             lo_zplan(JPIZ) = 1
             hi_zplan(JPIZ) = 1
+            !print*,"IO_WRITE_FIELD_BYFIELD_X2::nga_get=",g_a, lo_zplan, hi_zplan, ld_zplan, YRECFM ; call flush(6)
             call nga_get(g_a, lo_zplan, hi_zplan,ZFIELDP, ld_zplan)
          END IF
 #else
@@ -696,7 +700,7 @@ CONTAINS
     CHARACTER(LEN=2)                         :: YDIR     ! field form
     INTEGER                                  :: IERR
     INTEGER                                  :: ISIZEMAX
-    INTEGER                                  :: IRESP
+    INTEGER                                  :: IRESP,IRESP_ISP,IRESP_TMP
     REAL,DIMENSION(:,:,:),POINTER            :: ZFIELDP
     LOGICAL                                  :: GALLOC
     LOGICAL                                  :: GLFI, GNC4
@@ -831,9 +835,11 @@ CONTAINS
          !
          ALLOCATE (ZFIELD_GA (SIZE(PFIELD,1),SIZE(PFIELD,2),SIZE(PFIELD,3)))
          ZFIELD_GA = PFIELD
+         !print*,"IO_WRITE_FIELD_BYFIELD_X3::nga_put=",g_a, lo_col, hi_col,NIXO_L,NIYO_L , ld_col, YRECFM ; call flush(6)
+         call ga_sync()
          call nga_put(g_a, lo_col, hi_col,ZFIELD_GA(NIXO_L,NIYO_L,1) , ld_col)  
+         call ga_sync()
          DEALLOCATE(ZFIELD_GA)
-         call ga_sync
          CALL SECOND_MNH2(T1)
          TIMEZ%T_WRIT3D_SEND=TIMEZ%T_WRIT3D_SEND + T1 - T0
          !
@@ -841,8 +847,9 @@ CONTAINS
          !
          ALLOCATE(ZSLICE_ll(0,0)) ! to avoid bug on test of size
          GALLOC_ll = .TRUE.
+         IRESP_ISP=0
          !
-         DO JKK=1,IKU_ll
+         DO JKK=1,SIZE(PFIELD,3) ! IKU_ll
             !
             IK_FILE = IO_FILE(JKK,TPFILE%NSUBFILES_IOZ)
             TZFILE => TPFILE%TFILES_IOZ(IK_FILE+1)%TFILE
@@ -861,12 +868,14 @@ CONTAINS
                !
                lo_zplan(JPIZ) = JKK
                hi_zplan(JPIZ) = JKK
+               !print*,"IO_WRITE_FIELD_BYFIELD_X3::nga_get=",g_a, lo_zplan, hi_zplan, ld_zplan, YRECFM,JKK ; call flush(6)
                call nga_get(g_a, lo_zplan, hi_zplan,ZSLICE_ll, ld_zplan)
                CALL SECOND_MNH2(T1)
                TIMEZ%T_WRIT3D_RECV=TIMEZ%T_WRIT3D_RECV + T1 - T0
                !
-               IF (GLFI) CALL IO_WRITE_FIELD_LFI(TPFILE,TPFIELD,ZSLICE_ll,IRESP,KVERTLEVEL=JKK,KZFILE=IK_FILE+1)
-               IF (GNC4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,ZSLICE_ll,IRESP,KVERTLEVEL=JKK,KZFILE=IK_FILE+1)
+               IF (GLFI) CALL IO_WRITE_FIELD_LFI(TPFILE,TPFIELD,ZSLICE_ll,IRESP_TMP,KVERTLEVEL=JKK,KZFILE=IK_FILE+1)
+               IF (GNC4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,ZSLICE_ll,IRESP_TMP,KVERTLEVEL=JKK,KZFILE=IK_FILE+1)
+               IF (IRESP_TMP .NE. 0 ) IRESP_ISP = IRESP_TMP
                CALL SECOND_MNH2(T2)
                TIMEZ%T_WRIT3D_WRIT=TIMEZ%T_WRIT3D_WRIT + T2 - T1
             END IF
@@ -880,6 +889,7 @@ CONTAINS
           !
           ALLOCATE(ZSLICE_ll(0,0))
           GALLOC_ll = .TRUE.
+          IRESP_ISP=0
           INB_PROC_REAL = MIN(TPFILE%NSUBFILES_IOZ,ISNPROC)
           Z_SLICE: DO JK=1,SIZE(PFIELD,3),INB_PROC_REAL
              !
@@ -965,8 +975,9 @@ CONTAINS
                    END DO
                    CALL SECOND_MNH2(T1)
                    TIMEZ%T_WRIT3D_RECV=TIMEZ%T_WRIT3D_RECV + T1 - T0
-                   IF (GLFI) CALL IO_WRITE_FIELD_LFI(TPFILE,TPFIELD,ZSLICE_ll,IRESP,KVERTLEVEL=JKK,KZFILE=IK_FILE+1)
-                   IF (GNC4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,ZSLICE_ll,IRESP,KVERTLEVEL=JKK,KZFILE=IK_FILE+1)
+                   IF (GLFI) CALL IO_WRITE_FIELD_LFI(TPFILE,TPFIELD,ZSLICE_ll,IRESP_TMP,KVERTLEVEL=JKK,KZFILE=IK_FILE+1)
+                   IF (GNC4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,ZSLICE_ll,IRESP_TMP,KVERTLEVEL=JKK,KZFILE=IK_FILE+1)
+                   IF (IRESP_TMP .NE. 0 ) IRESP_ISP = IRESP_TMP
                    CALL SECOND_MNH2(T2)
                    TIMEZ%T_WRIT3D_WRIT=TIMEZ%T_WRIT3D_WRIT + T2 - T1
                 END IF
@@ -985,6 +996,8 @@ CONTAINS
           !JUAN BG Z SLICE
 ! end of MNH_GA
 #endif
+       CALL MPI_ALLREDUCE(-ABS(IRESP_ISP),IRESP_TMP,1,MPI_INTEGER,MPI_MIN,TPFILE%NMPICOMM,IRESP)   
+       IF (IRESP_TMP/=0) IRESP = IRESP_TMP !Keep last "error"
        END IF ! multiprocesses execution
     END IF
     !

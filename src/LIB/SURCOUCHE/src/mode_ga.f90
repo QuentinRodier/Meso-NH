@@ -7,6 +7,7 @@
 !
 ! Modifications:
 !  P.Wautelet: 14/12/2018: split from fmwrit_ll.f90
+!  J.Escobar : 11/02/2020: for GA , add some sync , & reduce size of MA heap <-> not used  
 !-----------------------------------------------------------------
 #ifdef MNH_GA
 MODULE MODE_GA
@@ -18,11 +19,11 @@ MODULE MODE_GA
     INTEGER, PARAMETER                              :: jpix=1 , jpiy = 2 , jpiz = 3
     !
     INTEGER                                         :: NIMAX_ll,NJMAX_ll, IIU_ll,IJU_ll,IKU_ll
-    integer                                         :: heap=5*10**6, stack
+    integer                                         :: heap=1*10**5, stack
     logical                                         :: gstatus_ga
     INTEGER, PARAMETER                              :: ndim_GA = 3
     INTEGER, DIMENSION(ndim_GA)                     :: dims_GA , chunk_GA
-    INTEGER,PARAMETER                               :: CI=1 ,CJ=-1 ,CK=-1
+    INTEGER,PARAMETER                               :: CI= 1 ,CJ=-1 ,CK=-1
     INTEGER                                         :: g_a
     integer, DIMENSION(ndim_GA)                     :: lo_col, hi_col , ld_col
     integer, DIMENSION(ndim_GA)                     :: lo_zplan , hi_zplan , ld_zplan
@@ -68,6 +69,8 @@ MODULE MODE_GA
          call ga_initialize()
       END IF
 
+      call ga_sync()
+
       CALL GET_GLOBALDIMS_ll (NIMAX_ll,NJMAX_ll)
       IIU_ll = NIMAX_ll + 2*JPHEXT
       IJU_ll = NJMAX_ll + 2*JPHEXT
@@ -92,9 +95,11 @@ MODULE MODE_GA
          ! reallocate the g_a , if need with bigger Z size
          !
          IF ( IKU_ll_MAX .NE. -1 ) gstatus_ga =  ga_destroy(g_a)
+         call ga_sync()
          IIU_ll_MAX = IIU_ll
          IJU_ll_MAX = IJU_ll
          IKU_ll_MAX = IKU_ll
+         !print*,"MNH_INIT_GA::nga_create=",MT_F_DBL, ndim_GA, dims_GA, HRECFM ,chunk_GA, g_a ; call flush(6)
          gstatus_ga = nga_create(MT_F_DBL, ndim_GA, dims_GA, HRECFM ,chunk_GA, g_a)
          call ga_sync()
       END IF

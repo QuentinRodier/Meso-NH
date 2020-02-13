@@ -8,6 +8,7 @@
 !  P. Wautelet 03/10/2017: set IP and NPROC in INIT_NMNH_COMM_WORLD
 !  P. Wautelet 10/01/2019: use NEWUNIT argument of OPEN
 !  P. Wautelet 21/11/2019: bugfix: close call could be done on a non-opened file
+!  J. Escobar  11/02/2020: For GA , replace MPI_INIT_THREAD -> MPI_INIT
 !-----------------------------------------------------------------
 MODULE MODE_MNH_WORLD
   IMPLICIT NONE
@@ -50,7 +51,7 @@ CONTAINS
     CALL MPI_INITIALIZED(GISINIT, KINFO_ll)
     IF (.NOT. GISINIT) THEN
 #ifdef MNH_GA
-       CALL MPI_INIT_thread(REQUIRED,PROVIDED,KINFO_ll)
+       CALL MPI_INIT(KINFO_ll)
 #else
        CALL MPI_INIT(KINFO_ll)
 #endif
