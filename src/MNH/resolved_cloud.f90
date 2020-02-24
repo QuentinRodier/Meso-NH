@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -267,6 +267,7 @@ END MODULE MODI_RESOLVED_CLOUD
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      P. Wautelet: 01/02/2019: ZRSMIN is now allocatable (instead of size of XRTMIN which was sometimes not allocated)
 !!                   02/2019 C.Lac add rain fraction as an output field
+!  P. Wautelet 24/02/2020: bugfix: corrected budget name (DEPI->CDEPI) for ice_adjust
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -949,7 +950,7 @@ SELECT CASE ( HCLOUD )
 !
 !
     IF (.NOT. LRED .OR. (LRED .AND. LADJ_AFTER) ) THEN
-      CALL ICE_ADJUST (1,IKU,1, KRR, CFRAC_ICE_ADJUST, 'DEPI',    &
+      CALL ICE_ADJUST (1,IKU,1, KRR, CFRAC_ICE_ADJUST, 'CDEPI',    &
                     OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,                    &
                     PRHODJ, PEXNREF,  PSIGS, PMFCONV, PPABST, ZZZ,           &
                     ZEXN, PCF_MF,PRC_MF,PRI_MF,                                    &   
@@ -1034,7 +1035,7 @@ SELECT CASE ( HCLOUD )
 !*       10.2   Perform the saturation adjustment over cloud ice and cloud water
 !
     IF (.NOT. LRED .OR. (LRED .AND. LADJ_AFTER) ) THEN
-     CALL ICE_ADJUST (1,IKU,1, KRR, CFRAC_ICE_ADJUST, 'DEPI',                 &
+     CALL ICE_ADJUST (1,IKU,1, KRR, CFRAC_ICE_ADJUST, 'CDEPI',               &
                     OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,                    &
                     PRHODJ, PEXNREF, PSIGS, PMFCONV, PPABST, ZZZ,            &
                     ZEXN, PCF_MF,PRC_MF,PRI_MF,                              &                     
