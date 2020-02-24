@@ -152,7 +152,8 @@ END MODULE MODI_INI_BUDGET
 !!      C. Barthe       01/2016   Add budget for LIMA
 !!      C.Lac          10/2016   Add budget for droplet deposition
 !!      S. Riette        11/2016  New budgets for ICE3/ICE4
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 24/02/2020: bugfix: corrected condition for budget NCDEPITH
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -880,8 +881,8 @@ IF (LBU_RTH) THEN
       IPROC=IPROC+1
       IF (HCLOUD(1:3) == 'ICE' .AND. LRED) IPROACTV(4,IPROC) = NCORRTH
       IPROC=IPROC+1
-      IF (HCLOUD(1:3) == 'ICE' .AND. .NOT. LRED .OR. (LRED .AND. LADJ_AFTER)) &
-          IPROACTV(4,IPROC) = NCDEPITH 
+      IF (HCLOUD(1:3) == 'ICE' .AND. (.NOT. LRED .OR. (LRED .AND. LADJ_AFTER) )) &
+          IPROACTV(4,IPROC) = NCDEPITH
       IPROC=IPROC+1
       IF (HCLOUD == 'C2R2' .OR. HCLOUD == 'KHKO' .OR. HCLOUD(1:3) == 'KES' .OR.   &
       HCLOUD == 'REVE')   IPROACTV(4,IPROC) = NCONDTH                     
