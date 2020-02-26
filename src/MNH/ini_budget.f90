@@ -155,6 +155,7 @@ END MODULE MODI_INI_BUDGET
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 24/02/2020: bugfix: corrected condition for budget NCDEPITH
 !  P. Wautelet 26/02/2020: bugfix: rename CEVA->REVA for budget for raindrop evaporation in C2R2 (necessary after commit 4ed805fc)
+!  P. Wautelet 26/02/2020: bugfix: add missing condition on OCOLD for NSEDIRH budget in LIMA case
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -2458,7 +2459,7 @@ IF (LBU_RRH) THEN
   IPROC=IPROC+1
 !
   IF (HCLOUD=='LIMA' .AND. OHAIL) THEN
-     IPROACTV(12,IPROC) = NSEDIRH
+     IF (OCOLD) IPROACTV(12,IPROC) = NSEDIRH
      IPROC=IPROC+1
      IPROACTV(12,IPROC) = NWETGRH
      IPROC=IPROC+1
