@@ -52,7 +52,7 @@ END MODULE MODI_INI_MICRO_n
 !!      C.LAc          10/2016   Add budget for droplet deposition
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      P.Wautelet     01/2019: bug: add missing allocations
-!!
+!!      C.Lac          02/2020: add missing allocation of INPRC and ACPRC with deposition
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -161,9 +161,9 @@ ELSE
   ALLOCATE(XACPRR(0,0))
 END IF
 !
-IF (( CCLOUD(1:3) == 'ICE'                                   .AND.LSEDIC) .OR. &
-    ((CCLOUD=='C2R2' .OR. CCLOUD=='C3R5' .OR. CCLOUD=='KHKO').AND.LSEDC)  .OR. &
-    ( CCLOUD=='LIMA'                                         .AND.MSEDC))  THEN
+IF (( CCLOUD(1:3) == 'ICE'                                   .AND.(LSEDIC .OR. LDEPOSC)) .OR. &
+    ((CCLOUD=='C2R2' .OR. CCLOUD=='C3R5' .OR. CCLOUD=='KHKO').AND.(LSEDC .OR. LDEPOC))  .OR. &
+    ( CCLOUD=='LIMA'                                         .AND.(MSEDC .OR. MDEPOC)))  THEN
   ALLOCATE(XINPRC(IIU,IJU))
   ALLOCATE(XACPRC(IIU,IJU))
   XINPRC(:,:)=0.0

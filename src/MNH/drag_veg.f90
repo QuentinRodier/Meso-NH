@@ -70,6 +70,7 @@ SUBROUTINE DRAG_VEG(PTSTEP,PUT,PVT,PTKET,ODEPOTREE, PVDEPOTREE, &
   !!       C.Lac      07/2016 : Add droplet deposition
   !!       C.Lac      10/2017 : Correction on deposition
   !!       C.Lac      11/2019 : Correction in the drag formula and application to building in addition to tree
+  !!       C.Lac      02/2020 : Correction missing condition for budget on RC and SV
   !!---------------------------------------------------------------
   !
   !
@@ -285,8 +286,10 @@ SUBROUTINE DRAG_VEG(PTSTEP,PUT,PVT,PTKET,ODEPOTREE, PVDEPOTREE, &
   !
   IF (LBUDGET_U) CALL BUDGET (PRUS,1,'DRAG_BU_RU')
   IF (LBUDGET_V) CALL BUDGET (PRVS,2,'DRAG_BU_RV')
-  IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2),7,'DEPOTR_BU_RRC')
-  IF (LBUDGET_SV) CALL BUDGET (PSVS(:,:,:,NSV_C2R2BEG+1),14+(NSV_C2R2BEG-1),'DEPOTR_BU_RSV')
+  IF (ODEPOTREE) THEN
+    IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2),7,'DEPOTR_BU_RRC')
+    IF (LBUDGET_SV) CALL BUDGET (PSVS(:,:,:,NSV_C2R2BEG+1),14+(NSV_C2R2BEG-1),'DEPOTR_BU_RSV')
+  END IF
   !
   !*      3.     Computations of TKE  tendency due to canopy drag
   !              ------------------------------------------------
