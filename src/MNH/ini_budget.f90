@@ -154,6 +154,7 @@ END MODULE MODI_INI_BUDGET
 !!      S. Riette        11/2016  New budgets for ICE3/ICE4
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 24/02/2020: bugfix: corrected condition for budget NCDEPITH
+!  P. Wautelet 26/02/2020: bugfix: rename CEVA->REVA for budget for raindrop evaporation in C2R2 (necessary after commit 4ed805fc)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -2958,7 +2959,7 @@ USE MODD_PARAM_LIMA, ONLY : NMOD_CCN, NMOD_IFN, NMOD_IMM
        IPROACTV(12+JSV,ILAST_PROC_NBR) = 1
       END IF
       ILAST_PROC_NBR = ILAST_PROC_NBR + 1
-      YWORK2(12+JSV,ILAST_PROC_NBR)= 'CEVA_'
+      YWORK2(12+JSV,ILAST_PROC_NBR)= 'REVA_'
       IPROACTV(12+JSV,ILAST_PROC_NBR) = 1
       ILAST_PROC_NBR = ILAST_PROC_NBR + 1
       YWORK2(12+JSV,ILAST_PROC_NBR)= 'BRKU_'
