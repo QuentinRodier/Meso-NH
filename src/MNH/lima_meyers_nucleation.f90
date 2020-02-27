@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2018-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -13,7 +13,7 @@ INTERFACE
                                       PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,   &
                                       PCCT, PCIT, PINT,                           &
                                       P_TH_HIND, P_RI_HIND, P_CI_HIND,            &
-                                      P_RC_HINC, P_CC_HINC                        )
+                                      P_TH_HINC, P_RC_HINC, P_CC_HINC             )
 !
 REAL,                     INTENT(IN)    :: PTSTEP
 !
@@ -33,11 +33,12 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCCT    ! Cloud water C. at t
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCIT    ! Ice crystal C. source
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PINT    ! Activated ice nuclei C.
 !
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: P_TH_HIND
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: P_RI_HIND
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: P_CI_HIND
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: P_RC_HINC
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: P_CC_HINC
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: P_TH_HIND
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: P_RI_HIND
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: P_CI_HIND
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: P_TH_HINC
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: P_RC_HINC
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: P_CC_HINC
 !
 END SUBROUTINE LIMA_MEYERS_NUCLEATION
 END INTERFACE
@@ -49,7 +50,7 @@ END MODULE MODI_LIMA_MEYERS_NUCLEATION
                                       PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,   &
                                       PCCT, PCIT, PINT,                           &
                                       P_TH_HIND, P_RI_HIND, P_CI_HIND,            &
-                                      P_RC_HINC, P_CC_HINC                        )
+                                      P_TH_HINC, P_RC_HINC, P_CC_HINC             )
 !     #############################################################################
 !!
 !!    PURPOSE
@@ -69,7 +70,7 @@ END MODULE MODI_LIMA_MEYERS_NUCLEATION
 !!    -------------
 !!      Original             15/03/2018
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
-!
+!  P. Wautelet 27/02/2020: add P_TH_HINC dummy argument + change intent of *_HIND and *_HINC dummy arguments (INOUT->OUT)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -108,11 +109,12 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCCT    ! Cloud water C. at t
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCIT    ! Ice crystal C. source
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PINT    ! Activated ice nuclei C.
 !
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: P_TH_HIND
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: P_RI_HIND
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: P_CI_HIND
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: P_RC_HINC
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: P_CC_HINC
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: P_TH_HIND
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: P_RI_HIND
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: P_CI_HIND
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: P_TH_HINC
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: P_RC_HINC
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: P_CC_HINC
 !
 !
 !*       0.2   Declarations of local variables :
@@ -302,7 +304,8 @@ IF( INEGT >= 1 ) THEN
 !
   P_RC_HINC(:,:,:) = - UNPACK( ZZW(:), MASK=GNEGT(:,:,:), FIELD=0. )
   P_CC_HINC(:,:,:) = - UNPACK( ZZX(:), MASK=GNEGT(:,:,:), FIELD=0. )
-  PTHT(:,:,:) = PTHT(:,:,:) + UNPACK( ZZW(:)*(ZLSFACT(:)-ZLVFACT(:)), MASK=GNEGT(:,:,:), FIELD=0. )
+  P_TH_HINC(:,:,:) =   UNPACK( ZZW(:)*(ZLSFACT(:)-ZLVFACT(:)), MASK=GNEGT(:,:,:), FIELD=0. )
+  PTHT(:,:,:) = PTHT(:,:,:) + P_TH_HINC(:,:,:)
   PRCT(:,:,:) = PRCT(:,:,:) + P_RC_HINC(:,:,:)
   PRIT(:,:,:) = PRIT(:,:,:) - P_RC_HINC(:,:,:)
   PCCT(:,:,:) = PCCT(:,:,:) + P_CC_HINC(:,:,:)

@@ -70,6 +70,7 @@ SUBROUTINE LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, OCLOSE_OUT, PRHODJ,           
 !!    -------------
 !!      Original             15/03/2018
 ! P. Wautelet 27/02/2020: bugfix: PNFT was not updated after LIMA_CCN_HOM_FREEZING
+! P. Wautelet 27/02/2020: add Z_TH_HINC variable (for budgets)
 !-------------------------------------------------------------------------------
 !
 USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LMEYERS, LSNOW, LWARM, LACTI, LRAIN, LHHONI,  &
@@ -126,7 +127,7 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNHT       ! CCN hom. freezing
 !
 !-------------------------------------------------------------------------------
 !
-REAL, DIMENSION(SIZE(PT,1),SIZE(PT,2),SIZE(PT,3))          :: Z_TH_HIND, Z_RI_HIND, Z_CI_HIND, Z_RC_HINC, Z_CC_HINC
+REAL, DIMENSION(SIZE(PT,1),SIZE(PT,2),SIZE(PT,3))          :: Z_TH_HIND, Z_RI_HIND, Z_CI_HIND, Z_TH_HINC, Z_RC_HINC, Z_CC_HINC
 REAL, DIMENSION(SIZE(PT,1),SIZE(PT,2),SIZE(PT,3))          :: ZTHT, ZRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT
 REAL, DIMENSION(SIZE(PT,1),SIZE(PT,2),SIZE(PT,3))          :: ZCCT, ZCRT, ZCIT
 REAL, DIMENSION(SIZE(PT,1),SIZE(PT,2),SIZE(PT,3),NMOD_CCN) :: ZNFT, ZNAT
@@ -190,7 +191,7 @@ IF (LCOLD .AND. LNUCL .AND. .NOT.LMEYERS .AND. NMOD_IFN.GE.1) THEN
                                       ZTHT, ZRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT,         &
                                       ZCCT, ZCIT, ZNAT, ZIFT, ZINT, ZNIT,               &
                                       Z_TH_HIND, Z_RI_HIND, Z_CI_HIND,                  &
-                                      Z_RC_HINC, Z_CC_HINC                              )
+                                      Z_TH_HINC, Z_RC_HINC, Z_CC_HINC                   )
 !
 ! Call budgets
 !
@@ -236,7 +237,7 @@ IF (LCOLD .AND. LNUCL .AND. LMEYERS) THEN
                                 ZTHT, ZRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT,   &
                                 ZCCT, ZCIT, ZINT,                           &
                                 Z_TH_HIND, Z_RI_HIND, Z_CI_HIND,            &
-                                Z_RC_HINC, Z_CC_HINC                        )
+                                Z_TH_HINC, Z_RC_HINC, Z_CC_HINC             )
 !
 ! Call budgets
 !
