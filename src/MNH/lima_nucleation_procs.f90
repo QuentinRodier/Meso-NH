@@ -1,8 +1,8 @@
-!MNH_LIC Copyright 2018-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
+!-------------------------------------------------------------------------------
 !      ###############################
        MODULE MODI_LIMA_NUCLEATION_PROCS
 !      ###############################
@@ -69,7 +69,7 @@ SUBROUTINE LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, OCLOSE_OUT, PRHODJ,           
 !!    MODIFICATIONS
 !!    -------------
 !!      Original             15/03/2018
-!!
+! P. Wautelet 27/02/2020: bugfix: PNFT was not updated after LIMA_CCN_HOM_FREEZING
 !-------------------------------------------------------------------------------
 !
 USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LMEYERS, LSNOW, LWARM, LACTI, LRAIN, LHHONI,  &
@@ -289,6 +289,7 @@ PTHT(:,:,:) = ZTHT(:,:,:)
 PRVT(:,:,:) = ZRVT(:,:,:)
 PRIT(:,:,:) = ZRIT(:,:,:)
 PCIT(:,:,:) = ZCIT(:,:,:)
+PNFT(:,:,:,:) = ZNFT(:,:,:,:)
 PNHT(:,:,:) = ZNHT(:,:,:)
 ENDIF
 !
