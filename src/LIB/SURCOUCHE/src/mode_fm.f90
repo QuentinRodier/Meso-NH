@@ -13,6 +13,7 @@
 !                                 of NNCID and NLFIFLU to the nc4 and lfi subroutines
 !  Philippe Wautelet: 21/01/2019: add LIO_ALLOW_NO_BACKUP and LIO_NO_WRITE to modd_io_ll
 !                                 to allow to disable writes (for bench purposes)
+!  Sylvie Donnier: 28/02/2020: correction for use of ECOCLIMAP SG type STREAM needed
 !-----------------------------------------------------------------
 
 MODULE MODE_FM
@@ -129,6 +130,10 @@ SELECT CASE(TPFILE%CTYPE)
       CALL OPEN_ll(TPFILE,IOSTAT=IRESP,FORM=TPFILE%CFORM,MODE='GLOBAL')
     ELSE IF (TPFILE%CACCESS=='DIRECT') THEN
       CALL OPEN_ll(TPFILE,IOSTAT=IRESP,FORM=TPFILE%CFORM,ACCESS=TPFILE%CACCESS,RECL=TPFILE%NRECL,MODE='GLOBAL')
+! modif ECOSG
+    ELSE IF  (TPFILE%CACCESS=='STREAM') THEN
+      CALL OPEN_ll(TPFILE,IOSTAT=IRESP,FORM=TPFILE%CFORM,ACCESS=TPFILE%CACCESS,MODE='GLOBAL')
+! fin modif ECOSG
     ELSE
       CALL OPEN_ll(TPFILE,IOSTAT=IRESP,FORM=TPFILE%CFORM,MODE='GLOBAL')
     END IF

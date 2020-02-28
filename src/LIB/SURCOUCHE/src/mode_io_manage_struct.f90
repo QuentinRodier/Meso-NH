@@ -11,6 +11,7 @@
 !                          to allow to disable writes (for bench purposes)
 !  P. Wautelet 12/03/2019: add TMAINFILE field in TFILEDATA
 !  P. Wautelet 11/02/2020: bugfix: TDADFILE was wrongly constructed for output files
+!  S. Donnier  28/02/2020: bugfix: type STREAM needed for use of ECOCLIMAP SG
 !-----------------------------------------------------------------
 MODULE MODE_IO_MANAGE_STRUCT
 !
@@ -714,7 +715,9 @@ IF(     PRESENT(HACCESS) .AND. TRIM(HTYPE)/='SURFACE_DATA') &
 IF(.NOT.PRESENT(HACCESS) .AND. TRIM(HTYPE)=='SURFACE_DATA') &
     CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','optional argument HACCESS is necessary for '//TRIM(HTYPE)//' files')
 IF(PRESENT(HACCESS)) THEN
-  IF(HACCESS/='DIRECT' .AND. HACCESS/='SEQUENTIAL') &
+! modif ECOSG
+  IF(HACCESS/='DIRECT' .AND. HACCESS/='SEQUENTIAL' .AND. HACCESS/='STREAM') &
+! fin modif
     CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','HACCESS should be DIRECT or SEQUENTIAL and not '//TRIM(HACCESS))
 END IF
 !
