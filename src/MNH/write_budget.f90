@@ -946,7 +946,6 @@ SELECT CASE (CBUTYPE)
             ZWORKT(:,:,:,1,1,JPROC) = ZWORKT(:,:,:,1,1,JPROC)* ZCONVERT(JPROC)    &
                / ZWORK(:,:,:,1,1,1)
           END DO
-         DEALLOCATE(ZWORK)
         ENDIF
         DEALLOCATE(ZCONVERT)
 !   
