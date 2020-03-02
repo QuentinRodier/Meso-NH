@@ -62,6 +62,7 @@ END MODULE MODI_LIMA_SEDIMENTATION
 !!      Original             15/03/2018
 !!
 !!      B.Vie  02/2019  Desactivate (comment) the heat transport by droplets
+!!      B.Vie  03/2020  Desactivate temperature change of droplets by air temperature
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -225,7 +226,7 @@ DO JN = 1 ,  NSPLITSED(KID)
       DEALLOCATE(ZZY)
       !      
       PINPR(:,:) = PINPR(:,:) + ZWSEDR(:,:,KKB)/XRHOLW/NSPLITSED(KID)                          ! in m/s
-      PT(:,:,:) = PT(:,:,:) + ZWDT(:,:,:)
+      !PT(:,:,:) = PT(:,:,:) + ZWDT(:,:,:)
       
    END IF
 END DO
