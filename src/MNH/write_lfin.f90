@@ -171,6 +171,7 @@ END MODULE MODI_WRITE_LFIFM_n
 !!       P.Wautelet    11/01/2019: bug correction in write XBL_DEPTH->XSBL_DEPTH
 !!       C.Lac         18/02/2019: add rain fraction as an output field              
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!!      P.Tulet 02/2020 : correction for dust and sea salts
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -249,12 +250,16 @@ USE MODE_GATHER_ll
 USE MODE_GRIDPROJ
 USE MODE_MSG
 USE MODE_MODELN_HANDLER
+USE MODE_DUST_PSD
+USE MODE_SALT_PSD
 !
 USE MODI_WRITE_LB_n
 USE MODI_WRITE_BALLOON_n
 USE MODI_DUSTLFI_n
 USE MODI_SALTLFI_n
 USE MODI_CH_AER_REALLFI_n
+USE MODI_SALT_FILTER
+USE MODI_DUST_FILTER
 !
 !20131128
 USE MODE_MPPDB
@@ -1220,6 +1225,7 @@ IF (NSV >=1) THEN
       TZFIELD%NDIMS      = 3
       TZFIELD%LTIMEDEP   = .TRUE.
       !
+      CALL DUST_FILTER(XSVT(:,:,:,NSV_DSTBEG:NSV_DSTEND), XRHODREF)
       DO JSV = NSV_DSTBEG,NSV_DSTEND
         TZFIELD%CMNHNAME   = TRIM(CDUSTNAMES(JSV-NSV_DSTBEG+1))//'T'
         TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
@@ -1280,22 +1286,34 @@ IF (NSV >=1) THEN
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
       TZFIELD%LTIMEDEP   = .TRUE.
-      DO JMODE=1, NMODE_SLT
-        DO JMOM = 1, IMOMENTS
-          !Index from which names are picked
-          ISV_NAME_IDX = (JPSALTORDER(JMODE)-1)*IMOMENTS + JMOM 
-          !Index which counts in the XSVT
-          JSV = (JMODE-1)*IMOMENTS      & !Number of moments previously counted
-               + JMOM                   & !Number of moments in this mode
-               + (NSV_SLTBEG -1)          !Previous list of tracers 
-
-          TZFIELD%CMNHNAME   = TRIM(YPSALT_INI(ISV_NAME_IDX))//'T'  !The refererence which will be written to file
+!
+      IF (IMOMENTS == 1) THEN
+        DO JMODE=1, NMODE_SLT
+          ISV_NAME_IDX = (JPSALTORDER(JMODE) - 1)*3 + 2
+          JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
+                  +  1              & !Number of moments in this mode
+                  + (NSV_SLTBEG -1)      !Previous list of tracers
+          TZFIELD%CMNHNAME   = TRIM(YPSALT_INI(ISV_NAME_IDX))//'T'
           TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
           WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
           CALL IO_WRITE_FIELD(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-          YSLTNAMES((JMODE-1)*IMOMENTS+JMOM)=TZFIELD%CMNHNAME(1:LEN_TRIM(TZFIELD%CMNHNAME)-1)
-        END DO ! Loop on moments
-      END DO   ! Loop on modes
+          YSLTNAMES((JMODE-1)*IMOMENTS+1)=TZFIELD%CMNHNAME(1:LEN_TRIM(TZFIELD%CMNHNAME)-1)
+        END DO ! Loop on mode
+      ELSE
+        DO JMODE=1, NMODE_SLT
+          DO JMOM = 1, IMOMENTS
+            ISV_NAME_IDX = (JPSALTORDER(JMODE) - 1)*IMOMENTS + JMOM
+            JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
+                 + JMOM               & !Number of moments in this mode
+                 + (NSV_SLTBEG -1)
+            TZFIELD%CMNHNAME   = TRIM(YPSALT_INI(ISV_NAME_IDX))//'T'  !The refererence which will be written to file
+            TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+            WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
+            CALL IO_WRITE_FIELD(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
+            YSLTNAMES((JMODE-1)*IMOMENTS+JMOM)=TZFIELD%CMNHNAME(1:LEN_TRIM(TZFIELD%CMNHNAME)-1)
+          END DO ! Loop on moment
+        END DO ! loop on mode
+      END IF ! Valeur IMOMENTS
       !
       DO JSV = NSV_SLTBEG,NSV_SLTEND
         YCHNAMES(JSV-JSA) = YSLTNAMES(JSV-NSV_SLTBEG+1)
@@ -1312,6 +1330,7 @@ IF (NSV >=1) THEN
       TZFIELD%NDIMS      = 3
       TZFIELD%LTIMEDEP   = .TRUE.
       !
+      CALL SALT_FILTER(XSVT(:,:,:,NSV_SLTBEG:NSV_SLTEND), XRHODREF)
       DO JSV = NSV_SLTBEG,NSV_SLTEND
         TZFIELD%CMNHNAME   = TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))//'T'
         TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
