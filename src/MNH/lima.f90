@@ -623,7 +623,7 @@ END IF
 IF (LWARM .AND. LDEPOC) THEN
   PINDEP(:,:)=0.
   GDEP(:,:) = .FALSE.
-  GDEP(:,:) =    ZRCS(:,:,IKB) >0 .AND. ZCCS(:,:,IKB) >0
+  GDEP(:,:) = ZRCS(:,:,IKB) >0 .AND. ZCCS(:,:,IKB) >0 .AND. ZRCT(:,:,IKB) >0 .AND. ZCCT(:,:,IKB) >0
   WHERE (GDEP)
      ZRCS(:,:,IKB) = ZRCS(:,:,IKB) - XVDEPOC * ZRCT(:,:,IKB) / PDZZ(:,:,IKB)
      ZCCS(:,:,IKB) = ZCCS(:,:,IKB) - XVDEPOC * ZCCT(:,:,IKB) / PDZZ(:,:,IKB)

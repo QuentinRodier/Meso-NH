@@ -127,7 +127,7 @@ END MODULE MODI_LIMA_WARM
 !!      C. Barthe  * LACy *  jan. 2014   add budgets
 !!      J. Escobar : for real*4 , use XMNH_HUGE
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!!  B.Vié 03/02/2020 : correction of activation of water deposition on the ground
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -231,7 +231,7 @@ REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZNAS     ! Cloud  C. nuclei C. source
 !
 !
 REAL,    DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3))   &
-                                  :: ZT, ZTM
+                                  :: ZT
 REAL,    DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3))   &
                                   :: ZWLBDR,ZWLBDR3,ZWLBDC,ZWLBDC3
 INTEGER :: JL
@@ -305,11 +305,6 @@ WHERE (PRRT(:,:,:)>XRTMIN(3) .AND. PCRT(:,:,:)>XCTMIN(3))
    ZWLBDR(:,:,:)  = ZWLBDR3(:,:,:)**XLBEXR
 END WHERE
 ZT(:,:,:)  = PTHT(:,:,:) * (PPABST(:,:,:)/XP00)**(XRD/XCPD)
-IF( OACTIT ) THEN
-   ZTM(:,:,:) = PTHM(:,:,:) * (PPABSM(:,:,:)/XP00)**(XRD/XCPD)
-ELSE 
-   ZTM(:,:,:) = ZT(:,:,:)
-END IF
 !
 !-------------------------------------------------------------------------------
 !
@@ -338,7 +333,7 @@ END IF
 IF (LDEPOC) THEN
   PINDEP(:,:)=0.
   GDEP(:,:) = .FALSE.
-  GDEP(:,:) =    PRCS(:,:,2) >0 .AND. PCCS(:,:,2) >0
+  GDEP(:,:) =    PRCS(:,:,2) >0 .AND. PCCS(:,:,2) >0 .AND. PRCT(:,:,2) >0 .AND. PCCT(:,:,2) >0
   WHERE (GDEP)
      PRCS(:,:,2) = PRCS(:,:,2) - XVDEPOC * PRCT(:,:,2) / ( PZZ(:,:,3) - PZZ(:,:,2))
      PCCS(:,:,2) = PCCS(:,:,2) - XVDEPOC * PCCT(:,:,2) / ( PZZ(:,:,3) - PZZ(:,:,2))
