@@ -8,11 +8,11 @@
 !      ###############################
 !
 INTERFACE
-   SUBROUTINE LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, OCLOSE_OUT, PRHODJ,          &
-                                     PRHODREF, PEXNREF, PPABST, PT, PTM, PW_NU,    &
-                                     PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,     &
-                                     PCCT, PCRT, PCIT,                             &
-                                     PNFT, PNAT, PIFT, PINT, PNIT, PNHT            )
+   SUBROUTINE LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, OCLOSE_OUT, PRHODJ,            &
+                                     PRHODREF, PEXNREF, PPABST, PT, PDTHRAD, PW_NU, &
+                                     PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,      &
+                                     PCCT, PCRT, PCIT,                              &
+                                     PNFT, PNAT, PIFT, PINT, PNIT, PNHT             )
 !
 USE MODD_IO_ll, ONLY: TFILEDATA
 !
@@ -25,7 +25,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF    ! Reference Exner function
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST     ! abs. pressure at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PT         ! Temperature
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTM        ! Temperature at time t-dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD    ! Radiative temperature tendency
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU      ! updraft velocity used for
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHT       ! Theta at t 
@@ -50,13 +50,13 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNHT       ! CCN hom freezing
 END SUBROUTINE LIMA_NUCLEATION_PROCS
 END INTERFACE
 END MODULE MODI_LIMA_NUCLEATION_PROCS
-!     #############################################################################
-SUBROUTINE LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, OCLOSE_OUT, PRHODJ,                &
-                                  PRHODREF, PEXNREF, PPABST, PT, PTM, PW_NU,          &
-                                  PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,           &
-                                  PCCT, PCRT, PCIT,                                   &
-                                  PNFT, PNAT, PIFT, PINT, PNIT, PNHT                  )
-!     #############################################################################
+!     ############################################################################
+SUBROUTINE LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, OCLOSE_OUT, PRHODJ,            &
+                                  PRHODREF, PEXNREF, PPABST, PT, PDTHRAD, PW_NU, &
+                                  PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,      &
+                                  PCCT, PCRT, PCIT,                              &
+                                  PNFT, PNAT, PIFT, PINT, PNIT, PNHT             )
+!     ############################################################################
 !
 !!    PURPOSE
 !!    -------
@@ -71,6 +71,7 @@ SUBROUTINE LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, OCLOSE_OUT, PRHODJ,           
 !!      Original             15/03/2018
 ! P. Wautelet 27/02/2020: bugfix: PNFT was not updated after LIMA_CCN_HOM_FREEZING
 ! P. Wautelet 27/02/2020: add Z_TH_HINC variable (for budgets)
+!!      B.Vié 03/03/2020 : use DTHRAD instead of dT/dt in Smax diagnostic computation
 !-------------------------------------------------------------------------------
 !
 USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LMEYERS, LSNOW, LWARM, LACTI, LRAIN, LHHONI, &
@@ -94,7 +95,7 @@ IMPLICIT NONE
 !-------------------------------------------------------------------------------
 !
 REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
-TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE     ! Output file
+TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE     ! Output file
 LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ     ! Reference density
@@ -102,7 +103,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF    ! Reference Exner function
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST     ! abs. pressure at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PT         ! Temperature
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTM        ! Temperature at time t-dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD    ! Radiative temperature tendency
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU      ! updraft velocity used for
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHT       ! Theta at t 
@@ -157,9 +158,9 @@ ZNHT(:,:,:) = PNHT(:,:,:)
 !-------------------------------------------------------------------------------
 !
 IF (LWARM .AND. LACTI .AND. NMOD_CCN.GE.1) THEN
-   CALL LIMA_CCN_ACTIVATION (PTSTEP, TPFILE, OCLOSE_OUT,                 &
-                             PRHODREF, PEXNREF, PPABST, PT, PTM, PW_NU,   &
-                             ZTHT, ZRVT, ZRCT, ZCCT, ZRRT, ZNFT, ZNAT)
+   CALL LIMA_CCN_ACTIVATION (PTSTEP, TPFILE, OCLOSE_OUT,                    &
+                             PRHODREF, PEXNREF, PPABST, PT, PDTHRAD, PW_NU, &
+                             ZTHT, ZRVT, ZRCT, ZCCT, ZRRT, ZNFT, ZNAT       )
    PTHT(:,:,:) = ZTHT(:,:,:)
    PRVT(:,:,:) = ZRVT(:,:,:)
    PRCT(:,:,:) = ZRCT(:,:,:)

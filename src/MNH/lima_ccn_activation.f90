@@ -7,9 +7,9 @@
 !      ###############################
 !
 INTERFACE
-   SUBROUTINE LIMA_CCN_ACTIVATION (PTSTEP, TPFILE, OCLOSE_OUT,                 &
-                                   PRHODREF, PEXNREF, PPABST, ZT, ZTM, PW_NU,   &
-                                   PTHT, PRVT, PRCT, PCCT, PRRT, PNFT, PNAT     )
+   SUBROUTINE LIMA_CCN_ACTIVATION (PTSTEP, TPFILE, OCLOSE_OUT,                    &
+                                   PRHODREF, PEXNREF, PPABST, PT, PDTHRAD, PW_NU, &
+                                   PTHT, PRVT, PRCT, PCCT, PRRT, PNFT, PNAT       )
 USE MODD_IO_ll, ONLY: TFILEDATA
 !
 REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
@@ -21,8 +21,8 @@ LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF    ! Reference Exner function
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST     ! abs. pressure at time t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: ZT         ! Temperature
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: ZTM        ! Temperature at time t-dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PT         ! Temperature
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD    ! Radiative temperature tendency
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU      ! updraft velocity used for
                                                       ! the nucleation param.
@@ -39,9 +39,9 @@ END SUBROUTINE LIMA_CCN_ACTIVATION
 END INTERFACE
 END MODULE MODI_LIMA_CCN_ACTIVATION
 !     #############################################################################
-   SUBROUTINE LIMA_CCN_ACTIVATION (PTSTEP, TPFILE, OCLOSE_OUT,                 &
-                                   PRHODREF, PEXNREF, PPABST, ZT, ZTM, PW_NU,   &
-                                   PTHT, PRVT, PRCT, PCCT, PRRT, PNFT, PNAT     )
+   SUBROUTINE LIMA_CCN_ACTIVATION (PTSTEP, TPFILE, OCLOSE_OUT,                    &
+                                   PRHODREF, PEXNREF, PPABST, PT, PDTHRAD, PW_NU, &
+                                   PTHT, PRVT, PRCT, PCCT, PRRT, PNFT, PNAT       )
 !     #############################################################################
 !
 !!
@@ -87,6 +87,7 @@ END MODULE MODI_LIMA_CCN_ACTIVATION
 !!    -------------
 !!      Original             ??/??/13 
 !!
+!!      B.Vié 03/03/2020 : use DTHRAD instead of dT/dt in Smax diagnostic computation
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -120,8 +121,8 @@ LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF    ! Reference Exner function
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST     ! abs. pressure at time t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: ZT         ! Temperature
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: ZTM        ! Temperature at time t-dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PT         ! Temperature
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD    ! Radiative temperature tendency
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU      ! updraft velocity used for
                                                       ! the nucleation param.
@@ -195,9 +196,10 @@ IKE=SIZE(PRHODREF,3) - JPVEXT
 !  Saturation vapor mixing ratio and radiative tendency                    
 !
 ZEPS= XMV / XMD
-ZRVSAT(:,:,:) = ZEPS / (PPABST(:,:,:)*EXP(-XALPW+XBETAW/ZT(:,:,:)+XGAMW*ALOG(ZT(:,:,:))) - 1.0)
+ZRVSAT(:,:,:) = ZEPS / (PPABST(:,:,:)*EXP(-XALPW+XBETAW/PT(:,:,:)+XGAMW*ALOG(PT(:,:,:))) - 1.0)
 ZTDT(:,:,:)   = 0.
-IF (LACTIT) ZTDT(:,:,:)   = (ZT(:,:,:)-ZTM(:,:,:))/PTSTEP                   ! dT/dt
+IF (LACTIT .AND. SIZE(PDTHRAD).GT.0) ZTDT(:,:,:)   = PDTHRAD(:,:,:) * PEXNREF(:,:,:)
+!IF (LACTIT) ZTDT(:,:,:)   = (PT(:,:,:)-PTM(:,:,:))/PTSTEP                   ! dT/dt
 !
 !  find locations where CCN are available
 !
@@ -217,13 +219,13 @@ IF( LACTIT ) THEN
                                      ZTDT(IIB:IIE,IJB:IJE,IKB:IKE)<XTMIN   .OR. &
         PRVT(IIB:IIE,IJB:IJE,IKB:IKE)>ZRVSAT(IIB:IIE,IJB:IJE,IKB:IKE)    ) .AND.&
             PRVT(IIB:IIE,IJB:IJE,IKB:IKE)>(0.98*ZRVSAT(IIB:IIE,IJB:IJE,IKB:IKE))&
-             .AND. ZT(IIB:IIE,IJB:IJE,IKB:IKE)>(XTT-22.)                        &
+             .AND. PT(IIB:IIE,IJB:IJE,IKB:IKE)>(XTT-22.)                        &
              .AND. ZCONC_TOT(IIB:IIE,IJB:IJE,IKB:IKE)>XCTMIN(4)
 ELSE 
    GNUCT(IIB:IIE,IJB:IJE,IKB:IKE) =   (PW_NU(IIB:IIE,IJB:IJE,IKB:IKE)>XWMIN .OR. &
         PRVT(IIB:IIE,IJB:IJE,IKB:IKE)>ZRVSAT(IIB:IIE,IJB:IJE,IKB:IKE)    ) .AND.&
             PRVT(IIB:IIE,IJB:IJE,IKB:IKE)>(0.98*ZRVSAT(IIB:IIE,IJB:IJE,IKB:IKE))&
-             .AND. ZT(IIB:IIE,IJB:IJE,IKB:IKE)>(XTT-22.)                        &
+             .AND. PT(IIB:IIE,IJB:IJE,IKB:IKE)>(XTT-22.)                        &
              .AND. ZCONC_TOT(IIB:IIE,IJB:IJE,IKB:IKE)>XCTMIN(4)
 END IF
 INUCT = COUNTJV( GNUCT(:,:,:),I1(:),I2(:),I3(:))
@@ -248,7 +250,7 @@ IF( INUCT >= 1 ) THEN
    ALLOCATE(ZRHODREF(INUCT)) 
    ALLOCATE(ZEXNREF(INUCT)) 
    DO JL=1,INUCT
-      ZZT(JL)  = ZT(I1(JL),I2(JL),I3(JL))
+      ZZT(JL)  = PT(I1(JL),I2(JL),I3(JL))
       ZZW1(JL) = ZRVSAT(I1(JL),I2(JL),I3(JL))
       ZZW2(JL) = PW_NU(I1(JL),I2(JL),I3(JL))
       ZZTDT(JL)  = ZTDT(I1(JL),I2(JL),I3(JL))
@@ -419,7 +421,7 @@ IF( INUCT >= 1 ) THEN
    END WHERE
    ZW(:,:,:) = MIN( UNPACK( ZZW1(:),MASK=GNUCT(:,:,:),FIELD=0.0 ),PRVT(:,:,:) )
 !
-   PTHT(:,:,:) = PTHT(:,:,:) + ZW(:,:,:) * (XLVTT+(XCPV-XCL)*(ZT(:,:,:)-XTT))/                &
+   PTHT(:,:,:) = PTHT(:,:,:) + ZW(:,:,:) * (XLVTT+(XCPV-XCL)*(PT(:,:,:)-XTT))/                &
             (PEXNREF(:,:,:)*(XCPD+XCPV*PRVT(:,:,:)+XCL*(PRCT(:,:,:)+PRRT(:,:,:))))
    PRVT(:,:,:) = PRVT(:,:,:) - ZW(:,:,:) 
    PRCT(:,:,:) = PRCT(:,:,:) + ZW(:,:,:) 

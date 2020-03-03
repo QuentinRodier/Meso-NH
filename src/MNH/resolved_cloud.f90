@@ -269,6 +269,7 @@ END MODULE MODI_RESOLVED_CLOUD
 !!                   02/2019 C.Lac add rain fraction as an output field
 !!  P. Wautelet 24/02/2020: bugfix: corrected budget name (DEPI->CDEPI) for ice_adjust
 !!                  03/2020 (B.Vie) : LIMA negativity checks after turbulence, advection and microphysics budgets
+!!      B.Vié 03/03/2020 : use DTHRAD instead of dT/dt in Smax diagnostic computation
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1069,7 +1070,7 @@ SELECT CASE ( HCLOUD )
                    PRHODREF, PEXNREF, ZDZZ,                                &
                    PRHODJ, PPABSM, PPABST,                                 &
                    NMOD_CCN, NMOD_IFN, NMOD_IMM,                           &
-                   PTHM, PTHT, PRT, ZSVT, PW_ACT,                          &
+                   PDTHRAD, PTHT, PRT, ZSVT, PW_ACT,                       &
                    PTHS, PRS, ZSVS,                                        &
                    PINPRC, PINDEP, PINPRR, ZINPRI, PINPRS, PINPRG, PINPRH, &
                    PEVAP3D                                         )
@@ -1078,7 +1079,7 @@ SELECT CASE ( HCLOUD )
         IF (OWARM) CALL LIMA_WARM(OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,   &
                                   TPFILE, OCLOSE_OUT, KRR, PZZ, PRHODJ,         &
                                   PRHODREF, PEXNREF, PW_ACT, PPABSM, PPABST,    &
-                                  PTHM, PRCM,                                   &
+                                  PDTHRAD, PRCM,                                   &
                                   PTHT, PRT, ZSVT,                              &
                                   PTHS, PRS, ZSVS,                              &
                                   PINPRC, PINPRR, PINDEP, PINPRR3D, PEVAP3D     )

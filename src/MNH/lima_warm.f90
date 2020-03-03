@@ -128,6 +128,7 @@ END MODULE MODI_LIMA_WARM
 !!      J. Escobar : for real*4 , use XMNH_HUGE
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!  B.Vié 03/02/2020 : correction of activation of water deposition on the ground
+!!  B.Vié 03/03/2020 : use DTHRAD instead of dT/dt in Smax diagnostic computation
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
