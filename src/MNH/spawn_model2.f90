@@ -1411,7 +1411,7 @@ IF (.NOT. L1D) THEN
             XLBYUM,XLBYVM,XLBYWM,XLBYTHM,XLBYTKEM,XLBYRM,XLBYSVM,   &
             XLBXUM,XLBXVM,XLBXWM,XLBXTHM,XLBXTKEM,XLBXRM,XLBXSVM,   &
             XLBYUM,XLBYVM,XLBYWM,XLBYTHM,XLBYTKEM,XLBYRM,XLBYSVM,   &
-            XRHODJ,                                                 &
+            XRHODJ,XRHODREF,                                        &
             XUT, XVT, XWT, XTHT, XTKET, XRT, XSVT, XSRCT            )
 END IF
 !
