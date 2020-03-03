@@ -79,7 +79,7 @@ END MODULE MODI_SET_CONC_LIMA
 !!      Original    15/11/00
 !!                        2014 G.Delautier : remplace MODD_RAIN_C2R2_PARAM par MODD_RAIN_C2R2_KHKO_PARAM        *
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!!  B.Vié : 03/03/2020  secure physical tests
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -90,6 +90,7 @@ USE MODD_PARAM_LIMA_COLD, ONLY : XAI, XBI
 USE MODD_NSV,             ONLY : NSV_LIMA_NC, NSV_LIMA_NR, NSV_LIMA_CCN_ACTI, NSV_LIMA_NI, NSV_LIMA_IFN_NUCL
 USE MODD_CST,             ONLY : XPI, XRHOLW, XRHOLI
 USE MODD_CONF,            ONLY : NVERB
+USE MODD_CONF_n,          ONLY : NRR
 USE MODD_LUNIT_n,         ONLY : TLUOUT
 
 !
@@ -122,7 +123,7 @@ ILUOUT = TLUOUT%NLU
 !*       2.    INITIALIZATION
 !              --------------
 !
-IF (LWARM) THEN
+IF (LWARM .AND. NRR.GE.2) THEN
 !
 !  droplets
 !
@@ -150,7 +151,7 @@ IF (LWARM) THEN
    END IF
 END IF
 !
-IF (LWARM .AND. LRAIN) THEN
+IF (LWARM .AND. LRAIN .AND. NRR.GE.3) THEN
 !
 !  drops
 !
@@ -160,7 +161,7 @@ IF (LWARM .AND. LRAIN) THEN
    ELSE ! init from KESS, ICE3...
       WHERE ( PRT(:,:,:,3) > 1.E-11 )
          PSVT(:,:,:,NSV_LIMA_NR) = MAX( SQRT(SQRT(PRHODREF(:,:,:)*PRT(:,:,:,3) &
-              *ZCONCR)),XCTMIN(3) )
+              *ZCONCR)),1. )
       END WHERE
       WHERE ( PRT(:,:,:,3) <= 1.E-11 )
          PRT(:,:,:,3)  = 0.0
@@ -173,7 +174,7 @@ IF (LWARM .AND. LRAIN) THEN
    END IF
 END IF
 !
-IF (LCOLD) THEN
+IF (LCOLD .AND. NRR.GE.4) THEN
 !
 ! ice crystals
 !
@@ -184,7 +185,7 @@ IF (LCOLD) THEN
 !           ( XRHOLI * XAI*(10.E-06)**XBI * PRT(:,:,:,4) ), &
 !           ZCONCI )
 ! Correction
-      PSVT(:,:,:,NSV_LIMA_NI) = MIN(PRT(:,:,:,4)/(XAI*(10.E-06)**XBI),ZCONCI )
+      PSVT(:,:,:,NSV_LIMA_NI) = MIN(PRT(:,:,:,4)/(0.82*(10.E-06)**2.5),ZCONCI )
    END WHERE
    WHERE ( PRT(:,:,:,4) <= 1.E-11 )
       PRT(:,:,:,4)  = 0.0
