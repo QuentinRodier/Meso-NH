@@ -293,6 +293,7 @@ END MODULE MODI_READ_EXSEG_n
 !!      Modification   01/2019   (R. Honnert) remove SURF in CMF_UPDRAFT
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !!      C.Lac          11/2019  correction in the drag formula and application to building in addition to tree
+!!      Q.Rodier       03/2020  add abort if use of any LHORELAX and cyclic conditions
 !!------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -2589,7 +2590,31 @@ IF ((LHORELAX_UVWTH  .OR. LHORELAX_SVPP  .OR.   &
  !callabortstop
   CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_EXSEG_n','')
 END IF
-! 
+!
+IF ((LHORELAX_UVWTH  .OR. LHORELAX_SVPP  .OR.   &
+     LHORELAX_SVCS   .OR.                       &
+#ifdef MNH_FOREFIRE
+     LHORELAX_SVFF   .OR.                       &
+#endif
+     LHORELAX_SVC2R2 .OR. LHORELAX_SVC1R3 .OR.  &
+     LHORELAX_SVLIMA .OR.                       &
+     LHORELAX_SVELEC .OR. LHORELAX_SVCHEM .OR.  &
+     LHORELAX_SVLG   .OR. ANY(LHORELAX_SV) .OR. &
+     LHORELAX_RV     .OR. LHORELAX_RC .OR.      &
+     LHORELAX_RR     .OR. LHORELAX_RI .OR.      &
+     LHORELAX_RG     .OR. LHORELAX_RS .OR.      &
+     LHORELAX_RH     .OR. LHORELAX_TKE.OR.      &
+     LHORELAX_SVCHIC )                          &
+     .AND. (CLBCX(1)=='CYCL'.OR.CLBCX(2)=='CYCL' &
+          .OR.CLBCY(1)=='CYCL'.OR.CLBCY(2)=='CYCL')) THEN
+  WRITE(UNIT=ILUOUT,FMT=9003) KMI
+  WRITE(ILUOUT,FMT=*) 'YOU WANT TO USE THE HORIZONTAL RELAXATION '
+  WRITE(ILUOUT,FMT=*) 'FOR CYCLIC CLBCX OR CLBCY VALUES' 
+  WRITE(ILUOUT,FMT=*) 'CHANGE LHORELAX TO FALSE'
+ !callabortstop
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_EXSEG_n','')
+END IF
+!
 IF (KMI==1) THEN
   GRELAX = .NOT.(OUSERV)  .AND.  LUSERV  .AND. LHORELAX_RV
 ELSE
