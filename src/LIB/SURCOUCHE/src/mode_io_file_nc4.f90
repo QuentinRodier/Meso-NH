@@ -122,9 +122,9 @@ subroutine io_open_file_nc4(tpfile)
   end if
 
   if (trim(tpfile%cmode) == 'READ') then
-    !call io_get_mnhversion(tpfile)
-    !if (tpfile%lmaster) call io_check_cleanly_closed_nc4(tpfile)
-    tpfile%nmnhversion = (/ 5,4,3 /)
+    call io_get_mnhversion(tpfile)
+    if (tpfile%lmaster) call io_check_cleanly_closed_nc4(tpfile)
+    !tpfile%nmnhversion = (/ 5,4,3 /)
   end if
 
 end subroutine io_open_file_nc4
