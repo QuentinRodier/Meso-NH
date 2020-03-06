@@ -1,0 +1,23 @@
+#!/bin/bash
+#NB_CORE=128
+Numactl='numactl'
+export IP=${SLURM_PROCID}
+
+if [ "x${IP}" != "x" ] 
+then
+export LIP=${SLURM_LOCALID}
+export NP=${SLURM_NTASKS}
+export NN=${SLURM_NNODES}
+export NPN=$(( NP / NN ))
+export NB_CORE=${SLURM_JOB_CPUS_PER_NODE/(*)/}
+export NPC=$(( NB_CORE / NPN ))
+CORE=$(( LIP * NPC ))
+#echo IP=${IP} LIP=${LIP} NP=${NP} NN=${NN} NPN=${NPN} NPC=${NPC} HOST=`hostname` NB_CORE=${NB_CORE} CORE=${CORE} 
+#
+# execution
+#
+exec ${Numactl} --physcpubind ${CORE} $*
+else
+exec ${Numactl} --physcpubind 0 $*
+fi
+
