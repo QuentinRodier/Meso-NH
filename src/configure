@@ -9,9 +9,9 @@ if [ "x$XYZ" = "x" ]
 then
 # 
 export VERSION_MASTER=${VERSION_MASTER:-MNH-V5-4}
-export VERSION_BUG=${VERSION_BUG:-2}
+export VERSION_BUG=${VERSION_BUG:-3}
 export VERSION_XYZ=${VERSION_XYZ:-${VERSION_MASTER}-${VERSION_BUG}${VER_OASIS:+-${VER_OASIS}}}
-export VERSION_DATE=${VERSION_DATE:-"03/04/2019"}
+export VERSION_DATE=${VERSION_DATE:-"06/03/2020"}
 export VERSION_LIBAEC=${VERSION_LIBAEC:-"0.3.2"}
 export VERSION_HDF=${VERSION_HDF:-"1.8.20"}
 export VERSION_CDFC=${VERSION_CDFC:-"4.5.0"}
@@ -118,6 +118,9 @@ module load ncl_ncarg/6.3.0
 "}
               ;;
 'Linux irene'*)
+	        MODEL_NAME=`lscpu  | grep 'Model name' `
+		case ${MODEL_NAME} in 
+*Intel*) # Irene Intel core
                 export MNH_ARCH=`echo $ARCH | grep LX`
                 export     ARCH=${MNH_ARCH:-LXifort}
                 export  VER_MPI=${VER_MPI:-MPIINTEL}
@@ -131,6 +134,30 @@ module load mpi/intelmpi/2018.0.3.222
 export SLURM_CPU_BIND=none
 export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
 "}
+;;
+*AMD*) # Irene AMD core
+                export MNH_ARCH=`echo $ARCH | grep LX`
+                export     ARCH=${MNH_ARCH:-LXifort}
+                export  VER_MPI=${VER_MPI:-MPIAUTO}
+                export OPTLEVEL=${OPTLEVEL:-O2}
+                export MVWORK=${MVWORK:-NO}
+		export VER_CDF=${VER_CDF:-CDFAUTO}
+		export VERSION_XYZ="${VERSION_XYZ}-AMD"
+                export MNHENV=${MNHENV:-"
+module purge
+module load intel/19.0.5.281 
+module load mpi/openmpi/4.0.2
+# Set some openmpi variable for pb with nb of cores >> 1024
+export OMPI_MCA_coll_hcoll_enable=0
+export HCOLL_ENABLE_MCAST_ALL=0
+export OMPI_MCA_coll_tuned_barrier_algorithm=2 
+# For GA version set GA/ARMCI variables
+export ARMCI_VERBOSE=1
+export ARMCI_STRIDED_METHOD=IOV ARMCI_IOV_METHOD=BATCHED
+export ARMCI_SHR_BUF_METHOD=COPY
+"}
+;;
+		esac
               ;;
 
 'Linux beaufix'*|'Linux prolix'*)
