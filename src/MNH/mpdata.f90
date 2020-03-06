@@ -113,7 +113,7 @@ USE MODD_PARAMETERS
 USE MODI_SHUMAN
 USE MODI_FLUX
 USE MODI_ANTI_DIFF
-USE MODI_BUDGET
+!USE MODI_BUDGET
 !
 IMPLICIT NONE
 !
@@ -269,14 +269,14 @@ irx(7) = NBUDGET_RH
 !
   CALL CLEANLIST_ll(TZFIELDS_ll)
 !
-  IF (LBUDGET_TH)  THEN
-    ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVU(:,:,:)
-    CALL BUDGET (ZRVARS,NBUDGET_TH,'ADVX_BU_RTH')
-    ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVV(:,:,:)
-    CALL BUDGET (ZRVARS,NBUDGET_TH,'ADVY_BU_RTH')
-    ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVW(:,:,:)
-    CALL BUDGET (ZRVARS,NBUDGET_TH,'ADVZ_BU_RTH')
-  END IF
+!  IF (LBUDGET_TH)  THEN
+!    ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVU(:,:,:)
+!    CALL BUDGET (ZRVARS,NBUDGET_TH,'ADVX_BU_RTH')
+!    ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVV(:,:,:)
+!    CALL BUDGET (ZRVARS,NBUDGET_TH,'ADVY_BU_RTH')
+!    ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVW(:,:,:)
+!    CALL BUDGET (ZRVARS,NBUDGET_TH,'ADVZ_BU_RTH')
+!  END IF
 !
 !-------------------------------------------------------------------------------
 !
@@ -332,17 +332,17 @@ irx(7) = NBUDGET_RH
 !
     CALL CLEANLIST_ll(TZFIELDS_ll)
 !
-    IF (LBUDGET_R(JRR)) THEN
-      ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVU(:,:,:)
-      YBURX = 'ADVX_BU_'//YRX(JRR)
-      CALL BUDGET (ZRVARS(:,:,:), irx(jrr ), YBURX)
-      ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVV(:,:,:)
-      YBURX = 'ADVY_BU_'//YRX(JRR)
-      CALL BUDGET (ZRVARS(:,:,:), irx(jrr ), YBURX)
-      ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVW(:,:,:)
-      YBURX = 'ADVZ_BU_'//YRX(JRR)
-      CALL BUDGET (ZRVARS(:,:,:), irx(jrr ), YBURX)
-    END IF
+!    IF (LBUDGET_R(JRR)) THEN
+!      ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVU(:,:,:)
+!      YBURX = 'ADVX_BU_'//YRX(JRR)
+!      CALL BUDGET (ZRVARS(:,:,:), irx(jrr ), YBURX)
+!      ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVV(:,:,:)
+!      YBURX = 'ADVY_BU_'//YRX(JRR)
+!      CALL BUDGET (ZRVARS(:,:,:), irx(jrr ), YBURX)
+!      ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVW(:,:,:)
+!      YBURX = 'ADVZ_BU_'//YRX(JRR)
+!      CALL BUDGET (ZRVARS(:,:,:), irx(jrr ), YBURX)
+!    END IF
   END DO
 !
 !
@@ -399,14 +399,14 @@ irx(7) = NBUDGET_RH
 !
     CALL CLEANLIST_ll(TZFIELDS_ll)
 !  
-    IF (LBUDGET_TKE)  THEN
-      ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVU(:,:,:)
-      CALL BUDGET (ZRVARS,NBUDGET_TKE,'ADVX_BU_RTKE')
-      ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVV(:,:,:)
-      CALL BUDGET (ZRVARS,NBUDGET_TKE,'ADVY_BU_RTKE')
-      ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVW(:,:,:)
-      CALL BUDGET (ZRVARS,NBUDGET_TKE,'ADVZ_BU_RTKE')
-    END IF
+!    IF (LBUDGET_TKE)  THEN
+!      ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVU(:,:,:)
+!      CALL BUDGET (ZRVARS,NBUDGET_TKE,'ADVX_BU_RTKE')
+!      ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVV(:,:,:)
+!      CALL BUDGET (ZRVARS,NBUDGET_TKE,'ADVY_BU_RTKE')
+!      ZRVARS(:,:,:) = ZRVARS(:,:,:) + ZFADVW(:,:,:)
+!      CALL BUDGET (ZRVARS,NBUDGET_TKE,'ADVZ_BU_RTKE')
+!    END IF
   END IF
 !
 !-------------------------------------------------------------------------------

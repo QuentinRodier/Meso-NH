@@ -115,7 +115,7 @@ USE MODD_BUDGET
 USE MODD_GRID_n
 !
 USE MODI_SHUMAN
-USE MODI_BUDGET
+!USE MODI_BUDGET
 !
 IMPLICIT NONE
 !
@@ -141,41 +141,41 @@ IKU=SIZE(XZHAT)
 !
 PRUS(:,:,:) = PRUS(:,:,:)                              &
              -DXM( MXF(PRUCT(:,:,:))*MXF(PUT(:,:,:)) ) 
-IF (LBUDGET_U)  CALL BUDGET (PRUS,NBUDGET_U,'ADVX_BU_RU')
+!IF (LBUDGET_U)  CALL BUDGET (PRUS,NBUDGET_U,'ADVX_BU_RU')
 !
 PRUS(:,:,:) = PRUS(:,:,:)                              &
              -DYF( MXM(PRVCT(:,:,:))*MYM(PUT(:,:,:)) ) 
-IF (LBUDGET_U)  CALL BUDGET (PRUS,NBUDGET_U,'ADVY_BU_RU')
+!IF (LBUDGET_U)  CALL BUDGET (PRUS,NBUDGET_U,'ADVY_BU_RU')
 !
 PRUS(:,:,:) = PRUS(:,:,:)                              &
              -DZF(1,IKU,1, MXM(PRWCT(:,:,:))*MZM(1,IKU,1,PUT(:,:,:)) )
-IF (LBUDGET_U)  CALL BUDGET (PRUS,NBUDGET_U,'ADVZ_BU_RU')
+!IF (LBUDGET_U)  CALL BUDGET (PRUS,NBUDGET_U,'ADVZ_BU_RU')
 !
 !
 PRVS(:,:,:) = PRVS(:,:,:)                              &
              -DXF( MYM(PRUCT(:,:,:))*MXM(PVT(:,:,:)) ) 
-IF (LBUDGET_V)  CALL BUDGET (PRVS,NBUDGET_V,'ADVX_BU_RV')
+!IF (LBUDGET_V)  CALL BUDGET (PRVS,NBUDGET_V,'ADVX_BU_RV')
 !
 PRVS(:,:,:) = PRVS(:,:,:)                              &
              -DYM( MYF(PRVCT(:,:,:))*MYF(PVT(:,:,:)) )  
-IF (LBUDGET_V)  CALL BUDGET (PRVS,NBUDGET_V,'ADVY_BU_RV')
+!IF (LBUDGET_V)  CALL BUDGET (PRVS,NBUDGET_V,'ADVY_BU_RV')
 !
 PRVS(:,:,:) = PRVS(:,:,:)                              &
              -DZF(1,IKU,1, MYM(PRWCT(:,:,:))*MZM(1,IKU,1,PVT(:,:,:)) )
-IF (LBUDGET_V)  CALL BUDGET (PRVS,NBUDGET_V,'ADVZ_BU_RV')
+!IF (LBUDGET_V)  CALL BUDGET (PRVS,NBUDGET_V,'ADVZ_BU_RV')
 !
 !
 PRWS(:,:,:) = PRWS(:,:,:)                              &
              -DXF( MZM(1,IKU,1,PRUCT(:,:,:))*MXM(PWT(:,:,:)) ) 
-IF (LBUDGET_W)  CALL BUDGET (PRWS,NBUDGET_W,'ADVX_BU_RW')
+!IF (LBUDGET_W)  CALL BUDGET (PRWS,NBUDGET_W,'ADVX_BU_RW')
 !
 PRWS(:,:,:) = PRWS(:,:,:)                              &
              -DYF( MZM(1,IKU,1,PRVCT(:,:,:))*MYM(PWT(:,:,:)) ) 
-IF (LBUDGET_W)  CALL BUDGET (PRWS,NBUDGET_W,'ADVY_BU_RW')
+!IF (LBUDGET_W)  CALL BUDGET (PRWS,NBUDGET_W,'ADVY_BU_RW')
 !
 PRWS(:,:,:) = PRWS(:,:,:)                              &
              -DZM(1,IKU,1, MZF(1,IKU,1,PRWCT(:,:,:))*MZF(1,IKU,1,PWT(:,:,:)) )
-IF (LBUDGET_W)  CALL BUDGET (PRWS,NBUDGET_W,'ADVZ_BU_RW')
+!IF (LBUDGET_W)  CALL BUDGET (PRWS,NBUDGET_W,'ADVZ_BU_RW')
 !
 !-------------------------------------------------------------------------------
 !

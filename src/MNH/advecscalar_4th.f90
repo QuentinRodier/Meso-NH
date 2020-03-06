@@ -121,7 +121,7 @@ USE MODD_BUDGET
 USE MODD_ARGSLIST_ll, ONLY : HALO2LIST_ll
 !
 USE MODI_SHUMAN
-USE MODI_BUDGET
+!USE MODI_BUDGET
 !
 ! incorporate ADVEC_4TH_ORDER_ALG, MZF4 and MZM4
 USE MODI_ADVEC_4TH_ORDER_AUX
@@ -188,15 +188,15 @@ DO JSV=1,KSV
 !
   PRSVS(:,:,:,JSV) = PRSVS(:,:,:,JSV)                            &
                     -DXF( PRUCT(:,:,:) * ZMEANX(:,:,:) )
-  IF (LBUDGET_SV) CALL BUDGET (PRSVS(:,:,:,JSV),JSV+NBUDGET_SV1-1,'ADVX_BU_RSV')
+!  IF (LBUDGET_SV) CALL BUDGET (PRSVS(:,:,:,JSV),JSV+NBUDGET_SV1-1,'ADVX_BU_RSV')
 !
   PRSVS(:,:,:,JSV) = PRSVS(:,:,:,JSV)                            &
                     -DYF( PRVCT(:,:,:) * ZMEANY(:,:,:) ) 
-  IF (LBUDGET_SV) CALL BUDGET (PRSVS(:,:,:,JSV),JSV+NBUDGET_SV1-1,'ADVY_BU_RSV')
+!  IF (LBUDGET_SV) CALL BUDGET (PRSVS(:,:,:,JSV),JSV+NBUDGET_SV1-1,'ADVY_BU_RSV')
 !
   PRSVS(:,:,:,JSV) = PRSVS(:,:,:,JSV)                           &
                     -DZF(1,IKU,1,  PRWCT(:,:,:) * MZM4(PSVT(:,:,:,JSV)) )
-  IF (LBUDGET_SV) CALL BUDGET (PRSVS(:,:,:,JSV),JSV+NBUDGET_SV1-1,'ADVZ_BU_RSV')
+!  IF (LBUDGET_SV) CALL BUDGET (PRSVS(:,:,:,JSV),JSV+NBUDGET_SV1-1,'ADVZ_BU_RSV')
 ENDDO
 !
 !-------------------------------------------------------------------------------

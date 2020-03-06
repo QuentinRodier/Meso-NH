@@ -102,7 +102,7 @@ USE MODD_NSV, ONLY : XSVMIN
 USE MODD_GRID_n
 USE MODI_SHUMAN
 USE MODI_DFLUX_CORR
-USE MODI_BUDGET
+!USE MODI_BUDGET
 !
 IMPLICIT NONE
 !
@@ -151,16 +151,16 @@ IKU=SIZE(XZHAT)
                       ZFX(:,:,:),ZFY(:,:,:),ZFZ(:,:,:)                     )
 !
     PRSVS(:,:,:,JSV) = PRSVS(:,:,:,JSV) - DXF(ZFX(:,:,:))        
-    IF (LBUDGET_SV)                               &
-                            CALL BUDGET (PRSVS(:,:,:,JSV),NBUDGET_SV1-1+JSV,'ADVX_BU_RSV')
+!    IF (LBUDGET_SV)                               &
+!                            CALL BUDGET (PRSVS(:,:,:,JSV),NBUDGET_SV1-1+JSV,'ADVX_BU_RSV')
 !
     PRSVS(:,:,:,JSV) = PRSVS(:,:,:,JSV) - DYF(ZFY(:,:,:))        
-    IF (LBUDGET_SV)                               &
-                            CALL BUDGET (PRSVS(:,:,:,JSV),NBUDGET_SV1-1+JSV,'ADVY_BU_RSV')
+!    IF (LBUDGET_SV)                               &
+!                            CALL BUDGET (PRSVS(:,:,:,JSV),NBUDGET_SV1-1+JSV,'ADVY_BU_RSV')
 !
     PRSVS(:,:,:,JSV) = PRSVS(:,:,:,JSV) - DZF(1,IKU,1,ZFZ(:,:,:)) 
-    IF (LBUDGET_SV)                               &
-                            CALL BUDGET (PRSVS(:,:,:,JSV),NBUDGET_SV1-1+JSV,'ADVZ_BU_RSV')
+!    IF (LBUDGET_SV)                               &
+!                            CALL BUDGET (PRSVS(:,:,:,JSV),NBUDGET_SV1-1+JSV,'ADVZ_BU_RSV')
   END DO
 !
 !-------------------------------------------------------------------------------
