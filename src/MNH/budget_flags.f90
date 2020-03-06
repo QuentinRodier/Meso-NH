@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 budget 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !##################
  MODULE MODI_BUDGET_FLAGS
@@ -67,16 +62,18 @@ SUBROUTINE BUDGET_FLAGS(OUSERV, OUSERC, OUSERR,         &
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    09/10/02
-!!      
+!  P. Wautelet 06/03/2020: add condition on NRR for hydrometeor variables and cturb for TKE
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
 USE MODD_BUDGET
-USE MODD_NSV, ONLY : NSV
-USE MODD_LES
-USE MODD_CONF, ONLY : LCHECK
+USE MODD_CONF,    ONLY: LCHECK
+use modd_conf_n,  only: nrr
+USE MODD_LES,     only: LLES_CALL
+USE MODD_NSV,     ONLY: NSV
+use modd_param_n, only: cturb
 !
 IMPLICIT NONE
 !  
@@ -95,19 +92,19 @@ LOGICAL, INTENT(IN) :: OUSERH    ! flag to use hail
 !
 !-------------------------------------------------------------------------------
 !
-LBUDGET_U  = (LBU_ENABLE .AND. LBU_RU  ) .OR.  (LLES_CALL .OR. LCHECK )
-LBUDGET_V  = (LBU_ENABLE .AND. LBU_RV  ) .OR.  (LLES_CALL .OR. LCHECK )
-LBUDGET_W  = (LBU_ENABLE .AND. LBU_RW  ) .OR.  (LLES_CALL .OR. LCHECK )
-LBUDGET_TH = (LBU_ENABLE .AND. LBU_RTH ) .OR.  (LLES_CALL .OR. LCHECK )
-LBUDGET_TKE= (LBU_ENABLE .AND. LBU_RTKE) .OR.  (LLES_CALL .OR. LCHECK )
-LBUDGET_RV = (LBU_ENABLE .AND. LBU_RRV ) .OR. ((LLES_CALL .OR. LCHECK ).AND. OUSERV)
-LBUDGET_RC = (LBU_ENABLE .AND. LBU_RRC ) .OR. ((LLES_CALL .OR. LCHECK ).AND. OUSERC)
-LBUDGET_RR = (LBU_ENABLE .AND. LBU_RRR ) .OR. ((LLES_CALL .OR. LCHECK ).AND. OUSERR)
-LBUDGET_RI = (LBU_ENABLE .AND. LBU_RRI ) .OR. ((LLES_CALL .OR. LCHECK ).AND. OUSERI)
-LBUDGET_RS = (LBU_ENABLE .AND. LBU_RRS ) .OR. ((LLES_CALL .OR. LCHECK ).AND. OUSERS)
-LBUDGET_RG = (LBU_ENABLE .AND. LBU_RRG ) .OR. ((LLES_CALL .OR. LCHECK ).AND. OUSERG)
-LBUDGET_RH = (LBU_ENABLE .AND. LBU_RRH ) .OR. ((LLES_CALL .OR. LCHECK ).AND. OUSERH)
-LBUDGET_SV = (LBU_ENABLE .AND. LBU_RSV ) .OR. ((LLES_CALL .OR. LCHECK ).AND. NSV>0 )
+LBUDGET_U  =   (LBU_ENABLE .AND. LBU_RU  ) .OR.  (LLES_CALL .OR. LCHECK )
+LBUDGET_V  =   (LBU_ENABLE .AND. LBU_RV  ) .OR.  (LLES_CALL .OR. LCHECK )
+LBUDGET_W  =   (LBU_ENABLE .AND. LBU_RW  ) .OR.  (LLES_CALL .OR. LCHECK )
+LBUDGET_TH =   (LBU_ENABLE .AND. LBU_RTH ) .OR.  (LLES_CALL .OR. LCHECK )
+LBUDGET_TKE= ( (LBU_ENABLE .AND. LBU_RTKE) .OR.  (LLES_CALL .OR. LCHECK )              ) .AND. CTURB /= 'NONE'
+LBUDGET_RV = ( (LBU_ENABLE .AND. LBU_RRV ) .OR. ((LLES_CALL .OR. LCHECK ).AND. OUSERV) ) .AND. NRR >= 1
+LBUDGET_RC = ( (LBU_ENABLE .AND. LBU_RRC ) .OR. ((LLES_CALL .OR. LCHECK ).AND. OUSERC) ) .AND. NRR >= 2
+LBUDGET_RR = ( (LBU_ENABLE .AND. LBU_RRR ) .OR. ((LLES_CALL .OR. LCHECK ).AND. OUSERR) ) .AND. NRR >= 3
+LBUDGET_RI = ( (LBU_ENABLE .AND. LBU_RRI ) .OR. ((LLES_CALL .OR. LCHECK ).AND. OUSERI) ) .AND. NRR >= 4
+LBUDGET_RS = ( (LBU_ENABLE .AND. LBU_RRS ) .OR. ((LLES_CALL .OR. LCHECK ).AND. OUSERS) ) .AND. NRR >= 5
+LBUDGET_RG = ( (LBU_ENABLE .AND. LBU_RRG ) .OR. ((LLES_CALL .OR. LCHECK ).AND. OUSERG) ) .AND. NRR >= 6
+LBUDGET_RH = ( (LBU_ENABLE .AND. LBU_RRH ) .OR. ((LLES_CALL .OR. LCHECK ).AND. OUSERH) ) .AND. NRR >= 7
+LBUDGET_SV =   (LBU_ENABLE .AND. LBU_RSV ) .OR. ((LLES_CALL .OR. LCHECK ).AND. NSV>0 )
 !
 !-------------------------------------------------------------------------------
 !
