@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -86,8 +86,8 @@ END MODULE MODI_EXCHANGE
 !!                   corrections for aq. phase and ice phase (lost mass neglig.)
 !!      25/08/16 (M.Leriche) remove negative values for aerosols and conserve
 !!                   total mass for chemical species in aerosols
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!            
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet    03/2020: use the new data structures and subroutines for budgets
 !-----------------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -96,20 +96,22 @@ END MODULE MODI_EXCHANGE
 ! USE MODE_ll
 !
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
-USE MODD_GRID_n
-USE MODD_NSV
-USE MODD_BUDGET,      ONLY : LBUDGET_SV, NBUDGET_SV1
-USE MODD_CST,         ONLY : XMNH_TINY
-USE MODD_LUNIT_n,     ONLY : TLUOUT
-USE MODI_SHUMAN
-use mode_exchange_ll, only: UPDATE_HALO_ll
-USE MODE_SUM_ll
-USE MODI_BUDGET
-USE MODD_CH_MNHC_n,   ONLY : LUSECHEM, LUSECHAQ, LUSECHIC
-USE MODD_CH_AEROSOL,  ONLY : LORILAM, NM6_AER
 USE MODD_BLOWSNOW
 USE MODD_BLOWSNOW_n
-!
+use modd_budget,      only: lbudget_sv, NBUDGET_SV1, tbudgets
+USE MODD_CH_AEROSOL,  ONLY : LORILAM, NM6_AER
+USE MODD_CH_MNHC_n,   ONLY : LUSECHEM, LUSECHAQ, LUSECHIC
+USE MODD_CST,         ONLY : XMNH_TINY
+USE MODD_GRID_n
+USE MODD_LUNIT_n,     ONLY : TLUOUT
+USE MODD_NSV
+
+use mode_budget,      only: Budget_store_init, Budget_store_end
+use mode_exchange_ll, only: UPDATE_HALO_ll
+USE MODE_SUM_ll
+
+USE MODI_SHUMAN
+
 IMPLICIT NONE
 !
 !*      0.1  DECLARATIONS OF ARGUMENTS
@@ -162,6 +164,12 @@ IF (SIZE(PRTKES,1) /= 0) PRTKES(:,:,:) = PRTKES(:,:,:)*PTSTEP/PRHODJ
 !      REMOVE NEGATIVE VALUES OF CHEM SCALAR
 !
 IF (LUSECHEM) THEN
+  if ( lbudget_sv ) then
+    do jsv = nsv_chembeg, nsv_chemend
+      call Budget_store_init( tbudgets( NBUDGET_SV1 - 1 + jsv), 'NEGA', prsvs(:, :, :, jsv) )
+    end do
+  end if
+
   DO JSV=NSV_CHGSBEG,NSV_CHGSEND
     IF ( MIN_ll( PRSVS(:,:,:,JSV), IINFO_ll) < 0.0 ) THEN
 !
@@ -208,14 +216,20 @@ IF (LUSECHEM) THEN
     END DO
   ENDIF
 !
-  IF (LBUDGET_SV) THEN
-    DO JSV=NSV_CHEMBEG,NSV_CHEMEND
-      CALL BUDGET(PRSVS(:,:,:,JSV),NBUDGET_SV1-1+JSV,'NEGA_BU_RSV')
-    ENDDO
-  ENDIF
+  if ( lbudget_sv ) then
+    do jsv = nsv_chembeg, nsv_chemend
+      call Budget_store_end( tbudgets( NBUDGET_SV1 - 1 + jsv), 'NEGA', prsvs(:, :, :, jsv) )
+    end do
+  end if
 !
 ! aerosol sv
   IF (LORILAM) THEN
+    if ( lbudget_sv ) then
+      do jsv = nsv_aerbeg, nsv_aerend
+        call Budget_store_init( tbudgets( NBUDGET_SV1 - 1 + jsv), 'NEGA', prsvs(:, :, :, jsv) )
+      end do
+    end if
+
     DO JSV=NSV_AERBEG,NSV_AEREND-2-NM6_AER ! keep chem. species only
       IF ( MIN_ll( PRSVS(:,:,:,JSV), IINFO_ll) < 0.0 ) THEN
 !
@@ -249,11 +263,12 @@ IF (LUSECHEM) THEN
          WRITE(ILUOUT,*)'AP MOMENT SOURCES IS SET TO ZERO'
       END IF
     END DO
-    IF (LBUDGET_SV) THEN
-      DO JSV=NSV_AERBEG,NSV_AEREND
-        CALL BUDGET(PRSVS(:,:,:,JSV),NBUDGET_SV1-1+JSV,'NEGA_BU_RSV')
-      ENDDO
-    ENDIF
+
+    if ( lbudget_sv ) then
+      do jsv = nsv_aerbeg, nsv_aerend
+        call Budget_store_end( tbudgets( NBUDGET_SV1 - 1 + jsv), 'NEGA', prsvs(:, :, :, jsv) )
+      end do
+    end if
   ENDIF
 ENDIF
 !

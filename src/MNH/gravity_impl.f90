@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2011-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2011-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -71,17 +71,20 @@ END MODULE MODI_GRAVITY_IMPL
 !!    -------------
 !!      Original    04/2011 
 !!      Q.Rodier 06/15 correction on budget
-!!
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODI_GRAVITY  
-USE MODI_ADV_BOUNDARIES
-USE MODD_BUDGET
-USE MODI_BUDGET
-!
+use modd_budget,         only: lbudget_w, NBUDGET_W, tbudgets
+
+use mode_budget,         only: Budget_store_init, Budget_store_end
+
+use modi_adv_boundaries
+use modi_gravity
+
 !-------------------------------------------------------------------------------
 !
 IMPLICIT NONE
@@ -124,7 +127,9 @@ REAL, DIMENSION(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3),SIZE(PRT,4)) :: ZR
 INTEGER :: JR
 !
 !-------------------------------------------------------------------------------
-!
+
+if ( lbudget_w ) call Budget_store_init( tbudgets(NBUDGET_W), 'GRAV', prws(:, :, :) )
+
 ZRWS_GRAV = 0.
 ZR = 0.
 !
@@ -146,9 +151,9 @@ END DO
 CALL GRAVITY ( KRR,KRRL, KRRI, ZTH, ZR, PRHODJ, PTHVREF, ZRWS_GRAV(:,:,:) )
 !
 PRWS(:,:,:) = PRWS(:,:,:) + ZRWS_GRAV(:,:,:)
-!
-IF (LBUDGET_W) CALL BUDGET (PRWS,NBUDGET_W,'GRAV_BU_RW')
-!
+
+if ( lbudget_w ) call Budget_store_end( tbudgets(NBUDGET_W), 'GRAV', prws(:, :, :) )
+
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE GRAVITY_IMPL

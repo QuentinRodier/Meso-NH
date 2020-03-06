@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -77,15 +77,18 @@ END MODULE MODI_LIMA_COLD_SLOW_PROCESSES
 !!    -------------
 !!      Original             ??/??/13 
 !!      C. Barthe  * LACy *  jan. 2014   add budgets
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P.Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
-!
+!  P. Wautelet    03/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_BUDGET
+use modd_budget,          only: lbu_enable, nbumod,                                          &
+                                lbudget_th, lbudget_rv, lbudget_ri, lbudget_rs, lbudget_sv,  &
+                                NBUDGET_TH, NBUDGET_RV, NBUDGET_RI, NBUDGET_RS, NBUDGET_SV1, &
+                                tbudgets
 USE MODD_CST,             ONLY: XP00, XRD, XRV, XMV, XMD, XCPD, XCPV,        &
                                 XCL, XCI, XTT, XLSTT, XALPI, XBETAI, XGAMI
 USE MODD_NSV,             ONLY: NSV_LIMA_NI
@@ -101,10 +104,9 @@ USE MODD_PARAM_LIMA_COLD, ONLY: XLBI, XLBEXI, XLBS, XLBEXS, XBI, XCXS, XCCS, &
                                 XCOLEXIS, XAGGS_CLARGE1, XAGGS_CLARGE2,      &
                                 XAGGS_RLARGE1, XAGGS_RLARGE2
 
+use mode_budget,          only: Budget_store_init, Budget_store_end
 use mode_tools,           only: Countjv
 
-USE MODI_BUDGET
-!
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
@@ -332,7 +334,13 @@ IF( IMICRO >= 1 ) THEN
 !*       2.1    Conversion of snow to r_i: RSCNVI
 !        ----------------------------------------
 !
-!
+      if ( nbumod == kmi .and. lbu_enable ) then
+        if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'CNVI', pris(:, :, :) * prhodj(:, :, :) )
+        if ( lbudget_rs ) call Budget_store_init( tbudgets(NBUDGET_RS), 'CNVI', prss(:, :, :) * prhodj(:, :, :) )
+        if ( lbudget_sv ) &
+          call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CNVI', pcis(:, :, :) * prhodj(:, :, :) )
+      end if
+
       WHERE ( ZRST(:)>XRTMIN(5) )
          ZLBDAS(:)  = MIN( XLBDAS_MAX,                                           &
                            XLBS*( ZRHODREF(:)*MAX( ZRST(:),XRTMIN(5) ) )**XLBEXS )
@@ -353,23 +361,26 @@ IF( IMICRO >= 1 ) THEN
       END WHERE
 !
 ! Budget storage
-      IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
-        IF (LBUDGET_RI) CALL BUDGET (                                          &
-                   UNPACK(ZRIS(:),MASK=GMICRO(:,:,:),FIELD=PRIS)*PRHODJ(:,:,:),&
-                                                                NBUDGET_RI,'CNVI_BU_RRI')
-        IF (LBUDGET_RS) CALL BUDGET (                                          &
-                   UNPACK(ZRSS(:),MASK=GMICRO(:,:,:),FIELD=PRSS)*PRHODJ(:,:,:),&
-                                                                NBUDGET_RS,'CNVI_BU_RRS')
-        IF (LBUDGET_SV) CALL BUDGET (                                          &
-                   UNPACK(ZCIS(:),MASK=GMICRO(:,:,:),FIELD=PCIS)*PRHODJ(:,:,:), &
-                                                 NBUDGET_SV1-1+NSV_LIMA_NI,'CNVI_BU_RSV')
-        END IF
+      if ( nbumod == kmi .and. lbu_enable ) then
+        if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'CNVI', &
+                                               Unpack( zris(:), mask = gmicro(:, :, :), field = pris(:, :, :) ) * prhodj(:, :, :) )
+        if ( lbudget_rs ) call Budget_store_end( tbudgets(NBUDGET_RS), 'CNVI', &
+                                               Unpack( zrss(:), mask = gmicro(:, :, :), field = prss(:, :, :) ) * prhodj(:, :, :) )
+        if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CNVI', &
+                                               Unpack( zcis(:), mask = gmicro(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
+      end if
 !
 !
 !*       2.2    Deposition of water vapor on r_s: RVDEPS
 !        -----------------------------------------------
 !
-!
+      if ( nbumod == kmi .and. lbu_enable ) then
+        if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'DEPS', pths(:, :, :) * prhodj(:, :, :) )
+        if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'DEPS', prvs(:, :, :) * prhodj(:, :, :) )
+        if ( lbudget_rs ) call Budget_store_init( tbudgets(NBUDGET_RS), 'DEPS', &
+                                               Unpack( zrss(:), mask = gmicro(:, :, :), field = prss(:, :, :) ) * prhodj(:, :, :) )
+      end if
+
       ZZW(:) = 0.0
       WHERE ( (ZRST(:)>XRTMIN(5)) .AND. (ZRSS(:)>ZRTMIN(5)) )
          ZZW(:) = ( ZSSI(:)/(ZRHODREF(:)*ZAI(:)) ) *                               &
@@ -382,23 +393,27 @@ IF( IMICRO >= 1 ) THEN
       END WHERE
 !
 ! Budget storage
-      IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
-        IF (LBUDGET_TH) CALL BUDGET (                                                 &
-                   UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
-                                                                NBUDGET_TH,'DEPS_BU_RTH')
-        IF (LBUDGET_RV) CALL BUDGET (                                                 &
-                   UNPACK(ZRVS(:),MASK=GMICRO(:,:,:),FIELD=PRVS)*PRHODJ(:,:,:),&
-                                                                NBUDGET_RV,'DEPS_BU_RRV')
-        IF (LBUDGET_RS) CALL BUDGET (                                                 &
-                   UNPACK(ZRSS(:),MASK=GMICRO(:,:,:),FIELD=PRSS)*PRHODJ(:,:,:),&
-                                                                NBUDGET_RS,'DEPS_BU_RRS')
-      END IF
-!
+      if ( nbumod == kmi .and. lbu_enable ) then
+        if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'DEPS', &
+                                               Unpack( zths(:), mask = gmicro(:, :, :), field = pths(:, :, :) ) * prhodj(:, :, :) )
+        if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'DEPS', &
+                                               Unpack( zrvs(:), mask = gmicro(:, :, :), field = prvs(:, :, :) ) * prhodj(:, :, :) )
+        if ( lbudget_rs ) call Budget_store_end( tbudgets(NBUDGET_RS), 'DEPS', &
+                                               Unpack( zrss(:), mask = gmicro(:, :, :), field = prss(:, :, :) ) * prhodj(:, :, :) )
+      end if
 !
 !*       2.3    Conversion of pristine ice to r_s: RICNVS
 !        ------------------------------------------------
 !
-!
+      if ( nbumod == kmi .and. lbu_enable ) then
+        if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'CNVS', &
+                                               Unpack( zris(:), mask = gmicro(:, :, :), field = pris(:, :, :) ) * prhodj(:, :, :) )
+        if ( lbudget_rs ) call Budget_store_init( tbudgets(NBUDGET_RS), 'CNVS', &
+                                               Unpack( zrss(:), mask = gmicro(:, :, :), field = prss(:, :, :) ) * prhodj(:, :, :) )
+        if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CNVS', &
+                                               Unpack( zcis(:), mask = gmicro(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
+      end if
+
       ZZW(:) = 0.0
       WHERE ( (ZLBDAI(:)<XLBDAICNVS_LIM) .AND. (ZCIT(:)>XCTMIN(4)) &
                                          .AND. (ZSSI(:)>0.0)       )
@@ -418,23 +433,28 @@ IF( IMICRO >= 1 ) THEN
       END WHERE
 !
 ! Budget storage
-      IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
-        IF (LBUDGET_RI) CALL BUDGET (                                          &
-                   UNPACK(ZRIS(:),MASK=GMICRO(:,:,:),FIELD=PRIS)*PRHODJ(:,:,:),&
-                                                                NBUDGET_RI,'CNVS_BU_RRI')
-        IF (LBUDGET_RS) CALL BUDGET (                                          &
-                   UNPACK(ZRSS(:),MASK=GMICRO(:,:,:),FIELD=PRSS)*PRHODJ(:,:,:),&
-                                                                NBUDGET_RS,'CNVS_BU_RRS')
-        IF (LBUDGET_SV) CALL BUDGET (                                           &
-                   UNPACK(ZCIS(:),MASK=GMICRO(:,:,:),FIELD=PCIS)*PRHODJ(:,:,:), &
-                                                 NBUDGET_SV1-1+NSV_LIMA_NI,'CNVS_BU_RSV')
-      END IF
+      if ( nbumod == kmi .and. lbu_enable ) then
+        if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'CNVS', &
+                                               Unpack( zris(:), mask = gmicro(:, :, :), field = pris(:, :, :) ) * prhodj(:, :, :) )
+        if ( lbudget_rs ) call Budget_store_end( tbudgets(NBUDGET_RS), 'CNVS', &
+                                               Unpack( zrss(:), mask = gmicro(:, :, :), field = prss(:, :, :) ) * prhodj(:, :, :) )
+        if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CNVS', &
+                                               Unpack( zcis(:), mask = gmicro(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
+      end if
 !
 !
 !*       2.4    Aggregation of r_i on r_s: CIAGGS and RIAGGS
 !        ---------------------------------------------------
 !
-!
+      if ( nbumod == kmi .and. lbu_enable ) then
+        if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'AGGS', &
+                                               Unpack( zris(:), mask = gmicro(:, :, :), field = pris(:, :, :) ) * prhodj(:, :, :) )
+        if ( lbudget_rs ) call Budget_store_init( tbudgets(NBUDGET_RS), 'AGGS', &
+                                               Unpack( zrss(:), mask = gmicro(:, :, :), field = prss(:, :, :) ) * prhodj(:, :, :) )
+        if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'AGGS', &
+                                               Unpack( zcis(:), mask = gmicro(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
+      end if
+
       WHERE ( (ZRIT(:)>XRTMIN(4)) .AND. (ZRST(:)>XRTMIN(5)) .AND. (ZRIS(:)>ZRTMIN(4)) &
                                                             .AND. (ZCIS(:)>ZCTMIN(4)) )
          ZZW1(:,3) = (ZLBDAI(:) / ZLBDAS(:))**3
@@ -450,19 +470,14 @@ IF( IMICRO >= 1 ) THEN
       END WHERE
 !
 ! Budget storage
-      IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
-        IF (LBUDGET_RI) CALL BUDGET (                                               &
-                       UNPACK(ZRIS(:),MASK=GMICRO(:,:,:),FIELD=PRIS)*PRHODJ(:,:,:), &
-                                                                NBUDGET_RI,'AGGS_BU_RRI')
-        IF (LBUDGET_RS) CALL BUDGET (                                               &
-                       UNPACK(ZRSS(:),MASK=GMICRO(:,:,:),FIELD=PRSS)*PRHODJ(:,:,:), &
-                                                                NBUDGET_RS,'AGGS_BU_RRS')
-        IF (LBUDGET_SV) CALL BUDGET (                                               &
-                       UNPACK(ZCIS(:),MASK=GMICRO(:,:,:),FIELD=PCIS)*PRHODJ(:,:,:), &
-                                                 NBUDGET_SV1-1+NSV_LIMA_NI,'AGGS_BU_RSV')
-      END IF
-!
-!
+      if ( nbumod == kmi .and. lbu_enable ) then
+        if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'AGGS', &
+                                               Unpack( zris(:), mask = gmicro(:, :, :), field = pris(:, :, :) ) * prhodj(:, :, :) )
+        if ( lbudget_rs ) call Budget_store_end( tbudgets(NBUDGET_RS), 'AGGS', &
+                                               Unpack( zrss(:), mask = gmicro(:, :, :), field = prss(:, :, :) ) * prhodj(:, :, :) )
+        if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'AGGS', &
+                                               Unpack( zcis(:), mask = gmicro(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
+      end if
 !------------------------------------------------------------------------------
 !
 !
@@ -512,41 +527,6 @@ IF( IMICRO >= 1 ) THEN
   DEALLOCATE(ZDV)
   DEALLOCATE(ZZW1)
   IF (NBUMOD==KMI .AND. LBU_ENABLE) DEALLOCATE(ZRHODJ)
-!
-!
-ELSE
-!
-! Advance the budget calls
-!
-  IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
-    IF (LBUDGET_TH) THEN
-      ZW(:,:,:) = PTHS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,NBUDGET_TH,'DEPS_BU_RTH')
-    ENDIF
-    IF (LBUDGET_RV) THEN
-      ZW(:,:,:) = PRVS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,NBUDGET_RV,'DEPS_BU_RRV')
-    ENDIF
-    IF (LBUDGET_RI) THEN
-      ZW(:,:,:) = PRIS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,NBUDGET_RI,'CNVI_BU_RRI')
-      CALL BUDGET (ZW,NBUDGET_RI,'CNVS_BU_RRI')
-      CALL BUDGET (ZW,NBUDGET_RI,'AGGS_BU_RRI')
-    ENDIF
-    IF (LBUDGET_RS) THEN
-      ZW(:,:,:) = PRSS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,NBUDGET_RS,'CNVI_BU_RRS')
-      CALL BUDGET (ZW,NBUDGET_RS,'DEPS_BU_RRS')
-      CALL BUDGET (ZW,NBUDGET_RS,'CNVS_BU_RRS')
-      CALL BUDGET (ZW,NBUDGET_RS,'AGGS_BU_RRS')
-    ENDIF
-    IF (LBUDGET_SV) THEN
-      ZW(:,:,:) = PCIS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,NBUDGET_SV1-1+NSV_LIMA_NI,'CNVI_BU_RSV')
-      CALL BUDGET (ZW,NBUDGET_SV1-1+NSV_LIMA_NI,'CNVS_BU_RSV')
-      CALL BUDGET (ZW,NBUDGET_SV1-1+NSV_LIMA_NI,'AGGS_BU_RSV')
-    ENDIF
-  ENDIF
 !
 END IF
 !

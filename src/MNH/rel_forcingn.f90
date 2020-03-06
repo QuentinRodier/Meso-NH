@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2010-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -94,7 +94,7 @@ END MODULE MODI_REL_FORCING_n
 !!     28/03/2018 P. Wautelet: replace TEMPORAL_DIST by DATETIME_DISTANCE
 !!                             use overloaded comparison operator for date_time
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -108,9 +108,9 @@ USE MODD_PARAMETERS
 USE MODD_RELFRC_n     ! Modules for time evolving advfrc
 USE MODD_TIME
 !
+use mode_budget,     only: Budget_store_init, Budget_store_end
 USE MODE_DATETIME
 !
-USE MODI_BUDGET
 USE MODI_SHUMAN
 !
 IMPLICIT NONE
@@ -147,10 +147,13 @@ INTEGER :: IKU
 
 !----------------------------------------------------------------------------
 !
-IKU = SIZE(PTHM,3)
 !*        1.   PREPARATION OF FORCING
 !              ----------------------
-!
+
+if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), '2DREL', prths(:, :, :)    )
+if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_TH), '2DREL', prrs (:, :, :, 1) )
+
+IKU = SIZE(PTHM,3)
 
 IF (GSFIRSTCALL) THEN
 !
@@ -249,8 +252,9 @@ END IF
 !
 !*       3.     BUDGET CALLS
 !   	        ------------
-IF (LBUDGET_TH)  CALL BUDGET (PRTHS,NBUDGET_TH,'2DREL_BU_RTH')
-IF (LBUDGET_RV)  CALL BUDGET (PRRS(:,:,:,1),NBUDGET_RV,'2DREL_BU_RRV')
+if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), '2DREL', prths(:, :, :)    )
+if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_TH), '2DREL', prrs (:, :, :, 1) )
+
 !----------------------------------------------------------------------------
 !
 END SUBROUTINE REL_FORCING_n

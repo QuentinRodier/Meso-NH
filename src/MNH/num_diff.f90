@@ -212,7 +212,7 @@ END MODULE MODI_NUM_DIFF
 !!     J.Escobar : 05/12/2017 : Pb SegFault , correct IF(ONUMDIFTH/OZDIFFU) nesting
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  J. Escobar  09/07/2019: add TTZHALO2*LIST structure, to match all cases of diffusion/U/TH activation T/F
-!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !
 !-------------------------------------------------------------------------------
 !
@@ -233,7 +233,6 @@ use mode_budget,     only: Budget_store_init, Budget_store_end
 USE MODE_ll
 USE MODE_TYPE_ZDIFFU
 
-USE MODI_BUDGET
 USE MODI_SHUMAN
 
 IMPLICIT NONE
@@ -304,7 +303,23 @@ IKU=SIZE(PUM,3)
 !
 GTKEALLOC = SIZE(PTKEM,1) /= 0
 
-if ( lbudget_u .and. onumdifu ) call Budget_store_init( tbudgets(NBUDGET_U), 'DIF', prus )
+if ( lbudget_u   .and. onumdifu  ) call Budget_store_init( tbudgets(NBUDGET_U  ), 'DIF', prus  (:, :, :)    )
+if ( lbudget_v   .and. onumdifu  ) call Budget_store_init( tbudgets(NBUDGET_V  ), 'DIF', prvs  (:, :, :)    )
+if ( lbudget_w   .and. onumdifu  ) call Budget_store_init( tbudgets(NBUDGET_W  ), 'DIF', prws  (:, :, :)    )
+if ( lbudget_th  .and. onumdifth ) call Budget_store_init( tbudgets(NBUDGET_TH ), 'DIF', prths (:, :, :)    )
+if ( lbudget_tke .and. onumdifth ) call Budget_store_init( tbudgets(NBUDGET_TKE), 'DIF', prtkes(:, :, :)    )
+if ( lbudget_rv  .and. onumdifth ) call Budget_store_init( tbudgets(NBUDGET_RV ), 'DIF', prrs  (:, :, :, 1) )
+if ( lbudget_rc  .and. onumdifth ) call Budget_store_init( tbudgets(NBUDGET_RC ), 'DIF', prrs  (:, :, :, 2) )
+if ( lbudget_rr  .and. onumdifth ) call Budget_store_init( tbudgets(NBUDGET_RR ), 'DIF', prrs  (:, :, :, 3) )
+if ( lbudget_ri  .and. onumdifth ) call Budget_store_init( tbudgets(NBUDGET_RI ), 'DIF', prrs  (:, :, :, 4) )
+if ( lbudget_rs  .and. onumdifth ) call Budget_store_init( tbudgets(NBUDGET_RS ), 'DIF', prrs  (:, :, :, 5) )
+if ( lbudget_rg  .and. onumdifth ) call Budget_store_init( tbudgets(NBUDGET_RG ), 'DIF', prrs  (:, :, :, 6) )
+if ( lbudget_rh  .and. onumdifth ) call Budget_store_init( tbudgets(NBUDGET_RH ), 'DIF', prrs  (:, :, :, 7) )
+if ( lbudget_sv  .and. onumdifsv ) then
+  do jsv = 1, ksv
+    call Budget_store_init( tbudgets(jsv + NBUDGET_SV1 - 1), 'DIF', prsvs(:, :, :, jsv) )
+  end do
+end if
 
 !-------------------------------------------------------------------------------
 !
@@ -448,24 +463,24 @@ END IF
 !*       3.     STORES FIELDS IN BUDGET ARRAYS
 !           ------------------------------
 !
-if ( lbudget_u .and. onumdifu ) call Budget_store_end( tbudgets(NBUDGET_U), 'DIF', prus )
+if ( lbudget_u   .and. onumdifu  ) call Budget_store_end( tbudgets(NBUDGET_U  ), 'DIF', prus  (:, :, :)    )
+if ( lbudget_v   .and. onumdifu  ) call Budget_store_end( tbudgets(NBUDGET_V  ), 'DIF', prvs  (:, :, :)    )
+if ( lbudget_w   .and. onumdifu  ) call Budget_store_end( tbudgets(NBUDGET_W  ), 'DIF', prws  (:, :, :)    )
+if ( lbudget_th  .and. onumdifth ) call Budget_store_end( tbudgets(NBUDGET_TH ), 'DIF', prths (:, :, :)    )
+if ( lbudget_tke .and. onumdifth ) call Budget_store_end( tbudgets(NBUDGET_TKE), 'DIF', prtkes(:, :, :)    )
+if ( lbudget_rv  .and. onumdifth ) call Budget_store_end( tbudgets(NBUDGET_RV ), 'DIF', prrs  (:, :, :, 1) )
+if ( lbudget_rc  .and. onumdifth ) call Budget_store_end( tbudgets(NBUDGET_RC ), 'DIF', prrs  (:, :, :, 2) )
+if ( lbudget_rr  .and. onumdifth ) call Budget_store_end( tbudgets(NBUDGET_RR ), 'DIF', prrs  (:, :, :, 3) )
+if ( lbudget_ri  .and. onumdifth ) call Budget_store_end( tbudgets(NBUDGET_RI ), 'DIF', prrs  (:, :, :, 4) )
+if ( lbudget_rs  .and. onumdifth ) call Budget_store_end( tbudgets(NBUDGET_RS ), 'DIF', prrs  (:, :, :, 5) )
+if ( lbudget_rg  .and. onumdifth ) call Budget_store_end( tbudgets(NBUDGET_RG ), 'DIF', prrs  (:, :, :, 6) )
+if ( lbudget_rh  .and. onumdifth ) call Budget_store_end( tbudgets(NBUDGET_RH ), 'DIF', prrs  (:, :, :, 7) )
+if ( lbudget_sv  .and. onumdifsv ) then
+  do jsv = 1, ksv
+    call Budget_store_end( tbudgets(jsv + NBUDGET_SV1 - 1), 'DIF', prsvs(:, :, :, jsv) )
+  end do
+end if
 
-IF ( LBUDGET_V   .AND. ONUMDIFU  ) CALL BUDGET( PRVS,              NBUDGET_V,   'DIF_BU_RV'   )
-IF ( LBUDGET_W   .AND. ONUMDIFU  ) CALL BUDGET( PRWS,              NBUDGET_W,   'DIF_BU_RW'   )
-IF ( LBUDGET_TH  .AND. ONUMDIFTH ) CALL BUDGET( PRTHS,             NBUDGET_TH,  'DIF_BU_RTH'  )
-IF ( LBUDGET_TKE .AND. ONUMDIFTH ) CALL BUDGET( PRTKES,            NBUDGET_TKE, 'DIF_BU_RTKE' )
-IF ( LBUDGET_RV  .AND. ONUMDIFTH ) CALL BUDGET( PRRS(:, :, :, 1 ), NBUDGET_RV,  'DIF_BU_RRV'  )
-IF ( LBUDGET_RC  .AND. ONUMDIFTH ) CALL BUDGET( PRRS(:, :, :, 2 ), NBUDGET_RC,  'DIF_BU_RRC'  )
-IF ( LBUDGET_RR  .AND. ONUMDIFTH ) CALL BUDGET( PRRS(:, :, :, 3 ), NBUDGET_RR,  'DIF_BU_RRR'  )
-IF ( LBUDGET_RI  .AND. ONUMDIFTH ) CALL BUDGET( PRRS(:, :, :, 4 ), NBUDGET_RI,  'DIF_BU_RRI'  )
-IF ( LBUDGET_RS  .AND. ONUMDIFTH ) CALL BUDGET( PRRS(:, :, :, 5 ), NBUDGET_RS,  'DIF_BU_RRS'  )
-IF ( LBUDGET_RG  .AND. ONUMDIFTH ) CALL BUDGET( PRRS(:, :, :, 6 ), NBUDGET_RG,  'DIF_BU_RRG'  )
-IF ( LBUDGET_RH  .AND. ONUMDIFTH ) CALL BUDGET( PRRS(:, :, :, 7 ), NBUDGET_RH,  'DIF_BU_RRH'  )
-IF ( LBUDGET_SV  .AND. ONUMDIFSV ) THEN
-  DO JSV=1,KSV
-    CALL BUDGET( PRSVS(:, :, :, JSV ), NBUDGET_SV1 - 1 + JSV, 'DIF_BU_RSV' )
-  END DO
-END IF
 !-------------------------------------------------------------------------------
 !
 !

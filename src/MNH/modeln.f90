@@ -1615,8 +1615,10 @@ CALL MPPDB_CHECK3DM("before RAD_BOUND :XRU/V/WS",PRECISION,XRUS,XRVS,XRWS)
 ZRUS=XRUS
 ZRVS=XRVS
 ZRWS=XRWS
-!
-if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'PRES', xrus )
+
+if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'PRES', xrus(:, :, :) )
+if ( lbudget_v ) call Budget_store_init( tbudgets(NBUDGET_V), 'PRES', xrvs(:, :, :) )
+if ( lbudget_w ) call Budget_store_init( tbudgets(NBUDGET_W), 'PRES', xrws(:, :, :) )
 
 CALL RAD_BOUND (CLBCX,CLBCY,CTURB,XCARPKMAX,             &
                 XTSTEP,                                  &

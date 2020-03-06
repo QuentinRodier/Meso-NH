@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -6,6 +6,7 @@
 ! Modifications:
 !  P. Wautelet 25/02/2019: split rain_ice (cleaner and easier to maintain/debug)
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !-----------------------------------------------------------------
 MODULE MODE_RAIN_ICE_SEDIMENTATION_STAT
 
@@ -26,8 +27,9 @@ SUBROUTINE RAIN_ICE_SEDIMENTATION_STAT( KIB, KIE, KJB, KJE, KKB, KKE, KKTB, KKTE
 !*      0. DECLARATIONS
 !          ------------
 !
-use MODD_BUDGET,         only: LBUDGET_RC, LBUDGET_RR, LBUDGET_RI, LBUDGET_RS, LBUDGET_RG, LBUDGET_RH, &
-                               NBUDGET_RC, NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH
+use modd_budget,         only: lbudget_rc, lbudget_rr, lbudget_ri, lbudget_rs, lbudget_rg, lbudget_rh, &
+                               NBUDGET_RC, NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, &
+                               tbudgets
 use MODD_CST,            only: XRHOLW
 use MODD_PARAM_ICE,      only: LDEPOSC, XVDEPOSC
 use MODD_RAIN_ICE_PARAM, only: XEXSEDG, XEXSEDH, XEXCSEDI, XEXSEDR, XEXSEDS, &
@@ -35,9 +37,8 @@ use MODD_RAIN_ICE_PARAM, only: XEXSEDG, XEXSEDH, XEXCSEDI, XEXSEDR, XEXSEDS, &
 use MODD_RAIN_ICE_DESCR, only: XALPHAC, XALPHAC2, XCC, XCEXVT, XCONC_LAND, XCONC_SEA, XCONC_URBAN, &
                                XDC, XLBC, XLBEXC, XNUC, XNUC2, XRTMIN
 
+use mode_budget,         only: Budget_store_init, Budget_store_end
 use mode_tools,          only: Countjv
-
-use MODI_BUDGET
 
 IMPLICIT NONE
 !
@@ -106,8 +107,14 @@ REAL,    DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),0:SIZE(PRHODREF,3)+1)   &
 REAL,    DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),0:SIZE(PRHODREF,3)+1)   &
                                   :: ZWSEDW2       ! sedimentation speed
 !-------------------------------------------------------------------------------
-!
-!
+
+if ( lbudget_rc .and. osedic ) call Budget_store_init( tbudgets(NBUDGET_RC), 'SEDI', prcs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rr )              call Budget_store_init( tbudgets(NBUDGET_RR), 'SEDI', prrs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_ri )              call Budget_store_init( tbudgets(NBUDGET_RI), 'SEDI', pris(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rs )              call Budget_store_init( tbudgets(NBUDGET_RS), 'SEDI', prss(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rg )              call Budget_store_init( tbudgets(NBUDGET_RG), 'SEDI', prgs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rh )              call Budget_store_init( tbudgets(NBUDGET_RH), 'SEDI', prhs(:, :, :) * prhodj(:, :, :) )
+
 ZINVTSTEP=1./PTSTEP
 !
 !*       1. Parameters for cloud sedimentation
@@ -544,23 +551,21 @@ PINPRR3D (:,:,:) = 0.
 
  ENDIF
 !
-
-!
 !*       2.3     budget storage
 !
-IF (LBUDGET_RC .AND. OSEDIC) &
-                CALL BUDGET( PRCS(:, :, : ) * PRHODJ(:, :, : ), NBUDGET_RC, 'SEDI_BU_RRC' )
-IF (LBUDGET_RR) CALL BUDGET( PRRS(:, :, : ) * PRHODJ(:, :, : ), NBUDGET_RR, 'SEDI_BU_RRR' )
-IF (LBUDGET_RI) CALL BUDGET( PRIS(:, :, : ) * PRHODJ(:, :, : ), NBUDGET_RI, 'SEDI_BU_RRI' )
-IF (LBUDGET_RS) CALL BUDGET( PRSS(:, :, : ) * PRHODJ(:, :, : ), NBUDGET_RS, 'SEDI_BU_RRS' )
-IF (LBUDGET_RG) CALL BUDGET( PRGS(:, :, : ) * PRHODJ(:, :, : ), NBUDGET_RG, 'SEDI_BU_RRG' )
-IF ( KRR == 7 .AND. LBUDGET_RH) &
-                CALL BUDGET( PRHS(:, :, : ) * PRHODJ(:, :, : ), NBUDGET_RH, 'SEDI_BU_RRH' )
+if ( lbudget_rc .and. osedic ) call Budget_store_end( tbudgets(NBUDGET_RC), 'SEDI', prcs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rr )              call Budget_store_end( tbudgets(NBUDGET_RR), 'SEDI', prrs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_ri )              call Budget_store_end( tbudgets(NBUDGET_RI), 'SEDI', pris(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rs )              call Budget_store_end( tbudgets(NBUDGET_RS), 'SEDI', prss(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rg )              call Budget_store_end( tbudgets(NBUDGET_RG), 'SEDI', prgs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rh )              call Budget_store_end( tbudgets(NBUDGET_RH), 'SEDI', prhs(:, :, :) * prhodj(:, :, :) )
 !
 !
 !*       2.4  DROPLET DEPOSITION AT THE 1ST LEVEL ABOVE GROUND
 !
 IF (LDEPOSC) THEN
+  if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'DEPO', prcs(:, :, :) * prhodj(:, :, :) )
+
   GDEP(:,:) = .FALSE.
   GDEP(KIB:KIE,KJB:KJE) =    PRCS(KIB:KIE,KJB:KJE,KKB) >0
   WHERE (GDEP)
@@ -568,13 +573,10 @@ IF (LDEPOSC) THEN
      PINPRC(:,:) = PINPRC(:,:) + XVDEPOSC * PRCT(:,:,KKB) * PRHODREF(:,:,KKB) /XRHOLW
      PINDEP(:,:) = XVDEPOSC * PRCT(:,:,KKB) * PRHODREF(:,:,KKB) /XRHOLW
   END WHERE
+
+  if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'DEPO', prcs(:, :, :) * prhodj(:, :, :) )
 END IF
-!
-!*       2.5     budget storage
-!
-IF ( LBUDGET_RC .AND. LDEPOSC ) &
-   CALL BUDGET( PRCS(:, :, : ) * PRHODJ(:, :, : ), NBUDGET_RC, 'DEPO_BU_RRC' )
-!
+
 END SUBROUTINE RAIN_ICE_SEDIMENTATION_STAT
 
 END MODULE MODE_RAIN_ICE_SEDIMENTATION_STAT

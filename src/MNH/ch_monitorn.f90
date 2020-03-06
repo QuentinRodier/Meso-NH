@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -116,6 +116,7 @@ END MODULE MODI_CH_MONITOR_n
 !!    Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 12/02/2019: bugfix: ZINPRR was not initialized all the time
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !!
 !!    EXTERNAL
 !!    --------
@@ -125,7 +126,6 @@ USE MODI_CH_SET_RATES
 USE MODI_CH_SET_PHOTO_RATES
 USE MODI_CH_SOLVER_n
 USE MODI_CH_UPDATE_JVALUES
-USE MODI_BUDGET
 USE MODI_CH_INIT_ICE
 USE MODI_CH_AQUEOUS_TMICICE
 USE MODI_CH_AQUEOUS_TMICKESS
@@ -142,6 +142,7 @@ USE MODI_CH_AER_EQM_CORMASS
 USE MODI_CH_AER_SURF
 USE MODI_CH_AER_DEPOS
 !
+use mode_budget,         only: Budget_store_end, Budget_store_init
 USE MODE_ll
 USE MODE_MODELN_HANDLER
 use mode_msg
@@ -154,7 +155,7 @@ USE MODI_CH_PRODLOSS
 !     IMPLICIT ARGUMENTS
 !     ------------------
 ! 
-USE MODD_BUDGET
+use modd_budget,     only: lbudget_sv, NBUDGET_SV1, tbudgets
 USE MODD_LUNIT_n
 USE MODD_NSV, ONLY : NSV_CHEMBEG,NSV_CHEMEND,NSV_CHEM,& ! index for chemical SV
                      NSV_CHACBEG,NSV_CHACEND,NSV_CHAC,& ! index for aqueous SV
@@ -403,7 +404,13 @@ REAL, DIMENSION(SIZE(XRT,1), SIZE(XRT,2))     :: ZINPRR! Rain instant precip
 !-------------------------------------------------------------------------------
 !
 ! get model index
-  IMI = GET_CURRENT_MODEL_INDEX()
+IMI = GET_CURRENT_MODEL_INDEX()
+
+if ( lbudget_sv ) then
+  do jsv = nsv_chembeg, nsv_chemend
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + jsv), 'CHEM', xrsvs(:, :, :, jsv) )
+  enddo
+endif
 !
 !*       1.    PREPARE MONITOR
 !              ---------------
@@ -1276,12 +1283,12 @@ DO JSV = 1, SIZE(XSVT,4)
  XRSVS(:,:,:,JSV)   = MAX((XRSVS(:,:,:,JSV)),XSVMIN(JSV))
 END DO
 !
-IF (LBUDGET_SV) THEN
-  DO JSV=NSV_CHEMBEG,NSV_CHEMEND
-    CALL BUDGET(XRSVS(:,:,:,JSV),NBUDGET_SV1-1+JSV,'CHEM_BU_RSV')
-  ENDDO
-ENDIF
-!
+if ( lbudget_sv ) then
+  do jsv = nsv_chembeg, nsv_chemend
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + jsv), 'CHEM', xrsvs(:, :, :, jsv) )
+  enddo
+endif
+
 !----------------------------------------------------------------------
 !
 IF ((CPROGRAM =='DIAG  ').OR.(L1D)) THEN

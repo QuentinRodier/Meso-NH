@@ -168,36 +168,35 @@ END MODULE MODI_TKE_EPS_SOURCES
 !!     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
-!! --------------------------------------------------------------------------
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
+! --------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
 !
-USE MODD_CST
+USE MODD_ARGSLIST_ll,    ONLY: LIST_ll
+use modd_budget,         only: lbudget_tke, lbudget_th, NBUDGET_TKE, NBUDGET_TH, tbudgets
 USE MODD_CONF
+USE MODD_CST
 USE MODD_CTURB
+USE MODD_DIAG_IN_RUN,    ONLY: LDIAG_IN_RUN, XCURRENT_TKE_DISS
 use modd_field,          only: tfielddata, TYPEREAL
-USE MODD_IO, ONLY: TFILEDATA
-USE MODD_PARAMETERS
-USE MODD_BUDGET
+USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_LES
-USE MODD_DIAG_IN_RUN, ONLY : LDIAG_IN_RUN, XCURRENT_TKE_DISS
+USE MODD_PARAMETERS
 !
-USE MODE_ll
+use mode_budget,         only: Budget_store_add, Budget_store_end, Budget_store_init
 USE MODE_IO_FIELD_WRITE, only: IO_Field_write
+USE MODE_ll
 !
+USE MODI_GET_HALO
 USE MODI_GRADIENT_M
 USE MODI_GRADIENT_U
 USE MODI_GRADIENT_V
 USE MODI_GRADIENT_W
-USE MODI_SHUMAN 
-USE MODI_TRIDIAG_TKE
-USE MODI_BUDGET
 USE MODI_LES_MEAN_SUBGRID
-!
-USE MODD_ARGSLIST_ll, ONLY : LIST_ll
-!
-USE MODI_GET_HALO
+USE MODI_SHUMAN
+USE MODI_TRIDIAG_TKE
 !
 IMPLICIT NONE
 !
@@ -277,7 +276,10 @@ IKE=KKU-JPVEXT_TURB*KKL
 !
 ! compute the effective diffusion coefficient at the mass point
 ZKEFF(:,:,:) = PLM(:,:,:) * SQRT(PTKEM(:,:,:)) 
-!
+
+if (lbudget_th)  call Budget_store_init( tbudgets(NBUDGET_TH),  'DISSH', prthls(:, :, :) )
+if (lbudget_tke) call Budget_store_init( tbudgets(NBUDGET_TKE), 'TR',    prtkes(:, :, :) )
+
 !----------------------------------------------------------------------------
 !
 !*       2.   TKE EQUATION  
@@ -370,24 +372,15 @@ END IF
 !
 !*       2.4  stores the explicit sources for budget purposes
 !
-IF (LBUDGET_TKE) THEN
-!
-! add the dynamical production
-!
-  PRTKES(:,:,:) = PRTKES(:,:,:) + PDP(:,:,:) * PRHODJ(:,:,:)
-  CALL BUDGET (PRTKES(:,:,:),NBUDGET_TKE,'DP_BU_RTKE')
-!
-! add the thermal production
-!
-  PRTKES(:,:,:) = PRTKES(:,:,:) + PTP(:,:,:) * PRHODJ(:,:,:)
-  CALL BUDGET (PRTKES(:,:,:),NBUDGET_TKE,'TP_BU_RTKE')
-!
-! add the dissipation
-!
-PRTKES(:,:,:) = PRTKES(:,:,:) - XCED * SQRT(PTKEM(:,:,:)) / PLEPS(:,:,:) * &
-                (PEXPL*PTKEM(:,:,:) + PIMPL*ZRES(:,:,:)) * PRHODJ(:,:,:)
-CALL BUDGET (PRTKES(:,:,:),NBUDGET_TKE,'DISS_BU_RTKE')
-END IF 
+if (lbudget_tke) then
+  ! Dynamical production
+  call Budget_store_add( tbudgets(NBUDGET_TKE), 'DP', pdp(:, :, :) * prhodj(:, :, :) )
+  ! Thermal production
+  call Budget_store_add( tbudgets(NBUDGET_TKE), 'TP', ptp(:, :, :) * prhodj(:, :, :) )
+  ! Dissipation
+  call Budget_store_add( tbudgets(NBUDGET_TKE), 'DISS', -xced * sqrt( ptkem(:, :, :) ) / pleps(:, :, :) &
+                         * ( pexpl * ptkem(:, :, :) + pimpl * zres(:, :, :) ) * prhodj(:, :, :) )
+end if
 !
 !*       2.5  computes the final RTKE and stores the whole turbulent transport
 !              with the removal of the advection part 
@@ -395,9 +388,8 @@ PRTKES(:,:,:) = ZRES(:,:,:) * PRHODJ(:,:,:) / PTSTEP -  PRTKESM(:,:,:)
 !
 ! stores the whole turbulent transport
 !
-IF (LBUDGET_TKE) CALL BUDGET (PRTKES(:,:,:),NBUDGET_TKE,'TR_BU_RTKE')
-!
-!
+if (lbudget_tke) call Budget_store_end( tbudgets(NBUDGET_TKE), 'TR', prtkes(:, :, :) )
+
 !----------------------------------------------------------------------------
 !
 !*       3.   COMPUTE THE DISSIPATIVE HEATING
@@ -405,7 +397,9 @@ IF (LBUDGET_TKE) CALL BUDGET (PRTKES(:,:,:),NBUDGET_TKE,'TR_BU_RTKE')
 !
 PRTHLS(:,:,:) = PRTHLS(:,:,:) + XCED * SQRT(PTKEM(:,:,:)) / PLEPS(:,:,:) * &
                 (PEXPL*PTKEM(:,:,:) + PIMPL*ZRES(:,:,:)) * PRHODJ(:,:,:) * PCOEF_DISS(:,:,:)
-!
+
+if (lbudget_th) call Budget_store_end( tbudgets(NBUDGET_TH), 'DISSH', prthls(:, :, :) )
+
 !----------------------------------------------------------------------------
 !
 !*       4.   STORES SOME DIAGNOSTICS

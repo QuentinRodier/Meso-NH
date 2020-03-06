@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -6,6 +6,7 @@
 ! Modifications:
 !  P. Wautelet 25/02/2019: split rain_ice (cleaner and easier to maintain/debug)
 !  P. Wautelet 03/06/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !-----------------------------------------------------------------
 MODULE MODE_RAIN_ICE_WARM
 
@@ -25,17 +26,17 @@ SUBROUTINE RAIN_ICE_WARM(OMICRO, KMICRO, K1, K2, K3,                            
 !*      0. DECLARATIONS
 !          ------------
 !
-use MODD_BUDGET,         only: LBUDGET_TH, LBUDGET_RV, LBUDGET_RC, LBUDGET_RR, &
-                               NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RR
+use modd_budget,         only: lbudget_th, lbudget_rv, lbudget_rc, lbudget_rr, &
+                               NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, &
+                               tbudgets
 use MODD_CST,            only: XALPW, XBETAW, XCL, XCPV, XGAMW, XLVTT, XMD, XMV, XRV, XTT
 use MODD_PARAM_ICE,      only: CSUBG_RC_RR_ACCR, CSUBG_RR_EVAP
 use MODD_RAIN_ICE_DESCR, only: XCEXVT, XRTMIN
 use MODD_RAIN_ICE_PARAM, only: X0EVAR, X1EVAR, XCRIAUTC, XEX0EVAR, XEX1EVAR, XEXCACCR, XFCACCR, XTIMAUTC
-!
+
+use mode_budget,         only: Budget_store_add
 use MODE_MSG
-!
-use MODI_BUDGET
-!
+
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
@@ -90,23 +91,22 @@ REAL, DIMENSION(size(PRHODREF)) :: ZZW4 ! Work array
 !
 !*       4.2    compute the autoconversion of r_c for r_r production: RCAUTR
 !
-
+    zzw(:) = 0.
     WHERE( PRCS(:)>0.0 .AND. PHLC_HCF(:).GT.0.0 )
       ZZW(:) = XTIMAUTC*MAX( PHLC_HRC(:)/PHLC_HCF(:)  - XCRIAUTC/PRHODREF(:),0.0)
       ZZW(:) = MIN( PRCS(:),PHLC_HCF(:)*ZZW(:))
       PRCS(:) = PRCS(:) - ZZW(:)
       PRRS(:) = PRRS(:) + ZZW(:)
     END WHERE
-!
-      IF (LBUDGET_RC) CALL BUDGET (                                               &
-                       UNPACK(PRCS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                          NBUDGET_RC,'AUTO_BU_RRC')
-      IF (LBUDGET_RR) CALL BUDGET (                                               &
-                       UNPACK(PRRS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                          NBUDGET_RR,'AUTO_BU_RRR')
+
+    if ( lbudget_rc ) call Budget_store_add( tbudgets(NBUDGET_RC), 'AUTO', &
+                                             Unpack( -zzw(:) * prhodj(:), mask = omicro(:,:,:), field = 0.) )
+    if ( lbudget_rr ) call Budget_store_add( tbudgets(NBUDGET_RR), 'AUTO', &
+                                             Unpack(  zzw(:) * prhodj(:), mask = omicro(:,:,:), field = 0.) )
 !
 !*       4.3    compute the accretion of r_c for r_r production: RCACCR
 !
+    zzw(:) = 0.
     IF (CSUBG_RC_RR_ACCR=='NONE') THEN
       !CLoud water and rain are diluted over the grid box
       WHERE( PRCT(:)>XRTMIN(2) .AND. PRRT(:)>XRTMIN(3) .AND. PRCS(:)>0.0 )
@@ -125,7 +125,6 @@ REAL, DIMENSION(size(PRHODREF)) :: ZZW4 ! Work array
       ! if PRF<PCF (rain is entirely falling in cloud): PRF-PHLC_HCF
       ! if PRF>PCF (rain is falling in cloud and in clear sky): PCF-PHLC_HCF
       ! => min(PCF, PRF)-PHLC_HCF
-      ZZW(:) = 0.
       WHERE( PHLC_HRC(:)>XRTMIN(2) .AND. PRRT(:)>XRTMIN(3) .AND. PRCS(:)>0.0 &
             .AND. PHLC_HCF(:)>0 )
         !Accretion due to rain falling in high cloud content
@@ -147,17 +146,13 @@ REAL, DIMENSION(size(PRHODREF)) :: ZZW4 ! Work array
       PRRS(:) = PRRS(:) + ZZW(:)
 
     ELSE
-      !wrong CSUBG_RC_RR_ACCR case
-      WRITE(*,*) 'wrong CSUBG_RC_RR_ACCR case'
-            CALL PRINT_MSG(NVERB_FATAL,'GEN','RAIN_ICE_WARM','')
+      call Print_msg( NVERB_FATAL, 'GEN', 'RAIN_ICE_WARM', 'invalid CSUBG_RC_RR_ACCR value: '//Trim(csubg_rc_rr_accr) )
     ENDIF
 
-    IF (LBUDGET_RC) CALL BUDGET (                                               &
-                     UNPACK(PRCS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                        NBUDGET_RC,'ACCR_BU_RRC')
-    IF (LBUDGET_RR) CALL BUDGET (                                               &
-                     UNPACK(PRRS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                        NBUDGET_RR,'ACCR_BU_RRR')
+    if ( lbudget_rc ) call Budget_store_add( tbudgets(NBUDGET_RC), 'ACCR', &
+                                             Unpack( -zzw(:) * prhodj(:), mask = omicro(:,:,:), field = 0.) )
+    if ( lbudget_rr ) call Budget_store_add( tbudgets(NBUDGET_RR), 'ACCR', &
+                                             Unpack(  zzw(:) * prhodj(:), mask = omicro(:,:,:), field = 0.) )
 !
 !*       4.4    compute the evaporation of r_r: RREVAV
 !
@@ -224,20 +219,15 @@ REAL, DIMENSION(size(PRHODREF)) :: ZZW4 ! Work array
       END WHERE
 
     ELSE
-      !wrong CSUBG_RR_EVAP case
-      WRITE(*,*) 'wrong CSUBG_RR_EVAP case'
-      CALL PRINT_MSG(NVERB_FATAL,'GEN','RAIN_ICE_WARM','')
+      call Print_msg( NVERB_FATAL, 'GEN', 'RAIN_ICE_WARM', 'invalid CSUBG_RR_EVAP value: '//Trim( csubg_rr_evap ) )
     END IF
 
-    IF (LBUDGET_TH) CALL BUDGET (                                               &
-                 UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),   &
-                                                        NBUDGET_TH,'REVA_BU_RTH')
-    IF (LBUDGET_RV) CALL BUDGET (                                               &
-                 UNPACK(PRVS(:),MASK=OMICRO(:,:,:),FIELD=PRVS3D)*PRHODJ3D(:,:,:),   &
-                                                        NBUDGET_RV,'REVA_BU_RRV')
-    IF (LBUDGET_RR) CALL BUDGET (                                               &
-                     UNPACK(PRRS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                        NBUDGET_RR,'REVA_BU_RRR')
+    if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'REVA', &
+                                             Unpack( -zzw(:) * plvfact(:) * prhodj(:), mask = omicro(:,:,:), field = 0.) )
+    if ( lbudget_rv ) call Budget_store_add( tbudgets(NBUDGET_RV), 'REVA', &
+                                             Unpack(  zzw(:)              * prhodj(:), mask = omicro(:,:,:), field = 0.) )
+    if ( lbudget_rr ) call Budget_store_add( tbudgets(NBUDGET_RR), 'REVA', &
+                                             Unpack( -zzw(:)              * prhodj(:), mask = omicro(:,:,:), field = 0.) )
 
     DO JL = 1, KMICRO
       PEVAP3D(K1(JL), K2(JL), K3(JL)) = ZZW( JL )

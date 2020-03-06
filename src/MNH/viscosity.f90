@@ -91,7 +91,7 @@ SUBROUTINE VISCOSITY(HLBCX, HLBCY, KRR, KSV, PNU, PPRANDTL,          &
 !!      01/18 (C.Lac) Add budgets
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !  P. Wautelet 08/11/2019: corrected wrong budget name VISC_BU_RU -> VISC_BU_RTH
-!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -111,7 +111,6 @@ SUBROUTINE VISCOSITY(HLBCX, HLBCY, KRR, KSV, PNU, PPRANDTL,          &
   use mode_budget,      only: Budget_store_init, Budget_store_end
   USE MODE_ll
 
-  USE MODI_BUDGET
   USE MODI_SHUMAN
   USE MODI_LAP_M
 !
@@ -188,7 +187,22 @@ IIU=SIZE(PWT,1)
 IJU=SIZE(PWT,2)
 IKU=SIZE(PWT,3)
 
-if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'VISC', prus )
+if ( lbudget_u  .and. ovisc_uvw ) call Budget_store_init( tbudgets(NBUDGET_U ), 'VISC', prus (:, :, :)    )
+if ( lbudget_v  .and. ovisc_uvw ) call Budget_store_init( tbudgets(NBUDGET_V ), 'VISC', prvs (:, :, :)    )
+if ( lbudget_w  .and. ovisc_uvw ) call Budget_store_init( tbudgets(NBUDGET_W ), 'VISC', prws (:, :, :)    )
+if ( lbudget_th .and. ovisc_th  ) call Budget_store_init( tbudgets(NBUDGET_TH), 'VISC', prths(:, :, :)    )
+if ( lbudget_rv .and. ovisc_r   ) call Budget_store_init( tbudgets(NBUDGET_RV), 'VISC', prrs (:, :, :, 1) )
+if ( lbudget_rc .and. ovisc_r   ) call Budget_store_init( tbudgets(NBUDGET_RC), 'VISC', prrs (:, :, :, 2) )
+if ( lbudget_rr .and. ovisc_r   ) call Budget_store_init( tbudgets(NBUDGET_RR), 'VISC', prrs (:, :, :, 3) )
+if ( lbudget_ri .and. ovisc_r   ) call Budget_store_init( tbudgets(NBUDGET_RI), 'VISC', prrs (:, :, :, 4) )
+if ( lbudget_rs .and. ovisc_r   ) call Budget_store_init( tbudgets(NBUDGET_RS), 'VISC', prrs (:, :, :, 5) )
+if ( lbudget_rg .and. ovisc_r   ) call Budget_store_init( tbudgets(NBUDGET_RG), 'VISC', prrs (:, :, :, 6) )
+if ( lbudget_rh .and. ovisc_r   ) call Budget_store_init( tbudgets(NBUDGET_RH), 'VISC', prrs (:, :, :, 7) )
+if ( lbudget_sv .and. ovisc_sv  ) then
+  do ik = 1, ksv
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + ik), 'VISC', prsvs(:, :, :, ik) )
+  end do
+end if
 
 !*       1.    Viscous forcing for potential temperature
 !	       -----------------------------------------
@@ -202,8 +216,6 @@ IF (OVISC_TH) THEN
 !
 !
 END IF
-!
-IF (LBUDGET_TH) CALL BUDGET (PRTHS,NBUDGET_TH,'VISC_BU_RTH')
 !
 !-------------------------------------------------------------------------------
 !
@@ -221,14 +233,6 @@ IF (OVISC_R .AND. (SIZE(PRT,1) > 0)) THEN
 !
 END IF
 !
-IF (LBUDGET_RV) CALL BUDGET (PRRS(:,:,:,1),NBUDGET_RV,'VISC_BU_RRV')
-IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2),NBUDGET_RC,'VISC_BU_RRC')
-IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:,3),NBUDGET_RR,'VISC_BU_RRR')
-IF (LBUDGET_RI) CALL BUDGET (PRRS(:,:,:,4),NBUDGET_RI,'VISC_BU_RRI')
-IF (LBUDGET_RS) CALL BUDGET (PRRS(:,:,:,5),NBUDGET_RS,'VISC_BU_RRS')
-IF (LBUDGET_RG) CALL BUDGET (PRRS(:,:,:,6),NBUDGET_RG,'VISC_BU_RRG')
-IF (LBUDGET_RH) CALL BUDGET (PRRS(:,:,:,7),NBUDGET_RH,'VISC_BU_RRH')
-!
 !-------------------------------------------------------------------------------
 !
 !*       3.    Viscous forcing for passive scalars
@@ -244,13 +248,6 @@ IF (OVISC_SV .AND. (SIZE(PSVT,1) > 0)) THEN
 !
 END IF
 !
-IF (LBUDGET_SV) THEN
-  DO  IK = 1, KSV
-    CALL BUDGET (PRSVS(:,:,:,IK), NBUDGET_SV1-1+IK, 'VISC_BU_RSV')
-  END DO
-END IF
-!
-
 !-------------------------------------------------------------------------------
 !
 !*       4.    Viscous forcing for momentum
@@ -343,10 +340,22 @@ ENDIF
    ENDIF
   ENDIF
 END IF
-!
-if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'VISC', prus )
 
-IF (LBUDGET_V) CALL BUDGET (PRVS,NBUDGET_V,'VISC_BU_RV')
-IF (LBUDGET_W) CALL BUDGET (PRWS,NBUDGET_V,'VISC_BU_RW')
-!
+if ( lbudget_u  .and. ovisc_uvw ) call Budget_store_end( tbudgets(NBUDGET_U ), 'VISC', prus (:, :, :)    )
+if ( lbudget_v  .and. ovisc_uvw ) call Budget_store_end( tbudgets(NBUDGET_V ), 'VISC', prvs (:, :, :)    )
+if ( lbudget_w  .and. ovisc_uvw ) call Budget_store_end( tbudgets(NBUDGET_W ), 'VISC', prws (:, :, :)    )
+if ( lbudget_th .and. ovisc_th  ) call Budget_store_end( tbudgets(NBUDGET_TH), 'VISC', prths(:, :, :)    )
+if ( lbudget_rv .and. ovisc_r   ) call Budget_store_end( tbudgets(NBUDGET_RV), 'VISC', prrs (:, :, :, 1) )
+if ( lbudget_rc .and. ovisc_r   ) call Budget_store_end( tbudgets(NBUDGET_RC), 'VISC', prrs (:, :, :, 2) )
+if ( lbudget_rr .and. ovisc_r   ) call Budget_store_end( tbudgets(NBUDGET_RR), 'VISC', prrs (:, :, :, 3) )
+if ( lbudget_ri .and. ovisc_r   ) call Budget_store_end( tbudgets(NBUDGET_RI), 'VISC', prrs (:, :, :, 4) )
+if ( lbudget_rs .and. ovisc_r   ) call Budget_store_end( tbudgets(NBUDGET_RS), 'VISC', prrs (:, :, :, 5) )
+if ( lbudget_rg .and. ovisc_r   ) call Budget_store_end( tbudgets(NBUDGET_RG), 'VISC', prrs (:, :, :, 6) )
+if ( lbudget_rh .and. ovisc_r   ) call Budget_store_end( tbudgets(NBUDGET_RH), 'VISC', prrs (:, :, :, 7) )
+if ( lbudget_sv .and. ovisc_sv  ) then
+  do ik = 1, ksv
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + ik), 'VISC', prsvs(:, :, :, ik) )
+  end do
+end if
+
 END SUBROUTINE VISCOSITY

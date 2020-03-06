@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2010-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -76,29 +76,29 @@ END MODULE MODI_ION_ATTACH_ELEC
 !!      Original    2010
 !!      Modifications:
 !!      J.Escobar : 18/12/2015 : Correction of bug in bound in // for NHALO <>1 
-!!
+!  P. Wautelet    03/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
 !*	0.	DECLARATIONS
 !		------------
 !
-USE MODD_PARAMETERS, ONLY : JPHEXT, JPVEXT
+use modd_budget,          only : lbudget_sv, NBUDGET_SV1, tbudgets
+USE MODD_CONF,            ONLY: CCONF
 USE MODD_CST
-USE MODD_CONF, ONLY : CCONF
 USE MODD_ELEC_DESCR
-USE MODD_ELEC_n       
+USE MODD_ELEC_n
 USE MODD_ELEC_PARAM
+USE MODD_NSV,             ONLY: NSV_ELECBEG, NSV_ELEC
+USE MODD_PARAMETERS,      ONLY: JPHEXT, JPVEXT
 USE MODD_RAIN_ICE_DESCR
 USE MODD_RAIN_ICE_PARAM
-USE MODD_NSV, ONLY : NSV_ELECBEG, NSV_ELEC
-USE MODD_BUDGET, ONLY : LBU_RSV, NBUDGET_SV1
-USE MODD_REF,    ONLY : XTHVREFZ
+USE MODD_REF,             ONLY: XTHVREFZ
 
+use mode_budget,          only: Budget_store_init, Budget_store_end
 use mode_tools_ll,        only: GET_INDICE_ll
 
-USE MODI_BUDGET
 USE MODI_MOMG
-!
+
 IMPLICIT NONE
 !
 !	0.1	Declaration of arguments
@@ -145,6 +145,11 @@ REAL    :: ZCOMB         ! Recombination
 !
 !
 !-------------------------------------------------------------------------------
+if ( lbudget_sv ) then
+  do jrr = 1, nsv_elec
+    call Budget_store_init( tbudgets( NBUDGET_SV1 - 1 + nsv_elecbeg - 1 + jrr), 'NEUT', psvs(:, :, :, jrr) )
+  end do
+end if
 !
 !*       1.     COMPUTE THE ION RECOMBINATION and TEMPERATURE
 !               ---------------------------------------------
@@ -261,11 +266,11 @@ ENDDO
 !*	5.	BUDGET
 !               ------
 !
-IF (LBU_RSV) THEN
-  DO JRR = 1, NSV_ELEC
-    CALL BUDGET(PSVS(:,:,:,JRR), NBUDGET_SV1-1+NSV_ELECBEG+JRR-1, 'NEUT_BU_RSV')
-  ENDDO
-END IF
+if ( lbudget_sv ) then
+  do jrr = 1, nsv_elec
+    call Budget_store_end( tbudgets( NBUDGET_SV1 - 1 + nsv_elecbeg - 1 + jrr), 'NEUT', psvs(:, :, :, jrr) )
+  end do
+end if
 !
 !------------------------------------------------------------------------------
 !

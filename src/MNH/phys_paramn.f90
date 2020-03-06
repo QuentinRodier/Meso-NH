@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -240,107 +240,104 @@ END MODULE MODI_PHYS_PARAM_n
 !
 !*       0.     DECLARATIONS
 !               ------------
-!    
-USE MODE_DATETIME
-USE MODE_ll
+!
+USE MODD_ADV_n,            ONLY : XRTKEMS
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
-!
 USE MODD_BLANK
-USE MODD_CST
-USE MODD_DYN
-USE MODD_CONF
-USE MODD_FRC
-USE MODD_IO, ONLY: TFILEDATA
-USE MODD_PARAMETERS
-USE MODD_GRID
-USE MODD_NSV
-USE MODD_LES
-USE MODD_LES_BUDGET
-!
-USE MODD_CONF_n
-USE MODD_CURVCOR_n
-USE MODD_DYN_n
-USE MODD_FIELD_n
-USE MODD_LSFIELD_n
-USE MODD_GRID_n
-USE MODD_METRICS_n
-USE MODD_LBC_n
-USE MODD_REF_n
-USE MODD_LUNIT_n
-USE MODD_OUT_n
-USE MODD_PARAM_n
-USE MODD_PARAM_RAD_n
-USE MODD_PARAM_KAFR_n
-USE MODD_RADIATIONS_n
-USE MODD_SHADOWS_n
-USE MODD_DEEP_CONVECTION_n
-USE MODD_TIME_n
-USE MODD_TURB_n
+use modd_budget,            only: lbudget_th, lbudget_rv, lbudget_rc, lbudget_ri, lbudget_sv,  &
+                                  NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RI, NBUDGET_SV1, &
+                                  tbudgets, xtime_bu_process
+USE MODD_CH_AEROSOL
 USE MODD_CH_MNHC_n, ONLY : LUSECHEM,         &! indicates if chemistry is used
                            LCH_CONV_SCAV,    &
                            LCH_CONV_LINOX
-USE MODD_PRECIP_n
-USE MODD_PASPOL_n
-USE MODD_BUDGET
-USE MODD_RAIN_ICE_DESCR,  ONLY : XRTMIN
-USE MODD_ICE_C1R3_DESCR,  ONLY : XRTMIN_C1R3=>XRTMIN
-USE MODD_TURB_CLOUD, ONLY : CTURBLEN_CLOUD,NMODEL_CLOUD, &
-                            XCEI,XCEI_MIN,XCEI_MAX,XCOEF_AMPL_SAT
-USE MODD_NESTING, ONLY : XWAY,NDAD, NDXRATIO_ALL, NDYRATIO_ALL
-USE MODD_PARAM_ICE,        ONLY : LSEDIC
-USE MODD_PARAM_C2R2,       ONLY : LSEDC
-USE MODD_SUB_PHYS_PARAM_n
-!
-USE MODD_PARAM_MFSHALL_n
-USE MODI_SHALLOW_MF_PACK
 USE MODD_CLOUD_MF_n
-USE MODD_ADV_n,            ONLY : XRTKEMS
-use modd_precision,        only: MNHTIME
-!
-USE MODI_SURF_RAD_MODIF
-USE MODI_GROUND_PARAM_n
-USE MODI_TURB
-USE MODI_SUNPOS_n
-USE MODI_RADIATIONS
-USE MODI_CONVECTION
-USE MODI_BUDGET
-USE MODI_PASPOL
-USE MODI_CONDSAMP
-USE MODE_MODELN_HANDLER
-USE MODI_SEDIM_DUST
-USE MODI_SEDIM_SALT
-USE MODI_DUST_FILTER
-USE MODI_SALT_FILTER
-USE MODI_DRAG_VEG
-USE MODD_DUST
-USE MODD_SALT
-USE MODD_PASPOL
 USE MODD_CONDSAMP
-USE MODD_CH_AEROSOL
-USE MODE_DUST_PSD
-USE MODE_SALT_PSD
-USE MODE_AERO_PSD
-USE MODE_MNH_TIMING
-USE MODD_TURB_FLUX_AIRCRAFT_BALLOON, ONLY : XTHW_FLUX, XRCW_FLUX, XSVW_FLUX
-USE MODD_DRAGTREE
-!
-USE MODD_TIME, ONLY : TDTEXP  ! Ajout PP
-USE MODI_AEROZON          ! Ajout PP
-!
-USE MODI_EDDY_FLUX_n               ! Ajout PP
-USE MODI_EDDYUV_FLUX_n             ! Ajout PP
-USE MODI_EDDY_FLUX_ONE_WAY_n       ! Ajout PP
-USE MODI_EDDYUV_FLUX_ONE_WAY_n     ! Ajout PP
+USE MODD_CONF
+USE MODD_CONF_n
+USE MODD_CST
+USE MODD_CURVCOR_n
+USE MODD_DEEP_CONVECTION_n
 USE MODD_DEF_EDDY_FLUX_n           ! Ajout PP
 USE MODD_DEF_EDDYUV_FLUX_n         ! Ajout PP
+USE MODD_DRAGTREE
+USE MODD_DUST
+USE MODD_DYN
+USE MODD_DYN_n
+USE MODD_FIELD_n
+USE MODD_FRC
+USE MODD_GRID
+USE MODD_GRID_n
+USE MODD_ICE_C1R3_DESCR,  ONLY : XRTMIN_C1R3=>XRTMIN
+USE MODD_IO, ONLY: TFILEDATA
 USE MODD_LATZ_EDFLX
+USE MODD_LBC_n
+USE MODD_LES
+USE MODD_LES_BUDGET
+USE MODD_LSFIELD_n
+USE MODD_LUNIT_n
+USE MODD_METRICS_n
 USE MODD_MNH_SURFEX_n
-USE MODI_SWITCH_SBG_LES_N
-USE MODD_TIME_n 
-!
+USE MODD_NESTING, ONLY : XWAY,NDAD, NDXRATIO_ALL, NDYRATIO_ALL
+USE MODD_NSV
+USE MODD_OUT_n
+USE MODD_PARAM_C2R2,       ONLY : LSEDC
+USE MODD_PARAMETERS
+USE MODD_PARAM_ICE,        ONLY : LSEDIC
+USE MODD_PARAM_KAFR_n
 USE MODD_PARAM_LIMA,       ONLY : MSEDC => LSEDC, XRTMIN_LIMA=>XRTMIN
-!
+USE MODD_PARAM_MFSHALL_n
+USE MODD_PARAM_n
+USE MODD_PARAM_RAD_n
+USE MODD_PASPOL
+USE MODD_PASPOL_n
+USE MODD_PRECIP_n
+use modd_precision,        only: MNHTIME
+USE MODD_RADIATIONS_n
+USE MODD_RAIN_ICE_DESCR,  ONLY : XRTMIN
+USE MODD_REF_n
+USE MODD_SALT
+USE MODD_SHADOWS_n
+USE MODD_SUB_PHYS_PARAM_n
+USE MODD_TIME_n
+USE MODD_TIME_n
+USE MODD_TIME, ONLY : TDTEXP  ! Ajout PP
+USE MODD_TURB_CLOUD, ONLY : CTURBLEN_CLOUD,NMODEL_CLOUD, &
+                            XCEI,XCEI_MIN,XCEI_MAX,XCOEF_AMPL_SAT
+USE MODD_TURB_FLUX_AIRCRAFT_BALLOON, ONLY : XTHW_FLUX, XRCW_FLUX, XSVW_FLUX
+USE MODD_TURB_n
+
+USE MODE_AERO_PSD
+use mode_budget,            only: Budget_store_end, Budget_store_init
+USE MODE_DATETIME
+USE MODE_DUST_PSD
+USE MODE_ll
+USE MODE_MNH_TIMING
+USE MODE_MODELN_HANDLER
 USE MODE_MPPDB
+USE MODE_SALT_PSD
+
+USE MODI_AEROZON          ! Ajout PP
+USE MODI_CONDSAMP
+USE MODI_CONVECTION
+USE MODI_DRAG_VEG
+USE MODI_DUST_FILTER
+USE MODI_EDDY_FLUX_n               ! Ajout PP
+USE MODI_EDDY_FLUX_ONE_WAY_n       ! Ajout PP
+USE MODI_EDDYUV_FLUX_n             ! Ajout PP
+USE MODI_EDDYUV_FLUX_ONE_WAY_n     ! Ajout PP
+USE MODI_GROUND_PARAM_n
+USE MODI_PASPOL
+USE MODI_RADIATIONS
+USE MODI_SALT_FILTER
+USE MODI_SEDIM_DUST
+USE MODI_SEDIM_SALT
+USE MODI_SHALLOW_MF_PACK
+USE MODI_SUNPOS_n
+USE MODI_SURF_RAD_MODIF
+USE MODI_SWITCH_SBG_LES_N
+USE MODI_TURB
+
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
@@ -446,7 +443,7 @@ REAL, DIMENSION(:,:,:),   ALLOCATABLE  :: ZSAVE_INPRC,ZSAVE_PRCONV,ZSAVE_PRSCONV
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE  :: ZSAVE_DIRFLASWD, ZSAVE_SCAFLASWD,ZSAVE_DIRSRFSWD
 !
 !-----------------------------------------------------------------------------
-!
+
 NULLIFY(TZFIELDS_ll)
 IMI=GET_CURRENT_MODEL_INDEX()
 !
@@ -784,13 +781,10 @@ END IF
 !               ------------------------------
 !
 IF (CRAD /='NONE') THEN
+  if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'RAD', xrths(:, :, :) )
   XRTHS(:,:,:) = XRTHS(:,:,:) + XRHODJ(:,:,:)*XDTHRAD(:,:,:)
+  if ( lbudget_th ) call Budget_store_end ( tbudgets(NBUDGET_TH), 'RAD', xrths(:, :, :) )
 END IF
-!
-!*        1.6   budget storage
-!               --------------
-!
-IF (CRAD/='NONE' .AND. LBUDGET_TH) CALL BUDGET (XRTHS,NBUDGET_TH,'RAD_BU_RTH')
 !
 CALL SECOND_MNH2(ZTIME2)
 !
@@ -811,7 +805,17 @@ XTIME_LES_BU_PROCESS = 0.
 !
 CALL SECOND_MNH2(ZTIME1)
 !
-IF( CDCONV /= 'NONE' .OR. CSCONV == 'KAFR' ) THEN
+IF( CDCONV == 'KAFR' .OR. CSCONV == 'KAFR' ) THEN
+
+  if (  lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'DCONV', xrths(:, :, :)    )
+  if (  lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'DCONV', xrrs (:, :, :, 1) )
+  if (  lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'DCONV', xrrs (:, :, :, 2) )
+  if (  lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'DCONV', xrrs (:, :, :, 4) )
+  if (  lbudget_sv .and. lchtrans ) then
+    do jsv = 1, size( xrsvs, 4 )
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + jsv), 'DCONV', xrsvs (:, :, :, jsv) )
+    end do
+  end if
 !
 ! test to see if the deep convection scheme should be called
 !
@@ -1045,21 +1049,17 @@ END IF
       XRTHS(:,:,:) = XRTHS(:,:,:) - XRHODJ(:,:,:) / XCPD * (              &
                      XLVTT * XDRCCONV(:,:,:) + XLSTT * XDRICONV(:,:,:) ) *&
                     ( XP00 / XPABST(:,:,:) ) ** ( XRD / XCPD )
-  END IF                                                               
-END IF
-!
-!  budget storage
-!
-IF (CDCONV == 'KAFR' .OR. CSCONV == 'KAFR' ) THEN
-  IF (LBUDGET_TH) CALL BUDGET (XRTHS,NBUDGET_TH,'DCONV_BU_RTH')
-  IF (LBUDGET_RV) CALL BUDGET (XRRS(:,:,:,1),NBUDGET_RV,'DCONV_BU_RRV')
-  IF (LBUDGET_RC) CALL BUDGET (XRRS(:,:,:,2),NBUDGET_RC,'DCONV_BU_RRC')
-  IF (LBUDGET_RI) CALL BUDGET (XRRS(:,:,:,4),NBUDGET_RI,'DCONV_BU_RRI')
-  IF (LCHTRANS .AND. LBUDGET_SV) THEN
-    DO JSV = 1, SIZE(XRSVS,4)
-      CALL BUDGET (XRSVS(:,:,:,JSV),NBUDGET_SV1-1+JSV,'DCONV_BU_RSV')
-    END DO
   END IF
+
+  if (  lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'DCONV', xrths(:, :, :)    )
+  if (  lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'DCONV', xrrs (:, :, :, 1) )
+  if (  lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'DCONV', xrrs (:, :, :, 2) )
+  if (  lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'DCONV', xrrs (:, :, :, 4) )
+  if (  lbudget_sv .and. lchtrans ) then
+    do jsv = 1, size( xrsvs, 4 )
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + jsv), 'DCONV', xrsvs (:, :, :, jsv) )
+    end do
+  end if
 END IF
 !
 CALL SECOND_MNH2(ZTIME2)

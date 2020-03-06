@@ -89,7 +89,7 @@ END MODULE MODI_ADVECTION_UVW_CEN
 !!      Modif
 !!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
-!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -106,7 +106,6 @@ USE MODE_ll
 
 USE MODI_ADVECUVW_2ND
 USE MODI_ADVECUVW_4TH
-USE MODI_BUDGET
 USE MODI_CONTRAV
 USE MODI_SHUMAN
 
@@ -181,7 +180,9 @@ IKU = SIZE(XZHAT)
 IKB=1+JPVEXT
 IKE=IKU-JPVEXT
 
-if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'ADV', prus )
+if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'ADV', prus(:, :, :) )
+if ( lbudget_v ) call Budget_store_init( tbudgets(NBUDGET_V), 'ADV', prvs(:, :, :) )
+if ( lbudget_w ) call Budget_store_init( tbudgets(NBUDGET_W), 'ADV', prws(:, :, :) )
 
 ZMXM_RHODJ = MXM(PRHODJ)
 ZMYM_RHODJ = MYM(PRHODJ)
@@ -252,11 +253,10 @@ PDUM = ZUS(:,:,:) - PUM(:,:,:)
 PDVM = ZVS(:,:,:) - PVM(:,:,:)
 PDWM = ZWS(:,:,:) - PWM(:,:,:)
 
-if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'ADV', prus )
+if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'ADV', prus(:, :, :) )
+if ( lbudget_v ) call Budget_store_end( tbudgets(NBUDGET_V), 'ADV', prvs(:, :, :) )
+if ( lbudget_w ) call Budget_store_end( tbudgets(NBUDGET_W), 'ADV', prws(:, :, :) )
 
-IF (LBUDGET_V)  CALL BUDGET (PRVS,NBUDGET_V,'ADV_BU_RV')
-IF (LBUDGET_W)  CALL BUDGET (PRWS,NBUDGET_W,'ADV_BU_RW')
-!
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE ADVECTION_UVW_CEN

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -7,6 +7,7 @@
 !  P. Wautelet 25/02/2019: split rain_ice (cleaner and easier to maintain/debug)
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !  P. Wautelet 29/05/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !-----------------------------------------------------------------
 MODULE MODE_RAIN_ICE_NUCLEATION
 
@@ -25,15 +26,15 @@ SUBROUTINE RAIN_ICE_NUCLEATION(KIB, KIE, KJB, KJE, KKTB, KKTE,KRR,PTSTEP,&
 !*      0. DECLARATIONS
 !          ------------
 !
-use MODD_BUDGET,          only: LBUDGET_RI, LBUDGET_RV, LBUDGET_TH, &
-                                NBUDGET_TH, NBUDGET_RV, NBUDGET_RI
+use modd_budget,          only: lbudget_th, lbudget_rv, lbudget_ri, &
+                                NBUDGET_TH, NBUDGET_RV, NBUDGET_RI, &
+                                tbudgets
 use MODD_CST,             only: XALPI, XALPW, XBETAI, XBETAW, XCI, XCL, XCPD, XCPV, XGAMI, XGAMW, &
                                 XLSTT, XMD, XMV, XP00, XRD, XTT
 use MODD_RAIN_ICE_PARAM,  only: XALPHA1, XALPHA2, XBETA1, XBETA2, XMNU0, XNU10, XNU20
 
+use mode_budget,          only: Budget_store_init, Budget_store_end
 use mode_tools,           only: Countjv
-
-use MODI_BUDGET
 
 IMPLICIT NONE
 !
@@ -79,7 +80,10 @@ REAL,    DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3))   &
                                     :: ZW      ! work array
 !
 !-------------------------------------------------------------------------------
-!
+
+if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'HENU', pths(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'HENU', prvs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'HENU', pris(:, :, :) * prhodj(:, :, :) )
 !
 !  compute the temperature and the pressure
 !
@@ -167,10 +171,10 @@ END IF
 !
 !*       3.1.3   budget storage
 !
-IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'HENU_BU_RTH')
-IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RV,'HENU_BU_RRV')
-IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RI,'HENU_BU_RRI')
-!
+if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HENU', pths(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'HENU', prvs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'HENU', pris(:, :, :) * prhodj(:, :, :) )
+
 END SUBROUTINE RAIN_ICE_NUCLEATION
 
 END MODULE MODE_RAIN_ICE_NUCLEATION

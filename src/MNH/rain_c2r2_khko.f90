@@ -215,12 +215,15 @@ END MODULE MODI_RAIN_C2R2_KHKO
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_BUDGET
+use modd_budget,               only: lbudget_th, lbudget_rv, lbudget_rc, lbudget_rr, lbudget_sv,  &
+                                     NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, NBUDGET_SV1, &
+                                     tbudgets
 USE MODD_CH_AEROSOL
 USE MODD_CONF
 USE MODD_CST
@@ -234,13 +237,13 @@ USE MODD_RAIN_C2R2_DESCR
 USE MODD_RAIN_C2R2_KHKO_PARAM
 USE MODD_SALT
 
+use mode_budget,               only: Budget_store_init, Budget_store_end
 USE MODE_IO_FIELD_WRITE,       only: IO_Field_write
 USE MODE_ll
 use mode_tools,                only: Countjv
 
-USE MODI_BUDGET
 USE MODI_GAMMA
-!
+
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
@@ -502,6 +505,8 @@ IF (ORAIN) THEN
 !        5.    SPONTANEOUS BREAK-UP (NUMERICAL FILTER)
 !              --------------------
 !
+  if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 2), 'BRKU', pcrs(:, :, :) * prhodj(:, :, :) )
+
   ZWLBDR(:,:,:) = 1.E10
   WHERE (PRRS(:,:,:)>0.0.AND.PCRS(:,:,:)>0.0 )
     ZWLBDR3(:,:,:) = XLBR * PCRS(:,:,:) / (PRHODREF(:,:,:) * PRRS(:,:,:))
@@ -511,13 +516,9 @@ IF (ORAIN) THEN
     PCRS(:,:,:) = PCRS(:,:,:)*MAX((1.+XSPONCOEF2*(XACCR1/ZWLBDR(:,:,:)-XSPONBUD1)**2),&
                                                  (XACCR1/ZWLBDR(:,:,:)/XSPONBUD3)**3)
   END WHERE
-!
+
+  if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 2), 'BRKU', pcrs(:, :, :) * prhodj(:, :, :) )
 ENDIF
-!
-IF (LBUDGET_SV) &         
-  CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_C2R2BEG+2,&
-                    &'BRKU_BU_RSV') ! RCR
-            
 !-------------------------------------------------------------------------------
 !*       6.     COMPUTE THE SEDIMENTATION (RS) SOURCE
 !	        -------------------------------------
@@ -575,6 +576,15 @@ INTEGER                           :: JL       ! and PACK intrinsics
 INTEGER                           :: J1
 !
 !-------------------------------------------------------------------------------
+
+if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'HENU', pths(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'HENU', prvs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'HENU', prcs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_sv ) then
+  call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg    ), 'HENU', pcns(:, :, :) * prhodj(:, :, :) )
+  call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 1), 'HENU', pccs(:, :, :) * prhodj(:, :, :) )
+end if
+
 ! Modification of XCHEN according to theta vertical gradient (J. Rangonio)
 !ZZA(:,:,2) = 1.
 !DO JK=IKB,IKE-1
@@ -888,14 +898,14 @@ END IF
 !
 !*       3.4   budget storage
 !
-IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'HENU_BU_RTH')
-IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RV,'HENU_BU_RRV')
-IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'HENU_BU_RRC')
-IF (LBUDGET_SV) THEN
-  CALL BUDGET (PCNS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_C2R2BEG,  'HENU_BU_RSV') ! RCN
-  CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_C2R2BEG+2,'HENU_BU_RSV') ! RCC
-END IF
-!
+if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HENU', pths(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'HENU', prvs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'HENU', prcs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_sv ) then
+  call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg    ), 'HENU', pcns(:, :, :) * prhodj(:, :, :) )
+  call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 1), 'HENU', pccs(:, :, :) * prhodj(:, :, :) )
+end if
+
 END SUBROUTINE C2R2_KHKO_NUCLEATION
 !
 !-------------------------------------------------------------------------------
@@ -920,6 +930,14 @@ INTEGER                           :: J1
 INTEGER                           :: JSV
 !
 !-------------------------------------------------------------------------------
+
+if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'HENU', pths(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'HENU', prvs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'HENU', prcs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_sv ) then
+  call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg    ), 'HENU', pcns(:, :, :) * prhodj(:, :, :) )
+  call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 1), 'HENU', pccs(:, :, :) * prhodj(:, :, :) )
+end if
 !
 !  compute the saturation vapor mixing ratio  
 !          the radiative tendency                    
@@ -1088,13 +1106,13 @@ END IF
 !*             budget storage
 !
 !
-IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'HENU_BU_RTH')
-IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RV,'HENU_BU_RRV')
-IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'HENU_BU_RRC')
-IF (LBUDGET_SV) THEN
-  CALL BUDGET (PCNS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_C2R2BEG,  'HENU_BU_RSV') ! RCN
-  CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_C2R2BEG+1,'HENU_BU_RSV') ! RCC
-END IF
+if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HENU', pths(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'HENU', prvs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'HENU', prcs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_sv ) then
+  call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg    ), 'HENU', pcns(:, :, :) * prhodj(:, :, :) )
+  call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 1), 'HENU', pccs(:, :, :) * prhodj(:, :, :) )
+end if
 
   END SUBROUTINE AER_NUCLEATION
 !
@@ -1163,6 +1181,8 @@ IF( IMICRO >= 1 ) THEN
 !
 !*       4.1   Self-collection of cloud droplets
 !
+  if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 1), 'SELF', pccs(:, :, :) * prhodj(:, :, :) )
+
   GSELF(:) = ZCCT(:)>XCTMIN(2)
   ISELF = COUNT(GSELF(:))
   IF( ISELF>0 ) THEN
@@ -1171,15 +1191,17 @@ IF( IMICRO >= 1 ) THEN
         ZCCS(:) = ZCCS(:) - MIN( ZCCS(:),ZZW1(:) )
       END WHERE
   END IF
-!
-  ZW(:,:,:) = PCCS(:,:,:)
-  IF (LBUDGET_SV) CALL BUDGET (                                 &
-                   UNPACK(ZCCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:))&
-                   &*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_C2R2BEG+1,'SELF_BU_RSV') ! RCC
+
+  if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 1), 'SELF', &
+                                           Unpack( zccs(:), mask = gmicro(:, :, :), field = pccs(:, :, :) ) * prhodj(:, :, :) )
 !
 !*       4.2   Autoconversion of cloud droplets
 !              using a Berry-Reinhardt parameterization
 !
+  if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC),                        'AUTO', prcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RR),                        'AUTO', prrs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 2), 'AUTO', pcrs(:, :, :) * prhodj(:, :, :) )
+
   ZZW2(:) = 0.0
   ZZW1(:) = 0.0
   WHERE( ZRCT(:)>XRTMIN(2) )
@@ -1199,25 +1221,23 @@ IF( IMICRO >= 1 ) THEN
     ZZW3(:) = ZZW3(:) * ZRHODREF(:)**2 * MAX( 0.0,ZZW1(:) )**3 / XAC 
     ZCRS(:) = ZCRS(:) + ZZW3(:)
   END WHERE
-!
 
-  ZW(:,:,:) = PRCS(:,:,:)
-  IF (LBUDGET_RC) CALL BUDGET (                                            &
-               UNPACK(ZRCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:))       &
-                            *PRHODJ(:,:,:), NBUDGET_RC,'AUTO_BU_RRC')
-
-  ZW(:,:,:) = PRRS(:,:,:)
-  IF (LBUDGET_RR) CALL BUDGET (                                            &
-               UNPACK(ZRRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:))       &
-                            *PRHODJ(:,:,:), NBUDGET_RR,'AUTO_BU_RRR')
-  ZW(:,:,:) = PCRS(:,:,:)
-  IF (LBUDGET_SV) CALL BUDGET (                                       &
-               UNPACK(ZCRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:))  &
-               &*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_C2R2BEG+2,'AUTO_BU_RSV') ! RCR
+  if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'AUTO', &
+                                           Unpack( zrcs(:), mask = gmicro(:, :, :), field = prcs(:, :, :) ) * prhodj(:, :, :) )
+  if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR), 'AUTO', &
+                                           Unpack( zrrs(:), mask = gmicro(:, :, :), field = prrs(:, :, :) ) * prhodj(:, :, :) )
+  if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 2), 'AUTO', &
+                                           Unpack( zcrs(:), mask = gmicro(:, :, :), field = pcrs(:, :, :) ) * prhodj(:, :, :) )
 !
 !
 !*       4.3    Accretion sources
 !
+  if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'ACCR', &
+                                            Unpack( zrcs(:), mask = gmicro(:, :, :), field = prcs(:, :, :) ) * prhodj(:, :, :) )
+  if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR), 'ACCR', &
+                                            Unpack( zrrs(:), mask = gmicro(:, :, :), field = prrs(:, :, :) ) * prhodj(:, :, :) )
+  if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 1), 'ACCR', &
+                                            Unpack( zccs(:), mask = gmicro(:, :, :), field = pccs(:, :, :) ) * prhodj(:, :, :) )
 !
 !*       4.31   test the criterium Df>Dh or Nr>Nrm
 !
@@ -1259,23 +1279,19 @@ IF( IMICRO >= 1 ) THEN
       ZRRS(:) = ZRRS(:) + ZZW2(:)
     END WHERE
   END IF
-!
-  ZW(:,:,:) = PRCS(:,:,:)
-  IF (LBUDGET_RC) CALL BUDGET (                                            &
-               UNPACK(ZRCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:))       &
-                              *PRHODJ(:,:,:), NBUDGET_RC,'ACCR_BU_RRC')
-  ZW(:,:,:) = PRRS(:,:,:)
-  IF (LBUDGET_RR) CALL BUDGET (                                            &
-               UNPACK(ZRRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:))       &
-                              *PRHODJ(:,:,:), NBUDGET_RR,'ACCR_BU_RRR')
-  ZW(:,:,:) = PCCS(:,:,:)
-  IF (LBUDGET_SV) CALL BUDGET (                                            &
-               UNPACK(ZCCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:))       &
-                  *PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_C2R2BEG+1,'ACCR_BU_RSV') ! RCC
 
+  if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'ACCR', &
+                                           Unpack( zrcs(:), mask = gmicro(:, :, :), field = prcs(:, :, :) ) * prhodj(:, :, :) )
+  if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR), 'ACCR', &
+                                           Unpack( zrrs(:), mask = gmicro(:, :, :), field = prrs(:, :, :) ) * prhodj(:, :, :) )
+  if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 1), 'ACCR', &
+                                           Unpack( zccs(:), mask = gmicro(:, :, :), field = pccs(:, :, :) ) * prhodj(:, :, :) )
 !
 !*       4.4   Self collection - Coalescence/Break-up
 !
+  if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 2), 'SCBU', &
+                                            Unpack( zcrs(:), mask = gmicro(:, :, :), field = pcrs(:, :, :) ) * prhodj(:, :, :) )
+
   IF( IACCR>0 ) THEN
     GSCBU(:) = ZCRT(:)>XCTMIN(3) .AND. GENABLE_ACCR_SCBU(:)
     ISCBU = COUNT(GSCBU(:))
@@ -1321,10 +1337,9 @@ IF( IMICRO >= 1 ) THEN
   PCCS(:,:,:) = UNPACK( ZCCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
   ZW(:,:,:) = PCRS(:,:,:)
   PCRS(:,:,:) = UNPACK( ZCRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
-!
-  IF (LBUDGET_SV) CALL BUDGET(PCRS(:,:,:)*PRHODJ(:,:,:)&
-       &,NBUDGET_SV1-1+NSV_C2R2BEG+2,'SCBU_BU_RSV') ! RCR
-!
+
+  if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 2), 'SCBU', pcrs(:, :, :) * prhodj(:, :, :) )
+
   DEALLOCATE(ZRCT)
   DEALLOCATE(ZRRT)
   DEALLOCATE(ZCCT)
@@ -1350,25 +1365,6 @@ IF( IMICRO >= 1 ) THEN
     DEALLOCATE(IVEC1)
     DEALLOCATE(ZVEC1)
   END IF
-ELSE
-!
-!*       4.5    Budgets are forwarded
-!
-  IF (LBUDGET_SV) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_C2R2BEG+1,&
-       &'SELF_BU_RSV') ! RCC
-!
-  IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,'AUTO_BU_RRC')
-  IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR,'AUTO_BU_RRR')
-  IF (LBUDGET_SV) CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_C2R2BEG+2,&
-       &'AUTO_BU_RSV') ! RCR
-!
-  IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,'ACCR_BU_RRC')
-  IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR,'ACCR_BU_RRR')
-  IF (LBUDGET_SV) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_C2R2BEG+1,&
-       &'ACCR_BU_RSV') ! RCC
-!
-  IF (LBUDGET_SV) CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_C2R2BEG+2,&
-       &'SCBU_BU_RSV') ! RCR
 END IF
 !
   END SUBROUTINE C2R2_COALESCENCE
@@ -1421,6 +1417,12 @@ IF( IMICRO >= 1 ) THEN
 !
 !*       4.1.1   autoconversion
 !
+  if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 1), 'SELF', pccs(:, :, :) * prhodj(:, :, :) )
+
+  if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC),                        'AUTO', prcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR),                        'AUTO', prrs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 2), 'AUTO', pcrs(:, :, :) * prhodj(:, :, :) )
+
   WHERE ( ZRCT(:) .GT. XRTMIN(2) .AND. ZCCT(:) .GT. XCTMIN(2)                 &
             .AND. (ZRCS(:) .GT. 0.0) .AND. (ZCCS(:) .GT. 0.0))
 !
@@ -1447,14 +1449,18 @@ IF( IMICRO >= 1 ) THEN
 !
 !*       4.1.2   budget storage
 !
-  IF (LBUDGET_SV) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_C2R2BEG+1,&
-                               &'SELF_BU_RSV') ! RCC
-  IF (LBUDGET_RC) CALL BUDGET (PRCS*PRHODJ(:,:,:), NBUDGET_RC,'AUTO_BU_RRC')
-  IF (LBUDGET_SV) CALL BUDGET (PCRS*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_C2R2BEG+2,'AUTO_BU_RSV')
-  IF (LBUDGET_RR) CALL BUDGET (PRRS*PRHODJ(:,:,:), NBUDGET_RR,'AUTO_BU_RRR')
+  if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 1), 'SELF', pccs(:, :, :) * prhodj(:, :, :) )
+
+  if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC),                        'AUTO', prcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR),                        'AUTO', prrs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 2), 'AUTO', pcrs(:, :, :) * prhodj(:, :, :) )
 !
 !*       4.2.1    Accretion sources
 !
+  if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC),                        'ACCR', prcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR),                        'ACCR', prrs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 1), 'ACCR', pccs(:, :, :) * prhodj(:, :, :) )
+
   WHERE ( (ZRCT(:) .GT. XRTMIN(2)) .AND. (ZRRT(:) .GT. XRTMIN(3))                 &
                .AND. (ZRCS(:) .GT. 0.0) .AND. (ZCCS(:) .GT. 0.0))
 
@@ -1487,25 +1493,9 @@ IF( IMICRO >= 1 ) THEN
 !
 !*       4.2.2   budget storage
 !
-  IF (LBUDGET_SV) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_C2R2BEG+1,&
-                               &'ACCR_BU_RSV') ! RCC
-  IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,'ACCR_BU_RRC')
-  IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR,'ACCR_BU_RRR')
-!
-ELSE
-!
-!*       4.3    Budgets are forwarded
-!
-  IF (LBUDGET_SV) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_C2R2BEG+1,&
-                               &'SELF_BU_RSV') ! RCC
-  IF (LBUDGET_RC) CALL BUDGET (PRCS*PRHODJ(:,:,:), NBUDGET_RC,'AUTO_BU_RRC')
-  IF (LBUDGET_SV) CALL BUDGET (PCRS*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_C2R2BEG+2,'AUTO_BU_RSV')
-  IF (LBUDGET_RR) CALL BUDGET (PRRS*PRHODJ(:,:,:), NBUDGET_RR,'AUTO_BU_RRR')
-  IF (LBUDGET_SV) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_C2R2BEG+1,&
-                               &'ACCR_BU_RSV') ! RCC
-  IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,'ACCR_BU_RRC')
-  IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR,'ACCR_BU_RRR')
-
+  if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC),                        'ACCR', prcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR),                        'ACCR', prrs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 1), 'ACCR', pccs(:, :, :) * prhodj(:, :, :) )
 END IF
 !
   END SUBROUTINE KHKO_COALESCENCE
@@ -1525,7 +1515,11 @@ INTEGER , DIMENSION(SIZE(GNUCT))  :: I1,I2,I3 ! Used to replace the COUNT
 INTEGER                           :: JL       ! and PACK intrinsics
 !
 !-------------------------------------------------------------------------------
-!
+
+if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH),                        'REVA', pths(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV),                        'REVA', prvs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR),                        'REVA', prrs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 2), 'REVA', pcrs(:, :, :) * prhodj(:, :, :) )
 !
 !  optimization by looking for locations where
 !  the raindrop mixing ratio is non-zero
@@ -1714,12 +1708,12 @@ ELSE ! KHKO
     PRRS(:,:,:) = 0.0
   END WHERE
 ENDIF
-!
-IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RV,'REVA_BU_RRV')
-IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR,'REVA_BU_RRR')
-IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_TH,'REVA_BU_RTH')
-IF (LBUDGET_SV) CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_C2R2BEG+2,'CEVA_BU_RSV')
-!
+
+if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH),                        'REVA', pths(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV),                        'REVA', prvs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR),                        'REVA', prrs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 2), 'REVA', pcrs(:, :, :) * prhodj(:, :, :) )
+
   END SUBROUTINE C2R2_KHKO_EVAPORATION
 !
 !-------------------------------------------------------------------------------
@@ -1738,6 +1732,13 @@ INTEGER , DIMENSION(SIZE(GSEDIM)) :: I1,I2,I3 ! Used to replace the COUNT
 INTEGER                           :: JL       ! and PACK intrinsics 
 !
 !-------------------------------------------------------------------------------
+
+if ( lbudget_rc .and. osedc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'SEDI', prcs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rr             ) call Budget_store_init( tbudgets(NBUDGET_RR), 'SEDI', prrs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_sv ) then
+  if ( osedc ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 1), 'SEDI', pccs(:, :, :) * prhodj(:, :, :) )
+  call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 2), 'SEDI', pcrs(:, :, :) * prhodj(:, :, :) )
+end if
 !
 !*       2.1    compute the fluxes  
 !
@@ -1928,19 +1929,19 @@ END DO
 !
 !*       2.5     budget storage
 !
-IF (LBUDGET_RC.AND.OSEDC)                                              &
-                CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,'SEDI_BU_RRC')
-IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR,'SEDI_BU_RRR')
-IF (LBUDGET_SV) THEN
-  IF (OSEDC) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_C2R2BEG+1,&
-                    &'SEDI_BU_RSV') ! RCC
-  CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_C2R2BEG+2,&
-                    &'SEDI_BU_RSV') ! RCR
-END IF
+if ( lbudget_rc .and. osedc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'SEDI', prcs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rr             ) call Budget_store_end( tbudgets(NBUDGET_RR), 'SEDI', prrs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_sv ) then
+  if ( osedc ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 1), 'SEDI', pccs(:, :, :) * prhodj(:, :, :) )
+  call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 2),              'SEDI', pcrs(:, :, :) * prhodj(:, :, :) )
+end if
 !
 !*       2.6  DROPLET DEPOSITION AT THE 1ST LEVEL ABOVE GROUND
 !
 IF (LDEPOC) THEN
+  if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC),                        'DEPO', prcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 1), 'DEPO', pccs(:, :, :) * prhodj(:, :, :) )
+
   GDEP(:,:) = .FALSE.
   GDEP(IIB:IIE,IJB:IJE) =    PRCS(IIB:IIE,IJB:IJE,2) >0 .AND. &
                                   PCCS(IIB:IIE,IJB:IJE,2) >0
@@ -1950,15 +1951,11 @@ IF (LDEPOC) THEN
      PINPRC(:,:) = PINPRC(:,:) + XVDEPOC * PRCT(:,:,2) * PRHODREF(:,:,2) /XRHOLW             
      PINDEP(:,:) = XVDEPOC * PRCT(:,:,2) * PRHODREF(:,:,2) /XRHOLW
   END WHERE
+
+  if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC),                        'DEPO', prcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 1), 'DEPO', pccs(:, :, :) * prhodj(:, :, :) )
 END IF
-!
-!*       2.7     budget storage
-!
-IF ( LBUDGET_RC .AND. LDEPOC ) &
-   CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,'DEPO_BU_RRC')
-IF ( LBUDGET_SV .AND. LDEPOC ) &
-   CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_C2R2BEG+1,'DEPO_BU_RSV')
-!
+
   END SUBROUTINE C2R2_KHKO_SEDIMENTATION
 !-------------------------------------------------------------------------------
 !

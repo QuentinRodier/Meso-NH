@@ -256,7 +256,7 @@ END MODULE MODI_RELAXATION
 !!                 06/2011 (M.Chong)     Case of ELEC
 !!                 11/2011 (C.Lac)       Adaptation to FIT temporal scheme
 !!                 J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
-!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !
 !-------------------------------------------------------------------------------
 !
@@ -278,7 +278,6 @@ USE MODE_EXTRAPOL,   only: Extrapol
 USE MODE_ll,         only: Get_intersection_ll
 USE MODE_MPPDB
 
-USE MODI_BUDGET
 USE MODI_SHUMAN
 
 IMPLICIT NONE
@@ -424,6 +423,7 @@ REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: ZKHU,ZKHV,ZKHW,       &
                              ! averages along x,y,z of the PRHODJ field
                                                      ZWORK
                              ! work array used to expand the LB fields
+logical :: grelax_uvwth
 LOGICAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: GMASK3D_RELAX ! 3D
                              ! mask for hor. relax.
 LOGICAL, DIMENSION(7) :: GHORELAXR ! local array of logical
@@ -444,8 +444,26 @@ CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 CALL GET_GLOBALDIMS_ll(IIU_ll,IJU_ll)
 IIU_ll=IIU_ll+2*JPHEXT
 IJU_ll=IJU_ll+2*JPHEXT
-!
-if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'REL', prus )
+
+grelax_uvwth = ohorelax_uvwth .or. ove_relax .or. ove_relax_grd
+
+if ( lbudget_u   .and. grelax_uvwth ) call Budget_store_init( tbudgets(NBUDGET_U  ), 'REL', prus  (:, :, :)    )
+if ( lbudget_v   .and. grelax_uvwth ) call Budget_store_init( tbudgets(NBUDGET_V  ), 'REL', prvs  (:, :, :)    )
+if ( lbudget_w   .and. grelax_uvwth ) call Budget_store_init( tbudgets(NBUDGET_W  ), 'REL', prws  (:, :, :)    )
+if ( lbudget_th  .and. grelax_uvwth ) call Budget_store_init( tbudgets(NBUDGET_TH ), 'REL', prths (:, :, :)    )
+if ( lbudget_tke .and. ohorelax_tke ) call Budget_store_init( tbudgets(NBUDGET_TKE), 'REL', prtkes(:, :, :)    )
+if ( lbudget_rv  .and. ohorelax_rv  ) call Budget_store_init( tbudgets(NBUDGET_RV ), 'REL', prrs  (:, :, :, 1) )
+if ( lbudget_rc  .and. ohorelax_rc  ) call Budget_store_init( tbudgets(NBUDGET_RC ), 'REL', prrs  (:, :, :, 2) )
+if ( lbudget_rr  .and. ohorelax_rr  ) call Budget_store_init( tbudgets(NBUDGET_RR ), 'REL', prrs  (:, :, :, 3) )
+if ( lbudget_ri  .and. ohorelax_ri  ) call Budget_store_init( tbudgets(NBUDGET_RI ), 'REL', prrs  (:, :, :, 4) )
+if ( lbudget_rs  .and. ohorelax_rs  ) call Budget_store_init( tbudgets(NBUDGET_RS ), 'REL', prrs  (:, :, :, 5) )
+if ( lbudget_rg  .and. ohorelax_rg  ) call Budget_store_init( tbudgets(NBUDGET_RG ), 'REL', prrs  (:, :, :, 6) )
+if ( lbudget_rh  .and. ohorelax_rh  ) call Budget_store_init( tbudgets(NBUDGET_RH ), 'REL', prrs  (:, :, :, 7) )
+if ( lbudget_sv ) then
+  do jsv = 1, ksv
+    if ( ohorelax_sv( jsv ) ) call Budget_store_init( tbudgets(jsv + NBUDGET_SV1 - 1), 'REL', prsvs(:, :, :, jsv) )
+  end do
+end if
 
 ZRHODJU(:,:,:) = MXM(PRHODJ)
 ZRHODJV(:,:,:) = MYM(PRHODJ)
@@ -714,25 +732,25 @@ END DO
 !
 CALL EXTRAPOL('W ', PRUS)
 
-if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'REL', prus )
+if ( lbudget_u   .and. grelax_uvwth ) call Budget_store_end( tbudgets(NBUDGET_U  ), 'REL', prus  (:, :, :)    )
+if ( lbudget_v   .and. grelax_uvwth ) call Budget_store_end( tbudgets(NBUDGET_V  ), 'REL', prvs  (:, :, :)    )
+if ( lbudget_w   .and. grelax_uvwth ) call Budget_store_end( tbudgets(NBUDGET_W  ), 'REL', prws  (:, :, :)    )
+if ( lbudget_th  .and. grelax_uvwth ) call Budget_store_end( tbudgets(NBUDGET_TH ), 'REL', prths (:, :, :)    )
+if ( lbudget_tke .and. ohorelax_tke ) call Budget_store_end( tbudgets(NBUDGET_TKE), 'REL', prtkes(:, :, :)    )
+if ( lbudget_rv  .and. ohorelax_rv  ) call Budget_store_end( tbudgets(NBUDGET_RV ), 'REL', prrs  (:, :, :, 1) )
+if ( lbudget_rc  .and. ohorelax_rc  ) call Budget_store_end( tbudgets(NBUDGET_RC ), 'REL', prrs  (:, :, :, 2) )
+if ( lbudget_rr  .and. ohorelax_rr  ) call Budget_store_end( tbudgets(NBUDGET_RR ), 'REL', prrs  (:, :, :, 3) )
+if ( lbudget_ri  .and. ohorelax_ri  ) call Budget_store_end( tbudgets(NBUDGET_RI ), 'REL', prrs  (:, :, :, 4) )
+if ( lbudget_rs  .and. ohorelax_rs  ) call Budget_store_end( tbudgets(NBUDGET_RS ), 'REL', prrs  (:, :, :, 5) )
+if ( lbudget_rg  .and. ohorelax_rg  ) call Budget_store_end( tbudgets(NBUDGET_RG ), 'REL', prrs  (:, :, :, 6) )
+if ( lbudget_rh  .and. ohorelax_rh  ) call Budget_store_end( tbudgets(NBUDGET_RH ), 'REL', prrs  (:, :, :, 7) )
+if ( lbudget_sv ) then
+  do jsv = 1, ksv
+    if ( ohorelax_sv( jsv ) ) call Budget_store_end( tbudgets(jsv + NBUDGET_SV1 - 1), 'REL', prsvs(:, :, :, jsv) )
+  end do
+end if
 
-IF ( LBUDGET_V   ) CALL BUDGET( PRVS,                 NBUDGET_V,             'REL_BU_RV')
-IF ( LBUDGET_W   ) CALL BUDGET( PRWS,                 NBUDGET_W,             'REL_BU_RW')
-IF ( LBUDGET_TH  ) CALL BUDGET( PRTHS,                NBUDGET_TH,            'REL_BU_RTH')
-IF ( LBUDGET_TKE ) CALL BUDGET( PRTKES,               NBUDGET_TKE,           'REL_BU_RTKE')
-IF ( LBUDGET_RV  ) CALL BUDGET( PRRS(:, :, :, 1 ),    NBUDGET_RV,            'REL_BU_RRV')
-IF ( LBUDGET_RC  ) CALL BUDGET( PRRS(:, :, :, 2 ),    NBUDGET_RC,            'REL_BU_RRC')
-IF ( LBUDGET_RR  ) CALL BUDGET( PRRS(:, :, :, 3 ),    NBUDGET_RR,            'REL_BU_RRR')
-IF ( LBUDGET_RI  ) CALL BUDGET( PRRS(:, :, :, 4 ),    NBUDGET_RI,            'REL_BU_RRI')
-IF ( LBUDGET_RS  ) CALL BUDGET( PRRS(:, :, :, 5 ),    NBUDGET_RS,            'REL_BU_RRS')
-IF ( LBUDGET_RG  ) CALL BUDGET( PRRS(:, :, :, 6 ),    NBUDGET_RG,            'REL_BU_RRG')
-IF ( LBUDGET_RH  ) CALL BUDGET( PRRS(:, :, :, 7 ),    NBUDGET_RH,            'REL_BU_RRH')
-IF ( LBUDGET_SV  ) THEN
-  DO JSV=1,KSV 
-                   CALL BUDGET( PRSVS(:, :, :, JSV ), NBUDGET_SV1 - 1 + JSV, 'REL_BU_RSV' )
-  END DO
-END IF
-!
+
 CONTAINS
 !     ######################################
       SUBROUTINE EXPAND_LB (PLBX,PLBY,PWORK)

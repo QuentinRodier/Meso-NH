@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -23,7 +23,7 @@ INTEGER,                  INTENT(IN)    :: KKU   !uppest atmosphere array index
 INTEGER,                  INTENT(IN)    :: KKL   !vert. levels type 1=MNH -1=ARO
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 CHARACTER(len=1),         INTENT(IN)    :: HFRAC_ICE
-CHARACTER(len=4),         INTENT(IN)    :: HBUNAME  ! Name of the budget
+CHARACTER(len=*),         INTENT(IN)    :: HBUNAME  ! Name of the budget
 LOGICAL,                  INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid 
                                                     ! Condensation
 LOGICAL                                 :: OSIGMAS  ! Switch for Sigma_s: 
@@ -163,24 +163,26 @@ END MODULE MODI_ICE_ADJUST
 !!                         This modification allows to call ice_adjust on T variable
 !!                         or to call it on S variables
 !!      2016-11 S. Riette: all-or-nothing adjustment now uses condensation
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_BUDGET
+use modd_budget,       only: lbudget_th, lbudget_rv, lbudget_rc, lbudget_ri, &
+                             NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RI, &
+                             tbudgets
 USE MODD_CONF
 USE MODD_CST
 USE MODD_PARAMETERS
 
-use mode_tools_ll,        only: GET_INDICE_ll
+use mode_budget,       only: Budget_store_init, Budget_store_end
+use mode_tools_ll,     only: GET_INDICE_ll
 
-USE MODI_BUDGET
 USE MODI_CONDENSATION
 USE MODI_GET_HALO
-!
+
 IMPLICIT NONE
 !
 !
@@ -192,7 +194,7 @@ INTEGER,                  INTENT(IN)    :: KKU  !uppest atmosphere array index
 INTEGER,                  INTENT(IN)    :: KKL  !vert. levels type 1=MNH -1=ARO
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 CHARACTER(len=1),         INTENT(IN)    :: HFRAC_ICE
-CHARACTER(len=4),         INTENT(IN)    :: HBUNAME  ! Name of the budget
+CHARACTER(len=*),         INTENT(IN)    :: HBUNAME  ! Name of the budget
 LOGICAL,                  INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid 
                                                     ! Condensation
 LOGICAL                                 :: OSIGMAS  ! Switch for Sigma_s: 
@@ -262,6 +264,11 @@ REAL, DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3)) :: ZSIGS,ZSRCS
 !*       1.     PRELIMINARIES
 !               -------------
 !
+if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), trim( hbuname ), pths(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), trim( hbuname ), prvs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), trim( hbuname ), prcs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), trim( hbuname ), pris(:, :, :) * prhodj(:, :, :) )
+
 IIU = SIZE(PEXNREF,1)
 IJU = SIZE(PEXNREF,2)
 IKU = SIZE(PEXNREF,3)
@@ -430,11 +437,11 @@ ENDIF
 !*       6.  STORE THE BUDGET TERMS
 !            ----------------------
 !
-IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:) * PRHODJ(:,:,:),NBUDGET_RV,HBUNAME//'_BU_RRV')
-IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:) * PRHODJ(:,:,:),NBUDGET_RC,HBUNAME//'_BU_RRC')
-IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:) * PRHODJ(:,:,:),NBUDGET_RI,HBUNAME//'_BU_RRI')
-IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:) * PRHODJ(:,:,:),NBUDGET_TH,HBUNAME//'_BU_RTH')
-!
+if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), trim( hbuname ), pths(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), trim( hbuname ), prvs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), trim( hbuname ), prcs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), trim( hbuname ), pris(:, :, :) * prhodj(:, :, :) )
+
 !------------------------------------------------------------------------------
 !
 !

@@ -93,11 +93,14 @@ END MODULE MODI_KHKO_NOTADJUST
 !!   M.Mazoyer : 10/2016 New KHKO output fields
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !
-USE MODD_BUDGET
+use modd_budget,          only: lbudget_th, lbudget_rv, lbudget_rc, lbudget_sv,  &
+                                NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_SV1, &
+                                tbudgets
 USE MODD_CONF
 USE MODD_CST
 use modd_field,           only: TFIELDDATA,TYPEREAL
@@ -107,13 +110,12 @@ USE MODD_NSV,             ONLY: NSV_C2R2BEG
 USE MODD_PARAMETERS
 USE MODD_RAIN_C2R2_DESCR, ONLY: XRTMIN
 
-!
+use mode_budget,          only: Budget_store_init, Budget_store_end
 USE MODE_IO_FIELD_WRITE,  only: IO_Field_write
 USE MODE_MSG
 use mode_tools,           only: Countjv
 use mode_tools_ll,        only: GET_INDICE_ll
-!
-USE MODI_BUDGET
+
 USE MODI_PROGNOS
 !
 IMPLICIT NONE
@@ -194,6 +196,14 @@ TYPE(TFIELDDATA)  :: TZFIELD
 !*       1.     PRELIMINARIES
 !               -------------
 !
+if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'COND', prvs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'COND', prcs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'COND', pths(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_sv ) then
+  call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg    ), 'CEVA', pcnucs(:, :, :) * prhodj(:, :, :) )
+  call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 1), 'CEVA', pccs  (:, :, :) * prhodj(:, :, :) )
+end if
+
 ILUOUT = TLUOUT%NLU
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB=1+JPVEXT
@@ -411,13 +421,12 @@ END IF
 !*       7.  STORE THE BUDGET TERMS
 !            ----------------------
 !
-!
-IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:) * PRHODJ(:,:,:),NBUDGET_RV,'COND_BU_RRV')
-IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:) * PRHODJ(:,:,:),NBUDGET_RC,'COND_BU_RRC')
-IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:) * PRHODJ(:,:,:),NBUDGET_TH,'COND_BU_RTH')
-IF (LBUDGET_SV) THEN
-  CALL BUDGET (PCNUCS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_C2R2BEG,  'CEVA_BU_RSV') ! RCN
-  CALL BUDGET (PCCS(:,:,:) * PRHODJ(:,:,:),  NBUDGET_SV1-1+NSV_C2R2BEG+1,'CEVA_BU_RSV') ! RCC
-END IF
-!
+if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'COND', prvs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'COND', prcs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'COND', pths(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_sv ) then
+  call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg    ), 'CEVA', pcnucs(:, :, :) * prhodj(:, :, :) )
+  call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 1), 'CEVA', pccs  (:, :, :) * prhodj(:, :, :) )
+end if
+
 END SUBROUTINE KHKO_NOTADJUST

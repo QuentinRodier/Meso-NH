@@ -177,12 +177,18 @@ END MODULE MODI_RESOLVED_ELEC_n
 !*       0.    DECLARATIONS
 !              ------------
 !
+use mode_budget,           only: Budget_store_init, Budget_store_end
 USE MODE_ELEC_ll
 USE MODE_IO_FILE,          ONLY: IO_File_close, IO_File_open
 USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_add2list, IO_File_find_byname
 USE MODE_ll
 !
-USE MODD_METRICS_n, ONLY : XDXX, XDYY, XDZX, XDZY, XDZZ 
+use modd_budget,           only: lbudget_th, lbudget_rv, lbudget_rc, lbudget_rr, lbudget_ri, lbudget_rs, lbudget_rg, lbudget_rh, &
+                                 lbudget_sv,                                                                                     &
+                                 NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, &
+                                 NBUDGET_SV1,                                                                                    &
+                                 tbudgets
+USE MODD_METRICS_n, ONLY : XDXX, XDYY, XDZX, XDZY, XDZZ
 USE MODD_FIELD_n, ONLY : XRSVS
 USE MODD_CONF, ONLY : L1D, L2D, CEXP
 USE MODD_CST
@@ -190,7 +196,6 @@ USE MODD_IO,            ONLY: TFILEDATA, TFILE_DUMMY
 USE MODD_PARAMETERS, ONLY : JPVEXT
 USE MODD_ELEC_DESCR
 USE MODD_ELEC_n
-USE MODD_BUDGET
 USE MODD_NSV
 USE MODD_CH_MNHC_n,    ONLY: LUSECHEM,LCH_CONV_LINOX
 USE MODD_DYN_n, ONLY: NSTOP, XTSTEP
@@ -205,7 +210,6 @@ USE MODI_ICE_ADJUST_ELEC
 USE MODI_TO_ELEC_FIELD_n
 USE MODI_FLASH_GEOM_ELEC_n
 USE MODI_SHUMAN
-USE MODI_BUDGET
 USE MODI_ION_ATTACH_ELEC
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
 !
@@ -373,6 +377,19 @@ IKB = 1 + JPVEXT
 IKE = SIZE(PZZ,3) - JPVEXT
 IKU = SIZE(PZZ,3)
 !
+if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'NEGA', pths(:, :, :)    )
+if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'NEGA', prs (:, :, :, 1) )
+if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'NEGA', prs (:, :, :, 2) )
+if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR), 'NEGA', prs (:, :, :, 3) )
+if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'NEGA', prs (:, :, :, 4) )
+if ( lbudget_rs ) call Budget_store_init( tbudgets(NBUDGET_RS), 'NEGA', prs (:, :, :, 5) )
+if ( lbudget_rg ) call Budget_store_init( tbudgets(NBUDGET_RG), 'NEGA', prs (:, :, :, 6) )
+if ( lbudget_rh ) call Budget_store_init( tbudgets(NBUDGET_RH), 'NEGA', prs (:, :, :, 7) )
+if ( lbudget_sv ) then
+  do jsv = nsv_elecbeg, nsv_elecend
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + jsv), 'NEGA', psvs(:, :, :, jsv) )
+  end do
+end if
 !
 !------------------------------------------------------------------------------
 !
@@ -612,21 +629,19 @@ END DO
 !
 !*       3.4     store the budget terms
 !
-IF (LBUDGET_RV) CALL BUDGET (PRS(:,:,:,1) * PRHODJ(:,:,:), NBUDGET_RV, 'NEGA_BU_RRV')
-IF (LBUDGET_RC) CALL BUDGET (PRS(:,:,:,2) * PRHODJ(:,:,:), NBUDGET_RC, 'NEGA_BU_RRC')
-IF (LBUDGET_RR) CALL BUDGET (PRS(:,:,:,3) * PRHODJ(:,:,:), NBUDGET_RR, 'NEGA_BU_RRR')
-IF (LBUDGET_RI) CALL BUDGET (PRS(:,:,:,4) * PRHODJ(:,:,:) ,NBUDGET_RI, 'NEGA_BU_RRI')
-IF (LBUDGET_RS) CALL BUDGET (PRS(:,:,:,5) * PRHODJ(:,:,:), NBUDGET_RS, 'NEGA_BU_RRS')
-IF (LBUDGET_RG) CALL BUDGET (PRS(:,:,:,6) * PRHODJ(:,:,:), NBUDGET_RG, 'NEGA_BU_RRG')
-IF (LBUDGET_RH) CALL BUDGET (PRS(:,:,:,7) * PRHODJ(:,:,:), NBUDGET_RH, 'NEGA_BU_RRH')
-IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)  * PRHODJ(:,:,:), NBUDGET_TH, 'NEGA_BU_RTH')
-!
-IF (LBUDGET_SV) THEN
-  DO JSV = NSV_ELECBEG, NSV_ELECEND
-    CALL BUDGET (PSVS(:,:,:,JSV) * PRHODJ(:,:,:), NBUDGET_SV1-1+JSV, 'NEGA_BU_RSV')
-  END DO
-END IF
-!
+if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'NEGA', pths(:, :, :)    * prhodj(:, :, :) )
+if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'NEGA', prs (:, :, :, 1) * prhodj(:, :, :) )
+if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'NEGA', prs (:, :, :, 2) * prhodj(:, :, :) )
+if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR), 'NEGA', prs (:, :, :, 3) * prhodj(:, :, :) )
+if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'NEGA', prs (:, :, :, 4) * prhodj(:, :, :) )
+if ( lbudget_rs ) call Budget_store_end( tbudgets(NBUDGET_RS), 'NEGA', prs (:, :, :, 5) * prhodj(:, :, :) )
+if ( lbudget_rg ) call Budget_store_end( tbudgets(NBUDGET_RG), 'NEGA', prs (:, :, :, 6) * prhodj(:, :, :) )
+if ( lbudget_rh ) call Budget_store_end( tbudgets(NBUDGET_RH), 'NEGA', prs (:, :, :, 7) * prhodj(:, :, :) )
+if ( lbudget_sv ) then
+  do jsv = nsv_elecbeg, nsv_elecend
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + jsv), 'NEGA', psvs(:, :, :, jsv) * prhodj(:, :, :) )
+  end do
+end if
 !
 !------------------------------------------------------------------------------
 !

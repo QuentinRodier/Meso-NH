@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -150,19 +150,21 @@ END MODULE MODI_FAST_TERMS
 !!                     J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !!                     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!                     June 17, 2016 (P. Wautelet) removed unused variables
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_BUDGET
-USE MODD_CST
+use modd_budget,     only: lbudget_rc, lbudget_rv, lbudget_th, NBUDGET_RC, NBUDGET_RV, NBUDGET_TH, tbudgets
 USE MODD_CONF
+USE MODD_CST
 USE MODD_LUNIT_n, ONLY: TLUOUT
 USE MODD_PARAMETERS
-!
-USE MODI_BUDGET
+
+use mode_budget,     only: Budget_store_end, Budget_store_init
+
 USE MODI_CONDENS
 USE MODI_GET_HALO
 !
@@ -238,8 +240,11 @@ IF (OSUBG_COND) THEN
 ELSE
   ITERMAX=1
 END IF
-!
-!
+
+if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'COND', prvs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'COND', prcs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'COND', pths(:, :, :) * prhodj(:, :, :) )
+
 !-------------------------------------------------------------------------------
 !
 !*       2.     COMPUTE QUANTITIES WITH THE GUESS OF THE FUTURE INSTANT
@@ -418,12 +423,11 @@ ENDIF
 !
 !*       7.  STORE THE BUDGET TERMS
 !            ----------------------
-!
-!
-IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:) * PRHODJ(:,:,:),NBUDGET_RV,'COND_BU_RRV')
-IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:) * PRHODJ(:,:,:),NBUDGET_RC,'COND_BU_RRC')
-IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:) * PRHODJ(:,:,:),NBUDGET_TH,'COND_BU_RTH')
-!
+
+if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'COND', prvs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'COND', prcs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'COND', pths(:, :, :) * prhodj(:, :, :) )
+
 !------------------------------------------------------------------------------
 !
 !

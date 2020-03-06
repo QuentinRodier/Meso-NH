@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -139,14 +139,6 @@ END MODULE MODI_ICE_ADJUST_ELEC
 !!                            !  pressure  function 
 !!      Module  MODD_CONF 
 !!         CCONF
-!!      Module MODD_BUDGET:
-!!         NBUMOD 
-!!         CBUTYPE
-!!         NBUPROCCTR 
-!!         LBU_RTH    
-!!         LBU_RRV  
-!!         LBU_RRC  
-!!         LBU_RRI  
 !!
 !!
 !!    REFERENCE
@@ -165,25 +157,27 @@ END MODULE MODI_ICE_ADJUST_ELEC
 !!      C. Barthe   19/11/09   update to version 4.8.1
 !!      M. Chong    Mar. 2010  Add small ions
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet    03/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAMETERS
-USE MODD_CST
+use modd_budget,         only: lbudget_th, lbudget_rv, lbudget_rc, lbudget_ri, lbudget_sv,  &
+                               NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RI, NBUDGET_SV1, &
+                               tbudgets
 USE MODD_CONF
-USE MODD_BUDGET
-USE MODD_NSV, ONLY : NSV_ELECBEG, NSV_ELECEND
+USE MODD_CST
 USE MODD_ELEC_DESCR, ONLY : XRTMIN_ELEC, XQTMIN, XFC, XFI, XECHARGE
+USE MODD_NSV, ONLY : NSV_ELECBEG, NSV_ELECEND
+USE MODD_PARAMETERS
 USE MODD_RAIN_ICE_DESCR, ONLY : XRTMIN, XBI
 
+use mode_budget,          only: Budget_store_init, Budget_store_end
 use mode_tools_ll,        only: GET_INDICE_ll
 
 USE MODI_CONDENSATION
-USE MODI_BUDGET
 USE MODI_GET_HALO
 !
 IMPLICIT NONE
@@ -311,6 +305,16 @@ ZT0  = XTT               ! Usefull if LPRETREATMENT=T or LNEW_ADJUST=T
 ZT00 = XTT-40.           ! Usefull if LPRETREATMENT=T or LNEW_ADJUST=T
 !
 !-------------------------------------------------------------------------------
+if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'CDEPI', pths(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'CDEPI', prvs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'CDEPI', prcs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'CDEPI', pris(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_sv ) then
+  call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg     ), 'CDEPI', pqpis(:, :, :) * prhodj(:, :, :) )
+  call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend     ), 'CDEPI', pqnis(:, :, :) * prhodj(:, :, :) )
+  call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'CDEPI', pqcs (:, :, :) * prhodj(:, :, :) )
+  call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'CDEPI', pqis (:, :, :) * prhodj(:, :, :) )
+end if
 !
 !*       2.     COMPUTE QUANTITIES WITH THE GUESS OF THE FUTURE INSTANT
 !               -------------------------------------------------------
@@ -625,17 +629,16 @@ ENDIF
 !*       6.  STORE THE BUDGET TERMS
 !            ----------------------
 !
-IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:) * PRHODJ(:,:,:),NBUDGET_RV,'DEPI_BU_RRV')
-IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:) * PRHODJ(:,:,:),NBUDGET_RC,'DEPI_BU_RRC')
-IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:) * PRHODJ(:,:,:),NBUDGET_RI,'DEPI_BU_RRI')
-IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:) * PRHODJ(:,:,:),NBUDGET_TH,'DEPI_BU_RTH')
-IF (LBUDGET_SV) THEN
-  CALL BUDGET(PQPIS(:,:,:) * PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_ELECBEG,   'DEPI_BU_RSV')
-  CALL BUDGET(PQNIS(:,:,:) * PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_ELECEND,   'DEPI_BU_RSV')
-  CALL BUDGET(PQCS(:,:,:)  * PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_ELECBEG+1, 'DEPI_BU_RSV')
-  CALL BUDGET(PQIS(:,:,:)  * PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_ELECBEG+3, 'DEPI_BU_RSV')
-END IF
-!
+if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'CDEPI', pths(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'CDEPI', prvs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'CDEPI', prcs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'CDEPI', pris(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_sv ) then
+  call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg     ), 'CDEPI', pqpis(:, :, :) * prhodj(:, :, :) )
+  call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend     ), 'CDEPI', pqnis(:, :, :) * prhodj(:, :, :) )
+  call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'CDEPI', pqcs (:, :, :) * prhodj(:, :, :) )
+  call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'CDEPI', pqis (:, :, :) * prhodj(:, :, :) )
+end if
 !------------------------------------------------------------------------------
 !
 END SUBROUTINE ICE_ADJUST_ELEC 

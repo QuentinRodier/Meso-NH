@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -264,17 +264,19 @@ END MODULE MODI_RESOLVED_CLOUD
 !!                    10/2016 (C.Lac) Add droplet deposition
 !!      S.Riette  : 11/2016 : ice_adjust before and after rain_ice
 !!                            ICE3/ICE4 modified, old version under LRED=F   
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!      P. Wautelet: 01/02/2019: ZRSMIN is now allocatable (instead of size of XRTMIN which was sometimes not allocated)
-!!                   02/2019 C.Lac add rain fraction as an output field
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 01/02/2019: ZRSMIN is now allocatable (instead of size of XRTMIN which was sometimes not allocated)
+!  C. Lac         02/2019: add rain fraction as an output field
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
-USE MODD_BUDGET,         ONLY: LBUDGET_TH, LBUDGET_RV, LBUDGET_RC, LBUDGET_RR, LBUDGET_RI, LBUDGET_RS, LBUDGET_RG, LBUDGET_RH, &
-                               LBUDGET_SV,                                                                                     &
+use modd_budget,         only: lbudget_th, lbudget_rv, lbudget_rc, lbudget_rr, lbudget_ri, lbudget_rs, lbudget_rg, lbudget_rh, &
+                               lbudget_sv,                                                                                     &
                                NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, &
-                               NBUDGET_SV1
+                               NBUDGET_SV1,                                                                                    &
+                               tbudgets
 USE MODD_CH_AEROSOL,     ONLY: LORILAM
 USE MODD_DUST,           ONLY: LDUST
 USE MODD_CST,            ONLY: XCI, XCL, XCPD, XCPV, XLSTT, XLVTT, XMNH_TINY, XP00, XRD, XRHOLW, XTT
@@ -291,9 +293,9 @@ USE MODD_PARAM_LIMA,     ONLY: LCOLD, XCONC_CCN_TOT, NMOD_CCN, NMOD_IFN, NMOD_IM
 USE MODD_RAIN_ICE_DESCR, ONLY: XRTMIN
 USE MODD_SALT,           ONLY: LSALT
 !
+use mode_budget,         only: Budget_store_init, Budget_store_end
 USE MODE_ll
 !
-USE MODI_BUDGET
 USE MODI_C2R2_ADJUST
 USE MODI_C3R5_ADJUST
 USE MODI_FAST_TERMS
@@ -506,6 +508,37 @@ IF (HCLOUD(1:3)=='ICE' .AND. LRED) THEN
   ALLOCATE(ZRSMIN(SIZE(XRTMIN)))
   ZRSMIN(:) = XRTMIN(:) / PTSTEP
 END IF
+if ( hcloud /= 'KHKO' .and. hcloud /= 'C2R2' ) then
+  if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'NEGA', pths(:, :, :)    )
+  if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'NEGA', prs (:, :, :, 1) )
+  if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'NEGA', prs (:, :, :, 2) )
+! else
+!   if ( .not. ( hactccn == 'ABRK' .and. ( lorilam .or. ldust .or. lsalt ) ) .and. (.not. lsupsat) ) then
+!     if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'HENU', pths(:, :, :) )
+!   end if
+end if
+if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR), 'NEGA', prs(:, :, :, 3) )
+if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'NEGA', prs(:, :, :, 4) )
+if ( lbudget_rs ) call Budget_store_init( tbudgets(NBUDGET_RS), 'NEGA', prs(:, :, :, 5) )
+if ( lbudget_rg ) call Budget_store_init( tbudgets(NBUDGET_RG), 'NEGA', prs(:, :, :, 6) )
+if ( lbudget_rh ) call Budget_store_init( tbudgets(NBUDGET_RH), 'NEGA', prs(:, :, :, 7) )
+if ( lbudget_sv .and. hcloud == 'LIMA' ) then
+  if ( owarm ) then
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'NEGA', zsvs(:, :, :, nsv_lima_nc) )
+  end if
+  if ( owarm .and. orain )  then
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'NEGA', zsvs(:, :, :, nsv_lima_nr) )
+  end if
+  if ( lcold ) then
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'NEGA', zsvs(:, :, :, nsv_lima_ni) )
+  end if
+  do jl = nsv_lima_ccn_free, nsv_lima_ccn_free + nmod_ccn - 1
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + jl), 'NEGA', zsvs(:, :, :, jl) )
+  end do
+  do jl = nsv_lima_ifn_free, nsv_lima_ifn_free + nmod_ifn - 1
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + jl), 'NEGA', zsvs(:, :, :, jl) )
+  end do
+end if
 !
 !*       2.     TRANSFORMATION INTO PHYSICAL TENDENCIES
 !               ---------------------------------------
@@ -765,35 +798,34 @@ END SELECT
 !*       3.3  STORE THE BUDGET TERMS
 !            ----------------------
 !
-IF ((HCLOUD /= 'KHKO') .AND. (HCLOUD /= 'C2R2') ) THEN
- IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)  * PRHODJ(:,:,:), NBUDGET_TH,'NEGA_BU_RTH')
- IF (LBUDGET_RV) CALL BUDGET (PRS(:,:,:,1) * PRHODJ(:,:,:), NBUDGET_RV,'NEGA_BU_RRV')
- IF (LBUDGET_RC) CALL BUDGET (PRS(:,:,:,2) * PRHODJ(:,:,:), NBUDGET_RC,'NEGA_BU_RRC')
-END IF
-IF (LBUDGET_RR) CALL BUDGET (PRS(:,:,:,3) * PRHODJ(:,:,:), NBUDGET_RR,'NEGA_BU_RRR')
-IF (LBUDGET_RI) CALL BUDGET (PRS(:,:,:,4) * PRHODJ(:,:,:), NBUDGET_RI,'NEGA_BU_RRI')
-IF (LBUDGET_RS) CALL BUDGET (PRS(:,:,:,5) * PRHODJ(:,:,:), NBUDGET_RS,'NEGA_BU_RRS')
-IF (LBUDGET_RG) CALL BUDGET (PRS(:,:,:,6) * PRHODJ(:,:,:), NBUDGET_RG,'NEGA_BU_RRG')
-IF (LBUDGET_RH) CALL BUDGET (PRS(:,:,:,7) * PRHODJ(:,:,:), NBUDGET_RH,'NEGA_BU_RRH')
-IF (LBUDGET_SV .AND. (HCLOUD == 'LIMA')) THEN
-   IF (OWARM) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NC) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NC,'NEGA_BU_RSV')
-   IF (OWARM.AND.ORAIN) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NR) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NR,'NEGA_BU_RSV')
-   IF (LCOLD) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NI) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NI,'NEGA_BU_RSV')
-   IF (NMOD_CCN.GE.1) THEN
-      DO JL=1, NMOD_CCN
-         CALL BUDGET ( ZSVS(:,:,:,NSV_LIMA_CCN_FREE+JL-1)* &
-              PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_CCN_FREE+JL-1,'NEGA_BU_RSV')
-      END DO
-   END IF
-   IF (NMOD_IFN.GE.1) THEN
-      DO JL=1, NMOD_IFN
-         CALL BUDGET ( ZSVS(:,:,:,NSV_LIMA_IFN_FREE+JL-1)* &
-              PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_IFN_FREE+JL-1,'NEGA_BU_RSV')
-      END DO
-   END IF
-END IF
+if ( hcloud /= 'KHKO' .and. hcloud /= 'C2R2' ) then
+  if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'NEGA', pths(:, :, :)    * prhodj(:, :, :) )
+  if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'NEGA', prs (:, :, :, 1) * prhodj(:, :, :) )
+  if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'NEGA', prs (:, :, :, 2) * prhodj(:, :, :) )
+end if
+if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR), 'NEGA', prs(:, :, :, 3) * prhodj(:, :, :) )
+if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'NEGA', prs(:, :, :, 4) * prhodj(:, :, :) )
+if ( lbudget_rs ) call Budget_store_end( tbudgets(NBUDGET_RS), 'NEGA', prs(:, :, :, 5) * prhodj(:, :, :) )
+if ( lbudget_rg ) call Budget_store_end( tbudgets(NBUDGET_RG), 'NEGA', prs(:, :, :, 6) * prhodj(:, :, :) )
+if ( lbudget_rh ) call Budget_store_end( tbudgets(NBUDGET_RH), 'NEGA', prs(:, :, :, 7) * prhodj(:, :, :) )
+if ( lbudget_sv .and. hcloud == 'LIMA' ) then
+  if ( owarm ) then
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'NEGA', zsvs(:, :, :, nsv_lima_nc) * prhodj(:, :, :) )
+  end if
+  if ( owarm .and. orain )  then
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'NEGA', zsvs(:, :, :, nsv_lima_nr) * prhodj(:, :, :) )
+  end if
+  if ( lcold ) then
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'NEGA', zsvs(:, :, :, nsv_lima_ni) * prhodj(:, :, :) )
+  end if
+  do jl = nsv_lima_ccn_free, nsv_lima_ccn_free + nmod_ccn - 1
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + jl), 'NEGA', zsvs(:, :, :, jl) * prhodj(:, :, :) )
+  end do
+  do jl = nsv_lima_ifn_free, nsv_lima_ifn_free + nmod_ifn - 1
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + jl), 'NEGA', zsvs(:, :, :, jl) * prhodj(:, :, :) )
+  end do
+end if
 !
-
 !*       3.4    Limitations of Na and Nc to the CCN max number concentration
 !
 ! Commented by O.Thouron 03/2013
@@ -956,7 +988,7 @@ SELECT CASE ( HCLOUD )
 !
 !
     IF (.NOT. LRED .OR. (LRED .AND. LADJ_AFTER) ) THEN
-      CALL ICE_ADJUST (1,IKU,1, KRR, CFRAC_ICE_ADJUST, 'DEPI',    &
+      CALL ICE_ADJUST (1,IKU,1, KRR, CFRAC_ICE_ADJUST, 'CDEPI',    &
                     OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,                    &
                     PRHODJ, PEXNREF,  PSIGS, PMFCONV, PPABST, ZZZ,           &
                     ZEXN, PCF_MF,PRC_MF,PRI_MF,                                    &   
@@ -1041,7 +1073,7 @@ SELECT CASE ( HCLOUD )
 !*       10.2   Perform the saturation adjustment over cloud ice and cloud water
 !
     IF (.NOT. LRED .OR. (LRED .AND. LADJ_AFTER) ) THEN
-     CALL ICE_ADJUST (1,IKU,1, KRR, CFRAC_ICE_ADJUST, 'DEPI',                &
+     CALL ICE_ADJUST (1,IKU,1, KRR, CFRAC_ICE_ADJUST, 'CDEPI',               &
                     OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,                    &
                     PRHODJ, PEXNREF, PSIGS, PMFCONV, PPABST, ZZZ,            &
                     ZEXN, PCF_MF,PRC_MF,PRI_MF,                              &                     
@@ -1140,6 +1172,9 @@ IF(HCLOUD=='ICE3' .OR. HCLOUD=='ICE4' ) THEN
 ENDIF
 !
 IF ( (HCLOUD == 'KHKO') .OR. (HCLOUD == 'C2R2') ) THEN
+  if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'NECON', pths(:, :, :)    )
+  if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'NECON', prs (:, :, :, 1) )
+  if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'NECON', prs (:, :, :, 2) )
 !    CALL GET_HALO(PRS(:,:,:,2))
 !    CALL GET_HALO(ZSVS(:,:,:,2))
 !    CALL GET_HALO(ZSVS(:,:,:,3))
@@ -1155,9 +1190,6 @@ IF ( (HCLOUD == 'KHKO') .OR. (HCLOUD == 'C2R2') ) THEN
         ZSVS(:,:,:,JSV) = 0.0
       END WHERE
     ENDDO
- IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)  * PRHODJ(:,:,:), NBUDGET_TH,'NECON_BU_RTH')
- IF (LBUDGET_RV) CALL BUDGET (PRS(:,:,:,1) * PRHODJ(:,:,:), NBUDGET_RV,'NECON_BU_RRV')
- IF (LBUDGET_RC) CALL BUDGET (PRS(:,:,:,2) * PRHODJ(:,:,:), NBUDGET_RC,'NECON_BU_RRC')
 END IF
 !-------------------------------------------------------------------------------
 !
@@ -1181,6 +1213,12 @@ IF (HCLOUD=='C2R2' .OR. HCLOUD=='C3R5' .OR. HCLOUD=='KHKO' .OR. HCLOUD=='LIMA') 
   DEALLOCATE(ZSVS)
   DEALLOCATE(ZSVT)
 ENDIF
+
+IF ( (HCLOUD == 'KHKO') .OR. (HCLOUD == 'C2R2') ) THEN
+  if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'NECON', pths(:, :, :)    )
+  if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'NECON', prs (:, :, :, 1) )
+  if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'NECON', prs (:, :, :, 2) )
+END IF
 !
 !-------------------------------------------------------------------------------
 !

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -98,12 +98,13 @@ END MODULE MODI_LIMA_PRECIP_SCAVENGING
 !!  Philippe Wautelet 28/05/2018: corrected truncated integer division (3/2 -> 1.5)
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
+!  P. Wautelet    03/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
 !*                  0.DECLARATIONS          
 !                   --------------
 !
-USE MODD_BUDGET
+use modd_budget,          only: lbudget_sv, NBUDGET_SV1, tbudgets
 USE MODD_CST
 USE MODD_NSV
 USE MODD_PARAMETERS
@@ -116,9 +117,9 @@ USE MODD_PARAM_LIMA,      ONLY: NMOD_IFN, NSPECIE, XFRAC,                       
                                 XRTMIN, XCTMIN
 USE MODD_PARAM_LIMA_WARM, ONLY: XCR, XDR
 
+use mode_budget,          only: Budget_store_init, Budget_store_end
 use mode_tools,           only: Countjv
 
-USE MODI_BUDGET
 USE MODI_GAMMA
 USE MODI_INI_NSV
 USE MODI_LIMA_FUNCTIONS
@@ -240,6 +241,7 @@ REAL, DIMENSION(:,:), ALLOCATABLE ::     &
                       ZVOLDR_INV            ! INV of Mean volumic Raindrop diameter [m]
 REAL               :: ZDENS_RATIO_SQRT 
 INTEGER :: SV_VAR, NM, JM
+integer :: idx
 REAL :: XMDIAMP 
 REAL :: XSIGMAP  
 REAL :: XRHOP   
@@ -248,7 +250,17 @@ REAL :: XFRACP
 !
 !
 !------------------------------------------------------------------------------
-!
+
+if ( lbudget_sv ) then
+  do jl = 1, nmod_ccn
+    idx = nsv_lima_ccn_free - 1 + jl
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + idx), 'SCAV', prsvs(:, :, :, idx) )
+  end do
+  do jl = 1, nmod_ifn
+    idx = nsv_lima_ifn_free - 1 + jl
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + idx), 'SCAV', prsvs(:, :, :, idx) )
+  end do
+end if
 !
 !*       1.     PRELIMINARY COMPUTATIONS
 !   	        ------------------------
@@ -555,21 +567,16 @@ DO JSV = 1, NMOD_CCN+NMOD_IFN
    ENDIF
 ENDDO
 !
-IF (LBUDGET_SV) THEN
-   IF (NMOD_CCN.GE.1) THEN
-      DO JL=1, NMOD_CCN
-         CALL BUDGET ( PRSVS(:,:,:,NSV_LIMA_CCN_FREE+JL-1), &
-              NBUDGET_SV1-1+NSV_LIMA_CCN_FREE+JL-1,'SCAV_BU_RSV')
-      END DO
-   END IF
-   IF (NMOD_IFN.GE.1) THEN
-      DO JL=1, NMOD_IFN
-         CALL BUDGET ( PRSVS(:,:,:,NSV_LIMA_IFN_FREE+JL-1), &
-              NBUDGET_SV1-1+NSV_LIMA_IFN_FREE+JL-1,'SCAV_BU_RSV')
-      END DO
-   END IF
-END IF
-!
+if ( lbudget_sv ) then
+  do jl = 1, nmod_ccn
+    idx = nsv_lima_ccn_free - 1 + jl
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + idx), 'SCAV', prsvs(:, :, :, idx) )
+  end do
+  do jl = 1, nmod_ifn
+    idx = nsv_lima_ifn_free - 1 + jl
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + idx), 'SCAV', prsvs(:, :, :, idx) )
+  end do
+end if
 !------------------------------------------------------------------------------
 !
 !

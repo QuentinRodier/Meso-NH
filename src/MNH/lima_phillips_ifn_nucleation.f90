@@ -111,7 +111,6 @@ END MODULE MODI_LIMA_PHILLIPS_IFN_NUCLEATION
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_BUDGET
 USE MODD_CST,             ONLY : XP00, XRD, XMV, XMD, XCPD, XCPV, XCL, XCI,        &
                                  XTT, XLSTT, XLVTT, XALPI, XBETAI, XGAMI,          &
                                  XALPW, XBETAW, XGAMW, XPI
@@ -124,7 +123,6 @@ USE MODD_PARAM_LIMA_COLD, ONLY : XMNU0
 
 use mode_tools,           only: Countjv
 
-USE MODI_BUDGET
 USE MODI_LIMA_PHILLIPS_INTEG
 USE MODI_LIMA_PHILLIPS_REF_SPECTRUM
 

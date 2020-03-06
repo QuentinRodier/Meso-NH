@@ -96,7 +96,6 @@ USE MODD_VEG_n
 
 use mode_budget,     only: Budget_store_init, Budget_store_end
 
-USE MODI_BUDGET
 USE MODI_MNHGET_SURF_PARAM_n
 USE MODI_SHUMAN
 
@@ -153,10 +152,16 @@ IIU = SIZE(PUT,1)
 IJU = SIZE(PUT,2)
 IKU = SIZE(PUT,3)
 
-if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'DRAG', prus )
-!
-!*       0.3     Initialisation de kelkes variables
-!	       
+if ( lbudget_u   ) call Budget_store_init( tbudgets(NBUDGET_U  ), 'DRAG', prus  (:, :, :) )
+if ( lbudget_v   ) call Budget_store_init( tbudgets(NBUDGET_V  ), 'DRAG', prvs  (:, :, :) )
+if ( lbudget_tke ) call Budget_store_init( tbudgets(NBUDGET_TKE), 'DRAG', prtkes(:, :, :) )
+
+if ( odepotree ) then
+  if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'DEPOTR', prrs(:, :, :, 2) )
+  if ( lbudget_sv .and. ( hcloud=='C2R2' .or. hcloud=='KHKO' .or. hcloud=='LIMA' ) ) &
+                    call Budget_store_init( tbudgets(NBUDGET_SV1-1+(NSV_C2R2BEG+1)), 'DEPOTR', psvs(:, :, :, NSV_C2R2BEG+1) )
+end if
+
 ZVH(:,:)=0.
 ZLAI(:,:)=0.
 ZCDRAG(:,:,:)=0.
@@ -275,13 +280,6 @@ IF (ODEPOTREE) THEN
 !
 !
 END IF
-
-if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'DRAG', prus )
-
-IF (LBUDGET_V) CALL BUDGET (PRVS,NBUDGET_V,'DRAG_BU_RV')
-IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2),NBUDGET_RC,'DEPOTR_BU_RRC')
-IF (LBUDGET_SV) CALL BUDGET (PSVS(:,:,:,NSV_C2R2BEG+1),NBUDGET_SV1+(NSV_C2R2BEG-1)+1,'DEPOTR_BU_RSV')
-!
 !
 !*      3.     Computations of TKE  tendency due to canopy drag
 !              ------------------------------------------------
@@ -306,7 +304,15 @@ ZTKES(:,:,:)=  (ZTKET(:,:,:) + (ZCDRAG(:,:,:)* ZDENSITY(:,:,:) &
             (1.+PTSTEP*ZCDRAG(:,:,:)* ZDENSITY(:,:,:)*SQRT(ZUT(:,:,:)**2+ZVT(:,:,:)**2))
 !
 PRTKES(:,:,:)=PRTKES(:,:,:)+((ZTKES(:,:,:)-ZTKET(:,:,:))*PRHODJ(:,:,:)/PTSTEP)
-!
-IF (LBUDGET_TKE) CALL BUDGET (PRTKES(:,:,:),NBUDGET_TKE,'DRAG_BU_RTKE')
-!
+
+if ( lbudget_u   ) call Budget_store_end( tbudgets(NBUDGET_U  ), 'DRAG', prus  (:, :, :) )
+if ( lbudget_v   ) call Budget_store_end( tbudgets(NBUDGET_V  ), 'DRAG', prvs  (:, :, :) )
+if ( lbudget_tke ) call Budget_store_end( tbudgets(NBUDGET_TKE), 'DRAG', prtkes(:, :, :) )
+
+if ( odepotree ) then
+  if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'DEPOTR', prrs(:, :, :, 2) )
+  if ( lbudget_sv .and. ( hcloud=='C2R2' .or. hcloud=='KHKO' .or. hcloud=='LIMA' ) ) &
+                    call Budget_store_end( tbudgets(NBUDGET_SV1-1+(NSV_C2R2BEG+1)), 'DEPOTR', psvs(:, :, :, NSV_C2R2BEG+1) )
+end if
+
 END SUBROUTINE DRAG_VEG

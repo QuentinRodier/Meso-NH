@@ -137,13 +137,16 @@ END MODULE MODI_LIMA_ADJUST
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
-!
+!  P. Wautelet    03/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_BUDGET
+use modd_budget,           only: lbu_enable, nbumod,                                          &
+                                 lbudget_th, lbudget_rv, lbudget_rc, lbudget_ri, lbudget_sv,  &
+                                 NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RI, NBUDGET_SV1, &
+                                 tbudgets
 USE MODD_CONF
 USE MODD_CST
 use modd_field,            only: TFIELDDATA, TYPEREAL
@@ -156,11 +159,11 @@ USE MODD_PARAM_LIMA_COLD
 USE MODD_PARAM_LIMA_MIXED
 USE MODD_PARAM_LIMA_WARM
 !
+use mode_budget,           only: Budget_store_init, Budget_store_end
 USE MODE_IO_FIELD_WRITE,   only: IO_Field_write
 use mode_msg
 use mode_tools,            only: Countjv
 !
-USE MODI_BUDGET
 USE MODI_CONDENS
 USE MODI_LIMA_FUNCTIONS
 !
@@ -276,6 +279,7 @@ INTEGER                           :: ISIZE
 REAL, DIMENSION(:), ALLOCATABLE   :: ZRTMIN
 REAL, DIMENSION(:), ALLOCATABLE   :: ZCTMIN
 !
+integer :: idx
 INTEGER , DIMENSION(SIZE(GMICRO)) :: I1,I2,I3 ! Used to replace the COUNT
 INTEGER                           :: JL       ! and PACK intrinsics
 INTEGER                           :: JMOD, JMOD_IFN, JMOD_IMM
@@ -372,8 +376,30 @@ IF ( NMOD_IMM .GE. 1 ) THEN
    ALLOCATE( PNIS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),NMOD_IMM) )
    PNIS(:,:,:,:) = PSVS(:,:,:,NSV_LIMA_IMM_NUCL:NSV_LIMA_IMM_NUCL+NMOD_IMM-1)
 END IF
-!
-!
+
+if ( nbumod == kmi .and. lbu_enable ) then
+  if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'CEDS', pths(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'CEDS', prvs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'CEDS', prcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'CEDS', pris(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv ) then
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CEDS', pccs(:, :, :) * prhodj(:, :, :) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CEDS', pcis(:, :, :) * prhodj(:, :, :) )
+    if ( lwarm ) then
+      do jl = 1, nmod_ccn
+        idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_free - 1 + jl
+        call Budget_store_init( tbudgets(idx), 'CEDS', pnfs(:, :, :, jl) * prhodj(:, :, :) )
+      end do
+    end if
+    if ( lcold ) then
+      do jl = 1, nmod_ifn
+        idx = NBUDGET_SV1 - 1 + nsv_lima_ifn_free - 1 + jl
+        call Budget_store_init( tbudgets(idx), 'CEDS', pifs(:, :, :, jl) * prhodj(:, :, :) )
+      end do
+    end if
+  end if
+end if
+
 !-------------------------------------------------------------------------------
 !
 !
@@ -1195,27 +1221,28 @@ END IF
 !*       7.  STORE THE BUDGET TERMS
 !            ----------------------
 !
-!
-IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
-  IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:) * PRHODJ(:,:,:),NBUDGET_TH,'CEDS_BU_RTH')
-  IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:) * PRHODJ(:,:,:),NBUDGET_RV,'CEDS_BU_RRV')
-  IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:) * PRHODJ(:,:,:),NBUDGET_RC,'CEDS_BU_RRC')
-  IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:) * PRHODJ(:,:,:),NBUDGET_RI,'CEDS_BU_RRI')
-  IF (LBUDGET_SV) THEN
-    CALL BUDGET (PCCS(:,:,:)   * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NC,'CEDS_BU_RSV') ! RCC
-    CALL BUDGET (PCIS(:,:,:)   * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NI,'CEDS_BU_RSV') ! RCI
-    IF (NMOD_CCN .GE. 1) THEN
-       DO JL = 1, NMOD_CCN
-          CALL BUDGET (PNFS(:,:,:,JL)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_CCN_FREE+JL-1,'CEDS_BU_RSV') ! RCC
-       END DO
-    END IF
-    IF (NMOD_IFN .GE. 1) THEN
-       DO JL = 1, NMOD_IFN
-          CALL BUDGET (PIFS(:,:,:,JL)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_IFN_FREE+JL-1,'CEDS_BU_RSV') ! RCC
-       END DO
-    END IF
-  END IF
-END IF
+if ( nbumod == kmi .and. lbu_enable ) then
+  if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'CEDS', pths(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'CEDS', prvs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'CEDS', prcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'CEDS', pris(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv ) then
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CEDS', pccs(:, :, :) * prhodj(:, :, :) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CEDS', pcis(:, :, :) * prhodj(:, :, :) )
+    if ( lwarm ) then
+      do jl = 1, nmod_ccn
+        idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_free - 1 + jl
+        call Budget_store_end( tbudgets(idx), 'CEDS', pnfs(:, :, :, jl) * prhodj(:, :, :) )
+      end do
+    end if
+    if ( lcold ) then
+      do jl = 1, nmod_ifn
+        idx = NBUDGET_SV1 - 1 + nsv_lima_ifn_free - 1 + jl
+        call Budget_store_end( tbudgets(idx), 'CEDS', pifs(:, :, :, jl) * prhodj(:, :, :) )
+      end do
+    end if
+  end if
+end if
 !++cb++
 IF (ALLOCATED(PNFS)) DEALLOCATE(PNFS)
 IF (ALLOCATED(PNAS)) DEALLOCATE(PNAS)

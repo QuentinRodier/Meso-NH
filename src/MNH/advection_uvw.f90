@@ -92,7 +92,7 @@ END MODULE MODI_ADVECTION_UVW
 !!                  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!                  C.LAC 10/2016 : Add OSPLIT_WENO
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
-!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -108,7 +108,6 @@ USE MODE_ll
 
 USE MODI_ADV_BOUNDARIES
 USE MODI_ADVECUVW_RK
-USE MODI_BUDGET
 USE MODI_CONTRAV
 USE MODI_SHUMAN
 !
@@ -201,7 +200,9 @@ ZMXM_RHODJ = MXM(PRHODJ)
 ZMYM_RHODJ = MYM(PRHODJ)
 ZMZM_RHODJ = MZM(1,IKU,1,PRHODJ)
 
-if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'ADV', prus )
+if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'ADV', prus(:, :, :) )
+if ( lbudget_v ) call Budget_store_init( tbudgets(NBUDGET_V), 'ADV', prvs(:, :, :) )
+if ( lbudget_w ) call Budget_store_init( tbudgets(NBUDGET_W), 'ADV', prws(:, :, :) )
 
 !-------------------------------------------------------------------------------
 !
@@ -324,10 +325,10 @@ END DO
 !*       4.     BUDGETS              
 !	        -------
 !
-if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'ADV', prus )
+if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'ADV', prus(:, :, :) )
+if ( lbudget_v ) call Budget_store_end( tbudgets(NBUDGET_V), 'ADV', prvs(:, :, :) )
+if ( lbudget_w ) call Budget_store_end( tbudgets(NBUDGET_W), 'ADV', prws(:, :, :) )
 
-IF (LBUDGET_V)  CALL BUDGET (PRVS,NBUDGET_V,'ADV_BU_RV')
-IF (LBUDGET_W)  CALL BUDGET (PRWS,NBUDGET_W,'ADV_BU_RW')
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE ADVECTION_UVW

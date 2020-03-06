@@ -146,7 +146,7 @@ END MODULE MODI_FORCING
 !  P. Wautelet 28/03/2018: replace TEMPORAL_DIST by DATETIME_DISTANCE
 !                          use overloaded comparison operator for date_time
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
-!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -169,7 +169,6 @@ use mode_budget,     only: Budget_store_init, Budget_store_end
 USE MODE_DATETIME
 USE MODE_MSG
 !
-USE MODI_BUDGET
 USE MODI_GET_HALO
 USE MODI_SHUMAN
 USE MODI_UPSTREAM_Z
@@ -253,7 +252,23 @@ IKU=SIZE(PUT,3)
 !
 ILUOUT0 = TLUOUT0%NLU
 
-if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'FRC', prus )
+if ( lbudget_u   ) call Budget_store_init( tbudgets(NBUDGET_U  ), 'FRC', prus  (:, :, :)    )
+if ( lbudget_v   ) call Budget_store_init( tbudgets(NBUDGET_V  ), 'FRC', prvs  (:, :, :)    )
+if ( lbudget_w   ) call Budget_store_init( tbudgets(NBUDGET_W  ), 'FRC', prws  (:, :, :)    )
+if ( lbudget_th  ) call Budget_store_init( tbudgets(NBUDGET_TH ), 'FRC', prths (:, :, :)    )
+if ( lbudget_tke ) call Budget_store_init( tbudgets(NBUDGET_TKE), 'FRC', prtkes(:, :, :)    )
+if ( lbudget_rv  ) call Budget_store_init( tbudgets(NBUDGET_RV ), 'FRC', prrs  (:, :, :, 1) )
+if ( lbudget_rc  ) call Budget_store_init( tbudgets(NBUDGET_RC ), 'FRC', prrs  (:, :, :, 2) )
+if ( lbudget_rr  ) call Budget_store_init( tbudgets(NBUDGET_RR ), 'FRC', prrs  (:, :, :, 3) )
+if ( lbudget_ri  ) call Budget_store_init( tbudgets(NBUDGET_RI ), 'FRC', prrs  (:, :, :, 4) )
+if ( lbudget_rs  ) call Budget_store_init( tbudgets(NBUDGET_RS ), 'FRC', prrs  (:, :, :, 5) )
+if ( lbudget_rg  ) call Budget_store_init( tbudgets(NBUDGET_RG ), 'FRC', prrs  (:, :, :, 6) )
+if ( lbudget_rh  ) call Budget_store_init( tbudgets(NBUDGET_RH ), 'FRC', prrs  (:, :, :, 7) )
+if ( lbudget_sv  ) then
+  do jl = 1, size( prsvs, 4 )
+    call Budget_store_init( tbudgets(jl + NBUDGET_SV1 - 1), 'FRC', prsvs(:, :, :, jl) )
+  end do
+end if
 !
 !*        1.   PREPARATION OF FORCING
 !              ----------------------
@@ -835,25 +850,24 @@ END IF
 !   	        ------------
 !
 !
-if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'FRC', prus )
+if ( lbudget_u   ) call Budget_store_end( tbudgets(NBUDGET_U  ), 'FRC', prus  (:, :, :)    )
+if ( lbudget_v   ) call Budget_store_end( tbudgets(NBUDGET_V  ), 'FRC', prvs  (:, :, :)    )
+if ( lbudget_w   ) call Budget_store_end( tbudgets(NBUDGET_W  ), 'FRC', prws  (:, :, :)    )
+if ( lbudget_th  ) call Budget_store_end( tbudgets(NBUDGET_TH ), 'FRC', prths (:, :, :)    )
+if ( lbudget_tke ) call Budget_store_end( tbudgets(NBUDGET_TKE), 'FRC', prtkes(:, :, :)    )
+if ( lbudget_rv  ) call Budget_store_end( tbudgets(NBUDGET_RV ), 'FRC', prrs  (:, :, :, 1) )
+if ( lbudget_rc  ) call Budget_store_end( tbudgets(NBUDGET_RC ), 'FRC', prrs  (:, :, :, 2) )
+if ( lbudget_rr  ) call Budget_store_end( tbudgets(NBUDGET_RR ), 'FRC', prrs  (:, :, :, 3) )
+if ( lbudget_ri  ) call Budget_store_end( tbudgets(NBUDGET_RI ), 'FRC', prrs  (:, :, :, 4) )
+if ( lbudget_rs  ) call Budget_store_end( tbudgets(NBUDGET_RS ), 'FRC', prrs  (:, :, :, 5) )
+if ( lbudget_rg  ) call Budget_store_end( tbudgets(NBUDGET_RG ), 'FRC', prrs  (:, :, :, 6) )
+if ( lbudget_rh  ) call Budget_store_end( tbudgets(NBUDGET_RH ), 'FRC', prrs  (:, :, :, 7) )
+if ( lbudget_sv  ) then
+  do jl = 1, size( prsvs, 4 )
+    call Budget_store_end( tbudgets(jl + NBUDGET_SV1 - 1), 'FRC', prsvs(:, :, :, jl) )
+  end do
+end if
 
-IF (LBUDGET_V)   CALL BUDGET (PRVS,         NBUDGET_V,  'FRC_BU_RV')
-IF (LBUDGET_W)   CALL BUDGET (PRWS,         NBUDGET_W,  'FRC_BU_RW')
-IF (LBUDGET_TH)  CALL BUDGET (PRTHS,        NBUDGET_TH, 'FRC_BU_RTH')
-IF (LBUDGET_TKE) CALL BUDGET (PRTKES,       NBUDGET_TKE,'FRC_BU_RTKE')
-IF (LBUDGET_RV)  CALL BUDGET (PRRS(:,:,:,1),NBUDGET_RV, 'FRC_BU_RRV')
-IF (LBUDGET_RC)  CALL BUDGET (PRRS(:,:,:,2),NBUDGET_RC, 'FRC_BU_RRC')
-IF (LBUDGET_RR)  CALL BUDGET (PRRS(:,:,:,3),NBUDGET_RR, 'FRC_BU_RRR')
-IF (LBUDGET_RI)  CALL BUDGET (PRRS(:,:,:,4),NBUDGET_RI, 'FRC_BU_RRI')
-IF (LBUDGET_RS)  CALL BUDGET (PRRS(:,:,:,5),NBUDGET_RS, 'FRC_BU_RRS')
-IF (LBUDGET_RG)  CALL BUDGET (PRRS(:,:,:,6),NBUDGET_RG, 'FRC_BU_RRG')
-IF (LBUDGET_RH)  CALL BUDGET (PRRS(:,:,:,7),NBUDGET_RH, 'FRC_BU_RRH')
-IF (LBUDGET_SV) THEN
-  DO JL = 1 , SIZE(PRSVS,4)
-    CALL BUDGET (PRSVS(:,:,:,JL),JL+NBUDGET_SV1-1,'FRC_BU_RSV')
-  END DO
-END IF
-!
 !----------------------------------------------------------------------------
 !
 ! deallocate work arrays

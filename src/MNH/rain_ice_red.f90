@@ -243,13 +243,16 @@ END MODULE MODI_RAIN_ICE_RED
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !  P. Wautelet 29/05/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
 !  P. Wautelet 17/01/2020: move Quicksort to tools.f90
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
+!-----------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_BUDGET,         ONLY: LBU_ENABLE,                                                                                     &
-                               LBUDGET_TH, LBUDGET_RV, LBUDGET_RC, LBUDGET_RR, LBUDGET_RI, LBUDGET_RS, LBUDGET_RG, LBUDGET_RH, &
-                               NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH
+use modd_budget,         only: lbu_enable,                                                                                     &
+                               lbudget_th, lbudget_rv, lbudget_rc, lbudget_rr, lbudget_ri, lbudget_rs, lbudget_rg, lbudget_rh, &
+                               NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, &
+                               tbudgets
 USE MODD_CST,            ONLY: XCI,XCL,XCPD,XCPV,XLSTT,XLVTT,XTT
 USE MODD_PARAMETERS,     ONLY: JPVEXT,XUNDEF
 USE MODD_PARAM_ICE,      ONLY: CSUBG_PR_PDF,CSUBG_RC_RR_ACCR,CSUBG_RR_EVAP,LDEPOSC,LFEEDBACKT,LSEDIM_AFTER, &
@@ -257,11 +260,11 @@ USE MODD_PARAM_ICE,      ONLY: CSUBG_PR_PDF,CSUBG_RC_RR_ACCR,CSUBG_RR_EVAP,LDEPO
 USE MODD_RAIN_ICE_DESCR, ONLY: XRTMIN
 USE MODD_VAR_ll,         ONLY: IP
 
+use mode_budget,         only: Budget_store_add, Budget_store_init, Budget_store_end
 USE MODE_ll
 USE MODE_MSG
 use mode_tools,          only: Countjv
 
-USE MODI_BUDGET
 USE MODI_ICE4_NUCLEATION_WRAPPER
 USE MODI_ICE4_RAINFR_VERT
 USE MODI_ICE4_SEDIMENTATION_STAT
@@ -346,11 +349,13 @@ INTEGER                             :: JL       ! and PACK intrinsics
 !
 !Arrays for nucleation call outisde of ODMICRO points
 REAL,    DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3)) :: ZW ! work array
+real, dimension(:,:,:), allocatable :: zw1, zw2, zw3, zw4, zw5, zw6 !Work arrays
 REAL,    DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3)) :: ZT ! Temperature
 REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) :: &
                                   & ZZ_RVHENI_MR, & ! heterogeneous nucleation mixing ratio change
                                   & ZZ_RVHENI       ! heterogeneous nucleation
 REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) :: ZZ_LVFACT, ZZ_LSFACT
+real, dimension(:,:,:), allocatable :: zz_diff
 !
 !Diagnostics
 REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) ::            &
@@ -483,7 +488,10 @@ REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) :: &
         &ZW_RVS, ZW_RCS, ZW_RRS, ZW_RIS, ZW_RSS, ZW_RGS, ZW_RHS, ZW_THS
 !
 !-------------------------------------------------------------------------------
-!
+if ( lbu_enable ) then
+  if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'HENU', pths(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'HENU', prvs(:, :, :) * prhodj(:, :, :) )
+end if
 !-------------------------------------------------------------------------------
 !
 !*       1.     COMPUTE THE LOOP BOUNDS
@@ -528,6 +536,19 @@ IF(.NOT. LSEDIM_AFTER) THEN
   !
   !*       2.1     sedimentation
   !
+  if ( lbudget_rc .and. osedic ) call Budget_store_init( tbudgets(NBUDGET_RC), 'SEDI', prcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rr  )             call Budget_store_init( tbudgets(NBUDGET_RR), 'SEDI', prrs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_ri  )             call Budget_store_init( tbudgets(NBUDGET_RI), 'SEDI', pris(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rs  )             call Budget_store_init( tbudgets(NBUDGET_RS), 'SEDI', prss(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rg  )             call Budget_store_init( tbudgets(NBUDGET_RG), 'SEDI', prgs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rh  )             call Budget_store_init( tbudgets(NBUDGET_RH), 'SEDI', prhs(:, :, :) * prhodj(:, :, :) )
+
+  !Init only of not osedic (to prevent crash with double init)
+  !Remark: the 2 source terms SEDI and DEPO could be mixed and stored in the same source term (SEDI)
+  !        if osedic=T and ldeposc=T (a warning is printed in ini_budget in that case)
+  if ( lbudget_rc .and. ldeposc .and. .not.osedic ) &
+    call Budget_store_init( tbudgets(NBUDGET_RC), 'DEPO', prcs(:, :, :) * prhodj(:, :, :) )
+
   IF(HSEDIM=='STAT') THEN
     !SR: It *seems* that we must have two separate calls for ifort
     IF(KRR==7) THEN
@@ -590,16 +611,17 @@ IF(.NOT. LSEDIM_AFTER) THEN
   !
   !*       2.2     budget storage
   !
-  IF (LBUDGET_RC .AND. OSEDIC) &
-                  CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC, 'SEDI_BU_RRC')
-  IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR, 'SEDI_BU_RRR')
-  IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RI, 'SEDI_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET (PRSS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RS, 'SEDI_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RG, 'SEDI_BU_RRG')
-  IF ( KRR == 7 .AND. LBUDGET_RH) &
-                  CALL BUDGET (PRHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RH, 'SEDI_BU_RRH')
-  IF ( LBUDGET_RC .AND. LDEPOSC ) &
-   CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,'DEPO_BU_RRC')
+  if ( lbudget_rc .and. osedic ) call Budget_store_end( tbudgets(NBUDGET_RC), 'SEDI', prcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rr  )             call Budget_store_end( tbudgets(NBUDGET_RR), 'SEDI', prrs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_ri  )             call Budget_store_end( tbudgets(NBUDGET_RI), 'SEDI', pris(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rs  )             call Budget_store_end( tbudgets(NBUDGET_RS), 'SEDI', prss(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rg  )             call Budget_store_end( tbudgets(NBUDGET_RG), 'SEDI', prgs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rh  )             call Budget_store_end( tbudgets(NBUDGET_RH), 'SEDI', prhs(:, :, :) * prhodj(:, :, :) )
+
+  !If osedic=T and ldeposc=T, DEPO is in fact mixed and stored with the SEDI source term
+  !(a warning is printed in ini_budget in that case)
+  if ( lbudget_rc .and. ldeposc .and. .not.osedic) &
+    call Budget_store_end( tbudgets(NBUDGET_RC), 'DEPO', prcs(:, :, :) * prhodj(:, :, :) )
 ENDIF
 !
 !-------------------------------------------------------------------------------
@@ -1049,6 +1071,8 @@ ENDIF
 !*       6.     COMPUTES THE SLOW COLD PROCESS SOURCES OUTSIDE OF ODMICRO POINTS
 !               ----------------------------------------------------------------
 !
+if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'HENU', pris(:, :, :) * prhodj(:, :, :) )
+
 CALL ICE4_NUCLEATION_WRAPPER(IIT, IJT, IKT, .NOT. ODMICRO, &
                              PTHT, PPABST, PRHODREF, PEXN, ZZ_LSFACT/PEXN, ZT, &
                              PRVT, &
@@ -1120,6 +1144,20 @@ CALL CORRECT_NEGATIVITIES(KRR, ZW_RVS, ZW_RCS, ZW_RRS, &
 !***     7.2    LBU_ENABLE case
 !
 IF(LBU_ENABLE) THEN
+  allocate( zw1( size( pexnref, 1 ), size( pexnref, 2 ), size( pexnref, 3 ) ) )
+  allocate( zw2( size( pexnref, 1 ), size( pexnref, 2 ), size( pexnref, 3 ) ) )
+  allocate( zw3( size( pexnref, 1 ), size( pexnref, 2 ), size( pexnref, 3 ) ) )
+  allocate( zw4( size( pexnref, 1 ), size( pexnref, 2 ), size( pexnref, 3 ) ) )
+  if ( krr == 7 ) then
+    allocate( zw5( size( pexnref, 1 ), size( pexnref, 2 ), size( pexnref, 3 ) ) )
+    allocate( zw6( size( pexnref, 1 ), size( pexnref, 2 ), size( pexnref, 3 ) ) )
+  end if
+
+  if ( lbudget_th ) then
+    allocate( zz_diff( size( zz_lsfact, 1 ), size( zz_lsfact, 2 ), size( zz_lsfact, 3 ) ) )
+    zz_diff(:, :, :) = zz_lsfact(:, :, :) - zz_lvfact(:, :, :)
+  end if
+
   ZW(:,:,:) = 0.
   DO JL=1,IMICRO
     ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RVHENI(JL) * ZINV_TSTEP
@@ -1127,414 +1165,332 @@ IF(LBU_ENABLE) THEN
   PRIS(:,:,:) = PRIS(:,:,:) + ZW(:,:,:)
   PRVS(:,:,:) = PRVS(:,:,:) - ZW(:,:,:)
   PTHS(:,:,:) = PTHS(:,:,:) + ZW(:,:,:)*ZZ_LSFACT(:,:,:)
-  IF (LBUDGET_TH) CALL BUDGET(PTHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_TH, 'HENU_BU_RTH')
-  IF (LBUDGET_RV) CALL BUDGET(PRVS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RV, 'HENU_BU_RRV')
-  IF (LBUDGET_RI) CALL BUDGET(PRIS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RI, 'HENU_BU_RRI')
+  if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HENU', pths(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'HENU', prvs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'HENU', pris(:, :, :) * prhodj(:, :, :) )
 
   ZW(:,:,:) = 0.
   DO JL=1,IMICRO
     ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RCHONI(JL) * ZINV_TSTEP
   END DO
-  PRIS(:,:,:) = PRIS(:,:,:) + ZW(:,:,:)
-  PRCS(:,:,:) = PRCS(:,:,:) - ZW(:,:,:)
-  PTHS(:,:,:) = PTHS(:,:,:) + ZW(:,:,:)*(ZZ_LSFACT(:,:,:)-ZZ_LVFACT(:,:,:))
-  IF (LBUDGET_TH) CALL BUDGET(PTHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_TH, 'HON_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET(PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC, 'HON_BU_RRC')
-  IF (LBUDGET_RI) CALL BUDGET(PRIS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RI, 'HON_BU_RRI')
+  if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'HON',  zw(:, :, :) * zz_diff(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rc ) call Budget_store_add( tbudgets(NBUDGET_RC), 'HON', -zw(:, :, :)                    * prhodj(:, :, :) )
+  if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'HON',  zw(:, :, :)                    * prhodj(:, :, :) )
 
   ZW(:,:,:) = 0.
   DO JL=1,IMICRO
     ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RRHONG(JL) * ZINV_TSTEP
   END DO
-  PRGS(:,:,:) = PRGS(:,:,:) + ZW(:,:,:)
-  PRRS(:,:,:) = PRRS(:,:,:) - ZW(:,:,:)
-  PTHS(:,:,:) = PTHS(:,:,:) + ZW(:,:,:)*(ZZ_LSFACT(:,:,:)-ZZ_LVFACT(:,:,:))
-  IF (LBUDGET_TH) CALL BUDGET(PTHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_TH, 'SFR_BU_RTH')
-  IF (LBUDGET_RR) CALL BUDGET(PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR, 'SFR_BU_RRR')
-  IF (LBUDGET_RG) CALL BUDGET(PRGS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RG,'SFR_BU_RRG')
+  if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'SFR',  zw(:, :, :) * zz_diff(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rr ) call Budget_store_add( tbudgets(NBUDGET_RR), 'SFR', -zw(:, :, :)                    * prhodj(:, :, :) )
+  if ( lbudget_rg ) call Budget_store_add( tbudgets(NBUDGET_RG), 'SFR',  zw(:, :, :)                    * prhodj(:, :, :) )
 
   ZW(:,:,:) = 0.
   DO JL=1,IMICRO
     ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RVDEPS(JL) * ZINV_TSTEP
   END DO
-  PRSS(:,:,:) = PRSS(:,:,:) + ZW(:,:,:)
-  PRVS(:,:,:) = PRVS(:,:,:) - ZW(:,:,:)
-  PTHS(:,:,:) = PTHS(:,:,:) + ZW(:,:,:)*ZZ_LSFACT(:,:,:)
-  IF (LBUDGET_TH) CALL BUDGET(PTHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_TH, 'DEPS_BU_RTH')
-  IF (LBUDGET_RV) CALL BUDGET(PRVS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RV, 'DEPS_BU_RRV')
-  IF (LBUDGET_RS) CALL BUDGET(PRSS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RS,'DEPS_BU_RRS')
+  if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'DEPS',  zw(:, :, :) * zz_lsfact(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rv ) call Budget_store_add( tbudgets(NBUDGET_RV), 'DEPS', -zw(:, :, :)                      * prhodj(:, :, :) )
+  if ( lbudget_rs ) call Budget_store_add( tbudgets(NBUDGET_RS), 'DEPS',  zw(:, :, :)                      * prhodj(:, :, :) )
 
   ZW(:,:,:) = 0.
   DO JL=1,IMICRO
     ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RIAGGS(JL) * ZINV_TSTEP
   END DO
-  PRSS(:,:,:) = PRSS(:,:,:) + ZW(:,:,:)
-  PRIS(:,:,:) = PRIS(:,:,:) - ZW(:,:,:)
-  IF (LBUDGET_RI) CALL BUDGET(PRIS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RI, 'AGGS_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET(PRSS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RS,'AGGS_BU_RRS')
+  if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'AGGS', -zw(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rs ) call Budget_store_add( tbudgets(NBUDGET_RS), 'AGGS',  zw(:, :, :) * prhodj(:, :, :) )
 
   ZW(:,:,:) = 0.
   DO JL=1,IMICRO
     ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RIAUTS(JL) * ZINV_TSTEP
   END DO
-  PRSS(:,:,:) = PRSS(:,:,:) + ZW(:,:,:)
-  PRIS(:,:,:) = PRIS(:,:,:) - ZW(:,:,:)
-  IF (LBUDGET_RI) CALL BUDGET(PRIS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RI, 'AUTS_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET(PRSS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RS,'AUTS_BU_RRS')
+  if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'AUTS', -zw(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rs ) call Budget_store_add( tbudgets(NBUDGET_RS), 'AUTS',  zw(:, :, :) * prhodj(:, :, :) )
 
   ZW(:,:,:) = 0.
   DO JL=1,IMICRO
     ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RVDEPG(JL) * ZINV_TSTEP
   END DO
-  PRGS(:,:,:) = PRGS(:,:,:) + ZW(:,:,:)
-  PRVS(:,:,:) = PRVS(:,:,:) - ZW(:,:,:)
-  PTHS(:,:,:) = PTHS(:,:,:) + ZW(:,:,:)*ZZ_LSFACT(:,:,:)
-  IF (LBUDGET_TH) CALL BUDGET(PTHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_TH, 'DEPG_BU_RTH')
-  IF (LBUDGET_RV) CALL BUDGET(PRVS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RV, 'DEPG_BU_RRV')
-  IF (LBUDGET_RG) CALL BUDGET(PRGS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RG,'DEPG_BU_RRG')
+  if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'DEPG',  zw(:, :, :) * zz_lsfact(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rv ) call Budget_store_add( tbudgets(NBUDGET_RV), 'DEPG', -zw(:, :, :)                      * prhodj(:, :, :) )
+  if ( lbudget_rg ) call Budget_store_add( tbudgets(NBUDGET_RG), 'DEPG',  zw(:, :, :)                      * prhodj(:, :, :) )
 
   IF(OWARM) THEN
     ZW(:,:,:) = 0.
     DO JL=1,IMICRO
       ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RCAUTR(JL) * ZINV_TSTEP
     END DO
-    PRCS(:,:,:) = PRCS(:,:,:) - ZW(:,:,:)
-    PRRS(:,:,:) = PRRS(:,:,:) + ZW(:,:,:)
-    IF (LBUDGET_RC) CALL BUDGET(PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC, 'AUTO_BU_RRC')
-    IF (LBUDGET_RR) CALL BUDGET(PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR, 'AUTO_BU_RRR')
+    if ( lbudget_rc ) call Budget_store_add( tbudgets(NBUDGET_RC), 'AUTO', -zw(:, :, :) * prhodj(:, :, :) )
+    if ( lbudget_rr ) call Budget_store_add( tbudgets(NBUDGET_RR), 'AUTO',  zw(:, :, :) * prhodj(:, :, :) )
 
     ZW(:,:,:) = 0.
     DO JL=1,IMICRO
       ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RCACCR(JL) * ZINV_TSTEP
     END DO
-    PRCS(:,:,:) = PRCS(:,:,:) - ZW(:,:,:)
-    PRRS(:,:,:) = PRRS(:,:,:) + ZW(:,:,:)
-    IF (LBUDGET_RC) CALL BUDGET(PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC, 'ACCR_BU_RRC')
-    IF (LBUDGET_RR) CALL BUDGET(PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR, 'ACCR_BU_RRR')
+    if ( lbudget_rc ) call Budget_store_add( tbudgets(NBUDGET_RC), 'ACCR', -zw(:, :, :) * prhodj(:, :, :) )
+    if ( lbudget_rr ) call Budget_store_add( tbudgets(NBUDGET_RR), 'ACCR',  zw(:, :, :) * prhodj(:, :, :) )
 
     ZW(:,:,:) = 0.
     DO JL=1,IMICRO
       ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RREVAV(JL) * ZINV_TSTEP
     END DO
-    PRRS(:,:,:) = PRRS(:,:,:) - ZW(:,:,:)
-    PRVS(:,:,:) = PRVS(:,:,:) + ZW(:,:,:)
-    PTHS(:,:,:) = PTHS(:,:,:) - ZW(:,:,:)*ZZ_LVFACT(:,:,:)
-    IF (LBUDGET_TH) CALL BUDGET(PTHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_TH, 'REVA_BU_RTH')
-    IF (LBUDGET_RV) CALL BUDGET(PRVS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RV, 'REVA_BU_RRV')
-    IF (LBUDGET_RR) CALL BUDGET(PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR, 'REVA_BU_RRR')
+    if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'REVA', -zw(:, :, :) * zz_lvfact(:, :, :) * prhodj(:, :, :) )
+    if ( lbudget_rv ) call Budget_store_add( tbudgets(NBUDGET_RV), 'REVA',  zw(:, :, :)                      * prhodj(:, :, :) )
+    if ( lbudget_rr ) call Budget_store_add( tbudgets(NBUDGET_RR), 'REVA', -zw(:, :, :)                      * prhodj(:, :, :) )
   ENDIF
 
-  ZW(:,:,:) = 0.
+  ZW1(:,:,:) = 0.
   DO JL=1,IMICRO
-    ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RCRIMSS(JL) * ZINV_TSTEP
+    ZW1(I1(JL), I2(JL), I3(JL)) = ZTOT_RCRIMSS(JL) * ZINV_TSTEP
   END DO
-  PRCS(:,:,:) = PRCS(:,:,:) - ZW(:,:,:)
-  PRSS(:,:,:) = PRSS(:,:,:) + ZW(:,:,:)
-  PTHS(:,:,:) = PTHS(:,:,:) + ZW(:,:,:)*(ZZ_LSFACT(:,:,:)-ZZ_LVFACT(:,:,:))
-  ZW(:,:,:) = 0.
+  ZW2(:,:,:) = 0.
   DO JL=1,IMICRO
-    ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RCRIMSG(JL) * ZINV_TSTEP
+    ZW2(I1(JL), I2(JL), I3(JL)) = ZTOT_RCRIMSG(JL) * ZINV_TSTEP
   END DO
-  PRCS(:,:,:) = PRCS(:,:,:) - ZW(:,:,:)
-  PRGS(:,:,:) = PRGS(:,:,:) + ZW(:,:,:)
-  PTHS(:,:,:) = PTHS(:,:,:) + ZW(:,:,:)*(ZZ_LSFACT(:,:,:)-ZZ_LVFACT(:,:,:))
-  ZW(:,:,:) = 0.
+  ZW3(:,:,:) = 0.
   DO JL=1,IMICRO
-    ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RSRIMCG(JL) * ZINV_TSTEP
+    ZW3(I1(JL), I2(JL), I3(JL)) = ZTOT_RSRIMCG(JL) * ZINV_TSTEP
   END DO
-  PRGS(:,:,:) = PRGS(:,:,:) + ZW(:,:,:)
-  PRSS(:,:,:) = PRSS(:,:,:) - ZW(:,:,:)
-  IF (LBUDGET_TH) CALL BUDGET(PTHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_TH, 'RIM_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET(PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC, 'RIM_BU_RRC')
-  IF (LBUDGET_RS) CALL BUDGET(PRSS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RS,'RIM_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET(PRGS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RG,'RIM_BU_RRG')
+  if ( lbudget_th ) &
+    call Budget_store_add( tbudgets(NBUDGET_TH), 'RIM', (  zw1(:, :, :) + zw2(:, :, :) ) * zz_diff(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rc ) call Budget_store_add( tbudgets(NBUDGET_RC), 'RIM', ( -zw1(:, :, :) - zw2(:, :, :) )    * prhodj(:, :, :) )
+  if ( lbudget_rs ) call Budget_store_add( tbudgets(NBUDGET_RS), 'RIM', (  zw1(:, :, :) - zw3(:, :, :) )    * prhodj(:, :, :) )
+  if ( lbudget_rg ) call Budget_store_add( tbudgets(NBUDGET_RG), 'RIM', (  zw2(:, :, :) + zw3(:, :, :) )    * prhodj(:, :, :) )
 
-  ZW(:,:,:) = 0.
+  ZW1(:,:,:) = 0.
   DO JL=1,IMICRO
-    ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RRACCSS(JL) * ZINV_TSTEP
+    ZW1(I1(JL), I2(JL), I3(JL)) = ZTOT_RRACCSS(JL) * ZINV_TSTEP
   END DO
-  PRRS(:,:,:) = PRRS(:,:,:) - ZW(:,:,:)
-  PRSS(:,:,:) = PRSS(:,:,:) + ZW(:,:,:)
-  PTHS(:,:,:) = PTHS(:,:,:) + ZW(:,:,:)*(ZZ_LSFACT(:,:,:)-ZZ_LVFACT(:,:,:))
-  ZW(:,:,:) = 0.
+  ZW2(:,:,:) = 0.
   DO JL=1,IMICRO
-    ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RRACCSG(JL) * ZINV_TSTEP
+    ZW2(I1(JL), I2(JL), I3(JL)) = ZTOT_RRACCSG(JL) * ZINV_TSTEP
   END DO
-  PRRS(:,:,:) = PRRS(:,:,:) - ZW(:,:,:)
-  PRGS(:,:,:) = PRGS(:,:,:) + ZW(:,:,:)
-  PTHS(:,:,:) = PTHS(:,:,:) + ZW(:,:,:)*(ZZ_LSFACT(:,:,:)-ZZ_LVFACT(:,:,:))
-  ZW(:,:,:) = 0.
+  ZW3(:,:,:) = 0.
   DO JL=1,IMICRO
-    ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RSACCRG(JL) * ZINV_TSTEP
+    ZW3(I1(JL), I2(JL), I3(JL)) = ZTOT_RSACCRG(JL) * ZINV_TSTEP
   END DO
-  PRSS(:,:,:) = PRSS(:,:,:) - ZW(:,:,:)
-  PRGS(:,:,:) = PRGS(:,:,:) + ZW(:,:,:)
-  IF (LBUDGET_TH) CALL BUDGET(PTHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_TH, 'ACC_BU_RTH')
-  IF (LBUDGET_RR) CALL BUDGET(PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR, 'ACC_BU_RRR')
-  IF (LBUDGET_RS) CALL BUDGET(PRSS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RS,'ACC_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET(PRGS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RG,'ACC_BU_RRG')
+  if ( lbudget_th ) &
+    call Budget_store_add( tbudgets(NBUDGET_TH), 'ACC', (  zw1(:, :, :) + zw2(:, :, :) ) * zz_diff(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rr ) call Budget_store_add( tbudgets(NBUDGET_RR), 'ACC', ( -zw1(:, :, :) - zw2(:, :, :) )    * prhodj(:, :, :) )
+  if ( lbudget_rs ) call Budget_store_add( tbudgets(NBUDGET_RS), 'ACC', (  zw1(:, :, :) - zw3(:, :, :) )    * prhodj(:, :, :) )
+  if ( lbudget_rg ) call Budget_store_add( tbudgets(NBUDGET_RG), 'ACC', (  zw2(:, :, :) + zw3(:, :, :) )    * prhodj(:, :, :) )
 
   ZW(:,:,:) = 0.
   DO JL=1,IMICRO
     ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RSMLTG(JL) * ZINV_TSTEP
   END DO
-  PRSS(:,:,:) = PRSS(:,:,:) - ZW(:,:,:)
-  PRGS(:,:,:) = PRGS(:,:,:) + ZW(:,:,:)
+  if ( lbudget_rs ) call Budget_store_add( tbudgets(NBUDGET_RS), 'CMEL', -zw(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rg ) call Budget_store_add( tbudgets(NBUDGET_RG), 'CMEL',  zw(:, :, :) * prhodj(:, :, :) )
   ZW(:,:,:) = 0.
   DO JL=1,IMICRO
     ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RCMLTSR(JL) * ZINV_TSTEP
   END DO
-  PRCS(:,:,:) = PRCS(:,:,:) - ZW(:,:,:)
-  PRRS(:,:,:) = PRRS(:,:,:) + ZW(:,:,:)
-  IF (LBUDGET_RS) CALL BUDGET(PRSS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RS,'CMEL_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET(PRGS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RG,'CMEL_BU_RRG')
-  IF (LBUDGET_RC) CALL BUDGET(PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC, 'CMEL_BU_RRC')
-  IF (LBUDGET_RR) CALL BUDGET(PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR, 'CMEL_BU_RRR')
+  if ( lbudget_rc ) call Budget_store_add( tbudgets(NBUDGET_RC), 'CMEL', -zw(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rr ) call Budget_store_add( tbudgets(NBUDGET_RR), 'CMEL',  zw(:, :, :) * prhodj(:, :, :) )
 
-  ZW(:,:,:) = 0.
+  ZW1(:,:,:) = 0.
   DO JL=1,IMICRO
-    ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RICFRRG(JL) * ZINV_TSTEP
+    ZW1(I1(JL), I2(JL), I3(JL)) = ZTOT_RICFRRG(JL) * ZINV_TSTEP
   END DO
-  PRIS(:,:,:) = PRIS(:,:,:) - ZW(:,:,:)
-  PRGS(:,:,:) = PRGS(:,:,:) + ZW(:,:,:)
-  ZW(:,:,:) = 0.
+  ZW2(:,:,:) = 0.
   DO JL=1,IMICRO
-    ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RRCFRIG(JL) * ZINV_TSTEP
+    ZW2(I1(JL), I2(JL), I3(JL)) = ZTOT_RRCFRIG(JL) * ZINV_TSTEP
   END DO
-  PRRS(:,:,:) = PRRS(:,:,:) - ZW(:,:,:)
-  PRGS(:,:,:) = PRGS(:,:,:) + ZW(:,:,:)
-  PTHS(:,:,:) = PTHS(:,:,:) + ZW(:,:,:)*(ZZ_LSFACT(:,:,:)-ZZ_LVFACT(:,:,:))
-  ZW(:,:,:) = 0.
+  ZW3(:,:,:) = 0.
   DO JL=1,IMICRO
-    ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RICFRR(JL) * ZINV_TSTEP
+    ZW3(I1(JL), I2(JL), I3(JL)) = ZTOT_RICFRR(JL) * ZINV_TSTEP
   END DO
-  PRIS(:,:,:) = PRIS(:,:,:) - ZW(:,:,:)
-  PRRS(:,:,:) = PRRS(:,:,:) + ZW(:,:,:)
-  IF (LBUDGET_TH) CALL BUDGET(PTHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_TH, 'CFRZ_BU_RTH')
-  IF (LBUDGET_RR) CALL BUDGET(PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR, 'CFRZ_BU_RRR')
-  IF (LBUDGET_RI) CALL BUDGET(PRIS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RI, 'CFRZ_BU_RRI')
-  IF (LBUDGET_RG) CALL BUDGET(PRGS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RG,'CFRZ_BU_RRG')
+  if ( lbudget_th ) &
+    call Budget_store_add( tbudgets(NBUDGET_TH), 'CFRZ', zw2(:, :, :) * zz_diff(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rr ) call Budget_store_add( tbudgets(NBUDGET_RR), 'CFRZ', ( -zw2(:, :, :) + zw3(:, :, :) )    * prhodj(:, :, :) )
+  if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'CFRZ', ( -zw1(:, :, :) - zw3(:, :, :) )    * prhodj(:, :, :) )
+  if ( lbudget_rg ) call Budget_store_add( tbudgets(NBUDGET_RG), 'CFRZ', (  zw1(:, :, :) + zw2(:, :, :) )    * prhodj(:, :, :) )
 
-  ZW(:,:,:) = 0.
+  ZW1(:,:,:) = 0.
   DO JL=1,IMICRO
-    ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RCWETG(JL) * ZINV_TSTEP
+    ZW1(I1(JL), I2(JL), I3(JL)) = ZTOT_RCWETG(JL) * ZINV_TSTEP
   END DO
-  PRCS(:,:,:) = PRCS(:,:,:) - ZW(:,:,:)
-  PRGS(:,:,:) = PRGS(:,:,:) + ZW(:,:,:)
-  PTHS(:,:,:) = PTHS(:,:,:) + ZW(:,:,:)*(ZZ_LSFACT(:,:,:)-ZZ_LVFACT(:,:,:))
-  ZW(:,:,:) = 0.
+  ZW2(:,:,:) = 0.
   DO JL=1,IMICRO
-    ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RRWETG(JL) * ZINV_TSTEP
+    ZW2(I1(JL), I2(JL), I3(JL)) = ZTOT_RRWETG(JL) * ZINV_TSTEP
   END DO
-  PRRS(:,:,:) = PRRS(:,:,:) - ZW(:,:,:)
-  PRGS(:,:,:) = PRGS(:,:,:) + ZW(:,:,:)
-  PTHS(:,:,:) = PTHS(:,:,:) + ZW(:,:,:)*(ZZ_LSFACT(:,:,:)-ZZ_LVFACT(:,:,:))
-  ZW(:,:,:) = 0.
+  ZW3(:,:,:) = 0.
   DO JL=1,IMICRO
-    ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RIWETG(JL) * ZINV_TSTEP
+    ZW3(I1(JL), I2(JL), I3(JL)) = ZTOT_RIWETG(JL) * ZINV_TSTEP
   END DO
-  PRIS(:,:,:) = PRIS(:,:,:) - ZW(:,:,:)
-  PRGS(:,:,:) = PRGS(:,:,:) + ZW(:,:,:)
-  ZW(:,:,:) = 0.
+  ZW4(:,:,:) = 0.
   DO JL=1,IMICRO
-    ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RSWETG(JL) * ZINV_TSTEP
+    ZW4(I1(JL), I2(JL), I3(JL)) = ZTOT_RSWETG(JL) * ZINV_TSTEP
   END DO
-  PRSS(:,:,:) = PRSS(:,:,:) - ZW(:,:,:)
-  PRGS(:,:,:) = PRGS(:,:,:) + ZW(:,:,:)
-  IF (LBUDGET_TH) CALL BUDGET(PTHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_TH, 'WETG_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET(PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC, 'WETG_BU_RRC')
-  IF (LBUDGET_RR) CALL BUDGET(PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR, 'WETG_BU_RRR')
-  IF (LBUDGET_RI) CALL BUDGET(PRIS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RI, 'WETG_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET(PRSS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RS,'WETG_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET(PRGS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RG,'WETG_BU_RRG')
+  if ( lbudget_th ) &
+    call Budget_store_add( tbudgets(NBUDGET_TH), 'WETG', (  zw1(:, :, :) + zw2(:, :, :) ) * zz_diff(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rc ) call Budget_store_add( tbudgets(NBUDGET_RC), 'WETG',   -zw1(:, :, :)                     * prhodj(:, :, :) )
+  if ( lbudget_rr ) call Budget_store_add( tbudgets(NBUDGET_RR), 'WETG',   -zw2(:, :, :)                     * prhodj(:, :, :) )
+  if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'WETG',   -zw3(:, :, :)                     * prhodj(:, :, :) )
+  if ( lbudget_rs ) call Budget_store_add( tbudgets(NBUDGET_RS), 'WETG',   -zw4(:, :, :)                     * prhodj(:, :, :) )
+  if ( lbudget_rg ) call Budget_store_add( tbudgets(NBUDGET_RG), 'WETG', (  zw1(:, :, :) + zw2(:, :, :)   &
+                                                                          + zw3(:, :, :) + zw4(:, :, :) ) &
+                                                                            * prhodj(:, :, :) )
 
   IF(KRR==7) THEN
     ZW(:,:,:) = 0.
     DO JL=1,IMICRO
       ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RWETGH(JL) * ZINV_TSTEP
     END DO
-    PRGS(:,:,:) = PRGS(:,:,:) - ZW(:,:,:)
-    PRHS(:,:,:) = PRHS(:,:,:) + ZW(:,:,:)
-    IF (LBUDGET_RG) CALL BUDGET(PRGS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RG,'GHCV_BU_RRG')
-    IF (LBUDGET_RH) CALL BUDGET(PRHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RH,'GHCV_BU_RRH')
+    if ( lbudget_rg ) call Budget_store_add( tbudgets(NBUDGET_RG), 'GHCV', -zw(:, :, :) * prhodj(:, :, :) )
+    if ( lbudget_rh ) call Budget_store_add( tbudgets(NBUDGET_RH), 'GHCV',  zw(:, :, :) * prhodj(:, :, :) )
   END IF
 
-  ZW(:,:,:) = 0.
+  ZW1(:,:,:) = 0.
   DO JL=1,IMICRO
-    ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RCDRYG(JL) * ZINV_TSTEP
+    ZW1(I1(JL), I2(JL), I3(JL)) = ZTOT_RCDRYG(JL) * ZINV_TSTEP
   END DO
-  PRCS(:,:,:) = PRCS(:,:,:) - ZW(:,:,:)
-  PRGS(:,:,:) = PRGS(:,:,:) + ZW(:,:,:)
-  PTHS(:,:,:) = PTHS(:,:,:) + ZW(:,:,:)*(ZZ_LSFACT(:,:,:)-ZZ_LVFACT(:,:,:))
-  ZW(:,:,:) = 0.
+  ZW2(:,:,:) = 0.
   DO JL=1,IMICRO
-    ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RRDRYG(JL) * ZINV_TSTEP
+    ZW2(I1(JL), I2(JL), I3(JL)) = ZTOT_RRDRYG(JL) * ZINV_TSTEP
   END DO
-  PRRS(:,:,:) = PRRS(:,:,:) - ZW(:,:,:)
-  PRGS(:,:,:) = PRGS(:,:,:) + ZW(:,:,:)
-  PTHS(:,:,:) = PTHS(:,:,:) + ZW(:,:,:)*(ZZ_LSFACT(:,:,:)-ZZ_LVFACT(:,:,:))
-  ZW(:,:,:) = 0.
+  ZW3(:,:,:) = 0.
   DO JL=1,IMICRO
-    ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RIDRYG(JL) * ZINV_TSTEP
+    ZW3(I1(JL), I2(JL), I3(JL)) = ZTOT_RIDRYG(JL) * ZINV_TSTEP
   END DO
-  PRIS(:,:,:) = PRIS(:,:,:) - ZW(:,:,:)
-  PRGS(:,:,:) = PRGS(:,:,:) + ZW(:,:,:)
-  ZW(:,:,:) = 0.
+  ZW4(:,:,:) = 0.
   DO JL=1,IMICRO
-    ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RSDRYG(JL) * ZINV_TSTEP
+    ZW4(I1(JL), I2(JL), I3(JL)) = ZTOT_RSDRYG(JL) * ZINV_TSTEP
   END DO
-  PRSS(:,:,:) = PRSS(:,:,:) - ZW(:,:,:)
-  PRGS(:,:,:) = PRGS(:,:,:) + ZW(:,:,:)
-  IF (LBUDGET_TH) CALL BUDGET(PTHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_TH, 'DRYG_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET(PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC, 'DRYG_BU_RRC')
-  IF (LBUDGET_RR) CALL BUDGET(PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR, 'DRYG_BU_RRR')
-  IF (LBUDGET_RI) CALL BUDGET(PRIS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RI, 'DRYG_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET(PRSS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RS,'DRYG_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET(PRGS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RG,'DRYG_BU_RRG')
+  if ( lbudget_th ) &
+    call Budget_store_add( tbudgets(NBUDGET_TH), 'DRYG', (  zw1(:, :, :) + zw2(:, :, :) ) * zz_diff(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rc ) call Budget_store_add( tbudgets(NBUDGET_RC), 'DRYG',   -zw1(:, :, :)                     * prhodj(:, :, :) )
+  if ( lbudget_rr ) call Budget_store_add( tbudgets(NBUDGET_RR), 'DRYG',   -zw2(:, :, :)                     * prhodj(:, :, :) )
+  if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'DRYG',   -zw3(:, :, :)                     * prhodj(:, :, :) )
+  if ( lbudget_rs ) call Budget_store_add( tbudgets(NBUDGET_RS), 'DRYG',   -zw4(:, :, :)                     * prhodj(:, :, :) )
+  if ( lbudget_rg ) call Budget_store_add( tbudgets(NBUDGET_RG), 'DRYG', (  zw1(:, :, :) + zw2(:, :, :)   &
+                                                                          + zw3(:, :, :) + zw4(:, :, :) ) &
+                                                                            * prhodj(:, :, :) )
 
   ZW(:,:,:) = 0.
   DO JL=1,IMICRO
     ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RGMLTR(JL) * ZINV_TSTEP
   END DO
-  PRRS(:,:,:) = PRRS(:,:,:) + ZW(:,:,:)
-  PRGS(:,:,:) = PRGS(:,:,:) - ZW(:,:,:)
-  PTHS(:,:,:) = PTHS(:,:,:) - ZW(:,:,:)*(ZZ_LSFACT(:,:,:)-ZZ_LVFACT(:,:,:))
-  IF (LBUDGET_TH) CALL BUDGET(PTHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_TH, 'GMLT_BU_RTH')
-  IF (LBUDGET_RR) CALL BUDGET(PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR, 'GMLT_BU_RRR')
-  IF (LBUDGET_RG) CALL BUDGET(PRGS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RG,'GMLT_BU_RRG')
+  if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'GMLT', -zw(:, :, :) * zz_diff(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rr ) call Budget_store_add( tbudgets(NBUDGET_RR), 'GMLT',  zw(:, :, :)                    * prhodj(:, :, :) )
+  if ( lbudget_rg ) call Budget_store_add( tbudgets(NBUDGET_RG), 'GMLT', -zw(:, :, :)                    * prhodj(:, :, :) )
 
   IF(KRR==7) THEN
-    ZW(:,:,:) = 0.
+    ZW1(:,:,:) = 0.
     DO JL=1,IMICRO
-      ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RCWETH(JL) * ZINV_TSTEP
+      ZW1(I1(JL), I2(JL), I3(JL)) = ZTOT_RCWETH(JL) * ZINV_TSTEP
     END DO
-    PRCS(:,:,:) = PRCS(:,:,:) - ZW(:,:,:)
-    PRHS(:,:,:) = PRHS(:,:,:) + ZW(:,:,:)
-    PTHS(:,:,:) = PTHS(:,:,:) + ZW(:,:,:)*(ZZ_LSFACT(:,:,:)-ZZ_LVFACT(:,:,:))
-    ZW(:,:,:) = 0.
+    ZW2(:,:,:) = 0.
     DO JL=1,IMICRO
-      ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RRWETH(JL) * ZINV_TSTEP
+      ZW2(I1(JL), I2(JL), I3(JL)) = ZTOT_RRWETH(JL) * ZINV_TSTEP
     END DO
-    PRRS(:,:,:) = PRRS(:,:,:) - ZW(:,:,:)
-    PRHS(:,:,:) = PRHS(:,:,:) + ZW(:,:,:)
-    PTHS(:,:,:) = PTHS(:,:,:) + ZW(:,:,:)*(ZZ_LSFACT(:,:,:)-ZZ_LVFACT(:,:,:))
-    ZW(:,:,:) = 0.
+    ZW3(:,:,:) = 0.
     DO JL=1,IMICRO
-      ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RIWETH(JL) * ZINV_TSTEP
+      ZW3(I1(JL), I2(JL), I3(JL)) = ZTOT_RIWETH(JL) * ZINV_TSTEP
     END DO
-    PRIS(:,:,:) = PRIS(:,:,:) - ZW(:,:,:)
-    PRHS(:,:,:) = PRHS(:,:,:) + ZW(:,:,:)
-    ZW(:,:,:) = 0.
+    ZW4(:,:,:) = 0.
     DO JL=1,IMICRO
-      ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RSWETH(JL) * ZINV_TSTEP
+      ZW4(I1(JL), I2(JL), I3(JL)) = ZTOT_RSWETH(JL) * ZINV_TSTEP
     END DO
-    PRSS(:,:,:) = PRSS(:,:,:) - ZW(:,:,:)
-    PRHS(:,:,:) = PRHS(:,:,:) + ZW(:,:,:)
-    ZW(:,:,:) = 0.
+    ZW5(:,:,:) = 0.
     DO JL=1,IMICRO
-      ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RGWETH(JL) * ZINV_TSTEP
+      ZW5(I1(JL), I2(JL), I3(JL)) = ZTOT_RGWETH(JL) * ZINV_TSTEP
     END DO
-    PRGS(:,:,:) = PRGS(:,:,:) - ZW(:,:,:)
-    PRHS(:,:,:) = PRHS(:,:,:) + ZW(:,:,:)
-    IF (LBUDGET_TH) CALL BUDGET(PTHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_TH, 'WETH_BU_RTH')
-    IF (LBUDGET_RC) CALL BUDGET(PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC, 'WETH_BU_RRC')
-    IF (LBUDGET_RR) CALL BUDGET(PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR, 'WETH_BU_RRR')
-    IF (LBUDGET_RI) CALL BUDGET(PRIS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RI, 'WETH_BU_RRI')
-    IF (LBUDGET_RS) CALL BUDGET(PRSS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RS,'WETH_BU_RRS')
-    IF (LBUDGET_RH) CALL BUDGET(PRHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RH,'WETH_BU_RRH')
+    if ( lbudget_th ) &
+      call Budget_store_add( tbudgets(NBUDGET_TH), 'WETH', (  zw1(:, :, :) + zw2(:, :, :) ) * zz_diff(:, :, :) * prhodj(:, :, :) )
+    if ( lbudget_rc ) call Budget_store_add( tbudgets(NBUDGET_RC), 'WETH',   -zw1(:, :, :)                     * prhodj(:, :, :) )
+    if ( lbudget_rr ) call Budget_store_add( tbudgets(NBUDGET_RR), 'WETH',   -zw2(:, :, :)                     * prhodj(:, :, :) )
+    if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'WETH',   -zw3(:, :, :)                     * prhodj(:, :, :) )
+    if ( lbudget_rs ) call Budget_store_add( tbudgets(NBUDGET_RS), 'WETH',   -zw4(:, :, :)                     * prhodj(:, :, :) )
+    if ( lbudget_rg ) call Budget_store_add( tbudgets(NBUDGET_RG), 'WETH',   -zw5(:, :, :)                     * prhodj(:, :, :) )
+    if ( lbudget_rh ) call Budget_store_add( tbudgets(NBUDGET_RH), 'WETH', (  zw1(:, :, :) + zw2(:, :, :) + zw3(:, :, :) &
+                                                                              + zw4(:, :, :) + zw5(:, :, : ) )           &
+                                                                              * prhodj(:, :, :) )
 
     ZW(:,:,:) = 0.
     DO JL=1,IMICRO
       ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RGWETH(JL) * ZINV_TSTEP
     END DO
-    PRGS(:,:,:) = PRGS(:,:,:) - ZW(:,:,:)
-    PRHS(:,:,:) = PRHS(:,:,:) + ZW(:,:,:)
-    IF (LBUDGET_RG) CALL BUDGET(PRGS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RG,'HGCV_BU_RRG')
-    IF (LBUDGET_RH) CALL BUDGET(PRHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RH,'HGCV_BU_RRH')
+    if ( lbudget_rg ) call Budget_store_add( tbudgets(NBUDGET_RG), 'HGCV', -zw(:, :, :) * prhodj(:, :, :) )
+    if ( lbudget_rh ) call Budget_store_add( tbudgets(NBUDGET_RH), 'HGCV',  zw(:, :, :) * prhodj(:, :, :) )
 
-    ZW(:,:,:) = 0.
+    ZW1(:,:,:) = 0.
     DO JL=1,IMICRO
-      ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RCDRYH(JL) * ZINV_TSTEP
+      ZW1(I1(JL), I2(JL), I3(JL)) = ZTOT_RCDRYH(JL) * ZINV_TSTEP
     END DO
-    PRCS(:,:,:) = PRCS(:,:,:) - ZW(:,:,:)
-    PRHS(:,:,:) = PRHS(:,:,:) + ZW(:,:,:)
-    PTHS(:,:,:) = PTHS(:,:,:) + ZW(:,:,:)*(ZZ_LSFACT(:,:,:)-ZZ_LVFACT(:,:,:))
-    ZW(:,:,:) = 0.
+    ZW2(:,:,:) = 0.
     DO JL=1,IMICRO
-      ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RRDRYH(JL) * ZINV_TSTEP
+      ZW2(I1(JL), I2(JL), I3(JL)) = ZTOT_RRDRYH(JL) * ZINV_TSTEP
     END DO
-    PRRS(:,:,:) = PRRS(:,:,:) - ZW(:,:,:)
-    PRHS(:,:,:) = PRHS(:,:,:) + ZW(:,:,:)
-    PTHS(:,:,:) = PTHS(:,:,:) + ZW(:,:,:)*(ZZ_LSFACT(:,:,:)-ZZ_LVFACT(:,:,:))
-    ZW(:,:,:) = 0.
+    ZW3(:,:,:) = 0.
     DO JL=1,IMICRO
-      ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RIDRYH(JL) * ZINV_TSTEP
+      ZW3(I1(JL), I2(JL), I3(JL)) = ZTOT_RIDRYH(JL) * ZINV_TSTEP
     END DO
-    PRIS(:,:,:) = PRIS(:,:,:) - ZW(:,:,:)
-    PRHS(:,:,:) = PRHS(:,:,:) + ZW(:,:,:)
-    ZW(:,:,:) = 0.
+    ZW4(:,:,:) = 0.
     DO JL=1,IMICRO
-      ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RSDRYH(JL) * ZINV_TSTEP
+      ZW4(I1(JL), I2(JL), I3(JL)) = ZTOT_RSDRYH(JL) * ZINV_TSTEP
     END DO
-    PRSS(:,:,:) = PRSS(:,:,:) - ZW(:,:,:)
-    PRHS(:,:,:) = PRHS(:,:,:) + ZW(:,:,:)
-    ZW(:,:,:) = 0.
+    ZW5(:,:,:) = 0.
     DO JL=1,IMICRO
-      ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RGDRYH(JL) * ZINV_TSTEP
+      ZW5(I1(JL), I2(JL), I3(JL)) = ZTOT_RGDRYH(JL) * ZINV_TSTEP
     END DO
-    PRGS(:,:,:) = PRGS(:,:,:) - ZW(:,:,:)
-    PRHS(:,:,:) = PRHS(:,:,:) + ZW(:,:,:)
-    ZW(:,:,:) = 0.
+    ZW6(:,:,:) = 0.
     DO JL=1,IMICRO
-      ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RDRYHG(JL) * ZINV_TSTEP
+      ZW6(I1(JL), I2(JL), I3(JL)) = ZTOT_RDRYHG(JL) * ZINV_TSTEP
     END DO
-    PRHS(:,:,:) = PRHS(:,:,:) - ZW(:,:,:)
-    PRGS(:,:,:) = PRGS(:,:,:) + ZW(:,:,:)
-    IF (LBUDGET_TH) CALL BUDGET(PTHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_TH, 'DRYH_BU_RTH')
-    IF (LBUDGET_RC) CALL BUDGET(PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC, 'DRYH_BU_RRC')
-    IF (LBUDGET_RR) CALL BUDGET(PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR, 'DRYH_BU_RRR')
-    IF (LBUDGET_RI) CALL BUDGET(PRIS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RI, 'DRYH_BU_RRI')
-    IF (LBUDGET_RS) CALL BUDGET(PRSS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RS,'DRYH_BU_RRS')
-    IF (LBUDGET_RG) CALL BUDGET(PRGS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RG,'DRYH_BU_RRG')
-    IF (LBUDGET_RH) CALL BUDGET(PRHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RH,'DRYH_BU_RRH')
+    if ( lbudget_th ) &
+      call Budget_store_add( tbudgets(NBUDGET_TH), 'DRYH', (  zw1(:, :, :) + zw2(:, :, :) ) * zz_diff(:, :, :) * prhodj(:, :, :) )
+    if ( lbudget_rc ) call Budget_store_add( tbudgets(NBUDGET_RC), 'DRYH',   -zw1(:, :, :)                     * prhodj(:, :, :) )
+    if ( lbudget_rr ) call Budget_store_add( tbudgets(NBUDGET_RR), 'DRYH',   -zw2(:, :, :)                     * prhodj(:, :, :) )
+    if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'DRYH',   -zw3(:, :, :)                     * prhodj(:, :, :) )
+    if ( lbudget_rs ) call Budget_store_add( tbudgets(NBUDGET_RS), 'DRYH',   -zw4(:, :, :)                     * prhodj(:, :, :) )
+    if ( lbudget_rg ) call Budget_store_add( tbudgets(NBUDGET_RG), 'DRYH', ( -zw5(:, :, :) + zw6(:, :, : ) )   * prhodj(:, :, :) )
+    if ( lbudget_rh ) call Budget_store_add( tbudgets(NBUDGET_RH), 'DRYH', (  zw1(:, :, :) + zw2(:, :, :) + zw3(:, :, :)   &
+                                                                            + zw4(:, :, :) + zw5(:, :, : )- zw6(:, :, :) ) &
+                                                                              * prhodj(:, :, :) )
 
     ZW(:,:,:) = 0.
     DO JL=1,IMICRO
       ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RHMLTR(JL) * ZINV_TSTEP
     END DO
-    PRRS(:,:,:) = PRRS(:,:,:) + ZW(:,:,:)
-    PRHS(:,:,:) = PRHS(:,:,:) - ZW(:,:,:)
-    PTHS(:,:,:) = PTHS(:,:,:) - ZW(:,:,:)*(ZZ_LSFACT(:,:,:)-ZZ_LVFACT(:,:,:))
-    IF (LBUDGET_TH) CALL BUDGET(PTHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_TH, 'HMLT_BU_RTH')
-    IF (LBUDGET_RR) CALL BUDGET(PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR, 'HMLT_BU_RRR')
-    IF (LBUDGET_RH) CALL BUDGET(PRHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RH,'HMLT_BU_RRH')
+    if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'HMLT', -zw(:, :, :) * zz_diff(:, :, :) * prhodj(:, :, :) )
+    if ( lbudget_rr ) call Budget_store_add( tbudgets(NBUDGET_RR), 'HMLT',  zw(:, :, :)                    * prhodj(:, :, :) )
+    if ( lbudget_rh ) call Budget_store_add( tbudgets(NBUDGET_RH), 'HMLT', -zw(:, :, :)                    * prhodj(:, :, :) )
   ENDIF
 
   ZW(:,:,:) = 0.
   DO JL=1,IMICRO
     ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RIMLTC(JL) * ZINV_TSTEP
   END DO
-  PRIS(:,:,:) = PRIS(:,:,:) - ZW(:,:,:)
-  PRCS(:,:,:) = PRCS(:,:,:) + ZW(:,:,:)
-  PTHS(:,:,:) = PTHS(:,:,:) - ZW(:,:,:)*(ZZ_LSFACT(:,:,:)-ZZ_LVFACT(:,:,:))
-  IF (LBUDGET_TH) CALL BUDGET(PTHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_TH, 'IMLT_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET(PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC, 'IMLT_BU_RRC')
-  IF (LBUDGET_RI) CALL BUDGET(PRIS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RI, 'IMLT_BU_RRI')
+  if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'IMLT', -zw(:, :, :) * zz_diff(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rc ) call Budget_store_add( tbudgets(NBUDGET_RC), 'IMLT',  zw(:, :, :)                    * prhodj(:, :, :) )
+  if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'IMLT', -zw(:, :, :)                    * prhodj(:, :, :) )
 
   ZW(:,:,:) = 0.
   DO JL=1,IMICRO
     ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RCBERI(JL) * ZINV_TSTEP
   END DO
-  PRCS(:,:,:) = PRCS(:,:,:) - ZW(:,:,:)
-  PRIS(:,:,:) = PRIS(:,:,:) + ZW(:,:,:)
-  PTHS(:,:,:) = PTHS(:,:,:) + ZW(:,:,:)*(ZZ_LSFACT(:,:,:)-ZZ_LVFACT(:,:,:))
-  IF (LBUDGET_TH) CALL BUDGET(PTHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_TH, 'BERFI_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET(PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC, 'BERFI_BU_RRC')
-  IF (LBUDGET_RI) CALL BUDGET(PRIS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RI, 'BERFI_BU_RRI')
+  if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'BERFI',  zw(:, :, :) * zz_diff(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rc ) call Budget_store_add( tbudgets(NBUDGET_RC), 'BERFI', -zw(:, :, :)                    * prhodj(:, :, :) )
+  if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'BERFI',  zw(:, :, :)                    * prhodj(:, :, :) )
+
+  deallocate( zw1, zw2, zw3, zw4 )
+  if ( krr == 7 ) deallocate( zw5, zw6 )
+  if ( lbudget_th ) deallocate( zz_diff )
 ENDIF
 !
 !***     7.3    Final tendencies
 !
+if ( lbu_enable ) then
+  if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'CORR', pths(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'CORR', prvs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'CORR', prcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR), 'CORR', prrs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'CORR', pris(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rs ) call Budget_store_init( tbudgets(NBUDGET_RS), 'CORR', prss(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rg ) call Budget_store_init( tbudgets(NBUDGET_RG), 'CORR', prgs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rh ) call Budget_store_init( tbudgets(NBUDGET_RH), 'CORR', prhs(:, :, :) * prhodj(:, :, :) )
+end if
 PRVS(:,:,:) = ZW_RVS(:,:,:)
 PRCS(:,:,:) = ZW_RCS(:,:,:)
 PRRS(:,:,:) = ZW_RRS(:,:,:)
@@ -1545,18 +1501,16 @@ IF (KRR==7) THEN
   PRHS(:,:,:) = ZW_RHS(:,:,:)
 ENDIF
 PTHS(:,:,:) = ZW_THS(:,:,:)
-IF(LBU_ENABLE) THEN
-  IF (LBUDGET_TH) CALL BUDGET(PTHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_TH, 'CORR_BU_RTH')
-  IF (LBUDGET_RV) CALL BUDGET(PRVS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RV, 'CORR_BU_RRV')
-  IF (LBUDGET_RC) CALL BUDGET(PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC, 'CORR_BU_RRC')
-  IF (LBUDGET_RR) CALL BUDGET(PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR, 'CORR_BU_RRR')
-  IF (LBUDGET_RI) CALL BUDGET(PRIS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RI, 'CORR_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET(PRSS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RS,'CORR_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET(PRGS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RG,'CORR_BU_RRG')
-  IF (KRR==7) THEN
-    IF (LBUDGET_RH) CALL BUDGET(PRHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RH,'CORR_BU_RRH')
-  ENDIF
-ENDIF
+if ( lbu_enable ) then
+  if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'CORR', pths(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'CORR', prvs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'CORR', prcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR), 'CORR', prrs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'CORR', pris(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rs ) call Budget_store_end( tbudgets(NBUDGET_RS), 'CORR', prss(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rg ) call Budget_store_end( tbudgets(NBUDGET_RG), 'CORR', prgs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rh ) call Budget_store_end( tbudgets(NBUDGET_RH), 'CORR', prhs(:, :, :) * prhodj(:, :, :) )
+end if
 !
 !-------------------------------------------------------------------------------
 !
@@ -1567,6 +1521,19 @@ IF(LSEDIM_AFTER) THEN
   !
   !*       8.1     sedimentation
   !
+  if ( lbudget_rc .and. osedic ) call Budget_store_init( tbudgets(NBUDGET_RC), 'SEDI', prcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rr )              call Budget_store_init( tbudgets(NBUDGET_RR), 'SEDI', prrs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_ri )              call Budget_store_init( tbudgets(NBUDGET_RI), 'SEDI', pris(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rs )              call Budget_store_init( tbudgets(NBUDGET_RS), 'SEDI', prss(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rg )              call Budget_store_init( tbudgets(NBUDGET_RG), 'SEDI', prgs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rh )              call Budget_store_init( tbudgets(NBUDGET_RH), 'SEDI', prhs(:, :, :) * prhodj(:, :, :) )
+
+  !Init only of not osedic (to prevent crash with double init)
+  !Remark: the 2 source terms SEDI and DEPO could be mixed and stored in the same source term (SEDI)
+  !        if osedic=T and ldeposc=T (a warning is printed in ini_budget in that case)
+  if ( lbudget_rc .and. ldeposc .and. .not.osedic ) &
+    call Budget_store_init( tbudgets(NBUDGET_RC), 'DEPO', prcs(:, :, :) * prhodj(:, :, :) )
+
   IF(HSEDIM=='STAT') THEN
     !SR: It *seems* that we must have two separate calls for ifort
     IF(KRR==7) THEN
@@ -1629,15 +1596,18 @@ IF(LSEDIM_AFTER) THEN
   !
   !*       8.2     budget storage
   !
-  IF (LBUDGET_RC .AND. OSEDIC) &
-                  CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC, 'SEDI_BU_RRC')
-  IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR, 'SEDI_BU_RRR')
-  IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RI, 'SEDI_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET (PRSS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RS, 'SEDI_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RG, 'SEDI_BU_RRG')
-  IF ( KRR == 7 .AND. LBUDGET_RH) &
-                  CALL BUDGET (PRHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RH, 'SEDI_BU_RRH')
-  !
+  if ( lbudget_rc .and. osedic ) call Budget_store_end( tbudgets(NBUDGET_RC), 'SEDI', prcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rr )              call Budget_store_end( tbudgets(NBUDGET_RR), 'SEDI', prrs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_ri )              call Budget_store_end( tbudgets(NBUDGET_RI), 'SEDI', pris(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rs )              call Budget_store_end( tbudgets(NBUDGET_RS), 'SEDI', prss(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rg )              call Budget_store_end( tbudgets(NBUDGET_RG), 'SEDI', prgs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rh )              call Budget_store_end( tbudgets(NBUDGET_RH), 'SEDI', prhs(:, :, :) * prhodj(:, :, :) )
+
+  !If osedic=T and ldeposc=T, DEPO is in fact mixed and stored with the SEDI source term
+  !(a warning is printed in ini_budget in that case)
+  if ( lbudget_rc .and. ldeposc .and. .not.osedic) &
+    call Budget_store_end( tbudgets(NBUDGET_RC), 'DEPO', prcs(:, :, :) * prhodj(:, :, :) )
+
   !sedimentation of rain fraction
   CALL ICE4_RAINFR_VERT(IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKT, KKL, PRAINFR, PRRS(:,:,:)*PTSTEP)
 ENDIF

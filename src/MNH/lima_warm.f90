@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -126,30 +126,31 @@ END MODULE MODI_LIMA_WARM
 !!      Original             ??/??/13 
 !!      C. Barthe  * LACy *  jan. 2014   add budgets
 !!      J. Escobar : for real*4 , use XMNH_HUGE
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets (no more budget calls in this subroutine)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAMETERS
-USE MODD_CST
+use modd_budget,          only: lbudget_th, lbudget_rv, lbudget_rc, lbudget_rr, lbudget_sv,  &
+                                NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, NBUDGET_SV1, &
+                                tbudgets
 USE MODD_CONF
-USE MODD_PARAM_LIMA
-USE MODD_PARAM_LIMA_WARM
-USE MODD_NSV
-!
-!
-USE MODD_BUDGET
-USE MODI_BUDGET
-!
-USE MODI_LIMA_WARM_SEDIMENTATION
-USE MODI_LIMA_WARM_NUCL
-USE MODI_LIMA_WARM_COAL
-USE MODI_LIMA_WARM_EVAP
+USE MODD_CST
 USE MODD_IO,      ONLY: TFILEDATA
 USE MODD_LUNIT_n, ONLY: TLUOUT
+USE MODD_NSV
+USE MODD_PARAMETERS
+USE MODD_PARAM_LIMA
+USE MODD_PARAM_LIMA_WARM
+
+use mode_budget,          only: Budget_store_init, Budget_store_end
+
+USE MODI_LIMA_WARM_COAL
+USE MODI_LIMA_WARM_EVAP
+USE MODI_LIMA_WARM_NUCL
+USE MODI_LIMA_WARM_SEDIMENTATION
 !
 IMPLICIT NONE
 !
@@ -231,6 +232,7 @@ REAL,    DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3))   &
                                   :: ZT, ZTM
 REAL,    DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3))   &
                                   :: ZWLBDR,ZWLBDR3,ZWLBDC,ZWLBDC3
+integer :: idx
 INTEGER :: JL
 !
 LOGICAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2)) :: GDEP
@@ -315,6 +317,13 @@ END IF
 !	        -------------------------------------
 !
 !
+if ( lbudget_rc .and. osedc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'SEDI', prcs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rr .and. orain ) call Budget_store_init( tbudgets(NBUDGET_RR), 'SEDI', prrs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_sv ) then
+  if ( osedc ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'SEDI', pccs(:, :, :) * prhodj(:, :, :) )
+  if ( orain ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'SEDI', pcrs(:, :, :) * prhodj(:, :, :) )
+end if
+
 CALL LIMA_WARM_SEDIMENTATION (OSEDC, KSPLITR, PTSTEP, KMI,  &
                               PZZ, PRHODREF, PPABST, ZT,    &
                               ZWLBDC,                       &
@@ -322,17 +331,20 @@ CALL LIMA_WARM_SEDIMENTATION (OSEDC, KSPLITR, PTSTEP, KMI,  &
                               PRCS, PRRS, PCCS, PCRS,       &
                               PINPRC, PINPRR,               &
                               PINPRR3D    )
-!
-IF (LBUDGET_RC .AND. OSEDC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,'SEDI_BU_RRC')
-IF (LBUDGET_RR .AND. ORAIN) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR,'SEDI_BU_RRR')
-IF (LBUDGET_SV) THEN
-  IF (OSEDC) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NC,'SEDI_BU_RSV')
-  IF (ORAIN) CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NR,'SEDI_BU_RSV')
-END IF
+
+if ( lbudget_rc .and. osedc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'SEDI', prcs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rr .and. orain ) call Budget_store_end( tbudgets(NBUDGET_RR), 'SEDI', prrs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_sv ) then
+  if ( osedc ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'SEDI', pccs(:, :, :) * prhodj(:, :, :) )
+  if ( orain ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'SEDI', pcrs(:, :, :) * prhodj(:, :, :) )
+end if
 !
 ! 2.bis Deposition at 1st level above ground
 !
 IF (LDEPOC) THEN
+  if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC),                    'DEPO', prcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'DEPO', pccs(:, :, :) * prhodj(:, :, :) )
+
   PINDEP(:,:)=0.
   GDEP(:,:) = .FALSE.
   GDEP(:,:) =    PRCS(:,:,2) >0 .AND. PCCS(:,:,2) >0
@@ -342,9 +354,9 @@ IF (LDEPOC) THEN
      PINPRC(:,:) = PINPRC(:,:) + XVDEPOC * PRCT(:,:,2) * PRHODREF(:,:,2) /XRHOLW
      PINDEP(:,:) = XVDEPOC * PRCT(:,:,2) *  PRHODREF(:,:,2) /XRHOLW
   END WHERE
-!
-  IF ( LBUDGET_RC ) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,                'DEPO_BU_RRC')
-  IF ( LBUDGET_SV ) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_LIMA_NC, 'DEPO_BU_RSV')
+
+  if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC),                    'DEPO', prcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'DEPO', pccs(:, :, :) * prhodj(:, :, :) )
 END IF
 ! 
 !-------------------------------------------------------------------------------
@@ -353,23 +365,33 @@ END IF
 !   	        --------------------------------------
 !
 !
-IF (LACTI .AND. NMOD_CCN.GE.1) THEN
-!
-   CALL LIMA_WARM_NUCL (OACTIT, PTSTEP, KMI, TPFILE, OCLOSE_OUT,&
+IF ( LACTI .AND. NMOD_CCN > 0 ) THEN
+  if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'HENU', pths(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'HENU', prvs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'HENU', prcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv ) then
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'HENU', pccs(:, :, :) * prhodj(:, :, :) )
+    do jl = 1, nmod_ccn
+      idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_free - 1 + jl
+      call Budget_store_init( tbudgets(idx), 'HENU', pnfs(:, :, :, jl) * prhodj(:, :, :) )
+    end do
+  end if
+
+  CALL LIMA_WARM_NUCL (OACTIT, PTSTEP, KMI, TPFILE, OCLOSE_OUT,&
                         PRHODREF, PEXNREF, PPABST, ZT, ZTM, PW_NU,       &
                         PRCM, PRVT, PRCT, PRRT,                          &
                         PTHS, PRVS, PRCS, PCCS, PNFS, PNAS               )
-!
-   IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'HENU_BU_RTH')
-   IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RV,'HENU_BU_RRV')
-   IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'HENU_BU_RRC')
-   IF (LBUDGET_SV) THEN
-      CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NC,'HENU_BU_RSV') ! RCN
-         DO JL=1, NMOD_CCN
-            CALL BUDGET ( PNFS(:,:,:,JL)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_CCN_FREE+JL-1,'HENU_BU_RSV')
-         END DO
-   END IF
-!
+
+  if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HENU', pths(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'HENU', prvs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'HENU', prcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv ) then
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'HENU', pccs(:, :, :) * prhodj(:, :, :) )
+    do jl = 1, nmod_ccn
+      idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_free - 1 + jl
+      call Budget_store_end( tbudgets(idx), 'HENU', pnfs(:, :, :, jl) * prhodj(:, :, :) )
+    end do
+  end if
 END IF ! LACTI
 !
 !
@@ -393,27 +415,34 @@ END IF ! LACTI
 !
 !
 IF (ORAIN) THEN
-!
+
+  if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH),                    'REVA', pths(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV),                    'REVA', prvs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC),                    'REVA', prcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR),                    'REVA', prrs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'REVA', pccs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'REVA', pcrs(:, :, :) * prhodj(:, :, :) )
+
    CALL LIMA_WARM_EVAP (PTSTEP, KMI,                                &
                         PRHODREF, PEXNREF, PPABST, ZT,              &
                         ZWLBDC3, ZWLBDC, ZWLBDR3, ZWLBDR,           &
                         PRVT, PRCT, PRRT, PCRT,                     &
                         PRVS, PRCS, PRRS, PCCS, PCRS, PTHS,         &
                         PEVAP3D                                     )
-!
-   IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RV,'REVA_BU_RRV')
-   IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,'REVA_BU_RRC')
-   IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR,'REVA_BU_RRR')
-   IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_TH,'REVA_BU_RTH')
-   IF (LBUDGET_SV) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NC,'REVA_BU_RSV')
-   IF (LBUDGET_SV) CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NR,'REVA_BU_RSV')
-!
-!
+
+  if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH),                    'REVA', pths(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV),                    'REVA', prvs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC),                    'REVA', prcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR),                    'REVA', prrs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'REVA', pccs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'REVA', pcrs(:, :, :) * prhodj(:, :, :) )
 !-------------------------------------------------------------------------------
 !
 !        5.    SPONTANEOUS BREAK-UP (NUMERICAL FILTER)
 !              --------------------
 !
+  if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'BRKU', pcrs(:, :, :) * prhodj(:, :, :) )
+
    ZWLBDR(:,:,:) = 1.E10
    WHERE (PRRS(:,:,:)>XRTMIN(3)/PTSTEP.AND.PCRS(:,:,:)>XCTMIN(3)/PTSTEP )
       ZWLBDR3(:,:,:) = XLBR * PCRS(:,:,:) / PRRS(:,:,:)
@@ -425,11 +454,7 @@ IF (ORAIN) THEN
    END WHERE
 !
 ! Budget storage
-   IF (LBUDGET_SV) &
-      CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NR,&
-                    &'BRKU_BU_RSV') 
-
-!
+  if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'BRKU', pcrs(:, :, :) * prhodj(:, :, :) )
 ENDIF ! ORAIN
 !
 !------------------------------------------------------------------------------

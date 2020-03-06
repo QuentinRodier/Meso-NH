@@ -405,7 +405,9 @@ ZPABS_E(:,:) = 0.
 ZPABS_W(:,:) = 0.
 
 ! Done in model_n before call to Rad_bound
-! if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'PRES', prus )
+! if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'PRES', prus(:, :, :) )
+! if ( lbudget_v ) call Budget_store_init( tbudgets(NBUDGET_V), 'PRES', prvs(:, :, :) )
+! if ( lbudget_w ) call Budget_store_init( tbudgets(NBUDGET_W), 'PRES', prws(:, :, :) )
 
 !-------------------------------------------------------------------------------
 !
@@ -681,10 +683,9 @@ ENDIF
 !*       7.    STORAGE OF THE FIELDS IN BUDGET ARRAYS
 !              --------------------------------------
 !
-if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'PRES', prus )
-
-IF (LBUDGET_V) CALL BUDGET (PRVS,NBUDGET_V,'PRES_BU_RV')
-IF (LBUDGET_W) CALL BUDGET (PRWS,NBUDGET_W,'PRES_BU_RW')
+if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'PRES', prus(:, :, :) )
+if ( lbudget_v ) call Budget_store_end( tbudgets(NBUDGET_V), 'PRES', prvs(:, :, :) )
+if ( lbudget_w ) call Budget_store_end( tbudgets(NBUDGET_W), 'PRES', prws(:, :, :) )
 !
 !-------------------------------------------------------------------------------
 !

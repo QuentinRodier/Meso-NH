@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -14,7 +14,7 @@ INTERFACE
                                            ZRVS, ZRCS, ZRIS, ZRGS, ZTHS, &
                                            ZCCS, ZCIS, ZIFS, ZINS,       &
                                            ZLBDAI, ZLBDAG,               &
-                                           ZRHODJ, GMICRO, PRHODJ, KMI,  &
+                                           PRHODJ1D, GMICRO, PRHODJ, KMI,&
                                            PTHS, PRVS, PRCS, PRIS, PRGS, &
                                            PCCS, PCIS                    )
 !
@@ -46,7 +46,7 @@ REAL, DIMENSION(:),   INTENT(IN)    :: ZLBDAI  ! Slope parameter of the ice crys
 REAL, DIMENSION(:),   INTENT(IN)    :: ZLBDAG  ! Slope parameter of the graupel distr.
 !
 ! used for budget storage
-REAL,    DIMENSION(:),     INTENT(IN) :: ZRHODJ
+REAL,    DIMENSION(:),     INTENT(IN) :: PRHODJ1D
 LOGICAL, DIMENSION(:,:,:), INTENT(IN) :: GMICRO 
 REAL,    DIMENSION(:,:,:), INTENT(IN) :: PRHODJ
 INTEGER,                   INTENT(IN) :: KMI 
@@ -69,7 +69,7 @@ END MODULE MODI_LIMA_MIXED_SLOW_PROCESSES
                                            ZRVS, ZRCS, ZRIS, ZRGS, ZTHS, &
                                            ZCCS, ZCIS, ZIFS, ZINS,       &
                                            ZLBDAI, ZLBDAG,               &
-                                           ZRHODJ, GMICRO, PRHODJ, KMI,  &
+                                           PRHODJ1D, GMICRO, PRHODJ, KMI,&
                                            PTHS, PRVS, PRCS, PRIS, PRGS, &
                                            PCCS, PCIS                    )
 !     #######################################################################
@@ -110,23 +110,25 @@ END MODULE MODI_LIMA_MIXED_SLOW_PROCESSES
 !!    -------------
 !!      Original             ??/??/13 
 !!      C. Barthe  * LACy *  jan. 2014   add budgets
-!!
+!  P. Wautelet    03/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
+use modd_budget,           only: lbu_enable, nbumod,                                                                  &
+                                 lbudget_th, lbudget_rv, lbudget_rc, lbudget_rc, lbudget_ri, lbudget_rg, lbudget_sv,  &
+                                 NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RC, NBUDGET_RI, NBUDGET_RG, NBUDGET_SV1, &
+                                 tbudgets
 USE MODD_CST,              ONLY : XTT, XALPI, XBETAI, XGAMI,          &
                                        XALPW, XBETAW, XGAMW
-USE MODD_PARAM_LIMA,       ONLY : XRTMIN, XCTMIN, NMOD_IFN, LSNOW
-USE MODD_PARAM_LIMA_COLD,  ONLY : XDI, X0DEPI, X2DEPI, XSCFAC  
-USE MODD_PARAM_LIMA_MIXED, ONLY : XLBG, XLBEXG, XLBDAG_MAX,           &
-                                  X0DEPG, XEX0DEPG, X1DEPG, XEX1DEPG 
-!
 USE MODD_NSV
-USE MODD_BUDGET
-USE MODI_BUDGET
-!
+USE MODD_PARAM_LIMA,       ONLY : XRTMIN, XCTMIN, NMOD_IFN, LSNOW
+USE MODD_PARAM_LIMA_COLD,  ONLY : XDI, X0DEPI, X2DEPI, XSCFAC
+USE MODD_PARAM_LIMA_MIXED, ONLY : XLBG, XLBEXG, XLBDAG_MAX,           &
+                                  X0DEPG, XEX0DEPG, X1DEPG, XEX1DEPG
+use mode_budget,           only: Budget_store_add, Budget_store_init, Budget_store_end
+
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
@@ -159,7 +161,7 @@ REAL, DIMENSION(:),   INTENT(IN)    :: ZLBDAI  ! Slope parameter of the ice crys
 REAL, DIMENSION(:),   INTENT(IN)    :: ZLBDAG  ! Slope parameter of the graupel distr.
 !
 ! used for budget storage
-REAL,    DIMENSION(:),     INTENT(IN) :: ZRHODJ
+REAL,    DIMENSION(:),     INTENT(IN) :: PRHODJ1D
 LOGICAL, DIMENSION(:,:,:), INTENT(IN) :: GMICRO 
 REAL,    DIMENSION(:,:,:), INTENT(IN) :: PRHODJ
 INTEGER,                   INTENT(IN) :: KMI
@@ -196,24 +198,31 @@ IF (LSNOW) THEN
    END WHERE
 !
 ! Budget storage
-   IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
-     IF (LBUDGET_TH) CALL BUDGET (                                                 &
-                   UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
-                                                                NBUDGET_TH,'DEPG_BU_RTH')
-     IF (LBUDGET_RV) CALL BUDGET (                                                 &
-                   UNPACK(ZRVS(:),MASK=GMICRO(:,:,:),FIELD=PRVS)*PRHODJ(:,:,:),&
-                                                                NBUDGET_RV,'DEPG_BU_RRV')
-     IF (LBUDGET_RG) CALL BUDGET (                                                 &
-                   UNPACK(ZRGS(:),MASK=GMICRO(:,:,:),FIELD=PRGS)*PRHODJ(:,:,:), &
-                                                                NBUDGET_RG,'DEPG_BU_RRG')
-  END IF
+  if ( nbumod == kmi .and. lbu_enable ) then
+    if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'DEPG', &
+                                           Unpack(  zzw(:) * zlsfact(:) * prhodj1d(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rv ) call Budget_store_add( tbudgets(NBUDGET_RV), 'DEPG', &
+                                           Unpack( -zzw(:)              * prhodj1d(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rg ) call Budget_store_add( tbudgets(NBUDGET_RG), 'DEPG', &
+                                           Unpack(  zzw(:)              * prhodj1d(:), mask = gmicro(:, :, :), field = 0. ) )
+  end if
 END IF
 !
 !
 !*       2    cloud ice Melting: RIMLTC and CIMLTC
 !        -----------------------------------------
 !
-!
+  if ( nbumod == kmi .and. lbu_enable ) then
+    if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'IMLT', &
+                                           Unpack( zths(:), mask = gmicro(:, :, :), field = pths(:, :, :) ) * prhodj(:, :, :) )
+    if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'IMLT', prcs(:, :, :) * prhodj(:, :, :) )
+    if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'IMLT', pris(:, :, :) * prhodj(:, :, :) )
+    if ( lbudget_sv ) then
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'IMLT', pccs(:, :, :) * prhodj(:, :, :) )
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'IMLT', pcis(:, :, :) * prhodj(:, :, :) )
+    end if
+  end if
+
    ZMASK(:) = 1.0
    WHERE( (ZRIS(:)>XRTMIN(4)/PTSTEP) .AND. (ZZT(:)>XTT) )
       ZRCS(:) = ZRCS(:) + ZRIS(:)
@@ -231,29 +240,33 @@ END IF
    ENDDO
 !
 ! Budget storage
-   IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
-     IF (LBUDGET_TH) CALL BUDGET (                                                 &
-                   UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
-                                                                NBUDGET_TH,'IMLT_BU_RTH')
-     IF (LBUDGET_RC) CALL BUDGET (                                                 &
-                   UNPACK(ZRCS(:),MASK=GMICRO(:,:,:),FIELD=PRCS)*PRHODJ(:,:,:), &
-                                                                NBUDGET_RC,'IMLT_BU_RRC')
-     IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                   UNPACK(ZRIS(:),MASK=GMICRO(:,:,:),FIELD=PRIS)*PRHODJ(:,:,:), &
-                                                                NBUDGET_RI,'IMLT_BU_RRI')
-     IF (LBUDGET_SV) THEN
-       CALL BUDGET (UNPACK(ZCCS(:),MASK=GMICRO(:,:,:),FIELD=PCCS)*PRHODJ(:,:,:), &
-                                                 NBUDGET_SV1-1+NSV_LIMA_NC,'IMLT_BU_RSV')
-       CALL BUDGET (UNPACK(ZCIS(:),MASK=GMICRO(:,:,:),FIELD=PCIS)*PRHODJ(:,:,:), &
-                                                 NBUDGET_SV1-1+NSV_LIMA_NI,'IMLT_BU_RSV')
-     END IF
-   END IF
-!
+  if ( nbumod == kmi .and. lbu_enable ) then
+    if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'IMLT', &
+                                           Unpack( zths(:), mask = gmicro(:, :, :), field = pths(:, :, :) ) * prhodj(:, :, :) )
+    if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'IMLT', &
+                                           Unpack( zrcs(:), mask = gmicro(:, :, :), field = prcs(:, :, :) ) * prhodj(:, :, :) )
+    if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'IMLT', &
+                                           Unpack( zris(:), mask = gmicro(:, :, :), field = pris(:, :, :) ) * prhodj(:, :, :) )
+    if ( lbudget_sv ) then
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'IMLT', &
+                                           Unpack( zccs(:), mask = gmicro(:, :, :), field = pccs(:, :, :) ) * prhodj(:, :, :) )
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'IMLT', &
+                                           Unpack( zcis(:), mask = gmicro(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
+    end if
+  end if
 !
 !*       3    Bergeron-Findeisen effect: RCBERI
 !        --------------------------------------
 !
-!
+  if ( nbumod == kmi .and. lbu_enable ) then
+    if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'BERFI', &
+                                           Unpack( zths(:), mask = gmicro(:, :, :), field = pths(:, :, :) ) * prhodj(:, :, :) )
+    if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'BERFI', &
+                                           Unpack( zrcs(:), mask = gmicro(:, :, :), field = prcs(:, :, :) ) * prhodj(:, :, :) )
+    if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'BERFI', &
+                                           Unpack( zris(:), mask = gmicro(:, :, :), field = pris(:, :, :) ) * prhodj(:, :, :) )
+  end if
+
    ZZW(:) = 0.0
    WHERE( (ZRCS(:)>XRTMIN(2)/PTSTEP) .AND. (ZRIS(:)>XRTMIN(4)/PTSTEP) .AND. (ZCIT(:)>XCTMIN(4)) )
       ZZW(:) = EXP( (XALPW-XALPI) - (XBETAW-XBETAI)/ZZT(:)          &
@@ -267,18 +280,14 @@ END IF
    END WHERE
 !
 ! Budget storage
-   IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
-     IF (LBUDGET_TH) CALL BUDGET (                                                 &
-                   UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
-                                                               NBUDGET_TH,'BERFI_BU_RTH')
-     IF (LBUDGET_RC) CALL BUDGET (                                                 &
-                   UNPACK(ZRCS(:),MASK=GMICRO(:,:,:),FIELD=PRCS)*PRHODJ(:,:,:), &
-                                                               NBUDGET_RC,'BERFI_BU_RRC')
-     IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                   UNPACK(ZRIS(:),MASK=GMICRO(:,:,:),FIELD=PRIS)*PRHODJ(:,:,:), &
-                                                               NBUDGET_RI,'BERFI_BU_RRI')
-   END IF
-!
+  if ( nbumod == kmi .and. lbu_enable ) then
+    if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'BERFI', &
+                                           Unpack( zths(:), mask = gmicro(:, :, :), field = pths(:, :, :) ) * prhodj(:, :, :) )
+    if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'BERFI', &
+                                           Unpack( zrcs(:), mask = gmicro(:, :, :), field = prcs(:, :, :) ) * prhodj(:, :, :) )
+    if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'BERFI', &
+                                           Unpack( zris(:), mask = gmicro(:, :, :), field = pris(:, :, :) ) * prhodj(:, :, :) )
+  end if
 !------------------------------------------------------------------------------
 !
 END SUBROUTINE LIMA_MIXED_SLOW_PROCESSES

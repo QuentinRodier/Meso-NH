@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -106,25 +106,27 @@ END MODULE MODI_LIMA_MEYERS
 !!    -------------
 !!      Original             ??/??/13 
 !!      C. Barthe  * LACy *  jan. 2014   add budgets
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
-!
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_BUDGET
+use modd_budget,          only: lbu_enable, nbumod,                                          &
+                                lbudget_th, lbudget_rv, lbudget_rc, lbudget_ri, lbudget_sv,  &
+                                NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RI, NBUDGET_SV1, &
+                                tbudgets
 USE MODD_CST
 USE MODD_NSV,             ONLY: NSV_LIMA_NC, NSV_LIMA_NI
 USE MODD_PARAMETERS
 USE MODD_PARAM_LIMA
 USE MODD_PARAM_LIMA_COLD
 
+use mode_budget,          only: Budget_store_init, Budget_store_end
 use mode_tools,           only: Countjv
 
-USE MODI_BUDGET
-!
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
@@ -314,6 +316,13 @@ IF( INEGT >= 1 ) THEN
 !
 !*            compute the heterogeneous nucleation by deposition: RVHNDI
 !
+  if ( nbumod == kmi .and. lbu_enable ) then
+    if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH),                    'HIND', pths(:, :, :) * prhodj(:, :, :) )
+    if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV),                    'HIND', prvs(:, :, :) * prhodj(:, :, :) )
+    if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI),                    'HIND', pris(:, :, :) * prhodj(:, :, :) )
+    if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HIND', pcis(:, :, :) * prhodj(:, :, :) )
+  end if
+
   DO JL=1,INEGT
     ZINS(JL,1) = PINS(I1(JL),I2(JL),I3(JL),1)
   END DO
@@ -338,24 +347,32 @@ IF( INEGT >= 1 ) THEN
 !
 !
 ! Budget storage
-  IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
-    IF (LBUDGET_TH) CALL BUDGET (                                                 &
-                    UNPACK(ZTHS(:),MASK=GNEGT(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
-                                                                NBUDGET_TH,'HIND_BU_RTH')
-    IF (LBUDGET_RV) CALL BUDGET (                                                 &
-                    UNPACK(ZRVS(:),MASK=GNEGT(:,:,:),FIELD=PRVS)*PRHODJ(:,:,:),&
-                                                                NBUDGET_RV,'HIND_BU_RRV')
-    IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                    UNPACK(ZRIS(:),MASK=GNEGT(:,:,:),FIELD=PRIS)*PRHODJ(:,:,:),&
-                                                                NBUDGET_RI,'HIND_BU_RRI')
-    IF (LBUDGET_SV) THEN
-      CALL BUDGET ( UNPACK(ZCIS(:),MASK=GNEGT(:,:,:),FIELD=PCIS)*PRHODJ(:,:,:),&
-                                                 NBUDGET_SV1-1+NSV_LIMA_NI,'HIND_BU_RSV')
-    END IF
-  END IF
+  if ( nbumod == kmi .and. lbu_enable ) then
+    if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HIND', &
+                                             Unpack ( zths(:), mask = gnegt(:, :, :), field = pths(:, :, :) ) * prhodj(:, :, :) )
+    if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'HIND', &
+                                             Unpack ( zrvs(:), mask = gnegt(:, :, :), field = prvs(:, :, :) ) * prhodj(:, :, :) )
+    if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'HIND', &
+                                             Unpack ( zris(:), mask = gnegt(:, :, :), field = pris(:, :, :) ) * prhodj(:, :, :) )
+    if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HIND', &
+                                             Unpack ( zcis(:), mask = gnegt(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
+  end if
 !
 !*            compute the heterogeneous nucleation by contact: RVHNCI
 !
+  if ( nbumod == kmi .and. lbu_enable ) then
+    if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'HINC', &
+                                             Unpack ( zths(:), mask = gnegt(:, :, :), field = pths(:, :, :) ) * prhodj(:, :, :) )
+    if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'HINC', prcs(:, :, :) * prhodj(:, :, :) )
+    if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'HINC', &
+                                             Unpack ( zris(:), mask = gnegt(:, :, :), field = pris(:, :, :) ) * prhodj(:, :, :) )
+    if ( lbudget_sv ) then
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'HINC', pccs(:, :, :) * prhodj(:, :, :) )
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HINC', &
+                                       Unpack ( zcis(:), mask = gnegt(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
+    end if
+  end if
+
   DO JL=1,INEGT
     ZINS(JL,1) = PINS(I1(JL),I2(JL),I3(JL),1)
   END DO
@@ -396,17 +413,16 @@ IF( INEGT >= 1 ) THEN
   PCIS(:,:,:) = UNPACK( ZCIS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
 !
 ! Budget storage
-  IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
-    IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_TH,'HINC_BU_RTH')
-    IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,'HINC_BU_RRC')
-    IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RI,'HINC_BU_RRI')
-    IF (LBUDGET_SV) THEN
-      CALL BUDGET ( PCCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NC,'HINC_BU_RSV')
-      CALL BUDGET ( PCIS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NI,'HINC_BU_RSV')
-    END IF
-  END IF
+  if ( nbumod == kmi .and. lbu_enable ) then
+    if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HINC', pths(:, :, :) * prhodj(:, :, :) )
+    if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'HINC', prcs(:, :, :) * prhodj(:, :, :) )
+    if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'HINC', pris(:, :, :) * prhodj(:, :, :) )
+    if ( lbudget_sv ) then
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'HINC', pccs(:, :, :) * prhodj(:, :, :) )
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HINC', pcis(:, :, :) * prhodj(:, :, :) )
+    end if
+  end if
 
-!
   DEALLOCATE(ZRVT) 
   DEALLOCATE(ZRCT) 
   DEALLOCATE(ZRRT) 
@@ -437,38 +453,6 @@ IF( INEGT >= 1 ) THEN
   DEALLOCATE(ZZY)
   DEALLOCATE(ZLSFACT)
   DEALLOCATE(ZLVFACT)
-!
-ELSE
-!
-! Advance the budget calls
-!
-  IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
-    IF (LBUDGET_TH) THEN
-      ZW(:,:,:) = PTHS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,NBUDGET_TH,'HIND_BU_RTH')
-      CALL BUDGET (ZW,NBUDGET_TH,'HINC_BU_RTH')
-    ENDIF
-    IF (LBUDGET_RV) THEN
-      ZW(:,:,:) = PRVS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,NBUDGET_RV,'HIND_BU_RRV')
-    ENDIF
-    IF (LBUDGET_RC) THEN
-      ZW(:,:,:) = PRCS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,NBUDGET_RC,'HINC_BU_RRC')
-    ENDIF
-    IF (LBUDGET_RI) THEN
-      ZW(:,:,:) = PRIS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,NBUDGET_RI,'HIND_BU_RRI')
-      CALL BUDGET (ZW,NBUDGET_RI,'HINC_BU_RRI')
-    ENDIF
-    IF (LBUDGET_SV) THEN
-      ZW(:,:,:) = PCCS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,NBUDGET_SV1-1+NSV_LIMA_NC,'HINC_BU_RSV')
-      ZW(:,:,:) = PCIS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,NBUDGET_SV1-1+NSV_LIMA_NI,'HIND_BU_RSV')
-      CALL BUDGET (ZW,NBUDGET_SV1-1+NSV_LIMA_NI,'HINC_BU_RSV')
-    END IF
-  END IF
 !
 END IF
 !

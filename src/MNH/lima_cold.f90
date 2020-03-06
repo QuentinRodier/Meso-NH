@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -106,24 +106,28 @@ END MODULE MODI_LIMA_COLD
 !!    MODIFICATIONS
 !!    -------------
 !!      Original             ??/??/13 
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets (no more budget calls in this subroutine)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
+
+use modd_budget,     only: lbu_enable,                                                  &
+                           lbudget_ri, lbudget_rs, lbudget_rg, lbudget_rh, lbudget_sv,  &
+                           NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, NBUDGET_SV1, &
+                           tbudgets
 USE MODD_NSV
 USE MODD_PARAM_LIMA
-!
-USE MODD_BUDGET
-USE MODI_BUDGET
-!
+
+use mode_budget,          only: Budget_store_init, Budget_store_end
+
+USE MODI_LIMA_COLD_HOM_NUCL
 USE MODI_LIMA_COLD_SEDIMENTATION
+USE MODI_LIMA_COLD_SLOW_PROCESSES
 USE MODI_LIMA_MEYERS
 USE MODI_LIMA_PHILLIPS
-USE MODI_LIMA_COLD_HOM_NUCL
-USE MODI_LIMA_COLD_SLOW_PROCESSES
-!
+
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
@@ -301,6 +305,15 @@ END IF
 !*       1.     COMPUTE THE SEDIMENTATION (RS) SOURCE
 !	        -------------------------------------
 !
+if ( lbu_enable ) then
+  if ( lbudget_ri .and. osedi ) call Budget_store_init( tbudgets(NBUDGET_RI), 'SEDI', pris(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rs .and. lsnow ) call Budget_store_init( tbudgets(NBUDGET_RS), 'SEDI', prss(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rg .and. lsnow ) call Budget_store_init( tbudgets(NBUDGET_RG), 'SEDI', prgs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rh .and. lhail ) call Budget_store_init( tbudgets(NBUDGET_RH), 'SEDI', prhs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv .and. osedi ) &
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'SEDI', pcis(:, :, :) * prhodj(:, :, :) )
+end if
+
 CALL LIMA_COLD_SEDIMENTATION (OSEDI, KSPLITG, PTSTEP, KMI,     &
                               PZZ, PRHODJ, PRHODREF,           &
                               PRIT, PCIT,                      &
@@ -308,15 +321,14 @@ CALL LIMA_COLD_SEDIMENTATION (OSEDI, KSPLITG, PTSTEP, KMI,     &
                               PINPRS, PINPRG,&
                               PINPRH                  )
 
-IF (LBU_ENABLE) THEN
-  IF (LBUDGET_RI .AND. OSEDI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RI,'SEDI_BU_RRI')
-  IF (LBUDGET_RS .AND. LSNOW) CALL BUDGET (PRSS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RS,'SEDI_BU_RRS')
-  IF (LBUDGET_RG .AND. LSNOW) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RG,'SEDI_BU_RRG')
-  IF (LBUDGET_RH .AND. LHAIL) CALL BUDGET (PRHS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RH,'SEDI_BU_RRH')
-  IF (LBUDGET_SV) THEN
-    IF (OSEDI) CALL BUDGET (PCIS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NI,'SEDI_BU_RSV') ! RCI
-  END IF
-END IF
+if ( lbu_enable ) then
+  if ( lbudget_ri .and. osedi ) call Budget_store_end( tbudgets(NBUDGET_RI), 'SEDI', pris(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rs .and. lsnow ) call Budget_store_end( tbudgets(NBUDGET_RS), 'SEDI', prss(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rg .and. lsnow ) call Budget_store_end( tbudgets(NBUDGET_RG), 'SEDI', prgs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rh .and. lhail ) call Budget_store_end( tbudgets(NBUDGET_RH), 'SEDI', prhs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv .and. osedi ) &
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'SEDI', pcis(:, :, :) * prhodj(:, :, :) )
+end if
 !-------------------------------------------------------------------------------
 !
 !

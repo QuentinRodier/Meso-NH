@@ -76,7 +76,6 @@ END MODULE MODI_LIMA_MEYERS_NUCLEATION
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_BUDGET
 USE MODD_CST
 USE MODD_NSV,             ONLY: NSV_LIMA_NC, NSV_LIMA_NI
 USE MODD_PARAMETERS
@@ -85,8 +84,6 @@ USE MODD_PARAM_LIMA_COLD
 
 use mode_tools,           only: Countjv
 
-USE MODI_BUDGET
-!
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
@@ -170,6 +167,7 @@ REAL,    DIMENSION(:),   ALLOCATABLE :: ZTCELSIUS
 P_TH_HIND(:,:,:) = 0.
 P_RI_HIND(:,:,:) = 0.
 P_CI_HIND(:,:,:) = 0.
+P_TH_HINC(:,:,:) = 0.
 P_RC_HINC(:,:,:) = 0.
 P_CC_HINC(:,:,:) = 0.
 !

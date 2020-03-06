@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2010-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -95,22 +95,22 @@ END MODULE MODI_ADV_FORCING_n
 !!     Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!     28/03/2018 P. Wautelet: replace TEMPORAL_DIST by DATETIME_DISTANCE
 !!                             use overloaded comparison operator for date_time
-!!
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
 USE MODD_ADVFRC_n     ! Modules for time evolving advfrc
-USE MODD_BUDGET
+use modd_budget,     only: lbudget_rv, lbudget_th, NBUDGET_RV, NBUDGET_TH, tbudgets
 USE MODD_DYN
 USE MODD_LUNIT, ONLY: TLUOUT0
 USE MODD_PARAMETERS
 USE MODD_TIME
 !
+use mode_budget,     only: Budget_store_init, Budget_store_end
 USE MODE_DATETIME
 !
-USE MODI_BUDGET
 USE MODI_SHUMAN
 !
 IMPLICIT NONE
@@ -147,7 +147,10 @@ LOGICAL,DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2),SIZE(PTHM,3)) :: GRELAX_MASK_FRC ! M
 !
 !*        1.   PREPARATION OF FORCING
 !              ----------------------
-!
+
+if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), '2DADV', prths(:, :, :)    )
+if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), '2DADV', prrs (:, :, :, 1) )
+
 ILUOUT0 = TLUOUT0%NLU
 !
 IF (GSFIRSTCALL) THEN
@@ -228,8 +231,9 @@ END IF
 !
 !*       3.     BUDGET CALLS
 !   	        ------------
-IF (LBUDGET_TH)  CALL BUDGET (PRTHS,NBUDGET_TH,'2DADV_BU_RTH')
-IF (LBUDGET_RV)  CALL BUDGET (PRRS(:,:,:,1),NBUDGET_RV,'2DADV_BU_RRV')
+if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), '2DADV', prths(:, :, :)    )
+if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), '2DADV', prrs (:, :, :, 1) )
+
 !----------------------------------------------------------------------------
 !
 END SUBROUTINE ADV_FORCING_n

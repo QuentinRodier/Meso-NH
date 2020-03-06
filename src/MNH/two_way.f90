@@ -93,7 +93,7 @@ END MODULE MODI_TWO_WAY
 !!                              + MASKkids array
 !!                   20/05/06 Remove EPS
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
-!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
+!  P. Wautelet   /02/2020: use the new data structures and subroutines for budgets
 !
 !------------------------------------------------------------------------------
 !
@@ -111,7 +111,6 @@ USE MODD_NESTING
 use mode_budget,     only: Budget_store_init, Budget_store_end
 USE MODE_MODELN_HANDLER
 
-USE MODI_BUDGET
 USE MODI_TWO_WAY_n
 
 IMPLICIT NONE
@@ -152,8 +151,22 @@ INTEGER :: JSV,JRR     ! Loop index for scalar and moist variables
 !
 !-------------------------------------------------------------------------------
 
-if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'NEST', prus )
-
+if ( lbudget_u  ) call Budget_store_init( tbudgets(NBUDGET_U ), 'NEST', prus (:, :, : ) )
+if ( lbudget_v  ) call Budget_store_init( tbudgets(NBUDGET_V ), 'NEST', prvs (:, :, : ) )
+if ( lbudget_w  ) call Budget_store_init( tbudgets(NBUDGET_W ), 'NEST', prws (:, :, : ) )
+if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'NEST', prths(:, :, : ) )
+if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'NEST', prrs (:, :, :, 1) )
+if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'NEST', prrs (:, :, :, 2) )
+if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR), 'NEST', prrs (:, :, :, 3) )
+if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'NEST', prrs (:, :, :, 4) )
+if ( lbudget_rs ) call Budget_store_init( tbudgets(NBUDGET_RS), 'NEST', prrs (:, :, :, 5) )
+if ( lbudget_rg ) call Budget_store_init( tbudgets(NBUDGET_RG), 'NEST', prrs (:, :, :, 6) )
+if ( lbudget_rh ) call Budget_store_init( tbudgets(NBUDGET_RH), 'NEST', prrs (:, :, :, 7) )
+if ( lbudget_sv ) then
+  do jsv = 1, ksv
+    call Budget_store_init( tbudgets(jsv + NBUDGET_SV1 - 1), 'NEST', prsvs(:, :, :, jsv) )
+  end do
+end if
 !
 !*       1.    CALL THE RIGHT TWO_WAY$n
 !              ------------------------
@@ -174,23 +187,22 @@ CALL GOTO_MODEL(KMI)
 !*       2.    BUDGET COMPUTATION
 !              ------------------
 !
-if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'NEST', prus )
-
-IF (LBUDGET_V)  CALL BUDGET (PRVS,NBUDGET_V,'NEST_BU_RV')
-IF (LBUDGET_W)  CALL BUDGET (PRWS,NBUDGET_W,'NEST_BU_RW')
-IF (LBUDGET_TH) CALL BUDGET (PRTHS,NBUDGET_TH,'NEST_BU_RTH')
-DO JRR=1,KRR
-  IF (JRR==1 .AND. LBUDGET_RV) CALL BUDGET (PRRS(:,:,:,JRR),NBUDGET_RV,'NEST_BU_RRV')
-  IF (JRR==2 .AND. LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,JRR),NBUDGET_RC,'NEST_BU_RRC')
-  IF (JRR==3 .AND. LBUDGET_RR) CALL BUDGET (PRRS(:,:,:,JRR),NBUDGET_RR,'NEST_BU_RRR')
-  IF (JRR==4 .AND. LBUDGET_RI) CALL BUDGET (PRRS(:,:,:,JRR),NBUDGET_RI,'NEST_BU_RRI')
-  IF (JRR==5 .AND. LBUDGET_RS) CALL BUDGET (PRRS(:,:,:,JRR),NBUDGET_RS,'NEST_BU_RRS')
-  IF (JRR==6 .AND. LBUDGET_RG) CALL BUDGET (PRRS(:,:,:,JRR),NBUDGET_RG,'NEST_BU_RRG')
-  IF (JRR==7 .AND. LBUDGET_RH) CALL BUDGET (PRRS(:,:,:,JRR),NBUDGET_RH,'NEST_BU_RRH')
-ENDDO
-DO JSV=1,KSV
-  IF (LBUDGET_SV)              CALL BUDGET (PRSVS(:,:,:,JSV),NBUDGET_SV1-1+JSV,'NEST_BU_RSV')
-END DO
+if ( lbudget_u  ) call Budget_store_end( tbudgets(NBUDGET_U ), 'NEST', prus (:, :, : ) )
+if ( lbudget_v  ) call Budget_store_end( tbudgets(NBUDGET_V ), 'NEST', prvs (:, :, : ) )
+if ( lbudget_w  ) call Budget_store_end( tbudgets(NBUDGET_W ), 'NEST', prws (:, :, : ) )
+if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'NEST', prths(:, :, : ) )
+if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'NEST', prrs (:, :, :, 1) )
+if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'NEST', prrs (:, :, :, 2) )
+if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR), 'NEST', prrs (:, :, :, 3) )
+if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'NEST', prrs (:, :, :, 4) )
+if ( lbudget_rs ) call Budget_store_end( tbudgets(NBUDGET_RS), 'NEST', prrs (:, :, :, 5) )
+if ( lbudget_rg ) call Budget_store_end( tbudgets(NBUDGET_RG), 'NEST', prrs (:, :, :, 6) )
+if ( lbudget_rh ) call Budget_store_end( tbudgets(NBUDGET_RH), 'NEST', prrs (:, :, :, 7) )
+if ( lbudget_sv ) then
+  do jsv = 1, ksv
+    call Budget_store_end( tbudgets(jsv + NBUDGET_SV1 - 1), 'NEST', prsvs(:, :, :, jsv) )
+  end do
+end if
 !------------------------------------------------------------------------------
 !
 END SUBROUTINE TWO_WAY

@@ -140,7 +140,7 @@ END MODULE MODI_INITIAL_GUESS
 !!                  10/09    (C.Lac)        FIT for variables advected with PPM
 !!                  04/13    (C.Lac)        FIT for all variables 
 !  J. Escobar)    07/2019: add reproductiblity test => MPPDB_CHECK( PRRS/RT/RHO )
-!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -159,7 +159,6 @@ USE MODD_GRID_n
 use mode_budget,     only: Budget_store_init, Budget_store_end
 USE MODE_MPPDB
 
-USE MODI_BUDGET
 USE MODI_SHUMAN
 !
 IMPLICIT NONE
@@ -242,40 +241,23 @@ IF (LBU_ENABLE) THEN
     NBUCTR_ACTV(:)=1
 
     !Remark: does not need a call to Budget_store_init because the budget array is overwritten for this source term
-    if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'INIF', prus )
-
-    IF (LBUDGET_V)   CALL BUDGET( PRVS,          NBUDGET_V,   'INIF_BU_RV'   )
-    IF (LBUDGET_W)   CALL BUDGET( PRWS,          NBUDGET_W,   'INIF_BU_RW'   )
-    IF (LBUDGET_TH)  CALL BUDGET( PRTHS,         NBUDGET_TH,  'INIF_BU_RTH'  )
-    IF (LBUDGET_TKE) CALL BUDGET( PRTKES,        NBUDGET_TKE, 'INIF_BU_RTKE' )
-    IF (LBUDGET_RV)  CALL BUDGET( PRRS(:,:,:,1), NBUDGET_RV,  'INIF_BU_RRV'  )
-    IF (LBUDGET_RC)  CALL BUDGET( PRRS(:,:,:,2), NBUDGET_RC,  'INIF_BU_RRC'  )
-    IF (LBUDGET_RR)  CALL BUDGET( PRRS(:,:,:,3), NBUDGET_RR,  'INIF_BU_RRR'  )
-    IF (LBUDGET_RI)  CALL BUDGET( PRRS(:,:,:,4), NBUDGET_RI,  'INIF_BU_RRI'  )
-    IF (LBUDGET_RS)  CALL BUDGET( PRRS(:,:,:,5), NBUDGET_RS,  'INIF_BU_RRS'  )
-    IF (LBUDGET_RG)  CALL BUDGET( PRRS(:,:,:,6), NBUDGET_RG,  'INIF_BU_RRG'  )
-    IF (LBUDGET_RH)  CALL BUDGET( PRRS(:,:,:,7), NBUDGET_RH,  'INIF_BU_RRH'  )
-    DO JSV=1,KSV
-      IF (LBUDGET_SV) CALL BUDGET( PRSVS(:,:,:,JSV), JSV + NBUDGET_SV1 - 1, 'INIF_BU_RSV' )
-    END DO
-!
-    NBUPROCCTR(:)=2
-    NBUCTR_ACTV(:)=2
-!
-    IF (LBUDGET_V)   CALL BUDGET( PRVS,          NBUDGET_V,   'ENDF_BU_RV'   )
-    IF (LBUDGET_W)   CALL BUDGET( PRWS,          NBUDGET_W,   'ENDF_BU_RW'   )
-    IF (LBUDGET_TH)  CALL BUDGET( PRTHS,         NBUDGET_TH,  'ENDF_BU_RTH'  )
-    IF (LBUDGET_TKE) CALL BUDGET( PRTKES,        NBUDGET_TKE, 'ENDF_BU_RTKE' )
-    IF (LBUDGET_RV)  CALL BUDGET( PRRS(:,:,:,1), NBUDGET_RV,  'ENDF_BU_RRV'  )
-    IF (LBUDGET_RC)  CALL BUDGET( PRRS(:,:,:,2), NBUDGET_RC,  'ENDF_BU_RRC'  )
-    IF (LBUDGET_RR)  CALL BUDGET( PRRS(:,:,:,3), NBUDGET_RR,  'ENDF_BU_RRR'  )
-    IF (LBUDGET_RI)  CALL BUDGET( PRRS(:,:,:,4), NBUDGET_RI,  'ENDF_BU_RRI'  )
-    IF (LBUDGET_RS)  CALL BUDGET( PRRS(:,:,:,5), NBUDGET_RS,  'ENDF_BU_RRS'  )
-    IF (LBUDGET_RG)  CALL BUDGET( PRRS(:,:,:,6), NBUDGET_RG,  'ENDF_BU_RRG'  )
-    IF (LBUDGET_RH)  CALL BUDGET( PRRS(:,:,:,7), NBUDGET_RH,  'ENDF_BU_RRH'  )
-    DO JSV=1,KSV
-      IF (LBUDGET_SV) CALL BUDGET( PRSVS(:,:,:,JSV), JSV + NBUDGET_SV1 - 1, 'ENDF_BU_RSV' )
-    END DO
+    if ( lbudget_u   ) call Budget_store_end( tbudgets(NBUDGET_U  ), 'INIF', prus  (:, :, :)    )
+    if ( lbudget_v   ) call Budget_store_end( tbudgets(NBUDGET_V  ), 'INIF', prvs  (:, :, :)    )
+    if ( lbudget_w   ) call Budget_store_end( tbudgets(NBUDGET_W  ), 'INIF', prws  (:, :, :)    )
+    if ( lbudget_th  ) call Budget_store_end( tbudgets(NBUDGET_TH ), 'INIF', prths (:, :, :)    )
+    if ( lbudget_tke ) call Budget_store_end( tbudgets(NBUDGET_TKE), 'INIF', prtkes(:, :, :)    )
+    if ( lbudget_rv  ) call Budget_store_end( tbudgets(NBUDGET_RV ), 'INIF', prrs  (:, :, :, 1) )
+    if ( lbudget_rc  ) call Budget_store_end( tbudgets(NBUDGET_RC ), 'INIF', prrs  (:, :, :, 2) )
+    if ( lbudget_rr  ) call Budget_store_end( tbudgets(NBUDGET_RR ), 'INIF', prrs  (:, :, :, 3) )
+    if ( lbudget_ri  ) call Budget_store_end( tbudgets(NBUDGET_RI ), 'INIF', prrs  (:, :, :, 4) )
+    if ( lbudget_rs  ) call Budget_store_end( tbudgets(NBUDGET_RS ), 'INIF', prrs  (:, :, :, 5) )
+    if ( lbudget_rg  ) call Budget_store_end( tbudgets(NBUDGET_RG ), 'INIF', prrs  (:, :, :, 6) )
+    if ( lbudget_rh  ) call Budget_store_end( tbudgets(NBUDGET_RH ), 'INIF', prrs  (:, :, :, 7) )
+    if ( lbudget_sv  ) then
+      do jsv = 1, ksv
+                       call Budget_store_end( tbudgets(jsv + NBUDGET_SV1 - 1), 'INIF', prsvs(:, :, :, jsv) )
+      end do
+    end if
   END IF
 !
   NBUPROCCTR(:)=4
@@ -286,23 +268,24 @@ IF (LBU_ENABLE) THEN
   !The Asselin source term is computed from the end of the previous time step to now
   !Therefore, it has to be stored only if not the 1st timestep of the budget
   if ( .not. lbu_beg ) then
-    if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'ASSE', prus )
+    if ( lbudget_u   ) call Budget_store_end( tbudgets(NBUDGET_U  ), 'ASSE', prus  (:, :, :) )
+    if ( lbudget_v   ) call Budget_store_end( tbudgets(NBUDGET_V  ), 'ASSE', prvs  (:, :, :) )
+    if ( lbudget_w   ) call Budget_store_end( tbudgets(NBUDGET_W  ), 'ASSE', prws  (:, :, :) )
+    if ( lbudget_th  ) call Budget_store_end( tbudgets(NBUDGET_TH ), 'ASSE', prths (:, :, :) )
+    if ( lbudget_tke ) call Budget_store_end( tbudgets(NBUDGET_TKE), 'ASSE', prtkes(:, :, :)    )
+    if ( lbudget_rv  ) call Budget_store_end( tbudgets(NBUDGET_RV ), 'ASSE', prrs  (:, :, :, 1) )
+    if ( lbudget_rc  ) call Budget_store_end( tbudgets(NBUDGET_RC ), 'ASSE', prrs  (:, :, :, 2) )
+    if ( lbudget_rr  ) call Budget_store_end( tbudgets(NBUDGET_RR ), 'ASSE', prrs  (:, :, :, 3) )
+    if ( lbudget_ri  ) call Budget_store_end( tbudgets(NBUDGET_RI ), 'ASSE', prrs  (:, :, :, 4) )
+    if ( lbudget_rs  ) call Budget_store_end( tbudgets(NBUDGET_RS ), 'ASSE', prrs  (:, :, :, 5) )
+    if ( lbudget_rg  ) call Budget_store_end( tbudgets(NBUDGET_RG ), 'ASSE', prrs  (:, :, :, 6) )
+    if ( lbudget_rh  ) call Budget_store_end( tbudgets(NBUDGET_RH ), 'ASSE', prrs  (:, :, :, 7) )
+    if ( lbudget_sv  ) then
+      do jsv = 1, ksv
+                       call Budget_store_end( tbudgets(jsv + NBUDGET_SV1 - 1), 'ASSE', prsvs(:, :, :, jsv) )
+      end do
+    end if
   end if
-
-  IF (LBUDGET_V)   CALL BUDGET( PRVS,          NBUDGET_V,   'ASSE_BU_RV'   )
-  IF (LBUDGET_W)   CALL BUDGET( PRWS,          NBUDGET_W,   'ASSE_BU_RW'   )
-  IF (LBUDGET_TH)  CALL BUDGET( PRTHS,         NBUDGET_TH,  'ASSE_BU_RTH'  )
-  IF (LBUDGET_TKE) CALL BUDGET( PRTKES,        NBUDGET_TKE, 'ASSE_BU_RTKE' )
-  IF (LBUDGET_RV)  CALL BUDGET( PRRS(:,:,:,1), NBUDGET_RV,  'ASSE_BU_RRV'  )
-  IF (LBUDGET_RC)  CALL BUDGET( PRRS(:,:,:,2), NBUDGET_RC,  'ASSE_BU_RRC'  )
-  IF (LBUDGET_RR)  CALL BUDGET( PRRS(:,:,:,3), NBUDGET_RR,  'ASSE_BU_RRR'  )
-  IF (LBUDGET_RI)  CALL BUDGET( PRRS(:,:,:,4), NBUDGET_RI,  'ASSE_BU_RRI'  )
-  IF (LBUDGET_RS)  CALL BUDGET( PRRS(:,:,:,5), NBUDGET_RS,  'ASSE_BU_RRS'  )
-  IF (LBUDGET_RG)  CALL BUDGET( PRRS(:,:,:,6), NBUDGET_RG,  'ASSE_BU_RRG'  )
-  IF (LBUDGET_RH)  CALL BUDGET( PRRS(:,:,:,7), NBUDGET_RH,  'ASSE_BU_RRH'  )
-  DO JSV=1,KSV
-    IF (LBUDGET_SV) CALL BUDGET( PRSVS(:,:,:,JSV), JSV + NBUDGET_SV1 - 1, 'ASSE_BU_RSV' )
-  END DO
 END IF
 
 LBU_BEG=.FALSE.

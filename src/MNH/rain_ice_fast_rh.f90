@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -8,6 +8,7 @@
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 03/06/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
 !  P. Wautelet 05/06/2019: optimisations
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !-----------------------------------------------------------------
 MODULE MODE_RAIN_ICE_FAST_RH
 
@@ -26,17 +27,18 @@ SUBROUTINE RAIN_ICE_FAST_RH(OMICRO, PRHODREF, PRVT, PRCT, PRIT, PRST, PRGT, PRHT
 !*      0. DECLARATIONS
 !          ------------
 !
-use MODD_BUDGET,         only: LBUDGET_TH, LBUDGET_RC, LBUDGET_RR, LBUDGET_RI, LBUDGET_RS, LBUDGET_RG, LBUDGET_RH, &
-                               NBUDGET_TH, NBUDGET_RC, NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH
+use modd_budget,         only: lbudget_th, lbudget_rc, lbudget_rr, lbudget_ri, lbudget_rs, lbudget_rg, lbudget_rh, &
+                               NBUDGET_TH, NBUDGET_RC, NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, &
+                               tbudgets
 use MODD_CST,            only: XCI, XCL, XCPV, XESTT, XLMTT, XLVTT, XMD, XMV, XRV, XTT
 use MODD_RAIN_ICE_DESCR, only: XBG, XBS, XCEXVT, XCXG, XCXH, XCXS, XDH, XLBEXH, XLBH, XRTMIN
 use MODD_RAIN_ICE_PARAM, only: NWETLBDAG, NWETLBDAH, NWETLBDAS, X0DEPH, X1DEPH, &
                                XEX0DEPH, XEX1DEPH, XFGWETH, XFSWETH, XFWETH, XKER_GWETH, XKER_SWETH, &
                                XLBGWETH1, XLBGWETH2, XLBGWETH3, XLBSWETH1, XLBSWETH2, XLBSWETH3,     &
                                XWETINTP1G, XWETINTP1H, XWETINTP1S, XWETINTP2G, XWETINTP2H, XWETINTP2S
-!
-use MODI_BUDGET
-!
+
+use mode_budget,         only: Budget_store_add, Budget_store_end, Budget_store_init
+
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
@@ -93,6 +95,22 @@ REAL,    DIMENSION(size(PRHODREF),6) :: ZZW1              ! Work arrays
   END DO
 !
   IF( IHAIL>0 ) THEN
+!PW:used init/end instead of add because zzw1 is produced and used with different conditions
+! => can not use directly zzw1 in Budget_store_add
+    if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'WETH', Unpack ( pths(:) * prhodj(:), &
+                                              mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'WETH', Unpack ( prcs(:) * prhodj(:), &
+                                              mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR), 'WETH', Unpack ( prrs(:) * prhodj(:), &
+                                              mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'WETH', Unpack ( pris(:) * prhodj(:), &
+                                              mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rs ) call Budget_store_init( tbudgets(NBUDGET_RS), 'WETH', Unpack ( prss(:) * prhodj(:), &
+                                              mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rg ) call Budget_store_init( tbudgets(NBUDGET_RG), 'WETH', Unpack ( prgs(:) * prhodj(:), &
+                                              mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rh ) call Budget_store_init( tbudgets(NBUDGET_RH), 'WETH', Unpack ( prhs(:) * prhodj(:), &
+                                              mask = omicro(:,:,:), field = 0. ) )
 !
 !*       7.2    compute the Wet growth of hail
 !
@@ -300,28 +318,21 @@ REAL,    DIMENSION(size(PRHODREF),6) :: ZZW1              ! Work arrays
         END IF
       END IF
     END DO
-  END IF
-    IF (LBUDGET_TH) CALL BUDGET (                                                 &
-                   UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),&
-                                                          NBUDGET_TH,'WETH_BU_RTH')
-    IF (LBUDGET_RC) CALL BUDGET (                                                 &
-                       UNPACK(PRCS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0), &
-                                                          NBUDGET_RC,'WETH_BU_RRC')
-    IF (LBUDGET_RR) CALL BUDGET (                                                 &
-                       UNPACK(PRRS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0), &
-                                                          NBUDGET_RR,'WETH_BU_RRR')
-    IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                       UNPACK(PRIS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0), &
-                                                          NBUDGET_RI,'WETH_BU_RRI')
-    IF (LBUDGET_RS) CALL BUDGET (                                                 &
-                       UNPACK(PRSS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0), &
-                                                          NBUDGET_RS,'WETH_BU_RRS')
-    IF (LBUDGET_RG) CALL BUDGET (                                                 &
-                       UNPACK(PRGS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0), &
-                                                          NBUDGET_RG,'WETH_BU_RRG')
-    IF (LBUDGET_RH) CALL BUDGET (                                                 &
-                       UNPACK(PRHS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0), &
-                                                          NBUDGET_RH,'WETH_BU_RRH')
+
+    if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'WETH', Unpack ( pths(:) * prhodj(:), &
+                                             mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'WETH', Unpack ( prcs(:) * prhodj(:), &
+                                             mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR), 'WETH', Unpack ( prrs(:) * prhodj(:), &
+                                             mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'WETH', Unpack ( pris(:) * prhodj(:), &
+                                             mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rs ) call Budget_store_end( tbudgets(NBUDGET_RS), 'WETH', Unpack ( prss(:) * prhodj(:), &
+                                             mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rg ) call Budget_store_end( tbudgets(NBUDGET_RG), 'WETH', Unpack ( prgs(:) * prhodj(:), &
+                                             mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rh ) call Budget_store_end( tbudgets(NBUDGET_RH), 'WETH', Unpack ( prhs(:) * prhodj(:), &
+                                             mask = omicro(:,:,:), field = 0. ) )
 !
 !
 ! ici LRECONVH et un flag pour autoriser une reconversion partielle de
@@ -351,10 +362,16 @@ REAL,    DIMENSION(size(PRHODREF),6) :: ZZW1              ! Work arrays
 
 
 
-  IF( IHAIL>0 ) THEN
 !
 !*       7.5    Melting of the hailstones
 !
+    if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'HMLT', Unpack ( pths(:) * prhodj(:), &
+                                              mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR), 'HMLT', Unpack ( prrs(:) * prhodj(:), &
+                                              mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rh ) call Budget_store_init( tbudgets(NBUDGET_RH), 'HMLT', Unpack ( prhs(:) * prhodj(:), &
+                                              mask = omicro(:,:,:), field = 0. ) )
+
     DO JJ = 1, IHAIL
       JL = I1H(JJ)
       IF( PRHS(JL)>0.0 .AND. PZT(JL)>XTT ) THEN
@@ -374,17 +391,14 @@ REAL,    DIMENSION(size(PRHODREF),6) :: ZZW1              ! Work arrays
         PTHS(JL) = PTHS(JL) - ZZW(JL)*(PLSFACT(JL)-PLVFACT(JL)) ! f(L_f*(-RHMLTR))
       END IF
     END DO
-  END IF
 
-    IF (LBUDGET_TH) CALL BUDGET (                                                 &
-                   UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),&
-                                                          NBUDGET_TH,'HMLT_BU_RTH')
-    IF (LBUDGET_RR) CALL BUDGET (                                                 &
-                       UNPACK(PRRS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0), &
-                                                          NBUDGET_RR,'HMLT_BU_RRR')
-    IF (LBUDGET_RH) CALL BUDGET (                                                 &
-                       UNPACK(PRHS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0), &
-                                                          NBUDGET_RH,'HMLT_BU_RRH')
+    if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HMLT', Unpack ( pths(:) * prhodj(:), &
+                                              mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR), 'HMLT', Unpack ( prrs(:) * prhodj(:), &
+                                              mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rh ) call Budget_store_end( tbudgets(NBUDGET_RH), 'HMLT', Unpack ( prhs(:) * prhodj(:), &
+                                              mask = omicro(:,:,:), field = 0. ) )
+  END IF
 !
 END SUBROUTINE RAIN_ICE_FAST_RH
 

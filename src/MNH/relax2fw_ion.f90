@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2010-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ########################
@@ -96,24 +96,23 @@ END MODULE MODI_RELAX2FW_ION
 !!    -------------
 !!      C.Lac, 07/11 : Avoid the horizontal relaxation if not father model
 !!      C.Lac, 11/11 : Adaptation to FIT temporal scheme
-!!
-!!
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-use modd_budget,     only: lbudget_sv, NBUDGET_SV1
+use modd_budget,     only: lbudget_sv, NBUDGET_SV1, tbudgets
 USE MODD_CONF
 USE MODD_ELEC_n,     ONLY: XCION_POS_FW, XCION_NEG_FW
 USE MODD_NSV,        ONLY: NSV_ELECBEG, NSV_ELECEND
 USE MODD_PARAMETERS
-!
+
+use mode_budget,     only: Budget_store_init, Budget_store_end
 USE MODE_ll
-!
-USE MODI_BUDGET
+
 USE MODI_SHUMAN
-!
+
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
@@ -155,6 +154,12 @@ REAL, DIMENSION(SIZE(PSVM,1),SIZE(PSVM,2)) :: ZKH
 !
 !*       1.     PRELIMINARIES
 !	        -------------
+
+if ( lbudget_sv ) then
+  call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg), 'REL', prsvs(:, :, :, nsv_elecbeg) )
+  call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend), 'REL', prsvs(:, :, :, nsv_elecend) )
+end if
+
 IKU = SIZE(PSVM,3)
 IKE = IKU - JPVEXT
 CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
@@ -212,11 +217,10 @@ END IF
 !*       4.     STORES FIELDS IN BUDGET ARRAYS
 !	        ------------------------------
 !
-IF (LBUDGET_SV) THEN
-  CALL BUDGET( PRSVS(:, :, :, NSV_ELECBEG ), NBUDGET_SV1 - 1 + NSV_ELECBEG, 'REL_BU_RSV' )
-  CALL BUDGET( PRSVS(:, :, :, NSV_ELECEND ), NBUDGET_SV1 - 1 + NSV_ELECEND, 'REL_BU_RSV' )
-END IF
-!
+if ( lbudget_sv ) then
+  call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg), 'REL', prsvs(:, :, :, nsv_elecbeg) )
+  call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend), 'REL', prsvs(:, :, :, nsv_elecend) )
+end if
 !
 !-------------------------------------------------------------------------------
 !

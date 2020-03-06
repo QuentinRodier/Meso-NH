@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -135,34 +135,6 @@ END MODULE MODI_RAIN_ICE
 !!                               function over liquid water
 !!          XALPI,XBETAI,XGAMI ! Constants for saturation vapor pressure
 !!                               function over solid ice
-!!      Module MODD_BUDGET:
-!!         NBUMOD       : model in which budget is calculated
-!!         CBUTYPE      : type of desired budget
-!!                          'CART' for cartesian box configuration
-!!                          'MASK' for budget zone defined by a mask
-!!                          'NONE'  ' for no budget
-!!         NBUPROCCTR   : process counter used for each budget variable
-!!         LBU_RTH      : logical for budget of RTH (potential temperature)
-!!                        .TRUE. = budget of RTH
-!!                        .FALSE. = no budget of RTH
-!!         LBU_RRV      : logical for budget of RRV (water vapor)
-!!                        .TRUE. = budget of RRV
-!!                        .FALSE. = no budget of RRV
-!!         LBU_RRC      : logical for budget of RRC (cloud water)
-!!                        .TRUE. = budget of RRC
-!!                        .FALSE. = no budget of RRC
-!!         LBU_RRI      : logical for budget of RRI (cloud ice)
-!!                        .TRUE. = budget of RRI
-!!                        .FALSE. = no budget of RRI
-!!         LBU_RRR      : logical for budget of RRR (rain water)
-!!                        .TRUE. = budget of RRR
-!!                        .FALSE. = no budget of RRR
-!!         LBU_RRS      : logical for budget of RRS (aggregates)
-!!                        .TRUE. = budget of RRS
-!!                        .FALSE. = no budget of RRS
-!!         LBU_RRG      : logical for budget of RRG (graupeln)
-!!                        .TRUE. = budget of RRG
-!!                        .FALSE. = no budget of RRG
 !!
 !!    REFERENCE
 !!    ---------
@@ -244,14 +216,13 @@ END MODULE MODI_RAIN_ICE
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !  P. Wautelet 29/05/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
 !  J. Escobar  09/07/2019: for reproductiblity MPPDB_CHECK, add missing LCHECK test in ZRHODJ de/allocate
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets (no more budget calls in this subroutine)
+!-----------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-use MODD_BUDGET,         only: LBU_ENABLE, LBUDGET_TH, LBUDGET_RV, LBUDGET_RC, LBUDGET_RR, &
-                               LBUDGET_RI, LBUDGET_RS, LBUDGET_RG, LBUDGET_RH, &
-                               NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, &
-                               NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH
+use modd_budget,         only: lbu_enable
 use MODD_CONF,           only: LCHECK
 use MODD_CST,            only: XCI, XCL, XCPD, XCPV, XLSTT, XLVTT, XTT, &
                                XALPI, XBETAI, XGAMI, XMD, XMV, XTT
@@ -274,7 +245,6 @@ use MODE_RAIN_ICE_WARM,                only: RAIN_ICE_WARM
 use mode_tools,                        only: Countjv
 use mode_tools_ll,                     only: GET_INDICE_ll
 
-use MODI_BUDGET
 USE MODI_ICE4_RAINFR_VERT
 
 IMPLICIT NONE
@@ -939,96 +909,6 @@ IF( IMICRO >= 0 ) THEN
   DEALLOCATE(ZRCRAUTC)
   DEALLOCATE(ZHLC_HRCLOCAL)
   DEALLOCATE(ZHLC_LRCLOCAL)
-!
-  ELSE
-!
-! Advance the budget calls
-!
-! Reordered for compability with flexible structures like in AROME
-
- ! rain_ice_slow
- IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'HON_BU_RTH')
- IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'HON_BU_RRC')
- IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RI,'HON_BU_RRI')
- IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'SFR_BU_RTH')
- IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'SFR_BU_RRR')
- IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RG,'SFR_BU_RRG')
- IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'DEPS_BU_RTH')
- IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RV,'DEPS_BU_RRV')
- IF (LBUDGET_RS) CALL BUDGET (PRSS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RS,'DEPS_BU_RRS')
- IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RI,'AGGS_BU_RRI')
- IF (LBUDGET_RS) CALL BUDGET (PRSS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RS,'AGGS_BU_RRS')
- IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RI,'AUTS_BU_RRI')
- IF (LBUDGET_RS) CALL BUDGET (PRSS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RS,'AUTS_BU_RRS')
- IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'DEPG_BU_RTH')
- IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RV,'DEPG_BU_RRV')
- IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RG,'DEPG_BU_RRG')
-
- IF (OWARM) THEN ! rain_ice_warm
-   IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'AUTO_BU_RRC')
-   IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'AUTO_BU_RRR')
-   IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'ACCR_BU_RRC')
-   IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'ACCR_BU_RRR')
-   IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'REVA_BU_RTH')
-   IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RV,'REVA_BU_RRV')
-   IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'REVA_BU_RRR')
- ENDIF
-
- !rain_ice_fast_rs
- IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'RIM_BU_RTH')
- IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'RIM_BU_RRC')
- IF (LBUDGET_RS) CALL BUDGET (PRSS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RS,'RIM_BU_RRS')
- IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RG,'RIM_BU_RRG')
- IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'ACC_BU_RTH')
- IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'ACC_BU_RRR')
- IF (LBUDGET_RS) CALL BUDGET (PRSS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RS,'ACC_BU_RRS')
- IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RG,'ACC_BU_RRG')
- IF (LBUDGET_RS) CALL BUDGET (PRSS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RS,'CMEL_BU_RRS')
- IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RG,'CMEL_BU_RRG')
-
- !rain_ice_fast_rg
- IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'CFRZ_BU_RTH')
- IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'CFRZ_BU_RRR')
- IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RI,'CFRZ_BU_RRI')
- IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RG,'CFRZ_BU_RRG')
- IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'WETG_BU_RTH')
- IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'WETG_BU_RRC')
- IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'WETG_BU_RRR')
- IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RI,'WETG_BU_RRI')
- IF (LBUDGET_RS) CALL BUDGET (PRSS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RS,'WETG_BU_RRS')
- IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RG,'WETG_BU_RRG')
- IF (LBUDGET_RH) CALL BUDGET (PRHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RH,'WETG_BU_RRH')
- IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'DRYG_BU_RTH')
- IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'DRYG_BU_RRC')
- IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'DRYG_BU_RRR')
- IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RI,'DRYG_BU_RRI')
- IF (LBUDGET_RS) CALL BUDGET (PRSS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RS,'DRYG_BU_RRS')
- IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RG,'DRYG_BU_RRG')
- IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'GMLT_BU_RTH')
- IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'GMLT_BU_RRR')
- IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RG,'GMLT_BU_RRG')
-
- IF(KRR==7) THEN ! rain_ice_fast_rh
-   IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'WETH_BU_RTH')
-   IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'WETH_BU_RRC')
-   IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'WETH_BU_RRR')
-   IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RI,'WETH_BU_RRI')
-   IF (LBUDGET_RS) CALL BUDGET (PRSS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RS,'WETH_BU_RRS')
-   IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RG,'WETH_BU_RRG')
-   IF (LBUDGET_RH) CALL BUDGET (PRHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RH,'WETH_BU_RRH')
-   IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'HMLT_BU_RTH')
-   IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'HMLT_BU_RRR')
-   IF (LBUDGET_RH) CALL BUDGET (PRHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RH,'HMLT_BU_RRH')
- ENDIF
-
- !rain_ice_fast_ri
- IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'IMLT_BU_RTH')
- IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'IMLT_BU_RRC')
- IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RI,'IMLT_BU_RRI')
- IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'BERFI_BU_RTH')
- IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'BERFI_BU_RRC')
- IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RI,'BERFI_BU_RRI')
-!
 END IF
 !
 !-------------------------------------------------------------------------------

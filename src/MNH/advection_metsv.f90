@@ -137,13 +137,18 @@ END MODULE MODI_ADVECTION_METSV
 !!                  07/2017  (V. Vionnet)  : add advection of 2D variables at
 !!                                      the surface for the blowing snow scheme
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_BUDGET
-USE MODD_CST 
+use modd_budget,     only: lbudget_th, lbudget_tke, lbudget_rv, lbudget_rc,                          &
+                           lbudget_rr, lbudget_ri,  lbudget_rs, lbudget_rg, lbudget_rh, lbudget_sv,  &
+                           NBUDGET_TH, NBUDGET_TKE, NBUDGET_RV, NBUDGET_RC,                          &
+                           NBUDGET_RR, NBUDGET_RI,  NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, NBUDGET_SV1, &
+                           tbudgets
+USE MODD_CST
 USE MODD_CTURB,          ONLY: XTKEMIN
 USE MODD_CONF,           ONLY: LNEUTRAL,NHALO,L1D, L2D
 use modd_field,          only: tfielddata, TYPEREAL
@@ -155,6 +160,7 @@ USE MODD_BLOWSNOW
 USE MODD_BLOWSNOW_n
 USE MODD_PARAMETERS
 !
+use mode_budget,       only: Budget_store_init, Budget_store_end
 USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 USE MODE_ll
 USE MODE_MSG
@@ -274,16 +280,29 @@ TYPE(TFIELDDATA) :: TZFIELD
 !
 !*       0.     INITIALIZATION                        
 !	        --------------
-!
+
+GTKE=(SIZE(PTKET)/=0)
+
+if ( lbudget_th  ) call Budget_store_init( tbudgets(NBUDGET_TH ), 'ADV', prths (:, :, :)    )
+if ( lbudget_tke ) call Budget_store_init( tbudgets(NBUDGET_TKE), 'ADV', prtkes(:, :, :)    )
+if ( lbudget_rv  ) call Budget_store_init( tbudgets(NBUDGET_RV ), 'ADV', prrs  (:, :, :, 1) )
+if ( lbudget_rc  ) call Budget_store_init( tbudgets(NBUDGET_RC ), 'ADV', prrs  (:, :, :, 2) )
+if ( lbudget_rr  ) call Budget_store_init( tbudgets(NBUDGET_RR ), 'ADV', prrs  (:, :, :, 3) )
+if ( lbudget_ri  ) call Budget_store_init( tbudgets(NBUDGET_RI ), 'ADV', prrs  (:, :, :, 4) )
+if ( lbudget_rs  ) call Budget_store_init( tbudgets(NBUDGET_RS ), 'ADV', prrs  (:, :, :, 5) )
+if ( lbudget_rg  ) call Budget_store_init( tbudgets(NBUDGET_RG ), 'ADV', prrs  (:, :, :, 6) )
+if ( lbudget_rh  ) call Budget_store_init( tbudgets(NBUDGET_RH ), 'ADV', prrs  (:, :, :, 7) )
+if ( lbudget_sv) then
+  do jsv = 1, ksv
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + jsv ), 'ADV', prsvs(:, :, :, jsv) )
+  end do
+end if
+
 ILUOUT = TLUOUT%NLU
 !
 CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 IKB=1+JPVEXT
 IKE=SIZE(PSVT,3) - JPVEXT
-
-!
-GTKE=(SIZE(PTKET)/=0)
-!
 !
 IF(LBLOWSNOW) THEN    ! Put 2D Canopy blowing snow variables into a 3D array for advection
   ZSNWC_INIT = 0.
@@ -656,20 +675,26 @@ END IF
 !*       5.     BUDGETS                                                 
 !	        -------
 !
-IF ( LBUDGET_TH )                CALL BUDGET( PRTHS,             NBUDGET_TH,        'ADV_BU_RTH'  )
-IF ( LBUDGET_TKE )               CALL BUDGET( PRTKES,            NBUDGET_TKE,       'ADV_BU_RTKE' )
-IF ( KRR >= 1 .AND. LBUDGET_RV ) CALL BUDGET( PRRS(:, :, :, 1 ), NBUDGET_RV,        'ADV_BU_RRV'  )
-IF ( KRR >= 2 .AND. LBUDGET_RC ) CALL BUDGET( PRRS(:, :, :, 2 ), NBUDGET_RC,        'ADV_BU_RRC'  )
-IF ( KRR >= 3 .AND. LBUDGET_RR ) CALL BUDGET( PRRS(:, :, :, 3 ), NBUDGET_RR,        'ADV_BU_RRR'  )
-IF ( KRR >= 4 .AND. LBUDGET_RI ) CALL BUDGET( PRRS(:, :, :, 4 ), NBUDGET_RI,        'ADV_BU_RRI'  )
-IF ( KRR >= 5 .AND. LBUDGET_RS ) CALL BUDGET( PRRS(:, :, :, 5 ), NBUDGET_RS,        'ADV_BU_RRS'  )
-IF ( KRR >= 6 .AND. LBUDGET_RG ) CALL BUDGET( PRRS(:, :, :, 6 ), NBUDGET_RG,        'ADV_BU_RRG'  )
-IF ( KRR >= 7 .AND. LBUDGET_RH ) CALL BUDGET( PRRS(:, :, :, 7 ), NBUDGET_RH,        'ADV_BU_RRH'  )
-DO JSV=1,KSV
-  IF ( LBUDGET_SV )              CALL BUDGET (PRSVS(:,:,:,JSV),  JSV+NBUDGET_SV1-1, 'ADV_BU_RSV' )
-END DO
-!
+if ( lbudget_th  ) call Budget_store_end( tbudgets(NBUDGET_TH ), 'ADV', prths (:, :, :)    )
+if ( lbudget_tke ) call Budget_store_end( tbudgets(NBUDGET_TKE), 'ADV', prtkes(:, :, :)    )
+if ( lbudget_rv  ) call Budget_store_end( tbudgets(NBUDGET_RV ), 'ADV', prrs  (:, :, :, 1) )
+if ( lbudget_rc  ) call Budget_store_end( tbudgets(NBUDGET_RC ), 'ADV', prrs  (:, :, :, 2) )
+if ( lbudget_rr  ) call Budget_store_end( tbudgets(NBUDGET_RR ), 'ADV', prrs  (:, :, :, 3) )
+if ( lbudget_ri  ) call Budget_store_end( tbudgets(NBUDGET_RI ), 'ADV', prrs  (:, :, :, 4) )
+if ( lbudget_rs  ) call Budget_store_end( tbudgets(NBUDGET_RS ), 'ADV', prrs  (:, :, :, 5) )
+if ( lbudget_rg  ) call Budget_store_end( tbudgets(NBUDGET_RG ), 'ADV', prrs  (:, :, :, 6) )
+if ( lbudget_rh  ) call Budget_store_end( tbudgets(NBUDGET_RH ), 'ADV', prrs  (:, :, :, 7) )
+if ( lbudget_sv) then
+  do jsv = 1, ksv
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + jsv ), 'ADV', prsvs(:, :, :, jsv) )
+  end do
+end if
+
 IF ((HCLOUD == 'KHKO') .OR. (HCLOUD == 'C2R2')) THEN
+  if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'NEADV', prths(:, :, :)    )
+  if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'NEADV', prrs (:, :, :, 1) )
+  if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'NEADV', prrs (:, :, :, 2) )
+
   ZEXN(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
   ZT(:,:,:)= PTHT(:,:,:)*ZEXN(:,:,:)
   ZLV(:,:,:)=XLVTT +(XCPV-XCL) *(ZT(:,:,:)-XTT)
@@ -690,11 +715,10 @@ IF ((HCLOUD == 'KHKO') .OR. (HCLOUD == 'C2R2')) THEN
       PRSVS(:,:,:,JSV) = 0.0
     END WHERE
   END DO
-!
-  IF (LBUDGET_TH) CALL BUDGET (PRTHS(:,:,:) , NBUDGET_TH,'NEADV_BU_RTH')
-  IF (LBUDGET_RV) CALL BUDGET (PRRS(:,:,:,1), NBUDGET_RV,'NEADV_BU_RRV')
-  IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2), NBUDGET_RC,'NEADV_BU_RRC')
 
+  if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'NEADV', prths(:, :, :)    )
+  if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'NEADV', prrs (:, :, :, 1) )
+  if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'NEADV', prrs (:, :, :, 2) )
 END IF
 
 

@@ -147,7 +147,7 @@ END MODULE MODI_DYN_SOURCES
 !!  Correction     06/10  (C.Lac) Exclude L1D for Coriolis term 
 !!  Modification   03/11  (C.Lac) Split the gravity term due to buoyancy
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
-!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -163,7 +163,6 @@ USE MODD_DYN
 use mode_budget,     only: Budget_store_init, Budget_store_end
 USE MODE_MPPDB
 
-USE MODI_BUDGET
 USE MODI_GRADIENT_M
 USE MODI_SHUMAN
 
@@ -224,10 +223,11 @@ IKU = SIZE(PUT,3)
 !
 ! Only when earth rotation is considered but not in 1D and CARTESIAN cases
 !
-if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'CURV', prus )
-
 IF ((.NOT.L1D).AND.(.NOT.LCARTESIAN) )  THEN
-  IF ( LTHINSHELL ) THEN           !  THINSHELL approximation  
+  if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'CURV', prus(:, :, :) )
+  if ( lbudget_v ) call Budget_store_init( tbudgets(NBUDGET_V), 'CURV', prvs(:, :, :) )
+
+  IF ( LTHINSHELL ) THEN           !  THINSHELL approximation
 !
     ZWORK1(:,:,:) = SPREAD( PCURVX(:,:),DIM=3,NCOPIES=IKU ) / XRADIUS
     ZWORK2(:,:,:) = SPREAD( PCURVY(:,:),DIM=3,NCOPIES=IKU ) / XRADIUS
@@ -241,7 +241,8 @@ IF ((.NOT.L1D).AND.(.NOT.LCARTESIAN) )  THEN
     - ZRVT * MYM( MXF(PUT) * ZWORK2 ) 
 !
   ELSE                           !  NO THINSHELL approximation
-!
+    if ( lbudget_w ) call Budget_store_init( tbudgets(NBUDGET_W), 'CURV', prws(:, :, :) )
+
     ZWORK3(:,:,:) = 1.0 / ( XRADIUS + MZF(1,IKU,1,PZZ(:,:,:)) )
     ZWORK1(:,:,:) = SPREAD( PCURVX(:,:),DIM=3,NCOPIES=IKU )
     ZWORK2(:,:,:) = SPREAD( PCURVY(:,:),DIM=3,NCOPIES=IKU )
@@ -263,33 +264,33 @@ IF ((.NOT.L1D).AND.(.NOT.LCARTESIAN) )  THEN
     - ZRVT * MYM( (MXF(PUT) * ZWORK2 + MZF(1,IKU,1,PWT) ) * ZWORK3 )
 !
     PRWS(:,:,:) = PRWS                                              &
-    +MZM(1,IKU,1, ( MXF(ZRUT*PUT) + MYF(ZRVT*PVT) ) * ZWORK3 ) 
-!
+    +MZM(1,IKU,1, ( MXF(ZRUT*PUT) + MYF(ZRVT*PVT) ) * ZWORK3 )
+
+    if ( lbudget_w ) call Budget_store_end( tbudgets(NBUDGET_W), 'CURV', prws(:, :, :) )
   END IF
-!
+
+  if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'CURV', prus(:, :, :) )
+  if ( lbudget_v ) call Budget_store_end( tbudgets(NBUDGET_V), 'CURV', prvs(:, :, :) )
 END IF
 !
-if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'CURV', prus )
-
-IF (LBUDGET_V) CALL BUDGET (PRVS,NBUDGET_V,'CURV_BU_RV')
-IF (LBUDGET_W) CALL BUDGET (PRWS,NBUDGET_W,'CURV_BU_RW')
 !
 !-------------------------------------------------------------------------------
 !
 !*       3.     COMPUTES THE CORIOLIS TERMS
 !	        ---------------------------
 !
-if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'COR', prus )
-
 IF (LCORIO)   THEN 
-!
+  if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'COR', prus(:, :, :) )
+  if ( lbudget_v ) call Budget_store_init( tbudgets(NBUDGET_V), 'COR', prvs(:, :, :) )
+
   ZWORK3(:,:,:) = SPREAD( PCORIOZ(:,:),DIM=3,NCOPIES=IKU ) * PRHODJ(:,:,:)
 !
   PRUS(:,:,:) = PRUS + MXM( ZWORK3 * MYF(PVT) )
   PRVS(:,:,:) = PRVS - MYM( ZWORK3 * MXF(PUT) )
 !
   IF ((.NOT.LTHINSHELL) .AND. (.NOT.L1D)) THEN
-!
+    if ( lbudget_w ) call Budget_store_init( tbudgets(NBUDGET_W), 'COR', prws(:, :, :) )
+
     ZWORK1(:,:,:) = SPREAD( PCORIOX(:,:),DIM=3,NCOPIES=IKU) * PRHODJ(:,:,:) 
     ZWORK2(:,:,:) = SPREAD( PCORIOY(:,:),DIM=3,NCOPIES=IKU) * PRHODJ(:,:,:)
 !
@@ -298,15 +299,14 @@ IF (LCORIO)   THEN
     PRVS(:,:,:) = PRVS - MYM( ZWORK1 * MZF(1,IKU,1,PWT) )
 !
     PRWS(:,:,:) = PRWS + MZM( 1,IKU,1,ZWORK2 * MXF(PUT) + ZWORK1 * MYF(PVT) )
-!
-  END IF
-!
-END IF                      
-!
-if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'COR', prus )
 
-IF (LBUDGET_V) CALL BUDGET (PRVS,NBUDGET_V,'COR_BU_RV')
-IF (LBUDGET_W) CALL BUDGET (PRWS,NBUDGET_W,'COR_BU_RW')
+    if ( lbudget_w ) call Budget_store_end( tbudgets(NBUDGET_W), 'COR', prws(:, :, :) )
+  END IF
+
+  if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'COR', prus(:, :, :) )
+  if ( lbudget_v ) call Budget_store_end( tbudgets(NBUDGET_V), 'COR', prvs(:, :, :) )
+END IF
+!
 !
 !-------------------------------------------------------------------------------
 !
@@ -322,7 +322,9 @@ ENDIF
 IF( .NOT.L1D ) THEN
 !
   IF (KRR > 0) THEN
-    ZCPD_OV_RD = XCPD / XRD 
+    if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'PREF', prths(:, :, :) )
+
+    ZCPD_OV_RD = XCPD / XRD
     ZG_OV_CPD  = -XG / XCPD
 !
 ! stores the specific heat capacity (Cph) in ZWORK1
@@ -342,10 +344,9 @@ IF( .NOT.L1D ) THEN
       * ( ( XRD + XRV * PRT(:,:,:,1) ) * ZCPD_OV_RD / ZWORK1(:,:,:)  - 1. )  &
       * PTHT(:,:,:)/PEXNREF(:,:,:)*MZF(1,IKU,1,PWT(:,:,:))*(ZG_OV_CPD/PTHVREF(:,:,:) &
       -ZD1*4./7.*PEXNREF(:,:,:)/( XRADIUS+MZF(1,IKU,1,PZZ(:,:,:)) ))
-!
+
+    if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'PREF', prths(:, :, :) )
   END IF
-!
-  IF (LBUDGET_TH) CALL BUDGET (PRTHS,NBUDGET_TH,'PREF_BU_RTH')
 !
 END IF
 !

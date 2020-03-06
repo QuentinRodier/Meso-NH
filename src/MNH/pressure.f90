@@ -221,7 +221,6 @@ USE MODI_CONRESOL
 USE MODI_GRADIENT_M
 USE MODI_SHUMAN
 USE MODI_P_ABS
-USE MODI_BUDGET
 !
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
 
@@ -366,7 +365,9 @@ ZPABS_N(:,:) = 0.
 ZPABS_E(:,:) = 0.
 ZPABS_W(:,:) = 0.
 
-! if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'PRES', prus )
+! if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'PRES', prus(:, :, :) )
+! if ( lbudget_v ) call Budget_store_init( tbudgets(NBUDGET_V), 'PRES', prvs(:, :, :) )
+! if ( lbudget_w ) call Budget_store_init( tbudgets(NBUDGET_W), 'PRES', prws(:, :, :) )
 
 !-------------------------------------------------------------------------------
 !
@@ -614,10 +615,9 @@ ENDIF
 !*       7.    STORAGE OF THE FIELDS IN BUDGET ARRAYS
 !              --------------------------------------
 !
-if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'PRES', prus )
-
-IF (LBUDGET_V) CALL BUDGET (PRVS,NBUDGET_V,'PRES_BU_RV')
-IF (LBUDGET_W) CALL BUDGET (PRWS,NBUDGET_W,'PRES_BU_RW')
+if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'PRES', prus(:, :, :) )
+if ( lbudget_v ) call Budget_store_end( tbudgets(NBUDGET_V), 'PRES', prvs(:, :, :) )
+if ( lbudget_w ) call Budget_store_end( tbudgets(NBUDGET_W), 'PRES', prws(:, :, :) )
 !
 !-------------------------------------------------------------------------------
 !

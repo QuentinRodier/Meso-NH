@@ -119,7 +119,7 @@ END MODULE MODI_SHALLOW_MF_PACK
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  S. Riette      11/2016: support for CFRAC_ICE_SHALLOW_MF
 !  P. Wautelet 28/03/2019: use MNHTIME for time measurement variables
-!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -141,7 +141,6 @@ use modd_precision,       only: MNHTIME
 use mode_budget,          only: Budget_store_init, Budget_store_end
 USE MODE_IO_FIELD_WRITE,  only: IO_Field_write
 
-USE MODI_BUDGET
 USE MODI_DIAGNOS_LES_MF
 USE MODI_SHALLOW_MF
 USE MODI_SHUMAN
@@ -280,7 +279,15 @@ IRR=SIZE(PRM,4)
 ! number of scalar var
 ISV=SIZE(PSVM,4)
 
-if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'MAFL', prus )
+if ( lbudget_u  ) call Budget_store_init( tbudgets(NBUDGET_U ), 'MAFL', prus (:, :, :)    )
+if ( lbudget_v  ) call Budget_store_init( tbudgets(NBUDGET_V ), 'MAFL', prvs (:, :, :)    )
+if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'MAFL', prths(:, :, :)    )
+if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'MAFL', prrs (:, :, :, 1) )
+if ( lbudget_sv ) then
+  do jsv = 1, isv
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + jsv), 'MAFL', prsvs(:, :, :, jsv) )
+  end do
+end if
 
 ZSVM(:,:,:) = 0.
 !
@@ -377,15 +384,16 @@ DO JSV=1,ISV
 END DO     
 
 !!! 7. call to MesoNH budgets
-if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'MAFL', prus )
+if ( lbudget_u  ) call Budget_store_end( tbudgets(NBUDGET_U ), 'MAFL', prus (:, :, :)    )
+if ( lbudget_v  ) call Budget_store_end( tbudgets(NBUDGET_V ), 'MAFL', prvs (:, :, :)    )
+if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'MAFL', prths(:, :, :)    )
+if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'MAFL', prrs (:, :, :, 1) )
+if ( lbudget_sv ) then
+  do jsv = 1, isv
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + jsv), 'MAFL', prsvs(:, :, :, jsv) )
+  end do
+end if
 
-IF (LBUDGET_TH) CALL BUDGET (PRTHS,NBUDGET_TH,'MAFL_BU_RTH')
-IF (LBUDGET_RV) CALL BUDGET (PRRS(:,:,:,1),NBUDGET_RV,'MAFL_BU_RRV')
-IF (LBUDGET_V) CALL BUDGET (PRVS,NBUDGET_V,'MAFL_BU_RV')
-DO JSV=1,ISV 
- IF (LBUDGET_SV) CALL BUDGET (PRSVS(:,:,:,JSV),NBUDGET_SV1-1+JSV,'MAFL_BU_RSV')
-END DO                 
-  
 !!! 8. Prints the fluxes in output file
 !
 IF ( OMF_FLX .AND. OCLOSE_OUT ) THEN

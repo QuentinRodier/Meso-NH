@@ -192,7 +192,7 @@ END MODULE MODI_ENDSTEP
 !!                 04/2014  (C.Lac)       Check on the positivity of PSVT
 !!                 J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!                 02/2019  (S. Bielli)  Sea salt : significant sea wave height influences salt emission; 5 salt modes
-!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -286,6 +286,7 @@ INTEGER:: JSV                  ! loop counters
 INTEGER :: IKU
 INTEGER :: IIB, IIE  ! index of first and last inner mass points along x
 INTEGER :: IJB, IJE  ! index of first and last inner mass points along y
+real, dimension(:,:,:), allocatable :: zrhodjontime
 !
 !------------------------------------------------------------------------------
 !
@@ -525,48 +526,71 @@ IF (LBU_ENABLE) THEN
   NBUCTR_ACTV(1 : NBUDGET_SV1 - 1 + KSV ) = 3
 
   !Division by nbustep to compute average on the selected time period
-  if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'AVEF', put(:, :, :) * prhodj(:, :, :) / ( ptstep * nbustep ) )
-
-  IF (LBUDGET_V)   CALL BUDGET( PVT(:,:,:)   * PRHODJ(:,:,:) / PTSTEP, NBUDGET_V,   'AVEF_BU_RV'   )
-  IF (LBUDGET_W)   CALL BUDGET( PWT(:,:,:)   * PRHODJ(:,:,:) / PTSTEP, NBUDGET_W,   'AVEF_BU_RW'   )
-  IF (LBUDGET_TH)  CALL BUDGET( PTHT(:,:,:)  * PRHODJ(:,:,:) / PTSTEP, NBUDGET_TH,  'AVEF_BU_RTH'  )
-  IF (LBUDGET_TKE) CALL BUDGET( PTKET(:,:,:) * PRHODJ(:,:,:) / PTSTEP, NBUDGET_TKE, 'AVEF_BU_RTKE' )
-  IF (LBUDGET_RV)  CALL BUDGET( PRT(:,:,:,1) * PRHODJ(:,:,:) / PTSTEP, NBUDGET_RV,  'AVEF_BU_RRV'  )
-  IF (LBUDGET_RC)  CALL BUDGET( PRT(:,:,:,2) * PRHODJ(:,:,:) / PTSTEP, NBUDGET_RC,  'AVEF_BU_RRC'  )
-  IF (LBUDGET_RR)  CALL BUDGET( PRT(:,:,:,3) * PRHODJ(:,:,:) / PTSTEP, NBUDGET_RR,  'AVEF_BU_RRR'  )
-  IF (LBUDGET_RI)  CALL BUDGET( PRT(:,:,:,4) * PRHODJ(:,:,:) / PTSTEP, NBUDGET_RI,  'AVEF_BU_RRI'  )
-  IF (LBUDGET_RS)  CALL BUDGET( PRT(:,:,:,5) * PRHODJ(:,:,:) / PTSTEP, NBUDGET_RS,  'AVEF_BU_RRS'  )
-  IF (LBUDGET_RG)  CALL BUDGET( PRT(:,:,:,6) * PRHODJ(:,:,:) / PTSTEP, NBUDGET_RG,  'AVEF_BU_RRG'  )
-  IF (LBUDGET_RH)  CALL BUDGET( PRT(:,:,:,7) * PRHODJ(:,:,:) / PTSTEP, NBUDGET_RH,  'AVEF_BU_RRH'  )
-  IF (LBUDGET_SV) THEN
-    DO JSV=1,KSV
-      CALL BUDGET( PSVT(:,:,:,JSV) * PRHODJ(:,:,:) / PTSTEP, JSV + NBUDGET_SV1 - 1, 'AVEF_BU_RSV' )
-    END DO
-  END IF
+  if ( lbudget_u .or. lbudget_v .or. lbudget_u .or. lbudget_v .or. lbudget_w .or. lbudget_th &
+       .or. lbudget_tke .or. lbudget_rv .or. lbudget_rc .or. lbudget_rr .or. lbudget_ri      &
+       .or. lbudget_rs .or. lbudget_rg .or. lbudget_rh .or. lbudget_sv ) then
+    allocate( zrhodjontime( size( prhodj, 1), size( prhodj, 2), size( prhodj, 3) ) )
+    zrhodjontime(:, :, :) = prhodj(:, :, :) / ( ptstep * nbustep )
+  end if
+  if ( lbudget_u   ) call Budget_store_end( tbudgets(NBUDGET_U  ), 'AVEF', put  (:, :, :)    * zrhodjontime(:, :, :) )
+  if ( lbudget_v   ) call Budget_store_end( tbudgets(NBUDGET_V  ), 'AVEF', pvt  (:, :, :)    * zrhodjontime(:, :, :) )
+  if ( lbudget_w   ) call Budget_store_end( tbudgets(NBUDGET_W  ), 'AVEF', pwt  (:, :, :)    * zrhodjontime(:, :, :) )
+  if ( lbudget_th  ) call Budget_store_end( tbudgets(NBUDGET_TH ), 'AVEF', ptht (:, :, :)    * zrhodjontime(:, :, :) )
+  if ( lbudget_tke ) call Budget_store_end( tbudgets(NBUDGET_TKE), 'AVEF', ptket(:, :, :)    * zrhodjontime(:, :, :) )
+  if ( lbudget_rv  ) call Budget_store_end( tbudgets(NBUDGET_RV ), 'AVEF', prt  (:, :, :, 1) * zrhodjontime(:, :, :) )
+  if ( lbudget_rc  ) call Budget_store_end( tbudgets(NBUDGET_RC ), 'AVEF', prt  (:, :, :, 2) * zrhodjontime(:, :, :) )
+  if ( lbudget_rr  ) call Budget_store_end( tbudgets(NBUDGET_RR ), 'AVEF', prt  (:, :, :, 3) * zrhodjontime(:, :, :) )
+  if ( lbudget_ri  ) call Budget_store_end( tbudgets(NBUDGET_RI ), 'AVEF', prt  (:, :, :, 4) * zrhodjontime(:, :, :) )
+  if ( lbudget_rs  ) call Budget_store_end( tbudgets(NBUDGET_RS ), 'AVEF', prt  (:, :, :, 5) * zrhodjontime(:, :, :) )
+  if ( lbudget_rg  ) call Budget_store_end( tbudgets(NBUDGET_RG ), 'AVEF', prt  (:, :, :, 6) * zrhodjontime(:, :, :) )
+  if ( lbudget_rh  ) call Budget_store_end( tbudgets(NBUDGET_RH ), 'AVEF', prt  (:, :, :, 7) * zrhodjontime(:, :, :) )
+  if ( lbudget_sv  ) then
+    do jsv = 1, ksv
+      call Budget_store_end( tbudgets(jsv + NBUDGET_SV1 - 1), 'AVEF', psvt(:, :, :, jsv) * zrhodjontime(:, :, :) )
+    end do
+  end if
 !
   NBUPROCCTR (1 : NBUDGET_SV1 - 1 + KSV ) = 2
   NBUCTR_ACTV(1 : NBUDGET_SV1 - 1 + KSV ) = 2
 
-  if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'ENDF', pus(:, :, :) * Mxm( prhodj(:, :, :) ) / ptstep )
+  if ( lbudget_u   ) call Budget_store_end( tbudgets(NBUDGET_U  ), 'ENDF', pus  (:, :, :) * Mxm( prhodj(:, :, :) ) / ptstep )
+  if ( lbudget_v   ) call Budget_store_end( tbudgets(NBUDGET_V  ), 'ENDF', pvs  (:, :, :) * Mym( prhodj(:, :, :) ) / ptstep )
+  if ( lbudget_w   ) call Budget_store_end( tbudgets(NBUDGET_W  ), 'ENDF', pws  (:, :, :) * Mzm( 1, iku, 1, prhodj(:, :, :) ) &
+                                            / ptstep )
+  if ( lbudget_th  ) call Budget_store_end( tbudgets(NBUDGET_TH ), 'ENDF', pths (:, :, :)    * prhodj(:, :, :) / ptstep )
+  if ( lbudget_tke ) call Budget_store_end( tbudgets(NBUDGET_TKE), 'ENDF', ptkes(:, :, :)    * prhodj(:, :, :) / ptstep )
+  if ( lbudget_rv  ) call Budget_store_end( tbudgets(NBUDGET_RV ), 'ENDF', prs  (:, :, :, 1) * prhodj(:, :, :) / ptstep )
+  if ( lbudget_rc  ) call Budget_store_end( tbudgets(NBUDGET_RC ), 'ENDF', prs  (:, :, :, 2) * prhodj(:, :, :) / ptstep )
+  if ( lbudget_rr  ) call Budget_store_end( tbudgets(NBUDGET_RR ), 'ENDF', prs  (:, :, :, 3) * prhodj(:, :, :) / ptstep )
+  if ( lbudget_ri  ) call Budget_store_end( tbudgets(NBUDGET_RI ), 'ENDF', prs  (:, :, :, 4) * prhodj(:, :, :) / ptstep )
+  if ( lbudget_rs  ) call Budget_store_end( tbudgets(NBUDGET_RS ), 'ENDF', prs  (:, :, :, 5) * prhodj(:, :, :) / ptstep )
+  if ( lbudget_rg  ) call Budget_store_end( tbudgets(NBUDGET_RG ), 'ENDF', prs  (:, :, :, 6) * prhodj(:, :, :) / ptstep )
+  if ( lbudget_rh  ) call Budget_store_end( tbudgets(NBUDGET_RH ), 'ENDF', prs  (:, :, :, 7) * prhodj(:, :, :) / ptstep )
+  if ( lbudget_sv  ) then
+    do jsv = 1, ksv
+      call Budget_store_end( tbudgets(jsv + NBUDGET_SV1 - 1), 'ENDF', psvs(:, :, :, jsv) * zrhodjontime(:, :, :) )
+    end do
+  end if
 
-  if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'ASSE', pus(:, :, :) * Mxm( prhodj(:, :, :) ) / ptstep )
+  if ( lbudget_u   ) call Budget_store_init( tbudgets(NBUDGET_U  ), 'ASSE', pus  (:, :, :) * Mxm( prhodj(:, :, :) ) / ptstep )
+  if ( lbudget_v   ) call Budget_store_init( tbudgets(NBUDGET_V  ), 'ASSE', pvs  (:, :, :) * Mym( prhodj(:, :, :) ) / ptstep )
+  if ( lbudget_w   ) call Budget_store_init( tbudgets(NBUDGET_W  ), 'ASSE', pws  (:, :, :) * Mzm( 1, iku, 1, prhodj(:, :, :) ) &
+                                             / ptstep )
+  if ( lbudget_th  ) call Budget_store_init( tbudgets(NBUDGET_TH ), 'ASSE', pths (:, :, :)    * prhodj(:, :, :) / ptstep )
+  if ( lbudget_tke ) call Budget_store_init( tbudgets(NBUDGET_TKE), 'ASSE', ptkes(:, :, :)    * prhodj(:, :, :) / ptstep )
+  if ( lbudget_rv  ) call Budget_store_init( tbudgets(NBUDGET_RV ), 'ASSE', prs  (:, :, :, 1) * prhodj(:, :, :) / ptstep )
+  if ( lbudget_rc  ) call Budget_store_init( tbudgets(NBUDGET_RC ), 'ASSE', prs  (:, :, :, 2) * prhodj(:, :, :) / ptstep )
+  if ( lbudget_rr  ) call Budget_store_init( tbudgets(NBUDGET_RR ), 'ASSE', prs  (:, :, :, 3) * prhodj(:, :, :) / ptstep )
+  if ( lbudget_ri  ) call Budget_store_init( tbudgets(NBUDGET_RI ), 'ASSE', prs  (:, :, :, 4) * prhodj(:, :, :) / ptstep )
+  if ( lbudget_rs  ) call Budget_store_init( tbudgets(NBUDGET_RS ), 'ASSE', prs  (:, :, :, 5) * prhodj(:, :, :) / ptstep )
+  if ( lbudget_rg  ) call Budget_store_init( tbudgets(NBUDGET_RG ), 'ASSE', prs  (:, :, :, 6) * prhodj(:, :, :) / ptstep )
+  if ( lbudget_rh  ) call Budget_store_init( tbudgets(NBUDGET_RH ), 'ASSE', prs  (:, :, :, 7) * prhodj(:, :, :) / ptstep )
+  if ( lbudget_sv  ) then
+    do jsv = 1, ksv
+      call Budget_store_init( tbudgets(jsv + NBUDGET_SV1 - 1), 'ASSE', psvs(:, :, :, jsv) * prhodj(:, :, :) / ptstep )
+    end do
+  end if
 
-  IF (LBUDGET_V)   CALL BUDGET( PVS          * MYM(PRHODJ)         / PTSTEP, NBUDGET_V,   'ENDF_BU_RV'   )
-  IF (LBUDGET_W)   CALL BUDGET( PWS          * MZM(1,IKU,1,PRHODJ) / PTSTEP, NBUDGET_W,   'ENDF_BU_RW'   )
-  IF (LBUDGET_TH)  CALL BUDGET( PTHS         * PRHODJ              / PTSTEP, NBUDGET_TH,  'ENDF_BU_RTH'  )
-  IF (LBUDGET_TKE) CALL BUDGET( PTKES        * PRHODJ              / PTSTEP, NBUDGET_TKE, 'ENDF_BU_RTKE' )
-  IF (LBUDGET_RV)  CALL BUDGET( PRS(:,:,:,1) * PRHODJ              / PTSTEP, NBUDGET_RV,  'ENDF_BU_RRV'  )
-  IF (LBUDGET_RC)  CALL BUDGET( PRS(:,:,:,2) * PRHODJ              / PTSTEP, NBUDGET_RC,  'ENDF_BU_RRC'  )
-  IF (LBUDGET_RR)  CALL BUDGET( PRS(:,:,:,3) * PRHODJ              / PTSTEP, NBUDGET_RR,  'ENDF_BU_RRR'  )
-  IF (LBUDGET_RI)  CALL BUDGET( PRS(:,:,:,4) * PRHODJ              / PTSTEP, NBUDGET_RI,  'ENDF_BU_RRI'  )
-  IF (LBUDGET_RS)  CALL BUDGET( PRS(:,:,:,5) * PRHODJ              / PTSTEP, NBUDGET_RS,  'ENDF_BU_RRS'  )
-  IF (LBUDGET_RG)  CALL BUDGET( PRS(:,:,:,6) * PRHODJ              / PTSTEP, NBUDGET_RG,  'ENDF_BU_RRG'  )
-  IF (LBUDGET_RH)  CALL BUDGET( PRS(:,:,:,7) * PRHODJ              / PTSTEP, NBUDGET_RH,  'ENDF_BU_RRH'  )
-  IF (LBUDGET_SV) THEN
-    DO JSV=1,KSV
-      CALL BUDGET( PSVS(:,:,:,JSV) * PRHODJ / PTSTEP, JSV + NBUDGET_SV1 - 1, 'ENDF_BU_RSV' )
-    END DO
-  END IF
 END IF
 !
 !------------------------------------------------------------------------------

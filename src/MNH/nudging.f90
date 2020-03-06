@@ -74,7 +74,7 @@ END MODULE MODI_NUDGING
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    15/05/06
-!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -86,8 +86,6 @@ use modd_budget,     only: lbudget_u, lbudget_v, lbudget_w, lbudget_th, lbudget_
 
 use mode_budget,     only: Budget_store_init, Budget_store_end
 
-USE MODI_BUDGET
-!
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
@@ -115,7 +113,11 @@ REAL :: ZINVTAU ! inverse of nudging time scale
 !
 ZINVTAU=1./PTNUDGING
 
-if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'NUD', prus )
+if ( lbudget_u  ) call Budget_store_init( tbudgets(NBUDGET_U ), 'NUD', prus (:, :, :)    )
+if ( lbudget_v  ) call Budget_store_init( tbudgets(NBUDGET_V ), 'NUD', prvs (:, :, :)    )
+if ( lbudget_w  ) call Budget_store_init( tbudgets(NBUDGET_W ), 'NUD', prws (:, :, :)    )
+if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'NUD', prths(:, :, :)    )
+if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'NUD', prrs (:, :, :, 1) )
 !
 !*        1.   NUGDGING TOWARDS LS FIELDS
 !              --------------------------
@@ -131,11 +133,10 @@ IF (OUSERV) &
 !*       2.     BUDGET CALLS
 !   	        ------------
 !
-if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'NUD', prus )
+if ( lbudget_u  ) call Budget_store_end( tbudgets(NBUDGET_U ), 'NUD', prus (:, :, :)    )
+if ( lbudget_v  ) call Budget_store_end( tbudgets(NBUDGET_V ), 'NUD', prvs (:, :, :)    )
+if ( lbudget_w  ) call Budget_store_end( tbudgets(NBUDGET_W ), 'NUD', prws (:, :, :)    )
+if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'NUD', prths(:, :, :)    )
+if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'NUD', prrs (:, :, :, 1) )
 
-IF (LBUDGET_V)   CALL BUDGET (PRVS,NBUDGET_V,'NUD_BU_RV')
-IF (LBUDGET_W)   CALL BUDGET (PRWS,NBUDGET_W,'NUD_BU_RW')
-IF (LBUDGET_TH)  CALL BUDGET (PRTHS,NBUDGET_TH,'NUD_BU_RTH')
-IF (LBUDGET_RV)  CALL BUDGET (PRRS(:,:,:,1),NBUDGET_RV,'NUD_BU_RRV')
-!
 END SUBROUTINE NUDGING

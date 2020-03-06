@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -8,6 +8,7 @@
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 03/06/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
 !  P. Wautelet 05/06/2019: optimisations
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !-----------------------------------------------------------------
 MODULE MODE_RAIN_ICE_FAST_RS
 
@@ -26,8 +27,9 @@ SUBROUTINE RAIN_ICE_FAST_RS(PTSTEP, OMICRO, PRHODREF, PRVT, PRCT, PRRT, PRST, PR
 !*      0. DECLARATIONS
 !          ------------
 !
-use MODD_BUDGET,         only: LBUDGET_TH, LBUDGET_RC, LBUDGET_RR, LBUDGET_RS, LBUDGET_RG, &
-                               NBUDGET_TH, NBUDGET_RC, NBUDGET_RR, NBUDGET_RS, NBUDGET_RG
+use modd_budget,         only: lbudget_th, lbudget_rc, lbudget_rr, lbudget_rs, lbudget_rg, &
+                               NBUDGET_TH, NBUDGET_RC, NBUDGET_RR, NBUDGET_RS, NBUDGET_RG, &
+                               tbudgets
 use MODD_CST,            only: XCL, XCPV, XESTT, XLMTT, XLVTT, XMD, XMV, XRV, XTT
 use MODD_RAIN_ICE_DESCR, only: XBS, XCEXVT, XCXS, XRTMIN
 use MODD_RAIN_ICE_PARAM, only: NACCLBDAR, NACCLBDAS, NGAMINC, X0DEPS, X1DEPS, XACCINTP1R, XACCINTP1S, XACCINTP2R, XACCINTP2S, &
@@ -35,9 +37,9 @@ use MODD_RAIN_ICE_PARAM, only: NACCLBDAR, NACCLBDAS, NGAMINC, X0DEPS, X1DEPS, XA
                                XFSACCRG, XFSCVMG, XGAMINC_RIM1, XGAMINC_RIM1, XGAMINC_RIM2, XKER_RACCS,                       &
                                XKER_RACCSS, XKER_SACCRG, XLBRACCS1, XLBRACCS2, XLBRACCS3, XLBSACCR1, XLBSACCR2, XLBSACCR3,    &
                                XRIMINTP1, XRIMINTP2, XSRIMCG
-!
-use MODI_BUDGET
-!
+
+use mode_budget,         only: Budget_store_add
+
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
@@ -160,6 +162,16 @@ REAL,    DIMENSION(:), ALLOCATABLE :: ZZW1, ZZW2, ZZW3, ZZW4 ! Work arrays
         PTHS(JL) = PTHS(JL) + ZZW2(JJ)*(PLSFACT(JL)-PLVFACT(JL)) ! f(L_f*(RCRIMSG))
       END IF
     END DO
+
+    if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'RIM', Unpack ( (  zzw1(:) + zzw2(:) ) &
+                                        * ( plsfact(:) - plvfact(:) ) * prhodj(:), mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rc ) call Budget_store_add( tbudgets(NBUDGET_RC), 'RIM', Unpack ( ( -zzw1(:) - zzw2(:) ) * prhodj(:), &
+                                                                                   mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rs ) call Budget_store_add( tbudgets(NBUDGET_RS), 'RIM', Unpack ( (  zzw1(:) - zzw3(:) ) * prhodj(:), &
+                                                                                   mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rg ) call Budget_store_add( tbudgets(NBUDGET_RG), 'RIM', Unpack ( (  zzw2(:) + zzw3(:) ) * prhodj(:), &
+                                                                                   mask = omicro(:,:,:), field = 0. ) )
+
     DEALLOCATE(ZZW3)
     DEALLOCATE(ZZW2)
     DEALLOCATE(ZZW1)
@@ -168,18 +180,6 @@ REAL,    DIMENSION(:), ALLOCATABLE :: ZZW1, ZZW2, ZZW3, ZZW4 ! Work arrays
     DEALLOCATE(ZVEC1)
     DEALLOCATE(ZVECLBDAS)
   END IF
-  IF (LBUDGET_TH) CALL BUDGET (                                               &
-               UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),   &
-                                                      NBUDGET_TH,'RIM_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (                                               &
-                   UNPACK(PRCS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                      NBUDGET_RC,'RIM_BU_RRC')
-  IF (LBUDGET_RS) CALL BUDGET (                                               &
-                   UNPACK(PRSS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                      NBUDGET_RS,'RIM_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (                                               &
-                   UNPACK(PRGS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                      NBUDGET_RG,'RIM_BU_RRG')
 !
 !*       5.2    rain accretion onto the aggregates
 !
@@ -300,6 +300,16 @@ REAL,    DIMENSION(:), ALLOCATABLE :: ZZW1, ZZW2, ZZW3, ZZW4 ! Work arrays
         END IF
       END IF
     END DO
+
+    if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'ACC', Unpack ( (  zzw4(:) + zzw2(:) ) &
+                                        * ( plsfact(:) - plvfact(:) ) * prhodj(:), mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rr ) call Budget_store_add( tbudgets(NBUDGET_RR), 'ACC', Unpack ( ( -zzw4(:) - zzw2(:) ) * prhodj(:), &
+                                                                                   mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rs ) call Budget_store_add( tbudgets(NBUDGET_RS), 'ACC', Unpack ( (  zzw4(:) - zzw3(:) ) * prhodj(:), &
+                                                                                   mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rg ) call Budget_store_add( tbudgets(NBUDGET_RG), 'ACC', Unpack ( (  zzw2(:) + zzw3(:) ) * prhodj(:), &
+                                                                                   mask = omicro(:,:,:), field = 0. ) )
+
     DEALLOCATE(ZZW4)
     DEALLOCATE(ZZW3)
     DEALLOCATE(ZZW2)
@@ -311,21 +321,10 @@ REAL,    DIMENSION(:), ALLOCATABLE :: ZZW1, ZZW2, ZZW3, ZZW4 ! Work arrays
     DEALLOCATE(ZVECLBDAS)
     DEALLOCATE(ZVECLBDAR)
   END IF
-  IF (LBUDGET_TH) CALL BUDGET (                                               &
-               UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),   &
-                                                        NBUDGET_TH,'ACC_BU_RTH')
-  IF (LBUDGET_RR) CALL BUDGET (                                               &
-                   UNPACK(PRRS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                        NBUDGET_RR,'ACC_BU_RRR')
-  IF (LBUDGET_RS) CALL BUDGET (                                               &
-                   UNPACK(PRSS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                        NBUDGET_RS,'ACC_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (                                               &
-                   UNPACK(PRGS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                        NBUDGET_RG,'ACC_BU_RRG')
 !
 !*       5.3    Conversion-Melting of the aggregates
 !
+  zzw(:) = 0.
   WHERE( PRST(:)>XRTMIN(5) .AND. PRSS(:)>0.0 .AND. PZT(:)>XTT )
     ZZW(:) = PRVT(:)*PPRES(:)/((XMV/XMD)+PRVT(:)) ! Vapor pressure
     ZZW(:) =  PKA(:)*(XTT-PZT(:)) +                                 &
@@ -345,13 +344,12 @@ REAL,    DIMENSION(:), ALLOCATABLE :: ZZW1, ZZW2, ZZW3, ZZW4 ! Work arrays
     PRSS(:) = PRSS(:) - ZZW(:)
     PRGS(:) = PRGS(:) + ZZW(:)
   END WHERE
-  IF (LBUDGET_RS) CALL BUDGET (                                                 &
-                     UNPACK(PRSS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                             NBUDGET_RS,'CMEL_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (                                                 &
-                     UNPACK(PRGS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                             NBUDGET_RG,'CMEL_BU_RRG')
-!
+
+  if ( lbudget_rs ) call Budget_store_add( tbudgets(NBUDGET_RS), 'CMEL', &
+                                           Unpack ( -zzw(:) * prhodj(:), mask = omicro(:,:,:), field = 0. ) )
+  if ( lbudget_rg ) call Budget_store_add( tbudgets(NBUDGET_RG), 'CMEL', &
+                                           Unpack (  zzw(:) * prhodj(:), mask = omicro(:,:,:), field = 0. ) )
+
 END SUBROUTINE RAIN_ICE_FAST_RS
 
 END MODULE MODE_RAIN_ICE_FAST_RS

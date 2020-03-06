@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -151,19 +151,22 @@ END MODULE MODI_SLOW_TERMS
 !!                     06/11/02 (V. Masson) update the budget calls
 !!     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAMETERS
-USE MODD_CLOUDPAR  
-USE MODD_CST
+use modd_budget,     only: lbudget_th, lbudget_rv, lbudget_rc, lbudget_rr, &
+                           NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, &
+                           tbudgets
+USE MODD_CLOUDPAR
 USE MODD_CONF
-USE MODD_BUDGET
-!
-USE MODI_BUDGET
-!
+USE MODD_CST
+USE MODD_PARAMETERS
+
+use mode_budget,     only: Budget_store_init, Budget_store_end
+
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
@@ -232,6 +235,7 @@ END DO
 !*       2.     COMPUTE THE SEDIMENTATION (RS) SOURCE
 !	        -------------------------------------
 !
+if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR), 'SEDI', prrs(:, :, :) * prhodj(:, :, :) )
 !
 !*       2.1    time splitting loop initialization        
 !
@@ -324,7 +328,7 @@ PRRS(:,:,:) = ZW1(:,:,:) / PTSTEP
 ! 
 !*       2.5     budget storage
 !
-IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'SEDI_BU_RRR')
+if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR), 'SEDI', prrs(:, :, :) * prhodj(:, :, :) )
 !
 !-------------------------------------------------------------------------------
 !
@@ -332,6 +336,8 @@ IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'SEDI_BU_RRR')
 !*       3.     COMPUTES THE ACCRETION SOURCE
 !   	        -----------------------------
 !
+if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'ACCR', prcs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR), 'ACCR', prrs(:, :, :) * prhodj(:, :, :) )
 !
 !*       3.1     compute the accretion and update the tendencies
 !
@@ -348,8 +354,8 @@ END WHERE
 !
 !*       3.2     budget storage
 !
-IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'ACCR_BU_RRC')
-IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'ACCR_BU_RRR')
+if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'ACCR', prcs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR), 'ACCR', prrs(:, :, :) * prhodj(:, :, :) )
 !
 !-------------------------------------------------------------------------------
 !
@@ -357,6 +363,8 @@ IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'ACCR_BU_RRR')
 !*       4.     COMPUTES THE AUTOCONVERSION SOURCE
 !               ----------------------------------
 !
+if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'AUTO', prcs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR), 'AUTO', prrs(:, :, :) * prhodj(:, :, :) )
 !
 !*       4.1     compute the autoconversion and update the tendencies
 !
@@ -379,14 +387,18 @@ END IF
 !
 !*       4.2     budget storage
 !
-IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'AUTO_BU_RRC')
-IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'AUTO_BU_RRR')
+if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'AUTO', prcs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR), 'AUTO', prrs(:, :, :) * prhodj(:, :, :) )
 !
 !-------------------------------------------------------------------------------
 !
 !*       5.     COMPUTES THE RAIN EVAPORATION (RE) SOURCE
 !   	        -----------------------------------------
 !
+if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'REVA', pths(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'REVA', prvs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR), 'REVA', prrs(:, :, :) * prhodj(:, :, :) )
+
 PEVAP3D(:,:,:)=0.
 WHERE ( (PRRT(:,:,:)>0.0) .AND. (PRCT(:,:,:)==0.0) ) 
 !
@@ -436,9 +448,9 @@ END WHERE
 !
 !*       5.8     budget storage
 !
-IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RV,'REVA_BU_RRV')
-IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'REVA_BU_RRR')
-IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'REVA_BU_RTH')
+if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'REVA', pths(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'REVA', prvs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR), 'REVA', prrs(:, :, :) * prhodj(:, :, :) )
 !
 !-------------------------------------------------------------------------------
 !

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -95,23 +95,22 @@ END MODULE MODI_LIMA_WARM_COAL
 !!    -------------
 !!      Original             ??/??/13 
 !!      C. Barthe  * LACy *  jan. 2014   add budgets
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
-!
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets (no more budget calls in this subroutine)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_BUDGET
+use modd_budget,          only: lbudget_rc, lbudget_rr, lbudget_sv, NBUDGET_RC, NBUDGET_RR, NBUDGET_SV1, tbudgets
 USE MODD_NSV,             ONLY: NSV_LIMA_NC, NSV_LIMA_NR
 USE MODD_PARAMETERS,      ONLY: JPHEXT, JPVEXT
 USE MODD_PARAM_LIMA
 USE MODD_PARAM_LIMA_WARM
 
+use mode_budget,          only: Budget_store_init, Budget_store_end
 use mode_tools,           only: Countjv
-
-USE MODI_BUDGET
 
 IMPLICIT NONE
 !
@@ -249,6 +248,8 @@ IF (LRAIN) THEN
 !   	 ------------------------------------
 !
 !
+  if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'SELF', pccs(:, :, :)  * prhodj(:, :, :) )
+
    GSELF(:) = ZCCT(:)>XCTMIN(2)
    ISELF = COUNT(GSELF(:))
    IF( ISELF>0 ) THEN
@@ -257,14 +258,10 @@ IF (LRAIN) THEN
          ZCCS(:) = ZCCS(:) - MIN( ZCCS(:),ZZW1(:) )
       END WHERE
    END IF
-!
-!
-  ZW(:,:,:) = PCCS(:,:,:)
-  IF (LBUDGET_SV) CALL BUDGET (                                 &
-                   UNPACK(ZCCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:))&
-                   &*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NC,'SELF_BU_RSV')
-!
-!
+
+  if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'SELF', &
+                                           Unpack( zccs(:), mask = gmicro(:, :, :), field = pccs(:, :, :) ) * prhodj(:, :, :) )
+
 !-------------------------------------------------------------------------------
 !
 !
@@ -273,6 +270,13 @@ IF (LRAIN) THEN
 !
 !
 !
+  if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'AUTO', prcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR), 'AUTO', prrs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv ) then
+    !call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'AUTO', pccs(:, :, :) * prhodj(:, :, :) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'AUTO', pcrs(:, :, :) * prhodj(:, :, :) )
+  end if
+
    ZZW2(:) = 0.0
    ZZW1(:) = 0.0
    WHERE( ZRCT(:)>XRTMIN(2) )
@@ -292,28 +296,19 @@ IF (LRAIN) THEN
       ZZW3(:) = ZZW3(:) * MAX( 0.0,ZZW1(:) )**3 / XAC 
       ZCRS(:) = ZCRS(:) + ZZW3(:)
    END WHERE
-!
-!
-   ZW(:,:,:) = PRCS(:,:,:)
-   IF (LBUDGET_RC) CALL BUDGET (                                  &
-               UNPACK(ZRCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:)) &
-                            *PRHODJ(:,:,:), NBUDGET_RC,'AUTO_BU_RRC')
 
-   ZW(:,:,:) = PRRS(:,:,:)
-   IF (LBUDGET_RR) CALL BUDGET (                                  &
-               UNPACK(ZRRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:)) &
-                            *PRHODJ(:,:,:), NBUDGET_RR,'AUTO_BU_RRR')
-   ZW(:,:,:) = PCRS(:,:,:)
-   IF (LBUDGET_SV) THEN
-      ZW(:,:,:) = PCRS(:,:,:)
-      CALL BUDGET (UNPACK(ZCRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:)) &
-               *PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NR,'AUTO_BU_RSV')
-      ZW(:,:,:) = PCCS(:,:,:)
-      CALL BUDGET (UNPACK(ZCCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:)) &
-               *PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NC,'AUTO_BU_RSV')
-   END IF
-!
-!
+  if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'AUTO', &
+                                           Unpack( zrcs(:), mask = gmicro(:, :, :), field = prcs(:, :, :) ) * prhodj(:, :, :) )
+  if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR), 'AUTO', &
+                                           Unpack( zrrs(:), mask = gmicro(:, :, :), field = prrs(:, :, :) ) * prhodj(:, :, :) )
+  if ( lbudget_sv ) then
+    !This budget is = 0 for nsv_lima_nc => not necessary to call it (ZCCS is not modified in this part)
+    !call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'AUTO', &
+    !                       Unpack( zccs(:), mask = gmicro(:, :, :), field = pccs(:, :, :) ) * prhodj(:, :, :) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'AUTO', &
+                           Unpack( zcrs(:), mask = gmicro(:, :, :), field = pcrs(:, :, :) ) * prhodj(:, :, :) )
+  end if
+
 !-------------------------------------------------------------------------------
 !
 !
@@ -321,7 +316,7 @@ IF (LRAIN) THEN
 !   	 --------------------
 !
 !
-   GACCR(:) = ZRRT(:)>XRTMIN(3) .AND. ZCRT(:)>XCTMIN(3) 
+   GACCR(:) = ZRRT(:)>XRTMIN(3) .AND. ZCRT(:)>XCTMIN(3)
    IACCR = COUNT(GACCR(:))
    IF( IACCR>0 ) THEN
       ALLOCATE(ZZW4(IMICRO)); ZZW4(:) = XACCR1/ZLBDR(:)
@@ -333,6 +328,12 @@ IF (LRAIN) THEN
 !
    IACCR = COUNT(GACCR(:))
    IF( IACCR>0 ) THEN
+    if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'ACCR', &
+                                              Unpack( zrcs(:), mask = gmicro(:, :, :), field = prcs(:, :, :) ) * prhodj(:, :, :) )
+    if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR), 'ACCR', &
+                                              Unpack( zrrs(:), mask = gmicro(:, :, :), field = prrs(:, :, :) ) * prhodj(:, :, :) )
+    if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'ACCR', &
+                                              Unpack( zccs(:), mask = gmicro(:, :, :), field = pccs(:, :, :) ) * prhodj(:, :, :) )
       WHERE( GACCR(:).AND.(ZZW4(:)>1.E-4) ) ! Accretion for D>100 10-6 m
          ZZW3(:) = ZLBDC3(:) / ZLBDR3(:)
          ZZW1(:) = ( ZCCT(:)*ZCRT(:) / ZLBDC3(:) )*ZRHODREF(:)
@@ -358,23 +359,14 @@ IF (LRAIN) THEN
          ZRCS(:) = ZRCS(:) - ZZW2(:)
          ZRRS(:) = ZRRS(:) + ZZW2(:)
       END WHERE
+
+    if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'ACCR', &
+                                             Unpack( zrcs(:), mask = gmicro(:, :, :), field = prcs(:, :, :) ) * prhodj(:, :, :) )
+    if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR), 'ACCR', &
+                                             Unpack( zrrs(:), mask = gmicro(:, :, :), field = prrs(:, :, :) ) * prhodj(:, :, :) )
+    if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'ACCR', &
+                                             Unpack( zccs(:), mask = gmicro(:, :, :), field = pccs(:, :, :) ) * prhodj(:, :, :) )
    END IF
-!
-!
-   ZW(:,:,:) = PRCS(:,:,:)
-   IF (LBUDGET_RC) CALL BUDGET (                                  &
-               UNPACK(ZRCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:)) &
-                              *PRHODJ(:,:,:), NBUDGET_RC,'ACCR_BU_RRC')
-   ZW(:,:,:) = PRRS(:,:,:)
-   IF (LBUDGET_RR) CALL BUDGET (                                  &
-               UNPACK(ZRRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:)) &
-                              *PRHODJ(:,:,:), NBUDGET_RR,'ACCR_BU_RRR')
-   ZW(:,:,:) = PCCS(:,:,:)
-   IF (LBUDGET_SV) CALL BUDGET (                                  &
-               UNPACK(ZCCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:)) &
-                  *PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NC,'ACCR_BU_RSV')
-!
-!
 !-------------------------------------------------------------------------------
 !
 !
@@ -389,6 +381,8 @@ IF (LRAIN) THEN
       ISCBU = 0.0
    END IF
    IF( ISCBU>0 ) THEN
+    if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'SCBU', &
+                                              Unpack( zcrs(:), mask = gmicro(:, :, :), field = pcrs(:, :, :) ) * prhodj(:, :, :) )
 !
 !*       5.1  efficiencies
 !
@@ -416,14 +410,9 @@ IF (LRAIN) THEN
       END WHERE
       ZCRS(:) = ZCRS(:) - MIN( ZCRS(:),ZZW3(:) * ZRHODREF(:) )
       DEALLOCATE(ZSCBU)
+    if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'SCBU', &
+                                             Unpack( zcrs(:), mask = gmicro(:, :, :), field = pcrs(:, :, :) ) * prhodj(:, :, :) )
    END IF
-!
-!
-   ZW(:,:,:) = PCRS(:,:,:)
-   IF (LBUDGET_SV) CALL BUDGET (                                  &
-               UNPACK(ZCRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:)) &
-                  *PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_LIMA_NR,'SCBU_BU_RSV')
-!
 END IF ! LRAIN
 !
 !
@@ -464,28 +453,6 @@ END IF ! LRAIN
    DEALLOCATE(ZLBDC3)
    DEALLOCATE(ZLBDR)
    DEALLOCATE(ZLBDC)
-!
-!
-!-------------------------------------------------------------------------------
-!
-ELSE
-!*       7. Budgets are forwarded
-!        ------------------------
-!
-!
-   IF (LBUDGET_SV .AND. LRAIN) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_LIMA_NC, 'SELF_BU_RSV')
-!
-   IF (LBUDGET_RC .AND. LRAIN) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,                'AUTO_BU_RRC')
-   IF (LBUDGET_RR .AND. LRAIN) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR,                'AUTO_BU_RRR')
-   IF (LBUDGET_SV .AND. LRAIN) CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_LIMA_NR, 'AUTO_BU_RSV')
-   IF (LBUDGET_SV .AND. LRAIN) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_LIMA_NC, 'AUTO_BU_RSV')
-!
-   IF (LBUDGET_RC .AND. LRAIN) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,                'ACCR_BU_RRC')
-   IF (LBUDGET_RR .AND. LRAIN) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR,                'ACCR_BU_RRR')
-   IF (LBUDGET_SV .AND. LRAIN) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_LIMA_NC, 'ACCR_BU_RSV')
-!
-   IF (LBUDGET_SV .AND. LRAIN) CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_LIMA_NR, 'SCBU_BU_RSV')
-
 END IF ! IMICRO
 !
 !-------------------------------------------------------------------------------

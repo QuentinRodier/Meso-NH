@@ -341,7 +341,7 @@ END MODULE MODI_TURB
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  Q. Rodier      01/2018: introduction of RM17
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
-!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -909,7 +909,18 @@ ENDIF
 !*      5. TURBULENT SOURCES
 !          -----------------
 !
-if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'VTURB', prus )
+if ( lbudget_u )  call Budget_store_init( tbudgets(NBUDGET_U ), 'VTURB', prus  (:, :, :)    )
+if ( lbudget_v )  call Budget_store_init( tbudgets(NBUDGET_V ), 'VTURB', prvs  (:, :, :)    )
+if ( lbudget_w )  call Budget_store_init( tbudgets(NBUDGET_W ), 'VTURB', prws  (:, :, :)    )
+if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'VTURB', prthls(:, :, :)    )
+if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'VTURB', prrs  (:, :, :, 1) )
+if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'VTURB', prrs  (:, :, :, 2) )
+if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'VTURB', prrs  (:, :, :, 4) )
+if ( lbudget_sv ) then
+  do jsv = 1, nsv
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + jsv), 'VTURB', prsvs(:, :, :, jsv) )
+  end do
+end if
 
 CALL TURB_VER(KKA,KKU,KKL,KRR, KRRL, KRRI,               &
           OCLOSE_OUT,OTURB_FLX,                          &
@@ -928,40 +939,75 @@ CALL TURB_VER(KKA,KKU,KKL,KRR, KRRL, KRRI,               &
           PRUS,PRVS,PRWS,PRTHLS,PRRS,PRSVS,              &
           PDYP,PTHP,PSIGS,PWTH,PWRC,PWSV                 )
 
-if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'VTURB', prus )
+if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'VTURB', prus(:, :, :) )
+if ( lbudget_v ) call Budget_store_end( tbudgets(NBUDGET_V), 'VTURB', prvs(:, :, :) )
+if ( lbudget_w ) call Budget_store_end( tbudgets(NBUDGET_W), 'VTURB', prws(:, :, :) )
 
-IF (LBUDGET_V) CALL BUDGET (PRVS,NBUDGET_V,'VTURB_BU_RV')
-IF (LBUDGET_W) CALL BUDGET (PRWS,NBUDGET_W,'VTURB_BU_RW')
-IF (LBUDGET_TH)  THEN
-  IF ( KRRI >= 1 .AND. KRRL >= 1 ) THEN
-    CALL BUDGET (PRTHLS+ ZLVOCPEXNM * PRRS(:,:,:,2) + ZLSOCPEXNM * PRRS(:,:,:,4),NBUDGET_TH,'VTURB_BU_RTH')
-  ELSE IF ( KRRL >= 1 ) THEN
-    CALL BUDGET (PRTHLS+ ZLOCPEXNM * PRRS(:,:,:,2),NBUDGET_TH,'VTURB_BU_RTH')
-  ELSE
-    CALL BUDGET (PRTHLS,NBUDGET_TH,'VTURB_BU_RTH')
-  END IF
-END IF
-IF (LBUDGET_SV) THEN
-  DO JSV = 1,NSV
-    CALL BUDGET (PRSVS(:,:,:,JSV),NBUDGET_SV1-1+JSV,'VTURB_BU_RSV')
-  END DO
-END IF
-IF (LBUDGET_RV) THEN
-  IF ( KRRI >= 1 .AND. KRRL >= 1) THEN
-    CALL BUDGET (PRRS(:,:,:,1)-PRRS(:,:,:,2)-PRRS(:,:,:,4),NBUDGET_RV,'VTURB_BU_RRV')
-  ELSE IF ( KRRL >= 1 ) THEN
-    CALL BUDGET (PRRS(:,:,:,1)-PRRS(:,:,:,2),NBUDGET_RV,'VTURB_BU_RRV')
-  ELSE 
-    CALL BUDGET (PRRS(:,:,:,1),NBUDGET_RV,'VTURB_BU_RRV')
-  END IF
-END IF  
-IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2),NBUDGET_RC,'VTURB_BU_RRC')
-IF (LBUDGET_RI) CALL BUDGET (PRRS(:,:,:,4),NBUDGET_RI,'VTURB_BU_RRI')
-!
-!
-if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'HTURB', prus )
+if ( lbudget_th ) then
+  if ( krri >= 1 .and. krrl >= 1 ) then
+    call Budget_store_end( tbudgets(NBUDGET_TH), 'VTURB', prthls(:, :, :) + zlvocpexnm(:, :, :) * prrs(:, :, :, 2) &
+                                                                          + zlsocpexnm(:, :, :) * prrs(:, :, :, 4) )
+  else if ( krrl >= 1 ) then
+    call Budget_store_end( tbudgets(NBUDGET_TH), 'VTURB', prthls(:, :, :) + zlocpexnm(:, :, :) * prrs(:, :, :, 2) )
+  else
+    call Budget_store_end( tbudgets(NBUDGET_TH), 'VTURB', prthls(:, :, :) )
+  end if
+end if
 
-IF (HTURBDIM=='3DIM') THEN
+if ( lbudget_rv ) then
+  if ( krri >= 1 .and. krrl >= 1 ) then
+    call Budget_store_end( tbudgets(NBUDGET_RV), 'VTURB', prrs(:, :, :, 1) - prrs(:, :, :, 2) - prrs(:, :, :, 4) )
+  else if ( krrl >= 1 ) then
+    call Budget_store_end( tbudgets(NBUDGET_RV), 'VTURB', prrs(:, :, :, 1) - prrs(:, :, :, 2) )
+  else
+    call Budget_store_end( tbudgets(NBUDGET_RV), 'VTURB', prrs(:, :, :, 1) )
+  end if
+end if
+
+if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'VTURB', prrs(:, :, :, 2) )
+if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'VTURB', prrs(:, :, :, 4) )
+
+if ( lbudget_sv )  then
+  do jsv = 1, nsv
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + jsv), 'VTURB', prsvs(:, :, :, jsv) )
+  end do
+end if
+!
+if ( hturbdim == '3DIM' ) then
+  if ( lbudget_u  ) call Budget_store_init( tbudgets(NBUDGET_U ), 'HTURB', prus  (:, :, :) )
+  if ( lbudget_v  ) call Budget_store_init( tbudgets(NBUDGET_V ), 'HTURB', prvs  (:, :, :) )
+  if ( lbudget_w  ) call Budget_store_init( tbudgets(NBUDGET_W ), 'HTURB', prws  (:, :, :) )
+
+  if (lbudget_th)  then
+    if ( krri >= 1 .and. krrl >= 1 ) then
+      call Budget_store_init( tbudgets(NBUDGET_TH), 'HTURB', prthls(:, :, :) + zlvocpexnm(:, :, :) * prrs(:, :, :, 2) &
+                                                                             + zlsocpexnm(:, :, :) * prrs(:, :, :, 4) )
+    else if ( krrl >= 1 ) then
+      call Budget_store_init( tbudgets(NBUDGET_TH), 'HTURB', prthls(:, :, :) + zlocpexnm(:, :, :) * prrs(:, :, :, 2) )
+    else
+      call Budget_store_init( tbudgets(NBUDGET_TH), 'HTURB', prthls(:, :, :) )
+    end if
+  end if
+
+  if ( lbudget_rv ) then
+    if ( krri >= 1 .and. krrl >= 1 ) then
+      call Budget_store_init( tbudgets(NBUDGET_RV), 'HTURB', prrs(:, :, :, 1) - prrs(:, :, :, 2) - prrs(:, :, :, 4) )
+    else if ( krrl >= 1 ) then
+      call Budget_store_init( tbudgets(NBUDGET_RV), 'HTURB', prrs(:, :, :, 1) - prrs(:, :, :, 2) )
+    else
+      call Budget_store_init( tbudgets(NBUDGET_RV), 'HTURB', prrs(:, :, :, 1) )
+    end if
+  end if
+
+  if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'HTURB', prrs(:, :, :, 2) )
+  if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'HTURB', prrs(:, :, :, 4) )
+
+  if ( lbudget_sv )  then
+    do jsv = 1, nsv
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + jsv), 'HTURB', prsvs(:, :, :, jsv) )
+    end do
+  end if
+
     CALL TURB_HOR_SPLT(KSPLIT, KRR, KRRL, KRRI, PTSTEP,        &
           HLBCX,HLBCY,OCLOSE_OUT,OTURB_FLX,OSUBG_COND,         &
           TPFILE,                                              &
@@ -977,39 +1023,41 @@ IF (HTURBDIM=='3DIM') THEN
           PDYP,PTHP,PSIGS,                                     &
           ZTRH,                                                &
           PRUS,PRVS,PRWS,PRTHLS,PRRS,PRSVS                     )
-END IF
 
-if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'HTURB', prus )
+  if ( lbudget_u ) call Budget_store_end( tbudgets(NBUDGET_U), 'HTURB', prus(:, :, :) )
+  if ( lbudget_v ) call Budget_store_end( tbudgets(NBUDGET_V), 'HTURB', prvs(:, :, :) )
+  if ( lbudget_w ) call Budget_store_end( tbudgets(NBUDGET_W), 'HTURB', prws(:, :, :) )
 
-IF (LBUDGET_V) CALL BUDGET (PRVS,NBUDGET_V,'HTURB_BU_RV')
-IF (LBUDGET_W) CALL BUDGET (PRWS,NBUDGET_W,'HTURB_BU_RW')
-IF (LBUDGET_TH)  THEN
-  IF ( KRRI >= 1 .AND. KRRL >= 1 ) THEN
-    CALL BUDGET (PRTHLS+ZLVOCPEXNM*PRRS(:,:,:,2)+ZLSOCPEXNM*PRRS(:,:,:,4) &
-                                                  ,NBUDGET_TH,'HTURB_BU_RTH')
-  ELSE IF ( KRRL >= 1 ) THEN
-    CALL BUDGET (PRTHLS+ ZLOCPEXNM * PRRS(:,:,:,2),NBUDGET_TH,'HTURB_BU_RTH')
-  ELSE
-    CALL BUDGET (PRTHLS,NBUDGET_TH,'HTURB_BU_RTH')
-  END IF
-END IF
-IF (LBUDGET_SV) THEN
-  DO JSV = 1,NSV
-    CALL BUDGET (PRSVS(:,:,:,JSV),NBUDGET_SV1-1+JSV,'HTURB_BU_RSV')
-  END DO
-END IF
-IF (LBUDGET_RV) THEN
-  IF ( KRRI >= 1 .AND. KRRL >= 1) THEN
-    CALL BUDGET (PRRS(:,:,:,1)-PRRS(:,:,:,2)-PRRS(:,:,:,4),NBUDGET_RV,'HTURB_BU_RRV')
-  ELSE IF ( KRRL >= 1 ) THEN
-    CALL BUDGET (PRRS(:,:,:,1)-PRRS(:,:,:,2),NBUDGET_RV,'HTURB_BU_RRV')
-  ELSE 
-    CALL BUDGET (PRRS(:,:,:,1),NBUDGET_RV,'HTURB_BU_RRV')
-  END IF
-END IF  
-IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2),NBUDGET_RC,'HTURB_BU_RRC')
-IF (LBUDGET_RI) CALL BUDGET (PRRS(:,:,:,4),NBUDGET_RI,'HTURB_BU_RRI')
-!
+  if ( lbudget_th ) then
+    if ( krri >= 1 .and. krrl >= 1 ) then
+      call Budget_store_end( tbudgets(NBUDGET_TH), 'HTURB', prthls(:, :, :) + zlvocpexnm(:, :, :) * prrs(:, :, :, 2) &
+                                                                            + zlsocpexnm(:, :, :) * prrs(:, :, :, 4) )
+    else if ( krrl >= 1 ) then
+      call Budget_store_end( tbudgets(NBUDGET_TH), 'HTURB', prthls(:, :, :) + zlocpexnm(:, :, :) * prrs(:, :, :, 2) )
+    else
+      call Budget_store_end( tbudgets(NBUDGET_TH), 'HTURB', prthls(:, :, :) )
+    end if
+  end if
+
+  if ( lbudget_rv ) then
+    if ( krri >= 1 .and. krrl >= 1 ) then
+      call Budget_store_end( tbudgets(NBUDGET_RV), 'HTURB', prrs(:, :, :, 1) - prrs(:, :, :, 2) - prrs(:, :, :, 4) )
+    else if ( krrl >= 1 ) then
+      call Budget_store_end( tbudgets(NBUDGET_RV), 'HTURB', prrs(:, :, :, 1) - prrs(:, :, :, 2) )
+    else
+      call Budget_store_end( tbudgets(NBUDGET_RV), 'HTURB', prrs(:, :, :, 1) )
+    end if
+  end if
+
+  if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'HTURB', prrs(:, :, :, 2) )
+  if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'HTURB', prrs(:, :, :, 4) )
+
+  if ( lbudget_sv )  then
+    do jsv = 1, nsv
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + jsv), 'HTURB', prsvs(:, :, :, jsv) )
+    end do
+  end if
+end if
 !----------------------------------------------------------------------------
 !
 !*      6. EVOLUTION OF THE TKE AND ITS DISSIPATION 
@@ -1028,18 +1076,7 @@ CALL TKE_EPS_SOURCES(KKA,KKU,KKL,KMI,PTKET,PLEM,ZLEPS,PDYP,ZTRH,     &
                      HTURBLEN,HTURBDIM,                              &
                      TPFILE,OCLOSE_OUT,OTURB_DIAG,                   &
                      PTHP,PRTKES,PRTKEMS,PRTHLS,ZCOEF_DISS,PTR,PDISS )
-!
-IF (LBUDGET_TH)  THEN
-  IF ( KRRI >= 1 .AND. KRRL >= 1 ) THEN
-    CALL BUDGET (PRTHLS+ZLVOCPEXNM*PRRS(:,:,:,2)+ZLSOCPEXNM*PRRS(:,:,:,4) &
-                                                ,NBUDGET_TH,'DISSH_BU_RTH')
-  ELSE IF ( KRRL >= 1 ) THEN
-    CALL BUDGET (PRTHLS+ZLOCPEXNM* PRRS(:,:,:,2),NBUDGET_TH,'DISSH_BU_RTH')
-  ELSE
-    CALL BUDGET (PRTHLS,NBUDGET_TH,'DISSH_BU_RTH')
-  END IF
-END IF
-!
+
 !----------------------------------------------------------------------------
 !
 !*      7. STORES SOME INFORMATIONS RELATED TO THE TURBULENCE SCHEME
@@ -1118,6 +1155,19 @@ IF ( KRRL >= 1 ) THEN
 END IF
 !
 IF ((HCLOUD == 'KHKO') .OR. (HCLOUD == 'C2R2')) THEN
+  if (lbudget_th)  then
+    if ( krri >= 1 .and. krrl >= 1 ) then
+      call Budget_store_init( tbudgets(NBUDGET_TH), 'NETUR', prthls(:, :, :) + zlvocpexnm(:, :, :) * prrs(:, :, :, 2) &
+                                                                             + zlsocpexnm(:, :, :) * prrs(:, :, :, 4) )
+    else if ( krrl >= 1 ) then
+      call Budget_store_init( tbudgets(NBUDGET_TH), 'NETUR', prthls(:, :, :) + zlocpexnm(:, :, :) * prrs(:, :, :, 2) )
+    else
+      call Budget_store_init( tbudgets(NBUDGET_TH), 'NETUR', prthls(:, :, :) )
+    end if
+  end if
+  if (lbudget_rv) call Budget_store_init( tbudgets(NBUDGET_RV), 'NETUR', prrs  (:, :, :, 1) )
+  if (lbudget_rc) call Budget_store_init( tbudgets(NBUDGET_RC), 'NETUR', prrs  (:, :, :, 2) )
+
  ZEXNE(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
  ZTT(:,:,:)= PTHLT(:,:,:)*ZEXNE(:,:,:)
  ZLV(:,:,:)=XLVTT +(XCPV-XCL) *(ZTT(:,:,:)-XTT)
@@ -1138,10 +1188,10 @@ IF ((HCLOUD == 'KHKO') .OR. (HCLOUD == 'C2R2')) THEN
       PRSVS(:,:,:,JSV) = 0.0
   END WHERE
  END DO
-!
- IF (LBUDGET_TH) CALL BUDGET (PRTHLS(:,:,:), NBUDGET_TH,'NETUR_BU_RTH')
- IF (LBUDGET_RV) CALL BUDGET (PRRS(:,:,:,1), NBUDGET_RV,'NETUR_BU_RRV')
- IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2), NBUDGET_RC,'NETUR_BU_RRC')
+
+  if (lbudget_th) call Budget_store_end( tbudgets(NBUDGET_TH), 'NETUR', prthls(:, :, :) )
+  if (lbudget_rv) call Budget_store_end( tbudgets(NBUDGET_RV), 'NETUR', prrs  (:, :, :, 1) )
+  if (lbudget_rc) call Budget_store_end( tbudgets(NBUDGET_RC), 'NETUR', prrs  (:, :, :, 2) )
 END IF
 !
 !----------------------------------------------------------------------------

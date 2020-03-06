@@ -69,24 +69,27 @@ SUBROUTINE LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, OCLOSE_OUT, PRHODJ,           
 !!    MODIFICATIONS
 !!    -------------
 !!      Original             15/03/2018
-! P. Wautelet 27/02/2020: bugfix: PNFT was not updated after LIMA_CCN_HOM_FREEZING
-! P. Wautelet 27/02/2020: add Z_TH_HINC variable (for budgets)
+!  P. Wautelet 27/02/2020: bugfix: PNFT was not updated after LIMA_CCN_HOM_FREEZING
+!  P. Wautelet 27/02/2020: add Z_TH_HINC variable (for budgets)
+!  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
-USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LMEYERS, LSNOW, LWARM, LACTI, LRAIN, LHHONI,  &
-                            NMOD_CCN, NMOD_IFN, NMOD_IMM
-USE MODD_BUDGET,     ONLY : LBU_ENABLE, LBUDGET_TH, LBUDGET_RV, LBUDGET_RC, LBUDGET_RR, &
-                            LBUDGET_RI, LBUDGET_RS, LBUDGET_RG, LBUDGET_RH, LBUDGET_SV, &
-                            NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RI, NBUDGET_SV1
+use modd_budget,     only: lbu_enable, lbudget_th, lbudget_rv, lbudget_rc, lbudget_rr,  &
+                           lbudget_ri, lbudget_rs, lbudget_rg, lbudget_rh, lbudget_sv,  &
+                           NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RI, NBUDGET_SV1, &
+                           tbudgets
+USE MODD_IO,         ONLY: TFILEDATA
 USE MODD_NSV,        ONLY : NSV_LIMA_NC, NSV_LIMA_NR, NSV_LIMA_CCN_FREE,                &
                             NSV_LIMA_NI, NSV_LIMA_IFN_FREE
-!
-USE MODD_IO,         ONLY: TFILEDATA
-USE MODI_BUDGET
+USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LMEYERS, LSNOW, LWARM, LACTI, LRAIN, LHHONI,  &
+                            NMOD_CCN, NMOD_IFN, NMOD_IMM
+
+use mode_budget,     only: Budget_store_add, Budget_store_init, Budget_store_end
+
 USE MODI_LIMA_CCN_ACTIVATION
-USE MODI_LIMA_PHILLIPS_IFN_NUCLEATION
-USE MODI_LIMA_MEYERS_NUCLEATION
 USE MODI_LIMA_CCN_HOM_FREEZING
+USE MODI_LIMA_MEYERS_NUCLEATION
+USE MODI_LIMA_PHILLIPS_IFN_NUCLEATION
 !
 !-------------------------------------------------------------------------------
 !
@@ -95,7 +98,7 @@ IMPLICIT NONE
 !-------------------------------------------------------------------------------
 !
 REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
-TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE     ! Output file
+TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE     ! Output file
 LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ     ! Reference density
@@ -128,105 +131,83 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNHT       ! CCN hom. freezing
 !-------------------------------------------------------------------------------
 !
 REAL, DIMENSION(SIZE(PT,1),SIZE(PT,2),SIZE(PT,3))          :: Z_TH_HIND, Z_RI_HIND, Z_CI_HIND, Z_TH_HINC, Z_RC_HINC, Z_CC_HINC
-REAL, DIMENSION(SIZE(PT,1),SIZE(PT,2),SIZE(PT,3))          :: ZTHT, ZRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT
-REAL, DIMENSION(SIZE(PT,1),SIZE(PT,2),SIZE(PT,3))          :: ZCCT, ZCRT, ZCIT
-REAL, DIMENSION(SIZE(PT,1),SIZE(PT,2),SIZE(PT,3),NMOD_CCN) :: ZNFT, ZNAT
-REAL, DIMENSION(SIZE(PT,1),SIZE(PT,2),SIZE(PT,3),NMOD_IFN) :: ZIFT, ZINT
-REAL, DIMENSION(SIZE(PT,1),SIZE(PT,2),SIZE(PT,3),NMOD_IMM) :: ZNIT
-REAL, DIMENSION(SIZE(PT,1),SIZE(PT,2),SIZE(PT,3))          :: ZNHT
 !
+integer :: idx
 INTEGER :: JL
-!-------------------------------------------------------------------------------
-!
-ZTHT(:,:,:) = PTHT(:,:,:)
-ZRVT(:,:,:) = PRVT(:,:,:)
-ZRCT(:,:,:) = PRCT(:,:,:)
-ZCCT(:,:,:) = PCCT(:,:,:)
-ZRRT(:,:,:) = PRRT(:,:,:)
-ZCRT(:,:,:) = PCRT(:,:,:)
-ZRIT(:,:,:) = PRIT(:,:,:)
-ZCIT(:,:,:) = PCIT(:,:,:)
-ZRST(:,:,:) = PRST(:,:,:)
-ZRGT(:,:,:) = PRGT(:,:,:)
-ZNFT(:,:,:,:) = PNFT(:,:,:,:)
-ZNAT(:,:,:,:) = PNAT(:,:,:,:)
-ZIFT(:,:,:,:) = PIFT(:,:,:,:)
-ZINT(:,:,:,:) = PINT(:,:,:,:)
-ZNIT(:,:,:,:) = PNIT(:,:,:,:)
-ZNHT(:,:,:) = PNHT(:,:,:)
 !
 !-------------------------------------------------------------------------------
 !
-IF (LWARM .AND. LACTI .AND. NMOD_CCN.GE.1) THEN
+IF ( LWARM .AND. LACTI .AND. NMOD_CCN >=1 ) THEN
+  if ( lbu_enable ) then
+    if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'HENU', ptht(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'HENU', prvt(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'HENU', prct(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_sv ) then
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'HENU', pcct(:, :, :) * prhodj(:, :, :) / ptstep )
+      do jl = 1, nmod_ccn
+        idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_free - 1 + jl
+        call Budget_store_init( tbudgets(idx), 'HENU', pnft(:, :, :, jl) * prhodj(:, :, :) / ptstep )
+      end do
+    end if
+  end if
+
    CALL LIMA_CCN_ACTIVATION (PTSTEP, TPFILE, OCLOSE_OUT,                 &
                              PRHODREF, PEXNREF, PPABST, PT, PTM, PW_NU,   &
-                             ZTHT, ZRVT, ZRCT, ZCCT, ZRRT, ZNFT, ZNAT)
-   PTHT(:,:,:) = ZTHT(:,:,:)
-   PRVT(:,:,:) = ZRVT(:,:,:)
-   PRCT(:,:,:) = ZRCT(:,:,:)
-   PCCT(:,:,:) = ZCCT(:,:,:)
-   PNFT(:,:,:,:) = ZNFT(:,:,:,:)
-   PNAT(:,:,:,:) = ZNAT(:,:,:,:)
-!
-! Call budgets
-!
-   IF (LBU_ENABLE) THEN
-      IF (LBUDGET_TH) CALL BUDGET (PTHT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,   NBUDGET_TH,                           'HENU_BU_RTH')
-      IF (LBUDGET_RV) CALL BUDGET (PRVT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,   NBUDGET_RV,                           'HENU_BU_RRV')
-      IF (LBUDGET_RC) CALL BUDGET (PRCT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,   NBUDGET_RC,                           'HENU_BU_RRC')
-      IF (LBUDGET_SV) THEN
-                      CALL BUDGET (PCCT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,   NBUDGET_SV1-1+NSV_LIMA_NC,            'HENU_BU_RSV')
-            DO JL=1, NMOD_CCN
-                      CALL BUDGET (PNFT(:,:,:,JL)*PRHODJ(:,:,:)/PTSTEP,NBUDGET_SV1-1+NSV_LIMA_CCN_FREE+JL-1, 'HENU_BU_RSV')
-            END DO
-      END IF
-   END IF
+                             PTHT, PRVT, PRCT, PCCT, PRRT, PNFT, PNAT)
+
+  if ( lbu_enable ) then
+    if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HENU', ptht(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'HENU', prvt(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'HENU', prct(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_sv ) then
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'HENU', pcct(:, :, :) * prhodj(:, :, :) / ptstep )
+      do jl = 1, nmod_ccn
+        idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_free - 1 + jl
+        call Budget_store_end( tbudgets(idx), 'HENU', pnft(:, :, :, jl) * prhodj(:, :, :) / ptstep )
+      end do
+    end if
+  end if
 END IF
 !
 !-------------------------------------------------------------------------------
 !
-IF (LCOLD .AND. LNUCL .AND. .NOT.LMEYERS .AND. NMOD_IFN.GE.1) THEN
+IF ( LCOLD .AND. LNUCL .AND. .NOT.LMEYERS .AND. NMOD_IFN >= 1 ) THEN
+  if ( lbu_enable ) then
+    if ( lbudget_sv ) then
+      do jl = 1, nmod_ifn
+        idx = NBUDGET_SV1 - 1 + nsv_lima_ifn_free - 1 + jl
+        call Budget_store_init( tbudgets(idx), 'HIND', pift(:, :, :, jl) * prhodj(:, :, :) / ptstep )
+      end do
+    end if
+  end if
+
    CALL LIMA_PHILLIPS_IFN_NUCLEATION (PTSTEP,                                           &
                                       PRHODREF, PEXNREF, PPABST,                        &
-                                      ZTHT, ZRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT,         &
-                                      ZCCT, ZCIT, ZNAT, ZIFT, ZINT, ZNIT,               &
+                                      PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,         &
+                                      PCCT, PCIT, PNAT, PIFT, PINT, PNIT,               &
                                       Z_TH_HIND, Z_RI_HIND, Z_CI_HIND,                  &
                                       Z_TH_HINC, Z_RC_HINC, Z_CC_HINC                   )
-!
-! Call budgets
-!
-   IF (LBU_ENABLE) THEN
-      IF (LBUDGET_TH) CALL BUDGET ((PTHT(:,:,:)+Z_TH_HIND(:,:,:))*PRHODJ(:,:,:)/PTSTEP,NBUDGET_TH, 'HIND_BU_RTH')
-      IF (LBUDGET_RV) CALL BUDGET ((PRVT(:,:,:)-Z_RI_HIND(:,:,:))*PRHODJ(:,:,:)/PTSTEP,NBUDGET_RV, 'HIND_BU_RRV')
-      IF (LBUDGET_RI) CALL BUDGET ((PRIT(:,:,:)+Z_RI_HIND(:,:,:))*PRHODJ(:,:,:)/PTSTEP,NBUDGET_RI, 'HIND_BU_RRI')
-      IF (LBUDGET_SV) THEN
-                      CALL BUDGET ((PCIT(:,:,:)+Z_CI_HIND(:,:,:))*PRHODJ(:,:,:)/PTSTEP,NBUDGET_SV1-1+NSV_LIMA_NI, 'HIND_BU_RSV')
-         IF (NMOD_IFN.GE.1) THEN
-            DO JL=1, NMOD_IFN
-                      CALL BUDGET ((ZIFT(:,:,:,JL))*PRHODJ(:,:,:)/PTSTEP,     NBUDGET_SV1-1+NSV_LIMA_IFN_FREE+JL-1,'HIND_BU_RSV')
-            END DO
-         END IF
-      END IF
-!
-      IF (LBUDGET_TH) CALL BUDGET (ZTHT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,NBUDGET_TH,'HINC_BU_RTH')
-      IF (LBUDGET_RC) CALL BUDGET (ZRCT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,NBUDGET_RC,'HINC_BU_RRC')
-      IF (LBUDGET_RI) CALL BUDGET (ZRIT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,NBUDGET_RI,'HINC_BU_RRI')
-      IF (LBUDGET_SV) THEN
-         CALL BUDGET (ZCCT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,NBUDGET_SV1-1+NSV_LIMA_NC,'HINC_BU_RSV')
-         CALL BUDGET (ZCIT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,NBUDGET_SV1-1+NSV_LIMA_NI,'HINC_BU_RSV')
-      END IF
-   END IF
-!
-   PTHT(:,:,:) = ZTHT(:,:,:)
-   PRVT(:,:,:) = ZRVT(:,:,:)
-   PRCT(:,:,:) = ZRCT(:,:,:)
-   PCCT(:,:,:) = ZCCT(:,:,:)
-   PRIT(:,:,:) = ZRIT(:,:,:)
-   PCIT(:,:,:) = ZCIT(:,:,:)
-   PNAT(:,:,:,:) = ZNAT(:,:,:,:)
-   PIFT(:,:,:,:) = ZIFT(:,:,:,:)
-   PINT(:,:,:,:) = ZINT(:,:,:,:)
-   PNIT(:,:,:,:) = ZNIT(:,:,:,:)
+
+  if ( lbu_enable ) then
+    if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'HIND',  z_th_hind(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_rv ) call Budget_store_add( tbudgets(NBUDGET_RV), 'HIND', -z_ri_hind(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'HIND',  z_ri_hind(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_sv ) then
+      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HIND', z_ci_hind(:, :, :) * prhodj(:, :, :) / ptstep )
+      do jl = 1, nmod_ifn
+        idx = NBUDGET_SV1 - 1 + nsv_lima_ifn_free - 1 + jl
+        call Budget_store_end( tbudgets(idx), 'HIND', pift(:, :, :, jl) * prhodj(:, :, :) / ptstep )
+      end do
+    end if
+
+    if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'HINC',  z_th_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_rc ) call Budget_store_add( tbudgets(NBUDGET_RC), 'HINC',  z_rc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'HINC', -z_rc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_sv ) then
+      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'HINC',  z_cc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
+      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HINC', -z_cc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
+    end if
+  end if
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -234,64 +215,60 @@ END IF
 IF (LCOLD .AND. LNUCL .AND. LMEYERS) THEN
    CALL LIMA_MEYERS_NUCLEATION (PTSTEP,                                     &
                                 PRHODREF, PEXNREF, PPABST,                  &
-                                ZTHT, ZRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT,   &
-                                ZCCT, ZCIT, ZINT,                           &
+                                PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,   &
+                                PCCT, PCIT, PINT,                           &
                                 Z_TH_HIND, Z_RI_HIND, Z_CI_HIND,            &
                                 Z_TH_HINC, Z_RC_HINC, Z_CC_HINC             )
-!
-! Call budgets
-!
-   IF (LBU_ENABLE) THEN
-      IF (LBUDGET_TH) CALL BUDGET ((PTHT(:,:,:)+Z_TH_HIND(:,:,:))*PRHODJ(:,:,:)/PTSTEP,NBUDGET_TH,               'HIND_BU_RTH')
-      IF (LBUDGET_RV) CALL BUDGET ((PRVT(:,:,:)-Z_RI_HIND(:,:,:))*PRHODJ(:,:,:)/PTSTEP,NBUDGET_RV,               'HIND_BU_RRV')
-      IF (LBUDGET_RI) CALL BUDGET ((PRIT(:,:,:)+Z_RI_HIND(:,:,:))*PRHODJ(:,:,:)/PTSTEP,NBUDGET_RI,               'HIND_BU_RRI')
-      IF (LBUDGET_SV) CALL BUDGET ((PCIT(:,:,:)+Z_CI_HIND(:,:,:))*PRHODJ(:,:,:)/PTSTEP,NBUDGET_SV1-1+NSV_LIMA_NI,'HIND_BU_RSV')
-!
-      IF (LBUDGET_TH) CALL BUDGET (ZTHT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,NBUDGET_TH,'HINC_BU_RTH')
-      IF (LBUDGET_RC) CALL BUDGET (ZRCT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,NBUDGET_RC,'HINC_BU_RRC')
-      IF (LBUDGET_RI) CALL BUDGET (ZRIT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,NBUDGET_RI,'HINC_BU_RRI')
-      IF (LBUDGET_SV) THEN
-         CALL BUDGET (ZCCT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,NBUDGET_SV1-1+NSV_LIMA_NC,'HINC_BU_RSV')
-         CALL BUDGET (ZCIT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,NBUDGET_SV1-1+NSV_LIMA_NI,'HINC_BU_RSV')
-      END IF
-   END IF
-!
-PTHT(:,:,:) = ZTHT(:,:,:)
-PRVT(:,:,:) = ZRVT(:,:,:)
-PRCT(:,:,:) = ZRCT(:,:,:)
-PCCT(:,:,:) = ZCCT(:,:,:)
-PRIT(:,:,:) = ZRIT(:,:,:)
-PCIT(:,:,:) = ZCIT(:,:,:)
-PINT(:,:,:,:) = ZINT(:,:,:,:)
+
+  if ( lbu_enable ) then
+    if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'HIND',  z_th_hind(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_rv ) call Budget_store_add( tbudgets(NBUDGET_RV), 'HIND', -z_ri_hind(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'HIND',  z_ri_hind(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_sv ) &
+      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HIND', z_ci_hind(:, :, :) * prhodj(:, :, :) / ptstep )
+
+    if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'HINC',  z_th_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_rc ) call Budget_store_add( tbudgets(NBUDGET_RC), 'HINC',  z_rc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'HINC', -z_rc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_sv ) then
+      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'HINC',  z_cc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
+      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HINC', -z_cc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
+    end if
+  end if
 END IF
 !
 !-------------------------------------------------------------------------------
 !
-IF (LCOLD .AND. LNUCL .AND. LHHONI .AND. NMOD_CCN.GE.1) THEN
-   CALL LIMA_CCN_HOM_FREEZING (PRHODREF, PEXNREF, PPABST, PW_NU,            &
-                               ZTHT, ZRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT,    &
-                               ZCCT, ZCRT, ZCIT, ZNFT, ZNHT                 )
-!
-! Call budgets
-!
-   IF (LBU_ENABLE) THEN
-     IF (LBUDGET_TH) CALL BUDGET (ZTHT(:,:,:)*PRHODJ(:,:,:)/PTSTEP, NBUDGET_TH,                            'HONH_BU_RTH')
-     IF (LBUDGET_RV) CALL BUDGET (ZRVT(:,:,:)*PRHODJ(:,:,:)/PTSTEP, NBUDGET_RV,                            'HONH_BU_RRV')
-     IF (LBUDGET_RI) CALL BUDGET (ZRIT(:,:,:)*PRHODJ(:,:,:)/PTSTEP, NBUDGET_RI,                            'HONH_BU_RRI')
-     IF (LBUDGET_SV) THEN
-                     CALL BUDGET (ZCIT(:,:,:)*PRHODJ(:,:,:)/PTSTEP,   NBUDGET_SV1-1+NSV_LIMA_NI,           'HONH_BU_RSV')
-          DO JL=1, NMOD_CCN
-                     CALL BUDGET (ZNFT(:,:,:,JL)*PRHODJ(:,:,:)/PTSTEP,NBUDGET_SV1-1+NSV_LIMA_CCN_FREE+JL-1,'HONH_BU_RSV')
-          END DO
-     END IF
-  END IF
-!
-PTHT(:,:,:) = ZTHT(:,:,:)
-PRVT(:,:,:) = ZRVT(:,:,:)
-PRIT(:,:,:) = ZRIT(:,:,:)
-PCIT(:,:,:) = ZCIT(:,:,:)
-PNFT(:,:,:,:) = ZNFT(:,:,:,:)
-PNHT(:,:,:) = ZNHT(:,:,:)
+IF ( LCOLD .AND. LNUCL .AND. LHHONI .AND. NMOD_CCN >= 1) THEN
+  if ( lbu_enable ) then
+    if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'HONH', PTHT(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'HONH', PRVT(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'HONH', PRIT(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_sv ) then
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HONH', PCIT(:, :, :) * prhodj(:, :, :) / ptstep )
+      do jl = 1, nmod_ccn
+        idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_free - 1 + jl
+        call Budget_store_end( tbudgets(idx), 'HONH', PNFT(:, :, :, jl) * prhodj(:, :, :) / ptstep )
+      end do
+    end if
+  end if
+
+  CALL LIMA_CCN_HOM_FREEZING (PRHODREF, PEXNREF, PPABST, PW_NU,            &
+                               PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,    &
+                               PCCT, PCRT, PCIT, PNFT, PNHT                 )
+
+  if ( lbu_enable ) then
+    if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HONH', PTHT(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'HONH', PRVT(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'HONH', PRIT(:, :, :) * prhodj(:, :, :) / ptstep )
+    if ( lbudget_sv ) then
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HONH', PCIT(:, :, :) * prhodj(:, :, :) / ptstep )
+      do jl = 1, nmod_ccn
+        idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_free - 1 + jl
+        call Budget_store_end( tbudgets(idx), 'HONH', PNFT(:, :, :, jl) * prhodj(:, :, :) / ptstep )
+      end do
+    end if
+  end if
 ENDIF
 !
 !-------------------------------------------------------------------------------

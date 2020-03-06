@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -157,37 +157,6 @@ END MODULE MODI_RAIN_ICE_ELEC
 !!                               function over liquid water
 !!          XALPI,XBETAI,XGAMI ! Constants for saturation vapor pressure
 !!                               function over solid ice
-!!      Module MODD_BUDGET:
-!!         NBUMOD       : model in which budget is calculated
-!!         CBUTYPE      : type of desired budget
-!!                          'CART' for cartesian box configuration
-!!                          'MASK' for budget zone defined by a mask 
-!!                          'NONE'  ' for no budget
-!!         NBUPROCCTR   : process counter used for each budget variable
-!!         LBU_RTH      : logical for budget of RTH (potential temperature)
-!!                        .TRUE. = budget of RTH
-!!                        .FALSE. = no budget of RTH
-!!         LBU_RRV      : logical for budget of RRV (water vapor)
-!!                        .TRUE. = budget of RRV
-!!                        .FALSE. = no budget of RRV
-!!         LBU_RRC      : logical for budget of RRC (cloud water)
-!!                        .TRUE. = budget of RRC
-!!                        .FALSE. = no budget of RRC
-!!         LBU_RRI      : logical for budget of RRI (cloud ice)
-!!                        .TRUE. = budget of RRI
-!!                        .FALSE. = no budget of RRI
-!!         LBU_RRR      : logical for budget of RRR (rain water)
-!!                        .TRUE. = budget of RRR
-!!                        .FALSE. = no budget of RRR
-!!         LBU_RRS      : logical for budget of RRS (aggregates)
-!!                        .TRUE. = budget of RRS
-!!                        .FALSE. = no budget of RRS
-!!         LBU_RRG      : logical for budget of RRG (graupeln)
-!!                        .TRUE. = budget of RRG
-!!                        .FALSE. = no budget of RRG
-!!         LBU_RSV      : logical for budget of RSV (scalar variables for charge)
-!!                        .TRUE. = budget of RSV
-!!                        .FALSE. = no budget of RSV
 !!
 !!    REFERENCE
 !!    ---------
@@ -224,16 +193,21 @@ END MODULE MODI_RAIN_ICE_ELEC
 !!         J-P Pinty     25/04/14  Many bugs with ZWQ1(:,...) = 0.0
 !!         J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!         J.Escobar : 10/2017 : for real*4 , limit exp() in RAIN_ICE_ELEC_SLOW with XMNH_HUGE_12_LOG
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
-!
+!  P. Wautelet    03/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_BUDGET
+use modd_budget,          only: lbu_enable,                                                 &
+                                lbudget_th, lbudget_rv, lbudget_rc, lbudget_rr, lbudget_ri, &
+                                lbudget_rs, lbudget_rg, lbudget_rh, lbudget_sv,             &
+                                NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, NBUDGET_RI, &
+                                NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, NBUDGET_SV1,            &
+                                tbudgets
 USE MODD_CONF
 USE MODD_CST
 USE MODD_ELEC_DESCR
@@ -248,12 +222,12 @@ USE MODD_RAIN_ICE_DESCR
 USE MODD_RAIN_ICE_PARAM
 USE MODD_REF,             ONLY: XTHVREFZ
 
+use mode_budget,          only: Budget_store_add, Budget_store_init, Budget_store_end
 #ifdef MNH_PGI
 USE MODE_PACK_PGI
 #endif
 use mode_tools,           only: Countjv
 
-USE MODI_BUDGET
 USE MODI_MOMG
 
 IMPLICIT NONE
@@ -1100,153 +1074,6 @@ IF (IMICRO > 0) THEN
   IF (ALLOCATED( ZEFIELDV ))  DEALLOCATE( ZEFIELDV )
   DEALLOCATE( ZLATHAMIAGGS )
 !
-ELSE
-!
-! Advance the budget calls
-!
-! Reordered for compability with flexible structures like in AROME
-
-! rain_ice_slow
-  IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'HON_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'HON_BU_RRC')
-  IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RI,'HON_BU_RRI')
-  IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'SFR_BU_RTH')
-  IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'SFR_BU_RRR')
-  IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RG,'SFR_BU_RRG')
-  IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'DEPS_BU_RTH')
-  IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RV,'DEPS_BU_RRV')
-  IF (LBUDGET_RS) CALL BUDGET (PRSS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RS,'DEPS_BU_RRS')
-  IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RI,'AGGS_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET (PRSS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RS,'AGGS_BU_RRS')
-  IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RI,'AUTS_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET (PRSS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RS,'AUTS_BU_RRS')
-  IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'DEPG_BU_RTH')
-  IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RV,'DEPG_BU_RRV')
-  IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RG,'DEPG_BU_RRG')
-!
-  IF (OWARM) THEN ! rain_ice_warm
-    IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'AUTO_BU_RRC')
-    IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'AUTO_BU_RRR')
-    IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'ACCR_BU_RRC')
-    IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'ACCR_BU_RRR')
-    IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'REVA_BU_RTH')
-    IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RV,'REVA_BU_RRV')
-    IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'REVA_BU_RRR')
-  ENDIF
-!
-! rain_ice_fast_rs
-  IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'RIM_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'RIM_BU_RRC')
-  IF (LBUDGET_RS) CALL BUDGET (PRSS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RS,'RIM_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RG,'RIM_BU_RRG')
-  IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'ACC_BU_RTH')
-  IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'ACC_BU_RRR')
-  IF (LBUDGET_RS) CALL BUDGET (PRSS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RS,'ACC_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RG,'ACC_BU_RRG')
-  IF (LBUDGET_RS) CALL BUDGET (PRSS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RS,'CMEL_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RG,'CMEL_BU_RRG')
-
-! rain_ice_fast_rg
-  IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'CFRZ_BU_RTH')
-  IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'CFRZ_BU_RRR')
-  IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RI,'CFRZ_BU_RRI')
-  IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RG,'CFRZ_BU_RRG')
-  IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'WETG_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'WETG_BU_RRC')
-  IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'WETG_BU_RRR')
-  IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RI,'WETG_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET (PRSS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RS,'WETG_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RG,'WETG_BU_RRG')
-  IF (LBUDGET_RH) CALL BUDGET (PRHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RH,'WETG_BU_RRH')
-  IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'DRYG_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'DRYG_BU_RRC')
-  IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'DRYG_BU_RRR')
-  IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RI,'DRYG_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET (PRSS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RS,'DRYG_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RG,'DRYG_BU_RRG')
-  IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'GMLT_BU_RTH')
-  IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'GMLT_BU_RRR')
-  IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RG,'GMLT_BU_RRG')
-
-  IF(KRR==7) THEN ! rain_ice_fast_rh
-    IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'WETH_BU_RTH')
-    IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'WETH_BU_RRC')
-    IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'WETH_BU_RRR')
-    IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RI,'WETH_BU_RRI')
-    IF (LBUDGET_RS) CALL BUDGET (PRSS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RS,'WETH_BU_RRS')
-    IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RG,'WETH_BU_RRG')
-    IF (LBUDGET_RH) CALL BUDGET (PRHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RH,'WETH_BU_RRH')
-    IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'HMLT_BU_RTH')
-    IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RR,'HMLT_BU_RRR')
-    IF (LBUDGET_RH) CALL BUDGET (PRHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RH,'HMLT_BU_RRH')
-  ENDIF
-
-! rain_ice_fast_ri
-  IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'IMLT_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'IMLT_BU_RRC')
-  IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RI,'IMLT_BU_RRI')
-  IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'BERFI_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RC,'BERFI_BU_RRC')
-  IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RI,'BERFI_BU_RRI')
-!
-  IF (LBUDGET_SV) THEN
-! rain_ice_slow
-      CALL BUDGET (PQPIS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG,  'DEPS_BU_RSV')
-      CALL BUDGET (PQNIS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECEND,  'DEPS_BU_RSV')
-      CALL BUDGET (PQSS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+4,'DEPS_BU_RSV')
-      CALL BUDGET (PQIS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+3,'AGGS_BU_RSV')
-      CALL BUDGET (PQSS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+4,'AGGS_BU_RSV')
-      CALL BUDGET (PQIS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+3,'AUTS_BU_RSV')
-      CALL BUDGET (PQSS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+4,'AUTS_BU_RSV')
-      CALL BUDGET (PQPIS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG,  'DEPG_BU_RSV')
-      CALL BUDGET (PQNIS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECEND,  'DEPG_BU_RSV')
-      CALL BUDGET (PQGS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+5,'DEPG_BU_RSV')
-!
-! rain_ice_warm
-      IF (OWARM) THEN 
-        CALL BUDGET (PQCS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+1,'AUTO_BU_RSV')
-        CALL BUDGET (PQRS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+2,'AUTO_BU_RSV')
-        CALL BUDGET (PQCS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+1,'ACCR_BU_RSV')
-        CALL BUDGET (PQRS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+2,'ACCR_BU_RSV')
-        CALL BUDGET (PQPIS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG,  'REVA_BU_RSV')
-        CALL BUDGET (PQNIS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECEND,  'REVA_BU_RSV')
-        CALL BUDGET (PQRS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+2,'REVA_BU_RSV')
-      END IF
-!
-! rain_ice_fast_rs
-      CALL BUDGET (PQCS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+1,'RIM_BU_RSV')
-      CALL BUDGET (PQSS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+4,'RIM_BU_RSV')
-      CALL BUDGET (PQGS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECEND,  'RIM_BU_RSV')
-      CALL BUDGET (PQRS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+2,'ACC_BU_RSV')
-      CALL BUDGET (PQSS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+4,'ACC_BU_RSV')
-      CALL BUDGET (PQGS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECEND,  'ACC_BU_RSV')
-      CALL BUDGET (PQSS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+4,'CMEL_BU_RSV')
-      CALL BUDGET (PQGS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECEND,  'CMEL_BU_RSV')
-!
-! rain_ice_fast_rg
-      CALL BUDGET (PQRS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+2,'CFRZ_BU_RSV')
-      CALL BUDGET (PQIS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+3,'CFRZ_BU_RSV')
-      CALL BUDGET (PQGS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECEND,  'CFRZ_BU_RSV')
-      CALL BUDGET (PQCS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+1,'WETG_BU_RSV')
-      CALL BUDGET (PQRS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+2,'WETG_BU_RSV')
-      CALL BUDGET (PQIS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+3,'WETG_BU_RSV')
-      CALL BUDGET (PQSS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+4,'WETG_BU_RSV')
-      CALL BUDGET (PQGS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECEND,  'WETG_BU_RSV')
-      CALL BUDGET (PQCS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+1,'DRYG_BU_RSV')
-      CALL BUDGET (PQRS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+2,'DRYG_BU_RSV')
-      CALL BUDGET (PQIS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+3,'DRYG_BU_RSV')
-      CALL BUDGET (PQSS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+4,'DRYG_BU_RSV')
-      CALL BUDGET (PQGS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECEND,  'DRYG_BU_RSV')
-      CALL BUDGET (PQRS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+2,'GMLT_BU_RSV')
-      CALL BUDGET (PQGS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECEND,  'GMLT_BU_RSV')
-!
-! rain_ice_fast_ri
-      CALL BUDGET (PQCS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+1,'IMLT_BU_RSV')
-      CALL BUDGET (PQIS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+3,'IMLT_BU_RSV')
-      CALL BUDGET (PQCS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+1,'BERFI_BU_RSV')
-      CALL BUDGET (PQIS(:,:,:) * PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+3,'BERFI_BU_RSV')
-!
-  END IF
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -1318,6 +1145,21 @@ REAL :: ZVR, ZVI, ZVS, ZVG, ZETA0, ZK, ZRE0
 !
 !        O. Initialization for sedimentation                  
 !
+  if ( lbudget_rc .and. osedic ) &
+                    call Budget_store_init( tbudgets(NBUDGET_RC), 'SEDI', prcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR), 'SEDI', prrs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'SEDI', pris(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rs ) call Budget_store_init( tbudgets(NBUDGET_RS), 'SEDI', prss(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rg ) call Budget_store_init( tbudgets(NBUDGET_RG), 'SEDI', prgs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rh ) call Budget_store_init( tbudgets(NBUDGET_RH), 'SEDI', prhs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv ) then
+    if ( osedic ) &
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'SEDI', pqcs(:, :, :) * prhodj(:, :, :) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'SEDI', pqrs(:, :, :) * prhodj(:, :, :) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'SEDI', pqis(:, :, :) * prhodj(:, :, :) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'SEDI', pqss(:, :, :) * prhodj(:, :, :) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'SEDI', pqgs(:, :, :) * prhodj(:, :, :) )
+  end if
   IF (OSEDIC) PINPRC (:,:) = 0.
   PINPRR (:,:) = 0.
   PINPRR3D (:,:,:) = 0.
@@ -1973,22 +1815,21 @@ REAL :: ZVR, ZVI, ZVS, ZVG, ZETA0, ZK, ZRE0
 !
 !*       2.3     budget storage
 !
-  IF (LBUDGET_RC .AND. OSEDIC) &
-                  CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,'SEDI_BU_RRC')
-  IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR,'SEDI_BU_RRR')
-  IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RI,'SEDI_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET (PRSS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RS,'SEDI_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RG,'SEDI_BU_RRG')
-  IF ( KRR == 7 .AND. LBUDGET_RH) &
-                  CALL BUDGET (PRHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RH,'SEDI_BU_RRH')
-!
-  IF (LBUDGET_SV) THEN
-    CALL BUDGET (PQCS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+1,'SEDI_BU_RSV')
-    CALL BUDGET (PQRS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+2,'SEDI_BU_RSV')
-    CALL BUDGET (PQIS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+3,'SEDI_BU_RSV')
-    CALL BUDGET (PQSS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+4,'SEDI_BU_RSV')
-    CALL BUDGET (PQGS(:,:,:)*PRHODJ(:,:,:),NBUDGET_SV1-1+NSV_ELECBEG+5,'SEDI_BU_RSV')
-  END IF
+  if ( lbudget_rc .and. osedic ) &
+                    call Budget_store_end( tbudgets(NBUDGET_RC), 'SEDI', prcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR), 'SEDI', prrs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'SEDI', pris(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rs ) call Budget_store_end( tbudgets(NBUDGET_RS), 'SEDI', prss(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rg ) call Budget_store_end( tbudgets(NBUDGET_RG), 'SEDI', prgs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rh ) call Budget_store_end( tbudgets(NBUDGET_RH), 'SEDI', prhs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv ) then
+    if ( osedic ) &
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'SEDI', pqcs(:, :, :) * prhodj(:, :, :) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'SEDI', pqrs(:, :, :) * prhodj(:, :, :) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'SEDI', pqis(:, :, :) * prhodj(:, :, :) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'SEDI', pqss(:, :, :) * prhodj(:, :, :) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'SEDI', pqgs(:, :, :) * prhodj(:, :, :) )
+  end if
 !
   END SUBROUTINE RAIN_ICE_ELEC_SEDIMENTATION_SPLIT
 !
@@ -2011,6 +1852,13 @@ INTEGER :: JI,JJ,JK
 REAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3)) :: ZCONC3D !  droplet condensation
 !
 !------------------------------------------------------------------------------- 
+  if ( lbudget_rc .and. osedic ) &
+                    call Budget_store_init( tbudgets(NBUDGET_RC), 'SEDI', prcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR), 'SEDI', prrs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'SEDI', pris(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rs ) call Budget_store_init( tbudgets(NBUDGET_RS), 'SEDI', prss(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rg ) call Budget_store_init( tbudgets(NBUDGET_RG), 'SEDI', prgs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rh ) call Budget_store_init( tbudgets(NBUDGET_RH), 'SEDI', prhs(:, :, :) * prhodj(:, :, :) )
 !
 !*       1. Parameters for cloud sedimentation
 !
@@ -2368,15 +2216,13 @@ REAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3)) :: ZCONC3D !
 !
 !*       2.3     budget storage
 !
-  IF (LBUDGET_RC .AND. OSEDIC) &
-                  CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RC,'SEDI_BU_RRC')
-  IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RR,'SEDI_BU_RRR')
-  IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:), NBUDGET_RI,'SEDI_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET (PRSS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RS,'SEDI_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RG,'SEDI_BU_RRG')
-  IF (KRR == 7 .AND. LBUDGET_RH) &     
-                  CALL BUDGET (PRHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RH,'SEDI_BU_RRH')
-
+  if ( lbudget_rc .and. osedic ) &
+                    call Budget_store_end( tbudgets(NBUDGET_RC), 'SEDI', prcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR), 'SEDI', prrs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'SEDI', pris(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rs ) call Budget_store_end( tbudgets(NBUDGET_RS), 'SEDI', prss(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rg ) call Budget_store_end( tbudgets(NBUDGET_RG), 'SEDI', prgs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rh ) call Budget_store_end( tbudgets(NBUDGET_RH), 'SEDI', prhs(:, :, :) * prhodj(:, :, :) )
 !
   END SUBROUTINE RAIN_ICE_SEDIMENTATION_STAT
 !
@@ -2397,7 +2243,6 @@ INTEGER                           :: JL       ! and PACK intrinsics
 !
 !-------------------------------------------------------------------------------
 !
-!
 !  compute the temperature and the pressure
 !
 ZT(:,:,:) = PTHT(:,:,:) * (PPABST(:,:,:) / XP00) ** (XRD / XCPD)
@@ -2410,7 +2255,11 @@ GNEGT(IIB:IIE,IJB:IJE,IKB:IKE) = ZT(IIB:IIE,IJB:IJE,IKB:IKE) < XTT
 INEGT = COUNTJV( GNEGT(:,:,:),I1(:),I2(:),I3(:))
 !
 IF( INEGT >= 1 ) THEN
-  ALLOCATE(ZRVT(INEGT)) 
+  if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'HENU', pths(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_TH), 'HENU', prvs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_TH), 'HENU', pris(:, :, :) * prhodj(:, :, :) )
+
+  ALLOCATE(ZRVT(INEGT))
   ALLOCATE(ZCIT(INEGT)) 
   ALLOCATE(ZZT(INEGT))  
   ALLOCATE(ZPRES(INEGT))
@@ -2481,14 +2330,13 @@ IF( INEGT >= 1 ) THEN
   DEALLOCATE(ZZT)
   DEALLOCATE(ZCIT)
   DEALLOCATE(ZRVT)
+
+  if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HENU', pths(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HENU', prvs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HENU', pris(:, :, :) * prhodj(:, :, :) )
+
 END IF
-!
-!*       3.1.3   budget storage
-!
-IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),NBUDGET_TH,'HENU_BU_RTH')
-IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RV,'HENU_BU_RRV')
-IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),NBUDGET_RI,'HENU_BU_RRI')
-!
+
   END SUBROUTINE RAIN_ICE_ELEC_NUCLEATION
 !
 !-------------------------------------------------------------------------------
@@ -2506,6 +2354,13 @@ IMPLICIT NONE
 !
 !*       3.5.1   compute the homogeneous nucleation source: RCHONI & QCHONI
 !
+  if ( lbudget_sv ) then
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'HON', &
+                            Unpack( zqcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'HON', &
+                            Unpack( zqis(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  end if
+
   ZZW(:) = 0.0
   ZWQ1(:,1:7) = 0.0
 !
@@ -2529,23 +2384,19 @@ IMPLICIT NONE
     ZQIS(:) = ZQIS(:) + ZWQ1(:,1)
     ZQCS(:) = ZQCS(:) - ZWQ1(:,1) 
   END WHERE
-!
-  IF (LBUDGET_TH) CALL BUDGET (                                                &
-                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),  &
-                                                        NBUDGET_TH,'HON_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (                                                &
-                     UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                        NBUDGET_RC,'HON_BU_RRC')
-  IF (LBUDGET_RI) CALL BUDGET (                                                &
-                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                        NBUDGET_RI,'HON_BU_RRI')
-!
-  IF (LBUDGET_SV) THEN
-    CALL BUDGET (UNPACK(ZQCS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0),&
-                                              NBUDGET_SV1-1+NSV_ELECBEG+1,'HON_BU_RSV')
-    CALL BUDGET (UNPACK(ZQIS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                              NBUDGET_SV1-1+NSV_ELECBEG+3,'HON_BU_RSV')
-  END IF
+
+  if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'HON', Unpack(  zzw(:) * ( zlsfact(:) - zlvfact(:) ) &
+                                                           * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rc ) call Budget_store_add( tbudgets(NBUDGET_RC), 'HON', &
+                                           Unpack( -zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'HON', &
+                                           Unpack(  zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_sv ) then
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'HON', &
+                           Unpack( zqcs(:) * zrhodj(:), mask = gmicro(:, :, :), field =  0. ) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'HON', &
+                           Unpack( zqis(:) * zrhodj(:), mask = gmicro(:, :, :), field =  0. ) )
+  end if
 !
 !*       3.5.2   compute the spontaneous freezing source: RRHONG & QRHONG
 !
@@ -2565,24 +2416,19 @@ IMPLICIT NONE
     ZQGS(:) = ZQGS(:) + ZWQ1(:,2)
     ZQRS(:) = ZQRS(:) - ZWQ1(:,2)
   ENDWHERE
-!
-  IF (LBUDGET_TH) CALL BUDGET (                                                &
-                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),  &
-                                                        NBUDGET_TH,'SFR_BU_RTH')
-  IF (LBUDGET_RR) CALL BUDGET (                                                &
-                     UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                        NBUDGET_RR,'SFR_BU_RRR')
-  IF (LBUDGET_RG) CALL BUDGET (                                                &
-                     UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                        NBUDGET_RG,'SFR_BU_RRG')
-!
-  IF (LBUDGET_SV) THEN
-    CALL BUDGET (UNPACK(ZQRS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0),&
-                                              NBUDGET_SV1-1+NSV_ELECBEG+2,'HON_BU_RSV')
-    CALL BUDGET (UNPACK(ZQGS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                              NBUDGET_SV1-1+NSV_ELECEND,  'HON_BU_RSV')
-  END IF
 
+  if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'SFR', Unpack(  zzw(:) * ( zlsfact(:) - zlvfact(:) ) &
+                                                           * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rr ) call Budget_store_add( tbudgets(NBUDGET_RR), 'SFR', &
+                                           Unpack( -zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rg ) call Budget_store_add( tbudgets(NBUDGET_RG), 'SFR', &
+                                           Unpack(  zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_sv ) then
+    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'SFR', &
+                           Unpack( -zwq1(:, 2) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'SFR', &
+                           Unpack(  zwq1(:, 2) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  end if
 !
 !*       3.5.3  compute the deposition, aggregation and autoconversion sources
 !
@@ -2599,6 +2445,15 @@ IMPLICIT NONE
 !
 !*      3.5.3.2  compute the riming-conversion of r_c for r_i production: RCAUTI
 !
+  if ( lbudget_sv ) then
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg ), 'DEPS', &
+                            Unpack( zqpis(:) * zrhodj(:), mask = gmicro(:, :, :), field =  0. ) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend ), 'DEPS', &
+                            Unpack( zqnis(:) * zrhodj(:), mask = gmicro(:, :, :), field =  0. ) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'DEPS', &
+                            Unpack( zqss(:) * zrhodj(:),  mask = gmicro(:, :, :), field =  0. ) )
+  end if
+
   ZZW(:) = 0.0
 !
   WHERE ((ZRST(:) > XRTMIN(5)) .AND. (ZRSS(:) > 0.0))
@@ -2620,28 +2475,31 @@ IMPLICIT NONE
     ZQPIS(:) = ZQPIS(:) + MAX( 0.0,ZWQ1(:,5)/XECHARGE )
     ZQNIS(:) = ZQNIS(:) - MIN( 0.0,ZWQ1(:,5)/XECHARGE )
   ENDWHERE
-!
-  IF (LBUDGET_TH) CALL BUDGET (                                                &
-                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),  &
-                                                      NBUDGET_TH,'DEPS_BU_RTH')
-  IF (LBUDGET_RV) CALL BUDGET (                                                &
-                 UNPACK(ZRVS(:),MASK=GMICRO(:,:,:),FIELD=PRVS)*PRHODJ(:,:,:),  &
-                                                      NBUDGET_RV,'DEPS_BU_RRV')
-  IF (LBUDGET_RS) CALL BUDGET (                                                &
-                     UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                      NBUDGET_RS,'DEPS_BU_RRS')
-!
-  IF (LBUDGET_SV) THEN
-    CALL BUDGET (UNPACK(ZQPIS(:), MASK=GMICRO(:,:,:), FIELD=PQPIS)          &
-                        *PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_ELECBEG ,'DEPS_BU_RSV')
-    CALL BUDGET (UNPACK(ZQNIS(:), MASK=GMICRO(:,:,:), FIELD=PQNIS)          &
-                        *PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_ELECEND ,'DEPS_BU_RSV')
-    CALL BUDGET (UNPACK(ZQSS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                              NBUDGET_SV1-1+NSV_ELECBEG+4,'DEPS_BU_RSV')
-  END IF
+
+  if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'DEPS', Unpack(  zzw(:) * zlsfact(:) &
+                                                           * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rv ) call Budget_store_add( tbudgets(NBUDGET_RV), 'DEPS', &
+                                           Unpack( -zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rs ) call Budget_store_add( tbudgets(NBUDGET_RS), 'DEPS', &
+                                           Unpack(  zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_sv ) then
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg ), 'DEPS', &
+                           Unpack( zqpis(:) * zrhodj(:), mask = gmicro(:, :, :), field =  0. ) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend ), 'DEPS', &
+                           Unpack( zqnis(:) * zrhodj(:), mask = gmicro(:, :, :), field =  0. ) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'DEPS', &
+                           Unpack( zqss(:) * zrhodj(:),  mask = gmicro(:, :, :), field =  0. ) )
+  end if
 !
 !*       3.5.3.4  compute the aggregation on r_s: RIAGGS & QIAGGS
 !
+  if ( lbudget_sv ) then
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'AGGS', &
+                            Unpack( zqis(:) * zrhodj(:), mask = gmicro(:, :, :), field =  0. ) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'AGGS', &
+                            Unpack( zqss(:) * zrhodj(:), mask = gmicro(:, :, :), field =  0. ) )
+  end if
+
   ZZW(:) = 0.0
   ZLATHAMIAGGS(:) = 1.0
   IF (LIAGGS_LATHAM) THEN
@@ -2666,37 +2524,48 @@ IMPLICIT NONE
     ZQSS(:) = ZQSS(:) + ZWQ1(:,3)
     ZQIS(:) = ZQIS(:) - ZWQ1(:,3)
   END WHERE
-!
-  IF (LBUDGET_RI) CALL BUDGET (                                                &
-                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                        NBUDGET_RI,'AGGS_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET (                                                &
-                     UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                        NBUDGET_RS,'AGGS_BU_RRS')
-!
-  IF (LBUDGET_SV) THEN
-    CALL BUDGET (UNPACK(ZQIS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                          NBUDGET_SV1-1+NSV_ELECBEG+3,'AGGS_BU_RSV')
-    CALL BUDGET (UNPACK(ZQSS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                          NBUDGET_SV1-1+NSV_ELECBEG+4,'AGGS_BU_RSV')
-  END IF
-!
+
+  if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'AGGS', &
+                                           Unpack( -zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rs ) call Budget_store_add( tbudgets(NBUDGET_RS), 'AGGS', &
+                                           Unpack(  zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_sv ) then
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'AGGS', &
+                           Unpack( zqis(:) * zrhodj(:), mask = gmicro(:, :, :), field =  0. ) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'AGGS', &
+                           Unpack( zqss(:) * zrhodj(:), mask = gmicro(:, :, :), field =  0. ) )
+  end if
+
+  if ( lbudget_sv ) then
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'NIIS', &
+                            Unpack( zqis(:) * zrhodj(:), mask = gmicro(:, :, :), field =  0. ) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'NIIS', &
+                            Unpack( zqss(:) * zrhodj(:), mask = gmicro(:, :, :), field =  0. ) )
+  end if
+
   CALL ELEC_IAGGS_B()                                   ! QIAGGS_boun
-!
+
+  if ( lbudget_sv ) then
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'NIIS', &
+                           Unpack( zqis(:), mask = gmicro(:, :, :), field =  0. ) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'NIIS', &
+                           Unpack( zqss(:), mask = gmicro(:, :, :), field =  0. ) )
+  end if
+
 ! Save the NI charging rate for temporal series
   XNI_IAGGS(:,:,:) = UNPACK(ZWQ1(:,7), MASK=GMICRO, FIELD=0.0)
   XNI_IAGGS(:,:,:) = XNI_IAGGS(:,:,:) * PRHODREF(:,:,:)  ! C/m3/s
 !
-  IF (LBUDGET_SV) THEN
-    CALL BUDGET (UNPACK(ZQIS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                          NBUDGET_SV1-1+NSV_ELECBEG+3,'NIIS_BU_RSV')
-    CALL BUDGET (UNPACK(ZQSS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                          NBUDGET_SV1-1+NSV_ELECBEG+4,'NIIS_BU_RSV')
-  END IF
-!
 !*       3.5.3.5  compute the autoconversion of r_i for r_s production: 
 !                 RIAUTS & QIAUTS
 !
+  if ( lbudget_sv ) then
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'AUTS', &
+                            Unpack( zqis(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'AUTS', &
+                            Unpack( zqss(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  end if
+
   ALLOCATE( ZCRIAUTI(IMICRO ))
   ZCRIAUTI(:) = MIN(XCRIAUTI,10**(0.06*(ZZT(:)-XTT)-3.5))
   ZZW(:) = 0.0
@@ -2717,22 +2586,29 @@ IMPLICIT NONE
   END WHERE
 !
   DEALLOCATE(ZCRIAUTI)
-  IF (LBUDGET_RI) CALL BUDGET (                                                &
-                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                      NBUDGET_RI,'AUTS_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET (                                                &
-                     UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                      NBUDGET_RS,'AUTS_BU_RRS')
-!
-  IF (LBU_RSV) THEN
-    CALL BUDGET (UNPACK(ZQIS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                         NBUDGET_SV1-1+NSV_ELECBEG+3,'AUTS_BU_RSV')
-    CALL BUDGET (UNPACK(ZQSS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                         NBUDGET_SV1-1+NSV_ELECBEG+4,'AUTS_BU_RSV')
-  END IF
+
+  if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'AUTS', &
+                                           Unpack( -zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rs ) call Budget_store_add( tbudgets(NBUDGET_RS), 'AUTS', &
+                                           Unpack(  zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_sv ) then
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'AUTS', &
+                           Unpack( zqis(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'AUTS', &
+                           Unpack( zqss(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  end if
 !
 !*       3.5.3.6  compute the deposition on r_g: RVDEPG & QVDEPG
 !
+  if ( lbudget_sv ) then
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg ), 'DEPG', &
+                            Unpack( zqpis(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend ), 'DEPG', &
+                            Unpack( zqnis(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'DEPG', &
+                            Unpack( zqgs(:) * zrhodj(:),  mask = gmicro(:, :, :), field = 0. ) )
+  end if
+
   ZZW(:) = 0.0
 !
   WHERE ((ZRGT(:) > XRTMIN(6)) .AND. (ZRGS(:) > 0.0))
@@ -2754,26 +2630,22 @@ IMPLICIT NONE
     ZQPIS(:) = ZQPIS(:) + MAX( 0.0,ZWQ1(:,6)/XECHARGE )
     ZQNIS(:) = ZQNIS(:) - MIN( 0.0,ZWQ1(:,6)/XECHARGE )
   END WHERE
-!
-  IF (LBUDGET_TH) CALL BUDGET (                                                &
-                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),  &
-                                                      NBUDGET_TH,'DEPG_BU_RTH')
-  IF (LBUDGET_RV) CALL BUDGET (                                                &
-                 UNPACK(ZRVS(:),MASK=GMICRO(:,:,:),FIELD=PRVS)*PRHODJ(:,:,:),  &
-                                                      NBUDGET_RV,'DEPG_BU_RRV')
-  IF (LBUDGET_RG) CALL BUDGET (                                                &
-                     UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                      NBUDGET_RG,'DEPG_BU_RRG')
-!
-  IF (LBU_RSV) THEN
-    CALL BUDGET (UNPACK(ZQPIS(:), MASK=GMICRO(:,:,:), FIELD=PQPIS)          &
-                        *PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_ELECBEG ,'DEPG_BU_RSV')
-    CALL BUDGET (UNPACK(ZQNIS(:), MASK=GMICRO(:,:,:), FIELD=PQNIS)          &
-                        *PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_ELECEND ,'DEPG_BU_RSV')
-    CALL BUDGET (UNPACK(ZQGS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                                 NBUDGET_SV1-1+NSV_ELECEND,'DEPG_BU_RSV')
-  END IF
-!
+
+  if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'DEPG', Unpack(  zzw(:) * zlsfact(:) &
+                                                           * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rv ) call Budget_store_add( tbudgets(NBUDGET_RV), 'DEPG', &
+                                           Unpack( -zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rg ) call Budget_store_add( tbudgets(NBUDGET_RG), 'DEPG', &
+                                           Unpack(  zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_sv ) then
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg ), 'DEPG', &
+                           Unpack( zqpis(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend ), 'DEPG', &
+                           Unpack( zqnis(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'DEPG', &
+                           Unpack( zqgs(:) * zrhodj(:),  mask = gmicro(:, :, :), field = 0. ) )
+  end if
+
   END SUBROUTINE RAIN_ICE_ELEC_SLOW
 !
 !-------------------------------------------------------------------------------
@@ -2793,6 +2665,13 @@ REAL :: ZCRIAUTC             ! Critical cloud mixing ratio
 !*       4.1    compute the autoconversion of r_c for r_r production: 
 !               RCAUTR & QCAUTR
 !
+    if ( lbudget_sv ) then
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'AUTO', &
+                              Unpack( zqcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'AUTO', &
+                              Unpack( zqrs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    end if
+
     ZZW(:) = 0.0
     ZWQ1(:,1:3) = 0.0
 !
@@ -2837,24 +2716,27 @@ REAL :: ZCRIAUTC             ! Critical cloud mixing ratio
       ZQCS(:) = ZQCS(:) - ZWQ1(:,1)
       ZQRS(:) = ZQRS(:) + ZWQ1(:,1)
     END WHERE
-!
-      IF (LBUDGET_RC) CALL BUDGET (                                            &
-                       UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                      NBUDGET_RC,'AUTO_BU_RRC')
-      IF (LBUDGET_RR) CALL BUDGET (                                            &
-                       UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                      NBUDGET_RR,'AUTO_BU_RRR')
-!
-      IF (LBUDGET_SV) THEN
-        CALL BUDGET (UNPACK(ZQCS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                              NBUDGET_SV1-1+NSV_ELECBEG+1,'AUTO_BU_RSV')
-        CALL BUDGET (UNPACK(ZQRS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                              NBUDGET_SV1-1+NSV_ELECBEG+2,'AUTO_BU_RSV')
-      END IF
-!
+
+    if ( lbudget_rc ) call Budget_store_add( tbudgets(NBUDGET_RC), 'AUTO', &
+                                             Unpack( -zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rr ) call Budget_store_add( tbudgets(NBUDGET_RR), 'AUTO', &
+                                             Unpack(  zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_sv ) then
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'AUTO', &
+                             Unpack( zqcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'AUTO', &
+                             Unpack( zqrs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    end if
 !
 !*       4.2    compute the accretion of r_c for r_r production: RCACCR & QCACCR
 !
+    if ( lbudget_sv ) then
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'ACCR', &
+                              Unpack( zqcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'ACCR', &
+                              Unpack( zqrs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    end if
+
     ZZW(:) = 0.0
     WHERE ((ZRCT(:) > XRTMIN(2)) .AND. (ZRRT(:) > XRTMIN(3)) .AND. (ZRCS(:) > 0.0))
       ZZW(:) = MIN( ZRCS(:),XFCACCR * ZRCT(:)             &
@@ -2871,24 +2753,30 @@ REAL :: ZCRIAUTC             ! Critical cloud mixing ratio
       ZQCS(:) = ZQCS(:) - ZWQ1(:,2)
       ZQRS(:) = ZQRS(:) + ZWQ1(:,2)
     ENDWHERE
-!
-    IF (LBUDGET_RC) CALL BUDGET (                                            &
-                     UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                    NBUDGET_RC,'ACCR_BU_RRC')
-    IF (LBUDGET_RR) CALL BUDGET (                                            &
-                     UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                    NBUDGET_RR,'ACCR_BU_RRR')
-!
-    IF (LBU_RSV) THEN
-      CALL BUDGET (UNPACK(ZQCS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                            NBUDGET_SV1-1+NSV_ELECBEG+1,'ACCR_BU_RSV')
-      CALL BUDGET (UNPACK(ZQRS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                            NBUDGET_SV1-1+NSV_ELECBEG+2,'ACCR_BU_RSV')
-    END IF
+
+    if ( lbudget_rc ) call Budget_store_add( tbudgets(NBUDGET_RC), 'ACCR', &
+                                             Unpack( -zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rr ) call Budget_store_add( tbudgets(NBUDGET_RR), 'ACCR', &
+                                             Unpack(  zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_sv ) then
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'ACCR', &
+                             Unpack( zqcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'ACCR', &
+                             Unpack( zqrs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    end if
 !
 !
 !*       4.3    compute the evaporation of r_r: RREVAV & QREVAV
 !
+    if ( lbudget_sv ) then
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg ), 'REVA', &
+                              Unpack( zqpis(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend ), 'REVA', &
+                              Unpack( zqnis(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'REVA', &
+                              Unpack( zqrs(:) * zrhodj(:),  mask = gmicro(:, :, :), field = 0. ) )
+    end if
+
     ZZW(:) = 0.0
     WHERE ((ZRRT(:) > XRTMIN(3)) .AND. (ZRCT(:) <= XRTMIN(2)))
       ZZW(:)  = EXP( XALPW - XBETAW/ZZT(:) - XGAMW*ALOG(ZZT(:) ) ) ! es_w
@@ -2914,27 +2802,23 @@ REAL :: ZCRIAUTC             ! Critical cloud mixing ratio
       ZQNIS(:) = ZQNIS(:) - MIN( 0.0,ZWQ1(:,3)/XECHARGE )
     ENDWHERE
 !
-    IF (LBUDGET_TH) CALL BUDGET (                                              &
-                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),  &
-                                                      NBUDGET_TH,'REVA_BU_RTH')
-    IF (LBUDGET_RV) CALL BUDGET (                                              &
-                 UNPACK(ZRVS(:),MASK=GMICRO(:,:,:),FIELD=PRVS)*PRHODJ(:,:,:),  &
-                                                      NBUDGET_RV,'REVA_BU_RRV')
-    IF (LBUDGET_RR) CALL BUDGET (                                              &
-                     UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                      NBUDGET_RR,'REVA_BU_RRR')
-    ZW(:,:,:)=PEVAP3D(:,:,:)
-    PEVAP3D(:,:,:)=UNPACK(ZZW(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:))
-!
-    IF (LBUDGET_SV) THEN
-      CALL BUDGET (UNPACK(ZQPIS(:), MASK=GMICRO(:,:,:), FIELD=PQPIS)          &
-                          *PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_ELECBEG ,'REVA_BU_RSV')
-      CALL BUDGET (UNPACK(ZQNIS(:), MASK=GMICRO(:,:,:), FIELD=PQNIS)          &
-                          *PRHODJ(:,:,:), NBUDGET_SV1-1+NSV_ELECEND ,'REVA_BU_RSV')
-      CALL BUDGET (UNPACK(ZQRS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                          NBUDGET_SV1-1+NSV_ELECBEG+2,'REVA_BU_RSV')
-    END IF
-!
+    PEVAP3D(:,:,:)=UNPACK(ZZW(:),MASK=GMICRO(:,:,:),FIELD=PEVAP3D(:,:,:))
+
+    if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'REVA', &
+                                Unpack( -zzw(:) * zlvfact(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rv ) call Budget_store_add( tbudgets(NBUDGET_RV), 'REVA', &
+                                             Unpack(  zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rr ) call Budget_store_add( tbudgets(NBUDGET_RR), 'REVA', &
+                                             Unpack( -zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_sv ) then
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg ), 'REVA', &
+                             Unpack( zqpis(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend ), 'REVA', &
+                             Unpack( zqnis(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'REVA', &
+                             Unpack( zqrs(:) * zrhodj(:),  mask = gmicro(:, :, :), field = 0. ) )
+    end if
+
   END SUBROUTINE RAIN_ICE_ELEC_WARM
 !
 !-------------------------------------------------------------------------------
@@ -2950,7 +2834,6 @@ IMPLICIT NONE
 !
 !*       5.1    cloud droplet riming of the aggregates
 !
-  ZZW1(:,:) = 0.0
   ZZW1(:,:)   = 0.0
   ZWQ1(:,1:7) = 0.0
 !
@@ -2960,6 +2843,14 @@ IMPLICIT NONE
   IGRIM = COUNT( GRIM(:) )
 !
   IF (IGRIM > 0) THEN
+    if ( lbudget_sv ) then
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'RIM', &
+                              Unpack( zqcs(:) * zrhodj(:),  mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'RIM', &
+                              Unpack( zqss(:) * zrhodj(:),  mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'RIM', &
+                              Unpack( zqgs(:) * zrhodj(:),  mask = gmicro(:, :, :), field = 0. ) )
+    end if
 !
 !        5.1.0  allocations
 !
@@ -3065,29 +2956,23 @@ IMPLICIT NONE
     DEALLOCATE(IVEC1)
     DEALLOCATE(ZVEC2)
     DEALLOCATE(ZVEC1)
-  END IF
-!
-  IF (LBUDGET_TH) CALL BUDGET (                                               &
-               UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),   &
-                                                      NBUDGET_TH,'RIM_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (                                               &
-                   UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
-                                                      NBUDGET_RC,'RIM_BU_RRC')
-  IF (LBUDGET_RS) CALL BUDGET (                                               &
-                   UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
-                                                      NBUDGET_RS,'RIM_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (                                               &
-                   UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
-                                                      NBUDGET_RG,'RIM_BU_RRG')
-!
-!
-  IF (LBUDGET_SV) THEN
-    CALL BUDGET (UNPACK(ZQCS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                           NBUDGET_SV1-1+NSV_ELECBEG+1,'RIM_BU_RSV')
-    CALL BUDGET (UNPACK(ZQSS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                           NBUDGET_SV1-1+NSV_ELECBEG+4,'RIM_BU_RSV')
-    CALL BUDGET (UNPACK(ZQGS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                             NBUDGET_SV1-1+NSV_ELECEND,'RIM_BU_RSV')
+
+    if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'RIM', Unpack( ( zzw1(:,1) + zzw1(:,2) ) &
+                                                  * ( zlsfact(:) - zlvfact(:) ) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rc ) call Budget_store_add( tbudgets(NBUDGET_RC), 'RIM', &
+                                             Unpack( ( -zzw1(:,1) - zzw1(:,2) ) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rs ) call Budget_store_add( tbudgets(NBUDGET_RS), 'RIM', &
+                                             Unpack( (  zzw1(:,1) - zzw1(:,3) ) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rg ) call Budget_store_add( tbudgets(NBUDGET_RG), 'RIM', &
+                                             Unpack( (  zzw1(:,2) + zzw1(:,3) ) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_sv ) then
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'RIM', &
+                             Unpack( zqcs(:) * zrhodj(:),  mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'RIM', &
+                             Unpack( zqss(:) * zrhodj(:),  mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'RIM', &
+                             Unpack( zqgs(:) * zrhodj(:),  mask = gmicro(:, :, :), field = 0. ) )
+    end if
   END IF
 !
   DEALLOCATE(GRIM)
@@ -3104,6 +2989,22 @@ IMPLICIT NONE
   IGACC = COUNT( GACC(:) )
 !
   IF( IGACC>0 ) THEN
+    if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'ACC', &
+                                              Unpack( zths(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR), 'ACC', &
+                                              Unpack( zrrs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rs ) call Budget_store_init( tbudgets(NBUDGET_RS), 'ACC', &
+                                              Unpack( zrss(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rg ) call Budget_store_init( tbudgets(NBUDGET_RG), 'ACC', &
+                                              Unpack( zrgs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_sv ) then
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'ACC', &
+                              Unpack( zqcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'ACC', &
+                              Unpack( zqss(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'ACC', &
+                              Unpack( zqgs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    end if
 !
 !        5.2.0  allocations
 !
@@ -3243,32 +3144,36 @@ IMPLICIT NONE
     DEALLOCATE( ZVECQ4 )
     DEALLOCATE( ZVECQ5 )
     DEALLOCATE( ZVECQ6 )
+
+    if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'ACC', &
+                                             Unpack( zths(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR), 'ACC', &
+                                             Unpack( zrrs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rs ) call Budget_store_end( tbudgets(NBUDGET_RS), 'ACC', &
+                                             Unpack( zrss(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rg ) call Budget_store_end( tbudgets(NBUDGET_RG), 'ACC', &
+                                             Unpack( zrgs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_sv ) then
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'ACC', &
+                             Unpack( zqcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'ACC', &
+                             Unpack( zqss(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'ACC', &
+                             Unpack( zqgs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    end if
   END IF
+
   DEALLOCATE(GACC)
-  IF (LBUDGET_TH) CALL BUDGET (                                               &
-               UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),   &
-                                                      NBUDGET_TH,'ACC_BU_RTH')
-  IF (LBUDGET_RR) CALL BUDGET (                                               &
-                   UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
-                                                      NBUDGET_RR,'ACC_BU_RRR')
-  IF (LBUDGET_RS) CALL BUDGET (                                               &
-                   UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
-                                                      NBUDGET_RS,'ACC_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (                                               &
-                   UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
-                                                      NBUDGET_RG,'ACC_BU_RRG')
-!
-  IF (LBUDGET_SV) THEN
-    CALL BUDGET (UNPACK(ZQRS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                            NBUDGET_SV1-1+NSV_ELECBEG+2,'ACC_BU_RSV')
-    CALL BUDGET (UNPACK(ZQSS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                            NBUDGET_SV1-1+NSV_ELECBEG+4,'ACC_BU_RSV')
-    CALL BUDGET (UNPACK(ZQGS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                              NBUDGET_SV1-1+NSV_ELECEND,'ACC_BU_RSV')
-  END IF
 !
 !*       5.3    Conversion-Melting of the aggregates: RSMLT & QSMLT
 !
+  if ( lbudget_sv ) then
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'CMEL', &
+                            Unpack( zqss(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'CMEL', &
+                            Unpack( zqgs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  end if
+
   ZZW(:) = 0.0
   WHERE ((ZRST(:) > XRTMIN(5)) .AND. (ZRSS(:) > 0.0) .AND. (ZZT(:) > XTT))
     ZZW(:) = ZRVT(:) * ZPRES(:) / ((XMV / XMD) + ZRVT(:)) ! Vapor pressure
@@ -3300,21 +3205,18 @@ IMPLICIT NONE
     ZQGS(:) = ZQGS(:) + ZWQ1(:,7)
     ZQSS(:) = ZQSS(:) - ZWQ1(:,7)
   ENDWHERE
-!
-  IF (LBUDGET_RS) CALL BUDGET (                                                &
-                     UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                      NBUDGET_RS,'CMEL_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (                                                &
-                     UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                      NBUDGET_RG,'CMEL_BU_RRG')
-!
-  IF (LBUDGET_SV) THEN
-    CALL BUDGET (UNPACK(ZQSS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                          NBUDGET_SV1-1+NSV_ELECBEG+4,'CMEL_BU_RSV')
-    CALL BUDGET (UNPACK(ZQGS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                            NBUDGET_SV1-1+NSV_ELECEND,'CMEL_BU_RSV')
-  END IF
-!
+
+  if ( lbudget_rs ) call Budget_store_add( tbudgets(NBUDGET_RS), 'CMEL', &
+                                           Unpack( -zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rg ) call Budget_store_end( tbudgets(NBUDGET_RG), 'CMEL', &
+                                           Unpack(  zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_sv ) then
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'CMEL', &
+                           Unpack( zqss(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'CMEL', &
+                           Unpack( zqgs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  end if
+
   END SUBROUTINE RAIN_ICE_ELEC_FAST_RS
 !
 !-------------------------------------------------------------------------------
@@ -3331,6 +3233,15 @@ IMPLICIT NONE
 !
 !*       6.1    rain contact freezing: RICFRRG & QICFRRG and RRCFRIG & QRCFRIG
 !
+  if ( lbudget_sv ) then
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'CFRZ', &
+                            Unpack( zqrs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'CFRZ', &
+                            Unpack( zqis(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'CFRZ', &
+                            Unpack( zqgs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  end if
+
   ZZW1(:,3:4) = 0.0
   ZWQ1(:,3:4) = 0.0
   WHERE ((ZRIT(:) > XRTMIN(4)) .AND. (ZRRT(:) > XRTMIN(3)) .AND.  &
@@ -3365,32 +3276,56 @@ IMPLICIT NONE
     ZQGS(:) = ZQGS(:) + ZWQ1(:,3)
     ZQIS(:) = ZQIS(:) - ZWQ1(:,3)
   ENDWHERE
-!
-  IF (LBUDGET_TH) CALL BUDGET (                                                &
-                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),  &
-                                                      NBUDGET_TH,'CFRZ_BU_RTH')
-  IF (LBUDGET_RR) CALL BUDGET (                                                &
-                     UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                      NBUDGET_RR,'CFRZ_BU_RRR')
-  IF (LBUDGET_RI) CALL BUDGET (                                                &
-                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                      NBUDGET_RI,'CFRZ_BU_RRI')
-  IF (LBUDGET_RG) CALL BUDGET (                                                &
-                     UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                      NBUDGET_RG,'CFRZ_BU_RRG')
-!
-  IF (LBU_RSV) THEN
-    CALL BUDGET (UNPACK(ZQRS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                          NBUDGET_SV1-1+NSV_ELECBEG+2,'CFRZ_BU_RSV')
-    CALL BUDGET (UNPACK(ZQIS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                          NBUDGET_SV1-1+NSV_ELECBEG+3,'CFRZ_BU_RSV')
-    CALL BUDGET (UNPACK(ZQGS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                            NBUDGET_SV1-1+NSV_ELECEND,'CFRZ_BU_RSV')
-  END IF
-!
+
+  if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'CFRZ', Unpack( zzw1(:,4) * ( zlsfact(:) - zlvfact(:) ) &
+                                                                               * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rr ) call Budget_store_add( tbudgets(NBUDGET_RR), 'CFRZ', &
+                                           Unpack( -zzw1(:, 4)                 * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'CFRZ', &
+                                           Unpack( -zzw1(:, 3)                 * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rg ) call Budget_store_add( tbudgets(NBUDGET_RG), 'CFRZ', &
+                                           Unpack( ( zzw1(:, 3) + zzw1(:, 4) ) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_sv ) then
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'CFRZ', &
+                           Unpack( zqrs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'CFRZ', &
+                           Unpack( zqis(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'CFRZ', &
+                           Unpack( zqgs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  end if
 !
 !*       6.2    compute the Dry growth case
 !
+  if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'WETG', &
+                                            Unpack( zths(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'WETG', &
+                                            Unpack( zrcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR), 'WETG', &
+                                            Unpack( zrrs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'WETG', &
+                                            Unpack( zris(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rs ) call Budget_store_init( tbudgets(NBUDGET_RS), 'WETG', &
+                                            Unpack( zrss(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rg ) call Budget_store_init( tbudgets(NBUDGET_RG), 'WETG', &
+                                            Unpack( zrgs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rh ) call Budget_store_init( tbudgets(NBUDGET_RH), 'WETG', &
+                                            Unpack( zrhs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_sv ) then
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'WETG', &
+                            Unpack( zqcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'WETG', &
+                            Unpack( zqrs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'WETG', &
+                            Unpack( zqis(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'WETG', &
+                            Unpack( zqss(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'WETG', &
+                            Unpack( zqgs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( krr == 7 ) &
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'WETG', &
+                            Unpack( zqhs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  end if
+
   ZZW1(:,:) = 0.0
   ZWQ1(:,1:10) = 0.0
   ZWQ3(:)      = 0.0
@@ -3748,44 +3683,62 @@ IMPLICIT NONE
       ZQGS(:) = ZQGS(:) + ZWQ1(:,1) + ZWQ1(:,9) + ZWQ1(:,7) + ZWQ1(:,8)
     END WHERE
   END IF
-!
-  IF (LBUDGET_TH) CALL BUDGET (                                                &
-                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),  &
-                                                      NBUDGET_TH,'WETG_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (                                                &
-                     UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                      NBUDGET_RC,'WETG_BU_RRC')
-  IF (LBUDGET_RR) CALL BUDGET (                                                &
-                     UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                      NBUDGET_RR,'WETG_BU_RRR')
-  IF (LBUDGET_RI) CALL BUDGET (                                                &
-                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                      NBUDGET_RI,'WETG_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET (                                                &
-                     UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                      NBUDGET_RS,'WETG_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (                                                &
-                     UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                      NBUDGET_RG,'WETG_BU_RRG')
-  IF ( KRR == 7 ) THEN
-    IF (LBUDGET_RH) CALL BUDGET (                                              &
-                     UNPACK(ZRHS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                      NBUDGET_RH,'WETG_BU_RRH')
-  END IF
-!
-  IF (LBU_RSV) THEN
-    CALL BUDGET (UNPACK(ZQCS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                          NBUDGET_SV1-1+NSV_ELECBEG+1,'WETG_BU_RSV')
-    CALL BUDGET (UNPACK(ZQRS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                          NBUDGET_SV1-1+NSV_ELECBEG+2,'WETG_BU_RSV')
-    CALL BUDGET (UNPACK(ZQIS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                          NBUDGET_SV1-1+NSV_ELECBEG+3,'WETG_BU_RSV')
-    CALL BUDGET (UNPACK(ZQSS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                          NBUDGET_SV1-1+NSV_ELECBEG+4,'WETG_BU_RSV')
-    CALL BUDGET (UNPACK(ZQGS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                            NBUDGET_SV1-1+NSV_ELECEND,'WETG_BU_RSV')
-  END IF
-!
+
+  if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'WETG', &
+                                           Unpack( zths(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'WETG', &
+                                           Unpack( zrcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR), 'WETG', &
+                                           Unpack( zrrs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'WETG', &
+                                           Unpack( zris(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rs ) call Budget_store_end( tbudgets(NBUDGET_RS), 'WETG', &
+                                           Unpack( zrss(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rg ) call Budget_store_end( tbudgets(NBUDGET_RG), 'WETG', &
+                                           Unpack( zrgs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rh ) call Budget_store_end( tbudgets(NBUDGET_RH), 'WETG', &
+                                           Unpack( zrhs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_sv ) then
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'WETG', &
+                           Unpack( zqcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'WETG', &
+                           Unpack( zqrs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'WETG', &
+                           Unpack( zqis(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'WETG', &
+                           Unpack( zqss(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'WETG', &
+                           Unpack( zqgs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( krr == 7 ) &
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 6 ), 'WETG', &
+                           Unpack( zqhs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  end if
+
+  if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'DRYG', &
+                                            Unpack( zths(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'DRYG', &
+                                            Unpack( zrcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR), 'DRYG', &
+                                            Unpack( zrrs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'DRYG', &
+                                            Unpack( zris(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rs ) call Budget_store_init( tbudgets(NBUDGET_RS), 'DRYG', &
+                                            Unpack( zrss(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rg ) call Budget_store_init( tbudgets(NBUDGET_RG), 'DRYG', &
+                                            Unpack( zrgs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_sv ) then
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'DRYG', &
+                            Unpack( zqcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'DRYG', &
+                            Unpack( zqrs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'DRYG', &
+                            Unpack( zqis(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'DRYG', &
+                            Unpack( zqss(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'DRYG', &
+                            Unpack( zqgs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  end if
+
   WHERE (ZRGT(:) > XRTMIN(6) .AND. ZZT(:) < XTT .AND. & ! Dry
          ZRDRYG(:) < ZRWETG(:) .AND. ZRDRYG(:) > 0.0)   ! case
     ZRCS(:) = ZRCS(:) - ZZW1(:,1)
@@ -3803,43 +3756,42 @@ IMPLICIT NONE
     ZQGS(:) = ZQGS(:) + ZWQ1(:,1) + ZWQ1(:,2) + ZWQ1(:,3) + ZWQ1(:,4) & 
                                               + ZWQ1(:,5) + ZWQ1(:,6)
   END WHERE
-!
-  IF (LBUDGET_TH) CALL BUDGET (                                                &
-                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),  &
-                                                      NBUDGET_TH,'DRYG_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (                                                &
-                     UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                      NBUDGET_RC,'DRYG_BU_RRC')
-  IF (LBUDGET_RR) CALL BUDGET (                                                &
-                     UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                      NBUDGET_RR,'DRYG_BU_RRR')
-  IF (LBUDGET_RI) CALL BUDGET (                                                &
-                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                      NBUDGET_RI,'DRYG_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET (                                                &
-                     UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                      NBUDGET_RS,'DRYG_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (                                                &
-                     UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                      NBUDGET_RG,'DRYG_BU_RRG')
-!
-  IF (LBUDGET_SV) THEN
-    CALL BUDGET (UNPACK(ZQCS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                          NBUDGET_SV1-1+NSV_ELECBEG+1,'DRYG_BU_RSV')
-    CALL BUDGET (UNPACK(ZQRS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                          NBUDGET_SV1-1+NSV_ELECBEG+2,'DRYG_BU_RSV')
-    CALL BUDGET (UNPACK(ZQIS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                          NBUDGET_SV1-1+NSV_ELECBEG+3,'DRYG_BU_RSV')
-    CALL BUDGET (UNPACK(ZQSS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                          NBUDGET_SV1-1+NSV_ELECBEG+4,'DRYG_BU_RSV')
-    CALL BUDGET (UNPACK(ZQGS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                            NBUDGET_SV1-1+NSV_ELECEND,'DRYG_BU_RSV')
-  END IF
-!
+
+  if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'DRYG', &
+                                           Unpack( zths(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'DRYG', &
+                                           Unpack( zrcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR), 'DRYG', &
+                                           Unpack( zrrs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'DRYG', &
+                                           Unpack( zris(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rs ) call Budget_store_end( tbudgets(NBUDGET_RS), 'DRYG', &
+                                           Unpack( zrss(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rg ) call Budget_store_end( tbudgets(NBUDGET_RG), 'DRYG', &
+                                           Unpack( zrgs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_sv ) then
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'DRYG', &
+                           Unpack( zqcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'DRYG', &
+                           Unpack( zqrs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'DRYG', &
+                           Unpack( zqis(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'DRYG', &
+                           Unpack( zqss(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'DRYG', &
+                           Unpack( zqgs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  end if
 !
 ! Inductive mecanism
 !
   IF (LINDUCTIVE) THEN
+    if ( lbudget_sv ) then
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1), 'INCG', &
+                              Unpack( zqcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'INCG', &
+                              Unpack( zqgs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    end if
+
     ZRATE_IND(:) = 0.
     GIND(:) = ZRDRYG(:) > 0. .AND. ZRDRYG(:) < ZRWETG(:) .AND. ZZT(:) < XTT
     IIND = COUNT(GIND(:))
@@ -3849,18 +3801,24 @@ IMPLICIT NONE
     XIND_RATE(:,:,:) = 0.
     XIND_RATE(:,:,:) = UNPACK(ZRATE_IND(:), MASK=GMICRO, FIELD=0.0)
     XIND_RATE(:,:,:) = XIND_RATE(:,:,:) * PRHODREF(:,:,:)  ! C/m3/s
+
+    if ( lbudget_sv ) then
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1), 'INCG', &
+                             Unpack( zqcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'INCG', &
+                             Unpack( zqgs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    end if
   END IF
-!
-  IF (LBUDGET_SV) THEN
-    CALL BUDGET (UNPACK(ZQCS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                          NBUDGET_SV1-1+NSV_ELECBEG+1,'INCG_BU_RSV')
-    CALL BUDGET (UNPACK(ZQGS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                            NBUDGET_SV1-1+NSV_ELECEND,'INCG_BU_RSV')
-  END IF
-!
 !
 !*       6.5    Melting of the graupeln
 !
+  if ( lbudget_sv ) then
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2), 'GMLT', &
+                            Unpack( zqrs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'GMLT', &
+                            Unpack( zqgs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  end if
+
   ZZW(:) = 0.0
   ZWQ1(:,7) = 0.0
   WHERE ((ZRGT(:) > XRTMIN(6)) .AND. (ZRGS(:) > 0.0) .AND. (ZZT(:) > XTT))
@@ -3889,24 +3847,20 @@ IMPLICIT NONE
     ZQRS(:) = ZQRS(:) + ZWQ1(:,7)
     ZQGS(:) = ZQGS(:) - ZWQ1(:,7)
   ENDWHERE
-!
-    IF (LBUDGET_TH) CALL BUDGET (                                              &
-                   UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
-                                                      NBUDGET_TH,'GMLT_BU_RTH')
-    IF (LBUDGET_RR) CALL BUDGET (                                              &
-                       UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                      NBUDGET_RR,'GMLT_BU_RRR')
-    IF (LBUDGET_RG) CALL BUDGET (                                              &
-                       UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                      NBUDGET_RG,'GMLT_BU_RRG')
-!
-    IF (LBUDGET_SV) THEN
-      CALL BUDGET (UNPACK(ZQRS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                            NBUDGET_SV1-1+NSV_ELECBEG+2,'GMLT_BU_RSV')
-      CALL BUDGET (UNPACK(ZQGS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                              NBUDGET_SV1-1+NSV_ELECEND,'GMLT_BU_RSV')
-    END IF
-!
+
+  if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'GMLT', Unpack( -zzw(:) * ( zlsfact(:) - zlvfact(:) ) &
+                                                           * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rr ) call Budget_store_add( tbudgets(NBUDGET_RR), 'GMLT', &
+                                           Unpack(  zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rg ) call Budget_store_add( tbudgets(NBUDGET_RG), 'GMLT', &
+                                           Unpack( -zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_sv ) then
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2), 'GMLT', &
+                           Unpack( zqrs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'GMLT', &
+                           Unpack( zqgs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  end if
+
   END SUBROUTINE RAIN_ICE_ELEC_FAST_RG
 !
 !-------------------------------------------------------------------------------
@@ -3926,6 +3880,20 @@ IMPLICIT NONE
   IHAIL = COUNT(GHAIL(:))
 !
   IF( IHAIL>0 ) THEN
+    if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'WETH', &
+                                              Unpack( zths(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'WETH', &
+                                              Unpack( zrcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR), 'WETH', &
+                                              Unpack( zrrs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'WETH', &
+                                              Unpack( zris(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rs ) call Budget_store_init( tbudgets(NBUDGET_RS), 'WETH', &
+                                              Unpack( zrss(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rg ) call Budget_store_init( tbudgets(NBUDGET_RG), 'WETH', &
+                                              Unpack( zrgs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rh ) call Budget_store_init( tbudgets(NBUDGET_RH), 'WETH', &
+                                              Unpack( zrhs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
 !
 !*       7.2    compute the Wet growth of hail
 !
@@ -4129,29 +4097,22 @@ IMPLICIT NONE
     ZQGS(:) = ZQGS(:) - ZWQ1(:,5)
     ZQRS(:) = ZQRS(:) - ZWQ1(:,4)
     ZQHS(:) = ZQHS(:) + ZWQ1(:,1) + ZWQ1(:,2) + ZWQ1(:,3) + ZWQ1(:,4) + ZWQ1(:,5)
-  END IF
 
-  IF (LBUDGET_TH) CALL BUDGET (                                              &
-                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
-                                                            NBUDGET_TH,'WETH_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (                                          &
-                 UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                            NBUDGET_RC,'WETH_BU_RRC')
-  IF (LBUDGET_RR) CALL BUDGET (                                          &
-                 UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                            NBUDGET_RR,'WETH_BU_RRR')
-  IF (LBUDGET_RI) CALL BUDGET (                                          &
-                 UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                            NBUDGET_RI,'WETH_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET (                                          &
-                 UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                            NBUDGET_RS,'WETH_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (                                          &
-                 UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                            NBUDGET_RG,'WETH_BU_RRG')
-  IF (LBUDGET_RH) CALL BUDGET (                                          &
-                 UNPACK(ZRHS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                            NBUDGET_RH,'WETH_BU_RRH')
+    if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'WETH', &
+                                             Unpack( zths(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'WETH', &
+                                             Unpack( zrcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR), 'WETH', &
+                                             Unpack( zrrs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'WETH', &
+                                             Unpack( zris(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rs ) call Budget_store_end( tbudgets(NBUDGET_RS), 'WETH', &
+                                             Unpack( zrss(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rg ) call Budget_store_end( tbudgets(NBUDGET_RG), 'WETH', &
+                                             Unpack( zrgs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rh ) call Budget_store_end( tbudgets(NBUDGET_RH), 'WETH', &
+                                             Unpack( zrhs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  END IF
 !
   IF (IHAIL > 0) THEN
 !
@@ -4186,19 +4147,16 @@ IMPLICIT NONE
       ZQRS(:) = ZQRS(:) + ZWQ1(:,7)
       ZQHS(:) = ZQHS(:) - ZWQ1(:,7)
     END WHERE
+
+    if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'HMLT', &
+               Unpack( -zzw(:) * ( zlsfact(:) - zlvfact(:) ) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rr ) call Budget_store_add( tbudgets(NBUDGET_RR), 'HMLT', &
+                                             Unpack(  zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_rh ) call Budget_store_add( tbudgets(NBUDGET_RH), 'HMLT', &
+                                             Unpack( -zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
   END IF
 !
   DEALLOCATE(GHAIL)
-!
-  IF (LBUDGET_TH) CALL BUDGET (                                              &
-                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
-                                                            NBUDGET_TH,'HMLT_BU_RTH')
-  IF (LBUDGET_RR) CALL BUDGET (                                              &
-                     UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                            NBUDGET_RR,'HMLT_BU_RRR')
-  IF (LBUDGET_RH) CALL BUDGET (                                              &
-                     UNPACK(ZRHS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                            NBUDGET_RH,'HMLT_BU_RRH')
 !
   END SUBROUTINE RAIN_ICE_ELEC_FAST_RH
 !
@@ -4216,6 +4174,19 @@ IMPLICIT NONE
 !
 !*       7.1    cloud ice melting
 !
+  if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'IMLT', &
+                                            Unpack( zths(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'IMLT', &
+                                            Unpack( zrcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'IMLT', &
+                                            Unpack( zris(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_sv ) then
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'IMLT', &
+                            Unpack( zqcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'IMLT', &
+                            Unpack( zqis(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  end if
+
   ZZW(:) = 0.0
   ZWQ1(:,1) = 0.0
   WHERE ((ZRIS(:) > 0.0) .AND. (ZZT(:) > XTT))
@@ -4227,26 +4198,29 @@ IMPLICIT NONE
     ZQCS(:) = ZQCS(:) + ZQIS(:)
     ZQIS(:) = 0.
   END WHERE
-!
-  IF (LBUDGET_TH) CALL BUDGET (                                                &
-                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),  &
-                                                              NBUDGET_TH,'IMLT_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (                                                &
-                     UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                              NBUDGET_RC,'IMLT_BU_RRC')
-  IF (LBUDGET_RI) CALL BUDGET (                                                &
-                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                              NBUDGET_RI,'IMLT_BU_RRI')
-!
-  IF (LBUDGET_SV) THEN
-    CALL BUDGET (UNPACK(ZQCS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                          NBUDGET_SV1-1+NSV_ELECBEG+1,'IMLT_BU_RSV')
-    CALL BUDGET (UNPACK(ZQIS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                          NBUDGET_SV1-1+NSV_ELECBEG+3,'IMLT_BU_RSV')
-  END IF
+
+  if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'IMLT', &
+                                           Unpack( zths(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'IMLT', &
+                                           Unpack( zrcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'IMLT', &
+                                           Unpack( zris(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_sv ) then
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'IMLT', &
+                           Unpack( zqcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'IMLT', &
+                           Unpack( zqis(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  end if
 !
 !*       7.2    Bergeron-Findeisen effect: RCBERI
 !
+  if ( lbudget_sv ) then
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'BERFI', &
+                            Unpack( zqcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'BERFI', &
+                            Unpack( zqis(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  end if
+
   ZZW(:) = 0.0
   ZWQ1(:,1)  = 0.0
   WHERE ((ZRCS(:) > 0.0) .AND. (ZSSI(:) > 0.0) .AND.      &
@@ -4269,24 +4243,20 @@ IMPLICIT NONE
     ZQIS(:) = ZQIS(:) + ZWQ1(:,1) 
     ZQCS(:) = ZQCS(:) - ZWQ1(:,1)
   ENDWHERE
-!
-  IF (LBUDGET_TH) CALL BUDGET (                                                &
-                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),  &
-                                                             NBUDGET_TH,'BERFI_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (                                                &
-                     UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                             NBUDGET_RC,'BERFI_BU_RRC')
-  IF (LBUDGET_RI) CALL BUDGET (                                                &
-                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
-                                                             NBUDGET_RI,'BERFI_BU_RRI')
-!
-  IF (LBUDGET_SV) THEN
-    CALL BUDGET (UNPACK(ZQCS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                         NBUDGET_SV1-1+NSV_ELECBEG+1,'BERFI_BU_RSV')
-    CALL BUDGET (UNPACK(ZQIS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                         NBUDGET_SV1-1+NSV_ELECBEG+3,'BERFI_BU_RSV')
-  END IF
-!
+
+  if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'BERFI', &
+              Unpack( zzw(:) * ( zlsfact(:) - zlvfact(:) ) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_rc ) call Budget_store_add( tbudgets(NBUDGET_RC), 'BERFI', &
+                                           Unpack( -zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'BERFI', &
+                                           Unpack(  zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  if ( lbudget_sv ) then
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'BERFI', &
+                           Unpack( zqcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'BERFI', &
+                           Unpack( zqis(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+  end if
+
   END SUBROUTINE RAIN_ICE_ELEC_FAST_RI
 !
 !-------------------------------------------------------------------------------
