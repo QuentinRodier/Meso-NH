@@ -105,6 +105,7 @@ contains
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 15/11/2019: remove unused CBURECORD variable
 !  P. Wautelet 02-03/2020: use the new data structures and subroutines for budgets
+!  P .Wautelet 09/03/2020: add missing budgets for electricity
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -3105,6 +3106,11 @@ SV_BUDGETS: do jsv = 1, ksv
 
         case ( 2 ) SV_ELEC
           ! volumetric charge of cloud droplets
+          gcond = .true.
+          tzsource%cmnhname  = 'HON'
+          tzsource%clongname = 'homogeneous nucleation'
+          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nhonqc )
+
           gcond = lwarm_ice
           tzsource%cmnhname  = 'AUTO'
           tzsource%clongname = 'autoconversion into rain'
@@ -3129,6 +3135,16 @@ SV_BUDGETS: do jsv = 1, ksv
           tzsource%cmnhname  = 'DRYG'
           tzsource%clongname = 'dry growth of graupel'
           call Budget_source_add( tbudgets(ibudget), tzsource, gcond, ndrygqc )
+
+          gcond = linductive
+          tzsource%cmnhname  = 'INCG'
+          tzsource%clongname = 'inductive charge transfer between cloud droplets and graupel'
+          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nincgqc )
+
+          gcond = hcloud == 'ICE4'
+          tzsource%cmnhname  = 'WETH'
+          tzsource%clongname = 'wet growth of hail'
+          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nwethqc )
 
           gcond = .true.
           tzsource%cmnhname  = 'IMLT'
@@ -3158,6 +3174,11 @@ SV_BUDGETS: do jsv = 1, ksv
 
         case ( 3 ) SV_ELEC
           ! volumetric charge of rain drops
+          gcond = .true.
+          tzsource%cmnhname  = 'SFR'
+          tzsource%clongname = 'spontaneous freezing'
+          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nsfrqr )
+
           gcond = lwarm_ice
           tzsource%cmnhname  = 'AUTO'
           tzsource%clongname = 'autoconversion into rain'
@@ -3198,6 +3219,16 @@ SV_BUDGETS: do jsv = 1, ksv
           tzsource%clongname = 'graupel melting'
           call Budget_source_add( tbudgets(ibudget), tzsource, gcond, ngmltqr )
 
+          gcond = hcloud == 'ICE4'
+          tzsource%cmnhname  = 'WETH'
+          tzsource%clongname = 'wet growth of hail'
+          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nwethqr )
+
+          gcond = hcloud == 'ICE4'
+          tzsource%cmnhname  = 'HMLT'
+          tzsource%clongname = 'melting of hail'
+          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nhmltqr )
+
           gcond = .true.
           tzsource%cmnhname  = 'SEDI'
           tzsource%clongname = 'sedimentation'
@@ -3210,6 +3241,11 @@ SV_BUDGETS: do jsv = 1, ksv
 
         case ( 4 ) SV_ELEC
           ! volumetric charge of ice crystals
+          gcond = .true.
+          tzsource%cmnhname  = 'HON'
+          tzsource%clongname = 'homogeneous nucleation'
+          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nhonqi )
+
           gcond = .true.
           tzsource%cmnhname  = 'AGGS'
           tzsource%clongname = 'aggregation of snow'
@@ -3234,6 +3270,11 @@ SV_BUDGETS: do jsv = 1, ksv
           tzsource%cmnhname  = 'DRYG'
           tzsource%clongname = 'dry growth of graupel'
           call Budget_source_add( tbudgets(ibudget), tzsource, gcond, ndrygqi )
+
+          gcond = hcloud == 'ICE4'
+          tzsource%cmnhname  = 'WETH'
+          tzsource%clongname = 'wet growth of hail'
+          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nwethqi )
 
           gcond = .true.
           tzsource%cmnhname  = 'IMLT'
@@ -3313,6 +3354,11 @@ SV_BUDGETS: do jsv = 1, ksv
           tzsource%clongname = 'non-inductive charge separation due to ice-snow collisions'
           call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nniisqs )
 
+          gcond = hcloud == 'ICE4'
+          tzsource%cmnhname  = 'WETH'
+          tzsource%clongname = 'wet growth of hail'
+          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nwethqs )
+
           gcond = .true.
           tzsource%cmnhname  = 'SEDI'
           tzsource%clongname = 'sedimentation'
@@ -3326,6 +3372,11 @@ SV_BUDGETS: do jsv = 1, ksv
 
         case ( 6 ) SV_ELEC
           ! volumetric charge of graupel
+          gcond = .true.
+          tzsource%cmnhname  = 'SFR'
+          tzsource%clongname = 'spontaneous freezing'
+          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nsfrqg )
+
           gcond = .true.
           tzsource%cmnhname  = 'DEPG'
           tzsource%clongname = 'deposition on graupel'
@@ -3361,10 +3412,20 @@ SV_BUDGETS: do jsv = 1, ksv
           tzsource%clongname = 'dry growth of graupel'
           call Budget_source_add( tbudgets(ibudget), tzsource, gcond, ndrygqg )
 
+          gcond = linductive
+          tzsource%cmnhname  = 'INCG'
+          tzsource%clongname = 'inductive charge transfer between cloud droplets and graupel'
+          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nincgqg )
+
           gcond = .true.
           tzsource%cmnhname  = 'GMLT'
           tzsource%clongname = 'graupel melting'
           call Budget_source_add( tbudgets(ibudget), tzsource, gcond, ngmltqg )
+
+          gcond = hcloud == 'ICE4'
+          tzsource%cmnhname  = 'WETH'
+          tzsource%clongname = 'wet growth of hail'
+          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nwethqg )
 
           gcond = .true.
           tzsource%cmnhname  = 'SEDI'
@@ -3378,6 +3439,64 @@ SV_BUDGETS: do jsv = 1, ksv
 
 
         case ( 7: ) SV_ELEC
+          if ( ( hcloud == 'ICE4' .and. ( jsv - nsv_elecbeg + 1 ) == 7 ) ) then
+            ! volumetric charge of hail
+            gcond = .true.
+            tzsource%cmnhname  = 'WETG'
+            tzsource%clongname = 'wet growth of graupel'
+            call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nwetgqh )
+
+            gcond = .true.
+            tzsource%cmnhname  = 'WETH'
+            tzsource%clongname = 'wet growth of hail'
+            call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nwethqh )
+
+            gcond = .true.
+            tzsource%cmnhname  = 'HMLT'
+            tzsource%clongname = 'melting of hail'
+            call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nhmltqh )
+
+            gcond = .true.
+            tzsource%cmnhname  = 'SEDI'
+            tzsource%clongname = 'sedimentation'
+            call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nsediqh )
+
+            gcond = .true.
+            tzsource%cmnhname  = 'NEUT'
+            tzsource%clongname = 'NEUT'
+            call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneutqh )
+
+          else if (      ( hcloud == 'ICE3' .and. ( jsv - nsv_elecbeg + 1 ) == 7 ) &
+                    .or. ( hcloud == 'ICE4' .and. ( jsv - nsv_elecbeg + 1 ) == 8 ) ) then
+            ! Negative ions (NSV_ELECEND case)
+            gcond = .true.
+            tzsource%cmnhname  = 'DEPS'
+            tzsource%clongname = 'deposition on snow'
+            call Budget_source_add( tbudgets(ibudget), tzsource, gcond, ndepsni )
+
+            gcond = .true.
+            tzsource%cmnhname  = 'DEPG'
+            tzsource%clongname = 'deposition on graupel'
+            call Budget_source_add( tbudgets(ibudget), tzsource, gcond, ndepgni )
+
+            gcond = lwarm_ice
+            tzsource%cmnhname  = 'REVA'
+            tzsource%clongname = 'rain evaporation'
+            call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nrevani )
+
+            gcond = .true.
+            tzsource%cmnhname  = 'CDEPI'
+            tzsource%clongname = 'condensation/deposition on ice'
+            call Budget_source_add( tbudgets(ibudget), tzsource, gcond, ncdepini )
+
+            gcond = .true.
+            tzsource%cmnhname  = 'NEUT'
+            tzsource%clongname = 'NEUT'
+            call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneutni )
+
+          else
+            call Print_msg( NVERB_FATAL, 'BUD', 'Ini_budget', 'unknown electricity budget' )
+          end if
 
       end select SV_ELEC
 

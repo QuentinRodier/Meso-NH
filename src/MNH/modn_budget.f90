@@ -226,6 +226,7 @@
 !!      C.Lac        10/2016  Add droplet deposition
 !!      S. Riette   11/2016 New budgets for ICE3/ICE4
 !  P. Wautelet 28/01/2020: add missing budgets for viscosity
+!  P .Wautelet 09/03/2020: add missing budgets for electricity
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -298,19 +299,22 @@ NAMELIST/NAM_BU_RRH/LBU_RRH, NASSERH, NNESTRH, NADVRH, NFRCRH, &
                     NDIFRH, NRELRH, NNEGARH, NSEDIRH, NWETGRH, NWETHRH, NDRYHRH, NHMLTRH, &
                     NCORRRH, NHGCVRH, NGHCVRH, NCOHGRH, NHMLTRH, NVISCRH
 ! 
-NAMELIST/NAM_BU_RSV/ LBU_RSV, NASSESV, NNESTSV, NADVSV, NFRCSV, &
-                     NDIFSV, NRELSV, NDCONVSV, NVTURBSV, NHTURBSV, NCHEMSV, NMAFLSV,       &
-                     NVISCSV, NNEGASV,                                                     &
-                     NAUTOQC, NACCRQC, NRIMQC, NWETGQC, NDRYGQC, NIMLTQC, NBERFIQC,        &
-                     NDEPIQC, NINDQC, NSEDIQC, NNEUTQC,                                    &
-                     NAUTOQR, NACCRQR, NREVAQR, NACCQR, NCFRZQR, NWETGQR, NDRYGQR,         &
-                     NGMLTQR, NSEDIQR, NNEUTQR,                                            &
-                     NAGGSQI, NAUTSQI, NCFRZQI, NWETGQI, NDRYGQI, NIMLTQI, NBERFIQI,       &
-                     NDEPIQI, NNIISQI, NSEDIQI, NNEUTQI,                                   &
-                     NDEPSQS, NAGGSQS, NAUTSQS, NRIMQS, NACCQS, NCMELQS, NWETGQS,          &
-                     NDRYGQS, NNIISQS, NSEDIQS, NNEUTQS,                                   &
-                     NDEPGQG, NRIMQG, NACCQG, NCMELQG, NCFRZQG, NWETGQG, NDRYGQG,          &
-                     NGMLTQG, NINDQG, NSEDIQG, NNEUTQG, NDEPOTRSV
-! must add budget for hail
+NAMELIST/NAM_BU_RSV/ LBU_RSV, NASSESV,  NNESTSV,  NADVSV,   NFRCSV, &
+                     NDIFSV,  NRELSV,   NDCONVSV, NVTURBSV, NHTURBSV, NCHEMSV, NMAFLSV,          &
+                     NVISCSV, NNEGASV,                                                           &
+                     NDEPSQV, NDEPGQV,  NREVAQV, NCDEPIQV,  NNEUTQV,                             &
+                     NHONQC,  NAUTOQC,  NACCRQC, NRIMQC,    NWETGQC,  NDRYGQC, NINCGQC, NWETHQC, &
+                     NIMLTQC, NBERFIQC, NSEDIQC, NCDEPIQC,  NNEUTQC,                             &
+                     NSFRQR,  NAUTOQR,  NACCRQR, NREVAQR,   NACCQR,   NCFRZQR, NWETGQR, NDRYGQR, &
+                     NGMLTQR, NWETHQR,  NHMLTQR, NSEDIQR,   NNEUTQR,                             &
+                     NHONQI,  NAGGSQI,  NAUTSQI, NCFRZQI,   NWETGQI,  NDRYGQI, NWETHQI,          &
+                     NIMLTQI, NBERFIQI, NNIISQI, NSEDIQI,   NCDEPIQI, NNEUTQI,                   &
+                     NDEPSQS, NAGGSQS,  NAUTSQS, NRIMQS,    NACCQS,   NCMELQS, NWETGQS,          &
+                     NDRYGQS, NNIISQS,  NWETHQS, NSEDIQS,   NNEUTQS,                             &
+                     NSFRQG,  NDEPGQG,  NRIMQG,  NACCQG,    NCMELQG,  NCFRZQG, NWETGQG, NDRYGQG, &
+                     NINCGQG, NGMLTQG,  NWETHQG, NSEDIQG,   NNEUTQG,                             &
+                     NWETGQH, NWETHQH,  NHMLTQH, NSEDIQH,   NNEUTQH,                             &
+                     NDEPSNI, NDEPGNI,  NREVANI, NCDEPINI,  NNEUTNI,                             &
+                     NDEPOTRSV
 !
 END MODULE MODN_BUDGET

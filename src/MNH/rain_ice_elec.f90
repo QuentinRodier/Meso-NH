@@ -197,6 +197,7 @@ END MODULE MODI_RAIN_ICE_ELEC
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !  P. Wautelet    03/2020: use the new data structures and subroutines for budgets
+!  P .Wautelet 09/03/2020: add missing budgets for electricity
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1159,7 +1160,10 @@ REAL :: ZVR, ZVI, ZVS, ZVG, ZETA0, ZK, ZRE0
     call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'SEDI', pqis(:, :, :) * prhodj(:, :, :) )
     call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'SEDI', pqss(:, :, :) * prhodj(:, :, :) )
     call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'SEDI', pqgs(:, :, :) * prhodj(:, :, :) )
+    if ( krr == 7 ) &
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 6 ), 'SEDI', pqhs(:, :, :) * prhodj(:, :, :) )
   end if
+
   IF (OSEDIC) PINPRC (:,:) = 0.
   PINPRR (:,:) = 0.
   PINPRR3D (:,:,:) = 0.
@@ -1829,6 +1833,8 @@ REAL :: ZVR, ZVI, ZVS, ZVG, ZETA0, ZK, ZRE0
     call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'SEDI', pqis(:, :, :) * prhodj(:, :, :) )
     call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'SEDI', pqss(:, :, :) * prhodj(:, :, :) )
     call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'SEDI', pqgs(:, :, :) * prhodj(:, :, :) )
+    if ( krr == 7 ) &
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 6 ), 'SEDI', pqhs(:, :, :) * prhodj(:, :, :) )
   end if
 !
   END SUBROUTINE RAIN_ICE_ELEC_SEDIMENTATION_SPLIT
@@ -1859,6 +1865,16 @@ REAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3)) :: ZCONC3D !
   if ( lbudget_rs ) call Budget_store_init( tbudgets(NBUDGET_RS), 'SEDI', prss(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_rg ) call Budget_store_init( tbudgets(NBUDGET_RG), 'SEDI', prgs(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_rh ) call Budget_store_init( tbudgets(NBUDGET_RH), 'SEDI', prhs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv ) then
+    if ( osedic ) &
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'SEDI', pqcs(:, :, :) * prhodj(:, :, :) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'SEDI', pqrs(:, :, :) * prhodj(:, :, :) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'SEDI', pqis(:, :, :) * prhodj(:, :, :) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'SEDI', pqss(:, :, :) * prhodj(:, :, :) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'SEDI', pqgs(:, :, :) * prhodj(:, :, :) )
+    if ( krr == 7 ) &
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 6 ), 'SEDI', pqhs(:, :, :) * prhodj(:, :, :) )
+  end if
 !
 !*       1. Parameters for cloud sedimentation
 !
@@ -2223,6 +2239,16 @@ REAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3)) :: ZCONC3D !
   if ( lbudget_rs ) call Budget_store_end( tbudgets(NBUDGET_RS), 'SEDI', prss(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_rg ) call Budget_store_end( tbudgets(NBUDGET_RG), 'SEDI', prgs(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_rh ) call Budget_store_end( tbudgets(NBUDGET_RH), 'SEDI', prhs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv ) then
+    if ( osedic ) &
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'SEDI', pqcs(:, :, :) * prhodj(:, :, :) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'SEDI', pqrs(:, :, :) * prhodj(:, :, :) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'SEDI', pqis(:, :, :) * prhodj(:, :, :) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'SEDI', pqss(:, :, :) * prhodj(:, :, :) )
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'SEDI', pqgs(:, :, :) * prhodj(:, :, :) )
+    if ( krr == 7 ) &
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 6 ), 'SEDI', pqhs(:, :, :) * prhodj(:, :, :) )
+  end if
 !
   END SUBROUTINE RAIN_ICE_SEDIMENTATION_STAT
 !
@@ -4112,12 +4138,34 @@ IMPLICIT NONE
                                              Unpack( zrgs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
     if ( lbudget_rh ) call Budget_store_end( tbudgets(NBUDGET_RH), 'WETH', &
                                              Unpack( zrhs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_sv ) then
+      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'WETH', &
+                             Unpack( -zwq1(:, 1) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'WETH', &
+                             Unpack( -zwq1(:, 4) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'WETH', &
+                             Unpack( -zwq1(:, 2) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'WETH', &
+                             Unpack( -zwq1(:, 3) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'WETH', &
+                             Unpack( -zwq1(:, 5) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 6 ), 'WETH',                      &
+                             Unpack( ( zwq1(:, 1) + zwq1(:, 2) + zwq1(:, 3) + zwq1(:, 4) + zwq1(:, 5) ) &
+                                       * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    end if
   END IF
 !
   IF (IHAIL > 0) THEN
 !
 !*       7.5    Melting of the hailstones
 !
+    if ( lbudget_sv ) then
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'HMLT', &
+                              Unpack( zqrs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 6 ), 'HMLT', &
+                              Unpack( zqhs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    end if
+
     ZZW(:) = 0.0
     ZWQ1(:,7) = 0.
 !
@@ -4154,6 +4202,12 @@ IMPLICIT NONE
                                              Unpack(  zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
     if ( lbudget_rh ) call Budget_store_add( tbudgets(NBUDGET_RH), 'HMLT', &
                                              Unpack( -zzw(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    if ( lbudget_sv ) then
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'HMLT', &
+                             Unpack( zqrs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 6 ), 'HMLT', &
+                             Unpack( zqhs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+    end if
   END IF
 !
   DEALLOCATE(GHAIL)

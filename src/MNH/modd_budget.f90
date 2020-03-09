@@ -49,6 +49,8 @@
 !  P. Wautelet 27/01/2020: use the tfield_metadata_base abstract datatype
 !  P. Wautelet 28/01/2020: add missing budgets for viscosity
 !  P. Wautelet 28/01/2020: add trhodj in tbudgetdata datatype
+!  P. Wautelet 09/03/2020: add tburhodj variable
+!  P .Wautelet 09/03/2020: add missing budgets for electricity
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -645,23 +647,26 @@ INTEGER, SAVE :: NNEGASV
 INTEGER, SAVE :: NDEPSQV
 INTEGER, SAVE :: NDEPGQV
 INTEGER, SAVE :: NREVAQV
-INTEGER, SAVE :: NDEPIQV
+INTEGER, SAVE :: NCDEPIQV
 INTEGER, SAVE :: NNEUTQV
 !
 ! Allowed processes for the budget of electric charge carried by cloud droplets
+INTEGER, SAVE :: NHONQC
 INTEGER, SAVE :: NAUTOQC
 INTEGER, SAVE :: NACCRQC
 INTEGER, SAVE :: NRIMQC
 INTEGER, SAVE :: NWETGQC
 INTEGER, SAVE :: NDRYGQC
+INTEGER, SAVE :: NINCGQC
+INTEGER, SAVE :: NWETHQC
 INTEGER, SAVE :: NIMLTQC
 INTEGER, SAVE :: NBERFIQC
-INTEGER, SAVE :: NDEPIQC
-INTEGER, SAVE :: NINDQC  ! inductive process
 INTEGER, SAVE :: NSEDIQC
+INTEGER, SAVE :: NCDEPIQC
 INTEGER, SAVE :: NNEUTQC
 !
 ! Allowed processes for the budget of electric charge carried by rain drops
+INTEGER, SAVE :: NSFRQR
 INTEGER, SAVE :: NAUTOQR
 INTEGER, SAVE :: NACCRQR
 INTEGER, SAVE :: NREVAQR
@@ -670,20 +675,24 @@ INTEGER, SAVE :: NCFRZQR
 INTEGER, SAVE :: NWETGQR
 INTEGER, SAVE :: NDRYGQR
 INTEGER, SAVE :: NGMLTQR
+INTEGER, SAVE :: NWETHQR
+INTEGER, SAVE :: NHMLTQR
 INTEGER, SAVE :: NSEDIQR
 INTEGER, SAVE :: NNEUTQR
 !
 ! Allowed processes for the budget of electric charge carried by ice crystals
+INTEGER, SAVE :: NHONQI
 INTEGER, SAVE :: NAGGSQI
 INTEGER, SAVE :: NAUTSQI
 INTEGER, SAVE :: NCFRZQI
 INTEGER, SAVE :: NWETGQI
 INTEGER, SAVE :: NDRYGQI
+INTEGER, SAVE :: NWETHQI
 INTEGER, SAVE :: NIMLTQI
 INTEGER, SAVE :: NBERFIQI
-INTEGER, SAVE :: NDEPIQI
 INTEGER, SAVE :: NNIISQI  ! non-inductive I-S
 INTEGER, SAVE :: NSEDIQI
+INTEGER, SAVE :: NCDEPIQI
 INTEGER, SAVE :: NNEUTQI
 !
 ! Allowed processes for the budget of electric charge carried by snow
@@ -696,10 +705,12 @@ INTEGER, SAVE :: NCMELQS
 INTEGER, SAVE :: NWETGQS
 INTEGER, SAVE :: NDRYGQS
 INTEGER, SAVE :: NNIISQS  ! non-inductive I-S
+INTEGER, SAVE :: NWETHQS
 INTEGER, SAVE :: NSEDIQS
 INTEGER, SAVE :: NNEUTQS
 !
 ! Allowed processes for the budget of electric charge carried by graupel
+INTEGER, SAVE :: NSFRQG
 INTEGER, SAVE :: NDEPGQG
 INTEGER, SAVE :: NRIMQG
 INTEGER, SAVE :: NACCQG
@@ -707,12 +718,25 @@ INTEGER, SAVE :: NCMELQG
 INTEGER, SAVE :: NCFRZQG
 INTEGER, SAVE :: NWETGQG
 INTEGER, SAVE :: NDRYGQG
+INTEGER, SAVE :: NINCGQG
 INTEGER, SAVE :: NGMLTQG
-INTEGER, SAVE :: NINDQG  ! inductive process
+INTEGER, SAVE :: NWETHQG
 INTEGER, SAVE :: NSEDIQG
 INTEGER, SAVE :: NNEUTQG
 !
-! must add processes for electric charge carried by hail
+! Allowed processes for the budget of electric charge carried by hail
+INTEGER, SAVE :: NWETGQH
+INTEGER, SAVE :: NWETHQH
+INTEGER, SAVE :: NHMLTQH
+INTEGER, SAVE :: NSEDIQH
+INTEGER, SAVE :: NNEUTQH
+!
+! Allowed processes for the budget of electric charge carried by negative ions
+INTEGER, SAVE :: NDEPSNI
+INTEGER, SAVE :: NDEPGNI
+INTEGER, SAVE :: NREVANI
+INTEGER, SAVE :: NCDEPINI
+INTEGER, SAVE :: NNEUTNI
 !
 !
 REAL :: XTIME_BU          ! budget time in this time-step
