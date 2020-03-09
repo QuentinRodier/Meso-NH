@@ -266,7 +266,7 @@ END MODULE MODI_MODEL_n
 !  J. Escobar  09/07/2019: for bug in management of XLSZWSM variable, add/use specific 2D TLSFIELD2D_ll pointer
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !  J. Escobar  27/09/2019: add missing report timing of RESOLVED_ELEC
-!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
+!  P. Wautelet 02-03/2020: use the new data structures and subroutines for budgets
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -280,7 +280,10 @@ USE MODD_BIKHARDT_n
 USE MODD_BLANK
 USE MODD_BLOWSNOW
 USE MODD_BLOWSNOW_n
-USE MODD_BUDGET
+use modd_budget,          only: cbutype, lbu_ru, lbu_rv, lbu_rw, lbudget_u, lbudget_v, lbudget_w, lbu_enable, &
+                                NBUDGET_U, NBUDGET_V, NBUDGET_W, nbumod, nbutime,                             &
+                                tbudgets, tburhodj,                                                           &
+                                xburhodj, xburhodju, xburhodjv, xburhodjw, xtime_bu, xtime_bu_process
 USE MODD_CH_AERO_n,      ONLY: XSOLORG, XMI
 USE MODD_CH_MNHC_n,      ONLY: LUSECHEM,LCH_CONV_LINOX,LUSECHAQ,LUSECHIC, &
                                LCH_INIT_FIELD
@@ -1001,6 +1004,15 @@ IF (NBUMOD==IMI .AND. CBUTYPE=='MASK' ) THEN
     tbudgets(NBUDGET_U)%trhodj%xdata(:, nbutime, :) = tbudgets(NBUDGET_U)%trhodj%xdata(:, nbutime, :) &
                                                       + Mask_compress( Mxm( xrhodj(:, :, :) ) )
   end if
+  if ( lbu_rv ) then
+    tbudgets(NBUDGET_V)%trhodj%xdata(:, nbutime, :) = tbudgets(NBUDGET_V)%trhodj%xdata(:, nbutime, :) &
+                                                      + Mask_compress( Mym( xrhodj(:, :, :) ) )
+  end if
+  if ( lbu_rw ) then
+    tbudgets(NBUDGET_W)%trhodj%xdata(:, nbutime, :) = tbudgets(NBUDGET_W)%trhodj%xdata(:, nbutime, :) &
+                                                      + Mask_compress( Mzm( 1, iku, 1, xrhodj(:, :, :) ) )
+  end if
+  if ( associated( tburhodj ) ) tburhodj%xdata(:, nbutime, :) = tburhodj%xdata(:, nbutime, :) + Mask_compress( xrhodj(:, :, :) )
 END IF
 !
 IF (NBUMOD==IMI .AND. CBUTYPE=='CART' ) THEN
@@ -1016,6 +1028,14 @@ IF (NBUMOD==IMI .AND. CBUTYPE=='CART' ) THEN
   if ( lbu_ru ) then
     tbudgets(NBUDGET_U)%trhodj%xdata(:, :, :) = tbudgets(NBUDGET_U)%trhodj%xdata(:, :, :) + Cart_compress( Mxm( xrhodj(:, :, :) ) )
   end if
+  if ( lbu_rv ) then
+    tbudgets(NBUDGET_V)%trhodj%xdata(:, :, :) = tbudgets(NBUDGET_V)%trhodj%xdata(:, :, :) + Cart_compress( Mym( xrhodj(:, :, :) ) )
+  end if
+  if ( lbu_rw ) then
+    tbudgets(NBUDGET_W)%trhodj%xdata(:, :, :) = tbudgets(NBUDGET_W)%trhodj%xdata(:, :, :) &
+                                                + Cart_compress( Mzm( 1, iku, 1, xrhodj(:, :, :) ) )
+  end if
+  if ( associated( tburhodj ) ) tburhodj%xdata(:, :, :) = tburhodj%xdata(:, :, :) + Cart_compress( xrhodj(:, :, :) )
 END IF
 !
 CALL BUDGET_FLAGS(LUSERV, LUSERC, LUSERR,         &

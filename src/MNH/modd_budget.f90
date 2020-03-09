@@ -116,6 +116,7 @@ type, extends( tfield_metadata_base ) :: tburhodata
 end type tburhodata
 
 type(tbudgetdata), dimension(:), allocatable, save :: tbudgets
+type(tburhodata),                pointer,     save :: tburhodj => null() ! Budget array for rhodj used inside some tbudgets
 
 
 !                       General variables
