@@ -1654,11 +1654,12 @@ ENDIF
 !              ---------------------------
 !
 IF ( CBUTYPE /= "NONE" .AND. NBUMOD == KMI ) THEN
-  CALL INI_BUDGET(ILUOUT,XTSTEP,NSV,NRR,                                      &
+  CALL Ini_budget(ILUOUT,XTSTEP,NSV,NRR,                                      &
              LNUMDIFU,LNUMDIFTH,LNUMDIFSV,                                    &
              LHORELAX_UVWTH,LHORELAX_RV, LHORELAX_RC,LHORELAX_RR,             &
              LHORELAX_RI,LHORELAX_RS,LHORELAX_RG, LHORELAX_RH,LHORELAX_TKE,   &
-             LHORELAX_SV,LVE_RELAX,LCHTRANS,LNUDGING,LDRAGTREE,LDEPOTREE,     &
+             LHORELAX_SV,LVE_RELAX, LVE_RELAX_GRD,                            &
+             LCHTRANS,LNUDGING,LDRAGTREE,LDEPOTREE,                           &
              CRAD,CDCONV,CSCONV,CTURB,CTURBDIM,CCLOUD                         )
 END IF
 !
