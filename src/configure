@@ -52,8 +52,8 @@ case "$TARG" in
                 export VER_CDF=${VER_CDF:-CDFAUTO}
                 export MNHENV=${MNHENV:-"
 module purge
-module load intel-compilers-19/19.0.4.243
-module load intel-mpi-19/19.0.4.243
+module load intel-compilers/19.0.5
+module load intel-mpi/19.0.5
 ulimit -s unlimited
 export SLURM_CPU_BIND=none
 export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
