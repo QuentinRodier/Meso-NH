@@ -306,17 +306,17 @@ NAMELIST/NAM_BU_RRH/LBU_RRH, NASSERH, NNESTRH, NADVRH, NFRCRH, &
 NAMELIST/NAM_BU_RSV/ LBU_RSV, NASSESV, NNESTSV, NADVSV, NFRCSV, &
                      NDIFSV, NRELSV, NDCONVSV, NVTURBSV, NHTURBSV, NCHEMSV, NMAFLSV,       &
                      NNEGASV,                                                              & 
-                     NDEPSQV, NDEPGQV, NREVAQV, NDEPIQV, NNEUTQV,                          &
+                     NDEPSQV, NDEPGQV, NREVAQV, NCDEPIQV, NNEUTQV,                         &
                      NAUTOQC, NACCRQC, NRIMQC, NWETGQC, NDRYGQC, NIMLTQC, NBERFIQC,        &
-                     NDEPIQC, NINDQC, NSEDIQC, NNEUTQC,                                    &
+                     NCDEPIQC, NSEDIQC, NNEUTQC,                                           &
                      NAUTOQR, NACCRQR, NREVAQR, NACCQR, NCFRZQR, NWETGQR, NDRYGQR,         &
                      NGMLTQR, NSEDIQR, NNEUTQR,                                            &
                      NAGGSQI, NAUTSQI, NCFRZQI, NWETGQI, NDRYGQI, NIMLTQI, NBERFIQI,       &
-                     NDEPIQI, NNIISQI, NSEDIQI, NNEUTQI,                                   &
+                     NCDEPIQI, NNIISQI, NSEDIQI, NNEUTQI,                                  &
                      NDEPSQS, NAGGSQS, NAUTSQS, NRIMQS, NACCQS, NCMELQS, NWETGQS,          &
                      NDRYGQS, NNIISQS, NSEDIQS, NNEUTQS,                                   &
                      NDEPGQG, NRIMQG, NACCQG, NCMELQG, NCFRZQG, NWETGQG, NDRYGQG,          &
-                     NGMLTQG, NINDQG, NSEDIQG, NNEUTQG, NDEPOTRSV
+                     NGMLTQG, NSEDIQG, NNEUTQG, NDEPOTRSV
 ! must add budget for hail
 !
 END MODULE MODN_BUDGET
