@@ -94,7 +94,7 @@ END MODULE MODI_ENDSTEP_BUDGET
 !!                            and change the write_budget call
 !!      C.Lac       11/09/15 adaptation to FIT temporal scheme
 !  P. Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
+!  P. Wautelet 01-03/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -138,6 +138,7 @@ SELECT CASE(CBUTYPE)
 !
 !*	 1.2    resetting the budget arrays to 0.
 !
+      ! Rhodj arrays
       IF (ALLOCATED(XBURU)) XBURU=0.
       IF (ALLOCATED(XBURV)) XBURV=0.
       IF (ALLOCATED(XBURW)) XBURW=0.
@@ -157,11 +158,17 @@ SELECT CASE(CBUTYPE)
       IF (ALLOCATED(XBURHODJ)) XBURHODJ =0.
 
       if ( tbudgets(NBUDGET_U)%lenabled ) tbudgets(NBUDGET_U)%trhodj%xdata(:, :, :) = 0.
-
+      if ( tbudgets(NBUDGET_V)%lenabled ) tbudgets(NBUDGET_V)%trhodj%xdata(:, :, :) = 0.
+      if ( tbudgets(NBUDGET_W)%lenabled ) tbudgets(NBUDGET_W)%trhodj%xdata(:, :, :) = 0.
+      ! Rhodj array for other budgets than U, V, W
+      if ( associated( tburhodj ) ) tburhodj%xdata(:, :, :) = 0.
+      ! Budget arrays
       do jbu = 1, nbudgets
-        do jgrp = 1, tbudgets(jbu)%ngroups
-          tbudgets(jbu)%tgroups(jgrp)%xdata(:, :, : ) = 0.
-        end do
+        if ( tbudgets(jbu)%lenabled ) then
+          do jgrp = 1, tbudgets(jbu)%ngroups
+            tbudgets(jbu)%tgroups(jgrp)%xdata(:, :, : ) = 0.
+          end do
+        end if
       end do
 !
 !*	 1.3    reset  budget beginning flag to TRUE
@@ -182,6 +189,13 @@ SELECT CASE(CBUTYPE)
 !
 !*	 2.2    reset the budget fields to 0.
 !
+      ! Rhodj arrays
+      if ( tbudgets(NBUDGET_U)%lenabled ) tbudgets(NBUDGET_U)%trhodj%xdata(:, :, :) = 0.
+      if ( tbudgets(NBUDGET_V)%lenabled ) tbudgets(NBUDGET_V)%trhodj%xdata(:, :, :) = 0.
+      if ( tbudgets(NBUDGET_W)%lenabled ) tbudgets(NBUDGET_W)%trhodj%xdata(:, :, :) = 0.
+      ! Rhodj array for other budgets than U, V, W
+      if ( associated( tburhodj ) ) tburhodj%xdata(:, :, :) = 0.
+      ! Budget arrays
       IF (ALLOCATED(XBURU)) XBURU=0.
       IF (ALLOCATED(XBURV)) XBURV=0.
       IF (ALLOCATED(XBURW)) XBURW=0.
@@ -201,9 +215,11 @@ SELECT CASE(CBUTYPE)
       IF (ALLOCATED(XBURHODJ)) XBURHODJ =0.
 
       do jbu = 1, nbudgets
-        do jgrp = 1, tbudgets(jbu)%ngroups
-          tbudgets(jbu)%tgroups(jgrp)%xdata(:, :, : ) = 0.
-        end do
+        if ( tbudgets(jbu)%lenabled ) then
+          do jgrp = 1, tbudgets(jbu)%ngroups
+            tbudgets(jbu)%tgroups(jgrp)%xdata(:, :, : ) = 0.
+          end do
+        end if
       end do
 !
       NBUTIME=0
