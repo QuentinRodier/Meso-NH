@@ -1239,7 +1239,7 @@ XTIME_LES_BU_PROCESS = 0.
 IF (LDRAGTREE) CALL DRAG_VEG(XTSTEP,XUT,XVT,XTKET,LDEPOTREE,XVDEPOTREE, &
                              CCLOUD, XPABST,XTHT,XRT,XSVT,       &
                              XRHODJ,XZZ,XRUS, XRVS,              &
-                             XRTKES,XRTHS, XRRS,XRSVS)
+                             XRTKES, XRRS,XRSVS)
 !
 CALL SECOND_MNH2(ZTIME2)
 !

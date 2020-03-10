@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2007-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2007-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -94,7 +94,7 @@ REAL,                     INTENT(IN)    :: PRTMIN_AQ ! LWC threshold liq. chem.
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ  ! Dry density * Jacobian
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS    ! water m.r. source
+REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRRS    ! water m.r. source
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRSVS   ! S.V. source
 !
 INTEGER,                  INTENT(IN)    :: KRRL    ! Number of liq. variables

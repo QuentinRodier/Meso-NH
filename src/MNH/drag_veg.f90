@@ -12,7 +12,7 @@ INTERFACE
 SUBROUTINE DRAG_VEG(PTSTEP,PUT,PVT,PTKET,ODEPOTREE, PVDEPOTREE, &
                     HCLOUD,PPABST,PTHT,PRT,PSVT,         &
                     PRHODJ,PZZ,PRUS, PRVS, PRTKES,       &
-                    PTHS,PRRS,PSVS)
+                    PRRS,PSVS)
 !
 REAL,                     INTENT(IN)    :: PTSTEP ! Time step
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT, PVT   ! variables
@@ -34,7 +34,6 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRUS, PRVS       ! Sources of Momentu
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTKES           ! Sources of Tke
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS         
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVS       
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PTHS          
 !
 !
 
@@ -48,7 +47,7 @@ END MODULE MODI_DRAG_VEG
 SUBROUTINE DRAG_VEG(PTSTEP,PUT,PVT,PTKET,ODEPOTREE, PVDEPOTREE, &
                     HCLOUD,PPABST,PTHT,PRT,PSVT,         &
                     PRHODJ,PZZ,PRUS, PRVS, PRTKES,       &
-                    PTHS,PRRS,PSVS)
+                    PRRS,PSVS)
 !     ###################################################################
 !
 !!****  *DRAG_VEG_n * -
@@ -123,7 +122,6 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRUS, PRVS       ! Sources of Momentu
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTKES           ! Sources of Tke
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS         
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVS       
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS          
 !
 !
 !*       0.2   Declarations of local variables :

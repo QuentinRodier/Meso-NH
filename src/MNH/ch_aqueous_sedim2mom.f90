@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2008-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2008-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -23,7 +23,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ  ! Dry density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRT    ! Rain water m.r. at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRS    ! Rain water m.r. source
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCRT    ! Rain water C at t
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCRS    ! Rain water C. source
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCRS    ! Rain water C. source
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT    ! Precip. aq. species at t
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRSVS   ! Precip. aq. species source
 REAL, DIMENSION(:,:),     INTENT(OUT)   :: PINPRR  ! instantaneaous precip.
