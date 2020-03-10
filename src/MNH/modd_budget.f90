@@ -124,33 +124,12 @@ type(tburhodata),                pointer,     save :: tburhodj => null() ! Budge
 !                       General variables
 LOGICAL, SAVE :: LBU_ENABLE
 !
-INTEGER, SAVE, DIMENSION(JPBUMAX,JPBUPROMAX)  &  ! number of processes to be
-                             :: NBUINC           ! avoided for every budget
-                                                 ! between one active
-                                                 ! source to the next one
-INTEGER, SAVE, DIMENSION(JPBUMAX)             &  ! counter for all the processes
-                             :: NBUCTR_ACTV      ! activated or not
-!
 CHARACTER (LEN=4), SAVE :: CBUTYPE         ! type of desired budget 'CART'
                                            ! (cartesian box) or 'MASK' (budget
                                            ! zone defined by a mask) or 'NONE'
                                            ! (no budget)
 INTEGER, SAVE :: NBUMOD                    ! model in which budget is 
                                            ! calculated
-INTEGER, SAVE, DIMENSION(:),             & ! number of processes for each 
-                 ALLOCATABLE :: NBUPROCNBR ! budget 
-!
-INTEGER, SAVE, DIMENSION(:),             & ! process counter linked to each 
-                 ALLOCATABLE :: NBUPROCCTR ! budget 
-!
-CHARACTER(LEN=2), SAVE, DIMENSION(:,:),  & ! resulting string character of the 
-        ALLOCATABLE :: CBUACTION           ! transcription of the budget actions 
-                                           ! (integer) read in  namelists or 
-                                           ! set by default
-!
-CHARACTER (LEN=99), SAVE, DIMENSION(:,:),& ! name of a process for a budget. It
-                 ALLOCATABLE :: CBUCOMMENT ! will appear in the comment part of 
-                                           ! the previous record
 !
 LOGICAL, SAVE :: LBU_BEG                   ! switch for budget beginning
 !
@@ -210,26 +189,6 @@ INTEGER, SAVE :: NBUJMAX                   ! second dimension of the budget
                                            ! tabular
 INTEGER, SAVE :: NBUKMAX                   ! dimension along K of the budget
                                            ! tabular
-REAL, SAVE, DIMENSION(:,:,:,:),          & ! budget arrays for RU, RV and
-        ALLOCATABLE :: XBURU, XBURV, XBURW ! RW (wind components) respectively
-REAL, SAVE, DIMENSION(:,:,:,:),          & ! budget arrays for RTH (potential 
-        ALLOCATABLE :: XBURTH, XBURTKE     ! temperature) and RTKE (kinetic
-                                           ! energy)
-REAL, SAVE, DIMENSION(:,:,:,:),          & ! budget arrays for RRV (water vapor)
-        ALLOCATABLE :: XBURRV, XBURRC      ! and RRC (cloud water)
-REAL, SAVE, DIMENSION(:,:,:,:),          & ! budget arrays for RRR (rain water)
-        ALLOCATABLE :: XBURRR, XBURRI      ! and RRI (ice)
-REAL, SAVE, DIMENSION(:,:,:,:),          & ! budget arrays for RRS (snow)
-        ALLOCATABLE :: XBURRS, XBURRG      ! and RRG (graupel)
-REAL, SAVE, DIMENSION(:,:,:,:),          & ! budget array for RRH (hail)
-        ALLOCATABLE :: XBURRH              ! 
-REAL, SAVE, DIMENSION(:,:,:,:,:), &
-                 ALLOCATABLE :: XBURSV       ! Budget of the SVx
-REAL, SAVE, DIMENSION(:,:,:),            & ! budget arrays for RHODJ at
-               ALLOCATABLE :: XBURHODJ , & !   scalar localization
-                              XBURHODJU, & !        U localization
-                              XBURHODJV, & !        V localization
-                              XBURHODJW    !    and W localization
 !
 !      Allowed processes for the budget of the x scalar variables
 !        (transport part only)

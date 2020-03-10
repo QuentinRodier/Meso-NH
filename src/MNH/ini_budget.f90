@@ -14,7 +14,7 @@ module mode_ini_budget
 contains
 
 !     #################################################################
-      SUBROUTINE INI_BUDGET(KLUOUT,PTSTEP,KSV,KRR,                    &
+      SUBROUTINE Ini_budget(KLUOUT,PTSTEP,KSV,KRR,                    &
       ONUMDIFU,ONUMDIFTH,ONUMDIFSV,                                   &
       OHORELAX_UVWTH,OHORELAX_RV,OHORELAX_RC,OHORELAX_RR,             &
       OHORELAX_RI,OHORELAX_RS, OHORELAX_RG, OHORELAX_RH,OHORELAX_TKE, &
@@ -191,10 +191,7 @@ CHARACTER (LEN=*), INTENT(IN) :: HTURBDIM! dimensionnality of the turbulence
 CHARACTER (LEN=*), INTENT(IN) :: HCLOUD ! type of microphysical scheme
 !
 !*       0.2   declarations of local variables
-!                                                     
-INTEGER, DIMENSION(JPBUMAX,JPBUPROMAX+1) :: IPROACTV      ! switches set by the
-                                                          ! user for process 
-                                                          ! activation
+!
 INTEGER :: JI, JJ, JK , JJJ                               ! loop indices
 INTEGER :: IIMAX_ll, IJMAX_ll ! size of the physical global domain
 INTEGER :: IIU, IJU                                       ! size along x and y directions
@@ -208,18 +205,8 @@ INTEGER :: IBUDIM2                                        ! second dimension of 
 INTEGER :: IBUDIM3                                        ! third dimension of the budget arrays
                                                           ! = NBUKMAX in CART case
                                                           ! = NBUMASK in MASK case
-LOGICAL :: GERROR                                         ! switch for error in
-                                                          ! budget specifcation
-CHARACTER(LEN=7), DIMENSION(JPBUMAX) :: YEND_COMMENT      ! last part of comment
-                                                          ! for budgets records
-CHARACTER(LEN=6), DIMENSION(JPBUMAX,JPBUPROMAX) :: YWORK2 ! used for
-                                                          ! concatenattion of  
-                                                          ! comments for budgets
-CHARACTER(LEN=40)                  :: YSTRING
 character(len=3)    :: ybudgetnum
-INTEGER             :: ILEN
 INTEGER             :: JSV               ! loop indice for the SVs
-INTEGER             :: IBUPROCNBR_SV_MAX ! Max number of processes for the SVs
 INTEGER             :: IINFO_ll ! return status of the interface routine
 integer             :: ibudget
 integer             :: isourcesmax          ! Maximum number of source terms in a budget
@@ -353,15 +340,6 @@ END IF
 !*       2.    ALLOCATE MEMORY FOR BUDGET ARRAYS AND INITIALIZE
 !              ------------------------------------------------
 !
-ALLOCATE( NBUPROCNBR(JPBUMAX) )
-ALLOCATE( NBUPROCCTR(JPBUMAX) )
-ALLOCATE( CBUACTION(JPBUMAX, JPBUPROMAX) )
-ALLOCATE( CBUCOMMENT(JPBUMAX, JPBUPROMAX) )
-NBUPROCCTR(:) = 0
-NBUCTR_ACTV(:) = 0
-NBUPROCNBR(:) = 0
-CBUACTION(:,:) = 'OF' 
-CBUCOMMENT(:,:) = ' '
 LBU_BEG =.TRUE. 
 !
 !-------------------------------------------------------------------------------
@@ -369,13 +347,6 @@ LBU_BEG =.TRUE.
 !*       3.    INITALIZE VARIABLES
 !              -------------------
 !
-IPROACTV(:,:) = 3
-IPROACTV(:,4) = 1
-IPROACTV(:,JPBUPROMAX+1) = 0
-GERROR=.FALSE.
-YWORK2(:,:) = ' '
-YEND_COMMENT(:) = ' '
-
 !Create intermediate variable to store rhodj for scalar variables
 if ( lbu_rth .or. lbu_rtke .or. lbu_rrv .or. lbu_rrc .or. lbu_rrr .or. &
      lbu_rri .or. lbu_rrs  .or. lbu_rrg .or. lbu_rrh .or. lbu_rsv      ) then
@@ -3527,119 +3498,6 @@ SV_BUDGETS: do jsv = 1, ksv
   end if
 end do SV_BUDGETS
 
-!-------------------------------------------------------------------------------
-!*       4.    COMPUTE THE INCREMENT BETWEEN TWO ACTIVE SOURCES 
-!              ------------------------------------------------
-!
-NBUINC(:,:) = 1
-DO JI = 1, JPBUMAX
-  DO JJ = 4, JPBUPROMAX-1
-    DO JK = JJ+1,JPBUPROMAX
-      IF ( IPROACTV(JI,JK) /= 3 ) EXIT
-      NBUINC(JI,JJ) = NBUINC(JI,JJ) +1
-    END DO 
-  END DO
-END DO
-!
-!-------------------------------------------------------------------------------
-!*       5.    COMPUTE PROCESSES ACTIONS AND NAMES OF BUDGET OUTPUT ARRAYS 
-!              -----------------------------------------------------------
-!
-!
-DO JI=1,JPBUMAX                                ! loop on the allowed budgets names of recording files
-  IF (IPROACTV(JI,4) >= 2) THEN
-    WRITE(UNIT=KLUOUT,FMT= '("Error in budget specification of ",A7,/," &
-    & The first source either is the first element of a group of sources or &
-    & is not considered")')  YEND_COMMENT(JI)
-    WRITE(UNIT=KLUOUT,FMT= '("change this namelist element ")')  
-    GERROR = .TRUE.
-  END IF
-!    
-  DO JJ=4,JPBUPROMAX                           ! loop on the allowed processes
-    IF (IPROACTV(JI,JJ) == 0) THEN
-      IF(IPROACTV(JI,JJ+NBUINC(JI,JJ)) == 0) THEN
-        CBUACTION(JI,JJ)='OF'
-      ELSE IF (IPROACTV(JI,JJ+NBUINC(JI,JJ)) == 1) THEN
-        CBUACTION(JI,JJ)='CC'
-      ELSE IF (IPROACTV(JI,JJ+NBUINC(JI,JJ)) == 2) THEN
-        WRITE(UNIT=KLUOUT,FMT= '("Error in budget specification of ",A15)') &
-        ADJUSTL( ADJUSTR(YWORK2(JI,JJ+NBUINC(JI,JJ)))//ADJUSTL(YEND_COMMENT(JI)))
-        WRITE(UNIT=KLUOUT,FMT= '("change this namelist ")')
-        GERROR = .TRUE.
-      END IF
-    ELSE IF (IPROACTV(JI,JJ) <= 2) THEN
-      DO JJJ = JJ+NBUINC(JI,JJ), JPBUPROMAX
-         IF(IPROACTV(JI,JJJ) /= 3 .AND. IPROACTV(JI,JJJ) /= 4) EXIT
-      END DO
-!
-      IF (IPROACTV(JI,JJJ) == 1) THEN
-        NBUPROCNBR(JI) = NBUPROCNBR(JI)+1
-        CBUACTION(JI,JJ) = 'DC'
-        CBUCOMMENT(JI,NBUPROCNBR(JI)) =                            ADJUSTL(    &
-                                   ADJUSTR( CBUCOMMENT(JI,NBUPROCNBR(JI)) ) // &
-                                   ADJUSTL( ADJUSTR( YWORK2(JI,JJ) ) //        &
-                                            ADJUSTL( YEND_COMMENT(JI) ) ) )
-      ELSE IF (IPROACTV(JI,JJJ) == 0) THEN
-        NBUPROCNBR(JI) = NBUPROCNBR(JI)+1
-        CBUACTION(JI,JJ) = 'DD'
-        CBUCOMMENT(JI,NBUPROCNBR(JI)) =                            ADJUSTL(    &
-                                   ADJUSTR( CBUCOMMENT(JI,NBUPROCNBR(JI)) ) // &
-                                   ADJUSTL( ADJUSTR( YWORK2(JI,JJ) ) //        &
-                                            ADJUSTL( YEND_COMMENT(JI) ) ) )
-      ELSE IF (IPROACTV(JI,JJJ) == 2) THEN
-        CBUACTION(JI,JJ) = 'NO'
-        CBUCOMMENT(JI,NBUPROCNBR(JI)+1) =           ADJUSTL(                   &
-                                  ADJUSTR( CBUCOMMENT(JI,NBUPROCNBR(JI)+1)) // &
-                                  ADJUSTL( YWORK2(JI,JJ) ) )
-      END IF
-    ELSEIF (IPROACTV(JI,JJ) == 3) THEN
-      CBUACTION(JI,JJ) = 'RM'
-    ELSEIF (IPROACTV(JI,JJ) == 4) THEN
-      CBUACTION(JI,JJ) = 'OF'
-    ELSE
-      WRITE(UNIT=KLUOUT,FMT= '("Error in budget specification of ",A7)') &
-            YEND_COMMENT(JI)
-      WRITE(UNIT=KLUOUT,FMT= '("change this namelist ")')
-      GERROR = .TRUE.
-    END IF
-  END DO
-END DO
-!   writes on output the explicit chain of sources for all the budgets
-DO JI=1,JPBUMAX                            ! loop over the allowed budgets
-  YSTRING = ADJUSTL( YEND_COMMENT(JI) )
-  ILEN    = LEN_TRIM(YSTRING)
-  IF( ILEN /= 0 ) THEN
-    IF( JI < NBUDGET_SV1 ) THEN
-      WRITE (UNIT=KLUOUT,FMT='(/,"budget ",A7," with ",I2," vectors")')        &
-                                                  YSTRING(1:ILEN),NBUPROCNBR(JI)
-      DO JJ=1,3
-        YSTRING = CBUCOMMENT(JI,JJ)
-        ILEN    = LEN_TRIM(YSTRING)
-        WRITE (UNIT=KLUOUT,FMT='(12X,A40)')         YSTRING(1:ILEN)
-      END DO
-      DO JJ=4,NBUPROCNBR(JI)                  ! loop over the allowed processes
-        YSTRING = CBUCOMMENT(JI,JJ)
-        ILEN    = LEN_TRIM(YSTRING)
-        WRITE (UNIT=KLUOUT,FMT='(20X,A40)')         YSTRING(1:ILEN)
-      END DO
-    ELSE
-      WRITE (UNIT=KLUOUT,                                                      &
-             FMT='(/,"budget ",A7," (number ",I3,") with ",I2," vectors")')    &
-                                   YSTRING(1:ILEN),JI-NBUDGET_SV1+1,NBUPROCNBR(JI)
-      DO JJ=1,3
-        YSTRING = CBUCOMMENT(JI,JJ)
-        ILEN    = LEN_TRIM(YSTRING)
-        WRITE (UNIT=KLUOUT,FMT='(12X,A40)')         YSTRING(1:ILEN)
-      END DO
-      DO JJ=4,NBUPROCNBR(JI)                  ! loop over the allowed processes
-        YSTRING = CBUCOMMENT(JI,JJ)
-        ILEN    = LEN_TRIM(YSTRING)
-        WRITE (UNIT=KLUOUT,FMT='(20X,A40)')         YSTRING(1:ILEN)
-      END DO
-    END IF
-  END IF
-END DO
-!
 IF (CBUTYPE=='CART') THEN
   WRITE(UNIT=KLUOUT, FMT= '(2/,"DESCRIPTION OF THE BUDGET BOX")' )
   WRITE(UNIT=KLUOUT, FMT= '("BUIL = ",I4.4)' ) NBUIL
@@ -3664,95 +3522,10 @@ IF (CBUTYPE=='MASK') THEN
   WRITE(UNIT=KLUOUT, FMT= '("BUWRNB = ",I4.4)' ) NBUWRNB
   WRITE(UNIT=KLUOUT, FMT= '("BUMASK = ",I4.4)' ) NBUMASK
 END IF
-IF (GERROR) THEN
-  call Print_msg( NVERB_FATAL, 'BUD', 'INI_BUDGET', '' )
-ENDIF
 
 call Ini_budget_groups( tbudgets, ibudim1, ibudim2, ibudim3 )
 
-!-------------------------------------------------------------------------------
-!*       5.    ALLOCATE MEMORY FOR BUDGET STORAGE ARRAYS
-!              -----------------------------------------
-IF (LBU_RU) THEN
-  ALLOCATE ( XBURU(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(NBUDGET_U)) )
-  XBURU(:,:,:,:)=0.
-  ALLOCATE ( XBURHODJU(IBUDIM1, IBUDIM2, IBUDIM3) )
-  XBURHODJU(:,:,:)=0.
-END IF
-!
-IF (LBU_RV) THEN
-  ALLOCATE ( XBURV(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(NBUDGET_V)) )
-  XBURV(:,:,:,:)=0.
-  ALLOCATE ( XBURHODJV(IBUDIM1, IBUDIM2, IBUDIM3) )
-  XBURHODJV(:,:,:)=0.
-END IF
-!
-IF (LBU_RW) THEN
-  ALLOCATE ( XBURW(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(NBUDGET_W)) )
-  XBURW(:,:,:,:)=0.
-  ALLOCATE ( XBURHODJW(IBUDIM1, IBUDIM2, IBUDIM3) )
-  XBURHODJW(:,:,:)=0.
-END IF
-!
-IF (LBU_RTH .OR. LBU_RTKE .OR. LBU_RRV .OR. LBU_RRC .OR. LBU_RRR .OR. &
-    LBU_RRI .OR. LBU_RRS  .OR. LBU_RRG .OR. LBU_RRH .OR. LBU_RSV      ) THEN
-  ALLOCATE ( XBURHODJ(IBUDIM1, IBUDIM2, IBUDIM3) )
-  XBURHODJ(:,:,:)=0.
-END IF
-!
-IF (LBU_RTH) THEN
-  ALLOCATE ( XBURTH(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(NBUDGET_TH)) )
-  XBURTH(:,:,:,:)=0.
-END IF
-!
-IF (LBU_RTKE) THEN
-  ALLOCATE ( XBURTKE(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(NBUDGET_TKE)) )
-  XBURTKE(:,:,:,:)=0.
-END IF
-!
-IF (LBU_RRV) THEN
-  ALLOCATE ( XBURRV(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(NBUDGET_RV)) )
-  XBURRV(:,:,:,:)=0.
-END IF
-!
-IF (LBU_RRC) THEN
-  ALLOCATE ( XBURRC(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(NBUDGET_RC)) )
-  XBURRC(:,:,:,:)=0.
-END IF
-!
-IF (LBU_RRR) THEN
-  ALLOCATE ( XBURRR(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(NBUDGET_RR)) )
-  XBURRR(:,:,:,:)=0.
-END IF
-!
-IF (LBU_RRI) THEN
-  ALLOCATE ( XBURRI(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(NBUDGET_RI)) )
-  XBURRI(:,:,:,:)=0.
-END IF
-!
-IF (LBU_RRS) THEN
-  ALLOCATE ( XBURRS(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(NBUDGET_RS)) )
-  XBURRS(:,:,:,:)=0.
-END IF
-!
-IF (LBU_RRG) THEN
-  ALLOCATE ( XBURRG(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(NBUDGET_RG)) )
-  XBURRG(:,:,:,:)=0.
-END IF
-!
-IF (LBU_RRH) THEN
-  ALLOCATE ( XBURRH(IBUDIM1, IBUDIM2, IBUDIM3, NBUPROCNBR(NBUDGET_RH)) )
-  XBURRH(:,:,:,:)=0.
-END IF
-!
-IF (LBU_RSV) THEN
-  ALLOCATE ( XBURSV(IBUDIM1, IBUDIM2, IBUDIM3, IBUPROCNBR_SV_MAX, KSV) )
-  XBURSV(:,:,:,:,:)=0.
-END IF
-!
-!-------------------------------------------------------------------------------
-!
-END SUBROUTINE INI_BUDGET
+end subroutine Ini_budget
 
 
 subroutine Budget_source_add( tpbudget, tpsource, ocond, kgroupin, odonotinit, ooverwrite )

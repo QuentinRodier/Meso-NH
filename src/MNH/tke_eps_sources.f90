@@ -122,7 +122,6 @@ END MODULE MODI_TKE_EPS_SOURCES
 !!                          'CART' for cartesian box configuration
 !!                          'MASK' for budget zone defined by a mask 
 !!                          'NONE'  ' for no budget
-!!         NBUPROCCTR   : process counter used for each budget variable
 !!         LBU_RTKE     : logical for budget of RTKE (turbulent kinetic energy)
 !!                        .TRUE. = budget of RTKE       
 !!                        .FALSE. = no budget of RTKE

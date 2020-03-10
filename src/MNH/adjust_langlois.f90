@@ -86,7 +86,6 @@ END MODULE MODI_ADJUST_LANGLOIS
 !!      Module MODD_BUDGET:
 !!         NBUMOD
 !!         CBUTYPE
-!!         NBUPROCCTR
 !!         LBU_RTH
 !!         LBU_RRV
 !!         LBU_RRC

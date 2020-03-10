@@ -250,7 +250,6 @@ END MODULE MODI_TURB
 !!      Module MODD_BUDGET:
 !!         NBUMOD  
 !!         CBUTYPE 
-!!         NBUPROCCTR 
 !!         LBU_RU     
 !!         LBU_RV     
 !!         LBU_RW     

@@ -55,25 +55,6 @@ END MODULE MODI_ENDSTEP_BUDGET
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
 !!       Module MODD_BUDGET
-!!         CBUTYPE     : budget type : CART, MASK or NONE
-!!         LBU_BEG     : switch for the budget begining
-!!         NBUTIME     : number of the budget step
-!!         NBUWRI      : NUMBER of budget steps when the budget 
-!!                       is written on FM-file
-!!         XBURU       : budget array of the variable RU
-!!         XBURV       : budget array of the variable RV
-!!         XBURW       : budget array of the variable RW
-!!         XBURTH      : budget array of the variable RTH
-!!         XBURTKE     : budget array of the variable RTKE
-!!         XBURRV      : budget array of the variable RRV
-!!         XBURRC      : budget array of the variable RRC
-!!         XBURRR      : budget array of the variable RRR
-!!         XBURRI      : budget array of the variable RRI
-!!         XBURRS      : budget array of the variable RRS
-!!         XBURRG      : budget array of the variable RRG
-!!         XBURRH      : budget array of the variable RRH
-!!         XBURSVx     : budget array of the variable RSVx
-!!
 !!
 !!    REFERENCE
 !!    ---------
@@ -139,24 +120,6 @@ SELECT CASE(CBUTYPE)
 !*	 1.2    resetting the budget arrays to 0.
 !
       ! Rhodj arrays
-      IF (ALLOCATED(XBURU)) XBURU=0.
-      IF (ALLOCATED(XBURV)) XBURV=0.
-      IF (ALLOCATED(XBURW)) XBURW=0.
-      IF (ALLOCATED(XBURTH)) XBURTH=0.
-      IF (ALLOCATED(XBURTKE)) XBURTKE=0.
-      IF (ALLOCATED(XBURRV)) XBURRV=0.
-      IF (ALLOCATED(XBURRC)) XBURRC=0.
-      IF (ALLOCATED(XBURRR)) XBURRR=0.
-      IF (ALLOCATED(XBURRI)) XBURRI=0.
-      IF (ALLOCATED(XBURRS)) XBURRS=0.
-      IF (ALLOCATED(XBURRG)) XBURRG=0.
-      IF (ALLOCATED(XBURRH)) XBURRH=0.
-      IF (ALLOCATED(XBURSV)) XBURSV=0.
-      IF (ALLOCATED(XBURHODJU)) XBURHODJU=0.
-      IF (ALLOCATED(XBURHODJV)) XBURHODJV=0.
-      IF (ALLOCATED(XBURHODJW)) XBURHODJW=0.
-      IF (ALLOCATED(XBURHODJ)) XBURHODJ =0.
-
       if ( tbudgets(NBUDGET_U)%lenabled ) tbudgets(NBUDGET_U)%trhodj%xdata(:, :, :) = 0.
       if ( tbudgets(NBUDGET_V)%lenabled ) tbudgets(NBUDGET_V)%trhodj%xdata(:, :, :) = 0.
       if ( tbudgets(NBUDGET_W)%lenabled ) tbudgets(NBUDGET_W)%trhodj%xdata(:, :, :) = 0.
@@ -196,24 +159,6 @@ SELECT CASE(CBUTYPE)
       ! Rhodj array for other budgets than U, V, W
       if ( associated( tburhodj ) ) tburhodj%xdata(:, :, :) = 0.
       ! Budget arrays
-      IF (ALLOCATED(XBURU)) XBURU=0.
-      IF (ALLOCATED(XBURV)) XBURV=0.
-      IF (ALLOCATED(XBURW)) XBURW=0.
-      IF (ALLOCATED(XBURTH)) XBURTH=0.
-      IF (ALLOCATED(XBURTKE)) XBURTKE=0.
-      IF (ALLOCATED(XBURRV)) XBURRV=0.
-      IF (ALLOCATED(XBURRC)) XBURRC=0.
-      IF (ALLOCATED(XBURRR)) XBURRR=0.
-      IF (ALLOCATED(XBURRI)) XBURRI=0.
-      IF (ALLOCATED(XBURRS)) XBURRS=0.
-      IF (ALLOCATED(XBURRG)) XBURRG=0.
-      IF (ALLOCATED(XBURRH)) XBURRH=0.
-      IF (ALLOCATED(XBURSV)) XBURSV=0.
-      IF (ALLOCATED(XBURHODJU)) XBURHODJU=0.
-      IF (ALLOCATED(XBURHODJV)) XBURHODJV=0.
-      IF (ALLOCATED(XBURHODJW)) XBURHODJW=0.
-      IF (ALLOCATED(XBURHODJ)) XBURHODJ =0.
-
       do jbu = 1, nbudgets
         if ( tbudgets(jbu)%lenabled ) then
           do jgrp = 1, tbudgets(jbu)%ngroups

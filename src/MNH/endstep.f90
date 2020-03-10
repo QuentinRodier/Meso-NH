@@ -147,7 +147,6 @@ END MODULE MODI_ENDSTEP
 !!    MODULE MODD_CTURB containing XTKEMIN, XEPSMIN
 !!    MODULE MODD_BUDGET:
 !!         NBUMOD       : model in which budget is calculated
-!!         NBUPROCCTR   : process counter used for each budget variable
 !!         NBUTSHIFT    : temporal shift for budgets writing
 !!
 !!    REFERENCE
@@ -204,7 +203,7 @@ use modd_budget,     only: lbudget_u,  lbudget_v,  lbudget_w,  lbudget_th, lbudg
                            lbudget_rr, lbudget_ri, lbudget_rs, lbudget_rg, lbudget_rh,  lbudget_sv,  lbu_enable, &
                            NBUDGET_U,  NBUDGET_V,  NBUDGET_W,  NBUDGET_TH, NBUDGET_TKE, NBUDGET_RV,  NBUDGET_RC, &
                            NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH,  NBUDGET_SV1,             &
-                           nbuctr_actv, nbuprocctr, nbustep, tbudgets
+                           nbustep, tbudgets
 USE MODD_CH_AEROSOL, ONLY: LORILAM
 USE MODD_CONF
 USE MODD_CTURB
@@ -521,9 +520,6 @@ END IF
 !*      10.   STORAGE IN BUDGET ARRAYS
 !
 IF (LBU_ENABLE) THEN
-  NBUPROCCTR (1 : NBUDGET_SV1 - 1 + KSV ) = 3
-  NBUCTR_ACTV(1 : NBUDGET_SV1 - 1 + KSV ) = 3
-
   !Division by nbustep to compute average on the selected time period
   if ( lbudget_u .or. lbudget_v .or. lbudget_u .or. lbudget_v .or. lbudget_w .or. lbudget_th &
        .or. lbudget_tke .or. lbudget_rv .or. lbudget_rc .or. lbudget_rr .or. lbudget_ri      &
@@ -548,9 +544,6 @@ IF (LBU_ENABLE) THEN
       call Budget_store_end( tbudgets(jsv + NBUDGET_SV1 - 1), 'AVEF', psvt(:, :, :, jsv) * zrhodjontime(:, :, :) )
     end do
   end if
-!
-  NBUPROCCTR (1 : NBUDGET_SV1 - 1 + KSV ) = 2
-  NBUCTR_ACTV(1 : NBUDGET_SV1 - 1 + KSV ) = 2
 
   if ( lbudget_u   ) call Budget_store_end( tbudgets(NBUDGET_U  ), 'ENDF', pus  (:, :, :) * Mxm( prhodj(:, :, :) ) / ptstep )
   if ( lbudget_v   ) call Budget_store_end( tbudgets(NBUDGET_V  ), 'ENDF', pvs  (:, :, :) * Mym( prhodj(:, :, :) ) / ptstep )

@@ -129,7 +129,6 @@ END MODULE MODI_NUM_DIFF
 !!                          'CART' for cartesian box configuration
 !!                          'MASK' for budget zone defined by a mask
 !!                          'NONE'  ' for no budget
-!!         NBUPROCCTR   : process counter used for each budget variable
 !!         Switches for budgets activations:
 !!
 !!         LBU_RU       : logical for budget of RU (wind component along x)

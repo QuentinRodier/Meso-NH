@@ -111,7 +111,6 @@ END MODULE MODI_SLOW_TERMS
 !!                          'CART' for cartesian box configuration
 !!                          'MASK' for budget zone defined by a mask 
 !!                          'NONE'  ' for no budget
-!!         NBUPROCCTR   : process counter used for each budget variable
 !!         LBU_RTH      : logical for budget of RTH (potential temperature)
 !!                        .TRUE. = budget of RTH        
 !!                        .FALSE. = no budget of RTH

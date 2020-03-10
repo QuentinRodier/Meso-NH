@@ -77,7 +77,6 @@ END MODULE MODI_INITIAL_GUESS
 !!         LBU_BEG      : logical for budget begnning
 !!                       .TRUE. = budget begining
 !!                       .FALSE. = no budget begining
-!!         NBUPROCCTR   : process counter used for each budget variable
 !!         Switches for budgets activations:
 !!         
 !!         LBU_RU       : logical for budget of RU (wind component along x)
@@ -152,7 +151,7 @@ use modd_budget,     only: lbudget_u,  lbudget_v,  lbudget_w,  lbudget_th, lbudg
                            lbudget_rr, lbudget_ri, lbudget_rs, lbudget_rg, lbudget_rh,  lbudget_sv,              &
                            NBUDGET_U,  NBUDGET_V,  NBUDGET_W,  NBUDGET_TH, NBUDGET_TKE, NBUDGET_RV,  NBUDGET_RC, &
                            NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH,  NBUDGET_SV1,             &
-                           lbu_beg, lbu_enable, nbuctr_actv, nbuprocctr, tbudgets
+                           lbu_beg, lbu_enable, tbudgets
 USE MODD_CONF
 USE MODD_GRID_n
 
@@ -237,9 +236,6 @@ END IF
 !
 IF (LBU_ENABLE) THEN
   IF (LBU_BEG) THEN
-    NBUPROCCTR(:)=1
-    NBUCTR_ACTV(:)=1
-
     !Remark: does not need a call to Budget_store_init because the budget array is overwritten for this source term
     if ( lbudget_u   ) call Budget_store_end( tbudgets(NBUDGET_U  ), 'INIF', prus  (:, :, :)    )
     if ( lbudget_v   ) call Budget_store_end( tbudgets(NBUDGET_V  ), 'INIF', prvs  (:, :, :)    )
@@ -259,9 +255,6 @@ IF (LBU_ENABLE) THEN
       end do
     end if
   END IF
-!
-  NBUPROCCTR(:)=4
-  NBUCTR_ACTV(:)=4
 !
 !  stores the Asselin source term
 !

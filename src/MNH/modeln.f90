@@ -283,7 +283,7 @@ USE MODD_BLOWSNOW_n
 use modd_budget,          only: cbutype, lbu_ru, lbu_rv, lbu_rw, lbudget_u, lbudget_v, lbudget_w, lbu_enable, &
                                 NBUDGET_U, NBUDGET_V, NBUDGET_W, nbumod, nbutime,                             &
                                 tbudgets, tburhodj,                                                           &
-                                xburhodj, xburhodju, xburhodjv, xburhodjw, xtime_bu, xtime_bu_process
+                                xtime_bu, xtime_bu_process
 USE MODD_CH_AERO_n,      ONLY: XSOLORG, XMI
 USE MODD_CH_MNHC_n,      ONLY: LUSECHEM,LCH_CONV_LINOX,LUSECHAQ,LUSECHIC, &
                                LCH_INIT_FIELD
@@ -990,16 +990,7 @@ ELSE
 END IF
 !
 IF (NBUMOD==IMI .AND. CBUTYPE=='MASK' ) THEN
-  CALL SET_MASK
-  IF (LBU_RU)   XBURHODJU(:,NBUTIME,:) = XBURHODJU(:,NBUTIME,:)    &
-                            + MASK_COMPRESS(MXM(XRHODJ))
-  IF (LBU_RV)   XBURHODJV(:,NBUTIME,:) = XBURHODJV(:,NBUTIME,:)    &
-                            + MASK_COMPRESS(MYM(XRHODJ))
-  IF (LBU_RW)   XBURHODJW(:,NBUTIME,:) = XBURHODJW(:,NBUTIME,:)    &
-                            + MASK_COMPRESS(MZM(1,IKU,1,XRHODJ))
-  IF (ALLOCATED(XBURHODJ))                                         &
-                XBURHODJ (:,NBUTIME,:) = XBURHODJ (:,NBUTIME,:)    &
-                              + MASK_COMPRESS(XRHODJ)
+  CALL SET_MASK()
   if ( lbu_ru ) then
     tbudgets(NBUDGET_U)%trhodj%xdata(:, nbutime, :) = tbudgets(NBUDGET_U)%trhodj%xdata(:, nbutime, :) &
                                                       + Mask_compress( Mxm( xrhodj(:, :, :) ) )
@@ -1016,15 +1007,6 @@ IF (NBUMOD==IMI .AND. CBUTYPE=='MASK' ) THEN
 END IF
 !
 IF (NBUMOD==IMI .AND. CBUTYPE=='CART' ) THEN
-  IF (LBU_RU)   XBURHODJU(:,:,:) = XBURHODJU(:,:,:)    &
-                + CART_COMPRESS(MXM(XRHODJ))
-  IF (LBU_RV)   XBURHODJV(:,:,:) = XBURHODJV(:,:,:)    &
-                + CART_COMPRESS(MYM(XRHODJ))
-  IF (LBU_RW)   XBURHODJW(:,:,:) = XBURHODJW(:,:,:)    &
-                + CART_COMPRESS(MZM(1,IKU,1,XRHODJ))
-  IF (ALLOCATED(XBURHODJ))                             &
-                XBURHODJ (:,:,:) = XBURHODJ (:,:,:)    &
-                + CART_COMPRESS(XRHODJ)
   if ( lbu_ru ) then
     tbudgets(NBUDGET_U)%trhodj%xdata(:, :, :) = tbudgets(NBUDGET_U)%trhodj%xdata(:, :, :) + Cart_compress( Mxm( xrhodj(:, :, :) ) )
   end if

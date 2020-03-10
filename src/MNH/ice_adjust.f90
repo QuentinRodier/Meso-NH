@@ -128,7 +128,6 @@ END MODULE MODI_ICE_ADJUST
 !!      Module MODD_BUDGET:
 !!         NBUMOD 
 !!         CBUTYPE
-!!         NBUPROCCTR 
 !!         LBU_RTH    
 !!         LBU_RRV  
 !!         LBU_RRC  
