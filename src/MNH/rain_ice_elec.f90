@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -705,7 +705,9 @@ IF (IMICRO > 0) THEN
 !
   IF (LBU_ENABLE .OR. LLES_CALL) THEN
     ALLOCATE(ZRHODJ(IMICRO))
-    ZRHODJ(:) = PACK( PRHODJ(:,:,:),MASK=GMICRO(:,:,:) )
+    DO JL=1,IMICRO
+      ZRHODJ(JL) = PRHODJ(I1(JL),I2(JL),I3(JL))
+    END DO
   END IF
 !
   ALLOCATE( ZECT(IMICRO) )
@@ -940,47 +942,38 @@ IF (IMICRO > 0) THEN
 !
 !*       8.1     Update the mixing ratio
 !
-  ZW(:,:,:) = PRVS(:,:,:)
-  PRVS(:,:,:) = UNPACK( ZRVS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
-  ZW(:,:,:) = PRCS(:,:,:)
-  PRCS(:,:,:) = UNPACK( ZRCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
-  ZW(:,:,:) = PRRS(:,:,:)
-  PRRS(:,:,:) = UNPACK( ZRRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
-  ZW(:,:,:) = PRIS(:,:,:)
-  PRIS(:,:,:) = UNPACK( ZRIS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
-  ZW(:,:,:) = PRSS(:,:,:)
-  PRSS(:,:,:) = UNPACK( ZRSS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
-  ZW(:,:,:) = PRGS(:,:,:)
-  PRGS(:,:,:) = UNPACK( ZRGS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
+  DO JL=1,IMICRO
+    PRVS(I1(JL),I2(JL),I3(JL)) = ZRVS(JL)
+    PRCS(I1(JL),I2(JL),I3(JL)) = ZRCS(JL)
+    PRRS(I1(JL),I2(JL),I3(JL)) = ZRRS(JL)
+    PRIS(I1(JL),I2(JL),I3(JL)) = ZRIS(JL)
+    PRSS(I1(JL),I2(JL),I3(JL)) = ZRSS(JL)
+    PRGS(I1(JL),I2(JL),I3(JL)) = ZRGS(JL)
+    PTHS(I1(JL),I2(JL),I3(JL)) = ZTHS(JL)
+    PCIT(I1(JL),I2(JL),I3(JL)) = ZCIT(JL)
+  END DO
   IF ( KRR == 7 ) THEN
-    ZW(:,:,:) = PRHS(:,:,:)
-    PRHS(:,:,:) = UNPACK( ZRHS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
+    DO JL=1,IMICRO
+      PRHS(I1(JL),I2(JL),I3(JL)) = ZRHS(JL)
+    END DO
   END IF
-  ZW(:,:,:) = PTHS(:,:,:)
-  PTHS(:,:,:) = UNPACK( ZTHS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
-  ZW(:,:,:) = PCIT(:,:,:)
-  PCIT(:,:,:) = UNPACK( ZCIT(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
 !
 !
 !*	8.2	Compute the volumetric charge concentration
 !
-  ZW(:,:,:)   = PQPIS(:,:,:)
-  PQPIS(:,:,:) = UNPACK( ZQPIS(:), MASK=GMICRO(:,:,:), FIELD=ZW(:,:,:) ) 
-  ZW(:,:,:)   = PQNIS(:,:,:)
-  PQNIS(:,:,:) = UNPACK( ZQNIS(:), MASK=GMICRO(:,:,:), FIELD=ZW(:,:,:) ) 
-  ZW(:,:,:)   = PQCS(:,:,:)
-  PQCS(:,:,:) = UNPACK( ZQCS(:), MASK=GMICRO(:,:,:), FIELD=ZW(:,:,:) )
-  ZW(:,:,:)   = PQRS(:,:,:)
-  PQRS(:,:,:) = UNPACK( ZQRS(:), MASK=GMICRO(:,:,:), FIELD=ZW(:,:,:) )
-  ZW(:,:,:)   = PQIS(:,:,:)
-  PQIS(:,:,:) = UNPACK( ZQIS(:), MASK=GMICRO(:,:,:), FIELD=ZW(:,:,:) )
-  ZW(:,:,:)   = PQSS(:,:,:)
-  PQSS(:,:,:) = UNPACK( ZQSS(:), MASK=GMICRO(:,:,:), FIELD=ZW(:,:,:) )
-  ZW(:,:,:)   = PQGS(:,:,:)
-  PQGS(:,:,:) = UNPACK( ZQGS(:), MASK=GMICRO(:,:,:), FIELD=ZW(:,:,:) )
+  DO JL=1,IMICRO
+    PQPIS(I1(JL),I2(JL),I3(JL)) = ZQPIS(JL)
+    PQNIS(I1(JL),I2(JL),I3(JL)) = ZQNIS(JL)
+    PQCS (I1(JL),I2(JL),I3(JL)) = ZQCS(JL)
+    PQRS (I1(JL),I2(JL),I3(JL)) = ZQRS(JL)
+    PQIS (I1(JL),I2(JL),I3(JL)) = ZQIS(JL)
+    PQSS (I1(JL),I2(JL),I3(JL)) = ZQSS(JL)
+    PQGS (I1(JL),I2(JL),I3(JL)) = ZQGS(JL)
+  END DO
   IF ( KRR == 7 ) THEN
-    ZW(:,:,:) = PQHS(:,:,:)
-    PQHS(:,:,:) = UNPACK( ZQHS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
+    DO JL=1,IMICRO
+      PQHS(I1(JL),I2(JL),I3(JL)) = ZQHS(JL)
+    END DO
   END IF
 !
 !
