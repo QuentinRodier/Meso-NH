@@ -160,13 +160,12 @@ USE MODD_BLOWSNOW
 USE MODD_BLOWSNOW_n
 USE MODD_PARAMETERS
 !
-use mode_budget,       only: Budget_store_init, Budget_store_end
+use mode_budget,         only: Budget_store_init, Budget_store_end
 USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 USE MODE_ll
 USE MODE_MSG
 !
 USE MODI_ADV_BOUNDARIES
-USE MODI_BUDGET
 USE MODI_CONTRAV
 USE MODI_GET_HALO
 USE MODI_PPM_RHODJ

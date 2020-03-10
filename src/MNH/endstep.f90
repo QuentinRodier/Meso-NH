@@ -221,7 +221,6 @@ USE MODD_PARAM_LIMA, ONLY: LACTIT_LIMA=>LACTIT
 
 use mode_budget,     only: Budget_store_end, Budget_store_init
 
-USE MODI_BUDGET
 USE MODI_SHUMAN
 !
 USE MODE_ll

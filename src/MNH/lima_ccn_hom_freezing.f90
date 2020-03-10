@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-------------------------------------------------------------------------------
 !      #################################
        MODULE MODI_LIMA_CCN_HOM_FREEZING
 !      #################################
@@ -64,7 +65,6 @@ END MODULE MODI_LIMA_CCN_HOM_FREEZING
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_BUDGET
 USE MODD_CST,             ONLY: XP00, XRD, XRV, XMV, XMD, XCPD, XCPV, XCL, XCI,   &
                                 XTT, XLSTT, XLVTT, XALPI, XBETAI, XGAMI,          &
                                 XG
@@ -80,8 +80,6 @@ USE MODD_PARAM_LIMA_COLD, ONLY: XRCOEF_HONH, XCEXP_DIFVAP_HONH, XCOEF_DIFVAP_HON
 USE MODD_PARAM_LIMA_WARM, ONLY: XLBC
 !
 use mode_tools,           only: Countjv
-!
-USE MODI_BUDGET
 !
 IMPLICIT NONE
 !

@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
 !-----------------------------------------------------------------
 !     ###################
       MODULE MODI_GRAVITY    
@@ -115,7 +111,6 @@ USE MODD_CONF
 USE MODD_CST
 !
 USE MODI_SHUMAN
-USE MODI_BUDGET
 USE MODI_GET_HALO
 !  
 IMPLICIT NONE

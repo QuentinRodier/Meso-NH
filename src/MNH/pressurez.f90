@@ -237,13 +237,12 @@ use modd_precision,   only: MNHREAL_MPI
 USE MODD_REF,         ONLY: LBOUSS
 USE MODD_VAR_ll,      ONLY: NMNH_COMM_WORLD , NPROC
 !
-use mode_budget,     only: Budget_store_end
+use mode_budget,      only: Budget_store_end
 USE MODE_ll
 USE MODE_MPPDB
 USE MODE_MSG
 USE MODE_SUM2_ll,     ONLY: GMAXLOC_ll
 !
-USE MODI_BUDGET
 USE MODI_CONJGRAD
 USE MODI_CONRESOL
 USE MODI_CONRESOLZ
