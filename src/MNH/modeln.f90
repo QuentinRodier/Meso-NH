@@ -886,7 +886,7 @@ CALL BOUNDARIES (                                                   &
             XLBYUM,XLBYVM,XLBYWM,XLBYTHM,XLBYTKEM,XLBYRM,XLBYSVM,   &
             XLBXUS,XLBXVS,XLBXWS,XLBXTHS,XLBXTKES,XLBXRS,XLBXSVS,   &
             XLBYUS,XLBYVS,XLBYWS,XLBYTHS,XLBYTKES,XLBYRS,XLBYSVS,   &
-            XRHODJ,                                                 &
+            XRHODJ,XRHODREF,                                        &
             XUT, XVT, XWT, XTHT, XTKET, XRT, XSVT, XSRCT            )
 CALL MPPDB_CHECK3DM("after  BOUNDARIES:XUT, XVT, XWT, XTHT, XTKET",PRECISION,&
                    &  XUT, XVT, XWT, XTHT, XTKET)
@@ -1109,7 +1109,7 @@ END IF
 !
 IF ( LFORCING ) THEN
   CALL FORCING(XTSTEP,LUSERV,XRHODJ,XCORIOZ,XZHAT,XZZ,TDTCUR,&
-               XUFRC_PAST, XVFRC_PAST,                &
+               XUFRC_PAST, XVFRC_PAST,XWTFRC,         &
                XUT,XVT,XWT,XTHT,XTKET,XRT,XSVT,       &
                XRUS,XRVS,XRWS,XRTHS,XRTKES,XRRS,XRSVS,IMI,ZJ)
 END IF

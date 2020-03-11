@@ -42,6 +42,7 @@
 !!      C. LAc          10/2016 add droplets deposition
 !!      S. Riette       11/2016  New budgets for ICE3/ICE4
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      B.Vie   03/02/2020 : LIMA negativity checks after turbulence, advection and microphysics budgets 
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -399,6 +400,9 @@ INTEGER, SAVE :: NFRCRR     ! forcing
 INTEGER, SAVE :: NDIFRR     ! numerical diffusion
 INTEGER, SAVE :: NRELRR     ! relaxation
 INTEGER, SAVE :: NNEGARR    ! negative correction                            
+INTEGER, SAVE :: NNETURRR    ! negative correction
+INTEGER, SAVE :: NNEADVRR    ! negative correction
+INTEGER, SAVE :: NNECONRR    ! negative correction
 INTEGER, SAVE :: NACCRRR    ! accretion
 INTEGER, SAVE :: NAUTORR    ! autoconversion
 INTEGER, SAVE :: NREVARR    ! rain evaporation
@@ -434,6 +438,9 @@ INTEGER, SAVE :: NDCONVRI   ! Deep CONVection
 INTEGER, SAVE :: NHTURBRI   ! horizontal turbulence
 INTEGER, SAVE :: NVTURBRI   ! vertical turbulence
 INTEGER, SAVE :: NNEGARI    ! negative correction                            
+INTEGER, SAVE :: NNETURRI    ! negative correction
+INTEGER, SAVE :: NNEADVRI    ! negative correction
+INTEGER, SAVE :: NNECONRI    ! negative correction
 INTEGER, SAVE :: NSEDIRI    ! SEDImentation           ICE3
 INTEGER, SAVE :: NHENURI    ! HEterogenous NUcleation ICE3
 INTEGER, SAVE :: NHONRI     ! HOmogeneous Nucleation  ICE3
@@ -472,6 +479,9 @@ INTEGER, SAVE :: NFRCRS     ! forcing
 INTEGER, SAVE :: NDIFRS     ! numerical diffusion
 INTEGER, SAVE :: NRELRS     ! relaxation
 INTEGER, SAVE :: NNEGARS    ! negative correction                            
+INTEGER, SAVE :: NNETURRS    ! negative correction
+INTEGER, SAVE :: NNEADVRS    ! negative correction
+INTEGER, SAVE :: NNECONRS    ! negative correction
 INTEGER, SAVE :: NSEDIRS    ! SEDImentation           ICE3
 INTEGER, SAVE :: NDEPSRS    ! DEPosition on Snow      ICE3
 INTEGER, SAVE :: NAGGSRS    ! AGGregation of snow     ICE3
@@ -501,6 +511,9 @@ INTEGER, SAVE :: NFRCRG     ! forcing
 INTEGER, SAVE :: NDIFRG     ! numerical diffusion
 INTEGER, SAVE :: NRELRG     ! relaxation
 INTEGER, SAVE :: NNEGARG    ! negative correction                            
+INTEGER, SAVE :: NNETURRG    ! negative correction
+INTEGER, SAVE :: NNEADVRG    ! negative correction
+INTEGER, SAVE :: NNECONRG    ! negative correction
 INTEGER, SAVE :: NSEDIRG    ! SEDImentation           ICE3
 INTEGER, SAVE :: NSFRRG     ! Spontaneous FReezing    ICE3
 INTEGER, SAVE :: NDEPGRG    ! DEPosition on Snow      ICE3
@@ -533,6 +546,9 @@ INTEGER, SAVE :: NFRCRH     ! forcing
 INTEGER, SAVE :: NDIFRH     ! numerical diffusion
 INTEGER, SAVE :: NRELRH     ! relaxation
 INTEGER, SAVE :: NNEGARH    ! negative correction 
+INTEGER, SAVE :: NNETURRH    ! negative correction
+INTEGER, SAVE :: NNEADVRH    ! negative correction
+INTEGER, SAVE :: NNECONRH    ! negative correction
 INTEGER, SAVE :: NSEDIRH    ! sedimentation
 INTEGER, SAVE :: NWETGRH    ! wet growth of graupel
 INTEGER, SAVE :: NWETHRH    ! wet growth of hail
@@ -566,7 +582,7 @@ INTEGER, SAVE :: NNEGASV
 INTEGER, SAVE :: NDEPSQV
 INTEGER, SAVE :: NDEPGQV
 INTEGER, SAVE :: NREVAQV
-INTEGER, SAVE :: NDEPIQV
+INTEGER, SAVE :: NCDEPIQV
 INTEGER, SAVE :: NNEUTQV
 !
 ! Allowed processes for the budget of electric charge carried by cloud droplets
@@ -577,8 +593,7 @@ INTEGER, SAVE :: NWETGQC
 INTEGER, SAVE :: NDRYGQC
 INTEGER, SAVE :: NIMLTQC
 INTEGER, SAVE :: NBERFIQC
-INTEGER, SAVE :: NDEPIQC
-INTEGER, SAVE :: NINDQC  ! inductive process
+INTEGER, SAVE :: NCDEPIQC
 INTEGER, SAVE :: NSEDIQC
 INTEGER, SAVE :: NNEUTQC
 !
@@ -602,7 +617,7 @@ INTEGER, SAVE :: NWETGQI
 INTEGER, SAVE :: NDRYGQI
 INTEGER, SAVE :: NIMLTQI
 INTEGER, SAVE :: NBERFIQI
-INTEGER, SAVE :: NDEPIQI
+INTEGER, SAVE :: NCDEPIQI
 INTEGER, SAVE :: NNIISQI  ! non-inductive I-S
 INTEGER, SAVE :: NSEDIQI
 INTEGER, SAVE :: NNEUTQI
@@ -629,7 +644,6 @@ INTEGER, SAVE :: NCFRZQG
 INTEGER, SAVE :: NWETGQG
 INTEGER, SAVE :: NDRYGQG
 INTEGER, SAVE :: NGMLTQG
-INTEGER, SAVE :: NINDQG  ! inductive process
 INTEGER, SAVE :: NSEDIQG
 INTEGER, SAVE :: NNEUTQG
 !

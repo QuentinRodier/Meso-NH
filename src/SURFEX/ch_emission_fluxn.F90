@@ -1,4 +1,4 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
@@ -28,6 +28,7 @@
 !!    P.Tulet  01/01/05  add dust, orilam
 !!    M.Leriche    2015  suppress ZDEPOT
 !!    M.Moge    01/2016  using READ_SURF_FIELD2D for 2D surfex fields reads
+!  P. Wautelet 11/02/2020: bugfix: set correct filein before call to INIT_IO_SURF_n
 !!
 !!    EXTERNAL
 !!    --------
@@ -53,6 +54,7 @@ USE MODI_GET_LUOUT
 USE MODD_CHS_AEROSOL, ONLY: LCH_AERO_FLUX
 USE MODI_CH_AER_EMISSION
 !UPG*AERO1
+USE MODI_SET_SURFEX_FILEIN
 !!
 !------------------------------------------------------------------------------
 !
@@ -208,6 +210,7 @@ DO JI=1,SIZE(CHE%TSEMISS)
 !
         IF (.NOT. LIOINIT) THEN
 !         Must be done once before reading
+          CALL SET_SURFEX_FILEIN(HPROGRAM,'PGD ')
           CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'FULL  ','SURF  ','READ ')
           IF (IVERB >= 6) WRITE(ILUOUT,*) 'INIT des I/O DONE.'
           LIOINIT=.TRUE.

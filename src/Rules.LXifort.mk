@@ -180,7 +180,7 @@ CPPFLAGS_MNH       = -DMNH -DSFX_MNH
 ifdef VER_GA
 CPPFLAGS_SURCOUCHE += -DMNH_GA
 INC                += -I${GA_ROOT}/include
-LIBS               += -L${GA_ROOT}/lib -larmci -lga -lgfortran
+LIBS               += -L${GA_ROOT}/lib -lga -larmci 
 endif
 #
 # Gribex flags

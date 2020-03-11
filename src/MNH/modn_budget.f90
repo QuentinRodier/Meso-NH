@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/modn_budget.f90,v $ $Revision: 1.2.2.1.2.1.2.1.10.1.2.3 $ $Date: 2014/01/09 15:01:56 $
 !-----------------------------------------------------------------
 !     ##################
       MODULE MODN_BUDGET
@@ -229,6 +225,7 @@
 !!      C. Barthe        /16  add budget terms for LIMA
 !!      C.Lac        10/2016  Add droplet deposition
 !!      S. Riette   11/2016 New budgets for ICE3/ICE4
+!!      B.Vie    03/02/2020 LIMA negativity checks after turbulence, advection and microphysics budgets 
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -278,42 +275,48 @@ NAMELIST/NAM_BU_RRC/LBU_RRC, NASSERC, NNESTRC, NADVRC, NFRCRC, &
 NAMELIST/NAM_BU_RRR/LBU_RRR, NASSERR, NNESTRR, NADVRR, NFRCRR, &
                     NDIFRR, NRELRR, NNEGARR, NACCRRR, NAUTORR, NREVARR, NSEDIRR,    &
                     NSFRRR, NACCRR, NCFRZRR, NWETGRR, NDRYGRR, NGMLTRR, NWETHRR,    &
-                    NHMLTRR, NDRYHRR, NCORRRR, NCMELRR,NHONRRR, NCORRRR, NR2C1RR, NCVRCRR
+                    NHMLTRR, NDRYHRR, NCORRRR, NCMELRR,NHONRRR, NCORRRR, NR2C1RR, NCVRCRR, &
+                    NNETURRR, NNEADVRR, NNECONRR
 ! 
 NAMELIST/NAM_BU_RRI/LBU_RRI, NASSERI, NNESTRI, NADVRI, NFRCRI, &
                     NDIFRI, NRELRI, NDCONVRI, NHTURBRI, NVTURBRI, NNEGARI, NSEDIRI, &
                     NHENURI, NHONRI, NAGGSRI, NAUTSRI, NCFRZRI, NWETGRI, NDRYGRI,   &
                     NIMLTRI, NBERFIRI, NCDEPIRI, NWETHRI, NDRYHRI, NADJURI, NCORRRI, &
                     NHINDRI, NHINCRI, NHONHRI, NHONCRI, NCNVIRI, NCNVSRI, &
-                    NHMSRI, NHMGRI, NCEDSRI, NCORRRI
+                    NHMSRI, NHMGRI, NCEDSRI, NCORRRI, &
+                    NNETURRI, NNEADVRI, NNECONRI
 ! 
 NAMELIST/NAM_BU_RRS/LBU_RRS, NASSERS, NNESTRS, NADVRS, NFRCRS, &
                     NDIFRS, NRELRS, NNEGARS, NSEDIRS, NDEPSRS, NAGGSRS, NAUTSRS,    &
                     NRIMRS, NACCRS, NCMELRS, NWETGRS, NDRYGRS, NWETHRS, NDRYHRS,    &
-                    NCORRRS, NCNVIRS, NCNVSRS, NHMSRS, NCORRRS
+                    NCORRRS, NCNVIRS, NCNVSRS, NHMSRS, NCORRRS, &
+                    NNETURRS, NNEADVRS, NNECONRS
 ! 
 NAMELIST/NAM_BU_RRG/LBU_RRG, NASSERG, NNESTRG, NADVRG, NFRCRG, &
                     NDIFRG, NRELRG, NNEGARG, NSEDIRG, NSFRRG, NDEPGRG, NRIMRG, NACCRG,    &
                     NCMELRG, NCFRZRG, NWETGRG, NDRYGRG, NGMLTRG, NWETHRG, &
-                    NDRYHRG, NCORRRG, NHGCVRG, NGHCVRG,NHONRRG, NHMGRG, NCOHGRG 
+                    NDRYHRG, NCORRRG, NHGCVRG, NGHCVRG,NHONRRG, NHMGRG, NCOHGRG, &
+                    NNETURRG, NNEADVRG, NNECONRG 
 ! 
 NAMELIST/NAM_BU_RRH/LBU_RRH, NASSERH, NNESTRH, NADVRH, NFRCRH, &
                     NDIFRH, NRELRH, NNEGARH, NSEDIRH, NWETGRH, NWETHRH, NDRYHRH, NHMLTRH, &
-                    NCORRRH, NHGCVRH, NGHCVRH, NCOHGRH, NHMLTRH
+                    NCORRRH, NHGCVRH, NGHCVRH, NCOHGRH, NHMLTRH, &
+                    NNETURRH, NNEADVRH, NNECONRH
 ! 
 NAMELIST/NAM_BU_RSV/ LBU_RSV, NASSESV, NNESTSV, NADVSV, NFRCSV, &
                      NDIFSV, NRELSV, NDCONVSV, NVTURBSV, NHTURBSV, NCHEMSV, NMAFLSV,       &
                      NNEGASV,                                                              & 
+                     NDEPSQV, NDEPGQV, NREVAQV, NCDEPIQV, NNEUTQV,                         &
                      NAUTOQC, NACCRQC, NRIMQC, NWETGQC, NDRYGQC, NIMLTQC, NBERFIQC,        &
-                     NDEPIQC, NINDQC, NSEDIQC, NNEUTQC,                                    &
+                     NCDEPIQC, NSEDIQC, NNEUTQC,                                           &
                      NAUTOQR, NACCRQR, NREVAQR, NACCQR, NCFRZQR, NWETGQR, NDRYGQR,         &
                      NGMLTQR, NSEDIQR, NNEUTQR,                                            &
                      NAGGSQI, NAUTSQI, NCFRZQI, NWETGQI, NDRYGQI, NIMLTQI, NBERFIQI,       &
-                     NDEPIQI, NNIISQI, NSEDIQI, NNEUTQI,                                   &
+                     NCDEPIQI, NNIISQI, NSEDIQI, NNEUTQI,                                  &
                      NDEPSQS, NAGGSQS, NAUTSQS, NRIMQS, NACCQS, NCMELQS, NWETGQS,          &
                      NDRYGQS, NNIISQS, NSEDIQS, NNEUTQS,                                   &
                      NDEPGQG, NRIMQG, NACCQG, NCMELQG, NCFRZQG, NWETGQG, NDRYGQG,          &
-                     NGMLTQG, NINDQG, NSEDIQG, NNEUTQG, NDEPOTRSV
+                     NGMLTQG, NSEDIQG, NNEUTQG, NDEPOTRSV
 ! must add budget for hail
 !
 END MODULE MODN_BUDGET

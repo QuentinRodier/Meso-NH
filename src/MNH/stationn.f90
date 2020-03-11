@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2002-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !      ##########################
@@ -86,6 +86,7 @@ END MODULE MODI_STATION_n
 !!     C.Lac       04/2013 : Add I/J positioning                   
 !!     P.Wautelet 28/03/2018 : Replace TEMPORAL_DIST by DATETIME_DISTANCE
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!     R.Schoetter 11/2019 : use LCARTESIAN instead of LSTATLAT for multiproc in cartesian
 !!
 !! --------------------------------------------------------------------------
 !       
@@ -292,7 +293,6 @@ IF (GSTATFIRSTCALL) THEN
 !
 !*      4.4  Computations only on correct processor
 !            --------------------------------------
-  IF ( LSTATLAT ) THEN
     ZXCOEF(I) = 0.
     ZYCOEF(I) = 0.
     ZUCOEF(I) = 0.         
@@ -331,7 +331,6 @@ IF (GSTATFIRSTCALL) THEN
 !
 
     END IF
-  END IF
  ENDDO
 END IF
 !----------------------------------------------------------------------------
@@ -360,18 +359,16 @@ IF (GSTORE) THEN
         ENDIF
        END IF
       !
-      ZGAM                  = (XRPK * (TSTATION%LON(I) - XLON0) - XBETA)*(XPI/180.)
-      IF ( LSTATLAT ) THEN
-       ZU_STAT               = STATION_INTERP_2D_U(PU(:,:,J))
-       ZV_STAT               = STATION_INTERP_2D_V(PV(:,:,J))
+      IF (LCARTESIAN) THEN
+        TSTATION%ZON (IN,I)   =   STATION_INTERP_2D_U(PU(:,:,J))
+        TSTATION%MER (IN,I)   =   STATION_INTERP_2D_V(PV(:,:,J))
       ELSE
-       ZU_STAT               = PU(TSTATION%I(I),TSTATION%J(I),J)
-       ZV_STAT               = PV(TSTATION%I(I),TSTATION%J(I),J)
-      END IF
-      !
-      TSTATION%ZON (IN,I)   =   ZU_STAT     * COS(ZGAM) + ZV_STAT     * SIN(ZGAM)
-      TSTATION%MER (IN,I)   = - ZU_STAT     * SIN(ZGAM) + ZV_STAT     * COS(ZGAM)
-      IF ( LSTATLAT ) THEN
+        ZU_STAT               = STATION_INTERP_2D_U(PU(:,:,J))
+        ZV_STAT               = STATION_INTERP_2D_V(PV(:,:,J))
+        ZGAM                  = (XRPK * (TSTATION%LON(I) - XLON0) - XBETA)*(XPI/180.)
+        TSTATION%ZON (IN,I)   =   ZU_STAT     * COS(ZGAM) + ZV_STAT     * SIN(ZGAM)
+        TSTATION%MER (IN,I)   = - ZU_STAT     * SIN(ZGAM) + ZV_STAT     * COS(ZGAM)
+      ENDIF
         TSTATION%W   (IN,I)   = STATION_INTERP_2D(PW(:,:,J))
         TSTATION%TH  (IN,I)   = STATION_INTERP_2D(PTH(:,:,J))
         TSTATION%P   (IN,I)   = STATION_INTERP_2D(PP(:,:,J))
@@ -410,46 +407,7 @@ IF (GSTORE) THEN
          ENDIF
           TSTATION%SFCO2 (IN,I) = STATION_INTERP_2D(XCURRENT_SFCO2 ) 
         ENDIF
-       ELSE
-        TSTATION%W   (IN,I)   = PW(TSTATION%I(I),TSTATION%J(I),J)
-        TSTATION%TH  (IN,I)   = PTH(TSTATION%I(I),TSTATION%J(I),J)
-        TSTATION%P   (IN,I)   = PP(TSTATION%I(I),TSTATION%J(I),J)
-      !
-        DO JSV=1,SIZE(PR,4)
-         TSTATION%R   (IN,I,JSV) = PR(TSTATION%I(I),TSTATION%J(I),J,JSV)
-        END DO
-      !
-        DO JSV=1,SIZE(PSV,4)
-         TSTATION%SV  (IN,I,JSV) = PSV(TSTATION%I(I),TSTATION%J(I),J,JSV)
-        END DO
-      !
-        IF (SIZE(PTKE)>0) TSTATION%TKE  (IN,I) = PTKE(TSTATION%I(I),TSTATION%J(I),J)
-        IF (SIZE(PTS) >0) TSTATION%TSRAD(IN,I) = PTS(TSTATION%I(I),TSTATION%J(I))
-        TSTATION%ZS(I)      = PZ(TSTATION%I(I),TSTATION%J(I),1+JPVEXT)
-      !
-        IF (LDIAG_IN_RUN) THEN
-          TSTATION%ZON10M(IN,I) = XCURRENT_ZON10M(TSTATION%I(I),TSTATION%J(I))
-          TSTATION%MER10M(IN,I) = XCURRENT_MER10M(TSTATION%I(I),TSTATION%J(I))
-          TSTATION%T2M   (IN,I) = XCURRENT_T2M(TSTATION%I(I),TSTATION%J(I))
-          TSTATION%Q2M   (IN,I) = XCURRENT_Q2M(TSTATION%I(I),TSTATION%J(I))
-          TSTATION%HU2M  (IN,I) = XCURRENT_HU2M(TSTATION%I(I),TSTATION%J(I))
-          TSTATION%RN    (IN,I) = XCURRENT_RN(TSTATION%I(I),TSTATION%J(I))
-          TSTATION%H     (IN,I) = XCURRENT_H(TSTATION%I(I),TSTATION%J(I))
-          TSTATION%LE    (IN,I) = XCURRENT_LE(TSTATION%I(I),TSTATION%J(I))
-          TSTATION%LEI   (IN,I) = XCURRENT_LEI(TSTATION%I(I),TSTATION%J(I))
-          TSTATION%GFLUX (IN,I) = XCURRENT_GFLUX(TSTATION%I(I),TSTATION%J(I))
-         IF (CRAD /= 'NONE') THEN
-          TSTATION%SWD   (IN,I) = XCURRENT_SWD(TSTATION%I(I),TSTATION%J(I))
-          TSTATION%SWU   (IN,I) = XCURRENT_SWU(TSTATION%I(I),TSTATION%J(I))
-          TSTATION%LWD   (IN,I) = XCURRENT_LWD(TSTATION%I(I),TSTATION%J(I))
-          TSTATION%LWU   (IN,I) = XCURRENT_LWU(TSTATION%I(I),TSTATION%J(I))
-          TSTATION%SWDIR (IN,I) = XCURRENT_SWDIR(TSTATION%I(I),TSTATION%J(I))
-          TSTATION%SWDIFF(IN,I) = XCURRENT_SWDIFF(TSTATION%I(I),TSTATION%J(I))         
-          TSTATION%DSTAOD(IN,I) = XCURRENT_DSTAOD(TSTATION%I(I),TSTATION%J(I))
-         ENDIF
-          TSTATION%SFCO2 (IN,I) = XCURRENT_SFCO2(TSTATION%I(I),TSTATION%J(I))
-        ENDIF
-       ENDIF
+       
       !
     END IF
 !

@@ -9,15 +9,19 @@
 INTERFACE
       SUBROUTINE MNHGET_SURF_PARAM_n(PCOVER,PSEA,KCOVER,PRN,PH,PLE,PLEI,PGFLUX, &
                                      PT2M,PQ2M,PHU2M,PZON10M,PMER10M,PZS,PTOWN,&
-                                     PBARE, PLAI_TREE, PH_TREE )
+                                     PBARE, PLAI_TREE, PH_TREE, PWALL_O_HOR,    &
+                                     PBUILD_HEIGHT,PNATURE )
 !
 REAL, DIMENSION(:,:,:), INTENT(OUT), OPTIONAL :: PCOVER  ! cover types
 REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PSEA    ! sea fraction
 REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PTOWN   ! town fraction
+REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PNATURE ! nature fraction
 INTEGER,                INTENT(OUT), OPTIONAL :: KCOVER  ! number of cover types
 REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PBARE           ! Bare soil fraction
-REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PLAI_TREE       ! 
-REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PH_TREE
+REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PLAI_TREE       ! Tree leaf area index [m^2(leaf)/m^2(nature)]
+REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PH_TREE         ! Tree height [m]
+REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PWALL_O_HOR     ! Facade area density [m^2(fac.)/m^2(town)]
+REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PBUILD_HEIGHT   ! Building height [m] 
 REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PRN           ! Net radiation at surface    (W/m2)
 REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PH            ! Sensible heat flux          (W/m2)
 REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PLE           ! Total Latent heat flux      (W/m2)
@@ -38,7 +42,8 @@ END MODULE MODI_MNHGET_SURF_PARAM_n
 !     ########################################
       SUBROUTINE MNHGET_SURF_PARAM_n(PCOVER,PSEA,KCOVER,PRN,PH,PLE,PLEI,PGFLUX, &
                                      PT2M,PQ2M,PHU2M,PZON10M,PMER10M,PZS,PTOWN,&
-                                     PBARE, PLAI_TREE, PH_TREE )
+                                     PBARE, PLAI_TREE, PH_TREE, PWALL_O_HOR,    &
+                                     PBUILD_HEIGHT,PNATURE )
 !     ########################################
 !
 !!****  *MNHGET_SURF_PARAM_n* - gets some surface fields on MESONH grid
@@ -74,6 +79,7 @@ END MODULE MODI_MNHGET_SURF_PARAM_n
 !!       S. Donier  06/2015 : bug surface aerosols
 !!  06/2016     (G.Delautier) phasage surfex 8
 !!  01/2018      (G.Delautier) SURFEX 8.1
+!!  11/2019 C.Lac correction in the drag formula and application to building in addition to tree
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -101,10 +107,13 @@ IMPLICIT NONE
 REAL, DIMENSION(:,:,:), INTENT(OUT), OPTIONAL :: PCOVER  ! cover types
 REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PSEA    ! sea fraction
 REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PTOWN   ! town fraction
+REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PNATURE ! nature fraction
 INTEGER,                INTENT(OUT), OPTIONAL :: KCOVER  ! number of cover types
 REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PBARE           ! Bare soil fraction
 REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PLAI_TREE       ! 
 REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PH_TREE         !
+REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PWALL_O_HOR     ! Facade area density [m^2(fac.)/m^2(town)]
+REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PBUILD_HEIGHT   ! Building height [m] 
 REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PRN           ! Net radiation at surface    (W/m2)
 REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PH            ! Sensible heat flux          (W/m2)
 REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PLE           ! Total Latent heat flux      (W/m2)
@@ -137,6 +146,8 @@ REAL, DIMENSION(:),   ALLOCATABLE :: ZNATURE! nature fraction
 REAL, DIMENSION(:),   ALLOCATABLE :: ZTOWN  ! town   fraction
 REAL, DIMENSION(:),   ALLOCATABLE :: ZVH     
 REAL, DIMENSION(:),   ALLOCATABLE :: ZLAI
+REAL, DIMENSION(:),   ALLOCATABLE :: ZWALL_O_HOR   ! Facade surface density [m^2(fac.)/m^2(town)]
+REAL, DIMENSION(:),   ALLOCATABLE :: ZBUILD_HEIGHT ! Building height [m]
 REAL, DIMENSION(:),   ALLOCATABLE :: ZBARE  ! bare soil fraction
 REAL, DIMENSION(:),   ALLOCATABLE :: ZZS    ! orography
 REAL, DIMENSION(:),   ALLOCATABLE :: ZRN    ! net radiation at surface    (W/m2)
@@ -170,8 +181,9 @@ IF (PRESENT(PCOVER)) THEN
   DEALLOCATE(ZCOVER)
 END IF
 !
-IF (PRESENT(PSEA) .OR. PRESENT(PTOWN) .OR. &
-    PRESENT(PBARE) .OR. PRESENT(PLAI_TREE) .OR. PRESENT(PH_TREE)) THEN
+IF (PRESENT(PSEA) .OR. PRESENT(PTOWN) .OR. PRESENT(PNATURE) .OR. &
+    PRESENT(PBARE) .OR. PRESENT(PLAI_TREE) .OR. PRESENT(PH_TREE) .OR. &
+    PRESENT(PWALL_O_HOR) .OR. PRESENT(PBUILD_HEIGHT) ) THEN
   ALLOCATE(ZSEA   ( ILU ))
   ALLOCATE(ZWATER ( ILU ))
   ALLOCATE(ZNATURE( ILU ))
@@ -182,6 +194,9 @@ IF (PRESENT(PSEA) .OR. PRESENT(PTOWN) .OR. &
   END IF
   IF (PRESENT(PTOWN)) THEN
     CALL REMOVE_HALO(ZTOWN,PTOWN)
+  END IF
+  IF (PRESENT(PNATURE)) THEN
+    CALL REMOVE_HALO(ZNATURE,PNATURE)
   END IF
 END IF
 !
@@ -246,6 +261,22 @@ IF (PRESENT(PH_TREE)  .OR.PRESENT(PLAI_TREE)) THEN
   CALL REMOVE_HALO(ZVH,PH_TREE)
   DEALLOCATE(ZVH)
   DEALLOCATE(ZLAI)
+END IF
+!
+IF (PRESENT(PWALL_O_HOR) .OR. PRESENT(PBUILD_HEIGHT)) THEN
+  PBUILD_HEIGHT(:,:) = XUNDEF
+  PWALL_O_HOR(:,:) = XUNDEF
+  ALLOCATE(ZBUILD_HEIGHT ( ILU ))
+  ALLOCATE(ZWALL_O_HOR   ( ILU ))
+  CALL GET_SURF_VAR_n(YSURF_CUR%FM,YSURF_CUR%IM,YSURF_CUR%SM,YSURF_CUR%TM, &
+                      YSURF_CUR%WM,YSURF_CUR%DUO,YSURF_CUR%DU,YSURF_CUR%UG,&
+                      YSURF_CUR%U,YSURF_CUR%USS,&
+                       'MESONH',ILU,1,PTOWN=ZTOWN,                       &
+                       PWALL_O_HOR=ZWALL_O_HOR,PBUILD_HEIGHT=ZBUILD_HEIGHT )
+  CALL REMOVE_HALO(ZBUILD_HEIGHT,PBUILD_HEIGHT)
+  CALL REMOVE_HALO(ZWALL_O_HOR,PWALL_O_HOR)
+  DEALLOCATE(ZBUILD_HEIGHT)
+  DEALLOCATE(ZWALL_O_HOR)
 END IF
 !
 IF (ALLOCATED(ZSEA)) THEN

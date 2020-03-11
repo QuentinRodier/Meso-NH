@@ -1976,7 +1976,7 @@ REAL :: ZVR, ZVI, ZVS, ZVG, ZETA0, ZK, ZRE0
                   CALL BUDGET (PRHS(:,:,:)*PRHODJ(:,:,:),12,'SEDI_BU_RRH')
 !
   IF (LBUDGET_SV) THEN
-    CALL BUDGET (PQCS(:,:,:)*PRHODJ(:,:,:),12+NSV_ELECBEG+1,'SEDI_BU_RSV')
+      IF (OSEDIC) CALL BUDGET (PQCS(:,:,:)*PRHODJ(:,:,:),12+NSV_ELECBEG+1,'SEDI_BU_RSV')
     CALL BUDGET (PQRS(:,:,:)*PRHODJ(:,:,:),12+NSV_ELECBEG+2,'SEDI_BU_RSV')
     CALL BUDGET (PQIS(:,:,:)*PRHODJ(:,:,:),12+NSV_ELECBEG+3,'SEDI_BU_RSV')
     CALL BUDGET (PQSS(:,:,:)*PRHODJ(:,:,:),12+NSV_ELECBEG+4,'SEDI_BU_RSV')
@@ -2571,9 +2571,9 @@ IMPLICIT NONE
 !
   IF (LBUDGET_SV) THEN
     CALL BUDGET (UNPACK(ZQRS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0),&
-                                              12+NSV_ELECBEG+2,'HON_BU_RSV')
+                                              12+NSV_ELECBEG+2,'SFR_BU_RSV')
     CALL BUDGET (UNPACK(ZQGS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                              12+NSV_ELECEND,  'HON_BU_RSV')
+                                              12+NSV_ELECBEG+5,'SFR_BU_RSV')
   END IF
 
 !
@@ -2764,7 +2764,7 @@ IMPLICIT NONE
     CALL BUDGET (UNPACK(ZQNIS(:), MASK=GMICRO(:,:,:), FIELD=PQNIS)          &
                         *PRHODJ(:,:,:), 12+NSV_ELECEND ,'DEPG_BU_RSV')
     CALL BUDGET (UNPACK(ZQGS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                                 12+NSV_ELECEND,'DEPG_BU_RSV')
+                                                 12+NSV_ELECBEG+5,'DEPG_BU_RSV')
   END IF
 !
   END SUBROUTINE RAIN_ICE_ELEC_SLOW
@@ -3080,7 +3080,7 @@ IMPLICIT NONE
     CALL BUDGET (UNPACK(ZQSS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
                                            12+NSV_ELECBEG+4,'RIM_BU_RSV')
     CALL BUDGET (UNPACK(ZQGS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                             12+NSV_ELECEND,'RIM_BU_RSV')
+                                           12+NSV_ELECBEG+5,'RIM_BU_RSV')
   END IF
 !
   DEALLOCATE(GRIM)
@@ -3257,7 +3257,7 @@ IMPLICIT NONE
     CALL BUDGET (UNPACK(ZQSS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
                                             12+NSV_ELECBEG+4,'ACC_BU_RSV')
     CALL BUDGET (UNPACK(ZQGS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                              12+NSV_ELECEND,'ACC_BU_RSV')
+                                            12+NSV_ELECBEG+5,'ACC_BU_RSV')
   END IF
 !
 !*       5.3    Conversion-Melting of the aggregates: RSMLT & QSMLT
@@ -3305,7 +3305,7 @@ IMPLICIT NONE
     CALL BUDGET (UNPACK(ZQSS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
                                           12+NSV_ELECBEG+4,'CMEL_BU_RSV')
     CALL BUDGET (UNPACK(ZQGS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                            12+NSV_ELECEND,'CMEL_BU_RSV')
+                                          12+NSV_ELECBEG+5,'CMEL_BU_RSV')
   END IF
 !
   END SUBROUTINE RAIN_ICE_ELEC_FAST_RS
@@ -3378,7 +3378,7 @@ IMPLICIT NONE
     CALL BUDGET (UNPACK(ZQIS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
                                           12+NSV_ELECBEG+3,'CFRZ_BU_RSV')
     CALL BUDGET (UNPACK(ZQGS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                            12+NSV_ELECEND,'CFRZ_BU_RSV')
+                                          12+NSV_ELECBEG+5,'CFRZ_BU_RSV')
   END IF
 !
 !
@@ -3776,7 +3776,7 @@ IMPLICIT NONE
     CALL BUDGET (UNPACK(ZQSS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
                                           12+NSV_ELECBEG+4,'WETG_BU_RSV')
     CALL BUDGET (UNPACK(ZQGS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                            12+NSV_ELECEND,'WETG_BU_RSV')
+                                          12+NSV_ELECBEG+5,'WETG_BU_RSV')
   END IF
 !
   WHERE (ZRGT(:) > XRTMIN(6) .AND. ZZT(:) < XTT .AND. & ! Dry
@@ -3826,7 +3826,7 @@ IMPLICIT NONE
     CALL BUDGET (UNPACK(ZQSS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
                                           12+NSV_ELECBEG+4,'DRYG_BU_RSV')
     CALL BUDGET (UNPACK(ZQGS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                            12+NSV_ELECEND,'DRYG_BU_RSV')
+                                          12+NSV_ELECBEG+5,'DRYG_BU_RSV')
   END IF
 !
 !
@@ -3848,7 +3848,7 @@ IMPLICIT NONE
     CALL BUDGET (UNPACK(ZQCS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
                                           12+NSV_ELECBEG+1,'INCG_BU_RSV')
     CALL BUDGET (UNPACK(ZQGS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                            12+NSV_ELECEND,'INCG_BU_RSV')
+                                          12+NSV_ELECBEG+5,'INCG_BU_RSV')
   END IF
 !
 !
@@ -3897,7 +3897,7 @@ IMPLICIT NONE
       CALL BUDGET (UNPACK(ZQRS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
                                             12+NSV_ELECBEG+2,'GMLT_BU_RSV')
       CALL BUDGET (UNPACK(ZQGS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                              12+NSV_ELECEND,'GMLT_BU_RSV')
+                                            12+NSV_ELECBEG+5,'GMLT_BU_RSV')
     END IF
 !
   END SUBROUTINE RAIN_ICE_ELEC_FAST_RG

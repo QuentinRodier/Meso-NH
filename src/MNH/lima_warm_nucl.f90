@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -9,7 +9,7 @@
 !
 INTERFACE
       SUBROUTINE LIMA_WARM_NUCL (OACTIT, PTSTEP, KMI, TPFILE, OCLOSE_OUT,&
-                                 PRHODREF, PEXNREF, PPABST, ZT, ZTM, PW_NU,       &
+                                 PRHODREF, PEXNREF, PPABST, PT, PTM, PW_NU,       &
                                  PRCM, PRVT, PRCT, PRRT,                          &
                                  PTHS, PRVS, PRCS, PCCS, PNFS, PNAS               )
 !
@@ -28,8 +28,8 @@ LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF    ! Reference Exner function
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST     ! abs. pressure at time t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: ZT         ! Temperature
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: ZTM        ! Temperature at time t-dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PT         ! Temperature
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTM        ! Temperature at time t-dt
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU      ! updraft velocity used for
                                                       ! the nucleation param.
@@ -53,7 +53,7 @@ END INTERFACE
 END MODULE MODI_LIMA_WARM_NUCL
 !     #############################################################################
       SUBROUTINE LIMA_WARM_NUCL (OACTIT, PTSTEP, KMI, TPFILE, OCLOSE_OUT,&
-                                 PRHODREF, PEXNREF, PPABST, ZT, ZTM, PW_NU,       &
+                                 PRHODREF, PEXNREF, PPABST, PT, PTM, PW_NU,       &
                                  PRCM, PRVT, PRCT, PRRT,                          &
                                  PTHS, PRVS, PRCS, PCCS, PNFS, PNAS               )
 !     #############################################################################
@@ -105,7 +105,7 @@ END MODULE MODI_LIMA_WARM_NUCL
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
-!
+!  B. Vie      03/03/2020: use DTHRAD instead of dT/dt in Smax diagnostic computation
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -141,8 +141,8 @@ LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF    ! Reference Exner function
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST     ! abs. pressure at time t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: ZT         ! Temperature
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: ZTM        ! Temperature at time t-dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PT         ! Temperature
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTM        ! Temperature at time t-dt
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU      ! updraft velocity used for
                                                       ! the nucleation param.
@@ -222,13 +222,7 @@ IJE=SIZE(PRHODREF,2) - JPHEXT
 IKB=1+JPVEXT
 IKE=SIZE(PRHODREF,3) - JPVEXT
 !
-!++cb++
-!ALLOCATE(ZRTMIN(SIZE(XRTMIN)))
-!--cb--
 ALLOCATE(ZCTMIN(SIZE(XCTMIN)))
-!++cb++
-!ZRTMIN(:) = XRTMIN(:) / PTSTEP
-!--cb--
 ZCTMIN(:) = XCTMIN(:) / PTSTEP
 !
 !  Saturation vapor mixing ratio and radiative tendency                    
@@ -236,11 +230,12 @@ ZCTMIN(:) = XCTMIN(:) / PTSTEP
 ZEPS= XMV / XMD
 !
 ZRVSAT(:,:,:) = ZEPS / (PPABST(:,:,:) * &
-                EXP(-XALPW+XBETAW/ZT(:,:,:)+XGAMW*ALOG(ZT(:,:,:))) - 1.0)
+                EXP(-XALPW+XBETAW/PT(:,:,:)+XGAMW*ALOG(PT(:,:,:))) - 1.0)
 ZTDT(:,:,:)   = 0.
 !! ZDRC(:,:,:)   = 0.
-IF (OACTIT) THEN
-   ZTDT(:,:,:)   = (ZT(:,:,:)-ZTM(:,:,:))/PTSTEP                   ! dT/dt 
+IF (OACTIT .AND. SIZE(PTM).GT.0) THEN
+   ZTDT(:,:,:)   = PTM(:,:,:)                   ! dThRad 
+!   ZTDT(:,:,:)   = (PT(:,:,:)-PTM(:,:,:))/PTSTEP                   ! dT/dt 
 !!! JPP
 !!! JPP
 !!!   ZDRC(:,:,:)   = (PRCT(:,:,:)-PRCM(:,:,:))/PTSTEP                ! drc/dt
@@ -251,7 +246,7 @@ IF (OACTIT) THEN
 !! BV - W and drc/dt effect should not be included in ZTDT (already accounted for in the computations) ?  
 !!
 !!   ZTDT(:,:,:)   = MIN(0.,ZTDT(:,:,:)+(XG*PW_NU(:,:,:))/XCPD- &
-!!        (XLVTT+(XCPV-XCL)*(ZT(:,:,:)-XTT))*ZDRC(:,:,:)/XCPD)
+!!        (XLVTT+(XCPV-XCL)*(PT(:,:,:)-XTT))*ZDRC(:,:,:)/XCPD)
 END IF
 !
 !  find locations where CCN are available
@@ -272,13 +267,13 @@ IF( OACTIT ) THEN
                                      ZTDT(IIB:IIE,IJB:IJE,IKB:IKE)<XTMIN   .OR. &
         PRVT(IIB:IIE,IJB:IJE,IKB:IKE)>ZRVSAT(IIB:IIE,IJB:IJE,IKB:IKE)    ) .AND.&
             PRVT(IIB:IIE,IJB:IJE,IKB:IKE)>(0.98*ZRVSAT(IIB:IIE,IJB:IJE,IKB:IKE))&
-             .AND. ZT(IIB:IIE,IJB:IJE,IKB:IKE)>(XTT-22.)                        &
+             .AND. PT(IIB:IIE,IJB:IJE,IKB:IKE)>(XTT-22.)                        &
              .AND. ZCONC_TOT(IIB:IIE,IJB:IJE,IKB:IKE)>ZCTMIN(4)
 ELSE 
    GNUCT(IIB:IIE,IJB:IJE,IKB:IKE) =   (PW_NU(IIB:IIE,IJB:IJE,IKB:IKE)>XWMIN .OR. &
         PRVT(IIB:IIE,IJB:IJE,IKB:IKE)>ZRVSAT(IIB:IIE,IJB:IJE,IKB:IKE)    ) .AND.&
             PRVT(IIB:IIE,IJB:IJE,IKB:IKE)>(0.98*ZRVSAT(IIB:IIE,IJB:IJE,IKB:IKE))&
-             .AND. ZT(IIB:IIE,IJB:IJE,IKB:IKE)>(XTT-22.)                        &
+             .AND. PT(IIB:IIE,IJB:IJE,IKB:IKE)>(XTT-22.)                        &
              .AND. ZCONC_TOT(IIB:IIE,IJB:IJE,IKB:IKE)>ZCTMIN(4)
 END IF
 INUCT = COUNTJV( GNUCT(:,:,:),I1(:),I2(:),I3(:))
@@ -306,7 +301,7 @@ IF( INUCT >= 1 ) THEN
    ALLOCATE(ZEXNREF(INUCT)) 
    DO JL=1,INUCT
       ZCCS(JL) = PCCS(I1(JL),I2(JL),I3(JL))
-      ZZT(JL)  = ZT(I1(JL),I2(JL),I3(JL))
+      ZZT(JL)  = PT(I1(JL),I2(JL),I3(JL))
       ZZW1(JL) = ZRVSAT(I1(JL),I2(JL),I3(JL))
       ZZW2(JL) = PW_NU(I1(JL),I2(JL),I3(JL))
       ZZTDT(JL)  = ZTDT(I1(JL),I2(JL),I3(JL))
@@ -484,7 +479,7 @@ IF( INUCT >= 1 ) THEN
 !
    PRVS(:,:,:) = PRVS(:,:,:) - ZW(:,:,:)
    PRCS(:,:,:) = PRCS(:,:,:) + ZW(:,:,:) 
-   ZW(:,:,:)   = ZW(:,:,:) * (XLVTT+(XCPV-XCL)*(ZT(:,:,:)-XTT))/                &
+   ZW(:,:,:)   = ZW(:,:,:) * (XLVTT+(XCPV-XCL)*(PT(:,:,:)-XTT))/                &
             (PEXNREF(:,:,:)*(XCPD+XCPV*PRVT(:,:,:)+XCL*(PRCT(:,:,:)+PRRT(:,:,:))))
    PTHS(:,:,:) = PTHS(:,:,:) + ZW(:,:,:)
 !

@@ -217,7 +217,12 @@ IF (GPPFIRSTCALL) THEN
       ! puis les indices fractionnaires (ZSRCI,ZSRCJ) et entiers
       ! (IPIGI,IPIGJ) du point de rejet dans le domaine de travail global.
       !
-      CALL SM_XYHAT(XLATORI,XLONORI,XPPLAT(JSV),XPPLON(JSV),ZSRCX,ZSRCY)
+      IF (LCARTESIAN) THEN  !En cartesien ecriture dans la namelist des coordonnees X,Y et non LAT,LON
+        ZSRCX = XPPLAT(JSV)
+        ZSRCY = XPPLON(JSV)
+      ELSE
+        CALL SM_XYHAT(XLATORI,XLONORI,XPPLAT(JSV),XPPLON(JSV),ZSRCX,ZSRCY)
+      END IF
       II=MAX(MIN(COUNT(XXHAT(:)<ZSRCX),IIU-1),1)
       IJ=MAX(MIN(COUNT(XYHAT(:)<ZSRCY),IJU-1),1)
       ZSRCI=(ZSRCX-XXHAT(II))/(XXHAT(II+1)-XXHAT(II))+REAL(II)

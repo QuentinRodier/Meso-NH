@@ -267,6 +267,9 @@ END MODULE MODI_RESOLVED_CLOUD
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      P. Wautelet: 01/02/2019: ZRSMIN is now allocatable (instead of size of XRTMIN which was sometimes not allocated)
 !!                   02/2019 C.Lac add rain fraction as an output field
+!!  P. Wautelet 24/02/2020: bugfix: corrected budget name (DEPI->CDEPI) for ice_adjust
+!!                  03/2020 (B.Vie) : LIMA negativity checks after turbulence, advection and microphysics budgets
+!!      B.Vié 03/03/2020 : use DTHRAD instead of dT/dt in Smax diagnostic computation
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -725,7 +728,7 @@ SELECT CASE ( HCLOUD )
    CASE('LIMA')   
 ! Correction where rc<0 or Nc<0
       IF (OWARM) THEN
-         WHERE (PRS(:,:,:,2) < 0. .OR. ZSVS(:,:,:,NSV_LIMA_NC) < 0.)
+         WHERE (PRS(:,:,:,2) < YRTMIN(2)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NC) < YCTMIN(2)/PTSTEP)
             PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
             PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
                  ZCPH(:,:,:) / ZEXN(:,:,:)
@@ -954,7 +957,7 @@ SELECT CASE ( HCLOUD )
 !
 !
     IF (.NOT. LRED .OR. (LRED .AND. LADJ_AFTER) ) THEN
-      CALL ICE_ADJUST (1,IKU,1, KRR, CFRAC_ICE_ADJUST, 'DEPI',    &
+      CALL ICE_ADJUST (1,IKU,1, KRR, CFRAC_ICE_ADJUST, 'CDEPI',    &
                     OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,                    &
                     PRHODJ, PEXNREF,  PSIGS, PMFCONV, PPABST, ZZZ,           &
                     ZEXN, PCF_MF,PRC_MF,PRI_MF,                                    &   
@@ -1039,7 +1042,7 @@ SELECT CASE ( HCLOUD )
 !*       10.2   Perform the saturation adjustment over cloud ice and cloud water
 !
     IF (.NOT. LRED .OR. (LRED .AND. LADJ_AFTER) ) THEN
-     CALL ICE_ADJUST (1,IKU,1, KRR, CFRAC_ICE_ADJUST, 'DEPI',                &
+     CALL ICE_ADJUST (1,IKU,1, KRR, CFRAC_ICE_ADJUST, 'CDEPI',               &
                     OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,                    &
                     PRHODJ, PEXNREF, PSIGS, PMFCONV, PPABST, ZZZ,            &
                     ZEXN, PCF_MF,PRC_MF,PRI_MF,                              &                     
@@ -1072,7 +1075,7 @@ SELECT CASE ( HCLOUD )
                    PRHODREF, PEXNREF, ZDZZ,                                &
                    PRHODJ, PPABSM, PPABST,                                 &
                    NMOD_CCN, NMOD_IFN, NMOD_IMM,                           &
-                   PTHM, PTHT, PRT, ZSVT, PW_ACT,                          &
+                   PDTHRAD, PTHT, PRT, ZSVT, PW_ACT,                       &
                    PTHS, PRS, ZSVS,                                        &
                    PINPRC, PINDEP, PINPRR, ZINPRI, PINPRS, PINPRG, PINPRH, &
                    PEVAP3D                                         )
@@ -1081,7 +1084,7 @@ SELECT CASE ( HCLOUD )
         IF (OWARM) CALL LIMA_WARM(OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,   &
                                   TPFILE, OCLOSE_OUT, KRR, PZZ, PRHODJ,         &
                                   PRHODREF, PEXNREF, PW_ACT, PPABSM, PPABST,    &
-                                  PTHM, PRCM,                                   &
+                                  PDTHRAD, PRCM,                                   &
                                   PTHT, PRT, ZSVT,                              &
                                   PTHS, PRS, ZSVS,                              &
                                   PINPRC, PINPRR, PINDEP, PINPRR3D, PEVAP3D     )
@@ -1137,10 +1140,73 @@ IF(HCLOUD=='ICE3' .OR. HCLOUD=='ICE4' ) THEN
   ENDIF
 ENDIF
 !
-IF ( (HCLOUD == 'KHKO') .OR. (HCLOUD == 'C2R2') ) THEN
-!    CALL GET_HALO(PRS(:,:,:,2))
-!    CALL GET_HALO(ZSVS(:,:,:,2))
-!    CALL GET_HALO(ZSVS(:,:,:,3))
+!
+SELECT CASE ( HCLOUD )
+  CASE('KESS')
+    WHERE (PRS(:,:,:,2) < 0.)
+      PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
+      PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
+           ZCPH(:,:,:) / PEXNREF(:,:,:)
+      PRS(:,:,:,2) = 0.0
+    END WHERE
+!
+!
+! CASE('C2R2','KHKO')                                 
+!   CALL GET_HALO(PRS(:,:,:,2))
+!   CALL GET_HALO(ZSVS(:,:,:,2))
+!   WHERE (PRS(:,:,:,2) < 0. .OR. ZSVS(:,:,:,2) < 0.)
+!     ZSVS(:,:,:,1) = 0.0
+!   END WHERE
+!   DO JSV = 2, 3
+!     WHERE (PRS(:,:,:,JSV) < 0. .OR. ZSVS(:,:,:,JSV) < 0.)
+!       PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,JSV)
+!       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,JSV) * ZLV(:,:,:) /  &
+!            ZCPH(:,:,:) / ZEXN(:,:,:)
+!       PRS(:,:,:,JSV)  = 0.0
+!       ZSVS(:,:,:,JSV) = 0.0
+!     END WHERE
+!   ENDDO
+! Commented 03/2013 O.Thouron 
+! (at least necessary to be commented for supersaturation variable)
+!  ZSVS(:,:,:,:) = MAX( 0.0,ZSVS(:,:,:,:) )
+!
+!
+  CASE('ICE3','ICE4')
+    WHERE (PRS(:,:,:,4) < 0.)
+      PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,4)
+      PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,4) * ZLS(:,:,:) /  &
+           ZCPH(:,:,:) / PEXNREF(:,:,:)
+      PRS(:,:,:,4) = 0.
+    END WHERE
+!
+!   cloud
+    WHERE (PRS(:,:,:,2) < 0.)
+      PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
+      PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
+           ZCPH(:,:,:) / PEXNREF(:,:,:)
+      PRS(:,:,:,2) = 0.
+    END WHERE
+!
+! if rc or ri are positive, we can correct negative rv
+!   cloud
+    WHERE ((PRS(:,:,:,1) <0.) .AND. (PRS(:,:,:,2)> 0.) )
+      PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
+      PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
+           ZCPH(:,:,:) / PEXNREF(:,:,:)
+      PRS(:,:,:,2) = 0.
+    END WHERE
+!   ice
+    IF(KRR > 3) THEN
+      WHERE ((PRS(:,:,:,1) < 0.).AND.(PRS(:,:,:,4) > 0.))
+        ZCOR(:,:,:)=MIN(-PRS(:,:,:,1),PRS(:,:,:,4))
+        PRS(:,:,:,1) = PRS(:,:,:,1) + ZCOR(:,:,:)
+        PTHS(:,:,:) = PTHS(:,:,:) - ZCOR(:,:,:) * ZLS(:,:,:) /  &
+             ZCPH(:,:,:) / PEXNREF(:,:,:)
+        PRS(:,:,:,4) = PRS(:,:,:,4) -ZCOR(:,:,:)
+      END WHERE
+    END IF
+!
+   CASE('C2R2','KHKO')
     WHERE (PRS(:,:,:,2) < 0. .OR. ZSVS(:,:,:,2) < 0.)
       ZSVS(:,:,:,1) = 0.0
     END WHERE
@@ -1153,9 +1219,104 @@ IF ( (HCLOUD == 'KHKO') .OR. (HCLOUD == 'C2R2') ) THEN
         ZSVS(:,:,:,JSV) = 0.0
       END WHERE
     ENDDO
- IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)  * PRHODJ(:,:,:), 4,'NECON_BU_RTH')
- IF (LBUDGET_RV) CALL BUDGET (PRS(:,:,:,1) * PRHODJ(:,:,:), 6,'NECON_BU_RRV')
- IF (LBUDGET_RC) CALL BUDGET (PRS(:,:,:,2) * PRHODJ(:,:,:), 7,'NECON_BU_RRC')
+!      
+   CASE('C3R5')
+    WHERE (PRS(:,:,:,2) < 0. .OR. ZSVS(:,:,:,2) < 0.)
+      ZSVS(:,:,:,1) = 0.0
+    END WHERE
+    DO JSV = 2, 3
+      WHERE (PRS(:,:,:,JSV) < 0. .OR. ZSVS(:,:,:,JSV) < 0.)
+        PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,JSV)
+        PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,JSV) * ZLV(:,:,:) /  &
+             ZCPH(:,:,:) / PEXNREF(:,:,:)
+        PRS(:,:,:,JSV)  = 0.0
+        ZSVS(:,:,:,JSV) = 0.0
+      END WHERE
+    ENDDO
+    ZSVS(:,:,:,:) = MAX( 0.0,ZSVS(:,:,:,:) )
+!   ice
+    WHERE (PRS(:,:,:,4) < 0.)
+      PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,4)
+      PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,4) * ZLV(:,:,:) /  &
+           ZCPH(:,:,:) / PEXNREF(:,:,:)
+      PRS(:,:,:,4)  = 0.0
+      PSVS(:,:,:,4) = 0.0
+    END WHERE
+!   cloud
+    WHERE (PRS(:,:,:,2) < 0.)
+      PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
+      PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
+           ZCPH(:,:,:) / PEXNREF(:,:,:)
+      PRS(:,:,:,2)  = 0.0
+      PSVS(:,:,:,2) = 0.0
+    END WHERE
+    PSVS(:,:,:,:) = MAX( 0.0,PSVS(:,:,:,:) )
+!
+   CASE('LIMA')   
+! Correction where rc<0 or Nc<0
+      IF (OWARM) THEN
+         WHERE (PRS(:,:,:,2) < YRTMIN(2)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NC) < YCTMIN(2)/PTSTEP)
+            PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
+            PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
+                 ZCPH(:,:,:) / ZEXN(:,:,:)
+            PRS(:,:,:,2)  = 0.0
+            ZSVS(:,:,:,NSV_LIMA_NC) = 0.0
+         END WHERE
+      END IF
+! Correction where rr<0 or Nr<0
+      IF (OWARM .AND. ORAIN) THEN
+         WHERE (PRS(:,:,:,3) < YRTMIN(3)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NR) < YCTMIN(3)/PTSTEP)
+            PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,3)
+            PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,3) * ZLV(:,:,:) /  &
+                 ZCPH(:,:,:) / ZEXN(:,:,:)
+            PRS(:,:,:,3)  = 0.0
+            ZSVS(:,:,:,NSV_LIMA_NR) = 0.0
+         END WHERE
+      END IF
+! Correction where ri<0 or Ni<0
+      IF (LCOLD) THEN
+         WHERE (PRS(:,:,:,4) < YRTMIN(4)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NI) < YCTMIN(4)/PTSTEP)
+            PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,4)
+            PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,4) * ZLS(:,:,:) /  &
+                 ZCPH(:,:,:) / ZEXN(:,:,:)
+            PRS(:,:,:,4)  = 0.0
+            ZSVS(:,:,:,NSV_LIMA_NI) = 0.0
+         END WHERE
+      END IF
+!
+     ZSVS(:,:,:,:) = MAX( 0.0,ZSVS(:,:,:,:) )
+     PRS(:,:,:,:) = MAX( 0.0,PRS(:,:,:,:) )
+!
+END SELECT
+!
+!
+!*       3.3  STORE THE BUDGET TERMS
+!            ----------------------
+!
+IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)  * PRHODJ(:,:,:), 4,'NECON_BU_RTH')
+IF (LBUDGET_RV) CALL BUDGET (PRS(:,:,:,1) * PRHODJ(:,:,:), 6,'NECON_BU_RRV')
+IF (LBUDGET_RC) CALL BUDGET (PRS(:,:,:,2) * PRHODJ(:,:,:), 7,'NECON_BU_RRC')
+IF (LBUDGET_RR) CALL BUDGET (PRS(:,:,:,3) * PRHODJ(:,:,:), 8,'NECON_BU_RRR')
+IF (LBUDGET_RI) CALL BUDGET (PRS(:,:,:,4) * PRHODJ(:,:,:) ,9,'NECON_BU_RRI')
+IF (LBUDGET_RS) CALL BUDGET (PRS(:,:,:,5) * PRHODJ(:,:,:),10,'NECON_BU_RRS')
+IF (LBUDGET_RG) CALL BUDGET (PRS(:,:,:,6) * PRHODJ(:,:,:),11,'NECON_BU_RRG')
+IF (LBUDGET_RH) CALL BUDGET (PRS(:,:,:,7) * PRHODJ(:,:,:),12,'NECON_BU_RRH')
+IF (LBUDGET_SV .AND. (HCLOUD == 'LIMA')) THEN
+   IF (OWARM) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NC) * PRHODJ(:,:,:),12+NSV_LIMA_NC,'NECON_BU_RSV')
+   IF (OWARM.AND.ORAIN) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NR) * PRHODJ(:,:,:),12+NSV_LIMA_NR,'NECON_BU_RSV')
+   IF (LCOLD) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NI) * PRHODJ(:,:,:),12+NSV_LIMA_NI,'NECON_BU_RSV')
+   IF (NMOD_CCN.GE.1) THEN
+      DO JL=1, NMOD_CCN
+         CALL BUDGET ( ZSVS(:,:,:,NSV_LIMA_CCN_FREE+JL-1)* &
+              PRHODJ(:,:,:),12+NSV_LIMA_CCN_FREE+JL-1,'NECON_BU_RSV') 
+      END DO
+   END IF
+   IF (NMOD_IFN.GE.1) THEN
+      DO JL=1, NMOD_IFN
+         CALL BUDGET ( ZSVS(:,:,:,NSV_LIMA_IFN_FREE+JL-1)* &
+              PRHODJ(:,:,:),12+NSV_LIMA_IFN_FREE+JL-1,'NECON_BU_RSV') 
+      END DO
+   END IF
 END IF
 !-------------------------------------------------------------------------------
 !

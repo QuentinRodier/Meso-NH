@@ -243,6 +243,7 @@ END MODULE MODI_RAIN_ICE_RED
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !  P. Wautelet 29/05/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
 !  P. Wautelet 17/01/2020: move Quicksort to tools.f90
+!  P. Wautelet 25/02/2020: bugfix: add missing budget: WETH_BU_RRG
 !
 !*       0.    DECLARATIONS
 !              ------------
@@ -1439,6 +1440,7 @@ IF(LBU_ENABLE) THEN
     IF (LBUDGET_RR) CALL BUDGET(PRRS(:,:,:)*PRHODJ(:,:,:), 8, 'WETH_BU_RRR')
     IF (LBUDGET_RI) CALL BUDGET(PRIS(:,:,:)*PRHODJ(:,:,:), 9, 'WETH_BU_RRI')
     IF (LBUDGET_RS) CALL BUDGET(PRSS(:,:,:)*PRHODJ(:,:,:), 10,'WETH_BU_RRS')
+    IF (LBUDGET_RG) CALL BUDGET(PRGS(:,:,:)*PRHODJ(:,:,:), 11,'WETH_BU_RRG')
     IF (LBUDGET_RH) CALL BUDGET(PRHS(:,:,:)*PRHODJ(:,:,:), 12,'WETH_BU_RRH')
 
     ZW(:,:,:) = 0.

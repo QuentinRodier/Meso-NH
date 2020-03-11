@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -56,6 +56,7 @@ END MODULE MODI_RESET_EXSEG
 !!                   02/2018 Q.Libois ECRAD
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
+!  J. Escobar  11/02/2020: for retrotrajectories in //, reset NHALO >> 1 if needed from NAM_CONF_DIAG
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -74,6 +75,10 @@ USE MODN_PARAM_KAFR_n
 USE MODN_PARAM_RAD_n
 USE MODN_PARAM_ECRAD_n
 !
+USE MODD_CONF,             ONLY: NHALO
+!
+USE MODD_VAR_ll, ONLY : IP
+!
 IMPLICIT NONE
 !
 !
@@ -87,6 +92,8 @@ CHARACTER(LEN=100):: YCOMMENT       ! Comment string
 INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: ILENCH         ! ILENCH : length of comment string
 TYPE(TFILEDATA),POINTER :: TZNMLFILE! Namelist file
+!
+NAMELIST/NAM_CONF_DIAG/NHALO 
 !
 !-------------------------------------------------------------------------------
 !
@@ -112,7 +119,7 @@ IF (NCONV_KF>=0) THEN
   IF (GFOUND) THEN
     CALL INIT_NAM_PARAM_KAFRn
     READ(UNIT=ILUNAM,NML=NAM_PARAM_KAFRN)
-    PRINT*, '  namelist NAM_PARAM_KAFRN read'
+    IF ( IP == 1 ) PRINT*, '  namelist NAM_PARAM_KAFRN read'
   END IF
   IF (LUSERV) THEN
     LDIAGCONV=.TRUE.
@@ -126,7 +133,7 @@ IF (NCONV_KF>=0) THEN
   END IF
 END IF
 !
-PRINT*,'RESET_EXSEG OUTPUT: NCONV_KF=',NCONV_KF,' CDCONV=',CDCONV,' CGETCONV=',CGETCONV
+IF ( IP == 1 ) PRINT*,'RESET_EXSEG OUTPUT: NCONV_KF=',NCONV_KF,' CDCONV=',CDCONV,' CGETCONV=',CGETCONV
 !
 !-------------------------------------------------------------------------------
 !
@@ -147,7 +154,7 @@ IF(NRAD_3D>=1) THEN
     CALL INIT_NAM_PARAM_RADn
     READ(UNIT=ILUNAM,NML=NAM_PARAM_RADN)
     CALL UPDATE_NAM_PARAM_RADn
-    PRINT*, '  namelist NAM_PARAM_RADN read'
+    IF ( IP == 1 ) PRINT*, '  namelist NAM_PARAM_RADN read'
   END IF
 #ifdef MNH_ECRAD
   CALL POSNAM(ILUNAM,'NAM_PARAM_ECRADN',GFOUND)
@@ -155,7 +162,7 @@ IF(NRAD_3D>=1) THEN
     CALL INIT_NAM_PARAM_EcRADn
     READ(UNIT=ILUNAM,NML=NAM_PARAM_ECRADN)
     CALL UPDATE_NAM_PARAM_ECRADn
-    PRINT*, '  namelist NAM_PARAM_ECRADN read'    
+    IF ( IP == 1 ) PRINT*, '  namelist NAM_PARAM_ECRADN read'    
   END IF
 #endif
 ENDIF
@@ -170,7 +177,7 @@ IF(LEN_TRIM(CRAD_SAT) /= 0) THEN
   CRAD='ECMW'
 END IF
 !
-PRINT*,'RESET_EXSEG OUTPUT: NRAD_3D =',NRAD_3D,' CRAD =',CRAD,' CGETRAD =',CGETRAD
+IF ( IP == 1 ) PRINT*,'RESET_EXSEG OUTPUT: NRAD_3D =',NRAD_3D,' CRAD =',CRAD,' CGETRAD =',CGETRAD
 !
 !-------------------------------------------------------------------------------
 !
@@ -179,8 +186,17 @@ PRINT*,'RESET_EXSEG OUTPUT: NRAD_3D =',NRAD_3D,' CRAD =',CRAD,' CGETRAD =',CGETR
 !
 IF (LUSECHEM .AND. .NOT.LCHEMDIAG) LUSECHEM =.FALSE. 
 !
-PRINT*,'RESET_EXSEG OUTPUT: LUSECHEM =',LUSECHEM,' LCHEMDIAG =',LCHEMDIAG
-PRINT*,' '
+IF ( IP == 1 ) PRINT*,'RESET_EXSEG OUTPUT: LUSECHEM =',LUSECHEM,' LCHEMDIAG =',LCHEMDIAG
+IF ( IP == 1 ) PRINT*,' '
+!
+!-------------------------------------------------------------------------------
+!
+!*      5. For retrotrajectories in // , reset NHALO >> 1 if needed from NAM_CONF_DIAG
+!          ---------------------------------------------------
+CALL POSNAM(ILUNAM,'NAM_CONF_DIAG',GFOUND)
+IF (GFOUND) THEN
+  READ(UNIT=ILUNAM,NML=NAM_CONF_DIAG)
+END IF
 !
 !-------------------------------------------------------------------------------
 !

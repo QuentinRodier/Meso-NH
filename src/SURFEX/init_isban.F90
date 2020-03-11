@@ -59,6 +59,7 @@ SUBROUTINE INIT_ISBA_n (DTCO, OREAD_BUDGETC, UG, U, USS, GCP, IM, DTZ,&
 !!      P.Tulet        06/16 : add MEGAN coupling  
 !!      J.Pianezzej    02/2019 : correction for use of MEGAN
 !  P. Wautelet 21/11/2019: initialize YSNOW_SCHEME
+!       S. Donnier     02/2020 : correction for ECOCLIMAP SG (20 vegtypes possible)
 !!
 !-------------------------------------------------------------------------------
 !
@@ -371,7 +372,10 @@ ISIZE_LMEB_PATCH=COUNT(IM%O%LMEB_PATCH(:))
 !*       2.2    Check:
 !               ------
 !
-IF ( IM%O%CPHOTO/='NON' .AND. IM%O%NPATCH/=12 .AND. IM%O%NPATCH/=19 )THEN
+! modif ECOSG
+!IF ( IM%O%CPHOTO/='NON' .AND. IM%O%NPATCH/=12 .AND. IM%O%NPATCH/=19 )THEN
+IF ( IM%O%CPHOTO/='NON' .AND. IM%O%NPATCH/=12 .AND. IM%O%NPATCH/=19  .AND. IM%O%NPATCH/=20 )THEN
+! fin modif ECOSG
   CALL ABOR1_SFX('INIT_ISBAN: INCONSISTENCY BETWEEN CPHOTO AND NPATCH')
 ENDIF
 !

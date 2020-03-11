@@ -1,18 +1,18 @@
-!MNH_LIC Copyright 2018-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
+!-------------------------------------------------------------------------------
 !      ###############################
        MODULE MODI_LIMA_NUCLEATION_PROCS
 !      ###############################
 !
 INTERFACE
-   SUBROUTINE LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, OCLOSE_OUT, PRHODJ,          &
-                                     PRHODREF, PEXNREF, PPABST, PT, PTM, PW_NU,    &
-                                     PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,     &
-                                     PCCT, PCRT, PCIT,                             &
-                                     PNFT, PNAT, PIFT, PINT, PNIT, PNHT            )
+   SUBROUTINE LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, OCLOSE_OUT, PRHODJ,            &
+                                     PRHODREF, PEXNREF, PPABST, PT, PDTHRAD, PW_NU, &
+                                     PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,      &
+                                     PCCT, PCRT, PCIT,                              &
+                                     PNFT, PNAT, PIFT, PINT, PNIT, PNHT             )
 !
 USE MODD_IO, ONLY: TFILEDATA
 !
@@ -25,7 +25,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF    ! Reference Exner function
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST     ! abs. pressure at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PT         ! Temperature
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTM        ! Temperature at time t-dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD    ! Radiative temperature tendency
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU      ! updraft velocity used for
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHT       ! Theta at t 
@@ -50,13 +50,13 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNHT       ! CCN hom freezing
 END SUBROUTINE LIMA_NUCLEATION_PROCS
 END INTERFACE
 END MODULE MODI_LIMA_NUCLEATION_PROCS
-!     #############################################################################
-SUBROUTINE LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, OCLOSE_OUT, PRHODJ,                &
-                                  PRHODREF, PEXNREF, PPABST, PT, PTM, PW_NU,          &
-                                  PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,           &
-                                  PCCT, PCRT, PCIT,                                   &
-                                  PNFT, PNAT, PIFT, PINT, PNIT, PNHT                  )
-!     #############################################################################
+!     ############################################################################
+SUBROUTINE LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, OCLOSE_OUT, PRHODJ,            &
+                                  PRHODREF, PEXNREF, PPABST, PT, PDTHRAD, PW_NU, &
+                                  PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,      &
+                                  PCCT, PCRT, PCIT,                              &
+                                  PNFT, PNAT, PIFT, PINT, PNIT, PNHT             )
+!     ############################################################################
 !
 !!    PURPOSE
 !!    -------
@@ -69,7 +69,9 @@ SUBROUTINE LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, OCLOSE_OUT, PRHODJ,           
 !!    MODIFICATIONS
 !!    -------------
 !!      Original             15/03/2018
-!!
+! P. Wautelet 27/02/2020: bugfix: PNFT was not updated after LIMA_CCN_HOM_FREEZING
+! P. Wautelet 27/02/2020: add Z_TH_HINC variable (for budgets)
+! B. Vie      03/03/2020: use DTHRAD instead of dT/dt in Smax diagnostic computation
 !-------------------------------------------------------------------------------
 !
 USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LMEYERS, LSNOW, LWARM, LACTI, LRAIN, LHHONI, &
@@ -93,7 +95,7 @@ IMPLICIT NONE
 !-------------------------------------------------------------------------------
 !
 REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
-TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE     ! Output file
+TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE     ! Output file
 LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ     ! Reference density
@@ -101,7 +103,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF    ! Reference Exner function
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST     ! abs. pressure at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PT         ! Temperature
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTM        ! Temperature at time t-dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD    ! Radiative temperature tendency
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU      ! updraft velocity used for
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHT       ! Theta at t 
@@ -125,7 +127,7 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNHT       ! CCN hom. freezing
 !
 !-------------------------------------------------------------------------------
 !
-REAL, DIMENSION(SIZE(PT,1),SIZE(PT,2),SIZE(PT,3))          :: Z_TH_HIND, Z_RI_HIND, Z_CI_HIND, Z_RC_HINC, Z_CC_HINC
+REAL, DIMENSION(SIZE(PT,1),SIZE(PT,2),SIZE(PT,3))          :: Z_TH_HIND, Z_RI_HIND, Z_CI_HIND, Z_TH_HINC, Z_RC_HINC, Z_CC_HINC
 REAL, DIMENSION(SIZE(PT,1),SIZE(PT,2),SIZE(PT,3))          :: ZTHT, ZRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT
 REAL, DIMENSION(SIZE(PT,1),SIZE(PT,2),SIZE(PT,3))          :: ZCCT, ZCRT, ZCIT
 REAL, DIMENSION(SIZE(PT,1),SIZE(PT,2),SIZE(PT,3),NMOD_CCN) :: ZNFT, ZNAT
@@ -156,9 +158,9 @@ ZNHT(:,:,:) = PNHT(:,:,:)
 !-------------------------------------------------------------------------------
 !
 IF (LWARM .AND. LACTI .AND. NMOD_CCN.GE.1) THEN
-   CALL LIMA_CCN_ACTIVATION (PTSTEP, TPFILE, OCLOSE_OUT,                 &
-                             PRHODREF, PEXNREF, PPABST, PT, PTM, PW_NU,   &
-                             ZTHT, ZRVT, ZRCT, ZCCT, ZRRT, ZNFT, ZNAT)
+   CALL LIMA_CCN_ACTIVATION (PTSTEP, TPFILE, OCLOSE_OUT,                    &
+                             PRHODREF, PEXNREF, PPABST, PT, PDTHRAD, PW_NU, &
+                             ZTHT, ZRVT, ZRCT, ZCCT, ZRRT, ZNFT, ZNAT       )
    PTHT(:,:,:) = ZTHT(:,:,:)
    PRVT(:,:,:) = ZRVT(:,:,:)
    PRCT(:,:,:) = ZRCT(:,:,:)
@@ -189,7 +191,7 @@ IF (LCOLD .AND. LNUCL .AND. .NOT.LMEYERS .AND. NMOD_IFN.GE.1) THEN
                                       ZTHT, ZRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT,         &
                                       ZCCT, ZCIT, ZNAT, ZIFT, ZINT, ZNIT,               &
                                       Z_TH_HIND, Z_RI_HIND, Z_CI_HIND,                  &
-                                      Z_RC_HINC, Z_CC_HINC                              )
+                                      Z_TH_HINC, Z_RC_HINC, Z_CC_HINC                   )
 !
 ! Call budgets
 !
@@ -235,7 +237,7 @@ IF (LCOLD .AND. LNUCL .AND. LMEYERS) THEN
                                 ZTHT, ZRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT,   &
                                 ZCCT, ZCIT, ZINT,                           &
                                 Z_TH_HIND, Z_RI_HIND, Z_CI_HIND,            &
-                                Z_RC_HINC, Z_CC_HINC                        )
+                                Z_TH_HINC, Z_RC_HINC, Z_CC_HINC             )
 !
 ! Call budgets
 !
@@ -288,6 +290,7 @@ PTHT(:,:,:) = ZTHT(:,:,:)
 PRVT(:,:,:) = ZRVT(:,:,:)
 PRIT(:,:,:) = ZRIT(:,:,:)
 PCIT(:,:,:) = ZCIT(:,:,:)
+PNFT(:,:,:,:) = ZNFT(:,:,:,:)
 PNHT(:,:,:) = ZNHT(:,:,:)
 ENDIF
 !

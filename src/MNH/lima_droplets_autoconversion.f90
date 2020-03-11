@@ -57,7 +57,7 @@ END MODULE MODI_LIMA_DROPLETS_AUTOCONVERSION
 !!    MODIFICATIONS
 !!    -------------
 !!      Original             15/03/2018 
-!!
+!!      B. Vie 02/03/2020 : missing CC process
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -125,11 +125,11 @@ WHERE( PRCT(:)>XRTMIN(2) .AND. PLBDC(:)>0. .AND. LDCOMPUTE(:) )
                                                 ! min (80 microns, D_h, D_r)
    ZW3(:) = ZW3(:) * MAX( 0.0,ZW1(:) )**3 / XAC 
 !
-   P_CC_AUTO(:) = 0.
+   P_CC_AUTO(:) = -ZW3(:)
    P_CR_AUTO(:) = ZW3(:)
 !
    PA_RC(:) = PA_RC(:) + P_RC_AUTO(:)
-   PA_CC(:) = PA_CC(:) 
+   PA_CC(:) = PA_CC(:) + P_CC_AUTO(:)
    PA_RR(:) = PA_RR(:) - P_RC_AUTO(:)
    PA_CR(:) = PA_CR(:) + P_CR_AUTO(:)
 END WHERE

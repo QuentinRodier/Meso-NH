@@ -11,7 +11,7 @@ INTERFACE
 !
       SUBROUTINE FORCING ( PTSTEP, OUSERV, PRHODJ, PCORIOZ,                &
                            PZHAT,  PZZ,  TPDTCUR,                          &
-                           PUFRC_PAST, PVFRC_PAST,                         &
+                           PUFRC_PAST, PVFRC_PAST,  PWTFRC,                &
                            PUT,  PVT,  PWT,  PTHT,  PTKET,  PRT,  PSVT,    &
                            PRUS, PRVS, PRWS, PRTHS, PRTKES, PRRS, PRSVS,   &
                            KMI,PJ)
@@ -28,6 +28,8 @@ REAL, DIMENSION(:,:,:), INTENT(IN) :: PZZ     ! height z
 TYPE (DATE_TIME),       INTENT(IN) :: TPDTCUR ! current date and time
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PUFRC_PAST, PVFRC_PAST 
 !                                             ! forcing at previous time-step
+!
+REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PWTFRC ! large scale vertical wind
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT,PVT,PWT,PTHT,PTKET 
                                           ! wind, potential temperature and
@@ -53,7 +55,7 @@ END MODULE MODI_FORCING
 !     ######################################################################
       SUBROUTINE FORCING ( PTSTEP, OUSERV, PRHODJ, PCORIOZ,                &
                            PZHAT,  PZZ,  TPDTCUR,                          &
-                           PUFRC_PAST, PVFRC_PAST,                         &
+                           PUFRC_PAST, PVFRC_PAST, PWTFRC,                 &
                            PUT,  PVT,  PWT,  PTHT,  PTKET,  PRT,  PSVT,    &
                            PRUS, PRVS, PRWS, PRTHS, PRTKES, PRRS, PRSVS,   &
                            KMI,PJ)
@@ -182,6 +184,8 @@ REAL, DIMENSION(:,:,:), INTENT(IN) :: PZZ     ! height z
 TYPE (DATE_TIME),       INTENT(IN) :: TPDTCUR ! current date and time
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PUFRC_PAST, PVFRC_PAST 
 !                                             ! forcing at previous time-step
+!
+REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PWTFRC ! large scale vertical wind
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT,PVT,PWT,PTHT,PTKET 
                                           ! wind, potential temperature and
@@ -607,7 +611,7 @@ END DO
 !
 ! store large scale w in module to be used later
 ! in convection scheme
-XWTFRC(:,:,:) = ZWF(:,:,:) 
+PWTFRC(:,:,:) = ZWF(:,:,:)
 !
 !* computes evolution of forcing wind
 WHERE(PUFRC_PAST==XUNDEF) PUFRC_PAST = ZUF(:,:,:)

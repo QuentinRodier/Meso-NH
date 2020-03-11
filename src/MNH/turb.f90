@@ -341,6 +341,7 @@ END MODULE MODI_TURB
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!                     01/2018 (Q.Rodier) Introduction of RM17
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!  B. Vie         03/2020: LIMA negativity checks after turbulence, advection and microphysics budgets
 !! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -354,6 +355,7 @@ USE MODD_BUDGET
 USE MODD_IO, ONLY: TFILEDATA
 USE MODD_LES
 USE MODD_NSV
+USE MODD_PARAM_LIMA
 !
 USE MODI_GRADIENT_M
 USE MODI_GRADIENT_U
@@ -538,7 +540,7 @@ REAL                :: ZALPHA       ! proportionnality constant between Dz/2 and
 !                                   ! BL89 mixing length near the surface
 !
 REAL :: ZTIME1, ZTIME2
-REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)):: ZTT,ZEXNE,ZLV,ZLS,ZCPH
+REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)):: ZTT,ZEXNE,ZLV,ZLS,ZCPH,ZCOR
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3))::  ZSHEAR, ZDUDZ, ZDVDZ
 TYPE(TFIELDDATA) :: TZFIELD
 !
@@ -1109,32 +1111,137 @@ IF ( KRRL >= 1 ) THEN
   END IF
 END IF
 !
-IF ((HCLOUD == 'KHKO') .OR. (HCLOUD == 'C2R2')) THEN
- ZEXNE(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
- ZTT(:,:,:)= PTHLT(:,:,:)*ZEXNE(:,:,:)
- ZLV(:,:,:)=XLVTT +(XCPV-XCL) *(ZTT(:,:,:)-XTT)
- ZLS(:,:,:)=XLSTT +(XCPV-XCI) *(ZTT(:,:,:)-XTT)
- ZCPH(:,:,:)=XCPD +XCPV*PRT(:,:,:,1)
-! CALL GET_HALO(PRRS(:,:,:,2))
-! CALL GET_HALO(PRSVS(:,:,:,2))
-! CALL GET_HALO(PRSVS(:,:,:,3))
- WHERE (PRRS(:,:,:,2) < 0. .OR. PRSVS(:,:,:,2) < 0.)
-      PRSVS(:,:,:,1) = 0.0
- END WHERE
- DO JSV = 2, 3
-  WHERE (PRRS(:,:,:,JSV) < 0. .OR. PRSVS(:,:,:,JSV) < 0.)
-      PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,JSV)
-      PRTHLS(:,:,:) = PRTHLS(:,:,:) - PRRS(:,:,:,JSV) * ZLV(:,:,:) /  &
-             ZCPH(:,:,:) / ZEXNE(:,:,:)
-      PRRS(:,:,:,JSV)  = 0.0
-      PRSVS(:,:,:,JSV) = 0.0
-  END WHERE
- END DO
+SELECT CASE ( HCLOUD )
+  CASE('ICE3','ICE4')
+     ZEXNE(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
+     ZTT(:,:,:)= PTHLT(:,:,:)*ZEXNE(:,:,:)
+     ZLV(:,:,:)=XLVTT +(XCPV-XCL) *(ZTT(:,:,:)-XTT)
+     ZLS(:,:,:)=XLSTT +(XCPV-XCI) *(ZTT(:,:,:)-XTT)
+     ZCPH(:,:,:)=XCPD +XCPV*PRT(:,:,:,1)
+    WHERE (PRRS(:,:,:,4) < 0.)
+      PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,4)
+      PRTHLS(:,:,:) = PRTHLS(:,:,:) - PRRS(:,:,:,4) * ZLS(:,:,:) /  &
+           ZCPH(:,:,:) / ZEXNE(:,:,:)
+      PRRS(:,:,:,4) = 0.
+    END WHERE
 !
- IF (LBUDGET_TH) CALL BUDGET (PRTHLS(:,:,:), 4,'NETUR_BU_RTH')
- IF (LBUDGET_RV) CALL BUDGET (PRRS(:,:,:,1), 6,'NETUR_BU_RRV')
- IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2), 7,'NETUR_BU_RRC')
+!   cloud
+    WHERE (PRRS(:,:,:,2) < 0.)
+      PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,2)
+      PRTHLS(:,:,:) = PRTHLS(:,:,:) - PRRS(:,:,:,2) * ZLV(:,:,:) /  &
+           ZCPH(:,:,:) / ZEXNE(:,:,:)
+      PRRS(:,:,:,2) = 0.
+    END WHERE
+!
+! if rc or ri are positive, we can correct negative rv
+!   cloud
+    WHERE ((PRRS(:,:,:,1) <0.) .AND. (PRRS(:,:,:,2)> 0.) )
+      PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,2)
+      PRTHLS(:,:,:) = PRTHLS(:,:,:) - PRRS(:,:,:,2) * ZLV(:,:,:) /  &
+           ZCPH(:,:,:) / ZEXNE(:,:,:)
+      PRRS(:,:,:,2) = 0.
+    END WHERE
+!   ice
+    IF(KRR > 3) THEN
+      WHERE ((PRRS(:,:,:,1) < 0.).AND.(PRRS(:,:,:,4) > 0.))
+        ZCOR(:,:,:)=MIN(-PRRS(:,:,:,1),PRRS(:,:,:,4))
+        PRRS(:,:,:,1) = PRRS(:,:,:,1) + ZCOR(:,:,:)
+        PRTHLS(:,:,:) = PRTHLS(:,:,:) - ZCOR(:,:,:) * ZLS(:,:,:) /  &
+             ZCPH(:,:,:) / ZEXNE(:,:,:)
+        PRRS(:,:,:,4) = PRRS(:,:,:,4) -ZCOR(:,:,:)
+      END WHERE
+    END IF
+!
+  CASE('C2R2','KHKO')
+     ZEXNE(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
+     ZTT(:,:,:)= PTHLT(:,:,:)*ZEXNE(:,:,:)
+     ZLV(:,:,:)=XLVTT +(XCPV-XCL) *(ZTT(:,:,:)-XTT)
+     ZLS(:,:,:)=XLSTT +(XCPV-XCI) *(ZTT(:,:,:)-XTT)
+     ZCPH(:,:,:)=XCPD +XCPV*PRT(:,:,:,1)
+!  CALL GET_HALO(PRRS(:,:,:,2))
+!  CALL GET_HALO(PRSVS(:,:,:,2))
+!  CALL GET_HALO(PRSVS(:,:,:,3))
+     WHERE (PRRS(:,:,:,2) < 0. .OR. PRSVS(:,:,:,2) < 0.)
+        PRSVS(:,:,:,1) = 0.0
+     END WHERE
+     DO JSV = 2, 3
+        WHERE (PRRS(:,:,:,JSV) < 0. .OR. PRSVS(:,:,:,JSV) < 0.)
+           PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,JSV)
+           PRTHLS(:,:,:) = PRTHLS(:,:,:) - PRRS(:,:,:,JSV) * ZLV(:,:,:) /  &
+                ZCPH(:,:,:) / ZEXNE(:,:,:)
+           PRRS(:,:,:,JSV)  = 0.0
+           PRSVS(:,:,:,JSV) = 0.0
+        END WHERE
+     END DO
+     !
+   CASE('LIMA')   
+     ZEXNE(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
+     ZTT(:,:,:)= PTHLT(:,:,:)*ZEXNE(:,:,:)
+     ZLV(:,:,:)=XLVTT +(XCPV-XCL) *(ZTT(:,:,:)-XTT)
+     ZLS(:,:,:)=XLSTT +(XCPV-XCI) *(ZTT(:,:,:)-XTT)
+     ZCPH(:,:,:)=XCPD +XCPV*PRT(:,:,:,1)
+! Correction where rc<0 or Nc<0
+      IF (LWARM) THEN
+         WHERE (PRRS(:,:,:,2) < XRTMIN(2)/PTSTEP .OR. PRSVS(:,:,:,NSV_LIMA_NC) < XCTMIN(2)/PTSTEP)
+            PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,2)
+            PRTHLS(:,:,:) = PRTHLS(:,:,:) - PRRS(:,:,:,2) * ZLV(:,:,:) /  &
+                 ZCPH(:,:,:) / ZEXNE(:,:,:)
+            PRRS(:,:,:,2)  = 0.0
+            PRSVS(:,:,:,NSV_LIMA_NC) = 0.0
+         END WHERE
+      END IF
+! Correction where rr<0 or Nr<0
+      IF (LWARM .AND. LRAIN) THEN
+         WHERE (PRRS(:,:,:,3) < XRTMIN(3)/PTSTEP .OR. PRSVS(:,:,:,NSV_LIMA_NR) < XCTMIN(3)/PTSTEP)
+            PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,3)
+            PRTHLS(:,:,:) = PRTHLS(:,:,:) - PRRS(:,:,:,3) * ZLV(:,:,:) /  &
+                 ZCPH(:,:,:) / ZEXNE(:,:,:)
+            PRRS(:,:,:,3)  = 0.0
+            PRSVS(:,:,:,NSV_LIMA_NR) = 0.0
+         END WHERE
+      END IF
+! Correction where ri<0 or Ni<0
+      IF (LCOLD) THEN
+         WHERE (PRRS(:,:,:,4) < XRTMIN(4)/PTSTEP .OR. PRSVS(:,:,:,NSV_LIMA_NI) < XCTMIN(4)/PTSTEP)
+            PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,4)
+            PRTHLS(:,:,:) = PRTHLS(:,:,:) - PRRS(:,:,:,4) * ZLS(:,:,:) /  &
+                 ZCPH(:,:,:) / ZEXNE(:,:,:)
+            PRRS(:,:,:,4)  = 0.0
+            PRSVS(:,:,:,NSV_LIMA_NI) = 0.0
+         END WHERE
+      END IF
+!
+      PRSVS(:,:,:,:) = MAX( 0.0,PRSVS(:,:,:,:) )
+      PRRS(:,:,:,:) = MAX( 0.0,PRRS(:,:,:,:) )
+!
+END SELECT
+!
+IF ((HCLOUD == 'ICE3') .OR. (HCLOUD == 'ICE4') .OR. (HCLOUD == 'KHKO') .OR. (HCLOUD /= 'C2R2') .OR. (HCLOUD /= 'LIMA') ) THEN
+  IF (LBUDGET_TH) CALL BUDGET (PRTHLS(:,:,:), 4,'NETUR_BU_RTH')
+  IF (LBUDGET_RV) CALL BUDGET (PRRS(:,:,:,1), 6,'NETUR_BU_RRV')
+  IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2), 7,'NETUR_BU_RRC')
+  IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:,3), 8,'NETUR_BU_RRR')
+  IF (LBUDGET_RI) CALL BUDGET (PRRS(:,:,:,4), 9,'NETUR_BU_RRI')
+  IF (LBUDGET_RS) CALL BUDGET (PRRS(:,:,:,5),10,'NETUR_BU_RRS')
+  IF (LBUDGET_RG) CALL BUDGET (PRRS(:,:,:,6),11,'NETUR_BU_RRG')
+  IF (LBUDGET_RH) CALL BUDGET (PRRS(:,:,:,7),12,'NETUR_BU_RRH')
 END IF
+IF (LBUDGET_SV .AND. (HCLOUD == 'LIMA')) THEN
+   IF (LWARM) CALL BUDGET (PRSVS(:,:,:,NSV_LIMA_NC),12+NSV_LIMA_NC,'NETUR_BU_RSV')
+   IF (LWARM.AND.LRAIN) CALL BUDGET (PRSVS(:,:,:,NSV_LIMA_NR),12+NSV_LIMA_NR,'NETUR_BU_RSV')
+   IF (LCOLD) CALL BUDGET (PRSVS(:,:,:,NSV_LIMA_NI),12+NSV_LIMA_NI,'NETUR_BU_RSV')
+   IF (NMOD_CCN.GE.1) THEN
+      DO JI=1, NMOD_CCN
+         CALL BUDGET ( PRSVS(:,:,:,NSV_LIMA_CCN_FREE+JI-1),12+NSV_LIMA_CCN_FREE+JI-1,'NETUR_BU_RSV') 
+      END DO
+   END IF
+   IF (NMOD_IFN.GE.1) THEN
+      DO JI=1, NMOD_IFN
+         CALL BUDGET ( PRSVS(:,:,:,NSV_LIMA_IFN_FREE+JI-1),12+NSV_LIMA_IFN_FREE+JI-1,'NETUR_BU_RSV') 
+      END DO
+   END IF
+END IF
+
 !
 !----------------------------------------------------------------------------
 !

@@ -10,7 +10,8 @@
                                  PZ0H_WATER, PZ0H_NATURE, PZ0H_TOWN, PQS_SEA,   &
                                  PQS_WATER, PQS_NATURE, PQS_TOWN, PPSNG, PPSNV, &
                                  PZS, PSERIES, PTWSNOW, PSSO_STDEV, PLON, PLAT, &
-                                 PBARE, PLAI_TREE, PH_TREE                    )  
+                                 PBARE, PLAI_TREE, PH_TREE,                     &
+                                 PWALL_O_HOR, PBUILD_HEIGHT                     )
 !     #######################################################################
 !
 !!****  *GET_SURF_VAR_n* - gets some surface fields on atmospheric grid
@@ -47,6 +48,7 @@
 !       S. Riette   06/2010 PSSO_STDEV and PTWSNOW added
 !       B. Decharme 09/2012 Argument added in GET_FLUX_n
 !       B. Decharme 05/2013 Argument added in GET_FLUX_n for debug in ARP/AL/AR
+!!      C. Lac      11/2019 correction in the drag formula and application to building in addition to tree
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -144,8 +146,11 @@ REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PLON       ! longitude
 REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PLAT       ! latitude
 !
 REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PBARE      ! bare soil fraction on grid mesh     (-)
-REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PLAI_TREE       ! Leaf Area Index    on grid mesh     (-)
-REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PH_TREE        ! Height of trees    on grid mesh     (-)
+REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PLAI_TREE  ! Leaf Area Index    on grid mesh     (-)
+REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PH_TREE    ! Height of trees    on grid mesh     (-)
+!
+REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PWALL_O_HOR   ! Facade area density on grid mesh [m^2(fac.)/m^2(town)] 
+REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PBUILD_HEIGHT ! Building height on grid mesh [m] 
 !
 !-------------------------------------------------------------------------------
 !
@@ -425,7 +430,8 @@ ENDIF
    !
    !-------------------------------------------------------------------------------
    !
-IF ( PRESENT(PQS_TOWN) .OR. PRESENT(PZ0_TOWN) .OR. PRESENT(PZ0H_TOWN) ) THEN
+IF ( PRESENT(PQS_TOWN) .OR. PRESENT(PZ0_TOWN) .OR. PRESENT(PZ0H_TOWN)  .OR. &
+     PRESENT(PWALL_O_HOR) .OR. PRESENT (PBUILD_HEIGHT) ) THEN
    !
    ! Get parameters over town tile
    !
@@ -440,8 +446,9 @@ IF ( PRESENT(PQS_TOWN) .OR. PRESENT(PZ0_TOWN) .OR. PRESENT(PZ0H_TOWN) ) THEN
    IMASK(:)=0
    CALL GET_1D_MASK(KI_TOWN, KI, PTOWN, IMASK(1:KI_TOWN))
    !
-   CALL GET_VAR_TOWN_n(TM%TD%O, TM%TD%D, HPROGRAM, KI_TOWN, &
-                       ZFIELD1(1:KI_TOWN), ZFIELD2(1:KI_TOWN), ZFIELD3(1:KI_TOWN))
+   CALL GET_VAR_TOWN_n(TM%TOP, TM%TD%O, TM%TD%D, TM%NT,HPROGRAM, KI_TOWN,         &
+                       ZFIELD1(1:KI_TOWN), ZFIELD2(1:KI_TOWN), ZFIELD3(1:KI_TOWN),&
+                       ZFIELD4(1:KI_TOWN), ZFIELD5(1:KI_TOWN)                     )
    !
    IF(PRESENT(PQS_TOWN))THEN
       PQS_TOWN    (:) = XUNDEF
@@ -461,6 +468,20 @@ IF ( PRESENT(PQS_TOWN) .OR. PRESENT(PZ0_TOWN) .OR. PRESENT(PZ0H_TOWN) ) THEN
       PZ0H_TOWN   (:) = XUNDEF
       DO JI = 1, KI_TOWN
          PZ0H_TOWN(IMASK(JI)) = ZFIELD3(JI)
+      END DO
+   ENDIF
+   !
+   IF(PRESENT(PWALL_O_HOR))THEN
+      PWALL_O_HOR (:) = XUNDEF
+      DO JI = 1, KI_TOWN
+         PWALL_O_HOR(IMASK(JI)) = ZFIELD4(JI)
+      END DO
+   ENDIF
+   !
+   IF(PRESENT(PBUILD_HEIGHT))THEN
+      PBUILD_HEIGHT (:) = XUNDEF
+      DO JI = 1, KI_TOWN
+         PBUILD_HEIGHT(IMASK(JI)) = ZFIELD5(JI)
       END DO
    ENDIF
    !

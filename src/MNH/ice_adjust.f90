@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1996-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -23,7 +23,7 @@ INTEGER,                  INTENT(IN)    :: KKU   !uppest atmosphere array index
 INTEGER,                  INTENT(IN)    :: KKL   !vert. levels type 1=MNH -1=ARO
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 CHARACTER(len=1),         INTENT(IN)    :: HFRAC_ICE
-CHARACTER(len=4),         INTENT(IN)    :: HBUNAME  ! Name of the budget
+CHARACTER(len=*),         INTENT(IN)    :: HBUNAME  ! Name of the budget
 LOGICAL,                  INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid 
                                                     ! Condensation
 LOGICAL                                 :: OSIGMAS  ! Switch for Sigma_s: 
@@ -164,7 +164,7 @@ END MODULE MODI_ICE_ADJUST
 !!                         or to call it on S variables
 !!      2016-11 S. Riette: all-or-nothing adjustment now uses condensation
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!  P. Wautelet 24/02/2020: bugfix: corrected budget name (DEPI->CDEPI) for ice_adjust
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -192,7 +192,7 @@ INTEGER,                  INTENT(IN)    :: KKU  !uppest atmosphere array index
 INTEGER,                  INTENT(IN)    :: KKL  !vert. levels type 1=MNH -1=ARO
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 CHARACTER(len=1),         INTENT(IN)    :: HFRAC_ICE
-CHARACTER(len=4),         INTENT(IN)    :: HBUNAME  ! Name of the budget
+CHARACTER(len=*),         INTENT(IN)    :: HBUNAME  ! Name of the budget
 LOGICAL,                  INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid 
                                                     ! Condensation
 LOGICAL                                 :: OSIGMAS  ! Switch for Sigma_s: 
@@ -430,10 +430,10 @@ ENDIF
 !*       6.  STORE THE BUDGET TERMS
 !            ----------------------
 !
-IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:) * PRHODJ(:,:,:),6,HBUNAME//'_BU_RRV')
-IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:) * PRHODJ(:,:,:),7,HBUNAME//'_BU_RRC')
-IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:) * PRHODJ(:,:,:),9,HBUNAME//'_BU_RRI')
-IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:) * PRHODJ(:,:,:),4,HBUNAME//'_BU_RTH')
+IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:) * PRHODJ(:,:,:),6,trim(HBUNAME)//'_BU_RRV')
+IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:) * PRHODJ(:,:,:),7,trim(HBUNAME)//'_BU_RRC')
+IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:) * PRHODJ(:,:,:),9,trim(HBUNAME)//'_BU_RRI')
+IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:) * PRHODJ(:,:,:),4,trim(HBUNAME)//'_BU_RTH')
 !
 !------------------------------------------------------------------------------
 !

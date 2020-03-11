@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -14,6 +14,7 @@
 !  P. Wautelet 05/03/2019: rename IO subroutines and modules
 !  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
 !  P. Wautelet 19/09/2019: temporary workaround for netCDF bug if MNH_INT=8 (if netCDF fortran < 4.4.5)
+!  P. Wautelet 11/02/2020: add 'dims' attribute in IO_Write_field_header_split_nc4
 !-----------------------------------------------------------------
 #if defined(MNH_IOCDF4)
 module mode_io_write_nc4
@@ -129,6 +130,10 @@ if ( istatus /= NF90_NOERR ) then
   istatus = NF90_PUT_ATT( incid, ivarid,'ndims', tpfield%ndims )
   if ( istatus /= NF90_NOERR ) call IO_Err_handle_nc4( istatus, 'IO_Field_header_split_write_nc4', 'NF90_PUT_ATT', &
                                                      'ndims for '//trim( tpfield%cmnhname ) )
+
+  istatus = NF90_PUT_ATT( incid, ivarid,'dims', ishape )
+  if ( istatus /= NF90_NOERR ) call IO_Err_handle_nc4( istatus, 'IO_Field_header_split_write_nc4', 'NF90_PUT_ATT', &
+                                                     'dims for '//trim( tpfield%cmnhname ) )
 
   if ( tpfield%ltimedep ) then
     istatus = NF90_PUT_ATT( incid, ivarid,'time_dependent', 'yes' )

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2018-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -65,6 +65,7 @@ END MODULE MODI_LIMA_SEDIMENTATION
 !!      B.Vie  02/2019  Desactivate (comment) the heat transport by droplets
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
+!  B. Vie         03/2020: disable temperature change of droplets by air temperature
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -230,7 +231,7 @@ DO JN = 1 ,  NSPLITSED(KID)
       DEALLOCATE(ZZY)
       !      
       PINPR(:,:) = PINPR(:,:) + ZWSEDR(:,:,KKB)/XRHOLW/NSPLITSED(KID)                          ! in m/s
-      PT(:,:,:) = PT(:,:,:) + ZWDT(:,:,:)
+      !PT(:,:,:) = PT(:,:,:) + ZWDT(:,:,:)
       
    END IF
 END DO

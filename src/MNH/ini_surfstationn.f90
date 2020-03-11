@@ -66,21 +66,25 @@ END MODULE MODI_INI_SURFSTATION_n
 !!     P. Tulet 15/01/2002 
 !!     A. Lemonsu 19/11/2002 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!!     R. Schoetter : 11/2019 : work for cartesian coordinates + parallel.
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
 !          ------------
 !
 USE MODD_CONF
+USE MODD_DIM_n
 USE MODD_DYN_n
 USE MODD_GRID
 USE MODD_GRID_n
 USE MODD_LUNIT_n, ONLY: TLUOUT
 USE MODD_PARAMETERS
+USE MODD_SHADOWS_n
 USE MODD_STATION_n
 USE MODD_TYPE_DATE
+USE MODD_VAR_ll,          ONLY: IP
 !
+USE MODE_GATHER_ll
 USE MODE_GRIDPROJ
 USE MODE_ll
 USE MODE_MSG
@@ -108,6 +112,7 @@ REAL,               INTENT(IN) :: PLONOR  ! longitude of origine point
 !
 INTEGER :: ISTORE ! number of storage instants
 INTEGER :: ILUOUT ! logical unit
+INTEGER :: IIU_ll,IJU_ll,IRESP
 !
 !----------------------------------------------------------------------------
 ILUOUT = TLUOUT%NLU
@@ -239,7 +244,6 @@ INTEGER :: JII                             !
 INTEGER :: IIU, IJU                        !   
 !
 IF ( ALL(TSTATION%LAT(:)/=XUNDEF) .AND. ALL(TSTATION%LON(:)/=XUNDEF) ) THEN
- LSTATLAT = .TRUE.
  DO JII=1,NUMBSTAT
    CALL GET_DIM_EXT_ll ('B',IIU,IJU)
    CALL SM_XYHAT(PLATOR,PLONOR,                        &
@@ -247,11 +251,20 @@ IF ( ALL(TSTATION%LAT(:)/=XUNDEF) .AND. ALL(TSTATION%LON(:)/=XUNDEF) ) THEN
                  TSTATION%X(JII),   TSTATION%Y(JII)    )
  ENDDO
 ELSE
- LSTATLAT = .FALSE.
  DO JII=1,NUMBSTAT
-   TSTATION%X(JII) = XXHAT(TSTATION%I(JII))
-   TSTATION%Y(JII) = XYHAT(TSTATION%I(JII))
    CALL GET_DIM_EXT_ll ('B',IIU,IJU)
+   IIU_ll=NIMAX_ll + 2 * JPHEXT
+   IJU_ll=NJMAX_ll + 2 * JPHEXT
+   ALLOCATE(XXHAT_ll                 (IIU_ll))
+   ALLOCATE(XYHAT_ll                 (IJU_ll))
+   !
+   CALL GATHERALL_FIELD_ll('XX',XXHAT,XXHAT_ll,IRESP)
+   CALL GATHERALL_FIELD_ll('YY',XYHAT,XYHAT_ll,IRESP)
+   TSTATION%X(JII) = XXHAT_ll(TSTATION%I(JII))
+   TSTATION%Y(JII) = XYHAT_ll(TSTATION%J(JII))
+   IF (LCARTESIAN) THEN
+     XRPK = -1
+   ENDIF
    CALL SM_LATLON(PLATOR,PLONOR,                       &
                  TSTATION%X(JII),   TSTATION%Y(JII),   &
                  TSTATION%LAT(JII), TSTATION%LON(JII)  )
