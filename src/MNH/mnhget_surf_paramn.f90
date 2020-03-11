@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2003-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -79,7 +79,8 @@ END MODULE MODI_MNHGET_SURF_PARAM_n
 !!       S. Donier  06/2015 : bug surface aerosols
 !!  06/2016     (G.Delautier) phasage surfex 8
 !!  01/2018      (G.Delautier) SURFEX 8.1
-!!  11/2019 C.Lac correction in the drag formula and application to building in addition to tree
+! C. Lac         11/2019: correction in the drag formula and application to building in addition to tree
+! P. Wautelet 11/03/2020: bugfix: add present checks before working on optional arrays
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -257,15 +258,15 @@ IF (PRESENT(PH_TREE)  .OR.PRESENT(PLAI_TREE)) THEN
                       YSURF_CUR%WM,YSURF_CUR%DUO,YSURF_CUR%DU,YSURF_CUR%UG,&
                       YSURF_CUR%U,YSURF_CUR%USS,&
                       'MESONH',ILU,1,PNATURE=ZNATURE,PLAI_TREE=ZLAI,PH_TREE=ZVH)
-  CALL REMOVE_HALO(ZLAI,PLAI_TREE)
-  CALL REMOVE_HALO(ZVH,PH_TREE)
+  IF ( PRESENT( PLAI_TREE ) )  CALL REMOVE_HALO(ZLAI,PLAI_TREE)
+  IF ( PRESENT( PH_TREE )   ) CALL REMOVE_HALO(ZVH,PH_TREE)
   DEALLOCATE(ZVH)
   DEALLOCATE(ZLAI)
 END IF
 !
 IF (PRESENT(PWALL_O_HOR) .OR. PRESENT(PBUILD_HEIGHT)) THEN
-  PBUILD_HEIGHT(:,:) = XUNDEF
-  PWALL_O_HOR(:,:) = XUNDEF
+  IF ( PRESENT ( PBUILD_HEIGHT ) ) PBUILD_HEIGHT(:,:) = XUNDEF
+  IF ( PRESENT ( PWALL_O_HOR )   ) PWALL_O_HOR(:,:) = XUNDEF
   ALLOCATE(ZBUILD_HEIGHT ( ILU ))
   ALLOCATE(ZWALL_O_HOR   ( ILU ))
   CALL GET_SURF_VAR_n(YSURF_CUR%FM,YSURF_CUR%IM,YSURF_CUR%SM,YSURF_CUR%TM, &
@@ -273,8 +274,8 @@ IF (PRESENT(PWALL_O_HOR) .OR. PRESENT(PBUILD_HEIGHT)) THEN
                       YSURF_CUR%U,YSURF_CUR%USS,&
                        'MESONH',ILU,1,PTOWN=ZTOWN,                       &
                        PWALL_O_HOR=ZWALL_O_HOR,PBUILD_HEIGHT=ZBUILD_HEIGHT )
-  CALL REMOVE_HALO(ZBUILD_HEIGHT,PBUILD_HEIGHT)
-  CALL REMOVE_HALO(ZWALL_O_HOR,PWALL_O_HOR)
+  IF ( PRESENT ( PBUILD_HEIGHT ) ) CALL REMOVE_HALO(ZBUILD_HEIGHT,PBUILD_HEIGHT)
+  IF ( PRESENT ( PWALL_O_HOR )   ) CALL REMOVE_HALO(ZWALL_O_HOR,PWALL_O_HOR)
   DEALLOCATE(ZBUILD_HEIGHT)
   DEALLOCATE(ZWALL_O_HOR)
 END IF
