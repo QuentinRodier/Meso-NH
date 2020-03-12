@@ -268,9 +268,9 @@ DO JSV=1,ISV
   IF (LLES_CALL .AND. KSPLT==1) THEN
     CALL SECOND_MNH(ZTIME1)
     CALL LES_MEAN_SUBGRID( MXF(ZFLXX), X_LES_SUBGRID_USv(:,:,:,JSV) ) 
-    CALL LES_MEAN_SUBGRID( MZF(1,IKU,1,MXF(GX_W_UW(1,IKU,1,PWM,PDXX,PDZZ,PDZX)*MZM(1,IKU,1,ZFLXX))), &
+    CALL LES_MEAN_SUBGRID( MZF(MXF(GX_W_UW(PWM,PDXX,PDZZ,PDZX)*MZM(ZFLXX))), &
                            X_LES_RES_ddxa_W_SBG_UaSv(:,:,:,JSV) , .TRUE. )
-    CALL LES_MEAN_SUBGRID( GX_M_M(1,IKU,1,PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)*MXF(ZFLXX), &
+    CALL LES_MEAN_SUBGRID( GX_M_M(PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)*MXF(ZFLXX), &
                            X_LES_RES_ddxa_Sv_SBG_UaSv(:,:,:,JSV), .TRUE. )
     CALL SECOND_MNH(ZTIME2)
     XTIME_LES = XTIME_LES + ZTIME2 - ZTIME1
@@ -323,9 +323,9 @@ DO JSV=1,ISV
   IF (LLES_CALL .AND. KSPLT==1) THEN
     CALL SECOND_MNH(ZTIME1)
     CALL LES_MEAN_SUBGRID( MYF(ZFLXY), X_LES_SUBGRID_VSv(:,:,:,JSV) ) 
-    CALL LES_MEAN_SUBGRID( MZF(1,IKU,1,MYF(GY_W_VW(1,IKU,1,PWM,PDYY,PDZZ,PDZY)*MZM(1,IKU,1,ZFLXY))), &
+    CALL LES_MEAN_SUBGRID( MZF(MYF(GY_W_VW(PWM,PDYY,PDZZ,PDZY)*MZM(ZFLXY))), &
                            X_LES_RES_ddxa_W_SBG_UaSv(:,:,:,JSV) , .TRUE. )
-    CALL LES_MEAN_SUBGRID( GY_M_M(1,IKU,1,PSVM(:,:,:,JSV),PDYY,PDZZ,PDZY)*MYF(ZFLXY), &
+    CALL LES_MEAN_SUBGRID( GY_M_M(PSVM(:,:,:,JSV),PDYY,PDZZ,PDZY)*MYF(ZFLXY), &
                            X_LES_RES_ddxa_Sv_SBG_UaSv(:,:,:,JSV) , .TRUE. )
     CALL SECOND_MNH(ZTIME2)
     XTIME_LES = XTIME_LES + ZTIME2 - ZTIME1
@@ -340,8 +340,8 @@ DO JSV=1,ISV
       PRSVS(:,:,:,JSV)=   PRSVS(:,:,:,JSV)                                          &
         -DXF( MXM(PRHODJ) * ZFLXX * PINV_PDXX  )                                    &
         -DYF( MYM(PRHODJ) * ZFLXY * PINV_PDYY  )                                    &
-        +DZF( 1,IKU,1,PMZM_PRHODJ * PINV_PDZZ *                                             &
-              ( MXF( MZM(1,IKU,1,ZFLXX * PINV_PDXX) * PDZX ) + MYF( MZM(1,IKU,1,ZFLXY * PINV_PDYY) * PDZY ) ) &
+        +DZF( PMZM_PRHODJ * PINV_PDZZ *                                             &
+              ( MXF( MZM(ZFLXX * PINV_PDXX) * PDZX ) + MYF( MZM(ZFLXY * PINV_PDYY) * PDZY ) ) &
             )
     ELSE
       PRSVS(:,:,:,JSV)=   PRSVS(:,:,:,JSV)                                          &
@@ -352,8 +352,8 @@ DO JSV=1,ISV
     IF (.NOT. LFLAT) THEN
       PRSVS(:,:,:,JSV)=   PRSVS(:,:,:,JSV)                                          &
         -DXF( MXM(PRHODJ) * ZFLXX * PINV_PDXX  )                                    &
-        +DZF(1,IKU,1, PMZM_PRHODJ * PINV_PDZZ *                                             &
-              ( MXF( MZM(1,IKU,1,ZFLXX * PINV_PDXX) * PDZX ) )                              &
+        +DZF( PMZM_PRHODJ * PINV_PDZZ *                                             &
+              ( MXF( MZM(ZFLXX * PINV_PDXX) * PDZX ) )                              &
             )
     ELSE
       PRSVS(:,:,:,JSV)=   PRSVS(:,:,:,JSV)                                          &

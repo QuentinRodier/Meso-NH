@@ -194,7 +194,7 @@ REAL, DIMENSION(SIZE(PTHLM,1),SIZE(PTHLM,2),SIZE(PTHLM,3))       &
                                      :: ZFLX,ZWORK,ZA
     ! work arrays
 !   
-INTEGER             :: IKB,IKE,IKU
+INTEGER             :: IKB,IKE
                                     ! Index values for the Beginning and End
                                     ! mass points of the domain  
 REAL, DIMENSION(SIZE(PDZZ,1),SIZE(PDZZ,2),1+JPVEXT:3+JPVEXT) :: ZCOEFF 
@@ -210,7 +210,6 @@ TYPE(TFIELDDATA) :: TZFIELD
 !
 IKB = 1+JPVEXT               
 IKE = SIZE(PTHLM,3)-JPVEXT   
-IKU = SIZE(PTHLM,3)
 !
 !
 !
@@ -237,10 +236,10 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. OCLOSE_OUT ) &
   ! Computes the horizontal variance <THl THl>
   IF (.NOT. L2D) THEN
     ZFLX(:,:,:) = XCTV * PLM(:,:,:) * PLEPS(:,:,:) *                           &
-       ( GX_M_M(1,IKU,1,PTHLM,PDXX,PDZZ,PDZX)**2 + GY_M_M(1,IKU,1,PTHLM,PDYY,PDZZ,PDZY)**2 )
+       ( GX_M_M(PTHLM,PDXX,PDZZ,PDZX)**2 + GY_M_M(PTHLM,PDYY,PDZZ,PDZY)**2 )
   ELSE
     ZFLX(:,:,:) = XCTV * PLM(:,:,:) * PLEPS(:,:,:) *                           &
-         GX_M_M(1,IKU,1,PTHLM,PDXX,PDZZ,PDZX)**2
+         GX_M_M(PTHLM,PDXX,PDZZ,PDZX)**2
   END IF
 !
 ! Compute the flux at the first inner U-point with an uncentred vertical  
@@ -289,7 +288,7 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. OCLOSE_OUT ) &
   IF (LLES_CALL) THEN
     CALL SECOND_MNH(ZTIME1)
     CALL LES_MEAN_SUBGRID( ZFLX, X_LES_SUBGRID_Thl2, .TRUE. ) 
-    CALL LES_MEAN_SUBGRID( MZF(1,IKU,1,PWM)*ZFLX, X_LES_RES_W_SBG_Thl2, .TRUE. ) 
+    CALL LES_MEAN_SUBGRID( MZF(PWM)*ZFLX, X_LES_RES_W_SBG_Thl2, .TRUE. )
     CALL LES_MEAN_SUBGRID( -2.*XCTD*SQRT(PTKEM)*ZFLX/PLEPS ,X_LES_SUBGRID_DISS_Thl2, .TRUE. )
     ZA(:,:,:)   =  ETHETA(KRR,KRRI,PTHLM,PRM,PLOCPEXNM,PATHETA,PSRCM)
     CALL LES_MEAN_SUBGRID( ZA*ZFLX, X_LES_SUBGRID_ThlThv, .TRUE. ) 
@@ -306,13 +305,13 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. OCLOSE_OUT ) &
     IF (.NOT. L2D) THEN
       ZFLX(:,:,:)=                                                               &
             PLM(:,:,:) * PLEPS(:,:,:) *                                          &
-            (GX_M_M(1,IKU,1,PTHLM,PDXX,PDZZ,PDZX) * GX_M_M(1,IKU,1,PRM(:,:,:,1),PDXX,PDZZ,PDZX)  &
-           + GY_M_M(1,IKU,1,PTHLM,PDYY,PDZZ,PDZY) * GY_M_M(1,IKU,1,PRM(:,:,:,1),PDYY,PDZZ,PDZY)  &
+            (GX_M_M(PTHLM,PDXX,PDZZ,PDZX) * GX_M_M(PRM(:,:,:,1),PDXX,PDZZ,PDZX)  &
+           + GY_M_M(PTHLM,PDYY,PDZZ,PDZY) * GY_M_M(PRM(:,:,:,1),PDYY,PDZZ,PDZY)  &
             ) * (XCHT1+XCHT2)
     ELSE
       ZFLX(:,:,:)=                                                               &
             PLM(:,:,:) * PLEPS(:,:,:) *                                          &
-            (GX_M_M(1,IKU,1,PTHLM,PDXX,PDZZ,PDZX) * GX_M_M(1,IKU,1,PRM(:,:,:,1),PDXX,PDZZ,PDZX)  &
+            (GX_M_M(PTHLM,PDXX,PDZZ,PDZX) * GX_M_M(PRM(:,:,:,1),PDXX,PDZZ,PDZX)  &
             ) * (XCHT1+XCHT2)
 
     END IF
@@ -377,7 +376,7 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. OCLOSE_OUT ) &
     IF (LLES_CALL) THEN
       CALL SECOND_MNH(ZTIME1)
       CALL LES_MEAN_SUBGRID( ZFLX, X_LES_SUBGRID_ThlRt, .TRUE. ) 
-      CALL LES_MEAN_SUBGRID( MZF(1,IKU,1,PWM)*ZFLX, X_LES_RES_W_SBG_ThlRt, .TRUE. ) 
+      CALL LES_MEAN_SUBGRID( MZF(PWM)*ZFLX, X_LES_RES_W_SBG_ThlRt, .TRUE. )
       CALL LES_MEAN_SUBGRID( -XCTD*SQRT(PTKEM)*ZFLX/PLEPS ,X_LES_SUBGRID_DISS_ThlRt, .TRUE. )
       CALL LES_MEAN_SUBGRID( ZA*ZFLX, X_LES_SUBGRID_RtThv, .TRUE. ) 
       CALL LES_MEAN_SUBGRID( -XG/PTHVREF/3.*ZA*ZFLX, X_LES_SUBGRID_RtPz,.TRUE.)
@@ -393,11 +392,11 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. OCLOSE_OUT ) &
     ! Computes the horizontal variance <Rnp Rnp>
     IF (.NOT. L2D) THEN
       ZFLX(:,:,:) = XCHV * PLM(:,:,:) * PLEPS(:,:,:) *                      &
-           ( GX_M_M(1,IKU,1,PRM(:,:,:,1),PDXX,PDZZ,PDZX)**2 +                       &
-             GY_M_M(1,IKU,1,PRM(:,:,:,1),PDYY,PDZZ,PDZY)**2 )
+           ( GX_M_M(PRM(:,:,:,1),PDXX,PDZZ,PDZX)**2 +                       &
+             GY_M_M(PRM(:,:,:,1),PDYY,PDZZ,PDZY)**2 )
     ELSE
       ZFLX(:,:,:) = XCHV * PLM(:,:,:) * PLEPS(:,:,:) *                      &
-           ( GX_M_M(1,IKU,1,PRM(:,:,:,1),PDXX,PDZZ,PDZX)**2  )
+           ( GX_M_M(PRM(:,:,:,1),PDXX,PDZZ,PDZX)**2  )
     END IF
 !
 ! Compute the flux at the first inner U-point with an uncentred vertical  
@@ -445,7 +444,7 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. OCLOSE_OUT ) &
     IF (LLES_CALL) THEN
       CALL SECOND_MNH(ZTIME1)
       CALL LES_MEAN_SUBGRID( ZFLX, X_LES_SUBGRID_Rt2, .TRUE. ) 
-      CALL LES_MEAN_SUBGRID( MZF(1,IKU,1,PWM)*ZFLX, X_LES_RES_W_SBG_Rt2, .TRUE. ) 
+      CALL LES_MEAN_SUBGRID( MZF(PWM)*ZFLX, X_LES_RES_W_SBG_Rt2, .TRUE. )
       CALL LES_MEAN_SUBGRID( ZA*ZFLX, X_LES_SUBGRID_RtThv, .TRUE. ) 
       CALL LES_MEAN_SUBGRID( -XG/PTHVREF/3.*ZA*ZFLX, X_LES_SUBGRID_RtPz,.TRUE.)
       CALL LES_MEAN_SUBGRID( -2.*XCTD*SQRT(PTKEM)*ZFLX/PLEPS, X_LES_SUBGRID_DISS_Rt2, .TRUE. )

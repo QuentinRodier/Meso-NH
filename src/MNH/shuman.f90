@@ -41,18 +41,14 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PDYM   ! result at flux
                                                             ! side
 END FUNCTION DYM
 !
-FUNCTION DZF(KKA,KKU,KL,PA)  RESULT(PDZF)
-INTEGER,              INTENT(IN)                  :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)                  :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
+FUNCTION DZF(PA)  RESULT(PDZF)
 REAL, DIMENSION(:,:,:), INTENT(IN)                :: PA     ! variable at flux
                                                             !  side
 REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PDZF   ! result at mass
                                                             ! localization 
 END FUNCTION DZF
 !
-FUNCTION DZM(KKA,KKU,KL,PA)  RESULT(PDZM)
-INTEGER,              INTENT(IN)                  :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)                  :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
+FUNCTION DZM(PA)  RESULT(PDZM)
 REAL, DIMENSION(:,:,:), INTENT(IN)                :: PA     ! variable at mass
                                                             ! localization
 REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PDZM   ! result at flux
@@ -83,18 +79,14 @@ REAL, DIMENSION(:,:,:), INTENT(IN)                :: PA     ! variable at mass l
 REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PMYM   ! result at flux localization 
 END  FUNCTION MYM
 !
-FUNCTION MZF(KKA,KKU,KL,PA)  RESULT(PMZF)
-INTEGER,              INTENT(IN)                  :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)                  :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
+FUNCTION MZF(PA)  RESULT(PMZF)
 REAL, DIMENSION(:,:,:), INTENT(IN)                :: PA     ! variable at flux
                                                             !  side
 REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PMZF   ! result at mass
                                                             ! localization 
 END FUNCTION MZF
 !
-FUNCTION MZM(KKA,KKU,KL,PA)  RESULT(PMZM)
-INTEGER,              INTENT(IN)                  :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)                  :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
+FUNCTION MZM(PA)  RESULT(PMZM)
 REAL, DIMENSION(:,:,:), INTENT(IN)                :: PA     ! variable at mass localization
 REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PMZM   ! result at flux localization 
 END FUNCTION MZM
@@ -505,7 +497,7 @@ END DO
 !
 END FUNCTION MYM
 !     ###############################
-      FUNCTION MZF(KKA,KKU,KL,PA)  RESULT(PMZF)
+      FUNCTION MZF(PA)  RESULT(PMZF)
 !     ###############################
 !
 !!****  *MZF* -  Shuman operator : mean operator in z direction for a 
@@ -555,8 +547,6 @@ IMPLICIT NONE
 !*       0.1   Declarations of argument and result
 !              ------------------------------------
 !
-INTEGER,              INTENT(IN)                  :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)                  :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 REAL, DIMENSION(:,:,:), INTENT(IN)                :: PA     ! variable at flux
                                                             !  side
 REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PMZF   ! result at mass
@@ -601,7 +591,7 @@ END DO
 !
 END FUNCTION MZF
 !     ###############################
-      FUNCTION MZM(KKA,KKU,KL,PA)  RESULT(PMZM)
+      FUNCTION MZM(PA)  RESULT(PMZM)
 !     ###############################
 !
 !!****  *MZM* -  Shuman operator : mean operator in z direction for a 
@@ -651,8 +641,6 @@ IMPLICIT NONE
 !*       0.1   Declarations of argument and result
 !              ------------------------------------
 !
-INTEGER,              INTENT(IN)                  :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)                  :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 REAL, DIMENSION(:,:,:), INTENT(IN)                :: PA     ! variable at mass localization
 REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PMZM   ! result at flux localization 
 !
@@ -1098,7 +1086,7 @@ END DO
 !
 END FUNCTION DYM
 !     ###############################
-      FUNCTION DZF(KKA,KKU,KL,PA)  RESULT(PDZF)
+      FUNCTION DZF(PA)  RESULT(PDZF)
 !     ###############################
 !
 !!****  *DZF* -  Shuman operator : finite difference operator in z direction
@@ -1148,8 +1136,6 @@ IMPLICIT NONE
 !*       0.1   Declarations of argument and result
 !              ------------------------------------
 !
-INTEGER,              INTENT(IN)                  :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)                  :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 REAL, DIMENSION(:,:,:), INTENT(IN)                :: PA     ! variable at flux
                                                             !  side
 REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PDZF   ! result at mass
@@ -1194,7 +1180,7 @@ END DO
 !
 END FUNCTION DZF
 !     ###############################
-      FUNCTION DZM(KKA,KKU,KL,PA)  RESULT(PDZM)
+      FUNCTION DZM(PA)  RESULT(PDZM)
 !     ###############################
 !
 !!****  *DZM* -  Shuman operator : finite difference operator in z direction
@@ -1244,8 +1230,6 @@ IMPLICIT NONE
 !*       0.1   Declarations of argument and result
 !              ------------------------------------
 !
-INTEGER,              INTENT(IN)                  :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)                  :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 REAL, DIMENSION(:,:,:), INTENT(IN)                :: PA     ! variable at mass
                                                             ! localization
 REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PDZM   ! result at flux

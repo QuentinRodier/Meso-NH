@@ -163,6 +163,7 @@ END MODULE MODI_ICE_ADJUST
 !!                         or to call it on S variables
 !!      2016-11 S. Riette: all-or-nothing adjustment now uses condensation
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 24/02/2020: bugfix: corrected budget name (DEPI->CDEPI) for ice_adjust
 !  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !

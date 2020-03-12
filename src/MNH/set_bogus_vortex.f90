@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2001-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2001-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -236,7 +236,7 @@ ZRADBOGMAX=ZRADBOGMAX*1000.  ! conversion from km to m
 !
 ALLOCATE(ZZHAT3D(1,1,IKU),ZZHATM(1,1,IKU)) ! to compute altitude of mass points
 ZZHAT3D(1,1,:) = XZHAT(:)
-ZZHATM = MZF(1,IKU,1,ZZHAT3D)
+ZZHATM = MZF(ZZHAT3D)
 DEALLOCATE(ZZHAT3D)
 !
 ! Definition de l angle de convergence

@@ -304,7 +304,7 @@ ENDIF
    IKB = JPVEXT + 1
    IKE = SIZE(PWT,3) - JPVEXT
 
-   ZTMP = MZF(1,IKU,1,PWT)
+   ZTMP = MZF(PWT)
 !
    IF (ODRAG) THEN
          WHERE (PDRAG==-1)
@@ -317,7 +317,7 @@ ENDIF
       ZTMP(:,:,IKE+IK) = ZTMP(:,:,IKE)
    END DO
 !
-   ZTMP = MZM(1,IKU,1, PNU * &
+   ZTMP = MZM( PNU * &
           LAP_M(HLBCX,HLBCY,PDXX,PDYY,PDZX,PDZY,PDZZ,PRHODJ,ZTMP) )
 !
    DO IK = 1,JPVEXT

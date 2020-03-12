@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -399,7 +399,7 @@ INTEGER :: IINFO_ll
         ZRHODJ(:,:,:) = MYM(XCURRENT_RHODJ)
         ZS(:,:,:) =  PVARS(:,:,:) / ZRHODJ * XCURRENT_TSTEP
       CASE ('Z')
-        ZRHODJ(:,:,:) = MZM(1,IKU,1,XCURRENT_RHODJ)
+        ZRHODJ(:,:,:) = MZM(XCURRENT_RHODJ)
         ZS(:,:,:) =  PVARS(:,:,:) / ZRHODJ * XCURRENT_TSTEP
       CASE DEFAULT
         ZRHODJ(:,:,:) =     XCURRENT_RHODJ
@@ -417,7 +417,7 @@ INTEGER :: IINFO_ll
       CASE ('Y')
         ZS(:,:,:) = MYF(ZS)
       CASE ('Z')
-        ZS(:,:,:) = MZF(1,IKU,1,ZS)
+        ZS(:,:,:) = MZF(ZS)
     END SELECT
 
     CALL LES_ANOMALY_FIELD(ZS,PANOM)

@@ -892,7 +892,7 @@ CALL BOUNDARIES (                                                   &
             XLBYUM,XLBYVM,XLBYWM,XLBYTHM,XLBYTKEM,XLBYRM,XLBYSVM,   &
             XLBXUS,XLBXVS,XLBXWS,XLBXTHS,XLBXTKES,XLBXRS,XLBXSVS,   &
             XLBYUS,XLBYVS,XLBYWS,XLBYTHS,XLBYTKES,XLBYRS,XLBYSVS,   &
-            XRHODJ,                                                 &
+            XRHODJ,XRHODREF,                                        &
             XUT, XVT, XWT, XTHT, XTKET, XRT, XSVT, XSRCT            )
 CALL MPPDB_CHECK3DM("after  BOUNDARIES:XUT, XVT, XWT, XTHT, XTKET",PRECISION,&
                    &  XUT, XVT, XWT, XTHT, XTKET)
@@ -1001,7 +1001,7 @@ IF (NBUMOD==IMI .AND. CBUTYPE=='MASK' ) THEN
   end if
   if ( lbu_rw ) then
     tbudgets(NBUDGET_W)%trhodj%xdata(:, nbutime, :) = tbudgets(NBUDGET_W)%trhodj%xdata(:, nbutime, :) &
-                                                      + Mask_compress( Mzm( 1, iku, 1, xrhodj(:, :, :) ) )
+                                                      + Mask_compress( Mzm( xrhodj(:, :, :) ) )
   end if
   if ( associated( tburhodj ) ) tburhodj%xdata(:, nbutime, :) = tburhodj%xdata(:, nbutime, :) + Mask_compress( xrhodj(:, :, :) )
 END IF
@@ -1015,7 +1015,7 @@ IF (NBUMOD==IMI .AND. CBUTYPE=='CART' ) THEN
   end if
   if ( lbu_rw ) then
     tbudgets(NBUDGET_W)%trhodj%xdata(:, :, :) = tbudgets(NBUDGET_W)%trhodj%xdata(:, :, :) &
-                                                + Cart_compress( Mzm( 1, iku, 1, xrhodj(:, :, :) ) )
+                                                + Cart_compress( Mzm( xrhodj(:, :, :) ) )
   end if
   if ( associated( tburhodj ) ) tburhodj%xdata(:, :, :) = tburhodj%xdata(:, :, :) + Cart_compress( xrhodj(:, :, :) )
 END IF
@@ -1121,7 +1121,7 @@ END IF
 !
 IF ( LFORCING ) THEN
   CALL FORCING(XTSTEP,LUSERV,XRHODJ,XCORIOZ,XZHAT,XZZ,TDTCUR,&
-               XUFRC_PAST, XVFRC_PAST,                &
+               XUFRC_PAST, XVFRC_PAST,XWTFRC,         &
                XUT,XVT,XWT,XTHT,XTKET,XRT,XSVT,       &
                XRUS,XRVS,XRWS,XRTHS,XRTKES,XRRS,XRSVS,IMI,ZJ)
 END IF

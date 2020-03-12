@@ -236,6 +236,7 @@ END MODULE MODI_PHYS_PARAM_n
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !  P. Wautelet 21/11/2019: ZRG_HOUR and ZRAT_HOUR are now parameter arrays
+!! 11/2019 C.Lac correction in the drag formula and application to building in addition to tree
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -260,12 +261,14 @@ USE MODD_CURVCOR_n
 USE MODD_DEEP_CONVECTION_n
 USE MODD_DEF_EDDY_FLUX_n           ! Ajout PP
 USE MODD_DEF_EDDYUV_FLUX_n         ! Ajout PP
-USE MODD_DRAGTREE
+USE MODD_DRAGBLDG_n
+USE MODD_DRAGTREE_n
 USE MODD_DUST
 USE MODD_DYN
 USE MODD_DYN_n
 USE MODD_FIELD_n
 USE MODD_FRC
+USE MODD_FRC_n
 USE MODD_GRID
 USE MODD_GRID_n
 USE MODD_ICE_C1R3_DESCR,  ONLY : XRTMIN_C1R3=>XRTMIN
@@ -320,6 +323,7 @@ USE MODE_SALT_PSD
 USE MODI_AEROZON          ! Ajout PP
 USE MODI_CONDSAMP
 USE MODI_CONVECTION
+USE MODI_DRAG_BLD
 USE MODI_DRAG_VEG
 USE MODI_DUST_FILTER
 USE MODI_EDDY_FLUX_n               ! Ajout PP
@@ -736,6 +740,23 @@ CALL SUNPOS_n   ( XZENITH, ZCOSZEN, ZSINZEN, ZAZIMSOL )
       WRITE(UNIT=ILUOUT,FMT='("  RADIATIONS called for KTCOUNT=",I6,       &
          &  "with the CLOUD_ONLY option set ",L2)')   KTCOUNT,OCLOUD_ONLY
 !
+      !
+      WHERE (XDIRFLASWD.LT.0.0)
+         XDIRFLASWD=0.0
+      ENDWHERE
+      !
+      WHERE (XDIRFLASWD.GT.1500.0)
+         XDIRFLASWD=1500.0
+      ENDWHERE
+      !
+      WHERE (XSCAFLASWD.LT.0.0) 
+         XSCAFLASWD=0.0
+      ENDWHERE
+      !
+      WHERE (XSCAFLASWD.GT.1500.0) 
+         XSCAFLASWD=1500.0
+      ENDWHERE
+      !
       WHERE( XDIRFLASWD(:,:,1) + XSCAFLASWD(:,:,1) >0. )
         XALBUV(:,:) = (  XDIR_ALB(:,:,1) * XDIRFLASWD(:,:,1)   &
                        + XSCA_ALB(:,:,1) * XSCAFLASWD(:,:,1) ) &
@@ -1236,10 +1257,11 @@ ZTIME1 = ZTIME2
 XTIME_BU_PROCESS = 0.
 XTIME_LES_BU_PROCESS = 0.
 !
-IF (LDRAGTREE) CALL DRAG_VEG(XTSTEP,XUT,XVT,XTKET,LDEPOTREE,XVDEPOTREE, &
-                             CCLOUD, XPABST,XTHT,XRT,XSVT,       &
-                             XRHODJ,XZZ,XRUS, XRVS,              &
-                             XRTKES, XRRS,XRSVS)
+IF (LDRAGTREE) CALL DRAG_VEG( XTSTEP, XUT, XVT, XTKET, LDEPOTREE, XVDEPOTREE, &
+                              CCLOUD, XPABST, XTHT, XRT, XSVT, XRHODJ, XZZ,   &
+                              XRUS, XRVS, XRTKES, XRRS, XRSVS )
+!
+IF (LDRAGBLDG) CALL DRAG_BLD( XTSTEP, XUT, XVT, XTKET, XRHODJ, XZZ, XRUS, XRVS, XRTKES )
 !
 CALL SECOND_MNH2(ZTIME2)
 !
@@ -1302,6 +1324,7 @@ IF ( CTURB == 'TKEL' ) THEN
     ENDIF
     ZSFCO2(IIB-1,:)=ZSFCO2(IIB,:)
   END IF
+  !
   IF ( CLBCX(2) /= "CYCL" .AND. LEAST_ll()) THEN
     ZSFTH(IIE+1,:)=ZSFTH(IIE,:)
     ZSFRV(IIE+1,:)=ZSFRV(IIE,:)
@@ -1315,6 +1338,7 @@ IF ( CTURB == 'TKEL' ) THEN
     ENDIF
     ZSFCO2(IIE+1,:)=ZSFCO2(IIE,:)
   END IF
+  !
   IF ( CLBCY(1) /= "CYCL" .AND. LSOUTH_ll()) THEN
     ZSFTH(:,IJB-1)=ZSFTH(:,IJB)
     ZSFRV(:,IJB-1)=ZSFRV(:,IJB)
@@ -1328,6 +1352,7 @@ IF ( CTURB == 'TKEL' ) THEN
     ENDIF
     ZSFCO2(:,IJB-1)=ZSFCO2(:,IJB)
   END IF
+  !
   IF ( CLBCY(2) /= "CYCL" .AND. LNORTH_ll()) THEN
     ZSFTH(:,IJE+1)=ZSFTH(:,IJE)
     ZSFRV(:,IJE+1)=ZSFRV(:,IJE)

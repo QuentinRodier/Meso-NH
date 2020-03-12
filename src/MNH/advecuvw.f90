@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ####################
@@ -129,12 +129,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRWCT     ! of momentum
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRUS, PRVS, PRWS ! Sources of Momentum
 !
-INTEGER :: IKU
-!
-!  
 !-------------------------------------------------------------------------------
-!
-IKU=SIZE(XZHAT)
 !
 !*       1.     COMPUTES THE ADVECTIVE TENDANCIES
 !	        ---------------------------------
@@ -148,8 +143,8 @@ PRUS(:,:,:) = PRUS(:,:,:)                              &
 !IF (LBUDGET_U)  CALL BUDGET (PRUS,NBUDGET_U,'ADVY_BU_RU')
 !
 PRUS(:,:,:) = PRUS(:,:,:)                              &
-             -DZF(1,IKU,1, MXM(PRWCT(:,:,:))*MZM(1,IKU,1,PUT(:,:,:)) )
-!IF (LBUDGET_U)  CALL BUDGET (PRUS,NBUDGET_U,'ADVZ_BU_RU')
+             -DZF( MXM(PRWCT(:,:,:))*MZM(PUT(:,:,:)) )
+!IF (LBUDGET_U)  CALL BUDGET (PRUS,1,'ADVZ_BU_RU')
 !
 !
 PRVS(:,:,:) = PRVS(:,:,:)                              &
@@ -161,21 +156,21 @@ PRVS(:,:,:) = PRVS(:,:,:)                              &
 !IF (LBUDGET_V)  CALL BUDGET (PRVS,NBUDGET_V,'ADVY_BU_RV')
 !
 PRVS(:,:,:) = PRVS(:,:,:)                              &
-             -DZF(1,IKU,1, MYM(PRWCT(:,:,:))*MZM(1,IKU,1,PVT(:,:,:)) )
-!IF (LBUDGET_V)  CALL BUDGET (PRVS,NBUDGET_V,'ADVZ_BU_RV')
+             -DZF( MYM(PRWCT(:,:,:))*MZM(PVT(:,:,:)) )
+!IF (LBUDGET_V)  CALL BUDGET (PRVS,2,'ADVZ_BU_RV')
 !
 !
 PRWS(:,:,:) = PRWS(:,:,:)                              &
-             -DXF( MZM(1,IKU,1,PRUCT(:,:,:))*MXM(PWT(:,:,:)) ) 
-!IF (LBUDGET_W)  CALL BUDGET (PRWS,NBUDGET_W,'ADVX_BU_RW')
+             -DXF( MZM(PRUCT(:,:,:))*MXM(PWT(:,:,:)) )
+!IF (LBUDGET_W)  CALL BUDGET (PRWS,3,'ADVX_BU_RW')
 !
 PRWS(:,:,:) = PRWS(:,:,:)                              &
-             -DYF( MZM(1,IKU,1,PRVCT(:,:,:))*MYM(PWT(:,:,:)) ) 
-!IF (LBUDGET_W)  CALL BUDGET (PRWS,NBUDGET_W,'ADVY_BU_RW')
+             -DYF( MZM(PRVCT(:,:,:))*MYM(PWT(:,:,:)) )
+!IF (LBUDGET_W)  CALL BUDGET (PRWS,3,'ADVY_BU_RW')
 !
 PRWS(:,:,:) = PRWS(:,:,:)                              &
-             -DZM(1,IKU,1, MZF(1,IKU,1,PRWCT(:,:,:))*MZF(1,IKU,1,PWT(:,:,:)) )
-!IF (LBUDGET_W)  CALL BUDGET (PRWS,NBUDGET_W,'ADVZ_BU_RW')
+             -DZM( MZF(PRWCT(:,:,:))*MZF(PWT(:,:,:)) )
+!IF (LBUDGET_W)  CALL BUDGET (PRWS,3,'ADVZ_BU_RW')
 !
 !-------------------------------------------------------------------------------
 !

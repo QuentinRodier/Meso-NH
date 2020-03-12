@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -80,7 +80,7 @@ END MODULE MODI_VER_DYN
 !!    subroutine VER_INT_DYN    : to initialize the horizontal momentum
 !!    subroutine WGUESS         : to initialize vertical momentum
 !!    subroutine ANEL_BALANCE1  : to apply the anelastic correction
-!!    functions MXM ,MYM ,MZM   : Shuman operators
+!!    functions  MXM, MYM       : Shuman operators
 !!
 !!
 !!    IMPLICIT ARGUMENTS

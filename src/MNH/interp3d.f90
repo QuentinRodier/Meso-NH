@@ -1,14 +1,11 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1997-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-!-----------------------------------------------------------------
+!###################
 MODULE MODI_INTERP3D
-!#################################
+!###################
 !
 INTERFACE
       SUBROUTINE INTERP3D(PFIELD,KGRID,PSVAL,PPLEV,PFIELDAP)
@@ -88,7 +85,6 @@ INTEGER      :: IIE,IJE,IPU      ! End of usefull area
 INTEGER      :: IIB,IJB,IKB      ! Begining of usefull area 
 REAL, DIMENSION(SIZE(XPABST,1),SIZE(XPABST,2),SIZE(XPABST,3)) :: ZPTH  ! pressure for grid points corresponding to KGRID type 
 REAL  :: ZREF,ZXP,ZXM,ZDIXEPS ! pressure values and epsilon value
-INTEGER :: IKU
 !-------------------------------------------------------------------------------
 !
 !*         1.    
@@ -96,7 +92,6 @@ INTEGER :: IKU
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IPU=SIZE(PFIELDAP,3)
 IKB=1 +JPVEXT
-IKU=SIZE(XZHAT)
 ZDIXEPS=10.*EPSILON(1.)
 !
 SELECT CASE (KGRID)
@@ -109,7 +104,7 @@ SELECT CASE (KGRID)
     ZPTH(:,:,:)=MYM(XPABST(:,:,:))
     ZPTH(:,1,:)=2.*ZPTH(:,2,:) - ZPTH(:,3,:)
   CASE(4)
-    ZPTH(:,:,:)=MZM(1,IKU,1,XPABST(:,:,:))
+    ZPTH(:,:,:)=MZM(XPABST(:,:,:))
     ZPTH(:,:,1)=2.*ZPTH(:,:,2) - ZPTH(:,:,3)
 END SELECT
 !

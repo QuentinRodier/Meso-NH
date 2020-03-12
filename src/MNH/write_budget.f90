@@ -199,7 +199,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   !
     CASE('MASK')
       ALLOCATE(ZWORKTEMP(NBUWRNB))
-      allocate( tzdates( NBUWRNB ) )
+      allocate( tzdates(NBUWRNB) )
       ALLOCATE(ZWORKMASK(SIZE(XBUSURF,1),SIZE(XBUSURF,2),1,NBUWRNB,NBUMASK,1))
   !
   ! local array
@@ -213,16 +213,16 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   !
       ZWORKTEMP(NBUWRNB)=ZWORKTEMP(NBUWRNB)+(1.-NBUSTEP*0.5)*PTSTEP
   !
-      tzdates(NBUWRNB )%tdate%year  = tdtexp%tdate%year
-      tzdates(NBUWRNB )%tdate%month = tdtexp%tdate%month
-      tzdates(NBUWRNB )%tdate%day   = tdtexp%tdate%day
-      tzdates(NBUWRNB )%time        = tdtexp%time + zworktemp(NBUWRNB )
+      tzdates(NBUWRNB)%tdate%year  = tdtexp%tdate%year
+      tzdates(NBUWRNB)%tdate%month = tdtexp%tdate%month
+      tzdates(NBUWRNB)%tdate%day   = tdtexp%tdate%day
+      tzdates(NBUWRNB)%time        = tdtexp%time + zworktemp(NBUWRNB)
       DO JT=1,NBUWRNB-1
         ZWORKTEMP(JT) = ZWORKTEMP(NBUWRNB)-NBUSTEP*PTSTEP*(NBUWRNB-JT)
-        tzdates(jt )%tdate%year  = tdtexp%tdate%year
-        tzdates(jt )%tdate%month = tdtexp%tdate%month
-        tzdates(jt )%tdate%day   = tdtexp%tdate%day
-        tzdates(jt )%time        = tdtexp%time + zworktemp(jt )
+        tzdates(jt)%tdate%year  = tdtexp%tdate%year
+        tzdates(jt)%tdate%month = tdtexp%tdate%month
+        tzdates(jt)%tdate%day   = tdtexp%tdate%day
+        tzdates(jt)%time        = tdtexp%time + zworktemp(jt)
       END DO
 
       DEALLOCATE( ZWORKTEMP )

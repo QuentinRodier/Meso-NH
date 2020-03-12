@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -186,7 +186,7 @@ ZRHODV_SH(:,:,1) = ZRHODV_SH(:,:,2)
 !*       3.1   Altitude of the mass points on the MESO-NH grid
 !              -----------------------------------------------
 !
-ZZMASS(:,:,:)=MZF(1,IKU,1,XZZ(:,:,:))
+ZZMASS(:,:,:)=MZF(XZZ(:,:,:))
 ZZMASS(:,:,SIZE(XZZ,3))=1.5*XZZ(:,:,SIZE(XZZ,3))-0.5*XZZ(:,:,SIZE(XZZ,3)-1)
 !
 !*       3.2   Interpolation on the MESO-NH grid

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -76,7 +76,8 @@
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
 !                          (nsubfiles_ioz is now determined in IO_File_add2list)
-!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  S. Bielli      02/2019: sea salt: significant sea wave height influences salt emission; 5 salt modes
+!  P. Wautelet 11/02/2020: bugfix: close TINIFILEPGD only if previously opened
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -208,7 +209,7 @@ CALL INIT_MNH
 !
 CALL IO_File_find_byname(TRIM(CINIFILE),TZINIFILE,IRESP)
 CALL IO_File_close(TZINIFILE)
-CALL IO_File_close(TINIFILEPGD)
+IF ( TINIFILEPGD%LOPENED ) CALL IO_File_close(TINIFILEPGD)
 !-------------------------------------------------------------------------------
 !
 !*       4.    INITIALIZATION OF OUTER POINTS OF MODEL 1
@@ -220,7 +221,7 @@ CALL BOUNDARIES                                                     &
             XLBYUM,XLBYVM,XLBYWM,XLBYTHM,XLBYTKEM,XLBYRM,XLBYSVM,   &
             XLBXUS,XLBXVS,XLBXWS,XLBXTHS,XLBXTKES,XLBXRS,XLBXSVS,   &
             XLBYUS,XLBYVS,XLBYWS,XLBYTHS,XLBYTKES,XLBYRS,XLBYSVS,   &
-            XRHODJ,                                                 &
+            XRHODJ,XRHODREF,                                        &
             XUT, XVT, XWT, XTHT, XTKET, XRT, XSVT, XSRCT            )
 CALL MPPDB_CHECK3D(XUT,"SPAWNING-after boundaries::XUT",PRECISION)
 !

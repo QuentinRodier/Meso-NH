@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -144,7 +144,6 @@ INTEGER :: JSV               ! Loop index for Scalar Variables
 !
 INTEGER:: IIB,IJB            ! Begining useful area  in x,y,z directions
 INTEGER:: IIE,IJE            ! End useful area in x,y,z directions
-INTEGER:: IKU
 !  
 REAL, DIMENSION(SIZE(PSVM,1),SIZE(PSVM,2),SIZE(PSVM,3))   :: ZGUESS  ! Guess 
                              ! variable (to be removed in the future !)
@@ -170,7 +169,6 @@ NULLIFY(TZFIELDS_ll)
 !*       0. PROLOGUE
 !
 CALL GET_PHYSICAL_ll(IIB,IJB,IIE,IJE)
-IKU=SIZE(PSVM,3)
 !
 !
 !-------------------------------------------------------------------------------
@@ -183,7 +181,7 @@ IKU=SIZE(PSVM,3)
     ZRVARS(:,:,:) = PRSVS(:,:,:,JSV)
     ZFADVU(:,:,:) = -DXF(FXM( PSVM(:,:,:,JSV),PRUCT(:,:,:) )  )
     ZFADVV(:,:,:) = -DYF(FYM( PSVM(:,:,:,JSV),PRVCT(:,:,:) )  )
-    ZFADVW(:,:,:) = -DZF(1,IKU,1,FZM( PSVM(:,:,:,JSV),PRWCT(:,:,:) )  )
+    ZFADVW(:,:,:) = -DZF(FZM( PSVM(:,:,:,JSV),PRWCT(:,:,:) )  )
 !
     PRSVS(:,:,:,JSV) = PRSVS(:,:,:,JSV) + ZFADVU(:,:,:) + ZFADVV(:,:,:) +  &
                                                           ZFADVW(:,:,:)
@@ -222,7 +220,7 @@ IKU=SIZE(PSVM,3)
       ZFADVV(:,:,:) = ZFADVV(:,:,:) + ZFADV(:,:,:) 
       PRSVS(:,:,:,JSV) = PRSVS(:,:,:,JSV) + ZFADV(:,:,:)
 !
-      ZFADV(:,:,:) = -DZF(1,IKU,1,FZM( ZGUESS(:,:,:),ZRAWCT(:,:,:) )  )
+      ZFADV(:,:,:) = -DZF(FZM( ZGUESS(:,:,:),ZRAWCT(:,:,:) )  )
       IF(LWEST_ll()  .AND. HLBCX(1) /= 'CYCL') ZFADV(IIB,:,:)=0.
       IF(LEAST_ll()  .AND. HLBCX(1) /= 'CYCL') ZFADV(IIE,:,:)=0.
       IF(LSOUTH_ll() .AND. HLBCY(1) /= 'CYCL') ZFADV(:,IJB,:)=0.

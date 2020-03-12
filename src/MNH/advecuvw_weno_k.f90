@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ###########################
       MODULE MODI_ADVECUVW_WENO_K
 !     ###########################
@@ -98,10 +99,6 @@ INTEGER                     :: IINFO_ll    ! return code of parallel routine
 !
 REAL, DIMENSION(SIZE(PUT,1), SIZE(PUT,2), SIZE(PUT,3)) :: ZMEAN, ZWORK
 !
-INTEGER :: K_SCHEME
-INTEGER :: IKU
-INTEGER :: IWORK
-!
 !------------------------- ADVECTION OF MOMENTUM ------------------------------
 !
 !
@@ -109,7 +106,6 @@ TZHALO2_UT => TPHALO2LIST                   ! 1rst add3dfield in model_n
 TZHALO2_VT => TPHALO2LIST%NEXT              ! 2nd  add3dfield in model_n
 TZHALO2_WT => TPHALO2LIST%NEXT%NEXT         ! 3rst add3dfield in model_n
 !
-IKU=SIZE(PUT,3)
 !      -------------------------------------------------------
 !
 SELECT CASE(KWENO_ORDER)
@@ -122,7 +118,7 @@ CASE(1) ! WENO 1
 !
   PRUS = PRUS - DYF(UP_MY(PUT,MXM(PRVCT)))
 !
-  PRUS = PRUS - DZF(1,IKU,1,UP_MZ(PUT,MXM(PRWCT)))
+  PRUS = PRUS - DZF(UP_MZ(PUT,MXM(PRWCT)))
 !
 ! V component
 !
@@ -130,15 +126,15 @@ CASE(1) ! WENO 1
 !
   PRVS = PRVS - DYM(UP_VY(PVT,MYF(PRVCT)))
 !
-  PRVS = PRVS - DZF(1,IKU,1,UP_MZ(PVT,MYM(PRWCT)))
+  PRVS = PRVS - DZF(UP_MZ(PVT,MYM(PRWCT)))
 !
 ! W component
 !
-  PRWS = PRWS - DXF(UP_MX(PWT,MZM(1,IKU,1,PRUCT)))
+  PRWS = PRWS - DXF(UP_MX(PWT,MZM(PRUCT)))
 !
-  PRWS = PRWS - DYF(UP_MY(PWT,MZM(1,IKU,1,PRVCT)))
+  PRWS = PRWS - DYF(UP_MY(PWT,MZM(PRVCT)))
 !
-  PRWS = PRWS - DZM(1,IKU,1,UP_WZ(PWT,MZF(1,IKU,1,PRWCT)))
+  PRWS = PRWS - DZM(UP_WZ(PWT,MZF(PRWCT)))
 !
 !
 CASE(3) ! WENO 3
@@ -156,7 +152,7 @@ CASE(3) ! WENO 3
     PRUS = PRUS - DYF(ZMEAN)
   END IF
 !
-  PRUS = PRUS - DZF(1,IKU,1,WENO_K_2_MZ(PUT, MXM(PRWCT)))
+  PRUS = PRUS - DZF(WENO_K_2_MZ(PUT, MXM(PRWCT)))
 !
 ! V component
 !
@@ -169,22 +165,22 @@ CASE(3) ! WENO 3
     CALL ADVEC_WENO_K_2_VY(HLBCY, PVT, ZWORK, ZMEAN, TZHALO2_VT%HALO2)
     PRVS = PRVS - DYM(ZMEAN)
 !
-    PRVS = PRVS - DZF(1,IKU,1,WENO_K_2_MZ(PVT, MYM(PRWCT)))
+    PRVS = PRVS - DZF(WENO_K_2_MZ(PVT, MYM(PRWCT)))
   END IF
 !
 ! W component
 !
-  ZWORK = MZM(1,IKU,1,PRUCT)
+  ZWORK = MZM(PRUCT)
   CALL ADVEC_WENO_K_2_MX(HLBCX, PWT, ZWORK, ZMEAN, TZHALO2_WT%HALO2)
   PRWS = PRWS - DXF(ZMEAN)
 !
   IF (.NOT.L2D) THEN
-    ZWORK = MZM(1,IKU,1,PRVCT)
+    ZWORK = MZM(PRVCT)
     CALL ADVEC_WENO_K_2_MY(HLBCY, PWT, ZWORK, ZMEAN, TZHALO2_WT%HALO2)
     PRWS = PRWS - DYF(ZMEAN)
   END IF
 !
-  PRWS = PRWS - DZM(1,IKU,1,WENO_K_2_WZ(PWT,MZF(1,IKU,1,PRWCT)))
+  PRWS = PRWS - DZM(WENO_K_2_WZ(PWT,MZF(PRWCT)))
 !
 !
 CASE(5) ! WENO 5
@@ -205,7 +201,7 @@ CASE(5) ! WENO 5
 !
   ZMEAN = WENO_K_3_MZ(PUT, MXM(PRWCT))
   CALL GET_HALO(ZMEAN)! Update HALO - maybe not necessary (T.Lunet)
-  PRUS = PRUS - DZF(1,IKU,1,ZMEAN) 
+  PRUS = PRUS - DZF(ZMEAN)
 !
 ! V component, only called in 3D case
 !
@@ -223,27 +219,27 @@ CASE(5) ! WENO 5
 !
     ZMEAN = WENO_K_3_MZ(PVT, MYM(PRWCT))
     CALL GET_HALO(ZMEAN)! Update HALO - maybe not necessary (T.Lunet)
-    PRVS = PRVS - DZF(1,IKU,1,ZMEAN) 
+    PRVS = PRVS - DZF(ZMEAN)
 !
   END IF
 !
 ! W component
 !
-  ZWORK = MZM(1,IKU,1,PRUCT)
+  ZWORK = MZM(PRUCT)
   CALL ADVEC_WENO_K_3_MX(HLBCX, PWT, ZWORK, ZMEAN)
   CALL GET_HALO(ZMEAN)! Update HALO
   PRWS = PRWS - DXF(ZMEAN)
 !
   IF (.NOT.L2D) THEN! 3D Case
-    ZWORK = MZM(1,IKU,1,PRVCT)
+    ZWORK = MZM(PRVCT)
     CALL ADVEC_WENO_K_3_MY(HLBCY, PWT, ZWORK, ZMEAN)
     CALL GET_HALO(ZMEAN)! Update HALO
     PRWS = PRWS - DYF(ZMEAN)
   END IF
 !
-  ZMEAN = WENO_K_3_WZ(PWT,MZF(1,IKU,1,PRWCT))
+  ZMEAN = WENO_K_3_WZ(PWT,MZF(PRWCT))
   CALL GET_HALO(ZMEAN)! Update HALO - maybe not necessary (T.Lunet)
-  PRWS = PRWS - DZM(1,IKU,1,ZMEAN)
+  PRWS = PRWS - DZM(ZMEAN)
 !
 !
 END SELECT

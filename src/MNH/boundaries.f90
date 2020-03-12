@@ -19,7 +19,7 @@ INTERFACE
             PLBYUM,PLBYVM,PLBYWM,PLBYTHM,PLBYTKEM,PLBYRM,PLBYSVM,   &
             PLBXUS,PLBXVS,PLBXWS,PLBXTHS,PLBXTKES,PLBXRS,PLBXSVS,   &
             PLBYUS,PLBYVS,PLBYWS,PLBYTHS,PLBYTKES,PLBYRS,PLBYSVS,   &
-            PRHODJ,                                                 &
+            PRHODJ,PRHODREF,                                        &
             PUT,PVT,PWT,PTHT,PTKET,PRT,PSVT,PSRCT                   )
 !
 REAL,                  INTENT(IN) :: PTSTEP        ! time step dt
@@ -51,6 +51,7 @@ REAL, DIMENSION(:,:,:,:),        INTENT(IN) :: PLBYRS  ,PLBYSVS  ! in x and y-di
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PRHODJ    ! Jacobian * dry density of
                                                   !  the reference state
+REAL, DIMENSION(:,:,:),   INTENT(IN) :: PRHODREF
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PUT,PVT,PWT,PTHT,PTKET,PSRCT
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRT,PSVT
@@ -71,7 +72,7 @@ END MODULE MODI_BOUNDARIES
             PLBYUM,PLBYVM,PLBYWM,PLBYTHM,PLBYTKEM,PLBYRM,PLBYSVM,   &
             PLBXUS,PLBXVS,PLBXWS,PLBXTHS,PLBXTKES,PLBXRS,PLBXSVS,   &
             PLBYUS,PLBYVS,PLBYWS,PLBYTHS,PLBYTKES,PLBYRS,PLBYSVS,   &
-            PRHODJ,                                                 &
+            PRHODJ,PRHODREF,                                        &
             PUT,PVT,PWT,PTHT,PTKET,PRT,PSVT,PSRCT                   )
 !     ####################################################################
 !
@@ -173,7 +174,8 @@ END MODULE MODI_BOUNDARIES
 !!      Redelsperger & Pianezze : 08/2015 : add XPOND coefficient
 !!      Modification    01/2016  (JP Pinty) Add LIMA that is LBC for CCN and IFN
 !!      Modification    18/07/17 (Vionnet)  Add blowing snow variables 
-!!      Modification    01/2018  (JL Redelsperger) Correction for TKE treatment 
+!!      Modification    01/2018  (JL Redelsperger) Correction for TKE treatment
+!!      Modification    03/02/2020 (B. Vié)  Correction for SV with LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -195,6 +197,7 @@ USE MODD_BLOWSNOW_n
 USE MODD_REF_n    
 USE MODD_PARAM_n,    ONLY : CELEC,CCLOUD 
 USE MODD_LBC_n,      ONLY : XPOND
+USE MODD_GRID_n,    ONLY : XZZ
 !
 USE MODD_PARAM_LIMA, ONLY : NMOD_CCN, NMOD_IFN, LBOUND, LWARM, LCOLD
 !
@@ -210,6 +213,8 @@ USE MODI_CH_BOUNDARIES
 !
 USE MODE_ll
 !
+USE MODI_INIT_AEROSOL_CONCENTRATION
+USE MODI_SET_CONC_LIMA
 !
 IMPLICIT NONE
 !
@@ -248,6 +253,7 @@ REAL, DIMENSION(:,:,:,:),        INTENT(IN) :: PLBYRS  ,PLBYSVS  ! in x and y-di
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PRHODJ    ! Jacobian * dry density of
                                                   !  the reference state
+REAL, DIMENSION(:,:,:),   INTENT(IN) :: PRHODREF
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PUT,PVT,PWT,PTHT,PTKET,PSRCT
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRT,PSVT
@@ -309,6 +315,9 @@ LOGICAL              :: GFFTMP
 #endif
 !
 INTEGER              :: JI,JJ
+!
+REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3),SIZE(PSVT,4)) :: ZSVT
+REAL, DIMENSION(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3),SIZE(PRT,4)) :: ZRT
 !
 !-------------------------------------------------------------------------------
 !
@@ -969,7 +978,11 @@ END SELECT
 END IF
 !
 !
-IF (CCLOUD == 'LIMA' .AND. IMI == 1) THEN
+IF (CCLOUD == 'LIMA' .AND. IMI == 1 .AND. CPROGRAM=='MESONH') THEN
+
+   ZSVT=PSVT
+   ZRT=PRT
+
   IF (GFIRSTCALLLIMA) THEN
     ALLOCATE(GLIMABOUNDARY(NSV_LIMA))
     GFIRSTCALLLIMA = .FALSE.
@@ -981,23 +994,53 @@ IF (CCLOUD == 'LIMA' .AND. IMI == 1) THEN
        IF (LNORTH_ll().AND.HLBCY(2)=='OPEN') GCHTMP = GCHTMP .OR. ALL(PLBYSVM(:,ILBY-JPHEXT+1,:,JSV)==0)
        GLIMABOUNDARY(JSV-NSV_LIMA_BEG+1) = GCHTMP
     ENDDO
-    ENDIF
+  ENDIF
+  CALL INIT_AEROSOL_CONCENTRATION(PRHODREF,ZSVT,XZZ)
+  DO JSV=NSV_LIMA_CCN_FREE,NSV_LIMA_CCN_FREE+NMOD_CCN-1 ! LBC for CCN
+     IF (GLIMABOUNDARY(JSV-NSV_LIMA_CCN_FREE+1)) THEN
+        PSVT(IIB-1,:,:,JSV)=ZSVT(IIB-1,:,:,JSV)
+        PSVT(IIE+1,:,:,JSV)=ZSVT(IIE+1,:,:,JSV)
+        PSVT(:,IJB-1,:,JSV)=ZSVT(:,IJB-1,:,JSV)
+        PSVT(:,IJE+1,:,JSV)=ZSVT(:,IJE+1,:,JSV)
+     ENDIF
+  END DO
+  DO JSV=NSV_LIMA_IFN_FREE,NSV_LIMA_IFN_FREE+NMOD_IFN-1 ! LBC for IFN
+     IF (GLIMABOUNDARY(JSV-NSV_LIMA_IFN_FREE+1)) THEN
+        PSVT(IIB-1,:,:,JSV)=ZSVT(IIB-1,:,:,JSV)
+        PSVT(IIE+1,:,:,JSV)=ZSVT(IIE+1,:,:,JSV)
+        PSVT(:,IJB-1,:,JSV)=ZSVT(:,IJB-1,:,JSV)
+        PSVT(:,IJE+1,:,JSV)=ZSVT(:,IJE+1,:,JSV)
+     ENDIF
+  END DO
 
-  DO JSV=NSV_LIMA_CCN_FREE,NSV_LIMA_CCN_FREE+NMOD_CCN-1 ! LBC for CCN from MACC
-    IF (GLIMABOUNDARY(JSV-NSV_LIMA_CCN_FREE+1)) THEN
-      IF (SIZE(PSVT)>0) THEN
-        CALL CH_BOUNDARIES (HLBCX,HLBCY,PUT,PVT,PSVT(:,:,:,JSV),XSVMIN(JSV))
-      ENDIF
-    ENDIF
-  ENDDO 
-  DO JSV=NSV_LIMA_IFN_FREE,NSV_LIMA_IFN_FREE+NMOD_IFN-1 ! LBC for IFN from MACC
-    IF (GLIMABOUNDARY(JSV-NSV_LIMA_IFN_FREE+1)) THEN
-      IF (SIZE(PSVT)>0) THEN
-        CALL CH_BOUNDARIES (HLBCX,HLBCY,PUT,PVT,PSVT(:,:,:,JSV),XSVMIN(JSV))
-      ENDIF
-    ENDIF
-  ENDDO 
-ENDIF
+  CALL SET_CONC_LIMA('NONE',PRHODREF,ZRT,ZSVT)
+  IF (NSV_LIMA_NC.GE.1) THEN
+     IF (GLIMABOUNDARY(NSV_LIMA_NC)) THEN
+        PSVT(IIB-1,:,:,NSV_LIMA_NC)=ZSVT(IIB-1,:,:,NSV_LIMA_NC) ! cloud
+        PSVT(IIE+1,:,:,NSV_LIMA_NC)=ZSVT(IIE+1,:,:,NSV_LIMA_NC)
+        PSVT(:,IJB-1,:,NSV_LIMA_NC)=ZSVT(:,IJB-1,:,NSV_LIMA_NC)
+        PSVT(:,IJE+1,:,NSV_LIMA_NC)=ZSVT(:,IJE+1,:,NSV_LIMA_NC)
+     ENDIF
+  ENDIF
+  IF (NSV_LIMA_NR.GE.1) THEN
+     IF (GLIMABOUNDARY(NSV_LIMA_NR)) THEN
+        PSVT(IIB-1,:,:,NSV_LIMA_NR)=ZSVT(IIB-1,:,:,NSV_LIMA_NR) ! rain
+        PSVT(IIE+1,:,:,NSV_LIMA_NR)=ZSVT(IIE+1,:,:,NSV_LIMA_NR)
+        PSVT(:,IJB-1,:,NSV_LIMA_NR)=ZSVT(:,IJB-1,:,NSV_LIMA_NR)
+        PSVT(:,IJE+1,:,NSV_LIMA_NR)=ZSVT(:,IJE+1,:,NSV_LIMA_NR)
+     ENDIF
+  ENDIF
+  IF (NSV_LIMA_NI.GE.1) THEN
+     IF (GLIMABOUNDARY(NSV_LIMA_NI)) THEN
+        PSVT(IIB-1,:,:,NSV_LIMA_NI)=ZSVT(IIB-1,:,:,NSV_LIMA_NI) ! ice
+        PSVT(IIE+1,:,:,NSV_LIMA_NI)=ZSVT(IIE+1,:,:,NSV_LIMA_NI)
+        PSVT(:,IJB-1,:,NSV_LIMA_NI)=ZSVT(:,IJB-1,:,NSV_LIMA_NI)
+        PSVT(:,IJE+1,:,NSV_LIMA_NI)=ZSVT(:,IJE+1,:,NSV_LIMA_NI)
+     ENDIF
+  END IF
+  
+END IF
+!
 !
 IF (LUSECHEM .AND. IMI == 1) THEN
   IF (GFIRSTCALL1) THEN

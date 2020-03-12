@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 turb 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !    #################### 
      MODULE MODI_TURB_VER_SV_CORR
@@ -191,9 +186,9 @@ DO JSV=1,NSV
   IF (LLES_CALL) THEN
     ! approximation: diagnosed explicitely (without implicit term)
     ZFLXZ(:,:,:) =  PPSI_SV(:,:,:,JSV)*GZ_M_W(KKA,KKU,KKL,PSVM(:,:,:,JSV),PDZZ)**2
-    ZFLXZ(:,:,:) = ZCSV / ZCSVD * PLM * PLEPS * MZF(KKA,KKU,KKL,ZFLXZ(:,:,:) )
+    ZFLXZ(:,:,:) = ZCSV / ZCSVD * PLM * PLEPS * MZF(ZFLXZ(:,:,:) )
     CALL LES_MEAN_SUBGRID( -2.*ZCSVD*SQRT(PTKEM)*ZFLXZ/PLEPS, X_LES_SUBGRID_DISS_Sv2(:,:,:,JSV) )
-    CALL LES_MEAN_SUBGRID( MZF(KKA,KKU,KKL,PWM)*ZFLXZ, X_LES_RES_W_SBG_Sv2(:,:,:,JSV) )
+    CALL LES_MEAN_SUBGRID( MZF(PWM)*ZFLXZ, X_LES_RES_W_SBG_Sv2(:,:,:,JSV) )
   END IF
   !
   ! covariance ThvSv
@@ -204,7 +199,7 @@ DO JSV=1,NSV
     ZFLXZ(:,:,:)= ( XCSHF * PPHI3 + ZCSV * PPSI_SV(:,:,:,JSV) )              &
                   *  GZ_M_W(KKA,KKU,KKL,PTHLM,PDZZ)                          &
                   *  GZ_M_W(KKA,KKU,KKL,PSVM(:,:,:,JSV),PDZZ)
-    ZFLXZ(:,:,:)= PLM * PLEPS / (2.*ZCTSVD) * MZF(KKA,KKU,KKL,ZFLXZ)
+    ZFLXZ(:,:,:)= PLM * PLEPS / (2.*ZCTSVD) * MZF(ZFLXZ)
     CALL LES_MEAN_SUBGRID( ZA*ZFLXZ, X_LES_SUBGRID_SvThv(:,:,:,JSV) ) 
     CALL LES_MEAN_SUBGRID( -XG/PTHVREF/3.*ZA*ZFLXZ, X_LES_SUBGRID_SvPz(:,:,:,JSV), .TRUE.)
     !
@@ -213,7 +208,7 @@ DO JSV=1,NSV
       ZFLXZ(:,:,:)= ( XCHF * PPSI3 + ZCSV * PPSI_SV(:,:,:,JSV) )             &
                     *  GZ_M_W(KKA,KKU,KKL,PRM(:,:,:,1),PDZZ)                 &
                     *  GZ_M_W(KKA,KKU,KKL,PSVM(:,:,:,JSV),PDZZ)
-      ZFLXZ(:,:,:)= PLM * PLEPS / (2.*ZCQSVD) * MZF(KKA,KKU,KKL,ZFLXZ)
+      ZFLXZ(:,:,:)= PLM * PLEPS / (2.*ZCQSVD) * MZF(ZFLXZ)
       CALL LES_MEAN_SUBGRID( ZA*ZFLXZ, X_LES_SUBGRID_SvThv(:,:,:,JSV) , .TRUE.)
       CALL LES_MEAN_SUBGRID( -XG/PTHVREF/3.*ZA*ZFLXZ, X_LES_SUBGRID_SvPz(:,:,:,JSV), .TRUE.)
     END IF

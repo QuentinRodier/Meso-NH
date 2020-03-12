@@ -243,6 +243,7 @@ END MODULE MODI_RAIN_ICE_RED
 !  P. Wautelet 29/05/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
 !  P. Wautelet 17/01/2020: move Quicksort to tools.f90
 !  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
+!  P. Wautelet 25/02/2020: bugfix: add missing budget: WETH_BU_RRG
 !-----------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

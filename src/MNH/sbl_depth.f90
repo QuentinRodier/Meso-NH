@@ -59,7 +59,7 @@ END MODULE MODI_SBL_DEPTH
 !!    MODIFICATIONS
 !!    -------------
 !!      Original         nov. 2005
-!!
+!!      26/02/2020   T.Nagel Correction of SBL depth computation in neutral stratification
 !! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -130,7 +130,7 @@ ZSBL_THER= XSBL_O_BL * BL_DEPTH_DIAG(KKB,KKE,ZQ0,PZZ(:,:,KKB),PWTHV,PZZ,XFTOP_O_
 PSBL_DEPTH = 0.
 WHERE (ZSBL_THER> 0. .AND. ZSBL_DYN> 0.) PSBL_DEPTH = MIN(ZSBL_THER(:,:),ZSBL_DYN(:,:))
 WHERE (ZSBL_THER> 0. .AND. ZSBL_DYN==0.) PSBL_DEPTH = ZSBL_THER(:,:)
-WHERE (ZSBL_THER==0. .AND. ZSBL_DYN> 0.) PSBL_DEPTH = ZSBL_THER(:,:)
+WHERE (ZSBL_THER==0. .AND. ZSBL_DYN> 0.) PSBL_DEPTH = ZSBL_DYN(:,:)
 !
 DO JLOOP=1,5
   WHERE (PLMO(:,:)/=XUNDEF .AND. ABS(PLMO(:,:))>=0.01 )
@@ -138,8 +138,8 @@ DO JLOOP=1,5
     PSBL_DEPTH = 0.2 * PSBL_DEPTH + 0.8 * ((1.-ZA) * ZSBL_DYN + ZA * ZSBL_THER )
   END WHERE
 END DO
-WHERE (ABS(PLMO(:,:))<=0.01 )     PSBL_DEPTH = ZSBL_DYN
-WHERE (PLMO(:,:)==XUNDEF) PSBL_DEPTH = ZSBL_THER
+WHERE (ABS(PLMO(:,:))<=0.01 )     PSBL_DEPTH = ZSBL_THER
+WHERE (PLMO(:,:)==XUNDEF) PSBL_DEPTH = ZSBL_DYN
 !
 !----------------------------------------------------------------------------
 END SUBROUTINE SBL_DEPTH

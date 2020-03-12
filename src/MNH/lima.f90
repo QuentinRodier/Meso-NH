@@ -14,7 +14,7 @@ INTERFACE
                      PRHODREF, PEXNREF, PDZZ,                        &
                      PRHODJ, PPABSM, PPABST,                         &
                      NCCN, NIFN, NIMM,                               &
-                     PTHM, PTHT, PRT, PSVT, PW_NU,                   &
+                     PDTHRAD, PTHT, PRT, PSVT, PW_NU,                &
                      PTHS, PRS, PSVS,                                &
                      PINPRC, PINDEP, PINPRR, PINPRI, PINPRS, PINPRG, PINPRH, &
                      PEVAP3D                                         )
@@ -41,7 +41,7 @@ INTEGER,                  INTENT(IN)    :: NCCN       ! for array size declarati
 INTEGER,                  INTENT(IN)    :: NIFN       ! for array size declarations
 INTEGER,                  INTENT(IN)    :: NIMM       ! for array size declarations
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHM       ! Theta at time t-dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD    ! Theta at time t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT       ! Theta at time t
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT        ! Mixing ratios at time t
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT       ! Concentrations at time t
@@ -71,7 +71,7 @@ END MODULE MODI_LIMA
                         PRHODREF, PEXNREF, PDZZ,                        &
                         PRHODJ, PPABSM, PPABST,                         &
                         NCCN, NIFN, NIMM,                               &
-                        PTHM, PTHT, PRT, PSVT, PW_NU,                   &
+                        PDTHRAD, PTHT, PRT, PSVT, PW_NU,                &
                         PTHS, PRS, PSVS,                                &
                         PINPRC, PINDEP, PINPRR, PINPRI, PINPRS, PINPRG, PINPRH, &
                         PEVAP3D                                         )
@@ -96,8 +96,10 @@ END MODULE MODI_LIMA
 !!    -------------
 !!      Original   15/03/2018
 !!
-!!      B.Vié  02/2019 : minor correction on budget
+!  B. Vie         02/2019: minor correction on budget
 !  P. Wautelet    02/2020: use the new data structures and subroutines for budgets (no more budget calls in this subroutine)
+!  P. Wautelet 26/02/2020: bugfix: corrected condition to write budget CORR_BU_RRS
+!  B. Vie      03/03/2020: use DTHRAD instead of dT/dt in Smax diagnostic computation
 !
 !*       0.    DECLARATIONS
 !              ------------
@@ -155,7 +157,7 @@ INTEGER,                  INTENT(IN)    :: NCCN       ! for array size declarati
 INTEGER,                  INTENT(IN)    :: NIFN       ! for array size declarations
 INTEGER,                  INTENT(IN)    :: NIMM       ! for array size declarations
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHM       ! Theta at time t-dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD    ! Theta at time t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT       ! Theta at time t
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT        ! Mixing ratios at time t
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT       ! Concentrations at time t
@@ -193,7 +195,7 @@ REAL, DIMENSION(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3))      :: ZHOMFS
 
 !
 ! Other 3D thermodynamical variables
-REAL, DIMENSION(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3))      :: ZEXN, ZT, ZTM
+REAL, DIMENSION(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3))      :: ZEXN, ZT
 
 !
 ! Packed prognostic & thermo variables
@@ -674,7 +676,7 @@ IF (LWARM .AND. LDEPOC) THEN
 
   PINDEP(:,:)=0.
   GDEP(:,:) = .FALSE.
-  GDEP(:,:) =    ZRCS(:,:,IKB) >0 .AND. ZCCS(:,:,IKB) >0
+  GDEP(:,:) = ZRCS(:,:,IKB) >0 .AND. ZCCS(:,:,IKB) >0 .AND. ZRCT(:,:,IKB) >0 .AND. ZCCT(:,:,IKB) >0
   WHERE (GDEP)
      ZRCS(:,:,IKB) = ZRCS(:,:,IKB) - XVDEPOC * ZRCT(:,:,IKB) / PDZZ(:,:,IKB)
      ZCCS(:,:,IKB) = ZCCS(:,:,IKB) - XVDEPOC * ZCCT(:,:,IKB) / PDZZ(:,:,IKB)
@@ -734,18 +736,11 @@ IF ( LCOLD )             ZCIT(:,:,:)   = ZCIS(:,:,:) * PTSTEP
 !*       2.     Nucleation processes
 !               --------------------
 !
-!
-IF( LACTIT ) THEN
-   ZTM(:,:,:) = PTHM(:,:,:) * (PPABSM(:,:,:)/XP00)**(XRD/XCPD)
-ELSE 
-   ZTM(:,:,:) = ZT(:,:,:)
-END IF
-!
 CALL LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, OCLOSE_OUT, PRHODJ,                &
-                            PRHODREF, ZEXN, PPABST, ZT, ZTM, PW_NU,             &
-                            ZTHT, ZRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT,           &
-                            ZCCT, ZCRT, ZCIT,                                   &
-                            ZCCNFT, ZCCNAT, ZIFNFT, ZIFNNT, ZIMMNT, ZHOMFT      )
+                            PRHODREF, ZEXN, PPABST, ZT, PDTHRAD, PW_NU,        &
+                            ZTHT, ZRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT,          &
+                            ZCCT, ZCRT, ZCIT,                                  &
+                            ZCCNFT, ZCCNAT, ZIFNFT, ZIFNNT, ZIMMNT, ZHOMFT     )
 !
 ! Saving sources before microphysics time-splitting loop
 !

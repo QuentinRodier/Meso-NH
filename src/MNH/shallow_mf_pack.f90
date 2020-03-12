@@ -295,7 +295,7 @@ ZSVM(:,:,:) = 0.
 ! wind on mass points
 ZUMM=MXF(PUM)
 ZVMM=MYF(PVM)
-ZWMM=MZF(1,IKU,1,PWM)
+ZWMM=MZF(PWM)
 !
 !!! 2. Pack input variables
 !

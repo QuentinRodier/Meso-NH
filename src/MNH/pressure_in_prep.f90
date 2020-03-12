@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -117,9 +117,6 @@ REAL,DIMENSION(SIZE(PDXX,1),SIZE(PDXX,2),SIZE(PDXX,3)):: ZDIV ! residual diverge
 !* file management variables and counters
 !
 INTEGER      :: ILUOUT0  ! logical unit for listing file
-INTEGER      :: IRESP    ! error code
-INTEGER      :: IKB, IKE ! inner limits in Z direction
-INTEGER      :: IKU
 INTEGER      :: IINFO_ll
 REAL         :: ZMAXRES
 TYPE(LIST_ll), POINTER :: TZFIELDS_ll   ! list of fields to exchange
@@ -132,10 +129,6 @@ INTEGER               :: I,J,K
 !              ---------------
 !
 ILUOUT0 = TLUOUT0%NLU
-!
-IKB=1+JPVEXT
-IKE=NKMAX+JPVEXT
-IKU=IKE+JPVEXT
 !
 ZU(:,:,:) = XUT(:,:,:)
 ZV(:,:,:) = XVT(:,:,:)
@@ -192,7 +185,7 @@ CALL MPPDB_CHECK3D(XVT,"PressInP4-beforeupdhalo::XVT",PRECISION)
 !
   ZRU(:,:,:) = XUT(:,:,:) * MXM(XRHODJ)
   ZRV(:,:,:) = XVT(:,:,:) * MYM(XRHODJ)
-  ZRW(:,:,:) = XWT(:,:,:) * MZM(1,IKU,1,XRHODJ)
+  ZRW(:,:,:) = XWT(:,:,:) * MZM(XRHODJ)
 !
   CALL ADD3DFIELD_ll( TZFIELDS_ll, ZRU, 'PRESSURE_IN_PREP::ZRU' )
   CALL ADD3DFIELD_ll( TZFIELDS_ll, ZRV, 'PRESSURE_IN_PREP::ZRV' )

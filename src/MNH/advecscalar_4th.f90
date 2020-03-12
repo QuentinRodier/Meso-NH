@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 2005-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2005-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ###############################
@@ -156,7 +156,6 @@ TYPE(HALO2LIST_ll), POINTER :: TZHALO2LIST
 !
 INTEGER :: IGRID ! localisation on the model grid
 REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3)) :: ZMEANX, ZMEANY ! fluxes
-INTEGER :: IKU
 !
 !-------------------------------------------------------------------------------
 !
@@ -164,7 +163,6 @@ INTEGER :: IKU
 !               ------------------------------
 !
 CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
-IKU=SIZE(XZHAT)
 !
 !-------------------------------------------------------------------------------
 !
@@ -195,7 +193,7 @@ DO JSV=1,KSV
 !  IF (LBUDGET_SV) CALL BUDGET (PRSVS(:,:,:,JSV),JSV+NBUDGET_SV1-1,'ADVY_BU_RSV')
 !
   PRSVS(:,:,:,JSV) = PRSVS(:,:,:,JSV)                           &
-                    -DZF(1,IKU,1,  PRWCT(:,:,:) * MZM4(PSVT(:,:,:,JSV)) )
+                    -DZF( PRWCT(:,:,:) * MZM4(PSVT(:,:,:,JSV)) )
 !  IF (LBUDGET_SV) CALL BUDGET (PRSVS(:,:,:,JSV),JSV+NBUDGET_SV1-1,'ADVZ_BU_RSV')
 ENDDO
 !

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2010-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -181,7 +181,6 @@ REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA  ! Land-sea mask
 INTEGER :: IIB, IIE  ! index values of the first and last inner mass points along x
 INTEGER :: IJB, IJE  ! index values of the first and last inner mass points along y
 INTEGER :: IKB, IKE  ! index values of the first and last inner mass points along z
-INTEGER :: IKU
 INTEGER :: II, IJ, IK, IL, IM, IPOINT  ! loop indexes
 INTEGER :: IX, IY, IZ
 INTEGER :: IXOR, IYOR  ! origin of the extended subdomain
@@ -336,7 +335,6 @@ CALL MYPROC_ELEC_ll(IPROC)
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB = 1 + JPVEXT
 IKE = SIZE(PRT,3) - JPVEXT
-IKU = SIZE(PRT,3)
 !
 ! global indexes of the local subdomains origin
 CALL GET_GLOBALDIMS_ll (NIMAX_ll,NJMAX_ll)
@@ -383,7 +381,7 @@ IF (GEFIRSTCALL) THEN
 !
   ZXMASS(IIB:IIE) = 0.5 * (XXHAT(IIB:IIE) + XXHAT(IIB+1:IIE+1))
   ZYMASS(IJB:IJE) = 0.5 * (XYHAT(IJB:IJE) + XYHAT(IJB+1:IJE+1))
-  ZZMASS = MZF(1,IKU,1,PZZ)
+  ZZMASS = MZF(PZZ)
   ZPRES_COEF = EXP(ZZMASS/8400.)
   ZSCOORD_SEG(:,:,:) = 0.0
   ISAVE_STATUS = 1

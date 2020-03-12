@@ -1,10 +1,11 @@
-!SFX_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
 !-------------------------------------------------------------------
 ! Modifications:
 !  P. Wautelet 19/09/2019: correct support of 64bit integers (MNH_INT=8)
+!  Q. Rodier   27/01/2020: switch of GRIB number ID for Orography in ARPEGE in EPyGrAM v1.3.7
 !-------------------------------------------------------------------
 !     #####################
 MODULE MODE_READ_GRIB
@@ -516,7 +517,11 @@ SELECT CASE (HINMODEL)
     CALL READ_GRIB(HGRIB,HINMODEL,KLUOUT,228002,IRET,PZS)               
   CASE ('ARPEGE','MOCAGE')
     IF (HINMODEL=='ARPEGE' .AND. NGRIB_VERSION==2) THEN
-      CALL READ_GRIB(HGRIB,HINMODEL,KLUOUT,5,IRET,PZS)
+      CALL READ_GRIB(HGRIB,HINMODEL,KLUOUT,4,IRET,PZS)
+      IF (IRET /= 0) THEN
+        ! Old version of EPyGraM (bug corrected since 01/2020)
+        CALL READ_GRIB(HGRIB,HINMODEL,KLUOUT,5,IRET,PZS)
+      END IF
     ELSE
       CALL READ_GRIB(HGRIB,HINMODEL,KLUOUT,8,IRET,PZS)               
     ENDIF

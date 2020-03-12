@@ -482,18 +482,18 @@ IF (INDEX(CISO,'TK') /= 0) THEN
 END IF
 !
 ZCORIOZ(:,:,:)=SPREAD( XCORIOZ(:,:),DIM=3,NCOPIES=IKU )
-ZVOX(:,:,:)=GY_W_VW(1,IKU,1,XWT,XDYY,XDZZ,XDZY)-GZ_V_VW(1,IKU,1,XVT,XDZZ)
+ZVOX(:,:,:)=GY_W_VW(XWT,XDYY,XDZZ,XDZY)-GZ_V_VW(XVT,XDZZ)
 ZVOX(:,:,2)=ZVOX(:,:,3)
-ZVOY(:,:,:)=GZ_U_UW(1,IKU,1,XUT,XDZZ)-GX_W_UW(1,IKU,1,XWT,XDXX,XDZZ,XDZX)
+ZVOY(:,:,:)=GZ_U_UW(XUT,XDZZ)-GX_W_UW(XWT,XDXX,XDZZ,XDZX)
 ZVOY(:,:,2)=ZVOY(:,:,3)
-ZVOZ(:,:,:)=GX_V_UV(1,IKU,1,XVT,XDXX,XDZZ,XDZX)-GY_U_UV(1,IKU,1,XUT,XDYY,XDZZ,XDZY)
+ZVOZ(:,:,:)=GX_V_UV(XVT,XDXX,XDZZ,XDZX)-GY_U_UV(XUT,XDYY,XDZZ,XDZY)
 ZVOZ(:,:,2)=ZVOZ(:,:,3)
 ZVOZ(:,:,1)=ZVOZ(:,:,3)
-ZWORK31(:,:,:)=GX_M_M(1,IKU,1,XTHT,XDXX,XDZZ,XDZX)
-ZWORK32(:,:,:)=GY_M_M(1,IKU,1,XTHT,XDYY,XDZZ,XDZY)
-ZWORK33(:,:,:)=GZ_M_M(1,IKU,1,XTHT,XDZZ)
-ZPOVO(:,:,:)= ZWORK31(:,:,:)*MZF(1,IKU,1,MYF(ZVOX(:,:,:)))     &
-             + ZWORK32(:,:,:)*MZF(1,IKU,1,MXF(ZVOY(:,:,:)))     &
+ZWORK31(:,:,:)=GX_M_M(XTHT,XDXX,XDZZ,XDZX)
+ZWORK32(:,:,:)=GY_M_M(XTHT,XDYY,XDZZ,XDZY)
+ZWORK33(:,:,:)=GZ_M_M(XTHT,XDZZ)
+ZPOVO(:,:,:)= ZWORK31(:,:,:)*MZF(MYF(ZVOX(:,:,:)))     &
+             + ZWORK32(:,:,:)*MZF(MXF(ZVOY(:,:,:)))     &
              + ZWORK33(:,:,:)*(MYF(MXF(ZVOZ(:,:,:))) + ZCORIOZ(:,:,:))
 ZPOVO(:,:,:)= ZPOVO(:,:,:)*1E6/XRHODREF(:,:,:)
 ZPOVO(:,:,1)  =-1.E+11
@@ -705,7 +705,7 @@ IF (LVAR_PR ) THEN
   ZWORK21(:,:) = 0.
   ZWORK22(:,:) = 0.
   ZWORK23(:,:) = 0.
-  ZWORK31(:,:,:) = DZF(1,IKU,1,XZZ(:,:,:))
+  ZWORK31(:,:,:) = DZF(XZZ(:,:,:))
   DO JK = IKB,IKE
     !* Calcul de qtot
     IF  (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'LIMA') THEN
@@ -744,13 +744,13 @@ IF (LHU_FLX) THEN
   ZWORK35(:,:,:) = XRHODREF(:,:,:) * XRT(:,:,:,1)
   ZWORK31(:,:,:) = MXM(ZWORK35(:,:,:)) * XUT(:,:,:)
   ZWORK32(:,:,:) = MYM(ZWORK35(:,:,:)) * XVT(:,:,:)
-  ZWORK35(:,:,:) = GX_U_M(1,IKU,1,ZWORK31,XDXX,XDZZ,XDZX) + GY_V_M(1,IKU,1,ZWORK32,XDYY,XDZZ,XDZY)
+  ZWORK35(:,:,:) = GX_U_M(ZWORK31,XDXX,XDZZ,XDZX) + GY_V_M(ZWORK32,XDYY,XDZZ,XDZY)
   IF  (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'LIMA') THEN
     ZWORK36(:,:,:) = ZWORK35(:,:,:) + XRHODREF(:,:,:) * (XRT(:,:,:,2) + &
     XRT(:,:,:,3) + XRT(:,:,:,4) + XRT(:,:,:,5) + XRT(:,:,:,6))
     ZWORK33(:,:,:) = MXM(ZWORK36(:,:,:)) * XUT(:,:,:)
     ZWORK34(:,:,:) = MYM(ZWORK36(:,:,:)) * XVT(:,:,:)
-    ZWORK36(:,:,:) = GX_U_M(1,IKU,1,ZWORK33,XDXX,XDZZ,XDZX) + GY_V_M(1,IKU,1,ZWORK34,XDYY,XDZZ,XDZY)
+    ZWORK36(:,:,:) = GX_U_M(ZWORK33,XDXX,XDZZ,XDZX) + GY_V_M(ZWORK34,XDYY,XDZZ,XDZY)
   ENDIF
   !
   ! Integration sur 3000 m
@@ -761,7 +761,7 @@ IF (LHU_FLX) THEN
       IKTOP(:,:)=JK
     END WHERE
   END DO
-  ZDELTAZ(:,:,:)=DZF(1,IKU,1,XZZ) 
+  ZDELTAZ(:,:,:)=DZF(XZZ)
   ZWORK21(:,:) = 0.
   ZWORK22(:,:) = 0.
   ZWORK25(:,:) = 0.  
@@ -2275,7 +2275,7 @@ IF (LTPZH .OR. LCOREF) THEN
       TZFIELD%LTIMEDEP   = .TRUE.
       CALL IO_Field_write(TPFILE,TZFIELD,ZWORK33)
       !
-      ZWORK33(:,:,:)=ZWORK33(:,:,:)+MZF(1,IKU,1,XZZ(:,:,:))*1E6/XRADIUS
+      ZWORK33(:,:,:)=ZWORK33(:,:,:)+MZF(XZZ(:,:,:))*1E6/XRADIUS
       TZFIELD%CMNHNAME   = 'MCOREF'
       TZFIELD%CSTDNAME   = ''
       TZFIELD%CLONGNAME  = 'MCOREF'
@@ -2585,7 +2585,7 @@ END IF
 !
 IF (LVORT) THEN
 ! Vorticity x
-  ZWORK31(:,:,:)=MYF(MZF(1,IKU,1,MXM(ZVOX(:,:,:))))
+  ZWORK31(:,:,:)=MYF(MZF(MXM(ZVOX(:,:,:))))
   TZFIELD%CMNHNAME   = 'UM1'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = 'UM1'
@@ -2599,7 +2599,7 @@ IF (LVORT) THEN
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
 !    
 ! Vorticity y
-  ZWORK32(:,:,:)=MZF(1,IKU,1,MXF(MYM(ZVOY(:,:,:))))
+  ZWORK32(:,:,:)=MZF(MXF(MYM(ZVOY(:,:,:))))
   TZFIELD%CMNHNAME   = 'VM1'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = 'VM1'
@@ -2639,7 +2639,7 @@ IF (LVORT) THEN
   ENDIF
 !    
 ! Vorticity z
-  ZWORK31(:,:,:)=MXF(MYF(MZM(1,IKU,1,ZVOZ(:,:,:))))
+  ZWORK31(:,:,:)=MXF(MYF(MZM(ZVOZ(:,:,:))))
   TZFIELD%CMNHNAME   = 'WM1'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = 'WM1'
@@ -2701,11 +2701,11 @@ END IF
 !
 ! Virtual Potential Vorticity in PV units
 IF (LMOIST_V .AND. (NRR>0) ) THEN
-  ZWORK31(:,:,:)=GX_M_M(1,IKU,1,ZTHETAV,XDXX,XDZZ,XDZX)
-  ZWORK32(:,:,:)=GY_M_M(1,IKU,1,ZTHETAV,XDYY,XDZZ,XDZY)
-  ZWORK33(:,:,:)=GZ_M_M(1,IKU,1,ZTHETAV,XDZZ)
-  ZWORK34(:,:,:)= ZWORK31(:,:,:)*MZF(1,IKU,1,MYF(ZVOX(:,:,:)))     &
-               + ZWORK32(:,:,:)*MZF(1,IKU,1,MXF(ZVOY(:,:,:)))     &
+  ZWORK31(:,:,:)=GX_M_M(ZTHETAV,XDXX,XDZZ,XDZX)
+  ZWORK32(:,:,:)=GY_M_M(ZTHETAV,XDYY,XDZZ,XDZY)
+  ZWORK33(:,:,:)=GZ_M_M(ZTHETAV,XDZZ)
+  ZWORK34(:,:,:)= ZWORK31(:,:,:)*MZF(MYF(ZVOX(:,:,:)))     &
+               + ZWORK32(:,:,:)*MZF(MXF(ZVOY(:,:,:)))     &
                + ZWORK33(:,:,:)*(MYF(MXF(ZVOZ(:,:,:))) + ZCORIOZ(:,:,:))
   ZWORK34(:,:,:)=ZWORK34(:,:,:)*1E6/XRHODREF(:,:,:)
   TZFIELD%CMNHNAME   = 'POVOV'
@@ -2747,11 +2747,11 @@ END IF
 ! Equivalent Potential Vorticity in PV units
 IF (LMOIST_E .AND. (NRR>0) ) THEN
 !
-  ZWORK31(:,:,:)=GX_M_M(1,IKU,1,ZTHETAE,XDXX,XDZZ,XDZX)
-  ZWORK32(:,:,:)=GY_M_M(1,IKU,1,ZTHETAE,XDYY,XDZZ,XDZY)
-  ZWORK33(:,:,:)=GZ_M_M(1,IKU,1,ZTHETAE,XDZZ)
-  ZWORK34(:,:,:)= ZWORK31(:,:,:)*MZF(1,IKU,1,MYF(ZVOX(:,:,:)))     &
-                + ZWORK32(:,:,:)*MZF(1,IKU,1,MXF(ZVOY(:,:,:)))     &
+  ZWORK31(:,:,:)=GX_M_M(ZTHETAE,XDXX,XDZZ,XDZX)
+  ZWORK32(:,:,:)=GY_M_M(ZTHETAE,XDYY,XDZZ,XDZY)
+  ZWORK33(:,:,:)=GZ_M_M(ZTHETAE,XDZZ)
+  ZWORK34(:,:,:)= ZWORK31(:,:,:)*MZF(MYF(ZVOX(:,:,:)))     &
+                + ZWORK32(:,:,:)*MZF(MXF(ZVOY(:,:,:)))     &
                 + ZWORK33(:,:,:)*(MYF(MXF(ZVOZ(:,:,:))) + ZCORIOZ(:,:,:))
   ZWORK34(:,:,:)=ZWORK34(:,:,:)*1E6/XRHODREF(:,:,:)
   TZFIELD%CMNHNAME   = 'POVOE'
@@ -2794,11 +2794,11 @@ END IF
 !
 ! Equivalent Saturated Potential Vorticity in PV units
 IF (LMOIST_ES .AND. (NRR>0) ) THEN
-  ZWORK31(:,:,:)=GX_M_M(1,IKU,1,ZTHETAES,XDXX,XDZZ,XDZX)
-  ZWORK32(:,:,:)=GY_M_M(1,IKU,1,ZTHETAES,XDYY,XDZZ,XDZY)
-  ZWORK33(:,:,:)=GZ_M_M(1,IKU,1,ZTHETAES,XDZZ)
-  ZWORK34(:,:,:)= ZWORK31(:,:,:)*MZF(1,IKU,1,MYF(ZVOX(:,:,:)))     &
-                + ZWORK32(:,:,:)*MZF(1,IKU,1,MXF(ZVOY(:,:,:)))     &
+  ZWORK31(:,:,:)=GX_M_M(ZTHETAES,XDXX,XDZZ,XDZX)
+  ZWORK32(:,:,:)=GY_M_M(ZTHETAES,XDYY,XDZZ,XDZY)
+  ZWORK33(:,:,:)=GZ_M_M(ZTHETAES,XDZZ)
+  ZWORK34(:,:,:)= ZWORK31(:,:,:)*MZF(MYF(ZVOX(:,:,:)))     &
+                + ZWORK32(:,:,:)*MZF(MXF(ZVOY(:,:,:)))     &
                 + ZWORK33(:,:,:)*(MYF(MXF(ZVOZ(:,:,:))) + ZCORIOZ(:,:,:))
   ZWORK34(:,:,:)=ZWORK34(:,:,:)*1E6/XRHODREF(:,:,:)
   TZFIELD%CMNHNAME   = 'POVOES'
@@ -2821,7 +2821,7 @@ ENDIF
 !
 IF (LDIV) THEN
 !
-  ZWORK31=GX_U_M(1,IKU,1,XUT,XDXX,XDZZ,XDZX) + GY_V_M(1,IKU,1,XVT,XDYY,XDZZ,XDZY)
+  ZWORK31=GX_U_M(XUT,XDXX,XDZZ,XDZX) + GY_V_M(XVT,XDYY,XDZZ,XDZY)
   TZFIELD%CMNHNAME   = 'HDIV'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = 'HDIV'
@@ -2847,7 +2847,7 @@ IF (LDIV) THEN
     TZFIELD%LTIMEDEP   = .TRUE.
     ZWORK31=MXM(XRHODREF*XRT(:,:,:,1))*XUT
     ZWORK32=MYM(XRHODREF*XRT(:,:,:,1))*XVT
-    ZWORK33=GX_U_M(1,IKU,1,ZWORK31,XDXX,XDZZ,XDZX) + GY_V_M(1,IKU,1,ZWORK32,XDYY,XDZZ,XDZY)
+    ZWORK33=GX_U_M(ZWORK31,XDXX,XDZZ,XDZX) + GY_V_M(ZWORK32,XDYY,XDZZ,XDZY)
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK33)
   END IF
 !
@@ -2920,13 +2920,13 @@ IF (LGEO .OR. LAGEO) THEN
     ZPHI(1,IJU,:)=2*ZPHI(1,IJU-1,:)-ZPHI(1,IJU-2,:)
     ZPHI(IIU,1,:)=2*ZPHI(IIU,2,:)-ZPHI(IIU,3,:)
     ZPHI(IIU,IJU,:)=2*ZPHI(IIU,IJU-1,:)-ZPHI(IIU,IJU-2,:)
-    ZWORK31(:,:,:)=-MXM(GY_M_M(1,IKU,1,ZPHI,XDYY,XDZZ,XDZY)*XCPD*XTHVREF/ZCORIOZ)
+    ZWORK31(:,:,:)=-MXM(GY_M_M(ZPHI,XDYY,XDZZ,XDZY)*XCPD*XTHVREF/ZCORIOZ)
     !
     ZPHI(1,1,:)=2*ZPHI(2,1,:)-ZPHI(3,1,:)
     ZPHI(IIU,1,:)=2*ZPHI(IIU-1,1,:)-ZPHI(IIU-2,1,:)
     ZPHI(1,IJU,:)=2*ZPHI(2,IJU,:)-ZPHI(3,IJU,:)
     ZPHI(IIU,IJU,:)=2*ZPHI(IIU-1,IJU,:)-ZPHI(IIU-2,IJU,:)
-    ZWORK32(:,:,:)=MYM(GX_M_M(1,IKU,1,ZPHI,XDXX,XDZZ,XDZX)*XCPD*XTHVREF/ZCORIOZ)
+    ZWORK32(:,:,:)=MYM(GX_M_M(ZPHI,XDXX,XDZZ,XDZX)*XCPD*XTHVREF/ZCORIOZ)
   !
   ELSE IF(CEQNSYS=='LHE') THEN
     ZPHI(:,:,:)= ((XPABST(:,:,:)/XP00)**(XRD/XCPD)-XEXNREF(:,:,:))   &
@@ -2936,13 +2936,13 @@ IF (LGEO .OR. LAGEO) THEN
     ZPHI(1,IJU,:)=2*ZPHI(1,IJU-1,:)-ZPHI(1,IJU-2,:)
     ZPHI(IIU,1,:)=2*ZPHI(IIU,2,:)-ZPHI(IIU,3,:)
     ZPHI(IIU,IJU,:)=2*ZPHI(IIU,IJU-1,:)-ZPHI(IIU,IJU-2,:)
-    ZWORK31(:,:,:)=-MXM(GY_M_M(1,IKU,1,ZPHI,XDYY,XDZZ,XDZY)/ZCORIOZ)
+    ZWORK31(:,:,:)=-MXM(GY_M_M(ZPHI,XDYY,XDZZ,XDZY)/ZCORIOZ)
     !
     ZPHI(1,1,:)=2*ZPHI(2,1,:)-ZPHI(3,1,:)
     ZPHI(IIU,1,:)=2*ZPHI(IIU-1,1,:)-ZPHI(IIU-2,1,:)
     ZPHI(1,IJU,:)=2*ZPHI(2,IJU,:)-ZPHI(3,IJU,:)
     ZPHI(IIU,IJU,:)=2*ZPHI(IIU-1,IJU,:)-ZPHI(IIU-2,IJU,:)
-    ZWORK32(:,:,:)=MYM(GX_M_M(1,IKU,1,ZPHI,XDXX,XDZZ,XDZX)/ZCORIOZ)
+    ZWORK32(:,:,:)=MYM(GX_M_M(ZPHI,XDXX,XDZZ,XDZX)/ZCORIOZ)
   END IF
   DEALLOCATE(ZPHI)
 !
@@ -3497,7 +3497,7 @@ ENDIF
 !* B-V frequency to assess thermal tropopause
 !
 IF (LBV_FR) THEN
-  ZWORK32(:,:,:)=DZM(1,IKU,1,XTHT(:,:,:))/ MZM(1,IKU,1,XTHT(:,:,:))
+  ZWORK32(:,:,:)=DZM(XTHT(:,:,:))/ MZM(XTHT(:,:,:))
   DO JK=1,IKU
    DO JJ=1,IJU
     DO JI=1,IIU
@@ -3523,7 +3523,7 @@ IF (LBV_FR) THEN
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK31)
 !  
   IF (NRR > 0) THEN
-    ZWORK32(:,:,:)=DZM(1,IKU,1,ZTHETAE(:,:,:))/ MZM(1,IKU,1,ZTHETAE(:,:,:))
+    ZWORK32(:,:,:)=DZM(ZTHETAE(:,:,:))/ MZM(ZTHETAE(:,:,:))
     DO JK=1,IKU
      DO JJ=1,IJU
       DO JI=1,IIU

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -233,7 +233,7 @@ CALL MPPDB_CHECK3D(XWT,"anel_balancen3.1-after update halo::XWT",PRECISION)
 !
 ZRU(:,:,:) = MXM(XRHODJ) * XUT(:,:,:)
 ZRV(:,:,:) = MYM(XRHODJ) * XVT(:,:,:)
-ZRW(:,:,:) = MZM(1,IKU,1,XRHODJ) * XWT(:,:,:)
+ZRW(:,:,:) = MZM(XRHODJ) * XWT(:,:,:)
 ZTH(:,:,:) = XTHT(:,:,:)
 ALLOCATE(ZRR(SIZE(XRHODJ,1),SIZE(XRHODJ,2),SIZE(XRHODJ,3),SIZE(XRT,4)))
 ZRR(:,:,:,:) = XRT(:,:,:,:)
@@ -288,7 +288,7 @@ DEALLOCATE(ZBFY,ZTRIGSX,ZTRIGSY,ZRR,ZBF_SXP2_YP1_Z)
 !20131112 appli update_halo_ll and associated operations
 XUT(:,:,:) = ZRU(:,:,:) / MXM(XRHODJ)
 XVT(:,:,:) = ZRV(:,:,:) / MYM(XRHODJ)
-XWT(:,:,:) = ZRW(:,:,:) / MZM(1,IKU,1,XRHODJ)
+XWT(:,:,:) = ZRW(:,:,:) / MZM(XRHODJ)
 !20131112 appli update_halo_ll to XUT,XVT,XWT
 CALL ADD3DFIELD_ll( TZFIELDS_ll, XUT, 'ANEL_BALANCE_n::XUT' )
 CALL ADD3DFIELD_ll( TZFIELDS_ll, XVT, 'ANEL_BALANCE_n::XVT' )

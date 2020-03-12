@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 operators 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODI_GRADIENT_V
@@ -15,10 +10,8 @@
 INTERFACE
 !
 !           
-FUNCTION GY_V_M(KKA,KKU,KL,PA,PDYY,PDZZ,PDZY)      RESULT(PGY_V_M)
+FUNCTION GY_V_M(PA,PDYY,PDZZ,PDZY)      RESULT(PGY_V_M)
 !
-INTEGER,              INTENT(IN)     :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)     :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the V point
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDYY    ! metric coefficient dyy
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
@@ -28,10 +21,8 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGY_V_M ! result mass point
 !
 END FUNCTION GY_V_M
 !           
-FUNCTION GX_V_UV(KKA,KKU,KL,PA,PDXX,PDZZ,PDZX)      RESULT(PGX_V_UV)
+FUNCTION GX_V_UV(PA,PDXX,PDZZ,PDZX)      RESULT(PGX_V_UV)
 !
-INTEGER,              INTENT(IN)     :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)     :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the V point
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDXX    ! metric coefficient dxx
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
@@ -42,10 +33,8 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGX_V_UV ! result UV point
 END FUNCTION GX_V_UV
 !
 !           
-FUNCTION GZ_V_VW(KKA,KKU,KL,PA,PDZZ)      RESULT(PGZ_V_VW)
+FUNCTION GZ_V_VW(PA,PDZZ)      RESULT(PGZ_V_VW)
 !
-INTEGER,              INTENT(IN)     :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)     :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the V point
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
 !
@@ -61,7 +50,7 @@ END MODULE MODI_GRADIENT_V
 !
 !
 !     #######################################################
-      FUNCTION GY_V_M(KKA,KKU,KL,PA,PDYY,PDZZ,PDZY)      RESULT(PGY_V_M)
+      FUNCTION GY_V_M(PA,PDYY,PDZZ,PDZY)      RESULT(PGY_V_M)
 !     #######################################################
 !
 !!****  *GY_V_M* - Cartesian Gradient operator: 
@@ -125,8 +114,6 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments and result
 !
-INTEGER,                 INTENT(IN)  :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,                 INTENT(IN)  :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the V point
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDYY    ! metric coefficient dyy
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
@@ -146,7 +133,7 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGY_V_M ! result mass point
 !
 IF (.NOT. LFLAT) THEN
   PGY_V_M(:,:,:)= (DYF(PA)        -                      &
-                   MZF(KKA,KKU,KL, MYF(PDZY*DZM(KKA,KKU,KL,PA))/PDZZ )         &
+                   MZF( MYF(PDZY*DZM(PA))/PDZZ )         &
                   ) / MYF(PDYY)
 ELSE
   PGY_V_M(:,:,:)= DYF(PA) / MYF(PDYY)
@@ -158,7 +145,7 @@ END FUNCTION GY_V_M
 !
 ! 
 !     #########################################################
-      FUNCTION GX_V_UV(KKA,KKU,KL,PA,PDXX,PDZZ,PDZX)      RESULT(PGX_V_UV)
+      FUNCTION GX_V_UV(PA,PDXX,PDZZ,PDZX)      RESULT(PGX_V_UV)
 !     #########################################################
 !
 !!****  *GX_V_UV* - Cartesian Gradient operator: 
@@ -223,8 +210,6 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments and result
 !
-INTEGER,                 INTENT(IN)  :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,                 INTENT(IN)  :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the V point
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDXX    ! metric coefficient dxx
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
@@ -243,7 +228,7 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGX_V_UV ! result UV point
 !              ---------------------
 !
 IF (.NOT. LFLAT) THEN
-  PGX_V_UV(:,:,:)= ( DXM(PA)- MZF(KKA,KKU,KL, MXM( DZM(KKA,KKU,KL,PA)/&
+  PGX_V_UV(:,:,:)= ( DXM(PA)- MZF( MXM( DZM(PA)/&
                     MYM(PDZZ) ) *MYM(PDZX) )   )   / MYM(PDXX)
 ELSE
   PGX_V_UV(:,:,:)= DXM(PA) / MYM(PDXX)
@@ -255,7 +240,7 @@ END FUNCTION GX_V_UV
 !
 !
 !     #######################################################
-      FUNCTION GZ_V_VW(KKA,KKU,KL,PA,PDZZ)      RESULT(PGZ_V_VW)
+      FUNCTION GZ_V_VW(PA,PDZZ)      RESULT(PGZ_V_VW)
 !     #######################################################
 !
 !!****  *GZ_V_VW - Cartesian Gradient operator: 
@@ -314,8 +299,6 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments and result
 !
-INTEGER,              INTENT(IN)     :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)     :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the V point
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
 !
@@ -331,7 +314,7 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGZ_V_VW ! result VW point
 !*       1.    DEFINITION of GZ_V_VW
 !              ---------------------
 !
-PGZ_V_VW(:,:,:)= DZM(KKA,KKU,KL,PA) / MYM(PDZZ)
+PGZ_V_VW(:,:,:)= DZM(PA) / MYM(PDZZ)
 !
 !----------------------------------------------------------------------------
 !

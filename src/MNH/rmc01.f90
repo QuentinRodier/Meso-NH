@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 turb 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ################
       MODULE MODI_RMC01
@@ -144,7 +139,7 @@ IKT=SIZE(PZZ,3)
 IKTE=IKT-JPVEXT_TURB
 !
 ! altitude of mass points
-ZZZ=MZF(KKA,KKU,KKL,PZZ)
+ZZZ=MZF(PZZ)
 ! replace by height of mass points
 DO JK=1,IKT
   ZZZ(:,:,JK) = ZZZ(:,:,JK) - PZZ(:,:,IKB)

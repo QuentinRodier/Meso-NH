@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 operators 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ################
       MODULE MODI_GDIV
@@ -71,13 +66,6 @@ END MODULE MODI_GDIV
 !!    EXTERNAL
 !!    --------
 !!      SUBROUTINE CONTRAV : compute the contavariant components 
-!!    Shuman operators :
-!!      FUNCTION DXF : compute finite difference along x for a variable 
-!!    localized at a flux side
-!!      FUNCTION DYF : compute finite difference along y for a variable 
-!!    localized at a flux side
-!!      FUNCTION DZF : compute finite difference along z for a variable 
-!!    localized at a flux side
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------ 
@@ -114,7 +102,6 @@ END MODULE MODI_GDIV
 !
 USE MODD_PARAMETERS
 USE MODD_CONF
-USE MODI_SHUMAN
 USE MODI_CONTRAV
 !
 USE MODE_ll

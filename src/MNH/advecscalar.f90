@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -124,7 +124,6 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRSVS
 !*       0.2   Declarations of local variables :
 !
 INTEGER :: JSV           ! Loop index for Scalar Variables
-INTEGER :: IKU
 !
 !  
 !-------------------------------------------------------------------------------
@@ -132,8 +131,6 @@ INTEGER :: IKU
 !*       1.     COMPUTES THE ADVECTIVE TENDENCIES
 !     	        ---------------------------------
 !
-IKU=SIZE(XZHAT)
-! 
                                         ! Case with KSV Scalar Variables
 DO JSV=1,KSV
   PRSVS(:,:,:,JSV) = PRSVS(:,:,:,JSV)                            &
@@ -157,7 +154,7 @@ END IF
 !
 DO JSV=1,KSV
   PRSVS(:,:,:,JSV) = PRSVS(:,:,:,JSV)                            &
-                    -DZF(1,IKU,1, PRWCT(:,:,:) * MZM (1,IKU,1, PSVT(:,:,:,JSV)) ) 
+                    -DZF( PRWCT(:,:,:) * MZM (PSVT(:,:,:,JSV)) )
 END DO
 IF (LBUDGET_SV) THEN
   DO JSV=1,KSV

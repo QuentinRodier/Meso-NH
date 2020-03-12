@@ -421,7 +421,7 @@ IF (LCLD_COV .AND. LUSERC) THEN
   ZCLMR=1.E-4         ! detection of clouds for cloud mixing ratio > .1g/kg
 !
   GMASK2(:,:)=.TRUE.
-  ZWORK31(:,:,:)= MZM(1,IKU,1, XRT(:,:,:,2) ) ! cloud mixing ratio at zz levels
+  ZWORK31(:,:,:)= MZM( XRT(:,:,:,2) ) ! cloud mixing ratio at zz levels
   DO JK=IKE,IKB,-1
     WHERE ( (GMASK2(:,:)).AND.(ZWORK31(:,:,JK)>ZCLMR) )
       GMASK2(:,:)=.FALSE.
@@ -431,7 +431,7 @@ IF (LCLD_COV .AND. LUSERC) THEN
 !
   IF (LUSERI) THEN
     GMASK2(:,:)=.TRUE.
-    ZWORK31(:,:,:)= MZM(1,IKU,1, XRT(:,:,:,4) ) ! cloud mixing ratio at zz levels
+    ZWORK31(:,:,:)= MZM( XRT(:,:,:,4) ) ! cloud mixing ratio at zz levels
     DO JK=IKE,IKB,-1
       WHERE ( (GMASK2(:,:)).AND.(ZWORK31(:,:,JK)>ZCLMR) )
         GMASK2(:,:)=.FALSE.
@@ -467,7 +467,7 @@ IF (LCLD_COV .AND. LUSERC) THEN
 !  Higher top of the different species of clouds
 !
   IWORK1(:,:)=IKB  ! initialization with the ground values
-  ZWORK31(:,:,:)=MZM(1,IKU,1,ZTEMP(:,:,:)) ! temperature (K) at zz levels
+  ZWORK31(:,:,:)=MZM(ZTEMP(:,:,:)) ! temperature (K) at zz levels
   IF(CRAD/='NONE')  ZWORK31(:,:,IKB)=XTSRAD(:,:)
   ZWORK21(:,:)=0.
   ZWORK22(:,:)=0.
@@ -1125,7 +1125,7 @@ ALLOCATE(ZWORK34(IIU,IJU,IKU))
 ! *********************
 ! Geopotential in meters
 ! *********************
-  ZWORK31(:,:,:) = MZF(1,IKU,1,XZZ(:,:,:))
+  ZWORK31(:,:,:) = MZF(XZZ(:,:,:))
   CALL PINTER(ZWORK31, XPABST, XZZ, ZTEMP, ZWRES, ZPRES, &
            IIU, IJU, IKU, IKB, IPRES, 'LOG', 'RHU.')
   DO JK=1,IPRES
@@ -1194,18 +1194,18 @@ ALLOCATE(ZWORK34(IIU,IJU,IKU))
 ! Potential Vorticity
 ! *********************
   ZCORIOZ(:,:,:)=SPREAD( XCORIOZ(:,:),DIM=3,NCOPIES=IKU )
-  ZVOX(:,:,:)=GY_W_VW(1,IKU,1,XWT,XDYY,XDZZ,XDZY)-GZ_V_VW(1,IKU,1,XVT,XDZZ)
+  ZVOX(:,:,:)=GY_W_VW(XWT,XDYY,XDZZ,XDZY)-GZ_V_VW(XVT,XDZZ)
   ZVOX(:,:,2)=ZVOX(:,:,3)
-  ZVOY(:,:,:)=GZ_U_UW(1,IKU,1,XUT,XDZZ)-GX_W_UW(1,IKU,1,XWT,XDXX,XDZZ,XDZX)
+  ZVOY(:,:,:)=GZ_U_UW(XUT,XDZZ)-GX_W_UW(XWT,XDXX,XDZZ,XDZX)
   ZVOY(:,:,2)=ZVOY(:,:,3)
-  ZVOZ(:,:,:)=GX_V_UV(1,IKU,1,XVT,XDXX,XDZZ,XDZX)-GY_U_UV(1,IKU,1,XUT,XDYY,XDZZ,XDZY)
+  ZVOZ(:,:,:)=GX_V_UV(XVT,XDXX,XDZZ,XDZX)-GY_U_UV(XUT,XDYY,XDZZ,XDZY)
   ZVOZ(:,:,2)=ZVOZ(:,:,3)
   ZVOZ(:,:,1)=ZVOZ(:,:,3)
-  ZWORK31(:,:,:)=GX_M_M(1,IKU,1,XTHT,XDXX,XDZZ,XDZX)
-  ZWORK32(:,:,:)=GY_M_M(1,IKU,1,XTHT,XDYY,XDZZ,XDZY)
-  ZWORK33(:,:,:)=GZ_M_M(1,IKU,1,XTHT,XDZZ)
-  ZPOVO(:,:,:)= ZWORK31(:,:,:)*MZF(1,IKU,1,MYF(ZVOX(:,:,:)))     &
-  + ZWORK32(:,:,:)*MZF(1,IKU,1,MXF(ZVOY(:,:,:)))     &
+  ZWORK31(:,:,:)=GX_M_M(XTHT,XDXX,XDZZ,XDZX)
+  ZWORK32(:,:,:)=GY_M_M(XTHT,XDYY,XDZZ,XDZY)
+  ZWORK33(:,:,:)=GZ_M_M(XTHT,XDZZ)
+  ZPOVO(:,:,:)= ZWORK31(:,:,:)*MZF(MYF(ZVOX(:,:,:)))     &
+  + ZWORK32(:,:,:)*MZF(MXF(ZVOY(:,:,:)))     &
    + ZWORK33(:,:,:)*(MYF(MXF(ZVOZ(:,:,:))) + ZCORIOZ(:,:,:))
   ZPOVO(:,:,:)= ZPOVO(:,:,:)*1E6/XRHODREF(:,:,:)
   ZPOVO(:,:,1)  =-1.E+11
@@ -1343,18 +1343,18 @@ IF (LISOAL .AND.XISOAL(1)/=0.) THEN
 ! Potential Vorticity
 ! *********************
   ZCORIOZ(:,:,:)=SPREAD( XCORIOZ(:,:),DIM=3,NCOPIES=IKU )
-  ZVOX(:,:,:)=GY_W_VW(1,IKU,1,XWT,XDYY,XDZZ,XDZY)-GZ_V_VW(1,IKU,1,XVT,XDZZ)
+  ZVOX(:,:,:)=GY_W_VW(XWT,XDYY,XDZZ,XDZY)-GZ_V_VW(XVT,XDZZ)
   ZVOX(:,:,2)=ZVOX(:,:,3)
-  ZVOY(:,:,:)=GZ_U_UW(1,IKU,1,XUT,XDZZ)-GX_W_UW(1,IKU,1,XWT,XDXX,XDZZ,XDZX)
+  ZVOY(:,:,:)=GZ_U_UW(XUT,XDZZ)-GX_W_UW(XWT,XDXX,XDZZ,XDZX)
   ZVOY(:,:,2)=ZVOY(:,:,3)
-  ZVOZ(:,:,:)=GX_V_UV(1,IKU,1,XVT,XDXX,XDZZ,XDZX)-GY_U_UV(1,IKU,1,XUT,XDYY,XDZZ,XDZY)
+  ZVOZ(:,:,:)=GX_V_UV(XVT,XDXX,XDZZ,XDZX)-GY_U_UV(XUT,XDYY,XDZZ,XDZY)
   ZVOZ(:,:,2)=ZVOZ(:,:,3)
   ZVOZ(:,:,1)=ZVOZ(:,:,3)
-  ZWORK31(:,:,:)=GX_M_M(1,IKU,1,XTHT,XDXX,XDZZ,XDZX)
-  ZWORK32(:,:,:)=GY_M_M(1,IKU,1,XTHT,XDYY,XDZZ,XDZY)
-  ZWORK33(:,:,:)=GZ_M_M(1,IKU,1,XTHT,XDZZ)
-  ZPOVO(:,:,:)= ZWORK31(:,:,:)*MZF(1,IKU,1,MYF(ZVOX(:,:,:)))     &
-  + ZWORK32(:,:,:)*MZF(1,IKU,1,MXF(ZVOY(:,:,:)))     &
+  ZWORK31(:,:,:)=GX_M_M(XTHT,XDXX,XDZZ,XDZX)
+  ZWORK32(:,:,:)=GY_M_M(XTHT,XDYY,XDZZ,XDZY)
+  ZWORK33(:,:,:)=GZ_M_M(XTHT,XDZZ)
+  ZPOVO(:,:,:)= ZWORK31(:,:,:)*MZF(MYF(ZVOX(:,:,:)))     &
+  + ZWORK32(:,:,:)*MZF(MXF(ZVOY(:,:,:)))     &
    + ZWORK33(:,:,:)*(MYF(MXF(ZVOZ(:,:,:))) + ZCORIOZ(:,:,:))
   ZPOVO(:,:,:)= ZPOVO(:,:,:)*1E6/XRHODREF(:,:,:)
   ZPOVO(:,:,1)  =-1.E+11
@@ -1451,7 +1451,7 @@ IF (LCOARSE) THEN
   CALL BLOCKAVG(ZWORK31,IDX,IDX,ZUU_AVG)
   ZWORK31=MYF(ZVT_PRM*ZVT_PRM)
   CALL BLOCKAVG(ZWORK31,IDX,IDX,ZVV_AVG)
-  ZWORK31=MZF(1,IKU,1,ZWT_PRM*ZWT_PRM)
+  ZWORK31=MZF(ZWT_PRM*ZWT_PRM)
   CALL BLOCKAVG(ZWORK31,IDX,IDX,ZWW_AVG)
   CALL BLOCKAVG(XTKET,IDX,IDX,ZWORK31)
   ZWORK31=0.5*( ZUU_AVG+ZVV_AVG+ZWW_AVG ) + ZWORK31
@@ -1481,7 +1481,7 @@ IF (LCOARSE) THEN
   CALL MOVINGAVG(ZWORK31,IDX,IDX,ZUU_AVG)
   ZWORK31=MYF(ZVT_PRM*ZVT_PRM)
   CALL MOVINGAVG(ZWORK31,IDX,IDX,ZVV_AVG)
-  ZWORK31=MZF(1,IKU,1,ZWT_PRM*ZWT_PRM)
+  ZWORK31=MZF(ZWT_PRM*ZWT_PRM)
   CALL MOVINGAVG(ZWORK31,IDX,IDX,ZWW_AVG)
   CALL MOVINGAVG(XTKET,IDX,IDX,ZWORK31)
   ZWORK31=0.5*( ZUU_AVG+ZVV_AVG+ZWW_AVG ) + ZWORK31

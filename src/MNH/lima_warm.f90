@@ -128,6 +128,8 @@ END MODULE MODI_LIMA_WARM
 !!      J. Escobar : for real*4 , use XMNH_HUGE
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet    02/2020: use the new data structures and subroutines for budgets (no more budget calls in this subroutine)
+!  B. Vie      03/02/2020: correction of activation of water deposition on the ground
+!  B. Vie      03/03/2020: use DTHRAD instead of dT/dt in Smax diagnostic computation
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -220,16 +222,16 @@ REAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3))   &
                                        PCCS,    & ! Cloud water C. source
                                        PCRS       ! Rain water C. source
 !
-REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: PNFS     ! CCN C. available source
+REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZNFS     ! CCN C. available source
                                                   !used as Free ice nuclei for
                                                   !HOMOGENEOUS nucleation of haze
-REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: PNAS     ! Cloud  C. nuclei C. source
+REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZNAS     ! Cloud  C. nuclei C. source
                                                   !used as Free ice nuclei for
                                                   !IMMERSION freezing
 !
 !
 REAL,    DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3))   &
-                                  :: ZT, ZTM
+                                  :: ZT
 REAL,    DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3))   &
                                   :: ZWLBDR,ZWLBDR3,ZWLBDC,ZWLBDC3
 integer :: idx
@@ -271,15 +273,15 @@ IF ( LWARM ) PCCS(:,:,:) = PSVS(:,:,:,NSV_LIMA_NC)
 IF ( LWARM .AND. LRAIN ) PCRS(:,:,:) = PSVS(:,:,:,NSV_LIMA_NR)
 !
 IF ( NMOD_CCN .GE. 1 ) THEN
-   ALLOCATE( PNFS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),NMOD_CCN) )
-   ALLOCATE( PNAS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),NMOD_CCN) )
-   PNFS(:,:,:,:) = PSVS(:,:,:,NSV_LIMA_CCN_FREE:NSV_LIMA_CCN_FREE+NMOD_CCN-1)
-   PNAS(:,:,:,:) = PSVS(:,:,:,NSV_LIMA_CCN_ACTI:NSV_LIMA_CCN_ACTI+NMOD_CCN-1)
+   ALLOCATE( ZNFS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),NMOD_CCN) )
+   ALLOCATE( ZNAS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),NMOD_CCN) )
+   ZNFS(:,:,:,:) = PSVS(:,:,:,NSV_LIMA_CCN_FREE:NSV_LIMA_CCN_FREE+NMOD_CCN-1)
+   ZNAS(:,:,:,:) = PSVS(:,:,:,NSV_LIMA_CCN_ACTI:NSV_LIMA_CCN_ACTI+NMOD_CCN-1)
 ELSE
-   ALLOCATE( PNFS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),1) )
-   ALLOCATE( PNAS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),1) )
-   PNFS(:,:,:,:) = 0.
-   PNAS(:,:,:,:) = 0.
+   ALLOCATE( ZNFS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),1) )
+   ALLOCATE( ZNAS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),1) )
+   ZNFS(:,:,:,:) = 0.
+   ZNAS(:,:,:,:) = 0.
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -304,11 +306,6 @@ WHERE (PRRT(:,:,:)>XRTMIN(3) .AND. PCRT(:,:,:)>XCTMIN(3))
    ZWLBDR(:,:,:)  = ZWLBDR3(:,:,:)**XLBEXR
 END WHERE
 ZT(:,:,:)  = PTHT(:,:,:) * (PPABST(:,:,:)/XP00)**(XRD/XCPD)
-IF( OACTIT ) THEN
-   ZTM(:,:,:) = PTHM(:,:,:) * (PPABSM(:,:,:)/XP00)**(XRD/XCPD)
-ELSE 
-   ZTM(:,:,:) = ZT(:,:,:)
-END IF
 !
 !-------------------------------------------------------------------------------
 !
@@ -347,7 +344,7 @@ IF (LDEPOC) THEN
 
   PINDEP(:,:)=0.
   GDEP(:,:) = .FALSE.
-  GDEP(:,:) =    PRCS(:,:,2) >0 .AND. PCCS(:,:,2) >0
+  GDEP(:,:) =    PRCS(:,:,2) >0 .AND. PCCS(:,:,2) >0 .AND. PRCT(:,:,2) >0 .AND. PCCT(:,:,2) >0
   WHERE (GDEP)
      PRCS(:,:,2) = PRCS(:,:,2) - XVDEPOC * PRCT(:,:,2) / ( PZZ(:,:,3) - PZZ(:,:,2))
      PCCS(:,:,2) = PCCS(:,:,2) - XVDEPOC * PCCT(:,:,2) / ( PZZ(:,:,3) - PZZ(:,:,2))
@@ -373,14 +370,14 @@ IF ( LACTI .AND. NMOD_CCN > 0 ) THEN
     call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'HENU', pccs(:, :, :) * prhodj(:, :, :) )
     do jl = 1, nmod_ccn
       idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_free - 1 + jl
-      call Budget_store_init( tbudgets(idx), 'HENU', pnfs(:, :, :, jl) * prhodj(:, :, :) )
+      call Budget_store_init( tbudgets(idx), 'HENU', znfs(:, :, :, jl) * prhodj(:, :, :) )
     end do
   end if
 
-  CALL LIMA_WARM_NUCL (OACTIT, PTSTEP, KMI, TPFILE, OCLOSE_OUT,&
-                        PRHODREF, PEXNREF, PPABST, ZT, ZTM, PW_NU,       &
-                        PRCM, PRVT, PRCT, PRRT,                          &
-                        PTHS, PRVS, PRCS, PCCS, PNFS, PNAS               )
+  CALL LIMA_WARM_NUCL( OACTIT, PTSTEP, KMI, TPFILE, OCLOSE_OUT,     &
+                        PRHODREF, PEXNREF, PPABST, ZT, PTHM, PW_NU, &
+                        PRCM, PRVT, PRCT, PRRT,                     &
+                        PTHS, PRVS, PRCS, PCCS, ZNFS, ZNAS          )
 
   if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HENU', pths(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'HENU', prvs(:, :, :) * prhodj(:, :, :) )
@@ -389,7 +386,7 @@ IF ( LACTI .AND. NMOD_CCN > 0 ) THEN
     call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'HENU', pccs(:, :, :) * prhodj(:, :, :) )
     do jl = 1, nmod_ccn
       idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_free - 1 + jl
-      call Budget_store_end( tbudgets(idx), 'HENU', pnfs(:, :, :, jl) * prhodj(:, :, :) )
+      call Budget_store_end( tbudgets(idx), 'HENU', znfs(:, :, :, jl) * prhodj(:, :, :) )
     end do
   end if
 END IF ! LACTI
@@ -473,14 +470,12 @@ IF ( LWARM ) PSVS(:,:,:,NSV_LIMA_NC) = PCCS(:,:,:)
 IF ( LWARM .AND. LRAIN ) PSVS(:,:,:,NSV_LIMA_NR) = PCRS(:,:,:)
 !
 IF ( NMOD_CCN .GE. 1 ) THEN
-   PSVS(:,:,:,NSV_LIMA_CCN_FREE:NSV_LIMA_CCN_FREE+NMOD_CCN-1) = PNFS(:,:,:,:)
-   PSVS(:,:,:,NSV_LIMA_CCN_ACTI:NSV_LIMA_CCN_ACTI+NMOD_CCN-1) = PNAS(:,:,:,:)
+   PSVS(:,:,:,NSV_LIMA_CCN_FREE:NSV_LIMA_CCN_FREE+NMOD_CCN-1) = ZNFS(:,:,:,:)
+   PSVS(:,:,:,NSV_LIMA_CCN_ACTI:NSV_LIMA_CCN_ACTI+NMOD_CCN-1) = ZNAS(:,:,:,:)
 END IF
 !
-!++cb++
-IF (ALLOCATED(PNFS)) DEALLOCATE(PNFS)
-IF (ALLOCATED(PNAS)) DEALLOCATE(PNAS)
-!--cb--
+IF (ALLOCATED(ZNFS)) DEALLOCATE(ZNFS)
+IF (ALLOCATED(ZNAS)) DEALLOCATE(ZNAS)
 !
 !-------------------------------------------------------------------------------
 !

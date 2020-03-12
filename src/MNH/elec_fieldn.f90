@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -99,7 +99,7 @@ INTEGER :: IRESP    ! Return code of FM routines
 INTEGER :: ILENG    ! Length of the data field in LFIFM file
 INTEGER :: IGRID    ! C-grid indicator in LFIFM file
 INTEGER :: ILENCH   ! Length of comment string in LFIFM file
-INTEGER :: IIU,IJU,IKU ! array sizes in I,J,K
+INTEGER :: IIU,IJU  ! array sizes in I,J,K
 INTEGER :: JI,JJ,JK    !loop index on the vertical levels
 INTEGER :: IINFO_ll  
 !
@@ -117,8 +117,7 @@ CALL GET_PHYSICAL_ll(IIB,IJB,IIE,IJE)
 CALL GET_DIM_EXT_ll('B',IIU,IJU)
 !
 IKB = 1 + JPVEXT
-IKU = SIZE(PEFIELDU,3)
-IKE = IKU - JPVEXT
+IKE = SIZE(PEFIELDU,3) - JPVEXT
 !
 ALLOCATE(ZDV_SOURCE(SIZE(PQ_SOURCE,1),SIZE(PQ_SOURCE,2),SIZE(PQ_SOURCE,3)))
 ALLOCATE(ZPHIT(SIZE(PQ_SOURCE,1),SIZE(PQ_SOURCE,2),SIZE(PQ_SOURCE,3)))
@@ -226,9 +225,9 @@ CALL ADD3DFIELD_ll( TZFIELDS_ll, ZPHIT, 'ELEC_FIELD_n::ZPHIT' )
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZFIELDS_ll)
 !
-PEFIELDU(:,:,:) = PRHODJ(:,:,:) * GX_M_M(1,IKU,1,ZPHIT,XDXX,XDZZ,XDZX)
-PEFIELDV(:,:,:) = PRHODJ(:,:,:) * GY_M_M(1,IKU,1,ZPHIT,XDYY,XDZZ,XDZY)
-PEFIELDW(:,:,:) = PRHODJ(:,:,:) * GZ_M_M(1,IKU,1,ZPHIT,XDZZ) 
+PEFIELDU(:,:,:) = PRHODJ(:,:,:) * GX_M_M(ZPHIT,XDXX,XDZZ,XDZX)
+PEFIELDV(:,:,:) = PRHODJ(:,:,:) * GY_M_M(ZPHIT,XDYY,XDZZ,XDZY)
+PEFIELDW(:,:,:) = PRHODJ(:,:,:) * GZ_M_M(ZPHIT,XDZZ)
 !
 IF (PRESENT(PPHIT)) PPHIT(:,:,:) = - PRHODJ(:,:,:) * ZPHIT(:,:,:) 
 !

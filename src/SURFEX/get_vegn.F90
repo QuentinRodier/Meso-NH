@@ -29,6 +29,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    07/2009
+!!      11/2019 C.Lac correction in the drag formula and application to building in addition to tree
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -100,16 +101,16 @@ IPATCH_BONE = VEGTYPE_TO_PATCH(NVT_BONE, IO%NPATCH)
 IPATCH_BOND = VEGTYPE_TO_PATCH(NVT_BOND, IO%NPATCH)
 
 
-!ZWORK(:) = S%XVEGTYPE(:,NVT_TRBE) + S%XVEGTYPE(:,NVT_TRBD) + S%XVEGTYPE(:,NVT_TEBE) + &
-!           S%XVEGTYPE(:,NVT_TEBD) + S%XVEGTYPE(:,NVT_TENE) + S%XVEGTYPE(:,NVT_BOBD) + &
-!           S%XVEGTYPE(:,NVT_BONE) + S%XVEGTYPE(:,NVT_BOND)
-
 ZH_TREE(:) = 0.
 ZLAI(:) = 0.
 ZWORK(:) = 0.
 !
 DO JP = 1,IO%NPATCH
+    PK => NP%AL(JP)
+    PEK => NPE%AL(JP)
+END DO
   !
+DO JP = 1,IO%NPATCH
   IF (JP==IPATCH_TRBE .OR. JP==IPATCH_TRBD .OR. JP==IPATCH_TEBE .OR. JP==IPATCH_TEBD .OR. &
       JP==IPATCH_TENE .OR. JP==IPATCH_BOBD .OR. JP==IPATCH_BONE .OR. JP==IPATCH_BOND) THEN
     !

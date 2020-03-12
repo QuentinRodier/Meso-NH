@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 adiab 2006/12/12 15:06:20
 !-----------------------------------------------------------------
 !     ##########################
       MODULE MODI_ANTI_DIFF 
@@ -156,44 +151,44 @@ IKE=IKU-JPVEXT
            (MXM(PAS(:,:,:))+ZEPSILON) 
   ZB(:,:,:)=PRAVCT(:,:,:)*DYM(PAS(:,:,:)/PRHODJ(:,:,:))/      &
            (MYM(PAS(:,:,:))+ZEPSILON) 
-  ZC(:,:,:)=PRAWCT(:,:,:)*DZM(1,IKU,1,PAS(:,:,:)/PRHODJ(:,:,:))/      &
-           (MZM(1,IKU,1,PAS(:,:,:))+ZEPSILON) 
+  ZC(:,:,:)=PRAWCT(:,:,:)*DZM(PAS(:,:,:)/PRHODJ(:,:,:))/      &
+           (MZM(PAS(:,:,:))+ZEPSILON)
 !
 !       1.2 Calculation antidiffusion velocities  
 !           ------------------------------------
 !
 ! u-component antidiffusive velocity
 !
-  PRAUCT(:,:,:)=PTSTEP/2.* (                                         & 
+  PRAUCT(:,:,:)=PTSTEP/2.* (                                      &
                           ZA*(                                    &
                                      MXM(PRHODJ)*SIGN(1.,PRAUCT)  &
                                     /ZDBLTST-                     &
                                      PRAUCT                       &
                                     )-                            &
-                          PRAUCT*MXM(MYF(ZB)+MZF(1,IKU,1,ZC))             &
+                          PRAUCT*MXM(MYF(ZB)+MZF(ZC))             &
                         )
 !  
 ! v-component antidiffusive velocity
 !
-  PRAVCT(:,:,:)=PTSTEP/2.* (                                         & 
+  PRAVCT(:,:,:)=PTSTEP/2.* (                                      &
                           ZB*(                                    &
                                      MYM(PRHODJ)*SIGN(1.,PRAVCT)  &
                                     /ZDBLTST-                     &
                                      PRAVCT                       &
                                     )-                            &
-                          PRAVCT*MYM(MXF(ZA)+MZF(1,IKU,1,ZC))             &
+                          PRAVCT*MYM(MXF(ZA)+MZF(ZC))             &
                         )
 !  
 !  
 ! w-component antidiffusive velocity
 !
-  PRAWCT(:,:,:)=PTSTEP/2.* (                                         & 
+  PRAWCT(:,:,:)=PTSTEP/2.* (                                      &
                           ZC*(                                    &
-                                     MZM(1,IKU,1,PRHODJ)*SIGN(1.,PRAWCT)  &
+                                     MZM(PRHODJ)*SIGN(1.,PRAWCT)  &
                                     /ZDBLTST-                     &
                                      PRAWCT                       &
                                      )-                           &
-                          PRAWCT*MZM(1,IKU,1,MXF(ZA)+MYF(ZB))             &
+                          PRAWCT*MZM(MXF(ZA)+MYF(ZB))             &
                         )
 ! 
 !       1.3 Limit of the antidiffusive velocities to satisfy CFL<1

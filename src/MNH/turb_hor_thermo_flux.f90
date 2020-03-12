@@ -265,7 +265,7 @@ ZFLX(:,:,IKB-1:IKB-1) = 2. * MXM(  SPREAD( PSFTHM(:,:)* PDIRCOSXW(:,:), 3,1) )  
 IF (.NOT. LFLAT) THEN
   PRTHLS(:,:,:) =  PRTHLS                                                   &
                 - DXF( MXM(PRHODJ) * ZFLX * PINV_PDXX )                          &
-                + DZF(1,IKU,1, PMZM_PRHODJ *MXF(PDZX*(MZM(1,IKU,1,ZFLX * PINV_PDXX))) * PINV_PDZZ )
+                + DZF( PMZM_PRHODJ *MXF(PDZX*(MZM(ZFLX * PINV_PDXX))) * PINV_PDZZ )
 ELSE
   PRTHLS(:,:,:) =  PRTHLS - DXF( MXM(PRHODJ) * ZFLX * PINV_PDXX )
 END IF
@@ -275,24 +275,24 @@ END IF
 IF ( KRRL >= 1 ) THEN
   IF (.NOT. LFLAT) THEN
     ZFLXC = 2.*( MXF( MXM( PRHODJ*PATHETA*PSRCM )*ZFLX )                       &
-                +MZF(1,IKU,1, MZM(1,IKU,1, PRHODJ*PATHETA*PSRCM )*MXF(                         &
-                                               PDZX*(MZM(1,IKU,1, ZFLX*PINV_PDXX )) ) )&
+                +MZF( MZM( PRHODJ*PATHETA*PSRCM )*MXF(                         &
+                                               PDZX*(MZM( ZFLX*PINV_PDXX )) ) )&
                )
     IF ( KRRI >= 1 ) THEN
       PRRS(:,:,:,2) = PRRS(:,:,:,2) +  2. *                                    &
         (- DXF( MXM( PRHODJ*PATHETA*PSRCM )*ZFLX*PINV_PDXX )                   &
-         + DZF(1,IKU,1, MZM(1,IKU,1, PRHODJ*PATHETA*PSRCM )*MXF( PDZX*(MZM(1,IKU,1, ZFLX*PINV_PDXX )) )&
+         + DZF( MZM( PRHODJ*PATHETA*PSRCM )*MXF( PDZX*(MZM( ZFLX*PINV_PDXX )) )&
                                            *PINV_PDZZ )                        &
         )*(1.0-PFRAC_ICE(:,:,:))
       PRRS(:,:,:,4) = PRRS(:,:,:,4) +  2. *                                    &
         (- DXF( MXM( PRHODJ*PATHETA*PSRCM )*ZFLX*PINV_PDXX )                   &
-         + DZF(1,IKU,1, MZM(1,IKU,1, PRHODJ*PATHETA*PSRCM )*MXF( PDZX*(MZM(1,IKU,1, ZFLX*PINV_PDXX )) )&
+         + DZF( MZM( PRHODJ*PATHETA*PSRCM )*MXF( PDZX*(MZM( ZFLX*PINV_PDXX )) )&
                                            *PINV_PDZZ )                        &
         )*PFRAC_ICE(:,:,:)
     ELSE
       PRRS(:,:,:,2) = PRRS(:,:,:,2) +  2. *                                    &
         (- DXF( MXM( PRHODJ*PATHETA*PSRCM )*ZFLX*PINV_PDXX )                   &
-         + DZF(1,IKU,1, MZM(1,IKU,1, PRHODJ*PATHETA*PSRCM )*MXF( PDZX*(MZM(1,IKU,1, ZFLX*PINV_PDXX )) )&
+         + DZF( MZM( PRHODJ*PATHETA*PSRCM )*MXF( PDZX*(MZM( ZFLX*PINV_PDXX )) )&
                                            *PINV_PDZZ )                        &
         )
     END IF
@@ -331,12 +331,12 @@ END IF
 IF (KSPLT==1 .AND. LLES_CALL) THEN
   CALL SECOND_MNH(ZTIME1)
   CALL LES_MEAN_SUBGRID( MXF(ZFLX), X_LES_SUBGRID_UThl ) 
-  CALL LES_MEAN_SUBGRID( MZF(1,IKU,1,MXF(GX_W_UW(1,IKU,1,PWM,PDXX,PDZZ,PDZX)*MZM(1,IKU,1,ZFLX))),&
+  CALL LES_MEAN_SUBGRID( MZF(MXF(GX_W_UW(PWM,PDXX,PDZZ,PDZX)*MZM(ZFLX))),&
                          X_LES_RES_ddxa_W_SBG_UaThl , .TRUE. )
-  CALL LES_MEAN_SUBGRID( GX_M_M(1,IKU,1,PTHLM,PDXX,PDZZ,PDZX)*MXF(ZFLX),&
+  CALL LES_MEAN_SUBGRID( GX_M_M(PTHLM,PDXX,PDZZ,PDZX)*MXF(ZFLX),&
                          X_LES_RES_ddxa_Thl_SBG_UaThl , .TRUE. )
   IF (KRR>=1) THEN
-    CALL LES_MEAN_SUBGRID( GX_M_M(1,IKU,1,PRM(:,:,:,1),PDXX,PDZZ,PDZX)*MXF(ZFLX), &
+    CALL LES_MEAN_SUBGRID( GX_M_M(PRM(:,:,:,1),PDXX,PDZZ,PDZX)*MXF(ZFLX), &
                            X_LES_RES_ddxa_Rt_SBG_UaThl , .TRUE. )
   END IF
   CALL SECOND_MNH(ZTIME2)
@@ -370,7 +370,7 @@ IF (KRR/=0) THEN
   IF (.NOT. LFLAT) THEN
     PRRS(:,:,:,1) = PRRS(:,:,:,1)                                             &
                   - DXF( MXM(PRHODJ) * ZFLX * PINV_PDXX )                          &
-                  + DZF(1,IKU,1, PMZM_PRHODJ *MXF(PDZX*(MZM(1,IKU,1,ZFLX * PINV_PDXX))) * PINV_PDZZ )
+                  + DZF( PMZM_PRHODJ *MXF(PDZX*(MZM(ZFLX * PINV_PDXX))) * PINV_PDZZ )
   ELSE
     PRRS(:,:,:,1) = PRRS(:,:,:,1) - DXF( MXM(PRHODJ) * ZFLX * PINV_PDXX )
   END IF
@@ -381,24 +381,24 @@ IF (KRR/=0) THEN
     IF (.NOT. LFLAT) THEN
       ZFLXC = ZFLXC            &
             + 2.*( MXF( MXM( PRHODJ*PAMOIST*PSRCM )*ZFLX )                     &
-                  +MZF(1,IKU,1, MZM(1,IKU,1, PRHODJ*PAMOIST*PSRCM )*MXF(                       &
-                                               PDZX*(MZM(1,IKU,1, ZFLX*PINV_PDXX )) ) )&
+                  +MZF( MZM( PRHODJ*PAMOIST*PSRCM )*MXF(                       &
+                                               PDZX*(MZM( ZFLX*PINV_PDXX )) ) )&
                  )
       IF ( KRRI >= 1 ) THEN
         PRRS(:,:,:,2) = PRRS(:,:,:,2) +  2. *                                  &
         (- DXF( MXM( PRHODJ*PAMOIST*PSRCM )*ZFLX*PINV_PDXX )                   &
-         + DZF(1,IKU,1, MZM(1,IKU,1, PRHODJ*PAMOIST*PSRCM )*MXF( PDZX*(MZM(1,IKU,1, ZFLX*PINV_PDXX )) )&
+         + DZF( MZM( PRHODJ*PAMOIST*PSRCM )*MXF( PDZX*(MZM( ZFLX*PINV_PDXX )) )&
                                            *PINV_PDZZ )                        &
         )*(1.0-PFRAC_ICE(:,:,:))
         PRRS(:,:,:,2) = PRRS(:,:,:,2) +  2. *                                  &
         (- DXF( MXM( PRHODJ*PAMOIST*PSRCM )*ZFLX*PINV_PDXX )                   &
-         + DZF(1,IKU,1, MZM(1,IKU,1, PRHODJ*PAMOIST*PSRCM )*MXF( PDZX*(MZM(1,IKU,1, ZFLX*PINV_PDXX )) )&
+         + DZF( MZM( PRHODJ*PAMOIST*PSRCM )*MXF( PDZX*(MZM( ZFLX*PINV_PDXX )) )&
                                            *PINV_PDZZ )                        &
         )*PFRAC_ICE(:,:,:)
       ELSE
         PRRS(:,:,:,2) = PRRS(:,:,:,2) +  2. *                                  &
         (- DXF( MXM( PRHODJ*PAMOIST*PSRCM )*ZFLX*PINV_PDXX )                   &
-         + DZF(1,IKU,1, MZM(1,IKU,1, PRHODJ*PAMOIST*PSRCM )*MXF( PDZX*(MZM(1,IKU,1, ZFLX*PINV_PDXX )) )&
+         + DZF( MZM( PRHODJ*PAMOIST*PSRCM )*MXF( PDZX*(MZM( ZFLX*PINV_PDXX )) )&
                                            *PINV_PDZZ )                        &
         )
       END IF
@@ -434,11 +434,11 @@ IF (KRR/=0) THEN
   IF (KSPLT==1 .AND. LLES_CALL) THEN
     CALL SECOND_MNH(ZTIME1)
     CALL LES_MEAN_SUBGRID( MXF(ZFLX), X_LES_SUBGRID_URt ) 
-    CALL LES_MEAN_SUBGRID( MZF(1,IKU,1,MXF(GX_W_UW(1,IKU,1,PWM,PDXX,PDZZ,PDZX)*MZM(1,IKU,1,ZFLX))),&
+    CALL LES_MEAN_SUBGRID( MZF(MXF(GX_W_UW(PWM,PDXX,PDZZ,PDZX)*MZM(ZFLX))),&
                            X_LES_RES_ddxa_W_SBG_UaRt , .TRUE. )
-    CALL LES_MEAN_SUBGRID( GX_M_M(1,IKU,1,PTHLM,PDXX,PDZZ,PDZX)*MXF(ZFLX),&
+    CALL LES_MEAN_SUBGRID( GX_M_M(PTHLM,PDXX,PDZZ,PDZX)*MXF(ZFLX),&
                            X_LES_RES_ddxa_Thl_SBG_UaRt , .TRUE. )
-    CALL LES_MEAN_SUBGRID( GX_M_M(1,IKU,1,PRM(:,:,:,1),PDXX,PDZZ,PDZX)*MXF(ZFLX),&
+    CALL LES_MEAN_SUBGRID( GX_M_M(PRM(:,:,:,1),PDXX,PDZZ,PDZX)*MXF(ZFLX),&
                            X_LES_RES_ddxa_Rt_SBG_UaRt , .TRUE. )
     CALL SECOND_MNH(ZTIME2)
     XTIME_LES = XTIME_LES + ZTIME2 - ZTIME1
@@ -518,7 +518,7 @@ IF (.NOT. L2D) THEN
   IF (.NOT. LFLAT) THEN
     PRTHLS(:,:,:) =  PRTHLS                                                         &
                   - DYF( MYM(PRHODJ) * ZFLX * PINV_PDYY )                           &
-                  + DZF(1,IKU,1, PMZM_PRHODJ *MYF(PDZY*(MZM(1,IKU,1,ZFLX * PINV_PDYY))) * PINV_PDZZ )
+                  + DZF( PMZM_PRHODJ *MYF(PDZY*(MZM(ZFLX * PINV_PDYY))) * PINV_PDZZ )
   ELSE
     PRTHLS(:,:,:) =  PRTHLS - DYF( MYM(PRHODJ) * ZFLX * PINV_PDYY )
   END IF
@@ -530,24 +530,24 @@ END IF
 IF ( KRRL >= 1 .AND. .NOT. L2D) THEN
   IF (.NOT. LFLAT) THEN
     ZFLXC = 2.*( MYF( MYM( PRHODJ*PATHETA*PSRCM )*ZFLX )                       &
-                +MZF(1,IKU,1, MZM(1,IKU,1, PRHODJ*PATHETA*PSRCM )*MYF(                         &
-                                               PDZY*(MZM(1,IKU,1, ZFLX*PINV_PDYY )) ) )&
+                +MZF( MZM( PRHODJ*PATHETA*PSRCM )*MYF(                         &
+                                               PDZY*(MZM( ZFLX*PINV_PDYY )) ) )&
                )
     IF ( KRRI >= 1 ) THEN
       PRRS(:,:,:,2) = PRRS(:,:,:,2) + 2. *                                     &
         (- DYF( MYM( PRHODJ*PATHETA*PSRCM )*ZFLX*PINV_PDYY )                   &
-         + DZF(1,IKU,1, MZM(1,IKU,1, PRHODJ*PATHETA*PSRCM )*MYF( PDZY*(MZM(1,IKU,1, ZFLX*PINV_PDYY )) )&
+         + DZF( MZM( PRHODJ*PATHETA*PSRCM )*MYF( PDZY*(MZM( ZFLX*PINV_PDYY )) )&
                                            *PINV_PDZZ )                        &
         )*(1.0-PFRAC_ICE(:,:,:))
       PRRS(:,:,:,4) = PRRS(:,:,:,4) + 2. *                                     &
         (- DYF( MYM( PRHODJ*PATHETA*PSRCM )*ZFLX*PINV_PDYY )                   &
-         + DZF(1,IKU,1, MZM(1,IKU,1, PRHODJ*PATHETA*PSRCM )*MYF( PDZY*(MZM(1,IKU,1, ZFLX*PINV_PDYY )) )&
+         + DZF( MZM( PRHODJ*PATHETA*PSRCM )*MYF( PDZY*(MZM( ZFLX*PINV_PDYY )) )&
                                            *PINV_PDZZ )                        &
         )*PFRAC_ICE(:,:,:)
     ELSE
       PRRS(:,:,:,2) = PRRS(:,:,:,2) + 2. *                                     &
         (- DYF( MYM( PRHODJ*PATHETA*PSRCM )*ZFLX*PINV_PDYY )                   &
-         + DZF(1,IKU,1, MZM(1,IKU,1, PRHODJ*PATHETA*PSRCM )*MYF( PDZY*(MZM(1,IKU,1, ZFLX*PINV_PDYY )) )&
+         + DZF( MZM( PRHODJ*PATHETA*PSRCM )*MYF( PDZY*(MZM( ZFLX*PINV_PDYY )) )&
                                            *PINV_PDZZ )                        &
         )
     END IF
@@ -586,12 +586,12 @@ END IF
 IF (KSPLT==1 .AND. LLES_CALL) THEN
   CALL SECOND_MNH(ZTIME1)
   CALL LES_MEAN_SUBGRID( MYF(ZFLX), X_LES_SUBGRID_VThl ) 
-  CALL LES_MEAN_SUBGRID( MZF(1,IKU,1,MYF(GY_W_VW(1,IKU,1,PWM,PDYY,PDZZ,PDZY)*MZM(1,IKU,1,ZFLX))),&
+  CALL LES_MEAN_SUBGRID( MZF(MYF(GY_W_VW(PWM,PDYY,PDZZ,PDZY)*MZM(ZFLX))),&
                          X_LES_RES_ddxa_W_SBG_UaThl , .TRUE. )
-  CALL LES_MEAN_SUBGRID( GY_M_M(1,IKU,1,PTHLM,PDYY,PDZZ,PDZY)*MYF(ZFLX),&
+  CALL LES_MEAN_SUBGRID( GY_M_M(PTHLM,PDYY,PDZZ,PDZY)*MYF(ZFLX),&
                          X_LES_RES_ddxa_Thl_SBG_UaThl , .TRUE. )
   IF (KRR>=1) THEN
-    CALL LES_MEAN_SUBGRID( GY_M_M(1,IKU,1,PRM(:,:,:,1),PDYY,PDZZ,PDZY)*MYF(ZFLX),&
+    CALL LES_MEAN_SUBGRID( GY_M_M(PRM(:,:,:,1),PDYY,PDZZ,PDZY)*MYF(ZFLX),&
                            X_LES_RES_ddxa_Rt_SBG_UaThl , .TRUE. )
   END IF
   CALL SECOND_MNH(ZTIME2)
@@ -633,7 +633,7 @@ IF (KRR/=0) THEN
       PRRS(:,:,:,1) = PRRS(:,:,:,1)                                              &
                     - DYF( MYM(PRHODJ) * ZFLX * PINV_PDYY )                           &
 
-                    + DZF(1,IKU,1, PMZM_PRHODJ *MYF(PDZY*(MZM(1,IKU,1,ZFLX * PINV_PDYY))) * PINV_PDZZ )
+                    + DZF( PMZM_PRHODJ *MYF(PDZY*(MZM(ZFLX * PINV_PDYY))) * PINV_PDZZ )
     ELSE
       PRRS(:,:,:,1) = PRRS(:,:,:,1) - DYF( MYM(PRHODJ) * ZFLX * PINV_PDYY )
     END IF
@@ -645,24 +645,24 @@ IF (KRR/=0) THEN
     IF (.NOT. LFLAT) THEN
       ZFLXC = ZFLXC            &
             + 2.*( MXF( MYM( PRHODJ*PAMOIST*PSRCM )*ZFLX )                     &
-                +  MZF(1,IKU,1, MZM(1,IKU,1, PRHODJ*PAMOIST*PSRCM )*MYF(                       &
-                                               PDZY*(MZM(1,IKU,1, ZFLX*PINV_PDYY )) ) )&
+                +  MZF( MZM( PRHODJ*PAMOIST*PSRCM )*MYF(                       &
+                                               PDZY*(MZM( ZFLX*PINV_PDYY )) ) )&
                  )
       IF ( KRRI >= 1 ) THEN
         PRRS(:,:,:,2) = PRRS(:,:,:,2) +  2. *                                  &
         (- DYF( MYM( PRHODJ*PAMOIST*PSRCM )*ZFLX/PDYY )                        &
-         + DZF(1,IKU,1, MZM(1,IKU,1, PRHODJ*PAMOIST*PSRCM )*MYF( PDZY*(MZM(1,IKU,1, ZFLX*PINV_PDYY )) )&
+         + DZF( MZM( PRHODJ*PAMOIST*PSRCM )*MYF( PDZY*(MZM( ZFLX*PINV_PDYY )) )&
                                            * PINV_PDZZ )                       &
         )*(1.0-PFRAC_ICE(:,:,:))
         PRRS(:,:,:,4) = PRRS(:,:,:,4) +  2. *                                  &
         (- DYF( MYM( PRHODJ*PAMOIST*PSRCM )*ZFLX/PDYY )                        &
-         + DZF(1,IKU,1, MZM(1,IKU,1, PRHODJ*PAMOIST*PSRCM )*MYF( PDZY*(MZM(1,IKU,1, ZFLX*PINV_PDYY )) )&
+         + DZF( MZM( PRHODJ*PAMOIST*PSRCM )*MYF( PDZY*(MZM( ZFLX*PINV_PDYY )) )&
                                            * PINV_PDZZ )                       &
         )*PFRAC_ICE(:,:,:)
       ELSE
         PRRS(:,:,:,2) = PRRS(:,:,:,2) +  2. *                                  &
         (- DYF( MYM( PRHODJ*PAMOIST*PSRCM )*ZFLX/PDYY )                        &
-         + DZF(1,IKU,1, MZM(1,IKU,1, PRHODJ*PAMOIST*PSRCM )*MYF( PDZY*(MZM(1,IKU,1, ZFLX*PINV_PDYY )) )&
+         + DZF( MZM( PRHODJ*PAMOIST*PSRCM )*MYF( PDZY*(MZM( ZFLX*PINV_PDYY )) )&
                                            * PINV_PDZZ )                       &
         )
       END IF
@@ -698,11 +698,11 @@ IF (KRR/=0) THEN
   IF (KSPLT==1 .AND. LLES_CALL) THEN
     CALL SECOND_MNH(ZTIME1)
     CALL LES_MEAN_SUBGRID( MYF(ZFLX), X_LES_SUBGRID_VRt ) 
-    CALL LES_MEAN_SUBGRID( MZF(1,IKU,1,MYF(GY_W_VW(1,IKU,1,PWM,PDYY,PDZZ,PDZY)*MZM(1,IKU,1,ZFLX))),&
+    CALL LES_MEAN_SUBGRID( MZF(MYF(GY_W_VW(PWM,PDYY,PDZZ,PDZY)*MZM(ZFLX))),&
                            X_LES_RES_ddxa_W_SBG_UaRt , .TRUE. )
-    CALL LES_MEAN_SUBGRID( GY_M_M(1,IKU,1,PTHLM,PDYY,PDZZ,PDZY)*MYF(ZFLX), &
+    CALL LES_MEAN_SUBGRID( GY_M_M(PTHLM,PDYY,PDZZ,PDZY)*MYF(ZFLX), &
                            X_LES_RES_ddxa_Thl_SBG_UaRt , .TRUE. )
-    CALL LES_MEAN_SUBGRID( GY_M_M(1,IKU,1,PRM(:,:,:,1),PDYY,PDZZ,PDZY)*MYF(ZFLX), &
+    CALL LES_MEAN_SUBGRID( GY_M_M(PRM(:,:,:,1),PDYY,PDZZ,PDZY)*MYF(ZFLX), &
                            X_LES_RES_ddxa_Rt_SBG_UaRt , .TRUE. )
     CALL SECOND_MNH(ZTIME2)
     XTIME_LES = XTIME_LES + ZTIME2 - ZTIME1

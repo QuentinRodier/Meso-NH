@@ -187,12 +187,10 @@ REAL, DIMENSION(:,:,:,:), INTENT(IN)  :: PRT, PSVT
 !*       0.2   declarations of local variables
 !
 INTEGER                               :: JRR, JSV
-INTEGER                               :: IKU
 REAL                                  :: ZINVTSTEP
 !
 !-------------------------------------------------------------------------------
 !
-IKU=SIZE(XZHAT)
 !*       1.     COMPUTES THE INVERSE OF THE APPLICABLE TIMESTEP
 !   	        -----------------------------------------------
 !
@@ -206,7 +204,7 @@ ZINVTSTEP = 1./PTSTEP
 ! forward-in-time time-marching scheme
 PRUS = PUT * ZINVTSTEP * MXM(PRHODJ)
 PRVS = PVT * ZINVTSTEP * MYM(PRHODJ)
-PRWS = PWT * ZINVTSTEP * MZM(1,IKU,1,PRHODJ)
+PRWS = PWT * ZINVTSTEP * MZM(PRHODJ)
 !
 ! *** meteorological variables
 !

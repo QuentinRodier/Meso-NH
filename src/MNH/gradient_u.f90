@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 operators 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODI_GRADIENT_U
@@ -15,9 +10,8 @@
 INTERFACE
 !
 !     
-FUNCTION GX_U_M(KKA,KKU,KL,PA,PDXX,PDZZ,PDZX)      RESULT(PGX_U_M)
-INTEGER,              INTENT(IN)     :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)     :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
+FUNCTION GX_U_M(PA,PDXX,PDZZ,PDZX)      RESULT(PGX_U_M)
+!
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the U point
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDXX    ! metric coefficient dxx
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
@@ -28,10 +22,8 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGX_U_M ! result mass point
 END FUNCTION GX_U_M
 !
 !     
-FUNCTION GY_U_UV(KKA,KKU,KL,PA,PDYY,PDZZ,PDZY)      RESULT(PGY_U_UV)
+FUNCTION GY_U_UV(PA,PDYY,PDZZ,PDZY)      RESULT(PGY_U_UV)
 !
-INTEGER,              INTENT(IN)     :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)     :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the U point
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDYY    ! metric coefficient dyy
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
@@ -42,10 +34,8 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGY_U_UV ! result UV point
 END FUNCTION GY_U_UV
 !
 !     
-FUNCTION GZ_U_UW(KKA,KKU,KL,PA,PDZZ)      RESULT(PGZ_U_UW)
+FUNCTION GZ_U_UW(PA,PDZZ)      RESULT(PGZ_U_UW)
 !
-INTEGER,              INTENT(IN)     :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)     :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the U point
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
 !
@@ -61,7 +51,7 @@ END MODULE MODI_GRADIENT_U
 !
 !
 !     #######################################################
-      FUNCTION GX_U_M(KKA,KKU,KL,PA,PDXX,PDZZ,PDZX)      RESULT(PGX_U_M)
+      FUNCTION GX_U_M(PA,PDXX,PDZZ,PDZX)      RESULT(PGX_U_M)
 !     #######################################################
 !
 !!****  *GX_U_M* - Cartesian Gradient operator: 
@@ -126,8 +116,6 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments and result
 !
-INTEGER,                 INTENT(IN)  :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,                 INTENT(IN)  :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the U point
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDXX    ! metric coefficient dxx
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
@@ -147,7 +135,7 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGX_U_M ! result mass point
 !
 IF (.NOT. LFLAT) THEN
   PGX_U_M(:,:,:)= ( DXF(PA)        -                 &
-                    MZF(KKA,KKU,KL,MXF(PDZX*DZM(KKA,KKU,KL,PA)) / PDZZ )  &
+                    MZF(MXF(PDZX*DZM(PA)) / PDZZ )  &
                   ) / MXF(PDXX)
 ELSE
   PGX_U_M(:,:,:)= DXF(PA) /  MXF(PDXX)
@@ -159,7 +147,7 @@ END FUNCTION GX_U_M
 !
 ! 
 !     #########################################################
-      FUNCTION GY_U_UV(KKA,KKU,KL,PA,PDYY,PDZZ,PDZY)      RESULT(PGY_U_UV)
+      FUNCTION GY_U_UV(PA,PDYY,PDZZ,PDZY)      RESULT(PGY_U_UV)
 !     #########################################################
 !
 !!****  *GY_U_UV* - Cartesian Gradient operator: 
@@ -225,8 +213,6 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments and result
 !
-INTEGER,                 INTENT(IN)  :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,                 INTENT(IN)  :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the U point
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDYY    ! metric coefficient dyy
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
@@ -245,7 +231,7 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGY_U_UV ! result UV point
 !              ---------------------
 !
 IF (.NOT. LFLAT) THEN
-  PGY_U_UV(:,:,:)=  (DYM(PA)- MZF(KKA,KKU,KL, MYM( DZM(KKA,KKU,KL,PA)/&
+  PGY_U_UV(:,:,:)=  (DYM(PA)- MZF( MYM( DZM(PA)/&
                  MXM(PDZZ) ) *MXM(PDZY) )   ) / MXM(PDYY)
 ELSE
   PGY_U_UV(:,:,:)= DYM(PA) / MXM(PDYY)
@@ -257,7 +243,7 @@ END FUNCTION GY_U_UV
 !
 !
 !     #######################################################
-      FUNCTION GZ_U_UW(KKA,KKU,KL,PA,PDZZ)      RESULT(PGZ_U_UW)
+      FUNCTION GZ_U_UW(PA,PDZZ)      RESULT(PGZ_U_UW)
 !     #######################################################
 !
 !!****  *GZ_U_UW - Cartesian Gradient operator: 
@@ -315,8 +301,6 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments and result
 !
-INTEGER,              INTENT(IN)     :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)     :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the U point
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
 !
@@ -332,7 +316,7 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGZ_U_UW ! result UW point
 !*       1.    DEFINITION of GZ_U_UW
 !              ---------------------
 !
-PGZ_U_UW(:,:,:)= DZM(KKA,KKU,KL,PA) / MXM(PDZZ)
+PGZ_U_UW(:,:,:)= DZM(PA) / MXM(PDZZ)
 !
 !----------------------------------------------------------------------------
 !

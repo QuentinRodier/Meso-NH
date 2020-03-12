@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2010-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -385,11 +385,11 @@ ELSE                                 ! conformal projection
 !
   PCORIOZ(:,:,:)   = SPREAD(  2. * XOMEGA * SIN(XLAT(:,:)*ZRADSDG),3,IKU)
   ZDXX(:,:,:) = MXM(                                                        &
-             MZF(1,IKU,1,SPREAD(SPREAD( 1.+ ZD1*XZHAT(:)/XRADIUS ,1,IIU),2,IJU ))  &
+             MZF(SPREAD(SPREAD( 1.+ ZD1*XZHAT(:)/XRADIUS ,1,IIU),2,IJU ))  &
                     * SPREAD( SPREAD(XDXHAT(1:IIU),2,IJU) /XMAP(:,:),3,IKU)   )
                                                    ! dxx (without orography)
   ZDYY(:,:,:) = MYM(                                                        &
-              MZF(1,IKU,1,SPREAD(SPREAD( 1.+ ZD1*XZHAT(:)/XRADIUS,1,IIU),2,IJU ))  &
+              MZF(SPREAD(SPREAD( 1.+ ZD1*XZHAT(:)/XRADIUS,1,IIU),2,IJU ))  &
                     * SPREAD( SPREAD(XDYHAT(1:IJU),1,IIU) /XMAP(:,:),3,IKU)   )
                                                    ! dyy (without orography)
 END IF
@@ -648,7 +648,7 @@ ZTHV3D(:,:,:) = SPREAD(SPREAD(PTHVM(:),1,IIU),2,IJU)  ! initialize  with
 !*       4.     INTERPOLATE THETAV, MR ON MODEL GRID (WITH OROGRAPHY)
 !               ------------------------------------------------------------
 !
-ZZM(:,:,:)   = MZF(1,IKU,1,XZZ)                       ! compute height at mass level
+ZZM(:,:,:)   = MZF(XZZ)                       ! compute height at mass level
                                               ! of grid with orography
 !
 ZZM(:,:,IKU) = 2. * XZZ(:,:,IKU) - ZZM(:,:,IKU-1) ! extrapolate on IKU mass level

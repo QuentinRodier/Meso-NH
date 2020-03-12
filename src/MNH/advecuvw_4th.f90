@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2005-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 adiab 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ###########################
       MODULE MODI_ADVECUVW_4TH
@@ -143,23 +138,11 @@ TYPE(HALO2LIST_ll), POINTER :: TPHALO2LIST ! list for diffusion
 !
 !*       0.2   Declarations of local variables :
 !
-INTEGER:: IIB,IJB        ! Begining useful area  in x,y,z directions
-INTEGER:: IIE,IJE        ! End useful area in x,y,z directions
-INTEGER :: IKU
-!
 TYPE(HALO2LIST_ll), POINTER :: TZHALO2LIST
 !
 INTEGER :: IGRID ! localisation on the model grid
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: ZMEANX, ZMEANY ! fluxes
 !
-!-------------------------------------------------------------------------------
-!
-!*       1.     COMPUTES THE DOMAIN DIMENSIONS
-!               ------------------------------
-!
-CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
-!
-IKU=SIZE(XZHAT)
 !-------------------------------------------------------------------------------
 !
 !*       2.     CALL THE ADVEC_4TH_ORDER_ALGO ROUTINE FOR MOMENTUM
@@ -181,7 +164,7 @@ PRUS(:,:,:) = PRUS(:,:,:)                          &
              -DYF( MXM(PRVCT(:,:,:))*ZMEANY(:,:,:) ) 
 !
 PRUS(:,:,:) = PRUS(:,:,:)                             &
-             -DZF(1,IKU,1, MXM(PRWCT(:,:,:))*MZM4(PUT(:,:,:)) )
+             -DZF( MXM(PRWCT(:,:,:))*MZM4(PUT(:,:,:)) )
 !
 !
 IGRID = 3
@@ -200,7 +183,7 @@ PRVS(:,:,:) = PRVS(:,:,:)                          &
              -DYM( MYF(PRVCT(:,:,:))*ZMEANY(:,:,:) )  
 !
 PRVS(:,:,:) = PRVS(:,:,:)                             &
-             -DZF(1,IKU,1, MYM(PRWCT(:,:,:))*MZM4(PVT(:,:,:)) )
+             -DZF( MYM(PRWCT(:,:,:))*MZM4(PVT(:,:,:)) )
 !
 !
 IGRID = 4
@@ -214,13 +197,13 @@ IGRID = 4
 !!$ENDIF
 !
 PRWS(:,:,:) = PRWS(:,:,:)                          &
-             -DXF( MZM(1,IKU,1,PRUCT(:,:,:))*ZMEANX(:,:,:) ) 
+             -DXF( MZM(PRUCT(:,:,:))*ZMEANX(:,:,:) )
 !
 PRWS(:,:,:) = PRWS(:,:,:)                          &
-             -DYF( MZM(1,IKU,1,PRVCT(:,:,:))*ZMEANY(:,:,:) ) 
+             -DYF( MZM(PRVCT(:,:,:))*ZMEANY(:,:,:) )
 !
 PRWS(:,:,:) = PRWS(:,:,:)                             &
-             -DZM(1,IKU,1, MZF(1,IKU,1,PRWCT(:,:,:))*MZF4(PWT(:,:,:)) )
+             -DZM( MZF(PRWCT(:,:,:))*MZF4(PWT(:,:,:)) )
 !
 !-------------------------------------------------------------------------------
 !

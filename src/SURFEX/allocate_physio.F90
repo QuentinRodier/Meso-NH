@@ -33,6 +33,7 @@
 !!    -------------
 !!      Original    xx/xxxx
 !!      Modified 10/2014 P. Samuelsson  MEB
+!!               11/2019 C.Lac correction in the drag formula and application to building in addition to tree
 !
 !
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
@@ -99,11 +100,7 @@ ELSE
 ENDIF
 ! - vegetation: Ags parameters ('AGS', 'LAI', 'AST', 'LST', 'NIT' options)
 !
-IF (IO%CPHOTO/='NON'.OR.LTREEDRAG) THEN
-  ALLOCATE(PK%XH_TREE                 (ISIZE              ))
-ELSE
-  ALLOCATE(PK%XH_TREE                 (0                 ))
-ENDIF
+ALLOCATE(PK%XH_TREE                 (ISIZE              ))
 !
 IF (IO%CPHOTO/='NON') THEN
   ALLOCATE(PK%XRE25                   (ISIZE              )) 

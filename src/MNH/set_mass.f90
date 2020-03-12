@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2010-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -331,8 +331,8 @@ ELSE                                 ! conformal projection
     ZDXX(JI,JJ,JK) = ( 1.+ ZD1*XZHAT(JK)/XRADIUS ) * ( XDXHAT(JI) /XMAP(JI,JJ) ) ! XDXHAT(JI)
     ZDYY(JI,JJ,JK) = ( 1.+ ZD1*XZHAT(JK)/XRADIUS ) * ( XDYHAT(JJ) /XMAP(JI,JJ) ) ! XDYHAT(JJ)
   ENDDO ; ENDDO ; ENDDO ;
-  ZDXX  = MXM(MZF(1,IKU,1,ZDXX))
-  ZDYY  = MYM(MZF(1,IKU,1,ZDYY))
+  ZDXX  = MXM(MZF(ZDXX))
+  ZDYY  = MYM(MZF(ZDYY))
 END IF
 !
 SELECT CASE(HFUNU)
@@ -482,8 +482,8 @@ CALL CLEANLIST_ll(TZFIELDS_ll)
 !
 ! Interpolation of the wind      
 !
-  ZRHODU_MX=MZF(1,IKU,1,ZUW3D_FL)*ZRHOD_MX
-  ZRHODV_MX=MZF(1,IKU,1,ZVW3D_FL)*ZRHOD_MX
+  ZRHODU_MX=MZF(ZUW3D_FL)*ZRHOD_MX
+  ZRHODV_MX=MZF(ZVW3D_FL)*ZRHOD_MX
   CALL MPPDB_CHECK3DM("SET_MASS:ZRHODU_MX,ZRHODV_MX,PZFLUX_MX,PZMASS_MX",PRECISION,&
                    &  ZRHODU_MX,ZRHODV_MX,PZFLUX_MX,PZMASS_MX  )
   CALL VER_INT_DYN(OSHIFT,ZRHODU_MX,ZRHODV_MX,PZFLUX_MX,PZMASS_MX,PZS_MX,ZRHODUA,ZRHODVA)

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -1117,7 +1117,7 @@ ELSE
   ENDIF
 ENDIF
 CALL VERT_COORD(LSLEVE,ZZS_LS,ZZS_LS,XLEN1,XLEN2,XZHAT,ZZFLUX_MX)
-ZZMASS_MX(:,:,:)=MZF(1,IKU,1,ZZFLUX_MX)
+ZZMASS_MX(:,:,:)=MZF(ZZFLUX_MX)
 ZZMASS_MX(:,:,IKU)=1.5*ZZFLUX_MX(:,:,IKU)-0.5*ZZFLUX_MX(:,:,IKU-1)
 !
 !*        3.2  Interpolate and extrapolate U and V on w- mixed grid levels

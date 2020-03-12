@@ -49,6 +49,7 @@
 !  P. Wautelet 27/01/2020: use the tfield_metadata_base abstract datatype
 !  P. Wautelet 28/01/2020: add missing budgets for viscosity
 !  P. Wautelet 28/01/2020: add trhodj in tbudgetdata datatype
+!  B. Vie      03/02/2020: LIMA negativity checks after turbulence, advection and microphysics budgets
 !  P. Wautelet 09/03/2020: add tburhodj variable
 !  P .Wautelet 09/03/2020: add missing budgets for electricity
 !-------------------------------------------------------------------------------
@@ -433,6 +434,9 @@ INTEGER, SAVE :: NFRCRR     ! forcing
 INTEGER, SAVE :: NDIFRR     ! numerical diffusion
 INTEGER, SAVE :: NRELRR     ! relaxation
 INTEGER, SAVE :: NNEGARR    ! negative correction                            
+INTEGER, SAVE :: NNETURRR    ! negative correction
+INTEGER, SAVE :: NNEADVRR    ! negative correction
+INTEGER, SAVE :: NNECONRR    ! negative correction
 INTEGER, SAVE :: NACCRRR    ! accretion
 INTEGER, SAVE :: NAUTORR    ! autoconversion
 INTEGER, SAVE :: NREVARR    ! rain evaporation
@@ -469,6 +473,9 @@ INTEGER, SAVE :: NDCONVRI   ! Deep CONVection
 INTEGER, SAVE :: NHTURBRI   ! horizontal turbulence
 INTEGER, SAVE :: NVTURBRI   ! vertical turbulence
 INTEGER, SAVE :: NNEGARI    ! negative correction                            
+INTEGER, SAVE :: NNETURRI    ! negative correction
+INTEGER, SAVE :: NNEADVRI    ! negative correction
+INTEGER, SAVE :: NNECONRI    ! negative correction
 INTEGER, SAVE :: NSEDIRI    ! SEDImentation           ICE3
 INTEGER, SAVE :: NHENURI    ! HEterogenous NUcleation ICE3
 INTEGER, SAVE :: NHONRI     ! HOmogeneous Nucleation  ICE3
@@ -508,6 +515,9 @@ INTEGER, SAVE :: NFRCRS     ! forcing
 INTEGER, SAVE :: NDIFRS     ! numerical diffusion
 INTEGER, SAVE :: NRELRS     ! relaxation
 INTEGER, SAVE :: NNEGARS    ! negative correction                            
+INTEGER, SAVE :: NNETURRS    ! negative correction
+INTEGER, SAVE :: NNEADVRS    ! negative correction
+INTEGER, SAVE :: NNECONRS    ! negative correction
 INTEGER, SAVE :: NSEDIRS    ! SEDImentation           ICE3
 INTEGER, SAVE :: NDEPSRS    ! DEPosition on Snow      ICE3
 INTEGER, SAVE :: NAGGSRS    ! AGGregation of snow     ICE3
@@ -538,6 +548,9 @@ INTEGER, SAVE :: NFRCRG     ! forcing
 INTEGER, SAVE :: NDIFRG     ! numerical diffusion
 INTEGER, SAVE :: NRELRG     ! relaxation
 INTEGER, SAVE :: NNEGARG    ! negative correction                            
+INTEGER, SAVE :: NNETURRG    ! negative correction
+INTEGER, SAVE :: NNEADVRG    ! negative correction
+INTEGER, SAVE :: NNECONRG    ! negative correction
 INTEGER, SAVE :: NSEDIRG    ! SEDImentation           ICE3
 INTEGER, SAVE :: NSFRRG     ! Spontaneous FReezing    ICE3
 INTEGER, SAVE :: NDEPGRG    ! DEPosition on Snow      ICE3
@@ -571,6 +584,9 @@ INTEGER, SAVE :: NFRCRH     ! forcing
 INTEGER, SAVE :: NDIFRH     ! numerical diffusion
 INTEGER, SAVE :: NRELRH     ! relaxation
 INTEGER, SAVE :: NNEGARH    ! negative correction 
+INTEGER, SAVE :: NNETURRH    ! negative correction
+INTEGER, SAVE :: NNEADVRH    ! negative correction
+INTEGER, SAVE :: NNECONRH    ! negative correction
 INTEGER, SAVE :: NSEDIRH    ! sedimentation
 INTEGER, SAVE :: NWETGRH    ! wet growth of graupel
 INTEGER, SAVE :: NWETHRH    ! wet growth of hail

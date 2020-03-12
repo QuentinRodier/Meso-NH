@@ -288,6 +288,7 @@ END MODULE MODI_INI_MODEL_n
 !  P. Wautelet 19/04/2019: removed unused dummy arguments and variables
 !  P. Wautelet 07/06/2019: allocate lookup tables for optical properties only when needed
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
+!  C. Lac         11/2019: correction in the drag formula and application to building in addition to tree
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -327,7 +328,7 @@ USE MODD_DEF_EDDYUV_FLUX_n ! FOR UV
 USE MODD_DIAG_FLAG,         only: LCHEMDIAG, CSPEC_BU_DIAG
 USE MODD_DIM_n
 USE MODD_DRAG_n
-USE MODD_DRAGTREE
+USE MODD_DRAGTREE_n
 USE MODD_DUST
 use MODD_DUST_OPT_LKT,      only: NMAX_RADIUS_LKT_DUST=>NMAX_RADIUS_LKT, NMAX_SIGMA_LKT_DUST=>NMAX_SIGMA_LKT,               &
                                   NMAX_WVL_SW_DUST=>NMAX_WVL_SW,                                                            &
@@ -1484,7 +1485,17 @@ ALLOCATE(XRI_MF(IIU,IJU,IKU)) ; XRI_MF=0.0
 !
 ALLOCATE(ZJ(IIU,IJU,IKU))
 !
-!*      3.10 Forcing variables (Module MODD_FRC)
+!*      3.10 Forcing variables (Module MODD_FRC and MODD_FRCn)
+!
+IF ( LFORCING ) THEN
+  ALLOCATE(XWTFRC(IIU,IJU,IKU)) ; XWTFRC = XUNDEF
+  ALLOCATE(XUFRC_PAST(IIU,IJU,IKU)) ; XUFRC_PAST = XUNDEF
+  ALLOCATE(XVFRC_PAST(IIU,IJU,IKU)) ; XVFRC_PAST = XUNDEF
+ELSE
+  ALLOCATE(XWTFRC(0,0,0))
+  ALLOCATE(XUFRC_PAST(0,0,0))
+  ALLOCATE(XVFRC_PAST(0,0,0))
+END IF
 !
 IF (KMI == 1) THEN
   IF ( LFORCING ) THEN
@@ -1515,15 +1526,6 @@ IF (KMI == 1) THEN
     ALLOCATE(XPGROUNDFRC(0))
     ALLOCATE(XTENDUFRC(0,0))
     ALLOCATE(XTENDVFRC(0,0))
-  END IF
-  IF ( LFORCING ) THEN
-    ALLOCATE(XWTFRC(IIU,IJU,IKU))
-    ALLOCATE(XUFRC_PAST(IIU,IJU,IKU)) ; XUFRC_PAST = XUNDEF
-    ALLOCATE(XVFRC_PAST(IIU,IJU,IKU)) ; XVFRC_PAST = XUNDEF
-  ELSE
-    ALLOCATE(XWTFRC(0,0,0))
-    ALLOCATE(XUFRC_PAST(0,0,0))
-    ALLOCATE(XVFRC_PAST(0,0,0))
   END IF
 ELSE
   !Do not allocate because they are the same on all grids (not 'n' variables)

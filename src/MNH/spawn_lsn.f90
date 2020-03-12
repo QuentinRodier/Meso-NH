@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1997-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1997-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -378,9 +378,9 @@ END IF
 IF ( GVERT_INTERP ) THEN
   IKU = SIZE(PZZ,3)
   !
-  ZZLS2=MZF(1,IKU,1,ZZLS1)
+  ZZLS2=MZF(ZZLS1)
   ZZLS2(:,:,IKU)=2.*ZZLS2(:,:,IKU-1)-ZZLS2(:,:,IKU-2)
-  ZZSS=MZF(1,IKU,1,PZZ)
+  ZZSS=MZF(PZZ)
   ZZSS(:,:,IKU)=2.*ZZSS(:,:,IKU-1)-ZZSS(:,:,IKU-2)
   !
   CALL COEF_VER_INTERP_LIN(ZZLS2,ZZSS,IKLIN,ZCOEFLIN)
@@ -455,7 +455,7 @@ IF ( GVERT_INTERP ) THEN
   !
   ZZLS1=MYM(ZZLS2)
   ZZLS1(:,1,:)=2.*ZZLS1(:,2,:)-ZZLS1(:,3,:)
-  ZZSS=MZF(1,IKU,1,PZZ)
+  ZZSS=MZF(PZZ)
   ZZSS(:,:,IKU)=2.*ZZSS(:,:,IKU-1)-ZZSS(:,:,IKU-2)
   ZZSS=MYM(ZZSS)
   ZZSS(:,1,:)=2.*ZZSS(:,2,:)-ZZSS(:,3,:)

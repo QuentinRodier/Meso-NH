@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -157,12 +157,10 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS
 !*       0.2   Declarations of local variables :
 !
 INTEGER :: JRR           ! Loop index for  moist variables
-INTEGER :: IKU
 !
 !  
 !-------------------------------------------------------------------------------
 !
-IKU=SIZE(XZHAT)
 !*       1.     COMPUTES THE ADVECTIVE TENDENCIES
 !     	        ---------------------------------
 !
@@ -176,7 +174,7 @@ PRTHS(:,:,:) = PRTHS(:,:,:)                            &
 !IF (LBUDGET_TH) CALL BUDGET (PRTHS,NBUDGET_TH,'ADVY_BU_RTH')
 !
 PRTHS(:,:,:) = PRTHS(:,:,:)                            &
-              -DZF(1,IKU,1, PRWCT(:,:,:) * MZM (1,IKU,1,PTHT(:,:,:)) )
+              -DZF( PRWCT(:,:,:) * MZM (PTHT(:,:,:)) )
 !IF (LBUDGET_TH) CALL BUDGET (PRTHS,NBUDGET_TH,'ADVZ_BU_RTH')
 !
                                         ! Case with KRR moist variables 
@@ -208,7 +206,7 @@ END DO
 !
 DO JRR=1,KRR
   PRRS(:,:,:,JRR) = PRRS(:,:,:,JRR)                            &
-                   -DZF(1,IKU,1, PRWCT(:,:,:) * MZM (1,IKU,1,PRT(:,:,:,JRR)) )
+                   -DZF( PRWCT(:,:,:) * MZM (PRT(:,:,:,JRR)) )
 END DO
 !
 !IF (LBUDGET_RV) CALL BUDGET (PRRS(:,:,:,1),NBUDGET_RV,'ADVZ_BU_RRV')
@@ -230,7 +228,7 @@ IF (SIZE(PTKET,1) /= 0) THEN
 !  IF (LBUDGET_TKE) CALL BUDGET (PRTKES,NBUDGET_TKE,'ADVY_BU_RTKE')
 !
    PRTKES(:,:,:) = PRTKES(:,:,:)                           &
-                 -DZF(1,IKU,1, PRWCT(:,:,:) * MZM (1,IKU,1,PTKET(:,:,:)) )
+                 -DZF( PRWCT(:,:,:) * MZM (PTKET(:,:,:)) )
 !  IF (LBUDGET_TKE) CALL BUDGET (PRTKES,NBUDGET_TKE,'ADVZ_BU_RTKE')
 END IF
 !

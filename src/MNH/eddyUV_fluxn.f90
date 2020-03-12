@@ -209,7 +209,7 @@ ZCORIOZ(:,:,:)= SPREAD(XCORIOZ(:,:),3,IKU)
 ZLAT3D(:,:,:) = SPREAD(XLAT(:,:),3,IKU)
 ! 
 ! relative vorticity
-ZVOZ(:,:,:)=GX_V_UV(1,IKU,1,PVM,XDXX,XDZZ,XDZX)
+ZVOZ(:,:,:)=GX_V_UV(PVM,XDXX,XDZZ,XDZX)
 ZVOZ(:,:,2)=ZVOZ(:,:,3)
 ZVOZ(:,:,1)=ZVOZ(:,:,3)
 !
@@ -422,7 +422,7 @@ PVU_FLUX_M(:,:,:) = ZUV_FLUX(:,:,:)
 !             -----------------------------
 !
 ! Take the divergence of the momentum flux 
-ZDIV_UV(:,:,:) = GX_U_M(1,IKU,1,ZUV_FLUX,XDXX,XDZZ,XDZX)
+ZDIV_UV(:,:,:) = GX_U_M(ZUV_FLUX,XDXX,XDZZ,XDZX)
 
 ! Lateral boundary conditions
 ZDIV_UV(IIB,:,:)=0.0

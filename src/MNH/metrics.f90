@@ -1,13 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
-!-----------------------------------------------------------------
-!-----------------------------------------------------------------
 !-----------------------------------------------------------------
 !     ###################
       MODULE MODI_METRICS
@@ -162,7 +156,7 @@ ELSE
   ZD1=1.
 END IF
 IF (.NOT.LCARTESIAN) THEN
-  ZDZZ(:,:,:) = MZF(1,IKU,1, 1.+ ZD1*PZZ(:,:,:)/XRADIUS)
+  ZDZZ(:,:,:) = MZF( 1.+ ZD1*PZZ(:,:,:)/XRADIUS)
   DO JK=1,IKU ; DO JJ=1,IJU ; DO JI=1,IIU
     PDXX(JI,JJ,JK) = ZDZZ(JI,JJ,JK) * PDXHAT(JI) /PMAP(JI,JJ)
     PDYY(JI,JJ,JK) = ZDZZ(JI,JJ,JK) * PDYHAT(JJ) /PMAP(JI,JJ)
@@ -201,7 +195,7 @@ PDZY(:,:,:) = DYM(PZZ(:,:,:))
 !*       4.  COMPUTE PDZZ  :
 !            -------------
 !
-PDZZ(:,:,:) = DZM(1,IKU,1,MZF(1,IKU,1,PZZ(:,:,:)))
+PDZZ(:,:,:) = DZM(MZF(PZZ(:,:,:)))
 PDZZ(:,:,IKU) = PZZ(:,:,IKU) - PZZ(:,:,IKU-1)  ! same delta z in IKU and IKU -1
 PDZZ(:,:,1)   = PDZZ(:,:,2)                    ! same delta z in 1   and 2
 !20131024

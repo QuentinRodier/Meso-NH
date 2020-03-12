@@ -284,7 +284,6 @@ INTEGER :: JRR           ! Loop index for  moist variables
 INTEGER :: JSV           ! Loop index for Scalar Variables
 INTEGER:: IIB,IJB        ! Begining useful area  in x,y directions
 INTEGER:: IIE,IJE        ! End useful area in x,y directions
-INTEGER :: IKU
 !
 LOGICAL     :: GTKEALLOC                 ! true if TKE arrays are not zero-sized
 !
@@ -298,7 +297,6 @@ INTEGER :: IGRID ! localisation on the model grid
 !*       1.     COMPUTES THE DOMAIN DIMENSIONS
 !               ------------------------------
 CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
-IKU=SIZE(PUM,3)
 !
 GTKEALLOC = SIZE(PTKEM,1) /= 0
 
@@ -359,10 +357,10 @@ IF (ONUMDIFU) THEN
 !!$ IF(NHALO == 1) THEN
   TZHALO2LIST => TZHALO2LIST%NEXT
   TZHALO2LSLIST => TZHALO2LSLIST%NEXT
-  CALL NUM_DIFF_ALGO(PRWS, PWM, IGRID, MZM(1,IKU,1,PRHODJ), PDK2U, PDK4U, &
+  CALL NUM_DIFF_ALGO(PRWS, PWM, IGRID, MZM(PRHODJ), PDK2U, PDK4U, &
                      PLSWM, TZHALO2LIST%HALO2, TZHALO2LSLIST%HALO2)
 !!$ ELSE
-!!$  CALL NUM_DIFF_ALGO(PRWS, PWM, IGRID, MZM(1,IKU,1,PRHODJ), PDK2U, PDK4U, PLSWM )
+!!$  CALL NUM_DIFF_ALGO(PRWS, PWM, IGRID, MZM(PRHODJ), PDK2U, PDK4U, PLSWM )
 !!$ ENDIF
 ENDIF
 !

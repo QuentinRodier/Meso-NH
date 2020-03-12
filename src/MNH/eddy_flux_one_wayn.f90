@@ -92,7 +92,6 @@ INTEGER:: IDTRATIO_KMI_1 ! Ratio between the time step of the son and the model 
 
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZFLUX2 ! Work array=Dad interpolated flux field
                                               ! on the son grid
-INTEGER :: IKU                                              
 !
 INTEGER :: IDIMX,IDIMY
 INTEGER :: IID, IRESP
@@ -101,7 +100,6 @@ INTEGER :: IID, IRESP
 !
 ! test of temporal synchronisation between the model 1 and the son KMI
 !
-IKU=SIZE(XZHAT)
 IDTRATIO_KMI_1=1
 DO JMI=2,KMI
    IDTRATIO_KMI_1=IDTRATIO_KMI_1*NDTRATIO(JMI)
@@ -126,7 +124,7 @@ IF (ISYNCHRO==1 .OR. IDTRATIO_KMI_1 == 1) THEN
                   HLBCX,HLBCY,TFIELDLIST(IID)%TFIELD_X3D(1)%DATA,ZFLUX2)
 
    ! operator GX_U_M used for gradient of v'T' (flux point) placed at a mass point
-   XRTHS_EDDY_FLUX(:,:,:) = - XRHODJ(:,:,:)* GX_U_M(1,IKU,1,ZFLUX2,XDXX,XDZZ,XDZX)
+   XRTHS_EDDY_FLUX(:,:,:) = - XRHODJ(:,:,:)* GX_U_M(ZFLUX2,XDXX,XDZZ,XDZX)
         
    ! w'T' (EDDY_FLUX_MODEL(1)%XWTH_FLUX_M) of model1 interpolation on the son grid put into ZFLUX2
    ZFLUX2 = 0.
@@ -139,7 +137,7 @@ IF (ISYNCHRO==1 .OR. IDTRATIO_KMI_1 == 1) THEN
 
    ! DIV(W'T') put into the source term
    XRTHS_EDDY_FLUX(:,:,:) = XRTHS_EDDY_FLUX(:,:,:) &
-                            - XRHODJ(:,:,:)* GZ_W_M(1,IKU,1,ZFLUX2,XDZZ)
+                            - XRHODJ(:,:,:)* GZ_W_M(ZFLUX2,XDZZ)
 
    DEALLOCATE(ZFLUX2)
 

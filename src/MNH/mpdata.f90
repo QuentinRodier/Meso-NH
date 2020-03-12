@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ##################
@@ -148,7 +148,6 @@ INTEGER :: JRR               ! Loop index for moist variables
 !
 INTEGER:: IIB,IJB            ! Begining useful area  in x,y,z directions
 INTEGER:: IIE,IJE            ! End useful area in x,y,z directions
-INTEGER:: IKU
 !  
 REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2),SIZE(PTHM,3))   :: ZGUESS  ! Guess 
                              ! variable (to be removed in the future !)
@@ -180,7 +179,6 @@ NULLIFY(TZFIELDS_ll)
 !*       0.3 PROLOGUE
 !
 CALL GET_PHYSICAL_ll(IIB,IJB,IIE,IJE)
-IKU=SIZE(PTHM,3)
 !
 YRX(1) = 'RRV'
 YRX(2) = 'RRC'
@@ -220,7 +218,7 @@ irx(7) = NBUDGET_RH
   ZRVARS(:,:,:) = PRTHS(:,:,:)
   ZFADVU(:,:,:) = -DXF(FXM( PTHM(:,:,:),PRUCT(:,:,:) )  )
   ZFADVV(:,:,:) = -DYF(FYM( PTHM(:,:,:),PRVCT(:,:,:) )  )
-  ZFADVW(:,:,:) = -DZF(1,IKU,1,FZM( PTHM(:,:,:),PRWCT(:,:,:) )  )
+  ZFADVW(:,:,:) = -DZF(FZM( PTHM(:,:,:),PRWCT(:,:,:) )  )
 !
   PRTHS(:,:,:) = PRTHS(:,:,:) + ZFADVU(:,:,:) + ZFADVV(:,:,:) + ZFADVW(:,:,:)
 !
@@ -257,7 +255,7 @@ irx(7) = NBUDGET_RH
     ZFADVV(:,:,:) = ZFADVV(:,:,:) + ZFADV(:,:,:) 
     PRTHS(:,:,:) = PRTHS(:,:,:) + ZFADV(:,:,:)
 !
-    ZFADV(:,:,:) = -DZF(1,IKU,1,FZM( ZGUESS(:,:,:),ZRAWCT(:,:,:) )  )
+    ZFADV(:,:,:) = -DZF(FZM( ZGUESS(:,:,:),ZRAWCT(:,:,:) )  )
     IF(LWEST_ll()  .AND. HLBCX(1) /= 'CYCL') ZFADV(IIB,:,:)=0.
     IF(LEAST_ll()  .AND. HLBCX(1) /= 'CYCL') ZFADV(IIE,:,:)=0.
     IF(LSOUTH_ll() .AND. HLBCY(1) /= 'CYCL') ZFADV(:,IJB,:)=0.
@@ -288,7 +286,7 @@ irx(7) = NBUDGET_RH
     ZRVARS(:,:,:) = PRRS(:,:,:,JRR)
     ZFADVU(:,:,:) = -DXF(FXM( PRM(:,:,:,JRR),PRUCT(:,:,:) )  )
     ZFADVV(:,:,:) = -DYF(FYM( PRM(:,:,:,JRR),PRVCT(:,:,:) )  )
-    ZFADVW(:,:,:) = -DZF(1,IKU,1,FZM( PRM(:,:,:,JRR),PRWCT(:,:,:) )  )
+    ZFADVW(:,:,:) = -DZF(FZM( PRM(:,:,:,JRR),PRWCT(:,:,:) )  )
 !
     PRRS(:,:,:,JRR) = PRRS(:,:,:,JRR) + ZFADVU(:,:,:) + ZFADVV(:,:,:) +  &
                                      ZFADVW(:,:,:)
@@ -321,7 +319,7 @@ irx(7) = NBUDGET_RH
       ZFADVV(:,:,:) = ZFADVV(:,:,:) + ZFADV(:,:,:) 
       PRRS(:,:,:,JRR) = PRRS(:,:,:,JRR) + ZFADV(:,:,:)
 !
-      ZFADV(:,:,:) = -DZF(1,IKU,1,FZM( ZGUESS(:,:,:),ZRAWCT(:,:,:) )  )
+      ZFADV(:,:,:) = -DZF(FZM( ZGUESS(:,:,:),ZRAWCT(:,:,:) )  )
       IF(LWEST_ll()  .AND. HLBCX(1) /= 'CYCL') ZFADV(IIB,:,:)=0.
       IF(LEAST_ll()  .AND. HLBCX(1) /= 'CYCL') ZFADV(IIE,:,:)=0.
       IF(LSOUTH_ll() .AND. HLBCY(1) /= 'CYCL') ZFADV(:,IJB,:)=0.
@@ -356,7 +354,7 @@ irx(7) = NBUDGET_RH
     ZRVARS(:,:,:) = PRTKES(:,:,:)
     ZFADVU(:,:,:) = -DXF(FXM( PTKEM(:,:,:),PRUCT(:,:,:) )  )
     ZFADVV(:,:,:) = -DYF(FYM( PTKEM(:,:,:),PRVCT(:,:,:) )  )
-    ZFADVW(:,:,:) = -DZF(1,IKU,1,FZM( PTKEM(:,:,:),PRWCT(:,:,:) )  )
+    ZFADVW(:,:,:) = -DZF(FZM( PTKEM(:,:,:),PRWCT(:,:,:) )  )
 !
     PRTKES(:,:,:) = PRTKES(:,:,:) + ZFADVU(:,:,:) + ZFADVV(:,:,:) + ZFADVW(:,:,:)
 !
@@ -388,7 +386,7 @@ irx(7) = NBUDGET_RH
       ZFADVV(:,:,:) = ZFADVV(:,:,:) + ZFADV(:,:,:) 
       PRTKES(:,:,:) = PRTKES(:,:,:) + ZFADV(:,:,:)
 !
-      ZFADV(:,:,:) = -DZF(1,IKU,1,FZM( ZGUESS(:,:,:),ZRAWCT(:,:,:) )  )
+      ZFADV(:,:,:) = -DZF(FZM( ZGUESS(:,:,:),ZRAWCT(:,:,:) )  )
       IF(LWEST_ll()  .AND. HLBCX(1) /= 'CYCL') ZFADV(IIB,:,:)=0.
       IF(LEAST_ll()  .AND. HLBCX(1) /= 'CYCL') ZFADV(IIE,:,:)=0.
       IF(LSOUTH_ll() .AND. HLBCY(1) /= 'CYCL') ZFADV(:,IJB,:)=0.

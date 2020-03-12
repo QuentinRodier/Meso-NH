@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2010-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -74,7 +74,6 @@ REAL, DIMENSION(:,:,:,:),       INTENT(INOUT) :: PSVT
 INTEGER :: IIB, IIE  ! index of first and last inner mass points along x
 INTEGER :: IJB, IJE  ! index of first and last inner mass points along y
 INTEGER :: IKB, IKE  ! index of first and last inner mass points along z
-INTEGER :: IKU
 REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3)) :: ZDRIFTX
 REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3)) :: ZDRIFTY
 REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3)) :: ZDRIFTZ
@@ -95,7 +94,6 @@ NULLIFY(TZFIELDS_ll)
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB = 1 + JPVEXT
 IKE = SIZE(PSVT,3) - JPVEXT
-IKU = SIZE(PSVT,3)
 !
 !
 !-------------------------------------------------------------------------------
@@ -166,7 +164,7 @@ ZDRIFTY(:,:,:) = -MYM(ZDRIFTY(:,:,:)) ! Put components at flux sides
 ! z-component of div term
 ZDRIFTZ(:,:,:) = PSVT(:,:,:,NSV_ELECBEG) * XMOBIL_POS(:,:,:)
 ZDRIFTZ(:,:,:) = ZDRIFTZ(:,:,:) * XEFIELDW(:,:,:)
-ZDRIFTZ(:,:,:) = -MZM(1,IKU,1,ZDRIFTZ(:,:,:)) ! Put components at flux sides
+ZDRIFTZ(:,:,:) = -MZM(ZDRIFTZ(:,:,:)) ! Put components at flux sides
 !
 IF (LWEST_ll( ))  ZDRIFTX(IIB-1,:,:) = ZDRIFTX(IIB,:,:)
 IF (LEAST_ll( ))  ZDRIFTX(IIE+1,:,:) = ZDRIFTX(IIE,:,:)
@@ -192,7 +190,7 @@ ZDRIFTY(:,:,:) = +MYM(ZDRIFTY(:,:,:)) ! Put components at flux sides
 ! z-component of div term
 ZDRIFTZ(:,:,:) = PSVT(:,:,:,NSV_ELECEND) * XMOBIL_NEG(:,:,:)
 ZDRIFTZ(:,:,:) = ZDRIFTZ(:,:,:) * XEFIELDW(:,:,:)
-ZDRIFTZ(:,:,:) = +MZM(1,IKU,1,ZDRIFTZ(:,:,:)) ! Put components at flux sides
+ZDRIFTZ(:,:,:) = +MZM(ZDRIFTZ(:,:,:)) ! Put components at flux sides
 
 !
 IF (LWEST_ll( ))  ZDRIFTX(IIB-1,:,:) = ZDRIFTX(IIB,:,:)

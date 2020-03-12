@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2009-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2009-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -151,83 +151,83 @@ CALL SECOND_MNH2(ZTIME1)
 
     
     ZWORK(:,:,:)=RESHAPE(PWTHMF(:,:),(/ KIU,KJU,KKU /) )
-    CALL LES_VER_INT(MZF(1,KKU,1,ZWORK)  ,ZTHLMFFLX_LES  )
+    CALL LES_VER_INT(MZF(ZWORK)  ,ZTHLMFFLX_LES  )
     CALL LES_MEAN_ll(ZTHLMFFLX_LES,LLES_CURRENT_CART_MASK, &
                     X_LES_SUBGRID_WTHLMF(:,NLES_CURRENT_TCOUNT,1))
     
     ZWORK(:,:,:)=RESHAPE(PWRTMF(:,:),(/ KIU,KJU,KKU /) )
-    CALL LES_VER_INT( MZF(1,KKU,1,ZWORK)  ,ZRTMFFLX_LES  )
+    CALL LES_VER_INT( MZF(ZWORK)  ,ZRTMFFLX_LES  )
     CALL LES_MEAN_ll (ZRTMFFLX_LES , LLES_CURRENT_CART_MASK,          &
                     X_LES_SUBGRID_WRTMF(:,NLES_CURRENT_TCOUNT,1)     )
                     
     ZWORK(:,:,:)=RESHAPE(PWUMF(:,:),(/ KIU,KJU,KKU /) )
-    CALL LES_VER_INT( MZF(1,KKU,1,ZWORK)  ,ZUMFFLX_LES  )
+    CALL LES_VER_INT( MZF(ZWORK)  ,ZUMFFLX_LES  )
     CALL LES_MEAN_ll (ZUMFFLX_LES , LLES_CURRENT_CART_MASK,              &
                     X_LES_SUBGRID_WUMF(:,NLES_CURRENT_TCOUNT,1)     )
                     
     ZWORK(:,:,:)=RESHAPE(PWVMF(:,:),(/ KIU,KJU,KKU /) )
-    CALL LES_VER_INT( MZF(1,KKU,1,ZWORK)  ,ZVMFFLX_LES  )
+    CALL LES_VER_INT( MZF(ZWORK)  ,ZVMFFLX_LES  )
     CALL LES_MEAN_ll (ZVMFFLX_LES , LLES_CURRENT_CART_MASK,                   &
                     X_LES_SUBGRID_WVMF(:,NLES_CURRENT_TCOUNT,1)     )
                     
     ZWORK(:,:,:)=RESHAPE(PWTHVMF(:,:),(/ KIU,KJU,KKU /) )
-    CALL LES_VER_INT( MZF(1,KKU,1,ZWORK)  ,ZTHVMFFLX_LES  )
+    CALL LES_VER_INT( MZF(ZWORK)  ,ZTHVMFFLX_LES  )
     CALL LES_MEAN_ll (ZTHVMFFLX_LES , LLES_CURRENT_CART_MASK,    &
                     X_LES_SUBGRID_WTHVMF(:,NLES_CURRENT_TCOUNT,1)     )
                     
 
     ZWORK(:,:,:)=RESHAPE(PTHL_UP(:,:),(/ KIU,KJU,KKU /) )
-    CALL LES_VER_INT( MZF(1,KKU,1,ZWORK)  ,ZTHLUP_MF_LES  )
+    CALL LES_VER_INT( MZF(ZWORK)  ,ZTHLUP_MF_LES  )
     CALL LES_MEAN_ll (ZTHLUP_MF_LES , LLES_CURRENT_CART_MASK,    &
                    X_LES_SUBGRID_THLUP_MF(:,NLES_CURRENT_TCOUNT,1)     )
                    
     ZWORK(:,:,:)=RESHAPE(PRT_UP(:,:),(/ KIU,KJU,KKU /) )
-    CALL LES_VER_INT( MZF(1,KKU,1,ZWORK)  ,ZRTUP_MF_LES  )
+    CALL LES_VER_INT( MZF(ZWORK)  ,ZRTUP_MF_LES  )
     CALL LES_MEAN_ll (ZRTUP_MF_LES , LLES_CURRENT_CART_MASK,       &
                     X_LES_SUBGRID_RTUP_MF(:,NLES_CURRENT_TCOUNT,1)     )
                     
     ZWORK(:,:,:)=RESHAPE(PRV_UP(:,:),(/ KIU,KJU,KKU /) )
-    CALL LES_VER_INT( MZF(1,KKU,1,ZWORK)  ,ZRVUP_MF_LES  )
+    CALL LES_VER_INT( MZF(ZWORK)  ,ZRVUP_MF_LES  )
     CALL LES_MEAN_ll (ZRVUP_MF_LES , LLES_CURRENT_CART_MASK,       &
                     X_LES_SUBGRID_RVUP_MF(:,NLES_CURRENT_TCOUNT,1)     )
                     
     ZWORK(:,:,:)=RESHAPE(PRC_UP(:,:),(/ KIU,KJU,KKU /) )
-    CALL LES_VER_INT( MZF(1,KKU,1,ZWORK)  ,ZRCUP_MF_LES  )
+    CALL LES_VER_INT( MZF(ZWORK)  ,ZRCUP_MF_LES  )
     CALL LES_MEAN_ll (ZRCUP_MF_LES , LLES_CURRENT_CART_MASK,        &
                     X_LES_SUBGRID_RCUP_MF(:,NLES_CURRENT_TCOUNT,1)     )
                     
     ZWORK(:,:,:)=RESHAPE(PRI_UP(:,:),(/ KIU,KJU,KKU /) )
-    CALL LES_VER_INT( MZF(1,KKU,1,ZWORK)  ,ZRIUP_MF_LES  )
+    CALL LES_VER_INT( MZF(ZWORK)  ,ZRIUP_MF_LES  )
     CALL LES_MEAN_ll (ZRIUP_MF_LES , LLES_CURRENT_CART_MASK,        &
                     X_LES_SUBGRID_RIUP_MF(:,NLES_CURRENT_TCOUNT,1)     )            
                     
     ZWORK(:,:,:)=RESHAPE(PEMF(:,:),(/ KIU,KJU,KKU /) )
-    CALL LES_VER_INT( MZF(1,KKU,1,ZWORK)  ,ZEMF_MF_LES  )
+    CALL LES_VER_INT( MZF(ZWORK)  ,ZEMF_MF_LES  )
     CALL LES_MEAN_ll (ZEMF_MF_LES , LLES_CURRENT_CART_MASK,       &
                    X_LES_SUBGRID_MASSFLUX(:,NLES_CURRENT_TCOUNT,1)     )
                    
     ZWORK(:,:,:)=RESHAPE(PDETR(:,:),(/ KIU,KJU,KKU /) )
-    CALL LES_VER_INT( MZF(1,KKU,1,ZWORK)  ,ZDETR_MF_LES  )
+    CALL LES_VER_INT( MZF(ZWORK)  ,ZDETR_MF_LES  )
     CALL LES_MEAN_ll (ZDETR_MF_LES , LLES_CURRENT_CART_MASK,       &
                    X_LES_SUBGRID_DETR(:,NLES_CURRENT_TCOUNT,1)         )
                    
     ZWORK(:,:,:)=RESHAPE(PENTR(:,:),(/ KIU,KJU,KKU /) )
-    CALL LES_VER_INT( MZF(1,KKU,1,ZWORK)  ,ZENTR_MF_LES  )
+    CALL LES_VER_INT( MZF(ZWORK)  ,ZENTR_MF_LES  )
     CALL LES_MEAN_ll (ZENTR_MF_LES , LLES_CURRENT_CART_MASK,       &
                    X_LES_SUBGRID_ENTR(:,NLES_CURRENT_TCOUNT,1)     )
                    
     ZWORK(:,:,:)=RESHAPE(PW_UP(:,:),(/ KIU,KJU,KKU /) )
-    CALL LES_VER_INT( MZF(1,KKU,1,ZWORK)  ,ZWUP_MF_LES  )
+    CALL LES_VER_INT( MZF(ZWORK)  ,ZWUP_MF_LES  )
     CALL LES_MEAN_ll (ZWUP_MF_LES , LLES_CURRENT_CART_MASK,       &
                    X_LES_SUBGRID_WUP_MF(:,NLES_CURRENT_TCOUNT,1)     )
                    
     ZWORK(:,:,:)=RESHAPE(PFRAC_UP(:,:),(/ KIU,KJU,KKU /) )
-    CALL LES_VER_INT( MZF(1,KKU,1,ZWORK)  ,ZFRACUP_MF_LES  )
+    CALL LES_VER_INT( MZF(ZWORK)  ,ZFRACUP_MF_LES  )
     CALL LES_MEAN_ll (ZFRACUP_MF_LES , LLES_CURRENT_CART_MASK,       &
                    X_LES_SUBGRID_FRACUP(:,NLES_CURRENT_TCOUNT,1)     )
                    
     ZWORK(:,:,:)=RESHAPE(PTHV_UP(:,:),(/ KIU,KJU,KKU /) )
-    CALL LES_VER_INT( MZF(1,KKU,1,ZWORK)  ,ZTHVUP_MF_LES  )
+    CALL LES_VER_INT( MZF(ZWORK)  ,ZTHVUP_MF_LES  )
     CALL LES_MEAN_ll (ZTHVUP_MF_LES , LLES_CURRENT_CART_MASK,       &
                    X_LES_SUBGRID_THVUP_MF(:,NLES_CURRENT_TCOUNT,1)     )
                    

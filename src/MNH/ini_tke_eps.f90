@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -117,7 +117,7 @@ TYPE(LIST_ll), POINTER                      :: TPINITHALO3D_ll ! pointer for the
 !
 !*       0.2    Declaration of local variables
 !
-INTEGER ::         IKB,IKE,IKU! index value for the first and last inner
+INTEGER ::         IKB,IKE    ! index value for the first and last inner
                               ! mass points
 INTEGER ::         JKK        ! vertical loop index
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: ZDELTZ ! vertical
@@ -128,7 +128,6 @@ REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: ZDELTZ ! vertical
 ! 
 IKB=1+JPVEXT
 IKE=SIZE(PTHT,3)-JPVEXT
-IKU=SIZE(PTHT,3)
 !
 !*       1.     TKE DETERMINATION
 !               -----------------
@@ -150,9 +149,9 @@ IF (HGETTKET == 'INIT' ) THEN
   !
   ! determines TKE
   PTKET(:,:,:)=(XLINI**2/XCED)*(  &
-                  XCMFS*( DZF(1,IKU,1,MXF(MZM(1,IKU,1,PUT)))**2                  &
-                         +DZF(1,IKU,1,MYF(MZM(1,IKU,1,PVT)))**2) / ZDELTZ        &
-                 -(XG/PTHVREF)*XCSHF*DZF(1,IKU,1,MZM(1,IKU,1,PTHT))              &
+                  XCMFS*( DZF(MXF(MZM(PUT)))**2                  &
+                         +DZF(MYF(MZM(PVT)))**2) / ZDELTZ        &
+                 -(XG/PTHVREF)*XCSHF*DZF(MZM(PTHT))              &
                                ) / ZDELTZ
   ! positivity control
   WHERE (PTKET < XTKEMIN) PTKET=XTKEMIN

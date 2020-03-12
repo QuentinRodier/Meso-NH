@@ -28,15 +28,11 @@ REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT            !   at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ    ! dry Density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ       ! Height (z)
 !
-
-!
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRUS, PRVS       ! Sources of Momentum
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTKES           ! Sources of Tke
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS         
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVS       
 !
-!
-
 END SUBROUTINE DRAG_VEG
 
 END INTERFACE
@@ -73,7 +69,9 @@ SUBROUTINE DRAG_VEG(PTSTEP,PUT,PVT,PTKET,ODEPOTREE, PVDEPOTREE, &
 !!       S. Donier  06/2015 : bug surface aerosols
 !!       C.Lac      07/2016 : Add droplet deposition
 !!       C.Lac      10/2017 : Correction on deposition
+!  C. Lac         11/2019: correction in the drag formula and application to building in addition to tree
 !  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
+!  C. Lac         02/2020: correction missing condition for budget on RC and SV
 !!---------------------------------------------------------------
 !
 !
@@ -116,13 +114,10 @@ REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT            !   at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ    ! dry Density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ       ! Height (z)
 !
-
-!
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRUS, PRVS       ! Sources of Momentum
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTKES           ! Sources of Tke
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS         
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVS       
-!
 !
 !*       0.2   Declarations of local variables :
 !
@@ -133,12 +128,12 @@ INTEGER  :: JI, JJ, JK             ! loop index
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZH_TREE_PGD ! surface cover types
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZLAI_PGD ! surface cover types
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) ::           &
-                              ZWORK1, ZWORK2, ZWORK3, ZUT, ZVT,   &
+                              ZWORK1, ZWORK2, ZWORK3, ZUT_SCAL, ZVT_SCAL,   &
                               ZUS, ZVS, ZTKES, ZTKET
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) ::           &
                               ZCDRAG, ZDENSITY
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2)) ::           &
-                              ZVH,ZLAI           !  LAI, Vegetation height
+                              ZH,ZLAI           !  LAI, Vegetation height
 REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZT,ZEXN,ZLV,ZCPH                              
 LOGICAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) &
             :: GDEP
@@ -146,10 +141,6 @@ REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZWDEPR,ZWDEPS
 
 !
 !
-IIU = SIZE(PUT,1)
-IJU = SIZE(PUT,2)
-IKU = SIZE(PUT,3)
-
 if ( lbudget_u   ) call Budget_store_init( tbudgets(NBUDGET_U  ), 'DRAG', prus  (:, :, :) )
 if ( lbudget_v   ) call Budget_store_init( tbudgets(NBUDGET_V  ), 'DRAG', prvs  (:, :, :) )
 if ( lbudget_tke ) call Budget_store_init( tbudgets(NBUDGET_TKE), 'DRAG', prtkes(:, :, :) )
@@ -160,18 +151,33 @@ if ( odepotree ) then
                     call Budget_store_init( tbudgets(NBUDGET_SV1-1+(NSV_C2R2BEG+1)), 'DEPOTR', psvs(:, :, :, NSV_C2R2BEG+1) )
 end if
 
-ZVH(:,:)=0.
-ZLAI(:,:)=0.
-ZCDRAG(:,:,:)=0.
-ZDENSITY(:,:,:)=0.
+IIU = SIZE(PUT,1)
+IJU = SIZE(PUT,2)
+IKU = SIZE(PUT,3)
+!
+ZUS   (:,:,:) = 0.0
+ZVS   (:,:,:) = 0.0
+ZTKES (:,:,:) = 0.0
+!
+ZH (:,:) = 0.
+ZLAI   (:,:) = 0.
+!
+ZCDRAG   (:,:,:) = 0.
+ZDENSITY (:,:,:) = 0.
 !
 ALLOCATE(ZH_TREE_PGD(IIU,IJU))
 ALLOCATE(ZLAI_PGD(IIU,IJU))
 !
+ZH_TREE_PGD     (:,:) = XUNDEF
+ZLAI_PGD        (:,:) = XUNDEF
+!
 CALL MNHGET_SURF_PARAM_n(PH_TREE=ZH_TREE_PGD,PLAI_TREE=ZLAI_PGD)
 !
-ZVH(:,:)=ZH_TREE_PGD(:,:)
-ZLAI(:,:)=ZLAI_PGD(:,:)
+ZH  (:,:) = ZH_TREE_PGD(:,:)
+ZLAI(:,:) = ZLAI_PGD(:,:)
+!
+WHERE ( ZH   (:,:).GT.998.0 ) ZH   (:,:) = 0.0
+WHERE ( ZLAI (:,:).GT.998.0 ) ZLAI (:,:) = 0.0
 !
 DEALLOCATE(ZH_TREE_PGD)
 DEALLOCATE(ZLAI_PGD)
@@ -182,9 +188,9 @@ DEALLOCATE(ZLAI_PGD)
 !*       1.     COMPUTES THE TRUE VELOCITY COMPONENTS
 !	        -------------------------------------
 !
-ZUT(:,:,:) = PUT(:,:,:) 
-ZVT(:,:,:) = PVT(:,:,:) 
-ZTKET(:,:,:) = PTKET(:,:,:) 
+ZUT_SCAL(:,:,:) = MXF(PUT(:,:,:))
+ZVT_SCAL(:,:,:) = MYF(PVT(:,:,:))
+ZTKET(:,:,:)    = PTKET(:,:,:)
 !-------------------------------------------------------------------------------
 !
 !*      1.     Computations of wind tendency due to canopy drag
@@ -199,35 +205,46 @@ ZTKET(:,:,:) = PTKET(:,:,:)
 !              ------------------------------
 !
 GDEP(:,:,:) = .FALSE.
+!
 DO JJ=2,(IJU-1)
- DO JI=2,(IIU-1)
-   IF (ZVH(JI,JJ) /= 0) THEN
-     DO JK=2,(IKU-1) 
-         IF ((ZVH(JI,JJ)+PZZ(JI,JJ,2))<PZZ(JI,JJ,JK)) EXIT
-         IF ((HCLOUD=='C2R2') .OR.  (HCLOUD=='KHKO')) THEN
-           IF ((PRRS(JI,JJ,JK,2) >0.) .AND. (PSVS(JI,JJ,JK,NSV_C2R2BEG+1) >0.)) &
-                   GDEP(JI,JJ,JK) = .TRUE.
-         ELSE IF (HCLOUD /= 'NONE' .AND. HCLOUD /= 'REVE') THEN
-           IF (PRRS(JI,JJ,JK,2) >0.) GDEP(JI,JJ,JK) = .TRUE.
-         END IF
-         ZCDRAG(JI,JJ,JK)  = 0.2 !0.075
-         ZDENSITY(JI,JJ,JK) = MAX((4 * (ZLAI(JI,JJ) *&
-                              (PZZ(JI,JJ,JK)-PZZ(JI,JJ,2)) *&
-                              (PZZ(JI,JJ,JK)-PZZ(JI,JJ,2)) *&
-                              (ZVH(JI,JJ)-(PZZ(JI,JJ,JK)-PZZ(JI,JJ,2)))/&
-                              ZVH(JI,JJ)**3)-&
-                              (0.30*((ZLAI(JI,JJ) *&
-                              (PZZ(JI,JJ,JK)-PZZ(JI,JJ,2)) *&
-                              (PZZ(JI,JJ,JK)-PZZ(JI,JJ,2)) *&
-                              (PZZ(JI,JJ,JK)-PZZ(JI,JJ,2)) /&
-                              (ZVH(JI,JJ)**3))-ZLAI(JI,JJ))))/&
-                              ZVH(JI,JJ), 0.)
-
-                                            
-     END DO
-   END IF
- END DO
-END DO
+   DO JI=2,(IIU-1)
+      !
+      ! Set density and drag coefficient for vegetation
+      !
+      IF (ZH(JI,JJ) /= 0) THEN
+         !
+         DO JK=2,(IKU-1)
+            !
+            IF ( (PZZ(JI,JJ,JK)-PZZ(JI,JJ,2)) .LT. ZH(JI,JJ) ) THEN
+               !
+               IF ((HCLOUD=='C2R2') .OR.  (HCLOUD=='KHKO')) THEN
+                  IF ((PRRS(JI,JJ,JK,2) >0.) .AND. (PSVS(JI,JJ,JK,NSV_C2R2BEG+1) >0.)) &
+                       GDEP(JI,JJ,JK) = .TRUE.
+               ELSE IF (HCLOUD /= 'NONE' .AND. HCLOUD /= 'REVE') THEN
+                  IF (PRRS(JI,JJ,JK,2) >0.) GDEP(JI,JJ,JK) = .TRUE.
+               ENDIF
+               !
+               ZCDRAG(JI,JJ,JK)  = 0.2 !0.075
+               ZDENSITY(JI,JJ,JK) = MAX((4 * (ZLAI(JI,JJ) *&
+                    (PZZ(JI,JJ,JK)-PZZ(JI,JJ,2)) *&
+                    (PZZ(JI,JJ,JK)-PZZ(JI,JJ,2)) *&
+                    (ZH(JI,JJ)-(PZZ(JI,JJ,JK)-PZZ(JI,JJ,2)))/&
+                    ZH(JI,JJ)**3)-&
+                    (0.30*((ZLAI(JI,JJ) *&
+                    (PZZ(JI,JJ,JK)-PZZ(JI,JJ,2)) *&
+                    (PZZ(JI,JJ,JK)-PZZ(JI,JJ,2)) *&
+                    (PZZ(JI,JJ,JK)-PZZ(JI,JJ,2)) /&
+                    (ZH(JI,JJ)**3))-ZLAI(JI,JJ))))/&
+                    ZH(JI,JJ), 0.)
+               !
+            ENDIF
+            !
+         ENDDO
+      ENDIF
+      !
+   ENDDO
+ENDDO
+!
 ! To exclude the first vertical level already dealt in rain_ice or rain_c2r2_khko
 GDEP(:,:,2) = .FALSE.
 !
@@ -236,15 +253,15 @@ GDEP(:,:,2) = .FALSE.
 !
 !* drag force by vertical surfaces
 !
-ZUS(:,:,:)=  ZUT(:,:,:)/(1 + ZCDRAG(:,:,:)* ZDENSITY(:,:,:)*PTSTEP &
-            *SQRT(ZUT(:,:,:)**2+ZVT(:,:,:)**2))
+ZUS(:,:,:) = PUT(:,:,:)/( 1.0 + MXM ( ZCDRAG(:,:,:) * ZDENSITY(:,:,:) &
+     * PTSTEP * SQRT(ZUT_SCAL(:,:,:)**2+ZVT_SCAL(:,:,:)**2) ) )
 !
-ZVS(:,:,:)=  ZVT(:,:,:)/(1 + ZCDRAG(:,:,:)* ZDENSITY(:,:,:)*PTSTEP &
-            *SQRT(ZUT(:,:,:)**2+ZVT(:,:,:)**2))
+ZVS(:,:,:) = PVT(:,:,:)/( 1.0 + MYM ( ZCDRAG(:,:,:) * ZDENSITY(:,:,:) &
+     * PTSTEP * SQRT(ZUT_SCAL(:,:,:)**2+ZVT_SCAL(:,:,:)**2) ) )
 !
-PRUS(:,:,:)=PRUS(:,:,:)+((ZUS(:,:,:)-ZUT(:,:,:))*PRHODJ(:,:,:))/PTSTEP
+PRUS(:,:,:) = PRUS(:,:,:) + (ZUS(:,:,:)-PUT(:,:,:)) * MXM(PRHODJ(:,:,:)) / PTSTEP
 !
-PRVS(:,:,:)=PRVS(:,:,:)+((ZVS(:,:,:)-ZVT(:,:,:))*PRHODJ(:,:,:))/PTSTEP
+PRVS(:,:,:) = PRVS(:,:,:) + (ZVS(:,:,:)-PVT(:,:,:)) * MYM(PRHODJ(:,:,:)) / PTSTEP
 !
 IF (ODEPOTREE) THEN
   ZEXN(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
@@ -294,14 +311,11 @@ END IF
 ! with Vair = Vair/Vtot * Vtot = (Vair/Vtot) * Stot * Dz
 ! and  Sv/Vair = (Sv/Stot) * Stot/Vair = (Sv/Stot) / (Vair/Vtot) / Dz
 !
-!ZTKES(:,:,:)=  (ZTKET(:,:,:) + (ZCDRAG(:,:,:)* ZDENSITY(:,:,:) &
-!            *(SQRT(ZUT(:,:,:)**2+ZVT(:,:,:)**2))**3))   /&
-!            (1.+(2.*ZCDRAG(:,:,:)* ZDENSITY(:,:,:)*SQRT(ZUT(:,:,:)**2+ZVT(:,:,:)**2)))
-ZTKES(:,:,:)=  (ZTKET(:,:,:) + (ZCDRAG(:,:,:)* ZDENSITY(:,:,:) &
-            *(SQRT(ZUT(:,:,:)**2+ZVT(:,:,:)**2))**3))*PTSTEP   /&
-            (1.+PTSTEP*ZCDRAG(:,:,:)* ZDENSITY(:,:,:)*SQRT(ZUT(:,:,:)**2+ZVT(:,:,:)**2))
+ZTKES(:,:,:)=  ( ZTKET(:,:,:) + PTSTEP * ZCDRAG(:,:,:) * ZDENSITY(:,:,:) &
+         * (SQRT( ZUT_SCAL(:,:,:)**2 + ZVT_SCAL(:,:,:)**2 ))**3 ) /      &
+     ( 1. + PTSTEP * ZCDRAG(:,:,:) * ZDENSITY(:,:,:) * SQRT(ZUT_SCAL(:,:,:)**2+ZVT_SCAL(:,:,:)**2))
 !
-PRTKES(:,:,:)=PRTKES(:,:,:)+((ZTKES(:,:,:)-ZTKET(:,:,:))*PRHODJ(:,:,:)/PTSTEP)
+PRTKES(:,:,:) = PRTKES(:,:,:) + (ZTKES(:,:,:)-ZTKET(:,:,:))*PRHODJ(:,:,:)/PTSTEP
 
 if ( lbudget_u   ) call Budget_store_end( tbudgets(NBUDGET_U  ), 'DRAG', prus  (:, :, :) )
 if ( lbudget_v   ) call Budget_store_end( tbudgets(NBUDGET_V  ), 'DRAG', prvs  (:, :, :) )

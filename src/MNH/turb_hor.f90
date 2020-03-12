@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -184,20 +184,8 @@ END MODULE MODI_TURB_HOR
 !!
 !!    EXTERNAL
 !!    --------
-!!      GX_M_U, GY_M_V
-!!      GX_M_M, GY_M_M, GZ_M_M
-!!      GY_U_UV,GX_V_UV
-!!      GX_U_M, GY_V_M, GZ_W_M
-!!      GX_W_UW,GY_W_UW
-!!                             :  Cartesian vertical gradient operators 
-!!                               
 !!
-!!      MXM,MXF,MYM,MYF,MZM,MZF
-!!                             :  Shuman functions (mean operators)     
-!!      DXM,DXF.DYM,DYF,DZM,DZF
-!!                             :  Shuman functions (difference operators)     
 !!
-!!       
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
 !!      Module MODD_CST : contains physical constants
@@ -258,13 +246,6 @@ USE MODD_CTURB
 USE MODD_IO, ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_LES
-!
-!
-USE MODI_GRADIENT_M
-USE MODI_GRADIENT_U
-USE MODI_GRADIENT_V
-USE MODI_GRADIENT_W
-USE MODI_SHUMAN 
 !
 USE MODI_TURB_HOR_THERMO_FLUX
 USE MODI_TURB_HOR_THERMO_CORR

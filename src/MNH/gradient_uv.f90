@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 operators 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     #######################
       MODULE MODI_GRADIENT_UV
@@ -15,9 +10,8 @@
 INTERFACE
 !
 !     
-FUNCTION GX_UV_V(KKA,KKU,KL,PA,PDXX,PDZZ,PDZX)      RESULT(PGX_UV_V)
-INTEGER,              INTENT(IN)     :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)     :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
+FUNCTION GX_UV_V(PA,PDXX,PDZZ,PDZX)      RESULT(PGX_UV_V)
+!
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the UV point
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDXX    ! metric coefficient dxx
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
@@ -28,10 +22,8 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGX_UV_V ! result V point
 END FUNCTION GX_UV_V
 !
 !     
-FUNCTION GY_UV_U(KKA,KKU,KL,PA,PDYY,PDZZ,PDZY)      RESULT(PGY_UV_U)
+FUNCTION GY_UV_U(PA,PDYY,PDZZ,PDZY)      RESULT(PGY_UV_U)
 !
-INTEGER,              INTENT(IN)     :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)     :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the UV point
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDYY    ! metric coefficient dyy
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
@@ -49,7 +41,7 @@ END MODULE MODI_GRADIENT_UV
 !
 !
 !     #########################################################
-      FUNCTION GX_UV_V(KKA,KKU,KL,PA,PDXX,PDZZ,PDZX)      RESULT(PGX_UV_V)
+      FUNCTION GX_UV_V(PA,PDXX,PDZZ,PDZX)      RESULT(PGX_UV_V)
 !     #########################################################
 !
 !!****  *GX_UV_V* - Cartesian Gradient operator: 
@@ -112,8 +104,6 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments and result
 !
-INTEGER,              INTENT(IN)     :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)     :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the UV point
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDXX    ! metric coefficient dxx
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
@@ -133,7 +123,7 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGX_UV_V ! result V point
 !
 IF (.NOT. LFLAT) THEN
   PGX_UV_V(:,:,:)= ( DXF(PA)        -                         &
-                    MZF(KKA,KKU,KL, MXF( MYM(PDZX)*DZM(KKA,KKU,KL,PA)/MYM(PDZZ) ) ) &
+                    MZF( MXF( MYM(PDZX)*DZM(PA)/MYM(PDZZ) ) ) &
                    ) / MXF(MYM(PDXX))
 ELSE
   PGX_UV_V(:,:,:)= DXF(PA) /  MXF(MYM(PDXX))
@@ -145,7 +135,7 @@ END FUNCTION GX_UV_V
 !
 ! 
 !     #########################################################
-      FUNCTION GY_UV_U(KKA,KKU,KL,PA,PDYY,PDZZ,PDZY)      RESULT(PGY_UV_U)
+      FUNCTION GY_UV_U(PA,PDYY,PDZZ,PDZY)      RESULT(PGY_UV_U)
 !     #########################################################
 !
 !!****  *GY_UV_U* - Cartesian Gradient operator: 
@@ -216,8 +206,6 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments and result
 !
-INTEGER,              INTENT(IN)     :: KKA, KKU ! near ground and uppest atmosphere array indexes
-INTEGER,              INTENT(IN)     :: KL     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PA      ! variable at the UV point
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDYY    ! metric coefficient dyy
 REAL, DIMENSION(:,:,:),  INTENT(IN)  :: PDZZ    ! metric coefficient dzz
@@ -237,7 +225,7 @@ REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2),SIZE(PA,3)) :: PGY_UV_U ! result U point
 !
 IF (.NOT. LFLAT) THEN
   PGY_UV_U(:,:,:)= ( DYF(PA)        -                         &
-                    MZF(KKA,KKU,KL, MYF( MXM(PDZY)*DZM(KKA,KKU,KL,PA)/MXM(PDZZ) ) ) &
+                    MZF( MYF( MXM(PDZY)*DZM(PA)/MXM(PDZZ) ) ) &
                    ) / MYF(MXM(PDYY))
 ELSE
   PGY_UV_U(:,:,:)= DYF(PA) / MYF(MXM(PDYY))

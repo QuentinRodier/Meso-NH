@@ -202,7 +202,7 @@ IKE = SIZE(PWM,3)-JPVEXT
 IKU = SIZE(PWM,3)
 !
 !
-GX_W_UW_PWM = GX_W_UW(1,IKU,1,PWM,PDXX,PDZZ,PDZX)
+GX_W_UW_PWM = GX_W_UW(PWM,PDXX,PDZZ,PDZX)
 !
 !
 !*      13.   < U'W'>
@@ -211,7 +211,7 @@ GX_W_UW_PWM = GX_W_UW(1,IKU,1,PWM,PDXX,PDZZ,PDZX)
 ! residual part of < U'W'> depending on dw/dx
 !
 ZFLX(:,:,:) =                                                      &
-  - XCMFS * MXM(MZM(1,IKU,1,PK)) * GX_W_UW_PWM
+  - XCMFS * MXM(MZM(PK)) * GX_W_UW_PWM
 !!         &  to be tested
 !!  - (2./3.) * XCMFB * MZM( ZVPTU * MXM( PLM / SQRT(PTKEM) * XG / PTHVREF ) )
 !
@@ -240,23 +240,23 @@ END IF
 !
 ! compute the source for rho*U due to this residual flux ( the other part is
 ! taken into account in TURB_VER)
-PRUS(:,:,:) = PRUS(:,:,:) - DZF(1,IKU,1, ZFLX* MXM( PMZM_PRHODJ ) / MXM( PDZZ ) )
+PRUS(:,:,:) = PRUS(:,:,:) - DZF( ZFLX* MXM( PMZM_PRHODJ ) / MXM( PDZZ ) )
 !
 !computation of the source for rho*W due to this flux
 IF (.NOT. LFLAT) THEN
   PRWS(:,:,:) = PRWS(:,:,:)                              &
-        -DXF( MZM(1,IKU,1, MXM(PRHODJ) * PINV_PDXX) * ZFLX)           &
-        +DZM(1,IKU,1, PRHODJ * MXF( MZF(1,IKU,1, ZFLX*PDZX ) * PINV_PDXX ) / MZF(1,IKU,1,PDZZ) )
+        -DXF( MZM( MXM(PRHODJ) * PINV_PDXX) * ZFLX)           &
+        +DZM( PRHODJ * MXF( MZF( ZFLX*PDZX ) * PINV_PDXX ) / MZF(PDZZ) )
 ELSE
-  PRWS(:,:,:) = PRWS(:,:,:) -DXF( MZM(1,IKU,1, MXM(PRHODJ) * PINV_PDXX) * ZFLX)
+  PRWS(:,:,:) = PRWS(:,:,:) -DXF( MZM( MXM(PRHODJ) * PINV_PDXX) * ZFLX)
 END IF
 ! 
 IF (KSPLT==1) THEN
   !
   !Contribution to the dynamic production of TKE:
   !
-  ZWORK(:,:,:) =-MZF(1,IKU,1, MXF(                               &
-     ZFLX *( GZ_U_UW(1,IKU,1,PUM,PDZZ) + GX_W_UW_PWM ) ) )
+  ZWORK(:,:,:) =-MZF( MXF(                               &
+     ZFLX *( GZ_U_UW(PUM,PDZZ) + GX_W_UW_PWM ) ) )
   !
   !
   ! evaluate the dynamic production at w(IKB+1) in PDP(IKB)
@@ -282,17 +282,17 @@ END IF
 !
 IF (LLES_CALL .AND. KSPLT==1) THEN
   CALL SECOND_MNH(ZTIME1)
-  CALL LES_MEAN_SUBGRID( MZF(1,IKU,1,MXF(ZFLX)), X_LES_SUBGRID_WU , .TRUE. ) 
-  CALL LES_MEAN_SUBGRID( MZF(1,IKU,1,MXF(GZ_U_UW(1,IKU,1,PUM,PDZZ)*ZFLX)), X_LES_RES_ddxa_U_SBG_UaU , .TRUE.)
-  CALL LES_MEAN_SUBGRID( MZF(1,IKU,1,MXF(GX_W_UW_PWM*ZFLX)), X_LES_RES_ddxa_W_SBG_UaW , .TRUE.)
-  CALL LES_MEAN_SUBGRID( MXF(GX_M_U(1,IKU,1,PTHLM,PDXX,PDZZ,PDZX)*MZF(1,IKU,1,ZFLX)),&
+  CALL LES_MEAN_SUBGRID( MZF(MXF(ZFLX)), X_LES_SUBGRID_WU , .TRUE. )
+  CALL LES_MEAN_SUBGRID( MZF(MXF(GZ_U_UW(PUM,PDZZ)*ZFLX)), X_LES_RES_ddxa_U_SBG_UaU , .TRUE.)
+  CALL LES_MEAN_SUBGRID( MZF(MXF(GX_W_UW_PWM*ZFLX)), X_LES_RES_ddxa_W_SBG_UaW , .TRUE.)
+  CALL LES_MEAN_SUBGRID( MXF(GX_M_U(1,IKU,1,PTHLM,PDXX,PDZZ,PDZX)*MZF(ZFLX)),&
                          X_LES_RES_ddxa_Thl_SBG_UaW , .TRUE.)
   IF (KRR>=1) THEN
-    CALL LES_MEAN_SUBGRID( MXF(GX_M_U(1,IKU,1,PRM(:,:,:,1),PDXX,PDZZ,PDZX)*MZF(1,IKU,1,ZFLX)), &
+    CALL LES_MEAN_SUBGRID( MXF(GX_M_U(1,IKU,1,PRM(:,:,:,1),PDXX,PDZZ,PDZX)*MZF(ZFLX)), &
                            X_LES_RES_ddxa_Rt_SBG_UaW , .TRUE.)
   END IF
   DO JSV=1,NSV
-    CALL LES_MEAN_SUBGRID( MXF(GX_M_U(1,IKU,1,PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)*MZF(1,IKU,1,ZFLX)), &
+    CALL LES_MEAN_SUBGRID( MXF(GX_M_U(1,IKU,1,PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)*MZF(ZFLX)), &
                            X_LES_RES_ddxa_Sv_SBG_UaW(:,:,:,JSV) , .TRUE.)
   END DO
   CALL SECOND_MNH(ZTIME2)

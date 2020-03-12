@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 turb 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !    ############################
      MODULE MODI_TURB_HOR_SV_CORR
@@ -142,7 +137,6 @@ REAL, DIMENSION(SIZE(PSVM,1),SIZE(PSVM,2),SIZE(PSVM,3))       &
                                      :: ZFLX, ZA
 !
 INTEGER             :: JSV          ! loop counter
-INTEGER             :: IKU
 !
 REAL :: ZTIME1, ZTIME2
 !
@@ -153,7 +147,6 @@ REAL :: ZCQSVD = 2.4  ! constant for humidity - scalar covariance dissipation
 REAL :: ZCSV          !constant for the scalar flux 
 ! ---------------------------------------------------------------------------
 !
-IKU=SIZE(PTKEM,3)
 CALL SECOND_MNH(ZTIME1)
 !
 IF(LBLOWSNOW) THEN
@@ -172,15 +165,15 @@ DO JSV=1,NSV
   IF (LLES_CALL) THEN
     IF (.NOT. L2D) THEN
       ZFLX(:,:,:) =  ZCSV / ZCSVD * PLM(:,:,:) * PLEPS(:,:,:) *   &
-         (  GX_M_M(1,IKU,1,PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)**2             &
-          + GY_M_M(1,IKU,1,PSVM(:,:,:,JSV),PDYY,PDZZ,PDZY)**2 )
+         (  GX_M_M(PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)**2             &
+          + GY_M_M(PSVM(:,:,:,JSV),PDYY,PDZZ,PDZY)**2 )
     ELSE
       ZFLX(:,:,:) =  ZCSV / ZCSVD * PLM(:,:,:) * PLEPS(:,:,:) *   &
-            GX_M_M(1,IKU,1,PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)**2
+            GX_M_M(PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)**2
     END IF
     CALL LES_MEAN_SUBGRID( -2.*ZCSVD*SQRT(PTKEM)*ZFLX/PLEPS, &
                            X_LES_SUBGRID_DISS_Sv2(:,:,:,JSV), .TRUE. )
-    CALL LES_MEAN_SUBGRID( MZF(1,IKU,1,PWM)*ZFLX, X_LES_RES_W_SBG_Sv2(:,:,:,JSV), .TRUE. )
+    CALL LES_MEAN_SUBGRID( MZF(PWM)*ZFLX, X_LES_RES_W_SBG_Sv2(:,:,:,JSV), .TRUE. )
   END IF
   !
   ! covariance SvThv
@@ -189,12 +182,12 @@ DO JSV=1,NSV
     ZA(:,:,:)   =  ETHETA(KRR,KRRI,PTHLM,PRM,PLOCPEXNM,PATHETA,PSRCM)
     IF (.NOT. L2D) THEN
       ZFLX(:,:,:)=  PLM(:,:,:) * PLEPS(:,:,:)                                          &
-          *  (  GX_M_M(1,IKU,1,PTHLM,PDXX,PDZZ,PDZX) * GX_M_M(1,IKU,1,PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)  &
-              + GY_M_M(1,IKU,1,PTHLM,PDYY,PDZZ,PDZY) * GY_M_M(1,IKU,1,PSVM(:,:,:,JSV),PDYY,PDZZ,PDZY)  &
+          *  (  GX_M_M(PTHLM,PDXX,PDZZ,PDZX) * GX_M_M(PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)  &
+              + GY_M_M(PTHLM,PDYY,PDZZ,PDZY) * GY_M_M(PSVM(:,:,:,JSV),PDYY,PDZZ,PDZY)  &
              ) * (XCSHF+ZCSV) / (2.*ZCTSVD)
     ELSE
       ZFLX(:,:,:)=  PLM(:,:,:) * PLEPS(:,:,:)                                          &
-              * GX_M_M(1,IKU,1,PTHLM,PDXX,PDZZ,PDZX) * GX_M_M(1,IKU,1,PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)  &
+              * GX_M_M(PTHLM,PDXX,PDZZ,PDZX) * GX_M_M(PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)  &
               * (XCSHF+ZCSV) / (2.*ZCTSVD)
     END IF
     CALL LES_MEAN_SUBGRID( ZA*ZFLX, X_LES_SUBGRID_SvThv(:,:,:,JSV) , .TRUE.)
@@ -204,12 +197,12 @@ DO JSV=1,NSV
       ZA(:,:,:)   =  EMOIST(KRR,KRRI,PTHLM,PRM,PLOCPEXNM,PAMOIST,PSRCM)
       IF (.NOT. L2D) THEN
         ZFLX(:,:,:)=  PLM(:,:,:) * PLEPS(:,:,:)                                                 &
-            *  (  GX_M_M(1,IKU,1,PRM(:,:,:,1),PDXX,PDZZ,PDZX) * GX_M_M(1,IKU,1,PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)  &
-                + GY_M_M(1,IKU,1,PRM(:,:,:,1),PDYY,PDZZ,PDZY) * GY_M_M(1,IKU,1,PSVM(:,:,:,JSV),PDYY,PDZZ,PDZY)  &
+            *  (  GX_M_M(PRM(:,:,:,1),PDXX,PDZZ,PDZX) * GX_M_M(PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)  &
+                + GY_M_M(PRM(:,:,:,1),PDYY,PDZZ,PDZY) * GY_M_M(PSVM(:,:,:,JSV),PDYY,PDZZ,PDZY)  &
                ) * (XCHF+ZCSV) / (2.*ZCQSVD)
       ELSE
         ZFLX(:,:,:)=  PLM(:,:,:) * PLEPS(:,:,:)                                                 &
-                * GX_M_M(1,IKU,1,PRM(:,:,:,1),PDXX,PDZZ,PDZX) * GX_M_M(1,IKU,1,PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)  &
+                * GX_M_M(PRM(:,:,:,1),PDXX,PDZZ,PDZX) * GX_M_M(PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)  &
                 * (XCHF+ZCSV) / (2.*ZCQSVD)
       END IF
       CALL LES_MEAN_SUBGRID( ZA*ZFLX, X_LES_SUBGRID_SvThv(:,:,:,JSV) , .TRUE.)

@@ -64,7 +64,6 @@ TYPE (DATE_TIME), SAVE, DIMENSION(:), ALLOCATABLE :: TDTFRC ! date of
 REAL, SAVE, DIMENSION(:,:), ALLOCATABLE :: XUFRC,   &! geostrophic wind 
 					                       XVFRC,   &! components U and V
 					                       XWFRC     ! large scale vertical wind
-REAL, SAVE, DIMENSION(:,:,:),ALLOCATABLE:: XWTFRC    ! large scale vertical wind
 REAL, SAVE, DIMENSION(:,:), ALLOCATABLE :: XTHFRC,  &! large scale TH profile
 					                       XRVFRC    ! large scale RV profile
 REAL, SAVE, DIMENSION(:,:), ALLOCATABLE :: XGXTHFRC,&! large scale TH gradient

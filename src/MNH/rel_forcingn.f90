@@ -143,7 +143,6 @@ REAL, DIMENSION(SIZE(PRTHS,1),SIZE(PRTHS,2),SIZE(PRTHS,3)) :: ZXADVTHFRC,ZXADVRV
 REAL, DIMENSION(SIZE(PRTHS,1),SIZE(PRTHS,2),SIZE(PRTHS,3)) :: ZTHREL,ZRVREL
 LOGICAL,DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2),SIZE(PTHM,3)) :: GRELAX_MASK_FRC ! MAsk for relaxation
 REAL :: ZRELAX_HEIGHT_TOP,ZRELAX_HEIGHT_BOT, ZRELAX_TIME
-INTEGER :: IKU
 
 !----------------------------------------------------------------------------
 !
@@ -152,8 +151,6 @@ INTEGER :: IKU
 
 if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), '2DREL', prths(:, :, :)    )
 if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_TH), '2DREL', prrs (:, :, :, 1) )
-
-IKU = SIZE(PTHM,3)
 
 IF (GSFIRSTCALL) THEN
 !
@@ -237,7 +234,7 @@ END IF
  ! Corresponds to CASE=FIXE of forcing.f90
  !
   GRELAX_MASK_FRC(:,:,:) = .TRUE.
-  WHERE ((MZF(1,IKU,1,PZZ).LT.ZRELAX_HEIGHT_BOT).OR.(MZF(1,IKU,1,PZZ).GT.ZRELAX_HEIGHT_TOP)) 
+  WHERE ((MZF(PZZ).LT.ZRELAX_HEIGHT_BOT).OR.(MZF(PZZ).GT.ZRELAX_HEIGHT_TOP))
     GRELAX_MASK_FRC = .FALSE.
   END WHERE
 !

@@ -281,7 +281,6 @@ REAL, DIMENSION(:,:),     INTENT(INOUT) :: PZWS                  ! significant w
 !*      0.2  DECLARATIONS OF LOCAL VARIABLES
 !
 INTEGER:: JSV                  ! loop counters
-INTEGER :: IKU
 INTEGER :: IIB, IIE  ! index of first and last inner mass points along x
 INTEGER :: IJB, IJE  ! index of first and last inner mass points along y
 real, dimension(:,:,:), allocatable :: zrhodjontime
@@ -289,7 +288,6 @@ real, dimension(:,:,:), allocatable :: zrhodjontime
 !------------------------------------------------------------------------------
 !
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
-IKU=SIZE(XZHAT)
 !
 !*      1.   ASSELIN FILTER
 !
@@ -547,8 +545,7 @@ IF (LBU_ENABLE) THEN
 
   if ( lbudget_u   ) call Budget_store_end( tbudgets(NBUDGET_U  ), 'ENDF', pus  (:, :, :) * Mxm( prhodj(:, :, :) ) / ptstep )
   if ( lbudget_v   ) call Budget_store_end( tbudgets(NBUDGET_V  ), 'ENDF', pvs  (:, :, :) * Mym( prhodj(:, :, :) ) / ptstep )
-  if ( lbudget_w   ) call Budget_store_end( tbudgets(NBUDGET_W  ), 'ENDF', pws  (:, :, :) * Mzm( 1, iku, 1, prhodj(:, :, :) ) &
-                                            / ptstep )
+  if ( lbudget_w   ) call Budget_store_end( tbudgets(NBUDGET_W  ), 'ENDF', pws  (:, :, :) * Mzm( prhodj(:, :, :) ) / ptstep )
   if ( lbudget_th  ) call Budget_store_end( tbudgets(NBUDGET_TH ), 'ENDF', pths (:, :, :)    * prhodj(:, :, :) / ptstep )
   if ( lbudget_tke ) call Budget_store_end( tbudgets(NBUDGET_TKE), 'ENDF', ptkes(:, :, :)    * prhodj(:, :, :) / ptstep )
   if ( lbudget_rv  ) call Budget_store_end( tbudgets(NBUDGET_RV ), 'ENDF', prs  (:, :, :, 1) * prhodj(:, :, :) / ptstep )
@@ -566,8 +563,7 @@ IF (LBU_ENABLE) THEN
 
   if ( lbudget_u   ) call Budget_store_init( tbudgets(NBUDGET_U  ), 'ASSE', pus  (:, :, :) * Mxm( prhodj(:, :, :) ) / ptstep )
   if ( lbudget_v   ) call Budget_store_init( tbudgets(NBUDGET_V  ), 'ASSE', pvs  (:, :, :) * Mym( prhodj(:, :, :) ) / ptstep )
-  if ( lbudget_w   ) call Budget_store_init( tbudgets(NBUDGET_W  ), 'ASSE', pws  (:, :, :) * Mzm( 1, iku, 1, prhodj(:, :, :) ) &
-                                             / ptstep )
+  if ( lbudget_w   ) call Budget_store_init( tbudgets(NBUDGET_W  ), 'ASSE', pws  (:, :, :) * Mzm( prhodj(:, :, :) ) / ptstep )
   if ( lbudget_th  ) call Budget_store_init( tbudgets(NBUDGET_TH ), 'ASSE', pths (:, :, :)    * prhodj(:, :, :) / ptstep )
   if ( lbudget_tke ) call Budget_store_init( tbudgets(NBUDGET_TKE), 'ASSE', ptkes(:, :, :)    * prhodj(:, :, :) / ptstep )
   if ( lbudget_rv  ) call Budget_store_init( tbudgets(NBUDGET_RV ), 'ASSE', prs  (:, :, :, 1) * prhodj(:, :, :) / ptstep )
@@ -582,7 +578,6 @@ IF (LBU_ENABLE) THEN
       call Budget_store_init( tbudgets(jsv + NBUDGET_SV1 - 1), 'ASSE', psvs(:, :, :, jsv) * prhodj(:, :, :) / ptstep )
     end do
   end if
-
 END IF
 !
 !------------------------------------------------------------------------------

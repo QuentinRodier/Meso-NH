@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 adiab 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ####################
       MODULE MODI_ADVECUVW_2ND 
@@ -117,12 +112,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRWCT     ! of momentum
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRUS, PRVS, PRWS ! Sources of Momentum
 !
-INTEGER :: IKU
-!
-!  
 !-------------------------------------------------------------------------------
-!
-IKU=SIZE(XZHAT)
 !
 !*       1.     COMPUTES THE ADVECTIVE TENDANCIES
 !	        ---------------------------------
@@ -134,7 +124,7 @@ PRUS(:,:,:) = PRUS(:,:,:)                              &
              -DYF( MXM(PRVCT(:,:,:))*MYM(PUT(:,:,:)) ) 
 !
 PRUS(:,:,:) = PRUS(:,:,:)                              &
-             -DZF(1,IKU,1, MXM(PRWCT(:,:,:))*MZM(1,IKU,1,PUT(:,:,:)) )
+             -DZF( MXM(PRWCT(:,:,:))*MZM(PUT(:,:,:)) )
 !
 !
 PRVS(:,:,:) = PRVS(:,:,:)                              &
@@ -144,17 +134,17 @@ PRVS(:,:,:) = PRVS(:,:,:)                              &
              -DYM( MYF(PRVCT(:,:,:))*MYF(PVT(:,:,:)) )  
 !
 PRVS(:,:,:) = PRVS(:,:,:)                              &
-             -DZF(1,IKU,1, MYM(PRWCT(:,:,:))*MZM(1,IKU,1,PVT(:,:,:)) )
+             -DZF( MYM(PRWCT(:,:,:))*MZM(PVT(:,:,:)) )
 !
 !
 PRWS(:,:,:) = PRWS(:,:,:)                              &
-             -DXF( MZM(1,IKU,1,PRUCT(:,:,:))*MXM(PWT(:,:,:)) ) 
+             -DXF( MZM(PRUCT(:,:,:))*MXM(PWT(:,:,:)) )
 !
 PRWS(:,:,:) = PRWS(:,:,:)                              &
-             -DYF( MZM(1,IKU,1,PRVCT(:,:,:))*MYM(PWT(:,:,:)) ) 
+             -DYF( MZM(PRVCT(:,:,:))*MYM(PWT(:,:,:)) )
 !
 PRWS(:,:,:) = PRWS(:,:,:)                              &
-             -DZM(1,IKU,1, MZF(1,IKU,1,PRWCT(:,:,:))*MZF(1,IKU,1,PWT(:,:,:)) )
+             -DZM( MZF(PRWCT(:,:,:))*MZF(PWT(:,:,:)) )
 !
 !-------------------------------------------------------------------------------
 !

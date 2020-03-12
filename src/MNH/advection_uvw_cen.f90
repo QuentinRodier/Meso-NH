@@ -169,24 +169,17 @@ REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: ZMZM_RHODJ
 !
 INTEGER                     :: IINFO_ll    ! return code of parallel routine
 TYPE(LIST_ll), POINTER      :: TZFIELDS_ll ! list of fields to exchange
-INTEGER :: IKU
-INTEGER :: IIB,IIE,IJB,IJE,IKB,IKE ! index values for the physical subdomain
 
 !
 !-------------------------------------------------------------------------------
 !
-CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
-IKU = SIZE(XZHAT)
-IKB=1+JPVEXT
-IKE=IKU-JPVEXT
-
 if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'ADV', prus(:, :, :) )
 if ( lbudget_v ) call Budget_store_init( tbudgets(NBUDGET_V), 'ADV', prvs(:, :, :) )
 if ( lbudget_w ) call Budget_store_init( tbudgets(NBUDGET_W), 'ADV', prws(:, :, :) )
 
 ZMXM_RHODJ = MXM(PRHODJ)
 ZMYM_RHODJ = MYM(PRHODJ)
-ZMZM_RHODJ = MZM(1,IKU,1,PRHODJ)
+ZMZM_RHODJ = MZM(PRHODJ)
 !
 !*       1.     COMPUTES THE CONTRAVARIANT COMPONENTS
 !	        -------------------------------------
