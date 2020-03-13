@@ -1616,7 +1616,7 @@ if ( tbudgets(NBUDGET_RR)%lenabled ) then
 
   !Allocate all basic source terms (used or not)
   !The size should be large enough (bigger than necessary is OK)
-  isourcesmax = 29
+  isourcesmax = 32
   tbudgets(NBUDGET_RR)%nsourcesmax = isourcesmax
   allocate( tbudgets(NBUDGET_RR)%tsources(isourcesmax) )
 
@@ -1827,7 +1827,7 @@ if ( tbudgets(NBUDGET_RI)%lenabled ) then
 
   !Allocate all basic source terms (used or not)
   !The size should be large enough (bigger than necessary is OK)
-  isourcesmax = 38
+  isourcesmax = 41
   tbudgets(NBUDGET_RI)%nsourcesmax = isourcesmax
   allocate( tbudgets(NBUDGET_RI)%tsources(isourcesmax) )
 
@@ -2065,7 +2065,7 @@ if ( tbudgets(NBUDGET_RS)%lenabled ) then
 
   !Allocate all basic source terms (used or not)
   !The size should be large enough (bigger than necessary is OK)
-  isourcesmax = 26
+  isourcesmax = 29
   tbudgets(NBUDGET_RS)%nsourcesmax = isourcesmax
   allocate( tbudgets(NBUDGET_RS)%tsources(isourcesmax) )
 
@@ -2244,7 +2244,7 @@ if ( tbudgets(NBUDGET_RG)%lenabled ) then
 
   !Allocate all basic source terms (used or not)
   !The size should be large enough (bigger than necessary is OK)
-  isourcesmax = 29
+  isourcesmax = 32
   tbudgets(NBUDGET_RG)%nsourcesmax = isourcesmax
   allocate( tbudgets(NBUDGET_RG)%tsources(isourcesmax) )
 
@@ -2437,7 +2437,7 @@ if ( tbudgets(NBUDGET_RH)%lenabled ) then
 
   !Allocate all basic source terms (used or not)
   !The size should be large enough (bigger than necessary is OK)
-  isourcesmax = 20
+  isourcesmax = 23
   tbudgets(NBUDGET_RH)%nsourcesmax = isourcesmax
   allocate( tbudgets(NBUDGET_RH)%tsources(isourcesmax) )
 
@@ -2593,7 +2593,7 @@ SV_BUDGETS: do jsv = 1, ksv
 
     !Allocate all basic source terms (used or not)
     !The size should be large enough (bigger than necessary is OK)
-    isourcesmax = 34
+    isourcesmax = 37
     tbudgets(ibudget)%nsourcesmax = isourcesmax
     allocate( tbudgets(ibudget)%tsources(isourcesmax) )
 
