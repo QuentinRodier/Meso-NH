@@ -17,7 +17,6 @@
 !!
 !!**  IMPLICIT ARGUMENTS
 !!    ------------------
-!!      MODD_PARAMETERS: JPBUMAX, JPBUPROCMAX
 !!
 !!    REFERENCE
 !!    ---------
@@ -58,7 +57,7 @@
 !             ------------
 
 use modd_field,      only: tfield_metadata_base
-use modd_parameters, only: JPBUMAX, JPBUPROMAX, NBUNAMELGTMAX, NCOMMENTLGTMAX
+use modd_parameters, only: NBUNAMELGTMAX, NCOMMENTLGTMAX
 
 implicit none
 
@@ -194,7 +193,7 @@ INTEGER, SAVE :: NBUKMAX                   ! dimension along K of the budget
 !      Allowed processes for the budget of the x scalar variables
 !        (transport part only)
 !
-! For each budget, the switches values (from 0 to JPBUPROMAX) for budgets 
+! For each budget, the switches values for budgets
 ! activation may be set by the user in a namelist. Their default value is 0.
 ! In the following declaration, the corresponding process names  are given 
 ! beside as comments.

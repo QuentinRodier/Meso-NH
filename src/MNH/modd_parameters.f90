@@ -42,6 +42,7 @@
 ! P. Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 ! Q. Rodier   29/03/2019: increase maximum number of outputs to 999
 ! P. Wautelet 17/01/2020: add NBUNAMELGTMAX and NCOMMENTLGTMAX parameters
+! P. Wautelet 13/03/2020: remove JPBUMAX and JPBUPROMAX
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -58,9 +59,6 @@ INTEGER, PARAMETER :: JPVEXT = 1      ! Vertical External points number
 INTEGER, PARAMETER :: JPVEXT_TURB = 1      ! Vertical External points number
 INTEGER, PARAMETER :: JPMODELMAX = 8  ! Maximum allowed number of nested models 
 INTEGER, PARAMETER :: JPCPLFILEMAX = 24 ! Maximum allowed number of CouPLing FILEs
-INTEGER, PARAMETER :: JPBUMAX= 250     ! Maximum of allowed budgets 
-INTEGER, PARAMETER :: JPBUPROMAX = 60 ! Maximum of allowed processes for all
-                                      ! budgets
 INTEGER, PARAMETER :: JPRIMMAX = 6    ! Maximum number of points for the
                        ! horizontal relaxation for the outermost verticals
 INTEGER, PARAMETER :: JPSVMAX  = 200  ! Maximum number of scalar variables

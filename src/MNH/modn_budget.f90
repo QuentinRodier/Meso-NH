@@ -92,8 +92,7 @@
 !!         
 !!         
 !!                         Variables specific to a budget
-!!     Their values are integer from 0 to JPBUPROMAX (max. of possible 
-!!     processes). The mechanism for activating a given process is detailled 
+!!     The mechanism for activating a given process is detailled
 !!     in Book 3. Each variable name is related to the location of the 
 !!     process in the run and may be decomposed in 2 parts: the first part
 !!     gives the name of the process implicated and the second part gives 

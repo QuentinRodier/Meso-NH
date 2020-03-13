@@ -47,12 +47,7 @@ contains
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------ 
-!!      Module MODD_PARAMETERS: JPBUMAX,JPBUPROMAX
-!!
-!!      Module MODD_CONF: CCONF        
-!!
-!!      Module MODD_DYN:  XSEGLEN 
-!!
+!!      Modules MODD_*
 !!
 !!    REFERENCE
 !!    ---------
