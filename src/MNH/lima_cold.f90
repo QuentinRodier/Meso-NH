@@ -349,8 +349,7 @@ IF (LNUCL) THEN
                                PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,    &
                                PTHS, PRVS, PRCS, PRRS, PRIS, PRGS,          &
                                PCCT,                                        &
-                               PCCS, PCRS, PNFS,                            &
-                               PCIS, PNIS, PNHS                             )
+                               PCCS, PCRS, PNFS, PCIS, PNHS                 )
    END IF
 !
 END IF

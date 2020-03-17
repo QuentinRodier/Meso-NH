@@ -14,8 +14,7 @@ INTERFACE
                            PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,  &
                            PTHS, PRVS, PRCS, PRRS, PRIS, PRGS,        &
                            PCCT,                                      &
-                           PCCS, PCRS, PNFS,                          &
-                           PCIS, PNIS, PNHS                           )
+                           PCCS, PCRS, PNFS, PCIS, PNHS               )
 !
 LOGICAL,                  INTENT(IN)    :: OHHONI  ! enable haze freezing
 REAL,                     INTENT(IN)    :: PTSTEP  ! Time step          
@@ -53,8 +52,6 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNFS    ! CCN C. available source
                                                    !HOMOGENEOUS nucleation of haze
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCIS    ! Ice crystal C. source
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNIS    ! Activated ice nuclei C. source
-                                                   !for IMMERSION
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNHS    ! haze homogeneous freezing
 !
 END SUBROUTINE LIMA_COLD_HOM_NUCL
@@ -68,8 +65,7 @@ END MODULE MODI_LIMA_COLD_HOM_NUCL
                            PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,  &
                            PTHS, PRVS, PRCS, PRRS, PRIS, PRGS,        &
                            PCCT,                                      &
-                           PCCS, PCRS, PNFS,                          &
-                           PCIS, PNIS, PNHS                           )
+                           PCCS, PCRS, PNFS, PCIS, PNHS               )
 !     ######################################################################
 !
 !!    PURPOSE
@@ -91,6 +87,7 @@ END MODULE MODI_LIMA_COLD_HOM_NUCL
 !!      C. Barthe  * LACy*   jan. 2014  add budgets
 !!      B.Vie 10/2016 Bug zero division
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      M. Leriche May 2019 suppress unused actived coated IN (immersion) source 
 !!      B.Vie 03/2020 Correction of budgets parallelization
 !-------------------------------------------------------------------------------
 !
@@ -155,8 +152,6 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNFS    ! CCN C. available source
                                                    !HOMOGENEOUS nucleation of haze
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCIS    ! Ice crystal C. source
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNIS    ! Activated ice nuclei C. source
-                                                   !for IMMERSION
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNHS    ! haze homogeneous freezing
 !
 !*       0.2   Declarations of local variables :
@@ -182,8 +177,6 @@ REAL, DIMENSION(:),   ALLOCATABLE :: ZCCS    ! Cloud water conc. source
 REAL, DIMENSION(:),   ALLOCATABLE :: ZCRS    ! Rain water conc. source
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZNFS    ! available nucleus conc. source
 REAL, DIMENSION(:),   ALLOCATABLE :: ZCIS    ! Pristine ice conc. source
-REAL, DIMENSION(:,:), ALLOCATABLE :: ZNIS    ! Nucleated Ice nuclei conc. source 
-                                             !by Immersion
 REAL, DIMENSION(:),   ALLOCATABLE :: ZZNHS   ! Nucleated Ice nuclei conc. source
                                              !by Homogeneous freezing
 !
@@ -281,7 +274,6 @@ IF (INEGT.GT.0) THEN
    ALLOCATE(ZCIS(INEGT))
    !
    ALLOCATE(ZNFS(INEGT,NMOD_CCN))
-   ALLOCATE(ZNIS(INEGT,NMOD_IMM))
    ALLOCATE(ZZNHS(INEGT))
    !
    ALLOCATE(ZRHODREF(INEGT)) 
@@ -313,9 +305,6 @@ IF (INEGT.GT.0) THEN
       !
       DO JMOD_CCN = 1, NMOD_CCN
          ZNFS(JL,JMOD_CCN) = PNFS(I1(JL),I2(JL),I3(JL),JMOD_CCN)
-      ENDDO
-      DO JMOD_IMM = 1, NMOD_IMM
-         ZNIS(JL,JMOD_IMM) = PNIS(I1(JL),I2(JL),I3(JL),JMOD_IMM)
       ENDDO
       ZZNHS(JL) = ZNHS(I1(JL),I2(JL),I3(JL))
       ZRHODREF(JL) = PRHODREF(I1(JL),I2(JL),I3(JL))
@@ -599,7 +588,6 @@ IF (INEGT.GT.0) THEN
    DEALLOCATE(ZCIS)
 !
    DEALLOCATE(ZNFS)
-   DEALLOCATE(ZNIS)
    DEALLOCATE(ZZNHS)
 !
    DEALLOCATE(ZRHODREF) 

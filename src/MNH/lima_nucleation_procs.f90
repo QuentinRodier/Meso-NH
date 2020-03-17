@@ -69,6 +69,7 @@ SUBROUTINE LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, OCLOSE_OUT, PRHODJ,           
 !!    MODIFICATIONS
 !!    -------------
 !!      Original             15/03/2018
+!!      M. Leriche (06/19) : missing update of PNFT after CCN hom. ncl.
 ! P. Wautelet 27/02/2020: bugfix: PNFT was not updated after LIMA_CCN_HOM_FREEZING
 ! P. Wautelet 27/02/2020: add Z_TH_HINC variable (for budgets)
 !!      B.Vié 03/03/2020 : use DTHRAD instead of dT/dt in Smax diagnostic computation
@@ -290,7 +291,9 @@ PTHT(:,:,:) = ZTHT(:,:,:)
 PRVT(:,:,:) = ZRVT(:,:,:)
 PRIT(:,:,:) = ZRIT(:,:,:)
 PCIT(:,:,:) = ZCIT(:,:,:)
-PNFT(:,:,:,:) = ZNFT(:,:,:,:)
+DO JL=1, NMOD_CCN
+  PNFT(:,:,:,JL) = ZNFT(:,:,:,JL)
+ENDDO
 PNHT(:,:,:) = ZNHT(:,:,:)
 ENDIF
 !
