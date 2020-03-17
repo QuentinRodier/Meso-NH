@@ -48,7 +48,7 @@ USE MODD_BUDGET
 USE MODD_CH_AERO_n,     ONLY: XSOLORG,XMI
 USE MODD_CH_AEROSOL,    ONLY: LORILAM
 USE MODD_CH_MNHC_n,     ONLY: LUSECHEM, LUSECHAQ, LUSECHIC, LCH_INIT_FIELD, &
-                              CCHEM_INPUT_FILE, LCH_CONV_LINOX,             &
+                              LCH_CONV_LINOX,             &
                               XCH_TUV_DOBNEW, LCH_PH
 USE MODD_CH_PH_n
 USE MODD_CLOUD_MF_n
