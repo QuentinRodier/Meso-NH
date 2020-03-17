@@ -92,6 +92,7 @@ END MODULE MODI_LIMA_MIXED
 !!      Original             ??/??/13 
 !!      C. Barthe  * LACy *  jan. 2014   add budgets
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      B.Vie 03/2020 Correction of budgets parallelization
 !!
 !-------------------------------------------------------------------------------
 !
@@ -380,7 +381,7 @@ GMICRO(IIB:IIE,IJB:IJE,IKB:IKE) = PRCT(IIB:IIE,IJB:IJE,IKB:IKE)>XRTMIN(2) .OR. &
 !
 IMICRO = COUNTJV( GMICRO(:,:,:),I1(:),I2(:),I3(:))
 !
-IF( IMICRO >= 1 ) THEN
+IF( IMICRO >= 0 ) THEN
 !
    ALLOCATE(ZRVT(IMICRO)) 
    ALLOCATE(ZRCT(IMICRO))
