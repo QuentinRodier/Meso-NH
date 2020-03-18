@@ -143,7 +143,8 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG
 !!       D.Ricard and P.Marquet 2016-2017 : THETAL + THETAS1 POVOS1 or THETAS2 POVOS2
 !!                                        if  LMOIST_L     LMOIST_S1   or  LMOIST_S2
 !  P. Wautelet 08/02/2019: minor bug: compute ZWORK36 only when needed
-!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  S  Bielli      02/2019: sea salt: significant sea wave height influences salt emission; 5 salt modes
+!  P. Wautelet 18/03/2020: remove ICE2 option
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -3909,7 +3910,7 @@ IF (LLIDAR) THEN
     ZTMP2(:,:,:,1)=ZRG_DST(:,:,:,IACCMODE)
     ZTMP3(:,:,:,1)=ZSIG_DST(:,:,:,IACCMODE)
     SELECT CASE ( CCLOUD )
-    CASE('KESS','ICE2','ICE3','ICE4')
+    CASE('KESS''ICE3','ICE4')
       CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, XCLDFR, &
                  XRT, ZWORK31, ZWORK32,                                        &
                  PDSTC=ZTMP1,                                                  &
@@ -3947,7 +3948,7 @@ IF (LLIDAR) THEN
     END SELECT
   ELSE
     SELECT CASE ( CCLOUD )
-    CASE('KESS','ICE2','ICE3','ICE4')
+    CASE('KESS','ICE3','ICE4')
       CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, XCLDFR, &
            XRT, ZWORK31, ZWORK32)
     CASE('C2R2')
