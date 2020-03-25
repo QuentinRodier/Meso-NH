@@ -11,7 +11,8 @@ INTERFACE
       ONUMDIFU,ONUMDIFTH,ONUMDIFSV,                                   &
       OHORELAX_UVWTH,OHORELAX_RV,OHORELAX_RC,OHORELAX_RR,             &
       OHORELAX_RI,OHORELAX_RS, OHORELAX_RG, OHORELAX_RH,OHORELAX_TKE, & 
-      OHORELAX_SV,OVE_RELAX,OCHTRANS,ONUDGING,ODRAGTREE,ODEPOTREE,    &
+      OHORELAX_SV, OVE_RELAX, ove_relax_grd, OCHTRANS,                &
+      ONUDGING,ODRAGTREE,ODEPOTREE,                                   &
       HRAD,HDCONV,HSCONV,HTURB,HTURBDIM,HCLOUD                        )
 !
 INTEGER,         INTENT(IN) :: KLUOUT   ! Logical unit number for prints
@@ -44,7 +45,9 @@ LOGICAL,DIMENSION(:),INTENT(IN):: OHORELAX_SV     ! switch for the
                        ! horizontal relaxation for scalar variables
 LOGICAL, INTENT(IN) :: OVE_RELAX        ! switch to activate the vertical 
                                         ! relaxation
-LOGICAL, INTENT(IN) :: OCHTRANS         ! switch to activate convective 
+logical, intent(in) :: ove_relax_grd    ! switch to activate the vertical
+                                        ! relaxation to the lowest verticals
+LOGICAL, INTENT(IN) :: OCHTRANS         ! switch to activate convective
                                         !transport for SV
 LOGICAL, INTENT(IN) :: ONUDGING         ! switch to activate nudging
 LOGICAL, INTENT(IN) :: ODRAGTREE        ! switch to activate vegetation drag
@@ -70,7 +73,8 @@ END MODULE MODI_INI_BUDGET
       ONUMDIFU,ONUMDIFTH,ONUMDIFSV,                                   &
       OHORELAX_UVWTH,OHORELAX_RV,OHORELAX_RC,OHORELAX_RR,             &
       OHORELAX_RI,OHORELAX_RS, OHORELAX_RG, OHORELAX_RH,OHORELAX_TKE, & 
-      OHORELAX_SV,OVE_RELAX,OCHTRANS,ONUDGING,ODRAGTREE,ODEPOTREE,    &
+      OHORELAX_SV, OVE_RELAX, ove_relax_grd, OCHTRANS,                &
+      ONUDGING,ODRAGTREE,ODEPOTREE,                                   &
       HRAD,HDCONV,HSCONV,HTURB,HTURBDIM,HCLOUD                        )
 !     #################################################################
 !
@@ -156,7 +160,8 @@ END MODULE MODI_INI_BUDGET
 !  P. Wautelet 24/02/2020: bugfix: corrected condition for budget NCDEPITH
 !  P. Wautelet 26/02/2020: bugfix: rename CEVA->REVA for budget for raindrop evaporation in C2R2 (necessary after commit 4ed805fc)
 !  P. Wautelet 26/02/2020: bugfix: add missing condition on OCOLD for NSEDIRH budget in LIMA case
-!  B. Vie      02/03/2020 : LIMA negativity checks after turbulence, advection and microphysics budgets 
+!  B. Vie      02/03/2020: LIMA negativity checks after turbulence, advection and microphysics budgets
+!  P. Wautelet 25/03/2020: add missing ove_relax_grd
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -218,7 +223,9 @@ LOGICAL,DIMENSION(:),INTENT(IN):: OHORELAX_SV     ! switch for the
                        ! horizontal relaxation for scalar variables
 LOGICAL, INTENT(IN) :: OVE_RELAX        ! switch to activate the vertical 
                                         ! relaxation
-LOGICAL, INTENT(IN) :: OCHTRANS         ! switch to activate convective 
+logical, intent(in) :: ove_relax_grd    ! switch to activate the vertical
+                                        ! relaxation to the lowest verticals
+LOGICAL, INTENT(IN) :: OCHTRANS         ! switch to activate convective
                                         !transport for SV
 LOGICAL, INTENT(IN) :: ONUDGING         ! switch to activate nudging
 LOGICAL, INTENT(IN) :: ODRAGTREE        ! switch to activate vegetation drag
@@ -447,10 +454,10 @@ IF (LBU_RU) THEN
   IPROC=IPROC+1
   IF ( ONUMDIFU ) IPROACTV(1,IPROC) = NDIFU
   IPROC=IPROC+1
-  IF ( OHORELAX_UVWTH .OR. OVE_RELAX ) THEN   
+  IF ( OHORELAX_UVWTH .OR. OVE_RELAX .or. ove_relax_grd) THEN
     IPROACTV(1,IPROC) = NRELU 
   ELSE
-    IF(OVE_RELAX .OR. OHORELAX_UVWTH .OR. OHORELAX_RV .OR.                 &
+    IF(OHORELAX_RV .OR.                                                    &
      OHORELAX_RC .OR. OHORELAX_RR .OR. OHORELAX_RI .OR. OHORELAX_RS .OR.   &
      OHORELAX_RG .OR. OHORELAX_RH .OR. OHORELAX_TKE .OR. ANY(OHORELAX_SV)) THEN
       IPROACTV(1,IPROC) = 4
@@ -550,10 +557,10 @@ IF (LBU_RV) THEN
   IPROC=IPROC+1 
   IF ( ONUMDIFU ) IPROACTV(2,IPROC) = NDIFV
   IPROC=IPROC+1 
-  IF ( OHORELAX_UVWTH .OR. OVE_RELAX ) THEN   
+  IF ( OHORELAX_UVWTH .OR. OVE_RELAX .or. ove_relax_grd ) THEN
     IPROACTV(2,IPROC) = NRELV 
   ELSE
-    IF(OVE_RELAX .OR. OHORELAX_UVWTH .OR. OHORELAX_RV .OR.                 &
+    IF(OHORELAX_RV .OR.                                                    &
      OHORELAX_RC .OR. OHORELAX_RR .OR. OHORELAX_RI .OR. OHORELAX_RS .OR.   &
      OHORELAX_RG .OR. OHORELAX_RH .OR. OHORELAX_TKE .OR. ANY(OHORELAX_SV)) THEN
       IPROACTV(2,IPROC) = 4
@@ -653,10 +660,10 @@ IF (LBU_RW) THEN
   IPROC=IPROC+1 
   IF ( ONUMDIFU ) IPROACTV(3,IPROC) = NDIFW
   IPROC=IPROC+1
-  IF ( OHORELAX_UVWTH .OR. OVE_RELAX ) THEN   
+  IF ( OHORELAX_UVWTH .OR. OVE_RELAX .or. ove_relax_grd ) THEN
     IPROACTV(3,IPROC) = NRELW 
   ELSE
-    IF(OVE_RELAX .OR. OHORELAX_UVWTH .OR. OHORELAX_RV .OR.                 &
+    IF(OHORELAX_RV .OR.                                                    &
      OHORELAX_RC .OR. OHORELAX_RR .OR. OHORELAX_RI .OR. OHORELAX_RS .OR.   &
      OHORELAX_RG .OR. OHORELAX_RH .OR. OHORELAX_TKE .OR. ANY(OHORELAX_SV)) THEN
       IPROACTV(3,IPROC) = 4
@@ -750,10 +757,10 @@ IF (LBU_RTH) THEN
   IPROC=IPROC+1
   IF ( ONUMDIFTH ) IPROACTV(4,IPROC) = NDIFTH
   IPROC=IPROC+1
-  IF ( OHORELAX_UVWTH .OR. OVE_RELAX ) THEN   
+  IF ( OHORELAX_UVWTH .OR. OVE_RELAX .or. ove_relax_grd ) THEN
     IPROACTV(4,IPROC) = NRELTH
   ELSE
-    IF(OVE_RELAX .OR. OHORELAX_UVWTH .OR. OHORELAX_RV .OR.                 &
+    IF(OHORELAX_RV .OR.                                                    &
      OHORELAX_RC .OR. OHORELAX_RR .OR. OHORELAX_RI .OR. OHORELAX_RS .OR.   &
      OHORELAX_RG .OR. OHORELAX_RH .OR. OHORELAX_TKE .OR. ANY(OHORELAX_SV)) THEN
       IPROACTV(4,IPROC) = 4
@@ -1062,7 +1069,7 @@ IF (LBU_RTKE) THEN
   IF ( OHORELAX_TKE ) THEN
     IPROACTV(5,IPROC) = NRELTKE
   ELSE
-    IF(OVE_RELAX .OR. OHORELAX_UVWTH .OR. OHORELAX_RV .OR.                 &
+    IF(OVE_RELAX .OR. OVE_RELAX_GRD .OR. OHORELAX_UVWTH .OR. OHORELAX_RV .OR. &
      OHORELAX_RC .OR. OHORELAX_RR .OR. OHORELAX_RI .OR. OHORELAX_RS .OR.   &
      OHORELAX_RG .OR. OHORELAX_RH .OR. OHORELAX_TKE .OR. ANY(OHORELAX_SV)) THEN
       IPROACTV(5,IPROC) = 4
@@ -1141,7 +1148,7 @@ IF (LBU_RRV) THEN
   IF ( OHORELAX_RV .OR. OVE_RELAX ) THEN  
     IPROACTV(6,IPROC) = NRELRV
   ELSE
-    IF(OVE_RELAX .OR. OHORELAX_UVWTH .OR. OHORELAX_RV .OR.                 &
+    IF(OVE_RELAX .OR. OVE_RELAX_GRD.OR. OHORELAX_UVWTH .OR. OHORELAX_RV .OR. &
      OHORELAX_RC .OR. OHORELAX_RR .OR. OHORELAX_RI .OR. OHORELAX_RS .OR.   &
      OHORELAX_RG .OR. OHORELAX_RH .OR. OHORELAX_TKE .OR. ANY(OHORELAX_SV)) THEN
       IPROACTV(6,IPROC) = 4
@@ -1336,7 +1343,7 @@ IF (LBU_RRC) THEN
   IF ( OHORELAX_RC ) THEN
     IPROACTV(7,IPROC) = NRELRC
   ELSE
-    IF(OVE_RELAX .OR. OHORELAX_UVWTH .OR. OHORELAX_RV .OR.                 &
+    IF(OVE_RELAX .OR. OVE_RELAX_GRD .OR. OHORELAX_UVWTH .OR. OHORELAX_RV .OR. &
      OHORELAX_RC .OR. OHORELAX_RR .OR. OHORELAX_RI .OR. OHORELAX_RS .OR.   &
      OHORELAX_RG .OR. OHORELAX_RH .OR. OHORELAX_TKE .OR. ANY(OHORELAX_SV)) THEN
       IPROACTV(7,IPROC) = 4
@@ -1629,7 +1636,7 @@ IF (LBU_RRR) THEN
   IF ( OHORELAX_RR ) THEN
     IPROACTV(8,IPROC) = NRELRR
   ELSE
-    IF(OVE_RELAX .OR. OHORELAX_UVWTH .OR. OHORELAX_RV .OR.                 &
+    IF(OVE_RELAX .OR. OVE_RELAX_GRD.OR. OHORELAX_UVWTH .OR. OHORELAX_RV .OR. &
      OHORELAX_RC .OR. OHORELAX_RR .OR. OHORELAX_RI .OR. OHORELAX_RS .OR.   &
      OHORELAX_RG .OR. OHORELAX_RH .OR. OHORELAX_TKE .OR. ANY(OHORELAX_SV)) THEN
       IPROACTV(8,IPROC) = 4
@@ -1871,7 +1878,7 @@ IF (LBU_RRI) THEN
   IF ( OHORELAX_RI ) THEN
     IPROACTV(9,IPROC) = NRELRI
   ELSE
-    IF(OVE_RELAX .OR. OHORELAX_UVWTH .OR. OHORELAX_RV .OR.                 &
+    IF(OVE_RELAX .OR. OVE_RELAX_GRD .OR. OHORELAX_UVWTH .OR. OHORELAX_RV .OR. &
      OHORELAX_RC .OR. OHORELAX_RR .OR. OHORELAX_RI .OR. OHORELAX_RS .OR.   &
      OHORELAX_RG .OR. OHORELAX_RH .OR. OHORELAX_TKE .OR. ANY(OHORELAX_SV)) THEN
       IPROACTV(9,IPROC) = 4
@@ -2113,7 +2120,7 @@ IF (LBU_RRS) THEN
   IF ( OHORELAX_RS ) THEN
     IPROACTV(10,IPROC) = NRELRS
   ELSE
-    IF(OVE_RELAX .OR. OHORELAX_UVWTH .OR. OHORELAX_RV .OR.                 &
+    IF(OVE_RELAX .OR. OVE_RELAX_GRD .OR. OHORELAX_UVWTH .OR. OHORELAX_RV .OR. &
      OHORELAX_RC .OR. OHORELAX_RR .OR. OHORELAX_RI .OR. OHORELAX_RS .OR.   &
      OHORELAX_RG .OR. OHORELAX_RH .OR. OHORELAX_TKE .OR. ANY(OHORELAX_SV)) THEN
       IPROACTV(10,IPROC) = 4
@@ -2302,7 +2309,7 @@ IF (LBU_RRG) THEN
   IF ( OHORELAX_RG ) THEN
     IPROACTV(11,IPROC) = NRELRG
   ELSE
-    IF(OVE_RELAX .OR. OHORELAX_UVWTH .OR. OHORELAX_RV .OR.                 &
+    IF(OVE_RELAX .OR. OVE_RELAX_GRD .OR. OHORELAX_UVWTH .OR. OHORELAX_RV .OR. &
      OHORELAX_RC .OR. OHORELAX_RR .OR. OHORELAX_RI .OR. OHORELAX_RS .OR.   &
      OHORELAX_RG .OR. OHORELAX_RH .OR. OHORELAX_TKE .OR. ANY(OHORELAX_SV)) THEN
       IPROACTV(11,IPROC) = 4
@@ -2514,7 +2521,7 @@ IF (LBU_RRH) THEN
   IF ( OHORELAX_RH ) THEN
     IPROACTV(12,IPROC) = NRELRH
   ELSE
-    IF(OVE_RELAX .OR. OHORELAX_UVWTH .OR. OHORELAX_RV .OR.                 &
+    IF(OVE_RELAX .OR. OVE_RELAX_GRD .OR. OHORELAX_UVWTH .OR. OHORELAX_RV .OR. &
      OHORELAX_RC .OR. OHORELAX_RR .OR. OHORELAX_RI .OR. OHORELAX_RS .OR.   &
      OHORELAX_RG .OR. OHORELAX_RH .OR. OHORELAX_TKE .OR. ANY(OHORELAX_SV)) THEN
       IPROACTV(12,IPROC) = 4
@@ -2661,7 +2668,7 @@ IF (LBU_RSV) THEN
     IF ( OHORELAX_SV(JSV) ) THEN
       IPROACTV(12+JSV,IPROC) = NRELSV
     ELSE
-    IF(OVE_RELAX .OR. OHORELAX_UVWTH .OR. OHORELAX_RV .OR.                 &
+    IF(OVE_RELAX .OR. OVE_RELAX_GRD .OR. OHORELAX_UVWTH .OR. OHORELAX_RV .OR. &
      OHORELAX_RC .OR. OHORELAX_RR .OR. OHORELAX_RI .OR. OHORELAX_RS .OR.   &
      OHORELAX_RG .OR. OHORELAX_RH .OR. OHORELAX_TKE .OR. ANY(OHORELAX_SV)) THEN
         IPROACTV(12+JSV,IPROC) = 4
