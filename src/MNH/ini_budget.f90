@@ -2412,7 +2412,7 @@ if ( tbudgets(NBUDGET_RG)%lenabled ) then
   gcond = hcloud == 'ICE4' .and. lred
   tzsource%cmnhname  = 'HGCV'
   tzsource%clongname = 'hail to graupel conversion'
-  call Budget_source_add( tbudgets(NBUDGET_RG), tzsource, gcond, nghcvrg )
+  call Budget_source_add( tbudgets(NBUDGET_RG), tzsource, gcond, nhgcvrg )
 
   gcond = hcloud == 'ICE4' .and. lred
   tzsource%cmnhname  = 'DRYH'
@@ -2551,7 +2551,7 @@ if ( tbudgets(NBUDGET_RH)%lenabled ) then
   gcond = hcloud == 'ICE4' .and. lred
   tzsource%cmnhname  = 'HGCV'
   tzsource%clongname = 'hail to graupel conversion'
-  call Budget_source_add( tbudgets(NBUDGET_RH), tzsource, gcond, nghcvrh )
+  call Budget_source_add( tbudgets(NBUDGET_RH), tzsource, gcond, nhgcvrh )
 
   gcond = hcloud == 'ICE4' .and. lred
   tzsource%cmnhname  = 'DRYH'
