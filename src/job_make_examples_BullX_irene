@@ -29,7 +29,7 @@ module list
 
 export MONORUN="Exec ccc_mprun -n 1 "
 export MPIRUN="Exec ccc_mprun -n 4 "
-export POSTRUN="time "
+export POSTRUN="echo "
 
 cd $SRC_MESONH/MY_RUN/KTEST/003_KW78 
 make -k
