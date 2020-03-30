@@ -1,8 +1,8 @@
 #
 # Version of PACKAGE MESONH "Open distribution"
-#              PACK-MNH-V5-4-2
-#              DATE : 03/04/2019
-#              VERSION : MESONH MASDEV5_4 + BUG-2
+#              PACK-MNH-V5-4-3
+#              DATE : 30/03/2020
+#              VERSION : MESONH MASDEV5_4 + BUG-3
 #
 #  MAP
 #
@@ -13,7 +13,7 @@
 #      III) COMPILING/INSTALLING THE MESONH PACKAGE ON YOUR LINUX COMPUTER 
 #       IV) RUN SOME "SMALL KTEST" EXAMPLES
 #        V) RECOMPILING YOUR 'OWN' SOURCES ONLY 
-#       VI) COMPILING/INSTALLING MESONH ON GENCI & ECMWF & METEO COMPUTERS
+#       VI) COMPILING/INSTALLING MESONH ON GENCI & ECMWF & METEO & CALMIP COMPUTERS
 #      VII) "SCANDOLLAR" = SCRIPTING YOUR OWN PROCEDURES 
 #
 #     VIII) TROUBLE-SHOOTING
@@ -80,14 +80,14 @@
 #
 # or directly
 #
-# http://mesonh.aero.obs-mip.fr/mesonh/dir_open/dir_MESONH/MNH-V5-4-2.tar.gz
+# http://mesonh.aero.obs-mip.fr/mesonh/dir_open/dir_MESONH/MNH-V5-4-3.tar.gz
 #
-# Then untar the file "MNH-V5-4-2.tar.gz" where you want to.
+# Then untar the file "MNH-V5-4-3.tar.gz" where you want to.
 # For example, in your home directory:
 #
 
 cd ~
-tar xvfz MNH-V5-4-2.tar.gz
+tar xvfz MNH-V5-4-3.tar.gz
 
 #
 #  Process now to the chapter to configure the MesoNH package.
@@ -167,10 +167,10 @@ git config --global http.sslverify false
 # Finally you can clone the Meso-NH Git repository with the following command:
 #
 
-git lfs clone anongit@anongit_mesonh:/gitrepos/MNH-git_open_source-lfs.git -b MNH-54-branch MNH-V5-4-2
+git lfs clone anongit@anongit_mesonh:/gitrepos/MNH-git_open_source-lfs.git -b MNH-54-branch MNH-V5-4-3
 
 #
-# that will create the MNH-V5-4-2 directory containing a clone (copy) of the
+# that will create the MNH-V5-4-3 directory containing a clone (copy) of the
 # Meso-NH package on the remote developpement branch MNH-54-branch
 #
 #
@@ -180,34 +180,34 @@ git lfs clone anongit@anongit_mesonh:/gitrepos/MNH-git_open_source-lfs.git -b MN
 # Once the repository is cloned, it's better for you to checkout your own branch
 # (by default, you are on HEAD of the MNH-54-branch development branch  ).
 #
-# To create your local branch corresponding to the V5-4-2 version, type:
+# To create your local branch corresponding to the V5-4-3 version, type:
 #
 
-cd MNH-V5-4-2
-git checkout -b MYB-MNH-V5-4-2 PACK-MNH-V5-4-2
+cd MNH-V5-4-3
+git checkout -b MYB-MNH-V5-4-3 PACK-MNH-V5-4-3
 
 #
-# MYB-MNH-V5-4-2 is the name of the local branch you created
+# MYB-MNH-V5-4-3 is the name of the local branch you created
 # and
-# PACK-MNH-V5-4-2 is the remote/origin tag on which it is based.
+# PACK-MNH-V5-4-3 is the remote/origin tag on which it is based.
 #
 # The advantage of this way of downloading the package is that in the future
 # you could check/update quickly differences with the new version of the
 # package without having to download entirely the full package.
 #
-#  Suppose that a new version, for example "PACK-MNH-V5-4-2", is announced.
+#  Suppose that a new version, for example "PACK-MNH-V5-4-4", is announced.
 #
 #  To see the differences with your working copy, do:
 #
 
 git fetch
-git diff HEAD PACK-MNH-V5-4-2
+git diff HEAD PACK-MNH-V5-4-4
 
 #
 #  To go to the new version, you can, for example, create a new local branch:
 #
 
-git checkout -b MYB-MNH-V5-4-2 PACK-MNH-V5-4-2
+git checkout -b MYB-MNH-V5-4-4 PACK-MNH-V5-4-4
 
 #
 # At any time, you can also check for "uptodate" changes in the Git branch
@@ -253,7 +253,7 @@ git clone anongit@anongit_mesonh:/gitrepos/MNH-DOC.git
 #    use the "./configure" script like this 
 #
 
-cd ~/MNH-V5-4-2/src
+cd ~/MNH-V5-4-3/src
 ./configure
 . ../conf/profile_mesonh
 
@@ -304,7 +304,7 @@ export OPTLEVEL=O2         # Compile in O2, 4 times faster then DEBUG, but less 
 
 #    and then source/load the new generate file
 
-. ../conf/profile_mesonh.LXifort.MNH-V5-4-2.MPIAUTO.O2
+. ../conf/profile_mesonh.LXifort.MNH-V5-4-3.MPIAUTO.O2
 
 #
 #  REM: 
@@ -329,7 +329,7 @@ export OPTLEVEL=O2         # Compile in O2, 4 times faster then DEBUG, but less 
 # go to the directory  "src"
 #
 
-cd  ~/MNH-V5-4-2/src
+cd  ~/MNH-V5-4-3/src
 
 #
 # if you have not already configured your MESONH environment
@@ -535,8 +535,8 @@ make examples
 
 ^L
 #
-#   VI) COMPILING/INSTALLING ON GENCI & ECMWF & METEO COMPUTERS
-#   ===========================================================
+#   VI) COMPILING/INSTALLING ON GENCI & ECMWF & METEO & CALMIP COMPUTERS
+#   ====================================================================
 #
 #   After downloading "exactly" like on "any standalone PC" 
 #   run the "./configure" command :
@@ -547,51 +547,77 @@ make examples
 #
 #  - If you do not have sufficient space in your "$HOME" directory,
 #    install the whole package directly on the ${WORKDIR}
+#    /!\  the name of the WORKDIR differ in the differents computer center
+#    read the doc , most of them manage disk space throw 'multi-projet' with only one unique login . 
 #
 #   WARNING :
 #   ======== 
 #    - Think to do a backup of your installation 
-#    - This space is no more "purged" but a "crash disk" could/will
+#    - This space is no "purged" but a "crash disk" could/will
 #      probably occur !!!
 # 
 
 cd $WORKDIR
-cd MNH-V5-4-2/src
+cd MNH-V5-4-3/src
 
 ./configure
  
 #   
 #   Due to limitation in time & memory on interactive connection 
-#   then compile the MESONH PACKAGE in batch mode with the different "job_make_mesonh*" files
+#   in some computer you have to compile the MESONH PACKAGE in batch mode with the different "job_make_mesonh*" files
 #   
 #   at IDRIS :
 #   ---------
 #
 
-#   - On ADA ( IBM/x3750 ) with :
+#   - On JEAN-ZAY ( HPE ) the compilation is only possible in interactive :
 
-llsubmit job_make_mesonh_IBM_ada
+cd MNH-V5-4-3/src
+. ../conf/profile_mesonh-LXifort-R8I4-MNH-V5-4-3-MPIINTEL-O2
+make -j16 |& tee error$XYZ
+make installmaster
 
-#
-#
-#   - On TURING (IBM BG/Q ) : 
+#   - to run the test case examples  run
 
-llsubmit job_make_mesonh_BGQ
+sbatch -A {your_projet}@cpu job_make_examples_BullX_jeanzay
 
-#
-#
-#   BACKUP : /!\ backup your work on "ergon"
 #
 #   
-#   at CINES on JADE( SGI/ICE ) , OCCIGEN not tested yet  :
+#   at CINES on OCCIGEN (BULLX)  :
 #   -------------------------------------------------------
 # 
-#   - install the PACKAGE in your "/store/${USER}" directory 
-#   - you could compile in interactive mode
+#   - install the PACKAGE in your $HOME ( default 50Go  of quota )
+#   - Compile in interactive mode ( see IDRIS )
 #
-#    BACKUP : /!\ backup your work on "/data/${USER}"
-# 
+#   - to run the test case examples  run
 
+sbatch job_make_examples_BullX_occigen
+
+#
+#   
+#   at TGCC on IRENE (BULLX)  :
+#   -------------------------------------------------------
+#
+#   At TGCC , you have two architectures accessible throw 2 differents frontals
+#   but with a commun disk space , connect to : 
+#
+#   - ssh irene-fr  : for Intel SkyLake/KNL processors
+#      On Intel processors the MPI use is INTELMPI
+#      the configure will generate a
+#      profile_mesonh-LXifort-R8I4-MNH-V5-4-3-MPIINTEL-O2
+#
+#   - ssh irene-amd : for AMD , processors
+#      On AMD processors the MPI use is OPENMPI
+#      the configure will generate a
+#      profile_mesonh-LXifort-R8I4-MNH-V5-4-3-AMD-MPIAUTO-O2
+# 
+#   - install the PACKAGE in your $CCCHOME ( default 20Go  of quota )
+#   - Compile in interactive mode ( see IDRIS )
+#
+
+#   - to run the test case examples  run
+
+ccc_msub job_make_examples_BullX_irene{_AMD}
 
 # 
 #   at ECMWF on cca ( CRAY/XC30 ) :
@@ -600,45 +626,32 @@ llsubmit job_make_mesonh_BGQ
 #   - to install MESONH go to your $PERM directory
 #     if you need more disk space than allowed for 'standard' user 
 #     Ask to Dominique Lucas, look this email :
-#
-#    http://mesonh.aero.obs-mip.fr/cgi-bin/mesonh_interne/mail2html.cgi?file=2009_09_24_15:31:54
+#    http://mesonh.aero.obs-mip.fr/mesonh/dir_interne/dir_mail_mesonh_cnrm/dir_mail/2009_09_24_15:31:54.eml
 #
 #   - for the compilation use :
 
 qsub job_make_mesonh_CRAY_cca
 
+#   - to run the test case examples  run
+
+qsub  job_make_examples_CRAY_cca
+
 #
-# REM : On CRAY computer cca , the default compiler is the CRAY one = crayftn .
-#      I you have trouble with this one , you could compile with the Intel/ifort one .
-#      Use the ifort one do :
-
-export ARCH=LXifort
-./configure
-
-...
-
-creation du fichier -->  ../conf/profile_mesonh-LXifortI4-MNH-V5-4-2-MPICRAY-O2
-
-# And for the compilation & example job , switch the ARCH variable to LXifort :
-
-vi  job_make_mesonh_CRAY_cca(job_make_examples_CRAY_cca)
-
-ARCH=LXifort
-#ARCH=LXcray # this is the default one
-. ../conf/profile_mesonh-${ARCH}I4-MNH-V5-4-2-MPICRAY-O2
+# REM : On CRAY computer cca , I switch the default compiler to the INTEL one .
+#      Some trouble with the is the CRAY one = crayftn .
 
 #
 #   - At Meteo-France DSI on beaufix (or prolix)
 #
 #  to install the whole package on your "$HOME" directory
-#  untar the file "PACK-MNH-V5-4-2.tar.gz" from its location :
+#  untar the file "MNH-V5-4-3.tar.gz" from its location :
 
 cd ~
-tar xvf $MESONH/pack_MNH-V5-4-2.tar.gz
+tar xvf $MESONH/MNH-V5-4-3.tar.gz
 
 #  run the "./configure" command :
 
-cd MNH-V5-4-2/src
+cd MNH-V5-4-3/src
 ./configure
 
 #
@@ -671,44 +684,18 @@ export VER_USER=MY_MODIF
 
 sbatch  job_make_mesonh_user_BullX
 
-#
-#   EXAMPLES ON GENCI & ECMWF PLATFORMS & METEO COMPUTERS
-#   =====================================================
-#
-#  - At IDRIS
-#
-
-# on ADA
-
-llsubmit job_make_examples_IBM_ada
-
-#on TURING
-
-llsubmit job_make_examples_BGQ
 
 #
-#   - At CINES on JADE( SGI/ICE ) :
+#   
+#   at CALMIP on OLYMPE (BULLX)  :
+#   -------------------------------------------------------
+# 
+#   - install the PACKAGE in your /tmpdir/$USER
+#   - Compile in interactive mode ( see IDRIS )
 #
-# load ".profile_mesonh..." & set the variables :
- 
-export MONORUN="mpirun -np 1"
-export MPIRUN="mpirun -np 4 " 
-  
-# and run with 
+#   - to run the test case examples  run
 
-make examples
-
-#
-#   - At ECMWF on cca
-#
-
-llsubmit  job_make_examples_CRAY_cca
-
-#
-#   - At Meteo-France DSI on beaufix or prolix
-#
-
-sbatch   job_make_examples_BullX
+sbatch job_make_examples_BullX_olympe
 
 #
 # That's all for the basic INSTALLATION of the "MESONH PACKAGE"
@@ -764,7 +751,7 @@ scandollar
 
 ## OUTPUT ::
 
->#  read default config file :: --->  CONF_DOLLAR=/home/escj/DEV64/PACK-MNH-V5-4-2/conf/post/confdollar_aeropc_default
+>#  read default config file :: --->  CONF_DOLLAR=/home/escj/DEV64/PACK-MNH-V5-4-3/conf/post/confdollar_aeropc_default
 >#
 >#  read    user config file :: --->  CONFIG=confdollar
 >#
@@ -786,7 +773,7 @@ scandollar 0*
 
 ## OUTPUT ::
 >#
->#  read default config file :: --->  CONF_DOLLAR=/home/escj/DEV64/PACK-MNH-V5-4-2/conf/post/confdollar_aeropc_default
+>#  read default config file :: --->  CONF_DOLLAR=/home/escj/DEV64/PACK-MNH-V5-4-3/conf/post/confdollar_aeropc_default
 >#
 >#  read    user config file :: --->  CONFIG=confdollar
 >#
@@ -860,22 +847,22 @@ cp -R  007_16janvier_scandollar /.../your_directory
 #
 # use this "profile_mesonh" :
 
-.  /home/rech/mnh/rmnh007/DEV/MNH-V5-4-2/conf/profile_mesonh-SX8-MNH-V5-4-2-MPIAUTO-O4
+.  /home/rech/mnh/rmnh007/DEV/MNH-V5-4-3/conf/profile_mesonh-SX8-MNH-V5-4-3-MPIAUTO-O4
 
 # And the examples are here ( link to my $WORKDIR in actually )  
 
-/home/rech/mnh/rmnh007/DEV/MNH-V5-4-2/MY_RUN/KTEST/007_16janvier_scandollar
+/home/rech/mnh/rmnh007/DEV/MNH-V5-4-3/MY_RUN/KTEST/007_16janvier_scandollar
 
 #
 #  On vargas
 #  ---------
 #  use this "profile_mesonh" :
 
-. /workgpfs/rech/mnh/rmnh007/DEV/MNH-V5-4-2/conf/profile_mesonh-AIX64-MNH-V5-4-2-MPIAUTO-O2
+. /workgpfs/rech/mnh/rmnh007/DEV/MNH-V5-4-3/conf/profile_mesonh-AIX64-MNH-V5-4-3-MPIAUTO-O2
 
 # and examples here :
 
-/workgpfs/rech/mnh/rmnh007/DEV/MNH-V5-4-2/MY_RUN/KTEST/007_16janvier_scandollar
+/workgpfs/rech/mnh/rmnh007/DEV/MNH-V5-4-3/MY_RUN/KTEST/007_16janvier_scandollar
 
 # 
 #  - At CINES on JADE :
@@ -883,11 +870,11 @@ cp -R  007_16janvier_scandollar /.../your_directory
 #
 # use 
 
-. /work/escobar/DEV/MNH-V5-4-2/conf/profile_mesonh-LXifort-MNH-V5-4-2-MPIICE-O2
+. /work/escobar/DEV/MNH-V5-4-3/conf/profile_mesonh-LXifort-MNH-V5-4-3-MPIICE-O2
 
 # and the exemples
 
-/work/escobar/DEV/MNH-V5-4-2/MY_RUN/KTEST/007_16janvier_scandollar
+/work/escobar/DEV/MNH-V5-4-3/MY_RUN/KTEST/007_16janvier_scandollar
 
 #
 #  - At ECMWF on cxa :
@@ -895,11 +882,11 @@ cp -R  007_16janvier_scandollar /.../your_directory
 #
 # use
 
-. /c1a/ms_perm/au5/MNH-V5-4-2/conf/profile_mesonh-AIX64-MNH-V5-4-2-MPIAUTO-O2
+. /c1a/ms_perm/au5/MNH-V5-4-3/conf/profile_mesonh-AIX64-MNH-V5-4-3-MPIAUTO-O2
 
 # and the examples
 
-/c1a/ms_perm/au5/MNH-V5-4-2/MY_RUN/KTEST/007_16janvier_scandollar
+/c1a/ms_perm/au5/MNH-V5-4-3/MY_RUN/KTEST/007_16janvier_scandollar
 
 
 #
