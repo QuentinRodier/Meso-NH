@@ -602,12 +602,12 @@ sbatch job_make_examples_BullX_occigen
 #   but with a commun disk space , connect to : 
 #
 #   - ssh irene-fr  : for Intel SkyLake/KNL processors
-#      On Intel processors the MPI use is INTELMPI
+#      On Intel processors the MPI use is OPENMPI/2.0.4
 #      the configure will generate a
-#      profile_mesonh-LXifort-R8I4-MNH-V5-4-3-MPIINTEL-O2
+#      profile_mesonh-LXifort-R8I4-MNH-V5-4-3-MPIAUTO-O2
 #
 #   - ssh irene-amd : for AMD , processors
-#      On AMD processors the MPI use is OPENMPI
+#      On AMD processors the MPI use is OPENMPI/4.02
 #      the configure will generate a
 #      profile_mesonh-LXifort-R8I4-MNH-V5-4-3-AMD-MPIAUTO-O2
 # 
@@ -616,8 +616,14 @@ sbatch job_make_examples_BullX_occigen
 #
 
 #   - to run the test case examples  run
+#
+# On intel Skylake
+ccc_msub job_make_examples_BullX_irene
+# On intel Knl 
+ccc_msub -q knl job_make_examples_BullX_irene
 
-ccc_msub job_make_examples_BullX_irene{_AMD}
+# On intel AMD 
+ccc_msub job_make_examples_BullX_irene_AMD
 
 # 
 #   at ECMWF on cca ( CRAY/XC30 ) :

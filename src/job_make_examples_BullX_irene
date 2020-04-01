@@ -1,8 +1,7 @@
 #!/bin/bash
 #MSUB -J Examples
 #MSUB -N 2            # nodes number
-#MSUB -n 4            # CPUs number (on all nodes) 
-#MSUB --exclusive           
+#MSUB -n 4            # CPUs number (on all nodes)         
 #MSUB -o Examples.eo%j   #
 #MSUB -e Examples.eo%j   #
 #MSUB -T 3600        # time limit
@@ -11,6 +10,7 @@
 #MSUB -x #  exclusive usage of nodes
 #MSUB -X # enable X forwarding -> force 'ccc_msub -i ' to get it work
 #MSUB -q skylake
+##MSUB -q knl
 
 # Echo des commandes
 ulimit -c 0
@@ -21,14 +21,14 @@ set +x
 # Nom de la machine
 hostname 
 
-. ../conf/profile_mesonh-LXifort-R8I4-MNH-V5-4-3-MPIINTEL-O2
+. ../conf/profile_mesonh-LXifort-R8I4-MNH-V5-4-3-MPIAUTO-O2
 
 set -x
 
 module list
 
-export MONORUN="Exec ccc_mprun -n 1 "
-export MPIRUN="Exec ccc_mprun -n 4 "
+export MONORUN="Mpirun -tag-output --report-bindings -np 1 "
+export MPIRUN="Mpirun -tag-output --report-bindings -np 4 "
 export POSTRUN="echo "
 
 cd $SRC_MESONH/MY_RUN/KTEST/003_KW78 
