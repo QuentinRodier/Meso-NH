@@ -10,16 +10,61 @@
 !  P. Wautelet 04/04/2019: force write on stderr for all processes in print_msg if abort
 !  P. Wautelet 02/07/2019: flush messages also for files opened with newunit (logical unit can be negative)
 !  P. Wautelet 17/01/2020: add 'BUD' category for Print_msg
+!  P. Wautelet 08/04/2020: add multiline Print_msg
 !-----------------------------------------------------------------
-MODULE MODE_MSG
-!
-USE MODD_IO, ONLY: NVERB_FATAL, NVERB_ERROR, NVERB_WARNING, NVERB_INFO, NVERB_DEBUG
-!
-IMPLICIT NONE
-!
-CONTAINS
-!
-SUBROUTINE PRINT_MSG(KVERB,HDOMAIN,HSUBR,HMSG)
+module mode_msg
+
+use modd_io, only: NVERB_FATAL, NVERB_ERROR, NVERB_WARNING, NVERB_INFO, NVERB_DEBUG
+
+implicit none
+
+integer, parameter :: NMSGLGTMAX   = 100 ! Maximum length for a message
+integer, parameter :: NMSGLLINEMAX = 10  ! Maximum number of lines for a message
+
+character(len=NMSGLGTMAX), dimension(NMSGLLINEMAX) :: cmnhmsg = ''
+
+interface Print_msg
+  module procedure Print_msg_1line, Print_msg_multi_cmnhmsg, Print_msg_multi
+end interface Print_msg
+
+
+contains
+
+subroutine Print_msg_1line( kverb, hdomain, hsubr, hmsg )
+  integer,          intent(in) :: kverb   !Verbosity level
+  character(len=*), intent(in) :: hdomain !Domain/category of message
+  character(len=*), intent(in) :: hsubr   !Subroutine/function name
+  character(len=*), intent(in) :: hmsg    !Message
+
+  call Print_msg_multi( kverb, hdomain, hsubr, [hmsg] )
+
+end subroutine Print_msg_1line
+
+
+subroutine Print_msg_multi_cmnhmsg( kverb, hdomain, hsubr )
+
+  integer,          intent(in) :: kverb   !Verbosity level
+  character(len=*), intent(in) :: hdomain !Domain/category of message
+  character(len=*), intent(in) :: hsubr   !Subroutine/function name
+
+  integer :: ilines
+
+  !Find the last non empty line
+  ilines = size( cmnhmsg )
+  do while ( len_trim( cmnhmsg(ilines) ) == 0 )
+    ilines = ilines - 1
+  end do
+
+  call Print_msg_multi( kverb, hdomain, hsubr, cmnhmsg(1 : ilines) )
+
+  !Empty the message buffer
+  !This is necessary especially if the next call contain a shorter message
+  cmnhmsg(1 : ilines) = ''
+
+end subroutine Print_msg_multi_cmnhmsg
+
+
+subroutine Print_msg_multi( KVERB, HDOMAIN, HSUBR, HMSG )
 !
 USE ISO_FORTRAN_ENV, ONLY: ERROR_UNIT, OUTPUT_UNIT
 !
@@ -27,20 +72,24 @@ USE MODD_CONF,       ONLY: CPROGRAM
 USE MODD_IO,         ONLY: NBUD_VERB, NBUD_ABORT_LEVEL, NIO_VERB, NIO_ABORT_LEVEL, NGEN_VERB, NGEN_ABORT_LEVEL, &
                            LVERB_OUTLST, LVERB_STDOUT, LVERB_ALLPRC, TFILE_OUTPUTLISTING
 USE MODD_LUNIT,      ONLY: TLUOUT0
-USE MODD_VAR_ll,     ONLY: IP, NMNH_COMM_WORLD
+USE MODD_VAR_ll,     ONLY: IP, NMNH_COMM_WORLD, NPROC
 !
 use modi_tools_c
 !
-INTEGER,         INTENT(IN) :: KVERB   !Verbosity level
-CHARACTER(LEN=*),INTENT(IN) :: HDOMAIN !Domain/category of message
-CHARACTER(LEN=*),INTENT(IN) :: HSUBR   !Subroutine/function name
-CHARACTER(LEN=*),INTENT(IN) :: HMSG    !Message
+INTEGER,                        INTENT(IN) :: KVERB   !Verbosity level
+CHARACTER(LEN=*),               INTENT(IN) :: HDOMAIN !Domain/category of message
+CHARACTER(LEN=*),               INTENT(IN) :: HSUBR   !Subroutine/function name
+CHARACTER(LEN=*), dimension(:), INTENT(IN) :: HMSG    !Message
 !
-CHARACTER(LEN=8)  :: YPRC
+character(len=2)  :: ysz
+CHARACTER(LEN=2)  :: YPRC
 CHARACTER(LEN=9)  :: YPRE
 CHARACTER(LEN=30) :: YSUBR
+character(len=:), allocatable :: yformat
 INTEGER :: IERR, IMAXVERB,IABORTLEVEL
 INTEGER :: ILU
+integer :: ji
+integer :: ilines
 LOGICAL :: GWRITE_OUTLST,GWRITE_STDOUT
 !
 !Determine if the process will write
@@ -85,7 +134,9 @@ SELECT CASE(HDOMAIN)
 END SELECT
 !
 IF (KVERB>IMAXVERB) RETURN
-!
+
+ilines = size( hmsg )
+
 SELECT CASE(KVERB)
   CASE(NVERB_FATAL)
     YPRE='FATAL:   '
@@ -102,16 +153,81 @@ SELECT CASE(KVERB)
     IF (GWRITE_OUTLST) WRITE(UNIT=ILU,        FMT=*) 'ERROR: PRINT_MSG: wrong verbosity level'
 END SELECT
 !
-WRITE(YPRC,'( I8 )') IP-1
-!
 YSUBR=TRIM(HSUBR)//':'
-IF (LVERB_ALLPRC) THEN
-  IF (GWRITE_STDOUT) WRITE(UNIT=OUTPUT_UNIT,FMT="(A8,': ',A9,A30,A)") ADJUSTL(YPRC),YPRE,YSUBR,HMSG
-  IF (GWRITE_OUTLST) WRITE(UNIT=ILU,        FMT="(A8,': ',A9,A30,A)") ADJUSTL(YPRC),YPRE,YSUBR,HMSG
-ELSE
-  IF (GWRITE_STDOUT) WRITE(UNIT=OUTPUT_UNIT,FMT="(A9,A30,A)") YPRE,YSUBR,HMSG
-  IF (GWRITE_OUTLST) WRITE(UNIT=ILU,        FMT="(A9,A30,A)") YPRE,YSUBR,HMSG
-END IF
+
+if ( ilines < 10 ) then
+  ysz = 'I1'
+else if ( ilines < 100 ) then
+  ysz = 'I2'
+else if ( ilines < 1000 ) then
+  ysz = 'I3'
+else
+  ysz = 'I4'
+end if
+
+if ( lverb_allprc ) then
+  if ( nproc < 10 ) then
+    yprc = 'I1'
+  else if ( nproc < 100 ) then
+    yprc = 'I2'
+  else if ( nproc < 1000 ) then
+    yprc = 'I3'
+  else if ( nproc < 10000 ) then
+    yprc = 'I4'
+  else if ( nproc < 100000 ) then
+    yprc = 'I5'
+  else if ( nproc < 1000000 ) then
+    yprc = 'I6'
+  else if ( nproc < 10000000 ) then
+    yprc = 'I7'
+  else
+    yprc = 'I8'
+  end if
+
+  if ( gwrite_stdout ) then
+    if ( ilines == 1 ) then
+      yformat = '(' // yprc // ','': '',a9,a30,a)'
+      Write( unit = output_unit, fmt = yformat ) ip, ypre, ysubr, hmsg
+    else
+      yformat = '(' // yprc // ','': '',a9,a30,' // ysz // ',''/'',' // ysz // ','': '',a)'
+      do ji = 1, ilines
+        Write( unit = output_unit, fmt = yformat ) ip, ypre, ysubr, ji, ilines, Trim( hmsg(ji) )
+      end do
+    end if
+  end if
+  if ( gwrite_outlst ) then
+    if ( ilines == 1 ) then
+      yformat = '(' // yprc // ','': '',a9,a30,a)'
+      Write( unit = ilu, fmt = yformat) ip, ypre, ysubr, hmsg
+    else
+      yformat = '(' // yprc // ','': '',a9,a30,' // ysz // ',''/'',' // ysz // ','': '',a)'
+      do ji = 1, ilines
+        Write( unit = ilu, fmt = yformat) ip, ypre, ysubr, ji, ilines, Trim( hmsg(ji) )
+      end do
+    end if
+  end if
+else
+  if ( gwrite_stdout ) then
+    if ( ilines == 1 ) then
+        Write( unit = output_unit, fmt = "(a9,a30,a)" ) ypre, ysubr, Trim( hmsg(1) )
+    else
+      yformat = '(a9,a30,' // ysz // ',''/'',' // ysz // ','': '',a)'
+      do ji = 1, ilines
+        Write(unit = output_unit, fmt = yformat ) ypre, ysubr, ji, ilines, Trim( hmsg(ji) )
+      end do
+    end if
+  end if
+  if ( gwrite_outlst ) then
+    if ( ilines == 1 ) then
+        Write( unit = ilu, fmt = "(a9,a30,a)") ypre, ysubr, Trim( hmsg(1) )
+    else
+      yformat = '(a9,a30,' // ysz // ',''/'',' // ysz // ','': '',a)'
+      do ji = 1, ilines
+        Write( unit = ilu, fmt = yformat) ypre, ysubr, ji, ilines, Trim( hmsg(ji) )
+      end do
+    end if
+  end if
+end if
 !
 IF (KVERB<=IABORTLEVEL) THEN
   IF (GWRITE_STDOUT) WRITE(UNIT=OUTPUT_UNIT,FMT=*) 'ABORT asked by application '//TRIM(CPROGRAM)
@@ -135,6 +251,6 @@ IF (KVERB<=IABORTLEVEL) THEN
   CALL ABORT
 END IF
 !
-END SUBROUTINE PRINT_MSG
-!
-END MODULE MODE_MSG
+end subroutine Print_msg_multi
+
+end module mode_msg
