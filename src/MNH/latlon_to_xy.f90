@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ####################
@@ -54,8 +54,8 @@
 !!    remove the USE MODI_DEFAULT_DESFM      Apr. 17, 1996 (J.Stein)
 !!    no transfer of the file when closing   Dec. 09, 1996 (V.Masson)
 !!    + changes call to READ_HGRID
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!  Philippe Wautelet: 10/04/2020 correction to new I/O structure
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 10/04/2020: add missing initializations (LATLON_TO_XY was not working)
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -69,15 +69,14 @@ USE MODD_PGDGRID
 USE MODD_PARAMETERS
 USE MODD_LUNIT
 !
-USE MODE_FIELD, ONLY: INI_FIELD_LIST
+USE MODE_FIELD,            ONLY: INI_FIELD_LIST
 USE MODE_FM
 USE MODE_FMREAD
 USE MODE_GRIDPROJ
 USE MODE_IO_ll
 USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST
-USE MODE_MODELN_HANDLER, ONLY: GOTO_MODEL
-USE MODE_SPLITTINGZ_ll
-USE MODE_POS
+USE MODE_MODELN_HANDLER,   ONLY: GOTO_MODEL
+use MODE_SPLITTINGZ_ll
 !
 USE MODI_INI_CST
 USE MODI_READ_HGRID
