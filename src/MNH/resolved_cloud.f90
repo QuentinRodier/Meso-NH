@@ -1184,16 +1184,16 @@ if (lbudget_rg) call Budget_store_init( tbudgets(NBUDGET_RG), 'NECON', prs (:, :
 if (lbudget_rh) call Budget_store_init( tbudgets(NBUDGET_RH), 'NECON', prs (:, :, :, 7) * prhodj(:, :, :) )
 if ( lbudget_sv .and. hcloud == 'LIMA' ) then
   if ( lwarm )             call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'NECON', &
-                                                   psvs(:, :, :, nsv_lima_nc) * prhodj(:, :, :) )
+                                                   zsvs(:, :, :, nsv_lima_nc) * prhodj(:, :, :) )
   if ( lwarm .and. lrain ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'NECON',&
-                                                   psvs(:, :, :, nsv_lima_nr) * prhodj(:, :, :) )
+                                                   zsvs(:, :, :, nsv_lima_nr) * prhodj(:, :, :) )
   if ( lcold )             call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'NECON', &
-                                                   psvs(:, :, :, nsv_lima_ni) * prhodj(:, :, :) )
+                                                   zsvs(:, :, :, nsv_lima_ni) * prhodj(:, :, :) )
   do ji = nsv_lima_ccn_free, nsv_lima_ccn_free + nmod_ccn - 1
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + ji), 'NECON', psvs(:, :, :, ji) * prhodj(:, :, :) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + ji), 'NECON', zsvs(:, :, :, ji) * prhodj(:, :, :) )
   end do
   do ji = nsv_lima_ifn_free, nsv_lima_ifn_free + nmod_ifn - 1
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + ji), 'NECON', psvs(:, :, :, ji) * prhodj(:, :, :) )
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + ji), 'NECON', zsvs(:, :, :, ji) * prhodj(:, :, :) )
   end do
 end if
 
