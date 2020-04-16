@@ -557,7 +557,7 @@ IF (LBU_ENABLE) THEN
   if ( lbudget_rh  ) call Budget_store_end( tbudgets(NBUDGET_RH ), 'ENDF', prs  (:, :, :, 7) * prhodj(:, :, :) / ptstep )
   if ( lbudget_sv  ) then
     do jsv = 1, ksv
-      call Budget_store_end( tbudgets(jsv + NBUDGET_SV1 - 1), 'ENDF', psvs(:, :, :, jsv) * zrhodjontime(:, :, :) )
+      call Budget_store_end( tbudgets(jsv + NBUDGET_SV1 - 1), 'ENDF', psvs(:, :, :, jsv) * prhodj(:, :, :) / ptstep )
     end do
   end if
 
