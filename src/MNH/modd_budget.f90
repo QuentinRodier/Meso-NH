@@ -51,6 +51,7 @@
 !  B. Vie      03/02/2020: LIMA negativity checks after turbulence, advection and microphysics budgets
 !  P. Wautelet 09/03/2020: add tburhodj variable
 !  P .Wautelet 09/03/2020: add missing budgets for electricity
+!  P. Wautelet 17/04/2020: set default values for budgets switch values
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -202,515 +203,515 @@ INTEGER, SAVE :: NBUKMAX                   ! dimension along K of the budget
 !
 ! Courant namelist: NAM_BURU
 !
-LOGICAL, SAVE :: LBU_RU     ! True when the budget of RU is performed
+LOGICAL, SAVE :: LBU_RU = .FALSE. ! True when the budget of RU is performed
 !                         
-INTEGER, SAVE :: NASSEU     ! time filter
-INTEGER, SAVE :: NNESTU     ! Efffect of 2way nesting on U
-INTEGER, SAVE :: NADVU      ! advection 
-INTEGER, SAVE :: NFRCU      ! forcing
-INTEGER, SAVE :: NNUDU      ! nudging
-INTEGER, SAVE :: NCURVU     ! curvature
-INTEGER, SAVE :: NCORU      ! Coriolis terms 
-INTEGER, SAVE :: NDIFU      ! numerical diffusion
-INTEGER, SAVE :: NRELU      ! relaxation
-INTEGER, SAVE :: NHTURBU    ! horizontal TURBulence
-INTEGER, SAVE :: NVTURBU    ! vertical turbulence 
-INTEGER, SAVE :: NDRAGU     ! vegetation drag        
-INTEGER, SAVE :: NMAFLU     ! mass flux            
-INTEGER, SAVE :: NPRESU     ! pressure term
-INTEGER, SAVE :: NVISCU     ! viscosity
+INTEGER, SAVE :: NASSEU  = 0 ! time filter
+INTEGER, SAVE :: NNESTU  = 0 ! Efffect of 2way nesting on U
+INTEGER, SAVE :: NADVU   = 0 ! advection
+INTEGER, SAVE :: NFRCU   = 0 ! forcing
+INTEGER, SAVE :: NNUDU   = 0 ! nudging
+INTEGER, SAVE :: NCURVU  = 0 ! curvature
+INTEGER, SAVE :: NCORU   = 0 ! Coriolis terms
+INTEGER, SAVE :: NDIFU   = 0 ! numerical diffusion
+INTEGER, SAVE :: NRELU   = 0 ! relaxation
+INTEGER, SAVE :: NHTURBU = 0 ! horizontal TURBulence
+INTEGER, SAVE :: NVTURBU = 0 ! vertical turbulence
+INTEGER, SAVE :: NDRAGU  = 0 ! vegetation drag
+INTEGER, SAVE :: NMAFLU  = 0 ! mass flux
+INTEGER, SAVE :: NPRESU  = 0 ! pressure term
+INTEGER, SAVE :: NVISCU  = 0 ! viscosity
 !
 !      Allowed processes for the budget of RV (wind component along y)
 !                                                  
 ! Courant namelist: NAM_BURV
 !
-LOGICAL, SAVE :: LBU_RV     ! True when the budget of RV is performed
+LOGICAL, SAVE :: LBU_RV = .FALSE. ! True when the budget of RV is performed
 !
-INTEGER, SAVE :: NASSEV     ! time filter
-INTEGER, SAVE :: NNESTV     ! Efffect of 2way nesting on V
-INTEGER, SAVE :: NADVV      ! advection 
-INTEGER, SAVE :: NFRCV      ! forcing
-INTEGER, SAVE :: NNUDV      ! nudging
-INTEGER, SAVE :: NCURVV     ! curvature
-INTEGER, SAVE :: NCORV      ! Coriolis terms 
-INTEGER, SAVE :: NDIFV      ! numerical diffusion
-INTEGER, SAVE :: NRELV      ! relaxation
-INTEGER, SAVE :: NHTURBV    ! horizontal turbulence
-INTEGER, SAVE :: NVTURBV    ! vertical turbulence 
-INTEGER, SAVE :: NDRAGV     ! vegetation drag         
-INTEGER, SAVE :: NMAFLV     ! mass flux            
-INTEGER, SAVE :: NPRESV     ! pressure term
-INTEGER, SAVE :: NVISCV     ! viscosity
+INTEGER, SAVE :: NASSEV  = 0 ! time filter
+INTEGER, SAVE :: NNESTV  = 0 ! Efffect of 2way nesting on V
+INTEGER, SAVE :: NADVV   = 0 ! advection
+INTEGER, SAVE :: NFRCV   = 0 ! forcing
+INTEGER, SAVE :: NNUDV   = 0 ! nudging
+INTEGER, SAVE :: NCURVV  = 0 ! curvature
+INTEGER, SAVE :: NCORV   = 0 ! Coriolis terms
+INTEGER, SAVE :: NDIFV   = 0 ! numerical diffusion
+INTEGER, SAVE :: NRELV   = 0 ! relaxation
+INTEGER, SAVE :: NHTURBV = 0 ! horizontal turbulence
+INTEGER, SAVE :: NVTURBV = 0 ! vertical turbulence
+INTEGER, SAVE :: NDRAGV  = 0 ! vegetation drag
+INTEGER, SAVE :: NMAFLV  = 0 ! mass flux
+INTEGER, SAVE :: NPRESV  = 0 ! pressure term
+INTEGER, SAVE :: NVISCV  = 0 ! viscosity
 !
 !      Allowed processes for the budget of RW (wind vertical component)
 !                                                  
 ! Courant namelist: NAM_BURW
 !
-LOGICAL, SAVE :: LBU_RW     ! True when the budget of RW is performed 
+LOGICAL, SAVE :: LBU_RW = .FALSE. ! True when the budget of RW is performed
 !                                                  
-INTEGER, SAVE :: NASSEW     ! time filter
-INTEGER, SAVE :: NNESTW     ! Efffect of 2way nesting on W
-INTEGER, SAVE :: NADVW      ! advection
-INTEGER, SAVE :: NFRCW      ! forcing
-INTEGER, SAVE :: NNUDW      ! nudging
-INTEGER, SAVE :: NCURVW     ! curvature
-INTEGER, SAVE :: NCORW      ! Coriolis terms 
-INTEGER, SAVE :: NGRAVW     ! gravity term
-INTEGER, SAVE :: NDIFW      ! numerical diffusion
-INTEGER, SAVE :: NRELW      ! relaxation
-INTEGER, SAVE :: NHTURBW    ! horizontal turbulence 
-INTEGER, SAVE :: NVTURBW    ! vertical turbulence 
-INTEGER, SAVE :: NPRESW     ! pressure term
-INTEGER, SAVE :: NVISCW     ! viscosity
+INTEGER, SAVE :: NASSEW  = 0 ! time filter
+INTEGER, SAVE :: NNESTW  = 0 ! Efffect of 2way nesting on W
+INTEGER, SAVE :: NADVW   = 0 ! advection
+INTEGER, SAVE :: NFRCW   = 0 ! forcing
+INTEGER, SAVE :: NNUDW   = 0 ! nudging
+INTEGER, SAVE :: NCURVW  = 0 ! curvature
+INTEGER, SAVE :: NCORW   = 0 ! Coriolis terms
+INTEGER, SAVE :: NGRAVW  = 0 ! gravity term
+INTEGER, SAVE :: NDIFW   = 0 ! numerical diffusion
+INTEGER, SAVE :: NRELW   = 0 ! relaxation
+INTEGER, SAVE :: NHTURBW = 0 ! horizontal turbulence
+INTEGER, SAVE :: NVTURBW = 0 ! vertical turbulence
+INTEGER, SAVE :: NPRESW  = 0 ! pressure term
+INTEGER, SAVE :: NVISCW  = 0 ! viscosity
 !
 !      Allowed processes for the budget of RTH (potential temperature)
 !                                                  
 ! Courant namelist: NAM_BURTH
 !
-LOGICAL, SAVE :: LBU_RTH    ! True when the budget of RTH is performed
+LOGICAL, SAVE :: LBU_RTH = .FALSE. ! True when the budget of RTH is performed
 !
-INTEGER, SAVE :: NASSETH    ! time filter
-INTEGER, SAVE :: NNESTTH    ! Efffect of 2way nesting on Th
-INTEGER, SAVE :: NADVTH     ! Total advection for PPM
-INTEGER, SAVE :: NFRCTH     ! forcing
-INTEGER, SAVE :: N2DADVTH   ! 2d advecting forcing
-INTEGER, SAVE :: N2DRELTH   ! 2d relaxation forcing
-INTEGER, SAVE :: NNUDTH     ! nudging
-INTEGER, SAVE :: NPREFTH    ! theta source term due to the reference pressure
-                            ! (Dyn. Sources) only present if KRR>0
-INTEGER, SAVE :: NDIFTH     ! numerical diffusion
-INTEGER, SAVE :: NRELTH     ! relaxation
-INTEGER, SAVE :: NRADTH     ! RADiation
-INTEGER, SAVE :: NDCONVTH   ! KAFR CONVection
-INTEGER, SAVE :: NMAFLTH    ! Mass flux              
-INTEGER, SAVE :: NHTURBTH   ! horizontal turbulence
-INTEGER, SAVE :: NVTURBTH   ! vertical turbulence
-INTEGER, SAVE :: NDISSHTH   ! dissipative heating
-INTEGER, SAVE :: NNEGATH    ! negative correction induced by hydrometeors
-INTEGER, SAVE :: NNETURTH    ! negative correction induced by hydrometeors
-INTEGER, SAVE :: NNEADVTH    ! negative correction induced by hydrometeors
-INTEGER, SAVE :: NNECONTH    ! negative correction induced by hydrometeors
-INTEGER, SAVE :: NREVATH    ! rain evaporation
-INTEGER, SAVE :: NCONDTH    ! evaporation/condensation
-INTEGER, SAVE :: NHENUTH    ! HEterogenous NUcleation ICE3
-INTEGER, SAVE :: NHONTH     ! HOmogeneous Nucleation  ICE3
-INTEGER, SAVE :: NSFRTH     ! Spontaneous FReezing    ICE3
-INTEGER, SAVE :: NDEPSTH    ! DEPosition on Snow      ICE3
-INTEGER, SAVE :: NDEPGTH    ! DEPosition on Graupel   ICE3
-INTEGER, SAVE :: NRIMTH     ! RIMing of cloudwater    ICE3
-INTEGER, SAVE :: NACCTH     ! ACCretion of rainwater  ICE3
-INTEGER, SAVE :: NCFRZTH    ! Conversion FReeZing     ICE3
-INTEGER, SAVE :: NWETGTH    ! WET Growth of graupel   ICE3
-INTEGER, SAVE :: NDRYGTH    ! DRY Growth of graupel   ICE3
-INTEGER, SAVE :: NGMLTTH    ! Graupel MeLTing         ICE3
-INTEGER, SAVE :: NIMLTTH    ! Ice MeLTing             ICE3
-INTEGER, SAVE :: NBERFITH   ! BERgeron-FIndeisen gth. ICE3
-INTEGER, SAVE :: NCDEPITH   ! Cond./DEPosition on ice ICE3
-INTEGER, SAVE :: NWETHTH    ! wet growth of hail      ICE4
-INTEGER, SAVE :: NDRYHTH    ! dry growth of hail      ICE4
-INTEGER, SAVE :: NHMLTTH    ! melting of hail         ICE4
-INTEGER, SAVE :: NADJUTH    ! adjustement before rain_ice ICE3
-INTEGER, SAVE :: NCORRTH    ! tendencies correction after ICE3
-INTEGER, SAVE :: NHINDTH    ! Heterogeneous Nucleation by Deposition LIMA
-INTEGER, SAVE :: NHINCTH    ! Heterogeneous Nucleation by Contact    LIMA
-INTEGER, SAVE :: NHONHTH    ! Haze Homogeneous Nucleation            LIMA
-INTEGER, SAVE :: NHONCTH    ! droplet homogeneous nucleation         LIMA
-INTEGER, SAVE :: NHONRTH    ! drop homogeneous nucleation            LIMA
-INTEGER, SAVE :: NCEDSTH    ! adjustment
-INTEGER, SAVE :: NSEDITH    ! Temperature transport by hydrometeors sedimentation
-INTEGER, SAVE :: NVISCTH    ! viscosity
+INTEGER, SAVE :: NASSETH  = 0 ! time filter
+INTEGER, SAVE :: NNESTTH  = 0 ! Efffect of 2way nesting on Th
+INTEGER, SAVE :: NADVTH   = 0 ! Total advection for PPM
+INTEGER, SAVE :: NFRCTH   = 0 ! forcing
+INTEGER, SAVE :: N2DADVTH = 0 ! 2d advecting forcing
+INTEGER, SAVE :: N2DRELTH = 0 ! 2d relaxation forcing
+INTEGER, SAVE :: NNUDTH   = 0 ! nudging
+INTEGER, SAVE :: NPREFTH  = 0 ! theta source term due to the reference pressure
+                              ! (Dyn. Sources) only present if KRR>0
+INTEGER, SAVE :: NDIFTH   = 0  ! numerical diffusion
+INTEGER, SAVE :: NRELTH   = 0  ! relaxation
+INTEGER, SAVE :: NRADTH   = 0  ! RADiation
+INTEGER, SAVE :: NDCONVTH = 0  ! KAFR CONVection
+INTEGER, SAVE :: NMAFLTH  = 0  ! Mass flux
+INTEGER, SAVE :: NHTURBTH = 0  ! horizontal turbulence
+INTEGER, SAVE :: NVTURBTH = 0  ! vertical turbulence
+INTEGER, SAVE :: NDISSHTH = 0  ! dissipative heating
+INTEGER, SAVE :: NNEGATH  = 0  ! negative correction induced by hydrometeors
+INTEGER, SAVE :: NNETURTH = 0   ! negative correction induced by hydrometeors
+INTEGER, SAVE :: NNEADVTH = 0   ! negative correction induced by hydrometeors
+INTEGER, SAVE :: NNECONTH = 0   ! negative correction induced by hydrometeors
+INTEGER, SAVE :: NREVATH  = 0  ! rain evaporation
+INTEGER, SAVE :: NCONDTH  = 0  ! evaporation/condensation
+INTEGER, SAVE :: NHENUTH  = 0  ! HEterogenous NUcleation ICE3
+INTEGER, SAVE :: NHONTH   = 0  ! HOmogeneous Nucleation  ICE3
+INTEGER, SAVE :: NSFRTH   = 0  ! Spontaneous FReezing    ICE3
+INTEGER, SAVE :: NDEPSTH  = 0  ! DEPosition on Snow      ICE3
+INTEGER, SAVE :: NDEPGTH  = 0  ! DEPosition on Graupel   ICE3
+INTEGER, SAVE :: NRIMTH   = 0  ! RIMing of cloudwater    ICE3
+INTEGER, SAVE :: NACCTH   = 0  ! ACCretion of rainwater  ICE3
+INTEGER, SAVE :: NCFRZTH  = 0  ! Conversion FReeZing     ICE3
+INTEGER, SAVE :: NWETGTH  = 0  ! WET Growth of graupel   ICE3
+INTEGER, SAVE :: NDRYGTH  = 0  ! DRY Growth of graupel   ICE3
+INTEGER, SAVE :: NGMLTTH  = 0  ! Graupel MeLTing         ICE3
+INTEGER, SAVE :: NIMLTTH  = 0  ! Ice MeLTing             ICE3
+INTEGER, SAVE :: NBERFITH = 0  ! BERgeron-FIndeisen gth. ICE3
+INTEGER, SAVE :: NCDEPITH = 0  ! Cond./DEPosition on ice ICE3
+INTEGER, SAVE :: NWETHTH  = 0  ! wet growth of hail      ICE4
+INTEGER, SAVE :: NDRYHTH  = 0  ! dry growth of hail      ICE4
+INTEGER, SAVE :: NHMLTTH  = 0  ! melting of hail         ICE4
+INTEGER, SAVE :: NADJUTH  = 0  ! adjustement before rain_ice ICE3
+INTEGER, SAVE :: NCORRTH  = 0  ! tendencies correction after ICE3
+INTEGER, SAVE :: NHINDTH  = 0  ! Heterogeneous Nucleation by Deposition LIMA
+INTEGER, SAVE :: NHINCTH  = 0  ! Heterogeneous Nucleation by Contact    LIMA
+INTEGER, SAVE :: NHONHTH  = 0  ! Haze Homogeneous Nucleation            LIMA
+INTEGER, SAVE :: NHONCTH  = 0  ! droplet homogeneous nucleation         LIMA
+INTEGER, SAVE :: NHONRTH  = 0  ! drop homogeneous nucleation            LIMA
+INTEGER, SAVE :: NCEDSTH  = 0  ! adjustment
+INTEGER, SAVE :: NSEDITH  = 0  ! Temperature transport by hydrometeors sedimentation
+INTEGER, SAVE :: NVISCTH  = 0  ! viscosity
 !
 !      Allowed processes for the budget of RTKE (kinetic energy)
 !                                                  
 ! Courant namelist: NAM_BURTKE
 !
-LOGICAL, SAVE :: LBU_RTKE   ! True when the budget of RTKE is performed
+LOGICAL, SAVE :: LBU_RTKE = .FALSE. ! True when the budget of RTKE is performed
 !
-INTEGER, SAVE :: NASSETKE   ! time filter
-INTEGER, SAVE :: NADVTKE    ! Total advection for PPM
-INTEGER, SAVE :: NFRCTKE    ! forcing
-INTEGER, SAVE :: NDIFTKE    ! numerical diffusion
-INTEGER, SAVE :: NRELTKE    ! relaxation
-INTEGER, SAVE :: NDPTKE     ! dynamic production of TKE
-INTEGER, SAVE :: NTPTKE     ! thermal production of TKE
-INTEGER, SAVE :: NDRAGTKE   ! vegetation drag              
-INTEGER, SAVE :: NDISSTKE   ! dissipation of TKE
-INTEGER, SAVE :: NTRTKE     ! turbulent transport of TKE
+INTEGER, SAVE :: NASSETKE = 0 ! time filter
+INTEGER, SAVE :: NADVTKE  = 0 ! Total advection for PPM
+INTEGER, SAVE :: NFRCTKE  = 0 ! forcing
+INTEGER, SAVE :: NDIFTKE  = 0 ! numerical diffusion
+INTEGER, SAVE :: NRELTKE  = 0 ! relaxation
+INTEGER, SAVE :: NDPTKE   = 0 ! dynamic production of TKE
+INTEGER, SAVE :: NTPTKE   = 0 ! thermal production of TKE
+INTEGER, SAVE :: NDRAGTKE = 0 ! vegetation drag
+INTEGER, SAVE :: NDISSTKE = 0 ! dissipation of TKE
+INTEGER, SAVE :: NTRTKE   = 0 ! turbulent transport of TKE
 !
 !
 !      Allowed processes for the budget of moist variable RRV (water vapor)
 !                                                  
 ! Courant namelist: NAM_BURRV
 !
-LOGICAL, SAVE :: LBU_RRV   ! true when the budget of RRV is performed
+LOGICAL, SAVE :: LBU_RRV = .FALSE. ! true when the budget of RRV is performed
 !
-INTEGER, SAVE :: NASSERV   ! time filter
-INTEGER, SAVE :: NNESTRV   ! Effect of 2way nesting on Rv
-INTEGER, SAVE :: NADVRV    ! Total advection for PPM
-INTEGER, SAVE :: NFRCRV    ! forcing
-INTEGER, SAVE :: N2DADVRV  ! 2d advecting forcing
-INTEGER, SAVE :: N2DRELRV  ! 2d relaxation forcing
-INTEGER, SAVE :: NNUDRV    ! nudging
-INTEGER, SAVE :: NDIFRV    ! numerical diffusion
-INTEGER, SAVE :: NRELRV    ! relaxation
-INTEGER, SAVE :: NDCONVRV  ! KAFR CONVection
-INTEGER, SAVE :: NMAFLRV   ! Mass flux           
-INTEGER, SAVE :: NHTURBRV  ! horizontal turbulence 
-INTEGER, SAVE :: NVTURBRV  ! vertical turbulence
-INTEGER, SAVE :: NNEGARV   ! negative correction                            
-INTEGER, SAVE :: NNETURRV   ! negative correction                            
-INTEGER, SAVE :: NNECONRV   ! negative correction                            
-INTEGER, SAVE :: NNEADVRV   ! negative correction                            
-INTEGER, SAVE :: NREVARV   ! rain evaporation
-INTEGER, SAVE :: NCONDRV   ! evaporation/condensation
-INTEGER, SAVE :: NHENURV   ! HEterogenous NUcleation ICE3
-INTEGER, SAVE :: NDEPSRV   ! DEPosition on Snow      ICE3
-INTEGER, SAVE :: NDEPGRV   ! DEPosition on Graupel   ICE3
-INTEGER, SAVE :: NCDEPIRV  ! Cond./DEPosition on ice ICE3
-INTEGER, SAVE :: NADJURV   ! adjustement before rain_ice ICE3
-INTEGER, SAVE :: NCORRRV    ! tendencies correction after ICE3
-INTEGER, SAVE :: NHINDRV   ! Heterogeneous Nucleation by Deposition LIMA
-INTEGER, SAVE :: NHONHRV   ! Haze Homogeneous Nucleation            LIMA
-INTEGER, SAVE :: NCEDSRV   ! adjustement 
-INTEGER, SAVE :: NVISCRV   ! viscosity
+INTEGER, SAVE :: NASSERV  = 0 ! time filter
+INTEGER, SAVE :: NNESTRV  = 0 ! Effect of 2way nesting on Rv
+INTEGER, SAVE :: NADVRV   = 0 ! Total advection for PPM
+INTEGER, SAVE :: NFRCRV   = 0 ! forcing
+INTEGER, SAVE :: N2DADVRV = 0 ! 2d advecting forcing
+INTEGER, SAVE :: N2DRELRV = 0 ! 2d relaxation forcing
+INTEGER, SAVE :: NNUDRV   = 0 ! nudging
+INTEGER, SAVE :: NDIFRV   = 0 ! numerical diffusion
+INTEGER, SAVE :: NRELRV   = 0 ! relaxation
+INTEGER, SAVE :: NDCONVRV = 0 ! KAFR CONVection
+INTEGER, SAVE :: NMAFLRV  = 0 ! Mass flux
+INTEGER, SAVE :: NHTURBRV = 0 ! horizontal turbulence
+INTEGER, SAVE :: NVTURBRV = 0 ! vertical turbulence
+INTEGER, SAVE :: NNEGARV  = 0 ! negative correction
+INTEGER, SAVE :: NNETURRV = 0 ! negative correction
+INTEGER, SAVE :: NNECONRV = 0 ! negative correction
+INTEGER, SAVE :: NNEADVRV = 0 ! negative correction
+INTEGER, SAVE :: NREVARV  = 0 ! rain evaporation
+INTEGER, SAVE :: NCONDRV  = 0 ! evaporation/condensation
+INTEGER, SAVE :: NHENURV  = 0 ! HEterogenous NUcleation ICE3
+INTEGER, SAVE :: NDEPSRV  = 0 ! DEPosition on Snow      ICE3
+INTEGER, SAVE :: NDEPGRV  = 0 ! DEPosition on Graupel   ICE3
+INTEGER, SAVE :: NCDEPIRV = 0 ! Cond./DEPosition on ice ICE3
+INTEGER, SAVE :: NADJURV  = 0 ! adjustement before rain_ice ICE3
+INTEGER, SAVE :: NCORRRV  = 0 ! tendencies correction after ICE3
+INTEGER, SAVE :: NHINDRV  = 0 ! Heterogeneous Nucleation by Deposition LIMA
+INTEGER, SAVE :: NHONHRV  = 0 ! Haze Homogeneous Nucleation            LIMA
+INTEGER, SAVE :: NCEDSRV  = 0 ! adjustement
+INTEGER, SAVE :: NVISCRV  = 0 ! viscosity
 !
 !      Allowed processes for the budget of moist variable RRC (cloud water)
 !                                                  
 ! Courant namelist: NAM_BURRC
 !
-LOGICAL, SAVE :: LBU_RRC    ! True when the budget of RRC is performed
+LOGICAL, SAVE :: LBU_RRC = .FALSE. ! True when the budget of RRC is performed
 !
-INTEGER, SAVE :: NASSERC    ! time filter
-INTEGER, SAVE :: NNESTRC    ! Efffect of 2way nesting on Rc
-INTEGER, SAVE :: NADVRC     ! Total advection for PPM
-INTEGER, SAVE :: NFRCRC     ! forcing
-INTEGER, SAVE :: NDIFRC     ! numerical diffusion
-INTEGER, SAVE :: NRELRC     ! relaxation
-INTEGER, SAVE :: NDCONVRC   ! Deep CONVection
-INTEGER, SAVE :: NHTURBRC   ! horizontal turbulence 
-INTEGER, SAVE :: NVTURBRC   ! vertical turbulence
-INTEGER, SAVE :: NNEGARC    ! negative correction                            
-INTEGER, SAVE :: NNETURRC    ! negative correction                            
-INTEGER, SAVE :: NNECONRC    ! negative correction                            
-INTEGER, SAVE :: NNEADVRC    ! negative correction                            
-INTEGER, SAVE :: NACCRRC    ! accretion
-INTEGER, SAVE :: NAUTORC    ! autoconversion
-INTEGER, SAVE :: NCONDRC    ! evaporation/condensation
-INTEGER, SAVE :: NHONRC     ! HOmogeneous Nucleation  ICE3
-INTEGER, SAVE :: NRIMRC     ! RIMing of cloudwater    ICE3
-INTEGER, SAVE :: NCMELRC    ! collection by snow and conversion into rain with T>XTT ICE3
-INTEGER, SAVE :: NWETGRC    ! WET Growth of graupel   ICE3
-INTEGER, SAVE :: NDRYGRC    ! DRY Growth of graupel   ICE3
-INTEGER, SAVE :: NIMLTRC    ! Ice MeLTing             ICE3
-INTEGER, SAVE :: NBERFIRC   ! BERgeron-FIndeisen gth. ICE3
-INTEGER, SAVE :: NCDEPIRC   ! Cond./DEPosition on ice ICE3
-INTEGER, SAVE :: NHENURC    ! CCN Activation C2R2
-INTEGER, SAVE :: NSEDIRC    ! sedimentation  C2R2
-INTEGER, SAVE :: NDEPORC    ! ground deposition     
-INTEGER, SAVE :: NDEPOTRRC  ! deposition on tree
-INTEGER, SAVE :: NWETHRC    ! wet growth of hail
-INTEGER, SAVE :: NDRYHRC    ! dry growth of hail      ICE4
-INTEGER, SAVE :: NADJURC    ! adjustement before rain_ice ICE3
-INTEGER, SAVE :: NHINCRC    ! Heterogeneous Nucleation by Contact LIMA
-INTEGER, SAVE :: NHONCRC    ! droplet homogeneous nucleation      LIMA
-INTEGER, SAVE :: NCEDSRC    ! adjustment                          LIMA
-INTEGER, SAVE :: NREVARC    ! evaporation of rain drops
-INTEGER, SAVE :: NCORRRC    ! rain <-> cloud transfer at the beginning of LIMA
-INTEGER, SAVE :: NR2C1RC    ! rain -> cloud change after sedimentation in LIMA
-INTEGER, SAVE :: NCVRCRC    ! rain -> cloud change after other microphysical processes in LIMA
-INTEGER, SAVE :: NVISCRC    ! viscosity
+INTEGER, SAVE :: NASSERC   = 0 ! time filter
+INTEGER, SAVE :: NNESTRC   = 0 ! Efffect of 2way nesting on Rc
+INTEGER, SAVE :: NADVRC    = 0 ! Total advection for PPM
+INTEGER, SAVE :: NFRCRC    = 0 ! forcing
+INTEGER, SAVE :: NDIFRC    = 0 ! numerical diffusion
+INTEGER, SAVE :: NRELRC    = 0 ! relaxation
+INTEGER, SAVE :: NDCONVRC  = 0 ! Deep CONVection
+INTEGER, SAVE :: NHTURBRC  = 0 ! horizontal turbulence
+INTEGER, SAVE :: NVTURBRC  = 0 ! vertical turbulence
+INTEGER, SAVE :: NNEGARC   = 0 ! negative correction
+INTEGER, SAVE :: NNETURRC  = 0 ! negative correction
+INTEGER, SAVE :: NNECONRC  = 0 ! negative correction
+INTEGER, SAVE :: NNEADVRC  = 0 ! negative correction
+INTEGER, SAVE :: NACCRRC   = 0 ! accretion
+INTEGER, SAVE :: NAUTORC   = 0 ! autoconversion
+INTEGER, SAVE :: NCONDRC   = 0 ! evaporation/condensation
+INTEGER, SAVE :: NHONRC    = 0 ! HOmogeneous Nucleation  ICE3
+INTEGER, SAVE :: NRIMRC    = 0 ! RIMing of cloudwater    ICE3
+INTEGER, SAVE :: NCMELRC   = 0 ! collection by snow and conversion into rain with T>XTT ICE3
+INTEGER, SAVE :: NWETGRC   = 0 ! WET Growth of graupel   ICE3
+INTEGER, SAVE :: NDRYGRC   = 0 ! DRY Growth of graupel   ICE3
+INTEGER, SAVE :: NIMLTRC   = 0 ! Ice MeLTing             ICE3
+INTEGER, SAVE :: NBERFIRC  = 0 ! BERgeron-FIndeisen gth. ICE3
+INTEGER, SAVE :: NCDEPIRC  = 0 ! Cond./DEPosition on ice ICE3
+INTEGER, SAVE :: NHENURC   = 0 ! CCN Activation C2R2
+INTEGER, SAVE :: NSEDIRC   = 0 ! sedimentation  C2R2
+INTEGER, SAVE :: NDEPORC   = 0 ! ground deposition
+INTEGER, SAVE :: NDEPOTRRC = 0 ! deposition on tree
+INTEGER, SAVE :: NWETHRC   = 0 ! wet growth of hail
+INTEGER, SAVE :: NDRYHRC   = 0 ! dry growth of hail      ICE4
+INTEGER, SAVE :: NADJURC   = 0 ! adjustement before rain_ice ICE3
+INTEGER, SAVE :: NHINCRC   = 0 ! Heterogeneous Nucleation by Contact LIMA
+INTEGER, SAVE :: NHONCRC   = 0 ! droplet homogeneous nucleation      LIMA
+INTEGER, SAVE :: NCEDSRC   = 0 ! adjustment                          LIMA
+INTEGER, SAVE :: NREVARC   = 0 ! evaporation of rain drops
+INTEGER, SAVE :: NCORRRC   = 0 ! rain <-> cloud transfer at the beginning of LIMA
+INTEGER, SAVE :: NR2C1RC   = 0 ! rain -> cloud change after sedimentation in LIMA
+INTEGER, SAVE :: NCVRCRC   = 0 ! rain -> cloud change after other microphysical processes in LIMA
+INTEGER, SAVE :: NVISCRC   = 0 ! viscosity
 !
 !      Allowed processes for the budget of moist variable RRR (rain water)
 !
 ! Courant namelist: NAM_BURRR
 !
-LOGICAL, SAVE :: LBU_RRR    ! True when the budget of RRR is performed
+LOGICAL, SAVE :: LBU_RRR = .FALSE. ! True when the budget of RRR is performed
 !
-INTEGER, SAVE :: NASSERR    ! time filter
-INTEGER, SAVE :: NNESTRR    ! Efffect of 2way nesting on Rr
-INTEGER, SAVE :: NADVRR     ! Total advection for PPM
-INTEGER, SAVE :: NFRCRR     ! forcing
-INTEGER, SAVE :: NDIFRR     ! numerical diffusion
-INTEGER, SAVE :: NRELRR     ! relaxation
-INTEGER, SAVE :: NNEGARR    ! negative correction                            
-INTEGER, SAVE :: NNETURRR    ! negative correction
-INTEGER, SAVE :: NNEADVRR    ! negative correction
-INTEGER, SAVE :: NNECONRR    ! negative correction
-INTEGER, SAVE :: NACCRRR    ! accretion
-INTEGER, SAVE :: NAUTORR    ! autoconversion
-INTEGER, SAVE :: NREVARR    ! rain evaporation
-INTEGER, SAVE :: NSEDIRR    ! sedimentation
-INTEGER, SAVE :: NSFRRR     ! Spontaneous FReezing    ICE3
-INTEGER, SAVE :: NACCRR     ! ACCretion of rainwater  ICE3
-INTEGER, SAVE :: NCMELRR    ! collection of droplets by snow and conversion into rain with T>XTT ICE3
-INTEGER, SAVE :: NCFRZRR    ! Conversion FReeZing     ICE3
-INTEGER, SAVE :: NWETGRR    ! WET Growth of graupel   ICE3
-INTEGER, SAVE :: NDRYGRR    ! DRY Growth of graupel   ICE3
-INTEGER, SAVE :: NGMLTRR    ! Graupel MeLTing         ICE3
-INTEGER, SAVE :: NWETHRR    ! wet growth of hail      ICE4
-INTEGER, SAVE :: NDRYHRR    ! dry growth of hail      ICE4
-INTEGER, SAVE :: NHMLTRR    ! melting of hail         ICE4
-INTEGER, SAVE :: NCORRRR    ! tendencies correction after ICE3
-INTEGER, SAVE :: NHONRRR    ! drop homogeneous nucleation LIMA
-INTEGER, SAVE :: NR2C1RR    ! rain -> cloud change after sedimentation in LIMA
-INTEGER, SAVE :: NCVRCRR    ! rain -> cloud change after other microphysical processes in LIMA
-INTEGER, SAVE :: NVISCRR    ! viscosity
+INTEGER, SAVE :: NASSERR  = 0 ! time filter
+INTEGER, SAVE :: NNESTRR  = 0 ! Efffect of 2way nesting on Rr
+INTEGER, SAVE :: NADVRR   = 0 ! Total advection for PPM
+INTEGER, SAVE :: NFRCRR   = 0 ! forcing
+INTEGER, SAVE :: NDIFRR   = 0 ! numerical diffusion
+INTEGER, SAVE :: NRELRR   = 0 ! relaxation
+INTEGER, SAVE :: NNEGARR  = 0 ! negative correction
+INTEGER, SAVE :: NNETURRR = 0 ! negative correction
+INTEGER, SAVE :: NNEADVRR = 0 ! negative correction
+INTEGER, SAVE :: NNECONRR = 0 ! negative correction
+INTEGER, SAVE :: NACCRRR  = 0 ! accretion
+INTEGER, SAVE :: NAUTORR  = 0 ! autoconversion
+INTEGER, SAVE :: NREVARR  = 0 ! rain evaporation
+INTEGER, SAVE :: NSEDIRR  = 0 ! sedimentation
+INTEGER, SAVE :: NSFRRR   = 0 ! Spontaneous FReezing    ICE3
+INTEGER, SAVE :: NACCRR   = 0 ! ACCretion of rainwater  ICE3
+INTEGER, SAVE :: NCMELRR  = 0 ! collection of droplets by snow and conversion into rain with T>XTT ICE3
+INTEGER, SAVE :: NCFRZRR  = 0 ! Conversion FReeZing     ICE3
+INTEGER, SAVE :: NWETGRR  = 0 ! WET Growth of graupel   ICE3
+INTEGER, SAVE :: NDRYGRR  = 0 ! DRY Growth of graupel   ICE3
+INTEGER, SAVE :: NGMLTRR  = 0 ! Graupel MeLTing         ICE3
+INTEGER, SAVE :: NWETHRR  = 0 ! wet growth of hail      ICE4
+INTEGER, SAVE :: NDRYHRR  = 0 ! dry growth of hail      ICE4
+INTEGER, SAVE :: NHMLTRR  = 0 ! melting of hail         ICE4
+INTEGER, SAVE :: NCORRRR  = 0 ! tendencies correction after ICE3
+INTEGER, SAVE :: NHONRRR  = 0 ! drop homogeneous nucleation LIMA
+INTEGER, SAVE :: NR2C1RR  = 0 ! rain -> cloud change after sedimentation in LIMA
+INTEGER, SAVE :: NCVRCRR  = 0 ! rain -> cloud change after other microphysical processes in LIMA
+INTEGER, SAVE :: NVISCRR  = 0 ! viscosity
 !
 !      Allowed processes for the budget of moist variable RRI (ice)
 !
 ! Courant namelist: NAM_BURRI
 !
-LOGICAL, SAVE :: LBU_RRI    ! True when the budget of RRI is performed
+LOGICAL, SAVE :: LBU_RRI = .FALSE. ! True when the budget of RRI is performed
 !
-INTEGER, SAVE :: NASSERI    ! time filter
-INTEGER, SAVE :: NNESTRI    ! Efffect of 2way nesting on Ri
-INTEGER, SAVE :: NADVRI     ! Total advection for PPM
-INTEGER, SAVE :: NFRCRI     ! forcing
-INTEGER, SAVE :: NDIFRI     ! numerical diffusion
-INTEGER, SAVE :: NRELRI     ! relaxation
-INTEGER, SAVE :: NDCONVRI   ! Deep CONVection
-INTEGER, SAVE :: NHTURBRI   ! horizontal turbulence
-INTEGER, SAVE :: NVTURBRI   ! vertical turbulence
-INTEGER, SAVE :: NNEGARI    ! negative correction                            
-INTEGER, SAVE :: NNETURRI    ! negative correction
-INTEGER, SAVE :: NNEADVRI    ! negative correction
-INTEGER, SAVE :: NNECONRI    ! negative correction
-INTEGER, SAVE :: NSEDIRI    ! SEDImentation           ICE3
-INTEGER, SAVE :: NHENURI    ! HEterogenous NUcleation ICE3
-INTEGER, SAVE :: NHONRI     ! HOmogeneous Nucleation  ICE3
-INTEGER, SAVE :: NAGGSRI    ! AGGregation of snow     ICE3
-INTEGER, SAVE :: NAUTSRI    ! AUToconversion of ice   ICE3
-INTEGER, SAVE :: NCFRZRI    ! Conversion FReeZing     ICE3
-INTEGER, SAVE :: NWETGRI    ! WET Growth of graupel   ICE3
-INTEGER, SAVE :: NDRYGRI    ! DRY Growth of graupel   ICE3
-INTEGER, SAVE :: NIMLTRI    ! Ice MeLTing             ICE3
-INTEGER, SAVE :: NBERFIRI   ! BERgeron-FIndeisen gth. ICE3
-INTEGER, SAVE :: NCDEPIRI   ! Cond./DEPosition on ice ICE3
-INTEGER, SAVE :: NWETHRI    ! wet growth of hail      ICE4
-INTEGER, SAVE :: NDRYHRI    ! dry growth of hail      ICE4
-INTEGER, SAVE :: NADJURI    ! adjustement before rain_ice ICE3
-INTEGER, SAVE :: NHINDRI ! heterogeneous nucleation by deposition LIMA
-INTEGER, SAVE :: NHINCRI ! heterogeneous nucleation by contact    LIMA
-INTEGER, SAVE :: NHONHRI ! haze homogeneous nucleation source     LIMA
-INTEGER, SAVE :: NHONCRI ! droplet homogeneous nucleation         LIMA
-INTEGER, SAVE :: NCNVIRI ! Conversion of snow to r_i              LIMA
-INTEGER, SAVE :: NCNVSRI ! Conversion of pristine ice to r_s      LIMA
-INTEGER, SAVE :: NHMSRI  ! Hallett-Mossop ice multiplication process due to snow riming LIMA
-INTEGER, SAVE :: NHMGRI  ! Hallett-Mossop ice multiplication process due to graupel riming LIMA
-INTEGER, SAVE :: NCEDSRI ! adjustement LIMA
-INTEGER, SAVE :: NCORRRI    ! ice <-> snow transfer at the beginning of LIMA
-INTEGER, SAVE :: NVISCRI    ! viscosity
+INTEGER, SAVE :: NASSERI  = 0 ! time filter
+INTEGER, SAVE :: NNESTRI  = 0 ! Efffect of 2way nesting on Ri
+INTEGER, SAVE :: NADVRI   = 0 ! Total advection for PPM
+INTEGER, SAVE :: NFRCRI   = 0 ! forcing
+INTEGER, SAVE :: NDIFRI   = 0 ! numerical diffusion
+INTEGER, SAVE :: NRELRI   = 0 ! relaxation
+INTEGER, SAVE :: NDCONVRI = 0 ! Deep CONVection
+INTEGER, SAVE :: NHTURBRI = 0 ! horizontal turbulence
+INTEGER, SAVE :: NVTURBRI = 0 ! vertical turbulence
+INTEGER, SAVE :: NNEGARI  = 0 ! negative correction
+INTEGER, SAVE :: NNETURRI = 0 ! negative correction
+INTEGER, SAVE :: NNEADVRI = 0 ! negative correction
+INTEGER, SAVE :: NNECONRI = 0 ! negative correction
+INTEGER, SAVE :: NSEDIRI  = 0 ! SEDImentation           ICE3
+INTEGER, SAVE :: NHENURI  = 0 ! HEterogenous NUcleation ICE3
+INTEGER, SAVE :: NHONRI   = 0 ! HOmogeneous Nucleation  ICE3
+INTEGER, SAVE :: NAGGSRI  = 0 ! AGGregation of snow     ICE3
+INTEGER, SAVE :: NAUTSRI  = 0 ! AUToconversion of ice   ICE3
+INTEGER, SAVE :: NCFRZRI  = 0 ! Conversion FReeZing     ICE3
+INTEGER, SAVE :: NWETGRI  = 0 ! WET Growth of graupel   ICE3
+INTEGER, SAVE :: NDRYGRI  = 0 ! DRY Growth of graupel   ICE3
+INTEGER, SAVE :: NIMLTRI  = 0 ! Ice MeLTing             ICE3
+INTEGER, SAVE :: NBERFIRI = 0 ! BERgeron-FIndeisen gth. ICE3
+INTEGER, SAVE :: NCDEPIRI = 0 ! Cond./DEPosition on ice ICE3
+INTEGER, SAVE :: NWETHRI  = 0 ! wet growth of hail      ICE4
+INTEGER, SAVE :: NDRYHRI  = 0 ! dry growth of hail      ICE4
+INTEGER, SAVE :: NADJURI  = 0 ! adjustement before rain_ice ICE3
+INTEGER, SAVE :: NHINDRI  = 0 ! heterogeneous nucleation by deposition LIMA
+INTEGER, SAVE :: NHINCRI  = 0 ! heterogeneous nucleation by contact    LIMA
+INTEGER, SAVE :: NHONHRI  = 0 ! haze homogeneous nucleation source     LIMA
+INTEGER, SAVE :: NHONCRI  = 0 ! droplet homogeneous nucleation         LIMA
+INTEGER, SAVE :: NCNVIRI  = 0 ! Conversion of snow to r_i              LIMA
+INTEGER, SAVE :: NCNVSRI  = 0 ! Conversion of pristine ice to r_s      LIMA
+INTEGER, SAVE :: NHMSRI   = 0 ! Hallett-Mossop ice multiplication process due to snow riming LIMA
+INTEGER, SAVE :: NHMGRI   = 0 ! Hallett-Mossop ice multiplication process due to graupel riming LIMA
+INTEGER, SAVE :: NCEDSRI  = 0 ! adjustement LIMA
+INTEGER, SAVE :: NCORRRI  = 0 ! ice <-> snow transfer at the beginning of LIMA
+INTEGER, SAVE :: NVISCRI  = 0 ! viscosity
 !
 !      Allowed processes for the budget of moist variable RRS (snow)
 !
 ! Courant namelist: NAM_BURRS
 !
-LOGICAL, SAVE :: LBU_RRS    ! True when the budget of RRS is performed
+LOGICAL, SAVE :: LBU_RRS = .FALSE. ! True when the budget of RRS is performed
 !
-INTEGER, SAVE :: NASSERS    ! time filter
-INTEGER, SAVE :: NNESTRS    ! Efffect of 2way nesting on Rs
-INTEGER, SAVE :: NADVRS     ! Total advection for PPM
-INTEGER, SAVE :: NFRCRS     ! forcing
-INTEGER, SAVE :: NDIFRS     ! numerical diffusion
-INTEGER, SAVE :: NRELRS     ! relaxation
-INTEGER, SAVE :: NNEGARS    ! negative correction                            
-INTEGER, SAVE :: NNETURRS    ! negative correction
-INTEGER, SAVE :: NNEADVRS    ! negative correction
-INTEGER, SAVE :: NNECONRS    ! negative correction
-INTEGER, SAVE :: NSEDIRS    ! SEDImentation           ICE3
-INTEGER, SAVE :: NDEPSRS    ! DEPosition on Snow      ICE3
-INTEGER, SAVE :: NAGGSRS    ! AGGregation of snow     ICE3
-INTEGER, SAVE :: NAUTSRS    ! AUToconversion of ice   ICE3
-INTEGER, SAVE :: NRIMRS     ! RIMing of cloudwater    ICE3
-INTEGER, SAVE :: NACCRS     ! ACCretion of rainwater  ICE3
-INTEGER, SAVE :: NCMELRS    ! Conversion MeLTing      ICE3
-INTEGER, SAVE :: NWETGRS    ! WET Growth of graupel   ICE3
-INTEGER, SAVE :: NDRYGRS    ! DRY Growth of graupel   ICE3
-INTEGER, SAVE :: NWETHRS    ! wet growth of hail      ICE4
-INTEGER, SAVE :: NDRYHRS    ! dry growth of hail      ICE4
-INTEGER, SAVE :: NCNVIRS   ! Conversion of snow to r_i         LIMA
-INTEGER, SAVE :: NCNVSRS   ! Conversion of pristine ice to r_s LIMA
-INTEGER, SAVE :: NHMSRS    ! Hallett-Mossop ice multiplication process due to snow riming LIMA
-INTEGER, SAVE :: NCORRRS    ! ice <-> snow transfer at the beginning of LIMA
-INTEGER, SAVE :: NVISCRS    ! viscosity
+INTEGER, SAVE :: NASSERS  = 0 ! time filter
+INTEGER, SAVE :: NNESTRS  = 0 ! Efffect of 2way nesting on Rs
+INTEGER, SAVE :: NADVRS   = 0 ! Total advection for PPM
+INTEGER, SAVE :: NFRCRS   = 0 ! forcing
+INTEGER, SAVE :: NDIFRS   = 0 ! numerical diffusion
+INTEGER, SAVE :: NRELRS   = 0 ! relaxation
+INTEGER, SAVE :: NNEGARS  = 0 ! negative correction
+INTEGER, SAVE :: NNETURRS = 0 ! negative correction
+INTEGER, SAVE :: NNEADVRS = 0 ! negative correction
+INTEGER, SAVE :: NNECONRS = 0 ! negative correction
+INTEGER, SAVE :: NSEDIRS  = 0 ! SEDImentation           ICE3
+INTEGER, SAVE :: NDEPSRS  = 0 ! DEPosition on Snow      ICE3
+INTEGER, SAVE :: NAGGSRS  = 0 ! AGGregation of snow     ICE3
+INTEGER, SAVE :: NAUTSRS  = 0 ! AUToconversion of ice   ICE3
+INTEGER, SAVE :: NRIMRS   = 0 ! RIMing of cloudwater    ICE3
+INTEGER, SAVE :: NACCRS   = 0 ! ACCretion of rainwater  ICE3
+INTEGER, SAVE :: NCMELRS  = 0 ! Conversion MeLTing      ICE3
+INTEGER, SAVE :: NWETGRS  = 0 ! WET Growth of graupel   ICE3
+INTEGER, SAVE :: NDRYGRS  = 0 ! DRY Growth of graupel   ICE3
+INTEGER, SAVE :: NWETHRS  = 0 ! wet growth of hail      ICE4
+INTEGER, SAVE :: NDRYHRS  = 0 ! dry growth of hail      ICE4
+INTEGER, SAVE :: NCNVIRS  = 0 ! Conversion of snow to r_i         LIMA
+INTEGER, SAVE :: NCNVSRS  = 0 ! Conversion of pristine ice to r_s LIMA
+INTEGER, SAVE :: NHMSRS   = 0 ! Hallett-Mossop ice multiplication process due to snow riming LIMA
+INTEGER, SAVE :: NCORRRS  = 0 ! ice <-> snow transfer at the beginning of LIMA
+INTEGER, SAVE :: NVISCRS  = 0 ! viscosity
 !
 !      Allowed processes for the budget of moist variable RRG (graupel)
 !
 ! Courant namelist: NAM_BURRG
 !
-LOGICAL, SAVE :: LBU_RRG    ! True when the budget of RRG is performed
+LOGICAL, SAVE :: LBU_RRG = .FALSE. ! True when the budget of RRG is performed
 !
-INTEGER, SAVE :: NASSERG    ! time filter
-INTEGER, SAVE :: NNESTRG    ! Efffect of 2way nesting on Rg
-INTEGER, SAVE :: NADVRG     ! Total advection for PPM
-INTEGER, SAVE :: NFRCRG     ! forcing
-INTEGER, SAVE :: NDIFRG     ! numerical diffusion
-INTEGER, SAVE :: NRELRG     ! relaxation
-INTEGER, SAVE :: NNEGARG    ! negative correction                            
-INTEGER, SAVE :: NNETURRG    ! negative correction
-INTEGER, SAVE :: NNEADVRG    ! negative correction
-INTEGER, SAVE :: NNECONRG    ! negative correction
-INTEGER, SAVE :: NSEDIRG    ! SEDImentation           ICE3
-INTEGER, SAVE :: NSFRRG     ! Spontaneous FReezing    ICE3
-INTEGER, SAVE :: NDEPGRG    ! DEPosition on Snow      ICE3
-INTEGER, SAVE :: NRIMRG     ! RIMing of cloudwater    ICE3
-INTEGER, SAVE :: NACCRG     ! ACCretion of rainwater  ICE3
-INTEGER, SAVE :: NCMELRG    ! Conversion MeLTing      ICE3
-INTEGER, SAVE :: NCFRZRG    ! Conversion FReeZing     ICE3
-INTEGER, SAVE :: NWETGRG    ! WET Growth of graupel   ICE3
-INTEGER, SAVE :: NDRYGRG    ! DRY Growth of graupel   ICE3
-INTEGER, SAVE :: NGMLTRG    ! Graupel MeLTing         ICE3
-INTEGER, SAVE :: NWETHRG    ! wet growth of hail      ICE4
-INTEGER, SAVE :: NDRYHRG    ! dry growth of hail      ICE4
-INTEGER, SAVE :: NCORRRG    ! tendencies correction after ICE3
-INTEGER, SAVE :: NHGCVRG    ! Hail to Graupel ConVersion ICE4
-INTEGER, SAVE :: NGHCVRG    ! Graupel to Hail ConVersion ICE4
-INTEGER, SAVE :: NHONRRG    ! drop homogeneous nucleation LIMA
-INTEGER, SAVE :: NHMGRG     ! Hallett-Mossop ice multiplication process due to graupel riming
-INTEGER, SAVE :: NCOHGRG    ! conversion of hail to graupel
-INTEGER, SAVE :: NVISCRG    ! viscosity
+INTEGER, SAVE :: NASSERG  = 0 ! time filter
+INTEGER, SAVE :: NNESTRG  = 0 ! Efffect of 2way nesting on Rg
+INTEGER, SAVE :: NADVRG   = 0 ! Total advection for PPM
+INTEGER, SAVE :: NFRCRG   = 0 ! forcing
+INTEGER, SAVE :: NDIFRG   = 0 ! numerical diffusion
+INTEGER, SAVE :: NRELRG   = 0 ! relaxation
+INTEGER, SAVE :: NNEGARG  = 0 ! negative correction
+INTEGER, SAVE :: NNETURRG = 0 ! negative correction
+INTEGER, SAVE :: NNEADVRG = 0 ! negative correction
+INTEGER, SAVE :: NNECONRG = 0 ! negative correction
+INTEGER, SAVE :: NSEDIRG  = 0 ! SEDImentation           ICE3
+INTEGER, SAVE :: NSFRRG   = 0 ! Spontaneous FReezing    ICE3
+INTEGER, SAVE :: NDEPGRG  = 0 ! DEPosition on Snow      ICE3
+INTEGER, SAVE :: NRIMRG   = 0 ! RIMing of cloudwater    ICE3
+INTEGER, SAVE :: NACCRG   = 0 ! ACCretion of rainwater  ICE3
+INTEGER, SAVE :: NCMELRG  = 0 ! Conversion MeLTing      ICE3
+INTEGER, SAVE :: NCFRZRG  = 0 ! Conversion FReeZing     ICE3
+INTEGER, SAVE :: NWETGRG  = 0 ! WET Growth of graupel   ICE3
+INTEGER, SAVE :: NDRYGRG  = 0 ! DRY Growth of graupel   ICE3
+INTEGER, SAVE :: NGMLTRG  = 0 ! Graupel MeLTing         ICE3
+INTEGER, SAVE :: NWETHRG  = 0 ! wet growth of hail      ICE4
+INTEGER, SAVE :: NDRYHRG  = 0 ! dry growth of hail      ICE4
+INTEGER, SAVE :: NCORRRG  = 0 ! tendencies correction after ICE3
+INTEGER, SAVE :: NHGCVRG  = 0 ! Hail to Graupel ConVersion ICE4
+INTEGER, SAVE :: NGHCVRG  = 0 ! Graupel to Hail ConVersion ICE4
+INTEGER, SAVE :: NHONRRG  = 0 ! drop homogeneous nucleation LIMA
+INTEGER, SAVE :: NHMGRG   = 0 ! Hallett-Mossop ice multiplication process due to graupel riming
+INTEGER, SAVE :: NCOHGRG  = 0 ! conversion of hail to graupel
+INTEGER, SAVE :: NVISCRG  = 0 ! viscosity
 !
 !      Allowed processes for the budget of moist variable RRH (hail)
 !
 ! Courant namelist: NAM_BURRH
 !
-LOGICAL, SAVE :: LBU_RRH    ! True when the budget of RRH is performed
+LOGICAL, SAVE :: LBU_RRH = .FALSE. ! True when the budget of RRH is performed
 !
-INTEGER, SAVE :: NASSERH    ! time filter
-INTEGER, SAVE :: NNESTRH    ! Efffect of 2way nesting on Rh
-INTEGER, SAVE :: NADVRH     ! Total advection for PPM
-INTEGER, SAVE :: NFRCRH     ! forcing
-INTEGER, SAVE :: NDIFRH     ! numerical diffusion
-INTEGER, SAVE :: NRELRH     ! relaxation
-INTEGER, SAVE :: NNEGARH    ! negative correction 
-INTEGER, SAVE :: NNETURRH    ! negative correction
-INTEGER, SAVE :: NNEADVRH    ! negative correction
-INTEGER, SAVE :: NNECONRH    ! negative correction
-INTEGER, SAVE :: NSEDIRH    ! sedimentation
-INTEGER, SAVE :: NWETGRH    ! wet growth of graupel
-INTEGER, SAVE :: NWETHRH    ! wet growth of hail
-INTEGER, SAVE :: NCOHGRH    ! reconversion from hail to graupel LIMA
-INTEGER, SAVE :: NDRYHRH    ! dry growth of hail      ICE4
-INTEGER, SAVE :: NHMLTRH    ! melting                           
-INTEGER, SAVE :: NCORRRH    ! tendencies correction after ICE3
-INTEGER, SAVE :: NHGCVRH    ! Hail to Graupel ConVersion ICE4
-INTEGER, SAVE :: NGHCVRH    ! Graupel to Hail ConVersion ICE4
-INTEGER, SAVE :: NVISCRH    ! viscosity
+INTEGER, SAVE :: NASSERH  = 0 ! time filter
+INTEGER, SAVE :: NNESTRH  = 0 ! Efffect of 2way nesting on Rh
+INTEGER, SAVE :: NADVRH   = 0 ! Total advection for PPM
+INTEGER, SAVE :: NFRCRH   = 0 ! forcing
+INTEGER, SAVE :: NDIFRH   = 0 ! numerical diffusion
+INTEGER, SAVE :: NRELRH   = 0 ! relaxation
+INTEGER, SAVE :: NNEGARH  = 0 ! negative correction
+INTEGER, SAVE :: NNETURRH = 0 ! negative correction
+INTEGER, SAVE :: NNEADVRH = 0 ! negative correction
+INTEGER, SAVE :: NNECONRH = 0 ! negative correction
+INTEGER, SAVE :: NSEDIRH  = 0 ! sedimentation
+INTEGER, SAVE :: NWETGRH  = 0 ! wet growth of graupel
+INTEGER, SAVE :: NWETHRH  = 0 ! wet growth of hail
+INTEGER, SAVE :: NCOHGRH  = 0 ! reconversion from hail to graupel LIMA
+INTEGER, SAVE :: NDRYHRH  = 0 ! dry growth of hail      ICE4
+INTEGER, SAVE :: NHMLTRH  = 0 ! melting
+INTEGER, SAVE :: NCORRRH  = 0 ! tendencies correction after ICE3
+INTEGER, SAVE :: NHGCVRH  = 0 ! Hail to Graupel ConVersion ICE4
+INTEGER, SAVE :: NGHCVRH  = 0 ! Graupel to Hail ConVersion ICE4
+INTEGER, SAVE :: NVISCRH  = 0 ! viscosity
 !
 ! Courant namelist: NAM_BURSV
 !
-LOGICAL, SAVE :: LBU_RSV    ! True when the budget of RSVx is performed
+LOGICAL, SAVE :: LBU_RSV = .FALSE. ! True when the budget of RSVx is performed
 !
-INTEGER, SAVE :: NASSESV    ! Asselin-Robert time filter
-INTEGER, SAVE :: NNESTSV    ! Efffect of 2way nesting on Sv
-INTEGER, SAVE :: NADVSV     ! Total advection for PPM
-INTEGER, SAVE :: NFRCSV     ! forcing
-INTEGER, SAVE :: NDIFSV     ! numerical diffusion
-INTEGER, SAVE :: NRELSV     ! relaxation
-INTEGER, SAVE :: NDCONVSV   !  Deep CONVection
-INTEGER, SAVE :: NMAFLSV    ! mass flux            
-INTEGER, SAVE :: NDEPOTRSV  ! deposition on tree    
-INTEGER, SAVE :: NHTURBSV   ! horizontal turbulence
-INTEGER, SAVE :: NVTURBSV   ! vertical turbulence
-INTEGER, SAVE :: NCHEMSV    ! chemistry activity
-INTEGER, SAVE :: NVISCSV    ! viscosity
+INTEGER, SAVE :: NASSESV   = 0 ! Asselin-Robert time filter
+INTEGER, SAVE :: NNESTSV   = 0 ! Efffect of 2way nesting on Sv
+INTEGER, SAVE :: NADVSV    = 0 ! Total advection for PPM
+INTEGER, SAVE :: NFRCSV    = 0 ! forcing
+INTEGER, SAVE :: NDIFSV    = 0 ! numerical diffusion
+INTEGER, SAVE :: NRELSV    = 0 ! relaxation
+INTEGER, SAVE :: NDCONVSV  = 0 !  Deep CONVection
+INTEGER, SAVE :: NMAFLSV   = 0 ! mass flux
+INTEGER, SAVE :: NDEPOTRSV = 0 ! deposition on tree
+INTEGER, SAVE :: NHTURBSV  = 0 ! horizontal turbulence
+INTEGER, SAVE :: NVTURBSV  = 0 ! vertical turbulence
+INTEGER, SAVE :: NCHEMSV   = 0 ! chemistry activity
+INTEGER, SAVE :: NVISCSV   = 0 ! viscosity
 !
-INTEGER, SAVE :: NNEGASV
+INTEGER, SAVE :: NNEGASV   = 0
 !
 ! Allowed processes for the budget of electric charge carried by water vapor
-INTEGER, SAVE :: NDEPSQV
-INTEGER, SAVE :: NDEPGQV
-INTEGER, SAVE :: NREVAQV
-INTEGER, SAVE :: NCDEPIQV
-INTEGER, SAVE :: NNEUTQV
+INTEGER, SAVE :: NDEPSQV   = 0
+INTEGER, SAVE :: NDEPGQV   = 0
+INTEGER, SAVE :: NREVAQV   = 0
+INTEGER, SAVE :: NCDEPIQV  = 0
+INTEGER, SAVE :: NNEUTQV   = 0
 !
 ! Allowed processes for the budget of electric charge carried by cloud droplets
-INTEGER, SAVE :: NHONQC
-INTEGER, SAVE :: NAUTOQC
-INTEGER, SAVE :: NACCRQC
-INTEGER, SAVE :: NRIMQC
-INTEGER, SAVE :: NWETGQC
-INTEGER, SAVE :: NDRYGQC
-INTEGER, SAVE :: NINCGQC
-INTEGER, SAVE :: NWETHQC
-INTEGER, SAVE :: NIMLTQC
-INTEGER, SAVE :: NBERFIQC
-INTEGER, SAVE :: NSEDIQC
-INTEGER, SAVE :: NCDEPIQC
-INTEGER, SAVE :: NNEUTQC
+INTEGER, SAVE :: NHONQC    = 0
+INTEGER, SAVE :: NAUTOQC   = 0
+INTEGER, SAVE :: NACCRQC   = 0
+INTEGER, SAVE :: NRIMQC    = 0
+INTEGER, SAVE :: NWETGQC   = 0
+INTEGER, SAVE :: NDRYGQC   = 0
+INTEGER, SAVE :: NINCGQC   = 0
+INTEGER, SAVE :: NWETHQC   = 0
+INTEGER, SAVE :: NIMLTQC   = 0
+INTEGER, SAVE :: NBERFIQC  = 0
+INTEGER, SAVE :: NSEDIQC   = 0
+INTEGER, SAVE :: NCDEPIQC  = 0
+INTEGER, SAVE :: NNEUTQC   = 0
 !
 ! Allowed processes for the budget of electric charge carried by rain drops
-INTEGER, SAVE :: NSFRQR
-INTEGER, SAVE :: NAUTOQR
-INTEGER, SAVE :: NACCRQR
-INTEGER, SAVE :: NREVAQR
-INTEGER, SAVE :: NACCQR
-INTEGER, SAVE :: NCFRZQR
-INTEGER, SAVE :: NWETGQR
-INTEGER, SAVE :: NDRYGQR
-INTEGER, SAVE :: NGMLTQR
-INTEGER, SAVE :: NWETHQR
-INTEGER, SAVE :: NHMLTQR
-INTEGER, SAVE :: NSEDIQR
-INTEGER, SAVE :: NNEUTQR
+INTEGER, SAVE :: NSFRQR    = 0
+INTEGER, SAVE :: NAUTOQR   = 0
+INTEGER, SAVE :: NACCRQR   = 0
+INTEGER, SAVE :: NREVAQR   = 0
+INTEGER, SAVE :: NACCQR    = 0
+INTEGER, SAVE :: NCFRZQR   = 0
+INTEGER, SAVE :: NWETGQR   = 0
+INTEGER, SAVE :: NDRYGQR   = 0
+INTEGER, SAVE :: NGMLTQR   = 0
+INTEGER, SAVE :: NWETHQR   = 0
+INTEGER, SAVE :: NHMLTQR   = 0
+INTEGER, SAVE :: NSEDIQR   = 0
+INTEGER, SAVE :: NNEUTQR   = 0
 !
 ! Allowed processes for the budget of electric charge carried by ice crystals
-INTEGER, SAVE :: NHONQI
-INTEGER, SAVE :: NAGGSQI
-INTEGER, SAVE :: NAUTSQI
-INTEGER, SAVE :: NCFRZQI
-INTEGER, SAVE :: NWETGQI
-INTEGER, SAVE :: NDRYGQI
-INTEGER, SAVE :: NWETHQI
-INTEGER, SAVE :: NIMLTQI
-INTEGER, SAVE :: NBERFIQI
-INTEGER, SAVE :: NNIISQI  ! non-inductive I-S
-INTEGER, SAVE :: NSEDIQI
-INTEGER, SAVE :: NCDEPIQI
-INTEGER, SAVE :: NNEUTQI
+INTEGER, SAVE :: NHONQI    = 0
+INTEGER, SAVE :: NAGGSQI   = 0
+INTEGER, SAVE :: NAUTSQI   = 0
+INTEGER, SAVE :: NCFRZQI   = 0
+INTEGER, SAVE :: NWETGQI   = 0
+INTEGER, SAVE :: NDRYGQI   = 0
+INTEGER, SAVE :: NWETHQI   = 0
+INTEGER, SAVE :: NIMLTQI   = 0
+INTEGER, SAVE :: NBERFIQI  = 0
+INTEGER, SAVE :: NNIISQI   = 0 ! non-inductive I-S
+INTEGER, SAVE :: NSEDIQI   = 0
+INTEGER, SAVE :: NCDEPIQI  = 0
+INTEGER, SAVE :: NNEUTQI   = 0
 !
 ! Allowed processes for the budget of electric charge carried by snow
-INTEGER, SAVE :: NDEPSQS
-INTEGER, SAVE :: NAGGSQS
-INTEGER, SAVE :: NAUTSQS
-INTEGER, SAVE :: NRIMQS
-INTEGER, SAVE :: NACCQS
-INTEGER, SAVE :: NCMELQS
-INTEGER, SAVE :: NWETGQS
-INTEGER, SAVE :: NDRYGQS
-INTEGER, SAVE :: NNIISQS  ! non-inductive I-S
-INTEGER, SAVE :: NWETHQS
-INTEGER, SAVE :: NSEDIQS
-INTEGER, SAVE :: NNEUTQS
+INTEGER, SAVE :: NDEPSQS   = 0
+INTEGER, SAVE :: NAGGSQS   = 0
+INTEGER, SAVE :: NAUTSQS   = 0
+INTEGER, SAVE :: NRIMQS    = 0
+INTEGER, SAVE :: NACCQS    = 0
+INTEGER, SAVE :: NCMELQS   = 0
+INTEGER, SAVE :: NWETGQS   = 0
+INTEGER, SAVE :: NDRYGQS   = 0
+INTEGER, SAVE :: NNIISQS   = 0 ! non-inductive I-S
+INTEGER, SAVE :: NWETHQS   = 0
+INTEGER, SAVE :: NSEDIQS   = 0
+INTEGER, SAVE :: NNEUTQS   = 0
 !
 ! Allowed processes for the budget of electric charge carried by graupel
-INTEGER, SAVE :: NSFRQG
-INTEGER, SAVE :: NDEPGQG
-INTEGER, SAVE :: NRIMQG
-INTEGER, SAVE :: NACCQG
-INTEGER, SAVE :: NCMELQG
-INTEGER, SAVE :: NCFRZQG
-INTEGER, SAVE :: NWETGQG
-INTEGER, SAVE :: NDRYGQG
-INTEGER, SAVE :: NINCGQG
-INTEGER, SAVE :: NGMLTQG
-INTEGER, SAVE :: NWETHQG
-INTEGER, SAVE :: NSEDIQG
-INTEGER, SAVE :: NNEUTQG
+INTEGER, SAVE :: NSFRQG    = 0
+INTEGER, SAVE :: NDEPGQG   = 0
+INTEGER, SAVE :: NRIMQG    = 0
+INTEGER, SAVE :: NACCQG    = 0
+INTEGER, SAVE :: NCMELQG   = 0
+INTEGER, SAVE :: NCFRZQG   = 0
+INTEGER, SAVE :: NWETGQG   = 0
+INTEGER, SAVE :: NDRYGQG   = 0
+INTEGER, SAVE :: NINCGQG   = 0
+INTEGER, SAVE :: NGMLTQG   = 0
+INTEGER, SAVE :: NWETHQG   = 0
+INTEGER, SAVE :: NSEDIQG   = 0
+INTEGER, SAVE :: NNEUTQG   = 0
 !
 ! Allowed processes for the budget of electric charge carried by hail
-INTEGER, SAVE :: NWETGQH
-INTEGER, SAVE :: NWETHQH
-INTEGER, SAVE :: NHMLTQH
-INTEGER, SAVE :: NSEDIQH
-INTEGER, SAVE :: NNEUTQH
+INTEGER, SAVE :: NWETGQH   = 0
+INTEGER, SAVE :: NWETHQH   = 0
+INTEGER, SAVE :: NHMLTQH   = 0
+INTEGER, SAVE :: NSEDIQH   = 0
+INTEGER, SAVE :: NNEUTQH   = 0
 !
 ! Allowed processes for the budget of electric charge carried by negative ions
-INTEGER, SAVE :: NDEPSNI
-INTEGER, SAVE :: NDEPGNI
-INTEGER, SAVE :: NREVANI
-INTEGER, SAVE :: NCDEPINI
-INTEGER, SAVE :: NNEUTNI
+INTEGER, SAVE :: NDEPSNI   = 0
+INTEGER, SAVE :: NDEPGNI   = 0
+INTEGER, SAVE :: NREVANI   = 0
+INTEGER, SAVE :: NCDEPINI  = 0
+INTEGER, SAVE :: NNEUTNI   = 0
 !
 !
 REAL :: XTIME_BU          ! budget time in this time-step
