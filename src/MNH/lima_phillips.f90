@@ -444,7 +444,7 @@ if ( nbumod == kmi .and. lbu_enable ) then
     call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HIND', pcis(:, :, :) * prhodj(:, :, :) )
     do jl = 1, nmod_ifn
       idx = NBUDGET_SV1 - 1 + nsv_lima_ifn_free -1 + jl
-      call Budget_store_init( tbudgets(NBUDGET_RI), 'HIND', pifs(:, :, :, jl) * prhodj(:, :, :) )
+      call Budget_store_init( tbudgets(idx), 'HIND', pifs(:, :, :, jl) * prhodj(:, :, :) )
     end do
   end if
 end if
@@ -494,7 +494,7 @@ if ( nbumod == kmi .and. lbu_enable ) then
                                     Unpack ( zcis(:), mask = gnegt(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
     do jl = 1, nmod_ifn
       idx = NBUDGET_SV1 - 1 + nsv_lima_ifn_free -1 + jl
-      call Budget_store_end( tbudgets(NBUDGET_RI), 'HIND', pifs(:, :, :, jl) * prhodj(:, :, :) )
+      call Budget_store_end( tbudgets(idx), 'HIND', pifs(:, :, :, jl) * prhodj(:, :, :) )
     end do
   end if
 end if
