@@ -105,6 +105,7 @@ contains
 !  P. Wautelet 02-03/2020: use the new data structures and subroutines for budgets
 !  B. Vie      02/03/2020: LIMA negativity checks after turbulence, advection and microphysics budgets
 !  P .Wautelet 09/03/2020: add missing budgets for electricity
+!  P. Wautelet 23/04/2020: add nid in tbudgetdata datatype
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -371,6 +372,7 @@ tzsource%ndims    = 3
 ! Budget of RU
 tbudgets(NBUDGET_U)%cname    = "BU_RU"
 tbudgets(NBUDGET_U)%ccomment = "Budget for U"
+tbudgets(NBUDGET_U)%nid      = NBUDGET_U
 
 tbudgets(NBUDGET_U)%lenabled = lbu_ru
 
@@ -500,6 +502,7 @@ end if
 ! Budget of RV
 tbudgets(NBUDGET_V)%cname    = "BU_RV"
 tbudgets(NBUDGET_V)%ccomment = "Budget for V"
+tbudgets(NBUDGET_V)%nid      = NBUDGET_V
 
 tbudgets(NBUDGET_V)%lenabled = lbu_rv
 
@@ -629,6 +632,7 @@ end if
 ! Budget of RW
 tbudgets(NBUDGET_W)%cname    = "BU_RW"
 tbudgets(NBUDGET_W)%ccomment = "Budget for W"
+tbudgets(NBUDGET_W)%nid      = NBUDGET_W
 
 tbudgets(NBUDGET_W)%lenabled = lbu_rw
 
@@ -753,6 +757,7 @@ end if
 ! Budget of RTH
 tbudgets(NBUDGET_TH)%cname    = "BU_RTH"
 tbudgets(NBUDGET_TH)%ccomment = "Budget for potential temperature"
+tbudgets(NBUDGET_TH)%nid      = NBUDGET_TH
 
 tbudgets(NBUDGET_TH)%lenabled = lbu_rth
 
@@ -1054,6 +1059,7 @@ end if
 ! Budget of RTKE
 tbudgets(NBUDGET_TKE)%cname    = "BU_RTKE"
 tbudgets(NBUDGET_TKE)%ccomment = "Budget for turbulent kinetic energy"
+tbudgets(NBUDGET_TKE)%nid      = NBUDGET_TKE
 
 tbudgets(NBUDGET_TKE)%lenabled = lbu_rtke
 
@@ -1147,6 +1153,7 @@ end if
 ! Budget of RRV
 tbudgets(NBUDGET_RV)%cname    = "BU_RRV"
 tbudgets(NBUDGET_RV)%ccomment = "Budget for water vapor mixing ratio"
+tbudgets(NBUDGET_RV)%nid      = NBUDGET_RV
 
 tbudgets(NBUDGET_RV)%lenabled = lbu_rrv .and. krr >= 1
 
@@ -1345,6 +1352,7 @@ end if
 ! Budget of RRC
 tbudgets(NBUDGET_RC)%cname    = "BU_RRC"
 tbudgets(NBUDGET_RC)%ccomment = "Budget for cloud water mixing ratio"
+tbudgets(NBUDGET_RC)%nid      = NBUDGET_RC
 
 tbudgets(NBUDGET_RC)%lenabled = lbu_rrc .and. krr >= 2
 
@@ -1608,6 +1616,7 @@ end if
 ! Budget of RRR
 tbudgets(NBUDGET_RR)%cname    = "BU_RRR"
 tbudgets(NBUDGET_RR)%ccomment = "Budget for rain water mixing ratio"
+tbudgets(NBUDGET_RR)%nid      = NBUDGET_RR
 
 tbudgets(NBUDGET_RR)%lenabled = lbu_rrr .and. krr >= 3
 
@@ -1819,6 +1828,7 @@ end if
 ! Budget of RRI
 tbudgets(NBUDGET_RI)%cname    = "BU_RRI"
 tbudgets(NBUDGET_RI)%ccomment = "Budget for cloud ice mixing ratio"
+tbudgets(NBUDGET_RI)%nid      = NBUDGET_RI
 
 tbudgets(NBUDGET_RI)%lenabled = lbu_rri .and. krr >= 4
 
@@ -2057,6 +2067,7 @@ end if
 ! Budget of RRS
 tbudgets(NBUDGET_RS)%cname    = "BU_RRS"
 tbudgets(NBUDGET_RS)%ccomment = "Budget for snow/aggregate mixing ratio"
+tbudgets(NBUDGET_RS)%nid      = NBUDGET_RS
 
 tbudgets(NBUDGET_RS)%lenabled = lbu_rrs .and. krr >= 5
 
@@ -2236,6 +2247,7 @@ end if
 ! Budget of RRG
 tbudgets(NBUDGET_RG)%cname    = "BU_RRG"
 tbudgets(NBUDGET_RG)%ccomment = "Budget for graupel mixing ratio"
+tbudgets(NBUDGET_RG)%nid      = NBUDGET_RG
 
 tbudgets(NBUDGET_RG)%lenabled = lbu_rrg .and. krr >= 6
 
@@ -2429,6 +2441,7 @@ end if
 ! Budget of RRH
 tbudgets(NBUDGET_RH)%cname    = "BU_RRH"
 tbudgets(NBUDGET_RH)%ccomment = "Budget for hail mixing ratio"
+tbudgets(NBUDGET_RH)%nid      = NBUDGET_RH
 
 tbudgets(NBUDGET_RH)%lenabled = lbu_rrh .and. krr >= 7
 
@@ -2585,6 +2598,7 @@ SV_BUDGETS: do jsv = 1, ksv
   write ( ybudgetnum, '( i3.3 )' ) jsv
   tbudgets(ibudget)%cname    = 'BU_RSV_' // ybudgetnum
   tbudgets(ibudget)%ccomment = 'Budget for scalar variable ' // ybudgetnum
+  tbudgets(ibudget)%nid      = ibudget
 
   tbudgets(ibudget)%lenabled = lbu_rsv
 

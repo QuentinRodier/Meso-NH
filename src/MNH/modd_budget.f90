@@ -52,6 +52,7 @@
 !  P. Wautelet 09/03/2020: add tburhodj variable
 !  P .Wautelet 09/03/2020: add missing budgets for electricity
 !  P. Wautelet 17/04/2020: set default values for budgets switch values
+!  P. Wautelet 23/04/2020: add nid in tbudgetdata datatype
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -85,6 +86,7 @@ integer :: nbudgets ! Number of budget categories
 type tbudgetdata
   character(len=NBUNAMELGTMAX)  :: cname    = ''
   character(len=NCOMMENTLGTMAX) :: ccomment = ''
+  integer :: nid         = -1 !Identifier number (based on parameters NBUDGET_*)
   integer :: ngroups     = 0 !Number of groups of source terms to store
   integer :: nsources    = 0 !Number of source terms
   integer :: nsourcesmax = 0 !Maximum number of source terms
