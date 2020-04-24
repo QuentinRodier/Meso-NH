@@ -82,6 +82,7 @@ CHARACTER(LEN=*), dimension(:), INTENT(IN) :: HMSG    !Message
 !
 character(len=2)  :: ysz
 CHARACTER(LEN=2)  :: YPRC
+character(len=8)  :: yprcnb
 CHARACTER(LEN=9)  :: YPRE
 CHARACTER(LEN=30) :: YSUBR
 character(len=:), allocatable :: yformat
@@ -182,22 +183,22 @@ if ( lverb_allprc ) then
   if ( gwrite_stdout ) then
     if ( ilines == 1 ) then
       yformat = '(' // yprc // ','': '',a9,a30,a)'
-      Write( unit = output_unit, fmt = yformat ) ip, ypre, ysubr, hmsg
+      Write( unit = output_unit, fmt = yformat ) ip - 1, ypre, ysubr, hmsg
     else
       yformat = '(' // yprc // ','': '',a9,a30,' // ysz // ',''/'',' // ysz // ','': '',a)'
       do ji = 1, ilines
-        Write( unit = output_unit, fmt = yformat ) ip, ypre, ysubr, ji, ilines, Trim( hmsg(ji) )
+        Write( unit = output_unit, fmt = yformat ) ip - 1, ypre, ysubr, ji, ilines, Trim( hmsg(ji) )
       end do
     end if
   end if
   if ( gwrite_outlst ) then
     if ( ilines == 1 ) then
       yformat = '(' // yprc // ','': '',a9,a30,a)'
-      Write( unit = ilu, fmt = yformat) ip, ypre, ysubr, hmsg
+      Write( unit = ilu, fmt = yformat) ip - 1, ypre, ysubr, hmsg
     else
       yformat = '(' // yprc // ','': '',a9,a30,' // ysz // ',''/'',' // ysz // ','': '',a)'
       do ji = 1, ilines
-        Write( unit = ilu, fmt = yformat) ip, ypre, ysubr, ji, ilines, Trim( hmsg(ji) )
+        Write( unit = ilu, fmt = yformat) ip - 1, ypre, ysubr, ji, ilines, Trim( hmsg(ji) )
       end do
     end if
   end if
@@ -225,11 +226,13 @@ else
 end if
 !
 IF (KVERB<=IABORTLEVEL) THEN
+  Write( yprcnb, '( i8 )' ) ip - 1
+
   IF (GWRITE_STDOUT) WRITE(UNIT=OUTPUT_UNIT,FMT=*) 'ABORT asked by application '//TRIM(CPROGRAM)
   IF (GWRITE_OUTLST) WRITE(UNIT=ILU,        FMT=*) 'ABORT asked by application '//TRIM(CPROGRAM)
   !Every process write on the error unit. This is necessary if the abort is done by an other process than 0.
-  WRITE(UNIT=ERROR_UNIT,FMT="(A8,': ',A9,A30,A)") ADJUSTL(YPRC),YPRE,YSUBR,HMSG
-  WRITE(UNIT=ERROR_UNIT,FMT="(A8,': ',A)")        ADJUSTL(YPRC),'ABORT asked by application '//TRIM(CPROGRAM)
+  WRITE(UNIT=ERROR_UNIT,FMT="(A8,': ',A9,A30,A)") ADJUSTL(yprcnb),YPRE,YSUBR,HMSG
+  WRITE(UNIT=ERROR_UNIT,FMT="(A8,': ',A)")        ADJUSTL(yprcnb),'ABORT asked by application '//TRIM(CPROGRAM)
 #if 0
   !Problem: loop dependency between MODE_MSG and MODE_FM (IO_FILE_CLOSE_ll call PRINT_MSG)
   NIO_VERB = 0 !To not get further messages (ABORT should be the last for readability)
