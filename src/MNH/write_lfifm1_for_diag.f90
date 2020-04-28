@@ -665,11 +665,11 @@ IF (LVAR_PR .AND. LUSERR .AND. SIZE(XINPRR)>0 ) THEN
     TZFIELD%CUNITS = 'mm hour-1'
     CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWORK21*3.6E6)
   !
-    ZWORK21(:,:) = (XACPRR(:,:) + XACPRS(:,:) + XACPRG(:,:))*1.0E3
+    ZWORK21(:,:) = XACPRR(:,:) + XACPRS(:,:) + XACPRG(:,:)
     IF (SIZE(XINPRC) /= 0 ) &      
-      ZWORK21(:,:) = ZWORK21(:,:) + XACPRC(:,:)*1.0E3
+      ZWORK21(:,:) = ZWORK21(:,:) + XACPRC(:,:)
     IF (SIZE(XINPRH) /= 0 ) &        
-      ZWORK21(:,:) = ZWORK21(:,:) + XACPRH(:,:)*1.0E3
+      ZWORK21(:,:) = ZWORK21(:,:) + XACPRH(:,:)
   !
     CALL FIND_FIELD_ID_FROM_MNHNAME('ACPRT',IID,IRESP)
     TZFIELD = TFIELDLIST(IID)
