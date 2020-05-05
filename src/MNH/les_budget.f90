@@ -132,6 +132,7 @@ SELECT CASE (KBUDN)
     X_LES_BU_RES_KE(:,ILES_BU) = X_LES_BU_RES_KE(:,ILES_BU) + ZLES_PROF(:)
     !
     !* update fields
+    XCURRENT_RUS = PVARS
     XU_ANOM = ZANOM
 !
 !* v
@@ -145,6 +146,7 @@ SELECT CASE (KBUDN)
     X_LES_BU_RES_KE(:,ILES_BU) = X_LES_BU_RES_KE(:,ILES_BU) + ZLES_PROF(:)
     !
     !* update fields
+    XCURRENT_RVS = PVARS
     XV_ANOM = ZANOM
 !
 !* w
@@ -177,6 +179,7 @@ SELECT CASE (KBUDN)
     END DO
     !
     !* update fields
+    XCURRENT_RWS = PVARS
     XW_ANOM = ZANOM
 !
 !* Th
@@ -312,6 +315,7 @@ SELECT CASE (KBUDN)
     X_LES_BU_RES_SV2(:,ILES_BU,KBUDN-(NBUDGET_SV1-1)) = X_LES_BU_RES_SV2(:,ILES_BU,KBUDN-(NBUDGET_SV1-1)) + ZLES_PROF(:)
     !
     !* update fields
+    XCURRENT_RSVS(:,:,:,KBUDN-(NBUDGET_SV1-1)) = PVARS
     XSV_ANOM(:,:,:,KBUDN-(NBUDGET_SV1-1)) = ZANOM
 
 END SELECT
