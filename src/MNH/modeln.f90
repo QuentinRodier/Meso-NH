@@ -1618,9 +1618,11 @@ ZRUS=XRUS
 ZRVS=XRVS
 ZRWS=XRWS
 
-if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'PRES', xrus(:, :, :) )
-if ( lbudget_v ) call Budget_store_init( tbudgets(NBUDGET_V), 'PRES', xrvs(:, :, :) )
-if ( lbudget_w ) call Budget_store_init( tbudgets(NBUDGET_W), 'PRES', xrws(:, :, :) )
+if ( .not. l1d ) then
+  if ( lbudget_u ) call Budget_store_init( tbudgets(NBUDGET_U), 'PRES', xrus(:, :, :) )
+  if ( lbudget_v ) call Budget_store_init( tbudgets(NBUDGET_V), 'PRES', xrvs(:, :, :) )
+  if ( lbudget_w ) call Budget_store_init( tbudgets(NBUDGET_W), 'PRES', xrws(:, :, :) )
+end if
 
 CALL RAD_BOUND (CLBCX,CLBCY,CTURB,XCARPKMAX,             &
                 XTSTEP,                                  &
