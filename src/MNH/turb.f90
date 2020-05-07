@@ -914,10 +914,31 @@ ENDIF
 if ( lbudget_u )  call Budget_store_init( tbudgets(NBUDGET_U ), 'VTURB', prus  (:, :, :)    )
 if ( lbudget_v )  call Budget_store_init( tbudgets(NBUDGET_V ), 'VTURB', prvs  (:, :, :)    )
 if ( lbudget_w )  call Budget_store_init( tbudgets(NBUDGET_W ), 'VTURB', prws  (:, :, :)    )
-if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'VTURB', prthls(:, :, :)    )
-if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'VTURB', prrs  (:, :, :, 1) )
+
+if ( lbudget_th ) then
+  if ( krri >= 1 .and. krrl >= 1 ) then
+    call Budget_store_init( tbudgets(NBUDGET_TH), 'VTURB', prthls(:, :, :) + zlvocpexnm(:, :, :) * prrs(:, :, :, 2) &
+                                                                          + zlsocpexnm(:, :, :) * prrs(:, :, :, 4) )
+  else if ( krrl >= 1 ) then
+    call Budget_store_init( tbudgets(NBUDGET_TH), 'VTURB', prthls(:, :, :) + zlocpexnm(:, :, :) * prrs(:, :, :, 2) )
+  else
+    call Budget_store_init( tbudgets(NBUDGET_TH), 'VTURB', prthls(:, :, :) )
+  end if
+end if
+
+if ( lbudget_rv ) then
+  if ( krri >= 1 .and. krrl >= 1 ) then
+    call Budget_store_init( tbudgets(NBUDGET_RV), 'VTURB', prrs(:, :, :, 1) - prrs(:, :, :, 2) - prrs(:, :, :, 4) )
+  else if ( krrl >= 1 ) then
+    call Budget_store_init( tbudgets(NBUDGET_RV), 'VTURB', prrs(:, :, :, 1) - prrs(:, :, :, 2) )
+  else
+    call Budget_store_init( tbudgets(NBUDGET_RV), 'VTURB', prrs(:, :, :, 1) )
+  end if
+end if
+
 if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'VTURB', prrs  (:, :, :, 2) )
 if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'VTURB', prrs  (:, :, :, 4) )
+
 if ( lbudget_sv ) then
   do jsv = 1, nsv
     call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + jsv), 'VTURB', prsvs(:, :, :, jsv) )
