@@ -425,7 +425,7 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
       write( ygroup_name, fmt = "('RJX__',I4.4)" ) nbutshift
 
     case( NBUDGET_V )
-      write( ygroup_name, fmt = "('RJX__',I4.4)" ) nbutshift
+      write( ygroup_name, fmt = "('RJY__',I4.4)" ) nbutshift
 
     case( NBUDGET_W )
       write( ygroup_name, fmt = "('RJZ__',I4.4)" ) nbutshift
