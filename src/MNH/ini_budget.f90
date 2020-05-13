@@ -3076,7 +3076,7 @@ SV_BUDGETS: do jsv = 1, ksv
         tzsource%clongname = 'correction'
         call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
 
-        gcond = lptsplit .and. lcold_lima .and. lsedi_lima
+        gcond = lcold_lima .and. lsedi_lima
         tzsource%cmnhname  = 'SEDI'
         tzsource%clongname = 'sedimentation'
         call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
