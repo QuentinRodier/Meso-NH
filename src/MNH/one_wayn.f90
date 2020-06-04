@@ -187,7 +187,7 @@ SUBROUTINE ONE_WAY_n(KDAD,PTSTEP,KMI,KTCOUNT,                            &
 !!      J.Escobar : 18/12/2015 : Correction of bug in bound in // for NHALO <>1 
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !  P. Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!  P. Wautelet 04/06/2020: correct call to Set_conc_lima
+!  P. Wautelet 04/06/2020: correct call to Set_conc_lima + initialize ZCONCT
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -483,6 +483,7 @@ ENDIF
 IF (HCLOUD=="LIMA"  ) THEN
    IF (CCLOUD/="LIMA") THEN
       ALLOCATE(ZCONCT(SIZE(XRHODJ,1),SIZE(XRHODJ,2),SIZE(XRHODJ,3),NSV_LIMA_A(KMI)))
+      ZCONCT(:, :, :, :) = 0.
       IF (CCLOUD == "REVE") THEN
          ZINIT_TYPE = "INI1"
       ELSE
