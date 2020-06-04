@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1999-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #######################
@@ -139,8 +139,8 @@ SUBROUTINE INI_ONE_WAY_n(KDAD,HLUOUT,PTSTEP,KMI,KTCOUNT,                 &
 !!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!      J.Escobar : 18/12/2015 : Correction of bug in bound in // for NHALO <>1 
 !!      B.VIE   2016 : LIMA
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 04/06/2020: correct call to Set_conc_lima
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -164,7 +164,7 @@ USE MODI_SET_CONC_RAIN_C2R2
 USE MODI_SET_CONC_ICE_C1R3
 USE MODI_SET_CHEMAQ_1WAY
 !
-USE MODI_SET_CONC_LIMA
+USE MODE_SET_CONC_LIMA
 !
 IMPLICIT NONE
 !
@@ -407,7 +407,7 @@ IF (HCLOUD=="LIMA"  ) THEN
       ELSE
          ZINIT_TYPE = "NONE"
       END IF
-      CALL SET_CONC_LIMA (ZINIT_TYPE,XRHODREF,XRT,ZCONCM)
+      CALL SET_CONC_LIMA (KMI,ZINIT_TYPE,XRHODREF,XRT,ZCONCM)
       DO JSV=1,NSV_LIMA_A(KMI)
          CALL SET_LSFIELD_1WAY_ll(ZCONCM(:,:,:,JSV),&
               &ZTSVM(:,:,:,JSV-1+NSV_LIMA_BEG_A(KMI)),KMI)

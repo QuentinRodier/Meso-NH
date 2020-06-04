@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -94,6 +94,7 @@ USE MODI_SET_CONC_ICE_C1R3
 USE MODE_ll
 USE MODE_MODELN_HANDLER
 USE MODE_BLOWSNOW_SEDIM_LKT
+USE MODE_SET_CONC_LIMA
 !
 USE MODD_NSV,        ONLY : NSV,NSV_CHEM,NSV_C2R2BEG,NSV_C2R2END, &
                             NSV_C1R3BEG,NSV_C1R3END,              &
@@ -109,7 +110,6 @@ USE MODD_LIMA_PRECIP_SCAVENGING_n
 !
 USE MODI_INIT_AEROSOL_CONCENTRATION
 USE MODI_INI_LIMA
-USE MODI_SET_CONC_LIMA
 !
 IMPLICIT NONE
 !
@@ -140,6 +140,7 @@ INTEGER :: IMI
 !
 CALL GET_DIM_EXT_ll('B',IIU,IJU)
 IKU=SIZE(XZZ,3)
+IMI = GET_CURRENT_MODEL_INDEX()
 !
 !
 !*       2.    ALLOCATE  Module MODD_PRECIP_n
@@ -317,7 +318,7 @@ ENDIF
 !
 IF (CCLOUD == 'LIMA') THEN
   IF (CGETCLOUD/='READ') THEN
-    CALL SET_CONC_LIMA(CGETCLOUD,XRHODREF,XRT,XSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END))
+    CALL SET_CONC_LIMA(IMI,CGETCLOUD,XRHODREF,XRT,XSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END))
   END IF
 END IF
 !
@@ -326,7 +327,6 @@ END IF
 !              ----------------------------------
 !
 !
-IMI = GET_CURRENT_MODEL_INDEX()
 !IF (CELEC /= 'NONE') THEN
 !  CALL INI_ELEC(IMI,CINIFILE,CLUOUT,XTSTEP,ZDZMIN,NSPLITR, &
 !                XDXX,XDYY,XDZZ,XDZX,XDZY                   )

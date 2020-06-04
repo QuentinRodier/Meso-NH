@@ -1,32 +1,18 @@
-!MNH_LIC Copyright 2000-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !#######################################
-       MODULE MODI_SET_CONC_LIMA
-!      #######################################
-!
-INTERFACE
-!
-      SUBROUTINE SET_CONC_LIMA (HGETCLOUD,PRHODREF,PRT,PSVT)
-!
-CHARACTER (LEN=4),         INTENT(IN) :: HGETCLOUD  ! Get indicator
-REAL, DIMENSION(:,:,:),    INTENT(IN) :: PRHODREF   ! Reference density
-!
-REAL, DIMENSION(:,:,:,:),  INTENT(INOUT) :: PRT     ! microphysical mixing ratios
-!
-REAL,  DIMENSION(:,:,:,:), INTENT(INOUT):: PSVT     ! microphys. concentrations
-!
-!
-END SUBROUTINE SET_CONC_LIMA
-!
-END INTERFACE
-!
-END MODULE MODI_SET_CONC_LIMA
-!
+module mode_set_conc_lima
+!#######################################
+
+implicit none
+
+contains
+
 !     ###########################################################################
-      SUBROUTINE SET_CONC_LIMA (HGETCLOUD,PRHODREF,PRT,PSVT)
+      SUBROUTINE SET_CONC_LIMA( kmi, HGETCLOUD, PRHODREF, PRT, PSVT )
 !     ###########################################################################
 !
 !!****  *SET_CONC_LIMA * - initialize droplet, raindrop and ice
@@ -79,7 +65,9 @@ END MODULE MODI_SET_CONC_LIMA
 !!      Original    15/11/00
 !!                        2014 G.Delautier : remplace MODD_RAIN_C2R2_PARAM par MODD_RAIN_C2R2_KHKO_PARAM        *
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!  B.Vié : 03/03/2020  secure physical tests
+!  B. Vié      03/03/2020: secure physical tests
+!  P. Wautelet 04/06/2020: correct array start for microphys. concentrations + add kmi dummy argument
+!                          (this subroutine is also called for other models)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -87,7 +75,8 @@ END MODULE MODI_SET_CONC_LIMA
 !
 USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, LCOLD, LWARM, LRAIN, NMOD_CCN, NMOD_IFN
 USE MODD_PARAM_LIMA_COLD, ONLY : XAI, XBI
-USE MODD_NSV,             ONLY : NSV_LIMA_NC, NSV_LIMA_NR, NSV_LIMA_CCN_ACTI, NSV_LIMA_NI, NSV_LIMA_IFN_NUCL
+USE MODD_NSV,             ONLY : NSV_LIMA_BEG_A, NSV_LIMA_NC_A, NSV_LIMA_NR_A, NSV_LIMA_CCN_ACTI_A, &
+                                 NSV_LIMA_NI_A, NSV_LIMA_IFN_NUCL_A
 USE MODD_CST,             ONLY : XPI, XRHOLW, XRHOLI
 USE MODD_CONF,            ONLY : NVERB
 USE MODD_CONF_n,          ONLY : NRR
@@ -100,12 +89,13 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
+integer,                   intent(in) :: kmi        ! Model number
 CHARACTER (LEN=4),         INTENT(IN) :: HGETCLOUD  ! Get indicator
 REAL, DIMENSION(:,:,:),    INTENT(IN) :: PRHODREF   ! Reference density
 !
 REAL, DIMENSION(:,:,:,:),  INTENT(INOUT) :: PRT     ! microphysical mixing ratios
 !
-REAL,  DIMENSION(:,:,:,:), INTENT(INOUT):: PSVT     ! microphys. concentrations
+REAL,  DIMENSION(:,:,:,NSV_LIMA_BEG_A(kmi):), INTENT(INOUT):: PSVT     ! microphys. concentrations
 !
 !
 !*       0.2   Declarations of local variables :
@@ -129,19 +119,19 @@ IF (LWARM .AND. NRR.GE.2) THEN
 !
    ZCONCC = 300.E6 ! droplet concentration set at 300 cm-3
    WHERE ( PRT(:,:,:,2) > 1.E-11 )
-      PSVT(:,:,:,NSV_LIMA_NC) = ZCONCC
+      PSVT(:,:,:,NSV_LIMA_NC_A(kmi)) = ZCONCC
    END WHERE
    WHERE ( PRT(:,:,:,2) <= 1.E-11 )
       PRT(:,:,:,2)  = 0.0
-      PSVT(:,:,:,NSV_LIMA_NC) = 0.0
+      PSVT(:,:,:,NSV_LIMA_NC_A(kmi)) = 0.0
    END WHERE
    
    IF (NMOD_CCN .GE. 1) THEN
       WHERE ( PRT(:,:,:,2) > 1.E-11 )
-         PSVT(:,:,:,NSV_LIMA_CCN_ACTI) = ZCONCC
+         PSVT(:,:,:,NSV_LIMA_CCN_ACTI_A(kmi)) = ZCONCC
       END WHERE
       WHERE ( PRT(:,:,:,2) <= 1.E-11 )
-         PSVT(:,:,:,NSV_LIMA_CCN_ACTI) = 0.0
+         PSVT(:,:,:,NSV_LIMA_CCN_ACTI_A(kmi)) = 0.0
       END WHERE
    END IF
    
@@ -157,15 +147,15 @@ IF (LWARM .AND. LRAIN .AND. NRR.GE.3) THEN
 !
    ZCONCR = (1.E7)**3/(XPI*XRHOLW) ! cf XCONCR_PARAM_INI in ini_rain_c2r2.f90
    IF (HGETCLOUD == 'INI1') THEN ! init from REVE scheme
-      PSVT(:,:,:,NSV_LIMA_NR) = 0.0
+      PSVT(:,:,:,NSV_LIMA_NR_A(kmi)) = 0.0
    ELSE ! init from KESS, ICE3...
       WHERE ( PRT(:,:,:,3) > 1.E-11 )
-         PSVT(:,:,:,NSV_LIMA_NR) = MAX( SQRT(SQRT(PRHODREF(:,:,:)*PRT(:,:,:,3) &
+         PSVT(:,:,:,NSV_LIMA_NR_A(kmi)) = MAX( SQRT(SQRT(PRHODREF(:,:,:)*PRT(:,:,:,3) &
               *ZCONCR)),1. )
       END WHERE
       WHERE ( PRT(:,:,:,3) <= 1.E-11 )
          PRT(:,:,:,3)  = 0.0
-         PSVT(:,:,:,NSV_LIMA_NR) = 0.0
+         PSVT(:,:,:,NSV_LIMA_NR_A(kmi)) = 0.0
       END WHERE
       IF( NVERB >= 5 ) THEN
          WRITE (UNIT=ILUOUT,FMT=*) "!INI_MODEL$n: The raindrop concentration has "
@@ -181,23 +171,23 @@ IF (LCOLD .AND. NRR.GE.4) THEN
    ZCONCI = 100.E3 ! maximum ice concentration set at 100/L
    WHERE ( PRT(:,:,:,4) > 1.E-11 )
 !
-!      PSVT(:,:,:,NSV_LIMA_NI) = MIN( PRHODREF(:,:,:) /                                     &
+!      PSVT(:,:,:,NSV_LIMA_NI_A(kmi)) = MIN( PRHODREF(:,:,:) /                                     &
 !           ( XRHOLI * XAI*(10.E-06)**XBI * PRT(:,:,:,4) ), &
 !           ZCONCI )
 ! Correction
-      PSVT(:,:,:,NSV_LIMA_NI) = MIN(PRT(:,:,:,4)/(0.82*(10.E-06)**2.5),ZCONCI )
+      PSVT(:,:,:,NSV_LIMA_NI_A(kmi)) = MIN(PRT(:,:,:,4)/(0.82*(10.E-06)**2.5),ZCONCI )
    END WHERE
    WHERE ( PRT(:,:,:,4) <= 1.E-11 )
       PRT(:,:,:,4)  = 0.0
-      PSVT(:,:,:,NSV_LIMA_NI) = 0.0
+      PSVT(:,:,:,NSV_LIMA_NI_A(kmi)) = 0.0
    END WHERE
 
    IF (NMOD_IFN .GE. 1) THEN
       WHERE ( PRT(:,:,:,4) > 1.E-11 )
-         PSVT(:,:,:,NSV_LIMA_IFN_NUCL) = PSVT(:,:,:,NSV_LIMA_NI)
+         PSVT(:,:,:,NSV_LIMA_IFN_NUCL_A(kmi)) = PSVT(:,:,:,NSV_LIMA_NI_A(kmi))
       END WHERE
       WHERE ( PRT(:,:,:,4) <= 1.E-11 )
-         PSVT(:,:,:,NSV_LIMA_IFN_NUCL) = 0.0
+         PSVT(:,:,:,NSV_LIMA_IFN_NUCL_A(kmi)) = 0.0
       END WHERE
    END IF
 
@@ -209,3 +199,5 @@ IF (LCOLD .AND. NRR.GE.4) THEN
 END IF
 !
 END SUBROUTINE SET_CONC_LIMA
+
+end module mode_set_conc_lima
