@@ -270,6 +270,7 @@ END MODULE MODI_RESOLVED_CLOUD
 !!  P. Wautelet 24/02/2020: bugfix: corrected budget name (DEPI->CDEPI) for ice_adjust
 !!                  03/2020 (B.Vie) : LIMA negativity checks after turbulence, advection and microphysics budgets
 !!      B.Vié 03/03/2020 : use DTHRAD instead of dT/dt in Smax diagnostic computation
+!  P. Wautelet 11/06/2020: bugfix: correct ZSVS array indices
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -723,32 +724,32 @@ SELECT CASE ( HCLOUD )
    CASE('LIMA')   
 ! Correction where rc<0 or Nc<0
       IF (OWARM) THEN
-         WHERE (PRS(:,:,:,2) < YRTMIN(2)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NC) < YCTMIN(2)/PTSTEP)
+         WHERE (PRS(:,:,:,2) < YRTMIN(2)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NC-NSV_LIMA_BEG+1) < YCTMIN(2)/PTSTEP)
             PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
             PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
                  ZCPH(:,:,:) / ZEXN(:,:,:)
             PRS(:,:,:,2)  = 0.0
-            ZSVS(:,:,:,NSV_LIMA_NC) = 0.0
+            ZSVS(:,:,:,NSV_LIMA_NC-NSV_LIMA_BEG+1) = 0.0
          END WHERE
       END IF
 ! Correction where rr<0 or Nr<0
       IF (OWARM .AND. ORAIN) THEN
-         WHERE (PRS(:,:,:,3) < YRTMIN(3)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NR) < YCTMIN(3)/PTSTEP)
+         WHERE (PRS(:,:,:,3) < YRTMIN(3)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NR-NSV_LIMA_BEG+1) < YCTMIN(3)/PTSTEP)
             PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,3)
             PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,3) * ZLV(:,:,:) /  &
                  ZCPH(:,:,:) / ZEXN(:,:,:)
             PRS(:,:,:,3)  = 0.0
-            ZSVS(:,:,:,NSV_LIMA_NR) = 0.0
+            ZSVS(:,:,:,NSV_LIMA_NR-NSV_LIMA_BEG+1) = 0.0
          END WHERE
       END IF
 ! Correction where ri<0 or Ni<0
       IF (LCOLD) THEN
-         WHERE (PRS(:,:,:,4) < YRTMIN(4)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NI) < YCTMIN(4)/PTSTEP)
+         WHERE (PRS(:,:,:,4) < YRTMIN(4)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NI-NSV_LIMA_BEG+1) < YCTMIN(4)/PTSTEP)
             PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,4)
             PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,4) * ZLS(:,:,:) /  &
                  ZCPH(:,:,:) / ZEXN(:,:,:)
             PRS(:,:,:,4)  = 0.0
-            ZSVS(:,:,:,NSV_LIMA_NI) = 0.0
+            ZSVS(:,:,:,NSV_LIMA_NI-NSV_LIMA_BEG+1) = 0.0
          END WHERE
       END IF
 !
@@ -772,19 +773,19 @@ IF (LBUDGET_RS) CALL BUDGET (PRS(:,:,:,5) * PRHODJ(:,:,:),10,'NEGA_BU_RRS')
 IF (LBUDGET_RG) CALL BUDGET (PRS(:,:,:,6) * PRHODJ(:,:,:),11,'NEGA_BU_RRG')
 IF (LBUDGET_RH) CALL BUDGET (PRS(:,:,:,7) * PRHODJ(:,:,:),12,'NEGA_BU_RRH')
 IF (LBUDGET_SV .AND. (HCLOUD == 'LIMA')) THEN
-   IF (OWARM) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NC) * PRHODJ(:,:,:),12+NSV_LIMA_NC,'NEGA_BU_RSV')
-   IF (OWARM.AND.ORAIN) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NR) * PRHODJ(:,:,:),12+NSV_LIMA_NR,'NEGA_BU_RSV')
-   IF (LCOLD) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NI) * PRHODJ(:,:,:),12+NSV_LIMA_NI,'NEGA_BU_RSV')
+   IF (OWARM) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NC-NSV_LIMA_BEG+1) * PRHODJ(:,:,:),12+NSV_LIMA_NC,'NEGA_BU_RSV')
+   IF (OWARM.AND.ORAIN) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NR-NSV_LIMA_BEG+1) * PRHODJ(:,:,:),12+NSV_LIMA_NR,'NEGA_BU_RSV')
+   IF (LCOLD) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NI-NSV_LIMA_BEG+1) * PRHODJ(:,:,:),12+NSV_LIMA_NI,'NEGA_BU_RSV')
    IF (NMOD_CCN.GE.1) THEN
       DO JL=1, NMOD_CCN
-         CALL BUDGET ( ZSVS(:,:,:,NSV_LIMA_CCN_FREE+JL-1)* &
-              PRHODJ(:,:,:),12+NSV_LIMA_CCN_FREE+JL-1,'NEGA_BU_RSV') 
+         CALL BUDGET ( ZSVS(:,:,:,NSV_LIMA_CCN_FREE+JL-NSV_LIMA_BEG)* &
+              PRHODJ(:,:,:),12+NSV_LIMA_CCN_FREE+JL-1,'NEGA_BU_RSV')
       END DO
    END IF
    IF (NMOD_IFN.GE.1) THEN
       DO JL=1, NMOD_IFN
-         CALL BUDGET ( ZSVS(:,:,:,NSV_LIMA_IFN_FREE+JL-1)* &
-              PRHODJ(:,:,:),12+NSV_LIMA_IFN_FREE+JL-1,'NEGA_BU_RSV') 
+         CALL BUDGET ( ZSVS(:,:,:,NSV_LIMA_IFN_FREE+JL-NSV_LIMA_BEG)* &
+              PRHODJ(:,:,:),12+NSV_LIMA_IFN_FREE+JL-1,'NEGA_BU_RSV')
       END DO
    END IF
 END IF
@@ -1250,32 +1251,32 @@ SELECT CASE ( HCLOUD )
    CASE('LIMA')   
 ! Correction where rc<0 or Nc<0
       IF (OWARM) THEN
-         WHERE (PRS(:,:,:,2) < YRTMIN(2)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NC) < YCTMIN(2)/PTSTEP)
+         WHERE (PRS(:,:,:,2) < YRTMIN(2)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NC-NSV_LIMA_BEG+1) < YCTMIN(2)/PTSTEP)
             PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
             PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
                  ZCPH(:,:,:) / ZEXN(:,:,:)
             PRS(:,:,:,2)  = 0.0
-            ZSVS(:,:,:,NSV_LIMA_NC) = 0.0
+            ZSVS(:,:,:,NSV_LIMA_NC-NSV_LIMA_BEG+1) = 0.0
          END WHERE
       END IF
 ! Correction where rr<0 or Nr<0
       IF (OWARM .AND. ORAIN) THEN
-         WHERE (PRS(:,:,:,3) < YRTMIN(3)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NR) < YCTMIN(3)/PTSTEP)
+         WHERE (PRS(:,:,:,3) < YRTMIN(3)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NR-NSV_LIMA_BEG+1) < YCTMIN(3)/PTSTEP)
             PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,3)
             PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,3) * ZLV(:,:,:) /  &
                  ZCPH(:,:,:) / ZEXN(:,:,:)
             PRS(:,:,:,3)  = 0.0
-            ZSVS(:,:,:,NSV_LIMA_NR) = 0.0
+            ZSVS(:,:,:,NSV_LIMA_NR-NSV_LIMA_BEG+1) = 0.0
          END WHERE
       END IF
 ! Correction where ri<0 or Ni<0
       IF (LCOLD) THEN
-         WHERE (PRS(:,:,:,4) < YRTMIN(4)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NI) < YCTMIN(4)/PTSTEP)
+         WHERE (PRS(:,:,:,4) < YRTMIN(4)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NI-NSV_LIMA_BEG+1) < YCTMIN(4)/PTSTEP)
             PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,4)
             PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,4) * ZLS(:,:,:) /  &
                  ZCPH(:,:,:) / ZEXN(:,:,:)
             PRS(:,:,:,4)  = 0.0
-            ZSVS(:,:,:,NSV_LIMA_NI) = 0.0
+            ZSVS(:,:,:,NSV_LIMA_NI-NSV_LIMA_BEG+1) = 0.0
          END WHERE
       END IF
 !
@@ -1297,19 +1298,19 @@ IF (LBUDGET_RS) CALL BUDGET (PRS(:,:,:,5) * PRHODJ(:,:,:),10,'NECON_BU_RRS')
 IF (LBUDGET_RG) CALL BUDGET (PRS(:,:,:,6) * PRHODJ(:,:,:),11,'NECON_BU_RRG')
 IF (LBUDGET_RH) CALL BUDGET (PRS(:,:,:,7) * PRHODJ(:,:,:),12,'NECON_BU_RRH')
 IF (LBUDGET_SV .AND. (HCLOUD == 'LIMA')) THEN
-   IF (OWARM) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NC) * PRHODJ(:,:,:),12+NSV_LIMA_NC,'NECON_BU_RSV')
-   IF (OWARM.AND.ORAIN) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NR) * PRHODJ(:,:,:),12+NSV_LIMA_NR,'NECON_BU_RSV')
-   IF (LCOLD) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NI) * PRHODJ(:,:,:),12+NSV_LIMA_NI,'NECON_BU_RSV')
+   IF (OWARM) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NC-NSV_LIMA_BEG+1) * PRHODJ(:,:,:),12+NSV_LIMA_NC,'NECON_BU_RSV')
+   IF (OWARM.AND.ORAIN) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NR-NSV_LIMA_BEG+1) * PRHODJ(:,:,:),12+NSV_LIMA_NR,'NECON_BU_RSV')
+   IF (LCOLD) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NI-NSV_LIMA_BEG+1) * PRHODJ(:,:,:),12+NSV_LIMA_NI,'NECON_BU_RSV')
    IF (NMOD_CCN.GE.1) THEN
       DO JL=1, NMOD_CCN
-         CALL BUDGET ( ZSVS(:,:,:,NSV_LIMA_CCN_FREE+JL-1)* &
-              PRHODJ(:,:,:),12+NSV_LIMA_CCN_FREE+JL-1,'NECON_BU_RSV') 
+         CALL BUDGET ( ZSVS(:,:,:,NSV_LIMA_CCN_FREE+JL-NSV_LIMA_BEG)* &
+              PRHODJ(:,:,:),12+NSV_LIMA_CCN_FREE+JL-1,'NECON_BU_RSV')
       END DO
    END IF
    IF (NMOD_IFN.GE.1) THEN
       DO JL=1, NMOD_IFN
-         CALL BUDGET ( ZSVS(:,:,:,NSV_LIMA_IFN_FREE+JL-1)* &
-              PRHODJ(:,:,:),12+NSV_LIMA_IFN_FREE+JL-1,'NECON_BU_RSV') 
+         CALL BUDGET ( ZSVS(:,:,:,NSV_LIMA_IFN_FREE+JL-NSV_LIMA_BEG)* &
+              PRHODJ(:,:,:),12+NSV_LIMA_IFN_FREE+JL-1,'NECON_BU_RSV')
       END DO
    END IF
 END IF

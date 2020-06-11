@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !    ################ 
@@ -341,6 +341,7 @@ END MODULE MODI_TURB
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!                     01/2018 (Q.Rodier) Introduction of RM17
 !!                  03/2020 (B.Vie) : LIMA negativity checks after turbulence, advection and microphysics budgets 
+!  P. Wautelet 11/06/2020: bugfix: correct PRSVS array indices
 !! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -1165,19 +1166,16 @@ SELECT CASE ( HCLOUD )
      ZLV(:,:,:)=XLVTT +(XCPV-XCL) *(ZTT(:,:,:)-XTT)
      ZLS(:,:,:)=XLSTT +(XCPV-XCI) *(ZTT(:,:,:)-XTT)
      ZCPH(:,:,:)=XCPD +XCPV*PRT(:,:,:,1)
-!  CALL GET_HALO(PRRS(:,:,:,2))
-!  CALL GET_HALO(PRSVS(:,:,:,2))
-!  CALL GET_HALO(PRSVS(:,:,:,3))
-     WHERE (PRRS(:,:,:,2) < 0. .OR. PRSVS(:,:,:,2) < 0.)
-        PRSVS(:,:,:,1) = 0.0
+     WHERE (PRRS(:,:,:,2) < 0. .OR. PRSVS(:,:,:,NSV_C2R2BEG+1) < 0.)
+        PRSVS(:,:,:,NSV_C2R2BEG) = 0.0
      END WHERE
      DO JSV = 2, 3
-        WHERE (PRRS(:,:,:,JSV) < 0. .OR. PRSVS(:,:,:,JSV) < 0.)
+        WHERE (PRRS(:,:,:,JSV) < 0. .OR. PRSVS(:,:,:,NSV_C2R2BEG-1+JSV) < 0.)
            PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,JSV)
            PRTHLS(:,:,:) = PRTHLS(:,:,:) - PRRS(:,:,:,JSV) * ZLV(:,:,:) /  &
                 ZCPH(:,:,:) / ZEXNE(:,:,:)
            PRRS(:,:,:,JSV)  = 0.0
-           PRSVS(:,:,:,JSV) = 0.0
+           PRSVS(:,:,:,NSV_C2R2BEG-1+JSV) = 0.0
         END WHERE
      END DO
      !
@@ -1218,7 +1216,7 @@ SELECT CASE ( HCLOUD )
          END WHERE
       END IF
 !
-      PRSVS(:,:,:,:) = MAX( 0.0,PRSVS(:,:,:,:) )
+      PRSVS(:, :, :, NSV_LIMA_BEG:NSV_LIMA_END) = MAX( 0.0, PRSVS(:, :, :, NSV_LIMA_BEG:NSV_LIMA_END) )
       PRRS(:,:,:,:) = MAX( 0.0,PRRS(:,:,:,:) )
 !
 END SELECT
