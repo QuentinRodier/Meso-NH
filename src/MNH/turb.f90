@@ -342,6 +342,7 @@ END MODULE MODI_TURB
 !!                     01/2018 (Q.Rodier) Introduction of RM17
 !!                  03/2020 (B.Vie) : LIMA negativity checks after turbulence, advection and microphysics budgets 
 !  P. Wautelet 11/06/2020: bugfix: correct PRSVS array indices
+!  P. Wautelet + Benoit Vié 11/06/2020: improve removal of negative scalar variables + adapt the corresponding budgets
 !! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -1120,6 +1121,22 @@ IF ( KRRL >= 1 ) THEN
 END IF
 !
 SELECT CASE ( HCLOUD )
+  CASE('KESS')
+    WHERE (PRRS(:,:,:,2) < 0.)
+      ZEXNE(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
+      PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,2)
+      ZTT(:,:,:)= PTHLT(:,:,:)*ZEXNE(:,:,:)
+      ZLV(:,:,:)=XLVTT +(XCPV-XCL) *(ZTT(:,:,:)-XTT)
+      ZCPH(:,:,:)=XCPD +XCPV*PRT(:,:,:,1)
+      PRTHLS(:,:,:) = PRTHLS(:,:,:) - PRRS(:,:,:,2) * ZLV(:,:,:) /  &
+           ZCPH(:,:,:) / ZEXNE(:,:,:)
+      PRRS(:,:,:,2) = 0.0
+    END WHERE
+!
+    IF (LBUDGET_TH) CALL BUDGET (PRTHLS(:,:,:), 4,'NETUR_BU_RTH')
+    IF (LBUDGET_RV) CALL BUDGET (PRRS(:,:,:,1), 6,'NETUR_BU_RRV')
+    IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2), 7,'NETUR_BU_RRC')
+
   CASE('ICE3','ICE4')
      ZEXNE(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
      ZTT(:,:,:)= PTHLT(:,:,:)*ZEXNE(:,:,:)
@@ -1160,6 +1177,11 @@ SELECT CASE ( HCLOUD )
       END WHERE
     END IF
 !
+    IF (LBUDGET_TH) CALL BUDGET (PRTHLS(:,:,:), 4,'NETUR_BU_RTH')
+    IF (LBUDGET_RV) CALL BUDGET (PRRS(:,:,:,1), 6,'NETUR_BU_RRV')
+    IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2), 7,'NETUR_BU_RRC')
+    IF (LBUDGET_RI) CALL BUDGET (PRRS(:,:,:,4), 9,'NETUR_BU_RRI')
+!
   CASE('C2R2','KHKO')
      ZEXNE(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
      ZTT(:,:,:)= PTHLT(:,:,:)*ZEXNE(:,:,:)
@@ -1178,8 +1200,18 @@ SELECT CASE ( HCLOUD )
            PRSVS(:,:,:,NSV_C2R2BEG-1+JSV) = 0.0
         END WHERE
      END DO
-     !
-   CASE('LIMA')   
+!
+    IF (LBUDGET_TH) CALL BUDGET (PRTHLS(:,:,:), 4,'NETUR_BU_RTH')
+    IF (LBUDGET_RV) CALL BUDGET (PRRS(:,:,:,1), 6,'NETUR_BU_RRV')
+    IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2), 7,'NETUR_BU_RRC')
+    IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:,3), 8,'NETUR_BU_RRR')
+    IF (LBUDGET_SV) THEN
+      DO JSV = 1, 3
+        CALL BUDGET (PRSVS(:,:,:,NSV_C2R2BEG-1+JSV),12+NSV_C2R2BEG-1+JSV,'NETUR_BU_RSV')
+      END DO
+    END IF
+!
+   CASE('LIMA')
      ZEXNE(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
      ZTT(:,:,:)= PTHLT(:,:,:)*ZEXNE(:,:,:)
      ZLV(:,:,:)=XLVTT +(XCPV-XCL) *(ZTT(:,:,:)-XTT)
@@ -1217,36 +1249,20 @@ SELECT CASE ( HCLOUD )
       END IF
 !
       PRSVS(:, :, :, NSV_LIMA_BEG:NSV_LIMA_END) = MAX( 0.0, PRSVS(:, :, :, NSV_LIMA_BEG:NSV_LIMA_END) )
-      PRRS(:,:,:,:) = MAX( 0.0,PRRS(:,:,:,:) )
+      !Commented out for B. Vie 15/05/2020 PRRS(:,:,:,:) = MAX( 0.0,PRRS(:,:,:,:) )
+!
+    IF (LBUDGET_TH) CALL BUDGET (PRTHLS(:,:,:), 4,'NETUR_BU_RTH')
+    IF (LBUDGET_RV) CALL BUDGET (PRRS(:,:,:,1), 6,'NETUR_BU_RRV')
+    IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2), 7,'NETUR_BU_RRC')
+    IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:,3), 8,'NETUR_BU_RRR')
+    IF (LBUDGET_RI) CALL BUDGET (PRRS(:,:,:,4), 9,'NETUR_BU_RRI')
+    IF (LBUDGET_SV) THEN
+      DO JSV = NSV_LIMA_BEG, NSV_LIMA_END
+        CALL BUDGET (PRSVS(:,:,:,JSV),12+JSV,'NETUR_BU_RSV')
+      END DO
+    END IF
 !
 END SELECT
-!
-IF ((HCLOUD == 'ICE3') .OR. (HCLOUD == 'ICE4') .OR. (HCLOUD == 'KHKO') .OR. (HCLOUD == 'C2R2') .OR. (HCLOUD == 'LIMA') ) THEN
-  IF (LBUDGET_TH) CALL BUDGET (PRTHLS(:,:,:), 4,'NETUR_BU_RTH')
-  IF (LBUDGET_RV) CALL BUDGET (PRRS(:,:,:,1), 6,'NETUR_BU_RRV')
-  IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2), 7,'NETUR_BU_RRC')
-  IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:,3), 8,'NETUR_BU_RRR')
-  IF (LBUDGET_RI) CALL BUDGET (PRRS(:,:,:,4), 9,'NETUR_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET (PRRS(:,:,:,5),10,'NETUR_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (PRRS(:,:,:,6),11,'NETUR_BU_RRG')
-  IF (LBUDGET_RH) CALL BUDGET (PRRS(:,:,:,7),12,'NETUR_BU_RRH')
-END IF
-IF (LBUDGET_SV .AND. (HCLOUD == 'LIMA')) THEN
-   IF (LWARM) CALL BUDGET (PRSVS(:,:,:,NSV_LIMA_NC),12+NSV_LIMA_NC,'NETUR_BU_RSV')
-   IF (LWARM.AND.LRAIN) CALL BUDGET (PRSVS(:,:,:,NSV_LIMA_NR),12+NSV_LIMA_NR,'NETUR_BU_RSV')
-   IF (LCOLD) CALL BUDGET (PRSVS(:,:,:,NSV_LIMA_NI),12+NSV_LIMA_NI,'NETUR_BU_RSV')
-   IF (NMOD_CCN.GE.1) THEN
-      DO JI=1, NMOD_CCN
-         CALL BUDGET ( PRSVS(:,:,:,NSV_LIMA_CCN_FREE+JI-1),12+NSV_LIMA_CCN_FREE+JI-1,'NETUR_BU_RSV') 
-      END DO
-   END IF
-   IF (NMOD_IFN.GE.1) THEN
-      DO JI=1, NMOD_IFN
-         CALL BUDGET ( PRSVS(:,:,:,NSV_LIMA_IFN_FREE+JI-1),12+NSV_LIMA_IFN_FREE+JI-1,'NETUR_BU_RSV') 
-      END DO
-   END IF
-END IF
-
 !
 !----------------------------------------------------------------------------
 !

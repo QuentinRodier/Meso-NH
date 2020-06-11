@@ -272,6 +272,7 @@ END MODULE MODI_RESOLVED_CLOUD
 !!      B.Vié 03/03/2020 : use DTHRAD instead of dT/dt in Smax diagnostic computation
 !  P. Wautelet 11/06/2020: bugfix: correct ZSVS array indices
 !  P. Wautelet 11/06/2020: bugfix: add "Non local correction for precipitating species" for ICE4
+!  P. Wautelet + Benoit Vié 11/06/2020: improve removal of negative scalar variables + adapt the corresponding budgets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -635,25 +636,24 @@ SELECT CASE ( HCLOUD )
       PRS(:,:,:,2) = 0.0
     END WHERE
 !
+    PRS(:,:,:,:) = MAX( 0.0,PRS(:,:,:,:) )
 !
-! CASE('C2R2','KHKO')                                 
-!   CALL GET_HALO(PRS(:,:,:,2))
-!   CALL GET_HALO(ZSVS(:,:,:,2))
-!   WHERE (PRS(:,:,:,2) < 0. .OR. ZSVS(:,:,:,2) < 0.)
-!     ZSVS(:,:,:,1) = 0.0
-!   END WHERE
-!   DO JSV = 2, 3
-!     WHERE (PRS(:,:,:,JSV) < 0. .OR. ZSVS(:,:,:,JSV) < 0.)
-!       PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,JSV)
-!       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,JSV) * ZLV(:,:,:) /  &
-!            ZCPH(:,:,:) / ZEXN(:,:,:)
-!       PRS(:,:,:,JSV)  = 0.0
-!       ZSVS(:,:,:,JSV) = 0.0
-!     END WHERE
-!   ENDDO
-! Commented 03/2013 O.Thouron 
-! (at least necessary to be commented for supersaturation variable)
-!  ZSVS(:,:,:,:) = MAX( 0.0,ZSVS(:,:,:,:) )
+!
+  CASE('C2R2','KHKO')
+    WHERE (PRS(:,:,:,2) < 0. .OR. ZSVS(:,:,:,2) < 0.)
+      ZSVS(:,:,:,1) = 0.0
+    END WHERE
+    DO JSV = 2, 3
+      WHERE (PRS(:,:,:,JSV) < 0. .OR. ZSVS(:,:,:,JSV) < 0.)
+        PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,JSV)
+        PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,JSV) * ZLV(:,:,:) /  &
+            ZCPH(:,:,:) / ZEXN(:,:,:)
+        PRS(:,:,:,JSV)  = 0.0
+        ZSVS(:,:,:,JSV) = 0.0
+      END WHERE
+    ENDDO
+!
+    PRS(:,:,:,:) = MAX( 0.0,PRS(:,:,:,:) )
 !
 !
   CASE('ICE3','ICE4')
@@ -691,6 +691,8 @@ SELECT CASE ( HCLOUD )
       END WHERE
     END IF
 !
+    PRS(:,:,:,:) = MAX( 0.0,PRS(:,:,:,:) )
+!
    CASE('C3R5')
     WHERE (PRS(:,:,:,2) < 0. .OR. ZSVS(:,:,:,2) < 0.)
       ZSVS(:,:,:,1) = 0.0
@@ -704,14 +706,13 @@ SELECT CASE ( HCLOUD )
         ZSVS(:,:,:,JSV) = 0.0
       END WHERE
     ENDDO
-    ZSVS(:,:,:,:) = MAX( 0.0,ZSVS(:,:,:,:) )
 !   ice
     WHERE (PRS(:,:,:,4) < 0.)
       PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,4)
       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,4) * ZLV(:,:,:) /  &
            ZCPH(:,:,:) / PEXNREF(:,:,:)
       PRS(:,:,:,4)  = 0.0
-      PSVS(:,:,:,4) = 0.0
+      ZSVS(:,:,:,4) = 0.0
     END WHERE
 !   cloud
     WHERE (PRS(:,:,:,2) < 0.)
@@ -719,11 +720,13 @@ SELECT CASE ( HCLOUD )
       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
            ZCPH(:,:,:) / PEXNREF(:,:,:)
       PRS(:,:,:,2)  = 0.0
-      PSVS(:,:,:,2) = 0.0
+      ZSVS(:,:,:,2) = 0.0
     END WHERE
-    PSVS(:,:,:,:) = MAX( 0.0,PSVS(:,:,:,:) )
 !
-   CASE('LIMA')   
+    ZSVS(:,:,:,:) = MAX( 0.0,ZSVS(:,:,:,:) )
+    PRS(:,:,:,:) = MAX( 0.0,PRS(:,:,:,:) )
+!
+   CASE('LIMA')
 ! Correction where rc<0 or Nc<0
       IF (OWARM) THEN
          WHERE (PRS(:,:,:,2) < YRTMIN(2)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NC-NSV_LIMA_BEG+1) < YCTMIN(2)/PTSTEP)
@@ -756,7 +759,7 @@ SELECT CASE ( HCLOUD )
       END IF
 !
      ZSVS(:,:,:,:) = MAX( 0.0,ZSVS(:,:,:,:) )
-     PRS(:,:,:,:) = MAX( 0.0,PRS(:,:,:,:) )
+     PRS(:,:,:,:)  = MAX( 0.0,PRS(:,:,:,:) )
 !
 END SELECT
 !
@@ -764,35 +767,31 @@ END SELECT
 !*       3.3  STORE THE BUDGET TERMS
 !            ----------------------
 !
-IF ((HCLOUD /= 'KHKO') .AND. (HCLOUD /= 'C2R2') ) THEN
- IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)  * PRHODJ(:,:,:), 4,'NEGA_BU_RTH')
- IF (LBUDGET_RV) CALL BUDGET (PRS(:,:,:,1) * PRHODJ(:,:,:), 6,'NEGA_BU_RRV')
- IF (LBUDGET_RC) CALL BUDGET (PRS(:,:,:,2) * PRHODJ(:,:,:), 7,'NEGA_BU_RRC')
-END IF
+IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)  * PRHODJ(:,:,:), 4,'NEGA_BU_RTH')
+IF (LBUDGET_RV) CALL BUDGET (PRS(:,:,:,1) * PRHODJ(:,:,:), 6,'NEGA_BU_RRV')
+IF (LBUDGET_RC) CALL BUDGET (PRS(:,:,:,2) * PRHODJ(:,:,:), 7,'NEGA_BU_RRC')
 IF (LBUDGET_RR) CALL BUDGET (PRS(:,:,:,3) * PRHODJ(:,:,:), 8,'NEGA_BU_RRR')
 IF (LBUDGET_RI) CALL BUDGET (PRS(:,:,:,4) * PRHODJ(:,:,:) ,9,'NEGA_BU_RRI')
 IF (LBUDGET_RS) CALL BUDGET (PRS(:,:,:,5) * PRHODJ(:,:,:),10,'NEGA_BU_RRS')
 IF (LBUDGET_RG) CALL BUDGET (PRS(:,:,:,6) * PRHODJ(:,:,:),11,'NEGA_BU_RRG')
 IF (LBUDGET_RH) CALL BUDGET (PRS(:,:,:,7) * PRHODJ(:,:,:),12,'NEGA_BU_RRH')
-IF (LBUDGET_SV .AND. (HCLOUD == 'LIMA')) THEN
-   IF (OWARM) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NC-NSV_LIMA_BEG+1) * PRHODJ(:,:,:),12+NSV_LIMA_NC,'NEGA_BU_RSV')
-   IF (OWARM.AND.ORAIN) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NR-NSV_LIMA_BEG+1) * PRHODJ(:,:,:),12+NSV_LIMA_NR,'NEGA_BU_RSV')
-   IF (LCOLD) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NI-NSV_LIMA_BEG+1) * PRHODJ(:,:,:),12+NSV_LIMA_NI,'NEGA_BU_RSV')
-   IF (NMOD_CCN.GE.1) THEN
-      DO JL=1, NMOD_CCN
-         CALL BUDGET ( ZSVS(:,:,:,NSV_LIMA_CCN_FREE+JL-NSV_LIMA_BEG)* &
-              PRHODJ(:,:,:),12+NSV_LIMA_CCN_FREE+JL-1,'NEGA_BU_RSV')
-      END DO
-   END IF
-   IF (NMOD_IFN.GE.1) THEN
-      DO JL=1, NMOD_IFN
-         CALL BUDGET ( ZSVS(:,:,:,NSV_LIMA_IFN_FREE+JL-NSV_LIMA_BEG)* &
-              PRHODJ(:,:,:),12+NSV_LIMA_IFN_FREE+JL-1,'NEGA_BU_RSV')
-      END DO
-   END IF
+
+IF (LBUDGET_SV .AND. (HCLOUD == 'C2R2' .OR. HCLOUD == 'KHKO')) THEN
+  DO JSV = 1, 3
+    CALL BUDGET ( ZSVS(:,:,:,JSV),12+NSV_C2R2BEG-1+JSV,'NEGA_BU_RSV')
+  END DO
+END IF
+IF (LBUDGET_SV .AND. HCLOUD == 'C3R5') THEN
+  DO JSV = 1, 4
+    CALL BUDGET ( ZSVS(:,:,:,JSV),12+NSV_C2R2BEG-1+JSV,'NEGA_BU_RSV')
+  END DO
+END IF
+IF (LBUDGET_SV .AND. HCLOUD == 'LIMA') THEN
+  DO JSV = NSV_LIMA_BEG, NSV_LIMA_END
+    CALL BUDGET ( ZSVS(:,:,:,JSV-NSV_LIMA_BEG+1),12+JSV,'NEGA_BU_RSV')
+  END DO
 END IF
 !
-
 !*       3.4    Limitations of Na and Nc to the CCN max number concentration
 !
 ! Commented by O.Thouron 03/2013
@@ -1148,26 +1147,7 @@ SELECT CASE ( HCLOUD )
       PRS(:,:,:,2) = 0.0
     END WHERE
 !
-!
-! CASE('C2R2','KHKO')                                 
-!   CALL GET_HALO(PRS(:,:,:,2))
-!   CALL GET_HALO(ZSVS(:,:,:,2))
-!   WHERE (PRS(:,:,:,2) < 0. .OR. ZSVS(:,:,:,2) < 0.)
-!     ZSVS(:,:,:,1) = 0.0
-!   END WHERE
-!   DO JSV = 2, 3
-!     WHERE (PRS(:,:,:,JSV) < 0. .OR. ZSVS(:,:,:,JSV) < 0.)
-!       PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,JSV)
-!       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,JSV) * ZLV(:,:,:) /  &
-!            ZCPH(:,:,:) / ZEXN(:,:,:)
-!       PRS(:,:,:,JSV)  = 0.0
-!       ZSVS(:,:,:,JSV) = 0.0
-!     END WHERE
-!   ENDDO
-! Commented 03/2013 O.Thouron 
-! (at least necessary to be commented for supersaturation variable)
-!  ZSVS(:,:,:,:) = MAX( 0.0,ZSVS(:,:,:,:) )
-!
+    PRS(:,:,:,:) = MAX( 0.0,PRS(:,:,:,:) )
 !
   CASE('ICE3','ICE4')
     WHERE (PRS(:,:,:,4) < 0.)
@@ -1204,6 +1184,8 @@ SELECT CASE ( HCLOUD )
       END WHERE
     END IF
 !
+    PRS(:,:,:,:) = MAX( 0.0,PRS(:,:,:,:) )
+!
    CASE('C2R2','KHKO')
     WHERE (PRS(:,:,:,2) < 0. .OR. ZSVS(:,:,:,2) < 0.)
       ZSVS(:,:,:,1) = 0.0
@@ -1217,7 +1199,9 @@ SELECT CASE ( HCLOUD )
         ZSVS(:,:,:,JSV) = 0.0
       END WHERE
     ENDDO
-!      
+!
+    PRS(:,:,:,:) = MAX( 0.0,PRS(:,:,:,:) )
+!
    CASE('C3R5')
     WHERE (PRS(:,:,:,2) < 0. .OR. ZSVS(:,:,:,2) < 0.)
       ZSVS(:,:,:,1) = 0.0
@@ -1231,14 +1215,13 @@ SELECT CASE ( HCLOUD )
         ZSVS(:,:,:,JSV) = 0.0
       END WHERE
     ENDDO
-    ZSVS(:,:,:,:) = MAX( 0.0,ZSVS(:,:,:,:) )
 !   ice
     WHERE (PRS(:,:,:,4) < 0.)
       PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,4)
       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,4) * ZLV(:,:,:) /  &
            ZCPH(:,:,:) / PEXNREF(:,:,:)
       PRS(:,:,:,4)  = 0.0
-      PSVS(:,:,:,4) = 0.0
+      ZSVS(:,:,:,4) = 0.0
     END WHERE
 !   cloud
     WHERE (PRS(:,:,:,2) < 0.)
@@ -1246,9 +1229,10 @@ SELECT CASE ( HCLOUD )
       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
            ZCPH(:,:,:) / PEXNREF(:,:,:)
       PRS(:,:,:,2)  = 0.0
-      PSVS(:,:,:,2) = 0.0
+      ZSVS(:,:,:,2) = 0.0
     END WHERE
-    PSVS(:,:,:,:) = MAX( 0.0,PSVS(:,:,:,:) )
+!
+    PRS(:,:,:,:) = MAX( 0.0,PRS(:,:,:,:) )
 !
    CASE('LIMA')   
 ! Correction where rc<0 or Nc<0
@@ -1283,7 +1267,7 @@ SELECT CASE ( HCLOUD )
       END IF
 !
      ZSVS(:,:,:,:) = MAX( 0.0,ZSVS(:,:,:,:) )
-     PRS(:,:,:,:) = MAX( 0.0,PRS(:,:,:,:) )
+     PRS(:,:,:,:)  = MAX( 0.0,PRS (:,:,:,:) )
 !
 END SELECT
 !
@@ -1299,22 +1283,21 @@ IF (LBUDGET_RI) CALL BUDGET (PRS(:,:,:,4) * PRHODJ(:,:,:) ,9,'NECON_BU_RRI')
 IF (LBUDGET_RS) CALL BUDGET (PRS(:,:,:,5) * PRHODJ(:,:,:),10,'NECON_BU_RRS')
 IF (LBUDGET_RG) CALL BUDGET (PRS(:,:,:,6) * PRHODJ(:,:,:),11,'NECON_BU_RRG')
 IF (LBUDGET_RH) CALL BUDGET (PRS(:,:,:,7) * PRHODJ(:,:,:),12,'NECON_BU_RRH')
-IF (LBUDGET_SV .AND. (HCLOUD == 'LIMA')) THEN
-   IF (OWARM) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NC-NSV_LIMA_BEG+1) * PRHODJ(:,:,:),12+NSV_LIMA_NC,'NECON_BU_RSV')
-   IF (OWARM.AND.ORAIN) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NR-NSV_LIMA_BEG+1) * PRHODJ(:,:,:),12+NSV_LIMA_NR,'NECON_BU_RSV')
-   IF (LCOLD) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NI-NSV_LIMA_BEG+1) * PRHODJ(:,:,:),12+NSV_LIMA_NI,'NECON_BU_RSV')
-   IF (NMOD_CCN.GE.1) THEN
-      DO JL=1, NMOD_CCN
-         CALL BUDGET ( ZSVS(:,:,:,NSV_LIMA_CCN_FREE+JL-NSV_LIMA_BEG)* &
-              PRHODJ(:,:,:),12+NSV_LIMA_CCN_FREE+JL-1,'NECON_BU_RSV')
-      END DO
-   END IF
-   IF (NMOD_IFN.GE.1) THEN
-      DO JL=1, NMOD_IFN
-         CALL BUDGET ( ZSVS(:,:,:,NSV_LIMA_IFN_FREE+JL-NSV_LIMA_BEG)* &
-              PRHODJ(:,:,:),12+NSV_LIMA_IFN_FREE+JL-1,'NECON_BU_RSV')
-      END DO
-   END IF
+
+IF (LBUDGET_SV .AND. (HCLOUD == 'C2R2' .OR. HCLOUD == 'KHKO')) THEN
+  DO JSV = 1, 3
+    CALL BUDGET ( ZSVS(:,:,:,JSV),12+NSV_C2R2BEG-1+JSV,'NECON_BU_RSV')
+  END DO
+END IF
+IF (LBUDGET_SV .AND. HCLOUD == 'C3R5') THEN
+  DO JSV = 1, 4
+    CALL BUDGET ( ZSVS(:,:,:,JSV),12+NSV_C2R2BEG-1+JSV,'NECON_BU_RSV')
+  END DO
+END IF
+IF (LBUDGET_SV .AND. HCLOUD == 'LIMA') THEN
+  DO JSV = NSV_LIMA_BEG, NSV_LIMA_END
+    CALL BUDGET ( ZSVS(:,:,:,JSV-NSV_LIMA_BEG+1),12+JSV,'NECON_BU_RSV')
+  END DO
 END IF
 !-------------------------------------------------------------------------------
 !
