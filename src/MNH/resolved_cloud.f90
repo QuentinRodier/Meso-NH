@@ -271,6 +271,7 @@ END MODULE MODI_RESOLVED_CLOUD
 !!                  03/2020 (B.Vie) : LIMA negativity checks after turbulence, advection and microphysics budgets
 !!      B.Vié 03/03/2020 : use DTHRAD instead of dT/dt in Smax diagnostic computation
 !  P. Wautelet 11/06/2020: bugfix: correct ZSVS array indices
+!  P. Wautelet 11/06/2020: bugfix: add "Non local correction for precipitating species" for ICE4
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -590,9 +591,10 @@ ZCPH(:,:,:)=XCPD +XCPV*PRT(:,:,:,1)
 !
 !*       3.1    Non local correction for precipitating species (Rood 87)
 !
-IF (HCLOUD == 'KESS' .OR. HCLOUD == 'ICE3'                                &
-    .OR. HCLOUD == 'C2R2' .OR. &
-    HCLOUD == 'C3R5' .OR. HCLOUD == 'KHKO' .OR. HCLOUD=='LIMA' ) THEN
+IF (      HCLOUD == 'KESS'                       &
+     .OR. HCLOUD == 'ICE3' .OR. HCLOUD == 'ICE4' &
+     .OR. HCLOUD == 'C2R2' .OR. HCLOUD == 'C3R5' &
+     .OR. HCLOUD == 'KHKO' .OR. HCLOUD == 'LIMA' ) THEN
 !
   DO JRR = 3,KRR
     SELECT CASE (JRR)
