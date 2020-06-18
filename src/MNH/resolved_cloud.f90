@@ -273,6 +273,7 @@ END MODULE MODI_RESOLVED_CLOUD
 !  P. Wautelet 11/06/2020: bugfix: correct ZSVS array indices
 !  P. Wautelet 11/06/2020: bugfix: add "Non local correction for precipitating species" for ICE4
 !  P. Wautelet + Benoit Vié 11/06/2020: improve removal of negative scalar variables + adapt the corresponding budgets
+!  P. Wautelet + Benoit Vié 18/06/2020: improve removal of negative scalar variables: use ZEXN instead of PEXNREF
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -632,7 +633,7 @@ SELECT CASE ( HCLOUD )
     WHERE (PRS(:,:,:,2) < 0.)
       PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
-           ZCPH(:,:,:) / PEXNREF(:,:,:)
+           ZCPH(:,:,:) / ZEXN(:,:,:)
       PRS(:,:,:,2) = 0.0
     END WHERE
 !
@@ -660,7 +661,7 @@ SELECT CASE ( HCLOUD )
     WHERE (PRS(:,:,:,4) < 0.)
       PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,4)
       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,4) * ZLS(:,:,:) /  &
-           ZCPH(:,:,:) / PEXNREF(:,:,:)
+           ZCPH(:,:,:) / ZEXN(:,:,:)
       PRS(:,:,:,4) = 0.
     END WHERE
 !
@@ -668,7 +669,7 @@ SELECT CASE ( HCLOUD )
     WHERE (PRS(:,:,:,2) < 0.)
       PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
-           ZCPH(:,:,:) / PEXNREF(:,:,:)
+           ZCPH(:,:,:) / ZEXN(:,:,:)
       PRS(:,:,:,2) = 0.
     END WHERE
 !
@@ -677,7 +678,7 @@ SELECT CASE ( HCLOUD )
     WHERE ((PRS(:,:,:,1) <0.) .AND. (PRS(:,:,:,2)> 0.) )
       PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
-           ZCPH(:,:,:) / PEXNREF(:,:,:)
+           ZCPH(:,:,:) / ZEXN(:,:,:)
       PRS(:,:,:,2) = 0.
     END WHERE
 !   ice
@@ -686,7 +687,7 @@ SELECT CASE ( HCLOUD )
         ZCOR(:,:,:)=MIN(-PRS(:,:,:,1),PRS(:,:,:,4))
         PRS(:,:,:,1) = PRS(:,:,:,1) + ZCOR(:,:,:)
         PTHS(:,:,:) = PTHS(:,:,:) - ZCOR(:,:,:) * ZLS(:,:,:) /  &
-             ZCPH(:,:,:) / PEXNREF(:,:,:)
+             ZCPH(:,:,:) / ZEXN(:,:,:)
         PRS(:,:,:,4) = PRS(:,:,:,4) -ZCOR(:,:,:)
       END WHERE
     END IF
@@ -701,7 +702,7 @@ SELECT CASE ( HCLOUD )
       WHERE (PRS(:,:,:,JSV) < 0. .OR. ZSVS(:,:,:,JSV) < 0.)
         PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,JSV)
         PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,JSV) * ZLV(:,:,:) /  &
-             ZCPH(:,:,:) / PEXNREF(:,:,:)
+             ZCPH(:,:,:) / ZEXN(:,:,:)
         PRS(:,:,:,JSV)  = 0.0
         ZSVS(:,:,:,JSV) = 0.0
       END WHERE
@@ -710,7 +711,7 @@ SELECT CASE ( HCLOUD )
     WHERE (PRS(:,:,:,4) < 0.)
       PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,4)
       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,4) * ZLV(:,:,:) /  &
-           ZCPH(:,:,:) / PEXNREF(:,:,:)
+           ZCPH(:,:,:) / ZEXN(:,:,:)
       PRS(:,:,:,4)  = 0.0
       ZSVS(:,:,:,4) = 0.0
     END WHERE
@@ -718,7 +719,7 @@ SELECT CASE ( HCLOUD )
     WHERE (PRS(:,:,:,2) < 0.)
       PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
-           ZCPH(:,:,:) / PEXNREF(:,:,:)
+           ZCPH(:,:,:) / ZEXN(:,:,:)
       PRS(:,:,:,2)  = 0.0
       ZSVS(:,:,:,2) = 0.0
     END WHERE
@@ -1143,7 +1144,7 @@ SELECT CASE ( HCLOUD )
     WHERE (PRS(:,:,:,2) < 0.)
       PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
-           ZCPH(:,:,:) / PEXNREF(:,:,:)
+           ZCPH(:,:,:) / ZEXN(:,:,:)
       PRS(:,:,:,2) = 0.0
     END WHERE
 !
@@ -1153,7 +1154,7 @@ SELECT CASE ( HCLOUD )
     WHERE (PRS(:,:,:,4) < 0.)
       PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,4)
       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,4) * ZLS(:,:,:) /  &
-           ZCPH(:,:,:) / PEXNREF(:,:,:)
+           ZCPH(:,:,:) / ZEXN(:,:,:)
       PRS(:,:,:,4) = 0.
     END WHERE
 !
@@ -1161,7 +1162,7 @@ SELECT CASE ( HCLOUD )
     WHERE (PRS(:,:,:,2) < 0.)
       PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
-           ZCPH(:,:,:) / PEXNREF(:,:,:)
+           ZCPH(:,:,:) / ZEXN(:,:,:)
       PRS(:,:,:,2) = 0.
     END WHERE
 !
@@ -1170,7 +1171,7 @@ SELECT CASE ( HCLOUD )
     WHERE ((PRS(:,:,:,1) <0.) .AND. (PRS(:,:,:,2)> 0.) )
       PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
-           ZCPH(:,:,:) / PEXNREF(:,:,:)
+           ZCPH(:,:,:) / ZEXN(:,:,:)
       PRS(:,:,:,2) = 0.
     END WHERE
 !   ice
@@ -1179,7 +1180,7 @@ SELECT CASE ( HCLOUD )
         ZCOR(:,:,:)=MIN(-PRS(:,:,:,1),PRS(:,:,:,4))
         PRS(:,:,:,1) = PRS(:,:,:,1) + ZCOR(:,:,:)
         PTHS(:,:,:) = PTHS(:,:,:) - ZCOR(:,:,:) * ZLS(:,:,:) /  &
-             ZCPH(:,:,:) / PEXNREF(:,:,:)
+             ZCPH(:,:,:) / ZEXN(:,:,:)
         PRS(:,:,:,4) = PRS(:,:,:,4) -ZCOR(:,:,:)
       END WHERE
     END IF
@@ -1194,7 +1195,7 @@ SELECT CASE ( HCLOUD )
       WHERE (PRS(:,:,:,JSV) < 0. .OR. ZSVS(:,:,:,JSV) < 0.)
         PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,JSV)
         PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,JSV) * ZLV(:,:,:) /  &
-             ZCPH(:,:,:) / PEXNREF(:,:,:)
+             ZCPH(:,:,:) / ZEXN(:,:,:)
         PRS(:,:,:,JSV)  = 0.0
         ZSVS(:,:,:,JSV) = 0.0
       END WHERE
@@ -1210,7 +1211,7 @@ SELECT CASE ( HCLOUD )
       WHERE (PRS(:,:,:,JSV) < 0. .OR. ZSVS(:,:,:,JSV) < 0.)
         PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,JSV)
         PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,JSV) * ZLV(:,:,:) /  &
-             ZCPH(:,:,:) / PEXNREF(:,:,:)
+             ZCPH(:,:,:) / ZEXN(:,:,:)
         PRS(:,:,:,JSV)  = 0.0
         ZSVS(:,:,:,JSV) = 0.0
       END WHERE
@@ -1219,7 +1220,7 @@ SELECT CASE ( HCLOUD )
     WHERE (PRS(:,:,:,4) < 0.)
       PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,4)
       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,4) * ZLV(:,:,:) /  &
-           ZCPH(:,:,:) / PEXNREF(:,:,:)
+           ZCPH(:,:,:) / ZEXN(:,:,:)
       PRS(:,:,:,4)  = 0.0
       ZSVS(:,:,:,4) = 0.0
     END WHERE
@@ -1227,7 +1228,7 @@ SELECT CASE ( HCLOUD )
     WHERE (PRS(:,:,:,2) < 0.)
       PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
-           ZCPH(:,:,:) / PEXNREF(:,:,:)
+           ZCPH(:,:,:) / ZEXN(:,:,:)
       PRS(:,:,:,2)  = 0.0
       ZSVS(:,:,:,2) = 0.0
     END WHERE
