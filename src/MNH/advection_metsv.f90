@@ -139,7 +139,8 @@ END MODULE MODI_ADVECTION_METSV
 !!                  03/2020 (B.Vie) : LIMA negativity checks after turbulence, advection and 
 !!                                    microphysics budgets 
 !  P. Wautelet 11/06/2020: bugfix: correct PRSVS array indices
-!  P. Wautelet + Benoit Vié 11/06/2020: improve removal of negative scalar variables + adapt the corresponding budgets
+!  P. Wautelet + Benoît Vié 11/06/2020: improve removal of negative scalar variables + adapt the corresponding budgets
+!  P. Wautelet + Benoît Vié 23/06/2020: improve removal of negative scalar variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -694,39 +695,47 @@ END DO
 !
 SELECT CASE ( HCLOUD )
   CASE('KESS')
-    WHERE (PRRS(:,:,:,2) < 0.)
-      PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,2)
-      ZEXN(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
-      ZT(:,:,:)= PTHT(:,:,:)*ZEXN(:,:,:)
-      ZLV(:,:,:)=XLVTT +(XCPV-XCL) *(ZT(:,:,:)-XTT)
-      ZCPH(:,:,:)=XCPD +XCPV*PRT(:,:,:,1)
-      PRTHS(:,:,:) = PRTHS(:,:,:) - PRRS(:,:,:,2) * ZLV(:,:,:) /  &
+    ZEXN(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
+    ZT(:,:,:)= PTHT(:,:,:)*ZEXN(:,:,:)
+    ZLV(:,:,:)=XLVTT +(XCPV-XCL) *(ZT(:,:,:)-XTT)
+    ZCPH(:,:,:)=XCPD +XCPV*PRT(:,:,:,1)
+    DO JR=2,SIZE(PRRS,4)
+      WHERE (PRRS(:,:,:,JR) < 0.)
+        PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,JR)
+        PRTHS(:,:,:) = PRTHS(:,:,:) - PRRS(:,:,:,JR) * ZLV(:,:,:) /  &
            ZCPH(:,:,:) / ZEXN(:,:,:)
-      PRRS(:,:,:,2) = 0.0
-    END WHERE
-!
-    PRRS(:,:,:,:) = MAX( 0.0,PRRS(:,:,:,:) )
-!
-  CASE('ICE3','ICE4')
-     ZEXN(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
-     ZT(:,:,:)= PTHT(:,:,:)*ZEXN(:,:,:)
-     ZLV(:,:,:)=XLVTT +(XCPV-XCL) *(ZT(:,:,:)-XTT)
-     ZLS(:,:,:)=XLSTT +(XCPV-XCI) *(ZT(:,:,:)-XTT)
-     ZCPH(:,:,:)=XCPD +XCPV*PRT(:,:,:,1)
-    WHERE (PRRS(:,:,:,4) < 0.)
-      PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,4)
-      PRTHS(:,:,:) = PRTHS(:,:,:) - PRRS(:,:,:,4) * ZLS(:,:,:) /  &
-           ZCPH(:,:,:) / ZEXN(:,:,:)
-      PRRS(:,:,:,4) = 0.
-    END WHERE
-!
-!   cloud
-    WHERE (PRRS(:,:,:,2) < 0.)
+        PRRS(:,:,:,JR) = 0.0
+      END WHERE
+    END DO
+    WHERE ((PRRS(:,:,:,1) <0.) .AND. (PRRS(:,:,:,2)> 0.) )
       PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,2)
       PRTHS(:,:,:) = PRTHS(:,:,:) - PRRS(:,:,:,2) * ZLV(:,:,:) /  &
            ZCPH(:,:,:) / ZEXN(:,:,:)
       PRRS(:,:,:,2) = 0.
     END WHERE
+!
+  CASE('ICE3','ICE4')
+    ZEXN(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
+    ZT(:,:,:)= PTHT(:,:,:)*ZEXN(:,:,:)
+    ZLV(:,:,:)=XLVTT +(XCPV-XCL) *(ZT(:,:,:)-XTT)
+    ZLS(:,:,:)=XLSTT +(XCPV-XCI) *(ZT(:,:,:)-XTT)
+    ZCPH(:,:,:)=XCPD +XCPV*PRT(:,:,:,1)
+    DO JR=4,SIZE(PRRS,4)
+      WHERE (PRRS(:,:,:,JR) < 0.)
+        PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,JR)
+        PRTHS(:,:,:) = PRTHS(:,:,:) - PRRS(:,:,:,JR) * ZLS(:,:,:) /  &
+           ZCPH(:,:,:) / ZEXN(:,:,:)
+        PRRS(:,:,:,JR) = 0.
+      END WHERE
+    END DO
+    DO JR=2,3
+      WHERE (PRRS(:,:,:,JR) < 0.)
+        PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,JR)
+        PRTHS(:,:,:) = PRTHS(:,:,:) - PRRS(:,:,:,JR) * ZLV(:,:,:) /  &
+           ZCPH(:,:,:) / ZEXN(:,:,:)
+        PRRS(:,:,:,JR) = 0.
+      END WHERE
+    END DO
 !
 ! if rc or ri are positive, we can correct negative rv
 !   cloud
@@ -747,68 +756,96 @@ SELECT CASE ( HCLOUD )
       END WHERE
     END IF
 !
-    PRRS(:,:,:,:) = MAX( 0.0,PRRS(:,:,:,:) )
 !
   CASE('C2R2','KHKO')
-     ZEXN(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
-     ZT(:,:,:)= PTHT(:,:,:)*ZEXN(:,:,:)
-     ZLV(:,:,:)=XLVTT +(XCPV-XCL) *(ZT(:,:,:)-XTT)
-     ZLS(:,:,:)=XLSTT +(XCPV-XCI) *(ZT(:,:,:)-XTT)
-     ZCPH(:,:,:)=XCPD +XCPV*PRT(:,:,:,1)
-     WHERE (PRRS(:,:,:,2) < 0. .OR. PRSVS(:,:,:,NSV_C2R2BEG+1) < 0.)
-        PRSVS(:,:,:,NSV_C2R2BEG) = 0.0
-     END WHERE
-     DO JSV = 2, 3
-        WHERE (PRRS(:,:,:,JSV) < 0. .OR. PRSVS(:,:,:,NSV_C2R2BEG-1+JSV) < 0.)
-           PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,JSV)
-           PRTHS(:,:,:) = PRTHS(:,:,:) - PRRS(:,:,:,JSV) * ZLV(:,:,:) /  &
+    ZEXN(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
+    ZT(:,:,:)= PTHT(:,:,:)*ZEXN(:,:,:)
+    ZLV(:,:,:)=XLVTT +(XCPV-XCL) *(ZT(:,:,:)-XTT)
+    ZLS(:,:,:)=XLSTT +(XCPV-XCI) *(ZT(:,:,:)-XTT)
+    ZCPH(:,:,:)=XCPD +XCPV*PRT(:,:,:,1)
+    WHERE (PRRS(:,:,:,2) < 0. .OR. PRSVS(:,:,:,NSV_C2R2BEG+1) < 0.)
+      PRSVS(:,:,:,NSV_C2R2BEG) = 0.0
+    END WHERE
+    DO JSV = 2, 3
+      WHERE (PRRS(:,:,:,JSV) < 0. .OR. PRSVS(:,:,:,NSV_C2R2BEG-1+JSV) < 0.)
+        PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,JSV)
+        PRTHS(:,:,:) = PRTHS(:,:,:) - PRRS(:,:,:,JSV) * ZLV(:,:,:) /  &
                 ZCPH(:,:,:) / ZEXN(:,:,:)
-           PRRS(:,:,:,JSV)  = 0.0
-           PRSVS(:,:,:,NSV_C2R2BEG-1+JSV) = 0.0
-        END WHERE
-     END DO
+        PRRS(:,:,:,JSV)  = 0.0
+        PRSVS(:,:,:,NSV_C2R2BEG-1+JSV) = 0.0
+      END WHERE
+    END DO
+    WHERE ((PRRS(:,:,:,1) <0.) .AND. (PRRS(:,:,:,2)> 0.) )
+      PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,2)
+      PRTHS(:,:,:) = PRTHS(:,:,:) - PRRS(:,:,:,2) * ZLV(:,:,:) /  &
+           ZCPH(:,:,:) / ZEXN(:,:,:)
+      PRRS(:,:,:,2) = 0.
+      PRSVS(:,:,:,NSV_C2R2BEG+1) = 0.
+    END WHERE
 !
-    PRRS(:,:,:,:) = MAX( 0.0,PRRS(:,:,:,:) )
 !
-   CASE('LIMA')
-     ZEXN(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
-     ZT(:,:,:)= PTHT(:,:,:)*ZEXN(:,:,:)
-     ZLV(:,:,:)=XLVTT +(XCPV-XCL) *(ZT(:,:,:)-XTT)
-     ZLS(:,:,:)=XLSTT +(XCPV-XCI) *(ZT(:,:,:)-XTT)
-     ZCPH(:,:,:)=XCPD +XCPV*PRT(:,:,:,1)
+  CASE('LIMA')
+    ZEXN(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
+    ZT(:,:,:)= PTHT(:,:,:)*ZEXN(:,:,:)
+    ZLV(:,:,:)=XLVTT +(XCPV-XCL) *(ZT(:,:,:)-XTT)
+    ZLS(:,:,:)=XLSTT +(XCPV-XCI) *(ZT(:,:,:)-XTT)
+    ZCPH(:,:,:)=XCPD +XCPV*PRT(:,:,:,1)
 ! Correction where rc<0 or Nc<0
-      IF (LWARM) THEN
-         WHERE (PRRS(:,:,:,2) < XRTMIN(2)/PTSTEP .OR. PRSVS(:,:,:,NSV_LIMA_NC) < XCTMIN(2)/PTSTEP)
-            PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,2)
-            PRTHS(:,:,:) = PRTHS(:,:,:) - PRRS(:,:,:,2) * ZLV(:,:,:) /  &
+    IF (LWARM) THEN
+      WHERE (PRRS(:,:,:,2) < XRTMIN(2)/PTSTEP .OR. PRSVS(:,:,:,NSV_LIMA_NC) < XCTMIN(2)/PTSTEP)
+        PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,2)
+        PRTHS(:,:,:) = PRTHS(:,:,:) - PRRS(:,:,:,2) * ZLV(:,:,:) /  &
                  ZCPH(:,:,:) / ZEXN(:,:,:)
-            PRRS(:,:,:,2)  = 0.0
-            PRSVS(:,:,:,NSV_LIMA_NC) = 0.0
-         END WHERE
-      END IF
+        PRRS(:,:,:,2)  = 0.0
+        PRSVS(:,:,:,NSV_LIMA_NC) = 0.0
+      END WHERE
+      WHERE ((PRRS(:,:,:,1) <0.) .AND. (PRRS(:,:,:,2)> 0.) )
+        PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,2)
+        PRTHS(:,:,:) = PRTHS(:,:,:) - PRRS(:,:,:,2) * ZLV(:,:,:) /  &
+           ZCPH(:,:,:) / ZEXN(:,:,:)
+        PRRS(:,:,:,2) = 0.
+        PRSVS(:,:,:,NSV_LIMA_NC) = 0.0
+      END WHERE
+    END IF
 ! Correction where rr<0 or Nr<0
-      IF (LWARM .AND. LRAIN) THEN
-         WHERE (PRRS(:,:,:,3) < XRTMIN(3)/PTSTEP .OR. PRSVS(:,:,:,NSV_LIMA_NR) < XCTMIN(3)/PTSTEP)
-            PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,3)
-            PRTHS(:,:,:) = PRTHS(:,:,:) - PRRS(:,:,:,3) * ZLV(:,:,:) /  &
+    IF (LWARM .AND. LRAIN) THEN
+      WHERE (PRRS(:,:,:,3) < XRTMIN(3)/PTSTEP .OR. PRSVS(:,:,:,NSV_LIMA_NR) < XCTMIN(3)/PTSTEP)
+        PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,3)
+        PRTHS(:,:,:) = PRTHS(:,:,:) - PRRS(:,:,:,3) * ZLV(:,:,:) /  &
                  ZCPH(:,:,:) / ZEXN(:,:,:)
-            PRRS(:,:,:,3)  = 0.0
-            PRSVS(:,:,:,NSV_LIMA_NR) = 0.0
-         END WHERE
-      END IF
+        PRRS(:,:,:,3)  = 0.0
+        PRSVS(:,:,:,NSV_LIMA_NR) = 0.0
+      END WHERE
+    END IF
 ! Correction where ri<0 or Ni<0
-      IF (LCOLD) THEN
-         WHERE (PRRS(:,:,:,4) < XRTMIN(4)/PTSTEP .OR. PRSVS(:,:,:,NSV_LIMA_NI) < XCTMIN(4)/PTSTEP)
-            PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,4)
-            PRTHS(:,:,:) = PRTHS(:,:,:) - PRRS(:,:,:,4) * ZLS(:,:,:) /  &
+    IF (LCOLD) THEN
+      WHERE (PRRS(:,:,:,4) < XRTMIN(4)/PTSTEP .OR. PRSVS(:,:,:,NSV_LIMA_NI) < XCTMIN(4)/PTSTEP)
+        PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,4)
+        PRTHS(:,:,:) = PRTHS(:,:,:) - PRRS(:,:,:,4) * ZLS(:,:,:) /  &
                  ZCPH(:,:,:) / ZEXN(:,:,:)
-            PRRS(:,:,:,4)  = 0.0
-            PRSVS(:,:,:,NSV_LIMA_NI) = 0.0
-         END WHERE
+        PRRS(:,:,:,4)  = 0.0
+        PRSVS(:,:,:,NSV_LIMA_NI) = 0.0
+      END WHERE
+      DO JR=5,SIZE(PRRS,4)
+        WHERE (PRRS(:,:,:,JR) < 0.)
+          PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,JR)
+          PRTHS(:,:,:) = PRTHS(:,:,:) - PRRS(:,:,:,JR) * ZLS(:,:,:) /  &
+                    ZCPH(:,:,:) / ZEXN(:,:,:)
+          PRRS(:,:,:,JR) = 0.
+        END WHERE
+      END DO
+      IF(KRR > 3) THEN
+        WHERE ((PRRS(:,:,:,1) < 0.).AND.(PRRS(:,:,:,4) > 0.))
+          ZCOR(:,:,:)=MIN(-PRRS(:,:,:,1),PRRS(:,:,:,4))
+          PRRS(:,:,:,1) = PRRS(:,:,:,1) + ZCOR(:,:,:)
+          PRTHS(:,:,:) = PRTHS(:,:,:) - ZCOR(:,:,:) * ZLS(:,:,:) /  &
+             ZCPH(:,:,:) / ZEXN(:,:,:)
+          PRRS(:,:,:,4) = PRRS(:,:,:,4) -ZCOR(:,:,:)
+        END WHERE
       END IF
+    END IF
 !
-      PRSVS(:, :, :, NSV_LIMA_BEG:NSV_LIMA_END) = MAX( 0.0, PRSVS(:, :, :, NSV_LIMA_BEG:NSV_LIMA_END) )
-      PRRS(:,:,:,:) = MAX( 0.0,PRRS(:,:,:,:) )
+    PRSVS(:, :, :, NSV_LIMA_BEG:NSV_LIMA_END) = MAX( 0.0, PRSVS(:, :, :, NSV_LIMA_BEG:NSV_LIMA_END) )
 !
 END SELECT
 !
