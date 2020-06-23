@@ -274,6 +274,7 @@ END MODULE MODI_RESOLVED_CLOUD
 !  P. Wautelet 11/06/2020: bugfix: add "Non local correction for precipitating species" for ICE4
 !  P. Wautelet + Benoit Vié 11/06/2020: improve removal of negative scalar variables + adapt the corresponding budgets
 !  P. Wautelet + Benoit Vié 18/06/2020: improve removal of negative scalar variables: use ZEXN instead of PEXNREF
+!  P. Wautelet 23/06/2020: remove ZSVS and ZSVT to improve code readability
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -463,8 +464,6 @@ REAL  :: ZRATIO                     ! ZMASSTOT / ZMASSCOR
 INTEGER                               :: ISVBEG ! first scalar index for microphysics
 INTEGER                               :: ISVEND ! last  scalar index for microphysics
 REAL, DIMENSION(:),       ALLOCATABLE :: ZRSMIN ! Minimum value for tendencies
-REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZSVT   ! scalar variable for microphysics only
-REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZSVS   ! scalar tendency for microphysics only
 LOGICAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: LLMICRO ! mask to limit computation
 REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3), KRR) :: ZFPR
 !
@@ -493,15 +492,9 @@ ELSE IF (HCLOUD == 'LIMA') THEN
   ISVEND = NSV_LIMA_END
 ELSE
   ISVBEG = 0
-  ISVEND = 0
+  ISVEND = -1
 END IF
 !
-IF (HCLOUD=='C2R2' .OR. HCLOUD=='C3R5' .OR. HCLOUD=='KHKO' .OR. HCLOUD=='LIMA') THEN
-  ALLOCATE(ZSVT(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3),ISVEND - ISVBEG + 1))
-  ALLOCATE(ZSVS(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3),ISVEND - ISVBEG + 1))
-  ZSVT(:,:,:,:) = PSVT(:,:,:,ISVBEG:ISVEND)
-  ZSVS(:,:,:,:) = PSVS(:,:,:,ISVBEG:ISVEND)
-END IF
 IF (HCLOUD(1:3)=='ICE') THEN
   ALLOCATE(ZRSMIN(SIZE(XRTMIN)))
   ZRSMIN(:) = XRTMIN(:) / PTSTEP
@@ -516,8 +509,8 @@ DO JRR = 1,KRR
 END DO
 !
 IF (HCLOUD=='C2R2' .OR. HCLOUD=='C3R5' .OR. HCLOUD=='KHKO' .OR. HCLOUD=='LIMA') THEN
-  DO JSV = 1,SIZE(ZSVS,4)
-    ZSVS(:,:,:,JSV) = ZSVS(:,:,:,JSV) / PRHODJ(:,:,:)
+  DO JSV = ISVBEG, ISVEND
+    PSVS(:,:,:,JSV) = PSVS(:,:,:,JSV) / PRHODJ(:,:,:)
   ENDDO
 ENDIF
 !
@@ -544,18 +537,18 @@ IF(LNORTH_ll() .AND. HLBCY(2) /= 'CYCL')  PRT(:,IJE+1:,:,2:) = 0.0
 !
 IF (HCLOUD=='C2R2' .OR. HCLOUD=='C3R5' .OR. HCLOUD=='KHKO' .OR. HCLOUD=='LIMA') THEN
 DO JI=1,JPHEXT
-  ZSVS(JI,:,:,:) = ZSVS(IIB,:,:,:)
-  ZSVS(IIE+JI,:,:,:) = ZSVS(IIE,:,:,:)
-  ZSVS(:,JI,:,:) = ZSVS(:,IJB,:,:)
-  ZSVS(:,IJE+JI,:,:) = ZSVS(:,IJE,:,:)
+  PSVS(JI,     :,      :, ISVBEG:ISVEND) = PSVS(IIB, :,   :, ISVBEG:ISVEND)
+  PSVS(IIE+JI, :,      :, ISVBEG:ISVEND) = PSVS(IIE, :,   :, ISVBEG:ISVEND)
+  PSVS(:,      JI,     :, ISVBEG:ISVEND) = PSVS(:,   IJB, :, ISVBEG:ISVEND)
+  PSVS(:,      IJE+JI, :, ISVBEG:ISVEND) = PSVS(:,   IJE, :, ISVBEG:ISVEND)
 END DO
  !
 !  complete the physical boundaries to avoid some computations
 !
-  IF(LWEST_ll()  .AND. HLBCX(1) /= 'CYCL')  ZSVT(:IIB-1,:,:,:) = 0.0
-  IF(LEAST_ll()  .AND. HLBCX(2) /= 'CYCL')  ZSVT(IIE+1:,:,:,:) = 0.0
-  IF(LSOUTH_ll() .AND. HLBCY(1) /= 'CYCL')  ZSVT(:,:IJB-1,:,:) = 0.0
-  IF(LNORTH_ll() .AND. HLBCY(2) /= 'CYCL')  ZSVT(:,IJE+1:,:,:) = 0.0
+  IF(LWEST_ll()  .AND. HLBCX(1) /= 'CYCL') PSVT(:IIB-1, :,      :, ISVBEG:ISVEND) = 0.0
+  IF(LEAST_ll()  .AND. HLBCX(2) /= 'CYCL') PSVT(IIE+1:, :,      :, ISVBEG:ISVEND) = 0.0
+  IF(LSOUTH_ll() .AND. HLBCY(1) /= 'CYCL') PSVT(:,      :IJB-1, :, ISVBEG:ISVEND) = 0.0
+  IF(LNORTH_ll() .AND. HLBCY(2) /= 'CYCL') PSVT(:,      IJE+1:, :, ISVBEG:ISVEND) = 0.0
 ENDIF
 !
 !  complete the vertical boundaries
@@ -571,10 +564,10 @@ PRT(:,:,IKE+1,:) = PRT(:,:,IKE,:)
 !
 IF (HCLOUD == 'C2R2' .OR. HCLOUD == 'C3R5' .OR. HCLOUD == 'KHKO' &
                                            .OR. HCLOUD == 'LIMA') THEN
-  ZSVS(:,:,IKB-1,:) = ZSVS(:,:,IKB,:)
-  ZSVS(:,:,IKE+1,:) = ZSVS(:,:,IKE,:)
-  ZSVT(:,:,IKB-1,:) = ZSVT(:,:,IKB,:)
-  ZSVT(:,:,IKE+1,:) = ZSVT(:,:,IKE,:)
+  PSVS(:,:,IKB-1,ISVBEG:ISVEND) = PSVS(:,:,IKB,ISVBEG:ISVEND)
+  PSVS(:,:,IKE+1,ISVBEG:ISVEND) = PSVS(:,:,IKE,ISVBEG:ISVEND)
+  PSVT(:,:,IKB-1,ISVBEG:ISVEND) = PSVT(:,:,IKB,ISVBEG:ISVEND)
+  PSVT(:,:,IKE+1,ISVBEG:ISVEND) = PSVT(:,:,IKE,ISVBEG:ISVEND)
 ENDIF
 !
 ! personal comment:  tranfering these variables to the
@@ -641,16 +634,16 @@ SELECT CASE ( HCLOUD )
 !
 !
   CASE('C2R2','KHKO')
-    WHERE (PRS(:,:,:,2) < 0. .OR. ZSVS(:,:,:,2) < 0.)
-      ZSVS(:,:,:,1) = 0.0
+    WHERE (PRS(:,:,:,2) < 0. .OR. PSVS(:,:,:,NSV_C2R2BEG+1) < 0.)
+      PSVS(:,:,:,NSV_C2R2BEG) = 0.0
     END WHERE
     DO JSV = 2, 3
-      WHERE (PRS(:,:,:,JSV) < 0. .OR. ZSVS(:,:,:,JSV) < 0.)
+      WHERE (PRS(:,:,:,JSV) < 0. .OR. PSVS(:,:,:,NSV_C2R2BEG-1+JSV) < 0.)
         PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,JSV)
         PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,JSV) * ZLV(:,:,:) /  &
             ZCPH(:,:,:) / ZEXN(:,:,:)
         PRS(:,:,:,JSV)  = 0.0
-        ZSVS(:,:,:,JSV) = 0.0
+        PSVS(:,:,:,NSV_C2R2BEG-1+JSV) = 0.0
       END WHERE
     ENDDO
 !
@@ -695,16 +688,16 @@ SELECT CASE ( HCLOUD )
     PRS(:,:,:,:) = MAX( 0.0,PRS(:,:,:,:) )
 !
    CASE('C3R5')
-    WHERE (PRS(:,:,:,2) < 0. .OR. ZSVS(:,:,:,2) < 0.)
-      ZSVS(:,:,:,1) = 0.0
+    WHERE (PRS(:,:,:,2) < 0. .OR. PSVS(:,:,:,NSV_C2R2BEG+1) < 0.)
+      PSVS(:,:,:,NSV_C2R2BEG) = 0.0
     END WHERE
     DO JSV = 2, 3
-      WHERE (PRS(:,:,:,JSV) < 0. .OR. ZSVS(:,:,:,JSV) < 0.)
+      WHERE (PRS(:,:,:,JSV) < 0. .OR. PSVS(:,:,:,NSV_C2R2BEG-1+JSV) < 0.)
         PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,JSV)
         PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,JSV) * ZLV(:,:,:) /  &
              ZCPH(:,:,:) / ZEXN(:,:,:)
         PRS(:,:,:,JSV)  = 0.0
-        ZSVS(:,:,:,JSV) = 0.0
+        PSVS(:,:,:,NSV_C2R2BEG-1+JSV) = 0.0
       END WHERE
     ENDDO
 !   ice
@@ -713,7 +706,7 @@ SELECT CASE ( HCLOUD )
       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,4) * ZLV(:,:,:) /  &
            ZCPH(:,:,:) / ZEXN(:,:,:)
       PRS(:,:,:,4)  = 0.0
-      ZSVS(:,:,:,4) = 0.0
+      PSVS(:,:,:,NSV_C2R2BEG+3) = 0.0
     END WHERE
 !   cloud
     WHERE (PRS(:,:,:,2) < 0.)
@@ -721,45 +714,45 @@ SELECT CASE ( HCLOUD )
       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
            ZCPH(:,:,:) / ZEXN(:,:,:)
       PRS(:,:,:,2)  = 0.0
-      ZSVS(:,:,:,2) = 0.0
+      PSVS(:,:,:,NSV_C2R2BEG+1) = 0.0
     END WHERE
 !
-    ZSVS(:,:,:,:) = MAX( 0.0,ZSVS(:,:,:,:) )
+    PSVS(:,:,:,ISVBEG:ISVEND) = MAX( 0.0,PSVS(:,:,:,ISVBEG:ISVEND) )
     PRS(:,:,:,:) = MAX( 0.0,PRS(:,:,:,:) )
 !
    CASE('LIMA')
 ! Correction where rc<0 or Nc<0
       IF (OWARM) THEN
-         WHERE (PRS(:,:,:,2) < YRTMIN(2)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NC-NSV_LIMA_BEG+1) < YCTMIN(2)/PTSTEP)
+         WHERE (PRS(:,:,:,2) < YRTMIN(2)/PTSTEP .OR. PSVS(:,:,:,NSV_LIMA_NC) < YCTMIN(2)/PTSTEP)
             PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
             PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
                  ZCPH(:,:,:) / ZEXN(:,:,:)
             PRS(:,:,:,2)  = 0.0
-            ZSVS(:,:,:,NSV_LIMA_NC-NSV_LIMA_BEG+1) = 0.0
+            PSVS(:,:,:,NSV_LIMA_NC) = 0.0
          END WHERE
       END IF
 ! Correction where rr<0 or Nr<0
       IF (OWARM .AND. ORAIN) THEN
-         WHERE (PRS(:,:,:,3) < YRTMIN(3)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NR-NSV_LIMA_BEG+1) < YCTMIN(3)/PTSTEP)
+         WHERE (PRS(:,:,:,3) < YRTMIN(3)/PTSTEP .OR. PSVS(:,:,:,NSV_LIMA_NR) < YCTMIN(3)/PTSTEP)
             PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,3)
             PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,3) * ZLV(:,:,:) /  &
                  ZCPH(:,:,:) / ZEXN(:,:,:)
             PRS(:,:,:,3)  = 0.0
-            ZSVS(:,:,:,NSV_LIMA_NR-NSV_LIMA_BEG+1) = 0.0
+            PSVS(:,:,:,NSV_LIMA_NR) = 0.0
          END WHERE
       END IF
 ! Correction where ri<0 or Ni<0
       IF (LCOLD) THEN
-         WHERE (PRS(:,:,:,4) < YRTMIN(4)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NI-NSV_LIMA_BEG+1) < YCTMIN(4)/PTSTEP)
+         WHERE (PRS(:,:,:,4) < YRTMIN(4)/PTSTEP .OR. PSVS(:,:,:,NSV_LIMA_NI) < YCTMIN(4)/PTSTEP)
             PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,4)
             PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,4) * ZLS(:,:,:) /  &
                  ZCPH(:,:,:) / ZEXN(:,:,:)
             PRS(:,:,:,4)  = 0.0
-            ZSVS(:,:,:,NSV_LIMA_NI-NSV_LIMA_BEG+1) = 0.0
+            PSVS(:,:,:,NSV_LIMA_NI) = 0.0
          END WHERE
       END IF
 !
-     ZSVS(:,:,:,:) = MAX( 0.0,ZSVS(:,:,:,:) )
+     PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END) = MAX( 0.0,PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END) )
      PRS(:,:,:,:)  = MAX( 0.0,PRS(:,:,:,:) )
 !
 END SELECT
@@ -779,17 +772,17 @@ IF (LBUDGET_RH) CALL BUDGET (PRS(:,:,:,7) * PRHODJ(:,:,:),12,'NEGA_BU_RRH')
 
 IF (LBUDGET_SV .AND. (HCLOUD == 'C2R2' .OR. HCLOUD == 'KHKO')) THEN
   DO JSV = 1, 3
-    CALL BUDGET ( ZSVS(:,:,:,JSV),12+NSV_C2R2BEG-1+JSV,'NEGA_BU_RSV')
+    CALL BUDGET ( PSVS(:,:,:,NSV_C2R2BEG-1+JSV),12+NSV_C2R2BEG-1+JSV,'NEGA_BU_RSV')
   END DO
 END IF
 IF (LBUDGET_SV .AND. HCLOUD == 'C3R5') THEN
   DO JSV = 1, 4
-    CALL BUDGET ( ZSVS(:,:,:,JSV),12+NSV_C2R2BEG-1+JSV,'NEGA_BU_RSV')
+    CALL BUDGET ( PSVS(:,:,:,NSV_C2R2BEG-1+JSV),12+NSV_C2R2BEG-1+JSV,'NEGA_BU_RSV')
   END DO
 END IF
 IF (LBUDGET_SV .AND. HCLOUD == 'LIMA') THEN
   DO JSV = NSV_LIMA_BEG, NSV_LIMA_END
-    CALL BUDGET ( ZSVS(:,:,:,JSV-NSV_LIMA_BEG+1),12+JSV,'NEGA_BU_RSV')
+    CALL BUDGET ( PSVS(:,:,:,JSV),12+JSV,'NEGA_BU_RSV')
   END DO
 END IF
 !
@@ -862,8 +855,9 @@ SELECT CASE ( HCLOUD )
                      PPABST, PTHT, PRT(:,:,:,1), PRT(:,:,:,2),  PRT(:,:,:,3),     &
                      PTHM, PRCM, PPABSM,                                          &
                      PW_ACT,PDTHRAD,PTHS, PRS(:,:,:,1),PRS(:,:,:,2),PRS(:,:,:,3), &
-                     ZSVT(:,:,:,1), ZSVT(:,:,:,2), ZSVT(:,:,:,3),                 &
-                     ZSVS(:,:,:,1), ZSVS(:,:,:,2), ZSVS(:,:,:,3),                 &
+                     PSVT(:,:,:,NSV_C2R2BEG),   PSVT(:,:,:,NSV_C2R2BEG+1),        &
+                     PSVT(:,:,:,NSV_C2R2BEG+2), PSVS(:,:,:,NSV_C2R2BEG),          &
+                     PSVS(:,:,:,NSV_C2R2BEG+1), PSVS(:,:,:,NSV_C2R2BEG+2),        &
                      PINPRC, PINPRR, PINPRR3D, PEVAP3D ,                          &
                      PSVT(:,:,:,:), PSOLORG, PMI, HACTCCN,                        &
                      PINDEP, PSUPSAT, PNACT                                       )
@@ -876,16 +870,17 @@ SELECT CASE ( HCLOUD )
                          PTSTEP, PRHODJ, PPABSM, PPABST, PRHODREF, PZZ,          &
                          PTHT,PRT(:,:,:,1),PRT(:,:,:,2),PRT(:,:,:,3),            &
                          PTHS,PRS(:,:,:,1),PRS(:,:,:,2),PRS(:,:,:,3),            &
-                         ZSVS(:,:,:,2),ZSVS(:,:,:,1),                            &
-                         ZSVS(:,:,:,4), PCLDFR, PSRCS , PNPRO,PSSPRO             )
+                         PSVS(:,:,:,NSV_C2R2BEG+1), PSVS(:,:,:,NSV_C2R2BEG),     &
+                         PSVS(:,:,:,NSV_C2R2BEG+3), PCLDFR, PSRCS, PNPRO, PSSPRO )
 !
    ELSE
-    CALL C2R2_ADJUST ( KRR,TPFILE, HRAD,                              &
-                       HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,               &
-                       PRHODJ, PSIGS, PPABST,                                  &
-                       PTHS=PTHS, PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2),        &
-                       PCNUCS=ZSVS(:,:,:,1), PCCS=ZSVS(:,:,:,2),               &
-                       PSRCS=PSRCS, PCLDFR=PCLDFR, PRRS=PRS(:,:,:,3)           )
+    CALL C2R2_ADJUST ( KRR,TPFILE, HRAD,                                &
+                       HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,        &
+                       PRHODJ, PSIGS, PPABST,                           &
+                       PTHS=PTHS, PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2), &
+                       PCNUCS=PSVS(:,:,:,NSV_C2R2BEG),                  &
+                       PCCS=PSVS(:,:,:,NSV_C2R2BEG+1),                  &
+                       PSRCS=PSRCS, PCLDFR=PCLDFR, PRRS=PRS(:,:,:,3)    )
 !
    END IF
 !
@@ -1073,34 +1068,35 @@ SELECT CASE ( HCLOUD )
                    PRHODREF, PEXNREF, ZDZZ,                                &
                    PRHODJ, PPABSM, PPABST,                                 &
                    NMOD_CCN, NMOD_IFN, NMOD_IMM,                           &
-                   PDTHRAD, PTHT, PRT, ZSVT, PW_ACT,                       &
-                   PTHS, PRS, ZSVS,                                        &
+                   PDTHRAD, PTHT, PRT,                                     &
+                   PSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END), PW_ACT,          &
+                   PTHS, PRS, PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),       &
                    PINPRC, PINDEP, PINPRR, ZINPRI, PINPRS, PINPRG, PINPRH, &
-                   PEVAP3D                                         )
+                   PEVAP3D                                                 )
      ELSE
 
-        IF (OWARM) CALL LIMA_WARM(OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,   &
-                                  TPFILE, OCLOSE_OUT, KRR, PZZ, PRHODJ,         &
-                                  PRHODREF, PEXNREF, PW_ACT, PPABSM, PPABST,    &
-                                  PDTHRAD, PRCM,                                   &
-                                  PTHT, PRT, ZSVT,                              &
-                                  PTHS, PRS, ZSVS,                              &
-                                  PINPRC, PINPRR, PINDEP, PINPRR3D, PEVAP3D     )
+        IF (OWARM) CALL LIMA_WARM(OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,       &
+                                  TPFILE, OCLOSE_OUT, KRR, PZZ, PRHODJ,             &
+                                  PRHODREF, PEXNREF, PW_ACT, PPABSM, PPABST,        &
+                                  PDTHRAD, PRCM,                                    &
+                                  PTHT, PRT, PSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END), &
+                                  PTHS, PRS, PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END), &
+                                  PINPRC, PINPRR, PINDEP, PINPRR3D, PEVAP3D         )
 !
         IF (LCOLD) CALL LIMA_COLD(OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,               &
                                   KRR, PZZ, PRHODJ,                                  &
                                   PRHODREF, PEXNREF, PPABST, PW_ACT,                 &
                                   PTHM, PPABSM,                                      &
-                                  PTHT, PRT, ZSVT,                                   &
-                                  PTHS, PRS, ZSVS,                                   &
-                                  PINPRS, PINPRG, PINPRH)
+                                  PTHT, PRT, PSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),  &
+                                  PTHS, PRS, PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),  &
+                                  PINPRS, PINPRG, PINPRH                             )
 !
-        IF (OWARM .AND. LCOLD) CALL LIMA_MIXED(OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,    &
-                                               KRR, PZZ, PRHODJ,                       &
-                                               PRHODREF, PEXNREF, PPABST, PW_ACT,      &
-                                               PTHM, PPABSM,                           &
-                                               PTHT, PRT, ZSVT,                        &
-                                               PTHS, PRS, ZSVS                         )
+        IF (OWARM .AND. LCOLD) CALL LIMA_MIXED(OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,              &
+                                               KRR, PZZ, PRHODJ,                                 &
+                                               PRHODREF, PEXNREF, PPABST, PW_ACT,                &
+                                               PTHM, PPABSM,                                     &
+                                               PTHT, PRT, PSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END), &
+                                               PTHS, PRS, PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END)  )
      ENDIF
 !
 !*       12.2   Perform the saturation adjustment
@@ -1108,7 +1104,8 @@ SELECT CASE ( HCLOUD )
      CALL LIMA_ADJUST(KRR, KMI, TPFILE, HRAD,                           &
                       HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,         &
                       PRHODREF, PRHODJ, PEXNREF, PPABST, PSIGS, PPABST, &
-                      PRT, PRS, ZSVT, ZSVS,                             &
+                      PRT, PRS, PSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),  &
+                      PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),            &
                       PTHS, PSRCS, PCLDFR                               )
 !
 END SELECT
@@ -1188,32 +1185,32 @@ SELECT CASE ( HCLOUD )
     PRS(:,:,:,:) = MAX( 0.0,PRS(:,:,:,:) )
 !
    CASE('C2R2','KHKO')
-    WHERE (PRS(:,:,:,2) < 0. .OR. ZSVS(:,:,:,2) < 0.)
-      ZSVS(:,:,:,1) = 0.0
+    WHERE (PRS(:,:,:,2) < 0. .OR. PSVS(:,:,:,NSV_C2R2BEG+1) < 0.)
+      PSVS(:,:,:,NSV_C2R2BEG) = 0.0
     END WHERE
     DO JSV = 2, 3
-      WHERE (PRS(:,:,:,JSV) < 0. .OR. ZSVS(:,:,:,JSV) < 0.)
+      WHERE (PRS(:,:,:,JSV) < 0. .OR. PSVS(:,:,:,NSV_C2R2BEG-1+JSV) < 0.)
         PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,JSV)
         PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,JSV) * ZLV(:,:,:) /  &
              ZCPH(:,:,:) / ZEXN(:,:,:)
         PRS(:,:,:,JSV)  = 0.0
-        ZSVS(:,:,:,JSV) = 0.0
+        PSVS(:,:,:,NSV_C2R2BEG-1+JSV) = 0.0
       END WHERE
     ENDDO
 !
     PRS(:,:,:,:) = MAX( 0.0,PRS(:,:,:,:) )
 !
    CASE('C3R5')
-    WHERE (PRS(:,:,:,2) < 0. .OR. ZSVS(:,:,:,2) < 0.)
-      ZSVS(:,:,:,1) = 0.0
+    WHERE (PRS(:,:,:,2) < 0. .OR. PSVS(:,:,:,NSV_C2R2BEG+1) < 0.)
+      PSVS(:,:,:,NSV_C2R2BEG) = 0.0
     END WHERE
     DO JSV = 2, 3
-      WHERE (PRS(:,:,:,JSV) < 0. .OR. ZSVS(:,:,:,JSV) < 0.)
+      WHERE (PRS(:,:,:,JSV) < 0. .OR. PSVS(:,:,:,NSV_C2R2BEG-1+JSV) < 0.)
         PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,JSV)
         PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,JSV) * ZLV(:,:,:) /  &
              ZCPH(:,:,:) / ZEXN(:,:,:)
         PRS(:,:,:,JSV)  = 0.0
-        ZSVS(:,:,:,JSV) = 0.0
+        PSVS(:,:,:,NSV_C2R2BEG-1+JSV) = 0.0
       END WHERE
     ENDDO
 !   ice
@@ -1222,7 +1219,7 @@ SELECT CASE ( HCLOUD )
       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,4) * ZLV(:,:,:) /  &
            ZCPH(:,:,:) / ZEXN(:,:,:)
       PRS(:,:,:,4)  = 0.0
-      ZSVS(:,:,:,4) = 0.0
+      PSVS(:,:,:,NSV_C2R2BEG+3) = 0.0
     END WHERE
 !   cloud
     WHERE (PRS(:,:,:,2) < 0.)
@@ -1230,7 +1227,7 @@ SELECT CASE ( HCLOUD )
       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
            ZCPH(:,:,:) / ZEXN(:,:,:)
       PRS(:,:,:,2)  = 0.0
-      ZSVS(:,:,:,2) = 0.0
+      PSVS(:,:,:,NSV_C2R2BEG+1) = 0.0
     END WHERE
 !
     PRS(:,:,:,:) = MAX( 0.0,PRS(:,:,:,:) )
@@ -1238,36 +1235,36 @@ SELECT CASE ( HCLOUD )
    CASE('LIMA')   
 ! Correction where rc<0 or Nc<0
       IF (OWARM) THEN
-         WHERE (PRS(:,:,:,2) < YRTMIN(2)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NC-NSV_LIMA_BEG+1) < YCTMIN(2)/PTSTEP)
+         WHERE (PRS(:,:,:,2) < YRTMIN(2)/PTSTEP .OR. PSVS(:,:,:,NSV_LIMA_NC) < YCTMIN(2)/PTSTEP)
             PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
             PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
                  ZCPH(:,:,:) / ZEXN(:,:,:)
             PRS(:,:,:,2)  = 0.0
-            ZSVS(:,:,:,NSV_LIMA_NC-NSV_LIMA_BEG+1) = 0.0
+            PSVS(:,:,:,NSV_LIMA_NC) = 0.0
          END WHERE
       END IF
 ! Correction where rr<0 or Nr<0
       IF (OWARM .AND. ORAIN) THEN
-         WHERE (PRS(:,:,:,3) < YRTMIN(3)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NR-NSV_LIMA_BEG+1) < YCTMIN(3)/PTSTEP)
+         WHERE (PRS(:,:,:,3) < YRTMIN(3)/PTSTEP .OR. PSVS(:,:,:,NSV_LIMA_NR) < YCTMIN(3)/PTSTEP)
             PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,3)
             PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,3) * ZLV(:,:,:) /  &
                  ZCPH(:,:,:) / ZEXN(:,:,:)
             PRS(:,:,:,3)  = 0.0
-            ZSVS(:,:,:,NSV_LIMA_NR-NSV_LIMA_BEG+1) = 0.0
+            PSVS(:,:,:,NSV_LIMA_NR) = 0.0
          END WHERE
       END IF
 ! Correction where ri<0 or Ni<0
       IF (LCOLD) THEN
-         WHERE (PRS(:,:,:,4) < YRTMIN(4)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NI-NSV_LIMA_BEG+1) < YCTMIN(4)/PTSTEP)
+         WHERE (PRS(:,:,:,4) < YRTMIN(4)/PTSTEP .OR. PSVS(:,:,:,NSV_LIMA_NI) < YCTMIN(4)/PTSTEP)
             PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,4)
             PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,4) * ZLS(:,:,:) /  &
                  ZCPH(:,:,:) / ZEXN(:,:,:)
             PRS(:,:,:,4)  = 0.0
-            ZSVS(:,:,:,NSV_LIMA_NI-NSV_LIMA_BEG+1) = 0.0
+            PSVS(:,:,:,NSV_LIMA_NI) = 0.0
          END WHERE
       END IF
 !
-     ZSVS(:,:,:,:) = MAX( 0.0,ZSVS(:,:,:,:) )
+     PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END) = MAX( 0.0,PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END) )
      PRS(:,:,:,:)  = MAX( 0.0,PRS (:,:,:,:) )
 !
 END SELECT
@@ -1287,17 +1284,17 @@ IF (LBUDGET_RH) CALL BUDGET (PRS(:,:,:,7) * PRHODJ(:,:,:),12,'NECON_BU_RRH')
 
 IF (LBUDGET_SV .AND. (HCLOUD == 'C2R2' .OR. HCLOUD == 'KHKO')) THEN
   DO JSV = 1, 3
-    CALL BUDGET ( ZSVS(:,:,:,JSV),12+NSV_C2R2BEG-1+JSV,'NECON_BU_RSV')
+    CALL BUDGET ( PSVS(:,:,:,NSV_C2R2BEG-1+JSV),12+NSV_C2R2BEG-1+JSV,'NECON_BU_RSV')
   END DO
 END IF
 IF (LBUDGET_SV .AND. HCLOUD == 'C3R5') THEN
   DO JSV = 1, 4
-    CALL BUDGET ( ZSVS(:,:,:,JSV),12+NSV_C2R2BEG-1+JSV,'NECON_BU_RSV')
+    CALL BUDGET ( PSVS(:,:,:,NSV_C2R2BEG-1+JSV),12+NSV_C2R2BEG-1+JSV,'NECON_BU_RSV')
   END DO
 END IF
 IF (LBUDGET_SV .AND. HCLOUD == 'LIMA') THEN
   DO JSV = NSV_LIMA_BEG, NSV_LIMA_END
-    CALL BUDGET ( ZSVS(:,:,:,JSV-NSV_LIMA_BEG+1),12+JSV,'NECON_BU_RSV')
+    CALL BUDGET ( PSVS(:,:,:,JSV),12+JSV,'NECON_BU_RSV')
   END DO
 END IF
 !-------------------------------------------------------------------------------
@@ -1313,14 +1310,9 @@ DO JRR = 1,KRR
 END DO
 !
 IF (HCLOUD=='C2R2' .OR. HCLOUD=='C3R5' .OR. HCLOUD=='KHKO' .OR. HCLOUD=='LIMA') THEN
-  DO JSV = 1,SIZE(ZSVS,4)
-    PSVS(:,:,:,JSV+ISVBEG-1) = ZSVS(:,:,:,JSV) * PRHODJ(:,:,:)
+  DO JSV = ISVBEG, ISVEND
+    PSVS(:,:,:,JSV) = PSVS(:,:,:,JSV) * PRHODJ(:,:,:)
   ENDDO
-  DO JSV = 1,SIZE(ZSVT,4)
-    PSVT(:,:,:,JSV+ISVBEG-1) = ZSVT(:,:,:,JSV)
-  ENDDO
-  DEALLOCATE(ZSVS)
-  DEALLOCATE(ZSVT)
 ENDIF
 !
 !-------------------------------------------------------------------------------
