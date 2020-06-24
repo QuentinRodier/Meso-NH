@@ -1,6 +1,6 @@
-#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 #MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 #MNH_LIC for details. version 1.
 ##########################################################
 #                                                        #
@@ -120,6 +120,17 @@ MNH_COMPRESS=yes
 #if MNH_S4PY exists => compile the libs4py library (for epygram)
 #MNH_S4PY=no
 #
+#
+# Force -fallow-argument-mismatch option for gcc >= 10.1
+# Necessary because some subroutines may be called with different datatypes
+# Known list: MPI_Allgatherv,MPI_Allreduce,MPI_Bcast,MPI_Bsend,MPI_Gather,MPI_Gatherv,MPI_Recv,LEPOLY,EXTRACT_BBUFF,FILL_BBUFF
+# + gribapi + netCDF-fortran < 4.5.3
+#
+ifeq ($(shell test $(GFV) -ge 1010 ; echo $$?),0)
+OPT_BASE += -fallow-argument-mismatch
+GRIB_FLAGS += -fallow-argument-mismatch
+NETCDF_SUPPFLAGS += -fallow-argument-mismatch
+endif
 ##########################################################
 #                                                        #
 # Source of MESONH PACKAGE  Distribution                 #
@@ -153,4 +164,3 @@ OBJS_O0= spll_lima_phillips_integ.o
 $(OBJS_O0) : OPT = $(OPT_BASE) $(OPT_PERF0)
 endif
 endif
-
