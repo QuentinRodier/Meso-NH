@@ -487,8 +487,8 @@ endif
 #  
 #
 ifeq "$(VER_CDF)" "CDFAUTO"
-DIR_CDFC?=${SRC_MESONH}/src/LIB/netcdf-${VERSION_CDFC}
-DIR_CDFCXX?=${SRC_MESONH}/src/LIB/netcdf-cxx-${VERSION_CDFCXX}
+DIR_CDFC?=${SRC_MESONH}/src/LIB/netcdf-c-${VERSION_CDFC}
+DIR_CDFCXX?=${SRC_MESONH}/src/LIB/netcdf-cxx4-${VERSION_CDFCXX}
 DIR_CDFF?=${SRC_MESONH}/src/LIB/netcdf-fortran-${VERSION_CDFF}
 CDF_PATH?=${SRC_MESONH}/src/LIB/netcdf-${ARCH}-R${MNH_REAL}I${MNH_INT}
 CDF_MOD?=${CDF_PATH}/include/netcdf.mod

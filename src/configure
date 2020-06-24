@@ -12,11 +12,11 @@ export VERSION_MASTER=${VERSION_MASTER:-MNH-V5-4}
 export VERSION_BUG=${VERSION_BUG:-3}
 export VERSION_XYZ=${VERSION_XYZ:-${VERSION_MASTER}-${VERSION_BUG}${VER_OASIS:+-${VER_OASIS}}}
 export VERSION_DATE=${VERSION_DATE:-"06/03/2020"}
-export VERSION_LIBAEC=${VERSION_LIBAEC:-"0.3.2"}
-export VERSION_HDF=${VERSION_HDF:-"1.8.20"}
-export VERSION_CDFC=${VERSION_CDFC:-"4.5.0"}
-export VERSION_CDFCXX=${VERSION_CDFCXX:-"4.2"}
-export VERSION_CDFF=${VERSION_CDFF:-"4.4.4"}
+export VERSION_LIBAEC=${VERSION_LIBAEC:-"0.3.4"}
+export VERSION_HDF=${VERSION_HDF:-"1.12.0"}
+export VERSION_CDFC=${VERSION_CDFC:-"4.7.4"}
+export VERSION_CDFCXX=${VERSION_CDFCXX:-"4.3.1"}
+export VERSION_CDFF=${VERSION_CDFF:-"4.5.3"}
 export VERSION_GRIBAPI=${VERSION_GRIBAPI:-"1.26.0-Source"}
 export MNH_INT=${MNH_INT:-"4"}
 export LFI_INT=${LFI_INT:-8}
@@ -512,8 +512,8 @@ fi
 if [ "x${VER_CDF}" == "xCDFAUTO" ] ;then
 ( cd $LOCAL/src/LIB ; [ ! -d libaec-${VERSION_LIBAEC} ] && tar xvfz libaec-${VERSION_LIBAEC}.tar.gz )
 ( cd $LOCAL/src/LIB ; [ ! -d hdf5-${VERSION_HDF} ] && tar xvfz hdf5-${VERSION_HDF}.tar.gz )
-( cd $LOCAL/src/LIB ; [ ! -d netcdf-${VERSION_CDFC} ] && tar xvfz netcdf-${VERSION_CDFC}.tar.gz )
-( cd $LOCAL/src/LIB ; [ ! -d netcdf-cxx-${VERSION_CDFCXX} ] && tar xvfz netcdf-cxx-${VERSION_CDFCXX}.tar.gz )
+( cd $LOCAL/src/LIB ; [ ! -d netcdf-${VERSION_CDFC} ] && tar xvfz netcdf-c-${VERSION_CDFC}.tar.gz )
+( cd $LOCAL/src/LIB ; [ ! -d netcdf-cxx-${VERSION_CDFCXX} ] && tar xvfz netcdf-cxx4-${VERSION_CDFCXX}.tar.gz )
 ( cd $LOCAL/src/LIB ; [ ! -d netcdf-fortran-${VERSION_CDFF} ] && tar xvfz netcdf-fortran-${VERSION_CDFF}.tar.gz )
 fi
 #
