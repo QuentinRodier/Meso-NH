@@ -15,6 +15,7 @@
 !  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
 !  P. Wautelet 19/09/2019: temporary workaround for netCDF bug if MNH_INT=8 (if netCDF fortran < 4.4.5)
 !  P. Wautelet 11/02/2020: add 'dims' attribute in IO_Write_field_header_split_nc4
+!  P. Wautelet 25/06/2020: remove workaround for netCDF bug (see 19/09/2019)
 !-----------------------------------------------------------------
 #if defined(MNH_IOCDF4)
 module mode_io_write_nc4
@@ -293,14 +294,12 @@ IF(TPFIELD%NTYPE==TYPEINT .AND. TPFIELD%NDIMS>0) THEN
   ! Remarks: * the attribute '_FillValue' is also recognized by the netCDF library
   !            and is used when pre-filling a variable
   !          * it cannot be modified if some data has already been written (->check OEXISTED)
-#if ( MNH_INT == 4 )
-!BUG: NF90_PUT_ATT does not work for NF90_INT64 and _FillValue attribute if netCDF-fortran version < 4.4.5 (bug in netCDF)
-!     (see https://github.com/Unidata/netcdf-fortran/issues/62)
+  !BUG: NF90_PUT_ATT does not work for NF90_INT64 and _FillValue attribute if netCDF-fortran version < 4.4.5 (bug in netCDF)
+  !     (see https://github.com/Unidata/netcdf-fortran/issues/62)
   IF(.NOT.OEXISTED) THEN
     STATUS = NF90_PUT_ATT(INCID, KVARID,'_FillValue', TPFIELD%NFILLVALUE)
     IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_attr_write_nc4','NF90_PUT_ATT','_FillValue')
   END IF
-#endif
   !
   ! Valid_min/max (CF/COMODO convention)
   STATUS = NF90_PUT_ATT(INCID, KVARID,'valid_min', TPFIELD%NVALIDMIN)
