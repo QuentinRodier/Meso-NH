@@ -414,40 +414,8 @@ INC            += $(INC_MPI)
 LIBS           += $(LIB_MPI)
 endif
 
-
 ARCH_XYZ    := $(ARCH_XYZ)-$(VER_MPI)
-##########################################################
-#           Librairie GRIBEX                             #
-##########################################################
-#ifneq "$(ARCH)" "BG"
-# Gribex bypass on BG for the moment
-#DIR_GRIBEX     +=  LIB/GRIBEX
-#endif
-#
-#ifdef DIR_GRIBEX
-#LIB_GRIBEX     =  $(DIR_GRIBEX)_$(ARCH)/libgribexR64.a
-#LIBS          +=    $(LIB_GRIBEX)
-#R64_GRIBEX=R64
-#endif
-##########################################################
-#           Librairie GRIBAPI                            #
-##########################################################
-#ifneq "$(ARCH)" "BG"
-# Gribapi bypass on BG for the moment
-DIR_GRIBAPI?=${SRC_MESONH}/src/LIB/grib_api-${VERSION_GRIBAPI}
-GRIBAPI_PATH?=${OBJDIR_MASTER}/GRIBAPI-${VERSION_GRIBAPI}
-#GRIBAPI_PATH?=${DIR_GRIBAPI}-${ARCH}${MNH_INT}
-GRIBAPI_INC?=${GRIBAPI_PATH}/include/grib_api.mod
-#endif
-#
-ifdef DIR_GRIBAPI
-INC_GRIBAPI   ?= -I${GRIBAPI_PATH}/include
-LIB_GRIBAPI   ?= -L${GRIBAPI_PATH}/lib -L${GRIBAPI_PATH}/lib64 -lgrib_api_f90 -lgrib_api
-INC           += $(INC_GRIBAPI)
-LIBS          += $(LIB_GRIBAPI)
-VPATH         += $(GRIBAPI_PATH)/include
-R64_GRIBAPI=R64
-endif
+
 ##########################################################
 #           ecCodes library                              #
 ##########################################################

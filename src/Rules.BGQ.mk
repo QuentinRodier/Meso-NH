@@ -121,7 +121,6 @@ F77FLAGS      =  $(OPT) -qfixed
 FX90 = $(F90)
 FX90FLAGS     =  $(OPT) -qfixed
 #
-# compiler & flags for compilation of grib_api
 # for reproductibility need : -qfloat=nomaf
 #
 FC = mpixlf95_r
@@ -153,15 +152,6 @@ CPPFLAGS_SURCOUCHE += -DMNH_GA
 INC                += -I${GA_ROOT}/include
 LIBS               += -L${GA_ROOT}/lib -larmci -lga -lgfortran
 endif
-#
-# Gribex flags
-#
-#TARGET_GRIBEX=rs6000
-TARGET_GRIBEX=ibm_power4
-CNAME_GRIBEX=""
-#A64=A64
-# Gribapi flags
-GRIBAPI_CONF= --host=powerpc64-bgq-linux 
 #
 # LIBTOOLS flags
 #

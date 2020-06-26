@@ -183,11 +183,6 @@ INC                += -I${GA_ROOT}/include
 LIBS               += -L${GA_ROOT}/lib -lga -larmci 
 endif
 #
-# Gribex flags
-#
-TARGET_GRIBEX=linux
-CNAME_GRIBEX=ifort
-#
 # Netcdf/HDF5 flags
 #
 HDF_CONF= CFLAGS=-std=c99

@@ -94,11 +94,6 @@ INC                += -I${GA_ROOT}/include
 LIBS               += -L${GA_ROOT}/lib -larmci -lga
 endif
 #
-# Gribex flags
-#
-TARGET_GRIBEX=linux
-CNAME_GRIBEX=_gfortran
-#
 # Netcdf/HDF5 flags
 #
 HDF_CONF= CFLAGS=-std=c99

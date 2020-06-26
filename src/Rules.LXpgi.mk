@@ -102,11 +102,6 @@ CPPFLAGS_NEWLFI    = -DSWAPIO -DLINUX -DLFI_INT=${LFI_INT}
 CPPFLAGS_MNH       = -DMNH -DMNH_PGI -DSFX_MNH
 
 #
-# Gribex flags
-#
-TARGET_GRIBEX=linux
-CNAME_GRIBEX=_pgf77
-#
 # LIBTOOLS flags
 #
 #if MNH_TOOLS exists => compile the tools

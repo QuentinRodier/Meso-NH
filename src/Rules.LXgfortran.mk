@@ -86,11 +86,6 @@ INC                += -I${GA_ROOT}/include
 LIBS               += -L${GA_ROOT}/lib -larmci -lga
 endif
 #
-# Gribex flags
-#
-TARGET_GRIBEX=linux
-CNAME_GRIBEX=_gfortran
-#
 # Netcdf/HDF5 flags
 #
 HDF_CONF= CFLAGS=-std=c99
@@ -125,11 +120,10 @@ MNH_COMPRESS=yes
 # Force -fallow-argument-mismatch option for gcc >= 10.1
 # Necessary because some subroutines may be called with different datatypes
 # Known list: MPI_Allgatherv,MPI_Allreduce,MPI_Bcast,MPI_Bsend,MPI_Gather,MPI_Gatherv,MPI_Recv,LEPOLY,EXTRACT_BBUFF,FILL_BBUFF
-# + gribapi + netCDF-fortran < 4.5.3
+# + ecCodes + netCDF-fortran < 4.5.3
 #
 ifeq ($(shell test $(GFV) -ge 1010 ; echo $$?),0)
 OPT_BASE += -fallow-argument-mismatch
-GRIB_FLAGS += -fallow-argument-mismatch
 NETCDF_SUPPFLAGS += -fallow-argument-mismatch
 ECCODES_FFLAGS += -fallow-argument-mismatch
 endif

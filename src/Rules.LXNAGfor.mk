@@ -74,12 +74,6 @@ CPPFLAGS_NEWLFI    = -DSWAPIO -DLINUX -DLFI_INT=${LFI_INT}
 CPPFLAGS_MNH       = -DMNH -DSFX_MNH
 
 #
-# Gribex flags
-#
-TARGET_GRIBEX=linux
-CNAME_GRIBEX=_nagfor
-GRIB_FLAGS = -dusty -kind=byte
-#
 # Netcdf/HDF5 flags
 #
 HDF_CONF= CFLAGS=-std=c99

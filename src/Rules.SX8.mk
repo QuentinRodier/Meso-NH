@@ -89,12 +89,6 @@ CPPFLAGS_RAD       =
 CPPFLAGS_NEWLFI    = -DMNH_SX5 -DLFI_INT=${LFI_INT}
 CPPFLAGS_MNH       = -DMNH -DSFX_MNH
 #
-# Gribex flags
-#
-#ARCH_GRIBEX=NEC
-TARGET_GRIBEX=NEC
-CNAME_GRIBEX=sxmpif90
-#
 # LIBTOOLS flags
 #
 #if MNH_TOOLS exists => compile the tools

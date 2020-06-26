@@ -47,11 +47,6 @@ CPPFLAGS_RAD       =
 CPPFLAGS_NEWLFI    = -DSWAPIO -DLINUX
 CPPFLAGS_MNH       = -DAINT=INT -DAMOD=MOD -DMNH -DSFX_MNH
 #
-# Gribex flags
-#
-TARGET_GRIBEX=linux
-CNAME_GRIBEX=pathf95
-#
 # LIBTOOLS flags
 #
 #if MNH_TOOLS exists => compile the tools
