@@ -1,4 +1,4 @@
-#MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 #MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 #MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 #MNH_LIC for details. version 1.
@@ -177,7 +177,7 @@ DEP_ALL_USER   = $(sort $(filter-out $(IGNORE_DEP_USER)  ,$(DEP_USER)) )
 .PHONY : all objdirmaster libmaster bibmaster objmaster progmaster
 .PHONY : installmaster cleanlibmaster cleanmaster cleanobjmaster cleanprogmaster
 
-all : gribapi progmaster
+all : eccodes_lib progmaster
 
 objdirmaster :  $(OBJDIR_MASTER)/.dummy
 
@@ -196,7 +196,7 @@ ifeq "$(VER_OASIS)" "OASISAUTO"
 depmaster : oasis
 endif
 
-depmaster : gribapi
+depmaster : eccodes_lib
 
 filedepallmaster :  $(DEP_ALL_MASTER)
 	find  $(OBJDIR_MASTER) -follow -name "*.D" >  $(OBJDIR_MASTER)/filemaster
@@ -333,6 +333,24 @@ $(GRIBAPI_INC) :
 
 gribapi_clean :
 	- [  -d ${GRIBAPI_PATH} ] && rm -fr ${GRIBAPI_PATH} 
+##########################################################
+#                                                        #
+# EXTRA LIB : ecCodes                                    #
+#                                                        #
+##########################################################
+eccodes_lib : $(ECCODES_MOD)
+$(ECCODES_MOD) :
+	- [ ! -d $(DIR_ECCODES_BUILD) ] && mkdir -p $(DIR_ECCODES_BUILD)
+	cd ${DIR_ECCODES_BUILD} && \
+	cmake ${DIR_ECCODES_SRC} -DCMAKE_INSTALL_PREFIX=${DIR_ECCODES_INSTALL} -DBUILD_SHARED_LIBS=OFF \
+	-DENABLE_NETCDF=OFF -DENABLE_JPG=OFF -DENABLE_PYTHON=OFF -DENABLE_EXAMPLES=OFF \
+	-DCMAKE_Fortran_COMPILER=$(FC) -DCMAKE_C_COMPILER=$(CC) \
+	-DCMAKE_Fortran_FLAGS=$(ECCODES_FFLAGS) -DCMAKE_C_FLAGS=$(ECCODES_CFLAGS) && \
+	$(MAKE) && $(MAKE) install && $(MAKE) clean
+
+eccodes_lib_clean :
+	- [  -d ${DIR_ECCODES_BUILD} ] && rm -fr ${DIR_ECCODES_BUILD}
+	- [  -d ${DIR_ECCODES_INSTALL} ] && rm -fr ${DIR_ECCODES_INSTALL}
 ##########################################################
 #                                                        #
 # EXTRA LIB : NETCDF                                     #

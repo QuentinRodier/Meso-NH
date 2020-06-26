@@ -448,6 +448,21 @@ LIBS          += $(LIB_GRIBAPI)
 VPATH         += $(GRIBAPI_PATH)/include
 R64_GRIBAPI=R64
 endif
+##########################################################
+#           ecCodes library                              #
+##########################################################
+DIR_ECCODES_SRC?=${SRC_MESONH}/src/LIB/eccodes-${VERSION_ECCODES}-Source
+DIR_ECCODES_BUILD?=${SRC_MESONH}/src/LIB/eccodes-${VERSION_ECCODES}-${ARCH}-R${MNH_REAL}I${MNH_INT}
+DIR_ECCODES_INSTALL?=${OBJDIR_MASTER}/ECCODES-${VERSION_ECCODES}
+ECCODES_MOD?=${DIR_ECCODES_INSTALL}/include/grib_api.mod
+#
+ifdef DIR_ECCODES_SRC
+INC_ECCODES   ?= -I${DIR_ECCODES_INSTALL}/include
+LIB_ECCODES   ?= -L${DIR_ECCODES_INSTALL}/lib -L${DIR_ECCODES_INSTALL}/lib64 -leccodes_f90 -leccodes
+INC           += $(INC_ECCODES)
+LIBS          += $(LIB_ECCODES)
+VPATH         += $(DIR_ECCODES_INSTALL)/include
+endif
 
 ##########################################################
 #           Librairie OASIS                              #
