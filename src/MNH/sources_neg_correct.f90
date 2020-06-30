@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 ! Author: P. Wautelet 25/06/2020 (deduplication of code from advection_metsv, resolved_cloud and turb)
 ! Modifications:
-!
+!  P. Wautelet 30/06/2020: remove non-local corrections in resolved_cloud for NEGA => new local corrections here
 !-----------------------------------------------------------------
 module mode_sources_neg_correct
 
@@ -71,11 +71,7 @@ deallocate( zt )
 
 CLOUD: select case ( hcloud )
   case ( 'KESS' )
-    if ( hbudname == 'NEGA' ) then
-      jrmax = 2
-    else
-      jrmax = Size( prrs, 4 )
-    end if
+    jrmax = Size( prrs, 4 )
     do jr = 2, jrmax
       where ( prrs(:, :, :, jr) < 0. )
         prrs(:, :, :, 1) = prrs(:, :, :, 1) + prrs(:, :, :, jr)
@@ -94,7 +90,7 @@ CLOUD: select case ( hcloud )
 
 
   case( 'ICE3', 'ICE4' )
-    if ( hbudname == 'NETUR' .or. hbudname == 'NEGA' ) then
+    if ( hbudname == 'NETUR' ) then
       jrmax = 4
     else
       jrmax = Size( prrs, 4 )
@@ -109,7 +105,7 @@ CLOUD: select case ( hcloud )
     end do
 !
 !   cloud
-    if ( hbudname == 'NETUR' .or. hbudname == 'NEGA' ) then
+    if ( hbudname == 'NETUR' ) then
       jrmax = 2
     else
       jrmax = 3
@@ -203,7 +199,7 @@ CLOUD: select case ( hcloud )
         prrs(:, :, :, 4)  = 0.
         prsvs(:, :, :, nsv_lima_ni) = 0.
       end where
-      if ( hbudname /= 'NETUR' .and. hbudname /= 'NEGA' ) then
+      if ( hbudname /= 'NETUR' ) then
         do jr = 5, Size( prrs, 4 )
           where ( prrs(:, :, :, jr) < 0. )
             prrs(:, :, :, 1) = prrs(:, :, :, 1) + prrs(:, :, :, jr)

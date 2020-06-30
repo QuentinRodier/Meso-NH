@@ -275,6 +275,7 @@ END MODULE MODI_RESOLVED_CLOUD
 !  P. Wautelet + Benoit Vié 06/2020: improve removal of negative scalar variables + adapt the corresponding budgets
 !  P. Wautelet 23/06/2020: remove ZSVS and ZSVT to improve code readability
 !  P. Wautelet 30/06/2020: move removal of negative scalar variables to Sources_neg_correct
+!  P. Wautelet 30/06/2020: remove non-local corrections
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -576,38 +577,38 @@ ENDIF
 !
 !*       3.1    Non local correction for precipitating species (Rood 87)
 !
-IF (      HCLOUD == 'KESS'                       &
-     .OR. HCLOUD == 'ICE3' .OR. HCLOUD == 'ICE4' &
-     .OR. HCLOUD == 'C2R2' .OR. HCLOUD == 'C3R5' &
-     .OR. HCLOUD == 'KHKO' .OR. HCLOUD == 'LIMA' ) THEN
+! IF (      HCLOUD == 'KESS'                       &
+!      .OR. HCLOUD == 'ICE3' .OR. HCLOUD == 'ICE4' &
+!      .OR. HCLOUD == 'C2R2' .OR. HCLOUD == 'C3R5' &
+!      .OR. HCLOUD == 'KHKO' .OR. HCLOUD == 'LIMA' ) THEN
+! !
+!   DO JRR = 3,KRR
+!     SELECT CASE (JRR)
+!       CASE(3,5,6,7) ! rain, snow, graupel and hail
 !
-  DO JRR = 3,KRR
-    SELECT CASE (JRR)
-      CASE(3,5,6,7) ! rain, snow, graupel and hail
-
-        IF ( MIN_ll( PRS(:,:,:,JRR), IINFO_ll) < 0.0 ) THEN
-!
-! compute the total water mass computation
-!
-          ZMASSTOT = MAX( 0. , SUM3D_ll( PRS(:,:,:,JRR), IINFO_ll ) )
-!
-! remove the negative values
-!
-          PRS(:,:,:,JRR) = MAX( 0., PRS(:,:,:,JRR) )
-!
-! compute the new total mass
-!
-          ZMASSPOS = MAX(XMNH_TINY,SUM3D_ll( PRS(:,:,:,JRR), IINFO_ll ) )
-!
-! correct again in such a way to conserve the total mass
-!
-          ZRATIO = ZMASSTOT / ZMASSPOS
-          PRS(:,:,:,JRR) = PRS(:,:,:,JRR) * ZRATIO
-!
-        END IF
-    END SELECT
-  END DO
-END IF
+!         IF ( MIN_ll( PRS(:,:,:,JRR), IINFO_ll) < 0.0 ) THEN
+! !
+! ! compute the total water mass computation
+! !
+!           ZMASSTOT = MAX( 0. , SUM3D_ll( PRS(:,:,:,JRR), IINFO_ll ) )
+! !
+! ! remove the negative values
+! !
+!           PRS(:,:,:,JRR) = MAX( 0., PRS(:,:,:,JRR) )
+! !
+! ! compute the new total mass
+! !
+!           ZMASSPOS = MAX(XMNH_TINY,SUM3D_ll( PRS(:,:,:,JRR), IINFO_ll ) )
+! !
+! ! correct again in such a way to conserve the total mass
+! !
+!           ZRATIO = ZMASSTOT / ZMASSPOS
+!           PRS(:,:,:,JRR) = PRS(:,:,:,JRR) * ZRATIO
+! !
+!         END IF
+!     END SELECT
+!   END DO
+! END IF
 !
 !*       3.2    Adjustement for liquid and solid cloud
 !
