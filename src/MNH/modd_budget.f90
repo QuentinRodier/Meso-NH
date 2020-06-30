@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ##################
       MODULE MODD_BUDGET
 !     ##################
@@ -41,8 +42,9 @@
 !!      C. Barthe            /16    add budget terms for LIMA
 !!      C. LAc          10/2016 add droplets deposition
 !!      S. Riette       11/2016  New budgets for ICE3/ICE4
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!      B.Vie   03/02/2020 : LIMA negativity checks after turbulence, advection and microphysics budgets 
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  B. Vié      03/02/2020: LIMA negativity checks after turbulence, advection and microphysics budgets
+!  P. Wautelet 30/06/2020: add NNETURSV, NNEADVSV and NNECONSV variables
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -576,7 +578,10 @@ INTEGER, SAVE :: NHTURBSV   ! horizontal turbulence
 INTEGER, SAVE :: NVTURBSV   ! vertical turbulence
 INTEGER, SAVE :: NCHEMSV    ! chemistry activity
 !
-INTEGER, SAVE :: NNEGASV
+INTEGER, SAVE :: NNEGASV    ! negative correction
+INTEGER, SAVE :: NNETURSV   ! negative correction
+INTEGER, SAVE :: NNEADVSV   ! negative correction
+INTEGER, SAVE :: NNECONSV   ! negative correction
 !
 ! Allowed processes for the budget of electric charge carried by water vapor
 INTEGER, SAVE :: NDEPSQV

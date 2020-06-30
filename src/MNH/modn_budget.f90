@@ -225,7 +225,8 @@
 !!      C. Barthe        /16  add budget terms for LIMA
 !!      C.Lac        10/2016  Add droplet deposition
 !!      S. Riette   11/2016 New budgets for ICE3/ICE4
-!!      B.Vie    03/02/2020 LIMA negativity checks after turbulence, advection and microphysics budgets 
+!  B. Vié      03/02/2020: LIMA negativity checks after turbulence, advection and microphysics budgets
+!  P. Wautelet 30/06/2020: add NNETURSV, NNEADVSV and NNECONSV variables
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -305,7 +306,7 @@ NAMELIST/NAM_BU_RRH/LBU_RRH, NASSERH, NNESTRH, NADVRH, NFRCRH, &
 ! 
 NAMELIST/NAM_BU_RSV/ LBU_RSV, NASSESV, NNESTSV, NADVSV, NFRCSV, &
                      NDIFSV, NRELSV, NDCONVSV, NVTURBSV, NHTURBSV, NCHEMSV, NMAFLSV,       &
-                     NNEGASV,                                                              & 
+                     NNEGASV, NNETURSV, NNEADVSV, NNECONSV,                                &
                      NDEPSQV, NDEPGQV, NREVAQV, NCDEPIQV, NNEUTQV,                         &
                      NAUTOQC, NACCRQC, NRIMQC, NWETGQC, NDRYGQC, NIMLTQC, NBERFIQC,        &
                      NCDEPIQC, NSEDIQC, NNEUTQC,                                           &
