@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -106,8 +106,9 @@ END MODULE MODI_LIMA_MEYERS
 !!    -------------
 !!      Original             ??/??/13 
 !!      C. Barthe  * LACy *  jan. 2014   add budgets
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
+!  B. Vie         03/2020: correction of budgets parallelization
 !
 !-------------------------------------------------------------------------------
 !
@@ -336,26 +337,32 @@ IF( INEGT >= 1 ) THEN
   ZTHS(:) = ZTHS(:) + ZZW(:) * (ZLSFACT(:)-ZLVFACT(:)) ! f(L_s*(RVHNDI))
   ZCIS(:) = ZCIS(:) + ZZX(:)
 !
+!*            unpack variables
+!
+  ZW(:,:,:)   = PRVS(:,:,:)
+  PRVS(:,:,:) = UNPACK( ZRVS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
+  ZW(:,:,:)   = PRIS(:,:,:)
+  PRIS(:,:,:) = UNPACK( ZRIS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
+  ZW(:,:,:)   = PTHS(:,:,:)
+  PTHS(:,:,:) = UNPACK( ZTHS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
+  ZW(:,:,:)   = PCIS(:,:,:)
+  PCIS(:,:,:) = UNPACK( ZCIS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
+!
+END IF
 !
 ! Budget storage
-  IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
-    IF (LBUDGET_TH) CALL BUDGET (                                                 &
-                    UNPACK(ZTHS(:),MASK=GNEGT(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
-                                                                4,'HIND_BU_RTH')
-    IF (LBUDGET_RV) CALL BUDGET (                                                 &
-                    UNPACK(ZRVS(:),MASK=GNEGT(:,:,:),FIELD=PRVS)*PRHODJ(:,:,:),&
-                                                                6,'HIND_BU_RRV')
-    IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                    UNPACK(ZRIS(:),MASK=GNEGT(:,:,:),FIELD=PRIS)*PRHODJ(:,:,:),&
-                                                                9,'HIND_BU_RRI')
-    IF (LBUDGET_SV) THEN
-      CALL BUDGET ( UNPACK(ZCIS(:),MASK=GNEGT(:,:,:),FIELD=PCIS)*PRHODJ(:,:,:),&
-                                                   12+NSV_LIMA_NI,'HIND_BU_RSV')
-    END IF
-  END IF
+IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
+   IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),4,'HIND_BU_RTH')
+   IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),6,'HIND_BU_RRV')
+   IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),9,'HIND_BU_RRI')
+   IF (LBUDGET_SV) THEN
+      CALL BUDGET (PCIS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NI,'HIND_BU_RSV')
+   END IF
+END IF
 !
 !*            compute the heterogeneous nucleation by contact: RVHNCI
 !
+IF( INEGT >= 1 ) THEN
   DO JL=1,INEGT
     ZINS(JL,1) = PINS(I1(JL),I2(JL),I3(JL),1)
   END DO
@@ -395,18 +402,6 @@ IF( INEGT >= 1 ) THEN
   ZW(:,:,:)   = PCIS(:,:,:)
   PCIS(:,:,:) = UNPACK( ZCIS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
 !
-! Budget storage
-  IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
-    IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:), 4,'HINC_BU_RTH')
-    IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), 7,'HINC_BU_RRC')
-    IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:), 9,'HINC_BU_RRI')
-    IF (LBUDGET_SV) THEN
-      CALL BUDGET ( PCCS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NC,'HINC_BU_RSV')
-      CALL BUDGET ( PCIS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NI,'HINC_BU_RSV')
-    END IF
-  END IF
-
-!
   DEALLOCATE(ZRVT) 
   DEALLOCATE(ZRCT) 
   DEALLOCATE(ZRRT) 
@@ -438,43 +433,19 @@ IF( INEGT >= 1 ) THEN
   DEALLOCATE(ZLSFACT)
   DEALLOCATE(ZLVFACT)
 !
-ELSE
-!
-! Advance the budget calls
-!
-  IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
-    IF (LBUDGET_TH) THEN
-      ZW(:,:,:) = PTHS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,4,'HIND_BU_RTH')
-      CALL BUDGET (ZW,4,'HINC_BU_RTH')
-    ENDIF
-    IF (LBUDGET_RV) THEN
-      ZW(:,:,:) = PRVS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,6,'HIND_BU_RRV')
-    ENDIF
-    IF (LBUDGET_RC) THEN
-      ZW(:,:,:) = PRCS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,7,'HINC_BU_RRC')
-    ENDIF
-    IF (LBUDGET_RI) THEN
-      ZW(:,:,:) = PRIS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,9,'HIND_BU_RRI')
-      CALL BUDGET (ZW,9,'HINC_BU_RRI')
-    ENDIF
-    IF (LBUDGET_SV) THEN
-      ZW(:,:,:) = PCCS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,12+NSV_LIMA_NC,'HINC_BU_RSV')
-      ZW(:,:,:) = PCIS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,12+NSV_LIMA_NI,'HIND_BU_RSV')
-      CALL BUDGET (ZW,12+NSV_LIMA_NI,'HINC_BU_RSV')
-    END IF
-  END IF
-!
 END IF
-
-
-
-
+!
+! Budget storage
+IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
+   IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:), 4,'HINC_BU_RTH')
+   IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:), 7,'HINC_BU_RRC')
+   IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:), 9,'HINC_BU_RRI')
+   IF (LBUDGET_SV) THEN
+      CALL BUDGET ( PCCS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NC,'HINC_BU_RSV')
+      CALL BUDGET ( PCIS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NI,'HINC_BU_RSV')
+   END IF
+END IF
+!
 !
 !-------------------------------------------------------------------------------
 !

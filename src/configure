@@ -123,16 +123,15 @@ module load ncl_ncarg/6.3.0
 *Intel*) # Irene Intel core
                 export MNH_ARCH=`echo $ARCH | grep LX`
                 export     ARCH=${MNH_ARCH:-LXifort}
-                export  VER_MPI=${VER_MPI:-MPIINTEL}
+                export  VER_MPI=${VER_MPI:-MPIAUTO}
                 export OPTLEVEL=${OPTLEVEL:-O2}
                 export MVWORK=${MVWORK:-NO}
 		export VER_CDF=${VER_CDF:-CDFAUTO}
                 export MNHENV=${MNHENV:-"
 module purge
 module load intel/18.0.3.222
-module load mpi/intelmpi/2018.0.3.222
+module load mpi/openmpi/2.0.4
 export SLURM_CPU_BIND=none
-export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
 "}
 ;;
 *AMD*) # Irene AMD core
@@ -147,6 +146,7 @@ export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
 module purge
 module load intel/19.0.5.281 
 module load mpi/openmpi/4.0.2
+export SLURM_CPU_BIND=none
 # Set some openmpi variable for pb with nb of cores >> 1024
 export OMPI_MCA_coll_hcoll_enable=0
 export HCOLL_ENABLE_MCAST_ALL=0

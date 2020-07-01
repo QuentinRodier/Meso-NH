@@ -668,11 +668,11 @@ IF (LVAR_PR .AND. LUSERR .AND. SIZE(XINPRR)>0 ) THEN
     TZFIELD%CUNITS = 'mm hour-1'
     CALL IO_Field_write(TPFILE,TZFIELD,ZWORK21*3.6E6)
   !
-    ZWORK21(:,:) = (XACPRR(:,:) + XACPRS(:,:) + XACPRG(:,:))*1.0E3
+    ZWORK21(:,:) = XACPRR(:,:) + XACPRS(:,:) + XACPRG(:,:)
     IF (SIZE(XINPRC) /= 0 ) &      
-      ZWORK21(:,:) = ZWORK21(:,:) + XACPRC(:,:)*1.0E3
+      ZWORK21(:,:) = ZWORK21(:,:) + XACPRC(:,:)
     IF (SIZE(XINPRH) /= 0 ) &        
-      ZWORK21(:,:) = ZWORK21(:,:) + XACPRH(:,:)*1.0E3
+      ZWORK21(:,:) = ZWORK21(:,:) + XACPRH(:,:)
   !
     CALL FIND_FIELD_ID_FROM_MNHNAME('ACPRT',IID,IRESP)
     TZFIELD = TFIELDLIST(IID)
@@ -1151,11 +1151,12 @@ IF (LLIMA_DIAG) THEN
       TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_CONC(3))//INDICE//'T'
     END IF
 ! N IMM nucl
-    I = 0
     IF (JSV .GE. NSV_LIMA_IMM_NUCL .AND. JSV .LT. NSV_LIMA_IMM_NUCL + NMOD_IMM) THEN
-      I = I + 1
-      WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(I))
-      TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_CONC(4))//INDICE//'T'
+      DO I = 1, NMOD_IMM ! to be supressed
+!       WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(JSV - NSV_LIMA_BEG - NSV_LIMA_IMM_NUCL + 1))
+        WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(I)) ! to be supressed
+        TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_CONC(4))//INDICE//'T'
+      ENDDO
     END IF
 ! Hom. freez. of CCN
     IF (JSV .EQ. NSV_LIMA_HOM_HAZE) THEN
@@ -1199,7 +1200,7 @@ IF (LLIMA_DIAG) THEN
 !
 END IF
 !
-! chemical scalar variables in gas phase PPBV
+! chemical scalar variables in gas phase ppbv
 IF (LCHEMDIAG) THEN
   DO JSV = NSV_CHGSBEG,NSV_CHGSEND
     TZFIELD%CMNHNAME   = TRIM(UPCASE(CNAMES(JSV-NSV_CHGSBEG+1)))//'T'
@@ -1217,8 +1218,7 @@ IF (LCHEMDIAG) THEN
 END IF
 IF (LCHAQDIAG) THEN    !aqueous concentration in M
   TZFIELD%CSTDNAME   = ''
-  !PW TODO: check units
-  TZFIELD%CUNITS     = ''
+  TZFIELD%CUNITS     = 'M'
   TZFIELD%CDIR       = 'XY'
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
@@ -1227,9 +1227,9 @@ IF (LCHAQDIAG) THEN    !aqueous concentration in M
   !
   ZWORK31(:,:,:)=0.
   DO JSV = NSV_CHACBEG, NSV_CHACBEG-1+NEQAQ/2   !cloud water
-    TZFIELD%CMNHNAME   = TRIM(CNAMES(JSV-NSV_CHACBEG+NSV_CHGS+1))//'M'
+    TZFIELD%CMNHNAME   = TRIM(CNAMES(JSV-NSV_CHACBEG+NSV_CHGS+1))//'T'
     TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    WRITE(TZFIELD%CCOMMENT,'(A6,A4,I3.3,A4)')'X_Y_Z_','CHAQ',JSV,' (M)'
+    WRITE(TZFIELD%CCOMMENT,'(A6,A4,I3.3)')'X_Y_Z_','CHAQ',JSV
     WHERE(((XRT(:,:,:,2)*XRHODREF(:,:,:))/1.e3) .GE. XRTMIN_AQ)
       ZWORK31(:,:,:)=(XSVT(:,:,:,JSV)*1000.)/(XMD*1.E+3*XRT(:,:,:,2))
     ENDWHERE
@@ -1238,9 +1238,9 @@ IF (LCHAQDIAG) THEN    !aqueous concentration in M
   !
   ZWORK31(:,:,:)=0.
   DO JSV = NSV_CHACBEG+NEQAQ/2, NSV_CHACEND    !rain water
-    TZFIELD%CMNHNAME   = TRIM(CNAMES(JSV-NSV_CHACBEG+NSV_CHGS+1))//'M'
+    TZFIELD%CMNHNAME   = TRIM(CNAMES(JSV-NSV_CHACBEG+NSV_CHGS+1))//'T'
     TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    WRITE(TZFIELD%CCOMMENT,'(A6,A4,I3.3,A4)')'X_Y_Z_','CHAQ',JSV,' (M)'
+    WRITE(TZFIELD%CCOMMENT,'(A6,A4,I3.3)')'X_Y_Z_','CHAQ',JSV
     WHERE(((XRT(:,:,:,3)*XRHODREF(:,:,:))/1.e3) .GE. XRTMIN_AQ)
       ZWORK31(:,:,:)=(XSVT(:,:,:,JSV)*1000.)/(XMD*1.E+3*XRT(:,:,:,3))
     ENDWHERE

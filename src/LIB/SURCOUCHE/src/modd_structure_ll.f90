@@ -1,11 +1,11 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!      ########################
-       MODULE MODD_STRUCTURE_ll
-!      ########################
+!#######################
+MODULE MODD_STRUCTURE_ll
+!#######################
 !
 !!****  *MODD_STRUCTURE_lll* - declaration of parallel structure
 !
@@ -45,10 +45,12 @@
 !
 !-------------------------------------------------------------------------------
 !
-  USE MODD_ARGSLIST_ll,   ONLY : LIST_ll
-  USE MODD_PARAMETERS,    ONLY : NNEGUNDEF
-  USE MODD_PARAMETERS_ll, ONLY : NMAXRIM
-!
+USE MODD_ARGSLIST_ll,   ONLY : LIST_ll
+USE MODD_PARAMETERS,    ONLY : NNEGUNDEF
+USE MODD_PARAMETERS_ll, ONLY : NMAXRIM
+
+implicit none
+
 !-------------------------------------------------------------------------------
 !
 ! Routines for allocation of structured types

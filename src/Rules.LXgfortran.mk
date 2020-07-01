@@ -125,6 +125,7 @@ MNH_COMPRESS=yes
 ifeq ($(shell test $(GFV) -ge 1010 ; echo $$?),0)
 OPT_BASE += -fallow-argument-mismatch
 GRIB_FLAGS += -fallow-argument-mismatch
+NETCDF_SUPPFLAGS += -fallow-argument-mismatch
 endif
 ##########################################################
 #                                                        #
