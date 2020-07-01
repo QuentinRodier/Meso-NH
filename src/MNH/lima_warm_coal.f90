@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -95,8 +95,9 @@ END MODULE MODI_LIMA_WARM_COAL
 !!    -------------
 !!      Original             ??/??/13 
 !!      C. Barthe  * LACy *  jan. 2014   add budgets
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
+!  B. Vie         03/2020: correction of budgets parallelization
 !
 !-------------------------------------------------------------------------------
 !
@@ -239,6 +240,7 @@ IF( IMICRO >= 1 ) THEN
    ALLOCATE(ZZW1(IMICRO))
    ALLOCATE(ZZW2(IMICRO))
    ALLOCATE(ZZW3(IMICRO))
+END IF ! IMICRO
 !
 !
 !-------------------------------------------------------------------------------
@@ -249,20 +251,21 @@ IF (LRAIN) THEN
 !   	 ------------------------------------
 !
 !
-   GSELF(:) = ZCCT(:)>XCTMIN(2)
-   ISELF = COUNT(GSELF(:))
-   IF( ISELF>0 ) THEN
-      ZZW1(:) = XSELFC*(ZCCT(:)/ZLBDC3(:))**2 * ZRHODREF(:) ! analytical integration
-      WHERE( GSELF(:) )
-         ZCCS(:) = ZCCS(:) - MIN( ZCCS(:),ZZW1(:) )
-      END WHERE
+   IF( IMICRO >= 1 ) THEN
+      GSELF(:) = ZCCT(:)>XCTMIN(2)
+      ISELF = COUNT(GSELF(:))
+      IF( ISELF>0 ) THEN
+         ZZW1(:) = XSELFC*(ZCCT(:)/ZLBDC3(:))**2 * ZRHODREF(:) ! analytical integration
+         WHERE( GSELF(:) )
+            ZCCS(:) = ZCCS(:) - MIN( ZCCS(:),ZZW1(:) )
+         END WHERE
+      END IF
+      !
+      ZW(:,:,:) = PCCS(:,:,:)
+      PCCS(:,:,:) = UNPACK( ZCCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
    END IF
-!
-!
-  ZW(:,:,:) = PCCS(:,:,:)
-  IF (LBUDGET_SV) CALL BUDGET (                                 &
-                   UNPACK(ZCCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:))&
-                   &*PRHODJ(:,:,:),12+NSV_LIMA_NC,'SELF_BU_RSV') 
+   !
+   IF (LBUDGET_SV) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NC,'SELF_BU_RSV') 
 !
 !
 !-------------------------------------------------------------------------------
@@ -273,44 +276,42 @@ IF (LRAIN) THEN
 !
 !
 !
-   ZZW2(:) = 0.0
-   ZZW1(:) = 0.0
-   WHERE( ZRCT(:)>XRTMIN(2) )
-      ZZW2(:) = MAX( 0.0,XLAUTR*ZRHODREF(:)*ZRCT(:)*             &
-                           (XAUTO1/min(ZLBDC(:),1.e9)**4-XLAUTR_THRESHOLD) ) ! L 
-!
-      ZZW3(:) = MIN( ZRCS(:), MAX( 0.0,XITAUTR*ZZW2(:)*ZRCT(:)*  &
-                           (XAUTO2/ZLBDC(:)-XITAUTR_THRESHOLD) ) ) ! L/tau
-!
-      ZRCS(:) = ZRCS(:) - ZZW3(:)
-      ZRRS(:) = ZRRS(:) + ZZW3(:)
-!
-      ZZW1(:) = MIN( MIN( 1.2E4,(XACCR4/ZLBDC(:)-XACCR5)/XACCR3),   &
-                           ZLBDR(:)/XACCR1 ) ! D**-1 threshold diameter for 
-                                             ! switching the autoconversion regimes
-                                             ! min (80 microns, D_h, D_r)
-      ZZW3(:) = ZZW3(:) * MAX( 0.0,ZZW1(:) )**3 / XAC 
-      ZCRS(:) = ZCRS(:) + ZZW3(:)
-   END WHERE
-!
-!
-   ZW(:,:,:) = PRCS(:,:,:)
-   IF (LBUDGET_RC) CALL BUDGET (                                  &
-               UNPACK(ZRCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:)) &
-                            *PRHODJ(:,:,:),7 ,'AUTO_BU_RRC')
-
-   ZW(:,:,:) = PRRS(:,:,:)
-   IF (LBUDGET_RR) CALL BUDGET (                                  &
-               UNPACK(ZRRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:)) &
-                            *PRHODJ(:,:,:),8 ,'AUTO_BU_RRR')
-   ZW(:,:,:) = PCRS(:,:,:)
-   IF (LBUDGET_SV) THEN
-      ZW(:,:,:) = PCRS(:,:,:)
-      CALL BUDGET (UNPACK(ZCRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:)) &
-               *PRHODJ(:,:,:),12+NSV_LIMA_NR,'AUTO_BU_RSV')
+   IF( IMICRO >= 1 ) THEN
+      ZZW2(:) = 0.0
+      ZZW1(:) = 0.0
+      WHERE( ZRCT(:)>XRTMIN(2) )
+         ZZW2(:) = MAX( 0.0,XLAUTR*ZRHODREF(:)*ZRCT(:)*             &
+              (XAUTO1/min(ZLBDC(:),1.e9)**4-XLAUTR_THRESHOLD) ) ! L 
+         !
+         ZZW3(:) = MIN( ZRCS(:), MAX( 0.0,XITAUTR*ZZW2(:)*ZRCT(:)*  &
+              (XAUTO2/ZLBDC(:)-XITAUTR_THRESHOLD) ) ) ! L/tau
+         !
+         ZRCS(:) = ZRCS(:) - ZZW3(:)
+         ZRRS(:) = ZRRS(:) + ZZW3(:)
+         !
+         ZZW1(:) = MIN( MIN( 1.2E4,(XACCR4/ZLBDC(:)-XACCR5)/XACCR3),   &
+              ZLBDR(:)/XACCR1 ) ! D**-1 threshold diameter for 
+         ! switching the autoconversion regimes
+         ! min (80 microns, D_h, D_r)
+         ZZW3(:) = ZZW3(:) * MAX( 0.0,ZZW1(:) )**3 / XAC 
+         ZCRS(:) = ZCRS(:) + ZZW3(:)
+      END WHERE
+      !
+      ZW(:,:,:) = PRCS(:,:,:)
+      PRCS(:,:,:) = UNPACK( ZRCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
+      ZW(:,:,:) = PRRS(:,:,:)
+      PRRS(:,:,:) = UNPACK( ZRRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
       ZW(:,:,:) = PCCS(:,:,:)
-      CALL BUDGET (UNPACK(ZCCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:)) &
-               *PRHODJ(:,:,:),12+NSV_LIMA_NC,'AUTO_BU_RSV')
+      PCCS(:,:,:) = UNPACK( ZCCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
+      ZW(:,:,:) = PCRS(:,:,:)
+      PCRS(:,:,:) = UNPACK( ZCRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
+   END IF
+   !
+   IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7 ,'AUTO_BU_RRC')
+   IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),8 ,'AUTO_BU_RRR')
+   IF (LBUDGET_SV) THEN
+      CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NR,'AUTO_BU_RSV')
+      CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NC,'AUTO_BU_RSV')
    END IF
 !
 !
@@ -321,58 +322,57 @@ IF (LRAIN) THEN
 !   	 --------------------
 !
 !
-   GACCR(:) = ZRRT(:)>XRTMIN(3) .AND. ZCRT(:)>XCTMIN(3) 
-   IACCR = COUNT(GACCR(:))
-   IF( IACCR>0 ) THEN
-      ALLOCATE(ZZW4(IMICRO)); ZZW4(:) = XACCR1/ZLBDR(:)
-      ALLOCATE(GENABLE_ACCR_SCBU(IMICRO))
-      GENABLE_ACCR_SCBU(:) = ZRRT(:)>1.2*ZZW2(:)/ZRHODREF(:) .OR.           &
-                       ZZW4(:)>=MAX( XACCR2,XACCR3/(XACCR4/ZLBDC(:)-XACCR5) )
-      GACCR(:) = GACCR(:) .AND. ZRCT(:)>XRTMIN(2) .AND. ZCCT(:)>XCTMIN(2) .AND. GENABLE_ACCR_SCBU(:)
+   IF( IMICRO >= 1 ) THEN
+      GACCR(:) = ZRRT(:)>XRTMIN(3) .AND. ZCRT(:)>XCTMIN(3) 
+      IACCR = COUNT(GACCR(:))
+      IF( IACCR>0 ) THEN
+         ALLOCATE(ZZW4(IMICRO)); ZZW4(:) = XACCR1/ZLBDR(:)
+         ALLOCATE(GENABLE_ACCR_SCBU(IMICRO))
+         GENABLE_ACCR_SCBU(:) = ZRRT(:)>1.2*ZZW2(:)/ZRHODREF(:) .OR.           &
+              ZZW4(:)>=MAX( XACCR2,XACCR3/(XACCR4/ZLBDC(:)-XACCR5) )
+         GACCR(:) = GACCR(:) .AND. ZRCT(:)>XRTMIN(2) .AND. ZCCT(:)>XCTMIN(2) .AND. GENABLE_ACCR_SCBU(:)
+      END IF
+      !
+      IACCR = COUNT(GACCR(:))
+      IF( IACCR>0 ) THEN
+         WHERE( GACCR(:).AND.(ZZW4(:)>1.E-4) ) ! Accretion for D>100 10-6 m
+            ZZW3(:) = ZLBDC3(:) / ZLBDR3(:)
+            ZZW1(:) = ( ZCCT(:)*ZCRT(:) / ZLBDC3(:) )*ZRHODREF(:)
+            ZZW2(:) = MIN( ZZW1(:)*(XACCR_CLARGE1+XACCR_CLARGE2*ZZW3(:)),ZCCS(:) )
+            ZCCS(:) = ZCCS(:) - ZZW2(:)
+            !
+            ZZW1(:) = ( ZZW1(:) / ZLBDC3(:) )
+            ZZW2(:) = MIN( ZZW1(:)*(XACCR_RLARGE1+XACCR_RLARGE2*ZZW3(:)),ZRCS(:) )
+            ZRCS(:) = ZRCS(:) - ZZW2(:)
+            ZRRS(:) = ZRRS(:) + ZZW2(:)
+         END WHERE
+         WHERE( GACCR(:).AND.(ZZW4(:)<=1.E-4) ) ! Accretion for D<100 10-6 m
+            ZZW3(:) = MIN(ZLBDC3(:) / ZLBDR3(:), 1.E8)
+            ZZW1(:) = ( ZCCT(:)*ZCRT(:) / ZLBDC3(:) )*ZRHODREF(:)
+            ZZW1(:) = ZZW1(:) / ZLBDC3(:)
+            ZZW3(:) = ZZW3(:)**2
+            ZZW2(:) = MIN( ZZW1(:)*(XACCR_CSMALL1+XACCR_CSMALL2*ZZW3(:)),ZCCS(:) )
+            ZCCS(:) = ZCCS(:) - ZZW2(:)
+            !
+            ZZW1(:) = ZZW1(:) / ZLBDC3(:)
+            ZZW2(:) = MIN( ZZW1(:)*(XACCR_RSMALL1+XACCR_RSMALL2*ZZW3(:))             &
+                 ,ZRCS(:) )
+            ZRCS(:) = ZRCS(:) - ZZW2(:)
+            ZRRS(:) = ZRRS(:) + ZZW2(:)
+         END WHERE
+      END IF
+      !
+      ZW(:,:,:) = PRCS(:,:,:)
+      PRCS(:,:,:) = UNPACK( ZRCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
+      ZW(:,:,:) = PRRS(:,:,:)
+      PRRS(:,:,:) = UNPACK( ZRRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
+      ZW(:,:,:) = PCCS(:,:,:)
+      PCCS(:,:,:) = UNPACK( ZCCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
    END IF
 !
-   IACCR = COUNT(GACCR(:))
-   IF( IACCR>0 ) THEN
-      WHERE( GACCR(:).AND.(ZZW4(:)>1.E-4) ) ! Accretion for D>100 10-6 m
-         ZZW3(:) = ZLBDC3(:) / ZLBDR3(:)
-         ZZW1(:) = ( ZCCT(:)*ZCRT(:) / ZLBDC3(:) )*ZRHODREF(:)
-         ZZW2(:) = MIN( ZZW1(:)*(XACCR_CLARGE1+XACCR_CLARGE2*ZZW3(:)),ZCCS(:) )
-         ZCCS(:) = ZCCS(:) - ZZW2(:)
-!
-         ZZW1(:) = ( ZZW1(:) / ZLBDC3(:) )
-         ZZW2(:) = MIN( ZZW1(:)*(XACCR_RLARGE1+XACCR_RLARGE2*ZZW3(:)),ZRCS(:) )
-         ZRCS(:) = ZRCS(:) - ZZW2(:)
-         ZRRS(:) = ZRRS(:) + ZZW2(:)
-      END WHERE
-      WHERE( GACCR(:).AND.(ZZW4(:)<=1.E-4) ) ! Accretion for D<100 10-6 m
-         ZZW3(:) = MIN(ZLBDC3(:) / ZLBDR3(:), 1.E8)
-         ZZW1(:) = ( ZCCT(:)*ZCRT(:) / ZLBDC3(:) )*ZRHODREF(:)
-         ZZW1(:) = ZZW1(:) / ZLBDC3(:)
-         ZZW3(:) = ZZW3(:)**2
-         ZZW2(:) = MIN( ZZW1(:)*(XACCR_CSMALL1+XACCR_CSMALL2*ZZW3(:)),ZCCS(:) )
-         ZCCS(:) = ZCCS(:) - ZZW2(:)
-!
-         ZZW1(:) = ZZW1(:) / ZLBDC3(:)
-         ZZW2(:) = MIN( ZZW1(:)*(XACCR_RSMALL1+XACCR_RSMALL2*ZZW3(:))             &
-                                                          ,ZRCS(:) )
-         ZRCS(:) = ZRCS(:) - ZZW2(:)
-         ZRRS(:) = ZRRS(:) + ZZW2(:)
-      END WHERE
-   END IF
-!
-!
-   ZW(:,:,:) = PRCS(:,:,:)
-   IF (LBUDGET_RC) CALL BUDGET (                                  &
-               UNPACK(ZRCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:)) &
-                              *PRHODJ(:,:,:),7 ,'ACCR_BU_RRC')
-   ZW(:,:,:) = PRRS(:,:,:)
-   IF (LBUDGET_RR) CALL BUDGET (                                  &
-               UNPACK(ZRRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:)) &
-                              *PRHODJ(:,:,:),8 ,'ACCR_BU_RRR')
-   ZW(:,:,:) = PCCS(:,:,:)
-   IF (LBUDGET_SV) CALL BUDGET (                                  &
-               UNPACK(ZCCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:)) &
-                  *PRHODJ(:,:,:),12+NSV_LIMA_NC,'ACCR_BU_RSV')
+   IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7 ,'ACCR_BU_RRC')
+   IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),8 ,'ACCR_BU_RRR')
+   IF (LBUDGET_SV) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NC,'ACCR_BU_RSV')
 !
 !
 !-------------------------------------------------------------------------------
@@ -382,48 +382,49 @@ IF (LRAIN) THEN
 !   	 -----------------------------------------
 !
 !
-   IF( IACCR>0 ) THEN
-      GSCBU(:) = ZCRT(:)>XCTMIN(3) .AND. GENABLE_ACCR_SCBU(:)
-      ISCBU = COUNT(GSCBU(:))
-   ELSE
-      ISCBU = 0.0
+   IF( IMICRO >= 1 ) THEN
+      IF( IACCR>0 ) THEN
+         GSCBU(:) = ZCRT(:)>XCTMIN(3) .AND. GENABLE_ACCR_SCBU(:)
+         ISCBU = COUNT(GSCBU(:))
+      ELSE
+         ISCBU = 0.0
+      END IF
+      IF( ISCBU>0 ) THEN
+         !
+         !*       5.1  efficiencies
+         !
+         IF (.NOT.ALLOCATED(ZZW4)) ALLOCATE(ZZW4(IMICRO))
+         ZZW4(:)  = XACCR1 / ZLBDR(:)                ! Mean diameter
+         ALLOCATE(ZSCBU(IMICRO))
+         ZSCBU(:) = 1.0
+         WHERE (ZZW4(:)>=XSCBU_EFF1 .AND. GSCBU(:))   ZSCBU(:) = &  ! Coalescence
+              EXP(XSCBUEXP1*(ZZW4(:)-XSCBU_EFF1))  ! efficiency
+         WHERE (ZZW4(:)>=XSCBU_EFF2) ZSCBU(:) = 0.0  ! Break-up
+         !
+         !*       5.2  integration
+         !
+         ZZW1(:) = 0.0
+         ZZW2(:) = 0.0
+         ZZW3(:) = 0.0
+         ZZW4(:) = XACCR1 / ZLBDR(:)                 ! Mean volume drop diameter
+         WHERE (GSCBU(:).AND.(ZZW4(:)>1.E-4))              ! analytical integration
+            ZZW1(:) = XSCBU2 * ZCRT(:)**2 / ZLBDR3(:)   ! D>100 10-6 m
+            ZZW3(:) = ZZW1(:)*ZSCBU(:)
+         END WHERE
+         WHERE (GSCBU(:).AND.(ZZW4(:)<=1.E-4))
+            ZZW2(:) = XSCBU3 *(ZCRT(:) / ZLBDR3(:))**2  ! D<100 10-6 m
+            ZZW3(:) = ZZW2(:)
+         END WHERE
+         ZCRS(:) = ZCRS(:) - MIN( ZCRS(:),ZZW3(:) * ZRHODREF(:) )
+         DEALLOCATE(ZSCBU)
+      END IF
+      !
+      ZW(:,:,:) = PCRS(:,:,:)
+      PCRS(:,:,:) = UNPACK( ZCRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
    END IF
-   IF( ISCBU>0 ) THEN
-!
-!*       5.1  efficiencies
-!
-      IF (.NOT.ALLOCATED(ZZW4)) ALLOCATE(ZZW4(IMICRO))
-      ZZW4(:)  = XACCR1 / ZLBDR(:)                ! Mean diameter
-      ALLOCATE(ZSCBU(IMICRO))
-      ZSCBU(:) = 1.0
-      WHERE (ZZW4(:)>=XSCBU_EFF1 .AND. GSCBU(:))   ZSCBU(:) = &  ! Coalescence
-                            EXP(XSCBUEXP1*(ZZW4(:)-XSCBU_EFF1))  ! efficiency
-      WHERE (ZZW4(:)>=XSCBU_EFF2) ZSCBU(:) = 0.0  ! Break-up
-!
-!*       5.2  integration
-!
-      ZZW1(:) = 0.0
-      ZZW2(:) = 0.0
-      ZZW3(:) = 0.0
-      ZZW4(:) = XACCR1 / ZLBDR(:)                 ! Mean volume drop diameter
-      WHERE (GSCBU(:).AND.(ZZW4(:)>1.E-4))              ! analytical integration
-         ZZW1(:) = XSCBU2 * ZCRT(:)**2 / ZLBDR3(:)   ! D>100 10-6 m
-         ZZW3(:) = ZZW1(:)*ZSCBU(:)
-      END WHERE
-      WHERE (GSCBU(:).AND.(ZZW4(:)<=1.E-4))
-         ZZW2(:) = XSCBU3 *(ZCRT(:) / ZLBDR3(:))**2  ! D<100 10-6 m
-         ZZW3(:) = ZZW2(:)
-      END WHERE
-      ZCRS(:) = ZCRS(:) - MIN( ZCRS(:),ZZW3(:) * ZRHODREF(:) )
-      DEALLOCATE(ZSCBU)
-   END IF
-!
-!
-   ZW(:,:,:) = PCRS(:,:,:)
-   IF (LBUDGET_SV) CALL BUDGET (                                  &
-               UNPACK(ZCRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:)) &
-                  *PRHODJ(:,:,:),12+NSV_LIMA_NR,'SCBU_BU_RSV')
-!
+   !
+   IF (LBUDGET_SV) CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NR,'SCBU_BU_RSV')
+   !
 END IF ! LRAIN
 !
 !
@@ -434,15 +435,7 @@ END IF ! LRAIN
 !   	 -------------------
 !
 !
-   ZW(:,:,:) = PRCS(:,:,:)
-   PRCS(:,:,:) = UNPACK( ZRCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
-   ZW(:,:,:) = PRRS(:,:,:)
-   PRRS(:,:,:) = UNPACK( ZRRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
-   ZW(:,:,:) = PCCS(:,:,:)
-   PCCS(:,:,:) = UNPACK( ZCCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
-   ZW(:,:,:) = PCRS(:,:,:)
-   PCRS(:,:,:) = UNPACK( ZCRS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
-!
+IF( IMICRO >= 1 ) THEN
    DEALLOCATE(ZRCT)
    DEALLOCATE(ZRRT)
    DEALLOCATE(ZCCT)
@@ -464,28 +457,6 @@ END IF ! LRAIN
    DEALLOCATE(ZLBDC3)
    DEALLOCATE(ZLBDR)
    DEALLOCATE(ZLBDC)
-!
-!
-!-------------------------------------------------------------------------------
-!
-ELSE
-!*       7. Budgets are forwarded
-!        ------------------------
-!
-!
-   IF (LBUDGET_SV .AND. LRAIN) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NC,'SELF_BU_RSV')
-!
-   IF (LBUDGET_RC .AND. LRAIN) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7 ,'AUTO_BU_RRC')
-   IF (LBUDGET_RR .AND. LRAIN) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),8 ,'AUTO_BU_RRR')
-   IF (LBUDGET_SV .AND. LRAIN) CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NR,'AUTO_BU_RSV')
-   IF (LBUDGET_SV .AND. LRAIN) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NC,'AUTO_BU_RSV')
-!
-   IF (LBUDGET_RC .AND. LRAIN) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7 ,'ACCR_BU_RRC')
-   IF (LBUDGET_RR .AND. LRAIN) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),8 ,'ACCR_BU_RRR')
-   IF (LBUDGET_SV .AND. LRAIN) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NC,'ACCR_BU_RSV')
-!
-   IF (LBUDGET_SV .AND. LRAIN) CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NR,'SCBU_BU_RSV')
-
 END IF ! IMICRO
 !
 !-------------------------------------------------------------------------------

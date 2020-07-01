@@ -1,8 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-! _Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/default_desfmn.f90,v _
 !-----------------------------------------------------------------
 !     ###########################
       MODULE MODI_DEFAULT_DESFM_n
@@ -230,7 +229,8 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !!                   05/2019 F.Brient add tracer emission from the top of the boundary-layer
 !!                   11/2019 C.Lac correction in the drag formula and application to building in addition to tree
-!!
+!  P. Wautelet 30/06/2020: add NNETURSV, NNEADVSV and NNECONSV variables
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -881,7 +881,10 @@ IF (KMI == 1) THEN
   NHTURBSV = 0
   NCHEMSV  = 0
   NNEGASV  = 0
-  NDEPOTRSV  = 0
+  NNETURSV = 0
+  NNEADVSV = 0
+  NNECONSV = 0
+  NDEPOTRSV = 0
 !
 !
 END IF

@@ -133,6 +133,7 @@ END MODULE MODI_READ_ALL_DATA_GRIB_CASE
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  Q. Rodier   16/09/2019: switch of GRIB number ID for orography in ARPEGE/AROME in EPyGrAM
 !  Q. Rodier   27/01/2020: switch of GRIB number ID for orography and hydrometeors in ARPEGE/AROME in EPyGrAM v1.3.7
+!  Q. Rodier   21/04/2020: correction GFS u and v wind component written in the right vertical order
 !-------------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -1425,7 +1426,7 @@ DO JLOOP1 = ISTARTLEVEL, ISTARTLEVEL+INLEVEL-1
   IF (IMODEL/=10) THEN ! others than NCEP
     ILEV1 = JLOOP1
   ELSE
-    ILEV1 = IP_GFS(JLOOP1)
+    ILEV1 = IP_GFS(INLEVEL+ISTARTLEVEL-JLOOP1)
   END IF
   ! read component u 
   CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IPAR,KLEV1=ILEV1)
@@ -1457,7 +1458,7 @@ DO JLOOP1 = ISTARTLEVEL, ISTARTLEVEL+INLEVEL-1
   IF (IMODEL/=10) THEN ! others than NCEP
     ILEV1 = JLOOP1
   ELSE
-    ILEV1 = IP_GFS(JLOOP1)
+    ILEV1 = IP_GFS(INLEVEL+ISTARTLEVEL-JLOOP1)
   END IF
   CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IPAR+1,KLEV1=ILEV1)
   IF (INUM < 0) THEN

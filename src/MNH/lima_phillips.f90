@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -115,8 +115,9 @@ END MODULE MODI_LIMA_PHILLIPS
 !!    -------------
 !!      Original             ??/??/13 
 !!      C. Barthe  * LACy *  jan. 2014   add budgets
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
+!  B. Vie         03/2020: Correction of budgets parallelization
 !
 !-------------------------------------------------------------------------------
 !
@@ -465,27 +466,29 @@ DO JMOD_IFN = 1,NMOD_IFN    ! IFN modes
    ZCIS(:) = ZCIS(:) + ZZX(:)
 END DO
 !
+ZW(:,:,:)   = PRVS(:,:,:)
+PRVS(:,:,:) = UNPACK( ZRVS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
+ZW(:,:,:)   = PRIS(:,:,:)
+PRIS(:,:,:) = UNPACK( ZRIS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
+ZW(:,:,:)   = PTHS(:,:,:)
+PTHS(:,:,:) = UNPACK( ZTHS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
+ZW(:,:,:)   = PCIS(:,:,:)
+PCIS(:,:,:) = UNPACK( ZCIS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
+END IF ! INEGT - call budget out of INEGT test
 !
 ! Budget storage
 IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
-  IF (LBUDGET_TH) CALL BUDGET (                                              &
-                  UNPACK(ZTHS(:),MASK=GNEGT(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
-                                                              4,'HIND_BU_RTH')
-  IF (LBUDGET_RV) CALL BUDGET (                                              &
-                  UNPACK(ZRVS(:),MASK=GNEGT(:,:,:),FIELD=PRVS)*PRHODJ(:,:,:),&
-                                                              6,'HIND_BU_RRV')
-  IF (LBUDGET_RI) CALL BUDGET (                                              &
-                  UNPACK(ZRIS(:),MASK=GNEGT(:,:,:),FIELD=PRIS)*PRHODJ(:,:,:),&
-                                                              9,'HIND_BU_RRI')
-  IF (LBUDGET_SV) THEN
-    CALL BUDGET ( UNPACK(ZCIS(:),MASK=GNEGT(:,:,:),FIELD=PCIS)*PRHODJ(:,:,:),&
-                                                       12+NSV_LIMA_NI,'HIND_BU_RSV')
-    IF (NMOD_IFN.GE.1) THEN
-       DO JL=1, NMOD_IFN
-          CALL BUDGET ( PIFS(:,:,:,JL)*PRHODJ(:,:,:),12+NSV_LIMA_IFN_FREE+JL-1,'HIND_BU_RSV') 
-       END DO
-    END IF
-  END IF
+   IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),4,'HIND_BU_RTH')
+   IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),6,'HIND_BU_RRV')
+   IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),9,'HIND_BU_RRI')
+   IF (LBUDGET_SV) THEN
+      CALL BUDGET (PCIS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NI,'HIND_BU_RSV')
+      IF (NMOD_IFN.GE.1) THEN
+         DO JL=1, NMOD_IFN
+            CALL BUDGET (PIFS(:,:,:,JL)*PRHODJ(:,:,:),12+NSV_LIMA_IFN_FREE+JL-1,'HIND_BU_RSV') 
+         END DO
+      END IF
+   END IF
 END IF
 !
 !
@@ -500,58 +503,63 @@ END IF
 ! Currently, we represent coated IFN as a pure aerosol type (NIND_SPECIE)
 !
 !
-DO JMOD_IMM = 1,NMOD_IMM  ! Coated IFN modes
-   JMOD_CCN = NINDICE_CCN_IMM(JMOD_IMM) ! Corresponding CCN mode
-   IF (JMOD_CCN .GT. 0) THEN
-!
-! OLD LIMA : Compute the appropriate mean diameter and sigma      
-!      XMDIAM_IMM = MIN( XMDIAM_IFN(NIND_SPECIE) , XR_MEAN_CCN(JMOD_CCN)*2. )
-!      XSIGMA_IMM = MIN( XSIGMA_IFN(JSPECIE) , EXP(XLOGSIG_CCN(JMOD_CCN)) )
-!
-      ZZW(:) = MIN( ZCCS(:) , ZNAS(:,JMOD_CCN) )
-      ZZX(:)=  ( ZZW(:)+ZNIS(:,JMOD_IMM) ) * Z_FRAC_ACT(:,NIND_SPECIE)
-! Now : ZZX(:) = number of activable AP.
-! Activated AP at this time step = activable AP - already activated AP 
-      ZZX(:) = MIN( ZZW(:), MAX( (ZZX(:)-ZNIS(:,JMOD_IMM)),0.0 ) )
-! Correction BVIE division by PTSTEP ?
-!      ZZY(:) = MIN( XMNU0*ZZX(:) / PTSTEP , ZRVS(:)     )
-      ZZY(:) = MIN( XMNU0*ZZX(:) , ZRVS(:)     )
-!
-! Update the concentrations and MMR
-!   
-      ZNAS(:,JMOD_CCN)     = ZNAS(:,JMOD_CCN) - ZZX(:)
-      ZW(:,:,:)            = PNAS(:,:,:,JMOD_CCN)
-      PNAS(:,:,:,JMOD_CCN) = UNPACK(ZNAS(:,JMOD_CCN),MASK=GNEGT(:,:,:), &
-                                                     FIELD=ZW(:,:,:))
-      ZNIS(:,JMOD_IMM)     = ZNIS(:,JMOD_IMM) + ZZX(:)
-      ZW(:,:,:)            = PNIS(:,:,:,JMOD_IMM)
-      PNIS(:,:,:,JMOD_IMM) = UNPACK(ZNIS(:,JMOD_IMM),MASK=GNEGT(:,:,:), &
-                                                     FIELD=ZW(:,:,:))
-!
-      ZRCS(:) = ZRCS(:) - ZZY(:)
-      ZRIS(:) = ZRIS(:) + ZZY(:)
-      ZTHS(:) = ZTHS(:) + ZZY(:)*ZLSFACT(:) !-ZLVFACT(:)) ! f(L_s*(RVHNCI))
-      ZCCS(:) = ZCCS(:) - ZZX(:)
-      ZCIS(:) = ZCIS(:) + ZZX(:)
-   END IF
-END DO
+IF (INEGT > 0) THEN
+   DO JMOD_IMM = 1,NMOD_IMM  ! Coated IFN modes
+      JMOD_CCN = NINDICE_CCN_IMM(JMOD_IMM) ! Corresponding CCN mode
+      IF (JMOD_CCN .GT. 0) THEN
+         !
+         ! OLD LIMA : Compute the appropriate mean diameter and sigma      
+         !      XMDIAM_IMM = MIN( XMDIAM_IFN(NIND_SPECIE) , XR_MEAN_CCN(JMOD_CCN)*2. )
+         !      XSIGMA_IMM = MIN( XSIGMA_IFN(JSPECIE) , EXP(XLOGSIG_CCN(JMOD_CCN)) )
+         !
+         ZZW(:) = MIN( ZCCS(:) , ZNAS(:,JMOD_CCN) )
+         ZZX(:)=  ( ZZW(:)+ZNIS(:,JMOD_IMM) ) * Z_FRAC_ACT(:,NIND_SPECIE)
+         ! Now : ZZX(:) = number of activable AP.
+         ! Activated AP at this time step = activable AP - already activated AP 
+         ZZX(:) = MIN( ZZW(:), MAX( (ZZX(:)-ZNIS(:,JMOD_IMM)),0.0 ) )
+         ! Correction BVIE division by PTSTEP ?
+         !      ZZY(:) = MIN( XMNU0*ZZX(:) / PTSTEP , ZRVS(:)     )
+         ZZY(:) = MIN( XMNU0*ZZX(:) , ZRVS(:)     )
+         !
+         ! Update the concentrations and MMR
+         !   
+         ZNAS(:,JMOD_CCN)     = ZNAS(:,JMOD_CCN) - ZZX(:)
+         ZW(:,:,:)            = PNAS(:,:,:,JMOD_CCN)
+         PNAS(:,:,:,JMOD_CCN) = UNPACK(ZNAS(:,JMOD_CCN),MASK=GNEGT(:,:,:), &
+              FIELD=ZW(:,:,:))
+         ZNIS(:,JMOD_IMM)     = ZNIS(:,JMOD_IMM) + ZZX(:)
+         ZW(:,:,:)            = PNIS(:,:,:,JMOD_IMM)
+         PNIS(:,:,:,JMOD_IMM) = UNPACK(ZNIS(:,JMOD_IMM),MASK=GNEGT(:,:,:), &
+              FIELD=ZW(:,:,:))
+         !
+         ZRCS(:) = ZRCS(:) - ZZY(:)
+         ZRIS(:) = ZRIS(:) + ZZY(:)
+         ZTHS(:) = ZTHS(:) + ZZY(:)*ZLSFACT(:) !-ZLVFACT(:)) ! f(L_s*(RVHNCI))
+         ZCCS(:) = ZCCS(:) - ZZX(:)
+         ZCIS(:) = ZCIS(:) + ZZX(:)
+      END IF
+   END DO
+   !
+   ZW(:,:,:)   = PRCS(:,:,:)
+   PRCS(:,:,:) = UNPACK( ZRCS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
+   ZW(:,:,:)   = PRIS(:,:,:)
+   PRIS(:,:,:) = UNPACK( ZRIS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
+   ZW(:,:,:)   = PTHS(:,:,:)
+   PTHS(:,:,:) = UNPACK( ZTHS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
+   ZW(:,:,:)   = PCCS(:,:,:)
+   PCCS(:,:,:) = UNPACK( ZCCS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
+   ZW(:,:,:)   = PCIS(:,:,:)
+   PCIS(:,:,:) = UNPACK( ZCIS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
+END IF ! INEGT
 !
 ! Budget storage
 IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
-  IF (LBUDGET_TH) CALL BUDGET (                                                 &
-                  UNPACK(ZTHS(:),MASK=GNEGT(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
-                                                              4,'HINC_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (                                                 &
-                  UNPACK(ZRCS(:),MASK=GNEGT(:,:,:),FIELD=PRCS)*PRHODJ(:,:,:),&
-                                                              7,'HINC_BU_RRC')
-  IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                  UNPACK(ZRIS(:),MASK=GNEGT(:,:,:),FIELD=PRIS)*PRHODJ(:,:,:),&
-                                                              9,'HINC_BU_RRI')
+  IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),4,'HINC_BU_RTH')
+  IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7,'HINC_BU_RRC')
+  IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),9,'HINC_BU_RRI')
   IF (LBUDGET_SV) THEN
-    CALL BUDGET ( UNPACK(ZCCS(:),MASK=GNEGT(:,:,:),FIELD=PCCS)*PRHODJ(:,:,:),&
-                                                       12+NSV_LIMA_NC,'HINC_BU_RSV')
-    CALL BUDGET ( UNPACK(ZCIS(:),MASK=GNEGT(:,:,:),FIELD=PCIS)*PRHODJ(:,:,:),&
-                                                       12+NSV_LIMA_NI,'HINC_BU_RSV')
+    CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NC,'HINC_BU_RSV')
+    CALL BUDGET (PCIS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NI,'HINC_BU_RSV')
   END IF
 END IF
 !
@@ -563,102 +571,43 @@ END IF
 !	        --------------------------
 !
 !
-! End of the heterogeneous nucleation following Phillips 08
-! Unpack variables, deallocate...
-!
-!
-ZW(:,:,:)   = PRVS(:,:,:)
-PRVS(:,:,:) = UNPACK( ZRVS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
-ZW(:,:,:)   = PRCS(:,:,:)
-PRCS(:,:,:) = UNPACK( ZRCS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
-ZW(:,:,:)   = PRIS(:,:,:)
-PRIS(:,:,:) = UNPACK( ZRIS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
-ZW(:,:,:)   = PTHS(:,:,:)
-PTHS(:,:,:) = UNPACK( ZTHS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
-ZW(:,:,:)   = PCCS(:,:,:)
-PCCS(:,:,:) = UNPACK( ZCCS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
-ZW(:,:,:)   = PCIS(:,:,:)
-PCIS(:,:,:) = UNPACK( ZCIS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
-!
-DEALLOCATE(ZRTMIN)
-DEALLOCATE(ZCTMIN)
-DEALLOCATE(ZRVT) 
-DEALLOCATE(ZRCT) 
-DEALLOCATE(ZRRT) 
-DEALLOCATE(ZRIT) 
-DEALLOCATE(ZRST) 
-DEALLOCATE(ZRGT) 
-DEALLOCATE(ZCIT)
-DEALLOCATE(ZRVS) 
-DEALLOCATE(ZRCS)
-DEALLOCATE(ZRIS)
-DEALLOCATE(ZTHS)
-DEALLOCATE(ZCCS)
-DEALLOCATE(ZCIS)
-DEALLOCATE(ZNAS)
-DEALLOCATE(ZIFS)
-DEALLOCATE(ZINS)
-DEALLOCATE(ZNIS)
-DEALLOCATE(ZRHODREF) 
-DEALLOCATE(ZZT) 
-DEALLOCATE(ZPRES) 
-DEALLOCATE(ZEXNREF)
-DEALLOCATE(ZLSFACT)
-DEALLOCATE(ZLVFACT)
-DEALLOCATE(ZSI)
-DEALLOCATE(ZTCELSIUS)
-DEALLOCATE(ZZT_SI0_BC)
-DEALLOCATE(ZLBDAC)
-DEALLOCATE(ZSI0)
-DEALLOCATE(Z_FRAC_ACT)
-DEALLOCATE(ZSW)
-DEALLOCATE(ZZW)
-DEALLOCATE(ZZX)
-DEALLOCATE(ZZY)
-!++cb++
-  DEALLOCATE(ZSI_W)
-!--cb--
-!
-!
-ELSE
-!
-! Advance the budget calls
-!
-  IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
-    IF (LBUDGET_TH) THEN
-      ZW(:,:,:) = PTHS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,4,'HIND_BU_RTH')
-      CALL BUDGET (ZW,4,'HINC_BU_RTH')
-    ENDIF
-    IF (LBUDGET_RV) THEN
-      ZW(:,:,:) = PRVS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,6,'HIND_BU_RRV')
-    ENDIF
-    IF (LBUDGET_RC) THEN
-      ZW(:,:,:) = PRCS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,7,'HINC_BU_RRC')
-    ENDIF
-    IF (LBUDGET_RI) THEN
-      ZW(:,:,:) = PRIS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,9,'HIND_BU_RRI')
-      CALL BUDGET (ZW,9,'HINC_BU_RRI')
-    ENDIF
-    IF (LBUDGET_SV) THEN
-!print*, 'LBUDGET_SV dans lima_phillips = ', LBUDGET_SV
-      ZW(:,:,:) = PCCS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,12+NSV_LIMA_NC,'HINC_BU_RSV')
-      ZW(:,:,:) = PCIS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,12+NSV_LIMA_NI,'HIND_BU_RSV')
-      CALL BUDGET (ZW,12+NSV_LIMA_NI,'HINC_BU_RSV')
-      IF (NMOD_IFN.GE.1) THEN
-         DO JL=1, NMOD_IFN
-            CALL BUDGET ( PIFS(:,:,:,JL)*PRHODJ(:,:,:),12+NSV_LIMA_IFN_FREE+JL-1,'HIND_BU_RSV') 
-         END DO
-      END IF
-    END IF
-  END IF
-!
-!
+IF (INEGT > 0) THEN
+   DEALLOCATE(ZRTMIN)
+   DEALLOCATE(ZCTMIN)
+   DEALLOCATE(ZRVT) 
+   DEALLOCATE(ZRCT) 
+   DEALLOCATE(ZRRT) 
+   DEALLOCATE(ZRIT) 
+   DEALLOCATE(ZRST) 
+   DEALLOCATE(ZRGT) 
+   DEALLOCATE(ZCIT)
+   DEALLOCATE(ZRVS) 
+   DEALLOCATE(ZRCS)
+   DEALLOCATE(ZRIS)
+   DEALLOCATE(ZTHS)
+   DEALLOCATE(ZCCS)
+   DEALLOCATE(ZCIS)
+   DEALLOCATE(ZNAS)
+   DEALLOCATE(ZIFS)
+   DEALLOCATE(ZINS)
+   DEALLOCATE(ZNIS)
+   DEALLOCATE(ZRHODREF) 
+   DEALLOCATE(ZZT) 
+   DEALLOCATE(ZPRES) 
+   DEALLOCATE(ZEXNREF)
+   DEALLOCATE(ZLSFACT)
+   DEALLOCATE(ZLVFACT)
+   DEALLOCATE(ZSI)
+   DEALLOCATE(ZTCELSIUS)
+   DEALLOCATE(ZZT_SI0_BC)
+   DEALLOCATE(ZLBDAC)
+   DEALLOCATE(ZSI0)
+   DEALLOCATE(Z_FRAC_ACT)
+   DEALLOCATE(ZSW)
+   DEALLOCATE(ZZW)
+   DEALLOCATE(ZZX)
+   DEALLOCATE(ZZY)
+   DEALLOCATE(ZSI_W)
 END IF ! INEGT > 0
 !
 !-------------------------------------------------------------------------------

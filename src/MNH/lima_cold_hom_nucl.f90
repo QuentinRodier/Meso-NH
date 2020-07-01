@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -14,8 +14,7 @@ INTERFACE
                            PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,  &
                            PTHS, PRVS, PRCS, PRRS, PRIS, PRGS,        &
                            PCCT,                                      &
-                           PCCS, PCRS, PNFS,                          &
-                           PCIS, PNIS, PNHS                           )
+                           PCCS, PCRS, PNFS, PCIS, PNHS               )
 !
 LOGICAL,                  INTENT(IN)    :: OHHONI  ! enable haze freezing
 REAL,                     INTENT(IN)    :: PTSTEP  ! Time step          
@@ -53,8 +52,6 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNFS    ! CCN C. available source
                                                    !HOMOGENEOUS nucleation of haze
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCIS    ! Ice crystal C. source
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNIS    ! Activated ice nuclei C. source
-                                                   !for IMMERSION
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNHS    ! haze homogeneous freezing
 !
 END SUBROUTINE LIMA_COLD_HOM_NUCL
@@ -68,8 +65,7 @@ END MODULE MODI_LIMA_COLD_HOM_NUCL
                            PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,  &
                            PTHS, PRVS, PRCS, PRRS, PRIS, PRGS,        &
                            PCCT,                                      &
-                           PCCS, PCRS, PNFS,                          &
-                           PCIS, PNIS, PNHS                           )
+                           PCCS, PCRS, PNFS, PCIS, PNHS               )
 !     ######################################################################
 !
 !!    PURPOSE
@@ -90,9 +86,10 @@ END MODULE MODI_LIMA_COLD_HOM_NUCL
 !!      Original             ??/??/13 
 !!      C. Barthe  * LACy*   jan. 2014  add budgets
 !!      B.Vie 10/2016 Bug zero division
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  M. Leriche     05/2019: suppress unused actived coated IN (immersion) source 
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
-!
+!  B. Vie         03/2020: correction of budgets parallelization
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -157,8 +154,6 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNFS    ! CCN C. available source
                                                    !HOMOGENEOUS nucleation of haze
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCIS    ! Ice crystal C. source
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNIS    ! Activated ice nuclei C. source
-                                                   !for IMMERSION
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNHS    ! haze homogeneous freezing
 !
 !*       0.2   Declarations of local variables :
@@ -184,8 +179,6 @@ REAL, DIMENSION(:),   ALLOCATABLE :: ZCCS    ! Cloud water conc. source
 REAL, DIMENSION(:),   ALLOCATABLE :: ZCRS    ! Rain water conc. source
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZNFS    ! available nucleus conc. source
 REAL, DIMENSION(:),   ALLOCATABLE :: ZCIS    ! Pristine ice conc. source
-REAL, DIMENSION(:,:), ALLOCATABLE :: ZNIS    ! Nucleated Ice nuclei conc. source 
-                                             !by Immersion
 REAL, DIMENSION(:),   ALLOCATABLE :: ZZNHS   ! Nucleated Ice nuclei conc. source
                                              !by Homogeneous freezing
 !
@@ -283,7 +276,6 @@ IF (INEGT.GT.0) THEN
    ALLOCATE(ZCIS(INEGT))
    !
    ALLOCATE(ZNFS(INEGT,NMOD_CCN))
-   ALLOCATE(ZNIS(INEGT,NMOD_IMM))
    ALLOCATE(ZZNHS(INEGT))
    !
    ALLOCATE(ZRHODREF(INEGT)) 
@@ -315,9 +307,6 @@ IF (INEGT.GT.0) THEN
       !
       DO JMOD_CCN = 1, NMOD_CCN
          ZNFS(JL,JMOD_CCN) = PNFS(I1(JL),I2(JL),I3(JL),JMOD_CCN)
-      ENDDO
-      DO JMOD_IMM = 1, NMOD_IMM
-         ZNIS(JL,JMOD_IMM) = PNIS(I1(JL),I2(JL),I3(JL),JMOD_IMM)
       ENDDO
       ZZNHS(JL) = ZNHS(I1(JL),I2(JL),I3(JL))
       ZRHODREF(JL) = PRHODREF(I1(JL),I2(JL),I3(JL))
@@ -443,33 +432,33 @@ IF (INEGT.GT.0) THEN
       ZTHS(:) = ZTHS(:) + ZZW(:) * (ZLSFACT(:)-ZLVFACT(:)) ! f(L_s*(RHHONI))
       ZCIS(:) = ZCIS(:) + ZZX(:)
 !
+!
+      ZW(:,:,:)   = PRVS(:,:,:)
+      PRVS(:,:,:) = UNPACK( ZRVS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
+      ZW(:,:,:)   = PRIS(:,:,:)
+      PRIS(:,:,:) = UNPACK( ZRIS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
+      ZW(:,:,:)   = PTHS(:,:,:)
+      PTHS(:,:,:) = UNPACK( ZTHS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
+      ZW(:,:,:)   = PCIS(:,:,:)
+      PCIS(:,:,:) = UNPACK( ZCIS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
    END IF ! OHHONI
+END IF ! INEGT (exclude calls to BUDGET from INEGT test
 !
 ! Budget storage
-   IF (NBUMOD==KMI .AND. LBU_ENABLE .AND. OHHONI .AND. NMOD_CCN.GT.0 ) THEN
-     IF (LBUDGET_TH) CALL BUDGET (                                                 &
-                     UNPACK(ZTHS(:),MASK=GNEGT(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
-                                                                 4,'HONH_BU_RTH')
-     IF (LBUDGET_RV) CALL BUDGET (                                                 &
-                     UNPACK(ZRVS(:),MASK=GNEGT(:,:,:),FIELD=PRVS)*PRHODJ(:,:,:),&
-                                                                 6,'HONH_BU_RRV')
-     IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                     UNPACK(ZRIS(:),MASK=GNEGT(:,:,:),FIELD=PRIS)*PRHODJ(:,:,:),&
-                                                                 9,'HONH_BU_RRI')
-     IF (LBUDGET_SV) THEN
-       CALL BUDGET ( UNPACK(ZCIS(:),MASK=GNEGT(:,:,:),FIELD=PCIS)*PRHODJ(:,:,:),&
-                                                          12+NSV_LIMA_NI,'HONH_BU_RSV') ! RCI
-       IF (NMOD_CCN.GE.1) THEN
-          DO JL=1, NMOD_CCN
-             CALL BUDGET ( UNPACK(ZNFS(:,JL),MASK=GNEGT(:,:,:),FIELD=PNFS(:,:,:,JL))*PRHODJ(:,:,:),&
-                  12+NSV_LIMA_CCN_FREE+JL-1,'HONH_BU_RSV') 
-          END DO
-          CALL BUDGET ( UNPACK(ZZNHS(:),MASK=GNEGT(:,:,:),FIELD=ZNHS(:,:,:))*PRHODJ(:,:,:),&
-                  12+NSV_LIMA_HOM_HAZE,'HONH_BU_RSV') 
-
-       END IF
-     END IF
+IF (NBUMOD==KMI .AND. LBU_ENABLE .AND. OHHONI .AND. NMOD_CCN.GT.0 ) THEN
+   IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),4,'HONH_BU_RTH')
+   IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),6,'HONH_BU_RRV')
+   IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),9,'HONH_BU_RRI')
+   IF (LBUDGET_SV) THEN
+      CALL BUDGET (PCIS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NI,'HONH_BU_RSV')
+      IF (NMOD_CCN.GE.1) THEN
+         DO JL=1, NMOD_CCN
+            CALL BUDGET (PNFS(:,:,:,JL)*PRHODJ(:,:,:),12+NSV_LIMA_CCN_FREE+JL-1,'HONH_BU_RSV') 
+         END DO
+         CALL BUDGET (PNHS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_HOM_HAZE,'HONH_BU_RSV') 
+      END IF
    END IF
+END IF
 !
 !
 !-------------------------------------------------------------------------------
@@ -483,44 +472,48 @@ IF (INEGT.GT.0) THEN
 !                 -> Pruppacher(1995)
 !
 IF (LWARM) THEN
-   ZZW(:) = 0.0
-   ZZX(:) = 0.0
-   WHERE( (ZZT(:)<XTT-35.0) .AND. (ZCCT(:)>XCTMIN(2)) .AND. (ZRCT(:)>XRTMIN(2)) )
-      ZLBDAC(:) = XLBC*ZCCT(:) / (ZRCT(:)) ! Lambda_c**3
-      ZZX(:) = 1.0 / ( 1.0 + (XC_HONC/ZLBDAC(:))*PTSTEP*                      &
-           EXP( XTEXP1_HONC + ZTCELSIUS(:)*(                        &
-           XTEXP2_HONC + ZTCELSIUS(:)*(                        &
-           XTEXP3_HONC + ZTCELSIUS(:)*(                        &
-           XTEXP4_HONC + ZTCELSIUS(:)*XTEXP5_HONC))) ) )**XNUC
-      ZZW(:) = ZCCS(:) * (1.0 - ZZX(:))                                  ! CCHONI
-!                                                                       
-      ZCCS(:) = ZCCS(:) - ZZW(:)
-      ZCIS(:) = ZCIS(:) + ZZW(:)
-!
-      ZZW(:) = ZRCS(:) * (1.0 - ZZX(:))                                  ! RCHONI
-!                                                                       
-      ZRCS(:) = ZRCS(:) - ZZW(:)
-      ZRIS(:) = ZRIS(:) + ZZW(:)
-      ZTHS(:) = ZTHS(:) + ZZW(:) * (ZLSFACT(:)-ZLVFACT(:)) ! f(L_f*(RCHONI))
-   END WHERE
-!
+   IF (INEGT.GT.0) THEN
+      ZZW(:) = 0.0
+      ZZX(:) = 0.0
+      WHERE( (ZZT(:)<XTT-35.0) .AND. (ZCCT(:)>XCTMIN(2)) .AND. (ZRCT(:)>XRTMIN(2)) )
+         ZLBDAC(:) = XLBC*ZCCT(:) / (ZRCT(:)) ! Lambda_c**3
+         ZZX(:) = 1.0 / ( 1.0 + (XC_HONC/ZLBDAC(:))*PTSTEP*                      &
+              EXP( XTEXP1_HONC + ZTCELSIUS(:)*(                        &
+              XTEXP2_HONC + ZTCELSIUS(:)*(                        &
+              XTEXP3_HONC + ZTCELSIUS(:)*(                        &
+              XTEXP4_HONC + ZTCELSIUS(:)*XTEXP5_HONC))) ) )**XNUC
+         ZZW(:) = ZCCS(:) * (1.0 - ZZX(:))                                  ! CCHONI
+         !                                                                       
+         ZCCS(:) = ZCCS(:) - ZZW(:)
+         ZCIS(:) = ZCIS(:) + ZZW(:)
+         !
+         ZZW(:) = ZRCS(:) * (1.0 - ZZX(:))                                  ! RCHONI
+         !                                                                       
+         ZRCS(:) = ZRCS(:) - ZZW(:)
+         ZRIS(:) = ZRIS(:) + ZZW(:)
+         ZTHS(:) = ZTHS(:) + ZZW(:) * (ZLSFACT(:)-ZLVFACT(:)) ! f(L_f*(RCHONI))
+      END WHERE
+      !
+      ZW(:,:,:)   = PRCS(:,:,:)
+      PRCS(:,:,:) = UNPACK( ZRCS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
+      ZW(:,:,:)   = PRIS(:,:,:)
+      PRIS(:,:,:) = UNPACK( ZRIS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
+      ZW(:,:,:)   = PTHS(:,:,:)
+      PTHS(:,:,:) = UNPACK( ZTHS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
+      ZW(:,:,:)   = PCCS(:,:,:)
+      PCCS(:,:,:) = UNPACK( ZCCS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
+      ZW(:,:,:)   = PCIS(:,:,:)
+      PCIS(:,:,:) = UNPACK( ZCIS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
+   END IF
 ! Budget storage
    IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
-     IF (LBUDGET_TH) CALL BUDGET (                                              &
-                     UNPACK(ZTHS(:),MASK=GNEGT(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
-                                                                 4,'HONC_BU_RTH')
-     IF (LBUDGET_RC) CALL BUDGET (                                              &
-                     UNPACK(ZRCS(:),MASK=GNEGT(:,:,:),FIELD=PRCS)*PRHODJ(:,:,:),&
-                                                                 7,'HONC_BU_RRC')
-     IF (LBUDGET_RI) CALL BUDGET (                                              &
-                     UNPACK(ZRIS(:),MASK=GNEGT(:,:,:),FIELD=PRIS)*PRHODJ(:,:,:),&
-                                                                 9,'HONC_BU_RRI')
-     IF (LBUDGET_SV) THEN
-       CALL BUDGET ( UNPACK(ZCCS(:),MASK=GNEGT(:,:,:),FIELD=PCCS)*PRHODJ(:,:,:),&
-                                                          12+NSV_LIMA_NC,'HONC_BU_RSV')
-       CALL BUDGET ( UNPACK(ZCIS(:),MASK=GNEGT(:,:,:),FIELD=PCIS)*PRHODJ(:,:,:),&
-                                                          12+NSV_LIMA_NI,'HONC_BU_RSV')
-     END IF
+      IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),4,'HONC_BU_RTH')
+      IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7,'HONC_BU_RRC')
+      IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),9,'HONC_BU_RRI')
+      IF (LBUDGET_SV) THEN
+         CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NC,'HONC_BU_RSV')
+         CALL BUDGET (PCIS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NI,'HONC_BU_RSV')
+      END IF
    END IF
 END IF
 !
@@ -535,31 +528,34 @@ END IF
 !  Compute the drop homogeneous nucleation source: RRHONG
 !
 IF (LWARM .AND. LRAIN) THEN
-   ZZW(:) = 0.0
-   WHERE( (ZZT(:)<XTT-35.0) .AND. (ZRRS(:)>XRTMIN(3)/PTSTEP) )
-      ZZW(:)  = ZRRS(:) ! Instantaneous freezing of the raindrops
-      ZRRS(:) = ZRRS(:) - ZZW(:)
-      ZRGS(:) = ZRGS(:) + ZZW(:)
-      ZTHS(:) = ZTHS(:) + ZZW(:)*(ZLSFACT(:)-ZLVFACT(:)) ! f(L_f*(RRHONG))
-!
-      ZCRS(:) = 0.0     ! No more raindrops when T<-35 C
-   ENDWHERE
-!
-! Budget storage
+   IF (INEGT.GT.0) THEN
+      ZZW(:) = 0.0
+      WHERE( (ZZT(:)<XTT-35.0) .AND. (ZRRS(:)>XRTMIN(3)/PTSTEP) )
+         ZZW(:)  = ZRRS(:) ! Instantaneous freezing of the raindrops
+         ZRRS(:) = ZRRS(:) - ZZW(:)
+         ZRGS(:) = ZRGS(:) + ZZW(:)
+         ZTHS(:) = ZTHS(:) + ZZW(:)*(ZLSFACT(:)-ZLVFACT(:)) ! f(L_f*(RRHONG))
+         !
+         ZCRS(:) = 0.0     ! No more raindrops when T<-35 C
+      ENDWHERE
+      !
+      ZW(:,:,:)   = PRRS(:,:,:)
+      PRRS(:,:,:) = UNPACK( ZRRS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
+      ZW(:,:,:)   = PRGS(:,:,:)
+      PRGS(:,:,:) = UNPACK( ZRGS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
+      ZW(:,:,:)   = PTHS(:,:,:)
+      PTHS(:,:,:) = UNPACK( ZTHS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
+      ZW(:,:,:)   = PCRS(:,:,:)
+      PCRS(:,:,:) = UNPACK( ZCRS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
+   END IF
+      ! Budget storage
    IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
-     IF (LBUDGET_TH) CALL BUDGET (                                                 &
-                     UNPACK(ZTHS(:),MASK=GNEGT(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
-                                                                 4,'HONR_BU_RTH')
-     IF (LBUDGET_RR) CALL BUDGET (                                                 &
-                     UNPACK(ZRRS(:),MASK=GNEGT(:,:,:),FIELD=PRRS)*PRHODJ(:,:,:),&
-                                                                 8,'HONR_BU_RRR')
-     IF (LBUDGET_RG) CALL BUDGET (                                                 &
-                     UNPACK(ZRGS(:),MASK=GNEGT(:,:,:),FIELD=PRGS)*PRHODJ(:,:,:),&
-                                                                11,'HONR_BU_RRG')
-     IF (LBUDGET_SV) THEN
-       CALL BUDGET ( UNPACK(ZCRS(:),MASK=GNEGT(:,:,:),FIELD=PCRS)*PRHODJ(:,:,:),&
-                                                          12+NSV_LIMA_NR,'HONR_BU_RSV')
-     END IF
+      IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),4,'HONR_BU_RTH')
+      IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),8,'HONR_BU_RRR')
+      IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),11,'HONR_BU_RRG')
+      IF (LBUDGET_SV) THEN
+         CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NR,'HONR_BU_RSV')
+      END IF
    END IF
 END IF
 !
@@ -570,27 +566,7 @@ END IF
 !*       4.     Unpack variables, clean
 !	        -----------------------
 !
-!
-! End of homogeneous nucleation processes
-!
-   ZW(:,:,:)   = PRVS(:,:,:)
-   PRVS(:,:,:) = UNPACK( ZRVS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
-   ZW(:,:,:)   = PRCS(:,:,:)
-   PRCS(:,:,:) = UNPACK( ZRCS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
-   ZW(:,:,:)   = PRRS(:,:,:)
-   PRRS(:,:,:) = UNPACK( ZRRS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
-   ZW(:,:,:)   = PRIS(:,:,:)
-   PRIS(:,:,:) = UNPACK( ZRIS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
-   ZW(:,:,:)   = PRGS(:,:,:)
-   PRGS(:,:,:) = UNPACK( ZRGS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
-   ZW(:,:,:)   = PTHS(:,:,:)
-   PTHS(:,:,:) = UNPACK( ZTHS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
-   ZW(:,:,:)   = PCCS(:,:,:)
-   PCCS(:,:,:) = UNPACK( ZCCS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
-   ZW(:,:,:)   = PCRS(:,:,:)
-   PCRS(:,:,:) = UNPACK( ZCRS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
-   ZW(:,:,:)   = PCIS(:,:,:)
-   PCIS(:,:,:) = UNPACK( ZCIS(:),MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:) )
+IF (INEGT.GT.0) THEN
 !   
    DEALLOCATE(ZRVT) 
    DEALLOCATE(ZRCT) 
@@ -614,7 +590,6 @@ END IF
    DEALLOCATE(ZCIS)
 !
    DEALLOCATE(ZNFS)
-   DEALLOCATE(ZNIS)
    DEALLOCATE(ZZNHS)
 !
    DEALLOCATE(ZRHODREF) 
@@ -631,57 +606,6 @@ END IF
    DEALLOCATE(ZZW) 
    DEALLOCATE(ZZX)
    DEALLOCATE(ZZY)
-!
-ELSE
-!
-! Advance the budget calls
-!
-   IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
-     IF (LBUDGET_TH) THEN
-       ZW(:,:,:) = PTHS(:,:,:)*PRHODJ(:,:,:)
-       IF( OHHONI .AND. NMOD_CCN.GT.0 ) CALL BUDGET (ZW,4,'HONH_BU_RTH')
-       IF (LWARM) CALL BUDGET (ZW,4,'HONC_BU_RTH')
-       IF (LWARM .AND. LRAIN) CALL BUDGET (ZW,4,'HONR_BU_RTH')
-     ENDIF
-     IF (LBUDGET_RV) THEN
-       ZW(:,:,:) = PRVS(:,:,:)*PRHODJ(:,:,:)
-       IF( OHHONI .AND. NMOD_CCN.GT.0 ) CALL BUDGET (ZW,6,'HONH_BU_RRV')
-     ENDIF
-     IF (LBUDGET_RC) THEN
-       ZW(:,:,:) = PRCS(:,:,:)*PRHODJ(:,:,:)
-       IF (LWARM) CALL BUDGET (ZW,7,'HONC_BU_RRC')
-     ENDIF
-     IF (LBUDGET_RR) THEN
-       ZW(:,:,:) = PRRS(:,:,:)*PRHODJ(:,:,:)
-       IF (LWARM .AND. LRAIN) CALL BUDGET (ZW,8,'HONR_BU_RRR')
-     ENDIF
-     IF (LBUDGET_RI) THEN
-       ZW(:,:,:) = PRIS(:,:,:)*PRHODJ(:,:,:)
-       IF( OHHONI .AND. NMOD_CCN.GT.0 ) CALL BUDGET (ZW,9,'HONH_BU_RRI')
-       IF (LWARM) CALL BUDGET (ZW,9,'HONC_BU_RRI')
-     ENDIF
-     IF (LBUDGET_RG) THEN
-       ZW(:,:,:) = PRGS(:,:,:)*PRHODJ(:,:,:)
-       IF (LWARM .AND. LRAIN) CALL BUDGET (ZW,11,'HONR_BU_RRG')
-     ENDIF
-     IF (LBUDGET_SV) THEN
-       ZW(:,:,:) = PCCS(:,:,:)*PRHODJ(:,:,:)
-       IF (LWARM) CALL BUDGET (ZW,12+NSV_LIMA_NC,'HONC_BU_RSV')
-       ZW(:,:,:) = PCRS(:,:,:)*PRHODJ(:,:,:)
-       IF (LWARM .AND. LRAIN) CALL BUDGET (ZW,12+NSV_LIMA_NR,'HONR_BU_RSV')
-       ZW(:,:,:) = PCIS(:,:,:)*PRHODJ(:,:,:)
-       IF( OHHONI .AND. NMOD_CCN.GT.0 ) CALL BUDGET (ZW,12+NSV_LIMA_NI,'HONH_BU_RSV')
-       IF (LWARM) CALL BUDGET (ZW,12+NSV_LIMA_NI,'HONC_BU_RSV')
-       IF( OHHONI .AND. NMOD_CCN.GT.0 ) THEN
-          DO JL=1, NMOD_CCN
-             ZW(:,:,:) = PNFS(:,:,:,JL)*PRHODJ(:,:,:)
-             CALL BUDGET (ZW,12+NSV_LIMA_CCN_FREE+JL-1,'HONH_BU_RSV') 
-          END DO
-          ZW(:,:,:) = ZNHS(:,:,:)*PRHODJ(:,:,:)
-          CALL BUDGET (ZW,12+NSV_LIMA_HOM_HAZE,'HONH_BU_RSV')
-       END IF
-     END IF
-   END IF
 !
 END IF ! INEGT>0
 !

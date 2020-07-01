@@ -1659,7 +1659,8 @@ IF ( CBUTYPE /= "NONE" .AND. NBUMOD == KMI ) THEN
              LNUMDIFU,LNUMDIFTH,LNUMDIFSV,                                    &
              LHORELAX_UVWTH,LHORELAX_RV, LHORELAX_RC,LHORELAX_RR,             &
              LHORELAX_RI,LHORELAX_RS,LHORELAX_RG, LHORELAX_RH,LHORELAX_TKE,   &
-             LHORELAX_SV,LVE_RELAX,LCHTRANS,LNUDGING,LDRAGTREE,LDEPOTREE,     &
+             LHORELAX_SV,LVE_RELAX,LVE_RELAX_GRD,                             &
+             LCHTRANS,LNUDGING,LDRAGTREE,LDEPOTREE,                           &
              CRAD,CDCONV,CSCONV,CTURB,CTURBDIM,CCLOUD                         )
 END IF
 !

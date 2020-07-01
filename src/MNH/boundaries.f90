@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/boundaries.f90,v $ $Revision: 1.3.2.1.2.1.2.2.12.3 $ $Date: 2014/01/09 15:01:54 $
 !-----------------------------------------------------------------
 !#####################
 MODULE MODI_BOUNDARIES
@@ -176,46 +172,43 @@ END MODULE MODI_BOUNDARIES
 !!      Modification    18/07/17 (Vionnet)  Add blowing snow variables 
 !!      Modification    01/2018  (JL Redelsperger) Correction for TKE treatment
 !!      Modification    03/02/2020 (B. Vié)  Correction for SV with LIMA
+!  P. Wautelet 04/06/2020: correct call to Set_conc_lima
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !         
-USE MODD_PARAMETERS
-USE MODD_CTURB
-USE MODD_CONF
-USE MODD_NSV
-USE MODD_CH_MNHC_n,   ONLY : LUSECHEM, LUSECHIC
-USE MODD_CH_AEROSOL , ONLY : LORILAM
-USE MODD_DUST
-USE MODD_SALT,        ONLY : LSALT
-USE MODD_PASPOL,      ONLY : LPASPOL
-USE MODD_CONDSAMP,    ONLY : LCONDSAMP
-USE MODD_ELEC_DESCR             
-USE MODD_ELEC_n 
 USE MODD_BLOWSNOW,  ONLY : LBLOWSNOW,NBLOWSNOW_2D
 USE MODD_BLOWSNOW_n
-USE MODD_REF_n    
-USE MODD_PARAM_n,    ONLY : CELEC,CCLOUD 
-USE MODD_LBC_n,      ONLY : XPOND
+USE MODD_CH_AEROSOL , ONLY : LORILAM
+USE MODD_CH_MNHC_n,   ONLY : LUSECHEM, LUSECHIC
+USE MODD_CONDSAMP,    ONLY : LCONDSAMP
+USE MODD_CONF
+USE MODD_CTURB
+USE MODD_DUST
 USE MODD_GRID_n,    ONLY : XZZ
-!
-USE MODD_PARAM_LIMA, ONLY : NMOD_CCN, NMOD_IFN, LBOUND, LWARM, LCOLD
-!
+USE MODD_ELEC_DESCR
+USE MODD_ELEC_n
 #ifdef MNH_FOREFIRE
 USE MODD_FOREFIRE,   ONLY : LFOREFIRE
 #endif
-USE MODD_NESTING,      ONLY : NDAD
-!
-USE MODE_MODELN_HANDLER
-!
-USE MODI_ION_BOUNDARIES
-USE MODI_CH_BOUNDARIES
-!
+USE MODD_LBC_n,      ONLY : XPOND
 USE MODE_ll
-!
+USE MODD_NESTING,      ONLY : NDAD
+USE MODD_NSV
+USE MODD_PARAMETERS
+USE MODD_PARAM_LIMA, ONLY : NMOD_CCN, NMOD_IFN, LBOUND, LWARM, LCOLD
+USE MODD_PARAM_n,    ONLY : CELEC,CCLOUD
+USE MODD_PASPOL,      ONLY : LPASPOL
+USE MODD_REF_n
+USE MODD_SALT,        ONLY : LSALT
+
+USE MODE_MODELN_HANDLER
+USE MODE_SET_CONC_LIMA
+
+USE MODI_CH_BOUNDARIES
 USE MODI_INIT_AEROSOL_CONCENTRATION
-USE MODI_SET_CONC_LIMA
-!
+USE MODI_ION_BOUNDARIES
+
 IMPLICIT NONE
 !
 !
@@ -1013,7 +1006,7 @@ IF (CCLOUD == 'LIMA' .AND. IMI == 1 .AND. CPROGRAM=='MESONH') THEN
      ENDIF
   END DO
 
-  CALL SET_CONC_LIMA('NONE',PRHODREF,ZRT,ZSVT)
+  CALL SET_CONC_LIMA( IMI, 'NONE', PRHODREF, ZRT(:, :, :, :), ZSVT(:, :, :, NSV_LIMA_BEG:NSV_LIMA_END) )
   IF (NSV_LIMA_NC.GE.1) THEN
      IF (GLIMABOUNDARY(NSV_LIMA_NC)) THEN
         PSVT(IIB-1,:,:,NSV_LIMA_NC)=ZSVT(IIB-1,:,:,NSV_LIMA_NC) ! cloud

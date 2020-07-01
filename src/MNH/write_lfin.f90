@@ -761,11 +761,13 @@ IF (NSV >=1) THEN
       TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(3))//INDICE//'T'
     END IF
 ! N IMM nucl
-    I = 0
     IF (JSV .GE. NSV_LIMA_IMM_NUCL .AND. JSV .LT. NSV_LIMA_IMM_NUCL + NMOD_IMM) THEN
-      I = I + 1
-      WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(I))
+      DO I =  1, NMOD_IMM ! to be supressed
+! ML start to 1 to get the CCN mode indice acting as IN by immersion
+!      WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(JSV - NSV_LIMA_BEG - NSV_LIMA_IMM_NUCL + 1))
+        WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(I)) ! to be supresses
       TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(4))//INDICE//'T'
+      ENDDO
     END IF
 ! Hom. freez. of CCN
     IF (JSV .EQ. NSV_LIMA_HOM_HAZE) THEN
