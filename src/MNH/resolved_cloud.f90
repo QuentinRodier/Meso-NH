@@ -571,6 +571,7 @@ IF (HCLOUD == 'C2R2' .OR. HCLOUD == 'C3R5' .OR. HCLOUD == 'KHKO' &
   PSVT(:,:,IKE+1,ISVBEG:ISVEND) = PSVT(:,:,IKE,ISVBEG:ISVEND)
 ENDIF
 !
+!
 !*       3.     REMOVE NEGATIVE VALUES
 !               ----------------------
 !
@@ -717,6 +718,8 @@ SELECT CASE ( HCLOUD )
 !*       9.     MIXED-PHASE MICROPHYSICAL SCHEME (WITH 3 ICE SPECIES)
 !               -----------------------------------------------------
 !
+    allocate( zexn( size( pzz, 1 ), size( pzz, 2 ), size( pzz, 3 ) ) )
+    ZEXN(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
 !
 !*       9.1    Compute the explicit microphysical sources
 !
@@ -790,12 +793,16 @@ SELECT CASE ( HCLOUD )
                     PRS=PRS(:,:,:,5)*PTSTEP,                                 &
                     PRG=PRS(:,:,:,6)*PTSTEP                                  )
     END IF
+
+    deallocate( zexn )
 !
   CASE ('ICE4')
 !
 !*       10.    MIXED-PHASE MICROPHYSICAL SCHEME (WITH 4 ICE SPECIES)
 !               -----------------------------------------------------
 !
+    allocate( zexn( size( pzz, 1 ), size( pzz, 2 ), size( pzz, 3 ) ) )
+    ZEXN(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
 !
 !*       10.1   Compute the explicit microphysical sources
 !
@@ -876,6 +883,8 @@ SELECT CASE ( HCLOUD )
                     PRG=PRS(:,:,:,6)*PTSTEP,                                 &
                     PRH=PRS(:,:,:,7)*PTSTEP                                  )
     END IF
+
+    deallocate( zexn )
 !           
 !
 !*       12.    2-MOMENT MIXED-PHASE MICROPHYSICAL SCHEME LIMA
