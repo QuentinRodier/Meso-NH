@@ -1,20 +1,11 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for CVS information
-!-----------------------------------------------------------------
-! $Source$
-! $Name$ 
-! $Revision$ 
-! $Date$
-!-----------------------------------------------------------------
-!-----------------------------------------------------------------
-
-!      ########################
-       MODULE MODD_STRUCTURE2_ll
-!      ########################
+!########################
+MODULE MODD_STRUCTURE2_ll
+!########################
 !
 !!****  *MODD_PARALLEL2* Contains the variables to treat
 !                        the second layer of the halo
@@ -46,18 +37,20 @@
 !
 !-------------------------------------------------------------------------------
 !
-!     #############
-      TYPE HALO2_ll
-!     #############
+implicit none
+!
+!############
+TYPE HALO2_ll
+!############
 !
 ! Type for the second layer of the halo
 !
-  REAL, DIMENSION(:,:), POINTER :: WEST
-  REAL, DIMENSION(:,:), POINTER :: EAST
-  REAL, DIMENSION(:,:), POINTER :: NORTH
-  REAL, DIMENSION(:,:), POINTER :: SOUTH
+  REAL, DIMENSION(:,:), POINTER :: WEST  => NULL()
+  REAL, DIMENSION(:,:), POINTER :: EAST  => NULL()
+  REAL, DIMENSION(:,:), POINTER :: NORTH => NULL()
+  REAL, DIMENSION(:,:), POINTER :: SOUTH => NULL()
 !
-      END TYPE HALO2_ll
+END TYPE HALO2_ll
 !
 !-------------------------------------------------------------------------------
 !

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2006-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -53,15 +53,17 @@
 !!
 !!    no transfer of the file when closing   Dec. 09, 1996 (V.Masson)
 !!    + changes call to READ_HGRID
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 14/04/2020: add missing initializations (XY_TO_LATLON was not working)
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
 !            -----------
 !
-!
+use MODD_CONF,             only: CPROGRAM
+USE MODD_DIM_n
 USE MODD_GRID
 USE MODD_IO,               ONLY: TFILEDATA
 USE MODD_PGDDIM
@@ -69,10 +71,14 @@ USE MODD_PGDGRID
 USE MODD_PARAMETERS
 USE MODD_LUNIT
 !
+USE MODE_FIELD,            ONLY: INI_FIELD_LIST
 USE MODE_GRIDPROJ
 USE MODE_IO,               only: IO_Config_set, IO_Init
+use MODE_IO_FIELD_READ,    only: IO_Field_read
 USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
 USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list
+USE MODE_MODELN_HANDLER,   ONLY: GOTO_MODEL
+use MODE_SPLITTINGZ_ll
 !
 USE MODI_INI_CST
 USE MODI_READ_HGRID
@@ -115,16 +121,26 @@ NAMELIST/NAM_INIFILE/ YINIFILE
 !*    1.     Initializations
 !            ---------------
 !
-CALL INI_CST
+CALL GOTO_MODEL(1)
+!
+CALL VERSION()
+!
+CPROGRAM='LAT2XY'
+!
+CALL IO_Init()
+!
+CALL INI_CST()
+!
+CALL INI_FIELD_LIST(1)
 !
 !*    2.     Reading of namelist file
 !            ------------------------
-CALL IO_Init()
 !
 CALL IO_File_add2list(TZNMLFILE,'XY2LATLON1.nam','NML','READ')
 CALL IO_File_open(TZNMLFILE)
 INAM=TZNMLFILE%NLU
 READ(INAM,NAM_INIFILE)
+!
 READ(INAM,NAM_CONFIO)
 CALL IO_Config_set()
 CALL IO_File_close(TZNMLFILE)
@@ -134,6 +150,15 @@ CALL IO_File_close(TZNMLFILE)
 !
 CALL IO_File_add2list(TZINIFILE,TRIM(YINIFILE),'MNH','READ',KLFITYPE=2,KLFIVERB=2)
 CALL IO_File_open(TZINIFILE)
+!
+CALL IO_Field_read(TZINIFILE,'IMAX',  NIMAX)
+CALL IO_Field_read(TZINIFILE,'JMAX',  NJMAX)
+NKMAX = 1
+CALL IO_Field_read(TZINIFILE,'JPHEXT',JPHEXT)
+!
+CALL SET_JP_ll(1,JPHEXT,JPVEXT,JPHEXT)
+CALL SET_DIM_ll(NIMAX, NJMAX, NKMAX)
+CALL INI_PARAZ_ll(IRESP)
 !
 !*    2.     Reading of MESONH file
 !            ----------------------

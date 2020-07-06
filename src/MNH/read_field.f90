@@ -241,6 +241,7 @@ END MODULE MODI_READ_FIELD
 !  P. Wautelet 13/02/2019: removed PPABSM and PTSTEP dummy arguments (bugfix: PPABSM was intent(OUT))
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 14/03/2019: correct ZWS when variable not present in file
+!! M. Leriche  10/06/2019: in restart case read all immersion modes for LIMA
 !!-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -715,11 +716,12 @@ DO JSV = NSV_LIMA_BEG,NSV_LIMA_END
       TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(3))//INDICE//'T'
     END IF
 ! N IMM nucl
-    I = 0
     IF (JSV .GE. NSV_LIMA_IMM_NUCL .AND. JSV .LT. NSV_LIMA_IMM_NUCL + NMOD_IMM) THEN
-      I = I + 1
-      WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(I))
-      TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(4))//INDICE//'T'
+      DO I= 1, NMOD_IMM ! to be supressed
+        WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(I)) ! to be supressed
+!        WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(JSV - NSV_LIMA_BEG - NSV_LIMA_IMM_NUCL + 1))
+        TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(4))//INDICE//'T'
+      ENDDO
     END IF
 ! Hom. freez. of CCN
     IF (JSV .EQ. NSV_LIMA_HOM_HAZE) THEN
@@ -797,7 +799,7 @@ IF (NSV_CHACEND>=NSV_CHACBEG) THEN
     CNAMES(JSV-NSV_CHACBEG+NSV_CHGS+1) = UPCASE(CNAMES(JSV-NSV_CHACBEG+NSV_CHGS+1))
     SELECT CASE(HGETSVT(JSV))
       CASE ('READ')
-        TZFIELD%CMNHNAME   = TRIM(CNAMES(JSV-NSV_CHACBEG+NSV_CHGS+1))//'M'
+        TZFIELD%CMNHNAME   = TRIM(CNAMES(JSV-NSV_CHACBEG+NSV_CHGS+1))//'T'
         TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
         WRITE(TZFIELD%CCOMMENT,'(A6,A4,I3.3,A4)')'X_Y_Z_','CHAQ',JSV,' (M)'
         CALL IO_Field_read(TPINIFILE,TZFIELD,PSVT(:,:,:,JSV))
@@ -1666,3 +1668,4 @@ END IF
 ! 
 !
 END SUBROUTINE READ_FIELD
+

@@ -17,7 +17,7 @@ INTERFACE
                             PRTHS, PRRS, PRTKES, PRSVS,                        &
                             PRTHS_CLD, PRRS_CLD, PRSVS_CLD, PRTKES_ADV         )
 !
-USE MODD_IO,     ONLY: TFILEDATA
+USE MODD_IO,        ONLY: TFILEDATA
 USE MODD_TYPE_DATE, ONLY: DATE_TIME
 !
 LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
@@ -133,12 +133,14 @@ END MODULE MODI_ADVECTION_METSV
 !!                  04/2016  (C.Lac)       : correction of negativity for KHKO
 !!                  10/2016  (C.Lac) Correction on the flag for Strang splitting
 !!                                  to insure reproducibility between START and RESTA
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!                  07/2017  (V. Vionnet)  : add advection of 2D variables at
-!!                                      the surface for the blowing snow scheme
-!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!  V. Vionnet     07/2017: add advection of 2D variables at the surface for the blowing snow scheme
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !  B. Vie         03/2020: LIMA negativity checks after turbulence, advection and microphysics budgets
+!  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!  P. Wautelet 11/06/2020: bugfix: correct PRSVS array indices
+!  P. Wautelet + Benoît Vié 06/2020: improve removal of negative scalar variables + adapt the corresponding budgets
+!  P. Wautelet 30/06/2020: move removal of negative scalar variables to Sources_neg_correct
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -167,6 +169,7 @@ use mode_budget,         only: Budget_store_init, Budget_store_end
 USE MODE_IO_FIELD_WRITE, only: IO_Field_write
 USE MODE_ll
 USE MODE_MSG
+use mode_sources_neg_correct, only: Sources_neg_correct
 !
 USE MODI_ADV_BOUNDARIES
 USE MODI_CONTRAV
@@ -692,154 +695,8 @@ if ( lbudget_sv) then
   end do
 end if
 
-if ( hcloud == 'ICE3' .or. hcloud == 'ICE4' .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA' ) then
-  if (lbudget_th) call Budget_store_init( tbudgets(NBUDGET_TH), 'NEADV', prths(:, :, :) )
-  if (lbudget_rv) call Budget_store_init( tbudgets(NBUDGET_RV), 'NEADV', prrs (:, :, :, 1) )
-  if (lbudget_rc) call Budget_store_init( tbudgets(NBUDGET_RC), 'NEADV', prrs (:, :, :, 2) )
-  if (lbudget_rr) call Budget_store_init( tbudgets(NBUDGET_RR), 'NEADV', prrs (:, :, :, 3) )
-  if (lbudget_ri) call Budget_store_init( tbudgets(NBUDGET_RI), 'NEADV', prrs (:, :, :, 4) )
-  if (lbudget_rs) call Budget_store_init( tbudgets(NBUDGET_RS), 'NEADV', prrs (:, :, :, 5) )
-  if (lbudget_rg) call Budget_store_init( tbudgets(NBUDGET_RG), 'NEADV', prrs (:, :, :, 6) )
-  if (lbudget_rh) call Budget_store_init( tbudgets(NBUDGET_RH), 'NEADV', prrs (:, :, :, 7) )
-end if
-if ( lbudget_sv .and. hcloud == 'LIMA' ) then
-  if ( lwarm )             call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'NEADV', prsvs(:, :, :, nsv_lima_nc) )
-  if ( lwarm .and. lrain ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'NEADV', prsvs(:, :, :, nsv_lima_nr) )
-  if ( lcold )             call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'NEADV', prsvs(:, :, :, nsv_lima_ni) )
-  do ji = nsv_lima_ccn_free, nsv_lima_ccn_free + nmod_ccn - 1
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + ji), 'NEADV', prsvs(:, :, :, ji) )
-  end do
-  do ji = nsv_lima_ifn_free, nsv_lima_ifn_free + nmod_ifn - 1
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + ji), 'NEADV', prsvs(:, :, :, ji) )
-  end do
-end if
-
-SELECT CASE ( HCLOUD )
-  CASE('ICE3','ICE4')
-     ZEXN(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
-     ZT(:,:,:)= PTHT(:,:,:)*ZEXN(:,:,:)
-     ZLV(:,:,:)=XLVTT +(XCPV-XCL) *(ZT(:,:,:)-XTT)
-     ZLS(:,:,:)=XLSTT +(XCPV-XCI) *(ZT(:,:,:)-XTT)
-     ZCPH(:,:,:)=XCPD +XCPV*PRT(:,:,:,1)
-    WHERE (PRRS(:,:,:,4) < 0.)
-      PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,4)
-      PRTHS(:,:,:) = PRTHS(:,:,:) - PRRS(:,:,:,4) * ZLS(:,:,:) /  &
-           ZCPH(:,:,:) / ZEXN(:,:,:)
-      PRRS(:,:,:,4) = 0.
-    END WHERE
-!
-!   cloud
-    WHERE (PRRS(:,:,:,2) < 0.)
-      PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,2)
-      PRTHS(:,:,:) = PRTHS(:,:,:) - PRRS(:,:,:,2) * ZLV(:,:,:) /  &
-           ZCPH(:,:,:) / ZEXN(:,:,:)
-      PRRS(:,:,:,2) = 0.
-    END WHERE
-!
-! if rc or ri are positive, we can correct negative rv
-!   cloud
-    WHERE ((PRRS(:,:,:,1) <0.) .AND. (PRRS(:,:,:,2)> 0.) )
-      PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,2)
-      PRTHS(:,:,:) = PRTHS(:,:,:) - PRRS(:,:,:,2) * ZLV(:,:,:) /  &
-           ZCPH(:,:,:) / ZEXN(:,:,:)
-      PRRS(:,:,:,2) = 0.
-    END WHERE
-!   ice
-    IF(KRR > 3) THEN
-      WHERE ((PRRS(:,:,:,1) < 0.).AND.(PRRS(:,:,:,4) > 0.))
-        ZCOR(:,:,:)=MIN(-PRRS(:,:,:,1),PRRS(:,:,:,4))
-        PRRS(:,:,:,1) = PRRS(:,:,:,1) + ZCOR(:,:,:)
-        PRTHS(:,:,:) = PRTHS(:,:,:) - ZCOR(:,:,:) * ZLS(:,:,:) /  &
-             ZCPH(:,:,:) / ZEXN(:,:,:)
-        PRRS(:,:,:,4) = PRRS(:,:,:,4) -ZCOR(:,:,:)
-      END WHERE
-    END IF
-!
-  CASE('C2R2','KHKO')
-     ZEXN(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
-     ZT(:,:,:)= PTHT(:,:,:)*ZEXN(:,:,:)
-     ZLV(:,:,:)=XLVTT +(XCPV-XCL) *(ZT(:,:,:)-XTT)
-     ZLS(:,:,:)=XLSTT +(XCPV-XCI) *(ZT(:,:,:)-XTT)
-     ZCPH(:,:,:)=XCPD +XCPV*PRT(:,:,:,1)
-!  CALL GET_HALO(PRRS(:,:,:,2))
-!  CALL GET_HALO(PRSVS(:,:,:,2))
-!  CALL GET_HALO(PRSVS(:,:,:,3))
-     WHERE (PRRS(:,:,:,2) < 0. .OR. PRSVS(:,:,:,2) < 0.)
-        PRSVS(:,:,:,1) = 0.0
-     END WHERE
-     DO JSV = 2, 3
-        WHERE (PRRS(:,:,:,JSV) < 0. .OR. PRSVS(:,:,:,JSV) < 0.)
-           PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,JSV)
-           PRTHS(:,:,:) = PRTHS(:,:,:) - PRRS(:,:,:,JSV) * ZLV(:,:,:) /  &
-                ZCPH(:,:,:) / ZEXN(:,:,:)
-           PRRS(:,:,:,JSV)  = 0.0
-           PRSVS(:,:,:,JSV) = 0.0
-        END WHERE
-     END DO
-     !
-   CASE('LIMA')   
-     ZEXN(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
-     ZT(:,:,:)= PTHT(:,:,:)*ZEXN(:,:,:)
-     ZLV(:,:,:)=XLVTT +(XCPV-XCL) *(ZT(:,:,:)-XTT)
-     ZLS(:,:,:)=XLSTT +(XCPV-XCI) *(ZT(:,:,:)-XTT)
-     ZCPH(:,:,:)=XCPD +XCPV*PRT(:,:,:,1)
-! Correction where rc<0 or Nc<0
-      IF (LWARM) THEN
-         WHERE (PRRS(:,:,:,2) < XRTMIN(2)/PTSTEP .OR. PRSVS(:,:,:,NSV_LIMA_NC) < XCTMIN(2)/PTSTEP)
-            PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,2)
-            PRTHS(:,:,:) = PRTHS(:,:,:) - PRRS(:,:,:,2) * ZLV(:,:,:) /  &
-                 ZCPH(:,:,:) / ZEXN(:,:,:)
-            PRRS(:,:,:,2)  = 0.0
-            PRSVS(:,:,:,NSV_LIMA_NC) = 0.0
-         END WHERE
-      END IF
-! Correction where rr<0 or Nr<0
-      IF (LWARM .AND. LRAIN) THEN
-         WHERE (PRRS(:,:,:,3) < XRTMIN(3)/PTSTEP .OR. PRSVS(:,:,:,NSV_LIMA_NR) < XCTMIN(3)/PTSTEP)
-            PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,3)
-            PRTHS(:,:,:) = PRTHS(:,:,:) - PRRS(:,:,:,3) * ZLV(:,:,:) /  &
-                 ZCPH(:,:,:) / ZEXN(:,:,:)
-            PRRS(:,:,:,3)  = 0.0
-            PRSVS(:,:,:,NSV_LIMA_NR) = 0.0
-         END WHERE
-      END IF
-! Correction where ri<0 or Ni<0
-      IF (LCOLD) THEN
-         WHERE (PRRS(:,:,:,4) < XRTMIN(4)/PTSTEP .OR. PRSVS(:,:,:,NSV_LIMA_NI) < XCTMIN(4)/PTSTEP)
-            PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,4)
-            PRTHS(:,:,:) = PRTHS(:,:,:) - PRRS(:,:,:,4) * ZLS(:,:,:) /  &
-                 ZCPH(:,:,:) / ZEXN(:,:,:)
-            PRRS(:,:,:,4)  = 0.0
-            PRSVS(:,:,:,NSV_LIMA_NI) = 0.0
-         END WHERE
-      END IF
-!
-      PRSVS(:,:,:,:) = MAX( 0.0,PRSVS(:,:,:,:) )
-      PRRS(:,:,:,:) = MAX( 0.0,PRRS(:,:,:,:) )
-!
-END SELECT
-
-if ( hcloud == 'ICE3' .or. hcloud == 'ICE4' .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA' ) then
-  if (lbudget_th) call Budget_store_end( tbudgets(NBUDGET_TH), 'NEADV', prths(:, :, :) )
-  if (lbudget_rv) call Budget_store_end( tbudgets(NBUDGET_RV), 'NEADV', prrs (:, :, :, 1) )
-  if (lbudget_rc) call Budget_store_end( tbudgets(NBUDGET_RC), 'NEADV', prrs (:, :, :, 2) )
-  if (lbudget_rr) call Budget_store_end( tbudgets(NBUDGET_RR), 'NEADV', prrs (:, :, :, 3) )
-  if (lbudget_ri) call Budget_store_end( tbudgets(NBUDGET_RI), 'NEADV', prrs (:, :, :, 4) )
-  if (lbudget_rs) call Budget_store_end( tbudgets(NBUDGET_RS), 'NEADV', prrs (:, :, :, 5) )
-  if (lbudget_rg) call Budget_store_end( tbudgets(NBUDGET_RG), 'NEADV', prrs (:, :, :, 6) )
-  if (lbudget_rh) call Budget_store_end( tbudgets(NBUDGET_RH), 'NEADV', prrs (:, :, :, 7) )
-end if
-if ( lbudget_sv .and. hcloud == 'LIMA' ) then
-  if ( lwarm )             call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'NEADV', prsvs(:, :, :, nsv_lima_nc) )
-  if ( lwarm .and. lrain ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'NEADV', prsvs(:, :, :, nsv_lima_nr) )
-  if ( lcold )             call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'NEADV', prsvs(:, :, :, nsv_lima_ni) )
-  do ji = nsv_lima_ccn_free, nsv_lima_ccn_free + nmod_ccn - 1
-    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + ji), 'NEADV', prsvs(:, :, :, ji) )
-  end do
-  do ji = nsv_lima_ifn_free, nsv_lima_ifn_free + nmod_ifn - 1
-    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + ji), 'NEADV', prsvs(:, :, :, ji) )
-  end do
-end if
+! Remove non-physical negative values (unnecessary in a perfect world) + corresponding budgets
+call Sources_neg_correct( hcloud, 'NEADV', krr, ptstep, ppabst, ptht, prt, prths, prrs, prsvs )
 
 !-------------------------------------------------------------------------------
 !

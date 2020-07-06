@@ -207,6 +207,8 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!                   05/2019 F.Brient add tracer emission from the top of the boundary-layer
 !!                   11/2019 C.Lac correction in the drag formula and application to building in addition to tree
 !  P. Wautelet 17/04/2020: move budgets switch values into modd_budget
+!  P. Wautelet 30/06/2020: add NNETURSV, NNEADVSV and NNECONSV variables
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

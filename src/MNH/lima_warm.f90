@@ -17,6 +17,7 @@ INTERFACE
                             PINPRC, PINPRR, PINDEP, PINPRR3D, PEVAP3D     )
 !
 USE MODD_IO,   ONLY: TFILEDATA
+USE MODD_NSV, only: NSV_LIMA_BEG
 !
 LOGICAL,                  INTENT(IN)    :: OACTIT     ! Switch to activate the
                                                       ! activation by radiative
@@ -51,11 +52,11 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCM       ! Cloud water m.r. at t-dt
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT       ! Theta at time t
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT        ! m.r. at t 
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT       ! Concentrations at t 
+REAL, DIMENSION(:,:,:,NSV_LIMA_BEG:), INTENT(IN)    :: PSVT ! Concentrations at time t
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS       ! Theta source
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRS        ! m.r. source
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVS       ! Concentrations source
+REAL, DIMENSION(:,:,:,NSV_LIMA_BEG:), INTENT(INOUT) :: PSVS ! Concentration sources
 !
 !
 !
@@ -130,6 +131,7 @@ END MODULE MODI_LIMA_WARM
 !  P. Wautelet    02/2020: use the new data structures and subroutines for budgets (no more budget calls in this subroutine)
 !  B. Vie      03/02/2020: correction of activation of water deposition on the ground
 !  B. Vie      03/03/2020: use DTHRAD instead of dT/dt in Smax diagnostic computation
+!  P. Wautelet 28/05/2020: bugfix: correct array start for PSVT and PSVS
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -191,11 +193,11 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCM       ! Cloud water m.r. at t-dt
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT       ! Theta at time t
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT        ! m.r. at t 
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT       ! Concentrations at t 
+REAL, DIMENSION(:,:,:,NSV_LIMA_BEG:), INTENT(IN)    :: PSVT ! Concentrations at time t
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS       ! Theta source
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRS        ! m.r. source
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVS       ! Concentrations source
+REAL, DIMENSION(:,:,:,NSV_LIMA_BEG:), INTENT(INOUT) :: PSVS ! Concentration sources
 !
 !
 !

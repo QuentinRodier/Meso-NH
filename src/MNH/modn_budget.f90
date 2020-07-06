@@ -226,7 +226,8 @@
 !!      S. Riette   11/2016 New budgets for ICE3/ICE4
 !  P. Wautelet 28/01/2020: add missing budgets for viscosity
 !  B. Vie      03/02/2020: LIMA negativity checks after turbulence, advection and microphysics budgets
-!  P .Wautelet 09/03/2020: add missing budgets for electricity
+!  P. Wautelet 09/03/2020: add missing budgets for electricity
+!  P. Wautelet 30/06/2020: add NNETURSV, NNEADVSV and NNECONSV variables
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -306,7 +307,7 @@ NAMELIST/NAM_BU_RRH/LBU_RRH, NASSERH, NNESTRH, NADVRH, NFRCRH, &
 ! 
 NAMELIST/NAM_BU_RSV/ LBU_RSV, NASSESV,  NNESTSV,  NADVSV,   NFRCSV, &
                      NDIFSV,  NRELSV,   NDCONVSV, NVTURBSV, NHTURBSV, NCHEMSV, NMAFLSV,          &
-                     NVISCSV, NNEGASV,                                                           &
+                     NVISCSV, NNEGASV,  NNETURSV, NNEADVSV, NNECONSV,                            &
                      NDEPSQV, NDEPGQV,  NREVAQV, NCDEPIQV,  NNEUTQV,                             &
                      NHONQC,  NAUTOQC,  NACCRQC, NRIMQC,    NWETGQC,  NDRYGQC, NINCGQC, NWETHQC, &
                      NIMLTQC, NBERFIQC, NSEDIQC, NCDEPIQC,  NNEUTQC,                             &

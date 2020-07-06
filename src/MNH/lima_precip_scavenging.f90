@@ -11,7 +11,9 @@ INTERFACE
    SUBROUTINE LIMA_PRECIP_SCAVENGING (HCLOUD, KLUOUT, KTCOUNT, PTSTEP,        &
                                       PRRT, PRHODREF, PRHODJ, PZZ,            & 
                                       PPABST, PTHT, PSVT, PRSVS, PINPAP )
-!
+
+use modd_nsv, only: nsv_lima_beg
+
 CHARACTER(LEN=4),       INTENT(IN)    :: HCLOUD   ! cloud paramerization
 INTEGER,                INTENT(IN)    :: KLUOUT   ! unit for output listing
 INTEGER,                INTENT(IN)    :: KTCOUNT  ! iteration count
@@ -25,8 +27,8 @@ REAL, DIMENSION(:,:,:), INTENT(IN)    :: PZZ      ! Altitude
 REAL, DIMENSION(:,:,:), INTENT(IN)    :: PPABST   ! Absolute pressure at t
 REAL, DIMENSION(:,:,:), INTENT(IN)    :: PTHT     ! Theta at time t 
 !
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT   ! Particle Concentration [kg-1]
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRSVS  ! Total Number Scavenging Rate
+REAL, DIMENSION(:,:,:,NSV_LIMA_BEG:), INTENT(IN)    :: PSVT   ! Particle Concentration [kg-1]
+REAL, DIMENSION(:,:,:,NSV_LIMA_BEG:), INTENT(INOUT) :: PRSVS  ! Total Number Scavenging Rate
 !
 REAL, DIMENSION(:,:),   INTENT(INOUT) :: PINPAP
 !
@@ -95,10 +97,11 @@ END MODULE MODI_LIMA_PRECIP_SCAVENGING
 !!    -------------
 !!      Original             ??/??/13 
 !!
-!!  Philippe Wautelet 28/05/2018: corrected truncated integer division (3/2 -> 1.5)
+!  P. Wautelet 28/05/2018: corrected truncated integer division (3/2 -> 1.5)
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !  P. Wautelet    03/2020: use the new data structures and subroutines for budgets
+!  P. Wautelet 03/06/2020: bugfix: correct array starts for PSVT and PRSVS
 !-------------------------------------------------------------------------------
 !
 !*                  0.DECLARATIONS          
@@ -141,8 +144,8 @@ REAL, DIMENSION(:,:,:), INTENT(IN)    :: PZZ      ! Altitude
 REAL, DIMENSION(:,:,:), INTENT(IN)    :: PPABST   ! Absolute pressure at t
 REAL, DIMENSION(:,:,:), INTENT(IN)    :: PTHT     ! Theta at time t 
 !
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT   ! Particle Concentration [/m**3]
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRSVS  ! Total Number Scavenging Rate
+REAL, DIMENSION(:,:,:,NSV_LIMA_BEG:), INTENT(IN)    :: PSVT   ! Particle Concentration [/m**3]
+REAL, DIMENSION(:,:,:,NSV_LIMA_BEG:), INTENT(INOUT) :: PRSVS  ! Total Number Scavenging Rate
 !
 REAL, DIMENSION(:,:),   INTENT(INOUT) :: PINPAP
 !

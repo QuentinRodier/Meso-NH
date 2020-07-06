@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -50,11 +50,12 @@ END MODULE MODI_INI_MICRO_n
 !!      O.Geoffroy (03/2006) : Add KHKO scheme
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!      C.LAc          10/2016   Add budget for droplet deposition
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!      P.Wautelet     01/2019: bug: add missing allocations
-!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet    01/2019: bugfix: add missing allocations
 !  C. Lac         02/2020: add missing allocation of INPRC and ACPRC with deposition
-!! --------------------------------------------------------------------------
+!  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
+!  P. Wautelet 04/06/2020: bugfix: correct bounds of passed arrays
+! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
 !          ------------
@@ -94,6 +95,7 @@ USE MODI_SET_CONC_ICE_C1R3
 USE MODE_ll
 USE MODE_MODELN_HANDLER
 USE MODE_BLOWSNOW_SEDIM_LKT
+USE MODE_SET_CONC_LIMA
 !
 USE MODD_NSV,        ONLY : NSV,NSV_CHEM,NSV_C2R2BEG,NSV_C2R2END, &
                             NSV_C1R3BEG,NSV_C1R3END,              &
@@ -109,7 +111,6 @@ USE MODD_LIMA_PRECIP_SCAVENGING_n
 !
 USE MODI_INIT_AEROSOL_CONCENTRATION
 USE MODI_INI_LIMA
-USE MODI_SET_CONC_LIMA
 !
 IMPLICIT NONE
 !
@@ -140,6 +141,7 @@ INTEGER :: IMI
 !
 CALL GET_DIM_EXT_ll('B',IIU,IJU)
 IKU=SIZE(XZZ,3)
+IMI = GET_CURRENT_MODEL_INDEX()
 !
 !
 !*       2.    ALLOCATE  Module MODD_PRECIP_n
@@ -291,11 +293,7 @@ ELSE IF (CCLOUD == 'C2R2' .OR. CCLOUD == 'C3R5' .OR. CCLOUD == 'KHKO') THEN
     CALL INI_ICE_C1R3(XTSTEP,ZDZMIN,NSPLITG)       ! 1/2 spectral cold cloud
   END IF
 ELSE IF (CCLOUD == 'LIMA') THEN
-  IF (CGETCLOUD /= 'READ') THEN
-    CALL INIT_AEROSOL_CONCENTRATION(XRHODREF,                              &
-                                    XSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END), &
-                                                                XZZ(:,:,:) )
-  END IF
+  IF (CGETCLOUD /= 'READ') CALL INIT_AEROSOL_CONCENTRATION( XRHODREF, XSVT(:, :, :, :), XZZ(:, :, :) )
   CALL INI_LIMA(XTSTEP,ZDZMIN,NSPLITR, NSPLITG)   ! 1/2 spectral warm cloud
 END IF
 !
@@ -317,7 +315,7 @@ ENDIF
 !
 IF (CCLOUD == 'LIMA') THEN
   IF (CGETCLOUD/='READ') THEN
-    CALL SET_CONC_LIMA(CGETCLOUD,XRHODREF,XRT,XSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END))
+    CALL SET_CONC_LIMA(IMI,CGETCLOUD,XRHODREF,XRT,XSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END))
   END IF
 END IF
 !
@@ -326,7 +324,6 @@ END IF
 !              ----------------------------------
 !
 !
-IMI = GET_CURRENT_MODEL_INDEX()
 !IF (CELEC /= 'NONE') THEN
 !  CALL INI_ELEC(IMI,TPINIFILE,XTSTEP,ZDZMIN,NSPLITR, &
 !                XDXX,XDYY,XDZZ,XDZX,XDZY            )

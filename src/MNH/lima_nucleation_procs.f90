@@ -69,6 +69,8 @@ SUBROUTINE LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, OCLOSE_OUT, PRHODJ,           
 !!    MODIFICATIONS
 !!    -------------
 !!      Original             15/03/2018
+!  M. Leriche     06/2019: missing update of PNFT after CCN hom. ncl.
+!  P. Wautelet 27/02/2020: bugfix: PNFT was not updated after LIMA_CCN_HOM_FREEZING
 !  P. Wautelet 27/02/2020: add Z_TH_HINC variable (for budgets)
 !  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !  B. Vie      03/03/2020: use DTHRAD instead of dT/dt in Smax diagnostic computation
@@ -253,9 +255,9 @@ IF ( LCOLD .AND. LNUCL .AND. LHHONI .AND. NMOD_CCN >= 1) THEN
     end if
   end if
 
-  CALL LIMA_CCN_HOM_FREEZING (PRHODREF, PEXNREF, PPABST, PW_NU,            &
-                               PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,    &
-                               PCCT, PCRT, PCIT, PNFT, PNHT                 )
+  CALL LIMA_CCN_HOM_FREEZING (PRHODREF, PEXNREF, PPABST, PW_NU,          &
+                               PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, &
+                               PCCT, PCRT, PCIT, PNFT, PNHT              )
 
   if ( lbu_enable ) then
     if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HONH', PTHT(:, :, :) * prhodj(:, :, :) / ptstep )

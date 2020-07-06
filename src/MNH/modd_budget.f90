@@ -53,6 +53,7 @@
 !  P .Wautelet 09/03/2020: add missing budgets for electricity
 !  P. Wautelet 17/04/2020: set default values for budgets switch values
 !  P. Wautelet 23/04/2020: add nid in tbudgetdata datatype
+!  P. Wautelet 30/06/2020: add NNETURSV, NNEADVSV and NNECONSV variables
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -618,7 +619,10 @@ INTEGER, SAVE :: NVTURBSV  = 0 ! vertical turbulence
 INTEGER, SAVE :: NCHEMSV   = 0 ! chemistry activity
 INTEGER, SAVE :: NVISCSV   = 0 ! viscosity
 !
-INTEGER, SAVE :: NNEGASV   = 0
+INTEGER, SAVE :: NNEGASV  = 0 ! negative correction
+INTEGER, SAVE :: NNETURSV = 0 ! negative correction
+INTEGER, SAVE :: NNEADVSV = 0 ! negative correction
+INTEGER, SAVE :: NNECONSV = 0 ! negative correction
 !
 ! Allowed processes for the budget of electric charge carried by water vapor
 INTEGER, SAVE :: NDEPSQV   = 0

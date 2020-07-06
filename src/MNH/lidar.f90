@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2007-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2007-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -86,6 +86,7 @@ END MODULE MODI_LIDAR
 !!                             add inputs (lidar charact. and cloud fraction)
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!   B.VIE  2016 : LIMA
+!  P. Wautelet 18/03/2020: remove ICE2 option
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -260,7 +261,7 @@ SELECT CASE ( HCLOUD )
     ZRTMIN(2) = 1.0E-20
     ZRTMIN(3) = 1.0E-20
     ZLBEXR = 1.0/(-1.0-3.0)
-  CASE('ICE2','ICE3','ICE4')
+  CASE('ICE3','ICE4')
     ZRTMIN(1:SIZE(WRTMIN)) = WRTMIN(1:SIZE(WRTMIN))
     ZLBEXR = WLBEXR
     ZCCS    = XCCS
@@ -370,7 +371,7 @@ ZREFF_FACT = 1.0E-3*(3.E3/(4.0*XPI*0.67E-3))**0.33 ! Continental N=500
 ZREFF_FACT = 1.0E-3*(3.E3/(4.0*XPI*0.80E-3))**0.33 ! Maritime    N=150
 !
 SELECT CASE ( HCLOUD )
-  CASE('KESS','ICE2','ICE3','ICE4')
+  CASE('KESS','ICE3','ICE4')
     DO JK = IKB, IKE
       DO JJ = IJB, IJE
         DO JI = IIB, IIE
@@ -462,7 +463,7 @@ END SELECT
 ! SOLID ICE
 !
 SELECT CASE ( HCLOUD )
-  CASE('ICE2','ICE3','ICE4')
+  CASE('ICE3','ICE4')
     DO JK = IKB, IKE
       DO JJ = IJB, IJE
         DO JI = IIB, IIE
@@ -512,7 +513,7 @@ SELECT CASE ( HCLOUD )
     END DO
 END SELECT
 SELECT CASE ( HCLOUD )
-  CASE('ICE2','ICE3','ICE4','C3R5','LIMA')
+  CASE('ICE3','ICE4','C3R5','LIMA')
     DO JK = IKB, IKE
       DO JJ = IJB, IJE
         DO JI = IIB, IIE

@@ -15,7 +15,9 @@ INTERFACE
                              PTHT, PRT, PSVT,                     &
                              PTHS, PRS, PSVS)
 !
-LOGICAL,                  INTENT(IN)    :: OSEDI   ! switch to activate the 
+USE MODD_NSV,   only: NSV_LIMA_BEG
+!
+LOGICAL,                  INTENT(IN)    :: OSEDI   ! switch to activate the
                                                    ! cloud ice sedimentation
 LOGICAL,                  INTENT(IN)    :: OHHONI  ! enable haze freezing
 INTEGER,                  INTENT(IN)    :: KSPLITG ! Number of small time step 
@@ -38,12 +40,11 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABSM  ! abs. pressure at time t-dt
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT    ! Theta at time t
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT     ! m.r. at t 
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT    ! Concentrations at t 
-
+REAL, DIMENSION(:,:,:,NSV_LIMA_BEG:), INTENT(IN)    :: PSVT ! Concentrations at time t
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS    ! Theta source
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRS     ! m.r. source
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVS    ! Concentrations source
+REAL, DIMENSION(:,:,:,NSV_LIMA_BEG:), INTENT(INOUT) :: PSVS ! Concentration sources
 !
 END SUBROUTINE LIMA_MIXED
 END INTERFACE
@@ -93,6 +94,7 @@ END MODULE MODI_LIMA_MIXED
 !!      C. Barthe  * LACy *  jan. 2014   add budgets
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet    03/2020: use the new data structures and subroutines for budgets (no more call to budget in this subroutine)
+!  P. Wautelet 28/05/2020: bugfix: correct array start for PSVT and PSVS
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -142,12 +144,11 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABSM  ! abs. pressure at time t-dt
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT    ! Theta at time t
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT     ! m.r. at t 
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT    ! Concentrations at t 
-
+REAL, DIMENSION(:,:,:,NSV_LIMA_BEG:), INTENT(IN)    :: PSVT ! Concentrations at time t
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS    ! Theta source
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRS     ! m.r. source
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVS    ! Concentrations source
+REAL, DIMENSION(:,:,:,NSV_LIMA_BEG:), INTENT(INOUT) :: PSVS ! Concentration sources
 !
 !*       0.2   Declarations of local variables :
 !

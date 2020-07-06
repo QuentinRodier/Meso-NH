@@ -1,4 +1,4 @@
-!SFX_LIC Copyright 2003-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 2003-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
@@ -36,6 +36,7 @@
 !!      P. Le Moigne 12/2004 : add type of photosynthesis 
 !!      P. Samuelsson 10/2014: MEB
 !!      P. Wautelet 01/2019: bug: write L_STRESS only if it exists
+!!      P. Wautelet 12/06/2020: bugfix: moved condition on LPAR_STRESS (LDATA_STRESS was not written)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -500,10 +501,10 @@ DO JV=1,DTV%NVEGTYPE
   ENDIF
 ENDDO
 !
-IF (ASSOCIATED(DTV%LPAR_STRESS)) THEN
 YRECFM='L_STRESS'
 YCOMMENT=YRECFM
  CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,DTV%LDATA_STRESS,IRESP,HCOMMENT=YCOMMENT,HDIR='-')
+IF (ASSOCIATED(DTV%LPAR_STRESS)) THEN
 ALLOCATE(ZWORK(SIZE(DTV%LPAR_STRESS,1)))
 DO JV=1,DTV%NVEGTYPE
   IF (DTV%LDATA_STRESS(JV)) THEN

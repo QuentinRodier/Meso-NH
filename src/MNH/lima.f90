@@ -19,7 +19,8 @@ INTERFACE
                      PINPRC, PINDEP, PINPRR, PINPRI, PINPRS, PINPRG, PINPRH, &
                      PEVAP3D                                         )
 !
-USE MODD_IO, ONLY: TFILEDATA
+USE MODD_IO,  ONLY: TFILEDATA
+USE MODD_NSV, only: NSV_LIMA_BEG
 !
 INTEGER,                  INTENT(IN)    :: KKA   !near ground array index  
 INTEGER,                  INTENT(IN)    :: KKU   !uppest atmosphere array index
@@ -44,12 +45,12 @@ INTEGER,                  INTENT(IN)    :: NIMM       ! for array size declarati
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD    ! Theta at time t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT       ! Theta at time t
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT        ! Mixing ratios at time t
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT       ! Concentrations at time t
+REAL, DIMENSION(:,:,:,NSV_LIMA_BEG:), INTENT(IN)    :: PSVT ! Concentrations at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU      ! w for CCN activation
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS       ! Theta source
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRS        ! Mixing ratios sources
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVS       ! Concentrations sources
+REAL, DIMENSION(:,:,:,NSV_LIMA_BEG:), INTENT(INOUT) :: PSVS ! Concentration sources
 !
 REAL, DIMENSION(:,:),     INTENT(OUT)   :: PINPRC     ! Cloud instant precip
 REAL, DIMENSION(:,:),     INTENT(OUT)   :: PINDEP     ! Cloud droplets deposition
@@ -100,6 +101,8 @@ END MODULE MODI_LIMA
 !  P. Wautelet    02/2020: use the new data structures and subroutines for budgets (no more budget calls in this subroutine)
 !  P. Wautelet 26/02/2020: bugfix: corrected condition to write budget CORR_BU_RRS
 !  B. Vie      03/03/2020: use DTHRAD instead of dT/dt in Smax diagnostic computation
+!  P. Wautelet 28/05/2020: bugfix: correct array start for PSVT and PSVS
+!-----------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
@@ -112,9 +115,9 @@ use modd_budget,          only: lbu_enable,                                     
 USE MODD_CLOUDPAR_n,      ONLY: NSPLITR, NSPLITG
 USE MODD_CST,             ONLY: XCI, XCL, XCPD, XCPV, XLSTT, XLVTT, XTT, XRHOLW, XP00, XRD
 USE MODD_IO,              ONLY: TFILEDATA
-USE MODD_LUNIT_n,         ONLY: TLUOUT
-USE MODD_NSV,             ONLY: NSV_LIMA_NC, NSV_LIMA_NR, NSV_LIMA_CCN_FREE, NSV_LIMA_CCN_ACTI, &
-                                NSV_LIMA_SCAVMASS, NSV_LIMA_NI, NSV_LIMA_IFN_FREE,              &
+USE MODD_NSV,             ONLY: NSV_LIMA_BEG,                                                   &
+                                NSV_LIMA_NC, NSV_LIMA_NR, NSV_LIMA_CCN_FREE, NSV_LIMA_CCN_ACTI, &
+                                NSV_LIMA_NI, NSV_LIMA_IFN_FREE,                                 &
                                 NSV_LIMA_IFN_NUCL, NSV_LIMA_IMM_NUCL, NSV_LIMA_HOM_HAZE
 USE MODD_PARAMETERS,      ONLY: JPHEXT, JPVEXT
 USE MODD_PARAM_LIMA,      ONLY: LCOLD, LRAIN, LWARM, NMOD_CCN, NMOD_IFN, NMOD_IMM, LHHONI,      &
@@ -160,12 +163,12 @@ INTEGER,                  INTENT(IN)    :: NIMM       ! for array size declarati
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD    ! Theta at time t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT       ! Theta at time t
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT        ! Mixing ratios at time t
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT       ! Concentrations at time t
+REAL, DIMENSION(:,:,:,NSV_LIMA_BEG:), INTENT(IN)    :: PSVT ! Concentrations at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU      ! w for CCN activation
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS       ! Theta source
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRS        ! Mixing ratios sources
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVS       ! Concentrations sources
+REAL, DIMENSION(:,:,:,NSV_LIMA_BEG:), INTENT(INOUT) :: PSVS ! Concentration sources
 !
 REAL, DIMENSION(:,:),     INTENT(OUT)   :: PINPRC     ! Cloud instant precip
 REAL, DIMENSION(:,:),     INTENT(OUT)   :: PINDEP     ! Cloud droplets deposition

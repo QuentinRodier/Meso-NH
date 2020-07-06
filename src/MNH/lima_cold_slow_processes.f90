@@ -77,7 +77,7 @@ END MODULE MODI_LIMA_COLD_SLOW_PROCESSES
 !!    -------------
 !!      Original             ??/??/13 
 !!      C. Barthe  * LACy *  jan. 2014   add budgets
-!  P.Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !  P. Wautelet    03/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
@@ -391,7 +391,6 @@ IF( IMICRO >= 1 ) THEN
          ZRVS(:) = ZRVS(:) - ZZW(:)
          ZTHS(:) = ZTHS(:) + ZZW(:)*ZLSFACT(:)
       END WHERE
-!
 ! Budget storage
       if ( nbumod == kmi .and. lbu_enable ) then
         if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'DEPS', &
@@ -468,7 +467,6 @@ IF( IMICRO >= 1 ) THEN
          ZRIS(:) = ZRIS(:) - ZZW1(:,2)
          ZRSS(:) = ZRSS(:) + ZZW1(:,2)
       END WHERE
-!
 ! Budget storage
       if ( nbumod == kmi .and. lbu_enable ) then
         if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'AGGS', &
@@ -484,7 +482,6 @@ IF( IMICRO >= 1 ) THEN
 !*       3.    Unpacking & Deallocating
 !              ------------------------
 !
-! 
 !
   ZW(:,:,:) = PRVS(:,:,:)
   PRVS(:,:,:) = UNPACK( ZRVS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
@@ -536,3 +533,4 @@ DEALLOCATE(ZCTMIN)
 !--cb--
 !
 END SUBROUTINE LIMA_COLD_SLOW_PROCESSES
+
