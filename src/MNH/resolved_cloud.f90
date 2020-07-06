@@ -281,14 +281,9 @@ END MODULE MODI_RESOLVED_CLOUD
 !
 !*       0.    DECLARATIONS
 !              ------------
-use modd_budget,         only: lbudget_th, lbudget_rv, lbudget_rc, lbudget_rr, lbudget_ri, lbudget_rs, lbudget_rg, lbudget_rh, &
-                               lbudget_sv,                                                                                     &
-                               NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, &
-                               NBUDGET_SV1,                                                                                    &
-                               tbudgets
 USE MODD_CH_AEROSOL,     ONLY: LORILAM
 USE MODD_DUST,           ONLY: LDUST
-USE MODD_CST,            ONLY: XCI, XCL, XCPD, XCPV, XLSTT, XLVTT, XMNH_TINY, XP00, XRD, XRHOLW, XTT
+use modd_cst,            only: xcpd, xrd, xp00, xrholw
 USE MODD_DUST ,          ONLY: LDUST
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_NSV,            ONLY: NSV_C1R3END, NSV_C2R2BEG, NSV_C2R2END,                            &
@@ -302,7 +297,6 @@ USE MODD_PARAM_LIMA,     ONLY: LCOLD, LRAIN, LWARM, XCONC_CCN_TOT, NMOD_CCN, NMO
 USE MODD_RAIN_ICE_DESCR, ONLY: XRTMIN
 USE MODD_SALT,           ONLY: LSALT
 !
-use mode_budget,         only: Budget_store_init, Budget_store_end
 USE MODE_ll
 use mode_sources_neg_correct, only: Sources_neg_correct
 !
@@ -453,16 +447,14 @@ INTEGER :: JK,JI,JL
 !
 !
 REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZDZZ
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZT,ZEXN,ZLV,ZLS,ZCPH
-REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZCOR
-                                    ! for the correction of negative rv
+real, dimension(:,:,:), allocatable :: ZEXN
 REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZZZ
                                     ! model layer height
-REAL  :: ZMASSTOT                   ! total mass  for one water category
-                                    ! including the negative values
-REAL  :: ZMASSPOS                   ! total mass  for one water category
-                                    ! after removing the negative values
-REAL  :: ZRATIO                     ! ZMASSTOT / ZMASSCOR
+! REAL  :: ZMASSTOT                   ! total mass  for one water category
+!                                     ! including the negative values
+! REAL  :: ZMASSPOS                   ! total mass  for one water category
+!                                     ! after removing the negative values
+! REAL  :: ZRATIO                     ! ZMASSTOT / ZMASSCOR
 !
 INTEGER                               :: ISVBEG ! first scalar index for microphysics
 INTEGER                               :: ISVEND ! last  scalar index for microphysics
