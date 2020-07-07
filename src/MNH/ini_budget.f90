@@ -2722,24 +2722,35 @@ SV_BUDGETS: do jsv = 1, ksv
 
     else if ( jsv >= nsv_c2r2beg .and. jsv <= nsv_c2r2end ) then SV_VAR
       ! C2R2 or KHKO Case
+
+      ! Source terms in common for all C2R2/KHKO budgets
+      ! (except supersaturation not taken into account in the budgets (for the moment))
+      if ( jsv <= nsv_c2r2beg + 2 ) then
+        gcond = hturb == 'TKEL'
+        tzsource%cmnhname  = 'NETUR'
+        tzsource%clongname = 'negative correction induced by turbulence'
+        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnetursv )
+
+        gcond = .true.
+        tzsource%cmnhname  = 'NEADV'
+        tzsource%clongname = 'negative correction induced by advection'
+        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneadvsv )
+
+        gcond = .true.
+        tzsource%cmnhname  = 'NEGA'
+        tzsource%clongname = 'negative correction'
+        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnegasv )
+
+        gcond = .true.
+        tzsource%cmnhname  = 'NECON'
+        tzsource%clongname = 'negative correction induced by condensation'
+        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneconsv )
+      end if
+
+      ! Source terms specific to each budget
       SV_C2R2: select case( jsv - nsv_c2r2beg + 1 )
         case ( 1 ) SV_C2R2
           ! Concentration of activated nuclei
-          gcond = hturb == 'TKEL'
-          tzsource%cmnhname  = 'NETUR'
-          tzsource%clongname = 'negative correction induced by turbulence'
-          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnetursv )
-
-          gcond = .true.
-          tzsource%cmnhname  = 'NEADV'
-          tzsource%clongname = 'negative correction induced by advection'
-          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneadvsv )
-
-          gcond = .true.
-          tzsource%cmnhname  = 'NEGA'
-          tzsource%clongname = 'negative correction'
-          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnegasv )
-
           gtmp = cactccn == 'ABRK' .and. (lorilam .or. ldust .or. lsalt )
           gcond =  gtmp .or. ( .not.gtmp .and. .not.lsupsat_c2r2 )
           tzsource%cmnhname  = 'HENU'
@@ -2751,29 +2762,9 @@ SV_BUDGETS: do jsv = 1, ksv
           tzsource%clongname = 'evaporation'
           call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
 
-          gcond = .true.
-          tzsource%cmnhname  = 'NECON'
-          tzsource%clongname = 'negative correction induced by condensation'
-          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneconsv )
-
 
         case ( 2 ) SV_C2R2
           ! Concentration of cloud droplets
-          gcond = hturb == 'TKEL'
-          tzsource%cmnhname  = 'NETUR'
-          tzsource%clongname = 'negative correction induced by turbulence'
-          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnetursv )
-
-          gcond = .true.
-          tzsource%cmnhname  = 'NEADV'
-          tzsource%clongname = 'negative correction induced by advection'
-          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneadvsv )
-
-          gcond = .true.
-          tzsource%cmnhname  = 'NEGA'
-          tzsource%clongname = 'negative correction'
-          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnegasv )
-
           gtmp = cactccn == 'ABRK' .and. (lorilam .or. ldust .or. lsalt )
           gcond =  gtmp .or. ( .not.gtmp .and. .not.lsupsat_c2r2 )
           tzsource%cmnhname  = 'HENU'
@@ -2805,28 +2796,9 @@ SV_BUDGETS: do jsv = 1, ksv
           tzsource%clongname = 'evaporation'
           call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
 
-          gcond = .true.
-          tzsource%cmnhname  = 'NECON'
-          tzsource%clongname = 'negative correction induced by condensation'
-          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneconsv )
-
 
         case ( 3 ) SV_C2R2
           ! Concentration of raindrops
-          gcond = hturb == 'TKEL'
-          tzsource%cmnhname  = 'NETUR'
-          tzsource%clongname = 'negative correction induced by turbulence'
-          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnetursv )
-
-          gcond = .true.
-          tzsource%cmnhname  = 'NEADV'
-          tzsource%clongname = 'negative correction induced by advection'
-          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneadvsv )
-
-          gcond = .true.
-          tzsource%cmnhname  = 'NEGA'
-          tzsource%clongname = 'negative correction'
-          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnegasv )
 
           gcond = lrain_c2r2
           tzsource%cmnhname  = 'AUTO'
@@ -2853,11 +2825,6 @@ SV_BUDGETS: do jsv = 1, ksv
           tzsource%clongname = 'sedimentation'
           call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
 
-          gcond = .true.
-          tzsource%cmnhname  = 'NECON'
-          tzsource%clongname = 'negative correction induced by condensation'
-          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneconsv )
-
 
         case ( 4 ) SV_C2R2
           ! Supersaturation
@@ -2867,23 +2834,32 @@ SV_BUDGETS: do jsv = 1, ksv
 
     else if ( jsv >= nsv_lima_beg .and. jsv <= nsv_lima_end ) then SV_VAR
       ! LIMA case
+
+      ! Source terms in common for all LIMA budgets
+      gcond = hturb == 'TKEL'
+      tzsource%cmnhname  = 'NETUR'
+      tzsource%clongname = 'negative correction induced by turbulence'
+      call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnetursv )
+
+      gcond = .true.
+      tzsource%cmnhname  = 'NEADV'
+      tzsource%clongname = 'negative correction induced by advection'
+      call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneadvsv )
+
+      gcond = .true.
+      tzsource%cmnhname  = 'NEGA'
+      tzsource%clongname = 'negative correction'
+      call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnegasv )
+
+      gcond = .true.
+      tzsource%cmnhname  = 'NECON'
+      tzsource%clongname = 'negative correction induced by condensation'
+      call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneconsv )
+
+
+      ! Source terms specific to each budget
       SV_LIMA: if ( jsv == nsv_lima_nc ) then
         ! Cloud droplets concentration
-        gcond = hturb == 'TKEL'
-        tzsource%cmnhname  = 'NETUR'
-        tzsource%clongname = 'negative correction induced by turbulence'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnetursv )
-
-        gcond = .true.
-        tzsource%cmnhname  = 'NEADV'
-        tzsource%clongname = 'negative correction induced by advection'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneadvsv )
-
-        gcond = .true.
-        tzsource%cmnhname  = 'NEGA'
-        tzsource%clongname = 'negative correction'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnegasv )
-
         gcond = lptsplit .and. lwarm_lima  .and. lrain_lima
         tzsource%cmnhname  = 'CORR'
         tzsource%clongname = 'correction'
@@ -2974,29 +2950,9 @@ SV_BUDGETS: do jsv = 1, ksv
         tzsource%clongname = 'adjustment to saturation'
         call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
 
-        gcond = .true.
-        tzsource%cmnhname  = 'NECON'
-        tzsource%clongname = 'negative correction induced by condensation'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneconsv )
-
 
       else if ( jsv == nsv_lima_nr ) then SV_LIMA
         ! Rain drops concentration
-        gcond = hturb == 'TKEL'
-        tzsource%cmnhname  = 'NETUR'
-        tzsource%clongname = 'negative correction induced by turbulence'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnetursv )
-
-        gcond = .true.
-        tzsource%cmnhname  = 'NEADV'
-        tzsource%clongname = 'negative correction induced by advection'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneadvsv )
-
-        gcond = .true.
-        tzsource%cmnhname  = 'NEGA'
-        tzsource%clongname = 'negative correction'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnegasv )
-
         gcond = lptsplit .and. lwarm_lima  .and. lrain_lima
         tzsource%cmnhname  = 'CORR'
         tzsource%clongname = 'correction'
@@ -3077,29 +3033,9 @@ SV_BUDGETS: do jsv = 1, ksv
         tzsource%clongname = 'hail melting'
         call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
 
-        gcond = .true.
-        tzsource%cmnhname  = 'NECON'
-        tzsource%clongname = 'negative correction induced by condensation'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneconsv )
-
 
       else if ( jsv >= nsv_lima_ccn_free .and. jsv <= nsv_lima_ccn_free + nmod_ccn - 1 ) then SV_LIMA
         ! Free CCN concentration
-        gcond = hturb == 'TKEL'
-        tzsource%cmnhname  = 'NETUR'
-        tzsource%clongname = 'negative correction induced by turbulence'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnetursv )
-
-        gcond = .true.
-        tzsource%cmnhname  = 'NEADV'
-        tzsource%clongname = 'negative correction induced by advection'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneadvsv )
-
-        gcond = .true.
-        tzsource%cmnhname  = 'NEGA'
-        tzsource%clongname = 'negative correction'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnegasv )
-
         gcond = lwarm_lima  .and. lacti_lima .and. nmod_ccn >= 1
         tzsource%cmnhname  = 'HENU'
         tzsource%clongname = 'CCN activation'
@@ -3120,75 +3056,17 @@ SV_BUDGETS: do jsv = 1, ksv
         tzsource%clongname = 'scavenging'
         call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
 
-        gcond = .true.
-        tzsource%cmnhname  = 'NECON'
-        tzsource%clongname = 'negative correction induced by condensation'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneconsv )
-
 
       else if ( jsv >= nsv_lima_ccn_acti .and. jsv <= nsv_lima_ccn_acti + nmod_ccn - 1 ) then SV_LIMA
         ! Activated CCN concentration
-        gcond = hturb == 'TKEL'
-        tzsource%cmnhname  = 'NETUR'
-        tzsource%clongname = 'negative correction induced by turbulence'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnetursv )
-
-        gcond = .true.
-        tzsource%cmnhname  = 'NEADV'
-        tzsource%clongname = 'negative correction induced by advection'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneadvsv )
-
-        gcond = .true.
-        tzsource%cmnhname  = 'NEGA'
-        tzsource%clongname = 'negative correction'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnegasv )
-
-        gcond = .true.
-        tzsource%cmnhname  = 'NECON'
-        tzsource%clongname = 'negative correction induced by condensation'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneconsv )
 
 
       else if ( jsv == nsv_lima_scavmass ) then SV_LIMA
         ! Scavenged mass variable
-        gcond = hturb == 'TKEL'
-        tzsource%cmnhname  = 'NETUR'
-        tzsource%clongname = 'negative correction induced by turbulence'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnetursv )
-
-        gcond = .true.
-        tzsource%cmnhname  = 'NEADV'
-        tzsource%clongname = 'negative correction induced by advection'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneadvsv )
-
-        gcond = .true.
-        tzsource%cmnhname  = 'NEGA'
-        tzsource%clongname = 'negative correction'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnegasv )
-
-        gcond = .true.
-        tzsource%cmnhname  = 'NECON'
-        tzsource%clongname = 'negative correction induced by condensation'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneconsv )
 
 
       else if ( jsv == nsv_lima_ni ) then SV_LIMA
         ! Pristine ice crystals concentration
-        gcond = hturb == 'TKEL'
-        tzsource%cmnhname  = 'NETUR'
-        tzsource%clongname = 'negative correction induced by turbulence'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnetursv )
-
-        gcond = .true.
-        tzsource%cmnhname  = 'NEADV'
-        tzsource%clongname = 'negative correction induced by advection'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneadvsv )
-
-        gcond = .true.
-        tzsource%cmnhname  = 'NEGA'
-        tzsource%clongname = 'negative correction'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnegasv )
-
         gcond = lptsplit .and. lcold_lima .and. lsnow_lima
         tzsource%cmnhname  = 'CORR'
         tzsource%clongname = 'correction'
@@ -3278,29 +3156,9 @@ SV_BUDGETS: do jsv = 1, ksv
         tzsource%clongname = 'adjustment to saturation'
         call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
 
-        gcond = .true.
-        tzsource%cmnhname  = 'NECON'
-        tzsource%clongname = 'negative correction induced by condensation'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneconsv )
-
 
       else if ( jsv >= nsv_lima_ifn_free .and. jsv <= nsv_lima_ifn_free + nmod_ifn - 1 ) then SV_LIMA
         ! Free IFN concentration
-        gcond = hturb == 'TKEL'
-        tzsource%cmnhname  = 'NETUR'
-        tzsource%clongname = 'negative correction induced by turbulence'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnetursv )
-
-        gcond = .true.
-        tzsource%cmnhname  = 'NEADV'
-        tzsource%clongname = 'negative correction induced by advection'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneadvsv )
-
-        gcond = .true.
-        tzsource%cmnhname  = 'NEGA'
-        tzsource%clongname = 'negative correction'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnegasv )
-
 !Rq: if NMOD_IFN=0=> budget=0
         gcond = ( .not.lptsplit .and. lcold_lima .and. lnucl_lima .and. .not. lmeyers_lima ) .or.              &
                 (      lptsplit .and. lcold_lima .and. lnucl_lima .and. .not. lmeyers_lima .and. nmod_ifn >= 1 )
@@ -3313,94 +3171,26 @@ SV_BUDGETS: do jsv = 1, ksv
         tzsource%clongname = 'adjustment to saturation'
         call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
 
-        gcond = .true.
-        tzsource%cmnhname  = 'NECON'
-        tzsource%clongname = 'negative correction induced by condensation'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
-
         gcond = lscav_lima
         tzsource%cmnhname  = 'SCAV'
         tzsource%clongname = 'scavenging'
         call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
 
-        gcond = .true.
-        tzsource%cmnhname  = 'NECON'
-        tzsource%clongname = 'negative correction induced by condensation'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneconsv )
-
 
       else if ( jsv >= nsv_lima_ifn_nucl .and. jsv <= nsv_lima_ifn_nucl + nmod_ifn - 1 ) then SV_LIMA
         ! Nucleated IFN concentration
-        gcond = hturb == 'TKEL'
-        tzsource%cmnhname  = 'NETUR'
-        tzsource%clongname = 'negative correction induced by turbulence'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnetursv )
-
-        gcond = .true.
-        tzsource%cmnhname  = 'NEADV'
-        tzsource%clongname = 'negative correction induced by advection'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneadvsv )
-
-        gcond = .true.
-        tzsource%cmnhname  = 'NEGA'
-        tzsource%clongname = 'negative correction'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnegasv )
-
-        gcond = .true.
-        tzsource%cmnhname  = 'NECON'
-        tzsource%clongname = 'negative correction induced by condensation'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneconsv )
 
 
       else if ( jsv >= nsv_lima_imm_nucl .and. jsv <= nsv_lima_imm_nucl + nmod_imm - 1 ) then SV_LIMA
         ! Nucleated IMM concentration
-        gcond = hturb == 'TKEL'
-        tzsource%cmnhname  = 'NETUR'
-        tzsource%clongname = 'negative correction induced by turbulence'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnetursv )
-
-        gcond = .true.
-        tzsource%cmnhname  = 'NEADV'
-        tzsource%clongname = 'negative correction induced by advection'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneadvsv )
-
-        gcond = .true.
-        tzsource%cmnhname  = 'NEGA'
-        tzsource%clongname = 'negative correction'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnegasv )
-
-        gcond = .true.
-        tzsource%cmnhname  = 'NECON'
-        tzsource%clongname = 'negative correction induced by condensation'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneconsv )
 
 
       else if ( jsv == nsv_lima_hom_haze ) then SV_LIMA
         ! Homogeneous freezing of CCN
-        gcond = hturb == 'TKEL'
-        tzsource%cmnhname  = 'NETUR'
-        tzsource%clongname = 'negative correction induced by turbulence'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnetursv )
-
-        gcond = .true.
-        tzsource%cmnhname  = 'NEADV'
-        tzsource%clongname = 'negative correction induced by advection'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneadvsv )
-
-        gcond = .true.
-        tzsource%cmnhname  = 'NEGA'
-        tzsource%clongname = 'negative correction'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnegasv )
-
         gcond = .not.lptsplit .and. lcold_lima .and. lnucl_lima .and. lwarm_lima  .and. lhhoni_lima
         tzsource%cmnhname  = 'HONH'
         tzsource%clongname = 'haze homogeneous nucleation'
         call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
-
-        gcond = .true.
-        tzsource%cmnhname  = 'NECON'
-        tzsource%clongname = 'negative correction induced by condensation'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneconsv )
 
     end if SV_LIMA
 
