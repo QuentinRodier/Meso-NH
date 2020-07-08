@@ -102,12 +102,12 @@ else !NECON + NEGA
 
   if ( lbudget_sv .and. ( hcloud == 'C2R2' .or. hcloud == 'KHKO' ) ) then
     do ji = nsv_c2r2beg, nsv_c2r2beg + 2
-      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + ji), Trim( hbudname ), prsvs(:, :, :, ji) )
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + ji), Trim( hbudname ), prsvs(:, :, :, ji) * prhodj(:, :, :) )
     end do
   end if
   if ( lbudget_sv .and. hcloud == 'LIMA' ) then
     do ji = nsv_lima_beg, nsv_lima_end
-      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + ji), Trim( hbudname ), prsvs(:, :, :, ji) )
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + ji), Trim( hbudname ), prsvs(:, :, :, ji) * prhodj(:, :, :) )
     end do
   end if
 end if
@@ -330,12 +330,12 @@ else !NECON + NEGA
 
   if ( lbudget_sv .and. ( hcloud == 'C2R2' .or. hcloud == 'KHKO' ) ) then
     do ji = nsv_c2r2beg, nsv_c2r2beg + 2
-      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + ji), Trim( hbudname ), prsvs(:, :, :, ji) )
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + ji), Trim( hbudname ), prsvs(:, :, :, ji) * prhodj(:, :, :) )
     end do
   end if
   if ( lbudget_sv .and. hcloud == 'LIMA' ) then
     do ji = nsv_lima_beg, nsv_lima_end
-      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + ji), Trim( hbudname ), prsvs(:, :, :, ji) )
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + ji), Trim( hbudname ), prsvs(:, :, :, ji) * prhodj(:, :, :) )
     end do
   end if
 end if
