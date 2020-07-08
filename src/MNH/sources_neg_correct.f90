@@ -273,12 +273,12 @@ else !NECON + NEGA
 
   if ( lbudget_sv .and. (hcloud == 'C2R2' .or. hcloud == 'KHKO' )) then
     do ji = 1, 3
-      call Budget( prsvs(:, :, :, nsv_c2r2beg - 1 + ji), 12 + nsv_c2r2beg - 1 + ji, Trim( hbudname )//'_BU_RSV' )
+      call Budget( prsvs(:, :, :, nsv_c2r2beg - 1 + ji) * prhodj(:, :, :), 12 + nsv_c2r2beg - 1 + ji, Trim( hbudname )//'_BU_RSV' )
     end do
   end if
   if ( lbudget_sv .and. hcloud == 'LIMA' ) then
     do ji = nsv_lima_beg, nsv_lima_end
-      call Budget( prsvs(:, :, :, ji), 12 + ji, Trim( hbudname )//'_BU_RSV' )
+      call Budget( prsvs(:, :, :, ji) * prhodj(:, :, :), 12 + ji, Trim( hbudname )//'_BU_RSV' )
     end do
   end if
 end if
