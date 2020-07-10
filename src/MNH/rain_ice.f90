@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ######spl
        MODULE MODI_RAIN_ICE
 !      ####################
@@ -2223,11 +2224,11 @@ IMPLICIT NONE
   IF (LBUDGET_TH) CALL BUDGET (                                                &
                  UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),  &
                                                               4,'HON_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (                                                &
-                     UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
+  IF (LBUDGET_RC) CALL BUDGET (                                                   &
+                     UNPACK(ZRCS(:),MASK=GMICRO(:,:,:),FIELD=PRCS)*PRHODJ(:,:,:), &
                                                               7,'HON_BU_RRC')
-  IF (LBUDGET_RI) CALL BUDGET (                                                &
-                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
+  IF (LBUDGET_RI) CALL BUDGET (                                                   &
+                     UNPACK(ZRIS(:),MASK=GMICRO(:,:,:),FIELD=PRIS)*PRHODJ(:,:,:), &
                                                               9,'HON_BU_RRI')
 !
 !*       3.3     compute the spontaneous freezing source: RRHONG
@@ -2243,11 +2244,11 @@ IMPLICIT NONE
   IF (LBUDGET_TH) CALL BUDGET (                                                &
                  UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),  &
                                                               4,'SFR_BU_RTH')
-  IF (LBUDGET_RR) CALL BUDGET (                                                &
-                     UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
+  IF (LBUDGET_RR) CALL BUDGET (                                                   &
+                     UNPACK(ZRRS(:),MASK=GMICRO(:,:,:),FIELD=PRRS)*PRHODJ(:,:,:), &
                                                               8,'SFR_BU_RRR')
-  IF (LBUDGET_RG) CALL BUDGET (                                                &
-                     UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
+  IF (LBUDGET_RG) CALL BUDGET (                                                   &
+                     UNPACK(ZRGS(:),MASK=GMICRO(:,:,:),FIELD=PRGS)*PRHODJ(:,:,:), &
                                                              11,'SFR_BU_RRG')
 !
 !*       3.4    compute the deposition, aggregation and autoconversion sources
@@ -2297,8 +2298,8 @@ IMPLICIT NONE
   IF (LBUDGET_RV) CALL BUDGET (                                                &
                  UNPACK(ZRVS(:),MASK=GMICRO(:,:,:),FIELD=PRVS)*PRHODJ(:,:,:),  &
                                                               6,'DEPS_BU_RRV')
-  IF (LBUDGET_RS) CALL BUDGET (                                                &
-                     UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
+  IF (LBUDGET_RS) CALL BUDGET (                                                   &
+                     UNPACK(ZRSS(:),MASK=GMICRO(:,:,:),FIELD=PRSS)*PRHODJ(:,:,:), &
                                                              10,'DEPS_BU_RRS')
 !
 !*       3.4.4  compute the aggregation on r_s: RIAGGS
@@ -2312,11 +2313,11 @@ IMPLICIT NONE
     ZRSS(:)  = ZRSS(:)  + ZZW(:)
     ZRIS(:)  = ZRIS(:)  - ZZW(:)
   END WHERE
-  IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RI) CALL BUDGET (                                                   &
+                     UNPACK(ZRIS(:),MASK=GMICRO(:,:,:),FIELD=PRIS)*PRHODJ(:,:,:), &
                                                               9,'AGGS_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET (                                                 &
-                     UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RS) CALL BUDGET (                                                   &
+                     UNPACK(ZRSS(:),MASK=GMICRO(:,:,:),FIELD=PRSS)*PRHODJ(:,:,:), &
                                                              10,'AGGS_BU_RRS')
 !
 !*       3.4.5  compute the autoconversion of r_i for r_s production: RIAUTS
@@ -2332,11 +2333,11 @@ IMPLICIT NONE
     ZRIS(:)  = ZRIS(:)  - ZZW(:)
   END WHERE
   DEALLOCATE(ZCRIAUTI)
-  IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RI) CALL BUDGET (                                                   &
+                     UNPACK(ZRIS(:),MASK=GMICRO(:,:,:),FIELD=PRIS)*PRHODJ(:,:,:), &
                                                               9,'AUTS_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET (                                                 &
-                     UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RS) CALL BUDGET (                                                   &
+                     UNPACK(ZRSS(:),MASK=GMICRO(:,:,:),FIELD=PRSS)*PRHODJ(:,:,:), &
                                                              10,'AUTS_BU_RRS')
 !
 !*       3.4.6  compute the deposition on r_g: RVDEPG
@@ -2361,8 +2362,8 @@ IMPLICIT NONE
   IF (LBUDGET_RV) CALL BUDGET (                                                 &
                  UNPACK(ZRVS(:),MASK=GMICRO(:,:,:),FIELD=PRVS)*PRHODJ(:,:,:),   &
                                                               6,'DEPG_BU_RRV')
-  IF (LBUDGET_RG) CALL BUDGET (                                                 &
-                     UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RG) CALL BUDGET (                                                   &
+                     UNPACK(ZRGS(:),MASK=GMICRO(:,:,:),FIELD=PRGS)*PRHODJ(:,:,:), &
                                                              11,'DEPG_BU_RRG')
 !
   END SUBROUTINE RAIN_ICE_SLOW
@@ -2390,11 +2391,11 @@ IMPLICIT NONE
       ZRRS(:) = ZRRS(:) + ZZW(:)
     END WHERE
 !
-      IF (LBUDGET_RC) CALL BUDGET (                                               &
-                       UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
-                                                                7,'AUTO_BU_RRC')
-      IF (LBUDGET_RR) CALL BUDGET (                                               &
-                       UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+    IF (LBUDGET_RC) CALL BUDGET (                                                   &
+                       UNPACK(ZRCS(:),MASK=GMICRO(:,:,:),FIELD=PRCS)*PRHODJ(:,:,:), &
+                                                              7,'AUTO_BU_RRC')
+    IF (LBUDGET_RR) CALL BUDGET (                                                   &
+                       UNPACK(ZRRS(:),MASK=GMICRO(:,:,:),FIELD=PRRS)*PRHODJ(:,:,:), &
                                                                 8,'AUTO_BU_RRR')
 !
 !*       4.3    compute the accretion of r_c for r_r production: RCACCR
@@ -2444,12 +2445,12 @@ IMPLICIT NONE
             CALL PRINT_MSG(NVERB_FATAL,'GEN','RAIN_ICE_WARM','')  
     ENDIF
 
-    IF (LBUDGET_RC) CALL BUDGET (                                               &
-                     UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
-                                                              7,'ACCR_BU_RRC')
-    IF (LBUDGET_RR) CALL BUDGET (                                               &
-                     UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
-                                                              8,'ACCR_BU_RRR')
+    IF (LBUDGET_RC) CALL BUDGET (                                                   &
+                       UNPACK(ZRCS(:),MASK=GMICRO(:,:,:),FIELD=PRCS)*PRHODJ(:,:,:), &
+                                                                7,'ACCR_BU_RRC')
+    IF (LBUDGET_RR) CALL BUDGET (                                                   &
+                       UNPACK(ZRRS(:),MASK=GMICRO(:,:,:),FIELD=PRRS)*PRHODJ(:,:,:), &
+                                                                8,'ACCR_BU_RRR')
 !
 !*       4.4    compute the evaporation of r_r: RREVAV
 !
@@ -2527,8 +2528,8 @@ IMPLICIT NONE
     IF (LBUDGET_RV) CALL BUDGET (                                               &
                  UNPACK(ZRVS(:),MASK=GMICRO(:,:,:),FIELD=PRVS)*PRHODJ(:,:,:),   &
                                                               6,'REVA_BU_RRV')
-    IF (LBUDGET_RR) CALL BUDGET (                                               &
-                     UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+    IF (LBUDGET_RR) CALL BUDGET (                                                   &
+                       UNPACK(ZRRS(:),MASK=GMICRO(:,:,:),FIELD=PRRS)*PRHODJ(:,:,:), &
                                                               8,'REVA_BU_RRR')
     ZW(:,:,:)=PEVAP3D(:,:,:)
     PEVAP3D(:,:,:)=UNPACK(ZZW(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:))
@@ -2630,15 +2631,15 @@ IMPLICIT NONE
   IF (LBUDGET_TH) CALL BUDGET (                                               &
                UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),   &
                                                              4,'RIM_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (                                               &
-                   UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
-                                                             7,'RIM_BU_RRC')
-  IF (LBUDGET_RS) CALL BUDGET (                                               &
-                   UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
-                                                            10,'RIM_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (                                               &
-                   UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
-                                                            11,'RIM_BU_RRG')
+  IF (LBUDGET_RC) CALL BUDGET (                                                   &
+                     UNPACK(ZRCS(:),MASK=GMICRO(:,:,:),FIELD=PRCS)*PRHODJ(:,:,:), &
+                                                              7,'RIM_BU_RRC')
+  IF (LBUDGET_RS) CALL BUDGET (                                                   &
+                     UNPACK(ZRSS(:),MASK=GMICRO(:,:,:),FIELD=PRSS)*PRHODJ(:,:,:), &
+                                                             10,'RIM_BU_RRS')
+  IF (LBUDGET_RG) CALL BUDGET (                                                   &
+                     UNPACK(ZRGS(:),MASK=GMICRO(:,:,:),FIELD=PRGS)*PRHODJ(:,:,:), &
+                                                             11,'RIM_BU_RRG')
   DEALLOCATE(GRIM)
 !
 !*       5.2    rain accretion onto the aggregates
@@ -2759,15 +2760,15 @@ IMPLICIT NONE
   IF (LBUDGET_TH) CALL BUDGET (                                               &
                UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),   &
                                                              4,'ACC_BU_RTH')
-  IF (LBUDGET_RR) CALL BUDGET (                                               &
-                   UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
-                                                             8,'ACC_BU_RRR')
-  IF (LBUDGET_RS) CALL BUDGET (                                               &
-                   UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
-                                                            10,'ACC_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (                                               &
-                   UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
-                                                            11,'ACC_BU_RRG')
+  IF (LBUDGET_RR) CALL BUDGET (                                                   &
+                     UNPACK(ZRRS(:),MASK=GMICRO(:,:,:),FIELD=PRRS)*PRHODJ(:,:,:), &
+                                                              8,'ACC_BU_RRR')
+  IF (LBUDGET_RS) CALL BUDGET (                                                   &
+                     UNPACK(ZRSS(:),MASK=GMICRO(:,:,:),FIELD=PRSS)*PRHODJ(:,:,:), &
+                                                             10,'ACC_BU_RRS')
+  IF (LBUDGET_RG) CALL BUDGET (                                                   &
+                     UNPACK(ZRGS(:),MASK=GMICRO(:,:,:),FIELD=PRGS)*PRHODJ(:,:,:), &
+                                                             11,'ACC_BU_RRG')
 !
 !*       5.3    Conversion-Melting of the aggregates
 !
@@ -2793,11 +2794,11 @@ IMPLICIT NONE
     ZRSS(:) = ZRSS(:) - ZZW(:)
     ZRGS(:) = ZRGS(:) + ZZW(:)
   END WHERE
-  IF (LBUDGET_RS) CALL BUDGET (                                                 &
-                     UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RS) CALL BUDGET (                                                   &
+                     UNPACK(ZRSS(:),MASK=GMICRO(:,:,:),FIELD=PRSS)*PRHODJ(:,:,:), &
                                                              10,'CMEL_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (                                                 &
-                     UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RG) CALL BUDGET (                                                   &
+                     UNPACK(ZRGS(:),MASK=GMICRO(:,:,:),FIELD=PRGS)*PRHODJ(:,:,:), &
                                                              11,'CMEL_BU_RRG')
 !
   END SUBROUTINE RAIN_ICE_FAST_RS
@@ -2833,14 +2834,14 @@ IMPLICIT NONE
   IF (LBUDGET_TH) CALL BUDGET (                                                 &
                  UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),   &
                                                               4,'CFRZ_BU_RTH')
-  IF (LBUDGET_RR) CALL BUDGET (                                                 &
-                     UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RR) CALL BUDGET (                                                   &
+                     UNPACK(ZRRS(:),MASK=GMICRO(:,:,:),FIELD=PRRS)*PRHODJ(:,:,:), &
                                                               8,'CFRZ_BU_RRR')
-  IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RI) CALL BUDGET (                                                   &
+                     UNPACK(ZRIS(:),MASK=GMICRO(:,:,:),FIELD=PRIS)*PRHODJ(:,:,:), &
                                                               9,'CFRZ_BU_RRI')
-  IF (LBUDGET_RG) CALL BUDGET (                                                 &
-                     UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RG) CALL BUDGET (                                                   &
+                     UNPACK(ZRGS(:),MASK=GMICRO(:,:,:),FIELD=PRGS)*PRHODJ(:,:,:), &
                                                              11,'CFRZ_BU_RRG')
 !
 !*       6.2    compute the Dry growth case
@@ -3060,27 +3061,26 @@ IMPLICIT NONE
   IF (LBUDGET_TH) CALL BUDGET (                                                 &
                  UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),   &
                                                               4,'WETG_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (                                                 &
-                     UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RC) CALL BUDGET (                                                   &
+                     UNPACK(ZRCS(:),MASK=GMICRO(:,:,:),FIELD=PRCS)*PRHODJ(:,:,:), &
                                                               7,'WETG_BU_RRC')
-  IF (LBUDGET_RR) CALL BUDGET (                                                 &
-                     UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RR) CALL BUDGET (                                                   &
+                     UNPACK(ZRRS(:),MASK=GMICRO(:,:,:),FIELD=PRRS)*PRHODJ(:,:,:), &
                                                               8,'WETG_BU_RRR')
-  IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RI) CALL BUDGET (                                                   &
+                     UNPACK(ZRIS(:),MASK=GMICRO(:,:,:),FIELD=PRIS)*PRHODJ(:,:,:), &
                                                               9,'WETG_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET (                                                 &
-                     UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RS) CALL BUDGET (                                                   &
+                     UNPACK(ZRSS(:),MASK=GMICRO(:,:,:),FIELD=PRSS)*PRHODJ(:,:,:), &
                                                              10,'WETG_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (                                                 &
-                     UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RG) CALL BUDGET (                                                   &
+                     UNPACK(ZRGS(:),MASK=GMICRO(:,:,:),FIELD=PRGS)*PRHODJ(:,:,:), &
                                                              11,'WETG_BU_RRG')
   IF ( KRR == 7 ) THEN
     IF (LBUDGET_RH) CALL BUDGET (                                                 &
-                     UNPACK(ZRHS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+                     UNPACK(ZRHS(:),MASK=GMICRO(:,:,:),FIELD=PRHS)*PRHODJ(:,:,:), &
                                                              12,'WETG_BU_RRH')
   END IF
-
 !
   WHERE( ZRGT(:)>XRTMIN(6) .AND. ZZT(:)<XTT                            &
                                         .AND.                          &
@@ -3096,20 +3096,20 @@ IMPLICIT NONE
   IF (LBUDGET_TH) CALL BUDGET (                                                    &
                  UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),   &
                                                               4,'DRYG_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (                                                 &
-                     UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RC) CALL BUDGET (                                                   &
+                     UNPACK(ZRCS(:),MASK=GMICRO(:,:,:),FIELD=PRCS)*PRHODJ(:,:,:), &
                                                               7,'DRYG_BU_RRC')
-  IF (LBUDGET_RR) CALL BUDGET (                                                 &
-                     UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RR) CALL BUDGET (                                                   &
+                     UNPACK(ZRRS(:),MASK=GMICRO(:,:,:),FIELD=PRRS)*PRHODJ(:,:,:), &
                                                               8,'DRYG_BU_RRR')
-  IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RI) CALL BUDGET (                                                   &
+                     UNPACK(ZRIS(:),MASK=GMICRO(:,:,:),FIELD=PRIS)*PRHODJ(:,:,:), &
                                                               9,'DRYG_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET (                                                 &
-                     UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RS) CALL BUDGET (                                                   &
+                     UNPACK(ZRSS(:),MASK=GMICRO(:,:,:),FIELD=PRSS)*PRHODJ(:,:,:), &
                                                              10,'DRYG_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (                                                 &
-                     UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RG) CALL BUDGET (                                                   &
+                     UNPACK(ZRGS(:),MASK=GMICRO(:,:,:),FIELD=PRGS)*PRHODJ(:,:,:), &
                                                              11,'DRYG_BU_RRG')
 !
 !      WHERE ( ZZT(:) > XTT ) ! RSWETG case only
@@ -3141,12 +3141,12 @@ IMPLICIT NONE
     IF (LBUDGET_TH) CALL BUDGET (                                                 &
                    UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),   &
                                                                 4,'GMLT_BU_RTH')
-    IF (LBUDGET_RR) CALL BUDGET (                                                 &
-                       UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
-                                                                8,'GMLT_BU_RRR')
-    IF (LBUDGET_RG) CALL BUDGET (                                                 &
-                       UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
-                                                               11,'GMLT_BU_RRG')
+  IF (LBUDGET_RR) CALL BUDGET (                                                   &
+                     UNPACK(ZRRS(:),MASK=GMICRO(:,:,:),FIELD=PRRS)*PRHODJ(:,:,:), &
+                                                              8,'GMLT_BU_RRR')
+  IF (LBUDGET_RG) CALL BUDGET (                                                   &
+                     UNPACK(ZRGS(:),MASK=GMICRO(:,:,:),FIELD=PRGS)*PRHODJ(:,:,:), &
+                                                             11,'GMLT_BU_RRG')
 !
   END SUBROUTINE RAIN_ICE_FAST_RG
 !
@@ -3355,24 +3355,24 @@ IMPLICIT NONE
     IF (LBUDGET_TH) CALL BUDGET (                                                 &
                    UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
                                                                 4,'WETH_BU_RTH')
-    IF (LBUDGET_RC) CALL BUDGET (                                                 &
-                       UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                                7,'WETH_BU_RRC')
-    IF (LBUDGET_RR) CALL BUDGET (                                                 &
-                       UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                                8,'WETH_BU_RRR')
-    IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                       UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                                9,'WETH_BU_RRI')
-    IF (LBUDGET_RS) CALL BUDGET (                                                 &
-                       UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                               10,'WETH_BU_RRS')
-    IF (LBUDGET_RG) CALL BUDGET (                                                 &
-                       UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                               11,'WETH_BU_RRG')
-    IF (LBUDGET_RH) CALL BUDGET (                                                 &
-                       UNPACK(ZRHS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                               12,'WETH_BU_RRH')
+  IF (LBUDGET_RC) CALL BUDGET (                                                   &
+                     UNPACK(ZRCS(:),MASK=GMICRO(:,:,:),FIELD=PRCS)*PRHODJ(:,:,:), &
+                                                              7,'WETH_BU_RRC')
+  IF (LBUDGET_RR) CALL BUDGET (                                                   &
+                     UNPACK(ZRRS(:),MASK=GMICRO(:,:,:),FIELD=PRRS)*PRHODJ(:,:,:), &
+                                                              8,'WETH_BU_RRR')
+  IF (LBUDGET_RI) CALL BUDGET (                                                   &
+                     UNPACK(ZRIS(:),MASK=GMICRO(:,:,:),FIELD=PRIS)*PRHODJ(:,:,:), &
+                                                              9,'WETH_BU_RRI')
+  IF (LBUDGET_RS) CALL BUDGET (                                                   &
+                     UNPACK(ZRSS(:),MASK=GMICRO(:,:,:),FIELD=PRSS)*PRHODJ(:,:,:), &
+                                                             10,'WETH_BU_RRS')
+  IF (LBUDGET_RG) CALL BUDGET (                                                   &
+                     UNPACK(ZRGS(:),MASK=GMICRO(:,:,:),FIELD=PRGS)*PRHODJ(:,:,:), &
+                                                             11,'WETH_BU_RRG')
+  IF (LBUDGET_RH) CALL BUDGET (                                                   &
+                     UNPACK(ZRHS(:),MASK=GMICRO(:,:,:),FIELD=PRHS)*PRHODJ(:,:,:), &
+                                                             12,'WETH_BU_RRH')
 !
 !
 ! ici LRECONVH et un flag pour autoriser une reconversion partielle de
@@ -3426,15 +3426,15 @@ IMPLICIT NONE
     END WHERE
   END IF
   DEALLOCATE(GHAIL)
-    IF (LBUDGET_TH) CALL BUDGET (                                                 &
-                   UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
+  IF (LBUDGET_TH) CALL BUDGET (                                                   &
+                     UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:), &
                                                                 4,'HMLT_BU_RTH')
-    IF (LBUDGET_RR) CALL BUDGET (                                                 &
-                       UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                                8,'HMLT_BU_RRR')
-    IF (LBUDGET_RH) CALL BUDGET (                                                 &
-                       UNPACK(ZRHS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                               12,'HMLT_BU_RRH')
+  IF (LBUDGET_RR) CALL BUDGET (                                                   &
+                     UNPACK(ZRRS(:),MASK=GMICRO(:,:,:),FIELD=PRRS)*PRHODJ(:,:,:), &
+                                                              8,'HMLT_BU_RRR')
+  IF (LBUDGET_RH) CALL BUDGET (                                                   &
+                     UNPACK(ZRHS(:),MASK=GMICRO(:,:,:),FIELD=PRHS)*PRHODJ(:,:,:), &
+                                                             12,'HMLT_BU_RRH')
 !
   END SUBROUTINE RAIN_ICE_FAST_RH
 !
@@ -3463,11 +3463,11 @@ IMPLICIT NONE
   IF (LBUDGET_TH) CALL BUDGET (                                                 &
                  UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),   &
                                                               4,'IMLT_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (                                                 &
-                     UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RC) CALL BUDGET (                                                   &
+                     UNPACK(ZRCS(:),MASK=GMICRO(:,:,:),FIELD=PRCS)*PRHODJ(:,:,:), &
                                                               7,'IMLT_BU_RRC')
-  IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RI) CALL BUDGET (                                                   &
+                     UNPACK(ZRIS(:),MASK=GMICRO(:,:,:),FIELD=PRIS)*PRHODJ(:,:,:), &
                                                               9,'IMLT_BU_RRI')
 !
 !*       7.2    Bergeron-Findeisen effect: RCBERI
@@ -3485,12 +3485,12 @@ IMPLICIT NONE
   IF (LBUDGET_TH) CALL BUDGET (                                                 &
                  UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),   &
                                                              4,'BERFI_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (                                                 &
-                     UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
-                                                             7,'BERFI_BU_RRC')
-  IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
-                                                             9,'BERFI_BU_RRI')
+  IF (LBUDGET_RC) CALL BUDGET (                                                   &
+                     UNPACK(ZRCS(:),MASK=GMICRO(:,:,:),FIELD=PRCS)*PRHODJ(:,:,:), &
+                                                              7,'BERFI_BU_RRC')
+  IF (LBUDGET_RI) CALL BUDGET (                                                   &
+                     UNPACK(ZRIS(:),MASK=GMICRO(:,:,:),FIELD=PRIS)*PRHODJ(:,:,:), &
+                                                              9,'BERFI_BU_RRI')
 !
   END SUBROUTINE RAIN_ICE_FAST_RI
 !
