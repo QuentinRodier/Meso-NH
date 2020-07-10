@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -16,11 +16,11 @@ MODULE MODE_RAIN_ICE_SLOW
 
 CONTAINS
 
-SUBROUTINE RAIN_ICE_SLOW(OMICRO, PINVTSTEP, PRHODREF,                      &
-                         PRCT, PRRT, PRIT, PRST, PRGT, PRHODJ, PZT, PPRES, &
-                         PLSFACT, PLVFACT,                                 &
-                         PSSI, PRHODJ3D, PTHS3D, PRVS3D,                   &
-                         PRVS, PRCS, PRRS, PRIS, PRSS, PRGS, PTHS,         &
+SUBROUTINE RAIN_ICE_SLOW(OMICRO, PINVTSTEP, PRHODREF,                                      &
+                         PRCT, PRRT, PRIT, PRST, PRGT, PRHODJ, PZT, PPRES,                 &
+                         PLSFACT, PLVFACT, PSSI,                                           &
+                         PRHODJ3D, PTHS3D, PRVS3D, PRCS3D, PRRS3D, PRIS3D, PRSS3D, PRGS3D, &
+                         PRVS, PRCS, PRRS, PRIS, PRSS, PRGS, PTHS,                         &
                          PAI, PCJ, PKA, PDV, PLBDAS, PLBDAG)
 !
 !*      0. DECLARATIONS
@@ -55,6 +55,11 @@ REAL,     DIMENSION(:),     intent(in)    :: PSSI     ! Supersaturation over ice
 REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRHODJ3D ! Dry density * Jacobian
 REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PTHS3D   ! Theta source
 REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRVS3D   ! Water vapor m.r. source
+REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRCS3D   ! Cloud vapor m.r. source
+REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRRS3D   ! Rain water m.r. source
+REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRIS3D   ! Ice vapor m.r. source
+REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRSS3D   ! Snow/aggregate m.r. source
+REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRGS3D   ! Graupel m.r. source
 REAL,     DIMENSION(:),     INTENT(INOUT) :: PRVS     ! Water vapor m.r. source
 REAL,     DIMENSION(:),     INTENT(INOUT) :: PRCS     ! Cloud water m.r. source
 REAL,     DIMENSION(:),     INTENT(INOUT) :: PRRS     ! Rain water m.r. source
@@ -89,14 +94,14 @@ REAL, DIMENSION(size(PRHODREF)) :: ZCRIAUTI ! Snow-to-ice autoconversion thres.
     PTHS(:) = PTHS(:) + ZZW(:)*(PLSFACT(:)-PLVFACT(:)) ! f(L_f*(RCHONI))
   ENDWHERE
 !
-  IF (LBUDGET_TH) CALL BUDGET (                                                &
-                 UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),  &
+  IF (LBUDGET_TH) CALL BUDGET (                                                   &
+                 UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:), &
                                                               4,'HON_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (                                                &
-                     UNPACK(PRCS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),   &
+  IF (LBUDGET_RC) CALL BUDGET (                                                   &
+                 UNPACK(PRCS(:),MASK=OMICRO(:,:,:),FIELD=PRCS3D)*PRHODJ3D(:,:,:), &
                                                               7,'HON_BU_RRC')
-  IF (LBUDGET_RI) CALL BUDGET (                                                &
-                     UNPACK(PRIS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),   &
+  IF (LBUDGET_RI) CALL BUDGET (                                                   &
+                 UNPACK(PRIS(:),MASK=OMICRO(:,:,:),FIELD=PRIS3D)*PRHODJ3D(:,:,:), &
                                                               9,'HON_BU_RRI')
 !
 !*       3.3     compute the spontaneous freezing source: RRHONG
@@ -109,14 +114,14 @@ REAL, DIMENSION(size(PRHODREF)) :: ZCRIAUTI ! Snow-to-ice autoconversion thres.
     PTHS(:) = PTHS(:) + ZZW(:)*(PLSFACT(:)-PLVFACT(:)) ! f(L_f*(RRHONG))
   ENDWHERE
 !
-  IF (LBUDGET_TH) CALL BUDGET (                                                &
-                 UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),  &
+  IF (LBUDGET_TH) CALL BUDGET (                                                   &
+                 UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:), &
                                                               4,'SFR_BU_RTH')
-  IF (LBUDGET_RR) CALL BUDGET (                                                &
-                     UNPACK(PRRS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),   &
+  IF (LBUDGET_RR) CALL BUDGET (                                                   &
+                 UNPACK(PRRS(:),MASK=OMICRO(:,:,:),FIELD=PRRS3D)*PRHODJ3D(:,:,:), &
                                                               8,'SFR_BU_RRR')
-  IF (LBUDGET_RG) CALL BUDGET (                                                &
-                     UNPACK(PRGS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),   &
+  IF (LBUDGET_RG) CALL BUDGET (                                                   &
+                 UNPACK(PRGS(:),MASK=OMICRO(:,:,:),FIELD=PRGS3D)*PRHODJ3D(:,:,:), &
                                                              11,'SFR_BU_RRG')
 !
 !*       3.4    compute the deposition, aggregation and autoconversion sources
@@ -160,14 +165,14 @@ REAL, DIMENSION(size(PRHODREF)) :: ZCRIAUTI ! Snow-to-ice autoconversion thres.
     PRVS(:) = PRVS(:) - ZZW(:)
     PTHS(:) = PTHS(:) + ZZW(:)*PLSFACT(:)
   END WHERE
-  IF (LBUDGET_TH) CALL BUDGET (                                                &
-                 UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),  &
+  IF (LBUDGET_TH) CALL BUDGET (                                                   &
+                 UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:), &
                                                               4,'DEPS_BU_RTH')
-  IF (LBUDGET_RV) CALL BUDGET (                                                &
-                 UNPACK(PRVS(:),MASK=OMICRO(:,:,:),FIELD=PRVS3D)*PRHODJ3D(:,:,:),  &
+  IF (LBUDGET_RV) CALL BUDGET (                                                   &
+                 UNPACK(PRVS(:),MASK=OMICRO(:,:,:),FIELD=PRVS3D)*PRHODJ3D(:,:,:), &
                                                               6,'DEPS_BU_RRV')
-  IF (LBUDGET_RS) CALL BUDGET (                                                &
-                     UNPACK(PRSS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),   &
+  IF (LBUDGET_RS) CALL BUDGET (                                                   &
+                 UNPACK(PRSS(:),MASK=OMICRO(:,:,:),FIELD=PRSS3D)*PRHODJ3D(:,:,:), &
                                                              10,'DEPS_BU_RRS')
 !
 !*       3.4.4  compute the aggregation on r_s: RIAGGS
@@ -181,11 +186,11 @@ REAL, DIMENSION(size(PRHODREF)) :: ZCRIAUTI ! Snow-to-ice autoconversion thres.
     PRSS(:)  = PRSS(:)  + ZZW(:)
     PRIS(:)  = PRIS(:)  - ZZW(:)
   END WHERE
-  IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                     UNPACK(PRIS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RI) CALL BUDGET (                                                   &
+                 UNPACK(PRIS(:),MASK=OMICRO(:,:,:),FIELD=PRIS3D)*PRHODJ3D(:,:,:), &
                                                               9,'AGGS_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET (                                                 &
-                     UNPACK(PRSS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RS) CALL BUDGET (                                                   &
+                 UNPACK(PRSS(:),MASK=OMICRO(:,:,:),FIELD=PRSS3D)*PRHODJ3D(:,:,:), &
                                                              10,'AGGS_BU_RRS')
 !
 !*       3.4.5  compute the autoconversion of r_i for r_s production: RIAUTS
@@ -199,11 +204,11 @@ REAL, DIMENSION(size(PRHODREF)) :: ZCRIAUTI ! Snow-to-ice autoconversion thres.
     PRSS(:)  = PRSS(:)  + ZZW(:)
     PRIS(:)  = PRIS(:)  - ZZW(:)
   END WHERE
-  IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                     UNPACK(PRIS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RI) CALL BUDGET (                                                       &
+                     UNPACK(PRIS(:),MASK=OMICRO(:,:,:),FIELD=PRIS3D)*PRHODJ3D(:,:,:), &
                                                               9,'AUTS_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET (                                                 &
-                     UNPACK(PRSS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RS) CALL BUDGET (                                                   &
+                 UNPACK(PRSS(:),MASK=OMICRO(:,:,:),FIELD=PRSS3D)*PRHODJ3D(:,:,:), &
                                                              10,'AUTS_BU_RRS')
 !
 !*       3.4.6  compute the deposition on r_g: RVDEPG
@@ -222,14 +227,14 @@ REAL, DIMENSION(size(PRHODREF)) :: ZCRIAUTI ! Snow-to-ice autoconversion thres.
     PRVS(:) = PRVS(:) - ZZW(:)
     PTHS(:) = PTHS(:) + ZZW(:)*PLSFACT(:)
   END WHERE
-  IF (LBUDGET_TH) CALL BUDGET (                                                 &
-                 UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),   &
+  IF (LBUDGET_TH) CALL BUDGET (                                                   &
+                 UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:), &
                                                               4,'DEPG_BU_RTH')
-  IF (LBUDGET_RV) CALL BUDGET (                                                 &
-                 UNPACK(PRVS(:),MASK=OMICRO(:,:,:),FIELD=PRVS3D)*PRHODJ3D(:,:,:),   &
+  IF (LBUDGET_RV) CALL BUDGET (                                                   &
+                 UNPACK(PRVS(:),MASK=OMICRO(:,:,:),FIELD=PRVS3D)*PRHODJ3D(:,:,:), &
                                                               6,'DEPG_BU_RRV')
-  IF (LBUDGET_RG) CALL BUDGET (                                                 &
-                     UNPACK(PRGS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RG) CALL BUDGET (                                                   &
+                 UNPACK(PRGS(:),MASK=OMICRO(:,:,:),FIELD=PRGS3D)*PRHODJ3D(:,:,:), &
                                                              11,'DEPG_BU_RRG')
 !
 END SUBROUTINE RAIN_ICE_SLOW

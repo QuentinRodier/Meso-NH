@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -20,7 +20,7 @@ CONTAINS
 SUBROUTINE RAIN_ICE_WARM(OMICRO, KMICRO, K1, K2, K3,                                                           &
                          PRHODREF, PRVT, PRCT, PRRT, PHLC_HCF, PHLC_LCF, PHLC_HRC, PHLC_LRC,                   &
                          PRHODJ, PPRES, PZT, PLBDAR, PLBDAR_RF, PLVFACT, PCJ, PKA, PDV, PRF, PCF, PTHT, PTHLT, &
-                         PRHODJ3D, PTHS3D, PRVS3D, PRVS, PRCS, PRRS, PTHS, PUSW, PEVAP3D)
+                         PRHODJ3D, PTHS3D, PRVS3D, PRCS3D, PRRS3D, PRVS, PRCS, PRRS, PTHS, PUSW, PEVAP3D)
 !
 !*      0. DECLARATIONS
 !          ------------
@@ -69,6 +69,8 @@ REAL,     DIMENSION(:),     intent(in)    :: PTHLT    ! Liquid potential tempera
 REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRHODJ3D ! Dry density * Jacobian
 REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PTHS3D   ! Theta source
 REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRVS3D   ! Water vapor m.r. source
+REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRCS3D   ! Cloud vapor m.r. source
+REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRRS3D   ! Rain water m.r. source
 REAL,     DIMENSION(:),     INTENT(INOUT) :: PRVS     ! Water vapor m.r. source
 REAL,     DIMENSION(:),     INTENT(INOUT) :: PRCS     ! Cloud water m.r. source
 REAL,     DIMENSION(:),     INTENT(INOUT) :: PRRS     ! Rain water m.r. source
@@ -97,11 +99,11 @@ REAL, DIMENSION(size(PRHODREF)) :: ZZW4 ! Work array
       PRRS(:) = PRRS(:) + ZZW(:)
     END WHERE
 !
-      IF (LBUDGET_RC) CALL BUDGET (                                               &
-                       UNPACK(PRCS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                                7,'AUTO_BU_RRC')
-      IF (LBUDGET_RR) CALL BUDGET (                                               &
-                       UNPACK(PRRS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
+    IF (LBUDGET_RC) CALL BUDGET (                                                   &
+                   UNPACK(PRCS(:),MASK=OMICRO(:,:,:),FIELD=PRCS3D)*PRHODJ3D(:,:,:), &
+                                                              7,'AUTO_BU_RRC')
+    IF (LBUDGET_RR) CALL BUDGET (                                                   &
+                   UNPACK(PRRS(:),MASK=OMICRO(:,:,:),FIELD=PRRS3D)*PRHODJ3D(:,:,:), &
                                                                 8,'AUTO_BU_RRR')
 !
 !*       4.3    compute the accretion of r_c for r_r production: RCACCR
@@ -151,12 +153,12 @@ REAL, DIMENSION(size(PRHODREF)) :: ZZW4 ! Work array
             CALL PRINT_MSG(NVERB_FATAL,'GEN','RAIN_ICE_WARM','')
     ENDIF
 
-    IF (LBUDGET_RC) CALL BUDGET (                                               &
-                     UNPACK(PRCS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
+    IF (LBUDGET_RC) CALL BUDGET (                                                   &
+                   UNPACK(PRCS(:),MASK=OMICRO(:,:,:),FIELD=PRCS3D)*PRHODJ3D(:,:,:), &
                                                               7,'ACCR_BU_RRC')
-    IF (LBUDGET_RR) CALL BUDGET (                                               &
-                     UNPACK(PRRS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                              8,'ACCR_BU_RRR')
+    IF (LBUDGET_RR) CALL BUDGET (                                                   &
+                   UNPACK(PRRS(:),MASK=OMICRO(:,:,:),FIELD=PRRS3D)*PRHODJ3D(:,:,:), &
+                                                                8,'ACCR_BU_RRR')
 !
 !*       4.4    compute the evaporation of r_r: RREVAV
 !
@@ -228,15 +230,15 @@ REAL, DIMENSION(size(PRHODREF)) :: ZZW4 ! Work array
       CALL PRINT_MSG(NVERB_FATAL,'GEN','RAIN_ICE_WARM','')
     END IF
 
-    IF (LBUDGET_TH) CALL BUDGET (                                               &
-                 UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),   &
+    IF (LBUDGET_TH) CALL BUDGET (                                                 &
+                 UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:), &
                                                               4,'REVA_BU_RTH')
-    IF (LBUDGET_RV) CALL BUDGET (                                               &
-                 UNPACK(PRVS(:),MASK=OMICRO(:,:,:),FIELD=PRVS3D)*PRHODJ3D(:,:,:),   &
+    IF (LBUDGET_RV) CALL BUDGET (                                                 &
+                 UNPACK(PRVS(:),MASK=OMICRO(:,:,:),FIELD=PRVS3D)*PRHODJ3D(:,:,:), &
                                                               6,'REVA_BU_RRV')
-    IF (LBUDGET_RR) CALL BUDGET (                                               &
-                     UNPACK(PRRS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                              8,'REVA_BU_RRR')
+    IF (LBUDGET_RR) CALL BUDGET (                                                 &
+                 UNPACK(PRRS(:),MASK=OMICRO(:,:,:),FIELD=PRRS3D)*PRHODJ3D(:,:,:), &
+                                                                8,'REVA_BU_RRR')
 
     DO JL = 1, KMICRO
       PEVAP3D(K1(JL), K2(JL), K3(JL)) = ZZW( JL )

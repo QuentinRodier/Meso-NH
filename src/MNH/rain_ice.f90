@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -786,8 +786,8 @@ IF( IMICRO >= 0 ) THEN
 !
   CALL RAIN_ICE_SLOW(GMICRO, ZINVTSTEP, ZRHODREF,                      &
                      ZRCT, ZRRT, ZRIT, ZRST, ZRGT, ZRHODJ, ZZT, ZPRES, &
-                     ZLSFACT, ZLVFACT,                                 &
-                     ZSSI, PRHODJ, PTHS, PRVS,                         &
+                     ZLSFACT, ZLVFACT, ZSSI,                           &
+                     PRHODJ, PTHS, PRVS, PRCS, PRRS, PRIS, PRSS, PRGS, &
                      ZRVS, ZRCS, ZRRS, ZRIS, ZRSS, ZRGS, ZTHS,         &
                      ZAI, ZCJ, ZKA, ZDV, ZLBDAS, ZLBDAG)
 !
@@ -816,7 +816,7 @@ IF( IMICRO >= 0 ) THEN
     CALL RAIN_ICE_WARM(GMICRO, IMICRO, I1, I2, I3,                                                           &
                        ZRHODREF, ZRVT, ZRCT, ZRRT, ZHLC_HCF, ZHLC_LCF, ZHLC_HRC, ZHLC_LRC,                   &
                        ZRHODJ, ZPRES, ZZT, ZLBDAR, ZLBDAR_RF, ZLVFACT, ZCJ, ZKA, ZDV, ZRF, ZCF, ZTHT, ZTHLT, &
-                       PRHODJ, PTHS, PRVS, ZRVS, ZRCS, ZRRS, ZTHS, ZUSW, PEVAP3D)
+                       PRHODJ, PTHS, PRVS, PRCS, PRRS, ZRVS, ZRCS, ZRRS, ZTHS, ZUSW, PEVAP3D)
   END IF
 !
 !-------------------------------------------------------------------------------
@@ -826,7 +826,7 @@ IF( IMICRO >= 0 ) THEN
 !               ----------------------------------------------
 !
   CALL RAIN_ICE_FAST_RS(PTSTEP, GMICRO, ZRHODREF, ZRVT, ZRCT, ZRRT, ZRST, ZRHODJ, ZPRES, ZZT, &
-                        ZLBDAR, ZLBDAS, ZLSFACT, ZLVFACT, ZCJ, ZKA, ZDV, PRHODJ, PTHS, &
+                        ZLBDAR, ZLBDAS, ZLSFACT, ZLVFACT, ZCJ, ZKA, ZDV, PRHODJ, PTHS, PRCS, PRRS, PRSS, PRGS, &
                         ZRCS, ZRRS, ZRSS, ZRGS, ZTHS)
 !
 !-------------------------------------------------------------------------------
@@ -837,8 +837,9 @@ IF( IMICRO >= 0 ) THEN
 !
   CALL RAIN_ICE_FAST_RG(KRR, GMICRO, ZRHODREF, ZRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT, ZCIT, &
                         ZRHODJ, ZPRES, ZZT, ZLBDAR, ZLBDAS, ZLBDAG, ZLSFACT, ZLVFACT, &
-                        ZCJ, ZKA, ZDV, PRHODJ, PTHS, ZRCS, ZRRS, ZRIS, ZRSS, ZRGS, ZRHS, ZTHS, &
-                        ZUSW, ZRDRYG, ZRWETG)
+                        ZCJ, ZKA, ZDV, PRHODJ, PTHS, PRCS, PRRS, PRIS, PRSS, PRGS, &
+                        ZRCS, ZRRS, ZRIS, ZRSS, ZRGS, ZRHS, ZTHS, &
+                        ZUSW, ZRDRYG, ZRWETG, PRHS)
 !
 !-------------------------------------------------------------------------------
 !
@@ -849,6 +850,7 @@ IF( IMICRO >= 0 ) THEN
  IF ( KRR == 7 ) THEN
   CALL RAIN_ICE_FAST_RH(GMICRO, ZRHODREF, ZRVT, ZRCT, ZRIT, ZRST, ZRGT, ZRHT, ZRHODJ, ZPRES, &
                         ZZT, ZLBDAS, ZLBDAG, ZLBDAH, ZLSFACT, ZLVFACT, ZCJ, ZKA, ZDV, PRHODJ, PTHS, &
+                        PRCS, PRRS, PRIS, PRSS, PRGS, PRHS, &
                         ZRCS, ZRRS, ZRIS, ZRSS, ZRGS, ZRHS, ZTHS, ZUSW)
  END IF
 !
@@ -859,7 +861,7 @@ IF( IMICRO >= 0 ) THEN
 !               -------------------------------------------------------------
 !
   CALL RAIN_ICE_FAST_RI(GMICRO, ZRHODREF, ZRIT, ZRHODJ, ZZT, ZSSI, ZLSFACT, ZLVFACT, &
-                        ZAI, ZCJ, PRHODJ, PTHS, ZCIT, ZRCS, ZRIS, ZTHS)
+                        ZAI, ZCJ, PRHODJ, PTHS, PRCS, PRIS, ZCIT, ZRCS, ZRIS, ZTHS)
 !
 !
 !-------------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -20,7 +20,7 @@ MODULE MODE_RAIN_ICE_FAST_RS
 CONTAINS
 
 SUBROUTINE RAIN_ICE_FAST_RS(PTSTEP, OMICRO, PRHODREF, PRVT, PRCT, PRRT, PRST, PRHODJ, PPRES, PZT, &
-                            PLBDAR, PLBDAS, PLSFACT, PLVFACT, PCJ, PKA, PDV, PRHODJ3D, PTHS3D, &
+                            PLBDAR, PLBDAS, PLSFACT, PLVFACT, PCJ, PKA, PDV, PRHODJ3D, PTHS3D, PRCS3D, PRRS3D, PRSS3D, PRGS3D, &
                             PRCS, PRRS, PRSS, PRGS, PTHS)
 !
 !*      0. DECLARATIONS
@@ -61,6 +61,10 @@ REAL,     DIMENSION(:),     intent(in)    :: PKA      ! Thermal conductivity of 
 REAL,     DIMENSION(:),     intent(in)    :: PDV      ! Diffusivity of water vapor in the air
 REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRHODJ3D ! Dry density * Jacobian
 REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PTHS3D   ! Theta source
+REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRCS3D   ! Cloud vapor m.r. source
+REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRRS3D   ! Rain water m.r. source
+REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRSS3D   ! Snow/aggregate m.r. source
+REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRGS3D   ! Graupel m.r. source
 REAL,     DIMENSION(:),     INTENT(INOUT) :: PRCS     ! Cloud water m.r. source
 REAL,     DIMENSION(:),     INTENT(INOUT) :: PRRS     ! Rain water m.r. source
 REAL,     DIMENSION(:),     INTENT(INOUT) :: PRSS     ! Snow/aggregate m.r. source
@@ -167,17 +171,17 @@ REAL,    DIMENSION(:), ALLOCATABLE :: ZZW1, ZZW2, ZZW3, ZZW4 ! Work arrays
     DEALLOCATE(ZVEC1)
     DEALLOCATE(ZVECLBDAS)
   END IF
-  IF (LBUDGET_TH) CALL BUDGET (                                               &
-               UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),   &
+  IF (LBUDGET_TH) CALL BUDGET (                                                   &
+                 UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:), &
                                                              4,'RIM_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (                                               &
-                   UNPACK(PRCS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RC) CALL BUDGET (                                                   &
+                 UNPACK(PRCS(:),MASK=OMICRO(:,:,:),FIELD=PRCS3D)*PRHODJ3D(:,:,:), &
                                                              7,'RIM_BU_RRC')
-  IF (LBUDGET_RS) CALL BUDGET (                                               &
-                   UNPACK(PRSS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RS) CALL BUDGET (                                                   &
+                 UNPACK(PRSS(:),MASK=OMICRO(:,:,:),FIELD=PRSS3D)*PRHODJ3D(:,:,:), &
                                                             10,'RIM_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (                                               &
-                   UNPACK(PRGS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RG) CALL BUDGET (                                                   &
+                 UNPACK(PRGS(:),MASK=OMICRO(:,:,:),FIELD=PRGS3D)*PRHODJ3D(:,:,:), &
                                                             11,'RIM_BU_RRG')
 !
 !*       5.2    rain accretion onto the aggregates
@@ -310,17 +314,17 @@ REAL,    DIMENSION(:), ALLOCATABLE :: ZZW1, ZZW2, ZZW3, ZZW4 ! Work arrays
     DEALLOCATE(ZVECLBDAS)
     DEALLOCATE(ZVECLBDAR)
   END IF
-  IF (LBUDGET_TH) CALL BUDGET (                                               &
-               UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),   &
+  IF (LBUDGET_TH) CALL BUDGET (                                                   &
+                 UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:), &
                                                              4,'ACC_BU_RTH')
-  IF (LBUDGET_RR) CALL BUDGET (                                               &
-                   UNPACK(PRRS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RR) CALL BUDGET (                                                   &
+                 UNPACK(PRRS(:),MASK=OMICRO(:,:,:),FIELD=PRRS3D)*PRHODJ3D(:,:,:), &
                                                              8,'ACC_BU_RRR')
-  IF (LBUDGET_RS) CALL BUDGET (                                               &
-                   UNPACK(PRSS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RS) CALL BUDGET (                                                   &
+                 UNPACK(PRSS(:),MASK=OMICRO(:,:,:),FIELD=PRSS3D)*PRHODJ3D(:,:,:), &
                                                             10,'ACC_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (                                               &
-                   UNPACK(PRGS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RG) CALL BUDGET (                                                   &
+                 UNPACK(PRGS(:),MASK=OMICRO(:,:,:),FIELD=PRGS3D)*PRHODJ3D(:,:,:), &
                                                             11,'ACC_BU_RRG')
 !
 !*       5.3    Conversion-Melting of the aggregates
@@ -344,12 +348,12 @@ REAL,    DIMENSION(:), ALLOCATABLE :: ZZW1, ZZW2, ZZW3, ZZW4 ! Work arrays
     PRSS(:) = PRSS(:) - ZZW(:)
     PRGS(:) = PRGS(:) + ZZW(:)
   END WHERE
-  IF (LBUDGET_RS) CALL BUDGET (                                                 &
-                     UNPACK(PRSS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                             10,'CMEL_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (                                                 &
-                     UNPACK(PRGS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
-                                                             11,'CMEL_BU_RRG')
+  IF (LBUDGET_RS) CALL BUDGET (                                                   &
+                 UNPACK(PRSS(:),MASK=OMICRO(:,:,:),FIELD=PRSS3D)*PRHODJ3D(:,:,:), &
+                                                            10,'CMEL_BU_RRS')
+  IF (LBUDGET_RG) CALL BUDGET (                                                   &
+                 UNPACK(PRGS(:),MASK=OMICRO(:,:,:),FIELD=PRGS3D)*PRHODJ3D(:,:,:), &
+                                                            11,'CMEL_BU_RRG')
 !
 END SUBROUTINE RAIN_ICE_FAST_RS
 

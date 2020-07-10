@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -18,7 +18,7 @@ MODULE MODE_RAIN_ICE_FAST_RI
 CONTAINS
 
 SUBROUTINE RAIN_ICE_FAST_RI(OMICRO, PRHODREF, PRIT, PRHODJ, PZT, PSSI, PLSFACT, PLVFACT, &
-                            PAI, PCJ, PRHODJ3D, PTHS3D, PCIT, PRCS, PRIS, PTHS)
+                            PAI, PCJ, PRHODJ3D, PTHS3D, PRCS3D, PRIS3D, PCIT, PRCS, PRIS, PTHS)
 !
 !*      0. DECLARATIONS
 !          ------------
@@ -46,6 +46,8 @@ REAL,     DIMENSION(:),     intent(in)    :: PAI      ! Thermodynamical function
 REAL,     DIMENSION(:),     intent(in)    :: PCJ      ! Function to compute the ventilation coefficient
 REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRHODJ3D ! Dry density * Jacobian
 REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PTHS3D   ! Theta source
+REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRCS3D   ! Cloud vapor m.r. source
+REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRIS3D   ! Ice vapor m.r. source
 REAL,     DIMENSION(:),     intent(inout) :: PCIT     ! Pristine ice conc. at t
 REAL,     DIMENSION(:),     INTENT(INOUT) :: PRCS     ! Cloud water m.r. source
 REAL,     DIMENSION(:),     INTENT(INOUT) :: PRIS     ! Pristine ice m.r. source
@@ -64,14 +66,14 @@ REAL, DIMENSION(size(PRHODREF)) :: ZZW  ! Work array
     PRIS(:) = 0.0
     PCIT(:) = 0.0
   END WHERE
-  IF (LBUDGET_TH) CALL BUDGET (                                                 &
-                 UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),   &
+  IF (LBUDGET_TH) CALL BUDGET (                                                   &
+                 UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:), &
                                                               4,'IMLT_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (                                                 &
-                     UNPACK(PRCS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RC) CALL BUDGET (                                                   &
+                 UNPACK(PRCS(:),MASK=OMICRO(:,:,:),FIELD=PRCS3D)*PRHODJ3D(:,:,:), &
                                                               7,'IMLT_BU_RRC')
-  IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                     UNPACK(PRIS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RI) CALL BUDGET (                                                   &
+                 UNPACK(PRIS(:),MASK=OMICRO(:,:,:),FIELD=PRIS3D)*PRHODJ3D(:,:,:), &
                                                               9,'IMLT_BU_RRI')
 !
 !*       7.2    Bergeron-Findeisen effect: RCBERI
@@ -84,14 +86,14 @@ REAL, DIMENSION(size(PRHODREF)) :: ZZW  ! Work array
     PRIS(:) = PRIS(:) + ZZW(:)
     PTHS(:) = PTHS(:) + ZZW(:)*(PLSFACT(:)-PLVFACT(:)) ! f(L_f*(RCBERI))
   END WHERE
-  IF (LBUDGET_TH) CALL BUDGET (                                                 &
-                 UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),   &
+  IF (LBUDGET_TH) CALL BUDGET (                                                   &
+                 UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:), &
                                                              4,'BERFI_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (                                                 &
-                     UNPACK(PRCS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RC) CALL BUDGET (                                                   &
+                 UNPACK(PRCS(:),MASK=OMICRO(:,:,:),FIELD=PRCS3D)*PRHODJ3D(:,:,:), &
                                                              7,'BERFI_BU_RRC')
-  IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                     UNPACK(PRIS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RI) CALL BUDGET (                                                   &
+                 UNPACK(PRIS(:),MASK=OMICRO(:,:,:),FIELD=PRIS3D)*PRHODJ3D(:,:,:), &
                                                              9,'BERFI_BU_RRI')
 !
 END SUBROUTINE RAIN_ICE_FAST_RI

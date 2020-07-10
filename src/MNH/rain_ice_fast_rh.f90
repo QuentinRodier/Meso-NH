@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -21,6 +21,7 @@ CONTAINS
 
 SUBROUTINE RAIN_ICE_FAST_RH(OMICRO, PRHODREF, PRVT, PRCT, PRIT, PRST, PRGT, PRHT, PRHODJ, PPRES, &
                             PZT, PLBDAS, PLBDAG, PLBDAH, PLSFACT, PLVFACT, PCJ, PKA, PDV, PRHODJ3D, PTHS3D, &
+                            PRCS3D, PRRS3D, PRIS3D, PRSS3D, PRGS3D, PRHS3D, &
                             PRCS, PRRS, PRIS, PRSS, PRGS, PRHS, PTHS, PUSW)
 !
 !*      0. DECLARATIONS
@@ -61,6 +62,12 @@ REAL,     DIMENSION(:),     intent(in)    :: PKA      ! Thermal conductivity of 
 REAL,     DIMENSION(:),     intent(in)    :: PDV      ! Diffusivity of water vapor in the air
 REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRHODJ3D ! Dry density * Jacobian
 REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PTHS3D   ! Theta source
+REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRCS3D   ! Cloud vapor m.r. source
+REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRRS3D   ! Rain water m.r. source
+REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRIS3D   ! Ice vapor m.r. source
+REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRSS3D   ! Snow/aggregate m.r. source
+REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRGS3D   ! Graupel m.r. source
+REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRHS3D   ! Hail m.r. source
 REAL,     DIMENSION(:),     INTENT(INOUT) :: PRCS     ! Cloud water m.r. source
 REAL,     DIMENSION(:),     INTENT(INOUT) :: PRRS     ! Rain water m.r. source
 REAL,     DIMENSION(:),     INTENT(INOUT) :: PRIS     ! Pristine ice m.r. source
@@ -300,27 +307,27 @@ REAL,    DIMENSION(size(PRHODREF),6) :: ZZW1              ! Work arrays
       END IF
     END DO
   END IF
-    IF (LBUDGET_TH) CALL BUDGET (                                                 &
-                   UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),&
+  IF (LBUDGET_TH) CALL BUDGET (                                                   &
+                 UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:), &
                                                                 4,'WETH_BU_RTH')
-    IF (LBUDGET_RC) CALL BUDGET (                                                 &
-                       UNPACK(PRCS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0), &
-                                                                7,'WETH_BU_RRC')
-    IF (LBUDGET_RR) CALL BUDGET (                                                 &
-                       UNPACK(PRRS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0), &
-                                                                8,'WETH_BU_RRR')
-    IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                       UNPACK(PRIS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0), &
-                                                                9,'WETH_BU_RRI')
-    IF (LBUDGET_RS) CALL BUDGET (                                                 &
-                       UNPACK(PRSS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0), &
-                                                               10,'WETH_BU_RRS')
-    IF (LBUDGET_RG) CALL BUDGET (                                                 &
-                       UNPACK(PRGS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0), &
-                                                               11,'WETH_BU_RRG')
-    IF (LBUDGET_RH) CALL BUDGET (                                                 &
-                       UNPACK(PRHS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0), &
-                                                               12,'WETH_BU_RRH')
+  IF (LBUDGET_RC) CALL BUDGET (                                                   &
+                 UNPACK(PRCS(:),MASK=OMICRO(:,:,:),FIELD=PRCS3D)*PRHODJ3D(:,:,:), &
+                                                             7,'WETH_BU_RRC')
+  IF (LBUDGET_RR) CALL BUDGET (                                                   &
+                 UNPACK(PRRS(:),MASK=OMICRO(:,:,:),FIELD=PRRS3D)*PRHODJ3D(:,:,:), &
+                                                             8,'WETH_BU_RRR')
+  IF (LBUDGET_RI) CALL BUDGET (                                                   &
+                 UNPACK(PRIS(:),MASK=OMICRO(:,:,:),FIELD=PRIS3D)*PRHODJ3D(:,:,:), &
+                                                             9,'WETH_BU_RRI')
+  IF (LBUDGET_RS) CALL BUDGET (                                                   &
+                 UNPACK(PRSS(:),MASK=OMICRO(:,:,:),FIELD=PRSS3D)*PRHODJ3D(:,:,:), &
+                                                            10,'WETH_BU_RRS')
+  IF (LBUDGET_RG) CALL BUDGET (                                                   &
+                 UNPACK(PRGS(:),MASK=OMICRO(:,:,:),FIELD=PRGS3D)*PRHODJ3D(:,:,:), &
+                                                            11,'WETH_BU_RRG')
+  IF (LBUDGET_RH) CALL BUDGET (                                                   &
+                 UNPACK(PRHS(:),MASK=OMICRO(:,:,:),FIELD=PRHS3D)*PRHODJ3D(:,:,:), &
+                                                            12,'WETH_BU_RRH')
 !
 !
 ! ici LRECONVH et un flag pour autoriser une reconversion partielle de
@@ -375,15 +382,15 @@ REAL,    DIMENSION(size(PRHODREF),6) :: ZZW1              ! Work arrays
     END DO
   END IF
 
-    IF (LBUDGET_TH) CALL BUDGET (                                                 &
-                   UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:),&
+  IF (LBUDGET_TH) CALL BUDGET (                                                   &
+                 UNPACK(PTHS(:),MASK=OMICRO(:,:,:),FIELD=PTHS3D)*PRHODJ3D(:,:,:), &
                                                                 4,'HMLT_BU_RTH')
-    IF (LBUDGET_RR) CALL BUDGET (                                                 &
-                       UNPACK(PRRS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0), &
-                                                                8,'HMLT_BU_RRR')
-    IF (LBUDGET_RH) CALL BUDGET (                                                 &
-                       UNPACK(PRHS(:)*PRHODJ(:),MASK=OMICRO(:,:,:),FIELD=0.0), &
-                                                               12,'HMLT_BU_RRH')
+  IF (LBUDGET_RR) CALL BUDGET (                                                   &
+                 UNPACK(PRRS(:),MASK=OMICRO(:,:,:),FIELD=PRRS3D)*PRHODJ3D(:,:,:), &
+                                                             8,'HMLT_BU_RRR')
+  IF (LBUDGET_RH) CALL BUDGET (                                                   &
+                 UNPACK(PRHS(:),MASK=OMICRO(:,:,:),FIELD=PRHS3D)*PRHODJ3D(:,:,:), &
+                                                            12,'HMLT_BU_RRH')
 !
 END SUBROUTINE RAIN_ICE_FAST_RH
 
