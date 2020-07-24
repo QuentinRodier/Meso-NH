@@ -14,6 +14,7 @@
 !
 !* modification 08/2010  V. Masson  smoothing of the discontinuity in functions 
 !                                   used for implicitation of exchange coefficients
+!               05/2020   V. Masson and C. Lac : bug in D_PHI3DTDZ2_O_DDTDZ
 !
 USE MODD_CTURB,      ONLY : XCTV, XCSHF, XCTD, XPHI_LIM, XCPR3, XCPR4, XCPR5
 USE MODD_PARAMETERS, ONLY : JPVEXT_TURB
@@ -277,32 +278,36 @@ IKE = SIZE(PREDTH1,3)-JPVEXT_TURB
 !
 !
 IF (HTURBDIM=='3DIM') THEN
-        !* 3DIM case
-  IF (OUSERV) THEN
-    WHERE (PPHI3(:,:,:)<=XPHI_LIM)
-    D_PHI3DTDZ2_O_DDTDZ(:,:,:) = PPHI3(:,:,:)                      &
-          * PDTDZ(:,:,:)*(2.-PREDTH1(:,:,:)*(3./2.+PREDTH1+PREDR1) &
-               /((1.+PREDTH1+PREDR1)*(1.+1./2.*(PREDTH1+PREDR1)))) &
-          + (1.+PREDR1)*(PRED2THR3+PRED2TH3)                       &
-               / (PREDTH1*(1.+PREDTH1+PREDR1)*(1.+1./2.*(PREDTH1+PREDR1))) &
-          - (1./2.*PREDTH1+PREDR1 * (1.+PREDTH1+PREDR1))           &
-               / ((1.+PREDTH1+PREDR1)*(1.+1./2.*(PREDTH1+PREDR1)))
-    ELSEWHERE
-      D_PHI3DTDZ2_O_DDTDZ(:,:,:) = PPHI3(:,:,:) * 2. * PDTDZ(:,:,:)
-    ENDWHERE
+   ! by derivation of (phi3 dtdz) * dtdz according to dtdz we obtain:
+   D_PHI3DTDZ2_O_DDTDZ(:,:,:) = PDTDZ * (PPHI3 +  &
+           D_PHI3DTDZ_O_DDTDZ(PPHI3,PREDTH1,PREDR1,PRED2TH3,PRED2THR3,HTURBDIM,OUSERV) )
 
+!        !* 3DIM case
+!  IF (OUSERV) THEN
+!    WHERE (PPHI3(:,:,:)<=XPHI_LIM)
+!    D_PHI3DTDZ2_O_DDTDZ(:,:,:) = PPHI3(:,:,:)                      &
+!          * PDTDZ(:,:,:)*(2.-PREDTH1(:,:,:)*(3./2.+PREDTH1+PREDR1) &
+!               /((1.+PREDTH1+PREDR1)*(1.+1./2.*(PREDTH1+PREDR1)))) &
+!          + (1.+PREDR1)*(PRED2THR3+PRED2TH3)                       &
+!               / (PREDTH1*(1.+PREDTH1+PREDR1)*(1.+1./2.*(PREDTH1+PREDR1))) &
+!          - (1./2.*PREDTH1+PREDR1 * (1.+PREDTH1+PREDR1))           &
+!               / ((1.+PREDTH1+PREDR1)*(1.+1./2.*(PREDTH1+PREDR1)))
+!    ELSEWHERE
+!      D_PHI3DTDZ2_O_DDTDZ(:,:,:) = PPHI3(:,:,:) * 2. * PDTDZ(:,:,:)
+!    ENDWHERE
 !
-  ELSE
-    WHERE (PPHI3(:,:,:)<=XPHI_LIM)
-    D_PHI3DTDZ2_O_DDTDZ(:,:,:) = PPHI3(:,:,:)                  &
-          * PDTDZ(:,:,:)*(2.-PREDTH1(:,:,:)*(3./2.+PREDTH1)   &
-               /((1.+PREDTH1)*(1.+1./2.*PREDTH1)))             &
-          + PRED2TH3 / (PREDTH1*(1.+PREDTH1)*(1.+1./2.*PREDTH1)) &
-          - 1./2.*PREDTH1 / ((1.+PREDTH1)*(1.+1./2.*PREDTH1))
-    ELSEWHERE
-      D_PHI3DTDZ2_O_DDTDZ(:,:,:) = PPHI3(:,:,:) * 2. * PDTDZ(:,:,:)
-    ENDWHERE
-  END IF
+!!
+!  ELSE
+!    WHERE (PPHI3(:,:,:)<=XPHI_LIM)
+!    D_PHI3DTDZ2_O_DDTDZ(:,:,:) = PPHI3(:,:,:)                  &
+!          * PDTDZ(:,:,:)*(2.-PREDTH1(:,:,:)*(3./2.+PREDTH1)   &
+!               /((1.+PREDTH1)*(1.+1./2.*PREDTH1)))             &
+!          + PRED2TH3 / (PREDTH1*(1.+PREDTH1)*(1.+1./2.*PREDTH1)) &
+!          - 1./2.*PREDTH1 / ((1.+PREDTH1)*(1.+1./2.*PREDTH1))
+!    ELSEWHERE
+!      D_PHI3DTDZ2_O_DDTDZ(:,:,:) = PPHI3(:,:,:) * 2. * PDTDZ(:,:,:)
+!    ENDWHERE
+!  END IF
 ELSE
         !* 1DIM case
     WHERE (PPHI3(:,:,:)<=XPHI_LIM)
