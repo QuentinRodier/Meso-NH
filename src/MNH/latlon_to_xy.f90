@@ -56,6 +56,7 @@
 !!    + changes call to READ_HGRID
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 10/04/2020: add missing initializations (LATLON_TO_XY was not working)
+!  J. Escobar 21/07/2020 : missing modi_version        
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -83,6 +84,7 @@ USE MODI_INI_CST
 USE MODI_READ_HGRID
 !
 USE MODN_CONFIO, ONLY : NAM_CONFIO
+USE MODI_VERSION
 !
 IMPLICIT NONE
 !
