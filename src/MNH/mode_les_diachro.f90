@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -8,6 +8,7 @@
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !  P. Wautelet 20/09/2019: rewrite normalization of LES budgets
+!  P. Wautelet 14/08/2020: deduplicate LES_DIACHRO* subroutines
 !-----------------------------------------------------------------
 !#######################
 MODULE MODE_LES_DIACHRO
@@ -87,14 +88,14 @@ if ( kpower == 0 ) return
 !normalization is not possible if some values are zero
 do jsv = 1, size( ples_norm, 2 )
   if ( any( ples_norm(:, jsv ) == 0. ) ) then
-    pa_norm(:, :, :, jsv) = xundef
+    pa_norm(:, :, :, jsv) = XUNDEF
     cycle
   end if
 
   do jp = 1, size( pa_norm, 3 )
     do jt = 1, nles_current_times
       do jk = 1, nles_k
-        if ( pa_norm(jk, jt, jp, jsv) /= xundef ) &
+        if ( pa_norm(jk, jt, jp, jsv) /= XUNDEF ) &
             pa_norm(jk, jt,jp, jsv ) = pa_norm(jk, jt, jp, jsv ) * ples_norm(jt, jsv )**( -kpower )
       end do
     end do
@@ -246,7 +247,7 @@ do ji = 1, inunits
 end do
 
 if ( ikg > 1 .and. ipowers(NNORM_KG ) /= 0 ) &
-  call Print_msg( NVERB_ERROR, 'IO', 'LES_NORM_4D', 'if kg appears more than one time, it should be admimensional' )
+  call Print_msg( NVERB_ERROR, 'IO', 'LES_NORM_4D', 'if kg appears more than one time, it should be adimensional' )
 
 if ( ikg > 2 ) &
   call Print_msg( NVERB_ERROR, 'IO', 'LES_NORM_4D', 'kg should not appear more than 2 times' )
@@ -270,151 +271,6 @@ if (ipowers(NNORM_SV ) /= 0 ) call Make_norm_sv( pa_norm, xles_norm_sv,  ipowers
 where( pa_norm == XUNDEF ) pa_norm = pa_les
 
 END SUBROUTINE LES_NORM_4D
-!
-!------------------------------------------------------------------------------
-!
-!     ###################################################
-      SUBROUTINE LES_NORM_3D(HUNIT, PA_LES, PA_NORM, OSV)
-!     ###################################################
-!
-!
-!!****  *LES_NORM* normalizes a field according to the chosen normalization
-!!
-!!    PURPOSE
-!!    -------
-!!
-!!    EXTERNAL
-!!    --------
-!!
-!!    IMPLICIT ARGUMENTS
-!!    ------------------
-!!
-!!    REFERENCE
-!!    ---------
-!!
-!!    AUTHOR
-!!    ------
-!!      V. Masson
-!!
-!!    MODIFICATIONS
-!!    -------------
-!!      Original         30/10/00
-!!
-!! --------------------------------------------------------------------------
-!       
-!*      0. DECLARATIONS
-!          ------------
-!
-!
-IMPLICIT NONE
-!
-!*      0.1  declarations of arguments
-!
-CHARACTER(LEN=*),          INTENT(IN)  :: HUNIT   ! physical unit of field
-REAL,    DIMENSION(:,:,:), INTENT(IN)  :: PA_LES  ! field
-!
-REAL,    DIMENSION(:,:,:), INTENT(OUT) :: PA_NORM ! normalized field
-LOGICAL, OPTIONAL,         INTENT(IN)  :: OSV     ! flag for scalar variables
-!
-!       0.2  declaration of local variables
-!
-REAL,    DIMENSION(:,:,:,:), ALLOCATABLE :: ZA_LES
-REAL,    DIMENSION(:,:,:,:), ALLOCATABLE :: ZA_NORM
-!
-INTEGER :: JSV
-!------------------------------------------------------------------------------
-!
-IF (PRESENT(OSV)) THEN
-  IF (OSV) THEN
-    ALLOCATE(ZA_LES (SIZE(PA_LES,1),SIZE(PA_LES,2),1,SIZE(PA_LES,3)))
-    ALLOCATE(ZA_NORM(SIZE(PA_LES,1),SIZE(PA_LES,2),1,SIZE(PA_LES,3)))
-    DO JSV=1,SIZE(PA_LES,3)
-      ZA_LES (:,:,1,JSV) = PA_LES(:,:,JSV)
-    END DO
-    CALL LES_NORM_4D(HUNIT, ZA_LES, ZA_NORM, OSV)
-    DO JSV=1,SIZE(PA_LES,3)
-      PA_NORM(:,:,JSV) = ZA_NORM(:,:,1,JSV)
-    END DO
-  ELSE
-    ALLOCATE(ZA_LES (SIZE(PA_LES,1),SIZE(PA_LES,2),SIZE(PA_LES,3),1))
-    ALLOCATE(ZA_NORM(SIZE(PA_LES,1),SIZE(PA_LES,2),SIZE(PA_LES,3),1))
-    ZA_LES (:,:,:,1) = PA_LES(:,:,:)
-    CALL LES_NORM_4D(HUNIT, ZA_LES, ZA_NORM, OSV)
-    PA_NORM(:,:,:) = ZA_NORM(:,:,:,1)
-  END IF
-ELSE
-  ALLOCATE(ZA_LES (SIZE(PA_LES,1),SIZE(PA_LES,2),SIZE(PA_LES,3),1))
-  ALLOCATE(ZA_NORM(SIZE(PA_LES,1),SIZE(PA_LES,2),SIZE(PA_LES,3),1))
-  ZA_LES (:,:,:,1) = PA_LES(:,:,:)
-  CALL LES_NORM_4D(HUNIT, ZA_LES, ZA_NORM)
-  PA_NORM(:,:,:) = ZA_NORM(:,:,:,1)
-END IF
-!
-DEALLOCATE(ZA_LES)
-DEALLOCATE(ZA_NORM)
-!
-END SUBROUTINE LES_NORM_3D
-!
-!     ##############################################
-      SUBROUTINE LES_NORM_2D(HUNIT, PA_LES, PA_NORM)
-!     ##############################################
-!
-!
-!!****  *LES_NORM* normalizes a field according to the chosen normalization
-!!
-!!    PURPOSE
-!!    -------
-!!
-!!    EXTERNAL
-!!    --------
-!!
-!!    IMPLICIT ARGUMENTS
-!!    ------------------
-!!
-!!    REFERENCE
-!!    ---------
-!!
-!!    AUTHOR
-!!    ------
-!!      V. Masson
-!!
-!!    MODIFICATIONS
-!!    -------------
-!!      Original         30/10/00
-!!
-!! --------------------------------------------------------------------------
-!       
-!*      0. DECLARATIONS
-!          ------------
-!
-!
-IMPLICIT NONE
-!
-!*      0.1  declarations of arguments
-!
-CHARACTER(LEN=*),        INTENT(IN)  :: HUNIT   ! physical unit of field
-REAL,    DIMENSION(:,:), INTENT(IN)  :: PA_LES  ! field
-!
-REAL,    DIMENSION(:,:), INTENT(OUT) :: PA_NORM ! normalized field
-!
-!       0.2  declaration of local variables
-!
-REAL,    DIMENSION(:,:,:,:), ALLOCATABLE :: ZA_LES
-REAL,    DIMENSION(:,:,:,:), ALLOCATABLE :: ZA_NORM
-!
-!------------------------------------------------------------------------------
-!
-ALLOCATE(ZA_LES  (SIZE(PA_LES,1),SIZE(PA_LES,2),1,1))
-ALLOCATE(ZA_NORM (SIZE(PA_LES,1),SIZE(PA_LES,2),1,1))
-!
-ZA_LES (:,:,1,1) = PA_LES(:,:)
-CALL LES_NORM_4D(HUNIT, ZA_LES, ZA_NORM)
-PA_NORM(:,:) = ZA_NORM(:,:,1,1)
-!
-DEALLOCATE(ZA_LES)
-DEALLOCATE(ZA_NORM)
-!
-END SUBROUTINE LES_NORM_2D
 !
 !------------------------------------------------------------------------------
 !
@@ -563,7 +419,7 @@ use mode_datetime,  only: Datetime_correctdate
 !
 IMPLICIT NONE
 !
-REAL, DIMENSION(:,:,:,:,:,:), POINTER     :: PWORK6 ! contains physical field
+REAL, DIMENSION(:,:,:,:,:,:), allocatable     :: PWORK6 ! contains physical field
 type(date_time), dimension(:), allocatable, intent(inout) :: tpdates
 INTEGER,                      INTENT(OUT) :: KRESP  ! return code (0 is OK)
 !------------------------------------------------------------------------------
@@ -652,18 +508,170 @@ END SUBROUTINE LES_TIME_AVG
 !------------------------------------------------------------------------------
 !
 !########################################################
-SUBROUTINE LES_DIACHRO(TPDIAFILE,HGROUP,HCOMMENT,HUNIT,PFIELD,HAVG)
+subroutine Les_diachro_gen(tpdiafile,hgroup,hcomment,hunit,pfield,havg, htitle, osurf, osv )
 !########################################################
-!
-USE MODD_GRID
-USE MODD_IO,            ONLY: TFILEDATA
-USE MODD_LES
+
+use modd_io,            only: tfiledata
+use modd_les,           only: nles_current_iinf, nles_current_isup, nles_current_jinf, nles_current_jsup, nles_current_times, &
+                              nles_k, nles_levels, xles_current_z, xles_temp_mean_start, xles_temp_mean_end
+use modd_parameters,    only: XUNDEF
 use modd_type_date,     only: date_time
 
-USE MODE_WRITE_DIACHRO, only: WRITE_DIACHRO
+use mode_write_diachro, only: Write_diachro
+
+implicit none
 !
+!*      0.1  Declarations of arguments
+!
+type(tfiledata),                                intent(in) :: tpdiafile ! File to write
+character(len=*),                               intent(in) :: hgroup    ! Group title
+character(len=*), dimension(:),                 intent(in) :: hcomment  ! Comment string
+character(len=*),                               intent(in) :: hunit     ! Physical unit
+real,             dimension(:,:,:,:),           intent(in) :: pfield    ! Data array
+character(len=1),                               intent(in) :: havg      ! Flag to compute avg.
+character(len=*), dimension(:),       optional, intent(in) :: htitle    ! Title
+logical,                              optional, intent(in) :: osurf     ! Flag to know if pfield is a surface variable
+logical,                              optional, intent(in) :: osv       ! Flag for scalar variables
+!
+!*      0.2  Declaration of local variables for diachro
+!
+character(len=10)                                       :: ygroup                        ! Group title
+character(len=100), dimension(:),           allocatable :: ycomment                      ! Comment string
+character(len=100), dimension(:),           allocatable :: ytitle                        ! Title
+character(len=100), dimension(:),           allocatable :: yunit                         ! Physical unit
+integer                                                 :: iresp                         ! Return code
+integer                                                 :: iles_k                        ! Number of vertical levels
+integer                                                 :: iil, iih, ijl, ijh, ikl, ikh  ! Cartesian area relatively to the
+                                                                                         ! entire domain
+integer                                                 :: jk                            ! Vertical loop counter
+integer                                                 :: jp                            ! Process loop counter
+integer                                                 :: jsv                           ! Scalar loop counter
+integer,            dimension(:),           allocatable :: igrid                         ! Grid indicator
+logical                                                 :: gavg                          ! Flag to compute time averagings
+logical                                                 :: gnorm                         ! Flag to compute normalizations
+logical                                                 :: gsurf                         ! Flag for surface variables
+logical                                                 :: gsv                           ! Flag for scalar variables
+real,               dimension(:,:,:),       allocatable :: ztrajx                        ! Localization of the temporal
+real,               dimension(:,:,:),       allocatable :: ztrajy                        ! series in x,y and z. remark:
+real,               dimension(:,:,:),       allocatable :: ztrajz                        ! x and y are not used for LES
+real,               dimension(size(pfield,1),size(pfield,2),size(pfield,3),size(pfield,4))    &
+                                                        :: zfield                        ! Normalized field
+real,               dimension(:,:,:,:,:,:), allocatable :: zwork6                        ! Contains physical field
+type(date_time),    dimension(:),           allocatable :: tzdates
+!------------------------------------------------------------------------------
+
+if ( present( osurf ) .and. present ( htitle ) ) then
+  call Print_msg( NVERB_ERROR, 'BUD', 'LES_DIACHRO_gen', &
+                  'unexpected: osurf and htitle simultaneously present (not yet validated)' )
+end if
+
+if ( present( osurf ) ) then
+  gsurf = osurf
+else
+  gsurf = .false.
+end if
+
+if ( present( osv ) ) then
+  gsv = osv
+else
+  gsv = .false.
+end if
+
+if ( gsurf ) then
+  iles_k = 1
+else
+  iles_k = nles_k
+end if
+
+gavg  = ( havg == 'A' .or. havg == 'H' )
+gnorm = ( havg == 'E' .or. havg == 'H' )
+
+if ( gavg .and. ( xles_temp_mean_start == XUNDEF .or. xles_temp_mean_end == XUNDEF ) ) return
+
+if ( gnorm ) then
+  if ( gsurf) then
+    return
+  else
+    call Les_norm_4d( hunit, pfield, zfield, gsv )
+  end if
+else
+  zfield(:, :, :, :) = pfield(:, :, :, :)
+end if
+
+! Initialization of diachro variables for les (z,t) profiles
+allocate( ztrajx( 1,      1, size( pfield, 4 ) ) )
+allocate( ztrajy( 1,      1, size( pfield, 4 ) ) )
+allocate( ztrajz( iles_k, 1, size( pfield, 4 ) ) )
+allocate( zwork6( 1, 1, iles_k, nles_current_times, size( pfield, 4 ), size( pfield, 3 ) ) )
+allocate( igrid   ( size( pfield, 3 ) ) )
+allocate( ycomment( size( pfield, 3 ) ) )
+allocate( ytitle  ( size( pfield, 3 ) ) )
+allocate( yunit   ( size( pfield, 3 ) ) )
+allocate( tzdates( nles_current_times ) )
+
+iil = nles_current_iinf
+iih = nles_current_isup
+ijl = nles_current_jinf
+ijh = nles_current_jsup
+ikl = nles_levels(1)
+ikh = nles_levels(iles_k)
+
+ztrajx(:, :, :) = ( iil + iih ) / 2
+ztrajy(:, :, :) = ( ijl + ijh ) / 2
+do jk = 1, iles_k
+  ztrajz(jk, :, :) = xles_current_z(jk)
+end do
+
+igrid(:) = 1
+ycomment(:) = hcomment(:)
+yunit(:)    = hunit(:)
+ygroup      = hgroup
+
+do jsv = 1, size( pfield, 4 )
+  do jp = 1, size( pfield, 3 )
+    zwork6(1, 1, :, :, jsv, jp) = zfield (:, :, jp, jsv)
+  end do
+end do
+
+tzdates(:) = xles_dates(:)
+
+! Normalization of vertical dimension
+if ( gnorm ) then
+  if ( hunit(1:1) /= ' ') yunit = '1'
+  call Les_z_norm( gavg, ztrajz, zwork6 )
+end if
+
+! Time average
+iresp = 0
+if ( gavg ) call Les_time_avg( zwork6, tzdates, iresp )
+
+if ( havg /= ' ' )  ygroup = havg // '_' // ygroup
+if ( present( htitle ) ) then
+  ytitle(:) = ygroup // htitle(:)
+else
+  if ( gsurf ) then
+    ytitle(1) = hgroup
+  else
+    ytitle(1) = ygroup
+  end if
+end if
+
+! Write the profile
+if ( iresp==0 .and. ( gsurf .or. any( zwork6 /= xundef ) ) ) &
+  call write_diachro( tpdiafile, tluout0, ygroup, "ssol", igrid, tzdates,               &
+                      zwork6, ytitle, yunit, ycomment,                                  &
+                      oicp = .false., ojcp = .false., okcp = .false.,                   &
+                      kil = iil, kih = iih, kjl = ijl, kjh = ijh, kkl = ikl, kkh = ikh, &
+                      ptrajx = ztrajx, ptrajy = ztrajy, ptrajz = ztrajz                 )
+
+!-------------------------------------------------------------------------------
+end subroutine Les_diachro_gen
+!------------------------------------------------------------------------------
+!########################################################
+SUBROUTINE LES_DIACHRO(TPDIAFILE,HGROUP,HCOMMENT,HUNIT,PFIELD,HAVG)
+!########################################################
+
 IMPLICIT NONE
-!
 !
 !*      0.1  declarations of arguments
 !
@@ -673,124 +681,18 @@ CHARACTER(LEN=*),     INTENT(IN)       :: HCOMMENT ! comment string
 CHARACTER(LEN=*),     INTENT(IN)       :: HUNIT    ! physical unit
 REAL, DIMENSION(:,:), INTENT(IN)       :: PFIELD
 CHARACTER(LEN=1),     INTENT(IN)       :: HAVG     ! flag to compute avg.
-!
-!*      0.2  declaration of local variables for diachro
-!
-REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJX ! localization of the temporal
-REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJY ! series in x,y and z. remark:
-REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJZ ! x and y are not used for LES
-!
-INTEGER, DIMENSION(1)                  :: IGRID    ! grid indicator
-CHARACTER(LEN= 10)                     :: YGROUP   ! group title
-CHARACTER(LEN=100), DIMENSION(1)       :: YCOMMENT ! comment string
-CHARACTER(LEN=100), DIMENSION(1)       :: YTITLE   ! title
-CHARACTER(LEN=100), DIMENSION(1)       :: YUNIT    ! physical unit
-!
-REAL,    DIMENSION(SIZE(PFIELD,1),SIZE(PFIELD,2))    &
-                                       :: ZFIELD     ! normalized field
-INTEGER                                :: IRESP    ! return code
-!
-REAL, DIMENSION(:,:,:,:,:,:), POINTER  :: ZWORK6 ! contains physical field
-!
-INTEGER :: IIL, IIH, IJL, IJH, IKL, IKH  ! cartesian area relatively to the
-!                                        ! entire domain
-INTEGER :: JK                            ! vertical loop counter
-!
-LOGICAL :: GAVG                          ! flag to compute time averagings
-LOGICAL :: GNORM                         ! flag to compute normalizations
-type(date_time), dimension(:), allocatable :: tzdates
-!
-!-------------------------------------------------------------------------------
-!
-GAVG =(HAVG=='A' .OR. HAVG=='H')
-GNORM=(HAVG=='E' .OR. HAVG=='H')
-!
-IF (GAVG .AND. (XLES_TEMP_MEAN_START==XUNDEF .OR. XLES_TEMP_MEAN_END==XUNDEF)) RETURN
-!
-ZFIELD=PFIELD
-IF (GNORM) CALL LES_NORM_2D(HUNIT, PFIELD, ZFIELD)
-!
-!*      1.0  Initialization of diachro variables for LES (z,t) profiles
-!            ----------------------------------------------------------
-!
-ALLOCATE (ZTRAJX(1,1,1))
-ALLOCATE (ZTRAJY(1,1,1))
-ALLOCATE (ZTRAJZ(NLES_K,1,1))
-!
-ALLOCATE(ZWORK6(1,1,NLES_K,NLES_CURRENT_TIMES,1,1))
-allocate( tzdates( NLES_CURRENT_TIMES ) )
-!
-IIL = NLES_CURRENT_IINF
-IIH = NLES_CURRENT_ISUP
-IJL = NLES_CURRENT_JINF
-IJH = NLES_CURRENT_JSUP
-ZTRAJX(:,:,:) = (IIL+IIH)/2
-ZTRAJY(:,:,:) = (IJL+IJH)/2
-IKL=NLES_LEVELS(1)
-IKH=NLES_LEVELS(NLES_K)
-DO JK=1,NLES_K
-  ZTRAJZ(JK,1,1) = XLES_CURRENT_Z(JK)
-END DO
-IGRID(1)=1
-YCOMMENT(1) = HCOMMENT
-!
-YUNIT (1) = HUNIT
-YGROUP    = HGROUP
-!
-ZWORK6(1,1,:,:,1,1) = ZFIELD (:,:)
-tzdates(:) = xles_dates(:)
-!
-!* normalization of vertical dimension
-!
-IF (GNORM) THEN
-  IF (HUNIT(1:1)/=' ') YUNIT='-'
-  CALL LES_Z_NORM(GAVG,ZTRAJZ,ZWORK6)
-END IF
-!
-!* time average
-!
-IRESP = 0
-IF (GAVG) CALL LES_TIME_AVG( ZWORK6, tzdates, IRESP )
-!
-IF (HAVG/=' ')  YGROUP=HAVG//'_'//YGROUP
-YTITLE(1) = YGROUP
-!
-!*      2.0  Writing of the profile
-!            ----------------------
-!
-IF (IRESP==0 .AND. ANY(ZWORK6/=XUNDEF)) &
-CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "SSOL", IGRID, tzdates,               &
-                    ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
-                    OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
-                    KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH, &
-                    PTRAJX = ZTRAJX, PTRAJY = ZTRAJY, PTRAJZ = ZTRAJZ                 )
-!
-!
-!*      3.0  Deallocations
-!            -------------
-!
-DEALLOCATE (ZTRAJX)
-DEALLOCATE (ZTRAJY)
-DEALLOCATE (ZTRAJZ)
-DEALLOCATE (ZWORK6)
-deallocate( tzdates )
-!
+
+call Les_diachro_gen( tpdiafile, hgroup, [ hcomment ], hunit, &
+                      reshape( pfield, [ size( pfield, 1), size( pfield, 2), 1, 1 ] ), havg )
+
 !-------------------------------------------------------------------------------
 END SUBROUTINE LES_DIACHRO
 !-------------------------------------------------------------------------------
 !###########################################################
 SUBROUTINE LES_DIACHRO_SV(TPDIAFILE,HGROUP,HCOMMENT,HUNIT,PFIELD,HAVG)
 !###########################################################
-!
-USE MODD_GRID
-USE MODD_IO,            ONLY: TFILEDATA
-USE MODD_LES
-use modd_type_date,     only: date_time
 
-USE MODE_WRITE_DIACHRO
-!
 IMPLICIT NONE
-!
 !
 !*      0.1  declarations of arguments
 !
@@ -800,122 +702,19 @@ CHARACTER(LEN=*),       INTENT(IN)       :: HCOMMENT ! comment string
 CHARACTER(LEN=*),       INTENT(IN)       :: HUNIT    ! physical unit
 REAL, DIMENSION(:,:,:), INTENT(IN)       :: PFIELD
 CHARACTER(LEN=1),       INTENT(IN)       :: HAVG     ! flag to compute avg.
-!
-!*      0.2  declaration of local variables for diachro
-!
-REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJX ! localization of the temporal
-REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJY ! series in x,y and z. remark:
-REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJZ ! x and y are not used for LES
-!
-INTEGER, DIMENSION(1)                  :: IGRID    ! grid indicator
-CHARACTER(LEN= 10)                     :: YGROUP   ! group title
-CHARACTER(LEN=100), DIMENSION(1)       :: YCOMMENT ! comment string
-CHARACTER(LEN=100), DIMENSION(1)       :: YTITLE   ! title
-CHARACTER(LEN=100), DIMENSION(1)       :: YUNIT    ! physical unit
-REAL,    DIMENSION(SIZE(PFIELD,1),SIZE(PFIELD,2),SIZE(PFIELD,3))    &
-                                       :: ZFIELD     ! normalized field
-INTEGER                                :: IRESP    ! return code
-!
-REAL, DIMENSION(:,:,:,:,:,:), POINTER  :: ZWORK6 ! contains physical field
-!
-INTEGER :: IIL, IIH, IJL, IJH, IKL, IKH  ! cartesian area relatively to the
-!                                        ! entire domain
-INTEGER :: JK                            ! vertical loop counter
-INTEGER :: JSV                           ! scalar loop counter
-!
-LOGICAL :: GAVG                          ! flag to compute time averagings
-LOGICAL :: GNORM                         ! flag to compute normalizations
-type(date_time), dimension(:), allocatable :: tzdates
-!
-!-------------------------------------------------------------------------------
-!
-GAVG =(HAVG=='A' .OR. HAVG=='H')
-GNORM=(HAVG=='E' .OR. HAVG=='H')
-!
-IF (GAVG .AND. (XLES_TEMP_MEAN_START==XUNDEF .OR. XLES_TEMP_MEAN_END==XUNDEF)) RETURN
-!
-ZFIELD=PFIELD
-IF (GNORM) CALL LES_NORM_3D(HUNIT, PFIELD, ZFIELD, .TRUE.)
-!
-!*      1.0  Initialization of diachro variables for LES (z,t) profiles
-!            ----------------------------------------------------------
-!
-ALLOCATE (ZTRAJX(1,1,SIZE(PFIELD,3)))
-ALLOCATE (ZTRAJY(1,1,SIZE(PFIELD,3)))
-ALLOCATE (ZTRAJZ(NLES_K,1,SIZE(PFIELD,3)))
-ALLOCATE(ZWORK6(1,1,NLES_K,NLES_CURRENT_TIMES,SIZE(PFIELD,3),1))
-allocate( tzdates( NLES_CURRENT_TIMES ) )
-!
-IIL = NLES_CURRENT_IINF
-IIH = NLES_CURRENT_ISUP
-IJL = NLES_CURRENT_JINF
-IJH = NLES_CURRENT_JSUP
-ZTRAJX(:,:,:) = (IIL+IIH)/2
-ZTRAJY(:,:,:) = (IJL+IJH)/2
-IKL=NLES_LEVELS(1)
-IKH=NLES_LEVELS(NLES_K)
-DO JK=1,NLES_K
-  ZTRAJZ(JK,:,:) = XLES_CURRENT_Z(JK)
-END DO
-IGRID(1)=1
-YCOMMENT(1) = HCOMMENT
-!
-YUNIT (1) = HUNIT
-YGROUP    = HGROUP
-!
-ZWORK6(1,1,:,:,:,1) = ZFIELD (:,:,:)
-tzdates(:) = xles_dates(:)
-!
-IF (GNORM) THEN
-  IF (HUNIT(1:1)/=' ') YUNIT='-'
-  CALL LES_Z_NORM(GAVG,ZTRAJZ,ZWORK6)
-END IF
-!
-!* time average
-!
-IRESP = 0
-IF (GAVG) CALL LES_TIME_AVG( ZWORK6, tzdates, IRESP )
-!
-IF (HAVG/=' ')  YGROUP=HAVG//'_'//YGROUP
-YTITLE(1) = YGROUP
-!
-!*      2.0  Writing of the profile
-!            ----------------------
-!
-!
-IF (IRESP==0 .AND. ANY(ZWORK6/=XUNDEF)) &
-CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "SSOL", IGRID, tzdates,               &
-                    ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
-                    OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
-                    KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH, &
-                    PTRAJX = ZTRAJX, PTRAJY = ZTRAJY, PTRAJZ = ZTRAJZ                 )
-!
-!
-!*      3.0  Deallocations
-!            -------------
-!
-DEALLOCATE (ZTRAJX)
-DEALLOCATE (ZTRAJY)
-DEALLOCATE (ZTRAJZ)
-DEALLOCATE(ZWORK6)
-deallocate( tzdates )
-!
+
+call Les_diachro_gen( tpdiafile, hgroup, [ hcomment ], hunit,                                            &
+                      reshape( pfield, [ size( pfield, 1 ), size( pfield, 2 ), 1, size( pfield, 3 ) ] ), &
+                      havg, osv = .true. )
+
 !-------------------------------------------------------------------------------
 END SUBROUTINE LES_DIACHRO_SV
 !-------------------------------------------------------------------------------
 !#####################################################################
 SUBROUTINE LES_DIACHRO_MASKS(TPDIAFILE,HGROUP,HTITLE,HCOMMENT,HUNIT,PFIELD,HAVG)
 !#####################################################################
-!
-USE MODD_GRID
-USE MODD_IO, ONLY: TFILEDATA
-USE MODD_LES
-use modd_type_date,     only: date_time
 
-USE MODE_WRITE_DIACHRO
-!
 IMPLICIT NONE
-!
 !
 !*      0.1  declarations of arguments
 !
@@ -926,124 +725,19 @@ CHARACTER(LEN=*), DIMENSION(:),     INTENT(IN) :: HCOMMENT ! comment string
 CHARACTER(LEN=*),                   INTENT(IN) :: HUNIT    ! physical unit
 REAL,             DIMENSION(:,:,:), INTENT(IN) :: PFIELD
 CHARACTER(LEN=1),                   INTENT(IN) :: HAVG     ! flag to compute avg.
-!
-!*      0.2  declaration of local variables for diachro
-!
-REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJX ! localization of the temporal
-REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJY ! series in x,y and z. remark:
-REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJZ ! x and y are not used for LES
-!
-INTEGER,            DIMENSION(SIZE(PFIELD,3)) :: IGRID    ! grid indicator
-CHARACTER(LEN= 10)                            :: YGROUP   ! group title
-CHARACTER(LEN=100), DIMENSION(SIZE(PFIELD,3)) :: YCOMMENT ! comment string
-CHARACTER(LEN=100), DIMENSION(SIZE(PFIELD,3)) :: YTITLE   ! title
-CHARACTER(LEN=100), DIMENSION(SIZE(PFIELD,3)) :: YUNIT    ! physical unit
-REAL,    DIMENSION(SIZE(PFIELD,1),SIZE(PFIELD,2),SIZE(PFIELD,3))    &
-                                              :: ZFIELD     ! normalized field
-INTEGER                                       :: IRESP    ! return code
-!
-REAL, DIMENSION(:,:,:,:,:,:), POINTER         :: ZWORK6 ! contains physical field
-!
-INTEGER :: IIL, IIH, IJL, IJH, IKL, IKH  ! cartesian area relatively to the
-!                                        ! entire domain
-INTEGER :: JK                            ! vertical loop counter
-INTEGER :: JMASK                         ! Mask loop counter
-!
-LOGICAL :: GAVG                          ! flag to compute time averagings
-LOGICAL :: GNORM                         ! flag to compute normalizations
-type(date_time), dimension(:), allocatable :: tzdates
-!
-!-------------------------------------------------------------------------------
-!
-GAVG =(HAVG=='A' .OR. HAVG=='H')
-GNORM=(HAVG=='E' .OR. HAVG=='H')
-!
-IF (GAVG .AND. (XLES_TEMP_MEAN_START==XUNDEF .OR. XLES_TEMP_MEAN_END==XUNDEF)) RETURN
-!
-ZFIELD=PFIELD
-IF (GNORM) CALL LES_NORM_3D(HUNIT, PFIELD, ZFIELD)
-!
-!*      1.0  Initialization of diachro variables for LES (z,t) profiles
-!            ----------------------------------------------------------
-!
-ALLOCATE (ZTRAJX(1,1,1))
-ALLOCATE (ZTRAJY(1,1,1))
-ALLOCATE (ZTRAJZ(NLES_K,1,1))
-ALLOCATE(ZWORK6(1,1,NLES_K,NLES_CURRENT_TIMES,1,SIZE(PFIELD,3)))
-allocate( tzdates( NLES_CURRENT_TIMES ) )
-!
-IIL = NLES_CURRENT_IINF
-IIH = NLES_CURRENT_ISUP
-IJL = NLES_CURRENT_JINF
-IJH = NLES_CURRENT_JSUP
-ZTRAJX(:,:,:) = (IIL+IIH)/2
-ZTRAJY(:,:,:) = (IJL+IJH)/2
-IKL=NLES_LEVELS(1)
-IKH=NLES_LEVELS(NLES_K)
-DO JK=1,NLES_K
-  ZTRAJZ(JK,:,1) = XLES_CURRENT_Z(JK)
-END DO
-!
-IGRID(:)=1
-!
-YCOMMENT(:) = HCOMMENT(:)
-YUNIT   (:) = HUNIT
-YGROUP      = HGROUP
-!
-ZWORK6(1,1,:,:,1,:) = ZFIELD (:,:,:)
-tzdates(:) = xles_dates(:)
-!
-IF (GNORM) THEN
-  IF (HUNIT(1:1)/=' ') YUNIT='-'
-  CALL LES_Z_NORM(GAVG,ZTRAJZ,ZWORK6)
-END IF
-!
-!
-!* time average
-!
-IRESP = 0
-IF (GAVG) CALL LES_TIME_AVG( ZWORK6, tzdates, IRESP )
-!
-IF (HAVG/=' ')  YGROUP=HAVG//'_'//YGROUP
-YTITLE  (:) = YGROUP//HTITLE(:)
-!
-!
-!*      2.0  Writing of the profile
-!            ----------------------
-!
-IF (IRESP==0 .AND. ANY(ZWORK6/=XUNDEF)) &
-CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "SSOL", IGRID, tzdates,               &
-                    ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
-                    OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
-                    KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH, &
-                    PTRAJX = ZTRAJX, PTRAJY = ZTRAJY, PTRAJZ = ZTRAJZ                 )
-!
-!
-!*      3.0  Deallocations
-!            -------------
-!
-DEALLOCATE (ZTRAJX)
-DEALLOCATE (ZTRAJY)
-DEALLOCATE (ZTRAJZ)
-DEALLOCATE(ZWORK6)
-deallocate( tzdates )
-!
+
+call Les_diachro_gen( tpdiafile, hgroup, hcomment, hunit,                                                &
+                      reshape( pfield, [ size( pfield, 1 ), size( pfield, 2 ), size( pfield, 3 ), 1 ] ), &
+                      havg, htitle = htitle )
+
 !-------------------------------------------------------------------------------
 END SUBROUTINE LES_DIACHRO_MASKS
 !-------------------------------------------------------------------------------
 !########################################################################
 SUBROUTINE LES_DIACHRO_SV_MASKS(TPDIAFILE,HGROUP,HTITLE,HCOMMENT,HUNIT,PFIELD,HAVG)
 !########################################################################
-!
-USE MODD_GRID
-USE MODD_IO,            ONLY: TFILEDATA
-USE MODD_LES
-use modd_type_date,     only: date_time
 
-USE MODE_WRITE_DIACHRO
-!
 IMPLICIT NONE
-!
 !
 !*      0.1  declarations of arguments
 !
@@ -1054,114 +748,10 @@ CHARACTER(LEN=*), DIMENSION(:),       INTENT(IN) :: HCOMMENT ! comment string
 CHARACTER(LEN=*),                     INTENT(IN) :: HUNIT    ! physical unit
 REAL,             DIMENSION(:,:,:,:), INTENT(IN) :: PFIELD
 CHARACTER(LEN=1),                     INTENT(IN) :: HAVG     ! flag to compute avg.
-!
-!*      0.2  declaration of local variables for diachro
-!
-REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJX ! localization of the temporal
-REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJY ! series in x,y and z. remark:
-REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJZ ! x and y are not used for LES
-!
-INTEGER,            DIMENSION(SIZE(PFIELD,3)) :: IGRID    ! grid indicator
-CHARACTER(LEN= 10)                            :: YGROUP   ! group title
-CHARACTER(LEN=100), DIMENSION(SIZE(PFIELD,3)) :: YCOMMENT ! comment string
-CHARACTER(LEN=100), DIMENSION(SIZE(PFIELD,3)) :: YTITLE   ! title
-CHARACTER(LEN=100), DIMENSION(SIZE(PFIELD,3)) :: YUNIT    ! physical unit
-REAL, DIMENSION(SIZE(PFIELD,1),SIZE(PFIELD,2),SIZE(PFIELD,3),SIZE(PFIELD,4))&
-                                              :: ZFIELD   ! normalized field
-INTEGER                                       :: IRESP    ! return code
-!
-REAL, DIMENSION(:,:,:,:,:,:), POINTER         :: ZWORK6 ! contains physical field
-!
-INTEGER :: IIL, IIH, IJL, IJH, IKL, IKH  ! cartesian area relatively to the
-!                                        ! entire domain
-INTEGER :: JK                            ! vertical loop counter
-INTEGER :: JP                            ! process loop counter
-INTEGER :: JSV                           ! scalar loop counter
-INTEGER :: JMASK                         ! mask loop counter
-!
-LOGICAL :: GAVG                          ! flag to compute time averagings
-LOGICAL :: GNORM                         ! flag to compute normalizations
-type(date_time), dimension(:), allocatable :: tzdates
-!
-!-------------------------------------------------------------------------------
-!
-GAVG =(HAVG=='A' .OR. HAVG=='H')
-GNORM=(HAVG=='E' .OR. HAVG=='H')
-!
-IF (GAVG .AND. (XLES_TEMP_MEAN_START==XUNDEF .OR. XLES_TEMP_MEAN_END==XUNDEF)) RETURN
-!
-ZFIELD=PFIELD
-IF (GNORM) CALL LES_NORM_4D(HUNIT, PFIELD, ZFIELD, .TRUE.)
-!
-!*      1.0  Initialization of diachro variables for LES (z,t) profiles
-!            ----------------------------------------------------------
-!
-ALLOCATE (ZTRAJX(1,1,SIZE(PFIELD,4)))
-ALLOCATE (ZTRAJY(1,1,SIZE(PFIELD,4)))
-ALLOCATE (ZTRAJZ(NLES_K,1,SIZE(PFIELD,4)))
-ALLOCATE(ZWORK6(1,1,NLES_K,NLES_CURRENT_TIMES,SIZE(PFIELD,4),SIZE(PFIELD,3)))
-allocate( tzdates( NLES_CURRENT_TIMES ) )
-!
-IIL = NLES_CURRENT_IINF
-IIH = NLES_CURRENT_ISUP
-IJL = NLES_CURRENT_JINF
-IJH = NLES_CURRENT_JSUP
-ZTRAJX(:,:,:) = (IIL+IIH)/2
-ZTRAJY(:,:,:) = (IJL+IJH)/2
-IKL=NLES_LEVELS(1)
-IKH=NLES_LEVELS(NLES_K)
-DO JK=1,NLES_K
-  ZTRAJZ(JK,:,:) = XLES_CURRENT_Z(JK)
-END DO
-IGRID(:)=1
-!
-YCOMMENT(:) = HCOMMENT(:)
-YUNIT   (:) = HUNIT
-YGROUP      = HGROUP
-!
-!
-DO JSV=1,SIZE(PFIELD,4)
-  DO JP=1,SIZE(PFIELD,3)
-    ZWORK6(1,1,:,:,JSV,JP) = ZFIELD (:,:,JP,JSV)
-  END DO
-END DO
-tzdates(:) = xles_dates(:)
-!
-IF (GNORM) THEN
-  IF (HUNIT(1:1)/=' ') YUNIT='-'
-  CALL LES_Z_NORM(GAVG,ZTRAJZ,ZWORK6)
-END IF
-!n
-!
-!* time average
-!
-IRESP = 0
-IF (GAVG) CALL LES_TIME_AVG( ZWORK6, tzdates, IRESP )
-!
-IF (HAVG/=' ')  YGROUP=HAVG//'_'//YGROUP
-YTITLE  (:) = YGROUP//HTITLE(:)
-!
-!*      2.0  Writing of the profile
-!            ----------------------
-!
-!
-IF (IRESP==0 .AND. ANY(ZWORK6/=XUNDEF)) &
-CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "SSOL", IGRID, tzdates,               &
-                    ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
-                    OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
-                    KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH, &
-                    PTRAJX = ZTRAJX, PTRAJY = ZTRAJY, PTRAJZ = ZTRAJZ                 )
-!
-!
-!*      3.0  Deallocations
-!            -------------
-!
-DEALLOCATE (ZTRAJX)
-DEALLOCATE (ZTRAJY)
-DEALLOCATE (ZTRAJZ)
-DEALLOCATE(ZWORK6)
-deallocate( tzdates )
-!
+
+call Les_diachro_gen( tpdiafile, hgroup, hcomment, hunit, pfield, &
+                      havg, htitle = htitle, osv = .true.)
+
 !-------------------------------------------------------------------------------
 END SUBROUTINE LES_DIACHRO_SV_MASKS
 !-------------------------------------------------------------------------------
@@ -1169,16 +759,8 @@ END SUBROUTINE LES_DIACHRO_SV_MASKS
 !#############################################################
 SUBROUTINE LES_DIACHRO_SURF(TPDIAFILE,HGROUP,HCOMMENT,HUNIT,PFIELD,HAVG)
 !#############################################################
-!
-USE MODD_GRID
-USE MODD_IO,            ONLY: TFILEDATA
-USE MODD_LES
-use modd_type_date,     only: date_time
 
-USE MODE_WRITE_DIACHRO
-!
 IMPLICIT NONE
-!
 !
 !*      0.1  declarations of arguments
 !
@@ -1188,110 +770,18 @@ CHARACTER(LEN=*),     INTENT(IN)       :: HCOMMENT ! comment string
 CHARACTER(LEN=*),     INTENT(IN)       :: HUNIT    ! physical unit
 REAL, DIMENSION(:),   INTENT(IN)       :: PFIELD
 CHARACTER(LEN=1),     INTENT(IN)       :: HAVG     ! flag to compute avg.
-!
-!
-!*      0.2  declaration of local variables for diachro
-!
-REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJX ! localization of the temporal
-REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJY ! series in x,y and z. remark:
-REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJZ ! x and y are not used for LES
-!
-INTEGER, DIMENSION(1)                  :: IGRID    ! grid indicator
-CHARACTER(LEN= 10)                     :: YGROUP   ! group title
-CHARACTER(LEN=100), DIMENSION(1)       :: YCOMMENT ! comment string
-CHARACTER(LEN=100), DIMENSION(1)       :: YTITLE   ! title
-CHARACTER(LEN=100), DIMENSION(1)       :: YUNIT    ! physical unit
-INTEGER                                :: IRESP    ! return code
-!
-REAL, DIMENSION(:,:,:,:,:,:), POINTER  :: ZWORK6 ! contains physical field
-!
-INTEGER :: IIL, IIH, IJL, IJH, IKL, IKH  ! cartesian area relatively to the
-!                                        ! entire domain
-!
-LOGICAL :: GAVG                          ! flag to compute time averagings
-LOGICAL :: GNORM                         ! flag to compute normalizations
-type(date_time), dimension(:), allocatable :: tzdates
-!-------------------------------------------------------------------------------
-!
-GAVG =(HAVG=='A' .OR. HAVG=='H')
-GNORM=(HAVG=='E' .OR. HAVG=='H')
-!
 
-IF (GAVG .AND. (XLES_TEMP_MEAN_START==XUNDEF .OR. XLES_TEMP_MEAN_END==XUNDEF)) RETURN
-!
-IF (GNORM) RETURN
-!
-!*      1.0  Initialization of diachro variables for LES (z,t) profiles
-!            ----------------------------------------------------------
-!
-ALLOCATE (ZTRAJX(1,1,1))
-ALLOCATE (ZTRAJY(1,1,1))
-ALLOCATE (ZTRAJZ(1,1,1))
-ALLOCATE(ZWORK6(1,1,1,NLES_CURRENT_TIMES,1,1))
-allocate( tzdates( NLES_CURRENT_TIMES ) )
-!
-IIL = NLES_CURRENT_IINF
-IIH = NLES_CURRENT_ISUP
-IJL = NLES_CURRENT_JINF
-IJH = NLES_CURRENT_JSUP
-ZTRAJX(:,:,:) = (IIL+IIH)/2
-ZTRAJY(:,:,:) = (IJL+IJH)/2
-IKL=NLES_LEVELS(1)
-IKH=NLES_LEVELS(1)
-ZTRAJZ(1,1,1) = XLES_CURRENT_Z(1)
-IGRID(1)=1
-YCOMMENT(1) = HCOMMENT
-!
-YUNIT (1) = HUNIT
-YGROUP    = HGROUP
-!
-ZWORK6(1,1,1,:,1,1) = PFIELD (:)
-tzdates(:) = xles_dates(:)
-!
-!* time average
-!
-IRESP = 0
-IF (GAVG) CALL LES_TIME_AVG( ZWORK6, tzdates, IRESP )
-!
-IF (HAVG/=' ')  YGROUP=HAVG//'_'//YGROUP
-YTITLE(1) = HGROUP
-!
-!*      2.0  Writing of the profile
-!            ----------------------
-!
-IF (IRESP==0) &
-CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "SSOL", IGRID, tzdates,               &
-                    ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
-                    OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
-                    KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH, &
-                    PTRAJX = ZTRAJX, PTRAJY = ZTRAJY, PTRAJZ = ZTRAJZ                 )
-!
-!
-!*      3.0  Deallocations
-!            -------------
-!
-DEALLOCATE (ZTRAJX)
-DEALLOCATE (ZTRAJY)
-DEALLOCATE (ZTRAJZ)
-DEALLOCATE(ZWORK6)
-deallocate( tzdates )
-!
+call Les_diachro_gen( tpdiafile, hgroup, [ hcomment ], hunit, &
+                      reshape( pfield, [ 1, size( pfield, 1 ), 1, 1 ] ), havg, osurf = .true. )
+
 !-------------------------------------------------------------------------------
 END SUBROUTINE LES_DIACHRO_SURF
 !-------------------------------------------------------------------------------
 !################################################################
 SUBROUTINE LES_DIACHRO_SURF_SV(TPDIAFILE,HGROUP,HCOMMENT,HUNIT,PFIELD,HAVG)
 !################################################################
-!
-USE MODD_GRID
-USE MODD_IO,            ONLY: TFILEDATA
-USE MODD_LES
-use modd_type_date,     only: date_time
 
-USE MODE_WRITE_DIACHRO
-!
 IMPLICIT NONE
-!
 !
 !*      0.1  declarations of arguments
 !
@@ -1301,92 +791,11 @@ CHARACTER(LEN=*),       INTENT(IN)       :: HCOMMENT ! comment string
 CHARACTER(LEN=*),       INTENT(IN)       :: HUNIT    ! physical unit
 REAL, DIMENSION(:,:),   INTENT(IN)       :: PFIELD
 CHARACTER(LEN=1),       INTENT(IN)       :: HAVG     ! flag to compute avg.
-!
-!*      0.2  declaration of local variables for diachro
-!
-REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJX ! localization of the temporal
-REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJY ! series in x,y and z. remark:
-REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZTRAJZ ! x and y are not used for LES
-INTEGER, DIMENSION(1)                  :: IGRID    ! grid indicator
-CHARACTER(LEN= 10)                     :: YGROUP   ! group title
-CHARACTER(LEN=100), DIMENSION(1)       :: YCOMMENT ! comment string
-CHARACTER(LEN=100), DIMENSION(1)       :: YTITLE   ! title
-CHARACTER(LEN=100), DIMENSION(1)       :: YUNIT    ! physical unit
-INTEGER                                :: IRESP    ! return code
-!
-REAL, DIMENSION(:,:,:,:,:,:), POINTER  :: ZWORK6 ! contains physical field
-!
-INTEGER :: IIL, IIH, IJL, IJH, IKL, IKH  ! cartesian area relatively to the
-!                                        ! entire domain
-!
-LOGICAL :: GAVG                          ! flag to compute time averagings
-LOGICAL :: GNORM                         ! flag to compute normalizations
-type(date_time), dimension(:), allocatable :: tzdates
-!-------------------------------------------------------------------------------
-!
-GAVG =(HAVG=='A' .OR. HAVG=='H')
-GNORM=(HAVG=='E' .OR. HAVG=='H')
-!
-IF (GAVG .AND. (XLES_TEMP_MEAN_START==XUNDEF .OR. XLES_TEMP_MEAN_END==XUNDEF)) RETURN
-!
-IF (GNORM) RETURN
-!
-!*      1.0  Initialization of diachro variables for LES (z,t) profiles
-!            ----------------------------------------------------------
-!
-ALLOCATE (ZTRAJX(1,1,SIZE(PFIELD,2)))
-ALLOCATE (ZTRAJY(1,1,SIZE(PFIELD,2)))
-ALLOCATE (ZTRAJZ(1,1,SIZE(PFIELD,2)))
-ALLOCATE(ZWORK6(1,1,1,NLES_CURRENT_TIMES,SIZE(PFIELD,2),1))
-allocate( tzdates( NLES_CURRENT_TIMES ) )
-!
-IIL = NLES_CURRENT_IINF
-IIH = NLES_CURRENT_ISUP
-IJL = NLES_CURRENT_JINF
-IJH = NLES_CURRENT_JSUP
-ZTRAJX(:,:,:) = (IIL+IIH)/2
-ZTRAJY(:,:,:) = (IJL+IJH)/2
-IKL=NLES_LEVELS(1)
-IKH=NLES_LEVELS(1)
-ZTRAJZ(1,1,:) = XLES_CURRENT_Z(1)
-IGRID(1)=1
-YCOMMENT(1) = HCOMMENT
-!
-YUNIT (1) = HUNIT
-YGROUP    = HGROUP
-!
-IRESP = 0
-ZWORK6(1,1,1,:,:,1) = PFIELD (:,:)
-tzdates(:) = xles_dates(:)
-!
-!* time average
-!
-IF (GAVG) CALL LES_TIME_AVG( ZWORK6, tzdates, IRESP )
-!
-!
-IF (HAVG/=' ')  YGROUP=HAVG//'_'//YGROUP
-YTITLE(1) = HGROUP
-!
-!*      2.0  Writing of the profile
-!            ----------------------
-!
-IF (IRESP==0) &
-CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "SSOL", IGRID, tzdates,               &
-                    ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
-                    OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
-                    KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH, &
-                    PTRAJX = ZTRAJX, PTRAJY = ZTRAJY, PTRAJZ = ZTRAJZ                 )
-!
-!
-!*      3.0  Deallocations
-!            -------------
-!
-DEALLOCATE (ZTRAJX)
-DEALLOCATE (ZTRAJY)
-DEALLOCATE (ZTRAJZ)
-DEALLOCATE(ZWORK6)
-deallocate( tzdates )
-!
+
+call Les_diachro_gen( tpdiafile, hgroup, [ hcomment ], hunit,                            &
+                      reshape( pfield, [ 1, size( pfield, 1 ), 1, size( pfield, 2 ) ] ), &
+                      havg, osurf = .true., osv = .true. )
+
 !-------------------------------------------------------------------------------
 END SUBROUTINE LES_DIACHRO_SURF_SV
 !-------------------------------------------------------------------------------
@@ -1432,7 +841,7 @@ INTEGER                          :: JT       ! time counter
 INTEGER                          :: JK       ! level counter
 INTEGER                          :: IRESP    ! return code
 !
-REAL, DIMENSION(:,:,:,:,:,:), POINTER :: ZWORK6 ! contains physical field
+REAL, DIMENSION(:,:,:,:,:,:), allocatable :: ZWORK6 ! contains physical field
 !
 INTEGER :: IIL, IIH, IJL, IJH, IKL, IKH  ! cartesian area relatively to the
 !                                        ! entire domain
@@ -1546,7 +955,6 @@ deallocate( tzdates )
 !-------------------------------------------------------------------------------
 END SUBROUTINE LES_DIACHRO_2PT
 !------------------------------------------------------------------------------
-!
 !#####################################################################
 SUBROUTINE LES_DIACHRO_SPEC(TPDIAFILE,HGROUP,HCOMMENT,HUNIT,PSPECTRAX,PSPECTRAY)
 !#####################################################################
@@ -1584,7 +992,7 @@ CHARACTER(LEN=100), DIMENSION(1) :: YTITLE   ! title
 CHARACTER(LEN=100), DIMENSION(1) :: YUNIT    ! physical unit
 INTEGER                          :: IRESP    ! return code
 !
-REAL, DIMENSION(:,:,:,:,:,:), POINTER     :: ZWORK6 ! contains physical field
+REAL, DIMENSION(:,:,:,:,:,:), allocatable :: ZWORK6 ! contains physical field
 
 !
 INTEGER :: IIL, IIH, IJL, IJH, IKL, IKH  ! cartesian area relatively to the
