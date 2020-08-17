@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1989-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1989-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -25,6 +25,7 @@ C                                             + wrong use of an non initialized 
 C**MODIFIED: P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 C  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 C  P. Wautelet 21/11/2019: replace several CONTINUE (workaround of problems with gfortran OpenACC)
+C  P. Wautelet 17/08/2020: small correction in call to LEPOLY
 C!
 C!
 C!
@@ -13478,7 +13479,7 @@ c                                    cosines
             NCOS   = 1
             ANGCOS = -UMU0
 
-            CALL LEPOLY( NCOS, MAZIM, MXCMU, NSTR - 1, ANGCOS, YLM0 )
+            CALL LEPOLY( NCOS, MAZIM, MXCMU, NSTR - 1, [ANGCOS], YLM0 )
 
          END IF
 
