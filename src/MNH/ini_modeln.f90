@@ -353,6 +353,7 @@ USE MODD_IO,                only: CIO_DIR, TFILEDATA, TFILE_DUMMY
 USE MODD_IO_SURF_MNH,       only: IO_SURF_MNH_MODEL
 USE MODD_LATZ_EDFLX
 USE MODD_LBC_n,             only: CLBCX, CLBCY
+use modd_les
 USE MODD_LSFIELD_n
 USE MODD_LUNIT_n
 USE MODD_MEAN_FIELD
@@ -392,7 +393,7 @@ USE MODD_TURB_n
 USE MODD_VAR_ll,            only: IP
 
 USE MODE_GATHER_ll
-use mode_ini_budget,        only: Ini_budget
+use mode_ini_budget,        only: Budget_preallocate, Ini_budget
 USE MODE_INI_ONE_WAY_n
 USE MODE_IO
 USE MODE_IO_FIELD_READ,     only: IO_Field_read
@@ -486,6 +487,7 @@ LOGICAL             :: GINIDCONV ! logical switch for the deep convection
                                ! initialization
 LOGICAL             :: GINIRAD ! logical switch for the radiation
                                ! initialization
+logical             :: gles    ! Logical to determine if LES diagnostics are enabled
 !
 !
 TYPE(LIST_ll), POINTER :: TZINITHALO2D_ll ! pointer for the list of 2D fields
@@ -1655,6 +1657,14 @@ ENDIF
 !*       4.    INITIALIZE BUDGET VARIABLES
 !              ---------------------------
 !
+gles = lles_mean .or. lles_resolved  .or. lles_subgrid .or. lles_updraft &
+                 .or. lles_downdraft .or. lles_spectra
+!Called if budgets are enabled via NAM_BUDGET
+!or if LES budgets are enabled via NAM_LES (condition on kmi==1 to call it max once)
+if ( ( cbutype /= "NONE" .and. nbumod == kmi ) .or. ( gles .and. kmi == 1 ) ) THEN
+  call Budget_preallocate()
+end if
+
 IF ( CBUTYPE /= "NONE" .AND. NBUMOD == KMI ) THEN
   CALL Ini_budget(ILUOUT,XTSTEP,NSV,NRR,                                      &
              LNUMDIFU,LNUMDIFTH,LNUMDIFSV,                                    &

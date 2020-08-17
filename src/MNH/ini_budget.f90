@@ -3,15 +3,102 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
+! Modifications:
+!  P. Wautelet 17/08/2020: add Budget_preallocate subroutine
+!-----------------------------------------------------------------
 module mode_ini_budget
 
   implicit none
 
   private
 
-  public :: Ini_budget
+  public :: Budget_preallocate, Ini_budget
 
 contains
+
+subroutine Budget_preallocate()
+
+use modd_budget, only: nbudgets, tbudgets,                                         &
+                       NBUDGET_U, NBUDGET_V, NBUDGET_W, NBUDGET_TH, NBUDGET_TKE,   &
+                       NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, &
+                       NBUDGET_RG, NBUDGET_RH, NBUDGET_SV1
+use modd_nsv,    only: nsv
+
+use mode_msg
+
+character(len=3) :: ybudgetnum
+integer          :: ibudget
+integer          :: jsv
+
+call Print_msg( NVERB_DEBUG, 'BUD', 'Budget_preallocate', 'called' )
+
+if ( allocated( tbudgets ) ) then
+  call Print_msg( NVERB_WARNING, 'BUD', 'Budget_preallocate', 'tbudgets already allocated' )
+  return
+end if
+
+nbudgets = NBUDGET_SV1 - 1 + nsv
+allocate( tbudgets( nbudgets ) )
+
+tbudgets(NBUDGET_U)%cname    = "BU_RU"
+tbudgets(NBUDGET_U)%ccomment = "Budget for U"
+tbudgets(NBUDGET_U)%nid      = NBUDGET_U
+
+tbudgets(NBUDGET_V)%cname    = "BU_RV"
+tbudgets(NBUDGET_V)%ccomment = "Budget for V"
+tbudgets(NBUDGET_V)%nid      = NBUDGET_V
+
+tbudgets(NBUDGET_W)%cname    = "BU_RW"
+tbudgets(NBUDGET_W)%ccomment = "Budget for W"
+tbudgets(NBUDGET_W)%nid      = NBUDGET_W
+
+tbudgets(NBUDGET_TH)%cname    = "BU_RTH"
+tbudgets(NBUDGET_TH)%ccomment = "Budget for potential temperature"
+tbudgets(NBUDGET_TH)%nid      = NBUDGET_TH
+
+tbudgets(NBUDGET_TKE)%cname    = "BU_RTKE"
+tbudgets(NBUDGET_TKE)%ccomment = "Budget for turbulent kinetic energy"
+tbudgets(NBUDGET_TKE)%nid      = NBUDGET_TKE
+
+tbudgets(NBUDGET_RV)%cname    = "BU_RRV"
+tbudgets(NBUDGET_RV)%ccomment = "Budget for water vapor mixing ratio"
+tbudgets(NBUDGET_RV)%nid      = NBUDGET_RV
+
+tbudgets(NBUDGET_RC)%cname    = "BU_RRC"
+tbudgets(NBUDGET_RC)%ccomment = "Budget for cloud water mixing ratio"
+tbudgets(NBUDGET_RC)%nid      = NBUDGET_RC
+
+tbudgets(NBUDGET_RR)%cname    = "BU_RRR"
+tbudgets(NBUDGET_RR)%ccomment = "Budget for rain water mixing ratio"
+tbudgets(NBUDGET_RR)%nid      = NBUDGET_RR
+
+tbudgets(NBUDGET_RI)%cname    = "BU_RRI"
+tbudgets(NBUDGET_RI)%ccomment = "Budget for cloud ice mixing ratio"
+tbudgets(NBUDGET_RI)%nid      = NBUDGET_RI
+
+tbudgets(NBUDGET_RS)%cname    = "BU_RRS"
+tbudgets(NBUDGET_RS)%ccomment = "Budget for snow/aggregate mixing ratio"
+tbudgets(NBUDGET_RS)%nid      = NBUDGET_RS
+
+tbudgets(NBUDGET_RG)%cname    = "BU_RRG"
+tbudgets(NBUDGET_RG)%ccomment = "Budget for graupel mixing ratio"
+tbudgets(NBUDGET_RG)%nid      = NBUDGET_RG
+
+tbudgets(NBUDGET_RH)%cname    = "BU_RRH"
+tbudgets(NBUDGET_RH)%ccomment = "Budget for hail mixing ratio"
+tbudgets(NBUDGET_RH)%nid      = NBUDGET_RH
+
+do jsv = 1, nsv
+  ibudget = NBUDGET_SV1 - 1 + jsv
+  write ( ybudgetnum, '( i3.3 )' ) jsv
+  tbudgets(ibudget)%cname    = 'BU_RSV_' // ybudgetnum
+  tbudgets(ibudget)%ccomment = 'Budget for scalar variable ' // ybudgetnum
+  tbudgets(ibudget)%nid      = ibudget
+end do
+
+
+end subroutine Budget_preallocate
+
 
 !     #################################################################
       SUBROUTINE Ini_budget(KLUOUT,PTSTEP,KSV,KRR,                    &
@@ -219,9 +306,6 @@ logical             :: gtmp
 type(tbusourcedata) :: tzsource ! Used to prepare metadate of source terms
 
 call Print_msg( NVERB_DEBUG, 'BUD', 'Ini_budget', 'called' )
-
-nbudgets = NBUDGET_SV1 - 1 + ksv
-allocate( tbudgets( nbudgets ) )
 !
 !*       1.    COMPUTE BUDGET VARIABLES
 !              ------------------------
@@ -373,10 +457,6 @@ tzsource%ntype    = TYPEREAL
 tzsource%ndims    = 3
 
 ! Budget of RU
-tbudgets(NBUDGET_U)%cname    = "BU_RU"
-tbudgets(NBUDGET_U)%ccomment = "Budget for U"
-tbudgets(NBUDGET_U)%nid      = NBUDGET_U
-
 tbudgets(NBUDGET_U)%lenabled = lbu_ru
 
 if ( lbu_ru ) then
@@ -503,10 +583,6 @@ if ( lbu_ru ) then
 end if
 
 ! Budget of RV
-tbudgets(NBUDGET_V)%cname    = "BU_RV"
-tbudgets(NBUDGET_V)%ccomment = "Budget for V"
-tbudgets(NBUDGET_V)%nid      = NBUDGET_V
-
 tbudgets(NBUDGET_V)%lenabled = lbu_rv
 
 if ( lbu_rv ) then
@@ -633,10 +709,6 @@ if ( lbu_rv ) then
 end if
 
 ! Budget of RW
-tbudgets(NBUDGET_W)%cname    = "BU_RW"
-tbudgets(NBUDGET_W)%ccomment = "Budget for W"
-tbudgets(NBUDGET_W)%nid      = NBUDGET_W
-
 tbudgets(NBUDGET_W)%lenabled = lbu_rw
 
 if ( lbu_rw ) then
@@ -758,10 +830,6 @@ if ( lbu_rw ) then
 end if
 
 ! Budget of RTH
-tbudgets(NBUDGET_TH)%cname    = "BU_RTH"
-tbudgets(NBUDGET_TH)%ccomment = "Budget for potential temperature"
-tbudgets(NBUDGET_TH)%nid      = NBUDGET_TH
-
 tbudgets(NBUDGET_TH)%lenabled = lbu_rth
 
 if ( lbu_rth ) then
@@ -1062,10 +1130,6 @@ if ( lbu_rth ) then
 end if
 
 ! Budget of RTKE
-tbudgets(NBUDGET_TKE)%cname    = "BU_RTKE"
-tbudgets(NBUDGET_TKE)%ccomment = "Budget for turbulent kinetic energy"
-tbudgets(NBUDGET_TKE)%nid      = NBUDGET_TKE
-
 tbudgets(NBUDGET_TKE)%lenabled = lbu_rtke
 
 if ( lbu_rtke ) then
@@ -1156,10 +1220,6 @@ if ( lbu_rtke ) then
 end if
 
 ! Budget of RRV
-tbudgets(NBUDGET_RV)%cname    = "BU_RRV"
-tbudgets(NBUDGET_RV)%ccomment = "Budget for water vapor mixing ratio"
-tbudgets(NBUDGET_RV)%nid      = NBUDGET_RV
-
 tbudgets(NBUDGET_RV)%lenabled = lbu_rrv .and. krr >= 1
 
 if ( tbudgets(NBUDGET_RV)%lenabled ) then
@@ -1357,10 +1417,6 @@ if ( tbudgets(NBUDGET_RV)%lenabled ) then
 end if
 
 ! Budget of RRC
-tbudgets(NBUDGET_RC)%cname    = "BU_RRC"
-tbudgets(NBUDGET_RC)%ccomment = "Budget for cloud water mixing ratio"
-tbudgets(NBUDGET_RC)%nid      = NBUDGET_RC
-
 tbudgets(NBUDGET_RC)%lenabled = lbu_rrc .and. krr >= 2
 
 if ( tbudgets(NBUDGET_RC)%lenabled ) then
@@ -1623,10 +1679,6 @@ if ( tbudgets(NBUDGET_RC)%lenabled ) then
 end if
 
 ! Budget of RRR
-tbudgets(NBUDGET_RR)%cname    = "BU_RRR"
-tbudgets(NBUDGET_RR)%ccomment = "Budget for rain water mixing ratio"
-tbudgets(NBUDGET_RR)%nid      = NBUDGET_RR
-
 tbudgets(NBUDGET_RR)%lenabled = lbu_rrr .and. krr >= 3
 
 if ( tbudgets(NBUDGET_RR)%lenabled ) then
@@ -1836,10 +1888,6 @@ if ( tbudgets(NBUDGET_RR)%lenabled ) then
 end if
 
 ! Budget of RRI
-tbudgets(NBUDGET_RI)%cname    = "BU_RRI"
-tbudgets(NBUDGET_RI)%ccomment = "Budget for cloud ice mixing ratio"
-tbudgets(NBUDGET_RI)%nid      = NBUDGET_RI
-
 tbudgets(NBUDGET_RI)%lenabled = lbu_rri .and. krr >= 4
 
 if ( tbudgets(NBUDGET_RI)%lenabled ) then
@@ -2076,10 +2124,6 @@ if ( tbudgets(NBUDGET_RI)%lenabled ) then
 end if
 
 ! Budget of RRS
-tbudgets(NBUDGET_RS)%cname    = "BU_RRS"
-tbudgets(NBUDGET_RS)%ccomment = "Budget for snow/aggregate mixing ratio"
-tbudgets(NBUDGET_RS)%nid      = NBUDGET_RS
-
 tbudgets(NBUDGET_RS)%lenabled = lbu_rrs .and. krr >= 5
 
 if ( tbudgets(NBUDGET_RS)%lenabled ) then
@@ -2258,10 +2302,6 @@ if ( tbudgets(NBUDGET_RS)%lenabled ) then
 end if
 
 ! Budget of RRG
-tbudgets(NBUDGET_RG)%cname    = "BU_RRG"
-tbudgets(NBUDGET_RG)%ccomment = "Budget for graupel mixing ratio"
-tbudgets(NBUDGET_RG)%nid      = NBUDGET_RG
-
 tbudgets(NBUDGET_RG)%lenabled = lbu_rrg .and. krr >= 6
 
 if ( tbudgets(NBUDGET_RG)%lenabled ) then
@@ -2454,10 +2494,6 @@ if ( tbudgets(NBUDGET_RG)%lenabled ) then
 end if
 
 ! Budget of RRH
-tbudgets(NBUDGET_RH)%cname    = "BU_RRH"
-tbudgets(NBUDGET_RH)%ccomment = "Budget for hail mixing ratio"
-tbudgets(NBUDGET_RH)%nid      = NBUDGET_RH
-
 tbudgets(NBUDGET_RH)%lenabled = lbu_rrh .and. krr >= 7
 
 if ( tbudgets(NBUDGET_RH)%lenabled ) then
@@ -2613,9 +2649,6 @@ if ( ksv > 999 ) call Print_msg( NVERB_FATAL, 'BUD', 'Ini_budget', 'number of sc
 SV_BUDGETS: do jsv = 1, ksv
   ibudget = NBUDGET_SV1 - 1 + jsv
   write ( ybudgetnum, '( i3.3 )' ) jsv
-  tbudgets(ibudget)%cname    = 'BU_RSV_' // ybudgetnum
-  tbudgets(ibudget)%ccomment = 'Budget for scalar variable ' // ybudgetnum
-  tbudgets(ibudget)%nid      = ibudget
 
   tbudgets(ibudget)%lenabled = lbu_rsv
 
