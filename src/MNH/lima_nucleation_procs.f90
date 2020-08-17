@@ -60,7 +60,7 @@ SUBROUTINE LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, OCLOSE_OUT, PRHODJ,           
 !
 !!    PURPOSE
 !!    -------
-!!      Compute nucleation processes for the time-splitted version of LIMA
+!!      Compute nucleation processes for the time-split version of LIMA
 !!
 !!    AUTHOR
 !!    ------

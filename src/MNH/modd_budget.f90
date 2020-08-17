@@ -38,7 +38,7 @@
 !!      V. Masson       27/11/02    add 2way nesting effect
 !!      P. Jabouille    07/07/04    add budget terms for microphysics
 !!      C. Barthe       19/11/09    add budget terms for electricity          
-!!      C.Lac           04/2016  negative contribution to the budget splitted between advection, turbulence and microphysics for KHKO/C2R2
+!!      C.Lac           04/2016  negative contribution to the budget split between advection, turbulence and microphysics for KHKO/C2R2
 !!      C. Barthe            /16    add budget terms for LIMA
 !!      C. LAc          10/2016 add droplets deposition
 !!      S. Riette       11/2016  New budgets for ICE3/ICE4

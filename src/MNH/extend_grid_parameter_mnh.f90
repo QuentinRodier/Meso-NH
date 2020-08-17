@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2015-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -6,7 +6,7 @@
       SUBROUTINE EXTEND_GRID_PARAMETERX1_MNH(HGRID,HREC,KDIM,KSIZE,KIMAX,KJMAX,PFIELD,PFIELD_EXTEND)
 !     #############################################################
 !
-!!****  * - routine to extend a real splitted array on SURFEX halo
+!!****  * - routine to extend a real split array on SURFEX halo
 !
 !    Author
 !  M.Moge  01/03/2015 
@@ -33,7 +33,7 @@ INTEGER,                INTENT(IN) :: KSIZE       ! size of PFIELD_EXTEND
 INTEGER,                INTENT(IN) :: KIMAX    !(local) dimension of the domain - X direction
 INTEGER,                INTENT(IN) :: KJMAX    !(local) dimension of the domain - Y direction
 REAL, DIMENSION(KDIM ), INTENT(IN) :: PFIELD      ! real field for complete grid
-REAL, DIMENSION(KSIZE), INTENT(OUT):: PFIELD_EXTEND! real field for splitted grid
+REAL, DIMENSION(KSIZE), INTENT(OUT):: PFIELD_EXTEND! real field for split grid
 !
 !*      0.2   Declarations of local variables
 !
@@ -150,7 +150,7 @@ END SUBROUTINE EXTEND_GRID_PARAMETERX1_MNH
       SUBROUTINE EXTEND_GRID_PARAMETERN0_MNH(HGRID,HREC,KFIELD,KFIELD_EXTEND)
 !     #############################################################
 !
-!!****  * - routine to "extend" an integer related to splitted grid on SURFEX halo
+!!****  * - routine to "extend" an integer related to split grid on SURFEX halo
 !
 !
 !
@@ -165,7 +165,7 @@ IMPLICIT NONE
 CHARACTER(LEN=10), INTENT(IN) :: HGRID        ! grid type
 CHARACTER(LEN=6),  INTENT(IN) :: HREC         ! name of the parameter
 INTEGER,           INTENT(IN) :: KFIELD       ! integer scalar for complete grid
-INTEGER,           INTENT(OUT):: KFIELD_EXTEND ! integer scalar for splitted grid
+INTEGER,           INTENT(OUT):: KFIELD_EXTEND ! integer scalar for split grid
 !*      0.2   Declarations of local variables
 !
 INTEGER :: IIB, IIE, IJB, IJE

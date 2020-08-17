@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -29,7 +29,7 @@ INTEGER, INTENT(IN)   :: KFLEV !number of vertical levels where the
                                !radiation calculations are performed
 INTEGER, INTENT(IN)   :: KSTATM  !index of the standard atmosphere level
                                  !just above the model top
-INTEGER, INTENT(IN)   :: KRAD_COLNBR !factor by which the memory is splitted
+INTEGER, INTENT(IN)   :: KRAD_COLNBR !factor by which the memory is split
 !
 REAL, DIMENSION(:,:),     INTENT(IN) :: PEMIS  !Surface IR EMISsivity
 REAL,                     INTENT(IN) :: PCCO2  !CO2 content
@@ -139,7 +139,7 @@ INTEGER, INTENT(IN)   :: KFLEV   !number of vertical levels where the
                                  ! radiation calculations are performed
 INTEGER, INTENT(IN)   :: KSTATM  !index of the standard atmosphere level
                                  !just above the model top
-INTEGER, INTENT(IN)   :: KRAD_COLNBR !factor by which the memory is splitted
+INTEGER, INTENT(IN)   :: KRAD_COLNBR !factor by which the memory is split
 !
 REAL, DIMENSION(:,:),     INTENT(IN) :: PEMIS  !Surface IR EMISsivity
 REAL,                     INTENT(IN) :: PCCO2  !CO2 content
@@ -229,7 +229,7 @@ REAL, DIMENSION(:,:), ALLOCATABLE   ::  ZZRADFT
 !
 REAL, DIMENSION(:),   ALLOCATABLE :: ZWORK1, ZWORK3
 !
-!  splitted arrays used to split the memory required by the ECMWF_radiation 
+!  split arrays used to split the memory required by the ECMWF_radiation 
 !  subroutine, the fields have the same meaning as their complete counterpart
 REAL, DIMENSION(:),     ALLOCATABLE :: ZREMIS_SPLIT
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZO3AVE_SPLIT
@@ -244,7 +244,7 @@ REAL, DIMENSION(:),   ALLOCATABLE   ::  ZDT0_SPLIT
 REAL, DIMENSION(:,:), ALLOCATABLE   ::  ZRADBT_SPLIT
 REAL, DIMENSION(:,:), ALLOCATABLE   ::  ZRADBC_SPLIT
 !
-INTEGER  :: JI_SPLIT          ! loop on the splitted array
+INTEGER  :: JI_SPLIT          ! loop on the split array
 INTEGER  :: INUM_CALL         ! number of CALL of the radiation scheme
 INTEGER  :: IDIM_EFF          ! effective number of air-columns to compute
 INTEGER  :: IDIM_RESIDUE      ! number of remaining air-columns to compute
@@ -645,7 +645,7 @@ ELSE
        ALLOCATE(  ZRADBC_SPLIT(IDIM_EFF,JPWVINT))
      END IF
      !
-     ! fill the splitted arrays with their values
+     ! fill the split arrays with their values
      ! taken from the full arrays 
      !
      IBEG = IDIM-IDIM_RESIDUE+1
@@ -661,7 +661,7 @@ ELSE
      ZVIEW_SPLIT(:)    = ZVIEW ( IBEG:IEND )
      ZDT0_SPLIT(:)    = ZDT0 ( IBEG:IEND )
      !  
-     ! call ECMWF_radiation with the splitted arrays
+     ! call ECMWF_radiation with the split arrays
      !
      CALL NBMVEC( 1, IDIM_EFF, IDIM_EFF, KFLEV, IGL, ICABS, ING1, IUABS,&
           IH2O, ICO2, IO3, ICNT, IN2O, ICH4, ICO, IC11, IC12, ICFC, &
@@ -671,14 +671,14 @@ ELSE
           ZVIEW_SPLIT, ZCLDLD_SPLIT, ZCLDLU_SPLIT, ZDT0_SPLIT, &
           ZREMIS_SPLIT, ZRADBC_SPLIT, ZRADBT_SPLIT)
      !
-     ! fill the full output arrays with the splitted arrays
+     ! fill the full output arrays with the split arrays
      !
      ZRADBT( IBEG:IEND ,:)  = ZRADBT_SPLIT(:,:)  
      ZRADBC( IBEG:IEND ,:)  = ZRADBC_SPLIT(:,:)  
      !
      IDIM_RESIDUE = IDIM_RESIDUE - IDIM_EFF
      !
-     ! desallocation of the splitted arrays
+     ! desallocation of the split arrays
      !
      IF( JI_SPLIT >= INUM_CALL-1 ) THEN
        DEALLOCATE(ZREMIS_SPLIT)

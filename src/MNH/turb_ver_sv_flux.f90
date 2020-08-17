@@ -177,10 +177,10 @@ END MODULE MODI_TURB_VER_SV_FLUX
 !!      DXF,DYF,DZF,DZM
 !!                             :  Shuman functions (difference operators)     
 !!                               
-!!      SUBROUTINE TRIDIAG     : to compute the splitted implicit evolution
+!!      SUBROUTINE TRIDIAG     : to compute the split implicit evolution
 !!                               of a variable located at a mass point
 !!
-!!      SUBROUTINE TRIDIAG_WIND: to compute the splitted implicit evolution
+!!      SUBROUTINE TRIDIAG_WIND: to compute the split implicit evolution
 !!                               of a variable located at a wind point
 !!
 !!      FUNCTIONs ETHETA and EMOIST  :  
@@ -419,7 +419,7 @@ DO JSV=1,ISV
   ZSOURCE(:,:,IKTB+1:IKTE-1) = 0.
   ZSOURCE(:,:,IKE) = 0.
 !
-! Obtention of the splitted JSV scalar variable at t+ deltat  
+! Obtention of the split JSV scalar variable at t+ deltat  
   CALL TRIDIAG(KKA,KKU,KKL,PSVM(:,:,:,JSV),ZA,PTSTEP,PEXPL,PIMPL,PRHODJ,ZSOURCE,ZRES)
 !
 !  Compute the equivalent tendency for the JSV scalar variable

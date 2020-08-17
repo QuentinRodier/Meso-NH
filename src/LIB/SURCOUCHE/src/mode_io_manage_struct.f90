@@ -575,7 +575,7 @@ SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN)
           CALL PRINT_MSG(NVERB_FATAL,'IO','POPULATE_STRUCT','unknown backup/output fileformat')
         ENDIF
         !
-        !Create file structures if Z-splitted files
+        !Create file structures if Z-split files
         IF (NB_PROCIO_W>1) THEN
           ALLOCATE(TPBAKOUTN(IPOS)%TFILE%TFILES_IOZ(NB_PROCIO_W))
 !           ALLOCATE(TPBAKOUTN(IPOS)%TFILE_IOZ(NB_PROCIO_W))

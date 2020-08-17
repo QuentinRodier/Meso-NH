@@ -227,15 +227,10 @@ END MODULE MODI_TURB_VER
 !!                               field	derivated
 !!                               
 !!
-!!      MXM,MXF,MYM,MYF,MZM,MZF
-!!                             :  Shuman functions (mean operators)     
-!!      DXF,DYF,DZF,DZM
-!!                             :  Shuman functions (difference operators)     
-!!                               
-!!      SUBROUTINE TRIDIAG     : to compute the splitted implicit evolution
+!!      SUBROUTINE TRIDIAG     : to compute the split implicit evolution
 !!                               of a variable located at a mass point
 !!
-!!      SUBROUTINE TRIDIAG_WIND: to compute the splitted implicit evolution
+!!      SUBROUTINE TRIDIAG_WIND: to compute the split implicit evolution
 !!                               of a variable located at a wind point
 !!
 !!      FUNCTIONs ETHETA and EMOIST  :  

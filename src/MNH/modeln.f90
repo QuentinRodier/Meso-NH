@@ -168,7 +168,7 @@ END MODULE MODI_MODEL_n
 !!                   July 29,1996 (Lafore) nesting introduction
 !!                   Aug.  1,1996 (Lafore) synchronization between models
 !!                   Sept. 4,1996 (Lafore) modification of call to routine SET_COUPLING
-!!                                         now splitted in 2 routines
+!!                                         now split in 2 routines
 !!                                         (UVW_LS_COUPLING and SCALAR_LS_COUPLING)
 !!                   Sept  5,1996 (V.Masson) print of loop index for debugging
 !!                                           purposes
