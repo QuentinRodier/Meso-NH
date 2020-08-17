@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1989-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -22,6 +22,7 @@ C**MODIFIED: 10/01/2019 (P.Wautelet) replace double precision declarations by
 C                       real(kind(0.0d0)) (to allow compilation by NAG compiler)
 C**MODIFIED: 08/02/2019 (P.Wautelet) bug fixes: missing argument
 C                                             + wrong use of an non initialized value
+C  P. Wautelet 17/08/2020: small correction in call to LEPOLY
 C!
 C!
 C!
@@ -13447,7 +13448,7 @@ c                                    cosines
             NCOS   = 1
             ANGCOS = -UMU0
 
-            CALL LEPOLY( NCOS, MAZIM, MXCMU, NSTR - 1, ANGCOS, YLM0 )
+            CALL LEPOLY( NCOS, MAZIM, MXCMU, NSTR - 1, [ANGCOS], YLM0 )
 
          END IF
 
