@@ -234,10 +234,10 @@ END MODULE MODI_TURB_VER_THERMO_FLUX
 !!      DXF,DYF,DZF,DZM
 !!                             :  Shuman functions (difference operators)     
 !!                               
-!!      SUBROUTINE TRIDIAG     : to compute the splitted implicit evolution
+!!      SUBROUTINE TRIDIAG     : to compute the split implicit evolution
 !!                               of a variable located at a mass point
 !!
-!!      SUBROUTINE TRIDIAG_WIND: to compute the splitted implicit evolution
+!!      SUBROUTINE TRIDIAG_WIND: to compute the split implicit evolution
 !!                               of a variable located at a wind point
 !!
 !!      FUNCTIONs ETHETA and EMOIST  :  
@@ -580,7 +580,7 @@ ELSE
                      * 0.5 * (1. + PRHODJ(:,:,KKA) / PRHODJ(:,:,IKB))
 END IF
 !
-! Compute the splitted conservative potential temperature at t+deltat
+! Compute the split conservative potential temperature at t+deltat
 CALL TRIDIAG_THERMO(KKA,KKU,KKL,PTHLM,ZF,ZDFDDTDZ,PTSTEP,PIMPL,PDZZ,&
                     PRHODJ,PTHLP)
 !
@@ -758,7 +758,7 @@ IF (KRR /= 0) THEN
                        * 0.5 * (1. + PRHODJ(:,:,KKA) / PRHODJ(:,:,IKB))
   END IF
   !
-  ! Compute the splitted conservative potential temperature at t+deltat
+  ! Compute the split conservative potential temperature at t+deltat
   CALL TRIDIAG_THERMO(KKA,KKU,KKL,PRM(:,:,:,1),ZF,ZDFDDRDZ,PTSTEP,PIMPL,&
                       PDZZ,PRHODJ,PRP)
   !

@@ -59,7 +59,7 @@ END MODULE MODI_LIMA_PHILLIPS_IFN_NUCLEATION
 !!    PURPOSE
 !!    -------
 !!      The purpose of this routine is to compute the heterogeneous nucleation
-!!    following Phillips (2008) for the time-splitted version of LIMA
+!!    following Phillips (2008) for the time-split version of LIMA
 !!
 !!
 !!**  METHOD

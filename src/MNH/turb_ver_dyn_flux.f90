@@ -198,10 +198,10 @@ END MODULE MODI_TURB_VER_DYN_FLUX
 !!      DXF,DYF,DZF,DZM
 !!                             :  Shuman functions (difference operators)     
 !!                               
-!!      SUBROUTINE TRIDIAG     : to compute the splitted implicit evolution
+!!      SUBROUTINE TRIDIAG     : to compute the split implicit evolution
 !!                               of a variable located at a mass point
 !!
-!!      SUBROUTINE TRIDIAG_WIND: to compute the splitted implicit evolution
+!!      SUBROUTINE TRIDIAG_WIND: to compute the split implicit evolution
 !!                               of a variable located at a wind point
 !!
 !!      FUNCTIONs ETHETA and EMOIST  :  
@@ -483,7 +483,7 @@ ZSOURCE(:,:,IKB:IKB) =                                  &
 ZSOURCE(:,:,IKTB+1:IKTE-1) = 0.
 ZSOURCE(:,:,IKE) = 0.
 !
-! Obtention of the splitted U at t+ deltat 
+! Obtention of the split U at t+ deltat 
 !
 CALL TRIDIAG_WIND(KKA,KKU,KKL,PUM,ZA,ZCOEFS(:,:,1),PTSTEP,PEXPL,PIMPL,   &
                   MXM(PRHODJ),ZSOURCE,ZRES)
@@ -659,7 +659,7 @@ ZSOURCE(:,:,IKB:IKB) =                                      &
 ZSOURCE(:,:,IKTB+1:IKTE-1) = 0.
 ZSOURCE(:,:,IKE) = 0.
 ! 
-!  Obtention of the splitted V at t+ deltat 
+!  Obtention of the split V at t+ deltat 
 CALL TRIDIAG_WIND(KKA,KKU,KKL,PVM,ZA,ZCOEFS(:,:,1),PTSTEP,PEXPL,PIMPL,  &
                   MYM(PRHODJ),ZSOURCE,ZRES)
 !

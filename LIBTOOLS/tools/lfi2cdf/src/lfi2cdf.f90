@@ -96,7 +96,7 @@ program LFI2CDF
   CALL OPEN_FILES(infiles, outfiles, nfiles_out, hinfile, houtfile, nbvar_infile, options, runmode)
   IF (options(OPTLIST)%set) STOP
 
-  !Set and initialize parallel variables (necessary to read splitted files)
+  !Set and initialize parallel variables (necessary to read split files)
   CALL SET_JP_ll(1,JPHEXT,JPVEXT,JPHEXT)
   CALL SET_DAD0_ll()
   CALL SET_DIM_ll(NIMAX_ll, NJMAX_ll, NKMAX)

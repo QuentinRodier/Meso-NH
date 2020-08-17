@@ -145,7 +145,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!      Modifications 25/04/96  (Suhre)  add the blank module
 !!      Modifications 29/07/96  (Pinty&Suhre) add module MODD_FRC
 !!      Modifications 11/04/96  (Pinty)  add the rain-ice scheme and modify
-!!                                       the splitted arrays in MODD_PARAM_RAD_n
+!!                                       the split arrays in MODD_PARAM_RAD_n
 !!      Modifications 11/01/97  (Pinty)  add the deep convection scheme
 !!      Modifications 24/11/96  (Masson)  add LREFRESH_ALL in deep convection
 !!      Modifications 12/02/96  (Lafore) transformation to DEFAULT_DESFM_n for spawning
@@ -187,7 +187,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!      Modification 24/03/16 (Leriche) remove LCH_SURFACE_FLUX 
 !!                                      put NCH_VEC_LENGTH = 50 instead of 1000
 !!
-!!                   04/2016 (C.LAC) negative contribution to the budget splitted between advection, turbulence and microphysics for KHKO/C2R2
+!!                   04/2016 (C.LAC) negative contribution to the budget split between advection, turbulence and microphysics for KHKO/C2R2
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!      Modification 24/03/16 (Leriche) remove LCH_SURFACE_FLUX 
 !!                                      put NCH_VEC_LENGTH = 50 instead of 1000

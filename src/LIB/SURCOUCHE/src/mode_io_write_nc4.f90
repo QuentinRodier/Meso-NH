@@ -475,8 +475,8 @@ TYPE(TFILEDATA),TARGET,INTENT(IN) :: TPFILE
 TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:,:),   INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,               INTENT(OUT):: KRESP
-INTEGER,OPTIONAL,      INTENT(IN) :: KVERTLEVEL ! Number of the vertical level (needed for Z-level splitted files)
-INTEGER,OPTIONAL,      INTENT(IN) :: KZFILE     ! Number of the Z-level splitted file
+INTEGER,OPTIONAL,      INTENT(IN) :: KVERTLEVEL ! Number of the vertical level (needed for Z-level split files)
+INTEGER,OPTIONAL,      INTENT(IN) :: KZFILE     ! Number of the Z-level split file
 LOGICAL,OPTIONAL,      INTENT(IN) :: OISCOORD   ! Is a coordinate variable (->do not write coordinates attribute)
 !
 INTEGER(KIND=CDFINT)                            :: STATUS

@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! masdev4_7 BUG1 2007/06/15 17:47:17
 !-----------------------------------------------------------------
 !     #####################
       MODULE MODI_CALCSOUND
@@ -43,7 +38,7 @@ END MODULE MODI_CALCSOUND
 !!
 !!**  METHOD
 !!    ------
-!!        The horizontal dimensions of model arrays are splitted in arrays of
+!!        The horizontal dimensions of model arrays are split in arrays of
 !!      1000 columns. If there is at least 1000 elements, computation is
 !!      made in a static way, otherwise in a dynamical way.
 !!

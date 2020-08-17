@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -1124,7 +1124,7 @@
     !
     INTEGER, INTENT(IN) :: K ! Number of elements of TPSPLIT
     !
-    TYPE(ZONE_ll), INTENT(IN) :: TPZONE ! Zone to be splitted
+    TYPE(ZONE_ll), INTENT(IN) :: TPZONE ! Zone to be split
     !
     TYPE(ZONE_ll), DIMENSION(:), INTENT(OUT) :: TPRES ! Splitting of the zone
     !

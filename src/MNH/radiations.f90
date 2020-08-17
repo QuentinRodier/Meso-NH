@@ -84,7 +84,7 @@ CONTAINS
 !!    -------------
 !!      Original    26/02/95 
 !!      J.Stein     20/12/95 add the array splitting in order to save memory
-!!      J.-P. Pinty 19/11/96 change the splitted arrays, specific humidity
+!!      J.-P. Pinty 19/11/96 change the split arrays, specific humidity
 !!                           and add the ice phase
 !!      J.Stein     22/06/97 use of the absolute pressure
 !!      P.Jabouille 31/07/97 impose a zero humidity for dry simulation
@@ -204,7 +204,7 @@ INTEGER, INTENT(IN)                  :: KSTATM  ! index of the standard
                                                 ! atmosphere level just above
                                                 !      the model top
 INTEGER, INTENT(IN)                  :: KRAD_COLNBR ! factor by which the memory
-                                                    ! is splitted
+                                                    ! is split
                                                     !
                                                !Choice of :             
 CHARACTER (LEN=*), INTENT (IN)       :: HEFRADL ! 
@@ -418,7 +418,7 @@ REAL, DIMENSION(:),   ALLOCATABLE :: ZWORK1, ZWORK2, ZWORK3, ZWORK
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZWORK4, ZWORK1AER, ZWORK2AER, ZWORK_GRID
 LOGICAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2)) :: ZWORKL
 !
-!  splitted arrays used to split the memory required by the ECMWF_radiation 
+!  split arrays used to split the memory required by the ECMWF_radiation 
 !  subroutine, the fields have the same meaning as their complete counterpart
 !
 REAL(KIND=JPRB), DIMENSION(:,:),   ALLOCATABLE :: ZALBP_SPLIT, ZALBD_SPLIT
@@ -514,7 +514,7 @@ REAL, DIMENSION(KFLEV,KSWB_OLD)           :: ZTAUREL_EQ_CLEAR    !tau/tau_{550} 
 INTEGER                               :: WVL_IDX              !Counter for wavelength
 
 !
-INTEGER  :: JI_SPLIT          ! loop on the splitted array
+INTEGER  :: JI_SPLIT          ! loop on the split array
 INTEGER  :: INUM_CALL         ! number of CALL of the radiation scheme
 INTEGER  :: IDIM_EFF          ! effective number of air-columns to compute
 INTEGER  :: IDIM_RESIDUE      ! number of remaining air-columns to compute
@@ -2181,7 +2181,7 @@ ELSE
       END IF
     END IF
 ! 
-! fill the splitted arrays with their values taken from the full arrays 
+! fill the split arrays with their values taken from the full arrays 
 !
     IBEG = IDIM-IDIM_RESIDUE+1
     IEND = IBEG+IDIM_EFF-1
@@ -2218,7 +2218,7 @@ ELSE
     ZQSAVE_SPLIT (:,:) = ZQSAVE (IBEG:IEND ,:)
     ZTS_SPLIT (:) = ZTS (IBEG:IEND)
 !
-!  CALL the ECMWF radiation with the splitted array
+!  CALL the ECMWF radiation with the split array
 !
   IF (CCLOUD == 'LIMA') THEN
 ! LIMA concentrations
@@ -2320,7 +2320,7 @@ ELSE
     END IF                   
     END IF 
 !
-! fill the full output arrays with the splitted arrays
+! fill the full output arrays with the split arrays
 !
     ZDTLW( IBEG:IEND ,:)  =  ZDTLW_SPLIT(:,:)  
     ZDTSW( IBEG:IEND ,:)  =  ZDTSW_SPLIT(:,:) 
@@ -2372,7 +2372,7 @@ ELSE
 !
     IDIM_RESIDUE = IDIM_RESIDUE - IDIM_EFF
 !
-! desallocation of the splitted arrays
+! desallocation of the split arrays
 !
     IF( JI_SPLIT >= INUM_CALL-1 ) THEN
       DEALLOCATE(  ZALBP_SPLIT )
