@@ -5,13 +5,14 @@
 !-----------------------------------------------------------------
 ! Modifications
 !  P. Wautelet 28/01/2020: new subroutines: Budget_store_init, Budget_store_end and Budget_source_id_find in new module mode_budget
+!  P. Wautelet 17/08/2020: treat LES budgets correctly
 !-----------------------------------------------------------------
 
 !#################
 module mode_budget
 !#################
 
-use modd_budget, only: cbutype, nbutime, tbudgetdata
+use modd_budget, only: cbutype, lbu_enable, nbutime, tbudgetdata
 
 use modi_cart_compress, only: Cart_compress
 use modi_mask_compress, only: Mask_compress
@@ -30,6 +31,8 @@ public :: Budget_store_add
 contains
 
 subroutine Budget_store_init( tpbudget, hsource, pvars )
+  use modd_les, only: lles_call
+
   type(tbudgetdata),      intent(inout) :: tpbudget ! Budget datastructure
   character(len=*),       intent(in)    :: hsource  ! Name of the source term
   real, dimension(:,:,:), intent(in)    :: pvars    ! Current value to be stored
@@ -37,6 +40,18 @@ subroutine Budget_store_init( tpbudget, hsource, pvars )
   integer :: iid ! Reference number of the current source term
 
   call Print_msg( NVERB_DEBUG, 'BUD', 'Budget_store_init', trim( tpbudget%cname )//':'//trim( hsource ) )
+
+  if ( lles_call ) then
+    if ( allocated( tpbudget%xtmplesstore ) ) then
+      call Print_msg( NVERB_ERROR, 'BUD', 'Budget_store_init', 'xtmplesstore already allocated' )
+    else
+      allocate( tpbudget%xtmplesstore( Size( pvars, 1 ), Size( pvars, 2 ), Size ( pvars, 3 )  ) )
+    end if
+    tpbudget%xtmplesstore(:, :, :) = pvars(:, :, :)
+  end if
+
+  ! Nothing else to do if budgets are not enabled
+  if ( .not. lbu_enable ) return
 
   call Budget_source_id_find( tpbudget, hsource, iid )
 
@@ -76,14 +91,37 @@ end subroutine Budget_store_init
 
 
 subroutine Budget_store_end( tpbudget, hsource, pvars )
+  use modd_les, only: lles_call
+
+  use modi_les_budget, only: Les_budget
+
   type(tbudgetdata),      intent(inout) :: tpbudget ! Budget datastructure
   character(len=*),       intent(in) :: hsource     ! Name of the source term
   real, dimension(:,:,:), intent(in) :: pvars       ! Current value to be stored
 
   integer :: iid    ! Reference number of the current source term
   integer :: igroup ! Number of the group where to store the source term
+  real, dimension(:,:,:), allocatable :: zvars_add
 
   call Print_msg( NVERB_DEBUG, 'BUD', 'Budget_store_end', trim( tpbudget%cname )//':'//trim( hsource ) )
+
+  if ( lles_call ) then
+    if ( allocated( tpbudget%xtmplesstore ) ) then
+      ! Do the call to Les_budget with oadd=.true.
+      ! This is necessary when the call to Budget_store_init was done with pvars not strictly
+      ! equal to the source term
+      Allocate( zvars_add( Size( pvars, 1 ), Size( pvars, 2 ), Size ( pvars, 3 ) ) )
+      zvars_add(:, :, :) = pvars(:, :, :) - tpbudget%xtmplesstore(:, :, :)
+      call Les_budget( zvars_add, tpbudget%nid, hsource, oadd = .true. )
+      Deallocate( zvars_add )
+      Deallocate( tpbudget%xtmplesstore )
+    else
+      call Les_budget( pvars, tpbudget%nid, hsource, oadd = .false. )
+    end if
+  end if
+
+  ! Nothing to do if budgets are not enabled
+  if ( .not. lbu_enable ) return
 
   call Budget_source_id_find( tpbudget, hsource, iid )
 
@@ -152,6 +190,10 @@ end subroutine Budget_store_end
 
 
 subroutine Budget_store_add( tpbudget, hsource, pvars )
+  use modd_les, only: lles_call
+
+  use modi_les_budget, only: Les_budget
+
   type(tbudgetdata),      intent(inout) :: tpbudget ! Budget datastructure
   character(len=*),       intent(in) :: hsource     ! Name of the source term
   real, dimension(:,:,:), intent(in) :: pvars       ! Current value to be stored
@@ -160,6 +202,11 @@ subroutine Budget_store_add( tpbudget, hsource, pvars )
   integer :: igroup ! Number of the group where to store the source term
 
   call Print_msg( NVERB_DEBUG, 'BUD', 'Budget_store_add', trim( tpbudget%cname )//':'//trim( hsource ) )
+
+  if ( lles_call ) call Les_budget( pvars, tpbudget%nid, hsource, oadd = .true. )
+
+  ! Nothing to do if budgets are not enabled
+  if ( .not. lbu_enable ) return
 
   call Budget_source_id_find( tpbudget, hsource, iid )
 

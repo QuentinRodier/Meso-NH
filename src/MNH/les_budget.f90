@@ -9,12 +9,12 @@
 !
 INTERFACE
 !
-      SUBROUTINE LES_BUDGET(PVARS,KBUDN,HBUVAR)
+      SUBROUTINE LES_BUDGET(PVARS,KBUDN,HBUVAR,oadd)
 
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PVARS    ! Source
-INTEGER               , INTENT(IN) :: KBUDN    ! variable number
-CHARACTER (LEN=*)    , INTENT(IN) :: HBUVAR   ! Identifier of the Budget of the
-                                               ! variable that is considered
+INTEGER,                INTENT(IN) :: KBUDN    ! variable number
+CHARACTER(LEN=*),       INTENT(IN) :: HBUVAR   ! Identifier of the budget of the variable that is considered
+logical,                intent(in) :: oadd     ! Flag to determine if source is to be added (true) or if is absolute (false)
 
 END SUBROUTINE LES_BUDGET
 
@@ -23,7 +23,7 @@ END INTERFACE
 END MODULE MODI_LES_BUDGET
 !
 !     ####################################
-      SUBROUTINE LES_BUDGET(PVARS,KBUDN,HBUVAR)
+      SUBROUTINE LES_BUDGET(PVARS,KBUDN,HBUVAR,oadd)
 !     ####################################
 !
 !!****  *LES_BUDGET* - stores
@@ -48,6 +48,7 @@ END MODULE MODI_LES_BUDGET
 !!      Original    September 19, 2002
 !!      25/11/2016  Q.Rodier correction bug variance u'^2  v'^2  w'^2
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!  P. Wautelet 17/08/2020: treat LES budgets correctly
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -73,10 +74,10 @@ IMPLICIT NONE
 !         ------------------------------
 !
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PVARS    ! Source
-INTEGER               , INTENT(IN) :: KBUDN    ! variable number
-CHARACTER (LEN=*)    , INTENT(IN) :: HBUVAR   ! Identifier of the Budget of the
-                                               ! variable that is considered
-
+INTEGER,                INTENT(IN) :: KBUDN    ! variable number
+CHARACTER(LEN=*),       INTENT(IN) :: HBUVAR   ! Identifier of the budget of the variable that is considered
+logical,                intent(in) :: oadd     ! Flag to determine if source is to be added (true) or if is absolute (false)
+!
 !* 0.2    declaration of local variables
 !         ------------------------------
 !
@@ -124,7 +125,11 @@ SELECT CASE (KBUDN)
 !* u
 !
   CASE( NBUDGET_U )
-    CALL LES_BUDGET_ANOMALY(PVARS,'X',ZANOM)
+    if ( oadd ) then
+      CALL LES_BUDGET_ANOMALY(XCURRENT_RUS + PVARS,'X',ZANOM)
+    else
+      CALL LES_BUDGET_ANOMALY(PVARS,'X',ZANOM)
+    end if
     !
     !* action in KE budget
     ZWORK_LES = 0.5*( ZANOM ** 2 - XU_ANOM ** 2 ) / XCURRENT_TSTEP
@@ -132,13 +137,21 @@ SELECT CASE (KBUDN)
     X_LES_BU_RES_KE(:,ILES_BU) = X_LES_BU_RES_KE(:,ILES_BU) + ZLES_PROF(:)
     !
     !* update fields
-    XCURRENT_RUS = PVARS
+    if ( oadd ) then
+      XCURRENT_RUS = XCURRENT_RUS + PVARS
+    else
+      XCURRENT_RUS = PVARS
+    end if
     XU_ANOM = ZANOM
 !
 !* v
 !
   CASE( NBUDGET_V )
-    CALL LES_BUDGET_ANOMALY(PVARS,'Y',ZANOM)
+    if ( oadd ) then
+      CALL LES_BUDGET_ANOMALY(XCURRENT_RVS + PVARS,'Y',ZANOM)
+    else
+      CALL LES_BUDGET_ANOMALY(PVARS,'Y',ZANOM)
+    end if
     !
     !* action in KE budget
     ZWORK_LES = 0.5*( ZANOM ** 2 - XV_ANOM ** 2 ) / XCURRENT_TSTEP
@@ -146,13 +159,21 @@ SELECT CASE (KBUDN)
     X_LES_BU_RES_KE(:,ILES_BU) = X_LES_BU_RES_KE(:,ILES_BU) + ZLES_PROF(:)
     !
     !* update fields
-    XCURRENT_RVS = PVARS
+    if ( oadd ) then
+      XCURRENT_RVS = XCURRENT_RVS + PVARS
+    else
+      XCURRENT_RVS = PVARS
+    end if
     XV_ANOM = ZANOM
 !
 !* w
 !
   CASE( NBUDGET_W )
-    CALL LES_BUDGET_ANOMALY(PVARS,'Z',ZANOM)
+    if ( oadd ) then
+      CALL LES_BUDGET_ANOMALY(XCURRENT_RWS + PVARS,'Z',ZANOM)
+    else
+      CALL LES_BUDGET_ANOMALY(PVARS,'Z',ZANOM)
+    end if
     !
     !* action in KE budget
     ZWORK_LES = 0.5*( ZANOM ** 2 - XW_ANOM ** 2 ) / XCURRENT_TSTEP
@@ -179,13 +200,21 @@ SELECT CASE (KBUDN)
     END DO
     !
     !* update fields
-    XCURRENT_RWS = PVARS
+    if ( oadd ) then
+      XCURRENT_RWS = XCURRENT_RWS + PVARS
+    else
+      XCURRENT_RWS = PVARS
+    end if
     XW_ANOM = ZANOM
 !
 !* Th
 !
   CASE( NBUDGET_TH )
-    XCURRENT_RTHLS = XCURRENT_RTHLS + PVARS - XCURRENT_RTHS
+    if ( oadd ) then
+      XCURRENT_RTHLS = XCURRENT_RTHLS + PVARS
+    else
+      XCURRENT_RTHLS = XCURRENT_RTHLS + PVARS - XCURRENT_RTHS
+    end if
     CALL LES_BUDGET_ANOMALY(XCURRENT_RTHLS,'-',ZANOM)
     !
     !* action in WTHL budget
@@ -207,15 +236,24 @@ SELECT CASE (KBUDN)
     END IF
     !
     !* update fields
-    XCURRENT_RTHS = PVARS
+    if ( oadd ) then
+      XCURRENT_RTHS = XCURRENT_RTHS + PVARS
+    else
+      XCURRENT_RTHS = PVARS
+    end if
     XTHL_ANOM = ZANOM
 !
 !* Tke
 !
   CASE( NBUDGET_TKE )
     ALLOCATE(ZTEND(IIU,IJU,IKU))
-    ZTEND(:,:,:) = (PVARS(:,:,:)-XCURRENT_RTKES(:,:,:)) / XCURRENT_RHODJ
-    XCURRENT_RTKES = PVARS
+    if ( oadd ) then
+      ZTEND(:,:,:) = PVARS(:,:,:) / XCURRENT_RHODJ
+      XCURRENT_RTKES = XCURRENT_RTKES+PVARS
+    else
+      ZTEND(:,:,:) = (PVARS(:,:,:)-XCURRENT_RTKES(:,:,:)) / XCURRENT_RHODJ
+      XCURRENT_RTKES = PVARS
+    end if
     CALL LES_VER_INT( ZTEND, ZWORK_LES )
     DEALLOCATE(ZTEND)
     CALL LES_MEAN_ll( ZWORK_LES, LLES_CURRENT_CART_MASK, ZLES_PROF)
@@ -225,7 +263,11 @@ SELECT CASE (KBUDN)
 !
   CASE( NBUDGET_RV, NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH )
     !* transformation into conservative variables: RT
-    XCURRENT_RRTS = XCURRENT_RRTS + PVARS(:,:,:) - XCURRENT_RRS(:,:,:,KBUDN-(NBUDGET_RV-1))
+    if ( oadd ) then
+      XCURRENT_RRTS = XCURRENT_RRTS + PVARS(:,:,:)
+    else
+      XCURRENT_RRTS = XCURRENT_RRTS + PVARS(:,:,:) - XCURRENT_RRS(:,:,:,KBUDN-(NBUDGET_RV-1))
+    end if
     CALL LES_BUDGET_ANOMALY(XCURRENT_RRTS,'-',ZANOM)
     !
     !* action in WRT budget
@@ -245,16 +287,29 @@ SELECT CASE (KBUDN)
     X_LES_BU_RES_THLRT(:,ILES_BU) = X_LES_BU_RES_THLRT(:,ILES_BU) + ZLES_PROF(:)
     !
     !* update fields
-    XCURRENT_RRS(:,:,:,KBUDN-(NBUDGET_RV-1)) = PVARS
+    if ( oadd ) then
+      XCURRENT_RRS(:,:,:,KBUDN-(NBUDGET_RV-1)) = XCURRENT_RRS(:,:,:,KBUDN-(NBUDGET_RV-1)) + PVARS
+    else
+      XCURRENT_RRS(:,:,:,KBUDN-(NBUDGET_RV-1)) = PVARS
+    end if
     XRT_ANOM = ZANOM
 !
 !* Rc
 !
   CASE( NBUDGET_RC )
     !* transformation into conservative variables: theta_l; RT
-    XCURRENT_RRTS  = XCURRENT_RRTS  + PVARS(:,:,:) - XCURRENT_RRS(:,:,:,KBUDN-(NBUDGET_RV-1))
-    XCURRENT_RTHLS = XCURRENT_RTHLS - XCURRENT_L_O_EXN_CP &
-                                    * (PVARS(:,:,:) - XCURRENT_RRS(:,:,:,KBUDN-(NBUDGET_RV-1)))
+    if ( oadd ) then
+      XCURRENT_RRTS  = XCURRENT_RRTS  + PVARS(:,:,:)
+    else
+      XCURRENT_RRTS  = XCURRENT_RRTS  + PVARS(:,:,:) - XCURRENT_RRS(:,:,:,KBUDN-(NBUDGET_RV-1))
+    end if
+    if ( oadd ) then
+      XCURRENT_RTHLS = XCURRENT_RTHLS - XCURRENT_L_O_EXN_CP &
+                                      * (PVARS(:,:,:) )
+    else
+      XCURRENT_RTHLS = XCURRENT_RTHLS - XCURRENT_L_O_EXN_CP &
+                                      * (PVARS(:,:,:) - XCURRENT_RRS(:,:,:,KBUDN-(NBUDGET_RV-1)))
+    end if
 
     !* anomaly of THL
     ALLOCATE(ZTHL_ANOM(IIU,IJU,NLES_K))
@@ -292,7 +347,11 @@ SELECT CASE (KBUDN)
     !
     !
     !* update fields
-    XCURRENT_RRS(:,:,:,KBUDN-(NBUDGET_RV-1)) = PVARS
+    if ( oadd ) then
+      XCURRENT_RRS(:,:,:,KBUDN-(NBUDGET_RV-1)) = XCURRENT_RRS(:,:,:,KBUDN-(NBUDGET_RV-1)) + PVARS
+    else
+      XCURRENT_RRS(:,:,:,KBUDN-(NBUDGET_RV-1)) = PVARS
+    end if
     XRT_ANOM = ZANOM
     XTHL_ANOM = ZTHL_ANOM
     DEALLOCATE(ZTHL_ANOM)
@@ -300,7 +359,11 @@ SELECT CASE (KBUDN)
 !* SV
 !
   CASE( NBUDGET_SV1: )
-    CALL LES_BUDGET_ANOMALY(PVARS,'-',ZANOM)
+    if ( oadd ) then
+      CALL LES_BUDGET_ANOMALY(XCURRENT_RSVS(:,:,:,KBUDN-(NBUDGET_SV1-1)) + PVARS,'-',ZANOM)
+    else
+      CALL LES_BUDGET_ANOMALY(PVARS,'-',ZANOM)
+    end if
     !
     !* action in WSV budget
     ZWORK_LES = ( ZANOM * XW_ANOM - XSV_ANOM(:,:,:,KBUDN-(NBUDGET_SV1-1)) * XW_ANOM ) / &
@@ -315,7 +378,12 @@ SELECT CASE (KBUDN)
     X_LES_BU_RES_SV2(:,ILES_BU,KBUDN-(NBUDGET_SV1-1)) = X_LES_BU_RES_SV2(:,ILES_BU,KBUDN-(NBUDGET_SV1-1)) + ZLES_PROF(:)
     !
     !* update fields
-    XCURRENT_RSVS(:,:,:,KBUDN-(NBUDGET_SV1-1)) = PVARS
+    if ( oadd ) then
+      XCURRENT_RSVS(:,:,:,KBUDN-(NBUDGET_SV1-1)) = XCURRENT_RSVS(:,:,:,KBUDN-(NBUDGET_SV1-1)) + PVARS
+    else
+      XCURRENT_RSVS(:,:,:,KBUDN-(NBUDGET_SV1-1)) = PVARS
+    end if
+    XV_ANOM = ZANOM
     XSV_ANOM(:,:,:,KBUDN-(NBUDGET_SV1-1)) = ZANOM
 
 END SELECT
@@ -339,37 +407,37 @@ CHARACTER (LEN=*), INTENT(IN)  :: HBU     ! Identifier of the Budget of the
                                           ! variable that is considered
 INTEGER,           INTENT(OUT) :: KLES_BU ! LES budget identifier
 !
-IF (HBU(1:3)=='ADV') THEN
+IF (HBU=='ADV') THEN
   KLES_BU = NLES_TOTADV
-ELSE IF (HBU(1:3)=='REL') THEN
+ELSE IF (HBU=='REL') THEN
   KLES_BU = NLES_RELA
-ELSE IF (HBU(1:5)=='VTURB') THEN
+ELSE IF (HBU=='VTURB') THEN
   KLES_BU = NLES_VTURB
-ELSE IF (HBU(1:5)=='HTURB') THEN
+ELSE IF (HBU=='HTURB') THEN
   KLES_BU = NLES_HTURB
-ELSE IF (HBU(1:4)=='GRAV') THEN
+ELSE IF (HBU=='GRAV') THEN
   KLES_BU = NLES_GRAV
-ELSE IF (HBU(1:4)=='PRES') THEN
+ELSE IF (HBU=='PRES') THEN
   KLES_BU = NLES_PRES
-ELSE IF (HBU(1:4)=='PREF') THEN
+ELSE IF (HBU=='PREF') THEN
   KLES_BU = NLES_PREF
-ELSE IF (HBU(1:4)=='CURV') THEN
+ELSE IF (HBU=='CURV') THEN
   KLES_BU = NLES_CURV
-ELSE IF (HBU(1:3)=='COR') THEN
+ELSE IF (HBU=='COR') THEN
   KLES_BU = NLES_COR
-ELSE IF (HBU(1:2)=='DP') THEN
+ELSE IF (HBU=='DP') THEN
   KLES_BU = NLES_DP
-ELSE IF (HBU(1:2)=='TP') THEN
+ELSE IF (HBU=='TP') THEN
   KLES_BU = NLES_TP
-ELSE IF (HBU(1:2)=='TR') THEN
+ELSE IF (HBU=='TR') THEN
   KLES_BU = NLES_TR
-ELSE IF (HBU(1:4)=='DISS') THEN
+ELSE IF (HBU=='DISS') THEN
   KLES_BU = NLES_DISS
-ELSE IF (HBU(1:3)=='DIF') THEN
+ELSE IF (HBU=='DIF') THEN
   KLES_BU = NLES_DIFF
-ELSE IF (HBU(1:3)=='RAD') THEN
+ELSE IF (HBU=='RAD') THEN
   KLES_BU = NLES_RAD
-ELSE IF (HBU(1:4)=='NEST') THEN
+ELSE IF (HBU=='NEST') THEN
   KLES_BU = NLES_NEST
 ELSE
   KLES_BU = NLES_MISC

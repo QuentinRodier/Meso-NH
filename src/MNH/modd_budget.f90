@@ -54,6 +54,7 @@
 !  P. Wautelet 17/04/2020: set default values for budgets switch values
 !  P. Wautelet 23/04/2020: add nid in tbudgetdata datatype
 !  P. Wautelet 30/06/2020: add NNETURSV, NNEADVSV and NNECONSV variables
+!  P. Wautelet 17/08/2020: add xtmplesstore in tbudgetdata datatype
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -95,6 +96,8 @@ type tbudgetdata
   logical :: lenabled = .false. ! True if corresponding budget flag is set to true
   real, dimension(:,:,:), allocatable :: xtmpstore ! Array to store temporary data
                                                    !  (to allow to store the difference between 2 places)
+  real, dimension(:,:,:), allocatable :: xtmplesstore ! Array to store temporary data for LES budgets
+                                                      !  (to allow to store the difference between 2 places)
   type(tbusourcedata), dimension(:), allocatable :: tsources ! Full list of source terms (used or not)
   type(tbugroupdata),  dimension(:), allocatable :: tgroups  ! Full list of groups of source terms (to be written)
   type(tburhodata),    pointer                   :: trhodj => null() ! Budget array for rhodj
