@@ -12,7 +12,7 @@
 module mode_budget
 !#################
 
-use modd_budget, only: cbutype, lbu_enable, nbutime, tbudgetdata
+use modd_budget, only: cbutype, nbutime, tbudgetdata
 
 use modi_cart_compress, only: Cart_compress
 use modi_mask_compress, only: Mask_compress
@@ -51,7 +51,7 @@ subroutine Budget_store_init( tpbudget, hsource, pvars )
   end if
 
   ! Nothing else to do if budgets are not enabled
-  if ( .not. lbu_enable ) return
+  if ( .not. tpbudget%lenabled ) return
 
   call Budget_source_id_find( tpbudget, hsource, iid )
 
@@ -121,7 +121,7 @@ subroutine Budget_store_end( tpbudget, hsource, pvars )
   end if
 
   ! Nothing to do if budgets are not enabled
-  if ( .not. lbu_enable ) return
+  if ( .not. tpbudget%lenabled ) return
 
   call Budget_source_id_find( tpbudget, hsource, iid )
 
@@ -206,7 +206,7 @@ subroutine Budget_store_add( tpbudget, hsource, pvars )
   if ( lles_call ) call Les_budget( pvars, tpbudget%nid, hsource, oadd = .true. )
 
   ! Nothing to do if budgets are not enabled
-  if ( .not. lbu_enable ) return
+  if ( .not. tpbudget%lenabled ) return
 
   call Budget_source_id_find( tpbudget, hsource, iid )
 
