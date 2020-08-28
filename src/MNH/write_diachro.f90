@@ -13,7 +13,7 @@ public :: Write_diachro
 
 contains
 !     #################################################################
-      SUBROUTINE WRITE_DIACHRO(TPDIAFILE,TPLUOUTDIA,HGROUP,HTYPE,     &
+      SUBROUTINE WRITE_DIACHRO(TPDIAFILE,HGROUP,HTYPE,                &
       KGRID, tpdates, PVAR,                                           &
       HTITRE,HUNITE,HCOMMENT,OICP,OJCP,OKCP,KIL,KIH,KJL,KJH,KKL,KKH,  &
       PTRAJX,PTRAJY,PTRAJZ  )
@@ -79,13 +79,14 @@ contains
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !  P. Wautelet 13/09/2019: remove never used PMASK optional dummy-argument
+!  P. Wautelet 28/08/2020: remove TPLUOUTDIA dummy argument
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
 USE MODD_BUDGET
-USE MODD_CONF
+use modd_conf,           only: lpack
 use modd_field,          only: tfielddata, TYPECHAR, TYPEDATE, TYPEINT, TYPEREAL
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_PARAMETERS,     ONLY: JPHEXT
@@ -104,7 +105,6 @@ IMPLICIT NONE
 !*       0.1   Dummy arguments
 !              ---------------
 TYPE(TFILEDATA),              INTENT(IN)          :: TPDIAFILE    ! file to write
-TYPE(TFILEDATA),              INTENT(IN)          :: TPLUOUTDIA
 CHARACTER(LEN=*),             INTENT(IN)          :: HGROUP, HTYPE
 INTEGER,DIMENSION(:),         INTENT(IN)          :: KGRID
 type(date_time), dimension(:), intent(in)           :: tpdates
@@ -123,7 +123,6 @@ REAL,DIMENSION(:,:,:),        INTENT(IN),OPTIONAL :: PTRAJZ
 CHARACTER(LEN=20) :: YCOMMENT
 CHARACTER(LEN=3)  :: YJ
 INTEGER   ::   ILENG, ILENTITRE, ILENUNITE, ILENCOMMENT
-INTEGER   ::   ILUOUTDIA
 INTEGER   ::   II, IJ, IK, IT, IN, IP, J, JJ
 INTEGER   ::   INTRAJT, IKTRAJX, IKTRAJY, IKTRAJZ
 INTEGER   ::   ITTRAJX, ITTRAJY, ITTRAJZ
@@ -163,8 +162,6 @@ end if
 GPACK=LPACK
 LPACK=.FALSE.
 YCOMMENT='NOTHING'
-!
-ILUOUTDIA = TPLUOUTDIA%NLU
 !
 II = SIZE(PVAR,1)
 IJ = SIZE(PVAR,2)
@@ -233,9 +230,6 @@ ELSE
   ICOMPZ = 0
 ENDIF
 !
-IF (NVERB>=5) THEN
-  WRITE(ILUOUTDIA,*)' WRITE_DIACHRO: ',TRIM(TPDIAFILE%CNAME)//'.lfi'
-ENDIF
 !
 ! 1er enregistrement TYPE
 !
@@ -250,10 +244,6 @@ TZFIELD%NTYPE      = TYPECHAR
 TZFIELD%NDIMS      = 0
 TZFIELD%LTIMEDEP   = .FALSE.
 CALL IO_Field_write(TPDIAFILE,TZFIELD,HTYPE)
-
-IF (NVERB>=5) THEN
-  WRITE(ILUOUTDIA,*)'  1st record (',TRIM(TZFIELD%CMNHNAME),'): OK'
-ENDIF
 !
 ! 2eme  enregistrement DIMENSIONS des MATRICES et LONGUEUR des TABLEAUX de CARACTERES et FLAGS de COMPRESSION sur les DIFFERENTS AXES
 !
@@ -295,9 +285,6 @@ SELECT CASE(HTYPE)
     ITABCHAR(33)=INMASK; ITABCHAR(34)=IPMASK
     CALL IO_Field_write(TPDIAFILE,TZFIELD,ITABCHAR)
     DEALLOCATE(ITABCHAR)
-    IF (NVERB>=5) THEN
-      WRITE(ILUOUTDIA,*)' ILENTITRE,ILENUNITE,ILENCOMMENT ',ILENTITRE,ILENUNITE,ILENCOMMENT
-    ENDIF
   CASE DEFAULT
     ILENG = 25 
     ALLOCATE(ITABCHAR(ILENG))
@@ -317,9 +304,6 @@ SELECT CASE(HTYPE)
     CALL IO_Field_write(TPDIAFILE,TZFIELD,ITABCHAR)
     DEALLOCATE(ITABCHAR)
 END SELECT
-IF (NVERB>=5) THEN
-  WRITE(ILUOUTDIA,*)'  2nd record (',TRIM(TZFIELD%CMNHNAME),'): OK'
-ENDIF
 !
 ! 3eme enregistrement TITRE
 !
@@ -334,10 +318,6 @@ TZFIELD%NTYPE      = TYPECHAR
 TZFIELD%NDIMS      = 1
 TZFIELD%LTIMEDEP   = .FALSE.
 CALL IO_Field_write(TPDIAFILE,TZFIELD,HTITRE(1:IP))
-
-IF (NVERB>=5) THEN
-  WRITE(ILUOUTDIA,*)'  3rd record (',TRIM(TZFIELD%CMNHNAME),'): OK'
-ENDIF
 !
 ! 4eme enregistrement UNITE
 !
@@ -352,10 +332,6 @@ TZFIELD%NTYPE      = TYPECHAR
 TZFIELD%NDIMS      = 1
 TZFIELD%LTIMEDEP   = .FALSE.
 CALL IO_Field_write(TPDIAFILE,TZFIELD,HUNITE(1:IP))
-
-IF (NVERB>=5) THEN
-  WRITE(ILUOUTDIA,*)'  4th record (',TRIM(TZFIELD%CMNHNAME),'): OK'
-ENDIF
 !
 ! 5eme enregistrement COMMENT
 !
@@ -370,10 +346,6 @@ TZFIELD%NTYPE      = TYPECHAR
 TZFIELD%NDIMS      = 1
 TZFIELD%LTIMEDEP   = .FALSE.
 CALL IO_Field_write(TPDIAFILE,TZFIELD,HCOMMENT(1:IP))
-
-IF (NVERB>=5) THEN
-  WRITE(ILUOUTDIA,*)'  5th record (',TRIM(TZFIELD%CMNHNAME),'): OK'
-ENDIF
 !
 ! 6eme enregistrement PVAR
 !
@@ -416,13 +388,7 @@ DO J = 1,IP
     TZFIELD%LTIMEDEP   = .FALSE.
     CALL IO_Field_write(TPDIAFILE,TZFIELD,PVAR(:,:,:,:,:,J))
   ENDIF
-  IF (NVERB>=5) THEN
-    WRITE(ILUOUTDIA,*)J,TRIM(TZFIELD%CMNHNAME)
-  ENDIF
 ENDDO
-IF (NVERB>=5) THEN
-  WRITE(ILUOUTDIA,*)'  6th record: OK'
-ENDIF
 !
 ! 7eme enregistrement TRAJT
 !
@@ -447,10 +413,6 @@ end do
 call IO_Field_write( tpdiafile, tzfield, ztimes )
 
 deallocate( ztimes )
-
-IF (NVERB>=5) THEN
-  WRITE(ILUOUTDIA,*)'  7th record (',TRIM(TZFIELD%CMNHNAME),'): OK'
-ENDIF
 !
 ! Dans certains cas
 !

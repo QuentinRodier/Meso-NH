@@ -658,7 +658,7 @@ end if
 
 ! Write the profile
 if ( iresp==0 .and. ( gsurf .or. any( zwork6 /= xundef ) ) ) &
-  call write_diachro( tpdiafile, tluout0, ygroup, "ssol", igrid, tzdates,               &
+  call write_diachro( tpdiafile, ygroup, "ssol", igrid, tzdates,                        &
                       zwork6, ytitle, yunit, ycomment,                                  &
                       oicp = .false., ojcp = .false., okcp = .false.,                   &
                       kil = iil, kih = iih, kjl = ijl, kjh = ijh, kkl = ikl, kkh = ikh, &
@@ -903,7 +903,7 @@ END IF
 !            ----------------------
 !
 IF (IRESP==0) &
-CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "SPXY", IGRID, tzdates,               &
+CALL WRITE_DIACHRO( TPDIAFILE, YGROUP, "SPXY", IGRID, tzdates,                        &
                     ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
                     OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
                     KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH  )
@@ -944,7 +944,7 @@ IF (GAVG) THEN
   YGROUP    = 'T_'//YGROUP
 END IF
 !
-CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "SPXY", IGRID, tzdates,               &
+CALL WRITE_DIACHRO( TPDIAFILE, YGROUP, "SPXY", IGRID, tzdates,                        &
                     ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
                     OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
                     KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH  )
@@ -1042,7 +1042,7 @@ WRITE(YSTRING,FMT="(I6.6)") NINT( XLES_CURRENT_DOMEGAX )
 YCOMMENT(:) = " DOMEGAX="//YSTRING//' '//HCOMMENT
 !
 !
-CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "SPXY", IGRID, tzdates,               &
+CALL WRITE_DIACHRO( TPDIAFILE, YGROUP, "SPXY", IGRID, tzdates,                        &
                     ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
                     OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
                     KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH  )
@@ -1055,7 +1055,7 @@ CALL LES_TIME_AVG( ZWORK6, tzdates, IRESP )
 YGROUP    = 'T_'//YGROUP
 !
 IF (IRESP==0) &
-CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "SPXY", IGRID, tzdates,               &
+CALL WRITE_DIACHRO( TPDIAFILE, YGROUP, "SPXY", IGRID, tzdates,                        &
                     ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
                     OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
                     KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH  )
@@ -1089,7 +1089,7 @@ YTITLE(:) = YGROUP
 WRITE(YSTRING,FMT="(I6.6)") NINT( XLES_CURRENT_DOMEGAY )
 YCOMMENT(:) = " DOMEGAY="//YSTRING//' '//HCOMMENT
 !
-CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "SPXY", IGRID, tzdates,               &
+CALL WRITE_DIACHRO( TPDIAFILE, YGROUP, "SPXY", IGRID, tzdates,                        &
                     ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
                     OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
                     KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH  )
@@ -1101,7 +1101,7 @@ CALL LES_TIME_AVG( ZWORK6, tzdates, IRESP )
 YGROUP    = 'T_'//YGROUP
 !
 IF (IRESP==0) &
-CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "SPXY", IGRID, tzdates,               &
+CALL WRITE_DIACHRO( TPDIAFILE, YGROUP, "SPXY", IGRID, tzdates,                        &
                     ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
                     OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
                     KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH  )

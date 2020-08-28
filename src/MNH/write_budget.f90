@@ -434,7 +434,7 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
       call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_rho', 'unknown budget type' )
   end select
 
-  call Write_diachro( tpdiafile, tluout, ygroup_name, ybutype, iworkgrid,                          &
+  call Write_diachro( tpdiafile, ygroup_name, ybutype, iworkgrid,                                  &
                       tpdates, prhodjn, ybucomment,                                                &
                       yworkunit, yworkcomment,                                                     &
                       oicp = lbu_icp, ojcp = lbu_jcp, okcp = lbu_kcp,                              &
@@ -601,11 +601,11 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, kp, knocompr
     ytitles(jproc) = trim( tpbudget%tgroups(jproc)%cmnhname )
   end do
 
-  call Write_diachro( tpdiafile, tluout, ygroup_name, ybutype, iworkgrid,                              &
-                          tpdates, zworkt, ytitles,                                                    &
-                          yworkunit, yworkcomment,                                                     &
-                          oicp = lbu_icp, ojcp = lbu_jcp, okcp = lbu_kcp,                              &
-                          kil = nbuil, kih = nbuih, kjl = nbujl, kjh = nbujh, kkl = nbukl, kkh = nbukh )
+  call Write_diachro( tpdiafile, ygroup_name, ybutype, iworkgrid,                                  &
+                      tpdates, zworkt, ytitles,                                                    &
+                      yworkunit, yworkcomment,                                                     &
+                      oicp = lbu_icp, ojcp = lbu_jcp, okcp = lbu_kcp,                              &
+                      kil = nbuil, kih = nbuih, kjl = nbujl, kjh = nbujh, kkl = nbukl, kkh = nbukh )
 
   deallocate( zworkt, yworkunit, yworkcomment, iworkgrid )
 

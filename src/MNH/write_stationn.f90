@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -711,10 +711,10 @@ ALLOCATE (ZW6(1,1,1,SIZE(tstation%tpdates),1,JPROC))
 ZW6 = ZWORK6(:,:,:,:,:,:JPROC)
 DEALLOCATE(ZWORK6)
 !
-CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "CART", IGRID, tstation%tpdates, &
-                    ZW6(:,:,:,:,:,:), YTITLE(:), YUNIT(:), YCOMMENT(:),          &
-                    OICP = .TRUE., OJCP = .TRUE., OKCP = .FALSE.,                &
-                    KIL = 1, KIH = 1, KJL = 1, KJH = 1, KKL = 1, KKH = 1         )
+CALL WRITE_DIACHRO( TPDIAFILE, YGROUP, "CART", IGRID, tstation%tpdates,  &
+                    ZW6(:,:,:,:,:,:), YTITLE(:), YUNIT(:), YCOMMENT(:),  &
+                    OICP = .TRUE., OJCP = .TRUE., OKCP = .FALSE.,        &
+                    KIL = 1, KIH = 1, KJL = 1, KJH = 1, KKL = 1, KKH = 1 )
 !
 DEALLOCATE (ZW6)
 DEALLOCATE (YCOMMENT)

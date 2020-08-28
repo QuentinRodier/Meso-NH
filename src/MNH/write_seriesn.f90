@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -236,11 +236,11 @@ ENDIF
 !*      2.3  Write in diachro file
 !
 GICP=.TRUE. ; GJCP=.TRUE. ; GKCP=.TRUE.
-CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, 'TSERIES', 'CART', NSGRIDD1, tpsdates(1:nsnbstept), &
-                    XSSERIES1(1:1,1:1,1:1,1:NSNBSTEPT,:,:),                                &
-                    CSTITLE1(:), CSUNIT1(:), CSCOMMENT1(:),                                &
-                    OICP = GICP, OJCP = GJCP, OKCP = GKCP,                                 &
-                    KIL = 1, KIH = 1, KJL = 1, KJH = 1, KKL = 1, KKH = 1                   )
+CALL WRITE_DIACHRO( TPDIAFILE, 'TSERIES', 'CART', NSGRIDD1, tpsdates(1:nsnbstept), &
+                    XSSERIES1(1:1,1:1,1:1,1:NSNBSTEPT,:,:),                        &
+                    CSTITLE1(:), CSUNIT1(:), CSCOMMENT1(:),                        &
+                    OICP = GICP, OJCP = GJCP, OKCP = GKCP,                         &
+                    KIL = 1, KIH = 1, KJL = 1, KJH = 1, KKL = 1, KKH = 1           )
 !
 !----------------------------------------------------------------------------
 !
@@ -290,11 +290,11 @@ DEALLOCATE(ZVAR3D)
 !*      3.2  Write in diachro file
 !
 GICP=.TRUE. ; GJCP=.TRUE. ; GKCP=.FALSE.
-CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, 'ZTSERIES', 'CART', NSGRIDD2, tpsdates(1:nsnbstept), &
-                    XSSERIES2(1:1,1:1,1:1,1:NSNBSTEPT,:,:),                                 &
-                    CSTITLE2(:), CSUNIT2(:), CSCOMMENT2(:),                                 &
-                    OICP = GICP, OJCP = GJCP, OKCP = GKCP,                                  &
-                    KIL = 1, KIH = 1, KJL = 1, KJH = 1, KKL = IKB, KKH = IKE                )
+CALL WRITE_DIACHRO( TPDIAFILE, 'ZTSERIES', 'CART', NSGRIDD2, tpsdates(1:nsnbstept), &
+                    XSSERIES2(1:1,1:1,1:1,1:NSNBSTEPT,:,:),                         &
+                    CSTITLE2(:), CSUNIT2(:), CSCOMMENT2(:),                         &
+                    OICP = GICP, OJCP = GJCP, OKCP = GKCP,                          &
+                    KIL = 1, KIH = 1, KJL = 1, KJH = 1, KKL = IKB, KKH = IKE        )
 !
 !----------------------------------------------------------------------------
 !
@@ -348,11 +348,11 @@ DO JS=1,NBJSLICE
     YSTITLE3S(JT)=ADJUSTL(ADJUSTR(CSTITLE3(JT))//'Y'//YSL//'-'//YSH)
   END DO
   GICP=.FALSE. ; GJCP=.TRUE. ; GKCP=.TRUE.
-  CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT, YGROUP, 'CART', NSGRIDD3, tpsdates(1:nsnbstept), &
-                      ZSERIES3_ll(1:IIU_ll,1:1,1:1,1:NSNBSTEPT,1:1,ISB1:ISB2),            &
-                      YSTITLE3S(:), CSUNIT3(:), CSCOMMENT3(:),                            &
-                      OICP = GICP, OJCP = GJCP, OKCP = GKCP,                              &
-                      KIL = 1, KIH = IIU_ll, KJL = 1, KJH = 1, KKL = 1, KKH = 1           )
+  CALL WRITE_DIACHRO( TPDIAFILE, YGROUP, 'CART', NSGRIDD3, tpsdates(1:nsnbstept), &
+                      ZSERIES3_ll(1:IIU_ll,1:1,1:1,1:NSNBSTEPT,1:1,ISB1:ISB2),    &
+                      YSTITLE3S(:), CSUNIT3(:), CSCOMMENT3(:),                    &
+                      OICP = GICP, OJCP = GJCP, OKCP = GKCP,                      &
+                      KIL = 1, KIH = IIU_ll, KJL = 1, KJH = 1, KKL = 1, KKH = 1   )
 END DO
 DEALLOCATE(ZVAR3D,ZWORK2D,ZSERIES3_ll)
 !

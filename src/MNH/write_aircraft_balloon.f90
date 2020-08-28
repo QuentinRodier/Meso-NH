@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -838,14 +838,14 @@ ALLOCATE (ZWZ6(1,1,IKU,size(tpflyer%tpdates),1,JPROCZ))
 ZWZ6 = ZWORKZ6(:,:,:,:,:,:JPROCZ)
 DEALLOCATE(ZWORKZ6)
 !
-CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUP, "RSPL", IGRID, tpflyer%tpdates, &
-                    ZW6, YTITLE(:), YUNIT(:), YCOMMENT(:),                      &
-                    PTRAJX = ZTRAJX, PTRAJY = ZTRAJY, PTRAJZ = ZTRAJZ           )
+CALL WRITE_DIACHRO( TPDIAFILE, YGROUP, "RSPL", IGRID, tpflyer%tpdates, &
+                    ZW6, YTITLE(:), YUNIT(:), YCOMMENT(:),             &
+                    PTRAJX = ZTRAJX, PTRAJY = ZTRAJY, PTRAJZ = ZTRAJZ  )
 !
-CALL WRITE_DIACHRO( TPDIAFILE, TLUOUT0, YGROUPZ, "CART", IGRIDZ, tpflyer%tpdates, &
-                    ZWZ6, YTITLEZ(:), YUNITZ(:), YCOMMENTZ(:),                    &
-                    OICP = .TRUE., OJCP = .TRUE., OKCP = .FALSE.,                 &
-                    KIL = 1, KIH = 1, KJL = 1, KJH = 1, KKL = 1, KKH = IKU        )
+CALL WRITE_DIACHRO( TPDIAFILE, YGROUPZ, "CART", IGRIDZ, tpflyer%tpdates,   &
+                    ZWZ6, YTITLEZ(:), YUNITZ(:), YCOMMENTZ(:),             &
+                    OICP = .TRUE., OJCP = .TRUE., OKCP = .FALSE.,          &
+                    KIL = 1, KIH = 1, KJL = 1, KJH = 1, KKL = 1, KKH = IKU )
 
 DEALLOCATE (ZTRAJX)
 DEALLOCATE (ZTRAJY)
