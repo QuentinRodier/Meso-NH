@@ -278,10 +278,10 @@ END SUBROUTINE LES_NORM_4D
 !------------------------------------------------------------------------------
 !
 !###################################
-SUBROUTINE LES_Z_NORM(OAVG,PTRAJZ,PWORK6)
+SUBROUTINE LES_Z_NORM(OAVG,PTRAJZ,PWORK4)
 !###################################
 !
-!* this subroutine interpolates the normalized field PWORK6 to the
+!* this subroutine interpolates the normalized field PWORK4 to the
 !  vertical normalized coordinate.
 !
 USE MODD_LES
@@ -295,24 +295,21 @@ IMPLICIT NONE
 !
 LOGICAL,                      INTENT(IN)    :: OAVG   ! time average ?
 REAL, DIMENSION(:,:,:),       INTENT(INOUT) :: PTRAJZ ! vertical grid
-REAL, DIMENSION(:,:,:,:,:,:), INTENT(INOUT) :: PWORK6 ! field data array
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PWORK4 ! field data array
 !
-REAL,    DIMENSION(SIZE(PWORK6,4),SIZE(PWORK6,5),SIZE(PWORK6,3))  :: ZTRAJZ
 ! initial grid
-REAL,    DIMENSION(SIZE(PWORK6,4),SIZE(PWORK6,5),SIZE(PWORK6,3), &
-                   SIZE(PWORK6,1),SIZE(PWORK6,2),SIZE(PWORK6,6) ) :: ZWORK6
+REAL,    DIMENSION(SIZE(PWORK4,2),SIZE(PWORK4,4),SIZE(PWORK4,1),SIZE(PWORK4,3) ) :: ZWORK4
 ! initial data
-REAL,    DIMENSION(SIZE(PWORK6,4),SIZE(PWORK6,5),SIZE(PWORK6,3))  :: ZNORMZ
+REAL,    DIMENSION(SIZE(PWORK4,2),SIZE(PWORK4,4),SIZE(PWORK4,1))  :: ZNORMZ
 ! grid in normalized coordinates
 !
-REAL,    DIMENSION(SIZE(PWORK6,4),SIZE(PWORK6,5),SIZE(PWORK6,3), &
-                   SIZE(PWORK6,1),SIZE(PWORK6,2),SIZE(PWORK6,6) ) :: ZNORM6
+REAL,    DIMENSION(SIZE(PWORK4,2),SIZE(PWORK4,4),SIZE(PWORK4,1),SIZE(PWORK4,3) ) :: ZNORM4
 ! data interpolated on normalized vertical grid
 !
-REAL,    DIMENSION(SIZE(PWORK6,4),SIZE(PWORK6,5),SIZE(PWORK6,3)+2*JPVEXT)  :: ZZ
-REAL,    DIMENSION(SIZE(PWORK6,4),SIZE(PWORK6,5),SIZE(PWORK6,3)+2*JPVEXT)  :: ZW
-INTEGER, DIMENSION(SIZE(PWORK6,4),SIZE(PWORK6,5),SIZE(PWORK6,3))           :: IKLIN
-REAL,    DIMENSION(SIZE(PWORK6,4),SIZE(PWORK6,5),SIZE(PWORK6,3))           :: ZCOEFLIN
+REAL,    DIMENSION(SIZE(PWORK4,2),SIZE(PWORK4,4),SIZE(PWORK4,1)+2*JPVEXT)  :: ZZ
+REAL,    DIMENSION(SIZE(PWORK4,2),SIZE(PWORK4,4),SIZE(PWORK4,1)+2*JPVEXT)  :: ZW
+INTEGER, DIMENSION(SIZE(PWORK4,2),SIZE(PWORK4,4),SIZE(PWORK4,1))           :: IKLIN
+REAL,    DIMENSION(SIZE(PWORK4,2),SIZE(PWORK4,4),SIZE(PWORK4,1))           :: ZCOEFLIN
 !
 INTEGER :: JK, JT, JN, JP
 INTEGER :: ITEMP_MEAN_START, ITEMP_MEAN_END
@@ -339,17 +336,16 @@ END IF
 ZMAX_NORM_M = MAXVAL(ABS(XLES_NORM_M(ITEMP_MEAN_START:ITEMP_MEAN_END)))
 !
 IF (ZMAX_NORM_M<=0.) THEN
-  PWORK6(:,:,:,:,:,:) = XUNDEF
+  PWORK4(:,:,:,:) = XUNDEF
   RETURN
 END IF
 !
 !* moves K index in third position
 !
 DO JK=1,NLES_K
-  DO JN=1,SIZE(PWORK6,5)
-    DO JT=1,SIZE(PWORK6,4)
-      ZTRAJZ(JT,JN,JK) = PTRAJZ(JK,1,JN)
-      ZWORK6(JT,JN,JK,1,1,:) = PWORK6(1,1,JK,JT,JN,:)
+  DO JN=1,SIZE(PWORK4,4)
+    DO JT=1,SIZE(PWORK4,2)
+      ZWORK4(JT,JN,JK,:) = PWORK4(JK,JT,:,JN)
     END DO
   END DO
 END DO
@@ -357,9 +353,9 @@ END DO
 !* computes the stretching due to the use of a normalized grid
 !
 DO JK=1,NLES_K
-  DO JN=1,SIZE(PWORK6,5)
-    DO JT=1,SIZE(PWORK6,4)
-      ZNORMZ(JT,JN,JK) = (ZTRAJZ(JT,JN,JK)-XLES_CURRENT_ZS)/ZMAX_NORM_M * XLES_NORM_M(JT)  &
+  DO JN=1,SIZE(PWORK4,4)
+    DO JT=1,SIZE(PWORK4,2)
+      ZNORMZ(JT,JN,JK) = (xles_current_z(JK)-XLES_CURRENT_ZS)/ZMAX_NORM_M * XLES_NORM_M(JT)  &
                          + XLES_CURRENT_ZS
     END DO
   END DO
@@ -370,34 +366,38 @@ IF (NLES_K>1) THEN
 !
 !* computes the interpolation coefficients
 !
-  ZZ(:,:,JPVEXT+1:JPVEXT+NLES_K) = ZTRAJZ(:,:,:)
+  DO JN=1,SIZE(PWORK4,4)
+    DO JT=1,SIZE(PWORK4,2)
+      ZZ(JT,JN,JPVEXT+1:JPVEXT+NLES_K) = xles_current_z(:)
+    END DO
+  END DO
   DO JK=1,JPVEXT
-    ZZ(:,:,              JK) = ZTRAJZ(:,:,1)      - (ZTRAJZ(:,:,2)     -ZTRAJZ(:,:,1)       )*(JPVEXT+1-JK)
-    ZZ(:,:,NLES_K+JPVEXT+JK) = ZTRAJZ(:,:,NLES_K) + (ZTRAJZ(:,:,NLES_K)-ZTRAJZ(:,:,NLES_K-1))*          JK
+      ZZ(:,:,              JK) = xles_current_z(1)      - (xles_current_z(2)     -xles_current_z(1)       )*(JPVEXT+1-JK)
+      ZZ(:,:,NLES_K+JPVEXT+JK) = xles_current_z(NLES_K) + (xles_current_z(NLES_K)-xles_current_z(NLES_K-1))*          JK
   END DO
 
   CALL COEF_VER_INTERP_LIN(ZZ,ZNORMZ,IKLIN,ZCOEFLIN)
 !
 !* performs the interpolation
 !
-  DO JP=1,SIZE(PWORK6,6)
+  DO JP=1,SIZE(PWORK4,3)
     ZW = XUNDEF
-    ZW(:,:,JPVEXT+1:JPVEXT+NLES_K) = ZWORK6(:,:,:,1,1,JP)
-    ZNORM6(:,:,:,1,1,JP) = VER_INTERP_LIN(ZW,IKLIN,ZCOEFLIN)
+    ZW(:,:,JPVEXT+1:JPVEXT+NLES_K) = ZWORK4(:,:,:,JP)
+    ZNORM4(:,:,:,JP) = VER_INTERP_LIN(ZW,IKLIN,ZCOEFLIN)
   END DO
 !
 ELSE
-  ZNORM6 = ZWORK6
+  ZNORM4 = ZWORK4
 END IF
 !
 !* puts the normalized grid and data in diachro arrays
 !
 PTRAJZ(:,:,:) = (PTRAJZ(:,:,:)-XLES_CURRENT_ZS)/ZMAX_NORM_M
 !
-DO JN=1,SIZE(PWORK6,5)
-  DO JT=1,SIZE(PWORK6,4)
+DO JN=1,SIZE(PWORK4,4)
+  DO JT=1,SIZE(PWORK4,2)
     DO JK=1,NLES_K
-      PWORK6(1,1,JK,JT,JN,:) = ZNORM6(JT,JN,JK,1,1,:)
+      PWORK4(JK,JT,:,JN) = ZNORM4(JT,JN,JK,:)
     END DO
   END DO
 END DO
@@ -631,19 +631,19 @@ ycomment(:) = hcomment(:)
 yunit(:)    = hunit(:)
 ygroup      = hgroup
 
-do jsv = 1, size( pfield, 4 )
-  do jp = 1, size( pfield, 3 )
-    zwork6(1, 1, :, :, jsv, jp) = zfield (:, :, jp, jsv)
-  end do
-end do
-
 tzdates(:) = xles_dates(:)
 
 ! Normalization of vertical dimension
 if ( gnorm ) then
   if ( hunit(1:1) /= ' ') yunit = '1'
-  call Les_z_norm( gavg, ztrajz, zwork6 )
+  call Les_z_norm( gavg, ztrajz, zfield(:,:,:,:) )
 end if
+
+do jsv = 1, size( pfield, 4 )
+  do jp = 1, size( pfield, 3 )
+    zwork6(1, 1, :, :, jsv, jp) = zfield (:, :, jp, jsv)
+  end do
+end do
 
 ! Time average
 iresp = 0
