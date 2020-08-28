@@ -170,6 +170,7 @@ integer :: ipower_kg_1st
 integer :: ji
 integer, dimension ( NNORMS ) :: ipowers
 character( len = 8 ) :: yun, yname, ypower
+character( len = : ), allocatable :: yunit
 character( len = 8 ), dimension( NMAXUNITS ) :: yunits
 logical :: gsv
 !------------------------------------------------------------------------------
@@ -187,20 +188,22 @@ inunits = 0
 ikg = 0
 idx = 1
 
+yunit = trim( hunit )
+
 !Separate units
 do
-  ispace = scan( hunit(idx: ), ' ' )
+  ispace = scan( yunit(idx: ), ' ' )
   if ( ispace == 0 ) then
     inunits = inunits + 1
     if (inunits > NMAXUNITS ) call Print_msg( NVERB_FATAL, 'GEN', 'LES_NORM_4D', 'inunits > NMAXUNITS' )
-    yunits(inunits ) = hunit(idx:)
+    yunits(inunits ) = yunit(idx:)
     exit
-  else if ( ispace == len(hunit(idx: )) ) then
+  else if ( ispace == len(yunit(idx: )) ) then
     exit
   else
     inunits = inunits + 1
     if (inunits > NMAXUNITS ) call Print_msg( NVERB_FATAL, 'GEN', 'LES_NORM_4D', 'inunits > NMAXUNITS' )
-    yunits(inunits ) =  hunit( idx : idx+ispace-1 )
+    yunits(inunits ) =  yunit( idx : idx+ispace-1 )
     idx = idx + ispace
   end if
 end do
