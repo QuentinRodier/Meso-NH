@@ -654,9 +654,9 @@ if ( present( htitle ) ) then
   ytitle(:) = ygroup // htitle(:)
 else
   if ( gsurf ) then
-    ytitle(1) = hgroup
+    ytitle(:) = hgroup
   else
-    ytitle(1) = ygroup
+    ytitle(:) = ygroup
   end if
 end if
 
