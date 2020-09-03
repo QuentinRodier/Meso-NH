@@ -132,6 +132,7 @@ END MODULE MODI_READ_ALL_DATA_GRIB_CASE
 !  P. Wautelet 14/03/2019: correct ZWS when variable not present in file
 !  Q. Rodier   27/01/2020: switch of GRIB number ID for Orograpgy and hydrometeors in ARPEGE/AROME in EPyGrAM v1.3.7
 !  Q. Rodier   21/04/2020: correction GFS u and v wind component written in the right vertical order
+!  Q. Rodier   02/09/2020 : Read and interpol geopotential height for interpolation on isobaric surface Grid of NCEP 
 !-------------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -203,7 +204,7 @@ INTEGER                            :: ILUOUT0       ! Unit used for output msg.
 INTEGER                            :: IRESP   ! Return code of FM-routines
 INTEGER                            :: IRET          ! Return code from subroutines
 INTEGER(KIND=kindOfInt)            :: IRET_GRIB          ! Return code from subroutines
-INTEGER, PARAMETER                 :: JP_GFS=26     ! number of pressure levels for GFS model
+INTEGER, PARAMETER                 :: JP_GFS=31     ! number of pressure levels for GFS model
 REAL                               :: ZA,ZB,ZC      ! Dummy variables
 REAL                               :: ZD,ZE,ZF      !  |
 REAL                               :: ZTEMP         !  |
@@ -311,6 +312,7 @@ REAL, DIMENSION(:,:), ALLOCATABLE   :: ZPF_G    ! Pressure (flux point)
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZPM_G    ! Pressure (mass point)
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZEXNF_G  ! Exner fct. (flux point)
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZEXNM_G  ! Exner fct. (mass point)
+REAL, DIMENSION(:,:), ALLOCATABLE   :: ZGH_G     ! Geopotential Height
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZT_G     ! Temperature
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZQ_G     ! Specific humidity
 REAL, DIMENSION(:), ALLOCATABLE     :: ZH_G     ! Relative humidity
@@ -334,7 +336,7 @@ INTEGER :: IVERSION,ILEVTYPE
 LOGICAL                                       :: GFIND  ! to test if sea wave height is found
 !---------------------------------------------------------------------------------------
 IP_GFS=(/1000,975,950,925,900,850,800,750,700,650,600,550,500,450,400,350,300,&
-           250,200,150,100,70,50,30,20,10/)!
+           250,200,150,100,70,50,30,20,10,7,5,3,2,1/)!
 !
 TZFILE => NULL()
 !
@@ -531,15 +533,10 @@ SELECT CASE (IMODEL)
          END IF
        ENDIF 
   CASE(10) ! NCEP
-      DO IVAR=0,222
-        CALL SEARCH_FIELD(IGRIB,INUM_ZS,KPARAM=IVAR)
+       CALL SEARCH_FIELD(IGRIB,INUM_ZS,KDIS=0,KCAT=3,KNUMBER=5,KTFFS=1)
         IF(INUM_ZS < 0) THEN
-          WRITE (ILUOUT0,'(A)')'Orography is missing'
-        ENDIF
-      END DO
-      INUM_ZS=218
-      WRITE (ILUOUT0,*) 'lsm  ',IGRIB(350)
-      WRITE (ILUOUT0,*) 'orog ',IGRIB(INUM_ZS)     
+          WRITE (ILUOUT0,'(A)')'Orography is missing - abort'
+        ENDIF    
 END SELECT
 ZPARAM(:)=-999.
 CALL GRIB_GET(IGRIB(INUM_ZS),'Nj',INJ,IRET_GRIB)
@@ -755,7 +752,7 @@ IF (IMODEL/=10) THEN
     STOP
   ENDIF 
 ELSE ! NCEP
-  ISTARTLEVEL=10
+  ISTARTLEVEL=1000
   IT=130
   IQ=157
   CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IT,KLEV1=ISTARTLEVEL)
@@ -813,7 +810,7 @@ ELSE ! NCEP
     END IF
     CALL GRIB_GET(IGRIB(INUM),'values',ZQ_G(:,JLOOP1),IRET_GRIB)
     WRITE (ILUOUT0,*) 'Q ',ILEV1,IRET_GRIB
-    CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IT,KLEV1=ILEV1)
+    CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=0,KNUMBER=0,KLEV1=ILEV1,KTFFS=100)
     IF (INUM< 0) THEN
       !callabortstop
       WRITE(YMSG,*) 'atmospheric temperature level ',JLOOP1,' is missing'
@@ -1055,6 +1052,43 @@ ELSE !NCEP
 END IF
   
 DEALLOCATE (ZOUT)
+
+
+!---------------------------------------------------------------------------------------
+!* 2.5.4.2 Read and interpol geopotential height for interpolation on isobaric surface Grid of NCEP 
+!---------------------------------------------------------------------------------------
+!
+ALLOCATE (ZGH_G(ISIZE,INLEVEL))
+!
+IF(IMODEL==10) THEN !NCEP with pressure grid only
+ DO JLOOP1=1, INLEVEL
+  ILEV1 = IP_GFS(JLOOP1)
+  WRITE (ILUOUT0,'(A)') ' | Searching geopotential height'
+  CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=3,KNUMBER=5,KLEV1=ILEV1)
+    IF (INUM< 0) THEN
+    !callabortstop
+      WRITE(YMSG,*) 'Geopoential height level ',JLOOP1,' is missing'
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
+    END IF
+  !
+  CALL GRIB_GET(IGRIB(INUM),'values',ZGH_G(:,JLOOP1),IRET_GRIB)
+  CALL GRIB_GET(IGRIB(INUM),'Nj',INJ,IRET_GRIB)
+  !
+  END DO
+ !
+ CALL COORDINATE_CONVERSION(IMODEL,IGRIB(INUM_ZS),IIU,IJU,ZLONOUT,ZLATOUT,&
+          ZXOUT,ZYOUT,INI,ZPARAM,IINLO)
+ !
+ ALLOCATE(ZOUT(INO))
+ ALLOCATE(XGH_LS(IIU,IJU,INLEVEL))
+ !
+ DO JLOOP1=1, INLEVEL
+  CALL HORIBL(ZPARAM(3),ZPARAM(4),ZPARAM(5),ZPARAM(6),INT(ZPARAM(2)),IINLO,INI, &
+              ZGH_G(:,JLOOP1),INO,ZXOUT,ZYOUT,ZOUT,.FALSE.,PTIME_HORI,.FALSE.)
+  CALL ARRAY_1D_TO_2D (INO,ZOUT,IIU,IJU,XGH_LS(:,:,JLOOP1))
+ END DO
+ DEALLOCATE(ZOUT)
+END IF
 !
 !*  2.5.5  Compute atmospheric pressure on MESO-NH grid
 !
@@ -1911,7 +1945,7 @@ END SUBROUTINE ARRAY_1D_TO_2D
 !---------------------------------------------------------------------------------------
 !---------------------------------------------------------------------------------------
 !#################################################################################
-SUBROUTINE SEARCH_FIELD(KGRIB,KNUM,KPARAM,KDIS,KCAT,KNUMBER,KLEV1)
+SUBROUTINE SEARCH_FIELD(KGRIB,KNUM,KPARAM,KDIS,KCAT,KNUMBER,KLEV1,KTFFS)
 !#################################################################################
 ! search the grib message corresponding to KPARAM,KLTYPE,KLEV1,KLEV2 in all 
 ! the KGIRB messages
@@ -1931,13 +1965,14 @@ INTEGER,INTENT(IN),OPTIONAL     :: KDIS ! Discipline (GRIB2)
 INTEGER,INTENT(IN),OPTIONAL     :: KCAT ! Catégorie (GRIB2)
 INTEGER,INTENT(IN),OPTIONAL     :: KNUMBER ! parameterNumber (GRIB2)
 INTEGER,INTENT(IN),OPTIONAL     :: KLEV1  ! Level 
+INTEGER,INTENT(IN),OPTIONAL     :: KTFFS  ! TypeOfFirstFixedSurface 
 !
 ! Declaration of local variables
 !
 INTEGER :: IFOUND  ! Number of correct parameters
 INTEGER :: ISEARCH  ! Number of correct parameters to find
 INTEGER :: IRET    ! error code 
-INTEGER :: IPARAM,IDIS,ICAT,INUMBER
+INTEGER :: IPARAM,IDIS,ICAT,INUMBER,ITFFS
 INTEGER :: ILEV1   ! Level parameter 1
 INTEGER :: JLOOP   ! Dummy counter
 INTEGER :: IVERSION
@@ -1955,6 +1990,7 @@ IF (PRESENT(KDIS)) ISEARCH=ISEARCH+1
 IF (PRESENT(KCAT)) ISEARCH=ISEARCH+1
 IF (PRESENT(KNUMBER)) ISEARCH=ISEARCH+1
 IF (PRESENT(KLEV1)) ISEARCH=ISEARCH+1
+IF(PRESENT(KTFFS)) ISEARCH=ISEARCH+1
 !
 DO JLOOP=1,SIZE(KGRIB)
       IFOUND = 0
@@ -1967,6 +2003,23 @@ DO JLOOP=1,SIZE(KGRIB)
         WRITE (ILUOUT0,'(A)')' | ECMWF pseudo-Grib data encountered, skipping field'
         CYCLE
       ENDIF
+      !
+     IF (PRESENT(KTFFS)) THEN
+        CALL GRIB_GET(KGRIB(JLOOP),'typeOfFirstFixedSurface',ITFFS,IRET_GRIB)
+        IF (IRET_GRIB >   0) THEN
+          WRITE (ILUOUT0,'(A)')' | Error encountered in the Grib file, skipping field'
+          CYCLE
+        ELSE IF (IRET_GRIB == -6) THEN
+          WRITE (ILUOUT0,'(A)')' | ECMWF pseudo-Grib data encountered, skipping field'
+          CYCLE
+        ENDIF
+        IF (ITFFS==KTFFS) THEN
+          IFOUND = IFOUND + 1
+        ELSE
+          CYCLE
+        ENDIF
+      ENDIF
+
       IF (PRESENT(KPARAM)) THEN
         IF (IVERSION == 2) THEN
           CALL GRIB_GET(KGRIB(JLOOP),'paramId',IPARAM,IRET_GRIB)

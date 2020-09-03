@@ -28,6 +28,7 @@
 !!      Original   05/05
 !!                 05/06 (I.Mallet) add *_SV_* variables to allow chemical
 !!                                 initialization from HCHEMFILE
+!!                 09/20 (Q. Rodier) add geopotential height for GFS GRIB read
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -70,6 +71,7 @@ REAL                                  :: XLEN2_LS ! Decay scale for small-scale 
 REAL,DIMENSION(:,:),   ALLOCATABLE :: XPS_LS   ! surface pressure
 REAL,DIMENSION(:,:),   ALLOCATABLE :: XZS_LS   ! orography
 REAL,DIMENSION(:,:),   ALLOCATABLE :: XZSMT_LS ! smooth orography
+REAL,DIMENSION(:,:,:),   ALLOCATABLE :: XGH_LS   ! geopotential height
 REAL,DIMENSION(:,:,:), ALLOCATABLE :: XZFLUX_LS! altitude of pressure points
 REAL,DIMENSION(:,:,:), ALLOCATABLE :: XZMASS_LS! altitude of mass points
 REAL,DIMENSION(:,:,:), ALLOCATABLE :: XPMHP_LS ! pressure minus hyd. pressure
