@@ -254,21 +254,21 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   !
     IF (LBU_RU) THEN
       call Store_one_budget_rho( tpdiafile, tzdates, tbudgets(NBUDGET_U)%trhodj,   NBUDGET_U, gnocompress, zrhodjn )
-      call Store_one_budget    ( tpdiafile, tzdates, tbudgets(NBUDGET_U), zrhodjn, NBUDGET_U, gnocompress, ptstep  )
+      call Store_one_budget    ( tpdiafile, tzdates, tbudgets(NBUDGET_U), zrhodjn,            gnocompress, ptstep  )
     END IF
   !
   !* RV budgets
   !
     IF (LBU_RV) THEN
       call Store_one_budget_rho( tpdiafile, tzdates, tbudgets(NBUDGET_V)%trhodj,   NBUDGET_V, gnocompress, zrhodjn )
-      call Store_one_budget    ( tpdiafile, tzdates, tbudgets(NBUDGET_V), zrhodjn, NBUDGET_V, gnocompress, ptstep  )
+      call Store_one_budget    ( tpdiafile, tzdates, tbudgets(NBUDGET_V), zrhodjn,            gnocompress, ptstep  )
     END IF
   !
   !* RW budgets
   !
     IF (LBU_RW) THEN
       call Store_one_budget_rho( tpdiafile, tzdates, tbudgets(NBUDGET_W)%trhodj,   NBUDGET_W, gnocompress, zrhodjn )
-      call Store_one_budget    ( tpdiafile, tzdates, tbudgets(NBUDGET_W), zrhodjn, NBUDGET_W, gnocompress, ptstep  )
+      call Store_one_budget    ( tpdiafile, tzdates, tbudgets(NBUDGET_W), zrhodjn,            gnocompress, ptstep  )
     END IF
   !
   !* RHODJ storage for Scalars
@@ -282,62 +282,62 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   !* RTH budget
   !
     IF (LBU_RTH) THEN
-      call Store_one_budget( tpdiafile, tzdates, tbudgets(NBUDGET_TH), zrhodjn, NBUDGET_TH, gnocompress, ptstep  )
+      call Store_one_budget( tpdiafile, tzdates, tbudgets(NBUDGET_TH), zrhodjn, gnocompress, ptstep  )
     END IF
   !
   !* RTKE budget
   !
     IF (LBU_RTKE) THEN
-      call Store_one_budget( tpdiafile, tzdates, tbudgets(NBUDGET_TKE), zrhodjn, NBUDGET_TKE, gnocompress, ptstep  )
+      call Store_one_budget( tpdiafile, tzdates, tbudgets(NBUDGET_TKE), zrhodjn, gnocompress, ptstep  )
     END IF
   !
   !* RRV budget
   !
     IF (LBU_RRV) THEN
-      call Store_one_budget( tpdiafile, tzdates, tbudgets(NBUDGET_RV), zrhodjn, NBUDGET_RV, gnocompress, ptstep  )
+      call Store_one_budget( tpdiafile, tzdates, tbudgets(NBUDGET_RV), zrhodjn, gnocompress, ptstep  )
     END IF
   !
   !* RRC budget
   !
     IF (LBU_RRC) THEN
-      call Store_one_budget( tpdiafile, tzdates, tbudgets(NBUDGET_RC), zrhodjn, NBUDGET_RC, gnocompress, ptstep  )
+      call Store_one_budget( tpdiafile, tzdates, tbudgets(NBUDGET_RC), zrhodjn, gnocompress, ptstep  )
     END IF
   !
   !* RRR budget
   !
     IF (LBU_RRR) THEN
-      call Store_one_budget( tpdiafile, tzdates, tbudgets(NBUDGET_RR), zrhodjn, NBUDGET_RR, gnocompress, ptstep  )
+      call Store_one_budget( tpdiafile, tzdates, tbudgets(NBUDGET_RR), zrhodjn, gnocompress, ptstep  )
     END IF
   !
   !* RRI budget
   !
     IF (LBU_RRI) THEN
-      call Store_one_budget( tpdiafile, tzdates, tbudgets(NBUDGET_RI), zrhodjn, NBUDGET_RI, gnocompress, ptstep  )
+      call Store_one_budget( tpdiafile, tzdates, tbudgets(NBUDGET_RI), zrhodjn, gnocompress, ptstep  )
     END IF
   !
   !* RRS budget
   !
     IF (LBU_RRS) THEN
-      call Store_one_budget( tpdiafile, tzdates, tbudgets(NBUDGET_RS), zrhodjn, NBUDGET_RS, gnocompress, ptstep  )
+      call Store_one_budget( tpdiafile, tzdates, tbudgets(NBUDGET_RS), zrhodjn, gnocompress, ptstep  )
     END IF
   !
   !* RRG budget
   !
     IF (LBU_RRG) THEN
-      call Store_one_budget( tpdiafile, tzdates, tbudgets(NBUDGET_RG), zrhodjn, NBUDGET_RG, gnocompress, ptstep  )
+      call Store_one_budget( tpdiafile, tzdates, tbudgets(NBUDGET_RG), zrhodjn, gnocompress, ptstep  )
     END IF
   !
   !* RRH budget
   !
     IF (LBU_RRH) THEN
-      call Store_one_budget( tpdiafile, tzdates, tbudgets(NBUDGET_RH), zrhodjn, NBUDGET_RH, gnocompress, ptstep  )
+      call Store_one_budget( tpdiafile, tzdates, tbudgets(NBUDGET_RH), zrhodjn, gnocompress, ptstep  )
     END IF
   !
   !* RSV budgets
   !
     IF (LBU_RSV) THEN
       do jsv = nbudget_sv1, nbudget_sv1 - 1 + ksv
-        call Store_one_budget( tpdiafile, tzdates, tbudgets(jsv), zrhodjn, jsv, gnocompress, ptstep  )
+        call Store_one_budget( tpdiafile, tzdates, tbudgets(jsv), zrhodjn, gnocompress, ptstep  )
       end do
     END IF
   end if
@@ -444,7 +444,7 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
 end subroutine Store_one_budget_rho
 
 
-subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, kp, knocompress, ptstep )
+subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress, ptstep )
   use modd_budget,            only: cbutype,                                                                                      &
                                     lbu_icp, lbu_jcp, lbu_kcp,                                                                    &
                                     nbuil, nbuih, nbujl, nbujh, nbukl, nbukh,                                                     &
@@ -470,7 +470,6 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, kp, knocompr
   type(date_time), dimension(:),                        intent(in) :: tpdates
   type(tbudgetdata),                                    intent(in) :: tpbudget ! Budget datastructure
   real,            dimension(:,:,:,:,:,:), allocatable, intent(in) :: prhodjn
-  integer,                                              intent(in) :: kp          ! reference number of budget
   logical,                                              intent(in) :: knocompress ! compression for the cart option
   real,                                                 intent(in) :: ptstep      ! time step
 
@@ -495,6 +494,8 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, kp, knocompr
   end if
 
   igroups = tpbudget%ngroups
+
+  if ( igroups == 0 ) return
 
   ! unit conversion for  ru budgets
   allocate( zconvert( igroups ) )
@@ -548,7 +549,7 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, kp, knocompr
   yworkcomment(:) = tpbudget%tgroups(:)%ccomment
   iworkgrid(:)    = tpbudget%tgroups(:)%ngrid
 
-  select case( kp )
+  select case( tpbudget%nid )
     case ( NBUDGET_U )
       write( ygroup_name, fmt = "('UU___',I4.4)" ) nbutshift
 
@@ -586,7 +587,7 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, kp, knocompr
       write( ygroup_name, fmt = "('RH___',I4.4)" ) nbutshift
 
     case ( NBUDGET_SV1 : )
-      jsv = kp - NBUDGET_SV1 + 1
+      jsv = tpbudget%nid - NBUDGET_SV1 + 1
 !       yworkunit(:)       = 's-1' ;  yworkunit(1:3) = '  '
 !       DO JT = 1, igroups
 !         WRITE(yworkcomment(JT),FMT="('Budget of SVx=',I3.3)") jsv
