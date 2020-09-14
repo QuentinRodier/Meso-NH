@@ -11,7 +11,7 @@
 !  P. Wautelet 10/01/2019: replace handle_err by IO_Err_handle_nc4 for better netCDF error messages
 !  P. Wautelet 05/03/2019: rename IO subroutines and modules
 !  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
-!  P. Wautelet 14/09/2020: IO_Knowndims_set_nc4: do not store 'time' dimension in diachronic files
+!  P. Wautelet 14/09/2020: IO_Knowndims_set_nc4: add new dimensions + remove 'time' dimension in diachronic files
 !-----------------------------------------------------------------
 #if defined(MNH_IOCDF4)
 module mode_io_tools_nc4
@@ -239,17 +239,25 @@ END SUBROUTINE IO_Dimids_guess_nc4
 
 SUBROUTINE IO_Knowndims_set_nc4(TPFILE,HPROGRAM_ORIG)
 
-USE MODD_CONF,          ONLY: CPROGRAM
+use modd_budget,        only: cbutype, lbu_icp, lbu_jcp, lbu_kcp, nbuimax_ll, nbujmax_ll, nbukmax, nbumask, nbuwrnb
+use modd_lbc_n,         only: clbcx, clbcy
+USE MODD_CONF,          ONLY: CPROGRAM, l2d
 USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
 USE MODD_DIM_n,         ONLY: NIMAX_ll, NJMAX_ll, NKMAX
+use modd_les,           only: nles_k, nspectra_k, xles_temp_mean_start, xles_temp_mean_step, xles_temp_mean_end
+use modd_les_n,         only: nles_times, nspectra_ni, nspectra_nj
+use modd_nsv,           only: nsv
 USE MODD_PARAMETERS_ll, ONLY: JPHEXT, JPVEXT
 
 TYPE(TFILEDATA),INTENT(INOUT)        :: TPFILE
 CHARACTER(LEN=*),OPTIONAL,INTENT(IN) :: HPROGRAM_ORIG !To emulate a file coming from this program
 
 CHARACTER(LEN=:),ALLOCATABLE :: YPROGRAM
+integer                      :: iavg
+integer                      :: ispectra_ni, ispectra_nj
 INTEGER                      :: IIU_ll, IJU_ll, IKU
-TYPE(IOCDF), POINTER         :: PIOCDF
+TYPE(DIMCDF), POINTER        :: tzdimcdf
+TYPE(IOCDF),  POINTER        :: PIOCDF
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Knowndims_set_nc4','called for '//TRIM(TPFILE%CNAME))
 
@@ -286,6 +294,76 @@ ELSE
   IF (.NOT. ASSOCIATED(PIOCDF%DIM_LEVEL_W)) ALLOCATE(PIOCDF%DIM_LEVEL_W)
   IF (.NOT. ASSOCIATED(PIOCDF%DIMTIME))     ALLOCATE(PIOCDF%DIMTIME)
 END IF
+
+!Write dimensions used in diachronic files
+if ( tpfile%ctype == 'MNHDIACHRONIC' ) then
+  !Dimension of size 1 used for NMNHDIM_UNUSED
+  tzdimcdf => IO_Dimcdf_get_nc4( tpfile, 1_CDFINT, hdimname = 'one' )
+
+  !Dimension of size 2 used for NMNHDIM_COMPLEX
+  tzdimcdf => IO_Dimcdf_get_nc4( tpfile, 2_CDFINT, hdimname = 'real_imaginary' )
+
+  !Dimensions for the budgets masks
+  if ( cbutype == 'CART' .or. cbutype == 'SKIP' ) then
+    if ( .not. lbu_icp ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nbuimax_ll, kind = CDFINT ), hdimname = 'cart_ni'      )
+    if ( .not. lbu_jcp ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nbujmax_ll, kind = CDFINT ), hdimname = 'cart_nj'      )
+    if ( .not. lbu_icp ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nbuimax_ll, kind = CDFINT ), hdimname = 'cart_ni_u'    )
+    if ( .not. lbu_jcp ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nbujmax_ll, kind = CDFINT ), hdimname = 'cart_nj_u'    )
+    if ( .not. lbu_icp ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nbuimax_ll, kind = CDFINT ), hdimname = 'cart_ni_v'    )
+    if ( .not. lbu_jcp ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nbujmax_ll, kind = CDFINT ), hdimname = 'cart_nj_v'    )
+    if ( .not. lbu_kcp ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nbukmax,    kind = CDFINT ), hdimname = 'cart_level'   )
+    if ( .not. lbu_kcp ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nbukmax,    kind = CDFINT ), hdimname = 'cart_level_w' )
+  else if ( cbutype == 'MASK' ) then
+    if ( nbukmax > 0 ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nbukmax, kind = CDFINT ), hdimname = 'mask_level'   )
+    if ( nbukmax > 0 ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nbukmax, kind = CDFINT ), hdimname = 'mask_level_w' )
+    if ( nbuwrnb > 0 ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nbuwrnb, kind = CDFINT ), hdimname = 'time_mask'    )
+    if ( nbumask > 0 ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nbumask, kind = CDFINT ), hdimname = 'nbumask'      )
+  end if
+
+  !Dimension for the number of LES budget time samplings
+  if ( nles_times > 0 ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nles_times, kind = CDFINT ), hdimname = 'time_les' )
+
+  !Dimension for the number of LES budget time averages
+  iavg = int( xles_temp_mean_end - 1.e-10 - xles_temp_mean_start ) / xles_temp_mean_step + 1
+  !Condition also on nles_times to not create this dimension when not used (no time average if nles_times=0)
+  if ( nles_times > 0 .and. iavg > 0 ) &
+    tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( iavg, kind = CDFINT ), hdimname = 'time_les_avg' )
+
+  !Dimension for the number of vertical levels for local LES budgets
+  if ( nles_k > 0 ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nles_k, kind = CDFINT ), hdimname = 'level_les' )
+
+  !Dimension for the number of scalar variables
+  if ( nsv > 0 ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nsv, kind = CDFINT ), hdimname = 'nsv' )
+
+  !Dimensions for the number of horizontal wavelengths for non-local LES budgets (2 points correlations)
+  if ( nspectra_ni > 0 ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nspectra_ni, kind = CDFINT ), hdimname = 'nspectra_2pts_ni' )
+  if ( nspectra_nj > 0 .and. .not. l2d ) &
+    tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nspectra_nj, kind = CDFINT ), hdimname = 'nspectra_2pts_nj' )
+
+  !Dimensions for the number of horizontal wavelengths for LES spectra budgets
+  if ( nspectra_ni > 0 ) then
+    if ( clbcx(1) == 'CYCL' ) then
+      ispectra_ni = ( nspectra_ni + 1 ) / 2 - 1
+    else
+      ispectra_ni =  nspectra_ni - 1
+    end if
+    if ( ispectra_ni > 0 ) &
+      tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( ispectra_ni, kind = CDFINT ), hdimname = 'nspectra_spec_ni' )
+  end if
+
+  if ( nspectra_nj > 0 .and. .not. l2d ) then
+    if ( clbcy(1) == 'CYCL' ) then
+      ispectra_nj = ( nspectra_nj + 1 ) / 2 - 1
+    else
+      ispectra_nj =  nspectra_nj - 1
+    end if
+    if ( ispectra_nj > 0 ) &
+      tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( ispectra_nj, kind = CDFINT ), hdimname = 'nspectra_spec_nj' )
+  end if
+
+  !Dimension for the number of vertical levels for non-local LES budgets
+  if ( nspectra_k > 0 ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nspectra_k, kind = CDFINT ), hdimname = 'nspectra_level' )
+end if
 
 !Store X,Y,Z coordinates for the Arakawa points
 !0 2nd-dimension is to treat NGRID=0 case without crash
