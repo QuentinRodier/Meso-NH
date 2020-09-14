@@ -11,6 +11,7 @@
 !  P. Wautelet 10/01/2019: replace handle_err by IO_Err_handle_nc4 for better netCDF error messages
 !  P. Wautelet 05/03/2019: rename IO subroutines and modules
 !  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
+!  P. Wautelet 14/09/2020: IO_Knowndims_set_nc4: do not store 'time' dimension in diachronic files
 !-----------------------------------------------------------------
 #if defined(MNH_IOCDF4)
 module mode_io_tools_nc4
@@ -274,7 +275,9 @@ IF (TRIM(YPROGRAM)/='PGD' .AND. TRIM(YPROGRAM)/='NESPGD' .AND. TRIM(YPROGRAM)/='
     .AND. .NOT.(TRIM(YPROGRAM)=='REAL' .AND. CSTORAGE_TYPE=='SU') ) THEN !condition to detect PREP_SURFEX
   IF (.NOT. ASSOCIATED(PIOCDF%DIM_LEVEL))   PIOCDF%DIM_LEVEL   => IO_Dimcdf_get_nc4(TPFILE, int( IKU, kind=CDFINT ), 'level')
   IF (.NOT. ASSOCIATED(PIOCDF%DIM_LEVEL_W)) PIOCDF%DIM_LEVEL_W => IO_Dimcdf_get_nc4(TPFILE, int( IKU, kind=CDFINT ), 'level_w')
-  IF (.NOT. ASSOCIATED(PIOCDF%DIMTIME)) PIOCDF%DIMTIME => IO_Dimcdf_get_nc4(TPFILE, NF90_UNLIMITED, 'time')
+  if ( tpfile%ctype /= 'MNHDIACHRONIC' ) then
+    IF (.NOT. ASSOCIATED(PIOCDF%DIMTIME)) PIOCDF%DIMTIME => IO_Dimcdf_get_nc4(TPFILE, NF90_UNLIMITED, 'time')
+  end if
 ELSE
   !PGD and SURFEX files for MesoNH have no vertical levels or time scale
   !These dimensions are allocated to default values

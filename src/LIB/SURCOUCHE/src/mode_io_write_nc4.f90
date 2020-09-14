@@ -19,6 +19,7 @@
 !  P. Wautelet 19/09/2019: temporary workaround for netCDF bug if MNH_INT=8 (if netCDF fortran < 4.4.5)
 !  P. Wautelet 11/02/2020: add 'dims' attribute in IO_Write_field_header_split_nc4
 !  P. Wautelet 25/06/2020: remove workaround for netCDF bug (see 19/09/2019)
+!  P. Wautelet 14/09/2020: IO_Coordvar_write_nc4: do not store 'time' coordinate in diachronic files
 !-----------------------------------------------------------------
 #ifdef MNH_IOCDF4
 module mode_io_write_nc4
@@ -1821,7 +1822,8 @@ END IF
 IF (TPFILE%LMASTER) THEN !Time scale is the same on all processes
   IF (TRIM(YPROGRAM)/='PGD' .AND. TRIM(YPROGRAM)/='NESPGD' .AND. TRIM(YPROGRAM)/='ZOOMPG' &
       .AND. .NOT.(TRIM(YPROGRAM)=='REAL' .AND. CSTORAGE_TYPE=='SU') ) THEN !condition to detect PREP_SURFEX
-    CALL WRITE_TIME_COORD(PIOCDF%DIMTIME)
+    if ( tpfile%ctype /= 'MNHDIACHRONIC' ) &
+      CALL WRITE_TIME_COORD(PIOCDF%DIMTIME)
   END IF
 END IF
 
