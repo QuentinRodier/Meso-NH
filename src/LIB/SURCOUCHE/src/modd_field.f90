@@ -10,6 +10,7 @@
 !  P. Wautelet 12/07/2019: add pointers for T1D structure in TFIELDDATA
 !  P. Wautelet 23/01/2020: split in modd_field.f90 and mode_field.f90
 !  P. Wautelet 27/01/2020: create the tfield_metadata_base abstract datatype
+!  P. Wautelet 14/09/2020: add ndimlist field to tfield_metadata_base
 !-----------------------------------------------------------------
 module modd_field
 
@@ -21,8 +22,37 @@ use NETCDF,          only: NF90_FILL_INT, NF90_FILL_REAL
 
 implicit none
 
+integer, parameter :: NMNHMAXDIMS = 6
 INTEGER,PARAMETER :: MAXFIELDS = 250
 INTEGER,PARAMETER :: TYPEUNDEF = -1, TYPEINT = 1, TYPELOG = 2, TYPEREAL = 3, TYPECHAR = 4, TYPEDATE = 5
+!
+integer, parameter :: NMNHDIM_UNKNOWN             = -2
+integer, parameter :: NMNHDIM_ONE                 = 10
+integer, parameter :: NMNHDIM_COMPLEX             = 11
+integer, parameter :: NMNHDIM_BUDGET_CART_NI      = 20
+integer, parameter :: NMNHDIM_BUDGET_CART_NJ      = 21
+integer, parameter :: NMNHDIM_BUDGET_CART_NI_U    = 22
+integer, parameter :: NMNHDIM_BUDGET_CART_NJ_U    = 23
+integer, parameter :: NMNHDIM_BUDGET_CART_NI_V    = 24
+integer, parameter :: NMNHDIM_BUDGET_CART_NJ_V    = 25
+integer, parameter :: NMNHDIM_BUDGET_CART_LEVEL   = 26
+integer, parameter :: NMNHDIM_BUDGET_CART_LEVEL_W = 27
+integer, parameter :: NMNHDIM_BUDGET_MASK_LEVEL   = 30
+integer, parameter :: NMNHDIM_BUDGET_MASK_LEVEL_W = 31
+integer, parameter :: NMNHDIM_BUDGET_MASK_TIME    = 32
+integer, parameter :: NMNHDIM_BUDGET_MASK_NBUMASK = 33
+integer, parameter :: NMNHDIM_BUDGET_LES_TIME     = 40
+integer, parameter :: NMNHDIM_BUDGET_LES_AVG_TIME = 41
+integer, parameter :: NMNHDIM_BUDGET_LES_LEVEL    = 42
+integer, parameter :: NMNHDIM_BUDGET_LES_SV       = 43
+integer, parameter :: NMNHDIM_BUDGET_LES_MASK     = 44
+integer, parameter :: NMNHDIM_SPECTRA_2PTS_NI     = 50
+integer, parameter :: NMNHDIM_SPECTRA_2PTS_NJ     = 51
+integer, parameter :: NMNHDIM_SPECTRA_SPEC_NI     = 52
+integer, parameter :: NMNHDIM_SPECTRA_SPEC_NJ     = 53
+integer, parameter :: NMNHDIM_SPECTRA_LEVEL       = 54
+integer, parameter :: NMNHDIM_BUDGET_NGROUPS      = 100 ! This is not a true dimension
+integer, parameter :: NMNHDIM_UNUSED              = 200
 !
 TYPE TFIELDPTR_C0D
   CHARACTER(LEN=:),     POINTER :: DATA => NULL()
@@ -101,6 +131,8 @@ type, abstract :: tfield_metadata_base
   INTEGER            :: NGRID     = NGRIDUNKNOWN !Localization on the model grid
   INTEGER            :: NTYPE     = TYPEUNDEF !Datatype
   INTEGER            :: NDIMS     = 0  !Number of dimensions
+  INTEGER, DIMENSION(NMNHMAXDIMS) :: NDIMLIST = NMNHDIM_UNKNOWN ! List of dimensions of the data field
+  !
 #if defined(MNH_IOCDF4)
   INTEGER            :: NFILLVALUE =  NF90_FILL_INT  !Fill value for integer fields
   REAL               :: XFILLVALUE =  NF90_FILL_REAL !Fill value for real fields
