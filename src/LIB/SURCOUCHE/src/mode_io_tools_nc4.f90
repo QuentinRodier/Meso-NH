@@ -12,6 +12,7 @@
 !  P. Wautelet 05/03/2019: rename IO subroutines and modules
 !  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
 !  P. Wautelet 14/09/2020: IO_Knowndims_set_nc4: add new dimensions + remove 'time' dimension in diachronic files
+!  P. Wautelet 14/09/2020: IO_Vdims_fill_nc4: use ndimlist when provided to fill dimensions ids
 !-----------------------------------------------------------------
 #if defined(MNH_IOCDF4)
 module mode_io_tools_nc4
@@ -440,16 +441,33 @@ END SUBROUTINE IO_Iocdf_dealloc_nc4
 
 
 SUBROUTINE IO_Vdims_fill_nc4(TPFILE, TPFIELD, KSHAPE, KVDIMS)
+
+use modd_field,  only: NMNHDIM_UNKNOWN, NMNHDIM_ONE, NMNHDIM_COMPLEX,                                   &
+                       NMNHDIM_BUDGET_CART_NI,      NMNHDIM_BUDGET_CART_NJ,  NMNHDIM_BUDGET_CART_NI_U,  &
+                       NMNHDIM_BUDGET_CART_NJ_U,    NMNHDIM_BUDGET_CART_NI_V, NMNHDIM_BUDGET_CART_NJ_V, &
+                       NMNHDIM_BUDGET_CART_LEVEL,   NMNHDIM_BUDGET_CART_LEVEL_W,                        &
+                       NMNHDIM_BUDGET_MASK_LEVEL,   NMNHDIM_BUDGET_MASK_LEVEL_W,                        &
+                       NMNHDIM_BUDGET_MASK_TIME,    NMNHDIM_BUDGET_MASK_NBUMASK,                        &
+                       NMNHDIM_BUDGET_LES_AVG_TIME, NMNHDIM_BUDGET_LES_TIME,                            &
+                       NMNHDIM_BUDGET_LES_LEVEL,    NMNHDIM_BUDGET_LES_SV,                              &
+                       NMNHDIM_SPECTRA_2PTS_NI,     NMNHDIM_SPECTRA_2PTS_NJ,                            &
+                       NMNHDIM_SPECTRA_SPEC_NI,     NMNHDIM_SPECTRA_SPEC_NJ,                            &
+                       NMNHDIM_SPECTRA_LEVEL,                                                           &
+                       NMNHDIM_UNUSED
+
 TYPE(TFILEDATA),                              INTENT(IN)  :: TPFILE
 TYPE(TFIELDDATA),                             INTENT(IN)  :: TPFIELD
 INTEGER(KIND=CDFINT),DIMENSION(:),            INTENT(IN)  :: KSHAPE
 INTEGER(KIND=CDFINT),DIMENSION(:),ALLOCATABLE,INTENT(OUT) :: KVDIMS
 !
-INTEGER               :: IGRID
-INTEGER               :: JI
-CHARACTER(LEN=32)     :: YINT
-CHARACTER(LEN=2)      :: YDIR
-TYPE(DIMCDF), POINTER :: PTDIM
+CHARACTER(LEN=32)             :: YINT
+CHARACTER(LEN=2)              :: YDIR
+character(len=:), allocatable :: ydimname
+INTEGER                       :: IGRID
+integer                       :: iresp
+INTEGER                       :: JI
+type(dimcdf)                  :: tzdim
+TYPE(DIMCDF), POINTER         :: PTDIM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Vdims_fill_nc4','called for '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -481,35 +499,129 @@ IF(IGRID==0 .AND. YDIR/='--' .AND. YDIR/=''  ) THEN
   CALL PRINT_MSG(NVERB_FATAL,'IO','IO_Vdims_fill_nc4','invalid YDIR ('//TRIM(YDIR)//') with NGRID=0 for field ' &
                  //TRIM(TPFIELD%CMNHNAME))
 END IF
-!
-DO JI=1,SIZE(KSHAPE)
-  IF (JI == 1) THEN
-    IF ( (YDIR == 'XX' .OR. YDIR == 'XY') .AND. KSHAPE(1)==TPFILE%TNCCOORDS(1,IGRID)%TDIM%LEN) THEN
-      KVDIMS(1) = TPFILE%TNCCOORDS(1,IGRID)%TDIM%ID
-    ELSE IF ( YDIR == 'YY'                .AND. KSHAPE(1)==TPFILE%TNCCOORDS(2,IGRID)%TDIM%LEN) THEN
-      KVDIMS(1) = TPFILE%TNCCOORDS(2,IGRID)%TDIM%ID
-    ELSE IF ( YDIR == 'ZZ'                .AND. KSHAPE(1)==TPFILE%TNCCOORDS(3,IGRID)%TDIM%LEN) THEN
-      KVDIMS(1) = TPFILE%TNCCOORDS(3,IGRID)%TDIM%ID
+
+if ( Any( tpfield%ndimlist(:) /= NMNHDIM_UNKNOWN ) ) then
+  do ji = 1, Size( kvdims )
+    if ( tpfield%ndimlist(ji) == NMNHDIM_UNKNOWN ) &
+      call Print_msg( NVERB_FATAL, 'IO', 'IO_Vdims_fill_nc4', 'ndimlist partially filled for field ' // Trim( tpfield%cmnhname ) )
+
+    select case ( tpfield%ndimlist(ji) )
+      case ( NMNHDIM_ONE )
+        ydimname = 'one'
+
+      case ( NMNHDIM_COMPLEX )
+        ydimname = 'real_imaginary'
+
+      case ( NMNHDIM_BUDGET_CART_NI )
+        ydimname = 'cart_ni'
+
+      case ( NMNHDIM_BUDGET_CART_NJ )
+        ydimname = 'cart_nj'
+
+      case ( NMNHDIM_BUDGET_CART_NI_U )
+        ydimname = 'cart_ni_u'
+
+      case ( NMNHDIM_BUDGET_CART_NJ_U )
+        ydimname = 'cart_nj_u'
+
+      case ( NMNHDIM_BUDGET_CART_NI_V )
+        ydimname = 'cart_ni_v'
+
+      case ( NMNHDIM_BUDGET_CART_NJ_V )
+        ydimname = 'cart_nj_v'
+
+      case ( NMNHDIM_BUDGET_CART_LEVEL )
+        ydimname = 'cart_level'
+
+      case ( NMNHDIM_BUDGET_CART_LEVEL_W )
+        ydimname = 'cart_level_w'
+
+      case ( NMNHDIM_BUDGET_MASK_LEVEL )
+        ydimname = 'mask_level'
+
+      case ( NMNHDIM_BUDGET_MASK_LEVEL_W )
+        ydimname = 'mask_level_w'
+
+      case ( NMNHDIM_BUDGET_MASK_TIME )
+        ydimname = 'time_mask'
+
+      case ( NMNHDIM_BUDGET_MASK_NBUMASK )
+        ydimname = 'nbumask'
+
+      case ( NMNHDIM_BUDGET_LES_TIME )
+        ydimname = 'time_les'
+
+      case ( NMNHDIM_BUDGET_LES_AVG_TIME )
+        ydimname = 'time_les_avg'
+
+      case ( NMNHDIM_BUDGET_LES_LEVEL )
+        ydimname = 'level_les'
+
+      case ( NMNHDIM_BUDGET_LES_SV )
+        ydimname = 'nsv'
+
+      case ( NMNHDIM_SPECTRA_2PTS_NI )
+        ydimname = 'nspectra_2pts_ni'
+
+      case ( NMNHDIM_SPECTRA_2PTS_NJ )
+        ydimname = 'nspectra_2pts_nj'
+
+      case ( NMNHDIM_SPECTRA_SPEC_NI )
+        ydimname = 'nspectra_spec_ni'
+
+      case ( NMNHDIM_SPECTRA_SPEC_NJ )
+        ydimname = 'nspectra_spec_nj'
+
+      case ( NMNHDIM_SPECTRA_LEVEL )
+        ydimname = 'nspectra_level'
+
+      case default
+        call Print_msg( NVERB_FATAL, 'IO', 'IO_Vdims_fill_nc4', &
+                        'ndimlist case not yet implemented for field ' // Trim( tpfield%cmnhname ) )
+    end select
+
+    call IO_Dim_find_byname_nc4( tpfile, ydimname, tzdim, iresp )
+    kvdims(ji) = tzdim%id
+
+    ! Check if dimension sizes are consistent with the declared dimensions ( skip ji>size(kshape), timedep dimension)
+    if ( ji <= Size( kshape ) ) then
+      if ( kshape(ji) /= tzdim%len ) then
+        call Print_msg( NVERB_FATAL, 'IO', 'IO_Vdims_fill_nc4', &
+                                     'wrong size for dimension '// Trim( tzdim%name ) // ' of field ' // Trim( tpfield%cmnhname ) )
+      end if
+    end if
+
+  end do
+else !ndimlist not provided
+  DO JI=1,SIZE(KSHAPE)
+    IF (JI == 1) THEN
+      IF ( (YDIR == 'XX' .OR. YDIR == 'XY') .AND. KSHAPE(1)==TPFILE%TNCCOORDS(1,IGRID)%TDIM%LEN) THEN
+        KVDIMS(1) = TPFILE%TNCCOORDS(1,IGRID)%TDIM%ID
+      ELSE IF ( YDIR == 'YY'                .AND. KSHAPE(1)==TPFILE%TNCCOORDS(2,IGRID)%TDIM%LEN) THEN
+        KVDIMS(1) = TPFILE%TNCCOORDS(2,IGRID)%TDIM%ID
+      ELSE IF ( YDIR == 'ZZ'                .AND. KSHAPE(1)==TPFILE%TNCCOORDS(3,IGRID)%TDIM%LEN) THEN
+        KVDIMS(1) = TPFILE%TNCCOORDS(3,IGRID)%TDIM%ID
+      ELSE
+        PTDIM => IO_Dimcdf_get_nc4(TPFILE, KSHAPE(1)); KVDIMS(1) = PTDIM%ID
+      END IF
+    ELSE IF (JI == 2) THEN
+      IF ( YDIR == 'XY' .AND. KSHAPE(2)==TPFILE%TNCCOORDS(2,IGRID)%TDIM%LEN) THEN
+        KVDIMS(2) = TPFILE%TNCCOORDS(2,IGRID)%TDIM%ID
+      ELSE
+        PTDIM => IO_Dimcdf_get_nc4(TPFILE, KSHAPE(2)); KVDIMS(2) = PTDIM%ID
+      END IF
+    ELSE IF (JI == 3) THEN
+      IF ( YDIR == 'XY' .AND. KSHAPE(3)==TPFILE%TNCCOORDS(3,IGRID)%TDIM%LEN) THEN
+        KVDIMS(3) = TPFILE%TNCCOORDS(3,IGRID)%TDIM%ID
+      ELSE
+        PTDIM => IO_Dimcdf_get_nc4(TPFILE, KSHAPE(3)); KVDIMS(3) = PTDIM%ID
+      END IF
     ELSE
-      PTDIM => IO_Dimcdf_get_nc4(TPFILE, KSHAPE(1)); KVDIMS(1) = PTDIM%ID
+        PTDIM => IO_Dimcdf_get_nc4(TPFILE, KSHAPE(JI)); KVDIMS(JI) = PTDIM%ID
     END IF
-  ELSE IF (JI == 2) THEN
-    IF ( YDIR == 'XY' .AND. KSHAPE(2)==TPFILE%TNCCOORDS(2,IGRID)%TDIM%LEN) THEN
-      KVDIMS(2) = TPFILE%TNCCOORDS(2,IGRID)%TDIM%ID
-    ELSE
-      PTDIM => IO_Dimcdf_get_nc4(TPFILE, KSHAPE(2)); KVDIMS(2) = PTDIM%ID
-    END IF
-  ELSE IF (JI == 3) THEN
-    IF ( YDIR == 'XY' .AND. KSHAPE(3)==TPFILE%TNCCOORDS(3,IGRID)%TDIM%LEN) THEN
-      KVDIMS(3) = TPFILE%TNCCOORDS(3,IGRID)%TDIM%ID
-    ELSE
-      PTDIM => IO_Dimcdf_get_nc4(TPFILE, KSHAPE(3)); KVDIMS(3) = PTDIM%ID
-    END IF
-  ELSE
-      PTDIM => IO_Dimcdf_get_nc4(TPFILE, KSHAPE(JI)); KVDIMS(JI) = PTDIM%ID
-  END IF
-END DO
-!
+  END DO
+end if
+
 END SUBROUTINE IO_Vdims_fill_nc4
 
 
