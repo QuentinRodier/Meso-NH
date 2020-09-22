@@ -10,7 +10,10 @@
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !  P. Wautelet 12/03/2019: add TMAINFILE field in TFILEDATA
 !  P. Wautelet 17/01/2020: add 'BUD' category for Print_msg + corresponding namelist variables
+!  P. Wautelet 22/09/2020: add ldimreduced in tfiledata
 !-----------------------------------------------------------------
+
+#define MNH_REDUCE_DIMENSIONS_IN_FILES 1
 
 MODULE MODD_IO
 !
@@ -18,7 +21,7 @@ USE MODD_NETCDF,     ONLY: IOCDF, TPTR2DIMCDF
 USE MODD_PARAMETERS, ONLY: NDIRNAMELGTMAX, NFILENAMELGTMAX
 use modd_precision,  only: CDFINT, LFIINT
 !
-IMPLICIT NONE 
+IMPLICIT NONE
 !
 !
 INTEGER, PARAMETER :: NVERB_NO=0, NVERB_FATAL=1, NVERB_ERROR=2, NVERB_WARNING=3, NVERB_INFO=4, NVERB_DEBUG=5
@@ -88,6 +91,11 @@ TYPE TFILEDATA
   INTEGER           :: NMPICOMM      = -1      !MPI communicator used for IO on this file
   LOGICAL           :: LMASTER       = .FALSE. !True if process is master of the file (process that open/read/write/close)
   LOGICAL           :: LMULTIMASTERS = .FALSE. !True if several processes may access the file
+#if ( MNH_REDUCE_DIMENSIONS_IN_FILES == 1 )
+  logical           :: ldimreduced   = .true.  !True if number of dimensions of fields can be reduced (for 2D simulations)
+#else
+  logical           :: ldimreduced   = .false. !True if number of dimensions of fields can be reduced (for 2D simulations)
+#endif
   !
   INTEGER           :: NSUBFILES_IOZ = 0       !Number of sub-files (Z-split files based on this file)
                                                !For example if 2 sub-files and this file is abcd,

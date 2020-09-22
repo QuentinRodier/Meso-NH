@@ -17,9 +17,9 @@
 !  P. Wautelet 05/03/2019: rename IO subroutines and modules
 !  P. Wautelet 07/03/2019: bugfix: io_set_mnhversion must be called by all the processes
 !  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
-!
+!  P. Wautelet 22/09/2020: use ldimreduced to allow reduction in the number of dimensions of fields (used by 2D simulations)
 !-----------------------------------------------------------------
-#if defined(MNH_IOCDF4)
+#ifdef MNH_IOCDF4
 module mode_io_file_nc4
 
 use modd_io,           only: tfiledata
@@ -126,9 +126,40 @@ subroutine IO_File_open_nc4(tpfile)
   if (trim(tpfile%cmode) == 'READ') then
     call IO_Mnhversion_get(tpfile)
     if (tpfile%lmaster) call IO_Cleanly_closed_check_nc4(tpfile)
+    call IO_Are_dimension_reduced(tpfile)
   end if
 
 end subroutine IO_File_open_nc4
+
+
+subroutine IO_Are_dimension_reduced(tpfile)
+  type(tfiledata), intent(inout) :: tpfile
+
+  integer(kind=CDFINT) :: istatus
+  character(len=1)     :: ydimred
+
+  call print_msg(NVERB_DEBUG,'IO','IO_Are_dimension_reduced','called for '//trim(tpfile%cname))
+
+  if ( tpfile%nmnhversion(1) < 5 .or. ( tpfile%nmnhversion(1) == 5 .and. tpfile%nmnhversion(2) < 5 ) ) then
+    call Print_msg( NVERB_DEBUG, 'IO', 'IO_Are_dimension_reduced', 'ldimreduced set to false (created with MesoNH < 5.5.0)' )
+    tpfile%ldimreduced = .false.
+  else
+    istatus = NF90_GET_ATT( tpfile%nncid, NF90_GLOBAL, 'MNH_REDUCE_DIMENSIONS_IN_FILES', ydimred )
+    if ( istatus == NF90_NOERR ) then
+      if ( ydimred == '0' ) then
+        tpfile%ldimreduced = .false.
+      else if ( ydimred == '1' ) then
+        tpfile%ldimreduced = .true.
+      else
+        call Print_msg( NVERB_ERROR, 'IO', 'IO_Are_dimension_reduced', &
+                        'invalid value for MNH_REDUCE_DIMENSIONS_IN_FILES attribute' )
+      end if
+    else !attribute not found
+      call Print_msg( NVERB_ERROR, 'IO', 'IO_Are_dimension_reduced', 'MNH_REDUCE_DIMENSIONS_IN_FILES attribute not found' )
+    end if
+  end if
+
+end subroutine IO_Are_dimension_reduced
 
 
 subroutine IO_Cleanly_closed_check_nc4(tpfile)

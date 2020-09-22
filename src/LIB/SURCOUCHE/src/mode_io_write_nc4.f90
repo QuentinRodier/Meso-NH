@@ -20,6 +20,7 @@
 !  P. Wautelet 11/02/2020: add 'dims' attribute in IO_Write_field_header_split_nc4
 !  P. Wautelet 25/06/2020: remove workaround for netCDF bug (see 19/09/2019)
 !  P. Wautelet 14/09/2020: IO_Coordvar_write_nc4: do not store 'time' coordinate in diachronic files
+!  P. Wautelet 22/09/2020: add ldimreduced field to allow reduction in the number of dimensions of fields (used by 2D simulations)
 !-----------------------------------------------------------------
 #ifdef MNH_IOCDF4
 module mode_io_write_nc4
@@ -2177,6 +2178,12 @@ IF (TPFILE%LMASTER)  THEN
   ISTATUS = NF90_PUT_ATT(TPFILE%NNCID, NF90_GLOBAL, 'MNH_INT', '8')
 #endif
   IF (ISTATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_FILE_WRITE_HEADER','NF90_PUT_ATT','MNH_INT')
+
+  if ( tpfile%ldimreduced ) then
+    istatus = NF90_PUT_ATT( tpfile%nncid, NF90_GLOBAL, 'MNH_REDUCE_DIMENSIONS_IN_FILES', '1')
+  else
+    istatus = NF90_PUT_ATT( tpfile%nncid, NF90_GLOBAL, 'MNH_REDUCE_DIMENSIONS_IN_FILES', '0')
+  endif
 
 !title
 

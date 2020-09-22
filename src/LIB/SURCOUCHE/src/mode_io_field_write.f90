@@ -14,6 +14,7 @@
 !  P. Wautelet 12/04/2019: use MNHTIME for time measurement variables
 !  P. Wautelet 12/07/2019: add support for 1D array of dates
 !  J. Escobar  11/02/2020: for GA & // IO, add sync, & mpi_allreduce for error handling in // IO
+!  P. Wautelet 22/09/2020: use ldimreduced to allow reduction in the number of dimensions of fields (used by 2D simulations)
 !-----------------------------------------------------------------
 
 #define MNH_SCALARS_IN_SPLITFILES 0
@@ -28,7 +29,7 @@ MODULE MODE_IO_FIELD_WRITE
 
   use mode_field,        only: Find_field_id_from_mnhname
   USE MODE_IO_WRITE_LFI
-#if defined(MNH_IOCDF4)
+#ifdef MNH_IOCDF4
   USE MODE_IO_WRITE_NC4
 #endif
   use mode_msg
@@ -160,7 +161,9 @@ CONTAINS
     OLFI = .FALSE.
     ONC4 = .FALSE.
     IF (TPFILE%CFORMAT=='LFI'     .OR. TPFILE%CFORMAT=='LFICDF4') OLFI = .TRUE.
+#ifdef MNH_IOCDF4
     IF (TPFILE%CFORMAT=='NETCDF4' .OR. TPFILE%CFORMAT=='LFICDF4') ONC4 = .TRUE.
+#endif
   END SUBROUTINE IO_Format_write_select
 
 
@@ -485,6 +488,7 @@ CONTAINS
 
 
   SUBROUTINE IO_Field_write_byfield_X2(TPFILE,TPFIELD,PFIELD,KRESP)
+    use modd_field,         only: NMNHDIM_UNKNOWN, NMNHDIM_ONE, NMNHDIM_UNUSED
     USE MODD_IO,            ONLY: GSMONOPROC,ISP,L1D,L2D,LPACK
     USE MODD_PARAMETERS_ll, ONLY: JPHEXT
     USE MODD_TIMEZ,         ONLY: TIMEZ
@@ -513,7 +517,9 @@ CONTAINS
     INTEGER                                  :: IERR
     INTEGER                                  :: ISIZEMAX
     INTEGER                                  :: IRESP
-    REAL,DIMENSION(:,:),POINTER              :: ZFIELDP
+    real                                     :: zfieldp0d
+    real, dimension(:),   pointer            :: zfieldp1d
+    REAL, DIMENSION(:,:), POINTER            :: ZFIELDP
     LOGICAL                                  :: GALLOC
     LOGICAL                                  :: GLFI, GNC4
     !
@@ -525,6 +531,7 @@ CONTAINS
     INTEGER                                  :: IHEXTOT
     CHARACTER(LEN=:),ALLOCATABLE             :: YMSG
     CHARACTER(LEN=6)                         :: YRESP
+    type(tfielddata)                         :: tzfield
     !
     YFILEM   = TPFILE%CNAME
     YRECFM   = TPFIELD%CMNHNAME
@@ -545,22 +552,54 @@ CONTAINS
     CALL IO_Format_write_select(TPFILE,GLFI,GNC4)
     !
     IF (IRESP==0) THEN
-       IF (GSMONOPROC) THEN ! sequential execution
-          !    IF (LPACK .AND. L1D .AND. YDIR=='XY') THEN 
-          IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN 
-             ZFIELDP=>PFIELD(JPHEXT+1:JPHEXT+1,JPHEXT+1:JPHEXT+1)
-             IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,ZFIELDP,IRESP)
-             IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
+      IF (GSMONOPROC) THEN ! sequential execution
+         !    IF (LPACK .AND. L1D .AND. YDIR=='XY') THEN
+        IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
+          if ( tpfile%ldimreduced ) then
+            tzfield = tpfield
+            tzfield%ndims = tzfield%ndims - 2
+            if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+              tzfield%ndimlist(1)  = tzfield%ndimlist(3) !Necessary if time dimension
+              tzfield%ndimlist(2:) = NMNHDIM_UNUSED
+            end if
+            zfieldp0d = pfield(jphext + 1, jphext + 1)
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp0d, iresp )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp0d, iresp )
+          else
+            tzfield = tpfield
+            if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+              tzfield%ndimlist(1:2) = NMNHDIM_ONE
+            end if
+            zfieldp => pfield(jphext + 1 : jphext + 1, jphext + 1 : jphext + 1)
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp, iresp )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp, iresp )
+          endif
              !    ELSE IF (LPACK .AND. L2D .AND. YDIR=='XY') THEN
-          ELSEIF (LPACK .AND. L2D .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
-             ZFIELDP=>PFIELD(:,JPHEXT+1:JPHEXT+1)
-             IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,ZFIELDP,IRESP)
-             IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
-          ELSE
-             IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,PFIELD,IRESP)
-             IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,PFIELD,IRESP)
-          END IF
-       ELSE ! multiprocesses execution
+        ELSEIF (LPACK .AND. L2D .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
+          if ( tpfile%ldimreduced ) then
+            tzfield = tpfield
+            tzfield%ndims = tzfield%ndims - 1
+            if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+              tzfield%ndimlist(2)  = tzfield%ndimlist(3) !Necessary if time dimension
+              tzfield%ndimlist(3:) = NMNHDIM_UNUSED
+            end if
+            zfieldp1d => pfield(:, jphext + 1)
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp1d, iresp )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp1d, iresp )
+          else
+            tzfield = tpfield
+            if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+              tzfield%ndimlist(2)  = NMNHDIM_ONE
+            end if
+            zfieldp => pfield(:, jphext + 1 : jphext + 1)
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp, iresp )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp, iresp )
+          endif
+        ELSE
+          IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,PFIELD,IRESP)
+          IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,PFIELD,IRESP)
+        END IF
+      ELSE ! multiprocesses execution
           CALL SECOND_MNH2(T0)
           CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MNHINT_MPI,MPI_MAX,TPFILE%NMPICOMM,IRESP)
           IF (ISIZEMAX==0) THEN
@@ -622,7 +661,7 @@ CONTAINS
           END IF
 #ifdef MNH_GA
          call ga_sync
-#endif     
+#endif
           CALL SECOND_MNH2(T2)
           TIMEZ%T_WRIT2D_WRIT=TIMEZ%T_WRIT2D_WRIT + T2 - T1
           !
@@ -668,6 +707,7 @@ CONTAINS
 
 
   SUBROUTINE IO_Field_write_byfield_X3(TPFILE,TPFIELD,PFIELD,KRESP)
+    use modd_field,            only: NMNHDIM_UNKNOWN, NMNHDIM_ONE, NMNHDIM_UNUSED
     USE MODD_IO,               ONLY: GSMONOPROC, ISNPROC, ISP, L1D, L2D, LPACK
     USE MODD_PARAMETERS_ll,    ONLY: JPHEXT
     USE MODD_TIMEZ,            ONLY: TIMEZ
@@ -698,6 +738,8 @@ CONTAINS
     INTEGER                                  :: IERR
     INTEGER                                  :: ISIZEMAX
     INTEGER                                  :: IRESP,IRESP_ISP,IRESP_TMP
+    real,dimension(:),    pointer            :: zfieldp1d
+    real,dimension(:,:),  pointer            :: zfieldp2d
     REAL,DIMENSION(:,:,:),POINTER            :: ZFIELDP
     LOGICAL                                  :: GALLOC
     LOGICAL                                  :: GLFI, GNC4
@@ -722,6 +764,7 @@ CONTAINS
     INTEGER                                  :: IHEXTOT
     CHARACTER(LEN=:),ALLOCATABLE             :: YMSG
     CHARACTER(LEN=6)                         :: YRESP
+    type(tfielddata)                         :: tzfield
     TYPE(TFILEDATA),POINTER                  :: TZFILE
     !
     TZFILE => NULL()
@@ -749,22 +792,53 @@ CONTAINS
     CALL IO_Format_write_select(TPFILE,GLFI,GNC4)
     !
     IF (IRESP==0) THEN
-       IF (GSMONOPROC .AND. TPFILE%NSUBFILES_IOZ==0 ) THEN ! sequential execution
+      IF (GSMONOPROC .AND. TPFILE%NSUBFILES_IOZ==0 ) THEN ! sequential execution
           !    IF (LPACK .AND. L1D .AND. YDIR=='XY') THEN 
-          IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN 
-             ZFIELDP=>PFIELD(JPHEXT+1:JPHEXT+1,JPHEXT+1:JPHEXT+1,:)
-             IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,ZFIELDP,IRESP)
-             IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
-             !    ELSE IF (LPACK .AND. L2D .AND. YDIR=='XY') THEN
-          ELSEIF (LPACK .AND. L2D .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
-             ZFIELDP=>PFIELD(:,JPHEXT+1:JPHEXT+1,:)
-             IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,ZFIELDP,IRESP)
-             IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
-          ELSE
-             IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,PFIELD,IRESP)
-             IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,PFIELD,IRESP)
-          END IF
-       ELSEIF ( TPFILE%NSUBFILES_IOZ==0 .OR. YDIR=='--' ) THEN  ! multiprocesses execution & 1 proc IO
+        IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
+          if ( tpfile%ldimreduced ) then
+            tzfield = tpfield
+            tzfield%ndims = tzfield%ndims - 2
+            if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+              tzfield%ndimlist(1)  = tzfield%ndimlist(3)
+              tzfield%ndimlist(2)  = tzfield%ndimlist(4) !Necessary if time dimension
+              tzfield%ndimlist(3:) = NMNHDIM_UNUSED
+            end if
+            zfieldp1d => pfield(jphext + 1, jphext + 1, :)
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp1d, iresp )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp1d, iresp )
+          else
+            tzfield = tpfield
+            if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+              tzfield%ndimlist(1:2) = NMNHDIM_ONE
+            end if
+            zfieldp => pfield(jphext + 1 : jphext + 1, jphext + 1 : jphext + 1, :)
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp, iresp )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp, iresp )
+          endif
+        ELSEIF (LPACK .AND. L2D .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
+          if ( tpfile%ldimreduced ) then
+            tzfield = tpfield
+            tzfield%ndims = tzfield%ndims - 1
+            if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+              tzfield%ndimlist(2)  = tzfield%ndimlist(3)
+              tzfield%ndimlist(3)  = tzfield%ndimlist(4) !Necessary if time dimension
+              tzfield%ndimlist(4:) = NMNHDIM_UNUSED
+            end if
+            zfieldp2d => pfield(:, jphext + 1, :)
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp2d, iresp )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp2d, iresp )
+          else
+            tzfield = tpfield
+            if ( tzfield%ndimlist(2) /= NMNHDIM_UNKNOWN ) tzfield%ndimlist(2) = NMNHDIM_ONE
+            zfieldp => pfield(:, jphext + 1 : jphext + 1, :)
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp, iresp )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp, iresp )
+          endif
+        ELSE
+          IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,PFIELD,IRESP)
+          IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,PFIELD,IRESP)
+        END IF
+      ELSEIF ( TPFILE%NSUBFILES_IOZ==0 .OR. YDIR=='--' ) THEN  ! multiprocesses execution & 1 proc IO
           CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MNHINT_MPI,MPI_MAX,TPFILE%NMPICOMM,IRESP)
           IF (ISIZEMAX==0) THEN
              CALL PRINT_MSG(NVERB_INFO,'IO','IO_Field_write_byfield_X3','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
@@ -798,7 +872,7 @@ CONTAINS
           !
           CALL MPI_BCAST(IRESP,1,MNHINT_MPI,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
           !
-       ELSE ! multiprocesses execution & // IO
+      ELSE ! multiprocesses execution & // IO
           CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MNHINT_MPI,MPI_MAX,TPFILE%NMPICOMM,IRESP)
           IF (ISIZEMAX==0) THEN
              CALL PRINT_MSG(NVERB_INFO,'IO','IO_Field_write_byfield_X3','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
@@ -1036,6 +1110,7 @@ CONTAINS
 
 
   SUBROUTINE IO_Field_write_byfield_X4(TPFILE,TPFIELD,PFIELD,KRESP)
+    use modd_field,         only: NMNHDIM_UNKNOWN, NMNHDIM_ONE, NMNHDIM_UNUSED
     USE MODD_IO,            ONLY: GSMONOPROC, ISP, L1D, L2D, LPACK
     USE MODD_PARAMETERS_ll, ONLY: JPHEXT
     USE MODD_TIMEZ,         ONLY: TIMEZ
@@ -1062,12 +1137,15 @@ CONTAINS
     INTEGER                                  :: IERR
     INTEGER                                  :: ISIZEMAX
     INTEGER                                  :: IRESP
+    real,dimension(:,:),    pointer          :: zfieldp2d
+    real,dimension(:,:,:),  pointer          :: zfieldp3d
     REAL,DIMENSION(:,:,:,:),POINTER          :: ZFIELDP
     LOGICAL                                  :: GALLOC
     LOGICAL                                  :: GLFI, GNC4
     INTEGER                                  :: IHEXTOT
     CHARACTER(LEN=:),ALLOCATABLE             :: YMSG
     CHARACTER(LEN=6)                         :: YRESP
+    type(tfielddata)                         :: tzfield
     !
     YFILEM   = TPFILE%CNAME
     YRECFM   = TPFIELD%CMNHNAME
@@ -1087,20 +1165,56 @@ CONTAINS
     CALL IO_Format_write_select(TPFILE,GLFI,GNC4)
     !
     IF (IRESP==0) THEN
-       IF (GSMONOPROC) THEN ! sequential execution
-          !    IF (LPACK .AND. L1D .AND. YDIR=='XY') THEN 
-          IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN 
-             ZFIELDP=>PFIELD(JPHEXT+1:JPHEXT+1,JPHEXT+1:JPHEXT+1,:,:)
+      IF (GSMONOPROC) THEN ! sequential execution
+        !    IF (LPACK .AND. L1D .AND. YDIR=='XY') THEN
+        IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
+          if ( tpfile%ldimreduced ) then
+            tzfield = tpfield
+            tzfield%ndims = tzfield%ndims - 2
+            if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+              tzfield%ndimlist(1)  = tzfield%ndimlist(3)
+              tzfield%ndimlist(2)  = tzfield%ndimlist(4)
+              tzfield%ndimlist(3)  = tzfield%ndimlist(5) !Necessary if time dimension
+              tzfield%ndimlist(4:) = NMNHDIM_UNUSED
+            end if
+            zfieldp2d => pfield(jphext + 1, jphext + 1, :, :)
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp2d, iresp )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp2d, iresp )
+          else
+            tzfield = tpfield
+            if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+              tzfield%ndimlist(1:2) = NMNHDIM_ONE
+            end if
+            zfieldp => pfield(jphext + 1 : jphext + 1, jphext + 1 : jphext + 1, :, :)
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp, iresp )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp, iresp )
+          endif
              !    ELSE IF (LPACK .AND. L2D .AND. YDIR=='XY') THEN
-          ELSEIF (LPACK .AND. L2D .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
-             ZFIELDP=>PFIELD(:,JPHEXT+1:JPHEXT+1,:,:)
-             IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,ZFIELDP,IRESP)
-             IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
-          ELSE
-             IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,PFIELD,IRESP)
-             IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,PFIELD,IRESP)
-          END IF
-       ELSE
+        ELSEIF (LPACK .AND. L2D .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
+          if ( tpfile%ldimreduced ) then
+            tzfield = tpfield
+            tzfield%ndims = tzfield%ndims - 1
+            if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+              tzfield%ndimlist(2)  = tzfield%ndimlist(3)
+              tzfield%ndimlist(3)  = tzfield%ndimlist(4)
+              tzfield%ndimlist(4)  = tzfield%ndimlist(5) !Necessary if time dimension
+              tzfield%ndimlist(5:) = NMNHDIM_UNUSED
+            end if
+            zfieldp3d => pfield(:, jphext + 1, :, :)
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp3d, iresp )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp3d, iresp )
+          else
+            tzfield = tpfield
+            if ( tzfield%ndimlist(2) /= NMNHDIM_UNKNOWN ) tzfield%ndimlist(2) = NMNHDIM_ONE
+            zfieldp => pfield(:, jphext + 1 : jphext + 1, :, :)
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp, iresp )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp, iresp )
+          endif
+        ELSE
+          IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,PFIELD,IRESP)
+          IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,PFIELD,IRESP)
+        END IF
+      ELSE
           CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MNHINT_MPI,MPI_MAX,TPFILE%NMPICOMM,IRESP)
           IF (ISIZEMAX==0) THEN
              CALL PRINT_MSG(NVERB_INFO,'IO','IO_Field_write_byfield_X4','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
@@ -1171,6 +1285,7 @@ CONTAINS
 
 
   SUBROUTINE IO_Field_write_byfield_X5(TPFILE,TPFIELD,PFIELD,KRESP)
+    use modd_field,         only: NMNHDIM_UNKNOWN, NMNHDIM_ONE, NMNHDIM_UNUSED
     USE MODD_IO,            ONLY: GSMONOPROC, ISP, L1D, L2D, LPACK
     USE MODD_PARAMETERS_ll, ONLY: JPHEXT
     USE MODD_TIMEZ,         ONLY: TIMEZ
@@ -1197,12 +1312,15 @@ CONTAINS
     INTEGER                                  :: IERR
     INTEGER                                  :: ISIZEMAX
     INTEGER                                  :: IRESP
+    real,dimension(:,:,:),    pointer        :: zfieldp3d
+    real,dimension(:,:,:,:),  pointer        :: zfieldp4d
     REAL,DIMENSION(:,:,:,:,:),POINTER        :: ZFIELDP
     LOGICAL                                  :: GALLOC
     LOGICAL                                  :: GLFI, GNC4
     INTEGER                                  :: IHEXTOT
     CHARACTER(LEN=:),ALLOCATABLE             :: YMSG
     CHARACTER(LEN=6)                         :: YRESP
+    type(tfielddata)                         :: tzfield
     !
     YFILEM   = TPFILE%CNAME
     YRECFM   = TPFIELD%CMNHNAME
@@ -1222,20 +1340,58 @@ CONTAINS
     CALL IO_Format_write_select(TPFILE,GLFI,GNC4)
     !
     IF (IRESP==0) THEN
-       IF (GSMONOPROC) THEN ! sequential execution
-          !    IF (LPACK .AND. L1D .AND. YDIR=='XY') THEN 
-          IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN 
-             ZFIELDP=>PFIELD(JPHEXT+1:JPHEXT+1,JPHEXT+1:JPHEXT+1,:,:,:)
+      IF (GSMONOPROC) THEN ! sequential execution
+        !    IF (LPACK .AND. L1D .AND. YDIR=='XY') THEN
+        IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
+          if ( tpfile%ldimreduced ) then
+            tzfield = tpfield
+            tzfield%ndims = tzfield%ndims - 2
+            if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+              tzfield%ndimlist(1)  = tzfield%ndimlist(3)
+              tzfield%ndimlist(2)  = tzfield%ndimlist(4)
+              tzfield%ndimlist(3)  = tzfield%ndimlist(5)
+              tzfield%ndimlist(4)  = tzfield%ndimlist(6) !Necessary if time dimension
+              tzfield%ndimlist(5:) = NMNHDIM_UNUSED
+            end if
+            zfieldp3d => pfield(jphext + 1, jphext + 1, :, :, :)
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp3d, iresp )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp3d, iresp )
+          else
+            tzfield = tpfield
+            if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+              tzfield%ndimlist(1:2) = NMNHDIM_ONE
+            end if
+            zfieldp => pfield(jphext + 1 : jphext + 1, jphext + 1 : jphext + 1, :, :, :)
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp, iresp )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp, iresp )
+          endif
              !    ELSE IF (LPACK .AND. L2D .AND. YDIR=='XY') THEN
-          ELSEIF (LPACK .AND. L2D .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
-             ZFIELDP=>PFIELD(:,JPHEXT+1:JPHEXT+1,:,:,:)
-             IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,ZFIELDP,IRESP)
-             IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
-          ELSE
-             IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,PFIELD,IRESP)
-             IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,PFIELD,IRESP)
-          END IF
-       ELSE
+        ELSEIF (LPACK .AND. L2D .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
+          if ( tpfile%ldimreduced ) then
+            tzfield = tpfield
+            tzfield%ndims = tzfield%ndims - 1
+            if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+              tzfield%ndimlist(2)  = tzfield%ndimlist(3)
+              tzfield%ndimlist(3)  = tzfield%ndimlist(4)
+              tzfield%ndimlist(4)  = tzfield%ndimlist(5)
+              tzfield%ndimlist(5)  = tzfield%ndimlist(6) !Necessary if time dimension
+              tzfield%ndimlist(6:) = NMNHDIM_UNUSED
+            end if
+            zfieldp4d => pfield(:, jphext + 1, :, :, :)
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp4d, iresp )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp4d, iresp )
+          else
+            tzfield = tpfield
+            if ( tzfield%ndimlist(2) /= NMNHDIM_UNKNOWN ) tzfield%ndimlist(2) = NMNHDIM_ONE
+            zfieldp => pfield(:, jphext + 1 : jphext + 1, :, :, :)
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp, iresp )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp, iresp )
+          endif
+        ELSE
+          IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,PFIELD,IRESP)
+          IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,PFIELD,IRESP)
+        END IF
+      ELSE
           CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MNHINT_MPI,MPI_MAX,TPFILE%NMPICOMM,IRESP)
           IF (ISIZEMAX==0) THEN
              CALL PRINT_MSG(NVERB_INFO,'IO','IO_Field_write_byfield_X5','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
@@ -1633,6 +1789,7 @@ CONTAINS
 
 
   SUBROUTINE IO_Field_write_byfield_N2(TPFILE,TPFIELD,KFIELD,KRESP)
+    use modd_field,         only: NMNHDIM_UNKNOWN, NMNHDIM_ONE, NMNHDIM_UNUSED
     USE MODD_IO,            ONLY: GSMONOPROC, ISP, L1D, L2D, LPACK
     USE MODD_PARAMETERS_ll, ONLY: JPHEXT
     USE MODD_TIMEZ,         ONLY: TIMEZ
@@ -1658,6 +1815,8 @@ CONTAINS
     INTEGER                                  :: IERR
     INTEGER                                  :: ISIZEMAX
     INTEGER                                  :: IRESP
+    integer                                  :: ifieldp0d
+    integer,dimension(:),  pointer           :: ifieldp1d
     INTEGER,DIMENSION(:,:),POINTER           :: IFIELDP
     LOGICAL                                  :: GALLOC
     LOGICAL                                  :: GLFI, GNC4
@@ -1667,6 +1826,7 @@ CONTAINS
     INTEGER                                  :: IHEXTOT
     CHARACTER(LEN=:),ALLOCATABLE             :: YMSG
     CHARACTER(LEN=6)                         :: YRESP
+    type(tfielddata)                         :: tzfield
     !
     YFILEM   = TPFILE%CNAME
     YRECFM   = TPFIELD%CMNHNAME
@@ -1688,21 +1848,53 @@ CONTAINS
     CALL IO_Format_write_select(TPFILE,GLFI,GNC4)
     !
     IF (IRESP==0) THEN
-       IF (GSMONOPROC) THEN ! sequential execution
-          IF (LPACK .AND. L1D .AND. SIZE(KFIELD,1)==IHEXTOT .AND. SIZE(KFIELD,2)==IHEXTOT) THEN 
-             IFIELDP=>KFIELD(JPHEXT+1:JPHEXT+1,JPHEXT+1:JPHEXT+1)
-             IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,IFIELDP,IRESP)
-             IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,IFIELDP,IRESP)
+      IF (GSMONOPROC) THEN ! sequential execution
+        IF (LPACK .AND. L1D .AND. SIZE(KFIELD,1)==IHEXTOT .AND. SIZE(KFIELD,2)==IHEXTOT) THEN
+          if ( tpfile%ldimreduced ) then
+            tzfield = tpfield
+            tzfield%ndims = tzfield%ndims - 2
+            if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+              tzfield%ndimlist(1)  = tzfield%ndimlist(3) !Necessary if time dimension
+              tzfield%ndimlist(2:) = NMNHDIM_UNUSED
+            end if
+            ifieldp0d = kfield(jphext + 1, jphext + 1)
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, ifieldp0d, iresp )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, ifieldp0d, iresp )
+          else
+            tzfield = tpfield
+            if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+              tzfield%ndimlist(1:2) = NMNHDIM_ONE
+            end if
+            ifieldp => kfield(jphext + 1 : jphext + 1, jphext + 1 : jphext + 1)
+            if ( glfi) call IO_Field_write_lfi( tpfile, tzfield, ifieldp, iresp )
+            if ( gnc4) call IO_Field_write_nc4( tpfile, tzfield, ifieldp, iresp )
+          endif
              !    ELSE IF (LPACK .AND. L2D .AND. YDIR=='XY') THEN
-          ELSEIF (LPACK .AND. L2D .AND. SIZE(KFIELD,2)==IHEXTOT) THEN
-             IFIELDP=>KFIELD(:,JPHEXT+1:JPHEXT+1)
-             IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,IFIELDP,IRESP)
-             IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,IFIELDP,IRESP)
-          ELSE
-             IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,KFIELD,IRESP)
-             IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,KFIELD,IRESP)
-          END IF
-       ELSE ! multiprocesses execution
+        ELSEIF (LPACK .AND. L2D .AND. SIZE(KFIELD,2)==IHEXTOT) THEN
+          if ( tpfile%ldimreduced ) then
+            tzfield = tpfield
+            tzfield%ndims = tzfield%ndims - 1
+            if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+              tzfield%ndimlist(2)  = tzfield%ndimlist(3) !Necessary if time dimension
+              tzfield%ndimlist(3:) = NMNHDIM_UNUSED
+            end if
+            ifieldp1d => kfield(:, jphext + 1)
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, ifieldp1d, iresp )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, ifieldp1d, iresp )
+          else
+            tzfield = tpfield
+            if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+              tzfield%ndimlist(2)  = NMNHDIM_ONE
+            end if
+            ifieldp => kfield(:, jphext + 1 : jphext + 1)
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, ifieldp, iresp )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, ifieldp, iresp )
+          endif
+        ELSE
+          IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,KFIELD,IRESP)
+          IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,KFIELD,IRESP)
+        END IF
+      ELSE ! multiprocesses execution
           CALL MPI_ALLREDUCE(SIZE(KFIELD),ISIZEMAX,1,MNHINT_MPI,MPI_MAX,TPFILE%NMPICOMM,IRESP)
           IF (ISIZEMAX==0) THEN
              CALL PRINT_MSG(NVERB_INFO,'IO','IO_Field_write_byfield_N2','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
@@ -1781,6 +1973,7 @@ CONTAINS
   END SUBROUTINE IO_Field_write_byname_N3
 
   SUBROUTINE IO_Field_write_byfield_N3(TPFILE,TPFIELD,KFIELD,KRESP)
+    use modd_field,         only: NMNHDIM_UNKNOWN, NMNHDIM_ONE, NMNHDIM_UNUSED
     USE MODD_IO,            ONLY: GSMONOPROC, ISP, L1D, L2D, LPACK
     USE MODD_PARAMETERS_ll, ONLY: JPHEXT
     USE MODD_TIMEZ,         ONLY: TIMEZ
@@ -1806,7 +1999,9 @@ CONTAINS
     INTEGER                                  :: IERR
     INTEGER                                  :: ISIZEMAX
     INTEGER                                  :: IRESP
-    INTEGER,DIMENSION(:,:,:),POINTER         :: IFIELDP
+    integer, dimension(:),     pointer       :: ifieldp1d
+    integer, dimension(:,:),   pointer       :: ifieldp2d
+    INTEGER, DIMENSION(:,:,:), POINTER       :: IFIELDP
     LOGICAL                                  :: GALLOC
     LOGICAL                                  :: GLFI, GNC4
     !
@@ -1814,6 +2009,7 @@ CONTAINS
     INTEGER                                  :: IHEXTOT
     CHARACTER(LEN=:),ALLOCATABLE             :: YMSG
     CHARACTER(LEN=6)                         :: YRESP
+    type(tfielddata)                         :: tzfield
     !
     YFILEM   = TPFILE%CNAME
     YRECFM   = TPFIELD%CMNHNAME
@@ -1835,21 +2031,53 @@ CONTAINS
     CALL IO_Format_write_select(TPFILE,GLFI,GNC4)
     !
     IF (IRESP==0) THEN
-       IF (GSMONOPROC) THEN ! sequential execution
-          IF (LPACK .AND. L1D .AND. SIZE(KFIELD,1)==IHEXTOT .AND. SIZE(KFIELD,2)==IHEXTOT) THEN 
-             IFIELDP=>KFIELD(JPHEXT+1:JPHEXT+1,JPHEXT+1:JPHEXT+1,:)
-             IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,IFIELDP,IRESP)
-             IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,IFIELDP,IRESP)
+      IF (GSMONOPROC) THEN ! sequential execution
+        IF (LPACK .AND. L1D .AND. SIZE(KFIELD,1)==IHEXTOT .AND. SIZE(KFIELD,2)==IHEXTOT) THEN
+          if ( tpfile%ldimreduced ) then
+            tzfield = tpfield
+            tzfield%ndims = tzfield%ndims - 2
+            if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+              tzfield%ndimlist(1)  = tzfield%ndimlist(3)
+              tzfield%ndimlist(2)  = tzfield%ndimlist(4) !Necessary if time dimension
+              tzfield%ndimlist(3:) = NMNHDIM_UNUSED
+            end if
+            ifieldp1d => kfield(jphext + 1, jphext + 1, :)
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, ifieldp1d, iresp )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, ifieldp1d, iresp )
+          else
+            tzfield = tpfield
+            if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+              tzfield%ndimlist(1:2) = NMNHDIM_ONE
+            end if
+            ifieldp => kfield(jphext + 1 : jphext + 1, jphext + 1 : jphext + 1, :)
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, ifieldp, iresp )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, ifieldp, iresp )
+          endif
              !    ELSE IF (LPACK .AND. L2D .AND. YDIR=='XY') THEN
-          ELSEIF (LPACK .AND. L2D .AND. SIZE(KFIELD,2)==IHEXTOT) THEN
-             IFIELDP=>KFIELD(:,JPHEXT+1:JPHEXT+1,:)
-             IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,IFIELDP,IRESP)
-             IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,IFIELDP,IRESP)
-          ELSE
-             IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,KFIELD,IRESP)
-             IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,KFIELD,IRESP)
-          END IF
-       ELSE ! multiprocesses execution
+        ELSEIF (LPACK .AND. L2D .AND. SIZE(KFIELD,2)==IHEXTOT) THEN
+          if ( tpfile%ldimreduced ) then
+            tzfield = tpfield
+            tzfield%ndims = tzfield%ndims - 1
+            if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+              tzfield%ndimlist(2)  = tzfield%ndimlist(3)
+              tzfield%ndimlist(3)  = tzfield%ndimlist(4) !Necessary if time dimension
+              tzfield%ndimlist(4:) = NMNHDIM_UNUSED
+            end if
+            ifieldp2d => kfield(:, jphext + 1, :)
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, ifieldp2d, iresp )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, ifieldp2d, iresp )
+          else
+            tzfield = tpfield
+            if ( tzfield%ndimlist(2) /= NMNHDIM_UNKNOWN ) tzfield%ndimlist(2) = NMNHDIM_ONE
+            ifieldp => kfield(:, jphext + 1 : jphext + 1, :)
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, ifieldp, iresp )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, ifieldp, iresp )
+          endif
+        ELSE
+          IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,KFIELD,IRESP)
+          IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,KFIELD,IRESP)
+        END IF
+      ELSE ! multiprocesses execution
           CALL MPI_ALLREDUCE(SIZE(KFIELD),ISIZEMAX,1,MNHINT_MPI,MPI_MAX,TPFILE%NMPICOMM,IRESP)
           IF (ISIZEMAX==0) THEN
              CALL PRINT_MSG(NVERB_INFO,'IO','IO_Field_write_byfield_N3','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
@@ -2489,7 +2717,8 @@ CONTAINS
 
   SUBROUTINE IO_Field_write_byfield_lb(TPFILE,TPFIELD,KL3D,PLB,KRESP)
     !
-    USE MODD_IO,            ONLY: GSMONOPROC, ISNPROC, ISP, L1D, L2D, LPACK
+    use modd_field,         only: NMNHDIM_UNKNOWN, NMNHDIM_ONE, NMNHDIM_UNUSED
+    USE MODD_IO,            ONLY: GSMONOPROC, ISNPROC, ISP, L2D, LPACK
     USE MODD_PARAMETERS_ll, ONLY: JPHEXT
     USE MODD_VAR_ll,        ONLY: MNH_STATUSES_IGNORE
     !
@@ -2514,6 +2743,7 @@ CONTAINS
     INTEGER                                  :: IERR
     INTEGER                                  :: IRESP
     REAL,DIMENSION(:,:,:),ALLOCATABLE,TARGET :: Z3D
+    real,dimension(:,:),   pointer           :: tx2dp
     REAL,DIMENSION(:,:,:), POINTER           :: TX3DP
     INTEGER                                  :: IIMAX_ll,IJMAX_ll
     INTEGER                                  :: JI
@@ -2528,6 +2758,7 @@ CONTAINS
     TYPE(TX_3DP),ALLOCATABLE,DIMENSION(:)    :: T_TX3DP
     CHARACTER(LEN=:),ALLOCATABLE             :: YMSG
     CHARACTER(LEN=6)                         :: YRESP
+    type(tfielddata)                         :: tzfield
     !
     YFILEM   = TPFILE%CNAME
     YRECFM   = TPFIELD%CMNHNAME
@@ -2558,16 +2789,31 @@ CONTAINS
     CALL IO_Format_write_select(TPFILE,GLFI,GNC4)
     !
     IF (IRESP==0) THEN
-       IF (GSMONOPROC) THEN  ! sequential execution
-          IF (LPACK .AND. L2D) THEN
-             TX3DP=>PLB(:,JPHEXT+1:JPHEXT+1,:)
-             IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,TX3DP,IRESP)
-             IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,TX3DP,IRESP)
-          ELSE
-             IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,PLB,IRESP)
-             IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,PLB,IRESP)
-          END IF
-       ELSE
+      IF (GSMONOPROC) THEN  ! sequential execution
+        IF (LPACK .AND. L2D) THEN
+          if ( tpfile%ldimreduced ) then
+            tzfield = tpfield
+            tzfield%ndims = tzfield%ndims - 1
+            if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+              tzfield%ndimlist(2)  = tzfield%ndimlist(3)
+              tzfield%ndimlist(3)  = tzfield%ndimlist(4) !Necessary if time dimension
+              tzfield%ndimlist(4:) = NMNHDIM_UNUSED
+            end if
+            tx2dp => plb(:, jphext + 1, :)
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, tx2dp, iresp )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, tx2dp, iresp )
+          else
+            tzfield = tpfield
+            if ( tzfield%ndimlist(2) /= NMNHDIM_UNKNOWN ) tzfield%ndimlist(2) = NMNHDIM_ONE
+            tx3dp => plb(:, jphext + 1 : jphext + 1, :)
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, tx3dp, iresp )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, tx3dp, iresp )
+          endif
+        ELSE
+          IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,PLB,IRESP)
+          IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,PLB,IRESP)
+        END IF
+      ELSE
           IF (ISP == TPFILE%NMASTER_RANK)  THEN
              ! I/O proc case
              CALL GET_GLOBALDIMS_ll(IIMAX_ll,IJMAX_ll)
