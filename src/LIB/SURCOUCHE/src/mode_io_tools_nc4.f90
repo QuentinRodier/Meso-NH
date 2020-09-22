@@ -242,7 +242,7 @@ SUBROUTINE IO_Knowndims_set_nc4(TPFILE,HPROGRAM_ORIG)
 
 use modd_budget,        only: cbutype, lbu_icp, lbu_jcp, lbu_kcp, nbuimax_ll, nbujmax_ll, nbukmax, nbumask, nbuwrnb
 use modd_lbc_n,         only: clbcx, clbcy
-USE MODD_CONF,          ONLY: CPROGRAM, l2d
+USE MODD_CONF,          ONLY: CPROGRAM, l2d, lpack
 USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
 USE MODD_DIM_n,         ONLY: NIMAX_ll, NJMAX_ll, NKMAX
 use modd_les,           only: nles_k, nspectra_k, xles_temp_mean_start, xles_temp_mean_step, xles_temp_mean_end
@@ -296,11 +296,14 @@ ELSE
   IF (.NOT. ASSOCIATED(PIOCDF%DIMTIME))     ALLOCATE(PIOCDF%DIMTIME)
 END IF
 
+
+if ( tpfile%ctype == 'MNHDIACHRONIC' .or. ( lpack .and. l2d ) ) then
+  !Dimension of size 1 used for NMNHDIM_ONE
+  tzdimcdf => IO_Dimcdf_get_nc4( tpfile, 1_CDFINT, hdimname = 'one' )
+end if
+
 !Write dimensions used in diachronic files
 if ( tpfile%ctype == 'MNHDIACHRONIC' ) then
-  !Dimension of size 1 used for NMNHDIM_UNUSED
-  tzdimcdf => IO_Dimcdf_get_nc4( tpfile, 1_CDFINT, hdimname = 'one' )
-
   !Dimension of size 2 used for NMNHDIM_COMPLEX
   tzdimcdf => IO_Dimcdf_get_nc4( tpfile, 2_CDFINT, hdimname = 'real_imaginary' )
 
