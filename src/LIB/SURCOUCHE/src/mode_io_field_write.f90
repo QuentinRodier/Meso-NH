@@ -581,6 +581,7 @@ CONTAINS
              CALL GATHER_XXFIELD(YDIR,PFIELD,ZFIELDP,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
           ELSEIF (YDIR == 'XY') THEN
              IF (LPACK .AND. L2D) THEN
+                call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_write_byfield_X2', '2D not (yet) allowed for parallel execution' )
                 CALL GATHER_XXFIELD('XX',PFIELD(:,JPHEXT+1),ZFIELDP(:,1),TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
              ELSE
 #ifdef MNH_GA
@@ -783,6 +784,7 @@ CONTAINS
              CALL GATHER_XXFIELD(YDIR,PFIELD,ZFIELDP,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
           ELSEIF (YDIR == 'XY') THEN
              IF (LPACK .AND. L2D) THEN
+                call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_write_byfield_X3', '2D not (yet) allowed for parallel execution' )
                 CALL GATHER_XXFIELD('XX',PFIELD(:,JPHEXT+1,:),ZFIELDP(:,1,:),TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
              ELSE
                 CALL GATHER_XYFIELD(PFIELD,ZFIELDP,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
@@ -902,11 +904,12 @@ CONTAINS
                 IK_RANK = TZFILE%NMASTER_RANK
                 !
                 IF (YDIR == 'XX' .OR. YDIR =='YY') THEN
-                   call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_write_byfield_X3', 'XX not yet planned on Blue Gene' )
+                   call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_write_byfield_X3', 'XX/YY not (yet) allowed for parallel I/O' )
                    CALL GATHER_XXFIELD(YDIR,PFIELD,ZFIELDP,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
                 ELSEIF (YDIR == 'XY') THEN
                    IF (LPACK .AND. L2D) THEN
-                      call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_write_byfield_X3', 'L2D not yet planned on Blue Gene' )
+                      call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_write_byfield_X3', &
+                                      '2D not (yet) allowed for parallel execution' )
                       CALL GATHER_XXFIELD('XX',PFIELD(:,JPHEXT+1,:),ZFIELDP(:,1,:),TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
                    ELSE
                       CALL SECOND_MNH2(T0)
@@ -1116,6 +1119,7 @@ CONTAINS
              CALL GATHER_XXFIELD(YDIR,PFIELD,ZFIELDP,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
           ELSEIF (YDIR == 'XY') THEN
              IF (LPACK .AND. L2D) THEN
+                call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_write_byfield_X4', '2D not (yet) allowed for parallel execution' )
                 CALL GATHER_XXFIELD('XX',PFIELD(:,JPHEXT+1,:,:),ZFIELDP(:,1,:,:),TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
              ELSE
                 CALL GATHER_XYFIELD(PFIELD,ZFIELDP,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
@@ -1250,6 +1254,7 @@ CONTAINS
              CALL GATHER_XXFIELD(YDIR,PFIELD,ZFIELDP,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
           ELSEIF (YDIR == 'XY') THEN
              IF (LPACK .AND. L2D) THEN
+                call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_write_byfield_X5', '2D not (yet) allowed for parallel execution' )
                 CALL GATHER_XXFIELD('XX',PFIELD(:,JPHEXT+1,:,:,:),ZFIELDP(:,1,:,:,:),&
                      & TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
              ELSE
@@ -1718,6 +1723,7 @@ CONTAINS
              CALL GATHER_XXFIELD(YDIR,KFIELD,IFIELDP,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
           ELSEIF (YDIR == 'XY') THEN
              IF (LPACK .AND. L2D) THEN
+                call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_write_byfield_N2', '2D not (yet) allowed for parallel execution' )
                 CALL GATHER_XXFIELD('XX',KFIELD(:,JPHEXT+1),IFIELDP(:,1),TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
              ELSE
                 CALL GATHER_XYFIELD(KFIELD,IFIELDP,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
@@ -1863,6 +1869,7 @@ CONTAINS
              CALL GATHER_XXFIELD(YDIR,KFIELD,IFIELDP,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
           ELSEIF (YDIR == 'XY') THEN
              IF (LPACK .AND. L2D) THEN
+                call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_write_byfield_N3', '2D not (yet) allowed for parallel execution' )
                 CALL GATHER_XXFIELD('XX',KFIELD(:,JPHEXT+1,:),IFIELDP(:,1,:),TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
              ELSE
                 CALL GATHER_XYFIELD(KFIELD,IFIELDP,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
@@ -2582,6 +2589,7 @@ CONTAINS
                 END IF
              END DO
              IF (LPACK .AND. L2D) THEN
+                call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_write_byfield_lb', '2D not (yet) allowed for parallel execution' )
                 TX3DP=>Z3D(:,JPHEXT+1:JPHEXT+1,:)
              ELSE
                 TX3DP=>Z3D

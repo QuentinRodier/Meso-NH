@@ -424,6 +424,7 @@ IF (IRESP==0) THEN
     ELSE IF (TPFIELD%CDIR == 'XY') THEN
       IF (LPACK .AND. L2D) THEN
         ! 2D compact case
+        call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_read_byfield_X2', '2D not (yet) allowed for parallel execution' )
         CALL SCATTER_XXFIELD('XX',ZFIELDP(:,1),PFIELD(:,JPHEXT+1),TPFILE%NMASTER_RANK,TPFILE%NMPICOMM,TPSPLITTING)
         PFIELD(:,:) = SPREAD(PFIELD(:,JPHEXT+1),DIM=2,NCOPIES=IHEXTOT)
       ELSE
@@ -610,6 +611,7 @@ IF (IRESP==0) THEN
     ELSE IF (YDIR == 'XY') THEN
       IF (LPACK .AND. L2D) THEN
         ! 2D compact case
+        call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_read_byfield_X3', '2D not (yet) allowed for parallel execution' )
         CALL SCATTER_XXFIELD('XX',ZFIELDP(:,1,:),PFIELD(:,JPHEXT+1,:),TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
         PFIELD(:,:,:) = SPREAD(PFIELD(:,JPHEXT+1,:),DIM=2,NCOPIES=IHEXTOT)
       ELSE
@@ -756,12 +758,12 @@ IF (IRESP==0) THEN
       !
       IF (YDIR == 'XX' .OR. YDIR =='YY') THEN
         ! XX or YY Scatter Field
-        call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_read_byfield_X3', 'XX or YY not yet planned on Blue Gene' )
+        call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_read_byfield_X3', 'XX/YY not (yet) allowed for parallel I/O' )
         CALL SCATTER_XXFIELD(YDIR,ZFIELDP,PFIELD,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
       ELSE IF (YDIR == 'XY') THEN
         IF (LPACK .AND. L2D) THEN
           ! 2D compact case
-          call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_read_byfield_X3', 'L2D not yet planned on Blue Gene' )
+          call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_read_byfield_X3', '2D not (yet) allowed for parallel execution' )
           CALL SCATTER_XXFIELD('XX',ZFIELDP(:,1,:),PFIELD(:,JPHEXT+1,:),TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
           PFIELD(:,:,:) = SPREAD(PFIELD(:,JPHEXT+1,:),DIM=2,NCOPIES=IHEXTOT)
         ELSE
@@ -928,6 +930,7 @@ IF (IRESP==0) THEN
     ELSE IF (TPFIELD%CDIR == 'XY') THEN
       IF (LPACK .AND. L2D) THEN
         ! 2D compact case
+        call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_read_byfield_X4', '2D not (yet) allowed for parallel execution' )
         CALL SCATTER_XXFIELD('XX',ZFIELDP(:,1,:,:),PFIELD(:,JPHEXT+1,:,:),TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
         PFIELD(:,:,:,:) = SPREAD(PFIELD(:,JPHEXT+1,:,:),DIM=2,NCOPIES=IHEXTOT)
       ELSE
@@ -1042,6 +1045,7 @@ IF (IRESP==0) THEN
     ELSE IF (TPFIELD%CDIR == 'XY') THEN
       IF (LPACK .AND. L2D) THEN
         ! 2D compact case
+        call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_read_byfield_X5', '2D not (yet) allowed for parallel execution' )
         CALL SCATTER_XXFIELD('XX',ZFIELDP(:,1,:,:,:),PFIELD(:,JPHEXT+1,:,:,:),TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
         PFIELD(:,:,:,:,:) = SPREAD(PFIELD(:,JPHEXT+1,:,:,:),DIM=2,NCOPIES=IHEXTOT)
       ELSE
@@ -1409,6 +1413,7 @@ IF (IRESP==0) THEN
     ELSE IF (TPFIELD%CDIR == 'XY') THEN
       IF (LPACK .AND. L2D) THEN
         ! 2D compact case
+        call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_read_byfield_N2', '2D not (yet) allowed for parallel execution' )
         CALL SCATTER_XXFIELD('XX',IFIELDP(:,1),KFIELD(:,JPHEXT+1),TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
         KFIELD(:,:) = SPREAD(KFIELD(:,JPHEXT+1),DIM=2,NCOPIES=IHEXTOT)
       ELSE
@@ -1525,6 +1530,7 @@ IF (IRESP==0) THEN
     ELSE IF (TPFIELD%CDIR == 'XY') THEN
       IF (LPACK .AND. L2D) THEN
         ! 2D compact case
+        call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_read_byfield_N3', '2D not (yet) allowed for parallel execution' )
         CALL SCATTER_XXFIELD('XX',IFIELDP(:,1,:),KFIELD(:,JPHEXT+1,:),TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
         KFIELD(:,:,:) = SPREAD(KFIELD(:,JPHEXT+1,:),DIM=2,NCOPIES=IHEXTOT)
       ELSE
@@ -1958,7 +1964,10 @@ IF (IRESP==0) THEN
       if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, tx3dp, iresp )
       if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, tx3dp, iresp )
       IF (YLBTYPE == 'LBX' .OR. YLBTYPE == 'LBXU') THEN
-        IF (LPACK .AND. L2D) Z3D(:,:,:) = SPREAD(Z3D(:,JPHEXT+1,:),DIM=2,NCOPIES=IHEXTOT)
+        IF (LPACK .AND. L2D) THEN
+          call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_read_byfield_lb', '2D not (yet) allowed for parallel execution' )
+          Z3D(:,:,:) = SPREAD(Z3D(:,JPHEXT+1,:),DIM=2,NCOPIES=IHEXTOT)
+        END IF
         ! erase gap in LB field
         Z3D(KRIM+JPHEXT+1:2*(KRIM+JPHEXT),:,:) = Z3D(KL3D-KRIM-JPHEXT+1:KL3D,:,:)
       ELSE !(YLBTYPE == 'LBY' .OR. YLBTYPE == 'LBYV')
