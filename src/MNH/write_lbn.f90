@@ -256,7 +256,7 @@ IF (NRR >=1) THEN
         TZFIELD%CLONGNAME  = 'LBYR'//YC(JRR)//'M'
         TZFIELD%CLBTYPE    = 'LBY'
         TZFIELD%CCOMMENT   = '2_Y_Z_LBYR'//YC(JRR)//'M'
-        CALL IO_Field_write_lb(TPFILE,TZFIELD,NSIZELBXR_ll,XLBYRM(:,:,:,IRR))
+        CALL IO_Field_write_lb(TPFILE,TZFIELD,NSIZELBYR_ll,XLBYRM(:,:,:,IRR))
       END IF
     END IF
   END DO
