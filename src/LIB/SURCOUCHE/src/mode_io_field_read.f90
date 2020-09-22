@@ -16,6 +16,7 @@
 !  P. Wautelet 26/04/2019: use modd_precision parameters for datatypes of MPI communications
 !  P. Wautelet 25/06/2019: added IO_Field_read for 3D integer arrays (IO_Field_read_byname_N3 and IO_Field_read_byfield_N3)
 !  J. Escobar  11/02/2020: for GA & // IO, add update_halo + sync, & mpi_allreduce for error handling in // IO
+!  P. Wautelet 22/09/2020: add IO_Format_read_select subroutine
 !-----------------------------------------------------------------
 
 MODULE MODE_IO_FIELD_READ
@@ -96,6 +97,21 @@ END IF
 END SUBROUTINE IO_File_read_check
 
 
+subroutine IO_Format_read_select( tpfile, olfi, onc4 )
+type(tfiledata), intent(in)  :: tpfile ! File structure
+logical,         intent(out) :: olfi   ! Read in LFI format?
+logical,         intent(out) :: onc4   ! Read in netCDF format?
+
+olfi = .false.
+onc4 = .false.
+if ( tpfile%cformat == 'LFI' )                                     olfi = .true.
+#ifdef MNH_IOCDF4
+if ( tpfile%cformat == 'NETCDF4' .or. tpfile%cformat == 'LFICDF4') onc4 = .true.
+#endif
+
+end subroutine IO_Format_read_select
+
+
 SUBROUTINE IO_Field_metadata_bcast(TPFILE,TPFIELD)
 TYPE(TFILEDATA),  INTENT(IN)    :: TPFILE
 TYPE(TFIELDDATA), INTENT(INOUT) :: TPFIELD
@@ -149,31 +165,24 @@ INTEGER,OPTIONAL, INTENT(OUT)   :: KRESP    ! return-code
 !
 INTEGER                      :: IERR
 INTEGER                      :: IRESP
+logical                      :: glfi, gnc4
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_byfield_X0',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
 IRESP = 0
 !
 CALL IO_File_read_check(TPFILE,'IO_Field_read_byfield_X0',IRESP)
-!
+
+call IO_Format_read_select( tpfile, glfi, gnc4 )
+
 IF (IRESP==0) THEN
   IF (GSMONOPROC) THEN ! sequential execution
-      IF (TPFILE%CFORMAT=='NETCDF4') THEN
-         CALL IO_Field_read_nc4(TPFILE,TPFIELD,PFIELD,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-         CALL IO_Field_read_lfi(TPFILE,TPFIELD,PFIELD,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-        CALL IO_Field_read_nc4(TPFILE,TPFIELD,PFIELD,IRESP)
-      END IF
+    if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, pfield, iresp )
+    if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, pfield, iresp )
   ELSE
     IF (ISP == TPFILE%NMASTER_RANK)  THEN
-      IF (TPFILE%CFORMAT=='NETCDF4') THEN
-         CALL IO_Field_read_nc4(TPFILE,TPFIELD,PFIELD,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-         CALL IO_Field_read_lfi(TPFILE,TPFIELD,PFIELD,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-        CALL IO_Field_read_nc4(TPFILE,TPFIELD,PFIELD,IRESP)
-      END IF
+      if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, pfield, iresp )
+      if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, pfield, iresp )
     END IF
     !
     CALL MPI_BCAST(IRESP,1,MNHINT_MPI,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
@@ -239,6 +248,7 @@ TYPE(ZONE_ll),DIMENSION(ISNPROC),OPTIONAL,INTENT(IN) :: TPSPLITTING  ! splitting
 INTEGER                      :: IERR
 REAL,DIMENSION(:),POINTER    :: ZFIELDP
 LOGICAL                      :: GALLOC
+logical                      :: glfi, gnc4
 INTEGER                      :: IRESP
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_byfield_X1',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
@@ -248,26 +258,18 @@ IRESP = 0
 ZFIELDP => NULL()
 !
 CALL IO_File_read_check(TPFILE,'IO_Field_read_byfield_X1',IRESP)
-!
+
+call IO_Format_read_select( tpfile, glfi, gnc4 )
+
 IF (IRESP==0) THEN
   IF (GSMONOPROC) THEN ! sequential execution
-      IF (TPFILE%CFORMAT=='NETCDF4') THEN
-         CALL IO_Field_read_nc4(TPFILE,TPFIELD,PFIELD,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-         CALL IO_Field_read_lfi(TPFILE,TPFIELD,PFIELD,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-        CALL IO_Field_read_nc4(TPFILE,TPFIELD,PFIELD,IRESP)
-      END IF
+    if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, pfield, iresp )
+    if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, pfield, iresp )
   ELSE
     IF (ISP == TPFILE%NMASTER_RANK)  THEN
       CALL ALLOCBUFFER_ll(ZFIELDP,PFIELD,TPFIELD%CDIR,GALLOC, KIMAX_ll, KJMAX_ll)
-      IF (TPFILE%CFORMAT=='NETCDF4') THEN
-         CALL IO_Field_read_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-         CALL IO_Field_read_lfi(TPFILE,TPFIELD,ZFIELDP,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-        CALL IO_Field_read_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
-      END IF
+      if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, zfieldp, iresp )
+      if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, zfieldp, iresp )
     ELSE
       !Not really necessary but useful to suppress alerts with Valgrind
       ALLOCATE(ZFIELDP(0))
@@ -356,6 +358,7 @@ TYPE(ZONE_ll),DIMENSION(ISNPROC),OPTIONAL,INTENT(IN) :: TPSPLITTING  ! splitting
 INTEGER                      :: IERR
 REAL,DIMENSION(:,:),POINTER  :: ZFIELDP
 LOGICAL                      :: GALLOC
+logical                          :: glfi, gnc4
 INTEGER                      :: IRESP
 INTEGER                      :: IHEXTOT
 REAL(kind=MNHTIME), DIMENSION(2) :: T0, T1, T2
@@ -375,7 +378,9 @@ ZFIELDP => NULL()
 !
 IHEXTOT = 2*JPHEXT+1
 CALL IO_File_read_check(TPFILE,'IO_Field_read_byfield_X2',IRESP)
-!
+
+call IO_Format_read_select( tpfile, glfi, gnc4 )
+
 IF (IRESP==0) THEN
   IF (GSMONOPROC) THEN ! sequential execution
     IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
@@ -385,13 +390,8 @@ IF (IRESP==0) THEN
     ELSE
       ZFIELDP=>PFIELD(:,:)
     END IF
-    IF (TPFILE%CFORMAT=='NETCDF4') THEN
-      CALL IO_Field_read_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
-    ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-      CALL IO_Field_read_lfi(TPFILE,TPFIELD,ZFIELDP,IRESP)
-    ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-      CALL IO_Field_read_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
-    END IF
+    if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, zfieldp, iresp )
+    if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, zfieldp, iresp )
     IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
       PFIELD(:,:)=SPREAD(SPREAD(PFIELD(JPHEXT+1,JPHEXT+1),DIM=1,NCOPIES=IHEXTOT),DIM=2,NCOPIES=IHEXTOT)
     ELSE IF (LPACK .AND. L2D .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
@@ -402,13 +402,8 @@ IF (IRESP==0) THEN
     IF (ISP == TPFILE%NMASTER_RANK)  THEN
       ! I/O process case
       CALL ALLOCBUFFER_ll(ZFIELDP,PFIELD,TPFIELD%CDIR,GALLOC, KIMAX_ll, KJMAX_ll)
-      IF (TPFILE%CFORMAT=='NETCDF4') THEN
-         CALL IO_Field_read_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-         CALL IO_Field_read_lfi(TPFILE,TPFIELD,ZFIELDP,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-        CALL IO_Field_read_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
-      END IF
+      if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, zfieldp, iresp )
+      if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, zfieldp, iresp )
     ELSE
       !Not really necessary but useful to suppress alerts with Valgrind
       ALLOCATE(ZFIELDP(0,0))
@@ -541,6 +536,7 @@ INTEGER                               :: NB_REQ
 INTEGER,ALLOCATABLE,DIMENSION(:)      :: REQ_TAB
 INTEGER, DIMENSION(MPI_STATUS_SIZE)   :: STATUS
 LOGICAL                               :: GALLOC, GALLOC_ll
+logical                               :: glfi, gnc4
 REAL,DIMENSION(:,:),POINTER           :: TX2DP
 REAL,DIMENSION(:,:),POINTER           :: ZSLICE_ll,ZSLICE
 REAL,DIMENSION(:,:,:),POINTER         :: ZFIELDP
@@ -571,7 +567,9 @@ YDIR = TPFIELD%CDIR
 IHEXTOT = 2*JPHEXT+1
 !
 CALL IO_File_read_check(TPFILE,'IO_Field_read_byfield_X3',IRESP)
-!
+
+call IO_Format_read_select( tpfile, glfi, gnc4 )
+
 IF (IRESP==0) THEN
   IF (GSMONOPROC  .AND. TPFILE%NSUBFILES_IOZ==0 ) THEN ! sequential execution
     IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
@@ -581,13 +579,8 @@ IF (IRESP==0) THEN
     ELSE
       ZFIELDP=>PFIELD(:,:,:)
     END IF
-    IF (TPFILE%CFORMAT=='NETCDF4') THEN
-      CALL IO_Field_read_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
-    ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-      CALL IO_Field_read_lfi(TPFILE,TPFIELD,ZFIELDP,IRESP)
-    ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-      CALL IO_Field_read_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
-    END IF
+    if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, zfieldp, iresp )
+    if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, zfieldp, iresp )
     IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
       PFIELD(:,:,:)=SPREAD(SPREAD(PFIELD(JPHEXT+1,JPHEXT+1,:),DIM=1,NCOPIES=IHEXTOT),DIM=2,NCOPIES=IHEXTOT)
     ELSE IF (LPACK .AND. L2D .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
@@ -597,13 +590,8 @@ IF (IRESP==0) THEN
     IF (ISP == TPFILE%NMASTER_RANK)  THEN
       ! I/O process case
       CALL ALLOCBUFFER_ll(ZFIELDP,PFIELD,YDIR,GALLOC)
-      IF (TPFILE%CFORMAT=='NETCDF4') THEN
-        CALL IO_Field_read_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-        CALL IO_Field_read_lfi(TPFILE,TPFIELD,ZFIELDP,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-        CALL IO_Field_read_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
-      END IF
+      if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, zfieldp, iresp )
+      if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, zfieldp, iresp )
     ELSE
       !Not really necessary but useful to suppress alerts with Valgrind
       ALLOCATE(ZFIELDP(0,0,0))
@@ -669,13 +657,9 @@ IF (IRESP==0) THEN
         CALL SECOND_MNH2(T0)
         WRITE(YK,'(I4.4)')  JKK
         YRECZSLICE = TRIM(TPFIELD%CMNHNAME)//YK
-        IF (TPFILE%CFORMAT=='NETCDF4') THEN
-          CALL IO_Field_read_nc4(TZFILE,TZFIELD,ZSLICE_ll,IRESP_TMP)
-        ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-          CALL IO_Field_read_lfi(TZFILE,TZFIELD,ZSLICE_ll,IRESP_TMP)
-        ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-          CALL IO_Field_read_nc4(TZFILE,TZFIELD,ZSLICE_ll,IRESP_TMP)
-        END IF
+        call IO_Format_read_select( tzfile, glfi, gnc4 ) !Safer to do that (probably useless)
+        if ( gnc4 ) call IO_Field_read_nc4( tzfile, tzfield, zslice_ll, iresp_tmp )
+        if ( glfi ) call IO_Field_read_lfi( tzfile, tzfield, zslice_ll, iresp_tmp )
         IF (IRESP_TMP .NE. 0 ) IRESP_ISP = IRESP_TMP
         CALL SECOND_MNH2(T1)
         TIMEZ%T_READ3D_READ=TIMEZ%T_READ3D_READ + T1 - T0
@@ -741,13 +725,9 @@ IF (IRESP==0) THEN
           CALL SECOND_MNH2(T0)
           WRITE(YK,'(I4.4)')  JKK
           YRECZSLICE = TRIM(TPFIELD%CMNHNAME)//YK
-          IF (TZFILE%CFORMAT=='NETCDF4') THEN
-            CALL IO_Field_read_nc4(TZFILE,TZFIELD,ZSLICE_ll,IRESP_TMP)
-          ELSE IF (TZFILE%CFORMAT=='LFI') THEN
-            CALL IO_Field_read_lfi(TZFILE,TZFIELD,ZSLICE_ll,IRESP_TMP)
-          ELSE IF (TZFILE%CFORMAT=='LFICDF4') THEN
-            CALL IO_Field_read_nc4(TZFILE,TZFIELD,ZSLICE_ll,IRESP_TMP)
-          END IF
+          call IO_Format_read_select( tzfile, glfi, gnc4 ) !Safer to do that (probably useless)
+          if ( gnc4 ) call IO_Field_read_nc4( tzfile, tzfield, zslice_ll, iresp_tmp )
+          if ( glfi ) call IO_Field_read_lfi( tzfile, tzfield, zslice_ll, iresp_tmp )
           IF (IRESP_TMP .NE. 0 ) IRESP_ISP = IRESP_TMP
           CALL SECOND_MNH2(T1)
           TIMEZ%T_READ3D_READ=TIMEZ%T_READ3D_READ + T1 - T0
@@ -893,6 +873,7 @@ INTEGER, OPTIONAL,             INTENT(OUT)   :: KRESP    ! return-code
 INTEGER                          :: IERR
 REAL,DIMENSION(:,:,:,:),POINTER  :: ZFIELDP
 LOGICAL                          :: GALLOC
+logical                          :: glfi, gnc4
 INTEGER                          :: IRESP
 INTEGER                          :: IHEXTOT
 !
@@ -904,7 +885,9 @@ ZFIELDP => NULL()
 !
 IHEXTOT = 2*JPHEXT+1
 CALL IO_File_read_check(TPFILE,'IO_Field_read_byfield_X4',IRESP)
-!
+
+call IO_Format_read_select( tpfile, glfi, gnc4 )
+
 IF (IRESP==0) THEN
   IF (GSMONOPROC) THEN ! sequential execution
     IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
@@ -914,13 +897,8 @@ IF (IRESP==0) THEN
     ELSE
       ZFIELDP=>PFIELD(:,:,:,:)
     END IF
-    IF (TPFILE%CFORMAT=='NETCDF4') THEN
-      CALL IO_Field_read_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
-    ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-      CALL IO_Field_read_lfi(TPFILE,TPFIELD,ZFIELDP,IRESP)
-    ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-      CALL IO_Field_read_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
-    END IF
+    if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, zfieldp, iresp )
+    if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, zfieldp, iresp )
     IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
       PFIELD(:,:,:,:)=SPREAD(SPREAD(PFIELD(JPHEXT+1,JPHEXT+1,:,:),DIM=1,NCOPIES=IHEXTOT),DIM=2,NCOPIES=IHEXTOT)
     ELSE IF (LPACK .AND. L2D .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
@@ -930,13 +908,8 @@ IF (IRESP==0) THEN
     IF (ISP == TPFILE%NMASTER_RANK)  THEN
       ! I/O process case
       CALL ALLOCBUFFER_ll(ZFIELDP,PFIELD,TPFIELD%CDIR,GALLOC)
-      IF (TPFILE%CFORMAT=='NETCDF4') THEN
-         CALL IO_Field_read_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-         CALL IO_Field_read_lfi(TPFILE,TPFIELD,ZFIELDP,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-        CALL IO_Field_read_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
-      END IF
+      if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, zfieldp, iresp )
+      if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, zfieldp, iresp )
     ELSE
       !Not really necessary but useful to suppress alerts with Valgrind
       ALLOCATE(ZFIELDP(0,0,0,0))
@@ -1014,6 +987,7 @@ INTEGER, OPTIONAL,               INTENT(OUT)   :: KRESP    ! return-code
 INTEGER                            :: IERR
 REAL,DIMENSION(:,:,:,:,:),POINTER  :: ZFIELDP
 LOGICAL                            :: GALLOC
+logical                            :: glfi, gnc4
 INTEGER                            :: IRESP
 INTEGER                            :: IHEXTOT
 !
@@ -1025,7 +999,9 @@ ZFIELDP => NULL()
 !
 IHEXTOT = 2*JPHEXT+1
 CALL IO_File_read_check(TPFILE,'IO_Field_read_byfield_X5',IRESP)
-!
+
+call IO_Format_read_select( tpfile, glfi, gnc4 )
+
 IF (IRESP==0) THEN
   IF (GSMONOPROC) THEN ! sequential execution
     IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
@@ -1035,13 +1011,8 @@ IF (IRESP==0) THEN
     ELSE
       ZFIELDP=>PFIELD(:,:,:,:,:)
     END IF
-    IF (TPFILE%CFORMAT=='NETCDF4') THEN
-      CALL IO_Field_read_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
-    ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-      CALL IO_Field_read_lfi(TPFILE,TPFIELD,ZFIELDP,IRESP)
-    ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-      CALL IO_Field_read_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
-    END IF
+    if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, zfieldp, iresp )
+    if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, zfieldp, iresp )
     IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
       PFIELD(:,:,:,:,:)=SPREAD(SPREAD(PFIELD(JPHEXT+1,JPHEXT+1,:,:,:),DIM=1,NCOPIES=IHEXTOT),DIM=2,NCOPIES=IHEXTOT)
     ELSE IF (LPACK .AND. L2D .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
@@ -1051,13 +1022,8 @@ IF (IRESP==0) THEN
     IF (ISP == TPFILE%NMASTER_RANK)  THEN
       ! I/O process case
       CALL ALLOCBUFFER_ll(ZFIELDP,PFIELD,TPFIELD%CDIR,GALLOC)
-      IF (TPFILE%CFORMAT=='NETCDF4') THEN
-         CALL IO_Field_read_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-         CALL IO_Field_read_lfi(TPFILE,TPFIELD,ZFIELDP,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-        CALL IO_Field_read_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
-      END IF
+      if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, zfieldp, iresp )
+      if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, zfieldp, iresp )
     ELSE
       !Not really necessary but useful to suppress alerts with Valgrind
       ALLOCATE(ZFIELDP(0,0,0,0,0))
@@ -1119,7 +1085,7 @@ END SUBROUTINE IO_Field_read_byname_X6
 
 SUBROUTINE IO_Field_read_byfield_X6(TPFILE,TPFIELD,PFIELD,KRESP)
 !
-USE MODD_IO,             ONLY: GSMONOPROC,ISP,LPACK,L1D,L2D
+USE MODD_IO,             ONLY: GSMONOPROC, ISP
 USE MODD_PARAMETERS_ll,  ONLY: JPHEXT
 USE MODD_TIMEZ,          ONLY: TIMEZ
 !
@@ -1135,6 +1101,7 @@ INTEGER, OPTIONAL,                 INTENT(OUT)   :: KRESP    ! return-code
 INTEGER                              :: IERR
 REAL,DIMENSION(:,:,:,:,:,:),POINTER  :: ZFIELDP
 LOGICAL                              :: GALLOC
+logical                              :: glfi, gnc4
 INTEGER                              :: IRESP
 INTEGER                              :: IHEXTOT
 !
@@ -1146,27 +1113,19 @@ ZFIELDP => NULL()
 !
 IHEXTOT = 2*JPHEXT+1
 CALL IO_File_read_check(TPFILE,'IO_Field_read_byfield_X6',IRESP)
-!
+
+call IO_Format_read_select( tpfile, glfi, gnc4 )
+
 IF (IRESP==0) THEN
   IF (GSMONOPROC) THEN ! sequential execution
-    IF (TPFILE%CFORMAT=='NETCDF4') THEN
-      CALL IO_Field_read_nc4(TPFILE,TPFIELD,PFIELD,IRESP)
-    ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-      CALL IO_Field_read_lfi(TPFILE,TPFIELD,PFIELD,IRESP)
-    ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-      CALL IO_Field_read_nc4(TPFILE,TPFIELD,PFIELD,IRESP)
-    END IF
+    if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, pfield, iresp )
+    if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, pfield, iresp )
   ELSE
     IF (ISP == TPFILE%NMASTER_RANK)  THEN
       ! I/O process case
       CALL ALLOCBUFFER_ll(ZFIELDP,PFIELD,TPFIELD%CDIR,GALLOC)
-      IF (TPFILE%CFORMAT=='NETCDF4') THEN
-         CALL IO_Field_read_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-         CALL IO_Field_read_lfi(TPFILE,TPFIELD,ZFIELDP,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-        CALL IO_Field_read_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
-      END IF
+      if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, zfieldp, iresp )
+      if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, zfieldp, iresp )
     ELSE
       !Not really necessary but useful to suppress alerts with Valgrind
       ALLOCATE(ZFIELDP(0,0,0,0,0,0))
@@ -1231,31 +1190,24 @@ INTEGER,OPTIONAL, INTENT(OUT)   :: KRESP    ! return-code
 !
 INTEGER                      :: IERR
 INTEGER                      :: IRESP
+logical                      :: glfi, gnc4
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_byfield_N0',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
 IRESP = 0
 !
 CALL IO_File_read_check(TPFILE,'IO_Field_read_byfield_N0',IRESP)
-!
+
+call IO_Format_read_select( tpfile, glfi, gnc4 )
+
 IF (IRESP==0) THEN
   IF (GSMONOPROC) THEN ! sequential execution
-      IF (TPFILE%CFORMAT=='NETCDF4') THEN
-         CALL IO_Field_read_nc4(TPFILE,TPFIELD,KFIELD,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-         CALL IO_Field_read_lfi(TPFILE,TPFIELD,KFIELD,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-        CALL IO_Field_read_nc4(TPFILE,TPFIELD,KFIELD,IRESP)
-      END IF
+    if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, kfield, iresp )
+    if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, kfield, iresp )
   ELSE
     IF (ISP == TPFILE%NMASTER_RANK)  THEN
-      IF (TPFILE%CFORMAT=='NETCDF4') THEN
-         CALL IO_Field_read_nc4(TPFILE,TPFIELD,KFIELD,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-         CALL IO_Field_read_lfi(TPFILE,TPFIELD,KFIELD,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-        CALL IO_Field_read_nc4(TPFILE,TPFIELD,KFIELD,IRESP)
-      END IF
+      if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, kfield, iresp )
+      if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, kfield, iresp )
     END IF
     !
     CALL MPI_BCAST(IRESP,1,MNHINT_MPI,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
@@ -1311,6 +1263,7 @@ INTEGER                      :: IERR
 INTEGER                      :: IRESP
 INTEGER,DIMENSION(:),POINTER :: IFIELDP
 LOGICAL                      :: GALLOC
+logical                      :: glfi, gnc4
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_byfield_N1',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -1319,26 +1272,18 @@ IRESP = 0
 IFIELDP => NULL()
 !
 CALL IO_File_read_check(TPFILE,'IO_Field_read_byfield_N1',IRESP)
-!
+
+call IO_Format_read_select( tpfile, glfi, gnc4 )
+
 IF (IRESP==0) THEN
   IF (GSMONOPROC) THEN ! sequential execution
-      IF (TPFILE%CFORMAT=='NETCDF4') THEN
-         CALL IO_Field_read_nc4(TPFILE,TPFIELD,KFIELD,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-         CALL IO_Field_read_lfi(TPFILE,TPFIELD,KFIELD,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-        CALL IO_Field_read_nc4(TPFILE,TPFIELD,KFIELD,IRESP)
-      END IF
+    if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, kfield, iresp )
+    if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, kfield, iresp )
   ELSE
     IF (ISP == TPFILE%NMASTER_RANK)  THEN
       CALL ALLOCBUFFER_ll(IFIELDP,KFIELD,TPFIELD%CDIR,GALLOC)
-      IF (TPFILE%CFORMAT=='NETCDF4') THEN
-         CALL IO_Field_read_nc4(TPFILE,TPFIELD,IFIELDP,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-         CALL IO_Field_read_lfi(TPFILE,TPFIELD,IFIELDP,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-        CALL IO_Field_read_nc4(TPFILE,TPFIELD,IFIELDP,IRESP)
-      END IF
+      if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, ifieldp, iresp )
+      if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, ifieldp, iresp )
     ELSE
       !Not really necessary but useful to suppress alerts with Valgrind
       ALLOCATE(IFIELDP(0))
@@ -1407,6 +1352,7 @@ INTEGER, OPTIONAL,            INTENT(OUT)   :: KRESP    ! return-code
 INTEGER                         :: IERR
 INTEGER,DIMENSION(:,:),POINTER  :: IFIELDP
 LOGICAL                         :: GALLOC
+logical                         :: glfi, gnc4
 INTEGER                         :: IRESP
 INTEGER                         :: IHEXTOT
 !
@@ -1418,7 +1364,9 @@ IFIELDP => NULL()
 !
 IHEXTOT = 2*JPHEXT+1
 CALL IO_File_read_check(TPFILE,'IO_Field_read_byfield_N2',IRESP)
-!
+
+call IO_Format_read_select( tpfile, glfi, gnc4 )
+
 IF (IRESP==0) THEN
   IF (GSMONOPROC) THEN ! sequential execution
     IF (LPACK .AND. L1D .AND. SIZE(KFIELD,1)==IHEXTOT .AND. SIZE(KFIELD,2)==IHEXTOT) THEN
@@ -1428,13 +1376,8 @@ IF (IRESP==0) THEN
     ELSE
       IFIELDP=>KFIELD(:,:)
     END IF
-    IF (TPFILE%CFORMAT=='NETCDF4') THEN
-      CALL IO_Field_read_nc4(TPFILE,TPFIELD,IFIELDP,IRESP)
-    ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-      CALL IO_Field_read_lfi(TPFILE,TPFIELD,IFIELDP,IRESP)
-    ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-      CALL IO_Field_read_nc4(TPFILE,TPFIELD,IFIELDP,IRESP)
-    END IF
+    if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, ifieldp, iresp )
+    if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, ifieldp, iresp )
     IF (LPACK .AND. L1D .AND. SIZE(KFIELD,1)==IHEXTOT .AND. SIZE(KFIELD,2)==IHEXTOT) THEN
       KFIELD(:,:)=SPREAD(SPREAD(KFIELD(JPHEXT+1,JPHEXT+1),DIM=1,NCOPIES=IHEXTOT),DIM=2,NCOPIES=IHEXTOT)
     ELSE IF (LPACK .AND. L2D .AND. SIZE(KFIELD,2)==IHEXTOT) THEN
@@ -1444,13 +1387,8 @@ IF (IRESP==0) THEN
     IF (ISP == TPFILE%NMASTER_RANK)  THEN
       ! I/O process case
       CALL ALLOCBUFFER_ll(IFIELDP,KFIELD,TPFIELD%CDIR,GALLOC)
-      IF (TPFILE%CFORMAT=='NETCDF4') THEN
-         CALL IO_Field_read_nc4(TPFILE,TPFIELD,IFIELDP,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-         CALL IO_Field_read_lfi(TPFILE,TPFIELD,IFIELDP,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-        CALL IO_Field_read_nc4(TPFILE,TPFIELD,IFIELDP,IRESP)
-      END IF
+      if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, ifieldp, iresp )
+      if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, ifieldp, iresp )
     ELSE
       !Not really necessary but useful to suppress alerts with Valgrind
       ALLOCATE(IFIELDP(0,0))
@@ -1530,6 +1468,7 @@ INTEGER, OPTIONAL,              INTENT(OUT)   :: KRESP    ! return-code
 INTEGER                           :: IERR
 INTEGER,DIMENSION(:,:,:),POINTER  :: IFIELDP
 LOGICAL                           :: GALLOC
+logical                           :: glfi, gnc4
 INTEGER                           :: IRESP
 INTEGER                           :: IHEXTOT
 !
@@ -1541,7 +1480,9 @@ IFIELDP => NULL()
 !
 IHEXTOT = 2*JPHEXT+1
 CALL IO_File_read_check(TPFILE,'IO_Field_read_byfield_N3',IRESP)
-!
+
+call IO_Format_read_select( tpfile, glfi, gnc4 )
+
 IF (IRESP==0) THEN
   IF (GSMONOPROC) THEN ! sequential execution
     IF (LPACK .AND. L1D .AND. SIZE(KFIELD,1)==IHEXTOT .AND. SIZE(KFIELD,2)==IHEXTOT) THEN
@@ -1551,13 +1492,8 @@ IF (IRESP==0) THEN
     ELSE
       IFIELDP=>KFIELD(:,:,:)
     END IF
-    IF (TPFILE%CFORMAT=='NETCDF4') THEN
-      CALL IO_Field_read_nc4(TPFILE,TPFIELD,IFIELDP,IRESP)
-    ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-      CALL IO_Field_read_lfi(TPFILE,TPFIELD,IFIELDP,IRESP)
-    ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-      CALL IO_Field_read_nc4(TPFILE,TPFIELD,IFIELDP,IRESP)
-    END IF
+    if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, ifieldp, iresp )
+    if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, ifieldp, iresp )
     IF (LPACK .AND. L1D .AND. SIZE(KFIELD,1)==IHEXTOT .AND. SIZE(KFIELD,2)==IHEXTOT) THEN
       KFIELD(:,:,:)=SPREAD(SPREAD(KFIELD(JPHEXT+1,JPHEXT+1,:),DIM=1,NCOPIES=IHEXTOT),DIM=2,NCOPIES=IHEXTOT)
     ELSE IF (LPACK .AND. L2D .AND. SIZE(KFIELD,2)==IHEXTOT) THEN
@@ -1567,13 +1503,8 @@ IF (IRESP==0) THEN
     IF (ISP == TPFILE%NMASTER_RANK)  THEN
       ! I/O process case
       CALL ALLOCBUFFER_ll(IFIELDP,KFIELD,TPFIELD%CDIR,GALLOC)
-      IF (TPFILE%CFORMAT=='NETCDF4') THEN
-         CALL IO_Field_read_nc4(TPFILE,TPFIELD,IFIELDP,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-         CALL IO_Field_read_lfi(TPFILE,TPFIELD,IFIELDP,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-        CALL IO_Field_read_nc4(TPFILE,TPFIELD,IFIELDP,IRESP)
-      END IF
+      if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, ifieldp, iresp )
+      if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, ifieldp, iresp )
     ELSE
       !Not really necessary but useful to suppress alerts with Valgrind
       ALLOCATE(IFIELDP(0,0,0))
@@ -1647,31 +1578,24 @@ INTEGER,OPTIONAL, INTENT(OUT)   :: KRESP    ! return-code
 !
 INTEGER                      :: IERR
 INTEGER                      :: IRESP
+logical                      :: glfi, gnc4
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_byfield_L0',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
 IRESP = 0
 !
 CALL IO_File_read_check(TPFILE,'IO_Field_read_byfield_L0',IRESP)
-!
+
+call IO_Format_read_select( tpfile, glfi, gnc4 )
+
 IF (IRESP==0) THEN
   IF (GSMONOPROC) THEN ! sequential execution
-      IF (TPFILE%CFORMAT=='NETCDF4') THEN
-         CALL IO_Field_read_nc4(TPFILE,TPFIELD,OFIELD,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-         CALL IO_Field_read_lfi(TPFILE,TPFIELD,OFIELD,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-        CALL IO_Field_read_nc4(TPFILE,TPFIELD,OFIELD,IRESP)
-      END IF
+    if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, ofield, iresp )
+    if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, ofield, iresp )
   ELSE
     IF (ISP == TPFILE%NMASTER_RANK)  THEN
-      IF (TPFILE%CFORMAT=='NETCDF4') THEN
-         CALL IO_Field_read_nc4(TPFILE,TPFIELD,OFIELD,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-         CALL IO_Field_read_lfi(TPFILE,TPFIELD,OFIELD,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-        CALL IO_Field_read_nc4(TPFILE,TPFIELD,OFIELD,IRESP)
-      END IF
+      if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, ofield, iresp )
+      if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, ofield, iresp )
     END IF
     !
     CALL MPI_BCAST(IRESP,1,MNHINT_MPI,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
@@ -1722,31 +1646,24 @@ INTEGER,OPTIONAL,    INTENT(OUT)   :: KRESP    ! return-code
 !
 INTEGER                      :: IERR
 INTEGER                      :: IRESP
+logical                      :: glfi, gnc4
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_byfield_L1',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
 IRESP = 0
 !
 CALL IO_File_read_check(TPFILE,'IO_Field_read_byfield_L1',IRESP)
-!
+
+call IO_Format_read_select( tpfile, glfi, gnc4 )
+
 IF (IRESP==0) THEN
   IF (GSMONOPROC) THEN ! sequential execution
-      IF (TPFILE%CFORMAT=='NETCDF4') THEN
-         CALL IO_Field_read_nc4(TPFILE,TPFIELD,OFIELD,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-         CALL IO_Field_read_lfi(TPFILE,TPFIELD,OFIELD,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-        CALL IO_Field_read_nc4(TPFILE,TPFIELD,OFIELD,IRESP)
-      END IF
+    if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, ofield, iresp )
+    if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, ofield, iresp )
   ELSE
     IF (ISP == TPFILE%NMASTER_RANK)  THEN
-      IF (TPFILE%CFORMAT=='NETCDF4') THEN
-         CALL IO_Field_read_nc4(TPFILE,TPFIELD,OFIELD,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-         CALL IO_Field_read_lfi(TPFILE,TPFIELD,OFIELD,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-        CALL IO_Field_read_nc4(TPFILE,TPFIELD,OFIELD,IRESP)
-      END IF
+      if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, ofield, iresp )
+      if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, ofield, iresp )
     END IF
     !
     CALL MPI_BCAST(IRESP,1,MNHINT_MPI,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
@@ -1797,31 +1714,24 @@ INTEGER,OPTIONAL, INTENT(OUT)   :: KRESP    ! return-code
 !
 INTEGER                      :: IERR
 INTEGER                      :: IRESP
+logical                      :: glfi, gnc4
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_byfield_C0',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
 IRESP = 0
 !
 CALL IO_File_read_check(TPFILE,'IO_Field_read_byfield_C0',IRESP)
-!
+
+call IO_Format_read_select( tpfile, glfi, gnc4 )
+
 IF (IRESP==0) THEN
   IF (GSMONOPROC) THEN ! sequential execution
-      IF (TPFILE%CFORMAT=='NETCDF4') THEN
-         CALL IO_Field_read_nc4(TPFILE,TPFIELD,HFIELD,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-         CALL IO_Field_read_lfi(TPFILE,TPFIELD,HFIELD,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-        CALL IO_Field_read_nc4(TPFILE,TPFIELD,HFIELD,IRESP)
-      END IF
+    if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, hfield, iresp )
+    if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, hfield, iresp )
   ELSE
     IF (ISP == TPFILE%NMASTER_RANK)  THEN
-      IF (TPFILE%CFORMAT=='NETCDF4') THEN
-         CALL IO_Field_read_nc4(TPFILE,TPFIELD,HFIELD,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-         CALL IO_Field_read_lfi(TPFILE,TPFIELD,HFIELD,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-        CALL IO_Field_read_nc4(TPFILE,TPFIELD,HFIELD,IRESP)
-      END IF
+      if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, hfield, iresp )
+      if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, hfield, iresp )
     END IF
     !
     CALL MPI_BCAST(IRESP,1,MNHINT_MPI,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
@@ -1876,31 +1786,24 @@ INTEGER,OPTIONAL, INTENT(OUT)   :: KRESP    ! return-code
 INTEGER                      :: IERR
 INTEGER                      :: IRESP
 INTEGER,DIMENSION(3)         :: ITDATE
+logical                      :: glfi, gnc4
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_byfield_T0',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
 IRESP = 0
 !
 CALL IO_File_read_check(TPFILE,'IO_Field_read_byfield_T0',IRESP)
-!
+
+call IO_Format_read_select( tpfile, glfi, gnc4 )
+
 IF (IRESP==0) THEN
   IF (GSMONOPROC) THEN ! sequential execution
-      IF (TPFILE%CFORMAT=='NETCDF4') THEN
-         CALL IO_Field_read_nc4(TPFILE,TPFIELD,TPDATA,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-         CALL IO_Field_read_lfi(TPFILE,TPFIELD,TPDATA,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-        CALL IO_Field_read_nc4(TPFILE,TPFIELD,TPDATA,IRESP)
-      END IF
+    if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, tpdata, iresp )
+    if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, tpdata, iresp )
   ELSE
     IF (ISP == TPFILE%NMASTER_RANK)  THEN
-      IF (TPFILE%CFORMAT=='NETCDF4') THEN
-         CALL IO_Field_read_nc4(TPFILE,TPFIELD,TPDATA,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-         CALL IO_Field_read_lfi(TPFILE,TPFIELD,TPDATA,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-        CALL IO_Field_read_nc4(TPFILE,TPFIELD,TPDATA,IRESP)
-      END IF
+      if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, tpdata, iresp )
+      if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, tpdata, iresp )
       ITDATE(1) = TPDATA%TDATE%YEAR
       ITDATE(2) = TPDATA%TDATE%MONTH
       ITDATE(3) = TPDATA%TDATE%DAY
@@ -1983,6 +1886,7 @@ INTEGER                                  :: NB_REQ,IKU
 INTEGER, DIMENSION(MPI_STATUS_SIZE)      :: STATUS
 INTEGER, ALLOCATABLE,DIMENSION(:,:)      :: STATUSES
 INTEGER,ALLOCATABLE,DIMENSION(:)         :: REQ_TAB
+logical                                  :: glfi, gnc4
 REAL,DIMENSION(:,:,:),ALLOCATABLE,TARGET :: Z3D
 REAL,DIMENSION(:,:,:), POINTER           :: TX3DP
 REAL(kind=MNHTIME), DIMENSION(2)         :: T0, T1, T2, T3
@@ -2006,7 +1910,9 @@ IRESP = 0
 !------------------------------------------------------------------
 IHEXTOT = 2*JPHEXT+1
 CALL IO_File_read_check(TPFILE,'IO_Field_read_byfield_lb',IRESP)
-!
+
+call IO_Format_read_select( tpfile, glfi, gnc4 )
+
 IF (IRESP==0) THEN
   IF (GSMONOPROC) THEN ! sequential execution
     IF (YLBTYPE == 'LBX' .OR. YLBTYPE == 'LBXU') THEN
@@ -2022,13 +1928,8 @@ IF (IRESP==0) THEN
       Z3D = 0.0
       TX3DP => Z3D(:,:,:)
     END IF
-    IF (TPFILE%CFORMAT=='NETCDF4') THEN
-      CALL IO_Field_read_nc4(TPFILE,TPFIELD,TX3DP,IRESP)
-    ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-      CALL IO_Field_read_lfi(TPFILE,TPFIELD,TX3DP,IRESP)
-    ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-      CALL IO_Field_read_nc4(TPFILE,TPFIELD,TX3DP,IRESP)
-    END IF
+    if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, tx3dp, iresp )
+    if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, tx3dp, iresp )
     IF (YLBTYPE == 'LBX' .OR. YLBTYPE == 'LBXU') THEN
       IF (LPACK .AND. L2D) Z3D(:,:,:) = SPREAD(Z3D(:,JPHEXT+1,:),DIM=2,NCOPIES=IHEXTOT)
       PLB(1:KRIM+JPHEXT,:,:)          = Z3D(1:KRIM+JPHEXT,:,:)
@@ -2054,13 +1955,8 @@ IF (IRESP==0) THEN
         Z3D = 0.0
         TX3DP => Z3D(:,:,:)
       END IF
-      IF (TPFILE%CFORMAT=='NETCDF4') THEN
-        CALL IO_Field_read_nc4(TPFILE,TPFIELD,TX3DP,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
-        CALL IO_Field_read_lfi(TPFILE,TPFIELD,TX3DP,IRESP)
-      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
-        CALL IO_Field_read_nc4(TPFILE,TPFIELD,TX3DP,IRESP)
-      END IF
+      if ( gnc4 ) call IO_Field_read_nc4( tpfile, tpfield, tx3dp, iresp )
+      if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, tx3dp, iresp )
       IF (YLBTYPE == 'LBX' .OR. YLBTYPE == 'LBXU') THEN
         IF (LPACK .AND. L2D) Z3D(:,:,:) = SPREAD(Z3D(:,JPHEXT+1,:),DIM=2,NCOPIES=IHEXTOT)
         ! erase gap in LB field
