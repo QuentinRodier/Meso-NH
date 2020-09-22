@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -256,7 +256,7 @@ IF (NRR >=1) THEN
         TZFIELD%CLONGNAME  = 'LBYR'//YC(JRR)//'M'
         TZFIELD%CLBTYPE    = 'LBY'
         TZFIELD%CCOMMENT   = '2_Y_Z_LBYR'//YC(JRR)//'M'
-        CALL IO_Field_write_lb(TPFILE,TZFIELD,NSIZELBXR_ll,XLBYRM(:,:,:,IRR))
+        CALL IO_Field_write_lb(TPFILE,TZFIELD,NSIZELBYR_ll,XLBYRM(:,:,:,IRR))
       END IF
     END IF
   END DO
