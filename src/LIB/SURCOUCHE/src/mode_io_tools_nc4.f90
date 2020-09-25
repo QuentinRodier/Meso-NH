@@ -446,6 +446,8 @@ END SUBROUTINE IO_Iocdf_dealloc_nc4
 SUBROUTINE IO_Vdims_fill_nc4(TPFILE, TPFIELD, KSHAPE, KVDIMS)
 
 use modd_field,  only: NMNHDIM_UNKNOWN, NMNHDIM_ONE, NMNHDIM_COMPLEX,                                   &
+                       NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NI_U, NMNHDIM_NJ_U, NMNHDIM_NI_V, NMNHDIM_NJ_V,  &
+                       NMNHDIM_LEVEL, NMNHDIM_LEVEL_W, NMNHDIM_TIME,                                    &
                        NMNHDIM_BUDGET_CART_NI,      NMNHDIM_BUDGET_CART_NJ,  NMNHDIM_BUDGET_CART_NI_U,  &
                        NMNHDIM_BUDGET_CART_NJ_U,    NMNHDIM_BUDGET_CART_NI_V, NMNHDIM_BUDGET_CART_NJ_V, &
                        NMNHDIM_BUDGET_CART_LEVEL,   NMNHDIM_BUDGET_CART_LEVEL_W,                        &
@@ -514,6 +516,33 @@ if ( Any( tpfield%ndimlist(:) /= NMNHDIM_UNKNOWN ) ) then
 
       case ( NMNHDIM_COMPLEX )
         ydimname = 'real_imaginary'
+
+      case ( NMNHDIM_NI )
+        ydimname = 'ni'
+
+      case ( NMNHDIM_NJ )
+        ydimname = 'nj'
+
+      case ( NMNHDIM_NI_U )
+        ydimname = 'ni_u'
+
+      case ( NMNHDIM_NJ_U )
+        ydimname = 'nj_u'
+
+      case ( NMNHDIM_NI_V )
+        ydimname = 'ni_v'
+
+      case ( NMNHDIM_NJ_V )
+        ydimname = 'nj_v'
+
+      case ( NMNHDIM_LEVEL )
+        ydimname = 'level'
+
+      case ( NMNHDIM_LEVEL_W )
+        ydimname = 'level_w'
+
+      case ( NMNHDIM_TIME )
+        ydimname = 'time'
 
       case ( NMNHDIM_BUDGET_CART_NI )
         ydimname = 'cart_ni'
