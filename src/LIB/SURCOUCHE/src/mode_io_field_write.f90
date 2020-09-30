@@ -15,6 +15,7 @@
 !  P. Wautelet 12/07/2019: add support for 1D array of dates
 !  J. Escobar  11/02/2020: for GA & // IO, add sync, & mpi_allreduce for error handling in // IO
 !  P. Wautelet 22/09/2020: use ldimreduced to allow reduction in the number of dimensions of fields (used by 2D simulations)
+!  P. Wautelet 30/09/2020: add IO_Field_write_box_byfield_X3 subroutine
 !-----------------------------------------------------------------
 
 #define MNH_SCALARS_IN_SPLITFILES 0
@@ -64,7 +65,7 @@ MODULE MODE_IO_FIELD_WRITE
   END INTERFACE
 
   INTERFACE IO_Field_write_box
-     MODULE PROCEDURE IO_Field_write_box_byfield_X5
+     MODULE PROCEDURE IO_Field_write_box_byfield_X3, IO_Field_write_box_byfield_X5
   END INTERFACE
 
   INTERFACE IO_Field_write_lb
@@ -2879,6 +2880,87 @@ CONTAINS
     IF (ALLOCATED(Z3D)) DEALLOCATE(Z3D)
     IF (PRESENT(KRESP)) KRESP = IRESP
   END SUBROUTINE IO_Field_write_byfield_lb
+
+
+  SUBROUTINE IO_Field_write_box_byfield_X3(TPFILE,TPFIELD,HBUDGET,PFIELD,KXOBOX,KXEBOX,KYOBOX,KYEBOX,KRESP)
+    !
+    USE MODD_IO, ONLY: GSMONOPROC, ISP
+    !
+    USE MODE_GATHER_ll
+    !
+    !
+    !*      0.1   Declarations of arguments
+    !
+    TYPE(TFILEDATA),                 INTENT(IN) :: TPFILE
+    TYPE(TFIELDDATA),                INTENT(IN) :: TPFIELD
+    CHARACTER(LEN=*),                INTENT(IN) :: HBUDGET  ! 'BUDGET' (budget)  or 'OTHER' (MesoNH field)
+    REAL, DIMENSION(:,:,:), TARGET,  INTENT(IN) :: PFIELD   ! array containing the data field
+    INTEGER,                         INTENT(IN) :: KXOBOX   !
+    INTEGER,                         INTENT(IN) :: KXEBOX   ! Global coordinates of the box
+    INTEGER,                         INTENT(IN) :: KYOBOX   !
+    INTEGER,                         INTENT(IN) :: KYEBOX   !
+    INTEGER,OPTIONAL,                INTENT(OUT):: KRESP    ! return-code
+    !
+    !*      0.2   Declarations of local variables
+    !
+    INTEGER                             :: IERR
+    INTEGER                             :: IRESP
+    REAL, DIMENSION(:,:,:), POINTER     :: ZFIELDP
+    LOGICAL                             :: GALLOC
+    LOGICAL                             :: GLFI, GNC4
+    CHARACTER(LEN=:),ALLOCATABLE        :: YMSG
+    CHARACTER(LEN=6)                    :: YRESP
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_box_byfield_X3',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
+    !
+    IRESP = 0
+    GALLOC = .FALSE.
+    !
+    CALL IO_File_write_check(TPFILE,'IO_Field_write_box_byfield_X3',IRESP)
+    !
+    CALL IO_Format_write_select(TPFILE,GLFI,GNC4)
+    !
+    IF (IRESP==0) THEN
+       IF (GSMONOPROC) THEN ! sequential execution
+          IF (HBUDGET /= 'BUDGET') THEN
+             ! take the sub-section of PFIELD defined by the box
+             ZFIELDP=>PFIELD(KXOBOX:KXEBOX,KYOBOX:KYEBOX,:)
+          ELSE
+             ! take the field as a budget
+             ZFIELDP=>PFIELD
+          END IF
+          IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,ZFIELDP,IRESP)
+          IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
+       ELSE ! multiprocesses execution
+          IF (ISP == TPFILE%NMASTER_RANK)  THEN
+             ! Allocate the box
+             ALLOCATE(ZFIELDP(KXEBOX-KXOBOX+1,KYEBOX-KYOBOX+1,SIZE(PFIELD,3)))
+             GALLOC = .TRUE.
+          ELSE
+             ALLOCATE(ZFIELDP(0,0,0))
+             GALLOC = .TRUE.
+          END IF
+          !
+          CALL GATHER_XYFIELD(PFIELD,ZFIELDP,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM,&
+               & KXOBOX,KXEBOX,KYOBOX,KYEBOX,HBUDGET)
+          !
+          IF (ISP == TPFILE%NMASTER_RANK)  THEN
+             IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,ZFIELDP,IRESP)
+             IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,ZFIELDP,IRESP)
+          END IF
+          !
+          CALL MPI_BCAST(IRESP,1,MNHINT_MPI,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
+       END IF ! multiprocesses execution
+    END IF
+    !
+    IF (IRESP.NE.0) THEN
+      WRITE(YRESP, '( I6 )') IRESP
+      YMSG = 'RESP='//YRESP//' when writing '//TRIM(TPFIELD%CMNHNAME)//' in '//TRIM(TPFILE%CNAME)
+      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Field_write_box_byfield_X3',YMSG)
+    END IF
+    IF (GALLOC) DEALLOCATE(ZFIELDP)
+    IF (PRESENT(KRESP)) KRESP = IRESP
+  END SUBROUTINE IO_Field_write_box_byfield_X3
 
 
   SUBROUTINE IO_Field_write_box_byfield_X5(TPFILE,TPFIELD,HBUDGET,PFIELD,KXOBOX,KXEBOX,KYOBOX,KYEBOX,KRESP)
