@@ -473,7 +473,7 @@ CONTAINS
     IF (IRESP==0) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,PFIELD,iresp_lfi)
-          IF (GNC4) CALL IO_Field_write_lfi(TPFILE,TPFIELD,PFIELD,iresp_nc4)
+          IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,PFIELD,iresp_nc4)
        ELSE ! multiprocesses execution
           CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MNHINT_MPI,MPI_MAX,TPFILE%NMPICOMM,IERR)
           IF (ISIZEMAX==0) THEN
@@ -646,7 +646,7 @@ CONTAINS
           endif
         ELSE
           IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,PFIELD,iresp_lfi)
-          IF (GNC4) CALL IO_Field_write_lfi(TPFILE,TPFIELD,PFIELD,iresp_nc4)
+          IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,PFIELD,iresp_nc4)
         END IF
       ELSE ! multiprocesses execution
           CALL SECOND_MNH2(T0)
@@ -884,7 +884,7 @@ CONTAINS
           endif
         ELSE
           IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,PFIELD,iresp_lfi)
-          IF (GNC4) CALL IO_Field_write_lfi(TPFILE,TPFIELD,PFIELD,iresp_nc4)
+          IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,PFIELD,iresp_nc4)
         END IF
       ELSEIF ( TPFILE%NSUBFILES_IOZ==0 .OR. YDIR=='--' ) THEN  ! multiprocesses execution & 1 proc IO
           CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MNHINT_MPI,MPI_MAX,TPFILE%NMPICOMM,IERR)
@@ -1260,7 +1260,7 @@ CONTAINS
           endif
         ELSE
           IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,PFIELD,iresp_lfi)
-          IF (GNC4) CALL IO_Field_write_lfi(TPFILE,TPFIELD,PFIELD,iresp_nc4)
+          IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,PFIELD,iresp_nc4)
         END IF
       ELSE
           CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MNHINT_MPI,MPI_MAX,TPFILE%NMPICOMM,IERR)
@@ -1434,7 +1434,7 @@ CONTAINS
           endif
         ELSE
           IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,PFIELD,iresp_lfi)
-          IF (GNC4) CALL IO_Field_write_lfi(TPFILE,TPFIELD,PFIELD,iresp_nc4)
+          IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,PFIELD,iresp_nc4)
         END IF
       ELSE
           CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MNHINT_MPI,MPI_MAX,TPFILE%NMPICOMM,IERR)
@@ -1557,7 +1557,7 @@ CONTAINS
     IF (IRESP==0) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,PFIELD,iresp_lfi)
-          IF (GNC4) CALL IO_Field_write_lfi(TPFILE,TPFIELD,PFIELD,iresp_nc4)
+          IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,PFIELD,iresp_nc4)
        ELSE
           CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MNHINT_MPI,MPI_MAX,TPFILE%NMPICOMM,IERR)
           IF (ISIZEMAX==0) THEN
