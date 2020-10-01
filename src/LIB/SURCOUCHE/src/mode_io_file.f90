@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -37,6 +37,7 @@
 !  P. Wautelet 05/03/2019: rename IO subroutines and modules
 !  P. Wautelet 12/03/2019: simplify opening of IO split files
 !  P. Wautelet 05/09/2019: disable IO_Coordvar_write_nc4 for Z-split files
+!  P. Wautelet 01/10/2020: bugfix: add missing initializations for IRESP
 !-----------------------------------------------------------------
 module mode_io_file
 
@@ -76,6 +77,8 @@ INTEGER                  :: IRESP
 TYPE(TFILEDATA), POINTER :: TZFILE_DES
 TYPE(TFILEDATA), POINTER :: TZFILE_DUMMY
 TYPE(TFILEDATA), POINTER :: TZFILE_SPLIT
+!
+iresp = 0
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_File_open','opening '//TRIM(TPFILE%CNAME)//' for '//TRIM(TPFILE%CMODE)// &
                ' (filetype='//TRIM(TPFILE%CTYPE)//')')
@@ -508,7 +511,9 @@ TYPE(TFILEDATA),POINTER :: TZFILE_DES
 TYPE(TFILEDATA),POINTER :: TZFILE_IOZ
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_File_close','closing '//TRIM(TPFILE%CNAME))
-!
+
+iresp = 0
+
 IF (.NOT.TPFILE%LOPENED) THEN
   CALL PRINT_MSG(NVERB_ERROR,'IO','IO_File_close','trying to close a file not opened: '//TRIM(TPFILE%CNAME))
   RETURN
