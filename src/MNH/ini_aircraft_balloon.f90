@@ -3,6 +3,10 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
+! Modifications:
+!  P. Wautelet 01/10/2020: bugfix: DEFAULT_FLYER: add missing default values
+!-----------------------------------------------------------------
+
 !      #########################
 MODULE MODI_INI_AIRCRAFT_BALLOON
 !      #########################
@@ -319,14 +323,23 @@ TPFLYER%STEP   = 60.     ! s
 !
 TPFLYER%LAT     = XUNDEF
 TPFLYER%LON     = XUNDEF
+TPFLYER%XLAUNCH = XUNDEF! X coordinate of launch
+TPFLYER%YLAUNCH = XUNDEF! Y coordinate of launch
 TPFLYER%ALT     = XUNDEF
 TPFLYER%WASCENT = 5.     ! m/s
 TPFLYER%RHO     = XUNDEF
 TPFLYER%PRES    = XUNDEF
+TPFLYER%DIAMETER= XUNDEF
+TPFLYER%AERODRAG= XUNDEF
+TPFLYER%INDDRAG = XUNDEF
+TPFLYER%VOLUME  = XUNDEF
+TPFLYER%MASS    = XUNDEF
 !
 TPFLYER%SEG     = 0
 TPFLYER%SEGCURN = 1
 TPFLYER%SEGCURT = 0.
+!
+TPFLYER%ALTDEF   = .FALSE.
 !
 TPFLYER%X_CUR   = XUNDEF
 TPFLYER%Y_CUR   = XUNDEF
