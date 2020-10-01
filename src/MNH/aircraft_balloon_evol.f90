@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -128,7 +128,8 @@ END MODULE MODI_AIRCRAFT_BALLOON_EVOL
 !!      October, 2016 (G.DELAUTIER) LIMA
 !!     March,28, 2018 (P. Wautelet) replace TEMPORAL_DIST by DATETIME_DISTANCE
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+!  P. Wautelet 01/10/2020: bugfix: initialize GSTORE
+!
 !! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -346,6 +347,7 @@ ALLOCATE(XSVW_FLUX(SIZE(PSV,1),SIZE(PSV,2),SIZE(PSV,3),SIZE(PSV,4)))
 ILUOUT = TLUOUT%NLU
 !
 ZR = 0.
+GSTORE = .FALSE.
 !
 !*      1.0  initialization of processor test
 !            --------------------------------
