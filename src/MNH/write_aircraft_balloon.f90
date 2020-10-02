@@ -63,9 +63,9 @@ END MODULE MODI_WRITE_AIRCRAFT_BALLOON
 !!     Oct 2016 : G.Delautier LIMA
 !!     August 2016 (M.Leriche) Add mass concentration of aerosol species
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!     P. Wautelet 29/01/2019: bug: moved an instruction later (to prevent access to a not allocated array)
-!!
-!! --------------------------------------------------------------------------
+!  P. Wautelet 29/01/2019: bug: moved an instruction later (to prevent access to a not allocated array)
+!  P. Wautelet 02/10/2020: bugfix: YGROUP/YGROUPZ were too small
+! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
 !          ------------
@@ -187,7 +187,7 @@ REAL, DIMENSION(:,:,:,:,:),   ALLOCATABLE :: ZPTOTA
 REAL, DIMENSION(:,:,:),       ALLOCATABLE :: ZRHO
 !
 INTEGER, DIMENSION(:),            ALLOCATABLE :: IGRID    ! grid indicator
-CHARACTER(LEN=  8)                            :: YGROUP   ! group title
+CHARACTER(LEN=:), ALLOCATABLE                 :: YGROUP   ! group title
 CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YCOMMENT ! comment string
 CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YTITLE   ! title
 CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YUNIT    ! physical unit
@@ -195,7 +195,7 @@ CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YUNIT    ! physical unit
 INTEGER :: IPROC    ! number of variables records
 INTEGER :: JPROC    ! loop counter
 INTEGER, DIMENSION(:),            ALLOCATABLE :: IGRIDZ   ! grid indicator
-CHARACTER(LEN=  8)                            :: YGROUPZ  ! group title
+CHARACTER(LEN=:), ALLOCATABLE                 :: YGROUPZ  ! group title
 CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YCOMMENTZ! comment string
 CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YTITLEZ  ! title
 CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YUNITZ   ! physical unit
