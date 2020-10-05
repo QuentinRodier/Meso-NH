@@ -184,6 +184,8 @@ CONTAINS
     integer                       :: ierr_mpi
     integer, dimension(3)         :: iresps
 
+    kresp_out = 0
+
     iresps(1) = kresp_in
     iresps(2) = kresp_lfi
     iresps(3) = kresp_nc4
