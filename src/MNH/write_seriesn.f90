@@ -291,7 +291,7 @@ DEALLOCATE(ZVAR3D)
 !
 GICP=.TRUE. ; GJCP=.TRUE. ; GKCP=.FALSE.
 CALL WRITE_DIACHRO( TPDIAFILE, 'ZTSERIES', 'CART', NSGRIDD2, tpsdates(1:nsnbstept), &
-                    XSSERIES2(1:1,1:1,1:1,1:NSNBSTEPT,:,:),                         &
+                    XSSERIES2(1:1,1:1,1:IKMAX,1:NSNBSTEPT,:,:),                         &
                     CSTITLE2(:), CSUNIT2(:), CSCOMMENT2(:),                         &
                     OICP = GICP, OJCP = GJCP, OKCP = GKCP,                          &
                     KIL = 1, KIH = 1, KJL = 1, KJH = 1, KKL = IKB, KKH = IKE        )
