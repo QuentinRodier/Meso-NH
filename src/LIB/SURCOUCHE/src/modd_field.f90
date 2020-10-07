@@ -67,9 +67,23 @@ integer, parameter :: NMNHDIM_SPECTRA_SPEC_NI     = 62
 integer, parameter :: NMNHDIM_SPECTRA_SPEC_NJ     = 63
 integer, parameter :: NMNHDIM_SPECTRA_LEVEL       = 64
 
-integer, parameter :: NMNHDIM_BUDGET_NGROUPS      = 100 ! This is not a true dimension
+integer, parameter :: NMNHDIM_SERIES_LEVEL        = 70
+integer, parameter :: NMNHDIM_SERIES_LEVEL_W      = 71
+integer, parameter :: NMNHDIM_SERIES_TIME         = 72  ! Time dimension for time series
 
-integer, parameter :: NMNHDIM_UNUSED              = 200
+integer, parameter :: NMNHDIM_FLYER_TIME          = 80  ! Time dimension for aircraft/balloon (dimension local to each flyer)
+integer, parameter :: NMNHDIM_PROFILER_TIME       = 81  ! Time dimension for profilers
+integer, parameter :: NMNHDIM_STATION_TIME        = 82  ! Time dimension for stations
+
+integer, parameter :: NMNHDIM_BUDGET_NGROUPS      = 100 ! This is not a true dimension
+integer, parameter :: NMNHDIM_FLYER_PROC          = 101 ! This is not a true dimension
+integer, parameter :: NMNHDIM_PROFILER_PROC       = 102 ! This is not a true dimension
+integer, parameter :: NMNHDIM_STATION_PROC        = 103 ! This is not a true dimension
+integer, parameter :: NMNHDIM_SERIES_PROC         = 104 ! This is not a true dimension
+
+integer, parameter :: NMNHDIM_NOTLISTED           = 200 ! Special case for valid dimension but not in this parameter list
+
+integer, parameter :: NMNHDIM_UNUSED              = 300
 !
 TYPE TFIELDPTR_C0D
   CHARACTER(LEN=:),     POINTER :: DATA => NULL()
