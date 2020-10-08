@@ -14,7 +14,7 @@
 !  P. Wautelet 14/09/2020: IO_Knowndims_set_nc4: add new dimensions + remove 'time' dimension in diachronic files
 !  P. Wautelet 14/09/2020: IO_Vdims_fill_nc4: use ndimlist when provided to fill dimensions ids
 !-----------------------------------------------------------------
-#if defined(MNH_IOCDF4)
+#ifdef MNH_IOCDF4
 module mode_io_tools_nc4
 
 use modd_field,     only: tfielddata
@@ -245,16 +245,22 @@ use modd_lbc_n,         only: clbcx, clbcy
 USE MODD_CONF,          ONLY: CPROGRAM, l2d, lpack
 USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
 USE MODD_DIM_n,         ONLY: NIMAX_ll, NJMAX_ll, NKMAX
+use modd_dyn,           only: xseglen
+use modd_dyn_n,         only: xtstep
 use modd_les,           only: nles_k, nspectra_k, xles_temp_mean_start, xles_temp_mean_step, xles_temp_mean_end
 use modd_les_n,         only: nles_times, nspectra_ni, nspectra_nj
 use modd_nsv,           only: nsv
 USE MODD_PARAMETERS_ll, ONLY: JPHEXT, JPVEXT
+use modd_profiler_n,    only: numbprofiler, tprofiler
+use modd_series,        only: lseries
+use modd_series_n,      only: nsnbstept
+use modd_station_n,     only: numbstat, tstation
 
 TYPE(TFILEDATA),INTENT(INOUT)        :: TPFILE
 CHARACTER(LEN=*),OPTIONAL,INTENT(IN) :: HPROGRAM_ORIG !To emulate a file coming from this program
 
 CHARACTER(LEN=:),ALLOCATABLE :: YPROGRAM
-integer                      :: iavg
+integer                      :: iavg, iprof, istation
 integer                      :: ispectra_ni, ispectra_nj
 INTEGER                      :: IIU_ll, IJU_ll, IKU
 TYPE(DIMCDF), POINTER        :: tzdimcdf
@@ -367,6 +373,25 @@ if ( tpfile%ctype == 'MNHDIACHRONIC' ) then
 
   !Dimension for the number of vertical levels for non-local LES budgets
   if ( nspectra_k > 0 ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nspectra_k, kind = CDFINT ), hdimname = 'nspectra_level' )
+
+  !Dimension for the number of profiler times
+  if ( numbprofiler > 0 ) then
+    iprof = Int ( ( xseglen - xtstep ) / tprofiler%step ) + 1
+    tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( iprof, kind = CDFINT ), hdimname = 'time_profiler' )
+  end if
+
+  !Dimension for the number of station times
+  if ( numbstat > 0 ) then
+    istation = Int ( ( xseglen - xtstep ) / tstation%step ) + 1
+    tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( istation, kind = CDFINT ), hdimname = 'time_station' )
+  end if
+
+  !Dimension for the number of series times
+  if ( lseries .and. nsnbstept > 0 ) then
+    tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nkmax, kind = CDFINT ), hdimname = 'series_level'   )
+    tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nkmax, kind = CDFINT ), hdimname = 'series_level_w' )
+    tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nsnbstept, kind = CDFINT ), hdimname = 'time_series' )
+  end if
 end if
 
 !Store X,Y,Z coordinates for the Arakawa points
@@ -445,6 +470,8 @@ END SUBROUTINE IO_Iocdf_dealloc_nc4
 
 SUBROUTINE IO_Vdims_fill_nc4(TPFILE, TPFIELD, KSHAPE, KVDIMS)
 
+use NETCDF, only: NF90_INQ_DIMID, NF90_INQUIRE_DIMENSION
+
 use modd_field,  only: NMNHDIM_UNKNOWN, NMNHDIM_ONE, NMNHDIM_COMPLEX,                                   &
                        NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NI_U, NMNHDIM_NJ_U, NMNHDIM_NI_V, NMNHDIM_NJ_V,  &
                        NMNHDIM_LEVEL, NMNHDIM_LEVEL_W, NMNHDIM_TIME,                                    &
@@ -458,7 +485,10 @@ use modd_field,  only: NMNHDIM_UNKNOWN, NMNHDIM_ONE, NMNHDIM_COMPLEX,           
                        NMNHDIM_SPECTRA_2PTS_NI,     NMNHDIM_SPECTRA_2PTS_NJ,                            &
                        NMNHDIM_SPECTRA_SPEC_NI,     NMNHDIM_SPECTRA_SPEC_NJ,                            &
                        NMNHDIM_SPECTRA_LEVEL,                                                           &
-                       NMNHDIM_UNUSED
+                       NMNHDIM_SERIES_LEVEL,        NMNHDIM_SERIES_LEVEL_W, NMNHDIM_SERIES_TIME,        &
+                       NMNHDIM_FLYER_TIME,          NMNHDIM_PROFILER_TIME,                              &
+                       NMNHDIM_STATION_TIME,                                                            &
+                       NMNHDIM_NOTLISTED, NMNHDIM_UNUSED
 
 TYPE(TFILEDATA),                              INTENT(IN)  :: TPFILE
 TYPE(TFIELDDATA),                             INTENT(IN)  :: TPFIELD
@@ -471,6 +501,8 @@ character(len=:), allocatable :: ydimname
 INTEGER                       :: IGRID
 integer                       :: iresp
 INTEGER                       :: JI
+integer(kind=CDFINT)          :: ilen
+integer(kind=CDFINT)          :: istatus
 type(dimcdf)                  :: tzdim
 TYPE(DIMCDF), POINTER         :: PTDIM
 !
@@ -509,6 +541,27 @@ if ( Any( tpfield%ndimlist(:) /= NMNHDIM_UNKNOWN ) ) then
   do ji = 1, Size( kvdims )
     if ( tpfield%ndimlist(ji) == NMNHDIM_UNKNOWN ) &
       call Print_msg( NVERB_FATAL, 'IO', 'IO_Vdims_fill_nc4', 'ndimlist partially filled for field ' // Trim( tpfield%cmnhname ) )
+
+    if ( tpfield%ndimlist(ji) == NMNHDIM_NOTLISTED ) then
+      ptdim => IO_Dimcdf_get_nc4( tpfile, kshape(ji) ); kvdims(ji) = ptdim%id
+      cycle
+    end if
+
+    if ( tpfield%ndimlist(ji) == NMNHDIM_FLYER_TIME ) then
+      istatus = NF90_INQ_DIMID( tpfile%nncid, 'time_flyer', kvdims(ji) )
+      if ( istatus /= NF90_NOERR ) &
+        call IO_Err_handle_nc4( istatus, 'IO_Vdims_fill_nc4','NF90_INQ_DIMID', Trim( tpfield%cmnhname ) )
+
+      istatus = NF90_INQUIRE_DIMENSION( tpfile%nncid, kvdims(ji), len = ilen)
+      if ( istatus /= NF90_NOERR ) &
+        call IO_Err_handle_nc4( istatus, 'IO_Vdims_fill_nc4','NF90_INQUIRE_DIMENSION', Trim( tpfield%cmnhname ) )
+
+      if ( kshape(ji) /= ilen ) then
+        call Print_msg( NVERB_FATAL, 'IO', 'IO_Vdims_fill_nc4', &
+                                     'wrong size for dimension '// 'time_flyer' // ' of field ' // Trim( tpfield%cmnhname ) )
+      end if
+      cycle
+    end if
 
     select case ( tpfield%ndimlist(ji) )
       case ( NMNHDIM_ONE )
@@ -606,6 +659,21 @@ if ( Any( tpfield%ndimlist(:) /= NMNHDIM_UNKNOWN ) ) then
 
       case ( NMNHDIM_SPECTRA_LEVEL )
         ydimname = 'nspectra_level'
+
+      case ( NMNHDIM_PROFILER_TIME )
+        ydimname = 'time_profiler'
+
+      case ( NMNHDIM_STATION_TIME )
+        ydimname = 'time_station'
+
+      case ( NMNHDIM_SERIES_LEVEL )
+        ydimname = 'series_level'
+
+      case ( NMNHDIM_SERIES_LEVEL_W )
+        ydimname = 'series_level_w'
+
+      case ( NMNHDIM_SERIES_TIME )
+        ydimname = 'time_series'
 
       case default
         call Print_msg( NVERB_FATAL, 'IO', 'IO_Vdims_fill_nc4', &
