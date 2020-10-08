@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 profiler 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     #######################
       SUBROUTINE INI_PROFILER_n
@@ -72,10 +67,12 @@
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_PROFILER_n
+use modd_conf,       only: lcartesian
 USE MODD_PARAMETERS
-!
-!
+USE MODD_PROFILER_n
+
+use mode_msg
+
 IMPLICIT NONE
 !
 !
@@ -92,7 +89,10 @@ IMPLICIT NONE
 !*      1.   Nameliste 
 !            ---------
 NUMBPROFILER             = 0
-!
+
+if ( numbprofiler > 0 .and. lcartesian ) &
+  call Print_msg( NVERB_FATAL, 'GEN', 'INI_PROFILER_n', 'profilers are not available if LCARTESIAN=T' )
+
 IF (NUMBPROFILER > 0) THEN
 ALLOCATE(TPROFILER%LAT (NUMBPROFILER))
 ALLOCATE(TPROFILER%LON (NUMBPROFILER))

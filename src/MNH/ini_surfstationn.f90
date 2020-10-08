@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -159,9 +159,14 @@ END SUBROUTINE DEFAULT_STATION_n
 SUBROUTINE ALLOCATE_STATION_n(TSTATION)
 !
 TYPE(STATION), INTENT(INOUT) :: TSTATION   ! 
-!
+
+if ( tstation%step < xtstep ) then
+  call Print_msg( NVERB_ERROR, 'GEN', 'INI_SURFSTATION_n', 'TSTATION%STEP smaller than XTSTEP' )
+  tstation%step = xtstep
+end if
+
 ISTORE = INT ( (PSEGLEN-XTSTEP) / TSTATION%STEP ) + 1
-!
+
 allocate( tstation%tpdates( istore ) )
 ALLOCATE(TSTATION%ERROR (NUMBSTAT))
 ALLOCATE(TSTATION%X   (NUMBSTAT))
