@@ -153,7 +153,7 @@ TYPE TFIELDPTR_T1D
   TYPE(DATE_TIME), DIMENSION(:), POINTER :: DATA => NULL()
 END TYPE TFIELDPTR_T1D
 !
-type, abstract :: tfield_metadata_base
+type :: tfield_metadata_base
   CHARACTER(LEN=NMNHNAMELGTMAX) :: CMNHNAME  = '' !Name of the field (for MesoNH, non CF convention)
   CHARACTER(LEN=NSTDNAMELGTMAX) :: CSTDNAME  = '' !Standard name (CF convention)
   CHARACTER(LEN=32)  :: CLONGNAME = '' !Long name (CF convention)
