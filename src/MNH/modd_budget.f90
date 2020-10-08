@@ -55,6 +55,7 @@
 !  P. Wautelet 23/04/2020: add nid in tbudgetdata datatype
 !  P. Wautelet 30/06/2020: add NNETURSV, NNEADVSV and NNECONSV variables
 !  P. Wautelet 17/08/2020: add xtmplesstore in tbudgetdata datatype
+!  P. Wautelet 08/10/2020: add clessource in tbudgetdata datatype
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -88,6 +89,7 @@ integer :: nbudgets ! Number of budget categories
 type tbudgetdata
   character(len=NBUNAMELGTMAX)  :: cname    = ''
   character(len=NCOMMENTLGTMAX) :: ccomment = ''
+  character(len=100)            :: clessource = '' ! Last source stored
   integer :: nid         = -1 !Identifier number (based on parameters NBUDGET_*)
   integer :: ngroups     = 0 !Number of groups of source terms to store
   integer :: nsources    = 0 !Number of source terms

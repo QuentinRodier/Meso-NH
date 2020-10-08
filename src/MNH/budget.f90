@@ -48,6 +48,8 @@ subroutine Budget_store_init( tpbudget, hsource, pvars )
       allocate( tpbudget%xtmplesstore( Size( pvars, 1 ), Size( pvars, 2 ), Size ( pvars, 3 )  ) )
     end if
     tpbudget%xtmplesstore(:, :, :) = pvars(:, :, :)
+
+    tpbudget%clessource = hsource
   end if
 
   ! Nothing else to do if budgets are not enabled
@@ -106,6 +108,12 @@ subroutine Budget_store_end( tpbudget, hsource, pvars )
   call Print_msg( NVERB_DEBUG, 'BUD', 'Budget_store_end', trim( tpbudget%cname )//':'//trim( hsource ) )
 
   if ( lles_call ) then
+    if ( hsource /= tpbudget%clessource ) &
+      call Print_msg( NVERB_FATAL, 'BUD', 'Budget_store_end', 'hsource not the same as in Budget_store_init (' &
+                      // Trim( hsource ) // ' / ' // Trim( tpbudget%clessource ) // ')' )
+
+    tpbudget%clessource = 'reset'
+
     if ( allocated( tpbudget%xtmplesstore ) ) then
       ! Do the call to Les_budget with oadd=.true.
       ! This is necessary when the call to Budget_store_init was done with pvars not strictly
