@@ -211,6 +211,9 @@ subroutine Budget_store_add( tpbudget, hsource, pvars )
 
   call Print_msg( NVERB_DEBUG, 'BUD', 'Budget_store_add', trim( tpbudget%cname )//':'//trim( hsource ) )
 
+  if ( tpbudget%ntmpstoresource /= 0 ) &
+    call Print_msg( NVERB_ERROR, 'BUD', 'Budget_store_add', 'inside a Budget_store_init/Budget_store_end zone' )
+
   if ( lles_call ) call Les_budget( pvars, tpbudget%nid, hsource, oadd = .true. )
 
   ! Nothing to do if budgets are not enabled
