@@ -65,6 +65,7 @@ END MODULE MODI_WRITE_AIRCRAFT_BALLOON
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 29/01/2019: bug: moved an instruction later (to prevent access to a not allocated array)
 !  P. Wautelet 02/10/2020: bugfix: YGROUP/YGROUPZ were too small
+!  P. Wautelet 09/10/2020: bugfix: correction on IPROCZ when not LIMA (condition was wrong)
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -225,7 +226,7 @@ IPROCZ = SIZE(TPFLYER%RTZ,2)+ SIZE(TPFLYER%RZ,2)+ SIZE(TPFLYER%RZ,3)+  SIZE(TPFL
          SIZE(TPFLYER%IWCZ,2)+ SIZE(TPFLYER%LWCZ,2) + SIZE(TPFLYER%CIZ,2) + &
          SIZE(TPFLYER%ZZ,2)
 
-IF (NSV_LIMA_BEG/=NSV_LIMA_END) IPROCZ= IPROCZ+ SIZE(TPFLYER%CCZ,2) + SIZE(TPFLYER%CRZ,2)
+IF (NSV_LIMA_BEG<=NSV_LIMA_END) IPROCZ= IPROCZ+ SIZE(TPFLYER%CCZ,2) + SIZE(TPFLYER%CRZ,2)
 IF (SIZE(TPFLYER%TKE  )>0) IPROC = IPROC + 1
 IF (LDIAG_IN_RUN) IPROC = IPROC + 1
 IF (LORILAM) IPROC = IPROC + JPMODE*3
