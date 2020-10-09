@@ -56,12 +56,12 @@ END MODULE MODI_WRITE_PROFILER_n
 !!    MODIFICATIONS
 !!    -------------
 !!     Original 15/02/2002
-!!     2016 : G.DELAUTIER : LIMA
-!!              Oct, 2016 (C.Lac) Add visibility diagnostics for fog
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!  J. Escobar : 16/08/2018: From Pierre & Maud , correction use CNAMES(JSV-NSV_CHEMBEG+1)
+!  G. Delautier      2016: LIMA
+!  C. Lac         10/2016: add visibility diagnostics for fog
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  J. Escobar  16/08/2018: From Pierre & Maud , correction use CNAMES(JSV-NSV_CHEMBEG+1)
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
-!
+!  P. Wautelet 09/10/2020: Write_diachro: use new datatype tpfields
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -89,7 +89,7 @@ USE MODD_PARAM_n,         ONLY: CRAD
 !
 USE MODE_AERO_PSD
 USE MODE_DUST_PSD
-USE MODE_WRITE_DIACHRO, only: WRITE_DIACHRO
+use mode_write_diachro,   only: Write_diachro
 !
 USE MODD_PARAM_LIMA_WARM, ONLY: CLIMA_WARM_NAMES, CAERO_MASS
 USE MODD_PARAM_LIMA_COLD, ONLY: CLIMA_COLD_NAMES
@@ -124,7 +124,10 @@ CONTAINS
 !
 !----------------------------------------------------------------------------
 SUBROUTINE PROFILER_DIACHRO_n(TPROFILER,II)
-!
+
+use modd_field, only:  NMNHDIM_LEVEL, NMNHDIM_PROFILER_TIME, NMNHDIM_PROFILER_PROC, NMNHDIM_UNUSED, &
+                       tfield_metadata_base, TYPEREAL
+
 TYPE(PROFILER),     INTENT(IN)       :: TPROFILER
 INTEGER,            INTENT(IN)       :: II
 !
@@ -148,6 +151,7 @@ INTEGER :: JSV      ! loop counter
 INTEGER :: IKU, IK  ! loop counter
 CHARACTER(LEN=2)  :: INDICE
 INTEGER           :: I
+type(tfield_metadata_base), dimension(:), allocatable :: tzfields
 !
 !----------------------------------------------------------------------------
 !
@@ -628,10 +632,29 @@ ALLOCATE (ZW6(1,1,IKU,size(tprofiler%tpdates),1,JPROC))
 ZW6 = ZWORK6(:,:,:,:,:,:JPROC)
 DEALLOCATE(ZWORK6)
 
-CALL WRITE_DIACHRO( TPDIAFILE, YGROUP, "CART", IGRID(:JPROC), tprofiler%tpdates, &
-                    ZW6, YTITLE(:JPROC), YUNIT(:JPROC), YCOMMENT(:JPROC),        &
-                    OICP = .TRUE., OJCP = .TRUE., OKCP = .FALSE.,                &
-                    KIL = 1, KIH = 1, KJL = 1, KJH = 1, KKL = 1, KKH = IKU       )
+allocate( tzfields( jproc ) )
+
+tzfields(:)%cmnhname  = ytitle(1 : jproc)
+tzfields(:)%cstdname  = ''
+tzfields(:)%clongname = ytitle(1 : jproc)
+tzfields(:)%cunits    = yunit(1 : jproc)
+tzfields(:)%ccomment  = ycomment(1 : jproc)
+tzfields(:)%ngrid     = 0
+tzfields(:)%ntype     = TYPEREAL
+tzfields(:)%ndims     = 3
+tzfields(:)%ndimlist(1) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(2) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(3) = NMNHDIM_LEVEL
+tzfields(:)%ndimlist(4) = NMNHDIM_PROFILER_TIME
+tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(6) = NMNHDIM_PROFILER_PROC
+
+call Write_diachro( tpdiafile, tzfields, ygroup, "CART", tprofiler%tpdates,     &
+                      zw6,                                                           &
+                    oicp = .true., ojcp = .true., okcp = .false.,                &
+                    kil = 1, kih = 1, kjl = 1, kjh = 1, kkl = 1, kkh = iku       )
+
+deallocate( tzfields )
 
 DEALLOCATE (ZW6     )
 DEALLOCATE (YCOMMENT)

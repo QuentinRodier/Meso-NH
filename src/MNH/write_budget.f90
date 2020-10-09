@@ -30,6 +30,7 @@
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !  P. Wautelet 14/10/2019: complete restructuration and deduplication of code
 !  P. Wautelet 10/03/2020: use the new data structures and subroutines for budgets
+!  P. Wautelet 09/10/2020: Write_diachro: use new datatype tpfields
 !-----------------------------------------------------------------
 
 !#######################
@@ -353,6 +354,12 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
                                     nbumask, nbuwrnb,                                             &
                                     tburhodata,                                                   &
                                     NBUDGET_RHO, NBUDGET_U, NBUDGET_V, NBUDGET_W
+  use modd_field,             only: NMNHDIM_BUDGET_CART_NI,    NMNHDIM_BUDGET_CART_NJ,   NMNHDIM_BUDGET_CART_NI_U, &
+                                    NMNHDIM_BUDGET_CART_NJ_U,  NMNHDIM_BUDGET_CART_NI_V, NMNHDIM_BUDGET_CART_NJ_V, &
+                                    NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W,                        &
+                                    NMNHDIM_BUDGET_MASK_LEVEL, NMNHDIM_BUDGET_MASK_LEVEL_W,                        &
+                                    NMNHDIM_BUDGET_MASK_TIME,  NMNHDIM_BUDGET_MASK_NBUMASK,                        &
+                                    NMNHDIM_UNUSED, NMNHDIM_UNKNOWN
   use modd_io,                only: tfiledata
   use modd_lunit_n,           only: tluout
   use modd_parameters,        only: XNEGUNDEF
@@ -373,12 +380,9 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
   logical,                                              intent(in)  :: knocompress ! compression for the cart option
   real,            dimension(:,:,:,:,:,:), allocatable, intent(out) :: prhodjn
 
-  character(len=4)                               :: ybutype
-  character(len=9)                               :: ygroup_name   ! group name
-  character(len=99),  dimension(:), allocatable  :: ybucomment    ! comment
-  character(len=100), dimension(:), allocatable  :: yworkcomment  ! comment
-  character(len=100), dimension(:), allocatable  :: yworkunit     ! comment
-  integer,            dimension(:), allocatable  :: iworkgrid     ! grid label
+  character(len=4) :: ybutype
+  character(len=9) :: ygroup_name
+  type(tburhodata) :: tzfield
 
   call Print_msg( NVERB_DEBUG, 'BUD', 'Store_one_budget_rho', 'called for '//trim( tprhodj%cmnhname ) )
 
@@ -387,35 +391,27 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
   ! pburhodj storage
   select case ( cbutype )
     case( 'CART', 'SKIP' )
+      !Set to CART for all processes even if has no data(='SKIP')
+      !Necessary to do the call and the collective write later (if knocompress)
       ybutype = 'CART'
-        if ( knocompress ) then
-          allocate( prhodjn(nbuimax, nbujmax, nbukmax, 1, 1, 1) ) ! local budget of RHODJU
-          prhodjn(:, :, :, 1, 1, 1) = tprhodj%xdata(:, :, :)
-        else
-          allocate( prhodjn(nbuimax_ll, nbujmax_ll, nbukmax, 1, 1, 1) ) ! global budget of RhodjU
-          prhodjn(:,:,:,1,1,1)=End_cart_compress( tprhodj%xdata(:,:,:) )
-        end if
+      if ( knocompress ) then
+        allocate( prhodjn(nbuimax, nbujmax, nbukmax, 1, 1, 1) ) ! local budget of RHODJU
+        prhodjn(:, :, :, 1, 1, 1) = tprhodj%xdata(:, :, :)
+      else
+        allocate( prhodjn(nbuimax_ll, nbujmax_ll, nbukmax, 1, 1, 1) ) ! global budget of RhodjU
+        prhodjn(:,:,:,1,1,1)=End_cart_compress( tprhodj%xdata(:,:,:) )
+      end if
     case('MASK')
       ybutype = 'MASK'
-        allocate( prhodjn(1, 1, nbukmax, nbuwrnb, nbumask, 1) )
-        prhodjn(1, 1, :, :, :, 1) = End_mask_compress( tprhodj%xdata(:, :, :) )
-        where  ( prhodjn(1, 1, :, :, :, 1) <= 0. )
-            prhodjn(1, 1, :, :, :, 1) = XNEGUNDEF
-        end where
+      allocate( prhodjn(1, 1, nbukmax, nbuwrnb, nbumask, 1) )
+      prhodjn(1, 1, :, :, :, 1) = End_mask_compress( tprhodj%xdata(:, :, :) )
+      where  ( prhodjn(1, 1, :, :, :, 1) <= 0. )
+        prhodjn(1, 1, :, :, :, 1) = XNEGUNDEF
+      end where
 
     case default
       call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_rho', 'unknown CBUTYPE' )
   end select
-
-  allocate( ybucomment(1) )
-  allocate( yworkunit(1) )
-  allocate( yworkcomment(1) )
-  allocate( iworkgrid(1) )
-
-  ybucomment(1)   = tprhodj%cmnhname
-  yworkunit(1)    = tprhodj%cunits
-  yworkcomment(1) = tprhodj%ccomment
-  iworkgrid(1)    = tprhodj%ngrid
 
   select case( kp )
     case( NBUDGET_RHO )
@@ -434,12 +430,76 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
       call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_rho', 'unknown budget type' )
   end select
 
-  call Write_diachro( tpdiafile, ygroup_name, ybutype, iworkgrid,                                  &
-                      tpdates, prhodjn, ybucomment,                                                &
-                      yworkunit, yworkcomment,                                                     &
+  !Copy all fields from tprhodj
+  tzfield = tprhodj
+
+  !Modify metadata coming from tprhodj%tgroups
+  !ndims and ndimlist are adapted for Write_diachro
+  if ( tzfield%ngrid < 1 .or. tzfield%ngrid > 4 ) &
+    call Print_msg( NVERB_FATAL, 'BUD', 'Store_one_budget_rho', 'invalid grid' )
+
+  if ( ybutype == 'CART' ) then
+    if ( .not. lbu_icp ) then
+      select case ( tzfield%ngrid )
+        case ( 1, 4 )
+          tzfield%ndimlist(1)  = NMNHDIM_BUDGET_CART_NI
+        case ( 2 )
+          tzfield%ndimlist(1)  = NMNHDIM_BUDGET_CART_NI_U
+        case ( 3 )
+          tzfield%ndimlist(1)  = NMNHDIM_BUDGET_CART_NI_V
+      end select
+    else
+      tzfield%ndims = tzfield%ndims - 1
+      tzfield%ndimlist(1)  = NMNHDIM_UNUSED
+    end if
+
+    if ( .not. lbu_jcp ) then
+      select case ( tzfield%ngrid )
+        case ( 1, 4 )
+          tzfield%ndimlist(2)  = NMNHDIM_BUDGET_CART_NJ
+        case ( 2 )
+          tzfield%ndimlist(2)  = NMNHDIM_BUDGET_CART_NJ_U
+        case ( 3 )
+          tzfield%ndimlist(2)  = NMNHDIM_BUDGET_CART_NJ_V
+      end select
+    else
+      tzfield%ndims = tzfield%ndims - 1
+      tzfield%ndimlist(2)  = NMNHDIM_UNUSED
+    end if
+
+    if ( .not. lbu_kcp ) then
+      select case ( tzfield%ngrid )
+        case ( 1, 2, 3 )
+          tzfield%ndimlist(3)  = NMNHDIM_BUDGET_CART_LEVEL
+        case ( 4 )
+          tzfield%ndimlist(3)  = NMNHDIM_BUDGET_CART_LEVEL_W
+      end select
+    else
+      tzfield%ndims = tzfield%ndims - 1
+      tzfield%ndimlist(3)  = NMNHDIM_UNUSED
+    end if
+    tzfield%ndimlist(4:) = NMNHDIM_UNUSED
+
+  else if ( ybutype == 'MASK' ) then
+    tzfield%ndimlist(1) = NMNHDIM_UNUSED
+    tzfield%ndimlist(2) = NMNHDIM_UNUSED
+    select case ( tzfield%ngrid )
+      case ( 1, 2, 3 )
+        tzfield%ndimlist(3)  = NMNHDIM_BUDGET_MASK_LEVEL
+      case ( 4 )
+        tzfield%ndimlist(3)  = NMNHDIM_BUDGET_MASK_LEVEL_W
+    end select
+    tzfield%ndimlist(4) = NMNHDIM_BUDGET_MASK_TIME
+    tzfield%ndimlist(5) = NMNHDIM_BUDGET_MASK_NBUMASK
+    tzfield%ndimlist(6) = NMNHDIM_UNUSED
+
+  else
+    tzfield%ndimlist(:) = NMNHDIM_UNKNOWN
+  end if
+
+  call Write_diachro( tpdiafile, [ tzfield ], ygroup_name, ybutype, tpdates, prhodjn,              &
                       oicp = lbu_icp, ojcp = lbu_jcp, okcp = lbu_kcp,                              &
                       kil = nbuil, kih = nbuih, kjl = nbujl, kjh = nbujh, kkl = nbukl, kkh = nbukh )
-  deallocate( ybucomment, yworkunit, yworkcomment, iworkgrid )
 
 end subroutine Store_one_budget_rho
 
@@ -452,7 +512,14 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
                                     nbumask, nbuwrnb,                                                                             &
                                     NBUDGET_U, NBUDGET_V, NBUDGET_W, NBUDGET_TH, NBUDGET_TKE, NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, &
                                     NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, NBUDGET_SV1,                                  &
-                                    tbudgetdata
+                                    tbudgetdata, tbugroupdata
+  use modd_field,             only: NMNHDIM_BUDGET_CART_NI,    NMNHDIM_BUDGET_CART_NJ,   NMNHDIM_BUDGET_CART_NI_U, &
+                                    NMNHDIM_BUDGET_CART_NJ_U,  NMNHDIM_BUDGET_CART_NI_V, NMNHDIM_BUDGET_CART_NJ_V, &
+                                    NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W,                        &
+                                    NMNHDIM_BUDGET_MASK_LEVEL, NMNHDIM_BUDGET_MASK_LEVEL_W,                        &
+                                    NMNHDIM_BUDGET_MASK_TIME,  NMNHDIM_BUDGET_MASK_NBUMASK,                        &
+                                    NMNHDIM_BUDGET_NGROUPS,    NMNHDIM_UNUSED, NMNHDIM_UNKNOWN,                    &
+                                    TYPEREAL
   use modd_io,                only: tfiledata
   use modd_lunit_n,           only: tluout
   use modd_parameters,        only: NBUNAMELGTMAX
@@ -475,16 +542,12 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
 
   character(len=4)                                        :: ybutype
   character(len=9)                                        :: ygroup_name
-  character(len=NBUNAMELGTMAX), dimension(:), allocatable :: ytitles
-  character(len=100), dimension(:),           allocatable :: yworkcomment
-  character(len=100), dimension(:),           allocatable :: yworkunit
   integer                                                 :: igroups
   integer                                                 :: jproc
   integer                                                 :: jsv
-  integer                                                 :: jt
-  integer,            dimension(:),           allocatable :: iworkgrid  ! grid label
   real,               dimension(:),           allocatable :: zconvert   ! unit conversion coefficient
   real,               dimension(:,:,:,:,:,:), allocatable :: zworkt
+  type(tbugroupdata), dimension(:),           allocatable :: tzfields
 
   call Print_msg( NVERB_DEBUG, 'BUD', 'Store_one_budget', 'called for '//trim( tpbudget%cname ) )
 
@@ -512,42 +575,33 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
   select case ( cbutype )
     case( 'CART', 'SKIP' )
       ybutype = 'CART'
-        if ( knocompress ) then
-          allocate( zworkt(nbuimax, nbujmax, nbukmax, 1, 1, igroups ) ) ! local budget of ru
-          do jproc = 1, igroups
-            zworkt(:, :, :, 1, 1, jproc) = tpbudget%tgroups(jproc)%xdata(:, :, :) &
-                                           * zconvert(jproc) / prhodjn(:, :, :, 1, 1, 1)
-          end do
-        else
-          allocate( zworkt(nbuimax_ll, nbujmax_ll, nbukmax, 1, 1, igroups ) ) ! global budget of ru
+      if ( knocompress ) then
+        allocate( zworkt(nbuimax, nbujmax, nbukmax, 1, 1, igroups ) ) ! local budget of ru
+        do jproc = 1, igroups
+          zworkt(:, :, :, 1, 1, jproc) = tpbudget%tgroups(jproc)%xdata(:, :, :) &
+                                         * zconvert(jproc) / prhodjn(:, :, :, 1, 1, 1)
+        end do
+      else
+        allocate( zworkt(nbuimax_ll, nbujmax_ll, nbukmax, 1, 1, igroups ) ) ! global budget of ru
 
-          do jproc = 1, igroups
-            zworkt(:, :, :, 1, 1, jproc) = End_cart_compress( tpbudget%tgroups(jproc)%xdata(:, :, :) )
-            zworkt(:, :, :, 1, 1, jproc) = zworkt(:, :, :, 1, 1, jproc) * zconvert(jproc) / prhodjn(:, :, :, 1, 1, 1)
-          end do
-        endif
+        do jproc = 1, igroups
+          zworkt(:, :, :, 1, 1, jproc) = End_cart_compress( tpbudget%tgroups(jproc)%xdata(:, :, :) )
+          zworkt(:, :, :, 1, 1, jproc) = zworkt(:, :, :, 1, 1, jproc) * zconvert(jproc) / prhodjn(:, :, :, 1, 1, 1)
+        end do
+      endif
     case('MASK')
       ybutype = 'MASK'
-        allocate( zworkt(1, 1, nbukmax, nbuwrnb, nbumask, igroups ) )
-        do jproc = 1, igroups
-          zworkt(1, 1, :, :, :, jproc) = End_mask_compress( tpbudget%tgroups(jproc)%xdata(:, :, :) ) &
-                                        * zconvert(jproc) / prhodjn(1, 1, :, :, :, 1)
-        end do
+      allocate( zworkt(1, 1, nbukmax, nbuwrnb, nbumask, igroups ) )
+      do jproc = 1, igroups
+        zworkt(1, 1, :, :, :, jproc) = End_mask_compress( tpbudget%tgroups(jproc)%xdata(:, :, :) ) &
+                                       * zconvert(jproc) / prhodjn(1, 1, :, :, :, 1)
+      end do
 
     case default
       call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget', 'unknown CBUTYPE' )
   end select
 
   deallocate(zconvert)
-
-  allocate( ytitles( igroups ) )
-  allocate( yworkunit( igroups ) )
-  allocate( yworkcomment( igroups ) )
-  allocate( iworkgrid( igroups ) )
-
-  yworkunit(:)    = tpbudget%tgroups(:)%cunits
-  yworkcomment(:) = tpbudget%tgroups(:)%ccomment
-  iworkgrid(:)    = tpbudget%tgroups(:)%ngrid
 
   select case( tpbudget%nid )
     case ( NBUDGET_U )
@@ -588,27 +642,90 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
 
     case ( NBUDGET_SV1 : )
       jsv = tpbudget%nid - NBUDGET_SV1 + 1
-!       yworkunit(:)       = 's-1' ;  yworkunit(1:3) = '  '
-!       DO JT = 1, igroups
-!         WRITE(yworkcomment(JT),FMT="('Budget of SVx=',I3.3)") jsv
-!       END DO
       write( ygroup_name, fmt = "('SV',I3.3,I4.4)") jsv, nbutshift
 
     case default
       call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget', 'unknown budget type' )
   end select
 
+  allocate( tzfields( igroups ) )
+
+  !Copy all fields from tpbudget%tgroups
+  tzfields(:) = tpbudget%tgroups(:)
+
+  !Modify metadata coming from tpbudget%tgroups
+  !ndims and ndimlist are adapted for Write_diachro
   do jproc = 1, igroups
-    ytitles(jproc) = trim( tpbudget%tgroups(jproc)%cmnhname )
+    tzfields(jproc)%ndims = 4
+
+    if ( tzfields(jproc)%ngrid < 1 .or. tzfields(jproc)%ngrid > 4 ) &
+      call Print_msg( NVERB_FATAL, 'BUD', 'Store_one_budget_rho', 'invalid grid' )
+
+    if ( ybutype == 'CART' ) then
+      if ( .not. lbu_icp ) then
+        select case ( tzfields(jproc)%ngrid )
+          case ( 1, 4 )
+            tzfields(jproc)%ndimlist(1)  = NMNHDIM_BUDGET_CART_NI
+          case ( 2 )
+            tzfields(jproc)%ndimlist(1)  = NMNHDIM_BUDGET_CART_NI_U
+          case ( 3 )
+            tzfields(jproc)%ndimlist(1)  = NMNHDIM_BUDGET_CART_NI_V
+        end select
+      else
+        tzfields(jproc)%ndims = tzfields(jproc)%ndims - 1
+        tzfields(jproc)%ndimlist(1)  = NMNHDIM_UNUSED
+      end if
+
+      if ( .not. lbu_jcp ) then
+        select case ( tzfields(jproc)%ngrid )
+          case ( 1, 4 )
+            tzfields(jproc)%ndimlist(2)  = NMNHDIM_BUDGET_CART_NJ
+          case ( 2 )
+            tzfields(jproc)%ndimlist(2)  = NMNHDIM_BUDGET_CART_NJ_U
+          case ( 3 )
+            tzfields(jproc)%ndimlist(2)  = NMNHDIM_BUDGET_CART_NJ_V
+        end select
+      else
+        tzfields(jproc)%ndims = tzfields(jproc)%ndims - 1
+        tzfields(jproc)%ndimlist(2)  = NMNHDIM_UNUSED
+      end if
+
+      if ( .not. lbu_kcp ) then
+        select case ( tzfields(jproc)%ngrid )
+          case ( 1, 2, 3 )
+            tzfields(jproc)%ndimlist(3)  = NMNHDIM_BUDGET_CART_LEVEL
+          case ( 4 )
+            tzfields(jproc)%ndimlist(3)  = NMNHDIM_BUDGET_CART_LEVEL_W
+        end select
+      else
+        tzfields(jproc)%ndims = tzfields(jproc)%ndims - 1
+        tzfields(jproc)%ndimlist(3)  = NMNHDIM_UNUSED
+      end if
+      tzfields(jproc)%ndimlist(4) = NMNHDIM_UNUSED
+      tzfields(jproc)%ndimlist(5) = NMNHDIM_UNUSED
+      tzfields(jproc)%ndimlist(6) = NMNHDIM_BUDGET_NGROUPS
+
+    else if ( ybutype == 'MASK' ) then
+      tzfields(jproc)%ndimlist(1) = NMNHDIM_UNUSED
+      tzfields(jproc)%ndimlist(2) = NMNHDIM_UNUSED
+      select case ( tzfields(jproc)%ngrid )
+        case ( 1, 2, 3 )
+          tzfields(jproc)%ndimlist(3)  = NMNHDIM_BUDGET_MASK_LEVEL
+        case ( 4 )
+          tzfields(jproc)%ndimlist(3)  = NMNHDIM_BUDGET_MASK_LEVEL_W
+      end select
+      tzfields(jproc)%ndimlist(4) = NMNHDIM_BUDGET_MASK_TIME
+      tzfields(jproc)%ndimlist(5) = NMNHDIM_BUDGET_MASK_NBUMASK
+      tzfields(jproc)%ndimlist(6) = NMNHDIM_BUDGET_NGROUPS
+
+    else
+      tzfields(jproc)%ndimlist(:) = NMNHDIM_UNKNOWN
+    end if
   end do
 
-  call Write_diachro( tpdiafile, ygroup_name, ybutype, iworkgrid,                                  &
-                      tpdates, zworkt, ytitles,                                                    &
-                      yworkunit, yworkcomment,                                                     &
+  call Write_diachro( tpdiafile, tzfields, ygroup_name, ybutype, tpdates, zworkt,                  &
                       oicp = lbu_icp, ojcp = lbu_jcp, okcp = lbu_kcp,                              &
                       kil = nbuil, kih = nbuih, kjl = nbujl, kjh = nbujh, kkl = nbukl, kkh = nbukh )
-
-  deallocate( zworkt, yworkunit, yworkcomment, iworkgrid )
 
 end subroutine Store_one_budget
 

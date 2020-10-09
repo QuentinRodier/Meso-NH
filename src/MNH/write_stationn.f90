@@ -58,7 +58,7 @@ END MODULE MODI_WRITE_STATION_n
 !!     Original 15/02/2002
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
-!
+!  P. Wautelet 09/10/2020: Write_diachro: use new datatype tpfields
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -88,7 +88,7 @@ USE MODD_STATION_n
 USE MODE_AERO_PSD
 USE MODE_DUST_PSD
 USE MODE_SALT_PSD
-USE MODE_WRITE_DIACHRO, only: WRITE_DIACHRO
+use mode_write_diachro,   only: Write_diachro
 !
 IMPLICIT NONE
 !
@@ -120,7 +120,10 @@ CONTAINS
 !
 !----------------------------------------------------------------------------
 SUBROUTINE STATION_DIACHRO_n(TSTATION,II)
-!
+
+use modd_field, only:  NMNHDIM_STATION_TIME, NMNHDIM_STATION_PROC, NMNHDIM_UNUSED, &
+                       tfield_metadata_base, TYPEREAL
+
 TYPE(STATION),        INTENT(IN)       :: TSTATION
 INTEGER,              INTENT(IN)       :: II
 !
@@ -138,12 +141,13 @@ CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YCOMMENT ! comment string
 CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YTITLE   ! title
 CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YUNIT    ! physical unit
 !
-!!! do not forget to incremente the IPROC value if you add diagnostic !!!
+!!! do not forget to increment the IPROC value if you add diagnostic !!!
 INTEGER :: IPROC    ! number of variables records
-!!! do not forget to incremente the IPROC value if you add diagnostic !!!
+!!! do not forget to increment the JPROC value if you add diagnostic !!!
 INTEGER :: JPROC    ! loop counter
 INTEGER :: JRR      ! loop counter
 INTEGER :: JSV      ! loop counter
+type(tfield_metadata_base), dimension(:), allocatable :: tzfields
 !
 !----------------------------------------------------------------------------
 IF (TSTATION%X(II)==XUNDEF) RETURN
@@ -711,11 +715,30 @@ ALLOCATE (ZW6(1,1,1,SIZE(tstation%tpdates),1,JPROC))
 ZW6 = ZWORK6(:,:,:,:,:,:JPROC)
 DEALLOCATE(ZWORK6)
 !
-CALL WRITE_DIACHRO( TPDIAFILE, YGROUP, "CART", IGRID, tstation%tpdates,  &
-                    ZW6(:,:,:,:,:,:), YTITLE(:), YUNIT(:), YCOMMENT(:),  &
-                    OICP = .TRUE., OJCP = .TRUE., OKCP = .FALSE.,        &
-                    KIL = 1, KIH = 1, KJL = 1, KJH = 1, KKL = 1, KKH = 1 )
-!
+allocate( tzfields( jproc ) )
+
+tzfields(:)%cmnhname  = ytitle(1 : jproc)
+tzfields(:)%cstdname  = ''
+tzfields(:)%clongname = ytitle(1 : jproc)
+tzfields(:)%cunits    = yunit(1 : jproc)
+tzfields(:)%ccomment  = ycomment(1 : jproc)
+tzfields(:)%ngrid     = 0
+tzfields(:)%ntype     = TYPEREAL
+tzfields(:)%ndims     = 2
+tzfields(:)%ndimlist(1) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(2) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(3) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(4) = NMNHDIM_STATION_TIME
+tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(6) = NMNHDIM_STATION_PROC
+
+call Write_diachro( tpdiafile, tzfields, ygroup, "CART", tstation%tpdates, &
+                    zw6,                                                   &
+                    oicp = .true., ojcp = .true., okcp = .false.,          &
+                    kil = 1, kih = 1, kjl = 1, kjh = 1, kkl = 1, kkh = 1   )
+
+deallocate( tzfields )
+
 DEALLOCATE (ZW6)
 DEALLOCATE (YCOMMENT)
 DEALLOCATE (YTITLE  )

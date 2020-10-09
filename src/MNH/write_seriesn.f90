@@ -56,20 +56,24 @@ END MODULE MODI_WRITE_SERIES_n
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    4/03/2002
-!!      Modification 7/01/2013 Add key for netcdf writing
-!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
-!!      P.Wautelet: 11/07/2016 : removed MNH_NCWRIT define
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!              07/01/2013: add key for netCDF writing
+!  J. Escobar  15/09/2015: WENO5 & JPHEXT <> 1
+!  P. Wautelet 11/07/2016: removed MNH_NCWRIT define
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
-!
+!  P. Wautelet 09/10/2020: Write_diachro: use new datatype tpfields
 !-------------------------------------------------------------------------------
 !
 !
 !*    0. Declaration
 !     --------------
 ! 
-USE MODD_IO,      ONLY: NGEN_VERB, TFILEDATA
-USE MODD_LUNIT_n, ONLY: TLUOUT
+use modd_field,         only: NMNHDIM_NI, NMNHDIM_NI_U,                                                               &
+                              NMNHDIM_SERIES_LEVEL, NMNHDIM_SERIES_LEVEL_W, NMNHDIM_SERIES_TIME, NMNHDIM_SERIES_PROC, &
+                              NMNHDIM_UNUSED,                                                                         &
+                              tfield_metadata_base, TYPEREAL
+USE MODD_IO,            ONLY: NGEN_VERB, TFILEDATA
+USE MODD_LUNIT_n,       ONLY: TLUOUT
 USE MODD_PARAMETERS
 USE MODD_SERIES
 USE MODD_SERIES_n
@@ -77,7 +81,7 @@ USE MODD_SERIES_n
 USE MODE_GATHER_ll
 USE MODE_ll
 USE MODE_MSG
-USE MODE_WRITE_DIACHRO, only: WRITE_DIACHRO
+use mode_write_diachro, only: Write_diachro
 !
 IMPLICIT NONE
 !
@@ -109,8 +113,8 @@ INTEGER  :: IRESP   ! Return code of FM-routines
 INTEGER  :: INFO_ll   ! Return code of FM-routines
 INTEGER :: ISER,INAV
 REAL :: ZSIZEHB
-LOGICAL :: GICP,GJCP,GKCP ! compression flags along the 3 directions
 CHARACTER(LEN=100) :: YMSG
+type(tfield_metadata_base), dimension(:), allocatable :: tzfields
 !----------------------------------------------------------------------------
 !
 !*    1.     INITIALIZATION
@@ -235,12 +239,29 @@ ENDIF
 !
 !*      2.3  Write in diachro file
 !
-GICP=.TRUE. ; GJCP=.TRUE. ; GKCP=.TRUE.
-CALL WRITE_DIACHRO( TPDIAFILE, 'TSERIES', 'CART', NSGRIDD1, tpsdates(1:nsnbstept), &
-                    XSSERIES1(1:1,1:1,1:1,1:NSNBSTEPT,:,:),                        &
-                    CSTITLE1(:), CSUNIT1(:), CSCOMMENT1(:),                        &
-                    OICP = GICP, OJCP = GJCP, OKCP = GKCP,                         &
-                    KIL = 1, KIH = 1, KJL = 1, KJH = 1, KKL = 1, KKH = 1           )
+allocate( tzfields( nstemp_serie1 ) )
+
+tzfields(:)%cmnhname  = cstitle1(:)
+tzfields(:)%cstdname  = ''
+tzfields(:)%clongname = cstitle1(:)
+tzfields(:)%cunits    = csunit1(:)
+tzfields(:)%ccomment  = cscomment1(:)
+tzfields(:)%ngrid     = nsgridd1(:)
+tzfields(:)%ntype     = TYPEREAL
+tzfields(:)%ndims     = 2
+tzfields(:)%ndimlist(1) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(2) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(3) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(4) = NMNHDIM_SERIES_TIME
+tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(6) = NMNHDIM_SERIES_PROC
+
+call Write_diachro( tpdiafile, tzfields, 'TSERIES', 'CART', tpsdates(1:nsnbstept), &
+                    xsseries1(1:1,1:1,1:1,1:nsnbstept,1:1,:),                      &
+                    oicp = .true., ojcp = .true., okcp = .true.,                   &
+                    kil = 1, kih = 1, kjl = 1, kjh = 1, kkl = 1, kkh = 1           )
+
+deallocate( tzfields )
 !
 !----------------------------------------------------------------------------
 !
@@ -289,12 +310,38 @@ DEALLOCATE(ZVAR3D)
 !
 !*      3.2  Write in diachro file
 !
-GICP=.TRUE. ; GJCP=.TRUE. ; GKCP=.FALSE.
-CALL WRITE_DIACHRO( TPDIAFILE, 'ZTSERIES', 'CART', NSGRIDD2, tpsdates(1:nsnbstept), &
-                    XSSERIES2(1:1,1:1,1:IKMAX,1:NSNBSTEPT,:,:),                         &
-                    CSTITLE2(:), CSUNIT2(:), CSCOMMENT2(:),                         &
-                    OICP = GICP, OJCP = GJCP, OKCP = GKCP,                          &
-                    KIL = 1, KIH = 1, KJL = 1, KJH = 1, KKL = IKB, KKH = IKE        )
+allocate( tzfields( nstemp_serie2 ) )
+
+tzfields(:)%cmnhname  = cstitle2(:)
+tzfields(:)%cstdname  = ''
+tzfields(:)%clongname = cstitle2(:)
+tzfields(:)%cunits    = csunit2(:)
+tzfields(:)%ccomment  = cscomment2(:)
+tzfields(:)%ngrid     = nsgridd2(:)
+tzfields(:)%ntype     = TYPEREAL
+tzfields(:)%ndims     = 3
+tzfields(:)%ndimlist(1) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(2) = NMNHDIM_UNUSED
+do ji = 1, nstemp_serie2
+  if ( nsgridd2(ji) == 1 ) then
+    tzfields(ji)%ndimlist(3) = NMNHDIM_SERIES_LEVEL
+  else if ( nsgridd2(ji) == 4 ) then
+    tzfields(ji)%ndimlist(3) = NMNHDIM_SERIES_LEVEL_W
+  else
+    call Print_msg( NVERB_ERROR, 'IO', 'Write_series_n', 'invalid nsgridd2' )
+    tzfields(ji)%ndimlist(3) = NMNHDIM_SERIES_LEVEL
+  end if
+end do
+tzfields(:)%ndimlist(4) = NMNHDIM_SERIES_TIME
+tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(6) = NMNHDIM_SERIES_PROC
+
+call Write_diachro( tpdiafile, tzfields, 'ZTSERIES', 'CART', tpsdates(1:nsnbstept), &
+                    xsseries2(1:1,1:1,1:ikmax,1:nsnbstept,1:1,:),                   &
+                    oicp = .true., ojcp = .true., okcp = .false.,                   &
+                    kil = 1, kih = 1, kjl = 1, kjh = 1, kkl = ikb, kkh = ike        )
+
+deallocate( tzfields )
 !
 !----------------------------------------------------------------------------
 !
@@ -347,12 +394,38 @@ DO JS=1,NBJSLICE
   DO JT=1, NSTEMP_SERIE3 
     YSTITLE3S(JT)=ADJUSTL(ADJUSTR(CSTITLE3(JT))//'Y'//YSL//'-'//YSH)
   END DO
-  GICP=.FALSE. ; GJCP=.TRUE. ; GKCP=.TRUE.
-  CALL WRITE_DIACHRO( TPDIAFILE, YGROUP, 'CART', NSGRIDD3, tpsdates(1:nsnbstept), &
-                      ZSERIES3_ll(1:IIU_ll,1:1,1:1,1:NSNBSTEPT,1:1,ISB1:ISB2),    &
-                      YSTITLE3S(:), CSUNIT3(:), CSCOMMENT3(:),                    &
-                      OICP = GICP, OJCP = GJCP, OKCP = GKCP,                      &
-                      KIL = 1, KIH = IIU_ll, KJL = 1, KJH = 1, KKL = 1, KKH = 1   )
+  allocate( tzfields( isb2 - isb1 + 1 ) )
+
+  tzfields(:)%cmnhname  = ystitle3s(:)
+  tzfields(:)%cstdname  = ''
+  tzfields(:)%clongname = ystitle3s(:)
+  tzfields(:)%cunits    = csunit3(:)
+  tzfields(:)%ccomment  = cscomment3(:)
+  tzfields(:)%ngrid     = nsgridd3(:)
+  tzfields(:)%ntype     = TYPEREAL
+  tzfields(:)%ndims     = 3
+  do ji = 1, isb2 - isb1 + 1
+    if ( nsgridd3(ji) == 1 .or. nsgridd3(ji) == 4 ) then
+      tzfields(ji)%ndimlist(1) = NMNHDIM_NI
+    else if ( nsgridd3(ji) == 2 ) then
+      tzfields(ji)%ndimlist(1) = NMNHDIM_NI_U
+    else
+      call Print_msg( NVERB_ERROR, 'IO', 'Write_series_n', 'invalid nsgridd3' )
+      tzfields(ji)%ndimlist(1) = NMNHDIM_NI
+    end if
+  end do
+  tzfields(:)%ndimlist(2) = NMNHDIM_UNUSED
+  tzfields(:)%ndimlist(3) = NMNHDIM_UNUSED
+  tzfields(:)%ndimlist(4) = NMNHDIM_SERIES_TIME
+  tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
+  tzfields(:)%ndimlist(6) = NMNHDIM_SERIES_PROC
+
+  call Write_diachro( tpdiafile, tzfields, ygroup, 'CART', tpsdates(1:nsnbstept),   &
+                      zseries3_ll(1:iiu_ll, 1:1, 1:1, 1:nsnbstept, 1:1, isb1:isb2), &
+                      oicp = .false., ojcp = .true., okcp = .true.,                 &
+                      kil = 1, kih = iiu_ll, kjl = 1, kjh = 1, kkl = 1, kkh = 1     )
+
+  deallocate( tzfields )
 END DO
 DEALLOCATE(ZVAR3D,ZWORK2D,ZSERIES3_ll)
 !

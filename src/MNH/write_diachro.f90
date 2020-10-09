@@ -12,26 +12,27 @@ private
 public :: Write_diachro
 
 contains
-!     #################################################################
-      SUBROUTINE WRITE_DIACHRO(TPDIAFILE,HGROUP,HTYPE,                &
-      KGRID, tpdates, PVAR,                                           &
-      HTITRE,HUNITE,HCOMMENT,OICP,OJCP,OKCP,KIL,KIH,KJL,KJH,KKL,KKH,  &
-      PTRAJX,PTRAJY,PTRAJZ  )
-!     #################################################################
+
+! #########################################################################
+subroutine Write_diachro( tpdiafile, tpfields, hgroup, htype,             &
+                          tpdates, pvar,                                  &
+                          oicp, ojcp, okcp, kil, kih, kjl, kjh, kkl, kkh, &
+                          ptrajx, ptrajy, ptrajz )
+! #########################################################################
 !
 !!****  *WRITE_DIACHRO* - Ecriture d'un enregistrement dans un fichier
 !!                        diachronique (de nom de base HGROUP)
 !!
 !!    PURPOSE
 !!    -------
-!      
+!
 !
 !!**  METHOD
 !!    ------
 !!      En fait pour un groupe donne HGROUP, on ecrit systematiquement
 !       plusieurs enregistrements :
 !       - 1: HGROUP.TYPE          (type d'informations a enregistrer)
-!       - 2: HGROUP.DIM           (dimensions de toutes les matrices a 
+!       - 2: HGROUP.DIM           (dimensions de toutes les matrices a
 !                                  enregistrer)
 !       - 3: HGROUP.TITRE         (Nom des processus)
 !       - 4: HGROUP.UNITE         (Unites pour chaque processus)
@@ -64,13 +65,13 @@ contains
 !!      Original       08/01/96
 !!      Updated   PM
 !!      Modification (N. Asencio) 18/06/99  : the two first dimensions of PMASK
-!!                   are linked to the horizontal grid, FMWRIT is called with 'XY' argument. 
-!!                   In standard configuration of the budgets, the mask is written once 
+!!                   are linked to the horizontal grid, FMWRIT is called with 'XY' argument.
+!!                   In standard configuration of the budgets, the mask is written once
 !!                   outside this routine with FMWRIT call. Its record name is 'MASK_nnnn.MASK'
 !!                   So optional PMASK is not used .
 !!      Modification (J. Duron)   24/06/99  : add logical GPACK to disable the pack option,
 !!                                            add the initialization of the dimensions of
-!!                                          MASK array in MASK case with write outside the 
+!!                                          MASK array in MASK case with write outside the
 !!                                          routine.
 !!      J.Escobar       02/10/2015 modif for JPHEXT(JPVEXT) variable
 !!      D.Gazen+ G.Delautier 06/2016 modif for ncl files
@@ -80,48 +81,58 @@ contains
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !  P. Wautelet 13/09/2019: remove never used PMASK optional dummy-argument
 !  P. Wautelet 28/08/2020: remove TPLUOUTDIA dummy argument
+!  P. Wautelet 09/10/2020: use new data type tpfields
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_BUDGET
+use modd_budget
 use modd_conf,           only: lpack
-use modd_field,          only: tfielddata, TYPECHAR, TYPEDATE, TYPEINT, TYPEREAL
-USE MODD_IO,             ONLY: TFILEDATA
-USE MODD_PARAMETERS,     ONLY: JPHEXT
+use modd_field,          only: NMNHDIM_ONE, NMNHDIM_UNKNOWN, NMNHDIM_BUDGET_LES_MASK, NMNHDIM_FLYER_TIME, &
+                               NMNHDIM_NOTLISTED, NMNHDIM_UNUSED,                                         &
+                               TYPECHAR, TYPEDATE, TYPEINT, TYPEREAL,                                     &
+                               tfield_metadata_base, tfielddata
+use modd_io,             only: tfiledata
+use modd_parameters,     only: jphext
 use modd_time,           only: tdtexp, tdtseg
 use modd_time_n,         only: tdtmod
 use modd_type_date,      only: date_time
 !
 use mode_datetime,       only: Datetime_distance
-USE MODE_IO_FIELD_WRITE, only: IO_Field_write, IO_Field_write_box
-USE MODE_ll
-use mode_menu_diachro,   only: MENU_DIACHRO
+use mode_io_field_write, only: IO_Field_write, IO_Field_write_box
+use mode_ll
+use mode_menu_diachro,   only: Menu_diachro
 use mode_msg
 !
 IMPLICIT NONE
 !
 !*       0.1   Dummy arguments
 !              ---------------
-TYPE(TFILEDATA),              INTENT(IN)          :: TPDIAFILE    ! file to write
-CHARACTER(LEN=*),             INTENT(IN)          :: HGROUP, HTYPE
-INTEGER,DIMENSION(:),         INTENT(IN)          :: KGRID
-type(date_time), dimension(:), intent(in)           :: tpdates
-REAL,DIMENSION(:,:,:,:,:,:),  INTENT(IN)          :: PVAR
-CHARACTER(LEN=*),DIMENSION(:),INTENT(IN)          :: HTITRE, HUNITE, HCOMMENT
-LOGICAL,                      INTENT(IN),OPTIONAL :: OICP, OJCP, OKCP
-INTEGER,                      INTENT(IN),OPTIONAL :: KIL, KIH
-INTEGER,                      INTENT(IN),OPTIONAL :: KJL, KJH
-INTEGER,                      INTENT(IN),OPTIONAL :: KKL, KKH
-REAL,DIMENSION(:,:,:),        INTENT(IN),OPTIONAL :: PTRAJX
-REAL,DIMENSION(:,:,:),        INTENT(IN),OPTIONAL :: PTRAJY
-REAL,DIMENSION(:,:,:),        INTENT(IN),OPTIONAL :: PTRAJZ
+TYPE(TFILEDATA),                                     INTENT(IN)           :: TPDIAFILE    ! file to write
+class(tfield_metadata_base), dimension(:),           intent(in)           :: tpfields
+CHARACTER(LEN=*),                                    INTENT(IN)           :: HGROUP, HTYPE
+type(date_time),             dimension(:),           intent(in)           :: tpdates
+REAL,                        DIMENSION(:,:,:,:,:,:), INTENT(IN)           :: PVAR
+LOGICAL,                                             INTENT(IN), OPTIONAL :: OICP, OJCP, OKCP
+INTEGER,                                             INTENT(IN), OPTIONAL :: KIL, KIH
+INTEGER,                                             INTENT(IN), OPTIONAL :: KJL, KJH
+INTEGER,                                             INTENT(IN), OPTIONAL :: KKL, KKH
+REAL,DIMENSION(:,:,:),                               INTENT(IN), OPTIONAL :: PTRAJX
+REAL,DIMENSION(:,:,:),                               INTENT(IN), OPTIONAL :: PTRAJY
+REAL,DIMENSION(:,:,:),                               INTENT(IN), OPTIONAL :: PTRAJZ
 !
 !*       0.1   Local variables
 !              ---------------
+integer, parameter :: LFITITLELGT = 100
+integer, parameter :: LFIUNITLGT = 100
+integer, parameter :: LFICOMMENTLGT = 100
+
 CHARACTER(LEN=20) :: YCOMMENT
 CHARACTER(LEN=3)  :: YJ
+character(len=LFITITLELGT),   dimension(:), allocatable :: ytitles   !Used to respect LFI fileformat
+character(len=LFIUNITLGT),    dimension(:), allocatable :: yunits    !Used to respect LFI fileformat
+character(len=LFICOMMENTLGT), dimension(:), allocatable :: ycomments !Used to respect LFI fileformat
 INTEGER   ::   ILENG, ILENTITRE, ILENUNITE, ILENCOMMENT
 INTEGER   ::   II, IJ, IK, IT, IN, IP, J, JJ
 INTEGER   ::   INTRAJT, IKTRAJX, IKTRAJY, IKTRAJZ
@@ -209,9 +220,9 @@ IF(HTYPE == 'MASK')THEN
   IPMASK=1
 ENDIF
 
-ILENTITRE = LEN(HTITRE)
-ILENUNITE = LEN(HUNITE)
-ILENCOMMENT = LEN(HCOMMENT)
+ILENTITRE   = LFITITLELGT
+ILENUNITE   = LFIUNITLGT
+ILENCOMMENT = LFICOMMENTLGT
 
 ICOMPX=0; ICOMPY=0; ICOMPZ=0
 IF ( GICP ) THEN
@@ -239,7 +250,7 @@ TZFIELD%CLONGNAME  = TRIM(HGROUP)//'.TYPE'
 TZFIELD%CUNITS     = ''
 TZFIELD%CDIR       = '--'
 TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
-TZFIELD%NGRID      = KGRID(1)
+TZFIELD%NGRID      = tpfields(1)%ngrid
 TZFIELD%NTYPE      = TYPECHAR
 TZFIELD%NDIMS      = 0
 TZFIELD%LTIMEDEP   = .FALSE.
@@ -253,12 +264,17 @@ TZFIELD%CLONGNAME  = TRIM(HGROUP)//'.DIM'
 TZFIELD%CUNITS     = ''
 TZFIELD%CDIR       = '--'
 TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
-TZFIELD%NGRID      = KGRID(1)
+TZFIELD%NGRID      = tpfields(1)%ngrid
 TZFIELD%NTYPE      = TYPEINT
 TZFIELD%NDIMS      = 1
 TZFIELD%LTIMEDEP   = .FALSE.
 SELECT CASE(HTYPE)
   CASE('CART','MASK','SPXY')
+    if (      .not. Present( kil ) .or. .not. Present( kih ) .or. .not. Present( kjl ) .or. .not. Present( kjh )  &
+         .or. .not. Present( kkl ) .or. .not. Present( kkh ) ) then
+      call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro', &
+                      'kil, kih, kjl, kjh, kkl or kkh not provided for variable ' // Trim( tpfields(1)%cmnhname ) )
+    end if
     ILENG = 34
     ALLOCATE(ITABCHAR(ILENG))
     ITABCHAR(1)=ILENTITRE; ITABCHAR(2)=ILENUNITE
@@ -286,7 +302,7 @@ SELECT CASE(HTYPE)
     CALL IO_Field_write(TPDIAFILE,TZFIELD,ITABCHAR)
     DEALLOCATE(ITABCHAR)
   CASE DEFAULT
-    ILENG = 25 
+    ILENG = 25
     ALLOCATE(ITABCHAR(ILENG))
     ITABCHAR(1)=ILENTITRE; ITABCHAR(2)=ILENUNITE
     ITABCHAR(3)=ILENCOMMENT; ITABCHAR(4)=II
@@ -313,11 +329,14 @@ TZFIELD%CLONGNAME  = TRIM(HGROUP)//'.TITRE'
 TZFIELD%CUNITS     = ''
 TZFIELD%CDIR       = '--'
 TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
-TZFIELD%NGRID      = KGRID(1)
+TZFIELD%NGRID      = tpfields(1)%ngrid
 TZFIELD%NTYPE      = TYPECHAR
 TZFIELD%NDIMS      = 1
 TZFIELD%LTIMEDEP   = .FALSE.
-CALL IO_Field_write(TPDIAFILE,TZFIELD,HTITRE(1:IP))
+allocate( ytitles( ip ) )
+ytitles(:) = tpfields(1 : ip)%cmnhname
+CALL IO_Field_write(TPDIAFILE,TZFIELD,ytitles(:))
+deallocate( ytitles )
 !
 ! 4eme enregistrement UNITE
 !
@@ -327,11 +346,14 @@ TZFIELD%CLONGNAME  = TRIM(HGROUP)//'.UNITE'
 TZFIELD%CUNITS     = ''
 TZFIELD%CDIR       = '--'
 TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
-TZFIELD%NGRID      = KGRID(1)
+TZFIELD%NGRID      = tpfields(1)%ngrid
 TZFIELD%NTYPE      = TYPECHAR
 TZFIELD%NDIMS      = 1
 TZFIELD%LTIMEDEP   = .FALSE.
-CALL IO_Field_write(TPDIAFILE,TZFIELD,HUNITE(1:IP))
+allocate( yunits( ip ) )
+yunits(:) = tpfields(1 : ip)%cunits
+CALL IO_Field_write(TPDIAFILE,TZFIELD,yunits(:))
+deallocate( yunits )
 !
 ! 5eme enregistrement COMMENT
 !
@@ -341,53 +363,67 @@ TZFIELD%CLONGNAME  = TRIM(HGROUP)//'.COMMENT'
 TZFIELD%CUNITS     = ''
 TZFIELD%CDIR       = '--'
 TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
-TZFIELD%NGRID      = KGRID(1)
+TZFIELD%NGRID      = tpfields(1)%ngrid
 TZFIELD%NTYPE      = TYPECHAR
 TZFIELD%NDIMS      = 1
 TZFIELD%LTIMEDEP   = .FALSE.
-CALL IO_Field_write(TPDIAFILE,TZFIELD,HCOMMENT(1:IP))
+allocate( ycomments( ip ) )
+ycomments(:) = tpfields(1 : ip)%ccomment
+CALL IO_Field_write(TPDIAFILE,TZFIELD,ycomments(:))
+deallocate( ycomments )
 !
 ! 6eme enregistrement PVAR
 !
-! Dans la mesure ou cette matrice risque d'etre tres volumineuse, on ecrira un 
+! Dans la mesure ou cette matrice risque d'etre tres volumineuse, on ecrira un
 ! enregistrement par processus
-!!!!!!!!!!!!!!!!  FUJI  compiler directive !!!!!!!!!!
-!ocl scalar
-!!!!!!!!!!!!!!!!  FUJI  compiler directive !!!!!!!!!!
 DO J = 1,IP
+  if ( All( tpfields(1)%ndimlist(:) /= NMNHDIM_UNKNOWN ) ) then
+    tzfield%ndimlist(1:5) = tpfields(j)%ndimlist(1:5)
+    do jj = 1, 5
+      if ( tzfield%ndimlist(jj) == NMNHDIM_UNUSED ) then
+        tzfield%ndimlist(jj) = NMNHDIM_ONE
+      end if
+    end do
+    if ( tzfield%ndimlist(4) == NMNHDIM_FLYER_TIME ) tzfield%ndimlist(4) = NMNHDIM_NOTLISTED
+    tzfield%ndimlist(6:)   = NMNHDIM_UNUSED
+  end if
+
   YJ = '   '
   IF(J < 10)WRITE(YJ,'(I1)')J ; YJ = ADJUSTL(YJ)
-  IF(J >= 10 .AND. J < 100) THEN 
+  IF(J >= 10 .AND. J < 100) THEN
           WRITE(YJ,'(I2)')J ; YJ = ADJUSTL(YJ)
-  ELSE IF(J >= 100 .AND. J < 1000) THEN 
+  ELSE IF(J >= 100 .AND. J < 1000) THEN
           WRITE(YJ,'(I3)')J
   ENDIF
   IF(HTYPE == 'CART' .AND. .NOT. GICP .AND. .NOT. GJCP) THEN
     TZFIELD%CMNHNAME   = TRIM(HGROUP)//'.PROC'//YJ
     TZFIELD%CSTDNAME   = ''
     TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = TRIM(HUNITE(J))
+    TZFIELD%CUNITS     = tpfields(j)%cunits
     TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = TRIM(HTITRE(J))//' - '//TRIM(HCOMMENT(J))//' ('//TRIM(HUNITE(J))//')'
-    TZFIELD%NGRID      = KGRID(J)
+    TZFIELD%CCOMMENT   = TRIM(tpfields(j)%cmnhname)//' - '//TRIM(tpfields(j)%ccomment)//' ('// Trim( tpfields(j)%cunits ) //')'
+    TZFIELD%NGRID      = tpfields(j)%ngrid
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 5
     TZFIELD%LTIMEDEP   = .FALSE.
+
     CALL IO_Field_write_BOX(TPDIAFILE,TZFIELD,'BUDGET',PVAR(:,:,:,:,:,J), &
                             KIL+JPHEXT,KIH+JPHEXT,KJL+JPHEXT,KJH+JPHEXT)
   ELSE
     TZFIELD%CMNHNAME   = TRIM(HGROUP)//'.PROC'//YJ
     TZFIELD%CSTDNAME   = ''
     TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-    TZFIELD%CUNITS     = TRIM(HUNITE(J))
+    TZFIELD%CUNITS     = tpfields(j)%cunits
     TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = TRIM(HTITRE(J))//' - '//TRIM(HCOMMENT(J))//' ('//TRIM(HUNITE(J))//')'
-    TZFIELD%NGRID      = KGRID(J)
+    TZFIELD%CCOMMENT   = TRIM(tpfields(j)%cmnhname)//' - '//TRIM(tpfields(j)%ccomment)//' ('// Trim( tpfields(j)%cunits ) //')'
+    TZFIELD%NGRID      = tpfields(j)%ngrid
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 5
     TZFIELD%LTIMEDEP   = .FALSE.
+
     CALL IO_Field_write(TPDIAFILE,TZFIELD,PVAR(:,:,:,:,:,J))
   ENDIF
+  tzfield%ndimlist(:)   = NMNHDIM_UNKNOWN
 ENDDO
 !
 ! 7eme enregistrement TRAJT
@@ -398,10 +434,18 @@ TZFIELD%CLONGNAME  = TRIM(HGROUP)//'.TRAJT'
 TZFIELD%CUNITS     = ''
 TZFIELD%CDIR       = '--'
 TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
-TZFIELD%NGRID      = KGRID(1)
+TZFIELD%NGRID      = tpfields(1)%ngrid
 TZFIELD%NTYPE      = TYPEREAL
 TZFIELD%NDIMS      = 2
 TZFIELD%LTIMEDEP   = .FALSE.
+
+!NMNHDIM_FLYER_TIME excluded because created only in netCDF/HDF groups (local to each flyer)
+if ( tpfields(1)%ndimlist(4) /= NMNHDIM_UNKNOWN .and. tpfields(1)%ndimlist(4) /= NMNHDIM_UNUSED &
+     .and. tpfields(1)%ndimlist(4) /= NMNHDIM_FLYER_TIME ) then
+  tzfield%ndimlist(1)  = tpfields(1)%ndimlist(4)
+  tzfield%ndimlist(2)  = NMNHDIM_ONE
+  tzfield%ndimlist(3:) = NMNHDIM_UNUSED
+end if
 
 !Reconstitute old diachro format
 allocate( ztimes( size( tpdates ), 1 ) )
@@ -411,6 +455,9 @@ do ji=1,size(tpdates)
 end do
 
 call IO_Field_write( tpdiafile, tzfield, ztimes )
+
+!Reset ndimlist
+tzfield%ndimlist(:) = NMNHDIM_UNKNOWN
 
 deallocate( ztimes )
 !
@@ -426,7 +473,7 @@ IF(PRESENT(PTRAJX))THEN
   TZFIELD%CUNITS     = ''
   TZFIELD%CDIR       = '--'
   TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
-  TZFIELD%NGRID      = KGRID(1)
+  TZFIELD%NGRID      = tpfields(1)%ngrid
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .FALSE.
@@ -442,7 +489,7 @@ IF(PRESENT(PTRAJY))THEN
   TZFIELD%CUNITS     = ''
   TZFIELD%CDIR       = '--'
   TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
-  TZFIELD%NGRID      = KGRID(1)
+  TZFIELD%NGRID      = tpfields(1)%ngrid
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .FALSE.
@@ -458,7 +505,7 @@ IF(PRESENT(PTRAJZ))THEN
   TZFIELD%CUNITS     = ''
   TZFIELD%CDIR       = '--'
   TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
-  TZFIELD%NGRID      = KGRID(1)
+  TZFIELD%NGRID      = tpfields(1)%ngrid
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .FALSE.
@@ -473,7 +520,7 @@ TZFIELD%CLONGNAME  = TRIM(HGROUP)//'.DATIM'
 TZFIELD%CUNITS     = ''
 TZFIELD%CDIR       = '--'
 TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
-TZFIELD%NGRID      = KGRID(1)
+TZFIELD%NGRID      = tpfields(1)%ngrid
 TZFIELD%NTYPE      = TYPEREAL
 TZFIELD%NDIMS      = 2
 TZFIELD%LTIMEDEP   = .FALSE.
@@ -506,10 +553,6 @@ CALL MENU_DIACHRO(TPDIAFILE,HGROUP)
 LPACK=GPACK
 !-----------------------------------------------------------------------------
 !
-!*       2.       EXITS
-!                 -----
-! 
-RETURN
-END SUBROUTINE WRITE_DIACHRO
+END SUBROUTINE Write_diachro
 
 end module mode_write_diachro

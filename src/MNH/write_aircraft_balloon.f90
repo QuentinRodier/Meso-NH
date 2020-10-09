@@ -62,11 +62,12 @@ END MODULE MODI_WRITE_AIRCRAFT_BALLOON
 !!                                      aircraft, ballon and profiler
 !!     Oct 2016 : G.Delautier LIMA
 !!     August 2016 (M.Leriche) Add mass concentration of aerosol species
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 29/01/2019: bug: moved an instruction later (to prevent access to a not allocated array)
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !  P. Wautelet 02/10/2020: bugfix: YGROUP/YGROUPZ were too small
 !  P. Wautelet 09/10/2020: bugfix: correction on IPROCZ when not LIMA (condition was wrong)
+!  P. Wautelet 09/10/2020: Write_diachro: use new datatype tpfields
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -101,7 +102,7 @@ USE MODD_PARAM_LIMA     , ONLY: NINDICE_CCN_IMM,NMOD_CCN,NMOD_IFN,NMOD_IMM
 USE MODE_MODELN_HANDLER
 USE MODE_DUST_PSD
 USE MODE_AERO_PSD
-USE MODE_WRITE_DIACHRO,   only: WRITE_DIACHRO
+use mode_write_diachro,   only: Write_diachro
 !
 IMPLICIT NONE
 !
@@ -170,7 +171,10 @@ CONTAINS
 !----------------------------------------------------------------------------
 !
 SUBROUTINE FLYER_DIACHRO(TPFLYER)
-!
+
+use modd_field, only:  NMNHDIM_LEVEL, NMNHDIM_FLYER_PROC, NMNHDIM_FLYER_TIME, NMNHDIM_UNUSED, &
+                       tfield_metadata_base, TYPEREAL
+
 TYPE(FLYER),        INTENT(IN)       :: TPFLYER
 !
 !*      0.2  declaration of local variables for diachro
@@ -208,6 +212,7 @@ INTEGER :: IKU, IK
 CHARACTER(LEN=2)  :: INDICE
 INTEGER           :: I
 INTEGER :: JLOOP
+type(tfield_metadata_base), dimension(:), allocatable :: tzfields
 !
 !----------------------------------------------------------------------------
 !
@@ -839,14 +844,52 @@ ALLOCATE (ZWZ6(1,1,IKU,size(tpflyer%tpdates),1,JPROCZ))
 ZWZ6 = ZWORKZ6(:,:,:,:,:,:JPROCZ)
 DEALLOCATE(ZWORKZ6)
 !
-CALL WRITE_DIACHRO( TPDIAFILE, YGROUP, "RSPL", IGRID, tpflyer%tpdates, &
-                    ZW6, YTITLE(:), YUNIT(:), YCOMMENT(:),             &
-                    PTRAJX = ZTRAJX, PTRAJY = ZTRAJY, PTRAJZ = ZTRAJZ  )
-!
-CALL WRITE_DIACHRO( TPDIAFILE, YGROUPZ, "CART", IGRIDZ, tpflyer%tpdates,   &
-                    ZWZ6, YTITLEZ(:), YUNITZ(:), YCOMMENTZ(:),             &
-                    OICP = .TRUE., OJCP = .TRUE., OKCP = .FALSE.,          &
-                    KIL = 1, KIH = 1, KJL = 1, KJH = 1, KKL = 1, KKH = IKU )
+allocate( tzfields( jproc ) )
+
+tzfields(:)%cmnhname  = ytitle(1 : jproc)
+tzfields(:)%cstdname  = ''
+tzfields(:)%clongname = ytitle(1 : jproc)
+tzfields(:)%cunits    = yunit(1 : jproc)
+tzfields(:)%ccomment  = ycomment(1 : jproc)
+tzfields(:)%ngrid     = 0
+tzfields(:)%ntype     = TYPEREAL
+tzfields(:)%ndims     = 2
+tzfields(:)%ndimlist(1) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(2) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(3) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(4) = NMNHDIM_FLYER_TIME
+tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(6) = NMNHDIM_FLYER_PROC
+
+call Write_diachro( tpdiafile, tzfields, ygroup, "RSPL", tpflyer%tpdates,     &
+                      zw6,                                                           &
+                      ptrajx = ztrajx, ptrajy = ztrajy, ptrajz = ztrajz )
+
+deallocate( tzfields )
+
+allocate( tzfields( jprocz ) )
+
+tzfields(:)%cmnhname  = ytitlez(1 : jprocz)
+tzfields(:)%cstdname  = ''
+tzfields(:)%clongname = ytitlez(1 : jprocz)
+tzfields(:)%cunits    = yunitz(1 : jprocz)
+tzfields(:)%ccomment  = ycommentz(1 : jprocz)
+tzfields(:)%ngrid     = 0
+tzfields(:)%ntype     = TYPEREAL
+tzfields(:)%ndims     = 3
+tzfields(:)%ndimlist(1) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(2) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(3) = NMNHDIM_LEVEL
+tzfields(:)%ndimlist(4) = NMNHDIM_FLYER_TIME
+tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(6) = NMNHDIM_FLYER_PROC
+
+call Write_diachro( tpdiafile, tzfields, ygroupz, "CART", tpflyer%tpdates,          &
+                      zwz6,                                                           &
+                      oicp = .true., ojcp = .true., okcp = .false.,                   &
+                      kil = 1, kih = 1, kjl = 1, kjh = 1, kkl = 1, kkh = iku )
+
+deallocate( tzfields )
 
 DEALLOCATE (ZTRAJX)
 DEALLOCATE (ZTRAJY)

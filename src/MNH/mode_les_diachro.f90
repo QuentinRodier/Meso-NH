@@ -512,9 +512,10 @@ END SUBROUTINE LES_TIME_AVG
 !------------------------------------------------------------------------------
 !
 !########################################################
-subroutine Les_diachro_gen(tpdiafile,hgroup,hcomment,hunit,pfield,havg, htitle, osurf, osv )
+subroutine Les_diachro_gen(tpdiafile, hgroup, hcomment, hunit, pfield, havg, htitle, osurf, osv )
 !########################################################
 
+use modd_field,         only: NMNHDIM_UNKNOWN, tfield_metadata_base, TYPEREAL
 use modd_io,            only: tfiledata
 use modd_les,           only: nles_current_iinf, nles_current_isup, nles_current_jinf, nles_current_jsup, nles_current_times, &
                               nles_k, nles_levels, xles_current_z, xles_temp_mean_start, xles_temp_mean_end
@@ -562,6 +563,7 @@ real,               dimension(size(pfield,1),size(pfield,2),size(pfield,3),size(
                                                         :: zfield                        ! Normalized field
 real,               dimension(:,:,:,:,:,:), allocatable :: zwork6                        ! Contains physical field
 type(date_time),    dimension(:),           allocatable :: tzdates
+type(tfield_metadata_base), dimension(:),   allocatable :: tzfields
 !------------------------------------------------------------------------------
 
 if ( present( osurf ) .and. present ( htitle ) ) then
@@ -661,12 +663,29 @@ else
 end if
 
 ! Write the profile
-if ( iresp==0 .and. ( gsurf .or. any( zwork6 /= xundef ) ) ) &
-  call write_diachro( tpdiafile, ygroup, "ssol", igrid, tzdates,                        &
-                      zwork6, ytitle, yunit, ycomment,                                  &
-                      oicp = .false., ojcp = .false., okcp = .false.,                   &
-                      kil = iil, kih = iih, kjl = ijl, kjh = ijh, kkl = ikl, kkh = ikh, &
-                      ptrajx = ztrajx, ptrajy = ztrajy, ptrajz = ztrajz                 )
+if ( iresp==0 .and. ( gsurf .or. any( zwork6 /= xundef ) ) ) then
+  allocate( tzfields( Size( pfield, 3 ) ) )
+
+  tzfields(:)%cmnhname  = ytitle(:)
+  tzfields(:)%cstdname  = ''
+  tzfields(:)%clongname = ytitle(:)
+  tzfields(:)%cunits    = yunit(:)
+  tzfields(:)%ccomment  = ycomment(:)
+  tzfields(:)%ngrid     = igrid
+  tzfields(:)%ntype     = TYPEREAL
+  tzfields(:)%ndims     = 6
+  do jp = 1, Size( tzfields )
+    tzfields(jp)%ndimlist(:) = NMNHDIM_UNKNOWN
+  end do
+
+  call Write_diachro( tpdiafile, tzfields, ygroup, "SSOL", tzdates,     &
+                        zwork6,                                                           &
+                        oicp = .false., ojcp = .false., okcp = .false.,                   &
+                        kil = iil, kih = iih, kjl = ijl, kjh = ijh, kkl = ikl, kkh = ikh, &
+                        ptrajx = ztrajx, ptrajy = ztrajy, ptrajz = ztrajz                 )
+
+  deallocate( tzfields )
+end if
 
 !-------------------------------------------------------------------------------
 end subroutine Les_diachro_gen
@@ -803,6 +822,7 @@ call Les_diachro_gen( tpdiafile, hgroup, [ hcomment ], hunit,                   
 !-------------------------------------------------------------------------------
 END SUBROUTINE LES_DIACHRO_SURF_SV
 !-------------------------------------------------------------------------------
+
 !#####################################################################
 SUBROUTINE LES_DIACHRO_2PT(TPDIAFILE,HGROUP,HCOMMENT,HUNIT,PFIELDX,PFIELDY,HAVG)
 !#####################################################################
@@ -811,12 +831,13 @@ SUBROUTINE LES_DIACHRO_2PT(TPDIAFILE,HGROUP,HCOMMENT,HUNIT,PFIELDX,PFIELDY,HAVG)
 !
 !
 USE MODD_CONF
+use modd_field,         only: NMNHDIM_UNKNOWN, tfield_metadata_base, TYPEREAL
 USE MODD_GRID
 USE MODD_IO,            ONLY: TFILEDATA
 USE MODD_LES
 use modd_type_date,     only: date_time
 
-USE MODE_WRITE_DIACHRO
+use mode_write_diachro, only: Write_diachro
 !
 IMPLICIT NONE
 !
@@ -839,8 +860,6 @@ CHARACTER(LEN= 10)               :: YGROUP   ! group title
 CHARACTER(LEN=100), DIMENSION(1) :: YCOMMENT ! comment string
 CHARACTER(LEN=100), DIMENSION(1) :: YTITLE   ! title
 CHARACTER(LEN=100), DIMENSION(1) :: YUNIT    ! physical unit
-REAL, DIMENSION(SIZE(PFIELDX,1),SIZE(PFIELDX,2)) :: ZAVG_FIELDX
-REAL, DIMENSION(SIZE(PFIELDY,1),SIZE(PFIELDY,2)) :: ZAVG_FIELDY
 INTEGER                          :: JT       ! time counter
 INTEGER                          :: JK       ! level counter
 INTEGER                          :: IRESP    ! return code
@@ -854,6 +873,7 @@ CHARACTER(len=6) :: YSTRING
 !
 LOGICAL :: GAVG                          ! flag to compute time averagings
 type(date_time), dimension(:), allocatable :: tzdates
+type(tfield_metadata_base) :: tzfield
 !-------------------------------------------------------------------------------
 !
 IF (HAVG/=' '.AND. HAVG/='A') RETURN
@@ -906,11 +926,22 @@ END IF
 !*      2.0  Writing of the profile
 !            ----------------------
 !
-IF (IRESP==0) &
-CALL WRITE_DIACHRO( TPDIAFILE, YGROUP, "SPXY", IGRID, tzdates,                        &
-                    ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
-                    OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
-                    KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH  )
+if ( iresp == 0 ) then
+  tzfield%cmnhname  = ytitle(1)
+  tzfield%cstdname  = ''
+  tzfield%clongname = ytitle(1)
+  tzfield%cunits    = yunit(1)
+  tzfield%ccomment  = ycomment(1)
+  tzfield%ngrid     = igrid(1)
+  tzfield%ntype     = TYPEREAL
+  tzfield%ndims     = 6
+  tzfield%ndimlist(:) = NMNHDIM_UNKNOWN
+
+  call Write_diachro( tpdiafile, [ tzfield ], ygroup, "SPXY", tzdates,                 &
+                      zwork6,                                                          &
+                      oicp = .false., ojcp = .false., okcp = .false.,                  &
+                      kil = iil, kih = iih, kjl = ijl, kjh = ijh, kkl = ikl, kkh = ikh )
+end if
 !
 !
 deallocate( tzdates )
@@ -948,10 +979,20 @@ IF (GAVG) THEN
   YGROUP    = 'T_'//YGROUP
 END IF
 !
-CALL WRITE_DIACHRO( TPDIAFILE, YGROUP, "SPXY", IGRID, tzdates,                        &
-                    ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
-                    OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
-                    KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH  )
+tzfield%cmnhname  = ytitle(1)
+tzfield%cstdname  = ''
+tzfield%clongname = ytitle(1)
+tzfield%cunits    = yunit(1)
+tzfield%ccomment  = ycomment(1)
+tzfield%ngrid     = igrid(1)
+tzfield%ntype     = TYPEREAL
+tzfield%ndims     = 6
+tzfield%ndimlist(:) = NMNHDIM_UNKNOWN
+
+call Write_diachro( tpdiafile, [ tzfield ], ygroup, "SPXY", tzdates,                  &
+                    zwork6,                                                           &
+                    oicp = .false., ojcp = .false., okcp = .false.,                   &
+                    kil = iil, kih = iih, kjl = ijl, kjh = ijh, kkl = ikl, kkh = ikh  )
 !
 DEALLOCATE(ZWORK6)
 deallocate( tzdates )
@@ -967,12 +1008,13 @@ SUBROUTINE LES_DIACHRO_SPEC(TPDIAFILE,HGROUP,HCOMMENT,HUNIT,PSPECTRAX,PSPECTRAY)
 !
 !
 USE MODD_CONF
+use modd_field,         only: NMNHDIM_UNKNOWN, tfield_metadata_base, TYPEREAL
 USE MODD_GRID
 USE MODD_IO,            ONLY: TFILEDATA
 USE MODD_LES
 use modd_type_date,     only: date_time
 
-USE MODE_WRITE_DIACHRO
+use mode_write_diachro, only: Write_diachro
 !
 IMPLICIT NONE
 !
@@ -1006,6 +1048,7 @@ CHARACTER(len=6) :: YSTRING
 INTEGER          :: JT       ! time counter
 INTEGER          :: JK       ! level counter
 type(date_time), dimension(:), allocatable :: tzdates
+type(tfield_metadata_base) :: tzfield
 !
 !-------------------------------------------------------------------------------
 !
@@ -1046,10 +1089,20 @@ WRITE(YSTRING,FMT="(I6.6)") NINT( XLES_CURRENT_DOMEGAX )
 YCOMMENT(:) = " DOMEGAX="//YSTRING//' '//HCOMMENT
 !
 !
-CALL WRITE_DIACHRO( TPDIAFILE, YGROUP, "SPXY", IGRID, tzdates,                        &
-                    ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
-                    OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
-                    KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH  )
+tzfield%cmnhname  = ytitle(1)
+tzfield%cstdname  = ''
+tzfield%clongname = ytitle(1)
+tzfield%cunits    = yunit(1)
+tzfield%ccomment  = ycomment(1)
+tzfield%ngrid     = igrid(1)
+tzfield%ntype     = TYPEREAL
+tzfield%ndims     = 6
+tzfield%ndimlist(:) = NMNHDIM_UNKNOWN
+
+call Write_diachro( tpdiafile, [ tzfield ], ygroup, "SPXY", tzdates,                  &
+                    zwork6,                                                           &
+                    oicp = .false., ojcp = .false., okcp = .false.,                   &
+                    kil = iil, kih = iih, kjl = ijl, kjh = ijh, kkl = ikl, kkh = ikh  )
 !
 !
 !* time average
@@ -1058,11 +1111,23 @@ IRESP=0
 CALL LES_TIME_AVG( ZWORK6, tzdates, IRESP )
 YGROUP    = 'T_'//YGROUP
 !
-IF (IRESP==0) &
-CALL WRITE_DIACHRO( TPDIAFILE, YGROUP, "SPXY", IGRID, tzdates,                        &
-                    ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
-                    OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
-                    KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH  )
+if ( iresp == 0 ) then
+  tzfield%cmnhname  = ytitle(1)
+  tzfield%cstdname  = ''
+  tzfield%clongname = ytitle(1)
+  tzfield%cunits    = yunit(1)
+  tzfield%ccomment  = ycomment(1)
+  tzfield%ngrid     = igrid(1)
+  tzfield%ntype     = TYPEREAL
+  tzfield%ndims     = 6
+  tzfield%ndimlist(:) = NMNHDIM_UNKNOWN
+
+  call Write_diachro( tpdiafile, [ tzfield ], ygroup, "SPXY", tzdates,                  &
+                      zwork6,                                                           &
+                      oicp = .false., ojcp = .false., okcp = .false.,                   &
+                      kil = iil, kih = iih, kjl = ijl, kjh = ijh, kkl = ikl, kkh = ikh  )
+end if
+
 DEALLOCATE(ZWORK6)
 deallocate( tzdates )
 !
@@ -1093,10 +1158,20 @@ YTITLE(:) = YGROUP
 WRITE(YSTRING,FMT="(I6.6)") NINT( XLES_CURRENT_DOMEGAY )
 YCOMMENT(:) = " DOMEGAY="//YSTRING//' '//HCOMMENT
 !
-CALL WRITE_DIACHRO( TPDIAFILE, YGROUP, "SPXY", IGRID, tzdates,                        &
-                    ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
-                    OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
-                    KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH  )
+tzfield%cmnhname  = ytitle(1)
+tzfield%cstdname  = ''
+tzfield%clongname = ytitle(1)
+tzfield%cunits    = yunit(1)
+tzfield%ccomment  = ycomment(1)
+tzfield%ngrid     = igrid(1)
+tzfield%ntype     = TYPEREAL
+tzfield%ndims     = 6
+tzfield%ndimlist(:) = NMNHDIM_UNKNOWN
+
+call Write_diachro( tpdiafile, [ tzfield ], ygroup, "SPXY", tzdates,                  &
+                    zwork6,                                                           &
+                    oicp = .false., ojcp = .false., okcp = .false.,                   &
+                    kil = iil, kih = iih, kjl = ijl, kjh = ijh, kkl = ikl, kkh = ikh  )
 !
 !
 !* time average
@@ -1104,11 +1179,22 @@ CALL WRITE_DIACHRO( TPDIAFILE, YGROUP, "SPXY", IGRID, tzdates,                  
 CALL LES_TIME_AVG( ZWORK6, tzdates, IRESP )
 YGROUP    = 'T_'//YGROUP
 !
-IF (IRESP==0) &
-CALL WRITE_DIACHRO( TPDIAFILE, YGROUP, "SPXY", IGRID, tzdates,                        &
-                    ZWORK6, YTITLE, YUNIT, YCOMMENT,                                  &
-                    OICP = .FALSE., OJCP = .FALSE., OKCP = .FALSE.,                   &
-                    KIL = IIL, KIH = IIH, KJL = IJL, KJH = IJH, KKL = IKL, KKH = IKH  )
+if ( iresp == 0 ) then
+  tzfield%cmnhname  = ytitle(1)
+  tzfield%cstdname  = ''
+  tzfield%clongname = ytitle(1)
+  tzfield%cunits    = yunit(1)
+  tzfield%ccomment  = ycomment(1)
+  tzfield%ngrid     = igrid(1)
+  tzfield%ntype     = TYPEREAL
+  tzfield%ndims     = 6
+  tzfield%ndimlist(:) = NMNHDIM_UNKNOWN
+
+  call Write_diachro( tpdiafile, [ tzfield ], ygroup, "SPXY", tzdates,                  &
+                      zwork6,                                                           &
+                      oicp = .false., ojcp = .false., okcp = .false.,                   &
+                      kil = iil, kih = iih, kjl = ijl, kjh = ijh, kkl = ikl, kkh = ikh  )
+end if
 !
 DEALLOCATE(ZWORK6)
 deallocate( tzdates )
