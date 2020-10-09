@@ -133,8 +133,13 @@ end subroutine IO_File_open_nc4
 
 
 subroutine IO_Are_dimension_reduced(tpfile)
+  use modd_io,        only: isp
+  use modd_mpif
+  use modd_precision, only: MNHLOG_MPI
+
   type(tfiledata), intent(inout) :: tpfile
 
+  integer              :: ierr
   integer(kind=CDFINT) :: istatus
   character(len=1)     :: ydimred
 
@@ -144,19 +149,23 @@ subroutine IO_Are_dimension_reduced(tpfile)
     call Print_msg( NVERB_DEBUG, 'IO', 'IO_Are_dimension_reduced', 'ldimreduced set to false (created with MesoNH < 5.5.0)' )
     tpfile%ldimreduced = .false.
   else
-    istatus = NF90_GET_ATT( tpfile%nncid, NF90_GLOBAL, 'MNH_REDUCE_DIMENSIONS_IN_FILES', ydimred )
-    if ( istatus == NF90_NOERR ) then
-      if ( ydimred == '0' ) then
-        tpfile%ldimreduced = .false.
-      else if ( ydimred == '1' ) then
-        tpfile%ldimreduced = .true.
-      else
-        call Print_msg( NVERB_ERROR, 'IO', 'IO_Are_dimension_reduced', &
-                        'invalid value for MNH_REDUCE_DIMENSIONS_IN_FILES attribute' )
+    if ( isp == tpfile%nmaster_rank ) then
+      istatus = NF90_GET_ATT( tpfile%nncid, NF90_GLOBAL, 'MNH_REDUCE_DIMENSIONS_IN_FILES', ydimred )
+      if ( istatus == NF90_NOERR ) then
+        if ( ydimred == '0' ) then
+          tpfile%ldimreduced = .false.
+        else if ( ydimred == '1' ) then
+          tpfile%ldimreduced = .true.
+        else
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Are_dimension_reduced', &
+                          'invalid value for MNH_REDUCE_DIMENSIONS_IN_FILES attribute' )
+        end if
+      else !attribute not found
+        call Print_msg( NVERB_ERROR, 'IO', 'IO_Are_dimension_reduced', 'MNH_REDUCE_DIMENSIONS_IN_FILES attribute not found' )
       end if
-    else !attribute not found
-      call Print_msg( NVERB_ERROR, 'IO', 'IO_Are_dimension_reduced', 'MNH_REDUCE_DIMENSIONS_IN_FILES attribute not found' )
     end if
+
+    call MPI_BCAST( tpfile%ldimreduced, 1, MNHLOG_MPI, tpfile%nmaster_rank - 1, tpfile%nmpicomm, ierr )
   end if
 
 end subroutine IO_Are_dimension_reduced
