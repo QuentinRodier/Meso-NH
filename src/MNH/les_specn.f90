@@ -1,12 +1,31 @@
-!MNH_LIC Copyright 2000-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
+! Modifications:
+!  P. Wautelet 12/10/2020: restructure Les_diachro_spec subroutine to use tfield_metadata_base type
+!-----------------------------------------------------------------
 !     ######################
       MODULE MODE_LES_SPEC_n
 !     ######################
-!
+
+use modd_field, only: tfield_metadata_base
+
+implicit none
+
+private
+
+public :: Les_spec_n
+
+
+real, dimension(:,:,:,:), allocatable :: xspectrax ! spectra coeffcients for
+real, dimension(:,:,:,:), allocatable :: xspectray ! x and y direction spectra
+
+type(tfield_metadata_base) :: tlesfieldx
+type(tfield_metadata_base) :: tlesfieldy
+
+
 CONTAINS
 !
 !     ######################
@@ -48,27 +67,33 @@ CONTAINS
 !!      Original         07/02/00
 !!                       01/02/01 (D. Gazen) add module MODD_NSV for NSV variable
 !!                       01/04/03 (V. Masson) bug in spectra normalization
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
+! P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_CONF
-USE MODD_CONF_n
-USE MODD_GRID_n
-USE MODD_IO,    ONLY: TFILEDATA
-USE MODD_LBC_n, ONLY: CLBCX, CLBCY
-USE MODD_LES
-USE MODD_LES_n
-USE MODD_NSV,   ONLY: NSV
-!
-USE MODE_LES_DIACHRO
-USE MODE_ll
-!
-USE MODI_WRITE_LES_n
-!
+use modd_conf_n, only: luserv, luserc, luseri
+use modd_field,  only: NMNHDIM_COMPLEX, NMNHDIM_BUDGET_LES_TIME, NMNHDIM_SPECTRA_SPEC_NI, &
+                       NMNHDIM_SPECTRA_SPEC_NJ, NMNHDIM_SPECTRA_LEVEL, NMNHDIM_UNUSED,    &
+                       TYPEREAL
+use modd_io,     only: tfiledata
+use modd_lbc_n,  only: clbcx, clbcy
+use modd_les,    only: nspectra_k
+use modd_les_n,  only: nles_times, nspectra_ni, nspectra_nj, &
+                       XCORRi_UU, XCORRi_VV, XCORRi_UV, XCORRi_WU, XCORRi_WV, XCORRi_WW,        &
+                       XCORRi_WTh, XCORRi_WThl, XCORRi_WRv, XCORRi_WRc, XCORRi_WRi, XCORRi_WSv, &
+                       XCORRi_ThTh, XCORRi_ThRv, XCORRi_ThRc, XCORRi_ThRi, XCORRi_ThlThl,       &
+                       XCORRi_ThlRv, XCORRi_ThlRc, XCORRi_ThlRi,                                &
+                       XCORRi_RvRv, XCORRi_RcRc, XCORRi_RiRi, XCORRi_SvSv,                      &
+                       XCORRj_UU, XCORRj_VV, XCORRj_UV, XCORRj_WU, XCORRj_WV, XCORRj_WW,        &
+                       XCORRj_WTh, XCORRj_WThl, XCORRj_WRv, XCORRj_WRc, XCORRj_WRi, XCORRj_WSv, &
+                       XCORRj_ThTh, XCORRj_ThRv, XCORRj_ThRc, XCORRj_ThRi, XCORRj_ThlThl,       &
+                       XCORRj_ThlRv, XCORRj_ThlRc, XCORRj_ThlRi,                                &
+                       XCORRj_RvRv, XCORRj_RcRc, XCORRj_RiRi, XCORRj_SvSv
+
+use modd_nsv,    only: nsv
+
 IMPLICIT NONE
 !
 !
@@ -78,15 +103,10 @@ TYPE(TFILEDATA), INTENT(IN) :: TPDIAFILE ! file to write
 !
 !*      0.2  declaration of local variables
 !
-INTEGER :: JSV       ! scalar loop counter
-!
-CHARACTER(len=5)                      :: YGROUP
-!
-REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZSPECTRAX ! spectra coeffcients for
-REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZSPECTRAY ! x and y direction spectra
-!
-INTEGER :: ISPECTRA_NI
-INTEGER :: ISPECTRA_NJ
+INTEGER          :: ISPECTRA_NI
+INTEGER          :: ISPECTRA_NJ
+INTEGER          :: JSV         ! scalar loop counter
+CHARACTER(len=5) :: YGROUP
 !-------------------------------------------------------------------------------
 !
 IF (CLBCX(1)=='CYCL') THEN
@@ -101,137 +121,119 @@ ELSE
   ISPECTRA_NJ =  NSPECTRA_NJ - 1
 END IF
 !
-ALLOCATE( ZSPECTRAX(ISPECTRA_NI,2,NSPECTRA_K,NLES_TIMES) )
-ALLOCATE( ZSPECTRAY(ISPECTRA_NJ,2,NSPECTRA_K,NLES_TIMES) )
-!
-!
 !*      1.   (ni,z,t) and (nj,z,t) spectra
 !            -----------------------------
 !
-IF (NSPECTRA_K>0) THEN
-  CALL LES_SPEC('X',XCORRi_UU,    ZSPECTRAX)
-  CALL LES_SPEC('Y',XCORRj_UU,    ZSPECTRAY)
-  CALL LES_DIACHRO_SPEC(TPDIAFILE,"UU   ","U*U     spectra","m3 s-2",ZSPECTRAX,ZSPECTRAY)
-!
-  CALL LES_SPEC('X',XCORRi_VV,    ZSPECTRAX)
-  CALL LES_SPEC('Y',XCORRj_VV,    ZSPECTRAY)
-  CALL LES_DIACHRO_SPEC(TPDIAFILE,"VV   ","V*V     spectra","m3 s-2",ZSPECTRAX,ZSPECTRAY)
-!
-  CALL LES_SPEC('X',XCORRi_WW,    ZSPECTRAX)
-  CALL LES_SPEC('Y',XCORRj_WW,    ZSPECTRAY)
-  CALL LES_DIACHRO_SPEC(TPDIAFILE,"WW   ","W*W     spectra","m3 s-2",ZSPECTRAX,ZSPECTRAY)
-!
-  CALL LES_SPEC('X',XCORRi_UV,    ZSPECTRAX)
-  CALL LES_SPEC('Y',XCORRj_UV,    ZSPECTRAY)
-  CALL LES_DIACHRO_SPEC(TPDIAFILE,"UV   ","U*V     spectra","m3 s-2",ZSPECTRAX,ZSPECTRAY)
-!
-  CALL LES_SPEC('X',XCORRi_WU,    ZSPECTRAX)
-  CALL LES_SPEC('Y',XCORRj_WU,    ZSPECTRAY)
-  CALL LES_DIACHRO_SPEC(TPDIAFILE,"WU   ","W*U     spectra","m3 s-2",ZSPECTRAX,ZSPECTRAY)
-!
-  CALL LES_SPEC('X',XCORRi_WV,    ZSPECTRAX)
-  CALL LES_SPEC('Y',XCORRj_WV,    ZSPECTRAY)
-  CALL LES_DIACHRO_SPEC(TPDIAFILE,"WV   ","W*V     spectra","m3 s-2",ZSPECTRAX,ZSPECTRAY)
-!
-  CALL LES_SPEC('X',XCORRi_ThTh,  ZSPECTRAX)
-  CALL LES_SPEC('Y',XCORRj_ThTh,  ZSPECTRAY)
-  CALL LES_DIACHRO_SPEC(TPDIAFILE,"THTH ","Th*Th   spectra","m K2",ZSPECTRAX,ZSPECTRAY)
-!
-  IF (LUSERC) THEN
-    CALL LES_SPEC('X',XCORRi_ThlThl,  ZSPECTRAX)
-    CALL LES_SPEC('Y',XCORRj_ThlThl,  ZSPECTRAY)
-    CALL LES_DIACHRO_SPEC(TPDIAFILE,"TLTL ","Thl*Thl spectra","m K2",ZSPECTRAX,ZSPECTRAY)
-  END IF
-!
-  CALL LES_SPEC('X',XCORRi_WTh,  ZSPECTRAX)
-  CALL LES_SPEC('Y',XCORRj_WTh,  ZSPECTRAY)
-  CALL LES_DIACHRO_SPEC(TPDIAFILE,"WTH  ","W*Th    spectra","m2 K s-1",ZSPECTRAX,ZSPECTRAY)
-!
-  IF (LUSERC) THEN
-    CALL LES_SPEC('X',XCORRi_WThl,  ZSPECTRAX)
-    CALL LES_SPEC('Y',XCORRj_WThl,  ZSPECTRAY)
-    CALL LES_DIACHRO_SPEC(TPDIAFILE,"WTHL ","W*Thl   spectra","m2 K s-1",ZSPECTRAX,ZSPECTRAY)
-  END IF
-  !
-  IF (LUSERV) THEN
-    CALL LES_SPEC('X',XCORRi_RvRv,  ZSPECTRAX)
-    CALL LES_SPEC('Y',XCORRj_RvRv,  ZSPECTRAY)
-    CALL LES_DIACHRO_SPEC(TPDIAFILE,"RVRV ","rv*rv   spectra","m",ZSPECTRAX,ZSPECTRAY)
-    !
-    CALL LES_SPEC('X',XCORRi_ThRv,  ZSPECTRAX)
-    CALL LES_SPEC('Y',XCORRj_ThRv,  ZSPECTRAY)
-    CALL LES_DIACHRO_SPEC(TPDIAFILE,"THRV ","th*rv   spectra","K m",ZSPECTRAX,ZSPECTRAY)
-    !
-    IF (LUSERC) THEN
-      CALL LES_SPEC('X',XCORRi_ThlRv,  ZSPECTRAX)
-      CALL LES_SPEC('Y',XCORRj_ThlRv,  ZSPECTRAY)
-      CALL LES_DIACHRO_SPEC(TPDIAFILE,"TLRV ","thl*rv  spectra","K m",ZSPECTRAX,ZSPECTRAY)
-    END IF
-    !
-    CALL LES_SPEC('X',XCORRi_WRv,  ZSPECTRAX)
-    CALL LES_SPEC('Y',XCORRj_WRv,  ZSPECTRAY)
-    CALL LES_DIACHRO_SPEC(TPDIAFILE,"WRV ","W*rv     spectra","m K s-1",ZSPECTRAX,ZSPECTRAY)
-  END IF
-  IF (LUSERC) THEN
-    CALL LES_SPEC('X',XCORRi_RcRc,  ZSPECTRAX)
-    CALL LES_SPEC('Y',XCORRj_RcRc,  ZSPECTRAY)
-    CALL LES_DIACHRO_SPEC(TPDIAFILE,"RCRC ","rc*rc   spectra","m",ZSPECTRAX,ZSPECTRAY)
-    !
-    CALL LES_SPEC('X',XCORRi_ThRc,  ZSPECTRAX)
-    CALL LES_SPEC('Y',XCORRj_ThRc,  ZSPECTRAY)
-    CALL LES_DIACHRO_SPEC(TPDIAFILE,"THRC ","th*rc   spectra","K m",ZSPECTRAX,ZSPECTRAY)
-    !
-    CALL LES_SPEC('X',XCORRi_ThlRc,  ZSPECTRAX)
-    CALL LES_SPEC('Y',XCORRj_ThlRc,  ZSPECTRAY)
-    CALL LES_DIACHRO_SPEC(TPDIAFILE,"TLRC ","thl*rc  spectra","K m",ZSPECTRAX,ZSPECTRAY)
-    !
-    CALL LES_SPEC('X',XCORRi_WRc,  ZSPECTRAX)
-    CALL LES_SPEC('Y',XCORRj_WRc,  ZSPECTRAY)
-    CALL LES_DIACHRO_SPEC(TPDIAFILE,"WRC ","W*rc     spectra","m K s-1",ZSPECTRAX,ZSPECTRAY)
-  END IF
-  IF (LUSERI) THEN
-    CALL LES_SPEC('X',XCORRi_RiRi,  ZSPECTRAX)
-    CALL LES_SPEC('Y',XCORRj_RiRi,  ZSPECTRAY)
-    CALL LES_DIACHRO_SPEC(TPDIAFILE,"RIRI ","ri*ri   spectra","m",ZSPECTRAX,ZSPECTRAY)
-    !
-    CALL LES_SPEC('X',XCORRi_ThRi,  ZSPECTRAX)
-    CALL LES_SPEC('Y',XCORRj_ThRi,  ZSPECTRAY)
-    CALL LES_DIACHRO_SPEC(TPDIAFILE,"THRI ","th*ri   spectra","K m",ZSPECTRAX,ZSPECTRAY)
-    !
-    CALL LES_SPEC('X',XCORRi_ThlRi,  ZSPECTRAX)
-    CALL LES_SPEC('Y',XCORRj_ThlRi,  ZSPECTRAY)
-    CALL LES_DIACHRO_SPEC(TPDIAFILE,"TLRI ","thl*ri  spectra","K m",ZSPECTRAX,ZSPECTRAY)
-    !
-    CALL LES_SPEC('X',XCORRi_WRi,  ZSPECTRAX)
-    CALL LES_SPEC('Y',XCORRj_WRi,  ZSPECTRAY)
-    CALL LES_DIACHRO_SPEC(TPDIAFILE,"WRI ","W*ri     spectra","m K s-1",ZSPECTRAX,ZSPECTRAY)
-  END IF
-  DO JSV=1,NSV
-    WRITE (YGROUP,FMT="(A2,I3.3)") "SS",JSV
-    CALL LES_SPEC('X',XCORRi_SvSv(:,:,:,JSV),  ZSPECTRAX)
-    CALL LES_SPEC('Y',XCORRj_SvSv(:,:,:,JSV),  ZSPECTRAY)
-    CALL LES_DIACHRO_SPEC(TPDIAFILE,YGROUP,"Sv*Sv    spectra","m",ZSPECTRAX,ZSPECTRAY)
-  END DO
-  DO JSV=1,NSV
-    WRITE (YGROUP,FMT="(A2,I3.3)") "WS",JSV
-    CALL LES_SPEC('X',XCORRi_WSv(:,:,:,JSV),  ZSPECTRAX)
-    CALL LES_SPEC('Y',XCORRj_WSv(:,:,:,JSV),  ZSPECTRAY)
-    CALL LES_DIACHRO_SPEC(TPDIAFILE,YGROUP,"W*Sv    spectra","m2 s-1",ZSPECTRAX,ZSPECTRAY)
-  END DO
-END IF
-!
-DEALLOCATE( ZSPECTRAX )
-DEALLOCATE( ZSPECTRAY )
+if ( nspectra_k > 0 ) then
+  allocate( xspectrax(ispectra_ni, 2, nspectra_k, nles_times) )
+  allocate( xspectray(ispectra_nj, 2, nspectra_k, nles_times) )
+
+  tlesfieldx%clongname = ''
+  tlesfieldx%ngrid     = 0
+  tlesfieldx%ntype     = TYPEREAL
+  tlesfieldx%ndims     = 4
+  tlesfieldx%ndimlist(1)  = NMNHDIM_SPECTRA_SPEC_NI
+  tlesfieldx%ndimlist(2)  = NMNHDIM_COMPLEX
+  tlesfieldx%ndimlist(3)  = NMNHDIM_SPECTRA_LEVEL
+  tlesfieldx%ndimlist(4)  = NMNHDIM_BUDGET_LES_TIME
+  tlesfieldx%ndimlist(5:) = NMNHDIM_UNUSED
+
+  tlesfieldy = tlesfieldx
+  tlesfieldy%ndimlist(1)  = NMNHDIM_SPECTRA_SPEC_NJ
+
+  call Les_specn_write_one_field( tpdiafile, XCORRi_UU, XCORRj_UU, 'UU', 'U*U     spectra', 'm3 s-2' )
+  call Les_specn_write_one_field( tpdiafile, XCORRi_VV, XCORRj_VV, 'VV', 'V*V     spectra', 'm3 s-2' )
+  call Les_specn_write_one_field( tpdiafile, XCORRi_WW, XCORRj_WW, 'WW', 'W*W     spectra', 'm3 s-2' )
+  call Les_specn_write_one_field( tpdiafile, XCORRi_UV, XCORRj_UV, 'UV', 'U*V     spectra', 'm3 s-2' )
+  call Les_specn_write_one_field( tpdiafile, XCORRi_WU, XCORRj_WU, 'WU', 'W*U     spectra', 'm3 s-2' )
+  call Les_specn_write_one_field( tpdiafile, XCORRi_WV, XCORRj_WV, 'WV', 'W*V     spectra', 'm3 s-2' )
+
+  call Les_specn_write_one_field( tpdiafile, XCORRi_ThTh, XCORRj_ThTh, 'THTH', 'Th*Th   spectra', 'm K2' )
+  if ( luserc ) then
+    call Les_specn_write_one_field( tpdiafile, XCORRi_ThlThl, XCORRj_ThlThl, 'TLTL', 'Thl*Thl spectra', 'm K2' )
+  end if
+
+  call Les_specn_write_one_field( tpdiafile, XCORRi_WTh, XCORRj_WTh, 'WTH',  'W*Th    spectra', 'm2 K s-1' )
+  if ( luserc ) then
+    call Les_specn_write_one_field( tpdiafile, XCORRi_WThl, XCORRj_WThl, 'WTHL', 'W*Thl   spectra', 'm2 K s-1' )
+  end if
+
+  if ( luserv ) then
+    call Les_specn_write_one_field( tpdiafile, XCORRi_RvRv, XCORRj_RvRv, 'RVRV', 'rv*rv   spectra', 'm' )
+    call Les_specn_write_one_field( tpdiafile, XCORRi_ThRv, XCORRj_ThRv, 'THRV', 'th*rv   spectra', 'K m' )
+    if ( luserc ) then
+      call Les_specn_write_one_field( tpdiafile, XCORRi_ThlRv, XCORRj_ThlRv, 'TLRV', 'thl*rv  spectra', 'K m' )
+    end if
+    call Les_specn_write_one_field( tpdiafile, XCORRi_WRv,  XCORRj_WRv,  'WRV',  'W*rv    spectra', 'm K s-1' )
+  end if
+
+  if ( luserc ) then
+    call Les_specn_write_one_field( tpdiafile, XCORRi_RcRc,  XCORRj_RcRc,  'RCRC', 'rc*rc   spectra', 'm' )
+    call Les_specn_write_one_field( tpdiafile, XCORRi_ThRc,  XCORRj_ThRc,  'THRC', 'th*rc   spectra', 'K m' )
+    call Les_specn_write_one_field( tpdiafile, XCORRi_ThlRc, XCORRj_ThlRc, 'TLRC', 'thl*rc  spectra', 'K m' )
+    call Les_specn_write_one_field( tpdiafile, XCORRi_WRc,   XCORRj_WRc,   'WRC',  'W*rc    spectra', 'm K s-1' )
+  end if
+
+  if ( luseri ) then
+    call Les_specn_write_one_field( tpdiafile, XCORRi_RiRi,  XCORRj_RiRi,  'RIRI', 'ri*ri   spectra', 'm' )
+    call Les_specn_write_one_field( tpdiafile, XCORRi_ThRi,  XCORRj_ThRi,  'THRI', 'th*ri   spectra', 'K m' )
+    call Les_specn_write_one_field( tpdiafile, XCORRi_ThlRi, XCORRj_ThlRi, 'TLRI', 'thl*ri  spectra', 'K m' )
+    call Les_specn_write_one_field( tpdiafile, XCORRi_WRi,   XCORRj_WRi,   'WRI',  'W*ri    spectra', 'm K s-1' )
+  end if
+
+  do jsv = 1, nsv
+    Write( ygroup, fmt = "( a2, i3.3 )" ) "SS", jsv
+    call Les_specn_write_one_field( tpdiafile, XCORRi_SvSv(:,:,:,JSV), XCORRj_SvSv(:,:,:,JSV), ygroup, 'Sv*Sv   spectra','m' )
+  end do
+
+  do jsv = 1, nsv
+    Write( ygroup, fmt = "( a2, i3.3 )" ) "WS", jsv
+    call Les_specn_write_one_field( tpdiafile, XCORRi_WSv(:,:,:,JSV), XCORRj_WSv(:,:,:,JSV), ygroup, 'W*Sv    spectra','m2 s-1' )
+  end do
+
+  deallocate( xspectrax )
+  deallocate( xspectray )
+end if
+
+END SUBROUTINE LES_SPEC_n
 !
 !------------------------------------------------------------------------------
-!
-CONTAINS
-!
+
+subroutine  Les_specn_write_one_field( tpdiafile, zcorri, zcorrj, ymnhname, ycomment, yunits )
+
+use modd_io,          only: tfiledata
+
+use mode_les_diachro, only: Les_diachro_spec
+
+type(tfiledata),          intent(in) :: tpdiafile ! file to write
+real, dimension(:,:,:),   intent(in) :: zcorri    ! 2 pts correlation data
+real, dimension(:,:,:),   intent(in) :: zcorrj    ! 2 pts correlation data
+character(len=*),         intent(in) :: ymnhname
+character(len=*),         intent(in) :: ycomment
+character(len=*),         intent(in) :: yunits
+
+call Les_spec('X', zcorri, xspectrax)
+call Les_spec('Y', zcorrj, xspectray)
+
+tlesfieldx%cmnhname = ymnhname
+tlesfieldx%ccomment = ycomment
+tlesfieldx%cunits   = yunits
+
+tlesfieldy%cmnhname = tlesfieldx%cmnhname
+tlesfieldy%ccomment = tlesfieldx%ccomment
+tlesfieldy%cunits   = tlesfieldx%cunits
+
+call Les_diachro_spec( tpdiafile, tlesfieldx, tlesfieldy, xspectrax, xspectray )
+
+end subroutine Les_specn_write_one_field
+
 !------------------------------------------------------------------------------
 !
 SUBROUTINE LES_SPEC(HDIR,ZCORR,ZSPECTRA)
 !
-USE MODD_CST
+use modd_conf,   only: l2d
+use modd_cst,    only: xpi
+use modd_grid_n, only: xxhat, xyhat
 !
 CHARACTER(len=1),         INTENT(IN)  :: HDIR        ! direction of spectra
 REAL, DIMENSION(:,:,:),   INTENT(IN)  :: ZCORR       ! 2 pts correlation data
@@ -290,7 +292,5 @@ ZSPECTRA(:,:,:,:) = ZSPECTRA(:,:,:,:) / (2.*XPI*ZDX*(INK/2))
 END SUBROUTINE LES_SPEC
 !
 !------------------------------------------------------------------------------
-!
-END SUBROUTINE LES_SPEC_n
 
 END MODULE MODE_LES_SPEC_n
