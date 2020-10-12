@@ -267,6 +267,7 @@ END MODULE MODI_MODEL_n
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !  J. Escobar  27/09/2019: add missing report timing of RESOLVED_ELEC
 !  P. Wautelet 02-03/2020: use the new data structures and subroutines for budgets
+!  P. Wautelet 12/10/2020: Write_les_n: remove HLES_AVG dummy argument and group all 4 calls
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -367,6 +368,7 @@ USE MODE_MNH_TIMING
 USE MODE_MODELN_HANDLER
 USE MODE_MPPDB
 USE MODE_ONE_WAY_n
+use mode_write_les_n,               only: Write_les_n
 use mode_write_lfifmn_fordiachro_n, only: WRITE_LFIFMN_FORDIACHRO_n
 !
 USE MODI_ADVECTION_METSV
@@ -427,7 +429,6 @@ USE MODI_VISCOSITY
 USE MODI_WRITE_AIRCRAFT_BALLOON
 USE MODI_WRITE_DESFM_n
 USE MODI_WRITE_DIAG_SURF_ATM_N
-USE MODI_WRITE_LES_n
 USE MODI_WRITE_LFIFM_n
 USE MODI_WRITE_PROFILER_n
 USE MODI_WRITE_SERIES_n
@@ -2088,10 +2089,7 @@ IF (OEXIT) THEN
     CALL WRITE_AIRCRAFT_BALLOON(TDIAFILE)
     CALL WRITE_STATION_n(TDIAFILE)
     CALL WRITE_PROFILER_n(TDIAFILE)
-    CALL WRITE_LES_n(TDIAFILE,' ')
-    CALL WRITE_LES_n(TDIAFILE,'A')
-    CALL WRITE_LES_n(TDIAFILE,'E')
-    CALL WRITE_LES_n(TDIAFILE,'H')
+    call Write_les_n( tdiafile )
     CALL MENU_DIACHRO(TDIAFILE,'END')
     CALL IO_File_close(TDIAFILE)
   END IF

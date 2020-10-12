@@ -1,34 +1,23 @@
-!MNH_LIC Copyright 2000-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !######################
-MODULE MODI_WRITE_LES_n
+module mode_write_les_n
 !######################
-!
-INTERFACE
-!
-      SUBROUTINE  WRITE_LES_n(TPDIAFILE,HLES_AVG)
-!
-USE MODD_IO, ONLY: TFILEDATA
-!
-TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE! file to write
-CHARACTER(LEN=1), INTENT(IN) :: HLES_AVG ! flag to perform the averages
-!                                        ! or normalizations
-END SUBROUTINE WRITE_LES_n
-!
-END INTERFACE
-!
-END MODULE MODI_WRITE_LES_n
 
-!     ######################
-      SUBROUTINE  WRITE_LES_n(TPDIAFILE,HLES_AVG)
-!     ######################
+implicit none
+
+contains
+
+!###################################
+subroutine  Write_les_n( tpdiafile )
+!###################################
 !
 !
-!!****  *WRITE_LES_n* writes the LES final diagnostics for model _n 
-!!                         
+!!****  *WRITE_LES_n* writes the LES final diagnostics for model _n
+!!
 !!
 !!    PURPOSE
 !!    -------
@@ -58,6 +47,7 @@ END MODULE MODI_WRITE_LES_n
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  C. Lac         02/2019: add rain fraction as a LES diagnostic
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
+!  P. Wautelet 12/10/2020: remove HLES_AVG dummy argument and group all 4 calls
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -92,8 +82,6 @@ IMPLICIT NONE
 !*      0.1  declarations of arguments
 !
 TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE! file to write
-CHARACTER(LEN=1), INTENT(IN) :: HLES_AVG ! flag to perform the averages
-!                                        ! or normalizations
 !
 !
 !*      0.2  declaration of local variables
@@ -111,17 +99,15 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE     :: ZAVG_PTS_ll
 REAL, DIMENSION(:,:,:), ALLOCATABLE     :: ZUND_PTS_ll
 REAL                                    :: ZCART_PTS_ll
 INTEGER                                 :: IMI ! Current model inde
+
+CHARACTER(LEN=1)              :: HLES_AVG
+character(len=1),DIMENSION(4) :: yles_avg
+integer                       :: javg
 !
 !
 !-------------------------------------------------------------------------------
 !
 IF (.NOT. LLES) RETURN
-!
-IF (HLES_AVG=='A'                                                       &
-     .AND. (XLES_TEMP_MEAN_START==XUNDEF .OR. XLES_TEMP_MEAN_END==XUNDEF)) RETURN
-IF (HLES_AVG=='E' .AND. CLES_NORM_TYPE=='NONE'                          ) RETURN
-IF (HLES_AVG=='H' .AND. (CLES_NORM_TYPE=='NONE'                          &
-     .OR. XLES_TEMP_MEAN_START/=XUNDEF .OR. XLES_TEMP_MEAN_END/=XUNDEF)) RETURN
 !
 !*      1.   Initializations
 !            ---------------
@@ -262,6 +248,21 @@ IF (LLES_CS_MASK) THEN
   IMASK=IMASK+1
   YSUBTITLE(IMASK) = " (cs3)"
 END IF
+
+yles_avg(1) = ' '
+yles_avg(2) = 'A'
+yles_avg(3) = 'E'
+yles_avg(4) = 'H'
+
+AVG: do javg = 1, 4
+
+hles_avg = yles_avg(javg)
+
+IF (HLES_AVG=='A'                                                       &
+     .AND. (XLES_TEMP_MEAN_START==XUNDEF .OR. XLES_TEMP_MEAN_END==XUNDEF)) cycle
+IF (HLES_AVG=='E' .AND. CLES_NORM_TYPE=='NONE'                          ) cycle
+IF (HLES_AVG=='H' .AND. (CLES_NORM_TYPE=='NONE'                          &
+     .OR. XLES_TEMP_MEAN_START==XUNDEF .OR. XLES_TEMP_MEAN_END==XUNDEF)) cycle
 !
 !*      2.0  averaging diagnostics
 !            ---------------------
@@ -1479,6 +1480,7 @@ END IF
 !
 IF (HLES_AVG==' ') CALL LES_SPEC_n(TPDIAFILE)
 !
+end do AVG
 !-------------------------------------------------------------------------------
 !
 !*      7.   deallocations
@@ -1495,5 +1497,7 @@ IF (CLES_NORM_TYPE/='NONE' ) THEN
   DEALLOCATE(XLES_NORM_SV )
   DEALLOCATE(XLES_NORM_P  )
 END IF
-!
-END SUBROUTINE WRITE_LES_n 
+
+end subroutine Write_les_n
+
+end module mode_write_les_n
