@@ -7,7 +7,18 @@
 module mode_write_les_n
 !######################
 
+use modd_field, only: tfield_metadata_base
+
 implicit none
+
+private
+
+public :: Write_les_n
+
+
+type(tfield_metadata_base) :: tfieldx
+type(tfield_metadata_base) :: tfieldy
+
 
 contains
 
@@ -48,6 +59,7 @@ subroutine  Write_les_n( tpdiafile )
 !  C. Lac         02/2019: add rain fraction as a LES diagnostic
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !  P. Wautelet 12/10/2020: remove HLES_AVG dummy argument and group all 4 calls
+!  P. Wautelet    10/2020: restructure subroutines to use tfield_metadata_base type
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -1399,88 +1411,87 @@ CALL WRITE_LES_BUDGET_n(TPDIAFILE,HLES_AVG)
 IF (LUSERV) CALL WRITE_LES_RT_BUDGET_n(TPDIAFILE,HLES_AVG)
 IF (NSV>0)  CALL WRITE_LES_SV_BUDGET_n(TPDIAFILE,HLES_AVG)
 !
+end do AVG
 !-------------------------------------------------------------------------------
 !
 !*      5.   (ni,z,t) and (nj,z,t) 2points correlations
 !            ------------------------------------------
 !
-IF (HLES_AVG==' ' .OR. HLES_AVG=='A') THEN
-  IF (NSPECTRA_K>0) THEN
-    CALL LES_DIACHRO_2PT(TPDIAFILE,"UU   ","U*U     2 points correlations", &
-  "m2 s-2",XCORRi_UU,    XCORRj_UU,HLES_AVG)
-    CALL LES_DIACHRO_2PT(TPDIAFILE,"VV   ","V*V     2 points correlations", &
-  "m2 s-2",XCORRi_VV,    XCORRj_VV,HLES_AVG)
-    CALL LES_DIACHRO_2PT(TPDIAFILE,"WW   ","W*W     2 points correlations", &
-  "m2 s-2",XCORRi_WW,    XCORRj_WW,HLES_AVG)
-    CALL LES_DIACHRO_2PT(TPDIAFILE,"UV   ","U*V     2 points correlations", &
-  "m2 s-2",XCORRi_UV,    XCORRj_UV,HLES_AVG)
-    CALL LES_DIACHRO_2PT(TPDIAFILE,"WU   ","W*U     2 points correlations", &
-  "m2 s-2",XCORRi_WU,    XCORRj_WU,HLES_AVG)
-    CALL LES_DIACHRO_2PT(TPDIAFILE,"WV   ","W*V     2 points correlations", &
-  "m2 s-2",XCORRi_WV,    XCORRj_WV,HLES_AVG)
-    CALL LES_DIACHRO_2PT(TPDIAFILE,"THTH ","Th*Th   2 points correlations", &
-  "K2   ",XCORRi_ThTh,  XCORRj_ThTh,HLES_AVG)
-    IF (LUSERC) &
-    CALL LES_DIACHRO_2PT(TPDIAFILE,"TLTL ","Thl*Thl 2 points correlations", &
-  "K2   ",XCORRi_ThlThl,XCORRj_ThlThl,HLES_AVG)
-    CALL LES_DIACHRO_2PT(TPDIAFILE,"WTH  ","W*Th    2 points correlations", &
-  "m K s-1 ",XCORRi_WTh,   XCORRj_WTh,HLES_AVG)
-    IF (LUSERC) &
-    CALL LES_DIACHRO_2PT(TPDIAFILE,"WTHL ","W*Thl   2 points correlations", &
-  "m K s-1 ",XCORRi_WThl,  XCORRj_WThl,HLES_AVG)
-    !
-    IF (LUSERV) THEN
-      CALL LES_DIACHRO_2PT(TPDIAFILE,"RVRV ","rv*rv   2 points correlations", &
-  "kg2 kg-2 ",XCORRi_RvRv,  XCORRj_RvRv,HLES_AVG)
-      CALL LES_DIACHRO_2PT(TPDIAFILE,"THRV ","th*rv   2 points correlations", &
-  "K kg kg-1  ",XCORRi_ThRv,  XCORRj_ThRv,HLES_AVG)
-      IF (LUSERC) &
-      CALL LES_DIACHRO_2PT(TPDIAFILE,"TLRV ","thl*rv  2 points correlations", &
-  "K kg kg-1  ",XCORRi_ThlRv, XCORRj_ThlRv,HLES_AVG)
-      CALL LES_DIACHRO_2PT(TPDIAFILE,"WRV  ","W*rv    2 points correlations", &
-  "m kg s-1 kg-1",XCORRi_WRv,   XCORRj_WRv,HLES_AVG)
-    END IF
-    IF (LUSERC) THEN
-      CALL LES_DIACHRO_2PT(TPDIAFILE,"RCRC ","rc*rc   2 points correlations", &
-  "kg2 kg-2 ",XCORRi_RcRc,  XCORRj_RcRc,HLES_AVG)
-      CALL LES_DIACHRO_2PT(TPDIAFILE,"THRC ","th*rc   2 points correlations", &
-  "K kg kg-1  ",XCORRi_ThRc,  XCORRj_ThRc,HLES_AVG)
-      CALL LES_DIACHRO_2PT(TPDIAFILE,"TLRC ","thl*rc  2 points correlations", &
-  "K kg kg-1  ",XCORRi_ThlRc, XCORRj_ThlRc,HLES_AVG)
-      CALL LES_DIACHRO_2PT(TPDIAFILE,"WRC  ","W*rc    2 points correlations", &
-  "m kg s-1 kg-1",XCORRi_WRc,   XCORRj_WRc,HLES_AVG)
-    END IF
-    IF (LUSERI) THEN
-      CALL LES_DIACHRO_2PT(TPDIAFILE,"RCRC ","ri*ri   2 points correlations", &
-  "kg2 kg-2 ",XCORRi_RiRi,  XCORRj_RiRi,HLES_AVG)
-      CALL LES_DIACHRO_2PT(TPDIAFILE,"THRC ","th*ri   2 points correlations", &
-  "K kg kg-1  ",XCORRi_ThRi,  XCORRj_ThRi,HLES_AVG)
-      CALL LES_DIACHRO_2PT(TPDIAFILE,"TLRC ","thl*ri  2 points correlations", &
-  "K kg kg-1  ",XCORRi_ThlRi, XCORRj_ThlRi,HLES_AVG)
-      CALL LES_DIACHRO_2PT(TPDIAFILE,"WRC  ","W*ri    2 points correlations", &
-  "m kg s-1 kg-1",XCORRi_WRi,   XCORRj_WRi,HLES_AVG)
-    END IF
-    DO JSV=1,NSV
-      WRITE (YGROUP,FMT="(A2,I3.3)") "SS",JSV
-      CALL LES_DIACHRO_2PT(TPDIAFILE,YGROUP,"Sv*Sv   2 points correlations", &
-  "kg2 kg-2 ",XCORRi_SvSv(:,:,:,JSV),  XCORRj_SvSv(:,:,:,JSV),HLES_AVG)
-    END DO
-    DO JSV=1,NSV
-      WRITE (YGROUP,FMT="(A2,I3.3)") "WS",JSV
-      CALL LES_DIACHRO_2PT(TPDIAFILE,YGROUP,"W*Sv    2 points correlations", &
- "m kg s-1 kg-1",XCORRi_WSv(:,:,:,JSV),   XCORRj_WSv(:,:,:,JSV),HLES_AVG)
-    END DO
-  END IF
-END IF
+if ( nspectra_k > 0 ) then
+  tfieldx%cstdname = ''
+  tfieldx%ngrid    = 0 !Not on the Arakawa grid
+  tfieldx%ntype    = TYPEREAL
+  tfieldx%ndims    = 3
+  tfieldx%ndimlist(1)  = NMNHDIM_SPECTRA_2PTS_NI
+  tfieldx%ndimlist(2)  = NMNHDIM_SPECTRA_LEVEL
+  tfieldx%ndimlist(3)  = NMNHDIM_BUDGET_LES_TIME
+  tfieldx%ndimlist(4:) = NMNHDIM_UNUSED
+
+  tfieldy%cstdname = ''
+  tfieldy%ngrid    = 0 !Not on the Arakawa grid
+  tfieldy%ntype    = TYPEREAL
+  tfieldy%ndims    = 3
+  tfieldy%ndimlist(1)  = NMNHDIM_SPECTRA_2PTS_NJ
+  tfieldy%ndimlist(2)  = NMNHDIM_SPECTRA_LEVEL
+  tfieldy%ndimlist(3)  = NMNHDIM_BUDGET_LES_TIME
+  tfieldy%ndimlist(4:) = NMNHDIM_UNUSED
+
+  call Les_diachro_2pt_write( tpdiafile, XCORRi_UU, XCORRj_UU, 'UU', 'U*U     2 points correlations', 'm2 s-2' )
+  call Les_diachro_2pt_write( tpdiafile, XCORRi_VV, XCORRj_VV, 'VV', 'V*V     2 points correlations', 'm2 s-2' )
+  call Les_diachro_2pt_write( tpdiafile, XCORRi_WW, XCORRj_WW, 'WW', 'W*W     2 points correlations', 'm2 s-2' )
+  call Les_diachro_2pt_write( tpdiafile, XCORRi_UV, XCORRj_UV, 'UV', 'U*V     2 points correlations', 'm2 s-2' )
+  call Les_diachro_2pt_write( tpdiafile, XCORRi_WU, XCORRj_WU, 'WU', 'W*U     2 points correlations', 'm2 s-2' )
+  call Les_diachro_2pt_write( tpdiafile, XCORRi_WV, XCORRj_WV, 'WV', 'W*V     2 points correlations', 'm2 s-2' )
+
+  call Les_diachro_2pt_write( tpdiafile, XCORRi_ThTh, XCORRj_ThTh, 'THTH', 'Th*Th   2 points correlations', 'K2' )
+  if ( luserc ) &
+  call Les_diachro_2pt_write( tpdiafile, XCORRi_ThlThl, XCORRj_ThlThl, 'TLTL', 'Thl*Thl 2 points correlations', 'K2' )
+  call Les_diachro_2pt_write( tpdiafile, XCORRi_WTh,    XCORRj_WTh,    'WTH',  'W*Th    2 points correlations', 'm K s-1' )
+  if ( luserc ) &
+  call Les_diachro_2pt_write( tpdiafile, XCORRi_WThl,   XCORRj_WThl,   'WTHL', 'W*Thl   2 points correlations', 'm K s-1' )
+
+  if ( luserv ) then
+    call Les_diachro_2pt_write( tpdiafile, XCORRi_RvRv,  XCORRj_RvRv,  'RVRV', 'rv*rv   2 points correlations', 'kg2 kg-2' )
+    call Les_diachro_2pt_write( tpdiafile, XCORRi_ThRv,  XCORRj_ThRv,  'THRV', 'TH*RV   2 points correlations', 'K kg kg-1' )
+    if ( luserc ) &
+    call Les_diachro_2pt_write( tpdiafile, XCORRi_ThlRv, XCORRj_ThlRv, 'TLRV', 'thl*rv  2 points correlations', 'K kg kg-1' )
+    call Les_diachro_2pt_write( tpdiafile, XCORRi_WRv,   XCORRj_WRv,   'WRV',  'W*rv    2 points correlations', 'm kg s-1 kg-1' )
+  end if
+
+  if ( luserc ) then
+    call Les_diachro_2pt_write( tpdiafile, XCORRi_RcRc,  XCORRj_RcRc,  'RCRC', 'rc*rc   2 points correlations', 'kg2 kg-2' )
+    call Les_diachro_2pt_write( tpdiafile, XCORRi_ThRc,  XCORRj_ThRc,  'THRC', 'th*rc   2 points correlations', 'K kg kg-1' )
+    call Les_diachro_2pt_write( tpdiafile, XCORRi_ThlRc, XCORRj_ThlRc, 'TLRC', 'thl*rc  2 points correlations', 'K kg kg-1' )
+    call Les_diachro_2pt_write( tpdiafile, XCORRi_WRc,   XCORRj_WRc,   'WRC',  'W*rc    2 points correlations', 'm kg s-1 kg-1' )
+  end if
+
+  if ( luseri ) then
+    call Les_diachro_2pt_write( tpdiafile, XCORRi_RiRi,  XCORRj_RiRi,  'RIRI', 'ri*ri   2 points correlations', 'kg2 kg-2' )
+    call Les_diachro_2pt_write( tpdiafile, XCORRi_ThRi,  XCORRj_ThRi,  'THRI', 'th*ri   2 points correlations', 'K kg kg-1' )
+    call Les_diachro_2pt_write( tpdiafile, XCORRi_ThlRi, XCORRj_ThlRi, 'TLRI', 'thl*ri  2 points correlations', 'K kg kg-1' )
+    call Les_diachro_2pt_write( tpdiafile, XCORRi_WRi,   XCORRj_WRi,   'WRI',  'W*ri    2 points correlations', 'm kg s-1 kg-1' )
+  end if
+
+  do jsv = 1, nsv
+    Write( ygroup, fmt = "( a2, i3.3 )" ) "SS", jsv
+    call Les_diachro_2pt_write( tpdiafile, XCORRi_SvSv(:,:,:,JSV), XCORRj_SvSv(:,:,:,JSV), ygroup, &
+                                'Sv*Sv   2 points correlations','kg2 kg-2' )
+  end do
+
+  do jsv = 1, nsv
+    Write( ygroup, fmt = "( a2, i3.3 )" ) "WS", jsv
+    call Les_diachro_2pt_write( tpdiafile, XCORRi_WSv(:,:,:,JSV), XCORRj_WSv(:,:,:,JSV), ygroup, &
+                                'W*Sv    2 points correlations','m kg s-1 kg-1' )
+  end do
+end if
 !
 !-------------------------------------------------------------------------------
 !
 !*      6.   spectra and time-averaged profiles (if first call to WRITE_LES_n)
 !            ----------------------------------
 !
-IF (HLES_AVG==' ') CALL LES_SPEC_n(TPDIAFILE)
+call Les_spec_n( tpdiafile )
 !
-end do AVG
 !-------------------------------------------------------------------------------
 !
 !*      7.   deallocations
@@ -1499,5 +1510,36 @@ IF (CLES_NORM_TYPE/='NONE' ) THEN
 END IF
 
 end subroutine Write_les_n
+
+!------------------------------------------------------------------------------
+
+subroutine Les_diachro_2pt_write( tpdiafile, zcorri, zcorrj, ymnhname, ycomment, yunits )
+
+use modd_io,          only: tfiledata
+
+use mode_les_diachro, only: Les_diachro_2pt
+
+type(tfiledata),          intent(in) :: tpdiafile ! file to write
+real, dimension(:,:,:),   intent(in) :: zcorri    ! 2 pts correlation data
+real, dimension(:,:,:),   intent(in) :: zcorrj    ! 2 pts correlation data
+character(len=*),         intent(in) :: ymnhname
+character(len=*),         intent(in) :: ycomment
+character(len=*),         intent(in) :: yunits
+
+tfieldx%cmnhname  = ymnhname
+tfieldx%clongname = ymnhname
+tfieldx%ccomment  = ycomment
+tfieldx%cunits    = yunits
+
+tfieldy%cmnhname  = ymnhname
+tfieldy%clongname = ymnhname
+tfieldy%ccomment  = ycomment
+tfieldy%cunits    = yunits
+
+call Les_diachro_2pt( tpdiafile, tfieldx, tfieldy, zcorri, zcorrj )
+
+end subroutine Les_diachro_2pt_write
+
+!------------------------------------------------------------------------------
 
 end module mode_write_les_n

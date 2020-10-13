@@ -9,7 +9,7 @@
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !  P. Wautelet 20/09/2019: rewrite normalization of LES budgets
 !  P. Wautelet 14/08/2020: deduplicate LES_DIACHRO* subroutines
-!  P. Wautelet 12/10/2020: restructure subroutines to use tfield_metadata_base type
+!  P. Wautelet    10/2020: restructure subroutines to use tfield_metadata_base type
 !-----------------------------------------------------------------
 !#######################
 MODULE MODE_LES_DIACHRO
@@ -24,7 +24,7 @@ implicit none
 
 private
 
-public :: LES_DIACHRO, LES_DIACHRO_2PT, LES_DIACHRO_MASKS, Les_diachro_spec, &
+public :: LES_DIACHRO, Les_diachro_2pt, LES_DIACHRO_MASKS, Les_diachro_spec, &
           LES_DIACHRO_SURF, LES_DIACHRO_SURF_SV, LES_DIACHRO_SV, LES_DIACHRO_SV_MASKS
 
 CONTAINS
@@ -824,183 +824,167 @@ call Les_diachro_gen( tpdiafile, hgroup, [ hcomment ], hunit,                   
 END SUBROUTINE LES_DIACHRO_SURF_SV
 !-------------------------------------------------------------------------------
 
-!#####################################################################
-SUBROUTINE LES_DIACHRO_2PT(TPDIAFILE,HGROUP,HCOMMENT,HUNIT,PFIELDX,PFIELDY,HAVG)
-!#####################################################################
+!############################################################################
+subroutine Les_diachro_2pt( tpdiafile, tpfieldx, tpfieldy, pfieldx, pfieldy )
+!############################################################################
 !
 !* Modification 01/04/03 (V. Masson) safer use of ZWORK6 with loops
 !
 !
-USE MODD_CONF
-use modd_field,         only: NMNHDIM_UNKNOWN, tfield_metadata_base, TYPEREAL
-USE MODD_GRID
-USE MODD_IO,            ONLY: TFILEDATA
-USE MODD_LES
-use modd_type_date,     only: date_time
-
-use mode_write_diachro, only: Write_diachro
+use modd_conf,       only: l2d
+use modd_field,      only: tfield_metadata_base
+use modd_io,         only: tfiledata
+use modd_les,        only: xles_temp_mean_start, xles_temp_mean_end
+use modd_parameters, only: XUNDEF
 !
 IMPLICIT NONE
 !
 !
 !*      0.1  declarations of arguments
 !
-TYPE(TFILEDATA),                    INTENT(IN) :: TPDIAFILE! file to write
-CHARACTER(LEN=*),                   INTENT(IN) :: HGROUP   ! group title
-CHARACTER(LEN=*),                   INTENT(IN) :: HCOMMENT ! comment string
-CHARACTER(LEN=*),                   INTENT(IN) :: HUNIT    ! physical unit
-REAL,             DIMENSION(:,:,:), INTENT(IN) :: PFIELDX
-REAL,             DIMENSION(:,:,:), INTENT(IN) :: PFIELDY
-CHARACTER(LEN=1),                   INTENT(IN) :: HAVG     ! flag to compute avg.
-!
-!*      0.2  declaration of local variables for diachro
-!
-!
-INTEGER,            DIMENSION(1) :: IGRID    ! grid indicator
-CHARACTER(LEN= 10)               :: YGROUP   ! group title
-CHARACTER(LEN=100), DIMENSION(1) :: YCOMMENT ! comment string
-CHARACTER(LEN=100), DIMENSION(1) :: YTITLE   ! title
-CHARACTER(LEN=100), DIMENSION(1) :: YUNIT    ! physical unit
-INTEGER                          :: JT       ! time counter
-INTEGER                          :: JK       ! level counter
-INTEGER                          :: IRESP    ! return code
-!
-REAL, DIMENSION(:,:,:,:,:,:), allocatable :: ZWORK6 ! contains physical field
-!
-INTEGER :: IIL, IIH, IJL, IJH, IKL, IKH  ! cartesian area relatively to the
-!                                        ! entire domain
-!
-CHARACTER(len=6) :: YSTRING
-!
-LOGICAL :: GAVG                          ! flag to compute time averagings
-type(date_time), dimension(:), allocatable :: tzdates
-type(tfield_metadata_base) :: tzfield
+type(tfiledata),                    intent(in) :: tpdiafile! file to write
+type(tfield_metadata_base),         intent(in) :: tpfieldx ! Metadata of field pfieldx
+type(tfield_metadata_base),         intent(in) :: tpfieldy ! Metadata of field pfieldy
+real,             dimension(:,:,:), intent(in) :: pfieldx
+real,             dimension(:,:,:), intent(in) :: pfieldy
 !-------------------------------------------------------------------------------
-!
-IF (HAVG/=' '.AND. HAVG/='A') RETURN
-!
-GAVG=(HAVG=='A')
-!
-IF (GAVG .AND. (XLES_TEMP_MEAN_START==XUNDEF .OR. XLES_TEMP_MEAN_END==XUNDEF)) RETURN
-!
+
+                call Les_diachro_2pt_1d_intern( tpdiafile, tpfieldx, 'X', .false., pfieldx )
+if ( .not.l2d ) call Les_diachro_2pt_1d_intern( tpdiafile, tpfieldy, 'Y', .false., pfieldy )
+
+! With time average
+if ( xles_temp_mean_start /= xundef .and. xles_temp_mean_end /= XUNDEF ) then
+                  call Les_diachro_2pt_1d_intern( tpdiafile, tpfieldx, 'X', .true., pfieldx )
+  if ( .not.l2d ) call Les_diachro_2pt_1d_intern( tpdiafile, tpfieldy, 'Y', .true., pfieldy )
+end if
+
+end subroutine Les_diachro_2pt
+!-------------------------------------------------------------------------------
+
+!#############################################################################
+subroutine Les_diachro_2pt_1d_intern( tpdiafile, tpfield, hdir, yavg, pfield )
+!#############################################################################
+
+use modd_field,         only: NMNHDIM_BUDGET_LES_AVG_TIME, NMNHDIM_BUDGET_LES_TIME, NMNHDIM_UNUSED, &
+                              NMNHMAXDIMS, tfield_metadata_base
+use modd_io,            only: tfiledata
+use modd_les,           only: nles_current_iinf, nles_current_isup, nles_current_jinf, nles_current_jsup, &
+                              nles_current_times, nspectra_k, xles_current_domegax, xles_current_domegay
+use modd_type_date,     only: date_time
+
+use mode_write_diachro, only: Write_diachro
+
+type(tfiledata),                    intent(in) :: tpdiafile! file to write
+type(tfield_metadata_base),         intent(in) :: tpfield ! Metadata of field pfield
+character,                          intent(in) :: hdir
+logical,                            intent(in) :: yavg
+real,             dimension(:,:,:), intent(in) :: pfield
+
+character(len=6)                                     :: ystring
+character(len= 10)                                   :: ygroup   ! group title
+character(len=100)                                   :: ycomment ! comment string
+integer                                              :: iil, iih, ijl, ijh, ikl, ikh  ! cartesian area relatively to the
+integer                                              :: iresp    ! return code
+integer                                              :: ji
+integer                                              :: jt       ! time counter
+integer                                              :: jk       ! level counter
+real,            dimension(:,:,:,:,:,:), allocatable :: zwork6 ! contains physical field
+type(date_time), dimension(:),           allocatable :: tzdates
+type(tfield_metadata_base)                           :: tzfield
+
+if ( hdir /= 'X' .and. hdir /= 'Y' ) &
+  call Print_msg( NVERB_FATAL, 'BUD', 'Les_diachro_2pt_1d_intern', 'invalid hdir' // hdir )
+
 !*      1.0  Initialization of diachro variables for LES (z,t) profiles
 !            ----------------------------------------------------------
-!
-ALLOCATE(ZWORK6(SIZE(PFIELDX,1),1,NSPECTRA_K,NLES_CURRENT_TIMES,2,1))
-allocate( tzdates( NLES_CURRENT_TIMES ) )
-!
-IGRID(:)=1
-!
-YUNIT (:) = HUNIT
-!
-IKL=1
-IKH=NSPECTRA_K
-!
-IIL = NLES_CURRENT_IINF
-IIH = NLES_CURRENT_ISUP
-IJL = 1
-IJH = 1
-!
-YGROUP    = 'CI_'//HGROUP
-YTITLE(:) = YGROUP
-WRITE(YSTRING,FMT="(I6.6)") NINT( XLES_CURRENT_DOMEGAX )
-YCOMMENT(:) = " DOMEGAX="//YSTRING//' '//HCOMMENT
-!
-IRESP = 0
-DO JT=1,SIZE(PFIELDX,3)
-    DO JK=1,SIZE(PFIELDX,2)
-      ZWORK6(:,1,JK,JT,1,1) = PFIELDX (:,JK,JT)
-      ZWORK6(:,1,JK,JT,2,1) = 0.
-    END DO
-END DO
 
+allocate( tzdates( NLES_CURRENT_TIMES ) )
 tzdates(:) = xles_dates(:)
 
+ikl = 1
+ikh = nspectra_k
+
+!Copy all fields from tpfield
+tzfield = tpfield
+
+if ( hdir == 'X' ) then
+  Allocate( zwork6(Size( pfield, 1 ), 1, nspectra_k, nles_current_times, 1, 1) )
+
+  iil = nles_current_iinf
+  iih = nles_current_isup
+  ijl = 1
+  ijh = 1
+
+  do jt = 1, Size( pfield,  3 )
+    do jk = 1, Size( pfield, 2 )
+      zwork6(:, 1, jk, jt, 1, 1) = pfield (:, jk, jt)
+    end do
+  end do
+
+  tzfield%ndimlist(6) = NMNHDIM_UNUSED
+  tzfield%ndimlist(5) = NMNHDIM_UNUSED
+  tzfield%ndimlist(4) = tpfield%ndimlist(3)
+  tzfield%ndimlist(3) = tpfield%ndimlist(2)
+  tzfield%ndimlist(2) = NMNHDIM_UNUSED
+  tzfield%ndimlist(1) = tpfield%ndimlist(1)
+
+  ygroup    = 'CI_' // tpfield%cmnhname
+  Write( ystring, fmt = "( i6.6 )" ) Nint( xles_current_domegax )
+  ycomment(:) = " DOMEGAX=" // ystring // ' ' // tpfield%ccomment
+else
+  Allocate( zwork6(1, Size( pfield, 1 ), nspectra_k, nles_current_times, 1, 1) )
+
+  iil = 1
+  iih = 1
+  ijl = nles_current_jinf
+  ijh = nles_current_jsup
+
+  do jt = 1, Size( pfield, 3 )
+    do jk = 1, Size( pfield, 2 )
+      zwork6(1, :, jk, jt, 1, 1) = pfield (:, jk, jt)
+    end do
+  end do
+
+  tzfield%ndimlist(6) = NMNHDIM_UNUSED
+  tzfield%ndimlist(5) = NMNHDIM_UNUSED
+  tzfield%ndimlist(4) = tpfield%ndimlist(3)
+  tzfield%ndimlist(3) = tpfield%ndimlist(2)
+  tzfield%ndimlist(2) = tpfield%ndimlist(1)
+  tzfield%ndimlist(1) = NMNHDIM_UNUSED
+
+  ygroup    = 'CJ_' // tpfield%cmnhname
+  Write( ystring, fmt ="( i6.6 )" ) Nint( xles_current_domegay )
+  ycomment(:) = " DOMEGAY=" // ystring // ' ' // tpfield%ccomment
+end if
+
+!Done here because ygroup is modified later
+tzfield%cmnhname  = ygroup
+tzfield%clongname = ygroup
+tzfield%ccomment  = ycomment(:)
+
 !* time average
-!
-IF (GAVG) THEN
-  CALL LES_TIME_AVG( ZWORK6, tzdates, IRESP )
-  YGROUP    = 'T_'//YGROUP
-END IF
-!
-!
+iresp = 0
+if ( yavg ) then
+  call Les_time_avg( zwork6, tzdates, iresp )
+  ygroup    = 'T_'//ygroup
+
+  do ji = 1, NMNHMAXDIMS
+    if ( tzfield%ndimlist(ji) == NMNHDIM_BUDGET_LES_TIME ) tzfield%ndimlist(ji) = NMNHDIM_BUDGET_LES_AVG_TIME
+  end do
+end if
+
 !*      2.0  Writing of the profile
 !            ----------------------
-!
 if ( iresp == 0 ) then
-  tzfield%cmnhname  = ytitle(1)
-  tzfield%cstdname  = ''
-  tzfield%clongname = ytitle(1)
-  tzfield%cunits    = yunit(1)
-  tzfield%ccomment  = ycomment(1)
-  tzfield%ngrid     = igrid(1)
-  tzfield%ntype     = TYPEREAL
-  tzfield%ndims     = 6
-  tzfield%ndimlist(:) = NMNHDIM_UNKNOWN
-
-  call Write_diachro( tpdiafile, [ tzfield ], ygroup, "SPXY", tzdates,                 &
-                      zwork6,                                                          &
-                      oicp = .false., ojcp = .false., okcp = .false.,                  &
-                      kil = iil, kih = iih, kjl = ijl, kjh = ijh, kkl = ikl, kkh = ikh )
+    call Write_diachro( tpdiafile, [ tzfield ], ygroup, "SPXY", tzdates,                 &
+                        zwork6,                                                          &
+                        oicp = .false., ojcp = .false., okcp = .false.,                  &
+                        kil = iil, kih = iih, kjl = ijl, kjh = ijh, kkl = ikl, kkh = ikh )
 end if
-!
-!
-deallocate( tzdates )
-DEALLOCATE(ZWORK6)
-!
-IF (L2D) RETURN
-!
-ALLOCATE(ZWORK6(1,SIZE(PFIELDY,1),NSPECTRA_K,NLES_CURRENT_TIMES,2,1))
-allocate( tzdates( NLES_CURRENT_TIMES ) )
-!
-IIL = 1
-IIH = 1
-IJL = NLES_CURRENT_JINF
-IJH = NLES_CURRENT_JSUP
-!
-DO JT=1,SIZE(PFIELDY,3)
-    DO JK=1,SIZE(PFIELDY,2)
-      ZWORK6(1,:,JK,JT,1,1) = PFIELDY (:,JK,JT)
-      ZWORK6(1,:,JK,JT,2,1) = 0.
-    END DO
-END DO
 
-tzdates(:) = xles_dates(:)
-!
-YGROUP    = 'CJ_'//HGROUP
-YTITLE(:) = YGROUP
-WRITE(YSTRING,FMT="(I6.6)") NINT( XLES_CURRENT_DOMEGAY )
-YCOMMENT(:) = " DOMEGAY="//YSTRING//' '//HCOMMENT
-!
-!
-!* time average
-!
-IF (GAVG) THEN
-  CALL LES_TIME_AVG( ZWORK6, tzdates, IRESP )
-  YGROUP    = 'T_'//YGROUP
-END IF
-!
-tzfield%cmnhname  = ytitle(1)
-tzfield%cstdname  = ''
-tzfield%clongname = ytitle(1)
-tzfield%cunits    = yunit(1)
-tzfield%ccomment  = ycomment(1)
-tzfield%ngrid     = igrid(1)
-tzfield%ntype     = TYPEREAL
-tzfield%ndims     = 6
-tzfield%ndimlist(:) = NMNHDIM_UNKNOWN
-
-call Write_diachro( tpdiafile, [ tzfield ], ygroup, "SPXY", tzdates,                  &
-                    zwork6,                                                           &
-                    oicp = .false., ojcp = .false., okcp = .false.,                   &
-                    kil = iil, kih = iih, kjl = ijl, kjh = ijh, kkl = ikl, kkh = ikh  )
-!
-DEALLOCATE(ZWORK6)
-deallocate( tzdates )
-!
-!-------------------------------------------------------------------------------
-END SUBROUTINE LES_DIACHRO_2PT
+end subroutine Les_diachro_2pt_1d_intern
 !------------------------------------------------------------------------------
+
 !#################################################################################
 subroutine Les_diachro_spec( tpdiafile, tpfieldx, tpfieldy, pspectrax, pspectray )
 !#################################################################################
