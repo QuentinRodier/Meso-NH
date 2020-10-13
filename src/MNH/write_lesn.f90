@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -55,9 +55,9 @@ END MODULE MODI_WRITE_LES_n
 !!                       10/10/09 (P. Aumond) Add user multimaskS
 !!                          11/15 (C.Lac) Add production terms of TKE
 !!                    10/2016 (C.Lac) Add droplet deposition
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!!!                     02/2019 (C. Lac) Add rain fraction as a LES diagnostic
-
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  C. Lac         02/2019: add rain fraction as a LES diagnostic
+!  P. Wautelet 13/10/2020: bugfix: correct some names for LES_DIACHRO_2PT diagnostics (Ri)
 !! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -1454,13 +1454,13 @@ IF (HLES_AVG==' ' .OR. HLES_AVG=='A') THEN
   "m kg s-1 kg-1",XCORRi_WRc,   XCORRj_WRc,HLES_AVG)
     END IF
     IF (LUSERI) THEN
-      CALL LES_DIACHRO_2PT(TPDIAFILE,"RCRC ","ri*ri   2 points correlations", &
+      CALL LES_DIACHRO_2PT(TPDIAFILE,"RIRI ","ri*ri   2 points correlations", &
   "kg2 kg-2 ",XCORRi_RiRi,  XCORRj_RiRi,HLES_AVG)
-      CALL LES_DIACHRO_2PT(TPDIAFILE,"THRC ","th*ri   2 points correlations", &
+      CALL LES_DIACHRO_2PT(TPDIAFILE,"THRI ","th*ri   2 points correlations", &
   "K kg kg-1  ",XCORRi_ThRi,  XCORRj_ThRi,HLES_AVG)
-      CALL LES_DIACHRO_2PT(TPDIAFILE,"TLRC ","thl*ri  2 points correlations", &
+      CALL LES_DIACHRO_2PT(TPDIAFILE,"TLRI ","thl*ri  2 points correlations", &
   "K kg kg-1  ",XCORRi_ThlRi, XCORRj_ThlRi,HLES_AVG)
-      CALL LES_DIACHRO_2PT(TPDIAFILE,"WRC  ","W*ri    2 points correlations", &
+      CALL LES_DIACHRO_2PT(TPDIAFILE,"WRI  ","W*ri    2 points correlations", &
   "m kg s-1 kg-1",XCORRi_WRi,   XCORRj_WRi,HLES_AVG)
     END IF
     DO JSV=1,NSV
