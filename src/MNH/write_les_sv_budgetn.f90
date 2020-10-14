@@ -1,33 +1,26 @@
-!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!######################
-MODULE MODI_WRITE_LES_SV_BUDGET_n
-!######################
-!
-INTERFACE
-!
-      SUBROUTINE  WRITE_LES_SV_BUDGET_n(TPDIAFILE,HLES_AVG)
-!
-USE MODD_IO, ONLY: TFILEDATA
-!
-TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE ! file to write
-CHARACTER(LEN=1), INTENT(IN) :: HLES_AVG  ! flag to perform the averages
-!                                         ! or normalizations
-END SUBROUTINE WRITE_LES_SV_BUDGET_n
-!
-END INTERFACE
-!
-END MODULE MODI_WRITE_LES_SV_BUDGET_n
+!################################
+module mode_write_les_sv_budget_n
+!################################
 
-!     ######################
-      SUBROUTINE  WRITE_LES_SV_BUDGET_n(TPDIAFILE,HLES_AVG)
-!     ######################
+implicit none
+
+private
+
+public :: Write_les_sv_budget_n
+
+contains
+
+!############################################
+subroutine Write_les_sv_budget_n( tpdiafile )
+!############################################
 !
 !
-!!****  *WRITE_LES_n* writes the LES final diagnostics for model _n 
+!!****  *Write_les_sv_budget_n* writes the LES final diagnostics for model _n
 !!                         
 !!
 !!    PURPOSE
@@ -49,36 +42,46 @@ END MODULE MODI_WRITE_LES_SV_BUDGET_n
 !!    MODIFICATIONS
 !!    -------------
 !!      Original         06/11/02
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
-!! --------------------------------------------------------------------------
+!  P. Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 14/10/2020: restructure Les_diachro calls to use tfield_metadata_base type
+! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_CST
-USE MODD_IO, ONLY: TFILEDATA
-USE MODD_LES
-USE MODD_LES_n
-USE MODD_CONF_n
-USE MODD_LES_BUDGET
-USE MODD_NSV
-!
-USE MODE_ll
-!
-USE MODE_LES_DIACHRO
-!
+use modd_conf_n,      only: luserv
+USE MODD_CST,         only: xg
+use modd_field,       only: NMNHDIM_BUDGET_LES_LEVEL, NMNHDIM_BUDGET_LES_TIME, NMNHDIM_BUDGET_LES_SV, &
+                            NMNHDIM_BUDGET_TERM, NMNHDIM_UNUSED,                                      &
+                            tfield_metadata_base, TYPEREAL
+use modd_io,          only: tfiledata
+use modd_les,         only: cles_norm_type, nles_k, xles_temp_mean_start, xles_temp_mean_end, xles_temp_sampling
+use modd_les_n,       only: nles_times,                                                                     &
+                            xles_bu_res_sv2, xles_bu_res_wsv,                                               &
+                            xles_mean_dsvdz, xles_mean_dwdz, xles_mean_th, xles_mean_thv, xles_mean_w,      &
+                            xles_res_ddxa_sv_sbg_uasv, xles_res_ddxa_sv_sbg_uaw, xles_res_ddxa_w_sbg_uasv,  &
+                            xles_res_ddz_sv_sbg_w2, xles_res_w_sbg_wsv, xles_res_w_sbg_sv2,                 &
+                            xles_subgrid_diss_sv2, xles_subgrid_sv2, xles_subgrid_svpz, xles_subgrid_svthv, &
+                            xles_subgrid_w2, xles_subgrid_wsv, xles_subgrid_wsv2, xles_subgrid_w2sv,        &
+                            xles_z
+USE MODD_LES_BUDGET,  only: NLES_RELA, NLES_GRAV, NLES_COR, NLES_HTURB, NLES_VTURB, NLES_FORC, NLES_PRES, &
+                            NLES_DIFF, NLES_DP, NLES_TR, NLES_TEND, NLES_ADVM, NLES_NEST, NLES_MISC
+USE MODD_NSV,         only: nsv
+use modd_parameters,  only: XUNDEF
+
+use mode_les_diachro, only: Les_diachro
+
 IMPLICIT NONE
 !
 !
 !*      0.1  declarations of arguments
 !
 TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE ! file to write
-CHARACTER(LEN=1), INTENT(IN) :: HLES_AVG  ! flag to perform the averages
-!                                         ! or normalizations
 !
 !*      0.2  declaration of local variables
 !
+integer, parameter :: NMAX_ILES = 50
+
 INTEGER :: ILES
 INTEGER :: ILES_STA
 INTEGER :: JLES
@@ -89,20 +92,21 @@ INTEGER :: JT ! temporal loop counter
 INTEGER :: JSV! scalar loop counter
 INTEGER :: JP ! process loop counter
 !
-CHARACTER(len=9), DIMENSION(:), ALLOCATABLE :: YSUBTITLE
+CHARACTER(len=9), DIMENSION(NMAX_ILES)      :: YSUBTITLE
 CHARACTER(len=8)                            :: YGROUP
 CHARACTER(len=20)                           :: YTITLE
 !
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZLES_BUDGET
-REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZSV_BUDGET
 !
+logical                    :: gdoavg  ! Compute and store time average
+logical                    :: gdonorm ! Compute and store normalized field
+type(tfield_metadata_base) :: tzfield
 !-------------------------------------------------------------------------------
 !
 !*          Initializations
 !            ---------------
 !
-ALLOCATE(ZLES_BUDGET(NLES_K,NLES_TIMES,50,NSV))
-ALLOCATE(YSUBTITLE(50))
+ALLOCATE(ZLES_BUDGET(NLES_K,NLES_TIMES,NMAX_ILES,NSV))
 !
 ZLES_BUDGET(:,:,:,:) = XUNDEF
 !-------------------------------------------------------------------------------
@@ -374,17 +378,29 @@ END DO
 !* 2.16 writing
 !       -------
 !
-ALLOCATE(ZSV_BUDGET(NLES_K,NLES_TIMES,ILES,NSV))
-DO JSV=1,NSV
-  DO JP=1,ILES
-    ZSV_BUDGET(:,:,JP,JSV) = ZLES_BUDGET(:,:,JP,JSV)
-  END DO
-END DO
-
 YTITLE = "Sv variance budget  "
-CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,YGROUP,YSUBTITLE(:ILES),YTITLE//YSUBTITLE(:ILES),"kg2 kg-2 s-1",ZSV_BUDGET,HLES_AVG)
-!
-DEALLOCATE(ZSV_BUDGET)
+
+tzfield%ngrid = 0 !Not on the Arakawa grid
+tzfield%ntype = TYPEREAL
+
+tzfield%cmnhname  = ygroup
+tzfield%cstdname  = ''
+tzfield%clongname = ygroup
+tzfield%ccomment  = ytitle
+tzfield%cunits    = 'kg2 kg-2 s-1'
+
+tzfield%ndims = 4
+tzfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+tzfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+tzfield%ndimlist(3)  = NMNHDIM_BUDGET_TERM
+tzfield%ndimlist(4)  = NMNHDIM_BUDGET_LES_SV
+tzfield%ndimlist(5:) = NMNHDIM_UNUSED
+
+gdoavg  = xles_temp_mean_start /= XUNDEF .and. xles_temp_mean_end /= XUNDEF
+gdonorm = trim(cles_norm_type) /= 'NONE'
+
+call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles, :), ysubtitle(:iles) )
+
 !-------------------------------------------------------------------------------
 !
 !*      3.  total water flux budget
@@ -744,22 +760,35 @@ END DO
 !* 3.22 writing
 !       -------
 !
-ALLOCATE(ZSV_BUDGET(NLES_K,NLES_TIMES,ILES,NSV))
-DO JSV=1,NSV
-  DO JP=1,ILES
-    ZSV_BUDGET(:,:,JP,JSV) = ZLES_BUDGET(:,:,JP,JSV)
-  END DO
-END DO
-
 YTITLE = "Sv flux budget      "
-CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,YGROUP,YSUBTITLE(:ILES),YTITLE//YSUBTITLE(:ILES),"m kg kg-1 s-2",ZSV_BUDGET,HLES_AVG)
-!
-DEALLOCATE(ZSV_BUDGET)
+
+tzfield%ngrid = 0 !Not on the Arakawa grid
+tzfield%ntype = TYPEREAL
+
+tzfield%cmnhname  = ygroup
+tzfield%cstdname  = ''
+tzfield%clongname = ygroup
+tzfield%ccomment  = ytitle
+tzfield%cunits    = 'm kg kg-1 s-2'
+
+tzfield%ndims = 4
+tzfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+tzfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+tzfield%ndimlist(3)  = NMNHDIM_BUDGET_TERM
+tzfield%ndimlist(4)  = NMNHDIM_BUDGET_LES_SV
+tzfield%ndimlist(5:) = NMNHDIM_UNUSED
+
+gdoavg  = xles_temp_mean_start /= XUNDEF .and. xles_temp_mean_end /= XUNDEF
+gdonorm = trim(cles_norm_type) /= 'NONE'
+
+call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles, :), ysubtitle(:iles) )
+
 !-------------------------------------------------------------------------------
 !
 DEALLOCATE(ZLES_BUDGET)
-DEALLOCATE(YSUBTITLE)
 !
 !-------------------------------------------------------------------------------
 !
-END SUBROUTINE WRITE_LES_SV_BUDGET_n 
+end subroutine Write_les_sv_budget_n
+
+end module mode_write_les_sv_budget_n

@@ -81,12 +81,12 @@ USE MODD_PARAM_C2R2, ONLY : LDEPOC
 USE MODE_ll
 !
 USE MODE_LES_DIACHRO
-USE MODE_LES_SPEC_N
+use mode_les_spec_n,            only: Les_spec_n
 USE MODE_MODELN_HANDLER
+use mode_write_les_sv_budget_n, only: Write_les_sv_budget_n
 !
 USE MODI_WRITE_LES_BUDGET_n
 USE MODI_WRITE_LES_RT_BUDGET_n
-USE MODI_WRITE_LES_SV_BUDGET_n
 !
 IMPLICIT NONE
 !
@@ -1409,9 +1409,10 @@ END IF
 !
 CALL WRITE_LES_BUDGET_n(TPDIAFILE,HLES_AVG)
 IF (LUSERV) CALL WRITE_LES_RT_BUDGET_n(TPDIAFILE,HLES_AVG)
-IF (NSV>0)  CALL WRITE_LES_SV_BUDGET_n(TPDIAFILE,HLES_AVG)
-!
 end do AVG
+
+if ( nsv > 0 ) call Write_les_sv_budget_n( tpdiafile )
+!
 !-------------------------------------------------------------------------------
 !
 !*      5.   (ni,z,t) and (nj,z,t) 2points correlations
