@@ -416,9 +416,10 @@ SUBROUTINE LES_TIME_AVG(PWORK6,tpdates,KRESP)
 !  P. Wautelet    03/2018: replace ADD_FORECAST_TO_DATE by DATETIME_CORRECTDATE
 !  P. Wautelet 28/08/2020: bugfix: allocate ZWORK6 at the correct dimension (3rd one)
 !
-use modd_time,      only: tdtseg
-USE MODD_LES
-USE MODD_TYPE_DATE, only: date_time
+use modd_les,        only: nles_current_times, xles_temp_mean_start, xles_temp_mean_end, xles_temp_mean_step
+use modd_parameters, only: XUNDEF
+use modd_time,       only: tdtseg
+use modd_type_date,  only: date_time
 !
 use mode_datetime,  only: Datetime_correctdate
 !
@@ -440,6 +441,7 @@ INTEGER :: JP                            ! process loop counter
 INTEGER :: JSV                           ! scalar loop counter
 INTEGER :: JX                            ! first  spatial or spectral coordinate loop counter
 INTEGER :: JY                            ! second spatial or spectral coordinate loop counter
+integer :: jtb, jte
 !------------------------------------------------------------------------------
 !
 IF (     XLES_TEMP_MEAN_END==XUNDEF   &
@@ -465,30 +467,29 @@ ZWORK6(:,:,:,:,:,:) = 0.
 DO JAVG=1,IAVG
   ZLES_TEMP_MEAN_START=XLES_TEMP_MEAN_START + (JAVG-1) * XLES_TEMP_MEAN_STEP
   ZLES_TEMP_MEAN_END  =MIN(XLES_TEMP_MEAN_END, ZLES_TEMP_MEAN_START + XLES_TEMP_MEAN_STEP)
-  !
+
+  jtb = -1
+  jte = -2
+  do jt = 1, nles_current_times
+    if ( xles_times(jt) >= zles_temp_mean_start ) then
+      jtb = jt
+      exit
+    end if
+  end do
+  do jt = jtb, nles_current_times
+    if ( xles_times(jt) <= zles_temp_mean_end ) then
+      jte = jt
+    else
+      exit
+    end if
+  end do
+
   DO JP=1,SIZE(PWORK6,6)
     DO JSV=1,SIZE(PWORK6,5)
       DO JK=1,SIZE(PWORK6,3)
         DO JY=1,SIZE(PWORK6,2)
           DO JX=1,SIZE(PWORK6,1)
-            ITIME=0
-            DO JT=1,NLES_CURRENT_TIMES
-              IF ( xles_times(JT) >= ZLES_TEMP_MEAN_START .AND. &
-                   xles_times(JT) <= ZLES_TEMP_MEAN_END         ) THEN
-                IF (PWORK6(JX,JY,JK,JT,JSV,JP) /= XUNDEF) THEN
-                 ZWORK6(JX,JY,JK,JAVG,JSV,JP) =  ZWORK6(JX,JY,JK,JAVG,JSV,JP) &
-                                              + PWORK6(JX,JY,JK,JT,JSV,JP)
-                 ITIME=ITIME+1
-                END IF
-              END IF
-            END DO
-            IF (ITIME >= 1) THEN
-                    ZWORK6(JX,JY,JK,JAVG,JSV,JP)= &
-                            ZWORK6(JX,JY,JK,JAVG,JSV,JP) / ITIME
-            END IF
-            IF (ITIME == 0) THEN
-                   ZWORK6(JX,JY,JK,JAVG,JSV,JP)= XUNDEF
-            END IF
+            zwork6(jx, jy, jk, javg, jsv, jp) = Les_time_avg_1pt( pwork6(jx, jy, jk, :, jsv, jp), jtb, jte )
           END DO
         END DO
       END DO
@@ -511,7 +512,141 @@ KRESP = 0
 
 END SUBROUTINE LES_TIME_AVG
 !------------------------------------------------------------------------------
-!
+
+!########################################################
+subroutine Les_time_avg_4D( pwork4, tpdates, kresp )
+!########################################################
+
+use modd_les,        only: nles_current_times, xles_temp_mean_start, xles_temp_mean_end, xles_temp_mean_step
+use modd_parameters, only: XUNDEF
+use modd_time,       only: tdtseg
+use modd_type_date,  only: date_time
+
+use mode_datetime,   only: Datetime_correctdate
+
+implicit none
+
+real,            dimension(:,:,:,:), allocatable, intent(inout) :: pwork4 ! contains physical field
+type(date_time), dimension(:),       allocatable, intent(inout) :: tpdates
+integer,                                          intent(out)   :: kresp  ! return code (0 is ok)
+!------------------------------------------------------------------------------
+integer                               :: jt                   ! time counter
+integer                               :: itime                ! nb of avg. points
+integer                               :: iavg                 ! nb of avg. periods
+integer                               :: javg                 ! loop counter on avg. periods
+integer                               :: jk                   ! vertical loop counter
+integer                               :: jp                   ! process loop counter
+integer                               :: jsv                  ! scalar loop counter
+integer                               :: jx                   ! first  spatial or spectral coordinate loop counter
+integer                               :: jy                   ! second spatial or spectral coordinate loop counter
+integer                               :: jtb, jte
+real                                  :: zles_temp_mean_start ! initial and end times
+real                                  :: zles_temp_mean_end   ! of one avergaing preiod
+real, dimension(:,:,:,:), allocatable :: zwork4               ! contains averaged physical field
+!------------------------------------------------------------------------------
+
+if (     xles_temp_mean_end   == XUNDEF &
+    .or. xles_temp_mean_start == XUNDEF &
+    .or. xles_temp_mean_step  == XUNDEF ) then
+  kresp = -1
+  return
+end if
+
+iavg = Int( xles_temp_mean_end - 1.e-10 - xles_temp_mean_start ) / xles_temp_mean_step + 1
+if ( iavg <= 0 ) then
+  kresp = -1
+  return
+end if
+
+Deallocate( tpdates )
+
+Allocate( tpdates(iavg) )
+Allocate( zwork4(Size( pwork4, 1 ), iavg, Size( pwork4, 3 ), Size( pwork4, 4 )) )
+
+zwork4(:, :, :, :) = 0.
+
+do javg = 1, iavg
+  zles_temp_mean_start = xles_temp_mean_start + (javg - 1) * xles_temp_mean_step
+  zles_temp_mean_end   = Min( xles_temp_mean_end, zles_temp_mean_start + xles_temp_mean_step )
+
+  jtb = -1
+  jte = -2
+  do jt = 1, nles_current_times
+    if ( xles_times(jt) >= zles_temp_mean_start ) then
+      jtb = jt
+      exit
+    end if
+  end do
+  do jt = jtb, nles_current_times
+    if ( xles_times(jt) <= zles_temp_mean_end ) then
+      jte = jt
+    else
+      exit
+    end if
+  end do
+
+  do jp = 1, Size( pwork4, 4 )
+    do jsv = 1, Size( pwork4, 3 )
+      do jk = 1, Size( pwork4, 1 )
+        zwork4(jk, javg, jsv, jp) = Les_time_avg_1pt( pwork4(jk, :, jsv, jp), jtb, jte )
+      end do
+    end do
+  end do
+
+  tpdates(javg)%tdate%year  = tdtseg%tdate%year
+  tpdates(javg)%tdate%month = tdtseg%tdate%month
+  tpdates(javg)%tdate%day   = tdtseg%tdate%day
+  tpdates(javg)%time        = tdtseg%time + ( zles_temp_mean_start + zles_temp_mean_end ) / 2.
+  call Datetime_correctdate( tpdates(javg) )
+end do
+
+Deallocate( pwork4 )
+Allocate( pwork4(Size( zwork4, 1 ), iavg, Size( zwork4, 3 ), Size( zwork4, 4 )) )
+
+pwork4 = zwork4
+
+Deallocate( zwork4 )
+
+kresp = 0
+
+end subroutine Les_time_avg_4D
+!------------------------------------------------------------------------------
+
+!#######################################################################
+pure function Les_time_avg_1pt( pfieldin, ktb, kte ) result( pfieldout )
+!#######################################################################
+! This routine computes time averaging for 1 point
+use modd_parameters, only: XUNDEF
+
+implicit none
+
+real,    dimension(:), intent(in) :: pfieldin
+integer,               intent(in) :: ktb
+integer,               intent(in) :: kte
+
+real :: pfieldout
+
+integer :: itime, jt
+
+itime = 0
+
+pfieldout = 0.
+
+do jt = ktb, kte
+  if ( pfieldin(jt) /= XUNDEF ) then
+    pfieldout =  pfieldout + pfieldin(jt)
+    itime = itime + 1
+  end if
+end do
+
+if (itime == 0) then
+  pfieldout = XUNDEF
+else
+  pfieldout = pfieldout / itime
+end if
+
+end function Les_time_avg_1pt
+
 !########################################################
 subroutine Les_diachro_gen(tpdiafile, hgroup, hcomment, hunit, pfield, havg, htitle, osurf, osv )
 !########################################################
