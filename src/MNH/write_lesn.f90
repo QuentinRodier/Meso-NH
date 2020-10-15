@@ -83,10 +83,10 @@ USE MODE_ll
 USE MODE_LES_DIACHRO
 use mode_les_spec_n,            only: Les_spec_n
 USE MODE_MODELN_HANDLER
+use mode_write_les_rt_budget_n, only: Write_les_rt_budget_n
 use mode_write_les_sv_budget_n, only: Write_les_sv_budget_n
 !
 USE MODI_WRITE_LES_BUDGET_n
-USE MODI_WRITE_LES_RT_BUDGET_n
 !
 IMPLICIT NONE
 !
@@ -1408,8 +1408,10 @@ END IF
 !            -----------
 !
 CALL WRITE_LES_BUDGET_n(TPDIAFILE,HLES_AVG)
-IF (LUSERV) CALL WRITE_LES_RT_BUDGET_n(TPDIAFILE,HLES_AVG)
+
 end do AVG
+
+if ( luserv )  call Write_les_rt_budget_n( tpdiafile )
 
 if ( nsv > 0 ) call Write_les_sv_budget_n( tpdiafile )
 !

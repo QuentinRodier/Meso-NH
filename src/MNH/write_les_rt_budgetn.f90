@@ -1,33 +1,26 @@
-!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!######################
-MODULE MODI_WRITE_LES_RT_BUDGET_n
-!######################
-!
-INTERFACE
-!
-      SUBROUTINE  WRITE_LES_RT_BUDGET_n(TPDIAFILE,HLES_AVG)
-!
-USE MODD_IO, ONLY: TFILEDATA
-!
-TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE ! file to write
-CHARACTER(LEN=1), INTENT(IN) :: HLES_AVG  ! flag to perform the averages
-!                                         ! or normalizations
-END SUBROUTINE WRITE_LES_RT_BUDGET_n
-!
-END INTERFACE
-!
-END MODULE MODI_WRITE_LES_RT_BUDGET_n
-!
-!     ######################
-      SUBROUTINE  WRITE_LES_RT_BUDGET_n(TPDIAFILE,HLES_AVG)
-!     ######################
+!################################
+module mode_write_les_rt_budget_n
+!################################
+
+implicit none
+
+private
+
+public :: Write_les_rt_budget_n
+
+contains
+
+!#############################################
+subroutine  Write_les_rt_budget_n( tpdiafile )
+!#############################################
 !
 !
-!!****  *WRITE_LES_n* writes the LES final diagnostics for model _n 
+!!****  *Write_les_rt_budget_n* writes the LES final diagnostics for model _n
 !!                         
 !!
 !!    PURPOSE
@@ -49,14 +42,17 @@ END MODULE MODI_WRITE_LES_RT_BUDGET_n
 !!    MODIFICATIONS
 !!    -------------
 !!      Original         06/11/02
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
-!! --------------------------------------------------------------------------
+!  P. Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 15/10/2020: restructure Les_diachro calls to use tfield_metadata_base type
+! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
 !          ------------
 !
 USE MODD_CST
+use modd_field,       only: NMNHDIM_BUDGET_LES_LEVEL, NMNHDIM_BUDGET_LES_TIME, &
+                            NMNHDIM_BUDGET_TERM, NMNHDIM_UNUSED,               &
+                            tfield_metadata_base, TYPEREAL
 USE MODD_IO, ONLY: TFILEDATA
 USE MODD_LES
 USE MODD_LES_n
@@ -72,12 +68,12 @@ IMPLICIT NONE
 !*      0.1  declarations of arguments
 !
 TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE ! file to write
-CHARACTER(LEN=1), INTENT(IN) :: HLES_AVG  ! flag to perform the averages
-!                                         ! or normalizations
 !
 !
 !*      0.2  declaration of local variables
 !
+integer, parameter :: NMAX_ILES = 40
+
 INTEGER :: ILES
 INTEGER :: ILES_STA
 INTEGER :: JLES
@@ -86,20 +82,34 @@ INTEGER :: ILES_P1, ILES_P2
 INTEGER :: JK ! vertical loop counter
 INTEGER :: JT ! temporal loop counter
 !
-CHARACTER(len=9), DIMENSION(:), ALLOCATABLE :: YSUBTITLE
-CHARACTER(len=8)                            :: YGROUP
+CHARACTER(len=9), DIMENSION(NMAX_ILES) :: YSUBTITLE
+CHARACTER(len=8)                       :: YGROUP
 !
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZLES_BUDGET
 !
+logical                    :: gdoavg  ! Compute and store time average
+logical                    :: gdonorm ! Compute and store normalized field
+type(tfield_metadata_base) :: tzfield
 !-------------------------------------------------------------------------------
 !
 !*          Initializations
 !            ---------------
 !
-ALLOCATE(ZLES_BUDGET(NLES_K,NLES_TIMES,40))
-ALLOCATE(YSUBTITLE(40))
+ALLOCATE(ZLES_BUDGET(NLES_K,NLES_TIMES,NMAX_ILES))
 !
 ZLES_BUDGET(:,:,:) = XUNDEF
+
+tzfield%ngrid = 0 !Not on the Arakawa grid
+tzfield%ntype = TYPEREAL
+tzfield%ndims = 3
+tzfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+tzfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+tzfield%ndimlist(3)  = NMNHDIM_BUDGET_TERM
+tzfield%ndimlist(4:) = NMNHDIM_UNUSED
+
+gdoavg  = xles_temp_mean_start /= XUNDEF .and. xles_temp_mean_end /= XUNDEF
+gdonorm = Trim( cles_norm_type ) /= 'NONE'
+
 !-------------------------------------------------------------------------------
 !
 !*      2.  total water variance budget
@@ -338,11 +348,14 @@ ZLES_BUDGET(NLES_K,:,ILES) = ZLES_BUDGET(NLES_K-1,:,ILES)
 !* 2.16 writing
 !       -------
 !
-!
-CALL LES_DIACHRO_MASKS(TPDIAFILE,YGROUP,YSUBTITLE(:ILES),"Rt variance budget"//YSUBTITLE(:ILES),"kg2 kg-2 s-1", &
-                       ZLES_BUDGET(:,:,:ILES),HLES_AVG)
-!
-!
+tzfield%cmnhname  = ygroup
+tzfield%cstdname  = ''
+tzfield%clongname = ygroup
+tzfield%ccomment  = 'Rt variance budget'
+tzfield%cunits    = 'kg2 kg-2 s-1'
+
+call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles), ysubtitle(:iles) )
+
 !-------------------------------------------------------------------------------
 !
 !*      3.  total water flux budget
@@ -645,11 +658,14 @@ ZLES_BUDGET(:,:,ILES)=-XLES_RES_ddxa_Rt_SBG_UaW(:,:,1)       &
 !* 3.22 writing
 !       -------
 !
-!
-CALL LES_DIACHRO_MASKS(TPDIAFILE,YGROUP,YSUBTITLE(:ILES),"Rt flux budget"//YSUBTITLE(:ILES),"m kg kg-1 s-2", &
-                       ZLES_BUDGET(:,:,:ILES),HLES_AVG)
-!
-!
+tzfield%cmnhname  = ygroup
+tzfield%cstdname  = ''
+tzfield%clongname = ygroup
+tzfield%ccomment  = 'Rt flux budget'
+tzfield%cunits    = 'm kg kg-1 s-2'
+
+call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles), ysubtitle(:iles) )
+
 !-------------------------------------------------------------------------------
 !
 !*      4.  liquid potential temperature - total water covariance budget
@@ -892,15 +908,20 @@ ZLES_BUDGET(NLES_K,:,ILES) = ZLES_BUDGET(NLES_K-1,:,ILES)
 !* 2.16 writing
 !       -------
 !
-!
-CALL LES_DIACHRO_MASKS(TPDIAFILE,YGROUP,YSUBTITLE(:ILES),"Thl-Rt covariance budget"//YSUBTITLE(:ILES), &
-                                              "K kg kg-1 s-1",ZLES_BUDGET(:,:,:ILES),HLES_AVG)
-!
+tzfield%cmnhname  = ygroup
+tzfield%cstdname  = ''
+tzfield%clongname = ygroup
+tzfield%ccomment  = 'Thl-Rt covariance budget'
+tzfield%cunits    = 'K kg kg-1 s-1'
+
+call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles), ysubtitle(:iles) )
+
 !-------------------------------------------------------------------------------
 !
 DEALLOCATE(ZLES_BUDGET)
-DEALLOCATE(YSUBTITLE)
 !
 !-------------------------------------------------------------------------------
 !
-END SUBROUTINE WRITE_LES_RT_BUDGET_n 
+end subroutine Write_les_rt_budget_n
+
+end module mode_write_les_rt_budget_n

@@ -933,7 +933,7 @@ subroutine Les_diachro_3D( tpdiafile, tpfield, odoavg, odonorm, pfield, hsuffixe
 !##################################################################################
 
 use modd_field, only: NMNHDIM_BUDGET_LES_LEVEL, NMNHDIM_BUDGET_LES_MASK, NMNHDIM_BUDGET_LES_SV, &
-                      NMNHDIM_BUDGET_LES_TIME,  NMNHDIM_UNUSED,                                 &
+                      NMNHDIM_BUDGET_LES_TIME,  NMNHDIM_BUDGET_TERM,     NMNHDIM_UNUSED,        &
                       tfield_metadata_base
 use modd_io,    only: tfiledata
 
@@ -959,9 +959,9 @@ if ( Any( tzfield%ndimlist(4:) /= NMNHDIM_UNUSED ) ) then
   tzfield%ndimlist(4:) = NMNHDIM_UNUSED
 end if
 
-if (       tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL &
-     .and. tzfield%ndimlist(2) == NMNHDIM_BUDGET_LES_TIME  &
-     .and. tzfield%ndimlist(3) == NMNHDIM_BUDGET_LES_MASK  ) then
+if (         tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL                                                 &
+     .and.   tzfield%ndimlist(2) == NMNHDIM_BUDGET_LES_TIME                                                  &
+     .and. ( tzfield%ndimlist(3) == NMNHDIM_BUDGET_LES_MASK .or.tzfield%ndimlist(3) == NMNHDIM_BUDGET_TERM ) ) then
   if ( .not. Present( hsuffixes ) ) &
     call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_3D', &
                     'optional dummy argument hsuffixes is needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
@@ -1264,6 +1264,7 @@ call Les_diachro_gen( tpdiafile, hgroup, [ hcomment ], hunit,                   
 !-------------------------------------------------------------------------------
 END SUBROUTINE LES_DIACHRO_SV
 !-------------------------------------------------------------------------------
+
 !#####################################################################
 SUBROUTINE LES_DIACHRO_MASKS(TPDIAFILE,HGROUP,HTITLE,HCOMMENT,HUNIT,PFIELD,HAVG)
 !#####################################################################
@@ -1287,6 +1288,7 @@ call Les_diachro_gen( tpdiafile, hgroup, hcomment, hunit,                       
 !-------------------------------------------------------------------------------
 END SUBROUTINE LES_DIACHRO_MASKS
 !-------------------------------------------------------------------------------
+
 !########################################################################
 SUBROUTINE LES_DIACHRO_SV_MASKS(TPDIAFILE,HGROUP,HTITLE,HCOMMENT,HUNIT,PFIELD,HAVG)
 !########################################################################
