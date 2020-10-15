@@ -48,20 +48,29 @@ subroutine  Write_les_rt_budget_n( tpdiafile )
 !
 !*      0. DECLARATIONS
 !          ------------
-!
-USE MODD_CST
+
+use modd_cst,         only: xg
 use modd_field,       only: NMNHDIM_BUDGET_LES_LEVEL, NMNHDIM_BUDGET_LES_TIME, &
                             NMNHDIM_BUDGET_TERM, NMNHDIM_UNUSED,               &
                             tfield_metadata_base, TYPEREAL
-USE MODD_IO, ONLY: TFILEDATA
-USE MODD_LES
-USE MODD_LES_n
-USE MODD_LES_BUDGET
-!
-USE MODE_ll
-!
-USE MODE_LES_DIACHRO
-!
+use modd_io,          only: tfiledata
+use modd_les,         only: cles_norm_type, nles_k, xles_temp_mean_start, xles_temp_mean_end, xles_temp_sampling
+use modd_les_n,       only: nles_times,                                                                                   &
+                            xles_bu_res_rt2, xles_bu_res_thlrt, xles_bu_res_wrt,                                          &
+                            xles_mean_drtdz, xles_mean_dthldz, xles_mean_thv, xles_mean_w,                                &
+                            xles_res_ddxa_rt_sbg_uart, xles_res_ddxa_rt_sbg_uaw, xles_res_ddxa_w_sbg_uart,                &
+                            xles_res_ddxa_rt_sbg_uathl, xles_res_ddxa_thl_sbg_uart,                                       &
+                            xles_res_ddz_rt_sbg_w2, xles_res_w_sbg_wrt, xles_res_w_sbg_rt2, xles_res_w_sbg_thlrt,         &
+                            xles_subgrid_diss_rt2, xles_subgrid_diss_thlrt, xles_subgrid_rt2, xles_subgrid_rtpz,          &
+                            xles_subgrid_rtthv, xles_subgrid_thlrt, xles_subgrid_w2, xles_subgrid_wrt, xles_subgrid_wrt2, &
+                            xles_subgrid_w2rt, xles_subgrid_wthl, xles_subgrid_wthlrt,                                    &
+                            xles_z
+use modd_les_budget,  only: NLES_RELA, NLES_RAD,  NLES_GRAV, NLES_COR, NLES_MICR, NLES_HTURB, NLES_VTURB, NLES_FORC, &
+                            NLES_PRES, NLES_DIFF, NLES_PREF, NLES_DP,  NLES_TR,   NLES_TEND,  NLES_ADVM,  NLES_NEST, NLES_MISC
+use modd_parameters,  only: XUNDEF
+
+use mode_les_diachro, only: Les_diachro
+
 IMPLICIT NONE
 !
 !

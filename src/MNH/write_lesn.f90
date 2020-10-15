@@ -83,10 +83,10 @@ USE MODE_ll
 USE MODE_LES_DIACHRO
 use mode_les_spec_n,            only: Les_spec_n
 USE MODE_MODELN_HANDLER
+use mode_write_les_budget_n,    only: Write_les_budget_n
 use mode_write_les_rt_budget_n, only: Write_les_rt_budget_n
 use mode_write_les_sv_budget_n, only: Write_les_sv_budget_n
 !
-USE MODI_WRITE_LES_BUDGET_n
 !
 IMPLICIT NONE
 !
@@ -1402,14 +1402,13 @@ IF (HLES_AVG==' ' .OR. HLES_AVG=='A') THEN
 
 END IF
 !
+end do AVG
 !-------------------------------------------------------------------------------
 !
 !*      4.   LES budgets
 !            -----------
 !
-CALL WRITE_LES_BUDGET_n(TPDIAFILE,HLES_AVG)
-
-end do AVG
+call Write_les_budget_n( tpdiafile )
 
 if ( luserv )  call Write_les_rt_budget_n( tpdiafile )
 

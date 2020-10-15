@@ -50,7 +50,7 @@ subroutine Write_les_sv_budget_n( tpdiafile )
 !          ------------
 !
 use modd_conf_n,      only: luserv
-USE MODD_CST,         only: xg
+use modd_cst,         only: xg
 use modd_field,       only: NMNHDIM_BUDGET_LES_LEVEL, NMNHDIM_BUDGET_LES_TIME, NMNHDIM_BUDGET_LES_SV, &
                             NMNHDIM_BUDGET_TERM, NMNHDIM_UNUSED,                                      &
                             tfield_metadata_base, TYPEREAL
@@ -64,9 +64,9 @@ use modd_les_n,       only: nles_times,                                         
                             xles_subgrid_diss_sv2, xles_subgrid_sv2, xles_subgrid_svpz, xles_subgrid_svthv, &
                             xles_subgrid_w2, xles_subgrid_wsv, xles_subgrid_wsv2, xles_subgrid_w2sv,        &
                             xles_z
-USE MODD_LES_BUDGET,  only: NLES_RELA, NLES_GRAV, NLES_COR, NLES_HTURB, NLES_VTURB, NLES_FORC, NLES_PRES, &
+use modd_les_budget,  only: NLES_RELA, NLES_GRAV, NLES_COR, NLES_HTURB, NLES_VTURB, NLES_FORC, NLES_PRES, &
                             NLES_DIFF, NLES_DP, NLES_TR, NLES_TEND, NLES_ADVM, NLES_NEST, NLES_MISC
-USE MODD_NSV,         only: nsv
+use modd_nsv,         only: nsv
 use modd_parameters,  only: XUNDEF
 
 use mode_les_diachro, only: Les_diachro

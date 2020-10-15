@@ -1,34 +1,27 @@
-!MNH_LIC Copyright 2000-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!######################
-MODULE MODI_WRITE_LES_BUDGET_n
-!######################
-!
-INTERFACE
-!
-      SUBROUTINE  WRITE_LES_BUDGET_n(TPDIAFILE,HLES_AVG)
-!
-USE MODD_IO, ONLY: TFILEDATA
-!
-TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE! file to write
-CHARACTER(LEN=1), INTENT(IN) :: HLES_AVG ! flag to perform the averages
-!                                        ! or normalizations
-END SUBROUTINE WRITE_LES_BUDGET_n
-!
-END INTERFACE
-!
-END MODULE MODI_WRITE_LES_BUDGET_n
+!#############################
+module mode_write_les_budget_n
+!#############################
 
-!     ######################
-      SUBROUTINE  WRITE_LES_BUDGET_n(TPDIAFILE,HLES_AVG)
-!     ######################
+implicit none
+
+private
+
+public :: Write_les_budget_n
+
+contains
+
+!##########################################
+subroutine  Write_les_budget_n( tpdiafile )
+!##########################################
 !
 !
-!!****  *WRITE_LES_n* writes the LES final diagnostics for model _n 
-!!                         
+!!****  *Write_les_budget_n* writes the LES final diagnostics for model _n
+!!
 !!
 !!    PURPOSE
 !!    -------
@@ -50,36 +43,51 @@ END MODULE MODI_WRITE_LES_BUDGET_n
 !!    -------------
 !!      Original   07/02/00
 !!                 06/11/02 (V. Masson) new LES budgets
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!
-!! --------------------------------------------------------------------------
-!       
+!  P. Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 15/10/2020: restructure Les_diachro calls to use tfield_metadata_base type
+! --------------------------------------------------------------------------
+!
 !*      0. DECLARATIONS
 !          ------------
-!
-USE MODD_CST
-USE MODD_IO, ONLY: TFILEDATA
-USE MODD_LES
-USE MODD_LES_n
-USE MODD_CONF_n
-USE MODD_LES_BUDGET
-!
-USE MODE_ll
-!
-USE MODE_LES_DIACHRO
-!
+
+use modd_conf_n,      only: luserv
+use modd_cst,         only: xg
+use modd_field,       only: NMNHDIM_BUDGET_LES_LEVEL, NMNHDIM_BUDGET_LES_TIME, &
+                            NMNHDIM_BUDGET_TERM, NMNHDIM_UNUSED,               &
+                            tfield_metadata_base, TYPEREAL
+use modd_io,          only: tfiledata
+use modd_les,         only: cles_norm_type, nles_k, xles_temp_mean_start, xles_temp_mean_end, xles_temp_sampling
+use modd_les_n,       only: nles_times,                                                                                   &
+                            xles_bu_res_ke, xles_bu_res_thl2, xles_bu_res_wthl,                                           &
+                            xles_bu_sbg_tke,                                                                              &
+                            xles_mean_dthldz, xles_mean_dudz, xles_mean_dvdz, xles_mean_dwdz,                             &
+                            xles_mean_th, xles_mean_thv, xles_mean_w,                                                     &
+                            xles_res_ddxa_thl_sbg_uaw, xles_res_ddxa_w_sbg_uathl, xles_res_ddxa_thl_sbg_uathl,            &
+                            xles_res_ddz_thl_sbg_w2,                                                                      &
+                            xles_res_w_sbg_thl2, xles_res_w_sbg_wthl,                                                     &
+                            xles_subgrid_diss_thl2,                                                                       &
+                            xles_subgrid_thl2, xles_subgrid_thlpz, xles_subgrid_thlthv, xles_subgrid_w2,                  &
+                            xles_subgrid_w2thl, xles_subgrid_wthl, xles_subgrid_wthl2, xles_subgrid_wu, xles_subgrid_wv,  &
+                            xles_z
+use modd_les_budget,  only: NLES_RELA, NLES_RAD,  NLES_GRAV, NLES_COR,  NLES_MICR, NLES_HTURB, NLES_VTURB, NLES_FORC,     &
+                            NLES_PRES, NLES_DIFF, NLES_CURV, NLES_PREF, NLES_DP,   NLES_TP,    NLES_TR,    NLES_DISS,     &
+                            NLES_TEND,  NLES_ADVR, NLES_ADVM,  NLES_NEST, NLES_MISC
+use modd_parameters,  only: XUNDEF
+
+use mode_les_diachro, only: Les_diachro
+
 IMPLICIT NONE
 !
 !
 !*      0.1  declarations of arguments
 !
 TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE! file to write
-CHARACTER(LEN=1), INTENT(IN) :: HLES_AVG ! flag to perform the averages
-!                                        ! or normalizations
 !
 !
 !*      0.2  declaration of local variables
 !
+integer, parameter :: NMAX_ILES = 40
+
 INTEGER :: ILES
 INTEGER :: ILES_STA
 INTEGER :: JLES
@@ -88,21 +96,34 @@ INTEGER :: ILES_P1, ILES_P2
 INTEGER :: JK ! vertical loop counter
 INTEGER :: JT ! temporal loop counter
 !
-CHARACTER(len=9), DIMENSION(:), ALLOCATABLE :: YSUBTITLE
-CHARACTER(len=8)                            :: YGROUP
+CHARACTER(len=9), DIMENSION(NMAX_ILES) :: YSUBTITLE
+CHARACTER(len=8)                       :: YGROUP
 !
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZLES_BUDGET
 !
+logical                    :: gdoavg  ! Compute and store time average
+logical                    :: gdonorm ! Compute and store normalized field
+type(tfield_metadata_base) :: tzfield
 !-------------------------------------------------------------------------------
 !
 !*          Initializations
 !            ---------------
 !
-ALLOCATE(ZLES_BUDGET(NLES_K,NLES_TIMES,40))
-ALLOCATE(YSUBTITLE(40))
+ALLOCATE(ZLES_BUDGET(NLES_K,NLES_TIMES,NMAX_ILES))
 !
 ZLES_BUDGET=XUNDEF
 YSUBTITLE(:)=' '
+
+tzfield%ngrid = 0 !Not on the Arakawa grid
+tzfield%ntype = TYPEREAL
+tzfield%ndims = 3
+tzfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+tzfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+tzfield%ndimlist(3)  = NMNHDIM_BUDGET_TERM
+tzfield%ndimlist(4:) = NMNHDIM_UNUSED
+
+gdoavg  = xles_temp_mean_start /= XUNDEF .and. xles_temp_mean_end /= XUNDEF
+gdonorm = Trim( cles_norm_type ) /= 'NONE'
 !-------------------------------------------------------------------------------
 !
 !*      1.  total (resolved+subgrid) kinetic energy budget
@@ -409,9 +430,14 @@ END DO
 !       -------
 !
 !
-CALL LES_DIACHRO_MASKS(TPDIAFILE,YGROUP,YSUBTITLE(:ILES),"resolved KE budget"//YSUBTITLE(:ILES),"m2 s-3", &
-                       ZLES_BUDGET(:,:,:ILES),HLES_AVG)
-!
+tzfield%cmnhname  = ygroup
+tzfield%cstdname  = ''
+tzfield%clongname = ygroup
+tzfield%ccomment  = 'resolved KE budget'
+tzfield%cunits    = 'm2 s-3'
+
+call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles), ysubtitle(:iles) )
+
 !-------------------------------------------------------------------------------
 !
 !
@@ -656,9 +682,14 @@ ZLES_BUDGET(NLES_K,:,ILES) = ZLES_BUDGET(NLES_K-1,:,ILES)
 !       -------
 !
 !
-CALL LES_DIACHRO_MASKS(TPDIAFILE,YGROUP,YSUBTITLE(:ILES),"thetal variance budget"//YSUBTITLE(:ILES),"K2 s-1", &
-                       ZLES_BUDGET(:,:,:ILES),HLES_AVG)
-!
+tzfield%cmnhname  = ygroup
+tzfield%cstdname  = ''
+tzfield%clongname = ygroup
+tzfield%ccomment  = 'thetal variance budget'
+tzfield%cunits    = 'K2 s-1'
+
+call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles), ysubtitle(:iles) )
+
 !-------------------------------------------------------------------------------
 !
 !*      3.  temperature flux budget
@@ -966,15 +997,20 @@ ZLES_BUDGET(:,:,ILES)=-XLES_RES_ddxa_Thl_SBG_UaW(:,:,1)       &
 !       -------
 !
 !
-CALL LES_DIACHRO_MASKS(TPDIAFILE,YGROUP,YSUBTITLE(:ILES),"thetal flux budget"//YSUBTITLE(:ILES),"m K s-2", &
-                       ZLES_BUDGET(:,:,:ILES),HLES_AVG)
-!
-!
+tzfield%cmnhname  = ygroup
+tzfield%cstdname  = ''
+tzfield%clongname = ygroup
+tzfield%ccomment  = 'thetal flux budget'
+tzfield%cunits    = 'm K s-2'
+
+call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles), ysubtitle(:iles) )
+
 !-------------------------------------------------------------------------------
 !
 DEALLOCATE(ZLES_BUDGET)
-DEALLOCATE(YSUBTITLE)
 !
 !-------------------------------------------------------------------------------
 !
-END SUBROUTINE WRITE_LES_BUDGET_n 
+end subroutine Write_les_budget_n
+
+end module mode_write_les_budget_n
