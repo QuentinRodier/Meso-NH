@@ -1280,14 +1280,6 @@ END IF
 !            --------------------------------
 !
 IF (HLES_AVG==' ' .OR. HLES_AVG=='A') THEN
-
-  CALL LES_DIACHRO_SURF(TPDIAFILE,"Q0      ",  &
-     "Sensible heat flux at the surface","m K s-1",XLES_Q0,HLES_AVG)
-
-  IF (LUSERV) &
-  CALL LES_DIACHRO_SURF(TPDIAFILE,"E0      ",  &
-     "Latent heat flux at the surface","kg kg-1 m s-1",XLES_E0,HLES_AVG)
-     !writes  sw and lw flux and dthrad at all levels
   CALL LES_DIACHRO(TPDIAFILE,"SWU      ",  &
      "sw_up ","W m-2 ",XLES_SWU,HLES_AVG)
 
@@ -1312,97 +1304,72 @@ IF (HLES_AVG==' ' .OR. HLES_AVG=='A') THEN
   IF (NSV>0) &
   CALL LES_DIACHRO_SURF_SV(TPDIAFILE,"SV0     ",  &
      "Scalar variable fluxes at the surface","kg kg-1 m s-1",XLES_SV0,HLES_AVG)
-
-  CALL LES_DIACHRO_SURF(TPDIAFILE,"U*      ",  &
-     "Friction velocity","m s-1",XLES_USTAR,HLES_AVG)
-
-  CALL LES_DIACHRO_SURF(TPDIAFILE,"W*      ",  &
-     "Convective velocity","m s-1",XLES_WSTAR,HLES_AVG)
-
-  CALL LES_DIACHRO_SURF(TPDIAFILE,"BL_H    ",  &
-     "Boundary Layer Height","m",XLES_BL_HEIGHT,HLES_AVG)
-
-  CALL LES_DIACHRO_SURF(TPDIAFILE,"L_MO    ",  &
-     "Monin-Obukhov length","m",XLES_MO_LENGTH,HLES_AVG)
-
-  CALL LES_DIACHRO_SURF(TPDIAFILE,"INT_TKE    ",  &
-     "Vertical integrated tke","m2.s-2",XLES_INT_TKE,HLES_AVG)
-
-  IF (LUSERC) &
-  CALL LES_DIACHRO_SURF(TPDIAFILE,"ZCB    ",  &
-     "Cloud base Height","m",XLES_ZCB,HLES_AVG)   
-
-  IF (LUSERC) &
-  CALL LES_DIACHRO_SURF(TPDIAFILE,"ZCFTOT    ",  &
-     "Total Cloud cover","1",XLES_CFtot,HLES_AVG)
-
-  IF (LUSERC) &
-  CALL LES_DIACHRO_SURF(TPDIAFILE,"ZCF2TOT    ",  &
-     "Total Cloud cove 2r","1",XLES_CF2tot,HLES_AVG)
-
-  IF (LUSERC) &
-  CALL LES_DIACHRO_SURF(TPDIAFILE,"LWP    ",  &
-     "Liquid Water path","kg m-2",XLES_LWP,HLES_AVG)
-
-  IF (LUSERC) &
-  CALL LES_DIACHRO_SURF(TPDIAFILE,"LWPVAR ",  &
-     "Liquid Water path variance","kg m-4",XLES_LWPVAR,HLES_AVG)
-
-  IF (LUSERR) &
-  CALL LES_DIACHRO_SURF(TPDIAFILE,"RWP    ",  &
-     "Rain Water path","kg m-2",XLES_RWP,HLES_AVG)
-
-  IF (LUSERI) &
-  CALL LES_DIACHRO_SURF(TPDIAFILE,"IWP    ",  &
-     "Ice Water path","kg m-2",XLES_IWP,HLES_AVG)
-
-  IF (LUSERS) &
-  CALL LES_DIACHRO_SURF(TPDIAFILE,"SWP    ",  &
-     "Snow Water path","kg m-2",XLES_SWP,HLES_AVG)
-
-  IF (LUSERG) &
-  CALL LES_DIACHRO_SURF(TPDIAFILE,"GWP    ",  &
-     "Graupel Water path","kg m-2",XLES_GWP,HLES_AVG)
-
-  IF (LUSERH) &
-  CALL LES_DIACHRO_SURF(TPDIAFILE,"HWP    ",  &
-     "Hail Water path","kg m-2",XLES_HWP,HLES_AVG)
-
-  IF (LUSERR) &
-  CALL LES_DIACHRO_SURF(TPDIAFILE,"PREC_FRAC    ",  &
-  "Fract of col where rain at surface","",XLES_PRECFR,HLES_AVG)
-
-  IF (LUSERR) &
-  CALL LES_DIACHRO_SURF(TPDIAFILE,"INST_PREC    ",  &
-     "Inst precip rate","mm day-1",XLES_INPRR,HLES_AVG)
-
-  IF (LUSERC) &
-  CALL LES_DIACHRO_SURF(TPDIAFILE,"INST_SEDIM   ",  &
-     "Inst cloud precip rate","mm day-1",XLES_INPRC,HLES_AVG)
-
-  IF (LUSERC .AND. (LDEPOSC .OR. LDEPOC)) &
-  CALL LES_DIACHRO_SURF(TPDIAFILE,"INST_DEPOS   ",  &
-     "Inst cloud deposi rate","mm day-1",XLES_INDEP,HLES_AVG)
-
-  IF (LUSERR) &
-  CALL LES_DIACHRO_SURF(TPDIAFILE,"RAIN_PREC    ",  &
-     "inst pr. rate over rainy grid cells","mm day-1",XLES_RAIN_INPRR,HLES_AVG)
-     
-  IF (LUSERR) &
-  CALL LES_DIACHRO_SURF(TPDIAFILE,"ACCU_PREC    ",  &
-     "Accu precip rate","mm",XLES_ACPRR,HLES_AVG)   
-
-  IF (LUSERC) &
-  CALL LES_DIACHRO_SURF(TPDIAFILE,"ZMAXCF    ",  &
-     "Height of Cloud fraction max","m",XLES_ZMAXCF,HLES_AVG)
-
-  IF (LUSERC) &
-  CALL LES_DIACHRO_SURF(TPDIAFILE,"ZMAXCF2   ",  &
-     "Height of Cloud fraction2max","m",XLES_ZMAXCF2,HLES_AVG)
-
 END IF
-!
+
 end do AVG
+
+!Prepare metadate (used in Les_diachro_write calls)
+tfield%ngrid = 0 !Not on the Arakawa grid
+tfield%ntype = TYPEREAL
+
+tfield%ndims = 1
+tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_TIME
+tfield%ndimlist(2:) = NMNHDIM_UNUSED
+
+ldoavg  = xles_temp_mean_start /= XUNDEF .and. xles_temp_mean_end /= XUNDEF
+ldonorm = .false.
+
+call Les_diachro_write( tpdiafile, xles_e0, 'Q0', 'Sensible heat flux at the surface', 'm K s-1' )
+if ( luserv ) &
+call Les_diachro_write( tpdiafile, xles_e0, 'E0', 'Latent heat flux at the surface',   'kg kg-1 m s-1' )
+
+
+
+
+
+
+call Les_diachro_write( tpdiafile, xles_ustar,      'U*',         'Friction velocity',                   'm s-1' )
+call Les_diachro_write( tpdiafile, xles_wstar,      'W*',         'Convective velocity',                 'm s-1' )
+call Les_diachro_write( tpdiafile, xles_bl_height,  'BL_H',       'Boundary Layer Height',               'm' )
+call Les_diachro_write( tpdiafile, xles_mo_length,  'L_MO',       'Monin-Obukhov length',                'm' )
+call Les_diachro_write( tpdiafile, xles_int_tke,    'INT_TKE',    'Vertical integrated tke',             'm2 s-2' )
+if ( luserc ) &
+call Les_diachro_write( tpdiafile, xles_zcb,        'ZCB',        'Cloud base Height',                   'm' )
+if ( luserc ) &
+call Les_diachro_write( tpdiafile, xles_cftot,      'ZCFTOT',     'Total Cloud cover',                   '1' )
+if ( luserc ) &
+call Les_diachro_write( tpdiafile, xles_cf2tot,     'ZCF2TOT',    'Total Cloud cove 2r',                 '1' )
+if ( luserc ) &
+call Les_diachro_write( tpdiafile, xles_lwp,        'LWP',        'Liquid Water path',                   'kg m-2' )
+if ( luserc ) &
+call Les_diachro_write( tpdiafile, xles_lwpvar,     'LWPVAR',     'Liquid Water path variance',          'kg m-4' )
+if ( luserr ) &
+call Les_diachro_write( tpdiafile, xles_rwp,        'RWP',        'Rain Water path',                     'kg m-2' )
+if ( luseri ) &
+call Les_diachro_write( tpdiafile, xles_iwp,        'IWP',        'Ice Water path',                      'kg m-2' )
+if ( lusers ) &
+call Les_diachro_write( tpdiafile, xles_swp,        'SWP',        'Snow Water path',                     'kg m-2' )
+if ( luserg ) &
+call Les_diachro_write( tpdiafile, xles_gwp,        'GWP',        'Graupel Water path',                  'kg m-2' )
+if ( luserh ) &
+call Les_diachro_write( tpdiafile, xles_hwp,        'HWP',        'Hail Water path',                     'kg m-2' )
+if ( luserr ) &
+call Les_diachro_write( tpdiafile, xles_precfr,     'PREC_FRAC',  'Fract of col where rain at surface',  '1' )
+if ( luserr ) &
+call Les_diachro_write( tpdiafile, xles_inprr,      'INST_PREC',  'Inst precip rate',                    'mm day-1' )
+if ( luserc ) &
+call Les_diachro_write( tpdiafile, xles_inprc,      'INST_SEDIM', 'Inst cloud precip rate',              'mm day-1' )
+if ( luserc .and. ( ldeposc .or. ldepoc ) ) &
+call Les_diachro_write( tpdiafile, xles_indep,      'INST_DEPOS', 'Inst cloud deposi rate',              'mm day-1' )
+if ( luserr ) &
+call Les_diachro_write( tpdiafile, xles_rain_inprr, 'RAIN_PREC',  'Inst pr. rate over rainy grid cells', 'mm day-1' )
+if ( luserr ) &
+call Les_diachro_write( tpdiafile, xles_acprr,      'ACCU_PREC',  'Accu precip rate',                    'mm' )
+if ( luserc ) &
+call Les_diachro_write( tpdiafile, xles_zmaxcf,     'ZMAXCF',     'Height of Cloud fraction max',        'm' )
+if ( luserc ) &
+call Les_diachro_write( tpdiafile, xles_zmaxcf2,    'ZMAXCF2',    'Height of Cloud fraction2max',        'm' )
+
 !-------------------------------------------------------------------------------
 !
 !*      4.   LES budgets
@@ -1512,6 +1479,29 @@ IF (CLES_NORM_TYPE/='NONE' ) THEN
 END IF
 
 end subroutine Write_les_n
+
+!------------------------------------------------------------------------------
+
+subroutine Les_diachro_write( tpdiafile, zcorr, ymnhname, ycomment, yunits )
+
+use modd_io,          only: tfiledata
+
+use mode_les_diachro, only: Les_diachro
+
+type(tfiledata),    intent(in) :: tpdiafile ! file to write
+real, dimension(:), intent(in) :: zcorr
+character(len=*),   intent(in) :: ymnhname
+character(len=*),   intent(in) :: ycomment
+character(len=*),   intent(in) :: yunits
+
+tfield%cmnhname  = ymnhname
+tfield%clongname = ymnhname
+tfield%ccomment  = ycomment
+tfield%cunits    = yunits
+
+call Les_diachro( tpdiafile, tfield, ldoavg, ldonorm, zcorr )
+
+end subroutine Les_diachro_write
 
 !------------------------------------------------------------------------------
 
