@@ -16,9 +16,16 @@ private
 public :: Write_les_n
 
 
+logical :: ldoavg    ! Compute and store time average
+logical :: ldonorm   ! Compute and store normalized field
+
+type(tfield_metadata_base) :: tfield
 type(tfield_metadata_base) :: tfieldx
 type(tfield_metadata_base) :: tfieldy
 
+interface Les_diachro_write
+  module procedure Les_diachro_write_1D, Les_diachro_write_2D, Les_diachro_write_3D, Les_diachro_write_4D
+end interface
 
 contains
 
@@ -59,37 +66,32 @@ subroutine  Write_les_n( tpdiafile )
 !  C. Lac         02/2019: add rain fraction as a LES diagnostic
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !  P. Wautelet 12/10/2020: remove HLES_AVG dummy argument and group all 4 calls
-!  P. Wautelet    10/2020: restructure subroutines to use tfield_metadata_base type
+!  P. Wautelet 26/10/2020: restructure subroutines to use tfield_metadata_base type
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_CST
-USE MODD_IO, ONLY: TFILEDATA
-USE MODD_LES
-USE MODD_LES_n
-USE MODD_FIELD_n
-USE MODD_CONF_n
-USE MODD_PARAM_n
-USE MODD_TURB_n
-USE MODD_GRID_n
-USE MODD_NSV, ONLY : NSV
-USE MODD_PARAM_ICE, ONLY : LDEPOSC
-USE MODD_PARAM_C2R2, ONLY : LDEPOC
-!
-USE MODE_ll
-!
-USE MODE_LES_DIACHRO
+use modd_conf_n,     only: luserv, luserc, luserr, luseri, lusers, luserg, luserh
+use modd_io,         only: tfiledata
+use modd_field,      only: NMNHDIM_BUDGET_LES_TIME, NMNHDIM_BUDGET_LES_LEVEL, NMNHDIM_BUDGET_LES_SV, NMNHDIM_BUDGET_LES_MASK, &
+                           NMNHDIM_SPECTRA_2PTS_NI, NMNHDIM_SPECTRA_2PTS_NJ,  NMNHDIM_SPECTRA_LEVEL, NMNHDIM_UNUSED,          &
+                           TYPEREAL
+use modd_grid_n,     only: xdxhat, xdyhat
+use modd_nsv,        only: nsv
+use modd_les
+use modd_les_n
+use modd_param_c2r2, only: ldepoc
+use modd_param_ice,  only: ldeposc
+use modd_parameters, only: XUNDEF
+
 use mode_les_spec_n,            only: Les_spec_n
-USE MODE_MODELN_HANDLER
+use mode_modeln_handler,        only: Get_current_model_index
 use mode_write_les_budget_n,    only: Write_les_budget_n
 use mode_write_les_rt_budget_n, only: Write_les_rt_budget_n
 use mode_write_les_sv_budget_n, only: Write_les_sv_budget_n
-!
-!
+
 IMPLICIT NONE
-!
 !
 !*      0.1  declarations of arguments
 !
@@ -102,20 +104,16 @@ INTEGER :: IMASK
 !
 INTEGER :: JSV       ! scalar loop counter
 INTEGER :: JI        ! loop counter
-INTEGER :: JPDF      ! pdf loop counter
 !
 CHARACTER(len=9), DIMENSION(NLES_MASKS) :: YSUBTITLE
 CHARACTER(len=5)                        :: YGROUP
 !
+logical :: gdoavg    ! Compute and store time average
+logical :: gdonorm   ! Compute and store normalized field
 REAL, DIMENSION(:,:,:), ALLOCATABLE     :: ZAVG_PTS_ll
 REAL, DIMENSION(:,:,:), ALLOCATABLE     :: ZUND_PTS_ll
 REAL                                    :: ZCART_PTS_ll
 INTEGER                                 :: IMI ! Current model inde
-
-CHARACTER(LEN=1)              :: HLES_AVG
-character(len=1),DIMENSION(4) :: yles_avg
-integer                       :: javg
-!
 !
 !-------------------------------------------------------------------------------
 !
@@ -227,8 +225,9 @@ NLES_CURRENT_JSUP=NLESn_JSUP(IMI)
 !
 XLES_CURRENT_DOMEGAX=XDXHAT(1)
 XLES_CURRENT_DOMEGAY=XDYHAT(1)
-!
-!
+
+tfield%ngrid = 0 !Not on the Arakawa grid
+tfield%ntype = TYPEREAL
 !
 !*      2.   (z,t) profiles (all masks)
 !            --------------
@@ -260,1115 +259,791 @@ IF (LLES_CS_MASK) THEN
   IMASK=IMASK+1
   YSUBTITLE(IMASK) = " (cs3)"
 END IF
-
-yles_avg(1) = ' '
-yles_avg(2) = 'A'
-yles_avg(3) = 'E'
-yles_avg(4) = 'H'
-
-AVG: do javg = 1, 4
-
-hles_avg = yles_avg(javg)
-
-IF (HLES_AVG=='A'                                                       &
-     .AND. (XLES_TEMP_MEAN_START==XUNDEF .OR. XLES_TEMP_MEAN_END==XUNDEF)) cycle
-IF (HLES_AVG=='E' .AND. CLES_NORM_TYPE=='NONE'                          ) cycle
-IF (HLES_AVG=='H' .AND. (CLES_NORM_TYPE=='NONE'                          &
-     .OR. XLES_TEMP_MEAN_START==XUNDEF .OR. XLES_TEMP_MEAN_END==XUNDEF)) cycle
 !
 !*      2.0  averaging diagnostics
 !            ---------------------
 !
-IF (HLES_AVG==' ' .OR. HLES_AVG=='A') THEN
-  ALLOCATE(ZAVG_PTS_ll (NLES_K,NLES_TIMES,NLES_MASKS))
-  ALLOCATE(ZUND_PTS_ll (NLES_K,NLES_TIMES,NLES_MASKS))
-  !
-  ZAVG_PTS_ll(:,:,:) = NLES_AVG_PTS_ll(:,:,:)
-  ZUND_PTS_ll(:,:,:) = NLES_UND_PTS_ll(:,:,:)
-  ZCART_PTS_ll       = (NLESn_ISUP(IMI)-NLESn_IINF(IMI)+1) * (NLESn_JSUP(IMI)-NLESn_JINF(IMI)+1)
-  !
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"AVG_PTS  ",YSUBTITLE(:), &
-  "number of points used for averaging"//YSUBTITLE(:),"1",ZAVG_PTS_ll,HLES_AVG)
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"AVG_PTSF",YSUBTITLE(:), &
-  "fraction of points used for averaging"//YSUBTITLE(:),"1",ZAVG_PTS_ll/ZCART_PTS_ll,HLES_AVG)
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"UND_PTS  ",YSUBTITLE(:), &
-  "number of points below orography"//YSUBTITLE(:),"1",ZUND_PTS_ll,HLES_AVG)
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"UND_PTSF",YSUBTITLE(:), &
-  "fraction of points below orography"//YSUBTITLE(:),"1",ZUND_PTS_ll/ZCART_PTS_ll,HLES_AVG)
-  !
-  DEALLOCATE(ZAVG_PTS_ll)
-  DEALLOCATE(ZUND_PTS_ll)
-END IF
-!
+ALLOCATE(ZAVG_PTS_ll (NLES_K,NLES_TIMES,NLES_MASKS))
+ALLOCATE(ZUND_PTS_ll (NLES_K,NLES_TIMES,NLES_MASKS))
+
+ZAVG_PTS_ll(:,:,:) = NLES_AVG_PTS_ll(:,:,:)
+ZUND_PTS_ll(:,:,:) = NLES_UND_PTS_ll(:,:,:)
+ZCART_PTS_ll       = (NLESn_ISUP(IMI)-NLESn_IINF(IMI)+1) * (NLESn_JSUP(IMI)-NLESn_JINF(IMI)+1)
+
+tfield%ndims = 3
+tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+tfield%ndimlist(3)  = NMNHDIM_BUDGET_LES_MASK
+tfield%ndimlist(4:) = NMNHDIM_UNUSED
+
+ldoavg  = xles_temp_mean_start /= XUNDEF .and. xles_temp_mean_end /= XUNDEF
+ldonorm = .false.
+
+call Les_diachro_write( tpdiafile, zavg_pts_ll,                'AVG_PTS',  'number of points used for averaging',   '1', ysubtitle)
+call Les_diachro_write( tpdiafile, zavg_pts_ll / zcart_pts_ll, 'AVG_PTSF', 'fraction of points used for averaging', '1', ysubtitle)
+call Les_diachro_write( tpdiafile, zund_pts_ll,                'UND_PTS',  'number of points below orography',      '1', ysubtitle)
+call Les_diachro_write( tpdiafile, zund_pts_ll / zcart_pts_ll, 'UND_PTSF', 'fraction of points below orography',    '1', ysubtitle)
+
+DEALLOCATE(ZAVG_PTS_ll)
+DEALLOCATE(ZUND_PTS_ll)
 !
 !*      2.1  mean quantities
 !            ---------------
 !
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_U  ",YSUBTITLE(:), &
-  "Mean U Profile"//YSUBTITLE(:),"m s-1",XLES_MEAN_U,HLES_AVG)
+tfield%ndims = 3
+tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+tfield%ndimlist(3)  = NMNHDIM_BUDGET_LES_MASK
+tfield%ndimlist(4:) = NMNHDIM_UNUSED
 
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_V  ",YSUBTITLE(:), &
-  "Mean V Profile"//YSUBTITLE(:),"m s-1",XLES_MEAN_V,HLES_AVG)
+ldoavg  = xles_temp_mean_start /= XUNDEF .and. xles_temp_mean_end /= XUNDEF
+ldonorm = trim(cles_norm_type) /= 'NONE'
 
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_W  ",YSUBTITLE(:), &
-  "Mean W Profile"//YSUBTITLE(:),"m s-1",XLES_MEAN_W,HLES_AVG)
+call Les_diachro_write( tpdiafile, XLES_MEAN_U,      'MEAN_U',      'Mean U Profile',                        'm s-1',  ysubtitle )
+call Les_diachro_write( tpdiafile, XLES_MEAN_V,      'MEAN_V',      'Mean V Profile',                        'm s-1',  ysubtitle )
+call Les_diachro_write( tpdiafile, XLES_MEAN_W,      'MEAN_W',      'Mean W Profile',                        'm s-1',  ysubtitle )
+call Les_diachro_write( tpdiafile, XLES_MEAN_P,      'MEAN_PRE',    'Mean pressure Profile',                 'Pa',     ysubtitle )
+call Les_diachro_write( tpdiafile, XLES_MEAN_DP,     'MEAN_DP',     'Mean Dyn production TKE Profile',       'm2 s-3', ysubtitle )
+call Les_diachro_write( tpdiafile, XLES_MEAN_TP,     'MEAN_TP',     'Mean Thermal production TKE Profile',   'm2 s-3', ysubtitle )
+call Les_diachro_write( tpdiafile, XLES_MEAN_TR,     'MEAN_TR',     'Mean transport production TKE Profile', 'm2 s-3', ysubtitle )
+call Les_diachro_write( tpdiafile, XLES_MEAN_DISS,   'MEAN_DISS',   'Mean Dissipation TKE Profile',          'm2 s-3', ysubtitle )
+call Les_diachro_write( tpdiafile, XLES_MEAN_LM,     'MEAN_LM',     'Mean mixing length Profile',            'm',      ysubtitle )
+call Les_diachro_write( tpdiafile, XLES_MEAN_RHO,    'MEAN_RHO',    'Mean density Profile',                  'kg m-3', ysubtitle )
+call Les_diachro_write( tpdiafile, XLES_MEAN_Th,     'MEAN_TH',     'Mean potential temperature Profile',    'K',      ysubtitle )
+call Les_diachro_write( tpdiafile, XLES_MEAN_Mf,     'MEAN_MF',     'Mass-flux Profile',                     'm s-1',  ysubtitle )
+if ( luserc ) &
+call Les_diachro_write( tpdiafile, XLES_MEAN_Thl,    'MEAN_THL',    'Mean liquid potential temperature Profile',  'K', ysubtitle )
+if ( luserv ) &
+call Les_diachro_write( tpdiafile, XLES_MEAN_Thv,    'MEAN_THV',    'Mean virtual potential temperature Profile', 'K', ysubtitle )
+if ( luserc ) &
+call Les_diachro_write( tpdiafile, XLES_MEAN_Rt,     'MEAN_RT',     'Mean Rt Profile', 'kg kg-1', ysubtitle )
+if ( luserv ) &
+call Les_diachro_write( tpdiafile, XLES_MEAN_Rv,     'MEAN_RV',     'Mean Rv Profile', 'kg kg-1', ysubtitle )
+if ( luserv ) &
+call Les_diachro_write( tpdiafile, XLES_MEAN_Rehu,   'MEAN_REHU',   'Mean Rh Profile', 'percent', ysubtitle )
+if ( luserv ) &
+call Les_diachro_write( tpdiafile, XLES_MEAN_Qs,     'MEAN_QS',     'Mean Qs Profile', 'kg kg-1', ysubtitle )
+if ( luserc ) &
+call Les_diachro_write( tpdiafile, XLES_MEAN_KHt,    'MEAN_KHT',    'Eddy-diffusivity (temperature) Profile', 'm2 s-1', ysubtitle )
+if ( luserc ) &
+call Les_diachro_write( tpdiafile, XLES_MEAN_KHr,    'MEAN_KHR',    'Eddy-diffusivity (wvapor) Profile',      'm2 s-1', ysubtitle )
+if ( luserc ) &
+call Les_diachro_write( tpdiafile, XLES_MEAN_Rc,     'MEAN_RC',     'Mean Rc Profile', 'kg kg-1', ysubtitle )
+if ( luserc ) &
+call Les_diachro_write( tpdiafile, XLES_MEAN_Cf,     'MEAN_CF',     'Mean Cf Profile',              '1',       ysubtitle )
+if ( luserc ) &
+call Les_diachro_write( tpdiafile, XLES_MEAN_INDCf,  'MEAN_INDCF',  'Mean Cf>1-6 Profile (0 or 1)', '1',       ysubtitle )
+if ( luserc ) &
+call Les_diachro_write( tpdiafile, XLES_MEAN_INDCf2, 'MEAN_INDCF2', 'Mean Cf>1-5 Profile (0 or 1)', '1',       ysubtitle )
+if ( luserr ) &
+call Les_diachro_write( tpdiafile, XLES_MEAN_Rr,     'MEAN_RR',     'Mean Rr Profile',              'kg kg-1', ysubtitle )
+if ( luserr ) &
+call Les_diachro_write( tpdiafile, XLES_MEAN_RF,     'MEAN_RF',     'Mean RF Profile',              '1',       ysubtitle )
+if ( luseri ) &
+call Les_diachro_write( tpdiafile, XLES_MEAN_Ri,     'MEAN_RI',     'Mean Ri Profile',              'kg kg-1', ysubtitle )
+if ( lusers ) &
+call Les_diachro_write( tpdiafile, XLES_MEAN_Rs,     'MEAN_RS',     'Mean Rs Profile',              'kg kg-1', ysubtitle )
+if ( luserg ) &
+call Les_diachro_write( tpdiafile, XLES_MEAN_Rg,     'MEAN_RG',     'Mean Rg Profile',              'kg kg-1', ysubtitle )
+if ( luserh ) &
+call Les_diachro_write( tpdiafile, XLES_MEAN_Rh,     'MEAN_RH',     'Mean Rh Profile',              'kg kg-1', ysubtitle )
 
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_PRE",YSUBTITLE(:), &
-  "Mean pressure Profile"//YSUBTITLE(:),"Pa",XLES_MEAN_P,HLES_AVG)
+if ( nsv > 0 ) then
+  tfield%ndims = 4
+  tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+  tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+  tfield%ndimlist(3)  = NMNHDIM_BUDGET_LES_MASK
+  tfield%ndimlist(4)  = NMNHDIM_BUDGET_LES_SV
+  tfield%ndimlist(5:) = NMNHDIM_UNUSED
 
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_DP",YSUBTITLE(:), &
-  "Mean Dyn production TKE Profile"//YSUBTITLE(:),"m2 s-3",XLES_MEAN_DP,HLES_AVG)
+  call Les_diachro_write( tpdiafile, XLES_MEAN_Sv, 'MEAN_SV', 'Mean Sv Profiles', 'kg kg-1', ysubtitle )
 
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_TP",YSUBTITLE(:), &
-  "Mean Thermal  production TKE Profile "//YSUBTITLE(:),"m2 s-3",XLES_MEAN_TP,HLES_AVG)
+  tfield%ndims = 3
+  !tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+  !tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+  !tfield%ndimlist(3)  = NMNHDIM_BUDGET_LES_MASK
+  tfield%ndimlist(4)  = NMNHDIM_UNUSED
+  !tfield%ndimlist(5:) = NMNHDIM_UNUSED
+end if
 
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_TR",YSUBTITLE(:), &
-  "Mean transport production TKE Profile"//YSUBTITLE(:),"m2 s-3",XLES_MEAN_TR,HLES_AVG)
+call Les_diachro_write( tpdiafile, XLES_MEAN_WIND, 'MEANWIND',       'Profile of Mean Modulus of Wind', 'm s-1',      ysubtitle )
+call Les_diachro_write( tpdiafile, XLES_RESOLVED_MASSFX, 'MEANMSFX', 'Total updraft mass flux',         'kg m-2 s-1', ysubtitle )
 
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_DISS",YSUBTITLE(:), &
-  "Mean Dissipation TKE Profile"//YSUBTITLE(:),"m2 s-3",XLES_MEAN_DISS,HLES_AVG)
-
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_LM",YSUBTITLE(:), &
-  "Mean mixing length Profile"//YSUBTITLE(:),"m",XLES_MEAN_LM,HLES_AVG)
-
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_RHO",YSUBTITLE(:), &
-  "Mean density Profile"//YSUBTITLE(:),"kg m-3",XLES_MEAN_RHO,HLES_AVG)
-
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_TH ",YSUBTITLE(:),&
-  "Mean potential temperature Profile"//YSUBTITLE(:),"K",XLES_MEAN_Th,HLES_AVG)
-
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_MF ",YSUBTITLE(:),&
-  "Mass-flux Profile"//YSUBTITLE(:),"m s-1",XLES_MEAN_Mf,HLES_AVG)
-
-IF (LUSERC) &
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_THL",YSUBTITLE(:), &
-   "Mean liquid potential temperature Profile"//YSUBTITLE(:),"K",XLES_MEAN_Thl,HLES_AVG)
-
-IF (LUSERV) &
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_THV",YSUBTITLE(:), &
-   "Mean virtual potential temperature Profile"//YSUBTITLE(:),"K",XLES_MEAN_Thv,HLES_AVG)
-
-IF (LUSERC) &
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_RT ",YSUBTITLE(:), &
-  "Mean Rt Profile"//YSUBTITLE(:),"kg kg-1",XLES_MEAN_Rt,HLES_AVG)
-
-IF (LUSERV) &
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_RV ",YSUBTITLE(:), &
-  "Mean Rv Profile"//YSUBTITLE(:),"kg kg-1",XLES_MEAN_Rv,HLES_AVG)
-
-IF (LUSERV) &
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_REHU ",YSUBTITLE(:), &
-  "Mean Rh Profile"//YSUBTITLE(:),"percent",XLES_MEAN_Rehu,HLES_AVG)
-
-IF (LUSERV) &
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_QS ",YSUBTITLE(:), &
-  "Mean Qs Profile"//YSUBTITLE(:),"kg kg-1",XLES_MEAN_Qs,HLES_AVG)
-
-IF (LUSERC) &
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_KHT ",YSUBTITLE(:),&
-  "Eddy-diffusivity (temperature) Profile"//YSUBTITLE(:),"m2 s-1",XLES_MEAN_KHt,HLES_AVG)
-
-IF (LUSERC) &
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_KHR ",YSUBTITLE(:),&
-  "Eddy-diffusivity (wvapor) Profile"//YSUBTITLE(:),"m2 s-1",XLES_MEAN_KHr,HLES_AVG)
-
-IF (LUSERC) &
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_RC ",YSUBTITLE(:), &
-  "Mean Rc Profile"//YSUBTITLE(:),"kg kg-1",XLES_MEAN_Rc,HLES_AVG)
-
-IF (LUSERC) &
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_CF ",YSUBTITLE(:), &
-  "Mean Cf Profile"//YSUBTITLE(:),"1",XLES_MEAN_Cf,HLES_AVG)
-
-IF (LUSERC) &
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_INDCF ",YSUBTITLE(:), &
-  "Mean Cf>1-6 Profile (0 ou 1)"//YSUBTITLE(:),"1",XLES_MEAN_INDCf,HLES_AVG)
-
-IF (LUSERC) &
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_INDCF2 ",YSUBTITLE(:), &
-  "Mean Cf>1-5 Profile (0 ou 1)"//YSUBTITLE(:),"1",XLES_MEAN_INDCf2,HLES_AVG)
-
-IF (LUSERR) &
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_RR ",YSUBTITLE(:), &
-  "Mean Rr Profile"//YSUBTITLE(:),"kg kg-1",XLES_MEAN_Rr,HLES_AVG)
-
-IF (LUSERR) &
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_RF ",YSUBTITLE(:), &
-  "Mean RF Profile"//YSUBTITLE(:),"1",XLES_MEAN_RF,HLES_AVG)
-
-IF (LUSERI) &
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_RI ",YSUBTITLE(:), &
-  "Mean Ri Profile"//YSUBTITLE(:),"kg kg-1",XLES_MEAN_Ri,HLES_AVG)
-
-IF (LUSERS) &
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_RS ",YSUBTITLE(:), &
-  "Mean Rs Profile"//YSUBTITLE(:),"kg kg-1",XLES_MEAN_Rs,HLES_AVG)
-
-IF (LUSERG) &
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_RG ",YSUBTITLE(:), &
-  "Mean Rg Profile"//YSUBTITLE(:),"kg kg-1",XLES_MEAN_Rg,HLES_AVG)
-
-IF (LUSERH) &
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_RH ",YSUBTITLE(:), &
-  "Mean Rh Profile"//YSUBTITLE(:),"kg kg-1",XLES_MEAN_Rh,HLES_AVG)
-
-IF (NSV>0) &
-CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"MEAN_SV ",YSUBTITLE(:), &
-  "Mean Sv Profiles"//YSUBTITLE(:),"kg kg-1",XLES_MEAN_Sv,HLES_AVG)
-
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEANWIND",YSUBTITLE(:), &
-  "Profile of Mean Modulus of Wind"//YSUBTITLE(:),"m s-1",XLES_MEAN_WIND,HLES_AVG)
-!
-CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEANMSFX",YSUBTITLE(:),  &
-     "Total updraft mass flux"//YSUBTITLE(:),"kg m-2 s-1",XLES_RESOLVED_MASSFX   ,HLES_AVG)
-!
-IF (LLES_PDF) THEN
-  CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"PDF_TH ",YSUBTITLE(:), &
-  "Pdf potential temperature Profiles"//YSUBTITLE(:),"1",XLES_PDF_TH,HLES_AVG)
-  CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"PDF_W ",YSUBTITLE(:), &
-  "Pdf vertical velocity Profiles"//YSUBTITLE(:),"1",XLES_PDF_W,HLES_AVG)
-  CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"PDF_THV ",YSUBTITLE(:), &
-  "Pdf virtual pot. temp. Profiles"//YSUBTITLE(:),"1",XLES_PDF_THV,HLES_AVG)
-    
-  IF (LUSERV) THEN
-   CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"PDF_RV ",YSUBTITLE(:), &
-     "Pdf Rv Profiles"//YSUBTITLE(:),"1",XLES_PDF_RV,HLES_AVG)
-  END IF
-
-  IF (LUSERC) THEN
-   CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"PDF_RC ",YSUBTITLE(:), &
-   "Pdf Rc Profiles"//YSUBTITLE(:),"1",XLES_PDF_RC,HLES_AVG)
-
-   CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"PDF_RT ",YSUBTITLE(:), &
-   "Pdf Rt Profiles"//YSUBTITLE(:),"1",XLES_PDF_RT,HLES_AVG)
-
-   CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"PDF_THL ",YSUBTITLE(:), &
-   "Pdf Thl Profiles"//YSUBTITLE(:),"1",XLES_PDF_THL,HLES_AVG)
-  END IF
-  IF (LUSERR) &
-  CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"PDF_RR ",YSUBTITLE(:), &
-  "Pdf Rr Profiles"//YSUBTITLE(:),"1",XLES_PDF_RR,HLES_AVG)
-
-  IF (LUSERI) &
-  CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"PDF_RI ",YSUBTITLE(:), &
-  "Pdf Ri Profiles"//YSUBTITLE(:),"1",XLES_PDF_RI,HLES_AVG)
-
-  IF (LUSERS) &
-  CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"PDF_RS ",YSUBTITLE(:), &
-  "Pdf Rs Profiles"//YSUBTITLE(:),"1",XLES_PDF_RS,HLES_AVG)
-
-  IF (LUSERG) &
-  CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"PDF_RG ",YSUBTITLE(:), &
-  "Pdf Rg Profiles"//YSUBTITLE(:),"1",XLES_PDF_RG,HLES_AVG)
-
-END IF
+if ( lles_pdf ) then
+  call Les_diachro_write( tpdiafile,   XLES_PDF_TH,  'PDF_TH',  'Pdf potential temperature Profiles', '1', ysubtitle )
+  call Les_diachro_write( tpdiafile,   XLES_PDF_W,   'PDF_W',   'Pdf vertical velocity Profiles',     '1', ysubtitle )
+  call Les_diachro_write( tpdiafile,   XLES_PDF_THV, 'PDF_THV', 'Pdf virtual pot. temp. Profiles',    '1', ysubtitle )
+  if ( luserv ) &
+  call Les_diachro_write( tpdiafile,   XLES_PDF_RV,  'PDF_RV',  'Pdf Rv Profiles',                    '1', ysubtitle )
+  if ( luserc ) then
+    call Les_diachro_write( tpdiafile, XLES_PDF_RC,  'PDF_RC',  'Pdf Rc Profiles',                    '1', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_PDF_RT,  'PDF_RT',  'Pdf Rt Profiles',                    '1', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_PDF_THL, 'PDF_THL', 'Pdf Thl Profiles',                   '1', ysubtitle )
+  end if
+  if ( luserr ) &
+  call Les_diachro_write( tpdiafile,   XLES_PDF_RR,  'PDF_RR',  'Pdf Rr Profiles',                    '1', ysubtitle )
+  if ( luseri ) &
+  call Les_diachro_write( tpdiafile,   XLES_PDF_RI,  'PDF_RI',  'Pdf Ri Profiles',                    '1', ysubtitle )
+  if ( lusers ) &
+  call Les_diachro_write( tpdiafile,   XLES_PDF_RS,  'PDF_RS',  'Pdf Rs Profiles',                    '1', ysubtitle )
+  if ( luserg ) &
+  call Les_diachro_write( tpdiafile,   XLES_PDF_RG,  'PDF_RG',  'Pdf Rg Profiles',                    '1', ysubtitle )
+end if
 !
 !*      2.2  resolved quantities
 !            -------------------
 !
-IF (LLES_RESOLVED) THEN
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_U2  ",YSUBTITLE(:), &
-     "Resolved <u2> variance "//YSUBTITLE(:),"m2 s-2",XLES_RESOLVED_U2,HLES_AVG)
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_V2  ",YSUBTITLE(:), &
-     "Resolved <v2> variance"//YSUBTITLE(:),"m2 s-2",XLES_RESOLVED_V2,HLES_AVG)
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_W2  ",YSUBTITLE(:), &
-     "Resolved <w2> variance"//YSUBTITLE(:),"m2 s-2",XLES_RESOLVED_W2,HLES_AVG)
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_UV  ",YSUBTITLE(:), &
-     "Resolved <uv> Flux"//YSUBTITLE(:),"m2 s-2",XLES_RESOLVED_UV,HLES_AVG)
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_WU  ",YSUBTITLE(:), &
-   "Resolved <wu> Flux"//YSUBTITLE(:),"m2 s-2",XLES_RESOLVED_WU,HLES_AVG)
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_WV  ",YSUBTITLE(:), &
-     "Resolved <wv> Flux"//YSUBTITLE(:),"m2 s-2",XLES_RESOLVED_WV,HLES_AVG)
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_KE  ",YSUBTITLE(:), &
-     "Resolved TKE Profile"//YSUBTITLE(:),"m2 s-2",XLES_RESOLVED_Ke,HLES_AVG)
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_P2  ",YSUBTITLE(:), &
-     "Resolved pressure variance"//YSUBTITLE(:),"Pa2",XLES_RESOLVED_P2,HLES_AVG)
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_UPZ ",YSUBTITLE(:), &
-     "Resolved <up> horizontal Flux"//YSUBTITLE(:),"Pa s-1",XLES_RESOLVED_UP,HLES_AVG)
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_VPZ ",YSUBTITLE(:), &
-     "Resolved <vp> horizontal Flux"//YSUBTITLE(:),"Pa s-1",XLES_RESOLVED_VP,HLES_AVG)
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_WPZ ",YSUBTITLE(:), &
-     "Resolved <wp> vertical Flux"//YSUBTITLE(:),"Pa s-1",XLES_RESOLVED_WP,HLES_AVG)
-
-  IF (LUSERV) &
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_THTV ",YSUBTITLE(:), &
-     "Resolved potential temperature - virtual potential temperature covariance"//YSUBTITLE(:), &
-     "K2",XLES_RESOLVED_ThThv,HLES_AVG)
-
-  IF (LUSERC) &
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_TLTV ",YSUBTITLE(:), &
-     "Resolved liquid potential temperature - virtual potential temperature covariance"//YSUBTITLE(:), &
-     "K2",XLES_RESOLVED_ThlThv,HLES_AVG)
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_TH2 ",YSUBTITLE(:), &
-     "Resolved potential temperature variance"//YSUBTITLE(:),"K2",XLES_RESOLVED_Th2,HLES_AVG)
-
-  IF (LUSERC) &
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_THL2",YSUBTITLE(:), &
-     "Resolved liquid potential temperature variance"//YSUBTITLE(:),"K2",XLES_RESOLVED_Thl2,HLES_AVG)
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_UTH ",YSUBTITLE(:), &
-     "Resolved <uth> horizontal Flux"//YSUBTITLE(:),"m K s-1",XLES_RESOLVED_UTh,HLES_AVG)
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_VTH ",YSUBTITLE(:), &
-     "Resolved <vth> horizontal Flux"//YSUBTITLE(:),"m K s-1",XLES_RESOLVED_VTh,HLES_AVG)
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_WTH ",YSUBTITLE(:), &
-     "Resolved <wth> vertical Flux"//YSUBTITLE(:),"m K s-1",XLES_RESOLVED_WTh,HLES_AVG)
-
-  IF (LUSERC) THEN
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_UTHL",YSUBTITLE(:), &
-       "Resolved <uthl> horizontal Flux"//YSUBTITLE(:),"m K s-1",XLES_RESOLVED_UThl,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_VTHL",YSUBTITLE(:), &
-       "Resolved <vthl> horizontal Flux"//YSUBTITLE(:),"m K s-1",XLES_RESOLVED_VThl,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_WTHL",YSUBTITLE(:), &
-       "Resolved <wthl> vertical Flux "//YSUBTITLE(:),"m K s-1",XLES_RESOLVED_WThl,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_RT2 ",YSUBTITLE(:), &
-     "Resolved total water variance"//YSUBTITLE(:),"kg2 kg-2",XLES_RESOLVED_Rt2,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_WRT ",YSUBTITLE(:), &
-       "Resolved <wrt> vertical Flux "//YSUBTITLE(:),"m kg kg-1 s-1",XLES_RESOLVED_WRt,HLES_AVG)
-  END IF
-
-  IF (LUSERV) THEN
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_UTHV",YSUBTITLE(:), &
-       "Resolved <uthv> horizontal Flux"//YSUBTITLE(:),"m K s-1",XLES_RESOLVED_UThv,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_VTHV",YSUBTITLE(:), &
-       "Resolved <vthl> horizontal Flux"//YSUBTITLE(:),"m K s-1",XLES_RESOLVED_VThv,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_WTHV",YSUBTITLE(:), &
-       "Resolved <wthv> vertical Flux "//YSUBTITLE(:),"m K s-1",XLES_RESOLVED_WThv,HLES_AVG)
-  END IF
-!
-  IF (LUSERV) THEN
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_RV2 ",YSUBTITLE(:), &
-       "Resolved water vapor variance"//YSUBTITLE(:),"kg2 kg-2",XLES_RESOLVED_Rv2,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_THRV",YSUBTITLE(:), &
-       "Resolved <thrv> covariance"//YSUBTITLE(:),"K kg kg-1",XLES_RESOLVED_ThRv,HLES_AVG)
-
-    IF (LUSERC) &
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_TLRV",YSUBTITLE(:), &
-       "Resolved <thlrv> covariance"//YSUBTITLE(:),"K kg kg-1",XLES_RESOLVED_ThlRv,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_TVRV",YSUBTITLE(:), &
-       "Resolved <thvrv> covariance"//YSUBTITLE(:),"K kg kg-1",XLES_RESOLVED_ThvRv,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_URV ", YSUBTITLE(:), &
-       "Resolved <urv> horizontal flux"//YSUBTITLE(:),"m kg kg-1 s-1",XLES_RESOLVED_URv,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_VRV ", YSUBTITLE(:), &
-       "Resolved <vrv> horizontal flux"//YSUBTITLE(:),"m kg kg-1 s-1",XLES_RESOLVED_VRv,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_WRV ", YSUBTITLE(:), &
-       "Resolved <wrv> vertical flux"//YSUBTITLE(:),"m kg kg-1 s-1",XLES_RESOLVED_WRv,HLES_AVG)
-  END IF
-
-  IF (LUSERC) THEN
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_RC2 ", YSUBTITLE(:), &
-       "Resolved cloud water variance"//YSUBTITLE(:),"kg2 kg-2",XLES_RESOLVED_Rc2,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_THRC", YSUBTITLE(:), &
-       "Resolved <thrc> covariance"//YSUBTITLE(:),"K kg kg-1",XLES_RESOLVED_ThRc,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_TLRC", YSUBTITLE(:), &
-       "Resolved <thlrc> covariance"//YSUBTITLE(:),"K kg kg-1",XLES_RESOLVED_ThlRc,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_TVRC", YSUBTITLE(:), &
-       "Resolved <thvrc> covariance"//YSUBTITLE(:),"K kg kg-1",XLES_RESOLVED_ThvRc,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_URC ", YSUBTITLE(:), &
-       "Resolved <urc> horizontal flux"//YSUBTITLE(:),"m kg kg-1 s-1",XLES_RESOLVED_URc,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_VRC ", YSUBTITLE(:), &
-       "Resolved <vrc> horizontal flux"//YSUBTITLE(:),"m kg kg-1 s-1",XLES_RESOLVED_VRc,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_WRC ", YSUBTITLE(:), &
-       "Resolved <wrc> vertical flux"//YSUBTITLE(:),"m kg kg-1 s-1",XLES_RESOLVED_WRc,HLES_AVG)
-  END IF
-
-  IF (LUSERI) THEN
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_RI2 ", YSUBTITLE(:), &
-       "Resolved cloud ice variance"//YSUBTITLE(:),"kg2 kg-2",XLES_RESOLVED_Ri2,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_THRI", YSUBTITLE(:), &
-       "Resolved <thri> covariance"//YSUBTITLE(:),"K kg kg-1",XLES_RESOLVED_ThRi,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_TLRI", YSUBTITLE(:), &
-       "Resolved <thlri> covariance"//YSUBTITLE(:),"K kg kg-1",XLES_RESOLVED_ThlRi,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_TVRI", YSUBTITLE(:), &
-       "Resolved <thvri> covariance"//YSUBTITLE(:),"K kg kg-1",XLES_RESOLVED_ThvRi,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_URI ", YSUBTITLE(:), &
-       "Resolved <uri> horizontal flux"//YSUBTITLE(:),"m kg kg-1 s-1",XLES_RESOLVED_URi,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_VRI ", YSUBTITLE(:), &
-       "Resolved <vri> horizontal flux"//YSUBTITLE(:),"m kg kg-1 s-1",XLES_RESOLVED_VRi,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_WRI ", YSUBTITLE(:), &
-       "Resolved <wri> vertical flux"//YSUBTITLE(:),"m kg kg-1 s-1",XLES_RESOLVED_WRi,HLES_AVG)
-  END IF
-
-  IF (LUSERR) THEN
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_WRR ", YSUBTITLE(:), &
-       "Resolved <wrr> vertical flux"//YSUBTITLE(:),"m kg kg-1 s-1",XLES_RESOLVED_WRr,HLES_AVG)
-    
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"INPRR3D ", YSUBTITLE(:), &
-       "Precipitation flux"//YSUBTITLE(:),"m s-1",XLES_INPRR3D,HLES_AVG)
-        
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"MAXINPR3D ", YSUBTITLE(:), &
-       "Max Precip flux"//YSUBTITLE(:),"m s-1",XLES_MAX_INPRR3D,HLES_AVG)
-        
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"EVAP3D ", YSUBTITLE(:), &
-       "Evaporation profile"//YSUBTITLE(:),"kg kg-1 s-1",XLES_EVAP3D,HLES_AVG)
-  ENDIF
-  IF (NSV>0) THEN
-    CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"RES_SV2 ", YSUBTITLE(:), &
-       "Resolved scalar variables variances"//YSUBTITLE(:),"kg2 kg-2",XLES_RESOLVED_Sv2,HLES_AVG)
-
-    CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"RES_THSV", YSUBTITLE(:), &
-       "Resolved <ThSv> variance"//YSUBTITLE(:),"K kg kg-1",XLES_RESOLVED_ThSv,HLES_AVG)
-
-    IF (LUSERC) &
-    CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"RES_TLSV", YSUBTITLE(:), &
-       "Resolved <ThlSv> variance"//YSUBTITLE(:),"K kg kg-1",XLES_RESOLVED_ThlSv,HLES_AVG)
-
-    IF (LUSERV) &
-    CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"RES_TVSV", YSUBTITLE(:), &
-       "Resolved <ThvSv> variance"//YSUBTITLE(:),"K kg kg-1",XLES_RESOLVED_ThvSv,HLES_AVG)
-
-    CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"RES_USV ", YSUBTITLE(:), &
-       "Resolved <uSv> horizontal flux"//YSUBTITLE(:),"m kg kg-1 s-1",XLES_RESOLVED_USv,HLES_AVG)
-
-    CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"RES_VSV ", YSUBTITLE(:), &
-       "Resolved <vSv> horizontal flux"//YSUBTITLE(:),"m kg kg-1 s-1",XLES_RESOLVED_VSv,HLES_AVG)
-
-    CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"RES_WSV ", YSUBTITLE(:), &
-       "Resolved <wSv> vertical flux"//YSUBTITLE(:),"m kg kg-1 s-1",XLES_RESOLVED_WSv,HLES_AVG)
-  END IF
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_U3  ",YSUBTITLE(:),  &
-       "Resolved <w3>"//YSUBTITLE(:),"m3 s-3",XLES_RESOLVED_U3,HLES_AVG)
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_V3  ",YSUBTITLE(:),  &
-       "Resolved <w3>"//YSUBTITLE(:),"m3 s-3",XLES_RESOLVED_V3,HLES_AVG)
-    
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_W3  ",YSUBTITLE(:),  &
-       "Resolved <w3>"//YSUBTITLE(:),"m3 s-3",XLES_RESOLVED_W3,HLES_AVG)
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_U4  ",YSUBTITLE(:),  &
-       "Resolved <w3>"//YSUBTITLE(:),"m4 s-4",XLES_RESOLVED_U4,HLES_AVG)
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_V4  ",YSUBTITLE(:),  &
-       "Resolved <w3>"//YSUBTITLE(:),"m4 s-4",XLES_RESOLVED_V4,HLES_AVG)
-    
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_W4  ",YSUBTITLE(:),  &
-       "Resolved <w3>"//YSUBTITLE(:),"m4 s-4",XLES_RESOLVED_W4,HLES_AVG)
-
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_WTL2",YSUBTITLE(:),  &
-       "Resolved <wThl2>"//YSUBTITLE(:),"m K2 s-1",XLES_RESOLVED_WThl2,HLES_AVG)
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_W2TL",YSUBTITLE(:),  &
-       "Resolved <w2Thl>"//YSUBTITLE(:),"m2 K s-2",XLES_RESOLVED_W2Thl,HLES_AVG)
-
-  IF (LUSERV) THEN
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_WRV2",YSUBTITLE(:),  &
-         "Resolved <wRv2>"//YSUBTITLE(:),"m kg2 kg-2 s-1",XLES_RESOLVED_WRv2,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_W2RV",YSUBTITLE(:),  &
-         "Resolved <w2Rv>"//YSUBTITLE(:),"m2 kg kg-1 s-2",XLES_RESOLVED_W2Rv,HLES_AVG)
-     
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_WRT2",YSUBTITLE(:),  &
-         "Resolved <wRt2>"//YSUBTITLE(:),"m kg2 kg-2 s-1",XLES_RESOLVED_WRt2,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_W2RT",YSUBTITLE(:),  &
-         "Resolved <w2Rt>"//YSUBTITLE(:),"m2 kg kg-1 s-2",XLES_RESOLVED_W2Rt,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RE_WTLRV",YSUBTITLE(:),  &
-         "Resolved <wThlRv>"//YSUBTITLE(:),"m K kg kg-1 s-1",XLES_RESOLVED_WThlRv,HLES_AVG)
-   
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RE_WTLRT",YSUBTITLE(:),  &
-         "Resolved <wThlRt>"//YSUBTITLE(:),"m K kg kg-1 s-1",XLES_RESOLVED_WThlRt,HLES_AVG)
-  END IF
-
-  IF (LUSERC) THEN
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_WRC2",YSUBTITLE(:),  &
-         "Resolved <wRc2>"//YSUBTITLE(:),"m kg2 kg-2 s-1",XLES_RESOLVED_WRc2,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_W2RC",YSUBTITLE(:),  &
-         "Resolved <w2Rc>"//YSUBTITLE(:),"m2 kg kg-1 s-2",XLES_RESOLVED_W2Rc,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RE_WTLRC",YSUBTITLE(:),  &
-         "Resolved <wThlRc>"//YSUBTITLE(:),"m K kg kg-1 s-1",XLES_RESOLVED_WThlRc,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RE_WRVRC",YSUBTITLE(:),  &
-         "Resolved <wRvRc>"//YSUBTITLE(:),"m kg2 kg-2 s-1",XLES_RESOLVED_WRvRc,HLES_AVG)
-  END IF
-
-  IF (LUSERI) THEN
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_WRI2",YSUBTITLE(:),  &
-         "Resolved <wRi2>"//YSUBTITLE(:),"m kg2 kg-2 s-1",XLES_RESOLVED_WRi2,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_W2RI",YSUBTITLE(:),  &
-         "Resolved <w2Ri>"//YSUBTITLE(:),"m2 kg kg-1 s-2",XLES_RESOLVED_W2Ri,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RE_WTLRI",YSUBTITLE(:),  &
-         "Resolved <wThlRi>"//YSUBTITLE(:),"m K kg kg-1 s-1",XLES_RESOLVED_WThlRi,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"RE_WRVRI",YSUBTITLE(:),  &
-         "Resolved <wRvRi>"//YSUBTITLE(:),"m kg2 kg-2 s-1",XLES_RESOLVED_WRvRi,HLES_AVG)
-  END IF
-
-  IF (NSV>0) THEN
-    CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"RES_WSV2",YSUBTITLE(:),  &
-         "Resolved <wSv2>"//YSUBTITLE(:),"m kg2 kg-2 s-1",XLES_RESOLVED_WSv2,HLES_AVG)
-
-    CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"RES_W2SV",YSUBTITLE(:),  &
-         "Resolved <w2Sv>"//YSUBTITLE(:),"m2 kg kg-1 s-2",XLES_RESOLVED_W2Sv,HLES_AVG)
-
-    CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"RE_WTLSV",YSUBTITLE(:),  &
-         "Resolved <wThlSv>"//YSUBTITLE(:),"m K kg kg-1 s-1",XLES_RESOLVED_WThlSv,HLES_AVG)
-
-    CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"RE_WRVSV",YSUBTITLE(:),  &
-         "Resolved <wRvSv>"//YSUBTITLE(:),"m kg2 kg-2 s-1",XLES_RESOLVED_WRvSv,HLES_AVG)
-  END IF
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_TLPZ",YSUBTITLE(:),  &
-       "Resolved <Thldp/dz>"//YSUBTITLE(:),"K Pa m-1",XLES_RESOLVED_ThlPz,HLES_AVG)
-
-  IF (LUSERV) &
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_RVPZ",YSUBTITLE(:),  &
-       "Resolved <Rvdp/dz>"//YSUBTITLE(:),"kg2 kg-2 Pa m-1",XLES_RESOLVED_RvPz,HLES_AVG)
-
-  IF (LUSERC) &
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_RCPZ",YSUBTITLE(:),  &
-       "Resolved <Rcdp/dz>"//YSUBTITLE(:),"kg2 kg-2 Pa m-1",XLES_RESOLVED_RcPz,HLES_AVG)
-
-  IF (LUSERI) &
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_RIPZ",YSUBTITLE(:),  &
-       "Resolved <Ridp/dz>"//YSUBTITLE(:),"kg2 kg-2 Pa m-1",XLES_RESOLVED_RiPz,HLES_AVG)
-
-  IF (NSV>0) THEN
-    CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"RES_SVPZ",YSUBTITLE(:),  &
-         "Resolved <Svdp/dz>"//YSUBTITLE(:),"kg2 kg-2 Pa m-1",XLES_RESOLVED_SvPz,HLES_AVG)
-  END IF
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_UKE ", YSUBTITLE(:), &
-       "Resolved flux of resolved kinetic energy"//YSUBTITLE(:),"m3 s-3",XLES_RESOLVED_UKe,HLES_AVG)
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_VKE ", YSUBTITLE(:), &
-       "Resolved flux of resolved kinetic energy"//YSUBTITLE(:),"m3 s-3",XLES_RESOLVED_VKe,HLES_AVG)
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_WKE ", YSUBTITLE(:), &
-       "Resolved flux of resolved kinetic energy"//YSUBTITLE(:),"m3 s-3",XLES_RESOLVED_WKe,HLES_AVG)
-
-END IF
+if ( lles_resolved ) then
+  !Prepare metadata (used in Les_diachro_write calls)
+  ldoavg  = xles_temp_mean_start /= XUNDEF .and. xles_temp_mean_end /= XUNDEF
+  ldonorm = trim(cles_norm_type) /= 'NONE'
+
+  tfield%ndims = 3
+  tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+  tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+  tfield%ndimlist(3)  = NMNHDIM_BUDGET_LES_MASK
+  tfield%ndimlist(4:) = NMNHDIM_UNUSED
+
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_U2, 'RES_U2',  'Resolved <u2> variance',        'm2 s-2', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_V2, 'RES_V2',  'Resolved <v2> variance',        'm2 s-2', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_W2, 'RES_W2',  'Resolved <w2> variance',        'm2 s-2', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_UV, 'RES_UV',  'Resolved <uv> Flux',            'm2 s-2', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_WU, 'RES_WU',  'Resolved <wu> Flux',            'm2 s-2', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_WV, 'RES_WV',  'Resolved <wv> Flux',            'm2 s-2', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_Ke, 'RES_KE',  'Resolved TKE Profile',          'm2 s-2', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_P2, 'RES_P2',  'Resolved pressure variance',    'Pa2',    ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_UP, 'RES_UPZ', 'Resolved <up> horizontal Flux', 'Pa s-1', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_VP, 'RES_VPZ', 'Resolved <vp> horizontal Flux', 'Pa s-1', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_WP, 'RES_WPZ', 'Resolved <wp> vertical Flux',   'Pa s-1', ysubtitle )
+
+  if ( luserv ) &
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_ThThv, 'RES_THTV', &
+                          'Resolved potential temperature - virtual potential temperature covariance',        'K2', ysubtitle )
+  if ( luserc ) &
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_ThlThv, 'RES_TLTV', &
+                          'Resolved liquid potential temperature - virtual potential temperature covariance', 'K2',  ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_Th2, 'RES_TH2', 'Resolved potential temperature variance', 'K2', ysubtitle )
+  if ( luserc ) &
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_Thl2, 'RES_THL2', 'Resolved liquid potential temperature variance', 'K2',&
+                          ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_UTh, 'RES_UTH', 'Resolved <uth> horizontal Flux', 'm K s-1', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_VTh, 'RES_VTH', 'Resolved <vth> horizontal Flux', 'm K s-1', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_WTh, 'RES_WTH', 'Resolved <wth> vertical Flux',   'm K s-1', ysubtitle )
+
+  if ( luserc ) then
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_UThl, 'RES_UTHL', 'Resolved <uthl> horizontal Flux', 'm K s-1',  ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_VThl, 'RES_VTHL', 'Resolved <vthl> horizontal Flux', 'm K s-1',  ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_WThl, 'RES_WTHL', 'Resolved <wthl> vertical Flux',   'm K s-1',  ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_Rt2, 'RES_RT2',  'Resolved total water variance',    'kg2 kg-2', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_WRt, 'RES_WRT',  'Resolved <wrt> vertical Flux', 'm kg kg-1 s-1', ysubtitle )
+  end if
+
+  if ( luserv ) then
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_UThv,  'RES_UTHV', 'Resolved <uthv> horizontal Flux', 'm K s-1', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_VThv,  'RES_VTHV', 'Resolved <vthv> horizontal Flux', 'm K s-1', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_WThv,  'RES_WTHV', 'Resolved <wthv> vertical Flux',   'm K s-1', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_Rv2,   'RES_RV2',  'Resolved water vapor variance',   'kg2 kg-2', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_ThRv,  'RES_THRV', 'Resolved <thrv> covariance',      'K kg kg-1', ysubtitle )
+    if ( luserc ) &
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_ThlRv, 'RES_TLRV', 'Resolved <thlrv> covariance',     'K kg kg-1', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_ThvRv, 'RES_TVRV', 'Resolved <thvrv> covariance',     'K kg kg-1', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_URv,   'RES_URV',  'Resolved <urv> horizontal flux',  'm kg kg-1 s-1', &
+                            ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_VRv,   'RES_VRV',  'Resolved <vrv> horizontal flux',  'm kg kg-1 s-1', &
+                            ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_WRv,   'RES_WRV',  'Resolved <wrv> vertical flux',    'm kg kg-1 s-1', &
+                            ysubtitle )
+  end if
+
+  if ( luserc ) then
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_Rc2,   'RES_RC2',  'Resolved cloud water variance',   'kg2 kg-2', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_ThRc,  'RES_THRC', 'Resolved <thrc> covariance',      'K kg kg-1', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_ThlRc, 'RES_TLRC', 'Resolved <thlrc> covariance',     'K kg kg-1', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_ThvRc, 'RES_TVRC', 'Resolved <thvrc> covariance',     'K kg kg-1', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_URc,   'RES_URC',  'Resolved <urc> horizontal flux',  'm kg kg-1 s-1', &
+                            ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_VRc,   'RES_VRC',  'Resolved <vrc> horizontal flux',  'm kg kg-1 s-1', &
+                            ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_WRc,   'RES_WRC',  'Resolved <wrc> vertical flux',    'm kg kg-1 s-1', &
+                            ysubtitle )
+  end if
+
+  if ( luseri ) then
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_Ri2,   'RES_RI2',  'Resolved cloud ice variance',     'kg2 kg-2', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_ThRi,  'RES_THRI', 'Resolved <thri> covariance',      'K kg kg-1', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_ThlRi, 'RES_TLRI', 'Resolved <thlri> covariance',     'K kg kg-1', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_ThvRi, 'RES_TVRI', 'Resolved <thvri> covariance',     'K kg kg-1', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_URi,   'RES_URI',  'Resolved <uri> horizontal flux',  'm kg kg-1 s-1', &
+                            ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_VRi,   'RES_VRI',  'Resolved <vri> horizontal flux',  'm kg kg-1 s-1', &
+                            ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_WRi,   'RES_WRI',  'Resolved <wri> vertical flux',    'm kg kg-1 s-1', &
+                            ysubtitle )
+  end if
+
+  if ( luserr ) then
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_WRr,   'RES_WRR',  'Resolved <wrr> vertical flux',    'm kg kg-1 s-1', &
+                            ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_INPRR3D,     'INPRR3D',   'Precipitation flux',  'm s-1',       ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_MAX_INPRR3D, 'MAXINPR3D', 'Max Precip flux',     'm s-1',       ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_EVAP3D,      'EVAP3D',    'Evaporation profile', 'kg kg-1 s-1', ysubtitle )
+  end if
+
+  if ( nsv > 0 ) then
+    tfield%ndims = 4
+    tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+    tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+    tfield%ndimlist(3)  = NMNHDIM_BUDGET_LES_MASK
+    tfield%ndimlist(4)  = NMNHDIM_BUDGET_LES_SV
+    tfield%ndimlist(5:) = NMNHDIM_UNUSED
+
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_Sv2,   'RES_SV2',  'Resolved scalar variables variances', 'kg2 kg-2', &
+                            ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_ThSv,  'RES_THSV', 'Resolved <ThSv> variance',  'K kg kg-1', ysubtitle )
+    if ( luserc ) &
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_ThlSv, 'RES_TLSV', 'Resolved <ThlSv> variance', 'K kg kg-1', ysubtitle )
+    if ( luserv ) &
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_ThvSv, 'RES_TVSV', 'Resolved <ThvSv> variance', 'K kg kg-1', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_USv,   'RES_USV',  'Resolved <uSv> horizontal flux', 'm kg kg-1 s-1', &
+                            ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_VSv,   'RES_VSV',  'Resolved <vSv> horizontal flux', 'm kg kg-1 s-1', &
+                            ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_WSv,   'RES_WSV',  'Resolved <wSv> vertical flux', 'm kg kg-1 s-1',   &
+                            ysubtitle )
+
+    tfield%ndims = 3
+    !tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+    !tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+    !tfield%ndimlist(3)  = NMNHDIM_BUDGET_LES_MASK
+    tfield%ndimlist(4)  = NMNHDIM_UNUSED
+    !tfield%ndimlist(5:) = NMNHDIM_UNUSED
+  end if
+
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_U3, 'RES_U3', 'Resolved <u3>', 'm3 s-3', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_V3, 'RES_V3', 'Resolved <v3>', 'm3 s-3', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_W3, 'RES_W3', 'Resolved <w3>', 'm3 s-3', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_U4, 'RES_U4', 'Resolved <u4>', 'm4 s-4', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_V4, 'RES_V4', 'Resolved <v4>', 'm4 s-4', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_W4, 'RES_W4', 'Resolved <>w4', 'm4 s-4', ysubtitle )
+
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_WThl2, 'RES_WTL2', 'Resolved <wThl2',  'm K2 s-1', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_W2Thl, 'RES_W2TL', 'Resolved <w2Thl>', 'm2 K s-2', ysubtitle )
+
+  if ( luserv ) then
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_WRv2,   'RES_WRV2', 'Resolved <wRv2>',   'm kg2 kg-2 s-1',  ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_W2Rv,   'RES_W2RV', 'Resolved <w2Rv>',   'm2 kg kg-1 s-2',  ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_WRt2,   'RES_WRT2', 'Resolved <wRt2>',   'm kg2 kg-2 s-1',  ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_W2Rt,   'RES_W2RT', 'Resolved <w2Rt>',   'm2 kg kg-1 s-2',  ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_WThlRv, 'RE_WTLRV', 'Resolved <wThlRv>', 'm K kg kg-1 s-1', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_WThlRt, 'RE_WTLRT', 'Resolved <wThlRt>', 'm K kg kg-1 s-1', ysubtitle )
+  end if
+
+  if ( luserc ) then
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_WRc2,   'RES_WRC2', 'Resolved <wRc2>',   'm kg2 kg-2 s-1',  ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_W2Rc,   'RES_W2RC', 'Resolved <w2Rc>',   'm2 kg kg-1 s-2',  ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_WThlRc, 'RE_WTLRC', 'Resolved <wThlRc>', 'm K kg kg-1 s-1', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_WRvRc,  'RE_WRVRC', 'Resolved <wRvRc>',  'm kg2 kg-2 s-1',  ysubtitle )
+  end if
+
+  if ( luseri ) then
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_WRi2,   'RES_WRI2', 'Resolved <wRi2>',   'm kg2 kg-2 s-1',  ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_W2Ri,   'RES_W2RI', 'Resolved <w2Ri>',   'm2 kg kg-1 s-2',  ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_WThlRi, 'RE_WTLRI', 'Resolved <wThlRi>', 'm K kg kg-1 s-1', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_WRvRi,  'RE_WRVRI', 'Resolved <wRvRi>',  'm kg2 kg-2 s-1',  ysubtitle )
+  end if
+
+  if ( nsv > 0 ) then
+    tfield%ndims = 4
+    tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+    tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+    tfield%ndimlist(3)  = NMNHDIM_BUDGET_LES_MASK
+    tfield%ndimlist(4)  = NMNHDIM_BUDGET_LES_SV
+    tfield%ndimlist(5:) = NMNHDIM_UNUSED
+
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_WSv2,   'RES_WSV2', 'Resolved <wSv2>',   'm kg2 kg-2 s-1',  ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_W2Sv,   'RES_W2SV', 'Resolved <w2Sv>',   'm2 kg kg-1 s-2',  ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_WThlSv, 'RE_WTLSV', 'Resolved <wThlSv>', 'm K kg kg-1 s-1', ysubtitle )
+    if ( luserv ) &
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_WRvSv,  'RE_WRVSV', 'Resolved <wRvSv>',  'm kg2 kg-2 s-1',  ysubtitle )
+
+    tfield%ndims = 3
+    !tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+    !tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+    !tfield%ndimlist(3)  = NMNHDIM_BUDGET_LES_MASK
+    tfield%ndimlist(4)  = NMNHDIM_UNUSED
+    !tfield%ndimlist(5:) = NMNHDIM_UNUSED
+  end if
+
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_ThlPz, 'RES_TLPZ', 'Resolved <Thldp/dz>', 'K Pa m-1', ysubtitle )
+  if ( luserc ) &
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_RtPz, 'RES_RTPZ', 'Resolved <Rtdp/dz>', 'kg2 kg-2 Pa m-1', ysubtitle )
+  if ( luserv ) &
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_RvPz, 'RES_RVPZ', 'Resolved <Rvdp/dz>', 'kg2 kg-2 Pa m-1', ysubtitle )
+  if ( luserc ) &
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_RcPz, 'RES_RCPZ', 'Resolved <Rcdp/dz>', 'kg2 kg-2 Pa m-1', ysubtitle )
+  if ( luseri ) &
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_RiPz, 'RES_RIPZ', 'Resolved <Ridp/dz>', 'kg2 kg-2 Pa m-1', ysubtitle )
+
+  if ( nsv > 0 ) then
+    tfield%ndims = 4
+    tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+    tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+    tfield%ndimlist(3)  = NMNHDIM_BUDGET_LES_MASK
+    tfield%ndimlist(4)  = NMNHDIM_BUDGET_LES_SV
+    tfield%ndimlist(5:) = NMNHDIM_UNUSED
+
+    call Les_diachro_write( tpdiafile, XLES_RESOLVED_SvPz, 'RES_SVPZ', 'Resolved <Svdp/dz>', 'kg2 kg-2 Pa m-1', ysubtitle )
+
+    tfield%ndims = 3
+    !tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+    !tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+    !tfield%ndimlist(3)  = NMNHDIM_BUDGET_LES_MASK
+    tfield%ndimlist(4)  = NMNHDIM_UNUSED
+    !tfield%ndimlist(5:) = NMNHDIM_UNUSED
+  end if
+
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_UKe, 'RES_UKE', 'Resolved flux of resolved kinetic energy', 'm3 s-3', ysubtitle)
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_VKe, 'RES_VKE', 'Resolved flux of resolved kinetic energy', 'm3 s-3', ysubtitle)
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_WKe, 'RES_WKE', 'Resolved flux of resolved kinetic energy', 'm3 s-3', ysubtitle)
+end if
 !
 !
 !*      2.3  subgrid quantities
 !            ------------------
 !
-IF (LLES_SUBGRID) THEN
+if ( lles_subgrid ) then
+  !Prepare metadata (used in Les_diachro_write calls)
+  ldoavg  = xles_temp_mean_start /= XUNDEF .and. xles_temp_mean_end /= XUNDEF
+  ldonorm = trim(cles_norm_type) /= 'NONE'
 
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_TKE ",YSUBTITLE(:), &
-       "Subgrid TKE"//YSUBTITLE(:),"m2 s-2",XLES_SUBGRID_Tke,HLES_AVG)
+  tfield%ndims = 3
+  tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+  tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+  tfield%ndimlist(3)  = NMNHDIM_BUDGET_LES_MASK
+  tfield%ndimlist(4:) = NMNHDIM_UNUSED
 
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_U2  ", YSUBTITLE(:), &
-       "Subgrid <u2> variance"//YSUBTITLE(:),"m2 s-2",XLES_SUBGRID_U2,HLES_AVG)
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_Tke,  'SBG_TKE',  'Subgrid TKE',           'm2 s-2', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_U2,   'SBG_U2',   'Subgrid <u2> variance', 'm2 s-2', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_V2,   'SBG_V2',   'Subgrid <v2> variance', 'm2 s-2', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_W2,   'SBG_W2',   'Subgrid <w2> variance', 'm2 s-2', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_UV,   'SBG_UV',   'Subgrid <uv> flux',     'm2 s-2', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_WU,   'SBG_WU',   'Subgrid <wu> flux',     'm2 s-2', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_WV,   'SBG_WV',   'Subgrid <wv> flux',     'm2 s-2', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_Thl2, 'SBG_THL2', 'Subgrid liquid potential temperature variance', &
+                          'K2', ysubtITLE )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_UThl, 'SBG_UTHL', 'Subgrid hor. flux of liquid potential temperature',  &
+                          'm K s-1', YSUBTITLE )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_VThl, 'SBG_VTHL', 'Subgrid hor. flux of liquid potential temperature',  &
+                          'm K s-1', YSUBTITLE )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_WThl, 'SBG_WTHL', 'Subgrid vert. flux of liquid potential temperature', &
+                          'm K s-1', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_WP,   'SBG_WP',   'Subgrid <wp> vertical Flux', 'm Pa s-1', ysubtitle )
 
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_V2  ", YSUBTITLE(:), &
-       "Subgrid <v2> variance"//YSUBTITLE(:),"m2 s-2",XLES_SUBGRID_V2,HLES_AVG)
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_THLUP_MF, 'THLUP_MF', 'Subgrid <thl> of updraft',    'K',          ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_RTUP_MF,  'RTUP_MF',  'Subgrid <rt> of updraft',     'kg kg-1',    ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_RVUP_MF,  'RVUP_MF',  'Subgrid <rv> of updraft',     'kg kg-1',    ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_RCUP_MF,  'RCUP_MF',  'Subgrid <rc> of updraft',     'kg kg-1',    ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_RIUP_MF,  'RIUP_MF',  'Subgrid <ri> of updraft',     'kg kg-1',    ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_WUP_MF,   'WUP_MF',   'Subgrid <w> of updraft',      'm s-1',      ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_MASSFLUX, 'MAFLX_MF', 'Subgrid <MF> of updraft',     'kg m-2 s-1', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_DETR,     'DETR_MF',  'Subgrid <detr> of updraft',   'kg m-3 s-1', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_ENTR,     'ENTR_MF',  'Subgrid <entr> of updraft',   'kg m-3 s-1', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_FRACUP,   'FRCUP_MF', 'Subgrid <FracUp> of updraft', '1',          ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_THVUP_MF, 'THVUP_MF', 'Subgrid <thv> of updraft',    'K',          ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_WTHLMF,   'WTHL_MF',  'Subgrid <wthl> of mass flux convection scheme', &
+                          'm K s-1', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_WRTMF,    'WRT_MF',   'Subgrid <wrt> of mass flux convection scheme',  &
+                          'm kg kg-1 s-1', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_WTHVMF,   'WTHV_MF',  'Subgrid <wthv> of mass flux convection scheme', &
+                          'm K s-1', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_WUMF,     'WU_MF',    'Subgrid <wu> of mass flux convection scheme',   &
+                          'm2 s-2', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_WVMF,     'WV_MF',    'Subgrid <wv> of mass flux convection scheme',   &
+                          'm2 s-2', ysubtitle )
 
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_W2  ", YSUBTITLE(:), &
-       "Subgrid <w2> variance"//YSUBTITLE(:),"m2 s-2",XLES_SUBGRID_W2,HLES_AVG)
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_PHI3,  'SBG_PHI3', 'Subgrid Phi3 function',         '1',      ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_LMix,  'SBG_LMIX', 'Subgrid Mixing Length',         '1',      ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_LDiss, 'SBG_LDIS', 'Subgrid Dissipation Length',    '1',      ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_Km,    'SBG_KM',   'Eddy diffusivity for momentum', 'm2 s-1', ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_Kh,    'SBG_KH',   'Eddy diffusivity for heat',     'm2 s-1', ysubtitle )
 
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_UV  ", YSUBTITLE(:), &
-       "Subgrid <uv> flux"//YSUBTITLE(:),"m2 s-2",XLES_SUBGRID_UV,HLES_AVG)
+  if ( luserv ) then
+    call Les_diachro_write( tpdiafile, XLES_SUBGRID_WThv,  'SBG_WTHV', 'Subgrid vert. flux of liquid potential temperature', &
+                            'm K s-1', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_SUBGRID_Rt2,   'SBG_RT2',  'Subgrid total water variance', 'kg2 kg-2', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_SUBGRID_ThlRt, 'SBG_TLRT', 'Subgrid <thlrt> covariance',  'K kg kg-1', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_SUBGRID_URt,   'SBG_URT',  'Subgrid total water horizontal flux', &
+                            'm kg kg-1 s-1', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_SUBGRID_VRt,   'SBG_VRT',  'Subgrid total water horizontal flux', &
+                            'm kg kg-1 s-1', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_SUBGRID_WRt,   'SBG_WRT',  'Subgrid total water vertical flux',   &
+                            'm kg kg-1 s-1', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_SUBGRID_PSI3,  'SBG_PSI3', 'Subgrid Psi3 function', '1', ysubtitle )
+  end if
 
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_WU  ", YSUBTITLE(:), &
-       "Subgrid <wu> flux"//YSUBTITLE(:),"m2 s-2",XLES_SUBGRID_WU,HLES_AVG)
+  if ( luserc ) then
+    call Les_diachro_write( tpdiafile, XLES_SUBGRID_Rc2, 'SBG_RC2', 'Subgrid cloud water variance',        'kg2 kg-2', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_SUBGRID_URc, 'SBG_URC', 'Subgrid cloud water horizontal flux', 'm kg kg-1 s-1', &
+                            ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_SUBGRID_VRc, 'SBG_VRC', 'Subgrid cloud water horizontal flux', 'm kg kg-1 s-1', &
+                            ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_SUBGRID_WRc, 'SBG_WRC', 'Subgrid cloud water vertical flux',   'm kg kg-1 s-1', &
+                            ysubtitle )
+  end if
 
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_WV  ", YSUBTITLE(:), &
-       "Subgrid <wv> flux"//YSUBTITLE(:),"m2 s-2",XLES_SUBGRID_WV,HLES_AVG)
+  if ( nsv > 0 ) then
+    tfield%ndims = 4
+    tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+    tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+    tfield%ndimlist(3)  = NMNHDIM_BUDGET_LES_MASK
+    tfield%ndimlist(4)  = NMNHDIM_BUDGET_LES_SV
+    tfield%ndimlist(5:) = NMNHDIM_UNUSED
 
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_THL2", YSUBTITLE(:), &
-       "Subgrid liquid potential temperature variance"//YSUBTITLE(:),"K2",XLES_SUBGRID_Thl2,HLES_AVG)
+    call Les_diachro_write( tpdiafile, XLES_SUBGRID_USv, 'SBG_USV', 'Subgrid <uSv> horizontal flux', 'm kg kg-1 s-1', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_SUBGRID_VSv, 'SBG_VSV', 'Subgrid <vSv> horizontal flux', 'm kg kg-1 s-1', ysubtitle )
+    call Les_diachro_write( tpdiafile, XLES_SUBGRID_WSv, 'SBG_WSV', 'Subgrid <wSv> vertical flux',   'm kg kg-1 s-1', ysubtitle )
 
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_UTHL", YSUBTITLE(:), &
-       "Subgrid hor. flux of liquid potential temperature"//YSUBTITLE(:),"m K s-1",XLES_SUBGRID_UThl,HLES_AVG)
+    tfield%ndims = 3
+    !tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+    !tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+    !tfield%ndimlist(3)  = NMNHDIM_BUDGET_LES_MASK
+    tfield%ndimlist(4)  = NMNHDIM_UNUSED
+    !tfield%ndimlist(5:) = NMNHDIM_UNUSED
 
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_VTHL", YSUBTITLE(:), &
-       "Subgrid hor. flux of liquid potential temperature"//YSUBTITLE(:),"m K s-1",XLES_SUBGRID_VThl,HLES_AVG)
 
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_WTHL", YSUBTITLE(:), &
-       "Subgrid vert. flux of liquid potential temperature"//YSUBTITLE(:),"m K s-1",XLES_SUBGRID_WThl,HLES_AVG)
+  end if
 
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_WP  ",YSUBTITLE(:), &
-     "Subgrid <wp> vertical Flux"//YSUBTITLE(:),"m Pa s-1",XLES_SUBGRID_WP,HLES_AVG)
-!!
-!!
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"THLUP_MF",YSUBTITLE(:), &
-     "Subgrid <thl> of updraft"//YSUBTITLE(:),"K",XLES_SUBGRID_THLUP_MF,HLES_AVG)
-!     
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RTUP_MF ",YSUBTITLE(:), &
-     "Subgrid <rt> of updraft"//YSUBTITLE(:),"kg kg-1",XLES_SUBGRID_RTUP_MF,HLES_AVG)
-!     
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RVUP_MF ",YSUBTITLE(:), &
-     "Subgrid <rv> of updraft"//YSUBTITLE(:),"kg kg-1",XLES_SUBGRID_RVUP_MF,HLES_AVG)
-!     
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RCUP_MF ",YSUBTITLE(:), &
-     "Subgrid <rc> of updraft"//YSUBTITLE(:),"kg kg-1",XLES_SUBGRID_RCUP_MF,HLES_AVG)
-!     
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RIUP_MF ",YSUBTITLE(:), &
-     "Subgrid <ri> of updraft"//YSUBTITLE(:),"kg kg-1",XLES_SUBGRID_RIUP_MF,HLES_AVG)
-!     
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"WUP_MF  ",YSUBTITLE(:), &
-     "Subgrid <w> of updraft"//YSUBTITLE(:),"m s-1",XLES_SUBGRID_WUP_MF,HLES_AVG)
-!     
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"MAFLX_MF",YSUBTITLE(:), &
-     "Subgrid <MF> of updraft"//YSUBTITLE(:),"kg m-2 s-1",XLES_SUBGRID_MASSFLUX,HLES_AVG)
-!     
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"DETR_MF ",YSUBTITLE(:), &
-     "Subgrid <detr> of updraft"//YSUBTITLE(:),"kg m-3 s-1",XLES_SUBGRID_DETR,HLES_AVG)
-!     
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"ENTR_MF ",YSUBTITLE(:), &
-     "Subgrid <entr> of updraft"//YSUBTITLE(:),"kg m-3 s-1",XLES_SUBGRID_ENTR,HLES_AVG)
-!     
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"FRCUP_MF",YSUBTITLE(:), &
-     "Subgrid <FracUp> of updraft"//YSUBTITLE(:),"1",XLES_SUBGRID_FRACUP,HLES_AVG)
-!     
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"THVUP_MF",YSUBTITLE(:), &
-     "Subgrid <thv> of updraft"//YSUBTITLE(:),"K",&
-                                XLES_SUBGRID_THVUP_MF,HLES_AVG)
-!     
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"WTHL_MF ",YSUBTITLE(:), &
-     "Subgrid <wthl> of mass flux convection scheme"//YSUBTITLE(:),"m K s-1",&
-                                XLES_SUBGRID_WTHLMF,HLES_AVG)
-!     
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"WRT_MF  ",YSUBTITLE(:), &
-     "Subgrid <wrt> of mass flux convection scheme"//YSUBTITLE(:),"m kg kg-1 s-1",&
-                                XLES_SUBGRID_WRTMF,HLES_AVG)
-!     
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"WTHV_MF ",YSUBTITLE(:), &
-     "Subgrid <wthv> of mass flux convection scheme"//YSUBTITLE(:),"m K s-1",&
-                                XLES_SUBGRID_WTHVMF,HLES_AVG)
-!     
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"WU_MF   ",YSUBTITLE(:), &
-     "Subgrid <wu> of mass flux convection scheme"//YSUBTITLE(:),"m2 s-2",&
-                                XLES_SUBGRID_WUMF,HLES_AVG)
-!     
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"WV_MF   ",YSUBTITLE(:), &
-     "Subgrid <wv> of mass flux convection scheme"//YSUBTITLE(:),"m2 s-2",&
-                                XLES_SUBGRID_WVMF,HLES_AVG)
-!!     
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_UTke,  'SBG_UTKE', 'Subgrid flux of subgrid kinetic energy', 'm3 s-3',   &
+                          ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_VTke,  'SBG_VTKE', 'Subgrid flux of subgrid kinetic energy', 'm3 s-3',   &
+                          ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_WTke,  'SBG_WTKE', 'Subgrid flux of subgrid kinetic energy', 'm3 s-3',   &
+                          ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_W2Thl, 'SBG_W2TL', 'Subgrid flux of subgrid kinetic energy', 'm2 K s-2', &
+                          ysubtitle )
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_WThl2, 'SBG_WTL2', 'Subgrid flux of subgrid kinetic energy', 'm K2 s-1', &
+                          ysubtitle )
+end if
 
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_PHI3",YSUBTITLE(:), &
-     "Subgrid Phi3 function"//YSUBTITLE(:),"1",XLES_SUBGRID_PHI3,HLES_AVG)
 
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_LMIX",YSUBTITLE(:), &
-     "Subgrid Mixing Length"//YSUBTITLE(:),"1",XLES_SUBGRID_LMix,HLES_AVG)
+!Prepare metadata (used in Les_diachro_write calls)
+tfield%ndims = 2
+tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+tfield%ndimlist(3:) = NMNHDIM_UNUSED
 
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_LDIS",YSUBTITLE(:), &
-     "Subgrid Dissipation Length"//YSUBTITLE(:),"1",XLES_SUBGRID_LDiss,HLES_AVG)
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_KM  ",YSUBTITLE(:), &
-     "Eddy diffusivity for momentum"//YSUBTITLE(:),"m2 s-1",XLES_SUBGRID_Km,HLES_AVG)
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_KH  ",YSUBTITLE(:), &
-     "Eddy diffusivity for heat"//YSUBTITLE(:),"m2 s-1",XLES_SUBGRID_Kh,HLES_AVG)
-!
-  IF (LUSERV) THEN
-     CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_WTHV", YSUBTITLE(:), &
-       "Subgrid vert. flux of liquid potential temperature"//YSUBTITLE(:),"m K s-1",XLES_SUBGRID_WThv,HLES_AVG)
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_RT2 ", YSUBTITLE(:), &
-       "Subgrid total water variance"//YSUBTITLE(:),"kg2 kg-2",XLES_SUBGRID_Rt2,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_TLRT", YSUBTITLE(:), &
-       "Subgrid <thlrt> covariance"//YSUBTITLE(:),"K kg kg-1",XLES_SUBGRID_ThlRt,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_URT ", YSUBTITLE(:), &
-       "Subgrid total water horizontal flux"//YSUBTITLE(:),"m kg kg-1 s-1",XLES_SUBGRID_URt,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_VRT ", YSUBTITLE(:), &
-       "Subgrid total water horizontal flux"//YSUBTITLE(:),"m kg kg-1 s-1",XLES_SUBGRID_VRt,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_WRT ", YSUBTITLE(:), &
-       "Subgrid total water vertical flux"//YSUBTITLE(:),"m kg kg-1 s-1",XLES_SUBGRID_WRt,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_PSI3",YSUBTITLE(:), &
-       "Subgrid Psi3 function"//YSUBTITLE(:),"1",XLES_SUBGRID_PSI3,HLES_AVG)
-  END IF
-
-  IF (LUSERC) THEN
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_RC2 ", YSUBTITLE(:), &
-       "Subgrid cloud water variance"//YSUBTITLE(:),"kg2 kg-2",XLES_SUBGRID_Rc2,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_URC ", YSUBTITLE(:), &
-       "Subgrid cloud water horizontal flux"//YSUBTITLE(:),"m kg kg-1 s-1",XLES_SUBGRID_URc,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_VRC ", YSUBTITLE(:), &
-       "Subgrid cloud water horizontal flux"//YSUBTITLE(:),"m kg kg-1 s-1",XLES_SUBGRID_VRc,HLES_AVG)
-
-    CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_WRC ", YSUBTITLE(:), &
-       "Subgrid cloud water vertical flux"//YSUBTITLE(:),"m kg kg-1 s-1",XLES_SUBGRID_WRc,HLES_AVG)
-  END IF
-
-  IF (NSV>0) THEN
-    CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"SBG_USV ", YSUBTITLE(:), &
-       "Subgrid <uSv> horizontal flux"//YSUBTITLE(:),"m kg kg-1 s-1",XLES_SUBGRID_USv,HLES_AVG)
-
-    CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"SBG_VSV ", YSUBTITLE(:), &
-       "Subgrid <vSv> horizontal flux"//YSUBTITLE(:),"m kg kg-1 s-1",XLES_SUBGRID_VSv,HLES_AVG)
-
-    CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"SBG_WSV ", YSUBTITLE(:), &
-       "Subgrid <wSv> vertical flux"//YSUBTITLE(:),"m kg kg-1 s-1",XLES_SUBGRID_WSv,HLES_AVG)
-  END IF
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_UTKE", YSUBTITLE(:), &
-     "Subgrid flux of subgrid kinetic energy"//YSUBTITLE(:),"m3 s-3",XLES_SUBGRID_UTke,HLES_AVG)
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_VTKE", YSUBTITLE(:), &
-     "Subgrid flux of subgrid kinetic energy"//YSUBTITLE(:),"m3 s-3",XLES_SUBGRID_VTke,HLES_AVG)
-
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_WTKE",YSUBTITLE(:),  &
-     "Subgrid flux of subgrid kinetic energy"//YSUBTITLE(:),"m3 s-3",XLES_SUBGRID_WTke,HLES_AVG)
-!
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_W2TL",YSUBTITLE(:),  &
-     "Subgrid flux of subgrid kinetic energy"//YSUBTITLE(:),"m2 K s-2",XLES_SUBGRID_W2Thl,HLES_AVG)
-!
-  CALL LES_DIACHRO_MASKS(TPDIAFILE,"SBG_WTL2",YSUBTITLE(:),  &
-     "Subgrid flux of subgrid kinetic energy"//YSUBTITLE(:),"m K2 s-1",XLES_SUBGRID_WThl2,HLES_AVG)
-!
-END IF
+ldoavg  = xles_temp_mean_start /= XUNDEF .and. xles_temp_mean_end /= XUNDEF
+ldonorm = trim(cles_norm_type) /= 'NONE'
 !
 !*      2.4  Updraft quantities
 !            ------------------
 !
-IF (LLES_UPDRAFT) THEN
-  CALL LES_DIACHRO(TPDIAFILE,"UP_FRAC ",  &
-       "Updraft fraction","1",XLES_UPDRAFT,HLES_AVG)
+if ( lles_updraft ) then
+  call Les_diachro_write( tpdiafile, XLES_UPDRAFT,     'UP_FRAC', 'Updraft fraction',                                 '1' )
+  call Les_diachro_write( tpdiafile, XLES_UPDRAFT_W,   'UP_W',    'Updraft W mean value',                             'm s-1' )
+  call Les_diachro_write( tpdiafile, XLES_UPDRAFT_Th,  'UP_TH',   'Updraft potential temperature mean value',         'K' )
+  if ( luserc ) &
+  call Les_diachro_write( tpdiafile, XLES_UPDRAFT_Thl, 'UP_THL',  'Updraft liquid potential temperature mean value',  'K' )
+  if ( luserv ) &
+  call Les_diachro_write( tpdiafile, XLES_UPDRAFT_Thv, 'UP_THV',  'Updraft virtual potential temperature mean value', 'K' )
+  call Les_diachro_write( tpdiafile, XLES_UPDRAFT_Ke,  'UP_KE',   'Updraft resolved TKE mean value',                   'm2 s-2' )
+  call Les_diachro_write( tpdiafile, XLES_UPDRAFT_Tke, 'UP_TKE',  'Updraft subgrid TKE mean value',                    'm2 s-2' )
+  if ( luserv ) &
+  call Les_diachro_write( tpdiafile, XLES_UPDRAFT_Rv,  'UP_RV',   'Updraft water vapor mean value',                    'kg kg-1' )
+  if ( luserc ) &
+  call Les_diachro_write( tpdiafile, XLES_UPDRAFT_Rc,  'UP_RC',   'Updraft cloud water mean value',                    'kg kg-1' )
+  if ( luserr ) &
+  call Les_diachro_write( tpdiafile, XLES_UPDRAFT_Rr,  'UP_RR',   'Updraft rain mean value',                           'kg kg-1' )
+  if ( luseri ) &
+  call Les_diachro_write( tpdiafile, XLES_UPDRAFT_Ri,  'UP_RI',   'Updraft ice mean value',                            'kg kg-1' )
+  if ( lusers ) &
+  call Les_diachro_write( tpdiafile, XLES_UPDRAFT_Rs,  'UP_RS',   'Updraft snow mean value',                           'kg kg-1' )
+  if ( luserg ) &
+  call Les_diachro_write( tpdiafile, XLES_UPDRAFT_Rg,  'UP_RG',   'Updraft graupel mean value',                        'kg kg-1' )
+  if ( luserh ) &
+  call Les_diachro_write( tpdiafile, XLES_UPDRAFT_Rh,  'UP_RH',   'Updraft hail mean value',                           'kg kg-1' )
 
-  CALL LES_DIACHRO(TPDIAFILE,"UP_W    ",  &
-       "Updraft W mean value","m s-1",XLES_UPDRAFT_W,HLES_AVG)
+  if ( nsv > 0 ) then
+    tfield%ndims = 3
+    tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+    tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+    tfield%ndimlist(3)  = NMNHDIM_BUDGET_LES_SV
+    tfield%ndimlist(4:) = NMNHDIM_UNUSED
 
-  CALL LES_DIACHRO(TPDIAFILE,"UP_TH   ",  &
-       "Updraft potential temperature mean value","K",XLES_UPDRAFT_Th,HLES_AVG)
+    call Les_diachro_write( tpdiafile, XLES_UPDRAFT_Sv, 'UP_SV', 'Updraft scalar variables mean values', 'kg kg-1' )
 
-  IF (LUSERC) &
-  CALL LES_DIACHRO(TPDIAFILE,"UP_THL  ",  &
-       "Updraft liquid potential temperature mean value","K",XLES_UPDRAFT_Thl,HLES_AVG)
+    tfield%ndims = 2
+    !tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+    !tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+    tfield%ndimlist(3) = NMNHDIM_UNUSED
+    !tfield%ndimlist(4:) = NMNHDIM_UNUSED
+  end if
 
-  IF (LUSERV) &
-  CALL LES_DIACHRO(TPDIAFILE,"UP_THV  ",  &
-       "Updraft virutal potential temperature mean value","K",XLES_UPDRAFT_Thv,HLES_AVG)
+  call Les_diachro_write( tpdiafile, XLES_UPDRAFT_Th2,    'UP_TH2',  'Updraft resolved Theta variance',             'K2' )
+  if ( luserc ) &
+  call Les_diachro_write( tpdiafile, XLES_UPDRAFT_Thl2,   'UP_THL2', 'Updraft resolved Theta_l variance',           'K2' )
+  if ( luserv ) &
+  call Les_diachro_write( tpdiafile, XLES_UPDRAFT_ThThv,  'UP_THTV', 'Updraft resolved Theta Theta_v covariance',   'K2' )
+  if ( luserc ) &
+  call Les_diachro_write( tpdiafile, XLES_UPDRAFT_ThlThv, 'UP_TLTV', 'Updraft resolved Theta_l Theta_v covariance', 'K2' )
+  call Les_diachro_write( tpdiafile, XLES_UPDRAFT_WTh,    'UP_WTH',  'Updraft resolved WTh flux',                    'm K s-1' )
+  if ( luserc ) &
+  call Les_diachro_write( tpdiafile, XLES_UPDRAFT_WThl,   'UP_WTHL', 'Updraft resolved WThl flux',                   'm K s-1' )
+  if ( luserv ) &
+  call Les_diachro_write( tpdiafile, XLES_UPDRAFT_WThv,   'UP_WTHV', 'Updraft resolved WThv flux',                   'm K s-1' )
 
-  CALL LES_DIACHRO(TPDIAFILE,"UP_KE   ",  &
-       "Updraft resolved TKE mean value","m2 s-2",XLES_UPDRAFT_Ke,HLES_AVG)
+  if ( luserv ) then
+    call Les_diachro_write( tpdiafile, XLES_UPDRAFT_Rv2,   'UP_RV2',   'Updraft resolved water vapor variance', 'kg2 kg-2' )
+    call Les_diachro_write( tpdiafile, XLES_UPDRAFT_ThRv,  'UP_THRV',  'Updraft resolved <thrv> covariance',    'K kg kg-1' )
+    if ( luserc ) &
+    call Les_diachro_write( tpdiafile, XLES_UPDRAFT_ThlRv, 'UP_THLRV', 'Updraft resolved <thlrv> covariance',   'K kg kg-1' )
+    call Les_diachro_write( tpdiafile, XLES_UPDRAFT_ThvRv, 'UP_THVRV', 'Updraft resolved <thvrv> covariance',   'K kg kg-1' )
+    call Les_diachro_write( tpdiafile, XLES_UPDRAFT_WRv,   'UP_WRV',   'Updraft resolved <wrv> vertical flux',  'm kg kg-1 s-1' )
+  end if
 
-  CALL LES_DIACHRO(TPDIAFILE,"UP_TKE  ",  &
-       "Updraft subgrid TKE mean value","m2 s-2",XLES_UPDRAFT_Tke,HLES_AVG)
+  if ( luserc ) then
+    call Les_diachro_write( tpdiafile, XLES_UPDRAFT_Rc2,   'UP_RC2',   'Updraft resolved cloud water variance', 'kg2 kg-2' )
+    call Les_diachro_write( tpdiafile, XLES_UPDRAFT_ThRc,  'UP_THRC',  'Updraft resolved <thrc> covariance',    'K kg kg-1' )
+    call Les_diachro_write( tpdiafile, XLES_UPDRAFT_ThlRc, 'UP_THLRC', 'Updraft resolved <thlrc> covariance',   'K kg kg-1' )
+    call Les_diachro_write( tpdiafile, XLES_UPDRAFT_ThvRc, 'UP_THVRC', 'Updraft resolved <thvrc> covariance',   'K kg kg-1' )
+    call Les_diachro_write( tpdiafile, XLES_UPDRAFT_WRc,   'UP_WRC',   'Updraft resolved <wrc> vertical flux',  'm kg kg-1 s-1' )
+  end if
 
-  IF (LUSERV) &
-  CALL LES_DIACHRO(TPDIAFILE,"UP_RV   ",  &
-       "Updraft water vapor mean value","kg kg-1",XLES_UPDRAFT_Rv,HLES_AVG)
+  if ( luseri ) then
+    call Les_diachro_write( tpdiafile, XLES_UPDRAFT_Ri2,   'UP_RI2',   'Updraft resolved cloud ice variance',   'kg2 kg-2' )
+    call Les_diachro_write( tpdiafile, XLES_UPDRAFT_ThRi,  'UP_THRI',  'Updraft resolved <thri> covariance',    'K kg kg-1' )
+    call Les_diachro_write( tpdiafile, XLES_UPDRAFT_ThlRi, 'UP_THLRI', 'Updraft resolved <thlri> covariance',   'K kg kg-1' )
+    call Les_diachro_write( tpdiafile, XLES_UPDRAFT_ThvRi, 'UP_THVRI', 'Updraft resolved <thvri> covariance',   'K kg kg-1' )
+    call Les_diachro_write( tpdiafile, XLES_UPDRAFT_WRi,   'UP_WRI',   'Updraft resolved <wri> vertical flux',  'm kg kg-1 s-1' )
+  end if
 
-  IF (LUSERC) &
-  CALL LES_DIACHRO(TPDIAFILE,"UP_RC   ",  &
-       "Updraft cloud water mean value","kg kg-1",XLES_UPDRAFT_Rc,HLES_AVG)
 
-  IF (LUSERR) &
-  CALL LES_DIACHRO(TPDIAFILE,"UP_RR   ",  &
-       "Updraft rain mean value","kg kg-1",XLES_UPDRAFT_Rr,HLES_AVG)
+  if ( nsv > 0 ) then
+    tfield%ndims = 3
+    tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+    tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+    tfield%ndimlist(3)  = NMNHDIM_BUDGET_LES_SV
+    tfield%ndimlist(4:) = NMNHDIM_UNUSED
 
-  IF (LUSERI) &
-  CALL LES_DIACHRO(TPDIAFILE,"UP_RI   ",  &
-       "Updraft ice mean value","kg kg-1",XLES_UPDRAFT_Ri,HLES_AVG)
+    call Les_diachro_write( tpdiafile, XLES_UPDRAFT_Sv2,   'UP_SV2',   'Updraft resolved scalar variables variances', 'kg2 kg-2' )
+    call Les_diachro_write( tpdiafile, XLES_UPDRAFT_ThSv,  'UP_THSV',  'Updraft resolved <ThSv> variance',            'K kg kg-1' )
+    if ( luserc ) &
+    call Les_diachro_write( tpdiafile, XLES_UPDRAFT_ThlSv, 'UP_THLSV', 'Updraft resolved <ThlSv> variance',           'K kg kg-1' )
+    if ( luserv ) &
+    call Les_diachro_write( tpdiafile, XLES_UPDRAFT_ThvSv, 'UP_THVSV', 'Updraft resolved <ThvSv> variance',           'K kg kg-1' )
+    call Les_diachro_write( tpdiafile, XLES_UPDRAFT_WSv,   'UP_WSV',   'Updraft resolved <wSv> vertical flux', 'm kg kg-1 s-1' )
 
-  IF (LUSERS) &
-  CALL LES_DIACHRO(TPDIAFILE,"UP_RS   ",  &
-       "Updraft snow mean value","kg kg-1",XLES_UPDRAFT_Rs,HLES_AVG)
-
-  IF (LUSERG) &
-  CALL LES_DIACHRO(TPDIAFILE,"UP_RG   ",  &
-       "Updraft graupel mean value","kg kg-1",XLES_UPDRAFT_Rg,HLES_AVG)
-
-  IF (LUSERH) &
-  CALL LES_DIACHRO(TPDIAFILE,"UP_RH   ",  &
-       "Updraft hail mean value","kg kg-1",XLES_UPDRAFT_Rh,HLES_AVG)
-
-  IF (NSV>0) &
-  CALL LES_DIACHRO_SV(TPDIAFILE,"UP_SV   ",  &
-       "Updraft scalar variables mean values","kg kg-1",XLES_UPDRAFT_Sv,HLES_AVG)
-  !
-  CALL LES_DIACHRO(TPDIAFILE,"UP_TH2 ",  &
-       "Updraft resolved Theta variance ","K2",XLES_UPDRAFT_Th2,HLES_AVG)
-
-  IF (LUSERC) &
-  CALL LES_DIACHRO(TPDIAFILE,"UP_THL2",  &
-       "Updraft resolved Theta_l variance ","K2",XLES_UPDRAFT_Thl2,HLES_AVG)
-
-  IF (LUSERV) &
-  CALL LES_DIACHRO(TPDIAFILE,"UP_THTV",  &
-       "Updraft resolved Theta Theta_v covariance ","K2",XLES_UPDRAFT_ThThv,HLES_AVG)
-
-  IF (LUSERC) &
-  CALL LES_DIACHRO(TPDIAFILE,"UP_TLTV",  &
-       "Updraft resolved Theta_l Theta_v covariance ","K2",XLES_UPDRAFT_ThlThv,HLES_AVG)
-
-  CALL LES_DIACHRO(TPDIAFILE,"UP_WTH  ",  &
-       "Updraft resolved WTh flux","m K s-1",XLES_UPDRAFT_WTh,HLES_AVG)
-
-  IF (LUSERC) &
-  CALL LES_DIACHRO(TPDIAFILE,"UP_WTHL ",  &
-       "Updraft resolved WThl flux","m K s-1",XLES_UPDRAFT_WThl,HLES_AVG)
-
-  IF (LUSERV) &
-  CALL LES_DIACHRO(TPDIAFILE,"UP_WTHV ",  &
-       "Updraft resolved WThv flux","m K s-1",XLES_UPDRAFT_WThv,HLES_AVG)
-  !
-  IF (LUSERV) THEN
-    CALL LES_DIACHRO(TPDIAFILE,"UP_RV2  ",  &
-       "Updraft resolved water vapor variance","kg2 kg-2",XLES_UPDRAFT_Rv2,HLES_AVG)
-
-    CALL LES_DIACHRO(TPDIAFILE,"UP_THRV ",  &
-       "Updraft resolved <thrv> covariance","K kg kg-1",XLES_UPDRAFT_ThRv,HLES_AVG)
-
-    IF (LUSERC) &
-    CALL LES_DIACHRO(TPDIAFILE,"UP_THLRV",  &
-     "Updraft resolved <thlrv> covariance","K kg kg-1",XLES_UPDRAFT_ThlRv,HLES_AVG)
-
-    CALL LES_DIACHRO(TPDIAFILE,"UP_THVRV",  &
-       "Updraft resolved <thvrv> covariance","K kg kg-1",XLES_UPDRAFT_ThvRv,HLES_AVG)
-
-    CALL LES_DIACHRO(TPDIAFILE,"UP_WRV  ",  &
-       "Updraft resolved <wrv> vertical flux","m kg kg-1 s-1",XLES_UPDRAFT_WRv,HLES_AVG)
-  END IF
-
-  IF (LUSERC) THEN
-    CALL LES_DIACHRO(TPDIAFILE,"UP_RC2  ",  &
-       "Updraft resolved cloud water variance","kg2 kg-2",XLES_UPDRAFT_Rc2,HLES_AVG)
-
-    CALL LES_DIACHRO(TPDIAFILE,"UP_THRC ",  &
-       "Updraft resolved <thrc> covariance","K kg kg-1",XLES_UPDRAFT_ThRc,HLES_AVG)
-
-    CALL LES_DIACHRO(TPDIAFILE,"UP_THLRC", &
-       "Updraft resolved <thlrc> covariance","K kg kg-1",XLES_UPDRAFT_ThlRc,HLES_AVG)
-
-    CALL LES_DIACHRO(TPDIAFILE,"UP_THVRC", &
-       "Updraft resolved <thvrc> covariance","K kg kg-1",XLES_UPDRAFT_ThvRc,HLES_AVG)
-
-    CALL LES_DIACHRO(TPDIAFILE,"UP_WRC  ",  &
-       "Updraft resolved <wrc> vertical flux","m kg kg-1 s-1",XLES_UPDRAFT_WRc,HLES_AVG)
-  END IF
-
-  IF (LUSERI) THEN
-    CALL LES_DIACHRO(TPDIAFILE,"UP_RI2  ", &
-       "Updraft resolved cloud ice variance","kg2 kg-2",XLES_UPDRAFT_Ri2,HLES_AVG)
-
-    CALL LES_DIACHRO(TPDIAFILE,"UP_THRI ",  &
-       "Updraft resolved <thri> covariance","K kg kg-1",XLES_UPDRAFT_ThRi,HLES_AVG)
-
-    CALL LES_DIACHRO(TPDIAFILE,"UP_THLRI",  &
-       "Updraft resolved <thlri> covariance","K kg kg-1",XLES_UPDRAFT_ThlRi,HLES_AVG)
-
-    CALL LES_DIACHRO(TPDIAFILE,"UP_THVRI",  &
-       "Updraft resolved <thvri> covariance","K kg kg-1",XLES_UPDRAFT_ThvRi,HLES_AVG)
-
-    CALL LES_DIACHRO(TPDIAFILE,"UP_WRI  ",  &
-       "Updraft resolved <wri> vertical flux","m kg kg-1 s-1",XLES_UPDRAFT_WRi,HLES_AVG)
-  END IF
-
-  IF (NSV>0) THEN
-    CALL LES_DIACHRO_SV(TPDIAFILE,"UP_SV2  ",  &
-       "Updraft resolved scalar variables variances","kg2 kg-2",XLES_UPDRAFT_Sv2,HLES_AVG)
-
-    CALL LES_DIACHRO_SV(TPDIAFILE,"UP_THSV ", &
-       "Updraft resolved <ThSv> variance","K kg kg-1",XLES_UPDRAFT_ThSv,HLES_AVG)
-
-    IF (LUSERC) &
-    CALL LES_DIACHRO_SV(TPDIAFILE,"UP_THLSV",  &
-       "Updraft resolved <ThlSv> variance","K kg kg-1",XLES_UPDRAFT_ThlSv,HLES_AVG)
-
-    IF (LUSERV) &
-    CALL LES_DIACHRO_SV(TPDIAFILE,"UP_THVSV",  &
-       "Updraft resolved <ThvSv> variance","K kg kg-1",XLES_UPDRAFT_ThvSv,HLES_AVG)
-
-    CALL LES_DIACHRO_SV(TPDIAFILE,"UP_WSV  ",  &
-       "Updraft resolved <wSv> vertical flux","m kg kg-1 s-1",XLES_UPDRAFT_WSv,HLES_AVG)
-  END IF
-END IF
-!                
+    tfield%ndims = 2
+    !tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+    !tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+    tfield%ndimlist(3) = NMNHDIM_UNUSED
+    !tfield%ndimlist(4:) = NMNHDIM_UNUSED
+  end if
+end if
+!
 !
 !*      2.5  Downdraft quantities
 !            --------------------
 !
-IF (LLES_DOWNDRAFT) THEN
-   CALL LES_DIACHRO(TPDIAFILE,"DW_FRAC ",  &
-       "Downdraft fraction","1",XLES_DOWNDRAFT,HLES_AVG)
+if ( lles_downdraft ) then
+  call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT,     'DW_FRAC', 'Downdraft fraction',                                 '1' )
+  call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_W,   'DW_W',    'Downdraft W mean value',                             'm s-1' )
+  call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_Th,  'DW_TH',   'Downdraft potential temperature mean value',         'K' )
+  if ( luserc ) &
+  call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_Thl, 'DW_THL',  'Downdraft liquid potential temperature mean value',  'K' )
+  if ( luserv ) &
+  call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_Thv, 'DW_THV',  'Downdraft virtual potential temperature mean value', 'K' )
+  call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_Ke,  'DW_KE',   'Downdraft resolved TKE mean value',                 'm2 s-2' )
+  call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_Tke, 'DW_TKE',  'Downdraft subgrid TKE mean value',                  'm2 s-2' )
+  if ( luserv ) &
+  call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_Rv,  'DW_RV',   'Downdraft water vapor mean value',                 'kg kg-1' )
+  if ( luserc ) &
+  call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_Rc,  'DW_RC',   'Downdraft cloud water mean value',                 'kg kg-1' )
+  if ( luserr ) &
+  call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_Rr,  'DW_RR',   'Downdraft rain mean value',                        'kg kg-1' )
+  if ( luseri ) &
+  call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_Ri,  'DW_RI',   'Downdraft ice mean value',                         'kg kg-1' )
+  if ( lusers ) &
+  call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_Rs,  'DW_RS',   'Downdraft snow mean value',                        'kg kg-1' )
+  if ( luserg ) &
+  call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_Rg,  'DW_RG',   'Downdraft graupel mean value',                     'kg kg-1' )
+  if ( luserh ) &
+  call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_Rh,  'DW_RH',   'Downdraft hail mean value',                        'kg kg-1' )
 
-  CALL LES_DIACHRO(TPDIAFILE,"DW_W    ", &
-       "Downdraft W mean value","m s-1",XLES_DOWNDRAFT_W,HLES_AVG)
+  if ( nsv > 0 ) then
+    tfield%ndims = 3
+    tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+    tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+    tfield%ndimlist(3)  = NMNHDIM_BUDGET_LES_SV
+    tfield%ndimlist(4:) = NMNHDIM_UNUSED
 
-  CALL LES_DIACHRO(TPDIAFILE,"DW_TH   ",  &
-       "Downdraft potential temperature mean value","K",XLES_DOWNDRAFT_Th,HLES_AVG)
+    call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_Sv, 'DW_SV', 'Downdraft scalar variables mean values', 'kg kg-1' )
 
-  IF (LUSERC) &
-  CALL LES_DIACHRO(TPDIAFILE,"DW_THL  ", &
-       "Downdraft liquid potential temperature mean value","K",XLES_DOWNDRAFT_Thl,HLES_AVG)
+    tfield%ndims = 2
+    !tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+    !tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+    tfield%ndimlist(3) = NMNHDIM_UNUSED
+    !tfield%ndimlist(4:) = NMNHDIM_UNUSED
+  end if
 
-  IF (LUSERV) &
-  CALL LES_DIACHRO(TPDIAFILE,"DW_THV  ",  &
-       "Downdraft virtual potential temperature mean value","K",XLES_DOWNDRAFT_Thv,HLES_AVG)
+  call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_Th2,    'DW_TH2',  'Downdraft resolved Theta variance',             'K2' )
+  if ( luserc ) &
+  call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_Thl2,   'DW_THL2', 'Downdraft resolved Theta_l variance',           'K2' )
+  if ( luserv ) &
+  call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_ThThv,  'DW_THTV', 'Downdraft resolved Theta Theta_v covariance',   'K2' )
+  if ( luserc ) &
+  call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_ThlThv, 'DW_TLTV', 'Downdraft resolved Theta_l Theta_v covariance', 'K2' )
+  call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_WTh,    'DW_WTH',  'Downdraft resolved WTh flux',                   'm K s-1' )
+  if ( luserc ) &
+  call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_WThl,   'DW_WTHL', 'Downdraft resolved WThl flux',                  'm K s-1' )
+  if ( luserv ) &
+  call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_WThv,   'DW_WTHV', 'Downdraft resolved WThv flux',                  'm K s-1' )
+
+  if ( luserv ) then
+    call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_Rv2,   'DW_RV2',   'Downdraft resolved water vapor variance', 'kg2 kg-2' )
+    call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_ThRv,  'DW_THRV',  'Downdraft resolved <thrv> covariance',    'K kg kg-1' )
+    if ( luserc ) &
+    call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_ThlRv, 'DW_THLRV', 'Downdraft resolved <thlrv> covariance',   'K kg kg-1' )
+    call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_ThvRv, 'DW_THVRV', 'Downdraft resolved <thvrv> covariance',   'K kg kg-1' )
+    call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_WRv,   'DW_WRV',   'Downdraft resolved <wrv> vertical flux',  &
+                            'm kg kg-1 s-1' )
+  end if
+
+  if ( luserc ) then
+    call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_Rc2,   'DW_RC2',   'Downdraft resolved cloud water variance', 'kg2 kg-2' )
+    call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_ThRc,  'DW_THRC',  'Downdraft resolved <thrc> covariance',    'K kg kg-1' )
+    call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_ThlRc, 'DW_THLRC', 'Downdraft resolved <thlrc> covariance',   'K kg kg-1' )
+    call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_ThvRc, 'DW_THVRC', 'Downdraft resolved <thvrc> covariance',   'K kg kg-1' )
+    call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_WRc,   'DW_WRC',   'Downdraft resolved <wrc> vertical flux',  &
+                            'm kg kg-1 s-1' )
+  end if
+
+  if ( luseri ) then
+    call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_Ri2,   'DW_RI2',   'Downdraft resolved cloud ice variance',   'kg2 kg-2' )
+    call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_ThRi,  'DW_THRI',  'Downdraft resolved <thri> covariance',    'K kg kg-1' )
+    call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_ThlRi, 'DW_THLRI', 'Downdraft resolved <thlri> covariance',   'K kg kg-1' )
+    call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_ThvRi, 'DW_THVRI', 'Downdraft resolved <thvri> covariance',   'K kg kg-1' )
+    call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_WRi,   'DW_WRI',   'Downdraft resolved <wri> vertical flux',  &
+                            'm kg kg-1 s-1' )
+  end if
 
 
-  CALL LES_DIACHRO(TPDIAFILE,"DW_KE   ", &
-       "Downdraft resolved TKE mean value","m2 s-2",XLES_DOWNDRAFT_Ke,HLES_AVG)
+  if ( nsv > 0 ) then
+    tfield%ndims = 3
+    tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+    tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+    tfield%ndimlist(3)  = NMNHDIM_BUDGET_LES_SV
+    tfield%ndimlist(4:) = NMNHDIM_UNUSED
 
-  CALL LES_DIACHRO(TPDIAFILE,"DW_TKE  ",  &
-       "Downdraft subgrid TKE mean value","m2 s-2",XLES_DOWNDRAFT_Tke,HLES_AVG)
+    call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_Sv2,   'DW_SV2',   'Downdraft resolved scalar variables variances', &
+                            'kg2 kg-2' )
+    call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_ThSv,  'DW_THSV',  'Downdraft resolved <ThSv> variance',            &
+                            'K kg kg-1' )
+    if ( luserc ) &
+    call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_ThlSv, 'DW_THLSV', 'Downdraft resolved <ThlSv> variance',           &
+                            'K kg kg-1' )
+    if ( luserv ) &
+    call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_ThvSv, 'DW_THVSV', 'Downdraft resolved <ThvSv> variance',           &
+                            'K kg kg-1' )
+    call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_WSv,   'DW_WSV',   'Downdraft resolved <wSv> vertical flux',        &
+                            'm kg kg-1 s-1' )
 
-  IF (LUSERV) &
-  CALL LES_DIACHRO(TPDIAFILE,"DW_RV   ",  &
-       "Downdraft water vapor mean value","kg kg-1",XLES_DOWNDRAFT_Rv,HLES_AVG)
-
-  IF (LUSERC) &
-  CALL LES_DIACHRO(TPDIAFILE,"DW_RC   ",  &
-       "Downdraft cloud water mean value","kg kg-1",XLES_DOWNDRAFT_Rc,HLES_AVG)
-
-  IF (LUSERR) &
-  CALL LES_DIACHRO(TPDIAFILE,"DW_RR   ",  &
-       "Downdraft rain mean value","kg kg-1",XLES_DOWNDRAFT_Rr,HLES_AVG)
-
-  IF (LUSERI) &
-  CALL LES_DIACHRO(TPDIAFILE,"DW_RI   ",  &
-       "Downdraft ice mean value","kg kg-1",XLES_DOWNDRAFT_Ri,HLES_AVG)
-
-  IF (LUSERS) &
-  CALL LES_DIACHRO(TPDIAFILE,"DW_RS   ",  &
-       "Downdraft snow mean value","kg kg-1",XLES_DOWNDRAFT_Rs,HLES_AVG)
-
-  IF (LUSERG) &
-  CALL LES_DIACHRO(TPDIAFILE,"DW_RG   ",  &
-       "Downdraft graupel mean value","kg kg-1",XLES_DOWNDRAFT_Rg,HLES_AVG)
-
-  IF (LUSERH) &
-  CALL LES_DIACHRO(TPDIAFILE,"DW_RH   ",  &
-       "Downdraft hail mean value","kg kg-1",XLES_DOWNDRAFT_Rh,HLES_AVG)
-
-  IF (NSV>0) &
-  CALL LES_DIACHRO_SV(TPDIAFILE,"DW_SV   ", &
-       "Downdraft scalar variables mean values","kg kg-1",XLES_DOWNDRAFT_Sv,HLES_AVG)
-  !
-  CALL LES_DIACHRO(TPDIAFILE,"DW_TH2 ",  &
-       "Downdraft resolved Theta variance ","K2",XLES_DOWNDRAFT_Th2,HLES_AVG)
-
-  IF (LUSERC) &
-  CALL LES_DIACHRO(TPDIAFILE,"DW_THL2",  &
-       "Downdraft resolved Theta_l variance ","K2",XLES_DOWNDRAFT_Thl2,HLES_AVG)
-
-  IF (LUSERV) &
-  CALL LES_DIACHRO(TPDIAFILE,"DW_THTV ",  &
-       "Downdraft resolved Theta Theta_v covariance ","K2",XLES_DOWNDRAFT_ThThv,HLES_AVG)
-
-  IF (LUSERC) &
-  CALL LES_DIACHRO(TPDIAFILE,"DW_TLTV ",  &
-       "Downdraft resolved Theta_l Theta_v covariance ","K2",XLES_DOWNDRAFT_ThlThv,HLES_AVG)
-
-  CALL LES_DIACHRO(TPDIAFILE,"DW_WTH  ",  &
-       "Downdraft resolved WTh flux","m K s-1",XLES_DOWNDRAFT_WTh,HLES_AVG)
-
-  IF (LUSERC) &
-  CALL LES_DIACHRO(TPDIAFILE,"DW_WTHL ",  &
-       "Downdraft resolved WThl flux","m K s-1",XLES_DOWNDRAFT_WThl,HLES_AVG)
-
-  IF (LUSERV) &
-  CALL LES_DIACHRO(TPDIAFILE,"DW_WTHV ",  &
-       "Downdraft resolved WThv flux","m K s-1",XLES_DOWNDRAFT_WThv,HLES_AVG)
-  !
-  IF (LUSERV) THEN
-    CALL LES_DIACHRO(TPDIAFILE,"DW_RV2  ",  &
-       "Downdraft resolved water vapor variance","kg2 kg-2",XLES_DOWNDRAFT_Rv2,HLES_AVG)
-
-    CALL LES_DIACHRO(TPDIAFILE,"DW_THRV ",  &
-       "Downdraft resolved <thrv> covariance","K kg kg-1",XLES_DOWNDRAFT_ThRv,HLES_AVG)
-
-    IF (LUSERC) &
-    CALL LES_DIACHRO(TPDIAFILE,"DW_THLRV",  &
-       "Downdraft resolved <thlrv> covariance","K kg kg-1",XLES_DOWNDRAFT_ThlRv,HLES_AVG)
-
-    CALL LES_DIACHRO(TPDIAFILE,"DW_THVRV",  &
-       "Downdraft resolved <thvrv> covariance","K kg kg-1",XLES_DOWNDRAFT_ThvRv,HLES_AVG)
-
-    CALL LES_DIACHRO(TPDIAFILE,"DW_WRV  ",  &
-       "Downdraft resolved <wrv> vertical flux","m kg kg-1 s-1",XLES_DOWNDRAFT_WRv,HLES_AVG)
-  END IF
-
-  IF (LUSERC) THEN
-    CALL LES_DIACHRO(TPDIAFILE,"DW_RC2  ",  &
-       "Downdraft resolved cloud water variance","kg2 kg-2",XLES_DOWNDRAFT_Rc2,HLES_AVG)
-
-    CALL LES_DIACHRO(TPDIAFILE,"DW_THRC ",  &
-       "Downdraft resolved <thrc> covariance","K kg kg-1",XLES_DOWNDRAFT_ThRc,HLES_AVG)
-
-    CALL LES_DIACHRO(TPDIAFILE,"DW_THLRC",  &
-       "Downdraft resolved <thlrc> covariance","K kg kg-1",XLES_DOWNDRAFT_ThlRc,HLES_AVG)
-
-    CALL LES_DIACHRO(TPDIAFILE,"DW_THVRC",  &
-       "Downdraft resolved <thvrc> covariance","K kg kg-1",XLES_DOWNDRAFT_ThvRc,HLES_AVG)
-
-    CALL LES_DIACHRO(TPDIAFILE,"DW_WRC  ",  &
-       "Downdraft resolved <wrc> vertical flux","m kg kg-1 s-1",XLES_DOWNDRAFT_WRc,HLES_AVG)
-  END IF
-
-  IF (LUSERI) THEN
-    CALL LES_DIACHRO(TPDIAFILE,"DW_RI2  ",  &
-       "Downdraft resolved cloud ice variance","kg2 kg-2",XLES_DOWNDRAFT_Ri2,HLES_AVG)
-
-    CALL LES_DIACHRO(TPDIAFILE,"DW_THRI ",  &
-       "Downdraft resolved <thri> covariance","K kg kg-1",XLES_DOWNDRAFT_ThRi,HLES_AVG)
-
-    CALL LES_DIACHRO(TPDIAFILE,"DW_THLRI", &
-       "Downdraft resolved <thlri> covariance","K kg kg-1",XLES_DOWNDRAFT_ThlRi,HLES_AVG)
-
-    CALL LES_DIACHRO(TPDIAFILE,"DW_THVRI",  &
-       "Downdraft resolved <thvri> covariance","K kg kg-1",XLES_DOWNDRAFT_ThvRi,HLES_AVG)
-
-    CALL LES_DIACHRO(TPDIAFILE,"DW_WRI  ", &
-       "Downdraft resolved <wri> vertical flux","m kg kg-1 s-1",XLES_DOWNDRAFT_WRi,HLES_AVG)
-  END IF
-
-  IF (NSV>0) THEN
-    CALL LES_DIACHRO_SV(TPDIAFILE,"DW_SV2  ", &
-       "Downdraft resolved scalar variables variances","kg2 kg-2",XLES_DOWNDRAFT_Sv2,HLES_AVG)
-
-   CALL LES_DIACHRO_SV(TPDIAFILE,"DW_THSV ",  &
-       "Downdraft resolved <ThSv> variance","K kg kg-1",XLES_DOWNDRAFT_ThSv,HLES_AVG)
-
-    IF (LUSERC) &
-    CALL LES_DIACHRO_SV(TPDIAFILE,"DW_THLSV",  &
-       "Downdraft resolved <ThlSv> variance","K kg kg-1",XLES_DOWNDRAFT_ThlSv,HLES_AVG)
-
-    IF (LUSERV) &
-    CALL LES_DIACHRO_SV(TPDIAFILE,"DW_THVSV",  &
-       "Downdraft resolved <ThvSv> variance","K kg kg-1",XLES_DOWNDRAFT_ThvSv,HLES_AVG)
-
-    CALL LES_DIACHRO_SV(TPDIAFILE,"DW_WSV  ", &
-       "Downdraft resolved <wSv> vertical flux","m kg kg-1 s-1",XLES_DOWNDRAFT_WSv,HLES_AVG)
-  END IF
-END IF
+    tfield%ndims = 2
+    !tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+    !tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+    tfield%ndimlist(3) = NMNHDIM_UNUSED
+    !tfield%ndimlist(4:) = NMNHDIM_UNUSED
+  end if
+end if
 !
 !-------------------------------------------------------------------------------
 !
 !*      3.   surface normalization parameters
 !            --------------------------------
 !
-IF (HLES_AVG==' ' .OR. HLES_AVG=='A') THEN
-  CALL LES_DIACHRO(TPDIAFILE,"SWU      ",  &
-     "sw_up ","W m-2 ",XLES_SWU,HLES_AVG)
-
-  CALL LES_DIACHRO(TPDIAFILE,"SWD      ",  &
-     "sw_down ","W m-2 ",XLES_SWD,HLES_AVG)
-     
-  CALL LES_DIACHRO(TPDIAFILE,"LWU      ",  &
-     "lw_up ","W m-2 ",XLES_LWU,HLES_AVG)
-
-  CALL LES_DIACHRO(TPDIAFILE,"LWD      ",  &
-     "lw_down ","W m-2 ",XLES_LWD,HLES_AVG)
-
-  CALL LES_DIACHRO(TPDIAFILE,"DTHRADSW      ",  &
-     "dthrad_sw ","K s-1 ",XLES_DTHRADSW,HLES_AVG)
-
-  CALL LES_DIACHRO(TPDIAFILE,"DTHRADLW      ",  &
-     "dthrad_lw ","K s-1 ",XLES_DTHRADLW,HLES_AVG)
-!writes mean_effective radius at all levels
-  CALL LES_DIACHRO(TPDIAFILE,"RADEFF      ",  &
-     "mean effective radius ","microm ",XLES_RADEFF,HLES_AVG)
-
-  IF (NSV>0) &
-  CALL LES_DIACHRO_SURF_SV(TPDIAFILE,"SV0     ",  &
-     "Scalar variable fluxes at the surface","kg kg-1 m s-1",XLES_SV0,HLES_AVG)
-END IF
-
-end do AVG
-
 !Prepare metadate (used in Les_diachro_write calls)
-tfield%ngrid = 0 !Not on the Arakawa grid
-tfield%ntype = TYPEREAL
-
-tfield%ndims = 1
-tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_TIME
-tfield%ndimlist(2:) = NMNHDIM_UNUSED
+tfield%ndims = 2
+tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+tfield%ndimlist(3:) = NMNHDIM_UNUSED
 
 ldoavg  = xles_temp_mean_start /= XUNDEF .and. xles_temp_mean_end /= XUNDEF
 ldonorm = .false.
 
-call Les_diachro_write( tpdiafile, xles_e0, 'Q0', 'Sensible heat flux at the surface', 'm K s-1' )
+call Les_diachro_write( tpdiafile, XLES_SWU,      'SWU',      'sw_up',     'W m-2' )
+call Les_diachro_write( tpdiafile, XLES_SWD,      'SWD',      'sw_down',   'W m-2' )
+call Les_diachro_write( tpdiafile, XLES_LWU,      'LWU',      'lw_up',     'W m-2' )
+call Les_diachro_write( tpdiafile, XLES_LWD,      'LWD',      'lw_down',   'W m-2' )
+call Les_diachro_write( tpdiafile, XLES_DTHRADSW, 'DTHRADSW', 'dthrad_sw', 'K s-1' )
+call Les_diachro_write( tpdiafile, XLES_DTHRADLW, 'DTHRADLW', 'dthrad_lw', 'K s-1' )
+!writes mean_effective radius at all levels
+call Les_diachro_write( tpdiafile, XLES_RADEFF,   'RADEFF',   'mean effective radius', 'micron' )
+
+
+! !Prepare metadate (used in Les_diachro_write calls)
+tfield%ndims = 1
+tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_TIME
+tfield%ndimlist(2:) = NMNHDIM_UNUSED
+
+call Les_diachro_write( tpdiafile, XLES_Q0, 'Q0', 'Sensible heat flux at the surface', 'm K s-1' )
 if ( luserv ) &
-call Les_diachro_write( tpdiafile, xles_e0, 'E0', 'Latent heat flux at the surface',   'kg kg-1 m s-1' )
+call Les_diachro_write( tpdiafile, XLES_E0, 'E0', 'Latent heat flux at the surface',   'kg kg-1 m s-1' )
 
+if ( nsv > 0 ) then
+  tfield%ndims = 2
+  tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_TIME
+  tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_SV
+  tfield%ndimlist(3:) = NMNHDIM_UNUSED
 
+  call Les_diachro_write( tpdiafile, XLES_SV0, 'SV0', 'Scalar variable fluxes at the surface', 'kg kg-1 m s-1' )
 
+  tfield%ndims = 1
+  !tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_TIME
+  tfield%ndimlist(2)  = NMNHDIM_UNUSED
+  !tfield%ndimlist(3:) = NMNHDIM_UNUSED
+end if
 
-
-
-call Les_diachro_write( tpdiafile, xles_ustar,      'U*',         'Friction velocity',                   'm s-1' )
-call Les_diachro_write( tpdiafile, xles_wstar,      'W*',         'Convective velocity',                 'm s-1' )
-call Les_diachro_write( tpdiafile, xles_bl_height,  'BL_H',       'Boundary Layer Height',               'm' )
-call Les_diachro_write( tpdiafile, xles_mo_length,  'L_MO',       'Monin-Obukhov length',                'm' )
-call Les_diachro_write( tpdiafile, xles_int_tke,    'INT_TKE',    'Vertical integrated tke',             'm2 s-2' )
+call Les_diachro_write( tpdiafile, XLES_USTAR,      'U*',         'Friction velocity',                   'm s-1' )
+call Les_diachro_write( tpdiafile, XLES_WSTAR,      'W*',         'Convective velocity',                 'm s-1' )
+call Les_diachro_write( tpdiafile, XLES_BL_HEIGHT,  'BL_H',       'Boundary Layer Height',               'm' )
+call Les_diachro_write( tpdiafile, XLES_MO_LENGTH,  'L_MO',       'Monin-Obukhov length',                'm' )
+call Les_diachro_write( tpdiafile, XLES_INT_TKE,    'INT_TKE',    'Vertical integrated tke',             'm2 s-2' )
 if ( luserc ) &
-call Les_diachro_write( tpdiafile, xles_zcb,        'ZCB',        'Cloud base Height',                   'm' )
+call Les_diachro_write( tpdiafile, XLES_ZCB,        'ZCB',        'Cloud base Height',                   'm' )
 if ( luserc ) &
-call Les_diachro_write( tpdiafile, xles_cftot,      'ZCFTOT',     'Total Cloud cover',                   '1' )
+call Les_diachro_write( tpdiafile, XLES_CFtot,      'ZCFTOT',     'Total Cloud cover',                   '1' )
 if ( luserc ) &
-call Les_diachro_write( tpdiafile, xles_cf2tot,     'ZCF2TOT',    'Total Cloud cove 2r',                 '1' )
+call Les_diachro_write( tpdiafile, XLES_CF2tot,     'ZCF2TOT',    'Total Cloud cove 2r',                 '1' )
 if ( luserc ) &
-call Les_diachro_write( tpdiafile, xles_lwp,        'LWP',        'Liquid Water path',                   'kg m-2' )
+call Les_diachro_write( tpdiafile, XLES_LWP,        'LWP',        'Liquid Water path',                   'kg m-2' )
 if ( luserc ) &
-call Les_diachro_write( tpdiafile, xles_lwpvar,     'LWPVAR',     'Liquid Water path variance',          'kg m-4' )
+call Les_diachro_write( tpdiafile, XLES_LWPVAR,     'LWPVAR',     'Liquid Water path variance',          'kg m-4' )
 if ( luserr ) &
-call Les_diachro_write( tpdiafile, xles_rwp,        'RWP',        'Rain Water path',                     'kg m-2' )
+call Les_diachro_write( tpdiafile, XLES_RWP,        'RWP',        'Rain Water path',                     'kg m-2' )
 if ( luseri ) &
-call Les_diachro_write( tpdiafile, xles_iwp,        'IWP',        'Ice Water path',                      'kg m-2' )
+call Les_diachro_write( tpdiafile, XLES_IWP,        'IWP',        'Ice Water path',                      'kg m-2' )
 if ( lusers ) &
-call Les_diachro_write( tpdiafile, xles_swp,        'SWP',        'Snow Water path',                     'kg m-2' )
+call Les_diachro_write( tpdiafile, XLES_SWP,        'SWP',        'Snow Water path',                     'kg m-2' )
 if ( luserg ) &
-call Les_diachro_write( tpdiafile, xles_gwp,        'GWP',        'Graupel Water path',                  'kg m-2' )
+call Les_diachro_write( tpdiafile, XLES_GWP,        'GWP',        'Graupel Water path',                  'kg m-2' )
 if ( luserh ) &
-call Les_diachro_write( tpdiafile, xles_hwp,        'HWP',        'Hail Water path',                     'kg m-2' )
+call Les_diachro_write( tpdiafile, XLES_HWP,        'HWP',        'Hail Water path',                     'kg m-2' )
 if ( luserr ) &
-call Les_diachro_write( tpdiafile, xles_precfr,     'PREC_FRAC',  'Fract of col where rain at surface',  '1' )
+call Les_diachro_write( tpdiafile, XLES_PRECFR,     'PREC_FRAC',  'Fract of col where rain at surface',  '1' )
 if ( luserr ) &
-call Les_diachro_write( tpdiafile, xles_inprr,      'INST_PREC',  'Inst precip rate',                    'mm day-1' )
+call Les_diachro_write( tpdiafile, XLES_INPRR,      'INST_PREC',  'Inst precip rate',                    'mm day-1' )
 if ( luserc ) &
-call Les_diachro_write( tpdiafile, xles_inprc,      'INST_SEDIM', 'Inst cloud precip rate',              'mm day-1' )
+call Les_diachro_write( tpdiafile, XLES_INPRC,      'INST_SEDIM', 'Inst cloud precip rate',              'mm day-1' )
 if ( luserc .and. ( ldeposc .or. ldepoc ) ) &
-call Les_diachro_write( tpdiafile, xles_indep,      'INST_DEPOS', 'Inst cloud deposi rate',              'mm day-1' )
+call Les_diachro_write( tpdiafile, XLES_INDEP,      'INST_DEPOS', 'Inst cloud deposi rate',              'mm day-1' )
 if ( luserr ) &
-call Les_diachro_write( tpdiafile, xles_rain_inprr, 'RAIN_PREC',  'Inst pr. rate over rainy grid cells', 'mm day-1' )
+call Les_diachro_write( tpdiafile, XLES_RAIN_INPRR, 'RAIN_PREC',  'Inst pr. rate over rainy grid cells', 'mm day-1' )
 if ( luserr ) &
-call Les_diachro_write( tpdiafile, xles_acprr,      'ACCU_PREC',  'Accu precip rate',                    'mm' )
+call Les_diachro_write( tpdiafile, XLES_ACPRR,      'ACCU_PREC',  'Accu precip rate',                    'mm' )
 if ( luserc ) &
-call Les_diachro_write( tpdiafile, xles_zmaxcf,     'ZMAXCF',     'Height of Cloud fraction max',        'm' )
+call Les_diachro_write( tpdiafile, XLES_ZMAXCF,     'ZMAXCF',     'Height of Cloud fraction max',        'm' )
 if ( luserc ) &
-call Les_diachro_write( tpdiafile, xles_zmaxcf2,    'ZMAXCF2',    'Height of Cloud fraction2max',        'm' )
+call Les_diachro_write( tpdiafile, XLES_ZMAXCF2,    'ZMAXCF2',    'Height of Cloud fraction2max',        'm' )
 
 !-------------------------------------------------------------------------------
 !
@@ -1466,7 +1141,7 @@ call Les_spec_n( tpdiafile )
 !*      7.   deallocations
 !            -------------
 !
-DEALLOCATE(XLES_CURRENT_Z     )
+DEALLOCATE( XLES_CURRENT_Z )
 
 IF (CLES_NORM_TYPE/='NONE' ) THEN
   DEALLOCATE(XLES_NORM_M  )
@@ -1482,30 +1157,101 @@ end subroutine Write_les_n
 
 !------------------------------------------------------------------------------
 
-subroutine Les_diachro_write( tpdiafile, zcorr, ymnhname, ycomment, yunits )
+subroutine Les_diachro_write_1D( tpdiafile, pdata, hmnhname, hcomment, hunits )
 
 use modd_io,          only: tfiledata
 
 use mode_les_diachro, only: Les_diachro
 
 type(tfiledata),    intent(in) :: tpdiafile ! file to write
-real, dimension(:), intent(in) :: zcorr
-character(len=*),   intent(in) :: ymnhname
-character(len=*),   intent(in) :: ycomment
-character(len=*),   intent(in) :: yunits
+real, dimension(:), intent(in) :: pdata
+character(len=*),   intent(in) :: hmnhname
+character(len=*),   intent(in) :: hcomment
+character(len=*),   intent(in) :: hunits
 
-tfield%cmnhname  = ymnhname
-tfield%clongname = ymnhname
-tfield%ccomment  = ycomment
-tfield%cunits    = yunits
+tfield%cmnhname  = hmnhname
+tfield%clongname = hmnhname
+tfield%ccomment  = hcomment
+tfield%cunits    = hunits
 
-call Les_diachro( tpdiafile, tfield, ldoavg, ldonorm, zcorr )
+call Les_diachro( tpdiafile, tfield, ldoavg, ldonorm, pdata )
 
-end subroutine Les_diachro_write
+end subroutine Les_diachro_write_1D
 
 !------------------------------------------------------------------------------
 
-subroutine Les_diachro_2pt_write( tpdiafile, zcorri, zcorrj, ymnhname, ycomment, yunits )
+subroutine Les_diachro_write_2D( tpdiafile, pdata, hmnhname, hcomment, hunits )
+
+use modd_io,          only: tfiledata
+
+use mode_les_diachro, only: Les_diachro
+
+type(tfiledata),      intent(in) :: tpdiafile ! file to write
+real, dimension(:,:), intent(in) :: pdata
+character(len=*),     intent(in) :: hmnhname
+character(len=*),     intent(in) :: hcomment
+character(len=*),     intent(in) :: hunits
+
+tfield%cmnhname  = hmnhname
+tfield%clongname = hmnhname
+tfield%ccomment  = hcomment
+tfield%cunits    = hunits
+
+call Les_diachro( tpdiafile, tfield, ldoavg, ldonorm, pdata )
+
+end subroutine Les_diachro_write_2D
+
+!------------------------------------------------------------------------------
+
+subroutine Les_diachro_write_3D( tpdiafile, pdata, hmnhname, hcomment, hunits, hsuffixes )
+
+use modd_io,          only: tfiledata
+
+use mode_les_diachro, only: Les_diachro
+
+type(tfiledata),                          intent(in) :: tpdiafile ! file to write
+real,             dimension(:,:,:),       intent(in) :: pdata
+character(len=*),                         intent(in) :: hmnhname
+character(len=*),                         intent(in) :: hcomment
+character(len=*),                         intent(in) :: hunits
+character(len=*), dimension(:), optional, intent(in) :: hsuffixes
+
+tfield%cmnhname  = hmnhname
+tfield%clongname = hmnhname
+tfield%ccomment  = hcomment
+tfield%cunits    = hunits
+
+call Les_diachro( tpdiafile, tfield, ldoavg, ldonorm, pdata, hsuffixes )
+
+end subroutine Les_diachro_write_3D
+
+!------------------------------------------------------------------------------
+
+subroutine Les_diachro_write_4D( tpdiafile, pdata, hmnhname, hcomment, hunits, hsuffixes )
+
+use modd_io,          only: tfiledata
+
+use mode_les_diachro, only: Les_diachro
+
+type(tfiledata),                            intent(in) :: tpdiafile ! file to write
+real,             dimension(:,:,:,:),       intent(in) :: pdata
+character(len=*),                           intent(in) :: hmnhname
+character(len=*),                           intent(in) :: hcomment
+character(len=*),                           intent(in) :: hunits
+character(len=*), dimension(:),   optional, intent(in) :: hsuffixes
+
+tfield%cmnhname  = hmnhname
+tfield%clongname = hmnhname
+tfield%ccomment  = hcomment
+tfield%cunits    = hunits
+
+call Les_diachro( tpdiafile, tfield, ldoavg, ldonorm, pdata, hsuffixes )
+
+end subroutine Les_diachro_write_4D
+
+!------------------------------------------------------------------------------
+
+subroutine Les_diachro_2pt_write( tpdiafile, zcorri, zcorrj, hmnhname, hcomment, hunits )
 
 use modd_io,          only: tfiledata
 
@@ -1514,19 +1260,19 @@ use mode_les_diachro, only: Les_diachro_2pt
 type(tfiledata),          intent(in) :: tpdiafile ! file to write
 real, dimension(:,:,:),   intent(in) :: zcorri    ! 2 pts correlation data
 real, dimension(:,:,:),   intent(in) :: zcorrj    ! 2 pts correlation data
-character(len=*),         intent(in) :: ymnhname
-character(len=*),         intent(in) :: ycomment
-character(len=*),         intent(in) :: yunits
+character(len=*),         intent(in) :: hmnhname
+character(len=*),         intent(in) :: hcomment
+character(len=*),         intent(in) :: hunits
 
-tfieldx%cmnhname  = ymnhname
-tfieldx%clongname = ymnhname
-tfieldx%ccomment  = ycomment
-tfieldx%cunits    = yunits
+tfieldx%cmnhname  = hmnhname
+tfieldx%clongname = hmnhname
+tfieldx%ccomment  = hcomment
+tfieldx%cunits    = hunits
 
-tfieldy%cmnhname  = ymnhname
-tfieldy%clongname = ymnhname
-tfieldy%ccomment  = ycomment
-tfieldy%cunits    = yunits
+tfieldy%cmnhname  = hmnhname
+tfieldy%clongname = hmnhname
+tfieldy%ccomment  = hcomment
+tfieldy%cunits    = hunits
 
 call Les_diachro_2pt( tpdiafile, tfieldx, tfieldy, zcorri, zcorrj )
 
