@@ -58,7 +58,7 @@ END MODULE MODI_WRITE_LES_n
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  C. Lac         02/2019: add rain fraction as a LES diagnostic
 !  P. Wautelet 13/10/2020: bugfix: correct some names for LES_DIACHRO_2PT diagnostics (Ri)
-!  P. Wautelet 26/10/2020: bugfix: correct some comments and conditions
+!  P. Wautelet 26/10/2020: bugfix: correct some comments and conditions + add missing RES_RTPZ
 !! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -745,6 +745,10 @@ IF (LLES_RESOLVED) THEN
 
   CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_TLPZ",YSUBTITLE(:),  &
        "Resolved <Thldp/dz>"//YSUBTITLE(:),"K Pa m-1",XLES_RESOLVED_ThlPz,HLES_AVG)
+
+  IF (LUSERC) &
+  CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_RTPZ",YSUBTITLE(:),  &
+       "Resolved <Rtdp/dz>"//YSUBTITLE(:),"kg2 kg-2 Pa m-1",XLES_RESOLVED_RtPz,HLES_AVG)
 
   IF (LUSERV) &
   CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_RVPZ",YSUBTITLE(:),  &
