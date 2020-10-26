@@ -1,6 +1,6 @@
 !MNH_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !######################
@@ -58,6 +58,7 @@ END MODULE MODI_WRITE_LES_n
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  C. Lac         02/2019: add rain fraction as a LES diagnostic
 !  P. Wautelet 13/10/2020: bugfix: correct some names for LES_DIACHRO_2PT diagnostics (Ri)
+!  P. Wautelet 26/10/2020: bugfix: correct some comments and conditions
 !! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -373,11 +374,11 @@ CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_CF ",YSUBTITLE(:), &
 
 IF (LUSERC) &
 CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_INDCF ",YSUBTITLE(:), &
-  "Mean Cf>1-6 Profile (0 ou 1)"//YSUBTITLE(:),"1",XLES_MEAN_INDCf,HLES_AVG)
+  "Mean Cf>1-6 Profile (0 or 1)"//YSUBTITLE(:),"1",XLES_MEAN_INDCf,HLES_AVG)
 
 IF (LUSERC) &
 CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_INDCF2 ",YSUBTITLE(:), &
-  "Mean Cf>1-5 Profile (0 ou 1)"//YSUBTITLE(:),"1",XLES_MEAN_INDCf2,HLES_AVG)
+  "Mean Cf>1-5 Profile (0 or 1)"//YSUBTITLE(:),"1",XLES_MEAN_INDCf2,HLES_AVG)
 
 IF (LUSERR) &
 CALL LES_DIACHRO_MASKS(TPDIAFILE,"MEAN_RR ",YSUBTITLE(:), &
@@ -540,7 +541,7 @@ IF (LLES_RESOLVED) THEN
        "Resolved <uthv> horizontal Flux"//YSUBTITLE(:),"m K s-1",XLES_RESOLVED_UThv,HLES_AVG)
 
     CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_VTHV",YSUBTITLE(:), &
-       "Resolved <vthl> horizontal Flux"//YSUBTITLE(:),"m K s-1",XLES_RESOLVED_VThv,HLES_AVG)
+       "Resolved <vthv> horizontal Flux"//YSUBTITLE(:),"m K s-1",XLES_RESOLVED_VThv,HLES_AVG)
 
     CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_WTHV",YSUBTITLE(:), &
        "Resolved <wthv> vertical Flux "//YSUBTITLE(:),"m K s-1",XLES_RESOLVED_WThv,HLES_AVG)
@@ -655,22 +656,22 @@ IF (LLES_RESOLVED) THEN
   END IF
 
   CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_U3  ",YSUBTITLE(:),  &
-       "Resolved <w3>"//YSUBTITLE(:),"m3 s-3",XLES_RESOLVED_U3,HLES_AVG)
+       "Resolved <u3>"//YSUBTITLE(:),"m3 s-3",XLES_RESOLVED_U3,HLES_AVG)
 
   CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_V3  ",YSUBTITLE(:),  &
-       "Resolved <w3>"//YSUBTITLE(:),"m3 s-3",XLES_RESOLVED_V3,HLES_AVG)
+       "Resolved <v3>"//YSUBTITLE(:),"m3 s-3",XLES_RESOLVED_V3,HLES_AVG)
     
   CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_W3  ",YSUBTITLE(:),  &
        "Resolved <w3>"//YSUBTITLE(:),"m3 s-3",XLES_RESOLVED_W3,HLES_AVG)
 
   CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_U4  ",YSUBTITLE(:),  &
-       "Resolved <w3>"//YSUBTITLE(:),"m4 s-4",XLES_RESOLVED_U4,HLES_AVG)
+       "Resolved <u4>"//YSUBTITLE(:),"m4 s-4",XLES_RESOLVED_U4,HLES_AVG)
 
   CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_V4  ",YSUBTITLE(:),  &
-       "Resolved <w3>"//YSUBTITLE(:),"m4 s-4",XLES_RESOLVED_V4,HLES_AVG)
+       "Resolved <v4>"//YSUBTITLE(:),"m4 s-4",XLES_RESOLVED_V4,HLES_AVG)
     
   CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_W4  ",YSUBTITLE(:),  &
-       "Resolved <w3>"//YSUBTITLE(:),"m4 s-4",XLES_RESOLVED_W4,HLES_AVG)
+       "Resolved <w4>"//YSUBTITLE(:),"m4 s-4",XLES_RESOLVED_W4,HLES_AVG)
 
 
   CALL LES_DIACHRO_MASKS(TPDIAFILE,"RES_WTL2",YSUBTITLE(:),  &
@@ -737,6 +738,7 @@ IF (LLES_RESOLVED) THEN
     CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"RE_WTLSV",YSUBTITLE(:),  &
          "Resolved <wThlSv>"//YSUBTITLE(:),"m K kg kg-1 s-1",XLES_RESOLVED_WThlSv,HLES_AVG)
 
+    IF (LUSERV) &
     CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,"RE_WRVSV",YSUBTITLE(:),  &
          "Resolved <wRvSv>"//YSUBTITLE(:),"m kg2 kg-2 s-1",XLES_RESOLVED_WRvSv,HLES_AVG)
   END IF
