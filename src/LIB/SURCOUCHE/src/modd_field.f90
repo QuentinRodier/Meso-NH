@@ -22,7 +22,7 @@ use NETCDF,          only: NF90_FILL_INT, NF90_FILL_REAL
 
 implicit none
 
-integer, parameter :: NMNHMAXDIMS = 6
+integer, parameter :: NMNHMAXDIMS = 6 ! Cannot be less than 6
 INTEGER,PARAMETER :: MAXFIELDS = 250
 INTEGER,PARAMETER :: TYPEUNDEF = -1, TYPEINT = 1, TYPELOG = 2, TYPEREAL = 3, TYPECHAR = 4, TYPEDATE = 5
 !
@@ -80,6 +80,7 @@ integer, parameter :: NMNHDIM_FLYER_PROC          = 101 ! This is not a true dim
 integer, parameter :: NMNHDIM_PROFILER_PROC       = 102 ! This is not a true dimension
 integer, parameter :: NMNHDIM_STATION_PROC        = 103 ! This is not a true dimension
 integer, parameter :: NMNHDIM_SERIES_PROC         = 104 ! This is not a true dimension
+integer, parameter :: NMNHDIM_BUDGET_TERM         = 105 ! This is not a true dimension
 
 integer, parameter :: NMNHDIM_NOTLISTED           = 200 ! Special case for valid dimension but not in this parameter list
 
