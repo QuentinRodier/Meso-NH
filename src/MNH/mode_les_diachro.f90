@@ -1063,23 +1063,24 @@ real,             dimension(:,:,:), intent(in) :: pfieldx
 real,             dimension(:,:,:), intent(in) :: pfieldy
 !-------------------------------------------------------------------------------
 
-                call Les_diachro_2pt_1d_intern( tpdiafile, tpfieldx, 'X', .false., pfieldx )
-if ( .not.l2d ) call Les_diachro_2pt_1d_intern( tpdiafile, tpfieldy, 'Y', .false., pfieldy )
+                call Les_diachro_2pt_1d_intern( tpdiafile, tpfieldx, .false., pfieldx )
+if ( .not.l2d ) call Les_diachro_2pt_1d_intern( tpdiafile, tpfieldy, .false., pfieldy )
 
 ! With time average
 if ( xles_temp_mean_start /= xundef .and. xles_temp_mean_end /= XUNDEF ) then
-                  call Les_diachro_2pt_1d_intern( tpdiafile, tpfieldx, 'X', .true., pfieldx )
-  if ( .not.l2d ) call Les_diachro_2pt_1d_intern( tpdiafile, tpfieldy, 'Y', .true., pfieldy )
+                  call Les_diachro_2pt_1d_intern( tpdiafile, tpfieldx, .true., pfieldx )
+  if ( .not.l2d ) call Les_diachro_2pt_1d_intern( tpdiafile, tpfieldy, .true., pfieldy )
 end if
 
 end subroutine Les_diachro_2pt
 !-------------------------------------------------------------------------------
 
-!#############################################################################
-subroutine Les_diachro_2pt_1d_intern( tpdiafile, tpfield, hdir, yavg, pfield )
-!#############################################################################
+!#######################################################################
+subroutine Les_diachro_2pt_1d_intern( tpdiafile, tpfield, yavg, pfield )
+!#######################################################################
 
 use modd_field,         only: NMNHDIM_BUDGET_LES_AVG_TIME, NMNHDIM_BUDGET_LES_TIME, NMNHDIM_UNUSED, &
+                              NMNHDIM_SPECTRA_2PTS_NI, NMNHDIM_SPECTRA_2PTS_NJ,                     &
                               NMNHMAXDIMS, tfield_metadata_base
 use modd_io,            only: tfiledata
 use modd_les,           only: nles_current_iinf, nles_current_isup, nles_current_jinf, nles_current_jsup, &
@@ -1090,7 +1091,6 @@ use mode_write_diachro, only: Write_diachro
 
 type(tfiledata),                    intent(in) :: tpdiafile! file to write
 type(tfield_metadata_base),         intent(in) :: tpfield ! Metadata of field pfield
-character,                          intent(in) :: hdir
 logical,                            intent(in) :: yavg
 real,             dimension(:,:,:), intent(in) :: pfield
 
@@ -1106,9 +1106,6 @@ real,            dimension(:,:,:,:,:,:), allocatable :: zwork6 ! contains physic
 type(date_time), dimension(:),           allocatable :: tzdates
 type(tfield_metadata_base)                           :: tzfield
 
-if ( hdir /= 'X' .and. hdir /= 'Y' ) &
-  call Print_msg( NVERB_FATAL, 'BUD', 'Les_diachro_2pt_1d_intern', 'invalid hdir' // hdir )
-
 !*      1.0  Initialization of diachro variables for LES (z,t) profiles
 !            ----------------------------------------------------------
 
@@ -1121,7 +1118,7 @@ ikh = nspectra_k
 !Copy all fields from tpfield
 tzfield = tpfield
 
-if ( hdir == 'X' ) then
+if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_2PTS_NI ) then
   Allocate( zwork6(Size( pfield, 1 ), 1, nspectra_k, nles_current_times, 1, 1) )
 
   iil = nles_current_iinf
@@ -1145,7 +1142,7 @@ if ( hdir == 'X' ) then
   ygroup    = 'CI_' // tpfield%cmnhname
   Write( ystring, fmt = "( i6.6 )" ) Nint( xles_current_domegax )
   ycomment(:) = " DOMEGAX=" // ystring // ' ' // tpfield%ccomment
-else
+else if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_2PTS_NJ ) then
   Allocate( zwork6(1, Size( pfield, 1 ), nspectra_k, nles_current_times, 1, 1) )
 
   iil = 1
@@ -1169,6 +1166,8 @@ else
   ygroup    = 'CJ_' // tpfield%cmnhname
   Write( ystring, fmt ="( i6.6 )" ) Nint( xles_current_domegay )
   ycomment(:) = " DOMEGAY=" // ystring // ' ' // tpfield%ccomment
+else
+  call Print_msg( NVERB_FATAL, 'BUD', 'Les_diachro_2pt_1d_intern', 'invalid dimensions for' // Trim( tpfield%cmnhname ) )
 end if
 
 !Done here because ygroup is modified later
@@ -1218,17 +1217,18 @@ type(tfield_metadata_base),           intent(in) :: tpfieldy ! metadata of field
 real,             dimension(:,:,:,:), intent(in) :: pspectrax! spectra in x
 real,             dimension(:,:,:,:), intent(in) :: pspectray! and y directions
 
-                 call Les_diachro_spec_1D_intern( tpdiafile, tpfieldx, 'X', pspectrax )
-if ( .not. l2d ) call Les_diachro_spec_1D_intern( tpdiafile, tpfieldy, 'Y', pspectray )
+                 call Les_diachro_spec_1D_intern( tpdiafile, tpfieldx, pspectrax )
+if ( .not. l2d ) call Les_diachro_spec_1D_intern( tpdiafile, tpfieldy, pspectray )
 
 end subroutine Les_diachro_spec
 
 
-!##########################################################################
-subroutine Les_diachro_spec_1D_intern( tpdiafile, tpfield, hdir, pspectra )
-!##########################################################################
+!####################################################################
+subroutine Les_diachro_spec_1D_intern( tpdiafile, tpfield, pspectra )
+!####################################################################
 
 use modd_field,         only: NMNHDIM_BUDGET_LES_AVG_TIME, NMNHDIM_BUDGET_LES_TIME, NMNHDIM_UNUSED, &
+                              NMNHDIM_SPECTRA_SPEC_NI, NMNHDIM_SPECTRA_SPEC_NJ,                     &
                               NMNHMAXDIMS, tfield_metadata_base
 use modd_io,            only: tfiledata
 use modd_les,           only: nles_current_iinf, nles_current_isup, nles_current_jinf, nles_current_jsup, &
@@ -1243,7 +1243,6 @@ implicit none
 
 type(tfiledata),             intent(in) :: tpdiafile ! file to write
 type(tfield_metadata_base),  intent(in) :: tpfield   ! metadata of field pfield
-character,                   intent(in) :: hdir
 real, dimension(:,:,:,:),    intent(in) :: pspectra
 
 character(len=10)                                    :: ygroup   ! group title
@@ -1257,9 +1256,6 @@ integer                                              :: jk       ! level counter
 real,            dimension(:,:,:,:,:,:), allocatable :: zwork6   ! physical field
 type(date_time), dimension(:),           allocatable :: tzdates
 type(tfield_metadata_base)                           :: tzfield
-
-if ( hdir /= 'X' .and. hdir /= 'Y' ) &
-  call Print_msg( NVERB_FATAL, 'BUD', 'Les_diachro_spec_1D_intern', 'invalid hdir' // hdir )
 !
 !*      1.0  Initialization of diachro variables for LES (z,t) profiles
 !            ----------------------------------------------------------
@@ -1275,7 +1271,7 @@ tzfield = tpfield
 !*      2.0  Writing of the profile
 !            ----------------------
 
-if ( hdir == 'X' ) then
+if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_SPEC_NI ) then
   Allocate( zwork6(Size( pspectra, 1 ), 1, nspectra_k, nles_current_times, 2, 1) )
 
   iil = nles_current_iinf
@@ -1300,7 +1296,7 @@ if ( hdir == 'X' ) then
   ygroup    = 'SI_' // tpfield%cmnhname
   Write( ystring, fmt = "( i6.6 )" ) Nint( xles_current_domegax )
   ycomment(:) = " DOMEGAX=" // ystring // ' ' // tpfield%ccomment
-else
+else if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_SPEC_NJ ) then
   Allocate( zwork6( 1, Size( pspectra, 1 ), nspectra_k, nles_current_times, 2, 1 ) )
 
   iil = 1
@@ -1325,6 +1321,8 @@ else
   ygroup    = 'SJ_' // tpfield%cmnhname
   Write( ystring, fmt = "( i6.6 )" ) Nint( xles_current_domegay )
   ycomment(:) = " DOMEGAY=" // ystring // ' ' // tpfield%ccomment
+else
+  call Print_msg( NVERB_FATAL, 'BUD', 'Les_diachro_spec_1D_intern', 'invalid dimensions for' // Trim( tpfield%cmnhname ) )
 end if
 
 tzfield%cmnhname  = ygroup
