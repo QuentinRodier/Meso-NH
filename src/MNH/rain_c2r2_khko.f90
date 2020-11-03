@@ -365,7 +365,7 @@ REAL,    DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3))   &
                                   :: ZMVRR,ZVRR,ZVCR
 REAL,    DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3))   &
                                   :: ZPRCT, ZPCCT, ZPRRT, ZPCRT 
-                                           ! For splitted sedimentation
+                                           ! For split sedimentation
 REAL,    DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3))   &
                                   :: ZMVRC !Cloud water mean volumic radius
 REAL,    DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3))   &

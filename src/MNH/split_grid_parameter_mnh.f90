@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2011-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2011-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -11,7 +11,7 @@
 #endif
 !     #############################################################
 !
-!!****  * - routine to split a real array on the splitted grid 
+!!****  * - routine to split a real array on the split grid 
 !
 !	Modifications
 !  M.Moge  10/02/2015  Using local subdomain for parallel execution
@@ -39,7 +39,7 @@ INTEGER,                INTENT(IN) :: KJMAX_ll    !(global) dimension of the dom
 INTEGER,                INTENT(IN) :: KHALO ! size of the Halo
 #endif
 REAL, DIMENSION(KDIM ), INTENT(IN) :: PFIELD      ! real field for complete grid
-REAL, DIMENSION(KSIZE), INTENT(OUT):: PFIELD_SPLIT! real field for splitted grid
+REAL, DIMENSION(KSIZE), INTENT(OUT):: PFIELD_SPLIT! real field for split grid
 !
 !*      0.2   Declarations of local variables
 !
@@ -143,7 +143,7 @@ END SUBROUTINE SPLIT_GRID_PARAMETERX1_MNH
 #endif
 !     #############################################################
 !
-!!****  * - routine to define an integer related to splitted grid
+!!****  * - routine to define an integer related to split grid
 !
 !
 !
@@ -164,7 +164,7 @@ CHARACTER(LEN=6),  INTENT(IN) :: HREC         ! name of the parameter
 INTEGER,           INTENT(IN) :: KHALO        ! size of the Halo
 #endif
 INTEGER,           INTENT(IN) :: KFIELD       ! integer scalar for complete grid
-INTEGER,           INTENT(OUT):: KFIELD_SPLIT ! integer scalar for splitted grid
+INTEGER,           INTENT(OUT):: KFIELD_SPLIT ! integer scalar for split grid
 !*      0.2   Declarations of local variables
 !
 INTEGER :: IIB, IIE, IJB, IJE

@@ -137,8 +137,8 @@ TYPE(TFILEDATA),TARGET,INTENT(IN) :: TPFILE
 TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:,:),   INTENT(IN) :: PFIELD ! array containing the data field
 INTEGER,               INTENT(OUT):: KRESP  ! return-code if problems araised
-INTEGER,OPTIONAL,      INTENT(IN) :: KVERTLEVEL ! Number of the vertical level (needed for Z-level splitted files)
-INTEGER,OPTIONAL,      INTENT(IN) :: KZFILE     ! Number of the Z-level splitted file
+INTEGER,OPTIONAL,      INTENT(IN) :: KVERTLEVEL ! Number of the vertical level (needed for Z-level split files)
+INTEGER,OPTIONAL,      INTENT(IN) :: KZFILE     ! Number of the Z-level split file
 !
 !*      0.2   Declarations of local variables
 !

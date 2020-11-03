@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -82,7 +82,7 @@ SUBROUTINE LIMA_INST_PROCS (PTSTEP, LDCOMPUTE,                                  
 !!    PURPOSE
 !!    -------
 !!      Compute sources of instantaneous microphysical processes for the
-!!    time-splitted version of LIMA
+!!    time-split version of LIMA
 !!
 !!    AUTHOR
 !!    ------

@@ -226,10 +226,10 @@ END MODULE MODI_TURB_VER
 !!                               _(M,UW,...) represent the localization of the 
 !!                               field	derivated
 !!
-!!      SUBROUTINE TRIDIAG     : to compute the splitted implicit evolution
+!!      SUBROUTINE TRIDIAG     : to compute the split implicit evolution
 !!                               of a variable located at a mass point
 !!
-!!      SUBROUTINE TRIDIAG_WIND: to compute the splitted implicit evolution
+!!      SUBROUTINE TRIDIAG_WIND: to compute the split implicit evolution
 !!                               of a variable located at a wind point
 !!
 !!      FUNCTIONs ETHETA and EMOIST  :  

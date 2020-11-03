@@ -65,7 +65,7 @@ TYPE TOUTBAK
   REAL              :: XTIME        !Time from start of the segment (in seconds and rounded to a timestep)
   INTEGER           :: NOUTDAD = -1 !Index of the corresponding dad file (file with same time)
   TYPE(TFILEDATA),POINTER :: TFILE => NULL() !Corresponding file
-  TYPE(TFILE_ELT),DIMENSION(:),ALLOCATABLE :: TFILE_IOZ !Corresponding Z-splitted files
+  TYPE(TFILE_ELT),DIMENSION(:),ALLOCATABLE :: TFILE_IOZ !Corresponding Z-split files
   INTEGER,DIMENSION(:),POINTER :: NFIELDLIST => NULL() !List of the fields to read or write
 END TYPE TOUTBAK
 
@@ -86,10 +86,10 @@ TYPE TFILEDATA
   LOGICAL           :: LMASTER       = .FALSE. !True if process is master of the file (process that open/read/write/close)
   LOGICAL           :: LMULTIMASTERS = .FALSE. !True if several processes may access the file
   !
-  INTEGER           :: NSUBFILES_IOZ = 0       !Number of sub-files (Z-splitted files based on this file)
+  INTEGER           :: NSUBFILES_IOZ = 0       !Number of sub-files (Z-split files based on this file)
                                                !For example if 2 sub-files and this file is abcd,
                                                !the 2 sub-files are abcd.Z001 and abcd.Z002
-  TYPE(TFILE_ELT),DIMENSION(:),ALLOCATABLE :: TFILES_IOZ !Corresponding Z-splitted files
+  TYPE(TFILE_ELT),DIMENSION(:),ALLOCATABLE :: TFILES_IOZ !Corresponding Z-split files
   !
   INTEGER              :: NMODEL = 0              !Model number corresponding to the file (field not always set)
   INTEGER,DIMENSION(3) :: NMNHVERSION = (/0,0,0/) !MesoNH version used to create the file

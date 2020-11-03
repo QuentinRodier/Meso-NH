@@ -221,7 +221,7 @@
 !!      J.-P. Pinty 18/02/97  add forcing and ice
 !!      J.-P. Pinty 25/09/00  add budget terms for C2R2
 !!      D. Gazen    22/01/01  add NCHEMSV
-!!      C.Lac           04/2016  negative contribution to the budget splitted between advection, turbulence and microphysics for KHKO/C2R2
+!!      C.Lac           04/2016  negative contribution to the budget split between advection, turbulence and microphysics for KHKO/C2R2
 !!      C. Barthe        /16  add budget terms for LIMA
 !!      C.Lac        10/2016  Add droplet deposition
 !!      S. Riette   11/2016 New budgets for ICE3/ICE4

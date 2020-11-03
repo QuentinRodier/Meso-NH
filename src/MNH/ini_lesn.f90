@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -35,6 +35,7 @@
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!                     02/2019 (C. Lac) Add rain fraction as a LES diagnostic
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 12/08/2020: bugfix: use NUNDEF instead of XUNDEF for integer variables
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -391,7 +392,7 @@ END IF
 !            --------------------
 !
 IF (ANY(NLES_LEVELS(:)/=NUNDEF)) THEN
-  NLES_K = COUNT (NLES_LEVELS(:)/=XUNDEF)
+  NLES_K = COUNT (NLES_LEVELS(:)/=NUNDEF)
   CLES_LEVEL_TYPE='K'
 ELSE
   IF (NLES_K==0) THEN
@@ -439,8 +440,8 @@ END IF
 !*      5.2  Case of model levels (highest priority)
 !            --------------------
 !
-IF (ANY(NSPECTRA_LEVELS(:)/=XUNDEF)) THEN
-  NSPECTRA_K = COUNT (NSPECTRA_LEVELS(:)/=XUNDEF)
+IF (ANY(NSPECTRA_LEVELS(:)/=NUNDEF)) THEN
+  NSPECTRA_K = COUNT (NSPECTRA_LEVELS(:)/=NUNDEF)
   CSPECTRA_LEVEL_TYPE='K'
 END IF
 !
