@@ -112,7 +112,6 @@ use modd_budget,          only: lbu_enable,                                     
                                 NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, NBUDGET_RI,  &
                                 NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, NBUDGET_SV1,             &
                                 tbudgets
-USE MODD_CLOUDPAR_n,      ONLY: NSPLITR, NSPLITG
 USE MODD_CST,             ONLY: XCI, XCL, XCPD, XCPV, XLSTT, XLVTT, XTT, XRHOLW, XP00, XRD
 USE MODD_IO,              ONLY: TFILEDATA
 USE MODD_NSV,             ONLY: NSV_LIMA_BEG,                                                   &

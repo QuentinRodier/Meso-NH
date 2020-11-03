@@ -6,6 +6,7 @@
 ! Author: P. Wautelet 25/06/2020 (deduplication of code from advection_metsv, resolved_cloud and turb)
 ! Modifications:
 !  P. Wautelet 30/06/2020: remove non-local corrections in resolved_cloud for NEGA => new local corrections here
+!  J. Escobar  21/07/2020: bug <-> array of size(:,:,:,0) => return if krr=0
 !-----------------------------------------------------------------
 module mode_sources_neg_correct
 
@@ -51,6 +52,8 @@ integer :: jr
 integer :: jrmax
 integer :: jsv
 real, dimension(:, :, :), allocatable :: zt, zexn, zlv, zls, zcph, zcor
+
+if ( krr == 0 ) return
 
 if ( hbudname /= 'NEADV' .and. hbudname /= 'NECON' .and. hbudname /= 'NEGA' .and. hbudname /= 'NETUR' ) &
   call Print_msg( NVERB_WARNING, 'GEN', 'Sources_neg_correct', 'budget '//hbudname//' not yet tested' )

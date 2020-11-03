@@ -82,7 +82,8 @@ SUBROUTINE CALL_RTTOV11(KDLON, KFLEV, PEMIS, PTSRAD,     &
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!      JP Chaboureau 30/05/2017 exclude the first layer when considering clouds
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet   10/04/2019: replace ABORT and STOP calls by Print_msg
+!  JP Chaboureau 26/10/2020: calculate all IR intruments; deallocate MW tabs
 !!----------------------------------------------------------------------------
 !!
 !!*       0.    DECLARATIONS
@@ -109,7 +110,7 @@ USE MODE_POS
 !
 #ifdef MNH_RTTOV_11
 USE rttov_const, ONLY :  &
-       & sensor_id_ir, sensor_id_hi, sensor_id_mw, &
+       & sensor_id, sensor_id_ir, sensor_id_hi, sensor_id_mw, &
        & q_mixratio_to_ppmv, tmin, tmax, qmin, qmax, pmin, pmax
 USE rttov_types
 USE parkind1, ONLY: jpim, jprb, jplm
@@ -192,8 +193,8 @@ REAL :: ZZH, zdeg_to_rad, zrad_to_deg, zbeta, zalpha
 ! REAL, DIMENSION(:,:),   ALLOCATABLE :: ZCOSZEN, ZSINZEN, ZAZIMSOL
 
 ! -----------------------------------------------------------------------------
-REAL, DIMENSION(:), ALLOCATABLE :: ZANGL   !Satellite zenith angle (deg)
-REAL, DIMENSION(:), ALLOCATABLE :: ZANGS   !Solar zenith angle (deg)
+REAL, DIMENSION(1) :: ZANGL, ZLON, ZLAT   !Satellite zenith angle, longitude, latitude (deg)
+REAL :: ZANGS   !Solar zenith angle (deg)
 ! -----------------------------------------------------------------------------
 ! INDEXES AND TEMPORAL ARRAYS FOR VECTORIZATION
 INTEGER :: JIS, IBEG, IEND, IDIM, ICPT
@@ -296,9 +297,7 @@ DO JSAT=1,IJSAT ! loop over sensors
   instrument(3)=KRTTOVINFO(3,JSAT)
 ! PRINT *,' JSAT=',JSAT, instrument
 
-!!! METEOSAT, GOES, OR MSG PLATFORM
-  IF (KRTTOVINFO(1,JSAT) == 3 .OR. KRTTOVINFO(1,JSAT) == 4 &
-       .OR. KRTTOVINFO(1,JSAT) == 12) THEN
+  IF( sensor_id( instrument(3) ) /= sensor_id_mw) THEN
     opts % rt_ir % addsolar = .FALSE.         ! Do not include solar radiation
     opts % interpolation % addinterp  = .TRUE.  ! Allow interpolation of input profile
     opts % interpolation % interp_mode = 1       ! Set interpolation method
@@ -342,7 +341,7 @@ DO JSAT=1,IJSAT ! loop over sensors
 
   ALLOCATE(ZBT(IIU,IJU,nchannels))
   ZBT(:,:,:)=999.
-!  PRINT *,'ncan=',nchan,' nchannels=',nchannels
+! PRINT *,'ncan=',nchan,' nchannels=',nchannels
 
   ALLOCATE (chanprof     (nchannels))
   ALLOCATE (frequencies  (nchannels))
@@ -354,9 +353,7 @@ DO JSAT=1,IJSAT ! loop over sensors
   calcemis  = .TRUE.
   emissivity % emis_in = 0.0_JPRB
 
-!!! METEOSAT, GOES, OR MSG PLATFORM
-  IF (KRTTOVINFO(1,JSAT) == 3 .OR. KRTTOVINFO(1,JSAT) == 4 &
-       .OR. KRTTOVINFO(1,JSAT) == 12) calcemis = .FALSE.
+  IF( coef_rttov%coef% id_sensor /= sensor_id_mw)  calcemis = .FALSE.
 
 !  IF( coef_rttov%coef% id_sensor /= sensor_id_mw) THEN
 !  ! Allocate arrays for surface reflectance
@@ -426,18 +423,41 @@ DO JSAT=1,IJSAT ! loop over sensors
 
 !!  opts%interpolation%reg_limit_extrap = .TRUE.
 !!  profiles(1)%gas_units = 1 ! kg/kg over moist air
-!PRINT *,'nlev=',nlev,' tmax=',tmax,' tmin=',tmin,' qmax=',qmax,' qmin=',qmin
-!PRINT *, coef_rttov%coef % nlevels
+! PRINT *,'nlev=',nlev,' tmax=',tmax,' tmin=',tmin,' qmax=',qmax,' qmin=',qmin
+! PRINT *, coef_rttov%coef % nlevels
   DO JI=IIB,IIE
     DO JJ=IJB,IJE      
+      ZANGL = XUNDEF
+      ZLON  = XLON(JI,JJ)
+      ZLAT  = XLAT(JI,JJ)
+      IF (KRTTOVINFO(1,JSAT) == 2) THEN ! DMSP PLATFORM
+        ZANGL=53.1 ! see Saunders, 2002, RTTOV7 - science/validation rep, page 8
+      ELSEIF (KRTTOVINFO(1,JSAT) == 3) THEN ! METEOSAT PLATFORM
+        CALL DETER_ANGLE(5, 1, ZLAT, ZLON, ZANGL)
+        WHERE (ZANGL /= XUNDEF .AND. ZANGL /=0.) ZANGL=ACOS(1./ZANGL)*180./XPI
+      ELSEIF (KRTTOVINFO(1,JSAT) == 12) THEN ! MSG PLATFORM
+        CALL DETER_ANGLE(6, 1, ZLAT, ZLON, ZANGL)
+        WHERE (ZANGL /= XUNDEF .AND. ZANGL /=0.) ZANGL=ACOS(1./ZANGL)*180./XPI
+      ELSEIF (KRTTOVINFO(1,JSAT) == 4) THEN ! GOES-E PLATFORM
+        CALL DETER_ANGLE(1, 1, ZLAT, ZLON, ZANGL)
+        WHERE (ZANGL /= XUNDEF .AND. ZANGL /=0.) ZANGL=ACOS(1./ZANGL)*180./XPI
+      ELSEIF (KRTTOVINFO(1,JSAT) == 7) THEN ! TRMM PLATFORM
+        ZANGL=52.3
+      ELSE
+        ZANGL=0.
+      ENDIF
+! Coefficients computed from transmittances for 6 viewing angles in the range 
+! 0 to 63.6 deg (Saunders, 2002, RTTOV7 - science/validation rep., page 3)
+      profiles(1) % zenangle = MIN(ZANGL(1),65.)
+
       DO JK=IKB,IKE ! nlevels
         JKRAD = nlev-JK+2 !INVERSION OF VERTICAL LEVELS!
-!PRINT *,'jk=',jk,' jkrad=',jkrad
+!       PRINT *,'jk=',jk,' jkrad=',jkrad
         profiles(1) % p(JKRAD) = PPABST(JI,JJ,JK)*0.01
         profiles(1) % t(JKRAD) = MIN(tmax,MAX(tmin,ZTEMP(JI,JJ,JK)))
-!PRINT *,'jk=',JK,' ZTEMP=',ZTEMP(JI,JJ,JK),' t=',profiles(1) % t(JKRAD)
+!       PRINT *,'jk=',JK,' ZTEMP=',ZTEMP(JI,JJ,JK),' t=',profiles(1) % t(JKRAD)
         profiles(1) % q(JKRAD) = MIN(qmax,MAX(qmin,PRT(JI,JJ,JK,1)*q_mixratio_to_ppmv))
-!        PRINT *,JK,profiles(1) % p(JKRAD) ,profiles(1) % t(JKRAD) ,profiles(1) % q(JKRAD) 
+!       PRINT *,JK,profiles(1) % p(JKRAD) ,profiles(1) % t(JKRAD) ,profiles(1) % q(JKRAD) 
       END DO
       profiles(1) % elevation = 0.5*( PZZ(JI,JJ,1)+PZZ(JI,JJ,IKB) )
       profiles(1) % skin % t = MIN(tmax,MAX(tmin,PTSRAD(JI,JJ)))
@@ -468,7 +488,7 @@ DO JSAT=1,IJSAT ! loop over sensors
       ELSE
         DO JK=IKB,IKE
           JKRAD = nlev-JK+2 !INVERSION OF VERTICAL LEVELS!
-          cld_profiles(1) % ph (JKRAD) = 0.5*( PPABST(JI,JJ,JK) + PPABST(JI,JJ,JK+1) )*0.01
+          cld_profiles(1) %ph (JKRAD) = 0.5*( PPABST(JI,JJ,JK) + PPABST(JI,JJ,JK+1) )*0.01
           cld_profiles(1) %cc(JKRAD) = PCLDFR(JI,JJ,JK)
           cld_profiles(1) %clw(JKRAD) = MIN(ZRCMAX,PRT(JI,JJ,JK,2))
           cld_profiles(1) %rain(JKRAD) = MIN(ZRRMAX,PRT(JI,JJ,JK,3))
@@ -478,14 +498,14 @@ DO JSAT=1,IJSAT ! loop over sensors
           END IF
         END DO
         cld_profiles (1) % ph (nlev+1) =   profiles (1) % s2m % p
-!          PRINT *,nlev+1,' cld_profiles(1) % ph (nlev+1) =',cld_profiles(1) % ph (nlev+1) 
+!       PRINT *,nlev+1,' cld_profiles(1) % ph (nlev+1) =',cld_profiles(1) % ph (nlev+1) 
       END IF
 
       DO JCH=1,nchannels
         IF (.NOT.calcemis(JCH)) emissivity(JCH)%emis_in = PEMIS(JI,JJ)
       END DO
 
-!write(*,*) 'Calling forward model' 
+! write(*,*) 'Calling forward model' 
 
 ! Forward model run
       IF ( coef_rttov%coef% id_sensor /= sensor_id_mw) THEN
@@ -573,12 +593,18 @@ DO JSAT=1,IJSAT ! loop over sensors
     TZFIELD%NGRID      = 1
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 2
-    TZFIELD%LTIMEDEP   = .FALSE.
+    TZFIELD%LTIMEDEP   = .TRUE.
 !    PRINT *,'YRECFM='//TRIM(TZFIELD%CMNHNAME)
     CALL IO_Field_write(TPFILE,TZFIELD,ZBT(:,:,JCH))
   END DO
-  DEALLOCATE(chanprof,frequencies,emissivity,calcemis,profiles,cld_profiles)
+  DEALLOCATE(chanprof,frequencies,emissivity,calcemis,profiles)
   DEALLOCATE(ZBT)
+  IF( coef_rttov%coef% id_sensor == sensor_id_mw) THEN
+    CALL rttov_alloc_scatt_prof(nprof, cld_profiles, nlev, .FALSE., 0_jpim)
+    CALL rttov_dealloc_scattcoeffs(coef_scatt)
+  END IF
+  DEALLOCATE(cld_profiles)
+  CALL rttov_dealloc_coefs(errorstatus, coef_rttov)
 !  IF( coef_rttov%coef% id_sensor /= sensor_id_mw) THEN
 !    DEALLOCATE(calcrefl,reflectance)
 !  END IF

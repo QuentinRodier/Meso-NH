@@ -21,7 +21,7 @@ CONTAINS
 SUBROUTINE RAIN_ICE_WARM(OMICRO, KMICRO, K1, K2, K3,                                                           &
                          PRHODREF, PRVT, PRCT, PRRT, PHLC_HCF, PHLC_LCF, PHLC_HRC, PHLC_LRC,                   &
                          PRHODJ, PPRES, PZT, PLBDAR, PLBDAR_RF, PLVFACT, PCJ, PKA, PDV, PRF, PCF, PTHT, PTHLT, &
-                         PRHODJ3D, PTHS3D, PRVS3D, PRVS, PRCS, PRRS, PTHS, PUSW, PEVAP3D)
+                         PRVS, PRCS, PRRS, PTHS, PUSW, PEVAP3D)
 !
 !*      0. DECLARATIONS
 !          ------------
@@ -68,9 +68,6 @@ REAL,     DIMENSION(:),     intent(in)    :: PRF      ! Rain fraction
 REAL,     DIMENSION(:),     intent(in)    :: PCF      ! Cloud fraction
 REAL,     DIMENSION(:),     intent(in)    :: PTHT     ! Potential temperature
 REAL,     DIMENSION(:),     intent(in)    :: PTHLT    ! Liquid potential temperature
-REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRHODJ3D ! Dry density * Jacobian
-REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PTHS3D   ! Theta source
-REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRVS3D   ! Water vapor m.r. source
 REAL,     DIMENSION(:),     INTENT(INOUT) :: PRVS     ! Water vapor m.r. source
 REAL,     DIMENSION(:),     INTENT(INOUT) :: PRCS     ! Cloud water m.r. source
 REAL,     DIMENSION(:),     INTENT(INOUT) :: PRRS     ! Rain water m.r. source

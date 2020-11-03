@@ -135,9 +135,9 @@ END MODULE MODI_LIMA_ADJUST
 !!      C. Barthe  * LACy*   jan. 2014  add budgets
 !!      JP Chaboureau *LA*   March 2014  fix the calculation of icy cloud fraction
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet    03/2020: use the new data structures and subroutines for budgets
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
-!  P. Wautelet    03/2020: use the new data structures and subroutines for budgets
 !  P. Wautelet 28/05/2020: bugfix: correct array start for PSVT and PSVS
 !-------------------------------------------------------------------------------
 !

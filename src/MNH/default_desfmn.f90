@@ -748,7 +748,7 @@ END IF
 !             ---------------------------------------
 !
 IF (KMI == 1) THEN
-  LRED    = .FALSE.
+  LRED    = .TRUE.
   LWARM = .TRUE.
   CPRISTINE_ICE = 'PLAT'
   LSEDIC  = .TRUE.

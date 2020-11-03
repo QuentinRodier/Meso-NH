@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -7,6 +7,7 @@
 !  J. Escobar  10/02/2012: bug in MPI_RECV: replace MPI_STATUSES_IGNORE with MPI_STATUS_IGNORE
 !  P. Wautelet 26/04/2019: use modd_precision parameters for datatypes of MPI communications
 !  P. Wautelet 25/06/2019: added IO_Field_read for 3D integer arrays (SCATTERXX_N3 and SCATTERXY_N3)
+!  J. Escobar  21/07/2020: for reduction of MPI_BUFFER_SIZE, in SCATTERXY_X3 replace MPI_BSEND -> MPI_ISEND
 !-----------------------------------------------------------------
 
 MODULE MODE_SCATTER_ll
@@ -467,7 +468,8 @@ END IF
 END SUBROUTINE  SCATTERXY_X2
 
 SUBROUTINE SCATTERXY_X3(PSEND,PRECV,KROOT,KCOMM)
-USE MODD_IO, ONLY: ISP, ISNPROC
+USE MODD_IO,     ONLY: ISP, ISNPROC
+USE MODD_VAR_ll, ONLY: MNH_STATUSES_IGNORE
 
 REAL,DIMENSION(:,:,:),TARGET,INTENT(IN) :: PSEND
 REAL,DIMENSION(:,:,:),       INTENT(INOUT):: PRECV
@@ -475,25 +477,45 @@ INTEGER,                     INTENT(IN) :: KROOT
 INTEGER,                     INTENT(IN) :: KCOMM
 
 INTEGER :: IERR
-INTEGER :: JI
+INTEGER :: JI,JKU
 INTEGER :: IXO,IXE,IYO,IYE
 REAL,DIMENSION(:,:,:), POINTER :: TX3DP
+
+INTEGER,ALLOCATABLE,DIMENSION(:)    :: REQ_TAB
+INTEGER                             :: NB_REQ
+TYPE TX_3DP
+   REAL,DIMENSION(:,:,:), POINTER    :: X
+END TYPE TX_3DP
+TYPE(TX_3DP),ALLOCATABLE,DIMENSION(:) :: T_TX3DP
+
+JKU = SIZE(PSEND,3)
   
 IF (ISP == KROOT) THEN
-  DO JI = 1,ISNPROC
-    CALL GET_DOMREAD_ll(JI,IXO,IXE,IYO,IYE)
-    TX3DP=>PSEND(IXO:IXE,IYO:IYE,:)
-    
-    IF (ISP /= JI) THEN 
-      CALL MPI_BSEND(TX3DP,SIZE(TX3DP),MNHREAL_MPI,JI-1,199+KROOT,KCOMM&
-           & ,IERR)
-    ELSE 
-      PRECV(:,:,:) = TX3DP(:,:,:)
-    END IF
-  END DO
+   NB_REQ=0
+   ALLOCATE(REQ_TAB(ISNPROC-1))
+   ALLOCATE(T_TX3DP(ISNPROC-1))   
+   DO JI = 1,ISNPROC
+      CALL GET_DOMREAD_ll(JI,IXO,IXE,IYO,IYE)
+      TX3DP=>PSEND(IXO:IXE,IYO:IYE,:)
+      IF (ISP /= JI) THEN
+         NB_REQ = NB_REQ + 1
+         ALLOCATE(T_TX3DP(NB_REQ)%X(IXO:IXE,IYO:IYE,JKU))
+         T_TX3DP(NB_REQ)%X=TX3DP
+         CALL MPI_ISEND(T_TX3DP(NB_REQ)%X,SIZE(TX3DP),MNHREAL_MPI,JI-1,199+KROOT,KCOMM&
+               & ,REQ_TAB(NB_REQ),IERR)
+         !CALL MPI_BSEND(TX3DP,SIZE(TX3DP),MNHREAL_MPI,JI-1,199+KROOT,KCOMM&
+         !     & ,IERR)        
+      ELSE 
+         PRECV(:,:,:) = TX3DP(:,:,:)
+      END IF
+   END DO
+   IF (NB_REQ .GT.0 ) THEN
+      CALL MPI_WAITALL(NB_REQ,REQ_TAB,MNH_STATUSES_IGNORE,IERR)
+      DO JI=1,NB_REQ ;  DEALLOCATE(T_TX3DP(JI)%X) ; ENDDO
+   END IF
 ELSE
-  CALL MPI_RECV(PRECV,SIZE(PRECV),MNHREAL_MPI,KROOT-1,199+KROOT,KCOMM&
-       & ,MPI_STATUS_IGNORE,IERR)
+   CALL MPI_RECV(PRECV,SIZE(PRECV),MNHREAL_MPI,KROOT-1,199+KROOT,KCOMM&
+        & ,MPI_STATUS_IGNORE,IERR)
 END IF
 
 END SUBROUTINE  SCATTERXY_X3

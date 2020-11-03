@@ -66,6 +66,8 @@ subroutine  Write_les_n( tpdiafile )
 !  C. Lac         02/2019: add rain fraction as a LES diagnostic
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !  P. Wautelet 12/10/2020: remove HLES_AVG dummy argument and group all 4 calls
+!  P. Wautelet 13/10/2020: bugfix: correct some names for LES_DIACHRO_2PT diagnostics (Ri)
+!  P. Wautelet 26/10/2020: bugfix: correct some comments and conditions + add missing RES_RTPZ
 !  P. Wautelet 26/10/2020: restructure subroutines to use tfield_metadata_base type
 ! --------------------------------------------------------------------------
 !

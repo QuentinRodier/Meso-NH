@@ -17,11 +17,10 @@ MODULE MODE_RAIN_ICE_SLOW
 
 CONTAINS
 
-SUBROUTINE RAIN_ICE_SLOW(OMICRO, PINVTSTEP, PRHODREF,                      &
-                         PRCT, PRRT, PRIT, PRST, PRGT, PRHODJ, PZT, PPRES, &
-                         PLSFACT, PLVFACT,                                 &
-                         PSSI, PRHODJ3D, PTHS3D, PRVS3D,                   &
-                         PRVS, PRCS, PRRS, PRIS, PRSS, PRGS, PTHS,         &
+SUBROUTINE RAIN_ICE_SLOW(OMICRO, PINVTSTEP, PRHODREF,                                      &
+                         PRCT, PRRT, PRIT, PRST, PRGT, PRHODJ, PZT, PPRES,                 &
+                         PLSFACT, PLVFACT, PSSI,                                           &
+                         PRVS, PRCS, PRRS, PRIS, PRSS, PRGS, PTHS,                         &
                          PAI, PCJ, PKA, PDV, PLBDAS, PLBDAG)
 !
 !*      0. DECLARATIONS
@@ -55,9 +54,6 @@ REAL,     DIMENSION(:),     intent(in)    :: PPRES    ! Pressure
 REAL,     DIMENSION(:),     intent(in)    :: PLSFACT  ! L_s/(Pi_ref*C_ph)
 REAL,     DIMENSION(:),     intent(in)    :: PLVFACT  ! L_v/(Pi_ref*C_ph)
 REAL,     DIMENSION(:),     intent(in)    :: PSSI     ! Supersaturation over ice
-REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRHODJ3D ! Dry density * Jacobian
-REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PTHS3D   ! Theta source
-REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRVS3D   ! Water vapor m.r. source
 REAL,     DIMENSION(:),     INTENT(INOUT) :: PRVS     ! Water vapor m.r. source
 REAL,     DIMENSION(:),     INTENT(INOUT) :: PRCS     ! Cloud water m.r. source
 REAL,     DIMENSION(:),     INTENT(INOUT) :: PRRS     ! Rain water m.r. source

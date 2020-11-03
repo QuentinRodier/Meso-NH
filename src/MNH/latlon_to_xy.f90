@@ -58,6 +58,7 @@
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 10/04/2020: add missing initializations (LATLON_TO_XY was not working)
+!  J. Escobar  21/07/2020: missing modi_version
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -85,6 +86,7 @@ use MODE_SPLITTINGZ_ll
 !
 USE MODI_INI_CST
 USE MODI_READ_HGRID
+USE MODI_VERSION
 !
 USE MODN_CONFIO,           ONLY: NAM_CONFIO
 !

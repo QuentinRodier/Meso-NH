@@ -21,7 +21,7 @@ MODULE MODE_RAIN_ICE_FAST_RH
 CONTAINS
 
 SUBROUTINE RAIN_ICE_FAST_RH(OMICRO, PRHODREF, PRVT, PRCT, PRIT, PRST, PRGT, PRHT, PRHODJ, PPRES, &
-                            PZT, PLBDAS, PLBDAG, PLBDAH, PLSFACT, PLVFACT, PCJ, PKA, PDV, PRHODJ3D, PTHS3D, &
+                            PZT, PLBDAS, PLBDAG, PLBDAH, PLSFACT, PLVFACT, PCJ, PKA, PDV, &
                             PRCS, PRRS, PRIS, PRSS, PRGS, PRHS, PTHS, PUSW)
 !
 !*      0. DECLARATIONS
@@ -62,8 +62,6 @@ REAL,     DIMENSION(:),     intent(in)    :: PLVFACT  ! L_v/(Pi_ref*C_ph)
 REAL,     DIMENSION(:),     intent(in)    :: PCJ      ! Function to compute the ventilation coefficient
 REAL,     DIMENSION(:),     intent(in)    :: PKA      ! Thermal conductivity of the air
 REAL,     DIMENSION(:),     intent(in)    :: PDV      ! Diffusivity of water vapor in the air
-REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRHODJ3D ! Dry density * Jacobian
-REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PTHS3D   ! Theta source
 REAL,     DIMENSION(:),     INTENT(INOUT) :: PRCS     ! Cloud water m.r. source
 REAL,     DIMENSION(:),     INTENT(INOUT) :: PRRS     ! Rain water m.r. source
 REAL,     DIMENSION(:),     INTENT(INOUT) :: PRIS     ! Pristine ice m.r. source

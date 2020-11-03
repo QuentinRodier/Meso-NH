@@ -19,7 +19,7 @@ MODULE MODE_RAIN_ICE_FAST_RI
 CONTAINS
 
 SUBROUTINE RAIN_ICE_FAST_RI(OMICRO, PRHODREF, PRIT, PRHODJ, PZT, PSSI, PLSFACT, PLVFACT, &
-                            PAI, PCJ, PRHODJ3D, PTHS3D, PCIT, PRCS, PRIS, PTHS)
+                            PAI, PCJ, PCIT, PRCS, PRIS, PTHS)
 !
 !*      0. DECLARATIONS
 !          ------------
@@ -47,8 +47,6 @@ REAL,     DIMENSION(:),     intent(in)    :: PLSFACT  ! L_s/(Pi_ref*C_ph)
 REAL,     DIMENSION(:),     intent(in)    :: PLVFACT  ! L_v/(Pi_ref*C_ph)
 REAL,     DIMENSION(:),     intent(in)    :: PAI      ! Thermodynamical function
 REAL,     DIMENSION(:),     intent(in)    :: PCJ      ! Function to compute the ventilation coefficient
-REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PRHODJ3D ! Dry density * Jacobian
-REAL,     DIMENSION(:,:,:), INTENT(IN)    :: PTHS3D   ! Theta source
 REAL,     DIMENSION(:),     intent(inout) :: PCIT     ! Pristine ice conc. at t
 REAL,     DIMENSION(:),     INTENT(INOUT) :: PRCS     ! Cloud water m.r. source
 REAL,     DIMENSION(:),     INTENT(INOUT) :: PRIS     ! Pristine ice m.r. source

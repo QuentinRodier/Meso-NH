@@ -192,10 +192,12 @@ end subroutine Budget_preallocate
 !  P. Wautelet 02-03/2020: use the new data structures and subroutines for budgets
 !  B. Vie      02/03/2020: LIMA negativity checks after turbulence, advection and microphysics budgets
 !  P .Wautelet 09/03/2020: add missing budgets for electricity
+!  P. Wautelet 25/03/2020: add missing ove_relax_grd
 !  P. Wautelet 23/04/2020: add nid in tbudgetdata datatype
 !  P. Wautelet + Benoit Vié 11/06/2020: improve removal of negative scalar variables + adapt the corresponding budgets
 !  P. Wautelet 30/06/2020: use NADVSV when possible
 !  P. Wautelet 30/06/2020: add NNETURSV, NNEADVSV and NNECONSV variables
+!  P. Wautelet 06/07/2020: bugfix: add condition on HTURB for NETUR sources for SV budgets
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
