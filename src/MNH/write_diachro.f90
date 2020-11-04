@@ -432,6 +432,9 @@ DO J = 1,IP
     end do
     if ( tzfield%ndimlist(4) == NMNHDIM_FLYER_TIME ) tzfield%ndimlist(4) = NMNHDIM_NOTLISTED
     tzfield%ndimlist(6:)   = NMNHDIM_UNUSED
+  else
+    call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_lfi', &
+                    'some dimensions are unknown for variable '//trim(tpfields(1)%cmnhname) )
   end if
 
   YJ = '   '
@@ -627,7 +630,9 @@ integer,                                             intent(in), optional :: kkl
 character(len=3)                          :: ynum
 integer                                   :: icompx, icompy, icompz
 integer                                   :: idims
+integer                                   :: icount
 integer                                   :: ji
+integer                                   :: jp
 integer(kind=CDFINT)                      :: isavencid
 integer(kind=CDFINT)                      :: idimid
 integer(kind=CDFINT)                      :: igrpid
@@ -643,7 +648,6 @@ real, dimension(:,:,:,:,:,:), allocatable :: zdata6d
 type(tfielddata)                          :: tzfield
 type(tfiledata)                           :: tzfile
 
-
 if ( trim ( htype ) == 'CART' .or. trim ( htype ) == 'MASK' .or. trim ( htype ) == 'SPXY') then
   if (        .not. Present( kil ) .or. .not. Present( kih ) &
          .or. .not. Present( kjl ) .or. .not. Present( kjh ) &
@@ -654,6 +658,9 @@ if ( trim ( htype ) == 'CART' .or. trim ( htype ) == 'MASK' .or. trim ( htype ) 
 end if
 
 tzfile = tpdiafile
+
+!Write only in netCDF files
+tzfile%cformat = 'NETCDF4'
 
 if ( oicp ) then
   icompx = 1
@@ -684,9 +691,6 @@ MASTER: if ( isp == tzfile%nmaster_rank) then
   !Save id of the file root group ('/' group)
   isavencid = tzfile%nncid
   tzfile%nncid = igrpid
-
-  !Write only in netCDF files
-  tzfile%cformat = 'NETCDF4'
 
   istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'type', trim( htype ) )
   if (istatus /= NF90_NOERR ) &
@@ -736,22 +740,35 @@ MASTER: if ( isp == tzfile%nmaster_rank) then
 
 end if MASTER
 
-if ( Count( tpfields(1)%ndimlist(:) == NMNHDIM_UNKNOWN ) /= 0 ) &
-  call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', &
-                  'some dimensions are unknown for variable '//trim(tpfields(1)%cmnhname) )
 
-idims = Count( tpfields(1)%ndimlist(:) /= NMNHDIM_UNUSED )
-
-if ( tpfields(1)%ndims /= idims ) &
-  call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', &
-                  'ndims is not coherent with ndimlist for variable '//trim(tpfields(1)%cmnhname) )
-
-do ji = 2, NMNHMAXDIMS
-  if ( tpfields(1)%ndimlist(ji) == NMNHDIM_UNKNOWN ) then
+!Determine the number of dimensions and do some verifications
+do jp = 1, Size( tpfields )
+  if ( Any( tpfields(jp)%ndimlist(:) == NMNHDIM_UNKNOWN ) ) &
     call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', &
-                    'NMNHDIM_UNKNOWN for some dimensions of variable '//trim(tpfields(1)%cmnhname) )
-    idims = 6
+                    'some dimensions are unknown for variable '//trim(tpfields(jp)%cmnhname) )
+
+  icount = Count( tpfields(jp)%ndimlist(:) /= NMNHDIM_UNUSED )
+
+  if ( tpfields(jp)%ndims /= icount ) &
+    call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', &
+                    'ndims is not coherent with ndimlist for variable '//trim(tpfields(jp)%cmnhname) )
+
+  if ( jp == 1 ) then
+    idims = icount
+  else
+    if ( idims /= icount ) &
+      call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', &
+                      'number of dimensions not the same for all tpfields for variable '//trim(tpfields(jp)%cmnhname) )
   end if
+end do
+
+!The dimension list should be the same for all tpfields entries
+do jp = 2, Size( tpfields )
+  do ji = 1, NMNHMAXDIMS
+    if ( tpfields(jp)%ndimlist(ji) /= tpfields(1)%ndimlist(ji) ) &
+      call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', &
+                      'some dimensions are not the same for all tpfields entries for variable '//trim(tpfields(jp)%cmnhname) )
+  end do
 end do
 
 !Check that if 'CART' and no horizontal compression, parameters are as expected
@@ -799,6 +816,9 @@ select case ( idims )
     CALL IO_Field_write( tzfile, tzfield, zdata0d )
 
   case (1)
+    if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
+                                                 'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
+
     if ( tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) then
       tzfield%ndimlist(1)  = tpfields(1)%ndimlist(4)
       tzfield%ndimlist(2:) = NMNHDIM_UNUSED
@@ -911,6 +931,9 @@ select case ( idims )
                   tpfields(1)%ndimlist(2) == NMNHDIM_NJ_V .or. tpfields(1)%ndimlist(2) == NMNHDIM_BUDGET_CART_NJ .or. &
                   tpfields(1)%ndimlist(2) == NMNHDIM_BUDGET_CART_NJ_U &
                  .or. tpfields(1)%ndimlist(2) == NMNHDIM_BUDGET_CART_NJ_V ) ) then
+      if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
+                                                   'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
+
       tzfield%ndimlist(1)  = tpfields(1)%ndimlist(1)
       tzfield%ndimlist(2)  = tpfields(1)%ndimlist(2)
       tzfield%ndimlist(3:) = NMNHDIM_UNUSED
@@ -940,6 +963,9 @@ select case ( idims )
        .and.  ( tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL .or. tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL_W &
            .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_CART_LEVEL &
            .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_CART_LEVEL_W ) ) then
+      if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
+                                                   'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
+
       tzfield%ndimlist(1)  = tpfields(1)%ndimlist(1)
       tzfield%ndimlist(2)  = tpfields(1)%ndimlist(3)
       tzfield%ndimlist(3:) = NMNHDIM_UNUSED
@@ -969,6 +995,9 @@ select case ( idims )
        .and.  ( tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL .or. tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL_W &
            .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_CART_LEVEL &
            .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_CART_LEVEL_W ) ) then
+      if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
+                                                   'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
+
       tzfield%ndimlist(1)  = tpfields(1)%ndimlist(2)
       tzfield%ndimlist(2)  = tpfields(1)%ndimlist(3)
       tzfield%ndimlist(3:) = NMNHDIM_UNUSED
@@ -994,6 +1023,9 @@ select case ( idims )
     else if (       tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL     &
        .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME &
                .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) ) then
+      if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
+                                                   'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
+
       tzfield%ndimlist(1)  = tpfields(1)%ndimlist(3)
       tzfield%ndimlist(2)  = tpfields(1)%ndimlist(4)
       tzfield%ndimlist(3:) = NMNHDIM_UNUSED
@@ -1019,6 +1051,9 @@ select case ( idims )
     else if (  (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME &
                .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
          .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_LES_SV       ) then
+      if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
+                                                   'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
+
       tzfield%ndimlist(1)  = tpfields(1)%ndimlist(4)
       tzfield%ndimlist(2)  = tpfields(1)%ndimlist(5)
       tzfield%ndimlist(3:) = NMNHDIM_UNUSED
@@ -1146,6 +1181,9 @@ select case ( idims )
        .and.  ( tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL .or. tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL_W &
            .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_CART_LEVEL &
            .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_CART_LEVEL_W ) ) then
+      if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
+                                                   'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
+
       tzfield%ndimlist(1)  = tpfields(1)%ndimlist(1)
       tzfield%ndimlist(2)  = tpfields(1)%ndimlist(2)
       tzfield%ndimlist(3)  = tpfields(1)%ndimlist(3)
@@ -1181,6 +1219,9 @@ select case ( idims )
        .and.    tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_MASK_TIME &
        .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_MASK_NBUMASK      ) then
       !Correspond to Store_one_budget_rho (MASK)
+      if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
+                                                   'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
+
       tzfield%ndimlist(1)  = tpfields(1)%ndimlist(3)
       tzfield%ndimlist(2)  = tpfields(1)%ndimlist(4)
       tzfield%ndimlist(3)  = tpfields(1)%ndimlist(5)
@@ -1268,6 +1309,9 @@ select case ( idims )
        .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME &
                .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
        .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_LES_SV      ) then
+      if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
+                                                   'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
+
       !Correspond to Les_diachro_sv_new
       tzfield%ndimlist(1)  = tpfields(1)%ndimlist(3)
       tzfield%ndimlist(2)  = tpfields(1)%ndimlist(4)
@@ -1295,6 +1339,9 @@ select case ( idims )
               .and. tpfields(1)%ndimlist(3) == NMNHDIM_SPECTRA_LEVEL                &
               .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
                       .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) ) then
+      if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
+                                                   'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
+
       tzfield%ndimlist(1)  = tpfields(1)%ndimlist(1)
       tzfield%ndimlist(2)  = tpfields(1)%ndimlist(3)
       tzfield%ndimlist(3)  = tpfields(1)%ndimlist(4)
@@ -1321,6 +1368,9 @@ select case ( idims )
               .and. tpfields(1)%ndimlist(3) == NMNHDIM_SPECTRA_LEVEL                &
               .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
                       .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) ) then
+      if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
+                                                   'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
+
       tzfield%ndimlist(1)  = tpfields(1)%ndimlist(2)
       tzfield%ndimlist(2)  = tpfields(1)%ndimlist(3)
       tzfield%ndimlist(3)  = tpfields(1)%ndimlist(4)
@@ -1616,6 +1666,9 @@ select case ( idims )
                .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
        .and. tpfields(1)%ndimlist(5) == NMNHDIM_COMPLEX      ) then
       !Correspond to LES_DIACHRO_SPEC
+      if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
+                                                   'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
+
       tzfield%ndimlist(1)  = tpfields(1)%ndimlist(1)
       tzfield%ndimlist(2)  = tpfields(1)%ndimlist(3)
       tzfield%ndimlist(3)  = tpfields(1)%ndimlist(4)
@@ -1645,6 +1698,9 @@ select case ( idims )
                .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
        .and. tpfields(1)%ndimlist(5) == NMNHDIM_COMPLEX      ) then
       !Correspond to LES_DIACHRO_SPEC
+      if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
+                                                   'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
+
       tzfield%ndimlist(1)  = tpfields(1)%ndimlist(2)
       tzfield%ndimlist(2)  = tpfields(1)%ndimlist(3)
       tzfield%ndimlist(3)  = tpfields(1)%ndimlist(4)
