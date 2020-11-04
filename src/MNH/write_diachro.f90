@@ -87,21 +87,11 @@ subroutine Write_diachro( tpdiafile, tpfields, hgroup, htype,             &
 !*       0.    DECLARATIONS
 !              ------------
 !
-use modd_budget
 use modd_conf,           only: lpack
-use modd_field,          only: NMNHDIM_ONE, NMNHDIM_UNKNOWN, NMNHDIM_BUDGET_LES_MASK, NMNHDIM_FLYER_TIME, &
-                               NMNHDIM_NOTLISTED, NMNHDIM_UNUSED,                                         &
-                               TYPECHAR, TYPEDATE, TYPEINT, TYPEREAL,                                     &
-                               tfield_metadata_base, tfielddata
+use modd_field,          only: tfield_metadata_base
 use modd_io,             only: tfiledata
-use modd_parameters,     only: jphext
-use modd_time,           only: tdtexp, tdtseg
-use modd_time_n,         only: tdtmod
 use modd_type_date,      only: date_time
 !
-use mode_datetime,       only: Datetime_distance
-use mode_io_field_write, only: IO_Field_write, IO_Field_write_box
-use mode_ll
 use mode_menu_diachro,   only: Menu_diachro
 use mode_msg
 !
@@ -124,30 +114,8 @@ REAL,DIMENSION(:,:,:),                               INTENT(IN), OPTIONAL :: PTR
 !
 !*       0.1   Local variables
 !              ---------------
-integer, parameter :: LFITITLELGT = 100
-integer, parameter :: LFIUNITLGT = 100
-integer, parameter :: LFICOMMENTLGT = 100
-
-CHARACTER(LEN=20) :: YCOMMENT
-CHARACTER(LEN=3)  :: YJ
-character(len=LFITITLELGT),   dimension(:), allocatable :: ytitles   !Used to respect LFI fileformat
-character(len=LFIUNITLGT),    dimension(:), allocatable :: yunits    !Used to respect LFI fileformat
-character(len=LFICOMMENTLGT), dimension(:), allocatable :: ycomments !Used to respect LFI fileformat
-INTEGER   ::   ILENG, ILENTITRE, ILENUNITE, ILENCOMMENT
-INTEGER   ::   II, IJ, IK, IT, IN, IP, J, JJ
-INTEGER   ::   INTRAJT, IKTRAJX, IKTRAJY, IKTRAJZ
-INTEGER   ::   ITTRAJX, ITTRAJY, ITTRAJZ
-INTEGER   ::   INTRAJX, INTRAJY, INTRAJZ
-INTEGER   ::   IIMASK, IJMASK, IKMASK, ITMASK, INMASK, IPMASK
-INTEGER   ::   ICOMPX, ICOMPY, ICOMPZ
-INTEGER   ::   IIMAX_ll, IJMAX_ll ! size of the physical global domain
-integer   ::   ji
-INTEGER,DIMENSION(:),ALLOCATABLE :: ITABCHAR
-logical   :: gicp, gjcp, gkcp
-LOGICAL   ::   GPACK
-real, dimension(:,:), allocatable :: ztimes
-real, dimension(:,:), allocatable :: zdatime
-TYPE(TFIELDDATA)  :: TZFIELD
+logical :: gicp, gjcp, gkcp
+logical :: gpack
 !------------------------------------------------------------------------------
 
 call Print_msg( NVERB_DEBUG, 'BUD', 'Write_diachro', 'called' )
@@ -170,13 +138,92 @@ else
   gkcp = .false.
 end if
 
-GPACK=LPACK
-LPACK=.FALSE.
+gpack = lpack
+lpack = .false.
+
+if ( tpdiafile%cformat == 'LFI' .or. tpdiafile%cformat == 'LFICDF4' ) &
+  call Write_diachro_lfi( tpdiafile, tpfields, hgroup, htype, tpdates, pvar, gicp, gjcp, gkcp, kil, kih, kjl, kjh, kkl, kkh, &
+                          ptrajx, ptrajy, ptrajz )
+
+#ifdef MNH_IOCDF4
+if ( tpdiafile%cformat == 'NETCDF4' .or. tpdiafile%cformat == 'LFICDF4' ) &
+  call Write_diachro_nc4( tpdiafile, tpfields, hgroup, htype, tpdates, pvar, gicp, gjcp, gkcp, kil, kih, kjl, kjh, kkl, kkh )
+#endif
+
+call Menu_diachro( tpdiafile, hgroup )
+lpack = gpack
+
+end subroutine Write_diachro
+
+!-----------------------------------------------------------------------------
+subroutine Write_diachro_lfi( tpdiafile, tpfields, hgroup, htype, tpdates, pvar, oicp, ojcp, okcp, kil, kih, kjl, kjh, kkl, kkh, &
+                              ptrajx, ptrajy, ptrajz )
+
+use modd_budget,         only: nbumask, nbuwrnb
+use modd_field,          only: NMNHDIM_ONE, NMNHDIM_UNKNOWN, NMNHDIM_FLYER_TIME, NMNHDIM_NOTLISTED, NMNHDIM_UNUSED, &
+                               TYPECHAR, TYPEINT, TYPEREAL,                                                         &
+                               tfield_metadata_base, tfielddata
+use modd_io,             only: tfiledata
+use modd_parameters,     only: jphext
+use modd_time,           only: tdtexp, tdtseg
+use modd_time_n,         only: tdtmod
+use modd_type_date,      only: date_time
+
+use mode_datetime,       only: Datetime_distance
+use mode_io_field_write, only: IO_Field_write, IO_Field_write_box
+use mode_msg
+use mode_tools_ll,       only: Get_globaldims_ll
+
+
+type(tfiledata),                                     intent(in)           :: tpdiafile        ! File to write
+class(tfield_metadata_base), dimension(:),           intent(in)           :: tpfields
+character(len=*),                                    intent(in)           :: hgroup, htype
+type(date_time),             dimension(:),           intent(in)           :: tpdates
+real,                        dimension(:,:,:,:,:,:), intent(in)           :: pvar
+logical,                                             intent(in)           :: oicp, ojcp, okcp
+integer,                                             intent(in), optional :: kil, kih
+integer,                                             intent(in), optional :: kjl, kjh
+integer,                                             intent(in), optional :: kkl, kkh
+REAL,DIMENSION(:,:,:),                               INTENT(IN), OPTIONAL :: PTRAJX
+REAL,DIMENSION(:,:,:),                               INTENT(IN), OPTIONAL :: PTRAJY
+REAL,DIMENSION(:,:,:),                               INTENT(IN), OPTIONAL :: PTRAJZ
+
+integer, parameter :: LFITITLELGT = 100
+integer, parameter :: LFIUNITLGT = 100
+integer, parameter :: LFICOMMENTLGT = 100
+
+CHARACTER(LEN=20) :: YCOMMENT
+CHARACTER(LEN=3)  :: YJ
+character(len=LFITITLELGT),   dimension(:), allocatable :: ytitles   !Used to respect LFI fileformat
+character(len=LFIUNITLGT),    dimension(:), allocatable :: yunits    !Used to respect LFI fileformat
+character(len=LFICOMMENTLGT), dimension(:), allocatable :: ycomments !Used to respect LFI fileformat
+INTEGER   ::   ILENG, ILENTITRE, ILENUNITE, ILENCOMMENT
+INTEGER   ::   II, IJ, IK, IT, IN, IP, J, JJ
+INTEGER   ::   INTRAJT, IKTRAJX, IKTRAJY, IKTRAJZ
+INTEGER   ::   ITTRAJX, ITTRAJY, ITTRAJZ
+INTEGER   ::   INTRAJX, INTRAJY, INTRAJZ
+INTEGER   ::   IIMASK, IJMASK, IKMASK, ITMASK, INMASK, IPMASK
+INTEGER   ::   ICOMPX, ICOMPY, ICOMPZ
+INTEGER   ::   IIMAX_ll, IJMAX_ll ! size of the physical global domain
+integer   ::   ji
+INTEGER,DIMENSION(:),ALLOCATABLE :: ITABCHAR
+real, dimension(:,:), allocatable :: ztimes
+real, dimension(:,:), allocatable :: zdatime
+TYPE(TFIELDDATA) :: TZFIELD
+type(tfiledata)  :: tzfile
+
+call Print_msg( NVERB_DEBUG, 'BUD', 'Write_diachro_lfi', 'called' )
+
+tzfile = tpdiafile
+
+!Write only in LFI files
+tzfile%cformat = 'LFI'
+
 YCOMMENT='NOTHING'
-!
+
 II = SIZE(PVAR,1)
 IJ = SIZE(PVAR,2)
-IF(HTYPE == 'CART' .AND. .NOT. GICP .AND. .NOT. GJCP) THEN
+IF(HTYPE == 'CART' .AND. .NOT. OICP .AND. .NOT. OJCP) THEN
                               !for parallel execution, PVAR is distributed on several proc
   II=KIH-KIL+1
   IJ=KJH-KJL+1
@@ -225,22 +272,21 @@ ILENUNITE   = LFIUNITLGT
 ILENCOMMENT = LFICOMMENTLGT
 
 ICOMPX=0; ICOMPY=0; ICOMPZ=0
-IF ( GICP ) THEN
+IF ( OICP ) THEN
   ICOMPX = 1
 ELSE
   ICOMPX = 0
 ENDIF
-IF ( GJCP ) THEN
+IF ( OJCP ) THEN
   ICOMPY = 1
 ELSE
   ICOMPY = 0
 ENDIF
-IF ( GKCP ) THEN
+IF ( OKCP ) THEN
   ICOMPZ=1
 ELSE
   ICOMPZ = 0
 ENDIF
-!
 !
 ! 1er enregistrement TYPE
 !
@@ -254,7 +300,7 @@ TZFIELD%NGRID      = tpfields(1)%ngrid
 TZFIELD%NTYPE      = TYPECHAR
 TZFIELD%NDIMS      = 0
 TZFIELD%LTIMEDEP   = .FALSE.
-CALL IO_Field_write(TPDIAFILE,TZFIELD,HTYPE)
+CALL IO_Field_write(tzfile,TZFIELD,HTYPE)
 !
 ! 2eme  enregistrement DIMENSIONS des MATRICES et LONGUEUR des TABLEAUX de CARACTERES et FLAGS de COMPRESSION sur les DIFFERENTS AXES
 !
@@ -299,7 +345,7 @@ SELECT CASE(HTYPE)
     ITABCHAR(29)=IIMASK; ITABCHAR(30)=IJMASK
     ITABCHAR(31)=IKMASK; ITABCHAR(32)=ITMASK
     ITABCHAR(33)=INMASK; ITABCHAR(34)=IPMASK
-    CALL IO_Field_write(TPDIAFILE,TZFIELD,ITABCHAR)
+    CALL IO_Field_write(tzfile,TZFIELD,ITABCHAR)
     DEALLOCATE(ITABCHAR)
   CASE DEFAULT
     ILENG = 25
@@ -317,7 +363,7 @@ SELECT CASE(HTYPE)
     ITABCHAR(20)=IIMASK; ITABCHAR(21)=IJMASK
     ITABCHAR(22)=IKMASK; ITABCHAR(23)=ITMASK
     ITABCHAR(24)=INMASK; ITABCHAR(25)=IPMASK
-    CALL IO_Field_write(TPDIAFILE,TZFIELD,ITABCHAR)
+    CALL IO_Field_write(tzfile,TZFIELD,ITABCHAR)
     DEALLOCATE(ITABCHAR)
 END SELECT
 !
@@ -335,7 +381,7 @@ TZFIELD%NDIMS      = 1
 TZFIELD%LTIMEDEP   = .FALSE.
 allocate( ytitles( ip ) )
 ytitles(:) = tpfields(1 : ip)%cmnhname
-CALL IO_Field_write(TPDIAFILE,TZFIELD,ytitles(:))
+CALL IO_Field_write(tzfile,TZFIELD,ytitles(:))
 deallocate( ytitles )
 !
 ! 4eme enregistrement UNITE
@@ -352,7 +398,7 @@ TZFIELD%NDIMS      = 1
 TZFIELD%LTIMEDEP   = .FALSE.
 allocate( yunits( ip ) )
 yunits(:) = tpfields(1 : ip)%cunits
-CALL IO_Field_write(TPDIAFILE,TZFIELD,yunits(:))
+CALL IO_Field_write(tzfile,TZFIELD,yunits(:))
 deallocate( yunits )
 !
 ! 5eme enregistrement COMMENT
@@ -369,7 +415,7 @@ TZFIELD%NDIMS      = 1
 TZFIELD%LTIMEDEP   = .FALSE.
 allocate( ycomments( ip ) )
 ycomments(:) = tpfields(1 : ip)%ccomment
-CALL IO_Field_write(TPDIAFILE,TZFIELD,ycomments(:))
+CALL IO_Field_write(tzfile,TZFIELD,ycomments(:))
 deallocate( ycomments )
 !
 ! 6eme enregistrement PVAR
@@ -395,7 +441,7 @@ DO J = 1,IP
   ELSE IF(J >= 100 .AND. J < 1000) THEN
           WRITE(YJ,'(I3)')J
   ENDIF
-  IF(HTYPE == 'CART' .AND. .NOT. GICP .AND. .NOT. GJCP) THEN
+  IF(HTYPE == 'CART' .AND. .NOT. oicp .AND. .NOT. ojcp) THEN
     TZFIELD%CMNHNAME   = TRIM(HGROUP)//'.PROC'//YJ
     TZFIELD%CSTDNAME   = ''
     TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
@@ -407,7 +453,7 @@ DO J = 1,IP
     TZFIELD%NDIMS      = 5
     TZFIELD%LTIMEDEP   = .FALSE.
 
-    CALL IO_Field_write_BOX(TPDIAFILE,TZFIELD,'BUDGET',PVAR(:,:,:,:,:,J), &
+    CALL IO_Field_write_BOX(tzfile,TZFIELD,'BUDGET',PVAR(:,:,:,:,:,J), &
                             KIL+JPHEXT,KIH+JPHEXT,KJL+JPHEXT,KJH+JPHEXT)
   ELSE
     TZFIELD%CMNHNAME   = TRIM(HGROUP)//'.PROC'//YJ
@@ -421,7 +467,7 @@ DO J = 1,IP
     TZFIELD%NDIMS      = 5
     TZFIELD%LTIMEDEP   = .FALSE.
 
-    CALL IO_Field_write(TPDIAFILE,TZFIELD,PVAR(:,:,:,:,:,J))
+    CALL IO_Field_write(tzfile,TZFIELD,PVAR(:,:,:,:,:,J))
   ENDIF
   tzfield%ndimlist(:)   = NMNHDIM_UNKNOWN
 ENDDO
@@ -454,7 +500,7 @@ do ji=1,size(tpdates)
   call Datetime_distance( tdtexp, tpdates(ji ), ztimes(ji, 1 ) )
 end do
 
-call IO_Field_write( tpdiafile, tzfield, ztimes )
+call IO_Field_write( tzfile, tzfield, ztimes )
 
 !Reset ndimlist
 tzfield%ndimlist(:) = NMNHDIM_UNKNOWN
@@ -477,7 +523,7 @@ IF(PRESENT(PTRAJX))THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .FALSE.
-  CALL IO_Field_write(TPDIAFILE,TZFIELD,PTRAJX)
+  CALL IO_Field_write(tzfile,TZFIELD,PTRAJX)
 ENDIF
 !
 ! 9eme enregistrement TRAJY
@@ -493,7 +539,7 @@ IF(PRESENT(PTRAJY))THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .FALSE.
-  CALL IO_Field_write(TPDIAFILE,TZFIELD,PTRAJY)
+  CALL IO_Field_write(tzfile,TZFIELD,PTRAJY)
 ENDIF
 !
 ! 10eme enregistrement TRAJZ
@@ -509,7 +555,7 @@ IF(PRESENT(PTRAJZ))THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .FALSE.
-  CALL IO_Field_write(TPDIAFILE,TZFIELD,PTRAJZ)
+  CALL IO_Field_write(tzfile,TZFIELD,PTRAJZ)
 ENDIF
 !
 ! 11eme enregistrement PDATIME
@@ -545,20 +591,11 @@ zdatime(14, : ) = tpdates(:)%tdate%month
 zdatime(15, : ) = tpdates(:)%tdate%day
 zdatime(16, : ) = tpdates(:)%time
 
-call IO_Field_write( tpdiafile, tzfield, zdatime )
+call IO_Field_write( tzfile, tzfield, zdatime )
 
 deallocate( zdatime )
-!
-#ifdef MNH_IOCDF4
-if ( tpdiafile%cformat == 'NETCDF4' .or. tpdiafile%cformat == 'LFICDF4' ) &
-  call Write_diachro_nc4( tpdiafile, tpfields, hgroup, htype, tpdates, pvar, gicp, gjcp, gkcp, kil, kih, kjl, kjh, kkl, kkh )
-#endif
 
-CALL MENU_DIACHRO(TPDIAFILE,HGROUP)
-LPACK=GPACK
-
-end subroutine Write_diachro
-
+end subroutine Write_diachro_lfi
 !-----------------------------------------------------------------------------
 #ifdef MNH_IOCDF4
 subroutine Write_diachro_nc4( tpdiafile, tpfields, hgroup, htype, tpdates, pvar, oicp, ojcp, okcp, kil, kih, kjl, kjh, kkl, kkh )
