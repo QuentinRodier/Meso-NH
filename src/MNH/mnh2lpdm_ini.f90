@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------------
 !     ######spl
         SUBROUTINE MNH2LPDM_INI(TPFILE1,TPFILE2,TPLOGFILE,TPGRIDFILE,TPDATEFILE)
 !--------------------------------------------------------------------------
@@ -19,7 +20,8 @@
 ! TPDATEFILE      Date file
 !
 ! Modifications:
-!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 05/11/2020: correct I/O of MNH2LPDM
 !--------------------------------------------------------------------------
 !
 !
@@ -41,6 +43,7 @@ USE MODD_TIME
 USE MODD_TIME_n
 !
 USE MODE_DATETIME
+use mode_field, only: tfielddata, TYPEREAL
 USE MODE_FM
 USE MODE_FMREAD
 USE MODE_GRIDPROJ
@@ -80,6 +83,7 @@ INTEGER, DIMENSION(:),   ALLOCATABLE   :: TAB1D
 INTEGER, DIMENSION(:,:), ALLOCATABLE   :: TAB2D
 TYPE(DATE_TIME)         :: TZDTCUR1,TZDTCUR2,TZDTEXP1
 INTEGER                :: IFDAT,IFGRI,IFLOG
+type(tfielddata)       :: tzfield
 !
 !
 !
@@ -203,8 +207,15 @@ CALL IO_READ_FIELD(TPFILE1,'ZS',XZS)
 !
 !*	2.8 Rugosite Z0. 
 !
-!PW:TODO: where is this field written? Warning: not in fieldlist => won't be found
-CALL IO_READ_FIELD(TPFILE1,'Z0',XZ0)
+tzfield%cmnhname  = 'Z0'
+tzfield%clongname = ''
+tzfield%cunits    = 'm'
+tzfield%cdir      = 'XY'
+tzfield%ccomment  = 'X_Y_Z0'
+tzfield%ngrid     = 4
+tzfield%ntype     = TYPEREAL
+tzfield%ndims     = 2
+CALL IO_READ_FIELD(TPFILE1,tzfield,XZ0)
 !
 XXPTSOMNH=XXHAT(1)+(XXHAT(2)-XXHAT(1))/2
 XYPTSOMNH=XYHAT(1)+(XYHAT(2)-XYHAT(1))/2

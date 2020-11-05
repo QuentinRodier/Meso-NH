@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 2002-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------------
 !     ######spl
         PROGRAM MNH2LPDM
 !	##############
@@ -12,8 +13,8 @@
 !	Creation :   16.07.2002
 !       Modification  : 07.01.2006 (T.LAUVAUX, adaptation LPDM)
 !       Modification  : 04.01.2009 (F. BONNARDOT, DP/SER/ENV )
-!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 05/11/2020: correct I/O of MNH2LPDM
 !-----------------------------------------------------------------------------
 !
 !
@@ -24,17 +25,22 @@
 !*	0.1 Modules.
 !
 USE MODD_CONF,             ONLY : CPROGRAM
-USE MODD_IO_ll,            ONLY : TFILEDATA,TPTR2FILE
+USE MODD_IO_ll,            ONLY : TFILEDATA, TFILE_OUTPUTLISTING, TPTR2FILE
+use modd_lunit
+use modd_lunit_n
 USE MODD_MNH2LPDM
 !
+USE MODE_FIELD,            ONLY: INI_FIELD_LIST, INI_FIELD_SCALARS
 USE MODE_FM,               ONLY: IO_FILE_OPEN_ll,IO_FILE_CLOSE_ll
 USE MODE_IO_ll,            ONLY: INITIO_ll,SET_CONFIO_ll
 USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
 USE MODE_MODELN_HANDLER
 USE MODE_POS
 !
+USE MODI_INI_CST
 USE MODI_MNH2LPDM_ECH
 USE MODI_MNH2LPDM_INI
+USE MODI_VERSION
 !
 USE MODN_CONFIO
 !
@@ -65,6 +71,19 @@ TYPE(TFILEDATA),POINTER :: TZNMLFILE   => NULL() ! Namelist file
 !
 CPROGRAM='M2LPDM'
 CALL GOTO_MODEL(1)
+CALL VERSION()
+CALL INITIO_ll()
+CALL INI_CST()
+CALL INI_FIELD_LIST(1)
+CALL INI_FIELD_SCALARS()
+!
+CLUOUT  = 'OUTPUT_LISTING1'
+CLUOUT0 = CLUOUT
+CALL IO_FILE_ADD2LIST(TLUOUT0,CLUOUT0,'OUTPUTLISTING','WRITE')
+CALL IO_FILE_OPEN_ll(TLUOUT0)
+!Set output files for PRINT_MSG
+TLUOUT              => TLUOUT0
+TFILE_OUTPUTLISTING => TLUOUT0
 !
 !*	1.1 Variables generales.
 !
@@ -73,7 +92,7 @@ CALL GOTO_MODEL(1)
 !
 !*	1.2 Initialisation routines LL.
 !
-CALL INITIO_ll()
+! CALL INITIO_ll()
 !
 !
 !*	1.3 Ouverture du fichier log.
