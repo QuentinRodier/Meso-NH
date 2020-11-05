@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     #######################
@@ -347,8 +347,7 @@ USE MODD_LUNIT,     ONLY:  TLUOUT0, TOUTDATAFILE
 USE MODD_LUNIT_n
 USE MODD_IO_ll,     ONLY: NIO_VERB,NVERB_DEBUG,TFILE_DUMMY,TFILE_OUTPUTLISTING
 USE MODD_CONF_n
-USE MODD_NSV,      ONLY : NSV,NSV_CHEM,           &
-                          NSV_DSTEND, NSV_DSTBEG
+USE MODD_NSV,       ONLY: NSV
 !
 USE MODN_BLANK
 !

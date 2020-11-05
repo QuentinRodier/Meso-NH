@@ -297,8 +297,6 @@ REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZCONCT
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZCHEMT
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZCHEMTI
 !
-INTEGER :: N_VAR_LIMA
-!
 !-------------------------------------------------------------------------------
 !
 !*      0.   INITIALISATION
@@ -938,7 +936,6 @@ END IF
 !            ------------------------------------------------
 !
 IF (NSV_A(KMI) > 0) THEN
-  ! Users scalar variables
   DO JSV = 1,NSV_A(KMI)
     CALL COMPUTE_LB_M(PLBXSVM(:,:,:,JSV),PLBYSVM(:,:,:,JSV),  &
          PLBXSVS(:,:,:,JSV),PLBYSVS(:,:,:,JSV),ZTSVT(:,:,:,JSV))
