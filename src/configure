@@ -159,7 +159,21 @@ export ARMCI_SHR_BUF_METHOD=COPY
 ;;
 		esac
               ;;
-
+'Linux belenos'*|'Linux taranis'*)
+                export     ARCH=${ARCH:-LXifort}
+                export  VER_MPI=${VER_MPI:-MPIAUTO}
+                export OPTLEVEL=${OPTLEVEL:-O3}
+                export MVWORK=${MVWORK:-NO}
+                export VER_CDF=${VER_CDF:-CDFAUTO}
+                export NEED_NCARG=${NEED_NCARG:-NO}
+                export NEED_TOOLS=YES
+                export MNHENV=${MNHENV:-"
+module purge
+module load intel/2019.5.281
+module load openmpi/icc/4.0.2.2
+unset CC CXX
+"}
+              ;;
 'Linux beaufix'*|'Linux prolix'*)
                 export     ARCH=${ARCH:-LXifort}
                 export  VER_MPI=${VER_MPI:-MPIINTEL}
