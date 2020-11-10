@@ -21,16 +21,16 @@
 !  P. Wautelet 25/06/2020: remove workaround for netCDF bug (see 19/09/2019)
 !  P. Wautelet 14/09/2020: IO_Coordvar_write_nc4: do not store 'time' coordinate in diachronic files
 !  P. Wautelet 22/09/2020: add ldimreduced field to allow reduction in the number of dimensions of fields (used by 2D simulations)
+!  P. Wautelet 10/11/2020: new data structures for netCDF dimensions
 !-----------------------------------------------------------------
 #ifdef MNH_IOCDF4
 module mode_io_write_nc4
 
 use modd_field,        only: tfielddata
 use modd_io,           only: gsmonoproc, tfiledata
-use modd_netcdf,       only: dimcdf, iocdf
 use modd_precision,    only: CDFINT, MNHINT_NF90, MNHREAL_MPI, MNHREAL_NF90
 
-use mode_io_tools_nc4, only: IO_Mnhname_clean, IO_Vdims_fill_nc4, IO_Dimcdf_get_nc4, IO_Strdimid_get_nc4, IO_Err_handle_nc4
+use mode_io_tools_nc4, only: IO_Mnhname_clean, IO_Vdims_fill_nc4, IO_Dim_find_create_nc4, IO_Strdimid_get_nc4, IO_Err_handle_nc4
 use mode_msg
 
 use NETCDF,            only: NF90_CHAR, NF90_FLOAT, NF90_INT1,                                    &
@@ -159,7 +159,7 @@ SUBROUTINE IO_Field_attr_write_nc4(TPFILE,TPFIELD,KVARID,OEXISTED,KSHAPE,HCALEND
 !
 USE MODD_CONF,   ONLY: CPROGRAM, LCARTESIAN
 USE MODD_CONF_n, ONLY: CSTORAGE_TYPE
-use modd_field,  only: TYPEINT, TYPEREAL
+use modd_field,  only: NMNHDIM_ARAKAWA, TYPEINT, TYPEREAL
 !
 TYPE(TFILEDATA),                              INTENT(IN) :: TPFILE
 TYPE(TFIELDDATA),                             INTENT(IN) :: TPFIELD
@@ -252,7 +252,8 @@ IF (.NOT.GISCOORD) THEN
   !1D: no direct correspondance with latitude(_x)/longitude(_x) 2D variables => nothing to do
   IF (.NOT.LCARTESIAN .AND. TPFIELD%NDIMS>1 .AND. TPFIELD%NGRID/=0) THEN
     IF (TPFIELD%CDIR=='XY') THEN
-      IF (KSHAPE(1)==TPFILE%TNCCOORDS(1,TPFIELD%NGRID)%TDIM%LEN .AND. KSHAPE(2)==TPFILE%TNCCOORDS(2,TPFIELD%NGRID)%TDIM%LEN ) THEN
+      if (       kshape(1) == tpfile%tncdims%tdims( NMNHDIM_ARAKAWA(tpfield%ngrid,1) )%nlen &
+           .and. kshape(2) == tpfile%tncdims%tdims( NMNHDIM_ARAKAWA(tpfield%ngrid,2) )%nlen ) then
         SELECT CASE(TPFIELD%NGRID)
           CASE (0) !Not on Arakawa grid
             !Nothing to do
@@ -837,9 +838,11 @@ END SUBROUTINE IO_Field_write_nc4_X6
 SUBROUTINE IO_Field_write_nc4_N0(TPFILE,TPFIELD,KFIELD,KRESP)
 !
 #if 0
+use modd_field,          only: NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_LEVEL
 USE MODD_IO,             ONLY: LPACK,L1D,L2D
 USE MODD_PARAMETERS_ll,  ONLY: JPHEXT, JPVEXT
 #else
+use modd_field,          only: NMNHDIM_LEVEL
 USE MODD_PARAMETERS_ll,  ONLY: JPVEXT
 #endif
 !
@@ -848,6 +851,7 @@ TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
 INTEGER,               INTENT(IN) :: KFIELD
 INTEGER,               INTENT(OUT):: KRESP
 !
+integer                                         :: iidx
 INTEGER(KIND=CDFINT)                            :: STATUS
 INTEGER(KIND=CDFINT)                            :: INCID
 CHARACTER(LEN=LEN(TPFIELD%CMNHNAME))            :: YVARNAME
@@ -855,7 +859,6 @@ INTEGER(KIND=CDFINT)                            :: IVARID
 INTEGER(KIND=CDFINT), DIMENSION(:), ALLOCATABLE :: IVDIMS
 INTEGER                                         :: IRESP
 LOGICAL                                         :: GEXISTED !True if variable was already defined
-TYPE(IOCDF), POINTER                            :: TZIOCDF
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_N0',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -898,19 +901,20 @@ IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_N0',
 ! /!\ Can only work if IMAX, JMAX or KMAX are written before any array
 !
 #if 0
-IF (YVARNAME == 'IMAX' .AND. .NOT. ASSOCIATED(TPFILE%TNCDIMS%DIM_NI)) TPFILE%TNCDIMS%DIM_NI=>IO_Dimcdf_get_nc4(TPFILE%TNCDIMS,KFIELD+2*JPHEXT,'X')
-IF (YVARNAME == 'JMAX' .AND. .NOT. ASSOCIATED(TPFILE%TNCDIMS%DIM_NJ)) THEN
-   IF (LPACK .AND. L2D) THEN
-      TPFILE%TNCDIMS%DIM_NJ=>IO_Dimcdf_get_nc4(TPFILE, 1,'Y')
-   ELSE
-      TPFILE%TNCDIMS%DIM_NJ=>IO_Dimcdf_get_nc4(TPFILE, KFIELD+2*JPHEXT, 'Y')
-   END IF
-END IF
+if ( yvarname == 'IMAX' .and. tpfile%tncdims%tdims(NMNHDIM_NI)%nid == -1 ) then
+  call IO_Dim_find_create_nc4( tpfile, kfield + 2 * jphext, iidx, 'X' )
+end if
+if ( yvarname == 'JMAX' .and. tpfile%tncdims%tdims(NMNHDIM_NJ)%nid == -1 ) then
+  if ( lpack .and. l2d ) then
+    call IO_Dim_find_create_nc4( tpfile, 1,                   iidx, 'Y' )
+  else
+    call IO_Dim_find_create_nc4( tpfile, kfield + 2 * jphext, iidx, 'Z' )
+  end if
+end if
 #endif
-IF (YVARNAME == 'KMAX' .AND. .NOT. ASSOCIATED(TPFILE%TNCDIMS%DIM_LEVEL)) THEN
-  TZIOCDF => TPFILE%TNCDIMS
-  TZIOCDF%DIM_LEVEL=>IO_Dimcdf_get_nc4(TPFILE,INT(KFIELD+2*JPVEXT,KIND=CDFINT),'Z')
-END IF
+if ( yvarname == 'KMAX' .and. tpfile%tncdims%tdims(NMNHDIM_LEVEL)%nid == -1 ) then
+  call IO_Dim_find_create_nc4( tpfile, kfield + 2 * JPVEXT, iidx, 'Z' )
+end if
 
 KRESP = IRESP
 END SUBROUTINE IO_Field_write_nc4_N0
@@ -1625,10 +1629,12 @@ END SUBROUTINE IO_Field_write_nc4_T1
 SUBROUTINE IO_Coordvar_write_nc4(TPFILE,HPROGRAM_ORIG)
 USE MODD_CONF,       ONLY: CPROGRAM, LCARTESIAN
 USE MODD_CONF_n,     ONLY: CSTORAGE_TYPE
-use modd_field,      only: tfieldlist
+use modd_field,      only: NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NI_U, NMNHDIM_NJ_U, NMNHDIM_NI_V, NMNHDIM_NJ_V, &
+                           NMNHDIM_LEVEL, NMNHDIM_LEVEL_W, NMNHDIM_TIME,                                   &
+                           tfieldlist
 USE MODD_GRID,       ONLY: XLATORI, XLONORI
 USE MODD_GRID_n,     ONLY: LSLEVE, XXHAT, XYHAT, XZHAT
-use modd_netcdf,     only: dimcdf
+use modd_netcdf,     only: tdimnc
 USE MODD_PARAMETERS, ONLY: JPHEXT, JPVEXT
 
 use mode_field,      only: Find_field_id_from_mnhname
@@ -1650,8 +1656,7 @@ LOGICAL,POINTER                 :: GSLEVE
 REAL,DIMENSION(:),POINTER       :: ZXHAT, ZYHAT, ZZHAT
 REAL,DIMENSION(:),ALLOCATABLE   :: ZXHATM, ZYHATM,ZZHATM !Coordinates at mass points in the transformed space
 REAL,DIMENSION(:,:),POINTER     :: ZLAT, ZLON
-type(dimcdf), pointer           :: tzdim_ni, tzdim_nj, tzdim_ni_u, tzdim_nj_u, tzdim_ni_v, tzdim_nj_v
-TYPE(IOCDF),  POINTER           :: PIOCDF
+type(tdimnc), pointer           :: tzdim_ni, tzdim_nj, tzdim_ni_u, tzdim_nj_u, tzdim_ni_v, tzdim_nj_v
 
 !These variables are save: they are populated once for the master Z-split file and freed after the last file has been written
 real, dimension(:),   pointer, save :: zxhat_glob  => null(), zyhat_glob  => null()
@@ -1666,8 +1671,6 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Coordvar_write_nc4','called for '//TRIM(TPFI
 ZXHAT => NULL()
 ZYHAT => NULL()
 ZZHAT => NULL()
-
-PIOCDF => TPFILE%TNCDIMS
 
 GCHANGEMODEL = .FALSE.
 
@@ -1719,22 +1722,21 @@ ELSE
   YSTDNAMEPREFIX = 'projection'
 ENDIF
 
-if(associated(piocdf)) then
-tzdim_ni   => piocdf%dim_ni
-tzdim_nj   => piocdf%dim_nj
-tzdim_ni_u => piocdf%dim_ni_u
-tzdim_nj_u => piocdf%dim_nj_u
-tzdim_ni_v => piocdf%dim_ni_v
-tzdim_nj_v => piocdf%dim_nj_v
+if ( Associated( tpfile%tncdims ) ) then
+  tzdim_ni   => tpfile%tncdims%tdims(NMNHDIM_NI)
+  tzdim_nj   => tpfile%tncdims%tdims(NMNHDIM_NJ)
+  tzdim_ni_u => tpfile%tncdims%tdims(NMNHDIM_NI_U)
+  tzdim_nj_u => tpfile%tncdims%tdims(NMNHDIM_NJ_U)
+  tzdim_ni_v => tpfile%tncdims%tdims(NMNHDIM_NI_V)
+  tzdim_nj_v => tpfile%tncdims%tdims(NMNHDIM_NJ_V)
 else
-tzdim_ni   => null()
-tzdim_nj   => null()
-tzdim_ni_u => null()
-tzdim_nj_u => null()
-tzdim_ni_v => null()
-tzdim_nj_v => null()
+  tzdim_ni   => Null()
+  tzdim_nj   => Null()
+  tzdim_ni_u => Null()
+  tzdim_nj_u => Null()
+  tzdim_ni_v => Null()
+  tzdim_nj_v => Null()
 end if
-
 
 !If the file is a Z-split subfile, coordinates are already collected
 if ( .not. associated( tpfile%tmainfile ) ) then
@@ -1809,10 +1811,10 @@ IF (TPFILE%LMASTER) THEN !vertical coordinates in the transformed space are the 
     ZZHATM(1:IKU-1) = 0.5 * (ZZHAT(2:IKU)+ZZHAT(1:IKU-1))
     ZZHATM(IKU)     = 2.* ZZHAT(IKU) - ZZHATM(IKU-1)
     !
-    CALL WRITE_VER_COORD(PIOCDF%DIM_LEVEL,  'position z in the transformed space',              '', &
+    CALL WRITE_VER_COORD(tpfile%tncdims%tdims(NMNHDIM_LEVEL),  'position z in the transformed space',              '', &
                          'altitude',               0., JPVEXT,JPVEXT,ZZHATM)
     !
-    CALL WRITE_VER_COORD(PIOCDF%DIM_LEVEL_W,'position z in the transformed space at w location','', &
+    CALL WRITE_VER_COORD(tpfile%tncdims%tdims(NMNHDIM_LEVEL_W),'position z in the transformed space at w location','', &
                          'altitude_at_w_location',-0.5,JPVEXT,0,     ZZHAT)
     !
     DEALLOCATE(ZZHATM)
@@ -1824,7 +1826,7 @@ IF (TPFILE%LMASTER) THEN !Time scale is the same on all processes
   IF (TRIM(YPROGRAM)/='PGD' .AND. TRIM(YPROGRAM)/='NESPGD' .AND. TRIM(YPROGRAM)/='ZOOMPG' &
       .AND. .NOT.(TRIM(YPROGRAM)=='REAL' .AND. CSTORAGE_TYPE=='SU') ) THEN !condition to detect PREP_SURFEX
     if ( tpfile%ctype /= 'MNHDIACHRONIC' ) &
-      CALL WRITE_TIME_COORD(PIOCDF%DIMTIME)
+      CALL WRITE_TIME_COORD(tpfile%tncdims%tdims(NMNHDIM_TIME))
   END IF
 END IF
 
@@ -1931,7 +1933,7 @@ subroutine Write_hor_coord1d(TDIM,HLONGNAME,HSTDNAME,HAXIS,PSHIFT,KBOUNDLOW,KBOU
   USE MODE_ALLOCBUFFER_ll, ONLY: ALLOCBUFFER_ll
   USE MODE_GATHER_ll,      ONLY: GATHER_XXFIELD
 
-  TYPE(DIMCDF), POINTER,      INTENT(IN) :: TDIM
+  TYPE(tdimnc), POINTER,      INTENT(IN) :: TDIM
   CHARACTER(LEN=*),           INTENT(IN) :: HLONGNAME
   CHARACTER(LEN=*),           INTENT(IN) :: HSTDNAME
   CHARACTER(LEN=*),           INTENT(IN) :: HAXIS
@@ -1949,9 +1951,9 @@ subroutine Write_hor_coord1d(TDIM,HLONGNAME,HSTDNAME,HAXIS,PSHIFT,KBOUNDLOW,KBOU
   INTEGER(KIND=CDFINT)          :: ISTATUS
 
   IF (TPFILE%LMASTER) THEN
-    ISIZE = TDIM%LEN
-    YVARNAME = TRIM(TDIM%NAME)
-    IVDIM = TDIM%ID
+    isize    = tdim%nlen
+    yvarname = Trim( tdim%cname )
+    ivdim    = tdim%nid
 
     ISTATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
     IF (ISTATUS /= NF90_NOERR) THEN
@@ -2009,7 +2011,7 @@ end subroutine Write_hor_coord2d
 
 
 SUBROUTINE WRITE_VER_COORD(TDIM,HLONGNAME,HSTDNAME,HCOMPNAME,PSHIFT,KBOUNDLOW,KBOUNDHIGH,PCOORDS)
-  TYPE(DIMCDF), POINTER, INTENT(IN) :: TDIM
+  TYPE(tdimnc), POINTER, INTENT(IN) :: TDIM
   CHARACTER(LEN=*),      INTENT(IN) :: HLONGNAME
   CHARACTER(LEN=*),      INTENT(IN) :: HSTDNAME
   CHARACTER(LEN=*),      INTENT(IN) :: HCOMPNAME
@@ -2027,9 +2029,9 @@ SUBROUTINE WRITE_VER_COORD(TDIM,HLONGNAME,HSTDNAME,HCOMPNAME,PSHIFT,KBOUNDLOW,KB
   INTEGER(KIND=CDFINT)          :: IVDIM
   INTEGER(KIND=CDFINT)          :: STATUS
 
-  ISIZE = TDIM%LEN
-  YVARNAME = TRIM(TDIM%NAME)
-  IVDIM = TDIM%ID
+  isize    = tdim%nlen
+  yvarname = Trim( tdim%cname )
+  ivdim    = tdim%nid
 
   STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
   IF (STATUS /= NF90_NOERR) THEN
@@ -2097,7 +2099,7 @@ SUBROUTINE WRITE_TIME_COORD(TDIM)
   use mode_field,      only: Find_field_id_from_mnhname
   USE MODE_GRIDPROJ
 
-  TYPE(DIMCDF), POINTER, INTENT(IN) :: TDIM
+  TYPE(tdimnc), POINTER, INTENT(IN) :: TDIM
 
   REAL                         :: ZDELTATIME
   CHARACTER(LEN=40)            :: YUNITS
@@ -2109,8 +2111,8 @@ SUBROUTINE WRITE_TIME_COORD(TDIM)
 
 
   IF (ASSOCIATED(TDTCUR) .AND. ASSOCIATED(TDTMOD)) THEN
-    YVARNAME = TRIM(TDIM%NAME)
-    IVDIM = TDIM%ID
+    yvarname = Trim( tdim%cname )
+    ivdim    = tdim%nid
 
     STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
     IF (STATUS /= NF90_NOERR) THEN

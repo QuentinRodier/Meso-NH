@@ -11,6 +11,7 @@
 !  P. Wautelet 23/01/2020: split in modd_field.f90 and mode_field.f90
 !  P. Wautelet 27/01/2020: create the tfield_metadata_base abstract datatype
 !  P. Wautelet 14/09/2020: add ndimlist field to tfield_metadata_base
+!  P. Wautelet 10/11/2020: new data structures for netCDF dimensions
 !-----------------------------------------------------------------
 module modd_field
 
@@ -28,64 +29,83 @@ INTEGER,PARAMETER :: TYPEUNDEF = -1, TYPEINT = 1, TYPELOG = 2, TYPEREAL = 3, TYP
 !
 integer, parameter :: NMNHDIM_UNKNOWN             = -2
 
+!For efficient use of memory, it is better that all values for real dimensions be contiguous
+integer, parameter :: NMNHDIM_NI                  = 1
+integer, parameter :: NMNHDIM_NJ                  = 2
+integer, parameter :: NMNHDIM_NI_U                = 3
+integer, parameter :: NMNHDIM_NJ_U                = 4
+integer, parameter :: NMNHDIM_NI_V                = 5
+integer, parameter :: NMNHDIM_NJ_V                = 6
+integer, parameter :: NMNHDIM_LEVEL               = 7
+integer, parameter :: NMNHDIM_LEVEL_W             = 8
+integer, parameter :: NMNHDIM_TIME                = 9
+
 integer, parameter :: NMNHDIM_ONE                 = 10
+
+integer, parameter :: NMNHDIM_LASTDIM_NODIACHRO   = 10  ! Index of the last defined dimension for non-diachronic files
+
 integer, parameter :: NMNHDIM_COMPLEX             = 11
 
-integer, parameter :: NMNHDIM_NI                  = 21
-integer, parameter :: NMNHDIM_NJ                  = 22
-integer, parameter :: NMNHDIM_NI_U                = 23
-integer, parameter :: NMNHDIM_NJ_U                = 24
-integer, parameter :: NMNHDIM_NI_V                = 25
-integer, parameter :: NMNHDIM_NJ_V                = 26
-integer, parameter :: NMNHDIM_LEVEL               = 27
-integer, parameter :: NMNHDIM_LEVEL_W             = 28
-integer, parameter :: NMNHDIM_TIME                = 29
+integer, parameter :: NMNHDIM_BUDGET_CART_NI      = 12
+integer, parameter :: NMNHDIM_BUDGET_CART_NJ      = 13
+integer, parameter :: NMNHDIM_BUDGET_CART_NI_U    = 14
+integer, parameter :: NMNHDIM_BUDGET_CART_NJ_U    = 15
+integer, parameter :: NMNHDIM_BUDGET_CART_NI_V    = 16
+integer, parameter :: NMNHDIM_BUDGET_CART_NJ_V    = 17
+integer, parameter :: NMNHDIM_BUDGET_CART_LEVEL   = 18
+integer, parameter :: NMNHDIM_BUDGET_CART_LEVEL_W = 19
 
-integer, parameter :: NMNHDIM_BUDGET_CART_NI      = 30
-integer, parameter :: NMNHDIM_BUDGET_CART_NJ      = 31
-integer, parameter :: NMNHDIM_BUDGET_CART_NI_U    = 32
-integer, parameter :: NMNHDIM_BUDGET_CART_NJ_U    = 33
-integer, parameter :: NMNHDIM_BUDGET_CART_NI_V    = 34
-integer, parameter :: NMNHDIM_BUDGET_CART_NJ_V    = 35
-integer, parameter :: NMNHDIM_BUDGET_CART_LEVEL   = 36
-integer, parameter :: NMNHDIM_BUDGET_CART_LEVEL_W = 37
+integer, parameter :: NMNHDIM_BUDGET_MASK_LEVEL   = 20
+integer, parameter :: NMNHDIM_BUDGET_MASK_LEVEL_W = 21
+integer, parameter :: NMNHDIM_BUDGET_MASK_TIME    = 22
+integer, parameter :: NMNHDIM_BUDGET_MASK_NBUMASK = 23
 
-integer, parameter :: NMNHDIM_BUDGET_MASK_LEVEL   = 40
-integer, parameter :: NMNHDIM_BUDGET_MASK_LEVEL_W = 41
-integer, parameter :: NMNHDIM_BUDGET_MASK_TIME    = 42
-integer, parameter :: NMNHDIM_BUDGET_MASK_NBUMASK = 43
+integer, parameter :: NMNHDIM_BUDGET_LES_TIME     = 24
+integer, parameter :: NMNHDIM_BUDGET_LES_AVG_TIME = 25
+integer, parameter :: NMNHDIM_BUDGET_LES_LEVEL    = 26
+integer, parameter :: NMNHDIM_BUDGET_LES_SV       = 27
+integer, parameter :: NMNHDIM_BUDGET_LES_MASK     = 100 ! This is not a true dimension
 
-integer, parameter :: NMNHDIM_BUDGET_LES_TIME     = 50
-integer, parameter :: NMNHDIM_BUDGET_LES_AVG_TIME = 51
-integer, parameter :: NMNHDIM_BUDGET_LES_LEVEL    = 52
-integer, parameter :: NMNHDIM_BUDGET_LES_SV       = 53
-integer, parameter :: NMNHDIM_BUDGET_LES_MASK     = 54
+integer, parameter :: NMNHDIM_SPECTRA_2PTS_NI     = 28
+integer, parameter :: NMNHDIM_SPECTRA_2PTS_NJ     = 29
+integer, parameter :: NMNHDIM_SPECTRA_SPEC_NI     = 30
+integer, parameter :: NMNHDIM_SPECTRA_SPEC_NJ     = 31
+integer, parameter :: NMNHDIM_SPECTRA_LEVEL       = 32
 
-integer, parameter :: NMNHDIM_SPECTRA_2PTS_NI     = 60
-integer, parameter :: NMNHDIM_SPECTRA_2PTS_NJ     = 61
-integer, parameter :: NMNHDIM_SPECTRA_SPEC_NI     = 62
-integer, parameter :: NMNHDIM_SPECTRA_SPEC_NJ     = 63
-integer, parameter :: NMNHDIM_SPECTRA_LEVEL       = 64
+integer, parameter :: NMNHDIM_SERIES_LEVEL        = 33
+integer, parameter :: NMNHDIM_SERIES_LEVEL_W      = 34
+integer, parameter :: NMNHDIM_SERIES_TIME         = 35  ! Time dimension for time series
 
-integer, parameter :: NMNHDIM_SERIES_LEVEL        = 70
-integer, parameter :: NMNHDIM_SERIES_LEVEL_W      = 71
-integer, parameter :: NMNHDIM_SERIES_TIME         = 72  ! Time dimension for time series
+integer, parameter :: NMNHDIM_FLYER_TIME          = 36  ! Time dimension for aircraft/balloon (dimension local to each flyer)
+integer, parameter :: NMNHDIM_PROFILER_TIME       = 37  ! Time dimension for profilers
+integer, parameter :: NMNHDIM_STATION_TIME        = 38  ! Time dimension for stations
 
-integer, parameter :: NMNHDIM_FLYER_TIME          = 80  ! Time dimension for aircraft/balloon (dimension local to each flyer)
-integer, parameter :: NMNHDIM_PROFILER_TIME       = 81  ! Time dimension for profilers
-integer, parameter :: NMNHDIM_STATION_TIME        = 82  ! Time dimension for stations
+integer, parameter :: NMNHDIM_LASTDIM_DIACHRO     = 38  ! Index of the last defined dimension for diachronic files
 
-integer, parameter :: NMNHDIM_BUDGET_NGROUPS      = 100 ! This is not a true dimension
-integer, parameter :: NMNHDIM_FLYER_PROC          = 101 ! This is not a true dimension
-integer, parameter :: NMNHDIM_PROFILER_PROC       = 102 ! This is not a true dimension
-integer, parameter :: NMNHDIM_STATION_PROC        = 103 ! This is not a true dimension
-integer, parameter :: NMNHDIM_SERIES_PROC         = 104 ! This is not a true dimension
-integer, parameter :: NMNHDIM_BUDGET_TERM         = 105 ! This is not a true dimension
+integer, parameter :: NMNHDIM_BUDGET_NGROUPS      = 101 ! This is not a true dimension
+integer, parameter :: NMNHDIM_FLYER_PROC          = 102 ! This is not a true dimension
+integer, parameter :: NMNHDIM_PROFILER_PROC       = 103 ! This is not a true dimension
+integer, parameter :: NMNHDIM_STATION_PROC        = 104 ! This is not a true dimension
+integer, parameter :: NMNHDIM_SERIES_PROC         = 105 ! This is not a true dimension
+integer, parameter :: NMNHDIM_BUDGET_TERM         = 106 ! This is not a true dimension
 
 integer, parameter :: NMNHDIM_NOTLISTED           = 200 ! Special case for valid dimension but not in this parameter list
 
 integer, parameter :: NMNHDIM_UNUSED              = 300
-!
+
+!Array to allow easy identification of dimensions for Arakawa grid points
+integer, dimension(0:8,3), parameter :: NMNHDIM_ARAKAWA = reshape( [ &
+  NMNHDIM_UNKNOWN, NMNHDIM_UNKNOWN, NMNHDIM_UNKNOWN, & ! dummy point (to treat ngrid=0 without crash)
+  NMNHDIM_NI,      NMNHDIM_NJ,      NMNHDIM_LEVEL,   & ! mass point
+  NMNHDIM_NI_U,    NMNHDIM_NJ_U,    NMNHDIM_LEVEL,   & ! u point
+  NMNHDIM_NI_V,    NMNHDIM_NJ_V,    NMNHDIM_LEVEL,   & ! v point
+  NMNHDIM_NI,      NMNHDIM_NJ,      NMNHDIM_LEVEL_W, & ! w point
+  NMNHDIM_NI_U,    NMNHDIM_NJ_V,    NMNHDIM_LEVEL,   & ! xi vorticity point (=f point =uv point)
+  NMNHDIM_NI_U,    NMNHDIM_NJ_U,    NMNHDIM_LEVEL_W, & ! eta vorticity point (=uw point)
+  NMNHDIM_NI_V,    NMNHDIM_NJ_V,    NMNHDIM_LEVEL_W, & ! zeta vorticity point (=vw point)
+  NMNHDIM_NI_U,    NMNHDIM_NJ_V,    NMNHDIM_LEVEL_W] & ! fw point (=uvw point)
+  , shape = [ 9, 3 ], order = [ 2, 1 ] )
+
 TYPE TFIELDPTR_C0D
   CHARACTER(LEN=:),     POINTER :: DATA => NULL()
 END TYPE TFIELDPTR_C0D

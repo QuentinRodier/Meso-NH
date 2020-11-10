@@ -12,11 +12,12 @@
 !  P. Wautelet 19/09/2019: add possibility to provide a fallback file if some information are not found in the input file
 !  P. Wautelet 21/10/2019: add OPTDIR option to set directory for writing outfiles
 !  P. Wautelet 21/10/2019: if DTMOD and DTCUR not found, try to read the time coordinate
+!  P. Wautelet 10/11/2020: new data structures for netCDF dimensions
 !-----------------------------------------------------------------
 MODULE mode_util
   use modd_field,      only: tfielddata, tfieldlist
   USE MODD_IO,         ONLY: TFILEDATA, TFILE_ELT
-  USE MODD_NETCDF,     ONLY: DIMCDF, CDFINT
+  USE MODD_NETCDF,     ONLY: CDFINT, tdimnc
   USE MODD_PARAMETERS, ONLY: NLFIMAXCOMMENTLENGTH, NMNHNAMELGTMAX
   use modd_precision,  only: LFIINT
 
@@ -56,7 +57,7 @@ MODULE mode_util
      INTEGER,DIMENSION(MAXRAW)             :: src    ! List of variables used to compute the variable (needed only if calc=.true.)
      INTEGER                               :: tgt    ! Target: id of the variable that use it (calc variable)
      TYPE(TFIELDDATA)                      :: TFIELD ! Metadata about the field
-     TYPE(DIMCDF),DIMENSION(:),ALLOCATABLE :: TDIMS  ! Dimensions of the field
+     TYPE(tdimnc),DIMENSION(:),ALLOCATABLE :: TDIMS  ! Dimensions of the field
   END TYPE workfield
 
   LOGICAL(KIND=LFIINT), PARAMETER :: ltrue  = .TRUE.
@@ -428,7 +429,7 @@ END DO
               CALL IO_Dimids_guess_nc4(outfiles(idx_out)%TFILE,tpreclist(ji)%TFIELD,&
                                       tpreclist(ji)%NSIZE,tpreclist(ji)%TDIMS,IRESP)
               !
-              IF (IRESP/=0 .OR. tpreclist(ji)%TDIMS(3)%LEN==1) THEN
+              IF (IRESP/=0 .OR. tpreclist(ji)%TDIMS(3)%nlen==1) THEN
                 CALL PRINT_MSG(NVERB_DEBUG,'IO','parse_infiles',tpreclist(ji)%TFIELD%CMNHNAME//': try 2D')
                 !Try again with 2D
                 tpreclist(ji)%TFIELD%NDIMS = 2
@@ -436,7 +437,7 @@ END DO
                                         tpreclist(ji)%NSIZE,tpreclist(ji)%TDIMS,IRESP)
               END IF
               !
-              IF (IRESP/=0 .OR. tpreclist(ji)%TDIMS(2)%LEN==1) THEN
+              IF (IRESP/=0 .OR. tpreclist(ji)%TDIMS(2)%nlen==1) THEN
                 CALL PRINT_MSG(NVERB_DEBUG,'IO','parse_infiles',tpreclist(ji)%TFIELD%CMNHNAME//': try 1D')
                 !Try again with 1D
                 tpreclist(ji)%TFIELD%NDIMS = 1
@@ -732,7 +733,7 @@ END DO
 
       SELECT CASE(tpreclist(ji)%TFIELD%NTYPE)
       CASE (TYPEINT)
-        IDIMLEN(1:IDIMS) = tpreclist(ji)%TDIMS(1:IDIMS)%LEN
+        IDIMLEN(1:IDIMS) = tpreclist(ji)%TDIMS(1:IDIMS)%nlen
 
         IF (.NOT.tpreclist(ji)%calc) THEN
           INSRC = 1
@@ -808,7 +809,7 @@ END DO
 
 
       CASE (TYPELOG)
-        IDIMLEN(1:IDIMS) = tpreclist(ji)%TDIMS(1:IDIMS)%LEN
+        IDIMLEN(1:IDIMS) = tpreclist(ji)%TDIMS(1:IDIMS)%nlen
 
         tpreclist(ji)%TFIELD%LTIMEDEP = gtimedep_in(ji)
         SELECT CASE(IDIMS)
@@ -832,7 +833,7 @@ END DO
 
 
       CASE (TYPEREAL)
-        IDIMLEN(1:IDIMS) = tpreclist(ji)%TDIMS(1:IDIMS)%LEN
+        IDIMLEN(1:IDIMS) = tpreclist(ji)%TDIMS(1:IDIMS)%nlen
 
         IF (.NOT.tpreclist(ji)%calc) THEN
           INSRC = 1
@@ -1593,14 +1594,14 @@ END DO
 
   SUBROUTINE IO_Dims_fill_nc4(TPFILE,TPREC,KRESP)
     USE MODD_IO,           ONLY: TFILEDATA
-    use mode_io_tools_nc4, only: IO_Dimcdf_get_nc4, IO_Dim_find_byname_nc4
+    use mode_io_tools_nc4, only: IO_Dim_find_create_nc4, IO_Dim_find_byname_nc4
 
     TYPE(TFILEDATA),INTENT(IN)    :: TPFILE
     TYPE(workfield),INTENT(INOUT) :: TPREC
     INTEGER,        INTENT(OUT)   :: KRESP
 
+    integer              :: iidx
     INTEGER              :: JJ
-    TYPE(DIMCDF),POINTER :: TZDIMPTR
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Dims_fill_nc4','called')
 
@@ -1622,12 +1623,12 @@ END DO
       CALL IO_Dim_find_byname_nc4(TPFILE,TPREC%CDIMNAMES_FILE(JJ),TPREC%TDIMS(JJ),KRESP)
       !If dimension not found => create it
       IF (KRESP/=0)  THEN
-        TZDIMPTR => IO_Dimcdf_get_nc4(TPFILE,TPREC%NDIMSIZES_FILE(JJ))
-        TPREC%TDIMS(JJ) = TZDIMPTR
+        call IO_Dim_find_create_nc4( tpfile, tprec%ndimsizes_file(jj), iidx )
+        tprec%tdims(jj) = tpfile%tncdims%tdims(iidx)
         KRESP = 0
       END IF
-      IF (TRIM(TPREC%TDIMS(JJ)%name)/='time' .AND. &
-        TPREC%TDIMS(JJ)%len /= TPREC%NDIMSIZES_FILE(JJ)) THEN
+      IF (TRIM(TPREC%TDIMS(JJ)%cname)/='time' .AND. &
+        TPREC%TDIMS(JJ)%nlen /= TPREC%NDIMSIZES_FILE(JJ)) THEN
         CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FILL_DIMS_NC4','problem with dimensions for '//TPREC%TFIELD%CMNHNAME)
         KRESP = -3
         EXIT

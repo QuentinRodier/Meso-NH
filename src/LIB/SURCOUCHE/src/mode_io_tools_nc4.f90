@@ -13,13 +13,14 @@
 !  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
 !  P. Wautelet 14/09/2020: IO_Knowndims_set_nc4: add new dimensions + remove 'time' dimension in diachronic files
 !  P. Wautelet 14/09/2020: IO_Vdims_fill_nc4: use ndimlist when provided to fill dimensions ids
+!  P. Wautelet 10/11/2020: new data structures for netCDF dimensions
 !-----------------------------------------------------------------
 #ifdef MNH_IOCDF4
 module mode_io_tools_nc4
 
 use modd_field,     only: tfielddata
 use modd_io,        only: tfiledata
-use modd_netcdf,    only: dimcdf, iocdf, tdim_dummy
+use modd_netcdf,    only: tdimnc, tdimsnc
 use modd_precision, only: CDFINT
 
 use mode_msg
@@ -33,59 +34,64 @@ private
 
 public :: IO_Dim_find_byname_nc4, IO_Dimids_guess_nc4, IO_Knowndims_set_nc4
 public :: IO_Iocdf_alloc_nc4, IO_Iocdf_dealloc_nc4, IO_Mnhname_clean
-public :: IO_Dimcdf_get_nc4, IO_Strdimid_get_nc4, IO_Vdims_fill_nc4, IO_Err_handle_nc4
+public :: IO_Dim_find_create_nc4, IO_Strdimid_get_nc4, IO_Vdims_fill_nc4, IO_Err_handle_nc4
 
 contains
 
-SUBROUTINE IO_Dim_find_byname_nc4(TPFILE, HDIMNAME, TPDIM, KRESP)
-TYPE(TFILEDATA),         INTENT(IN)  :: TPFILE
-CHARACTER(LEN=*),        INTENT(IN)  :: HDIMNAME
-TYPE(DIMCDF),            INTENT(OUT) :: TPDIM
-INTEGER,                 INTENT(OUT) :: KRESP
-!
-TYPE(DIMCDF), POINTER :: TMP
-!
-CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Dim_find_byname_nc4','called for dimension name '//TRIM(HDIMNAME))
-!
-KRESP = -2
-!
-IF(.NOT.ASSOCIATED(TPFILE%TNCDIMS%DIMLIST)) THEN
-  CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Dim_find_byname_nc4','DIMLIST not associated for file  '//TRIM(TPFILE%CNAME))
-  KRESP = -1
-  RETURN
-END IF
-!
-TMP => TPFILE%TNCDIMS%DIMLIST
-!
-DO WHILE(ASSOCIATED(TMP))
-  IF (TRIM(TMP%NAME)==TRIM(HDIMNAME)) THEN
-    TPDIM = TMP
-    KRESP = 0
-    EXIT
-  END IF
-  TMP => TMP%NEXT
-END DO
-!
-END SUBROUTINE IO_Dim_find_byname_nc4
+subroutine IO_Dim_find_byname_nc4( tpfile, hdimname, tpdim, kresp )
+type(tfiledata),  intent(in)  :: tpfile
+character(len=*), intent(in)  :: hdimname
+type(tdimnc),     intent(out) :: tpdim
+integer,          intent(out) :: kresp
+
+integer :: idx
+integer :: ji
+
+call Print_msg( NVERB_DEBUG, 'IO', 'IO_Dim_find_byname_nc4', 'called for dimension name ' // Trim( hdimname ) )
+
+kresp = -2
+
+if ( .not.Associated( tpfile%tncdims ) ) then
+  call Print_msg( NVERB_ERROR, 'IO', 'IO_Dim_find_byname_nc4', 'tncdims not associated for file  '//trim(tpfile%cname) )
+  kresp = -3
+  return
+end if
+
+if ( .not.Allocated( tpfile%tncdims%tdims ) ) then
+  call Print_msg( NVERB_WARNING, 'IO', 'IO_Dim_find_byname_nc4', 'tdims not allocated for file  '//trim(tpfile%cname) )
+  kresp = -1
+  return
+end if
+
+idx = -1
+do ji = 1, tpfile%tncdims%nmaxdims
+  if ( Trim( hdimname ) == Trim( tpfile%tncdims%tdims(ji)%cname ) ) then
+    idx = ji
+    kresp = 0
+    exit
+  end if
+end do
+
+end subroutine IO_Dim_find_byname_nc4
 
 
 SUBROUTINE IO_Dimids_guess_nc4(TPFILE, TPFIELD, KLEN, TPDIMS, KRESP)
 !
-USE MODD_FIELD, ONLY: TYPECHAR
+USE MODD_FIELD, ONLY: NMNHDIM_ARAKAWA, TYPECHAR
 !
 !Used by LFI2CDF
 TYPE(TFILEDATA),                      INTENT(IN)  :: TPFILE
 TYPE(TFIELDDATA),                     INTENT(IN)  :: TPFIELD
 INTEGER,                              INTENT(IN)  :: KLEN
-TYPE(DIMCDF),DIMENSION(:),            INTENT(OUT) :: TPDIMS
+TYPE(tdimnc),DIMENSION(:),            INTENT(OUT) :: TPDIMS
 INTEGER,                              INTENT(OUT) :: KRESP
 !
 INTEGER               :: IGRID
+integer               :: iidx
 INTEGER(kind=CDFINT)  :: ILEN, ISIZE
 INTEGER               :: JI
 CHARACTER(LEN=32)     :: YINT
 CHARACTER(LEN=2)      :: YDIR
-TYPE(DIMCDF), POINTER :: PTDIM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Dimids_guess_nc4','called for '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -94,7 +100,6 @@ YDIR   =  TPFIELD%CDIR
 !
 KRESP = 0
 ILEN = 0
-PTDIM => NULL()
 !
 IF(IGRID<0 .OR. IGRID>8) THEN
   WRITE(YINT,'( I0 )') IGRID
@@ -115,9 +120,9 @@ IF (IGRID==0) THEN
         ILEN = 1
       END IF
     CASE (1)
-      PTDIM => IO_Dimcdf_get_nc4(TPFILE, int( KLEN, kind=CDFINT ) )
-      TPDIMS(1) = PTDIM
-      ILEN      = PTDIM%LEN
+      call IO_Dim_find_create_nc4( tpfile, klen, iidx )
+      tpdims(1) = tpfile%tncdims%tdims(iidx)
+      ilen = tpdims(1)%nlen
     CASE DEFAULT
       CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Dimids_guess_nc4','NGRID=0 and NDIMS>1 not yet supported (field '&
                      //TRIM(TPFIELD%CMNHNAME)//')')
@@ -129,29 +134,25 @@ ELSE IF (TPFIELD%CLBTYPE/='NONE') THEN
   END IF
   !
   IF (TPFIELD%CLBTYPE=='LBX' .OR. TPFIELD%CLBTYPE=='LBXU') THEN
-    PTDIM => TPFILE%TNCCOORDS(2,IGRID)%TDIM
-    TPDIMS(2) = PTDIM
-    PTDIM => TPFILE%TNCCOORDS(3,IGRID)%TDIM
-    TPDIMS(3) = PTDIM
-    ILEN = TPDIMS(2)%LEN * TPDIMS(3)%LEN
+    tpdims(2) = tpfile%tncdims%tdims( NMNHDIM_ARAKAWA(igrid,2) )
+    tpdims(3) = tpfile%tncdims%tdims( NMNHDIM_ARAKAWA(igrid,3) )
+    ilen = tpdims(2)%nlen * tpdims(3)%nlen
     ISIZE = KLEN/ILEN
     IF (MOD(KLEN,ILEN)/=0) CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Dimids_guess_nc4', &
                                               'can not guess 1st dimension for field '//TRIM(TPFIELD%CMNHNAME))
-    PTDIM => IO_Dimcdf_get_nc4(TPFILE, ISIZE)
-    TPDIMS(1) = PTDIM
-    ILEN       = ILEN * PTDIM%LEN
+    call IO_Dim_find_create_nc4( tpfile, isize, iidx )
+    tpdims(1) = tpfile%tncdims%tdims(iidx)
+    ilen = ilen * tpdims(1)%nlen
   ELSE IF (TPFIELD%CLBTYPE=='LBY' .OR. TPFIELD%CLBTYPE=='LBYV') THEN
-    PTDIM => TPFILE%TNCCOORDS(1,IGRID)%TDIM
-    TPDIMS(1) = PTDIM
-    PTDIM => TPFILE%TNCCOORDS(3,IGRID)%TDIM
-    TPDIMS(3) = PTDIM
-    ILEN = TPDIMS(1)%LEN * TPDIMS(3)%LEN
+    tpdims(1) = tpfile%tncdims%tdims( NMNHDIM_ARAKAWA(igrid,1) )
+    tpdims(3) = tpfile%tncdims%tdims( NMNHDIM_ARAKAWA(igrid,3) )
+    ilen = tpdims(1)%nlen * tpdims(3)%nlen
     ISIZE = KLEN/ILEN
     IF (MOD(KLEN,ILEN)/=0) CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Dimids_guess_nc4', &
                                               'can not guess 2nd dimension for field '//TRIM(TPFIELD%CMNHNAME))
-    PTDIM => IO_Dimcdf_get_nc4(TPFILE, ISIZE)
-    TPDIMS(2) = PTDIM
-    ILEN       = ILEN * PTDIM%LEN
+    call IO_Dim_find_create_nc4( tpfile, isize, iidx )
+    tpdims(2) = tpfile%tncdims%tdims(iidx)
+    ilen = ilen * tpdims(2)%nlen
   ELSE
     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Dimids_guess_nc4','invalid CLBTYPE ('//TPFIELD%CLBTYPE//') for field '&
                      //TRIM(TPFIELD%CMNHNAME))
@@ -162,19 +163,19 @@ ELSE
   DO JI=1,TPFIELD%NDIMS
     IF (JI == 1) THEN
       IF ( (YDIR == 'XX' .OR. YDIR == 'XY') ) THEN
-        PTDIM => TPFILE%TNCCOORDS(1,IGRID)%TDIM
+        tpdims(1) = tpfile%tncdims%tdims( NMNHDIM_ARAKAWA(igrid,1) )
       ELSE IF ( YDIR == 'YY' ) THEN
-        PTDIM => TPFILE%TNCCOORDS(2,IGRID)%TDIM
+        tpdims(1) = tpfile%tncdims%tdims( NMNHDIM_ARAKAWA(igrid,2) )
       ELSE IF ( YDIR == 'ZZ' ) THEN
-        PTDIM => TPFILE%TNCCOORDS(3,IGRID)%TDIM
+        tpdims(1) = tpfile%tncdims%tdims( NMNHDIM_ARAKAWA(igrid,3) )
       ELSE IF (JI==TPFIELD%NDIMS) THEN !Guess last dimension
-        PTDIM => IO_Dimcdf_get_nc4(TPFILE, int( KLEN, kind=CDFINT ) )
+        call IO_Dim_find_create_nc4( tpfile, klen, iidx )
+        tpdims(1) = tpfile%tncdims%tdims(iidx)
       END IF
-      ILEN       = PTDIM%LEN
-      TPDIMS(JI) = PTDIM
+      ilen = tpdims(1)%nlen
     ELSE IF (JI == 2) THEN
       IF ( YDIR == 'XY') THEN
-        PTDIM => TPFILE%TNCCOORDS(2,IGRID)%TDIM
+        tpdims(2) = tpfile%tncdims%tdims( NMNHDIM_ARAKAWA(igrid,2) )
       ELSE IF (JI==TPFIELD%NDIMS) THEN !Guess last dimension
         ISIZE = KLEN/ILEN
         IF (MOD(KLEN,ILEN)/=0) THEN
@@ -182,21 +183,22 @@ ELSE
                                             'can not guess 2nd and last dimension for field '//TRIM(TPFIELD%CMNHNAME))
           EXIT
         END IF
-        PTDIM => IO_Dimcdf_get_nc4(TPFILE, ISIZE)
+        call IO_Dim_find_create_nc4( tpfile, isize, iidx )
+        tpdims(2) = tpfile%tncdims%tdims(iidx)
       ELSE
         CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Dimids_guess_nc4','can not guess 2nd dimension for field '//TRIM(TPFIELD%CMNHNAME))
         EXIT
       END IF
-      ILEN       = ILEN * PTDIM%LEN
-      TPDIMS(JI) = PTDIM
+      ilen = ilen * tpdims(2)%nlen
     ELSE IF (JI == 3) THEN
       IF ( YDIR == 'XY' ) THEN
         IF (JI==TPFIELD%NDIMS .AND. KLEN/ILEN==1 .AND. MOD(KLEN,ILEN)==0) THEN
           !The last dimension is of size 1 => probably time dimension
           ISIZE = 1
-          PTDIM => IO_Dimcdf_get_nc4(TPFILE,ISIZE)
+          call IO_Dim_find_create_nc4( tpfile, isize, iidx )
+          tpdims(3) = tpfile%tncdims%tdims(iidx)
         ELSE
-          PTDIM => TPFILE%TNCCOORDS(3,IGRID)%TDIM
+          tpdims(3) = tpfile%tncdims%tdims( NMNHDIM_ARAKAWA(igrid,3) )
         END IF
       ELSE IF (JI==TPFIELD%NDIMS) THEN !Guess last dimension
         ISIZE = KLEN/ILEN
@@ -205,13 +207,13 @@ ELSE
                                             'can not guess 3rd and last dimension for field '//TRIM(TPFIELD%CMNHNAME))
           EXIT
         END IF
-        PTDIM => IO_Dimcdf_get_nc4(TPFILE, ISIZE)
+        call IO_Dim_find_create_nc4( tpfile, isize, iidx )
+        tpdims(3) = tpfile%tncdims%tdims(iidx)
       ELSE
         CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Dimids_guess_nc4','can not guess 3rd dimension for field '//TRIM(TPFIELD%CMNHNAME))
         EXIT
       END IF
-      ILEN       = ILEN * PTDIM%LEN
-      TPDIMS(JI) = PTDIM
+      ilen = ilen * tpdims(3)%nlen
     ELSE IF (JI==4 .AND. JI==TPFIELD%NDIMS) THEN !Guess last dimension
       ISIZE = KLEN/ILEN
       IF (MOD(KLEN,ILEN)/=0) THEN
@@ -219,9 +221,9 @@ ELSE
                                           'can not guess 4th and last dimension for field '//TRIM(TPFIELD%CMNHNAME))
         EXIT
       END IF
-      PTDIM => IO_Dimcdf_get_nc4(TPFILE, ISIZE)
-      ILEN       = ILEN * PTDIM%LEN
-      TPDIMS(JI) = PTDIM
+      call IO_Dim_find_create_nc4( tpfile, isize, iidx )
+      tpdims(4) = tpfile%tncdims%tdims(iidx)
+      ilen = ilen * tpdims(4)%nlen
     ELSE
       CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Dimids_guess_nc4','can not guess dimension above 4 for field '&
                      //TRIM(TPFIELD%CMNHNAME))
@@ -247,6 +249,23 @@ USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
 USE MODD_DIM_n,         ONLY: NIMAX_ll, NJMAX_ll, NKMAX
 use modd_dyn,           only: xseglen
 use modd_dyn_n,         only: xtstep
+use modd_field,         only: NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NI_U, NMNHDIM_NJ_U, NMNHDIM_NI_V, NMNHDIM_NJ_V,   &
+                              NMNHDIM_LEVEL, NMNHDIM_LEVEL_W, NMNHDIM_TIME,                                     &
+                              NMNHDIM_ONE,  NMNHDIM_COMPLEX,                                                    &
+                              NMNHDIM_BUDGET_CART_NI, NMNHDIM_BUDGET_CART_NJ, NMNHDIM_BUDGET_CART_NI_U,         &
+                              NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NI_V, NMNHDIM_BUDGET_CART_NJ_V,     &
+                              NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W,                           &
+                              NMNHDIM_BUDGET_MASK_LEVEL, NMNHDIM_BUDGET_MASK_LEVEL_W, NMNHDIM_BUDGET_MASK_TIME, &
+                              NMNHDIM_BUDGET_MASK_NBUMASK,                                                      &
+                              NMNHDIM_BUDGET_LES_TIME, NMNHDIM_BUDGET_LES_AVG_TIME, NMNHDIM_BUDGET_LES_LEVEL,   &
+                              NMNHDIM_BUDGET_LES_SV,                                                            &
+                              NMNHDIM_SPECTRA_2PTS_NI, NMNHDIM_SPECTRA_2PTS_NJ,                                 &
+                              NMNHDIM_SPECTRA_SPEC_NI, NMNHDIM_SPECTRA_SPEC_NJ, NMNHDIM_SPECTRA_LEVEL,          &
+                              NMNHDIM_SERIES_LEVEL, NMNHDIM_SERIES_LEVEL_W,                                     &
+                              NMNHDIM_SERIES_TIME, NMNHDIM_PROFILER_TIME, NMNHDIM_STATION_TIME,                 &
+                              NMNHDIM_ARAKAWA,                                                                  &
+                              NMNHDIM_LASTDIM_NODIACHRO, NMNHDIM_LASTDIM_DIACHRO
+
 use modd_les,           only: nles_k, nspectra_k, xles_temp_mean_start, xles_temp_mean_step, xles_temp_mean_end
 use modd_les_n,         only: nles_times, nspectra_ni, nspectra_nj
 use modd_nsv,           only: nsv
@@ -263,12 +282,8 @@ CHARACTER(LEN=:),ALLOCATABLE :: YPROGRAM
 integer                      :: iavg, iprof, istation
 integer                      :: ispectra_ni, ispectra_nj
 INTEGER                      :: IIU_ll, IJU_ll, IKU
-TYPE(DIMCDF), POINTER        :: tzdimcdf
-TYPE(IOCDF),  POINTER        :: PIOCDF
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Knowndims_set_nc4','called for '//TRIM(TPFILE%CNAME))
-
-PIOCDF => TPFILE%TNCDIMS
 
 IF (PRESENT(HPROGRAM_ORIG)) THEN
   YPROGRAM = HPROGRAM_ORIG
@@ -280,75 +295,84 @@ IIU_ll = NIMAX_ll + 2*JPHEXT
 IJU_ll = NJMAX_ll + 2*JPHEXT
 IKU    = NKMAX    + 2*JPVEXT
 
-IF (.NOT. ASSOCIATED(PIOCDF%DIM_NI))      PIOCDF%DIM_NI      => IO_Dimcdf_get_nc4(TPFILE, int( IIU_ll, kind=CDFINT ), 'ni')
-IF (.NOT. ASSOCIATED(PIOCDF%DIM_NJ))      PIOCDF%DIM_NJ      => IO_Dimcdf_get_nc4(TPFILE, int( IJU_ll, kind=CDFINT ), 'nj')
-IF (.NOT. ASSOCIATED(PIOCDF%DIM_NI_U))    PIOCDF%DIM_NI_U    => IO_Dimcdf_get_nc4(TPFILE, int( IIU_ll, kind=CDFINT ), 'ni_u')
-IF (.NOT. ASSOCIATED(PIOCDF%DIM_NJ_U))    PIOCDF%DIM_NJ_U    => IO_Dimcdf_get_nc4(TPFILE, int( IJU_ll, kind=CDFINT ), 'nj_u')
-IF (.NOT. ASSOCIATED(PIOCDF%DIM_NI_V))    PIOCDF%DIM_NI_V    => IO_Dimcdf_get_nc4(TPFILE, int( IIU_ll, kind=CDFINT ), 'ni_v')
-IF (.NOT. ASSOCIATED(PIOCDF%DIM_NJ_V))    PIOCDF%DIM_NJ_V    => IO_Dimcdf_get_nc4(TPFILE, int( IJU_ll, kind=CDFINT ), 'nj_v')
-IF (TRIM(YPROGRAM)/='PGD' .AND. TRIM(YPROGRAM)/='NESPGD' .AND. TRIM(YPROGRAM)/='ZOOMPG' &
-    .AND. .NOT.(TRIM(YPROGRAM)=='REAL' .AND. CSTORAGE_TYPE=='SU') ) THEN !condition to detect PREP_SURFEX
-  IF (.NOT. ASSOCIATED(PIOCDF%DIM_LEVEL))   PIOCDF%DIM_LEVEL   => IO_Dimcdf_get_nc4(TPFILE, int( IKU, kind=CDFINT ), 'level')
-  IF (.NOT. ASSOCIATED(PIOCDF%DIM_LEVEL_W)) PIOCDF%DIM_LEVEL_W => IO_Dimcdf_get_nc4(TPFILE, int( IKU, kind=CDFINT ), 'level_w')
-  if ( tpfile%ctype /= 'MNHDIACHRONIC' ) then
-    IF (.NOT. ASSOCIATED(PIOCDF%DIMTIME)) PIOCDF%DIMTIME => IO_Dimcdf_get_nc4(TPFILE, NF90_UNLIMITED, 'time')
-  end if
-ELSE
-  !PGD and SURFEX files for MesoNH have no vertical levels or time scale
-  !These dimensions are allocated to default values
-  !(they need to be allocated when looking for dimensions of variables)
-  IF (.NOT. ASSOCIATED(PIOCDF%DIM_LEVEL))   ALLOCATE(PIOCDF%DIM_LEVEL)
-  IF (.NOT. ASSOCIATED(PIOCDF%DIM_LEVEL_W)) ALLOCATE(PIOCDF%DIM_LEVEL_W)
-  IF (.NOT. ASSOCIATED(PIOCDF%DIMTIME))     ALLOCATE(PIOCDF%DIMTIME)
-END IF
+if ( .not.Associated( tpfile%tncdims ) ) then
+  call Print_msg( NVERB_ERROR, 'IO', 'IO_Knowndims_set_nc4', 'tncdims not associated for ' // Trim( tpfile%cname ) )
+  Allocate( tpfile%tncdims )
+end if
 
+if ( Allocated( tpfile%tncdims%tdims ) ) then
+  call Print_msg( NVERB_ERROR, 'IO', 'IO_Knowndims_set_nc4', 'tdims already allocated for ' // Trim( tpfile%cname ) )
+  Deallocate( tpfile%tncdims%tdims )
+end if
+
+if ( tpfile%ctype /= 'MNHDIACHRONIC' ) then
+  tpfile%tncdims%nmaxdims = NMNHDIM_LASTDIM_NODIACHRO
+  Allocate( tpfile%tncdims%tdims(NMNHDIM_LASTDIM_NODIACHRO) )
+else
+  tpfile%tncdims%nmaxdims = NMNHDIM_LASTDIM_DIACHRO
+  Allocate( tpfile%tncdims%tdims(NMNHDIM_LASTDIM_DIACHRO) )
+end if
+
+call IO_Add_dim_nc4( tpfile, NMNHDIM_NI,   'ni',   IIU_ll )
+call IO_Add_dim_nc4( tpfile, NMNHDIM_NJ,   'nj',   IJU_ll )
+call IO_Add_dim_nc4( tpfile, NMNHDIM_NI_U, 'ni_u', IIU_ll )
+call IO_Add_dim_nc4( tpfile, NMNHDIM_NJ_U, 'nj_u', IJU_ll )
+call IO_Add_dim_nc4( tpfile, NMNHDIM_NI_V, 'ni_v', IIU_ll )
+call IO_Add_dim_nc4( tpfile, NMNHDIM_NJ_V, 'nj_v', IJU_ll )
+if ( Trim( yprogram ) /= 'PGD' .and. Trim( yprogram ) /= 'NESPGD' .and. Trim( yprogram ) /= 'ZOOMPG' &
+     .and. .not. ( Trim( yprogram ) == 'REAL' .and. cstorage_type == 'SU' ) ) then !condition to detect PREP_SURFEX
+  call IO_Add_dim_nc4( tpfile, NMNHDIM_LEVEL,   'level',   IKU )
+  call IO_Add_dim_nc4( tpfile, NMNHDIM_LEVEL_W, 'level_w', IKU )
+  if ( tpfile%ctype /= 'MNHDIACHRONIC' ) &
+    call IO_Add_dim_nc4( tpfile, NMNHDIM_TIME, 'time', NF90_UNLIMITED )
+end if
 
 if ( tpfile%ctype == 'MNHDIACHRONIC' .or. ( lpack .and. l2d ) ) then
   !Dimension of size 1 used for NMNHDIM_ONE
-  tzdimcdf => IO_Dimcdf_get_nc4( tpfile, 1_CDFINT, hdimname = 'one' )
+  call IO_Add_dim_nc4( tpfile, NMNHDIM_ONE, 'one', 1 )
 end if
 
 !Write dimensions used in diachronic files
 if ( tpfile%ctype == 'MNHDIACHRONIC' ) then
   !Dimension of size 2 used for NMNHDIM_COMPLEX
-  tzdimcdf => IO_Dimcdf_get_nc4( tpfile, 2_CDFINT, hdimname = 'real_imaginary' )
+  call IO_Add_dim_nc4( tpfile, NMNHDIM_COMPLEX, 'real_imaginary', 2 )
 
   !Dimensions for the budgets masks
   if ( cbutype == 'CART' .or. cbutype == 'SKIP' ) then
-    if ( .not. lbu_icp ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nbuimax_ll, kind = CDFINT ), hdimname = 'cart_ni'      )
-    if ( .not. lbu_jcp ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nbujmax_ll, kind = CDFINT ), hdimname = 'cart_nj'      )
-    if ( .not. lbu_icp ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nbuimax_ll, kind = CDFINT ), hdimname = 'cart_ni_u'    )
-    if ( .not. lbu_jcp ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nbujmax_ll, kind = CDFINT ), hdimname = 'cart_nj_u'    )
-    if ( .not. lbu_icp ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nbuimax_ll, kind = CDFINT ), hdimname = 'cart_ni_v'    )
-    if ( .not. lbu_jcp ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nbujmax_ll, kind = CDFINT ), hdimname = 'cart_nj_v'    )
-    if ( .not. lbu_kcp ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nbukmax,    kind = CDFINT ), hdimname = 'cart_level'   )
-    if ( .not. lbu_kcp ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nbukmax,    kind = CDFINT ), hdimname = 'cart_level_w' )
+    if ( .not. lbu_icp ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_CART_NI,      'cart_ni',      nbuimax_ll )
+    if ( .not. lbu_jcp ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_CART_NJ,      'cart_nj',      nbujmax_ll )
+    if ( .not. lbu_icp ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_CART_NI_U,    'cart_ni_u',    nbuimax_ll )
+    if ( .not. lbu_jcp ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_CART_NJ_U,    'cart_nj_u',    nbujmax_ll )
+    if ( .not. lbu_icp ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_CART_NI_V,    'cart_ni_v',    nbuimax_ll )
+    if ( .not. lbu_jcp ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_CART_NJ_V,    'cart_nj_v',    nbujmax_ll )
+    if ( .not. lbu_kcp ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_CART_LEVEL,   'cart_level',   nbukmax    )
+    if ( .not. lbu_kcp ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_CART_LEVEL_W, 'cart_level_w', nbukmax    )
   else if ( cbutype == 'MASK' ) then
-    if ( nbukmax > 0 ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nbukmax, kind = CDFINT ), hdimname = 'mask_level'   )
-    if ( nbukmax > 0 ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nbukmax, kind = CDFINT ), hdimname = 'mask_level_w' )
-    if ( nbuwrnb > 0 ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nbuwrnb, kind = CDFINT ), hdimname = 'time_mask'    )
-    if ( nbumask > 0 ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nbumask, kind = CDFINT ), hdimname = 'nbumask'      )
+    if ( nbukmax > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_MASK_LEVEL,   'mask_level',   nbukmax )
+    if ( nbukmax > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_MASK_LEVEL_W, 'mask_level_w', nbukmax )
+    if ( nbuwrnb > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_MASK_TIME,    'time_mask',    nbuwrnb )
+    if ( nbumask > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_MASK_NBUMASK, 'nbumask',      nbumask )
   end if
 
   !Dimension for the number of LES budget time samplings
-  if ( nles_times > 0 ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nles_times, kind = CDFINT ), hdimname = 'time_les' )
+  if ( nles_times > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_LES_TIME, 'time_les', nles_times )
 
   !Dimension for the number of LES budget time averages
   iavg = int( xles_temp_mean_end - 1.e-10 - xles_temp_mean_start ) / xles_temp_mean_step + 1
   !Condition also on nles_times to not create this dimension when not used (no time average if nles_times=0)
   if ( nles_times > 0 .and. iavg > 0 ) &
-    tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( iavg, kind = CDFINT ), hdimname = 'time_les_avg' )
+    call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_LES_AVG_TIME, 'time_les_avg', iavg )
 
   !Dimension for the number of vertical levels for local LES budgets
-  if ( nles_k > 0 ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nles_k, kind = CDFINT ), hdimname = 'level_les' )
+  if ( nles_k > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_LES_LEVEL, 'level_les', nles_k )
 
   !Dimension for the number of scalar variables
-  if ( nsv > 0 ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nsv, kind = CDFINT ), hdimname = 'nsv' )
+  if ( nsv > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_LES_SV, 'nsv', nsv )
 
   !Dimensions for the number of horizontal wavelengths for non-local LES budgets (2 points correlations)
-  if ( nspectra_ni > 0 ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nspectra_ni, kind = CDFINT ), hdimname = 'nspectra_2pts_ni' )
+  if ( nspectra_ni > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_SPECTRA_2PTS_NI, 'nspectra_2pts_ni', nspectra_ni )
   if ( nspectra_nj > 0 .and. .not. l2d ) &
-    tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nspectra_nj, kind = CDFINT ), hdimname = 'nspectra_2pts_nj' )
+    call IO_Add_dim_nc4( tpfile, NMNHDIM_SPECTRA_2PTS_NJ, 'nspectra_2pts_nj', nspectra_nj )
 
   !Dimensions for the number of horizontal wavelengths for LES spectra budgets
   if ( nspectra_ni > 0 ) then
@@ -358,7 +382,7 @@ if ( tpfile%ctype == 'MNHDIACHRONIC' ) then
       ispectra_ni =  nspectra_ni - 1
     end if
     if ( ispectra_ni > 0 ) &
-      tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( ispectra_ni, kind = CDFINT ), hdimname = 'nspectra_spec_ni' )
+      call IO_Add_dim_nc4( tpfile, NMNHDIM_SPECTRA_SPEC_NI, 'nspectra_spec_ni', ispectra_ni )
   end if
 
   if ( nspectra_nj > 0 .and. .not. l2d ) then
@@ -368,102 +392,77 @@ if ( tpfile%ctype == 'MNHDIACHRONIC' ) then
       ispectra_nj =  nspectra_nj - 1
     end if
     if ( ispectra_nj > 0 ) &
-      tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( ispectra_nj, kind = CDFINT ), hdimname = 'nspectra_spec_nj' )
+      call IO_Add_dim_nc4( tpfile, NMNHDIM_SPECTRA_SPEC_NJ, 'nspectra_spec_nj', ispectra_nj )
   end if
 
   !Dimension for the number of vertical levels for non-local LES budgets
-  if ( nspectra_k > 0 ) tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nspectra_k, kind = CDFINT ), hdimname = 'nspectra_level' )
+  if ( nspectra_k > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_SPECTRA_LEVEL, 'nspectra_level', nspectra_k )
 
   !Dimension for the number of profiler times
   if ( numbprofiler > 0 ) then
     iprof = Int ( ( xseglen - xtstep ) / tprofiler%step ) + 1
-    tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( iprof, kind = CDFINT ), hdimname = 'time_profiler' )
+    call IO_Add_dim_nc4( tpfile, NMNHDIM_PROFILER_TIME, 'time_profiler', iprof )
   end if
 
   !Dimension for the number of station times
   if ( numbstat > 0 ) then
     istation = Int ( ( xseglen - xtstep ) / tstation%step ) + 1
-    tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( istation, kind = CDFINT ), hdimname = 'time_station' )
+    call IO_Add_dim_nc4( tpfile, NMNHDIM_STATION_TIME, 'time_station', istation )
   end if
 
   !Dimension for the number of series times
   if ( lseries .and. nsnbstept > 0 ) then
-    tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nkmax, kind = CDFINT ), hdimname = 'series_level'   )
-    tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nkmax, kind = CDFINT ), hdimname = 'series_level_w' )
-    tzdimcdf => IO_Dimcdf_get_nc4( tpfile, int( nsnbstept, kind = CDFINT ), hdimname = 'time_series' )
+    call IO_Add_dim_nc4( tpfile, NMNHDIM_SERIES_LEVEL,   'series_level',   nkmax     )
+    call IO_Add_dim_nc4( tpfile, NMNHDIM_SERIES_LEVEL_W, 'series_level_w', nkmax     )
+    call IO_Add_dim_nc4( tpfile, NMNHDIM_SERIES_TIME,    'time_series',    nsnbstept )
   end if
 end if
-
-!Store X,Y,Z coordinates for the Arakawa points
-!0 2nd-dimension is to treat NGRID=0 case without crash
-IF (.NOT.ALLOCATED(TPFILE%TNCCOORDS)) ALLOCATE(TPFILE%TNCCOORDS(3,0:8))
-!Dummy point
-TPFILE%TNCCOORDS(1,0)%TDIM => TDIM_DUMMY
-TPFILE%TNCCOORDS(2,0)%TDIM => TDIM_DUMMY
-TPFILE%TNCCOORDS(3,0)%TDIM => TDIM_DUMMY
-! Mass point
-TPFILE%TNCCOORDS(1,1)%TDIM => PIOCDF%DIM_NI
-TPFILE%TNCCOORDS(2,1)%TDIM => PIOCDF%DIM_NJ
-TPFILE%TNCCOORDS(3,1)%TDIM => PIOCDF%DIM_LEVEL
-! u point
-TPFILE%TNCCOORDS(1,2)%TDIM => PIOCDF%DIM_NI_U
-TPFILE%TNCCOORDS(2,2)%TDIM => PIOCDF%DIM_NJ_U
-TPFILE%TNCCOORDS(3,2)%TDIM => PIOCDF%DIM_LEVEL
-! v point
-TPFILE%TNCCOORDS(1,3)%TDIM => PIOCDF%DIM_NI_V
-TPFILE%TNCCOORDS(2,3)%TDIM => PIOCDF%DIM_NJ_V
-TPFILE%TNCCOORDS(3,3)%TDIM => PIOCDF%DIM_LEVEL
-! w point
-TPFILE%TNCCOORDS(1,4)%TDIM => PIOCDF%DIM_NI
-TPFILE%TNCCOORDS(2,4)%TDIM => PIOCDF%DIM_NJ
-TPFILE%TNCCOORDS(3,4)%TDIM => PIOCDF%DIM_LEVEL_W
-! xi vorticity point (=f point =uv point)
-TPFILE%TNCCOORDS(1,5)%TDIM => PIOCDF%DIM_NI_U
-TPFILE%TNCCOORDS(2,5)%TDIM => PIOCDF%DIM_NJ_V
-TPFILE%TNCCOORDS(3,5)%TDIM => PIOCDF%DIM_LEVEL
-! eta vorticity point (=uw point)
-TPFILE%TNCCOORDS(1,6)%TDIM => PIOCDF%DIM_NI_U
-TPFILE%TNCCOORDS(2,6)%TDIM => PIOCDF%DIM_NJ_U
-TPFILE%TNCCOORDS(3,6)%TDIM => PIOCDF%DIM_LEVEL_W
-! zeta vorticity point (=vw point)
-TPFILE%TNCCOORDS(1,7)%TDIM => PIOCDF%DIM_NI_V
-TPFILE%TNCCOORDS(2,7)%TDIM => PIOCDF%DIM_NJ_V
-TPFILE%TNCCOORDS(3,7)%TDIM => PIOCDF%DIM_LEVEL_W
-! fw point (=uvw point)
-TPFILE%TNCCOORDS(1,8)%TDIM => PIOCDF%DIM_NI_U
-TPFILE%TNCCOORDS(2,8)%TDIM => PIOCDF%DIM_NJ_V
-TPFILE%TNCCOORDS(3,8)%TDIM => PIOCDF%DIM_LEVEL_W
-
 
 END SUBROUTINE IO_Knowndims_set_nc4
 
 
-SUBROUTINE IO_Iocdf_dealloc_nc4(PIOCDF)
-TYPE(IOCDF),  POINTER :: PIOCDF
+subroutine IO_Add_dim_nc4( tpfile, kidx, hdimname, klen )
+use NETCDF, only: NF90_DEF_DIM, NF90_NOERR
 
-INTEGER(KIND=CDFINT) :: IRESP
+type(tfiledata),  intent(inout) :: tpfile
+integer,          intent(in)    :: kidx     !Position of the dimension in the list
+character(len=*), intent(in)    :: hdimname !Name of the dimension
+integer,          intent(in)    :: klen     !Length of the dimension
+
+integer(kind=CDFINT)          :: istatus
+
+
+if ( .not.Associated( tpfile%tncdims ) ) &
+  call Print_msg( NVERB_FATAL, 'IO', 'IO_Add_dim_nc4', 'tncdims not associated for ' // Trim( tpfile%cname ) )
+
+if ( kidx < 1 .or. kidx > Size( tpfile%tncdims%tdims ) )                                                      &
+  call Print_msg( NVERB_FATAL, 'IO', 'IO_Add_dim_nc4', 'index out of range for dimension ' // Trim( hdimname ) // &
+                  ' of file ' //Trim( tpfile%cname ) )
+
+if ( tpfile%tncdims%tdims(kidx)%nlen /= -1 .or. tpfile%tncdims%tdims(kidx)%nid /= -1 ) &
+  call Print_msg( NVERB_WARNING, 'IO', 'IO_Add_dim_nc4', 'dimension ' // Trim( hdimname ) //   &
+                  ' already defined for file ' //Trim( tpfile%cname ) )
+
+tpfile%tncdims%tdims(kidx)%cname = hdimname
+tpfile%tncdims%tdims(kidx)%nlen  = Int( klen, kind = CDFINT )
+
+istatus = NF90_DEF_DIM( tpfile%nncid, Trim( hdimname ), Int( klen, kind = CDFINT ), tpfile%tncdims%tdims(kidx)%nid )
+if ( istatus /= NF90_NOERR ) &
+  call IO_Err_handle_nc4( istatus, 'IO_Add_dim_nc4', 'NF90_DEF_DIM', Trim( hdimname ) )
+
+end subroutine IO_Add_dim_nc4
+
+
+SUBROUTINE IO_Iocdf_dealloc_nc4(tpdimsnc)
+TYPE(tdimsnc),  POINTER :: tpdimsnc
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Iocdf_dealloc_nc4','called')
 
-! Clean DIMLIST and DIMSTR
-CALL CLEANLIST(PIOCDF%DIMLIST)
-CALL CLEANLIST(PIOCDF%DIMSTR)
-! Then free iocdf
-DEALLOCATE(PIOCDF)
+if ( Allocated( tpdimsnc%tdims     ) ) deallocate( tpdimsnc%tdims     )
+if ( Allocated( tpdimsnc%tdims_str ) ) deallocate( tpdimsnc%tdims_str )
 
-CONTAINS
-
-SUBROUTINE CLEANLIST(PLIST)
-TYPE(DIMCDF), POINTER :: PLIST,TZDIMCUR, TZDIMNEXT
-
-TZDIMCUR  => PLIST
-DO WHILE(ASSOCIATED(TZDIMCUR))
-   TZDIMNEXT => TZDIMCUR%NEXT
-   DEALLOCATE(TZDIMCUR)
-   TZDIMCUR => TZDIMNEXT
-END DO
-
-END SUBROUTINE CLEANLIST
+deallocate( tpdimsnc )
+tpdimsnc => Null()
 
 END SUBROUTINE IO_Iocdf_dealloc_nc4
 
@@ -487,8 +486,8 @@ use modd_field,  only: NMNHDIM_UNKNOWN, NMNHDIM_ONE, NMNHDIM_COMPLEX,           
                        NMNHDIM_SPECTRA_LEVEL,                                                           &
                        NMNHDIM_SERIES_LEVEL,        NMNHDIM_SERIES_LEVEL_W, NMNHDIM_SERIES_TIME,        &
                        NMNHDIM_FLYER_TIME,          NMNHDIM_PROFILER_TIME,                              &
-                       NMNHDIM_STATION_TIME,                                                            &
-                       NMNHDIM_NOTLISTED, NMNHDIM_UNUSED
+                       NMNHDIM_STATION_TIME,        NMNHDIM_LASTDIM_DIACHRO,                            &
+                       NMNHDIM_NOTLISTED, NMNHDIM_UNUSED, NMNHDIM_ARAKAWA
 
 TYPE(TFILEDATA),                              INTENT(IN)  :: TPFILE
 TYPE(TFIELDDATA),                             INTENT(IN)  :: TPFIELD
@@ -499,12 +498,11 @@ CHARACTER(LEN=32)             :: YINT
 CHARACTER(LEN=2)              :: YDIR
 character(len=:), allocatable :: ydimname
 INTEGER                       :: IGRID
+integer                       :: iidx
 integer                       :: iresp
 INTEGER                       :: JI
 integer(kind=CDFINT)          :: ilen
 integer(kind=CDFINT)          :: istatus
-type(dimcdf)                  :: tzdim
-TYPE(DIMCDF), POINTER         :: PTDIM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Vdims_fill_nc4','called for '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -522,7 +520,7 @@ END IF
 IF (TPFIELD%LTIMEDEP) THEN
   !Add time dimension
   ALLOCATE(KVDIMS(TPFIELD%NDIMS+1))
-  KVDIMS(TPFIELD%NDIMS+1) = TPFILE%TNCDIMS%DIMTIME%ID
+  KVDIMS(TPFIELD%NDIMS+1) = tpfile%tncdims%tdims(NMNHDIM_TIME)%nid
 ELSE
   ALLOCATE(KVDIMS(TPFIELD%NDIMS))
 END IF
@@ -543,7 +541,8 @@ if ( Any( tpfield%ndimlist(:) /= NMNHDIM_UNKNOWN ) ) then
       call Print_msg( NVERB_FATAL, 'IO', 'IO_Vdims_fill_nc4', 'ndimlist partially filled for field ' // Trim( tpfield%cmnhname ) )
 
     if ( tpfield%ndimlist(ji) == NMNHDIM_NOTLISTED ) then
-      ptdim => IO_Dimcdf_get_nc4( tpfile, kshape(ji) ); kvdims(ji) = ptdim%id
+      call IO_Dim_find_create_nc4( tpfile, kshape(ji), iidx )
+      kvdims(ji) = tpfile%tncdims%tdims(iidx)%nid
       cycle
     end if
 
@@ -563,290 +562,203 @@ if ( Any( tpfield%ndimlist(:) /= NMNHDIM_UNKNOWN ) ) then
       cycle
     end if
 
-    select case ( tpfield%ndimlist(ji) )
-      case ( NMNHDIM_ONE )
-        ydimname = 'one'
+    if ( tpfield%ndimlist(ji) > 0 .and. tpfield%ndimlist(ji) <= tpfile%tncdims%nmaxdims ) then
+      kvdims(ji) = tpfile%tncdims%tdims(tpfield%ndimlist(ji))%nid
 
-      case ( NMNHDIM_COMPLEX )
-        ydimname = 'real_imaginary'
-
-      case ( NMNHDIM_NI )
-        ydimname = 'ni'
-
-      case ( NMNHDIM_NJ )
-        ydimname = 'nj'
-
-      case ( NMNHDIM_NI_U )
-        ydimname = 'ni_u'
-
-      case ( NMNHDIM_NJ_U )
-        ydimname = 'nj_u'
-
-      case ( NMNHDIM_NI_V )
-        ydimname = 'ni_v'
-
-      case ( NMNHDIM_NJ_V )
-        ydimname = 'nj_v'
-
-      case ( NMNHDIM_LEVEL )
-        ydimname = 'level'
-
-      case ( NMNHDIM_LEVEL_W )
-        ydimname = 'level_w'
-
-      case ( NMNHDIM_TIME )
-        ydimname = 'time'
-
-      case ( NMNHDIM_BUDGET_CART_NI )
-        ydimname = 'cart_ni'
-
-      case ( NMNHDIM_BUDGET_CART_NJ )
-        ydimname = 'cart_nj'
-
-      case ( NMNHDIM_BUDGET_CART_NI_U )
-        ydimname = 'cart_ni_u'
-
-      case ( NMNHDIM_BUDGET_CART_NJ_U )
-        ydimname = 'cart_nj_u'
-
-      case ( NMNHDIM_BUDGET_CART_NI_V )
-        ydimname = 'cart_ni_v'
-
-      case ( NMNHDIM_BUDGET_CART_NJ_V )
-        ydimname = 'cart_nj_v'
-
-      case ( NMNHDIM_BUDGET_CART_LEVEL )
-        ydimname = 'cart_level'
-
-      case ( NMNHDIM_BUDGET_CART_LEVEL_W )
-        ydimname = 'cart_level_w'
-
-      case ( NMNHDIM_BUDGET_MASK_LEVEL )
-        ydimname = 'mask_level'
-
-      case ( NMNHDIM_BUDGET_MASK_LEVEL_W )
-        ydimname = 'mask_level_w'
-
-      case ( NMNHDIM_BUDGET_MASK_TIME )
-        ydimname = 'time_mask'
-
-      case ( NMNHDIM_BUDGET_MASK_NBUMASK )
-        ydimname = 'nbumask'
-
-      case ( NMNHDIM_BUDGET_LES_TIME )
-        ydimname = 'time_les'
-
-      case ( NMNHDIM_BUDGET_LES_AVG_TIME )
-        ydimname = 'time_les_avg'
-
-      case ( NMNHDIM_BUDGET_LES_LEVEL )
-        ydimname = 'level_les'
-
-      case ( NMNHDIM_BUDGET_LES_SV )
-        ydimname = 'nsv'
-
-      case ( NMNHDIM_SPECTRA_2PTS_NI )
-        ydimname = 'nspectra_2pts_ni'
-
-      case ( NMNHDIM_SPECTRA_2PTS_NJ )
-        ydimname = 'nspectra_2pts_nj'
-
-      case ( NMNHDIM_SPECTRA_SPEC_NI )
-        ydimname = 'nspectra_spec_ni'
-
-      case ( NMNHDIM_SPECTRA_SPEC_NJ )
-        ydimname = 'nspectra_spec_nj'
-
-      case ( NMNHDIM_SPECTRA_LEVEL )
-        ydimname = 'nspectra_level'
-
-      case ( NMNHDIM_PROFILER_TIME )
-        ydimname = 'time_profiler'
-
-      case ( NMNHDIM_STATION_TIME )
-        ydimname = 'time_station'
-
-      case ( NMNHDIM_SERIES_LEVEL )
-        ydimname = 'series_level'
-
-      case ( NMNHDIM_SERIES_LEVEL_W )
-        ydimname = 'series_level_w'
-
-      case ( NMNHDIM_SERIES_TIME )
-        ydimname = 'time_series'
-
-      case default
-        call Print_msg( NVERB_FATAL, 'IO', 'IO_Vdims_fill_nc4', &
-                        'ndimlist case not yet implemented for field ' // Trim( tpfield%cmnhname ) )
-    end select
-
-    call IO_Dim_find_byname_nc4( tpfile, ydimname, tzdim, iresp )
-    kvdims(ji) = tzdim%id
-
-    ! Check if dimension sizes are consistent with the declared dimensions ( skip ji>size(kshape), timedep dimension)
-    if ( ji <= Size( kshape ) ) then
-      if ( kshape(ji) /= tzdim%len ) then
-        call Print_msg( NVERB_FATAL, 'IO', 'IO_Vdims_fill_nc4', &
-                                     'wrong size for dimension '// Trim( tzdim%name ) // ' of field ' // Trim( tpfield%cmnhname ) )
+      ! Check if dimension sizes are consistent with the declared dimensions ( skip ji>size(kshape), timedep dimension)
+      if ( ji <= Size( kshape ) ) then
+        if ( kshape(ji) /= tpfile%tncdims%tdims(tpfield%ndimlist(ji))%nlen )              &
+          call Print_msg( NVERB_FATAL, 'IO', 'IO_Vdims_fill_nc4', 'wrong size for dimension ' &
+                          // Trim( tpfile%tncdims%tdims(tpfield%ndimlist(ji))%cname ) //  &
+                                       ' of field ' // Trim( tpfield%cmnhname ) )
       end if
+    else
+      call Print_msg( NVERB_FATAL, 'IO', 'IO_Vdims_fill_nc4', 'wrong dimension' )
     end if
-
   end do
 else !ndimlist not provided
-  DO JI=1,SIZE(KSHAPE)
-    IF (JI == 1) THEN
-      IF ( (YDIR == 'XX' .OR. YDIR == 'XY') .AND. KSHAPE(1)==TPFILE%TNCCOORDS(1,IGRID)%TDIM%LEN) THEN
-        KVDIMS(1) = TPFILE%TNCCOORDS(1,IGRID)%TDIM%ID
-      ELSE IF ( YDIR == 'YY'                .AND. KSHAPE(1)==TPFILE%TNCCOORDS(2,IGRID)%TDIM%LEN) THEN
-        KVDIMS(1) = TPFILE%TNCCOORDS(2,IGRID)%TDIM%ID
-      ELSE IF ( YDIR == 'ZZ'                .AND. KSHAPE(1)==TPFILE%TNCCOORDS(3,IGRID)%TDIM%LEN) THEN
-        KVDIMS(1) = TPFILE%TNCCOORDS(3,IGRID)%TDIM%ID
-      ELSE
-        PTDIM => IO_Dimcdf_get_nc4(TPFILE, KSHAPE(1)); KVDIMS(1) = PTDIM%ID
-      END IF
-    ELSE IF (JI == 2) THEN
-      IF ( YDIR == 'XY' .AND. KSHAPE(2)==TPFILE%TNCCOORDS(2,IGRID)%TDIM%LEN) THEN
-        KVDIMS(2) = TPFILE%TNCCOORDS(2,IGRID)%TDIM%ID
-      ELSE
-        PTDIM => IO_Dimcdf_get_nc4(TPFILE, KSHAPE(2)); KVDIMS(2) = PTDIM%ID
-      END IF
-    ELSE IF (JI == 3) THEN
-      IF ( YDIR == 'XY' .AND. KSHAPE(3)==TPFILE%TNCCOORDS(3,IGRID)%TDIM%LEN) THEN
-        KVDIMS(3) = TPFILE%TNCCOORDS(3,IGRID)%TDIM%ID
-      ELSE
-        PTDIM => IO_Dimcdf_get_nc4(TPFILE, KSHAPE(3)); KVDIMS(3) = PTDIM%ID
-      END IF
-    ELSE
-        PTDIM => IO_Dimcdf_get_nc4(TPFILE, KSHAPE(JI)); KVDIMS(JI) = PTDIM%ID
-    END IF
+  do ji = 1, Size( kshape )
+    if ( igrid > 0 .and. igrid < 9 ) then
+      if ( ji == 1 ) then
+        if ( ( ydir == 'XX' .or. ydir == 'XY') .and. kshape(1) == tpfile%tncdims%tdims( NMNHDIM_ARAKAWA(igrid,1) )%nlen ) then
+          kvdims(1) = tpfile%tncdims%tdims( NMNHDIM_ARAKAWA(igrid,1) )%nid
+        else if ( ydir == 'YY'                .and. kshape(1) == tpfile%tncdims%tdims( NMNHDIM_ARAKAWA(igrid,2) )%nlen ) then
+          kvdims(1) = tpfile%tncdims%tdims( NMNHDIM_ARAKAWA(igrid,2) )%nid
+        else if ( ydir == 'ZZ'                .and. kshape(1) == tpfile%tncdims%tdims( NMNHDIM_ARAKAWA(igrid,3) )%nlen ) then
+          kvdims(1) = tpfile%tncdims%tdims( NMNHDIM_ARAKAWA(igrid,3) )%nid
+        else
+          call IO_Dim_find_create_nc4( tpfile, kshape(1), iidx )
+          kvdims(1) = tpfile%tncdims%tdims(iidx)%nid
+        end if
+      else if ( ji == 2 ) then
+        if ( ydir == 'XY' .and. kshape(2) == tpfile%tncdims%tdims( NMNHDIM_ARAKAWA(igrid,2) )%nlen ) then
+          kvdims(2) = tpfile%tncdims%tdims( NMNHDIM_ARAKAWA(igrid,2) )%nid
+        else
+          call IO_Dim_find_create_nc4( tpfile, kshape(2), iidx )
+          kvdims(2) = tpfile%tncdims%tdims(iidx)%nid
+        end if
+      else if ( ji == 3 ) then
+        if ( ydir == 'XY' .and. kshape(3) == tpfile%tncdims%tdims( NMNHDIM_ARAKAWA(igrid,3) )%nlen ) then
+          kvdims(3) = tpfile%tncdims%tdims( NMNHDIM_ARAKAWA(igrid,3) )%nid
+        else
+          call IO_Dim_find_create_nc4( tpfile, kshape(3), iidx )
+          kvdims(3) = tpfile%tncdims%tdims(iidx)%nid
+        end if
+      else
+        call IO_Dim_find_create_nc4( tpfile, kshape(ji), iidx )
+        kvdims(ji) = tpfile%tncdims%tdims(iidx)%nid
+      end if
+    else
+      call IO_Dim_find_create_nc4( tpfile, kshape(ji), iidx )
+      kvdims(ji) = tpfile%tncdims%tdims(iidx)%nid
+    end if
   END DO
 end if
 
 END SUBROUTINE IO_Vdims_fill_nc4
 
 
-FUNCTION IO_Dimcdf_get_nc4(TPFILE, KLEN, HDIMNAME)
-TYPE(TFILEDATA),            INTENT(IN) :: TPFILE
-INTEGER(KIND=CDFINT),       INTENT(IN) :: KLEN
-CHARACTER(LEN=*), OPTIONAL, INTENT(IN) :: HDIMNAME ! When provided don't search but
-                                                   ! simply create with name HDIMNAME
-TYPE(DIMCDF), POINTER   :: IO_Dimcdf_get_nc4
+subroutine IO_Dim_find_create_nc4( tpfile, klen, kidx, hdimname)
+use modd_netcdf, only: tdimnc
 
-TYPE(DIMCDF), POINTER :: TMP
-INTEGER               :: COUNT
-CHARACTER(LEN=16)     :: YSUFFIX
-CHARACTER(LEN=20)     :: YDIMNAME
-INTEGER(KIND=CDFINT)  :: STATUS
-LOGICAL               :: GCHKLEN !Check if KLEN is valid
-TYPE(IOCDF), POINTER  :: PIOCDF
+type(tfiledata),            intent(in) :: tpfile
+integer,       intent(in) :: klen
+CHARACTER(LEN=*), OPTIONAL, INTENT(IN) :: HDIMNAME
+integer, intent(out) :: kidx !Position of the dimension in the dimension array
 
-CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Dimcdf_get_nc4','called')
+character(len=16)     :: ysuffix
+integer :: inewsize
+integer :: ji
+integer(kind=CDFINT)  :: istatus
+type(tdimnc), dimension(:), allocatable :: tzncdims
 
-PIOCDF => TPFILE%TNCDIMS
 
-GCHKLEN = .TRUE.
-!Do not check KLEN if 'time' (because NF90_UNLIMITED = 0)
-IF (PRESENT(HDIMNAME)) THEN
-  IF (TRIM(HDIMNAME)=='time') THEN
-    GCHKLEN = .FALSE.
-  END IF
-END IF
+kidx = -1
 
-WRITE(YSUFFIX,'(I0)') KLEN
+do ji = 1, Size( tpfile%tncdims%tdims )
+  if ( tpfile%tncdims%tdims(ji)%nlen == klen ) then
+    if ( Present( hdimname ) ) then
+      if ( hdimname == Trim( tpfile%tncdims%tdims(ji)%cname ) ) then
+        kidx = ji
+        exit
+      end if
+    else
+      kidx = ji
+      exit
+    end if
+  end if
+end do
 
-IF (GCHKLEN .AND. KLEN < 1) THEN
-  CALL PRINT_MSG(NVERB_FATAL,'IO','IO_Dimcdf_get_nc4','KLEN='//TRIM(YSUFFIX))
-END IF
+if ( kidx == - 1 ) then
+  !Check if already exist with the provided name (if so => error)
+  if ( Present( hdimname ) ) then
+    do ji = 1, Size( tpfile%tncdims%tdims )
+      if ( hdimname == Trim( tpfile%tncdims%tdims(ji)%cname ) )                             &
+        call Print_msg( NVERB_ERROR, 'IO', 'IO_Dim_find_create_nc4', 'dimension '          &
+                        // Trim( hdimname ) // ' already exist but with a different size' )
+    end do
+  end if
 
-IF (PRESENT(HDIMNAME)) THEN
-   NULLIFY(TMP)
-   YDIMNAME = TRIM(HDIMNAME)
-ELSE
-   ! Search dimension with KLEN length
-   COUNT = 1
-   TMP  => PIOCDF%DIMLIST
-   DO WHILE(ASSOCIATED(TMP))
-      IF (TMP%LEN == KLEN .AND. TMP%NAME(1:4) /= 'char') EXIT
-      TMP=>TMP%NEXT
-      COUNT = COUNT+1
-   END DO
-   YDIMNAME = 'size'//TRIM(YSUFFIX)
-END IF
+  !Create new dimension
+  inewsize = Size( tpfile%tncdims%tdims ) + 1
+  allocate( tzncdims(inewsize) )
+  tzncdims(1 : inewsize - 1) = tpfile%tncdims%tdims(:)
 
-IF (.NOT. ASSOCIATED(TMP)) THEN
-   ! Not found then define new dimension
-   ALLOCATE(TMP)
-   TMP%NAME = YDIMNAME
-   TMP%LEN = KLEN
-   STATUS = NF90_DEF_DIM(TPFILE%NNCID, TMP%NAME, KLEN, TMP%ID)
-   IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Dimcdf_get_nc4','NF90_DEF_DIM',trim(TMP%NAME))
-   NULLIFY(TMP%NEXT)
-   TMP%NEXT       => PIOCDF%DIMLIST
-   PIOCDF%DIMLIST => TMP
-CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Dimcdf_get_nc4','new dimension: '//TRIM(TMP%NAME))
-END IF
+  if ( Present( hdimname ) ) then
+    tzncdims(inewsize)%cname = Trim( hdimname )
+  else
+    Write( ysuffix, '( i0 )' ) klen
+    tzncdims(inewsize)%cname = 'size' // Trim( ysuffix )
+  end if
+  tzncdims(inewsize)%nlen = Int( klen, kind = CDFINT )
 
-IO_Dimcdf_get_nc4 => TMP
+  istatus = NF90_DEF_DIM( tpfile%nncid, tzncdims(inewsize)%cname, Int( klen, kind = CDFINT ), tzncdims(inewsize)%nid )
+  if ( istatus /= NF90_NOERR ) &
+    call IO_Err_handle_nc4( istatus, 'IO_Dim_find_create_nc4', 'NF90_DEF_DIM', Trim( tzncdims(inewsize)%cname) )
 
-END FUNCTION IO_Dimcdf_get_nc4
+  call Move_alloc( from = tzncdims, to = tpfile%tncdims%tdims )
+  tpfile%tncdims%nmaxdims = inewsize
+
+  kidx = inewsize
+  call Print_msg( NVERB_DEBUG, 'IO', 'IO_Dim_find_create_nc4','new dimension: ' // Trim( tpfile%tncdims%tdims(inewsize)%cname ) )
+end if
+
+end subroutine IO_Dim_find_create_nc4
 
 
 FUNCTION IO_Strdimid_get_nc4(TPFILE,KLEN)
+use modd_netcdf, only: tdimnc
+
 TYPE(TFILEDATA),      INTENT(IN) :: TPFILE
 INTEGER(KIND=CDFINT), INTENT(IN) :: KLEN
 INTEGER(KIND=CDFINT)             :: IO_Strdimid_get_nc4
 
-TYPE(DIMCDF), POINTER :: TMP
-TYPE(IOCDF),  POINTER :: TZIOCDF
-CHARACTER(LEN=16)     :: YSUFFIX
-INTEGER(KIND=CDFINT)  :: STATUS
+CHARACTER(LEN=16)                       :: YSUFFIX
+integer                                 :: idx
+integer                                 :: inewsize
+integer                                 :: ji
+integer(kind=CDFINT)                    :: istatus
+type(tdimnc), dimension(:), allocatable :: tzncdims
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Strdimid_get_nc4','called')
-
-WRITE(YSUFFIX,'(I0)') KLEN
 
 IF (KLEN < 1) THEN
   CALL PRINT_MSG(NVERB_FATAL,'IO','IO_Strdimid_get_nc4','KLEN='//TRIM(YSUFFIX))
 END IF
 
 ! Search string dimension with KLEN length
-TMP  => TPFILE%TNCDIMS%DIMSTR
-DO WHILE(ASSOCIATED(TMP))
-   IF (TMP%LEN == KLEN) EXIT
-   TMP=>TMP%NEXT
-END DO
+idx = -1
+if ( Allocated( tpfile%tncdims%tdims_str ) ) then
+  do ji = 1, Size( tpfile%tncdims%tdims_str )
+    if ( tpfile%tncdims%tdims_str(ji)%nlen == klen ) then
+      idx = ji
+      exit
+    end if
+  end do
+end if
 
-IF (.NOT. ASSOCIATED(TMP)) THEN
-   ! Not found then define new dimension
-   ALLOCATE(TMP)
-   TMP%NAME = 'char'//TRIM(YSUFFIX)
-   TMP%LEN = KLEN
-   STATUS = NF90_DEF_DIM(TPFILE%NNCID, TMP%NAME, KLEN, TMP%ID)
-   IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Strdimid_get_nc4','NF90_DEF_DIM',trim(TMP%NAME))
-   NULLIFY(TMP%NEXT)
-   TMP%NEXT      => TPFILE%TNCDIMS%DIMSTR
-   TZIOCDF => TPFILE%TNCDIMS
-   TZIOCDF%DIMSTR => TMP
-END IF
+if ( idx == -1 ) then
+  !Create new dimension
+  inewsize = tpfile%tncdims%nmaxdims_str + 1
+  allocate( tzncdims(inewsize) )
+  if ( Allocated( tpfile%tncdims%tdims_str ) ) &
+    tzncdims(1 : inewsize - 1) = tpfile%tncdims%tdims_str(:)
 
-IO_Strdimid_get_nc4 = TMP%ID
+  Write( ysuffix, '( i0 )' ) klen
+  tzncdims(inewsize)%cname = 'char' // Trim( ysuffix )
+  tzncdims(inewsize)%nlen = Int( klen, kind = CDFINT )
+
+  istatus = NF90_DEF_DIM( tpfile%nncid, tzncdims(inewsize)%cname, Int( klen, kind = CDFINT ), tzncdims(inewsize)%nid )
+  if ( istatus /= NF90_NOERR ) &
+    call IO_Err_handle_nc4( istatus, 'IO_Strdimid_get_nc4', 'NF90_DEF_DIM', Trim( tzncdims(inewsize)%cname) )
+
+  call Move_alloc( from = tzncdims, to = tpfile%tncdims%tdims_str )
+  tpfile%tncdims%nmaxdims_str = inewsize
+
+  idx = inewsize
+
+  call Print_msg( NVERB_DEBUG, 'IO', 'IO_Dim_find_create_nc4','new dimension: ' &
+                  // Trim( tpfile%tncdims%tdims_str(inewsize)%cname ) )
+end if
+
+IO_Strdimid_get_nc4 = tpfile%tncdims%tdims_str(idx)%nid
 
 END FUNCTION IO_Strdimid_get_nc4
 
 
 FUNCTION IO_Iocdf_alloc_nc4()
-TYPE(IOCDF), POINTER :: IO_Iocdf_alloc_nc4
-TYPE(IOCDF), POINTER :: TZIOCDF
-INTEGER              :: IRESP
+type(tdimsnc), pointer :: IO_Iocdf_alloc_nc4
+type(tdimsnc), pointer :: tzdimsnc
+INTEGER                :: IRESP
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Iocdf_alloc_nc4','called')
 
-ALLOCATE(TZIOCDF, STAT=IRESP)
+ALLOCATE(tzdimsnc, STAT=IRESP)
 IF (IRESP > 0) THEN
   CALL PRINT_MSG(NVERB_FATAL,'IO','IO_Iocdf_alloc_nc4','memory allocation error')
 END IF
 
-IO_Iocdf_alloc_nc4=>TZIOCDF
+IO_Iocdf_alloc_nc4 => tzdimsnc
 
 END FUNCTION IO_Iocdf_alloc_nc4
 

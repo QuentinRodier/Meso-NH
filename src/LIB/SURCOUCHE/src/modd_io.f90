@@ -11,13 +11,14 @@
 !  P. Wautelet 12/03/2019: add TMAINFILE field in TFILEDATA
 !  P. Wautelet 17/01/2020: add 'BUD' category for Print_msg + corresponding namelist variables
 !  P. Wautelet 22/09/2020: add ldimreduced in tfiledata
+!  P. Wautelet 10/11/2020: new data structures for netCDF dimensions
 !-----------------------------------------------------------------
 
 #define MNH_REDUCE_DIMENSIONS_IN_FILES 1
 
 MODULE MODD_IO
 !
-USE MODD_NETCDF,     ONLY: IOCDF, TPTR2DIMCDF
+use modd_netcdf,     only: tdimsnc
 USE MODD_PARAMETERS, ONLY: NDIRNAMELGTMAX, NFILENAMELGTMAX
 use modd_precision,  only: CDFINT, LFIINT
 !
@@ -112,15 +113,16 @@ TYPE TFILEDATA
   INTEGER              :: NLFIVERB  = 1  !LFI verbosity level
   INTEGER(KIND=LFIINT) :: NLFIFLU   = -1 !File identifier
   !
+#ifdef MNH_IOCDF4
   ! Fields for netCDF files
-  INTEGER(KIND=CDFINT) :: NNCID = -1 !File identifier
-  INTEGER(KIND=CDFINT) :: NNCNAR = 0 !Number of articles of the netCDF file (only accurate if file opened in read mode)
-  LOGICAL              :: LNCREDUCE_FLOAT_PRECISION = .FALSE. ! Reduce the precision of floats to single precision
-                                                                  ! instead of double precision
-  LOGICAL              :: LNCCOMPRESS = .FALSE. ! Do compression on fields
-  INTEGER(KIND=CDFINT) :: NNCCOMPRESS_LEVEL = 0 ! Compression level
-  TYPE(IOCDF),POINTER  :: TNCDIMS => NULL()     ! Structure containing netCDF dimensions
-  TYPE(TPTR2DIMCDF),DIMENSION(:,:),ALLOCATABLE :: TNCCOORDS ! Structure pointing to the coordinates variables
+  INTEGER(KIND=CDFINT)   :: NNCID = -1 !File identifier (corresponding to the actual group)
+  INTEGER(KIND=CDFINT)   :: NNCNAR = 0 !Number of articles of the netCDF file (only accurate if file opened in read mode)
+  LOGICAL                :: LNCREDUCE_FLOAT_PRECISION = .FALSE. ! Reduce the precision of floats to single precision
+                                                                ! instead of double precision
+  LOGICAL                :: LNCCOMPRESS = .FALSE. ! Do compression on fields
+  INTEGER(KIND=CDFINT)   :: NNCCOMPRESS_LEVEL = 0 ! Compression level
+  type(tdimsnc), pointer :: tncdims => Null()     ! Dimensions of netCDF file
+#endif
   !
   !Fields for other files
   INTEGER :: NLU = -1                      !Logical unit number
@@ -150,6 +152,6 @@ TYPE(TFILEDATA),POINTER,SAVE :: TFILE_SURFEX  => NULL() !Pointer used to find th
 TYPE(TFILEDATA),POINTER,SAVE :: TFILE_OUTPUTLISTING  => NULL() !Pointer used to point to the file used when writing to OUTPUT_LISTINGn file
 
 !Non existing file which can be used as a dummy target
-TYPE(TFILEDATA),TARGET, SAVE :: TFILE_DUMMY = TFILEDATA(CNAME="dummy",CDIRNAME=NULL(),TFILES_IOZ=NULL(),TNCCOORDS=NULL())
+TYPE(TFILEDATA),TARGET, SAVE :: TFILE_DUMMY = TFILEDATA(CNAME="dummy",CDIRNAME=NULL(),TFILES_IOZ=NULL())
 
 END MODULE MODD_IO
