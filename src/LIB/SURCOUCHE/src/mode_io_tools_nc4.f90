@@ -44,7 +44,6 @@ character(len=*), intent(in)  :: hdimname
 type(tdimnc),     intent(out) :: tpdim
 integer,          intent(out) :: kresp
 
-integer :: idx
 integer :: ji
 
 call Print_msg( NVERB_DEBUG, 'IO', 'IO_Dim_find_byname_nc4', 'called for dimension name ' // Trim( hdimname ) )
@@ -63,10 +62,9 @@ if ( .not.Allocated( tpfile%tncdims%tdims ) ) then
   return
 end if
 
-idx = -1
 do ji = 1, tpfile%tncdims%nmaxdims
   if ( Trim( hdimname ) == Trim( tpfile%tncdims%tdims(ji)%cname ) ) then
-    idx = ji
+    tpdim = tpfile%tncdims%tdims(ji)
     kresp = 0
     exit
   end if

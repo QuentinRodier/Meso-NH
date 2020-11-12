@@ -1629,7 +1629,7 @@ END DO
       END IF
       IF (TRIM(TPREC%TDIMS(JJ)%cname)/='time' .AND. &
         TPREC%TDIMS(JJ)%nlen /= TPREC%NDIMSIZES_FILE(JJ)) THEN
-        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FILL_DIMS_NC4','problem with dimensions for '//TPREC%TFIELD%CMNHNAME)
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Dims_fill_nc4','problem with dimensions for '//TPREC%TFIELD%CMNHNAME)
         KRESP = -3
         EXIT
       END IF
