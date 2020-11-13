@@ -2045,8 +2045,10 @@ SUBROUTINE WRITE_VER_COORD(TDIM,HLONGNAME,HSTDNAME,HCOMPNAME,PSHIFT,KBOUNDLOW,KB
   ! Write metadata
   STATUS = NF90_PUT_ATT(INCID, IVARID, 'long_name',HLONGNAME)
   IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_VER_COORD','NF90_PUT_ATT','long_name for '//trim(YVARNAME))
-  STATUS = NF90_PUT_ATT(INCID, IVARID, 'standard_name',HSTDNAME)
-  IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_VER_COORD','NF90_PUT_ATT','standard_name for '//trim(YVARNAME))
+  if ( Len_trim( hstdname ) > 0 ) then
+    STATUS = NF90_PUT_ATT(INCID, IVARID, 'standard_name',HSTDNAME)
+    IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_VER_COORD','NF90_PUT_ATT','standard_name for '//trim(YVARNAME))
+  end if
   STATUS = NF90_PUT_ATT(INCID, IVARID, 'units','m')
   IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_VER_COORD','NF90_PUT_ATT','units for '//trim(YVARNAME))
   STATUS = NF90_PUT_ATT(INCID, IVARID, 'axis','Z')
