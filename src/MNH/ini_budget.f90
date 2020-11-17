@@ -208,7 +208,8 @@ use modd_budget
 use modd_ch_aerosol,    only: lorilam
 use modd_conf,          only: l1d, lcartesian, lforcing, lthinshell, nmodel
 use modd_dust,          only: ldust
-use modd_dyn,           only: lcorio
+use modd_dyn,           only: lcorio, xseglen
+use modd_dyn_n,         only: xtstep
 use modd_elec_descr,    only: linductive, lrelax2fw_ion
 use modd_field,         only: TYPEREAL
 use modd_nsv,           only: nsv_aerbeg, nsv_aerend, nsv_c2r2beg, nsv_c2r2end, nsv_chembeg, nsv_chemend,          &
@@ -284,6 +285,8 @@ CHARACTER (LEN=*), INTENT(IN) :: HCLOUD ! type of microphysical scheme
 !
 !*       0.2   declarations of local variables
 !
+real, parameter :: ITOL = 1e-6
+
 INTEGER :: JI, JJ, JK , JJJ                               ! loop indices
 INTEGER :: IIMAX_ll, IJMAX_ll ! size of the physical global domain
 INTEGER :: IIU, IJU                                       ! size along x and y directions
@@ -323,11 +326,30 @@ ELSE
   NBUKMAX = NBUKH - NBUKL +1
 END IF
 !
+if ( cbutype == 'CART' .or. cbutype == 'MASK' ) then
+  !Check if xbulen is a multiple of xtstep (within tolerance)
+  if ( Abs( Nint( xbulen / xtstep ) * xtstep - xbulen ) > ( ITOL * xtstep ) ) &
+    call Print_msg( NVERB_WARNING, 'BUD', 'Ini_budget', 'xbulen is not a multiple of xtstep' )
+
+  !Check if xbuwri is a multiple of xtstep (within tolerance)
+  if ( Abs( Nint( xbuwri / xtstep ) * xtstep - xbuwri ) > ( ITOL * xtstep ) ) &
+    call Print_msg( NVERB_WARNING, 'BUD', 'Ini_budget', 'xbuwri is not a multiple of xtstep' )
+
+  !Check if xbuwri is a multiple of xbulen (within tolerance)
+  if ( Abs( Nint( xbuwri / xbulen ) * xbulen - xbuwri ) > ( ITOL * xbulen ) ) &
+    call Print_msg( NVERB_WARNING, 'BUD', 'Ini_budget', 'xbuwri is not a multiple of xbulen' )
+
+  !Check if xseglen is a multiple of xbuwri (within tolerance)
+  if ( Abs( Nint( xseglen / xbuwri ) * xbuwri - xseglen ) > ( ITOL * xseglen ) ) &
+    call Print_msg( NVERB_WARNING, 'BUD', 'Ini_budget', 'xseglen is not a multiple of xbuwri' )
+
+    NBUWRNB = NINT (XBUWRI / XBULEN)  ! only after NBUWRNB budget periods, we write the
+                                      ! result on the FM_FILE
+end if
+
 IF (CBUTYPE=='CART') THEN              ! cartesian case only
 !
-  NBUWRNB = NINT (XBUWRI / XBULEN)  ! only after NBUWRNB budget periods, we write the
-                                    ! result on the FM_FILE   
-  IF (LBU_ICP) THEN 
+  IF (LBU_ICP) THEN
     NBUIMAX_ll = 1
   ELSE
     NBUIMAX_ll = NBUIH - NBUIL +1
@@ -366,7 +388,6 @@ IF (CBUTYPE=='CART') THEN              ! cartesian case only
 ELSEIF (CBUTYPE=='MASK') THEN          ! mask case only 
 !
   LBU_ENABLE=.TRUE.
-  NBUWRNB = NINT (XBUWRI / XBULEN)  ! only after NBUWRNB budget periods, we write the
                                     ! result on the FM_FILE
   NBUTIME = 1
 
@@ -395,7 +416,6 @@ ELSEIF (CBUTYPE=='MASK') THEN          ! mask case only
    NBUIH=IIMAX_ll + 2 * JPHEXT
    NBUJL=1 
    NBUJH=IJMAX_ll + 2 * JPHEXT
-   
 !
 ELSE                      ! default case
 !
