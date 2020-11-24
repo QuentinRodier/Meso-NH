@@ -253,8 +253,8 @@ use modd_field,         only: NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NI_U, NMNHDIM_NJ_U
                               NMNHDIM_BUDGET_CART_NI, NMNHDIM_BUDGET_CART_NJ, NMNHDIM_BUDGET_CART_NI_U,         &
                               NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NI_V, NMNHDIM_BUDGET_CART_NJ_V,     &
                               NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W,                           &
-                              NMNHDIM_BUDGET_MASK_LEVEL, NMNHDIM_BUDGET_MASK_LEVEL_W, NMNHDIM_BUDGET_MASK_TIME, &
-                              NMNHDIM_BUDGET_MASK_NBUMASK,                                                      &
+                              NMNHDIM_BUDGET_MASK_LEVEL, NMNHDIM_BUDGET_MASK_LEVEL_W,                           &
+                              NMNHDIM_BUDGET_MASK_NBUMASK, NMNHDIM_BUDGET_TIME,                                 &
                               NMNHDIM_BUDGET_LES_TIME, NMNHDIM_BUDGET_LES_AVG_TIME, NMNHDIM_BUDGET_LES_LEVEL,   &
                               NMNHDIM_BUDGET_LES_SV,                                                            &
                               NMNHDIM_SPECTRA_2PTS_NI, NMNHDIM_SPECTRA_2PTS_NJ,                                 &
@@ -348,7 +348,7 @@ if ( tpfile%ctype == 'MNHDIACHRONIC' ) then
   else if ( cbutype == 'MASK' ) then
     if ( nbukmax > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_MASK_LEVEL,   'mask_level',   nbukmax )
     if ( nbukmax > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_MASK_LEVEL_W, 'mask_level_w', nbukmax )
-    if ( nbuwrnb > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_MASK_TIME,    'time_mask',    nbuwrnb )
+    if ( nbuwrnb > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_TIME,         'time_budget',  nbuwrnb )
     if ( nbumask > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_MASK_NBUMASK, 'nbumask',      nbumask )
   end if
 
@@ -476,7 +476,7 @@ use modd_field,  only: NMNHDIM_UNKNOWN, NMNHDIM_ONE, NMNHDIM_COMPLEX,           
                        NMNHDIM_BUDGET_CART_NJ_U,    NMNHDIM_BUDGET_CART_NI_V, NMNHDIM_BUDGET_CART_NJ_V, &
                        NMNHDIM_BUDGET_CART_LEVEL,   NMNHDIM_BUDGET_CART_LEVEL_W,                        &
                        NMNHDIM_BUDGET_MASK_LEVEL,   NMNHDIM_BUDGET_MASK_LEVEL_W,                        &
-                       NMNHDIM_BUDGET_MASK_TIME,    NMNHDIM_BUDGET_MASK_NBUMASK,                        &
+                       NMNHDIM_BUDGET_MASK_NBUMASK, NMNHDIM_BUDGET_TIME,                                &
                        NMNHDIM_BUDGET_LES_AVG_TIME, NMNHDIM_BUDGET_LES_TIME,                            &
                        NMNHDIM_BUDGET_LES_LEVEL,    NMNHDIM_BUDGET_LES_SV,                              &
                        NMNHDIM_SPECTRA_2PTS_NI,     NMNHDIM_SPECTRA_2PTS_NJ,                            &

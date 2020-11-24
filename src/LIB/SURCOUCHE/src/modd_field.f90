@@ -57,8 +57,9 @@ integer, parameter :: NMNHDIM_BUDGET_CART_LEVEL_W = 19
 
 integer, parameter :: NMNHDIM_BUDGET_MASK_LEVEL   = 20
 integer, parameter :: NMNHDIM_BUDGET_MASK_LEVEL_W = 21
-integer, parameter :: NMNHDIM_BUDGET_MASK_TIME    = 22
-integer, parameter :: NMNHDIM_BUDGET_MASK_NBUMASK = 23
+integer, parameter :: NMNHDIM_BUDGET_MASK_NBUMASK = 22
+
+integer, parameter :: NMNHDIM_BUDGET_TIME         = 23
 
 integer, parameter :: NMNHDIM_BUDGET_LES_TIME     = 24
 integer, parameter :: NMNHDIM_BUDGET_LES_AVG_TIME = 25

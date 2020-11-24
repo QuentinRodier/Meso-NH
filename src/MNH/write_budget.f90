@@ -358,7 +358,7 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
                                     NMNHDIM_BUDGET_CART_NJ_U,  NMNHDIM_BUDGET_CART_NI_V, NMNHDIM_BUDGET_CART_NJ_V, &
                                     NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W,                        &
                                     NMNHDIM_BUDGET_MASK_LEVEL, NMNHDIM_BUDGET_MASK_LEVEL_W,                        &
-                                    NMNHDIM_BUDGET_MASK_TIME,  NMNHDIM_BUDGET_MASK_NBUMASK,                        &
+                                    NMNHDIM_BUDGET_MASK_NBUMASK, NMNHDIM_BUDGET_TIME,                              &
                                     NMNHDIM_UNUSED, NMNHDIM_UNKNOWN
   use modd_io,                only: tfiledata
   use modd_lunit_n,           only: tluout
@@ -489,7 +489,7 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
       case ( 4 )
         tzfield%ndimlist(3)  = NMNHDIM_BUDGET_MASK_LEVEL_W
     end select
-    tzfield%ndimlist(4) = NMNHDIM_BUDGET_MASK_TIME
+    tzfield%ndimlist(4) = NMNHDIM_BUDGET_TIME
     tzfield%ndimlist(5) = NMNHDIM_BUDGET_MASK_NBUMASK
     tzfield%ndimlist(6) = NMNHDIM_UNUSED
 
@@ -517,7 +517,7 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
                                     NMNHDIM_BUDGET_CART_NJ_U,  NMNHDIM_BUDGET_CART_NI_V, NMNHDIM_BUDGET_CART_NJ_V, &
                                     NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W,                        &
                                     NMNHDIM_BUDGET_MASK_LEVEL, NMNHDIM_BUDGET_MASK_LEVEL_W,                        &
-                                    NMNHDIM_BUDGET_MASK_TIME,  NMNHDIM_BUDGET_MASK_NBUMASK,                        &
+                                    NMNHDIM_BUDGET_MASK_NBUMASK, NMNHDIM_BUDGET_TIME,                              &
                                     NMNHDIM_BUDGET_NGROUPS,    NMNHDIM_UNUSED, NMNHDIM_UNKNOWN,                    &
                                     TYPEREAL
   use modd_io,                only: tfiledata
@@ -714,7 +714,7 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
         case ( 4 )
           tzfields(jproc)%ndimlist(3)  = NMNHDIM_BUDGET_MASK_LEVEL_W
       end select
-      tzfields(jproc)%ndimlist(4) = NMNHDIM_BUDGET_MASK_TIME
+      tzfields(jproc)%ndimlist(4) = NMNHDIM_BUDGET_TIME
       tzfields(jproc)%ndimlist(5) = NMNHDIM_BUDGET_MASK_NBUMASK
       tzfields(jproc)%ndimlist(6) = NMNHDIM_BUDGET_NGROUPS
 

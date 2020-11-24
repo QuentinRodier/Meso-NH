@@ -1216,7 +1216,7 @@ select case ( idims )
       deallocate( zdata3d )
     else if (  ( tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_MASK_LEVEL &
                   .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_MASK_LEVEL_W ) &
-       .and.    tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_MASK_TIME &
+       .and.    tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_TIME &
        .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_MASK_NBUMASK      ) then
       !Correspond to Store_one_budget_rho (MASK)
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
@@ -1566,7 +1566,7 @@ select case ( idims )
 
     elseif (  ( tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_MASK_LEVEL &
                   .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_MASK_LEVEL_W ) &
-       .and.    tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_MASK_TIME &
+       .and.    tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_TIME &
        .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_MASK_NBUMASK &
        .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS      ) then
       !Correspond to Store_one_budget (MASK)
