@@ -1002,64 +1002,6 @@ CALL DATETIME_DISTANCE(TZREF,TPDATA,ZDELTATIME)
 STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, ZDELTATIME)
 IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_T0','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
-#if 0
-!This part is to keep backward compatibility with MesoNH files
-!but date/time is not conform to CF convention
-!
-! Write date
-!
-TZFIELD%CMNHNAME  = TRIM(YVARNAME)//'__TDATE'
-TZFIELD%CLONGNAME = TRIM(TPFIELD%CLONGNAME)//'%TDATE'
-TZFIELD%CUNITS    = ''
-TZFIELD%CCOMMENT  = 'YYYYMMDD'
-
-! The variable should not already exist but who knows ?
-STATUS = NF90_INQ_VARID(INCID, TZFIELD%CMNHNAME, IVARID)
-IF (STATUS /= NF90_NOERR) THEN
-   ! Get the netcdf dimensions
-   CALL IO_Vdims_fill_nc4(TPFILE, TPFIELD, INT(SHAPE(ITDATE),KIND=CDFINT), IVDIMS)
-
-   ! Define the variable
-   STATUS = NF90_DEF_VAR(INCID, TZFIELD%CMNHNAME, NF90_INT, IVDIMS, IVARID)
-     IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_T0','NF90_DEF_VAR',trim(TZFIELD%CMNHNAME))
-   CALL IO_Field_attr_write_nc4(TPFILE,TZFIELD,IVARID,GEXISTED)
-ELSE
-   CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_T0',TRIM(TPFILE%CNAME)//': '//TRIM(TZFIELD%CMNHNAME)//' already defined')
-END IF
-
-! Write the data
-STATUS = NF90_PUT_VAR(INCID, IVARID, ITDATE)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_T0','NF90_PUT_VAR',trim(TZFIELD%CMNHNAME),IRESP)
-
-IF (IRESP/=0) THEN
-  KRESP = IRESP
-  RETURN
-END IF
-!
-! Write time
-!
-TZFIELD%CMNHNAME  = TRIM(YVARNAME)//'__TIME'
-TZFIELD%CLONGNAME = TRIM(TPFIELD%CLONGNAME)//'%TIME'
-TZFIELD%CUNITS    = 's'
-TZFIELD%CCOMMENT  = 'SECONDS'
-
-! The variable should not already exist but who knows ?
-STATUS = NF90_INQ_VARID(INCID, TZFIELD%CMNHNAME, IVARID)
-IF (STATUS /= NF90_NOERR) THEN
-   ! Define the scalar variable
-   STATUS = NF90_DEF_VAR(INCID, TZFIELD%CMNHNAME, MNHREAL_NF90, IVARID)
-   IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_T0','NF90_DEF_VAR',trim(TZFIELD%CMNHNAME))
-   CALL IO_Field_attr_write_nc4(TPFILE,TZFIELD,IVARID,GEXISTED)
-ELSE
-   GEXISTED = .TRUE.
-   CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_T0',TRIM(TPFILE%CNAME)//': '//TRIM(TZFIELD%CMNHNAME)//' already defined')
-END IF
-
-! Write the data
-STATUS = NF90_PUT_VAR(INCID, IVARID, TPDATA%TIME)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_T0','NF90_PUT_VAR',trim(TZFIELD%CMNHNAME),IRESP)
-#endif
-
 END SUBROUTINE IO_Field_write_nc4_T0
 
 
