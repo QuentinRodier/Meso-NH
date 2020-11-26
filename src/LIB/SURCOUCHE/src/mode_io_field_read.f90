@@ -365,8 +365,8 @@ LOGICAL                      :: GALLOC
 logical                          :: glfi, gnc4
 INTEGER                      :: IRESP
 INTEGER                      :: IHEXTOT
-REAL(kind=MNHTIME), DIMENSION(2) :: T0, T1, T2
-REAL(kind=MNHTIME), DIMENSION(2) :: T11, T22
+REAL(kind=MNHTIME), DIMENSION(2) :: ZT0, ZT1, ZT2
+REAL(kind=MNHTIME), DIMENSION(2) :: ZT11, ZT22
 type(tfielddata)                 :: tzfield
 #ifdef MNH_GA
 REAL,DIMENSION(:,:),POINTER  :: ZFIELD_GA
@@ -376,7 +376,7 @@ INTEGER                      :: IINFO_ll
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_byfield_X2',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
-CALL SECOND_MNH2(T11)
+CALL SECOND_MNH2(ZT11)
 GALLOC = .FALSE.
 IRESP = 0
 ZFIELDP => NULL()
@@ -436,7 +436,7 @@ IF (IRESP==0) THEN
       if ( glfi ) call IO_Field_read_lfi( tpfile, tpfield, pfield, iresp )
     end if
   ELSE
-    CALL SECOND_MNH2(T0)
+    CALL SECOND_MNH2(ZT0)
     IF (ISP == TPFILE%NMASTER_RANK)  THEN
       ! I/O process case
       CALL ALLOCBUFFER_ll(ZFIELDP,PFIELD,TPFIELD%CDIR,GALLOC, KIMAX_ll, KJMAX_ll)
@@ -447,8 +447,8 @@ IF (IRESP==0) THEN
       ALLOCATE(ZFIELDP(0,0))
       GALLOC = .TRUE.
     END IF
-    CALL SECOND_MNH2(T1)
-    TIMEZ%T_READ2D_READ=TIMEZ%T_READ2D_READ + T1 - T0
+    CALL SECOND_MNH2(ZT1)
+    TIMEZ%T_READ2D_READ=TIMEZ%T_READ2D_READ + ZT1 - ZT0
     !
     CALL MPI_BCAST(IRESP,1,MNHINT_MPI,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
     !
@@ -503,8 +503,8 @@ IF (IRESP==0) THEN
     ELSE
       CALL MPI_BCAST(PFIELD,SIZE(PFIELD),MNHREAL_MPI,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
     END IF
-    CALL SECOND_MNH2(T2)
-    TIMEZ%T_READ2D_SCAT=TIMEZ%T_READ2D_SCAT + T2 - T1
+    CALL SECOND_MNH2(ZT2)
+    TIMEZ%T_READ2D_SCAT=TIMEZ%T_READ2D_SCAT + ZT2 - ZT1
   END IF
 END IF
 !
@@ -514,8 +514,8 @@ IF (IRESP==-111) IRESP = 0 !-111 is not really an error (metadata has changed)
 !
 IF (PRESENT(KRESP)) KRESP = IRESP
 !
-CALL SECOND_MNH2(T22)
-TIMEZ%T_READ2D_ALL=TIMEZ%T_READ2D_ALL + T22 - T11
+CALL SECOND_MNH2(ZT22)
+TIMEZ%T_READ2D_ALL=TIMEZ%T_READ2D_ALL + ZT22 - ZT11
 !
 END SUBROUTINE IO_Field_read_byfield_X2
 
@@ -572,18 +572,18 @@ INTEGER                               :: IHEXTOT
 INTEGER                               :: IK_FILE,IK_RANK,INB_PROC_REAL,JK_MAX
 INTEGER                               :: JI,IXO,IXE,IYO,IYE
 INTEGER                               :: JK,JKK
-INTEGER                               :: NB_REQ
-INTEGER,ALLOCATABLE,DIMENSION(:)      :: REQ_TAB
-INTEGER, DIMENSION(MPI_STATUS_SIZE)   :: STATUS
+INTEGER                               :: INB_REQ
+INTEGER,ALLOCATABLE,DIMENSION(:)      :: IREQ_TAB
+INTEGER, DIMENSION(MPI_STATUS_SIZE)   :: ISTATUS
 LOGICAL                               :: GALLOC, GALLOC_ll
 logical                               :: glfi, gnc4
-REAL,DIMENSION(:,:),POINTER           :: TX2DP
+REAL,DIMENSION(:,:),POINTER           :: ZTX2DP
 REAL,DIMENSION(:,:),POINTER           :: ZSLICE_ll,ZSLICE
 real,dimension(:),     pointer        :: zfieldp1d
 real,dimension(:,:),   pointer        :: zfieldp2d
 REAL,DIMENSION(:,:,:), POINTER        :: ZFIELDP
-REAL(kind=MNHTIME), DIMENSION(2)      :: T0, T1, T2
-REAL(kind=MNHTIME), DIMENSION(2)      :: T11, T22
+REAL(kind=MNHTIME), DIMENSION(2)      :: ZT0, ZT1, ZT2
+REAL(kind=MNHTIME), DIMENSION(2)      :: ZT11, ZT22
 CHARACTER(LEN=2)                      :: YDIR
 CHARACTER(LEN=4)                      :: YK
 CHARACTER(LEN=NMNHNAMELGTMAX+4)       :: YRECZSLICE
@@ -597,7 +597,7 @@ REAL,DIMENSION(:,:,:),POINTER              :: ZFIELD_GA
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_read_byfield_X3',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
-CALL SECOND_MNH2(T11)
+CALL SECOND_MNH2(ZT11)
 !
 TZFILE => NULL()
 GALLOC    = .FALSE.
@@ -709,7 +709,7 @@ IF (IRESP==0) THEN
     !
     ! init/create the ga
     !
-    CALL SECOND_MNH2(T0)
+    CALL SECOND_MNH2(ZT0)
     CALL MNH_INIT_GA(SIZE(PFIELD,1),SIZE(PFIELD,2),SIZE(PFIELD,3),TPFIELD%CMNHNAME,"READ")
     !
     ! read the data
@@ -735,15 +735,15 @@ IF (IRESP==0) THEN
           CALL ALLOCBUFFER_ll(ZSLICE_ll,ZSLICE,YDIR,GALLOC_ll)
         END IF
         !
-        CALL SECOND_MNH2(T0)
+        CALL SECOND_MNH2(ZT0)
         WRITE(YK,'(I4.4)')  JKK
         YRECZSLICE = TRIM(TPFIELD%CMNHNAME)//YK
         call IO_Format_read_select( tzfile, glfi, gnc4 ) !Safer to do that (probably useless)
         if ( gnc4 ) call IO_Field_read_nc4( tzfile, tzfield, zslice_ll, iresp_tmp )
         if ( glfi ) call IO_Field_read_lfi( tzfile, tzfield, zslice_ll, iresp_tmp )
         IF (IRESP_TMP .NE. 0 ) IRESP_ISP = IRESP_TMP
-        CALL SECOND_MNH2(T1)
-        TIMEZ%T_READ3D_READ=TIMEZ%T_READ3D_READ + T1 - T0
+        CALL SECOND_MNH2(ZT1)
+        TIMEZ%T_READ3D_READ=TIMEZ%T_READ3D_READ + ZT1 - ZT0
         !
         ! put the data in the g_a , this proc get this JKK slide
         !
@@ -774,7 +774,7 @@ IF (IRESP==0) THEN
     GALLOC_ll = .TRUE.
     IRESP_ISP=0
     INB_PROC_REAL = MIN(TPFILE%NSUBFILES_IOZ,ISNPROC)
-    ALLOCATE(REQ_TAB((ISNPROC-1)*INB_PROC_REAL))
+    ALLOCATE(IREQ_TAB((ISNPROC-1)*INB_PROC_REAL))
     ALLOCATE(T_TX2DP((ISNPROC-1)*INB_PROC_REAL))
     Z_SLICE: DO JK=1,SIZE(PFIELD,3),INB_PROC_REAL
       !
@@ -782,7 +782,7 @@ IF (IRESP==0) THEN
       !
       JK_MAX=MIN(SIZE(PFIELD,3),JK+INB_PROC_REAL-1)
       !
-      NB_REQ=0
+      INB_REQ=0
       DO JKK=JK,JK_MAX
         IF (TPFILE%NSUBFILES_IOZ .GT. 1 ) THEN
           IK_FILE = IO_Level2filenumber_get(JKK,TPFILE%NSUBFILES_IOZ)
@@ -803,31 +803,31 @@ IF (IRESP==0) THEN
             DEALLOCATE(ZSLICE_ll)
             CALL ALLOCBUFFER_ll(ZSLICE_ll,ZSLICE,YDIR,GALLOC_ll)
           END IF
-          CALL SECOND_MNH2(T0)
+          CALL SECOND_MNH2(ZT0)
           WRITE(YK,'(I4.4)')  JKK
           YRECZSLICE = TRIM(TPFIELD%CMNHNAME)//YK
           call IO_Format_read_select( tzfile, glfi, gnc4 ) !Safer to do that (probably useless)
           if ( gnc4 ) call IO_Field_read_nc4( tzfile, tzfield, zslice_ll, iresp_tmp )
           if ( glfi ) call IO_Field_read_lfi( tzfile, tzfield, zslice_ll, iresp_tmp )
           IF (IRESP_TMP .NE. 0 ) IRESP_ISP = IRESP_TMP
-          CALL SECOND_MNH2(T1)
-          TIMEZ%T_READ3D_READ=TIMEZ%T_READ3D_READ + T1 - T0
+          CALL SECOND_MNH2(ZT1)
+          TIMEZ%T_READ3D_READ=TIMEZ%T_READ3D_READ + ZT1 - ZT0
           DO JI = 1,ISNPROC
             CALL GET_DOMREAD_ll(JI,IXO,IXE,IYO,IYE)
-            TX2DP=>ZSLICE_ll(IXO:IXE,IYO:IYE)
+            ZTX2DP=>ZSLICE_ll(IXO:IXE,IYO:IYE)
             IF (ISP /= JI) THEN
-              NB_REQ = NB_REQ + 1
-              ALLOCATE(T_TX2DP(NB_REQ)%X(IXO:IXE,IYO:IYE))
-              T_TX2DP(NB_REQ)%X=TX2DP
-              CALL MPI_ISEND(T_TX2DP(NB_REQ)%X,SIZE(TX2DP),MNHREAL_MPI,JI-1,199+IK_RANK, &
-                             TZFILE%NMPICOMM,REQ_TAB(NB_REQ),IERR)
-              !CALL MPI_BSEND(TX2DP,SIZE(TX2DP),MNHREAL_MPI,JI-1,199+IK_RANK,TZFILE%NMPICOMM,IERR)
+              INB_REQ = INB_REQ + 1
+              ALLOCATE(T_TX2DP(INB_REQ)%X(IXO:IXE,IYO:IYE))
+              T_TX2DP(INB_REQ)%X=ZTX2DP
+              CALL MPI_ISEND(T_TX2DP(INB_REQ)%X,SIZE(ZTX2DP),MNHREAL_MPI,JI-1,199+IK_RANK, &
+                             TZFILE%NMPICOMM,IREQ_TAB(INB_REQ),IERR)
+              !CALL MPI_BSEND(ZTX2DP,SIZE(ZTX2DP),MNHREAL_MPI,JI-1,199+IK_RANK,TZFILE%NMPICOMM,IERR)
             ELSE
-              PFIELD(:,:,JKK) = TX2DP(:,:)
+              PFIELD(:,:,JKK) = ZTX2DP(:,:)
             END IF
           END DO
-          CALL SECOND_MNH2(T2)
-          TIMEZ%T_READ3D_SEND=TIMEZ%T_READ3D_SEND + T2 - T1
+          CALL SECOND_MNH2(ZT2)
+          TIMEZ%T_READ3D_SEND=TIMEZ%T_READ3D_SEND + ZT2 - ZT1
         END IF
         !
         TZFILE => NULL()
@@ -849,7 +849,7 @@ IF (IRESP==0) THEN
           !
           ! XY Scatter Field
           !
-          CALL SECOND_MNH2(T0)
+          CALL SECOND_MNH2(ZT0)
           DO JKK=JK,JK_MAX
             !
             ! get the file & rank
@@ -867,29 +867,29 @@ IF (IRESP==0) THEN
             !CALL SCATTER_XYFIELD(ZSLICE_ll,ZSLICE,TZFILE%NMASTER_RANK,TZFILE%NMPICOMM)
             IF (ISP .NE. IK_RANK) THEN
               CALL MPI_RECV(ZSLICE,SIZE(ZSLICE),MNHREAL_MPI,IK_RANK-1,199+IK_RANK, &
-                            TZFILE%NMPICOMM,STATUS,IERR)
+                            TZFILE%NMPICOMM,ISTATUS,IERR)
             END IF
             TZFILE => NULL()
           END DO
-          CALL SECOND_MNH2(T1)
-          TIMEZ%T_READ3D_RECV=TIMEZ%T_READ3D_RECV + T1 - T0
+          CALL SECOND_MNH2(ZT1)
+          TIMEZ%T_READ3D_RECV=TIMEZ%T_READ3D_RECV + ZT1 - ZT0
         END IF
       ELSE
         ! Broadcast Field
         call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_read_byfield_X3', 'broadcast field not yet planned on Blue Gene' )
         CALL MPI_BCAST(PFIELD,SIZE(PFIELD),MNHREAL_MPI,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
       END IF
-      CALL SECOND_MNH2(T0)
-      IF (NB_REQ .GT.0 ) THEN
-        CALL MPI_WAITALL(NB_REQ,REQ_TAB,MNH_STATUSES_IGNORE,IERR)
-        DO JI=1,NB_REQ ;  DEALLOCATE(T_TX2DP(JI)%X) ; ENDDO
+      CALL SECOND_MNH2(ZT0)
+      IF (INB_REQ .GT.0 ) THEN
+        CALL MPI_WAITALL(INB_REQ,IREQ_TAB,MNH_STATUSES_IGNORE,IERR)
+        DO JI=1,INB_REQ ;  DEALLOCATE(T_TX2DP(JI)%X) ; ENDDO
       END IF
-      CALL SECOND_MNH2(T1)
-      TIMEZ%T_READ3D_WAIT=TIMEZ%T_READ3D_WAIT + T1 - T0
+      CALL SECOND_MNH2(ZT1)
+      TIMEZ%T_READ3D_WAIT=TIMEZ%T_READ3D_WAIT + ZT1 - ZT0
     END DO Z_SLICE
     !
     DEALLOCATE(T_TX2DP)
-    DEALLOCATE(REQ_TAB)
+    DEALLOCATE(IREQ_TAB)
     !
     CALL MPI_ALLREDUCE(-ABS(IRESP_ISP),IRESP_TMP,1,MNHINT_MPI,MPI_MIN,TPFILE%NMPICOMM,IRESP)
     IF (IRESP_TMP/=0) IRESP = IRESP_TMP !Keep last "error"
@@ -910,8 +910,8 @@ IF (IRESP==-111) IRESP = 0 !-111 is not really an error (metadata has changed)
 IF (PRESENT(KRESP)) KRESP = IRESP
 !
 CALL MPI_BARRIER(TPFILE%NMPICOMM,IERR)
-CALL SECOND_MNH2(T22)
-TIMEZ%T_READ3D_ALL=TIMEZ%T_READ3D_ALL + T22 - T11
+CALL SECOND_MNH2(ZT22)
+TIMEZ%T_READ3D_ALL=TIMEZ%T_READ3D_ALL + ZT22 - ZT11
 !
 END SUBROUTINE IO_Field_read_byfield_X3
 
@@ -2137,16 +2137,16 @@ INTEGER                                  :: IHEXTOT
 INTEGER                                  :: IIMAX_ll,IJMAX_ll
 INTEGER                                  :: IIB,IIE,IJB,IJE
 INTEGER                                  :: JI
-INTEGER                                  :: NB_REQ,IKU
-INTEGER, DIMENSION(MPI_STATUS_SIZE)      :: STATUS
-INTEGER, ALLOCATABLE,DIMENSION(:,:)      :: STATUSES
-INTEGER,ALLOCATABLE,DIMENSION(:)         :: REQ_TAB
+INTEGER                                  :: INB_REQ,IKU
+INTEGER, DIMENSION(MPI_STATUS_SIZE)      :: ISTATUS
+INTEGER, ALLOCATABLE,DIMENSION(:,:)      :: ISTATUSES
+INTEGER,ALLOCATABLE,DIMENSION(:)         :: IREQ_TAB
 logical                                  :: glfi, gnc4
 REAL,DIMENSION(:,:,:),ALLOCATABLE,TARGET :: Z3D
-real, dimension(:,:),  pointer           :: tx2dp
+real, dimension(:,:),  pointer           :: ZTX2DP
 REAL,DIMENSION(:,:,:), POINTER           :: TX3DP
-REAL(kind=MNHTIME), DIMENSION(2)         :: T0, T1, T2, T3
-REAL(kind=MNHTIME), DIMENSION(2)         :: T11, T22
+REAL(kind=MNHTIME), DIMENSION(2)         :: ZT0, ZT1, ZT2, ZT3
+REAL(kind=MNHTIME), DIMENSION(2)         :: ZT11, ZT22
 type(tfielddata)                         :: tzfield
 TYPE(TX_3DP),ALLOCATABLE,DIMENSION(:)    :: T_TX3DP
 !
@@ -2162,7 +2162,7 @@ END IF
 !
 !*      1.1   THE NAME OF LFIFM
 !
-CALL SECOND_MNH2(T11)
+CALL SECOND_MNH2(ZT11)
 IRESP = 0
 !------------------------------------------------------------------
 IHEXTOT = 2*JPHEXT+1
@@ -2183,9 +2183,9 @@ IF (IRESP==0) THEN
             tzfield%ndimlist(3)  = tzfield%ndimlist(4) !Necessary if time dimension
             tzfield%ndimlist(4:) = NMNHDIM_UNUSED
           end if
-          TX2DP=>Z3D(:,JPHEXT+1,:)
-          if ( gnc4 ) call IO_Field_read_nc4( tpfile, tzfield, tx2dp, iresp )
-          if ( glfi ) call IO_Field_read_lfi( tpfile, tzfield, tx2dp, iresp )
+          ZTX2DP=>Z3D(:,JPHEXT+1,:)
+          if ( gnc4 ) call IO_Field_read_nc4( tpfile, tzfield, ZTX2DP, iresp )
+          if ( glfi ) call IO_Field_read_lfi( tpfile, tzfield, ZTX2DP, iresp )
           Z3D(:,:,:) = SPREAD(Z3D(:,JPHEXT+1,:),DIM=2,NCOPIES=IHEXTOT)
         else
           tzfield = tpfield
@@ -2210,7 +2210,7 @@ IF (IRESP==0) THEN
     END IF
   ELSE                 ! multiprocesses execution
     IF (ISP == TPFILE%NMASTER_RANK)  THEN
-      CALL SECOND_MNH2(T0)
+      CALL SECOND_MNH2(ZT0)
       CALL GET_GLOBALDIMS_ll(IIMAX_ll,IJMAX_ll)
       IF (YLBTYPE == 'LBX' .OR. YLBTYPE == 'LBXU') THEN
         ALLOCATE(Z3D(KL3D,IJMAX_ll+2*JPHEXT,SIZE(PLB,3)))
@@ -2238,8 +2238,8 @@ IF (IRESP==0) THEN
         ! erase gap in LB field
         Z3D(:,KRIM+JPHEXT+1:2*(KRIM+JPHEXT),:) = Z3D(:,KL3D-KRIM-JPHEXT+1:KL3D,:)
       END IF
-      CALL SECOND_MNH2(T1)
-      TIMEZ%T_READLB_READ=TIMEZ%T_READLB_READ + T1 - T0
+      CALL SECOND_MNH2(ZT1)
+      TIMEZ%T_READLB_READ=TIMEZ%T_READLB_READ + ZT1 - ZT0
     END IF
     !
     CALL MPI_BCAST(IRESP,1,MNHINT_MPI,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
@@ -2248,13 +2248,13 @@ IF (IRESP==0) THEN
     !because metadata of field has been modified in IO_Field_read_xxx
     IF (IRESP==-111) CALL IO_Field_metadata_bcast(TPFILE,TPFIELD)
     !
-    NB_REQ=0
-    ALLOCATE(REQ_TAB(ISNPROC-1))
-    !REQ_TAB=MPI_REQUEST_NULL
+    INB_REQ=0
+    ALLOCATE(IREQ_TAB(ISNPROC-1))
+    !IREQ_TAB=MPI_REQUEST_NULL
     IF (ISP == TPFILE%NMASTER_RANK)  THEN
-       CALL SECOND_MNH2(T1)
-      !ALLOCATE(REQ_TAB(ISNPROC-1))
-      !REQ_TAB=MPI_REQUEST_NULL
+       CALL SECOND_MNH2(ZT1)
+      !ALLOCATE(IREQ_TAB(ISNPROC-1))
+      !IREQ_TAB=MPI_REQUEST_NULL
       ALLOCATE(T_TX3DP(ISNPROC-1))
       IKU = SIZE(Z3D,3)
       DO JI = 1,ISNPROC
@@ -2262,46 +2262,46 @@ IF (IRESP==0) THEN
         IF (IIB /= 0) THEN
           TX3DP=>Z3D(IIB:IIE,IJB:IJE,:)
           IF (ISP /= JI) THEN
-            NB_REQ = NB_REQ + 1
-            ALLOCATE(T_TX3DP(NB_REQ)%X(IIB:IIE,IJB:IJE,IKU))
-            T_TX3DP(NB_REQ)%X=Z3D(IIB:IIE,IJB:IJE,:)
-            CALL MPI_ISEND(T_TX3DP(NB_REQ)%X,SIZE(TX3DP),MNHREAL_MPI,JI-1,99,TPFILE%NMPICOMM,REQ_TAB(NB_REQ),IERR)
-            !CALL MPI_BSEND(T_TX3DP(NB_REQ)%X,SIZE(TX3DP),MNHREAL_MPI,JI-1,99,TPFILE%NMPICOMM,IERR)
+            INB_REQ = INB_REQ + 1
+            ALLOCATE(T_TX3DP(INB_REQ)%X(IIB:IIE,IJB:IJE,IKU))
+            T_TX3DP(INB_REQ)%X=Z3D(IIB:IIE,IJB:IJE,:)
+            CALL MPI_ISEND(T_TX3DP(INB_REQ)%X,SIZE(TX3DP),MNHREAL_MPI,JI-1,99,TPFILE%NMPICOMM,IREQ_TAB(INB_REQ),IERR)
+            !CALL MPI_BSEND(T_TX3DP(INB_REQ)%X,SIZE(TX3DP),MNHREAL_MPI,JI-1,99,TPFILE%NMPICOMM,IERR)
           ELSE
             CALL GET_DISTRIB_lb(YLBTYPE,JI,'LOC','READ',KRIM,IIB,IIE,IJB,IJE)
             PLB(IIB:IIE,IJB:IJE,:) = TX3DP(:,:,:)
           END IF
         END IF
       END DO
-      CALL SECOND_MNH2(T2)
-      TIMEZ%T_READLB_SEND=TIMEZ%T_READLB_SEND + T2 - T1
-      IF (NB_REQ .GT.0 ) THEN
-         !ALLOCATE(STATUSES(MPI_STATUS_SIZE,NB_REQ))
-         !CALL MPI_WAITALL(NB_REQ,REQ_TAB,STATUSES,IERR)
-         CALL MPI_WAITALL(NB_REQ,REQ_TAB,MNH_STATUSES_IGNORE,IERR)
-         !DEALLOCATE(STATUSES)
-         DO JI=1,NB_REQ ;  DEALLOCATE(T_TX3DP(JI)%X) ; ENDDO
+      CALL SECOND_MNH2(ZT2)
+      TIMEZ%T_READLB_SEND=TIMEZ%T_READLB_SEND + ZT2 - ZT1
+      IF (INB_REQ .GT.0 ) THEN
+         !ALLOCATE(ISTATUSES(MPI_STATUS_SIZE,INB_REQ))
+         !CALL MPI_WAITALL(INB_REQ,IREQ_TAB,ISTATUSES,IERR)
+         CALL MPI_WAITALL(INB_REQ,IREQ_TAB,MNH_STATUSES_IGNORE,IERR)
+         !DEALLOCATE(ISTATUSES)
+         DO JI=1,INB_REQ ;  DEALLOCATE(T_TX3DP(JI)%X) ; ENDDO
       END IF
       DEALLOCATE(T_TX3DP)
-      !DEALLOCATE(REQ_TAB)
-      CALL SECOND_MNH2(T3)
-      TIMEZ%T_READLB_WAIT=TIMEZ%T_READLB_WAIT + T3 - T2
+      !DEALLOCATE(IREQ_TAB)
+      CALL SECOND_MNH2(ZT3)
+      TIMEZ%T_READLB_WAIT=TIMEZ%T_READLB_WAIT + ZT3 - ZT2
     ELSE
-       CALL SECOND_MNH2(T0)
-      !ALLOCATE(REQ_TAB(1))
-      !REQ_TAB=MPI_REQUEST_NULL
+       CALL SECOND_MNH2(ZT0)
+      !ALLOCATE(IREQ_TAB(1))
+      !IREQ_TAB=MPI_REQUEST_NULL
       CALL GET_DISTRIB_lb(YLBTYPE,ISP,'LOC','READ',KRIM,IIB,IIE,IJB,IJE)
       IF (IIB /= 0) THEN
         TX3DP=>PLB(IIB:IIE,IJB:IJE,:)
-        CALL MPI_RECV(TX3DP,SIZE(TX3DP),MNHREAL_MPI,TPFILE%NMASTER_RANK-1,99,TPFILE%NMPICOMM,STATUS,IERR)
-        !NB_REQ = NB_REQ + 1
-        !CALL MPI_IRECV(TX3DP,SIZE(TX3DP),MNHREAL_MPI,TPFILE%NMASTER_RANK-1,99,TPFILE%NMPICOMM,REQ_TAB(NB_REQ),IERR)
-        !IF (NB_REQ .GT.0 ) CALL MPI_WAITALL(NB_REQ,REQ_TAB,MNH_STATUSES_IGNORE,IERR)
+        CALL MPI_RECV(TX3DP,SIZE(TX3DP),MNHREAL_MPI,TPFILE%NMASTER_RANK-1,99,TPFILE%NMPICOMM,ISTATUS,IERR)
+        !INB_REQ = INB_REQ + 1
+        !CALL MPI_IRECV(TX3DP,SIZE(TX3DP),MNHREAL_MPI,TPFILE%NMASTER_RANK-1,99,TPFILE%NMPICOMM,IREQ_TAB(INB_REQ),IERR)
+        !IF (INB_REQ .GT.0 ) CALL MPI_WAITALL(INB_REQ,IREQ_TAB,MNH_STATUSES_IGNORE,IERR)
       END IF
-      CALL SECOND_MNH2(T1)
-      TIMEZ%T_READLB_RECV=TIMEZ%T_READLB_RECV + T1 - T0
+      CALL SECOND_MNH2(ZT1)
+      TIMEZ%T_READLB_RECV=TIMEZ%T_READLB_RECV + ZT1 - ZT0
     END IF
-    DEALLOCATE(REQ_TAB)
+    DEALLOCATE(IREQ_TAB)
   END IF !(GSMONOPROC)
 END IF
 !----------------------------------------------------------------
@@ -2312,8 +2312,8 @@ IF (IRESP==-111) IRESP = 0 !-111 is not really an error (metadata has changed)
 !
 IF (PRESENT(KRESP)) KRESP = IRESP
 !
-CALL SECOND_MNH2(T22)
-TIMEZ%T_READLB_ALL=TIMEZ%T_READLB_ALL + T22 - T11
+CALL SECOND_MNH2(ZT22)
+TIMEZ%T_READLB_ALL=TIMEZ%T_READLB_ALL + ZT22 - ZT11
 !
 END SUBROUTINE IO_Field_read_byfield_lb
 

@@ -170,10 +170,10 @@ INTEGER(KIND=CDFINT), DIMENSION(:), OPTIONAL, INTENT(IN) :: KSHAPE
 CHARACTER(LEN=*),                   OPTIONAL, INTENT(IN) :: HCALENDAR
 LOGICAL,                            OPTIONAL, INTENT(IN) :: OISCOORD   ! Is a coordinate variable (->do not write coordinates attribute)
 !
-INTEGER(KIND=CDFINT)         :: INCID
-INTEGER(KIND=CDFINT)         :: STATUS
-CHARACTER(LEN=:),ALLOCATABLE :: YCOORDS
-LOGICAL                      :: GISCOORD
+CHARACTER(LEN=:),                   ALLOCATABLE :: YCOORDS
+INTEGER(KIND=CDFINT)                            :: INCID
+INTEGER(KIND=CDFINT)                            :: istatus
+LOGICAL                                         :: GISCOORD
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_attr_write_nc4','called for field '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -197,8 +197,8 @@ INCID = TPFILE%NNCID
 IF(LEN_TRIM(TPFIELD%CSTDNAME)==0) THEN
   CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_attr_write_nc4','TPFIELD%CSTDNAME not set for variable '//TRIM(TPFIELD%CMNHNAME))
 ELSE
-  STATUS = NF90_PUT_ATT(INCID, KVARID,'standard_name', TRIM(TPFIELD%CSTDNAME))
-  IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_attr_write_nc4','NF90_PUT_ATT','standard_name for ' &
+  istatus = NF90_PUT_ATT(INCID, KVARID,'standard_name', TRIM(TPFIELD%CSTDNAME))
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_attr_write_nc4','NF90_PUT_ATT','standard_name for ' &
                                                    //trim(TPFIELD%CMNHNAME))
 ENDIF
 !
@@ -206,8 +206,8 @@ ENDIF
 IF(LEN_TRIM(TPFIELD%CLONGNAME)==0) THEN
   CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_attr_write_nc4','TPFIELD%CLONGNAME not set for variable '//TRIM(TPFIELD%CMNHNAME))
 ELSE
-  STATUS = NF90_PUT_ATT(INCID, KVARID,'long_name', TRIM(TPFIELD%CLONGNAME))
-  IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_attr_write_nc4','NF90_PUT_ATT','long_name for ' &
+  istatus = NF90_PUT_ATT(INCID, KVARID,'long_name', TRIM(TPFIELD%CLONGNAME))
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_attr_write_nc4','NF90_PUT_ATT','long_name for ' &
                                                    //trim(TPFIELD%CMNHNAME))
 ENDIF
 !
@@ -215,8 +215,8 @@ ENDIF
 IF(LEN_TRIM(TPFIELD%CUNITS)==0) THEN
   CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_attr_write_nc4','TPFIELD%CUNITS not set for variable '//TRIM(TPFIELD%CMNHNAME))
 ELSE
-  STATUS = NF90_PUT_ATT(INCID, KVARID,'units', TRIM(TPFIELD%CUNITS))
-  IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_attr_write_nc4','NF90_PUT_ATT','units for ' &
+  istatus = NF90_PUT_ATT(INCID, KVARID,'units', TRIM(TPFIELD%CUNITS))
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_attr_write_nc4','NF90_PUT_ATT','units for ' &
                                                    //trim(TPFIELD%CMNHNAME))
 ENDIF
 !
@@ -225,8 +225,8 @@ IF(TPFIELD%NGRID<0) THEN
   CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_attr_write_nc4','TPFIELD%NGRID not set for variable '//TRIM(TPFIELD%CMNHNAME))
 !Do not write GRID attribute if NGRID=0
 ELSE IF (TPFIELD%NGRID>0) THEN
-  STATUS = NF90_PUT_ATT(INCID, KVARID, 'grid', TPFIELD%NGRID)
-  IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_attr_write_nc4','NF90_PUT_ATT','grid for ' &
+  istatus = NF90_PUT_ATT(INCID, KVARID, 'grid', TPFIELD%NGRID)
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_attr_write_nc4','NF90_PUT_ATT','grid for ' &
                                                    //trim(TPFIELD%CMNHNAME))
 ENDIF
 !
@@ -234,16 +234,16 @@ ENDIF
 IF(LEN_TRIM(TPFIELD%CCOMMENT)==0) THEN
   CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_attr_write_nc4','TPFIELD%CCOMMENT not set for variable '//TRIM(TPFIELD%CMNHNAME))
 ELSE
-  STATUS = NF90_PUT_ATT(INCID, KVARID,'comment', TRIM(TPFIELD%CCOMMENT))
-  IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_attr_write_nc4','NF90_PUT_ATT','comment for ' &
+  istatus = NF90_PUT_ATT(INCID, KVARID,'comment', TRIM(TPFIELD%CCOMMENT))
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_attr_write_nc4','NF90_PUT_ATT','comment for ' &
                                                    //trim(TPFIELD%CMNHNAME))
 ENDIF
 !
 ! Calendar (CF convention)
 IF(PRESENT(HCALENDAR)) THEN
   CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_attr_write_nc4','CALENDAR provided for variable '//TRIM(TPFIELD%CMNHNAME))
-  STATUS = NF90_PUT_ATT(INCID, KVARID,'calendar', TRIM(HCALENDAR))
-  IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_attr_write_nc4','NF90_PUT_ATT','calendar for ' &
+  istatus = NF90_PUT_ATT(INCID, KVARID,'calendar', TRIM(HCALENDAR))
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_attr_write_nc4','NF90_PUT_ATT','calendar for ' &
                                                    //trim(TPFIELD%CMNHNAME))
 ENDIF
 !
@@ -278,8 +278,8 @@ IF (.NOT.GISCOORD) THEN
             CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Field_attr_write_nc4','invalid NGRID for variable '//TRIM(TPFIELD%CMNHNAME))
         END SELECT
         !
-        STATUS = NF90_PUT_ATT(INCID, KVARID,'coordinates',YCOORDS)
-        IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_attr_write_nc4','NF90_PUT_ATT','coordinates')
+        istatus = NF90_PUT_ATT(INCID, KVARID,'coordinates',YCOORDS)
+        IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_attr_write_nc4','NF90_PUT_ATT','coordinates')
         DEALLOCATE(YCOORDS)
       ELSE
         CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_attr_write_nc4','coordinates not implemented for variable ' &
@@ -303,16 +303,16 @@ IF(TPFIELD%NTYPE==TYPEINT .AND. TPFIELD%NDIMS>0) THEN
   !BUG: NF90_PUT_ATT does not work for NF90_INT64 and _FillValue attribute if netCDF-fortran version < 4.4.5 (bug in netCDF)
   !     (see https://github.com/Unidata/netcdf-fortran/issues/62)
   IF(.NOT.OEXISTED) THEN
-    STATUS = NF90_PUT_ATT(INCID, KVARID,'_FillValue', TPFIELD%NFILLVALUE)
-    IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_attr_write_nc4','NF90_PUT_ATT','_FillValue')
+    istatus = NF90_PUT_ATT(INCID, KVARID,'_FillValue', TPFIELD%NFILLVALUE)
+    IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_attr_write_nc4','NF90_PUT_ATT','_FillValue')
   END IF
   !
   ! Valid_min/max (CF/COMODO convention)
-  STATUS = NF90_PUT_ATT(INCID, KVARID,'valid_min', TPFIELD%NVALIDMIN)
-    IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_attr_write_nc4','NF90_PUT_ATT','valid_min')
+  istatus = NF90_PUT_ATT(INCID, KVARID,'valid_min', TPFIELD%NVALIDMIN)
+    IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_attr_write_nc4','NF90_PUT_ATT','valid_min')
   !
-  STATUS = NF90_PUT_ATT(INCID, KVARID,'valid_max',TPFIELD%NVALIDMAX)
-    IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_attr_write_nc4','NF90_PUT_ATT','valid_max')
+  istatus = NF90_PUT_ATT(INCID, KVARID,'valid_max',TPFIELD%NVALIDMAX)
+    IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_attr_write_nc4','NF90_PUT_ATT','valid_max')
 ENDIF
 !
 IF(TPFIELD%NTYPE==TYPEREAL .AND. TPFIELD%NDIMS>0) THEN
@@ -326,27 +326,27 @@ IF(TPFIELD%NTYPE==TYPEREAL .AND. TPFIELD%NDIMS>0) THEN
   !          * it cannot be modified if some data has already been written (->check OEXISTED)
   IF(.NOT.OEXISTED) THEN
     IF (TPFILE%LNCREDUCE_FLOAT_PRECISION) THEN
-      STATUS = NF90_PUT_ATT(INCID, KVARID,'_FillValue', REAL(TPFIELD%XFILLVALUE,KIND=4))
+      istatus = NF90_PUT_ATT(INCID, KVARID,'_FillValue', REAL(TPFIELD%XFILLVALUE,KIND=4))
     ELSE
-      STATUS = NF90_PUT_ATT(INCID, KVARID,'_FillValue', TPFIELD%XFILLVALUE)
+      istatus = NF90_PUT_ATT(INCID, KVARID,'_FillValue', TPFIELD%XFILLVALUE)
     END IF
-    IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_attr_write_nc4','NF90_PUT_ATT','_FillValue')
+    IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_attr_write_nc4','NF90_PUT_ATT','_FillValue')
   END IF
   !
   ! Valid_min/max (CF/COMODO convention)
   IF (TPFILE%LNCREDUCE_FLOAT_PRECISION) THEN
-    STATUS = NF90_PUT_ATT(INCID, KVARID,'valid_min', REAL(TPFIELD%XVALIDMIN,KIND=4))
+    istatus = NF90_PUT_ATT(INCID, KVARID,'valid_min', REAL(TPFIELD%XVALIDMIN,KIND=4))
   ELSE
-    STATUS = NF90_PUT_ATT(INCID, KVARID,'valid_min', TPFIELD%XVALIDMIN)
+    istatus = NF90_PUT_ATT(INCID, KVARID,'valid_min', TPFIELD%XVALIDMIN)
   END IF
-  IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_attr_write_nc4','NF90_PUT_ATT','valid_min')
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_attr_write_nc4','NF90_PUT_ATT','valid_min')
   !
   IF (TPFILE%LNCREDUCE_FLOAT_PRECISION) THEN
-    STATUS = NF90_PUT_ATT(INCID, KVARID,'valid_max', REAL(TPFIELD%XVALIDMAX,KIND=4))
+    istatus = NF90_PUT_ATT(INCID, KVARID,'valid_max', REAL(TPFIELD%XVALIDMAX,KIND=4))
   ELSE
-    STATUS = NF90_PUT_ATT(INCID, KVARID,'valid_max',TPFIELD%XVALIDMAX)
+    istatus = NF90_PUT_ATT(INCID, KVARID,'valid_max',TPFIELD%XVALIDMAX)
   END IF
-  IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_attr_write_nc4','NF90_PUT_ATT','valid_max')
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_attr_write_nc4','NF90_PUT_ATT','valid_max')
 ENDIF
 !
 END SUBROUTINE IO_Field_attr_write_nc4
@@ -515,7 +515,7 @@ TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
 REAL,                  INTENT(IN) :: PFIELD
 INTEGER,               INTENT(OUT):: KRESP
 !
-INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: IVARID
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_X0',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
@@ -525,8 +525,8 @@ KRESP = 0
 call IO_Field_create_nc4( tpfile, tpfield, kvarid = ivarid )
 
 ! Write the data
-STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X0','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
+IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_X0','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
 END SUBROUTINE IO_Field_write_nc4_X0
 
@@ -538,7 +538,7 @@ TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:),     INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,               INTENT(OUT):: KRESP
 !
-INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: IVARID
 logical              :: gisempty
 !
@@ -549,8 +549,8 @@ KRESP = 0
 call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( pfield ), kvarid = ivarid, oisempty = gisempty )
 
 ! Write the data
-if ( .not. gisempty ) STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X1','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+if ( .not. gisempty ) istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
+IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_X1','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
 END SUBROUTINE IO_Field_write_nc4_X1
 
@@ -565,7 +565,7 @@ INTEGER,OPTIONAL,      INTENT(IN) :: KVERTLEVEL ! Number of the vertical level (
 INTEGER,OPTIONAL,      INTENT(IN) :: KZFILE     ! Number of the Z-level split file
 LOGICAL,OPTIONAL,      INTENT(IN) :: OISCOORD   ! Is a coordinate variable (->do not write coordinates attribute)
 !
-INTEGER(KIND=CDFINT)     :: STATUS
+INTEGER(KIND=CDFINT)     :: istatus
 CHARACTER(LEN=4)         :: YSUFFIX
 INTEGER(KIND=CDFINT)     :: IVARID
 TYPE(TFIELDDATA)         :: TZFIELD
@@ -596,8 +596,8 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_X2',TRIM(TZFILE%CNAME)//': w
 call IO_Field_create_nc4( tzfile, tzfield, kshape = Shape( pfield ), oiscoord = oiscoord, kvarid = ivarid )
 
 ! Write the data
-STATUS = NF90_PUT_VAR(TZFILE%NNCID, IVARID, PFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X2','NF90_PUT_VAR',trim(TZFIELD%CMNHNAME),KRESP)
+istatus = NF90_PUT_VAR(TZFILE%NNCID, IVARID, PFIELD)
+IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_X2','NF90_PUT_VAR',trim(TZFIELD%CMNHNAME),KRESP)
 
 END SUBROUTINE IO_Field_write_nc4_X2
 
@@ -609,7 +609,7 @@ TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:,:,:), INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,               INTENT(OUT):: KRESP
 !
-INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: IVARID
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_X3',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
@@ -619,8 +619,8 @@ KRESP = 0
 call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( pfield ), kvarid = ivarid )
 
 ! Write the data
-STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X3','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
+IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_X3','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
 END SUBROUTINE IO_Field_write_nc4_X3
 
@@ -632,7 +632,7 @@ TYPE(TFIELDDATA),          INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:,:,:,:),   INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,                   INTENT(OUT):: KRESP
 !
-INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: IVARID
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_X4',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
@@ -642,8 +642,8 @@ KRESP = 0
 call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( pfield ), kvarid = ivarid )
 
 ! Write the data
-STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X4','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
+IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_X4','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
 END SUBROUTINE IO_Field_write_nc4_X4
 
@@ -655,7 +655,7 @@ TYPE(TFIELDDATA),          INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:,:,:,:,:), INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,                   INTENT(OUT):: KRESP
 !
-INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: IVARID
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_X5',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
@@ -665,8 +665,8 @@ KRESP = 0
 call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( pfield ), kvarid = ivarid )
 
 ! Write the data
-STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X5','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
+IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_X5','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
 END SUBROUTINE IO_Field_write_nc4_X5
 
@@ -678,7 +678,7 @@ TYPE(TFIELDDATA),            INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:,:,:,:,:,:), INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,                     INTENT(OUT):: KRESP
 !
-INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: IVARID
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_X6',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
@@ -688,8 +688,8 @@ KRESP = 0
 call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( pfield ), kvarid = ivarid )
 
 ! Write the data
-STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X6','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
+IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_X6','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
 END SUBROUTINE IO_Field_write_nc4_X6
 
@@ -711,7 +711,7 @@ INTEGER,               INTENT(IN) :: KFIELD
 INTEGER,               INTENT(OUT):: KRESP
 !
 integer              :: iidx
-INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: IVARID
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_N0',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
@@ -721,8 +721,8 @@ KRESP = 0
 call IO_Field_create_nc4( tpfile, tpfield, kvarid = ivarid )
 
 ! Write the data
-STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, KFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_N0','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, KFIELD)
+IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_N0','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 !
 ! Use IMAX, JMAX, KMAX to define DIM_NI, DIM_NJ, DIM_LEVEL
 ! /!\ Can only work if IMAX, JMAX or KMAX are written before any array
@@ -760,7 +760,7 @@ TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
 INTEGER, DIMENSION(:), INTENT(IN) :: KFIELD
 INTEGER,               INTENT(OUT):: KRESP
 !
-INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: IVARID
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_N1',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
@@ -770,8 +770,8 @@ KRESP = 0
 call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( kfield ), kvarid = ivarid )
 
 ! Write the data
-STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, KFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_N1','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, KFIELD)
+IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_N1','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
 END SUBROUTINE IO_Field_write_nc4_N1
 
@@ -783,7 +783,7 @@ TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
 INTEGER,DIMENSION(:,:),INTENT(IN) :: KFIELD   ! array containing the data field
 INTEGER,               INTENT(OUT):: KRESP
 !
-INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: IVARID
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_N2',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
@@ -793,8 +793,8 @@ KRESP = 0
 call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( kfield ), kvarid = ivarid )
 
 ! Write the data
-STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, KFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_N2','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, KFIELD)
+IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_N2','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
 END SUBROUTINE IO_Field_write_nc4_N2
 
@@ -806,7 +806,7 @@ TYPE(TFIELDDATA),        INTENT(IN) :: TPFIELD
 INTEGER,DIMENSION(:,:,:),INTENT(IN) :: KFIELD   ! array containing the data field
 INTEGER,                 INTENT(OUT):: KRESP
 !
-INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: IVARID
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_N3',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
@@ -816,8 +816,8 @@ KRESP = 0
 call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( kfield ), kvarid = ivarid )
 
 ! Write the data
-STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, KFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_N3','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, KFIELD)
+IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_N3','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
 END SUBROUTINE IO_Field_write_nc4_N3
 
@@ -830,7 +830,7 @@ LOGICAL,               INTENT(IN) :: OFIELD
 INTEGER,               INTENT(OUT):: KRESP
 !
 INTEGER              :: IFIELD
-INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: IVARID
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_L0',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
@@ -847,8 +847,8 @@ ELSE
 END IF
 
 ! Write the data
-STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, IFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_L0','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, IFIELD)
+IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_L0','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
 END SUBROUTINE IO_Field_write_nc4_L0
 
@@ -861,7 +861,7 @@ LOGICAL, DIMENSION(:), INTENT(IN) :: OFIELD
 INTEGER,               INTENT(OUT):: KRESP
 !
 INTEGER, DIMENSION(SIZE(OFIELD)) :: IFIELD
-INTEGER(KIND=CDFINT)             :: STATUS
+INTEGER(KIND=CDFINT)             :: istatus
 INTEGER(KIND=CDFINT)             :: IVARID
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_L1',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
@@ -878,8 +878,8 @@ ELSEWHERE
 END WHERE
 
 ! Write the data
-STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, IFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_L1','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, IFIELD)
+IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_L1','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
 END SUBROUTINE IO_Field_write_nc4_L1
 
@@ -891,7 +891,7 @@ TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
 CHARACTER(LEN=*),      INTENT(IN) :: HFIELD
 INTEGER,               INTENT(OUT):: KRESP
 !
-INTEGER(KIND=CDFINT)          :: STATUS
+INTEGER(KIND=CDFINT)          :: istatus
 INTEGER(KIND=CDFINT)          :: IVARID
 INTEGER                       :: ILEN
 CHARACTER(LEN=:), ALLOCATABLE :: YFIELD
@@ -914,8 +914,8 @@ YFIELD(1:LEN_TRIM(HFIELD))=TRIM(HFIELD)
 YFIELD(LEN_TRIM(HFIELD)+1:)=' '
 
 ! Write the data
-STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, YFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_C0','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, YFIELD)
+IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_C0','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
 END SUBROUTINE IO_Field_write_nc4_C0
 
@@ -931,7 +931,7 @@ INTEGER,                      INTENT(OUT) :: KRESP
 !
 INTEGER(KIND=CDFINT),PARAMETER :: IONE = 1
 !
-INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: IVARID
 INTEGER(KIND=CDFINT) :: ILEN, ISIZE
 !
@@ -945,8 +945,8 @@ ISIZE = SIZE(HFIELD)
 call IO_Field_create_nc4( tpfile, tpfield, kshape = [ ilen, isize ], kvarid = ivarid )
 
 ! Write the data
-STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, HFIELD(1:ISIZE)(1:ILEN), START=(/IONE,IONE/), COUNT=(/ILEN,ISIZE/))
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_C1','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, HFIELD(1:ISIZE)(1:ILEN), START=(/IONE,IONE/), COUNT=(/ILEN,ISIZE/))
+IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_C1','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
 END SUBROUTINE IO_Field_write_nc4_C1
 
@@ -963,7 +963,7 @@ TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
 TYPE (DATE_TIME),      INTENT(IN) :: TPDATA
 INTEGER,               INTENT(OUT):: KRESP
 !
-INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: IVARID
 TYPE(TFIELDDATA)     :: TZFIELD
 CHARACTER(LEN=40)    :: YUNITS
@@ -999,8 +999,8 @@ call IO_Field_create_nc4( tpfile, tzfield, kvarid = ivarid, hcalendar = 'standar
 CALL DATETIME_DISTANCE(TZREF,TPDATA,ZDELTATIME)
 
 ! Write the data
-STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, ZDELTATIME)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_T0','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, ZDELTATIME)
+IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_T0','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
 END SUBROUTINE IO_Field_write_nc4_T0
 
@@ -1019,7 +1019,7 @@ INTEGER,                        INTENT(OUT):: KRESP
 !
 CHARACTER(LEN=40)               :: YUNITS
 INTEGER                         :: JI
-INTEGER(KIND=CDFINT)            :: STATUS
+INTEGER(KIND=CDFINT)            :: istatus
 INTEGER(KIND=CDFINT)            :: IVARID
 REAL, DIMENSION(:), ALLOCATABLE :: ZDELTATIME !Distance in seconds since reference date and time
 TYPE(DATE_TIME)                 :: TZREF
@@ -1058,8 +1058,8 @@ DO JI = 1, SIZE( TPDATA )
 END DO
 
 ! Write the data
-STATUS = NF90_PUT_VAR( TPFILE%NNCID, IVARID, ZDELTATIME(:) )
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_T1','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+istatus = NF90_PUT_VAR( TPFILE%NNCID, IVARID, ZDELTATIME(:) )
+IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_T1','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
 END SUBROUTINE IO_Field_write_nc4_T1
 
@@ -1464,68 +1464,70 @@ SUBROUTINE WRITE_VER_COORD(TDIM,HLONGNAME,HSTDNAME,HCOMPNAME,PSHIFT,KBOUNDLOW,KB
   INTEGER                       :: JI
   INTEGER(KIND=CDFINT)          :: IVARID
   INTEGER(KIND=CDFINT)          :: IVDIM
-  INTEGER(KIND=CDFINT)          :: STATUS
+  INTEGER(KIND=CDFINT)          :: istatus
 
   isize    = tdim%nlen
   yvarname = Trim( tdim%cname )
   ivdim    = tdim%nid
 
-  STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
-  IF (STATUS /= NF90_NOERR) THEN
+  istatus = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
+  IF (istatus /= NF90_NOERR) THEN
     ! Define the coordinate variable
-    STATUS = NF90_DEF_VAR(INCID, YVARNAME, MNHREAL_NF90, IVDIM, IVARID)
-    IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_VER_COORD','NF90_DEF_VAR',trim(YVARNAME))
+    istatus = NF90_DEF_VAR(INCID, YVARNAME, MNHREAL_NF90, IVDIM, IVARID)
+    IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_VER_COORD','NF90_DEF_VAR',trim(YVARNAME))
   ELSE
     CALL PRINT_MSG(NVERB_ERROR,'IO','WRITE_VER_COORD',TRIM(YVARNAME)//' already defined')
   END IF
 
   ! Write metadata
-  STATUS = NF90_PUT_ATT(INCID, IVARID, 'long_name',HLONGNAME)
-  IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_VER_COORD','NF90_PUT_ATT','long_name for '//trim(YVARNAME))
+  istatus = NF90_PUT_ATT(INCID, IVARID, 'long_name',HLONGNAME)
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_VER_COORD','NF90_PUT_ATT','long_name for '//trim(YVARNAME))
   if ( Len_trim( hstdname ) > 0 ) then
-    STATUS = NF90_PUT_ATT(INCID, IVARID, 'standard_name',HSTDNAME)
-    IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_VER_COORD','NF90_PUT_ATT','standard_name for '//trim(YVARNAME))
+    istatus = NF90_PUT_ATT(INCID, IVARID, 'standard_name',HSTDNAME)
+    IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_VER_COORD','NF90_PUT_ATT','standard_name for '//trim(YVARNAME))
   end if
-  STATUS = NF90_PUT_ATT(INCID, IVARID, 'units','m')
-  IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_VER_COORD','NF90_PUT_ATT','units for '//trim(YVARNAME))
-  STATUS = NF90_PUT_ATT(INCID, IVARID, 'axis','Z')
-  IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_VER_COORD','NF90_PUT_ATT','axis for '//trim(YVARNAME))
-  STATUS = NF90_PUT_ATT(INCID, IVARID, 'positive','up')
-  IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_VER_COORD','NF90_PUT_ATT','positive for '//trim(YVARNAME))
-  STATUS = NF90_PUT_ATT(INCID, IVARID, 'c_grid_axis_shift',PSHIFT)
-  IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_VER_COORD','NF90_PUT_ATT','c_grid_axis_shift for ' &
+  istatus = NF90_PUT_ATT(INCID, IVARID, 'units','m')
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_VER_COORD','NF90_PUT_ATT','units for '//trim(YVARNAME))
+  istatus = NF90_PUT_ATT(INCID, IVARID, 'axis','Z')
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_VER_COORD','NF90_PUT_ATT','axis for '//trim(YVARNAME))
+  istatus = NF90_PUT_ATT(INCID, IVARID, 'positive','up')
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_VER_COORD','NF90_PUT_ATT','positive for '//trim(YVARNAME))
+  istatus = NF90_PUT_ATT(INCID, IVARID, 'c_grid_axis_shift',PSHIFT)
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_VER_COORD','NF90_PUT_ATT','c_grid_axis_shift for ' &
                                                    //trim(YVARNAME))
   WRITE(YRANGE,'( I0,":",I0 )') 1+KBOUNDLOW,ISIZE-KBOUNDHIGH
-  STATUS = NF90_PUT_ATT(INCID, IVARID, 'c_grid_dynamic_range',TRIM(YRANGE))
-  IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_VER_COORD','NF90_PUT_ATT','c_grid_dynamic_range for ' &
+  istatus = NF90_PUT_ATT(INCID, IVARID, 'c_grid_dynamic_range',TRIM(YRANGE))
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_VER_COORD','NF90_PUT_ATT','c_grid_dynamic_range for ' &
                                                    //trim(YVARNAME))
   !
   IF (GSLEVE) THEN
     !Remark: ZS, ZSMT and ZTOP in the formula are the same for mass point or flux point
-    STATUS = NF90_PUT_ATT(INCID, IVARID,'formula_terms','s: '//TRIM(YVARNAME)//                   &
+    istatus = NF90_PUT_ATT(INCID, IVARID,'formula_terms','s: '//TRIM(YVARNAME)//                   &
                                         ' height: ZTOP oro_ls: ZSMT oro: ZS len1: LEN1 len2: LEN2')
-    IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_VER_COORD','NF90_PUT_ATT','formula_terms for '//trim(YVARNAME))
-    STATUS = NF90_PUT_ATT(INCID, IVARID, 'formula_definition','z(n,k,j,i)=s(k)'//                                      &
+    IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_VER_COORD','NF90_PUT_ATT','formula_terms for '//trim(YVARNAME))
+    istatus = NF90_PUT_ATT(INCID, IVARID, 'formula_definition','z(n,k,j,i)=s(k)'//                                      &
                           '+ oro_ls(j,i)*sinh((height/len1)**1.35-(s(k)/len1)**1.35)/sinh((s(k)/len1)**1.35)'//        &
                           '+(oro(j,i)-oro_ls(j,i))*sinh((height/len2)**1.35-(s(k)/len2)**1.35)/sinh((s(k)/len2)**1.35)')
-    IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_VER_COORD','NF90_PUT_ATT','formula_definition for ' &
+    IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_VER_COORD','NF90_PUT_ATT','formula_definition for ' &
                                                      //trim(YVARNAME))
   ELSE
     !Remark: ZS and ZTOP in the formula are the same for mass point or flux point
-    STATUS = NF90_PUT_ATT(INCID, IVARID, 'formula_terms','s: '//TRIM(YVARNAME)//' height: ZTOP orog: ZS')
-    IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_VER_COORD','NF90_PUT_ATT','formula_terms for '//trim(YVARNAME))
-    STATUS = NF90_PUT_ATT(INCID, IVARID, 'formula_definition','z(n,k,j,i)=s(k)*(height-orog(j,i))/height+orog(j,i)')
-    IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_VER_COORD','NF90_PUT_ATT','formula_definition for ' &
+    istatus = NF90_PUT_ATT(INCID, IVARID, 'formula_terms','s: '//TRIM(YVARNAME)//' height: ZTOP orog: ZS')
+    IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_VER_COORD','NF90_PUT_ATT','formula_terms for '//trim(YVARNAME))
+    istatus = NF90_PUT_ATT(INCID, IVARID, 'formula_definition','z(n,k,j,i)=s(k)*(height-orog(j,i))/height+orog(j,i)')
+    IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_VER_COORD','NF90_PUT_ATT','formula_definition for ' &
                                                      //trim(YVARNAME))
   ENDIF
   !
-  STATUS = NF90_PUT_ATT(INCID, IVARID, 'computed_standard_name',HCOMPNAME)
-  IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_VER_COORD','NF90_PUT_ATT','computed_standard_name for ' &
-                                                   //trim(YVARNAME))
+  if ( Len_trim( hcompname ) > 0 ) then
+    istatus = NF90_PUT_ATT(INCID, IVARID, 'computed_standard_name',HCOMPNAME)
+    IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_VER_COORD','NF90_PUT_ATT','computed_standard_name for ' &
+                                                     //trim(YVARNAME))
+  end if
 
   ! Write the data
-  STATUS = NF90_PUT_VAR(INCID, IVARID, PCOORDS)
-  IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_VER_COORD','NF90_PUT_VAR',trim(YVARNAME))
+  istatus = NF90_PUT_VAR(INCID, IVARID, PCOORDS)
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_VER_COORD','NF90_PUT_VAR',trim(YVARNAME))
 
 END SUBROUTINE WRITE_VER_COORD
 
@@ -1545,7 +1547,7 @@ SUBROUTINE WRITE_TIME_COORD(TDIM)
   CHARACTER(LEN=:),ALLOCATABLE :: YVARNAME
   INTEGER(KIND=CDFINT)         :: IVARID
   INTEGER(KIND=CDFINT)         :: IVDIM
-  INTEGER(KIND=CDFINT)         :: STATUS
+  INTEGER(KIND=CDFINT)         :: istatus
   TYPE(DATE_TIME)              :: TZREF
 
 
@@ -1553,28 +1555,29 @@ SUBROUTINE WRITE_TIME_COORD(TDIM)
     yvarname = Trim( tdim%cname )
     ivdim    = tdim%nid
 
-    STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
-    IF (STATUS /= NF90_NOERR) THEN
+    istatus = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
+    IF (istatus /= NF90_NOERR) THEN
       ! Define the coordinate variable
-      STATUS = NF90_DEF_VAR(INCID, YVARNAME, MNHREAL_NF90, IVDIM, IVARID)
-      IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_TIME_COORD','NF90_DEF_VAR',trim(YVARNAME))
+      istatus = NF90_DEF_VAR(INCID, YVARNAME, MNHREAL_NF90, IVDIM, IVARID)
+      IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_TIME_COORD','NF90_DEF_VAR',trim(YVARNAME))
     ELSE
       CALL PRINT_MSG(NVERB_ERROR,'IO','WRITE_TIME_COORD',TRIM(YVARNAME)//' already defined')
     END IF
 
     ! Write metadata
-    STATUS = NF90_PUT_ATT(INCID, IVARID, 'long_name','time axis')
-    IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_TIME_COORD','NF90_PUT_ATT','long_name for '//trim(YVARNAME))
-    STATUS = NF90_PUT_ATT(INCID, IVARID, 'standard_name','time')
-    IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_TIME_COORD','NF90_PUT_ATT','standard_name for '//trim(YVARNAME))
+    istatus = NF90_PUT_ATT(INCID, IVARID, 'long_name','time axis')
+    IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_TIME_COORD','NF90_PUT_ATT','long_name for '//trim(YVARNAME))
+    istatus = NF90_PUT_ATT(INCID, IVARID, 'standard_name','time')
+    IF (istatus /= NF90_NOERR) &
+      CALL IO_Err_handle_nc4(istatus,'WRITE_TIME_COORD','NF90_PUT_ATT','standard_name for '//trim(YVARNAME))
     WRITE(YUNITS,'( "seconds since ",I4.4,"-",I2.2,"-",I2.2," 00:00:00 +0:00" )') &
           TDTMOD%TDATE%YEAR,TDTMOD%TDATE%MONTH,TDTMOD%TDATE%DAY
-    STATUS = NF90_PUT_ATT(INCID, IVARID, 'units',YUNITS)
-    IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_TIME_COORD','NF90_PUT_ATT','units for '//trim(YVARNAME))
-    STATUS = NF90_PUT_ATT(INCID, IVARID, 'axis','T')
-    IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_TIME_COORD','NF90_PUT_ATT','axis for '//trim(YVARNAME))
-    STATUS = NF90_PUT_ATT(INCID, IVARID,'calendar','standard')
-    IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_TIME_COORD','NF90_PUT_ATT','calendar for '//trim(YVARNAME))
+    istatus = NF90_PUT_ATT(INCID, IVARID, 'units',YUNITS)
+    IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_TIME_COORD','NF90_PUT_ATT','units for '//trim(YVARNAME))
+    istatus = NF90_PUT_ATT(INCID, IVARID, 'axis','T')
+    IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_TIME_COORD','NF90_PUT_ATT','axis for '//trim(YVARNAME))
+    istatus = NF90_PUT_ATT(INCID, IVARID,'calendar','standard')
+    IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_TIME_COORD','NF90_PUT_ATT','calendar for '//trim(YVARNAME))
 
     ! Model beginning date (TDTMOD%TDATE) is used as the reference date
     ! Reference time is set to 0.
@@ -1583,8 +1586,8 @@ SUBROUTINE WRITE_TIME_COORD(TDIM)
     ! Compute the temporal distance from reference
     CALL DATETIME_DISTANCE(TZREF,TDTCUR,ZDELTATIME)
     ! Write the data
-    STATUS = NF90_PUT_VAR(INCID, IVARID, ZDELTATIME)
-    IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'WRITE_TIME_COORD','NF90_PUT_VAR',trim(YVARNAME))
+    istatus = NF90_PUT_VAR(INCID, IVARID, ZDELTATIME)
+    IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_TIME_COORD','NF90_PUT_VAR',trim(YVARNAME))
   END IF
 
 END SUBROUTINE WRITE_TIME_COORD

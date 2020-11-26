@@ -572,8 +572,8 @@ CONTAINS
     LOGICAL                                  :: GALLOC
     LOGICAL                                  :: GLFI, GNC4
     !
-    REAL(kind=MNHTIME), DIMENSION(2)         :: T0, T1, T2
-    REAL(kind=MNHTIME), DIMENSION(2)         :: T11, T22
+    REAL(kind=MNHTIME), DIMENSION(2)         :: ZT0, ZT1, ZT2
+    REAL(kind=MNHTIME), DIMENSION(2)         :: ZT11, ZT22
 #ifdef MNH_GA
     REAL,DIMENSION(:,:),POINTER              :: ZFIELD_GA
 #endif
@@ -592,7 +592,7 @@ CONTAINS
     GALLOC = .FALSE.
     IHEXTOT = 2*JPHEXT+1
     !
-    CALL SECOND_MNH2(T11)
+    CALL SECOND_MNH2(ZT11)
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_byfield_X2',TRIM(YFILEM)//': writing '//TRIM(YRECFM))
     !
@@ -651,7 +651,7 @@ CONTAINS
           IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,PFIELD,iresp_nc4)
         END IF
       ELSE ! multiprocesses execution
-          CALL SECOND_MNH2(T0)
+          CALL SECOND_MNH2(ZT0)
           CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MNHINT_MPI,MPI_MAX,TPFILE%NMPICOMM,IERR)
           IF (ISIZEMAX==0) THEN
              CALL PRINT_MSG(NVERB_INFO,'IO','IO_Field_write_byfield_X2','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
@@ -703,8 +703,8 @@ CONTAINS
 #endif
              END IF
           END IF
-          CALL SECOND_MNH2(T1)
-          TIMEZ%T_WRIT2D_GATH=TIMEZ%T_WRIT2D_GATH + T1 - T0
+          CALL SECOND_MNH2(ZT1)
+          TIMEZ%T_WRIT2D_GATH=TIMEZ%T_WRIT2D_GATH + ZT1 - ZT0
           !
           IF (ISP == TPFILE%NMASTER_RANK) THEN
              IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,ZFIELDP,iresp_lfi)
@@ -713,8 +713,8 @@ CONTAINS
 #ifdef MNH_GA
          call ga_sync
 #endif
-          CALL SECOND_MNH2(T2)
-          TIMEZ%T_WRIT2D_WRIT=TIMEZ%T_WRIT2D_WRIT + T2 - T1
+          CALL SECOND_MNH2(ZT2)
+          TIMEZ%T_WRIT2D_WRIT=TIMEZ%T_WRIT2D_WRIT + ZT2 - ZT1
        END IF
     END IF
 
@@ -722,8 +722,8 @@ CONTAINS
     if ( Present( kresp ) ) kresp = iresp_glob
 
     IF (GALLOC) DEALLOCATE(ZFIELDP)
-    CALL SECOND_MNH2(T22)
-    TIMEZ%T_WRIT2D_ALL=TIMEZ%T_WRIT2D_ALL + T22 - T11
+    CALL SECOND_MNH2(ZT22)
+    TIMEZ%T_WRIT2D_ALL=TIMEZ%T_WRIT2D_ALL + ZT22 - ZT11
   END SUBROUTINE IO_Field_write_byfield_X2
 
 
@@ -774,7 +774,7 @@ CONTAINS
     TYPE(TFILEDATA),TARGET,      INTENT(IN) :: TPFILE
     TYPE(TFIELDDATA),            INTENT(IN) :: TPFIELD
     REAL,DIMENSION(:,:,:),TARGET,INTENT(IN) :: PFIELD   ! array containing the data field
-    INTEGER,OPTIONAL,            INTENT(OUT):: KRESP    ! return-code 
+    INTEGER,OPTIONAL,            INTENT(OUT):: KRESP    ! return-code
     !
     !*      0.2   Declarations of local variables
     !
@@ -795,17 +795,17 @@ CONTAINS
     REAL,DIMENSION(:,:),POINTER              :: ZSLICE_ll,ZSLICE
     INTEGER                                  :: IK_FILE,IK_RANK,INB_PROC_REAL,JK_MAX
     INTEGER                                  :: JI,IXO,IXE,IYO,IYE
-    REAL,DIMENSION(:,:),POINTER              :: TX2DP
-    INTEGER, DIMENSION(MPI_STATUS_SIZE)      :: STATUS
+    REAL,DIMENSION(:,:),POINTER              :: ZTX2DP
+    INTEGER, DIMENSION(MPI_STATUS_SIZE)      :: ISTATUS
     LOGICAL                                  :: GALLOC_ll
-    INTEGER,ALLOCATABLE,DIMENSION(:)         :: REQ_TAB
-    INTEGER                                  :: NB_REQ
+    INTEGER,ALLOCATABLE,DIMENSION(:)         :: IREQ_TAB
+    INTEGER                                  :: INB_REQ
     TYPE TX_2DP
        REAL, DIMENSION(:,:), POINTER :: X
     END TYPE TX_2DP
     TYPE(TX_2DP),ALLOCATABLE,DIMENSION(:)    :: T_TX2DP
-    REAL(kind=MNHTIME), DIMENSION(2)         :: T0, T1, T2
-    REAL(kind=MNHTIME), DIMENSION(2)         :: T11, T22
+    REAL(kind=MNHTIME), DIMENSION(2)         :: ZT0, ZT1, ZT2
+    REAL(kind=MNHTIME), DIMENSION(2)         :: ZT11, ZT22
 #ifdef MNH_GA
     REAL,DIMENSION(:,:,:),POINTER            :: ZFIELD_GA
 #endif
@@ -833,7 +833,7 @@ CONTAINS
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_byfield_X3',TRIM(YFILEM)//': writing '//TRIM(YRECFM))
     !
-    CALL SECOND_MNH2(T11)
+    CALL SECOND_MNH2(ZT11)
     !
     CALL IO_Field_metadata_check(TPFIELD,TYPEREAL,3,'IO_Field_write_byfield_X3')
     !
@@ -843,7 +843,7 @@ CONTAINS
     !
     IF (IRESP==0) THEN
       IF (GSMONOPROC .AND. TPFILE%NSUBFILES_IOZ==0 ) THEN ! sequential execution
-          !    IF (LPACK .AND. L1D .AND. YDIR=='XY') THEN 
+          !    IF (LPACK .AND. L1D .AND. YDIR=='XY') THEN
         IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
           if ( tpfile%ldimreduced ) then
             tzfield = tpfield
@@ -940,20 +940,20 @@ CONTAINS
           !
           ! init/create the ga
           !
-          CALL SECOND_MNH2(T0)
+          CALL SECOND_MNH2(ZT0)
           CALL MNH_INIT_GA(SIZE(PFIELD,1),SIZE(PFIELD,2),SIZE(PFIELD,3),YRECFM,"WRITE")
          !
-         !   copy columun data to global arrays g_a 
+         !   copy columun data to global arrays g_a
          !
          ALLOCATE (ZFIELD_GA (SIZE(PFIELD,1),SIZE(PFIELD,2),SIZE(PFIELD,3)))
          ZFIELD_GA = PFIELD
          !print*,"IO_WRITE_FIELD_BYFIELD_X3::nga_put=",g_a, lo_col, hi_col,NIXO_L,NIYO_L , ld_col, YRECFM ; call flush(6)
          call ga_sync()
-         call nga_put(g_a, lo_col, hi_col,ZFIELD_GA(NIXO_L,NIYO_L,1) , ld_col)  
+         call nga_put(g_a, lo_col, hi_col,ZFIELD_GA(NIXO_L,NIYO_L,1) , ld_col)
          call ga_sync()
          DEALLOCATE(ZFIELD_GA)
-         CALL SECOND_MNH2(T1)
-         TIMEZ%T_WRIT3D_SEND=TIMEZ%T_WRIT3D_SEND + T1 - T0
+         CALL SECOND_MNH2(ZT1)
+         TIMEZ%T_WRIT3D_SEND=TIMEZ%T_WRIT3D_SEND + ZT1 - ZT0
          !
          ! write the data
          !
@@ -967,8 +967,8 @@ CONTAINS
             !
             IK_RANK = TZFILE%NMASTER_RANK
             !
-            IF (ISP == IK_RANK )  THEN 
-               CALL SECOND_MNH2(T0)
+            IF (ISP == IK_RANK )  THEN
+               CALL SECOND_MNH2(ZT0)
                !
                IF ( SIZE(ZSLICE_ll) .EQ. 0 ) THEN
                   DEALLOCATE(ZSLICE_ll)
@@ -981,22 +981,22 @@ CONTAINS
                hi_zplan(JPIZ) = JKK
                !print*,"IO_WRITE_FIELD_BYFIELD_X3::nga_get=",g_a, lo_zplan, hi_zplan, ld_zplan, YRECFM,JKK ; call flush(6)
                call nga_get(g_a, lo_zplan, hi_zplan,ZSLICE_ll, ld_zplan)
-               CALL SECOND_MNH2(T1)
-               TIMEZ%T_WRIT3D_RECV=TIMEZ%T_WRIT3D_RECV + T1 - T0
+               CALL SECOND_MNH2(ZT1)
+               TIMEZ%T_WRIT3D_RECV=TIMEZ%T_WRIT3D_RECV + ZT1 - ZT0
                !
                IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,ZSLICE_ll,iresp_tmp_lfi,KVERTLEVEL=JKK,KZFILE=IK_FILE+1)
                if ( iresp_tmp_lfi /= 0 ) iresp_lfi = iresp_tmp_lfi
                IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,ZSLICE_ll,iresp_tmp_nc4,KVERTLEVEL=JKK,KZFILE=IK_FILE+1)
                if ( iresp_tmp_nc4 /= 0 ) iresp_nc4 = iresp_tmp_nc4
-               CALL SECOND_MNH2(T2)
-               TIMEZ%T_WRIT3D_WRIT=TIMEZ%T_WRIT3D_WRIT + T2 - T1
+               CALL SECOND_MNH2(ZT2)
+               TIMEZ%T_WRIT3D_WRIT=TIMEZ%T_WRIT3D_WRIT + ZT2 - ZT1
             END IF
          END DO
          !
-         CALL SECOND_MNH2(T0) 
+         CALL SECOND_MNH2(ZT0)
          call ga_sync
-         CALL SECOND_MNH2(T1) 
-         TIMEZ%T_WRIT3D_WAIT=TIMEZ%T_WRIT3D_WAIT + T1 - T0     
+         CALL SECOND_MNH2(ZT1)
+         TIMEZ%T_WRIT3D_WAIT=TIMEZ%T_WRIT3D_WAIT + ZT1 - ZT0
 #else
           !
           ALLOCATE(ZSLICE_ll(0,0))
@@ -1008,8 +1008,8 @@ CONTAINS
              !
              JK_MAX=MIN(SIZE(PFIELD,3),JK+INB_PROC_REAL-1)
              !
-             NB_REQ=0
-             ALLOCATE(REQ_TAB(INB_PROC_REAL))
+             INB_REQ=0
+             ALLOCATE(IREQ_TAB(INB_PROC_REAL))
              ALLOCATE(T_TX2DP(INB_PROC_REAL))
              DO JKK=JK,JK_MAX
                 !
@@ -1033,23 +1033,23 @@ CONTAINS
                                       '2D not (yet) allowed for parallel execution' )
                       CALL GATHER_XXFIELD('XX',PFIELD(:,JPHEXT+1,:),ZFIELDP(:,1,:),TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
                    ELSE
-                      CALL SECOND_MNH2(T0)
+                      CALL SECOND_MNH2(ZT0)
                       IF ( ISP /= IK_RANK )  THEN
                          ! Other processes
                          CALL GET_DOMWRITE_ll(ISP,'local',IXO,IXE,IYO,IYE)
                          IF (IXO /= 0) THEN ! intersection is not empty
-                            NB_REQ = NB_REQ + 1
-                            ALLOCATE(T_TX2DP(NB_REQ)%X(IXO:IXE,IYO:IYE))
+                            INB_REQ = INB_REQ + 1
+                            ALLOCATE(T_TX2DP(INB_REQ)%X(IXO:IXE,IYO:IYE))
                             ZSLICE => PFIELD(:,:,JKK)
-                            TX2DP=>ZSLICE(IXO:IXE,IYO:IYE)
-                            T_TX2DP(NB_REQ)%X=ZSLICE(IXO:IXE,IYO:IYE)
-                            CALL MPI_ISEND(T_TX2DP(NB_REQ)%X,SIZE(TX2DP),MNHREAL_MPI,IK_RANK-1,99+IK_RANK &
-                                          & ,TZFILE%NMPICOMM,REQ_TAB(NB_REQ),IERR)
-                            !CALL MPI_BSEND(TX2DP,SIZE(TX2DP),MNHREAL_MPI,IK_RANK-1,99+IK_RANK,TZFILE%NMPICOMM,IERR)
+                            ZTX2DP=>ZSLICE(IXO:IXE,IYO:IYE)
+                            T_TX2DP(INB_REQ)%X=ZSLICE(IXO:IXE,IYO:IYE)
+                            CALL MPI_ISEND(T_TX2DP(INB_REQ)%X,SIZE(ZTX2DP),MNHREAL_MPI,IK_RANK-1,99+IK_RANK &
+                                          & ,TZFILE%NMPICOMM,IREQ_TAB(INB_REQ),IERR)
+                            !CALL MPI_BSEND(ZTX2DP,SIZE(ZTX2DP),MNHREAL_MPI,IK_RANK-1,99+IK_RANK,TZFILE%NMPICOMM,IERR)
                          END IF
                       END IF
-                      CALL SECOND_MNH2(T1)
-                      TIMEZ%T_WRIT3D_SEND=TIMEZ%T_WRIT3D_SEND + T1 - T0
+                      CALL SECOND_MNH2(ZT1)
+                      TIMEZ%T_WRIT3D_SEND=TIMEZ%T_WRIT3D_SEND + ZT1 - ZT0
                    END IF
                 END IF
              END DO
@@ -1071,7 +1071,7 @@ CONTAINS
                 IK_RANK = TZFILE%NMASTER_RANK
                 !
                 IF (ISP == IK_RANK )  THEN
-                   CALL SECOND_MNH2(T0)
+                   CALL SECOND_MNH2(ZT0)
                    ! I/O proc case
                    IF ( SIZE(ZSLICE_ll) .EQ. 0 ) THEN
                       DEALLOCATE(ZSLICE_ll)
@@ -1080,36 +1080,36 @@ CONTAINS
                    DO JI=1,ISNPROC
                       CALL GET_DOMWRITE_ll(JI,'global',IXO,IXE,IYO,IYE)
                       IF (IXO /= 0) THEN ! intersection is not empty
-                         TX2DP=>ZSLICE_ll(IXO:IXE,IYO:IYE)
-                         IF (ISP == JI) THEN 
+                         ZTX2DP=>ZSLICE_ll(IXO:IXE,IYO:IYE)
+                         IF (ISP == JI) THEN
                             CALL GET_DOMWRITE_ll(JI,'local',IXO,IXE,IYO,IYE)
                             ZSLICE => PFIELD(:,:,JKK)
-                            TX2DP = ZSLICE(IXO:IXE,IYO:IYE)
-                         ELSE 
-                            CALL MPI_RECV(TX2DP,SIZE(TX2DP),MNHREAL_MPI,JI-1,99+IK_RANK,TZFILE%NMPICOMM,STATUS,IERR)
+                            ZTX2DP = ZSLICE(IXO:IXE,IYO:IYE)
+                         ELSE
+                            CALL MPI_RECV(ZTX2DP,SIZE(ZTX2DP),MNHREAL_MPI,JI-1,99+IK_RANK,TZFILE%NMPICOMM,ISTATUS,IERR)
                          END IF
                       END IF
                    END DO
-                   CALL SECOND_MNH2(T1)
-                   TIMEZ%T_WRIT3D_RECV=TIMEZ%T_WRIT3D_RECV + T1 - T0
+                   CALL SECOND_MNH2(ZT1)
+                   TIMEZ%T_WRIT3D_RECV=TIMEZ%T_WRIT3D_RECV + ZT1 - ZT0
                    IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,ZSLICE_ll,iresp_tmp_lfi,KVERTLEVEL=JKK,KZFILE=IK_FILE+1)
                    if ( iresp_tmp_lfi /= 0 ) iresp_lfi = iresp_tmp_lfi
                    IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,ZSLICE_ll,iresp_tmp_nc4,KVERTLEVEL=JKK,KZFILE=IK_FILE+1)
                    if ( iresp_tmp_nc4 /= 0 ) iresp_nc4 = iresp_tmp_nc4
-                   CALL SECOND_MNH2(T2)
-                   TIMEZ%T_WRIT3D_WRIT=TIMEZ%T_WRIT3D_WRIT + T2 - T1
+                   CALL SECOND_MNH2(ZT2)
+                   TIMEZ%T_WRIT3D_WRIT=TIMEZ%T_WRIT3D_WRIT + ZT2 - ZT1
                 END IF
              END DO
              !
-             CALL SECOND_MNH2(T0) 
-             IF (NB_REQ .GT.0 ) THEN
-                CALL MPI_WAITALL(NB_REQ,REQ_TAB,MNH_STATUSES_IGNORE,IERR)
-                DO JI=1,NB_REQ ;  DEALLOCATE(T_TX2DP(JI)%X) ; ENDDO
+             CALL SECOND_MNH2(ZT0)
+             IF (INB_REQ .GT.0 ) THEN
+                CALL MPI_WAITALL(INB_REQ,IREQ_TAB,MNH_STATUSES_IGNORE,IERR)
+                DO JI=1,INB_REQ ;  DEALLOCATE(T_TX2DP(JI)%X) ; ENDDO
              END IF
              DEALLOCATE(T_TX2DP)
-             DEALLOCATE(REQ_TAB)
-             CALL SECOND_MNH2(T1) 
-             TIMEZ%T_WRIT3D_WAIT=TIMEZ%T_WRIT3D_WAIT + T1 - T0
+             DEALLOCATE(IREQ_TAB)
+             CALL SECOND_MNH2(ZT1)
+             TIMEZ%T_WRIT3D_WAIT=TIMEZ%T_WRIT3D_WAIT + ZT1 - ZT0
           END DO Z_SLICE
           !JUAN BG Z SLICE
 ! end of MNH_GA
@@ -1127,8 +1127,8 @@ CONTAINS
 
     IF (GALLOC)    DEALLOCATE(ZFIELDP)
     IF (GALLOC_ll) DEALLOCATE(ZSLICE_ll)
-    CALL SECOND_MNH2(T22)
-    TIMEZ%T_WRIT3D_ALL=TIMEZ%T_WRIT3D_ALL + T22 - T11
+    CALL SECOND_MNH2(ZT22)
+    TIMEZ%T_WRIT3D_ALL=TIMEZ%T_WRIT3D_ALL + ZT22 - ZT11
   END SUBROUTINE IO_Field_write_byfield_X3
 
 
@@ -1851,8 +1851,8 @@ CONTAINS
     LOGICAL                                  :: GALLOC
     LOGICAL                                  :: GLFI, GNC4
     !
-    REAL(kind=MNHTIME), DIMENSION(2)         :: T0, T1, T2
-    REAL(kind=MNHTIME), DIMENSION(2)         :: T11, T22
+    REAL(kind=MNHTIME), DIMENSION(2)         :: ZT0, ZT1, ZT2
+    REAL(kind=MNHTIME), DIMENSION(2)         :: ZT11, ZT22
     INTEGER                                  :: IHEXTOT
     CHARACTER(LEN=:),ALLOCATABLE             :: YMSG
     CHARACTER(LEN=6)                         :: YRESP
@@ -1871,7 +1871,7 @@ CONTAINS
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_byfield_N2',TRIM(YFILEM)//': writing '//TRIM(YRECFM))
     !
-    CALL SECOND_MNH2(T11)
+    CALL SECOND_MNH2(ZT11)
     !
     CALL IO_Field_metadata_check(TPFIELD,TYPEINT,2,'IO_Field_write_byfield_N2')
     !
@@ -1934,7 +1934,7 @@ CONTAINS
              RETURN
           END IF
 
-          CALL SECOND_MNH2(T0)
+          CALL SECOND_MNH2(ZT0)
           IF (ISP == TPFILE%NMASTER_RANK) THEN
              ! I/O process case
              CALL ALLOCBUFFER_ll(IFIELDP,KFIELD,YDIR,GALLOC)
@@ -1953,15 +1953,15 @@ CONTAINS
                 CALL GATHER_XYFIELD(KFIELD,IFIELDP,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
              END IF
           END IF
-          CALL SECOND_MNH2(T1)
-          TIMEZ%T_WRIT2D_GATH=TIMEZ%T_WRIT2D_GATH + T1 - T0
+          CALL SECOND_MNH2(ZT1)
+          TIMEZ%T_WRIT2D_GATH=TIMEZ%T_WRIT2D_GATH + ZT1 - ZT0
           !
           IF (ISP == TPFILE%NMASTER_RANK) THEN
              IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,IFIELDP,iresp_lfi)
              IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,IFIELDP,iresp_nc4)
           END IF
-          CALL SECOND_MNH2(T2)
-          TIMEZ%T_WRIT2D_WRIT=TIMEZ%T_WRIT2D_WRIT + T2 - T1
+          CALL SECOND_MNH2(ZT2)
+          TIMEZ%T_WRIT2D_WRIT=TIMEZ%T_WRIT2D_WRIT + ZT2 - ZT1
        END IF
     END IF
 
@@ -1969,8 +1969,8 @@ CONTAINS
     if ( Present( kresp ) ) kresp = iresp_glob
 
     IF (GALLOC) DEALLOCATE(IFIELDP)
-    CALL SECOND_MNH2(T22)
-    TIMEZ%T_WRIT2D_ALL=TIMEZ%T_WRIT2D_ALL + T22 - T11
+    CALL SECOND_MNH2(ZT22)
+    TIMEZ%T_WRIT2D_ALL=TIMEZ%T_WRIT2D_ALL + ZT22 - ZT11
     !
   END SUBROUTINE IO_Field_write_byfield_N2
 
@@ -2032,7 +2032,7 @@ CONTAINS
     LOGICAL                                  :: GALLOC
     LOGICAL                                  :: GLFI, GNC4
     !
-    REAL(kind=MNHTIME), DIMENSION(2)         :: T11, T22
+    REAL(kind=MNHTIME), DIMENSION(2)         :: ZT11, ZT22
     INTEGER                                  :: IHEXTOT
     CHARACTER(LEN=:),ALLOCATABLE             :: YMSG
     CHARACTER(LEN=6)                         :: YRESP
@@ -2051,7 +2051,7 @@ CONTAINS
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_byfield_N3',TRIM(YFILEM)//': writing '//TRIM(YRECFM))
     !
-    CALL SECOND_MNH2(T11)
+    CALL SECOND_MNH2(ZT11)
     !
     CALL IO_Field_metadata_check(TPFIELD,TYPEINT,3,'IO_Field_write_byfield_N3')
     !
@@ -2144,8 +2144,8 @@ CONTAINS
     if ( Present( kresp ) ) kresp = iresp_glob
 
     IF (GALLOC) DEALLOCATE(IFIELDP)
-    CALL SECOND_MNH2(T22)
-    TIMEZ%T_WRIT3D_ALL=TIMEZ%T_WRIT3D_ALL + T22 - T11
+    CALL SECOND_MNH2(ZT22)
+    TIMEZ%T_WRIT3D_ALL=TIMEZ%T_WRIT3D_ALL + ZT22 - ZT11
     !
   END SUBROUTINE IO_Field_write_byfield_N3
 
@@ -2739,14 +2739,14 @@ CONTAINS
     INTEGER                                  :: IERR
     integer                                  :: iresp, iresp_lfi, iresp_nc4, iresp_glob
     REAL,DIMENSION(:,:,:),ALLOCATABLE,TARGET :: Z3D
-    real,dimension(:,:),   pointer           :: tx2dp
+    real,dimension(:,:),   pointer           :: ztx2dp
     REAL,DIMENSION(:,:,:), POINTER           :: TX3DP
     INTEGER                                  :: IIMAX_ll,IJMAX_ll
     INTEGER                                  :: JI
     INTEGER                                  :: IIB,IIE,IJB,IJE
-    INTEGER, DIMENSION(MPI_STATUS_SIZE)      :: STATUS
-    INTEGER,ALLOCATABLE,DIMENSION(:)         :: REQ_TAB
-    INTEGER                                  :: NB_REQ,IKU
+    INTEGER, DIMENSION(MPI_STATUS_SIZE)      :: ISTATUS
+    INTEGER,ALLOCATABLE,DIMENSION(:)         :: IREQ_TAB
+    INTEGER                                  :: INB_REQ,IKU
     LOGICAL                                  :: GLFI, GNC4
     TYPE TX_3DP
        REAL,DIMENSION(:,:,:), POINTER    :: X
@@ -2797,9 +2797,9 @@ CONTAINS
               tzfield%ndimlist(3)  = tzfield%ndimlist(4) !Necessary if time dimension
               tzfield%ndimlist(4:) = NMNHDIM_UNUSED
             end if
-            tx2dp => plb(:, jphext + 1, :)
-            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, tx2dp, iresp_lfi )
-            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, tx2dp, iresp_nc4 )
+            ztx2dp => plb(:, jphext + 1, :)
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, ztx2dp, iresp_lfi )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, ztx2dp, iresp_nc4 )
           else
             tzfield = tpfield
             if ( tzfield%ndimlist(2) /= NMNHDIM_UNKNOWN ) tzfield%ndimlist(2) = NMNHDIM_ONE
@@ -2825,7 +2825,7 @@ CONTAINS
                 IF (IIB /= 0) THEN
                    TX3DP=>Z3D(IIB:IIE,IJB:IJE,:)
                    IF (ISP /= JI) THEN
-                      CALL MPI_RECV(TX3DP,SIZE(TX3DP),MNHREAL_MPI,JI-1,99,TPFILE%NMPICOMM,STATUS,IERR)
+                      CALL MPI_RECV(TX3DP,SIZE(TX3DP),MNHREAL_MPI,JI-1,99,TPFILE%NMPICOMM,ISTATUS,IERR)
                    ELSE
                       CALL GET_DISTRIB_lb(YLBTYPE,JI,'LOC','WRITE',IRIM,IIB,IIE,IJB,IJE)
                       TX3DP = PLB(IIB:IIE,IJB:IJE,:)
@@ -2841,26 +2841,26 @@ CONTAINS
              IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,TX3DP,iresp_lfi)
              IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,TX3DP,iresp_nc4)
           ELSE
-             NB_REQ=0
-             ALLOCATE(REQ_TAB(1))
+             INB_REQ=0
+             ALLOCATE(IREQ_TAB(1))
              ALLOCATE(T_TX3DP(1))
              IKU = SIZE(PLB,3)
              ! Other processes
              CALL GET_DISTRIB_lb(YLBTYPE,ISP,'LOC','WRITE',IRIM,IIB,IIE,IJB,IJE)
              IF (IIB /= 0) THEN
                 TX3DP=>PLB(IIB:IIE,IJB:IJE,:)
-                NB_REQ = NB_REQ + 1
-                ALLOCATE(T_TX3DP(NB_REQ)%X(IIB:IIE,IJB:IJE,IKU))  
-                T_TX3DP(NB_REQ)%X=PLB(IIB:IIE,IJB:IJE,:)
-                CALL MPI_ISEND(T_TX3DP(NB_REQ)%X,SIZE(TX3DP),MNHREAL_MPI,TPFILE%NMASTER_RANK-1,99, &
-                               TPFILE%NMPICOMM,REQ_TAB(NB_REQ),IERR)
+                INB_REQ = INB_REQ + 1
+                ALLOCATE(T_TX3DP(INB_REQ)%X(IIB:IIE,IJB:IJE,IKU))
+                T_TX3DP(INB_REQ)%X=PLB(IIB:IIE,IJB:IJE,:)
+                CALL MPI_ISEND(T_TX3DP(INB_REQ)%X,SIZE(TX3DP),MNHREAL_MPI,TPFILE%NMASTER_RANK-1,99, &
+                               TPFILE%NMPICOMM,IREQ_TAB(INB_REQ),IERR)
                 !CALL MPI_BSEND(TX3DP,SIZE(TX3DP),MNHREAL_MPI,TPFILE%NMASTER_RANK-1,99,TPFILE%NMPICOMM,IERR)
              END IF
-             IF (NB_REQ .GT.0 ) THEN
-                CALL MPI_WAITALL(NB_REQ,REQ_TAB,MNH_STATUSES_IGNORE,IERR)
+             IF (INB_REQ .GT.0 ) THEN
+                CALL MPI_WAITALL(INB_REQ,IREQ_TAB,MNH_STATUSES_IGNORE,IERR)
                 DEALLOCATE(T_TX3DP(1)%X) 
              END IF
-             DEALLOCATE(T_TX3DP,REQ_TAB)
+             DEALLOCATE(T_TX3DP,IREQ_TAB)
           END IF
        END IF
     END IF
