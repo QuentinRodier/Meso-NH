@@ -14,6 +14,7 @@
 !  P. Wautelet 14/09/2020: IO_Knowndims_set_nc4: add new dimensions + remove 'time' dimension in diachronic files
 !  P. Wautelet 14/09/2020: IO_Vdims_fill_nc4: use ndimlist when provided to fill dimensions ids
 !  P. Wautelet 10/11/2020: new data structures for netCDF dimensions
+!  P. Wautelet 26/11/2020: IO_Vdims_fill_nc4: support for empty kshape
 !-----------------------------------------------------------------
 #ifdef MNH_IOCDF4
 module mode_io_tools_nc4
@@ -504,8 +505,16 @@ integer(kind=CDFINT)          :: istatus
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Vdims_fill_nc4','called for '//TRIM(TPFIELD%CMNHNAME))
 !
-IF (SIZE(KSHAPE) < 1 .AND. .NOT.TPFIELD%LTIMEDEP) CALL PRINT_MSG(NVERB_FATAL,'IO','IO_Vdims_fill_nc4','empty KSHAPE')
-!
+if ( Size( kshape ) == 0 .and. .not. tpfield%ltimedep) then
+  !Scalar variable case not time dependent
+  if ( tpfield%ndims == 0 ) then
+    Allocate( kvdims(0) )
+    return
+  else
+    call Print_msg( NVERB_FATAL, 'IO', 'IO_Vdims_fill_nc4', 'empty kshape' )
+  end if
+end if
+
 IGRID  =  TPFIELD%NGRID
 YDIR   =  TPFIELD%CDIR
 !

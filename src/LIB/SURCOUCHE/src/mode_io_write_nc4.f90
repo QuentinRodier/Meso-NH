@@ -22,6 +22,7 @@
 !  P. Wautelet 14/09/2020: IO_Coordvar_write_nc4: do not store 'time' coordinate in diachronic files
 !  P. Wautelet 22/09/2020: add ldimreduced field to allow reduction in the number of dimensions of fields (used by 2D simulations)
 !  P. Wautelet 10/11/2020: new data structures for netCDF dimensions
+!  P. Wautelet 26/11/2020: add IO_Field_create_nc4 subroutine + use it for all IO_Field_write_nc4_*
 !-----------------------------------------------------------------
 #ifdef MNH_IOCDF4
 module mode_io_write_nc4
@@ -42,7 +43,7 @@ implicit none
 
 private
 
-public :: IO_Coordvar_write_nc4, IO_Field_write_nc4, IO_Header_write_nc4
+public :: IO_Coordvar_write_nc4, IO_Field_create_nc4, IO_Field_write_nc4, IO_Header_write_nc4
 public :: IO_Field_header_split_write_nc4
 
 INTERFACE IO_Field_write_nc4
@@ -351,6 +352,162 @@ ENDIF
 END SUBROUTINE IO_Field_attr_write_nc4
 
 
+subroutine IO_Field_create_nc4( tpfile, tpfield, kshape, hcalendar, oiscoord, kvarid, oisempty )
+use NETCDF, only: NF90_CHAR, NF90_FLOAT, NF90_INT1
+
+use modd_field,     only: NMNHDIM_TIME, TYPECHAR, TYPEDATE, TYPEINT, TYPELOG, TYPEREAL, TYPEUNDEF
+use modd_precision, only: MNHINT_NF90, MNHREAL_NF90
+
+type(tfiledata),       intent(in)            :: tpfile
+type(tfielddata),      intent(in)            :: tpfield
+integer, dimension(:), intent(in),  optional :: kshape
+character(len=*),      intent(in),  optional :: hcalendar
+logical,               intent(in),  optional :: oiscoord   ! Is a coordinate variable (->do not write coordinates attribute)
+integer(kind=CDFINT),  intent(out), optional :: kvarid
+logical,               intent(out), optional :: oisempty
+
+character(len = Len( tpfield%cmnhname ))        :: yvarname
+integer                                         :: idims
+integer                                         :: idx
+integer                                         :: ji
+integer(kind=CDFINT)                            :: istatus
+integer(kind=CDFINT)                            :: itype
+integer(kind=CDFINT)                            :: ivarid
+integer(kind=CDFINT), dimension(:), allocatable :: ivdims
+integer(kind=CDFINT), dimension(:), allocatable :: ivdimstmp
+integer(kind=CDFINT), dimension(:), allocatable :: ishape
+logical                                         :: gexisted !True if variable was already defined
+
+call Print_msg( NVERB_DEBUG, 'IO', 'IO_Field_create_nc4', Trim( tpfile%cname ) // ': creating ' // Trim( tpfield%cmnhname ) )
+
+gexisted = .false.
+
+call IO_Mnhname_clean( tpfield%cmnhname, yvarname )
+
+if ( .not. Present( kshape ) .and. tpfield%ndims > 0 ) then
+  !kshape not provided => ndimlist has to be previously populated
+  idims = tpfield%ndims
+  if ( tpfield%ltimedep ) idims = idims + 1
+  Allocate( ivdims(idims) )
+  Allocate( ishape(idims) )
+
+  do ji = 1, tpfield%ndims
+    idx = tpfield%ndimlist(ji)
+    if ( idx > tpfile%tncdims%nmaxdims .or. idx < 1 )                                        &
+      call Print_msg( NVERB_FATAL, 'IO', 'IO_Field_create_nc4', Trim( tpfile%cname ) // ': ' &
+                      // Trim( tpfield%cmnhname ) // ': invalid ndimlist'  )
+    ivdims(ji) = tpfile%tncdims%tdims(idx)%nid
+    ishape(ji) = tpfile%tncdims%tdims(idx)%nlen
+  end do
+
+  !Set the last dimension if variable is time dependent
+  if ( tpfield%ltimedep ) then
+    ivdims(idims) = tpfile%tncdims%tdims(NMNHDIM_TIME)%nid
+    ishape(idims) = 1
+  end if
+else
+  !Guess the dimensions from the shape of the field
+  if ( tpfield%ndims == 0 ) then
+    Allocate( ishape(0) )
+  else
+    Allocate( ishape(Size( kshape )) )
+    ishape(:) = kshape(:)
+  end if
+
+  !Get the netCDF dimensions
+  if ( tpfield%ntype /= TYPECHAR ) then
+    call IO_Vdims_fill_nc4( tpfile, tpfield, ishape, ivdims )
+  else
+    if ( tpfield%ndims == 0 ) then
+      idims = 1
+    else if ( tpfield%ndims == 1 ) then
+      idims = 2
+    else
+      call Print_msg( NVERB_FATAL, 'IO', 'IO_Field_create_nc4', Trim( tpfile%cname ) // ': ' &
+                      // Trim( tpfield%cmnhname ) // ': ndims value not supported for character strings'  )
+    end if
+
+    Allocate( ivdims(idims) )
+    ivdims(1) = IO_Strdimid_get_nc4( tpfile, Int( kshape(1), kind=CDFINT ) )
+
+    if ( idims == 2 ) then
+      call IO_Vdims_fill_nc4( tpfile, tpfield, [ Int( kshape(2), kind=CDFINT ) ], ivdimstmp )
+      ivdims(2) = ivdimstmp(1)
+      Deallocate( ivdimstmp )
+    end if
+  end if
+end if
+
+if ( Present( oisempty ) ) oisempty = .false.
+do ji = 1, Size( ishape )
+  if ( ishape(ji) == 0 ) then
+    if ( Present( oisempty ) ) then
+      call Print_msg( NVERB_WARNING, 'IO', 'IO_Field_create_nc4','ignoring variable with a zero size (' // Trim( yvarname ) // ')' )
+      oisempty = .true.
+      return
+    else
+      call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_create_nc4','variable with a zero size (' // Trim( yvarname ) // ')' )
+    end if
+  end if
+end do
+
+! The variable should not already exist but who knows ?
+istatus = NF90_INQ_VARID( tpfile%nncid, yvarname, ivarid )
+if ( istatus /= NF90_NOERR ) then
+  select case( tpfield%ntype )
+    case ( TYPEINT )
+      itype = MNHINT_NF90
+
+    case ( TYPELOG )
+      itype = NF90_INT1
+
+    case ( TYPEREAL )
+      if ( tpfile%lncreduce_float_precision .and. tpfield%ndims >= 1  ) then
+        itype = NF90_FLOAT
+      else
+        itype = MNHREAL_NF90
+      end if
+
+    case ( TYPECHAR )
+      itype = NF90_CHAR
+
+    case ( TYPEDATE )
+      itype = MNHREAL_NF90
+      if ( .not. Present( hcalendar ) ) &
+        call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_create_nc4', Trim( tpfield%cmnhname ) // ': hcalendar not provided' )
+
+    case ( TYPEUNDEF )
+      call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_create_nc4', Trim( tpfield%cmnhname ) // ': ntype is TYPEUNDEF' )
+      return
+
+    case default
+      call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_create_nc4', Trim( tpfield%cmnhname ) // ': invalid ntype' )
+      return
+  end select
+
+  ! Define the variable
+  istatus = NF90_DEF_VAR( tpfile%nncid, yvarname, itype, ivdims, ivarid )
+  if ( istatus /= NF90_NOERR ) call IO_Err_handle_nc4( istatus, 'IO_Field_create_nc4', 'NF90_DEF_VAR', Trim( yvarname ) )
+
+  ! Add compression if asked for
+  if ( tpfile%lnccompress .and. tpfield%ntype == TYPEREAL .and. tpfield%ndims >= 1 ) then
+    istatus = NF90_DEF_VAR_DEFLATE( tpfile%nncid, ivarid, SHUFFLE, DEFLATE, tpfile%nnccompress_level )
+    if ( istatus /= NF90_NOERR ) call IO_Err_handle_nc4( istatus, 'IO_Field_create_nc4', 'NF90_DEF_VAR_DEFLATE', Trim( yvarname ) )
+  end if
+else
+  gexisted = .true.
+  call Print_msg( NVERB_WARNING, 'IO', 'IO_Field_create_nc4', Trim( tpfile%cname ) // ': ' &
+                  // Trim( yvarname ) // ' already defined' )
+end if
+
+! Write metadata
+call IO_Field_attr_write_nc4( tpfile, tpfield, ivarid, gexisted, kshape = ishape, hcalendar = hcalendar, oiscoord = oiscoord )
+
+if ( Present( kvarid ) ) kvarid = ivarid
+
+end subroutine IO_Field_create_nc4
+
+
 SUBROUTINE IO_Field_write_nc4_X0(TPFILE,TPFIELD,PFIELD,KRESP)
 !
 TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
@@ -358,51 +515,19 @@ TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
 REAL,                  INTENT(IN) :: PFIELD
 INTEGER,               INTENT(OUT):: KRESP
 !
-INTEGER(KIND=CDFINT)                            :: STATUS
-INTEGER(KIND=CDFINT)                            :: INCID
-CHARACTER(LEN=LEN(TPFIELD%CMNHNAME))            :: YVARNAME
-INTEGER(KIND=CDFINT)                            :: IVARID
-INTEGER(KIND=CDFINT), DIMENSION(:), ALLOCATABLE :: IVDIMS
-INTEGER                                         :: IRESP
-LOGICAL                                         :: GEXISTED !True if variable was already defined
+INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: IVARID
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_X0',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
-IRESP = 0
-! Get the Netcdf file ID
-INCID = TPFILE%NNCID
-!
-GEXISTED = .FALSE.
-!
-CALL IO_Mnhname_clean(TPFIELD%CMNHNAME,YVARNAME)
-!
-! The variable should not already exist but who knows ?
-STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
-IF (STATUS /= NF90_NOERR) THEN
-   IF (TPFIELD%LTIMEDEP) THEN
-     ! Get the netcdf dimensions
-     CALL IO_Vdims_fill_nc4(TPFILE, TPFIELD, INT(SHAPE(PFIELD),KIND=CDFINT), IVDIMS)
-     ! Define the variable
-     STATUS = NF90_DEF_VAR(INCID, YVARNAME, MNHREAL_NF90, IVDIMS, IVARID)
-     IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X0','NF90_DEF_VAR',trim(YVARNAME))
-     DEALLOCATE(IVDIMS)
-   ELSE
-     ! Define the scalar variable
-     STATUS = NF90_DEF_VAR(INCID, YVARNAME, MNHREAL_NF90, IVARID)
-     IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X0','NF90_DEF_VAR',trim(YVARNAME))
-   END IF
-ELSE
-   GEXISTED = .TRUE.
-   CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_X0',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)//' already defined')
-END IF
+KRESP = 0
 
-! Write metadata
-CALL IO_Field_attr_write_nc4(TPFILE,TPFIELD,IVARID,GEXISTED)
+call IO_Field_create_nc4( tpfile, tpfield, kvarid = ivarid )
+
 ! Write the data
-STATUS = NF90_PUT_VAR(INCID, IVARID, PFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X0','NF90_PUT_VAR',trim(YVARNAME),IRESP)
+STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
+IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X0','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
-KRESP = IRESP
 END SUBROUTINE IO_Field_write_nc4_X0
 
 
@@ -413,62 +538,20 @@ TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:),     INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,               INTENT(OUT):: KRESP
 !
-INTEGER(KIND=CDFINT)                            :: STATUS
-INTEGER(KIND=CDFINT)                            :: INCID
-CHARACTER(LEN=LEN(TPFIELD%CMNHNAME)+4)          :: YVARNAME
-INTEGER(KIND=CDFINT)                            :: IVARID
-INTEGER(KIND=CDFINT), DIMENSION(:), ALLOCATABLE :: IVDIMS
-INTEGER                                         :: IRESP
-LOGICAL                                         :: GEXISTED !True if variable was already defined
+INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: IVARID
+logical              :: gisempty
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_X1',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
-IRESP = 0
-! Get the Netcdf file ID
-INCID = TPFILE%NNCID
+KRESP = 0
 !
-GEXISTED = .FALSE.
-!
-CALL IO_Mnhname_clean(TPFIELD%CMNHNAME,YVARNAME)
+call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( pfield ), kvarid = ivarid, oisempty = gisempty )
 
-! The variable should not already exist but who knows ?
-STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
-IF (STATUS /= NF90_NOERR) THEN
-   IF (SIZE(PFIELD)==0) THEN
-     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_X1','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
-     KRESP = 0
-     RETURN
-   END IF
-
-   ! Get the netcdf dimensions
-   CALL IO_Vdims_fill_nc4(TPFILE, TPFIELD, INT(SHAPE(PFIELD),KIND=CDFINT), IVDIMS)
-
-   ! Define the variable
-   IF (TPFILE%LNCREDUCE_FLOAT_PRECISION) THEN
-     STATUS = NF90_DEF_VAR(INCID, YVARNAME, NF90_FLOAT,  IVDIMS, IVARID)
-   ELSE
-     STATUS = NF90_DEF_VAR(INCID, YVARNAME, MNHREAL_NF90, IVDIMS, IVARID)
-   END IF
-     IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X1','NF90_DEF_VAR',trim(YVARNAME))
-   ! Add compression if asked for
-   IF (TPFILE%LNCCOMPRESS) THEN
-     STATUS = NF90_DEF_VAR_DEFLATE(INCID, IVARID, SHUFFLE, DEFLATE, TPFILE%NNCCOMPRESS_LEVEL)
-     IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X1','NF90_DEF_VAR_DEFLATE',trim(YVARNAME))
-   END IF
-ELSE
-   GEXISTED = .TRUE.
-   CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_X1',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)//' already defined')
-END IF
-
-! Write metadata
-CALL IO_Field_attr_write_nc4(TPFILE,TPFIELD,IVARID,GEXISTED)
 ! Write the data
-STATUS = NF90_PUT_VAR(INCID, IVARID, PFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X1','NF90_PUT_VAR',trim(YVARNAME),IRESP)
+if ( .not. gisempty ) STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
+IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X1','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
-IF(ALLOCATED(IVDIMS)) DEALLOCATE(IVDIMS)
-
-KRESP = IRESP
 END SUBROUTINE IO_Field_write_nc4_X1
 
 
@@ -482,18 +565,13 @@ INTEGER,OPTIONAL,      INTENT(IN) :: KVERTLEVEL ! Number of the vertical level (
 INTEGER,OPTIONAL,      INTENT(IN) :: KZFILE     ! Number of the Z-level split file
 LOGICAL,OPTIONAL,      INTENT(IN) :: OISCOORD   ! Is a coordinate variable (->do not write coordinates attribute)
 !
-INTEGER(KIND=CDFINT)                            :: STATUS
-INTEGER(KIND=CDFINT)                            :: INCID
-CHARACTER(LEN=4)                                :: YSUFFIX
-CHARACTER(LEN=LEN(TPFIELD%CMNHNAME)+4)          :: YVARNAME
-INTEGER(KIND=CDFINT)                            :: IVARID
-INTEGER(KIND=CDFINT), DIMENSION(:), ALLOCATABLE :: IVDIMS
-INTEGER                                         :: IRESP
-TYPE(TFIELDDATA)                                :: TZFIELD
-TYPE(TFILEDATA),POINTER                         :: TZFILE
-LOGICAL                                         :: GEXISTED !True if variable was already defined
+INTEGER(KIND=CDFINT)     :: STATUS
+CHARACTER(LEN=4)         :: YSUFFIX
+INTEGER(KIND=CDFINT)     :: IVARID
+TYPE(TFIELDDATA)         :: TZFIELD
+TYPE(TFILEDATA), POINTER :: TZFILE
 !
-IRESP = 0
+KRESP = 0
 !
 IF (PRESENT(KVERTLEVEL)) THEN
   WRITE(YSUFFIX,'(I4.4)') KVERTLEVEL
@@ -515,51 +593,12 @@ ENDIF
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_X2',TRIM(TZFILE%CNAME)//': writing '//TRIM(TZFIELD%CMNHNAME))
 !
-! Get the Netcdf file ID
-INCID = TZFILE%NNCID
-!
-GEXISTED = .FALSE.
-!
-CALL IO_Mnhname_clean(TZFIELD%CMNHNAME,YVARNAME)
+call IO_Field_create_nc4( tzfile, tzfield, kshape = Shape( pfield ), oiscoord = oiscoord, kvarid = ivarid )
 
-! The variable should not already exist but who knows ?
-STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
-IF (STATUS /= NF90_NOERR) THEN
-   IF (SIZE(PFIELD)==0) THEN
-     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_X2','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
-     KRESP = 0
-     RETURN
-   END IF
-
-   ! Get the netcdf dimensions
-   CALL IO_Vdims_fill_nc4(TZFILE, TZFIELD, INT(SHAPE(PFIELD),KIND=CDFINT), IVDIMS)
-
-   ! Define the variable
-   IF (TZFILE%LNCREDUCE_FLOAT_PRECISION) THEN
-     STATUS = NF90_DEF_VAR(INCID, YVARNAME, NF90_FLOAT,  IVDIMS, IVARID)
-   ELSE
-     STATUS = NF90_DEF_VAR(INCID, YVARNAME, MNHREAL_NF90, IVDIMS, IVARID)
-   END IF
-     IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X2','NF90_DEF_VAR',trim(YVARNAME))
-   ! Add compression if asked for
-   IF (TZFILE%LNCCOMPRESS) THEN
-     STATUS = NF90_DEF_VAR_DEFLATE(INCID, IVARID, SHUFFLE, DEFLATE, TZFILE%NNCCOMPRESS_LEVEL)
-     IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X2','NF90_DEF_VAR_DEFLATE',trim(YVARNAME))
-   END IF
-ELSE
-   GEXISTED = .TRUE.
-   CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_X2',TRIM(TZFILE%CNAME)//': '//TRIM(YVARNAME)//' already defined')
-END IF
-
-! Write metadata
-CALL IO_Field_attr_write_nc4(TZFILE,TZFIELD,IVARID,GEXISTED,KSHAPE=INT(SHAPE(PFIELD),KIND=CDFINT),OISCOORD=OISCOORD)
 ! Write the data
-STATUS = NF90_PUT_VAR(INCID, IVARID, PFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X2','NF90_PUT_VAR',trim(YVARNAME),IRESP)
+STATUS = NF90_PUT_VAR(TZFILE%NNCID, IVARID, PFIELD)
+IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X2','NF90_PUT_VAR',trim(TZFIELD%CMNHNAME),KRESP)
 
-IF(ALLOCATED(IVDIMS)) DEALLOCATE(IVDIMS)
-
-KRESP = IRESP
 END SUBROUTINE IO_Field_write_nc4_X2
 
 
@@ -570,64 +609,19 @@ TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:,:,:), INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,               INTENT(OUT):: KRESP
 !
-INTEGER(KIND=CDFINT)                            :: STATUS
-INTEGER(KIND=CDFINT)                            :: INCID
-CHARACTER(LEN=LEN(TPFIELD%CMNHNAME))            :: YVARNAME
-INTEGER(KIND=CDFINT)                            :: IVARID
-INTEGER(KIND=CDFINT), DIMENSION(:), ALLOCATABLE :: IVDIMS
-INTEGER                                         :: IRESP
-LOGICAL                                         :: GEXISTED !True if variable was already defined
-!
+INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: IVARID
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_X3',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
-IRESP = 0
-! Get the Netcdf file ID
-INCID = TPFILE%NNCID
+KRESP = 0
 !
-GEXISTED = .FALSE.
-!
-CALL IO_Mnhname_clean(TPFIELD%CMNHNAME,YVARNAME)
+call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( pfield ), kvarid = ivarid )
 
-! The variable should not already exist but who knows ?
-STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
-IF (STATUS /= NF90_NOERR) THEN
-   IF (SIZE(PFIELD)==0) THEN
-     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_X3','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
-     KRESP = 0
-     RETURN
-   END IF
-
-   ! Get the netcdf dimensions
-   CALL IO_Vdims_fill_nc4(TPFILE, TPFIELD, INT(SHAPE(PFIELD),KIND=CDFINT), IVDIMS)
-
-   ! Define the variable
-   IF (TPFILE%LNCREDUCE_FLOAT_PRECISION) THEN
-     STATUS = NF90_DEF_VAR(INCID, YVARNAME, NF90_FLOAT,  IVDIMS, IVARID)
-   ELSE
-     STATUS = NF90_DEF_VAR(INCID, YVARNAME, MNHREAL_NF90, IVDIMS, IVARID)
-   END IF
-   IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X3','NF90_DEF_VAR',trim(YVARNAME))
-
-   ! Add compression if asked for
-   IF (TPFILE%LNCCOMPRESS) THEN
-     STATUS = NF90_DEF_VAR_DEFLATE(INCID, IVARID, SHUFFLE, DEFLATE, TPFILE%NNCCOMPRESS_LEVEL)
-     IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X3','NF90_DEF_VAR_DEFLATE',trim(YVARNAME))
-   END IF
-ELSE
-   GEXISTED = .TRUE.
-   CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_X3',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)//' already defined')
-END IF
-
-! Write metadata
-CALL IO_Field_attr_write_nc4(TPFILE,TPFIELD,IVARID,GEXISTED,KSHAPE=INT(SHAPE(PFIELD),KIND=CDFINT))
 ! Write the data
-STATUS = NF90_PUT_VAR(INCID, IVARID, PFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X3','NF90_PUT_VAR',trim(YVARNAME),IRESP)
+STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
+IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X3','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
-IF(ALLOCATED(IVDIMS)) DEALLOCATE(IVDIMS)
-
-KRESP = IRESP
 END SUBROUTINE IO_Field_write_nc4_X3
 
 
@@ -638,64 +632,19 @@ TYPE(TFIELDDATA),          INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:,:,:,:),   INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,                   INTENT(OUT):: KRESP
 !
-INTEGER(KIND=CDFINT)                            :: STATUS
-INTEGER(KIND=CDFINT)                            :: INCID
-CHARACTER(LEN=LEN(TPFIELD%CMNHNAME))            :: YVARNAME
-INTEGER(KIND=CDFINT)                            :: IVARID
-INTEGER(KIND=CDFINT), DIMENSION(:), ALLOCATABLE :: IVDIMS
-INTEGER                                         :: IRESP
-LOGICAL                                         :: GEXISTED !True if variable was already defined
-!
+INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: IVARID
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_X4',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
-IRESP = 0
-! Get the Netcdf file ID
-INCID = TPFILE%NNCID
+KRESP = 0
 !
-GEXISTED = .FALSE.
-!
-CALL IO_Mnhname_clean(TPFIELD%CMNHNAME,YVARNAME)
+call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( pfield ), kvarid = ivarid )
 
-! The variable should not already exist but who knows ?
-STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
-IF (STATUS /= NF90_NOERR) THEN
-   IF (SIZE(PFIELD)==0) THEN
-     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_X4','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
-     KRESP = 0
-     RETURN
-   END IF
-
-   ! Get the netcdf dimensions
-   CALL IO_Vdims_fill_nc4(TPFILE, TPFIELD, INT(SHAPE(PFIELD),KIND=CDFINT), IVDIMS)
-
-   ! Define the variable
-   IF (TPFILE%LNCREDUCE_FLOAT_PRECISION) THEN
-     STATUS = NF90_DEF_VAR(INCID, YVARNAME, NF90_FLOAT,  IVDIMS, IVARID)
-   ELSE
-     STATUS = NF90_DEF_VAR(INCID, YVARNAME, MNHREAL_NF90, IVDIMS, IVARID)
-   END IF
-   IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X4','NF90_DEF_VAR',trim(YVARNAME))
-
-   ! Add compression if asked for
-   IF (TPFILE%LNCCOMPRESS) THEN
-     STATUS = NF90_DEF_VAR_DEFLATE(INCID, IVARID, SHUFFLE, DEFLATE, TPFILE%NNCCOMPRESS_LEVEL)
-     IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X4','NF90_DEF_VAR_DEFLATE',trim(YVARNAME))
-   END IF
-ELSE
-   GEXISTED = .TRUE.
-   CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_X4',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)//' already defined')
-END IF
-
-! Write metadata
-CALL IO_Field_attr_write_nc4(TPFILE,TPFIELD,IVARID,GEXISTED,KSHAPE=INT(SHAPE(PFIELD),KIND=CDFINT))
 ! Write the data
-STATUS = NF90_PUT_VAR(INCID, IVARID, PFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X4','NF90_PUT_VAR',trim(YVARNAME),IRESP)
+STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
+IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X4','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
-IF(ALLOCATED(IVDIMS)) DEALLOCATE(IVDIMS)
-
-KRESP = IRESP
 END SUBROUTINE IO_Field_write_nc4_X4
 
 
@@ -706,64 +655,19 @@ TYPE(TFIELDDATA),          INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:,:,:,:,:), INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,                   INTENT(OUT):: KRESP
 !
-INTEGER(KIND=CDFINT)                            :: STATUS
-INTEGER(KIND=CDFINT)                            :: INCID
-CHARACTER(LEN=LEN(TPFIELD%CMNHNAME))            :: YVARNAME
-INTEGER(KIND=CDFINT)                            :: IVARID
-INTEGER(KIND=CDFINT), DIMENSION(:), ALLOCATABLE :: IVDIMS
-INTEGER                                         :: IRESP
-LOGICAL                                         :: GEXISTED !True if variable was already defined
-!
+INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: IVARID
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_X5',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
-IRESP = 0
-! Get the Netcdf file ID
-INCID = TPFILE%NNCID
+KRESP = 0
 !
-GEXISTED = .FALSE.
-!
-CALL IO_Mnhname_clean(TPFIELD%CMNHNAME,YVARNAME)
+call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( pfield ), kvarid = ivarid )
 
-! The variable should not already exist but who knows ?
-STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
-IF (STATUS /= NF90_NOERR) THEN
-   IF (SIZE(PFIELD)==0) THEN
-     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_X5','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
-     KRESP = 0
-     RETURN
-   END IF
-
-   ! Get the netcdf dimensions
-   CALL IO_Vdims_fill_nc4(TPFILE, TPFIELD, INT(SHAPE(PFIELD),KIND=CDFINT), IVDIMS)
-
-   ! Define the variable
-   IF (TPFILE%LNCREDUCE_FLOAT_PRECISION) THEN
-     STATUS = NF90_DEF_VAR(INCID, YVARNAME, NF90_FLOAT,  IVDIMS, IVARID)
-   ELSE
-     STATUS = NF90_DEF_VAR(INCID, YVARNAME, MNHREAL_NF90, IVDIMS, IVARID)
-   END IF
-   IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X5','NF90_DEF_VAR',trim(YVARNAME))
-
-   ! Add compression if asked for
-   IF (TPFILE%LNCCOMPRESS) THEN
-     STATUS = NF90_DEF_VAR_DEFLATE(INCID, IVARID, SHUFFLE, DEFLATE, TPFILE%NNCCOMPRESS_LEVEL)
-     IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X5','NF90_DEF_VAR_DEFLATE',trim(YVARNAME))
-   END IF
-ELSE
-   GEXISTED = .TRUE.
-   CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_X5',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)//' already defined')
-END IF
-
-! Write metadata
-CALL IO_Field_attr_write_nc4(TPFILE,TPFIELD,IVARID,GEXISTED,KSHAPE=INT(SHAPE(PFIELD),KIND=CDFINT))
 ! Write the data
-STATUS = NF90_PUT_VAR(INCID, IVARID, PFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X5','NF90_PUT_VAR',trim(YVARNAME),IRESP)
+STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
+IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X5','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
-IF(ALLOCATED(IVDIMS)) DEALLOCATE(IVDIMS)
-
-KRESP = IRESP
 END SUBROUTINE IO_Field_write_nc4_X5
 
 
@@ -774,64 +678,19 @@ TYPE(TFIELDDATA),            INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:,:,:,:,:,:), INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,                     INTENT(OUT):: KRESP
 !
-INTEGER(KIND=CDFINT)                            :: STATUS
-INTEGER(KIND=CDFINT)                            :: INCID
-CHARACTER(LEN=LEN(TPFIELD%CMNHNAME))            :: YVARNAME
-INTEGER(KIND=CDFINT)                            :: IVARID
-INTEGER(KIND=CDFINT), DIMENSION(:), ALLOCATABLE :: IVDIMS
-INTEGER                                         :: IRESP
-LOGICAL                                         :: GEXISTED !True if variable was already defined
-!
+INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: IVARID
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_X6',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
-IRESP = 0
-! Get the Netcdf file ID
-INCID = TPFILE%NNCID
+KRESP = 0
 !
-GEXISTED = .FALSE.
-!
-CALL IO_Mnhname_clean(TPFIELD%CMNHNAME,YVARNAME)
+call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( pfield ), kvarid = ivarid )
 
-! The variable should not already exist but who knows ?
-STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
-IF (STATUS /= NF90_NOERR) THEN
-   IF (SIZE(PFIELD)==0) THEN
-     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_X6','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
-     KRESP = 0
-     RETURN
-   END IF
-
-   ! Get the netcdf dimensions
-   CALL IO_Vdims_fill_nc4(TPFILE, TPFIELD, INT(SHAPE(PFIELD),KIND=CDFINT), IVDIMS)
-
-   ! Define the variable
-   IF (TPFILE%LNCREDUCE_FLOAT_PRECISION) THEN
-     STATUS = NF90_DEF_VAR(INCID, YVARNAME, NF90_FLOAT,  IVDIMS, IVARID)
-   ELSE
-     STATUS = NF90_DEF_VAR(INCID, YVARNAME, MNHREAL_NF90, IVDIMS, IVARID)
-   END IF
-   IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X6','NF90_DEF_VAR',trim(YVARNAME))
-
-     ! Add compression if asked for
-   IF (TPFILE%LNCCOMPRESS) THEN
-     STATUS = NF90_DEF_VAR_DEFLATE(INCID, IVARID, SHUFFLE, DEFLATE, TPFILE%NNCCOMPRESS_LEVEL)
-     IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X6','NF90_DEF_VAR_DEFLATE',trim(YVARNAME))
-   END IF
-ELSE
-   GEXISTED = .TRUE.
-   CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_X6',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)//' already defined')
-END IF
-
-! Write metadata
-CALL IO_Field_attr_write_nc4(TPFILE,TPFIELD,IVARID,GEXISTED,KSHAPE=INT(SHAPE(PFIELD),KIND=CDFINT))
 ! Write the data
-STATUS = NF90_PUT_VAR(INCID, IVARID, PFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X6','NF90_PUT_VAR',trim(YVARNAME),IRESP)
+STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
+IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_X6','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
-IF(ALLOCATED(IVDIMS)) DEALLOCATE(IVDIMS)
-
-KRESP = IRESP
 END SUBROUTINE IO_Field_write_nc4_X6
 
 
@@ -839,7 +698,7 @@ SUBROUTINE IO_Field_write_nc4_N0(TPFILE,TPFIELD,KFIELD,KRESP)
 !
 #if 0
 use modd_field,          only: NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_LEVEL
-USE MODD_IO,             ONLY: LPACK,L1D,L2D
+USE MODD_IO,             ONLY: LPACK, L2D
 USE MODD_PARAMETERS_ll,  ONLY: JPHEXT, JPVEXT
 #else
 use modd_field,          only: NMNHDIM_LEVEL
@@ -851,60 +710,28 @@ TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
 INTEGER,               INTENT(IN) :: KFIELD
 INTEGER,               INTENT(OUT):: KRESP
 !
-integer                                         :: iidx
-INTEGER(KIND=CDFINT)                            :: STATUS
-INTEGER(KIND=CDFINT)                            :: INCID
-CHARACTER(LEN=LEN(TPFIELD%CMNHNAME))            :: YVARNAME
-INTEGER(KIND=CDFINT)                            :: IVARID
-INTEGER(KIND=CDFINT), DIMENSION(:), ALLOCATABLE :: IVDIMS
-INTEGER                                         :: IRESP
-LOGICAL                                         :: GEXISTED !True if variable was already defined
+integer              :: iidx
+INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: IVARID
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_N0',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
-IRESP = 0
-! Get the Netcdf file ID
-INCID = TPFILE%NNCID
+KRESP = 0
 !
-GEXISTED = .FALSE.
-!
-CALL IO_Mnhname_clean(TPFIELD%CMNHNAME,YVARNAME)
-!
-! The variable should not already exist but who knows ?
-STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
-IF (STATUS /= NF90_NOERR) THEN
-   IF (TPFIELD%LTIMEDEP) THEN
-     ! Get the netcdf dimensions
-     CALL IO_Vdims_fill_nc4(TPFILE, TPFIELD, INT(SHAPE(KFIELD),KIND=CDFINT), IVDIMS)
-     ! Define the variable
-     STATUS = NF90_DEF_VAR(INCID, YVARNAME, MNHINT_NF90, IVDIMS, IVARID)
-     IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_N0','NF90_DEF_VAR',trim(YVARNAME))
-     DEALLOCATE(IVDIMS)
-   ELSE
-     ! Define the scalar variable
-     STATUS = NF90_DEF_VAR(INCID, YVARNAME, MNHINT_NF90, IVARID)
-     IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_N0','NF90_DEF_VAR',trim(YVARNAME))
-   END IF
-ELSE
-   GEXISTED = .TRUE.
-   CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_N0',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)//' already defined')
-END IF
+call IO_Field_create_nc4( tpfile, tpfield, kvarid = ivarid )
 
-! Write metadata
-CALL IO_Field_attr_write_nc4(TPFILE,TPFIELD,IVARID,GEXISTED)
 ! Write the data
-STATUS = NF90_PUT_VAR(INCID, IVARID, KFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_N0','NF90_PUT_VAR',trim(YVARNAME),IRESP)
-
+STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, KFIELD)
+IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_N0','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 !
 ! Use IMAX, JMAX, KMAX to define DIM_NI, DIM_NJ, DIM_LEVEL
 ! /!\ Can only work if IMAX, JMAX or KMAX are written before any array
 !
 #if 0
-if ( yvarname == 'IMAX' .and. tpfile%tncdims%tdims(NMNHDIM_NI)%nid == -1 ) then
+if ( tpfield%cmnhname == 'IMAX' .and. tpfile%tncdims%tdims(NMNHDIM_NI)%nid == -1 ) then
   call IO_Dim_find_create_nc4( tpfile, kfield + 2 * jphext, iidx, 'X' )
 end if
-if ( yvarname == 'JMAX' .and. tpfile%tncdims%tdims(NMNHDIM_NJ)%nid == -1 ) then
+if ( tpfield%cmnhname == 'JMAX' .and. tpfile%tncdims%tdims(NMNHDIM_NJ)%nid == -1 ) then
   if ( lpack .and. l2d ) then
     call IO_Dim_find_create_nc4( tpfile, 1,                   iidx, 'Y' )
   else
@@ -912,18 +739,17 @@ if ( yvarname == 'JMAX' .and. tpfile%tncdims%tdims(NMNHDIM_NJ)%nid == -1 ) then
   end if
 end if
 #endif
-if ( yvarname == 'KMAX' .and. tpfile%tncdims%tdims(NMNHDIM_LEVEL)%nid == -1 ) then
+if ( tpfield%cmnhname == 'KMAX' .and. tpfile%tncdims%tdims(NMNHDIM_LEVEL)%nid == -1 ) then
   call IO_Dim_find_create_nc4( tpfile, kfield + 2 * JPVEXT, iidx, 'Z' )
 end if
 
-KRESP = IRESP
 END SUBROUTINE IO_Field_write_nc4_N0
 
 
 SUBROUTINE IO_Field_write_nc4_N1(TPFILE,TPFIELD,KFIELD,KRESP)
 !
 #if 0
-USE MODD_IO,             ONLY: LPACK,L1D,L2D
+USE MODD_IO,             ONLY: LPACK, L2D
 USE MODD_PARAMETERS_ll,  ONLY: JPHEXT, JPVEXT
 #else
 USE MODD_PARAMETERS_ll,  ONLY: JPVEXT
@@ -934,53 +760,19 @@ TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
 INTEGER, DIMENSION(:), INTENT(IN) :: KFIELD
 INTEGER,               INTENT(OUT):: KRESP
 !
-INTEGER(KIND=CDFINT)                            :: STATUS
-INTEGER(KIND=CDFINT)                            :: INCID
-CHARACTER(LEN=LEN(TPFIELD%CMNHNAME))            :: YVARNAME
-INTEGER(KIND=CDFINT)                            :: IVARID
-INTEGER(KIND=CDFINT), DIMENSION(:), ALLOCATABLE :: IVDIMS
-INTEGER                                         :: IRESP
-LOGICAL                                         :: GEXISTED !True if variable was already defined
+INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: IVARID
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_N1',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
-IRESP = 0
-! Get the Netcdf file ID
-INCID = TPFILE%NNCID
+KRESP = 0
 !
-GEXISTED = .FALSE.
-!
-CALL IO_Mnhname_clean(TPFIELD%CMNHNAME,YVARNAME)
+call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( kfield ), kvarid = ivarid )
 
-! The variable should not already exist but who knows ?
-STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
-IF (STATUS /= NF90_NOERR) THEN
-   IF (SIZE(KFIELD)==0) THEN
-     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_N1','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
-     KRESP = 0
-     RETURN
-   END IF
-
-   ! Get the netcdf dimensions
-   CALL IO_Vdims_fill_nc4(TPFILE, TPFIELD, INT(SHAPE(KFIELD),KIND=CDFINT), IVDIMS)
-
-   ! Define the variable
-   STATUS = NF90_DEF_VAR(INCID, YVARNAME, MNHINT_NF90, IVDIMS, IVARID)
-   IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_N1','NF90_DEF_VAR',trim(YVARNAME))
-ELSE
-   GEXISTED = .TRUE.
-   CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_N1',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)//' already defined')
-END IF
-
-! Write metadata
-CALL IO_Field_attr_write_nc4(TPFILE,TPFIELD,IVARID,GEXISTED)
 ! Write the data
-STATUS = NF90_PUT_VAR(INCID, IVARID, KFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_N1','NF90_PUT_VAR',trim(YVARNAME),IRESP)
+STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, KFIELD)
+IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_N1','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
-IF(ALLOCATED(IVDIMS)) DEALLOCATE(IVDIMS)
-
-KRESP = IRESP
 END SUBROUTINE IO_Field_write_nc4_N1
 
 
@@ -991,60 +783,21 @@ TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
 INTEGER,DIMENSION(:,:),INTENT(IN) :: KFIELD   ! array containing the data field
 INTEGER,               INTENT(OUT):: KRESP
 !
-INTEGER(KIND=CDFINT)                            :: STATUS
-INTEGER(KIND=CDFINT)                            :: INCID
-CHARACTER(LEN=LEN(TPFIELD%CMNHNAME))            :: YVARNAME
-INTEGER(KIND=CDFINT)                            :: IVARID
-INTEGER(KIND=CDFINT), DIMENSION(:), ALLOCATABLE :: IVDIMS
-INTEGER                                         :: IRESP
-LOGICAL                                         :: GEXISTED !True if variable was already defined
-!
-IRESP = 0
+INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: IVARID
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_N2',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
-! Get the Netcdf file ID
-INCID = TPFILE%NNCID
+KRESP = 0
 !
-GEXISTED = .FALSE.
-!
-CALL IO_Mnhname_clean(TPFIELD%CMNHNAME,YVARNAME)
+call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( kfield ), kvarid = ivarid )
 
-! The variable should not already exist but who knows ?
-STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
-IF (STATUS /= NF90_NOERR) THEN
-   IF (SIZE(KFIELD)==0) THEN
-     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_N2','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
-     KRESP = 0
-     RETURN
-   END IF
-
-   ! Get the netcdf dimensions
-   CALL IO_Vdims_fill_nc4(TPFILE, TPFIELD, INT(SHAPE(KFIELD),KIND=CDFINT), IVDIMS)
-
-   ! Define the variable
-   STATUS = NF90_DEF_VAR(INCID, YVARNAME, MNHINT_NF90, IVDIMS, IVARID)
-   IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_N2','NF90_DEF_VAR',trim(YVARNAME))
-   ! Add compression if asked for
-   IF (TPFILE%LNCCOMPRESS) THEN
-     STATUS = NF90_DEF_VAR_DEFLATE(INCID, IVARID, SHUFFLE, DEFLATE, TPFILE%NNCCOMPRESS_LEVEL)
-     IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_N2','NF90_DEF_VAR_DEFLATE',trim(YVARNAME))
-   END IF
-ELSE
-   GEXISTED = .TRUE.
-   CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_N2',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)//' already defined')
-END IF
-
-! Write metadata
-CALL IO_Field_attr_write_nc4(TPFILE,TPFIELD,IVARID,GEXISTED,KSHAPE=INT(SHAPE(KFIELD),KIND=CDFINT))
 ! Write the data
-STATUS = NF90_PUT_VAR(INCID, IVARID, KFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_N2','NF90_PUT_VAR',trim(YVARNAME),IRESP)
+STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, KFIELD)
+IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_N2','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
-IF(ALLOCATED(IVDIMS)) DEALLOCATE(IVDIMS)
-
-KRESP = IRESP
 END SUBROUTINE IO_Field_write_nc4_N2
+
 
 SUBROUTINE IO_Field_write_nc4_N3(TPFILE,TPFIELD,KFIELD,KRESP)
 !
@@ -1053,110 +806,38 @@ TYPE(TFIELDDATA),        INTENT(IN) :: TPFIELD
 INTEGER,DIMENSION(:,:,:),INTENT(IN) :: KFIELD   ! array containing the data field
 INTEGER,                 INTENT(OUT):: KRESP
 !
-INTEGER(KIND=CDFINT)                            :: STATUS
-INTEGER(KIND=CDFINT)                            :: INCID
-CHARACTER(LEN=LEN(TPFIELD%CMNHNAME))            :: YVARNAME
-INTEGER(KIND=CDFINT)                            :: IVARID
-INTEGER(KIND=CDFINT), DIMENSION(:), ALLOCATABLE :: IVDIMS
-INTEGER                                         :: IRESP
-LOGICAL                                         :: GEXISTED !True if variable was already defined
-!
-IRESP = 0
+INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: IVARID
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_N3',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
-! Get the Netcdf file ID
-INCID = TPFILE%NNCID
+KRESP = 0
 !
-GEXISTED = .FALSE.
-!
-CALL IO_Mnhname_clean(TPFIELD%CMNHNAME,YVARNAME)
+call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( kfield ), kvarid = ivarid )
 
-! The variable should not already exist but who knows ?
-STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
-IF (STATUS /= NF90_NOERR) THEN
-   IF (SIZE(KFIELD)==0) THEN
-     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_N3','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
-     KRESP = 0
-     RETURN
-   END IF
-
-   ! Get the netcdf dimensions
-   CALL IO_Vdims_fill_nc4(TPFILE, TPFIELD, INT(SHAPE(KFIELD),KIND=CDFINT), IVDIMS)
-
-   ! Define the variable
-   STATUS = NF90_DEF_VAR(INCID, YVARNAME, MNHINT_NF90, IVDIMS, IVARID)
-   IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_N3','NF90_DEF_VAR',trim(YVARNAME))
-   ! Add compression if asked for
-   IF (TPFILE%LNCCOMPRESS) THEN
-     STATUS = NF90_DEF_VAR_DEFLATE(INCID, IVARID, SHUFFLE, DEFLATE, TPFILE%NNCCOMPRESS_LEVEL)
-     IF (STATUS /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_N3','NF90_DEF_VAR_DEFLATE',trim(YVARNAME))
-   END IF
-ELSE
-   GEXISTED = .TRUE.
-   CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_N3',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)//' already defined')
-END IF
-
-! Write metadata
-CALL IO_Field_attr_write_nc4(TPFILE,TPFIELD,IVARID,GEXISTED,KSHAPE=INT(SHAPE(KFIELD),KIND=CDFINT))
 ! Write the data
-STATUS = NF90_PUT_VAR(INCID, IVARID, KFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_N3','NF90_PUT_VAR',trim(YVARNAME),IRESP)
+STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, KFIELD)
+IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_N3','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
-IF(ALLOCATED(IVDIMS)) DEALLOCATE(IVDIMS)
-
-KRESP = IRESP
 END SUBROUTINE IO_Field_write_nc4_N3
 
+
 SUBROUTINE IO_Field_write_nc4_L0(TPFILE,TPFIELD,OFIELD,KRESP)
-!
-USE MODD_PARAMETERS_ll,  ONLY: JPVEXT
 !
 TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
 TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
 LOGICAL,               INTENT(IN) :: OFIELD
 INTEGER,               INTENT(OUT):: KRESP
 !
-INTEGER                                         :: IFIELD
-INTEGER(KIND=CDFINT)                            :: STATUS
-INTEGER(KIND=CDFINT)                            :: INCID
-CHARACTER(LEN=LEN(TPFIELD%CMNHNAME))            :: YVARNAME
-INTEGER(KIND=CDFINT)                            :: IVARID
-INTEGER(KIND=CDFINT), DIMENSION(:), ALLOCATABLE :: IVDIMS
-INTEGER                                         :: IRESP
-LOGICAL                                         :: GEXISTED !True if variable was already defined
+INTEGER              :: IFIELD
+INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: IVARID
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_L0',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
-IRESP = 0
-! Get the Netcdf file ID
-INCID = TPFILE%NNCID
+KRESP = 0
 !
-GEXISTED = .FALSE.
-!
-CALL IO_Mnhname_clean(TPFIELD%CMNHNAME,YVARNAME)
-!
-! The variable should not already exist but who knows ?
-STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
-IF (STATUS /= NF90_NOERR) THEN
-   IF (TPFIELD%LTIMEDEP) THEN
-     ! Get the netcdf dimensions
-     CALL IO_Vdims_fill_nc4(TPFILE, TPFIELD, INT(SHAPE(OFIELD),KIND=CDFINT), IVDIMS)
-     ! Define the variable
-     ! Use of NF90_INT1 datatype (=NF90_BYTE) that is enough to store a boolean
-     STATUS = NF90_DEF_VAR(INCID, YVARNAME, NF90_INT1, IVDIMS, IVARID)
-     IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_L0','NF90_DEF_VAR',trim(YVARNAME))
-     DEALLOCATE(IVDIMS)
-   ELSE
-     ! Define the scalar variable
-     ! Use of NF90_INT1 datatype (=NF90_BYTE) that is enough to store a boolean
-     STATUS = NF90_DEF_VAR(INCID, YVARNAME, NF90_INT1, IVARID)
-     IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_L0','NF90_DEF_VAR',trim(YVARNAME))
-   END IF
-ELSE
-   GEXISTED = .TRUE.
-   CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_L0',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)//' already defined')
-END IF
+call IO_Field_create_nc4( tpfile, tpfield, kvarid = ivarid )
 
 !Convert LOGICAL to INTEGER (LOGICAL format not supported by netCDF files)
 IF (OFIELD) THEN
@@ -1165,63 +846,29 @@ ELSE
   IFIELD = 0
 END IF
 
-! Write metadata
-CALL IO_Field_attr_write_nc4(TPFILE,TPFIELD,IVARID,GEXISTED)
 ! Write the data
-STATUS = NF90_PUT_VAR(INCID, IVARID, IFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_L0','NF90_PUT_VAR',trim(YVARNAME),IRESP)
+STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, IFIELD)
+IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_L0','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
-KRESP = IRESP
 END SUBROUTINE IO_Field_write_nc4_L0
 
+
 SUBROUTINE IO_Field_write_nc4_L1(TPFILE,TPFIELD,OFIELD,KRESP)
-!
-USE MODD_PARAMETERS_ll,  ONLY: JPVEXT
 !
 TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
 TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
 LOGICAL, DIMENSION(:), INTENT(IN) :: OFIELD
 INTEGER,               INTENT(OUT):: KRESP
 !
-INTEGER, DIMENSION(SIZE(OFIELD))                :: IFIELD
-INTEGER(KIND=CDFINT)                            :: STATUS
-INTEGER(KIND=CDFINT)                            :: INCID
-CHARACTER(LEN=LEN(TPFIELD%CMNHNAME))            :: YVARNAME
-INTEGER(KIND=CDFINT)                            :: IVARID
-INTEGER(KIND=CDFINT), DIMENSION(:), ALLOCATABLE :: IVDIMS
-INTEGER                                         :: IRESP
-LOGICAL                                         :: GEXISTED !True if variable was already defined
+INTEGER, DIMENSION(SIZE(OFIELD)) :: IFIELD
+INTEGER(KIND=CDFINT)             :: STATUS
+INTEGER(KIND=CDFINT)             :: IVARID
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_L1',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
-IRESP = 0
-! Get the Netcdf file ID
-INCID = TPFILE%NNCID
+KRESP = 0
 !
-GEXISTED = .FALSE.
-!
-CALL IO_Mnhname_clean(TPFIELD%CMNHNAME,YVARNAME)
-
-! The variable should not already exist but who knows ?
-STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
-IF (STATUS /= NF90_NOERR) THEN
-   IF (SIZE(OFIELD)==0) THEN
-     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_L1','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
-     KRESP = 0
-     RETURN
-   END IF
-
-   ! Get the netcdf dimensions
-   CALL IO_Vdims_fill_nc4(TPFILE, TPFIELD, INT(SHAPE(OFIELD),KIND=CDFINT), IVDIMS)
-
-   ! Define the variable
-   ! Use of NF90_INT1 datatype (=NF90_BYTE) that is enough to store a boolean
-   STATUS = NF90_DEF_VAR(INCID, YVARNAME, NF90_INT1, IVDIMS, IVARID)
-     IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_L1','NF90_DEF_VAR',trim(YVARNAME))
-ELSE
-   GEXISTED = .TRUE.
-   CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_L1',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)//' already defined')
-END IF
+call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( ofield ), kvarid = ivarid )
 
 !Convert LOGICAL to INTEGER (LOGICAL format not supported by netCDF files)
 WHERE (OFIELD)
@@ -1230,15 +877,10 @@ ELSEWHERE
   IFIELD = 0
 END WHERE
 
-! Write metadata
-CALL IO_Field_attr_write_nc4(TPFILE,TPFIELD,IVARID,GEXISTED)
 ! Write the data
-STATUS = NF90_PUT_VAR(INCID, IVARID, IFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_L1','NF90_PUT_VAR',trim(YVARNAME),IRESP)
+STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, IFIELD)
+IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_L1','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
-IF(ALLOCATED(IVDIMS)) DEALLOCATE(IVDIMS)
-
-KRESP = IRESP
 END SUBROUTINE IO_Field_write_nc4_L1
 
 
@@ -1249,60 +891,34 @@ TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
 CHARACTER(LEN=*),      INTENT(IN) :: HFIELD
 INTEGER,               INTENT(OUT):: KRESP
 !
-INTEGER(KIND=CDFINT)                 :: STATUS
-INTEGER(KIND=CDFINT)                 :: INCID
-CHARACTER(LEN=LEN(TPFIELD%CMNHNAME)) :: YVARNAME
-INTEGER(KIND=CDFINT)                 :: IVARID
-INTEGER(KIND=CDFINT), DIMENSION(1)   :: IVDIMS
-INTEGER                              :: IRESP, ILEN
-CHARACTER(LEN=:),ALLOCATABLE         :: YFIELD
-LOGICAL                              :: GEXISTED !True if variable was already defined
+INTEGER(KIND=CDFINT)          :: STATUS
+INTEGER(KIND=CDFINT)          :: IVARID
+INTEGER                       :: ILEN
+CHARACTER(LEN=:), ALLOCATABLE :: YFIELD
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_C0',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
-IRESP = 0
+KRESP = 0
+
 !Store the character string in a string of a size multiple of NSTRINGCHUNKSIZE
 !This is done to limit the number of dimensions in the netCDF file
 ILEN = ((LEN_TRIM(HFIELD)+NSTRINGCHUNKSIZE-1)/NSTRINGCHUNKSIZE)*NSTRINGCHUNKSIZE
 !If the string is empty, create it anyway with a non-zero size (to prevent problems later)
 IF (ILEN==0) ILEN = NSTRINGCHUNKSIZE
 
-! Get the Netcdf file ID
-INCID = TPFILE%NNCID
-!
-GEXISTED = .FALSE.
-!
-CALL IO_Mnhname_clean(TPFIELD%CMNHNAME,YVARNAME)
-!
-IF (TPFIELD%LTIMEDEP) &
-  CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_C0',TRIM(TPFILE%CNAME)// &
-                 ': time dependent variable not (yet) possible for 0D variable '//TRIM(TPFIELD%CMNHNAME))
-!
-! The variable should not already exist but who knows ?
-STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
-IF (STATUS /= NF90_NOERR) THEN
-   ! Get the netcdf string dimensions id
-   IVDIMS(1) = IO_Strdimid_get_nc4(TPFILE,INT(ILEN,KIND=CDFINT))
-   ! Define the variable
-   STATUS = NF90_DEF_VAR(INCID, YVARNAME, NF90_CHAR, IVDIMS, IVARID)
-     IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_C0','NF90_DEF_VAR',trim(YVARNAME))
-ELSE
-   GEXISTED = .TRUE.
-   CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_C0',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)//' already defined')
-END IF
+!PW: si ndimlist populated, pas besoin de passer kshape...
+call IO_Field_create_nc4( tpfile, tpfield, kshape = [ ilen ], kvarid = ivarid )
 
 ALLOCATE(CHARACTER(LEN=ILEN)::YFIELD)
 YFIELD(1:LEN_TRIM(HFIELD))=TRIM(HFIELD)
 YFIELD(LEN_TRIM(HFIELD)+1:)=' '
-! Write metadata
-CALL IO_Field_attr_write_nc4(TPFILE,TPFIELD,IVARID,GEXISTED)
-! Write the data
-STATUS = NF90_PUT_VAR(INCID, IVARID, YFIELD)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_C0','NF90_PUT_VAR',trim(YVARNAME),IRESP)
-DEALLOCATE(YFIELD)
 
-KRESP = IRESP
+! Write the data
+STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, YFIELD)
+IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_C0','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+
 END SUBROUTINE IO_Field_write_nc4_C0
+
 
 SUBROUTINE IO_Field_write_nc4_C1(TPFILE,TPFIELD,HFIELD,KRESP)
 !  Modif
@@ -1315,61 +931,23 @@ INTEGER,                      INTENT(OUT) :: KRESP
 !
 INTEGER(KIND=CDFINT),PARAMETER :: IONE = 1
 !
-INTEGER(KIND=CDFINT)                            :: STATUS
-INTEGER(KIND=CDFINT)                            :: INCID
-CHARACTER(LEN=LEN(TPFIELD%CMNHNAME))            :: YVARNAME
-INTEGER(KIND=CDFINT)                            :: IVARID
-INTEGER(KIND=CDFINT), DIMENSION(2)              :: IVDIMS
-INTEGER(KIND=CDFINT), DIMENSION(:), ALLOCATABLE :: IVDIMSTMP
-INTEGER(KIND=CDFINT)                            :: ILEN, ISIZE
-INTEGER                                         :: IRESP
-LOGICAL                                         :: GEXISTED !True if variable was already defined
+INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: IVARID
+INTEGER(KIND=CDFINT) :: ILEN, ISIZE
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_C1',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
-IRESP = 0
+KRESP = 0
 
 ILEN  = LEN(HFIELD)
 ISIZE = SIZE(HFIELD)
 
-! Get the Netcdf file ID
-INCID = TPFILE%NNCID
-!
-GEXISTED = .FALSE.
-!
-CALL IO_Mnhname_clean(TPFIELD%CMNHNAME,YVARNAME)
-!
-IF (TPFIELD%LTIMEDEP) THEN
-  !This is an error (+return) and not a warning because IVDIMSTMP could be of size 2 if LTIMEDEP=T
-  CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Field_write_nc4_C1',TRIM(TPFILE%CNAME)// &
-                 ': time dependent variable not (yet) possible for '//TRIM(TPFIELD%CMNHNAME))
-  RETURN
-END IF
-!
-! The variable should not already exist but who knows ?
-STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
-IF (STATUS /= NF90_NOERR) THEN
-   ! Get the netcdf string dimensions id
-   IVDIMS(1) = IO_Strdimid_get_nc4(TPFILE,ILEN)
-   CALL IO_Vdims_fill_nc4(TPFILE, TPFIELD, (/ISIZE/), IVDIMSTMP)
-   IVDIMS(2) = IVDIMSTMP(1)
-   ! Define the variable
-   STATUS = NF90_DEF_VAR(INCID, YVARNAME, NF90_CHAR, IVDIMS, IVARID)
-     IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_C1','NF90_DEF_VAR',trim(YVARNAME))
-ELSE
-   GEXISTED = .TRUE.
-   CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_C1',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)//' already defined')
-END IF
+call IO_Field_create_nc4( tpfile, tpfield, kshape = [ ilen, isize ], kvarid = ivarid )
 
-! Write metadata
-CALL IO_Field_attr_write_nc4(TPFILE,TPFIELD,IVARID,GEXISTED)
 ! Write the data
-STATUS = NF90_PUT_VAR(INCID, IVARID, HFIELD(1:ISIZE)(1:ILEN), START=(/IONE,IONE/), COUNT=(/ILEN,ISIZE/))
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_C1','NF90_PUT_VAR',trim(YVARNAME),IRESP)
+STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, HFIELD(1:ISIZE)(1:ILEN), START=(/IONE,IONE/), COUNT=(/ILEN,ISIZE/))
+IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_C1','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
-IF(ALLOCATED(IVDIMSTMP)) DEALLOCATE(IVDIMSTMP)
-
-KRESP = IRESP
 END SUBROUTINE IO_Field_write_nc4_C1
 
 
@@ -1385,32 +963,18 @@ TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
 TYPE (DATE_TIME),      INTENT(IN) :: TPDATA
 INTEGER,               INTENT(OUT):: KRESP
 !
-INTEGER(KIND=CDFINT)                 :: STATUS
-INTEGER(KIND=CDFINT)                 :: INCID
-CHARACTER(LEN=LEN(TPFIELD%CMNHNAME)) :: YVARNAME
-INTEGER(KIND=CDFINT)                 :: IVARID
-INTEGER(KIND=CDFINT), DIMENSION(:), ALLOCATABLE :: IVDIMS
-INTEGER                              :: IRESP
-TYPE(TFIELDDATA)                     :: TZFIELD
-CHARACTER(LEN=40)                    :: YUNITS
-LOGICAL                              :: GEXISTED !True if variable was already defined
-REAL                                 :: ZDELTATIME !Distance in seconds since reference date and time
-TYPE(DATE_TIME)                      :: TZREF
+INTEGER(KIND=CDFINT) :: STATUS
+INTEGER(KIND=CDFINT) :: IVARID
+TYPE(TFIELDDATA)     :: TZFIELD
+CHARACTER(LEN=40)    :: YUNITS
+REAL                 :: ZDELTATIME !Distance in seconds since reference date and time
+TYPE(DATE_TIME)      :: TZREF
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_T0',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
-IRESP = 0
+KRESP = 0
 !
 TZFIELD = TPFIELD
-!
-! Get the Netcdf file ID
-INCID = TPFILE%NNCID
-!
-GEXISTED = .FALSE.
-!
-CALL IO_Mnhname_clean(TPFIELD%CMNHNAME,YVARNAME)
-!
-TZFIELD%CMNHNAME = TRIM(YVARNAME)
 !
 ! Model beginning date (TDTMOD%TDATE) is used as the reference date
 ! Reference time is set to 0.
@@ -1429,35 +993,14 @@ WRITE(YUNITS,'( "seconds since ",I4.4,"-",I2.2,"-",I2.2," 00:00:00 +0:00" )') &
       TZREF%TDATE%YEAR, TZREF%TDATE%MONTH, TZREF%TDATE%DAY
 TZFIELD%CUNITS = TRIM(YUNITS)
 !
-IF (TPFIELD%LTIMEDEP) &
-  CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_T0',TRIM(TPFILE%CNAME)// &
-                 ': time dependent variable not (yet) possible for 0D variable '//TRIM(TPFIELD%CMNHNAME))
-!
-! The variable should not already exist but who knows ?
-STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
-IF (STATUS /= NF90_NOERR) THEN
-   ! Define the scalar variable
-   STATUS = NF90_DEF_VAR(INCID, YVARNAME, MNHREAL_NF90, IVARID)
-   IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_T0','NF90_DEF_VAR',trim(YVARNAME))
-ELSE
-   GEXISTED = .TRUE.
-   CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_T0',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)//' already defined')
-END IF
-
-! Write metadata
-CALL IO_Field_attr_write_nc4(TPFILE,TZFIELD,IVARID,GEXISTED,HCALENDAR='standard')
+call IO_Field_create_nc4( tpfile, tzfield, kvarid = ivarid, hcalendar = 'standard' )
 !
 ! Compute the temporal distance from reference
 CALL DATETIME_DISTANCE(TZREF,TPDATA,ZDELTATIME)
 
 ! Write the data
-STATUS = NF90_PUT_VAR(INCID, IVARID, ZDELTATIME)
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_T0','NF90_PUT_VAR',trim(YVARNAME),IRESP)
-
-IF (IRESP/=0) THEN
-  KRESP = IRESP
-  RETURN
-END IF
+STATUS = NF90_PUT_VAR(TPFILE%NNCID, IVARID, ZDELTATIME)
+IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_T0','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
 #if 0
 !This part is to keep backward compatibility with MesoNH files
@@ -1517,8 +1060,8 @@ STATUS = NF90_PUT_VAR(INCID, IVARID, TPDATA%TIME)
 IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_T0','NF90_PUT_VAR',trim(TZFIELD%CMNHNAME),IRESP)
 #endif
 
-KRESP = IRESP
 END SUBROUTINE IO_Field_write_nc4_T0
+
 
 SUBROUTINE IO_Field_write_nc4_T1(TPFILE,TPFIELD,TPDATA,KRESP)
 !
@@ -1532,33 +1075,19 @@ TYPE(TFIELDDATA),               INTENT(IN) :: TPFIELD
 TYPE (DATE_TIME), DIMENSION(:), INTENT(IN) :: TPDATA
 INTEGER,                        INTENT(OUT):: KRESP
 !
-INTEGER                              :: JI
-INTEGER(KIND=CDFINT)                 :: STATUS
-INTEGER(KIND=CDFINT)                 :: INCID
-CHARACTER(LEN=LEN(TPFIELD%CMNHNAME)) :: YVARNAME
-INTEGER(KIND=CDFINT)                 :: IVARID
-INTEGER(KIND=CDFINT), DIMENSION(:), ALLOCATABLE :: IVDIMS
-INTEGER                              :: IRESP
-TYPE(TFIELDDATA)                     :: TZFIELD
-CHARACTER(LEN=40)                    :: YUNITS
-LOGICAL                              :: GEXISTED !True if variable was already defined
-REAL, DIMENSION(:), ALLOCATABLE      :: ZDELTATIME !Distance in seconds since reference date and time
-TYPE(DATE_TIME)                      :: TZREF
+CHARACTER(LEN=40)               :: YUNITS
+INTEGER                         :: JI
+INTEGER(KIND=CDFINT)            :: STATUS
+INTEGER(KIND=CDFINT)            :: IVARID
+REAL, DIMENSION(:), ALLOCATABLE :: ZDELTATIME !Distance in seconds since reference date and time
+TYPE(DATE_TIME)                 :: TZREF
+TYPE(TFIELDDATA)                :: TZFIELD
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_T1',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
-IRESP = 0
+KRESP = 0
 !
 TZFIELD = TPFIELD
-!
-! Get the Netcdf file ID
-INCID = TPFILE%NNCID
-!
-GEXISTED = .FALSE.
-!
-CALL IO_Mnhname_clean(TPFIELD%CMNHNAME,YVARNAME)
-!
-TZFIELD%CMNHNAME = TRIM(YVARNAME)
 !
 ! Model beginning date (TDTMOD%TDATE) is used as the reference date
 ! Reference time is set to 0.
@@ -1577,32 +1106,7 @@ WRITE(YUNITS,'( "seconds since ",I4.4,"-",I2.2,"-",I2.2," 00:00:00 +0:00" )') &
       TZREF%TDATE%YEAR, TZREF%TDATE%MONTH, TZREF%TDATE%DAY
 TZFIELD%CUNITS = TRIM(YUNITS)
 !
-IF (TPFIELD%LTIMEDEP) &
-  CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_T1',TRIM(TPFILE%CNAME)// &
-                 ': time dependent variable not (yet) possible for 1D variable '//TRIM(TPFIELD%CMNHNAME))
-!
-! The variable should not already exist but who knows ?
-STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
-IF (STATUS /= NF90_NOERR) THEN
-   IF (SIZE(TPDATA)==0) THEN
-     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_T1','ignoring variable with a zero size ('//TRIM(YVARNAME)//')')
-     KRESP = 0
-     RETURN
-   END IF
-
-   ! Get the netcdf dimensions
-   CALL IO_Vdims_fill_nc4(TPFILE, TPFIELD, INT(SHAPE(TPDATA),KIND=CDFINT), IVDIMS)
-
-   ! Define the variable
-   STATUS = NF90_DEF_VAR(INCID, YVARNAME, MNHREAL_NF90, IVDIMS, IVARID)
-   IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_T1','NF90_DEF_VAR',trim(YVARNAME))
-ELSE
-   GEXISTED = .TRUE.
-   CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_N1',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)//' already defined')
-END IF
-
-! Write metadata
-CALL IO_Field_attr_write_nc4(TPFILE,TZFIELD,IVARID,GEXISTED,HCALENDAR='standard')
+call IO_Field_create_nc4( tpfile, tzfield, kshape = Shape( tpdata), kvarid = ivarid, hcalendar = 'standard' )
 !
 ! Compute the temporal distances from reference
 ALLOCATE( ZDELTATIME( SIZE( TPDATA ) ) )
@@ -1612,18 +1116,9 @@ DO JI = 1, SIZE( TPDATA )
 END DO
 
 ! Write the data
-STATUS = NF90_PUT_VAR( INCID, IVARID, ZDELTATIME(:) )
-IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_T1','NF90_PUT_VAR',trim(YVARNAME),IRESP)
+STATUS = NF90_PUT_VAR( TPFILE%NNCID, IVARID, ZDELTATIME(:) )
+IF (status /= NF90_NOERR) CALL IO_Err_handle_nc4(status,'IO_Field_write_nc4_T1','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
-IF( ALLOCATED( IVDIMS ) ) DEALLOCATE( IVDIMS )
-DEALLOCATE( ZDELTATIME )
-
-IF (IRESP/=0) THEN
-  KRESP = IRESP
-  RETURN
-END IF
-
-KRESP = IRESP
 END SUBROUTINE IO_Field_write_nc4_T1
 
 SUBROUTINE IO_Coordvar_write_nc4(TPFILE,HPROGRAM_ORIG)
