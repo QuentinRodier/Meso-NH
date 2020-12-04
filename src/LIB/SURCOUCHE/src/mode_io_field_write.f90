@@ -16,6 +16,7 @@
 !  J. Escobar  11/02/2020: for GA & // IO, add sync, & mpi_allreduce for error handling in // IO
 !  P. Wautelet 22/09/2020: use ldimreduced to allow reduction in the number of dimensions of fields (used by 2D simulations)
 !  P. Wautelet 30/09/2020: add IO_Field_write_box_byfield_X3 and IO_Field_write_error_check subroutines
+!  P. Wautelet 04/12/2020: add IO_Field_create and IO_Ndimlist_reduce subroutines
 !-----------------------------------------------------------------
 
 #define MNH_SCALARS_IN_SPLITFILES 0
@@ -40,8 +41,8 @@ MODULE MODE_IO_FIELD_WRITE
   PRIVATE
 
   public :: IO_Field_write, IO_Field_write_box, IO_Field_write_lb
-  public :: IO_Header_write
   public :: IO_Fieldlist_write, IO_Field_user_write
+  public :: IO_Header_write, IO_Field_create
 
   INTERFACE IO_Field_write
      MODULE PROCEDURE IO_Field_write_byname_X0, IO_Field_write_byname_X1,  &
@@ -297,6 +298,194 @@ CONTAINS
     DEALLOCATE(YDAD_NAME)
     !
   END SUBROUTINE IO_Header_onefile_write
+
+
+subroutine IO_Field_create( tpfile, tpfield )
+  ! Subroutine to create a variable in a file and write its metadata without writing its data
+  ! LFI files are not supported
+  use modd_field
+  use modd_io,            only: gsmonoproc, isp
+
+  type(tfiledata),  intent(in) :: tpfile
+  type(tfielddata), intent(in) :: tpfield
+
+  integer                  :: ik_file
+  integer                  :: iresp
+  logical                  :: glfi, gnc4
+  type(tfielddata)         :: tzfield
+  type(tfiledata), pointer :: tzfile
+
+  call Print_msg( NVERB_DEBUG, 'IO', 'IO_Field_create', Trim( tpfile%cname ) // ': creating ' // Trim( tpfield%cmnhname ) )
+
+  if ( Any (tpfield%ndimlist(:) == NMNHDIM_UNKNOWN ) ) then
+    call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_create', Trim( tpfile%cname ) // ': ' // Trim( tpfield%cmnhname ) &
+                    // ' : ndimlist must be populated' )
+    return
+  end if
+
+  !Not very useful: call IO_Field_metadata_check( tpfield, tpfield%ntype, tpfield%ndims, 'IO_Field_create' )
+
+  call IO_File_write_check( tpfile, 'IO_Field_create', iresp )
+
+  call IO_Format_write_select( tpfile, glfi, gnc4 )
+
+  if ( glfi ) then
+    call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_create', Trim( tpfile%cname ) // ': LFI format not supported' )
+    glfi = .false.
+  end if
+
+  if ( iresp == 0 ) then
+    tzfield = tpfield
+
+    if ( All( tzfield%ntype /= [ TYPEINT, TYPELOG, TYPEREAL, TYPECHAR, TYPEDATE ] ) ) then
+      call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_create', Trim( tpfile%cname ) // ': ' &
+                      // Trim( tzfield%cmnhname ) // ': invalid ntype' )
+      return
+    end if
+
+    NDIMS: select case ( tzfield%ndims )
+      case ( 0 ) NDIMS
+#if MNH_SCALARS_IN_SPLITFILES
+      if ( Any( tzfield%ntype == [ TYPEREAL, TYPEINT, TYPELOG ] ) then
+        if ( tpfile%nsubfiles_ioz > 0 ) then
+          !Create the variable in all the Z-split files
+          do ik_file = 1, tpfile%nsubfiles_ioz
+            tzfile => tpfile%tfiles_ioz(ik_file)%tfile
+            if ( isp == tzfile%nmaster_rank )  then
+#ifdef MNH_IOCDF4
+              if ( gnc4 ) call IO_Field_create_nc4( tzfile, tzfield )
+#endif
+            end if
+          end do
+        endif
+      end if
+#endif
+      case ( 1 ) NDIMS
+        ! Nothing to do
+
+      case ( 2 ) NDIMS
+        if ( All( tzfield%ntype /= [ TYPEINT, TYPEREAL ] ) ) then
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_create', Trim( tpfile%cname ) // ': ' &
+                          // Trim( tzfield%cmnhname ) // ': invalid ntype for 2D field' )
+          return
+        end if
+
+        if ( gsmonoproc ) call IO_Ndimlist_reduce( tpfile, tzfield )
+
+      case ( 3 ) NDIMS
+        if ( All( tzfield%ntype /= [ TYPEINT, TYPEREAL ] ) ) then
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_create', Trim( tpfile%cname ) // ': ' &
+                          // Trim( tzfield%cmnhname ) // ': invalid ntype for 2D field' )
+          return
+        end if
+
+        if ( gsmonoproc .and. ( tzfield%ntype /= TYPEREAL .or. tpfile%nsubfiles_ioz == 0 ) ) &
+          call IO_Ndimlist_reduce( tpfile, tzfield )
+
+        if ( tzfield%ntype == TYPEREAL .and. tpfile%nsubfiles_ioz > 0 ) then
+#ifdef MNH_IOCDF4
+          ! Write the variable attributes in the non-split file
+          if ( tpfile%nmaster_rank==isp .and. gnc4 ) &
+            call IO_Field_header_split_write_nc4( tpfile, tzfield, tpfile%tncdims%tdims(tzfield%ndimlist(3))%nlen )
+        end if
+#endif
+
+      case ( 4 ) NDIMS
+        if ( tzfield%ntype /= TYPEREAL ) then
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_create', Trim( tpfile%cname ) // ': ' &
+                          // Trim( tzfield%cmnhname ) // ': invalid ntype for 2D field' )
+          return
+        end if
+
+        if ( gsmonoproc ) call IO_Ndimlist_reduce( tpfile, tzfield )
+
+      case ( 5 ) NDIMS
+        if ( tzfield%ntype /= TYPEREAL ) then
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_create', Trim( tpfile%cname ) // ': ' &
+                          // Trim( tzfield%cmnhname ) // ': invalid ntype for 2D field' )
+          return
+        end if
+
+        if ( gsmonoproc ) call IO_Ndimlist_reduce( tpfile, tzfield )
+
+      case ( 6 ) NDIMS
+        if ( tzfield%ntype /= TYPEREAL ) then
+          call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_create', Trim( tpfile%cname ) // ': ' &
+                          // Trim( tzfield%cmnhname ) // ': invalid ntype for 2D field' )
+          return
+        end if
+
+        ! Nothing else to do
+
+      case default NDIMS
+      call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_create', Trim( tpfile%cname ) // ': ' &
+                      // Trim( tzfield%cmnhname ) // ': invalid ndims' )
+    end select NDIMS
+
+    if ( isp == tpfile%nmaster_rank ) then
+#ifdef MNH_IOCDF4
+      if ( gnc4 ) call IO_Field_create_nc4( tpfile, tzfield )
+#endif
+    end if
+  end if
+
+end subroutine IO_Field_create
+
+
+subroutine IO_Ndimlist_reduce( tpfile, tpfield )
+  use modd_field,         only: NMNHDIM_ONE, NMNHDIM_UNKNOWN, NMNHDIM_UNUSED
+  use modd_io,            only: gsmonoproc, l1d, l2d, lpack
+  use modd_parameters_ll, only: jphext
+
+  type(tfiledata),  intent(in)    :: tpfile
+  type(tfielddata), intent(inout) :: tpfield
+
+  integer :: ihextot
+  integer :: ji
+
+  if ( .not. gsmonoproc ) return
+
+  ihextot = 2*jphext+1
+
+  ! sequential execution and non Z-split field
+  if ( tpfield%ndims /= 3 .or. tpfield%ntype /= TYPEREAL .or. tpfile%nsubfiles_ioz == 0 ) then
+    if ( lpack .and. l1d .and. tpfile%tncdims%tdims(tpfield%ndimlist(1))%nlen == ihextot &
+                         .and. tpfile%tncdims%tdims(tpfield%ndimlist(2))%nlen == ihextot ) then
+      if ( tpfile%ldimreduced ) then
+        tpfield%ndims = tpfield%ndims - 2
+        if ( tpfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+          ! Last iteration necessary if time dimension
+          do ji = 1, tpfield%ndims + 1
+            tpfield%ndimlist(ji)  = tpfield%ndimlist(ji + 2)
+          end do
+          tpfield%ndimlist(tpfield%ndims + 2 : ) = NMNHDIM_UNUSED
+        end if
+      else
+        if ( tpfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+          tpfield%ndimlist(1:2) = NMNHDIM_ONE
+        end if
+      endif
+    else if ( lpack .and. l2d .and. tpfile%tncdims%tdims(tpfield%ndimlist(2))%nlen == ihextot ) then
+      if ( tpfile%ldimreduced ) then
+        tpfield%ndims = tpfield%ndims - 1
+        if ( tpfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+          ! Last iteration necessary if time dimension
+          do ji = 2, tpfield%ndims + 1
+            tpfield%ndimlist(ji)  = tpfield%ndimlist(ji + 1)
+          end do
+          tpfield%ndimlist(tpfield%ndims + 2 : ) = NMNHDIM_UNUSED
+        end if
+      else
+        if ( tpfield%ndimlist(2) /= NMNHDIM_UNKNOWN ) then
+          tpfield%ndimlist(2) = NMNHDIM_ONE
+        end if
+      endif
+    else
+      !Nothing to do
+    end if
+  end if
+
+end subroutine IO_Ndimlist_reduce
 
 
   SUBROUTINE IO_Field_write_byname_X0(TPFILE,HNAME,PFIELD,KRESP)
