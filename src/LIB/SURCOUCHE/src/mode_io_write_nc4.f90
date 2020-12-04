@@ -23,12 +23,14 @@
 !  P. Wautelet 22/09/2020: add ldimreduced field to allow reduction in the number of dimensions of fields (used by 2D simulations)
 !  P. Wautelet 10/11/2020: new data structures for netCDF dimensions
 !  P. Wautelet 26/11/2020: add IO_Field_create_nc4 subroutine + use it for all IO_Field_write_nc4_*
+!  P. Wautelet 04/12/2020: add IO_Field_partial_write_nc4 subroutines
 !-----------------------------------------------------------------
 #ifdef MNH_IOCDF4
 module mode_io_write_nc4
 
 use modd_field,        only: tfielddata
 use modd_io,           only: gsmonoproc, tfiledata
+use modd_parameters,   only: NMNHNAMELGTMAX
 use modd_precision,    only: CDFINT, MNHINT_NF90, MNHREAL_MPI, MNHREAL_NF90
 
 use mode_io_tools_nc4, only: IO_Mnhname_clean, IO_Vdims_fill_nc4, IO_Dim_find_create_nc4, IO_Strdimid_get_nc4, IO_Err_handle_nc4
@@ -43,8 +45,8 @@ implicit none
 
 private
 
-public :: IO_Coordvar_write_nc4, IO_Field_create_nc4, IO_Field_write_nc4, IO_Header_write_nc4
-public :: IO_Field_header_split_write_nc4
+public :: IO_Coordvar_write_nc4, IO_Header_write_nc4, IO_Field_header_split_write_nc4
+public :: IO_Field_create_nc4, IO_Field_write_nc4, IO_Field_partial_write_nc4
 
 INTERFACE IO_Field_write_nc4
    MODULE PROCEDURE IO_Field_write_nc4_X0,IO_Field_write_nc4_X1, &
@@ -57,6 +59,11 @@ INTERFACE IO_Field_write_nc4
                     IO_Field_write_nc4_C0,IO_Field_write_nc4_C1, &
                     IO_Field_write_nc4_T0,IO_Field_write_nc4_T1
 END INTERFACE IO_Field_write_nc4
+
+interface IO_Field_partial_write_nc4
+   module procedure IO_Field_partial_write_nc4_X1, IO_Field_partial_write_nc4_X2, &
+                    IO_Field_partial_write_nc4_X3, IO_Field_partial_write_nc4_X4
+end interface IO_Field_partial_write_nc4
 
 integer,parameter :: NSTRINGCHUNKSIZE = 16 !Dimension of the chunks of strings
                                            !(to limit the number of dimensions for strings)
@@ -1062,6 +1069,154 @@ istatus = NF90_PUT_VAR( TPFILE%NNCID, IVARID, ZDELTATIME(:) )
 IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_T1','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
 
 END SUBROUTINE IO_Field_write_nc4_T1
+
+
+subroutine IO_Field_partial_write_nc4_X1( tpfile, tpfield, pfield, koffset, kresp )
+
+type(tfiledata),                intent(in)  :: tpfile
+type(tfielddata),               intent(in)  :: tpfield
+real,             dimension(:), intent(in)  :: pfield   ! array containing the data field
+integer,          dimension(1), intent(in)  :: koffset
+integer,                        intent(out) :: kresp
+
+character(len=NMNHNAMELGTMAX)      :: yvarname
+integer(kind=CDFINT)               :: istatus
+integer(kind=CDFINT)               :: ivarid
+integer(kind=CDFINT), dimension(1) :: istarts
+
+call Print_msg( NVERB_DEBUG, 'IO', 'IO_Field_partial_write_nc4_X1',&
+                Trim( tpfile%cname ) // ': writing ' // Trim( tpfield%cmnhname ) )
+
+kresp = 0
+
+call IO_Mnhname_clean( tpfield%cmnhname, yvarname )
+
+istatus = NF90_INQ_VARID( tpfile%nncid, yvarname, ivarid )
+if ( istatus /= NF90_NOERR ) then
+  call Print_msg( NVERB_FATAL, 'IO', 'IO_Field_partial_write_nc4_X1', 'variable ' // Trim( yvarname ) &
+                  // ' not yet created (IO_Field_create not yet called?)' )
+end if
+
+! Write the data
+if ( Size( pfield ) > 0 ) then
+  istarts(:) = koffset(:) + 1
+  istatus = NF90_PUT_VAR( tpfile%nncid, ivarid, pfield(:), start = istarts(:), count = Shape( pfield ) )
+  if (istatus /= NF90_NOERR) &
+    call IO_Err_handle_nc4( istatus, 'IO_Field_partial_write_nc4_X1', 'NF90_PUT_VAR', Trim( tpfield%cmnhname ), kresp )
+end if
+
+end subroutine IO_Field_partial_write_nc4_X1
+
+
+subroutine IO_Field_partial_write_nc4_X2( tpfile, tpfield, pfield, koffset, kresp )
+
+type(tfiledata),                  intent(in)  :: tpfile
+type(tfielddata),                 intent(in)  :: tpfield
+real,             dimension(:,:), intent(in)  :: pfield   ! array containing the data field
+integer,          dimension(2),   intent(in)  :: koffset
+integer,                          intent(out) :: kresp
+
+character(len=NMNHNAMELGTMAX)      :: yvarname
+integer(kind=CDFINT)               :: istatus
+integer(kind=CDFINT)               :: ivarid
+integer(kind=CDFINT), dimension(2) :: istarts
+
+call Print_msg( NVERB_DEBUG, 'IO', 'IO_Field_partial_write_nc4_X2',&
+                Trim( tpfile%cname ) // ': writing ' // Trim( tpfield%cmnhname ) )
+
+kresp = 0
+
+call IO_Mnhname_clean( tpfield%cmnhname, yvarname )
+
+istatus = NF90_INQ_VARID( tpfile%nncid, yvarname, ivarid )
+if ( istatus /= NF90_NOERR ) then
+  call Print_msg( NVERB_FATAL, 'IO', 'IO_Field_partial_write_nc4_X2', 'variable ' // Trim( yvarname ) &
+                  // ' not yet created (IO_Field_create not yet called?)' )
+end if
+
+! Write the data
+if ( Size( pfield ) > 0 ) then
+  istarts(:) = koffset(:) + 1
+  istatus = NF90_PUT_VAR( tpfile%nncid, ivarid, pfield(:,:), start = istarts(:), count = Shape( pfield ) )
+  if (istatus /= NF90_NOERR) &
+    call IO_Err_handle_nc4( istatus, 'IO_Field_partial_write_nc4_X2', 'NF90_PUT_VAR', Trim( tpfield%cmnhname ), kresp )
+end if
+
+end subroutine IO_Field_partial_write_nc4_X2
+
+
+subroutine IO_Field_partial_write_nc4_X3( tpfile, tpfield, pfield, koffset, kresp )
+
+type(tfiledata),                    intent(in)  :: tpfile
+type(tfielddata),                   intent(in)  :: tpfield
+real,             dimension(:,:,:), intent(in)  :: pfield   ! array containing the data field
+integer,          dimension(3),     intent(in)  :: koffset
+integer,                            intent(out) :: kresp
+
+character(len=NMNHNAMELGTMAX)      :: yvarname
+integer(kind=CDFINT)               :: istatus
+integer(kind=CDFINT)               :: ivarid
+integer(kind=CDFINT), dimension(3) :: istarts
+
+call Print_msg( NVERB_DEBUG, 'IO', 'IO_Field_partial_write_nc4_X3',&
+                Trim( tpfile%cname ) // ': writing ' // Trim( tpfield%cmnhname ) )
+
+kresp = 0
+
+call IO_Mnhname_clean( tpfield%cmnhname, yvarname )
+
+istatus = NF90_INQ_VARID( tpfile%nncid, yvarname, ivarid )
+if ( istatus /= NF90_NOERR ) then
+  call Print_msg( NVERB_FATAL, 'IO', 'IO_Field_partial_write_nc4_X3', 'variable ' // Trim( yvarname ) &
+                  // ' not yet created (IO_Field_create not yet called?)' )
+end if
+
+! Write the data
+if ( Size( pfield ) > 0 ) then
+  istarts(:) = koffset(:) + 1
+  istatus = NF90_PUT_VAR( tpfile%nncid, ivarid, pfield(:,:,:), start = istarts(:), count = Shape( pfield ) )
+  if (istatus /= NF90_NOERR) &
+    call IO_Err_handle_nc4( istatus, 'IO_Field_partial_write_nc4_X3', 'NF90_PUT_VAR', Trim( tpfield%cmnhname ), kresp )
+end if
+
+end subroutine IO_Field_partial_write_nc4_X3
+
+
+subroutine IO_Field_partial_write_nc4_X4( tpfile, tpfield, pfield, koffset, kresp )
+
+type(tfiledata),                      intent(in)  :: tpfile
+type(tfielddata),                     intent(in)  :: tpfield
+real,             dimension(:,:,:,:), intent(in)  :: pfield   ! array containing the data field
+integer,          dimension(4),       intent(in)  :: koffset
+integer,                              intent(out) :: kresp
+
+character(len=NMNHNAMELGTMAX)      :: yvarname
+integer(kind=CDFINT)               :: istatus
+integer(kind=CDFINT)               :: ivarid
+integer(kind=CDFINT), dimension(4) :: istarts
+
+call Print_msg( NVERB_DEBUG, 'IO', 'IO_Field_partial_write_nc4_X4',&
+                Trim( tpfile%cname ) // ': writing ' // Trim( tpfield%cmnhname ) )
+
+kresp = 0
+
+call IO_Mnhname_clean( tpfield%cmnhname, yvarname )
+
+istatus = NF90_INQ_VARID( tpfile%nncid, yvarname, ivarid )
+if ( istatus /= NF90_NOERR ) then
+  call Print_msg( NVERB_FATAL, 'IO', 'IO_Field_partial_write_nc4_X4', 'variable ' // Trim( yvarname ) &
+                  // ' not yet created (IO_Field_create not yet called?)' )
+end if
+
+! Write the data
+if ( Size( pfield ) > 0 ) then
+  istarts(:) = koffset(:) + 1
+  istatus = NF90_PUT_VAR( tpfile%nncid, ivarid, pfield(:,:,:,:), start = istarts(:), count = Shape( pfield ) )
+  if (istatus /= NF90_NOERR) &
+    call IO_Err_handle_nc4( istatus, 'IO_Field_partial_write_nc4_X4', 'NF90_PUT_VAR', Trim( tpfield%cmnhname ), kresp )
+end if
+
+end subroutine IO_Field_partial_write_nc4_X4
 
 SUBROUTINE IO_Coordvar_write_nc4(TPFILE,HPROGRAM_ORIG)
 USE MODD_CONF,       ONLY: CPROGRAM, LCARTESIAN
