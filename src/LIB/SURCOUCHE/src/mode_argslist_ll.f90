@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1998-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -15,7 +15,7 @@
 !
 !    SUBROUTINES : ADD1DFIELD_ll, ADD2DFIELD_ll, ADD3DFIELD_ll
 !                  DEL1DFIELD_ll, DEL2DFIELD_ll, DEL3DFIELD_ll
-!                  CLEANLIST_ll
+!                  CLEANLIST_ll, CLEANLIST1D_ll
 !
 !!    Purpose
 !!    -------
@@ -49,7 +49,7 @@
 !     Original    May 19, 1998
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
-!
+!  P. Wautelet 07/12/2020: add CLEANLIST1D_ll subroutine
 !-------------------------------------------------------------------------------
 !
 ! Implicit arguments
@@ -705,6 +705,7 @@ end subroutine add4dfield_ll
 !
       END SUBROUTINE DEL3DFIELD_ll
 !
+!
 !!    ###############################
       SUBROUTINE CLEANLIST_ll(TPLIST)
 !!    ###############################
@@ -770,4 +771,31 @@ end subroutine add4dfield_ll
 !
       END SUBROUTINE CLEANLIST_ll
 !
+!!    ###############################
+      SUBROUTINE CLEANLIST1D_ll(TPLIST)
+!!    ###############################
+  IMPLICIT NONE
+!
+  TYPE(LIST1D_ll), POINTER :: TPLIST ! List of fields
+!
+  TYPE(LIST1D_ll), POINTER :: TZTEMP
+!
+!------------------------------------------------------------------------------
+!
+!*       1.    Deallocate one by one the elements of TPLIST
+!              --------------------------------------------
+!
+  IF (ASSOCIATED(TPLIST)) THEN
+    DO WHILE(ASSOCIATED(TPLIST))
+      TZTEMP => TPLIST
+      TPLIST => TPLIST%NEXT
+      DEALLOCATE(TZTEMP)
+    END DO
+    NULLIFY(TPLIST)
+  END IF
+!
+!------------------------------------------------------------------------------
+!
+      END SUBROUTINE CLEANLIST1D_ll
+
 END MODULE MODE_ARGSLIST_ll
