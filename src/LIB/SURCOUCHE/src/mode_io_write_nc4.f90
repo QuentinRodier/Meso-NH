@@ -564,7 +564,7 @@ END SUBROUTINE IO_Field_write_nc4_X1
 
 SUBROUTINE IO_Field_write_nc4_X2(TPFILE,TPFIELD,PFIELD,KRESP,KVERTLEVEL,KZFILE,OISCOORD)
 !
-TYPE(TFILEDATA),TARGET,INTENT(IN) :: TPFILE
+TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
 TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
 REAL,DIMENSION(:,:),   INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,               INTENT(OUT):: KRESP
@@ -572,31 +572,15 @@ INTEGER,OPTIONAL,      INTENT(IN) :: KVERTLEVEL ! Number of the vertical level (
 INTEGER,OPTIONAL,      INTENT(IN) :: KZFILE     ! Number of the Z-level split file
 LOGICAL,OPTIONAL,      INTENT(IN) :: OISCOORD   ! Is a coordinate variable (->do not write coordinates attribute)
 !
-INTEGER(KIND=CDFINT)     :: istatus
-CHARACTER(LEN=4)         :: YSUFFIX
-INTEGER(KIND=CDFINT)     :: IVARID
-TYPE(TFIELDDATA)         :: TZFIELD
-TYPE(TFILEDATA), POINTER :: TZFILE
+INTEGER(KIND=CDFINT)      :: istatus
+CHARACTER(LEN=4)          :: YSUFFIX
+INTEGER(KIND=CDFINT)      :: IVARID
+TYPE(TFIELDDATA), pointer :: TZFIELD
+TYPE(TFILEDATA),  POINTER :: TZFILE
 !
 KRESP = 0
 !
-IF (PRESENT(KVERTLEVEL)) THEN
-  WRITE(YSUFFIX,'(I4.4)') KVERTLEVEL
-  IF (.NOT.PRESENT(KZFILE)) THEN
-    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Field_write_nc4_X2','KZFILE argument not provided')
-    RETURN
-  END IF
-  IF (KZFILE>TPFILE%NSUBFILES_IOZ) CALL PRINT_MSG(NVERB_FATAL,'IO','IO_Field_write_nc4_X2','KZFILE value too high')
-  TZFILE => TPFILE%TFILES_IOZ(KZFILE)%TFILE
-  TZFIELD = TPFIELD
-  TZFIELD%CMNHNAME  = TRIM(TZFIELD%CMNHNAME)//YSUFFIX
-  IF (LEN_TRIM(TZFIELD%CSTDNAME)>0)  TZFIELD%CSTDNAME  = TRIM(TZFIELD%CSTDNAME)//'_at_level_'//YSUFFIX
-  IF (LEN_TRIM(TZFIELD%CLONGNAME)>0) TZFIELD%CLONGNAME = TRIM(TZFIELD%CLONGNAME)//' at level '//YSUFFIX
-  TZFIELD%NDIMS = 2
-ELSE
-  TZFILE => TPFILE
-  TZFIELD = TPFIELD
-ENDIF
+call IO_Select_split_file( tpfile, tpfield, tzfile, tzfield, kvertlevel, kzfile )
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_X2',TRIM(TZFILE%CNAME)//': writing '//TRIM(TZFIELD%CMNHNAME))
 !
@@ -1108,27 +1092,34 @@ end if
 end subroutine IO_Field_partial_write_nc4_X1
 
 
-subroutine IO_Field_partial_write_nc4_X2( tpfile, tpfield, pfield, koffset, kresp )
+subroutine IO_Field_partial_write_nc4_X2( tpfile, tpfield, pfield, koffset, kresp, kvertlevel, kzfile )
 
 type(tfiledata),                  intent(in)  :: tpfile
 type(tfielddata),                 intent(in)  :: tpfield
 real,             dimension(:,:), intent(in)  :: pfield   ! array containing the data field
 integer,          dimension(2),   intent(in)  :: koffset
 integer,                          intent(out) :: kresp
+integer,                optional, intent(in)  :: kvertlevel ! Number of the vertical level (needed for Z-level split files)
+integer,                optional, intent(in)  :: kzfile     ! Number of the Z-level split file
 
+character(len=4)                   :: ysuffix
 character(len=NMNHNAMELGTMAX)      :: yvarname
 integer(kind=CDFINT)               :: istatus
 integer(kind=CDFINT)               :: ivarid
 integer(kind=CDFINT), dimension(2) :: istarts
-
-call Print_msg( NVERB_DEBUG, 'IO', 'IO_Field_partial_write_nc4_X2',&
-                Trim( tpfile%cname ) // ': writing ' // Trim( tpfield%cmnhname ) )
+type(tfielddata),     pointer      :: tzfield
+type(tfiledata),      pointer      :: tzfile
 
 kresp = 0
 
-call IO_Mnhname_clean( tpfield%cmnhname, yvarname )
+call IO_Select_split_file( tpfile, tpfield, tzfile, tzfield, kvertlevel, kzfile )
 
-istatus = NF90_INQ_VARID( tpfile%nncid, yvarname, ivarid )
+call Print_msg( NVERB_DEBUG, 'IO', 'IO_Field_partial_write_nc4_X2',&
+                Trim( tzfile%cname ) // ': writing ' // Trim( tzfield%cmnhname ) )
+
+call IO_Mnhname_clean( tzfield%cmnhname, yvarname )
+
+istatus = NF90_INQ_VARID( tzfile%nncid, yvarname, ivarid )
 if ( istatus /= NF90_NOERR ) then
   call Print_msg( NVERB_FATAL, 'IO', 'IO_Field_partial_write_nc4_X2', 'variable ' // Trim( yvarname ) &
                   // ' not yet created (IO_Field_create not yet called?)' )
@@ -1137,9 +1128,9 @@ end if
 ! Write the data
 if ( Size( pfield ) > 0 ) then
   istarts(:) = koffset(:) + 1
-  istatus = NF90_PUT_VAR( tpfile%nncid, ivarid, pfield(:,:), start = istarts(:), count = Shape( pfield ) )
+  istatus = NF90_PUT_VAR( tzfile%nncid, ivarid, pfield(:,:), start = istarts(:), count = Shape( pfield ) )
   if (istatus /= NF90_NOERR) &
-    call IO_Err_handle_nc4( istatus, 'IO_Field_partial_write_nc4_X2', 'NF90_PUT_VAR', Trim( tpfield%cmnhname ), kresp )
+    call IO_Err_handle_nc4( istatus, 'IO_Field_partial_write_nc4_X2', 'NF90_PUT_VAR', Trim( tzfield%cmnhname ), kresp )
 end if
 
 end subroutine IO_Field_partial_write_nc4_X2
@@ -1857,6 +1848,37 @@ IF (TPFILE%LMASTER)  THEN
 END IF
 
 END SUBROUTINE IO_History_append_nc4
+
+
+subroutine IO_Select_split_file( tpfile, tpfield, tpfileout, tpfieldout, kvertlevel, kzfile )
+type(tfiledata),  target,         intent(in)  :: tpfile
+type(tfielddata), target,         intent(in)  :: tpfield
+type(tfielddata), pointer,        intent(out) :: tpfieldout
+type(tfiledata),  pointer,        intent(out) :: tpfileout
+integer,                optional, intent(in)  :: kvertlevel ! Number of the vertical level (needed for Z-level split files)
+integer,                optional, intent(in)  :: kzfile     ! Number of the Z-level split file
+
+character(len=4) :: ysuffix
+
+if ( Present( kvertlevel ) ) then
+  if ( kvertlevel > 9999 ) call Print_msg( NVERB_FATAL, 'IO', 'IO_Select_split_file','too many vertical levels' )
+  if ( .not. Present( kzfile ) ) call Print_msg( NVERB_FATAL, 'IO', 'IO_Select_split_file', 'kzfile argument not provided' )
+  if ( kzfile > tpfile%nsubfiles_ioz ) call Print_msg( NVERB_FATAL, 'IO', 'IO_Select_split_file', 'kzfile value too high' )
+
+  Write( ysuffix, '( i4.4 )' ) kvertlevel
+  tpfileout => tpfile%tfiles_ioz(kzfile)%tfile
+  !Copy the values of tpfield to the pointer tpfieldout (new tfielddata)
+  tpfieldout = tpfield
+  tpfieldout%cmnhname  = Trim( tpfieldout%cmnhname ) // ysuffix
+  if ( Len_trim( tpfieldout%cstdname  ) > 0 )  tpfieldout%cstdname  = Trim( tpfieldout%cstdname  ) // '_at_level_' // ysuffix
+  if ( Len_trim( tpfieldout%clongname ) > 0 )  tpfieldout%clongname = Trim( tpfieldout%clongname ) // ' at level ' // ysuffix
+  tpfieldout%ndims = 2
+else
+  tpfileout  => tpfile
+  tpfieldout => tpfield
+endif
+
+end subroutine IO_Select_split_file
 
 
 end module mode_io_write_nc4
