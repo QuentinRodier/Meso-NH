@@ -17,6 +17,7 @@
 !  P. Wautelet 22/09/2020: use ldimreduced to allow reduction in the number of dimensions of fields (used by 2D simulations)
 !  P. Wautelet 30/09/2020: add IO_Field_write_box_byfield_X3 and IO_Field_write_error_check subroutines
 !  P. Wautelet 04/12/2020: add IO_Field_create and IO_Ndimlist_reduce subroutines
+!  P. Wautelet 07/12/2020: add support for partial write of fields (optional argument: koffset, not all subroutines, no LFI spport)
 !-----------------------------------------------------------------
 
 #define MNH_SCALARS_IN_SPLITFILES 0
@@ -66,7 +67,7 @@ MODULE MODE_IO_FIELD_WRITE
   END INTERFACE
 
   INTERFACE IO_Field_write_box
-     MODULE PROCEDURE IO_Field_write_box_byfield_X3, IO_Field_write_box_byfield_X5
+     MODULE PROCEDURE IO_Field_write_box_byfield_X3, IO_Field_write_box_byfield_X4, IO_Field_write_box_byfield_X5
   END INTERFACE
 
   INTERFACE IO_Field_write_lb
@@ -916,14 +917,15 @@ end subroutine IO_Ndimlist_reduce
   END SUBROUTINE IO_Field_write_byfield_X2
 
 
-  SUBROUTINE IO_Field_write_byname_X3(TPFILE,HNAME,PFIELD,KRESP)
+  SUBROUTINE IO_Field_write_byname_X3( TPFILE, HNAME, PFIELD, KRESP, koffset )
     !
     !*      0.1   Declarations of arguments
     !
-    TYPE(TFILEDATA),             INTENT(IN) :: TPFILE
-    CHARACTER(LEN=*),            INTENT(IN) :: HNAME    ! name of the field to write
-    REAL,DIMENSION(:,:,:),       INTENT(IN) :: PFIELD   ! array containing the data field
-    INTEGER,OPTIONAL,            INTENT(OUT):: KRESP    ! return-code 
+    TYPE(TFILEDATA),                              INTENT(IN)  :: TPFILE
+    CHARACTER(LEN=*),                             INTENT(IN)  :: HNAME    ! name of the field to write
+    REAL,             DIMENSION(:,:,:),           INTENT(IN)  :: PFIELD   ! array containing the data field
+    INTEGER,                            OPTIONAL, INTENT(OUT) :: KRESP    ! return-code
+    integer,          dimension(3),     optional, intent(in)  :: koffset
     !
     !*      0.2   Declarations of local variables
     !
@@ -934,14 +936,14 @@ end subroutine IO_Ndimlist_reduce
     !
     CALL FIND_FIELD_ID_FROM_MNHNAME(HNAME,ID,IRESP)
     !
-    IF(IRESP==0) CALL IO_Field_write(TPFILE,TFIELDLIST(ID),PFIELD,IRESP)
+    if( iresp == 0 ) call IO_Field_write( tpfile, tfieldlist(id), pfield, iresp, koffset )
     !
     IF (PRESENT(KRESP)) KRESP = IRESP
     !
   END SUBROUTINE IO_Field_write_byname_X3
 
 
-  SUBROUTINE IO_Field_write_byfield_X3(TPFILE,TPFIELD,PFIELD,KRESP)
+  SUBROUTINE IO_Field_write_byfield_X3( TPFILE, TPFIELD, PFIELD, KRESP, koffset )
     use modd_field,            only: NMNHDIM_UNKNOWN, NMNHDIM_ONE, NMNHDIM_UNUSED
     USE MODD_IO,               ONLY: GSMONOPROC, ISNPROC, ISP, L1D, L2D, LPACK
     USE MODD_PARAMETERS_ll,    ONLY: JPHEXT
@@ -960,10 +962,11 @@ end subroutine IO_Ndimlist_reduce
     !
     !*      0.1   Declarations of arguments
     !
-    TYPE(TFILEDATA),TARGET,      INTENT(IN) :: TPFILE
-    TYPE(TFIELDDATA),            INTENT(IN) :: TPFIELD
-    REAL,DIMENSION(:,:,:),TARGET,INTENT(IN) :: PFIELD   ! array containing the data field
-    INTEGER,OPTIONAL,            INTENT(OUT):: KRESP    ! return-code
+    TYPE(TFILEDATA),TARGET,                 INTENT(IN)  :: TPFILE
+    TYPE(TFIELDDATA),                       INTENT(IN)  :: TPFIELD
+    REAL,DIMENSION(:,:,:),TARGET,           INTENT(IN)  :: PFIELD   ! array containing the data field
+    INTEGER,                      OPTIONAL, INTENT(OUT) :: KRESP    ! return-code
+    integer, dimension(3),        optional, intent(in)  :: koffset
     !
     !*      0.2   Declarations of local variables
     !
@@ -975,6 +978,8 @@ end subroutine IO_Ndimlist_reduce
     integer                                  :: iresp, iresp_lfi, iresp_nc4, iresp_glob
     integer                                  :: iresp_tmp_lfi, iresp_tmp_nc4
     integer, dimension(2)                    :: iresps
+    integer, dimension(1)                    :: ioffset1d
+    integer, dimension(2)                    :: ioffset2d
     real,dimension(:),    pointer            :: zfieldp1d
     real,dimension(:,:),  pointer            :: zfieldp2d
     REAL,DIMENSION(:,:,:),POINTER            :: ZFIELDP
@@ -1030,6 +1035,11 @@ end subroutine IO_Ndimlist_reduce
     !
     CALL IO_Format_write_select(TPFILE,GLFI,GNC4)
     !
+    if ( Present( koffset ) .and. glfi ) then
+      call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_partial_write_byfield_X4', Trim( tpfile%cname ) // ': LFI format not supported' )
+      glfi = .false.
+    end if
+
     IF (IRESP==0) THEN
       IF (GSMONOPROC .AND. TPFILE%NSUBFILES_IOZ==0 ) THEN ! sequential execution
           !    IF (LPACK .AND. L1D .AND. YDIR=='XY') THEN
@@ -1043,16 +1053,27 @@ end subroutine IO_Ndimlist_reduce
               tzfield%ndimlist(3:) = NMNHDIM_UNUSED
             end if
             zfieldp1d => pfield(jphext + 1, jphext + 1, :)
-            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp1d, iresp_lfi )
-            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp1d, iresp_nc4 )
+            if ( Present ( koffset ) ) then
+              ioffset1d(1) = koffset(3)
+              !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tzfield, zfieldp1d, ioffset1d, iresp_lfi )
+              if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tzfield, zfieldp1d, ioffset1d, iresp_nc4 )
+            else
+              if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp1d, iresp_lfi )
+              if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp1d, iresp_nc4 )
+            end if
           else
             tzfield = tpfield
             if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
               tzfield%ndimlist(1:2) = NMNHDIM_ONE
             end if
             zfieldp => pfield(jphext + 1 : jphext + 1, jphext + 1 : jphext + 1, :)
-            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp, iresp_lfi )
-            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp, iresp_nc4 )
+            if ( Present ( koffset ) ) then
+              !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tzfield, zfieldp, koffset, iresp_lfi )
+              if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tzfield, zfieldp, koffset, iresp_nc4 )
+            else
+              if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp, iresp_lfi )
+              if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp, iresp_nc4 )
+            end if
           endif
         ELSEIF (LPACK .AND. L2D .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
           if ( tpfile%ldimreduced ) then
@@ -1064,18 +1085,35 @@ end subroutine IO_Ndimlist_reduce
               tzfield%ndimlist(4:) = NMNHDIM_UNUSED
             end if
             zfieldp2d => pfield(:, jphext + 1, :)
-            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp2d, iresp_lfi )
-            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp2d, iresp_nc4 )
+            if ( Present ( koffset ) ) then
+              ioffset2d(1) = koffset(1)
+              ioffset2d(2) = koffset(3)
+              !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tzfield, zfieldp2d, ioffset2d, iresp_lfi )
+              if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tzfield, zfieldp2d, ioffset2d, iresp_nc4 )
+            else
+              if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp2d, iresp_lfi )
+              if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp2d, iresp_nc4 )
+            end if
           else
             tzfield = tpfield
             if ( tzfield%ndimlist(2) /= NMNHDIM_UNKNOWN ) tzfield%ndimlist(2) = NMNHDIM_ONE
             zfieldp => pfield(:, jphext + 1 : jphext + 1, :)
-            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp, iresp_lfi )
-            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp, iresp_nc4 )
+            if ( Present ( koffset ) ) then
+              !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tzfield, zfieldp, koffset, iresp_lfi )
+              if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tzfield, zfieldp, koffset, iresp_nc4 )
+            else
+              if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp, iresp_lfi )
+              if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp, iresp_nc4 )
+            end if
           endif
         ELSE
-          IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,PFIELD,iresp_lfi)
-          IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,PFIELD,iresp_nc4)
+          if ( Present ( koffset ) ) then
+            !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tpfield, pfield, koffset, iresp_lfi )
+            if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tpfield, pfield, koffset, iresp_nc4 )
+          else
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tpfield, pfield, iresp_lfi )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tpfield, pfield, iresp_nc4 )
+          end if
         END IF
       ELSEIF ( TPFILE%NSUBFILES_IOZ==0 .OR. YDIR=='--' ) THEN  ! multiprocesses execution & 1 proc IO
           CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MNHINT_MPI,MPI_MAX,TPFILE%NMPICOMM,IERR)
@@ -1105,8 +1143,13 @@ end subroutine IO_Ndimlist_reduce
           END IF
           !
           IF (ISP == TPFILE%NMASTER_RANK)  THEN
-             IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,ZFIELDP,iresp_lfi)
-             IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,ZFIELDP,iresp_nc4)
+            if ( Present ( koffset ) ) then
+              !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tpfield, zfieldp, koffset, iresp_lfi )
+              if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tpfield, zfieldp, koffset, iresp_nc4 )
+            else
+              if (glfi) call IO_Field_write_lfi( tpfile, tpfield, zfieldp, iresp_lfi )
+              if (gnc4) call IO_Field_write_nc4( tpfile, tpfield, zfieldp, iresp_nc4 )
+            end if
           END IF
           !
       ELSE ! multiprocesses execution & // IO
@@ -1173,10 +1216,21 @@ end subroutine IO_Ndimlist_reduce
                CALL SECOND_MNH2(ZT1)
                TIMEZ%T_WRIT3D_RECV=TIMEZ%T_WRIT3D_RECV + ZT1 - ZT0
                !
-               IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,ZSLICE_ll,iresp_tmp_lfi,KVERTLEVEL=JKK,KZFILE=IK_FILE+1)
-               if ( iresp_tmp_lfi /= 0 ) iresp_lfi = iresp_tmp_lfi
-               IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,ZSLICE_ll,iresp_tmp_nc4,KVERTLEVEL=JKK,KZFILE=IK_FILE+1)
-               if ( iresp_tmp_nc4 /= 0 ) iresp_nc4 = iresp_tmp_nc4
+               if ( Present ( koffset ) ) then
+                 !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tpfield, zslice_ll, koffset, iresp_tmp_lfi, &
+                 !                                             kvertlevel = jkk, kzfile = ik_file + 1 )
+                 !if ( iresp_tmp_lfi /= 0 ) iresp_lfi = iresp_tmp_lfi
+                 if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tpfield, zslice_ll, koffset, iresp_tmp_nc4, &
+                                                            kvertlevel = jkk, kzfile = ik_file + 1 )
+                 if ( iresp_tmp_nc4 /= 0 ) iresp_nc4 = iresp_tmp_nc4
+               else
+                 if ( glfi ) call IO_Field_write_lfi( tpfile, tpfield, zslice_ll, iresp_tmp_lfi, &
+                                                      kvertlevel = jkk, kzfile = ik_file + 1 )
+                 if ( iresp_tmp_lfi /= 0 ) iresp_lfi = iresp_tmp_lfi
+                 if ( gnc4 ) call IO_Field_write_nc4( tpfile, tpfield, zslice_ll, iresp_tmp_nc4, &
+                                                      kvertlevel = jkk, kzfile = ik_file + 1 )
+                 if ( iresp_tmp_nc4 /= 0 ) iresp_nc4 = iresp_tmp_nc4
+               end if
                CALL SECOND_MNH2(ZT2)
                TIMEZ%T_WRIT3D_WRIT=TIMEZ%T_WRIT3D_WRIT + ZT2 - ZT1
             END IF
@@ -1281,10 +1335,21 @@ end subroutine IO_Ndimlist_reduce
                    END DO
                    CALL SECOND_MNH2(ZT1)
                    TIMEZ%T_WRIT3D_RECV=TIMEZ%T_WRIT3D_RECV + ZT1 - ZT0
-                   IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,ZSLICE_ll,iresp_tmp_lfi,KVERTLEVEL=JKK,KZFILE=IK_FILE+1)
-                   if ( iresp_tmp_lfi /= 0 ) iresp_lfi = iresp_tmp_lfi
-                   IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,ZSLICE_ll,iresp_tmp_nc4,KVERTLEVEL=JKK,KZFILE=IK_FILE+1)
-                   if ( iresp_tmp_nc4 /= 0 ) iresp_nc4 = iresp_tmp_nc4
+                   if ( Present ( koffset ) ) then
+                     !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tpfield, zslice_ll, koffset, iresp_tmp_lfi, &
+                     !                                             kvertlevel = jkk, kzfile = ik_file + 1 )
+                     !if ( iresp_tmp_lfi /= 0 ) iresp_lfi = iresp_tmp_lfi
+                     if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tpfield, zslice_ll, koffset, iresp_tmp_nc4, &
+                                                                kvertlevel = jkk, kzfile = ik_file + 1 )
+                     if ( iresp_tmp_nc4 /= 0 ) iresp_nc4 = iresp_tmp_nc4
+                   else
+                     if ( glfi ) call IO_Field_write_lfi( tpfile, tpfield, zslice_ll, iresp_tmp_lfi, &
+                                                          kvertlevel = jkk, kzfile = ik_file + 1 )
+                     if ( iresp_tmp_lfi /= 0 ) iresp_lfi = iresp_tmp_lfi
+                     if ( gnc4 ) call IO_Field_write_nc4( tpfile, tpfield, zslice_ll, iresp_tmp_nc4, &
+                                                          kvertlevel = jkk, kzfile = ik_file + 1 )
+                     if ( iresp_tmp_nc4 /= 0 ) iresp_nc4 = iresp_tmp_nc4
+                   end if
                    CALL SECOND_MNH2(ZT2)
                    TIMEZ%T_WRIT3D_WRIT=TIMEZ%T_WRIT3D_WRIT + ZT2 - ZT1
                 END IF
@@ -1321,14 +1386,15 @@ end subroutine IO_Ndimlist_reduce
   END SUBROUTINE IO_Field_write_byfield_X3
 
 
-  SUBROUTINE IO_Field_write_byname_X4(TPFILE,HNAME,PFIELD,KRESP)
+  SUBROUTINE IO_Field_write_byname_X4( TPFILE, HNAME, PFIELD, KRESP, koffset )
     !
     !*      0.1   Declarations of arguments
     !
-    TYPE(TFILEDATA),             INTENT(IN) :: TPFILE
-    CHARACTER(LEN=*),            INTENT(IN) :: HNAME    ! name of the field to write
-    REAL,DIMENSION(:,:,:,:),     INTENT(IN) :: PFIELD   ! array containing the data field
-    INTEGER,OPTIONAL,            INTENT(OUT):: KRESP    ! return-code 
+    TYPE(TFILEDATA),                   INTENT(IN)  :: TPFILE
+    CHARACTER(LEN=*),                  INTENT(IN)  :: HNAME    ! name of the field to write
+    REAL,DIMENSION(:,:,:,:),           INTENT(IN)  :: PFIELD   ! array containing the data field
+    INTEGER,                 OPTIONAL, INTENT(OUT) :: KRESP    ! return-code
+    integer, dimension(4),   optional, intent(in)  :: koffset
     !
     !*      0.2   Declarations of local variables
     !
@@ -1339,14 +1405,14 @@ end subroutine IO_Ndimlist_reduce
     !
     CALL FIND_FIELD_ID_FROM_MNHNAME(HNAME,ID,IRESP)
     !
-    IF(IRESP==0) CALL IO_Field_write(TPFILE,TFIELDLIST(ID),PFIELD,IRESP)
+    if( iresp == 0 ) call IO_Field_write( tpfile, tfieldlist(id), pfield, iresp, koffset )
     !
     IF (PRESENT(KRESP)) KRESP = IRESP
     !
   END SUBROUTINE IO_Field_write_byname_X4
 
 
-  SUBROUTINE IO_Field_write_byfield_X4(TPFILE,TPFIELD,PFIELD,KRESP)
+  SUBROUTINE IO_Field_write_byfield_X4( TPFILE, TPFIELD, PFIELD, KRESP, koffset )
     use modd_field,         only: NMNHDIM_UNKNOWN, NMNHDIM_ONE, NMNHDIM_UNUSED
     USE MODD_IO,            ONLY: GSMONOPROC, ISP, L1D, L2D, LPACK
     USE MODD_PARAMETERS_ll, ONLY: JPHEXT
@@ -1361,10 +1427,11 @@ end subroutine IO_Ndimlist_reduce
     !
     !*      0.1   Declarations of arguments
     !
-    TYPE(TFILEDATA),                 INTENT(IN) :: TPFILE
-    TYPE(TFIELDDATA),                INTENT(IN) :: TPFIELD
-    REAL,DIMENSION(:,:,:,:),TARGET,  INTENT(IN) :: PFIELD   ! array containing the data field
-    INTEGER,OPTIONAL,                INTENT(OUT):: KRESP    ! return-code 
+    TYPE(TFILEDATA),                          INTENT(IN)  :: TPFILE
+    TYPE(TFIELDDATA),                         INTENT(IN)  :: TPFIELD
+    REAL,DIMENSION(:,:,:,:),TARGET,           INTENT(IN)  :: PFIELD   ! array containing the data field
+    INTEGER,                        OPTIONAL, INTENT(OUT) :: KRESP    ! return-code
+    integer, dimension(4),          optional, intent(in)  :: koffset
     !
     !*      0.2   Declarations of local variables
     !
@@ -1374,6 +1441,8 @@ end subroutine IO_Ndimlist_reduce
     INTEGER                                  :: IERR
     INTEGER                                  :: ISIZEMAX
     integer                                  :: iresp, iresp_lfi, iresp_nc4, iresp_glob
+    integer, dimension(2)                    :: ioffset2d
+    integer, dimension(3)                    :: ioffset3d
     real,dimension(:,:),    pointer          :: zfieldp2d
     real,dimension(:,:,:),  pointer          :: zfieldp3d
     REAL,DIMENSION(:,:,:,:),POINTER          :: ZFIELDP
@@ -1403,6 +1472,11 @@ end subroutine IO_Ndimlist_reduce
     !
     CALL IO_Format_write_select(TPFILE,GLFI,GNC4)
     !
+    if ( Present( koffset ) .and. glfi ) then
+      call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_partial_write_byfield_X4', Trim( tpfile%cname ) // ': LFI format not supported' )
+      glfi = .false.
+    end if
+
     IF (IRESP==0) THEN
       IF (GSMONOPROC) THEN ! sequential execution
         !    IF (LPACK .AND. L1D .AND. YDIR=='XY') THEN
@@ -1417,16 +1491,28 @@ end subroutine IO_Ndimlist_reduce
               tzfield%ndimlist(4:) = NMNHDIM_UNUSED
             end if
             zfieldp2d => pfield(jphext + 1, jphext + 1, :, :)
-            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp2d, iresp_lfi )
-            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp2d, iresp_nc4 )
+            if ( Present( koffset ) ) then
+              ioffset2d(1) = koffset(3)
+              ioffset2d(2) = koffset(4)
+              !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tzfield, zfieldp2d, ioffset2d, iresp_lfi )
+              if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tzfield, zfieldp2d, ioffset2d, iresp_nc4 )
+            else
+              if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp2d, iresp_lfi )
+              if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp2d, iresp_nc4 )
+            end if
           else
             tzfield = tpfield
             if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
               tzfield%ndimlist(1:2) = NMNHDIM_ONE
             end if
             zfieldp => pfield(jphext + 1 : jphext + 1, jphext + 1 : jphext + 1, :, :)
-            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp, iresp_lfi )
-            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp, iresp_nc4 )
+            if ( Present( koffset ) ) then
+              !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tzfield, zfieldp, koffset, iresp_lfi )
+              if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tzfield, zfieldp, koffset, iresp_nc4 )
+            else
+              if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp, iresp_lfi )
+              if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp, iresp_nc4 )
+            end if
           endif
              !    ELSE IF (LPACK .AND. L2D .AND. YDIR=='XY') THEN
         ELSEIF (LPACK .AND. L2D .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
@@ -1440,18 +1526,36 @@ end subroutine IO_Ndimlist_reduce
               tzfield%ndimlist(5:) = NMNHDIM_UNUSED
             end if
             zfieldp3d => pfield(:, jphext + 1, :, :)
-            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp3d, iresp_lfi )
-            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp3d, iresp_nc4 )
+            if ( Present( koffset ) ) then
+              ioffset3d(1) = koffset(1)
+              ioffset3d(2) = koffset(3)
+              ioffset3d(3) = koffset(4)
+              !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tzfield, zfieldp3d, ioffset3d, iresp_lfi )
+              if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tzfield, zfieldp3d, ioffset3d, iresp_nc4 )
+            else
+              if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp3d, iresp_lfi )
+              if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp3d, iresp_nc4 )
+            end if
           else
             tzfield = tpfield
             if ( tzfield%ndimlist(2) /= NMNHDIM_UNKNOWN ) tzfield%ndimlist(2) = NMNHDIM_ONE
             zfieldp => pfield(:, jphext + 1 : jphext + 1, :, :)
-            if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp, iresp_lfi )
-            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp, iresp_nc4 )
+            if ( Present( koffset ) ) then
+              !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tzfield, zfieldp, koffset, iresp_lfi )
+              if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tzfield, zfieldp, koffset, iresp_nc4 )
+            else
+              if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, zfieldp, iresp_lfi )
+              if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, zfieldp, iresp_nc4 )
+            end if
           endif
         ELSE
-          IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,PFIELD,iresp_lfi)
-          IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,PFIELD,iresp_nc4)
+          if ( Present( koffset ) ) then
+              !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tpfield, pfield, koffset, iresp_lfi )
+              if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tpfield, pfield, koffset, iresp_nc4 )
+          else
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tpfield, pfield, iresp_lfi )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tpfield, pfield, iresp_nc4 )
+          end if
         END IF
       ELSE
           CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MNHINT_MPI,MPI_MAX,TPFILE%NMPICOMM,IERR)
@@ -1480,8 +1584,13 @@ end subroutine IO_Ndimlist_reduce
           END IF
           !
           IF (ISP == TPFILE%NMASTER_RANK)  THEN
-             IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,ZFIELDP,iresp_lfi)
-             IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,ZFIELDP,iresp_nc4)
+            if ( Present( koffset ) ) then
+              !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tpfield, zfieldp, koffset, iresp_lfi )
+              if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tpfield, zfieldp, koffset, iresp_nc4 )
+            else
+              if ( glfi ) call IO_Field_write_lfi( tpfile, tpfield, zfieldp, iresp_lfi )
+              if ( gnc4 ) call IO_Field_write_nc4( tpfile, tpfield, zfieldp, iresp_nc4 )
+            end if
           END IF
        END IF ! multiprocess execution
     END IF
@@ -3064,7 +3173,7 @@ end subroutine IO_Ndimlist_reduce
   END SUBROUTINE IO_Field_write_byfield_lb
 
 
-  SUBROUTINE IO_Field_write_box_byfield_X3(TPFILE,TPFIELD,HBUDGET,PFIELD,KXOBOX,KXEBOX,KYOBOX,KYEBOX,KRESP)
+  SUBROUTINE IO_Field_write_box_byfield_X3( TPFILE, TPFIELD, HBUDGET, PFIELD, KXOBOX, KXEBOX, KYOBOX, KYEBOX, KRESP, koffset )
     !
     USE MODD_IO, ONLY: GSMONOPROC, ISP
     !
@@ -3073,15 +3182,16 @@ end subroutine IO_Ndimlist_reduce
     !
     !*      0.1   Declarations of arguments
     !
-    TYPE(TFILEDATA),                 INTENT(IN) :: TPFILE
-    TYPE(TFIELDDATA),                INTENT(IN) :: TPFIELD
-    CHARACTER(LEN=*),                INTENT(IN) :: HBUDGET  ! 'BUDGET' (budget)  or 'OTHER' (MesoNH field)
-    REAL, DIMENSION(:,:,:), TARGET,  INTENT(IN) :: PFIELD   ! array containing the data field
-    INTEGER,                         INTENT(IN) :: KXOBOX   !
-    INTEGER,                         INTENT(IN) :: KXEBOX   ! Global coordinates of the box
-    INTEGER,                         INTENT(IN) :: KYOBOX   !
-    INTEGER,                         INTENT(IN) :: KYEBOX   !
-    INTEGER,OPTIONAL,                INTENT(OUT):: KRESP    ! return-code
+    TYPE(TFILEDATA),                 INTENT(IN)  :: TPFILE
+    TYPE(TFIELDDATA),                INTENT(IN)  :: TPFIELD
+    CHARACTER(LEN=*),                INTENT(IN)  :: HBUDGET  ! 'BUDGET' (budget)  or 'OTHER' (MesoNH field)
+    REAL, DIMENSION(:,:,:), TARGET,  INTENT(IN)  :: PFIELD   ! array containing the data field
+    INTEGER,                         INTENT(IN)  :: KXOBOX   !
+    INTEGER,                         INTENT(IN)  :: KXEBOX   ! Global coordinates of the box
+    INTEGER,                         INTENT(IN)  :: KYOBOX   !
+    INTEGER,                         INTENT(IN)  :: KYEBOX   !
+    INTEGER,               OPTIONAL, INTENT(OUT) :: KRESP    ! return-code
+    integer, dimension(3), optional, intent(in)  :: koffset
     !
     !*      0.2   Declarations of local variables
     !
@@ -3103,6 +3213,12 @@ end subroutine IO_Ndimlist_reduce
     !
     CALL IO_Format_write_select(TPFILE,GLFI,GNC4)
     !
+    if ( Present( koffset ) .and. glfi ) then
+      call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_partial_write_box_byfield_X3', Trim( tpfile%cname ) &
+                      // ': LFI format not supported' )
+      glfi = .false.
+    end if
+
     IF (IRESP==0) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           IF (HBUDGET /= 'BUDGET') THEN
@@ -3112,8 +3228,13 @@ end subroutine IO_Ndimlist_reduce
              ! take the field as a budget
              ZFIELDP=>PFIELD
           END IF
-          IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,ZFIELDP,iresp_lfi)
-          IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,ZFIELDP,iresp_nc4)
+          if ( Present( koffset ) ) then
+            !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tpfield, zfieldp, koffset, iresp_lfi )
+            if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tpfield, zfieldp, koffset, iresp_nc4 )
+          else
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tpfield, zfieldp, iresp_lfi )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tpfield, zfieldp, iresp_nc4 )
+          end if
        ELSE ! multiprocesses execution
           IF (ISP == TPFILE%NMASTER_RANK)  THEN
              ! Allocate the box
@@ -3128,8 +3249,13 @@ end subroutine IO_Ndimlist_reduce
                & KXOBOX,KXEBOX,KYOBOX,KYEBOX,HBUDGET)
           !
           IF (ISP == TPFILE%NMASTER_RANK)  THEN
-             IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,ZFIELDP,iresp_lfi)
-             IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,ZFIELDP,iresp_nc4)
+            if ( Present( koffset ) ) then
+              !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tpfield, zfieldp, koffset, iresp_lfi )
+              if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tpfield, zfieldp, koffset, iresp_nc4 )
+            else
+              if ( glfi ) call IO_Field_write_lfi( tpfile, tpfield, zfieldp, iresp_lfi )
+              if ( gnc4 ) call IO_Field_write_nc4( tpfile, tpfield, zfieldp, iresp_nc4 )
+            end if
           END IF
        END IF ! multiprocesses execution
     END IF
@@ -3139,6 +3265,100 @@ end subroutine IO_Ndimlist_reduce
 
     IF (GALLOC) DEALLOCATE(ZFIELDP)
   END SUBROUTINE IO_Field_write_box_byfield_X3
+
+
+  SUBROUTINE IO_Field_write_box_byfield_X4( TPFILE, TPFIELD, HBUDGET, PFIELD, KXOBOX, KXEBOX, KYOBOX, KYEBOX, KRESP, koffset )
+    !
+    USE MODD_IO, ONLY: GSMONOPROC, ISP
+    !
+    USE MODE_GATHER_ll
+    !
+    !
+    !*      0.1   Declarations of arguments
+    !
+    TYPE(TFILEDATA),                    INTENT(IN)  :: TPFILE
+    TYPE(TFIELDDATA),                   INTENT(IN)  :: TPFIELD
+    CHARACTER(LEN=*),                   INTENT(IN)  :: HBUDGET  ! 'BUDGET' (budget)  or 'OTHER' (MesoNH field)
+    REAL, DIMENSION(:,:,:,:), TARGET,   INTENT(IN)  :: PFIELD   ! array containing the data field
+    INTEGER,                            INTENT(IN)  :: KXOBOX   !
+    INTEGER,                            INTENT(IN)  :: KXEBOX   ! Global coordinates of the box
+    INTEGER,                            INTENT(IN)  :: KYOBOX   !
+    INTEGER,                            INTENT(IN)  :: KYEBOX   !
+    INTEGER,                  OPTIONAL, INTENT(OUT) :: KRESP    ! return-code
+    integer, dimension(4),    optional, intent(in)  :: koffset
+    !
+    !*      0.2   Declarations of local variables
+    !
+    integer                             :: iresp, iresp_lfi, iresp_nc4, iresp_glob
+    REAL, DIMENSION(:,:,:,:), POINTER   :: ZFIELDP
+    LOGICAL                             :: GALLOC
+    LOGICAL                             :: GLFI, GNC4
+    CHARACTER(LEN=:),ALLOCATABLE        :: YMSG
+    CHARACTER(LEN=6)                    :: YRESP
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_box_byfield_X4',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
+    !
+    iresp     = 0
+    iresp_lfi = 0
+    iresp_nc4 = 0
+    GALLOC = .FALSE.
+    !
+    CALL IO_File_write_check(TPFILE,'IO_Field_write_box_byfield_X4',IRESP)
+    !
+    CALL IO_Format_write_select(TPFILE,GLFI,GNC4)
+    !
+    if ( Present( koffset ) .and. glfi ) then
+      call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_partial_write_box_byfield_X4', Trim( tpfile%cname ) &
+                      // ': LFI format not supported' )
+      glfi = .false.
+    end if
+
+    IF (IRESP==0) THEN
+       IF (GSMONOPROC) THEN ! sequential execution
+          IF (HBUDGET /= 'BUDGET') THEN
+             ! take the sub-section of PFIELD defined by the box
+             ZFIELDP=>PFIELD(KXOBOX:KXEBOX,KYOBOX:KYEBOX,:,:)
+          ELSE
+             ! take the field as a budget
+             ZFIELDP=>PFIELD
+          END IF
+          if ( Present( koffset ) ) then
+            !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tpfield, zfieldp, koffset, iresp_lfi )
+            if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tpfield, zfieldp, koffset, iresp_nc4 )
+          else
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tpfield, zfieldp, iresp_lfi )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tpfield, zfieldp, iresp_nc4 )
+          end if
+       ELSE ! multiprocesses execution
+          IF (ISP == TPFILE%NMASTER_RANK)  THEN
+             ! Allocate the box
+             ALLOCATE(ZFIELDP(KXEBOX-KXOBOX+1,KYEBOX-KYOBOX+1,SIZE(PFIELD,3),SIZE(PFIELD,4)))
+             GALLOC = .TRUE.
+          ELSE
+             ALLOCATE(ZFIELDP(0,0,0,0))
+             GALLOC = .TRUE.
+          END IF
+          !
+          CALL GATHER_XYFIELD(PFIELD,ZFIELDP,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM,&
+               & KXOBOX,KXEBOX,KYOBOX,KYEBOX,HBUDGET)
+          !
+          IF (ISP == TPFILE%NMASTER_RANK)  THEN
+            if ( Present( koffset ) ) then
+              !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tpfield, zfieldp, koffset, iresp_lfi )
+              if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tpfield, zfieldp, koffset, iresp_nc4 )
+            else
+              if ( glfi ) call IO_Field_write_lfi( tpfile, tpfield, zfieldp, iresp_lfi )
+              if ( gnc4 ) call IO_Field_write_nc4( tpfile, tpfield, zfieldp, iresp_nc4 )
+             end if
+          END IF
+       END IF ! multiprocesses execution
+    END IF
+
+    call IO_Field_write_error_check( tpfile, tpfield, 'IO_Field_write_box_byfield_X4', iresp, iresp_lfi, iresp_nc4, iresp_glob )
+    if ( Present( kresp ) ) kresp = iresp_glob
+
+    IF (GALLOC) DEALLOCATE(ZFIELDP)
+  END SUBROUTINE IO_Field_write_box_byfield_X4
 
 
   SUBROUTINE IO_Field_write_box_byfield_X5(TPFILE,TPFIELD,HBUDGET,PFIELD,KXOBOX,KXEBOX,KYOBOX,KYEBOX,KRESP)
