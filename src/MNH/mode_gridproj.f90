@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -39,7 +39,7 @@
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
-!
+!  P. Wautelet 07/12/2020: bugfix: deallocate correctly TZHALO1_ll
 !------------------------------------------------------------------------------
 !
 !*                0.  DECLARATIONS
@@ -370,7 +370,7 @@ ZDZ(:,:,IKU)     = ZDZ(:,:,IKU-1)
 CALL ADD1DFIELD_ll( 'X', TZHALO1_ll, PDXHAT, 'SM_GRIDPROJ::PDXHAT' )
 CALL ADD1DFIELD_ll( 'Y', TZHALO1_ll, PDYHAT, 'SM_GRIDPROJ::PDYHAT' )
 CALL UPDATE_1DHALO_ll(TZHALO1_ll,IINFO_ll)
-DEALLOCATE(TZHALO1_ll)
+call CLEANLIST1D_ll( TZHALO1_ll )
 CALL MPPDB_CHECK3D(ZDZ,"GRIDPROJ:ZDZ",PRECISION)
 !
 !-----------------------------------------------------------------------------
