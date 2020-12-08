@@ -15,6 +15,7 @@
 !  P. Wautelet 14/09/2020: IO_Vdims_fill_nc4: use ndimlist when provided to fill dimensions ids
 !  P. Wautelet 10/11/2020: new data structures for netCDF dimensions
 !  P. Wautelet 26/11/2020: IO_Vdims_fill_nc4: support for empty kshape
+!  P. Wautelet 08/12/2020: add nbutotwrite
 !-----------------------------------------------------------------
 #ifdef MNH_IOCDF4
 module mode_io_tools_nc4
@@ -241,7 +242,7 @@ END SUBROUTINE IO_Dimids_guess_nc4
 
 SUBROUTINE IO_Knowndims_set_nc4(TPFILE,HPROGRAM_ORIG)
 
-use modd_budget,        only: cbutype, lbu_icp, lbu_jcp, lbu_kcp, nbuimax_ll, nbujmax_ll, nbukmax, nbumask, nbuwrnb
+use modd_budget,        only: cbutype, lbu_icp, lbu_jcp, lbu_kcp, nbuimax_ll, nbujmax_ll, nbukmax, nbumask, nbutotwrite
 use modd_lbc_n,         only: clbcx, clbcy
 USE MODD_CONF,          ONLY: CPROGRAM, l2d, lpack
 USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
@@ -338,19 +339,20 @@ if ( tpfile%ctype == 'MNHDIACHRONIC' ) then
 
   !Dimensions for the budgets masks
   if ( cbutype == 'CART' .or. cbutype == 'SKIP' ) then
-    if ( .not. lbu_icp ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_CART_NI,      'cart_ni',      nbuimax_ll )
-    if ( .not. lbu_jcp ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_CART_NJ,      'cart_nj',      nbujmax_ll )
-    if ( .not. lbu_icp ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_CART_NI_U,    'cart_ni_u',    nbuimax_ll )
-    if ( .not. lbu_jcp ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_CART_NJ_U,    'cart_nj_u',    nbujmax_ll )
-    if ( .not. lbu_icp ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_CART_NI_V,    'cart_ni_v',    nbuimax_ll )
-    if ( .not. lbu_jcp ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_CART_NJ_V,    'cart_nj_v',    nbujmax_ll )
-    if ( .not. lbu_kcp ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_CART_LEVEL,   'cart_level',   nbukmax    )
-    if ( .not. lbu_kcp ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_CART_LEVEL_W, 'cart_level_w', nbukmax    )
+    if ( .not. lbu_icp )   call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_CART_NI,      'cart_ni',      nbuimax_ll  )
+    if ( .not. lbu_jcp )   call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_CART_NJ,      'cart_nj',      nbujmax_ll  )
+    if ( .not. lbu_icp )   call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_CART_NI_U,    'cart_ni_u',    nbuimax_ll  )
+    if ( .not. lbu_jcp )   call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_CART_NJ_U,    'cart_nj_u',    nbujmax_ll  )
+    if ( .not. lbu_icp )   call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_CART_NI_V,    'cart_ni_v',    nbuimax_ll  )
+    if ( .not. lbu_jcp )   call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_CART_NJ_V,    'cart_nj_v',    nbujmax_ll  )
+    if ( .not. lbu_kcp )   call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_CART_LEVEL,   'cart_level',   nbukmax     )
+    if ( .not. lbu_kcp )   call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_CART_LEVEL_W, 'cart_level_w', nbukmax     )
+    if ( nbutotwrite > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_TIME,         'time_budget',  nbutotwrite )
   else if ( cbutype == 'MASK' ) then
-    if ( nbukmax > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_MASK_LEVEL,   'mask_level',   nbukmax )
-    if ( nbukmax > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_MASK_LEVEL_W, 'mask_level_w', nbukmax )
-    if ( nbuwrnb > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_TIME,         'time_budget',  nbuwrnb )
-    if ( nbumask > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_MASK_NBUMASK, 'nbumask',      nbumask )
+    if ( nbukmax > 0 )     call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_MASK_LEVEL,   'mask_level',   nbukmax     )
+    if ( nbukmax > 0 )     call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_MASK_LEVEL_W, 'mask_level_w', nbukmax     )
+    if ( nbutotwrite > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_TIME,         'time_budget',  nbutotwrite )
+    if ( nbumask > 0 )     call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_MASK_NBUMASK, 'nbumask',      nbumask     )
   end if
 
   !Dimension for the number of LES budget time samplings

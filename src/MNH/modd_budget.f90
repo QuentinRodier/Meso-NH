@@ -56,6 +56,7 @@
 !  P. Wautelet 30/06/2020: add NNETURSV, NNEADVSV and NNECONSV variables
 !  P. Wautelet 17/08/2020: add xtmplesstore in tbudgetdata datatype
 !  P. Wautelet 08/10/2020: add clessource in tbudgetdata datatype
+!  P. Wautelet 08/12/2020: add nbusubwrite and nbutotwrite
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -112,7 +113,7 @@ type, extends( tfield_metadata_base ) :: tbusourcedata
   logical :: lenabled   = .false.
   logical :: ldonotinit = .false. ! if true, does not need a call to Budget_store_init
                                   ! It may be true only if the source term is in a group not containing other sources
-  logical :: loverwrite = .false. ! if true, source term values will overwrite the previuos ones
+  logical :: loverwrite = .false. ! if true, source term values will overwrite the previous ones
                                   ! It may be true only if the source term is in a group not containing other sources
 end type tbusourcedata
 
@@ -147,11 +148,13 @@ REAL, SAVE    :: XBULEN                    ! length in seconds of the budget
 !
 INTEGER, SAVE :: NBUSTEP                   ! number of model timesteps required 
                                            ! for the budget time average
-REAL, SAVE    :: XBUWRI                       ! period in seconds of
+REAL, SAVE    :: XBUWRI                    ! period in seconds of
                                            ! budget writing on FM-files
 INTEGER, SAVE :: NBUWRNB                   ! number of budget periods when storage
                                            ! arrays are written on FM-files
 INTEGER, SAVE :: NBUTSHIFT                 ! temporal shift for budgets writing
+integer, save :: nbusubwrite = 0           ! Number of budget time average periods for each write
+integer, save :: nbutotwrite = 0           ! Total number of budget time average periods
 !
 INTEGER, SAVE :: NBUKL, NBUKH              ! lowest and highest K indice values 
                                            ! of the budget box 

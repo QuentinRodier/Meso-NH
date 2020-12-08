@@ -31,6 +31,7 @@
 !  P. Wautelet 14/10/2019: complete restructuration and deduplication of code
 !  P. Wautelet 10/03/2020: use the new data structures and subroutines for budgets
 !  P. Wautelet 09/10/2020: Write_diachro: use new datatype tpfields
+!  P. Wautelet 08/12/2020: budgets: merge budgets terms with different nbutshift
 !-----------------------------------------------------------------
 
 !#######################
@@ -100,14 +101,16 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
                                  NBUDGET_RHO, NBUDGET_U, NBUDGET_V, NBUDGET_W, NBUDGET_TH, NBUDGET_TKE,                           &
                                  NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, NBUDGET_SV1, &
                                  tbudgets, tburhodj
-  use modd_field,          only: tfielddata, TYPEREAL
+  use modd_field,          only: NMNHDIM_ONE, NMNHDIM_NI, NMNHDIM_NJ,                              &
+                                 NMNHDIM_BUDGET_TIME, NMNHDIM_BUDGET_MASK_NBUMASK, NMNHDIM_UNUSED, &
+                                 tfielddata, TYPEREAL
   use modd_io,             only: tfiledata
   use modd_lunit_n,        only: tluout
   use modd_parameters,     only: NMNHNAMELGTMAX
   use modd_type_date,      only: date_time
 
   use mode_datetime,       only: datetime_distance
-  use mode_io_field_write, only: IO_Field_write
+  use mode_io_field_write, only: IO_Field_create, IO_Field_write
   use mode_menu_diachro,   only: Menu_diachro
   use mode_msg
   use mode_time,           only: tdtexp
@@ -127,6 +130,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   real,            dimension(:,:,:,:,:,:), allocatable :: zrhodjn, zworkmask
   type(date_time), dimension(:),           allocatable :: tzdates
   type(tfielddata) :: tzfield
+  type(tfiledata)  :: tzfile
   !
   !-------------------------------------------------------------------------------
   !
@@ -201,14 +205,6 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
     CASE('MASK')
       ALLOCATE(ZWORKTEMP(NBUWRNB))
       allocate( tzdates(NBUWRNB) )
-      ALLOCATE(ZWORKMASK(SIZE(XBUSURF,1),SIZE(XBUSURF,2),1,NBUWRNB,NBUMASK,1))
-  !
-  ! local array
-      DO JMASK=1,NBUMASK
-        DO JT=1,NBUWRNB
-          ZWORKMASK(:,:,1,JT,JMASK,1) = XBUSURF(:,:,JMASK,JT)
-        END DO
-      END DO
   !
       CALL DATETIME_DISTANCE(TDTEXP,TPDTCUR,ZWORKTEMP(NBUWRNB))
   !
@@ -230,20 +226,70 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   !
   !*     3.1    storage of the masks  array
   !
-      WRITE(TZFIELD%CMNHNAME,FMT="('MASK_',I4.4,'.MASK')" ) nbutshift
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      TZFIELD%CUNITS     = ''
-      TZFIELD%CDIR       = 'XY'
-      WRITE(TZFIELD%CCOMMENT,FMT="('X_Y_MASK',I4.4)" ) nbutshift
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 6
-      TZFIELD%LTIMEDEP   = .FALSE.
-      CALL IO_Field_write(TPDIAFILE,TZFIELD,ZWORKMASK(:,:,:,:,:,:))
-      WRITE(YRECFM,FMT="('MASK_',I4.4)" ) nbutshift
-      CALL MENU_DIACHRO(TPDIAFILE,YRECFM)
-      DEALLOCATE(ZWORKMASK)
+      if ( Trim( tpdiafile%cformat ) == 'LFI' .or. Trim( tpdiafile%cformat ) == 'LFICDF4' ) then
+        Allocate( zworkmask(Size( xbusurf, 1 ), Size( xbusurf, 2 ), 1, nbuwrnb, nbumask,1) )
+        ! local array
+        do jmask = 1, nbumask
+          do jt = 1, nbuwrnb
+            zworkmask(:, :, 1, jt, jmask, 1) = xbusurf(:, :, jmask, jt)
+          end do
+        end do
+
+        tzfile = tpdiafile
+        tzfile%cformat = 'LFI'
+
+        Write( tzfield%cmnhname, fmt = "( 'MASK_', i4.4, '.MASK' )" ) nbutshift
+        tzfield%cstdname   = ''
+        tzfield%clongname  = Trim( tzfield%cmnhname )
+        tzfield%cunits     = ''
+        tzfield%cdir       = 'XY'
+        Write( tzfield%ccomment, fmt = "( 'X_Y_MASK', i4.4 )" ) nbutshift
+        tzfield%ngrid      = 1
+        tzfield%ntype      = TYPEREAL
+        tzfield%ndims      = 6
+        tzfield%ltimedep   = .FALSE.
+        tzfield%ndimlist(1) = NMNHDIM_NI
+        tzfield%ndimlist(2) = NMNHDIM_NJ
+        tzfield%ndimlist(3) = NMNHDIM_ONE
+        tzfield%ndimlist(4) = NMNHDIM_BUDGET_TIME
+        tzfield%ndimlist(5) = NMNHDIM_BUDGET_MASK_NBUMASK
+        tzfield%ndimlist(6) = NMNHDIM_ONE
+        call IO_Field_write( tzfile, tzfield, zworkmask(:, :, :, :, :, :) )
+
+        Write( yrecfm, fmt = "( 'MASK_', i4.4 )" ) nbutshift
+        call Menu_diachro( tzfile, yrecfm )
+
+        Deallocate( zworkmask )
+      end if
+
+      if ( Trim( tpdiafile%cformat ) == 'LFICDF4' .or. Trim( tpdiafile%cformat ) == 'NETCDF4' ) then
+        tzfile = tpdiafile
+        tzfile%cformat = 'NETCDF4'
+
+        tzfield%cmnhname   = 'MASKS'
+        tzfield%cstdname   = ''
+        tzfield%clongname  = Trim( tzfield%cmnhname )
+        tzfield%cunits     = '1'
+        tzfield%cdir       = 'XY'
+        tzfield%ccomment   = 'Masks for budget areas'
+        tzfield%ngrid      = 1
+        tzfield%ntype      = TYPEREAL
+        tzfield%ndims      = 4
+        tzfield%ltimedep   = .false. !The time dependance is in the NMNHDIM_BUDGET_TIME dimension
+        tzfield%ndimlist(1)  = NMNHDIM_NI
+        tzfield%ndimlist(2)  = NMNHDIM_NJ
+        tzfield%ndimlist(3)  = NMNHDIM_BUDGET_MASK_NBUMASK
+        tzfield%ndimlist(4)  = NMNHDIM_BUDGET_TIME
+        tzfield%ndimlist(5:) = NMNHDIM_UNUSED
+
+        !Create the metadata of the field (has to be done only once)
+        if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
+
+        !Write the data (partial write of the field with the given offset)
+        call IO_Field_write( tzfile, tzfield, xbusurf(:,:,:,:), koffset= [ 0, 0, 0, ( nbutshift - 1 ) * nbuwrnb ] )
+
+        if ( nbutshift == 1 ) call Menu_diachro( tzfile, 'MASKS' )
+      end if
   !
   END SELECT
   !
@@ -386,7 +432,7 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
 
   call Print_msg( NVERB_DEBUG, 'BUD', 'Store_one_budget_rho', 'called for '//trim( tprhodj%cmnhname ) )
 
-  if ( allocated( prhodjn ) ) deallocate( prhodjn )
+  !if ( allocated( prhodjn ) ) deallocate( prhodjn ) !Not necessary: if intent(out) => automatically deallocated
 
   ! pburhodj storage
   select case ( cbutype )
@@ -499,7 +545,7 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
 
   call Write_diachro( tpdiafile, [ tzfield ], ygroup_name, ybutype, tpdates, prhodjn,              &
                       oicp = lbu_icp, ojcp = lbu_jcp, okcp = lbu_kcp,                              &
-                      kil = nbuil, kih = nbuih, kjl = nbujl, kjh = nbujh, kkl = nbukl, kkh = nbukh )
+                      kil = nbuil, kih = nbuih, kjl = nbujl, kjh = nbujh, kkl = nbukl, kkh = nbukh, osplit = .true. )
 
 end subroutine Store_one_budget_rho
 
@@ -724,9 +770,10 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
     end if
   end do
 
-  call Write_diachro( tpdiafile, tzfields, ygroup_name, ybutype, tpdates, zworkt,                  &
-                      oicp = lbu_icp, ojcp = lbu_jcp, okcp = lbu_kcp,                              &
-                      kil = nbuil, kih = nbuih, kjl = nbujl, kjh = nbujh, kkl = nbukl, kkh = nbukh )
+  call Write_diachro( tpdiafile, tzfields, ygroup_name, ybutype, tpdates, zworkt,                   &
+                      oicp = lbu_icp, ojcp = lbu_jcp, okcp = lbu_kcp,                               &
+                      kil = nbuil, kih = nbuih, kjl = nbujl, kjh = nbujh, kkl = nbukl, kkh = nbukh, &
+                      osplit = .true. )
 
 end subroutine Store_one_budget
 

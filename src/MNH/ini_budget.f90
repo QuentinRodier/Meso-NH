@@ -198,6 +198,7 @@ end subroutine Budget_preallocate
 !  P. Wautelet 30/06/2020: use NADVSV when possible
 !  P. Wautelet 30/06/2020: add NNETURSV, NNEADVSV and NNECONSV variables
 !  P. Wautelet 06/07/2020: bugfix: add condition on HTURB for NETUR sources for SV budgets
+!  P. Wautelet 08/12/2020: add nbusubwrite and nbutotwrite
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -345,6 +346,14 @@ if ( cbutype == 'CART' .or. cbutype == 'MASK' ) then
 
     NBUWRNB = NINT (XBUWRI / XBULEN)  ! only after NBUWRNB budget periods, we write the
                                       ! result on the FM_FILE
+
+  if ( cbutype == 'CART' ) then
+    nbusubwrite = 1                        !Number of budget time average periods for each write
+    nbutotwrite = Nint( xseglen / xbuwri ) !Total number of budget time average periods
+  else if ( cbutype == 'MASK' ) then
+    nbusubwrite = nbuwrnb                            !Number of budget time average periods for each write
+    nbutotwrite = nbuwrnb * Nint( xseglen / xbuwri ) !Total number of budget time average periods
+  end if
 end if
 
 IF (CBUTYPE=='CART') THEN              ! cartesian case only

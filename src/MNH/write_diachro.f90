@@ -82,6 +82,7 @@ subroutine Write_diachro( tpdiafile, tpfields, hgroup, htype,             &
 !  P. Wautelet 13/09/2019: remove never used PMASK optional dummy-argument
 !  P. Wautelet 28/08/2020: remove TPLUOUTDIA dummy argument
 !  P. Wautelet 09/10/2020: use new data type tpfields
+!  P. Wautelet 08/12/2020: budgets: merge budgets terms with different nbutshift in same group variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -110,6 +111,7 @@ INTEGER,                                             INTENT(IN), OPTIONAL :: KKL
 REAL,DIMENSION(:,:,:),                               INTENT(IN), OPTIONAL :: PTRAJX
 REAL,DIMENSION(:,:,:),                               INTENT(IN), OPTIONAL :: PTRAJY
 REAL,DIMENSION(:,:,:),                               INTENT(IN), OPTIONAL :: PTRAJZ
+logical,                                             intent(in), optional :: osplit
 !
 !*       0.1   Local variables
 !              ---------------
@@ -146,7 +148,8 @@ if ( tpdiafile%cformat == 'LFI' .or. tpdiafile%cformat == 'LFICDF4' ) &
 
 #ifdef MNH_IOCDF4
 if ( tpdiafile%cformat == 'NETCDF4' .or. tpdiafile%cformat == 'LFICDF4' ) &
-  call Write_diachro_nc4( tpdiafile, tpfields, hgroup, htype, tpdates, pvar, gicp, gjcp, gkcp, kil, kih, kjl, kjh, kkl, kkh )
+  call Write_diachro_nc4( tpdiafile, tpfields, hgroup, htype, tpdates, pvar, gicp, gjcp, gkcp, kil, kih, kjl, kjh, kkl, kkh, &
+                          osplit )
 #endif
 
 lpack = gpack
@@ -616,11 +619,13 @@ call Menu_diachro( tzfile, ygroup )
 end subroutine Write_diachro_lfi
 !-----------------------------------------------------------------------------
 #ifdef MNH_IOCDF4
-subroutine Write_diachro_nc4( tpdiafile, tpfields, hgroup, htype, tpdates, pvar, oicp, ojcp, okcp, kil, kih, kjl, kjh, kkl, kkh )
+subroutine Write_diachro_nc4( tpdiafile, tpfields, hgroup, htype, tpdates, pvar, oicp, ojcp, okcp, kil, kih, kjl, kjh, kkl, kkh, &
+                              osplit )
 
 use NETCDF,            only: NF90_DEF_DIM, NF90_DEF_GRP, NF90_DEF_VAR, NF90_INQ_NCID, NF90_PUT_ATT, NF90_PUT_VAR, &
                              NF90_GLOBAL, NF90_NOERR, NF90_STRERROR
 
+use modd_budget,       only: nbutshift, nbusubwrite
 use modd_field
 use modd_io,           only: isp, tfiledata
 use modd_les,          only: nles_masks
@@ -628,7 +633,7 @@ use modd_parameters,   only: jphext
 use modd_precision,    only: CDFINT, MNHREAL_NF90
 use modd_type_date,    only: date_time
 
-use mode_io_field_write, only: IO_Field_write, IO_Field_write_box
+use mode_io_field_write, only: IO_Field_create, IO_Field_write, IO_Field_write_box
 use mode_io_tools_nc4,   only: IO_Err_handle_nc4
 use mode_menu_diachro,   only: Menu_diachro
 use mode_msg
@@ -642,6 +647,7 @@ logical,                                             intent(in)           :: oic
 integer,                                             intent(in), optional :: kil, kih
 integer,                                             intent(in), optional :: kjl, kjh
 integer,                                             intent(in), optional :: kkl, kkh
+logical,                                             intent(in), optional :: osplit
 
 character(len=3)                          :: ynum
 integer                                   :: icompx, icompy, icompz
@@ -654,6 +660,7 @@ integer(kind=CDFINT)                      :: idimid
 integer(kind=CDFINT)                      :: igrpid
 integer(kind=CDFINT)                      :: istatus
 integer(kind=CDFINT)                      :: idimtimeid
+logical                                   :: gsplit
 real                                      :: zdata0d
 real, dimension(:),           allocatable :: zdata1d
 real, dimension(:,:),         allocatable :: zdata2d
@@ -693,6 +700,12 @@ if ( okcp ) then
 else
   icompz = 0
 endif
+
+if ( Present( osplit ) ) then
+  gsplit = osplit
+else
+  gsplit = .false.
+end if
 
 MASTER: if ( isp == tzfile%nmaster_rank) then
   istatus = NF90_INQ_NCID( tzfile%nncid, trim( hgroup ), igrpid )
@@ -817,6 +830,12 @@ end if
 
 select case ( idims )
   case (0)
+
+    if ( gsplit ) then
+        call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                        ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+    end if
+
     zdata0d = pvar(1, 1, 1, 1, 1, 1)
 
     TZFIELD%CMNHNAME   = tpfields(1)%cmnhname
@@ -832,10 +851,16 @@ select case ( idims )
     CALL IO_Field_write( tzfile, tzfield, zdata0d )
 
   case (1)
+
     if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                  'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
 
     if ( tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) then
+      if ( gsplit ) then
+        call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                        ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+      end if
+
       tzfield%ndimlist(1)  = tpfields(1)%ndimlist(4)
       tzfield%ndimlist(2:) = NMNHDIM_UNUSED
 
@@ -862,6 +887,11 @@ select case ( idims )
               .or. tpfields(1)%ndimlist(1) == NMNHDIM_BUDGET_CART_NI   &
               .or. tpfields(1)%ndimlist(1) == NMNHDIM_BUDGET_CART_NI_U &
               .or. tpfields(1)%ndimlist(1) == NMNHDIM_BUDGET_CART_NI_V ) then
+      if ( gsplit ) then
+        call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                        ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+      end if
+
       tzfield%ndimlist(1) = tpfields(1)%ndimlist(1)
       tzfield%ndimlist(2:) = NMNHDIM_UNUSED
 
@@ -888,6 +918,11 @@ select case ( idims )
               .or. tpfields(1)%ndimlist(2) == NMNHDIM_BUDGET_CART_NJ   &
               .or. tpfields(1)%ndimlist(2) == NMNHDIM_BUDGET_CART_NJ_U &
               .or. tpfields(1)%ndimlist(2) == NMNHDIM_BUDGET_CART_NJ_V ) then
+      if ( gsplit ) then
+        call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                        ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+      end if
+
       tzfield%ndimlist(1)  = tpfields(1)%ndimlist(2)
       tzfield%ndimlist(2:) = NMNHDIM_UNUSED
 
@@ -929,16 +964,39 @@ select case ( idims )
       TZFIELD%NTYPE      = tpfields(1)%ntype
       TZFIELD%NDIMS      = 1
       TZFIELD%LTIMEDEP   = .FALSE.
-      CALL IO_Field_write( tzfile, tzfield, zdata1d )
+
+      if ( gsplit ) then
+        if ( htype /= 'CART' ) call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                    ': group ' // Trim( hgroup ) //': gsplit=T not implemented for these dimensions and htype/=CART' )
+
+        !Add budget time dimension
+        tzfield%ndims = 2
+        tzfield%ndimlist(2) = NMNHDIM_BUDGET_TIME
+
+        !Create the metadata of the field (has to be done only once)
+        if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
+
+        call IO_Field_write( tzfile, tzfield, Reshape( zdata1d, [ Size(zdata1d,1), 1 ] ), &
+                             koffset= [ 0, ( nbutshift - 1 ) * nbusubwrite ] )
+      else
+        call IO_Field_write( tzfile, tzfield, zdata1d )
+      end if
 
       deallocate( zdata1d )
     else
       call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                       'case not yet implemented (variable '//trim(tpfields(1)%cmnhname)//')' )
+
+      if ( gsplit ) then
+        call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                        ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+      end if
+
     end if
 
 
   case (2)
+
     if (       ( tpfields(1)%ndimlist(1) == NMNHDIM_NI .or. tpfields(1)%ndimlist(1) == NMNHDIM_NI_U .or. &
                  tpfields(1)%ndimlist(1) == NMNHDIM_NI_V .or. tpfields(1)%ndimlist(1) == NMNHDIM_BUDGET_CART_NI &
                  .or. tpfields(1)%ndimlist(1) == NMNHDIM_BUDGET_CART_NI_U &
@@ -947,6 +1005,11 @@ select case ( idims )
                   tpfields(1)%ndimlist(2) == NMNHDIM_NJ_V .or. tpfields(1)%ndimlist(2) == NMNHDIM_BUDGET_CART_NJ .or. &
                   tpfields(1)%ndimlist(2) == NMNHDIM_BUDGET_CART_NJ_U &
                  .or. tpfields(1)%ndimlist(2) == NMNHDIM_BUDGET_CART_NJ_V ) ) then
+      if ( gsplit ) then
+          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+      end if
+
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
 
@@ -979,6 +1042,7 @@ select case ( idims )
        .and.  ( tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL .or. tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL_W &
            .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_CART_LEVEL &
            .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_CART_LEVEL_W ) ) then
+
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
 
@@ -1000,7 +1064,23 @@ select case ( idims )
       TZFIELD%NTYPE      = tpfields(1)%ntype
       TZFIELD%NDIMS      = 2
       TZFIELD%LTIMEDEP   = .FALSE.
-      CALL IO_Field_write( tzfile, tzfield, zdata2d )
+
+      if ( gsplit ) then
+        if ( htype /= 'CART' ) call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                    ': group ' // Trim( hgroup ) //': gsplit=T not implemented for these dimensions and htype/=CART' )
+
+        !Add budget time dimension
+        tzfield%ndims = 3
+        tzfield%ndimlist(3) = NMNHDIM_BUDGET_TIME
+
+        !Create the metadata of the field (has to be done only once)
+        if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
+
+        call IO_Field_write( tzfile, tzfield, Reshape( zdata2d, [ Size(zdata2d,1), Size(zdata2d,2), 1 ] ), &
+                             koffset= [ 0, 0, ( nbutshift - 1 ) * nbusubwrite ] )
+      else
+        call IO_Field_write( tzfile, tzfield, zdata2d )
+      end if
 
       deallocate( zdata2d )
 
@@ -1011,6 +1091,7 @@ select case ( idims )
        .and.  ( tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL .or. tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL_W &
            .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_CART_LEVEL &
            .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_CART_LEVEL_W ) ) then
+
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
 
@@ -1032,13 +1113,34 @@ select case ( idims )
       TZFIELD%NTYPE      = tpfields(1)%ntype
       TZFIELD%NDIMS      = 2
       TZFIELD%LTIMEDEP   = .FALSE.
-      CALL IO_Field_write( tzfile, tzfield, zdata2d )
+
+      if ( gsplit ) then
+        if ( htype /= 'CART' ) call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                    ': group ' // Trim( hgroup ) //': gsplit=T not implemented for these dimensions and htype/=CART' )
+
+        !Add budget time dimension
+        tzfield%ndims = 3
+        tzfield%ndimlist(3) = NMNHDIM_BUDGET_TIME
+
+        !Create the metadata of the field (has to be done only once)
+        if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
+
+        call IO_Field_write( tzfile, tzfield, Reshape( zdata2d, [ Size(zdata2d,1), Size(zdata2d,2), 1 ] ), &
+                             koffset= [ 0, 0, ( nbutshift - 1 ) * nbusubwrite ] )
+      else
+        call IO_Field_write( tzfile, tzfield, zdata2d )
+      end if
 
       deallocate( zdata2d )
 
     else if (       tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL     &
        .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME &
                .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) ) then
+      if ( gsplit ) then
+          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+      end if
+
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
 
@@ -1064,9 +1166,53 @@ select case ( idims )
 
       deallocate( zdata2d )
 
+    else if ( Any( tpfields(1)%ndimlist(3) == [ NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W ] ) &
+              .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS ) then
+      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(3)
+      tzfield%ndimlist(2:) = NMNHDIM_UNUSED
+
+      allocate( zdata1d( size(pvar,3) ) )
+
+      ! Loop on the processes (1 written variable per process)
+      do ji = 1, Size( pvar, 6 )
+        zdata1d(:) = pvar(1, 1, :, 1, 1, ji)
+
+        tzfield%cmnhname   = tpfields(ji)%cmnhname
+        tzfield%cstdname   = tpfields(ji)%cstdname
+        tzfield%clongname  = tpfields(ji)%clongname
+        tzfield%cunits     = tpfields(ji)%cunits
+        tzfield%cdir       = '--'
+        tzfield%ccomment   = tpfields(ji)%ccomment
+        tzfield%ngrid      = tpfields(ji)%ngrid
+        tzfield%ntype      = tpfields(ji)%ntype
+        tzfield%ndims      = 1
+        tzfield%ltimedep   = .FALSE.
+
+        if ( gsplit ) then
+          !Add budget time dimension
+          tzfield%ndims = 2
+          tzfield%ndimlist(2) = NMNHDIM_BUDGET_TIME
+
+          !Create the metadata of the field (has to be done only once)
+          if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
+
+          call IO_Field_write( tzfile, tzfield, Reshape( zdata1d, [ Size(zdata1d,1), 1 ] ), &
+                               koffset= [ 0, ( nbutshift - 1 ) * nbusubwrite ] )
+        else
+          call IO_Field_write( tzfile, tzfield, zdata1d )
+        end if
+      end do
+
+      deallocate( zdata1d )
+
     else if (  (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME &
                .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
          .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_LES_SV       ) then
+      if ( gsplit ) then
+          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+      end if
+
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
 
@@ -1094,6 +1240,10 @@ select case ( idims )
     else if (  tpfields(1)%ndimlist(4) == NMNHDIM_FLYER_TIME &
          .and. tpfields(1)%ndimlist(6) == NMNHDIM_FLYER_PROC ) then
       !Correspond to FLYER_DIACHRO
+      if ( gsplit ) then
+          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+      end if
 
       !Create local time dimension
       if ( isp == tzfile%nmaster_rank) then
@@ -1128,6 +1278,10 @@ select case ( idims )
     else if (  tpfields(1)%ndimlist(4) == NMNHDIM_STATION_TIME &
          .and. tpfields(1)%ndimlist(6) == NMNHDIM_STATION_PROC ) then
       !Correspond to STATION_DIACHRO_n
+      if ( gsplit ) then
+          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+      end if
 
       tzfield%ndimlist(1)  = tpfields(1)%ndimlist(4)
       tzfield%ndimlist(2:) = NMNHDIM_UNUSED
@@ -1155,6 +1309,10 @@ select case ( idims )
     else if (  tpfields(1)%ndimlist(4) == NMNHDIM_SERIES_TIME &
          .and. tpfields(1)%ndimlist(6) == NMNHDIM_SERIES_PROC ) then
       !Correspond to WRITE_SERIES_n
+      if ( gsplit ) then
+          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+      end if
 
       tzfield%ndimlist(1)  = tpfields(1)%ndimlist(4)
       tzfield%ndimlist(2:) = NMNHDIM_UNUSED
@@ -1182,6 +1340,12 @@ select case ( idims )
     else
       call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                       'case not yet implemented (variable '//trim(tpfields(1)%cmnhname)//')' )
+
+      if ( gsplit ) then
+          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+      end if
+
     end if
 
 
@@ -1218,18 +1382,124 @@ select case ( idims )
       TZFIELD%NTYPE      = tpfields(1)%ntype
       TZFIELD%NDIMS      = 3
       TZFIELD%LTIMEDEP   = .FALSE.
-      if ( htype == 'CART' .and. .not. oicp .and. .not. ojcp ) then
-        !Data is distributed between all the processes
-        TZFIELD%CDIR     = 'XY'
-        CALL IO_Field_write_BOX( tzfile, tzfield, 'BUDGET', zdata3d, &
-                                 KIL + JPHEXT, KIH + JPHEXT, KJL + JPHEXT, KJH + JPHEXT )
+
+      if ( gsplit ) then
+        if ( htype /= 'CART' ) call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                    ': group ' // Trim( hgroup ) //': gsplit=T not implemented for these dimensions and htype/=CART' )
+
+        if ( htype == 'CART' .and. .not. oicp .and. .not. ojcp ) then
+          !Data is distributed between all the processes
+          tzfield%cdir = 'XY'
+
+          !Add budget time dimension
+          tzfield%ndims = 4
+          tzfield%ndimlist(4) = NMNHDIM_BUDGET_TIME
+
+          !Create the metadata of the field (has to be done only once)
+          if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
+
+          call IO_Field_write_box( tzfile, tzfield, 'BUDGET',                                                     &
+                                   Reshape( zdata3d, [ Size(zdata3d,1), Size(zdata3d,2), Size(zdata3d,3), 1 ] ) , &
+                                   kil + jphext, kih + jphext, kjl + jphext, kjh + jphext,                        &
+                                   koffset= [ 0, 0, 0, ( nbutshift - 1 ) * nbusubwrite ]                          )
+        else
+          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+        end if
       else
-        !Data is already collected on the master process
-        TZFIELD%CDIR     = '--'
-        CALL IO_Field_write( tzfile, tzfield, zdata3d )
+        if ( htype == 'CART' .and. .not. oicp .and. .not. ojcp ) then
+          !Data is distributed between all the processes
+          tzfield%cdir = 'XY'
+          call IO_Field_write_box( tzfile, tzfield, 'BUDGET', zdata3d, &
+                                  kil + jphext, kih + jphext, kjl + jphext, kjh + jphext )
+        else
+          !Data is already collected on the master process
+          tzfield%cdir = '--'
+          call IO_Field_write( tzfile, tzfield, zdata3d )
+        end if
       end if
 
       deallocate( zdata3d )
+    else if ( Any ( tpfields(1)%ndimlist(1) == [ NMNHDIM_BUDGET_CART_NI, NMNHDIM_BUDGET_CART_NI_U, NMNHDIM_BUDGET_CART_NI_V ] ) &
+              .and. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_CART_LEVEL &
+              .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS    ) then
+      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(1)
+      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(3)
+      tzfield%ndimlist(3:) = NMNHDIM_UNUSED
+
+      Allocate( zdata2d(Size( pvar, 1 ), Size( pvar, 3 )) )
+
+      ! Loop on the processes
+      do ji = 1, Size( pvar, 6 )
+        zdata2d(:, :) = pvar(:, 1, :, 1, 1, ji)
+
+        tzfield%cmnhname   = tpfields(ji)%cmnhname
+        tzfield%cstdname   = tpfields(ji)%cstdname
+        tzfield%clongname  = tpfields(ji)%clongname
+        tzfield%cunits     = tpfields(ji)%cunits
+        tzfield%cdir       = '--'
+        tzfield%ccomment   = tpfields(ji)%ccomment
+        tzfield%ngrid      = tpfields(ji)%ngrid
+        tzfield%ntype      = tpfields(ji)%ntype
+        tzfield%ndims      = 2
+        tzfield%ltimedep   = .false.
+        if ( gsplit ) then
+          !Add budget time dimension
+          tzfield%ndims = 3
+          tzfield%ndimlist(3) = NMNHDIM_BUDGET_TIME
+
+          !Create the metadata of the field (has to be done only once)
+          if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
+
+          call IO_Field_write( tzfile, tzfield,                                             &
+                               Reshape( zdata2d, [ Size(zdata2d,1), Size(zdata2d,2), 1 ] ), &
+                               koffset= [ 0, 0, ( nbutshift - 1 ) * nbusubwrite ]           )
+        else
+          call IO_Field_write( tzfile, tzfield, zdata2d )
+        end if
+      end do
+
+      Deallocate( zdata2d )
+    else if ( Any ( tpfields(1)%ndimlist(2) == [ NMNHDIM_BUDGET_CART_NJ, NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NJ_V ] ) &
+              .and. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_CART_LEVEL &
+              .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS    ) then
+      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(2)
+      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(3)
+      tzfield%ndimlist(3:) = NMNHDIM_UNUSED
+
+      Allocate( zdata2d(Size( pvar, 2 ), Size( pvar, 3 )) )
+
+      ! Loop on the processes
+      do ji = 1, Size( pvar, 6 )
+        zdata2d(:, :) = pvar(1, :, :, 1, 1, ji)
+
+        tzfield%cmnhname   = tpfields(ji)%cmnhname
+        tzfield%cstdname   = tpfields(ji)%cstdname
+        tzfield%clongname  = tpfields(ji)%clongname
+        tzfield%cunits     = tpfields(ji)%cunits
+        tzfield%cdir       = '--'
+        tzfield%ccomment   = tpfields(ji)%ccomment
+        tzfield%ngrid      = tpfields(ji)%ngrid
+        tzfield%ntype      = tpfields(ji)%ntype
+        tzfield%ndims      = 2
+        tzfield%ltimedep   = .false.
+        if ( gsplit ) then
+          !Add budget time dimension
+          tzfield%ndims = 3
+          tzfield%ndimlist(3) = NMNHDIM_BUDGET_TIME
+
+          !Create the metadata of the field (has to be done only once)
+          if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
+
+          call IO_Field_write( tzfile, tzfield,                                             &
+                               Reshape( zdata2d, [ Size(zdata2d,1), Size(zdata2d,2), 1 ] ), &
+                               koffset= [ 0, 0, ( nbutshift - 1 ) * nbusubwrite ]           )
+        else
+          call IO_Field_write( tzfile, tzfield, zdata2d )
+        end if
+      end do
+
+      Deallocate( zdata2d )
     else if (  ( tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_MASK_LEVEL &
                   .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_MASK_LEVEL_W ) &
        .and.    tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_TIME &
@@ -1257,13 +1527,24 @@ select case ( idims )
       TZFIELD%NTYPE      = tpfields(1)%ntype
       TZFIELD%NDIMS      = 3
       TZFIELD%LTIMEDEP   = .FALSE.
-      CALL IO_Field_write( tzfile, tzfield, zdata3d )
+      if ( gsplit ) then
+        !Create the metadata of the field (has to be done only once)
+        if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
+        call IO_Field_write( tzfile, tzfield, zdata3d(:,:,:), koffset= [ 0, ( nbutshift - 1 ) * nbusubwrite, 0 ] )
+      else
+        call IO_Field_write( tzfile, tzfield, zdata3d )
+      end if
 
       deallocate( zdata3d )
     else if (       tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL     &
        .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME &
                .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
        .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_LES_MASK      ) then
+      if ( gsplit ) then
+          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+      end if
+
       if ( nles_masks /= Size( pvar, 6 ) ) &
         call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4',                             &
                         'last dimension size of pvar is not equal to nles_masks (variable ' &
@@ -1297,6 +1578,11 @@ select case ( idims )
        .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME &
                .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
        .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_TERM      ) then
+      if ( gsplit ) then
+          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+      end if
+
       tzfield%ndimlist(1)  = tpfields(1)%ndimlist(3)
       tzfield%ndimlist(2)  = tpfields(1)%ndimlist(4)
       tzfield%ndimlist(3:) = NMNHDIM_UNUSED
@@ -1325,6 +1611,11 @@ select case ( idims )
        .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME &
                .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
        .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_LES_SV      ) then
+      if ( gsplit ) then
+          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+      end if
+
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
 
@@ -1355,6 +1646,11 @@ select case ( idims )
               .and. tpfields(1)%ndimlist(3) == NMNHDIM_SPECTRA_LEVEL                &
               .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
                       .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) ) then
+      if ( gsplit ) then
+          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+      end if
+
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
 
@@ -1384,6 +1680,11 @@ select case ( idims )
               .and. tpfields(1)%ndimlist(3) == NMNHDIM_SPECTRA_LEVEL                &
               .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
                       .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) ) then
+      if ( gsplit ) then
+          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+      end if
+
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
 
@@ -1413,6 +1714,10 @@ select case ( idims )
          .and. tpfields(1)%ndimlist(4) == NMNHDIM_FLYER_TIME &
          .and. tpfields(1)%ndimlist(6) == NMNHDIM_FLYER_PROC ) then
       !Correspond to FLYER_DIACHRO
+      if ( gsplit ) then
+          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+      end if
 
       !Create local time dimension
       if ( isp == tzfile%nmaster_rank) then
@@ -1449,6 +1754,10 @@ select case ( idims )
          .and. tpfields(1)%ndimlist(4) == NMNHDIM_PROFILER_TIME &
          .and. tpfields(1)%ndimlist(6) == NMNHDIM_PROFILER_PROC ) then
       !Correspond to PROFILER_DIACHRO_n
+      if ( gsplit ) then
+          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+      end if
 
       tzfield%ndimlist(1)  = tpfields(1)%ndimlist(3)
       tzfield%ndimlist(2)  = tpfields(1)%ndimlist(4)
@@ -1478,6 +1787,10 @@ select case ( idims )
          .and. tpfields(1)%ndimlist(4) == NMNHDIM_SERIES_TIME &
          .and. tpfields(1)%ndimlist(6) == NMNHDIM_SERIES_PROC ) then
       !Correspond to PROFILER_DIACHRO_n
+      if ( gsplit ) then
+          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+      end if
 
       tzfield%ndimlist(1)  = tpfields(1)%ndimlist(3)
       tzfield%ndimlist(2)  = tpfields(1)%ndimlist(4)
@@ -1507,6 +1820,10 @@ select case ( idims )
          .and. tpfields(1)%ndimlist(4) == NMNHDIM_SERIES_TIME &
          .and. tpfields(1)%ndimlist(6) == NMNHDIM_SERIES_PROC ) then
       !Correspond to PROFILER_DIACHRO_n
+      if ( gsplit ) then
+          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+      end if
 
       tzfield%ndimlist(1)  = tpfields(1)%ndimlist(1)
       tzfield%ndimlist(2)  = tpfields(1)%ndimlist(4)
@@ -1566,15 +1883,41 @@ select case ( idims )
         TZFIELD%NTYPE      = tpfields(ji)%ntype
         TZFIELD%NDIMS      = 3
         TZFIELD%LTIMEDEP   = .FALSE.
-        if ( htype == 'CART' .and. .not. oicp .and. .not. ojcp ) then
-          !Data is distributed between all the processes
-          TZFIELD%CDIR     = 'XY'
-          CALL IO_Field_write_BOX( tzfile, tzfield, 'BUDGET', zdata3d, &
-                                   KIL + JPHEXT, KIH + JPHEXT, KJL + JPHEXT, KJH + JPHEXT )
+
+        if ( gsplit ) then
+          if ( htype /= 'CART' ) call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                      ': group ' // Trim( hgroup ) //' gsplit=T not implemented for these dimensions and htype/=CART' )
+
+          if ( htype == 'CART' .and. .not. oicp .and. .not. ojcp ) then
+            !Data is distributed between all the processes
+            tzfield%cdir = 'XY'
+
+            !Add budget time dimension
+            tzfield%ndims = 4
+            tzfield%ndimlist(4) = NMNHDIM_BUDGET_TIME
+
+            !Create the metadata of the field (has to be done only once)
+            if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
+
+            call IO_Field_write_box( tzfile, tzfield, 'BUDGET',                                                     &
+                                     Reshape( zdata3d, [ Size(zdata3d,1), Size(zdata3d,2), Size(zdata3d,3), 1 ] ) , &
+                                     kil + jphext, kih + jphext, kjl + jphext, kjh + jphext,                        &
+                                     koffset= [ 0, 0, 0, ( nbutshift - 1 ) * nbusubwrite ]                          )
+          else
+            call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                            ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+          end if
         else
-          !Data is already collected on the master process
-          TZFIELD%CDIR     = '--'
-          CALL IO_Field_write( tzfile, tzfield, zdata3d )
+          if ( htype == 'CART' .and. .not. oicp .and. .not. ojcp ) then
+            !Data is distributed between all the processes
+            tzfield%cdir = 'XY'
+            call IO_Field_write_box( tzfile, tzfield, 'BUDGET', zdata3d, &
+                                    kil + jphext, kih + jphext, kjl + jphext, kjh + jphext )
+          else
+            !Data is already collected on the master process
+            tzfield%cdir = '--'
+            call IO_Field_write( tzfile, tzfield, zdata3d )
+          end if
         end if
       end do
 
@@ -1607,7 +1950,14 @@ select case ( idims )
         TZFIELD%NTYPE      = tpfields(ji)%ntype
         TZFIELD%NDIMS      = 3
         TZFIELD%LTIMEDEP   = .FALSE.
-        CALL IO_Field_write( tzfile, tzfield, zdata3d )
+        if ( gsplit ) then
+        !Create the metadata of the field (has to be done only once)
+          if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
+!           call IO_Field_partial_write( tzfile, tzfield, zdata3d(:,:,:), koffset= [ 0, ( nbutshift - 1 ) * nbusubwrite, 0 ] )
+          call IO_Field_write( tzfile, tzfield, zdata3d(:,:,:), koffset= [ 0, ( nbutshift - 1 ) * nbusubwrite, 0 ] )
+        else
+          call IO_Field_write( tzfile, tzfield, zdata3d )
+        end if
       end do
 
       deallocate( zdata3d )
@@ -1616,6 +1966,11 @@ select case ( idims )
                .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
        .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_LES_SV      &
        .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_LES_MASK      ) then
+      if ( gsplit ) then
+          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+      end if
+
       if ( nles_masks /= Size( pvar, 6 ) ) &
         call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4',                             &
                         'last dimension size of pvar is not equal to nles_masks (variable ' &
@@ -1651,6 +2006,11 @@ select case ( idims )
                .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
        .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_LES_SV      &
        .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_TERM      ) then
+      if ( gsplit ) then
+          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+      end if
+
       tzfield%ndimlist(1)  = tpfields(1)%ndimlist(3)
       tzfield%ndimlist(2)  = tpfields(1)%ndimlist(4)
       tzfield%ndimlist(3)  = tpfields(1)%ndimlist(5)
@@ -1682,6 +2042,11 @@ select case ( idims )
                .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
        .and. tpfields(1)%ndimlist(5) == NMNHDIM_COMPLEX      ) then
       !Correspond to LES_DIACHRO_SPEC
+      if ( gsplit ) then
+          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+      end if
+
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
 
@@ -1714,6 +2079,11 @@ select case ( idims )
                .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
        .and. tpfields(1)%ndimlist(5) == NMNHDIM_COMPLEX      ) then
       !Correspond to LES_DIACHRO_SPEC
+      if ( gsplit ) then
+          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+      end if
+
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
 
@@ -1750,6 +2120,11 @@ select case ( idims )
 !   case (6)
 
   case default
+    if ( gsplit ) then
+        call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                        ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
+    end if
+
     if ( All( tpfields(1)%ndimlist(:) /= NMNHDIM_UNKNOWN ) ) then
       tzfield%ndimlist(1)  = tpfields(1)%ndimlist(1)
       tzfield%ndimlist(2)  = tpfields(1)%ndimlist(2)
