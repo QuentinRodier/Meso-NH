@@ -92,7 +92,6 @@ use modd_field,          only: tfield_metadata_base
 use modd_io,             only: tfiledata
 use modd_type_date,      only: date_time
 !
-use mode_menu_diachro,   only: Menu_diachro
 use mode_msg
 !
 IMPLICIT NONE
@@ -150,7 +149,6 @@ if ( tpdiafile%cformat == 'NETCDF4' .or. tpdiafile%cformat == 'LFICDF4' ) &
   call Write_diachro_nc4( tpdiafile, tpfields, hgroup, htype, tpdates, pvar, gicp, gjcp, gkcp, kil, kih, kjl, kjh, kkl, kkh )
 #endif
 
-call Menu_diachro( tpdiafile, hgroup )
 lpack = gpack
 
 end subroutine Write_diachro
@@ -159,7 +157,7 @@ end subroutine Write_diachro
 subroutine Write_diachro_lfi( tpdiafile, tpfields, hgroup, htype, tpdates, pvar, oicp, ojcp, okcp, kil, kih, kjl, kjh, kkl, kkh, &
                               ptrajx, ptrajy, ptrajz )
 
-use modd_budget,         only: nbumask, nbuwrnb
+use modd_budget,         only: nbumask, nbutshift, nbuwrnb
 use modd_field,          only: NMNHDIM_ONE, NMNHDIM_UNKNOWN, NMNHDIM_FLYER_TIME, NMNHDIM_NOTLISTED, NMNHDIM_UNUSED, &
                                TYPECHAR, TYPEINT, TYPEREAL,                                                         &
                                tfield_metadata_base, tfielddata
@@ -171,6 +169,7 @@ use modd_type_date,      only: date_time
 
 use mode_datetime,       only: Datetime_distance
 use mode_io_field_write, only: IO_Field_write, IO_Field_write_box
+use mode_menu_diachro,   only: Menu_diachro
 use mode_msg
 use mode_tools_ll,       only: Get_globaldims_ll
 
@@ -194,6 +193,7 @@ integer, parameter :: LFICOMMENTLGT = 100
 
 CHARACTER(LEN=20) :: YCOMMENT
 CHARACTER(LEN=3)  :: YJ
+character(len=:),                           allocatable :: ygroup
 character(len=LFITITLELGT),   dimension(:), allocatable :: ytitles   !Used to respect LFI fileformat
 character(len=LFIUNITLGT),    dimension(:), allocatable :: yunits    !Used to respect LFI fileformat
 character(len=LFICOMMENTLGT), dimension(:), allocatable :: ycomments !Used to respect LFI fileformat
@@ -220,6 +220,19 @@ tzfile = tpdiafile
 tzfile%cformat = 'LFI'
 
 YCOMMENT='NOTHING'
+
+if (      Any( hgroup == [ 'RJS', 'RJX', 'RJY', 'RJZ'] )                                              &
+     .or. Any( hgroup == [ 'UU', 'VV', 'WW', 'TH', 'TK', 'RV', 'RC', 'RR', 'RI', 'RS', 'RG', 'RH' ] ) &
+     .or.  ( hgroup(1:2) == 'SV' .and. Len( hgroup ) == 5 )                                           ) then
+  Allocate( character(len=9) :: ygroup )
+  ygroup(:) = hgroup
+  do ji = Len_trim( hgroup ) + 1, 5
+    ygroup(ji : ji) = '_'
+  end do
+  Write( ygroup(6:9), '( i4.4 )' ) nbutshift
+else
+  ygroup = hgroup
+end if
 
 II = SIZE(PVAR,1)
 IJ = SIZE(PVAR,2)
@@ -290,9 +303,9 @@ ENDIF
 !
 ! 1er enregistrement TYPE
 !
-TZFIELD%CMNHNAME   = TRIM(HGROUP)//'.TYPE'
+TZFIELD%CMNHNAME   = TRIM(ygroup)//'.TYPE'
 TZFIELD%CSTDNAME   = ''
-TZFIELD%CLONGNAME  = TRIM(HGROUP)//'.TYPE'
+TZFIELD%CLONGNAME  = TRIM(ygroup)//'.TYPE'
 TZFIELD%CUNITS     = ''
 TZFIELD%CDIR       = '--'
 TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
@@ -304,9 +317,9 @@ CALL IO_Field_write(tzfile,TZFIELD,HTYPE)
 !
 ! 2eme  enregistrement DIMENSIONS des MATRICES et LONGUEUR des TABLEAUX de CARACTERES et FLAGS de COMPRESSION sur les DIFFERENTS AXES
 !
-TZFIELD%CMNHNAME   = TRIM(HGROUP)//'.DIM'
+TZFIELD%CMNHNAME   = TRIM(ygroup)//'.DIM'
 TZFIELD%CSTDNAME   = ''
-TZFIELD%CLONGNAME  = TRIM(HGROUP)//'.DIM'
+TZFIELD%CLONGNAME  = TRIM(ygroup)//'.DIM'
 TZFIELD%CUNITS     = ''
 TZFIELD%CDIR       = '--'
 TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
@@ -369,9 +382,9 @@ END SELECT
 !
 ! 3eme enregistrement TITRE
 !
-TZFIELD%CMNHNAME   = TRIM(HGROUP)//'.TITRE'
+TZFIELD%CMNHNAME   = TRIM(ygroup)//'.TITRE'
 TZFIELD%CSTDNAME   = ''
-TZFIELD%CLONGNAME  = TRIM(HGROUP)//'.TITRE'
+TZFIELD%CLONGNAME  = TRIM(ygroup)//'.TITRE'
 TZFIELD%CUNITS     = ''
 TZFIELD%CDIR       = '--'
 TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
@@ -386,9 +399,9 @@ deallocate( ytitles )
 !
 ! 4eme enregistrement UNITE
 !
-TZFIELD%CMNHNAME   = TRIM(HGROUP)//'.UNITE'
+TZFIELD%CMNHNAME   = TRIM(ygroup)//'.UNITE'
 TZFIELD%CSTDNAME   = ''
-TZFIELD%CLONGNAME  = TRIM(HGROUP)//'.UNITE'
+TZFIELD%CLONGNAME  = TRIM(ygroup)//'.UNITE'
 TZFIELD%CUNITS     = ''
 TZFIELD%CDIR       = '--'
 TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
@@ -403,9 +416,9 @@ deallocate( yunits )
 !
 ! 5eme enregistrement COMMENT
 !
-TZFIELD%CMNHNAME   = TRIM(HGROUP)//'.COMMENT'
+TZFIELD%CMNHNAME   = TRIM(ygroup)//'.COMMENT'
 TZFIELD%CSTDNAME   = ''
-TZFIELD%CLONGNAME  = TRIM(HGROUP)//'.COMMENT'
+TZFIELD%CLONGNAME  = TRIM(ygroup)//'.COMMENT'
 TZFIELD%CUNITS     = ''
 TZFIELD%CDIR       = '--'
 TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
@@ -445,7 +458,7 @@ DO J = 1,IP
           WRITE(YJ,'(I3)')J
   ENDIF
   IF(HTYPE == 'CART' .AND. .NOT. oicp .AND. .NOT. ojcp) THEN
-    TZFIELD%CMNHNAME   = TRIM(HGROUP)//'.PROC'//YJ
+    TZFIELD%CMNHNAME   = TRIM(ygroup)//'.PROC'//YJ
     TZFIELD%CSTDNAME   = ''
     TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
     TZFIELD%CUNITS     = tpfields(j)%cunits
@@ -459,7 +472,7 @@ DO J = 1,IP
     CALL IO_Field_write_BOX(tzfile,TZFIELD,'BUDGET',PVAR(:,:,:,:,:,J), &
                             KIL+JPHEXT,KIH+JPHEXT,KJL+JPHEXT,KJH+JPHEXT)
   ELSE
-    TZFIELD%CMNHNAME   = TRIM(HGROUP)//'.PROC'//YJ
+    TZFIELD%CMNHNAME   = TRIM(ygroup)//'.PROC'//YJ
     TZFIELD%CSTDNAME   = ''
     TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
     TZFIELD%CUNITS     = tpfields(j)%cunits
@@ -477,9 +490,9 @@ ENDDO
 !
 ! 7eme enregistrement TRAJT
 !
-TZFIELD%CMNHNAME   = TRIM(HGROUP)//'.TRAJT'
+TZFIELD%CMNHNAME   = TRIM(ygroup)//'.TRAJT'
 TZFIELD%CSTDNAME   = ''
-TZFIELD%CLONGNAME  = TRIM(HGROUP)//'.TRAJT'
+TZFIELD%CLONGNAME  = TRIM(ygroup)//'.TRAJT'
 TZFIELD%CUNITS     = ''
 TZFIELD%CDIR       = '--'
 TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
@@ -516,9 +529,9 @@ deallocate( ztimes )
 ! 8eme enregistrement TRAJX
 !
 IF(PRESENT(PTRAJX))THEN
-  TZFIELD%CMNHNAME   = TRIM(HGROUP)//'.TRAJX'
+  TZFIELD%CMNHNAME   = TRIM(ygroup)//'.TRAJX'
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = TRIM(HGROUP)//'.TRAJX'
+  TZFIELD%CLONGNAME  = TRIM(ygroup)//'.TRAJX'
   TZFIELD%CUNITS     = ''
   TZFIELD%CDIR       = '--'
   TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
@@ -532,9 +545,9 @@ ENDIF
 ! 9eme enregistrement TRAJY
 !
 IF(PRESENT(PTRAJY))THEN
-  TZFIELD%CMNHNAME   = TRIM(HGROUP)//'.TRAJY'
+  TZFIELD%CMNHNAME   = TRIM(ygroup)//'.TRAJY'
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = TRIM(HGROUP)//'.TRAJY'
+  TZFIELD%CLONGNAME  = TRIM(ygroup)//'.TRAJY'
   TZFIELD%CUNITS     = ''
   TZFIELD%CDIR       = '--'
   TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
@@ -548,9 +561,9 @@ ENDIF
 ! 10eme enregistrement TRAJZ
 !
 IF(PRESENT(PTRAJZ))THEN
-  TZFIELD%CMNHNAME   = TRIM(HGROUP)//'.TRAJZ'
+  TZFIELD%CMNHNAME   = TRIM(ygroup)//'.TRAJZ'
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = TRIM(HGROUP)//'.TRAJZ'
+  TZFIELD%CLONGNAME  = TRIM(ygroup)//'.TRAJZ'
   TZFIELD%CUNITS     = ''
   TZFIELD%CDIR       = '--'
   TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
@@ -563,9 +576,9 @@ ENDIF
 !
 ! 11eme enregistrement PDATIME
 !
-TZFIELD%CMNHNAME   = TRIM(HGROUP)//'.DATIM'
+TZFIELD%CMNHNAME   = TRIM(ygroup)//'.DATIM'
 TZFIELD%CSTDNAME   = ''
-TZFIELD%CLONGNAME  = TRIM(HGROUP)//'.DATIM'
+TZFIELD%CLONGNAME  = TRIM(ygroup)//'.DATIM'
 TZFIELD%CUNITS     = ''
 TZFIELD%CDIR       = '--'
 TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
@@ -598,6 +611,8 @@ call IO_Field_write( tzfile, tzfield, zdatime )
 
 deallocate( zdatime )
 
+call Menu_diachro( tzfile, ygroup )
+
 end subroutine Write_diachro_lfi
 !-----------------------------------------------------------------------------
 #ifdef MNH_IOCDF4
@@ -615,6 +630,7 @@ use modd_type_date,    only: date_time
 
 use mode_io_field_write, only: IO_Field_write, IO_Field_write_box
 use mode_io_tools_nc4,   only: IO_Err_handle_nc4
+use mode_menu_diachro,   only: Menu_diachro
 use mode_msg
 
 type(tfiledata),                                     intent(in)           :: tpdiafile        ! File to write
@@ -1786,6 +1802,8 @@ tzfield%ndimlist(:) = NMNHDIM_UNKNOWN
 
 !Restore id of the file root group ('/' group)
 tzfile%nncid = isavencid
+
+call Menu_diachro( tzfile, hgroup )
 
 end  subroutine Write_diachro_nc4
 #endif

@@ -380,9 +380,9 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
   logical,                                              intent(in)  :: knocompress ! compression for the cart option
   real,            dimension(:,:,:,:,:,:), allocatable, intent(out) :: prhodjn
 
-  character(len=4) :: ybutype
-  character(len=9) :: ygroup_name
-  type(tburhodata) :: tzfield
+  character(len=4)              :: ybutype
+  character(len=:), allocatable :: ygroup_name
+  type(tburhodata)              :: tzfield
 
   call Print_msg( NVERB_DEBUG, 'BUD', 'Store_one_budget_rho', 'called for '//trim( tprhodj%cmnhname ) )
 
@@ -415,16 +415,16 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
 
   select case( kp )
     case( NBUDGET_RHO )
-      write( ygroup_name, fmt = "('RJS__',I4.4)" ) nbutshift
+      ygroup_name = 'RJS'
 
     case( NBUDGET_U )
-      write( ygroup_name, fmt = "('RJX__',I4.4)" ) nbutshift
+      ygroup_name = 'RJX'
 
     case( NBUDGET_V )
-      write( ygroup_name, fmt = "('RJY__',I4.4)" ) nbutshift
+      ygroup_name = 'RJY'
 
     case( NBUDGET_W )
-      write( ygroup_name, fmt = "('RJZ__',I4.4)" ) nbutshift
+      ygroup_name = 'RJZ'
 
     case default
       call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_rho', 'unknown budget type' )
@@ -541,7 +541,7 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
   real,                                                 intent(in) :: ptstep      ! time step
 
   character(len=4)                                        :: ybutype
-  character(len=9)                                        :: ygroup_name
+  character(len=:),                           allocatable :: ygroup_name
   integer                                                 :: igroups
   integer                                                 :: jproc
   integer                                                 :: jsv
@@ -605,44 +605,45 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
 
   select case( tpbudget%nid )
     case ( NBUDGET_U )
-      write( ygroup_name, fmt = "('UU___',I4.4)" ) nbutshift
+      ygroup_name = 'UU'
 
     case ( NBUDGET_V )
-      write( ygroup_name, fmt = "('VV___',I4.4)" ) nbutshift
+      ygroup_name = 'VV'
 
     case ( NBUDGET_W )
-      write( ygroup_name, fmt = "('WW___',I4.4)" ) nbutshift
+      ygroup_name = 'WW'
 
     case ( NBUDGET_TH )
-      write( ygroup_name, fmt = "('TH___',I4.4)" ) nbutshift
+      ygroup_name = 'TH'
 
     case ( NBUDGET_TKE )
-      write( ygroup_name, fmt = "('TK___',I4.4)" ) nbutshift
+      ygroup_name = 'TK'
 
     case ( NBUDGET_RV )
-      write( ygroup_name, fmt = "('RV___',I4.4)" ) nbutshift
+      ygroup_name = 'RV'
 
     case ( NBUDGET_RC )
-      write( ygroup_name, fmt = "('RC___',I4.4)" ) nbutshift
+      ygroup_name = 'RC'
 
     case ( NBUDGET_RR )
-      write( ygroup_name, fmt = "('RR___',I4.4)" ) nbutshift
+      ygroup_name = 'RR'
 
     case ( NBUDGET_RI )
-      write( ygroup_name, fmt = "('RI___',I4.4)" ) nbutshift
+      ygroup_name = 'RI'
 
     case ( NBUDGET_RS )
-      write( ygroup_name, fmt = "('RS___',I4.4)" ) nbutshift
+      ygroup_name = 'RS'
 
     case ( NBUDGET_RG )
-      write( ygroup_name, fmt = "('RG___',I4.4)" ) nbutshift
+      ygroup_name = 'RG'
 
     case ( NBUDGET_RH )
-      write( ygroup_name, fmt = "('RH___',I4.4)" ) nbutshift
+      ygroup_name = 'RH'
 
     case ( NBUDGET_SV1 : )
       jsv = tpbudget%nid - NBUDGET_SV1 + 1
-      write( ygroup_name, fmt = "('SV',I3.3,I4.4)") jsv, nbutshift
+      Allocate( character(len=5) :: ygroup_name )
+      write( ygroup_name, fmt = "('SV',I3.3)") jsv
 
     case default
       call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget', 'unknown budget type' )
