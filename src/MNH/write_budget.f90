@@ -529,12 +529,17 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
   else if ( ybutype == 'MASK' ) then
     tzfield%ndimlist(1) = NMNHDIM_UNUSED
     tzfield%ndimlist(2) = NMNHDIM_UNUSED
-    select case ( tzfield%ngrid )
-      case ( 1, 2, 3 )
-        tzfield%ndimlist(3)  = NMNHDIM_BUDGET_MASK_LEVEL
-      case ( 4 )
-        tzfield%ndimlist(3)  = NMNHDIM_BUDGET_MASK_LEVEL_W
-    end select
+    if ( .not. lbu_kcp ) then
+      select case ( tzfield%ngrid )
+        case ( 1, 2, 3 )
+          tzfield%ndimlist(3)  = NMNHDIM_BUDGET_MASK_LEVEL
+        case ( 4 )
+          tzfield%ndimlist(3)  = NMNHDIM_BUDGET_MASK_LEVEL_W
+      end select
+    else
+      tzfield%ndims = tzfield%ndims - 1
+      tzfield%ndimlist(3) = NMNHDIM_UNUSED
+    end if
     tzfield%ndimlist(4) = NMNHDIM_BUDGET_TIME
     tzfield%ndimlist(5) = NMNHDIM_BUDGET_MASK_NBUMASK
     tzfield%ndimlist(6) = NMNHDIM_UNUSED
@@ -755,12 +760,17 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
     else if ( ybutype == 'MASK' ) then
       tzfields(jproc)%ndimlist(1) = NMNHDIM_UNUSED
       tzfields(jproc)%ndimlist(2) = NMNHDIM_UNUSED
-      select case ( tzfields(jproc)%ngrid )
-        case ( 1, 2, 3 )
-          tzfields(jproc)%ndimlist(3)  = NMNHDIM_BUDGET_MASK_LEVEL
-        case ( 4 )
-          tzfields(jproc)%ndimlist(3)  = NMNHDIM_BUDGET_MASK_LEVEL_W
-      end select
+      if ( .not. lbu_kcp ) then
+        select case ( tzfields(jproc)%ngrid )
+          case ( 1, 2, 3 )
+            tzfields(jproc)%ndimlist(3)  = NMNHDIM_BUDGET_MASK_LEVEL
+          case ( 4 )
+            tzfields(jproc)%ndimlist(3)  = NMNHDIM_BUDGET_MASK_LEVEL_W
+        end select
+      else
+        tzfields(jproc)%ndims = tzfields(jproc)%ndims - 1
+        tzfields(jproc)%ndimlist(3) = NMNHDIM_UNUSED
+      end if
       tzfields(jproc)%ndimlist(4) = NMNHDIM_BUDGET_TIME
       tzfields(jproc)%ndimlist(5) = NMNHDIM_BUDGET_MASK_NBUMASK
       tzfields(jproc)%ndimlist(6) = NMNHDIM_BUDGET_NGROUPS

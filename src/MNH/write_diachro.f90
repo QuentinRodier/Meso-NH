@@ -1373,6 +1373,40 @@ select case ( idims )
 
       deallocate( zdata1d )
 
+    else if (  tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_TIME .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_MASK_NBUMASK ) then
+      if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
+                                                   'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
+
+      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(4)
+      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(5)
+      tzfield%ndimlist(3:) = NMNHDIM_UNUSED
+
+      Allocate( zdata2d(Size( pvar, 4 ), Size( pvar, 5 )) )
+
+      zdata2d(:,:) = pvar(1, 1, 1, :, :, 1)
+
+      tzfield%cmnhname   = tpfields(1)%cmnhname
+      tzfield%cstdname   = tpfields(1)%cstdname
+      tzfield%clongname  = tpfields(1)%clongname
+      tzfield%cunits     = tpfields(1)%cunits
+      tzfield%cdir       = '--'
+      tzfield%ccomment   = tpfields(1)%ccomment
+      tzfield%ngrid      = tpfields(1)%ngrid
+      tzfield%ntype      = tpfields(1)%ntype
+      tzfield%ndims      = 2
+      tzfield%ltimedep   = .false.
+
+      if ( gsplit ) then
+        !Create the metadata of the field (has to be done only once)
+        if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
+
+        call IO_Field_write( tzfile, tzfield, zdata2d, koffset= [ ( nbutshift - 1 ) * nbusubwrite, 0 ] )
+      else
+        call IO_Field_write( tzfile, tzfield, zdata2d )
+      end if
+
+      Deallocate( zdata2d )
+
     else if (  (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME &
                .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
          .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_LES_SV       ) then
@@ -2060,6 +2094,43 @@ select case ( idims )
       end do
 
       deallocate( zdata2d )
+
+    else if (       tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_TIME         &
+              .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_MASK_NBUMASK &
+              .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS      ) then
+      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(4)
+      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(5)
+      tzfield%ndimlist(3:) = NMNHDIM_UNUSED
+
+      Allocate( zdata2d(Size( pvar, 4 ), Size( pvar, 5 )) )
+
+      ! Loop on the processes (1 written variable per process)
+      do ji = 1, Size( pvar, 6 )
+        zdata2d(:,:) = pvar(1, 1, 1, :, :, ji)
+
+        tzfield%cmnhname   = tpfields(ji)%cmnhname
+        tzfield%cstdname   = tpfields(ji)%cstdname
+        tzfield%clongname  = tpfields(ji)%clongname
+        tzfield%cunits     = tpfields(ji)%cunits
+        tzfield%cdir       = '--'
+        tzfield%ccomment   = tpfields(ji)%ccomment
+        tzfield%ngrid      = tpfields(ji)%ngrid
+        tzfield%ntype      = tpfields(ji)%ntype
+        tzfield%ndims      = 2
+        tzfield%ltimedep   = .false.
+
+        if ( gsplit ) then
+          !Create the metadata of the field (has to be done only once)
+          if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
+
+          call IO_Field_write( tzfile, tzfield, zdata2d, koffset= [ ( nbutshift - 1 ) * nbusubwrite, 0 ] )
+        else
+          call IO_Field_write( tzfile, tzfield, zdata2d )
+        end if
+      end do
+
+      Deallocate( zdata2d )
+
     else
       call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                       'case not yet implemented (variable '//trim(tpfields(1)%cmnhname)//')' )

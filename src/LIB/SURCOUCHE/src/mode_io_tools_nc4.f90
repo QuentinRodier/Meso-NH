@@ -349,8 +349,8 @@ if ( tpfile%ctype == 'MNHDIACHRONIC' ) then
     if ( .not. lbu_kcp )   call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_CART_LEVEL_W, 'cart_level_w', nbukmax     )
     if ( nbutotwrite > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_TIME,         'time_budget',  nbutotwrite )
   else if ( cbutype == 'MASK' ) then
-    if ( nbukmax > 0 )     call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_MASK_LEVEL,   'mask_level',   nbukmax     )
-    if ( nbukmax > 0 )     call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_MASK_LEVEL_W, 'mask_level_w', nbukmax     )
+    if ( .not. lbu_kcp )   call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_MASK_LEVEL,   'mask_level',   nbukmax     )
+    if ( .not. lbu_kcp )   call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_MASK_LEVEL_W, 'mask_level_w', nbukmax     )
     if ( nbutotwrite > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_TIME,         'time_budget',  nbutotwrite )
     if ( nbumask > 0 )     call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_MASK_NBUMASK, 'nbumask',      nbumask     )
   end if
