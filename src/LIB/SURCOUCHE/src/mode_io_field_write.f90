@@ -589,14 +589,15 @@ end subroutine IO_Ndimlist_reduce
   END SUBROUTINE IO_Field_write_byfield_X0
 
 
-  SUBROUTINE IO_Field_write_byname_X1(TPFILE,HNAME,PFIELD,KRESP)
+  SUBROUTINE IO_Field_write_byname_X1( TPFILE, HNAME, PFIELD, KRESP, koffset )
     !
     !*      0.1   Declarations of arguments
     !
-    TYPE(TFILEDATA),           INTENT(IN) :: TPFILE
-    CHARACTER(LEN=*),          INTENT(IN) :: HNAME    ! name of the field to write
-    REAL,DIMENSION(:),         INTENT(IN) :: PFIELD   ! array containing the data field
-    INTEGER,OPTIONAL,          INTENT(OUT):: KRESP    ! return-code 
+    TYPE(TFILEDATA),                 INTENT(IN)  :: TPFILE
+    CHARACTER(LEN=*),                INTENT(IN)  :: HNAME    ! name of the field to write
+    REAL,DIMENSION(:),               INTENT(IN)  :: PFIELD   ! array containing the data field
+    INTEGER,               OPTIONAL, INTENT(OUT) :: KRESP    ! return-code
+    integer, dimension(1), optional, intent(in)  :: koffset
     !
     !*      0.2   Declarations of local variables
     !
@@ -607,14 +608,14 @@ end subroutine IO_Ndimlist_reduce
     !
     CALL FIND_FIELD_ID_FROM_MNHNAME(HNAME,ID,IRESP)
     !
-    IF(IRESP==0) CALL IO_Field_write(TPFILE,TFIELDLIST(ID),PFIELD,IRESP)
+    if( iresp == 0 ) call IO_Field_write( tpfile, tfieldlist(id), pfield, iresp, koffset )
     !
     IF (PRESENT(KRESP)) KRESP = IRESP
     !
   END SUBROUTINE IO_Field_write_byname_X1
 
 
-  SUBROUTINE IO_Field_write_byfield_X1(TPFILE,TPFIELD,PFIELD,KRESP)
+  SUBROUTINE IO_Field_write_byfield_X1( TPFILE, TPFIELD, PFIELD, KRESP, koffset )
     USE MODD_IO,               ONLY: GSMONOPROC, ISP
     !
     USE MODE_ALLOCBUFFER_ll
@@ -625,10 +626,11 @@ end subroutine IO_Ndimlist_reduce
     !
     !*      0.1   Declarations of arguments
     !
-    TYPE(TFILEDATA),             INTENT(IN) :: TPFILE
-    TYPE(TFIELDDATA),            INTENT(IN) :: TPFIELD
-    REAL,DIMENSION(:),TARGET,    INTENT(IN) :: PFIELD   ! array containing the data field
-    INTEGER,OPTIONAL,            INTENT(OUT):: KRESP    ! return-code 
+    TYPE(TFILEDATA),                      INTENT(IN)  :: TPFILE
+    TYPE(TFIELDDATA),                     INTENT(IN)  :: TPFIELD
+    REAL,DIMENSION(:),TARGET,             INTENT(IN)  :: PFIELD   ! array containing the data field
+    INTEGER,                    OPTIONAL, INTENT(OUT) :: KRESP    ! return-code
+    integer, dimension(1),      optional, intent(in)  :: koffset
     !
     !*      0.2   Declarations of local variables
     !
@@ -664,8 +666,13 @@ end subroutine IO_Ndimlist_reduce
     !
     IF (IRESP==0) THEN
        IF (GSMONOPROC) THEN ! sequential execution
-          IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,PFIELD,iresp_lfi)
-          IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,PFIELD,iresp_nc4)
+          if ( Present( koffset ) ) then
+            !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tpfield, pfield, koffset, iresp_lfi )
+            if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tpfield, pfield, koffset, iresp_nc4 )
+          else
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tpfield, pfield, iresp_lfi )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tpfield, pfield, iresp_nc4 )
+          end if
        ELSE ! multiprocesses execution
           CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MNHINT_MPI,MPI_MAX,TPFILE%NMPICOMM,IERR)
           IF (ISIZEMAX==0) THEN
@@ -686,8 +693,13 @@ end subroutine IO_Ndimlist_reduce
           END IF
           !
           IF (ISP == TPFILE%NMASTER_RANK)  THEN
-             IF (GLFI) CALL IO_Field_write_lfi(TPFILE,TPFIELD,ZFIELDP,iresp_lfi)
-             IF (GNC4) CALL IO_Field_write_nc4(TPFILE,TPFIELD,ZFIELDP,iresp_nc4)
+            if ( Present( koffset ) ) then
+              !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tpfield, zfieldp, koffset, iresp_lfi )
+              if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tpfield, zfieldp, koffset, iresp_nc4 )
+            else
+              if ( glfi ) call IO_Field_write_lfi( tpfile, tpfield, zfieldp, iresp_lfi )
+              if ( gnc4 ) call IO_Field_write_nc4( tpfile, tpfield, zfieldp, iresp_nc4 )
+            end if
           END IF
           !
           CALL MPI_BCAST(IRESP,1,MNHINT_MPI,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
