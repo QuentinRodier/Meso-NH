@@ -653,6 +653,7 @@ character(len=3)                          :: ynum
 integer                                   :: icompx, icompy, icompz
 integer                                   :: idims
 integer                                   :: icount
+integer                                   :: icorr
 integer                                   :: ji
 integer                                   :: jp
 integer(kind=CDFINT)                      :: isavencid
