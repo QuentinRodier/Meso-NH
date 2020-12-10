@@ -17,7 +17,7 @@ contains
 subroutine Write_diachro( tpdiafile, tpfields, hgroup, htype,             &
                           tpdates, pvar,                                  &
                           oicp, ojcp, okcp, kil, kih, kjl, kjh, kkl, kkh, &
-                          ptrajx, ptrajy, ptrajz )
+                          ptrajx, ptrajy, ptrajz, osplit )
 ! #########################################################################
 !
 !!****  *WRITE_DIACHRO* - Ecriture d'un enregistrement dans un fichier
