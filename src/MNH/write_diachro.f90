@@ -5,6 +5,8 @@
 !-----------------------------------------------------------------
 module mode_write_diachro
 
+use mode_msg
+
 implicit none
 
 private
@@ -93,8 +95,6 @@ use modd_field,          only: tfield_metadata_base
 use modd_io,             only: tfiledata
 use modd_type_date,      only: date_time
 !
-use mode_msg
-!
 IMPLICIT NONE
 !
 !*       0.1   Dummy arguments
@@ -173,7 +173,6 @@ use modd_type_date,      only: date_time
 use mode_datetime,       only: Datetime_distance
 use mode_io_field_write, only: IO_Field_write, IO_Field_write_box
 use mode_menu_diachro,   only: Menu_diachro
-use mode_msg
 use mode_tools_ll,       only: Get_globaldims_ll
 
 
@@ -636,7 +635,6 @@ use modd_type_date,    only: date_time
 use mode_io_field_write, only: IO_Field_create, IO_Field_write, IO_Field_write_box
 use mode_io_tools_nc4,   only: IO_Err_handle_nc4
 use mode_menu_diachro,   only: Menu_diachro
-use mode_msg
 
 type(tfiledata),                                     intent(in)           :: tpdiafile        ! File to write
 class(tfield_metadata_base), dimension(:),           intent(in)           :: tpfields
@@ -841,31 +839,20 @@ select case ( idims )
   case (0)
     zdata0d = pvar(1, 1, 1, 1, 1, 1)
 
-    TZFIELD%CMNHNAME   = tpfields(1)%cmnhname
-    TZFIELD%CSTDNAME   = tpfields(1)%cstdname
-    TZFIELD%CLONGNAME  = tpfields(1)%clongname
-    TZFIELD%CUNITS     = tpfields(1)%cunits
-    TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = tpfields(1)%ccomment
-    TZFIELD%NGRID      = tpfields(1)%ngrid
-    TZFIELD%NTYPE      = tpfields(1)%ntype
-    TZFIELD%NDIMS      = 0
-    TZFIELD%LTIMEDEP   = .FALSE.
-
     if ( gsplit ) then
       if ( htype /= 'CART' ) call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
                   ': group ' // Trim( hgroup ) //': gsplit=T not implemented for these dimensions and htype/=CART' )
 
-      !Add budget time dimension
-      tzfield%ndims = 1
-      tzfield%ndimlist(1)  = NMNHDIM_BUDGET_TIME
-      tzfield%ndimlist(2:) = NMNHDIM_UNUSED
+      !Remark: [ integer:: ] is a constructor for a zero-size array of integers, [] is not allowed (type can not be determined)
+      call Prepare_diachro_write( tpfields(1), tzfield, [ integer:: ], kbutimepos = 1 )
 
       !Create the metadata of the field (has to be done only once)
       if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
 
       call IO_Field_write( tzfile, tzfield, [ zdata0d ], koffset= [ ( nbutshift - 1 ) * nbusubwrite ] )
     else
+      !Remark: [ integer:: ] is a constructor for a zero-size array of integers, [] is not allowed (type can not be determined)
+      call Prepare_diachro_write( tpfields(1), tzfield, [ integer:: ] )
       call IO_Field_write( tzfile, tzfield, zdata0d )
     end if
 
@@ -880,60 +867,29 @@ select case ( idims )
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
 
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(4)
-      tzfield%ndimlist(2:) = NMNHDIM_UNUSED
-
       allocate( zdata1d( size(pvar,4) ) )
 
       zdata1d(:) = pvar(1, 1, 1, :, 1, 1)
 
-      TZFIELD%CMNHNAME   = tpfields(1)%cmnhname
-      TZFIELD%CSTDNAME   = tpfields(1)%cstdname
-      TZFIELD%CLONGNAME  = tpfields(1)%clongname
-      TZFIELD%CUNITS     = tpfields(1)%cunits
-      TZFIELD%CDIR       = '--'
-      TZFIELD%CCOMMENT   = tpfields(1)%ccomment
-      TZFIELD%NGRID      = tpfields(1)%ngrid
-      TZFIELD%NTYPE      = tpfields(1)%ntype
-      TZFIELD%NDIMS      = 1
-      TZFIELD%LTIMEDEP   = .FALSE.
+      call Prepare_diachro_write( tpfields(1), tzfield, [ 4 ] )
+
       CALL IO_Field_write( tzfile, tzfield, zdata1d )
 
       deallocate( zdata1d )
-    else if (      tpfields(1)%ndimlist(1) == NMNHDIM_NI   &
-              .or. tpfields(1)%ndimlist(1) == NMNHDIM_NI_U   &
-              .or. tpfields(1)%ndimlist(1) == NMNHDIM_NI_V   &
-              .or. tpfields(1)%ndimlist(1) == NMNHDIM_BUDGET_CART_NI   &
-              .or. tpfields(1)%ndimlist(1) == NMNHDIM_BUDGET_CART_NI_U &
-              .or. tpfields(1)%ndimlist(1) == NMNHDIM_BUDGET_CART_NI_V ) then
+    else if ( Any( tpfields(1)%ndimlist(1) == [ NMNHDIM_NI, NMNHDIM_NI_U, NMNHDIM_NI_V, NMNHDIM_BUDGET_CART_NI,     &
+                                                NMNHDIM_BUDGET_CART_NI_U, NMNHDIM_BUDGET_CART_NI_V              ] ) ) then
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-
-      tzfield%ndimlist(1) = tpfields(1)%ndimlist(1)
-      tzfield%ndimlist(2:) = NMNHDIM_UNUSED
 
       allocate( zdata1d( size(pvar,1) ) )
 
       zdata1d(:) = pvar(:, 1, 1, 1, 1, 1)
 
-      TZFIELD%CMNHNAME   = tpfields(1)%cmnhname
-      TZFIELD%CSTDNAME   = tpfields(1)%cstdname
-      TZFIELD%CLONGNAME  = tpfields(1)%clongname
-      TZFIELD%CUNITS     = tpfields(1)%cunits
-      TZFIELD%CDIR       = '--'
-      TZFIELD%CCOMMENT   = tpfields(1)%ccomment
-      TZFIELD%NGRID      = tpfields(1)%ngrid
-      TZFIELD%NTYPE      = tpfields(1)%ntype
-      TZFIELD%NDIMS      = 1
-      TZFIELD%LTIMEDEP   = .FALSE.
-
       if ( gsplit ) then
         if ( htype /= 'CART' ) call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
                     ': group ' // Trim( hgroup ) //': gsplit=T not implemented for these dimensions and htype/=CART' )
 
-        !Add budget time dimension
-        tzfield%ndims = 2
-        tzfield%ndimlist(2) = NMNHDIM_BUDGET_TIME
+        call Prepare_diachro_write( tpfields(1), tzfield, [ 1 ], kbutimepos = 2 )
 
         !Create the metadata of the field (has to be done only once)
         if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
@@ -941,44 +897,25 @@ select case ( idims )
         call IO_Field_write( tzfile, tzfield, Reshape( zdata1d, [ Size(zdata1d,1), 1 ] ), &
                              koffset= [ 0, ( nbutshift - 1 ) * nbusubwrite ] )
       else
+        call Prepare_diachro_write( tpfields(1), tzfield, [ 1 ] )
         call IO_Field_write( tzfile, tzfield, zdata1d )
       end if
 
       deallocate( zdata1d )
-    else if (      tpfields(1)%ndimlist(2) == NMNHDIM_NJ   &
-              .or. tpfields(1)%ndimlist(2) == NMNHDIM_NJ_U   &
-              .or. tpfields(1)%ndimlist(2) == NMNHDIM_NJ_V   &
-              .or. tpfields(1)%ndimlist(2) == NMNHDIM_BUDGET_CART_NJ   &
-              .or. tpfields(1)%ndimlist(2) == NMNHDIM_BUDGET_CART_NJ_U &
-              .or. tpfields(1)%ndimlist(2) == NMNHDIM_BUDGET_CART_NJ_V ) then
+    else if ( Any( tpfields(1)%ndimlist(2) == [ NMNHDIM_NJ, NMNHDIM_NJ_U, NMNHDIM_NJ_V, NMNHDIM_BUDGET_CART_NJ,     &
+                                                NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NJ_V              ] ) ) then
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(2)
-      tzfield%ndimlist(2:) = NMNHDIM_UNUSED
 
       allocate( zdata1d( size(pvar,2) ) )
 
       zdata1d(:) = pvar(1, :, 1, 1, 1, 1)
 
-      TZFIELD%CMNHNAME   = tpfields(1)%cmnhname
-      TZFIELD%CSTDNAME   = tpfields(1)%cstdname
-      TZFIELD%CLONGNAME  = tpfields(1)%clongname
-      TZFIELD%CUNITS     = tpfields(1)%cunits
-      TZFIELD%CDIR       = '--'
-      TZFIELD%CCOMMENT   = tpfields(1)%ccomment
-      TZFIELD%NGRID      = tpfields(1)%ngrid
-      TZFIELD%NTYPE      = tpfields(1)%ntype
-      TZFIELD%NDIMS      = 1
-      TZFIELD%LTIMEDEP   = .FALSE.
-
       if ( gsplit ) then
         if ( htype /= 'CART' ) call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
                     ': group ' // Trim( hgroup ) //': gsplit=T not implemented for these dimensions and htype/=CART' )
 
-        !Add budget time dimension
-        tzfield%ndims = 2
-        tzfield%ndimlist(2) = NMNHDIM_BUDGET_TIME
+        call Prepare_diachro_write( tpfields(1), tzfield, [ 2 ], kbutimepos = 2 )
 
         !Create the metadata of the field (has to be done only once)
         if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
@@ -986,42 +923,25 @@ select case ( idims )
         call IO_Field_write( tzfile, tzfield, Reshape( zdata1d, [ Size(zdata1d,1), 1 ] ), &
                              koffset= [ 0, ( nbutshift - 1 ) * nbusubwrite ] )
       else
+        call Prepare_diachro_write( tpfields(1), tzfield, [ 2 ] )
         call IO_Field_write( tzfile, tzfield, zdata1d )
       end if
 
       deallocate( zdata1d )
-    else if (      tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL   &
-              .or. tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL_W   &
-              .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_CART_LEVEL   &
-              .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_CART_LEVEL_W ) then
+    else if ( Any( tpfields(1)%ndimlist(3) == [ NMNHDIM_LEVEL, NMNHDIM_LEVEL_W,                            &
+                                                NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W ] ) ) then
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(3)
-      tzfield%ndimlist(2:) = NMNHDIM_UNUSED
 
       allocate( zdata1d( size(pvar,3) ) )
 
       zdata1d(:) = pvar(1, 1, :, 1, 1, 1)
 
-      TZFIELD%CMNHNAME   = tpfields(1)%cmnhname
-      TZFIELD%CSTDNAME   = tpfields(1)%cstdname
-      TZFIELD%CLONGNAME  = tpfields(1)%clongname
-      TZFIELD%CUNITS     = tpfields(1)%cunits
-      TZFIELD%CDIR       = '--'
-      TZFIELD%CCOMMENT   = tpfields(1)%ccomment
-      TZFIELD%NGRID      = tpfields(1)%ngrid
-      TZFIELD%NTYPE      = tpfields(1)%ntype
-      TZFIELD%NDIMS      = 1
-      TZFIELD%LTIMEDEP   = .FALSE.
-
       if ( gsplit ) then
         if ( htype /= 'CART' ) call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
                     ': group ' // Trim( hgroup ) //': gsplit=T not implemented for these dimensions and htype/=CART' )
 
-        !Add budget time dimension
-        tzfield%ndims = 2
-        tzfield%ndimlist(2) = NMNHDIM_BUDGET_TIME
+        call Prepare_diachro_write( tpfields(1), tzfield, [ 3 ], kbutimepos = 2 )
 
         !Create the metadata of the field (has to be done only once)
         if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
@@ -1029,38 +949,27 @@ select case ( idims )
         call IO_Field_write( tzfile, tzfield, Reshape( zdata1d, [ Size(zdata1d,1), 1 ] ), &
                              koffset= [ 0, ( nbutshift - 1 ) * nbusubwrite ] )
       else
+        call Prepare_diachro_write( tpfields(1), tzfield, [ 3 ] )
         call IO_Field_write( tzfile, tzfield, zdata1d )
       end if
 
       deallocate( zdata1d )
 
     else if ( tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS ) then
-      tzfield%ndimlist(:) = NMNHDIM_UNUSED
-
       do ji = 1, Size( pvar, 6 )
         zdata0d = pvar(1, 1, 1, 1, 1, ji)
 
-        tzfield%cmnhname   = tpfields(ji)%cmnhname
-        tzfield%cstdname   = tpfields(ji)%cstdname
-        tzfield%clongname  = tpfields(ji)%clongname
-        tzfield%cunits     = tpfields(ji)%cunits
-        tzfield%cdir       = '--'
-        tzfield%ccomment   = tpfields(ji)%ccomment
-        tzfield%ngrid      = tpfields(ji)%ngrid
-        tzfield%ntype      = tpfields(ji)%ntype
-        tzfield%ndims      = 2
-        tzfield%ltimedep   = .false.
-
         if ( gsplit ) then
-          !Add budget time dimension
-          tzfield%ndims = 1
-          tzfield%ndimlist(1) = NMNHDIM_BUDGET_TIME
+          !Remark: [ integer:: ] is a constructor for a zero-size array of integers, [] is not allowed (type can not be determined)
+          call Prepare_diachro_write( tpfields(ji), tzfield, [ integer:: ], kbutimepos = 1 )
 
           !Create the metadata of the field (has to be done only once)
           if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
 
           call IO_Field_write( tzfile, tzfield, [ zdata0d ], koffset= [ ( nbutshift - 1 ) * nbusubwrite ] )
         else
+          !Remark: [ integer:: ] is a constructor for a zero-size array of integers, [] is not allowed (type can not be determined)
+          call Prepare_diachro_write( tpfields(ji), tzfield, [ integer:: ] )
           call IO_Field_write( tzfile, tzfield, zdata0d )
         end if
       end do
@@ -1079,43 +988,20 @@ select case ( idims )
 
   case (2)
 
-    if (       ( tpfields(1)%ndimlist(1) == NMNHDIM_NI .or. tpfields(1)%ndimlist(1) == NMNHDIM_NI_U .or. &
-                 tpfields(1)%ndimlist(1) == NMNHDIM_NI_V .or. tpfields(1)%ndimlist(1) == NMNHDIM_BUDGET_CART_NI &
-                 .or. tpfields(1)%ndimlist(1) == NMNHDIM_BUDGET_CART_NI_U &
-                 .or. tpfields(1)%ndimlist(1) == NMNHDIM_BUDGET_CART_NI_V )     &
-         .and. ( tpfields(1)%ndimlist(2) == NMNHDIM_NJ .or. tpfields(1)%ndimlist(2) == NMNHDIM_NJ_U .or. &
-                  tpfields(1)%ndimlist(2) == NMNHDIM_NJ_V .or. tpfields(1)%ndimlist(2) == NMNHDIM_BUDGET_CART_NJ .or. &
-                  tpfields(1)%ndimlist(2) == NMNHDIM_BUDGET_CART_NJ_U &
-                 .or. tpfields(1)%ndimlist(2) == NMNHDIM_BUDGET_CART_NJ_V ) ) then
+    if (       Any( tpfields(1)%ndimlist(1) == [ NMNHDIM_NI, NMNHDIM_NI_U, NMNHDIM_NI_V, NMNHDIM_BUDGET_CART_NI, &
+                                                 NMNHDIM_BUDGET_CART_NI_U, NMNHDIM_BUDGET_CART_NI_V ] )          &
+         .and. Any( tpfields(1)%ndimlist(2) == [ NMNHDIM_NJ, NMNHDIM_NJ_U, NMNHDIM_NJ_V, NMNHDIM_BUDGET_CART_NJ, &
+                                                 NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NJ_V ] )          ) then
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(1)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(2)
-      tzfield%ndimlist(3:) = NMNHDIM_UNUSED
-
       allocate( zdata2d( size(pvar,1), size(pvar,2) ) )
-
       zdata2d(:,:) = pvar(:, :, 1, 1, 1, 1)
-
-      TZFIELD%CMNHNAME   = tpfields(1)%cmnhname
-      TZFIELD%CSTDNAME   = tpfields(1)%cstdname
-      TZFIELD%CLONGNAME  = tpfields(1)%clongname
-      TZFIELD%CUNITS     = tpfields(1)%cunits
-      TZFIELD%CDIR       = '--'
-      TZFIELD%CCOMMENT   = tpfields(1)%ccomment
-      TZFIELD%NGRID      = tpfields(1)%ngrid
-      TZFIELD%NTYPE      = tpfields(1)%ntype
-      TZFIELD%NDIMS      = 2
-      TZFIELD%LTIMEDEP   = .FALSE.
 
       if ( gsplit ) then
         if ( htype /= 'CART' ) call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
                     ': group ' // Trim( hgroup ) //': gsplit=T not implemented for these dimensions and htype/=CART' )
 
-        !Add budget time dimension
-        tzfield%ndims = 3
-        tzfield%ndimlist(3) = NMNHDIM_BUDGET_TIME
+        call Prepare_diachro_write( tpfields(1), tzfield, [ 1, 2 ], kbutimepos =  3 )
 
         !Create the metadata of the field (has to be done only once)
         if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
@@ -1123,48 +1009,29 @@ select case ( idims )
         call IO_Field_write( tzfile, tzfield, Reshape( zdata2d, [ Size(zdata2d,1), Size(zdata2d,2), 1 ] ), &
                              koffset= [ 0, 0, ( nbutshift - 1 ) * nbusubwrite ] )
       else
+        call Prepare_diachro_write( tpfields(1), tzfield, [ 1, 2 ] )
         call IO_Field_write( tzfile, tzfield, zdata2d )
       end if
 
       deallocate( zdata2d )
 
-    else if (       ( tpfields(1)%ndimlist(1) == NMNHDIM_NI .or. tpfields(1)%ndimlist(1) == NMNHDIM_NI_U &
-                      .or. tpfields(1)%ndimlist(1) == NMNHDIM_NI_V .or. tpfields(1)%ndimlist(1) == NMNHDIM_BUDGET_CART_NI &
-                      .or. tpfields(1)%ndimlist(1) == NMNHDIM_BUDGET_CART_NI_U &
-                 .or. tpfields(1)%ndimlist(1) == NMNHDIM_BUDGET_CART_NI_V )     &
-       .and.  ( tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL .or. tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL_W &
-           .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_CART_LEVEL &
-           .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_CART_LEVEL_W ) ) then
+    else if (       Any( tpfields(1)%ndimlist(1) == [ NMNHDIM_NI, NMNHDIM_NI_U, NMNHDIM_NI_V, NMNHDIM_BUDGET_CART_NI, &
+                                                      NMNHDIM_BUDGET_CART_NI_U, NMNHDIM_BUDGET_CART_NI_V ] )          &
+              .and. Any( tpfields(1)%ndimlist(3) == [ NMNHDIM_LEVEL, NMNHDIM_LEVEL_W,                                 &
+                                                      NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W ] )      ) then
 
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(1)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(3)
-      tzfield%ndimlist(3:) = NMNHDIM_UNUSED
 
       allocate( zdata2d( size(pvar,1), size(pvar,3) ) )
 
       zdata2d(:,:) = pvar(:, 1, :, 1, 1, 1)
 
-      TZFIELD%CMNHNAME   = tpfields(1)%cmnhname
-      TZFIELD%CSTDNAME   = tpfields(1)%cstdname
-      TZFIELD%CLONGNAME  = tpfields(1)%clongname
-      TZFIELD%CUNITS     = tpfields(1)%cunits
-      TZFIELD%CDIR       = '--'
-      TZFIELD%CCOMMENT   = tpfields(1)%ccomment
-      TZFIELD%NGRID      = tpfields(1)%ngrid
-      TZFIELD%NTYPE      = tpfields(1)%ntype
-      TZFIELD%NDIMS      = 2
-      TZFIELD%LTIMEDEP   = .FALSE.
-
       if ( gsplit ) then
         if ( htype /= 'CART' ) call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
                     ': group ' // Trim( hgroup ) //': gsplit=T not implemented for these dimensions and htype/=CART' )
 
-        !Add budget time dimension
-        tzfield%ndims = 3
-        tzfield%ndimlist(3) = NMNHDIM_BUDGET_TIME
+        call Prepare_diachro_write( tpfields(1), tzfield, [ 1, 3 ], kbutimepos =  3 )
 
         !Create the metadata of the field (has to be done only once)
         if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
@@ -1172,48 +1039,29 @@ select case ( idims )
         call IO_Field_write( tzfile, tzfield, Reshape( zdata2d, [ Size(zdata2d,1), Size(zdata2d,2), 1 ] ), &
                              koffset= [ 0, 0, ( nbutshift - 1 ) * nbusubwrite ] )
       else
+        call Prepare_diachro_write( tpfields(1), tzfield, [ 1, 3 ] )
         call IO_Field_write( tzfile, tzfield, zdata2d )
       end if
 
       deallocate( zdata2d )
 
-    else if (       ( tpfields(1)%ndimlist(2) == NMNHDIM_NJ .or. tpfields(1)%ndimlist(2) == NMNHDIM_NJ_U &
-                     .or. tpfields(1)%ndimlist(2) == NMNHDIM_NJ_V .or. tpfields(1)%ndimlist(2) == NMNHDIM_BUDGET_CART_NJ &
-                     .or. tpfields(1)%ndimlist(2) == NMNHDIM_BUDGET_CART_NJ_U &
-                 .or. tpfields(1)%ndimlist(2) == NMNHDIM_BUDGET_CART_NJ_V )     &
-       .and.  ( tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL .or. tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL_W &
-           .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_CART_LEVEL &
-           .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_CART_LEVEL_W ) ) then
+    else if (       Any( tpfields(1)%ndimlist(2) == [ NMNHDIM_NJ, NMNHDIM_NJ_U, NMNHDIM_NJ_V, NMNHDIM_BUDGET_CART_NJ, &
+                                                      NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NJ_V ] )          &
+              .and. Any( tpfields(1)%ndimlist(3) == [ NMNHDIM_LEVEL, NMNHDIM_LEVEL_W,                                 &
+                                                      NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W ] )      ) then
 
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(2)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(3)
-      tzfield%ndimlist(3:) = NMNHDIM_UNUSED
 
       allocate( zdata2d( size(pvar,2), size(pvar,3) ) )
 
       zdata2d(:,:) = pvar(1, :, :, 1, 1, 1)
 
-      TZFIELD%CMNHNAME   = tpfields(1)%cmnhname
-      TZFIELD%CSTDNAME   = tpfields(1)%cstdname
-      TZFIELD%CLONGNAME  = tpfields(1)%clongname
-      TZFIELD%CUNITS     = tpfields(1)%cunits
-      TZFIELD%CDIR       = '--'
-      TZFIELD%CCOMMENT   = tpfields(1)%ccomment
-      TZFIELD%NGRID      = tpfields(1)%ngrid
-      TZFIELD%NTYPE      = tpfields(1)%ntype
-      TZFIELD%NDIMS      = 2
-      TZFIELD%LTIMEDEP   = .FALSE.
-
       if ( gsplit ) then
         if ( htype /= 'CART' ) call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
                     ': group ' // Trim( hgroup ) //': gsplit=T not implemented for these dimensions and htype/=CART' )
 
-        !Add budget time dimension
-        tzfield%ndims = 3
-        tzfield%ndimlist(3) = NMNHDIM_BUDGET_TIME
+        call Prepare_diachro_write( tpfields(1), tzfield, [ 2, 3 ], kbutimepos =  3 )
 
         !Create the metadata of the field (has to be done only once)
         if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
@@ -1221,6 +1069,7 @@ select case ( idims )
         call IO_Field_write( tzfile, tzfield, Reshape( zdata2d, [ Size(zdata2d,1), Size(zdata2d,2), 1 ] ), &
                              koffset= [ 0, 0, ( nbutshift - 1 ) * nbusubwrite ] )
       else
+        call Prepare_diachro_write( tpfields(1), tzfield, [ 2, 3 ] )
         call IO_Field_write( tzfile, tzfield, zdata2d )
       end if
 
@@ -1228,29 +1077,13 @@ select case ( idims )
 
     else if (  Any( tpfields(1)%ndimlist(1) == [ NMNHDIM_BUDGET_CART_NI, NMNHDIM_BUDGET_CART_NI_U, NMNHDIM_BUDGET_CART_NI_V ] ) &
               .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS ) then
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(1)
-      tzfield%ndimlist(2:) = NMNHDIM_UNUSED
-
       Allocate( zdata1d(Size( pvar, 1 )) )
 
       do ji = 1, Size( pvar, 6 )
         zdata1d(:) = pvar(:, 1, 1, 1, 1, ji)
 
-        tzfield%cmnhname   = tpfields(ji)%cmnhname
-        tzfield%cstdname   = tpfields(ji)%cstdname
-        tzfield%clongname  = tpfields(ji)%clongname
-        tzfield%cunits     = tpfields(ji)%cunits
-        tzfield%cdir       = '--'
-        tzfield%ccomment   = tpfields(ji)%ccomment
-        tzfield%ngrid      = tpfields(ji)%ngrid
-        tzfield%ntype      = tpfields(ji)%ntype
-        tzfield%ndims      = 2
-        tzfield%ltimedep   = .false.
-
         if ( gsplit ) then
-          !Add budget time dimension
-          tzfield%ndims = 2
-          tzfield%ndimlist(2) = NMNHDIM_BUDGET_TIME
+          call Prepare_diachro_write( tpfields(ji), tzfield, [ 1 ], kbutimepos =  2 )
 
           !Create the metadata of the field (has to be done only once)
           if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
@@ -1258,6 +1091,7 @@ select case ( idims )
           call IO_Field_write( tzfile, tzfield, Reshape( zdata1d, [ Size(zdata1d,1), 1 ] ), &
                                koffset= [ 0, ( nbutshift - 1 ) * nbusubwrite ] )
         else
+          call Prepare_diachro_write( tpfields(ji), tzfield, [ 1 ] )
           call IO_Field_write( tzfile, tzfield, zdata1d )
         end if
       end do
@@ -1266,29 +1100,13 @@ select case ( idims )
 
     else if (  Any( tpfields(1)%ndimlist(2) == [ NMNHDIM_BUDGET_CART_NJ, NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NJ_V ] ) &
               .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS ) then
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(2)
-      tzfield%ndimlist(2:) = NMNHDIM_UNUSED
-
       Allocate( zdata1d(Size( pvar, 2 )) )
 
       do ji = 1, Size( pvar, 6 )
         zdata1d(:) = pvar(1, :, 1, 1, 1, ji)
 
-        tzfield%cmnhname   = tpfields(ji)%cmnhname
-        tzfield%cstdname   = tpfields(ji)%cstdname
-        tzfield%clongname  = tpfields(ji)%clongname
-        tzfield%cunits     = tpfields(ji)%cunits
-        tzfield%cdir       = '--'
-        tzfield%ccomment   = tpfields(ji)%ccomment
-        tzfield%ngrid      = tpfields(ji)%ngrid
-        tzfield%ntype      = tpfields(ji)%ntype
-        tzfield%ndims      = 2
-        tzfield%ltimedep   = .false.
-
         if ( gsplit ) then
-          !Add budget time dimension
-          tzfield%ndims = 2
-          tzfield%ndimlist(2) = NMNHDIM_BUDGET_TIME
+          call Prepare_diachro_write( tpfields(ji), tzfield, [ 2 ], kbutimepos =  2 )
 
           !Create the metadata of the field (has to be done only once)
           if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
@@ -1296,6 +1114,7 @@ select case ( idims )
           call IO_Field_write( tzfile, tzfield, Reshape( zdata1d, [ Size(zdata1d,1), 1 ] ), &
                                koffset= [ 0, ( nbutshift - 1 ) * nbusubwrite ] )
         else
+          call Prepare_diachro_write( tpfields(ji), tzfield, [ 2 ] )
           call IO_Field_write( tzfile, tzfield, zdata1d )
         end if
       end do
@@ -1313,24 +1132,11 @@ select case ( idims )
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
 
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(3)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(4)
-      tzfield%ndimlist(3:) = NMNHDIM_UNUSED
-
       allocate( zdata2d( size(pvar,3), size(pvar,4) ) )
 
       zdata2d(:,:) = pvar(1, 1, :, :, 1, 1)
 
-      TZFIELD%CMNHNAME   = tpfields(1)%cmnhname
-      TZFIELD%CSTDNAME   = tpfields(1)%cstdname
-      TZFIELD%CLONGNAME  = tpfields(1)%clongname
-      TZFIELD%CUNITS     = tpfields(1)%cunits
-      TZFIELD%CDIR       = '--'
-      TZFIELD%CCOMMENT   = tpfields(1)%ccomment
-      TZFIELD%NGRID      = tpfields(1)%ngrid
-      TZFIELD%NTYPE      = tpfields(1)%ntype
-      TZFIELD%NDIMS      = 2
-      TZFIELD%LTIMEDEP   = .FALSE.
+      call Prepare_diachro_write( tpfields(1), tzfield, [ 3, 4 ] )
       CALL IO_Field_write( tzfile, tzfield, zdata2d )
 
       deallocate( zdata2d )
@@ -1346,21 +1152,8 @@ select case ( idims )
       do ji = 1, Size( pvar, 6 )
         zdata1d(:) = pvar(1, 1, :, 1, 1, ji)
 
-        tzfield%cmnhname   = tpfields(ji)%cmnhname
-        tzfield%cstdname   = tpfields(ji)%cstdname
-        tzfield%clongname  = tpfields(ji)%clongname
-        tzfield%cunits     = tpfields(ji)%cunits
-        tzfield%cdir       = '--'
-        tzfield%ccomment   = tpfields(ji)%ccomment
-        tzfield%ngrid      = tpfields(ji)%ngrid
-        tzfield%ntype      = tpfields(ji)%ntype
-        tzfield%ndims      = 1
-        tzfield%ltimedep   = .FALSE.
-
         if ( gsplit ) then
-          !Add budget time dimension
-          tzfield%ndims = 2
-          tzfield%ndimlist(2) = NMNHDIM_BUDGET_TIME
+          call Prepare_diachro_write( tpfields(ji), tzfield, [ 3 ], kbutimepos =  2 )
 
           !Create the metadata of the field (has to be done only once)
           if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
@@ -1368,6 +1161,7 @@ select case ( idims )
           call IO_Field_write( tzfile, tzfield, Reshape( zdata1d, [ Size(zdata1d,1), 1 ] ), &
                                koffset= [ 0, ( nbutshift - 1 ) * nbusubwrite ] )
         else
+          call Prepare_diachro_write( tpfields(ji), tzfield, [ 3 ] )
           call IO_Field_write( tzfile, tzfield, zdata1d )
         end if
       end do
@@ -1378,38 +1172,26 @@ select case ( idims )
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
 
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(4)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(5)
-      tzfield%ndimlist(3:) = NMNHDIM_UNUSED
-
       Allocate( zdata2d(Size( pvar, 4 ), Size( pvar, 5 )) )
 
       zdata2d(:,:) = pvar(1, 1, 1, :, :, 1)
 
-      tzfield%cmnhname   = tpfields(1)%cmnhname
-      tzfield%cstdname   = tpfields(1)%cstdname
-      tzfield%clongname  = tpfields(1)%clongname
-      tzfield%cunits     = tpfields(1)%cunits
-      tzfield%cdir       = '--'
-      tzfield%ccomment   = tpfields(1)%ccomment
-      tzfield%ngrid      = tpfields(1)%ngrid
-      tzfield%ntype      = tpfields(1)%ntype
-      tzfield%ndims      = 2
-      tzfield%ltimedep   = .false.
-
       if ( gsplit ) then
+        call Prepare_diachro_write( tpfields(1), tzfield, [ 4, 5 ], kbutimepos =  1 )
+
         !Create the metadata of the field (has to be done only once)
         if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
 
         call IO_Field_write( tzfile, tzfield, zdata2d, koffset= [ ( nbutshift - 1 ) * nbusubwrite, 0 ] )
       else
+        call Prepare_diachro_write( tpfields(1), tzfield, [ 4, 5 ] )
         call IO_Field_write( tzfile, tzfield, zdata2d )
       end if
 
       Deallocate( zdata2d )
 
     else if (  (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME &
-               .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
+                 .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
          .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_LES_SV       ) then
       if ( gsplit ) then
           call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
@@ -1419,27 +1201,16 @@ select case ( idims )
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
 
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(4)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(5)
-      tzfield%ndimlist(3:) = NMNHDIM_UNUSED
-
       allocate( zdata2d( size(pvar,4), size(pvar,5) ) )
 
       zdata2d(:,:) = pvar(1, 1, 1, :, :, 1)
 
-      TZFIELD%CMNHNAME   = tpfields(1)%cmnhname
-      TZFIELD%CSTDNAME   = tpfields(1)%cstdname
-      TZFIELD%CLONGNAME  = tpfields(1)%clongname
-      TZFIELD%CUNITS     = tpfields(1)%cunits
-      TZFIELD%CDIR       = '--'
-      TZFIELD%CCOMMENT   = tpfields(1)%ccomment
-      TZFIELD%NGRID      = tpfields(1)%ngrid
-      TZFIELD%NTYPE      = tpfields(1)%ntype
-      TZFIELD%NDIMS      = 2
-      TZFIELD%LTIMEDEP   = .FALSE.
+      call Prepare_diachro_write( tpfields(1), tzfield, [ 4, 5 ] )
+
       CALL IO_Field_write( tzfile, tzfield, zdata2d )
 
       deallocate( zdata2d )
+
     else if (  tpfields(1)%ndimlist(4) == NMNHDIM_FLYER_TIME &
          .and. tpfields(1)%ndimlist(6) == NMNHDIM_FLYER_PROC ) then
       !Correspond to FLYER_DIACHRO
@@ -1455,25 +1226,13 @@ select case ( idims )
           call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_DEF_DIM', Trim( tpfields(1)%cmnhname ) )
       end if
 
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(4)
-      tzfield%ndimlist(2:) = NMNHDIM_UNUSED
-
       allocate( zdata1d( size(pvar,4) ) )
 
       ! Loop on the processes (1 written variable per process)
       do ji = 1, size(pvar,6)
         zdata1d(:) = pvar(1, 1, 1, :, 1, ji)
 
-        TZFIELD%CMNHNAME   = tpfields(ji)%cmnhname
-        TZFIELD%CSTDNAME   = tpfields(ji)%cstdname
-        TZFIELD%CLONGNAME  = tpfields(ji)%clongname
-        TZFIELD%CUNITS     = tpfields(ji)%cunits
-        TZFIELD%CDIR       = '--'
-        TZFIELD%CCOMMENT   = tpfields(ji)%ccomment
-        TZFIELD%NGRID      = tpfields(ji)%ngrid
-        TZFIELD%NTYPE      = tpfields(ji)%ntype
-        TZFIELD%NDIMS      = 1
-        TZFIELD%LTIMEDEP   = .FALSE.
+        call Prepare_diachro_write( tpfields(ji), tzfield, [ 4 ] )
         CALL IO_Field_write( tzfile, tzfield, zdata1d )
       end do
 
@@ -1486,25 +1245,13 @@ select case ( idims )
                           ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
       end if
 
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(4)
-      tzfield%ndimlist(2:) = NMNHDIM_UNUSED
-
       allocate( zdata1d( size(pvar,4) ) )
 
       ! Loop on the processes (1 written variable per process)
       do ji = 1, size(pvar,6)
         zdata1d(:) = pvar(1, 1, 1, :, 1, ji)
 
-        TZFIELD%CMNHNAME   = tpfields(ji)%cmnhname
-        TZFIELD%CSTDNAME   = tpfields(ji)%cstdname
-        TZFIELD%CLONGNAME  = tpfields(ji)%clongname
-        TZFIELD%CUNITS     = tpfields(ji)%cunits
-        TZFIELD%CDIR       = '--'
-        TZFIELD%CCOMMENT   = tpfields(ji)%ccomment
-        TZFIELD%NGRID      = tpfields(ji)%ngrid
-        TZFIELD%NTYPE      = tpfields(ji)%ntype
-        TZFIELD%NDIMS      = 1
-        TZFIELD%LTIMEDEP   = .FALSE.
+        call Prepare_diachro_write( tpfields(ji), tzfield, [ 4 ] )
         CALL IO_Field_write( tzfile, tzfield, zdata1d )
       end do
 
@@ -1517,25 +1264,13 @@ select case ( idims )
                           ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
       end if
 
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(4)
-      tzfield%ndimlist(2:) = NMNHDIM_UNUSED
-
       allocate( zdata1d( size(pvar,4) ) )
 
       ! Loop on the processes (1 written variable per process)
       do ji = 1, size(pvar,6)
         zdata1d(:) = pvar(1, 1, 1, :, 1, ji)
 
-        TZFIELD%CMNHNAME   = tpfields(ji)%cmnhname
-        TZFIELD%CSTDNAME   = tpfields(ji)%cstdname
-        TZFIELD%CLONGNAME  = tpfields(ji)%clongname
-        TZFIELD%CUNITS     = tpfields(ji)%cunits
-        TZFIELD%CDIR       = '--'
-        TZFIELD%CCOMMENT   = tpfields(ji)%ccomment
-        TZFIELD%NGRID      = tpfields(ji)%ngrid
-        TZFIELD%NTYPE      = tpfields(ji)%ntype
-        TZFIELD%NDIMS      = 1
-        TZFIELD%LTIMEDEP   = .FALSE.
+        call Prepare_diachro_write( tpfields(ji), tzfield, [ 4 ] )
         CALL IO_Field_write( tzfile, tzfield, zdata1d )
       end do
 
@@ -1553,50 +1288,28 @@ select case ( idims )
 
 
   case (3)
-    if (       ( tpfields(1)%ndimlist(1) == NMNHDIM_NI .or. tpfields(1)%ndimlist(1) == NMNHDIM_NI_U .or. &
-                 tpfields(1)%ndimlist(1) == NMNHDIM_NI_V .or. tpfields(1)%ndimlist(1) == NMNHDIM_BUDGET_CART_NI &
-                 .or. tpfields(1)%ndimlist(1) == NMNHDIM_BUDGET_CART_NI_U &
-                 .or. tpfields(1)%ndimlist(1) == NMNHDIM_BUDGET_CART_NI_V )     &
-         .and. ( tpfields(1)%ndimlist(2) == NMNHDIM_NJ .or. tpfields(1)%ndimlist(2) == NMNHDIM_NJ_U .or. &
-                  tpfields(1)%ndimlist(2) == NMNHDIM_NJ_V .or. tpfields(1)%ndimlist(2) == NMNHDIM_BUDGET_CART_NJ .or. &
-                  tpfields(1)%ndimlist(2) == NMNHDIM_BUDGET_CART_NJ_U &
-                 .or. tpfields(1)%ndimlist(2) == NMNHDIM_BUDGET_CART_NJ_V ) &
-       .and.  ( tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL .or. tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL_W &
-           .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_CART_LEVEL &
-           .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_CART_LEVEL_W ) ) then
+
+    if (       Any( tpfields(1)%ndimlist(1) == [ NMNHDIM_NI, NMNHDIM_NI_U, NMNHDIM_NI_V, NMNHDIM_BUDGET_CART_NI, &
+                                                 NMNHDIM_BUDGET_CART_NI_U, NMNHDIM_BUDGET_CART_NI_V ] )          &
+         .and. Any( tpfields(1)%ndimlist(2) == [ NMNHDIM_NJ, NMNHDIM_NJ_U, NMNHDIM_NJ_V, NMNHDIM_BUDGET_CART_NJ, &
+                                                 NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NJ_V ] )          &
+         .and. Any( tpfields(1)%ndimlist(3) == [ NMNHDIM_LEVEL, NMNHDIM_LEVEL_W,                                 &
+                                                 NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W ] )      ) then
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(1)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(2)
-      tzfield%ndimlist(3)  = tpfields(1)%ndimlist(3)
-      tzfield%ndimlist(4:) = NMNHDIM_UNUSED
-
       allocate( zdata3d( size(pvar,1), size(pvar,2), size(pvar,3) ) )
 
       zdata3d(:,:,:) = pvar(:, :, :, 1, 1, 1)
-
-      TZFIELD%CMNHNAME   = tpfields(1)%cmnhname
-      TZFIELD%CSTDNAME   = tpfields(1)%cstdname
-      TZFIELD%CLONGNAME  = tpfields(1)%clongname
-      TZFIELD%CUNITS     = tpfields(1)%cunits
-      TZFIELD%CCOMMENT   = tpfields(1)%ccomment
-      TZFIELD%NGRID      = tpfields(1)%ngrid
-      TZFIELD%NTYPE      = tpfields(1)%ntype
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .FALSE.
 
       if ( gsplit ) then
         if ( htype /= 'CART' ) call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
                     ': group ' // Trim( hgroup ) //': gsplit=T not implemented for these dimensions and htype/=CART' )
 
         if ( htype == 'CART' .and. .not. oicp .and. .not. ojcp ) then
+          call Prepare_diachro_write( tpfields(1), tzfield, [ 1, 2, 3 ], kbutimepos = 4 )
+
           !Data is distributed between all the processes
           tzfield%cdir = 'XY'
-
-          !Add budget time dimension
-          tzfield%ndims = 4
-          tzfield%ndimlist(4) = NMNHDIM_BUDGET_TIME
 
           !Create the metadata of the field (has to be done only once)
           if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
@@ -1611,13 +1324,17 @@ select case ( idims )
         end if
       else
         if ( htype == 'CART' .and. .not. oicp .and. .not. ojcp ) then
+          call Prepare_diachro_write( tpfields(1), tzfield, [ 1, 2, 3 ] )
+
           !Data is distributed between all the processes
           tzfield%cdir = 'XY'
           call IO_Field_write_box( tzfile, tzfield, 'BUDGET', zdata3d, &
                                   kil + jphext, kih + jphext, kjl + jphext, kjh + jphext )
         else
+          call Prepare_diachro_write( tpfields(1), tzfield, [ 1, 2, 3 ]  )
+
           !Data is already collected on the master process
-          tzfield%cdir = '--'
+          !tzfield%cdir = '--'
           call IO_Field_write( tzfile, tzfield, zdata3d )
         end if
       end if
@@ -1626,32 +1343,15 @@ select case ( idims )
 
     else if (       Any(tpfields(1)%ndimlist(1) == [ NMNHDIM_BUDGET_CART_NI, NMNHDIM_BUDGET_CART_NI_U, NMNHDIM_BUDGET_CART_NI_V ]) &
               .and. Any(tpfields(1)%ndimlist(2) == [ NMNHDIM_BUDGET_CART_NJ, NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NJ_V ]) &
-              .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS    ) then
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(1)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(2)
-      tzfield%ndimlist(3:) = NMNHDIM_UNUSED
-
+              .and.     tpfields(1)%ndimlist(6) ==   NMNHDIM_BUDGET_NGROUPS                                                   ) then
       Allocate( zdata2d(Size( pvar, 1 ), Size( pvar, 2 )) )
 
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
         zdata2d(:, :) = pvar(:, :, 1, 1, 1, ji)
 
-        tzfield%cmnhname   = tpfields(ji)%cmnhname
-        tzfield%cstdname   = tpfields(ji)%cstdname
-        tzfield%clongname  = tpfields(ji)%clongname
-        tzfield%cunits     = tpfields(ji)%cunits
-        tzfield%cdir       = '--'
-        tzfield%ccomment   = tpfields(ji)%ccomment
-        tzfield%ngrid      = tpfields(ji)%ngrid
-        tzfield%ntype      = tpfields(ji)%ntype
-        tzfield%ndims      = 2
-        tzfield%ltimedep   = .false.
-
         if ( gsplit ) then
-          !Add budget time dimension
-          tzfield%ndims = 3
-          tzfield%ndimlist(3) = NMNHDIM_BUDGET_TIME
+          call Prepare_diachro_write( tpfields(ji), tzfield, [ 1, 2 ], kbutimepos = 3 )
 
           !Create the metadata of the field (has to be done only once)
           if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
@@ -1660,6 +1360,7 @@ select case ( idims )
                                Reshape( zdata2d, [ Size(zdata2d,1), Size(zdata2d,2), 1 ] ), &
                                koffset= [ 0, 0, ( nbutshift - 1 ) * nbusubwrite ]           )
         else
+          call Prepare_diachro_write( tpfields(ji), tzfield, [ 1, 2 ] )
           call IO_Field_write( tzfile, tzfield, zdata2d )
         end if
       end do
@@ -1667,32 +1368,16 @@ select case ( idims )
       Deallocate( zdata2d )
 
     else if ( Any ( tpfields(1)%ndimlist(1) == [ NMNHDIM_BUDGET_CART_NI, NMNHDIM_BUDGET_CART_NI_U, NMNHDIM_BUDGET_CART_NI_V ] ) &
-              .and. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_CART_LEVEL &
-              .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS    ) then
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(1)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(3)
-      tzfield%ndimlist(3:) = NMNHDIM_UNUSED
-
+              .and. tpfields(1)%ndimlist(3) ==   NMNHDIM_BUDGET_CART_LEVEL                                                      &
+              .and. tpfields(1)%ndimlist(6) ==   NMNHDIM_BUDGET_NGROUPS                                                      ) then
       Allocate( zdata2d(Size( pvar, 1 ), Size( pvar, 3 )) )
 
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
         zdata2d(:, :) = pvar(:, 1, :, 1, 1, ji)
 
-        tzfield%cmnhname   = tpfields(ji)%cmnhname
-        tzfield%cstdname   = tpfields(ji)%cstdname
-        tzfield%clongname  = tpfields(ji)%clongname
-        tzfield%cunits     = tpfields(ji)%cunits
-        tzfield%cdir       = '--'
-        tzfield%ccomment   = tpfields(ji)%ccomment
-        tzfield%ngrid      = tpfields(ji)%ngrid
-        tzfield%ntype      = tpfields(ji)%ntype
-        tzfield%ndims      = 2
-        tzfield%ltimedep   = .false.
         if ( gsplit ) then
-          !Add budget time dimension
-          tzfield%ndims = 3
-          tzfield%ndimlist(3) = NMNHDIM_BUDGET_TIME
+          call Prepare_diachro_write( tpfields(ji), tzfield, [ 1, 3 ], kbutimepos = 3 )
 
           !Create the metadata of the field (has to be done only once)
           if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
@@ -1701,38 +1386,23 @@ select case ( idims )
                                Reshape( zdata2d, [ Size(zdata2d,1), Size(zdata2d,2), 1 ] ), &
                                koffset= [ 0, 0, ( nbutshift - 1 ) * nbusubwrite ]           )
         else
+          call Prepare_diachro_write( tpfields(ji), tzfield, [ 1, 3 ] )
           call IO_Field_write( tzfile, tzfield, zdata2d )
         end if
       end do
 
       Deallocate( zdata2d )
     else if ( Any ( tpfields(1)%ndimlist(2) == [ NMNHDIM_BUDGET_CART_NJ, NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NJ_V ] ) &
-              .and. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_CART_LEVEL &
-              .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS    ) then
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(2)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(3)
-      tzfield%ndimlist(3:) = NMNHDIM_UNUSED
-
+              .and. tpfields(1)%ndimlist(3) ==   NMNHDIM_BUDGET_CART_LEVEL                                                      &
+              .and. tpfields(1)%ndimlist(6) ==   NMNHDIM_BUDGET_NGROUPS                                                      ) then
       Allocate( zdata2d(Size( pvar, 2 ), Size( pvar, 3 )) )
 
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
         zdata2d(:, :) = pvar(1, :, :, 1, 1, ji)
 
-        tzfield%cmnhname   = tpfields(ji)%cmnhname
-        tzfield%cstdname   = tpfields(ji)%cstdname
-        tzfield%clongname  = tpfields(ji)%clongname
-        tzfield%cunits     = tpfields(ji)%cunits
-        tzfield%cdir       = '--'
-        tzfield%ccomment   = tpfields(ji)%ccomment
-        tzfield%ngrid      = tpfields(ji)%ngrid
-        tzfield%ntype      = tpfields(ji)%ntype
-        tzfield%ndims      = 2
-        tzfield%ltimedep   = .false.
         if ( gsplit ) then
-          !Add budget time dimension
-          tzfield%ndims = 3
-          tzfield%ndimlist(3) = NMNHDIM_BUDGET_TIME
+          call Prepare_diachro_write( tpfields(ji), tzfield, [ 2, 3 ], kbutimepos = 3 )
 
           !Create the metadata of the field (has to be done only once)
           if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
@@ -1741,51 +1411,39 @@ select case ( idims )
                                Reshape( zdata2d, [ Size(zdata2d,1), Size(zdata2d,2), 1 ] ), &
                                koffset= [ 0, 0, ( nbutshift - 1 ) * nbusubwrite ]           )
         else
+          call Prepare_diachro_write( tpfields(ji), tzfield, [ 2, 3 ] )
           call IO_Field_write( tzfile, tzfield, zdata2d )
         end if
       end do
 
       Deallocate( zdata2d )
-    else if (  ( tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_MASK_LEVEL &
-                  .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_MASK_LEVEL_W ) &
-       .and.    tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_TIME &
-       .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_MASK_NBUMASK      ) then
+    else if (         (      tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_MASK_LEVEL     &
+                        .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_MASK_LEVEL_W ) &
+               .and.         tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_TIME           &
+               .and.         tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_MASK_NBUMASK   ) then
       !Correspond to Store_one_budget_rho (MASK)
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(3)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(4)
-      tzfield%ndimlist(3)  = tpfields(1)%ndimlist(5)
-      tzfield%ndimlist(4:) = NMNHDIM_UNUSED
 
       allocate( zdata3d( size(pvar,3), size(pvar,4), size(pvar,5) ) )
 
       zdata3d(:,:,:) = pvar(1, 1, :, :, :, 1)
 
-      TZFIELD%CMNHNAME   = tpfields(1)%cmnhname
-      TZFIELD%CSTDNAME   = tpfields(1)%cstdname
-      TZFIELD%CLONGNAME  = tpfields(1)%clongname
-      TZFIELD%CUNITS     = tpfields(1)%cunits
-      TZFIELD%CDIR       = '--'
-      TZFIELD%CCOMMENT   = tpfields(1)%ccomment
-      TZFIELD%NGRID      = tpfields(1)%ngrid
-      TZFIELD%NTYPE      = tpfields(1)%ntype
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .FALSE.
       if ( gsplit ) then
+        call Prepare_diachro_write( tpfields(1), tzfield, [ 3, 4, 5 ], kbutimepos = 2 )
         !Create the metadata of the field (has to be done only once)
         if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
         call IO_Field_write( tzfile, tzfield, zdata3d(:,:,:), koffset= [ 0, ( nbutshift - 1 ) * nbusubwrite, 0 ] )
       else
+        call Prepare_diachro_write( tpfields(1), tzfield, [ 3, 4, 5 ] )
         call IO_Field_write( tzfile, tzfield, zdata3d )
       end if
 
       deallocate( zdata3d )
-    else if (       tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL     &
-       .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME &
-               .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
-       .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_LES_MASK      ) then
+    else if (              tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL      &
+              .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
+                      .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
+              .and.        tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_LES_MASK       ) then
       if ( gsplit ) then
           call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
                           ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
@@ -1796,26 +1454,13 @@ select case ( idims )
                         'last dimension size of pvar is not equal to nles_masks (variable ' &
                         // Trim( tpfields(1)%cmnhname ) // ')' )
 
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(3)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(4)
-      tzfield%ndimlist(3:) = NMNHDIM_UNUSED
-
       allocate( zdata2d( size(pvar,3), size(pvar,4) ) )
 
       ! Loop on the masks (1 written variable per mask)
       do ji = 1, size(pvar,6)
         zdata2d(:,:) = pvar(1, 1, :, :, 1, ji)
 
-        TZFIELD%CMNHNAME   = tpfields(ji)%cmnhname
-        TZFIELD%CSTDNAME   = tpfields(ji)%cstdname
-        TZFIELD%CLONGNAME  = tpfields(ji)%clongname
-        TZFIELD%CUNITS     = tpfields(ji)%cunits
-        TZFIELD%CDIR       = '--'
-        TZFIELD%CCOMMENT   = tpfields(ji)%ccomment
-        TZFIELD%NGRID      = tpfields(ji)%ngrid
-        TZFIELD%NTYPE      = tpfields(ji)%ntype
-        TZFIELD%NDIMS      = 2
-        TZFIELD%LTIMEDEP   = .FALSE.
+        call Prepare_diachro_write( tpfields(ji), tzfield, [ 3, 4 ] )
         CALL IO_Field_write( tzfile, tzfield, zdata2d )
       end do
 
@@ -1829,34 +1474,21 @@ select case ( idims )
                           ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
       end if
 
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(3)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(4)
-      tzfield%ndimlist(3:) = NMNHDIM_UNUSED
-
       allocate( zdata2d( size(pvar,3), size(pvar,4) ) )
 
       ! Loop on the masks (1 written variable per mask)
       do ji = 1, size(pvar,6)
         zdata2d(:,:) = pvar(1, 1, :, :, 1, ji)
 
-        TZFIELD%CMNHNAME   = tpfields(ji)%cmnhname
-        TZFIELD%CSTDNAME   = tpfields(ji)%cstdname
-        TZFIELD%CLONGNAME  = tpfields(ji)%clongname
-        TZFIELD%CUNITS     = tpfields(ji)%cunits
-        TZFIELD%CDIR       = '--'
-        TZFIELD%CCOMMENT   = tpfields(ji)%ccomment
-        TZFIELD%NGRID      = tpfields(ji)%ngrid
-        TZFIELD%NTYPE      = tpfields(ji)%ntype
-        TZFIELD%NDIMS      = 2
-        TZFIELD%LTIMEDEP   = .FALSE.
+        call Prepare_diachro_write( tpfields(ji), tzfield, [ 3, 4 ] )
         CALL IO_Field_write( tzfile, tzfield, zdata2d )
       end do
 
       deallocate( zdata2d )
-    else if (       tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL     &
-       .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME &
-               .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
-       .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_LES_SV      ) then
+    else if (              tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL      &
+              .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
+                      .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
+              .and.        tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_LES_SV         ) then
       if ( gsplit ) then
           call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
                           ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
@@ -1866,30 +1498,17 @@ select case ( idims )
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
 
       !Correspond to Les_diachro_sv_new
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(3)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(4)
-      tzfield%ndimlist(3)  = tpfields(1)%ndimlist(5)
-      tzfield%ndimlist(4:) = NMNHDIM_UNUSED
-
       allocate( zdata3d( size(pvar,3), size(pvar,4), size(pvar,5) ) )
 
       zdata3d(:,:,:) = pvar(1, 1, :, :, :, 1)
 
-      TZFIELD%CMNHNAME   = tpfields(1)%cmnhname
-      TZFIELD%CSTDNAME   = tpfields(1)%cstdname
-      TZFIELD%CLONGNAME  = tpfields(1)%clongname
-      TZFIELD%CUNITS     = tpfields(1)%cunits
-      TZFIELD%CDIR       = '--'
-      TZFIELD%CCOMMENT   = tpfields(1)%ccomment
-      TZFIELD%NGRID      = tpfields(1)%ngrid
-      TZFIELD%NTYPE      = tpfields(1)%ntype
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .FALSE.
+      call Prepare_diachro_write( tpfields(1), tzfield, [ 3, 4, 5 ] )
+
       CALL IO_Field_write( tzfile, tzfield, zdata3d )
 
       deallocate( zdata3d )
-    else if (       tpfields(1)%ndimlist(1) == NMNHDIM_SPECTRA_2PTS_NI                   &
-              .and. tpfields(1)%ndimlist(3) == NMNHDIM_SPECTRA_LEVEL                &
+    else if (              tpfields(1)%ndimlist(1) == NMNHDIM_SPECTRA_2PTS_NI       &
+              .and.        tpfields(1)%ndimlist(3) == NMNHDIM_SPECTRA_LEVEL         &
               .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
                       .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) ) then
       if ( gsplit ) then
@@ -1900,25 +1519,12 @@ select case ( idims )
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
 
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(1)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(3)
-      tzfield%ndimlist(3)  = tpfields(1)%ndimlist(4)
-      tzfield%ndimlist(4:) = NMNHDIM_UNUSED
-
       allocate( zdata3d( size(pvar,1), size(pvar,3), size(pvar,4) ) )
 
       zdata3d(:,:,:) = pvar(:, 1, :, :, 1, 1)
 
-      TZFIELD%CMNHNAME   = tpfields(1)%cmnhname
-      TZFIELD%CSTDNAME   = tpfields(1)%cstdname
-      TZFIELD%CLONGNAME  = tpfields(1)%clongname
-      TZFIELD%CUNITS     = tpfields(1)%cunits
-      TZFIELD%CDIR       = '--'
-      TZFIELD%CCOMMENT   = tpfields(1)%ccomment
-      TZFIELD%NGRID      = tpfields(1)%ngrid
-      TZFIELD%NTYPE      = tpfields(1)%ntype
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .FALSE.
+      call Prepare_diachro_write( tpfields(1), tzfield, [ 1, 3, 4 ] )
+
       CALL IO_Field_write( tzfile, tzfield, zdata3d )
 
       deallocate( zdata3d )
@@ -1934,25 +1540,12 @@ select case ( idims )
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
 
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(2)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(3)
-      tzfield%ndimlist(3)  = tpfields(1)%ndimlist(4)
-      tzfield%ndimlist(4:) = NMNHDIM_UNUSED
-
       allocate( zdata3d( size(pvar,2), size(pvar,3), size(pvar,4) ) )
 
       zdata3d(:,:,:) = pvar(1, :, :, :, 1, 1)
 
-      TZFIELD%CMNHNAME   = tpfields(1)%cmnhname
-      TZFIELD%CSTDNAME   = tpfields(1)%cstdname
-      TZFIELD%CLONGNAME  = tpfields(1)%clongname
-      TZFIELD%CUNITS     = tpfields(1)%cunits
-      TZFIELD%CDIR       = '--'
-      TZFIELD%CCOMMENT   = tpfields(1)%ccomment
-      TZFIELD%NGRID      = tpfields(1)%ngrid
-      TZFIELD%NTYPE      = tpfields(1)%ntype
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .FALSE.
+      call Prepare_diachro_write( tpfields(1), tzfield, [ 2, 3, 4 ] )
+
       CALL IO_Field_write( tzfile, tzfield, zdata3d )
 
       deallocate( zdata3d )
@@ -1972,26 +1565,13 @@ select case ( idims )
           call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_DEF_DIM', Trim( tpfields(1)%cmnhname ) )
       end if
 
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(3)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(4)
-      tzfield%ndimlist(3:) = NMNHDIM_UNUSED
-
       allocate( zdata2d( size(pvar,3), size(pvar,4) ) )
 
       ! Loop on the processes (1 written variable per process)
       do ji = 1, size(pvar,6)
         zdata2d(:, :) = pvar(1, 1, :, :, 1, ji)
 
-        TZFIELD%CMNHNAME   = tpfields(ji)%cmnhname
-        TZFIELD%CSTDNAME   = tpfields(ji)%cstdname
-        TZFIELD%CLONGNAME  = tpfields(ji)%clongname
-        TZFIELD%CUNITS     = tpfields(ji)%cunits
-        TZFIELD%CDIR       = '--'
-        TZFIELD%CCOMMENT   = tpfields(ji)%ccomment
-        TZFIELD%NGRID      = tpfields(ji)%ngrid
-        TZFIELD%NTYPE      = tpfields(ji)%ntype
-        TZFIELD%NDIMS      = 2
-        TZFIELD%LTIMEDEP   = .FALSE.
+        call Prepare_diachro_write( tpfields(ji), tzfield, [ 3, 4 ] )
         CALL IO_Field_write( tzfile, tzfield, zdata2d )
       end do
 
@@ -2005,31 +1585,18 @@ select case ( idims )
                           ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
       end if
 
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(3)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(4)
-      tzfield%ndimlist(3:) = NMNHDIM_UNUSED
-
       allocate( zdata2d( size(pvar,3), size(pvar,4) ) )
 
       ! Loop on the processes (1 written variable per process)
       do ji = 1, size(pvar,6)
         zdata2d(:, :) = pvar(1, 1, :, :, 1, ji)
 
-        TZFIELD%CMNHNAME   = tpfields(ji)%cmnhname
-        TZFIELD%CSTDNAME   = tpfields(ji)%cstdname
-        TZFIELD%CLONGNAME  = tpfields(ji)%clongname
-        TZFIELD%CUNITS     = tpfields(ji)%cunits
-        TZFIELD%CDIR       = '--'
-        TZFIELD%CCOMMENT   = tpfields(ji)%ccomment
-        TZFIELD%NGRID      = tpfields(ji)%ngrid
-        TZFIELD%NTYPE      = tpfields(ji)%ntype
-        TZFIELD%NDIMS      = 2
-        TZFIELD%LTIMEDEP   = .FALSE.
+        call Prepare_diachro_write( tpfields(ji), tzfield, [ 3, 4 ] )
         CALL IO_Field_write( tzfile, tzfield, zdata2d )
       end do
 
       deallocate( zdata2d )
-    else if (  ( tpfields(1)%ndimlist(3) == NMNHDIM_SERIES_LEVEL .or. tpfields(1)%ndimlist(3) == NMNHDIM_SERIES_LEVEL_W )      &
+    else if (  ( tpfields(1)%ndimlist(3) == NMNHDIM_SERIES_LEVEL .or. tpfields(1)%ndimlist(3) == NMNHDIM_SERIES_LEVEL_W ) &
          .and. tpfields(1)%ndimlist(4) == NMNHDIM_SERIES_TIME &
          .and. tpfields(1)%ndimlist(6) == NMNHDIM_SERIES_PROC ) then
       !Correspond to PROFILER_DIACHRO_n
@@ -2038,26 +1605,13 @@ select case ( idims )
                           ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
       end if
 
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(3)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(4)
-      tzfield%ndimlist(3:) = NMNHDIM_UNUSED
-
       allocate( zdata2d( size(pvar,3), size(pvar,4) ) )
 
       ! Loop on the processes (1 written variable per process)
       do ji = 1, size(pvar,6)
         zdata2d(:, :) = pvar(1, 1, :, :, 1, ji)
 
-        TZFIELD%CMNHNAME   = tpfields(ji)%cmnhname
-        TZFIELD%CSTDNAME   = tpfields(ji)%cstdname
-        TZFIELD%CLONGNAME  = tpfields(ji)%clongname
-        TZFIELD%CUNITS     = tpfields(ji)%cunits
-        TZFIELD%CDIR       = '--'
-        TZFIELD%CCOMMENT   = tpfields(ji)%ccomment
-        TZFIELD%NGRID      = tpfields(ji)%ngrid
-        TZFIELD%NTYPE      = tpfields(ji)%ntype
-        TZFIELD%NDIMS      = 2
-        TZFIELD%LTIMEDEP   = .FALSE.
+        call Prepare_diachro_write( tpfields(ji), tzfield, [ 3, 4 ] )
         CALL IO_Field_write( tzfile, tzfield, zdata2d )
       end do
 
@@ -2071,26 +1625,13 @@ select case ( idims )
                           ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
       end if
 
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(1)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(4)
-      tzfield%ndimlist(3:) = NMNHDIM_UNUSED
-
       allocate( zdata2d( size(pvar,1), size(pvar,4) ) )
 
       ! Loop on the processes (1 written variable per process)
       do ji = 1, size(pvar,6)
         zdata2d(:, :) = pvar(:, 1, 1, :, 1, ji)
 
-        TZFIELD%CMNHNAME   = tpfields(ji)%cmnhname
-        TZFIELD%CSTDNAME   = tpfields(ji)%cstdname
-        TZFIELD%CLONGNAME  = tpfields(ji)%clongname
-        TZFIELD%CUNITS     = tpfields(ji)%cunits
-        TZFIELD%CDIR       = '--'
-        TZFIELD%CCOMMENT   = tpfields(ji)%ccomment
-        TZFIELD%NGRID      = tpfields(ji)%ngrid
-        TZFIELD%NTYPE      = tpfields(ji)%ntype
-        TZFIELD%NDIMS      = 2
-        TZFIELD%LTIMEDEP   = .FALSE.
+        call Prepare_diachro_write( tpfields(ji), tzfield, [ 1, 4 ] )
         CALL IO_Field_write( tzfile, tzfield, zdata2d )
       end do
 
@@ -2099,9 +1640,6 @@ select case ( idims )
     else if (       tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_TIME         &
               .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_MASK_NBUMASK &
               .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS      ) then
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(4)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(5)
-      tzfield%ndimlist(3:) = NMNHDIM_UNUSED
 
       Allocate( zdata2d(Size( pvar, 4 ), Size( pvar, 5 )) )
 
@@ -2109,18 +1647,8 @@ select case ( idims )
       do ji = 1, Size( pvar, 6 )
         zdata2d(:,:) = pvar(1, 1, 1, :, :, ji)
 
-        tzfield%cmnhname   = tpfields(ji)%cmnhname
-        tzfield%cstdname   = tpfields(ji)%cstdname
-        tzfield%clongname  = tpfields(ji)%clongname
-        tzfield%cunits     = tpfields(ji)%cunits
-        tzfield%cdir       = '--'
-        tzfield%ccomment   = tpfields(ji)%ccomment
-        tzfield%ngrid      = tpfields(ji)%ngrid
-        tzfield%ntype      = tpfields(ji)%ntype
-        tzfield%ndims      = 2
-        tzfield%ltimedep   = .false.
-
         if ( gsplit ) then
+          call Prepare_diachro_write( tpfields(ji), tzfield, [ 4, 5 ], kbutimepos = 1 )
           !Create the metadata of the field (has to be done only once)
           if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
 
@@ -2138,46 +1666,28 @@ select case ( idims )
     end if
 
   case (4)
-    if (       ( tpfields(1)%ndimlist(1) == NMNHDIM_BUDGET_CART_NI .or. tpfields(1)%ndimlist(1) == NMNHDIM_BUDGET_CART_NI_U &
-                 .or. tpfields(1)%ndimlist(1) == NMNHDIM_BUDGET_CART_NI_V )     &
-         .and. ( tpfields(1)%ndimlist(2) == NMNHDIM_BUDGET_CART_NJ .or. tpfields(1)%ndimlist(2) == NMNHDIM_BUDGET_CART_NJ_U &
-                 .or. tpfields(1)%ndimlist(2) == NMNHDIM_BUDGET_CART_NJ_V ) &
-       .and.  ( tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_CART_LEVEL &
-                  .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_CART_LEVEL_W ) &
-       .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS      ) then
-      !Correspond to Store_one_budget (CART)
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(1)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(2)
-      tzfield%ndimlist(3)  = tpfields(1)%ndimlist(3)
-      tzfield%ndimlist(4:) = NMNHDIM_UNUSED
 
+    if (       Any( tpfields(1)%ndimlist(1) == [ NMNHDIM_BUDGET_CART_NI, NMNHDIM_BUDGET_CART_NI_U, NMNHDIM_BUDGET_CART_NI_V ] ) &
+         .and. Any( tpfields(1)%ndimlist(2) == [ NMNHDIM_BUDGET_CART_NJ, NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NJ_V ] ) &
+         .and. Any( tpfields(1)%ndimlist(3) == [ NMNHDIM_BUDGET_CART_LEVEL,NMNHDIM_BUDGET_CART_LEVEL_W ] )                      &
+         .and.      tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS                                                        ) then
+      !Correspond to Store_one_budget (CART)
       allocate( zdata3d( size(pvar,1), size(pvar,2), size(pvar,3) ) )
 
       ! Loop on the processes
       do ji = 1, size(pvar,6)
         zdata3d(:,:,:) = pvar(:, :, :, 1, 1, ji)
 
-        TZFIELD%CMNHNAME   = tpfields(ji)%cmnhname
-        TZFIELD%CSTDNAME   = tpfields(ji)%cstdname
-        TZFIELD%CLONGNAME  = tpfields(ji)%clongname
-        TZFIELD%CUNITS     = tpfields(ji)%cunits
-        TZFIELD%CCOMMENT   = tpfields(ji)%ccomment
-        TZFIELD%NGRID      = tpfields(ji)%ngrid
-        TZFIELD%NTYPE      = tpfields(ji)%ntype
-        TZFIELD%NDIMS      = 3
-        TZFIELD%LTIMEDEP   = .FALSE.
-
         if ( gsplit ) then
           if ( htype /= 'CART' ) call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
                       ': group ' // Trim( hgroup ) //' gsplit=T not implemented for these dimensions and htype/=CART' )
 
           if ( htype == 'CART' .and. .not. oicp .and. .not. ojcp ) then
+            call Prepare_diachro_write( tpfields(ji), tzfield, [ 1, 2, 3 ], kbutimepos = 4 )
+
             !Data is distributed between all the processes
             tzfield%cdir = 'XY'
 
-            !Add budget time dimension
-            tzfield%ndims = 4
-            tzfield%ndimlist(4) = NMNHDIM_BUDGET_TIME
 
             !Create the metadata of the field (has to be done only once)
             if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
@@ -2192,13 +1702,17 @@ select case ( idims )
           end if
         else
           if ( htype == 'CART' .and. .not. oicp .and. .not. ojcp ) then
+            call Prepare_diachro_write( tpfields(ji), tzfield, [ 1, 2, 3 ] )
+
             !Data is distributed between all the processes
             tzfield%cdir = 'XY'
             call IO_Field_write_box( tzfile, tzfield, 'BUDGET', zdata3d, &
                                     kil + jphext, kih + jphext, kjl + jphext, kjh + jphext )
           else
+            call Prepare_diachro_write( tpfields(ji), tzfield, [ 1, 2, 3 ] )
+
             !Data is already collected on the master process
-            tzfield%cdir = '--'
+!             tzfield%cdir = '--'
             call IO_Field_write( tzfile, tzfield, zdata3d )
           end if
         end if
@@ -2206,49 +1720,37 @@ select case ( idims )
 
       deallocate( zdata3d )
 
-    elseif (  ( tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_MASK_LEVEL &
+    elseif (  (        tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_MASK_LEVEL     &
                   .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_MASK_LEVEL_W ) &
-       .and.    tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_TIME &
-       .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_MASK_NBUMASK &
-       .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS      ) then
+       .and.           tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_TIME           &
+       .and.           tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_MASK_NBUMASK   &
+       .and.           tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS        ) then
       !Correspond to Store_one_budget (MASK)
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(3)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(4)
-      tzfield%ndimlist(3)  = tpfields(1)%ndimlist(5)
-      tzfield%ndimlist(4:) = NMNHDIM_UNUSED
-
       allocate( zdata3d( size(pvar,3), size(pvar,4), size(pvar,5) ) )
 
       ! Loop on the processes
       do ji = 1, size(pvar,6)
         zdata3d(:,:,:) = pvar(1, 1, :, :, :, ji)
 
-        TZFIELD%CMNHNAME   = tpfields(ji)%cmnhname
-        TZFIELD%CSTDNAME   = tpfields(ji)%cstdname
-        TZFIELD%CLONGNAME  = tpfields(ji)%clongname
-        TZFIELD%CUNITS     = tpfields(ji)%cunits
-        TZFIELD%CDIR       = '--'
-        TZFIELD%CCOMMENT   = tpfields(ji)%ccomment
-        TZFIELD%NGRID      = tpfields(ji)%ngrid
-        TZFIELD%NTYPE      = tpfields(ji)%ntype
-        TZFIELD%NDIMS      = 3
-        TZFIELD%LTIMEDEP   = .FALSE.
         if ( gsplit ) then
+          call Prepare_diachro_write( tpfields(ji), tzfield, [ 3, 4, 5 ], kbutimepos = 2 )
+
         !Create the metadata of the field (has to be done only once)
           if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
 !           call IO_Field_partial_write( tzfile, tzfield, zdata3d(:,:,:), koffset= [ 0, ( nbutshift - 1 ) * nbusubwrite, 0 ] )
           call IO_Field_write( tzfile, tzfield, zdata3d(:,:,:), koffset= [ 0, ( nbutshift - 1 ) * nbusubwrite, 0 ] )
         else
+          call Prepare_diachro_write( tpfields(ji), tzfield, [ 3, 4, 5 ] )
           call IO_Field_write( tzfile, tzfield, zdata3d )
         end if
       end do
 
       deallocate( zdata3d )
-    else if (       tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL     &
-       .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME &
-               .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
-       .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_LES_SV      &
-       .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_LES_MASK      ) then
+    else if (              tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL      &
+              .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
+                      .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
+       .and.               tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_LES_SV         &
+       .and.               tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_LES_MASK       ) then
       if ( gsplit ) then
           call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
                           ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
@@ -2259,71 +1761,43 @@ select case ( idims )
                         'last dimension size of pvar is not equal to nles_masks (variable ' &
                         // Trim( tpfields(1)%cmnhname ) // ')' )
 
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(3)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(4)
-      tzfield%ndimlist(3)  = tpfields(1)%ndimlist(5)
-      tzfield%ndimlist(4:) = NMNHDIM_UNUSED
-
       allocate( zdata3d( size(pvar,3), size(pvar,4), size(pvar,5) ) )
 
       ! Loop on the masks (1 written variable per mask)
       do ji = 1, size(pvar,6)
         zdata3d(:,:,:) = pvar(1, 1, :, :, :, ji)
 
-        TZFIELD%CMNHNAME   = tpfields(ji)%cmnhname
-        TZFIELD%CSTDNAME   = tpfields(ji)%cstdname
-        TZFIELD%CLONGNAME  = tpfields(ji)%clongname
-        TZFIELD%CUNITS     = tpfields(ji)%cunits
-        TZFIELD%CDIR       = '--'
-        TZFIELD%CCOMMENT   = tpfields(ji)%ccomment
-        TZFIELD%NGRID      = tpfields(ji)%ngrid
-        TZFIELD%NTYPE      = tpfields(ji)%ntype
-        TZFIELD%NDIMS      = 3
-        TZFIELD%LTIMEDEP   = .FALSE.
+        call Prepare_diachro_write( tpfields(ji), tzfield, [ 3, 4, 5 ] )
         CALL IO_Field_write( tzfile, tzfield, zdata3d )
       end do
 
       deallocate( zdata3d )
-    else if (       tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL     &
-       .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME &
-               .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
-       .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_LES_SV      &
-       .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_TERM      ) then
+    else if (              tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL      &
+              .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
+                      .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
+       .and.               tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_LES_SV         &
+       .and.               tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_TERM           ) then
       if ( gsplit ) then
           call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
                           ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
       end if
 
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(3)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(4)
-      tzfield%ndimlist(3)  = tpfields(1)%ndimlist(5)
-      tzfield%ndimlist(4:) = NMNHDIM_UNUSED
-
       allocate( zdata3d( size(pvar,3), size(pvar,4), size(pvar,5) ) )
 
       ! Loop on the masks (1 written variable per mask)
       do ji = 1, size(pvar,6)
         zdata3d(:,:,:) = pvar(1, 1, :, :, :, ji)
 
-        TZFIELD%CMNHNAME   = tpfields(ji)%cmnhname
-        TZFIELD%CSTDNAME   = tpfields(ji)%cstdname
-        TZFIELD%CLONGNAME  = tpfields(ji)%clongname
-        TZFIELD%CUNITS     = tpfields(ji)%cunits
-        TZFIELD%CDIR       = '--'
-        TZFIELD%CCOMMENT   = tpfields(ji)%ccomment
-        TZFIELD%NGRID      = tpfields(ji)%ngrid
-        TZFIELD%NTYPE      = tpfields(ji)%ntype
-        TZFIELD%NDIMS      = 3
-        TZFIELD%LTIMEDEP   = .FALSE.
+        call Prepare_diachro_write( tpfields(ji), tzfield, [ 3, 4, 5 ] )
         CALL IO_Field_write( tzfile, tzfield, zdata3d )
       end do
 
       deallocate( zdata3d )
-    else if (       tpfields(1)%ndimlist(1) == NMNHDIM_SPECTRA_SPEC_NI     &
-       .and.        tpfields(1)%ndimlist(3) == NMNHDIM_SPECTRA_LEVEL &
-       .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME &
-               .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
-       .and. tpfields(1)%ndimlist(5) == NMNHDIM_COMPLEX      ) then
+    else if (             tpfields(1)%ndimlist(1) == NMNHDIM_SPECTRA_SPEC_NI       &
+             .and.        tpfields(1)%ndimlist(3) == NMNHDIM_SPECTRA_LEVEL         &
+             .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
+                     .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
+             .and.        tpfields(1)%ndimlist(5) == NMNHDIM_COMPLEX               ) then
       !Correspond to LES_DIACHRO_SPEC
       if ( gsplit ) then
           call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
@@ -2332,35 +1806,20 @@ select case ( idims )
 
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(1)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(3)
-      tzfield%ndimlist(3)  = tpfields(1)%ndimlist(4)
-      tzfield%ndimlist(4)  = tpfields(1)%ndimlist(5)
-      tzfield%ndimlist(5:) = NMNHDIM_UNUSED
 
       allocate( zdata4d( size(pvar,1), size(pvar,3), size(pvar,4), size(pvar,5) ) )
 
       zdata4d(:,:,:,:) = pvar(:, 1, :, :, :, 1)
 
-      TZFIELD%CMNHNAME   = tpfields(1)%cmnhname
-      TZFIELD%CSTDNAME   = tpfields(1)%cstdname
-      TZFIELD%CLONGNAME  = tpfields(1)%clongname
-      TZFIELD%CUNITS     = tpfields(1)%cunits
-      TZFIELD%CDIR       = '--'
-      TZFIELD%CCOMMENT   = tpfields(1)%ccomment
-      TZFIELD%NGRID      = tpfields(1)%ngrid
-      TZFIELD%NTYPE      = tpfields(1)%ntype
-      TZFIELD%NDIMS      = 4
-      TZFIELD%LTIMEDEP   = .FALSE.
+      call Prepare_diachro_write( tpfields(1), tzfield, [ 1, 3, 4, 5 ] )
       CALL IO_Field_write( tzfile, tzfield, zdata4d )
 
       deallocate( zdata4d )
-    else if (       tpfields(1)%ndimlist(2) == NMNHDIM_SPECTRA_SPEC_NJ     &
-       .and.        tpfields(1)%ndimlist(3) == NMNHDIM_SPECTRA_LEVEL &
-       .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME &
-               .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
-       .and. tpfields(1)%ndimlist(5) == NMNHDIM_COMPLEX      ) then
+    else if (              tpfields(1)%ndimlist(2) == NMNHDIM_SPECTRA_SPEC_NJ       &
+              .and.        tpfields(1)%ndimlist(3) == NMNHDIM_SPECTRA_LEVEL         &
+              .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
+                      .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
+              .and.        tpfields(1)%ndimlist(5) == NMNHDIM_COMPLEX               ) then
       !Correspond to LES_DIACHRO_SPEC
       if ( gsplit ) then
           call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
@@ -2370,26 +1829,11 @@ select case ( idims )
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
 
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(2)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(3)
-      tzfield%ndimlist(3)  = tpfields(1)%ndimlist(4)
-      tzfield%ndimlist(4)  = tpfields(1)%ndimlist(5)
-      tzfield%ndimlist(5:) = NMNHDIM_UNUSED
-
       allocate( zdata4d( size(pvar,2), size(pvar,3), size(pvar,4), size(pvar,5) ) )
 
       zdata4d(:,:,:,:) = pvar(1, :, :, :, :, 1)
 
-      TZFIELD%CMNHNAME   = tpfields(1)%cmnhname
-      TZFIELD%CSTDNAME   = tpfields(1)%cstdname
-      TZFIELD%CLONGNAME  = tpfields(1)%clongname
-      TZFIELD%CUNITS     = tpfields(1)%cunits
-      TZFIELD%CDIR       = '--'
-      TZFIELD%CCOMMENT   = tpfields(1)%ccomment
-      TZFIELD%NGRID      = tpfields(1)%ngrid
-      TZFIELD%NTYPE      = tpfields(1)%ntype
-      TZFIELD%NDIMS      = 4
-      TZFIELD%LTIMEDEP   = .FALSE.
+      call Prepare_diachro_write( tpfields(1), tzfield, [ 2, 3, 4, 5 ] )
       CALL IO_Field_write( tzfile, tzfield, zdata4d )
 
       deallocate( zdata4d )
@@ -2408,26 +1852,17 @@ select case ( idims )
                         ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
     end if
 
-    if ( All( tpfields(1)%ndimlist(:) /= NMNHDIM_UNKNOWN ) ) then
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(1)
-      tzfield%ndimlist(2)  = tpfields(1)%ndimlist(2)
-      tzfield%ndimlist(3)  = tpfields(1)%ndimlist(3)
-      tzfield%ndimlist(4)  = tpfields(1)%ndimlist(4)
-      tzfield%ndimlist(5)  = tpfields(1)%ndimlist(5)
-      tzfield%ndimlist(6:) = NMNHDIM_UNUSED
-    end if
+!     if ( All( tpfields(1)%ndimlist(:) /= NMNHDIM_UNKNOWN ) ) then
+!       tzfield%ndimlist(1)  = tpfields(1)%ndimlist(1)
+!       tzfield%ndimlist(2)  = tpfields(1)%ndimlist(2)
+!       tzfield%ndimlist(3)  = tpfields(1)%ndimlist(3)
+!       tzfield%ndimlist(4)  = tpfields(1)%ndimlist(4)
+!       tzfield%ndimlist(5)  = tpfields(1)%ndimlist(5)
+!       tzfield%ndimlist(6:) = NMNHDIM_UNUSED
+!     end if
 
     do ji = 1, Size( pvar, 6 )
-      TZFIELD%CMNHNAME   = tpfields(ji)%cmnhname
-      TZFIELD%CSTDNAME   = tpfields(ji)%cstdname
-      TZFIELD%CLONGNAME  = tpfields(ji)%clongname
-      TZFIELD%CUNITS     = tpfields(ji)%cunits
-      TZFIELD%CDIR       = '--'
-      TZFIELD%CCOMMENT   = tpfields(ji)%ccomment
-      TZFIELD%NGRID      = tpfields(ji)%ngrid
-      TZFIELD%NTYPE      = tpfields(ji)%ntype
-      TZFIELD%NDIMS      = 5
-      TZFIELD%LTIMEDEP   = .FALSE.
+      call Prepare_diachro_write( tpfields(ji), tzfield, [ 1, 2, 3, 4, 5 ] )
       CALL IO_Field_write( tzfile, tzfield, pvar(:, :, :, :, :, ji ) )
     end do
 end select
@@ -2464,6 +1899,56 @@ tzfile%nncid = isavencid
 call Menu_diachro( tzfile, hgroup )
 
 end  subroutine Write_diachro_nc4
+
+
+subroutine Prepare_diachro_write( tpfieldin, tpfieldout, kdims, kbutimepos )
+use modd_field,          only: NMNHDIM_BUDGET_TIME, NMNHDIM_UNUSED, NMNHMAXDIMS, tfielddata, tfield_metadata_base
+
+
+class(tfield_metadata_base), intent(in)  :: tpfieldin
+type(tfielddata),            intent(out) :: tpfieldout
+integer, dimension(:),       intent(in)  :: kdims ! List of indices of dimensions to use
+integer,           optional, intent(in)  :: kbutimepos
+
+integer :: jdim
+integer :: idims
+
+print *,'PW: Prepare_diachro_write called for ',Trim( tpfieldin%cmnhname )
+
+idims = Size( kdims )
+
+if ( idims > NMNHMAXDIMS ) call Print_msg( NVERB_FATAL, 'IO', 'Prepare_diachro_write', &
+                                           'kdims is too big for ' //Trim( tpfieldin%cmnhname ) )
+
+tpfieldout%cmnhname   = tpfieldin%cmnhname
+tpfieldout%cstdname   = tpfieldin%cstdname
+tpfieldout%clongname  = tpfieldin%clongname
+tpfieldout%cunits     = tpfieldin%cunits
+tpfieldout%cdir       = '--'
+tpfieldout%ccomment   = tpfieldin%ccomment
+tpfieldout%ngrid      = tpfieldin%ngrid
+tpfieldout%ntype      = tpfieldin%ntype
+tpfieldout%ltimedep   = .false.
+
+tpfieldout%ndims      = idims
+
+do jdim = 1, idims
+  tpfieldout%ndimlist(jdim)  = tpfieldin%ndimlist(kdims(jdim))
+end do
+tpfieldout%ndimlist(idims + 1:) = NMNHDIM_UNUSED
+
+!Add budget time dimension if required
+if ( Present( kbutimepos ) ) then
+  ! Note: if kbutimepos <= idims, the budget time dimension is assumed to be already present
+  ! In that case, it is not necessary/useful to provide kbutimepos
+  if ( kbutimepos > idims ) then
+    if ( kbutimepos /= (idims + 1) ) call Print_msg( NVERB_FATAL, 'IO', 'Prepare_diachro_write', &
+                                                   'unexpected value for kbutimepos for ' //Trim( tpfieldin%cmnhname ) )
+    tpfieldout%ndims = tpfieldout%ndims + 1
+    tpfieldout%ndimlist(kbutimepos) = NMNHDIM_BUDGET_TIME
+  end if
+end if
+end subroutine Prepare_diachro_write
 #endif
 
 end module mode_write_diachro
