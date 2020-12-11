@@ -90,6 +90,7 @@ CLOUD: select case ( hcloud )
            ( zcph(:, :, :) * zexn(:, :, :) )
       prrs(:, :, :, 2) = 0.
     end where
+    prrs(:,:,:,1) = max(0.0,prrs(:,:,:,1))
 
 
   case( 'ICE3', 'ICE4' )
@@ -141,6 +142,8 @@ CLOUD: select case ( hcloud )
         prrs(:, :, :, 4) = prrs(:, :, :, 4) - zcor(:, :, :)
       end where
     end if
+   prrs(:,:,:,1) = max(0.0,prrs(:,:,:,1))
+
 !
 !
   case( 'C2R2', 'KHKO' )
@@ -163,6 +166,8 @@ CLOUD: select case ( hcloud )
       prrs(:, :, :, 2) = 0.
       prsvs(:, :, :, nsv_c2r2beg + 1) = 0.
     end where
+    prrs(:,:,:,1) = max(0.0,prrs(:,:,:,1))
+
 !
 !
   case( 'LIMA' )
@@ -224,7 +229,7 @@ CLOUD: select case ( hcloud )
         deallocate( zcor )
       end if
     end if
-
+    prrs(:,:,:,1) = max(0.0,prrs(:,:,:,1))
     prsvs(:, :, :, nsv_lima_beg : nsv_lima_end) = Max( 0.0, prsvs(:, :, :, nsv_lima_beg : nsv_lima_end) )
 
 end select CLOUD
