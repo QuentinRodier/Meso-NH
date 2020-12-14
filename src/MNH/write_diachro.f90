@@ -647,28 +647,19 @@ integer,                                             intent(in), optional :: kjl
 integer,                                             intent(in), optional :: kkl, kkh
 logical,                                             intent(in), optional :: osplit
 
-character(len=3)                          :: ynum
-integer                                   :: icompx, icompy, icompz
-integer                                   :: idims
-integer                                   :: icount
-integer                                   :: icorr
-integer                                   :: ji
-integer                                   :: jp
-integer(kind=CDFINT)                      :: isavencid
-integer(kind=CDFINT)                      :: idimid
-integer(kind=CDFINT)                      :: igrpid
-integer(kind=CDFINT)                      :: istatus
-integer(kind=CDFINT)                      :: idimtimeid
-logical                                   :: gsplit
-real                                      :: zdata0d
-real, dimension(:),           allocatable :: zdata1d
-real, dimension(:,:),         allocatable :: zdata2d
-real, dimension(:,:,:),       allocatable :: zdata3d
-real, dimension(:,:,:,:),     allocatable :: zdata4d
-real, dimension(:,:,:,:,:),   allocatable :: zdata5d
-real, dimension(:,:,:,:,:,:), allocatable :: zdata6d
-type(tfielddata)                          :: tzfield
-type(tfiledata)                           :: tzfile
+integer              :: icompx, icompy, icompz
+integer              :: idims
+integer              :: icount
+integer              :: icorr
+integer              :: ji
+integer              :: jp
+integer(kind=CDFINT) :: isavencid
+integer(kind=CDFINT) :: idimid
+integer(kind=CDFINT) :: igrpid
+integer(kind=CDFINT) :: istatus
+logical              :: gdistributed
+logical              :: gsplit
+type(tfiledata)      :: tzfile
 
 if ( trim ( htype ) == 'CART' .or. trim ( htype ) == 'MASK' .or. trim ( htype ) == 'SPXY') then
   if (        .not. Present( kil ) .or. .not. Present( kih ) &
@@ -699,6 +690,13 @@ if ( okcp ) then
 else
   icompz = 0
 endif
+
+if ( Trim( htype ) == 'CART' .and. .not. oicp .and. .not. ojcp ) then
+  gdistributed = .true.
+else
+  !By default data is already collected on the write process for budgets
+  gdistributed = .false.
+end if
 
 if ( Present( osplit ) ) then
   gsplit = osplit
@@ -834,155 +832,43 @@ if ( htype == 'CART' .and. .not. oicp .and. .not. ojcp ) then
 end if
 
 
-
 select case ( idims )
   case (0)
-    zdata0d = pvar(1, 1, 1, 1, 1, 1)
-
-    if ( gsplit ) then
-      if ( htype /= 'CART' ) call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                  ': group ' // Trim( hgroup ) //': gsplit=T not implemented for these dimensions and htype/=CART' )
-
-      !Remark: [ integer:: ] is a constructor for a zero-size array of integers, [] is not allowed (type can not be determined)
-      call Prepare_diachro_write( tpfields(1), tzfield, [ integer:: ], kbutimepos = 1 )
-
-      !Create the metadata of the field (has to be done only once)
-      if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
-
-      call IO_Field_write( tzfile, tzfield, [ zdata0d ], koffset= [ ( nbutshift - 1 ) * nbusubwrite ] )
-    else
-      !Remark: [ integer:: ] is a constructor for a zero-size array of integers, [] is not allowed (type can not be determined)
-      call Prepare_diachro_write( tpfields(1), tzfield, [ integer:: ] )
-      call IO_Field_write( tzfile, tzfield, zdata0d )
-    end if
+     !Remark: [ integer:: ] is a constructor for a zero-size array of integers, [] is not allowed (type can not be determined)
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ integer:: ], gsplit, gdistributed )
 
   case (1)
 
     if ( tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) then
-      if ( gsplit ) then
-        call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                        ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
-      end if
-
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
 
-      allocate( zdata1d( size(pvar,4) ) )
-
-      zdata1d(:) = pvar(1, 1, 1, :, 1, 1)
-
-      call Prepare_diachro_write( tpfields(1), tzfield, [ 4 ] )
-
-      CALL IO_Field_write( tzfile, tzfield, zdata1d )
-
-      deallocate( zdata1d )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 4 ], gsplit, gdistributed )
     else if ( Any( tpfields(1)%ndimlist(1) == [ NMNHDIM_NI, NMNHDIM_NI_U, NMNHDIM_NI_V, NMNHDIM_BUDGET_CART_NI,     &
                                                 NMNHDIM_BUDGET_CART_NI_U, NMNHDIM_BUDGET_CART_NI_V              ] ) ) then
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
 
-      allocate( zdata1d( size(pvar,1) ) )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 1 ], gsplit, gdistributed )
 
-      zdata1d(:) = pvar(:, 1, 1, 1, 1, 1)
-
-      if ( gsplit ) then
-        if ( htype /= 'CART' ) call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                    ': group ' // Trim( hgroup ) //': gsplit=T not implemented for these dimensions and htype/=CART' )
-
-        call Prepare_diachro_write( tpfields(1), tzfield, [ 1 ], kbutimepos = 2 )
-
-        !Create the metadata of the field (has to be done only once)
-        if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
-
-        call IO_Field_write( tzfile, tzfield, Reshape( zdata1d, [ Size(zdata1d,1), 1 ] ), &
-                             koffset= [ 0, ( nbutshift - 1 ) * nbusubwrite ] )
-      else
-        call Prepare_diachro_write( tpfields(1), tzfield, [ 1 ] )
-        call IO_Field_write( tzfile, tzfield, zdata1d )
-      end if
-
-      deallocate( zdata1d )
     else if ( Any( tpfields(1)%ndimlist(2) == [ NMNHDIM_NJ, NMNHDIM_NJ_U, NMNHDIM_NJ_V, NMNHDIM_BUDGET_CART_NJ,     &
                                                 NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NJ_V              ] ) ) then
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-
-      allocate( zdata1d( size(pvar,2) ) )
-
-      zdata1d(:) = pvar(1, :, 1, 1, 1, 1)
-
-      if ( gsplit ) then
-        if ( htype /= 'CART' ) call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                    ': group ' // Trim( hgroup ) //': gsplit=T not implemented for these dimensions and htype/=CART' )
-
-        call Prepare_diachro_write( tpfields(1), tzfield, [ 2 ], kbutimepos = 2 )
-
-        !Create the metadata of the field (has to be done only once)
-        if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
-
-        call IO_Field_write( tzfile, tzfield, Reshape( zdata1d, [ Size(zdata1d,1), 1 ] ), &
-                             koffset= [ 0, ( nbutshift - 1 ) * nbusubwrite ] )
-      else
-        call Prepare_diachro_write( tpfields(1), tzfield, [ 2 ] )
-        call IO_Field_write( tzfile, tzfield, zdata1d )
-      end if
-
-      deallocate( zdata1d )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 2 ], gsplit, gdistributed )
     else if ( Any( tpfields(1)%ndimlist(3) == [ NMNHDIM_LEVEL, NMNHDIM_LEVEL_W,                            &
                                                 NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W ] ) ) then
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-
-      allocate( zdata1d( size(pvar,3) ) )
-
-      zdata1d(:) = pvar(1, 1, :, 1, 1, 1)
-
-      if ( gsplit ) then
-        if ( htype /= 'CART' ) call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                    ': group ' // Trim( hgroup ) //': gsplit=T not implemented for these dimensions and htype/=CART' )
-
-        call Prepare_diachro_write( tpfields(1), tzfield, [ 3 ], kbutimepos = 2 )
-
-        !Create the metadata of the field (has to be done only once)
-        if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
-
-        call IO_Field_write( tzfile, tzfield, Reshape( zdata1d, [ Size(zdata1d,1), 1 ] ), &
-                             koffset= [ 0, ( nbutshift - 1 ) * nbusubwrite ] )
-      else
-        call Prepare_diachro_write( tpfields(1), tzfield, [ 3 ] )
-        call IO_Field_write( tzfile, tzfield, zdata1d )
-      end if
-
-      deallocate( zdata1d )
-
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 3 ], gsplit, gdistributed )
     else if ( tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS ) then
       do ji = 1, Size( pvar, 6 )
-        zdata0d = pvar(1, 1, 1, 1, 1, ji)
-
-        if ( gsplit ) then
-          !Remark: [ integer:: ] is a constructor for a zero-size array of integers, [] is not allowed (type can not be determined)
-          call Prepare_diachro_write( tpfields(ji), tzfield, [ integer:: ], kbutimepos = 1 )
-
-          !Create the metadata of the field (has to be done only once)
-          if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
-
-          call IO_Field_write( tzfile, tzfield, [ zdata0d ], koffset= [ ( nbutshift - 1 ) * nbusubwrite ] )
-        else
-          !Remark: [ integer:: ] is a constructor for a zero-size array of integers, [] is not allowed (type can not be determined)
-          call Prepare_diachro_write( tpfields(ji), tzfield, [ integer:: ] )
-          call IO_Field_write( tzfile, tzfield, zdata0d )
-        end if
+        !Remark: [ integer:: ] is a constructor for a zero-size array of integers, [] is not allowed (type can not be determined)
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ integer:: ], gsplit, gdistributed )
       end do
-
     else
       call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                       'case not yet implemented (variable '//trim(tpfields(1)%cmnhname)//')' )
-
-      if ( gsplit ) then
-        call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                        ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
-      end if
-
     end if
 
 
@@ -994,231 +880,58 @@ select case ( idims )
                                                  NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NJ_V ] )          ) then
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-      allocate( zdata2d( size(pvar,1), size(pvar,2) ) )
-      zdata2d(:,:) = pvar(:, :, 1, 1, 1, 1)
-
-      if ( gsplit ) then
-        if ( htype /= 'CART' ) call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                    ': group ' // Trim( hgroup ) //': gsplit=T not implemented for these dimensions and htype/=CART' )
-
-        call Prepare_diachro_write( tpfields(1), tzfield, [ 1, 2 ], kbutimepos =  3 )
-
-        !Create the metadata of the field (has to be done only once)
-        if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
-
-        call IO_Field_write( tzfile, tzfield, Reshape( zdata2d, [ Size(zdata2d,1), Size(zdata2d,2), 1 ] ), &
-                             koffset= [ 0, 0, ( nbutshift - 1 ) * nbusubwrite ] )
-      else
-        call Prepare_diachro_write( tpfields(1), tzfield, [ 1, 2 ] )
-        call IO_Field_write( tzfile, tzfield, zdata2d )
-      end if
-
-      deallocate( zdata2d )
-
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 1, 2 ], gsplit, gdistributed )
     else if (       Any( tpfields(1)%ndimlist(1) == [ NMNHDIM_NI, NMNHDIM_NI_U, NMNHDIM_NI_V, NMNHDIM_BUDGET_CART_NI, &
                                                       NMNHDIM_BUDGET_CART_NI_U, NMNHDIM_BUDGET_CART_NI_V ] )          &
               .and. Any( tpfields(1)%ndimlist(3) == [ NMNHDIM_LEVEL, NMNHDIM_LEVEL_W,                                 &
                                                       NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W ] )      ) then
-
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-
-      allocate( zdata2d( size(pvar,1), size(pvar,3) ) )
-
-      zdata2d(:,:) = pvar(:, 1, :, 1, 1, 1)
-
-      if ( gsplit ) then
-        if ( htype /= 'CART' ) call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                    ': group ' // Trim( hgroup ) //': gsplit=T not implemented for these dimensions and htype/=CART' )
-
-        call Prepare_diachro_write( tpfields(1), tzfield, [ 1, 3 ], kbutimepos =  3 )
-
-        !Create the metadata of the field (has to be done only once)
-        if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
-
-        call IO_Field_write( tzfile, tzfield, Reshape( zdata2d, [ Size(zdata2d,1), Size(zdata2d,2), 1 ] ), &
-                             koffset= [ 0, 0, ( nbutshift - 1 ) * nbusubwrite ] )
-      else
-        call Prepare_diachro_write( tpfields(1), tzfield, [ 1, 3 ] )
-        call IO_Field_write( tzfile, tzfield, zdata2d )
-      end if
-
-      deallocate( zdata2d )
-
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 1, 3 ], gsplit, gdistributed )
     else if (       Any( tpfields(1)%ndimlist(2) == [ NMNHDIM_NJ, NMNHDIM_NJ_U, NMNHDIM_NJ_V, NMNHDIM_BUDGET_CART_NJ, &
                                                       NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NJ_V ] )          &
               .and. Any( tpfields(1)%ndimlist(3) == [ NMNHDIM_LEVEL, NMNHDIM_LEVEL_W,                                 &
                                                       NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W ] )      ) then
-
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-
-      allocate( zdata2d( size(pvar,2), size(pvar,3) ) )
-
-      zdata2d(:,:) = pvar(1, :, :, 1, 1, 1)
-
-      if ( gsplit ) then
-        if ( htype /= 'CART' ) call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                    ': group ' // Trim( hgroup ) //': gsplit=T not implemented for these dimensions and htype/=CART' )
-
-        call Prepare_diachro_write( tpfields(1), tzfield, [ 2, 3 ], kbutimepos =  3 )
-
-        !Create the metadata of the field (has to be done only once)
-        if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
-
-        call IO_Field_write( tzfile, tzfield, Reshape( zdata2d, [ Size(zdata2d,1), Size(zdata2d,2), 1 ] ), &
-                             koffset= [ 0, 0, ( nbutshift - 1 ) * nbusubwrite ] )
-      else
-        call Prepare_diachro_write( tpfields(1), tzfield, [ 2, 3 ] )
-        call IO_Field_write( tzfile, tzfield, zdata2d )
-      end if
-
-      deallocate( zdata2d )
-
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 2, 3 ], gsplit, gdistributed )
     else if (  Any( tpfields(1)%ndimlist(1) == [ NMNHDIM_BUDGET_CART_NI, NMNHDIM_BUDGET_CART_NI_U, NMNHDIM_BUDGET_CART_NI_V ] ) &
               .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS ) then
-      Allocate( zdata1d(Size( pvar, 1 )) )
-
+      ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        zdata1d(:) = pvar(:, 1, 1, 1, 1, ji)
-
-        if ( gsplit ) then
-          call Prepare_diachro_write( tpfields(ji), tzfield, [ 1 ], kbutimepos =  2 )
-
-          !Create the metadata of the field (has to be done only once)
-          if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
-
-          call IO_Field_write( tzfile, tzfield, Reshape( zdata1d, [ Size(zdata1d,1), 1 ] ), &
-                               koffset= [ 0, ( nbutshift - 1 ) * nbusubwrite ] )
-        else
-          call Prepare_diachro_write( tpfields(ji), tzfield, [ 1 ] )
-          call IO_Field_write( tzfile, tzfield, zdata1d )
-        end if
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 1 ], gsplit, gdistributed )
       end do
-
-      Deallocate( zdata1d )
-
     else if (  Any( tpfields(1)%ndimlist(2) == [ NMNHDIM_BUDGET_CART_NJ, NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NJ_V ] ) &
               .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS ) then
-      Allocate( zdata1d(Size( pvar, 2 )) )
-
+      ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        zdata1d(:) = pvar(1, :, 1, 1, 1, ji)
-
-        if ( gsplit ) then
-          call Prepare_diachro_write( tpfields(ji), tzfield, [ 2 ], kbutimepos =  2 )
-
-          !Create the metadata of the field (has to be done only once)
-          if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
-
-          call IO_Field_write( tzfile, tzfield, Reshape( zdata1d, [ Size(zdata1d,1), 1 ] ), &
-                               koffset= [ 0, ( nbutshift - 1 ) * nbusubwrite ] )
-        else
-          call Prepare_diachro_write( tpfields(ji), tzfield, [ 2 ] )
-          call IO_Field_write( tzfile, tzfield, zdata1d )
-        end if
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 2 ], gsplit, gdistributed )
       end do
-
-      Deallocate( zdata1d )
-
     else if (       tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL     &
        .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME &
                .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) ) then
-      if ( gsplit ) then
-          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
-      end if
-
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-
-      allocate( zdata2d( size(pvar,3), size(pvar,4) ) )
-
-      zdata2d(:,:) = pvar(1, 1, :, :, 1, 1)
-
-      call Prepare_diachro_write( tpfields(1), tzfield, [ 3, 4 ] )
-      CALL IO_Field_write( tzfile, tzfield, zdata2d )
-
-      deallocate( zdata2d )
-
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 3, 4 ], gsplit, gdistributed )
     else if ( Any( tpfields(1)%ndimlist(3) == [ NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W ] ) &
               .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS ) then
-      tzfield%ndimlist(1)  = tpfields(1)%ndimlist(3)
-      tzfield%ndimlist(2:) = NMNHDIM_UNUSED
-
-      allocate( zdata1d( size(pvar,3) ) )
-
-      ! Loop on the processes (1 written variable per process)
+      ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        zdata1d(:) = pvar(1, 1, :, 1, 1, ji)
-
-        if ( gsplit ) then
-          call Prepare_diachro_write( tpfields(ji), tzfield, [ 3 ], kbutimepos =  2 )
-
-          !Create the metadata of the field (has to be done only once)
-          if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
-
-          call IO_Field_write( tzfile, tzfield, Reshape( zdata1d, [ Size(zdata1d,1), 1 ] ), &
-                               koffset= [ 0, ( nbutshift - 1 ) * nbusubwrite ] )
-        else
-          call Prepare_diachro_write( tpfields(ji), tzfield, [ 3 ] )
-          call IO_Field_write( tzfile, tzfield, zdata1d )
-        end if
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 3 ], gsplit, gdistributed )
       end do
-
-      deallocate( zdata1d )
-
     else if (  tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_TIME .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_MASK_NBUMASK ) then
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-
-      Allocate( zdata2d(Size( pvar, 4 ), Size( pvar, 5 )) )
-
-      zdata2d(:,:) = pvar(1, 1, 1, :, :, 1)
-
-      if ( gsplit ) then
-        call Prepare_diachro_write( tpfields(1), tzfield, [ 4, 5 ], kbutimepos =  1 )
-
-        !Create the metadata of the field (has to be done only once)
-        if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
-
-        call IO_Field_write( tzfile, tzfield, zdata2d, koffset= [ ( nbutshift - 1 ) * nbusubwrite, 0 ] )
-      else
-        call Prepare_diachro_write( tpfields(1), tzfield, [ 4, 5 ] )
-        call IO_Field_write( tzfile, tzfield, zdata2d )
-      end if
-
-      Deallocate( zdata2d )
-
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 4, 5 ], gsplit, gdistributed )
     else if (  (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME &
                  .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
          .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_LES_SV       ) then
-      if ( gsplit ) then
-          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
-      end if
-
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-
-      allocate( zdata2d( size(pvar,4), size(pvar,5) ) )
-
-      zdata2d(:,:) = pvar(1, 1, 1, :, :, 1)
-
-      call Prepare_diachro_write( tpfields(1), tzfield, [ 4, 5 ] )
-
-      CALL IO_Field_write( tzfile, tzfield, zdata2d )
-
-      deallocate( zdata2d )
-
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 4, 5 ], gsplit, gdistributed )
     else if (  tpfields(1)%ndimlist(4) == NMNHDIM_FLYER_TIME &
          .and. tpfields(1)%ndimlist(6) == NMNHDIM_FLYER_PROC ) then
       !Correspond to FLYER_DIACHRO
-      if ( gsplit ) then
-          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
-      end if
-
       !Create local time dimension
       if ( isp == tzfile%nmaster_rank) then
         istatus = NF90_DEF_DIM( igrpid, 'time_flyer', Size( pvar, 4), idimid )
@@ -1226,64 +939,20 @@ select case ( idims )
           call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_DEF_DIM', Trim( tpfields(1)%cmnhname ) )
       end if
 
-      allocate( zdata1d( size(pvar,4) ) )
-
-      ! Loop on the processes (1 written variable per process)
-      do ji = 1, size(pvar,6)
-        zdata1d(:) = pvar(1, 1, 1, :, 1, ji)
-
-        call Prepare_diachro_write( tpfields(ji), tzfield, [ 4 ] )
-        CALL IO_Field_write( tzfile, tzfield, zdata1d )
+      ! Loop on the processes
+      do ji = 1, Size( pvar, 6 )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 4 ], gsplit, gdistributed )
       end do
-
-      deallocate( zdata1d )
-    else if (  tpfields(1)%ndimlist(4) == NMNHDIM_STATION_TIME &
-         .and. tpfields(1)%ndimlist(6) == NMNHDIM_STATION_PROC ) then
-      !Correspond to STATION_DIACHRO_n
-      if ( gsplit ) then
-          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
-      end if
-
-      allocate( zdata1d( size(pvar,4) ) )
-
-      ! Loop on the processes (1 written variable per process)
-      do ji = 1, size(pvar,6)
-        zdata1d(:) = pvar(1, 1, 1, :, 1, ji)
-
-        call Prepare_diachro_write( tpfields(ji), tzfield, [ 4 ] )
-        CALL IO_Field_write( tzfile, tzfield, zdata1d )
-      end do
-
-      deallocate( zdata1d )
     else if (  tpfields(1)%ndimlist(4) == NMNHDIM_SERIES_TIME &
          .and. tpfields(1)%ndimlist(6) == NMNHDIM_SERIES_PROC ) then
       !Correspond to WRITE_SERIES_n
-      if ( gsplit ) then
-          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
-      end if
-
-      allocate( zdata1d( size(pvar,4) ) )
-
-      ! Loop on the processes (1 written variable per process)
-      do ji = 1, size(pvar,6)
-        zdata1d(:) = pvar(1, 1, 1, :, 1, ji)
-
-        call Prepare_diachro_write( tpfields(ji), tzfield, [ 4 ] )
-        CALL IO_Field_write( tzfile, tzfield, zdata1d )
+      ! Loop on the processes
+      do ji = 1, Size( pvar, 6 )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 4 ], gsplit, gdistributed )
       end do
-
-      deallocate( zdata1d )
     else
       call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                       'case not yet implemented (variable '//trim(tpfields(1)%cmnhname)//')' )
-
-      if ( gsplit ) then
-          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
-      end if
-
     end if
 
 
@@ -1297,126 +966,29 @@ select case ( idims )
                                                  NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W ] )      ) then
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-      allocate( zdata3d( size(pvar,1), size(pvar,2), size(pvar,3) ) )
-
-      zdata3d(:,:,:) = pvar(:, :, :, 1, 1, 1)
-
-      if ( gsplit ) then
-        if ( htype /= 'CART' ) call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                    ': group ' // Trim( hgroup ) //': gsplit=T not implemented for these dimensions and htype/=CART' )
-
-        if ( htype == 'CART' .and. .not. oicp .and. .not. ojcp ) then
-          call Prepare_diachro_write( tpfields(1), tzfield, [ 1, 2, 3 ], kbutimepos = 4 )
-
-          !Data is distributed between all the processes
-          tzfield%cdir = 'XY'
-
-          !Create the metadata of the field (has to be done only once)
-          if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
-
-          call IO_Field_write_box( tzfile, tzfield, 'BUDGET',                                                     &
-                                   Reshape( zdata3d, [ Size(zdata3d,1), Size(zdata3d,2), Size(zdata3d,3), 1 ] ) , &
-                                   kil + jphext, kih + jphext, kjl + jphext, kjh + jphext,                        &
-                                   koffset= [ 0, 0, 0, ( nbutshift - 1 ) * nbusubwrite ]                          )
-        else
-          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
-        end if
-      else
-        if ( htype == 'CART' .and. .not. oicp .and. .not. ojcp ) then
-          call Prepare_diachro_write( tpfields(1), tzfield, [ 1, 2, 3 ] )
-
-          !Data is distributed between all the processes
-          tzfield%cdir = 'XY'
-          call IO_Field_write_box( tzfile, tzfield, 'BUDGET', zdata3d, &
-                                  kil + jphext, kih + jphext, kjl + jphext, kjh + jphext )
-        else
-          call Prepare_diachro_write( tpfields(1), tzfield, [ 1, 2, 3 ]  )
-
-          !Data is already collected on the master process
-          !tzfield%cdir = '--'
-          call IO_Field_write( tzfile, tzfield, zdata3d )
-        end if
-      end if
-
-      deallocate( zdata3d )
-
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 1, 2, 3 ], gsplit, gdistributed, &
+                                        kil, kih, kjl, kjh, kkl, kkh )
     else if (       Any(tpfields(1)%ndimlist(1) == [ NMNHDIM_BUDGET_CART_NI, NMNHDIM_BUDGET_CART_NI_U, NMNHDIM_BUDGET_CART_NI_V ]) &
               .and. Any(tpfields(1)%ndimlist(2) == [ NMNHDIM_BUDGET_CART_NJ, NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NJ_V ]) &
               .and.     tpfields(1)%ndimlist(6) ==   NMNHDIM_BUDGET_NGROUPS                                                   ) then
-      Allocate( zdata2d(Size( pvar, 1 ), Size( pvar, 2 )) )
-
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        zdata2d(:, :) = pvar(:, :, 1, 1, 1, ji)
-
-        if ( gsplit ) then
-          call Prepare_diachro_write( tpfields(ji), tzfield, [ 1, 2 ], kbutimepos = 3 )
-
-          !Create the metadata of the field (has to be done only once)
-          if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
-
-          call IO_Field_write( tzfile, tzfield,                                             &
-                               Reshape( zdata2d, [ Size(zdata2d,1), Size(zdata2d,2), 1 ] ), &
-                               koffset= [ 0, 0, ( nbutshift - 1 ) * nbusubwrite ]           )
-        else
-          call Prepare_diachro_write( tpfields(ji), tzfield, [ 1, 2 ] )
-          call IO_Field_write( tzfile, tzfield, zdata2d )
-        end if
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 1, 2 ], gsplit, gdistributed )
       end do
-
-      Deallocate( zdata2d )
-
     else if ( Any ( tpfields(1)%ndimlist(1) == [ NMNHDIM_BUDGET_CART_NI, NMNHDIM_BUDGET_CART_NI_U, NMNHDIM_BUDGET_CART_NI_V ] ) &
               .and. tpfields(1)%ndimlist(3) ==   NMNHDIM_BUDGET_CART_LEVEL                                                      &
               .and. tpfields(1)%ndimlist(6) ==   NMNHDIM_BUDGET_NGROUPS                                                      ) then
-      Allocate( zdata2d(Size( pvar, 1 ), Size( pvar, 3 )) )
-
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        zdata2d(:, :) = pvar(:, 1, :, 1, 1, ji)
-
-        if ( gsplit ) then
-          call Prepare_diachro_write( tpfields(ji), tzfield, [ 1, 3 ], kbutimepos = 3 )
-
-          !Create the metadata of the field (has to be done only once)
-          if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
-
-          call IO_Field_write( tzfile, tzfield,                                             &
-                               Reshape( zdata2d, [ Size(zdata2d,1), Size(zdata2d,2), 1 ] ), &
-                               koffset= [ 0, 0, ( nbutshift - 1 ) * nbusubwrite ]           )
-        else
-          call Prepare_diachro_write( tpfields(ji), tzfield, [ 1, 3 ] )
-          call IO_Field_write( tzfile, tzfield, zdata2d )
-        end if
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 1, 3 ], gsplit, gdistributed )
       end do
-
-      Deallocate( zdata2d )
     else if ( Any ( tpfields(1)%ndimlist(2) == [ NMNHDIM_BUDGET_CART_NJ, NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NJ_V ] ) &
               .and. tpfields(1)%ndimlist(3) ==   NMNHDIM_BUDGET_CART_LEVEL                                                      &
               .and. tpfields(1)%ndimlist(6) ==   NMNHDIM_BUDGET_NGROUPS                                                      ) then
-      Allocate( zdata2d(Size( pvar, 2 ), Size( pvar, 3 )) )
-
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        zdata2d(:, :) = pvar(1, :, :, 1, 1, ji)
-
-        if ( gsplit ) then
-          call Prepare_diachro_write( tpfields(ji), tzfield, [ 2, 3 ], kbutimepos = 3 )
-
-          !Create the metadata of the field (has to be done only once)
-          if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
-
-          call IO_Field_write( tzfile, tzfield,                                             &
-                               Reshape( zdata2d, [ Size(zdata2d,1), Size(zdata2d,2), 1 ] ), &
-                               koffset= [ 0, 0, ( nbutshift - 1 ) * nbusubwrite ]           )
-        else
-          call Prepare_diachro_write( tpfields(ji), tzfield, [ 2, 3 ] )
-          call IO_Field_write( tzfile, tzfield, zdata2d )
-        end if
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 2, 3 ], gsplit, gdistributed )
       end do
-
-      Deallocate( zdata2d )
     else if (         (      tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_MASK_LEVEL     &
                         .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_MASK_LEVEL_W ) &
                .and.         tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_TIME           &
@@ -1424,140 +996,57 @@ select case ( idims )
       !Correspond to Store_one_budget_rho (MASK)
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-
-      allocate( zdata3d( size(pvar,3), size(pvar,4), size(pvar,5) ) )
-
-      zdata3d(:,:,:) = pvar(1, 1, :, :, :, 1)
-
-      if ( gsplit ) then
-        call Prepare_diachro_write( tpfields(1), tzfield, [ 3, 4, 5 ], kbutimepos = 2 )
-        !Create the metadata of the field (has to be done only once)
-        if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
-        call IO_Field_write( tzfile, tzfield, zdata3d(:,:,:), koffset= [ 0, ( nbutshift - 1 ) * nbusubwrite, 0 ] )
-      else
-        call Prepare_diachro_write( tpfields(1), tzfield, [ 3, 4, 5 ] )
-        call IO_Field_write( tzfile, tzfield, zdata3d )
-      end if
-
-      deallocate( zdata3d )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 3, 4, 5 ], gsplit, gdistributed, &
+                                        kil, kih, kjl, kjh, kkl, kkh )
     else if (              tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL      &
               .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
                       .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
               .and.        tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_LES_MASK       ) then
-      if ( gsplit ) then
-          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
-      end if
-
       if ( nles_masks /= Size( pvar, 6 ) ) &
         call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4',                             &
                         'last dimension size of pvar is not equal to nles_masks (variable ' &
                         // Trim( tpfields(1)%cmnhname ) // ')' )
 
-      allocate( zdata2d( size(pvar,3), size(pvar,4) ) )
-
-      ! Loop on the masks (1 written variable per mask)
-      do ji = 1, size(pvar,6)
-        zdata2d(:,:) = pvar(1, 1, :, :, 1, ji)
-
-        call Prepare_diachro_write( tpfields(ji), tzfield, [ 3, 4 ] )
-        CALL IO_Field_write( tzfile, tzfield, zdata2d )
+      ! Loop on the processes
+      do ji = 1, Size( pvar, 6 )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 3, 4 ], gsplit, gdistributed )
       end do
-
-      deallocate( zdata2d )
     else if (       tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL     &
        .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME &
                .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
        .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_TERM      ) then
-      if ( gsplit ) then
-          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
-      end if
-
-      allocate( zdata2d( size(pvar,3), size(pvar,4) ) )
-
-      ! Loop on the masks (1 written variable per mask)
-      do ji = 1, size(pvar,6)
-        zdata2d(:,:) = pvar(1, 1, :, :, 1, ji)
-
-        call Prepare_diachro_write( tpfields(ji), tzfield, [ 3, 4 ] )
-        CALL IO_Field_write( tzfile, tzfield, zdata2d )
+      ! Loop on the processes
+      do ji = 1, Size( pvar, 6 )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 3, 4 ], gsplit, gdistributed )
       end do
-
-      deallocate( zdata2d )
     else if (              tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL      &
               .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
                       .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
               .and.        tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_LES_SV         ) then
-      if ( gsplit ) then
-          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
-      end if
-
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-
-      !Correspond to Les_diachro_sv_new
-      allocate( zdata3d( size(pvar,3), size(pvar,4), size(pvar,5) ) )
-
-      zdata3d(:,:,:) = pvar(1, 1, :, :, :, 1)
-
-      call Prepare_diachro_write( tpfields(1), tzfield, [ 3, 4, 5 ] )
-
-      CALL IO_Field_write( tzfile, tzfield, zdata3d )
-
-      deallocate( zdata3d )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 3, 4, 5 ], gsplit, gdistributed, &
+                                        kil, kih, kjl, kjh, kkl, kkh )
     else if (              tpfields(1)%ndimlist(1) == NMNHDIM_SPECTRA_2PTS_NI       &
               .and.        tpfields(1)%ndimlist(3) == NMNHDIM_SPECTRA_LEVEL         &
               .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
                       .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) ) then
-      if ( gsplit ) then
-          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
-      end if
-
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-
-      allocate( zdata3d( size(pvar,1), size(pvar,3), size(pvar,4) ) )
-
-      zdata3d(:,:,:) = pvar(:, 1, :, :, 1, 1)
-
-      call Prepare_diachro_write( tpfields(1), tzfield, [ 1, 3, 4 ] )
-
-      CALL IO_Field_write( tzfile, tzfield, zdata3d )
-
-      deallocate( zdata3d )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 1, 3, 4 ], gsplit, gdistributed, &
+                                        kil, kih, kjl, kjh, kkl, kkh )
     else if (       tpfields(1)%ndimlist(2) == NMNHDIM_SPECTRA_2PTS_NJ                   &
               .and. tpfields(1)%ndimlist(3) == NMNHDIM_SPECTRA_LEVEL                &
               .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
                       .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) ) then
-      if ( gsplit ) then
-          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
-      end if
-
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-
-      allocate( zdata3d( size(pvar,2), size(pvar,3), size(pvar,4) ) )
-
-      zdata3d(:,:,:) = pvar(1, :, :, :, 1, 1)
-
-      call Prepare_diachro_write( tpfields(1), tzfield, [ 2, 3, 4 ] )
-
-      CALL IO_Field_write( tzfile, tzfield, zdata3d )
-
-      deallocate( zdata3d )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 2, 3, 4 ], gsplit, gdistributed, &
+                                        kil, kih, kjl, kjh, kkl, kkh )
     else if (  tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL      &
          .and. tpfields(1)%ndimlist(4) == NMNHDIM_FLYER_TIME &
          .and. tpfields(1)%ndimlist(6) == NMNHDIM_FLYER_PROC ) then
       !Correspond to FLYER_DIACHRO
-      if ( gsplit ) then
-          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
-      end if
-
       !Create local time dimension
       if ( isp == tzfile%nmaster_rank) then
         istatus = NF90_DEF_DIM( igrpid, 'time_flyer', Size( pvar, 4), idimid )
@@ -1565,101 +1054,41 @@ select case ( idims )
           call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_DEF_DIM', Trim( tpfields(1)%cmnhname ) )
       end if
 
-      allocate( zdata2d( size(pvar,3), size(pvar,4) ) )
-
-      ! Loop on the processes (1 written variable per process)
-      do ji = 1, size(pvar,6)
-        zdata2d(:, :) = pvar(1, 1, :, :, 1, ji)
-
-        call Prepare_diachro_write( tpfields(ji), tzfield, [ 3, 4 ] )
-        CALL IO_Field_write( tzfile, tzfield, zdata2d )
+      ! Loop on the processes
+      do ji = 1, Size( pvar, 6 )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 3, 4 ], gsplit, gdistributed )
       end do
-
-      deallocate( zdata2d )
     else if (  tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL      &
          .and. tpfields(1)%ndimlist(4) == NMNHDIM_PROFILER_TIME &
          .and. tpfields(1)%ndimlist(6) == NMNHDIM_PROFILER_PROC ) then
       !Correspond to PROFILER_DIACHRO_n
-      if ( gsplit ) then
-          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
-      end if
-
-      allocate( zdata2d( size(pvar,3), size(pvar,4) ) )
-
-      ! Loop on the processes (1 written variable per process)
-      do ji = 1, size(pvar,6)
-        zdata2d(:, :) = pvar(1, 1, :, :, 1, ji)
-
-        call Prepare_diachro_write( tpfields(ji), tzfield, [ 3, 4 ] )
-        CALL IO_Field_write( tzfile, tzfield, zdata2d )
+      ! Loop on the processes
+      do ji = 1, Size( pvar, 6 )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 3, 4 ], gsplit, gdistributed )
       end do
-
-      deallocate( zdata2d )
     else if (  ( tpfields(1)%ndimlist(3) == NMNHDIM_SERIES_LEVEL .or. tpfields(1)%ndimlist(3) == NMNHDIM_SERIES_LEVEL_W ) &
          .and. tpfields(1)%ndimlist(4) == NMNHDIM_SERIES_TIME &
          .and. tpfields(1)%ndimlist(6) == NMNHDIM_SERIES_PROC ) then
       !Correspond to PROFILER_DIACHRO_n
-      if ( gsplit ) then
-          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
-      end if
-
-      allocate( zdata2d( size(pvar,3), size(pvar,4) ) )
-
-      ! Loop on the processes (1 written variable per process)
-      do ji = 1, size(pvar,6)
-        zdata2d(:, :) = pvar(1, 1, :, :, 1, ji)
-
-        call Prepare_diachro_write( tpfields(ji), tzfield, [ 3, 4 ] )
-        CALL IO_Field_write( tzfile, tzfield, zdata2d )
+      ! Loop on the processes
+      do ji = 1, Size( pvar, 6 )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 3, 4 ], gsplit, gdistributed )
       end do
-
-      deallocate( zdata2d )
     else if (  ( tpfields(1)%ndimlist(1) == NMNHDIM_NI .or. tpfields(1)%ndimlist(1) == NMNHDIM_NI_U )      &
          .and. tpfields(1)%ndimlist(4) == NMNHDIM_SERIES_TIME &
          .and. tpfields(1)%ndimlist(6) == NMNHDIM_SERIES_PROC ) then
       !Correspond to PROFILER_DIACHRO_n
-      if ( gsplit ) then
-          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
-      end if
-
-      allocate( zdata2d( size(pvar,1), size(pvar,4) ) )
-
-      ! Loop on the processes (1 written variable per process)
-      do ji = 1, size(pvar,6)
-        zdata2d(:, :) = pvar(:, 1, 1, :, 1, ji)
-
-        call Prepare_diachro_write( tpfields(ji), tzfield, [ 1, 4 ] )
-        CALL IO_Field_write( tzfile, tzfield, zdata2d )
+      ! Loop on the processes
+      do ji = 1, Size( pvar, 6 )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 1, 4 ], gsplit, gdistributed )
       end do
-
-      deallocate( zdata2d )
-
     else if (       tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_TIME         &
               .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_MASK_NBUMASK &
               .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS      ) then
-
-      Allocate( zdata2d(Size( pvar, 4 ), Size( pvar, 5 )) )
-
-      ! Loop on the processes (1 written variable per process)
+      ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        zdata2d(:,:) = pvar(1, 1, 1, :, :, ji)
-
-        if ( gsplit ) then
-          call Prepare_diachro_write( tpfields(ji), tzfield, [ 4, 5 ], kbutimepos = 1 )
-          !Create the metadata of the field (has to be done only once)
-          if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
-
-          call IO_Field_write( tzfile, tzfield, zdata2d, koffset= [ ( nbutshift - 1 ) * nbusubwrite, 0 ] )
-        else
-          call IO_Field_write( tzfile, tzfield, zdata2d )
-        end if
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 4, 5 ], gsplit, gdistributed )
       end do
-
-      Deallocate( zdata2d )
-
     else
       call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                       'case not yet implemented (variable '//trim(tpfields(1)%cmnhname)//')' )
@@ -1672,171 +1101,65 @@ select case ( idims )
          .and. Any( tpfields(1)%ndimlist(3) == [ NMNHDIM_BUDGET_CART_LEVEL,NMNHDIM_BUDGET_CART_LEVEL_W ] )                      &
          .and.      tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS                                                        ) then
       !Correspond to Store_one_budget (CART)
-      allocate( zdata3d( size(pvar,1), size(pvar,2), size(pvar,3) ) )
-
       ! Loop on the processes
-      do ji = 1, size(pvar,6)
-        zdata3d(:,:,:) = pvar(:, :, :, 1, 1, ji)
-
-        if ( gsplit ) then
-          if ( htype /= 'CART' ) call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                      ': group ' // Trim( hgroup ) //' gsplit=T not implemented for these dimensions and htype/=CART' )
-
-          if ( htype == 'CART' .and. .not. oicp .and. .not. ojcp ) then
-            call Prepare_diachro_write( tpfields(ji), tzfield, [ 1, 2, 3 ], kbutimepos = 4 )
-
-            !Data is distributed between all the processes
-            tzfield%cdir = 'XY'
-
-
-            !Create the metadata of the field (has to be done only once)
-            if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
-
-            call IO_Field_write_box( tzfile, tzfield, 'BUDGET',                                                     &
-                                     Reshape( zdata3d, [ Size(zdata3d,1), Size(zdata3d,2), Size(zdata3d,3), 1 ] ) , &
-                                     kil + jphext, kih + jphext, kjl + jphext, kjh + jphext,                        &
-                                     koffset= [ 0, 0, 0, ( nbutshift - 1 ) * nbusubwrite ]                          )
-          else
-            call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                            ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
-          end if
-        else
-          if ( htype == 'CART' .and. .not. oicp .and. .not. ojcp ) then
-            call Prepare_diachro_write( tpfields(ji), tzfield, [ 1, 2, 3 ] )
-
-            !Data is distributed between all the processes
-            tzfield%cdir = 'XY'
-            call IO_Field_write_box( tzfile, tzfield, 'BUDGET', zdata3d, &
-                                    kil + jphext, kih + jphext, kjl + jphext, kjh + jphext )
-          else
-            call Prepare_diachro_write( tpfields(ji), tzfield, [ 1, 2, 3 ] )
-
-            !Data is already collected on the master process
-!             tzfield%cdir = '--'
-            call IO_Field_write( tzfile, tzfield, zdata3d )
-          end if
-        end if
+      do ji = 1, Size( pvar, 6 )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 1, 2, 3 ], gsplit, gdistributed, &
+                                          kil, kih, kjl, kjh, kkl, kkh )
       end do
-
-      deallocate( zdata3d )
-
     elseif (  (        tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_MASK_LEVEL     &
                   .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_MASK_LEVEL_W ) &
        .and.           tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_TIME           &
        .and.           tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_MASK_NBUMASK   &
        .and.           tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS        ) then
       !Correspond to Store_one_budget (MASK)
-      allocate( zdata3d( size(pvar,3), size(pvar,4), size(pvar,5) ) )
-
       ! Loop on the processes
-      do ji = 1, size(pvar,6)
-        zdata3d(:,:,:) = pvar(1, 1, :, :, :, ji)
-
-        if ( gsplit ) then
-          call Prepare_diachro_write( tpfields(ji), tzfield, [ 3, 4, 5 ], kbutimepos = 2 )
-
-        !Create the metadata of the field (has to be done only once)
-          if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
-!           call IO_Field_partial_write( tzfile, tzfield, zdata3d(:,:,:), koffset= [ 0, ( nbutshift - 1 ) * nbusubwrite, 0 ] )
-          call IO_Field_write( tzfile, tzfield, zdata3d(:,:,:), koffset= [ 0, ( nbutshift - 1 ) * nbusubwrite, 0 ] )
-        else
-          call Prepare_diachro_write( tpfields(ji), tzfield, [ 3, 4, 5 ] )
-          call IO_Field_write( tzfile, tzfield, zdata3d )
-        end if
+      do ji = 1, Size( pvar, 6 )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 3, 4, 5 ], gsplit, gdistributed, &
+                                          kil, kih, kjl, kjh, kkl, kkh )
       end do
-
-      deallocate( zdata3d )
     else if (              tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL      &
               .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
                       .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
        .and.               tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_LES_SV         &
        .and.               tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_LES_MASK       ) then
-      if ( gsplit ) then
-          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
-      end if
-
       if ( nles_masks /= Size( pvar, 6 ) ) &
         call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4',                             &
                         'last dimension size of pvar is not equal to nles_masks (variable ' &
                         // Trim( tpfields(1)%cmnhname ) // ')' )
 
-      allocate( zdata3d( size(pvar,3), size(pvar,4), size(pvar,5) ) )
-
-      ! Loop on the masks (1 written variable per mask)
-      do ji = 1, size(pvar,6)
-        zdata3d(:,:,:) = pvar(1, 1, :, :, :, ji)
-
-        call Prepare_diachro_write( tpfields(ji), tzfield, [ 3, 4, 5 ] )
-        CALL IO_Field_write( tzfile, tzfield, zdata3d )
+      ! Loop on the processes
+      do ji = 1, Size( pvar, 6 )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 3, 4, 5 ], gsplit, gdistributed, &
+                                          kil, kih, kjl, kjh, kkl, kkh )
       end do
-
-      deallocate( zdata3d )
     else if (              tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL      &
               .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
                       .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
        .and.               tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_LES_SV         &
        .and.               tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_TERM           ) then
-      if ( gsplit ) then
-          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
-      end if
-
-      allocate( zdata3d( size(pvar,3), size(pvar,4), size(pvar,5) ) )
-
-      ! Loop on the masks (1 written variable per mask)
-      do ji = 1, size(pvar,6)
-        zdata3d(:,:,:) = pvar(1, 1, :, :, :, ji)
-
-        call Prepare_diachro_write( tpfields(ji), tzfield, [ 3, 4, 5 ] )
-        CALL IO_Field_write( tzfile, tzfield, zdata3d )
+      ! Loop on the processes
+      do ji = 1, Size( pvar, 6 )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 3, 4, 5 ], gsplit, gdistributed, &
+                                          kil, kih, kjl, kjh, kkl, kkh )
       end do
-
-      deallocate( zdata3d )
     else if (             tpfields(1)%ndimlist(1) == NMNHDIM_SPECTRA_SPEC_NI       &
              .and.        tpfields(1)%ndimlist(3) == NMNHDIM_SPECTRA_LEVEL         &
              .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
                      .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
              .and.        tpfields(1)%ndimlist(5) == NMNHDIM_COMPLEX               ) then
       !Correspond to LES_DIACHRO_SPEC
-      if ( gsplit ) then
-          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
-      end if
-
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-
-      allocate( zdata4d( size(pvar,1), size(pvar,3), size(pvar,4), size(pvar,5) ) )
-
-      zdata4d(:,:,:,:) = pvar(:, 1, :, :, :, 1)
-
-      call Prepare_diachro_write( tpfields(1), tzfield, [ 1, 3, 4, 5 ] )
-      CALL IO_Field_write( tzfile, tzfield, zdata4d )
-
-      deallocate( zdata4d )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 1, 3, 4, 5 ], gsplit, gdistributed )
     else if (              tpfields(1)%ndimlist(2) == NMNHDIM_SPECTRA_SPEC_NJ       &
               .and.        tpfields(1)%ndimlist(3) == NMNHDIM_SPECTRA_LEVEL         &
               .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
                       .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
               .and.        tpfields(1)%ndimlist(5) == NMNHDIM_COMPLEX               ) then
       !Correspond to LES_DIACHRO_SPEC
-      if ( gsplit ) then
-          call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                          ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
-      end if
-
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-
-      allocate( zdata4d( size(pvar,2), size(pvar,3), size(pvar,4), size(pvar,5) ) )
-
-      zdata4d(:,:,:,:) = pvar(1, :, :, :, :, 1)
-
-      call Prepare_diachro_write( tpfields(1), tzfield, [ 2, 3, 4, 5 ] )
-      CALL IO_Field_write( tzfile, tzfield, zdata4d )
-
-      deallocate( zdata4d )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 2, 3, 4, 5 ], gsplit, gdistributed )
     else
       call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                       'case not yet implemented (variable '//trim(tpfields(1)%cmnhname)//')' )
@@ -1847,49 +1170,17 @@ select case ( idims )
 !   case (6)
 
   case default
-    if ( gsplit ) then
-        call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
-                        ': group ' // Trim( hgroup ) //' gsplit=T not implemented' )
-    end if
-
-!     if ( All( tpfields(1)%ndimlist(:) /= NMNHDIM_UNKNOWN ) ) then
-!       tzfield%ndimlist(1)  = tpfields(1)%ndimlist(1)
-!       tzfield%ndimlist(2)  = tpfields(1)%ndimlist(2)
-!       tzfield%ndimlist(3)  = tpfields(1)%ndimlist(3)
-!       tzfield%ndimlist(4)  = tpfields(1)%ndimlist(4)
-!       tzfield%ndimlist(5)  = tpfields(1)%ndimlist(5)
-!       tzfield%ndimlist(6:) = NMNHDIM_UNUSED
-!     end if
-
     do ji = 1, Size( pvar, 6 )
-      call Prepare_diachro_write( tpfields(ji), tzfield, [ 1, 2, 3, 4, 5 ] )
-      CALL IO_Field_write( tzfile, tzfield, pvar(:, :, :, :, :, ji ) )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 1, 2, 3, 4, 5 ], &
+                                        gsplit, gdistributed )
     end do
+
 end select
 
-!Reset ndimlist (to prevent problems later)
-tzfield%ndimlist(:) = NMNHDIM_UNKNOWN
 
-TZFIELD%CMNHNAME   = 'dates'
-TZFIELD%CSTDNAME   = ''
-TZFIELD%CLONGNAME  = 'dates'
-TZFIELD%CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S'
-TZFIELD%CDIR       = '--'
-TZFIELD%CCOMMENT   = 'Dates at the middle of the budget timesteps'
-TZFIELD%NGRID      = 0
-TZFIELD%NTYPE      = TYPEDATE
-TZFIELD%NDIMS      = 1
-TZFIELD%LTIMEDEP   = .FALSE.
 
-if ( tpfields(1)%ndimlist(4) /= NMNHDIM_UNKNOWN .and. tpfields(1)%ndimlist(4) /= NMNHDIM_UNUSED) then
-  tzfield%ndimlist(1) = tpfields(1)%ndimlist(4)
-  tzfield%ndimlist(2:) = NMNHDIM_UNUSED
-end if
 
-CALL IO_Field_write( tzfile, tzfield, tpdates(:) )
 
-!Reset ndimlist
-tzfield%ndimlist(:) = NMNHDIM_UNKNOWN
 
 !
 
@@ -1900,20 +1191,240 @@ call Menu_diachro( tzfile, hgroup )
 
 end  subroutine Write_diachro_nc4
 
+subroutine Diachro_one_field_write_nc4( tpfile, tpfield, htype, pvar, kdims, osplit, odistributed, kil, kih, kjl, kjh, kkl, kkh )
+use modd_budget,      only: nbutshift, nbusubwrite
+use modd_field,       only: tfielddata, tfield_metadata_base
+use modd_io,          only: isp, tfiledata
+use modd_parameters,  only: jphext
 
-subroutine Prepare_diachro_write( tpfieldin, tpfieldout, kdims, kbutimepos )
-use modd_field,          only: NMNHDIM_BUDGET_TIME, NMNHDIM_UNUSED, NMNHMAXDIMS, tfielddata, tfield_metadata_base
+use mode_io_field_write, only: IO_Field_create, IO_Field_write, IO_Field_write_box
 
+type(tfiledata),                                     intent(in)  :: tpfile        !File to write
+class(tfield_metadata_base),                         intent(in)  :: tpfield
+character(len=*),                                    intent(in)  :: htype
+real,                        dimension(:,:,:,:,:,:), intent(in)  :: pvar
+integer, dimension(:),                               intent(in)  :: kdims        !List of indices of dimensions to use
+logical,                                             intent(in)  :: osplit
+logical,                                             intent(in)  :: odistributed !.T. if data is distributed among all processes
+integer,                                             intent(in), optional :: kil, kih
+integer,                                             intent(in), optional :: kjl, kjh
+integer,                                             intent(in), optional :: kkl, kkh
+
+integer                                                    :: idims
+integer                                                    :: ibutimepos
+integer                                                    :: ji
+integer,          dimension(size(shape(pvar)))             :: isizes_alldims
+integer,          dimension(:),                allocatable :: ioffset
+integer,          dimension(:),                allocatable :: isizes
+real                                                       :: zdata0d
+real,             dimension(:),                allocatable :: zdata1d
+real,             dimension(:,:),              allocatable :: zdata2d
+real,             dimension(:,:,:),            allocatable :: zdata3d
+real,             dimension(:,:,:,:),          allocatable :: zdata4d
+real,             dimension(:,:,:,:,:),        allocatable :: zdata5d
+type(tfielddata) :: tzfield
+
+idims = Size( kdims )
+
+if ( odistributed ) then
+  if ( idims /= 3 )                                                                                  &
+    call Print_msg( NVERB_FATAL, 'IO', 'Diachro_one_field_write_nc4',                                &
+                   'odistributed=.true. not allowed for dims/=3, field: ' //Trim( tzfield%cmnhname ) )
+
+  if ( htype /= 'CART' )                                                                                 &
+    call Print_msg( NVERB_FATAL, 'IO', 'Diachro_one_field_write_nc4',                                    &
+                   'odistributed=.true. not allowed for htype/=CART, field: ' //Trim( tzfield%cmnhname ) )
+end if
+
+if ( osplit ) then
+  if ( idims > 3 )                                                                                          &
+    call Print_msg( NVERB_FATAL, 'IO', 'Diachro_one_field_write_nc4',                                       &
+                                 'osplit=.true. not allowed for dims>3, field: ' //Trim( tzfield%cmnhname ) )
+
+  if ( htype /= 'CART' .and. htype /= 'MASK' )                                                                 &
+    call Print_msg( NVERB_FATAL, 'IO', 'Diachro_one_field_write_nc4',                                          &
+                    'osplit=.true. not allowed for htype/=CART and /=MASK, field: ' //Trim( tzfield%cmnhname ) )
+end if
+
+Allocate( isizes(idims) )
+isizes_alldims = 1
+do ji = 1, idims
+  isizes(ji) = Size( pvar, kdims(ji) )
+  isizes_alldims(kdims(ji)) = isizes(ji)
+end do
+
+call Prepare_diachro_write( tpfield, tzfield, kdims, osplit, odistributed, ibutimepos )
+
+NDIMS: select case( idims )
+  case ( 0 ) NDIMS
+    zdata0d = pvar(1, 1, 1, 1, 1, 1)
+
+    if ( osplit ) then
+      !Create the metadata of the field (has to be done only once)
+      if ( nbutshift == 1 ) call IO_Field_create( tpfile, tzfield )
+
+      call IO_Field_write( tpfile, tzfield, [ zdata0d ], koffset= [ ( nbutshift - 1 ) * nbusubwrite ] )
+    else
+      call IO_Field_write( tpfile, tzfield, zdata0d )
+    end if
+
+
+  case ( 1 ) NDIMS
+    ! Copy selected dimensions into zdata (+ auto-allocate it)
+    zdata1d = Reshape ( pvar(1:isizes_alldims(1), 1:isizes_alldims(2), 1:isizes_alldims(3),  &
+                             1:isizes_alldims(4), 1:isizes_alldims(5), 1:isizes_alldims(6)), &
+                             isizes(1:1) )
+
+    if ( osplit ) then
+      !Create the metadata of the field (has to be done only once)
+      if ( nbutshift == 1 ) call IO_Field_create( tpfile, tzfield )
+
+      Allocate( ioffset( tzfield%ndims ) )
+      ioffset(:) = 0
+      ioffset(ibutimepos) = ( nbutshift - 1 ) * nbusubwrite
+
+      if ( tzfield%ndims == idims ) then
+        !No time dimension was added in Prepare_diachro_write
+        call IO_Field_write( tpfile, tzfield, zdata1d(:), koffset = ioffset )
+      else if ( tzfield%ndims == ( idims + 1 ) ) then
+        !A time dimension was added in Prepare_diachro_write
+        call IO_Field_write( tpfile, tzfield, Reshape( zdata1d, [ Size(zdata1d,1), 1 ] ), &
+                              koffset = ioffset )
+      else
+        call Print_msg( NVERB_FATAL, 'IO', 'Diachro_one_field_write_nc4', &
+                                         'probable bug for ' //Trim( tzfield%cmnhname ) )
+      end if
+    else !.not. osplit
+      call IO_Field_write( tpfile, tzfield, zdata1d )
+    end if
+
+
+  case ( 2 ) NDIMS
+    ! Copy selected dimensions into zdata (+ auto-allocate it)
+    zdata2d = Reshape ( pvar(1:isizes_alldims(1), 1:isizes_alldims(2), 1:isizes_alldims(3),  &
+                             1:isizes_alldims(4), 1:isizes_alldims(5), 1:isizes_alldims(6)), &
+                             isizes(1:2) )
+
+    if ( osplit ) then
+      !Create the metadata of the field (has to be done only once)
+      if ( nbutshift == 1 ) call IO_Field_create( tpfile, tzfield )
+
+      Allocate( ioffset( tzfield%ndims ) )
+      ioffset(:) = 0
+      ioffset(ibutimepos) = ( nbutshift - 1 ) * nbusubwrite
+
+      if ( tzfield%ndims == idims ) then
+        !No time dimension was added in Prepare_diachro_write
+        call IO_Field_write( tpfile, tzfield, zdata2d(:,:), koffset = ioffset )
+      else if ( tzfield%ndims == ( idims + 1 ) ) then
+        !A time dimension was added in Prepare_diachro_write
+        call IO_Field_write( tpfile, tzfield, Reshape( zdata2d, [ Size(zdata2d,1), Size(zdata2d,2), 1 ] ), &
+                              koffset = ioffset )
+      else
+        call Print_msg( NVERB_FATAL, 'IO', 'Diachro_one_field_write_nc4', &
+                                         'probable bug for ' //Trim( tzfield%cmnhname ) )
+      end if
+    else !.not. osplit
+      call IO_Field_write( tpfile, tzfield, zdata2d )
+    end if
+
+
+  case ( 3 ) NDIMS
+    ! Copy selected dimensions into zdata (+ auto-allocate it)
+    zdata3d = Reshape ( pvar(1:isizes_alldims(1), 1:isizes_alldims(2), 1:isizes_alldims(3),  &
+                             1:isizes_alldims(4), 1:isizes_alldims(5), 1:isizes_alldims(6)), &
+                             isizes(1:3) )
+
+    if ( osplit ) then
+      !Create the metadata of the field (has to be done only once)
+      if ( nbutshift == 1 ) call IO_Field_create( tpfile, tzfield )
+
+      Allocate( ioffset( tzfield%ndims ) )
+      ioffset(:) = 0
+      ioffset(ibutimepos) = ( nbutshift - 1 ) * nbusubwrite
+
+      if ( odistributed ) then
+        if ( tzfield%ndims == idims ) then
+          !No time dimension was added in Prepare_diachro_write
+          call IO_Field_write_box( tpfile, tzfield, 'BUDGET',                                                     &
+                                 zdata3d, &
+                                 kil + jphext, kih + jphext, kjl + jphext, kjh + jphext,                        &
+                                 koffset = ioffset                                                              )
+        else if ( tzfield%ndims == ( idims + 1 ) ) then
+          !A time dimension was added in Prepare_diachro_write
+          call IO_Field_write_box( tpfile, tzfield, 'BUDGET',                                                     &
+                                 Reshape( zdata3d, [ Size(zdata3d,1), Size(zdata3d,2), Size(zdata3d,3), 1 ] ) , &
+                                 kil + jphext, kih + jphext, kjl + jphext, kjh + jphext,                        &
+                                 koffset = ioffset                                                              )
+        else
+          call Print_msg( NVERB_FATAL, 'IO', 'Diachro_one_field_write_nc4', &
+                                           'probable bug for ' //Trim( tzfield%cmnhname ) )
+        end if
+      else
+        !Data is already collected on the master process
+        if ( tzfield%ndims == idims ) then
+          !No time dimension was added in Prepare_diachro_write
+          call IO_Field_write( tpfile, tzfield, zdata3d(:,:,:), koffset = ioffset )
+        else if ( tzfield%ndims == ( idims + 1 ) ) then
+          !A time dimension was added in Prepare_diachro_write
+          call IO_Field_write( tpfile, tzfield, Reshape( zdata3d, [ Size(zdata3d,1), Size(zdata3d,2), Size(zdata3d,3), 1 ] ), &
+                                koffset = ioffset )
+        else
+          call Print_msg( NVERB_FATAL, 'IO', 'Diachro_one_field_write_nc4', &
+                                           'probable bug for ' //Trim( tzfield%cmnhname ) )
+        end if
+      end if
+    else !.not. osplit
+      if ( odistributed ) then
+        call IO_Field_write_box( tpfile, tzfield, 'BUDGET', zdata3d, &
+                                 kil + jphext, kih + jphext, kjl + jphext, kjh + jphext )
+      else
+        !Data is already collected on the master process
+        call IO_Field_write( tpfile, tzfield, zdata3d )
+      end if
+    end if
+
+
+  case ( 4 ) NDIMS
+    ! Copy selected dimensions into zdata (+ auto-allocate it)
+    zdata4d = Reshape ( pvar(1:isizes_alldims(1), 1:isizes_alldims(2), 1:isizes_alldims(3),  &
+                             1:isizes_alldims(4), 1:isizes_alldims(5), 1:isizes_alldims(6)), &
+                             isizes(1:4) )
+
+    call IO_Field_write( tpfile, tzfield, zdata4d )
+
+
+  case ( 5 ) NDIMS
+    ! Copy selected dimensions into zdata (+ auto-allocate it)
+    zdata5d = Reshape ( pvar(1:isizes_alldims(1), 1:isizes_alldims(2), 1:isizes_alldims(3),  &
+                             1:isizes_alldims(4), 1:isizes_alldims(5), 1:isizes_alldims(6)), &
+                             isizes(1:5) )
+
+    call IO_Field_write( tpfile, tzfield, zdata5d )
+
+
+  case default NDIMS
+    call Print_msg( NVERB_ERROR, 'IO', 'Diachro_one_field_write_nc4', Trim( tpfile%cname ) // &
+                          ': unsupported number of dimensions' )
+    return
+
+end select NDIMS
+
+end subroutine Diachro_one_field_write_nc4
+
+
+subroutine Prepare_diachro_write( tpfieldin, tpfieldout, kdims, osplit, odistributed, kbutimepos )
+use modd_field, only: NMNHDIM_BUDGET_TIME, NMNHDIM_UNUSED, NMNHMAXDIMS, tfielddata, tfield_metadata_base
 
 class(tfield_metadata_base), intent(in)  :: tpfieldin
 type(tfielddata),            intent(out) :: tpfieldout
 integer, dimension(:),       intent(in)  :: kdims ! List of indices of dimensions to use
-integer,           optional, intent(in)  :: kbutimepos
+logical,                     intent(in)  :: osplit
+logical,                     intent(in)  :: odistributed ! .true. if data is distributed among all the processes
+integer,                     intent(out) :: kbutimepos
 
-integer :: jdim
 integer :: idims
-
-print *,'PW: Prepare_diachro_write called for ',Trim( tpfieldin%cmnhname )
+integer :: jdim
 
 idims = Size( kdims )
 
@@ -1924,7 +1435,11 @@ tpfieldout%cmnhname   = tpfieldin%cmnhname
 tpfieldout%cstdname   = tpfieldin%cstdname
 tpfieldout%clongname  = tpfieldin%clongname
 tpfieldout%cunits     = tpfieldin%cunits
-tpfieldout%cdir       = '--'
+if ( .not. odistributed ) then
+  tpfieldout%cdir       = '--'
+else
+  tpfieldout%cdir       = 'XY'
+end if
 tpfieldout%ccomment   = tpfieldin%ccomment
 tpfieldout%ngrid      = tpfieldin%ngrid
 tpfieldout%ntype      = tpfieldin%ntype
@@ -1937,17 +1452,28 @@ do jdim = 1, idims
 end do
 tpfieldout%ndimlist(idims + 1:) = NMNHDIM_UNUSED
 
+kbutimepos = -1
+
 !Add budget time dimension if required
-if ( Present( kbutimepos ) ) then
-  ! Note: if kbutimepos <= idims, the budget time dimension is assumed to be already present
-  ! In that case, it is not necessary/useful to provide kbutimepos
-  if ( kbutimepos > idims ) then
-    if ( kbutimepos /= (idims + 1) ) call Print_msg( NVERB_FATAL, 'IO', 'Prepare_diachro_write', &
-                                                   'unexpected value for kbutimepos for ' //Trim( tpfieldin%cmnhname ) )
-    tpfieldout%ndims = tpfieldout%ndims + 1
-    tpfieldout%ndimlist(kbutimepos) = NMNHDIM_BUDGET_TIME
+if ( osplit ) then
+  do jdim = 1, idims
+    if ( tpfieldout%ndimlist(jdim) == NMNHDIM_BUDGET_TIME ) then
+      kbutimepos = jdim
+      exit
+    end if
+  end do
+
+  !budget time dimension was not found => add it
+  if ( kbutimepos == -1 ) then
+    idims = idims + 1
+    if ( idims > NMNHMAXDIMS ) call Print_msg( NVERB_FATAL, 'IO', 'Prepare_diachro_write',  &
+                                               'impossible to add NMNHDIM_BUDGET_TIME dimension for ' //Trim( tpfieldin%cmnhname ) )
+    kbutimepos = idims
+    tpfieldout%ndims = idims
+    tpfieldout%ndimlist(idims) = NMNHDIM_BUDGET_TIME
   end if
 end if
+
 end subroutine Prepare_diachro_write
 #endif
 
