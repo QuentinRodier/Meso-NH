@@ -92,8 +92,11 @@ INTEGER,SAVE   ::   IGROUP=0
 INTEGER,DIMENSION(:),ALLOCATABLE :: ITABCHAR
 LOGICAL   ::   GPACK
 TYPE(TFIELDDATA)  :: TZFIELD
+type(tfiledata) :: tzfile
 !------------------------------------------------------------------------------
 !
+if ( tpdiafile%cformat == 'NETCDF4' ) return
+
 GPACK=LPACK
 LPACK=.FALSE.
 !
@@ -104,6 +107,11 @@ IF(HGROUP == 'END')THEN
     LPACK=GPACK
     RETURN
   ENDIF
+
+  !Write only in LFI files
+  tzfile = tpdiafile
+  tzfile%cformat = 'LFI'
+
   ILENG=NMNHNAMELGTMAX*IGROUP
 
   TZFIELD%CMNHNAME   = 'MENU_BUDGET.DIM'
@@ -116,7 +124,7 @@ IF(HGROUP == 'END')THEN
   TZFIELD%NTYPE      = TYPEINT
   TZFIELD%NDIMS      = 0
   TZFIELD%LTIMEDEP   = .FALSE.
-  CALL IO_Field_write(TPDIAFILE,TZFIELD,ILENG)
+  CALL IO_Field_write(tzfile,TZFIELD,ILENG)
 
   ALLOCATE(ITABCHAR(ILENG))
   DO JJ=1,IGROUP
@@ -135,11 +143,15 @@ IF(HGROUP == 'END')THEN
   TZFIELD%NTYPE      = TYPEINT
   TZFIELD%NDIMS      = 1
   TZFIELD%LTIMEDEP   = .FALSE.
-  CALL IO_Field_write(TPDIAFILE,TZFIELD,ITABCHAR)
+  CALL IO_Field_write(tzfile,TZFIELD,ITABCHAR)
 
   DEALLOCATE(ITABCHAR)
 
 ELSE IF(HGROUP == 'READ')THEN
+
+  !Read only in LFI files
+  tzfile = tpdiafile
+  tzfile%cformat = 'LFI'
 
   TZFIELD%CMNHNAME   = 'MENU_BUDGET.DIM'
   TZFIELD%CSTDNAME   = ''
@@ -151,7 +163,7 @@ ELSE IF(HGROUP == 'READ')THEN
   TZFIELD%NTYPE      = TYPEINT
   TZFIELD%NDIMS      = 0
   TZFIELD%LTIMEDEP   = .FALSE.
-  CALL IO_Field_read(TPDIAFILE,TZFIELD,ILENG,IRESPDIA)
+  CALL IO_Field_read(tzfile,TZFIELD,ILENG,IRESPDIA)
   IF(IRESPDIA == -47)THEN
 !   print *,' No record MENU_BUDGET '
     LPACK=GPACK
@@ -169,7 +181,7 @@ ELSE IF(HGROUP == 'READ')THEN
   TZFIELD%NTYPE      = TYPEINT
   TZFIELD%NDIMS      = 1
   TZFIELD%LTIMEDEP   = .FALSE.
-  CALL IO_Field_read(TPDIAFILE,TZFIELD,ITABCHAR)
+  CALL IO_Field_read(tzfile,TZFIELD,ITABCHAR)
   IGROUP=ILENG/NMNHNAMELGTMAX
   DO JJ=1,IGROUP
     DO J = 1,NMNHNAMELGTMAX

@@ -634,7 +634,6 @@ use modd_type_date,    only: date_time
 
 use mode_io_field_write, only: IO_Field_create, IO_Field_write, IO_Field_write_box
 use mode_io_tools_nc4,   only: IO_Err_handle_nc4
-use mode_menu_diachro,   only: Menu_diachro
 
 type(tfiledata),                                     intent(in)           :: tpdiafile        ! File to write
 class(tfield_metadata_base), dimension(:),           intent(in)           :: tpfields
@@ -1186,8 +1185,6 @@ end select
 
 !Restore id of the file root group ('/' group)
 tzfile%nncid = isavencid
-
-call Menu_diachro( tzfile, hgroup )
 
 end  subroutine Write_diachro_nc4
 
