@@ -56,7 +56,8 @@ contains
 !!      Original       08/01/96
 !!      Updated   PM
 !!      Updated   JD 24/06/99 : add GPACK to disable pack option
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 15/12/2020: more intelligent ygroup allocation (waste less memory + no more risk of out of range accesses)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -81,8 +82,10 @@ CHARACTER(LEN=*), INTENT(IN) :: HGROUP
 !*       0.1   Local variables
 !              ---------------
 
-!
-CHARACTER(LEN=NMNHNAMELGTMAX),DIMENSION(1500),SAVE    :: YGROUP
+integer, parameter :: NALLOCSTEP = 50
+
+character(len=NMNHNAMELGTMAX), dimension(:), allocatable, save :: ygroup
+character(len=NMNHNAMELGTMAX), dimension(:), allocatable       :: ygroup_tmp
 INTEGER   ::   ILENG, J, JJ, IALREADY
 INTEGER   ::   IRESPDIA
 INTEGER,SAVE   ::   IGROUP=0
@@ -191,6 +194,14 @@ ELSE
   ENDIF
   IF(IALREADY == 0)THEN
     IGROUP=IGROUP+1
+
+    !Reallocate ygroup if too small
+    if ( Modulo( igroup, NALLOCSTEP ) == 1 ) then
+      Allocate( ygroup_tmp( NALLOCSTEP * ( igroup / NALLOCSTEP + 1 ) ) )
+      ygroup_tmp( 1 : igroup - 1 ) = ygroup( 1 : igroup - 1 )
+      call Move_alloc( from = ygroup_tmp, to = ygroup )
+    end if
+
     YGROUP(IGROUP)=ADJUSTL(HGROUP)
   ENDIF
 ENDIF
