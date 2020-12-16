@@ -8,6 +8,7 @@
 #SBATCH -e Examples.eo%j   #
 #SBATCH -t 01:00:00    # time limit
 #SBATCH --export=NONE
+#SBATCH -A mnh@cpu # put here you account/projet name
 
 # Echo des commandes
 ulimit -c 0
