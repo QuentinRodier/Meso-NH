@@ -67,7 +67,7 @@ export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
                 export   MNHENV=${MNHENV:-"
 ulimit -s unlimited
 module purge
-module load intel/17.0 intelmpi/2017.2.174
+module load intel/19.4 intelmpi/2019.4.243
 export SLURM_CPU_BIND=none
 export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
 # force CC=gcc , for HDF5 divide by zero problem with icc !!!
