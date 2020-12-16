@@ -318,7 +318,7 @@ NLES_TCOUNT = 0
 !*      3.6  dates array for diachro
 !            ----------------------
 !
-allocate( xles_dates( nles_times ) )
+allocate( tles_dates( nles_times ) )
 allocate( xles_times( nles_times ) )
 !
 !*      3.7  No data

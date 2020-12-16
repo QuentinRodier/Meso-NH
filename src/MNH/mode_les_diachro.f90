@@ -16,7 +16,7 @@ MODULE MODE_LES_DIACHRO
 !#######################
 
 USE MODD_LUNIT
-use modd_les_n, only: xles_dates, xles_times
+use modd_les_n, only: tles_dates, xles_times
 
 use mode_msg
 
@@ -957,7 +957,7 @@ type(date_time), dimension(:),           allocatable :: tzdates
 Allocate( zfield(Size( pfield, 1 ), Size( pfield, 2 ), Size( pfield, 3 ), Size( pfield, 4 )) )
 Allocate( tzdates( nles_current_times ) )
 
-tzdates(:) = xles_dates(:)
+tzdates(:) = tles_dates(:)
 
 !Copy all fields from tpfield
 tzfields(:) = tpfield
@@ -1110,7 +1110,7 @@ type(tfield_metadata_base)                           :: tzfield
 !            ----------------------------------------------------------
 
 allocate( tzdates( NLES_CURRENT_TIMES ) )
-tzdates(:) = xles_dates(:)
+tzdates(:) = tles_dates(:)
 
 ikl = 1
 ikh = nspectra_k
@@ -1234,7 +1234,7 @@ use modd_io,            only: tfiledata
 use modd_les,           only: nles_current_iinf, nles_current_isup, nles_current_jinf, nles_current_jsup, &
                               nles_current_times, nspectra_k, &
                               xles_current_domegax, xles_current_domegay
-use modd_les_n,         only: xles_dates
+use modd_les_n,         only: tles_dates
 use modd_type_date,     only: date_time
 
 use mode_write_diachro, only: Write_diachro
@@ -1260,7 +1260,7 @@ type(tfield_metadata_base)                           :: tzfield
 !*      1.0  Initialization of diachro variables for LES (z,t) profiles
 !            ----------------------------------------------------------
 allocate( tzdates( nles_current_times ) )
-tzdates(:) = xles_dates(:)
+tzdates(:) = tles_dates(:)
 
 ikl = 1
 ikh = nspectra_k

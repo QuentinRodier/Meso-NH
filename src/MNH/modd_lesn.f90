@@ -64,7 +64,7 @@ TYPE LES_t
   INTEGER :: NSPECTRA_NI        ! number of wave lengths in I direction
   INTEGER :: NSPECTRA_NJ        ! number of wave lengths in J direction
 !
-  type(date_time), dimension(:), pointer :: xles_dates => null() !Dates array
+  type(date_time), dimension(:), pointer :: tles_dates => null() !Dates array
   real,            dimension(:), pointer :: xles_times => null() !Times from the start of the segment
 !
   REAL, DIMENSION(:),   POINTER :: XLES_Z=>NULL()      ! altitudes
@@ -662,7 +662,7 @@ INTEGER, POINTER :: NLES_DTCOUNT=>NULL()
 INTEGER, POINTER :: NLES_TCOUNT=>NULL()
 INTEGER, POINTER :: NSPECTRA_NI=>NULL()
 INTEGER, POINTER :: NSPECTRA_NJ=>NULL()
-type(date_time), dimension(:), pointer :: xles_dates => null()
+type(date_time), dimension(:), pointer :: tles_dates => null()
 real,            dimension(:), pointer :: xles_times => null()
 REAL, DIMENSION(:),   POINTER :: XLES_Z=>NULL()
 REAL, POINTER :: XLES_ZS=>NULL()
@@ -1087,7 +1087,7 @@ SUBROUTINE LES_GOTO_MODEL(KFROM, KTO)
 INTEGER, INTENT(IN) :: KFROM, KTO
 !
 ! Save current state for allocated arrays
-les_model(kfrom)%xles_dates=>xles_dates
+les_model(kfrom)%tles_dates=>tles_dates
 les_model(kfrom)%xles_times=>xles_times
 LES_MODEL(KFROM)%XLES_Z=>XLES_Z
 LES_MODEL(KFROM)%XCOEFLIN_LES=>XCOEFLIN_LES
@@ -1511,7 +1511,7 @@ NLES_DTCOUNT=>LES_MODEL(KTO)%NLES_DTCOUNT
 NLES_TCOUNT=>LES_MODEL(KTO)%NLES_TCOUNT
 NSPECTRA_NI=>LES_MODEL(KTO)%NSPECTRA_NI
 NSPECTRA_NJ=>LES_MODEL(KTO)%NSPECTRA_NJ
-xles_dates=>les_model(kto)%xles_dates
+tles_dates=>les_model(kto)%tles_dates
 xles_times=>les_model(kto)%xles_times
 XLES_Z=>LES_MODEL(KTO)%XLES_Z
 XLES_ZS=>LES_MODEL(KTO)%XLES_ZS

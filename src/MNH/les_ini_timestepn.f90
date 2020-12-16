@@ -145,8 +145,8 @@ NLES_TCOUNT = NLES_TCOUNT + 1
 !
 NLES_CURRENT_TCOUNT = NLES_TCOUNT
 !
-xles_dates(nles_tcount ) = tdtcur
-call Datetime_distance( tdtseg, tdtcur, xles_times(nles_tcount ) )
+tles_dates(nles_tcount) = tdtcur
+call Datetime_distance( tdtseg, tdtcur, xles_times(nles_tcount) )
 !
 !* forward-in-time time-step
 !
