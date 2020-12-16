@@ -170,7 +170,7 @@ export ARMCI_SHR_BUF_METHOD=COPY
                 export MNHENV=${MNHENV:-"
 module purge
 module load intel/2019.5.281
-module load openmpi/icc/4.0.2.2
+module load openmpi/intel/4.0.2.2
 unset CC CXX
 "}
               ;;
