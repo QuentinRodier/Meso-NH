@@ -263,6 +263,7 @@ use modd_field,         only: NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NI_U, NMNHDIM_NJ_U
                               NMNHDIM_SPECTRA_SPEC_NI, NMNHDIM_SPECTRA_SPEC_NJ, NMNHDIM_SPECTRA_LEVEL,          &
                               NMNHDIM_SERIES_LEVEL, NMNHDIM_SERIES_LEVEL_W,                                     &
                               NMNHDIM_SERIES_TIME, NMNHDIM_PROFILER_TIME, NMNHDIM_STATION_TIME,                 &
+                              NMNHDIM_PAIR,                                                                     &
                               NMNHDIM_ARAKAWA,                                                                  &
                               NMNHDIM_LASTDIM_NODIACHRO, NMNHDIM_LASTDIM_DIACHRO
 
@@ -336,6 +337,9 @@ end if
 if ( tpfile%ctype == 'MNHDIACHRONIC' ) then
   !Dimension of size 2 used for NMNHDIM_COMPLEX
   call IO_Add_dim_nc4( tpfile, NMNHDIM_COMPLEX, 'real_imaginary', 2 )
+
+  !Dimension pair is used ie for boundaries of time intervals
+  call IO_Add_dim_nc4( tpfile, NMNHDIM_PAIR,    'pair',           2 )
 
   !Dimensions for the budgets masks
   if ( cbutype == 'CART' .or. cbutype == 'SKIP' ) then

@@ -1219,6 +1219,7 @@ USE MODD_GRID,       ONLY: XLATORI, XLONORI
 USE MODD_GRID_n,     ONLY: LSLEVE, XXHAT, XYHAT, XZHAT
 use modd_netcdf,     only: tdimnc
 USE MODD_PARAMETERS, ONLY: JPHEXT, JPVEXT
+use modd_time_n,     only: tdtcur
 
 use mode_field,      only: Find_field_id_from_mnhname
 USE MODE_GRIDPROJ
@@ -1408,8 +1409,8 @@ END IF
 IF (TPFILE%LMASTER) THEN !Time scale is the same on all processes
   IF (TRIM(YPROGRAM)/='PGD' .AND. TRIM(YPROGRAM)/='NESPGD' .AND. TRIM(YPROGRAM)/='ZOOMPG' &
       .AND. .NOT.(TRIM(YPROGRAM)=='REAL' .AND. CSTORAGE_TYPE=='SU') ) THEN !condition to detect PREP_SURFEX
-    if ( tpfile%ctype /= 'MNHDIACHRONIC' ) &
-      CALL WRITE_TIME_COORD(tpfile%tncdims%tdims(NMNHDIM_TIME))
+    if ( tpfile%ctype /= 'MNHDIACHRONIC' .and. Associated( tdtcur ) ) &
+      call Write_time_coord( tpfile%tncdims%tdims(NMNHDIM_TIME), [ tdtcur ] )
   END IF
 END IF
 
@@ -1677,66 +1678,116 @@ SUBROUTINE WRITE_VER_COORD(TDIM,HLONGNAME,HSTDNAME,HCOMPNAME,PSHIFT,KBOUNDLOW,KB
 
 END SUBROUTINE WRITE_VER_COORD
 
-SUBROUTINE WRITE_TIME_COORD(TDIM)
-  use modd_field,      only: tfieldlist
-  USE MODD_TIME_n,     ONLY: TDTMOD, TDTCUR
-  USE MODD_TYPE_DATE
+subroutine Write_time_coord( tdim, tpdates, tpdates_bound )
+  use modd_field,      only: NMNHDIM_PAIR, tfieldlist
+  use modd_time_n,     only: tdtmod
+  use modd_type_date,  only: date_time
 
-  USE MODE_DATETIME
+  use mode_datetime,   only: Datetime_distance
   use mode_field,      only: Find_field_id_from_mnhname
-  USE MODE_GRIDPROJ
 
-  TYPE(tdimnc), POINTER, INTENT(IN) :: TDIM
+  type(tdimnc),                    pointer,           intent(in) :: tdim
+  type(date_time), dimension(:),                      intent(in) :: tpdates
+  type(date_time), dimension(:,:),          optional, intent(in) :: tpdates_bound !Boundaries of the date intervals
 
-  REAL                         :: ZDELTATIME
-  CHARACTER(LEN=40)            :: YUNITS
-  CHARACTER(LEN=:),ALLOCATABLE :: YVARNAME
-  INTEGER(KIND=CDFINT)         :: IVARID
-  INTEGER(KIND=CDFINT)         :: IVDIM
-  INTEGER(KIND=CDFINT)         :: istatus
-  TYPE(DATE_TIME)              :: TZREF
+  character(len=40)                                 :: yunits
+  character(len=:),                     allocatable :: yvarname
+  integer                                           :: jt
+  integer(kind=CDFINT)                              :: ivarid
+  integer(kind=CDFINT)                              :: ivdim
+  integer(kind=CDFINT)                              :: istatus
+  integer(kind=CDFINT), dimension(2)                :: ivdims
+  real,                 dimension(:),   allocatable :: zdeltatimes_1d
+  real,                 dimension(:,:), allocatable :: zdeltatimes_2d
+  type(date_time)                                   :: tzref
 
-
-  IF (ASSOCIATED(TDTCUR) .AND. ASSOCIATED(TDTMOD)) THEN
-    yvarname = Trim( tdim%cname )
-    ivdim    = tdim%nid
-
-    istatus = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
-    IF (istatus /= NF90_NOERR) THEN
-      ! Define the coordinate variable
-      istatus = NF90_DEF_VAR(INCID, YVARNAME, MNHREAL_NF90, IVDIM, IVARID)
-      IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_TIME_COORD','NF90_DEF_VAR',trim(YVARNAME))
-    ELSE
-      CALL PRINT_MSG(NVERB_ERROR,'IO','WRITE_TIME_COORD',TRIM(YVARNAME)//' already defined')
-    END IF
-
-    ! Write metadata
-    istatus = NF90_PUT_ATT(INCID, IVARID, 'long_name','time axis')
-    IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_TIME_COORD','NF90_PUT_ATT','long_name for '//trim(YVARNAME))
-    istatus = NF90_PUT_ATT(INCID, IVARID, 'standard_name','time')
-    IF (istatus /= NF90_NOERR) &
-      CALL IO_Err_handle_nc4(istatus,'WRITE_TIME_COORD','NF90_PUT_ATT','standard_name for '//trim(YVARNAME))
-    WRITE(YUNITS,'( "seconds since ",I4.4,"-",I2.2,"-",I2.2," 00:00:00 +0:00" )') &
-          TDTMOD%TDATE%YEAR,TDTMOD%TDATE%MONTH,TDTMOD%TDATE%DAY
-    istatus = NF90_PUT_ATT(INCID, IVARID, 'units',YUNITS)
-    IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_TIME_COORD','NF90_PUT_ATT','units for '//trim(YVARNAME))
-    istatus = NF90_PUT_ATT(INCID, IVARID, 'axis','T')
-    IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_TIME_COORD','NF90_PUT_ATT','axis for '//trim(YVARNAME))
-    istatus = NF90_PUT_ATT(INCID, IVARID,'calendar','standard')
-    IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_TIME_COORD','NF90_PUT_ATT','calendar for '//trim(YVARNAME))
-
-    ! Model beginning date (TDTMOD%TDATE) is used as the reference date
+  if ( Associated( tdtmod ) ) then
+    ! Model beginning date (tdtmod%tdate) is used as the reference date
     ! Reference time is set to 0.
-    TZREF = TDTMOD
-    TZREF%TIME = 0.
-    ! Compute the temporal distance from reference
-    CALL DATETIME_DISTANCE(TZREF,TDTCUR,ZDELTATIME)
-    ! Write the data
-    istatus = NF90_PUT_VAR(INCID, IVARID, ZDELTATIME)
-    IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_TIME_COORD','NF90_PUT_VAR',trim(YVARNAME))
-  END IF
+    tzref = tdtmod
+    tzref%time = 0.
+  else
+    tzref%tdate%year  = 2000
+    tzref%tdate%month = 1
+    tzref%tdate%day   = 1
+    tzref%time        = 0.
+  end if
 
-END SUBROUTINE WRITE_TIME_COORD
+  yvarname = Trim( tdim%cname )
+  ivdim    = tdim%nid
+
+  istatus = NF90_INQ_VARID( incid, yvarname, ivarid )
+  if ( istatus /= NF90_NOERR ) then
+    ! Define the coordinate variable
+    istatus = NF90_DEF_VAR( incid, yvarname, mnhreal_nf90, ivdim, ivarid )
+    if ( istatus /= NF90_NOERR ) call IO_Err_handle_nc4( istatus, 'Write_time_coord', 'NF90_DEF_VAR', Trim( yvarname ) )
+  else
+    call Print_msg( NVERB_ERROR, 'IO', 'Write_time_coord', Trim( yvarname ) // ' already defined' )
+  end if
+
+  ! Write metadata
+  istatus = NF90_PUT_ATT( incid, ivarid, 'long_name', 'time axis' )
+  if ( istatus /= NF90_NOERR ) &
+    call IO_Err_handle_nc4( istatus, 'Write_time_coord', 'NF90_PUT_ATT', 'long_name for ' // Trim( yvarname ) )
+  istatus = NF90_PUT_ATT( incid, ivarid, 'standard_name','time' )
+  IF ( istatus /= NF90_NOERR ) &
+    call IO_Err_handle_nc4( istatus, 'Write_time_coord', 'NF90_PUT_ATT', 'standard_name for ' // Trim( yvarname ) )
+  Write( yunits, '( "seconds since ", i4.4, "-", i2.2, "-", i2.2, " 00:00:00 +0:00" )' ) &
+         tzref%tdate%year, tzref%tdate%month, tzref%tdate%day
+  istatus = NF90_PUT_ATT( incid, ivarid, 'units', yunits )
+  if ( istatus /= NF90_NOERR ) &
+    call IO_Err_handle_nc4( istatus, 'Write_time_coord', 'NF90_PUT_ATT', 'units for ' // Trim( yvarname ) )
+  istatus = NF90_PUT_ATT( incid, ivarid, 'axis', 'T' )
+  if ( istatus /= NF90_NOERR ) &
+    call IO_Err_handle_nc4( istatus, 'Write_time_coord', 'NF90_PUT_ATT', 'axis for ' // Trim( yvarname ) )
+  istatus = NF90_PUT_ATT( incid, ivarid, 'calendar', 'standard' )
+  if ( istatus /= NF90_NOERR ) &
+    call IO_Err_handle_nc4( istatus, 'Write_time_coord', 'NF90_PUT_ATT', 'calendar for ' // Trim( yvarname ) )
+  if ( Present( tpdates_bound ) ) then
+    istatus = NF90_PUT_ATT( incid, ivarid, 'bounds', Trim( yvarname ) // '_bounds' )
+    if ( istatus /= NF90_NOERR ) call IO_Err_handle_nc4( istatus, 'Write_time_coord', 'NF90_PUT_ATT', &
+                                                         'bounds for ' // Trim( yvarname ) )
+  end if
+
+  ! Compute the temporal distance from reference
+  Allocate( zdeltatimes_1d(Size( tpdates )) )
+  do jt = 1, Size( tpdates )
+    call Datetime_distance( tzref, tpdates(jt), zdeltatimes_1d(jt) )
+  end do
+
+  ! Write the data
+  istatus = NF90_PUT_VAR( incid, ivarid, zdeltatimes_1d )
+  if ( istatus /= NF90_NOERR ) call IO_Err_handle_nc4( istatus, 'Write_time_coord', 'NF90_PUT_VAR', Trim( yvarname ) )
+
+  Deallocate( zdeltatimes_1d )
+
+  !Write the date interval boundaries (if provided)
+  if ( Present( tpdates_bound ) ) then
+    yvarname = Trim( tdim%cname ) // '_bounds'
+    istatus = NF90_INQ_VARID( incid, yvarname, ivarid )
+    if ( istatus /= NF90_NOERR ) then
+      ! Define the coordinate variable
+      ivdims(1) = tpfile%tncdims%tdims(NMNHDIM_PAIR)%nid
+      ivdims(2) = tdim%nid
+      istatus = NF90_DEF_VAR( incid, yvarname, MNHREAL_NF90, ivdims, ivarid )
+      if ( istatus /= NF90_NOERR ) call IO_Err_handle_nc4( istatus, 'Write_time_coord', 'NF90_DEF_VAR', Trim( yvarname ) )
+    else
+      call Print_msg( NVERB_ERROR, 'IO', 'Write_time_coord', Trim( yvarname ) // ' already defined' )
+    end if
+
+    ! Compute the temporal distance from reference
+    Allocate( zdeltatimes_2d(2, Size( tpdates_bound, 2 )) )
+    do jt = 1, Size( tpdates_bound, 2 )
+      call Datetime_distance( tzref, tpdates_bound(1, jt), zdeltatimes_2d(1, jt) )
+      call Datetime_distance( tzref, tpdates_bound(2, jt), zdeltatimes_2d(2, jt) )
+    end do
+
+    ! Write the data
+    istatus = NF90_PUT_VAR( incid, ivarid, zdeltatimes_2d(:,:) )
+    if ( istatus /= NF90_NOERR ) call IO_Err_handle_nc4( istatus, 'Write_time_coord', 'NF90_PUT_VAR', Trim( yvarname ) )
+  end if
+
+end subroutine Write_time_coord
 
 END SUBROUTINE IO_Coordvar_write_nc4
 

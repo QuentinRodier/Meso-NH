@@ -81,7 +81,9 @@ integer, parameter :: NMNHDIM_FLYER_TIME          = 36  ! Time dimension for air
 integer, parameter :: NMNHDIM_PROFILER_TIME       = 37  ! Time dimension for profilers
 integer, parameter :: NMNHDIM_STATION_TIME        = 38  ! Time dimension for stations
 
-integer, parameter :: NMNHDIM_LASTDIM_DIACHRO     = 38  ! Index of the last defined dimension for diachronic files
+integer, parameter :: NMNHDIM_PAIR                = 39  ! For values coming by pair (ie boundaries)
+
+integer, parameter :: NMNHDIM_LASTDIM_DIACHRO     = 39  ! Index of the last defined dimension for diachronic files
 
 integer, parameter :: NMNHDIM_BUDGET_NGROUPS      = 101 ! This is not a true dimension
 integer, parameter :: NMNHDIM_FLYER_PROC          = 102 ! This is not a true dimension
