@@ -972,16 +972,16 @@ TZFIELD = TPFIELD
 IF (.NOT.ASSOCIATED(TDTMOD)) THEN
   CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_T0',TRIM(TPFILE%CNAME)// &
                  ': '//TRIM(TZFIELD%CMNHNAME)//': DTMOD is not associated and not known. Reference date set to 2000/01/01')
-  TZREF%TDATE%YEAR  = 2000
-  TZREF%TDATE%MONTH = 1
-  TZREF%TDATE%DAY   = 1
-  TZREF%TIME        = 0.
+  TZREF%nyear  = 2000
+  TZREF%nmonth = 1
+  TZREF%nday   = 1
+  TZREF%xtime  = 0.
 ELSE
   TZREF = TDTMOD
-  TZREF%TIME = 0.
+  TZREF%xtime = 0.
 END IF
 WRITE(YUNITS,'( "seconds since ",I4.4,"-",I2.2,"-",I2.2," 00:00:00 +0:00" )') &
-      TZREF%TDATE%YEAR, TZREF%TDATE%MONTH, TZREF%TDATE%DAY
+      TZREF%nyear, TZREF%nmonth, TZREF%nday
 TZFIELD%CUNITS = TRIM(YUNITS)
 !
 call IO_Field_create_nc4( tpfile, tzfield, kvarid = ivarid, hcalendar = 'standard' )
@@ -1027,16 +1027,16 @@ TZFIELD = TPFIELD
 IF (.NOT.ASSOCIATED(TDTMOD)) THEN
   CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_nc4_T1',TRIM(TPFILE%CNAME)// &
                  ': '//TRIM(TZFIELD%CMNHNAME)//': DTMOD is not associated and not known. Reference date set to 2000/01/01')
-  TZREF%TDATE%YEAR  = 2000
-  TZREF%TDATE%MONTH = 1
-  TZREF%TDATE%DAY   = 1
-  TZREF%TIME        = 0.
+  TZREF%nyear  = 2000
+  TZREF%nmonth = 1
+  TZREF%nday   = 1
+  TZREF%xtime  = 0.
 ELSE
   TZREF = TDTMOD
-  TZREF%TIME = 0.
+  TZREF%xtime = 0.
 END IF
 WRITE(YUNITS,'( "seconds since ",I4.4,"-",I2.2,"-",I2.2," 00:00:00 +0:00" )') &
-      TZREF%TDATE%YEAR, TZREF%TDATE%MONTH, TZREF%TDATE%DAY
+      TZREF%nyear, TZREF%nmonth, TZREF%nday
 TZFIELD%CUNITS = TRIM(YUNITS)
 !
 call IO_Field_create_nc4( tpfile, tzfield, kshape = Shape( tpdata), kvarid = ivarid, hcalendar = 'standard' )
@@ -1705,12 +1705,12 @@ subroutine Write_time_coord( tdim, tpdates, tpdates_bound )
     ! Model beginning date (tdtmod%tdate) is used as the reference date
     ! Reference time is set to 0.
     tzref = tdtmod
-    tzref%time = 0.
+    tzref%xtime = 0.
   else
-    tzref%tdate%year  = 2000
-    tzref%tdate%month = 1
-    tzref%tdate%day   = 1
-    tzref%time        = 0.
+    tzref%nyear  = 2000
+    tzref%nmonth = 1
+    tzref%nday   = 1
+    tzref%xtime  = 0.
   end if
 
   yvarname = Trim( tdim%cname )
@@ -1733,7 +1733,7 @@ subroutine Write_time_coord( tdim, tpdates, tpdates_bound )
   IF ( istatus /= NF90_NOERR ) &
     call IO_Err_handle_nc4( istatus, 'Write_time_coord', 'NF90_PUT_ATT', 'standard_name for ' // Trim( yvarname ) )
   Write( yunits, '( "seconds since ", i4.4, "-", i2.2, "-", i2.2, " 00:00:00 +0:00" )' ) &
-         tzref%tdate%year, tzref%tdate%month, tzref%tdate%day
+         tzref%nyear, tzref%nmonth, tzref%nday
   istatus = NF90_PUT_ATT( incid, ivarid, 'units', yunits )
   if ( istatus /= NF90_NOERR ) &
     call IO_Err_handle_nc4( istatus, 'Write_time_coord', 'NF90_PUT_ATT', 'units for ' // Trim( yvarname ) )

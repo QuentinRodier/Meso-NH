@@ -948,11 +948,11 @@ IF (LFLASH_GEOM .AND. LLMA) THEN
 !
   GLMA_FILE = .FALSE.
 !
-  IF (TDTCUR%TIME >= TDTLMA%TIME-PTSTEP .AND. CLMA_FILE(1:5) /= "BEGIN") THEN
+  IF (TDTCUR%xtime >= TDTLMA%xtime-PTSTEP .AND. CLMA_FILE(1:5) /= "BEGIN") THEN
     LWRITE_LMA  = .TRUE.
   END IF
-  IF (TDTCUR%TIME >= TDTLMA%TIME) THEN
-    TDTLMA%TIME = TDTLMA%TIME + XDTLMA
+  IF (TDTCUR%xtime >= TDTLMA%xtime) THEN
+    TDTLMA%xtime = TDTLMA%xtime + XDTLMA
     GLMA_FILE   = .TRUE.
     LWRITE_LMA  = .FALSE.
   END IF
@@ -964,12 +964,12 @@ IF (LFLASH_GEOM .AND. LLMA) THEN
       TZFILE_LMA => NULL()
     ENDIF
 !
-    TDTLMA%TIME = TDTLMA%TIME - XDTLMA
-    WRITE (YNAME,FMT='(3I2.2,A1,3I2.2,A1,I4.4)')                               &
-          ABS(TDTCUR%TDATE%YEAR-2000),TDTCUR%TDATE%MONTH,TDTCUR%TDATE%DAY,'_', &
-            INT(TDTLMA%TIME/3600.),INT(REAL(MOD(INT(TDTLMA%TIME),3600))/60.),  &
-                                      MOD(INT(TDTLMA%TIME),60), '_', INT(XDTLMA)
-    TDTLMA%TIME = MOD(TDTLMA%TIME + XDTLMA,86400.)
+    TDTLMA%xtime = TDTLMA%xtime - XDTLMA
+    WRITE (YNAME,FMT='(3I2.2,A1,3I2.2,A1,I4.4)')                                 &
+          ABS(TDTCUR%nyear-2000),TDTCUR%nmonth,TDTCUR%nday,'_',                  &
+            INT(TDTLMA%xtime/3600.),INT(REAL(MOD(INT(TDTLMA%xtime),3600))/60.),  &
+                                      MOD(INT(TDTLMA%xtime),60), '_', INT(XDTLMA)
+    TDTLMA%xtime = MOD(TDTLMA%xtime + XDTLMA,86400.)
     CLMA_FILE = CEXP//"_SIMLMA_"//YNAME//".dat"
 !
     IF ( IPROC .EQ. 0 ) THEN

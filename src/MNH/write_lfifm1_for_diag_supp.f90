@@ -801,12 +801,12 @@ IF (LEN_TRIM(CRAD_SAT) /= 0 .AND. NRR /=0) THEN
   DO JI=1,ITOTGEO
     ZIRBT(:,:) = XUNDEF
     ZWVBT(:,:) = XUNDEF
-    CALL RADTR_SATEL(TDTCUR%TDATE%YEAR,TDTCUR%TDATE%MONTH,TDTCUR%TDATE%DAY, &
-                     TDTCUR%TIME, NDLON, NFLEV, NSTATM, NRAD_COLNBR, XEMIS(:,:,1), &
-                     XCCO2, XTSRAD, XSTATM, XTHT, XRT, XPABST, XZZ,         &
-                     XSIGS, XMFCONV, XCLDFR, LUSERI, LSIGMAS,               &
-                     LSUBG_COND, LRAD_SUBG_COND, ZIRBT, ZWVBT,              &
-                     INDGEO(JI),VSIGQSAT ) 
+    CALL RADTR_SATEL( TDTCUR%nyear, TDTCUR%nmonth, TDTCUR%nday, TDTCUR%xtime, &
+                      NDLON, NFLEV, NSTATM, NRAD_COLNBR, XEMIS(:,:,1),        &
+                      XCCO2, XTSRAD, XSTATM, XTHT, XRT, XPABST, XZZ,          &
+                      XSIGS, XMFCONV, XCLDFR, LUSERI, LSIGMAS,                &
+                      LSUBG_COND, LRAD_SUBG_COND, ZIRBT, ZWVBT,               &
+                      INDGEO(JI), VSIGQSAT                                    )
     !
     TZFIELD%CMNHNAME   = TRIM(YNAM_SAT(JI))//'_IRBT'
     TZFIELD%CSTDNAME   = ''

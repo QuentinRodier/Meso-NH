@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -224,10 +224,10 @@ DO JKT = 1,NFRC
   WRITE(UNIT=ILUOUT,FMT='(A, I4)') "SET_FRC: start reading forcing field ", JKT
 !
   IF( YZP=='ZFRC' ) THEN
-    READ(ILUPRE,*) TDTFRC(JKT)%TDATE%YEAR,  &
-                   TDTFRC(JKT)%TDATE%MONTH, &
-                   TDTFRC(JKT)%TDATE%DAY,   &
-                   TDTFRC(JKT)%TIME
+    READ(ILUPRE,*) TDTFRC(JKT)%nyear,  &
+                   TDTFRC(JKT)%nmonth, &
+                   TDTFRC(JKT)%nday,   &
+                   TDTFRC(JKT)%xtime
     READ(ILUPRE,*) ZZGROUNDF  ! data at ground level
     READ(ILUPRE,*) ZPGROUNDF
     READ(ILUPRE,*) ZTHDGROUNDF
@@ -267,10 +267,10 @@ DO JKT = 1,NFRC
   END IF
 !
   IF( YZP=='PFRC' ) THEN
-    READ(ILUPRE,*) TDTFRC(JKT)%TDATE%YEAR,  &
-                   TDTFRC(JKT)%TDATE%MONTH, &
-                   TDTFRC(JKT)%TDATE%DAY,   &
-                   TDTFRC(JKT)%TIME
+    READ(ILUPRE,*) TDTFRC(JKT)%nyear,  &
+                   TDTFRC(JKT)%nmonth, &
+                   TDTFRC(JKT)%nday,   &
+                   TDTFRC(JKT)%xtime
 !
     READ(ILUPRE,*) ZZGROUNDF  ! data at ground level
     READ(ILUPRE,*) ZPGROUNDF
@@ -453,15 +453,15 @@ DO JKT = 2,NFRC-1
     WRITE(ILUOUT,*) &
       "               soundings have to be entered in increasing temporal order"
     WRITE(ILUOUT,*) "SOUNDING TIME ", JKT-1, " IS: "
-    WRITE(ILUOUT,*) TDTFRC(JKT-1)%TDATE%YEAR,  &
-                    TDTFRC(JKT-1)%TDATE%MONTH, &
-                    TDTFRC(JKT-1)%TDATE%DAY,   &
-                    TDTFRC(JKT-1)%TIME
+    WRITE(ILUOUT,*) TDTFRC(JKT-1)%nyear,  &
+                    TDTFRC(JKT-1)%nmonth, &
+                    TDTFRC(JKT-1)%nday,   &
+                    TDTFRC(JKT-1)%xtime
     WRITE(ILUOUT,*) "SOUNDING TIME ", JKT, " IS: "
-    WRITE(ILUOUT,*) TDTFRC(JKT)%TDATE%YEAR,  &
-                    TDTFRC(JKT)%TDATE%MONTH, &
-                    TDTFRC(JKT)%TDATE%DAY,   &
-                    TDTFRC(JKT)%TIME
+    WRITE(ILUOUT,*) TDTFRC(JKT)%nyear,  &
+                    TDTFRC(JKT)%nmonth, &
+                    TDTFRC(JKT)%nday,   &
+                    TDTFRC(JKT)%xtime
  !callabortstop
   CALL PRINT_MSG(NVERB_FATAL,'GEN','SET_FRC','')
   END IF
@@ -524,10 +524,10 @@ END DO
 WRITE(UNIT=ILUOUT,FMT='(" THERE ARE ",I2," FORCING SOUNDINGS AT:")') NFRC
 DO JL = 1 , NFRC
   WRITE(UNIT=ILUOUT,FMT='(F9.0, "s, date:", I3, "/", I3, "/", I5)') &
-    TDTFRC(JL)%TIME,        &
-    TDTFRC(JL)%TDATE%DAY,   &
-    TDTFRC(JL)%TDATE%MONTH, &
-    TDTFRC(JL)%TDATE%YEAR
+    TDTFRC(JL)%xtime,  &
+    TDTFRC(JL)%nday,   &
+    TDTFRC(JL)%nmonth, &
+    TDTFRC(JL)%nyear
 END DO
 !
 IF (NVERB >= 10) THEN

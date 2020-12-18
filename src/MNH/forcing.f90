@@ -286,10 +286,10 @@ IF (GSFIRSTCALL) THEN
   WRITE(UNIT=ILUOUT0,FMT='(" THERE ARE ",I2," FORCING SOUNDINGS AT:")') NFRC
   DO JSX = 1 , NFRC
     WRITE(UNIT=ILUOUT0,FMT='(F9.0, "s, date:", I3, "/", I3, "/", I5)') &
-      TDTFRC(JSX)%TIME,        &
-      TDTFRC(JSX)%TDATE%DAY,   &
-      TDTFRC(JSX)%TDATE%MONTH, &
-      TDTFRC(JSX)%TDATE%YEAR
+      TDTFRC(JSX)%xtime,  &
+      TDTFRC(JSX)%nday,   &
+      TDTFRC(JSX)%nmonth, &
+      TDTFRC(JSX)%nyear
   END DO
 !
 !*        1.2  find first sounding to be used 

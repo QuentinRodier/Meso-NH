@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -337,7 +337,7 @@ ENDIF
 !  summer/winter dependency
 !
 IF (LFIX_DAT ) THEN           ! Ajout PP 
-   IF( (TPDTEXP%TDATE%MONTH.GE.4).AND.(TPDTEXP%TDATE%MONTH.LE.9) ) THEN
+   IF( (TPDTEXP%nmonth.GE.4).AND.(TPDTEXP%nmonth.LE.9) ) THEN
      GSUMMER = .TRUE.
      GWINTER = .FALSE.
    ELSE
@@ -345,7 +345,7 @@ IF (LFIX_DAT ) THEN           ! Ajout PP
      GWINTER = .TRUE.
    END IF
 ELSE
-   IF( (TPDTCUR%TDATE%MONTH.GE.4).AND.(TPDTCUR%TDATE%MONTH.LE.9) ) THEN
+   IF( (TPDTCUR%nmonth.GE.4).AND.(TPDTCUR%nmonth.LE.9) ) THEN
      GSUMMER = .TRUE.
      GWINTER = .FALSE.
    ELSE
@@ -518,11 +518,11 @@ END IF
 ALLOCATE (ZOZON(KDLON,KFLEV))
 !
 IF (LFIX_DAT ) THEN     ! Ajout PP 
- ZYMD = TPDTEXP%TDATE%YEAR * 1E4 + TPDTEXP%TDATE%MONTH * 1E2 + TPDTEXP%TDATE%DAY
- ZHOURS = INT(TPDTEXP%TIME / 60.)
+ ZYMD = TPDTEXP%nyear * 1E4 + TPDTEXP%nmonth * 1E2 + TPDTEXP%nday
+ ZHOURS = INT(TPDTEXP%xtime / 60.)
 ELSE
- ZYMD = TPDTCUR%TDATE%YEAR * 1E4 + TPDTCUR%TDATE%MONTH * 1E2 + TPDTCUR%TDATE%DAY
- ZHOURS = INT(TPDTCUR%TIME / 60.)
+ ZYMD = TPDTCUR%nyear * 1E4 + TPDTCUR%nmonth * 1E2 + TPDTCUR%nday
+ ZHOURS = INT(TPDTCUR%xtime / 60.)
 END IF
 !
 ! Fortuin langematz climatology loading

@@ -592,22 +592,22 @@ TZFIELD%LTIMEDEP   = .FALSE.
 !Reconstitute old diachro format
 allocate( zdatime( 16, size(tpdates) ) )
 
-zdatime(1,  : ) = tdtexp%tdate%year
-zdatime(2,  : ) = tdtexp%tdate%month
-zdatime(3,  : ) = tdtexp%tdate%day
-zdatime(4,  : ) = tdtexp%time
-zdatime(5,  : ) = tdtseg%tdate%year
-zdatime(6,  : ) = tdtseg%tdate%month
-zdatime(7,  : ) = tdtseg%tdate%day
-zdatime(8,  : ) = tdtseg%time
-zdatime(9,  : ) = tdtmod%tdate%year
-zdatime(10, : ) = tdtmod%tdate%month
-zdatime(11, : ) = tdtmod%tdate%day
-zdatime(12, : ) = tdtmod%time
-zdatime(13, : ) = tpdates(:)%tdate%year
-zdatime(14, : ) = tpdates(:)%tdate%month
-zdatime(15, : ) = tpdates(:)%tdate%day
-zdatime(16, : ) = tpdates(:)%time
+zdatime(1,  : ) = tdtexp%nyear
+zdatime(2,  : ) = tdtexp%nmonth
+zdatime(3,  : ) = tdtexp%nday
+zdatime(4,  : ) = tdtexp%xtime
+zdatime(5,  : ) = tdtseg%nyear
+zdatime(6,  : ) = tdtseg%nmonth
+zdatime(7,  : ) = tdtseg%nday
+zdatime(8,  : ) = tdtseg%xtime
+zdatime(9,  : ) = tdtmod%nyear
+zdatime(10, : ) = tdtmod%nmonth
+zdatime(11, : ) = tdtmod%nday
+zdatime(12, : ) = tdtmod%xtime
+zdatime(13, : ) = tpdates(:)%nyear
+zdatime(14, : ) = tpdates(:)%nmonth
+zdatime(15, : ) = tpdates(:)%nday
+zdatime(16, : ) = tpdates(:)%xtime
 
 call IO_Field_write( tzfile, tzfield, zdatime )
 

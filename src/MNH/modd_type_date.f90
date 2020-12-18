@@ -1,11 +1,11 @@
-!MNH_LIC Copyright 1997-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1997-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!     #################
-      MODULE MODD_TYPE_DATE
-!     #################
+!####################
+module modd_type_date
+!####################
 !
 !!****  *MODD_TYPE_DATE* - declaration of temporal types
 !!
@@ -31,24 +31,24 @@
 !!    -------------
 !!      Original    11/08/97
 !  P. Wautelet 24/07/2019: set default values
+!  P. Wautelet 17/12/2020: restructure type date_time
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
-!
+
 use modd_parameters, only: NNEGUNDEF, XNEGUNDEF
 
-IMPLICIT NONE
+implicit none
+
+type date
+  integer :: nyear  = NNEGUNDEF
+  integer :: nmonth = 0
+  integer :: nday   = 0
+end type date
 !
-TYPE DATE
-  INTEGER :: YEAR  = NNEGUNDEF
-  INTEGER :: MONTH = 0
-  INTEGER :: DAY   = 0
-END TYPE DATE
+type, extends( date ) :: date_time
+  real :: xtime = XNEGUNDEF
+end type date_time
 !
-TYPE DATE_TIME
-  TYPE (DATE) :: TDATE
-  REAL        :: TIME = XNEGUNDEF
-END TYPE DATE_TIME
-!
-END MODULE MODD_TYPE_DATE
+end module modd_type_date

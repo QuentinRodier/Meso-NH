@@ -500,10 +500,10 @@ DO JAVG=1,IAVG
     END DO
   END DO
 
-  tpdates(javg )%tdate%year  = tdtseg%tdate%year
-  tpdates(javg )%tdate%month = tdtseg%tdate%month
-  tpdates(javg )%tdate%day   = tdtseg%tdate%day
-  tpdates(javg )%time        = tdtseg%time + ( zles_temp_mean_start + zles_temp_mean_end ) / 2.
+  tpdates(javg)%nyear  = tdtseg%nyear
+  tpdates(javg)%nmonth = tdtseg%nmonth
+  tpdates(javg)%nday   = tdtseg%nday
+  tpdates(javg)%xtime  = tdtseg%xtime + ( zles_temp_mean_start + zles_temp_mean_end ) / 2.
   call Datetime_correctdate( tpdates(javg ) )
 END DO
 !
@@ -597,10 +597,10 @@ do javg = 1, iavg
     end do
   end do
 
-  tpdates(javg)%tdate%year  = tdtseg%tdate%year
-  tpdates(javg)%tdate%month = tdtseg%tdate%month
-  tpdates(javg)%tdate%day   = tdtseg%tdate%day
-  tpdates(javg)%time        = tdtseg%time + ( zles_temp_mean_start + zles_temp_mean_end ) / 2.
+  tpdates(javg)%nyear  = tdtseg%nyear
+  tpdates(javg)%nmonth = tdtseg%nmonth
+  tpdates(javg)%nday   = tdtseg%nday
+  tpdates(javg)%xtime  = tdtseg%xtime + ( zles_temp_mean_start + zles_temp_mean_end ) / 2.
   call Datetime_correctdate( tpdates(javg) )
 end do
 

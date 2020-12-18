@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2018-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -23,7 +23,7 @@ PUBLIC :: OPERATOR(>=)
 !
 !Reference date (do not change it)
 !To work with DATETIME_TIME2REFERENCE, we assume the year is a multiple of 400 + 1 and the date is January 1st (and time=0.)
-TYPE(DATE_TIME),PARAMETER :: TPREFERENCE_DATE = DATE_TIME( TDATE=DATE(1601,1,1), TIME=0. )
+TYPE(DATE_TIME),PARAMETER :: TPREFERENCE_DATE = DATE_TIME( nyear = 1601, nmonth = 1, nday =1 , xtime = 0. )
 !
 INTERFACE OPERATOR(<)
   MODULE PROCEDURE DATETIME_LT
@@ -57,10 +57,10 @@ IDAYS  = 0_MNHINT64
 TZDATE = TPDATE
 CALL DATETIME_CORRECTDATE(TZDATE)
 !
-IYEAR_CUR  = int( TZDATE%TDATE%YEAR,  kind=MNHINT64 )
-IMONTH_CUR = int( TZDATE%TDATE%MONTH, kind=MNHINT64 )
-IDAY_CUR   = int( TZDATE%TDATE%DAY,   kind=MNHINT64 )
-ZSEC = TZDATE%TIME
+IYEAR_CUR  = int( TZDATE%nyear,  kind=MNHINT64 )
+IMONTH_CUR = int( TZDATE%nmonth, kind=MNHINT64 )
+IDAY_CUR   = int( TZDATE%nday,   kind=MNHINT64 )
+ZSEC       = TZDATE%xtime
 !
 !Compute number of days since beginning of the year
 IF ( ((MOD(IYEAR_CUR,4_MNHINT64)==0).AND.(MOD(IYEAR_CUR,100_MNHINT64)/=0)) .OR. (MOD(IYEAR_CUR,400_MNHINT64)==0)) ILEAPS=1
@@ -91,7 +91,7 @@ SELECT CASE(IMONTH_CUR)
     IDAYS = IDAY_CUR-1+31+28+ILEAPS+31+30+31+30+31+31+30+31+30
 END SELECT
 !
-IYEARS = IYEAR_CUR - int( TPREFERENCE_DATE%TDATE%YEAR, kind=MNHINT64 )
+IYEARS = IYEAR_CUR - int( TPREFERENCE_DATE%nyear, kind=MNHINT64 )
 IF ( IYEARS < 0_MNHINT64 ) THEN
   CALL PRINT_MSG(NVERB_WARNING,'GEN','DATETIME_TIME2REFERENCE', &
                  'input year is smaller than reference year => result could be invalid')
@@ -142,14 +142,14 @@ INTEGER :: IMONTH_LGT                      !Number of days in a month
 LOGICAL :: GKO
 REAL    :: ZSEC                            !Current time of the day (in seconds)
 !
-IYEAR_CUR  = TPDATE%TDATE%YEAR
-IMONTH_CUR = TPDATE%TDATE%MONTH
-IDAY_CUR   = TPDATE%TDATE%DAY
-ZSEC = TPDATE%TIME
+IYEAR_CUR  = TPDATE%nyear
+IMONTH_CUR = TPDATE%nmonth
+IDAY_CUR   = TPDATE%nday
+ZSEC       = TPDATE%xtime
 ! print *,'DATETIME_CORRECTDATE in: ',IYEAR_CUR,IMONTH_CUR,IDAY_CUR,ZSEC
 !
 CALL DATETIME_GETMONTHLGT(IYEAR_CUR,IMONTH_CUR,IMONTH_LGT)
-IF (TPDATE%TIME<0. .OR. TPDATE%TIME>=86400. .OR. &
+IF (TPDATE%xtime<0. .OR. TPDATE%xtime>=86400. .OR. &
     IDAY_CUR<1     .OR. IDAY_CUR>IMONTH_LGT .OR. &
     IMONTH_CUR<1   .OR. IMONTH_CUR>12            ) THEN
   GKO = .TRUE.
@@ -157,12 +157,12 @@ ELSE
   GKO = .FALSE.
 END IF
 !
-IF (TPDATE%TIME<0.) THEN
+IF (TPDATE%xtime<0.) THEN
   !Number of days to remove
-  IDAYS = INT(TPDATE%TIME/86400.)-1
-ELSE IF (TPDATE%TIME>=86400.) THEN
+  IDAYS = INT(TPDATE%xtime/86400.)-1
+ELSE IF (TPDATE%xtime>=86400.) THEN
   !Number of days to add
-  IDAYS = INT(TPDATE%TIME/86400.)
+  IDAYS = INT(TPDATE%xtime/86400.)
 ELSE
   IDAYS = 0
 END IF
@@ -211,10 +211,10 @@ DO WHILE (GKO)
 END DO
 ! print *,'DATETIME_CORRECTDATE out:',IYEAR_CUR,IMONTH_CUR,IDAY_CUR,ZSEC
 !
-TPDATE%TDATE%YEAR  = IYEAR_CUR
-TPDATE%TDATE%MONTH = IMONTH_CUR
-TPDATE%TDATE%DAY   = IDAY_CUR
-TPDATE%TIME        = ZSEC
+TPDATE%nyear  = IYEAR_CUR
+TPDATE%nmonth = IMONTH_CUR
+TPDATE%nday   = IDAY_CUR
+TPDATE%xtime  = ZSEC
 !
 END SUBROUTINE DATETIME_CORRECTDATE
 !
@@ -251,18 +251,18 @@ TYPE(DATE_TIME), INTENT(IN) :: TPT1, TPT2
 ! TRUE if TPT1 .LT. TPT2
 !
 !
-IF ( TPT1%TDATE%YEAR .EQ. TPT2%TDATE%YEAR ) THEN
-  IF ( TPT1%TDATE%MONTH .EQ. TPT2%TDATE%MONTH ) THEN
-    IF ( TPT1%TDATE%DAY .EQ. TPT2%TDATE%DAY ) THEN
-      OLT = TPT1%TIME .LT. TPT2%TIME
+IF ( TPT1%nyear .EQ. TPT2%nyear ) THEN
+  IF ( TPT1%nmonth .EQ. TPT2%nmonth ) THEN
+    IF ( TPT1%nday .EQ. TPT2%nday ) THEN
+      OLT = TPT1%xtime .LT. TPT2%xtime
     ELSE
-      OLT = TPT1%TDATE%DAY .LT. TPT2%TDATE%DAY
+      OLT = TPT1%nday .LT. TPT2%nday
     END IF
   ELSE
-   OLT = TPT1%TDATE%MONTH .LT. TPT2%TDATE%MONTH
+   OLT = TPT1%nmonth .LT. TPT2%nmonth
   END IF
 ELSE
-  OLT = TPT1%TDATE%YEAR .LT. TPT2%TDATE%YEAR
+  OLT = TPT1%nyear .LT. TPT2%nyear
 ENDIF
 !
 END FUNCTION DATETIME_LT

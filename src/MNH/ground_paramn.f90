@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ##########
@@ -503,9 +503,9 @@ IF( NRR    >= 7    .AND. SIZE(XINPRH)>0 ) ZSNOW = ZSNOW + XINPRH * XRHOLW
 !               ----------
 !
 IF (.NOT. LCARTESIAN) THEN
-  ZTSUN(:,:) = MOD(TDTCUR%TIME -XTSIDER*3600. +XLON(:,:)*240., XDAY)
+  ZTSUN(:,:) = MOD(TDTCUR%xtime -XTSIDER*3600. +XLON(:,:)*240., XDAY)
 ELSE
-  ZTSUN(:,:) = MOD(TDTCUR%TIME -XTSIDER*3600. +XLON0    *240., XDAY)
+  ZTSUN(:,:) = MOD(TDTCUR%xtime -XTSIDER*3600. +XLON0    *240., XDAY)
 END IF
 !
 !        1.12   Forcing level
@@ -588,17 +588,17 @@ END IF
 !
 ! Call to surface schemes
 !                       
-CALL COUPLING_SURF_ATM_n(YSURF_CUR,'MESONH', 'E',ZTIMEC,                                                   &
-               XTSTEP, TDTCUR%TDATE%YEAR, TDTCUR%TDATE%MONTH, TDTCUR%TDATE%DAY, TDTCUR%TIME,  &
-               IDIM1D,KSV_SURF,SIZE(XSW_BANDS),                                                    &
-               ZP_TSUN, ZP_ZENITH,ZP_ZENITH, ZP_AZIM,                                                   &
-               ZP_ZREF, ZP_ZREF, ZP_ZS, ZP_U, ZP_V, ZP_QA, ZP_TA, ZP_RHOA, ZP_SV, ZP_CO2, YSV_SURF,&
-               ZP_RAIN, ZP_SNOW, ZP_LW, ZP_DIR_SW, ZP_SCA_SW, XSW_BANDS, ZP_PS, ZP_PA,        &
-               ZP_SFTQ, ZP_SFTH, ZP_SFTS, ZP_SFCO2, ZP_SFU, ZP_SFV,                           &
-               ZP_TSRAD, ZP_DIR_ALB, ZP_SCA_ALB, ZP_EMIS, ZP_TSURF, ZP_Z0, ZP_Z0H, ZP_QSURF,  &
-               ZP_PEW_A_COEF, ZP_PEW_B_COEF,                                                  &
-               ZP_PET_A_COEF, ZP_PEQ_A_COEF, ZP_PET_B_COEF, ZP_PEQ_B_COEF,ZP_ZWS,             &
-               'OK'                                                                           )
+CALL COUPLING_SURF_ATM_n(YSURF_CUR,'MESONH', 'E',ZTIMEC,                                            &
+               XTSTEP, TDTCUR%nyear, TDTCUR%nmonth, TDTCUR%nday, TDTCUR%xtime,                      &
+               IDIM1D,KSV_SURF,SIZE(XSW_BANDS),                                                     &
+               ZP_TSUN, ZP_ZENITH,ZP_ZENITH, ZP_AZIM,                                               &
+               ZP_ZREF, ZP_ZREF, ZP_ZS, ZP_U, ZP_V, ZP_QA, ZP_TA, ZP_RHOA, ZP_SV, ZP_CO2, YSV_SURF, &
+               ZP_RAIN, ZP_SNOW, ZP_LW, ZP_DIR_SW, ZP_SCA_SW, XSW_BANDS, ZP_PS, ZP_PA,              &
+               ZP_SFTQ, ZP_SFTH, ZP_SFTS, ZP_SFCO2, ZP_SFU, ZP_SFV,                                 &
+               ZP_TSRAD, ZP_DIR_ALB, ZP_SCA_ALB, ZP_EMIS, ZP_TSURF, ZP_Z0, ZP_Z0H, ZP_QSURF,        &
+               ZP_PEW_A_COEF, ZP_PEW_B_COEF,                                                        &
+               ZP_PET_A_COEF, ZP_PEQ_A_COEF, ZP_PET_B_COEF, ZP_PEQ_B_COEF,ZP_ZWS,                   &
+               'OK'                                                                                 )
 !
 #ifdef CPLOASIS
 IF (LOASIS) THEN

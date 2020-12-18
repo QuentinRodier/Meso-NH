@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2003-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -206,19 +206,19 @@ DO JI=1,11
   IBIS(JI) = INOBIS(JI)+1
 END DO
 IF ( LFIX_DAT ) THEN   ! Ajout PP 
-   IF( MOD(TPDTEXP%TDATE%YEAR,4).EQ.0 ) THEN
-    ZDATE = REAL(TPDTEXP%TDATE%DAY +   IBIS(TPDTEXP%TDATE%MONTH-1)) - 1
+   IF( MOD(TPDTEXP%nyear,4).EQ.0 ) THEN
+    ZDATE = REAL(TPDTEXP%nday +   IBIS(TPDTEXP%nmonth-1)) - 1
      ZAD = 2.0*XPI*ZDATE/366.0
    ELSE
-     ZDATE = REAL(TPDTEXP%TDATE%DAY + INOBIS(TPDTEXP%TDATE%MONTH-1)) - 1
+     ZDATE = REAL(TPDTEXP%nday + INOBIS(TPDTEXP%nmonth-1)) - 1
      ZAD = 2.0*XPI*ZDATE/365.0
    END IF
 ELSE
-   IF( MOD(TPDTCUR%TDATE%YEAR,4).EQ.0 ) THEN
-     ZDATE = REAL(TPDTCUR%TDATE%DAY +   IBIS(TPDTCUR%TDATE%MONTH-1)) - 1
+   IF( MOD(TPDTCUR%nyear,4).EQ.0 ) THEN
+     ZDATE = REAL(TPDTCUR%nday +   IBIS(TPDTCUR%nmonth-1)) - 1
      ZAD = 2.0*XPI*ZDATE/366.0
    ELSE
-     ZDATE = REAL(TPDTCUR%TDATE%DAY + INOBIS(TPDTCUR%TDATE%MONTH-1)) - 1
+     ZDATE = REAL(TPDTCUR%nday + INOBIS(TPDTCUR%nmonth-1)) - 1
      ZAD = 2.0*XPI*ZDATE/365.0
    END IF
 END IF

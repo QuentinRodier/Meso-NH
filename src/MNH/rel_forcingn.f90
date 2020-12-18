@@ -162,10 +162,10 @@ IF (GSFIRSTCALL) THEN
   WRITE(UNIT=ILUOUT0,FMT='(" THERE ARE ",I2," REL FORCING FIELDs  AT:")') NRELFRC
   DO JSX_REL = 1 , NRELFRC
     WRITE(UNIT=ILUOUT0,FMT='(F9.0, "s, date:", I3, "/", I3, "/", I5)') &
-      TDTRELFRC(JSX_REL)%TIME,        &
-      TDTRELFRC(JSX_REL)%TDATE%DAY,   &
-      TDTRELFRC(JSX_REL)%TDATE%MONTH, &
-      TDTRELFRC(JSX_REL)%TDATE%YEAR
+      TDTRELFRC(JSX_REL)%xtime,  &
+      TDTRELFRC(JSX_REL)%nday,   &
+      TDTRELFRC(JSX_REL)%nmonth, &
+      TDTRELFRC(JSX_REL)%nyear
   END DO
 
 !*        1.2  find first sounding to be used 

@@ -191,12 +191,12 @@ CALL FIND_FIELD_ID_FROM_MNHNAME('DTCUR',IID,IRESP)
 TZTCUR=>TFIELDLIST(IID)%TFIELD_T0D(1)%DATA
 !
 TZDATE = TZTCUR
-TZDATE%TIME = TZDATE%TIME + NSTOP * XTSTEP
+TZDATE%xtime = TZDATE%xtime + NSTOP * XTSTEP
 CALL DATETIME_CORRECTDATE(TZDATE)
 !Done field by field because TYPE(DATE) different in MesoNH and SURFEX
-TDATE_END%YEAR  = TZDATE%TDATE%YEAR
-TDATE_END%MONTH = TZDATE%TDATE%MONTH
-TDATE_END%DAY   = TZDATE%TDATE%DAY
+TDATE_END%YEAR  = TZDATE%nyear
+TDATE_END%MONTH = TZDATE%nmonth
+TDATE_END%DAY   = TZDATE%nday
 !
 DO JLAYER=NSV_SNWBEG,NSV_SNWEND
   HSV(JLAYER) = TRIM(CSNOWNAMES(JLAYER-NSV_SNWBEG+1))
@@ -220,13 +220,13 @@ ELSE
 ENDIF
 CALL INIT_SURF_ATM_n(YSURF_CUR,'MESONH',HINIT,.FALSE.,                  &
                      ILU,ISV,SIZE(PSW_BANDS),                           &
-                     YSV_SURF,ZCO2,ZRHODREF,                                 &
+                     YSV_SURF,ZCO2,ZRHODREF,                            &
                      ZZENITH,ZAZIM,PSW_BANDS,ZDIR_ALB,ZSCA_ALB,         &
                      ZEMIS,ZTSRAD,ZTSURF,                               &
-                     TZTCUR%TDATE%YEAR, TZTCUR%TDATE%MONTH,             &
-                     TZTCUR%TDATE%DAY, TZTCUR%TIME,                     &
+                     TZTCUR%nyear, TZTCUR%nmonth,                       &
+                     TZTCUR%nday, TZTCUR%xtime,                         &
                      TDATE_END,'                            ','      ', &
-                     'OK'                                       )
+                     'OK'                                               )
 !
 PDIR_ALB = XUNDEF
 PSCA_ALB = XUNDEF

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2004-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -94,9 +94,8 @@ YATMFILETYPE = HATMFILETYPE
 IF(YATMFILETYPE=='GRIBEX') YATMFILETYPE='GRIB  '
 IF (LEN_TRIM(HATMFILE)==0) YATMFILETYPE='      '
 !
-CALL INIT_PGD_SURF_ATM(YSURF_CUR,'MESONH','PRE',HATMFILE,YATMFILETYPE,  &
-                       TDTCUR%TDATE%YEAR, TDTCUR%TDATE%MONTH, &
-                       TDTCUR%TDATE%DAY, TDTCUR%TIME          )
+CALL INIT_PGD_SURF_ATM( YSURF_CUR, 'MESONH', 'PRE', HATMFILE, YATMFILETYPE,    &
+                        TDTCUR%nyear, TDTCUR%nmonth, TDTCUR%nday, TDTCUR%xtime )
 CALL PREP_SURF_ATM(YSURF_CUR,'MESONH',HATMFILE,YATMFILETYPE,HATMFILE,YATMFILETYPE,YLCTL)
 IF (PRESENT(OINIFILEOPEN)) THEN
   !This is done here because model dimensions were not known before this call (for PREP_SURFEX)

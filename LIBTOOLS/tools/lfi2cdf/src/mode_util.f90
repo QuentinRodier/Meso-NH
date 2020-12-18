@@ -1174,7 +1174,7 @@ END DO
        istatus = NF90_INQ_VARID( infiles(1)%tfile%nncid, 'time', ivar_id )
        if ( istatus == NF90_NOERR ) then
          allocate( tdtcur )
-         istatus = NF90_GET_VAR( infiles(1)%tfile%nncid, ivar_id, tdtcur%time )
+         istatus = NF90_GET_VAR( infiles(1)%tfile%nncid, ivar_id, tdtcur%xtime )
          if ( istatus == NF90_NOERR ) then
            istatus = NF90_INQUIRE_ATTRIBUTE( infiles(1)%tfile%nncid, ivar_id, 'units', len = ilen )
            if ( istatus == NF90_NOERR ) then
@@ -1182,14 +1182,14 @@ END DO
              istatus = NF90_GET_ATT( infiles(1)%tfile%nncid, ivar_id, 'units', yunits )
              ! Extract date from yunits
              idx =  INDEX( yunits, 'since ' )
-             Read( yunits(idx+6 :idx+9 ) , '( I4.4 )' ) tdtcur%tdate%year
-             Read( yunits(idx+11:idx+12 ), '( I2.2 )' ) tdtcur%tdate%month
-             Read( yunits(idx+14:idx+15 ), '( I2.2 )' ) tdtcur%tdate%day
+             Read( yunits(idx+6 :idx+9 ) , '( I4.4 )' ) tdtcur%nyear
+             Read( yunits(idx+11:idx+12 ), '( I2.2 )' ) tdtcur%nmonth
+             Read( yunits(idx+14:idx+15 ), '( I2.2 )' ) tdtcur%nday
 
              if ( .not. associated( tdtmod ) ) then
                allocate( tdtmod )
                tdtmod = tdtcur
-               tdtmod%time = 0.
+               tdtmod%xtime = 0.
              end if
 
              gok = .true.

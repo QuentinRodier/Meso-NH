@@ -1302,7 +1302,7 @@ IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_read_nc4_T0'
 
 IF (IDIMS == 0 .AND. (ITYPE == NF90_FLOAT .OR. ITYPE == NF90_DOUBLE) ) THEN
   ! Read time
-  istatus = NF90_GET_VAR(INCID, IVARID, TPDATA%TIME)
+  istatus = NF90_GET_VAR(INCID, IVARID, TPDATA%xtime)
   IF (istatus /= NF90_NOERR) THEN
     CALL IO_Err_handle_nc4(istatus,'IO_Field_read_nc4_T0','NF90_GET_VAR',TRIM(YVARNAME),IRESP)
     GOTO 1000
@@ -1311,11 +1311,11 @@ IF (IDIMS == 0 .AND. (ITYPE == NF90_FLOAT .OR. ITYPE == NF90_DOUBLE) ) THEN
   CALL IO_Field_attr_read_check_nc4(TPFILE,TPFIELD,IVARID,IRESP,HCALENDAR='standard')
   ! Extract date from UNITS
   IDX =  INDEX(TPFIELD%CUNITS,'since ')
-  READ(TPFIELD%CUNITS(IDX+6 :IDX+9), '( I4.4 )') TPDATA%TDATE%YEAR
-  READ(TPFIELD%CUNITS(IDX+11:IDX+12),'( I2.2 )') TPDATA%TDATE%MONTH
-  READ(TPFIELD%CUNITS(IDX+14:IDX+15),'( I2.2 )') TPDATA%TDATE%DAY
+  READ(TPFIELD%CUNITS(IDX+6 :IDX+9), '( I4.4 )') TPDATA%nyear
+  READ(TPFIELD%CUNITS(IDX+11:IDX+12),'( I2.2 )') TPDATA%nmonth
+  READ(TPFIELD%CUNITS(IDX+14:IDX+15),'( I2.2 )') TPDATA%nday
   ! Simple check (should catch most errors)
-  IF ( TPDATA%TDATE%DAY<1 .OR. TPDATA%TDATE%DAY>31 .OR. TPDATA%TDATE%MONTH<1 .OR. TPDATA%TDATE%MONTH>12 ) THEN
+  IF ( TPDATA%nday<1 .OR. TPDATA%nday>31 .OR. TPDATA%nmonth<1 .OR. TPDATA%nmonth>12 ) THEN
     CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Field_read_nc4_T0',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)// &
                                                            ' read date is invalid')
     IRESP = -3

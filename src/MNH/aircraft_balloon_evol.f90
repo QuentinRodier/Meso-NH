@@ -436,9 +436,9 @@ IF (.NOT. TPFLYER%FLY) THEN
         TPFLYER%CRASH=.FALSE.
         IF (ZTDIST <= PTSTEP ) THEN
           WRITE(ILUOUT,*) '-------------------------------------------------------------------'
-          WRITE(ILUOUT,*) 'Aircraft ',TPFLYER%TITLE,' takes off the   ',      &
-                      TDTCUR%TDATE%DAY,'/',TDTCUR%TDATE%MONTH,'/',      &
-                      TDTCUR%TDATE%YEAR,' at ',NINT(TDTCUR%TIME),' sec.'
+          WRITE(ILUOUT,*) 'Aircraft ',TPFLYER%TITLE,' takes off the   ', &
+                      TDTCUR%nday,'/',TDTCUR%nmonth,'/',                 &
+                      TDTCUR%nyear,' at ',NINT(TDTCUR%xtime),' sec.'
           WRITE(ILUOUT,*) '-------------------------------------------------------------------'
         ENDIF
       ENDIF
@@ -446,9 +446,9 @@ IF (.NOT. TPFLYER%FLY) THEN
       TPFLYER%FLY = .TRUE.
       GLAUNCH     = .TRUE.
       WRITE(ILUOUT,*) '-------------------------------------------------------------------'
-      WRITE(ILUOUT,*) 'Balloon  ',TPFLYER%TITLE,' is launched the ',      &
-                    TDTCUR%TDATE%DAY,'/',TDTCUR%TDATE%MONTH,'/',      &
-                    TDTCUR%TDATE%YEAR,' at ',NINT(TDTCUR%TIME),' sec.'
+      WRITE(ILUOUT,*) 'Balloon  ',TPFLYER%TITLE,' is launched the ', &
+                    TDTCUR%nday,'/',TDTCUR%nmonth,'/',               &
+                    TDTCUR%nyear,' at ',NINT(TDTCUR%xtime),' sec.'
       WRITE(ILUOUT,*) '-------------------------------------------------------------------'
     END IF
 !
@@ -494,10 +494,10 @@ END IF
 IF (GSTORE) THEN
   IN = TPFLYER%N_CUR
 #if 0
-  tpflyer%tpdates(in)%date%year  = tdtexp%date%year
-  tpflyer%tpdates(in)%date%month = tdtexp%date%month
-  tpflyer%tpdates(in)%date%day   = tdtexp%date%day
-  tpflyer%tpdates(in)%time       = tdtexp%time + ( in - 1 ) * tpflyer%step
+  tpflyer%tpdates(in)%nyear  = tdtexp%nyear
+  tpflyer%tpdates(in)%nmonth = tdtexp%nmonth
+  tpflyer%tpdates(in)%nday   = tdtexp%nday
+  tpflyer%tpdates(in)%xtime  = tdtexp%xtime + ( in - 1 ) * tpflyer%step
 #else
   tpflyer%tpdates(in) = tdtcur
 #endif
@@ -809,19 +809,19 @@ IF ( TPFLYER%FLY) THEN
     TPFLYER%FLY = .FALSE.
     IF (TPFLYER%TYPE=='AIRCRA' .AND. .NOT. GLAUNCH ) THEN
       WRITE(ILUOUT,*) 'Aircraft ',TPFLYER%TITLE,' flew out of the domain the ', &
-                    TDTCUR%TDATE%DAY,'/',TDTCUR%TDATE%MONTH,'/',            &
-                    TDTCUR%TDATE%YEAR,' at ',TDTCUR%TIME,' sec.'
+                    TDTCUR%nday,'/',TDTCUR%nmonth,'/',                          &
+                    TDTCUR%nyear,' at ',TDTCUR%xtime,' sec.'
     ELSE IF (TPFLYER%TYPE /= 'AIRCRA') THEN
       WRITE(ILUOUT,*) 'Balloon ',TPFLYER%TITLE,' crashed the ',                 &
-                    TDTCUR%TDATE%DAY,'/',TDTCUR%TDATE%MONTH,'/',            &
-                    TDTCUR%TDATE%YEAR,' at ',TDTCUR%TIME,' sec.'
+                    TDTCUR%nday,'/',TDTCUR%nmonth,'/',                          &
+                    TDTCUR%nyear,' at ',TDTCUR%xtime,' sec.'
     END IF
   ELSE
     IF (TPFLYER%TYPE=='AIRCRA' .AND. .NOT. GLAUNCH .AND. ZTDIST > PTSTEP ) THEN
       WRITE(ILUOUT,*) '-------------------------------------------------------------------'
       WRITE(ILUOUT,*) 'Aircraft ',TPFLYER%TITLE,' flies  in leg',TPFLYER%SEGCURN ,' the ',  &
-        TDTCUR%TDATE%DAY,'/',TDTCUR%TDATE%MONTH,'/',      &
-        TDTCUR%TDATE%YEAR,' at ',NINT(TDTCUR%TIME),' sec.'
+        TDTCUR%nday,'/',TDTCUR%nmonth,'/',      &
+        TDTCUR%nyear,' at ',NINT(TDTCUR%xtime),' sec.'
       WRITE(ILUOUT,*) '-------------------------------------------------------------------'
     ENDIF
 !
@@ -1688,12 +1688,12 @@ IF (TPFLYER%NMODEL /= IMODEL) THEN
    IF (NDAD(IMODEL) == TPFLYER%NMODEL) THEN
       WRITE(ILUOUT,*) '-------------------------------------------------------------------'
       WRITE(ILUOUT,*) TPFLYER%TITLE,' comes from model ',IMODEL,' in  model ',&
-             TPFLYER%NMODEL,' at ',NINT(TDTCUR%TIME),' sec.'
+             TPFLYER%NMODEL,' at ',NINT(TDTCUR%xtime),' sec.'
       WRITE(ILUOUT,*) '-------------------------------------------------------------------'
    ELSE
       WRITE(ILUOUT,*) '-------------------------------------------------------------------'
       WRITE(ILUOUT,*) TPFLYER%TITLE,' goes from model ',IMODEL,' to  model ',&
-             TPFLYER%NMODEL,' at ',NINT(TDTCUR%TIME),' sec.'
+             TPFLYER%NMODEL,' at ',NINT(TDTCUR%xtime),' sec.'
       WRITE(ILUOUT,*) '-------------------------------------------------------------------'
    ENDIF
 ENDIF

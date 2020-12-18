@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
 !-----------------------------------------------------------------
 !     #######################
       SUBROUTINE INI_AIRCRAFT
@@ -135,10 +131,10 @@ TAIRCRAFT1%STEP              = 60.
 !
 !* take-off date and time
 !
-TAIRCRAFT1%LAUNCH%TDATE%YEAR  =  2007
-TAIRCRAFT1%LAUNCH%TDATE%MONTH =    04
-TAIRCRAFT1%LAUNCH%TDATE%DAY   =    19
-TAIRCRAFT1%LAUNCH%TIME        = 32280.
+TAIRCRAFT1%LAUNCH%nyear  =  2007
+TAIRCRAFT1%LAUNCH%nmonth =    04
+TAIRCRAFT1%LAUNCH%nday   =    19
+TAIRCRAFT1%LAUNCH%xtime  = 32280.
 !
 !* number of flight segments
 !
@@ -365,10 +361,10 @@ TAIRCRAFT2%STEP             = 60.
 !
 !* take-off date and time
 !
-TAIRCRAFT2%LAUNCH%TDATE%YEAR  =  2007
-TAIRCRAFT2%LAUNCH%TDATE%MONTH =    04
-TAIRCRAFT2%LAUNCH%TDATE%DAY   =    19
-TAIRCRAFT2%LAUNCH%TIME        = 48060.
+TAIRCRAFT2%LAUNCH%nyear  =  2007
+TAIRCRAFT2%LAUNCH%nmonth =    04
+TAIRCRAFT2%LAUNCH%nday   =    19
+TAIRCRAFT2%LAUNCH%xtime  = 48060.
 !
 !* number of flight segments
 !
@@ -624,10 +620,10 @@ TAIRCRAFT3%STEP             = 30.
 !
 !* take-off date and time
 !
-TAIRCRAFT3%LAUNCH%TDATE%YEAR  =  2007
-TAIRCRAFT3%LAUNCH%TDATE%MONTH =    04
-TAIRCRAFT3%LAUNCH%TDATE%DAY   =    19
-TAIRCRAFT3%LAUNCH%TIME        = 45369
+TAIRCRAFT3%LAUNCH%nyear  =  2007
+TAIRCRAFT3%LAUNCH%nmonth =    04
+TAIRCRAFT3%LAUNCH%nday   =    19
+TAIRCRAFT3%LAUNCH%xtime  = 45369
 !
 !* number of flight segments
 !
@@ -731,10 +727,10 @@ TAIRCRAFT4%STEP             = 30.
 !
 !* take-off date and time
 !
-TAIRCRAFT4%LAUNCH%TDATE%YEAR  =  2007
-TAIRCRAFT4%LAUNCH%TDATE%MONTH =    04
-TAIRCRAFT4%LAUNCH%TDATE%DAY   =    19
-TAIRCRAFT4%LAUNCH%TIME        = 60392.
+TAIRCRAFT4%LAUNCH%nyear  =  2007
+TAIRCRAFT4%LAUNCH%nmonth =    04
+TAIRCRAFT4%LAUNCH%nday   =    19
+TAIRCRAFT4%LAUNCH%xtime  = 60392.
 !
 !* number of flight segments
 !
@@ -837,10 +833,10 @@ TAIRCRAFT5%STEP             = 30.
 !
 !* take-off date and time
 !
-TAIRCRAFT5%LAUNCH%TDATE%YEAR  =  2007
-TAIRCRAFT5%LAUNCH%TDATE%MONTH =    04
-TAIRCRAFT5%LAUNCH%TDATE%DAY   =    19
-TAIRCRAFT5%LAUNCH%TIME        = 43380.
+TAIRCRAFT5%LAUNCH%nyear  =  2007
+TAIRCRAFT5%LAUNCH%nmonth =    04
+TAIRCRAFT5%LAUNCH%nday   =    19
+TAIRCRAFT5%LAUNCH%xtime  = 43380.
 !
 !* number of flight segments
 !
@@ -1081,10 +1077,10 @@ TAIRCRAFT6%STEP             = 30.
 !
 !* take-off date and time
 !
-TAIRCRAFT6%LAUNCH%TDATE%YEAR  =  2007
-TAIRCRAFT6%LAUNCH%TDATE%MONTH =    04
-TAIRCRAFT6%LAUNCH%TDATE%DAY   =    19
-TAIRCRAFT6%LAUNCH%TIME        = 55992.
+TAIRCRAFT6%LAUNCH%nyear  =  2007
+TAIRCRAFT6%LAUNCH%nmonth =    04
+TAIRCRAFT6%LAUNCH%nday   =    19
+TAIRCRAFT6%LAUNCH%xtime  = 55992.
 !
 !* number of flight segments
 !
@@ -1322,10 +1318,10 @@ TAIRCRAFT7%STEP             = 60.
 !
 !* take-off date and time
 !
-TAIRCRAFT7%LAUNCH%TDATE%YEAR  =  2007
-TAIRCRAFT7%LAUNCH%TDATE%MONTH =    04
-TAIRCRAFT7%LAUNCH%TDATE%DAY   =    19
-TAIRCRAFT7%LAUNCH%TIME        = 43500.
+TAIRCRAFT7%LAUNCH%nyear  =  2007
+TAIRCRAFT7%LAUNCH%nmonth =    04
+TAIRCRAFT7%LAUNCH%nday   =    19
+TAIRCRAFT7%LAUNCH%xtime  = 43500.
 !
 !* number of flight segments
 !
@@ -1593,10 +1589,10 @@ TAIRCRAFT8%STEP             = 60.
 !
 !* take-off date and time
 !
-TAIRCRAFT8%LAUNCH%TDATE%YEAR  =  2007
-TAIRCRAFT8%LAUNCH%TDATE%MONTH =    04
-TAIRCRAFT8%LAUNCH%TDATE%DAY   =    22
-TAIRCRAFT8%LAUNCH%TIME        = 45720.
+TAIRCRAFT8%LAUNCH%nyear  =  2007
+TAIRCRAFT8%LAUNCH%nmonth =    04
+TAIRCRAFT8%LAUNCH%nday   =    22
+TAIRCRAFT8%LAUNCH%xtime  = 45720.
 !
 !* number of flight segments
 !
@@ -1867,10 +1863,10 @@ TAIRCRAFT9%STEP             = 60.
 !
 !* take-off date and time
 !
-TAIRCRAFT9%LAUNCH%TDATE%YEAR  =  2007
-TAIRCRAFT9%LAUNCH%TDATE%MONTH =    04
-TAIRCRAFT9%LAUNCH%TDATE%DAY   =    23
-TAIRCRAFT9%LAUNCH%TIME        = 28080.
+TAIRCRAFT9%LAUNCH%nyear  =  2007
+TAIRCRAFT9%LAUNCH%nmonth =    04
+TAIRCRAFT9%LAUNCH%nday   =    23
+TAIRCRAFT9%LAUNCH%xtime  = 28080.
 !
 !* number of flight segments
 !

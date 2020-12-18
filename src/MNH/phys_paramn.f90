@@ -699,7 +699,7 @@ CALL SUNPOS_n   ( XZENITH, ZCOSZEN, ZSINZEN, ZAZIMSOL )
 !               ------------------------------
 !
     CASE('FIXE')
-      ZTIME = MOD(TDTCUR%TIME +XLON0*240., XDAY)
+      ZTIME = MOD(TDTCUR%xtime +XLON0*240., XDAY)
       IHOUR = INT( ZTIME/3600. )
       IF (IHOUR < 0) IHOUR=IHOUR + 24
       ZDT = ZTIME/3600. - REAL(IHOUR)

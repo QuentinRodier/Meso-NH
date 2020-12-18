@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -208,10 +208,10 @@ print*,"!  3.   READ ASCII FILES FOR ADVECTIVE FORCING "
 DO JKT = 1,NADVFRC
 !
 !   Reading the date and the filename  of mean state and frc
-    READ(ILUPRE,*) TDTADVFRC(JKT)%TDATE%YEAR,  &
-                   TDTADVFRC(JKT)%TDATE%MONTH, &
-                   TDTADVFRC(JKT)%TDATE%DAY,   &
-                   TDTADVFRC(JKT)%TIME
+    READ(ILUPRE,*) TDTADVFRC(JKT)%nyear,  &
+                   TDTADVFRC(JKT)%nmonth, &
+                   TDTADVFRC(JKT)%nday,   &
+                   TDTADVFRC(JKT)%xtime
 !                   ; Read filenames
     READ(ILUPRE,*)  CFNAM_MEANVAR_ADV  
     READ(ILUPRE,*)  CFNAM_ADV
@@ -318,10 +318,10 @@ print*,"!*        3.    PRINT FORCING FIELDS"
 WRITE(UNIT=ILUOUT,FMT='(" THERE ARE ",I2," ADV FORCING AT:")') NADVFRC
 DO JL = 1 , NADVFRC
   WRITE(UNIT=ILUOUT,FMT='(F9.0, "s, date:", I3, "/", I3, "/", I5)') &
-    TDTADVFRC(JL)%TIME, &
-    TDTADVFRC(JL)%TDATE%DAY,   &
-    TDTADVFRC(JL)%TDATE%MONTH, &
-    TDTADVFRC(JL)%TDATE%YEAR
+    TDTADVFRC(JL)%xtime,  &
+    TDTADVFRC(JL)%nday,   &
+    TDTADVFRC(JL)%nmonth, &
+    TDTADVFRC(JL)%nyear
 END DO
 !
 DO JKT = 2,NADVFRC-1
@@ -331,15 +331,15 @@ DO JKT = 2,NADVFRC-1
     WRITE(ILUOUT,*) &
       "               soundings have to be entered in increasing temporal order"
     WRITE(ILUOUT,*) "SOUNDING TIME ", JKT-1, " IS: "
-    WRITE(ILUOUT,*) TDTADVFRC(JKT-1)%TDATE%YEAR,  &
-                    TDTADVFRC(JKT-1)%TDATE%MONTH, &
-                    TDTADVFRC(JKT-1)%TDATE%DAY,   &
-                    TDTADVFRC(JKT-1)%TIME
+    WRITE(ILUOUT,*) TDTADVFRC(JKT-1)%nyear,  &
+                    TDTADVFRC(JKT-1)%nmonth, &
+                    TDTADVFRC(JKT-1)%nday,   &
+                    TDTADVFRC(JKT-1)%xtime
     WRITE(ILUOUT,*) "SOUNDING TIME ", JKT, " IS: "
-    WRITE(ILUOUT,*) TDTADVFRC(JKT)%TDATE%YEAR,  &
-                    TDTADVFRC(JKT)%TDATE%MONTH, &
-                    TDTADVFRC(JKT)%TDATE%DAY,   &
-                    TDTADVFRC(JKT)%TIME
+    WRITE(ILUOUT,*) TDTADVFRC(JKT)%nyear,  &
+                    TDTADVFRC(JKT)%nmonth, &
+                    TDTADVFRC(JKT)%nday,   &
+                    TDTADVFRC(JKT)%xtime
  !callabortstop
     CALL PRINT_MSG(NVERB_FATAL,'GEN','SET_ADVFRC','')
   END IF

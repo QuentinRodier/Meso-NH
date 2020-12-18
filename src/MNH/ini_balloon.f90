@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 balloon 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ######################
       SUBROUTINE INI_BALLOON
@@ -139,10 +134,10 @@ TBALLOON1%TITLE              = 'CVB1MOBI'
 !
 !* launching date and time
 !
-TBALLOON1%LAUNCH%TDATE%YEAR  =  1999
-TBALLOON1%LAUNCH%TDATE%MONTH =    09
-TBALLOON1%LAUNCH%TDATE%DAY   =    19
-TBALLOON1%LAUNCH%TIME        = 32460.
+TBALLOON1%LAUNCH%nyear  =  1999
+TBALLOON1%LAUNCH%nmonth =    09
+TBALLOON1%LAUNCH%nday   =    19
+TBALLOON1%LAUNCH%xtime  = 32460.
 !
 !* latitude and longitude of launching site (decimal degree)
 !
@@ -194,10 +189,10 @@ TBALLOON2%TITLE              = 'CVB2MOBI'
 !
 !* launching date and time
 !
-TBALLOON2%LAUNCH%TDATE%YEAR  =  1999
-TBALLOON2%LAUNCH%TDATE%MONTH =    09
-TBALLOON2%LAUNCH%TDATE%DAY   =    19
-TBALLOON2%LAUNCH%TIME        = 39660.
+TBALLOON2%LAUNCH%nyear  =  1999
+TBALLOON2%LAUNCH%nmonth =    09
+TBALLOON2%LAUNCH%nday   =    19
+TBALLOON2%LAUNCH%xtime  = 39660.
 !
 !* latitude and longitude of launching site (decimal degree)
 !
@@ -250,10 +245,10 @@ TBALLOON3%TITLE              = 'RSMASE19'
 !
 !* launching date and time
 !
-TBALLOON3%LAUNCH%TDATE%YEAR  =  1999
-TBALLOON3%LAUNCH%TDATE%MONTH =    09
-TBALLOON3%LAUNCH%TDATE%DAY   =    19
-TBALLOON3%LAUNCH%TIME        = 68400.
+TBALLOON3%LAUNCH%nyear  =  1999
+TBALLOON3%LAUNCH%nmonth =    09
+TBALLOON3%LAUNCH%nday   =    19
+TBALLOON3%LAUNCH%xtime  = 68400.
 !
 !* latitude and longitude of launching site (decimal degree)
 !
@@ -306,10 +301,10 @@ TBALLOON4%TITLE              = 'CVB1ACVB'
 !
 !* launching date and time
 !
-TBALLOON4%LAUNCH%TDATE%YEAR  =  1999
-TBALLOON4%LAUNCH%TDATE%MONTH =    09
-TBALLOON4%LAUNCH%TDATE%DAY   =    19
-TBALLOON4%LAUNCH%TIME        = 32460.
+TBALLOON4%LAUNCH%nyear  =  1999
+TBALLOON4%LAUNCH%nmonth =    09
+TBALLOON4%LAUNCH%nday   =    19
+TBALLOON4%LAUNCH%xtime  = 32460.
 !
 !* latitude and longitude of launching site (decimal degree)
 !
@@ -361,10 +356,10 @@ TBALLOON5%TITLE              = 'CVB1DEPA'
 !
 !* launching date and time
 !
-TBALLOON5%LAUNCH%TDATE%YEAR  =  1999
-TBALLOON5%LAUNCH%TDATE%MONTH =    09
-TBALLOON5%LAUNCH%TDATE%DAY   =    19
-TBALLOON5%LAUNCH%TIME        = 32435.
+TBALLOON5%LAUNCH%nyear  =  1999
+TBALLOON5%LAUNCH%nmonth =    09
+TBALLOON5%LAUNCH%nday   =    19
+TBALLOON5%LAUNCH%xtime  = 32435.
 !
 !* latitude and longitude of launching site (decimal degree)
 !
@@ -416,10 +411,10 @@ TBALLOON6%TITLE              = 'CVB1RCVB'
 !
 !* launching date and time
 !
-TBALLOON6%LAUNCH%TDATE%YEAR  =  1999
-TBALLOON6%LAUNCH%TDATE%MONTH =    09
-TBALLOON6%LAUNCH%TDATE%DAY   =    19
-TBALLOON6%LAUNCH%TIME        = 32460.
+TBALLOON6%LAUNCH%nyear  =  1999
+TBALLOON6%LAUNCH%nmonth =    09
+TBALLOON6%LAUNCH%nday   =    19
+TBALLOON6%LAUNCH%xtime  = 32460.
 !
 !* latitude and longitude of launching site (decimal degree)
 !
@@ -471,10 +466,10 @@ TBALLOON7%TITLE              = 'CVB1PISO'
 !
 !* launching date and time
 !
-TBALLOON7%LAUNCH%TDATE%YEAR  =  1999
-TBALLOON7%LAUNCH%TDATE%MONTH =    09
-TBALLOON7%LAUNCH%TDATE%DAY   =    19
-TBALLOON7%LAUNCH%TIME        = 32460.
+TBALLOON7%LAUNCH%nyear  =  1999
+TBALLOON7%LAUNCH%nmonth =    09
+TBALLOON7%LAUNCH%nday   =    19
+TBALLOON7%LAUNCH%xtime  = 32460.
 !
 !* latitude and longitude of launching site (decimal degree)
 !

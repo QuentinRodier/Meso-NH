@@ -2066,7 +2066,7 @@ END IF
 !*       27.    CURRENT TIME REFRESH
 !               --------------------
 !
-TDTCUR%TIME=TDTCUR%TIME + XTSTEP
+TDTCUR%xtime=TDTCUR%xtime + XTSTEP
 CALL DATETIME_CORRECTDATE(TDTCUR)
 !
 !-------------------------------------------------------------------------------

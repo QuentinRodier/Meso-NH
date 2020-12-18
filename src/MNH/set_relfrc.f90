@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -217,10 +217,10 @@ DO JKT = 1,NRELFRC
 
 
 !   Reading the date and the filename  of mean state and frc
-    READ(ILUPRE,*) TDTRELFRC(JKT)%TDATE%YEAR,  &
-                   TDTRELFRC(JKT)%TDATE%MONTH, &
-                   TDTRELFRC(JKT)%TDATE%DAY,   &
-                   TDTRELFRC(JKT)%TIME
+    READ(ILUPRE,*) TDTRELFRC(JKT)%nyear,  &
+                   TDTRELFRC(JKT)%nmonth, &
+                   TDTRELFRC(JKT)%nday,   &
+                   TDTRELFRC(JKT)%xtime
 !                   ; Read filenames
     READ(ILUPRE,*)  CFNAM_MEANVAR_REL  
     READ(ILUPRE,*)  CFNAM_REL
@@ -341,10 +341,10 @@ END DO ! End of loop in time
 WRITE(UNIT=ILUOUT,FMT='(" THERE ARE ",I2," REL FORCING AT:")') NRELFRC
 DO JL = 1 , NRELFRC
   WRITE(UNIT=ILUOUT,FMT='(F9.0, "s, date:", I3, "/", I3, "/", I5)') &
-    TDTRELFRC(JL)%TIME, &
-    TDTRELFRC(JL)%TDATE%DAY,   &
-    TDTRELFRC(JL)%TDATE%MONTH, &
-    TDTRELFRC(JL)%TDATE%YEAR
+    TDTRELFRC(JL)%xtime,  &
+    TDTRELFRC(JL)%nday,   &
+    TDTRELFRC(JL)%nmonth, &
+    TDTRELFRC(JL)%nyear
 END DO
 !
 DO JKT = 2,NRELFRC-1
@@ -354,15 +354,15 @@ DO JKT = 2,NRELFRC-1
     WRITE(ILUOUT,*) &
       "               soundings have to be entered in increasing temporal order"
     WRITE(ILUOUT,*) "SOUNDING TIME ", JKT-1, " IS: "
-    WRITE(ILUOUT,*) TDTRELFRC(JKT-1)%TDATE%YEAR,  &
-                    TDTRELFRC(JKT-1)%TDATE%MONTH, &
-                    TDTRELFRC(JKT-1)%TDATE%DAY,   &
-                    TDTRELFRC(JKT-1)%TIME
+    WRITE(ILUOUT,*) TDTRELFRC(JKT-1)%nyear,  &
+                    TDTRELFRC(JKT-1)%nmonth, &
+                    TDTRELFRC(JKT-1)%nday,   &
+                    TDTRELFRC(JKT-1)%xtime
     WRITE(ILUOUT,*) "SOUNDING TIME ", JKT, " IS: "
-    WRITE(ILUOUT,*) TDTRELFRC(JKT)%TDATE%YEAR,  &
-                    TDTRELFRC(JKT)%TDATE%MONTH, &
-                    TDTRELFRC(JKT)%TDATE%DAY,   &
-                    TDTRELFRC(JKT)%TIME
+    WRITE(ILUOUT,*) TDTRELFRC(JKT)%nyear,  &
+                    TDTRELFRC(JKT)%nmonth, &
+                    TDTRELFRC(JKT)%nday,   &
+                    TDTRELFRC(JKT)%xtime
  !callabortstop
     CALL PRINT_MSG(NVERB_FATAL,'GEN','SET_RELFRC','')
   END IF

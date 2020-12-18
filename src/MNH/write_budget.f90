@@ -190,10 +190,10 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   !
       ZWORKTEMP(1)=ZWORKTEMP(1)+(1.-NBUSTEP*0.5)*PTSTEP
   !
-      tzdates(1)%tdate%year  = tdtexp%tdate%year
-      tzdates(1)%tdate%month = tdtexp%tdate%month
-      tzdates(1)%tdate%day   = tdtexp%tdate%day
-      tzdates(1)%time        = tdtexp%time + zworktemp(1)
+      tzdates(1)%nyear  = tdtexp%nyear
+      tzdates(1)%nmonth = tdtexp%nmonth
+      tzdates(1)%nday   = tdtexp%nday
+      tzdates(1)%xtime  = tdtexp%xtime + zworktemp(1)
 
       DEALLOCATE ( ZWORKTEMP )
   !
@@ -210,16 +210,16 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   !
       ZWORKTEMP(NBUWRNB)=ZWORKTEMP(NBUWRNB)+(1.-NBUSTEP*0.5)*PTSTEP
   !
-      tzdates(NBUWRNB)%tdate%year  = tdtexp%tdate%year
-      tzdates(NBUWRNB)%tdate%month = tdtexp%tdate%month
-      tzdates(NBUWRNB)%tdate%day   = tdtexp%tdate%day
-      tzdates(NBUWRNB)%time        = tdtexp%time + zworktemp(NBUWRNB)
+      tzdates(NBUWRNB)%nyear  = tdtexp%nyear
+      tzdates(NBUWRNB)%nmonth = tdtexp%nmonth
+      tzdates(NBUWRNB)%nday   = tdtexp%nday
+      tzdates(NBUWRNB)%xtime  = tdtexp%xtime + zworktemp(NBUWRNB)
       DO JT=1,NBUWRNB-1
         ZWORKTEMP(JT) = ZWORKTEMP(NBUWRNB)-NBUSTEP*PTSTEP*(NBUWRNB-JT)
-        tzdates(jt)%tdate%year  = tdtexp%tdate%year
-        tzdates(jt)%tdate%month = tdtexp%tdate%month
-        tzdates(jt)%tdate%day   = tdtexp%tdate%day
-        tzdates(jt)%time        = tdtexp%time + zworktemp(jt)
+        tzdates(jt)%nyear  = tdtexp%nyear
+        tzdates(jt)%nmonth = tdtexp%nmonth
+        tzdates(jt)%nday   = tdtexp%nday
+        tzdates(jt)%xtime  = tdtexp%xtime + zworktemp(jt)
       END DO
 
       DEALLOCATE( ZWORKTEMP )

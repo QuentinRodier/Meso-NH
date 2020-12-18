@@ -1757,10 +1757,10 @@ IF (CSURF =='EXTE') THEN
     TPGDFILE => TINIFILEPGD
   ELSE
   ! ... or read from file.
-    CALL INIT_PGD_SURF_ATM(YSURF_CUR,'MESONH','PGD',                         &
-                            '                            ','      ',&
-                            TDTCUR%TDATE%YEAR, TDTCUR%TDATE%MONTH,  &
-                            TDTCUR%TDATE%DAY, TDTCUR%TIME           )
+    CALL INIT_PGD_SURF_ATM( YSURF_CUR, 'MESONH', 'PGD',               &
+                            '                            ', '      ', &
+                            TDTCUR%nyear, TDTCUR%nmonth,              &
+                            TDTCUR%nday, TDTCUR%xtime                 )
 !
   END IF
   !

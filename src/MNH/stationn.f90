@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -202,7 +202,7 @@ IF (GSTORE) THEN
   tstation%tpdates(in)%date%year  = tdtexp%date%year
   tstation%tpdates(in)%date%month = tdtexp%date%month
   tstation%tpdates(in)%date%day   = tdtexp%date%day
-  tstation%tpdates(in)%time       = tdtexp%time + ( in - 1 ) * tstation%step
+  tstation%tpdates(in)%xtime      = tdtexp%xtime + ( in - 1 ) * tstation%step
 #else
   tstation%tpdates(in) = tdtcur
 #endif

@@ -1525,7 +1525,7 @@ END IF   ! (inb_cell .ge. 1)
 !               --------------------------------------------------
 !
 IF (LLMA) THEN
-  IF( IPROC .EQ. 0 .AND. TDTCUR%TIME >= TDTLMA%TIME - PTSTEP ) THEN
+  IF( IPROC .EQ. 0 .AND. TDTCUR%xtime >= TDTLMA%xtime - PTSTEP ) THEN
     CALL WRITE_OUT_ASCII
     CALL WRITE_OUT_LMA
     ISFLASH_NUMBER(0) = ISFLASH_NUMBER(NNBLIGHT)

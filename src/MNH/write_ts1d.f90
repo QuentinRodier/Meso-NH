@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -43,7 +43,7 @@
 !!    Original 12/10/95
 !!    Add U, V, W, all water variables and all tracers to timeseries (KS)
 !!     27/10/95 KS: add air density
-!!     09/02/96 KS: change time to TDTSEG%TIME + ISCOUNT * XTSTEP
+!!     09/02/96 KS: change time to TDTSEG%xtime + ISCOUNT * XTSTEP
 !!                 & grid identifier all set to 1 (mass levels)
 !!     01/03/96 KS: remove air density
 !!                  write variables every 900s to disk, regardless of XTSTEP
@@ -161,14 +161,14 @@ TZFILE => NULL()
 NBPROF = 0
 
 CALL DATETIME_DISTANCE(TDTEXP,TDTCUR,ZTIME)
-ZTIME = ZTIME + TDTEXP%TIME
+ZTIME = ZTIME + TDTEXP%xtime
 CALL GET_DIM_EXT_ll ('B',IIU,IJU)
 
 IF ((CPROGRAM =='DIAG  ').AND.(LCHEMDIAG)) THEN
-  WRITE(YCYEAR,'(I4.4)')  TDTCUR%TDATE%YEAR
-  WRITE(YCMONTH,'(I2.2)') TDTCUR%TDATE%MONTH
-  WRITE(YCDAY,'(I2.2)')   TDTCUR%TDATE%DAY
-  IUTIME = INT(3600*MOD( 24.0+MOD((TDTCUR%TIME)/3600.,24.0),24.0 ))  ! TU 
+  WRITE(YCYEAR,'(I4.4)')  TDTCUR%nyear
+  WRITE(YCMONTH,'(I2.2)') TDTCUR%nmonth
+  WRITE(YCDAY,'(I2.2)')   TDTCUR%nday
+  IUTIME = INT(3600*MOD( 24.0+MOD((TDTCUR%xtime)/3600.,24.0),24.0 ))  ! TU
   WRITE(YCTIME,'(I5.5)')  IUTIME
 
 

@@ -161,10 +161,10 @@ IF (GSFIRSTCALL) THEN
   WRITE(UNIT=ILUOUT0,FMT='(" THERE ARE ",I2," ADV FORCING FIELDs  AT:")') NADVFRC
   DO JSX_ADV = 1 , NADVFRC
     WRITE(UNIT=ILUOUT0,FMT='(F9.0, "s, date:", I3, "/", I3, "/", I5)') &
-      TDTADVFRC(JSX_ADV)%TIME,        &
-      TDTADVFRC(JSX_ADV)%TDATE%DAY,   &
-      TDTADVFRC(JSX_ADV)%TDATE%MONTH, &
-      TDTADVFRC(JSX_ADV)%TDATE%YEAR
+      TDTADVFRC(JSX_ADV)%xtime,  &
+      TDTADVFRC(JSX_ADV)%nday,   &
+      TDTADVFRC(JSX_ADV)%nmonth, &
+      TDTADVFRC(JSX_ADV)%nyear
   END DO
 
 !*        1.2  find first sounding to be used 

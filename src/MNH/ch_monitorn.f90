@@ -708,7 +708,7 @@ END IF
 IF (KTCOUNT==1 .OR. &
     (MOD(ISTCOUNT, MAX(1, INT(XCH_TUV_TUPDATE/XTSTEP)) ) .EQ. 0)) THEN
 !
-  WRITE(KLUOUT,*)"TIME call update jvalue: ",TDTCUR%TIME
+  WRITE(KLUOUT,*)"TIME call update jvalue: ",TDTCUR%xtime
 !
   IF (.NOT.ASSOCIATED(XJVALUES)) &
              ALLOCATE(XJVALUES(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),JPJVMAX))
@@ -716,7 +716,7 @@ IF (KTCOUNT==1 .OR. &
   CALL CH_UPDATE_JVALUES(KLUOUT,  XZENITH, XRT,                  &
        XALBUV, XZS, XZZ, XLAT0, XLON0,                           &
        SIZE(XZZ,1), SIZE(XZZ,2), SIZE(XZZ,3), NRR,               &
-       TDTCUR%TDATE%DAY, TDTCUR%TDATE%MONTH, TDTCUR%TDATE%YEAR, TDTCUR%TIME,&
+       TDTCUR%nday, TDTCUR%nmonth, TDTCUR%nyear, TDTCUR%xtime,   &
        LCH_TUV_ONLINE,  CCH_TUV_CLOUDS,                          &
        XCH_TUV_ALBNEW, XCH_TUV_DOBNEW, XRHODREF, XJVALUES,       &
        IIB,IIE,IJB,IJE,IIU,IJU, KVERB   )
@@ -732,7 +732,7 @@ ISTCOUNT = ISTCOUNT + 1
 !*       3.1 sedimentation term and wet deposition for aerosols tendency (XSEDA)
 !
 IF (LORILAM) THEN
-  ZTIME  = TDTCUR%TIME ! need for ch_orilam
+  ZTIME  = TDTCUR%xtime ! need for ch_orilam
   XSEDA(:,:,:,:) = 0.
   ZSEDA(:,:) = 0.
 ! dry sedimentation
@@ -995,14 +995,14 @@ DO JL=1,ISVECNMASK
   CASE ('NONE','KESS','ICE3','ICE4')
     IF (GSPLIT) THEN ! LWC and LWR computed from tendencies
       CALL CH_METEO_TRANS_KESS(JL, XRHODJ, XRHODREF, XRRS, XTHT, XPABST, &
-                             ISVECNPT, ISVECMASK, TZM, TDTCUR%TDATE%DAY, &
-                             TDTCUR%TDATE%MONTH, TDTCUR%TDATE%YEAR,      &
+                             ISVECNPT, ISVECMASK, TZM, TDTCUR%nday,      &
+                             TDTCUR%nmonth, TDTCUR%nyear,                &
                              XLAT, XLON, XLAT0, XLON0, LUSERV, LUSERC,   &
                              LUSERR, KLUOUT, CCLOUD, PTSTEP              )
     ELSE 
       CALL CH_METEO_TRANS_KESS(JL, XRHODJ, XRHODREF, XRT, XTHT, XPABST,  &
-                             ISVECNPT, ISVECMASK, TZM, TDTCUR%TDATE%DAY, &
-                             TDTCUR%TDATE%MONTH, TDTCUR%TDATE%YEAR,      &
+                             ISVECNPT, ISVECMASK, TZM, TDTCUR%nday,      &
+                             TDTCUR%nmonth, TDTCUR%nyear,                &
                              XLAT, XLON, XLAT0, XLON0, LUSERV, LUSERC,   &
                              LUSERR, KLUOUT, CCLOUD                      )
     ENDIF
@@ -1011,14 +1011,14 @@ DO JL=1,ISVECNMASK
     IF (GSPLIT) THEN ! LWC and LWR computed from tendencies
       CALL CH_METEO_TRANS_C2R2(JL, XRHODJ, XRHODREF, XRRS, XRSVS(:,:,:,NSV_C2R2BEG+1), &
                              XRSVS(:,:,:,NSV_C2R2BEG+2), XTHT, XPABST, ISVECNPT,       &
-                             ISVECMASK, TZM, TDTCUR%TDATE%DAY, TDTCUR%TDATE%MONTH,     &
-                             TDTCUR%TDATE%YEAR, XLAT,XLON, XLAT0, XLON0, LUSERV,       &
+                             ISVECMASK, TZM, TDTCUR%nday, TDTCUR%nmonth,               &
+                             TDTCUR%nyear, XLAT,XLON, XLAT0, XLON0, LUSERV,            &
                              LUSERC, LUSERR, KLUOUT, CCLOUD,  PTSTEP                   )
     ELSE 
       CALL CH_METEO_TRANS_C2R2(JL, XRHODJ, XRHODREF, XRT, XSVT(:,:,:,NSV_C2R2BEG+1), &
                              XSVT(:,:,:,NSV_C2R2BEG+2), XTHT, XPABST, ISVECNPT,      &
-                             ISVECMASK, TZM, TDTCUR%TDATE%DAY, TDTCUR%TDATE%MONTH,   &
-                             TDTCUR%TDATE%YEAR, XLAT,XLON, XLAT0, XLON0, LUSERV,     &
+                             ISVECMASK, TZM, TDTCUR%nday, TDTCUR%nmonth,             &
+                             TDTCUR%nyear, XLAT,XLON, XLAT0, XLON0, LUSERV,          &
                              LUSERC, LUSERR, KLUOUT, CCLOUD                          )
     ENDIF
   END SELECT
@@ -1044,13 +1044,13 @@ DO JL=1,ISVECNMASK
         END DO
     END SELECT
     CALL CH_SET_RATES &
-      (TDTCUR%TIME, ZCHEM, TZM, IMI, KLUOUT, KVERB, ISVECNPT, NEQ, NRRL, ZPH)
+      (TDTCUR%xtime, ZCHEM, TZM, IMI, KLUOUT, KVERB, ISVECNPT, NEQ, NRRL, ZPH)
   ELSE
     CALL CH_SET_RATES &
-      (TDTCUR%TIME, ZCHEM, TZM, IMI, KLUOUT, KVERB, ISVECNPT, NEQ, NRRL)
+      (TDTCUR%xtime, ZCHEM, TZM, IMI, KLUOUT, KVERB, ISVECNPT, NEQ, NRRL)
   ENDIF
 !
-  CALL CH_SET_PHOTO_RATES( TDTCUR%TIME, ZCHEM, JL, TZM, IMI, KLUOUT, KVERB, &
+  CALL CH_SET_PHOTO_RATES( TDTCUR%xtime, ZCHEM, JL, TZM, IMI, KLUOUT, KVERB, &
                            ISVECNPT, ISVECMASK, NEQ, XJVALUES)
 !
 !*       4.4 initialize aerosol parameters and moments of 0th,
@@ -1073,7 +1073,7 @@ DO JL=1,ISVECNMASK
   ZOLDCHEM(:,:) = ZCHEM(:,:)
   DO JM = 1, NCH_SUBSTEPS
     CALL CH_SOLVER_n &
-          (TDTCUR%TIME, ZDTSOLVER, ZCHEM, ZNEWCHEM, NEQ, ISVECNPT, IMI)
+          (TDTCUR%xtime, ZDTSOLVER, ZCHEM, ZNEWCHEM, NEQ, ISVECNPT, IMI)
     ZCHEM(:,:) = MAX(0.0,ZNEWCHEM(:,:))
   END DO
  IF (CSOLVER(1:2)=="RO" .AND. NEQAQ>0) THEN ! aqueous chemistry case rosenbrock solver
@@ -1139,7 +1139,7 @@ DO JL=1,ISVECNMASK
 !               selected species
 !
   IF (NEQ_PLT>0) THEN
-    CALL CH_PRODLOSS(TDTCUR%TIME,ZCHEM,ZPRODTOT,ZLOSSTOT,IMI,ISVECNPT,NEQ)
+    CALL CH_PRODLOSS(TDTCUR%xtime,ZCHEM,ZPRODTOT,ZLOSSTOT,IMI,ISVECNPT,NEQ)
     DO JM=1, NEQ_PLT
       DO JN=1,ISVECNPT
         ZPROD(JN,JM)=ZPRODTOT(JN,NIND_SPEC(JM))
@@ -1153,7 +1153,7 @@ DO JL=1,ISVECNMASK
 !               filter selected species
 !
   IF (NEQ_BUDGET>0) THEN
-        CALL CH_TERMS(TDTCUR%TIME,ZCHEM,ZTCHEMTOT,IMI,ISVECNPT,NEQ,NREAC)
+        CALL CH_TERMS(TDTCUR%xtime,ZCHEM,ZTCHEMTOT,IMI,ISVECNPT,NEQ,NREAC)
         DO JM=1,NEQ_BUDGET
           DO JN=1,ISVECNPT    
             JS=1      

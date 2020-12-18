@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 rad 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ####################
       MODULE MODI_SUNPOS_n
@@ -134,7 +129,7 @@ END IF
 !*       2.    COMPUTES THE TRUE SOLAR TIME
 !              ----------------------------
 !
-ZTIME     = TDTRAD_FULL%TIME + 0.5*XDTRAD
+ZTIME     = TDTRAD_FULL%xtime + 0.5*XDTRAD
 
 
 ZUT       = MOD( 24.0+MOD(ZTIME/3600.,24.0),24.0 )

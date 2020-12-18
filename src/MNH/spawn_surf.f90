@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2004-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -133,9 +133,8 @@ IF (CSURF=='EXTE') THEN
     ALLOCATE(YSURF_CUR%DUO%CSELECT(0))
     CALL WRITE_PGD_SURF_ATM_n(YSURF_CUR,'MESONH')
     !* rereading of physiographic fields and definition of prognostic fields
-    CALL INIT_PGD_SURF_ATM(YSURF_CUR,'MESONH','PRE',HINIFILE,'MESONH',      &
-                           TDTCUR%TDATE%YEAR, TDTCUR%TDATE%MONTH, &
-                           TDTCUR%TDATE%DAY, TDTCUR%TIME          )
+    CALL INIT_PGD_SURF_ATM( YSURF_CUR, 'MESONH', 'PRE', HINIFILE, 'MESONH',        &
+                            TDTCUR%nyear, TDTCUR%nmonth, TDTCUR%nday, TDTCUR%xtime )
     CALL PREP_SURF_ATM(YSURF_CUR,'MESONH',HINIFILE,'MESONH',HINIFILEPGD,'MESONH',YLCTL)
     !* writing of all surface fields
     CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','ALL',.FALSE.)

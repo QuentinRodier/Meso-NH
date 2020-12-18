@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -113,8 +113,8 @@ INTEGER :: ILUOUT
 !*       1.    CONVERT TIME IN HOURS,MINUTES AND SECONDS :
 !              ------------------------------------------
 !
-IHOUR   = INT(TPDATETIME%TIME/3600.)
-ZREMAIN = MOD(TPDATETIME%TIME,3600.)
+IHOUR   = INT(TPDATETIME%xtime/3600.)
+ZREMAIN = MOD(TPDATETIME%xtime,3600.)
 IMINUTE = INT(ZREMAIN/60.)
 ZSECOND = MOD(ZREMAIN,60.)
 !
@@ -126,22 +126,22 @@ ZSECOND = MOD(ZREMAIN,60.)
 ILUOUT = TPOUTFILE%NLU
 !
 IF (PRESENT(HTITLE)) THEN
-  IF ((TPDATETIME%TDATE%YEAR < 0).OR.(TPDATETIME%TDATE%MONTH < 0).OR.    &
-     (TPDATETIME%TDATE%DAY < 0) ) THEN 
+  IF ((TPDATETIME%nyear < 0).OR.(TPDATETIME%nmonth < 0).OR.    &
+     (TPDATETIME%nday < 0) ) THEN 
     WRITE(UNIT=ILUOUT,FMT='(1X,A," :",2X,I2.2,"H",I2.2,"M", &
          & F5.2,"S")') HTITLE, IHOUR,IMINUTE,ZSECOND
   ELSE
     WRITE(UNIT=ILUOUT,FMT='(1X,A," :",I4.4,I2.2,I2.2,2X,I2.2,"H",I2.2,"M", &
-         & F5.2,"S")') HTITLE, TPDATETIME%TDATE, IHOUR,IMINUTE,ZSECOND
+         & F5.2,"S")') HTITLE, TPDATETIME%nyear, TPDATETIME%nmonth, TPDATETIME%nday, IHOUR,IMINUTE,ZSECOND
   END IF
 ELSE
-  IF ((TPDATETIME%TDATE%YEAR < 0).OR.(TPDATETIME%TDATE%MONTH < 0).OR.    &
-     (TPDATETIME%TDATE%DAY < 0) ) THEN 
+  IF ((TPDATETIME%nyear < 0).OR.(TPDATETIME%nmonth < 0).OR.    &
+     (TPDATETIME%nday < 0) ) THEN 
     WRITE(UNIT=ILUOUT,FMT='(1X,2X,I2.2,"H",I2.2,"M", &
          & F5.2,"S")') IHOUR,IMINUTE,ZSECOND  
   ELSE 
     WRITE(UNIT=ILUOUT,FMT='(1X,I4.4,I2.2,I2.2,2X,I2.2,"H",I2.2,"M", &
-         & F5.2,"S")') TPDATETIME%TDATE, IHOUR,IMINUTE,ZSECOND  
+         & F5.2,"S")') TPDATETIME%nyear, TPDATETIME%nmonth, TPDATETIME%nday, IHOUR,IMINUTE,ZSECOND
   END IF
 END IF
 !-------------------------------------------------------------------------------

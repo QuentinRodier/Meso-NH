@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2009-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2009-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -83,10 +83,10 @@ CALL IO_File_open(TPFILE)
 !
 CALL IO_Field_read(TPFILE,'DTCUR',TZDTCUR)
 ! 
-ICURAA=MOD(TZDTCUR%TDATE%YEAR,100)  ! Annee sur 2 caracteres.
-ICURMM=TZDTCUR%TDATE%MONTH
-ICURJJ=TZDTCUR%TDATE%DAY
-ICURSS=NINT(TZDTCUR%TIME)
+ICURAA=MOD(TZDTCUR%nyear,100)  ! Annee sur 2 caracteres.
+ICURMM=TZDTCUR%nmonth
+ICURJJ=TZDTCUR%nday
+ICURSS=NINT(TZDTCUR%xtime)
 !
 ICURMN = NINT( (REAL(ICURSS)/60.0)/5.0 )*5   ! Heure arrondie a 5 minutes pres.
 ICURSS = 0
