@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -37,6 +37,7 @@
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !  P. Wautelet 12/08/2020: bugfix: use NUNDEF instead of XUNDEF for integer variables
+!  P. Wautelet 04/01/2021: bugfix: nles_k was used instead of nspectra_k for a loop index
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -396,7 +397,7 @@ IF (ANY(XSPECTRA_ALTITUDES(:)/=XUNDEF)) THEN
   ALLOCATE(NKLIN_SPEC   (SIZE(XZZ,1),SIZE(XZZ,2),NSPECTRA_K))
   !
   ALLOCATE(ZZ_SPEC      (SIZE(XZZ,1),SIZE(XZZ,2),NSPECTRA_K))
-  DO JK=1,NLES_K
+  DO JK=1,NSPECTRA_K
     DO JJ=1,SIZE(XZZ,2)
       DO JI=1,SIZE(XZZ,1)
         ZZ_SPEC(JI,JJ,JK) = XSPECTRA_ALTITUDES(JK)
