@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -51,8 +51,8 @@ END MODULE MODI_SPEC_VER_INT
 !!      Original         07/02/00
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
-!!
-!! --------------------------------------------------------------------------
+!  P. Wautelet 05/01/2021: bugfix: CSPECTRA_LEVEL_TYPE='Z' computation was wrong
+! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
 !          ------------
@@ -99,10 +99,10 @@ ELSE IF (CSPECTRA_LEVEL_TYPE=='K') THEN
     ZA(:,:,JK) = PA_MNH(:,:,NSPECTRA_LEVELS(JK))
   END DO
 ELSE IF (CSPECTRA_LEVEL_TYPE=='Z') THEN
-  PA_SPEC = VER_INTERP_LIN(PA_MNH,NKLIN_CURRENT_SPEC,XCOEFLIN_CURRENT_SPEC)
+  ZA(:,:,:) = VER_INTERP_LIN(PA_MNH,NKLIN_CURRENT_SPEC,XCOEFLIN_CURRENT_SPEC)
   !
   WHERE(NKLIN_CURRENT_SPEC<2)
-    PA_SPEC = XUNDEF
+    ZA(:,:,:) = XUNDEF
   END WHERE
 ELSE
   call Print_msg( NVERB_FATAL, 'GEN', 'SPEC_VER_INT', 'invalid CSPECTRA_LEVEL_TYPE ('//CSPECTRA_LEVEL_TYPE//')' )
