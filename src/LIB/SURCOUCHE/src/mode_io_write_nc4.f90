@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -1410,7 +1410,7 @@ IF (TPFILE%LMASTER) THEN !Time scale is the same on all processes
   IF (TRIM(YPROGRAM)/='PGD' .AND. TRIM(YPROGRAM)/='NESPGD' .AND. TRIM(YPROGRAM)/='ZOOMPG' &
       .AND. .NOT.(TRIM(YPROGRAM)=='REAL' .AND. CSTORAGE_TYPE=='SU') ) THEN !condition to detect PREP_SURFEX
     if ( tpfile%ctype /= 'MNHDIACHRONIC' .and. Associated( tdtcur ) ) &
-      call Write_time_coord( tpfile%tncdims%tdims(NMNHDIM_TIME), [ tdtcur ] )
+      call Write_time_coord( tpfile%tncdims%tdims(NMNHDIM_TIME), 'time axis', [ tdtcur ] )
   END IF
 END IF
 
@@ -1678,7 +1678,7 @@ SUBROUTINE WRITE_VER_COORD(TDIM,HLONGNAME,HSTDNAME,HCOMPNAME,PSHIFT,KBOUNDLOW,KB
 
 END SUBROUTINE WRITE_VER_COORD
 
-subroutine Write_time_coord( tdim, tpdates, tpdates_bound )
+subroutine Write_time_coord( tdim, hlongname, tpdates, tpdates_bound )
   use modd_field,      only: NMNHDIM_PAIR, tfieldlist
   use modd_time_n,     only: tdtmod
   use modd_type_date,  only: date_time
@@ -1687,6 +1687,7 @@ subroutine Write_time_coord( tdim, tpdates, tpdates_bound )
   use mode_field,      only: Find_field_id_from_mnhname
 
   type(tdimnc),                    pointer,           intent(in) :: tdim
+  character(len=*),                                   intent(in) :: hlongname
   type(date_time), dimension(:),                      intent(in) :: tpdates
   type(date_time), dimension(:,:),          optional, intent(in) :: tpdates_bound !Boundaries of the date intervals
 
@@ -1726,7 +1727,7 @@ subroutine Write_time_coord( tdim, tpdates, tpdates_bound )
   end if
 
   ! Write metadata
-  istatus = NF90_PUT_ATT( incid, ivarid, 'long_name', 'time axis' )
+  istatus = NF90_PUT_ATT( incid, ivarid, 'long_name', Trim( hlongname ) )
   if ( istatus /= NF90_NOERR ) &
     call IO_Err_handle_nc4( istatus, 'Write_time_coord', 'NF90_PUT_ATT', 'long_name for ' // Trim( yvarname ) )
   istatus = NF90_PUT_ATT( incid, ivarid, 'standard_name','time' )
