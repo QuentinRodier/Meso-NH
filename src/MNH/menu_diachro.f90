@@ -1,8 +1,9 @@
-!MNH_LIC Copyright 1996-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
+#ifdef MNH_IOLFI
 module mode_menu_diachro
 
 implicit none
@@ -223,3 +224,4 @@ LPACK=GPACK
 END SUBROUTINE MENU_DIACHRO
 
 end module mode_menu_diachro
+#endif

@@ -1,4 +1,4 @@
-#MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 #MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 #MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 #MNH_LIC for details. version 1.
@@ -215,13 +215,16 @@ endif
 ##########################################################
 #           Source NEWLFI                                #
 ##########################################################
+ifdef MNH_IOLFI
+CPPFLAGS_MNH += -DMNH_IOLFI
 DIR_NEWLFI      += LIB/NEWLFI/src
 #CPPFLAGS_NEWLFI = -DSWAPIO -DLINUX
 INC_NEWLFI      = -I$(B)LIB/NEWLFI/src
+endif
 #
 ifdef DIR_NEWLFI
 #
-# Management/parametrisation of size of INTEGER ofr file > 16 GO & RECL for LFI
+# Management/parametrisation of size of INTEGER for files > 16 GiB & RECL for LFI
 #
 LFI_INT?=4
 ifneq "$(findstring 8,$(LFI_INT))" ""

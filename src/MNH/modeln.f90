@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -363,7 +363,9 @@ USE MODE_IO_FIELD_WRITE,   only: IO_Field_user_write, IO_Fieldlist_write, IO_Hea
 USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
 USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list
 USE MODE_ll
+#ifdef MNH_IOLFI
 use mode_menu_diachro,     only: MENU_DIACHRO
+#endif
 USE MODE_MNH_TIMING
 USE MODE_MODELN_HANDLER
 USE MODE_MPPDB
@@ -2090,7 +2092,9 @@ IF (OEXIT) THEN
     CALL WRITE_STATION_n(TDIAFILE)
     CALL WRITE_PROFILER_n(TDIAFILE)
     call Write_les_n( tdiafile )
+#ifdef MNH_IOLFI
     CALL MENU_DIACHRO(TDIAFILE,'END')
+#endif
     CALL IO_File_close(TDIAFILE)
   END IF
   !

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2018-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -16,6 +16,7 @@
 !  P. Wautelet 05/03/2019: rename IO subroutines and modules
 !
 !-----------------------------------------------------------------
+#ifdef MNH_IOLFI
 module mode_io_file_lfi
 
 use modd_io,     only: tfiledata
@@ -202,3 +203,5 @@ end subroutine IO_Flu_dealloc
 
 
 end module mode_io_file_lfi
+#endif
+

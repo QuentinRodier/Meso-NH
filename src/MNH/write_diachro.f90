@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1996-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -142,9 +142,11 @@ end if
 gpack = lpack
 lpack = .false.
 
+#ifdef MNH_IOLFI
 if ( tpdiafile%cformat == 'LFI' .or. tpdiafile%cformat == 'LFICDF4' ) &
   call Write_diachro_lfi( tpdiafile, tpfields, hgroup, htype, tpdates, pvar, gicp, gjcp, gkcp, kil, kih, kjl, kjh, kkl, kkh, &
                           ptrajx, ptrajy, ptrajz )
+#endif
 
 #ifdef MNH_IOCDF4
 if ( tpdiafile%cformat == 'NETCDF4' .or. tpdiafile%cformat == 'LFICDF4' ) &
@@ -156,6 +158,7 @@ lpack = gpack
 
 end subroutine Write_diachro
 
+#ifdef MNH_IOLFI
 !-----------------------------------------------------------------------------
 subroutine Write_diachro_lfi( tpdiafile, tpfields, hgroup, htype, tpdates, pvar, oicp, ojcp, okcp, kil, kih, kjl, kjh, kkl, kkh, &
                               ptrajx, ptrajy, ptrajz )
@@ -616,8 +619,10 @@ deallocate( zdatime )
 call Menu_diachro( tzfile, ygroup )
 
 end subroutine Write_diachro_lfi
-!-----------------------------------------------------------------------------
+#endif
+
 #ifdef MNH_IOCDF4
+!-----------------------------------------------------------------------------
 subroutine Write_diachro_nc4( tpdiafile, tpfields, hgroup, htype, tpdates, pvar, oicp, ojcp, okcp, kil, kih, kjl, kjh, kkl, kkh, &
                               osplit )
 

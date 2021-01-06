@@ -1,4 +1,4 @@
-#MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 #MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 #MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 #MNH_LIC for details. version 1.
@@ -105,6 +105,11 @@ ifeq ($(shell test $(GFV) -ge 500 ; echo $$?),0)
 MNH_TOOLS=yes
 endif
 endif
+#
+## IOLFI flag
+#
+#if MNH_IOLFI exists => compile the NEWLFI library (for LFI files)
+MNH_IOLFI=yes
 #
 ## COMPRESS flag
 #

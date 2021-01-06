@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1999-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1999-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -146,7 +146,9 @@ USE MODE_IO_FIELD_WRITE,   only: IO_Header_write
 USE MODE_IO,               only: IO_Config_set, IO_Init
 USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list,IO_Filelist_print
 USE MODE_ll
+#ifdef MNH_IOLFI
 use mode_menu_diachro,     only: MENU_DIACHRO
+#endif
 USE MODE_MNH_TIMING
 USE MODE_MODELN_HANDLER
 USE MODE_MSG
@@ -566,7 +568,9 @@ IF ( LAIRCRAFT_BALLOON ) THEN
   CALL IO_Header_write(TZDIACFILE)
   CALL WRITE_LFIFMN_FORDIACHRO_n(TZDIACFILE)
   CALL WRITE_AIRCRAFT_BALLOON(TZDIACFILE)
+#ifdef MNH_IOLFI
   CALL MENU_DIACHRO(TZDIACFILE,'END')
+#endif
   CALL IO_File_close(TZDIACFILE)
   WRITE(ILUOUT0,*) ' '
   WRITE(ILUOUT0,*) 'DIAG AFTER CLOSE DIACHRONIC FILE'

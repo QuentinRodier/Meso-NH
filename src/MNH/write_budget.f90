@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -111,7 +111,9 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
 
   use mode_datetime,       only: datetime_distance
   use mode_io_field_write, only: IO_Field_create, IO_Field_write
+#ifdef MNH_IOLFI
   use mode_menu_diachro,   only: Menu_diachro
+#endif
   use mode_msg
   use mode_time,           only: tdtexp
 
@@ -226,6 +228,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   !
   !*     3.1    storage of the masks  array
   !
+#ifdef MNH_IOLFI
       if ( Trim( tpdiafile%cformat ) == 'LFI' .or. Trim( tpdiafile%cformat ) == 'LFICDF4' ) then
         Allocate( zworkmask(Size( xbusurf, 1 ), Size( xbusurf, 2 ), 1, nbuwrnb, nbumask,1) )
         ! local array
@@ -261,6 +264,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
 
         Deallocate( zworkmask )
       end if
+#endif
 
       if ( Trim( tpdiafile%cformat ) == 'LFICDF4' .or. Trim( tpdiafile%cformat ) == 'NETCDF4' ) then
         tzfile = tpdiafile

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -106,12 +106,14 @@ TYPE TFILEDATA
   INTEGER              :: NMODEL = 0              !Model number corresponding to the file (field not always set)
   INTEGER,DIMENSION(3) :: NMNHVERSION = (/0,0,0/) !MesoNH version used to create the file
   !
+#ifdef MNH_IOLFI
   ! Fields for LFI files
   INTEGER(KIND=LFIINT) :: NLFININAR = 0  !Number of articles of the LFI file (only accurate if file opened in read mode)
   INTEGER(KIND=LFIINT) :: NLFINPRAR = 0  !Number of predicted articles of the LFI file (non crucial)
   INTEGER              :: NLFITYPE  = -1 !Type of the file (used to generate list of files to transfers)
   INTEGER              :: NLFIVERB  = 1  !LFI verbosity level
   INTEGER(KIND=LFIINT) :: NLFIFLU   = -1 !File identifier
+#endif
   !
 #ifdef MNH_IOCDF4
   ! Fields for netCDF files
