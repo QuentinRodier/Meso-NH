@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2019-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2019-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -9,6 +9,7 @@
 !  P. Wautelet 22/03/2019: add MNHINT/REAL32/64_MPI, MNH2REAL32/64_MPI + more public parameters
 !  P. Wautelet 27/03/2019: add MNHTIME and MNHTIME_MPI
 !  P. Wautelet 26/04/2019: add MNHLOG and MNHLOG_MPI/MNHLOG32_MPI/MNHLOG64_MPI
+!  P. Wautelet 06/01/2021: use kind=CDFINT to define parameters used in netCDF calls
 !-----------------------------------------------------------------
 module modd_precision
 
@@ -113,17 +114,17 @@ integer, parameter :: LFIINT = MNHINT64
 integer, parameter :: CDFINT = selected_int_kind( r = 9 )
 
 #if (MNH_INT == 4)
-integer, parameter :: MNHINT_NF90 = NF90_INT
+integer(kind=CDFINT), parameter :: MNHINT_NF90 = NF90_INT
 #elif (MNH_INT == 8)
-integer, parameter :: MNHINT_NF90 = NF90_INT64
+integer(kind=CDFINT), parameter :: MNHINT_NF90 = NF90_INT64
 #else
 #error "Invalid MNH_INT"
 #endif
 
 #if (MNH_REAL == 4)
-integer, parameter :: MNHREAL_NF90 = NF90_FLOAT
+integer(kind=CDFINT), parameter :: MNHREAL_NF90 = NF90_FLOAT
 #elif (MNH_REAL == 8)
-integer, parameter :: MNHREAL_NF90 = NF90_DOUBLE
+integer(kind=CDFINT), parameter :: MNHREAL_NF90 = NF90_DOUBLE
 #else
 #error "Invalid MNH_REAL"
 #endif
