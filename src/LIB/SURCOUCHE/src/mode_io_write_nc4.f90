@@ -590,6 +590,8 @@ call IO_Field_create_nc4( tzfile, tzfield, kshape = Shape( pfield ), oiscoord = 
 istatus = NF90_PUT_VAR(TZFILE%NNCID, IVARID, PFIELD)
 IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_X2','NF90_PUT_VAR',trim(TZFIELD%CMNHNAME),KRESP)
 
+if ( Present( kvertlevel ) ) deallocate( tzfield )
+
 END SUBROUTINE IO_Field_write_nc4_X2
 
 
@@ -1132,6 +1134,8 @@ if ( Size( pfield ) > 0 ) then
   if (istatus /= NF90_NOERR) &
     call IO_Err_handle_nc4( istatus, 'IO_Field_partial_write_nc4_X2', 'NF90_PUT_VAR', Trim( tzfield%cmnhname ), kresp )
 end if
+
+if ( Present( kvertlevel ) ) deallocate( tzfield )
 
 end subroutine IO_Field_partial_write_nc4_X2
 
@@ -1920,6 +1924,7 @@ if ( Present( kvertlevel ) ) then
   Write( ysuffix, '( i4.4 )' ) kvertlevel
   tpfileout => tpfile%tfiles_ioz(kzfile)%tfile
   !Copy the values of tpfield to the pointer tpfieldout (new tfielddata)
+  Allocate( tpfieldout )
   tpfieldout = tpfield
   tpfieldout%cmnhname  = Trim( tpfieldout%cmnhname ) // ysuffix
   if ( Len_trim( tpfieldout%cstdname  ) > 0 )  tpfieldout%cstdname  = Trim( tpfieldout%cstdname  ) // '_at_level_' // ysuffix
