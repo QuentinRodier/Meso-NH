@@ -483,7 +483,9 @@ endif
 ##########################################################
 # NETCDF4 INPUT/OUTPUT in MesoNH 
 ifdef MNH_IOCDF4
-CPPFLAGS_MNH += -DMNH_IOCDF4=$(MNH_IOCDF4)
+CPPFLAGS_MNH += -DMNH_IOCDF4
+else
+VER_CDF="NONE"
 endif
 #
 # NetCDF  : AUTO install of netcdf-4.X.X on PC linux to avoid problem with compiler

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -46,7 +46,7 @@ CONTAINS
     IF (GCONFIO) THEN
       CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Config_set','already called (ignoring this call)')
     ELSE
-#if defined(MNH_IOCDF4)
+#ifdef MNH_IOCDF4
       LIOCDF4  = OIOCDF4
       LLFIOUT  = OLFIOUT
       LLFIREAD = OLFIREAD

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -183,15 +183,17 @@ SELECT CASE(TPFILE%CTYPE)
 
         IF (IRESP/=0) THEN !File not yet in filelist => add it (nothing to do if already in list)
           IF (ALLOCATED(TPFILE%CDIRNAME)) THEN
-            CALL IO_File_add2list(TZFILE_SPLIT,TRIM(TPFILE%CNAME)//TRIM(YFILE),TPFILE%CTYPE,TPFILE%CMODE,        &
-                                  HDIRNAME=TPFILE%CDIRNAME,                                                     &
-                                  KLFINPRAR=TPFILE%NLFINPRAR,KLFITYPE=TPFILE%NLFITYPE,KLFIVERB=TPFILE%NLFIVERB, &
-                                  HFORMAT=TPFILE%CFORMAT,osplit_ioz=.false.)
+            call IO_File_add2list( tzfile_split, trim(tpfile%cname)//trim(yfile), tpfile%ctype, tpfile%cmode,            &
+                                   hdirname = tpfile%cdirname,                                                           &
+                                   klfinprar = tpfile%nlfinprar, klfitype = tpfile%nlfitype, klfiverb = tpfile%nlfiverb, &
+                                   hformat = tpfile%cformat,                                                             &
+                                   osplit_ioz=.false. )
           ELSE
-            CALL IO_File_add2list(TZFILE_SPLIT,TRIM(TPFILE%CNAME)//TRIM(YFILE),TPFILE%CTYPE,TPFILE%CMODE,        &
-                                  KLFINPRAR=TPFILE%NLFINPRAR,KLFITYPE=TPFILE%NLFITYPE,KLFIVERB=TPFILE%NLFIVERB, &
-                                  HFORMAT=TPFILE%CFORMAT,osplit_ioz=.false.)
-          END IF
+            call IO_File_add2list( tzfile_split, trim(tpfile%cname)//trim(yfile), tpfile%ctype, tpfile%cmode,            &
+                                   klfinprar = tpfile%nlfinprar, klfitype = tpfile%nlfitype, klfiverb = tpfile%nlfiverb, &
+                                   hformat = tpfile%cformat,                                                             &
+                                   osplit_ioz=.false. )
+           END IF
 
           TZFILE_SPLIT%TMAINFILE => TPFILE
         END IF
@@ -495,7 +497,7 @@ use modd_conf,             only: cprogram
 use modd_io,               only: nnullunit
 
 use mode_io_file_lfi,      only: IO_File_close_lfi
-#if defined(MNH_IOCDF4)
+#ifdef MNH_IOCDF4
 use mode_io_file_nc4,      only: IO_File_close_nc4
 use mode_io_write_nc4,     only: IO_Coordvar_write_nc4
 #endif
@@ -559,7 +561,7 @@ SELECT CASE(TPFILE%CTYPE)
       CALL IO_File_close(TZFILE_DES,KRESP=IRESP,HPROGRAM_ORIG=HPROGRAM_ORIG)
     ENDIF
     !
-#if defined(MNH_IOCDF4)
+#ifdef MNH_IOCDF4
     !Write coordinates variables in NetCDF file
     IF (TPFILE%CMODE == 'WRITE' .AND. (TPFILE%CFORMAT=='NETCDF4' .OR. TPFILE%CFORMAT=='LFICDF4')) THEN
       CALL IO_Coordvar_write_nc4(TPFILE,HPROGRAM_ORIG=HPROGRAM_ORIG)
@@ -568,7 +570,7 @@ SELECT CASE(TPFILE%CTYPE)
 
     if (tpfile%lmaster) then
       if (tpfile%cformat == 'LFI'     .or. tpfile%cformat == 'LFICDF4') call IO_File_close_lfi(tpfile,iresp)
-#if defined(MNH_IOCDF4)
+#ifdef MNH_IOCDF4
       if (tpfile%cformat == 'NETCDF4' .or. tpfile%cformat == 'LFICDF4') call IO_File_close_nc4(tpfile,iresp)
 #endif
     end if
@@ -585,7 +587,7 @@ SELECT CASE(TPFILE%CTYPE)
       TZFILE_IOZ%LOPENED       = .FALSE.
       TZFILE_IOZ%NOPEN_CURRENT = 0
       TZFILE_IOZ%NCLOSE        = TZFILE_IOZ%NCLOSE + 1
-#if defined(MNH_IOCDF4)
+#ifdef MNH_IOCDF4
 !Remark: IO_Coordvar_write_nc4 disabled (for the moment) for Z-split files
 !        because it introduce a serialization due to MPI communications inside the call
 !       !Write coordinates variables in netCDF file
@@ -595,7 +597,7 @@ SELECT CASE(TPFILE%CTYPE)
 #endif
       IF (TZFILE_IOZ%LMASTER) THEN
         if (tzfile_ioz%cformat == 'LFI'     .or. tzfile_ioz%cformat == 'LFICDF4') call IO_File_close_lfi(tzfile_ioz,iresp)
-#if defined(MNH_IOCDF4)
+#ifdef MNH_IOCDF4
         if (tzfile_ioz%cformat == 'NETCDF4' .or. tzfile_ioz%cformat == 'LFICDF4') call IO_File_close_nc4(tzfile_ioz,iresp)
 #endif
       END IF
@@ -723,7 +725,7 @@ end subroutine IO_File_check_format_exist
 
 subroutine IO_File_open_format( tpfile, hprogram_orig )
 
-#if defined(MNH_IOCDF4)
+#ifdef MNH_IOCDF4
 use mode_io_file_nc4, only: IO_File_create_nc4, IO_File_open_nc4
 #endif
 use mode_io_file_lfi, only: IO_File_create_lfi, IO_File_open_lfi
@@ -736,7 +738,7 @@ integer :: iresp
 
 call Print_msg( NVERB_DEBUG, 'IO', 'IO_File_open_format', 'called for '//TRIM(tpfile%cname) )
 
-#if defined(MNH_IOCDF4)
+#ifdef MNH_IOCDF4
     IF (TPFILE%CFORMAT=='NETCDF4' .OR. TPFILE%CFORMAT=='LFICDF4') THEN
       SELECT CASE (TPFILE%CMODE)
         CASE('READ')
