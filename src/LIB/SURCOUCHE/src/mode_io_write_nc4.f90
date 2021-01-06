@@ -1213,38 +1213,73 @@ end if
 
 end subroutine IO_Field_partial_write_nc4_X4
 
-SUBROUTINE IO_Coordvar_write_nc4(TPFILE,HPROGRAM_ORIG)
-USE MODD_CONF,       ONLY: CPROGRAM, LCARTESIAN
-USE MODD_CONF_n,     ONLY: CSTORAGE_TYPE
+
+subroutine IO_Coordvar_write_nc4( tpfile, hprogram_orig )
+use modd_aircraft_balloon
+use modd_budget,     only: cbutype, lbu_icp, lbu_jcp, lbu_kcp, nbuih, nbuil, nbujh, nbujl, nbukh, nbukl, nbukmax, &
+                           nbustep, nbutotwrite
+use modd_conf,       only: cprogram, l2d, lcartesian
+use modd_conf_n,     only: cstorage_type
+use modd_dim_n,      only: nkmax
+use modd_dyn_n,      only: xtstep
 use modd_field,      only: NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NI_U, NMNHDIM_NJ_U, NMNHDIM_NI_V, NMNHDIM_NJ_V, &
                            NMNHDIM_LEVEL, NMNHDIM_LEVEL_W, NMNHDIM_TIME,                                   &
+                           NMNHDIM_BUDGET_CART_NI,   NMNHDIM_BUDGET_CART_NJ,   NMNHDIM_BUDGET_CART_NI_U,   &
+                           NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NI_V, NMNHDIM_BUDGET_CART_NJ_V,   &
+                           NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W,                         &
+                           NMNHDIM_BUDGET_MASK_LEVEL, NMNHDIM_BUDGET_MASK_LEVEL_W,                         &
+                           NMNHDIM_BUDGET_TIME, NMNHDIM_BUDGET_LES_TIME, NMNHDIM_BUDGET_LES_AVG_TIME,      &
+                           NMNHDIM_BUDGET_LES_LEVEL,                                                       &
+                           NMNHDIM_SPECTRA_2PTS_NI, NMNHDIM_SPECTRA_2PTS_NJ, NMNHDIM_SPECTRA_LEVEL,        &
+                           NMNHDIM_SERIES_LEVEL, NMNHDIM_SERIES_LEVEL_W, NMNHDIM_SERIES_TIME,              &
+                           NMNHDIM_PROFILER_TIME, NMNHDIM_STATION_TIME,                                    &
                            tfieldlist
-USE MODD_GRID,       ONLY: XLATORI, XLONORI
-USE MODD_GRID_n,     ONLY: LSLEVE, XXHAT, XYHAT, XZHAT
+use modd_grid,       only: xlatori, xlonori
+use modd_grid_n,     only: lsleve, xxhat, xyhat, xzhat
+use modd_les,        only: cles_level_type, cspectra_level_type, nlesn_iinf, nlesn_isup, nlesn_jinf, nlesn_jsup, &
+                           nles_k, nles_levels, nspectra_k, nspectra_levels,                                     &
+                           xles_altitudes, xles_temp_mean_start, xles_temp_mean_end, xles_temp_mean_step,        &
+                           xspectra_altitudes
+use modd_les_n,      only: nles_times, nspectra_ni, nspectra_nj, tles_dates
 use modd_netcdf,     only: tdimnc
-USE MODD_PARAMETERS, ONLY: JPHEXT, JPVEXT
+use modd_parameters, only: jphext, JPVEXT
+use modd_profiler_n, only: numbprofiler, tprofiler
+use modd_series,     only: lseries
+use modd_series_n,   only: nsnbstept, tpsdates
+use modd_station_n,  only: numbstat, tstation
+use modd_time,       only: tdtseg
 use modd_time_n,     only: tdtcur
+use modd_type_date,  only: date_time
 
 use mode_field,      only: Find_field_id_from_mnhname
-USE MODE_GRIDPROJ
-USE MODE_NEST_ll,    ONLY: GET_MODEL_NUMBER_ll, GO_TOMODEL_ll
+use mode_gridproj,   only: Sm_latlon
+use mode_nest_ll,    only: Get_model_number_ll, Go_tomodel_ll
+use mode_time,       only: tdtexp
 
-TYPE(TFILEDATA),          INTENT(IN) :: TPFILE
-CHARACTER(LEN=*),OPTIONAL,INTENT(IN) :: HPROGRAM_ORIG !To emulate a file coming from this program
+type(tfiledata),            intent(in) :: tpfile
+character(len=*), optional, intent(in) :: hprogram_orig !To emulate a file coming from this program
 
-CHARACTER(LEN=:),ALLOCATABLE    :: YSTDNAMEPREFIX
-CHARACTER(LEN=:),ALLOCATABLE    :: YPROGRAM
-INTEGER                         :: IIU, IJU, IKU
-INTEGER                         :: ID, IID, IRESP
-INTEGER                         :: IMI
-INTEGER(KIND=CDFINT)            :: INCID
-LOGICAL                         :: GCHANGEMODEL
-logical                         :: gdealloc
-LOGICAL,POINTER                 :: GSLEVE
-REAL,DIMENSION(:),POINTER       :: ZXHAT, ZYHAT, ZZHAT
-REAL,DIMENSION(:),ALLOCATABLE   :: ZXHATM, ZYHATM,ZZHATM !Coordinates at mass points in the transformed space
-REAL,DIMENSION(:,:),POINTER     :: ZLAT, ZLON
-type(tdimnc), pointer           :: tzdim_ni, tzdim_nj, tzdim_ni_u, tzdim_nj_u, tzdim_ni_v, tzdim_nj_v
+character(len=:),                         allocatable :: ystdnameprefix
+character(len=:),                         allocatable :: yprogram
+integer                                               :: iiu, iju, iku
+integer                                               :: id, iid, iresp
+integer                                               :: imi
+integer                                               :: iavg
+integer                                               :: ji
+integer                                               :: jt
+integer(kind=cdfint)                                  :: incid
+logical                                               :: gchangemodel
+logical                                               :: gdealloc
+logical,                         pointer              :: gsleve
+real                                                  :: zles_temp_mean_start, zles_temp_mean_end
+real,            dimension(:),   pointer              :: zxhat, zyhat, zzhat
+real,            dimension(:),            allocatable :: zxhatm, zyhatm, zzhatm !Coordinates at mass points in the transformed space
+real,            dimension(:),            allocatable :: zles_levels
+real,            dimension(:),            allocatable :: zspectra_levels
+real,            dimension(:,:), pointer              :: zlat, zlon
+type(tdimnc),                    pointer              :: tzdim_ni, tzdim_nj, tzdim_ni_u, tzdim_nj_u, tzdim_ni_v, tzdim_nj_v
+type(date_time), dimension(:),            allocatable :: tzdates
+type(date_time), dimension(:,:),          allocatable :: tzdates_bound
 
 !These variables are save: they are populated once for the master Z-split file and freed after the last file has been written
 real, dimension(:),   pointer, save :: zxhat_glob  => null(), zyhat_glob  => null()
@@ -1254,61 +1289,63 @@ real, dimension(:,:), pointer, save :: zlatu_glob  => null(), zlonu_glob  => nul
 real, dimension(:,:), pointer, save :: zlatv_glob  => null(), zlonv_glob  => null()
 real, dimension(:,:), pointer, save :: zlatf_glob  => null(), zlonf_glob  => null()
 
-CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Coordvar_write_nc4','called for '//TRIM(TPFILE%CNAME))
 
-ZXHAT => NULL()
-ZYHAT => NULL()
-ZZHAT => NULL()
+call Print_msg( NVERB_DEBUG, 'IO', 'IO_Coordvar_write_nc4', 'called for ' // Trim( tpfile%cname ) )
 
-GCHANGEMODEL = .FALSE.
+zxhat => null()
+zyhat => null()
+zzhat => null()
 
-IF (PRESENT(HPROGRAM_ORIG)) THEN
-  YPROGRAM = HPROGRAM_ORIG
-ELSE
-  YPROGRAM = CPROGRAM
-ENDIF
+gchangemodel = .false.
+
+if ( Present( hprogram_orig ) ) then
+  yprogram = hprogram_orig
+else
+  yprogram = cprogram
+endif
 
 ! Get the Netcdf file ID
-INCID = TPFILE%NNCID
+incid = tpfile%nncid
 
-IF (TPFILE%NMODEL>0) THEN
-  CALL FIND_FIELD_ID_FROM_MNHNAME('XHAT',IID,IRESP)
-  ZXHAT => TFIELDLIST(IID)%TFIELD_X1D(TPFILE%NMODEL)%DATA
-  CALL FIND_FIELD_ID_FROM_MNHNAME('YHAT',IID,IRESP)
-  ZYHAT => TFIELDLIST(IID)%TFIELD_X1D(TPFILE%NMODEL)%DATA
-  CALL FIND_FIELD_ID_FROM_MNHNAME('ZHAT',IID,IRESP)
-  ZZHAT => TFIELDLIST(IID)%TFIELD_X1D(TPFILE%NMODEL)%DATA
-  CALL FIND_FIELD_ID_FROM_MNHNAME('SLEVE',IID,IRESP)
-  GSLEVE => TFIELDLIST(IID)%TFIELD_L0D(TPFILE%NMODEL)%DATA
-  !
-  CALL GET_MODEL_NUMBER_ll(IMI)
-  IF (IMI/=TPFILE%NMODEL) THEN
-    !This is necessary to have correct domain sizes (used by GATHER_XXFIELD)
-    CALL GO_TOMODEL_ll(TPFILE%NMODEL,IRESP)
-    GCHANGEMODEL = .TRUE.
-  END IF
-ELSE
-  ZXHAT => XXHAT
-  ZYHAT => XYHAT
-  ZZHAT => XZHAT
-  GSLEVE => LSLEVE
-END IF
+call Get_model_number_ll( imi )
 
-IIU = SIZE(ZXHAT)
-IJU = SIZE(ZYHAT)
-ALLOCATE(ZXHATM(IIU),ZYHATM(IJU))
-!ZXHATM(IIU) and ZYHATM(IJU) are correct only on some processes
-!but it is OK due to the way GATHER_XXFIELD is done
-ZXHATM(1:IIU-1) = 0.5*(ZXHAT(1:IIU-1)+ZXHAT(2:IIU))
-ZXHATM(IIU)     = 2.*ZXHAT(IIU)-ZXHATM(IIU-1)
-ZYHATM(1:IJU-1) = 0.5*(ZYHAT(1:IJU-1)+ZYHAT(2:IJU))
-ZYHATM(IJU)     = 2.*ZYHAT(IJU)-ZYHATM(IJU-1)
-!
-IF (LCARTESIAN) THEN
-  YSTDNAMEPREFIX = 'plane'
-ELSE
-  YSTDNAMEPREFIX = 'projection'
-ENDIF
+if ( tpfile%nmodel > 0 ) then
+  call Find_field_id_from_mnhname( 'XHAT', iid, iresp )
+  zxhat => tfieldlist(iid)%tfield_x1d(tpfile%nmodel)%data
+  call Find_field_id_from_mnhname( 'YHAT', iid, iresp )
+  zyhat => tfieldlist(iid)%tfield_x1d(tpfile%nmodel)%data
+  call Find_field_id_from_mnhname( 'ZHAT', iid, iresp )
+  zzhat => tfieldlist(iid)%tfield_x1d(tpfile%nmodel)%data
+  call Find_field_id_from_mnhname( 'SLEVE', iid, iresp )
+  gsleve => tfieldlist(iid)%tfield_l0d(tpfile%nmodel)%data
+
+  if ( imi /= tpfile%nmodel ) then
+    !This is necessary to have correct domain sizes (used by Gather_xxfield)
+    call Go_tomodel_ll( tpfile%nmodel, iresp )
+    gchangemodel = .true.
+  end if
+else
+  zxhat => xxhat
+  zyhat => xyhat
+  zzhat => xzhat
+  gsleve => lsleve
+end if
+
+iiu = Size( zxhat )
+iju = Size( zyhat )
+Allocate( zxhatm(iiu), zyhatm(iju) )
+!zxhatm(iiu) and zyhatm(iju) are correct only on some processes
+!but it is OK due to the way Gather_xxfield is done
+zxhatm(1 : iiu - 1) = 0.5 * ( zxhat(1 : iiu - 1) + zxhat(2 : iiu) )
+zxhatm(iiu)         = 2. * zxhat(iiu) - zxhatm(iiu - 1)
+zyhatm(1 : iju - 1) = 0.5 * ( zyhat(1 : iju - 1) + zyhat(2 : iju) )
+zyhatm(iju)         = 2. * zyhat(iju) - zyhatm(iju - 1)
+
+if ( lcartesian ) then
+  ystdnameprefix = 'plane'
+else
+  ystdnameprefix = 'projection'
+endif
 
 if ( Associated( tpfile%tncdims ) ) then
   tzdim_ni   => tpfile%tncdims%tdims(NMNHDIM_NI)
@@ -1327,7 +1364,7 @@ else
 end if
 
 !If the file is a Z-split subfile, coordinates are already collected
-if ( .not. associated( tpfile%tmainfile ) ) then
+if ( .not. Associated( tpfile%tmainfile ) ) then
   call Gather_hor_coord1d( 'X', zxhat,  zxhat_glob  )
   call Gather_hor_coord1d( 'X', zxhatm, zxhatm_glob )
   call Gather_hor_coord1d( 'Y', zyhat,  zyhat_glob  )
@@ -1335,34 +1372,30 @@ if ( .not. associated( tpfile%tmainfile ) ) then
 end if
 
 call Write_hor_coord1d( tzdim_ni,   'x-dimension of the grid', &
-                        trim(ystdnameprefix)//'_x_coordinate',              'x', 0.,    jphext, jphext, zxhatm_glob )
+                        trim(ystdnameprefix)//'_x_coordinate',               'X', 0.,   jphext, jphext, zxhatm_glob )
 call Write_hor_coord1d( tzdim_nj,   'y-dimension of the grid', &
-                        trim(ystdnameprefix)//'_y_coordinate',               'y', 0.,   jphext, jphext, zyhatm_glob )
+                        trim(ystdnameprefix)//'_y_coordinate',               'Y', 0.,   jphext, jphext, zyhatm_glob )
 call Write_hor_coord1d( tzdim_ni_u, 'x-dimension of the grid at u location', &
-                        trim(ystdnameprefix)//'_x_coordinate_at_u_location', 'x', -0.5, jphext, 0,      zxhat_glob  )
+                        trim(ystdnameprefix)//'_x_coordinate_at_u_location', 'X', -0.5, jphext, 0,      zxhat_glob  )
 call Write_hor_coord1d( tzdim_nj_u, 'y-dimension of the grid at u location', &
-                        trim(ystdnameprefix)//'_y_coordinate_at_u_location', 'y', 0.,   jphext, jphext, zyhatm_glob )
+                        trim(ystdnameprefix)//'_y_coordinate_at_u_location', 'Y', 0.,   jphext, jphext, zyhatm_glob )
 call Write_hor_coord1d( tzdim_ni_v, 'x-dimension of the grid at v location', &
-                        trim(ystdnameprefix)//'_x_coordinate_at_v_location', 'x', 0.,   jphext, jphext, zxhatm_glob )
+                        trim(ystdnameprefix)//'_x_coordinate_at_v_location', 'X', 0.,   jphext, jphext, zxhatm_glob )
 call Write_hor_coord1d( tzdim_nj_v, 'y-dimension of the grid at v location', &
-                        trim(ystdnameprefix)//'_y_coordinate_at_v_location', 'y', -0.5, jphext, 0,      zyhat_glob  )
+                        trim(ystdnameprefix)//'_y_coordinate_at_v_location', 'Y', -0.5, jphext, 0,      zyhat_glob  )
 
 !The z?hat*_glob were allocated in Gather_hor_coord1d calls
 !Deallocate only if it is a non Z-split file or the last Z-split subfile
 gdealloc = .false.
-if ( associated( tpfile%tmainfile ) ) then
+if ( Associated( tpfile%tmainfile ) ) then
   if ( tpfile%cname == tpfile%tmainfile%tfiles_ioz(tpfile%tmainfile%nsubfiles_ioz)%tfile%cname ) gdealloc = .true.
-else if ( tpfile%nsubfiles_ioz == 0 .and. .not. associated( tpfile%tmainfile ) ) then
+else if ( tpfile%nsubfiles_ioz == 0 .and. .not. Associated( tpfile%tmainfile ) ) then
   gdealloc = .true.
 end if
 
-if ( gdealloc ) deallocate( zxhat_glob, zxhatm_glob, zyhat_glob, zyhatm_glob )
-
-IF (.NOT.LCARTESIAN) THEN
-  !
+if ( .not. lcartesian ) then
   !Compute latitude/longitude for the Arakawa points
-  !
-  ALLOCATE(ZLAT(IIU,IJU),ZLON(IIU,IJU))
+  Allocate( zlat(iiu, iju), zlon(iiu, iju) )
 
   !If the file is a Z-split subfile, coordinates are already collected
   if ( .not. associated( tpfile%tmainfile ) ) then
@@ -1381,46 +1414,281 @@ IF (.NOT.LCARTESIAN) THEN
   ! xi vorticity point (=f point =uv point)
   call Write_hor_coord2d( zlatf_glob, zlonf_glob, 'latitude_f','longitude_f')
 
-  DEALLOCATE(ZLAT,ZLON)
+  Deallocate( zlat, zlon )
 
   !The zlat/lon._glob were allocated in Gather_hor_coord2d calls
   !Deallocate only if it is non Z-split file or the last Z-split subfile
-  if ( gdealloc ) deallocate( zlatm_glob, zlonm_glob, zlatu_glob, zlonu_glob, zlatv_glob, zlonv_glob, zlatf_glob, zlonf_glob )
-END IF
-!
-DEALLOCATE(ZXHATM,ZYHATM)
-!
-IF (TPFILE%LMASTER) THEN !vertical coordinates in the transformed space are the same on all processes
-  IF (TRIM(YPROGRAM)/='PGD' .AND. TRIM(YPROGRAM)/='NESPGD' .AND. TRIM(YPROGRAM)/='ZOOMPG' &
-      .AND. .NOT.(TRIM(YPROGRAM)=='REAL' .AND. CSTORAGE_TYPE=='SU') ) THEN !condition to detect PREP_SURFEX
-    !
-    IKU = SIZE(ZZHAT)
-    ALLOCATE(ZZHATM(IKU))
-    ZZHATM(1:IKU-1) = 0.5 * (ZZHAT(2:IKU)+ZZHAT(1:IKU-1))
-    ZZHATM(IKU)     = 2.* ZZHAT(IKU) - ZZHATM(IKU-1)
-    !
-    CALL WRITE_VER_COORD(tpfile%tncdims%tdims(NMNHDIM_LEVEL),  'position z in the transformed space',              '', &
-                         'altitude',               0., JPVEXT,JPVEXT,ZZHATM)
-    !
-    CALL WRITE_VER_COORD(tpfile%tncdims%tdims(NMNHDIM_LEVEL_W),'position z in the transformed space at w location','', &
-                         'altitude_at_w_location',-0.5,JPVEXT,0,     ZZHAT)
-    !
-    DEALLOCATE(ZZHATM)
+  if ( gdealloc ) Deallocate( zlatm_glob, zlonm_glob, zlatu_glob, zlonu_glob, zlatv_glob, zlonv_glob, zlatf_glob, zlonf_glob )
+end if
+
+Deallocate( zxhatm, zyhatm )
+
+if ( tpfile%lmaster ) then !vertical coordinates in the transformed space are the same on all processes
+  if ( Trim( yprogram ) /= 'PGD' .and. Trim( yprogram ) /= 'NESPGD' .and. Trim( yprogram ) /= 'ZOOMPG' &
+      .and. .not. ( Trim( yprogram ) == 'REAL' .and. cstorage_type == 'SU') ) then !condition to detect prep_surfex
+
+    iku = Size( zzhat )
+    Allocate( zzhatm(iku) )
+    zzhatm(1 : iku - 1) = 0.5 * ( zzhat(2 : iku) + zzhat(1 : iku - 1) )
+    zzhatm(iku)         = 2.* zzhat(iku) - zzhatm(iku - 1)
+
+    call Write_ver_coord( tpfile%tncdims%tdims(NMNHDIM_LEVEL),  'position z in the transformed space',              '', &
+                          'altitude',                0.,  JPVEXT, JPVEXT, ZZHATM )
+    call Write_ver_coord( tpfile%tncdims%tdims(NMNHDIM_LEVEL_W),'position z in the transformed space at w location','', &
+                          'altitude_at_w_location', -0.5, JPVEXT, 0,      ZZHAT )
   END IF
 END IF
-!
+
 !Write time scale
-IF (TPFILE%LMASTER) THEN !Time scale is the same on all processes
-  IF (TRIM(YPROGRAM)/='PGD' .AND. TRIM(YPROGRAM)/='NESPGD' .AND. TRIM(YPROGRAM)/='ZOOMPG' &
-      .AND. .NOT.(TRIM(YPROGRAM)=='REAL' .AND. CSTORAGE_TYPE=='SU') ) THEN !condition to detect PREP_SURFEX
+if ( tpfile%lmaster ) then !time scale is the same on all processes
+  if ( Trim( yprogram ) /= 'PGD' .and. Trim( yprogram ) /= 'NESPGD' .and. Trim( yprogram ) /= 'ZOOMPG' &
+      .and. .not. ( Trim( yprogram ) == 'REAL' .and. cstorage_type == 'SU' ) ) then !condition to detect prep_surfex
     if ( tpfile%ctype /= 'MNHDIACHRONIC' .and. Associated( tdtcur ) ) &
-      call Write_time_coord( tpfile%tncdims%tdims(NMNHDIM_TIME), 'time axis', [ tdtcur ] )
-  END IF
-END IF
+      call Write_time_coord( tpfile%tncdims%tdims(nmnhdim_time), 'time axis', [ tdtcur ] )
+  end if
+end if
 
-IF (GCHANGEMODEL) CALL GO_TOMODEL_ll(IMI,IRESP)
+if ( tpfile%lmaster ) then
+  !Write coordinates used in diachronic files
+  if ( tpfile%ctype == 'MNHDIACHRONIC' ) then
+    !Coordinates for the budgets masks
+    if ( cbutype == 'CART' .or. cbutype == 'SKIP' ) then
+      if ( .not. lbu_icp )                                                                                                  &
+        call Write_hor_coord1d( tpfile%tncdims%tdims(NMNHDIM_BUDGET_CART_NI), 'x-dimension of the budget cartesian box',    &
+                         trim(ystdnameprefix)//'_x_coordinate', 'X', 0., 0, 0, zxhatm_glob(nbuil + jphext : nbuih + jphext) )
+      if ( .not. lbu_jcp )                                                                                                  &
+        call Write_hor_coord1d( tpfile%tncdims%tdims(NMNHDIM_BUDGET_CART_NJ), 'y-dimension of the budget cartesian box',    &
+                         trim(ystdnameprefix)//'_y_coordinate', 'Y', 0., 0, 0, zyhatm_glob(nbujl + jphext : nbujh + jphext) )
+      if ( .not. lbu_icp )                                                                    &
+        call Write_hor_coord1d( tpfile%tncdims%tdims(NMNHDIM_BUDGET_CART_NI_U),               &
+                                'x-dimension of the budget cartesian box at u location',      &
+                                trim(ystdnameprefix)//'_x_coordinate_at_u_location',          &
+                                'X', -0.5, 0, 0, zxhat_glob (nbuil + jphext : nbuih + jphext) )
+      if ( .not. lbu_jcp )                                                                    &
+        call Write_hor_coord1d( tpfile%tncdims%tdims(NMNHDIM_BUDGET_CART_NJ_U),               &
+                                'y-dimension of the budget cartesian box at u location',      &
+                                trim(ystdnameprefix)//'_y_coordinate_at_u_location',          &
+                                'Y', 0.,   0, 0, zyhatm_glob(nbujl + jphext : nbujh + jphext) )
+      if ( .not. lbu_icp )                                                                    &
+        call Write_hor_coord1d( tpfile%tncdims%tdims(NMNHDIM_BUDGET_CART_NI_V),               &
+                                'x-dimension of the budget cartesian box at v location',      &
+                                trim(ystdnameprefix)//'_x_coordinate_at_v_location',          &
+                                'X', 0.,   0, 0, zxhatm_glob(nbuil + jphext : nbuih + jphext) )
+      if ( .not. lbu_jcp )                                                                    &
+        call Write_hor_coord1d( tpfile%tncdims%tdims(NMNHDIM_BUDGET_CART_NJ_V),               &
+                                'y-dimension of the budget cartesian box at v location',      &
+                                trim(ystdnameprefix)//'_y_coordinate_at_v_location',          &
+                                'Y', -0.5, 0, 0, zyhat_glob (nbujl + jphext : nbujh + jphext) )
+      if ( .not. lbu_kcp )                                                                                      &
+        call Write_ver_coord( tpfile%tncdims%tdims(NMNHDIM_BUDGET_CART_LEVEL),                                  &
+                              'position z in the transformed space of the budget cartesian box',                &
+                              '', 'altitude',               0.,   0, 0, zzhatm(nbukl + JPVEXT : nbukh + JPVEXT) )
+      if ( .not. lbu_kcp )                                                                                     &
+        call Write_ver_coord( tpfile%tncdims%tdims(NMNHDIM_BUDGET_CART_LEVEL_W),                               &
+                              'position z in the transformed space at w location of the budget cartesian box', &
+                              '', 'altitude_at_w_location', -0.5, 0, 0, zzhat (nbukl + JPVEXT : nbukh + JPVEXT) )
+    else if ( cbutype == 'MASK' ) then
+      if ( nbukmax > 0 )                                                                                        &
+        call Write_ver_coord( tpfile%tncdims%tdims(NMNHDIM_BUDGET_MASK_LEVEL),                                  &
+                              'position z in the transformed space of the budget mask',                         &
+                              '', 'altitude',               0.,   0, 0, zzhatm(nbukl + JPVEXT : nbukh + JPVEXT) )
+      if ( nbukmax > 0 )                                                                                        &
+        call Write_ver_coord( tpfile%tncdims%tdims(NMNHDIM_BUDGET_MASK_LEVEL_W),                                &
+                              'position z in the transformed space at w location of the budget mask',           &
+                              '', 'altitude',               -0.5, 0, 0, zzhat (nbukl + JPVEXT : nbukh + JPVEXT) )
+      !Write time_budget coordinate + its boundaries
+      if ( nbutotwrite > 0 ) then
+        Allocate( tzdates(nbutotwrite) )
+        Allocate( tzdates_bound(2, nbutotwrite) )
 
-CONTAINS
+        do jt = 1, nbutotwrite
+          tzdates(jt)%nyear  = tdtexp%nyear
+          tzdates(jt)%nmonth = tdtexp%nmonth
+          tzdates(jt)%nday   = tdtexp%nday
+          tzdates(jt)%xtime  = tdtexp%xtime + nbustep * ( ( jt - 1 )  + 0.5  ) * xtstep
+
+          tzdates_bound(1, jt)%nyear  = tdtexp%nyear
+          tzdates_bound(1, jt)%nmonth = tdtexp%nmonth
+          tzdates_bound(1, jt)%nday   = tdtexp%nday
+          tzdates_bound(1, jt)%xtime  = tdtexp%xtime + nbustep * ( jt - 1 ) * xtstep
+
+          tzdates_bound(2, jt)%nyear  = tdtexp%nyear
+          tzdates_bound(2, jt)%nmonth = tdtexp%nmonth
+          tzdates_bound(2, jt)%nday   = tdtexp%nday
+          tzdates_bound(2, jt)%xtime  = tdtexp%xtime + nbustep * jt * xtstep
+        end do
+
+        call Write_time_coord( tpfile%tncdims%tdims(NMNHDIM_BUDGET_TIME), 'time axis for budgets', tzdates, tzdates_bound )
+
+        Deallocate( tzdates_bound )
+        Deallocate( tzdates )
+      end if
+
+      !NMNHDIM_BUDGET_MASK_NBUMASK: not a true dimension
+    end if !cbutype
+
+    !Coordinates for the number of LES budget time samplings
+    if ( nles_times > 0 ) &
+      call Write_time_coord( tpfile%tncdims%tdims(NMNHDIM_BUDGET_LES_TIME), 'time axis for LES budgets', tles_dates )
+
+    !Coordinates for the number of LES budget time averages
+    iavg = int( xles_temp_mean_end - 1.e-10 - xles_temp_mean_start ) / xles_temp_mean_step + 1
+    !Condition also on nles_times to not create this coordinate when not used (no time average if nles_times=0)
+    if ( nles_times > 0 .and. iavg > 0 ) then
+      Allocate( tzdates(iavg) )
+      Allocate( tzdates_bound(2, iavg) )
+
+      do jt = 1, iavg
+        zles_temp_mean_start = xles_temp_mean_start + ( jt - 1 ) * xles_temp_mean_step
+        zles_temp_mean_end   = Min( xles_temp_mean_end, zles_temp_mean_start + xles_temp_mean_step )
+
+        tzdates(jt)%nyear  = tdtseg%nyear
+        tzdates(jt)%nmonth = tdtseg%nmonth
+        tzdates(jt)%nday   = tdtseg%nday
+        tzdates(jt)%xtime        = tdtseg%xtime + ( zles_temp_mean_start + zles_temp_mean_end ) / 2.
+        !Not necessary:  call Datetime_correctdate( tzdates(jt ) )
+
+        tzdates_bound(1, jt)%nyear  = tdtseg%nyear
+        tzdates_bound(1, jt)%nmonth = tdtseg%nmonth
+        tzdates_bound(1, jt)%nday   = tdtseg%nday
+        tzdates_bound(1, jt)%xtime        = tdtseg%xtime + zles_temp_mean_start
+
+        tzdates_bound(2, jt)%nyear  = tdtseg%nyear
+        tzdates_bound(2, jt)%nmonth = tdtseg%nmonth
+        tzdates_bound(2, jt)%nday   = tdtseg%nday
+        tzdates_bound(2, jt)%xtime        = tdtseg%xtime + zles_temp_mean_end
+      end do
+      call Write_time_coord( tpfile%tncdims%tdims(NMNHDIM_BUDGET_LES_AVG_TIME), 'time axis for LES budget time averages', &
+                             tzdates, tzdates_bound )
+
+      Deallocate( tzdates_bound )
+      Deallocate( tzdates )
+    end if
+
+    !Coordinates for the number of vertical levels for local LES budgets
+    if ( nles_k > 0 ) then
+      if ( cles_level_type == 'K' ) then
+        Allocate( zles_levels(nles_k) )
+        do ji = 1, nles_k
+          zles_levels(ji) = zzhatm(nles_levels(ji))
+        end do
+        call Write_ver_coord( tpfile%tncdims%tdims(NMNHDIM_BUDGET_LES_LEVEL),           &
+                              'position z in the transformed space of the LES budgets', &
+                              '', 'altitude', 0., 0, 0, zles_levels(:)                  )
+        Deallocate( zles_levels )
+      else if ( cles_level_type == 'Z' ) then
+        call Write_ver_coord( tpfile%tncdims%tdims(NMNHDIM_BUDGET_LES_LEVEL), 'altitude levels for the LES budgets', &
+                              'altitude', '', 0., 0, 0, xles_altitudes(1:nles_k) )
+      else
+        call Print_msg( NVERB_ERROR, 'IO', 'IO_Coordvar_write_nc4','invalid cles_level_type' )
+      end if
+    end if
+
+    !NMNHDIM_BUDGET_LES_SV: not a true dimension
+
+    !Coordinates for the number of horizontal wavelengths for non-local LES budgets (2 points correlations)
+    if ( nspectra_ni > 0 ) &
+      call Write_hor_coord1d( tpfile%tncdims%tdims(NMNHDIM_SPECTRA_2PTS_NI), 'x-dimension of the LES budget cartesian box',    &
+                            trim(ystdnameprefix)//'_x_coordinate', 'X', 0., 0, 0, zxhatm_glob(nlesn_iinf(imi) : nlesn_isup(imi)) )
+    if ( nspectra_nj > 0 .and. .not. l2d ) &
+      call Write_hor_coord1d( tpfile%tncdims%tdims(NMNHDIM_SPECTRA_2PTS_NJ), 'y-dimension of the LES budget cartesian box',    &
+                              trim(ystdnameprefix)//'_y_coordinate', 'Y', 0., 0, 0, zyhatm_glob(nlesn_jinf(imi) : nlesn_jsup(imi)) )
+
+
+    !NMNHDIM_SPECTRA_SPEC_NI, NMNHDIM_SPECTRA_SPEC_NJ: not true dimensions: spectra wavelengths
+
+    !Coordinates for the number of vertical levels for non-local LES budgets
+    if ( nspectra_k > 0 ) then
+      if ( cspectra_level_type == 'K' ) then
+        Allocate( zspectra_levels(nspectra_k) )
+        do ji = 1, nspectra_k
+          zspectra_levels(ji) = zzhatm(nspectra_levels(ji))
+        end do
+        call Write_ver_coord( tpfile%tncdims%tdims(NMNHDIM_SPECTRA_LEVEL),                        &
+                              'position z in the transformed space of the non-local LES budgets', &
+                              '', 'altitude', 0., 0, 0, zspectra_levels(:)                        )
+        Deallocate( zspectra_levels )
+      else if ( cspectra_level_type == 'Z' ) then
+        call Write_ver_coord( tpfile%tncdims%tdims(NMNHDIM_SPECTRA_LEVEL), 'altitude levels for the non-local LES budgets', &
+                              'altitude', '', 0., 0, 0, xspectra_altitudes(1 : nspectra_k) )
+      else
+        call Print_msg( NVERB_ERROR, 'IO', 'IO_Coordvar_write_nc4','invalid cspectra_level_type' )
+      end if
+    end if
+
+    !Coordinates for the number of profiler times
+    if ( numbprofiler > 0 ) &
+      call Write_time_coord( tpfile%tncdims%tdims(NMNHDIM_PROFILER_TIME), 'time axis for profilers', tprofiler%tpdates )
+
+    !Coordinates for the number of station times
+    if ( numbstat > 0 ) &
+      call Write_time_coord( tpfile%tncdims%tdims(NMNHDIM_STATION_TIME), 'time axis for stations', tstation%tpdates )
+
+    !Dimension for the number of series times
+    if ( lseries .and. nsnbstept > 0 ) then
+      call Write_ver_coord( tpfile%tncdims%tdims(NMNHDIM_SERIES_LEVEL),                   &
+                            'position z in the transformed space of the temporal series', &
+                            '', 'altitude', 0., 0, 0, zzhatm(1 + JPVEXT : nkmax + JPVEXT) )
+      call Write_ver_coord( tpfile%tncdims%tdims(NMNHDIM_SERIES_LEVEL_W),                                 &
+                            'position z in the transformed space at w location of the temporal series',   &
+                            '', 'altitude_at_w_location', -0.5, 0, 0, zzhat (1 + JPVEXT : nkmax + JPVEXT) )
+      call Write_time_coord( tpfile%tncdims%tdims(NMNHDIM_SERIES_TIME), 'time axis for temporal series', tpsdates )
+    end if
+
+    if ( lflyer ) then
+      call Write_flyer_time_coord( tballoon1 )
+      call Write_flyer_time_coord( tballoon2 )
+      call Write_flyer_time_coord( tballoon3 )
+      call Write_flyer_time_coord( tballoon4 )
+      call Write_flyer_time_coord( tballoon5 )
+      call Write_flyer_time_coord( tballoon6 )
+      call Write_flyer_time_coord( tballoon7 )
+      call Write_flyer_time_coord( tballoon8 )
+      call Write_flyer_time_coord( tballoon9 )
+
+      call Write_flyer_time_coord( taircraft1 )
+      call Write_flyer_time_coord( taircraft2 )
+      call Write_flyer_time_coord( taircraft3 )
+      call Write_flyer_time_coord( taircraft4 )
+      call Write_flyer_time_coord( taircraft5 )
+      call Write_flyer_time_coord( taircraft6 )
+      call Write_flyer_time_coord( taircraft7 )
+      call Write_flyer_time_coord( taircraft8 )
+      call Write_flyer_time_coord( taircraft9 )
+      call Write_flyer_time_coord( taircraft10 )
+      call Write_flyer_time_coord( taircraft11 )
+      call Write_flyer_time_coord( taircraft12 )
+      call Write_flyer_time_coord( taircraft13 )
+      call Write_flyer_time_coord( taircraft14 )
+      call Write_flyer_time_coord( taircraft15 )
+      call Write_flyer_time_coord( taircraft16 )
+      call Write_flyer_time_coord( taircraft17 )
+      call Write_flyer_time_coord( taircraft18 )
+      call Write_flyer_time_coord( taircraft19 )
+      call Write_flyer_time_coord( taircraft20 )
+      call Write_flyer_time_coord( taircraft21 )
+      call Write_flyer_time_coord( taircraft22 )
+      call Write_flyer_time_coord( taircraft23 )
+      call Write_flyer_time_coord( taircraft24 )
+      call Write_flyer_time_coord( taircraft25 )
+      call Write_flyer_time_coord( taircraft26 )
+      call Write_flyer_time_coord( taircraft27 )
+      call Write_flyer_time_coord( taircraft28 )
+      call Write_flyer_time_coord( taircraft29 )
+      call Write_flyer_time_coord( taircraft30 )
+    end if
+
+  end if !MNHDIACHRONIC
+
+end if
+
+if ( gdealloc ) deallocate( zxhat_glob, zxhatm_glob, zyhat_glob, zyhatm_glob )
+
+if ( gchangemodel ) call Go_tomodel_ll( imi, iresp )
+
+
+contains
+
 subroutine Gather_hor_coord1d( haxis, pcoords_loc, pcoords_glob )
   use mode_allocbuffer_ll, only: Allocbuffer_ll
   use mode_gather_ll,      only: Gather_xxfield
@@ -1651,26 +1919,28 @@ SUBROUTINE WRITE_VER_COORD(TDIM,HLONGNAME,HSTDNAME,HCOMPNAME,PSHIFT,KBOUNDLOW,KB
   IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_VER_COORD','NF90_PUT_ATT','c_grid_dynamic_range for ' &
                                                    //trim(YVARNAME))
   !
-  IF (GSLEVE) THEN
-    !Remark: ZS, ZSMT and ZTOP in the formula are the same for mass point or flux point
-    istatus = NF90_PUT_ATT(INCID, IVARID,'formula_terms','s: '//TRIM(YVARNAME)//                   &
-                                        ' height: ZTOP oro_ls: ZSMT oro: ZS len1: LEN1 len2: LEN2')
-    IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_VER_COORD','NF90_PUT_ATT','formula_terms for '//trim(YVARNAME))
-    istatus = NF90_PUT_ATT(INCID, IVARID, 'formula_definition','z(n,k,j,i)=s(k)'//                                      &
-                          '+ oro_ls(j,i)*sinh((height/len1)**1.35-(s(k)/len1)**1.35)/sinh((s(k)/len1)**1.35)'//        &
-                          '+(oro(j,i)-oro_ls(j,i))*sinh((height/len2)**1.35-(s(k)/len2)**1.35)/sinh((s(k)/len2)**1.35)')
-    IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_VER_COORD','NF90_PUT_ATT','formula_definition for ' &
-                                                     //trim(YVARNAME))
-  ELSE
-    !Remark: ZS and ZTOP in the formula are the same for mass point or flux point
-    istatus = NF90_PUT_ATT(INCID, IVARID, 'formula_terms','s: '//TRIM(YVARNAME)//' height: ZTOP orog: ZS')
-    IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_VER_COORD','NF90_PUT_ATT','formula_terms for '//trim(YVARNAME))
-    istatus = NF90_PUT_ATT(INCID, IVARID, 'formula_definition','z(n,k,j,i)=s(k)*(height-orog(j,i))/height+orog(j,i)')
-    IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_VER_COORD','NF90_PUT_ATT','formula_definition for ' &
-                                                     //trim(YVARNAME))
-  ENDIF
-  !
   if ( Len_trim( hcompname ) > 0 ) then
+    IF (GSLEVE) THEN
+      !Remark: ZS, ZSMT and ZTOP in the formula are the same for mass point or flux point
+      istatus = NF90_PUT_ATT(INCID, IVARID,'formula_terms','s: '//TRIM(YVARNAME)//                   &
+                                          ' height: ZTOP oro_ls: ZSMT oro: ZS len1: LEN1 len2: LEN2')
+      IF (istatus /= NF90_NOERR) &
+        CALL IO_Err_handle_nc4(istatus,'WRITE_VER_COORD','NF90_PUT_ATT','formula_terms for '//trim(YVARNAME))
+      istatus = NF90_PUT_ATT(INCID, IVARID, 'formula_definition','z(n,k,j,i)=s(k)'//                                      &
+                            '+ oro_ls(j,i)*sinh((height/len1)**1.35-(s(k)/len1)**1.35)/sinh((s(k)/len1)**1.35)'//        &
+                            '+(oro(j,i)-oro_ls(j,i))*sinh((height/len2)**1.35-(s(k)/len2)**1.35)/sinh((s(k)/len2)**1.35)')
+      IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_VER_COORD','NF90_PUT_ATT','formula_definition for ' &
+                                                      //trim(YVARNAME))
+    ELSE
+      !Remark: ZS and ZTOP in the formula are the same for mass point or flux point
+      istatus = NF90_PUT_ATT(INCID, IVARID, 'formula_terms','s: '//TRIM(YVARNAME)//' height: ZTOP orog: ZS')
+      IF (istatus /= NF90_NOERR) &
+        CALL IO_Err_handle_nc4(istatus,'WRITE_VER_COORD','NF90_PUT_ATT','formula_terms for '//trim(YVARNAME))
+      istatus = NF90_PUT_ATT(INCID, IVARID, 'formula_definition','z(n,k,j,i)=s(k)*(height-orog(j,i))/height+orog(j,i)')
+      IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_VER_COORD','NF90_PUT_ATT','formula_definition for ' &
+                                                      //trim(YVARNAME))
+    ENDIF
+    !
     istatus = NF90_PUT_ATT(INCID, IVARID, 'computed_standard_name',HCOMPNAME)
     IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'WRITE_VER_COORD','NF90_PUT_ATT','computed_standard_name for ' &
                                                      //trim(YVARNAME))
@@ -1793,6 +2063,74 @@ subroutine Write_time_coord( tdim, hlongname, tpdates, tpdates_bound )
   end if
 
 end subroutine Write_time_coord
+
+
+subroutine Write_flyer_time_coord( tpflyer )
+  use NETCDF
+
+  use modd_aircraft_balloon
+  use modd_parameters,       only: XUNDEF
+
+  type(flyer), intent(in) :: tpflyer
+
+  integer                      :: istatus
+  integer(kind=CDFINT)         :: idimid
+  type(tdimnc),        pointer :: tzdim
+
+  !Do it only if correct model level and has really flown
+  if ( tpflyer%nmodel == imi .and. Count( tpflyer%x /= XUNDEF) > 1 ) then
+    Allocate( tzdim )
+
+
+    !Group with flyer title
+    istatus = NF90_INQ_NCID( tpfile%nncid, Trim( tpflyer%title ), incid )
+    if ( istatus /= NF90_NOERR ) then
+      call Print_msg( NVERB_ERROR, 'IO', 'Write_flyer_time_coord', &
+                      Trim( tpfile%cname ) // ': group '// Trim( tpflyer%title ) // ' not found' )
+    end if
+
+    istatus = NF90_INQ_DIMID( incid, 'time_flyer', idimid )
+    if ( istatus /= NF90_NOERR ) then
+      call Print_msg( NVERB_ERROR, 'IO', 'Write_flyer_time_coord', &
+                      Trim( tpfile%cname ) // ': group ' // Trim( tpflyer%title ) // ' time_flyer dimension not found' )
+    end if
+
+    tzdim%cname = 'time_flyer'
+    istatus = NF90_INQUIRE_DIMENSION( incid, idimid, len = tzdim%nlen )
+    tzdim%nid = idimid
+
+    !Remark: incid is used in Write_time_coord
+    call Write_time_coord( tzdim, 'time axis for flyer', tpflyer%tpdates )
+
+
+    !Group with flyer title suffixed by Z
+    istatus = NF90_INQ_NCID( tpfile%nncid, Trim( tpflyer%title ) // 'Z' , incid )
+    if ( istatus /= NF90_NOERR ) then
+      call Print_msg( NVERB_ERROR, 'IO', 'Write_flyer_time_coord', &
+                      Trim( tpfile%cname ) // ': group '// Trim( tpflyer%title ) // 'z not found' )
+    end if
+
+    istatus = NF90_INQ_DIMID( incid, 'time_flyer', idimid )
+    if ( istatus /= NF90_NOERR ) then
+      call Print_msg( NVERB_ERROR, 'IO', 'Write_flyer_time_coord', &
+                      Trim( tpfile%cname ) // ': group ' // Trim( tpflyer%title ) // 'Z time_flyer dimension not found' )
+    end if
+
+    tzdim%cname = 'time_flyer'
+    istatus = NF90_INQUIRE_DIMENSION( incid, idimid, len = tzdim%nlen )
+    tzdim%nid = idimid
+
+    !Remark: incid is used in Write_time_coord
+    call Write_time_coord( tzdim, 'time axis for flyer', tpflyer  %tpdates )
+
+
+    Deallocate( tzdim )
+
+    !Restore file identifier to root group
+    incid = tpfile%nncid
+  end if
+
+end subroutine Write_flyer_time_coord
 
 END SUBROUTINE IO_Coordvar_write_nc4
 
