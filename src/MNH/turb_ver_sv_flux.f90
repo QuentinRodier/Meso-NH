@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,7 +10,7 @@
 INTERFACE 
 !
       SUBROUTINE TURB_VER_SV_FLUX(KKA,KKU,KKL,                      &
-                      OCLOSE_OUT,OTURB_FLX,HTURBDIM,                &
+                      OTURB_FLX,HTURBDIM,                           &
                       PIMPL,PEXPL,                                  &
                       PTSTEP,                                       &
                       TPFILE,                                       &
@@ -26,8 +26,6 @@ USE MODD_IO, ONLY: TFILEDATA
 INTEGER,                INTENT(IN)   :: KKA           !near ground array index  
 INTEGER,                INTENT(IN)   :: KKU           !uppest atmosphere array index
 INTEGER,                INTENT(IN)   :: KKL           !vert. levels type 1=MNH -1=AR
-LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
-                                                      ! file opening       
 LOGICAL,                INTENT(IN)   ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
 CHARACTER(len=4),       INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
@@ -69,7 +67,7 @@ END MODULE MODI_TURB_VER_SV_FLUX
 !
 !     ###############################################################
       SUBROUTINE TURB_VER_SV_FLUX(KKA,KKU,KKL,                      &
-                      OCLOSE_OUT,OTURB_FLX,HTURBDIM,                &
+                      OTURB_FLX,HTURBDIM,                           &
                       PIMPL,PEXPL,                                  &
                       PTSTEP,                                       &
                       TPFILE,                                       &
@@ -302,8 +300,6 @@ IMPLICIT NONE
 INTEGER,                INTENT(IN)   :: KKA           !near ground array index  
 INTEGER,                INTENT(IN)   :: KKU           !uppest atmosphere array index
 INTEGER,                INTENT(IN)   :: KKL           !vert. levels type 1=MNH -1=ARO
-LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
-                                                      ! file opening       
 LOGICAL,                INTENT(IN)   ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
 CHARACTER(len=4),       INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
@@ -428,7 +424,7 @@ DO JSV=1,ISV
 ! PRSVS(:,:,:,JSV)= MAX((PRSVS(:,:,:,JSV)+    &
 !                   PRHODJ(:,:,:)*(ZRES(:,:,:)-PSVM(:,:,:,JSV))/PTSTEP),XSVMIN(JSV))
 !
-  IF ( (OTURB_FLX .AND. OCLOSE_OUT) .OR. LLES_CALL ) THEN
+  IF ( (OTURB_FLX .AND. tpfile%lopened) .OR. LLES_CALL ) THEN
     ! Diagnostic of the cartesian vertical flux
     !
     ZFLXZ(:,:,:) = -ZCSV * PPSI_SV(:,:,:,JSV) * MZM(PLM*SQRT(PTKEM)) / PDZZ * &
@@ -455,7 +451,7 @@ DO JSV=1,ISV
     PWSV(:,:,IKE,JSV)=PWSV(:,:,IKE-KKL,JSV)
  END IF
   !
-  IF (OTURB_FLX .AND. OCLOSE_OUT) THEN
+  IF (OTURB_FLX .AND. tpfile%lopened) THEN
     ! stores the JSVth vertical flux
     WRITE(TZFIELD%CMNHNAME,'("WSV_FLX_",I3.3)') JSV
     TZFIELD%CSTDNAME   = ''

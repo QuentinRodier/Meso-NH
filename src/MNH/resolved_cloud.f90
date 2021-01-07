@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,7 +10,7 @@ INTERFACE
       SUBROUTINE RESOLVED_CLOUD ( HCLOUD, HACTCCN, HSCONV, HMF_CLOUD,                  &
                                   KRR, KSPLITR, KSPLITG, KMI, KTCOUNT,                 &
                                   HLBCX, HLBCY, TPFILE, HRAD, HTURBDIM,                &
-                                  OCLOSE_OUT, OSUBG_COND, OSIGMAS, HSUBG_AUCV,         &
+                                  OSUBG_COND, OSIGMAS, HSUBG_AUCV,                     &
                                   PTSTEP, PZZ, PRHODJ, PRHODREF, PEXNREF,              &
                                   PPABST, PTHT, PRT, PSIGS, PSIGQSAT, PMFCONV,         &
                                   PTHM, PRCM, PPABSM,                                  &
@@ -44,8 +44,6 @@ TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE   ! Output file
 CHARACTER(len=4),         INTENT(IN)   :: HRAD     ! Radiation scheme name
 CHARACTER(len=4),         INTENT(IN)   :: HTURBDIM ! Dimensionality of the
                                                    ! turbulence scheme
-LOGICAL,                  INTENT(IN)   :: OCLOSE_OUT ! Conditional closure of
-                                                   ! the OUTPUT FM-file
 LOGICAL,                  INTENT(IN)   :: OSUBG_COND ! Switch for Subgrid Cond.
 LOGICAL,                  INTENT(IN)   :: OSIGMAS  ! Switch for Sigma_s:
                                         ! use values computed in CONDENSATION
@@ -145,7 +143,7 @@ END MODULE MODI_RESOLVED_CLOUD
       SUBROUTINE RESOLVED_CLOUD ( HCLOUD, HACTCCN, HSCONV, HMF_CLOUD,                  &
                                   KRR, KSPLITR, KSPLITG, KMI, KTCOUNT,                 &
                                   HLBCX, HLBCY, TPFILE, HRAD, HTURBDIM,                &
-                                  OCLOSE_OUT, OSUBG_COND, OSIGMAS, HSUBG_AUCV,         &
+                                  OSUBG_COND, OSIGMAS, HSUBG_AUCV,                     &
                                   PTSTEP, PZZ, PRHODJ, PRHODREF, PEXNREF,              &
                                   PPABST, PTHT, PRT, PSIGS, PSIGQSAT, PMFCONV,         &
                                   PTHM, PRCM, PPABSM,                                  &
@@ -338,8 +336,6 @@ TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE   ! Output file
 CHARACTER(len=4),         INTENT(IN)   :: HRAD     ! Radiation scheme name
 CHARACTER(len=4),         INTENT(IN)   :: HTURBDIM ! Dimensionality of the
                                                    ! turbulence scheme
-LOGICAL,                  INTENT(IN)   :: OCLOSE_OUT ! Conditional closure of
-                                                   ! the OUTPUT FM-file
 LOGICAL,                  INTENT(IN)   :: OSUBG_COND ! Switch for Subgrid Cond.
 LOGICAL,                  INTENT(IN)   :: OSIGMAS  ! Switch for Sigma_s:
                                         ! use values computed in CONDENSATION
@@ -680,7 +676,7 @@ SELECT CASE ( HCLOUD )
 !
 !
     CALL RAIN_C2R2_KHKO ( HCLOUD, OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,     &
-                     TPFILE, OCLOSE_OUT, PZZ, PRHODJ, PRHODREF, PEXNREF,          &
+                     TPFILE, PZZ, PRHODJ, PRHODREF, PEXNREF,                      &
                      PPABST, PTHT, PRT(:,:,:,1), PRT(:,:,:,2),  PRT(:,:,:,3),     &
                      PTHM, PRCM, PPABSM,                                          &
                      PW_ACT,PDTHRAD,PTHS, PRS(:,:,:,1),PRS(:,:,:,2),PRS(:,:,:,3), &
@@ -695,7 +691,7 @@ SELECT CASE ( HCLOUD )
 !*       7.2    Perform the saturation adjustment
 !
    IF (LSUPSAT) THEN
-    CALL KHKO_NOTADJUST (KRR, KTCOUNT,TPFILE, HRAD, OCLOSE_OUT,                  &
+    CALL KHKO_NOTADJUST (KRR, KTCOUNT,TPFILE, HRAD,                              &
                          PTSTEP, PRHODJ, PPABSM, PPABST, PRHODREF, PZZ,          &
                          PTHT,PRT(:,:,:,1),PRT(:,:,:,2),PRT(:,:,:,3),            &
                          PTHS,PRS(:,:,:,1),PRS(:,:,:,2),PRS(:,:,:,3),            &
@@ -704,7 +700,7 @@ SELECT CASE ( HCLOUD )
 !
    ELSE
     CALL C2R2_ADJUST ( KRR,TPFILE, HRAD,                                &
-                       HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,        &
+                       HTURBDIM, OSUBG_COND, PTSTEP,                    &
                        PRHODJ, PSIGS, PPABST,                           &
                        PTHS=PTHS, PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2), &
                        PCNUCS=PSVS(:,:,:,NSV_C2R2BEG),                  &
@@ -901,7 +897,7 @@ SELECT CASE ( HCLOUD )
     ZZZ = MZF( PZZ )
      IF (LPTSPLIT) THEN
         CALL LIMA (1, IKU, 1,                                              &
-                   PTSTEP, TPFILE, OCLOSE_OUT,                             &
+                   PTSTEP, TPFILE,                                         &
                    PRHODREF, PEXNREF, ZDZZ,                                &
                    PRHODJ, PPABSM, PPABST,                                 &
                    NMOD_CCN, NMOD_IFN, NMOD_IMM,                           &
@@ -913,7 +909,7 @@ SELECT CASE ( HCLOUD )
      ELSE
 
         IF (OWARM) CALL LIMA_WARM(OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,       &
-                                  TPFILE, OCLOSE_OUT, KRR, PZZ, PRHODJ,             &
+                                  TPFILE, KRR, PZZ, PRHODJ,                         &
                                   PRHODREF, PEXNREF, PW_ACT, PPABSM, PPABST,        &
                                   PDTHRAD, PRCM,                                    &
                                   PTHT, PRT, PSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END), &
@@ -939,7 +935,7 @@ SELECT CASE ( HCLOUD )
 !*       12.2   Perform the saturation adjustment
 !
      CALL LIMA_ADJUST(KRR, KMI, TPFILE, HRAD,                           &
-                      HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,         &
+                      HTURBDIM, OSUBG_COND, PTSTEP,                     &
                       PRHODREF, PRHODJ, PEXNREF, PPABST, PSIGS, PPABST, &
                       PRT, PRS, PSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),  &
                       PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),            &

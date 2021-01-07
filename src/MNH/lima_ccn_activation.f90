@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -8,7 +8,7 @@
 !      ###############################
 !
 INTERFACE
-   SUBROUTINE LIMA_CCN_ACTIVATION (PTSTEP, TPFILE, OCLOSE_OUT,                    &
+   SUBROUTINE LIMA_CCN_ACTIVATION (PTSTEP, TPFILE,                                &
                                    PRHODREF, PEXNREF, PPABST, PT, PDTHRAD, PW_NU, &
                                    PTHT, PRVT, PRCT, PCCT, PRRT, PNFT, PNAT       )
 USE MODD_IO, ONLY: TFILEDATA
@@ -16,8 +16,6 @@ USE MODD_IO, ONLY: TFILEDATA
 REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
                                                       ! (single if cold start)
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE     ! Output file
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                      ! the output FM file
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF    ! Reference Exner function
@@ -40,7 +38,7 @@ END SUBROUTINE LIMA_CCN_ACTIVATION
 END INTERFACE
 END MODULE MODI_LIMA_CCN_ACTIVATION
 !     #############################################################################
-   SUBROUTINE LIMA_CCN_ACTIVATION (PTSTEP, TPFILE, OCLOSE_OUT,                    &
+   SUBROUTINE LIMA_CCN_ACTIVATION (PTSTEP, TPFILE,                                &
                                    PRHODREF, PEXNREF, PPABST, PT, PDTHRAD, PW_NU, &
                                    PTHT, PRVT, PRCT, PCCT, PRRT, PNFT, PNAT       )
 !     #############################################################################
@@ -118,8 +116,6 @@ IMPLICIT NONE
 REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
                                                       ! (single if cold start)
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE     ! Output file
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                      ! the output FM file
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF    ! Reference Exner function
@@ -461,7 +457,7 @@ IF( INUCT >= 1 ) THEN
 !
 END IF ! INUCT
 !
-IF ( OCLOSE_OUT ) THEN
+IF ( tpfile%lopened ) THEN
   TZFIELD%CMNHNAME   ='SMAX'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)

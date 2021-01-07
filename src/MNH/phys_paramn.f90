@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,17 +10,15 @@
 !
 INTERFACE
 !
-      SUBROUTINE PHYS_PARAM_n(KTCOUNT,TPFILE,OCLOSE_OUT,                                   &
-                              PRAD,PSHADOWS,PKAFR,PGROUND,PMAFL,PDRAG,PTURB,PTRACER,       &
-                              PTIME_BU, PWETDEPAER, OMASKkids,OCLOUD_ONLY                  )           
+      SUBROUTINE PHYS_PARAM_n( KTCOUNT, TPFILE,                                              &
+                               PRAD, PSHADOWS, PKAFR, PGROUND, PMAFL, PDRAG, PTURB, PTRACER, &
+                               PTIME_BU, PWETDEPAER, OMASKkids, OCLOUD_ONLY                  )
 !
 USE MODD_IO,        ONLY: TFILEDATA
 use modd_precision, only: MNHTIME
 !
 INTEGER,           INTENT(IN)     :: KTCOUNT   ! temporal iteration count
 TYPE(TFILEDATA),   INTENT(IN)     :: TPFILE    ! Synchronous output file
-LOGICAL,           INTENT(IN)     :: OCLOSE_OUT! conditional closure of the 
-                                               ! OUTPUT FM-file
 ! advection schemes
 REAL(kind=MNHTIME), DIMENSION(2), INTENT(INOUT) :: PRAD,PSHADOWS,PKAFR,PGROUND,PTURB,PMAFL,PDRAG,PTRACER ! to store CPU
                                                                                                          ! time for computing time
@@ -36,11 +34,11 @@ END INTERFACE
 !
 END MODULE MODI_PHYS_PARAM_n
 !
-!     ######################################################################
-      SUBROUTINE PHYS_PARAM_n(KTCOUNT,TPFILE,OCLOSE_OUT,                                   &
-                              PRAD,PSHADOWS,PKAFR,PGROUND,PMAFL,PDRAG,PTURB,PTRACER,       &
-                              PTIME_BU, PWETDEPAER, OMASKkids,OCLOUD_ONLY                  )           
-!     ######################################################################
+!     ########################################################################################
+      SUBROUTINE PHYS_PARAM_n( KTCOUNT, TPFILE,                                              &
+                               PRAD, PSHADOWS, PKAFR, PGROUND, PMAFL, PDRAG, PTURB, PTRACER, &
+                               PTIME_BU, PWETDEPAER, OMASKkids, OCLOUD_ONLY                  )
+!     ########################################################################################
 !
 !!****  *PHYS_PARAM_n * -monitor of the parameterizations used by model _n
 !!
@@ -348,8 +346,6 @@ IMPLICIT NONE
 !
 INTEGER,           INTENT(IN)     :: KTCOUNT   ! temporal iteration count
 TYPE(TFILEDATA),   INTENT(IN)     :: TPFILE    ! Synchronous output file
-LOGICAL,           INTENT(IN)     :: OCLOSE_OUT! conditional closure of the 
-                                               ! OUTPUT FM-file
 ! advection schemes
 REAL(kind=MNHTIME), DIMENSION(2), INTENT(INOUT) :: PRAD,PSHADOWS,PKAFR,PGROUND,PTURB,PMAFL,PDRAG,PTRACER ! to store CPU
                                                                                                          ! time for computing time
@@ -726,15 +722,15 @@ CALL SUNPOS_n   ( XZENITH, ZCOSZEN, ZSINZEN, ZAZIMSOL )
       XLWD(:,:,:)=0.0
       XDTHRADSW(:,:,:)=0.0
       XDTHRADLW(:,:,:)=0.0
-      CALL RADIATIONS   ( OCLOSE_OUT, TPFILE,                                       &
-               LCLEAR_SKY,OCLOUD_ONLY, NCLEARCOL_TM1,CEFRADL, CEFRADI,COPWSW,COPISW,&
-               COPWLW,COPILW, XFUDG,                                                &
-               NDLON, NFLEV, NRAD_DIAG, NFLUX, NRAD,NAER,NSWB_OLD,NSWB_MNH,NLWB_MNH,      &
-               NSTATM, NRAD_COLNBR, ZCOSZEN, XSEA, XCORSOL,                         &
-               XDIR_ALB, XSCA_ALB, XEMIS, XCLDFR, XCCO2, XTSRAD, XSTATM, XTHT, XRT, &
-               XPABST,XOZON, XAER,XDST_WL, XAER_CLIM, XSVT,                         &
-               XDTHRAD, XFLALWD, XDIRFLASWD, XSCAFLASWD, XRHODREF, XZZ ,            &
-               XRADEFF, XSWU, XSWD, XLWU, XLWD, XDTHRADSW, XDTHRADLW                )
+      CALL RADIATIONS( TPFILE,                                                                   &
+                       LCLEAR_SKY, OCLOUD_ONLY, NCLEARCOL_TM1, CEFRADL, CEFRADI, COPWSW, COPISW, &
+                       COPWLW, COPILW, XFUDG,                                                    &
+                       NDLON, NFLEV, NRAD_DIAG, NFLUX, NRAD, NAER, NSWB_OLD, NSWB_MNH, NLWB_MNH, &
+                       NSTATM, NRAD_COLNBR, ZCOSZEN, XSEA, XCORSOL,                              &
+                       XDIR_ALB, XSCA_ALB, XEMIS, XCLDFR, XCCO2, XTSRAD, XSTATM, XTHT, XRT,      &
+                       XPABST, XOZON, XAER,XDST_WL, XAER_CLIM, XSVT,                             &
+                       XDTHRAD, XFLALWD, XDIRFLASWD, XSCAFLASWD, XRHODREF, XZZ ,                 &
+                       XRADEFF, XSWU, XSWD, XLWU, XLWD, XDTHRADSW, XDTHRADLW                     )
 !
 
       WRITE(UNIT=ILUOUT,FMT='("  RADIATIONS called for KTCOUNT=",I6,       &
@@ -1237,7 +1233,7 @@ END IF
 !
 ZTIME1 = ZTIME2
 !
-IF (LPASPOL) CALL PASPOL(XTSTEP, ZSFSV, ILUOUT, NVERB, OCLOSE_OUT, TPFILE)
+IF (LPASPOL) CALL PASPOL(XTSTEP, ZSFSV, ILUOUT, NVERB, TPFILE)
 !
 !
 !*        4b.  PASSIVE POLLUTANTS FOR MASS-FLUX SCHEME DIAGNOSTICS
@@ -1394,19 +1390,19 @@ ELSE
  ALLOCATE(XSVW_FLUX(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),SIZE(XSVT,4)))
 END IF
 !
-   CALL TURB(1,IKU,1,IMI,NRR, NRRL, NRRI, CLBCX, CLBCY, 1,NMODEL_CLOUD,     &
-      OCLOSE_OUT,LTURB_FLX,LTURB_DIAG,LSUBG_COND,LRMC01,                    &
-      CTURBDIM,CTURBLEN,CTOM,CTURBLEN_CLOUD,CCLOUD,XIMPL,                   &
-      XTSTEP,TPFILE,                                                        &
-      XDXX,XDYY,XDZZ,XDZX,XDZY,XZZ,                                         &
-      XDIRCOSXW,XDIRCOSYW,XDIRCOSZW,XCOSSLOPE,XSINSLOPE,                    &
-      XRHODJ,XTHVREF,                                                       &
-      ZSFTH,ZSFRV,ZSFSV,ZSFU,ZSFV,                                          &
-      XPABST,XUT,XVT,XWT,XTKET,XSVT,XSRCT,XBL_DEPTH,XSBL_DEPTH,             &
-      XCEI,XCEI_MIN,XCEI_MAX,XCOEF_AMPL_SAT,                                &
-      XTHT,XRT,                                                             &
-      XRUS,XRVS,XRWS,XRTHS,XRRS,XRSVS,XRTKES,XRTKEMS, XSIGS, XWTHVMF,       &
-      XTHW_FLUX, XRCW_FLUX, XSVW_FLUX,XDYP, XTHP, XTR, XDISS,  XLEM         )
+   CALL TURB( 1, IKU, 1, IMI, NRR, NRRL, NRRI, CLBCX, CLBCY, 1, NMODEL_CLOUD,        &
+              LTURB_FLX, LTURB_DIAG, LSUBG_COND, LRMC01,                             &
+              CTURBDIM, CTURBLEN, CTOM, CTURBLEN_CLOUD, CCLOUD,XIMPL,                &
+              XTSTEP, TPFILE,                                                        &
+              XDXX, XDYY, XDZZ, XDZX, XDZY, XZZ,                                     &
+              XDIRCOSXW, XDIRCOSYW, XDIRCOSZW, XCOSSLOPE, XSINSLOPE,                 &
+              XRHODJ, XTHVREF,                                                       &
+              ZSFTH, ZSFRV, ZSFSV, ZSFU, ZSFV,                                       &
+              XPABST, XUT, XVT, XWT, XTKET, XSVT, XSRCT, XBL_DEPTH, XSBL_DEPTH,      &
+              XCEI, XCEI_MIN, XCEI_MAX, XCOEF_AMPL_SAT,                              &
+              XTHT, XRT,                                                             &
+              XRUS, XRVS, XRWS, XRTHS, XRRS, XRSVS, XRTKES, XRTKEMS, XSIGS, XWTHVMF, &
+              XTHW_FLUX, XRCW_FLUX, XSVW_FLUX,XDYP, XTHP, XTR, XDISS, XLEM           )
 !
 IF (LRMC01) THEN
   CALL ADD2DFIELD_ll( TZFIELDS_ll, XSBL_DEPTH, 'PHYS_PARAM_n::XSBL_DEPTH' )
@@ -1447,7 +1443,7 @@ IF (CSCONV == 'EDKF') THEN
      CALL MPPDB_CHECK3D(ZEXN,"physparam.7::ZEXN",PRECISION)
  !    
      CALL SHALLOW_MF_PACK(NRR,NRRL,NRRI, CMF_UPDRAFT, CMF_CLOUD, LMIXUV,  &
-                   OCLOSE_OUT,LMF_FLX,TPFILE,ZTIME_LES_MF,                &
+                   LMF_FLX,TPFILE,ZTIME_LES_MF,                           &
                    XIMPL_MF, XTSTEP,                                      &
                    XDZZ, XZZ,                                             &
                    XRHODJ, XRHODREF, XPABST, ZEXN, ZSFTH, ZSFRV,          &

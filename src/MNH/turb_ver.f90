@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,8 +10,8 @@
 INTERFACE 
 !
       SUBROUTINE TURB_VER(KKA,KKU,KKL,KRR,KRRL,KRRI,                &
-                      OCLOSE_OUT,OTURB_FLX,                         &
-                      HTURBDIM,HTOM,PIMPL,PEXPL,                    & 
+                      OTURB_FLX,                                    &
+                      HTURBDIM,HTOM,PIMPL,PEXPL,                    &
                       PTSTEP, TPFILE,                               &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,PZZ,       &
                       PCOSSLOPE,PSINSLOPE,                          &
@@ -32,8 +32,6 @@ USE MODD_IO, ONLY: TFILEDATA
 INTEGER,                INTENT(IN)   :: KRR           ! number of moist var.
 INTEGER,                INTENT(IN)   :: KRRL          ! number of liquid water var.
 INTEGER,                INTENT(IN)   :: KRRI          ! number of ice water var.
-LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
-                                                      ! file opening       
 LOGICAL,                INTENT(IN)   ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
 CHARACTER(len=4),       INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
@@ -120,8 +118,8 @@ END MODULE MODI_TURB_VER
 !
 !     ###############################################################
       SUBROUTINE TURB_VER(KKA,KKU,KKL,KRR, KRRL, KRRI,              &
-                      OCLOSE_OUT,OTURB_FLX,                         &
-                      HTURBDIM,HTOM,PIMPL,PEXPL,                    & 
+                      OTURB_FLX,                                    &
+                      HTURBDIM,HTOM,PIMPL,PEXPL,                    &
                       PTSTEP, TPFILE,                               &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,PZZ,       &
                       PCOSSLOPE,PSINSLOPE,                          &
@@ -358,8 +356,6 @@ INTEGER,                INTENT(IN)   :: KKL           !vert. levels type 1=MNH -
 INTEGER,                INTENT(IN)   :: KRR           ! number of moist var.
 INTEGER,                INTENT(IN)   :: KRRL          ! number of liquid water var.
 INTEGER,                INTENT(IN)   :: KRRI          ! number of ice water var.
-LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
-                                                      ! file opening       
 LOGICAL,                INTENT(IN)   ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
 CHARACTER(len=4),       INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
@@ -520,7 +516,7 @@ IKE=KKU-JPVEXT_TURB*KKL
 ! 3D Redelsperger numbers
 !
 !
-CALL PRANDTL(KKA,KKU,KKL,KRR,KRRI,OCLOSE_OUT,OTURB_FLX,        &
+CALL PRANDTL(KKA,KKU,KKL,KRR,KRRI,OTURB_FLX,       &
              HTURBDIM,                             &
              TPFILE,                               &
              PDXX,PDYY,PDZZ,PDZX,PDZY,             &
@@ -593,7 +589,7 @@ END IF
 !
 !
   CALL  TURB_VER_THERMO_FLUX(KKA,KKU,KKL,KRR,KRRL,KRRI,               &
-                        OCLOSE_OUT,OTURB_FLX,HTURBDIM,HTOM,           &
+                        OTURB_FLX,HTURBDIM,HTOM,                      &
                         PIMPL,PEXPL,PTSTEP,                           &
                         TPFILE,                                       &
                         PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,PZZ,       &
@@ -609,7 +605,7 @@ END IF
                         PRTHLS,PRRS,ZTHLP,ZRP,PTP,PWTH,PWRC           )
 !
   CALL  TURB_VER_THERMO_CORR(KKA,KKU,KKL,KRR,KRRL,KRRI,               &
-                        OCLOSE_OUT,OTURB_FLX,HTURBDIM,HTOM,           &
+                        OTURB_FLX,HTURBDIM,HTOM,                      &
                         PIMPL,PEXPL,                                  &
                         TPFILE,                                       &
                         PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,           &
@@ -638,7 +634,7 @@ END IF
 !             -----------------------------------------------
 !
 CALL  TURB_VER_DYN_FLUX(KKA,KKU,KKL,                                &
-                      OCLOSE_OUT,OTURB_FLX,KRR,                     &
+                      OTURB_FLX,KRR,                                &
                       HTURBDIM,PIMPL,PEXPL,PTSTEP,                  &
                       TPFILE,                                       &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,PZZ,       &
@@ -658,7 +654,7 @@ CALL  TURB_VER_DYN_FLUX(KKA,KKU,KKL,                                &
 !
 IF (SIZE(PSVM,4)>0)                                                 &
 CALL  TURB_VER_SV_FLUX(KKA,KKU,KKL,                                 &
-                      OCLOSE_OUT,OTURB_FLX,HTURBDIM,                &
+                      OTURB_FLX,HTURBDIM,                           &
                       PIMPL,PEXPL,PTSTEP,                           &
                       TPFILE,                                       &
                       PDZZ,PDIRCOSZW,                               &
@@ -692,7 +688,7 @@ IF (SIZE(PSBL_DEPTH)>0) CALL SBL_DEPTH(IKB,IKE,PZZ,ZWU,ZWV,ZWTHV,PLMO,PSBL_DEPTH
 !             ------
 !
 !
-IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
+IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
 !
 ! stores the Turbulent Prandtl number
 ! 

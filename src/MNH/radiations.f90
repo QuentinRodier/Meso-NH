@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,9 +10,9 @@
 CONTAINS
 !
 !   ############################################################################
-    SUBROUTINE RADIATIONS (OCLOSE_OUT,TPFILE,OCLEAR_SKY,OCLOUD_ONLY,           &
+    SUBROUTINE RADIATIONS (TPFILE,OCLEAR_SKY,OCLOUD_ONLY,                      &
                KCLEARCOL_TM1,HEFRADL,HEFRADI,HOPWSW,HOPISW,HOPWLW,HOPILW,      &
-               PFUDG, KDLON, KFLEV, KRAD_DIAG, KFLUX, KRAD, KAER, KSWB_OLD,    & 
+               PFUDG, KDLON, KFLEV, KRAD_DIAG, KFLUX, KRAD, KAER, KSWB_OLD,    &
                KSWB_MNH,KLWB_MNH, KSTATM,KRAD_COLNBR,PCOSZEN,PSEA, PCORSOL,    &
                PDIR_ALB, PSCA_ALB,PEMIS, PCLDFR, PCCO2, PTSRAD, PSTATM,        &
                PTHT, PRT, PPABST, POZON, PAER, PDST_WL, PAER_CLIM, PSVT,       &
@@ -176,9 +176,6 @@ IMPLICIT NONE
 !
 !*       0.1   DECLARATIONS OF DUMMY ARGUMENTS :
 !
-LOGICAL, INTENT(IN)                  :: OCLOSE_OUT! flag indicating that a FM
-                                                  ! file is opened during this 
-                                                  ! time-step
 TYPE(TFILEDATA),  INTENT(IN)         :: TPFILE    ! Output file
 LOGICAL, INTENT(IN)                  :: OCLOUD_ONLY! flag for the cloud column
                                                    !    computations only
@@ -2336,7 +2333,7 @@ ELSE
     ZFLUX_SW_DOWN( IBEG:IEND ,:) =  ZFLUX_SW_DOWN_SPLIT(:,:)
     ZFLUX_SW_UP( IBEG:IEND ,:)   =  ZFLUX_SW_UP_SPLIT(:,:)
     ZRADLP( IBEG:IEND ,:) = ZRADLP_SPLIT(:,:)
-    IF( OCLOSE_OUT ) THEN
+    IF ( tpfile%lopened ) THEN
       IF( KRAD_DIAG >= 1) THEN
         ZNFLW(IBEG:IEND ,:)= ZNFLW_SPLIT(:,:)
         ZNFSW(IBEG:IEND ,:)= ZNFSW_SPLIT(:,:)
@@ -2678,7 +2675,7 @@ END IF
 !*       7.    STORE SOME ADDITIONNAL RADIATIVE FIELDS
 !              ---------------------------------------
 !
-IF( OCLOSE_OUT .AND. (KRAD_DIAG >= 1) ) THEN
+IF( tpfile%lopened .AND. (KRAD_DIAG >= 1) ) THEN
   ZSTORE_3D(:,:,:) = 0.0
   ZSTORE_3D2(:,:,:) = 0.0
   ZSTORE_2D(:,:)   = 0.0

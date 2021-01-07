@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1996-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -9,7 +9,7 @@
 !
 INTERFACE
       SUBROUTINE RAIN_C2R2_KHKO(HCLOUD,OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP,   &
-                            KMI,TPFILE, OCLOSE_OUT,                             &
+                            KMI,TPFILE,                                         &
                             PZZ, PRHODJ,                                        &
                             PRHODREF, PEXNREF,                                  &
                             PPABST, PTHT, PRVT, PRCT,                           &
@@ -36,8 +36,6 @@ INTEGER,                  INTENT(IN)    :: KSPLITR ! Number of small time step
 REAL,                     INTENT(IN)    :: PTSTEP ! Time step :XTSTEP in namelist
 INTEGER,                  INTENT(IN)    :: KMI     ! Model index 
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE   ! Output file
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT  ! Conditional closure of 
-                                                    ! the tput FM fileoutp
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ     ! Height (z)
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ  ! Dry density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF! Reference density
@@ -86,7 +84,7 @@ END INTERFACE
 END MODULE MODI_RAIN_C2R2_KHKO
 !     ######################################################################
       SUBROUTINE RAIN_C2R2_KHKO (HCLOUD,OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP,  &
-                            KMI, TPFILE, OCLOSE_OUT, PZZ, PRHODJ,               &
+                            KMI, TPFILE, PZZ, PRHODJ,                           &
                             PRHODREF, PEXNREF,                                  &
                             PPABST, PTHT, PRVT,  PRCT,                          &
                             PRRT, PTHM, PRCM, PPABSM,                           &
@@ -264,8 +262,6 @@ INTEGER,                  INTENT(IN)    :: KSPLITR ! Number of small time step
 REAL,                     INTENT(IN)    :: PTSTEP ! Time step :XTSTEP in namelist
 INTEGER,                  INTENT(IN)    :: KMI     ! Model index 
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE   ! Output file
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT  ! Conditional closure of 
-                                                    ! the tput FM fileoutp
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ     ! Height (z)
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ  ! Dry density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF! Reference density
@@ -598,7 +594,7 @@ end if
 !ZCHEN(:,:,IKE) = ZCHEN(:,:,IKE-1)
 !!
 !!
-! IF ( OCLOSE_OUT ) THEN
+! IF ( tpfile%lopened ) THEN
 !   TZFIELD%CMNHNAME   = 'ZCHEN'
 !   TZFIELD%CSTDNAME   = ''
 !   TZFIELD%CLONGNAME  = 'ZCHEN'
@@ -881,7 +877,7 @@ INUCT = COUNTJV( GNUCT(:,:,:),I1(:),I2(:),I3(:))
 !-------------------------------------------------------------------------------
 ! END IF
 !                      
-IF ( OCLOSE_OUT ) THEN
+IF ( tpfile%lopened ) THEN
   TZFIELD%CMNHNAME   = 'SMAX'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = 'SMAX'
@@ -1899,7 +1895,7 @@ DO JN = 1 , KSPLITR
       PCRS(:,:,:) = ( PCRS(:,:,:) + ZPCRT(:,:,:) ) / PTSTEP
   END IF
 !   
- IF (OSEDC .AND. OCLOSE_OUT) THEN
+ IF ( OSEDC .AND. tpfile%lopened ) THEN
   TZFIELD%CMNHNAME   = 'SEDFLUXC'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = 'SEDFLUXC'

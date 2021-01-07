@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -9,11 +9,11 @@
 !
 INTERFACE
 !
-      SUBROUTINE KHKO_NOTADJUST(KRR, KTCOUNT, TPFILE, HRAD, OCLOSE_OUT,             &
+      SUBROUTINE KHKO_NOTADJUST(KRR, KTCOUNT, TPFILE, HRAD,                         &
                                 PTSTEP, PRHODJ, PPABSM,  PPABST, PRHODREF, PZZ,     &
                                 PTHT,PRVT,PRCT,PRRT,                                &
                                 PTHS, PRVS, PRCS, PRRS, PCCS, PCNUCS, PSAT,         &
-                                PCLDFR, PSRCS, PNPRO,PSSPRO                          )
+                                PCLDFR, PSRCS, PNPRO,PSSPRO                         )
 !
 USE MODD_IO, ONLY: TFILEDATA
 !
@@ -21,9 +21,6 @@ INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 INTEGER,                  INTENT(IN)    :: KTCOUNT      ! Number of moist variables
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE   ! Output file
 CHARACTER(len=4),         INTENT(IN)    :: HRAD     ! Radiation scheme name
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                    ! the OUTPUT FM-file
-                                                    ! Condensation
 REAL,                     INTENT(IN)    :: PTSTEP   ! Double Time step
                                                     ! (single if cold start)
 !
@@ -59,13 +56,13 @@ END INTERFACE
 !
 END MODULE MODI_KHKO_NOTADJUST
 !
-!     ################################################################################
-      SUBROUTINE KHKO_NOTADJUST(KRR, KTCOUNT, TPFILE, HRAD, OCLOSE_OUT,             &
+!     ###############################################################################
+      SUBROUTINE KHKO_NOTADJUST(KRR, KTCOUNT, TPFILE, HRAD,                         &
                                 PTSTEP, PRHODJ, PPABSM,  PPABST, PRHODREF, PZZ,     &
                                 PTHT,PRVT,PRCT,PRRT,                                &
                                 PTHS, PRVS, PRCS, PRRS, PCCS, PCNUCS, PSAT,         &
-                                PCLDFR, PSRCS, PNPRO,PSSPRO                          )
-!     ################################################################################
+                                PCLDFR, PSRCS, PNPRO,PSSPRO                         )
+!     ###############################################################################
 !
 !!****  * -  compute pseudo-prognostic of supersaturation according to Thouron
 !                                                                     et al. 2012
@@ -127,9 +124,6 @@ INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 INTEGER,                  INTENT(IN)    :: KTCOUNT      ! Number of moist variables
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE   ! Output file
 CHARACTER(len=4),         INTENT(IN)    :: HRAD     ! Radiation scheme name
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                    ! the OUTPUT FM-file
-                                                    ! Condensation
 REAL,                     INTENT(IN)    :: PTSTEP   ! Double Time step
                                                     ! (single if cold start)
 !
@@ -392,7 +386,7 @@ END IF
   PNPRO(:,:,:) = 0.0
   PNPRO(:,:,:) = ZACT(:,:,:) 
 !
-IF ( OCLOSE_OUT ) THEN
+IF ( tpfile%lopened ) THEN
   TZFIELD%CMNHNAME   = 'SURSAT'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = 'SURSAT'

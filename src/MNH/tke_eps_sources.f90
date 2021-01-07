@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -12,7 +12,7 @@ INTERFACE
                       PRHODJ,PDZZ,PDXX,PDYY,PDZX,PDZY,PZZ,                  &
                       PTSTEP,PIMPL,PEXPL,                                   &
                       HTURBLEN,HTURBDIM,                                    &
-                      TPFILE,OCLOSE_OUT,OTURB_DIAG,                         &
+                      TPFILE,OTURB_DIAG,                                    &
                       PTP,PRTKES,PRTKESM, PRTHLS,PCOEF_DISS,PTR,PDISS       )
 !
 USE MODD_IO, ONLY: TFILEDATA
@@ -34,8 +34,6 @@ CHARACTER(len=4),        INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
                                                        ! turbulence scheme
 CHARACTER(len=4),        INTENT(IN)   ::  HTURBLEN     ! kind of mixing length
 TYPE(TFILEDATA),         INTENT(IN)   ::  TPFILE       ! Output file
-LOGICAL,                 INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
-                                                       ! file opening
 LOGICAL,                 INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
                                   ! diagnostic fields in the syncronous FM-file
 REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PDP          ! Dyn. prod. of TKE
@@ -62,7 +60,7 @@ END MODULE MODI_TKE_EPS_SOURCES
                       PTRH,PRHODJ,PDZZ,PDXX,PDYY,PDZX,PDZY,PZZ,        &
                       PTSTEP,PIMPL,PEXPL,                              &
                       HTURBLEN,HTURBDIM,                               &
-                      TPFILE,OCLOSE_OUT,OTURB_DIAG,                    &
+                      TPFILE,OTURB_DIAG,                               &
                       PTP,PRTKES,PRTKESM, PRTHLS,PCOEF_DISS,PTR,PDISS  )
 !     ##################################################################
 !
@@ -221,8 +219,6 @@ CHARACTER(len=4),        INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
                                                        ! turbulence scheme
 CHARACTER(len=4),        INTENT(IN)   ::  HTURBLEN     ! kind of mixing length
 TYPE(TFILEDATA),         INTENT(IN)   ::  TPFILE       ! Output file
-LOGICAL,                 INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
-                                                       ! file opening
 LOGICAL,                 INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
                                   ! diagnostic fields in the syncronous FM-file
 REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PDP          ! Dyn. prod. of TKE
@@ -345,7 +341,7 @@ ENDIF
 !END WHERE
 !
 IF ( LLES_CALL .OR.                         &
-     (OTURB_DIAG .AND. OCLOSE_OUT)  ) THEN
+     (OTURB_DIAG .AND. tpfile%lopened)  ) THEN
 !
 ! Compute the cartesian vertical flux of TKE in ZFLX
 !
@@ -406,7 +402,7 @@ if (lbudget_th) call Budget_store_end( tbudgets(NBUDGET_TH), 'DISSH', prthls(:, 
 !
 PDISS(:,:,:) =  -XCED * (PTKEM(:,:,:)**1.5) / PLEPS(:,:,:)
 !
-IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
+IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
 !
 ! stores the dynamic production 
 !

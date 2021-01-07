@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -9,7 +9,7 @@
 !
 INTERFACE
       SUBROUTINE LIMA_WARM (OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,   &
-                            TPFILE, OCLOSE_OUT, KRR, PZZ, PRHODJ,&
+                            TPFILE, KRR, PZZ, PRHODJ,                     &
                             PRHODREF, PEXNREF, PW_NU, PPABSM, PPABST,     &
                             PTHM, PRCM,                                   &
                             PTHT, PRT, PSVT,                              &
@@ -32,8 +32,6 @@ REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
                                                       ! (single if cold start)
 INTEGER,                  INTENT(IN)    :: KMI        ! Model index 
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE     ! Output file
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                      ! the tput FM fileoutp
 INTEGER,                  INTENT(IN)    :: KRR        ! Number of moist variables
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ        ! Height (z)
@@ -71,7 +69,7 @@ END INTERFACE
 END MODULE MODI_LIMA_WARM
 !     #####################################################################
       SUBROUTINE LIMA_WARM (OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,   &
-                            TPFILE, OCLOSE_OUT, KRR, PZZ, PRHODJ,         &
+                            TPFILE, KRR, PZZ, PRHODJ,                     &
                             PRHODREF, PEXNREF, PW_NU, PPABSM, PPABST,     &
                             PTHM, PRCM,                                   &
                             PTHT, PRT, PSVT,                              &
@@ -173,8 +171,6 @@ REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
                                                       ! (single if cold start)
 INTEGER,                  INTENT(IN)    :: KMI        ! Model index 
 TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE     ! Output file
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                      ! the tput FM fileoutp
 INTEGER,                  INTENT(IN)    :: KRR        ! Number of moist variables
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ        ! Height (z)
@@ -376,7 +372,7 @@ IF ( LACTI .AND. NMOD_CCN > 0 ) THEN
     end do
   end if
 
-  CALL LIMA_WARM_NUCL( OACTIT, PTSTEP, KMI, TPFILE, OCLOSE_OUT,     &
+  CALL LIMA_WARM_NUCL( OACTIT, PTSTEP, KMI, TPFILE,                 &
                         PRHODREF, PEXNREF, PPABST, ZT, PTHM, PW_NU, &
                         PRCM, PRVT, PRCT, PRRT,                     &
                         PTHS, PRVS, PRCS, PCCS, ZNFS, ZNAS          )

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,7 +10,7 @@
 INTERFACE  
 !
       SUBROUTINE TURB_HOR(KSPLT, KRR, KRRL, KRRI, PTSTEP,            &
-                      OCLOSE_OUT,OTURB_FLX,OSUBG_COND,               &
+                      OTURB_FLX,OSUBG_COND,                          &
                       TPFILE,                                        &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                  &
                       PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,                 &
@@ -34,8 +34,6 @@ INTEGER,                INTENT(IN)   :: KRR           ! number of moist var.
 INTEGER,                INTENT(IN)   :: KRRL          ! number of liquid water var.
 INTEGER,                INTENT(IN)   :: KRRI          ! number of ice water var.
 REAL,                   INTENT(IN)   ::  PTSTEP       !
-LOGICAL,                  INTENT(IN)    ::  OCLOSE_OUT   ! switch for syncronous
-                                                         ! file opening       
 LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
 LOGICAL,                 INTENT(IN)  ::   OSUBG_COND ! Switch for sub-grid 
@@ -111,7 +109,7 @@ END INTERFACE
 END MODULE MODI_TURB_HOR
 !     ################################################################
       SUBROUTINE TURB_HOR(KSPLT, KRR, KRRL, KRRI, PTSTEP,            &
-                      OCLOSE_OUT,OTURB_FLX,OSUBG_COND,               &
+                      OTURB_FLX,OSUBG_COND,                          &
                       TPFILE,                                        &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                  &
                       PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,                 &
@@ -267,8 +265,6 @@ INTEGER,                INTENT(IN)   :: KRR           ! number of moist var.
 INTEGER,                INTENT(IN)   :: KRRL          ! number of liquid water var.
 INTEGER,                INTENT(IN)   :: KRRI          ! number of ice water var.
 REAL,                   INTENT(IN)   ::  PTSTEP       !
-LOGICAL,                  INTENT(IN)    ::  OCLOSE_OUT   ! switch for syncronous
-                                                         ! file opening       
 LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
 LOGICAL,                 INTENT(IN)  ::   OSUBG_COND ! Switch for sub-grid 
@@ -356,7 +352,7 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PSIGS
 !*       7.   < V' TPV' >
 !
       CALL      TURB_HOR_THERMO_FLUX(KSPLT, KRR, KRRL, KRRI,         &
-                      OCLOSE_OUT,OTURB_FLX,OSUBG_COND,               &
+                      OTURB_FLX,OSUBG_COND,                          &
                       TPFILE,                                        &
                       PK,PINV_PDXX,PINV_PDYY,PINV_PDZZ,PMZM_PRHODJ,  &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
@@ -372,7 +368,7 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PSIGS
 !
       IF (KSPLT==1)                                                  &
       CALL      TURB_HOR_THERMO_CORR(KRR, KRRL, KRRI,                &
-                      OCLOSE_OUT,OTURB_FLX,OSUBG_COND,               &
+                      OTURB_FLX,OSUBG_COND,                          &
                       TPFILE,                                        &
                       PINV_PDXX,PINV_PDYY,                           &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
@@ -388,7 +384,7 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PSIGS
 !*      11.   < W'W'>
 ! 
       CALL       TURB_HOR_DYN_CORR(KSPLT, PTSTEP,                    &
-                      OCLOSE_OUT,OTURB_FLX,KRR,                      &
+                      OTURB_FLX,KRR,                                 &
                       TPFILE,                                        &
                       PK,PINV_PDZZ,                                  &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                  &
@@ -406,7 +402,7 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PSIGS
 !*      12.   < U'V'>
 !
       CALL      TURB_HOR_UV(KSPLT,                                   &
-                      OCLOSE_OUT,OTURB_FLX,                          &
+                      OTURB_FLX,                                     &
                       TPFILE,                                        &
                       PK,PINV_PDXX,PINV_PDYY,PINV_PDZZ,PMZM_PRHODJ,  &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
@@ -422,7 +418,7 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PSIGS
 !*      13.   < U'W'>
 !
       CALL      TURB_HOR_UW(KSPLT,                                   &
-                      OCLOSE_OUT,OTURB_FLX,KRR,                      &
+                      OTURB_FLX,KRR,                                 &
                       TPFILE,                                        &
                       PK,PINV_PDXX,PINV_PDZZ,PMZM_PRHODJ,            &
                       PDXX,PDZZ,PDZX,                                &
@@ -436,7 +432,7 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PSIGS
 !*      14.   < V'W'>
 !
       CALL      TURB_HOR_VW(KSPLT,                                   &
-                      OCLOSE_OUT,OTURB_FLX,KRR,                      &
+                      OTURB_FLX,KRR,                                 &
                       TPFILE,                                        &
                       PK,PINV_PDYY,PINV_PDZZ,PMZM_PRHODJ,            &
                       PDYY,PDZZ,PDZY,                                &
@@ -451,7 +447,7 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PSIGS
 !*      15.   HORIZONTAL FLUXES OF PASSIVE SCALARS
 !
       CALL      TURB_HOR_SV_FLUX(KSPLT,                              &
-                      OCLOSE_OUT,OTURB_FLX,                          &
+                      OTURB_FLX,                                     &
                       TPFILE,                                        &
                       PK,PINV_PDXX,PINV_PDYY,PINV_PDZZ,PMZM_PRHODJ,  &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,                      &

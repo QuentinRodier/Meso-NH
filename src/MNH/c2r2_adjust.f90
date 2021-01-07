@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,7 +10,7 @@
 INTERFACE
 !
       SUBROUTINE C2R2_ADJUST(KRR, TPFILE, HRAD,                           &
-                             HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,    &
+                             HTURBDIM, OSUBG_COND, PTSTEP,                &
                              PRHODJ, PSIGS, PPABST,                       &
                              PTHS, PRVS, PRCS, PCNUCS,                    &
                              PCCS, PSRCS, PCLDFR, PRRS )
@@ -21,7 +21,6 @@ INTEGER,                          INTENT(IN)    :: KRR        ! Number of moist 
 TYPE(TFILEDATA),                  INTENT(IN)    :: TPFILE     ! Output file
 CHARACTER(len=4),                 INTENT(IN)    :: HTURBDIM   ! Dimensionality of the turbulence scheme
 CHARACTER(len=4),                 INTENT(IN)    :: HRAD       ! Radiation scheme name
-LOGICAL,                          INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of the OUTPUT file
 LOGICAL,                          INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid condensation
 REAL,                             INTENT(IN)    :: PTSTEP     ! Double Time step (single if cold start)
 !
@@ -46,7 +45,7 @@ END INTERFACE
 END MODULE MODI_C2R2_ADJUST
 !     ##########################################################################
       SUBROUTINE C2R2_ADJUST(KRR, TPFILE, HRAD,                           &
-                             HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,    &
+                             HTURBDIM, OSUBG_COND, PTSTEP,                &
                              PRHODJ, PSIGS, PPABST,                       &
                              PTHS, PRVS, PRCS, PCNUCS,                    &
                              PCCS, PSRCS, PCLDFR, PRRS )
@@ -167,7 +166,6 @@ INTEGER,                          INTENT(IN)    :: KRR        ! Number of moist 
 TYPE(TFILEDATA),                  INTENT(IN)    :: TPFILE     ! Output file
 CHARACTER(len=4),                 INTENT(IN)    :: HTURBDIM   ! Dimensionality of the turbulence scheme
 CHARACTER(len=4),                 INTENT(IN)    :: HRAD       ! Radiation scheme name
-LOGICAL,                          INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of the OUTPUT file
 LOGICAL,                          INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid condensation
 REAL,                             INTENT(IN)    :: PTSTEP     ! Double Time step (single if cold start)
 !
@@ -406,7 +404,7 @@ IF ( HRAD /= 'NONE' ) THEN
   PCLDFR(:,:,:) = ZW1(:,:,:)
 END IF
 !
-IF ( OCLOSE_OUT ) THEN
+IF ( tpfile%lopened ) THEN
   TZFIELD%CMNHNAME   = 'NEB'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = 'NEB'

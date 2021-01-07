@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2010-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -11,7 +11,7 @@ INTERFACE
 !     #################################################################
       SUBROUTINE SHALLOW_MF_PACK(KRR,KRRL,KRRI,                       &
                 HMF_UPDRAFT, HMF_CLOUD, OMIXUV,                       &
-                OCLOSE_OUT,OMF_FLX,TPFILE,PTIME_LES,                  &
+                OMF_FLX,TPFILE,PTIME_LES,                             &
                 PIMPL_MF, PTSTEP,                                     &
                 PDZZ, PZZ,                                            &
                 PRHODJ, PRHODREF,                                     &
@@ -36,8 +36,6 @@ CHARACTER (LEN=4),      INTENT(IN)   :: HMF_UPDRAFT! Type of Mass Flux Scheme
 CHARACTER (LEN=4),      INTENT(IN)   :: HMF_CLOUD  ! Type of statistical cloud
                                                    ! scheme
 LOGICAL,                INTENT(IN)   :: OMIXUV     ! True if mixing of momentum
-LOGICAL,                INTENT(IN)   :: OCLOSE_OUT ! switch for synchronous
-                                                   ! file opening
 LOGICAL,                INTENT(IN)   :: OMF_FLX    ! switch to write the
                                                    ! MF fluxes in the synchronous FM-file
 TYPE(TFILEDATA),        INTENT(IN)   :: TPFILE     ! Output file
@@ -77,7 +75,7 @@ END MODULE MODI_SHALLOW_MF_PACK
 !     #################################################################
       SUBROUTINE SHALLOW_MF_PACK(KRR,KRRL,KRRI,                       &
                 HMF_UPDRAFT, HMF_CLOUD, OMIXUV,                       &
-                OCLOSE_OUT,OMF_FLX,TPFILE,PTIME_LES,                  &
+                OMF_FLX,TPFILE,PTIME_LES,                             &
                 PIMPL_MF, PTSTEP,                                     &
                 PDZZ, PZZ,                                            &
                 PRHODJ, PRHODREF,                                     &
@@ -159,8 +157,6 @@ CHARACTER (LEN=4),      INTENT(IN)   :: HMF_UPDRAFT! Type of Mass Flux Scheme
 CHARACTER (LEN=4),      INTENT(IN)   :: HMF_CLOUD  ! Type of statistical cloud
                                                    ! scheme
 LOGICAL,                INTENT(IN)   :: OMIXUV     ! True if mixing of momentum
-LOGICAL,                INTENT(IN)   :: OCLOSE_OUT ! switch for synchronous
-                                                   ! file opening
 LOGICAL,                INTENT(IN)   :: OMF_FLX    ! switch to write the
                                                    ! MF fluxes in the synchronous FM-file
 TYPE(TFILEDATA),        INTENT(IN)   :: TPFILE     ! Output file
@@ -396,7 +392,7 @@ end if
 
 !!! 8. Prints the fluxes in output file
 !
-IF ( OMF_FLX .AND. OCLOSE_OUT ) THEN
+IF ( OMF_FLX .AND. tpfile%lopened ) THEN
   ! stores the conservative potential temperature vertical flux
   ZWORK(:,:,:)=RESHAPE(ZFLXZTHMF (:,:),(/ IIU,IJU,IKU /) )
   TZFIELD%CMNHNAME   = 'MF_THW_FLX'

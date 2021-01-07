@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -8,7 +8,7 @@
 !     ###########################
 !
 INTERFACE
-      SUBROUTINE ADVECTION_METSV (TPFILE, OCLOSE_OUT,HUVW_ADV_SCHEME,          &
+      SUBROUTINE ADVECTION_METSV (TPFILE, HUVW_ADV_SCHEME,                     &
                             HMET_ADV_SCHEME,HSV_ADV_SCHEME, HCLOUD, KSPLIT,    &
                             OSPLIT_CFL, PSPLIT_CFL, OCFL_WRIT,                 &
                             HLBCX, HLBCY, KRR, KSV, TPDTCUR, PTSTEP,           &
@@ -20,8 +20,6 @@ INTERFACE
 USE MODD_IO,        ONLY: TFILEDATA
 USE MODD_TYPE_DATE, ONLY: DATE_TIME
 !
-LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
-                                                      ! file opening
 TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
 CHARACTER(LEN=6),       INTENT(IN)   :: HMET_ADV_SCHEME, & ! Control of the 
                                         HSV_ADV_SCHEME, &  ! scheme applied 
@@ -64,7 +62,7 @@ END INTERFACE
 !
 END MODULE MODI_ADVECTION_METSV
 !     ##########################################################################
-      SUBROUTINE ADVECTION_METSV (TPFILE, OCLOSE_OUT,HUVW_ADV_SCHEME,          &
+      SUBROUTINE ADVECTION_METSV (TPFILE, HUVW_ADV_SCHEME,                     &
                             HMET_ADV_SCHEME,HSV_ADV_SCHEME, HCLOUD, KSPLIT,    &
                             OSPLIT_CFL, PSPLIT_CFL, OCFL_WRIT,                 &
                             HLBCX, HLBCY, KRR, KSV, TPDTCUR, PTSTEP,           &
@@ -184,8 +182,6 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
-LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for synchronous
-                                                      ! file opening
 TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
 CHARACTER(LEN=6),       INTENT(IN)   :: HMET_ADV_SCHEME, & ! Control of the 
                                         HSV_ADV_SCHEME, &  ! scheme applied 
@@ -355,7 +351,7 @@ END IF
 !
 !* prints in the file the 3D Courant numbers (one should flag this)
 !
-IF (OCLOSE_OUT .AND. OCFL_WRIT .AND. (.NOT. L1D)) THEN
+IF ( tpfile%lopened .AND. OCFL_WRIT .AND. (.NOT. L1D) ) THEN
     TZFIELD%CMNHNAME   = 'CFLU'
     TZFIELD%CSTDNAME   = ''
     TZFIELD%CLONGNAME  = 'CFLU'

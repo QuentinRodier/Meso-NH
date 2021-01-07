@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,7 +10,7 @@
 INTERFACE
 !
       SUBROUTINE LIMA_ADJUST(KRR, KMI, TPFILE, HRAD,                           &
-                             HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,         &
+                             HTURBDIM, OSUBG_COND, PTSTEP,                     &
                              PRHODREF, PRHODJ, PEXNREF, PPABSM, PSIGS, PPABST, &
                              PRT, PRS, PSVT, PSVS,                             &
                              PTHS, PSRCS, PCLDFR                               )
@@ -24,8 +24,6 @@ TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE     ! Output file
 CHARACTER(len=4),         INTENT(IN)   :: HTURBDIM   ! Dimensionality of the
                                                      ! turbulence scheme
 CHARACTER(len=4),         INTENT(IN)   :: HRAD       ! Radiation scheme name
-LOGICAL,                  INTENT(IN)   :: OCLOSE_OUT ! Conditional closure of 
-                                                     ! the OUTPUT FM-file
 LOGICAL,                  INTENT(IN)   :: OSUBG_COND ! Switch for Subgrid 
                                                      ! Condensation
 REAL,                     INTENT(IN)   :: PTSTEP     ! Time step          
@@ -61,7 +59,7 @@ END MODULE MODI_LIMA_ADJUST
 !
 !     ##########################################################################
       SUBROUTINE LIMA_ADJUST(KRR, KMI, TPFILE, HRAD,                           &
-                             HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,         &
+                             HTURBDIM, OSUBG_COND, PTSTEP,                     &
                              PRHODREF, PRHODJ, PEXNREF, PPABSM, PSIGS, PPABST, &
                              PRT, PRS, PSVT, PSVS,                             &
                              PTHS, PSRCS, PCLDFR                               )
@@ -179,8 +177,6 @@ TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE     ! Output file
 CHARACTER(len=4),         INTENT(IN)   :: HTURBDIM   ! Dimensionality of the
                                                      ! turbulence scheme
 CHARACTER(len=4),         INTENT(IN)   :: HRAD       ! Radiation scheme name
-LOGICAL,                  INTENT(IN)   :: OCLOSE_OUT ! Conditional closure of 
-                                                     ! the OUTPUT FM-file
 LOGICAL,                  INTENT(IN)   :: OSUBG_COND ! Switch for Subgrid 
                                                      ! Condensation
 REAL,                     INTENT(IN)   :: PTSTEP     ! Time step          
@@ -1149,7 +1145,7 @@ END IF
 !
 PCLDFR(:,:,:) = ZW(:,:,:)
 !
-IF ( OCLOSE_OUT ) THEN
+IF ( tpfile%lopened ) THEN
   TZFIELD%CMNHNAME   = 'NEB'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = 'NEB'
@@ -1199,7 +1195,7 @@ END IF
 !
 ! write SSI in LFI
 !
-IF ( OCLOSE_OUT ) THEN
+IF ( tpfile%lopened ) THEN
   ZT(:,:,:) = ( PTHS(:,:,:) * ZDT ) * ZEXNS(:,:,:)
   ZW(:,:,:) = EXP( XALPI - XBETAI/ZT(:,:,:) - XGAMI*ALOG(ZT(:,:,:) ) )
   ZW1(:,:,:)= 2.0*PPABST(:,:,:)-PPABSM(:,:,:)

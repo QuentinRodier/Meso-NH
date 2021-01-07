@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,7 +10,7 @@
 INTERFACE  
 !
       SUBROUTINE TURB_HOR_THERMO_FLUX(KSPLT, KRR, KRRL, KRRI,        &
-                      OCLOSE_OUT,OTURB_FLX,OSUBG_COND,               &
+                      OTURB_FLX,OSUBG_COND,                          &
                       TPFILE,                                        &
                       PK,PINV_PDXX,PINV_PDYY,PINV_PDZZ,PMZM_PRHODJ,  &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
@@ -27,8 +27,6 @@ INTEGER,                  INTENT(IN)    :: KSPLT         ! split process index
 INTEGER,                  INTENT(IN)    :: KRR           ! number of moist var.
 INTEGER,                  INTENT(IN)    :: KRRL          ! number of liquid water var.
 INTEGER,                  INTENT(IN)    :: KRRI          ! number of ice water var.
-LOGICAL,                  INTENT(IN)    ::  OCLOSE_OUT   ! switch for syncronous
-                                                         ! file opening       
 LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
 LOGICAL,                 INTENT(IN)  ::   OSUBG_COND ! Switch for sub-grid 
@@ -75,7 +73,7 @@ END INTERFACE
 END MODULE MODI_TURB_HOR_THERMO_FLUX
 !     ################################################################
       SUBROUTINE TURB_HOR_THERMO_FLUX(KSPLT, KRR, KRRL, KRRI,        &
-                      OCLOSE_OUT,OTURB_FLX,OSUBG_COND,               &
+                      OTURB_FLX,OSUBG_COND,                          &
                       TPFILE,                                        &
                       PK,PINV_PDXX,PINV_PDYY,PINV_PDZZ,PMZM_PRHODJ,  &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
@@ -161,8 +159,6 @@ INTEGER,                  INTENT(IN)    :: KSPLT         ! split process index
 INTEGER,                  INTENT(IN)    :: KRR           ! number of moist var.
 INTEGER,                  INTENT(IN)    :: KRRL          ! number of liquid water var.
 INTEGER,                  INTENT(IN)    :: KRRI          ! number of ice water var.
-LOGICAL,                  INTENT(IN)    ::  OCLOSE_OUT   ! switch for syncronous
-                                                         ! file opening       
 LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
 LOGICAL,                 INTENT(IN)  ::   OSUBG_COND ! Switch for sub-grid 
@@ -314,7 +310,7 @@ END IF
 !!ZWORK(:,:,:) = ZFLX(:,:,:) 
 !
 ! stores the horizontal  <U THl>
-IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
+IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
   TZFIELD%CMNHNAME   = 'UTHL_FLX'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = 'UTHL_FLX'
@@ -417,7 +413,7 @@ IF (KRR/=0) THEN
   END IF
   !
   ! stores the horizontal  <U Rnp>
-  IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
+  IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
     TZFIELD%CMNHNAME   = 'UR_FLX'
     TZFIELD%CSTDNAME   = ''
     TZFIELD%CLONGNAME  = 'UR_FLX'
@@ -466,7 +462,7 @@ END IF
 !!     ZFLX(:,:,:)*MXM(EMOIST(KRR,KRRI,PTHLT,PEXNREF,PRT,PLOCPT,PSRCM))
 !!  !
 !!  ! stores the horizontal  <U VPT>
-!!  IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
+!!  IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
 !!    TZFIELD%CMNHNAME   = 'UVPT_FLX'
 !!    TZFIELD%CSTDNAME   = ''
 !!    TZFIELD%CLONGNAME  = 'UVPT_FLX'
@@ -569,7 +565,7 @@ END IF
 !!ZWORK(:,:,:) = ZFLX(:,:,:) 
 !
 ! stores the horizontal  <V THl>
-IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
+IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
   TZFIELD%CMNHNAME   = 'VTHL_FLX'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = 'VTHL_FLX'
@@ -681,7 +677,7 @@ IF (KRR/=0) THEN
   END IF
   !
   ! stores the horizontal  <V Rnp>
-  IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
+  IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
     TZFIELD%CMNHNAME   = 'VR_FLX'
     TZFIELD%CSTDNAME   = ''
     TZFIELD%CLONGNAME  = 'VR_FLX'
@@ -734,7 +730,7 @@ END IF
 !!  END IF
 !!  !
 !!  ! stores the horizontal  <V VPT>
-!!  IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
+!!  IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
 !!    TZFIELD%CMNHNAME   = 'VVPT_FLX'
 !!    TZFIELD%CSTDNAME   = ''
 !!    TZFIELD%CLONGNAME  = 'VVPT_FLX'

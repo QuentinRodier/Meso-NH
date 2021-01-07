@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,7 +10,7 @@
 INTERFACE
 !
       SUBROUTINE TURB_CLOUD_INDEX(PTSTEP,TPFILE,                            &
-                                  OTURB_DIAG,OCLOSE_OUT,KRRI,               &
+                                  OTURB_DIAG,KRRI,                          &
                                   PRRS,PRM,PRHODJ,PDXX,PDYY,PDZZ,PDZX,PDZY, &
                                   PCEI                                      )
 !
@@ -20,8 +20,6 @@ REAL,                   INTENT(IN)   ::  PTSTEP       ! Double Time step
 TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
 LOGICAL,                INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
                                  ! diagnostic fields in the syncronous FM-file
-LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
-                                                      ! file opening
 INTEGER,                INTENT(IN)   :: KRRI          ! number of ice water var.
 REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PRRS ! Sources term of RR
 REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PRM  ! Variable at t-dt
@@ -41,7 +39,7 @@ END MODULE MODI_TURB_CLOUD_INDEX
 !
 !     #######################
       SUBROUTINE TURB_CLOUD_INDEX(PTSTEP,TPFILE,                            &
-                                  OTURB_DIAG,OCLOSE_OUT,KRRI,               &
+                                  OTURB_DIAG,KRRI,                          &
                                   PRRS,PRM,PRHODJ,PDXX,PDYY,PDZZ,PDZX,PDZY, &
                                   PCEI                                      )
 !     #######################
@@ -105,8 +103,6 @@ REAL,                   INTENT(IN)   ::  PTSTEP       ! Double Time step
 TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
 LOGICAL,                INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
                                  ! diagnostic fields in the syncronous FM-file
-LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
-                                                      ! file opening
 INTEGER,                INTENT(IN)   :: KRRI          ! number of ice water var.
 REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PRRS ! Sources term of RR
 REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PRM  ! Variable at t-dt
@@ -247,7 +243,7 @@ ENDDO
 !
 !*       2.5    Writing
 !
-IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
+IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
   TZFIELD%CMNHNAME   = 'RVCI'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = 'RVCI'

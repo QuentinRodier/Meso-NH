@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,7 +10,7 @@
 INTERFACE 
 !
       SUBROUTINE TURB_VER_DYN_FLUX(KKA,KKU,KKL,                     &
-                      OCLOSE_OUT,OTURB_FLX,KRR,                     &
+                      OTURB_FLX,KRR,                                &
                       HTURBDIM,PIMPL,PEXPL,                         &
                       PTSTEP,                                       &
                       TPFILE,                                       &
@@ -28,8 +28,6 @@ USE MODD_IO, ONLY: TFILEDATA
 INTEGER,                INTENT(IN)   :: KKA           !near ground array index  
 INTEGER,                INTENT(IN)   :: KKU           !uppest atmosphere array index
 INTEGER,                INTENT(IN)   :: KKL           !vert. levels type 1=MNH -1=AR 
-LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
-                                                      ! file opening       
 LOGICAL,                INTENT(IN)   ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
 INTEGER,                INTENT(IN)   ::  KRR          ! number of moist var.
@@ -89,7 +87,7 @@ END MODULE MODI_TURB_VER_DYN_FLUX
 !
 !     ###############################################################
       SUBROUTINE TURB_VER_DYN_FLUX(KKA,KKU,KKL,                     &
-                      OCLOSE_OUT,OTURB_FLX,KRR,                     &
+                      OTURB_FLX,KRR,                                &
                       HTURBDIM,PIMPL,PEXPL,                         &
                       PTSTEP,                                       &
                       TPFILE,                                       &
@@ -319,8 +317,6 @@ IMPLICIT NONE
 INTEGER,                INTENT(IN)   :: KKA           !near ground array index  
 INTEGER,                INTENT(IN)   :: KKU           !uppest atmosphere array index
 INTEGER,                INTENT(IN)   :: KKL           !vert. levels type 1=MNH -1=ARO
-LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
-                                                      ! file opening       
 LOGICAL,                INTENT(IN)   ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
 INTEGER,                INTENT(IN)   ::  KRR          ! number of moist var.
@@ -509,7 +505,7 @@ ZFLXZ(:,:,IKB:IKB)   =   MXM(PDZZ(:,:,IKB:IKB))  *                &
 ZFLXZ(:,:,KKA) = ZFLXZ(:,:,IKB) 
 
 !
-IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
+IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
   ! stores the U wind component vertical flux
   TZFIELD%CMNHNAME   = 'UW_VFLX'
   TZFIELD%CSTDNAME   = ''
@@ -683,7 +679,7 @@ ZFLXZ(:,:,IKB:IKB)   =   MYM(PDZZ(:,:,IKB:IKB))  *                       &
 !
 ZFLXZ(:,:,KKA) = ZFLXZ(:,:,IKB)
 !
-IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
+IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
   ! stores the V wind component vertical flux
   TZFIELD%CMNHNAME   = 'VW_VFLX'
   TZFIELD%CSTDNAME   = ''
@@ -791,7 +787,7 @@ END IF
 !*       7.   DIAGNOSTIC COMPUTATION OF THE 1D <W W> VARIANCE
 !             -----------------------------------------------
 !
-IF ( OTURB_FLX .AND. OCLOSE_OUT .AND. HTURBDIM == '1DIM') THEN
+IF ( OTURB_FLX .AND. tpfile%lopened .AND. HTURBDIM == '1DIM') THEN
   ZFLXZ(:,:,:)= (2./3.) * PTKEM(:,:,:)                     &
      -XCMFS*PLM(:,:,:)*SQRT(PTKEM(:,:,:))*GZ_W_M(PWM,PDZZ)
   ! to be tested &

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,7 +10,7 @@ MODULE MODI_LIMA
 INTERFACE
 !
    SUBROUTINE LIMA ( KKA, KKU, KKL,                                  &
-                     PTSTEP, TPFILE, OCLOSE_OUT,                     &
+                     PTSTEP, TPFILE,                                 &
                      PRHODREF, PEXNREF, PDZZ,                        &
                      PRHODJ, PPABSM, PPABST,                         &
                      NCCN, NIFN, NIMM,                               &
@@ -28,7 +28,6 @@ INTEGER,                  INTENT(IN)    :: KKL   !vert. levels type 1=MNH -1=ARO
 !
 REAL,                     INTENT(IN)    :: PTSTEP     ! Time step
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE     ! Output file
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of output
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF    ! Reference Exner function
@@ -68,7 +67,7 @@ END MODULE MODI_LIMA
 !
 !     ######spl
       SUBROUTINE LIMA ( KKA, KKU, KKL,                                  &
-                        PTSTEP, TPFILE, OCLOSE_OUT,                     &
+                        PTSTEP, TPFILE,                                 &
                         PRHODREF, PEXNREF, PDZZ,                        &
                         PRHODJ, PPABSM, PPABST,                         &
                         NCCN, NIFN, NIMM,                               &
@@ -145,7 +144,6 @@ INTEGER,                  INTENT(IN)    :: KKL   !vert. levels type 1=MNH -1=ARO
 !
 REAL,                     INTENT(IN)    :: PTSTEP     ! Time step
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE     ! Output file
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of output
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF    ! Reference Exner function
@@ -738,7 +736,7 @@ IF ( LCOLD )             ZCIT(:,:,:)   = ZCIS(:,:,:) * PTSTEP
 !*       2.     Nucleation processes
 !               --------------------
 !
-CALL LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, OCLOSE_OUT, PRHODJ,                &
+CALL LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, PRHODJ,                            &
                             PRHODREF, ZEXN, PPABST, ZT, PDTHRAD, PW_NU,        &
                             ZTHT, ZRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT,          &
                             ZCCT, ZCRT, ZCIT,                                  &

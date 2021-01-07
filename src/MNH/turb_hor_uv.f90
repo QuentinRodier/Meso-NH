@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,7 +10,7 @@
 INTERFACE  
 !
       SUBROUTINE TURB_HOR_UV(KSPLT,                                  &
-                      OCLOSE_OUT,OTURB_FLX,                          &
+                      OTURB_FLX,                                     &
                       TPFILE,                                        &
                       PK,PINV_PDXX,PINV_PDYY,PINV_PDZZ,PMZM_PRHODJ,  &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
@@ -25,8 +25,6 @@ INTERFACE
 USE MODD_IO, ONLY: TFILEDATA
 !
 INTEGER,                  INTENT(IN)    ::  KSPLT        ! split process index
-LOGICAL,                  INTENT(IN)    ::  OCLOSE_OUT   ! switch for syncronous
-                                                         ! file opening       
 LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
 TYPE(TFILEDATA),          INTENT(IN)    ::  TPFILE       ! Output file
@@ -74,7 +72,7 @@ END INTERFACE
 END MODULE MODI_TURB_HOR_UV
 !     ################################################################
       SUBROUTINE TURB_HOR_UV(KSPLT,                                  &
-                      OCLOSE_OUT,OTURB_FLX,                          &
+                      OTURB_FLX,                                     &
                       TPFILE,                                        &
                       PK,PINV_PDXX,PINV_PDYY,PINV_PDZZ,PMZM_PRHODJ,  &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
@@ -153,8 +151,6 @@ IMPLICIT NONE
 !
 !
 INTEGER,                  INTENT(IN)    ::  KSPLT        ! split process index
-LOGICAL,                  INTENT(IN)    ::  OCLOSE_OUT   ! switch for syncronous
-                                                         ! file opening       
 LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
 TYPE(TFILEDATA),          INTENT(IN)    ::  TPFILE       ! Output file
@@ -273,7 +269,7 @@ ZFLX(:,:,IKB-1:IKB-1) = 2. * MXM( MYM( ZFLX(:,:,IKB-1:IKB-1) ) )  &
                    - ZFLX(:,:,IKB:IKB)
 !     
 ! stores  <U V>
-IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
+IF ( tpfile%lopened .AND. OTURB_FLX ) THEN
   TZFIELD%CMNHNAME   = 'UV_FLX'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = 'UV_FLX'

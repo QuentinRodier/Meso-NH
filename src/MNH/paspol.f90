@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2008-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2008-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -9,7 +9,7 @@
 !
 INTERFACE
 !
-      SUBROUTINE PASPOL (PTSTEP, PSFSV, KLUOUT, KVERB, OCLOSE_OUT, TPFILE)
+      SUBROUTINE PASPOL (PTSTEP, PSFSV, KLUOUT, KVERB, TPFILE)
 !
 USE MODD_IO, ONLY: TFILEDATA
 !
@@ -20,7 +20,6 @@ REAL,                   INTENT(IN)    :: PTSTEP     ! Double timestep except
 REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PSFSV      ! surface flux of scalars
 INTEGER,                INTENT(IN)    :: KLUOUT     ! unit for output listing count
 INTEGER,                INTENT(IN)    :: KVERB      ! verbosity level
-LOGICAL,                INTENT(IN)    :: OCLOSE_OUT ! conditional closure of the OUTPUT FM-file
 TYPE(TFILEDATA),        INTENT(IN)    :: TPFILE     ! Output file
 !
 END SUBROUTINE PASPOL
@@ -29,7 +28,7 @@ END INTERFACE
 !
 END MODULE MODI_PASPOL
 !     ######spl
-      SUBROUTINE PASPOL (PTSTEP, PSFSV, KLUOUT, KVERB, OCLOSE_OUT, TPFILE)
+      SUBROUTINE PASPOL (PTSTEP, PSFSV, KLUOUT, KVERB, TPFILE)
 !     ############################################################
 !
 !
@@ -110,7 +109,6 @@ REAL,                   INTENT(IN)    :: PTSTEP     ! Double timestep except
 REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PSFSV      ! surface flux of scalars
 INTEGER,                INTENT(IN)    :: KLUOUT     ! unit for output listing count
 INTEGER,                INTENT(IN)    :: KVERB      ! verbosity level
-LOGICAL,                INTENT(IN)    :: OCLOSE_OUT ! conditional closure of the OUTPUT FM-file
 TYPE(TFILEDATA),        INTENT(IN)    :: TPFILE     ! Output file
 !
 !*      0.2    declarations of local variables
@@ -580,7 +578,7 @@ END DO
 !
 !*	3.4 Ecriture conditionnelle.
 !
-IF (OCLOSE_OUT) THEN
+IF ( tpfile%lopened ) THEN
   ALLOCATE( ZTEMPO(IIU,IJU,IKU) )
   !
   TZFIELD%CSTDNAME   = ''

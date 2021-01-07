@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,7 +10,7 @@
 INTERFACE 
 !
       SUBROUTINE TURB_VER_THERMO_FLUX(KKA,KKU,KKL,KRR,KRRL,KRRI,    &
-                      OCLOSE_OUT,OTURB_FLX,HTURBDIM,HTOM,           &
+                      OTURB_FLX,HTURBDIM,HTOM,                      &
                       PIMPL,PEXPL,                                  &
                       PTSTEP,                                       &
                       TPFILE,                                       &
@@ -34,8 +34,6 @@ INTEGER,                INTENT(IN)   :: KKL           !vert. levels type 1=MNH -
 INTEGER,                INTENT(IN)   :: KRR           ! number of moist var.
 INTEGER,                INTENT(IN)   :: KRRL          ! number of liquid water var.
 INTEGER,                INTENT(IN)   :: KRRI          ! number of ice water var.
-LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
-                                                      ! file opening       
 LOGICAL,                INTENT(IN)   ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
 CHARACTER(len=4),       INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
@@ -122,7 +120,7 @@ END MODULE MODI_TURB_VER_THERMO_FLUX
 !
 !     ###############################################################
       SUBROUTINE TURB_VER_THERMO_FLUX(KKA,KKU,KKL,KRR, KRRL, KRRI,  &
-                      OCLOSE_OUT,OTURB_FLX,HTURBDIM,HTOM,           &
+                      OTURB_FLX,HTURBDIM,HTOM,                      &
                       PIMPL,PEXPL,                                  &
                       PTSTEP,                                       &
                       TPFILE,                                       &
@@ -366,8 +364,6 @@ INTEGER,                INTENT(IN)   :: KKL           !vert. levels type 1=MNH -
 INTEGER,                INTENT(IN)   :: KRR           ! number of moist var.
 INTEGER,                INTENT(IN)   :: KRRL          ! number of liquid water var.
 INTEGER,                INTENT(IN)   :: KRRI          ! number of ice water var.
-LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
-                                                      ! file opening       
 LOGICAL,                INTENT(IN)   ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
 CHARACTER(len=4),       INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
@@ -605,7 +601,7 @@ ZFLXZ(:,:,KKA) = ZFLXZ(:,:,IKB)
   PWTH(:,:,IKE)=PWTH(:,:,IKE-KKL)
 
 
-IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
+IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
   ! stores the conservative potential temperature vertical flux
   TZFIELD%CMNHNAME   = 'THW_FLX'
   TZFIELD%CSTDNAME   = ''
@@ -783,7 +779,7 @@ IF (KRR /= 0) THEN
   PWRC(:,:,IKE)=PWRC(:,:,IKE-KKL)
   !
   !
-  IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
+  IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
     ! stores the conservative mixing ratio vertical flux
     TZFIELD%CMNHNAME   = 'RCONSW_FLX'
     TZFIELD%CSTDNAME   = ''
@@ -852,7 +848,7 @@ END IF
 !
 !*       4.1  <w Rc>    
 !
-IF ( ((OTURB_FLX .AND. OCLOSE_OUT) .OR. LLES_CALL) .AND. (KRRL > 0) ) THEN
+IF ( ((OTURB_FLX .AND. tpfile%lopened) .OR. LLES_CALL) .AND. (KRRL > 0) ) THEN
   !  
   ! recover the Conservative potential temperature flux : 
   ZA(:,:,:)   = DZM(PIMPL * PTHLP + PEXPL * PTHLM) / PDZZ *       &
@@ -866,7 +862,7 @@ IF ( ((OTURB_FLX .AND. OCLOSE_OUT) .OR. LLES_CALL) .AND. (KRRL > 0) ) THEN
   ZFLXZ(:,:,KKA) = ZFLXZ(:,:,IKB) 
   !                 
   ! store the liquid water mixing ratio vertical flux
-  IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
+  IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
     TZFIELD%CMNHNAME   = 'RCW_FLX'
     TZFIELD%CSTDNAME   = ''
     TZFIELD%CLONGNAME  = 'RCW_FLX'

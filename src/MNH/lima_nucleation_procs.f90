@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -8,7 +8,7 @@
 !      ###############################
 !
 INTERFACE
-   SUBROUTINE LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, OCLOSE_OUT, PRHODJ,            &
+   SUBROUTINE LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, PRHODJ,                        &
                                      PRHODREF, PEXNREF, PPABST, PT, PDTHRAD, PW_NU, &
                                      PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,      &
                                      PCCT, PCRT, PCIT,                              &
@@ -18,7 +18,6 @@ USE MODD_IO, ONLY: TFILEDATA
 !
 REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE     ! Output file
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ     ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
@@ -51,7 +50,7 @@ END SUBROUTINE LIMA_NUCLEATION_PROCS
 END INTERFACE
 END MODULE MODI_LIMA_NUCLEATION_PROCS
 !     ############################################################################
-SUBROUTINE LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, OCLOSE_OUT, PRHODJ,            &
+SUBROUTINE LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, PRHODJ,                        &
                                   PRHODREF, PEXNREF, PPABST, PT, PDTHRAD, PW_NU, &
                                   PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,      &
                                   PCCT, PCRT, PCIT,                              &
@@ -101,7 +100,6 @@ IMPLICIT NONE
 !
 REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE     ! Output file
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ     ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
@@ -153,7 +151,7 @@ IF ( LWARM .AND. LACTI .AND. NMOD_CCN >=1 ) THEN
     end if
   end if
 
-   CALL LIMA_CCN_ACTIVATION (PTSTEP, TPFILE, OCLOSE_OUT,                    &
+   CALL LIMA_CCN_ACTIVATION (PTSTEP, TPFILE,                                &
                              PRHODREF, PEXNREF, PPABST, PT, PDTHRAD, PW_NU, &
                              PTHT, PRVT, PRCT, PCCT, PRRT, PNFT, PNAT       )
 

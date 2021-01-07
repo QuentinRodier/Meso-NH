@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -9,7 +9,7 @@
 !
 INTERFACE
 !
-      SUBROUTINE PRANDTL(KKA,KKU,KKL,KRR,KRRI,OCLOSE_OUT,OTURB_DIAG,&
+      SUBROUTINE PRANDTL(KKA,KKU,KKL,KRR,KRRI,OTURB_DIAG,      &
                          HTURBDIM,                             &
                          TPFILE,                               &
                          PDXX,PDYY,PDZZ,PDZX,PDZY,             &
@@ -30,8 +30,6 @@ INTEGER,                INTENT(IN)   :: KKL           !vert. levels type 1=MNH -
 INTEGER,                INTENT(IN)   :: KRR           ! number of moist var.
 INTEGER,                INTENT(IN)   :: KRRI          ! number of ice var.
 !
-LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
-                                                      ! file opening
 LOGICAL,                INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
                                  ! diagnostic fields in the syncronous FM-file
 CHARACTER(len=4),       INTENT(IN)   ::  HTURBDIM     ! Kind of turbulence param.
@@ -78,7 +76,7 @@ END MODULE MODI_PRANDTL
 !
 !
 !     ###########################################################
-      SUBROUTINE PRANDTL(KKA,KKU,KKL,KRR,KRRI,OCLOSE_OUT,OTURB_DIAG,&
+      SUBROUTINE PRANDTL(KKA,KKU,KKL,KRR,KRRI,OTURB_DIAG,      &
                          HTURBDIM,                             &
                          TPFILE,                               &
                          PDXX,PDYY,PDZZ,PDZX,PDZY,             &
@@ -219,8 +217,6 @@ INTEGER,                INTENT(IN)   :: KKL           !vert. levels type 1=MNH -
 INTEGER,                INTENT(IN)   :: KRR           ! number of moist var.
 INTEGER,                INTENT(IN)   :: KRRI          ! number of ice var.
 !
-LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
-                                                      ! file opening
 LOGICAL,                INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
                                  ! diagnostic fields in the syncronous FM-file
 CHARACTER(len=4),       INTENT(IN)   ::  HTURBDIM     ! Kind of turbulence param.
@@ -512,7 +508,7 @@ END IF ! end of HTURBDIM if-block
 !*          6. SAVES THE REDELSPERGER NUMBERS
 !              ------------------------------
 !
-IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
+IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
   !
   ! stores the RED_TH1
   TZFIELD%CMNHNAME   = 'RED_TH1'

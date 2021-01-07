@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,7 +10,7 @@
 INTERFACE  
 !
       SUBROUTINE TURB_HOR_THERMO_CORR(KRR, KRRL, KRRI,               &
-                      OCLOSE_OUT,OTURB_FLX,OSUBG_COND,               &
+                      OTURB_FLX,OSUBG_COND,                          &
                       TPFILE,                                        &
                       PINV_PDXX,PINV_PDYY,                           &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
@@ -25,8 +25,6 @@ USE MODD_IO, ONLY: TFILEDATA
 INTEGER,                INTENT(IN)   :: KRR           ! number of moist var.
 INTEGER,                INTENT(IN)   :: KRRL          ! number of liquid water var.
 INTEGER,                INTENT(IN)   :: KRRI          ! number of ice water var.
-LOGICAL,                  INTENT(IN)    ::  OCLOSE_OUT   ! switch for syncronous
-                                                         ! file opening       
 LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
 LOGICAL,                 INTENT(IN)  ::   OSUBG_COND ! Switch for sub-grid
@@ -69,7 +67,7 @@ END INTERFACE
 END MODULE MODI_TURB_HOR_THERMO_CORR
 !     ################################################################
       SUBROUTINE TURB_HOR_THERMO_CORR(KRR, KRRL, KRRI,               &
-                      OCLOSE_OUT,OTURB_FLX,OSUBG_COND,               &
+                      OTURB_FLX,OSUBG_COND,                          &
                       TPFILE,                                        &
                       PINV_PDXX,PINV_PDYY,                           &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
@@ -152,8 +150,6 @@ IMPLICIT NONE
 INTEGER,                INTENT(IN)   :: KRR           ! number of moist var.
 INTEGER,                INTENT(IN)   :: KRRL          ! number of liquid water var.
 INTEGER,                INTENT(IN)   :: KRRI          ! number of ice water var.
-LOGICAL,                  INTENT(IN)    ::  OCLOSE_OUT   ! switch for syncronous
-                                                         ! file opening       
 LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
 LOGICAL,                 INTENT(IN)  ::   OSUBG_COND ! Switch for sub-grid
@@ -228,7 +224,7 @@ ZCOEFF(:,:,IKB)= - (PDZZ(:,:,IKB+2)+2.*PDZZ(:,:,IKB+1)) /      &
 !
 !
 !
-IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. OCLOSE_OUT ) &
+IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. tpfile%lopened ) &
                                   .OR. ( LLES_CALL )                  ) THEN
 !
 !*       8.1  <THl THl>
@@ -269,7 +265,7 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. OCLOSE_OUT ) &
   END IF
   !
   ! stores <THl THl>
-  IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
+  IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
     TZFIELD%CMNHNAME   = 'THL_HVAR'
     TZFIELD%CSTDNAME   = ''
     TZFIELD%CLONGNAME  = 'THL_HVAR'
@@ -357,7 +353,7 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. OCLOSE_OUT ) &
     END IF                    
     !
     ! stores <THl Rnp>
-    IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
+    IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
       TZFIELD%CMNHNAME   = 'THLR_HCOR'
       TZFIELD%CSTDNAME   = ''
       TZFIELD%CLONGNAME  = 'THLR_HCOR'
@@ -425,7 +421,7 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. OCLOSE_OUT ) &
     END IF
     !
     ! stores <Rnp Rnp>
-    IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
+    IF ( OTURB_FLX .AND. tpfile%lopened ) THEN
       TZFIELD%CMNHNAME   = 'R_HVAR'
       TZFIELD%CSTDNAME   = ''
       TZFIELD%CLONGNAME  = 'R_HVAR'

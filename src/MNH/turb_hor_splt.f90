@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,7 +10,7 @@
 INTERFACE  
 !
       SUBROUTINE TURB_HOR_SPLT(KSPLIT, KRR, KRRL, KRRI, PTSTEP,      &
-                      HLBCX,HLBCY,OCLOSE_OUT,OTURB_FLX,OSUBG_COND,   &
+                      HLBCX,HLBCY,OTURB_FLX,OSUBG_COND,              &
                       TPFILE,                                        &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                  &
                       PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,                 &
@@ -34,8 +34,6 @@ INTEGER,                INTENT(IN)   :: KRRL          ! number of liquid water v
 INTEGER,                INTENT(IN)   :: KRRI          ! number of ice water var.
 REAL,                   INTENT(IN)   ::  PTSTEP       ! timestep 
 CHARACTER (LEN=*), DIMENSION(:), INTENT(IN)       ::  HLBCX,HLBCY
-LOGICAL,                  INTENT(IN)    ::  OCLOSE_OUT   ! switch for syncronous
-                                                         ! file opening       
 LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
 LOGICAL,                 INTENT(IN)  ::   OSUBG_COND ! Switch for sub-grid 
@@ -106,7 +104,7 @@ END INTERFACE
 END MODULE MODI_TURB_HOR_SPLT
 !     ################################################################
       SUBROUTINE TURB_HOR_SPLT(KSPLIT, KRR, KRRL, KRRI, PTSTEP,      &
-                      HLBCX,HLBCY,OCLOSE_OUT,OTURB_FLX,OSUBG_COND,   &
+                      HLBCX,HLBCY,OTURB_FLX,OSUBG_COND,              &
                       TPFILE,                                        &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                  &
                       PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,                 &
@@ -280,8 +278,6 @@ INTEGER,                INTENT(IN)   :: KRRL          ! number of liquid water v
 INTEGER,                INTENT(IN)   :: KRRI          ! number of ice water var.
 REAL,                   INTENT(IN)   ::  PTSTEP       ! timestep 
 CHARACTER (LEN=*), DIMENSION(:), INTENT(IN)       ::  HLBCX,HLBCY
-LOGICAL,                  INTENT(IN)    ::  OCLOSE_OUT   ! switch for syncronous
-                                                         ! file opening       
 LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
 LOGICAL,                 INTENT(IN)  ::   OSUBG_COND ! Switch for sub-grid 
@@ -458,7 +454,7 @@ IF (KSPLIT>1 .AND. CPROGRAM=='MESONH') THEN
 !
 ! compute the turbulent tendencies for the small time step
     CALL TURB_HOR(JSPLT, KRR, KRRL, KRRI, PTSTEP,                 &
-                   OCLOSE_OUT,OTURB_FLX,OSUBG_COND,               &
+                   OTURB_FLX,OSUBG_COND,                          &
                    TPFILE,                                        &
                    PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                  &
                    PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,                 &
@@ -599,7 +595,7 @@ IF (KSPLIT>1 .AND. CPROGRAM=='MESONH') THEN
 ELSE
 !
   CALL TURB_HOR(1, KRR, KRRL, KRRI,  PTSTEP,                   &
-                OCLOSE_OUT,OTURB_FLX,OSUBG_COND,               &
+                OTURB_FLX,OSUBG_COND,                          &
                 TPFILE,                                        &
                 PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                  &
                 PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,                 &

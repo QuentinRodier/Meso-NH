@@ -914,7 +914,6 @@ ZTIME1 = ZTIME2
 IF ( nfile_backup_current < NBAK_NUMB ) THEN
   IF ( KTCOUNT == TBACKUPN(nfile_backup_current + 1)%NSTEP ) THEN
     nfile_backup_current = nfile_backup_current + 1
-    GCLOSE_OUT=.TRUE.
     !
     TZBAKFILE => TBACKUPN(nfile_backup_current)%TFILE
     IVERB    = TZBAKFILE%NLFIVERB
@@ -1323,10 +1322,10 @@ XT_RELAX = XT_RELAX + ZTIME2 - ZTIME1 &
 !
 ZTIME1 = ZTIME2
 !
-CALL PHYS_PARAM_n(KTCOUNT,TZBAKFILE, GCLOSE_OUT,                &
-                  XT_RAD,XT_SHADOWS,XT_DCONV,XT_GROUND,XT_MAFL, &
-                  XT_DRAG,XT_TURB,XT_TRACER,                    &
-                  ZTIME,ZWETDEPAER,GMASKkids,GCLOUD_ONLY)
+CALL PHYS_PARAM_n( KTCOUNT, TZBAKFILE,                       &
+                   XT_RAD,  XT_SHADOWS, XT_DCONV, XT_GROUND, &
+                   XT_MAFL, XT_DRAG,    XT_TURB,  XT_TRACER, &
+                   ZTIME, ZWETDEPAER, GMASKkids, GCLOUD_ONLY )
 !
 IF (CDCONV/='NONE') THEN
   XPACCONV = XPACCONV + XPRCONV * XTSTEP
@@ -1509,7 +1508,7 @@ XTIME_LES_BU_PROCESS = 0.
 !
 CALL MPPDB_CHECK3DM("before ADVEC_METSV:XU/V/W/TH/TKE/T,XRHODJ",PRECISION,&
                    &  XUT, XVT, XWT, XTHT, XTKET,XRHODJ)
- CALL ADVECTION_METSV ( TZBAKFILE, GCLOSE_OUT,CUVW_ADV_SCHEME,         &
+ CALL ADVECTION_METSV ( TZBAKFILE, CUVW_ADV_SCHEME,                    &
                  CMET_ADV_SCHEME, CSV_ADV_SCHEME, CCLOUD, NSPLIT,      &
                  LSPLIT_CFL, XSPLIT_CFL, LCFL_WRIT,                    &
                  CLBCX, CLBCY, NRR, NSV, TDTCUR, XTSTEP,               &
@@ -1599,10 +1598,10 @@ XT_ADVUVW = XT_ADVUVW + ZTIME2 - ZTIME1 - XTIME_LES_BU_PROCESS - XTIME_BU_PROCES
 !-------------------------------------------------------------------------------
 !
 IF (NMODEL_CLOUD==IMI .AND. CTURBLEN_CLOUD/='NONE') THEN
-  CALL TURB_CLOUD_INDEX(XTSTEP,TZBAKFILE,                         &
-                        LTURB_DIAG,GCLOSE_OUT,NRRI,               &
-                        XRRS,XRT,XRHODJ,XDXX,XDYY,XDZZ,XDZX,XDZY, &
-                        XCEI )
+  CALL TURB_CLOUD_INDEX( XTSTEP, TZBAKFILE,                               &
+                         LTURB_DIAG, NRRI,                                &
+                         XRRS, XRT, XRHODJ, XDXX, XDYY, XDZZ, XDZX, XDZY, &
+                         XCEI                                             )
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -1779,7 +1778,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
     CALL RESOLVED_CLOUD ( CCLOUD, CACTCCN, CSCONV, CMF_CLOUD, NRR, NSPLITR,    &
                           NSPLITG, IMI, KTCOUNT,                               &
                           CLBCX,CLBCY,TZBAKFILE, CRAD, CTURBDIM,               &
-                          GCLOSE_OUT, LSUBG_COND,LSIGMAS,CSUBG_AUCV,XTSTEP,    &
+                          LSUBG_COND,LSIGMAS,CSUBG_AUCV,XTSTEP,                &
                           XZZ, XRHODJ, XRHODREF, XEXNREF,                      &
                           ZPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
                           XPABSM, XWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
@@ -1787,7 +1786,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           XSRCT, XCLDFR,XCIT,                                  &
                           LSEDIC,KACTIT, KSEDC, KSEDI, KRAIN, KWARM, KHHONI,   &
                           LCONVHG, XCF_MF,XRC_MF, XRI_MF,                      &
-                          XINPRC,ZINPRC3D,XINPRR, XINPRR3D, XEVAP3D,             &
+                          XINPRC,ZINPRC3D,XINPRR, XINPRR3D, XEVAP3D,           &
                           XINPRS,ZINPRS3D, XINPRG,ZINPRG3D, XINPRH,ZINPRH3D,   &
                           XSOLORG, XMI,ZSPEEDC, ZSPEEDR, ZSPEEDS, ZSPEEDG, ZSPEEDH, &
                           XINDEP, XSUPSAT, XNACT, XNPRO,XSSPRO, XRAINFR,       &
@@ -1797,7 +1796,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
     CALL RESOLVED_CLOUD ( CCLOUD, CACTCCN, CSCONV, CMF_CLOUD, NRR, NSPLITR,    &
                           NSPLITG, IMI, KTCOUNT,                               &
                           CLBCX,CLBCY,TZBAKFILE, CRAD, CTURBDIM,               &
-                          GCLOSE_OUT, LSUBG_COND,LSIGMAS,CSUBG_AUCV,           &
+                          LSUBG_COND,LSIGMAS,CSUBG_AUCV,                       &
                           XTSTEP,XZZ, XRHODJ, XRHODREF, XEXNREF,               &
                           ZPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
                           XPABSM, XWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
@@ -1805,7 +1804,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           XSRCT, XCLDFR,XCIT,                                  &
                           LSEDIC,KACTIT, KSEDC, KSEDI, KRAIN, KWARM, KHHONI,   &
                           LCONVHG, XCF_MF,XRC_MF, XRI_MF,                      &
-                          XINPRC,ZINPRC3D,XINPRR, XINPRR3D, XEVAP3D,             &
+                          XINPRC,ZINPRC3D,XINPRR, XINPRR3D, XEVAP3D,           &
                           XINPRS,ZINPRS3D, XINPRG,ZINPRG3D, XINPRH,ZINPRH3D,   &
                           XSOLORG, XMI,ZSPEEDC, ZSPEEDR, ZSPEEDS, ZSPEEDG, ZSPEEDH, &
                           XINDEP, XSUPSAT, XNACT, XNPRO,XSSPRO, XRAINFR        )
@@ -2054,8 +2053,7 @@ XT_STEP_BUD = XT_STEP_BUD + ZTIME2 - ZTIME1 + XTIME_BU
 !*       26.    FM FILE CLOSURE
 !               ---------------
 !
-IF (GCLOSE_OUT) THEN
-  GCLOSE_OUT=.FALSE.
+IF ( tzbakfile%lopened ) THEN
   CALL IO_File_close(TZBAKFILE)
 END IF
 !

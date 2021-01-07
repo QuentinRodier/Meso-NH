@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,8 +10,8 @@
 INTERFACE
 !
       SUBROUTINE TURB(KKA, KKU, KKL, KMI,KRR,KRRL,KRRI,HLBCX,HLBCY,   &
-                KSPLIT,KMODEL_CL, &
-                OCLOSE_OUT,OTURB_FLX,OTURB_DIAG,OSUBG_COND,ORMC01,    &
+                KSPLIT,KMODEL_CL,                                     &
+                OTURB_FLX,OTURB_DIAG,OSUBG_COND,ORMC01,               &
                 HTURBDIM,HTURBLEN,HTOM,HTURBLEN_CL,HCLOUD,PIMPL,      &
                 PTSTEP,TPFILE,PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,           &
                 PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,PCOSSLOPE,PSINSLOPE,    &
@@ -37,8 +37,6 @@ INTEGER,                INTENT(IN)   :: KRRI          ! number of ice water var.
 CHARACTER(LEN=*),DIMENSION(:),INTENT(IN):: HLBCX, HLBCY  ! X- and Y-direc LBC
 INTEGER,                INTENT(IN)   :: KSPLIT        ! number of time-splitting
 INTEGER,                INTENT(IN)   :: KMODEL_CL     ! model number for cloud mixing length
-LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
-                                                      ! file opening
 LOGICAL,                INTENT(IN)   ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
 LOGICAL,                INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
@@ -135,15 +133,16 @@ END INTERFACE
 END MODULE MODI_TURB
 !
 !     #################################################################
-      SUBROUTINE TURB(KKA,KKU,KKL,KMI,KRR,KRRL,KRRI,HLBCX,HLBCY,KSPLIT,KMODEL_CL, &
-                OCLOSE_OUT,OTURB_FLX,OTURB_DIAG,OSUBG_COND,ORMC01,    &
+      SUBROUTINE TURB(KKA, KKU, KKL, KMI,KRR,KRRL,KRRI,HLBCX,HLBCY,   &
+                KSPLIT,KMODEL_CL,                                     &
+                OTURB_FLX,OTURB_DIAG,OSUBG_COND,ORMC01,               &
                 HTURBDIM,HTURBLEN,HTOM,HTURBLEN_CL,HCLOUD,PIMPL,      &
                 PTSTEP,TPFILE,PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,           &
                 PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,PCOSSLOPE,PSINSLOPE,    &
                 PRHODJ,PTHVREF,                                       &
                 PSFTH,PSFRV,PSFSV,PSFU,PSFV,                          &
                 PPABST,PUT,PVT,PWT,PTKET,PSVT,PSRCT,                  &
-                PBL_DEPTH,PSBL_DEPTH,                                 &
+                PBL_DEPTH, PSBL_DEPTH,                                &
                 PCEI,PCEI_MIN,PCEI_MAX,PCOEF_AMPL_SAT,                &
                 PTHLT,PRT,                                            &
                 PRUS,PRVS,PRWS,PRTHLS,PRRS,PRSVS,PRTKES,PRTKEMS,PSIGS,&
@@ -409,8 +408,6 @@ INTEGER,                INTENT(IN)   :: KRRI          ! number of ice water var.
 CHARACTER(LEN=*),DIMENSION(:),INTENT(IN):: HLBCX, HLBCY  ! X- and Y-direc LBC
 INTEGER,                INTENT(IN)   :: KSPLIT        ! number of time-splitting
 INTEGER,                INTENT(IN)   :: KMODEL_CL     ! model number for cloud mixing length
-LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
-                                                      ! file opening
 LOGICAL,                INTENT(IN)   ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
 LOGICAL,                INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
@@ -686,7 +683,7 @@ IF (KRRL >=1) THEN
   END IF
 !
 !
-  IF (OCLOSE_OUT .AND. OTURB_DIAG) THEN
+  IF ( tpfile%lopened .AND. OTURB_DIAG ) THEN
     TZFIELD%CMNHNAME   = 'ATHETA'
     TZFIELD%CSTDNAME   = ''
     TZFIELD%CLONGNAME  = 'ATHETA'
@@ -950,7 +947,7 @@ if ( lbudget_sv ) then
 end if
 
 CALL TURB_VER(KKA,KKU,KKL,KRR, KRRL, KRRI,               &
-          OCLOSE_OUT,OTURB_FLX,                          &
+          OTURB_FLX,                                     &
           HTURBDIM,HTOM,PIMPL,ZEXPL,                     &
           PTSTEP,TPFILE,                                 &
           PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,PZZ,        &
@@ -1036,7 +1033,7 @@ if ( hturbdim == '3DIM' ) then
   end if
 
     CALL TURB_HOR_SPLT(KSPLIT, KRR, KRRL, KRRI, PTSTEP,        &
-          HLBCX,HLBCY,OCLOSE_OUT,OTURB_FLX,OSUBG_COND,         &
+          HLBCX,HLBCY,OTURB_FLX,OSUBG_COND,                    &
           TPFILE,                                              &
           PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                        &
           PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,                       &
@@ -1101,7 +1098,7 @@ CALL TKE_EPS_SOURCES(KKA,KKU,KKL,KMI,PTKET,PLEM,ZLEPS,PDYP,ZTRH,     &
                      PRHODJ,PDZZ,PDXX,PDYY,PDZX,PDZY,PZZ,            &
                      PTSTEP,PIMPL,ZEXPL,                             &
                      HTURBLEN,HTURBDIM,                              &
-                     TPFILE,OCLOSE_OUT,OTURB_DIAG,                   &
+                     TPFILE,OTURB_DIAG,                              &
                      PTHP,PRTKES,PRTKEMS,PRTHLS,ZCOEF_DISS,PTR,PDISS )
 
 !----------------------------------------------------------------------------
@@ -1109,7 +1106,7 @@ CALL TKE_EPS_SOURCES(KKA,KKU,KKL,KMI,PTKET,PLEM,ZLEPS,PDYP,ZTRH,     &
 !*      7. STORES SOME INFORMATIONS RELATED TO THE TURBULENCE SCHEME
 !          ---------------------------------------------------------
 !
-IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
+IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
 ! 
 ! stores the mixing length
 ! 
@@ -1732,7 +1729,7 @@ ENDIF
 !              -----------------------------------------------
 !
 ! Impression before modification of the mixing length
-IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
+IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
   TZFIELD%CMNHNAME   = 'LM_CLEAR_SKY'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = 'LM_CLEAR_SKY'
@@ -1758,7 +1755,7 @@ WHERE (PCEI(:,:,:) == -1.) PLEM(:,:,:) = ZLM_CLOUD(:,:,:)
 !*       5.    IMPRESSION
 !              ----------
 !
-IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
+IF ( OTURB_DIAG .AND. tpfile%lopened ) THEN
   TZFIELD%CMNHNAME   = 'COEF_AMPL'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = 'COEF_AMPL'

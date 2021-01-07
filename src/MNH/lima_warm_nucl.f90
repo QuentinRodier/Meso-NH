@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -8,10 +8,10 @@
 !      ##########################
 !
 INTERFACE
-      SUBROUTINE LIMA_WARM_NUCL (OACTIT, PTSTEP, KMI, TPFILE, OCLOSE_OUT,&
-                                 PRHODREF, PEXNREF, PPABST, PT, PTM, PW_NU,       &
-                                 PRCM, PRVT, PRCT, PRRT,                          &
-                                 PTHS, PRVS, PRCS, PCCS, PNFS, PNAS               )
+      SUBROUTINE LIMA_WARM_NUCL( OACTIT, PTSTEP, KMI, TPFILE,               &
+                                 PRHODREF, PEXNREF, PPABST, PT, PTM, PW_NU, &
+                                 PRCM, PRVT, PRCT, PRRT,                    &
+                                 PTHS, PRVS, PRCS, PCCS, PNFS, PNAS         )
 !
 USE MODD_IO,   ONLY: TFILEDATA
 !
@@ -22,8 +22,6 @@ REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
                                                       ! (single if cold start)
 INTEGER,                  INTENT(IN)    :: KMI        ! Model index 
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE     ! Output file
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                      ! the output FM file
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF    ! Reference Exner function
@@ -51,12 +49,12 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNAS       ! CCN C. activated source
 END SUBROUTINE LIMA_WARM_NUCL
 END INTERFACE
 END MODULE MODI_LIMA_WARM_NUCL
-!     #############################################################################
-      SUBROUTINE LIMA_WARM_NUCL (OACTIT, PTSTEP, KMI, TPFILE, OCLOSE_OUT,&
-                                 PRHODREF, PEXNREF, PPABST, PT, PTM, PW_NU,       &
-                                 PRCM, PRVT, PRCT, PRRT,                          &
-                                 PTHS, PRVS, PRCS, PCCS, PNFS, PNAS               )
-!     #############################################################################
+!     #######################################################################
+      SUBROUTINE LIMA_WARM_NUCL( OACTIT, PTSTEP, KMI, TPFILE,               &
+                                 PRHODREF, PEXNREF, PPABST, PT, PTM, PW_NU, &
+                                 PRCM, PRVT, PRCT, PRRT,                    &
+                                 PTHS, PRVS, PRCS, PCCS, PNFS, PNAS         )
+!     #######################################################################
 !
 !!
 !!    PURPOSE
@@ -135,8 +133,6 @@ REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
                                                       ! (single if cold start)
 INTEGER,                  INTENT(IN)    :: KMI        ! Model index 
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE     ! Output file
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                      ! the output FM file
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF    ! Reference Exner function
@@ -521,7 +517,7 @@ END IF ! INUCT
 !++cb++
 DEALLOCATE(ZCTMIN)
 !--cb--
-IF ( OCLOSE_OUT ) THEN
+IF ( tpfile%lopened ) THEN
   TZFIELD%CMNHNAME   ='SMAX'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
