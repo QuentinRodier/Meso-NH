@@ -611,10 +611,6 @@ IF (KTCOUNT == 1) THEN
   ALLOCATE(XWT_ACT_NUC(SIZE(XWT,1),SIZE(XWT,2),SIZE(XWT,3)))
   ALLOCATE(GMASKkids(SIZE(XWT,1),SIZE(XWT,2)))
 !
-! initialization of the FM file backup/output number
-  IBAK=0
-  IOUT=0
-!
   IF ( .NOT. LIO_NO_WRITE ) THEN
     CALL IO_File_open(TDIAFILE)
 !
@@ -915,19 +911,19 @@ IF (CSURF=='EXTE') CALL GOTO_SURFEX(IMI)
 !
 ZTIME1 = ZTIME2
 !
-IF (IBAK < NBAK_NUMB ) THEN
-  IF (KTCOUNT == TBACKUPN(IBAK+1)%NSTEP) THEN
-    IBAK=IBAK+1
+IF ( nfile_backup_current < NBAK_NUMB ) THEN
+  IF ( KTCOUNT == TBACKUPN(nfile_backup_current + 1)%NSTEP ) THEN
+    nfile_backup_current = nfile_backup_current + 1
     GCLOSE_OUT=.TRUE.
     !
-    TZBAKFILE => TBACKUPN(IBAK)%TFILE
+    TZBAKFILE => TBACKUPN(nfile_backup_current)%TFILE
     IVERB    = TZBAKFILE%NLFIVERB
     !
     CALL IO_File_open(TZBAKFILE)
     !
     CALL WRITE_DESFM_n(IMI,TZBAKFILE)
-    CALL IO_Header_write(TBACKUPN(IBAK)%TFILE)
-    CALL WRITE_LFIFM_n(TBACKUPN(IBAK)%TFILE,TBACKUPN(IBAK)%TFILE%TDADFILE%CNAME)
+    CALL IO_Header_write( TBACKUPN(nfile_backup_current)%TFILE )
+    CALL WRITE_LFIFM_n( TBACKUPN(nfile_backup_current)%TFILE, TBACKUPN(nfile_backup_current)%TFILE%TDADFILE%CNAME )
     TOUTDATAFILE => TZBAKFILE
     CALL MNHWRITE_ZS_DUMMY_n(TZBAKFILE)
     IF (CSURF=='EXTE') THEN
@@ -960,17 +956,17 @@ ELSE
   TZBAKFILE => TFILE_DUMMY
 END IF
 !
-IF (IOUT < NOUT_NUMB ) THEN
-  IF (KTCOUNT == TOUTPUTN(IOUT+1)%NSTEP) THEN
-    IOUT=IOUT+1
+IF ( nfile_output_current < NOUT_NUMB ) THEN
+  IF ( KTCOUNT == TOUTPUTN(nfile_output_current + 1)%NSTEP ) THEN
+    nfile_output_current = nfile_output_current + 1
     !
-    TZOUTFILE => TOUTPUTN(IOUT)%TFILE
+    TZOUTFILE => TOUTPUTN(nfile_output_current)%TFILE
     !
     CALL IO_File_open(TZOUTFILE)
     !
     CALL IO_Header_write(TZOUTFILE)
-    CALL IO_Fieldlist_write(TOUTPUTN(IOUT))
-    CALL IO_Field_user_write(TOUTPUTN(IOUT))
+    CALL IO_Fieldlist_write(  TOUTPUTN(nfile_output_current) )
+    CALL IO_Field_user_write( TOUTPUTN(nfile_output_current) )
     !
     CALL IO_File_close(TZOUTFILE)
     !
@@ -1340,8 +1336,8 @@ IF (CDCONV/='NONE') THEN
   END IF
 END IF
 !
-IF (IBAK>0 .AND. IBAK <= NBAK_NUMB ) THEN
-  IF (KTCOUNT == TBACKUPN(IBAK)%NSTEP) THEN
+IF ( nfile_backup_current > 0 .AND. nfile_backup_current <= NBAK_NUMB ) THEN
+  IF ( KTCOUNT == TBACKUPN(nfile_backup_current)%NSTEP ) THEN
     IF (CSURF=='EXTE') THEN
       CALL GOTO_SURFEX(IMI)
       CALL DIAG_SURF_ATM_n(YSURF_CUR,'MESONH')

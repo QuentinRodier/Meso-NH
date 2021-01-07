@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,6 +10,7 @@
 !  P. Wautelet 28/03/2019: use MNHTIME for time measurement variables
 !  J. Escobar  09/07/2019: norme Doctor -> Rename Module Type variable TZ -> T
 !  J. Escobar  09/07/2019: for bug in management of XLSZWSM variable, add/use specific 2D TLSFIELD2D_ll pointer
+!  P. Wautelet 07/01/2021: rename ibak/iout into nfile_backup_current/nfile_output_current
 !-----------------------------------------------------------------
 !     #################
       MODULE MODD_SUB_MODEL_n
@@ -36,7 +37,8 @@ TYPE SUB_MODEL_t
   TYPE(HALO2LIST_ll), POINTER :: THALO2T_ll  => NULL()
   TYPE(HALO2LIST_ll), POINTER :: THALO2MT_ll => NULL()
   TYPE(HALO2LIST_ll), POINTER :: THALO2SC_ll => NULL()
-  INTEGER :: IBAK, IOUT          ! number of the backup / output
+  integer :: nfile_backup_current = 0 ! Number of the current backup file
+  integer :: nfile_output_current = 0 ! Number of the current output file
   REAL(kind=MNHTIME), DIMENSION(2) :: XT_START
   REAL(kind=MNHTIME), DIMENSION(2) :: XT_STORE, XT_BOUND, XT_GUESS
   REAL(kind=MNHTIME), DIMENSION(2) :: XT_ADV, XT_SOURCES, XT_DRAG
@@ -64,8 +66,8 @@ TYPE(LIST_ll), POINTER :: TLSFIELD2D_ll => NULL()
 TYPE(LIST_ll), POINTER :: TFIELDT_ll=>NULL(),TFIELDMT_ll=>NULL(),TFIELDSC_ll=>NULL()
 TYPE(HALO2LIST_ll), POINTER :: THALO2M_ll=>NULL(), TLSHALO2_ll=>NULL()
 TYPE(HALO2LIST_ll), POINTER :: THALO2T_ll=>NULL(), THALO2MT_ll=>NULL(), THALO2SC_ll=>NULL()
-INTEGER, POINTER :: IBAK=>NULL()
-INTEGER, POINTER :: IOUT=>NULL()
+integer, pointer :: nfile_backup_current => Null()
+integer, pointer :: nfile_output_current => Null()
 REAL(kind=MNHTIME), DIMENSION(:), POINTER :: XT_START=>NULL()
 REAL(kind=MNHTIME), DIMENSION(:), POINTER :: XT_STORE=>NULL(), XT_BOUND=>NULL(), XT_GUESS=>NULL()
 REAL(kind=MNHTIME), DIMENSION(:), POINTER :: XT_ADV=>NULL(), XT_SOURCES=>NULL(), XT_DRAG=>NULL()
@@ -117,8 +119,8 @@ TLSHALO2_ll=>SUB_MODEL_MODEL(KTO)%TLSHALO2_ll
 THALO2T_ll=>SUB_MODEL_MODEL(KTO)%THALO2T_ll
 THALO2MT_ll=>SUB_MODEL_MODEL(KTO)%THALO2MT_ll
 THALO2SC_ll=>SUB_MODEL_MODEL(KTO)%THALO2SC_ll
-IBAK=>SUB_MODEL_MODEL(KTO)%IBAK
-IOUT=>SUB_MODEL_MODEL(KTO)%IOUT
+nfile_backup_current => sub_model_model(kto)%nfile_backup_current
+nfile_output_current => sub_model_model(kto)%nfile_output_current
 XT_START=>SUB_MODEL_MODEL(KTO)%XT_START
 XT_STORE=>SUB_MODEL_MODEL(KTO)%XT_STORE
 XT_BOUND=>SUB_MODEL_MODEL(KTO)%XT_BOUND
