@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2016-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2016-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -18,6 +18,7 @@
 !  P. Wautelet 12/03/2019: add TMAINFILE field in TFILEDATA
 !  P. Wautelet 11/02/2020: bugfix: TDADFILE was wrongly constructed for output files
 !  S. Donnier  28/02/2020: type STREAM needed for use of ECOCLIMAP SG
+!  P. Wautelet 08/01/2021: allow output files with empty variable list (useful if IO_Field_user_write is not empty)
 !-----------------------------------------------------------------
 MODULE MODE_IO_MANAGE_STRUCT
 !
@@ -272,24 +273,28 @@ DO IMI = 1, NMODEL
     DO IPOS = 1,JPOUTVARMAX
       IF (COUT_VAR(IMI,IPOS)/='') IVAR = IVAR + 1
     END DO
-    IF (IVAR==0) CALL PRINT_MSG(NVERB_ERROR,'IO','IO_Bakout_struct_prepare','no fields chosen for output')
+    IF (IVAR==0) CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Bakout_struct_prepare','no fields chosen for output')
     ALLOCATE(OUT_MODEL(IMI)%TOUTPUTN(1)%NFIELDLIST(IVAR))
-    !Determine the list of the outputs to do (by field number)
-    IVAR = 1
-    !Set the NFIELDLIST for the 1st output
-    !All the others will use the same list (for the moment)
-    DO IPOS = 1,JPOUTVARMAX
-      IF (COUT_VAR(IMI,IPOS)/='') THEN
-        CALL FIND_FIELD_ID_FROM_MNHNAME(COUT_VAR(IMI,IPOS),IFIELD,IRESP)
-        OUT_MODEL(IMI)%TOUTPUTN(1)%NFIELDLIST(IVAR) = IFIELD
-        IF (IRESP/=0) THEN
-          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_Bakout_struct_prepare','unknown field for output: '//TRIM(COUT_VAR(IMI,IPOS)))
-          !MNH is killed to prevent problems with wrong values in NFIELDLIST
+
+    if ( ivar > 0 ) then
+      !Determine the list of the outputs to do (by field number)
+      !Set the NFIELDLIST for the 1st output
+      !All the others will use the same list (for the moment)
+      IVAR = 0
+      DO IPOS = 1,JPOUTVARMAX
+        IF (COUT_VAR(IMI,IPOS)/='') THEN
+          IVAR=IVAR+1
+          CALL FIND_FIELD_ID_FROM_MNHNAME(COUT_VAR(IMI,IPOS),IFIELD,IRESP)
+          OUT_MODEL(IMI)%TOUTPUTN(1)%NFIELDLIST(IVAR) = IFIELD
+          IF (IRESP/=0) THEN
+            CALL PRINT_MSG(NVERB_FATAL,'IO','IO_Bakout_struct_prepare','unknown field for output: '//TRIM(COUT_VAR(IMI,IPOS)))
+            !MNH is killed to prevent problems with wrong values in NFIELDLIST
+          END IF
+          !
         END IF
-        !
-        IVAR=IVAR+1
-      END IF
-    END DO
+      END DO
+    end if
+
     !All the outputs use the same field list (for the moment)
     DO IPOS = 2,IOUT_NUMB
       OUT_MODEL(IMI)%TOUTPUTN(IPOS)%NFIELDLIST => OUT_MODEL(IMI)%TOUTPUTN(1)%NFIELDLIST
