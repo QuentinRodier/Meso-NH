@@ -1,10 +1,11 @@
-!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 ! Modifications:
 !  P. Wautelet 17/08/2020: add Budget_preallocate subroutine
+!  P. Wautelet 11/01/2021: ignore xbuwri for cartesian boxes (write at every xbulen interval)
 !-----------------------------------------------------------------
 module mode_ini_budget
 
@@ -332,25 +333,33 @@ if ( cbutype == 'CART' .or. cbutype == 'MASK' ) then
   if ( Abs( Nint( xbulen / xtstep ) * xtstep - xbulen ) > ( ITOL * xtstep ) ) &
     call Print_msg( NVERB_WARNING, 'BUD', 'Ini_budget', 'xbulen is not a multiple of xtstep' )
 
-  !Check if xbuwri is a multiple of xtstep (within tolerance)
-  if ( Abs( Nint( xbuwri / xtstep ) * xtstep - xbuwri ) > ( ITOL * xtstep ) ) &
-    call Print_msg( NVERB_WARNING, 'BUD', 'Ini_budget', 'xbuwri is not a multiple of xtstep' )
+  if ( cbutype == 'CART' ) then
+    !Check if xseglen is a multiple of xbulen (within tolerance)
+    if ( Abs( Nint( xseglen / xbulen ) * xbulen - xseglen ) > ( ITOL * xseglen ) ) &
+      call Print_msg( NVERB_WARNING, 'BUD', 'Ini_budget', 'xseglen is not a multiple of xbuwri' )
 
-  !Check if xbuwri is a multiple of xbulen (within tolerance)
-  if ( Abs( Nint( xbuwri / xbulen ) * xbulen - xbuwri ) > ( ITOL * xbulen ) ) &
-    call Print_msg( NVERB_WARNING, 'BUD', 'Ini_budget', 'xbuwri is not a multiple of xbulen' )
+    !Write cartesian budgets every xbulen time period (do not take xbuwri into account)
+    nbuwrnb = 1
+    xbuwri = xbulen
 
-  !Check if xseglen is a multiple of xbuwri (within tolerance)
-  if ( Abs( Nint( xseglen / xbuwri ) * xbuwri - xseglen ) > ( ITOL * xseglen ) ) &
-    call Print_msg( NVERB_WARNING, 'BUD', 'Ini_budget', 'xseglen is not a multiple of xbuwri' )
+    nbusubwrite = nbuwrnb                            !Number of budget time average periods for each write
+    nbutotwrite = nbuwrnb * Nint( xseglen / xbuwri ) !Total number of budget time average periods
+  else if ( cbutype == 'MASK' ) then
+    !Check if xbuwri is a multiple of xtstep (within tolerance)
+    if ( Abs( Nint( xbuwri / xtstep ) * xtstep - xbuwri ) > ( ITOL * xtstep ) ) &
+      call Print_msg( NVERB_WARNING, 'BUD', 'Ini_budget', 'xbuwri is not a multiple of xtstep' )
+
+    !Check if xbuwri is a multiple of xbulen (within tolerance)
+    if ( Abs( Nint( xbuwri / xbulen ) * xbulen - xbuwri ) > ( ITOL * xbulen ) ) &
+      call Print_msg( NVERB_WARNING, 'BUD', 'Ini_budget', 'xbuwri is not a multiple of xbulen' )
+
+    !Check if xseglen is a multiple of xbuwri (within tolerance)
+    if ( Abs( Nint( xseglen / xbuwri ) * xbuwri - xseglen ) > ( ITOL * xseglen ) ) &
+      call Print_msg( NVERB_WARNING, 'BUD', 'Ini_budget', 'xseglen is not a multiple of xbuwri' )
 
     NBUWRNB = NINT (XBUWRI / XBULEN)  ! only after NBUWRNB budget periods, we write the
                                       ! result on the FM_FILE
 
-  if ( cbutype == 'CART' ) then
-    nbusubwrite = 1                        !Number of budget time average periods for each write
-    nbutotwrite = Nint( xseglen / xbuwri ) !Total number of budget time average periods
-  else if ( cbutype == 'MASK' ) then
     nbusubwrite = nbuwrnb                            !Number of budget time average periods for each write
     nbutotwrite = nbuwrnb * Nint( xseglen / xbuwri ) !Total number of budget time average periods
   end if

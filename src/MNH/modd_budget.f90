@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -148,8 +148,8 @@ REAL, SAVE    :: XBULEN                    ! length in seconds of the budget
 !
 INTEGER, SAVE :: NBUSTEP                   ! number of model timesteps required 
                                            ! for the budget time average
-REAL, SAVE    :: XBUWRI                    ! period in seconds of
-                                           ! budget writing on FM-files
+REAL, SAVE    :: XBUWRI                    ! period in seconds between
+                                           ! budget writing for budget masks
 INTEGER, SAVE :: NBUWRNB                   ! number of budget periods when storage
                                            ! arrays are written on FM-files
 INTEGER, SAVE :: NBUTSHIFT                 ! temporal shift for budgets writing
