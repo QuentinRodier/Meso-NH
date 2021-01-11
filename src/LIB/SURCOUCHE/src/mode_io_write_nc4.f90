@@ -24,6 +24,7 @@
 !  P. Wautelet 10/11/2020: new data structures for netCDF dimensions
 !  P. Wautelet 26/11/2020: add IO_Field_create_nc4 subroutine + use it for all IO_Field_write_nc4_*
 !  P. Wautelet 04/12/2020: add IO_Field_partial_write_nc4 subroutines
+!  P. Wautelet 11/01/2021: add coordinates for dimension variables in diachronic files
 !-----------------------------------------------------------------
 #ifdef MNH_IOCDF4
 module mode_io_write_nc4
@@ -1451,8 +1452,8 @@ end if
 if ( tpfile%lmaster ) then
   !Write coordinates used in diachronic files
   if ( tpfile%ctype == 'MNHDIACHRONIC' ) then
-    !Coordinates for the budgets masks
     if ( cbutype == 'CART' .or. cbutype == 'SKIP' ) then
+      !Coordinates for the budgets in cartesian boxes
       if ( .not. lbu_icp )                                                                                                  &
         call Write_hor_coord1d( tpfile%tncdims%tdims(NMNHDIM_BUDGET_CART_NI), 'x-dimension of the budget cartesian box',    &
                          trim(ystdnameprefix)//'_x_coordinate', 'X', 0., 0, 0, zxhatm_glob(nbuil + jphext : nbuih + jphext) )
@@ -1488,6 +1489,7 @@ if ( tpfile%lmaster ) then
                               'position z in the transformed space at w location of the budget cartesian box', &
                               '', 'altitude_at_w_location', -0.5, 0, 0, zzhat (nbukl + JPVEXT : nbukh + JPVEXT) )
     else if ( cbutype == 'MASK' ) then
+      !Coordinates for the budgets masks
       if ( nbukmax > 0 )                                                                                        &
         call Write_ver_coord( tpfile%tncdims%tdims(NMNHDIM_BUDGET_MASK_LEVEL),                                  &
                               'position z in the transformed space of the budget mask',                         &
@@ -1496,36 +1498,37 @@ if ( tpfile%lmaster ) then
         call Write_ver_coord( tpfile%tncdims%tdims(NMNHDIM_BUDGET_MASK_LEVEL_W),                                &
                               'position z in the transformed space at w location of the budget mask',           &
                               '', 'altitude',               -0.5, 0, 0, zzhat (nbukl + JPVEXT : nbukh + JPVEXT) )
-      !Write time_budget coordinate + its boundaries
-      if ( nbutotwrite > 0 ) then
-        Allocate( tzdates(nbutotwrite) )
-        Allocate( tzdates_bound(2, nbutotwrite) )
-
-        do jt = 1, nbutotwrite
-          tzdates(jt)%nyear  = tdtexp%nyear
-          tzdates(jt)%nmonth = tdtexp%nmonth
-          tzdates(jt)%nday   = tdtexp%nday
-          tzdates(jt)%xtime  = tdtexp%xtime + nbustep * ( ( jt - 1 )  + 0.5  ) * xtstep
-
-          tzdates_bound(1, jt)%nyear  = tdtexp%nyear
-          tzdates_bound(1, jt)%nmonth = tdtexp%nmonth
-          tzdates_bound(1, jt)%nday   = tdtexp%nday
-          tzdates_bound(1, jt)%xtime  = tdtexp%xtime + nbustep * ( jt - 1 ) * xtstep
-
-          tzdates_bound(2, jt)%nyear  = tdtexp%nyear
-          tzdates_bound(2, jt)%nmonth = tdtexp%nmonth
-          tzdates_bound(2, jt)%nday   = tdtexp%nday
-          tzdates_bound(2, jt)%xtime  = tdtexp%xtime + nbustep * jt * xtstep
-        end do
-
-        call Write_time_coord( tpfile%tncdims%tdims(NMNHDIM_BUDGET_TIME), 'time axis for budgets', tzdates, tzdates_bound )
-
-        Deallocate( tzdates_bound )
-        Deallocate( tzdates )
-      end if
 
       !NMNHDIM_BUDGET_MASK_NBUMASK: not a true dimension
     end if !cbutype
+
+    !Write time_budget coordinate + its boundaries
+    if ( nbutotwrite > 0 ) then
+      Allocate( tzdates(nbutotwrite) )
+      Allocate( tzdates_bound(2, nbutotwrite) )
+
+      do jt = 1, nbutotwrite
+        tzdates(jt)%nyear  = tdtexp%nyear
+        tzdates(jt)%nmonth = tdtexp%nmonth
+        tzdates(jt)%nday   = tdtexp%nday
+        tzdates(jt)%xtime  = tdtexp%xtime + nbustep * ( ( jt - 1 )  + 0.5  ) * xtstep
+
+        tzdates_bound(1, jt)%nyear  = tdtexp%nyear
+        tzdates_bound(1, jt)%nmonth = tdtexp%nmonth
+        tzdates_bound(1, jt)%nday   = tdtexp%nday
+        tzdates_bound(1, jt)%xtime  = tdtexp%xtime + nbustep * ( jt - 1 ) * xtstep
+
+        tzdates_bound(2, jt)%nyear  = tdtexp%nyear
+        tzdates_bound(2, jt)%nmonth = tdtexp%nmonth
+        tzdates_bound(2, jt)%nday   = tdtexp%nday
+        tzdates_bound(2, jt)%xtime  = tdtexp%xtime + nbustep * jt * xtstep
+      end do
+
+      call Write_time_coord( tpfile%tncdims%tdims(NMNHDIM_BUDGET_TIME), 'time axis for budgets', tzdates, tzdates_bound )
+
+      Deallocate( tzdates_bound )
+      Deallocate( tzdates )
+    end if
 
     !Coordinates for the number of LES budget time samplings
     if ( nles_times > 0 ) &
