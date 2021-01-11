@@ -94,7 +94,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
 !!
 !-------------------------------------------------------------------------------
 
-  use modd_budget,         only: cbutype, nbumask, nbutshift, nbustep, nbuwrnb, xbulen, xbusurf,                                  &
+  use modd_budget,         only: cbutype, nbumask, nbutshift, nbustep, nbusubwrite, xbulen, xbusurf,                              &
                                  lbu_icp, lbu_jcp,                                                                                &
                                  lbu_ru, lbu_rv, lbu_rw, lbu_rth, lbu_rtke, lbu_rrv, lbu_rrc, lbu_rrr,                            &
                                  lbu_rri, lbu_rrs, lbu_rrg, lbu_rrh, lbu_rsv,                                                     &
@@ -205,19 +205,19 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   !         -----------
   !
     CASE('MASK')
-      ALLOCATE(ZWORKTEMP(NBUWRNB))
-      allocate( tzdates(NBUWRNB) )
+      ALLOCATE(ZWORKTEMP(nbusubwrite))
+      allocate( tzdates(nbusubwrite) )
   !
-      CALL DATETIME_DISTANCE(TDTEXP,TPDTCUR,ZWORKTEMP(NBUWRNB))
+      CALL DATETIME_DISTANCE(TDTEXP,TPDTCUR,ZWORKTEMP(nbusubwrite))
   !
-      ZWORKTEMP(NBUWRNB)=ZWORKTEMP(NBUWRNB)+(1.-NBUSTEP*0.5)*PTSTEP
+      ZWORKTEMP(nbusubwrite)=ZWORKTEMP(nbusubwrite)+(1.-NBUSTEP*0.5)*PTSTEP
   !
-      tzdates(NBUWRNB)%nyear  = tdtexp%nyear
-      tzdates(NBUWRNB)%nmonth = tdtexp%nmonth
-      tzdates(NBUWRNB)%nday   = tdtexp%nday
-      tzdates(NBUWRNB)%xtime  = tdtexp%xtime + zworktemp(NBUWRNB)
-      DO JT=1,NBUWRNB-1
-        ZWORKTEMP(JT) = ZWORKTEMP(NBUWRNB)-NBUSTEP*PTSTEP*(NBUWRNB-JT)
+      tzdates(nbusubwrite)%nyear  = tdtexp%nyear
+      tzdates(nbusubwrite)%nmonth = tdtexp%nmonth
+      tzdates(nbusubwrite)%nday   = tdtexp%nday
+      tzdates(nbusubwrite)%xtime  = tdtexp%xtime + zworktemp(nbusubwrite)
+      DO JT=1,nbusubwrite-1
+        ZWORKTEMP(JT) = ZWORKTEMP(nbusubwrite)-NBUSTEP*PTSTEP*(nbusubwrite-JT)
         tzdates(jt)%nyear  = tdtexp%nyear
         tzdates(jt)%nmonth = tdtexp%nmonth
         tzdates(jt)%nday   = tdtexp%nday
@@ -230,10 +230,10 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   !
 #ifdef MNH_IOLFI
       if ( Trim( tpdiafile%cformat ) == 'LFI' .or. Trim( tpdiafile%cformat ) == 'LFICDF4' ) then
-        Allocate( zworkmask(Size( xbusurf, 1 ), Size( xbusurf, 2 ), 1, nbuwrnb, nbumask,1) )
+        Allocate( zworkmask(Size( xbusurf, 1 ), Size( xbusurf, 2 ), 1, nbusubwrite, nbumask,1) )
         ! local array
         do jmask = 1, nbumask
-          do jt = 1, nbuwrnb
+          do jt = 1, nbusubwrite
             zworkmask(:, :, 1, jt, jmask, 1) = xbusurf(:, :, jmask, jt)
           end do
         end do
@@ -290,7 +290,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
         if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
 
         !Write the data (partial write of the field with the given offset)
-        call IO_Field_write( tzfile, tzfield, xbusurf(:,:,:,:), koffset= [ 0, 0, 0, ( nbutshift - 1 ) * nbuwrnb ] )
+        call IO_Field_write( tzfile, tzfield, xbusurf(:,:,:,:), koffset= [ 0, 0, 0, ( nbutshift - 1 ) * nbusubwrite ] )
 
         if ( nbutshift == 1 ) call Menu_diachro( tzfile, 'MASKS' )
       end if
@@ -401,7 +401,7 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
                                     lbu_icp, lbu_jcp, lbu_kcp,                                    &
                                     nbuil, nbuih, nbujl, nbujh, nbukl, nbukh,                     &
                                     nbuimax, nbuimax_ll, nbujmax, nbujmax_ll, nbukmax, nbutshift, &
-                                    nbumask, nbuwrnb,                                             &
+                                    nbumask, nbusubwrite,                                         &
                                     tburhodata,                                                   &
                                     NBUDGET_RHO, NBUDGET_U, NBUDGET_V, NBUDGET_W
   use modd_field,             only: NMNHDIM_BUDGET_CART_NI,    NMNHDIM_BUDGET_CART_NJ,   NMNHDIM_BUDGET_CART_NI_U, &
@@ -453,7 +453,7 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
       end if
     case('MASK')
       ybutype = 'MASK'
-      allocate( prhodjn(1, 1, nbukmax, nbuwrnb, nbumask, 1) )
+      allocate( prhodjn(1, 1, nbukmax, nbusubwrite, nbumask, 1) )
       prhodjn(1, 1, :, :, :, 1) = End_mask_compress( tprhodj%xdata(:, :, :) )
       where  ( prhodjn(1, 1, :, :, :, 1) <= 0. )
         prhodjn(1, 1, :, :, :, 1) = XNEGUNDEF
@@ -564,7 +564,7 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
                                     lbu_icp, lbu_jcp, lbu_kcp,                                                                    &
                                     nbuil, nbuih, nbujl, nbujh, nbukl, nbukh,                                                     &
                                     nbuimax, nbuimax_ll, nbujmax, nbujmax_ll, nbukmax, nbustep, nbutshift,                        &
-                                    nbumask, nbuwrnb,                                                                             &
+                                    nbumask, nbusubwrite,                                                                         &
                                     NBUDGET_U, NBUDGET_V, NBUDGET_W, NBUDGET_TH, NBUDGET_TKE, NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, &
                                     NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, NBUDGET_SV1,                                  &
                                     tbudgetdata, tbugroupdata
@@ -646,7 +646,7 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
       endif
     case('MASK')
       ybutype = 'MASK'
-      allocate( zworkt(1, 1, nbukmax, nbuwrnb, nbumask, igroups ) )
+      allocate( zworkt(1, 1, nbukmax, nbusubwrite, nbumask, igroups ) )
       do jproc = 1, igroups
         zworkt(1, 1, :, :, :, jproc) = End_mask_compress( tpbudget%tgroups(jproc)%xdata(:, :, :) ) &
                                        * zconvert(jproc) / prhodjn(1, 1, :, :, :, 1)

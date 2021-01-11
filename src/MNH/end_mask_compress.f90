@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1999-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 budget 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !#############################
  MODULE MODI_END_MASK_COMPRESS
@@ -19,7 +14,7 @@ FUNCTION END_MASK_COMPRESS(PVARS) RESULT(PCOMPRESS)
 USE MODD_BUDGET
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)                   :: PVARS     ! Source
-REAL, DIMENSION(NBUKMAX,NBUWRNB,NBUMASK)             :: PCOMPRESS ! result
+REAL, DIMENSION(NBUKMAX,nbusubwrite,NBUMASK)         :: PCOMPRESS ! result
 !
 END FUNCTION END_MASK_COMPRESS
 !
@@ -57,7 +52,7 @@ END MODULE MODI_END_MASK_COMPRESS
 !!           LBU_KCP   : switch for compression in K direction
 !!           NBUKMAX   : first dimension of the budget array ( number of grid points along
 !!                       K direction)
-!!           NBUWRNB   : second dimension of the budget array ( number of buffered times)
+!!           nbusubwrite: second dimension of the budget array ( number of buffered times)
 !!           NBUMASK   : third dimension of the budget array ( number of mask zones)
 !!          
 !!
@@ -90,7 +85,7 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments and result :
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)                   :: PVARS     ! Source 
-REAL, DIMENSION(NBUKMAX,NBUWRNB,NBUMASK)             :: PCOMPRESS ! result
+REAL, DIMENSION(NBUKMAX,nbusubwrite,NBUMASK)         :: PCOMPRESS ! result
 !
 !*       0.2   Declarations of local variables :
 ! 
@@ -108,7 +103,7 @@ INTEGER :: IINFO_ll  ! return status code of the interface routines
 !
 IF (LBU_KCP) THEN
   IF (CBUTYPE=='MASK' ) THEN
-    ALLOCATE(ZVAR2D(NBUWRNB,NBUMASK))
+    ALLOCATE(ZVAR2D(nbusubwrite,NBUMASK))
     ZVAR2D(:,:)=PVARS(1,:,:)
   ELSE  ! the processor has a empty intersection with the MASK region
     ZVAR2D(:,:)=0.
@@ -118,7 +113,7 @@ IF (LBU_KCP) THEN
   DEALLOCATE(ZVAR2D)
 !
 ELSE IF (.NOT.LBU_KCP) THEN
-  ALLOCATE(ZVAR3D(NBUKMAX,NBUWRNB,NBUMASK))
+  ALLOCATE(ZVAR3D(NBUKMAX,nbusubwrite,NBUMASK))
   IF (CBUTYPE=='MASK' ) THEN
     ZVAR3D(:,:,:)=PVARS(:,:,:)
   ELSE ! the processor has a empty intersection with the MASK region

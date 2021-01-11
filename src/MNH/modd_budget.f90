@@ -57,6 +57,7 @@
 !  P. Wautelet 17/08/2020: add xtmplesstore in tbudgetdata datatype
 !  P. Wautelet 08/10/2020: add clessource in tbudgetdata datatype
 !  P. Wautelet 08/12/2020: add nbusubwrite and nbutotwrite
+!  P. Wautelet 11/01/2021: remove nbuwrnb (replaced by nbusubwrite)
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -150,8 +151,6 @@ INTEGER, SAVE :: NBUSTEP                   ! number of model timesteps required
                                            ! for the budget time average
 REAL, SAVE    :: XBUWRI                    ! period in seconds between
                                            ! budget writing for budget masks
-INTEGER, SAVE :: NBUWRNB                   ! number of budget periods when storage
-                                           ! arrays are written on FM-files
 INTEGER, SAVE :: NBUTSHIFT                 ! temporal shift for budgets writing
 integer, save :: nbusubwrite = 0           ! Number of budget time average periods for each write
 integer, save :: nbutotwrite = 0           ! Total number of budget time average periods

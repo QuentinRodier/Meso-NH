@@ -163,7 +163,7 @@ end subroutine Write_diachro
 subroutine Write_diachro_lfi( tpdiafile, tpfields, hgroup, htype, tpdates, pvar, oicp, ojcp, okcp, kil, kih, kjl, kjh, kkl, kkh, &
                               ptrajx, ptrajy, ptrajz )
 
-use modd_budget,         only: nbumask, nbutshift, nbuwrnb
+use modd_budget,         only: nbumask, nbutshift, nbusubwrite
 use modd_field,          only: NMNHDIM_ONE, NMNHDIM_UNKNOWN, NMNHDIM_FLYER_TIME, NMNHDIM_NOTLISTED, NMNHDIM_UNUSED, &
                                TYPECHAR, TYPEINT, TYPEREAL,                                                         &
                                tfield_metadata_base, tfielddata
@@ -280,7 +280,7 @@ IF(HTYPE == 'MASK')THEN
   IIMASK=IIMAX_ll + 2 * JPHEXT
   IJMASK=IJMAX_ll + 2 * JPHEXT
   IKMASK=1
-  ITMASK=NBUWRNB
+  ITMASK=nbusubwrite
   INMASK=NBUMASK
   IPMASK=1
 ENDIF

@@ -298,7 +298,7 @@ INTEGER :: IBUDIM1                                        ! first dimension of t
                                                           ! = NBUKMAX in MASK case
 INTEGER :: IBUDIM2                                        ! second dimension of the budget arrays
                                                           ! = NBUJMAX in CART case
-                                                          ! = NBUWRNB in MASK case
+                                                          ! = nbusubwrite in MASK case
 INTEGER :: IBUDIM3                                        ! third dimension of the budget arrays
                                                           ! = NBUKMAX in CART case
                                                           ! = NBUMASK in MASK case
@@ -339,11 +339,10 @@ if ( cbutype == 'CART' .or. cbutype == 'MASK' ) then
       call Print_msg( NVERB_WARNING, 'BUD', 'Ini_budget', 'xseglen is not a multiple of xbuwri' )
 
     !Write cartesian budgets every xbulen time period (do not take xbuwri into account)
-    nbuwrnb = 1
     xbuwri = xbulen
 
-    nbusubwrite = nbuwrnb                            !Number of budget time average periods for each write
-    nbutotwrite = nbuwrnb * Nint( xseglen / xbuwri ) !Total number of budget time average periods
+    nbusubwrite = 1                                      !Number of budget time average periods for each write
+    nbutotwrite = nbusubwrite * Nint( xseglen / xbulen ) !Total number of budget time average periods
   else if ( cbutype == 'MASK' ) then
     !Check if xbuwri is a multiple of xtstep (within tolerance)
     if ( Abs( Nint( xbuwri / xtstep ) * xtstep - xbuwri ) > ( ITOL * xtstep ) ) &
@@ -357,11 +356,8 @@ if ( cbutype == 'CART' .or. cbutype == 'MASK' ) then
     if ( Abs( Nint( xseglen / xbuwri ) * xbuwri - xseglen ) > ( ITOL * xseglen ) ) &
       call Print_msg( NVERB_WARNING, 'BUD', 'Ini_budget', 'xseglen is not a multiple of xbuwri' )
 
-    NBUWRNB = NINT (XBUWRI / XBULEN)  ! only after NBUWRNB budget periods, we write the
-                                      ! result on the FM_FILE
-
-    nbusubwrite = nbuwrnb                            !Number of budget time average periods for each write
-    nbutotwrite = nbuwrnb * Nint( xseglen / xbuwri ) !Total number of budget time average periods
+    nbusubwrite = Nint ( xbuwri / xbulen )               !Number of budget time average periods for each write
+    nbutotwrite = nbusubwrite * Nint( xseglen / xbuwri ) !Total number of budget time average periods
   end if
 end if
 
@@ -412,7 +408,7 @@ ELSEIF (CBUTYPE=='MASK') THEN          ! mask case only
   CALL GET_DIM_EXT_ll ('B', IIU,IJU)
   ALLOCATE( LBU_MASK( IIU ,IJU, NBUMASK) )
   LBU_MASK(:,:,:)=.FALSE.
-  ALLOCATE( XBUSURF( IIU, IJU, NBUMASK, NBUWRNB) )
+  ALLOCATE( XBUSURF( IIU, IJU, NBUMASK, nbusubwrite) )
   XBUSURF(:,:,:,:) = 0.
 !
 ! three first dimensions of budget arrays in mask case
@@ -422,7 +418,7 @@ ELSEIF (CBUTYPE=='MASK') THEN          ! mask case only
 !  second dimension of the arrays : number of the budget time period
 !  third dimension of the arrays : number of the budget masks zones
   IBUDIM1=NBUKMAX
-  IBUDIM2=NBUWRNB
+  IBUDIM2=nbusubwrite
   IBUDIM3=NBUMASK
 ! these variables are not used in this case
   NBUIMAX=-1
@@ -3747,7 +3743,7 @@ IF (CBUTYPE=='MASK') THEN
   WRITE(UNIT=KLUOUT, FMT= '("BUKL = ",I4.4)' ) NBUKL
   WRITE(UNIT=KLUOUT, FMT= '("BUKH = ",I4.4)' ) NBUKH
   WRITE(UNIT=KLUOUT, FMT= '("BUKMAX = ",I4.4)' ) NBUKMAX
-  WRITE(UNIT=KLUOUT, FMT= '("BUWRNB = ",I4.4)' ) NBUWRNB
+  WRITE(UNIT=KLUOUT, FMT= '("BUSUBWRITE = ",I4.4)' ) NBUSUBWRITE
   WRITE(UNIT=KLUOUT, FMT= '("BUMASK = ",I4.4)' ) NBUMASK
 END IF
 
