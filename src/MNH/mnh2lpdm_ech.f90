@@ -12,9 +12,10 @@
 ! Auteur   : Francois Bonnardot, DP/SERV/ENV
 ! Creation : 07.01.2009
 ! Modifications:
-!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!  Philippe Wautelet 28/05/2018: corrected truncated integer division (1/3 -> 1./3.)
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 28/05/2018: corrected truncated integer division (1/3 -> 1./3.)
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
+!  P. Wautelet 05/11/2020: correct I/O of MNH2LPDM
 !-----------------------------------------------------------------------
 !
 !*	0.  DECLARATIONS.
@@ -35,6 +36,7 @@ USE MODD_TIME
 !
 USE MODD_MNH2LPDM
 !
+use modd_field,            only: tfielddata, TYPEREAL
 USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
 USE MODE_IO_FIELD_READ,    only: IO_Field_read
 USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list
@@ -59,6 +61,7 @@ INTEGER              :: ICURAA,ICURMM,ICURJJ         ! Date  courante.
 INTEGER              :: ICURHH,ICURMN,ICURSS         ! Heure courante.
 INTEGER              :: JI,JJ,JK
 TYPE(DATE_TIME)      :: TZDTCUR
+type(tfielddata)        :: tzfield
 TYPE(TFILEDATA),POINTER :: TZFILE
 !
 !
@@ -106,13 +109,57 @@ CALL IO_Field_read(TPFILE,'VT',     XVT)
 CALL IO_Field_read(TPFILE,'WT',     XWT)
 CALL IO_Field_read(TPFILE,'THT',    XTHT)
 CALL IO_Field_read(TPFILE,'TKET',   XTKET)
-!PW:TODO: where are these fields (LM,THW_FLX,DISS,FMU,FMV) written?
-!Warning: not in fieldlist => won't be found
-CALL IO_Field_read(TPFILE,'LM',     XLM)
-CALL IO_Field_read(TPFILE,'THW_FLX',XWPTHP)
-CALL IO_Field_read(TPFILE,'DISS',   XDISSIP)
-CALL IO_Field_read(TPFILE,'FMU',    XSFU)
-CALL IO_Field_read(TPFILE,'FMV',    XSFV)
+
+tzfield%cmnhname  = 'LM'
+tzfield%clongname = ''
+tzfield%cunits    = 'm'
+tzfield%cdir      = 'XY'
+tzfield%ccomment  = 'Mixing length'
+tzfield%ngrid     = 1
+tzfield%ntype     = TYPEREAL
+tzfield%ndims     = 3
+CALL IO_Field_read(TPFILE, tzfield, XLM)
+
+tzfield%cmnhname  = 'THW_FLX'
+tzfield%clongname = ''
+tzfield%cunits    = 'K s-1' !correct?
+tzfield%cdir      = 'XY'
+tzfield%ccomment  = 'Conservative potential temperature vertical flux'
+tzfield%ngrid     = 4
+tzfield%ntype     = TYPEREAL
+tzfield%ndims     = 3
+CALL IO_Field_read(TPFILE, tzfield, XWPTHP)
+
+tzfield%cmnhname  = 'DISS'
+tzfield%clongname = ''
+tzfield%cunits    = '' !TODO: set units
+tzfield%cdir      = 'XY'
+tzfield%ccomment  = 'X_Y_Z_DISS'
+tzfield%ngrid     = 1
+tzfield%ntype     = TYPEREAL
+tzfield%ndims     = 3
+CALL IO_Field_read(TPFILE, tzfield, XDISSIP)
+
+tzfield%cmnhname  = 'FMU'
+tzfield%clongname = ''
+tzfield%cunits    = 'kg m-1 s-2'
+tzfield%cdir      = 'XY'
+tzfield%ccomment  = 'X_Y_FMU'
+tzfield%ngrid     = 4
+tzfield%ntype     = TYPEREAL
+tzfield%ndims     = 2
+CALL IO_Field_read(TPFILE, tzfield, XSFU)
+
+tzfield%cmnhname  = 'FMV'
+tzfield%clongname = ''
+tzfield%cunits    = 'kg m-1 s-2'
+tzfield%cdir      = 'XY'
+tzfield%ccomment  = 'X_Y_FMV'
+tzfield%ngrid     = 4
+tzfield%ntype     = TYPEREAL
+tzfield%ndims     = 2
+CALL IO_Field_read(TPFILE, tzfield, XSFV)
+
 CALL IO_Field_read(TPFILE,'INPRT',  XINRT)
 CALL IO_Field_read(TPFILE,'RVT',    XRMVT)
 CALL IO_Field_read(TPFILE,'RCT',    XRMCT)

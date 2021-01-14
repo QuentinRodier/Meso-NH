@@ -767,7 +767,6 @@ END IF
 !            ------------------------------------------------
 !
 IF (NSV_A(KMI) > 0) THEN
-  ! Users scalar variables
   DO JSV = 1,NSV_A(KMI)
     IGRID = 1
     CALL Compute_LB( PLBXSVM(:,:,:,JSV), PLBYSVM(:,:,:,JSV), PLBXSVS(:,:,:,JSV), PLBYSVS(:,:,:,JSV), &
