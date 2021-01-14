@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,6 +10,7 @@
 !  P. Wautelet 11/01/2019: do not write variables with a zero size
 !  P. Wautelet 05/03/2019: rename IO subroutines and modules
 !  P. Wautelet 12/07/2019: add support for 1D array of dates
+!  P. Wautelet 14/01/2021: add IO_Field_write_lfi_N4 subroutine
 !-----------------------------------------------------------------
 module mode_io_write_lfi
 !
@@ -36,6 +37,7 @@ INTERFACE IO_Field_write_lfi
                     IO_Field_write_lfi_X6,                       &
                     IO_Field_write_lfi_N0,IO_Field_write_lfi_N1, &
                     IO_Field_write_lfi_N2,IO_Field_write_lfi_N3, &
+                    IO_Field_write_lfi_N4,                       &
                     IO_Field_write_lfi_L0,IO_Field_write_lfi_L1, &
                     IO_Field_write_lfi_C0,                       &
                     IO_Field_write_lfi_T0,IO_Field_write_lfi_T1
@@ -547,7 +549,54 @@ KRESP=IRESP
 IF (ALLOCATED(IWORK)) DEALLOCATE(IWORK)
 !
 END SUBROUTINE IO_Field_write_lfi_N3
+
+
+SUBROUTINE IO_Field_write_lfi_N4(TPFILE,TPFIELD,KFIELD,KRESP)
 !
+IMPLICIT NONE
+!
+!*      0.1   Declarations of arguments
+!
+TYPE(TFILEDATA),           INTENT(IN) :: TPFILE
+TYPE(TFIELDDATA),          INTENT(IN) :: TPFIELD
+INTEGER,DIMENSION(:,:,:,:),INTENT(IN) :: KFIELD ! array containing the data field
+INTEGER,                   INTENT(OUT):: KRESP  ! return-code if problems araised
+!
+!*      0.2   Declarations of local variables
+!
+INTEGER                                  :: ILENG
+INTEGER(kind=LFIINT)                     :: IRESP, ITOTAL
+INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
+CHARACTER(LEN=LEN_HREC)                  :: YRECFM
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_lfi_N4','writing '//TRIM(TPFIELD%CMNHNAME))
+!
+ILENG = SIZE(KFIELD)
+!
+IF ( ILENG==0 ) THEN
+  CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_lfi_N4','ignoring variable with a zero size ('//TRIM(TPFIELD%CMNHNAME)//')')
+  KRESP = 0
+  RETURN
+END IF
+!
+CALL WRITE_PREPARE(TPFIELD,ILENG,IWORK,ITOTAL,IRESP)
+!
+IF (IRESP==0) THEN
+  IWORK(LEN(TPFIELD%CCOMMENT)+3:) = RESHAPE( KFIELD(:,:,:,:) , (/ SIZE(KFIELD) /) )
+  YRECFM=TRIM(TPFIELD%CMNHNAME)
+  IF( LEN_TRIM(TPFIELD%CMNHNAME) > LEN(YRECFM) ) &
+    CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_write_lfi_N4','field name was truncated to '&
+                   //YRECFM//' for '//TRIM(TPFIELD%CMNHNAME))
+  CALL LFIECR(IRESP,TPFILE%NLFIFLU,YRECFM,IWORK,ITOTAL)
+ENDIF
+!
+KRESP=IRESP
+!
+IF (ALLOCATED(IWORK)) DEALLOCATE(IWORK)
+!
+END SUBROUTINE IO_Field_write_lfi_N4
+
+
 SUBROUTINE IO_Field_write_lfi_L0(TPFILE,TPFIELD,OFIELD,KRESP)
 !
 IMPLICIT NONE
