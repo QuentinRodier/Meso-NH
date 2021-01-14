@@ -26,4 +26,4 @@ ln -sf ../2_INPUT_TOY/TOYNAMELIST.nam_${TYPE_TOY} TOYNAMELIST.nam
 ln -fs ../3_INPUT_OASIS/namcouple_${TYPE_TOY} namcouple
 
 #time Mpirun -np 1 MESONH${XYZ} : -np 1 $PATH_EXETOY/toy_model
-time Mpirun -np 1 $PATH_EXETOY/toy_model : -np 1 totalview MESONH${XYZ}  
+time Mpirun -np 1 $PATH_EXETOY/toy_model : -np 1 MESONH${XYZ}  

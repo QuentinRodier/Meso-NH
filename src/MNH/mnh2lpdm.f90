@@ -1,8 +1,8 @@
-!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
+!-----------------------------------------------------------------------
 !     ######spl
         PROGRAM MNH2LPDM
 !	##############
@@ -13,9 +13,10 @@
 !	Creation :   16.07.2002
 !       Modification  : 07.01.2006 (T.LAUVAUX, adaptation LPDM)
 !       Modification  : 04.01.2009 (F. BONNARDOT, DP/SER/ENV )
-!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 05/11/2020: correct I/O of MNH2LPDM
 !
 !-----------------------------------------------------------------------------
 !
@@ -27,9 +28,12 @@
 !*	0.1 Modules.
 !
 USE MODD_CONF,             ONLY : CPROGRAM
-USE MODD_IO,               ONLY : TFILEDATA,TPTR2FILE
+USE MODD_IO,               ONLY : TFILEDATA, TFILE_OUTPUTLISTING, TPTR2FILE
+use modd_lunit,            only: TLUOUT0
+use modd_lunit_n,          only: TLUOUT
 USE MODD_MNH2LPDM
 !
+USE MODE_FIELD,            ONLY: INI_FIELD_LIST, INI_FIELD_SCALARS
 USE MODE_IO,               ONLY: IO_Init, IO_Config_set
 USE MODE_IO_FILE,          ONLY: IO_File_open, IO_File_close
 USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_add2list
@@ -37,8 +41,10 @@ USE MODE_MODELN_HANDLER
 use mode_msg
 USE MODE_POS
 !
+USE MODI_INI_CST
 USE MODI_MNH2LPDM_ECH
 USE MODI_MNH2LPDM_INI
+USE MODI_VERSION
 !
 USE MODN_CONFIO
 !
@@ -69,6 +75,17 @@ TYPE(TFILEDATA),POINTER :: TZNMLFILE   => NULL() ! Namelist file
 !
 CPROGRAM='M2LPDM'
 CALL GOTO_MODEL(1)
+CALL VERSION()
+CALL IO_Init()
+CALL INI_CST()
+CALL INI_FIELD_LIST(1)
+CALL INI_FIELD_SCALARS()
+!
+CALL IO_File_add2list(TLUOUT0,'OUTPUT_LISTING1','OUTPUTLISTING','WRITE')
+CALL IO_File_open(TLUOUT0)
+!Set output files for PRINT_MSG
+TLUOUT              => TLUOUT0
+TFILE_OUTPUTLISTING => TLUOUT0
 !
 !*	1.1 Variables generales.
 !
