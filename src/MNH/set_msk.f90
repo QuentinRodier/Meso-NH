@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -38,9 +38,8 @@ END MODULE MODI_SET_MSK
 !!    ------
 !!      According to each criterion associated to one zone, the mask is
 !!    set to TRUE at each point where the criterion is confirmed, at each 
-!!    time step of the model. Finally, The number of occurence of this criteria is 
-!!    increased by 1 and stored in the array XBUSURF. 
-!!      
+!!    time step of the model.
+!!
 !!
 !!    EXTERNAL
 !!    --------
@@ -48,8 +47,6 @@ END MODULE MODI_SET_MSK
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
-!!       Module MODD_BUDGET
-!!         XBUSURF    : mask tracer array (surface array) 
 !!
 !!    REFERENCE
 !!    ---------
@@ -74,7 +71,6 @@ END MODULE MODI_SET_MSK
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_BUDGET
 USE MODD_FIELD_n
 USE MODD_RAIN_ICE_PARAM , ONLY : XFSEDR,XEXSEDR
 USE MODD_RAIN_ICE_DESCR , ONLY : XCEXVT

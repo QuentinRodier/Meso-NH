@@ -161,7 +161,7 @@ end subroutine Budget_preallocate
 !!      N. Asencio      18/06/99  // MASK case : delete KIMAX and KJMAX arguments,
 !!                                GET_DIM_EXT_ll initializes the dimensions of the
 !!                                extended local domain.
-!!                                LBU_MASK and XBUSURF are allocated on the extended
+!!                                LBU_MASK and NBUSURF are allocated on the extended
 !!                                local domain.
 !!                                add 3 local variables IBUDIM1,IBUDIM2,IBUDIM3
 !!                                to define the dimensions of the budget arrays
@@ -408,8 +408,8 @@ ELSEIF (CBUTYPE=='MASK') THEN          ! mask case only
   CALL GET_DIM_EXT_ll ('B', IIU,IJU)
   ALLOCATE( LBU_MASK( IIU ,IJU, NBUMASK) )
   LBU_MASK(:,:,:)=.FALSE.
-  ALLOCATE( XBUSURF( IIU, IJU, NBUMASK, nbusubwrite) )
-  XBUSURF(:,:,:,:) = 0.
+  ALLOCATE( NBUSURF( IIU, IJU, NBUMASK, nbusubwrite) )
+  NBUSURF(:,:,:,:) = 0
 !
 ! three first dimensions of budget arrays in mask case
 !  the order of the dimensions are the order expected in WRITE_DIACHRO routine:

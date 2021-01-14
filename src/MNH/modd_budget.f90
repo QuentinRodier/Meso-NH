@@ -58,6 +58,7 @@
 !  P. Wautelet 08/10/2020: add clessource in tbudgetdata datatype
 !  P. Wautelet 08/12/2020: add nbusubwrite and nbutotwrite
 !  P. Wautelet 11/01/2021: remove nbuwrnb (replaced by nbusubwrite)
+!  P. Wautelet 14/01/2021: change xbusurf type to integer (+ rename it to nbusurf)
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -178,8 +179,8 @@ INTEGER, SAVE :: NBUMASK                   ! number of MASK zones for which
 LOGICAL, SAVE, DIMENSION(:,:,:),         & ! define the zone where the MASK 
            ALLOCATABLE :: LBU_MASK         ! is True 
 !                                          
-REAL, SAVE, DIMENSION(:,:,:,:),          & ! surface for each mask at each   
-           ALLOCATABLE :: XBUSURF          ! budget step   
+INTEGER, SAVE, DIMENSION(:,:,:,:),       & ! surface for each mask at each
+           ALLOCATABLE :: NBUSURF          ! budget step
 !             
 INTEGER, SAVE :: NBUTIME                   ! number of budget time periods
 !

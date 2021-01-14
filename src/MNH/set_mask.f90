@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/set_mask.f90,v $ $Revision: 1.2.2.1.2.1.18.2 $
-! MASDEV4_7 budget 2006/09/08 10:35:15
 !-----------------------------------------------------------------
 !     ###################
       SUBROUTINE SET_MASK
@@ -26,7 +21,7 @@
 !!      According to each criterion associated to one zone, the mask is
 !!    set to TRUE at each point where the criterion is confirmed, at each 
 !!    time step of the model. Finally, The number of occurence of this criteria is 
-!!    increased by 1 and stored in the array XBUSURF. 
+!!    increased by 1 and stored in the array NBUSURF.
 !!    Caution : The mask is defined on the inner domain.
 !!      
 !!
@@ -39,7 +34,7 @@
 !!       Module MODD_BUDGET
 !!         LBU_MASK   : logical array mask defining the zones
 !!         NBUTIME    : number of the budget step
-!!         XBUSURF    : mask tracer array (surface array) 
+!!         NBUSURF    : mask tracer array (surface array)
 !!
 !!    REFERENCE
 !!    ---------
@@ -106,7 +101,7 @@ IF (NBUMASK>=2) &
 !               -------------------------
 !
 WHERE (LBU_MASK(:,:,:))
-  XBUSURF(:,:,:,NBUTIME)=XBUSURF(:,:,:,NBUTIME)+1.
+  NBUSURF(:,:,:,NBUTIME) = NBUSURF(:,:,:,NBUTIME) + 1
 END WHERE
 !
 !-------------------------------------------------------------------------------

@@ -94,7 +94,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
 !!
 !-------------------------------------------------------------------------------
 
-  use modd_budget,         only: cbutype, nbumask, nbutshift, nbustep, nbusubwrite, xbulen, xbusurf,                              &
+  use modd_budget,         only: cbutype, nbumask, nbusurf, nbutshift, nbustep, nbusubwrite, xbulen,                              &
                                  lbu_icp, lbu_jcp,                                                                                &
                                  lbu_ru, lbu_rv, lbu_rw, lbu_rth, lbu_rtke, lbu_rrv, lbu_rrc, lbu_rrr,                            &
                                  lbu_rri, lbu_rrs, lbu_rrg, lbu_rrh, lbu_rsv,                                                     &
@@ -230,11 +230,11 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   !
 #ifdef MNH_IOLFI
       if ( Trim( tpdiafile%cformat ) == 'LFI' .or. Trim( tpdiafile%cformat ) == 'LFICDF4' ) then
-        Allocate( zworkmask(Size( xbusurf, 1 ), Size( xbusurf, 2 ), 1, nbusubwrite, nbumask,1) )
+        Allocate( zworkmask(Size( nbusurf, 1 ), Size( nbusurf, 2 ), 1, nbusubwrite, nbumask,1) )
         ! local array
         do jmask = 1, nbumask
           do jt = 1, nbusubwrite
-            zworkmask(:, :, 1, jt, jmask, 1) = xbusurf(:, :, jmask, jt)
+            zworkmask(:, :, 1, jt, jmask, 1) = Real( nbusurf(:, :, jmask, jt), kind = Kind( zworkmask ) )
           end do
         end do
 
@@ -290,7 +290,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
         if ( nbutshift == 1 ) call IO_Field_create( tzfile, tzfield )
 
         !Write the data (partial write of the field with the given offset)
-        call IO_Field_write( tzfile, tzfield, xbusurf(:,:,:,:), koffset= [ 0, 0, 0, ( nbutshift - 1 ) * nbusubwrite ] )
+        call IO_Field_write( tzfile, tzfield, nbusurf(:,:,:,:), koffset= [ 0, 0, 0, ( nbutshift - 1 ) * nbusubwrite ] )
 
         if ( nbutshift == 1 ) call Menu_diachro( tzfile, 'MASKS' )
       end if
