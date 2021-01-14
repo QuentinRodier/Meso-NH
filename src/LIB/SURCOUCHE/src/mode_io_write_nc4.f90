@@ -25,6 +25,8 @@
 !  P. Wautelet 26/11/2020: add IO_Field_create_nc4 subroutine + use it for all IO_Field_write_nc4_*
 !  P. Wautelet 04/12/2020: add IO_Field_partial_write_nc4 subroutines
 !  P. Wautelet 11/01/2021: add coordinates for dimension variables in diachronic files
+!  P. Wautelet 14/01/2021: add IO_Field_write_nc4_N4, IO_Field_partial_write_nc4_N2,
+!                          IO_Field_partial_write_nc4_N3 and IO_Field_partial_write_nc4_N4 subroutines
 !-----------------------------------------------------------------
 #ifdef MNH_IOCDF4
 module mode_io_write_nc4
@@ -56,6 +58,7 @@ INTERFACE IO_Field_write_nc4
                     IO_Field_write_nc4_X6,                       &
                     IO_Field_write_nc4_N0,IO_Field_write_nc4_N1, &
                     IO_Field_write_nc4_N2,IO_Field_write_nc4_N3, &
+                    IO_Field_write_nc4_N4,                       &
                     IO_Field_write_nc4_L0,IO_Field_write_nc4_L1, &
                     IO_Field_write_nc4_C0,IO_Field_write_nc4_C1, &
                     IO_Field_write_nc4_T0,IO_Field_write_nc4_T1
@@ -63,7 +66,9 @@ END INTERFACE IO_Field_write_nc4
 
 interface IO_Field_partial_write_nc4
    module procedure IO_Field_partial_write_nc4_X1, IO_Field_partial_write_nc4_X2, &
-                    IO_Field_partial_write_nc4_X3, IO_Field_partial_write_nc4_X4
+                    IO_Field_partial_write_nc4_X3, IO_Field_partial_write_nc4_X4, &
+                    IO_Field_partial_write_nc4_N2, IO_Field_partial_write_nc4_N3, &
+                    IO_Field_partial_write_nc4_N4
 end interface IO_Field_partial_write_nc4
 
 integer,parameter :: NSTRINGCHUNKSIZE = 16 !Dimension of the chunks of strings
@@ -816,6 +821,29 @@ IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_N3
 END SUBROUTINE IO_Field_write_nc4_N3
 
 
+SUBROUTINE IO_Field_write_nc4_N4(TPFILE,TPFIELD,KFIELD,KRESP)
+!
+TYPE(TFILEDATA),TARGET,    INTENT(IN) :: TPFILE
+TYPE(TFIELDDATA),          INTENT(IN) :: TPFIELD
+INTEGER,DIMENSION(:,:,:,:),INTENT(IN) :: KFIELD   ! array containing the data field
+INTEGER,                   INTENT(OUT):: KRESP
+!
+INTEGER(KIND=CDFINT) :: istatus
+INTEGER(KIND=CDFINT) :: IVARID
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_N4',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
+!
+KRESP = 0
+!
+call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( kfield ), kvarid = ivarid )
+
+! Write the data
+istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, KFIELD)
+IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_N4','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+
+END SUBROUTINE IO_Field_write_nc4_N4
+
+
 SUBROUTINE IO_Field_write_nc4_L0(TPFILE,TPFIELD,OFIELD,KRESP)
 !
 TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
@@ -1213,6 +1241,144 @@ if ( Size( pfield ) > 0 ) then
 end if
 
 end subroutine IO_Field_partial_write_nc4_X4
+
+
+subroutine IO_Field_partial_write_nc4_N2( tpfile, tpfield, kfield, koffset, kresp, kvertlevel, kzfile )
+
+type(tfiledata),                  intent(in)  :: tpfile
+type(tfielddata),                 intent(in)  :: tpfield
+integer,          dimension(:,:), intent(in)  :: kfield   ! array containing the data field
+integer,          dimension(2),   intent(in)  :: koffset
+integer,                          intent(out) :: kresp
+integer,                optional, intent(in)  :: kvertlevel ! Number of the vertical level (needed for Z-level split files)
+integer,                optional, intent(in)  :: kzfile     ! Number of the Z-level split file
+
+character(len=4)                   :: ysuffix
+character(len=NMNHNAMELGTMAX)      :: yvarname
+integer(kind=CDFINT)               :: istatus
+integer(kind=CDFINT)               :: ivarid
+integer(kind=CDFINT), dimension(2) :: istarts
+type(tfielddata),     pointer      :: tzfield
+type(tfiledata),      pointer      :: tzfile
+
+kresp = 0
+
+call IO_Select_split_file( tpfile, tpfield, tzfile, tzfield, kvertlevel, kzfile )
+
+call Print_msg( NVERB_DEBUG, 'IO', 'IO_Field_partial_write_nc4_N2',&
+                Trim( tzfile%cname ) // ': writing ' // Trim( tzfield%cmnhname ) )
+
+call IO_Mnhname_clean( tzfield%cmnhname, yvarname )
+
+istatus = NF90_INQ_VARID( tzfile%nncid, yvarname, ivarid )
+if ( istatus /= NF90_NOERR ) then
+  call Print_msg( NVERB_FATAL, 'IO', 'IO_Field_partial_write_nc4_N2', 'variable ' // Trim( yvarname ) &
+                  // ' not yet created (IO_Field_create not yet called?)' )
+end if
+
+! Write the data
+if ( Size( kfield ) > 0 ) then
+  istarts(:) = koffset(:) + 1
+  istatus = NF90_PUT_VAR( tzfile%nncid, ivarid, kfield(:,:), start = istarts(:), count = Shape( kfield ) )
+  if (istatus /= NF90_NOERR) &
+    call IO_Err_handle_nc4( istatus, 'IO_Field_partial_write_nc4_N2', 'NF90_PUT_VAR', Trim( tzfield%cmnhname ), kresp )
+end if
+
+if ( Present( kvertlevel ) ) deallocate( tzfield )
+
+end subroutine IO_Field_partial_write_nc4_N2
+
+
+subroutine IO_Field_partial_write_nc4_N3( tpfile, tpfield, kfield, koffset, kresp, kvertlevel, kzfile )
+
+type(tfiledata),                    intent(in)  :: tpfile
+type(tfielddata),                   intent(in)  :: tpfield
+integer,          dimension(:,:,:), intent(in)  :: kfield   ! array containing the data field
+integer,          dimension(3),     intent(in)  :: koffset
+integer,                            intent(out) :: kresp
+integer,                  optional, intent(in)  :: kvertlevel ! Number of the vertical level (needed for Z-level split files)
+integer,                  optional, intent(in)  :: kzfile     ! Number of the Z-level split file
+
+character(len=4)                   :: ysuffix
+character(len=NMNHNAMELGTMAX)      :: yvarname
+integer(kind=CDFINT)               :: istatus
+integer(kind=CDFINT)               :: ivarid
+integer(kind=CDFINT), dimension(3) :: istarts
+type(tfielddata),     pointer      :: tzfield
+type(tfiledata),      pointer      :: tzfile
+
+kresp = 0
+
+call IO_Select_split_file( tpfile, tpfield, tzfile, tzfield, kvertlevel, kzfile )
+
+call Print_msg( NVERB_DEBUG, 'IO', 'IO_Field_partial_write_nc4_N3',&
+                Trim( tzfile%cname ) // ': writing ' // Trim( tzfield%cmnhname ) )
+
+call IO_Mnhname_clean( tzfield%cmnhname, yvarname )
+
+istatus = NF90_INQ_VARID( tzfile%nncid, yvarname, ivarid )
+if ( istatus /= NF90_NOERR ) then
+  call Print_msg( NVERB_FATAL, 'IO', 'IO_Field_partial_write_nc4_N3', 'variable ' // Trim( yvarname ) &
+                  // ' not yet created (IO_Field_create not yet called?)' )
+end if
+
+! Write the data
+if ( Size( kfield ) > 0 ) then
+  istarts(:) = koffset(:) + 1
+  istatus = NF90_PUT_VAR( tzfile%nncid, ivarid, kfield(:,:,:), start = istarts(:), count = Shape( kfield ) )
+  if (istatus /= NF90_NOERR) &
+    call IO_Err_handle_nc4( istatus, 'IO_Field_partial_write_nc4_N3', 'NF90_PUT_VAR', Trim( tzfield%cmnhname ), kresp )
+end if
+
+if ( Present( kvertlevel ) ) deallocate( tzfield )
+
+end subroutine IO_Field_partial_write_nc4_N3
+
+
+subroutine IO_Field_partial_write_nc4_N4( tpfile, tpfield, kfield, koffset, kresp, kvertlevel, kzfile )
+
+type(tfiledata),                      intent(in)  :: tpfile
+type(tfielddata),                     intent(in)  :: tpfield
+integer,          dimension(:,:,:,:), intent(in)  :: kfield   ! array containing the data field
+integer,          dimension(4),       intent(in)  :: koffset
+integer,                              intent(out) :: kresp
+integer,                    optional, intent(in)  :: kvertlevel ! Number of the vertical level (needed for Z-level split files)
+integer,                    optional, intent(in)  :: kzfile     ! Number of the Z-level split file
+
+character(len=4)                   :: ysuffix
+character(len=NMNHNAMELGTMAX)      :: yvarname
+integer(kind=CDFINT)               :: istatus
+integer(kind=CDFINT)               :: ivarid
+integer(kind=CDFINT), dimension(4) :: istarts
+type(tfielddata),     pointer      :: tzfield
+type(tfiledata),      pointer      :: tzfile
+
+kresp = 0
+
+call IO_Select_split_file( tpfile, tpfield, tzfile, tzfield, kvertlevel, kzfile )
+
+call Print_msg( NVERB_DEBUG, 'IO', 'IO_Field_partial_write_nc4_N4',&
+                Trim( tzfile%cname ) // ': writing ' // Trim( tzfield%cmnhname ) )
+
+call IO_Mnhname_clean( tzfield%cmnhname, yvarname )
+
+istatus = NF90_INQ_VARID( tzfile%nncid, yvarname, ivarid )
+if ( istatus /= NF90_NOERR ) then
+  call Print_msg( NVERB_FATAL, 'IO', 'IO_Field_partial_write_nc4_N4', 'variable ' // Trim( yvarname ) &
+                  // ' not yet created (IO_Field_create not yet called?)' )
+end if
+
+! Write the data
+if ( Size( kfield ) > 0 ) then
+  istarts(:) = koffset(:) + 1
+  istatus = NF90_PUT_VAR( tzfile%nncid, ivarid, kfield(:,:,:,:), start = istarts(:), count = Shape( kfield ) )
+  if (istatus /= NF90_NOERR) &
+    call IO_Err_handle_nc4( istatus, 'IO_Field_partial_write_nc4_N4', 'NF90_PUT_VAR', Trim( tzfield%cmnhname ), kresp )
+end if
+
+if ( Present( kvertlevel ) ) deallocate( tzfield )
+
+end subroutine IO_Field_partial_write_nc4_N4
 
 
 subroutine IO_Coordvar_write_nc4( tpfile, hprogram_orig )
