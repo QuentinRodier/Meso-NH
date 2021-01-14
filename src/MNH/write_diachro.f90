@@ -103,7 +103,7 @@ IMPLICIT NONE
 TYPE(TFILEDATA),                                     INTENT(IN)           :: TPDIAFILE    ! file to write
 class(tfield_metadata_base), dimension(:),           intent(in)           :: tpfields
 CHARACTER(LEN=*),                                    INTENT(IN)           :: HGROUP, HTYPE
-type(date_time),             dimension(:),           intent(in)           :: tpdates
+type(date_time),             dimension(:),           intent(in)           :: tpdates  !Used only for LFI files
 REAL,                        DIMENSION(:,:,:,:,:,:), INTENT(IN)           :: PVAR
 LOGICAL,                                             INTENT(IN), OPTIONAL :: OICP, OJCP, OKCP
 INTEGER,                                             INTENT(IN), OPTIONAL :: KIL, KIH
@@ -152,7 +152,7 @@ if ( tpdiafile%cformat == 'LFI' .or. tpdiafile%cformat == 'LFICDF4' ) &
 
 #ifdef MNH_IOCDF4
 if ( tpdiafile%cformat == 'NETCDF4' .or. tpdiafile%cformat == 'LFICDF4' ) &
-  call Write_diachro_nc4( tpdiafile, tpfields, hgroup, htype, tpdates, pvar, gicp, gjcp, gkcp, kil, kih, kjl, kjh, kkl, kkh, &
+  call Write_diachro_nc4( tpdiafile, tpfields, hgroup, htype, pvar, gicp, gjcp, gkcp, kil, kih, kjl, kjh, kkl, kkh, &
                           osplit, tpflyer )
 #endif
 
@@ -625,7 +625,7 @@ end subroutine Write_diachro_lfi
 
 #ifdef MNH_IOCDF4
 !-----------------------------------------------------------------------------
-subroutine Write_diachro_nc4( tpdiafile, tpfields, hgroup, htype, tpdates, pvar, oicp, ojcp, okcp, kil, kih, kjl, kjh, kkl, kkh, &
+subroutine Write_diachro_nc4( tpdiafile, tpfields, hgroup, htype, pvar, oicp, ojcp, okcp, kil, kih, kjl, kjh, kkl, kkh, &
                               osplit, tpflyer )
 
 use NETCDF,            only: NF90_DEF_DIM, NF90_DEF_GRP, NF90_DEF_VAR, NF90_INQ_NCID, NF90_PUT_ATT, NF90_PUT_VAR, &
@@ -647,7 +647,6 @@ use mode_io_tools_nc4,     only: IO_Err_handle_nc4
 type(tfiledata),                                     intent(in)           :: tpdiafile        ! File to write
 class(tfield_metadata_base), dimension(:),           intent(in)           :: tpfields
 character(len=*),                                    intent(in)           :: hgroup, htype
-type(date_time),             dimension(:),           intent(in)           :: tpdates
 real,                        dimension(:,:,:,:,:,:), intent(in)           :: pvar
 logical,                                             intent(in)           :: oicp, ojcp, okcp
 integer,                                             intent(in), optional :: kil, kih

@@ -184,6 +184,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   !* 2.1    Initialization
   !
       ALLOCATE( ZWORKTEMP(1) )
+      !Note: tzdates are used only in LFI files; for netCDF files, dates are written in the coordinates
       allocate( tzdates(1) )
   !
       !Compute time at the middle of the temporally-averaged budget timestep
@@ -206,6 +207,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   !
     CASE('MASK')
       ALLOCATE(ZWORKTEMP(nbusubwrite))
+      !Note: tzdates are used only in LFI files; for netCDF files, dates are written in the coordinates
       allocate( tzdates(nbusubwrite) )
   !
       CALL DATETIME_DISTANCE(TDTEXP,TPDTCUR,ZWORKTEMP(nbusubwrite))
