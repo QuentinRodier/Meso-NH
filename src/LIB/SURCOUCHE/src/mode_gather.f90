@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -8,7 +8,7 @@
 !  J. Escobar  22/05/2012: bug in ISEND with non-contiguous buffer: reintroduce intermediate buffer
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 26/04/2019: use modd_precision parameters for datatypes of MPI communications
-!
+!  P. Wautelet 14/01/2021: add GATHERXX_N4, GATHERXX_L3, GATHERXY_N4 and GATHERXY_L3 subroutines
 !-----------------------------------------------------------------
 
 MODULE MODE_GATHER_ll
@@ -22,18 +22,27 @@ IMPLICIT NONE
 PRIVATE
 
 INTERFACE GATHERALL_FIELD_ll
-  MODULE PROCEDURE GATHERALL_X1, GATHERALL_X2, GATHERALL_X3,&
-       & GATHERALL_N1, GATHERALL_N2
+  MODULE PROCEDURE                               &
+       GATHERALL_X1, GATHERALL_X2, GATHERALL_X3, &
+       GATHERALL_N1, GATHERALL_N2,               &
+       GATHERALL_L3
 END INTERFACE
 
 INTERFACE GATHER_XXFIELD
-  MODULE PROCEDURE GATHERXX_X1,GATHERXX_X2,GATHERXX_X3,GATHERXX_X4,GATHERXX_X5,&
-       & GATHERXX_X6,GATHERXX_N1,GATHERXX_N2,GATHERXX_N3,GATHERXX_L1
+  MODULE PROCEDURE                            &
+       GATHERXX_X1, GATHERXX_X2, GATHERXX_X3, &
+       GATHERXX_X4, GATHERXX_X5, GATHERXX_X6, &
+       GATHERXX_N1, GATHERXX_N2, GATHERXX_N3, &
+       GATHERXX_N4,                           &
+       GATHERXX_L1, GATHERXX_L3
 END INTERFACE
 
 INTERFACE GATHER_XYFIELD
-  MODULE PROCEDURE GATHERXY_X2,GATHERXY_X3,GATHERXY_X4,GATHERXY_X5,GATHERXY_X6,&
-       & GATHERXY_N2,GATHERXY_N3
+  MODULE PROCEDURE                            &
+       GATHERXY_X2, GATHERXY_X3, GATHERXY_X4, &
+       GATHERXY_X5, GATHERXY_X6,              &
+       GATHERXY_N2, GATHERXY_N3, GATHERXY_N4, &
+       GATHERXY_L3
 END INTERFACE
 
 PUBLIC GATHER_XXFIELD,GATHER_XYFIELD,GATHERALL_FIELD_ll,GATHERALL_X1,&
@@ -62,7 +71,7 @@ ELSE
   KRESP =-1
   PRINT *,'Error GATHERALL_X1'
 END IF
-! PRECV variable of IROOT processor contains the global field
+! PRECV variable of IROOT process contains the global field
 CALL MPI_BCAST(PRECV,SIZE(PRECV),MNHREAL_MPI,IROOT-1,NMNH_COMM_WORLD,KRESP)
 
 END SUBROUTINE GATHERALL_X1
@@ -85,7 +94,7 @@ ELSE IF (HDIR == 'XY') THEN
 ELSE
   PRINT *,'Error GATHERALL_X2'
 END IF
-! PRECV variable of IROOT processor contains the global field
+! PRECV variable of IROOT process contains the global field
 CALL MPI_BCAST(PRECV,SIZE(PRECV),MNHREAL_MPI,IROOT-1,NMNH_COMM_WORLD,KRESP)
 
 END SUBROUTINE GATHERALL_X2
@@ -109,7 +118,7 @@ ELSE
   PRINT *,'Error GATHERALL_X3'
   KRESP = -1
 END IF
-! PRECV variable of IROOT processor contains the global field
+! PRECV variable of IROOT process contains the global field
 CALL MPI_BCAST(PRECV,SIZE(PRECV),MNHREAL_MPI,IROOT-1,NMNH_COMM_WORLD,KRESP)
 
 END SUBROUTINE GATHERALL_X3
@@ -131,7 +140,7 @@ IF (HDIR == 'XX' .OR. HDIR == 'YY') THEN
 ELSE 
   PRINT *,'Error GATHERALL_N1'
 END IF
-! KRECV variable of IROOT processor contains the global field
+! KRECV variable of IROOT process contains the global field
 CALL MPI_BCAST(KRECV,SIZE(KRECV),MNHINT_MPI,IROOT-1,NMNH_COMM_WORLD,KRESP)
 
 END SUBROUTINE GATHERALL_N1
@@ -154,11 +163,34 @@ ELSE IF (HDIR == 'XY') THEN
 ELSE
   PRINT *,'Error GATHERALL_N2'
 END IF
-! KRECV variable of IROOT processor contains the global field
+! KRECV variable of IROOT process contains the global field
 CALL MPI_BCAST(KRECV,SIZE(KRECV),MNHINT_MPI,IROOT-1,NMNH_COMM_WORLD,KRESP)
 
 END SUBROUTINE GATHERALL_N2
 
+SUBROUTINE GATHERALL_L3(HDIR,OSEND,ORECV,KRESP)
+CHARACTER(LEN=*),         INTENT(IN)    :: HDIR
+LOGICAL,DIMENSION(:,:,:), INTENT(IN)    :: OSEND
+LOGICAL,DIMENSION(:,:,:), INTENT(INOUT) :: ORECV
+INTEGER,                  INTENT(INOUT) :: KRESP
+
+INTEGER :: IROOT
+
+KRESP = 0
+IROOT = 1
+
+IF (HDIR == 'XX' .OR. HDIR == 'YY') THEN
+  CALL GATHER_XXFIELD(HDIR,OSEND,ORECV,IROOT,NMNH_COMM_WORLD)
+ELSE IF (HDIR == 'XY') THEN
+  CALL GATHER_XYFIELD(OSEND,ORECV,IROOT,NMNH_COMM_WORLD)
+ELSE
+  PRINT *,'Error GATHERALL_L3'
+  KRESP = -1
+END IF
+! ORECV variable of IROOT process contains the global field
+CALL MPI_BCAST(ORECV,SIZE(ORECV),MNHLOG_MPI,IROOT-1,NMNH_COMM_WORLD,KRESP)
+
+END SUBROUTINE GATHERALL_L3
 
 !
 ! Gather des champs XX (ou YY)
@@ -213,7 +245,7 @@ IF (ISP == KROOT)  THEN
   END DO
 
 ELSE 
-  ! Other processors
+  ! Other processes
   CALL GET_DOMWRITE_ll(ISP,'global',IGXO,IGXE,IGYO,IGYE)
   CALL GET_DOMWRITE_ll(ISP,'local',IXO,IXE,IYO,IYE)
   
@@ -281,7 +313,7 @@ IF (ISP == KROOT)  THEN
   END DO
 
 ELSE 
-  ! Other processors
+  ! Other processes
   CALL GET_DOMWRITE_ll(ISP,'global',IGXO,IGXE,IGYO,IGYE)
   CALL GET_DOMWRITE_ll(ISP,'local',IXO,IXE,IYO,IYE)
   
@@ -342,7 +374,7 @@ IF (ISP == KROOT)  THEN
   END DO
 
 ELSE 
-  ! Other processors
+  ! Other processes
   CALL GET_DOMWRITE_ll(ISP,'global',IGXO,IGXE,IGYO,IGYE)
   CALL GET_DOMWRITE_ll(ISP,'local',IXO,IXE,IYO,IYE)
   
@@ -403,7 +435,7 @@ IF (ISP == KROOT)  THEN
   END DO
 
 ELSE 
-  ! Other processors
+  ! Other processes
   CALL GET_DOMWRITE_ll(ISP,'global',IGXO,IGXE,IGYO,IGYE)
   CALL GET_DOMWRITE_ll(ISP,'local',IXO,IXE,IYO,IYE)
   
@@ -464,7 +496,7 @@ IF (ISP == KROOT)  THEN
   END DO
 
 ELSE 
-  ! Other processors
+  ! Other processes
   CALL GET_DOMWRITE_ll(ISP,'global',IGXO,IGXE,IGYO,IGYE)
   CALL GET_DOMWRITE_ll(ISP,'local',IXO,IXE,IYO,IYE)
   
@@ -525,7 +557,7 @@ IF (ISP == KROOT)  THEN
   END DO
 
 ELSE 
-  ! Other processors
+  ! Other processes
   CALL GET_DOMWRITE_ll(ISP,'global',IGXO,IGXE,IGYO,IGYE)
   CALL GET_DOMWRITE_ll(ISP,'local',IXO,IXE,IYO,IYE)
   
@@ -587,7 +619,7 @@ IF (ISP == KROOT)  THEN
   END DO
 
 ELSE 
-  ! Other processors
+  ! Other processes
   CALL GET_DOMWRITE_ll(ISP,'global',IGXO,IGXE,IGYO,IGYE)
   CALL GET_DOMWRITE_ll(ISP,'local',IXO,IXE,IYO,IYE)
   
@@ -650,7 +682,7 @@ IF (ISP == KROOT)  THEN
   END DO
 
 ELSE 
-  ! Other processors
+  ! Other processes
   CALL GET_DOMWRITE_ll(ISP,'global',IGXO,IGXE,IGYO,IGYE)
   CALL GET_DOMWRITE_ll(ISP,'local',IXO,IXE,IYO,IYE)
   
@@ -711,7 +743,7 @@ IF (ISP == KROOT)  THEN
   END DO
 
 ELSE
-  ! Other processors
+  ! Other processes
   CALL GET_DOMWRITE_ll(ISP,'global',IGXO,IGXE,IGYO,IGYE)
   CALL GET_DOMWRITE_ll(ISP,'local',IXO,IXE,IYO,IYE)
 
@@ -725,6 +757,68 @@ ELSE
 END IF
 
 END SUBROUTINE GATHERXX_N3
+
+
+SUBROUTINE GATHERXX_N4(HDIR,KSEND,KRECV,KROOT,KCOMM)
+USE MODD_IO, ONLY: ISP, ISNPROC
+
+CHARACTER(LEN=*),                    INTENT(IN)    :: HDIR
+INTEGER, DIMENSION(:,:,:,:), TARGET, INTENT(IN)    :: KSEND
+INTEGER, DIMENSION(:,:,:,:), TARGET, INTENT(INOUT) :: KRECV
+INTEGER,                             INTENT(IN)    :: KROOT
+INTEGER,                             INTENT(IN)    :: KCOMM
+
+INTEGER                     :: JI
+INTEGER                     :: IXO,IXE,IYO,IYE
+INTEGER                     :: IGXO,IGXE,IGYO,IGYE
+INTEGER                     :: IERR
+INTEGER                     :: IXM, IYM
+INTEGER, DIMENSION(:,:,:,:), POINTER :: IP
+
+CALL GET_DOMWRITE_ll(KROOT,'global',IGXO,IGXE,IGYO,IGYE)
+IXM = (IGXE+IGXO)/2
+IYM = (IGYE+IGYO)/2
+
+IF (ISP == KROOT)  THEN
+  ! I/O proc case
+  DO JI=1,ISNPROC
+    CALL GET_DOMWRITE_ll(JI,'global',IGXO,IGXE,IGYO,IGYE)
+    CALL GET_DOMWRITE_ll(JI,'local',IXO,IXE,IYO,IYE)
+
+    IF (HDIR == 'XX' .AND. IYM <= IGYE .AND. IYM >= IGYO) THEN
+      IP=>KRECV(IGXO:IGXE,:,:,:)
+      IF (JI == KROOT) THEN
+        IP = KSEND(IXO:IXE,:,:,:)
+      ELSE
+        CALL MPI_RECV(IP,SIZE(IP),MNHINT_MPI,JI-1,99+KROOT,KCOMM,MPI_STATUS_IGNORE,IERR)
+      END IF
+
+    ELSE IF (HDIR == 'YY' .AND. IXM <= IGXE .AND. IXM >= IGXO) THEN
+      IP=>KRECV(IGYO:IGYE,:,:,:)
+      IF (JI==KROOT) THEN
+        IP = KSEND(IYO:IYE,:,:,:)
+      ELSE
+        CALL MPI_RECV(IP,SIZE(IP),MNHINT_MPI,JI-1,99+KROOT,KCOMM,MPI_STATUS_IGNORE,IERR)
+      END IF
+    END IF
+  END DO
+
+ELSE
+  ! Other processes
+  CALL GET_DOMWRITE_ll(ISP,'global',IGXO,IGXE,IGYO,IGYE)
+  CALL GET_DOMWRITE_ll(ISP,'local',IXO,IXE,IYO,IYE)
+
+  IF (HDIR == 'XX' .AND. IYM <= IGYE .AND. IYM >= IGYO) THEN
+    IP=>KSEND(IXO:IXE,:,:,:)
+    CALL MPI_BSEND(IP,SIZE(IP),MNHINT_MPI,KROOT-1,99+KROOT,KCOMM,IERR)
+  ELSE IF (HDIR == 'YY' .AND. IXM <= IGXE .AND. IXM >= IGXO) THEN
+    IP=>KSEND(IYO:IYE,:,:,:)
+    CALL MPI_BSEND(IP,SIZE(IP),MNHINT_MPI,KROOT-1,99+KROOT,KCOMM,IERR)
+  END IF
+END IF
+
+END SUBROUTINE GATHERXX_N4
+
 
 SUBROUTINE GATHERXX_L1(HDIR,OSEND,ORECV,KROOT,KCOMM)
 USE MODD_IO, ONLY: ISP, ISNPROC
@@ -773,7 +867,7 @@ IF (ISP == KROOT)  THEN
   END DO
 
 ELSE
-  ! Other processors
+  ! Other processes
   CALL GET_DOMWRITE_ll(ISP,'global',IGXO,IGXE,IGYO,IGYE)
   CALL GET_DOMWRITE_ll(ISP,'local',IXO,IXE,IYO,IYE)
 
@@ -787,6 +881,67 @@ ELSE
 END IF
 
 END SUBROUTINE GATHERXX_L1
+
+SUBROUTINE GATHERXX_L3(HDIR,OSEND,ORECV,KROOT,KCOMM)
+USE MODD_IO, ONLY : ISP, ISNPROC
+
+CHARACTER(LEN=*),               INTENT(IN)   :: HDIR
+LOGICAL,DIMENSION(:,:,:),TARGET,INTENT(IN)   :: OSEND
+LOGICAL,DIMENSION(:,:,:),TARGET,INTENT(INOUT):: ORECV
+INTEGER,                        INTENT(IN)   :: KROOT
+INTEGER,                        INTENT(IN)   :: KCOMM
+
+INTEGER                     :: JI
+INTEGER                     :: IXO,IXE,IYO,IYE
+INTEGER                     :: IGXO,IGXE,IGYO,IGYE
+LOGICAL, DIMENSION(:,:,:), POINTER :: IP
+INTEGER                     :: IERR
+INTEGER                     :: IXM, IYM
+!INTEGER, DIMENSION(MPI_STATUS_SIZE)   :: STATUS
+
+CALL GET_DOMWRITE_ll(KROOT,'global',IGXO,IGXE,IGYO,IGYE)
+IXM = (IGXE+IGXO)/2
+IYM = (IGYE+IGYO)/2
+
+IF (ISP == KROOT)  THEN
+  ! I/O proc case
+  DO JI=1,ISNPROC
+    CALL GET_DOMWRITE_ll(JI,'global',IGXO,IGXE,IGYO,IGYE)
+    CALL GET_DOMWRITE_ll(JI,'local',IXO,IXE,IYO,IYE)
+
+    IF (HDIR == 'XX' .AND. IYM <= IGYE .AND. IYM >= IGYO) THEN
+      IP=>ORECV(IGXO:IGXE,:,:)
+      IF (JI == KROOT) THEN
+        IP = OSEND(IXO:IXE,:,:)
+      ELSE
+        CALL MPI_RECV(IP,SIZE(IP),MNHLOG_MPI,JI-1,99+KROOT,KCOMM,MPI_STATUS_IGNORE,IERR)
+      END IF
+
+    ELSE IF (HDIR == 'YY' .AND. IXM <= IGXE .AND. IXM >= IGXO) THEN
+      IP=>ORECV(IGYO:IGYE,:,:)
+      IF (JI==KROOT) THEN
+        IP = OSEND(IYO:IYE,:,:)
+      ELSE
+        CALL MPI_RECV(IP,SIZE(IP),MNHLOG_MPI,JI-1,99+KROOT,KCOMM,MPI_STATUS_IGNORE,IERR)
+      END IF
+    END IF
+  END DO
+
+ELSE
+  ! Other processes
+  CALL GET_DOMWRITE_ll(ISP,'global',IGXO,IGXE,IGYO,IGYE)
+  CALL GET_DOMWRITE_ll(ISP,'local',IXO,IXE,IYO,IYE)
+
+  IF (HDIR == 'XX' .AND. IYM <= IGYE .AND. IYM >= IGYO) THEN
+    IP=>OSEND(IXO:IXE,:,:)
+    CALL MPI_BSEND(IP,SIZE(IP),MNHLOG_MPI,KROOT-1,99+KROOT,KCOMM,IERR)
+  ELSE IF (HDIR == 'YY' .AND. IXM <= IGXE .AND. IXM >= IGXO) THEN
+    IP=>OSEND(IYO:IYE,:,:)
+    CALL MPI_BSEND(IP,SIZE(IP),MNHLOG_MPI,KROOT-1,99+KROOT,KCOMM,IERR)
+  END IF
+END IF
+
+END SUBROUTINE GATHERXX_L3
 
 !
 ! Gather des champs XY
@@ -828,7 +983,7 @@ IF (ISP == KROOT)  THEN
     END IF
   END DO
 ELSE 
-  ! Other processors
+  ! Other processes
   CALL GET_DOMWRITE_ll(ISP,'local',IXO,IXE,IYO,IYE,KXOBOX,KXEBOX,KYOBOX,KYEBOX,HINTER)
   IF (IXO /= 0) THEN ! intersection is not empty
     XP=>PSEND(IXO:IXE,IYO:IYE)
@@ -875,7 +1030,7 @@ IF (ISP == KROOT)  THEN
     END IF
   END DO
 ELSE 
-  ! Other processors
+  ! Other processes
   CALL GET_DOMWRITE_ll(ISP,'local',IXO,IXE,IYO,IYE,KXOBOX,KXEBOX,KYOBOX,KYEBOX,HINTER)
   IF (IXO /= 0) THEN ! intersection is not empty
     XP=>PSEND(IXO:IXE,IYO:IYE,:)
@@ -916,7 +1071,7 @@ IF (ISP == KROOT)  THEN
     END IF
   END DO
 ELSE 
-  ! Other processors
+  ! Other processes
   CALL GET_DOMWRITE_ll(ISP,'local',IXO,IXE,IYO,IYE,KXOBOX,KXEBOX,KYOBOX,KYEBOX,HINTER)
   IF (IXO /= 0) THEN ! intersection is not empty
     XP=>PSEND(IXO:IXE,IYO:IYE,:,:)
@@ -957,7 +1112,7 @@ IF (ISP == KROOT)  THEN
     END IF
   END DO
 ELSE 
-  ! Other processors
+  ! Other processes
   CALL GET_DOMWRITE_ll(ISP,'local',IXO,IXE,IYO,IYE,KXOBOX,KXEBOX,KYOBOX,KYEBOX,HINTER)
   IF (IXO /= 0) THEN ! intersection is not empty
     XP=>PSEND(IXO:IXE,IYO:IYE,:,:,:)
@@ -998,7 +1153,7 @@ IF (ISP == KROOT)  THEN
     END IF
   END DO
 ELSE 
-  ! Other processors
+  ! Other processes
   CALL GET_DOMWRITE_ll(ISP,'local',IXO,IXE,IYO,IYE,KXOBOX,KXEBOX,KYOBOX,KYEBOX,HINTER)
   IF (IXO /= 0) THEN ! intersection is not empty
     XP=>PSEND(IXO:IXE,IYO:IYE,:,:,:,:)
@@ -1035,7 +1190,7 @@ IF (ISP == KROOT)  THEN
     END IF
   END DO
 ELSE 
-  ! Other processors
+  ! Other processes
   CALL GET_DOMWRITE_ll(ISP,'local',IXO,IXE,IYO,IYE)
   ITP=>KSEND(IXO:IXE,IYO:IYE)
   CALL MPI_BSEND(ITP,SIZE(ITP),MNHINT_MPI,KROOT-1,99+KROOT,KCOMM,IERR)
@@ -1074,7 +1229,7 @@ IF (ISP == KROOT)  THEN
     END IF
   END DO
 ELSE
-  ! Other processors
+  ! Other processes
   CALL GET_DOMWRITE_ll(ISP,'local',IXO,IXE,IYO,IYE,KXOBOX,KXEBOX,KYOBOX,KYEBOX,HINTER)
   IF (IXO /= 0) THEN ! intersection is not empty
     IP=>KSEND(IXO:IXE,IYO:IYE,:)
@@ -1083,6 +1238,89 @@ ELSE
 END IF
 
 END SUBROUTINE GATHERXY_N3
+
+
+SUBROUTINE GATHERXY_N4(KSEND,KRECV,KROOT,KCOMM,KXOBOX,KXEBOX,KYOBOX,KYEBOX,HINTER)
+USE MODD_IO, ONLY: ISP, ISNPROC
+
+INTEGER, DIMENSION(:,:,:,:), TARGET,           INTENT(IN)    :: KSEND
+INTEGER, DIMENSION(:,:,:,:), TARGET,           INTENT(INOUT) :: KRECV
+INTEGER,                                       INTENT(IN)    :: KROOT
+INTEGER,                                       INTENT(IN)    :: KCOMM
+INTEGER,                             OPTIONAL, INTENT(IN)    :: KXOBOX,KXEBOX,KYOBOX,KYEBOX
+CHARACTER(LEN=*),                    OPTIONAL, INTENT(IN)    :: HINTER
+
+INTEGER                         :: JI
+INTEGER                         :: IXO,IXE,IYO,IYE
+INTEGER                         :: IERR
+INTEGER, DIMENSION(:,:,:,:), POINTER :: IP
+
+IF (ISP == KROOT)  THEN
+  ! I/O proc case
+  DO JI=1,ISNPROC
+    CALL GET_DOMWRITE_ll(JI,'global',IXO,IXE,IYO,IYE,KXOBOX,KXEBOX,KYOBOX,KYEBOX,HINTER)
+    IF (IXO /= 0) THEN ! intersection is not empty
+      IP=>KRECV(IXO:IXE,IYO:IYE,:,:)
+      IF (ISP == JI) THEN
+        CALL GET_DOMWRITE_ll(JI,'local',IXO,IXE,IYO,IYE,KXOBOX,KXEBOX,KYOBOX,KYEBOX,HINTER)
+        IP = KSEND(IXO:IXE,IYO:IYE,:,:)
+      ELSE
+        CALL MPI_RECV(IP,SIZE(IP),MNHINT_MPI,JI-1,99+KROOT,KCOMM,MPI_STATUS_IGNORE,IERR)
+      END IF
+    END IF
+  END DO
+ELSE
+  ! Other processes
+  CALL GET_DOMWRITE_ll(ISP,'local',IXO,IXE,IYO,IYE,KXOBOX,KXEBOX,KYOBOX,KYEBOX,HINTER)
+  IF (IXO /= 0) THEN ! intersection is not empty
+    IP=>KSEND(IXO:IXE,IYO:IYE,:,:)
+    CALL MPI_BSEND(IP,SIZE(IP),MNHINT_MPI,KROOT-1,99+KROOT,KCOMM,IERR)
+  END IF
+END IF
+
+END SUBROUTINE GATHERXY_N4
+
+
+SUBROUTINE GATHERXY_L3(OSEND,ORECV,KROOT,KCOMM,KXOBOX,KXEBOX,KYOBOX,KYEBOX,HINTER)
+USE MODD_IO, ONLY : ISP, ISNPROC
+
+LOGICAL,DIMENSION(:,:,:),TARGET,INTENT(IN)   :: OSEND
+LOGICAL,DIMENSION(:,:,:),TARGET,INTENT(INOUT):: ORECV
+INTEGER,                     INTENT(IN) :: KROOT
+INTEGER,                     INTENT(IN) :: KCOMM
+INTEGER,            OPTIONAL,INTENT(IN) :: KXOBOX,KXEBOX,KYOBOX,KYEBOX
+CHARACTER(LEN=*),   OPTIONAL,INTENT(IN) :: HINTER
+
+INTEGER                       :: JI
+INTEGER                       :: IXO,IXE,IYO,IYE
+LOGICAL, DIMENSION(:,:,:),POINTER:: IP
+INTEGER                       :: IERR
+!INTEGER, DIMENSION(MPI_STATUS_SIZE)   :: STATUS
+
+IF (ISP == KROOT)  THEN
+  ! I/O proc case
+  DO JI=1,ISNPROC
+    CALL GET_DOMWRITE_ll(JI,'global',IXO,IXE,IYO,IYE,KXOBOX,KXEBOX,KYOBOX,KYEBOX,HINTER)
+    IF (IXO /= 0) THEN ! intersection is not empty
+      IP=>ORECV(IXO:IXE,IYO:IYE,:)
+      IF (ISP == JI) THEN
+        CALL GET_DOMWRITE_ll(JI,'local',IXO,IXE,IYO,IYE,KXOBOX,KXEBOX,KYOBOX,KYEBOX,HINTER)
+        IP = OSEND(IXO:IXE,IYO:IYE,:)
+      ELSE
+        CALL MPI_RECV(IP,SIZE(IP),MNHLOG_MPI,JI-1,99+KROOT,KCOMM,MPI_STATUS_IGNORE,IERR)
+      END IF
+    END IF
+  END DO
+ELSE
+  ! Other processes
+  CALL GET_DOMWRITE_ll(ISP,'local',IXO,IXE,IYO,IYE,KXOBOX,KXEBOX,KYOBOX,KYEBOX,HINTER)
+  IF (IXO /= 0) THEN ! intersection is not empty
+    IP=>OSEND(IXO:IXE,IYO:IYE,:)
+    CALL MPI_BSEND(IP,SIZE(IP),MNHLOG_MPI,KROOT-1,99+KROOT,KCOMM,IERR)
+  END IF
+END IF
+
+END SUBROUTINE GATHERXY_L3
 
 SUBROUTINE GATHERBOX_X2(PSEND,PRECV,KROOT,KCOMM,KXOBOX,KXEBOX,KYOBOX,KYEBOX)
 USE MODD_IO, ONLY: ISP, ISNPROC
@@ -1114,7 +1352,7 @@ IF (ISP == KROOT)  THEN
     END IF
   END DO
 ELSE 
-  ! Other processors
+  ! Other processes
   CALL GET_DOMWRITE_ll(ISP,'local',IXO,IXE,IYO,IYE,KXOBOX,KXEBOX,KYOBOX,KYEBOX)
   IF (IXO /= 0) THEN ! intersection is not empty
     XP=>PSEND(IXO:IXE,IYO:IYE)
