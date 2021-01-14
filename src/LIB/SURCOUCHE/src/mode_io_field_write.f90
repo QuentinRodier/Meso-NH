@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -18,6 +18,7 @@
 !  P. Wautelet 30/09/2020: add IO_Field_write_box_byfield_X3 and IO_Field_write_error_check subroutines
 !  P. Wautelet 04/12/2020: add IO_Field_create and IO_Ndimlist_reduce subroutines
 !  P. Wautelet 07/12/2020: add support for partial write of fields (optional argument: koffset, not all subroutines, no LFI spport)
+!  P. Wautelet 14/01/2021: add IO_Field_write_byname_N4 and IO_Field_write_byfield_N4 subroutines
 !-----------------------------------------------------------------
 
 #define MNH_SCALARS_IN_SPLITFILES 0
@@ -52,6 +53,7 @@ MODULE MODE_IO_FIELD_WRITE
                       IO_Field_write_byname_X6,                            &
                       IO_Field_write_byname_N0, IO_Field_write_byname_N1,  &
                       IO_Field_write_byname_N2, IO_Field_write_byname_N3,  &
+                      IO_Field_write_byname_N4,                            &
                       IO_Field_write_byname_L0, IO_Field_write_byname_L1,  &
                       IO_Field_write_byname_C0, IO_Field_write_byname_C1,  &
                       IO_Field_write_byname_T0, IO_Field_write_byname_T1,  &
@@ -61,6 +63,7 @@ MODULE MODE_IO_FIELD_WRITE
                       IO_Field_write_byfield_X6,                           &
                       IO_Field_write_byfield_N0,IO_Field_write_byfield_N1, &
                       IO_Field_write_byfield_N2,IO_Field_write_byfield_N3, &
+                      IO_Field_write_byfield_N4,                           &
                       IO_Field_write_byfield_L0,IO_Field_write_byfield_L1, &
                       IO_Field_write_byfield_C0,IO_Field_write_byfield_C1, &
                       IO_Field_write_byfield_T0,IO_Field_write_byfield_T1
@@ -394,7 +397,7 @@ subroutine IO_Field_create( tpfile, tpfield )
       case ( 4 ) NDIMS
         if ( tzfield%ntype /= TYPEREAL ) then
           call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_create', Trim( tpfile%cname ) // ': ' &
-                          // Trim( tzfield%cmnhname ) // ': invalid ntype for 2D field' )
+                          // Trim( tzfield%cmnhname ) // ': invalid ntype for 4D field' )
           return
         end if
 
@@ -403,7 +406,7 @@ subroutine IO_Field_create( tpfile, tpfield )
       case ( 5 ) NDIMS
         if ( tzfield%ntype /= TYPEREAL ) then
           call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_create', Trim( tpfile%cname ) // ': ' &
-                          // Trim( tzfield%cmnhname ) // ': invalid ntype for 2D field' )
+                          // Trim( tzfield%cmnhname ) // ': invalid ntype for 5D field' )
           return
         end if
 
@@ -412,7 +415,7 @@ subroutine IO_Field_create( tpfile, tpfield )
       case ( 6 ) NDIMS
         if ( tzfield%ntype /= TYPEREAL ) then
           call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_create', Trim( tpfile%cname ) // ': ' &
-                          // Trim( tzfield%cmnhname ) // ': invalid ntype for 2D field' )
+                          // Trim( tzfield%cmnhname ) // ': invalid ntype for 6D field' )
           return
         end if
 
@@ -2499,6 +2502,222 @@ end subroutine IO_Ndimlist_reduce
     TIMEZ%T_WRIT3D_ALL=TIMEZ%T_WRIT3D_ALL + ZT22 - ZT11
     !
   END SUBROUTINE IO_Field_write_byfield_N3
+
+
+  SUBROUTINE IO_Field_write_byname_N4( TPFILE, HNAME, KFIELD, KRESP, koffset )
+    !
+    !*      0.1   Declarations of arguments
+    !
+    TYPE(TFILEDATA),                      INTENT(IN)  :: TPFILE
+    CHARACTER(LEN=*),                     INTENT(IN)  :: HNAME    ! name of the field to write
+    INTEGER,DIMENSION(:,:,:,:),           INTENT(IN)  :: KFIELD   ! array containing the data field
+    INTEGER,                    OPTIONAL, INTENT(OUT) :: KRESP    ! return-code
+    integer, dimension(4),      optional, intent(in)  :: koffset
+    !
+    !*      0.2   Declarations of local variables
+    !
+    INTEGER :: ID ! Index of the field
+    INTEGER :: IRESP ! return_code
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_byname_N4',TRIM(TPFILE%CNAME)//': writing '//TRIM(HNAME))
+    !
+    CALL FIND_FIELD_ID_FROM_MNHNAME(HNAME,ID,IRESP)
+    !
+    if( iresp == 0 ) call IO_Field_write( tpfile, tfieldlist(id), kfield, iresp, koffset )
+    !
+    IF (PRESENT(KRESP)) KRESP = IRESP
+    !
+  END SUBROUTINE IO_Field_write_byname_N4
+
+
+  SUBROUTINE IO_Field_write_byfield_N4( TPFILE, TPFIELD, KFIELD, KRESP, koffset )
+    use modd_field,         only: NMNHDIM_UNKNOWN, NMNHDIM_ONE, NMNHDIM_UNUSED
+    USE MODD_IO,            ONLY: GSMONOPROC, ISP, L1D, L2D, LPACK
+    USE MODD_PARAMETERS_ll, ONLY: JPHEXT
+    USE MODD_TIMEZ,         ONLY: TIMEZ
+    !
+    USE MODE_ALLOCBUFFER_ll
+    USE MODE_GATHER_ll
+    USE MODE_IO_TOOLS,      ONLY: IO_Level2filenumber_get
+    USE MODE_MNH_TIMING,    ONLY: SECOND_MNH2
+    USE MODD_VAR_ll,        ONLY: MNH_STATUSES_IGNORE
+    !
+    !
+    !*      0.1   Declarations of arguments
+    !
+    TYPE(TFILEDATA),                             INTENT(IN)  :: TPFILE
+    TYPE(TFIELDDATA),                            INTENT(IN)  :: TPFIELD
+    INTEGER,DIMENSION(:,:,:,:),TARGET,           INTENT(IN)  :: KFIELD   ! array containing the data field
+    INTEGER,                           OPTIONAL, INTENT(OUT) :: KRESP    ! return-code
+    integer, dimension(4),             optional, intent(in)  :: koffset
+    !
+    !*      0.2   Declarations of local variables
+    !
+    CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
+    CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
+    CHARACTER(LEN=2)                         :: YDIR     ! field form
+    INTEGER                                  :: IERR
+    INTEGER                                  :: ISIZEMAX
+    integer                                  :: iresp, iresp_lfi, iresp_nc4, iresp_glob
+    integer, dimension(2)                    :: ioffset2d
+    integer, dimension(3)                    :: ioffset3d
+    integer, dimension(:,:),     pointer     :: ifieldp2d
+    integer, dimension(:,:,:),   pointer     :: ifieldp3d
+    integer, dimension(:,:,:,:), pointer     :: ifieldp
+    LOGICAL                                  :: GALLOC
+    LOGICAL                                  :: GLFI, GNC4
+    INTEGER                                  :: IHEXTOT
+    CHARACTER(LEN=:),ALLOCATABLE             :: YMSG
+    CHARACTER(LEN=6)                         :: YRESP
+    type(tfielddata)                         :: tzfield
+    !
+    YFILEM   = TPFILE%CNAME
+    YRECFM   = TPFIELD%CMNHNAME
+    YDIR     = TPFIELD%CDIR
+    !
+    iresp     = 0
+    iresp_lfi = 0
+    iresp_nc4 = 0
+    GALLOC    = .FALSE.
+    !
+    IHEXTOT = 2*JPHEXT+1
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_byfield_N4',TRIM(YFILEM)//': writing '//TRIM(YRECFM))
+    !
+    CALL IO_Field_metadata_check(TPFIELD,TYPEINT,4,'IO_Field_write_byfield_N4')
+    !
+    CALL IO_File_write_check(TPFILE,'IO_Field_write_byfield_N4',IRESP)
+    !
+    CALL IO_Format_write_select(TPFILE,GLFI,GNC4)
+    !
+    if ( Present( koffset ) .and. glfi ) then
+      call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_partial_write_byfield_N4', Trim( tpfile%cname ) // ': LFI format not supported' )
+      glfi = .false.
+    end if
+
+    IF (IRESP==0) THEN
+      IF (GSMONOPROC) THEN ! sequential execution
+        !    IF (LPACK .AND. L1D .AND. YDIR=='XY') THEN
+        IF (LPACK .AND. L1D .AND. SIZE(KFIELD,1)==IHEXTOT .AND. SIZE(KFIELD,2)==IHEXTOT) THEN
+          if ( tpfile%ldimreduced ) then
+            tzfield = tpfield
+            tzfield%ndims = tzfield%ndims - 2
+            if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+              tzfield%ndimlist(1)  = tzfield%ndimlist(3)
+              tzfield%ndimlist(2)  = tzfield%ndimlist(4)
+              tzfield%ndimlist(3)  = tzfield%ndimlist(5) !Necessary if time dimension
+              tzfield%ndimlist(4:) = NMNHDIM_UNUSED
+            end if
+            ifieldp2d => kfield(jphext + 1, jphext + 1, :, :)
+            if ( Present( koffset ) ) then
+              ioffset2d(1) = koffset(3)
+              ioffset2d(2) = koffset(4)
+              !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tzfield, ifieldp2d, ioffset2d, iresp_lfi )
+              if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tzfield, ifieldp2d, ioffset2d, iresp_nc4 )
+            else
+              if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, ifieldp2d, iresp_lfi )
+              if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, ifieldp2d, iresp_nc4 )
+            end if
+          else
+            tzfield = tpfield
+            if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+              tzfield%ndimlist(1:2) = NMNHDIM_ONE
+            end if
+            ifieldp => kfield(jphext + 1 : jphext + 1, jphext + 1 : jphext + 1, :, :)
+            if ( Present( koffset ) ) then
+              !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tzfield, ifieldp, koffset, iresp_lfi )
+              if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tzfield, ifieldp, koffset, iresp_nc4 )
+            else
+              if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, ifieldp, iresp_lfi )
+              if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, ifieldp, iresp_nc4 )
+            end if
+          endif
+             !    ELSE IF (LPACK .AND. L2D .AND. YDIR=='XY') THEN
+        ELSEIF (LPACK .AND. L2D .AND. SIZE(KFIELD,2)==IHEXTOT) THEN
+          if ( tpfile%ldimreduced ) then
+            tzfield = tpfield
+            tzfield%ndims = tzfield%ndims - 1
+            if ( tzfield%ndimlist(1) /= NMNHDIM_UNKNOWN ) then
+              tzfield%ndimlist(2)  = tzfield%ndimlist(3)
+              tzfield%ndimlist(3)  = tzfield%ndimlist(4)
+              tzfield%ndimlist(4)  = tzfield%ndimlist(5) !Necessary if time dimension
+              tzfield%ndimlist(5:) = NMNHDIM_UNUSED
+            end if
+            ifieldp3d => kfield(:, jphext + 1, :, :)
+            if ( Present( koffset ) ) then
+              ioffset3d(1) = koffset(1)
+              ioffset3d(2) = koffset(3)
+              ioffset3d(3) = koffset(4)
+              !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tzfield, ifieldp3d, ioffset3d, iresp_lfi )
+              if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tzfield, ifieldp3d, ioffset3d, iresp_nc4 )
+            else
+              if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, ifieldp3d, iresp_lfi )
+              if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, ifieldp3d, iresp_nc4 )
+            end if
+          else
+            tzfield = tpfield
+            if ( tzfield%ndimlist(2) /= NMNHDIM_UNKNOWN ) tzfield%ndimlist(2) = NMNHDIM_ONE
+            ifieldp => kfield(:, jphext + 1 : jphext + 1, :, :)
+            if ( Present( koffset ) ) then
+              !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tzfield, ifieldp, koffset, iresp_lfi )
+              if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tzfield, ifieldp, koffset, iresp_nc4 )
+            else
+              if ( glfi ) call IO_Field_write_lfi( tpfile, tzfield, ifieldp, iresp_lfi )
+              if ( gnc4 ) call IO_Field_write_nc4( tpfile, tzfield, ifieldp, iresp_nc4 )
+            end if
+          endif
+        ELSE
+          if ( Present( koffset ) ) then
+              !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tpfield, kfield, koffset, iresp_lfi )
+              if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tpfield, kfield, koffset, iresp_nc4 )
+          else
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tpfield, kfield, iresp_lfi )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tpfield, kfield, iresp_nc4 )
+          end if
+        END IF
+      ELSE
+          CALL MPI_ALLREDUCE(SIZE(KFIELD),ISIZEMAX,1,MNHINT_MPI,MPI_MAX,TPFILE%NMPICOMM,IERR)
+          IF (ISIZEMAX==0) THEN
+             CALL PRINT_MSG(NVERB_INFO,'IO','IO_Field_write_byfield_N4','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
+             IF (PRESENT(KRESP)) KRESP=0
+             RETURN
+          END IF
+
+          IF (ISP == TPFILE%NMASTER_RANK)  THEN
+             CALL ALLOCBUFFER_ll(IFIELDP,KFIELD,YDIR,GALLOC)
+          ELSE
+             ALLOCATE(IFIELDP(0,0,0,0))
+             GALLOC = .TRUE.
+          END IF
+          !
+          IF (YDIR == 'XX' .OR. YDIR =='YY') THEN
+             CALL GATHER_XXFIELD(YDIR,KFIELD,IFIELDP,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
+          ELSEIF (YDIR == 'XY') THEN
+             IF (LPACK .AND. L2D) THEN
+                call Print_msg( NVERB_FATAL, 'GEN', 'IO_Field_write_byfield_N4', '2D not (yet) allowed for parallel execution' )
+                CALL GATHER_XXFIELD('XX',KFIELD(:,JPHEXT+1,:,:),IFIELDP(:,1,:,:),TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
+             ELSE
+                CALL GATHER_XYFIELD(KFIELD,IFIELDP,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
+             END IF
+          END IF
+          !
+          IF (ISP == TPFILE%NMASTER_RANK)  THEN
+            if ( Present( koffset ) ) then
+              !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tpfield, ifieldp, koffset, iresp_lfi )
+              if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tpfield, ifieldp, koffset, iresp_nc4 )
+            else
+              if ( glfi ) call IO_Field_write_lfi( tpfile, tpfield, ifieldp, iresp_lfi )
+              if ( gnc4 ) call IO_Field_write_nc4( tpfile, tpfield, ifieldp, iresp_nc4 )
+            end if
+          END IF
+       END IF ! multiprocess execution
+    END IF
+
+    call IO_Field_write_error_check( tpfile, tpfield, 'IO_Field_write_byfield_N4', iresp, iresp_lfi, iresp_nc4, iresp_glob )
+    if ( Present( kresp ) ) kresp = iresp_glob
+
+    IF (GALLOC) DEALLOCATE(IFIELDP)
+  END SUBROUTINE IO_Field_write_byfield_N4
 
 
   SUBROUTINE IO_Field_write_byname_L0(TPFILE,HNAME,OFIELD,KRESP)
