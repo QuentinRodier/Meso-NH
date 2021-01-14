@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -129,6 +129,10 @@ END MODULE MODI_AIRCRAFT_BALLOON_EVOL
 !!     March,28, 2018 (P. Wautelet) replace TEMPORAL_DIST by DATETIME_DISTANCE
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 01/10/2020: bugfix: initialize GSTORE
+!  P. Wautelet 14/01/2021: bugfixes: -ZXCOEF and ZYCOEF were not computed if CVBALL
+!                                    -PCIT was used if CCLOUD/=ICEx (not allocated)
+!                                    -PSEA was always used even if not allocated (CSURF/=EXTE)
+!                                    -do not use PMAP if cartesian domain
 !
 !! --------------------------------------------------------------------------
 !       
@@ -154,7 +158,7 @@ USE MODD_PARAM_LIMA_MIXED, ONLY: XDG_L=>XDG,XLBEXG_L=>XLBEXG,XLBG_L=>XLBG,XCCG_L
                                  XAG_L=>XAG,XBG_L=>XBG,XCXG_L=>XCXG,XCG_L=>XCG
 USE MODD_PARAM_LIMA_WARM,  ONLY: XLBEXR_L=>XLBEXR,XLBR_L=>XLBR,XBR_L=>XBR,XAR_L=>XAR,&
                                  XBC_L=>XBC,XAC_L=>XAC
-USE MODD_PARAM_n,          ONLY: CCLOUD
+USE MODD_PARAM_n,          ONLY: CCLOUD, CSURF
 USE MODD_RAIN_ICE_DESCR,   ONLY: XALPHAR_I=>XALPHAR,XNUR_I=>XNUR,XLBEXR_I=>XLBEXR,&
                                  XLBR_I=>XLBR,XCCR_I=>XCCR,XBR_I=>XBR,XAR_I=>XAR,&
                                  XALPHAC_I=>XALPHAC,XNUC_I=>XNUC,&
@@ -721,6 +725,10 @@ IF ( TPFLYER%FLY) THEN
 !*      5.2.4 Constant Volume Balloon
 !
       IF (TPFLYER%TYPE=='CVBALL') THEN
+        ZXCOEF = (TPFLYER%X_CUR - ZXHATM(II)) / (ZXHATM(II+1) - ZXHATM(II))
+        ZXCOEF = MAX (0.,MIN(ZXCOEF,1.))
+        ZYCOEF = (TPFLYER%Y_CUR - ZYHATM(IJ)) / (ZYHATM(IJ+1) - ZYHATM(IJ))
+        ZYCOEF = MAX (0.,MIN(ZYCOEF,1.))
         IF ( TPFLYER%ALT /= XUNDEF ) THEN
           IK00 = MAX ( COUNT (TPFLYER%ALT >= ZZM(1,1,:)), 1)
           IK01 = MAX ( COUNT (TPFLYER%ALT >= ZZM(1,2,:)), 1)
@@ -747,7 +755,7 @@ IF ( TPFLYER%FLY) THEN
           IK10 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(2,1,:)), 1)
           IK11 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(2,2,:)), 1)
           IF (IK00*IK01*IK10*IK11 .EQ. 0) THEN
-            TPFLYER%Z_CUR = ZZM(1,1,IKB) 
+            TPFLYER%Z_CUR = ZZM(1,1,IKB)
             TPFLYER%Z_CUR = MAX ( TPFLYER%Z_CUR , ZZM(2,1,IKB) )
             TPFLYER%Z_CUR = MAX ( TPFLYER%Z_CUR , ZZM(1,2,IKB) )
             TPFLYER%Z_CUR = MAX ( TPFLYER%Z_CUR , ZZM(2,2,IKB) )
@@ -766,7 +774,7 @@ IF ( TPFLYER%FLY) THEN
           IK10 = MAX ( COUNT (TPFLYER%RHO <= ZRHO(2,1,:)), 1)
           IK11 = MAX ( COUNT (TPFLYER%RHO <= ZRHO(2,2,:)), 1)
           IF (IK00*IK01*IK10*IK11 .EQ. 0) THEN
-            TPFLYER%Z_CUR = ZZM(1,1,IKB) 
+            TPFLYER%Z_CUR = ZZM(1,1,IKB)
             TPFLYER%Z_CUR = MAX ( TPFLYER%Z_CUR , ZZM(2,1,IKB) )
             TPFLYER%Z_CUR = MAX ( TPFLYER%Z_CUR , ZZM(1,2,IKB) )
             TPFLYER%Z_CUR = MAX ( TPFLYER%Z_CUR , ZZM(2,2,IKB) )
@@ -987,8 +995,8 @@ IF ( TPFLYER%FLY) THEN
           TPFLYER%CIZ  (IN,:) = FLYER_INTERPZ(PSV(:,:,:,NSV_LIMA_NI))  
           TPFLYER%CCZ  (IN,:) = FLYER_INTERPZ(PSV(:,:,:,NSV_LIMA_NC))  
           TPFLYER%CRZ  (IN,:) = FLYER_INTERPZ(PSV(:,:,:,NSV_LIMA_NR))  
-        ELSE
-          TPFLYER%CIZ  (IN,:) = FLYER_INTERPZ(PCIT(:,:,:))      
+        ELSE IF ( CCLOUD=="ICE3" .OR. CCLOUD=="ICE4" ) THEN
+          TPFLYER%CIZ  (IN,:) = FLYER_INTERPZ(PCIT(:,:,:))
         ENDIF             
         ! initialization CRARE and CRARE_ATT + LWC and IWC
         TPFLYER%CRARE(IN,:) = 0.
@@ -1000,19 +1008,28 @@ IF ( TPFLYER%FLY) THEN
        TPFLYER%IWCZ  (IN,:) = FLYER_INTERPZ((PR(:,:,:,4)+PR(:,:,:,5)+PR(:,:,:,6))*PRHODREF(:,:,:))
        ZTEMPZ(:)=FLYER_INTERPZ(PTH(II:II+1,IJ:IJ+1,:) * ZEXN(:,:,:))
         ZRHODREFZ(:)=FLYER_INTERPZ(PRHODREF(:,:,:))
-        ZCIT(:)=FLYER_INTERPZ(PCIT(:,:,:))
         IF (CCLOUD=="LIMA") THEN
           ZCCI(:)=FLYER_INTERPZ(PSV(:,:,:,NSV_LIMA_NI))
           ZCCR(:)=FLYER_INTERPZ(PSV(:,:,:,NSV_LIMA_NR))
           ZCCC(:)=FLYER_INTERPZ(PSV(:,:,:,NSV_LIMA_NC))
+        ELSE
+          ZCIT(:)=FLYER_INTERPZ(PCIT(:,:,:))
         ENDIF
         DO JLOOP=3,6
           ZRZ(:,JLOOP)=FLYER_INTERPZ(PR(:,:,:,JLOOP))
         END DO
-        DO JK=1,IKU
-          ZRZ(JK,2)=FLYER_INTERP_2D(PR(:,:,JK,2)*PSEA(:,:))       ! becomes cloud mixing ratio over sea
-          ZRZ(JK,7)=FLYER_INTERP_2D(PR(:,:,JK,2)*(1.-PSEA(:,:)))  ! becomes cloud mixing ratio over land
-        END DO
+        if ( csurf == 'EXTE' ) then
+          DO JK=1,IKU
+            ZRZ(JK,2)=FLYER_INTERP_2D(PR(:,:,JK,2)*PSEA(:,:))       ! becomes cloud mixing ratio over sea
+            ZRZ(JK,7)=FLYER_INTERP_2D(PR(:,:,JK,2)*(1.-PSEA(:,:)))  ! becomes cloud mixing ratio over land
+          END DO
+        else
+          !if csurf/='EXTE', psea is not allocated
+          DO JK=1,IKU
+            ZRZ(JK,2)=FLYER_INTERP_2D(PR(:,:,JK,2))
+            ZRZ(JK,7) = 0.
+          END DO
+        end if
         ALLOCATE(ZAELOC(IKU))
         !
         ZAELOC(:)=0.
@@ -1299,7 +1316,11 @@ IF ( TPFLYER%FLY) THEN
       IF (TPFLYER%TYPE=='RADIOS' .OR. TPFLYER%TYPE=='ISODEN' .OR. TPFLYER%TYPE=='CVBALL') THEN
         ZU_BAL = FLYER_INTERP_U(PU)
         ZV_BAL = FLYER_INTERP_V(PV)
-        ZMAP   = FLYER_INTERP_2D(PMAP)
+        if ( .not. lcartesian ) then
+          ZMAP = FLYER_INTERP_2D(PMAP)
+        else
+          ZMAP = 1.
+        end if
         !
         TPFLYER%X_CUR = TPFLYER%X_CUR   +   ZU_BAL * PTSTEP * ZMAP
         TPFLYER%Y_CUR = TPFLYER%Y_CUR   +   ZV_BAL * PTSTEP * ZMAP
