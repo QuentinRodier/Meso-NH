@@ -15,12 +15,12 @@ public :: Write_diachro
 
 contains
 
-! #########################################################################
-subroutine Write_diachro( tpdiafile, tpfields, hgroup, htype,             &
-                          tpdates, pvar,                                  &
-                          oicp, ojcp, okcp, kil, kih, kjl, kjh, kkl, kkh, &
-                          ptrajx, ptrajy, ptrajz, osplit )
-! #########################################################################
+! ###########################################################################
+  subroutine Write_diachro( tpdiafile, tpfields, hgroup, htype,             &
+                            tpdates, pvar,                                  &
+                            oicp, ojcp, okcp, kil, kih, kjl, kjh, kkl, kkh, &
+                            ptrajx, ptrajy, ptrajz, osplit, tpflyer         )
+! ###########################################################################
 !
 !!****  *WRITE_DIACHRO* - Ecriture d'un enregistrement dans un fichier
 !!                        diachronique (de nom de base HGROUP)
@@ -90,10 +90,11 @@ subroutine Write_diachro( tpdiafile, tpfields, hgroup, htype,             &
 !*       0.    DECLARATIONS
 !              ------------
 !
-use modd_conf,           only: lpack
-use modd_field,          only: tfield_metadata_base
-use modd_io,             only: tfiledata
-use modd_type_date,      only: date_time
+use modd_aircraft_balloon, only: flyer
+use modd_conf,             only: lpack
+use modd_field,            only: tfield_metadata_base
+use modd_io,               only: tfiledata
+use modd_type_date,        only: date_time
 !
 IMPLICIT NONE
 !
@@ -112,6 +113,7 @@ REAL,DIMENSION(:,:,:),                               INTENT(IN), OPTIONAL :: PTR
 REAL,DIMENSION(:,:,:),                               INTENT(IN), OPTIONAL :: PTRAJY
 REAL,DIMENSION(:,:,:),                               INTENT(IN), OPTIONAL :: PTRAJZ
 logical,                                             intent(in), optional :: osplit
+type(flyer),                                         intent(in), optional :: tpflyer
 !
 !*       0.1   Local variables
 !              ---------------
@@ -151,7 +153,7 @@ if ( tpdiafile%cformat == 'LFI' .or. tpdiafile%cformat == 'LFICDF4' ) &
 #ifdef MNH_IOCDF4
 if ( tpdiafile%cformat == 'NETCDF4' .or. tpdiafile%cformat == 'LFICDF4' ) &
   call Write_diachro_nc4( tpdiafile, tpfields, hgroup, htype, tpdates, pvar, gicp, gjcp, gkcp, kil, kih, kjl, kjh, kkl, kkh, &
-                          osplit )
+                          osplit, tpflyer )
 #endif
 
 lpack = gpack
@@ -624,21 +626,23 @@ end subroutine Write_diachro_lfi
 #ifdef MNH_IOCDF4
 !-----------------------------------------------------------------------------
 subroutine Write_diachro_nc4( tpdiafile, tpfields, hgroup, htype, tpdates, pvar, oicp, ojcp, okcp, kil, kih, kjl, kjh, kkl, kkh, &
-                              osplit )
+                              osplit, tpflyer )
 
 use NETCDF,            only: NF90_DEF_DIM, NF90_DEF_GRP, NF90_DEF_VAR, NF90_INQ_NCID, NF90_PUT_ATT, NF90_PUT_VAR, &
                              NF90_GLOBAL, NF90_NOERR, NF90_STRERROR
 
-use modd_budget,       only: nbutshift, nbusubwrite
+use modd_aircraft_balloon, only: flyer
+use modd_budget,           only: nbutshift, nbusubwrite
+use modd_conf,             only: lcartesian
 use modd_field
-use modd_io,           only: isp, tfiledata
-use modd_les,          only: nles_masks
-use modd_parameters,   only: jphext
-use modd_precision,    only: CDFINT, MNHREAL_NF90
-use modd_type_date,    only: date_time
+use modd_io,               only: isp, tfiledata
+use modd_les,              only: nles_masks
+use modd_parameters,       only: jphext
+use modd_precision,        only: CDFINT, MNHREAL_NF90
+use modd_type_date,        only: date_time
 
-use mode_io_field_write, only: IO_Field_create, IO_Field_write, IO_Field_write_box
-use mode_io_tools_nc4,   only: IO_Err_handle_nc4
+use mode_io_field_write,   only: IO_Field_create, IO_Field_write, IO_Field_write_box
+use mode_io_tools_nc4,     only: IO_Err_handle_nc4
 
 type(tfiledata),                                     intent(in)           :: tpdiafile        ! File to write
 class(tfield_metadata_base), dimension(:),           intent(in)           :: tpfields
@@ -650,7 +654,9 @@ integer,                                             intent(in), optional :: kil
 integer,                                             intent(in), optional :: kjl, kjh
 integer,                                             intent(in), optional :: kkl, kkh
 logical,                                             intent(in), optional :: osplit
+type(flyer),                                         intent(in), optional :: tpflyer
 
+character(len=:), allocatable :: ystdnameprefix
 integer              :: icompx, icompy, icompz
 integer              :: idims
 integer              :: icount
@@ -663,6 +669,7 @@ integer(kind=CDFINT) :: igrpid
 integer(kind=CDFINT) :: istatus
 logical              :: gdistributed
 logical              :: gsplit
+type(tfielddata)     :: tzfield
 type(tfiledata)      :: tzfile
 
 if ( trim ( htype ) == 'CART' .or. trim ( htype ) == 'MASK' .or. trim ( htype ) == 'SPXY') then
@@ -1181,6 +1188,35 @@ select case ( idims )
 
 end select
 
+!Write X and Y position of the flyer
+if ( Present( tpflyer ) ) then
+  if ( lcartesian ) then
+    ystdnameprefix = 'plane'
+  else
+    ystdnameprefix = 'projection'
+  endif
+
+  tzfield%cmnhname   = 'X'
+  tzfield%cstdname   = Trim( ystdnameprefix ) // '_x_coordinate'
+  tzfield%clongname  = 'x-position of the flyer'
+  tzfield%cunits     = 'm'
+  tzfield%cdir       = '--'
+  tzfield%ccomment   = ''
+  tzfield%ngrid      = 0
+  tzfield%ntype      = TYPEREAL
+  tzfield%ltimedep   = .false.
+  tzfield%ndims      = 1
+  tzfield%ndimlist(1)  = NMNHDIM_FLYER_TIME
+  tzfield%ndimlist(2:) = NMNHDIM_UNUSED
+
+  call IO_Field_write( tzfile, tzfield, tpflyer%x )
+
+  tzfield%cmnhname   = 'Y'
+  tzfield%cstdname   = Trim( ystdnameprefix ) // '_y_coordinate'
+  tzfield%clongname  = 'y-position of the flyer'
+
+  call IO_Field_write( tzfile, tzfield, tpflyer%y )
+end if
 
 
 
@@ -1224,7 +1260,7 @@ real,             dimension(:,:),              allocatable :: zdata2d
 real,             dimension(:,:,:),            allocatable :: zdata3d
 real,             dimension(:,:,:,:),          allocatable :: zdata4d
 real,             dimension(:,:,:,:,:),        allocatable :: zdata5d
-type(tfielddata) :: tzfield
+type(tfielddata)                                           :: tzfield
 
 idims = Size( kdims )
 
