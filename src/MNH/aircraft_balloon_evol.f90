@@ -632,6 +632,7 @@ IF ( TPFLYER%FLY) THEN
       END DO
      ZTHW_FLUX(:,:,:) = ZRHO(:,:,:)*XCPD *XTHW_FLUX(II:II+1,IJ:IJ+1,:)
      ZRCW_FLUX(:,:,:) = ZRHO(:,:,:)*XLVTT*XRCW_FLUX(II:II+1,IJ:IJ+1,:)
+     ZSVW_FLUX(:,:,:,:) = XSVW_FLUX(II:II+1,IJ:IJ+1,:,:)
     END IF
 
 !
