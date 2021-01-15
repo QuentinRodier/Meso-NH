@@ -205,7 +205,6 @@ TYPE(TFIELDDATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 ILUOUT = TLUOUT%NLU
-ZW(:,:,:)=0.
 !
 !*       1.     PREPARE COMPUTATIONS - PACK
 !   	        ---------------------------
@@ -518,6 +517,11 @@ END IF ! INUCT
 DEALLOCATE(ZCTMIN)
 !--cb--
 IF ( tpfile%lopened ) THEN
+  IF ( INUCT == 0 ) THEN
+    ZW (:,:,:) = 0.
+    ZW2(:,:,:) = 0.
+  END IF
+
   TZFIELD%CMNHNAME   ='SMAX'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
