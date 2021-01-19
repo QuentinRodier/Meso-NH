@@ -2501,7 +2501,7 @@ if ( tbudgets(NBUDGET_RG)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource, gcond, ngmltrg )
 
   gcond =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. lhail_lima .and. lcold_lima .and. lwarm_lima .and. lsnow_lima ) &
-          .or. ( hcloud == 'ICE4' .and. ( .not. lred .or. celec /= 'NONE' ) )
+          .or.   hcloud == 'ICE4'
   tzsource%cmnhname  = 'WETH'
   tzsource%clongname = 'wet growth of hail'
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource, gcond, nwethrg )
