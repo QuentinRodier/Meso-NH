@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -325,7 +325,6 @@ REAL    :: ZMAX_NORM_M
 !* normalization height (usually maximum BL height)
 !
 IF (OAVG) THEN
-
   ITEMP_MEAN_START = COUNT( xles_times(:)<=XLES_TEMP_MEAN_START ) + 1
   ITEMP_MEAN_END   = COUNT( xles_times(:)<=XLES_TEMP_MEAN_END   )
 
@@ -912,9 +911,6 @@ ikh = nles_levels(iles_k)
 
 ztrajx(:, :, :) = ( iil + iih ) / 2
 ztrajy(:, :, :) = ( ijl + ijh ) / 2
-do jk = 1, iles_k
-  ztrajz(jk, :, :) = xles_current_z(jk)
-end do
 
 if ( Present( hsuffixes ) ) then
   if ( Size( hsuffixes ) /= Size( pfield, 3) ) &
@@ -958,6 +954,10 @@ Allocate( zfield(Size( pfield, 1 ), Size( pfield, 2 ), Size( pfield, 3 ), Size( 
 Allocate( tzdates( nles_current_times ) )
 
 tzdates(:) = tles_dates(:)
+
+do jk = 1, iles_k
+  ztrajz(jk, :, :) = xles_current_z(jk)
+end do
 
 !Copy all fields from tpfield
 tzfields(:) = tpfield
