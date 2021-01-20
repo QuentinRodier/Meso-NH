@@ -543,7 +543,7 @@ IF(.NOT. LSEDIM_AFTER) THEN
   if ( lbudget_rg  )             call Budget_store_init( tbudgets(NBUDGET_RG), 'SEDI', prgs(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_rh  )             call Budget_store_init( tbudgets(NBUDGET_RH), 'SEDI', prhs(:, :, :) * prhodj(:, :, :) )
 
-  !Init only of not osedic (to prevent crash with double init)
+  !Init only if not osedic (to prevent crash with double init)
   !Remark: the 2 source terms SEDI and DEPO could be mixed and stored in the same source term (SEDI)
   !        if osedic=T and ldeposc=T (a warning is printed in ini_budget in that case)
   if ( lbudget_rc .and. ldeposc .and. .not.osedic ) &
@@ -1071,8 +1071,6 @@ ENDIF
 !*       6.     COMPUTES THE SLOW COLD PROCESS SOURCES OUTSIDE OF ODMICRO POINTS
 !               ----------------------------------------------------------------
 !
-if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'HENU', pris(:, :, :) * prhodj(:, :, :) )
-
 CALL ICE4_NUCLEATION_WRAPPER(IIT, IJT, IKT, .NOT. ODMICRO, &
                              PTHT, PPABST, PRHODREF, PEXN, ZZ_LSFACT/PEXN, ZT, &
                              PRVT, &
@@ -1083,6 +1081,14 @@ ZZ_RVHENI(:,:,:) = MIN(PRVS(:,:,:), ZZ_RVHENI_MR(:,:,:)/PTSTEP)
 PRIS(:,:,:)=PRIS(:,:,:)+ZZ_RVHENI(:,:,:)
 PRVS(:,:,:)=PRVS(:,:,:)-ZZ_RVHENI(:,:,:)
 PTHS(:,:,:)=PTHS(:,:,:) + ZZ_RVHENI(:,:,:)*ZZ_LSFACT(:,:,:)
+
+if ( lbu_enable ) then
+  !Note: there is an other contribution for HENU later
+  if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HENU', pths(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'HENU', prvs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'HENU', zz_rvheni(:, :, :) * prhodj(:, :, :) )
+end if
+
 !-------------------------------------------------------------------------------
 !
 !*       7.     UNPACKING AND TOTAL TENDENCIES
@@ -1136,10 +1142,33 @@ ZW_RSS(:,:,:) = PRSS(:,:,:) + ZW_RSS(:,:,:)
 ZW_RGS(:,:,:) = PRGS(:,:,:) + ZW_RGS(:,:,:)
 IF(KRR==7) ZW_RHS(:,:,:) = PRHS(:,:,:) + ZW_RHS(:,:,:)
 ZW_THS(:,:,:) = PTHS(:,:,:) + ZW_THS(:,:,:)
+
+if ( lbu_enable ) then
+  if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'CORR', zw_ths(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'CORR', zw_rvs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'CORR', zw_rcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR), 'CORR', zw_rrs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'CORR', zw_ris(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rs ) call Budget_store_init( tbudgets(NBUDGET_RS), 'CORR', zw_rss(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rg ) call Budget_store_init( tbudgets(NBUDGET_RG), 'CORR', zw_rgs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rh ) call Budget_store_init( tbudgets(NBUDGET_RH), 'CORR', zw_rhs(:, :, :) * prhodj(:, :, :) )
+end if
+
 !We correct negativities with conservation
 CALL CORRECT_NEGATIVITIES(KRR, ZW_RVS, ZW_RCS, ZW_RRS, &
                          &ZW_RIS, ZW_RSS, ZW_RGS, &
                          &ZW_THS, ZZ_LVFACT, ZZ_LSFACT, ZW_RHS)
+
+if ( lbu_enable ) then
+  if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'CORR', zw_ths(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'CORR', zw_rvs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'CORR', zw_rcs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR), 'CORR', zw_rrs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'CORR', zw_ris(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rs ) call Budget_store_end( tbudgets(NBUDGET_RS), 'CORR', zw_rss(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rg ) call Budget_store_end( tbudgets(NBUDGET_RG), 'CORR', zw_rgs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rh ) call Budget_store_end( tbudgets(NBUDGET_RH), 'CORR', zw_rhs(:, :, :) * prhodj(:, :, :) )
+end if
 !
 !***     7.2    LBU_ENABLE case
 !
@@ -1162,12 +1191,9 @@ IF(LBU_ENABLE) THEN
   DO JL=1,IMICRO
     ZW(I1(JL), I2(JL), I3(JL)) = ZTOT_RVHENI(JL) * ZINV_TSTEP
   END DO
-  PRIS(:,:,:) = PRIS(:,:,:) + ZW(:,:,:)
-  PRVS(:,:,:) = PRVS(:,:,:) - ZW(:,:,:)
-  PTHS(:,:,:) = PTHS(:,:,:) + ZW(:,:,:)*ZZ_LSFACT(:,:,:)
-  if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HENU', pths(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'HENU', prvs(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'HENU', pris(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'HENU',  zw(:, :, :) * zz_lsfact(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rv ) call Budget_store_add( tbudgets(NBUDGET_RV), 'HENU', -zw(:, :, :)                      * prhodj(:, :, :) )
+  if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'HENU',  zw(:, :, :)                      * prhodj(:, :, :) )
 
   ZW(:,:,:) = 0.
   DO JL=1,IMICRO
@@ -1481,16 +1507,6 @@ ENDIF
 !
 !***     7.3    Final tendencies
 !
-if ( lbu_enable ) then
-  if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'CORR', pths(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'CORR', prvs(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'CORR', prcs(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR), 'CORR', prrs(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'CORR', pris(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_rs ) call Budget_store_init( tbudgets(NBUDGET_RS), 'CORR', prss(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_rg ) call Budget_store_init( tbudgets(NBUDGET_RG), 'CORR', prgs(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_rh ) call Budget_store_init( tbudgets(NBUDGET_RH), 'CORR', prhs(:, :, :) * prhodj(:, :, :) )
-end if
 PRVS(:,:,:) = ZW_RVS(:,:,:)
 PRCS(:,:,:) = ZW_RCS(:,:,:)
 PRRS(:,:,:) = ZW_RRS(:,:,:)
@@ -1501,16 +1517,6 @@ IF (KRR==7) THEN
   PRHS(:,:,:) = ZW_RHS(:,:,:)
 ENDIF
 PTHS(:,:,:) = ZW_THS(:,:,:)
-if ( lbu_enable ) then
-  if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'CORR', pths(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'CORR', prvs(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'CORR', prcs(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR), 'CORR', prrs(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'CORR', pris(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_rs ) call Budget_store_end( tbudgets(NBUDGET_RS), 'CORR', prss(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_rg ) call Budget_store_end( tbudgets(NBUDGET_RG), 'CORR', prgs(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_rh ) call Budget_store_end( tbudgets(NBUDGET_RH), 'CORR', prhs(:, :, :) * prhodj(:, :, :) )
-end if
 !
 !-------------------------------------------------------------------------------
 !
@@ -1528,7 +1534,7 @@ IF(LSEDIM_AFTER) THEN
   if ( lbudget_rg )              call Budget_store_init( tbudgets(NBUDGET_RG), 'SEDI', prgs(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_rh )              call Budget_store_init( tbudgets(NBUDGET_RH), 'SEDI', prhs(:, :, :) * prhodj(:, :, :) )
 
-  !Init only of not osedic (to prevent crash with double init)
+  !Init only if not osedic (to prevent crash with double init)
   !Remark: the 2 source terms SEDI and DEPO could be mixed and stored in the same source term (SEDI)
   !        if osedic=T and ldeposc=T (a warning is printed in ini_budget in that case)
   if ( lbudget_rc .and. ldeposc .and. .not.osedic ) &
