@@ -126,6 +126,12 @@ INTEGER                                 :: IMI ! Current model inde
 !
 IF (.NOT. LLES) RETURN
 !
+IF (HLES_AVG=='A'                                                       &
+     .AND. (XLES_TEMP_MEAN_START==XUNDEF .OR. XLES_TEMP_MEAN_END==XUNDEF)) RETURN
+IF (HLES_AVG=='E' .AND. CLES_NORM_TYPE=='NONE'                          ) RETURN
+IF ( HLES_AVG == 'H' .AND. ( CLES_NORM_TYPE == 'NONE'                        &
+     .OR. XLES_TEMP_MEAN_START == XUNDEF .OR. XLES_TEMP_MEAN_END == XUNDEF ) ) RETURN
+!
 !*      1.   Initializations
 !            ---------------
 !
