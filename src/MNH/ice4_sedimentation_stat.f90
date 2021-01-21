@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -74,6 +74,7 @@ SUBROUTINE ICE4_SEDIMENTATION_STAT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB,
 !!
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
+!  P. Wautelet 21/01/2021: initialize untouched part of PFPR
 !
 !
 !*      0. DECLARATIONS
@@ -138,6 +139,12 @@ LOGICAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2)):: GDEP
 !-------------------------------------------------------------------------------
 !
 ZINVTSTEP=1./PTSTEP
+
+IF ( PRESENT( PFPR ) ) THEN
+ !Set to 0. to avoid undefined values (in files)
+ PFPR(:, :, : KKTB - 1, :) = 0.
+ PFPR(:, :, KKTE + 1 :, :) = 0.
+END IF
 !-------------------------------------------------------------------------------
 !
 !*       1.    compute the fluxes
