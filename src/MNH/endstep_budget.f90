@@ -105,7 +105,6 @@ integer :: jbu, jgrp
 !
 call Print_msg( NVERB_DEBUG, 'BUD', 'Endstep_budget', 'called' )
 
-!Do not call Write_budget at the beginning of the simulation (this is necessary in the case were xbulen = xtstep)
 IF ( KTCOUNT == 1 ) RETURN
 
 SELECT CASE(CBUTYPE)
