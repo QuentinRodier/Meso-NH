@@ -76,6 +76,7 @@ END MODULE MODI_ENDSTEP_BUDGET
 !!      C.Lac       11/09/15 adaptation to FIT temporal scheme
 !  P. Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 01-03/2020: use the new data structures and subroutines for budgets
+!  P. Wautelet 25/01/2021: bugfix: do not call Write_budget at the beginning of the simulation
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -104,15 +105,18 @@ integer :: jbu, jgrp
 !
 call Print_msg( NVERB_DEBUG, 'BUD', 'Endstep_budget', 'called' )
 
+!Do not call Write_budget at the beginning of the simulation (this is necessary in the case were xbulen = xtstep)
+IF ( KTCOUNT == 1 ) RETURN
+
 SELECT CASE(CBUTYPE)
 !
 !
 !*	 1.     'CART' CASE
 !               -----------
 !
-  CASE('CART','SKIP') 
+  CASE('CART','SKIP')
 !
-!*	 1.1    storage of the budget fields 
+!*	 1.1    storage of the budget fields
 !
     IF( MODULO(KTCOUNT,NBUSTEP*nbusubwrite) == 0 ) THEN
       call Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
