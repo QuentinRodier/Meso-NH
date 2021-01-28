@@ -386,8 +386,9 @@ if ( tpfile%ctype == 'MNHDIACHRONIC' ) then
     else
       ispectra_ni =  nspectra_ni - 1
     end if
-    if ( ispectra_ni > 0 ) &
-      call IO_Add_dim_nc4( tpfile, NMNHDIM_SPECTRA_SPEC_NI, 'nspectra_spec_ni', ispectra_ni )
+    if ( ispectra_ni == 0 ) call Print_msg( NVERB_WARNING, 'IO', 'IO_Knowndims_set_nc4', &
+                                            'nspectra_spec_ni dimension is zero sized for ' // Trim( tpfile%cname ) )
+    call IO_Add_dim_nc4( tpfile, NMNHDIM_SPECTRA_SPEC_NI, 'nspectra_spec_ni', ispectra_ni )
   end if
 
   if ( nspectra_nj > 0 .and. .not. l2d ) then
@@ -396,8 +397,9 @@ if ( tpfile%ctype == 'MNHDIACHRONIC' ) then
     else
       ispectra_nj =  nspectra_nj - 1
     end if
-    if ( ispectra_nj > 0 ) &
-      call IO_Add_dim_nc4( tpfile, NMNHDIM_SPECTRA_SPEC_NJ, 'nspectra_spec_nj', ispectra_nj )
+    if ( ispectra_nj == 0 ) call Print_msg( NVERB_WARNING, 'IO', 'IO_Knowndims_set_nc4', &
+                                            'nspectra_spec_nj dimension is zero sized for ' // Trim( tpfile%cname ) )
+    call IO_Add_dim_nc4( tpfile, NMNHDIM_SPECTRA_SPEC_NJ, 'nspectra_spec_nj', ispectra_nj )
   end if
 
   !Dimension for the number of vertical levels for non-local LES budgets
