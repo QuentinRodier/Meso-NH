@@ -890,7 +890,8 @@ select case ( idims )
                                                  NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NJ_V ] )          ) then
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 1, 2 ], gsplit, gdistributed )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 1, 2 ], gsplit, gdistributed, &
+                                        kil, kih, kjl, kjh, kkl, kkh )
     else if (       Any( tpfields(1)%ndimlist(1) == [ NMNHDIM_NI, NMNHDIM_NI_U, NMNHDIM_NI_V, NMNHDIM_BUDGET_CART_NI, &
                                                       NMNHDIM_BUDGET_CART_NI_U, NMNHDIM_BUDGET_CART_NI_V ] )          &
               .and. Any( tpfields(1)%ndimlist(3) == [ NMNHDIM_LEVEL, NMNHDIM_LEVEL_W,                                 &
@@ -983,7 +984,8 @@ select case ( idims )
               .and.     tpfields(1)%ndimlist(6) ==   NMNHDIM_BUDGET_NGROUPS                                                   ) then
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 1, 2 ], gsplit, gdistributed )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 1, 2 ], gsplit, gdistributed, &
+                                          kil, kih, kjl, kjh, kkl, kkh )
       end do
     else if ( Any ( tpfields(1)%ndimlist(1) == [ NMNHDIM_BUDGET_CART_NI, NMNHDIM_BUDGET_CART_NI_U, NMNHDIM_BUDGET_CART_NI_V ] ) &
               .and. tpfields(1)%ndimlist(3) ==   NMNHDIM_BUDGET_CART_LEVEL                                                      &
@@ -1264,7 +1266,7 @@ type(tfielddata)                                           :: tzfield
 idims = Size( kdims )
 
 if ( odistributed ) then
-  if ( idims /= 3 )                                                                                  &
+  if ( idims /= 2 .and. idims /= 3 )                                                                                  &
     call Print_msg( NVERB_FATAL, 'IO', 'Diachro_one_field_write_nc4',                                &
                    'odistributed=.true. not allowed for dims/=3, field: ' //Trim( tzfield%cmnhname ) )
 
@@ -1350,19 +1352,45 @@ NDIMS: select case( idims )
       ioffset(:) = 0
       ioffset(ibutimepos) = ( nbutshift - 1 ) * nbusubwrite
 
-      if ( tzfield%ndims == idims ) then
-        !No time dimension was added in Prepare_diachro_write
-        call IO_Field_write( tpfile, tzfield, zdata2d(:,:), koffset = ioffset )
-      else if ( tzfield%ndims == ( idims + 1 ) ) then
-        !A time dimension was added in Prepare_diachro_write
-        call IO_Field_write( tpfile, tzfield, Reshape( zdata2d, [ Size(zdata2d,1), Size(zdata2d,2), 1 ] ), &
-                              koffset = ioffset )
+      if ( odistributed ) then
+        if ( tzfield%ndims == idims ) then
+          !No time dimension was added in Prepare_diachro_write
+          call IO_Field_write_box( tpfile, tzfield, 'BUDGET',                              &
+                                   zdata2d,                                                &
+                                   kil + jphext, kih + jphext, kjl + jphext, kjh + jphext, &
+                                   koffset = ioffset                                       )
+        else if ( tzfield%ndims == ( idims + 1 ) ) then
+          !A time dimension was added in Prepare_diachro_write
+          call IO_Field_write_box( tpfile, tzfield, 'BUDGET',                                   &
+                                   Reshape( zdata2d, [ Size(zdata2d,1), Size(zdata2d,2), 1 ] ), &
+                                   kil + jphext, kih + jphext, kjl + jphext, kjh + jphext,      &
+                                   koffset = ioffset                                            )
+        else
+          call Print_msg( NVERB_FATAL, 'IO', 'Diachro_one_field_write_nc4', &
+                                             'probable bug for ' //Trim( tzfield%cmnhname ) )
+        end if
       else
-        call Print_msg( NVERB_FATAL, 'IO', 'Diachro_one_field_write_nc4', &
-                                         'probable bug for ' //Trim( tzfield%cmnhname ) )
+        !Data is already collected on the master process
+        if ( tzfield%ndims == idims ) then
+          !No time dimension was added in Prepare_diachro_write
+          call IO_Field_write( tpfile, tzfield, zdata2d(:,:), koffset = ioffset )
+        else if ( tzfield%ndims == ( idims + 1 ) ) then
+          !A time dimension was added in Prepare_diachro_write
+          call IO_Field_write( tpfile, tzfield, Reshape( zdata2d, [ Size(zdata2d,1), Size(zdata2d,2), 1 ] ), &
+                                koffset = ioffset )
+        else
+          call Print_msg( NVERB_FATAL, 'IO', 'Diachro_one_field_write_nc4', &
+                                             'probable bug for ' //Trim( tzfield%cmnhname ) )
+        end if
       end if
     else !.not. osplit
-      call IO_Field_write( tpfile, tzfield, zdata2d )
+      if ( odistributed ) then
+        call IO_Field_write_box( tpfile, tzfield, 'BUDGET', zdata2d, &
+                                 kil + jphext, kih + jphext, kjl + jphext, kjh + jphext )
+      else
+        !Data is already collected on the master process
+        call IO_Field_write( tpfile, tzfield, zdata2d )
+      end if
     end if
 
 
@@ -1383,19 +1411,19 @@ NDIMS: select case( idims )
       if ( odistributed ) then
         if ( tzfield%ndims == idims ) then
           !No time dimension was added in Prepare_diachro_write
-          call IO_Field_write_box( tpfile, tzfield, 'BUDGET',                                                     &
-                                 zdata3d, &
-                                 kil + jphext, kih + jphext, kjl + jphext, kjh + jphext,                        &
-                                 koffset = ioffset                                                              )
+          call IO_Field_write_box( tpfile, tzfield, 'BUDGET',                              &
+                                   zdata3d,                                                &
+                                   kil + jphext, kih + jphext, kjl + jphext, kjh + jphext, &
+                                   koffset = ioffset                                       )
         else if ( tzfield%ndims == ( idims + 1 ) ) then
           !A time dimension was added in Prepare_diachro_write
-          call IO_Field_write_box( tpfile, tzfield, 'BUDGET',                                                     &
-                                 Reshape( zdata3d, [ Size(zdata3d,1), Size(zdata3d,2), Size(zdata3d,3), 1 ] ) , &
-                                 kil + jphext, kih + jphext, kjl + jphext, kjh + jphext,                        &
-                                 koffset = ioffset                                                              )
+          call IO_Field_write_box( tpfile, tzfield, 'BUDGET',                                                    &
+                                   Reshape( zdata3d, [ Size(zdata3d,1), Size(zdata3d,2), Size(zdata3d,3), 1 ] ), &
+                                   kil + jphext, kih + jphext, kjl + jphext, kjh + jphext,                       &
+                                   koffset = ioffset                                                             )
         else
           call Print_msg( NVERB_FATAL, 'IO', 'Diachro_one_field_write_nc4', &
-                                           'probable bug for ' //Trim( tzfield%cmnhname ) )
+                                             'probable bug for ' //Trim( tzfield%cmnhname ) )
         end if
       else
         !Data is already collected on the master process
@@ -1408,7 +1436,7 @@ NDIMS: select case( idims )
                                 koffset = ioffset )
         else
           call Print_msg( NVERB_FATAL, 'IO', 'Diachro_one_field_write_nc4', &
-                                           'probable bug for ' //Trim( tzfield%cmnhname ) )
+                                             'probable bug for ' //Trim( tzfield%cmnhname ) )
         end if
       end if
     else !.not. osplit
