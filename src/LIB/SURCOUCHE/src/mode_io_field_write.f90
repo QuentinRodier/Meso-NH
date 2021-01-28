@@ -70,7 +70,8 @@ MODULE MODE_IO_FIELD_WRITE
   END INTERFACE
 
   INTERFACE IO_Field_write_box
-     MODULE PROCEDURE IO_Field_write_box_byfield_X3, IO_Field_write_box_byfield_X4, IO_Field_write_box_byfield_X5
+     MODULE PROCEDURE IO_Field_write_box_byfield_X2, IO_Field_write_box_byfield_X3, &
+                      IO_Field_write_box_byfield_X4, IO_Field_write_box_byfield_X5
   END INTERFACE
 
   INTERFACE IO_Field_write_lb
@@ -3445,6 +3446,100 @@ end subroutine IO_Ndimlist_reduce
   END SUBROUTINE IO_Field_write_byfield_lb
 
 
+  SUBROUTINE IO_Field_write_box_byfield_X2( TPFILE, TPFIELD, HBUDGET, PFIELD, KXOBOX, KXEBOX, KYOBOX, KYEBOX, KRESP, koffset )
+    !
+    USE MODD_IO, ONLY: GSMONOPROC, ISP
+    !
+    USE MODE_GATHER_ll
+    !
+    !
+    !*      0.1   Declarations of arguments
+    !
+    TYPE(TFILEDATA),                 INTENT(IN)  :: TPFILE
+    TYPE(TFIELDDATA),                INTENT(IN)  :: TPFIELD
+    CHARACTER(LEN=*),                INTENT(IN)  :: HBUDGET  ! 'BUDGET' (budget)  or 'OTHER' (MesoNH field)
+    REAL,   DIMENSION(:,:), TARGET,  INTENT(IN)  :: PFIELD   ! array containing the data field
+    INTEGER,                         INTENT(IN)  :: KXOBOX   !
+    INTEGER,                         INTENT(IN)  :: KXEBOX   ! Global coordinates of the box
+    INTEGER,                         INTENT(IN)  :: KYOBOX   !
+    INTEGER,                         INTENT(IN)  :: KYEBOX   !
+    INTEGER,               OPTIONAL, INTENT(OUT) :: KRESP    ! return-code
+    integer, dimension(2), optional, intent(in)  :: koffset
+    !
+    !*      0.2   Declarations of local variables
+    !
+    integer                           :: iresp, iresp_lfi, iresp_nc4, iresp_glob
+    REAL, DIMENSION(:,:), POINTER     :: ZFIELDP
+    LOGICAL                           :: GALLOC
+    LOGICAL                           :: GLFI, GNC4
+    CHARACTER(LEN=:),ALLOCATABLE      :: YMSG
+    CHARACTER(LEN=6)                  :: YRESP
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_box_byfield_X2',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
+    !
+    iresp     = 0
+    iresp_lfi = 0
+    iresp_nc4 = 0
+    GALLOC = .FALSE.
+    !
+    CALL IO_File_write_check(TPFILE,'IO_Field_write_box_byfield_X2',IRESP)
+    !
+    CALL IO_Format_write_select(TPFILE,GLFI,GNC4)
+    !
+    if ( Present( koffset ) .and. glfi ) then
+      call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_write_box_byfield_X3', Trim( tpfile%cname ) &
+                      // ': LFI format not supported' )
+      glfi = .false.
+    end if
+
+    IF (IRESP==0) THEN
+       IF (GSMONOPROC) THEN ! sequential execution
+          IF (HBUDGET /= 'BUDGET') THEN
+             ! take the sub-section of PFIELD defined by the box
+             ZFIELDP=>PFIELD(KXOBOX:KXEBOX,KYOBOX:KYEBOX)
+          ELSE
+             ! take the field as a budget
+             ZFIELDP=>PFIELD
+          END IF
+          if ( Present( koffset ) ) then
+            !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tpfield, zfieldp, koffset, iresp_lfi )
+            if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tpfield, zfieldp, koffset, iresp_nc4 )
+          else
+            if ( glfi ) call IO_Field_write_lfi( tpfile, tpfield, zfieldp, iresp_lfi )
+            if ( gnc4 ) call IO_Field_write_nc4( tpfile, tpfield, zfieldp, iresp_nc4 )
+          end if
+       ELSE ! multiprocesses execution
+          IF (ISP == TPFILE%NMASTER_RANK)  THEN
+             ! Allocate the box
+             ALLOCATE(ZFIELDP(KXEBOX-KXOBOX+1,KYEBOX-KYOBOX+1))
+             GALLOC = .TRUE.
+          ELSE
+             ALLOCATE(ZFIELDP(0,0))
+             GALLOC = .TRUE.
+          END IF
+          !
+          CALL GATHER_XYFIELD(PFIELD,ZFIELDP,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM,&
+               & KXOBOX,KXEBOX,KYOBOX,KYEBOX,HBUDGET)
+          !
+          IF (ISP == TPFILE%NMASTER_RANK)  THEN
+            if ( Present( koffset ) ) then
+              !if ( glfi ) call IO_Field_partial_write_lfi( tpfile, tpfield, zfieldp, koffset, iresp_lfi )
+              if ( gnc4 ) call IO_Field_partial_write_nc4( tpfile, tpfield, zfieldp, koffset, iresp_nc4 )
+            else
+              if ( glfi ) call IO_Field_write_lfi( tpfile, tpfield, zfieldp, iresp_lfi )
+              if ( gnc4 ) call IO_Field_write_nc4( tpfile, tpfield, zfieldp, iresp_nc4 )
+            end if
+          END IF
+       END IF ! multiprocesses execution
+    END IF
+
+    call IO_Field_write_error_check( tpfile, tpfield, 'IO_Field_write_box_byfield_X2', iresp, iresp_lfi, iresp_nc4, iresp_glob )
+    if ( Present( kresp ) ) kresp = iresp_glob
+
+    IF (GALLOC) DEALLOCATE(ZFIELDP)
+  END SUBROUTINE IO_Field_write_box_byfield_X2
+
+
   SUBROUTINE IO_Field_write_box_byfield_X3( TPFILE, TPFIELD, HBUDGET, PFIELD, KXOBOX, KXEBOX, KYOBOX, KYEBOX, KRESP, koffset )
     !
     USE MODD_IO, ONLY: GSMONOPROC, ISP
@@ -3486,7 +3581,7 @@ end subroutine IO_Ndimlist_reduce
     CALL IO_Format_write_select(TPFILE,GLFI,GNC4)
     !
     if ( Present( koffset ) .and. glfi ) then
-      call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_partial_write_box_byfield_X3', Trim( tpfile%cname ) &
+      call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_write_box_byfield_X3', Trim( tpfile%cname ) &
                       // ': LFI format not supported' )
       glfi = .false.
     end if
