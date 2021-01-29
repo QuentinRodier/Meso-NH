@@ -801,9 +801,13 @@ end do
 !The dimension list should be the same for all tpfields entries
 do jp = 2, Size( tpfields )
   do ji = 1, NMNHMAXDIMS
-    if ( tpfields(jp)%ndimlist(ji) /= tpfields(1)%ndimlist(ji) ) &
-      call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', &
-                      'some dimensions are not the same for all tpfields entries for variable '//trim(tpfields(jp)%cmnhname) )
+    if ( tpfields(jp)%ndimlist(ji) /= tpfields(1)%ndimlist(ji) ) then
+      !For SERIES: it is possible to have NMNHDIM_SERIES_LEVEL and NMNHDIM_SERIES_LEVEL_W in the different tpfields
+      if ( tpfields(jp)%ndimlist(ji) /= NMNHDIM_SERIES_LEVEL .and. tpfields(jp)%ndimlist(ji) /= NMNHDIM_SERIES_LEVEL_W ) then
+        call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', &
+                        'some dimensions are not the same for all tpfields entries for variable '//trim(tpfields(jp)%cmnhname) )
+      end if
+    end if
   end do
 end do
 
