@@ -336,7 +336,7 @@ if ( cbutype == 'CART' .or. cbutype == 'MASK' ) then
   if ( cbutype == 'CART' ) then
     !Check if xseglen is a multiple of xbulen (within tolerance)
     if ( Abs( Nint( xseglen / xbulen ) * xbulen - xseglen ) > ( ITOL * xseglen ) ) &
-      call Print_msg( NVERB_WARNING, 'BUD', 'Ini_budget', 'xseglen is not a multiple of xbuwri' )
+      call Print_msg( NVERB_WARNING, 'BUD', 'Ini_budget', 'xseglen is not a multiple of xbulen' )
 
     !Write cartesian budgets every xbulen time period (do not take xbuwri into account)
     xbuwri = xbulen
@@ -363,16 +363,21 @@ end if
 
 IF (CBUTYPE=='CART') THEN              ! cartesian case only
 !
+  IF ( NBUIH < NBUIL ) CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUIH < NBUIL' )
   IF (LBU_ICP) THEN
     NBUIMAX_ll = 1
   ELSE
     NBUIMAX_ll = NBUIH - NBUIL +1
   END IF
-  IF (LBU_JCP) THEN 
+
+  IF ( NBUJH < NBUJL ) CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUJH < NBUJL' )
+  IF (LBU_JCP) THEN
     NBUJMAX_ll = 1
   ELSE
     NBUJMAX_ll = NBUJH - NBUJL +1
   END IF
+
+  IF ( NBUKH < NBUKL ) CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUKH < NBUKL' )
 !
   CALL GET_INTERSECTION_ll(NBUIL+JPHEXT,NBUJL+JPHEXT,NBUIH+JPHEXT,NBUJH+JPHEXT, &
       NBUSIL,NBUSJL,NBUSIH,NBUSJH,"PHYS",IINFO_ll)
