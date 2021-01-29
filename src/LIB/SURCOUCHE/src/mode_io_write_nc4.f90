@@ -562,8 +562,10 @@ KRESP = 0
 call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( pfield ), kvarid = ivarid, oisempty = gisempty )
 
 ! Write the data
-if ( .not. gisempty ) istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
-IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_X1','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+if ( .not. gisempty ) then
+  istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_X1','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+end if
 
 END SUBROUTINE IO_Field_write_nc4_X1
 
@@ -581,6 +583,7 @@ LOGICAL,OPTIONAL,      INTENT(IN) :: OISCOORD   ! Is a coordinate variable (->do
 INTEGER(KIND=CDFINT)      :: istatus
 CHARACTER(LEN=4)          :: YSUFFIX
 INTEGER(KIND=CDFINT)      :: IVARID
+logical                   :: gisempty
 TYPE(TFIELDDATA), pointer :: TZFIELD
 TYPE(TFILEDATA),  POINTER :: TZFILE
 !
@@ -590,11 +593,13 @@ call IO_Select_split_file( tpfile, tpfield, tzfile, tzfield, kvertlevel, kzfile 
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_X2',TRIM(TZFILE%CNAME)//': writing '//TRIM(TZFIELD%CMNHNAME))
 !
-call IO_Field_create_nc4( tzfile, tzfield, kshape = Shape( pfield ), oiscoord = oiscoord, kvarid = ivarid )
+call IO_Field_create_nc4( tzfile, tzfield, kshape = Shape( pfield ), oiscoord = oiscoord, kvarid = ivarid, oisempty = gisempty )
 
 ! Write the data
-istatus = NF90_PUT_VAR(TZFILE%NNCID, IVARID, PFIELD)
-IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_X2','NF90_PUT_VAR',trim(TZFIELD%CMNHNAME),KRESP)
+if ( .not. gisempty ) then
+  istatus = NF90_PUT_VAR(TZFILE%NNCID, IVARID, PFIELD)
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_X2','NF90_PUT_VAR',trim(TZFIELD%CMNHNAME),KRESP)
+end if
 
 if ( Present( kvertlevel ) ) deallocate( tzfield )
 
@@ -610,16 +615,19 @@ INTEGER,               INTENT(OUT):: KRESP
 !
 INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: IVARID
+logical              :: gisempty
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_X3',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
 KRESP = 0
 !
-call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( pfield ), kvarid = ivarid )
+call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( pfield ), kvarid = ivarid, oisempty = gisempty )
 
 ! Write the data
-istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
-IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_X3','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+if ( .not. gisempty ) then
+  istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_X3','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+end if
 
 END SUBROUTINE IO_Field_write_nc4_X3
 
@@ -633,16 +641,19 @@ INTEGER,                   INTENT(OUT):: KRESP
 !
 INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: IVARID
+logical              :: gisempty
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_X4',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
 KRESP = 0
 !
-call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( pfield ), kvarid = ivarid )
+call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( pfield ), kvarid = ivarid, oisempty = gisempty )
 
 ! Write the data
-istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
-IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_X4','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+if ( .not. gisempty ) then
+  istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_X4','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+end if
 
 END SUBROUTINE IO_Field_write_nc4_X4
 
@@ -656,16 +667,19 @@ INTEGER,                   INTENT(OUT):: KRESP
 !
 INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: IVARID
+logical              :: gisempty
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_X5',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
 KRESP = 0
 !
-call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( pfield ), kvarid = ivarid )
+call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( pfield ), kvarid = ivarid, oisempty = gisempty )
 
 ! Write the data
-istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
-IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_X5','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+if ( .not. gisempty ) then
+  istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_X5','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+end if
 
 END SUBROUTINE IO_Field_write_nc4_X5
 
@@ -679,16 +693,19 @@ INTEGER,                     INTENT(OUT):: KRESP
 !
 INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: IVARID
+logical              :: gisempty
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_X6',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
 KRESP = 0
 !
-call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( pfield ), kvarid = ivarid )
+call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( pfield ), kvarid = ivarid, oisempty = gisempty )
 
 ! Write the data
-istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
-IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_X6','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+if ( .not. gisempty ) then
+  istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, PFIELD)
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_X6','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+end if
 
 END SUBROUTINE IO_Field_write_nc4_X6
 
@@ -761,16 +778,19 @@ INTEGER,               INTENT(OUT):: KRESP
 !
 INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: IVARID
+logical              :: gisempty
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_N1',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
 KRESP = 0
 !
-call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( kfield ), kvarid = ivarid )
+call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( kfield ), kvarid = ivarid, oisempty = gisempty )
 
 ! Write the data
-istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, KFIELD)
-IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_N1','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+if ( .not. gisempty ) then
+  istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, KFIELD)
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_N1','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+end if
 
 END SUBROUTINE IO_Field_write_nc4_N1
 
@@ -784,16 +804,19 @@ INTEGER,               INTENT(OUT):: KRESP
 !
 INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: IVARID
+logical              :: gisempty
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_N2',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
 KRESP = 0
 !
-call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( kfield ), kvarid = ivarid )
+call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( kfield ), kvarid = ivarid, oisempty = gisempty )
 
 ! Write the data
-istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, KFIELD)
-IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_N2','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+if ( .not. gisempty ) then
+  istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, KFIELD)
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_N2','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+end if
 
 END SUBROUTINE IO_Field_write_nc4_N2
 
@@ -807,16 +830,19 @@ INTEGER,                 INTENT(OUT):: KRESP
 !
 INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: IVARID
+logical              :: gisempty
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_N3',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
 KRESP = 0
 !
-call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( kfield ), kvarid = ivarid )
+call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( kfield ), kvarid = ivarid, oisempty = gisempty )
 
 ! Write the data
-istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, KFIELD)
-IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_N3','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+if ( .not. gisempty ) then
+  istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, KFIELD)
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_N3','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+end if
 
 END SUBROUTINE IO_Field_write_nc4_N3
 
@@ -830,16 +856,19 @@ INTEGER,                   INTENT(OUT):: KRESP
 !
 INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: IVARID
+logical              :: gisempty
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_N4',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
 KRESP = 0
 !
-call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( kfield ), kvarid = ivarid )
+call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( kfield ), kvarid = ivarid, oisempty = gisempty )
 
 ! Write the data
-istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, KFIELD)
-IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_N4','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+if ( .not. gisempty ) then
+  istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, KFIELD)
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_N4','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+end if
 
 END SUBROUTINE IO_Field_write_nc4_N4
 
@@ -885,12 +914,13 @@ INTEGER,               INTENT(OUT):: KRESP
 INTEGER, DIMENSION(SIZE(OFIELD)) :: IFIELD
 INTEGER(KIND=CDFINT)             :: istatus
 INTEGER(KIND=CDFINT)             :: IVARID
+logical                          :: gisempty
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_L1',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
 KRESP = 0
 !
-call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( ofield ), kvarid = ivarid )
+call IO_Field_create_nc4( tpfile, tpfield, kshape = Shape( ofield ), kvarid = ivarid, oisempty = gisempty )
 
 !Convert LOGICAL to INTEGER (LOGICAL format not supported by netCDF files)
 WHERE (OFIELD)
@@ -900,8 +930,10 @@ ELSEWHERE
 END WHERE
 
 ! Write the data
-istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, IFIELD)
-IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_L1','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+if ( .not. gisempty ) then
+  istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, IFIELD)
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_L1','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+end if
 
 END SUBROUTINE IO_Field_write_nc4_L1
 
@@ -956,6 +988,7 @@ INTEGER(KIND=CDFINT),PARAMETER :: IONE = 1
 INTEGER(KIND=CDFINT) :: istatus
 INTEGER(KIND=CDFINT) :: IVARID
 INTEGER(KIND=CDFINT) :: ILEN, ISIZE
+logical              :: gisempty
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_write_nc4_C1',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -964,11 +997,13 @@ KRESP = 0
 ILEN  = LEN(HFIELD)
 ISIZE = SIZE(HFIELD)
 
-call IO_Field_create_nc4( tpfile, tpfield, kshape = [ ilen, isize ], kvarid = ivarid )
+call IO_Field_create_nc4( tpfile, tpfield, kshape = [ ilen, isize ], kvarid = ivarid, oisempty = gisempty )
 
 ! Write the data
-istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, HFIELD(1:ISIZE)(1:ILEN), START=(/IONE,IONE/), COUNT=(/ILEN,ISIZE/))
-IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_C1','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+if ( .not. gisempty ) then
+  istatus = NF90_PUT_VAR(TPFILE%NNCID, IVARID, HFIELD(1:ISIZE)(1:ILEN), START=(/IONE,IONE/), COUNT=(/ILEN,ISIZE/))
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_C1','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+end if
 
 END SUBROUTINE IO_Field_write_nc4_C1
 
@@ -1043,6 +1078,7 @@ CHARACTER(LEN=40)               :: YUNITS
 INTEGER                         :: JI
 INTEGER(KIND=CDFINT)            :: istatus
 INTEGER(KIND=CDFINT)            :: IVARID
+logical                         :: gisempty
 REAL, DIMENSION(:), ALLOCATABLE :: ZDELTATIME !Distance in seconds since reference date and time
 TYPE(DATE_TIME)                 :: TZREF
 TYPE(TFIELDDATA)                :: TZFIELD
@@ -1070,7 +1106,7 @@ WRITE(YUNITS,'( "seconds since ",I4.4,"-",I2.2,"-",I2.2," 00:00:00 +0:00" )') &
       TZREF%nyear, TZREF%nmonth, TZREF%nday
 TZFIELD%CUNITS = TRIM(YUNITS)
 !
-call IO_Field_create_nc4( tpfile, tzfield, kshape = Shape( tpdata), kvarid = ivarid, hcalendar = 'standard' )
+call IO_Field_create_nc4( tpfile, tzfield, kshape = Shape( tpdata), kvarid = ivarid, hcalendar = 'standard', oisempty = gisempty )
 !
 ! Compute the temporal distances from reference
 ALLOCATE( ZDELTATIME( SIZE( TPDATA ) ) )
@@ -1080,8 +1116,10 @@ DO JI = 1, SIZE( TPDATA )
 END DO
 
 ! Write the data
-istatus = NF90_PUT_VAR( TPFILE%NNCID, IVARID, ZDELTATIME(:) )
-IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_T1','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+if ( .not. gisempty ) then
+  istatus = NF90_PUT_VAR( TPFILE%NNCID, IVARID, ZDELTATIME(:) )
+  IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_write_nc4_T1','NF90_PUT_VAR',trim(TPFIELD%CMNHNAME),KRESP)
+end if
 
 END SUBROUTINE IO_Field_write_nc4_T1
 
