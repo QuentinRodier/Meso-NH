@@ -6,6 +6,7 @@
 ! Modifications:
 !  P. Wautelet 17/08/2020: add Budget_preallocate subroutine
 !  P. Wautelet 11/01/2021: ignore xbuwri for cartesian boxes (write at every xbulen interval)
+!  P. Wautelet 01/02/2021: bugfix: add missing CEDS source terms for SV budgets
 !-----------------------------------------------------------------
 module mode_ini_budget
 
@@ -224,10 +225,11 @@ use modd_parameters,   only: jphext
 use modd_param_c2r2,   only: ldepoc_c2r2 => ldepoc, lrain_c2r2 => lrain, lsedc_c2r2 => lsedc, lsupsat_c2r2 => lsupsat
 use modd_param_ice,    only: ladj_after, ladj_before, ldeposc_ice => ldeposc, lred, lsedic_ice => lsedic, lwarm_ice => lwarm
 use modd_param_n,      only: cactccn, celec
-use modd_param_lima,   only: lacti_lima => lacti, lcold_lima => lcold, ldepoc_lima => ldepoc, lhail_lima => lhail, &
-                             lhhoni_lima => lhhoni, lmeyers_lima => lmeyers, lnucl_lima => lnucl, lptsplit,        &
-                             lrain_lima => lrain, lscav_lima => lscav, lsedc_lima => lsedc, lsedi_lima => lsedi,   &
-                             lsnow_lima => lsnow, lwarm_lima => lwarm,                                             &
+use modd_param_lima,   only: laero_mass_lima => laero_mass, lacti_lima => lacti, lcold_lima => lcold, ldepoc_lima => ldepoc, &
+                             lhail_lima => lhail, lhhoni_lima => lhhoni, lmeyers_lima => lmeyers, lnucl_lima => lnucl,  &
+                             lptsplit,                                                                                  &
+                             lrain_lima => lrain, lscav_lima => lscav, lsedc_lima => lsedc, lsedi_lima => lsedi,        &
+                             lsnow_lima => lsnow, lwarm_lima => lwarm,                                                  &
                              nmod_ccn, nmod_ifn, nmod_imm
 use modd_salt,         only: lsalt
 use modd_viscosity,    only: lvisc, lvisc_r, lvisc_sv, lvisc_th, lvisc_uvw
@@ -3132,10 +3134,18 @@ SV_BUDGETS: do jsv = 1, ksv
 
       else if ( jsv >= nsv_lima_ccn_acti .and. jsv <= nsv_lima_ccn_acti + nmod_ccn - 1 ) then SV_LIMA
         ! Activated CCN concentration
+        gcond = lwarm_lima
+        tzsource%cmnhname  = 'CEDS'
+        tzsource%clongname = 'adjustment to saturation'
+        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
 
 
       else if ( jsv == nsv_lima_scavmass ) then SV_LIMA
         ! Scavenged mass variable
+        gcond = lscav_lima .and. laero_mass_lima
+        tzsource%cmnhname  = 'CEDS'
+        tzsource%clongname = 'adjustment to saturation'
+        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
 
 
       else if ( jsv == nsv_lima_ni ) then SV_LIMA
@@ -3252,10 +3262,18 @@ SV_BUDGETS: do jsv = 1, ksv
 
       else if ( jsv >= nsv_lima_ifn_nucl .and. jsv <= nsv_lima_ifn_nucl + nmod_ifn - 1 ) then SV_LIMA
         ! Nucleated IFN concentration
+        gcond = lcold_lima
+        tzsource%cmnhname  = 'CEDS'
+        tzsource%clongname = 'adjustment to saturation'
+        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
 
 
       else if ( jsv >= nsv_lima_imm_nucl .and. jsv <= nsv_lima_imm_nucl + nmod_imm - 1 ) then SV_LIMA
         ! Nucleated IMM concentration
+        gcond = lcold_lima
+        tzsource%cmnhname  = 'CEDS'
+        tzsource%clongname = 'adjustment to saturation'
+        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
 
 
       else if ( jsv == nsv_lima_hom_haze ) then SV_LIMA
