@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -95,6 +95,7 @@ END MODULE MODI_LIMA_MIXED
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet    03/2020: use the new data structures and subroutines for budgets (no more call to budget in this subroutine)
 !  P. Wautelet 28/05/2020: bugfix: correct array start for PSVT and PSVS
+!  P. Wautelet 02/02/2021: budgets: add missing source terms for SV budgets in LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -178,19 +179,10 @@ REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3))  &
                                        PCRS,    & ! Rain water C. source
                                        PCIS       ! Ice crystal C. source
 !
-REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: PNFS     ! CCN C. available source
-                                                  !used as Free ice nuclei for
-                                                  !HOMOGENEOUS nucleation of haze
-REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: PNAS     ! Cloud  C. nuclei C. source
-                                                  !used as Free ice nuclei for
-                                                  !IMMERSION freezing
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: PIFS     ! Free ice nuclei C. source 
                                                   !for DEPOSITION and CONTACT
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: PINS     ! Activated ice nuclei C. source
                                                   !for DEPOSITION and CONTACT
-REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: PNIS     ! Activated ice nuclei C. source
-                                                  !for IMMERSION
-REAL, DIMENSION(:,:,:),   ALLOCATABLE :: PNHS     ! Hom. freezing of CCN
 !
 ! Replace PACK
 LOGICAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3)) :: GMICRO
@@ -309,18 +301,6 @@ IF ( LWARM ) PCCS(:,:,:) = PSVS(:,:,:,NSV_LIMA_NC)
 IF ( LWARM .AND. LRAIN ) PCRS(:,:,:) = PSVS(:,:,:,NSV_LIMA_NR)
 IF ( LCOLD ) PCIS(:,:,:) = PSVS(:,:,:,NSV_LIMA_NI)
 !
-IF ( NMOD_CCN .GE. 1 ) THEN
-   ALLOCATE( PNFS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),NMOD_CCN) )
-   ALLOCATE( PNAS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),NMOD_CCN) )
-   PNFS(:,:,:,:) = PSVS(:,:,:,NSV_LIMA_CCN_FREE:NSV_LIMA_CCN_FREE+NMOD_CCN-1)
-   PNAS(:,:,:,:) = PSVS(:,:,:,NSV_LIMA_CCN_ACTI:NSV_LIMA_CCN_ACTI+NMOD_CCN-1)
-ELSE
-   ALLOCATE( PNFS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),1) )
-   ALLOCATE( PNAS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),1) )
-   PNFS(:,:,:,:) = 0.
-   PNAS(:,:,:,:) = 0.
-END IF
-!
 IF ( NMOD_IFN .GE. 1 ) THEN
    ALLOCATE( PIFS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),NMOD_IFN) )
    ALLOCATE( PINS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),NMOD_IFN) )
@@ -331,22 +311,6 @@ ELSE
    ALLOCATE( PINS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),1) )
    PIFS(:,:,:,:) = 0.
    PINS(:,:,:,:) = 0.
-END IF
-!
-IF ( NMOD_IMM .GE. 1 ) THEN
-   ALLOCATE( PNIS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),NMOD_IMM) )
-   PNIS(:,:,:,:) = PSVS(:,:,:,NSV_LIMA_IMM_NUCL:NSV_LIMA_IMM_NUCL+NMOD_IMM-1)
-ELSE
-   ALLOCATE( PNIS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),1) )
-   PNIS(:,:,:,:) = 0.0
-END IF
-!
-IF ( OHHONI ) THEN
-   ALLOCATE( PNHS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3)) )
-   PNHS(:,:,:) = PSVS(:,:,:,NSV_LIMA_HOM_HAZE)
-ELSE
-   ALLOCATE( PNHS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3)) )
-   PNHS(:,:,:) = 0.0
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -529,7 +493,7 @@ IF( IMICRO >= 1 ) THEN
                                   ZLBDAI, ZLBDAG,               &
                                   ZRHODJ, GMICRO, PRHODJ, KMI,  &
                                   PTHS, PRVS, PRCS, PRIS, PRGS, &
-                                  PCCS, PCIS                    )
+                                  PCCS, PCIS, PINS              )
 ! 
 !-------------------------------------------------------------------------------
 !
@@ -664,27 +628,14 @@ PSVS(:,:,:,NSV_LIMA_NC) = PCCS(:,:,:)
 IF ( LRAIN ) PSVS(:,:,:,NSV_LIMA_NR) = PCRS(:,:,:)
 PSVS(:,:,:,NSV_LIMA_NI) = PCIS(:,:,:)
 !
-IF ( NMOD_CCN .GE. 1 ) THEN
-   PSVS(:,:,:,NSV_LIMA_CCN_FREE:NSV_LIMA_CCN_FREE+NMOD_CCN-1) = PNFS(:,:,:,:)
-   PSVS(:,:,:,NSV_LIMA_CCN_ACTI:NSV_LIMA_CCN_ACTI+NMOD_CCN-1) = PNAS(:,:,:,:)
-END IF
-!
 IF ( NMOD_IFN .GE. 1 ) THEN
    PSVS(:,:,:,NSV_LIMA_IFN_FREE:NSV_LIMA_IFN_FREE+NMOD_IFN-1) = PIFS(:,:,:,:)
    PSVS(:,:,:,NSV_LIMA_IFN_NUCL:NSV_LIMA_IFN_NUCL+NMOD_IFN-1) = PINS(:,:,:,:)
 END IF
 !
-IF ( NMOD_IMM .GE. 1 ) THEN
-   PSVS(:,:,:,NSV_LIMA_IMM_NUCL:NSV_LIMA_IMM_NUCL+NMOD_IMM-1) = PNIS(:,:,:,:)
-END IF
-!
 !++cb++
-IF (ALLOCATED(PNFS)) DEALLOCATE(PNFS)
-IF (ALLOCATED(PNAS)) DEALLOCATE(PNAS)
 IF (ALLOCATED(PIFS)) DEALLOCATE(PIFS)
 IF (ALLOCATED(PINS)) DEALLOCATE(PINS)
-IF (ALLOCATED(PNIS)) DEALLOCATE(PNIS)
-IF (ALLOCATED(PNHS)) DEALLOCATE(PNHS)
 !--cb--
 !
 !-------------------------------------------------------------------------------

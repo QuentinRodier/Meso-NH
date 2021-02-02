@@ -130,6 +130,7 @@ END MODULE MODI_LIMA_WARM
 !  B. Vie      03/02/2020: correction of activation of water deposition on the ground
 !  B. Vie      03/03/2020: use DTHRAD instead of dT/dt in Smax diagnostic computation
 !  P. Wautelet 28/05/2020: bugfix: correct array start for PSVT and PSVS
+!  P. Wautelet 02/02/2021: budgets: add missing source terms for SV budgets in LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -369,6 +370,8 @@ IF ( LACTI .AND. NMOD_CCN > 0 ) THEN
     do jl = 1, nmod_ccn
       idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_free - 1 + jl
       call Budget_store_init( tbudgets(idx), 'HENU', znfs(:, :, :, jl) * prhodj(:, :, :) )
+      idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_acti - 1 + jl
+      call Budget_store_init( tbudgets(idx), 'HENU', znas(:, :, :, jl) * prhodj(:, :, :) )
     end do
   end if
 
@@ -385,6 +388,8 @@ IF ( LACTI .AND. NMOD_CCN > 0 ) THEN
     do jl = 1, nmod_ccn
       idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_free - 1 + jl
       call Budget_store_end( tbudgets(idx), 'HENU', znfs(:, :, :, jl) * prhodj(:, :, :) )
+      idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_acti - 1 + jl
+      call Budget_store_end( tbudgets(idx), 'HENU', znas(:, :, :, jl) * prhodj(:, :, :) )
     end do
   end if
 END IF ! LACTI

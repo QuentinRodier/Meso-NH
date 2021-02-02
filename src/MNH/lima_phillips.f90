@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -118,6 +118,7 @@ END MODULE MODI_LIMA_PHILLIPS
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !  P. Wautelet    03/2020: use the new data structures and subroutines for budgets
+!  P. Wautelet 02/02/2021: budgets: add missing source terms for SV budgets in LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -130,7 +131,7 @@ use modd_budget,          only: lbu_enable, nbumod,                             
 USE MODD_CST,             ONLY : XP00, XRD, XMV, XMD, XCPD, XCPV, XCL, XCI,        &
                                  XTT, XLSTT, XLVTT, XALPI, XBETAI, XGAMI,          &
                                  XALPW, XBETAW, XGAMW, XPI
-USE MODD_NSV, ONLY : NSV_LIMA_NC, NSV_LIMA_NI, NSV_LIMA_IFN_FREE
+USE MODD_NSV, ONLY : NSV_LIMA_NC, NSV_LIMA_NI, NSV_LIMA_CCN_ACTI, NSV_LIMA_IFN_FREE, NSV_LIMA_IFN_NUCL, NSV_LIMA_IMM_NUCL
 USE MODD_PARAMETERS,      ONLY : JPHEXT, JPVEXT
 USE MODD_PARAM_LIMA,      ONLY : NMOD_IFN, NSPECIE, XFRAC,                         &
                                  NMOD_CCN, NMOD_IMM, NIND_SPECIE, NINDICE_CCN_IMM,  &
@@ -445,6 +446,8 @@ if ( nbumod == kmi .and. lbu_enable ) then
     do jl = 1, nmod_ifn
       idx = NBUDGET_SV1 - 1 + nsv_lima_ifn_free -1 + jl
       call Budget_store_init( tbudgets(idx), 'HIND', pifs(:, :, :, jl) * prhodj(:, :, :) )
+      idx = NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl -1 + jl
+      call Budget_store_init( tbudgets(idx), 'HIND', pins(:, :, :, jl) * prhodj(:, :, :) )
     end do
   end if
 end if
@@ -495,6 +498,8 @@ if ( nbumod == kmi .and. lbu_enable ) then
     do jl = 1, nmod_ifn
       idx = NBUDGET_SV1 - 1 + nsv_lima_ifn_free -1 + jl
       call Budget_store_end( tbudgets(idx), 'HIND', pifs(:, :, :, jl) * prhodj(:, :, :) )
+      idx = NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl -1 + jl
+      call Budget_store_end( tbudgets(idx), 'HIND', pins(:, :, :, jl) * prhodj(:, :, :) )
     end do
   end if
 end if
@@ -514,6 +519,14 @@ if ( nbumod == kmi .and. lbu_enable ) then
     call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'HINC', pccs(:, :, :) * prhodj(:, :, :) )
     call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HINC', &
                                     Unpack ( zcis(:), mask = gnegt(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
+    do jl = 1, nmod_ccn
+      idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_acti - 1 + jl
+      call Budget_store_init( tbudgets(idx), 'HINC', pnas(:, :, :, jl) * prhodj(:, :, :) )
+    end do
+    do jl = 1, nmod_imm
+      idx = NBUDGET_SV1 - 1 + nsv_lima_imm_nucl - 1 + jl
+      call Budget_store_init( tbudgets(idx), 'HINC', pnis(:, :, :, jl) * prhodj(:, :, :) )
+    end do
   end if
 end if
 !
@@ -570,6 +583,14 @@ if ( nbumod == kmi .and. lbu_enable ) then
                                     Unpack ( zccs(:), mask = gnegt(:, :, :), field = pccs(:, :, :) ) * prhodj(:, :, :) )
     call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HINC', &
                                     Unpack ( zcis(:), mask = gnegt(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
+    do jl = 1, nmod_ccn
+      idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_acti - 1 + jl
+      call Budget_store_end( tbudgets(idx), 'HINC', pnas(:, :, :, jl) * prhodj(:, :, :) )
+    end do
+    do jl = 1, nmod_imm
+      idx = NBUDGET_SV1 - 1 + nsv_lima_imm_nucl - 1 + jl
+      call Budget_store_end( tbudgets(idx), 'HINC', pnis(:, :, :, jl) * prhodj(:, :, :) )
+    end do
   end if
 end if
 !-------------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -16,7 +16,7 @@ INTERFACE
                                            ZLBDAI, ZLBDAG,               &
                                            PRHODJ1D, GMICRO, PRHODJ, KMI,&
                                            PTHS, PRVS, PRCS, PRIS, PRGS, &
-                                           PCCS, PCIS                    )
+                                           PCCS, PCIS, PINS              )
 !
 REAL, DIMENSION(:),   INTENT(IN)    :: ZRHODREF  ! RHO Dry REFerence
 REAL, DIMENSION(:),   INTENT(IN)    :: ZZT       ! Temperature
@@ -57,6 +57,7 @@ REAL,    DIMENSION(:,:,:), INTENT(IN) :: PRIS
 REAL,    DIMENSION(:,:,:), INTENT(IN) :: PRGS
 REAL,    DIMENSION(:,:,:), INTENT(IN) :: PCCS
 REAL,    DIMENSION(:,:,:), INTENT(IN) :: PCIS
+REAL,    DIMENSION(:,:,:,:), INTENT(IN) :: PINS
 !
 END SUBROUTINE LIMA_MIXED_SLOW_PROCESSES
 END INTERFACE
@@ -71,7 +72,7 @@ END MODULE MODI_LIMA_MIXED_SLOW_PROCESSES
                                            ZLBDAI, ZLBDAG,               &
                                            PRHODJ1D, GMICRO, PRHODJ, KMI,&
                                            PTHS, PRVS, PRCS, PRIS, PRGS, &
-                                           PCCS, PCIS                    )
+                                           PCCS, PCIS, PINS              )
 !     #######################################################################
 !
 !!
@@ -111,6 +112,7 @@ END MODULE MODI_LIMA_MIXED_SLOW_PROCESSES
 !!      Original             ??/??/13 
 !!      C. Barthe  * LACy *  jan. 2014   add budgets
 !  P. Wautelet    03/2020: use the new data structures and subroutines for budgets
+!  P. Wautelet 02/02/2021: budgets: add missing source terms for SV budgets in LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -172,6 +174,7 @@ REAL,    DIMENSION(:,:,:), INTENT(IN) :: PRIS
 REAL,    DIMENSION(:,:,:), INTENT(IN) :: PRGS
 REAL,    DIMENSION(:,:,:), INTENT(IN) :: PCCS
 REAL,    DIMENSION(:,:,:), INTENT(IN) :: PCIS
+REAL,    DIMENSION(:,:,:,:), INTENT(IN) :: PINS
 !
 !*       0.2   Declarations of local variables :
 !
@@ -220,6 +223,10 @@ END IF
     if ( lbudget_sv ) then
       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'IMLT', pccs(:, :, :) * prhodj(:, :, :) )
       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'IMLT', pcis(:, :, :) * prhodj(:, :, :) )
+      do jmod_ifn = 1,nmod_ifn
+        call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl + jmod_ifn - 1), 'IMLT', &
+                                pins(:, :, :, jmod_ifn) * prhodj(:, :, :) )
+      enddo
     end if
   end if
 
@@ -252,6 +259,10 @@ END IF
                                            Unpack( zccs(:), mask = gmicro(:, :, :), field = pccs(:, :, :) ) * prhodj(:, :, :) )
       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'IMLT', &
                                            Unpack( zcis(:), mask = gmicro(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
+      do jmod_ifn = 1,nmod_ifn
+        call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl + jmod_ifn - 1), 'IMLT', &
+                          Unpack( zins(:, jmod_ifn), mask = gmicro(:, :, :), field = pins(:, :, :, jmod_ifn) ) * prhodj(:, :, :) )
+      enddo
     end if
   end if
 !

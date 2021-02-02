@@ -7,6 +7,7 @@
 !  P. Wautelet 17/08/2020: add Budget_preallocate subroutine
 !  P. Wautelet 11/01/2021: ignore xbuwri for cartesian boxes (write at every xbulen interval)
 !  P. Wautelet 01/02/2021: bugfix: add missing CEDS source terms for SV budgets
+!  P. Wautelet 02/02/2021: budgets: add missing source terms for SV budgets in LIMA
 !-----------------------------------------------------------------
 module mode_ini_budget
 
@@ -3134,6 +3135,16 @@ SV_BUDGETS: do jsv = 1, ksv
 
       else if ( jsv >= nsv_lima_ccn_acti .and. jsv <= nsv_lima_ccn_acti + nmod_ccn - 1 ) then SV_LIMA
         ! Activated CCN concentration
+        gcond = lptsplit .and. lwarm_lima  .and. lacti_lima .and. nmod_ccn >= 1
+        tzsource%cmnhname  = 'HENU'
+        tzsource%clongname = 'CCN activation'
+        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
+
+        gcond = lptsplit .and. lcold_lima .and. lnucl_lima .and. .not. lmeyers_lima
+        tzsource%cmnhname  = 'HINC'
+        tzsource%clongname = 'heterogeneous nucleation by contact'
+        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
+
         gcond = lwarm_lima
         tzsource%cmnhname  = 'CEDS'
         tzsource%clongname = 'adjustment to saturation'
@@ -3262,6 +3273,23 @@ SV_BUDGETS: do jsv = 1, ksv
 
       else if ( jsv >= nsv_lima_ifn_nucl .and. jsv <= nsv_lima_ifn_nucl + nmod_ifn - 1 ) then SV_LIMA
         ! Nucleated IFN concentration
+        gcond = lptsplit .and. lcold_lima .and. lnucl_lima .and. lmeyers_lima .and. jsv == nsv_lima_ifn_nucl
+        tzsource%cmnhname  = 'HINC'
+        tzsource%clongname = 'heterogeneous nucleation by contact'
+        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
+
+        gcond = lptsplit .and.                                                                               &
+                     ( lcold_lima .and. lnucl_lima .and.       lmeyers_lima .and. jsv == nsv_lima_ifn_nucl ) &
+                .or. ( lcold_lima .and. lnucl_lima .and. .not. lmeyers_lima                                )
+        tzsource%cmnhname  = 'HIND'
+        tzsource%clongname = 'heterogeneous nucleation by deposition'
+        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
+
+        gcond = lptsplit .or. ( lcold_lima .and. lwarm_lima  )
+        tzsource%cmnhname  = 'IMLT'
+        tzsource%clongname = 'ice melting'
+        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
+
         gcond = lcold_lima
         tzsource%cmnhname  = 'CEDS'
         tzsource%clongname = 'adjustment to saturation'
@@ -3270,6 +3298,11 @@ SV_BUDGETS: do jsv = 1, ksv
 
       else if ( jsv >= nsv_lima_imm_nucl .and. jsv <= nsv_lima_imm_nucl + nmod_imm - 1 ) then SV_LIMA
         ! Nucleated IMM concentration
+        gcond = lptsplit .and. lcold_lima .and. lnucl_lima .and. .not. lmeyers_lima
+        tzsource%cmnhname  = 'HINC'
+        tzsource%clongname = 'heterogeneous nucleation by contact'
+        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
+
         gcond = lcold_lima
         tzsource%cmnhname  = 'CEDS'
         tzsource%clongname = 'adjustment to saturation'

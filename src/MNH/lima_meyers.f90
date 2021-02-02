@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -109,6 +109,7 @@ END MODULE MODI_LIMA_MEYERS
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
+!  P. Wautelet 02/02/2021: budgets: add missing source terms for SV budgets in LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -119,7 +120,7 @@ use modd_budget,          only: lbu_enable, nbumod,                             
                                 NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RI, NBUDGET_SV1, &
                                 tbudgets
 USE MODD_CST
-USE MODD_NSV,             ONLY: NSV_LIMA_NC, NSV_LIMA_NI
+USE MODD_NSV,             ONLY: NSV_LIMA_NC, NSV_LIMA_NI, NSV_LIMA_IFN_NUCL
 USE MODD_PARAMETERS
 USE MODD_PARAM_LIMA
 USE MODD_PARAM_LIMA_COLD
@@ -321,6 +322,8 @@ IF( INEGT >= 1 ) THEN
     if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV),                    'HIND', prvs(:, :, :) * prhodj(:, :, :) )
     if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI),                    'HIND', pris(:, :, :) * prhodj(:, :, :) )
     if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HIND', pcis(:, :, :) * prhodj(:, :, :) )
+    if ( lbudget_sv ) &
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl), 'HIND', pins(:, :, :, 1) * prhodj(:, :, :) )
   end if
 
   DO JL=1,INEGT
@@ -337,8 +340,6 @@ IF( INEGT >= 1 ) THEN
   END WHERE
 !
   ZINS(:,1)     = ZINS(:,1) + ZZX(:)
-  ZW(:,:,:)     = PINS(:,:,:,1)
-  PINS(:,:,:,1) = UNPACK( ZINS(:,1), MASK=GNEGT(:,:,:), FIELD=ZW(:,:,:)  )
 !
   ZRVS(:) = ZRVS(:) - ZZW(:)
   ZRIS(:) = ZRIS(:) + ZZW(:)
@@ -356,6 +357,8 @@ IF( INEGT >= 1 ) THEN
                                              Unpack ( zris(:), mask = gnegt(:, :, :), field = pris(:, :, :) ) * prhodj(:, :, :) )
     if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HIND', &
                                              Unpack ( zcis(:), mask = gnegt(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
+    if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl), 'HIND', &
+                                       Unpack ( zins(:, 1), mask = gnegt(:, :, :), field = pins(:, :, :, 1) ) * prhodj(:, :, :) )
   end if
 !
 !*            compute the heterogeneous nucleation by contact: RVHNCI
@@ -370,12 +373,11 @@ IF( INEGT >= 1 ) THEN
       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'HINC', pccs(:, :, :) * prhodj(:, :, :) )
       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HINC', &
                                        Unpack ( zcis(:), mask = gnegt(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl), 'HINC', &
+                                 Unpack ( zins(:, 1), mask = gnegt(:, :, :), field = pins(:, :, :, 1) ) * prhodj(:, :, :) )
     end if
   end if
 
-  DO JL=1,INEGT
-    ZINS(JL,1) = PINS(I1(JL),I2(JL),I3(JL),1)
-  END DO
   ZZW(:) = 0.0
   ZZX(:) = 0.0
   ZZY(:) = 0.0
@@ -420,6 +422,7 @@ IF( INEGT >= 1 ) THEN
     if ( lbudget_sv ) then
       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'HINC', pccs(:, :, :) * prhodj(:, :, :) )
       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HINC', pcis(:, :, :) * prhodj(:, :, :) )
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl), 'HINC', pins(:, :, :, 1) * prhodj(:, :, :) )
     end if
   end if
 
