@@ -101,6 +101,7 @@ END MODULE MODI_LIMA
 !  P. Wautelet 26/02/2020: bugfix: corrected condition to write budget CORR_BU_RRS
 !  B. Vie      03/03/2020: use DTHRAD instead of dT/dt in Smax diagnostic computation
 !  P. Wautelet 28/05/2020: bugfix: correct array start for PSVT and PSVS
+!  P. Wautelet 03/02/2021: budgets: add new source if LIMA splitting: CORR2
 !-----------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -238,11 +239,13 @@ REAL, DIMENSION(:), ALLOCATABLE ::                          &
      Z_TH_DRYG, Z_RC_DRYG, Z_CC_DRYG, Z_RR_DRYG, Z_CR_DRYG, & ! dry growth of graupel (DRYG) : rc, Nc, rr, Nr, ri, Ni, rs, rg, th
      Z_RI_DRYG, Z_CI_DRYG, Z_RS_DRYG, Z_RG_DRYG,            & ! dry growth of graupel (DRYG) : rc, Nc, rr, Nr, ri, Ni, rs, rg, th
      Z_RI_HMG, Z_CI_HMG, Z_RG_HMG,                          & ! hallett mossop graupel (HMG) : ri, Ni, rg
-     Z_TH_GMLT, Z_RR_GMLT, Z_CR_GMLT                          ! graupel melting (GMLT) : rr, Nr, rg=-rr, th
+     Z_TH_GMLT, Z_RR_GMLT, Z_CR_GMLT,                       & ! graupel melting (GMLT) : rr, Nr, rg=-rr, th
 !      Z_RC_WETH, Z_CC_WETH, Z_RR_WETH, Z_CR_WETH,            & ! wet growth of hail (WETH) : rc, Nc, rr, Nr, ri, Ni, rs, rg, rh, th
 !      Z_RI_WETH, Z_CI_WETH, Z_RS_WETH, Z_RG_WETH, Z_RH_WETH, & ! wet growth of hail (WETH) : rc, Nc, rr, Nr, ri, Ni, rs, rg, rh, th
 !      Z_RG_COHG,                                             & ! conversion of hail into graupel (COHG) : rg, rh
 !      Z_RR_HMLT, Z_CR_HMLT                                     ! hail melting (HMLT) : rr, Nr, rh=-rr, th
+     Z_RV_CORR2, Z_RC_CORR2, Z_RR_CORR2, Z_RI_CORR2,        &
+     Z_CC_CORR2, Z_CR_CORR2, Z_CI_CORR2
 !
 ! for the conversion from rain to cloud, we need a 3D variable instead of a 1D packed variable
 REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) ::  &
@@ -291,7 +294,9 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE ::                                     &
 !      ZTOT_RI_WETH, ZTOT_CI_WETH, ZTOT_RS_WETH, ZTOT_RG_WETH, ZTOT_RH_WETH, & ! wet growth of hail (WETH)
 !      ZTOT_RG_COHG,                                                         & ! conversion of hail into graupel (COHG)
 !      ZTOT_RR_HMLT, ZTOT_CR_HMLT,                                           & ! hail melting (HMLT)
-     ZTOT_RR_CVRC, ZTOT_CR_CVRC                                              ! conversion of rain into cloud droplets if diameter too small
+     ZTOT_RR_CVRC, ZTOT_CR_CVRC,                                           & ! conversion of rain into cloud droplets if diameter too small
+     ZTOT_RV_CORR2, ZTOT_RC_CORR2, ZTOT_RR_CORR2, ZTOT_RI_CORR2,           &
+     ZTOT_CC_CORR2, ZTOT_CR_CORR2, ZTOT_CI_CORR2
 
 !
 !For mixing-ratio splitting
@@ -477,6 +482,14 @@ if ( lbu_enable ) then
 !   allocate( ZTOT_CR_HMLT (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CR_HMLT(:,:,:) = 0.
   allocate( ZTOT_RR_CVRC (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RR_CVRC(:,:,:) = 0.
   allocate( ZTOT_CR_CVRC (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CR_CVRC(:,:,:) = 0.
+
+  allocate( ZTOT_RV_CORR2 (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RV_CORR2(:,:,:) = 0.
+  allocate( ZTOT_RC_CORR2 (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RC_CORR2(:,:,:) = 0.
+  allocate( ZTOT_RR_CORR2 (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RR_CORR2(:,:,:) = 0.
+  allocate( ZTOT_RI_CORR2 (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RI_CORR2(:,:,:) = 0.
+  allocate( ZTOT_CC_CORR2 (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CC_CORR2(:,:,:) = 0.
+  allocate( ZTOT_CR_CORR2 (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CR_CORR2(:,:,:) = 0.
+  allocate( ZTOT_CI_CORR2 (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CI_CORR2(:,:,:) = 0.
 END IF
 !
 ! Initial values computed as source * PTSTEP
@@ -989,6 +1002,13 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKB:IKE)<PTSTEP))
       ALLOCATE(Z_RR_GMLT(IPACK))          ; Z_RR_GMLT = 0.
       ALLOCATE(Z_CR_GMLT(IPACK))          ; Z_CR_GMLT = 0.
 
+      ALLOCATE(Z_RV_CORR2(IPACK))         ; Z_RV_CORR2 = 0.
+      ALLOCATE(Z_RC_CORR2(IPACK))         ; Z_RC_CORR2 = 0.
+      ALLOCATE(Z_RR_CORR2(IPACK))         ; Z_RR_CORR2 = 0.
+      ALLOCATE(Z_RI_CORR2(IPACK))         ; Z_RI_CORR2 = 0.
+      ALLOCATE(Z_CC_CORR2(IPACK))         ; Z_CC_CORR2 = 0.
+      ALLOCATE(Z_CR_CORR2(IPACK))         ; Z_CR_CORR2 = 0.
+      ALLOCATE(Z_CI_CORR2(IPACK))         ; Z_CI_CORR2 = 0.
       !
       !***       4.1 Tendecies computation
       !
@@ -1195,7 +1215,6 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKB:IKE)<PTSTEP))
       ZRGT1D = ZRGT1D + ZA_RG(:) * ZMAXTIME(:) + ZB_RG(:)
       ZRHT1D = ZRHT1D + ZA_RH(:) * ZMAXTIME(:) + ZB_RH(:)
       !
-
       DO II=1,NMOD_IFN
          ZIFNN1D(:,II) = ZIFNN1D(:,II) + ZB_IFNN(:,II)
       END DO
@@ -1203,16 +1222,28 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKB:IKE)<PTSTEP))
       !***       4.5 
       !
       WHERE (ZRCT1D .LE. XRTMIN(2))
+         Z_RV_CORR2(:) = ZRCT1D(:)
+         Z_RC_CORR2(:) = -ZRCT1D(:)
+         Z_CC_CORR2(:) = -ZCCT1D(:)
+
          ZRVT1D = ZRVT1D + ZRCT1D
          ZRCT1D = 0.
          ZCCT1D = 0.
       END WHERE
       WHERE (ZRRT1D .LE. XRTMIN(3))
+         Z_RV_CORR2(:) = Z_RV_CORR2(:) + ZRRT1D(:)
+         Z_RR_CORR2(:) = -ZRRT1D(:)
+         Z_CR_CORR2(:) = -ZCRT1D(:)
+
          ZRVT1D = ZRVT1D + ZRRT1D
          ZRRT1D = 0.
          ZCRT1D = 0.
       END WHERE
       WHERE (ZRIT1D .LE. XRTMIN(4))
+         Z_RV_CORR2(:) = Z_RV_CORR2(:) + ZRIT1D(:)
+         Z_RI_CORR2(:) = -ZRIT1D(:)
+         Z_CI_CORR2(:) = -ZCIT1D(:)
+
          ZRVT1D = ZRVT1D + ZRIT1D
          ZRIT1D = 0.
          ZCIT1D = 0.
@@ -1350,6 +1381,15 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKB:IKE)<PTSTEP))
 !!$            ZTOT_RG_COHG(I1(II),I2(II),I3(II)) =   ZTOT_RG_COHG(I1(II),I2(II),I3(II))   + Z_RG_COHG(II)  * ZMAXTIME(II)
 !!$            ZTOT_RR_HMLT(I1(II),I2(II),I3(II)) =   ZTOT_RR_HMLT(I1(II),I2(II),I3(II))   + Z_RR_HMLT(II)  * ZMAXTIME(II)
 !!$            ZTOT_CR_HMLT(I1(II),I2(II),I3(II)) =   ZTOT_CR_HMLT(I1(II),I2(II),I3(II))   + Z_CR_HMLT(II)  * ZMAXTIME(II)
+
+          !Correction term
+          ZTOT_RV_CORR2(I1(II),I2(II),I3(II)) =   ZTOT_RV_CORR2(I1(II),I2(II),I3(II)) + Z_RV_CORR2(II)
+          ZTOT_RC_CORR2(I1(II),I2(II),I3(II)) =   ZTOT_RC_CORR2(I1(II),I2(II),I3(II)) + Z_RC_CORR2(II)
+          ZTOT_RR_CORR2(I1(II),I2(II),I3(II)) =   ZTOT_RR_CORR2(I1(II),I2(II),I3(II)) + Z_RR_CORR2(II)
+          ZTOT_RI_CORR2(I1(II),I2(II),I3(II)) =   ZTOT_RI_CORR2(I1(II),I2(II),I3(II)) + Z_RI_CORR2(II)
+          ZTOT_CC_CORR2(I1(II),I2(II),I3(II)) =   ZTOT_CC_CORR2(I1(II),I2(II),I3(II)) + Z_CC_CORR2(II)
+          ZTOT_CR_CORR2(I1(II),I2(II),I3(II)) =   ZTOT_CR_CORR2(I1(II),I2(II),I3(II)) + Z_CR_CORR2(II)
+          ZTOT_CI_CORR2(I1(II),I2(II),I3(II)) =   ZTOT_CI_CORR2(I1(II),I2(II),I3(II)) + Z_CI_CORR2(II)
          END DO
       ENDIF
       !
@@ -1490,7 +1530,15 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKB:IKE)<PTSTEP))
       DEALLOCATE(Z_TH_GMLT)
       DEALLOCATE(Z_RR_GMLT)
       DEALLOCATE(Z_CR_GMLT)
-      !      
+
+      DEALLOCATE(Z_RV_CORR2)
+      DEALLOCATE(Z_RC_CORR2)
+      DEALLOCATE(Z_RR_CORR2)
+      DEALLOCATE(Z_RI_CORR2)
+      DEALLOCATE(Z_CC_CORR2)
+      DEALLOCATE(Z_CR_CORR2)
+      DEALLOCATE(Z_CI_CORR2)
+      !
    ENDDO
 ENDDO
 !
@@ -1550,6 +1598,7 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(NBUDGET_RV), 'REVA', -ztot_rr_evap (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RV), 'DEPS', -ztot_rs_deps (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RV), 'DEPG', -ztot_rg_depg (:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_RV), 'CORR2', ztot_rv_corr2(:, :, :) * zrhodjontstep(:, :, :) )
   end if
 
   if ( lbudget_rc ) then
@@ -1563,6 +1612,7 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(NBUDGET_RC), 'WETG',  ztot_rc_wetg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RC), 'DRYG',  ztot_rc_dryg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RC), 'CVRC', -ztot_rr_cvrc (:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_RC), 'CORR2', ztot_rc_corr2(:, :, :) * zrhodjontstep(:, :, :) )
   end if
 
   if ( lbudget_rr ) then
@@ -1576,6 +1626,7 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(NBUDGET_RR), 'DRYG',  ztot_rr_dryg(:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RR), 'GMLT',  ztot_rr_gmlt(:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RR), 'CVRC',  ztot_rr_cvrc(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_RR), 'CORR2', ztot_rr_corr2(:, :, :) * zrhodjontstep(:, :, :) )
   end if
 
   if ( lbudget_ri ) then
@@ -1590,6 +1641,7 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(NBUDGET_RI), 'WETG',   ztot_ri_wetg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RI), 'DRYG',   ztot_ri_dryg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RI), 'HMG',    ztot_ri_hmg  (:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_RI), 'CORR2',  ztot_ri_corr2(:, :, :) * zrhodjontstep(:, :, :) )
   end if
 
   if ( lbudget_rs ) then
@@ -1638,6 +1690,7 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(idx), 'WETG',  ztot_cc_wetg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'DRYG',  ztot_cc_dryg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'CVRC', -ztot_cr_cvrc (:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(idx), 'CORR2', ztot_cc_corr2(:, :, :) * zrhodjontstep(:, :, :) )
     !
     ! Rain drops
     !
@@ -1653,6 +1706,7 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(idx), 'DRYG',  ztot_cr_dryg(:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'GMLT',  ztot_cr_gmlt(:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'CVRC',  ztot_cr_cvrc(:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(idx), 'CORR2', ztot_cr_corr2(:, :, :) * zrhodjontstep(:, :, :) )
     !
     ! Ice crystals
     !
@@ -1667,6 +1721,7 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(idx), 'WETG',   ztot_ci_wetg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'DRYG',   ztot_ci_dryg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'HMG',    ztot_ci_hmg  (:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(idx), 'CORR2',  ztot_ci_corr2(:, :, :) * zrhodjontstep(:, :, :) )
   end if
 
   deallocate( zrhodjontstep )

@@ -8,6 +8,7 @@
 !  P. Wautelet 11/01/2021: ignore xbuwri for cartesian boxes (write at every xbulen interval)
 !  P. Wautelet 01/02/2021: bugfix: add missing CEDS source terms for SV budgets
 !  P. Wautelet 02/02/2021: budgets: add missing source terms for SV budgets in LIMA
+!  P. Wautelet 03/02/2021: budgets: add new source if LIMA splitting: CORR2
 !-----------------------------------------------------------------
 module mode_ini_budget
 
@@ -1271,7 +1272,7 @@ if ( tbudgets(NBUDGET_RV)%lenabled ) then
 
   !Allocate all basic source terms (used or not)
   !The size should be large enough (bigger than necessary is OK)
-  isourcesmax = 32
+  isourcesmax = 33
   tbudgets(NBUDGET_RV)%nsourcesmax = isourcesmax
   allocate( tbudgets(NBUDGET_RV)%tsources(isourcesmax) )
 
@@ -1452,6 +1453,11 @@ if ( tbudgets(NBUDGET_RV)%lenabled ) then
   tzsource%clongname = 'deposition on ice'
   call Budget_source_add( tbudgets(NBUDGET_RV), tzsource, gcond, ncdepirv )
 
+  gcond = hcloud == 'LIMA' .and. lptsplit
+  tzsource%cmnhname  = 'CORR2'
+  tzsource%clongname = 'supplementary correction inside LIMA splitting'
+  call Budget_source_add( tbudgets(NBUDGET_RV), tzsource, gcond, ncorr2rv )
+
   gcond = (      hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4'   &
             .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA' ) &
           .and. celec == 'NONE'
@@ -1472,7 +1478,7 @@ if ( tbudgets(NBUDGET_RC)%lenabled ) then
 
   !Allocate all basic source terms (used or not)
   !The size should be large enough (bigger than necessary is OK)
-  isourcesmax = 42
+  isourcesmax = 43
   tbudgets(NBUDGET_RC)%nsourcesmax = isourcesmax
   allocate( tbudgets(NBUDGET_RC)%tsources(isourcesmax) )
 
@@ -1714,6 +1720,11 @@ if ( tbudgets(NBUDGET_RC)%lenabled ) then
   tzsource%clongname = 'vapor condensation or cloud water evaporation'
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource, gcond, ncondrc )
 
+  gcond = hcloud == 'LIMA' .and. lptsplit
+  tzsource%cmnhname  = 'CORR2'
+  tzsource%clongname = 'supplementary correction inside LIMA splitting'
+  call Budget_source_add( tbudgets(NBUDGET_RC), tzsource, gcond, 1 )
+
   gcond = (      hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4'   &
             .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA' ) &
           .and. celec == 'NONE'
@@ -1730,7 +1741,7 @@ if ( tbudgets(NBUDGET_RR)%lenabled ) then
 
   !Allocate all basic source terms (used or not)
   !The size should be large enough (bigger than necessary is OK)
-  isourcesmax = 32
+  isourcesmax = 33
   tbudgets(NBUDGET_RR)%nsourcesmax = isourcesmax
   allocate( tbudgets(NBUDGET_RR)%tsources(isourcesmax) )
 
@@ -1923,6 +1934,11 @@ if ( tbudgets(NBUDGET_RR)%lenabled ) then
   tzsource%clongname = 'spontaneous freezing'
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource, gcond, nsfrrr )
 
+  gcond = hcloud == 'LIMA' .and. lptsplit
+  tzsource%cmnhname  = 'CORR2'
+  tzsource%clongname = 'supplementary correction inside LIMA splitting'
+  call Budget_source_add( tbudgets(NBUDGET_RR), tzsource, gcond, ncorr2rr )
+
   gcond = (      hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4'   &
             .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA' ) &
           .and. celec == 'NONE'
@@ -1939,7 +1955,7 @@ if ( tbudgets(NBUDGET_RI)%lenabled ) then
 
   !Allocate all basic source terms (used or not)
   !The size should be large enough (bigger than necessary is OK)
-  isourcesmax = 41
+  isourcesmax = 42
   tbudgets(NBUDGET_RI)%nsourcesmax = isourcesmax
   allocate( tbudgets(NBUDGET_RI)%tsources(isourcesmax) )
 
@@ -2158,6 +2174,11 @@ if ( tbudgets(NBUDGET_RI)%lenabled ) then
   tzsource%cmnhname  = 'CDEPI'
   tzsource%clongname = 'condensation/deposition on ice'
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource, gcond, ncdepiri )
+
+  gcond = hcloud == 'LIMA' .and. lptsplit
+  tzsource%cmnhname  = 'CORR2'
+  tzsource%clongname = 'supplementary correction inside LIMA splitting'
+  call Budget_source_add( tbudgets(NBUDGET_RI), tzsource, gcond, ncorr2ri )
 
   gcond = (      hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4'   &
             .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA' ) &
@@ -2700,7 +2721,7 @@ SV_BUDGETS: do jsv = 1, ksv
 
     !Allocate all basic source terms (used or not)
     !The size should be large enough (bigger than necessary is OK)
-    isourcesmax = 37
+    isourcesmax = 38
     tbudgets(ibudget)%nsourcesmax = isourcesmax
     allocate( tbudgets(ibudget)%tsources(isourcesmax) )
 
@@ -3021,6 +3042,11 @@ SV_BUDGETS: do jsv = 1, ksv
         tzsource%clongname = 'wet growth of hail'
         call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
 
+        gcond = hcloud == 'LIMA' .and. lptsplit
+        tzsource%cmnhname  = 'CORR2'
+        tzsource%clongname = 'supplementary correction inside LIMA splitting'
+        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
+
         gcond = .true.
         tzsource%cmnhname  = 'CEDS'
         tzsource%clongname = 'adjustment to saturation'
@@ -3107,6 +3133,11 @@ SV_BUDGETS: do jsv = 1, ksv
         gcond = .not.lptsplit .and. lhail_lima .and. lcold_lima .and. lwarm_lima  .and. lsnow_lima
         tzsource%cmnhname  = 'HMLT'
         tzsource%clongname = 'hail melting'
+        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
+
+        gcond = hcloud == 'LIMA' .and. lptsplit
+        tzsource%cmnhname  = 'CORR2'
+        tzsource%clongname = 'supplementary correction inside LIMA splitting'
         call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
 
 
@@ -3248,6 +3279,11 @@ SV_BUDGETS: do jsv = 1, ksv
         gcond = .true.
         tzsource%cmnhname  = 'CEDS'
         tzsource%clongname = 'adjustment to saturation'
+        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
+
+        gcond = hcloud == 'LIMA' .and. lptsplit
+        tzsource%cmnhname  = 'CORR2'
+        tzsource%clongname = 'supplementary correction inside LIMA splitting'
         call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
 
 

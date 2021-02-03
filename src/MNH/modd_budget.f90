@@ -59,6 +59,7 @@
 !  P. Wautelet 08/12/2020: add nbusubwrite and nbutotwrite
 !  P. Wautelet 11/01/2021: remove nbuwrnb (replaced by nbusubwrite)
 !  P. Wautelet 14/01/2021: change xbusurf type to integer (+ rename it to nbusurf)
+!  P. Wautelet 03/02/2021: budgets: add new source if LIMA splitting: CORR2
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -385,6 +386,7 @@ INTEGER, SAVE :: NHINDRV  = 0 ! Heterogeneous Nucleation by Deposition LIMA
 INTEGER, SAVE :: NHONHRV  = 0 ! Haze Homogeneous Nucleation            LIMA
 INTEGER, SAVE :: NCEDSRV  = 0 ! adjustement
 INTEGER, SAVE :: NVISCRV  = 0 ! viscosity
+INTEGER, SAVE :: NCORR2RV = 0 ! Correction in LIMA splitting
 !
 !      Allowed processes for the budget of moist variable RRC (cloud water)
 !                                                  
@@ -431,6 +433,7 @@ INTEGER, SAVE :: NCORRRC   = 0 ! rain <-> cloud transfer at the beginning of LIM
 INTEGER, SAVE :: NR2C1RC   = 0 ! rain -> cloud change after sedimentation in LIMA
 INTEGER, SAVE :: NCVRCRC   = 0 ! rain -> cloud change after other microphysical processes in LIMA
 INTEGER, SAVE :: NVISCRC   = 0 ! viscosity
+INTEGER, SAVE :: NCORR2RC  = 0 ! Correction in LIMA splitting
 !
 !      Allowed processes for the budget of moist variable RRR (rain water)
 !
@@ -467,6 +470,7 @@ INTEGER, SAVE :: NHONRRR  = 0 ! drop homogeneous nucleation LIMA
 INTEGER, SAVE :: NR2C1RR  = 0 ! rain -> cloud change after sedimentation in LIMA
 INTEGER, SAVE :: NCVRCRR  = 0 ! rain -> cloud change after other microphysical processes in LIMA
 INTEGER, SAVE :: NVISCRR  = 0 ! viscosity
+INTEGER, SAVE :: NCORR2RR = 0 ! Correction in LIMA splitting
 !
 !      Allowed processes for the budget of moist variable RRI (ice)
 !
@@ -512,6 +516,7 @@ INTEGER, SAVE :: NHMGRI   = 0 ! Hallett-Mossop ice multiplication process due to
 INTEGER, SAVE :: NCEDSRI  = 0 ! adjustement LIMA
 INTEGER, SAVE :: NCORRRI  = 0 ! ice <-> snow transfer at the beginning of LIMA
 INTEGER, SAVE :: NVISCRI  = 0 ! viscosity
+INTEGER, SAVE :: NCORR2RI = 0 ! Correction in LIMA splitting
 !
 !      Allowed processes for the budget of moist variable RRS (snow)
 !
