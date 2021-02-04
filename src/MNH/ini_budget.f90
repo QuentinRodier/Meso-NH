@@ -3321,7 +3321,7 @@ SV_BUDGETS: do jsv = 1, ksv
         tzsource%clongname = 'heterogeneous nucleation by deposition'
         call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
 
-        gcond = lptsplit .or. ( lcold_lima .and. lwarm_lima  )
+        gcond = lptsplit .or. ( lcold_lima .and. lwarm_lima )
         tzsource%cmnhname  = 'IMLT'
         tzsource%clongname = 'ice melting'
         call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )

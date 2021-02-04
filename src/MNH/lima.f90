@@ -297,6 +297,7 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE ::                                     &
      ZTOT_RR_CVRC, ZTOT_CR_CVRC,                                           & ! conversion of rain into cloud droplets if diameter too small
      ZTOT_RV_CORR2, ZTOT_RC_CORR2, ZTOT_RR_CORR2, ZTOT_RI_CORR2,           &
      ZTOT_CC_CORR2, ZTOT_CR_CORR2, ZTOT_CI_CORR2
+REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZTOT_IFNN_IMLT
 
 !
 !For mixing-ratio splitting
@@ -319,7 +320,7 @@ INTEGER                                                 :: INB_ITER_MAX
 INTEGER :: KRR
 INTEGER :: IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKT, IKTB, IKTE
 ! loops and packing
-INTEGER :: II, IPACK
+INTEGER :: II, IPACK, JI
 integer :: idx
 INTEGER, DIMENSION(:), ALLOCATABLE :: I1, I2, I3
 ! Inverse ov PTSTEP
@@ -397,6 +398,7 @@ if ( lbu_enable ) then
   allocate( ZTOT_TH_IMLT (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_TH_IMLT(:,:,:) = 0.
   allocate( ZTOT_RC_IMLT (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RC_IMLT(:,:,:) = 0.
   allocate( ZTOT_CC_IMLT (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CC_IMLT(:,:,:) = 0.
+  allocate( ZTOT_IFNN_IMLT (size( ptht, 1), size( ptht, 2), size( ptht, 3), nmod_ifn ) ); ZTOT_IFNN_IMLT(:,:,:,:) = 0.
   allocate( ZTOT_TH_HONC (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_TH_HONC(:,:,:) = 0.
   allocate( ZTOT_RC_HONC (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RC_HONC(:,:,:) = 0.
   allocate( ZTOT_CC_HONC (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CC_HONC(:,:,:) = 0.
@@ -1297,6 +1299,10 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKB:IKE)<PTSTEP))
             ZTOT_TH_IMLT(I1(II),I2(II),I3(II)) =   ZTOT_TH_IMLT(I1(II),I2(II),I3(II))   + Z_TH_IMLT(II)
             ZTOT_RC_IMLT(I1(II),I2(II),I3(II)) =   ZTOT_RC_IMLT(I1(II),I2(II),I3(II))   + Z_RC_IMLT(II)
             ZTOT_CC_IMLT(I1(II),I2(II),I3(II)) =   ZTOT_CC_IMLT(I1(II),I2(II),I3(II))   + Z_CC_IMLT(II)
+            DO JI = 1, NMOD_IFN
+              ZTOT_IFNN_IMLT(I1(II),I2(II),I3(II),JI) = ZTOT_IFNN_IMLT(I1(II),I2(II),I3(II),JI) + ZB_IFNN(II,JI)
+            END DO
+
             ! Tendencies
             ZTOT_TH_HONC(I1(II),I2(II),I3(II)) =   ZTOT_TH_HONC(I1(II),I2(II),I3(II))   + Z_TH_HONC(II)  * ZMAXTIME(II)
             ZTOT_RC_HONC(I1(II),I2(II),I3(II)) =   ZTOT_RC_HONC(I1(II),I2(II),I3(II))   + Z_RC_HONC(II)  * ZMAXTIME(II)
@@ -1722,6 +1728,11 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(idx), 'DRYG',   ztot_ci_dryg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'HMG',    ztot_ci_hmg  (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'CORR2',  ztot_ci_corr2(:, :, :) * zrhodjontstep(:, :, :) )
+
+    do ii = 1, nmod_ifn
+      idx = nsv_lima_ifn_nucl + ii - 1
+      call Budget_store_add( tbudgets(idx), 'IMLT', ztot_ifnn_imlt(:, :, :, ii) * zrhodjontstep(:, :, :) )
+    end do
   end if
 
   deallocate( zrhodjontstep )
