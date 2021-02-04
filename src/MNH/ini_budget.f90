@@ -2781,11 +2781,6 @@ SV_BUDGETS: do jsv = 1, ksv
     tzsource%clongname = 'KAFR convection'
     call Budget_source_add( tbudgets(ibudget), tzsource, gcond, ndconvsv )
 
-    gcond = odragtree .and. odepotree .and. ( hcloud=='C2R2' .or. hcloud=='KHKO' .or. hcloud=='LIMA' )
-    tzsource%cmnhname  = 'DEPOTR'
-    tzsource%clongname = 'tree droplet deposition'
-    call Budget_source_add( tbudgets(ibudget), tzsource, gcond, ndepotrsv )
-
     gcond = hturb == 'TKEL'
     tzsource%cmnhname  = 'VTURB'
     tzsource%clongname = 'vertical turbulent diffusion'
@@ -2862,6 +2857,11 @@ SV_BUDGETS: do jsv = 1, ksv
 
         case ( 2 ) SV_C2R2
           ! Concentration of cloud droplets
+          gcond = odragtree .and. odepotree
+          tzsource%cmnhname  = 'DEPOTR'
+          tzsource%clongname = 'tree droplet deposition'
+          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, ndepotrsv )
+
           gtmp = cactccn == 'ABRK' .and. (lorilam .or. ldust .or. lsalt )
           gcond =  gtmp .or. ( .not.gtmp .and. .not.lsupsat_c2r2 )
           tzsource%cmnhname  = 'HENU'
@@ -2957,6 +2957,11 @@ SV_BUDGETS: do jsv = 1, ksv
       ! Source terms specific to each budget
       SV_LIMA: if ( jsv == nsv_lima_nc ) then
         ! Cloud droplets concentration
+          gcond = odragtree .and. odepotree
+          tzsource%cmnhname  = 'DEPOTR'
+          tzsource%clongname = 'tree droplet deposition'
+          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, ndepotrsv )
+
         gcond = lptsplit .and. lwarm_lima  .and. lrain_lima
         tzsource%cmnhname  = 'CORR'
         tzsource%clongname = 'correction'

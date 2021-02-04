@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2009-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2009-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -72,6 +72,7 @@ SUBROUTINE DRAG_VEG(PTSTEP,PUT,PVT,PTKET,ODEPOTREE, PVDEPOTREE, &
 !  C. Lac         11/2019: correction in the drag formula and application to building in addition to tree
 !  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
 !  C. Lac         02/2020: correction missing condition for budget on RC and SV
+!  P. Wautelet 04/02/2021: budgets: bugfixes for LDRAGTREE if LIMA + small optimisations and verifications
 !!---------------------------------------------------------------
 !
 !
@@ -88,10 +89,13 @@ USE MODD_DYN_n
 USE MODD_GROUND_PAR
 USE MODD_NSV
 USE MODD_PARAM_C2R2
+USE MODD_PARAM_LIMA,  ONLY: LWARM_LIMA => LWARM
+USE MODD_PARAM_n,     only: CSURF, CTURB
 USE MODD_PGDFIELDS
 USE MODD_VEG_n
 
 use mode_budget,     only: Budget_store_init, Budget_store_end
+use mode_msg
 
 USE MODI_MNHGET_SURF_PARAM_n
 USE MODI_SHUMAN
@@ -125,8 +129,6 @@ INTEGER    ::  IIU,IJU,IKU,IKV         ! array size along the k direction
 INTEGER  :: JI, JJ, JK             ! loop index
 !
 !
-REAL, DIMENSION(:,:), ALLOCATABLE :: ZH_TREE_PGD ! surface cover types
-REAL, DIMENSION(:,:), ALLOCATABLE :: ZLAI_PGD ! surface cover types
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) ::           &
                               ZWORK1, ZWORK2, ZWORK3, ZUT_SCAL, ZVT_SCAL,   &
                               ZUS, ZVS, ZTKES, ZTKET
@@ -139,7 +141,10 @@ LOGICAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) &
             :: GDEP
 REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZWDEPR,ZWDEPS
 
-!
+IF ( CSURF /= 'EXTE' ) CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'DRAG_VEG', 'CSURF/=EXTE not allowed' )
+
+!Condition necessary because PTKET is used (and must be allocated)
+IF ( CTURB /= 'TKEL' ) CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'DRAG_VEG', 'CTURB/=TKEL not allowed' )
 !
 if ( lbudget_u   ) call Budget_store_init( tbudgets(NBUDGET_U  ), 'DRAG', prus  (:, :, :) )
 if ( lbudget_v   ) call Budget_store_init( tbudgets(NBUDGET_V  ), 'DRAG', prvs  (:, :, :) )
@@ -147,8 +152,10 @@ if ( lbudget_tke ) call Budget_store_init( tbudgets(NBUDGET_TKE), 'DRAG', prtkes
 
 if ( odepotree ) then
   if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'DEPOTR', prrs(:, :, :, 2) )
-  if ( lbudget_sv .and. ( hcloud=='C2R2' .or. hcloud=='KHKO' .or. hcloud=='LIMA' ) ) &
+  if ( lbudget_sv .and. ( hcloud=='C2R2' .or. hcloud=='KHKO' ) ) &
                     call Budget_store_init( tbudgets(NBUDGET_SV1-1+(NSV_C2R2BEG+1)), 'DEPOTR', psvs(:, :, :, NSV_C2R2BEG+1) )
+  if ( lbudget_sv .and.   hcloud=='LIMA' ) &
+                    call Budget_store_init( tbudgets(NBUDGET_SV1-1+NSV_LIMA_NC),     'DEPOTR', psvs(:, :, :, NSV_LIMA_NC) )
 end if
 
 IIU = SIZE(PUT,1)
@@ -159,28 +166,16 @@ ZUS   (:,:,:) = 0.0
 ZVS   (:,:,:) = 0.0
 ZTKES (:,:,:) = 0.0
 !
-ZH (:,:) = 0.
-ZLAI   (:,:) = 0.
+ZH  (:,:) = XUNDEF
+ZLAI(:,:) = XUNDEF
 !
 ZCDRAG   (:,:,:) = 0.
 ZDENSITY (:,:,:) = 0.
 !
-ALLOCATE(ZH_TREE_PGD(IIU,IJU))
-ALLOCATE(ZLAI_PGD(IIU,IJU))
+CALL MNHGET_SURF_PARAM_n( PH_TREE = ZH, PLAI_TREE = ZLAI )
 !
-ZH_TREE_PGD     (:,:) = XUNDEF
-ZLAI_PGD        (:,:) = XUNDEF
-!
-CALL MNHGET_SURF_PARAM_n(PH_TREE=ZH_TREE_PGD,PLAI_TREE=ZLAI_PGD)
-!
-ZH  (:,:) = ZH_TREE_PGD(:,:)
-ZLAI(:,:) = ZLAI_PGD(:,:)
-!
-WHERE ( ZH   (:,:).GT.998.0 ) ZH   (:,:) = 0.0
-WHERE ( ZLAI (:,:).GT.998.0 ) ZLAI (:,:) = 0.0
-!
-DEALLOCATE(ZH_TREE_PGD)
-DEALLOCATE(ZLAI_PGD)
+WHERE ( ZH   (:,:) > (XUNDEF-1.) ) ZH   (:,:) = 0.0
+WHERE ( ZLAI (:,:) > (XUNDEF-1.) ) ZLAI (:,:) = 0.0
 !
 !-------------------------------------------------------------------------------
 !
@@ -264,6 +259,10 @@ PRUS(:,:,:) = PRUS(:,:,:) + (ZUS(:,:,:)-PUT(:,:,:)) * MXM(PRHODJ(:,:,:)) / PTSTE
 PRVS(:,:,:) = PRVS(:,:,:) + (ZVS(:,:,:)-PVT(:,:,:)) * MYM(PRHODJ(:,:,:)) / PTSTEP
 !
 IF (ODEPOTREE) THEN
+  IF ( HCLOUD == 'NONE' ) CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'DRAG_VEG', 'LDEPOTREE=T not allowed if CCLOUD=NONE' )
+  IF ( HCLOUD == 'LIMA' .AND. .NOT. LWARM_LIMA ) &
+    CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'DRAG_VEG', 'LDEPOTREE=T not allowed if CCLOUD=LIMA and LWARM=F' )
+
   ZEXN(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
   ZT(:,:,:)= PTHT(:,:,:)*ZEXN(:,:,:)
   ZLV(:,:,:)=XLVTT +(XCPV-XCL) *(ZT(:,:,:)-XTT)
@@ -273,20 +272,27 @@ IF (ODEPOTREE) THEN
   WHERE (GDEP)
    ZWDEPR(:,:,:)= PVDEPOTREE * PRT(:,:,:,2) * PRHODJ(:,:,:)
   END WHERE
-  IF ((HCLOUD=='C2R2') .OR.  (HCLOUD=='KHKO')  .OR.  (HCLOUD=='LIMA')) THEN
-   WHERE (GDEP)
-   ZWDEPS(:,:,:)= PVDEPOTREE * PSVT(:,:,:,NSV_C2R2BEG+1) * PRHODJ(:,:,:)
-   END WHERE
+  IF ( HCLOUD == 'C2R2' .OR. HCLOUD == 'KHKO' ) THEN
+    WHERE (GDEP)
+      ZWDEPS(:,:,:)= PVDEPOTREE * PSVT(:,:,:,NSV_C2R2BEG+1) * PRHODJ(:,:,:)
+    END WHERE
+  ELSE IF ( HCLOUD == 'LIMA' ) THEN
+    WHERE (GDEP)
+      ZWDEPS(:,:,:)= PVDEPOTREE * PSVT(:,:,:,NSV_LIMA_NC) * PRHODJ(:,:,:)
+    END WHERE
   END IF
   DO JJ=2,(IJU-1)
    DO JI=2,(IIU-1)
      DO JK=2,(IKU-2) 
        IF (GDEP(JI,JJ,JK)) THEN
-          PRRS(JI,JJ,JK,2) = PRRS(JI,JJ,JK,2) + (ZWDEPR(JI,JJ,JK+1)-ZWDEPR(JI,JJ,JK))/ &
-                             (PZZ(JI,JJ,JK+1)-PZZ(JI,JJ,JK))
-         IF ((HCLOUD=='C2R2') .OR.  (HCLOUD=='KHKO').OR.  (HCLOUD=='LIMA')) THEN
-          PSVS(JI,JJ,JK,NSV_C2R2BEG+1) =  PSVS(JI,JJ,JK,NSV_C2R2BEG+1) + &
-                   (ZWDEPS(JI,JJ,JK+1)-ZWDEPS(JI,JJ,JK))/(PZZ(JI,JJ,JK+1)-PZZ(JI,JJ,JK))
+         PRRS(JI,JJ,JK,2) = PRRS(JI,JJ,JK,2) + (ZWDEPR(JI,JJ,JK+1)-ZWDEPR(JI,JJ,JK))/ &
+                            (PZZ(JI,JJ,JK+1)-PZZ(JI,JJ,JK))
+         IF ( HCLOUD == 'C2R2' .OR. HCLOUD == 'KHKO' ) THEN
+           PSVS(JI,JJ,JK,NSV_C2R2BEG+1) = PSVS(JI,JJ,JK,NSV_C2R2BEG+1) + &
+                                          (ZWDEPS(JI,JJ,JK+1)-ZWDEPS(JI,JJ,JK))/(PZZ(JI,JJ,JK+1)-PZZ(JI,JJ,JK))
+         ELSE IF ( HCLOUD == 'LIMA' ) THEN
+           PSVS(JI,JJ,JK,NSV_LIMA_NC) = PSVS(JI,JJ,JK,NSV_LIMA_NC) + &
+                                        (ZWDEPS(JI,JJ,JK+1)-ZWDEPS(JI,JJ,JK))/(PZZ(JI,JJ,JK+1)-PZZ(JI,JJ,JK))
          END IF
        END IF
      END DO
@@ -323,8 +329,10 @@ if ( lbudget_tke ) call Budget_store_end( tbudgets(NBUDGET_TKE), 'DRAG', prtkes(
 
 if ( odepotree ) then
   if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'DEPOTR', prrs(:, :, :, 2) )
-  if ( lbudget_sv .and. ( hcloud=='C2R2' .or. hcloud=='KHKO' .or. hcloud=='LIMA' ) ) &
+  if ( lbudget_sv .and. ( hcloud=='C2R2' .or. hcloud=='KHKO' ) ) &
                     call Budget_store_end( tbudgets(NBUDGET_SV1-1+(NSV_C2R2BEG+1)), 'DEPOTR', psvs(:, :, :, NSV_C2R2BEG+1) )
+  if ( lbudget_sv .and.   hcloud=='LIMA' ) &
+                    call Budget_store_end( tbudgets(NBUDGET_SV1-1+NSV_LIMA_NC),     'DEPOTR', psvs(:, :, :, NSV_LIMA_NC) )
 end if
 
 END SUBROUTINE DRAG_VEG
