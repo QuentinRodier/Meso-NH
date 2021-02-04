@@ -35,6 +35,8 @@
   yhat  = fichier1->YHAT(1:jmax+jphext-1+1) ; YHAT
   xhat  = fichier1->XHAT(1:imax+jphext-1+1) ; XHAT
 
+  vtype = typeof(zs)
+
   wt= fichier1->WT(0,1:kmax+1,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; WT
   vt= fichier1->VT(0,1:kmax,jphext:jmax+jphext-1+1,jphext:imax+jphext-1) ; VT
   ut= fichier1->UT(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1+1) ; UT
@@ -106,14 +108,14 @@
 ; Altitude des niveaux modèles
 ;=================================================;
 ; Unstagger zhat (from grid 4 to 1)
-  nzh=new(kmax,double)
+  nzh=new(kmax,vtype)
   do k=0,kmax-1
     nzh(k)=(zhat(k)+zhat(k+1))/2.
   end do
 
 ; Create alt (altitude des niveaux modèle)
-  alt=new(dimsizes(tht1),double)
-  zcoef=new((/jmax,imax/),double)
+  alt=new(dimsizes(tht1),vtype)
+  zcoef=new((/jmax,imax/),vtype)
   zcoef=1.-zs/nzh(kmax-1)
   do i=0,imax-1
     do j=0,jmax-1

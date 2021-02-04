@@ -102,6 +102,8 @@ load "$NCARG_ROOT/lib/ncarg/nclscripts/wrf/WRFUserARW.ncl"
   zs@lat2d = lat2d
   zs@lon2d = lon2d
 
+  vtype = typeof(zs)
+
   wt= fichier1->WT(0,1:kmax+1,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; WT
   vt= fichier1->VT(0,1:kmax,jphext:jmax+jphext-1+1,jphext:imax+jphext-1); VT
   ut= fichier1->UT(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1+1) ; UT
@@ -156,13 +158,13 @@ load "$NCARG_ROOT/lib/ncarg/nclscripts/wrf/WRFUserARW.ncl"
   zhat= fichier1->ZHAT(1:kmax+1)
 
 ; Unstagger zhat (from grid 4 to 1)
-  nzhat=new(kmax,double)
+  nzhat=new(kmax,vtype)
   do k=0,kmax-1
     nzhat(k)=(zhat(k)+zhat(k+1))/2.
   end do
 
 ; Create Z3D == ALT
-  alt=new(dimsizes(tht),double)
+  alt=new(dimsizes(tht),vtype)
   zcoef=1.-zs/nzhat(kmax-1)
 
   do i=0,imax-1
