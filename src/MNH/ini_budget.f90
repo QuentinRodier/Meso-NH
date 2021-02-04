@@ -3166,12 +3166,12 @@ SV_BUDGETS: do jsv = 1, ksv
 
       else if ( jsv >= nsv_lima_ccn_acti .and. jsv <= nsv_lima_ccn_acti + nmod_ccn - 1 ) then SV_LIMA
         ! Activated CCN concentration
-        gcond = lptsplit .and. lwarm_lima  .and. lacti_lima .and. nmod_ccn >= 1
+        gcond = lwarm_lima  .and. lacti_lima .and. nmod_ccn >= 1
         tzsource%cmnhname  = 'HENU'
         tzsource%clongname = 'CCN activation'
         call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
 
-        gcond = lptsplit .and. lcold_lima .and. lnucl_lima .and. .not. lmeyers_lima
+        gcond = lcold_lima .and. lnucl_lima .and. .not. lmeyers_lima
         tzsource%cmnhname  = 'HINC'
         tzsource%clongname = 'heterogeneous nucleation by contact'
         call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
@@ -3202,16 +3202,12 @@ SV_BUDGETS: do jsv = 1, ksv
         tzsource%clongname = 'sedimentation'
         call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
 
-        gcond = lcold_lima .and. lnucl_lima .and. &
-                ( (      lptsplit .and. ( ( .not.lmeyers_lima .and. nmod_ifn > 0 ) .or. lmeyers_lima ) ) .or. &
-                  ( .not.lptsplit ) )
+        gcond = lcold_lima .and. lnucl_lima
         tzsource%cmnhname  = 'HIND'
         tzsource%clongname = 'heterogeneous nucleation by deposition'
         call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
 
-        gcond = lcold_lima .and. lnucl_lima .and. &
-                ( (      lptsplit .and. ( ( .not.lmeyers_lima .and. nmod_ifn > 0 ) .or. lmeyers_lima ) ) .or. &
-                  ( .not.lptsplit ) )
+        gcond = lcold_lima .and. lnucl_lima
         tzsource%cmnhname  = 'HINC'
         tzsource%clongname = 'heterogeneous nucleation by contact'
         call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
@@ -3289,9 +3285,7 @@ SV_BUDGETS: do jsv = 1, ksv
 
       else if ( jsv >= nsv_lima_ifn_free .and. jsv <= nsv_lima_ifn_free + nmod_ifn - 1 ) then SV_LIMA
         ! Free IFN concentration
-!Rq: if NMOD_IFN=0=> budget=0
-        gcond = ( .not.lptsplit .and. lcold_lima .and. lnucl_lima .and. .not. lmeyers_lima ) .or.              &
-                (      lptsplit .and. lcold_lima .and. lnucl_lima .and. .not. lmeyers_lima .and. nmod_ifn >= 1 )
+        gcond = lcold_lima .and. lnucl_lima .and. .not. lmeyers_lima
         tzsource%cmnhname  = 'HIND'
         tzsource%clongname = 'heterogeneous nucleation by deposition'
         call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
@@ -3309,16 +3303,15 @@ SV_BUDGETS: do jsv = 1, ksv
 
       else if ( jsv >= nsv_lima_ifn_nucl .and. jsv <= nsv_lima_ifn_nucl + nmod_ifn - 1 ) then SV_LIMA
         ! Nucleated IFN concentration
-        gcond = lptsplit .and. lcold_lima .and. lnucl_lima .and. lmeyers_lima .and. jsv == nsv_lima_ifn_nucl
-        tzsource%cmnhname  = 'HINC'
-        tzsource%clongname = 'heterogeneous nucleation by contact'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
-
-        gcond = lptsplit .and.                                                                               &
-                     ( lcold_lima .and. lnucl_lima .and.       lmeyers_lima .and. jsv == nsv_lima_ifn_nucl ) &
-                .or. ( lcold_lima .and. lnucl_lima .and. .not. lmeyers_lima                                )
+        gcond = lcold_lima .and. lnucl_lima                                                     &
+                .and. ( ( lmeyers_lima .and. jsv == nsv_lima_ifn_nucl ) .or. .not. lmeyers_lima )
         tzsource%cmnhname  = 'HIND'
         tzsource%clongname = 'heterogeneous nucleation by deposition'
+        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
+
+        gcond = lcold_lima .and. lnucl_lima .and. lmeyers_lima .and. jsv == nsv_lima_ifn_nucl
+        tzsource%cmnhname  = 'HINC'
+        tzsource%clongname = 'heterogeneous nucleation by contact'
         call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
 
         gcond = lptsplit .or. ( lcold_lima .and. lwarm_lima )
@@ -3334,7 +3327,7 @@ SV_BUDGETS: do jsv = 1, ksv
 
       else if ( jsv >= nsv_lima_imm_nucl .and. jsv <= nsv_lima_imm_nucl + nmod_imm - 1 ) then SV_LIMA
         ! Nucleated IMM concentration
-        gcond = lptsplit .and. lcold_lima .and. lnucl_lima .and. .not. lmeyers_lima
+        gcond = lcold_lima .and. lnucl_lima .and. .not. lmeyers_lima
         tzsource%cmnhname  = 'HINC'
         tzsource%clongname = 'heterogeneous nucleation by contact'
         call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
@@ -3347,7 +3340,9 @@ SV_BUDGETS: do jsv = 1, ksv
 
       else if ( jsv == nsv_lima_hom_haze ) then SV_LIMA
         ! Homogeneous freezing of CCN
-        gcond = .not.lptsplit .and. lcold_lima .and. lnucl_lima .and. lwarm_lima  .and. lhhoni_lima
+        gcond = lcold_lima .and. lnucl_lima  .and.                                                     &
+                (      ( .not.lptsplit .and. ( ( lhhoni_lima .and. nmod_ccn >= 1 ) .or. lwarm_lima ) ) &
+                  .or. (      lptsplit .and.   ( lhhoni_lima .and. nmod_ccn >= 1 )                 ) )
         tzsource%cmnhname  = 'HONH'
         tzsource%clongname = 'haze homogeneous nucleation'
         call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
