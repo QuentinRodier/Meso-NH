@@ -991,16 +991,18 @@ select case ( idims )
         call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 1, 2 ], gsplit, gdistributed, &
                                           kil, kih, kjl, kjh, kkl, kkh )
       end do
-    else if ( Any ( tpfields(1)%ndimlist(1) == [ NMNHDIM_BUDGET_CART_NI, NMNHDIM_BUDGET_CART_NI_U, NMNHDIM_BUDGET_CART_NI_V ] ) &
-              .and. tpfields(1)%ndimlist(3) ==   NMNHDIM_BUDGET_CART_LEVEL                                                      &
-              .and. tpfields(1)%ndimlist(6) ==   NMNHDIM_BUDGET_NGROUPS                                                      ) then
+    else if (       Any ( tpfields(1)%ndimlist(1) == [ NMNHDIM_BUDGET_CART_NI, NMNHDIM_BUDGET_CART_NI_U,          &
+                                                       NMNHDIM_BUDGET_CART_NI_V ] )                               &
+              .and. Any ( tpfields(1)%ndimlist(3) == [ NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W ] ) &
+              .and.       tpfields(1)%ndimlist(6) ==   NMNHDIM_BUDGET_NGROUPS                                     ) then
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
         call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 1, 3 ], gsplit, gdistributed )
       end do
-    else if ( Any ( tpfields(1)%ndimlist(2) == [ NMNHDIM_BUDGET_CART_NJ, NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NJ_V ] ) &
-              .and. tpfields(1)%ndimlist(3) ==   NMNHDIM_BUDGET_CART_LEVEL                                                      &
-              .and. tpfields(1)%ndimlist(6) ==   NMNHDIM_BUDGET_NGROUPS                                                      ) then
+    else if (       Any ( tpfields(1)%ndimlist(2) == [ NMNHDIM_BUDGET_CART_NJ, NMNHDIM_BUDGET_CART_NJ_U,          &
+                                                       NMNHDIM_BUDGET_CART_NJ_V ] )                               &
+              .and. Any ( tpfields(1)%ndimlist(3) == [ NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W ] ) &
+              .and.       tpfields(1)%ndimlist(6) ==   NMNHDIM_BUDGET_NGROUPS                                     ) then
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
         call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 2, 3 ], gsplit, gdistributed )
@@ -1059,7 +1061,7 @@ select case ( idims )
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
       call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 2, 3, 4 ], gsplit, gdistributed, &
                                         kil, kih, kjl, kjh, kkl, kkh )
-    else if (  tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL      &
+    else if ( ( tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL .or. tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL_W ) &
          .and. tpfields(1)%ndimlist(4) == NMNHDIM_FLYER_TIME &
          .and. tpfields(1)%ndimlist(6) == NMNHDIM_FLYER_PROC ) then
       !Correspond to FLYER_DIACHRO
@@ -1074,7 +1076,7 @@ select case ( idims )
       do ji = 1, Size( pvar, 6 )
         call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 3, 4 ], gsplit, gdistributed )
       end do
-    else if (  tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL      &
+    else if (  ( tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL .or. tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL_W ) &
          .and. tpfields(1)%ndimlist(4) == NMNHDIM_PROFILER_TIME &
          .and. tpfields(1)%ndimlist(6) == NMNHDIM_PROFILER_PROC ) then
       !Correspond to PROFILER_DIACHRO_n
@@ -1097,6 +1099,13 @@ select case ( idims )
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
         call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 1, 4 ], gsplit, gdistributed )
+      end do
+    else if (  ( tpfields(1)%ndimlist(2) == NMNHDIM_NJ .or. tpfields(1)%ndimlist(2) == NMNHDIM_NJ_U )      &
+         .and. tpfields(1)%ndimlist(4) == NMNHDIM_SERIES_TIME &
+         .and. tpfields(1)%ndimlist(6) == NMNHDIM_SERIES_PROC ) then
+      ! Loop on the processes
+      do ji = 1, Size( pvar, 6 )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 2, 4 ], gsplit, gdistributed )
       end do
     else if (       tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_TIME         &
               .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_MASK_NBUMASK &
