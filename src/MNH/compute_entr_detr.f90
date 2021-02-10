@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2009-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2009-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -120,19 +120,20 @@ END MODULE MODI_COMPUTE_ENTR_DETR
 !!                          improvement of continuity at the condensation level
 !!      S. Riette Nov 2013: protection against zero divide for min value of dry PDETR
 !!      R.Honnert Oct 2016 : Update with AROME
-!  P. Wautelet 08/02/2019: bug fix: compute ZEPSI_CLOUD only once and only when it is needed
+!  P. Wautelet 08/02/2019: bugfix: compute ZEPSI_CLOUD only once and only when it is needed
+!  P. Wautelet 10/02/2021: bugfix: initialized PPART_DRY everywhere
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
 !          ------------
 !                         
 USE MODD_CST
-!
 USE MODD_PARAM_MFSHALL_n
-!
-USE MODI_TH_R_FROM_THL_RT_1D 
+USE MODD_PARAMETERS, ONLY: XUNDEF
 
 USE MODE_THERMO
+
+USE MODI_TH_R_FROM_THL_RT_1D
 
 IMPLICIT NONE
 !
@@ -233,6 +234,10 @@ INTEGER :: JI,JLOOP
   ZPRE(:)=PPRE_MINUS_HALF(:)
   ZMIXTHL(:)=0.1
   ZMIXRT(:)=0.1
+
+  !Initialize PPART_DRY everywhere to prevent access to non-initialized values
+  ! (intent(out) arrays have undefined values at subroutine entry)
+  PPART_DRY(:) = XUNDEF
 
 !                1.4 Estimation of PPART_DRY
   DO JLOOP=1,SIZE(OTEST)
