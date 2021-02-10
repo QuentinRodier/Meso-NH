@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2010-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -150,7 +150,7 @@ REAL :: ZRELAX_HEIGHT_TOP,ZRELAX_HEIGHT_BOT, ZRELAX_TIME
 !              ----------------------
 
 if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), '2DREL', prths(:, :, :)    )
-if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_TH), '2DREL', prrs (:, :, :, 1) )
+if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), '2DREL', prrs (:, :, :, 1) )
 
 IF (GSFIRSTCALL) THEN
 !
@@ -250,7 +250,7 @@ END IF
 !*       3.     BUDGET CALLS
 !   	        ------------
 if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), '2DREL', prths(:, :, :)    )
-if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_TH), '2DREL', prrs (:, :, :, 1) )
+if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), '2DREL', prrs (:, :, :, 1) )
 
 !----------------------------------------------------------------------------
 !
