@@ -91,6 +91,7 @@ END MODULE MODI_KHKO_NOTADJUST
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
+!  P. Wautelet 10/02/2021: add CEVA source for NSV_C2R2BEG+3 budget
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -196,6 +197,7 @@ if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'COND', pths(:, 
 if ( lbudget_sv ) then
   call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg    ), 'CEVA', pcnucs(:, :, :) * prhodj(:, :, :) )
   call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 1), 'CEVA', pccs  (:, :, :) * prhodj(:, :, :) )
+  call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 3), 'CEVA', psat  (:, :, :) * prhodj(:, :, :) )
 end if
 
 ILUOUT = TLUOUT%NLU
@@ -421,6 +423,7 @@ if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'COND', pths(:, :
 if ( lbudget_sv ) then
   call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg    ), 'CEVA', pcnucs(:, :, :) * prhodj(:, :, :) )
   call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 1), 'CEVA', pccs  (:, :, :) * prhodj(:, :, :) )
+  call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_c2r2beg + 3), 'CEVA', psat  (:, :, :) * prhodj(:, :, :) )
 end if
 
 END SUBROUTINE KHKO_NOTADJUST

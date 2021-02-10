@@ -5,10 +5,6 @@
 !-----------------------------------------------------------------
 ! Modifications:
 !  P. Wautelet 17/08/2020: add Budget_preallocate subroutine
-!  P. Wautelet 11/01/2021: ignore xbuwri for cartesian boxes (write at every xbulen interval)
-!  P. Wautelet 01/02/2021: bugfix: add missing CEDS source terms for SV budgets
-!  P. Wautelet 02/02/2021: budgets: add missing source terms for SV budgets in LIMA
-!  P. Wautelet 03/02/2021: budgets: add new source if LIMA splitting: CORR2
 !-----------------------------------------------------------------
 module mode_ini_budget
 
@@ -203,6 +199,11 @@ end subroutine Budget_preallocate
 !  P. Wautelet 30/06/2020: add NNETURSV, NNEADVSV and NNECONSV variables
 !  P. Wautelet 06/07/2020: bugfix: add condition on HTURB for NETUR sources for SV budgets
 !  P. Wautelet 08/12/2020: add nbusubwrite and nbutotwrite
+!  P. Wautelet 11/01/2021: ignore xbuwri for cartesian boxes (write at every xbulen interval)
+!  P. Wautelet 01/02/2021: bugfix: add missing CEDS source terms for SV budgets
+!  P. Wautelet 02/02/2021: budgets: add missing source terms for SV budgets in LIMA
+!  P. Wautelet 03/02/2021: budgets: add new source if LIMA splitting: CORR2
+!  P. Wautelet 10/02/2021: budgets: add missing sources for NSV_C2R2BEG+3 budget
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -2816,28 +2817,25 @@ SV_BUDGETS: do jsv = 1, ksv
       ! C2R2 or KHKO Case
 
       ! Source terms in common for all C2R2/KHKO budgets
-      ! (except supersaturation not taken into account in the budgets (for the moment))
-      if ( jsv <= nsv_c2r2beg + 2 ) then
-        gcond = hturb == 'TKEL'
-        tzsource%cmnhname  = 'NETUR'
-        tzsource%clongname = 'negative correction induced by turbulence'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnetursv )
+      gcond = hturb == 'TKEL'
+      tzsource%cmnhname  = 'NETUR'
+      tzsource%clongname = 'negative correction induced by turbulence'
+      call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnetursv )
 
-        gcond = .true.
-        tzsource%cmnhname  = 'NEADV'
-        tzsource%clongname = 'negative correction induced by advection'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneadvsv )
+      gcond = .true.
+      tzsource%cmnhname  = 'NEADV'
+      tzsource%clongname = 'negative correction induced by advection'
+      call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneadvsv )
 
-        gcond = .true.
-        tzsource%cmnhname  = 'NEGA'
-        tzsource%clongname = 'negative correction'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnegasv )
+      gcond = .true.
+      tzsource%cmnhname  = 'NEGA'
+      tzsource%clongname = 'negative correction'
+      call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnegasv )
 
-        gcond = .true.
-        tzsource%cmnhname  = 'NECON'
-        tzsource%clongname = 'negative correction induced by condensation'
-        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneconsv )
-      end if
+      gcond = .true.
+      tzsource%cmnhname  = 'NECON'
+      tzsource%clongname = 'negative correction induced by condensation'
+      call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nneconsv )
 
       ! Source terms specific to each budget
       SV_C2R2: select case( jsv - nsv_c2r2beg + 1 )
@@ -2925,7 +2923,11 @@ SV_BUDGETS: do jsv = 1, ksv
 
         case ( 4 ) SV_C2R2
           ! Supersaturation
-          ! Nothing to do
+          gcond = .true.
+          tzsource%cmnhname  = 'CEVA'
+          tzsource%clongname = 'evaporation'
+          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
+
       end select SV_C2R2
 
 

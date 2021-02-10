@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2020-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2020-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -7,6 +7,7 @@
 ! Modifications:
 !  P. Wautelet 30/06/2020: remove non-local corrections in resolved_cloud for NEGA => new local corrections here
 !  J. Escobar  21/07/2020: bug <-> array of size(:,:,:,0) => return if krr=0
+!  P. Wautelet 10/02/2021: budgets: add missing sources for NSV_C2R2BEG+3 budget
 !-----------------------------------------------------------------
 module mode_sources_neg_correct
 
@@ -26,7 +27,7 @@ use modd_budget,     only: lbudget_th, lbudget_rv, lbudget_rc, lbudget_rr, lbudg
                            NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, NBUDGET_SV1,            &
                            tbudgets
 use modd_cst,        only: xci, xcl, xcpd, xcpv, xlstt, xlvtt, xp00, xrd, xtt
-use modd_nsv,        only: nsv_c2r2beg, nsv_lima_beg, nsv_lima_end, nsv_lima_nc, nsv_lima_nr, nsv_lima_ni
+use modd_nsv,        only: nsv_c2r2beg, nsv_c2r2end, nsv_lima_beg, nsv_lima_end, nsv_lima_nc, nsv_lima_nr, nsv_lima_ni
 use modd_param_lima, only: lcold_lima => lcold, lrain_lima => lrain, lwarm_lima => lwarm, &
                            xctmin_lima => xctmin, xrtmin_lima => xrtmin
 
@@ -78,7 +79,7 @@ if ( hbudname /= 'NECON' .and. hbudname /= 'NEGA' ) then
   end if
 
   if ( lbudget_sv .and. ( hcloud == 'C2R2' .or. hcloud == 'KHKO' ) ) then
-    do ji = nsv_c2r2beg, nsv_c2r2beg + 2
+    do ji = nsv_c2r2beg, nsv_c2r2end
       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + ji), Trim( hbudname ), prsvs(:, :, :, ji) )
     end do
   end if
@@ -104,7 +105,7 @@ else !NECON + NEGA
   end if
 
   if ( lbudget_sv .and. ( hcloud == 'C2R2' .or. hcloud == 'KHKO' ) ) then
-    do ji = nsv_c2r2beg, nsv_c2r2beg + 2
+    do ji = nsv_c2r2beg, nsv_c2r2end
       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + ji), Trim( hbudname ), prsvs(:, :, :, ji) * prhodj(:, :, :) )
     end do
   end if
@@ -309,7 +310,7 @@ if ( hbudname /= 'NECON' .and. hbudname /= 'NEGA' ) then
   end if
 
   if ( lbudget_sv .and. ( hcloud == 'C2R2' .or. hcloud == 'KHKO' ) ) then
-    do ji = nsv_c2r2beg, nsv_c2r2beg + 2
+    do ji = nsv_c2r2beg, nsv_c2r2end
       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + ji), Trim( hbudname ), prsvs(:, :, :, ji) )
     end do
   end if
@@ -332,7 +333,7 @@ else !NECON + NEGA
   end if
 
   if ( lbudget_sv .and. ( hcloud == 'C2R2' .or. hcloud == 'KHKO' ) ) then
-    do ji = nsv_c2r2beg, nsv_c2r2beg + 2
+    do ji = nsv_c2r2beg, nsv_c2r2end
       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + ji), Trim( hbudname ), prsvs(:, :, :, ji) * prhodj(:, :, :) )
     end do
   end if
