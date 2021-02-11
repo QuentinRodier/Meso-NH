@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -102,6 +102,7 @@ END MODULE MODI_LIMA_PRECIP_SCAVENGING
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !  P. Wautelet    03/2020: use the new data structures and subroutines for budgets
 !  P. Wautelet 03/06/2020: bugfix: correct array starts for PSVT and PRSVS
+!  P. Wautelet 11/02/2021: bugfix: ZRTMIN was of wrong size (replaced by a scalar)
 !-------------------------------------------------------------------------------
 !
 !*                  0.DECLARATIONS          
@@ -683,7 +684,7 @@ REAL, DIMENSION(:), ALLOCATABLE :: ZRRS,     & ! Rain water m.r. source
                                    ZRHODREF, & ! RHO Dry REFerence
                                    ZZW         ! Work array
 !
-REAL, DIMENSION(3)              :: ZRTMIN
+REAL                            :: ZRTMIN3
 !
 !
 REAL                            :: ZVTRMAX, ZDZMIN, ZT
@@ -740,11 +741,11 @@ END IF
 !  optimization by looking for locations where
 !  the precipitating fields are larger than a minimal value only !!!
 !
-ZRTMIN(:) = XRTMIN(:) / ZTSTEP
+ZRTMIN3 = XRTMIN(3) / ZTSTEP
 ZZS(:,:,:) = PRAIN(:,:,:)
 DO JN = 1 , ISPLITR
    GSEDIM(:,:,:) = .FALSE.
-   GSEDIM(IIB:IIE,IJB:IJE,IKB:IKE) = ZZS(IIB:IIE,IJB:IJE,IKB:IKE) > ZRTMIN(3)
+   GSEDIM(IIB:IIE,IJB:IJE,IKB:IKE) = ZZS(IIB:IIE,IJB:IJE,IKB:IKE) > ZRTMIN3
 ! 
    ISEDIM = COUNTJV( GSEDIM(:,:,:),I1(:),I2(:),I3(:))
    IF( ISEDIM >= 1 ) THEN
@@ -772,14 +773,14 @@ DO JN = 1 , ISPLITR
       END DO
       IF( JN==1 ) THEN
          PINPAP(:,:) = ZWSED(:,:,IKB)*                                            &
-                             ( PSVT_MASS(:,:,IKB)/MAX(ZRTMIN(3),PRRT(:,:,IKB)) )
+                             ( PSVT_MASS(:,:,IKB)/MAX(ZRTMIN3,PRRT(:,:,IKB)) )
       END IF
       DEALLOCATE(ZRHODREF)
       DEALLOCATE(ZRRS)
       DEALLOCATE(ZZW)
       IF( JN==ISPLITR ) THEN
          GSEDIM(:,:,:) = .FALSE.
-         GSEDIM(IIB:IIE,IJB:IJE,IKB:IKE) = ZZS(IIB:IIE,IJB:IJE,IKB:IKE) > ZRTMIN(3)
+         GSEDIM(IIB:IIE,IJB:IJE,IKB:IKE) = ZZS(IIB:IIE,IJB:IJE,IKB:IKE) > ZRTMIN3
          ZWSED(:,:,:) = 0.0
          WHERE( GSEDIM(:,:,:) ) 
             ZWSED(:,:,:) = 1.0/ZTSTEP - PRAIN(:,:,:)/ZZS(:,:,:)
