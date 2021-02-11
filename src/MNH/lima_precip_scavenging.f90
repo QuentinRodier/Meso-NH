@@ -103,6 +103,7 @@ END MODULE MODI_LIMA_PRECIP_SCAVENGING
 !  P. Wautelet    03/2020: use the new data structures and subroutines for budgets
 !  P. Wautelet 03/06/2020: bugfix: correct array starts for PSVT and PRSVS
 !  P. Wautelet 11/02/2021: bugfix: ZRTMIN was of wrong size (replaced by a scalar)
+!  P. Wautelet 11/02/2021: budgets: add missing term SCAV for NSV_LIMA_SCAVMASS budget
 !-------------------------------------------------------------------------------
 !
 !*                  0.DECLARATIONS          
@@ -264,6 +265,9 @@ if ( lbudget_sv ) then
     idx = nsv_lima_ifn_free - 1 + jl
     call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + idx), 'SCAV', prsvs(:, :, :, idx) )
   end do
+  if ( laero_mass ) then
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_scavmass), 'SCAV', prsvs(:, :, :, nsv_lima_scavmass) )
+  end if
 end if
 !
 !*       1.     PRELIMINARY COMPUTATIONS
@@ -580,6 +584,9 @@ if ( lbudget_sv ) then
     idx = nsv_lima_ifn_free - 1 + jl
     call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + idx), 'SCAV', prsvs(:, :, :, idx) )
   end do
+  if ( laero_mass ) then
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_scavmass), 'SCAV', prsvs(:, :, :, nsv_lima_scavmass) )
+  end if
 end if
 !------------------------------------------------------------------------------
 !

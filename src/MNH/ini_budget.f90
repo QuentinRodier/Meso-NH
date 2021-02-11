@@ -204,6 +204,7 @@ end subroutine Budget_preallocate
 !  P. Wautelet 02/02/2021: budgets: add missing source terms for SV budgets in LIMA
 !  P. Wautelet 03/02/2021: budgets: add new source if LIMA splitting: CORR2
 !  P. Wautelet 10/02/2021: budgets: add missing sources for NSV_C2R2BEG+3 budget
+!  P. Wautelet 11/02/2021: budgets: add missing term SCAV for NSV_LIMA_SCAVMASS budget
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -3191,6 +3192,11 @@ SV_BUDGETS: do jsv = 1, ksv
 
       else if ( jsv == nsv_lima_scavmass ) then SV_LIMA
         ! Scavenged mass variable
+        gcond = lscav_lima .and. laero_mass_lima
+        tzsource%cmnhname  = 'SCAV'
+        tzsource%clongname = 'scavenging'
+        call Budget_source_add( tbudgets(ibudget), tzsource, gcond, igroup )
+
         gcond = lscav_lima .and. laero_mass_lima
         tzsource%cmnhname  = 'CEDS'
         tzsource%clongname = 'adjustment to saturation'
