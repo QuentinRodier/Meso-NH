@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2009-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2009-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -171,7 +171,7 @@ END MODULE MODI_RESOLVED_ELEC_n
 !  P. Wautelet 22/01/2019: use standard FLUSH statement instead of non standard intrinsics
 !  P. Wautelet 14/03/2019: bugfix: correct management of files
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
-!
+!  P. Wautelet 12/02/2021: bugfix: change STATUS for opening files containing flash information (NEW->UNKNOWN)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -869,7 +869,7 @@ IF (KTCOUNT==1 .AND. IPROC==0) THEN
     YASCFILE = CEXP//"_fgeom_diag.asc"
     TZFILE_FGEOM_DIAG => NULL()
     CALL IO_File_add2list(TZFILE_FGEOM_DIAG,YASCFILE,'TXT','WRITE')
-    CALL IO_File_open(TZFILE_FGEOM_DIAG,HPOSITION='APPEND',HSTATUS='NEW')
+    CALL IO_File_open(TZFILE_FGEOM_DIAG,HPOSITION='APPEND',HSTATUS='UNKNOWN')
     ILU = TZFILE_FGEOM_DIAG%NLU
     WRITE (UNIT=ILU, FMT='(A)') '--------------------------------------------------------'
     WRITE (UNIT=ILU, FMT='(A)') '*FLASH CHARACTERISTICS FROM FLASH_GEOM_ELEC*'
@@ -894,7 +894,7 @@ IF (KTCOUNT==1 .AND. IPROC==0) THEN
       YASCFILE = CEXP//"_fgeom_coord.asc"
       TZFILE_FGEOM_COORD => NULL()
       CALL IO_File_add2list(TZFILE_FGEOM_COORD,YASCFILE,'TXT','WRITE')
-      CALL IO_File_open(TZFILE_FGEOM_COORD,HPOSITION='APPEND',HSTATUS='NEW')
+      CALL IO_File_open(TZFILE_FGEOM_COORD,HPOSITION='APPEND',HSTATUS='UNKNOWN')
       ILU = TZFILE_FGEOM_COORD%NLU
       WRITE (UNIT=ILU,FMT='(A)') '------------------------------------------'
       WRITE (UNIT=ILU,FMT='(A)') '*****FLASH COORD. FROM FLASH_GEOM_ELEC****'
@@ -913,7 +913,7 @@ IF (KTCOUNT==1 .AND. IPROC==0) THEN
     YASCFILE = CEXP//"_series_cloud_elec.asc"
     TZFILE_SERIES_CLOUD_ELEC => NULL()
     CALL IO_File_add2list(TZFILE_SERIES_CLOUD_ELEC,YASCFILE,'TXT','WRITE')
-    CALL IO_File_open(TZFILE_SERIES_CLOUD_ELEC,HPOSITION='APPEND',HSTATUS='NEW')
+    CALL IO_File_open(TZFILE_SERIES_CLOUD_ELEC,HPOSITION='APPEND',HSTATUS='UNKNOWN')
     ILU = TZFILE_SERIES_CLOUD_ELEC%NLU
     WRITE (UNIT=ILU, FMT='(A)') '----------------------------------------------------'
     WRITE (UNIT=ILU, FMT='(A)') '********* RESULTS FROM of LSERIES_ELEC *************'
@@ -975,7 +975,7 @@ IF (LFLASH_GEOM .AND. LLMA) THEN
     IF ( IPROC .EQ. 0 ) THEN
       TZFILE_LMA => NULL()
       CALL IO_File_add2list(TZFILE_LMA,CLMA_FILE,'TXT','WRITE')
-      CALL IO_File_open(TZFILE_LMA,HPOSITION='APPEND',HSTATUS='NEW')
+      CALL IO_File_open(TZFILE_LMA,HPOSITION='APPEND',HSTATUS='UNKNOWN')
       ILU = TZFILE_LMA%NLU
       WRITE (UNIT=ILU,FMT='(A)') '----------------------------------------'
       WRITE (UNIT=ILU,FMT='(A)') '*** FLASH COORD. FROM LMA SIMULATOR ****'
