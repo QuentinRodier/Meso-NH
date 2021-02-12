@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -257,7 +257,7 @@ END MODULE MODI_RELAXATION
 !!                 11/2011 (C.Lac)       Adaptation to FIT temporal scheme
 !!                 J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
-!
+!  P. Wautelet 12/02/2021: bugfix: do not call budgets for all SV budgets if LRELAX2FW_ION=T
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -746,7 +746,8 @@ if ( lbudget_rg  .and. ohorelax_rg  ) call Budget_store_end( tbudgets(NBUDGET_RG
 if ( lbudget_rh  .and. ohorelax_rh  ) call Budget_store_end( tbudgets(NBUDGET_RH ), 'REL', prrs  (:, :, :, 7) )
 if ( lbudget_sv ) then
   do jsv = 1, ksv
-    if ( ohorelax_sv( jsv ) ) call Budget_store_end( tbudgets(jsv + NBUDGET_SV1 - 1), 'REL', prsvs(:, :, :, jsv) )
+    if ( .not. lrelax2fw_ion .or. ( jsv /= nsv_elecbeg .and. jsv /= nsv_elecend ) ) &
+      if ( ohorelax_sv( jsv ) ) call Budget_store_end( tbudgets(jsv + NBUDGET_SV1 - 1), 'REL', prsvs(:, :, :, jsv) )
   end do
 end if
 
