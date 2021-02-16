@@ -1132,7 +1132,7 @@ if ( lbu_rth ) then
   tzsource%clongname = 'wet growth of hail'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource, gcond, nwethth )
 
-  gcond = hcloud == 'ICE4' .and. lred
+  gcond = hcloud == 'ICE4' .and. lred .and. celec == 'NONE'
   tzsource%cmnhname  = 'DRYH'
   tzsource%clongname = 'dry growth of hail'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource, gcond, ndryhth )
@@ -1143,7 +1143,7 @@ if ( lbu_rth ) then
   tzsource%clongname = 'melting of hail'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource, gcond, nhmltth )
 
-  gcond = hcloud(1:3) == 'ICE' .and. lred
+  gcond = hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE'
   tzsource%cmnhname  = 'CORR'
   tzsource%clongname = 'correction'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource, gcond, ncorrth )
@@ -1153,7 +1153,7 @@ if ( lbu_rth ) then
   tzsource%clongname = 'adjustment to saturation'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource, gcond, ncedsth )
 
-  gcond = hcloud(1:3) == 'ICE' .and. lred .and. ladj_before
+  gcond = hcloud(1:3) == 'ICE' .and. lred .and. ladj_before .and. celec == 'NONE'
   tzsource%cmnhname  = 'ADJU'
   tzsource%clongname = ''
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource, gcond, nadjuth )
@@ -1435,7 +1435,7 @@ if ( tbudgets(NBUDGET_RV)%lenabled ) then
   tzsource%clongname = 'adjustment to saturation'
   call Budget_source_add( tbudgets(NBUDGET_RV), tzsource, gcond, ncedsrv )
 
-  gcond = hcloud(1:3) == 'ICE' .and. lred .and. ladj_before
+  gcond = hcloud(1:3) == 'ICE' .and. lred .and. ladj_before .and. celec == 'NONE'
   tzsource%cmnhname  = 'ADJU'
   tzsource%clongname = 'adjustment before'
   call Budget_source_add( tbudgets(NBUDGET_RV), tzsource, gcond, nadjurv )
@@ -1445,7 +1445,7 @@ if ( tbudgets(NBUDGET_RV)%lenabled ) then
   tzsource%clongname = 'vapor condensation or cloud water evaporation'
   call Budget_source_add( tbudgets(NBUDGET_RV), tzsource, gcond, ncondrv )
 
-  gcond = hcloud(1:3) == 'ICE' .and. lred
+  gcond = hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE'
   tzsource%cmnhname  = 'CORR'
   tzsource%clongname = 'correction'
   call Budget_source_add( tbudgets(NBUDGET_RV), tzsource, gcond, ncorrrv )
@@ -1584,7 +1584,7 @@ if ( tbudgets(NBUDGET_RC)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource, gcond, nnegarc )
 
   gcond =       ( hcloud      == 'LIMA' .and. lptsplit .and. lwarm_lima .and. lrain_lima ) &
-           .or. ( hcloud(1:3) == 'ICE' .and. lred )
+           .or. ( hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE' )
   tzsource%cmnhname  = 'CORR'
   tzsource%clongname = 'correction'
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource, gcond, ncorrrc )
@@ -1623,7 +1623,7 @@ if ( tbudgets(NBUDGET_RC)%lenabled ) then
   tzsource%clongname = 'heterogeneous nucleation by contact'
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource, gcond, nhincrc )
 
-  gcond = hcloud(1:3) == 'ICE' .and. lred .and. ladj_before
+  gcond = hcloud(1:3) == 'ICE' .and. lred .and. ladj_before .and. celec == 'NONE'
   tzsource%cmnhname  = 'ADJU'
   tzsource%clongname = 'adjustment to saturation'
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource, gcond, nadjurc )
@@ -1676,7 +1676,7 @@ if ( tbudgets(NBUDGET_RC)%lenabled ) then
   tzsource%clongname = 'riming of cloud water'
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource, gcond, nrimrc )
 
-  gcond = hcloud(1:3) == 'ICE' .and. lred
+  gcond = hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE'
   tzsource%cmnhname  = 'CMEL'
   tzsource%clongname = 'collection by snow and conversion into rain with T>XTT on ice'
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource, gcond, ncmelrc )
@@ -1702,7 +1702,7 @@ if ( tbudgets(NBUDGET_RC)%lenabled ) then
   tzsource%clongname = 'wet growth of hail'
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource, gcond, nwethrc )
 
-  gcond = hcloud == 'ICE4' .and. lred
+  gcond = hcloud == 'ICE4' .and. lred .and. celec == 'NONE'
   tzsource%cmnhname  = 'DRYH'
   tzsource%clongname = 'dry growth of hail'
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource, gcond, ndryhrc )
@@ -1826,7 +1826,7 @@ if ( tbudgets(NBUDGET_RR)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource, gcond, nnegarr )
 
   gcond =       ( hcloud      == 'LIMA' .and. lptsplit .and. lwarm_lima .and. lrain_lima ) &
-           .or. ( hcloud(1:3) == 'ICE' .and. lred )
+           .or. ( hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE' )
   tzsource%cmnhname  = 'CORR'
   tzsource%clongname = 'correction'
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource, gcond, ncorrrr )
@@ -1884,7 +1884,7 @@ if ( tbudgets(NBUDGET_RR)%lenabled ) then
   tzsource%clongname = 'accretion of rain water on aggregates'
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource, gcond, naccrr )
 
-  gcond = hcloud(1:3) == 'ICE' .and. lred
+  gcond = hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE'
   tzsource%cmnhname  = 'CMEL'
   tzsource%clongname = 'collection of droplets by snow and conversion into rain'
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource, gcond, ncmelrr )
@@ -1920,7 +1920,7 @@ if ( tbudgets(NBUDGET_RR)%lenabled ) then
   tzsource%clongname = 'wet growth of hail'
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource, gcond, nwethrr )
 
-  gcond = hcloud == 'ICE4' .and. lred
+  gcond = hcloud == 'ICE4' .and. lred .and. celec == 'NONE'
   tzsource%cmnhname  = 'DRYH'
   tzsource%clongname = 'dry growth of hail'
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource, gcond, ndryhrr )
@@ -2055,12 +2055,12 @@ if ( tbudgets(NBUDGET_RI)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource, gcond, nnegari )
 
   gcond =       ( hcloud      == 'LIMA' .and. lptsplit .and. lcold_lima .and. lsnow_lima ) &
-           .or. ( hcloud(1:3) == 'ICE' .and. lred )
+           .or. ( hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE' )
   tzsource%cmnhname  = 'CORR'
   tzsource%clongname = 'correction'
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource, gcond, ncorrri )
 
-  gcond = hcloud(1:3) == 'ICE' .and. lred .and. ladj_before
+  gcond = hcloud(1:3) == 'ICE' .and. lred .and. ladj_before .and. celec == 'NONE'
   tzsource%cmnhname  = 'ADJU'
   tzsource%clongname = 'adjustment before on ice'
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource, gcond, nadjuri )
@@ -2162,7 +2162,7 @@ if ( tbudgets(NBUDGET_RI)%lenabled ) then
   tzsource%clongname = 'wet growth of hail'
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource, gcond, nwethri )
 
-  gcond = hcloud == 'ICE4' .and. lred
+  gcond = hcloud == 'ICE4' .and. lred .and. celec == 'NONE'
   tzsource%cmnhname  = 'DRYH'
   tzsource%clongname = 'dry growth of hail'
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource, gcond, ndryhri )
@@ -2282,7 +2282,7 @@ if ( tbudgets(NBUDGET_RS)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource, gcond, nnegars )
 
   gcond =       ( hcloud      == 'LIMA' .and. lptsplit .and. lcold_lima .and. lsnow_lima ) &
-           .or. ( hcloud(1:3) == 'ICE' .and. lred )
+           .or. ( hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE' )
   tzsource%cmnhname  = 'CORR'
   tzsource%clongname = 'correction'
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource, gcond, ncorrrs )
@@ -2355,7 +2355,7 @@ if ( tbudgets(NBUDGET_RS)%lenabled ) then
   tzsource%clongname = 'wet growth of hail'
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource, gcond, nwethrs )
 
-  gcond = hcloud == 'ICE4' .and. lred
+  gcond = hcloud == 'ICE4' .and. lred .and. celec == 'NONE'
   tzsource%cmnhname  = 'DRYH'
   tzsource%clongname = 'dry growth of hail'
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource, gcond, ndryhrs )
@@ -2459,7 +2459,7 @@ if ( tbudgets(NBUDGET_RG)%lenabled ) then
   tzsource%clongname = 'negative correction'
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource, gcond, nnegarg )
 
-  gcond = hcloud(1:3) == 'ICE' .and. lred
+  gcond = hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE'
   tzsource%cmnhname  = 'CORR'
   tzsource%clongname = 'correction'
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource, gcond, ncorrrg )
@@ -2511,7 +2511,7 @@ if ( tbudgets(NBUDGET_RG)%lenabled ) then
   tzsource%clongname = 'wet growth of graupel'
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource, gcond, nwetgrg )
 
-  gcond = hcloud == 'ICE4' .and. lred
+  gcond = hcloud == 'ICE4' .and. lred .and. celec == 'NONE'
   tzsource%cmnhname  = 'GHCV'
   tzsource%clongname = 'graupel to hail conversion'
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource, gcond, nghcvrg )
@@ -2542,12 +2542,12 @@ if ( tbudgets(NBUDGET_RG)%lenabled ) then
   tzsource%clongname = 'conversion of hail to graupel'
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource, gcond, ncohgrg )
 
-  gcond = hcloud == 'ICE4' .and. lred
+  gcond = hcloud == 'ICE4' .and. lred .and. celec == 'NONE'
   tzsource%cmnhname  = 'HGCV'
   tzsource%clongname = 'hail to graupel conversion'
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource, gcond, nhgcvrg )
 
-  gcond = hcloud == 'ICE4' .and. lred
+  gcond = hcloud == 'ICE4' .and. lred .and. celec == 'NONE'
   tzsource%cmnhname  = 'DRYH'
   tzsource%clongname = 'dry growth of hail'
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource, gcond, ndryhrg )
@@ -2657,7 +2657,7 @@ if ( tbudgets(NBUDGET_RH)%lenabled ) then
   tzsource%clongname = 'sedimentation'
   call Budget_source_add( tbudgets(NBUDGET_RH), tzsource, gcond, nsedirh )
 
-  gcond = hcloud == 'ICE4' .and. lred
+  gcond = hcloud == 'ICE4' .and. lred .and. celec == 'NONE'
   tzsource%cmnhname  = 'GHCV'
   tzsource%clongname = 'graupel to hail conversion'
   call Budget_source_add( tbudgets(NBUDGET_RH), tzsource, gcond, nghcvrh )
@@ -2679,12 +2679,12 @@ if ( tbudgets(NBUDGET_RH)%lenabled ) then
   tzsource%clongname = 'conversion from hail to graupel'
   call Budget_source_add( tbudgets(NBUDGET_RH), tzsource, gcond, ncohgrh )
 
-  gcond = hcloud == 'ICE4' .and. lred
+  gcond = hcloud == 'ICE4' .and. lred .and. celec == 'NONE'
   tzsource%cmnhname  = 'HGCV'
   tzsource%clongname = 'hail to graupel conversion'
   call Budget_source_add( tbudgets(NBUDGET_RH), tzsource, gcond, nhgcvrh )
 
-  gcond = hcloud == 'ICE4' .and. lred
+  gcond = hcloud == 'ICE4' .and. lred .and. celec == 'NONE'
   tzsource%cmnhname  = 'DRYH'
   tzsource%clongname = 'dry growth of hail'
   call Budget_source_add( tbudgets(NBUDGET_RH), tzsource, gcond, ndryhrh )
@@ -2695,7 +2695,7 @@ if ( tbudgets(NBUDGET_RH)%lenabled ) then
   tzsource%clongname = 'melting of hail'
   call Budget_source_add( tbudgets(NBUDGET_RH), tzsource, gcond, nhmltrh )
 
-  gcond = hcloud == 'ICE4' .and. lred
+  gcond = hcloud == 'ICE4' .and. lred .and. celec == 'NONE'
   tzsource%cmnhname  = 'CORR'
   tzsource%clongname = 'correction'
   call Budget_source_add( tbudgets(NBUDGET_RH), tzsource, gcond, ncorrrh )
