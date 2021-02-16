@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -2275,8 +2275,8 @@ INEGT = COUNTJV( GNEGT(:,:,:),I1(:),I2(:),I3(:))
 !
 IF( INEGT >= 1 ) THEN
   if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'HENU', pths(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_TH), 'HENU', prvs(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_TH), 'HENU', pris(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'HENU', prvs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'HENU', pris(:, :, :) * prhodj(:, :, :) )
 
   ALLOCATE(ZRVT(INEGT))
   ALLOCATE(ZCIT(INEGT)) 
@@ -2351,8 +2351,8 @@ IF( INEGT >= 1 ) THEN
   DEALLOCATE(ZRVT)
 
   if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HENU', pths(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HENU', prvs(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HENU', pris(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'HENU', prvs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'HENU', pris(:, :, :) * prhodj(:, :, :) )
 
 END IF
 
@@ -3017,8 +3017,8 @@ IMPLICIT NONE
     if ( lbudget_rg ) call Budget_store_init( tbudgets(NBUDGET_RG), 'ACC', &
                                               Unpack( zrgs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
     if ( lbudget_sv ) then
-      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'ACC', &
-                              Unpack( zqcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'ACC', &
+                              Unpack( zqrs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'ACC', &
                               Unpack( zqss(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'ACC', &
@@ -3173,8 +3173,8 @@ IMPLICIT NONE
     if ( lbudget_rg ) call Budget_store_end( tbudgets(NBUDGET_RG), 'ACC', &
                                              Unpack( zrgs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
     if ( lbudget_sv ) then
-      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'ACC', &
-                             Unpack( zqcs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 2 ), 'ACC', &
+                             Unpack( zqrs(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 4 ), 'ACC', &
                              Unpack( zqss(:) * zrhodj(:), mask = gmicro(:, :, :), field = 0. ) )
       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 5 ), 'ACC', &
