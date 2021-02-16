@@ -258,6 +258,7 @@ END MODULE MODI_RELAXATION
 !!                 J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !  P. Wautelet 12/02/2021: bugfix: do not call budgets for all SV budgets if LRELAX2FW_ION=T
+!  P. Wautelet 16/02/2021: bugfix: GMASK3D_RELAX was not computed if OHORELAX_UVWTH=F and needed by other variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -591,6 +592,10 @@ IF ( ANY(GHORELAXR) .OR. ANY(GHORELAXSV) .OR. ANY(OHORELAX_SV) &
 !     ZKHW(:,:,JK) = PKWRELAX(:,:)
 !   END DO
 !  END IF
+!
+  DO JK=1,IKU
+    GMASK3D_RELAX(:,:,JK)=OMASK_RELAX(:,:)
+  END DO
 ENDIF
 !
 !
@@ -600,10 +605,6 @@ ENDIF
 !
 ! special treatment is needed to expand LB for U and V because of the C grid 
 IF ( OHORELAX_UVWTH ) THEN
-!
-  DO JK=1,IKU
-    GMASK3D_RELAX(:,:,JK)=OMASK_RELAX(:,:)
-  END DO
 !
   IDIMLB = SIZE(PLBXUM,1)
   IF ( IDIMLB /= 0) THEN
