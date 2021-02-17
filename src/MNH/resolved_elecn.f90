@@ -172,12 +172,13 @@ END MODULE MODI_RESOLVED_ELEC_n
 !  P. Wautelet 14/03/2019: bugfix: correct management of files
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 12/02/2021: bugfix: change STATUS for opening files containing flash information (NEW->UNKNOWN)
+!  P. Wautelet 17/02/2021: budgets: add DRIFT and CORAY terms for electricity
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-use mode_budget,           only: Budget_store_init, Budget_store_end
+use mode_budget,           only: Budget_store_add, Budget_store_init, Budget_store_end
 USE MODE_ELEC_ll
 USE MODE_IO_FILE,          ONLY: IO_File_close, IO_File_open
 USE MODE_IO_MANAGE_STRUCT, ONLY: IO_File_add2list, IO_File_find_byname
@@ -671,9 +672,13 @@ CALL MYPROC_ELEC_ll (IPROC)
 !
 CALL ION_DRIFT(ZCPH, ZCOR, PSVT, HLBCX, HLBCY)
 
-
 PSVS(:,:,:,NSV_ELECBEG) = PSVS(:,:,:,NSV_ELECBEG) + ZCPH(:,:,:)
 PSVS(:,:,:,NSV_ELECEND) = PSVS(:,:,:,NSV_ELECEND) + ZCOR(:,:,:)
+
+if ( lbudget_sv ) then
+  call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg), 'DRIFT', zcph(:, :, :) * prhodj(:, :, :) )
+  call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend), 'DRIFT', zcor(:, :, :) * prhodj(:, :, :) )
+end if
 !
 !*       4.3    Add Cosmic Ray source
 !
@@ -681,6 +686,11 @@ PSVS(:,:,:,NSV_ELECBEG) = PSVS(:,:,:,NSV_ELECBEG) +           &
                               XIONSOURCEFW(:,:,:) / PRHODREF(:,:,:)
 PSVS(:,:,:,NSV_ELECEND) = PSVS(:,:,:,NSV_ELECEND) +           &
                               XIONSOURCEFW(:,:,:) / PRHODREF(:,:,:)
+
+if ( lbudget_sv ) then
+  call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg), 'CORAY', xionsourcefw(:,:,:)/prhodref(:,:,:) * prhodj(:, :, :) )
+  call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend), 'CORAY', xionsourcefw(:,:,:)/prhodref(:,:,:) * prhodj(:, :, :) )
+end if
 !
 !-------------------------------------------------------------------------------
 !

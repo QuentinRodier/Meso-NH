@@ -638,6 +638,8 @@ INTEGER, SAVE :: NNEADVSV = 0 ! negative correction
 INTEGER, SAVE :: NNECONSV = 0 ! negative correction
 !
 ! Allowed processes for the budget of electric charge carried by water vapor
+INTEGER, SAVE :: NDRIFTQV  = 0
+INTEGER, SAVE :: NCORAYQV  = 0
 INTEGER, SAVE :: NDEPSQV   = 0
 INTEGER, SAVE :: NDEPGQV   = 0
 INTEGER, SAVE :: NREVAQV   = 0
@@ -726,6 +728,8 @@ INTEGER, SAVE :: NSEDIQH   = 0
 INTEGER, SAVE :: NNEUTQH   = 0
 !
 ! Allowed processes for the budget of electric charge carried by negative ions
+INTEGER, SAVE :: NDRIFTNI  = 0
+INTEGER, SAVE :: NCORAYNI  = 0
 INTEGER, SAVE :: NDEPSNI   = 0
 INTEGER, SAVE :: NDEPGNI   = 0
 INTEGER, SAVE :: NREVANI   = 0

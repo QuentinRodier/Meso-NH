@@ -3374,6 +3374,16 @@ SV_BUDGETS: do jsv = 1, ksv
         case ( 1 ) SV_ELEC
           ! volumetric charge of water vapor
           gcond = .true.
+          tzsource%cmnhname  = 'DRIFT'
+          tzsource%clongname = 'ion drift motion'
+          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, ndriftqv )
+
+          gcond = .true.
+          tzsource%cmnhname  = 'CORAY'
+          tzsource%clongname = 'cosmic ray source'
+          call Budget_source_add( tbudgets(ibudget), tzsource, gcond, ncorayqv )
+
+          gcond = .true.
           tzsource%cmnhname  = 'DEPS'
           tzsource%clongname = 'deposition on snow'
           call Budget_source_add( tbudgets(ibudget), tzsource, gcond, ndepsqv )
@@ -3764,6 +3774,16 @@ SV_BUDGETS: do jsv = 1, ksv
           else if (      ( hcloud == 'ICE3' .and. ( jsv - nsv_elecbeg + 1 ) == 7 ) &
                     .or. ( hcloud == 'ICE4' .and. ( jsv - nsv_elecbeg + 1 ) == 8 ) ) then
             ! Negative ions (NSV_ELECEND case)
+            gcond = .true.
+            tzsource%cmnhname  = 'DRIFT'
+            tzsource%clongname = 'ion drift motion'
+            call Budget_source_add( tbudgets(ibudget), tzsource, gcond, ndriftni )
+
+            gcond = .true.
+            tzsource%cmnhname  = 'CORAY'
+            tzsource%clongname = 'cosmic ray source'
+            call Budget_source_add( tbudgets(ibudget), tzsource, gcond, ncorayni )
+
             gcond = .true.
             tzsource%cmnhname  = 'DEPS'
             tzsource%clongname = 'deposition on snow'

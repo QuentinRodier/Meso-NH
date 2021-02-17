@@ -308,19 +308,19 @@ NAMELIST/NAM_BU_RRH/LBU_RRH, NASSERH, NNESTRH, NADVRH, NFRCRH, &
 NAMELIST/NAM_BU_RSV/ LBU_RSV, NASSESV,  NNESTSV,  NADVSV,   NFRCSV, &
                      NDIFSV,  NRELSV,   NDCONVSV, NVTURBSV, NHTURBSV, NCHEMSV, NMAFLSV,          &
                      NVISCSV, NNEGASV,  NNETURSV, NNEADVSV, NNECONSV,                            &
-                     NDEPSQV, NDEPGQV,  NREVAQV, NCDEPIQV,  NNEUTQV,                             &
-                     NHONQC,  NAUTOQC,  NACCRQC, NRIMQC,    NWETGQC,  NDRYGQC, NINCGQC, NWETHQC, &
-                     NIMLTQC, NBERFIQC, NSEDIQC, NCDEPIQC,  NNEUTQC,                             &
-                     NSFRQR,  NAUTOQR,  NACCRQR, NREVAQR,   NACCQR,   NCFRZQR, NWETGQR, NDRYGQR, &
-                     NGMLTQR, NWETHQR,  NHMLTQR, NSEDIQR,   NNEUTQR,                             &
-                     NHONQI,  NAGGSQI,  NAUTSQI, NCFRZQI,   NWETGQI,  NDRYGQI, NWETHQI,          &
-                     NIMLTQI, NBERFIQI, NNIISQI, NSEDIQI,   NCDEPIQI, NNEUTQI,                   &
-                     NDEPSQS, NAGGSQS,  NAUTSQS, NRIMQS,    NACCQS,   NCMELQS, NWETGQS,          &
-                     NDRYGQS, NNIISQS,  NWETHQS, NSEDIQS,   NNEUTQS,                             &
-                     NSFRQG,  NDEPGQG,  NRIMQG,  NACCQG,    NCMELQG,  NCFRZQG, NWETGQG, NDRYGQG, &
-                     NINCGQG, NGMLTQG,  NWETHQG, NSEDIQG,   NNEUTQG,                             &
-                     NWETGQH, NWETHQH,  NHMLTQH, NSEDIQH,   NNEUTQH,                             &
-                     NDEPSNI, NDEPGNI,  NREVANI, NCDEPINI,  NNEUTNI,                             &
+                     NDRIFTQV, NCORAYQV, NDEPSQV, NDEPGQV,   NREVAQV,  NCDEPIQV, NNEUTQV,          &
+                     NHONQC,   NAUTOQC,  NACCRQC, NRIMQC,    NWETGQC,  NDRYGQC,  NINCGQC, NWETHQC, &
+                     NIMLTQC,  NBERFIQC, NSEDIQC, NCDEPIQC,  NNEUTQC,                              &
+                     NSFRQR,   NAUTOQR,  NACCRQR, NREVAQR,   NACCQR,   NCFRZQR,  NWETGQR, NDRYGQR, &
+                     NGMLTQR,  NWETHQR,  NHMLTQR, NSEDIQR,   NNEUTQR,                              &
+                     NHONQI,   NAGGSQI,  NAUTSQI, NCFRZQI,   NWETGQI,  NDRYGQI,  NWETHQI,          &
+                     NIMLTQI,  NBERFIQI, NNIISQI, NSEDIQI,   NCDEPIQI, NNEUTQI,                    &
+                     NDEPSQS,  NAGGSQS,  NAUTSQS, NRIMQS,    NACCQS,   NCMELQS,  NWETGQS,          &
+                     NDRYGQS,  NNIISQS,  NWETHQS, NSEDIQS,   NNEUTQS,                              &
+                     NSFRQG,   NDEPGQG,  NRIMQG,  NACCQG,    NCMELQG,  NCFRZQG,  NWETGQG, NDRYGQG, &
+                     NINCGQG,  NGMLTQG,  NWETHQG, NSEDIQG,   NNEUTQG,                              &
+                     NWETGQH,  NWETHQH,  NHMLTQH, NSEDIQH,   NNEUTQH,                              &
+                     NDRIFTNI, NCORAYNI, NDEPSNI, NDEPGNI,   NREVANI,  NCDEPINI, NNEUTNI,          &
                      NDEPOTRSV
 !
 END MODULE MODN_BUDGET
