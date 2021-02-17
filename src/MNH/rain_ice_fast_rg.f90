@@ -424,6 +424,7 @@ REAL,    DIMENSION(size(PRHODREF),7) :: ZZW1              ! Work arrays
 !
 !*       6.5    Melting of the graupeln
 !
+  zzw(:) = 0. !initialization necessary (for budgets)
   WHERE( PRGT(:)>XRTMIN(6) .AND. PRGS(:)>0.0 .AND. PZT(:)>XTT )
     ZZW(:) = PRVT(:)*PPRES(:)/((XMV/XMD)+PRVT(:)) ! Vapor pressure
     ZZW(:) =  PKA(:)*(XTT-PZT(:)) +                                 &

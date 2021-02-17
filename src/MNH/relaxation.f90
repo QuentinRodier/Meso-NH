@@ -462,7 +462,9 @@ if ( lbudget_rg  .and. ohorelax_rg  ) call Budget_store_init( tbudgets(NBUDGET_R
 if ( lbudget_rh  .and. ohorelax_rh  ) call Budget_store_init( tbudgets(NBUDGET_RH ), 'REL', prrs  (:, :, :, 7) )
 if ( lbudget_sv ) then
   do jsv = 1, ksv
-    if ( ohorelax_sv( jsv ) ) call Budget_store_init( tbudgets(jsv + NBUDGET_SV1 - 1), 'REL', prsvs(:, :, :, jsv) )
+    if ( .not. lrelax2fw_ion .or. ( jsv /= nsv_elecbeg .and. jsv /= nsv_elecend ) ) then
+      if ( ohorelax_sv( jsv ) ) call Budget_store_init( tbudgets(jsv + NBUDGET_SV1 - 1), 'REL', prsvs(:, :, :, jsv) )
+    end if
   end do
 end if
 
@@ -747,8 +749,9 @@ if ( lbudget_rg  .and. ohorelax_rg  ) call Budget_store_end( tbudgets(NBUDGET_RG
 if ( lbudget_rh  .and. ohorelax_rh  ) call Budget_store_end( tbudgets(NBUDGET_RH ), 'REL', prrs  (:, :, :, 7) )
 if ( lbudget_sv ) then
   do jsv = 1, ksv
-    if ( .not. lrelax2fw_ion .or. ( jsv /= nsv_elecbeg .and. jsv /= nsv_elecend ) ) &
+    if ( .not. lrelax2fw_ion .or. ( jsv /= nsv_elecbeg .and. jsv /= nsv_elecend ) ) then
       if ( ohorelax_sv( jsv ) ) call Budget_store_end( tbudgets(jsv + NBUDGET_SV1 - 1), 'REL', prsvs(:, :, :, jsv) )
+    end if
   end do
 end if
 

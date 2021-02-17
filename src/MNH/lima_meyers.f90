@@ -322,7 +322,7 @@ IF( INEGT >= 1 ) THEN
     if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV),                    'HIND', prvs(:, :, :) * prhodj(:, :, :) )
     if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI),                    'HIND', pris(:, :, :) * prhodj(:, :, :) )
     if ( lbudget_sv ) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HIND', pcis(:, :, :) * prhodj(:, :, :) )
-    if ( lbudget_sv ) &
+    if ( lbudget_sv .and. nmod_ifn > 0) &
       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl), 'HIND', pins(:, :, :, 1) * prhodj(:, :, :) )
   end if
 
@@ -357,7 +357,7 @@ IF( INEGT >= 1 ) THEN
                                              Unpack ( zris(:), mask = gnegt(:, :, :), field = pris(:, :, :) ) * prhodj(:, :, :) )
     if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HIND', &
                                              Unpack ( zcis(:), mask = gnegt(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
-    if ( lbudget_sv ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl), 'HIND', &
+    if ( lbudget_sv .and. nmod_ifn > 0 ) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl), 'HIND', &
                                        Unpack ( zins(:, 1), mask = gnegt(:, :, :), field = pins(:, :, :, 1) ) * prhodj(:, :, :) )
   end if
 !
@@ -373,7 +373,8 @@ IF( INEGT >= 1 ) THEN
       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'HINC', pccs(:, :, :) * prhodj(:, :, :) )
       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HINC', &
                                        Unpack ( zcis(:), mask = gnegt(:, :, :), field = pcis(:, :, :) ) * prhodj(:, :, :) )
-      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl), 'HINC', &
+      if ( nmod_ifn > 0 ) &
+        call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl), 'HINC', &
                                  Unpack ( zins(:, 1), mask = gnegt(:, :, :), field = pins(:, :, :, 1) ) * prhodj(:, :, :) )
     end if
   end if
@@ -422,7 +423,8 @@ IF( INEGT >= 1 ) THEN
     if ( lbudget_sv ) then
       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'HINC', pccs(:, :, :) * prhodj(:, :, :) )
       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HINC', pcis(:, :, :) * prhodj(:, :, :) )
-      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl), 'HINC', pins(:, :, :, 1) * prhodj(:, :, :) )
+      if ( nmod_ifn > 0 ) &
+        call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl), 'HINC', pins(:, :, :, 1) * prhodj(:, :, :) )
     end if
   end if
 

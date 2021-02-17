@@ -2773,7 +2773,7 @@ SV_BUDGETS: do jsv = 1, ksv
     tzsource%clongname = 'numerical diffusion'
     call Budget_source_add( tbudgets(ibudget), tzsource, gcond, ndifsv )
 
-    gcond = ohorelax_sv( jsv ) .or. ( celec /= 'none' .and. lrelax2fw_ion .and. (jsv == nsv_elecbeg .or. jsv == nsv_elecend ) )
+    gcond = ohorelax_sv( jsv ) .or. ( celec /= 'NONE' .and. lrelax2fw_ion .and. (jsv == nsv_elecbeg .or. jsv == nsv_elecend ) )
     tzsource%cmnhname  = 'REL'
     tzsource%clongname = 'relaxation'
     call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nrelsv )
