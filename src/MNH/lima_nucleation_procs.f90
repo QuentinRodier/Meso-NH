@@ -80,8 +80,8 @@ use modd_budget,     only: lbu_enable, lbudget_th, lbudget_rv, lbudget_rc, lbudg
                            NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RI, NBUDGET_SV1, &
                            tbudgets
 USE MODD_IO,         ONLY: TFILEDATA
-USE MODD_NSV,        ONLY : NSV_LIMA_NC, NSV_LIMA_NR, NSV_LIMA_CCN_FREE,                &
-                            NSV_LIMA_NI, NSV_LIMA_IFN_FREE
+USE MODD_NSV,        ONLY : NSV_LIMA_NC, NSV_LIMA_NR, NSV_LIMA_CCN_FREE, NSV_LIMA_CCN_ACTI, &
+                            NSV_LIMA_NI, NSV_LIMA_IFN_FREE, NSV_LIMA_IFN_NUCL, NSV_LIMA_IMM_NUCL, NSV_LIMA_HOM_HAZE
 USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LMEYERS, LSNOW, LWARM, LACTI, LRAIN, LHHONI,  &
                             NMOD_CCN, NMOD_IFN, NMOD_IMM
 
@@ -147,6 +147,8 @@ IF ( LWARM .AND. LACTI .AND. NMOD_CCN >=1 ) THEN
       do jl = 1, nmod_ccn
         idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_free - 1 + jl
         call Budget_store_init( tbudgets(idx), 'HENU', pnft(:, :, :, jl) * prhodj(:, :, :) / ptstep )
+        idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_acti - 1 + jl
+        call Budget_store_init( tbudgets(idx), 'HENU', pnat(:, :, :, jl) * prhodj(:, :, :) / ptstep )
       end do
     end if
   end if
@@ -164,6 +166,8 @@ IF ( LWARM .AND. LACTI .AND. NMOD_CCN >=1 ) THEN
       do jl = 1, nmod_ccn
         idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_free - 1 + jl
         call Budget_store_end( tbudgets(idx), 'HENU', pnft(:, :, :, jl) * prhodj(:, :, :) / ptstep )
+        idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_acti - 1 + jl
+        call Budget_store_end( tbudgets(idx), 'HENU', pnat(:, :, :, jl) * prhodj(:, :, :) / ptstep )
       end do
     end if
   end if
@@ -177,6 +181,17 @@ IF ( LCOLD .AND. LNUCL .AND. .NOT.LMEYERS .AND. NMOD_IFN >= 1 ) THEN
       do jl = 1, nmod_ifn
         idx = NBUDGET_SV1 - 1 + nsv_lima_ifn_free - 1 + jl
         call Budget_store_init( tbudgets(idx), 'HIND', pift(:, :, :, jl) * prhodj(:, :, :) / ptstep )
+        idx = NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl - 1 + jl
+        call Budget_store_init( tbudgets(idx), 'HIND', pint(:, :, :, jl) * prhodj(:, :, :) / ptstep )
+      end do
+
+      do jl = 1, nmod_ccn
+        idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_acti - 1 + jl
+        call Budget_store_init( tbudgets(idx), 'HINC', pnat(:, :, :, jl) * prhodj(:, :, :) / ptstep )
+      end do
+      do jl = 1, nmod_imm
+        idx = NBUDGET_SV1 - 1 + nsv_lima_imm_nucl - 1 + jl
+        call Budget_store_init( tbudgets(idx), 'HINC', pnit(:, :, :, jl) * prhodj(:, :, :) / ptstep )
       end do
     end if
   end if
@@ -197,6 +212,8 @@ IF ( LCOLD .AND. LNUCL .AND. .NOT.LMEYERS .AND. NMOD_IFN >= 1 ) THEN
       do jl = 1, nmod_ifn
         idx = NBUDGET_SV1 - 1 + nsv_lima_ifn_free - 1 + jl
         call Budget_store_end( tbudgets(idx), 'HIND', pift(:, :, :, jl) * prhodj(:, :, :) / ptstep )
+        idx = NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl - 1 + jl
+        call Budget_store_end( tbudgets(idx), 'HIND', pint(:, :, :, jl) * prhodj(:, :, :) / ptstep )
       end do
     end if
 
@@ -206,6 +223,14 @@ IF ( LCOLD .AND. LNUCL .AND. .NOT.LMEYERS .AND. NMOD_IFN >= 1 ) THEN
     if ( lbudget_sv ) then
       call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'HINC',  z_cc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
       call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HINC', -z_cc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
+      do jl = 1, nmod_ccn
+        idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_acti - 1 + jl
+        call Budget_store_end( tbudgets(idx), 'HINC', pnat(:, :, :, jl) * prhodj(:, :, :) / ptstep )
+      end do
+      do jl = 1, nmod_imm
+        idx = NBUDGET_SV1 - 1 + nsv_lima_imm_nucl - 1 + jl
+        call Budget_store_end( tbudgets(idx), 'HINC', pnit(:, :, :, jl) * prhodj(:, :, :) / ptstep )
+      end do
     end if
   end if
 END IF
@@ -224,8 +249,12 @@ IF (LCOLD .AND. LNUCL .AND. LMEYERS) THEN
     if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'HIND',  z_th_hind(:, :, :) * prhodj(:, :, :) / ptstep )
     if ( lbudget_rv ) call Budget_store_add( tbudgets(NBUDGET_RV), 'HIND', -z_ri_hind(:, :, :) * prhodj(:, :, :) / ptstep )
     if ( lbudget_ri ) call Budget_store_add( tbudgets(NBUDGET_RI), 'HIND',  z_ri_hind(:, :, :) * prhodj(:, :, :) / ptstep )
-    if ( lbudget_sv ) &
+    if ( lbudget_sv ) then
       call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HIND', z_ci_hind(:, :, :) * prhodj(:, :, :) / ptstep )
+      if (nmod_ifn > 0 ) &
+        call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl), 'HIND', &
+                               z_ci_hind(:, :, :) * prhodj(:, :, :) / ptstep )
+    end if
 
     if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'HINC',  z_th_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
     if ( lbudget_rc ) call Budget_store_add( tbudgets(NBUDGET_RC), 'HINC',  z_rc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
@@ -233,6 +262,9 @@ IF (LCOLD .AND. LNUCL .AND. LMEYERS) THEN
     if ( lbudget_sv ) then
       call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'HINC',  z_cc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
       call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HINC', -z_cc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
+      if (nmod_ifn > 0 ) &
+        call Budget_store_add( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl), 'HINC', &
+                               -z_cc_hinc(:, :, :) * prhodj(:, :, :) / ptstep )
     end if
   end if
 END IF
@@ -248,8 +280,9 @@ IF ( LCOLD .AND. LNUCL .AND. LHHONI .AND. NMOD_CCN >= 1) THEN
       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'HONH', PCIT(:, :, :) * prhodj(:, :, :) / ptstep )
       do jl = 1, nmod_ccn
         idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_free - 1 + jl
-        call Budget_store_end( tbudgets(idx), 'HONH', PNFT(:, :, :, jl) * prhodj(:, :, :) / ptstep )
+        call Budget_store_init( tbudgets(idx), 'HONH', PNFT(:, :, :, jl) * prhodj(:, :, :) / ptstep )
       end do
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_hom_haze), 'HONH', PNHT(:, :, :) * prhodj(:, :, :) / ptstep )
     end if
   end if
 
@@ -267,6 +300,7 @@ IF ( LCOLD .AND. LNUCL .AND. LHHONI .AND. NMOD_CCN >= 1) THEN
         idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_free - 1 + jl
         call Budget_store_end( tbudgets(idx), 'HONH', PNFT(:, :, :, jl) * prhodj(:, :, :) / ptstep )
       end do
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_hom_haze), 'HONH', PNHT(:, :, :) * prhodj(:, :, :) / ptstep )
     end if
   end if
 ENDIF
