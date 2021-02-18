@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -430,7 +430,9 @@ ELSE IF (HBU=='TP') THEN
   KLES_BU = NLES_TP
 ELSE IF (HBU=='TR') THEN
   KLES_BU = NLES_TR
-ELSE IF (HBU=='DISS') THEN
+ELSE IF ( HBU == 'DISS' .OR. HBU == 'DISSH' ) THEN
+  !Both DISS and DISSH source terms are included in the same index
+  !but they are stored in different budgets (DISS goes to NBUDGET_TKE, DISSH to NBUDGET_TH)
   KLES_BU = NLES_DISS
 ELSE IF (HBU=='DIF') THEN
   KLES_BU = NLES_DIFF
