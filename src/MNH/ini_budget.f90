@@ -219,11 +219,18 @@ use modd_dyn,           only: lcorio, xseglen
 use modd_dyn_n,         only: xtstep
 use modd_elec_descr,    only: linductive, lrelax2fw_ion
 use modd_field,         only: TYPEREAL
-use modd_nsv,           only: nsv_aerbeg, nsv_aerend, nsv_c2r2beg, nsv_c2r2end, nsv_chembeg, nsv_chemend,          &
-                              nsv_elecbeg, nsv_elecend,                                                            &
+use modd_nsv,           only: nsv_aerbeg, nsv_aerend, nsv_aerdepbeg, nsv_aerdepend, nsv_c2r2beg, nsv_c2r2end,      &
+                              nsv_chembeg, nsv_chemend, nsv_chicbeg, nsv_chicend, nsv_csbeg, nsv_csend,            &
+                              nsv_dstbeg, nsv_dstend, nsv_dstdepbeg, nsv_dstdepend, nsv_elecbeg, nsv_elecend,      &
+#ifdef MNH_FOREFIRE
+                              nsv_ffbeg, nsv_ffend,                                                                &
+#endif
+                              nsv_lgbeg, nsv_lgend,                                                                &
                               nsv_lima_beg, nsv_lima_end, nsv_lima_ccn_acti, nsv_lima_ccn_free, nsv_lima_hom_haze, &
                               nsv_lima_ifn_free, nsv_lima_ifn_nucl, nsv_lima_imm_nucl,                             &
                               nsv_lima_nc, nsv_lima_nr, nsv_lima_ni, nsv_lima_scavmass,                            &
+                              nsv_lnoxbeg, nsv_lnoxend, nsv_ppbeg, nsv_ppend,                                      &
+                              nsv_sltbeg, nsv_sltend, nsv_sltdepbeg, nsv_sltdepend, nsv_snwbeg, nsv_snwend,        &
                               nsv_user
 use modd_parameters,   only: jphext
 use modd_param_c2r2,   only: ldepoc_c2r2 => ldepoc, lrain_c2r2 => lrain, lsedc_c2r2 => lsedc, lsupsat_c2r2 => lsupsat
@@ -3816,6 +3823,23 @@ SV_BUDGETS: do jsv = 1, ksv
       end select SV_ELEC
 
 
+    else if ( jsv >= nsv_lgbeg .and. jsv <= nsv_lgend ) then SV_VAR
+      !Lagrangian variables
+
+
+    else if ( jsv >= nsv_ppbeg .and. jsv <= nsv_ppend ) then SV_VAR
+      !Passive pollutants
+
+
+#ifdef MNH_FOREFIRE
+    else if ( jsv >= nsv_ffbeg .and. jsv <= nsv_ffend ) then SV_VAR
+      !Forefire
+
+#endif
+    else if ( jsv >= nsv_csbeg .and. jsv <= nsv_csend ) then SV_VAR
+      !Conditional sampling
+
+
     else if ( jsv >= nsv_chembeg .and. jsv <= nsv_chemend ) then SV_VAR
       !Chemical case
       gcond = .true.
@@ -3828,6 +3852,11 @@ SV_BUDGETS: do jsv = 1, ksv
       tzsource%clongname = 'negative correction'
       call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnegasv )
 
+
+    else if ( jsv >= nsv_chicbeg .and. jsv <= nsv_chicend ) then SV_VAR
+      !Ice phase chemistry
+
+
     else if ( jsv >= nsv_aerbeg .and. jsv <= nsv_aerend ) then SV_VAR
       !Chemical aerosol case
       gcond = lorilam
@@ -3835,9 +3864,29 @@ SV_BUDGETS: do jsv = 1, ksv
       tzsource%clongname = 'negative correction'
       call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnegasv )
 
-    else SV_VAR
-      ! Nothing to do
+    else if ( jsv >= nsv_aerdepbeg .and. jsv <= nsv_aerdepend ) then SV_VAR
+      !Aerosol wet deposition
 
+    else if ( jsv >= nsv_dstbeg .and. jsv <= nsv_dstend ) then SV_VAR
+      !Dust
+
+    else if ( jsv >= nsv_dstdepbeg .and. jsv <= nsv_dstdepend ) then SV_VAR
+      !Dust wet deposition
+
+    else if ( jsv >= nsv_sltbeg .and. jsv <= nsv_sltend ) then SV_VAR
+      !Salt
+
+    else if ( jsv >= nsv_sltdepbeg .and. jsv <= nsv_sltdepend ) then SV_VAR
+      !Salt wet deposition
+
+    else if ( jsv >= nsv_snwbeg .and. jsv <= nsv_snwend ) then SV_VAR
+      !Snow
+
+    else if ( jsv >= nsv_lnoxbeg .and. jsv <= nsv_lnoxend ) then SV_VAR
+      !LiNOX passive tracer
+
+    else SV_VAR
+      call Print_msg( NVERB_FATAL, 'BUD', 'Ini_budget', 'unknown scalar variable' )
     end if SV_VAR
   end if
 end do SV_BUDGETS
