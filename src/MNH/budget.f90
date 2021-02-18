@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -58,8 +58,10 @@ subroutine Budget_store_init( tpbudget, hsource, pvars )
   call Budget_source_id_find( tpbudget, hsource, iid )
 
   if ( tpbudget%ntmpstoresource /= 0 ) then
-    call Print_msg( NVERB_ERROR, 'BUD', 'Budget_store_init', 'ntmpstoresource already set (previous call to ' &
-                    //'Budget_store_end missing?) for '//trim( tpbudget%cname )//':'//trim( hsource ) )
+    cmnhmsg(1) = 'ntmpstoresource already set (previous call to '//'Budget_store_end missing?)'
+    cmnhmsg(2) = 'Set for:    ' // Trim( tpbudget%cname ) // ':' // Trim( tpbudget%tsources(tpbudget%ntmpstoresource)%cmnhname )
+    cmnhmsg(3) = 'Working on: ' // Trim( tpbudget%cname ) // ':' // Trim( hsource )
+    call Print_msg( NVERB_ERROR, 'BUD', 'Budget_store_init' )
   end if
 
   if ( tpbudget%tsources(iid)%ldonotinit ) then

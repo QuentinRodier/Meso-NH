@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -169,8 +169,6 @@ INTEGER                       ::       IRRI    ! Number of solid water variables
 REAL                          ::  ZDRYMASST    ! Mass of dry air Md
 REAL                          ::  ZREFMASS     ! Total mass of the ref. atmosphere
 REAL                          ::  ZMASS_O_PHI0 ! Mass / Phi0
-LOGICAL                       ::  GCLOSE_OUT   ! switch for the LFI writing
-CHARACTER (LEN= 28)           ::  YFMFILE      ! virtual FM file
 INTEGER                       ::  IMI          ! model index
 !JUAN
 INTEGER                               ::  IIU_B,IJU_B,IKU
@@ -266,8 +264,6 @@ ZMASS_O_PHI0 = 1.    !      |  which is here not needed                    |
 IRR  = 0             !      |                                              |
 IRRL = 0             !      |                                              |
 IRRI = 0             !       ==============================================
-GCLOSE_OUT=.FALSE.
-YFMFILE='UNUSED'
 !
 IMI = GET_CURRENT_MODEL_INDEX()
 CALL PRESSUREZ(CLBCX,CLBCY,CPRESOPT,NITR,LITRADJ,ITCOUNT,XRELAX,IMI,  &

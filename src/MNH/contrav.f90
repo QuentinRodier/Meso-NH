@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -148,8 +148,6 @@ INTEGER:: IW,IE,IS,IN   ! Coordinate of forth order diffusion area
 TYPE(LIST_ll),      POINTER :: TZFIELD_U, TZFIELD_V, TZFIELD_DZX, TZFIELD_DZY
 TYPE(HALO2LIST_ll), POINTER :: TZHALO2_U, TZHALO2_V, TZHALO2_DZX, TZHALO2_DZY
 INTEGER                     :: IINFO_ll
-!JUAN
-REAL          :: XPRECISION
 !-----------------------------------------------------------------------
 !
 !*       1.    Compute the horizontal contravariant components

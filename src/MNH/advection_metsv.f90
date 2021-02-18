@@ -464,7 +464,7 @@ END IF
 ZTSTEP_PPM = PTSTEP / REAL(KSPLIT)
 !
 !
-!*      2.4 normalized contravariant components for splitted PPM time-step
+!*      2.4 normalized contravariant components for split PPM time-step
 !
 ZRUCPPM = ZRUCPPM*ZTSTEP_PPM
 ZRVCPPM = ZRVCPPM*ZTSTEP_PPM
