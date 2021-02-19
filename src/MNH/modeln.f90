@@ -268,6 +268,7 @@ END MODULE MODI_MODEL_n
 !  J. Escobar  27/09/2019: add missing report timing of RESOLVED_ELEC
 !  P. Wautelet 02-03/2020: use the new data structures and subroutines for budgets
 !  P. Wautelet 12/10/2020: Write_les_n: remove HLES_AVG dummy argument and group all 4 calls
+!  P. Wautelet 19/02/2021: add NEGA2 term for SV budgets
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -354,7 +355,7 @@ USE MODD_TURB_CLOUD,     ONLY: NMODEL_CLOUD,CTURBLEN_CLOUD,XCEI
 USE MODD_TURB_n
 USE MODD_VISCOSITY
 !
-use mode_budget,           only: Budget_store_init
+use mode_budget,           only: Budget_store_init, Budget_store_end
 USE MODE_DATETIME
 USE MODE_ELEC_ll
 USE MODE_GRIDCART
@@ -1215,7 +1216,13 @@ IF ( LNUMDIFU .OR. LNUMDIFTH .OR. LNUMDIFSV ) THEN
                   LZDIFFU,LNUMDIFU, LNUMDIFTH, LNUMDIFSV,               &
                   THALO2T_ll, TLSHALO2_ll,XZDIFFU_HALO2      )
 END IF
-!
+
+if ( lbudget_sv ) then
+  do jsv = 1, nsv
+    call Budget_store_init( tbudgets(jsv + NBUDGET_SV1 - 1), 'NEGA2', xrsvs(:, :, :, jsv) )
+  end do
+end if
+
 DO JSV = NSV_CHEMBEG,NSV_CHEMEND
   XRSVS(:,:,:,JSV) = MAX(XRSVS(:,:,:,JSV),0.)
 END DO
@@ -1261,6 +1268,12 @@ IF (CELEC .NE. 'NONE') THEN
   XRSVS(:,:,:,NSV_ELECBEG) = MAX(XRSVS(:,:,:,NSV_ELECBEG),0.)
   XRSVS(:,:,:,NSV_ELECEND) = MAX(XRSVS(:,:,:,NSV_ELECEND),0.)
 END IF
+
+if ( lbudget_sv ) then
+  do jsv = 1, nsv
+    call Budget_store_end( tbudgets(jsv + NBUDGET_SV1 - 1), 'NEGA2', xrsvs(:, :, :, jsv) )
+  end do
+end if
 !
 CALL SECOND_MNH2(ZTIME2)
 !

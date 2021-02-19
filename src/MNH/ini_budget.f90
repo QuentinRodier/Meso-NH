@@ -2815,6 +2815,11 @@ SV_BUDGETS: do jsv = 1, ksv
     tzsource%clongname = 'total advection'
     call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nadvsv )
 
+    gcond = .true.
+    tzsource%cmnhname  = 'NEGA2'
+    tzsource%clongname = 'negative correction'
+    call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nnega2sv )
+
     ! Add specific source terms to different scalar variables
     igroup = 1
     SV_VAR: if ( jsv <= nsv_user ) then
