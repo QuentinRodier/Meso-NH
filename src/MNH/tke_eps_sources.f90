@@ -273,7 +273,6 @@ IKE=KKU-JPVEXT_TURB*KKL
 ZKEFF(:,:,:) = PLM(:,:,:) * SQRT(PTKEM(:,:,:)) 
 
 if (lbudget_th)  call Budget_store_init( tbudgets(NBUDGET_TH),  'DISSH', prthls(:, :, :) )
-if (lbudget_tke) call Budget_store_init( tbudgets(NBUDGET_TKE), 'TR',    prtkes(:, :, :) )
 
 !----------------------------------------------------------------------------
 !
@@ -303,7 +302,7 @@ PDP(:,:,IKB) = PDP(:,:,IKB) * (1. + PDZZ(:,:,IKB+KKL)/PDZZ(:,:,IKB))
 ! Compute the source terms for TKE: ( ADVECtion + NUMerical DIFFusion + ..)
 ! + (Dynamical Production) + (Thermal Production) - (dissipation) 
 ZFLX(:,:,:) = XCED * SQRT(PTKEM(:,:,:)) / PLEPS(:,:,:)
-ZSOURCE(:,:,:) = PRTKES(:,:,:) / PRHODJ(:,:,:)  +  PRTKESM(:,:,:) / PRHODJ(:,:,:) &
+ZSOURCE(:,:,:) = ( PRTKES(:,:,:) +  PRTKESM(:,:,:) ) / PRHODJ(:,:,:) &
    - PTKEM(:,:,:) / PTSTEP &
    + PDP(:,:,:) + PTP(:,:,:) + PTR(:,:,:) - PEXPL * ZFLX(:,:,:) * PTKEM(:,:,:)
 !
@@ -379,6 +378,16 @@ end if
 !
 !*       2.5  computes the final RTKE and stores the whole turbulent transport
 !              with the removal of the advection part 
+
+if (lbudget_tke) then
+  !Store the previous source terms in prtkes before initializing the next one
+  PRTKES(:,:,:) = PRTKES(:,:,:) + PRHODJ(:,:,:) *                                                           &
+                  ( PDP(:,:,:) + PTP(:,:,:)                                                                 &
+                    - XCED * SQRT(PTKEM(:,:,:)) / PLEPS(:,:,:) * ( PEXPL*PTKEM(:,:,:) + PIMPL*ZRES(:,:,:) ) )
+
+  call Budget_store_init( tbudgets(NBUDGET_TKE), 'TR', prtkes(:, :, :) )
+end if
+
 PRTKES(:,:,:) = ZRES(:,:,:) * PRHODJ(:,:,:) / PTSTEP -  PRTKESM(:,:,:)
 !
 ! stores the whole turbulent transport
