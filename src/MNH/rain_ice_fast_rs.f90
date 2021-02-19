@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -9,6 +9,7 @@
 !  P. Wautelet 03/06/2019: remove PACK/UNPACK intrinsics (to get more performance and better OpenACC support)
 !  P. Wautelet 05/06/2019: optimisations
 !  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
+!  P. Wautelet 19/02/2021: bugfix: RIM and ACC terms for budgets are now correctly stored
 !-----------------------------------------------------------------
 MODULE MODE_RAIN_ICE_FAST_RS
 
@@ -38,7 +39,7 @@ use MODD_RAIN_ICE_PARAM, only: NACCLBDAR, NACCLBDAS, NGAMINC, X0DEPS, X1DEPS, XA
                                XKER_RACCSS, XKER_SACCRG, XLBRACCS1, XLBRACCS2, XLBRACCS3, XLBSACCR1, XLBSACCR2, XLBSACCR3,    &
                                XRIMINTP1, XRIMINTP2, XSRIMCG
 
-use mode_budget,         only: Budget_store_add
+use mode_budget,         only: Budget_store_add, Budget_store_end, Budget_store_init
 
 IMPLICIT NONE
 !
@@ -91,6 +92,15 @@ REAL,    DIMENSION(:), ALLOCATABLE :: ZZW1, ZZW2, ZZW3, ZZW4 ! Work arrays
   END DO
   !
   IF( IGRIM>0 ) THEN
+    if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'RIM', Unpack ( pths(:) * prhodj(:), &
+                                              mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'RIM', Unpack ( prcs(:) * prhodj(:), &
+                                              mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rs ) call Budget_store_init( tbudgets(NBUDGET_RS), 'RIM', Unpack ( prss(:) * prhodj(:), &
+                                              mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rg ) call Budget_store_init( tbudgets(NBUDGET_RG), 'RIM', Unpack ( prgs(:) * prhodj(:), &
+                                              mask = omicro(:,:,:), field = 0. ) )
+
 !
 !        5.1.0  allocations
 !
@@ -161,14 +171,16 @@ REAL,    DIMENSION(:), ALLOCATABLE :: ZZW1, ZZW2, ZZW3, ZZW4 ! Work arrays
       END IF
     END DO
 
-    if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'RIM', Unpack ( (  zzw1(:) + zzw2(:) ) &
-                                        * ( plsfact(:) - plvfact(:) ) * prhodj(:), mask = omicro(:,:,:), field = 0. ) )
-    if ( lbudget_rc ) call Budget_store_add( tbudgets(NBUDGET_RC), 'RIM', Unpack ( ( -zzw1(:) - zzw2(:) ) * prhodj(:), &
-                                                                                   mask = omicro(:,:,:), field = 0. ) )
-    if ( lbudget_rs ) call Budget_store_add( tbudgets(NBUDGET_RS), 'RIM', Unpack ( (  zzw1(:) - zzw3(:) ) * prhodj(:), &
-                                                                                   mask = omicro(:,:,:), field = 0. ) )
-    if ( lbudget_rg ) call Budget_store_add( tbudgets(NBUDGET_RG), 'RIM', Unpack ( (  zzw2(:) + zzw3(:) ) * prhodj(:), &
-                                                                                   mask = omicro(:,:,:), field = 0. ) )
+    !Remark: not possible to use Budget_store_add here
+    !        because variables modified a second time but with a if on prss + jl/=jj
+    if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'RIM', Unpack ( pths(:) * prhodj(:), &
+                                             mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'RIM', Unpack ( prcs(:) * prhodj(:), &
+                                             mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rs ) call Budget_store_end( tbudgets(NBUDGET_RS), 'RIM', Unpack ( prss(:) * prhodj(:), &
+                                             mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rg ) call Budget_store_end( tbudgets(NBUDGET_RG), 'RIM', Unpack ( prgs(:) * prhodj(:), &
+                                             mask = omicro(:,:,:), field = 0. ) )
 
     DEALLOCATE(ZZW3)
     DEALLOCATE(ZZW2)
@@ -190,6 +202,14 @@ REAL,    DIMENSION(:), ALLOCATABLE :: ZZW1, ZZW2, ZZW3, ZZW4 ! Work arrays
   END DO
   !
   IF( IGACC>0 ) THEN
+    if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'ACC', Unpack ( pths(:) * prhodj(:), &
+                                              mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rr ) call Budget_store_init( tbudgets(NBUDGET_RR), 'ACC', Unpack ( prrs(:) * prhodj(:), &
+                                              mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rs ) call Budget_store_init( tbudgets(NBUDGET_RS), 'ACC', Unpack ( prss(:) * prhodj(:), &
+                                              mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rg ) call Budget_store_init( tbudgets(NBUDGET_RG), 'ACC', Unpack ( prgs(:) * prhodj(:), &
+                                              mask = omicro(:,:,:), field = 0. ) )
 !
 !        5.2.0  allocations
 !
@@ -299,14 +319,16 @@ REAL,    DIMENSION(:), ALLOCATABLE :: ZZW1, ZZW2, ZZW3, ZZW4 ! Work arrays
       END IF
     END DO
 
-    if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'ACC', Unpack ( (  zzw4(:) + zzw2(:) ) &
-                                        * ( plsfact(:) - plvfact(:) ) * prhodj(:), mask = omicro(:,:,:), field = 0. ) )
-    if ( lbudget_rr ) call Budget_store_add( tbudgets(NBUDGET_RR), 'ACC', Unpack ( ( -zzw4(:) - zzw2(:) ) * prhodj(:), &
-                                                                                   mask = omicro(:,:,:), field = 0. ) )
-    if ( lbudget_rs ) call Budget_store_add( tbudgets(NBUDGET_RS), 'ACC', Unpack ( (  zzw4(:) - zzw3(:) ) * prhodj(:), &
-                                                                                   mask = omicro(:,:,:), field = 0. ) )
-    if ( lbudget_rg ) call Budget_store_add( tbudgets(NBUDGET_RG), 'ACC', Unpack ( (  zzw2(:) + zzw3(:) ) * prhodj(:), &
-                                                                                   mask = omicro(:,:,:), field = 0. ) )
+    !Remark: not possible to use Budget_store_add here
+    !        because variables modified a second time but with a if on prss + jl/=jj
+    if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'ACC', Unpack ( pths(:) * prhodj(:), &
+                                             mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rr ) call Budget_store_end( tbudgets(NBUDGET_RR), 'ACC', Unpack ( prrs(:) * prhodj(:), &
+                                             mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rs ) call Budget_store_end( tbudgets(NBUDGET_RS), 'ACC', Unpack ( prss(:) * prhodj(:), &
+                                             mask = omicro(:,:,:), field = 0. ) )
+    if ( lbudget_rg ) call Budget_store_end( tbudgets(NBUDGET_RG), 'ACC', Unpack ( prgs(:) * prhodj(:), &
+                                             mask = omicro(:,:,:), field = 0. ) )
 
     DEALLOCATE(ZZW4)
     DEALLOCATE(ZZW3)
