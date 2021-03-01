@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2018-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -6,6 +6,7 @@
 ! Modifications:
 !  P. Wautelet 28/05/2018: corrected truncated integer division (1*10**(-6) -> 1E-6)
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
+!  P. Wautelet 01/03/2021: bugfix: correct intent of PSVT in module interface
 !-----------------------------------------------------------------
 !      ####################
        MODULE MODI_SUBL_BLOWSNOW
@@ -24,12 +25,12 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST  ! absolute pressure at t
 
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT    ! Theta at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRVT    ! Water vapor m.r. at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCT    ! Cloud water m.r. at t 
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRT    ! Rain water m.r. at t 
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCT    ! Cloud water m.r. at t
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRT    ! Rain water m.r. at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRIT    ! Pristine ice m.r. at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRST    ! Snow/aggregate m.r. at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRGT    ! Graupel/hail m.r. at t
-REAL, DIMENSION(:,:,:,:),   INTENT(IN)  :: PSVT    ! Blowing snow concentration
+REAL, DIMENSION(:,:,:,:),   INTENT(INOUT)  :: PSVT    ! Blowing snow concentration
 REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PVGK    ! Mass averaged settling velocity
 
 
