@@ -667,6 +667,7 @@ integer(kind=CDFINT) :: idimid
 integer(kind=CDFINT) :: igrpid
 integer(kind=CDFINT) :: istatus
 logical              :: gdistributed
+logical              :: ggroupdefined
 logical              :: gsplit
 type(tfielddata)     :: tzfield
 type(tfiledata)      :: tzfile
@@ -715,9 +716,14 @@ else
 end if
 
 MASTER: if ( isp == tzfile%nmaster_rank) then
+  ggroupdefined = .false.
+
   istatus = NF90_INQ_NCID( tzfile%nncid, trim( hgroup ), igrpid )
   if ( istatus == NF90_NOERR ) then
-    call Print_msg( NVERB_WARNING, 'IO', 'Write_diachro_nc4', trim(tzfile%cname)//': group '//trim(hgroup)//' already defined' )
+    ggroupdefined = .true.
+    if ( .not. gsplit ) then
+      call Print_msg( NVERB_WARNING, 'IO', 'Write_diachro_nc4', trim(tzfile%cname)//': group '//trim(hgroup)//' already defined' )
+    end if
   else
     istatus = NF90_DEF_GRP( tzfile%nncid, trim( hgroup ), igrpid )
     if ( istatus /= NF90_NOERR ) &
@@ -728,50 +734,52 @@ MASTER: if ( isp == tzfile%nmaster_rank) then
   isavencid = tzfile%nncid
   tzfile%nncid = igrpid
 
-  istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'type', trim( htype ) )
-  if (istatus /= NF90_NOERR ) &
-    call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'type for '//trim(hgroup)//' group' )
-
-  if ( trim ( htype ) == 'CART' .or. trim ( htype ) == 'MASK' .or. trim ( htype ) == 'SPXY') then
-    istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'min x index', kil )
+  if ( .not. ggroupdefined ) then
+    istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'type', trim( htype ) )
     if (istatus /= NF90_NOERR ) &
-      call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'min x index for '//trim(hgroup)//' group' )
+      call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'type for '//trim(hgroup)//' group' )
 
-    istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'max x index', kih )
-    if (istatus /= NF90_NOERR ) &
-      call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'max x index for '//trim(hgroup)//' group' )
+    if ( trim ( htype ) == 'CART' .or. trim ( htype ) == 'MASK' .or. trim ( htype ) == 'SPXY') then
+      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'min x index', kil )
+      if (istatus /= NF90_NOERR ) &
+        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'min x index for '//trim(hgroup)//' group' )
 
-    istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'min y index', kjl )
-    if (istatus /= NF90_NOERR ) &
-      call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'min y index for '//trim(hgroup)//' group' )
+      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'max x index', kih )
+      if (istatus /= NF90_NOERR ) &
+        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'max x index for '//trim(hgroup)//' group' )
 
-    istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'max y index', kjh )
-    if (istatus /= NF90_NOERR ) &
-      call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'max y index for '//trim(hgroup)//' group' )
+      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'min y index', kjl )
+      if (istatus /= NF90_NOERR ) &
+        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'min y index for '//trim(hgroup)//' group' )
 
-    istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'min z index', kkl )
-    if (istatus /= NF90_NOERR ) &
-      call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'min z index for '//trim(hgroup)//' group' )
+      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'max y index', kjh )
+      if (istatus /= NF90_NOERR ) &
+        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'max y index for '//trim(hgroup)//' group' )
 
-    istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'max z index', kkh )
-    if (istatus /= NF90_NOERR ) &
-      call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'max z index for '//trim(hgroup)//' group' )
-  end if
+      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'min z index', kkl )
+      if (istatus /= NF90_NOERR ) &
+        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'min z index for '//trim(hgroup)//' group' )
 
-  if ( trim ( htype ) == 'CART' ) then
-    istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'averaged on x dimension', icompx )
-    if (istatus /= NF90_NOERR ) &
-      call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'averaged on x dimension '//trim(hgroup)//' group' )
+      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'max z index', kkh )
+      if (istatus /= NF90_NOERR ) &
+        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'max z index for '//trim(hgroup)//' group' )
+    end if
 
-    istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'averaged on y dimension', icompy )
-    if (istatus /= NF90_NOERR ) &
-      call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'averaged on y dimension '//trim(hgroup)//' group' )
-  end if
+    if ( trim ( htype ) == 'CART' ) then
+      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'averaged on x dimension', icompx )
+      if (istatus /= NF90_NOERR ) &
+        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'averaged on x dimension '//trim(hgroup)//' group' )
 
-  if ( trim ( htype ) == 'CART' .or. trim ( htype ) == 'MASK' .or. trim ( htype ) == 'SPXY') then
-    istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'averaged on z dimension', icompz )
-    if (istatus /= NF90_NOERR ) &
-      call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'averaged on z dimension '//trim(hgroup)//' group' )
+      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'averaged on y dimension', icompy )
+      if (istatus /= NF90_NOERR ) &
+        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'averaged on y dimension '//trim(hgroup)//' group' )
+    end if
+
+    if ( trim ( htype ) == 'CART' .or. trim ( htype ) == 'MASK' .or. trim ( htype ) == 'SPXY') then
+      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'averaged on z dimension', icompz )
+      if (istatus /= NF90_NOERR ) &
+        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'averaged on z dimension '//trim(hgroup)//' group' )
+    end if
   end if
 
 end if MASTER
