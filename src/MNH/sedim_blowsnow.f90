@@ -1,7 +1,10 @@
-!MNH_LIC Copyright 2018-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
+! Modifications:
+!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !-----------------------------------------------------------------
 !   ##############################
      MODULE MODI_SEDIM_BLOWSNOW
@@ -13,7 +16,6 @@ SUBROUTINE SEDIM_BLOWSNOW(  &
      PTHT               & !I [K] theta
      ,PDTMONITOR        & !I Time step
      ,PRHODREF          & !I [kg/m3] air density
-     ,PPABST            & !I [Pa] pressure
      ,PZZ               & !I [m] height of layers
      ,PSVT              & !IO [scalar variable, ppp] Blowing snow concentration
      ,PSVS              & !IO ! Blowing snow variable source
@@ -26,7 +28,6 @@ REAL,  INTENT(IN) :: PDTMONITOR
 REAL,  DIMENSION(:,:,:,:),  INTENT(INOUT) :: PSVT   !scalar variable
 REAL,  DIMENSION(:,:,:,:),  INTENT(INOUT) :: PSVS   !scalar variable
 REAL,  DIMENSION(:,:,:),    INTENT(IN)    :: PTHT,PRHODREF, PZZ
-REAL,  DIMENSION(:,:,:),    INTENT(IN)    :: PPABST
 REAL,  DIMENSION(:,:,:,:),  INTENT(INOUT)    :: PVGK   !Settling velocity of blowing snow variable
 
 
@@ -39,7 +40,7 @@ END MODULE MODI_SEDIM_BLOWSNOW
 
 !!   #######################################
      SUBROUTINE SEDIM_BLOWSNOW(PTHT,PDTMONITOR,&
-                       PRHODREF,PPABST,PZZ,PSVT,&
+                       PRHODREF,PZZ,PSVT,&
                        PSVS,PVGK)
 !!   #######################################
 !!
@@ -58,7 +59,6 @@ END MODULE MODI_SEDIM_BLOWSNOW
 !!    -------------
 !!   Original
 !!
-!  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !
 USE MODD_BLOWSNOW
 USE MODD_CSTS_BLOWSNOW
@@ -73,7 +73,6 @@ REAL,  INTENT(IN) :: PDTMONITOR
 REAL,  DIMENSION(:,:,:,:),  INTENT(INOUT)    :: PSVT  !scalar variable 
 REAL,  DIMENSION(:,:,:,:),  INTENT(INOUT)    :: PSVS  !scalar variable
 REAL,  DIMENSION(:,:,:),    INTENT(IN)    :: PTHT,PRHODREF, PZZ
-REAL,  DIMENSION(:,:,:),    INTENT(IN)    :: PPABST
 REAL,  DIMENSION(:,:,:,:),  INTENT(INOUT)    :: PVGK   !Settling velocity of blowing snow variable
 
 !

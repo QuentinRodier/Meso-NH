@@ -1480,9 +1480,9 @@ XT_COUPL = XT_COUPL + ZTIME2 - ZTIME1
 !*      8 Bis . Blowing snow scheme
 !              ---------
 !
-IF(LBLOWSNOW) THEN
- CALL BLOWSNOW(CLBCX,CLBCY,XTSTEP,NRR,XPABST,XTHT,XRT,XZZ,XRHODREF,  &
-                     XRHODJ,XEXNREF,XRRS,XRTHS,XSVT,XRSVS,XSNWSUBL3D )
+IF ( LBLOWSNOW ) THEN
+ CALL BLOWSNOW( XTSTEP, NRR, XPABST, XTHT, XRT, XZZ, XRHODREF,        &
+                XRHODJ, XEXNREF, XRRS, XRTHS, XSVT, XRSVS, XSNWSUBL3D )
 ENDIF
 !
 !-----------------------------------------------------------------------

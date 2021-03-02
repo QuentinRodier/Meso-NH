@@ -1,7 +1,10 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2011-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
+! Modifications:
+!-----------------------------------------------------------------
 !    ########################
      MODULE MODI_BLOWSNOW
 !    ########################
@@ -9,10 +12,9 @@
 !
 INTERFACE
 !
-      SUBROUTINE BLOWSNOW(HLBCX,HLBCY,PTSTEP,KRR,PPABST,PTHT,PRT,PZZ,PRHODREF,  &
+      SUBROUTINE BLOWSNOW(PTSTEP,KRR,PPABST,PTHT,PRT,PZZ,PRHODREF,  &
                            PRHODJ,PEXNREF,PRS,PTHS,PSVT,PSVS,PSNWSUBL3D)
 !
-CHARACTER(LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX,HLBCY   ! X and Y-direc. LBC type
 REAL,                     INTENT(IN)   :: PTSTEP ! Time step :XTSTEP in namelist
 INTEGER,                  INTENT(IN)   :: KRR      ! Number of moist variables
 !
@@ -38,7 +40,7 @@ END INTERFACE
 END MODULE MODI_BLOWSNOW
 !
 !     ######################################################################
-      SUBROUTINE BLOWSNOW(HLBCX,HLBCY,PTSTEP,KRR,PPABST,PTHT,PRT,PZZ,PRHODREF, &
+      SUBROUTINE BLOWSNOW(PTSTEP,KRR,PPABST,PTHT,PRT,PZZ,PRHODREF, &
                            PRHODJ,PEXNREF,PRS,PTHS,PSVT,PSVS,PSNWSUBL3D)
 !     ######################################################################
 !     ##########################################################################
@@ -84,25 +86,21 @@ END MODULE MODI_BLOWSNOW
 !!      Implementation in MNH 53 07/2017
 !
 !*       0.    DECLARATIONS
-!  
-USE MODE_ll
 !
-USE MODD_NSV
-USE MODD_PARAMETERS
-USE MODD_BLOWSNOW_n
-USE MODD_BLOWSNOW
-!
-USE MODI_SUBL_BLOWSNOW
-USE MODI_SEDIM_BLOWSNOW
+USE MODD_BLOWSNOW_n,       only: LSNOWSUBL
+USE MODD_NSV,              only: NSV_SNWBEG, NSV_SNWEND
+USE MODD_PARAMETERS,       only: JPHEXT, JPVEXT
+
 USE MODI_BLOWSNOW_VELGRAV
-!
+USE MODI_SEDIM_BLOWSNOW
+USE MODI_SUBL_BLOWSNOW
+
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
 !
 !
-CHARACTER(LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX,HLBCY   ! X and Y-direc. LBC type
 REAL,                     INTENT(IN)   :: PTSTEP ! Time step :XTSTEP in namelist
 INTEGER,                  INTENT(IN)   :: KRR      ! Number of moist variables
 !
@@ -133,8 +131,6 @@ INTEGER :: IJE           !
 INTEGER :: IKB           !
 INTEGER :: IKE           !
 
-REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZSVT   ! scalar variable for microphysics only
-REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZSVS   ! scalar tendency for microphysics only
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZVGK   ! settling velocity for blowing snow variables
 !------------------------------------------------------------------------------
 !
@@ -148,13 +144,8 @@ IJE=SIZE(PZZ,2) - JPHEXT
 IKB=1+JPVEXT
 IKE=SIZE(PZZ,3) - JPVEXT
 
-
-ALLOCATE(ZSVT(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3),NSV_SNWEND - NSV_SNWBEG + 1))
-ALLOCATE(ZSVS(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3),NSV_SNWEND - NSV_SNWBEG + 1))
 ALLOCATE(ZVGK(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3),NSV_SNWEND - NSV_SNWBEG + 1))
 
-ZSVT = PSVT(:,:,:,NSV_SNWBEG:NSV_SNWEND) 
-ZSVS = PSVS(:,:,:,NSV_SNWBEG:NSV_SNWEND)
 ZVGK = 0.
 !
 !*       2.     TRANSFORMATION INTO PHYSICAL TENDENCIES
@@ -165,10 +156,9 @@ DO JRR = 1,KRR
   PRS(:,:,:,JRR)  = PRS(:,:,:,JRR) / PRHODJ(:,:,:)
 END DO
 
-DO  JSV = 1,SIZE(ZSVS,4)
-    ZSVS(:,:,:,JSV) = ZSVS(:,:,:,JSV) / PRHODJ(:,:,:)
+DO  JSV = NSV_SNWBEG, NSV_SNWEND
+    PSVS(:,:,:,JSV) = PSVS(:,:,:,JSV) / PRHODJ(:,:,:)
 END DO
-
 !
 !  complete the vertical boundaries
 !
@@ -185,10 +175,10 @@ PRT(:,:,IKE+1,1) = PRT(:,:,IKE,1)
 PRT(:,:,IKB-1,2:) = 0.0
 PRT(:,:,IKE+1,2:) = 0.0
 !
-ZSVS(:,:,IKB-1,:) = 0.0
-ZSVS(:,:,IKE+1,:) = 0.0
-ZSVT(:,:,IKB-1,:) = 0.0
-ZSVT(:,:,IKE+1,:) = 0.0
+PSVS(:,:,IKB-1,NSV_SNWBEG:NSV_SNWEND) = 0.0
+PSVS(:,:,IKE+1,NSV_SNWBEG:NSV_SNWEND) = 0.0
+PSVT(:,:,IKB-1,NSV_SNWBEG:NSV_SNWEND) = 0.0
+PSVT(:,:,IKE+1,NSV_SNWBEG:NSV_SNWEND) = 0.0
 !
 !------------------------------------------------------------------------------
 !
@@ -199,7 +189,7 @@ ZSVT(:,:,IKE+1,:) = 0.0
 !      - sublimation as ventilation velocity 
 !      - sedimentation
 !
-CALL BLOWSNOW_VELGRAV(ZSVT(:,:,1:IKE+1,:),PTHT(:,:,1:IKE+1),    &
+CALL BLOWSNOW_VELGRAV(PSVT(:,:,1:IKE+1,NSV_SNWBEG:NSV_SNWEND),PTHT(:,:,1:IKE+1),    &
                       PPABST(:,:,1:IKE+1),                       &
                       PRHODREF(:,:,1:IKE+1),ZVGK(:,:,1:IKE+1,:))
 
@@ -208,14 +198,15 @@ CALL BLOWSNOW_VELGRAV(ZSVT(:,:,1:IKE+1,:),PTHT(:,:,1:IKE+1),    &
 !*       4.     Sublimation (optional)
 !               ------------------------
 !
-IF(LSNOWSUBL) THEN 
+IF(LSNOWSUBL) THEN
 ! Initialize blowing snow sublimation profile         
      PSNWSUBL3D(:,:,:) = 0.        
 !    Compute sublimation for MNH levels        
      CALL SUBL_BLOWSNOW(PZZ, PRHODJ,PRHODREF, PEXNREF, PPABST,          &
                          PTHT, PRT(:,:,:,1), PRT(:,:,:,2),PRT(:,:,:,3),  &
                          PRT(:,:,:,4), PRT(:,:,:,5),PRT(:,:,:,6),        & 
-                         ZSVT,PTHS,PRS(:,:,:,1),ZSVS,PSNWSUBL3D,ZVGK(:,:,:,2)  )  
+                         PSVT(:,:,:,NSV_SNWBEG:NSV_SNWEND),PTHS,PRS(:,:,:,1),PSVS(:,:,:,NSV_SNWBEG:NSV_SNWEND), &
+                         PSNWSUBL3D,ZVGK(:,:,:,2)  )
 END IF
 !------------------------------------------------------------------------------
 !
@@ -224,11 +215,10 @@ END IF
 !
 CALL SEDIM_BLOWSNOW(PTHT(IIB:IIE,IJB:IJE,IKB:IKE), PTSTEP,&
                   PRHODREF(IIB:IIE,IJB:IJE,IKB:IKE),         &
-                  PPABST(IIB:IIE,IJB:IJE,IKB:IKE),           &
                   PZZ(IIB:IIE,IJB:IJE,IKB:IKE+1),            &
-                  ZSVT(IIB:IIE,IJB:IJE,IKB:IKE,:),           &
-                  ZSVS(IIB:IIE,IJB:IJE,IKB:IKE,:),ZVGK(IIB:IIE,IJB:IJE,IKB:IKE,:))
-!                  
+                  PSVT(IIB:IIE,IJB:IJE,IKB:IKE,NSV_SNWBEG:NSV_SNWEND),           &
+                  PSVS(IIB:IIE,IJB:IJE,IKB:IKE,NSV_SNWBEG:NSV_SNWEND),ZVGK(IIB:IIE,IJB:IJE,IKB:IKE,:))
+!
 !-------------------------------------------------------------------------------
 !
 !
@@ -241,15 +231,10 @@ DO JRR = 1,KRR
   PRS(:,:,:,JRR)  = PRS(:,:,:,JRR) * PRHODJ(:,:,:)
 END DO
 
-DO  JSV = 1,SIZE(ZSVS,4)
-    PSVS(:,:,:,JSV+NSV_SNWBEG-1) = ZSVS(:,:,:,JSV) * PRHODJ(:,:,:)
-END DO
-DO JSV = NSV_SNWBEG, NSV_SNWEND
-     PSVT(:,:,:,JSV) = PSVS(:,:,:,JSV) * PTSTEP / PRHODJ(:,:,:)
+DO  JSV = NSV_SNWBEG, NSV_SNWEND
+  PSVT(:,:,:,JSV) = PSVS(:,:,:,JSV) * PTSTEP
+  PSVS(:,:,:,JSV) = PSVS(:,:,:,JSV) * PRHODJ(:,:,:)
 END DO
 
-
-DEALLOCATE(ZSVS)
-DEALLOCATE(ZSVT)
 
 END SUBROUTINE BLOWSNOW

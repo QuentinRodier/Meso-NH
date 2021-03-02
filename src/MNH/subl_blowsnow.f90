@@ -103,8 +103,6 @@ INTEGER :: IKE           !
 !
 REAL,  DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3))   ::  ZBETA
 REAL,  DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3))   ::  ZT
-REAL,    DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3))   &
-                                  :: ZW ! work array
 LOGICAL,    DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3))   &
                                   :: GSUBL ! Test where to compute sublimation
 
@@ -203,7 +201,7 @@ IKE=SIZE(PZZ,3) - JPVEXT
 !
 !-------------------------------------------------------------------------------
 !
-!*       2. COMPUTE THE BLOWINGG SNOW SUBLIMATION
+!*       2. COMPUTE THE BLOWING SNOW SUBLIMATION
 !
 ! Optimization by looking for locations where
 ! the blowing snow fields are larger than a minimal value only !!!
@@ -288,22 +286,14 @@ IF( IMICRO >= 0 ) THEN
   ALLOCATE(ZAM3(IMICRO))
   ALLOCATE(NMAX(IMICRO))
 
+  CALL SNOW_SUBL
 
-CALL SNOW_SUBL
-
-  ZW(:,:,:) = PRVS(:,:,:)
-  PRVS(:,:,:) = UNPACK( ZRVS(:),MASK=GSUBL(:,:,:),FIELD=ZW(:,:,:) )
-  ZW(:,:,:) = PTHS(:,:,:)
-  PTHS(:,:,:) = UNPACK( ZTHS(:),MASK=GSUBL(:,:,:),FIELD=ZW(:,:,:) )
-  ZW(:,:,:) = PSVS(:,:,:,1)
-  PSVS(:,:,:,1) = UNPACK( ZSVS(:,1),MASK=GSUBL(:,:,:),FIELD=ZW(:,:,:) )
-  ZW(:,:,:) = PSVS(:,:,:,2)
-  PSVS(:,:,:,2) = UNPACK( ZSVS(:,2),MASK=GSUBL(:,:,:),FIELD=ZW(:,:,:) )
-!  ZW(:,:,:) = PSVS(:,:,:,3)
-!  PSVS(:,:,:,3) = UNPACK( ZSVS(:,3),MASK=GSUBL(:,:,:),FIELD=ZW(:,:,:) )
-  ZW(:,:,:) = PSNWSUBL3D(:,:,:)
-  PSNWSUBL3D(:,:,:) = UNPACK( ZSNWSUBL(:),MASK=GSUBL(:,:,:),FIELD=ZW(:,:,:) )
-
+  PRVS(:,:,:)       = UNPACK( ZRVS(:),    MASK=GSUBL(:,:,:),FIELD=PRVS(:,:,:) )
+  PTHS(:,:,:)       = UNPACK( ZTHS(:),    MASK=GSUBL(:,:,:),FIELD=PTHS(:,:,:) )
+  PSVS(:,:,:,1)     = UNPACK( ZSVS(:,1),  MASK=GSUBL(:,:,:),FIELD=PSVS(:,:,:,1) )
+  PSVS(:,:,:,2)     = UNPACK( ZSVS(:,2),  MASK=GSUBL(:,:,:),FIELD=PSVS(:,:,:,2) )
+!  PSVS(:,:,:,3) = UNPACK( ZSVS(:,3),MASK=GSUBL(:,:,:),FIELD=PSVS(:,:,:,3) )
+  PSNWSUBL3D(:,:,:) = UNPACK( ZSNWSUBL(:),MASK=GSUBL(:,:,:),FIELD=PSNWSUBL3D(:,:,:) )
 
   DEALLOCATE(ZRVT)
   DEALLOCATE(ZRCT)
