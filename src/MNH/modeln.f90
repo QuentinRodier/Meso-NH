@@ -282,9 +282,9 @@ USE MODD_BIKHARDT_n
 USE MODD_BLANK
 USE MODD_BLOWSNOW
 USE MODD_BLOWSNOW_n
-use modd_budget,          only: cbutype, lbu_ru, lbu_rv, lbu_rw, lbudget_u, lbudget_v, lbudget_w, lbu_enable, &
-                                NBUDGET_U, NBUDGET_V, NBUDGET_W, nbumod, nbutime,                             &
-                                tbudgets, tburhodj,                                                           &
+use modd_budget,          only: cbutype, lbu_ru, lbu_rv, lbu_rw, lbudget_u, lbudget_v, lbudget_w, lbudget_sv, lbu_enable, &
+                                NBUDGET_U, NBUDGET_V, NBUDGET_W, NBUDGET_SV1, nbumod, nbutime,                            &
+                                tbudgets, tburhodj,                                                                       &
                                 xtime_bu, xtime_bu_process
 USE MODD_CH_AERO_n,      ONLY: XSOLORG, XMI
 USE MODD_CH_MNHC_n,      ONLY: LUSECHEM,LCH_CONV_LINOX,LUSECHAQ,LUSECHIC, &
