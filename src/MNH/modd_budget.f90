@@ -60,6 +60,7 @@
 !  P. Wautelet 11/01/2021: remove nbuwrnb (replaced by nbusubwrite)
 !  P. Wautelet 14/01/2021: change xbusurf type to integer (+ rename it to nbusurf)
 !  P. Wautelet 03/02/2021: budgets: add new source if LIMA splitting: CORR2
+!  P. Wautelet 02/03/2021: budgets: add terms for blowing snow
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -296,6 +297,7 @@ INTEGER, SAVE :: NRELTH   = 0  ! relaxation
 INTEGER, SAVE :: NRADTH   = 0  ! RADiation
 INTEGER, SAVE :: NDCONVTH = 0  ! KAFR CONVection
 INTEGER, SAVE :: NMAFLTH  = 0  ! Mass flux
+INTEGER, SAVE :: NSNSUBTH = 0  ! Blowing snow sublimation
 INTEGER, SAVE :: NHTURBTH = 0  ! horizontal turbulence
 INTEGER, SAVE :: NVTURBTH = 0  ! vertical turbulence
 INTEGER, SAVE :: NDISSHTH = 0  ! dissipative heating
@@ -368,6 +370,7 @@ INTEGER, SAVE :: NDIFRV   = 0 ! numerical diffusion
 INTEGER, SAVE :: NRELRV   = 0 ! relaxation
 INTEGER, SAVE :: NDCONVRV = 0 ! KAFR CONVection
 INTEGER, SAVE :: NMAFLRV  = 0 ! Mass flux
+INTEGER, SAVE :: NSNSUBRV = 0 ! Blowing snow sublimation
 INTEGER, SAVE :: NHTURBRV = 0 ! horizontal turbulence
 INTEGER, SAVE :: NVTURBRV = 0 ! vertical turbulence
 INTEGER, SAVE :: NNEGARV  = 0 ! negative correction
@@ -631,6 +634,8 @@ INTEGER, SAVE :: NHTURBSV  = 0 ! horizontal turbulence
 INTEGER, SAVE :: NVTURBSV  = 0 ! vertical turbulence
 INTEGER, SAVE :: NCHEMSV   = 0 ! chemistry activity
 INTEGER, SAVE :: NVISCSV   = 0 ! viscosity
+INTEGER, SAVE :: NSNSUBSV  = 0 ! Blowing snow sublimation
+INTEGER, SAVE :: NSNSEDSV  = 0 ! Blowing snow sedimentation
 !
 INTEGER, SAVE :: NNEGASV  = 0 ! negative correction
 INTEGER, SAVE :: NNETURSV = 0 ! negative correction

@@ -205,12 +205,15 @@ end subroutine Budget_preallocate
 !  P. Wautelet 03/02/2021: budgets: add new source if LIMA splitting: CORR2
 !  P. Wautelet 10/02/2021: budgets: add missing sources for NSV_C2R2BEG+3 budget
 !  P. Wautelet 11/02/2021: budgets: add missing term SCAV for NSV_LIMA_SCAVMASS budget
+!  P. Wautelet 02/03/2021: budgets: add terms for blowing snow
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------ 
 !
 use modd_2d_frc,        only: l2d_adv_frc, l2d_rel_frc
+use modd_blowsnow,      only: lblowsnow
+use modd_blowsnow_n,    only: lsnowsubl
 use modd_budget
 use modd_ch_aerosol,    only: lorilam
 use modd_conf,          only: l1d, lcartesian, lforcing, lthinshell, nmodel
@@ -891,7 +894,7 @@ if ( lbu_rth ) then
 
   !Allocate all basic source terms (used or not)
   !The size should be large enough (bigger than necessary is OK)
-  isourcesmax = 52
+  isourcesmax = 53
   tbudgets(NBUDGET_TH)%nsourcesmax = isourcesmax
   allocate( tbudgets(NBUDGET_TH)%tsources(isourcesmax) )
 
@@ -1001,6 +1004,11 @@ if ( lbu_rth ) then
   tzsource%cmnhname  = 'MAFL'
   tzsource%clongname = 'mass flux'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource, gcond, nmaflth )
+
+  gcond = lblowsnow .and. lsnowsubl
+  tzsource%cmnhname  = 'SNSUB'
+  tzsource%clongname = 'blowing snow sublimation'
+  call Budget_source_add( tbudgets(NBUDGET_TH), tzsource, gcond, nsnsubth )
 
   gcond = lvisc .and. lvisc_th
   tzsource%cmnhname  = 'VISC'
@@ -1281,7 +1289,7 @@ if ( tbudgets(NBUDGET_RV)%lenabled ) then
 
   !Allocate all basic source terms (used or not)
   !The size should be large enough (bigger than necessary is OK)
-  isourcesmax = 33
+  isourcesmax = 34
   tbudgets(NBUDGET_RV)%nsourcesmax = isourcesmax
   allocate( tbudgets(NBUDGET_RV)%tsources(isourcesmax) )
 
@@ -1376,6 +1384,11 @@ if ( tbudgets(NBUDGET_RV)%lenabled ) then
   tzsource%cmnhname  = 'MAFL'
   tzsource%clongname = 'mass flux'
   call Budget_source_add( tbudgets(NBUDGET_RV), tzsource, gcond, nmaflrv )
+
+  gcond = lblowsnow .and. lsnowsubl
+  tzsource%cmnhname  = 'SNSUB'
+  tzsource%clongname = 'blowing snow sublimation'
+  call Budget_source_add( tbudgets(NBUDGET_RV), tzsource, gcond, nsnsubrv )
 
   gcond = lvisc .and. lvisc_r
   tzsource%cmnhname  = 'VISC'
@@ -3886,6 +3899,16 @@ SV_BUDGETS: do jsv = 1, ksv
 
     else if ( jsv >= nsv_snwbeg .and. jsv <= nsv_snwend ) then SV_VAR
       !Snow
+      gcond = lblowsnow .and. lsnowsubl
+      tzsource%cmnhname  = 'SNSUB'
+      tzsource%clongname = 'blowing snow sublimation'
+      call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nsnsubsv )
+
+      gcond = lblowsnow
+      tzsource%cmnhname  = 'SNSED'
+      tzsource%clongname = 'blowing snow sedimentation'
+      call Budget_source_add( tbudgets(ibudget), tzsource, gcond, nsnsedsv )
+
 
     else if ( jsv >= nsv_lnoxbeg .and. jsv <= nsv_lnoxend ) then SV_VAR
       !LiNOX passive tracer

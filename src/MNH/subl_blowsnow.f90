@@ -51,11 +51,16 @@ END MODULE MODI_SUBL_BLOWSNOW
                          PTHS, PRVS, PSVS,PSNWSUBL3D,PVGK)
 
 USE MODD_BLOWSNOW
+use modd_budget,          only: lbudget_th, lbudget_rv, lbudget_sv,  &
+                                NBUDGET_TH, NBUDGET_RV, NBUDGET_SV1, &
+                                tbudgets
 USE MODD_CST
 USE MODD_CSTS_BLOWSNOW
+use modd_nsv,             only: nsv_snwbeg, nsv_snwend
 USE MODD_PARAMETERS
 
 USE MODE_BLOWSNOW_PSD
+use mode_budget,          only: Budget_store_init, Budget_store_end
 use mode_tools,           only: Countjv
 
 USE MODI_GAMMA
@@ -223,6 +228,14 @@ GSUBL(IIB:IIE,IJB:IJE,IKB:IKE) =                               &
 
 IMICRO = COUNTJV( GSUBL(:,:,:),I1(:),I2(:),I3(:))
 IF( IMICRO >= 0 ) THEN
+  if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'SNSUB', pths(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'SNSUB', prvs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv ) then
+    do jsv = nsv_snwbeg, nsv_snwend
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + jsv), 'SNSUB', psvs(:, :, :, jsv - nsv_snwbeg + 1) * prhodj(:, :, :) )
+    end do
+  end if
+
   ALLOCATE(ZRVT(IMICRO))
   ALLOCATE(ZRCT(IMICRO))
   ALLOCATE(ZRRT(IMICRO))
@@ -294,6 +307,14 @@ IF( IMICRO >= 0 ) THEN
   PSVS(:,:,:,2)     = UNPACK( ZSVS(:,2),  MASK=GSUBL(:,:,:),FIELD=PSVS(:,:,:,2) )
 !  PSVS(:,:,:,3) = UNPACK( ZSVS(:,3),MASK=GSUBL(:,:,:),FIELD=PSVS(:,:,:,3) )
   PSNWSUBL3D(:,:,:) = UNPACK( ZSNWSUBL(:),MASK=GSUBL(:,:,:),FIELD=PSNWSUBL3D(:,:,:) )
+
+  if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'SNSUB', pths(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'SNSUB', prvs(:, :, :) * prhodj(:, :, :) )
+  if ( lbudget_sv ) then
+    do jsv = nsv_snwbeg, nsv_snwend
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + jsv), 'SNSUB', psvs(:, :, :, jsv - nsv_snwbeg + 1) * prhodj(:, :, :) )
+    end do
+  end if
 
   DEALLOCATE(ZRVT)
   DEALLOCATE(ZRCT)

@@ -88,8 +88,11 @@ END MODULE MODI_BLOWSNOW
 !*       0.    DECLARATIONS
 !
 USE MODD_BLOWSNOW_n,       only: LSNOWSUBL
+use modd_budget,           only: lbudget_sv, NBUDGET_SV1, tbudgets
 USE MODD_NSV,              only: NSV_SNWBEG, NSV_SNWEND
 USE MODD_PARAMETERS,       only: JPHEXT, JPVEXT
+
+use mode_budget,           only: Budget_store_init, Budget_store_end
 
 USE MODI_BLOWSNOW_VELGRAV
 USE MODI_SEDIM_BLOWSNOW
@@ -213,6 +216,13 @@ END IF
 !*       5.     Sedimentation 
 !               ------------------------
 !
+!Remark: budgets not done in SEDIM_BLOWSNOW because arrays are not complete in it
+if ( lbudget_sv ) then
+  do jsv = nsv_snwbeg, nsv_snwend
+    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + jsv), 'SNSED', psvs(:, :, :, jsv) * prhodj(:, :, :) )
+  end do
+end if
+
 CALL SEDIM_BLOWSNOW(PTHT(IIB:IIE,IJB:IJE,IKB:IKE), PTSTEP,&
                   PRHODREF(IIB:IIE,IJB:IJE,IKB:IKE),         &
                   PZZ(IIB:IIE,IJB:IJE,IKB:IKE+1),            &
@@ -236,5 +246,10 @@ DO  JSV = NSV_SNWBEG, NSV_SNWEND
   PSVS(:,:,:,JSV) = PSVS(:,:,:,JSV) * PRHODJ(:,:,:)
 END DO
 
+if ( lbudget_sv ) then
+  do jsv = nsv_snwbeg, nsv_snwend
+    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + jsv), 'SNSED', psvs(:, :, :, jsv) )
+  end do
+end if
 
 END SUBROUTINE BLOWSNOW

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -228,6 +228,7 @@
 !  B. Vie      03/02/2020: LIMA negativity checks after turbulence, advection and microphysics budgets
 !  P. Wautelet 09/03/2020: add missing budgets for electricity
 !  P. Wautelet 30/06/2020: add NNETURSV, NNEADVSV and NNECONSV variables
+!  P. Wautelet 02/03/2021: budgets: add terms for blowing snow
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -254,7 +255,7 @@ NAMELIST/NAM_BU_RTH/LBU_RTH, NASSETH, NNESTTH, NADVTH, NFRCTH, &
                    NVTURBTH, NDISSHTH, NNEGATH, NREVATH, NCONDTH, NHENUTH, NHONTH, &
                    NSFRTH, NDEPSTH, NDEPGTH,NRIMTH, NACCTH, NCFRZTH, NWETGTH, &
                    NDRYGTH, NGMLTTH, NIMLTTH, NBERFITH, NCDEPITH, NWETHTH, NHMLTTH, &
-                   NMAFLTH, NNETURTH, NNEADVTH,NNECONTH, NDRYHTH, NADJUTH, NCORRTH, &
+                   NMAFLTH, NSNSUBTH, NNETURTH, NNEADVTH,NNECONTH, NDRYHTH, NADJUTH, NCORRTH, &
                    NHINDTH, NHINCTH, NHONHTH, NHONCTH, NHONRTH, NCEDSTH, NSEDITH, NVISCTH
 !
 NAMELIST/NAM_BU_RTKE/LBU_RTKE, NASSETKE, NADVTKE,    &
@@ -263,7 +264,7 @@ NAMELIST/NAM_BU_RTKE/LBU_RTKE, NASSETKE, NADVTKE,    &
 !
 NAMELIST/NAM_BU_RRV/LBU_RRV, NASSERV, NNESTRV, NADVRV, NFRCRV, &
                     NNUDRV, NDIFRV, NRELRV, NDCONVRV, NHTURBRV, NVTURBRV, NNEGARV, &
-                    NREVARV, NCONDRV, NHENURV, NDEPSRV, NDEPGRV, NCDEPIRV, NMAFLRV, &
+                    NREVARV, NCONDRV, NHENURV, NDEPSRV, NDEPGRV, NCDEPIRV, NMAFLRV, NSNSUBRV, &
                     NNETURRV, NNEADVRV,NNECONRV, NADJURV, NCORRRV, NHINDRV, NHONHRV, NCEDSRV, NVISCRV
 ! 
 NAMELIST/NAM_BU_RRC/LBU_RRC, NASSERC, NNESTRC, NADVRC, NFRCRC, &
@@ -305,22 +306,22 @@ NAMELIST/NAM_BU_RRH/LBU_RRH, NASSERH, NNESTRH, NADVRH, NFRCRH, &
                     NCORRRH, NHGCVRH, NGHCVRH, NCOHGRH, NHMLTRH, &
                     NNETURRH, NNEADVRH, NNECONRH, NVISCRH
 ! 
-NAMELIST/NAM_BU_RSV/ LBU_RSV,  NASSESV,  NNESTSV,  NADVSV,   NFRCSV, &
-                     NDIFSV,   NRELSV,   NDCONVSV, NVTURBSV, NHTURBSV, NCHEMSV,  NMAFLSV,          &
-                     NVISCSV,  NNEGASV,  NNETURSV, NNEADVSV, NNECONSV, NNEGA2SV,                   &
-                     NDRIFTQV, NCORAYQV, NDEPSQV, NDEPGQV,   NREVAQV,  NCDEPIQV, NNEUTQV,          &
-                     NHONQC,   NAUTOQC,  NACCRQC, NRIMQC,    NWETGQC,  NDRYGQC,  NINCGQC, NWETHQC, &
-                     NIMLTQC,  NBERFIQC, NSEDIQC, NCDEPIQC,  NNEUTQC,                              &
-                     NSFRQR,   NAUTOQR,  NACCRQR, NREVAQR,   NACCQR,   NCFRZQR,  NWETGQR, NDRYGQR, &
-                     NGMLTQR,  NWETHQR,  NHMLTQR, NSEDIQR,   NNEUTQR,                              &
-                     NHONQI,   NAGGSQI,  NAUTSQI, NCFRZQI,   NWETGQI,  NDRYGQI,  NWETHQI,          &
-                     NIMLTQI,  NBERFIQI, NNIISQI, NSEDIQI,   NCDEPIQI, NNEUTQI,                    &
-                     NDEPSQS,  NAGGSQS,  NAUTSQS, NRIMQS,    NACCQS,   NCMELQS,  NWETGQS,          &
-                     NDRYGQS,  NNIISQS,  NWETHQS, NSEDIQS,   NNEUTQS,                              &
-                     NSFRQG,   NDEPGQG,  NRIMQG,  NACCQG,    NCMELQG,  NCFRZQG,  NWETGQG, NDRYGQG, &
-                     NINCGQG,  NGMLTQG,  NWETHQG, NSEDIQG,   NNEUTQG,                              &
-                     NWETGQH,  NWETHQH,  NHMLTQH, NSEDIQH,   NNEUTQH,                              &
-                     NDRIFTNI, NCORAYNI, NDEPSNI, NDEPGNI,   NREVANI,  NCDEPINI, NNEUTNI,          &
+NAMELIST/NAM_BU_RSV/ LBU_RSV,  NASSESV,  NNESTSV,  NADVSV,   NFRCSV,                                 &
+                     NDIFSV,   NRELSV,   NDCONVSV, NVTURBSV, NHTURBSV, NCHEMSV,  NMAFLSV,            &
+                     NVISCSV,  NSNSUBSV, NSNSEDSV, NNEGASV,  NNETURSV, NNEADVSV, NNECONSV, NNEGA2SV, &
+                     NDRIFTQV, NCORAYQV, NDEPSQV,  NDEPGQV,  NREVAQV,  NCDEPIQV, NNEUTQV,            &
+                     NHONQC,   NAUTOQC,  NACCRQC,  NRIMQC,   NWETGQC,  NDRYGQC,  NINCGQC,  NWETHQC,  &
+                     NIMLTQC,  NBERFIQC, NSEDIQC,  NCDEPIQC, NNEUTQC,                                &
+                     NSFRQR,   NAUTOQR,  NACCRQR,  NREVAQR,  NACCQR,   NCFRZQR,  NWETGQR,  NDRYGQR,  &
+                     NGMLTQR,  NWETHQR,  NHMLTQR,  NSEDIQR,  NNEUTQR,                                &
+                     NHONQI,   NAGGSQI,  NAUTSQI,  NCFRZQI,  NWETGQI,  NDRYGQI,  NWETHQI,            &
+                     NIMLTQI,  NBERFIQI, NNIISQI,  NSEDIQI,  NCDEPIQI, NNEUTQI,                      &
+                     NDEPSQS,  NAGGSQS,  NAUTSQS,  NRIMQS,   NACCQS,   NCMELQS,  NWETGQS,            &
+                     NDRYGQS,  NNIISQS,  NWETHQS,  NSEDIQS,  NNEUTQS,                                &
+                     NSFRQG,   NDEPGQG,  NRIMQG,   NACCQG,   NCMELQG,  NCFRZQG,  NWETGQG,  NDRYGQG,  &
+                     NINCGQG,  NGMLTQG,  NWETHQG,  NSEDIQG,  NNEUTQG,                                &
+                     NWETGQH,  NWETHQH,  NHMLTQH,  NSEDIQH,  NNEUTQH,                                &
+                     NDRIFTNI, NCORAYNI, NDEPSNI,  NDEPGNI,  NREVANI,  NCDEPINI, NNEUTNI,            &
                      NDEPOTRSV
 !
 END MODULE MODN_BUDGET
