@@ -68,6 +68,7 @@ END MODULE MODI_WRITE_AIRCRAFT_BALLOON
 !  P. Wautelet 02/10/2020: bugfix: YGROUP/YGROUPZ were too small
 !  P. Wautelet 09/10/2020: bugfix: correction on IPROCZ when not LIMA (condition was wrong)
 !  P. Wautelet 09/10/2020: Write_diachro: use new datatype tpfields
+!  P. Wautelet 03/03/2021: budgets: add tbudiachrometadata type (useful to pass more information to Write_diachro)
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -172,7 +173,8 @@ CONTAINS
 !
 SUBROUTINE FLYER_DIACHRO(TPFLYER)
 
-use modd_field, only:  NMNHDIM_LEVEL, NMNHDIM_FLYER_PROC, NMNHDIM_FLYER_TIME, NMNHDIM_UNUSED, &
+use modd_budget, only: tbudiachrometadata
+use modd_field,  only: NMNHDIM_LEVEL, NMNHDIM_FLYER_PROC, NMNHDIM_FLYER_TIME, NMNHDIM_UNUSED, &
                        tfield_metadata_base, TYPEREAL
 
 TYPE(FLYER),        INTENT(IN)       :: TPFLYER
@@ -212,6 +214,7 @@ INTEGER :: IKU, IK
 CHARACTER(LEN=2)  :: INDICE
 INTEGER           :: I
 INTEGER :: JLOOP
+type(tbudiachrometadata) :: tzbudiachro
 type(tfield_metadata_base), dimension(:), allocatable :: tzfields
 !
 !----------------------------------------------------------------------------
@@ -861,10 +864,14 @@ tzfields(:)%ndimlist(4) = NMNHDIM_FLYER_TIME
 tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_FLYER_PROC
 
-call Write_diachro( tpdiafile, tzfields, ygroup, "RSPL", tpflyer%tpdates, &
-                      zw6,                                                &
-                      ptrajx = ztrajx, ptrajy = ztrajy, ptrajz = ztrajz,  &
-                      tpflyer = tpflyer                                   )
+tzbudiachro%cgroupname = ygroup
+tzbudiachro%cname        = ''
+tzbudiachro%ccomment     = ''
+tzbudiachro%ctype      = 'RSPL'
+
+call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpflyer%tpdates, zw6, &
+                    ptrajx = ztrajx, ptrajy = ztrajy, ptrajz = ztrajz,      &
+                    tpflyer = tpflyer                                       )
 
 deallocate( tzfields )
 
@@ -885,11 +892,22 @@ tzfields(:)%ndimlist(4) = NMNHDIM_FLYER_TIME
 tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_FLYER_PROC
 
-call Write_diachro( tpdiafile, tzfields, ygroupz, "CART", tpflyer%tpdates,    &
-                      zwz6,                                                   &
-                      oicp = .true., ojcp = .true., okcp = .false.,           &
-                      kil = 1, kih = 1, kjl = 1, kjh = 1, kkl = 1, kkh = iku, &
-                      tpflyer = tpflyer                                       )
+tzbudiachro%cgroupname = ygroupz
+tzbudiachro%cname        = ''
+tzbudiachro%ccomment     = ''
+tzbudiachro%ctype      = 'CART'
+tzbudiachro%licompress = .true.
+tzbudiachro%ljcompress = .true.
+tzbudiachro%lkcompress = .false.
+tzbudiachro%nil        = 1
+tzbudiachro%nih        = 1
+tzbudiachro%njl        = 1
+tzbudiachro%njh        = 1
+tzbudiachro%nkl        = 1
+tzbudiachro%nkh        = iku
+
+call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpflyer%tpdates, zwz6, &
+                    tpflyer = tpflyer                                        )
 
 deallocate( tzfields )
 

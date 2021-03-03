@@ -10,13 +10,15 @@
 !  P. Wautelet 20/09/2019: rewrite normalization of LES budgets
 !  P. Wautelet 14/08/2020: deduplicate LES_DIACHRO* subroutines
 !  P. Wautelet    10/2020: restructure subroutines to use tfield_metadata_base type
+!  P. Wautelet 03/03/2021: budgets: add tbudiachrometadata type (useful to pass more information to Write_diachro)
 !-----------------------------------------------------------------
 !#######################
 MODULE MODE_LES_DIACHRO
 !#######################
 
-USE MODD_LUNIT
-use modd_les_n, only: tles_dates, xles_times
+use modd_budget, only: tbudiachrometadata
+use modd_les_n,  only: tles_dates, xles_times
+use modd_lunit
 
 use mode_msg
 
@@ -947,6 +949,7 @@ integer                                              :: jsv     ! Scalar loop co
 logical                                              :: gsv
 real,            dimension(:,:,:,:),     allocatable :: zfield  ! Normalized field
 real,            dimension(:,:,:,:,:,:), allocatable :: zwork6  ! Contains physical field
+type(tbudiachrometadata)                             :: tzbudiachro
 type(date_time), dimension(:),           allocatable :: tzdates
 
 !Reallocate each time necessary because can be reallocated to an other size in Les_time_avg
@@ -1023,11 +1026,22 @@ if ( iresp == 0 .and. any( zfield /= XUNDEF ) ) then
   tzfields(:)%clongname = ytitle(:)
   tzfields(:)%ccomment  = ycomment(:)
 
-  call Write_diachro( tpdiafile, tzfields, ygroup, "SSOL", tzdates,                     &
-                      zwork6,                                                           &
-                      oicp = .false., ojcp = .false., okcp = .false.,                   &
-                      kil = iil, kih = iih, kjl = ijl, kjh = ijh, kkl = ikl, kkh = ikh, &
-                      ptrajx = ztrajx, ptrajy = ztrajy, ptrajz = ztrajz                 )
+  tzbudiachro%cgroupname = ygroup
+  tzbudiachro%cname      = ''
+  tzbudiachro%ccomment   = ''
+  tzbudiachro%ctype      = 'SSOL'
+  tzbudiachro%licompress = .false.
+  tzbudiachro%ljcompress = .false.
+  tzbudiachro%lkcompress = .false.
+  tzbudiachro%nil        = iil
+  tzbudiachro%nih        = iih
+  tzbudiachro%njl        = ijl
+  tzbudiachro%njh        = ijh
+  tzbudiachro%nkl        = ikl
+  tzbudiachro%nkh        = ikh
+
+  call Write_diachro( tpdiafile, tzbudiachro, tzfields, tzdates, zwork6, &
+                      ptrajx = ztrajx, ptrajy = ztrajy, ptrajz = ztrajz  )
 end if
 
 !-------------------------------------------------------------------------------
@@ -1104,6 +1118,7 @@ integer                                              :: jt       ! time counter
 integer                                              :: jk       ! level counter
 real,            dimension(:,:,:,:,:,:), allocatable :: zwork6 ! contains physical field
 type(date_time), dimension(:),           allocatable :: tzdates
+type(tbudiachrometadata)                             :: tzbudiachro
 type(tfield_metadata_base)                           :: tzfield
 
 !*      1.0  Initialization of diachro variables for LES (z,t) profiles
@@ -1186,14 +1201,23 @@ if ( yavg ) then
   end do
 end if
 
+tzbudiachro%cgroupname = ygroup
+tzbudiachro%cname      = ''
+tzbudiachro%ccomment   = ''
+tzbudiachro%ctype      = 'SPXY'
+tzbudiachro%licompress = .false.
+tzbudiachro%ljcompress = .false.
+tzbudiachro%lkcompress = .false.
+tzbudiachro%nil        = iil
+tzbudiachro%nih        = iih
+tzbudiachro%njl        = ijl
+tzbudiachro%njh        = ijh
+tzbudiachro%nkl        = ikl
+tzbudiachro%nkh        = ikh
+
 !*      2.0  Writing of the profile
 !            ----------------------
-if ( iresp == 0 ) then
-    call Write_diachro( tpdiafile, [ tzfield ], ygroup, "SPXY", tzdates,                 &
-                        zwork6,                                                          &
-                        oicp = .false., ojcp = .false., okcp = .false.,                  &
-                        kil = iil, kih = iih, kjl = ijl, kjh = ijh, kkl = ikl, kkh = ikh )
-end if
+if ( iresp == 0 ) call Write_diachro( tpdiafile, tzbudiachro, [ tzfield ], tzdates, zwork6 )
 
 end subroutine Les_diachro_2pt_1d_intern
 !------------------------------------------------------------------------------
@@ -1255,6 +1279,7 @@ integer                                              :: jt       ! time counter
 integer                                              :: jk       ! level counter
 real,            dimension(:,:,:,:,:,:), allocatable :: zwork6   ! physical field
 type(date_time), dimension(:),           allocatable :: tzdates
+type(tbudiachrometadata)                             :: tzbudiachro
 type(tfield_metadata_base)                           :: tzfield
 !
 !*      1.0  Initialization of diachro variables for LES (z,t) profiles
@@ -1329,10 +1354,21 @@ tzfield%cmnhname  = ygroup
 tzfield%clongname = ygroup
 tzfield%ccomment  = ycomment(:)
 
-call Write_diachro( tpdiafile, [ tzfield ], ygroup, "SPXY", tzdates,                 &
-                    zwork6,                                                          &
-                    oicp = .false., ojcp = .false., okcp = .false.,                  &
-                    kil = iil, kih = iih, kjl = ijl, kjh = ijh, kkl = ikl, kkh = ikh )
+tzbudiachro%cgroupname = ygroup
+tzbudiachro%cname      = ''
+tzbudiachro%ccomment   = ''
+tzbudiachro%ctype      = 'SPXY'
+tzbudiachro%licompress = .false.
+tzbudiachro%ljcompress = .false.
+tzbudiachro%lkcompress = .false.
+tzbudiachro%nil        = iil
+tzbudiachro%nih        = iih
+tzbudiachro%njl        = ijl
+tzbudiachro%njh        = ijh
+tzbudiachro%nkl        = ikl
+tzbudiachro%nkh        = ikh
+
+call Write_diachro( tpdiafile, tzbudiachro, [ tzfield ], tzdates, zwork6 )
 !
 !* time average
 !
@@ -1343,12 +1379,21 @@ do ji = 1, NMNHMAXDIMS
   if ( tzfield%ndimlist(ji) == NMNHDIM_BUDGET_LES_TIME ) tzfield%ndimlist(ji) = NMNHDIM_BUDGET_LES_AVG_TIME
 end do
 
-if ( iresp == 0 ) then
-  call Write_diachro( tpdiafile, [ tzfield ], ygroup, "SPXY", tzdates,                 &
-                      zwork6,                                                          &
-                      oicp = .false., ojcp = .false., okcp = .false.,                  &
-                      kil = iil, kih = iih, kjl = ijl, kjh = ijh, kkl = ikl, kkh = ikh )
-endif
+tzbudiachro%cgroupname = ygroup
+tzbudiachro%cname      = ''
+tzbudiachro%ccomment   = ''
+tzbudiachro%ctype      = 'SPXY'
+tzbudiachro%licompress = .false.
+tzbudiachro%ljcompress = .false.
+tzbudiachro%lkcompress = .false.
+tzbudiachro%nil        = iil
+tzbudiachro%nih        = iih
+tzbudiachro%njl        = ijl
+tzbudiachro%njh        = ijh
+tzbudiachro%nkl        = ikl
+tzbudiachro%nkh        = ikh
+
+if ( iresp == 0 ) call Write_diachro( tpdiafile, tzbudiachro, [ tzfield ], tzdates, zwork6 )
 
 end subroutine Les_diachro_spec_1D_intern
 

@@ -15,12 +15,11 @@ public :: Write_diachro
 
 contains
 
-! ###########################################################################
-  subroutine Write_diachro( tpdiafile, tpfields, hgroup, htype,             &
-                            tpdates, pvar,                                  &
-                            oicp, ojcp, okcp, kil, kih, kjl, kjh, kkl, kkh, &
-                            ptrajx, ptrajy, ptrajz, osplit, tpflyer         )
-! ###########################################################################
+! #################################################################
+subroutine Write_diachro( tpdiafile, tpbudiachro, tpfields,       &
+                          tpdates, pvar,                          &
+                          ptrajx, ptrajy, ptrajz, osplit, tpflyer )
+! #################################################################
 !
 !!****  *WRITE_DIACHRO* - Ecriture d'un enregistrement dans un fichier
 !!                        diachronique (de nom de base HGROUP)
@@ -84,13 +83,15 @@ contains
 !  P. Wautelet 13/09/2019: remove never used PMASK optional dummy-argument
 !  P. Wautelet 28/08/2020: remove TPLUOUTDIA dummy argument
 !  P. Wautelet 09/10/2020: use new data type tpfields
-!  P. Wautelet 08/12/2020: budgets: merge budgets terms with different nbutshift in same group variables
+!  P. Wautelet 08/12/2020: merge budgets terms with different nbutshift in same group variables
+!  P. Wautelet 03/03/2021: add tbudiachrometadata type (useful to pass more information to Write_diachro)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
 use modd_aircraft_balloon, only: flyer
+use modd_budget,           only: tbudiachrometadata
 use modd_conf,             only: lpack
 use modd_field,            only: tfield_metadata_base
 use modd_io,               only: tfiledata
@@ -101,14 +102,10 @@ IMPLICIT NONE
 !*       0.1   Dummy arguments
 !              ---------------
 TYPE(TFILEDATA),                                     INTENT(IN)           :: TPDIAFILE    ! file to write
+type(tbudiachrometadata),                            intent(in)           :: tpbudiachro
 class(tfield_metadata_base), dimension(:),           intent(in)           :: tpfields
-CHARACTER(LEN=*),                                    INTENT(IN)           :: HGROUP, HTYPE
 type(date_time),             dimension(:),           intent(in)           :: tpdates  !Used only for LFI files
 REAL,                        DIMENSION(:,:,:,:,:,:), INTENT(IN)           :: PVAR
-LOGICAL,                                             INTENT(IN), OPTIONAL :: OICP, OJCP, OKCP
-INTEGER,                                             INTENT(IN), OPTIONAL :: KIL, KIH
-INTEGER,                                             INTENT(IN), OPTIONAL :: KJL, KJH
-INTEGER,                                             INTENT(IN), OPTIONAL :: KKL, KKH
 REAL,DIMENSION(:,:,:),                               INTENT(IN), OPTIONAL :: PTRAJX
 REAL,DIMENSION(:,:,:),                               INTENT(IN), OPTIONAL :: PTRAJY
 REAL,DIMENSION(:,:,:),                               INTENT(IN), OPTIONAL :: PTRAJZ
@@ -117,43 +114,22 @@ type(flyer),                                         intent(in), optional :: tpf
 !
 !*       0.1   Local variables
 !              ---------------
-logical :: gicp, gjcp, gkcp
 logical :: gpack
 !------------------------------------------------------------------------------
 
 call Print_msg( NVERB_DEBUG, 'BUD', 'Write_diachro', 'called' )
-
-if ( present( oicp ) ) then
-  gicp = oicp
-else
-  gicp = .false.
-end if
-
-if ( present( ojcp ) ) then
-  gjcp = ojcp
-else
-  gjcp = .false.
-end if
-
-if ( present( okcp ) ) then
-  gkcp = okcp
-else
-  gkcp = .false.
-end if
 
 gpack = lpack
 lpack = .false.
 
 #ifdef MNH_IOLFI
 if ( tpdiafile%cformat == 'LFI' .or. tpdiafile%cformat == 'LFICDF4' ) &
-  call Write_diachro_lfi( tpdiafile, tpfields, hgroup, htype, tpdates, pvar, gicp, gjcp, gkcp, kil, kih, kjl, kjh, kkl, kkh, &
-                          ptrajx, ptrajy, ptrajz )
+  call Write_diachro_lfi( tpdiafile, tpbudiachro, tpfields, tpdates, pvar, ptrajx, ptrajy, ptrajz )
 #endif
 
 #ifdef MNH_IOCDF4
 if ( tpdiafile%cformat == 'NETCDF4' .or. tpdiafile%cformat == 'LFICDF4' ) &
-  call Write_diachro_nc4( tpdiafile, tpfields, hgroup, htype, pvar, gicp, gjcp, gkcp, kil, kih, kjl, kjh, kkl, kkh, &
-                          osplit, tpflyer )
+  call Write_diachro_nc4( tpdiafile, tpbudiachro, tpfields, pvar, osplit, tpflyer )
 #endif
 
 lpack = gpack
@@ -162,10 +138,10 @@ end subroutine Write_diachro
 
 #ifdef MNH_IOLFI
 !-----------------------------------------------------------------------------
-subroutine Write_diachro_lfi( tpdiafile, tpfields, hgroup, htype, tpdates, pvar, oicp, ojcp, okcp, kil, kih, kjl, kjh, kkl, kkh, &
+subroutine Write_diachro_lfi( tpdiafile, tpbudiachro, tpfields, tpdates, pvar, &
                               ptrajx, ptrajy, ptrajz )
 
-use modd_budget,         only: nbumask, nbutshift, nbusubwrite
+use modd_budget,         only: nbumask, nbutshift, nbusubwrite, tbudiachrometadata
 use modd_field,          only: NMNHDIM_ONE, NMNHDIM_UNKNOWN, NMNHDIM_FLYER_TIME, NMNHDIM_NOTLISTED, NMNHDIM_UNUSED, &
                                TYPECHAR, TYPEINT, TYPEREAL,                                                         &
                                tfield_metadata_base, tfielddata
@@ -182,14 +158,10 @@ use mode_tools_ll,       only: Get_globaldims_ll
 
 
 type(tfiledata),                                     intent(in)           :: tpdiafile        ! File to write
+type(tbudiachrometadata),                            intent(in)           :: tpbudiachro
 class(tfield_metadata_base), dimension(:),           intent(in)           :: tpfields
-character(len=*),                                    intent(in)           :: hgroup, htype
 type(date_time),             dimension(:),           intent(in)           :: tpdates
 real,                        dimension(:,:,:,:,:,:), intent(in)           :: pvar
-logical,                                             intent(in)           :: oicp, ojcp, okcp
-integer,                                             intent(in), optional :: kil, kih
-integer,                                             intent(in), optional :: kjl, kjh
-integer,                                             intent(in), optional :: kkl, kkh
 REAL,DIMENSION(:,:,:),                               INTENT(IN), OPTIONAL :: PTRAJX
 REAL,DIMENSION(:,:,:),                               INTENT(IN), OPTIONAL :: PTRAJY
 REAL,DIMENSION(:,:,:),                               INTENT(IN), OPTIONAL :: PTRAJZ
@@ -198,6 +170,7 @@ integer, parameter :: LFITITLELGT = 100
 integer, parameter :: LFIUNITLGT = 100
 integer, parameter :: LFICOMMENTLGT = 100
 
+character(len=:), allocatable :: ytype
 CHARACTER(LEN=20) :: YCOMMENT
 CHARACTER(LEN=3)  :: YJ
 character(len=:),                           allocatable :: ygroup
@@ -205,12 +178,12 @@ character(len=LFITITLELGT),   dimension(:), allocatable :: ytitles   !Used to re
 character(len=LFIUNITLGT),    dimension(:), allocatable :: yunits    !Used to respect LFI fileformat
 character(len=LFICOMMENTLGT), dimension(:), allocatable :: ycomments !Used to respect LFI fileformat
 INTEGER   ::   ILENG, ILENTITRE, ILENUNITE, ILENCOMMENT
+integer   :: iil, iih, ijl, ijh, ikl, ikh
 INTEGER   ::   II, IJ, IK, IT, IN, IP, J, JJ
 INTEGER   ::   INTRAJT, IKTRAJX, IKTRAJY, IKTRAJZ
 INTEGER   ::   ITTRAJX, ITTRAJY, ITTRAJZ
 INTEGER   ::   INTRAJX, INTRAJY, INTRAJZ
 INTEGER   ::   IIMASK, IJMASK, IKMASK, ITMASK, INMASK, IPMASK
-INTEGER   ::   ICOMPX, ICOMPY, ICOMPZ
 INTEGER   ::   IIMAX_ll, IJMAX_ll ! size of the physical global domain
 integer   ::   ji
 INTEGER,DIMENSION(:),ALLOCATABLE :: ITABCHAR
@@ -223,30 +196,39 @@ call Print_msg( NVERB_DEBUG, 'BUD', 'Write_diachro_lfi', 'called' )
 
 tzfile = tpdiafile
 
+iil = tpbudiachro%nil
+iih = tpbudiachro%nih
+ijl = tpbudiachro%njl
+ijh = tpbudiachro%njh
+ikl = tpbudiachro%nkl
+ikh = tpbudiachro%nkh
+
 !Write only in LFI files
 tzfile%cformat = 'LFI'
 
 YCOMMENT='NOTHING'
 
-if (      Any( hgroup == [ 'RJS', 'RJX', 'RJY', 'RJZ'] )                                              &
-     .or. Any( hgroup == [ 'UU', 'VV', 'WW', 'TH', 'TK', 'RV', 'RC', 'RR', 'RI', 'RS', 'RG', 'RH' ] ) &
-     .or.  ( hgroup(1:2) == 'SV' .and. Len( hgroup ) == 5 )                                           ) then
+if (      Any( tpbudiachro%cgroupname == [ 'RJS', 'RJX', 'RJY', 'RJZ'] )                                              &
+     .or. Any( tpbudiachro%cgroupname == [ 'UU', 'VV', 'WW', 'TH', 'TK', 'RV', 'RC', 'RR', 'RI', 'RS', 'RG', 'RH' ] ) &
+     .or.    ( tpbudiachro%cgroupname(1:2) == 'SV' .and. Len_trim( tpbudiachro%cgroupname ) == 5 )                    ) then
   Allocate( character(len=9) :: ygroup )
-  ygroup(:) = hgroup
-  do ji = Len_trim( hgroup ) + 1, 5
+  ygroup(:) = Trim( tpbudiachro%cgroupname )
+  do ji = Len_trim( tpbudiachro%cgroupname ) + 1, 5
     ygroup(ji : ji) = '_'
   end do
   Write( ygroup(6:9), '( i4.4 )' ) nbutshift
 else
-  ygroup = hgroup
+  ygroup = Trim( tpbudiachro%cgroupname )
 end if
+
+ytype = Trim( tpbudiachro%ctype )
 
 II = SIZE(PVAR,1)
 IJ = SIZE(PVAR,2)
-IF(HTYPE == 'CART' .AND. .NOT. OICP .AND. .NOT. OJCP) THEN
+IF(YTYPE == 'CART' .AND. .NOT. tpbudiachro%licompress .AND. .NOT. tpbudiachro%ljcompress) THEN
                               !for parallel execution, PVAR is distributed on several proc
-  II=KIH-KIL+1
-  IJ=KJH-KJL+1
+  II=iih-iil+1
+  IJ=ijh-ijl+1
 ENDIF
 IK = SIZE(PVAR,3)
 IT = SIZE(PVAR,4)
@@ -275,7 +257,7 @@ IF(PRESENT(PTRAJZ))THEN
 ENDIF
 
 IIMASK=0; IJMASK=0; IKMASK=0; ITMASK=0; INMASK=0; IPMASK=0
-IF(HTYPE == 'MASK')THEN
+IF(YTYPE == 'MASK')THEN
 !     MASK is written outside this routine but the dimensions must be initialized
 !     the mask is defined on the extended domain
   CALL GET_GLOBALDIMS_ll (IIMAX_ll,IJMAX_ll)
@@ -290,23 +272,6 @@ ENDIF
 ILENTITRE   = LFITITLELGT
 ILENUNITE   = LFIUNITLGT
 ILENCOMMENT = LFICOMMENTLGT
-
-ICOMPX=0; ICOMPY=0; ICOMPZ=0
-IF ( OICP ) THEN
-  ICOMPX = 1
-ELSE
-  ICOMPX = 0
-ENDIF
-IF ( OJCP ) THEN
-  ICOMPY = 1
-ELSE
-  ICOMPY = 0
-ENDIF
-IF ( OKCP ) THEN
-  ICOMPZ=1
-ELSE
-  ICOMPZ = 0
-ENDIF
 !
 ! 1er enregistrement TYPE
 !
@@ -320,7 +285,7 @@ TZFIELD%NGRID      = tpfields(1)%ngrid
 TZFIELD%NTYPE      = TYPECHAR
 TZFIELD%NDIMS      = 0
 TZFIELD%LTIMEDEP   = .FALSE.
-CALL IO_Field_write(tzfile,TZFIELD,HTYPE)
+CALL IO_Field_write(tzfile,TZFIELD,YTYPE)
 !
 ! 2eme  enregistrement DIMENSIONS des MATRICES et LONGUEUR des TABLEAUX de CARACTERES et FLAGS de COMPRESSION sur les DIFFERENTS AXES
 !
@@ -334,12 +299,11 @@ TZFIELD%NGRID      = tpfields(1)%ngrid
 TZFIELD%NTYPE      = TYPEINT
 TZFIELD%NDIMS      = 1
 TZFIELD%LTIMEDEP   = .FALSE.
-SELECT CASE(HTYPE)
+SELECT CASE(YTYPE)
   CASE('CART','MASK','SPXY')
-    if (      .not. Present( kil ) .or. .not. Present( kih ) .or. .not. Present( kjl ) .or. .not. Present( kjh )  &
-         .or. .not. Present( kkl ) .or. .not. Present( kkh ) ) then
-      call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro', &
-                      'kil, kih, kjl, kjh, kkl or kkh not provided for variable ' // Trim( tpfields(1)%cmnhname ) )
+    if ( iil < 0 .or. iih < 0 .or. ijl < 0 .or. ijh < 0 .or. ikl < 0 .or. ikh < 0 ) then
+      call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_lfi', &
+                      'nil, nih, njl, njh, nkl or nkh not set in tpbudiachro for variable ' // Trim( tpfields(1)%cmnhname ) )
     end if
     ILENG = 34
     ALLOCATE(ITABCHAR(ILENG))
@@ -347,12 +311,14 @@ SELECT CASE(HTYPE)
     ITABCHAR(3)=ILENCOMMENT; ITABCHAR(4)=II
     ITABCHAR(5)=IJ; ITABCHAR(6)=IK
     ITABCHAR(7)=IT; ITABCHAR(8)=IN
-    ITABCHAR(9)=IP; ITABCHAR(10)=KIL
-    ITABCHAR(11)=KJL; ITABCHAR(12)=KKL
-    ITABCHAR(13)=KIH; ITABCHAR(14)=KJH
-    ITABCHAR(15)=KKH; ITABCHAR(16)=ICOMPX
-    ITABCHAR(17)=ICOMPY; ITABCHAR(18)=ICOMPZ
-    IF(HTYPE == 'MASK')THEN
+    ITABCHAR(9)=IP; ITABCHAR(10)=iil
+    ITABCHAR(11)=ijl; ITABCHAR(12)=ikl
+    ITABCHAR(13)=iih; ITABCHAR(14)=ijh
+    ITABCHAR(15)=ikh
+    ITABCHAR(16)=Merge( 1, 0, tpbudiachro%licompress )
+    ITABCHAR(17)=Merge( 1, 0, tpbudiachro%ljcompress )
+    ITABCHAR(18)=Merge( 1, 0, tpbudiachro%lkcompress )
+    IF(YTYPE == 'MASK')THEN
 !     ITABCHAR(10)=1; ITABCHAR(11)=1
 !     ITABCHAR(13)=1; ITABCHAR(14)=1
       ITABCHAR(16)=1; ITABCHAR(17)=1
@@ -464,7 +430,7 @@ DO J = 1,IP
   ELSE IF(J >= 100 .AND. J < 1000) THEN
           WRITE(YJ,'(I3)')J
   ENDIF
-  IF(HTYPE == 'CART' .AND. .NOT. oicp .AND. .NOT. ojcp) THEN
+  IF(YTYPE == 'CART' .AND. .NOT. tpbudiachro%licompress .AND. .NOT. tpbudiachro%ljcompress) THEN
     TZFIELD%CMNHNAME   = TRIM(ygroup)//'.PROC'//YJ
     TZFIELD%CSTDNAME   = ''
     TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
@@ -477,7 +443,7 @@ DO J = 1,IP
     TZFIELD%LTIMEDEP   = .FALSE.
 
     CALL IO_Field_write_BOX(tzfile,TZFIELD,'BUDGET',PVAR(:,:,:,:,:,J), &
-                            KIL+JPHEXT,KIH+JPHEXT,KJL+JPHEXT,KJH+JPHEXT)
+                            iil+JPHEXT,iih+JPHEXT,ijl+JPHEXT,ijh+JPHEXT)
   ELSE
     TZFIELD%CMNHNAME   = TRIM(ygroup)//'.PROC'//YJ
     TZFIELD%CSTDNAME   = ''
@@ -625,14 +591,13 @@ end subroutine Write_diachro_lfi
 
 #ifdef MNH_IOCDF4
 !-----------------------------------------------------------------------------
-subroutine Write_diachro_nc4( tpdiafile, tpfields, hgroup, htype, pvar, oicp, ojcp, okcp, kil, kih, kjl, kjh, kkl, kkh, &
-                              osplit, tpflyer )
+subroutine Write_diachro_nc4( tpdiafile, tpbudiachro, tpfields, pvar, osplit, tpflyer )
 
-use NETCDF,            only: NF90_DEF_DIM, NF90_DEF_GRP, NF90_DEF_VAR, NF90_INQ_NCID, NF90_PUT_ATT, NF90_PUT_VAR, &
-                             NF90_GLOBAL, NF90_NOERR, NF90_STRERROR
+use NETCDF,                only: NF90_DEF_DIM, NF90_DEF_GRP, NF90_DEF_VAR, NF90_INQ_NCID, NF90_PUT_ATT, NF90_PUT_VAR, &
+                                 NF90_GLOBAL, NF90_NOERR, NF90_STRERROR
 
 use modd_aircraft_balloon, only: flyer
-use modd_budget,           only: nbutshift, nbusubwrite
+use modd_budget,           only: nbutshift, nbusubwrite, tbudiachrometadata
 use modd_conf,             only: lcartesian
 use modd_field
 use modd_io,               only: isp, tfiledata
@@ -645,18 +610,16 @@ use mode_io_field_write,   only: IO_Field_create, IO_Field_write, IO_Field_write
 use mode_io_tools_nc4,     only: IO_Err_handle_nc4
 
 type(tfiledata),                                     intent(in)           :: tpdiafile        ! File to write
+type(tbudiachrometadata),                            intent(in)           :: tpbudiachro
 class(tfield_metadata_base), dimension(:),           intent(in)           :: tpfields
-character(len=*),                                    intent(in)           :: hgroup, htype
 real,                        dimension(:,:,:,:,:,:), intent(in)           :: pvar
-logical,                                             intent(in)           :: oicp, ojcp, okcp
-integer,                                             intent(in), optional :: kil, kih
-integer,                                             intent(in), optional :: kjl, kjh
-integer,                                             intent(in), optional :: kkl, kkh
 logical,                                             intent(in), optional :: osplit
 type(flyer),                                         intent(in), optional :: tpflyer
 
+character(len=:), allocatable :: ygroup
+character(len=:), allocatable :: ytype
 character(len=:), allocatable :: ystdnameprefix
-integer              :: icompx, icompy, icompz
+integer              :: iil, iih, ijl, ijh, ikl, ikh
 integer              :: idims
 integer              :: icount
 integer              :: icorr
@@ -672,13 +635,13 @@ logical              :: gsplit
 type(tfielddata)     :: tzfield
 type(tfiledata)      :: tzfile
 
-if ( trim ( htype ) == 'CART' .or. trim ( htype ) == 'MASK' .or. trim ( htype ) == 'SPXY') then
-  if (        .not. Present( kil ) .or. .not. Present( kih ) &
-         .or. .not. Present( kjl ) .or. .not. Present( kjh ) &
-         .or. .not. Present( kkl ) .or. .not. Present( kkh ) ) then
-    call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
-                      'kil, kih, kjl, kjh, kkl or kkh not provided for variable ' // Trim( tpfields(1)%cmnhname ) )
-  end if
+ytype = Trim( tpbudiachro%ctype )
+
+if ( trim ( ytype ) == 'CART' .or. trim ( ytype ) == 'MASK' .or. trim ( ytype ) == 'SPXY') then
+    if ( iil < 0 .or. iih < 0 .or. ijl < 0 .or. ijh < 0 .or. ikl < 0 .or. ikh < 0 ) then
+      call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
+                      'nil, nih, njl, njh, nkl or nkh not set in tpbudiachro for variable ' // Trim( tpfields(1)%cmnhname ) )
+    end if
 end if
 
 tzfile = tpdiafile
@@ -686,23 +649,16 @@ tzfile = tpdiafile
 !Write only in netCDF files
 tzfile%cformat = 'NETCDF4'
 
-if ( oicp ) then
-  icompx = 1
-else
-  icompx = 0
-endif
-if ( ojcp ) then
-  icompy = 1
-else
-  icompy = 0
-endif
-if ( okcp ) then
-  icompz = 1
-else
-  icompz = 0
-endif
+ygroup = tpbudiachro%cgroupname
 
-if ( Trim( htype ) == 'CART' .and. .not. oicp .and. .not. ojcp ) then
+iil = tpbudiachro%nil
+iih = tpbudiachro%nih
+ijl = tpbudiachro%njl
+ijh = tpbudiachro%njh
+ikl = tpbudiachro%nkl
+ikh = tpbudiachro%nkh
+
+if ( Trim( ytype ) == 'CART' .and. .not. tpbudiachro%licompress .and. .not. tpbudiachro%ljcompress ) then
   gdistributed = .true.
 else
   !By default data is already collected on the write process for budgets
@@ -718,16 +674,16 @@ end if
 MASTER: if ( isp == tzfile%nmaster_rank) then
   ggroupdefined = .false.
 
-  istatus = NF90_INQ_NCID( tzfile%nncid, trim( hgroup ), igrpid )
+  istatus = NF90_INQ_NCID( tzfile%nncid, trim( ygroup ), igrpid )
   if ( istatus == NF90_NOERR ) then
     ggroupdefined = .true.
     if ( .not. gsplit ) then
-      call Print_msg( NVERB_WARNING, 'IO', 'Write_diachro_nc4', trim(tzfile%cname)//': group '//trim(hgroup)//' already defined' )
+      call Print_msg( NVERB_WARNING, 'IO', 'Write_diachro_nc4', trim(tzfile%cname)//': group '//trim(ygroup)//' already defined' )
     end if
   else
-    istatus = NF90_DEF_GRP( tzfile%nncid, trim( hgroup ), igrpid )
+    istatus = NF90_DEF_GRP( tzfile%nncid, trim( ygroup ), igrpid )
     if ( istatus /= NF90_NOERR ) &
-      call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_DEF_GRP', 'for '//trim(hgroup)//' group' )
+      call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_DEF_GRP', 'for '//trim(ygroup)//' group' )
   end if
 
   !Save id of the file root group ('/' group)
@@ -735,50 +691,50 @@ MASTER: if ( isp == tzfile%nmaster_rank) then
   tzfile%nncid = igrpid
 
   if ( .not. ggroupdefined ) then
-    istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'type', trim( htype ) )
+    istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'type', trim( ytype ) )
     if (istatus /= NF90_NOERR ) &
-      call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'type for '//trim(hgroup)//' group' )
+      call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'type for '//trim(ygroup)//' group' )
 
-    if ( trim ( htype ) == 'CART' .or. trim ( htype ) == 'MASK' .or. trim ( htype ) == 'SPXY') then
-      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'min x index', kil )
+    if ( trim ( ytype ) == 'CART' .or. trim ( ytype ) == 'MASK' .or. trim ( ytype ) == 'SPXY') then
+      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'min x index', iil )
       if (istatus /= NF90_NOERR ) &
-        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'min x index for '//trim(hgroup)//' group' )
+        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'min x index for '//trim(ygroup)//' group' )
 
-      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'max x index', kih )
+      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'max x index', iih )
       if (istatus /= NF90_NOERR ) &
-        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'max x index for '//trim(hgroup)//' group' )
+        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'max x index for '//trim(ygroup)//' group' )
 
-      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'min y index', kjl )
+      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'min y index', ijl )
       if (istatus /= NF90_NOERR ) &
-        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'min y index for '//trim(hgroup)//' group' )
+        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'min y index for '//trim(ygroup)//' group' )
 
-      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'max y index', kjh )
+      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'max y index', ijh )
       if (istatus /= NF90_NOERR ) &
-        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'max y index for '//trim(hgroup)//' group' )
+        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'max y index for '//trim(ygroup)//' group' )
 
-      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'min z index', kkl )
+      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'min z index', ikl )
       if (istatus /= NF90_NOERR ) &
-        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'min z index for '//trim(hgroup)//' group' )
+        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'min z index for '//trim(ygroup)//' group' )
 
-      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'max z index', kkh )
+      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'max z index', ikh )
       if (istatus /= NF90_NOERR ) &
-        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'max z index for '//trim(hgroup)//' group' )
+        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'max z index for '//trim(ygroup)//' group' )
     end if
 
-    if ( trim ( htype ) == 'CART' ) then
-      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'averaged on x dimension', icompx )
+    if ( trim ( ytype ) == 'CART' ) then
+      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'averaged on x dimension', Merge( 1, 0, tpbudiachro%licompress ) )
       if (istatus /= NF90_NOERR ) &
-        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'averaged on x dimension '//trim(hgroup)//' group' )
+        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'averaged on x dimension '//trim(ygroup)//' group' )
 
-      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'averaged on y dimension', icompy )
+      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'averaged on y dimension', Merge( 1, 0, tpbudiachro%ljcompress ) )
       if (istatus /= NF90_NOERR ) &
-        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'averaged on y dimension '//trim(hgroup)//' group' )
+        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'averaged on y dimension '//trim(ygroup)//' group' )
     end if
 
-    if ( trim ( htype ) == 'CART' .or. trim ( htype ) == 'MASK' .or. trim ( htype ) == 'SPXY') then
-      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'averaged on z dimension', icompz )
+    if ( trim ( ytype ) == 'CART' .or. trim ( ytype ) == 'MASK' .or. trim ( ytype ) == 'SPXY') then
+      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'averaged on z dimension', Merge( 1, 0, tpbudiachro%lkcompress ) )
       if (istatus /= NF90_NOERR ) &
-        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'averaged on z dimension '//trim(hgroup)//' group' )
+        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'averaged on z dimension '//trim(ygroup)//' group' )
     end if
   end if
 
@@ -820,12 +776,8 @@ do jp = 2, Size( tpfields )
 end do
 
 !Check that if 'CART' and no horizontal compression, parameters are as expected
-if ( htype == 'CART' .and. .not. oicp .and. .not. ojcp ) then
-  if ( okcp ) then
-    icorr = 1
-  else
-    icorr = 0
-  end if
+if ( ytype == 'CART' .and. .not. tpbudiachro%licompress .and. .not. tpbudiachro%ljcompress ) then
+  icorr = Merge( 1, 0, tpbudiachro%lkcompress )
   if ( ( idims + icorr ) /= 3 .and. ( idims + icorr ) /= 4 ) then
     call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4',                                                 &
                     'unexpected number of dimensions for CART without horizontal compression for variable ' &
@@ -838,7 +790,7 @@ if ( htype == 'CART' .and. .not. oicp .and. .not. ojcp ) then
        .or. (       tpfields(1)%ndimlist(2) /= NMNHDIM_BUDGET_CART_NJ              &
               .and. tpfields(1)%ndimlist(2) /= NMNHDIM_BUDGET_CART_NJ_U            &
               .and. tpfields(1)%ndimlist(2) /= NMNHDIM_BUDGET_CART_NJ_V          ) &
-       .or. (       .not. okcp                                                     &
+       .or. (       .not. tpbudiachro%lkcompress                                                     &
               .and. tpfields(1)%ndimlist(3) /= NMNHDIM_BUDGET_CART_LEVEL           &
               .and. tpfields(1)%ndimlist(3) /= NMNHDIM_BUDGET_CART_LEVEL_W       ) &
        .or. ( idims == 4 .and. tpfields(1)%ndimlist(6) /= NMNHDIM_BUDGET_NGROUPS ) ) then
@@ -846,18 +798,13 @@ if ( htype == 'CART' .and. .not. oicp .and. .not. ojcp ) then
                     'unexpected dimensions for CART without horizontal compression for variable ' &
                     // Trim( tpfields(1)%cmnhname ) )
   end if
-
-  if ( .not. Present( kil ) .or. .not. Present( kih ) .or. .not. Present( kjl ) .or. .not. Present( kjh ) ) then
-    call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4',                                                &
-                    'kil or kih or kjl or kjh not provided for variable ' // Trim( tpfields(1)%cmnhname ) )
-  end if
 end if
 
 
 select case ( idims )
   case (0)
      !Remark: [ integer:: ] is a constructor for a zero-size array of integers, [] is not allowed (type can not be determined)
-      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ integer:: ], gsplit, gdistributed )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), ytype, pvar, [ integer:: ], gsplit, gdistributed )
 
   case (1)
 
@@ -865,28 +812,28 @@ select case ( idims )
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
 
-      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 4 ], gsplit, gdistributed )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), ytype, pvar, [ 4 ], gsplit, gdistributed )
     else if ( Any( tpfields(1)%ndimlist(1) == [ NMNHDIM_NI, NMNHDIM_NI_U, NMNHDIM_NI_V, NMNHDIM_BUDGET_CART_NI,     &
                                                 NMNHDIM_BUDGET_CART_NI_U, NMNHDIM_BUDGET_CART_NI_V              ] ) ) then
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
 
-      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 1 ], gsplit, gdistributed )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), ytype, pvar, [ 1 ], gsplit, gdistributed )
 
     else if ( Any( tpfields(1)%ndimlist(2) == [ NMNHDIM_NJ, NMNHDIM_NJ_U, NMNHDIM_NJ_V, NMNHDIM_BUDGET_CART_NJ,     &
                                                 NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NJ_V              ] ) ) then
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 2 ], gsplit, gdistributed )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), ytype, pvar, [ 2 ], gsplit, gdistributed )
     else if ( Any( tpfields(1)%ndimlist(3) == [ NMNHDIM_LEVEL, NMNHDIM_LEVEL_W,                            &
                                                 NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W ] ) ) then
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 3 ], gsplit, gdistributed )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), ytype, pvar, [ 3 ], gsplit, gdistributed )
     else if ( tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS ) then
       do ji = 1, Size( pvar, 6 )
         !Remark: [ integer:: ] is a constructor for a zero-size array of integers, [] is not allowed (type can not be determined)
-        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ integer:: ], gsplit, gdistributed )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), ytype, pvar(:,:,:,:,:,ji:ji), [ integer:: ], gsplit, gdistributed )
       end do
     else
       call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
@@ -902,56 +849,56 @@ select case ( idims )
                                                  NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NJ_V ] )          ) then
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 1, 2 ], gsplit, gdistributed, &
-                                        kil, kih, kjl, kjh, kkl, kkh )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), ytype, pvar, [ 1, 2 ], gsplit, gdistributed, &
+                                        iil, iih, ijl, ijh, ikl, ikh )
     else if (       Any( tpfields(1)%ndimlist(1) == [ NMNHDIM_NI, NMNHDIM_NI_U, NMNHDIM_NI_V, NMNHDIM_BUDGET_CART_NI, &
                                                       NMNHDIM_BUDGET_CART_NI_U, NMNHDIM_BUDGET_CART_NI_V ] )          &
               .and. Any( tpfields(1)%ndimlist(3) == [ NMNHDIM_LEVEL, NMNHDIM_LEVEL_W,                                 &
                                                       NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W ] )      ) then
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 1, 3 ], gsplit, gdistributed )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), ytype, pvar, [ 1, 3 ], gsplit, gdistributed )
     else if (       Any( tpfields(1)%ndimlist(2) == [ NMNHDIM_NJ, NMNHDIM_NJ_U, NMNHDIM_NJ_V, NMNHDIM_BUDGET_CART_NJ, &
                                                       NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NJ_V ] )          &
               .and. Any( tpfields(1)%ndimlist(3) == [ NMNHDIM_LEVEL, NMNHDIM_LEVEL_W,                                 &
                                                       NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W ] )      ) then
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 2, 3 ], gsplit, gdistributed )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), ytype, pvar, [ 2, 3 ], gsplit, gdistributed )
     else if (  Any( tpfields(1)%ndimlist(1) == [ NMNHDIM_BUDGET_CART_NI, NMNHDIM_BUDGET_CART_NI_U, NMNHDIM_BUDGET_CART_NI_V ] ) &
               .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS ) then
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 1 ], gsplit, gdistributed )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), ytype, pvar(:,:,:,:,:,ji:ji), [ 1 ], gsplit, gdistributed )
       end do
     else if (  Any( tpfields(1)%ndimlist(2) == [ NMNHDIM_BUDGET_CART_NJ, NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NJ_V ] ) &
               .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS ) then
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 2 ], gsplit, gdistributed )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), ytype, pvar(:,:,:,:,:,ji:ji), [ 2 ], gsplit, gdistributed )
       end do
     else if (       tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL     &
        .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME &
                .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) ) then
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 3, 4 ], gsplit, gdistributed )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), ytype, pvar, [ 3, 4 ], gsplit, gdistributed )
     else if ( Any( tpfields(1)%ndimlist(3) == [ NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W ] ) &
               .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS ) then
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 3 ], gsplit, gdistributed )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), ytype, pvar(:,:,:,:,:,ji:ji), [ 3 ], gsplit, gdistributed )
       end do
     else if (  tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_TIME .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_MASK_NBUMASK ) then
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 4, 5 ], gsplit, gdistributed )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), ytype, pvar, [ 4, 5 ], gsplit, gdistributed )
     else if (  (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME &
                  .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
          .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_LES_SV       ) then
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 4, 5 ], gsplit, gdistributed )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), ytype, pvar, [ 4, 5 ], gsplit, gdistributed )
     else if (  tpfields(1)%ndimlist(4) == NMNHDIM_FLYER_TIME &
          .and. tpfields(1)%ndimlist(6) == NMNHDIM_FLYER_PROC ) then
       !Correspond to FLYER_DIACHRO
@@ -964,14 +911,14 @@ select case ( idims )
 
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 4 ], gsplit, gdistributed )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), ytype, pvar(:,:,:,:,:,ji:ji), [ 4 ], gsplit, gdistributed )
       end do
     else if (  tpfields(1)%ndimlist(4) == NMNHDIM_SERIES_TIME &
          .and. tpfields(1)%ndimlist(6) == NMNHDIM_SERIES_PROC ) then
       !Correspond to WRITE_SERIES_n
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 4 ], gsplit, gdistributed )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), ytype, pvar(:,:,:,:,:,ji:ji), [ 4 ], gsplit, gdistributed )
       end do
     else
       call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
@@ -989,15 +936,15 @@ select case ( idims )
                                                  NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W ] )      ) then
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 1, 2, 3 ], gsplit, gdistributed, &
-                                        kil, kih, kjl, kjh, kkl, kkh )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), ytype, pvar, [ 1, 2, 3 ], gsplit, gdistributed, &
+                                        iil, iih, ijl, ijh, ikl, ikh )
     else if (       Any(tpfields(1)%ndimlist(1) == [ NMNHDIM_BUDGET_CART_NI, NMNHDIM_BUDGET_CART_NI_U, NMNHDIM_BUDGET_CART_NI_V ]) &
               .and. Any(tpfields(1)%ndimlist(2) == [ NMNHDIM_BUDGET_CART_NJ, NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NJ_V ]) &
               .and.     tpfields(1)%ndimlist(6) ==   NMNHDIM_BUDGET_NGROUPS                                                   ) then
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 1, 2 ], gsplit, gdistributed, &
-                                          kil, kih, kjl, kjh, kkl, kkh )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), ytype, pvar(:,:,:,:,:,ji:ji), [ 1, 2 ], gsplit, gdistributed, &
+                                          iil, iih, ijl, ijh, ikl, ikh )
       end do
     else if (       Any ( tpfields(1)%ndimlist(1) == [ NMNHDIM_BUDGET_CART_NI, NMNHDIM_BUDGET_CART_NI_U,          &
                                                        NMNHDIM_BUDGET_CART_NI_V ] )                               &
@@ -1005,7 +952,7 @@ select case ( idims )
               .and.       tpfields(1)%ndimlist(6) ==   NMNHDIM_BUDGET_NGROUPS                                     ) then
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 1, 3 ], gsplit, gdistributed )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), ytype, pvar(:,:,:,:,:,ji:ji), [ 1, 3 ], gsplit, gdistributed )
       end do
     else if (       Any ( tpfields(1)%ndimlist(2) == [ NMNHDIM_BUDGET_CART_NJ, NMNHDIM_BUDGET_CART_NJ_U,          &
                                                        NMNHDIM_BUDGET_CART_NJ_V ] )                               &
@@ -1013,7 +960,7 @@ select case ( idims )
               .and.       tpfields(1)%ndimlist(6) ==   NMNHDIM_BUDGET_NGROUPS                                     ) then
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 2, 3 ], gsplit, gdistributed )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), ytype, pvar(:,:,:,:,:,ji:ji), [ 2, 3 ], gsplit, gdistributed )
       end do
     else if (         (      tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_MASK_LEVEL     &
                         .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_MASK_LEVEL_W ) &
@@ -1022,8 +969,8 @@ select case ( idims )
       !Correspond to Store_one_budget_rho (MASK)
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 3, 4, 5 ], gsplit, gdistributed, &
-                                        kil, kih, kjl, kjh, kkl, kkh )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), ytype, pvar, [ 3, 4, 5 ], gsplit, gdistributed, &
+                                        iil, iih, ijl, ijh, ikl, ikh )
     else if (              tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL      &
               .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
                       .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
@@ -1035,7 +982,7 @@ select case ( idims )
 
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 3, 4 ], gsplit, gdistributed )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), ytype, pvar(:,:,:,:,:,ji:ji), [ 3, 4 ], gsplit, gdistributed )
       end do
     else if (       tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL     &
        .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME &
@@ -1043,7 +990,7 @@ select case ( idims )
        .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_TERM      ) then
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 3, 4 ], gsplit, gdistributed )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), ytype, pvar(:,:,:,:,:,ji:ji), [ 3, 4 ], gsplit, gdistributed )
       end do
     else if (              tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL      &
               .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
@@ -1051,24 +998,24 @@ select case ( idims )
               .and.        tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_LES_SV         ) then
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 3, 4, 5 ], gsplit, gdistributed, &
-                                        kil, kih, kjl, kjh, kkl, kkh )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), ytype, pvar, [ 3, 4, 5 ], gsplit, gdistributed, &
+                                        iil, iih, ijl, ijh, ikl, ikh )
     else if (              tpfields(1)%ndimlist(1) == NMNHDIM_SPECTRA_2PTS_NI       &
               .and.        tpfields(1)%ndimlist(3) == NMNHDIM_SPECTRA_LEVEL         &
               .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
                       .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) ) then
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 1, 3, 4 ], gsplit, gdistributed, &
-                                        kil, kih, kjl, kjh, kkl, kkh )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), ytype, pvar, [ 1, 3, 4 ], gsplit, gdistributed, &
+                                        iil, iih, ijl, ijh, ikl, ikh )
     else if (       tpfields(1)%ndimlist(2) == NMNHDIM_SPECTRA_2PTS_NJ                   &
               .and. tpfields(1)%ndimlist(3) == NMNHDIM_SPECTRA_LEVEL                &
               .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
                       .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) ) then
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 2, 3, 4 ], gsplit, gdistributed, &
-                                        kil, kih, kjl, kjh, kkl, kkh )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), ytype, pvar, [ 2, 3, 4 ], gsplit, gdistributed, &
+                                        iil, iih, ijl, ijh, ikl, ikh )
     else if ( ( tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL .or. tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL_W ) &
          .and. tpfields(1)%ndimlist(4) == NMNHDIM_FLYER_TIME &
          .and. tpfields(1)%ndimlist(6) == NMNHDIM_FLYER_PROC ) then
@@ -1082,7 +1029,7 @@ select case ( idims )
 
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 3, 4 ], gsplit, gdistributed )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), ytype, pvar(:,:,:,:,:,ji:ji), [ 3, 4 ], gsplit, gdistributed )
       end do
     else if (  ( tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL .or. tpfields(1)%ndimlist(3) == NMNHDIM_LEVEL_W ) &
          .and. tpfields(1)%ndimlist(4) == NMNHDIM_PROFILER_TIME &
@@ -1090,7 +1037,7 @@ select case ( idims )
       !Correspond to PROFILER_DIACHRO_n
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 3, 4 ], gsplit, gdistributed )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), ytype, pvar(:,:,:,:,:,ji:ji), [ 3, 4 ], gsplit, gdistributed )
       end do
     else if (  ( tpfields(1)%ndimlist(3) == NMNHDIM_SERIES_LEVEL .or. tpfields(1)%ndimlist(3) == NMNHDIM_SERIES_LEVEL_W ) &
          .and. tpfields(1)%ndimlist(4) == NMNHDIM_SERIES_TIME &
@@ -1098,7 +1045,7 @@ select case ( idims )
       !Correspond to PROFILER_DIACHRO_n
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 3, 4 ], gsplit, gdistributed )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), ytype, pvar(:,:,:,:,:,ji:ji), [ 3, 4 ], gsplit, gdistributed )
       end do
     else if (  ( tpfields(1)%ndimlist(1) == NMNHDIM_NI .or. tpfields(1)%ndimlist(1) == NMNHDIM_NI_U )      &
          .and. tpfields(1)%ndimlist(4) == NMNHDIM_SERIES_TIME &
@@ -1106,21 +1053,21 @@ select case ( idims )
       !Correspond to PROFILER_DIACHRO_n
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 1, 4 ], gsplit, gdistributed )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), ytype, pvar(:,:,:,:,:,ji:ji), [ 1, 4 ], gsplit, gdistributed )
       end do
     else if (  ( tpfields(1)%ndimlist(2) == NMNHDIM_NJ .or. tpfields(1)%ndimlist(2) == NMNHDIM_NJ_U )      &
          .and. tpfields(1)%ndimlist(4) == NMNHDIM_SERIES_TIME &
          .and. tpfields(1)%ndimlist(6) == NMNHDIM_SERIES_PROC ) then
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 2, 4 ], gsplit, gdistributed )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), ytype, pvar(:,:,:,:,:,ji:ji), [ 2, 4 ], gsplit, gdistributed )
       end do
     else if (       tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_TIME         &
               .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_MASK_NBUMASK &
               .and. tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS      ) then
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 4, 5 ], gsplit, gdistributed )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), ytype, pvar(:,:,:,:,:,ji:ji), [ 4, 5 ], gsplit, gdistributed )
       end do
     else
       call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
@@ -1136,8 +1083,8 @@ select case ( idims )
       !Correspond to Store_one_budget (CART)
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 1, 2, 3 ], gsplit, gdistributed, &
-                                          kil, kih, kjl, kjh, kkl, kkh )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), ytype, pvar(:,:,:,:,:,ji:ji), [ 1, 2, 3 ], gsplit, gdistributed, &
+                                          iil, iih, ijl, ijh, ikl, ikh )
       end do
     elseif (  (        tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_MASK_LEVEL     &
                   .or. tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_MASK_LEVEL_W ) &
@@ -1147,8 +1094,8 @@ select case ( idims )
       !Correspond to Store_one_budget (MASK)
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 3, 4, 5 ], gsplit, gdistributed, &
-                                          kil, kih, kjl, kjh, kkl, kkh )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), ytype, pvar(:,:,:,:,:,ji:ji), [ 3, 4, 5 ], gsplit, gdistributed, &
+                                          iil, iih, ijl, ijh, ikl, ikh )
       end do
     else if (              tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL      &
               .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
@@ -1162,8 +1109,8 @@ select case ( idims )
 
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 3, 4, 5 ], gsplit, gdistributed, &
-                                          kil, kih, kjl, kjh, kkl, kkh )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), ytype, pvar(:,:,:,:,:,ji:ji), [ 3, 4, 5 ], gsplit, gdistributed, &
+                                          iil, iih, ijl, ijh, ikl, ikh )
       end do
     else if (              tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL      &
               .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
@@ -1172,8 +1119,8 @@ select case ( idims )
        .and.               tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_TERM           ) then
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
-        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 3, 4, 5 ], gsplit, gdistributed, &
-                                          kil, kih, kjl, kjh, kkl, kkh )
+        call Diachro_one_field_write_nc4( tzfile, tpfields(ji), ytype, pvar(:,:,:,:,:,ji:ji), [ 3, 4, 5 ], gsplit, gdistributed, &
+                                          iil, iih, ijl, ijh, ikl, ikh )
       end do
     else if (             tpfields(1)%ndimlist(1) == NMNHDIM_SPECTRA_SPEC_NI       &
              .and.        tpfields(1)%ndimlist(3) == NMNHDIM_SPECTRA_LEVEL         &
@@ -1183,7 +1130,7 @@ select case ( idims )
       !Correspond to LES_DIACHRO_SPEC
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 1, 3, 4, 5 ], gsplit, gdistributed )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), ytype, pvar, [ 1, 3, 4, 5 ], gsplit, gdistributed )
     else if (              tpfields(1)%ndimlist(2) == NMNHDIM_SPECTRA_SPEC_NJ       &
               .and.        tpfields(1)%ndimlist(3) == NMNHDIM_SPECTRA_LEVEL         &
               .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
@@ -1192,7 +1139,7 @@ select case ( idims )
       !Correspond to LES_DIACHRO_SPEC
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
-      call Diachro_one_field_write_nc4( tzfile, tpfields(1), htype, pvar, [ 2, 3, 4, 5 ], gsplit, gdistributed )
+      call Diachro_one_field_write_nc4( tzfile, tpfields(1), ytype, pvar, [ 2, 3, 4, 5 ], gsplit, gdistributed )
     else
       call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                       'case not yet implemented (variable '//trim(tpfields(1)%cmnhname)//')' )
@@ -1204,7 +1151,7 @@ select case ( idims )
 
   case default
     do ji = 1, Size( pvar, 6 )
-      call Diachro_one_field_write_nc4( tzfile, tpfields(ji), htype, pvar(:,:,:,:,:,ji:ji), [ 1, 2, 3, 4, 5 ], &
+      call Diachro_one_field_write_nc4( tzfile, tpfields(ji), ytype, pvar(:,:,:,:,:,ji:ji), [ 1, 2, 3, 4, 5 ], &
                                         gsplit, gdistributed )
     end do
 

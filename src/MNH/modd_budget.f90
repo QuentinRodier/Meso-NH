@@ -59,8 +59,9 @@
 !  P. Wautelet 08/12/2020: add nbusubwrite and nbutotwrite
 !  P. Wautelet 11/01/2021: remove nbuwrnb (replaced by nbusubwrite)
 !  P. Wautelet 14/01/2021: change xbusurf type to integer (+ rename it to nbusurf)
-!  P. Wautelet 03/02/2021: budgets: add new source if LIMA splitting: CORR2
-!  P. Wautelet 02/03/2021: budgets: add terms for blowing snow
+!  P. Wautelet 03/02/2021: add new source if LIMA splitting: CORR2
+!  P. Wautelet 02/03/2021: add terms for blowing snow
+!  P. Wautelet 03/03/2021: add tbudiachrometadata type (useful to pass more information to Write_diachro)
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -131,6 +132,21 @@ type, extends( tfield_metadata_base ) :: tburhodata
   real, dimension(:,:,:), allocatable :: xdata ! Array to store the budget data
 end type tburhodata
 
+type :: tbudiachrometadata
+  character(len=NBUNAMELGTMAX)  :: cgroupname  = 'not set'
+  character(len=NBUNAMELGTMAX)  :: cname       = 'not set'
+  character(len=NCOMMENTLGTMAX) :: ccomment    = 'not set'
+  character(len=NBUNAMELGTMAX)  :: ctype       = 'not set'
+  logical :: licompress = .false.
+  logical :: ljcompress = .false.
+  logical :: lkcompress = .false.
+  integer :: nil = -1
+  integer :: nih = -1
+  integer :: njl = -1
+  integer :: njh = -1
+  integer :: nkl = -1
+  integer :: nkh = -1
+end type tbudiachrometadata
 type(tbudgetdata), dimension(:), allocatable, save :: tbudgets
 type(tburhodata),                pointer,     save :: tburhodj => null() ! Budget array for rhodj used inside some tbudgets
 

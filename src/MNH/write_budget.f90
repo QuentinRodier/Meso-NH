@@ -404,7 +404,7 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
                                     nbuil, nbuih, nbujl, nbujh, nbukl, nbukh,                     &
                                     nbuimax, nbuimax_ll, nbujmax, nbujmax_ll, nbukmax, nbutshift, &
                                     nbumask, nbusubwrite,                                         &
-                                    tburhodata,                                                   &
+                                    tbudiachrometadata, tburhodata,                               &
                                     NBUDGET_RHO, NBUDGET_U, NBUDGET_V, NBUDGET_W
   use modd_field,             only: NMNHDIM_BUDGET_CART_NI,    NMNHDIM_BUDGET_CART_NJ,   NMNHDIM_BUDGET_CART_NI_U, &
                                     NMNHDIM_BUDGET_CART_NJ_U,  NMNHDIM_BUDGET_CART_NI_V, NMNHDIM_BUDGET_CART_NJ_V, &
@@ -434,6 +434,7 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
 
   character(len=4)              :: ybutype
   character(len=:), allocatable :: ygroup_name
+  type(tbudiachrometadata)      :: tzbudiachro
   type(tburhodata)              :: tzfield
 
   call Print_msg( NVERB_DEBUG, 'BUD', 'Store_one_budget_rho', 'called for '//trim( tprhodj%cmnhname ) )
@@ -554,9 +555,21 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
     tzfield%ndimlist(:) = NMNHDIM_UNKNOWN
   end if
 
-  call Write_diachro( tpdiafile, [ tzfield ], ygroup_name, ybutype, tpdates, prhodjn,              &
-                      oicp = lbu_icp, ojcp = lbu_jcp, okcp = lbu_kcp,                              &
-                      kil = nbuil, kih = nbuih, kjl = nbujl, kjh = nbujh, kkl = nbukl, kkh = nbukh, osplit = .true. )
+  tzbudiachro%cgroupname = ygroup_name
+  tzbudiachro%cname      = tprhodj%cmnhname
+  tzbudiachro%ccomment   = tprhodj%ccomment
+  tzbudiachro%ctype      = ybutype
+  tzbudiachro%licompress = lbu_icp
+  tzbudiachro%ljcompress = lbu_jcp
+  tzbudiachro%lkcompress = lbu_kcp
+  tzbudiachro%nil        = nbuil
+  tzbudiachro%nih        = nbuih
+  tzbudiachro%njl        = nbujl
+  tzbudiachro%njh        = nbujh
+  tzbudiachro%nkl        = nbukl
+  tzbudiachro%nkh        = nbukh
+
+  call Write_diachro( tpdiafile, tzbudiachro, [ tzfield ], tpdates, prhodjn, osplit = .true. )
 
 end subroutine Store_one_budget_rho
 
@@ -569,7 +582,7 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
                                     nbumask, nbusubwrite,                                                                         &
                                     NBUDGET_U, NBUDGET_V, NBUDGET_W, NBUDGET_TH, NBUDGET_TKE, NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, &
                                     NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, NBUDGET_SV1,                                  &
-                                    tbudgetdata, tbugroupdata
+                                    tbudgetdata, tbudiachrometadata, tbugroupdata
   use modd_field,             only: NMNHDIM_BUDGET_CART_NI,    NMNHDIM_BUDGET_CART_NJ,   NMNHDIM_BUDGET_CART_NI_U, &
                                     NMNHDIM_BUDGET_CART_NJ_U,  NMNHDIM_BUDGET_CART_NI_V, NMNHDIM_BUDGET_CART_NJ_V, &
                                     NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W,                        &
@@ -604,6 +617,7 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
   integer                                                 :: jsv
   real,               dimension(:),           allocatable :: zconvert   ! unit conversion coefficient
   real,               dimension(:,:,:,:,:,:), allocatable :: zworkt
+  type(tbudiachrometadata)                                :: tzbudiachro
   type(tbugroupdata), dimension(:),           allocatable :: tzfields
 
   call Print_msg( NVERB_DEBUG, 'BUD', 'Store_one_budget', 'called for '//trim( tpbudget%cname ) )
@@ -786,10 +800,21 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
     end if
   end do
 
-  call Write_diachro( tpdiafile, tzfields, ygroup_name, ybutype, tpdates, zworkt,                   &
-                      oicp = lbu_icp, ojcp = lbu_jcp, okcp = lbu_kcp,                               &
-                      kil = nbuil, kih = nbuih, kjl = nbujl, kjh = nbujh, kkl = nbukl, kkh = nbukh, &
-                      osplit = .true. )
+  tzbudiachro%cgroupname = ygroup_name
+  tzbudiachro%cname      = tpbudget%cname
+  tzbudiachro%ccomment   = tpbudget%ccomment
+  tzbudiachro%ctype      = ybutype
+  tzbudiachro%licompress = lbu_icp
+  tzbudiachro%ljcompress = lbu_jcp
+  tzbudiachro%lkcompress = lbu_kcp
+  tzbudiachro%nil        = nbuil
+  tzbudiachro%nih        = nbuih
+  tzbudiachro%njl        = nbujl
+  tzbudiachro%njh        = nbujh
+  tzbudiachro%nkl        = nbukl
+  tzbudiachro%nkh        = nbukh
+
+  call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpdates, zworkt, osplit = .true. )
 
 end subroutine Store_one_budget
 

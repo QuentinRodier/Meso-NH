@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -62,12 +62,14 @@ END MODULE MODI_WRITE_SERIES_n
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !  P. Wautelet 09/10/2020: Write_diachro: use new datatype tpfields
+!  P. Wautelet 03/03/2021: budgets: add tbudiachrometadata type (useful to pass more information to Write_diachro)
 !-------------------------------------------------------------------------------
 !
 !
 !*    0. Declaration
 !     --------------
-! 
+!
+use modd_budget,        only: tbudiachrometadata
 use modd_field,         only: NMNHDIM_NI, NMNHDIM_NI_U,                                                               &
                               NMNHDIM_SERIES_LEVEL, NMNHDIM_SERIES_LEVEL_W, NMNHDIM_SERIES_TIME, NMNHDIM_SERIES_PROC, &
                               NMNHDIM_UNUSED,                                                                         &
@@ -114,6 +116,7 @@ INTEGER  :: INFO_ll   ! Return code of FM-routines
 INTEGER :: ISER,INAV
 REAL :: ZSIZEHB
 CHARACTER(LEN=100) :: YMSG
+type(tbudiachrometadata)                              :: tzbudiachro
 type(tfield_metadata_base), dimension(:), allocatable :: tzfields
 !----------------------------------------------------------------------------
 !
@@ -256,10 +259,22 @@ tzfields(:)%ndimlist(4) = NMNHDIM_SERIES_TIME
 tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_SERIES_PROC
 
-call Write_diachro( tpdiafile, tzfields, 'TSERIES', 'CART', tpsdates(1:nsnbstept), &
-                    xsseries1(1:1,1:1,1:1,1:nsnbstept,1:1,:),                      &
-                    oicp = .true., ojcp = .true., okcp = .true.,                   &
-                    kil = 1, kih = 1, kjl = 1, kjh = 1, kkl = 1, kkh = 1           )
+tzbudiachro%cgroupname = 'TSERIES'
+tzbudiachro%cname      = ''
+tzbudiachro%ccomment   = ''
+tzbudiachro%ctype      = 'CART'
+tzbudiachro%licompress = .true.
+tzbudiachro%ljcompress = .true.
+tzbudiachro%lkcompress = .true.
+tzbudiachro%nil        = 1
+tzbudiachro%nih        = 1
+tzbudiachro%njl        = 1
+tzbudiachro%njh        = 1
+tzbudiachro%nkl        = 1
+tzbudiachro%nkh        = 1
+
+call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpsdates(1:nsnbstept), &
+                    xsseries1(1:1,1:1,1:1,1:nsnbstept,1:1,:)                 )
 
 deallocate( tzfields )
 !
@@ -336,10 +351,22 @@ tzfields(:)%ndimlist(4) = NMNHDIM_SERIES_TIME
 tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_SERIES_PROC
 
-call Write_diachro( tpdiafile, tzfields, 'ZTSERIES', 'CART', tpsdates(1:nsnbstept), &
-                    xsseries2(1:1,1:1,1:ikmax,1:nsnbstept,1:1,:),                   &
-                    oicp = .true., ojcp = .true., okcp = .false.,                   &
-                    kil = 1, kih = 1, kjl = 1, kjh = 1, kkl = ikb, kkh = ike        )
+tzbudiachro%cgroupname = 'ZTSERIES'
+tzbudiachro%cname      = ''
+tzbudiachro%ccomment   = ''
+tzbudiachro%ctype      = 'CART'
+tzbudiachro%licompress = .true.
+tzbudiachro%ljcompress = .true.
+tzbudiachro%lkcompress = .false.
+tzbudiachro%nil        = 1
+tzbudiachro%nih        = 1
+tzbudiachro%njl        = 1
+tzbudiachro%njh        = 1
+tzbudiachro%nkl        = ikb
+tzbudiachro%nkh        = ike
+
+call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpsdates(1:nsnbstept), &
+                    xsseries2(1:1,1:1,1:ikmax,1:nsnbstept,1:1,:)             )
 
 deallocate( tzfields )
 !
@@ -420,10 +447,22 @@ DO JS=1,NBJSLICE
   tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
   tzfields(:)%ndimlist(6) = NMNHDIM_SERIES_PROC
 
-  call Write_diachro( tpdiafile, tzfields, ygroup, 'CART', tpsdates(1:nsnbstept),   &
-                      zseries3_ll(1:iiu_ll, 1:1, 1:1, 1:nsnbstept, 1:1, isb1:isb2), &
-                      oicp = .false., ojcp = .true., okcp = .true.,                 &
-                      kil = 1, kih = iiu_ll, kjl = 1, kjh = 1, kkl = 1, kkh = 1     )
+  tzbudiachro%cgroupname = ygroup
+  tzbudiachro%cname      = ''
+  tzbudiachro%ccomment   = ''
+  tzbudiachro%ctype      = 'SSOL'
+  tzbudiachro%licompress = .false.
+  tzbudiachro%ljcompress = .true.
+  tzbudiachro%lkcompress = .true.
+  tzbudiachro%nil        = 1
+  tzbudiachro%nih        = iiu_ll
+  tzbudiachro%njl        = 1
+  tzbudiachro%njh        = 1
+  tzbudiachro%nkl        = 1
+  tzbudiachro%nkh        = 1
+
+  call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpsdates(1:nsnbstept),     &
+                      zseries3_ll(1:iiu_ll, 1:1, 1:1, 1:nsnbstept, 1:1, isb1:isb2) )
 
   deallocate( tzfields )
 END DO

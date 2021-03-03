@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -62,6 +62,7 @@ END MODULE MODI_WRITE_PROFILER_n
 !  J. Escobar  16/08/2018: From Pierre & Maud , correction use CNAMES(JSV-NSV_CHEMBEG+1)
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !  P. Wautelet 09/10/2020: Write_diachro: use new datatype tpfields
+!  P. Wautelet 03/03/2021: budgets: add tbudiachrometadata type (useful to pass more information to Write_diachro)
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -125,7 +126,8 @@ CONTAINS
 !----------------------------------------------------------------------------
 SUBROUTINE PROFILER_DIACHRO_n(TPROFILER,II)
 
-use modd_field, only:  NMNHDIM_LEVEL, NMNHDIM_PROFILER_TIME, NMNHDIM_PROFILER_PROC, NMNHDIM_UNUSED, &
+use modd_budget, only: tbudiachrometadata
+use modd_field,  only: NMNHDIM_LEVEL, NMNHDIM_PROFILER_TIME, NMNHDIM_PROFILER_PROC, NMNHDIM_UNUSED, &
                        tfield_metadata_base, TYPEREAL
 
 TYPE(PROFILER),     INTENT(IN)       :: TPROFILER
@@ -151,6 +153,7 @@ INTEGER :: JSV      ! loop counter
 INTEGER :: IKU, IK  ! loop counter
 CHARACTER(LEN=2)  :: INDICE
 INTEGER           :: I
+type(tbudiachrometadata)                              :: tzbudiachro
 type(tfield_metadata_base), dimension(:), allocatable :: tzfields
 !
 !----------------------------------------------------------------------------
@@ -649,10 +652,21 @@ tzfields(:)%ndimlist(4) = NMNHDIM_PROFILER_TIME
 tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_PROFILER_PROC
 
-call Write_diachro( tpdiafile, tzfields, ygroup, "CART", tprofiler%tpdates,     &
-                      zw6,                                                           &
-                    oicp = .true., ojcp = .true., okcp = .false.,                &
-                    kil = 1, kih = 1, kjl = 1, kjh = 1, kkl = 1, kkh = iku       )
+tzbudiachro%cgroupname = ygroup
+tzbudiachro%cname      = ''
+tzbudiachro%ccomment   = ''
+tzbudiachro%ctype      = 'CART'
+tzbudiachro%licompress = .true.
+tzbudiachro%ljcompress = .true.
+tzbudiachro%lkcompress = .false.
+tzbudiachro%nil        = 1
+tzbudiachro%nih        = 1
+tzbudiachro%njl        = 1
+tzbudiachro%njh        = 1
+tzbudiachro%nkl        = 1
+tzbudiachro%nkh        = iku
+
+call Write_diachro( tpdiafile, tzbudiachro, tzfields, tprofiler%tpdates, zw6 )
 
 deallocate( tzfields )
 
