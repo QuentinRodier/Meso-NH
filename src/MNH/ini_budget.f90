@@ -206,6 +206,7 @@ end subroutine Budget_preallocate
 !  P. Wautelet 10/02/2021: budgets: add missing sources for NSV_C2R2BEG+3 budget
 !  P. Wautelet 11/02/2021: budgets: add missing term SCAV for NSV_LIMA_SCAVMASS budget
 !  P. Wautelet 02/03/2021: budgets: add terms for blowing snow
+!  P. Wautelet 04/03/2021: budgets: add terms for drag due to buildings
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -217,6 +218,7 @@ use modd_blowsnow_n,    only: lsnowsubl
 use modd_budget
 use modd_ch_aerosol,    only: lorilam
 use modd_conf,          only: l1d, lcartesian, lforcing, lthinshell, nmodel
+use modd_dragbldg_n,    only: ldragbldg
 use modd_dust,          only: ldust
 use modd_dyn,           only: lcorio, xseglen
 use modd_dyn_n,         only: xtstep
@@ -533,7 +535,7 @@ if ( lbu_ru ) then
 
   !Allocate all basic source terms (used or not)
   !The size should be large enough (bigger than necessary is OK)
-  isourcesmax = 18
+  isourcesmax = 19
   tbudgets(NBUDGET_U)%nsourcesmax = isourcesmax
   allocate( tbudgets(NBUDGET_U)%tsources(isourcesmax) )
 
@@ -608,6 +610,11 @@ if ( lbu_ru ) then
   tzsource%clongname = 'drag force'
   call Budget_source_add( tbudgets(NBUDGET_U), tzsource, gcond, ndragu )
 
+  gcond = ldragbldg
+  tzsource%cmnhname  = 'DRAGB'
+  tzsource%clongname = 'drag force due to buildings'
+  call Budget_source_add( tbudgets(NBUDGET_U), tzsource, gcond, ndragbu )
+
   gcond = hturb == 'TKEL'
   tzsource%cmnhname  = 'VTURB'
   tzsource%clongname = 'vertical turbulent diffusion'
@@ -659,7 +666,7 @@ if ( lbu_rv ) then
 
   !Allocate all basic source terms (used or not)
   !The size should be large enough (bigger than necessary is OK)
-  isourcesmax = 18
+  isourcesmax = 19
   tbudgets(NBUDGET_V)%nsourcesmax = isourcesmax
   allocate( tbudgets(NBUDGET_V)%tsources(isourcesmax) )
 
@@ -733,6 +740,11 @@ if ( lbu_rv ) then
   tzsource%cmnhname  = 'DRAG'
   tzsource%clongname = 'drag force'
   call Budget_source_add( tbudgets(NBUDGET_V), tzsource, gcond, ndragv )
+
+  gcond = ldragbldg
+  tzsource%cmnhname  = 'DRAGB'
+  tzsource%clongname = 'drag force due to buildings'
+  call Budget_source_add( tbudgets(NBUDGET_V), tzsource, gcond, ndragbv )
 
   gcond = hturb == 'TKEL'
   tzsource%cmnhname  = 'VTURB'
@@ -1199,7 +1211,7 @@ if ( lbu_rtke ) then
 
   !Allocate all basic source terms (used or not)
   !The size should be large enough (bigger than necessary is OK)
-  isourcesmax = 13
+  isourcesmax = 14
   tbudgets(NBUDGET_TKE)%nsourcesmax = isourcesmax
   allocate( tbudgets(NBUDGET_TKE)%tsources(isourcesmax) )
 
@@ -1253,6 +1265,11 @@ if ( lbu_rtke ) then
   tzsource%cmnhname  = 'DRAG'
   tzsource%clongname = 'drag force'
   call Budget_source_add( tbudgets(NBUDGET_TKE), tzsource, gcond, ndragtke )
+
+  gcond = ldragbldg
+  tzsource%cmnhname  = 'DRAGB'
+  tzsource%clongname = 'drag force due to buildings'
+  call Budget_source_add( tbudgets(NBUDGET_TKE), tzsource, gcond, ndragbtke )
 
   gcond = hturb == 'TKEL'
   tzsource%cmnhname  = 'DP'

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2019-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2019-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -51,19 +51,26 @@ SUBROUTINE DRAG_BLD(PTSTEP, PUT, PVT, PTKET, PRHODJ, PZZ, PRUS, PRVS, PRTKES )
   !!    MODIFICATIONS
   !!    -------------
   !!      Original    09/2019
+  !  P. Wautelet 04/03/2021: budgets: add DRAGB source term
   !!---------------------------------------------------------------
   !
   !*       0.    DECLARATIONS
   !              ------------
   !
+  use modd_budget,     only: lbudget_u, lbudget_v, lbudget_tke, &
+                             NBUDGET_U, NBUDGET_V, NBUDGET_TKE, &
+                             tbudgets
   USE MODD_CONF
   USE MODD_CST
   USE MODD_DRAGBLDG_n
   USE MODD_DYN
   USE MODD_DYN_n
   USE MODD_GROUND_PAR
-  USE MODD_PGDFIELDS
   USE MODD_NSV
+  USE MODD_PGDFIELDS
+
+  use mode_budget,     only: Budget_store_init, Budget_store_end
+
   USE MODI_MNHGET_SURF_PARAM_n
   USE MODI_SHUMAN
   !
@@ -103,6 +110,10 @@ SUBROUTINE DRAG_BLD(PTSTEP, PUT, PVT, PTKET, PRHODJ, PZZ, PRUS, PRVS, PRTKES )
   !
   !*       0.3     Initialization
   !
+  if ( lbudget_u   ) call Budget_store_init( tbudgets(NBUDGET_U  ), 'DRAGB', prus  (:, :, :) )
+  if ( lbudget_v   ) call Budget_store_init( tbudgets(NBUDGET_V  ), 'DRAGB', prvs  (:, :, :) )
+  if ( lbudget_tke ) call Budget_store_init( tbudgets(NBUDGET_TKE), 'DRAGB', prtkes(:, :, :) )
+
   IIU = SIZE(PUT,1)
   IJU = SIZE(PUT,2)
   IKU = SIZE(PUT,3)
@@ -232,5 +243,9 @@ SUBROUTINE DRAG_BLD(PTSTEP, PUT, PVT, PTKET, PRHODJ, PZZ, PRUS, PRVS, PRTKES )
      PTSTEP * ZCDRAG(:,:,:) * ZDENSITY(:,:,:) * (SQRT( ZUT_SCAL(:,:,:)**2 + ZVT_SCAL(:,:,:)**2 ))**3
   !
   PRTKES(:,:,:) = PRTKES(:,:,:) + (ZTKES(:,:,:)-ZTKET(:,:,:))*PRHODJ(:,:,:)/PTSTEP
-  !
+
+  if ( lbudget_u   ) call Budget_store_end( tbudgets(NBUDGET_U  ), 'DRAGB', prus  (:, :, :) )
+  if ( lbudget_v   ) call Budget_store_end( tbudgets(NBUDGET_V  ), 'DRAGB', prvs  (:, :, :) )
+  if ( lbudget_tke ) call Budget_store_end( tbudgets(NBUDGET_TKE), 'DRAGB', prtkes(:, :, :) )
+
 END SUBROUTINE DRAG_BLD

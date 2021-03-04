@@ -62,6 +62,7 @@
 !  P. Wautelet 03/02/2021: add new source if LIMA splitting: CORR2
 !  P. Wautelet 02/03/2021: add terms for blowing snow
 !  P. Wautelet 03/03/2021: add tbudiachrometadata type (useful to pass more information to Write_diachro)
+!  P. Wautelet 04/03/2021: add terms for drag due to buildings
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -249,6 +250,7 @@ INTEGER, SAVE :: NDRAGU  = 0 ! vegetation drag
 INTEGER, SAVE :: NMAFLU  = 0 ! mass flux
 INTEGER, SAVE :: NPRESU  = 0 ! pressure term
 INTEGER, SAVE :: NVISCU  = 0 ! viscosity
+INTEGER, SAVE :: NDRAGBU = 0 ! buildings drag
 !
 !      Allowed processes for the budget of RV (wind component along y)
 !                                                  
@@ -271,6 +273,7 @@ INTEGER, SAVE :: NDRAGV  = 0 ! vegetation drag
 INTEGER, SAVE :: NMAFLV  = 0 ! mass flux
 INTEGER, SAVE :: NPRESV  = 0 ! pressure term
 INTEGER, SAVE :: NVISCV  = 0 ! viscosity
+INTEGER, SAVE :: NDRAGBV = 0 ! buildings drag
 !
 !      Allowed processes for the budget of RW (wind vertical component)
 !                                                  
@@ -367,6 +370,7 @@ INTEGER, SAVE :: NTPTKE   = 0 ! thermal production of TKE
 INTEGER, SAVE :: NDRAGTKE = 0 ! vegetation drag
 INTEGER, SAVE :: NDISSTKE = 0 ! dissipation of TKE
 INTEGER, SAVE :: NTRTKE   = 0 ! turbulent transport of TKE
+INTEGER, SAVE :: NDRAGBTKE = 0 ! buildings drag
 !
 !
 !      Allowed processes for the budget of moist variable RRV (water vapor)
