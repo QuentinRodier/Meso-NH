@@ -983,14 +983,18 @@ if ( oavg ) call Les_time_avg_4d( zfield, tzdates, iresp )
 if ( oavg ) then
   if ( onorm ) then
     ygroup = 'H_' // tpfield%cmnhname
+    tzbudiachro%ccomment = Trim( tpfield%ccomment ) // ' (normalized and time averaged)'
   else
     ygroup = 'A_' // tpfield%cmnhname
+    tzbudiachro%ccomment = Trim( tpfield%ccomment ) // ' (time averaged)'
   end if
 else
   if ( onorm ) then
     ygroup = 'E_' // tpfield%cmnhname
+    tzbudiachro%ccomment = Trim( tpfield%ccomment ) // ' (normalized)'
   else
     ygroup = tpfield%cmnhname
+    tzbudiachro%ccomment = Trim( tpfield%ccomment )
   end if
 endif
 
@@ -1027,8 +1031,8 @@ if ( iresp == 0 .and. any( zfield /= XUNDEF ) ) then
   tzfields(:)%ccomment  = ycomment(:)
 
   tzbudiachro%cgroupname = ygroup
-  tzbudiachro%cname      = ''
-  tzbudiachro%ccomment   = ''
+  tzbudiachro%cname      = ygroup
+  !tzbudiachro%ccomment   = DONE BEFORE
   tzbudiachro%ctype      = 'SSOL'
   tzbudiachro%licompress = .false.
   tzbudiachro%ljcompress = .false.
@@ -1090,7 +1094,7 @@ end subroutine Les_diachro_2pt
 !-------------------------------------------------------------------------------
 
 !#######################################################################
-subroutine Les_diachro_2pt_1d_intern( tpdiafile, tpfield, yavg, pfield )
+subroutine Les_diachro_2pt_1d_intern( tpdiafile, tpfield, gavg, pfield )
 !#######################################################################
 
 use modd_field,         only: NMNHDIM_BUDGET_LES_AVG_TIME, NMNHDIM_BUDGET_LES_TIME, NMNHDIM_UNUSED, &
@@ -1105,7 +1109,7 @@ use mode_write_diachro, only: Write_diachro
 
 type(tfiledata),                    intent(in) :: tpdiafile! file to write
 type(tfield_metadata_base),         intent(in) :: tpfield ! Metadata of field pfield
-logical,                            intent(in) :: yavg
+logical,                            intent(in) :: gavg
 real,             dimension(:,:,:), intent(in) :: pfield
 
 character(len=6)                                     :: ystring
@@ -1192,7 +1196,7 @@ tzfield%ccomment  = ycomment(:)
 
 !* time average
 iresp = 0
-if ( yavg ) then
+if ( gavg ) then
   call Les_time_avg( zwork6, tzdates, iresp )
   ygroup    = 'T_'//ygroup
 
@@ -1202,8 +1206,12 @@ if ( yavg ) then
 end if
 
 tzbudiachro%cgroupname = ygroup
-tzbudiachro%cname      = ''
-tzbudiachro%ccomment   = ''
+tzbudiachro%cname      = ygroup
+if ( .not. gavg ) then
+  tzbudiachro%ccomment = tzfield%ccomment
+else
+  tzbudiachro%ccomment = Trim( tzfield%ccomment ) // ' (time averaged)'
+end if
 tzbudiachro%ctype      = 'SPXY'
 tzbudiachro%licompress = .false.
 tzbudiachro%ljcompress = .false.
@@ -1355,8 +1363,8 @@ tzfield%clongname = ygroup
 tzfield%ccomment  = ycomment(:)
 
 tzbudiachro%cgroupname = ygroup
-tzbudiachro%cname      = ''
-tzbudiachro%ccomment   = ''
+tzbudiachro%cname      = ygroup
+tzbudiachro%ccomment   = tzfield%ccomment
 tzbudiachro%ctype      = 'SPXY'
 tzbudiachro%licompress = .false.
 tzbudiachro%ljcompress = .false.
@@ -1380,8 +1388,8 @@ do ji = 1, NMNHMAXDIMS
 end do
 
 tzbudiachro%cgroupname = ygroup
-tzbudiachro%cname      = ''
-tzbudiachro%ccomment   = ''
+tzbudiachro%cname      = ygroup
+tzbudiachro%ccomment   = Trim( tzfield%ccomment ) // ' (time averaged)'
 tzbudiachro%ctype      = 'SPXY'
 tzbudiachro%licompress = .false.
 tzbudiachro%ljcompress = .false.

@@ -260,8 +260,8 @@ tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_SERIES_PROC
 
 tzbudiachro%cgroupname = 'TSERIES'
-tzbudiachro%cname      = ''
-tzbudiachro%ccomment   = ''
+tzbudiachro%cname      = 'TSERIES'
+tzbudiachro%ccomment   = 'Time series of horizontally and vertically averaged fields'
 tzbudiachro%ctype      = 'CART'
 tzbudiachro%licompress = .true.
 tzbudiachro%ljcompress = .true.
@@ -352,8 +352,8 @@ tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_SERIES_PROC
 
 tzbudiachro%cgroupname = 'ZTSERIES'
-tzbudiachro%cname      = ''
-tzbudiachro%ccomment   = ''
+tzbudiachro%cname      = 'ZTSERIES'
+tzbudiachro%ccomment   = 'Time series of horizontally averaged vertical profile'
 tzbudiachro%ctype      = 'CART'
 tzbudiachro%licompress = .true.
 tzbudiachro%ljcompress = .true.
@@ -448,8 +448,8 @@ DO JS=1,NBJSLICE
   tzfields(:)%ndimlist(6) = NMNHDIM_SERIES_PROC
 
   tzbudiachro%cgroupname = ygroup
-  tzbudiachro%cname      = ''
-  tzbudiachro%ccomment   = ''
+  tzbudiachro%cname      = ygroup
+  tzbudiachro%ccomment   = 'Time series of y-horizontally averaged fields at one level or vertically averaged between 2 levels'
   tzbudiachro%ctype      = 'SSOL'
   tzbudiachro%licompress = .false.
   tzbudiachro%ljcompress = .true.

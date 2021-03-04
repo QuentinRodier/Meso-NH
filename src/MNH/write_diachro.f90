@@ -691,6 +691,14 @@ MASTER: if ( isp == tzfile%nmaster_rank) then
   tzfile%nncid = igrpid
 
   if ( .not. ggroupdefined ) then
+    istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'name', Trim( tpbudiachro%cname ) )
+    if (istatus /= NF90_NOERR ) &
+      call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'name for '//trim(ygroup)//' group' )
+
+    istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'comment', Trim( tpbudiachro%ccomment ) )
+    if (istatus /= NF90_NOERR ) &
+      call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'comment for '//trim(ygroup)//' group' )
+
     istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'type', trim( ytype ) )
     if (istatus /= NF90_NOERR ) &
       call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'type for '//trim(ygroup)//' group' )

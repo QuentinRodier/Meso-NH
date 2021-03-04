@@ -865,9 +865,18 @@ tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_FLYER_PROC
 
 tzbudiachro%cgroupname = ygroup
-tzbudiachro%cname        = ''
-tzbudiachro%ccomment     = ''
+tzbudiachro%cname      = ygroup
+tzbudiachro%ccomment   = 'Values at position of flyer ' // Trim( tpflyer%title )
 tzbudiachro%ctype      = 'RSPL'
+! tzbudiachro%licompress = NOT SET (default values)
+! tzbudiachro%ljcompress = NOT SET (default values)
+! tzbudiachro%lkcompress = NOT SET (default values)
+! tzbudiachro%nil        = NOT SET (default values)
+! tzbudiachro%nih        = NOT SET (default values)
+! tzbudiachro%njl        = NOT SET (default values)
+! tzbudiachro%njh        = NOT SET (default values)
+! tzbudiachro%nkl        = NOT SET (default values)
+! tzbudiachro%nkh        = NOT SET (default values)
 
 call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpflyer%tpdates, zw6, &
                     ptrajx = ztrajx, ptrajy = ztrajy, ptrajz = ztrajz,      &
@@ -893,8 +902,8 @@ tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_FLYER_PROC
 
 tzbudiachro%cgroupname = ygroupz
-tzbudiachro%cname        = ''
-tzbudiachro%ccomment     = ''
+tzbudiachro%cname      = ygroupz
+tzbudiachro%ccomment   = 'Vertical profiles at position of flyer ' // Trim( tpflyer%title )
 tzbudiachro%ctype      = 'CART'
 tzbudiachro%licompress = .true.
 tzbudiachro%ljcompress = .true.
