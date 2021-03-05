@@ -519,12 +519,14 @@ END IF
 !
 IF (LBU_ENABLE) THEN
   !Division by nbustep to compute average on the selected time period
-  if ( lbudget_u .or. lbudget_v .or. lbudget_u .or. lbudget_v .or. lbudget_w .or. lbudget_th &
-       .or. lbudget_tke .or. lbudget_rv .or. lbudget_rc .or. lbudget_rr .or. lbudget_ri      &
-       .or. lbudget_rs .or. lbudget_rg .or. lbudget_rh .or. lbudget_sv ) then
-    allocate( zrhodjontime( size( prhodj, 1), size( prhodj, 2), size( prhodj, 3) ) )
+  if (      lbudget_u   .or. lbudget_v  .or. lbudget_w  .or. lbudget_th                 &
+       .or. lbudget_tke .or. lbudget_rv .or. lbudget_rc .or. lbudget_rr .or. lbudget_ri &
+       .or. lbudget_rs  .or. lbudget_rg .or. lbudget_rh .or. lbudget_sv                 ) then
+    Allocate( zrhodjontime, mold = prhodj )
+    Allocate( zwork,        mold = prhodj )
     zrhodjontime(:, :, :) = prhodj(:, :, :) / ( ptstep * nbustep )
   end if
+
   if ( lbudget_u   ) call Budget_store_end( tbudgets(NBUDGET_U  ), 'AVEF', put  (:, :, :)    * zrhodjontime(:, :, :) )
   if ( lbudget_v   ) call Budget_store_end( tbudgets(NBUDGET_V  ), 'AVEF', pvt  (:, :, :)    * zrhodjontime(:, :, :) )
   if ( lbudget_w   ) call Budget_store_end( tbudgets(NBUDGET_W  ), 'AVEF', pwt  (:, :, :)    * zrhodjontime(:, :, :) )
@@ -543,41 +545,93 @@ IF (LBU_ENABLE) THEN
     end do
   end if
 
-  if ( lbudget_u   ) call Budget_store_end( tbudgets(NBUDGET_U  ), 'ENDF', pus  (:, :, :) * Mxm( prhodj(:, :, :) ) / ptstep )
-  if ( lbudget_v   ) call Budget_store_end( tbudgets(NBUDGET_V  ), 'ENDF', pvs  (:, :, :) * Mym( prhodj(:, :, :) ) / ptstep )
-  if ( lbudget_w   ) call Budget_store_end( tbudgets(NBUDGET_W  ), 'ENDF', pws  (:, :, :) * Mzm( prhodj(:, :, :) ) / ptstep )
-  if ( lbudget_th  ) call Budget_store_end( tbudgets(NBUDGET_TH ), 'ENDF', pths (:, :, :)    * prhodj(:, :, :) / ptstep )
-  if ( lbudget_tke ) call Budget_store_end( tbudgets(NBUDGET_TKE), 'ENDF', ptkes(:, :, :)    * prhodj(:, :, :) / ptstep )
-  if ( lbudget_rv  ) call Budget_store_end( tbudgets(NBUDGET_RV ), 'ENDF', prs  (:, :, :, 1) * prhodj(:, :, :) / ptstep )
-  if ( lbudget_rc  ) call Budget_store_end( tbudgets(NBUDGET_RC ), 'ENDF', prs  (:, :, :, 2) * prhodj(:, :, :) / ptstep )
-  if ( lbudget_rr  ) call Budget_store_end( tbudgets(NBUDGET_RR ), 'ENDF', prs  (:, :, :, 3) * prhodj(:, :, :) / ptstep )
-  if ( lbudget_ri  ) call Budget_store_end( tbudgets(NBUDGET_RI ), 'ENDF', prs  (:, :, :, 4) * prhodj(:, :, :) / ptstep )
-  if ( lbudget_rs  ) call Budget_store_end( tbudgets(NBUDGET_RS ), 'ENDF', prs  (:, :, :, 5) * prhodj(:, :, :) / ptstep )
-  if ( lbudget_rg  ) call Budget_store_end( tbudgets(NBUDGET_RG ), 'ENDF', prs  (:, :, :, 6) * prhodj(:, :, :) / ptstep )
-  if ( lbudget_rh  ) call Budget_store_end( tbudgets(NBUDGET_RH ), 'ENDF', prs  (:, :, :, 7) * prhodj(:, :, :) / ptstep )
+  if ( lbudget_u   ) then
+    zwork(:, :, :) = pus  (:, :, :) * Mxm( prhodj(:, :, :) ) / ptstep
+    call Budget_store_end(  tbudgets(NBUDGET_U  ), 'ENDF', zwork )
+    call Budget_store_init( tbudgets(NBUDGET_U  ), 'ASSE', zwork )
+  end if
+
+  if ( lbudget_v   ) then
+    zwork(:, :, :) = pvs  (:, :, :) * Mym( prhodj(:, :, :) ) / ptstep
+    call Budget_store_end(  tbudgets(NBUDGET_V  ), 'ENDF', zwork )
+    call Budget_store_init( tbudgets(NBUDGET_V  ), 'ASSE', zwork )
+  end if
+
+  if ( lbudget_w   ) then
+    zwork(:, :, :) = pws  (:, :, :) * Mzm( prhodj(:, :, :) ) / ptstep
+    call Budget_store_end(  tbudgets(NBUDGET_W  ), 'ENDF', zwork )
+    call Budget_store_init( tbudgets(NBUDGET_W  ), 'ASSE', zwork )
+  end if
+
+  if (      lbudget_th .or. lbudget_tke .or. lbudget_rv .or. lbudget_rc .or. lbudget_rr &
+       .or. lbudget_ri .or. lbudget_rs  .or. lbudget_rg .or. lbudget_rh .or. lbudget_sv ) then
+    zrhodjontime(:, :, :) = prhodj(:, :, :) / ptstep
+  end if
+
+  if ( lbudget_th  ) then
+    zwork(:, :, :) = pths (:, :, :)    * zrhodjontime(:, :, :)
+    call Budget_store_end(  tbudgets(NBUDGET_TH ), 'ENDF', zwork )
+    call Budget_store_init( tbudgets(NBUDGET_TH ), 'ASSE', zwork )
+  end if
+
+  if ( lbudget_tke ) then
+    zwork(:, :, :) = ptkes(:, :, :)    * zrhodjontime(:, :, :)
+    call Budget_store_end(  tbudgets(NBUDGET_TKE), 'ENDF', zwork )
+    call Budget_store_init( tbudgets(NBUDGET_TKE), 'ASSE', zwork )
+  end if
+
+  if ( lbudget_rv  ) then
+    zwork(:, :, :) = prs  (:, :, :, 1) * zrhodjontime(:, :, :)
+    call Budget_store_end(  tbudgets(NBUDGET_RV ), 'ENDF', zwork )
+    call Budget_store_init( tbudgets(NBUDGET_RV ), 'ASSE', zwork )
+  end if
+
+  if ( lbudget_rc  ) then
+    zwork(:, :, :) = prs  (:, :, :, 2) * zrhodjontime(:, :, :)
+    call Budget_store_end(  tbudgets(NBUDGET_RC ), 'ENDF', zwork )
+    call Budget_store_init( tbudgets(NBUDGET_RC ), 'ASSE', zwork )
+  end if
+
+  if ( lbudget_rr  ) then
+    zwork(:, :, :) = prs  (:, :, :, 3) * zrhodjontime(:, :, :)
+    call Budget_store_end(  tbudgets(NBUDGET_RR ), 'ENDF', zwork )
+    call Budget_store_init( tbudgets(NBUDGET_RR ), 'ASSE', zwork )
+  end if
+
+  if ( lbudget_ri  ) then
+    zwork(:, :, :) = prs  (:, :, :, 4) * zrhodjontime(:, :, :)
+    call Budget_store_end(  tbudgets(NBUDGET_RI ), 'ENDF', zwork )
+    call Budget_store_init( tbudgets(NBUDGET_RI ), 'ASSE', zwork )
+  end if
+
+  if ( lbudget_rs  ) then
+    zwork(:, :, :) = prs  (:, :, :, 5) * zrhodjontime(:, :, :)
+    call Budget_store_end(  tbudgets(NBUDGET_RS ), 'ENDF', zwork )
+    call Budget_store_init( tbudgets(NBUDGET_RS ), 'ASSE', zwork )
+  end if
+
+  if ( lbudget_rg  ) then
+    zwork(:, :, :) = prs  (:, :, :, 6) * zrhodjontime(:, :, :)
+    call Budget_store_end(  tbudgets(NBUDGET_RG ), 'ENDF', zwork )
+    call Budget_store_init( tbudgets(NBUDGET_RG ), 'ASSE', zwork )
+  end if
+
+  if ( lbudget_rh  ) then
+    zwork(:, :, :) = prs  (:, :, :, 7) * zrhodjontime(:, :, :)
+    call Budget_store_end(  tbudgets(NBUDGET_RH ), 'ENDF', zwork )
+    call Budget_store_init( tbudgets(NBUDGET_RH ), 'ASSE', zwork )
+  end if
+
   if ( lbudget_sv  ) then
     do jsv = 1, ksv
-      call Budget_store_end( tbudgets(jsv + NBUDGET_SV1 - 1), 'ENDF', psvs(:, :, :, jsv) * prhodj(:, :, :) / ptstep )
+      zwork(:, :, :) = psvs(:, :, :, jsv) * zrhodjontime(:, :, :)
+      call Budget_store_end(  tbudgets(jsv + NBUDGET_SV1 - 1), 'ENDF', zwork )
+      call Budget_store_init( tbudgets(jsv + NBUDGET_SV1 - 1), 'ASSE', zwork )
     end do
   end if
 
-  if ( lbudget_u   ) call Budget_store_init( tbudgets(NBUDGET_U  ), 'ASSE', pus  (:, :, :) * Mxm( prhodj(:, :, :) ) / ptstep )
-  if ( lbudget_v   ) call Budget_store_init( tbudgets(NBUDGET_V  ), 'ASSE', pvs  (:, :, :) * Mym( prhodj(:, :, :) ) / ptstep )
-  if ( lbudget_w   ) call Budget_store_init( tbudgets(NBUDGET_W  ), 'ASSE', pws  (:, :, :) * Mzm( prhodj(:, :, :) ) / ptstep )
-  if ( lbudget_th  ) call Budget_store_init( tbudgets(NBUDGET_TH ), 'ASSE', pths (:, :, :)    * prhodj(:, :, :) / ptstep )
-  if ( lbudget_tke ) call Budget_store_init( tbudgets(NBUDGET_TKE), 'ASSE', ptkes(:, :, :)    * prhodj(:, :, :) / ptstep )
-  if ( lbudget_rv  ) call Budget_store_init( tbudgets(NBUDGET_RV ), 'ASSE', prs  (:, :, :, 1) * prhodj(:, :, :) / ptstep )
-  if ( lbudget_rc  ) call Budget_store_init( tbudgets(NBUDGET_RC ), 'ASSE', prs  (:, :, :, 2) * prhodj(:, :, :) / ptstep )
-  if ( lbudget_rr  ) call Budget_store_init( tbudgets(NBUDGET_RR ), 'ASSE', prs  (:, :, :, 3) * prhodj(:, :, :) / ptstep )
-  if ( lbudget_ri  ) call Budget_store_init( tbudgets(NBUDGET_RI ), 'ASSE', prs  (:, :, :, 4) * prhodj(:, :, :) / ptstep )
-  if ( lbudget_rs  ) call Budget_store_init( tbudgets(NBUDGET_RS ), 'ASSE', prs  (:, :, :, 5) * prhodj(:, :, :) / ptstep )
-  if ( lbudget_rg  ) call Budget_store_init( tbudgets(NBUDGET_RG ), 'ASSE', prs  (:, :, :, 6) * prhodj(:, :, :) / ptstep )
-  if ( lbudget_rh  ) call Budget_store_init( tbudgets(NBUDGET_RH ), 'ASSE', prs  (:, :, :, 7) * prhodj(:, :, :) / ptstep )
-  if ( lbudget_sv  ) then
-    do jsv = 1, ksv
-      call Budget_store_init( tbudgets(jsv + NBUDGET_SV1 - 1), 'ASSE', psvs(:, :, :, jsv) * prhodj(:, :, :) / ptstep )
-    end do
-  end if
+  if ( Allocated( zwork ) )        Deallocate( zwork )
+  if ( Allocated( zrhodjontime ) ) Deallocate( zrhodjontime )
 END IF
 !
 !------------------------------------------------------------------------------
