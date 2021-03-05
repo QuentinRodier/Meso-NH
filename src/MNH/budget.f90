@@ -6,16 +6,19 @@
 ! Modifications
 !  P. Wautelet 28/01/2020: new subroutines: Budget_store_init, Budget_store_end and Budget_source_id_find in new module mode_budget
 !  P. Wautelet 17/08/2020: treat LES budgets correctly
+!  P. Wautelet 05/03/2021: measure cpu_time for budgets
 !-----------------------------------------------------------------
 
 !#################
 module mode_budget
 !#################
 
-use modd_budget, only: cbutype, nbutime, tbudgetdata
+use modd_budget,     only: cbutype, nbutime, tbudgetdata, xtime_bu, xtime_bu_process
+use modd_les_budget, only: xtime_les_bu, xtime_les_bu_process
 
 use modi_cart_compress, only: Cart_compress
 use modi_mask_compress, only: Mask_compress
+use modi_second_mnh,    only: Second_mnh
 
 use mode_msg
 
@@ -27,6 +30,7 @@ public :: Budget_store_init
 public :: Budget_store_end
 public :: Budget_store_add
 
+real :: ztime1, ztime2
 
 contains
 
@@ -42,6 +46,8 @@ subroutine Budget_store_init( tpbudget, hsource, pvars )
   call Print_msg( NVERB_DEBUG, 'BUD', 'Budget_store_init', trim( tpbudget%cname )//':'//trim( hsource ) )
 
   if ( lles_call ) then
+    call Second_mnh( ztime1 )
+
     if ( allocated( tpbudget%xtmplesstore ) ) then
       call Print_msg( NVERB_ERROR, 'BUD', 'Budget_store_init', 'xtmplesstore already allocated' )
     else
@@ -50,10 +56,16 @@ subroutine Budget_store_init( tpbudget, hsource, pvars )
     tpbudget%xtmplesstore(:, :, :) = pvars(:, :, :)
 
     tpbudget%clessource = hsource
+
+    call Second_mnh( ztime2 )
+    xtime_les_bu         = xtime_les_bu         + ztime2 - ztime1
+    xtime_les_bu_process = xtime_les_bu_process + ztime2 - ztime1
   end if
 
   ! Nothing else to do if budgets are not enabled
   if ( .not. tpbudget%lenabled ) return
+
+  call Second_mnh( ztime1 )
 
   call Budget_source_id_find( tpbudget, hsource, iid )
 
@@ -91,7 +103,11 @@ subroutine Budget_store_init( tpbudget, hsource, pvars )
     end if
   end if
 
-end subroutine Budget_store_init
+  call Second_mnh( ztime2 )
+  xtime_bu         = xtime_bu         + ztime2 - ztime1
+  xtime_bu_process = xtime_bu_process + ztime2 - ztime1
+
+  end subroutine Budget_store_init
 
 
 subroutine Budget_store_end( tpbudget, hsource, pvars )
@@ -132,6 +148,8 @@ subroutine Budget_store_end( tpbudget, hsource, pvars )
 
   ! Nothing to do if budgets are not enabled
   if ( .not. tpbudget%lenabled ) return
+
+  call Second_mnh( ztime1 )
 
   call Budget_source_id_find( tpbudget, hsource, iid )
 
@@ -196,6 +214,10 @@ subroutine Budget_store_end( tpbudget, hsource, pvars )
     tpbudget%ntmpstoresource = 0
   end if
 
+  call Second_mnh( ztime2 )
+  xtime_bu         = xtime_bu         + ztime2 - ztime1
+  xtime_bu_process = xtime_bu_process + ztime2 - ztime1
+
 end subroutine Budget_store_end
 
 
@@ -221,6 +243,8 @@ subroutine Budget_store_add( tpbudget, hsource, pvars )
   ! Nothing to do if budgets are not enabled
   if ( .not. tpbudget%lenabled ) return
 
+  call Second_mnh( ztime1 )
+
   call Budget_source_id_find( tpbudget, hsource, iid )
 
   if ( tpbudget%tsources(iid)%lenabled ) then
@@ -239,6 +263,10 @@ subroutine Budget_store_add( tpbudget, hsource, pvars )
       call Print_msg( NVERB_ERROR, 'BUD', 'Budget_store_add', 'unknown cbutype: '//trim( cbutype ) )
     end if
   end if
+
+  call Second_mnh( ztime2 )
+  xtime_bu         = xtime_bu         + ztime2 - ztime1
+  xtime_bu_process = xtime_bu_process + ztime2 - ztime1
 
 end subroutine Budget_store_add
 
