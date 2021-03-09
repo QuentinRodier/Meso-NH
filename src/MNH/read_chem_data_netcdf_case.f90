@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2012-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2012-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -86,6 +86,7 @@ END MODULE MODI_READ_CHEM_DATA_NETCDF_CASE
 !!      J.Pianezzej 13/02/2019 : correction for use of MEGAN
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 18/09/2019: correct support of 64bit integers (MNH_INT=8)
+!  P. Wautelet 09/03/2021: move some chemistry initializations to ini_nsv
 !-------------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -120,8 +121,6 @@ USE MODE_TIME
 USE MODE_TOOLS,      ONLY: UPCASE
 use mode_tools_ll,   only: GET_DIM_EXT_ll
 !
-USE MODI_CH_AER_INIT_SOA
-USE MODI_CH_INIT_SCHEME_n
 USE MODI_CH_OPEN_INPUT
 USE MODI_HORIBL
 USE MODI_INI_NSV
@@ -427,17 +426,14 @@ enddo
 !------------------------------------------------------------------------
 !* 3 Interpolation of MOZART variable
 !---------------------------------------------------------------------
-  ! Always initialize chemical scheme variables before INI_NSV call !
-  CALL CH_INIT_SCHEME_n(IMI,LUSECHAQ,LUSECHIC,LCH_PH,ILUOUT0,KVERB)
   LUSECHEM = .TRUE.
   IF (LORILAM) THEN
     CORGANIC = "MPMPO"
     LVARSIGI = .TRUE.
     LVARSIGJ = .TRUE.
-    CALL CH_AER_INIT_SOA(ILUOUT0, KVERB)
   END IF
   ! initialise NSV_* variables
-  CALL INI_NSV(1)
+  CALL INI_NSV(IMI)
     DEALLOCATE(XSV_LS)
     ALLOCATE (XSV_LS(IIU,IJU,ilevlen,NSV))
    XSV_LS(:,:,:,:) = 0.

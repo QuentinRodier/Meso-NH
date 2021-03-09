@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2001-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ###################
       MODULE MODI_INI_NSV
 !     ###################
@@ -64,46 +65,48 @@ END MODULE MODI_INI_NSV
 !!       J.escobar     04/08/2015 suit Pb with writ_lfin JSA increment , modif in ini_nsv to have good order initialization
 !!      Modification    01/2016  (JP Pinty) Add LIMA and LUSECHEM condition
 !!      Modification    07/2017  (V. Vionnet) Add blowing snow condition
-!! 
+!  P. Wautelet 09/03/2021: move some chemistry initializations to ini_nsv
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
 !
-USE MODD_NSV
-USE MODD_ELEC_DESCR,    ONLY : CELECNAMES 
-USE MODD_CH_M9_n,    ONLY : NEQ, NEQAQ
-USE MODD_CH_MNHC_n, ONLY : LUSECHEM, LUSECHAQ, LUSECHIC, CCH_SCHEME, LCH_CONV_LINOX
-USE MODD_DIAG_FLAG,ONLY : LELECDIAG,LCHEMDIAG,LCHAQDIAG
-USE MODD_PARAM_n,   ONLY : CCLOUD, CELEC
-USE MODD_DYN_n,     ONLY : LHORELAX_SV,LHORELAX_SVC2R2,LHORELAX_SVC1R3,   &
-                           LHORELAX_SVLIMA,                               &
-                           LHORELAX_SVELEC,LHORELAX_SVCHEM,LHORELAX_SVLG, &
-                           LHORELAX_SVDST,LHORELAX_SVAER, LHORELAX_SVSLT, &
-                           LHORELAX_SVPP,LHORELAX_SVCS, LHORELAX_SVCHIC,  &
-                           LHORELAX_SVSNW    
+USE MODD_BLOWSNOW,        ONLY: LBLOWSNOW, NBLOWSNOW3D
+USE MODD_CH_AEROSOL,      ONLY: JPMODE, LAERINIT, LDEPOS_AER, LORILAM, LVARSIGI, LVARSIGJ, NCARB, NM6_AER, NSOA, NSP
+USE MODD_CH_M9_n,         ONLY: NEQ, NEQAQ
+USE MODD_CH_MNHC_n,       ONLY: LCH_PH, LUSECHEM, LUSECHAQ, LUSECHIC, CCH_SCHEME, LCH_CONV_LINOX
+USE MODD_CONDSAMP,        ONLY: LCONDSAMP, NCONDSAMP
+USE MODD_CONF,            ONLY: LLG, CPROGRAM, NVERB
+USE MODD_CST,             ONLY: XMNH_TINY
+USE MODD_DIAG_FLAG,       ONLY: LCHEMDIAG, LCHAQDIAG
+USE MODD_DUST,            ONLY: LDEPOS_DST, LDSTINIT, LDSTPRES, LDUST, LRGFIX_DST, LVARSIG, NMODE_DST
+USE MODD_DYN_n,           ONLY: LHORELAX_SV,LHORELAX_SVC2R2,LHORELAX_SVC1R3,   &
+                                LHORELAX_SVLIMA,                               &
+                                LHORELAX_SVELEC,LHORELAX_SVCHEM,LHORELAX_SVLG, &
+                                LHORELAX_SVDST,LHORELAX_SVAER, LHORELAX_SVSLT, &
+                                LHORELAX_SVPP,LHORELAX_SVCS, LHORELAX_SVCHIC,  &
+                                LHORELAX_SVSNW
 #ifdef MNH_FOREFIRE
-USE MODD_DYN_n,     ONLY : LHORELAX_SVFF
+USE MODD_DYN_n,           ONLY: LHORELAX_SVFF
+#endif
+USE MODD_ELEC_DESCR,      ONLY: LLNOX_EXPLICIT
+USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
+#ifdef MNH_FOREFIRE
 USE MODD_FOREFIRE
 #endif
-USE MODD_CONF,     ONLY : LLG, CPROGRAM
-USE MODD_LG
-USE MODD_DUST
-USE MODD_SALT
-USE MODD_PASPOL
-USE MODD_BLOWSNOW
-USE MODD_CONDSAMP
-USE MODD_CH_AEROSOL
-USE MODD_PREP_REAL, ONLY: XT_LS
-USE MODD_ELEC_DESCR, ONLY : LLNOX_EXPLICIT
-USE MODD_PARAM_C2R2, ONLY : LSUPSAT
+USE MODD_PARAM_n,         ONLY: CCLOUD, CELEC
+USE MODD_LG,              ONLY: XLG1MIN, XLG2MIN, XLG3MIN
+USE MODD_LUNIT_n,         ONLY: TLUOUT
+USE MODD_NSV
+USE MODD_PARAM_C2R2,      ONLY: LSUPSAT
+USE MODD_PARAM_LIMA,      ONLY: NMOD_CCN, LSCAV, LAERO_MASS, &
+                                NMOD_IFN, NMOD_IMM, LHHONI,  &
+                                LWARM, LCOLD, LRAIN
+USE MODD_PASPOL,          ONLY: LPASPOL, NRELEASE
+USE MODD_PREP_REAL,       ONLY: XT_LS
+USE MODD_SALT,            ONLY: LRGFIX_SLT, LSALT, LSLTINIT, LSLTPRES, NMODE_SLT, LDEPOS_SLT, LVARSIG_SLT
 !
-USE MODD_PARAM_LIMA, ONLY: NMOD_CCN, LSCAV, LAERO_MASS, &
-                           NMOD_IFN, NMOD_IMM, LHHONI,  &
-                           LWARM, LCOLD, LRAIN
-!
-USE MODI_UPDATE_NSV
-USE MODD_CST, ONLY : XMNH_TINY
+USE MODI_UPDATE_NSV,      ONLY: UPDATE_NSV
 !
 IMPLICIT NONE 
 !
@@ -115,11 +118,14 @@ INTEGER, INTENT(IN)             :: KMI ! model index
 !
 !*       0.2   Declarations of local variables
 !
+INTEGER :: ILUOUT
 INTEGER :: ISV ! total number of scalar variables
 !
 !-------------------------------------------------------------------------------
 !
-LINI_NSV = .TRUE. 
+LINI_NSV = .TRUE.
+
+ILUOUT = TLUOUT%NLU
 !
 ! Users scalar variables are first considered
 !
@@ -323,6 +329,11 @@ END IF
 !
 ! scalar variables used in chemical core system
 !
+IF (LUSECHEM) THEN
+  CALL CH_INIT_SCHEME_n(KMI,LUSECHAQ,LUSECHIC,LCH_PH,ILUOUT,NVERB)
+  IF (LORILAM) CALL CH_AER_INIT_SOA(ILUOUT, NVERB)
+END IF
+
 IF (LUSECHEM .AND.(NEQ .GT. 0)) THEN
   NSV_CHEM_A(KMI)   = NEQ
   NSV_CHEMBEG_A(KMI)= ISV+1

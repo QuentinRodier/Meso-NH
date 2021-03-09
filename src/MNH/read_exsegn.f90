@@ -296,6 +296,7 @@ END MODULE MODI_READ_EXSEG_n
 !  C. Lac         11/2019: correction in the drag formula and application to building in addition to tree
 !  Q. Rodier      03/2020: add abort if use of any LHORELAX and cyclic conditions
 !  P. Wautelet 09/03/2021: simplify allocation of scalar variable names
+!  P. Wautelet 09/03/2021: move some chemistry initializations to ini_nsv
 !!------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -362,7 +363,6 @@ USE MODE_MSG
 !
 USE MODI_TEST_NAM_VAR
 USE MODI_INI_NSV
-USE MODI_CH_INIT_SCHEME_n
 USE MODN_CH_ORILAM
 USE MODD_CH_AEROSOL
 USE MODD_DUST
@@ -1216,12 +1216,6 @@ IF ((LUSECHIC).AND.(LCH_RET_ICE)) THEN
   WRITE(UNIT=ILUOUT,FMT=*) 'TO FALSE IE NO CHEMICAL SPECIES IN ICE' 
 ENDIF
 !
-IF (LUSECHEM) THEN
-  CALL CH_INIT_SCHEME_n(KMI,LUSECHAQ,LUSECHIC,LCH_PH,ILUOUT,NVERB)
-  IF (LORILAM) CALL CH_AER_INIT_SOA(ILUOUT, NVERB)
-END IF
-!
-
 CALL UPDATE_NAM_CH_MNHCN
 CALL INI_NSV(KMI)
 !

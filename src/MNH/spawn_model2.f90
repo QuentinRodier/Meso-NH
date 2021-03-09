@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -198,6 +198,7 @@ END MODULE MODI_SPAWN_MODEL2
 !  P. Wautelet 14/03/2019: correct ZWS when variable not present in file
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!  P. Wautelet 09/03/2021: move some chemistry initializations to ini_nsv
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -260,7 +261,6 @@ USE MODI_INI_BIKHARDT_n
 USE MODI_DEALLOCATE_MODEL1
 USE MODI_BOUNDARIES
 USE MODI_INI_NSV
-USE MODI_CH_INIT_SCHEME_n
 !$20140710
 USE MODI_UPDATE_METRICS
 !
@@ -577,7 +577,6 @@ IF (NSV_CHEM>0) THEN
            LUSECHIC=.TRUE.
    ENDIF 
    CCHEM_INPUT_FILE = HCHEM_INPUT_FILE
-   CALL CH_INIT_SCHEME_n(1,LUSECHAQ,LUSECHIC,LCH_PH,ILUOUT,NVERB)
 END IF
 !
 CTURB    =  HTURB                 ! for MODD_PARAM2

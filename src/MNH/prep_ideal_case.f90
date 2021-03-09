@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -318,6 +318,7 @@
 !  P. Wautelet 19/04/2019: removed unused dummy arguments and variables
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!  P. Wautelet 09/03/2021: move some chemistry initializations to ini_nsv
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -388,11 +389,9 @@ USE MODI_UPDATE_METRICS
 USE MODI_SET_REF
 USE MODI_SET_PERTURB
 USE MODI_TOTAL_DMASS
-USE MODI_CH_INIT_SCHEME_n
 USE MODI_CH_INIT_FIELD_n
 USE MODI_INI_NSV
 USE MODI_READ_PRE_IDEA_NAM_n
-USE MODI_CH_AER_INIT_SOA
 USE MODI_ZSMT_PIC
 USE MODI_ZSMT_PGD
 USE MODI_READ_VER_GRID
@@ -870,14 +869,11 @@ IF (CIDEAL == 'RSOU' .AND. NRR < 4 ) NRR=4
 !*       3.5   Chemistry
 !
 IF (LORILAM .OR. LCH_INIT_FIELD) THEN
-  ! Always initialize chemical scheme variables before INI_NSV call !
-  CALL CH_INIT_SCHEME_n(1,LUSECHAQ,LUSECHIC,LCH_PH,NLUOUT,NVERB)
   LUSECHEM = .TRUE.
   IF (LORILAM) THEN
     CORGANIC = "MPMPO"
     LVARSIGI = .TRUE.
     LVARSIGJ = .TRUE.
-    CALL CH_AER_INIT_SOA(NLUOUT, NVERB)
   END IF
 END IF
 ! initialise NSV_* variables

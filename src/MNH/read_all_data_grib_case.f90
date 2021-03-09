@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1998-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -134,7 +134,8 @@ END MODULE MODI_READ_ALL_DATA_GRIB_CASE
 !  Q. Rodier   16/09/2019: switch of GRIB number ID for orography in ARPEGE/AROME in EPyGrAM
 !  Q. Rodier   27/01/2020: switch of GRIB number ID for orography and hydrometeors in ARPEGE/AROME in EPyGrAM v1.3.7
 !  Q. Rodier   21/04/2020: correction GFS u and v wind component written in the right vertical order
-!  Q. Rodier   02/09/2020 : Read and interpol geopotential height for interpolation on isobaric surface Grid of NCEP 
+!  Q. Rodier   02/09/2020: Read and interpol geopotential height for interpolation on isobaric surface Grid of NCEP
+!  P. Wautelet 09/03/2021: move some chemistry initializations to ini_nsv
 !-------------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -153,10 +154,7 @@ USE MODI_READ_VER_GRID
 USE MODI_XYTOLATLON
 USE MODI_HORIBL
 USE MODI_INI_NSV
-USE MODI_CH_INIT_SCHEME_n
 USE MODI_REMOVAL_VORTEX
-USE MODI_CH_INIT_CCS
-USE MODI_CH_AER_INIT_SOA
 USE MODI_INI_CTURB
 USE MODI_CH_OPEN_INPUT
 !
@@ -1285,17 +1283,14 @@ DEALLOCATE(IINLO)
 !---------------------------------------------------------------------------------------
 
 IF (IMODEL==5) THEN 
-  ! Always initialize chemical scheme variables before INI_NSV call !
-  CALL CH_INIT_SCHEME_n(IMI,LUSECHAQ,LUSECHIC,LCH_PH,ILUOUT0,KVERB)
   LUSECHEM = .TRUE.
   IF (LORILAM) THEN
     CORGANIC = "MPMPO"
     LVARSIGI = .TRUE.
     LVARSIGJ = .TRUE.
-    CALL CH_AER_INIT_SOA(ILUOUT0, KVERB)
   END IF
   ! initialise NSV_* variables
-  CALL INI_NSV(1)
+  CALL INI_NSV(IMI)
   IF( HFILE=='ATM0' ) THEN
     ALLOCATE (XSV_LS(IIU,IJU,INLEVEL,NSV))
   ELSE IF (HFILE=='CHEM' ) THEN

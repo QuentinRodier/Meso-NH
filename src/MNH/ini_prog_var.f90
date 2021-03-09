@@ -96,6 +96,7 @@ END MODULE MODI_INI_PROG_VAR
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !  P. Wautelet 09/03/2021: simplify allocation of scalar variable names
+!  P. Wautelet 09/03/2021: move some chemistry initializations to ini_nsv
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -130,8 +131,6 @@ USE MODE_MSG
 USE MODE_POS
 use mode_tools_ll,         only: GET_INDICE_ll
 !
-USE MODI_CH_AER_INIT_SOA
-USE MODI_CH_INIT_SCHEME_n
 USE MODI_PGDFILTER
 !
 USE MODN_CH_ORILAM
@@ -247,10 +246,7 @@ IF(PRESENT(HCHEMFILE)) THEN
     !callabortstop
     CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_PROG_VAR','')
   END IF ! IIMAX
-! check nsv to be read  
   IF (.NOT.LDUST) THEN
-  ! Always initialize chemical scheme variables before INI_NSV call !
-    CALL CH_INIT_SCHEME_n(IMI,LUSECHAQ,LUSECHIC,LCH_PH,ILUOUT,NVERB)
     LUSECHEM = .TRUE.
   END IF
   IF (LORILAM) THEN
@@ -270,7 +266,7 @@ IF(PRESENT(HCHEMFILE)) THEN
     IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_SALT)
   ! initialise NSV_* variables
   ENDIF
-  CALL INI_NSV(1)
+  CALL INI_NSV(IMI)
   ALLOCATE(XSVT(IIU,IJU,IKU,NSV))
   
   ! Read scalars in chem file   
@@ -300,8 +296,6 @@ IF(PRESENT(HCHEMFILE)) THEN
   END IF
 
   IF (LORILAM) THEN
-    CALL CH_AER_INIT_SOA(ILUOUT,NVERB)
-    !
     TZFIELD%CSTDNAME   = ''
     TZFIELD%CUNITS     = 'ppp'
     TZFIELD%CDIR       = 'XY'
