@@ -1,4 +1,4 @@
-!ORILAM_LIC Copyright 2006-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!ORILAM_LIC Copyright 2006-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
@@ -30,12 +30,12 @@
 !!     -------------
 !!     (30-01-01) P.Tulet (LA) * modifications for secondary biogenics aerosols
 !!     (25-08-16) M.Leriche (LA) * NM6_AER is now in SAVE and assign in ini_nsv
-!  P. Wautelet: 07/06/2019: allocate weights only when needed!!
-!
+!  P. Wautelet 07/06/2019: allocate weights only when needed
+!  P. Wautelet 09/03/2021: simplify allocation of scalar variable names
 !!--------------------------------------------------------------------
 !!     DECLARATIONS
 !!     ------------
-USE MODD_PARAMETERS, ONLY: JPMODELMAX
+USE MODD_PARAMETERS, ONLY: JPMODELMAX, JPSVNAMELGTMAX
 !
 IMPLICIT NONE
 !
@@ -46,15 +46,15 @@ LOGICAL      :: LINITPM     = .TRUE.        ! switch to initialize BC
 LOGICAL      :: LAERINIT    = .FALSE.       ! switch to initialize aerosols
 
 LOGICAL,DIMENSION(JPMODELMAX)             :: LDEPOS_AER = .FALSE.    ! switch to AER wet depositon
-       
-CHARACTER(LEN=9),DIMENSION(:),ALLOCATABLE :: CDEAERNAMES
-CHARACTER(LEN=9),DIMENSION(4), PARAMETER  :: YPDEAER_INI = &
-     (/'DEAERM31C','DEAERM32C' &
-      ,'DEAERM31R','DEAERM32R' /)
+
                                             ! and OC from CO concentration (real_case)
 INTEGER, PARAMETER         :: JPMODE=2      ! number of modes
 INTEGER, PARAMETER         :: JPIN=JPMODE*3 ! number of differential equations
 INTEGER, SAVE, DIMENSION(JPMODE) :: NM0,NM3,NM6   ! index of the moments in arrays
+
+CHARACTER(LEN=JPSVNAMELGTMAX), DIMENSION(JPMODE*2), PARAMETER :: CDEAERNAMES = &
+     (/'DEAERM31C','DEAERM32C' &
+      ,'DEAERM31R','DEAERM32R' /)
 !
 !* indices of Aerosol chemical parameters
 !

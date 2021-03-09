@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -295,6 +295,7 @@ END MODULE MODI_READ_EXSEG_n
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  C. Lac         11/2019: correction in the drag formula and application to building in addition to tree
 !  Q. Rodier      03/2020: add abort if use of any LHORELAX and cyclic conditions
+!  P. Wautelet 09/03/2021: simplify allocation of scalar variable names
 !!------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1866,13 +1867,6 @@ IF (LORILAM) THEN
     CGETSVT(NSV_AERDEPBEG:NSV_AERDEPEND)='INIT'    
    END IF
   END IF
-! Initialization of deposition scheme
-  IF (LDEPOS_AER(KMI)) THEN
-    IF(.NOT.ALLOCATED(CDEAERNAMES)) THEN
-      ALLOCATE(CDEAERNAMES(JPMODE*2))
-        CDEAERNAMES(:) = YPDEAER_INI(:)
-    ENDIF    
-  ENDIF
 END IF
 !
 ! Lagrangian variables

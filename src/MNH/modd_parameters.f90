@@ -62,6 +62,7 @@ INTEGER, PARAMETER :: JPCPLFILEMAX = 24 ! Maximum allowed number of CouPLing FIL
 INTEGER, PARAMETER :: JPRIMMAX = 6    ! Maximum number of points for the
                        ! horizontal relaxation for the outermost verticals
 INTEGER, PARAMETER :: JPSVMAX  = 200  ! Maximum number of scalar variables
+INTEGER, PARAMETER :: JPSVNAMELGTMAX = 10 ! Maximum length of a scalar variable name (do not set to less than 10)
 !
 !
 REAL,    PARAMETER :: XUNDEF = 999.     ! default value for undefined or unused
