@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2001-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -26,6 +26,8 @@ END MODULE MODI_UPDATE_NSV
 !!  Modify (Vie) 2016 : add LIMA
 !!         V. Vionnet 7/2017 : add blowing snow var
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!  P. Wautelet 10/03/2021: add CSVNAMES and CSVNAMES_A to store the name of all the scalar variables
+!-------------------------------------------------------------------------------
 !
 USE MODD_CONF, ONLY : NVERB
 USE MODD_NSV
@@ -44,6 +46,8 @@ END IF
 ! Update the NSV_* variables from original NSV_*_A arrays
 ! that have been initialized in ini_nsv.f90 for model KMI
 !
+CSVNAMES => CSVNAMES_A(:,KMI)
+
 NSV         = NSV_A(KMI)
 NSV_USER    = NSV_USER_A(KMI)
 NSV_C2R2    = NSV_C2R2_A(KMI)

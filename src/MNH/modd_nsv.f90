@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2001-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-------------------------------------------------------------------------------
 !        ###############
          MODULE MODD_NSV
 !        ###############
@@ -27,14 +28,15 @@
 !!       Pialat/Tulet  15/02/12 add ForeFire
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!       V. Vionnet     07/17   add blowing snow
-!!
+!  P. Wautelet 10/03/2021: add CSVNAMES and CSVNAMES_A to store the name of all the scalar variables
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
 !
-USE MODD_PARAMETERS, ONLY : JPMODELMAX,& ! Maximum allowed number of nested models
-                            JPSVMAX      ! Maximum number of scalar variables
+USE MODD_PARAMETERS, ONLY : JPMODELMAX, &  ! Maximum allowed number of nested models
+                            JPSVMAX,    &  ! Maximum number of scalar variables
+                            JPSVNAMELGTMAX ! Maximum length of a scalar variable name
 !
 IMPLICIT NONE
 SAVE
@@ -43,6 +45,8 @@ REAL,DIMENSION(JPSVMAX) :: XSVMIN ! minimum value for SV variables
 !
 LOGICAL :: LINI_NSV = .FALSE. ! becomes True when routine INI_NSV is called
 !
+CHARACTER(LEN=JPSVNAMELGTMAX), DIMENSION(:,:), ALLOCATABLE, TARGET :: CSVNAMES_A !Names of all the scalar variables
+
 INTEGER,DIMENSION(JPMODELMAX)::NSV_A = 0 ! total number of scalar variables
                                          ! NSV_A = NSV_USER_A+NSV_C2R2_A+NSV_CHEM_A+..
 INTEGER,DIMENSION(JPMODELMAX)::NSV_USER_A = 0  ! number of user scalar variables with 
@@ -144,6 +148,7 @@ INTEGER,DIMENSION(JPMODELMAX)::NSV_SNWEND_A = 0 ! NSV_SNWBEG_A...NSV_SNWEND_A
 !
 ! variables updated for the current model
 !
+CHARACTER(LEN=JPSVNAMELGTMAX), DIMENSION(:), POINTER :: CSVNAMES !Names of all the scalar variables
 CHARACTER(LEN=6), DIMENSION(:), ALLOCATABLE :: CSV ! name of the scalar variables
 INTEGER :: NSV         = 0 ! total number of user scalar variables
 !
