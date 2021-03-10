@@ -22,11 +22,10 @@ use modd_budget, only: nbudgets, tbudgets,                                      
                        NBUDGET_U, NBUDGET_V, NBUDGET_W, NBUDGET_TH, NBUDGET_TKE,   &
                        NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, NBUDGET_RI, NBUDGET_RS, &
                        NBUDGET_RG, NBUDGET_RH, NBUDGET_SV1
-use modd_nsv,    only: nsv
+use modd_nsv,    only: csvnames, nsv
 
 use mode_msg
 
-character(len=3) :: ybudgetnum
 integer          :: ibudget
 integer          :: jsv
 
@@ -90,9 +89,8 @@ tbudgets(NBUDGET_RH)%nid      = NBUDGET_RH
 
 do jsv = 1, nsv
   ibudget = NBUDGET_SV1 - 1 + jsv
-  write ( ybudgetnum, '( i3.3 )' ) jsv
-  tbudgets(ibudget)%cname    = 'BU_RSV_' // ybudgetnum
-  tbudgets(ibudget)%ccomment = 'Budget for scalar variable ' // ybudgetnum
+  tbudgets(ibudget)%cname    = Trim( csvnames(jsv) )
+  tbudgets(ibudget)%ccomment = 'Budget for scalar variable ' // Trim( csvnames(jsv) )
   tbudgets(ibudget)%nid      = ibudget
 end do
 
@@ -224,7 +222,8 @@ use modd_dyn,           only: lcorio, xseglen
 use modd_dyn_n,         only: xtstep
 use modd_elec_descr,    only: linductive, lrelax2fw_ion
 use modd_field,         only: TYPEREAL
-use modd_nsv,           only: nsv_aerbeg, nsv_aerend, nsv_aerdepbeg, nsv_aerdepend, nsv_c2r2beg, nsv_c2r2end,      &
+use modd_nsv,           only: csvnames,                                                                            &
+                              nsv_aerbeg, nsv_aerend, nsv_aerdepbeg, nsv_aerdepend, nsv_c2r2beg, nsv_c2r2end,      &
                               nsv_chembeg, nsv_chemend, nsv_chicbeg, nsv_chicend, nsv_csbeg, nsv_csend,            &
                               nsv_dstbeg, nsv_dstend, nsv_dstdepbeg, nsv_dstdepend, nsv_elecbeg, nsv_elecend,      &
 #ifdef MNH_FOREFIRE
@@ -320,7 +319,6 @@ INTEGER :: IBUDIM2                                        ! second dimension of 
 INTEGER :: IBUDIM3                                        ! third dimension of the budget arrays
                                                           ! = NBUKMAX in CART case
                                                           ! = NBUMASK in MASK case
-character(len=3)    :: ybudgetnum
 INTEGER             :: JSV               ! loop indice for the SVs
 INTEGER             :: IINFO_ll ! return status of the interface routine
 integer             :: ibudget
@@ -2751,7 +2749,6 @@ if ( ksv > 999 ) call Print_msg( NVERB_FATAL, 'BUD', 'Ini_budget', 'number of sc
 
 SV_BUDGETS: do jsv = 1, ksv
   ibudget = NBUDGET_SV1 - 1 + jsv
-  write ( ybudgetnum, '( i3.3 )' ) jsv
 
   tbudgets(ibudget)%lenabled = lbu_rsv
 
@@ -2768,7 +2765,7 @@ SV_BUDGETS: do jsv = 1, ksv
 
     tbudgets(ibudget)%tsources(:)%ngroup = 0
 
-    tzsource%ccomment = 'Budget of scalar variable ' // ybudgetnum
+    tzsource%ccomment = 'Budget of scalar variable ' // csvnames(jsv)
     tzsource%ngrid    = 1
 
     tzsource%cunits   = '1'

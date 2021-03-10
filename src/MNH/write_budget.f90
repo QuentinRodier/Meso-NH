@@ -592,6 +592,7 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
                                     TYPEREAL
   use modd_io,                only: tfiledata
   use modd_lunit_n,           only: tluout
+  use modd_nsv,               only: csvnames
   use modd_parameters,        only: NBUNAMELGTMAX
   use modd_type_date,         only: date_time
 
@@ -674,6 +675,7 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
 
   deallocate(zconvert)
 
+  jsv = -1
   select case( tpbudget%nid )
     case ( NBUDGET_U )
       ygroup_name = 'UU'
@@ -713,8 +715,7 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
 
     case ( NBUDGET_SV1 : )
       jsv = tpbudget%nid - NBUDGET_SV1 + 1
-      Allocate( character(len=5) :: ygroup_name )
-      write( ygroup_name, fmt = "('SV',I3.3)") jsv
+      ygroup_name = csvnames(jsv)
 
     case default
       call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget', 'unknown budget type' )
@@ -813,6 +814,7 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
   tzbudiachro%njh        = nbujh
   tzbudiachro%nkl        = nbukl
   tzbudiachro%nkh        = nbukh
+  tzbudiachro%nsv        = jsv
 
   call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpdates, zworkt, osplit = .true. )
 

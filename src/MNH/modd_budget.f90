@@ -147,6 +147,7 @@ type :: tbudiachrometadata
   integer :: njh = -1
   integer :: nkl = -1
   integer :: nkh = -1
+  integer :: nsv = -1 !Reference number of the corresponding scalar variable
 end type tbudiachrometadata
 type(tbudgetdata), dimension(:), allocatable, save :: tbudgets
 type(tburhodata),                pointer,     save :: tburhodj => null() ! Budget array for rhodj used inside some tbudgets

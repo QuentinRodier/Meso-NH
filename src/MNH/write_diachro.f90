@@ -208,6 +208,7 @@ tzfile%cformat = 'LFI'
 
 YCOMMENT='NOTHING'
 
+!Set ygroup to preserve backward compatibility of LFI files
 if (      Any( tpbudiachro%cgroupname == [ 'RJS', 'RJX', 'RJY', 'RJZ'] )                                              &
      .or. Any( tpbudiachro%cgroupname == [ 'UU', 'VV', 'WW', 'TH', 'TK', 'RV', 'RC', 'RR', 'RI', 'RS', 'RG', 'RH' ] ) &
      .or.    ( tpbudiachro%cgroupname(1:2) == 'SV' .and. Len_trim( tpbudiachro%cgroupname ) == 5 )                    ) then
@@ -217,6 +218,9 @@ if (      Any( tpbudiachro%cgroupname == [ 'RJS', 'RJX', 'RJY', 'RJZ'] )        
     ygroup(ji : ji) = '_'
   end do
   Write( ygroup(6:9), '( i4.4 )' ) nbutshift
+else if ( tpbudiachro%nsv > 0 ) then
+  Allocate( character(len=9) :: ygroup )
+  Write( ygroup, '( "SV", i3.3, i4.4 )' ) tpbudiachro%nsv, nbutshift
 else
   ygroup = Trim( tpbudiachro%cgroupname )
 end if
