@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -163,16 +163,17 @@ END MODULE MODI_WRITE_LFIFM_n
 !!       J.escobar     04/08/2015 suit Pb with writ_lfin JSA increment , modif in ini_nsv to have good order initialization
 !!       Modification    01/2016  (JP Pinty) Add LIMA
 !!       M.Mazoyer     04/16 : Add supersaturation fields
-!!       P.Wautelet    11/07/2016 removed MNH_NCWRIT define
-!!       JP Chaboureau 27/11/2017 add wind tendency forcing
-!!                   02/2018 Q.Libois move Diagnostic related to the radiations in radiations.f90
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!       V. Vionnet    07/2017, add blowing snow variables
-!!       P.Wautelet    11/01/2019: bug correction in write XBL_DEPTH->XSBL_DEPTH
-!!       C.Lac         18/02/2019: add rain fraction as an output field
-!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 11/07/2016: remove MNH_NCWRIT define
+!  V. Vionnet     07/2017: add blowing snow variables
+!  JP Chaboureau 27/11/2017: add wind tendency forcing
+!  Q. Libois      02/2018: move Diagnostic related to the radiations in radiations.f90
+!  P. Wautelet 11/01/2019: bug correction in write XBL_DEPTH->XSBL_DEPTH
+!  C. Lac      18/02/2019: add rain fraction as an output field
+!  S. Bielli      02/2019: Sea salt: significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Tulet       02/2020: correction for dust and sea salts
+!  P. Wautelet 10/03/2021: use scalar variable names for dust and salt
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -295,8 +296,6 @@ INTEGER           :: JSA            ! beginning of chemical-aerosol variables
 CHARACTER(LEN=3)  :: YFRC           ! to mark the time of the forcing
 INTEGER           :: JT             ! loop index
 !
-INTEGER           :: JMOM, IMOMENTS, JMODE, ISV_NAME_IDX  ! dust modes
-! 
 REAL,DIMENSION(:,:), ALLOCATABLE  :: ZWORK2D     ! Working array
 REAL,DIMENSION(:,:,:), ALLOCATABLE  :: ZWORK3D     ! Working array
 !
@@ -1159,82 +1158,25 @@ IF (NSV >=1) THEN
       CALL DUSTLFI_n(XSVT(:,:,:,NSV_DSTBEG:NSV_DSTEND), XRHODREF)
     !At this point, we have the tracer array in order of importance, i.e.
     !if mode 2 is most important it will occupy place 1-3 of XSVT  
-    IF ((CPROGRAM == 'REAL  ').AND.((LDSTINIT).OR.(LDSTPRES)).OR.&
-       (CPROGRAM == 'IDEAL ')               ) THEN
-      ! In this case CDUSTNAMES is not allocated. We will use YPDUST_INI,
-      !but remember that this variable does not follow JPDUSTORDER
-      IMOMENTS = INT(NSV_DSTEND - NSV_DSTBEG+1)/NMODE_DST  
-      !Should equal 3 at this point
-      IF (IMOMENTS > 3) THEN
-        WRITE(ILUOUT,*) 'Error in write_lfin: number of moments must be less or equal to 3'
-        WRITE(ILUOUT,*) NSV_DSTBEG, NSV_DSTEND,NMODE_DST,IMOMENTS
-        call Print_msg( NVERB_FATAL, 'GEN', 'WRITE_LFIFM_n', 'number of moments must be less or equal to 3' )
-      END IF ! Test IMOMENTS
-      ALLOCATE(YDSTNAMES(NSV_DSTEND - NSV_DSTBEG+1))
-      !
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppp'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      IF (IMOMENTS == 1) THEN
-        DO JMODE=1, NMODE_DST
-          ISV_NAME_IDX = (JPDUSTORDER(JMODE) - 1)*3 + 2
-          JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
-                  +  1              & !Number of moments in this mode
-                  + (NSV_DSTBEG -1)      !Previous list of tracers
-          TZFIELD%CMNHNAME   = TRIM(YPDUST_INI(ISV_NAME_IDX))//'T'
-          TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-          WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-          CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-          YDSTNAMES((JMODE-1)*IMOMENTS+1)=TZFIELD%CMNHNAME(1:LEN_TRIM(TZFIELD%CMNHNAME)-1)
-        END DO ! Loop on mode
-      ELSE
-        DO JMODE=1,NMODE_DST
-          DO JMOM=1,IMOMENTS
-            ISV_NAME_IDX = (JPDUSTORDER(JMODE) - 1)*3 + JMOM
-            JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
-                 + JMOM               & !Number of moments in this mode
-                 + (NSV_DSTBEG -1)
-            TZFIELD%CMNHNAME   = TRIM(YPDUST_INI(ISV_NAME_IDX))//'T'  !The refererence which will be written to file
-            TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-            WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-            CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-            YDSTNAMES((JMODE-1)*IMOMENTS+JMOM)=TZFIELD%CMNHNAME(1:LEN_TRIM(TZFIELD%CMNHNAME)-1)
-          END DO ! Loop on moment
-        END DO ! loop on mode
-      END IF ! Valeur IMOMENTS
-!
-      DO JSV = NSV_DSTBEG,NSV_DSTEND
-        YCHNAMES(JSV-JSA) = YDSTNAMES(JSV-NSV_DSTBEG+1)
-      END DO   
-      DEALLOCATE(YDSTNAMES)
-    ELSE 
-      ! We are in the subprogram MESONH, CDUSTNAMES are allocated and are 
-      !in the same order as the variables in XSVT (i.e. following JPDUSTORDER)
-      !
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppp'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      CALL DUST_FILTER(XSVT(:,:,:,NSV_DSTBEG:NSV_DSTEND), XRHODREF)
-      DO JSV = NSV_DSTBEG,NSV_DSTEND
-        TZFIELD%CMNHNAME   = TRIM(CDUSTNAMES(JSV-NSV_DSTBEG+1))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-        IF (JSV==NSV_DSTBEG) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_DSTBEG ',JSV
-        IF (JSV==NSV_DSTEND) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_DSTEND ',JSV
-        YCHNAMES(JSV-JSA) = TZFIELD%CMNHNAME(1:LEN_TRIM(TZFIELD%CMNHNAME)-1)
-      END DO   ! Loop on dust scalar variables
-    END IF 
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CUNITS     = 'ppp'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    TZFIELD%LTIMEDEP   = .TRUE.
+    !
+    CALL DUST_FILTER(XSVT(:,:,:,NSV_DSTBEG:NSV_DSTEND), XRHODREF)
+    DO JSV = NSV_DSTBEG,NSV_DSTEND
+      TZFIELD%CMNHNAME   = TRIM(CDUSTNAMES(JSV-NSV_DSTBEG+1))//'T'
+      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+      WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
+      CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
+      IF (JSV==NSV_DSTBEG) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_DSTBEG ',JSV
+      IF (JSV==NSV_DSTEND) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_DSTEND ',JSV
+      YCHNAMES(JSV-JSA) = TZFIELD%CMNHNAME(1:LEN_TRIM(TZFIELD%CMNHNAME)-1)
+    END DO   ! Loop on dust scalar variables
+
     IF (LDEPOS_DST(IMI)) THEN
       TZFIELD%CSTDNAME   = ''
       TZFIELD%CUNITS     = 'ppp'
@@ -1252,9 +1194,9 @@ IF (NSV >=1) THEN
         IF (JSV==NSV_DSTDEPBEG) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_DSTDEPBEG ',JSV
         IF (JSV==NSV_DSTDEPEND) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_DSTDEPEND ',JSV
         YCHNAMES(JSV-JSA) = TZFIELD%CMNHNAME(1:LEN_TRIM(TZFIELD%CMNHNAME)-1)
-      END DO   ! Loop on aq dust scalar variables      
+      END DO   ! Loop on aq dust scalar variables
     ENDIF
-  ENDIF  
+  ENDIF
   ! sea salt scalar variables
   IF (LSALT) THEN
     IF ((CPROGRAM == 'REAL  ').AND.(NSV_SLT > 1).AND.(IMI==1).AND.(LSLTINIT)) &
@@ -1263,80 +1205,25 @@ IF (NSV >=1) THEN
       CALL SALTLFI_n(XSVT(:,:,:,NSV_SLTBEG:NSV_SLTEND), XRHODREF, XZZ)
     !At this point, we have the tracer array in order of importance, i.e.
     !if mode 2 is most important it will occupy place 1-3 of XSVT  
-    IF (((CPROGRAM == 'REAL  ').AND.(LSLTINIT)).OR.&
-        (CPROGRAM == 'IDEAL ')           ) THEN
-      ! In this case CSALTNAMES is not allocated. We will use YPSALT_INI,
-      !but remember that this variable does not follow JPSALTORDER
-      IMOMENTS = INT(NSV_SLTEND - NSV_SLTBEG+1)/NMODE_SLT  
-      !Should equal 3 at this point
-      IF (IMOMENTS .NE. 3) THEN
-        WRITE(ILUOUT,*) 'Error in write_lfin: number of moments must be equal to 3'
-        WRITE(ILUOUT,*) NSV_SLTBEG, NSV_SLTEND,NMODE_SLT,IMOMENTS
-        call Print_msg( NVERB_FATAL, 'GEN', 'WRITE_LFIFM_n', 'number of moments must be equal to 3' )
-      END IF
-      ALLOCATE(YSLTNAMES(NSV_SLTEND - NSV_SLTBEG+1))
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppp'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-!
-      IF (IMOMENTS == 1) THEN
-        DO JMODE=1, NMODE_SLT
-          ISV_NAME_IDX = (JPSALTORDER(JMODE) - 1)*3 + 2
-          JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
-                  +  1              & !Number of moments in this mode
-                  + (NSV_SLTBEG -1)      !Previous list of tracers
-          TZFIELD%CMNHNAME   = TRIM(YPSALT_INI(ISV_NAME_IDX))//'T'
-          TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-          WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-          CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-          YSLTNAMES((JMODE-1)*IMOMENTS+1)=TZFIELD%CMNHNAME(1:LEN_TRIM(TZFIELD%CMNHNAME)-1)
-        END DO ! Loop on mode
-      ELSE
-        DO JMODE=1, NMODE_SLT
-          DO JMOM = 1, IMOMENTS
-            ISV_NAME_IDX = (JPSALTORDER(JMODE) - 1)*IMOMENTS + JMOM
-            JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
-                 + JMOM               & !Number of moments in this mode
-                 + (NSV_SLTBEG -1)
-            TZFIELD%CMNHNAME   = TRIM(YPSALT_INI(ISV_NAME_IDX))//'T'  !The refererence which will be written to file
-            TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-            WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-            CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-            YSLTNAMES((JMODE-1)*IMOMENTS+JMOM)=TZFIELD%CMNHNAME(1:LEN_TRIM(TZFIELD%CMNHNAME)-1)
-          END DO ! Loop on moment
-        END DO ! loop on mode
-      END IF ! IMOMENTS
-      !
-      DO JSV = NSV_SLTBEG,NSV_SLTEND
-        YCHNAMES(JSV-JSA) = YSLTNAMES(JSV-NSV_SLTBEG+1)
-      END DO   
-      DEALLOCATE(YSLTNAMES)
-    ELSE 
-      ! We are in the subprogram MESONH, CSALTNAMES are allocated and are 
-      !in the same order as the variables in XSVT (i.e. following JPSALTORDER)
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppp'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      CALL SALT_FILTER(XSVT(:,:,:,NSV_SLTBEG:NSV_SLTEND), XRHODREF)
-      DO JSV = NSV_SLTBEG,NSV_SLTEND
-        TZFIELD%CMNHNAME   = TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
-        IF (JSV==NSV_SLTBEG) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_SLTBEG ',JSV
-        IF (JSV==NSV_SLTEND) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_SLTEND ',JSV
-        YCHNAMES(JSV-JSA) = TZFIELD%CMNHNAME(1:LEN_TRIM(TZFIELD%CMNHNAME)-1)
-      END DO   ! Loop on sea salt scalar variables
-    END IF 
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CUNITS     = 'ppp'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    TZFIELD%LTIMEDEP   = .TRUE.
+    !
+    CALL SALT_FILTER(XSVT(:,:,:,NSV_SLTBEG:NSV_SLTEND), XRHODREF)
+    DO JSV = NSV_SLTBEG,NSV_SLTEND
+      TZFIELD%CMNHNAME   = TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))//'T'
+      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+      WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
+      CALL IO_Field_write(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
+      IF (JSV==NSV_SLTBEG) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_SLTBEG ',JSV
+      IF (JSV==NSV_SLTEND) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_SLTEND ',JSV
+      YCHNAMES(JSV-JSA) = TZFIELD%CMNHNAME(1:LEN_TRIM(TZFIELD%CMNHNAME)-1)
+    END DO   ! Loop on sea salt scalar variables
+
     IF (LDEPOS_SLT(IMI)) THEN        
       TZFIELD%CSTDNAME   = ''
       TZFIELD%CUNITS     = 'ppp'

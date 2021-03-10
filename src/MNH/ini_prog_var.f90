@@ -98,6 +98,7 @@ END MODULE MODI_INI_PROG_VAR
 !  P. Wautelet 09/03/2021: simplify allocation of scalar variable names
 !  P. Wautelet 09/03/2021: move some chemistry initializations to ini_nsv
 !  P. Wautelet 10/03/2021: move scalar variable name initializations to ini_nsv
+!  P. Wautelet 10/03/2021: use scalar variable names for dust and salt
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -347,40 +348,16 @@ IF(PRESENT(HCHEMFILE)) THEN
     TZFIELD%NDIMS      = 3
     TZFIELD%LTIMEDEP   = .TRUE.
     !
-    IMOMENTS = INT(NSV_DSTEND - NSV_DSTBEG+1)/NMODE_DST
-    IF (IMOMENTS == 1) THEN
-      DO JMODE=1, NMODE_DST
-        !Index from which names are picked
-        ISV_NAME_IDX = (JPDUSTORDER(JMODE) - 1)*3 + 2
-        JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
-             +  1                 & !Number of moments in this mode
-             + (NSV_DSTBEG -1)      !Previous list of tracers  
-        TZFIELD%CMNHNAME   = TRIM(YPDUST_INI(ISV_NAME_IDX))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_read(TZCHEMFILE,TZFIELD,XSVT(:,:,:,JSV),IRESP)
-        IF (IRESP/=0) THEN
-          CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_PROG_VAR',TRIM(TZFIELD%CMNHNAME)//' not found in the CHEM file '//TRIM(HCHEMFILE))
-        END IF !IRESP
-      END DO !JMOD
-    ELSE  ! IMOMENTS diff 1
-      DO JMODE=1,NMODE_DST
-        DO JMOM=1,IMOMENTS
-          ISV_NAME_IDX = (JPDUSTORDER(JMODE) - 1)*3 + JMOM
-          JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
-               + JMOM               & !Number of moments in this mode
-               + (NSV_DSTBEG -1)      !Previous list of tracers
-          TZFIELD%CMNHNAME   = TRIM(YPDUST_INI(ISV_NAME_IDX))//'T'
-          TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-          WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-          CALL IO_Field_read(TZCHEMFILE,TZFIELD,XSVT(:,:,:,JSV),IRESP)
-          IF (IRESP/=0) THEN
-            CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_PROG_VAR',TRIM(TZFIELD%CMNHNAME)//&
-                                             ' not found in the CHEM file '//TRIM(HCHEMFILE))
-          END IF !IRESP
-        END DO ! JMOM
-      END DO !JMOD
-    END IF !if IMOMENTS   
+    DO JSV = NSV_DSTBEG, NSV_DSTEND
+      TZFIELD%CMNHNAME   = TRIM(CDUSTNAMES(JSV-NSV_DSTBEG+1))//'T'
+      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+      WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
+      CALL IO_Field_read(TZCHEMFILE,TZFIELD,XSVT(:,:,:,JSV),IRESP)
+      IF (IRESP/=0) THEN
+        CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_PROG_VAR',TRIM(TZFIELD%CMNHNAME)//' not found in the CHEM file '//TRIM(HCHEMFILE))
+      END IF !IRESP
+    END DO ! JSV
+
     IF (LDEPOS_DST(IMI)) THEN   
       TZFIELD%CSTDNAME   = ''
       TZFIELD%CUNITS     = 'ppp'
@@ -412,39 +389,15 @@ IF(PRESENT(HCHEMFILE)) THEN
     TZFIELD%NDIMS      = 3
     TZFIELD%LTIMEDEP   = .TRUE.
     !
-    IMOMENTS = INT(NSV_SLTEND - NSV_SLTBEG+1)/NMODE_SLT
-    IF (IMOMENTS == 1) THEN
-      DO JMODE=1, NMODE_SLT
-        !Index from which names are picked
-        ISV_NAME_IDX = (JPSALTORDER(JMODE) - 1)*3 + 2
-        JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
-             +  1                 & !Number of moments in this mode
-             + (NSV_SLTBEG -1)      !Previous list of tracers  
-        TZFIELD%CMNHNAME   = TRIM(YPSALT_INI(ISV_NAME_IDX))//'T'
-        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-        CALL IO_Field_read(TZCHEMFILE,TZFIELD,XSVT(:,:,:,JSV),IRESP)
-        IF (IRESP/=0) THEN
-          CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_PROG_VAR',TRIM(TZFIELD%CMNHNAME)//' not found in the CHEM file '//TRIM(HCHEMFILE))
-        END IF !IRESP
-      END DO !JMOD
-    ELSE  ! IMOMENTS
-      DO JMODE=1,NMODE_SLT
-        DO JMOM=1,IMOMENTS
-          ISV_NAME_IDX = (JPSALTORDER(JMODE) - 1)*3 + JMOM
-          JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
-               + JMOM               & !Number of moments in this mode
-               + (NSV_SLTBEG -1)      !Previous list of tracers
-          TZFIELD%CMNHNAME   = TRIM(YPSALT_INI(ISV_NAME_IDX))//'T'
-          TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-          WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
-          CALL IO_Field_read(TZCHEMFILE,TZFIELD,XSVT(:,:,:,JSV),IRESP)
-          IF (IRESP/=0) THEN
-            CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_PROG_VAR',TRIM(TZFIELD%CMNHNAME)//' not found in the CHEM file '//TRIM(HCHEMFILE))
-          END IF !IRESP
-        END DO ! JMOM
-      END DO !JMOD
-    END IF !if IMOMENTS
+    DO JSV = NSV_SLTBEG, NSV_SLTEND
+      TZFIELD%CMNHNAME   = TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))//'T'
+      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+      WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
+      CALL IO_Field_read(TZCHEMFILE,TZFIELD,XSVT(:,:,:,JSV),IRESP)
+      IF (IRESP/=0) THEN
+        CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_PROG_VAR',TRIM(TZFIELD%CMNHNAME)//' not found in the CHEM file '//TRIM(HCHEMFILE))
+      END IF !IRESP
+    END DO ! JSV
     !
     IF (LDEPOS_SLT(IMI)) THEN
       TZFIELD%CSTDNAME   = ''

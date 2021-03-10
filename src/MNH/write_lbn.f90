@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1998-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1998-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -75,8 +75,9 @@ END MODULE MODI_WRITE_LB_n
 !!     P. Tulet    09/14    modif SALT
 !!     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!    J.-P. Pinty  09/02/16 Add LIMA that is LBC for CCN and IFN
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  S. Bielli      02/2019: Sea salt: significant sea wave height influences salt emission; 5 salt modes
+!  P. Wautelet 10/03/2021: use scalar variable names for dust and salt
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -143,8 +144,6 @@ LOGICAL, DIMENSION (7)           :: GUSER ! array with the use indicator of the 
 REAL,    DIMENSION(SIZE(XLBXSVM, 1), SIZE(XLBXSVM,2), SIZE(XLBXSVM,3)) :: ZRHODREFX
 REAL,    DIMENSION(SIZE(XLBYSVM, 1), SIZE(XLBYSVM,2), SIZE(XLBYSVM,3)) :: ZRHODREFY
 INTEGER            :: JK
-!         Integers, counters for dust modes
-INTEGER            :: JMOM, IMOMENTS, JMODE, ISV_NAME_IDX
 INTEGER            :: IMI    ! Current model index
 CHARACTER(LEN=2)   :: INDICE ! to index CCN and IFN fields of LIMA scheme
 INTEGER           :: I
@@ -611,123 +610,51 @@ IF (NSV >=1) THEN
         CALL DUSTLFI_n(XLBYSVM(:,:,:,NSV_DSTBEG:NSV_DSTEND), ZRHODREFY)
     END IF
     !
-    IF ((CPROGRAM == 'REAL  ').OR. (CPROGRAM == 'IDEAL ')) THEN
-      ! In this case CDUSTNAMES is not allocated. We will use YPDUST_INI,
-      !but remember that this variable does not follow JPDUSTORDER
-      IMOMENTS = INT(NSV_DSTEND - NSV_DSTBEG + 1)/NMODE_DST
-      !Should equal 3 at this point
-      IF (IMOMENTS >  3) THEN
-        WRITE(YMSG,*) 'number of DST moments must be 3',NSV_DSTBEG, NSV_DSTEND,NMODE_DST,IMOMENTS
-        CALL PRINT_MSG(NVERB_FATAL,'GEN','WRITE_LB_n',YMSG)
-      END IF ! Test IMOMENTS
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CUNITS     = 'ppp'
+    TZFIELD%CDIR       = ''
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    TZFIELD%LTIMEDEP   = .TRUE.
+    !
+    DO JSV = NSV_DSTBEG,NSV_DSTEND
+      IF(NSIZELBXSV_ll /= 0) THEN
+        TZFIELD%CMNHNAME   = 'LBX_'//TRIM(CDUSTNAMES(JSV-NSV_DSTBEG+1))
+        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+        TZFIELD%CLBTYPE    = 'LBX'
+        WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
+        CALL IO_Field_write_lb(TPFILE,TZFIELD,NSIZELBXSV_ll,XLBXSVM(:,:,:,JSV))
+      END IF
       !
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppp'
-      TZFIELD%CDIR       = ''
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      IF (IMOMENTS == 1) THEN
-        DO JMODE=1, NMODE_DST
-          !Index from which names are picked
-          ISV_NAME_IDX = (JPDUSTORDER(JMODE) - 1)*3 + 2
-          JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
-                +  1              & !Number of moments in this mode
-                + (NSV_DSTBEG -1)      !Previous list of tracers
-
-          IF(NSIZELBXSV_ll /= 0) THEN !Check on border points in X direction             
-            TZFIELD%CMNHNAME   = 'LBX_'//TRIM(YPDUST_INI(ISV_NAME_IDX))
-            TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-            TZFIELD%CLBTYPE    = 'LBX'
-            WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3,A8)')'2_Y_Z_','LBXSVM',JSV
-            CALL IO_Field_write_lb(TPFILE,TZFIELD,NSIZELBXSV_ll,XLBXSVM(:,:,:,JSV))
-          ENDIF !Check on border points in X direction
-          IF(NSIZELBYSV_ll /= 0) THEN
-            TZFIELD%CMNHNAME   = 'LBY_'//TRIM(YPDUST_INI(ISV_NAME_IDX))
-            TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-            TZFIELD%CLBTYPE    = 'LBY'
-            WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3,A8)')'X_2_Z_','LBYSVM',JSV
-            CALL IO_Field_write_lb(TPFILE,TZFIELD,NSIZELBYSV_ll,XLBYSVM(:,:,:,JSV))
-          ENDIF  !Check on points in Y direction
-        ENDDO ! Loop on mode
-      ELSE  ! valeur IMOMENTS =/ 1
-        DO JMODE=1,NMODE_DST
-          DO JMOM=1,IMOMENTS
-            ISV_NAME_IDX = (JPDUSTORDER(JMODE) - 1)*3 + JMOM
-            JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
-                + JMOM               & !Number of moments in this mode
-                + (NSV_DSTBEG -1)
-            !
-            IF(NSIZELBXSV_ll /= 0) THEN !Check on border points in X direction
-              TZFIELD%CMNHNAME   = 'LBX_'//TRIM(YPDUST_INI(ISV_NAME_IDX))
-              TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-              TZFIELD%CLBTYPE    = 'LBX'
-              WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3,A8)')'2_Y_Z_','LBXSVM',JSV
-              CALL IO_Field_write_lb(TPFILE,TZFIELD,NSIZELBXSV_ll,XLBXSVM(:,:,:,JSV))
-            ENDIF !Check on border points in X direction
-            IF(NSIZELBYSV_ll /= 0) THEN
-              TZFIELD%CMNHNAME   = 'LBY_'//TRIM(YPDUST_INI(ISV_NAME_IDX))
-              TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-              TZFIELD%CLBTYPE    = 'LBY'
-              WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3,A8)')'X_2_Z_','LBYSVM',JSV
-              CALL IO_Field_write_lb(TPFILE,TZFIELD,NSIZELBYSV_ll,XLBYSVM(:,:,:,JSV))
-            ENDIF  !Check on points in Y direction
-          ENDDO ! Loop on moments
-        ENDDO    ! Loop on modes
-      END IF ! valeur IMOMENTS
-
-    ELSE  ! Test CPROGRAM
-      ! We are in the subprogram MESONH, CDUSTNAMES are allocated and are 
-      !in the same order as the variables in XSVM (i.e. following JPDUSTORDER)
-      !
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppp'
-      TZFIELD%CDIR       = ''
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = NSV_DSTBEG,NSV_DSTEND
+      IF(NSIZELBYSV_ll /= 0) THEN
+        TZFIELD%CMNHNAME   = 'LBY_'//TRIM(CDUSTNAMES(JSV-NSV_DSTBEG+1))
+        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+        TZFIELD%CLBTYPE    = 'LBY'
+        WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
+        CALL IO_Field_write_lb(TPFILE,TZFIELD,NSIZELBYSV_ll,XLBYSVM(:,:,:,JSV))
+      END IF
+    END DO
+    IF (LDEPOS_DST(IMI)) THEN
+      DO JSV = NSV_DSTDEPBEG,NSV_DSTDEPEND
         IF(NSIZELBXSV_ll /= 0) THEN
-          TZFIELD%CMNHNAME   = 'LBX_'//TRIM(CDUSTNAMES(JSV-NSV_DSTBEG+1))
+          TZFIELD%CMNHNAME   = 'LBX_'//TRIM(CDEDSTNAMES(JSV-NSV_DSTDEPBEG+1))
           TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
           TZFIELD%CLBTYPE    = 'LBX'
           WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
           CALL IO_Field_write_lb(TPFILE,TZFIELD,NSIZELBXSV_ll,XLBXSVM(:,:,:,JSV))
-        END IF             
+        END IF
         !
         IF(NSIZELBYSV_ll /= 0) THEN
-          TZFIELD%CMNHNAME   = 'LBY_'//TRIM(CDUSTNAMES(JSV-NSV_DSTBEG+1))
+          TZFIELD%CMNHNAME   = 'LBY_'//TRIM(CDEDSTNAMES(JSV-NSV_DSTDEPBEG+1))
           TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
           TZFIELD%CLBTYPE    = 'LBY'
           WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
           CALL IO_Field_write_lb(TPFILE,TZFIELD,NSIZELBYSV_ll,XLBYSVM(:,:,:,JSV))
         END IF
       END DO
-      IF (LDEPOS_DST(IMI)) THEN
-        DO JSV = NSV_DSTDEPBEG,NSV_DSTDEPEND
-          IF(NSIZELBXSV_ll /= 0) THEN
-            TZFIELD%CMNHNAME   = 'LBX_'//TRIM(CDEDSTNAMES(JSV-NSV_DSTDEPBEG+1))
-            TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-            TZFIELD%CLBTYPE    = 'LBX'
-            WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
-            CALL IO_Field_write_lb(TPFILE,TZFIELD,NSIZELBXSV_ll,XLBXSVM(:,:,:,JSV))
-          END IF             
-          !
-          IF(NSIZELBYSV_ll /= 0) THEN
-            TZFIELD%CMNHNAME   = 'LBY_'//TRIM(CDEDSTNAMES(JSV-NSV_DSTDEPBEG+1))
-            TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-            TZFIELD%CLBTYPE    = 'LBY'
-            WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
-            CALL IO_Field_write_lb(TPFILE,TZFIELD,NSIZELBYSV_ll,XLBYSVM(:,:,:,JSV))
-          END IF             
-        END DO      
-      END IF  
-    END IF  
-  ENDIF  
+    END IF
+  ENDIF
   !
   IF (LSALT) THEN
     DO JK=1,size(XLBXSVM,3)
@@ -772,120 +699,50 @@ IF (NSV >=1) THEN
       END IF
     END IF
     !
-    IF ((CPROGRAM == 'REAL  ').OR. (CPROGRAM == 'IDEAL ')) THEN
-      ! In this case CSALTNAMES is not allocated. We will use YPSALT_INI,
-      !but remember that this variable does not follow JPSALTORDER
-      IMOMENTS = INT(NSV_SLTEND - NSV_SLTBEG + 1)/NMODE_SLT
-      !Should equal 3 at this point
-      IF (IMOMENTS >  3) THEN
-        WRITE(YMSG,*) 'number of SLT moments must be 3',NSV_SLTBEG, NSV_SLTEND,NMODE_SLT,IMOMENTS
-        CALL PRINT_MSG(NVERB_FATAL,'GEN','WRITE_LB_n',YMSG)
-      END IF ! Test IMOMENTS
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CUNITS     = 'ppp'
+    TZFIELD%CDIR       = ''
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    TZFIELD%LTIMEDEP   = .TRUE.
+    !
+    DO JSV = NSV_SLTBEG,NSV_SLTEND
+      IF(NSIZELBXSV_ll /= 0) THEN
+        TZFIELD%CMNHNAME   = 'LBX_'//TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))
+        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+        TZFIELD%CLBTYPE    = 'LBX'
+        WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
+        CALL IO_Field_write_lb(TPFILE,TZFIELD,NSIZELBXSV_ll,XLBXSVM(:,:,:,JSV))
+      END IF
       !
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppp'
-      TZFIELD%CDIR       = ''
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      IF (IMOMENTS == 1) THEN
-        DO JMODE=1, NMODE_SLT
-          !Index from which names are picked
-          ISV_NAME_IDX = (JPSALTORDER(JMODE) - 1)*3 + 2
-          JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
-                +  1              & !Number of moments in this mode
-                + (NSV_SLTBEG -1)      !Previous list of tracers
-
-          IF(NSIZELBXSV_ll /= 0) THEN !Check on border points in X direction   
-            TZFIELD%CMNHNAME   = 'LBX_'//TRIM(YPSALT_INI(ISV_NAME_IDX))
-            TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-            TZFIELD%CLBTYPE    = 'LBX'
-            WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
-            CALL IO_Field_write_lb(TPFILE,TZFIELD,NSIZELBXSV_ll,XLBXSVM(:,:,:,JSV))
-          ENDIF !Check on border points in X direction
-          IF(NSIZELBYSV_ll /= 0) THEN
-            TZFIELD%CMNHNAME   = 'LBY_'//TRIM(YPSALT_INI(ISV_NAME_IDX))
-            TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-            TZFIELD%CLBTYPE    = 'LBY'
-            WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
-            CALL IO_Field_write_lb(TPFILE,TZFIELD,NSIZELBYSV_ll,XLBYSVM(:,:,:,JSV))
-          ENDIF  !Check on points in Y direction
-        ENDDO ! Loop on mode
-      ELSE  ! valeur IMOMENTS =/ 1
-        DO JMODE=1,NMODE_SLT
-          DO JMOM=1,IMOMENTS
-            ISV_NAME_IDX = (JPSALTORDER(JMODE) - 1)*3 + JMOM
-            JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
-                + JMOM               & !Number of moments in this mode
-                + (NSV_SLTBEG -1)
-
-            IF(NSIZELBXSV_ll /= 0) THEN !Check on border points in X direction
-              TZFIELD%CMNHNAME   = 'LBX_'//TRIM(YPSALT_INI(ISV_NAME_IDX))
-              TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-              TZFIELD%CLBTYPE    = 'LBX'
-              WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
-              CALL IO_Field_write_lb(TPFILE,TZFIELD,NSIZELBXSV_ll,XLBXSVM(:,:,:,JSV))
-            ENDIF !Check on border points in X direction
-            IF(NSIZELBYSV_ll /= 0) THEN
-              TZFIELD%CMNHNAME   = 'LBY_'//TRIM(YPSALT_INI(ISV_NAME_IDX))
-              TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-              TZFIELD%CLBTYPE    = 'LBY'
-              WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
-              CALL IO_Field_write_lb(TPFILE,TZFIELD,NSIZELBYSV_ll,XLBYSVM(:,:,:,JSV))
-            ENDIF  !Check on points in Y direction
-          ENDDO ! Loop on moments
-        ENDDO    ! Loop on modes
-      END IF ! valeur IMOMENTS
-    ELSE  ! Test CPROGRAM
-      ! We are in the subprogram MESONH, CSALTNAMES are allocated and are 
-      !in the same order as the variables in XSVM (i.e. following JPSALTORDER)
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'ppp'
-      TZFIELD%CDIR       = ''
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      TZFIELD%LTIMEDEP   = .TRUE.
-      !
-      DO JSV = NSV_SLTBEG,NSV_SLTEND
+      IF(NSIZELBYSV_ll /= 0) THEN
+        TZFIELD%CMNHNAME   = 'LBY_'//TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))
+        TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+        TZFIELD%CLBTYPE    = 'LBY'
+        WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
+        CALL IO_Field_write_lb(TPFILE,TZFIELD,NSIZELBYSV_ll,XLBYSVM(:,:,:,JSV))
+      END IF
+    END DO
+    IF (LDEPOS_SLT(IMI)) THEN
+      DO JSV = NSV_SLTDEPBEG,NSV_SLTDEPEND
         IF(NSIZELBXSV_ll /= 0) THEN
-          TZFIELD%CMNHNAME   = 'LBX_'//TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))
+          TZFIELD%CMNHNAME   = 'LBX_'//TRIM(CDESLTNAMES(JSV-NSV_SLTDEPBEG+1))
           TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
           TZFIELD%CLBTYPE    = 'LBX'
           WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
           CALL IO_Field_write_lb(TPFILE,TZFIELD,NSIZELBXSV_ll,XLBXSVM(:,:,:,JSV))
-        END IF             
+        END IF
         !
         IF(NSIZELBYSV_ll /= 0) THEN
-          TZFIELD%CMNHNAME   = 'LBY_'//TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))
+          TZFIELD%CMNHNAME   = 'LBY_'//TRIM(CDESLTNAMES(JSV-NSV_SLTDEPBEG+1))
           TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
           TZFIELD%CLBTYPE    = 'LBY'
           WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
           CALL IO_Field_write_lb(TPFILE,TZFIELD,NSIZELBYSV_ll,XLBYSVM(:,:,:,JSV))
-        END IF            
+        END IF
       END DO
-      IF (LDEPOS_SLT(IMI)) THEN
-        DO JSV = NSV_SLTDEPBEG,NSV_SLTDEPEND
-          IF(NSIZELBXSV_ll /= 0) THEN
-            TZFIELD%CMNHNAME   = 'LBX_'//TRIM(CDESLTNAMES(JSV-NSV_SLTDEPBEG+1))
-            TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-            TZFIELD%CLBTYPE    = 'LBX'
-            WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
-            CALL IO_Field_write_lb(TPFILE,TZFIELD,NSIZELBXSV_ll,XLBXSVM(:,:,:,JSV))
-          END IF             
-          !
-          IF(NSIZELBYSV_ll /= 0) THEN
-            TZFIELD%CMNHNAME   = 'LBY_'//TRIM(CDESLTNAMES(JSV-NSV_SLTDEPBEG+1))
-            TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-            TZFIELD%CLBTYPE    = 'LBY'
-            WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
-            CALL IO_Field_write_lb(TPFILE,TZFIELD,NSIZELBYSV_ll,XLBYSVM(:,:,:,JSV))
-          END IF             
-        END DO      
-      END IF  
-    END IF  
+    END IF
   ENDIF   
   !
   ! lagrangian variables
