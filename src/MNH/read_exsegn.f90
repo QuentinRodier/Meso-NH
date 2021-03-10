@@ -297,7 +297,8 @@ END MODULE MODI_READ_EXSEG_n
 !  Q. Rodier      03/2020: add abort if use of any LHORELAX and cyclic conditions
 !  P. Wautelet 09/03/2021: simplify allocation of scalar variable names
 !  P. Wautelet 09/03/2021: move some chemistry initializations to ini_nsv
-!!------------------------------------------------------------------------------
+!  P. Wautelet 10/03/2021: move scalar variable name initializations to ini_nsv
+!------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
@@ -447,8 +448,6 @@ INTEGER :: ILUSEG,ILUOUT ! logical unit numbers of EXSEG file and outputlisting
 INTEGER :: JS,JCI,JI,JSV       ! Loop indexes 
 LOGICAL :: GRELAX              
 LOGICAL :: GFOUND              ! Return code when searching namelist
-!
-INTEGER :: IMOMENTS, JMODE, IMODEIDX, JMOM, JSV_NAME, JMOD, I
 !
 !-------------------------------------------------------------------------------
 !
@@ -1704,44 +1703,7 @@ IF (LDUST) THEN
  !callabortstop
     CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_EXSEG_n','')
   END IF     
-  IF(.NOT.ALLOCATED(CDUSTNAMES)) THEN
-    IMOMENTS = (NSV_DSTEND - NSV_DSTBEG +1 )/NMODE_DST
-    ALLOCATE(CDUSTNAMES(IMOMENTS*NMODE_DST))
-    !Loop on all dust modes
-    IF (IMOMENTS == 1) THEN
-    DO JMODE=1,NMODE_DST
-      IMODEIDX=JPDUSTORDER(JMODE)
-      JSV_NAME = (IMODEIDX - 1)*3 + 2
-      CDUSTNAMES(JMODE) = YPDUST_INI(JSV_NAME)
-    END DO
-    ELSE
-    DO JMODE=1,NMODE_DST  
-      !Find which mode we are dealing with
-      IMODEIDX=JPDUSTORDER(JMODE)
-      DO JMOM=1,IMOMENTS
-        !Find which number this is of the list of scalars
-        JSV = (JMODE-1)*IMOMENTS + JMOM
-        !Find what name this corresponds to, always 3 moments assumed in YPDUST_INI
-        JSV_NAME = (IMODEIDX - 1)*3 + JMOM
-        !Get the right CDUSTNAMES which should follow the list of scalars transported in XSVM/XSVT
-        CDUSTNAMES(JSV) = YPDUST_INI(JSV_NAME)
-      ENDDO ! Loop on moments
-    ENDDO    ! Loop on dust modes
-    END IF 
-  END IF 
-  ! Initialization of deposition scheme
-  IF (LDEPOS_DST(KMI)) THEN
-    IF(.NOT.ALLOCATED(CDEDSTNAMES)) THEN
-      ALLOCATE(CDEDSTNAMES(NMODE_DST*2))
-      DO JMODE=1,NMODE_DST  
-        IMODEIDX=JPDUSTORDER(JMODE)
-        CDEDSTNAMES(JMODE) = YPDEDST_INI(IMODEIDX)
-        CDEDSTNAMES(NMODE_DST+JMODE) = YPDEDST_INI(NMODE_DST+IMODEIDX)
-      ENDDO
-    ENDIF    
-  ENDIF
-
-END IF 
+END IF
 !
 ! Sea Salt case
 !
@@ -1787,42 +1749,6 @@ IF (LSALT) THEN
  !callabortstop
     CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_EXSEG_n','')
   END IF     
-  IF(.NOT.ALLOCATED(CSALTNAMES)) THEN
-    IMOMENTS = (NSV_SLTEND - NSV_SLTBEG +1 )/NMODE_SLT
-    ALLOCATE(CSALTNAMES(IMOMENTS*NMODE_SLT))
-    !Loop on all dust modes
-    IF (IMOMENTS == 1) THEN
-    DO JMODE=1,NMODE_SLT
-      IMODEIDX=JPSALTORDER(JMODE)
-      JSV_NAME = (IMODEIDX - 1)*3 + 2
-      CSALTNAMES(JMODE) = YPSALT_INI(JSV_NAME)
-    END DO
-    ELSE
-    DO JMODE=1,NMODE_SLT  
-      !Find which mode we are dealing with
-      IMODEIDX=JPSALTORDER(JMODE)
-      DO JMOM=1,IMOMENTS
-        !Find which number this is of the list of scalars
-        JSV = (JMODE-1)*IMOMENTS + JMOM
-        !Find what name this corresponds to, always 3 moments assumed in YPSALT_INI
-        JSV_NAME = (IMODEIDX - 1)*3 + JMOM
-        !Get the right CSALTNAMES which should follow the list of scalars transported in XSVM/XSVT
-        CSALTNAMES(JSV) = YPSALT_INI(JSV_NAME)
-      ENDDO ! Loop on moments
-    ENDDO    ! Loop on dust modes
-    END IF
-  END IF 
-  ! Initialization of deposition scheme
-  IF (LDEPOS_SLT(KMI)) THEN
-    IF(.NOT.ALLOCATED(CDESLTNAMES)) THEN
-      ALLOCATE(CDESLTNAMES(NMODE_SLT*2))
-      DO JMODE=1,NMODE_SLT  
-        IMODEIDX=JPSALTORDER(JMODE)
-        CDESLTNAMES(JMODE) = YPDESLT_INI(IMODEIDX)
-        CDESLTNAMES(NMODE_SLT+JMODE) = YPDESLT_INI(NMODE_SLT+IMODEIDX)
-      ENDDO
-    ENDIF    
-  ENDIF
 END IF 
 !
 ! Orilam SV case
@@ -1957,13 +1883,6 @@ IF (LBLOWSNOW) THEN
          &SCHEME IN INITIAL FMFILE",/,&
          & "THE BLOWING SNOW VARIABLES HAVE BEEN INITIALIZED TO ZERO ")')
     CGETSVT(NSV_SNWBEG:NSV_SNWEND)='INIT'
-  END IF
-  IF(.NOT.ALLOCATED(CSNOWNAMES)) THEN
-    IMOMENTS = (NSV_SNWEND - NSV_SNWBEG +1 )
-    ALLOCATE(CSNOWNAMES(IMOMENTS))
-    DO JMOM=1,IMOMENTS
-      CSNOWNAMES(JMOM) = YPSNOW_INI(JMOM)
-    ENDDO ! Loop on moments
   END IF
 END IF
 !

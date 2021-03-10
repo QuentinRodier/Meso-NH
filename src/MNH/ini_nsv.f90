@@ -66,12 +66,13 @@ END MODULE MODI_INI_NSV
 !!      Modification    01/2016  (JP Pinty) Add LIMA and LUSECHEM condition
 !!      Modification    07/2017  (V. Vionnet) Add blowing snow condition
 !  P. Wautelet 09/03/2021: move some chemistry initializations to ini_nsv
+!  P. Wautelet 10/03/2021: move scalar variable name initializations to ini_nsv
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
 !
-USE MODD_BLOWSNOW,        ONLY: LBLOWSNOW, NBLOWSNOW3D
+USE MODD_BLOWSNOW,        ONLY: CSNOWNAMES, LBLOWSNOW, NBLOWSNOW3D, YPSNOW_INI
 USE MODD_CH_AEROSOL,      ONLY: JPMODE, LAERINIT, LDEPOS_AER, LORILAM, LVARSIGI, LVARSIGJ, NCARB, NM6_AER, NSOA, NSP
 USE MODD_CH_M9_n,         ONLY: NEQ, NEQAQ
 USE MODD_CH_MNHC_n,       ONLY: LCH_PH, LUSECHEM, LUSECHAQ, LUSECHIC, CCH_SCHEME, LCH_CONV_LINOX
@@ -79,7 +80,8 @@ USE MODD_CONDSAMP,        ONLY: LCONDSAMP, NCONDSAMP
 USE MODD_CONF,            ONLY: LLG, CPROGRAM, NVERB
 USE MODD_CST,             ONLY: XMNH_TINY
 USE MODD_DIAG_FLAG,       ONLY: LCHEMDIAG, LCHAQDIAG
-USE MODD_DUST,            ONLY: LDEPOS_DST, LDSTINIT, LDSTPRES, LDUST, LRGFIX_DST, LVARSIG, NMODE_DST
+USE MODD_DUST,            ONLY: CDEDSTNAMES, CDUSTNAMES, JPDUSTORDER, LDEPOS_DST, LDSTINIT, LDSTPRES, LDUST, &
+                                LRGFIX_DST, LVARSIG, NMODE_DST, YPDEDST_INI, YPDUST_INI
 USE MODD_DYN_n,           ONLY: LHORELAX_SV,LHORELAX_SVC2R2,LHORELAX_SVC1R3,   &
                                 LHORELAX_SVLIMA,                               &
                                 LHORELAX_SVELEC,LHORELAX_SVCHEM,LHORELAX_SVLG, &
@@ -104,8 +106,11 @@ USE MODD_PARAM_LIMA,      ONLY: NMOD_CCN, LSCAV, LAERO_MASS, &
                                 LWARM, LCOLD, LRAIN
 USE MODD_PASPOL,          ONLY: LPASPOL, NRELEASE
 USE MODD_PREP_REAL,       ONLY: XT_LS
-USE MODD_SALT,            ONLY: LRGFIX_SLT, LSALT, LSLTINIT, LSLTPRES, NMODE_SLT, LDEPOS_SLT, LVARSIG_SLT
-!
+USE MODD_SALT,            ONLY: CSALTNAMES, CDESLTNAMES, JPSALTORDER, &
+                                LRGFIX_SLT, LSALT, LSLTINIT, LSLTPRES, LDEPOS_SLT, LVARSIG_SLT, NMODE_SLT, YPDESLT_INI, YPSALT_INI
+
+USE MODE_MSG
+
 USE MODI_UPDATE_NSV,      ONLY: UPDATE_NSV
 !
 IMPLICIT NONE 
@@ -118,8 +123,14 @@ INTEGER, INTENT(IN)             :: KMI ! model index
 !
 !*       0.2   Declarations of local variables
 !
+CHARACTER(LEN=2) :: YNUM2
+CHARACTER(LEN=3) :: YNUM3
+CHARACTER(LEN=JPSVNAMELGTMAX), DIMENSION(:,:), ALLOCATABLE :: YSVNAMES_TMP
 INTEGER :: ILUOUT
 INTEGER :: ISV ! total number of scalar variables
+INTEGER :: IMODEIDX, IMOMENTS
+INTEGER :: JI, JJ, JSV
+INTEGER :: JMODE, JMOM, JSV_NAME
 !
 !-------------------------------------------------------------------------------
 !
@@ -636,5 +647,101 @@ IF (LLG) THEN
   CSV(NSV_LGBEG_A(KMI)+1) = 'Y0     '
   CSV(NSV_LGEND_A(KMI)  ) = 'Z0     '
 ENDIF
-!
+
+! Initialize scalar variable names for dust
+IF ( LDUST ) THEN
+  IF ( NMODE_DST < 1 .OR. NMODE_DST > 3 ) CALL Print_msg( NVERB_FATAL, 'GEN', 'INI_NSV', 'NMODE_DST must in the 1 to 3 interval' )
+
+  ! Initialization of dust names
+  IF( .NOT. ALLOCATED( CDUSTNAMES ) ) THEN
+    IMOMENTS = ( NSV_DSTEND_A(KMI) - NSV_DSTBEG_A(KMI) + 1 ) / NMODE_DST
+    ALLOCATE( CDUSTNAMES(IMOMENTS * NMODE_DST) )
+    !Loop on all dust modes
+    IF ( IMOMENTS == 1 ) THEN
+      DO JMODE = 1, NMODE_DST
+        IMODEIDX = JPDUSTORDER(JMODE)
+        JSV_NAME = ( IMODEIDX - 1 ) * 3 + 2
+        CDUSTNAMES(JMODE) = YPDUST_INI(JSV_NAME)
+      END DO
+    ELSE
+      DO JMODE = 1,NMODE_DST
+        !Find which mode we are dealing with
+        IMODEIDX = JPDUSTORDER(JMODE)
+        DO JMOM = 1, IMOMENTS
+          !Find which number this is of the list of scalars
+          JSV = ( JMODE - 1 ) * IMOMENTS + JMOM
+          !Find what name this corresponds to, always 3 moments assumed in YPDUST_INI
+          JSV_NAME = ( IMODEIDX - 1) * 3 + JMOM
+          !Get the right CDUSTNAMES which should follow the list of scalars transported in XSVM/XSVT
+          CDUSTNAMES(JSV) = YPDUST_INI(JSV_NAME)
+        ENDDO ! Loop on moments
+      ENDDO    ! Loop on dust modes
+    END IF
+  END IF
+
+  ! Initialization of deposition scheme names
+  IF ( LDEPOS_DST(KMI) ) THEN
+    IF( .NOT. ALLOCATED( CDEDSTNAMES ) ) THEN
+      ALLOCATE( CDEDSTNAMES(NMODE_DST * 2) )
+      DO JMODE = 1, NMODE_DST
+        IMODEIDX = JPDUSTORDER(JMODE)
+        CDEDSTNAMES(JMODE)             = YPDEDST_INI(IMODEIDX)
+        CDEDSTNAMES(NMODE_DST + JMODE) = YPDEDST_INI(NMODE_DST + IMODEIDX)
+      ENDDO
+    END IF
+  END IF
+END IF
+
+! Initialize scalar variable names for salt
+IF ( LSALT ) THEN
+  IF ( NMODE_SLT < 1 .OR. NMODE_SLT > 5 ) CALL Print_msg( NVERB_FATAL, 'GEN', 'INI_NSV', 'NMODE_SLT must in the 1 to 5 interval' )
+
+  IF( .NOT. ALLOCATED( CSALTNAMES ) ) THEN
+    IMOMENTS = ( NSV_SLTEND_A(KMI) - NSV_SLTBEG_A(KMI) + 1 ) / NMODE_SLT
+    ALLOCATE( CSALTNAMES(IMOMENTS * NMODE_SLT) )
+    !Loop on all dust modes
+    IF ( IMOMENTS == 1 ) THEN
+      DO JMODE = 1, NMODE_SLT
+        IMODEIDX = JPSALTORDER(JMODE)
+        JSV_NAME = ( IMODEIDX - 1 ) * 3 + 2
+        CSALTNAMES(JMODE) = YPSALT_INI(JSV_NAME)
+      END DO
+    ELSE
+      DO JMODE = 1, NMODE_SLT
+        !Find which mode we are dealing with
+        IMODEIDX = JPSALTORDER(JMODE)
+        DO JMOM = 1, IMOMENTS
+          !Find which number this is of the list of scalars
+          JSV = ( JMODE - 1 ) * IMOMENTS + JMOM
+          !Find what name this corresponds to, always 3 moments assumed in YPSALT_INI
+          JSV_NAME = ( IMODEIDX - 1 ) * 3 + JMOM
+          !Get the right CSALTNAMES which should follow the list of scalars transported in XSVM/XSVT
+          CSALTNAMES(JSV) = YPSALT_INI(JSV_NAME)
+        ENDDO ! Loop on moments
+      ENDDO    ! Loop on dust modes
+    END IF
+  END IF
+  ! Initialization of deposition scheme
+  IF ( LDEPOS_SLT(KMI) ) THEN
+    IF( .NOT. ALLOCATED( CDESLTNAMES ) ) THEN
+      ALLOCATE( CDESLTNAMES(NMODE_SLT * 2) )
+      DO JMODE = 1, NMODE_SLT
+        IMODEIDX = JPSALTORDER(JMODE)
+        CDESLTNAMES(JMODE)             = YPDESLT_INI(IMODEIDX)
+        CDESLTNAMES(NMODE_SLT + JMODE) = YPDESLT_INI(NMODE_SLT + IMODEIDX)
+      ENDDO
+    ENDIF
+  ENDIF
+END IF
+
+! Initialize scalar variable names for snow
+IF ( LBLOWSNOW ) THEN
+  IF( .NOT. ALLOCATED( CSNOWNAMES ) ) THEN
+    IMOMENTS = ( NSV_SNWEND_A(KMI) - NSV_SNWBEG_A(KMI) + 1 )
+    ALLOCATE( CSNOWNAMES(IMOMENTS) )
+    DO JMOM = 1, IMOMENTS
+      CSNOWNAMES(JMOM) = YPSNOW_INI(JMOM)
+    ENDDO ! Loop on moments
+  END IF
+END IF
 END SUBROUTINE INI_NSV

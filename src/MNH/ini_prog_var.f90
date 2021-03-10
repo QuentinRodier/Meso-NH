@@ -97,6 +97,7 @@ END MODULE MODI_INI_PROG_VAR
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
 !  P. Wautelet 09/03/2021: simplify allocation of scalar variable names
 !  P. Wautelet 09/03/2021: move some chemistry initializations to ini_nsv
+!  P. Wautelet 10/03/2021: move scalar variable name initializations to ini_nsv
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -381,15 +382,6 @@ IF(PRESENT(HCHEMFILE)) THEN
       END DO !JMOD
     END IF !if IMOMENTS   
     IF (LDEPOS_DST(IMI)) THEN   
-      IF(.NOT.ALLOCATED(CDEDSTNAMES)) THEN
-        ALLOCATE(CDEDSTNAMES(NMODE_DST*2))
-        DO JMODE=1,NMODE_DST  
-          IMODEIDX=JPDUSTORDER(JMODE)
-          CDEDSTNAMES(JMODE) = YPDEDST_INI(IMODEIDX)
-          CDEDSTNAMES(NMODE_DST+JMODE) = YPDEDST_INI(NMODE_DST+IMODEIDX)
-        ENDDO
-      ENDIF
-      !
       TZFIELD%CSTDNAME   = ''
       TZFIELD%CUNITS     = 'ppp'
       TZFIELD%CDIR       = 'XY'
@@ -455,15 +447,6 @@ IF(PRESENT(HCHEMFILE)) THEN
     END IF !if IMOMENTS
     !
     IF (LDEPOS_SLT(IMI)) THEN
-      IF(.NOT.ALLOCATED(CDESLTNAMES)) THEN
-        ALLOCATE(CDESLTNAMES(NMODE_SLT*2))
-        DO JMODE=1,NMODE_SLT  
-          IMODEIDX=JPDUSTORDER(JMODE)
-          CDESLTNAMES(JMODE) = YPDESLT_INI(IMODEIDX)
-          CDESLTNAMES(NMODE_SLT+JMODE) = YPDESLT_INI(NMODE_SLT+IMODEIDX)
-        ENDDO
-      ENDIF
-      !
       TZFIELD%CSTDNAME   = ''
       TZFIELD%CUNITS     = 'ppp'
       TZFIELD%CDIR       = 'XY'
