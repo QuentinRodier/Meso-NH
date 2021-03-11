@@ -11,6 +11,7 @@
 !  P. Wautelet 14/08/2020: deduplicate LES_DIACHRO* subroutines
 !  P. Wautelet    10/2020: restructure subroutines to use tfield_metadata_base type
 !  P. Wautelet 03/03/2021: budgets: add tbudiachrometadata type (useful to pass more information to Write_diachro)
+!  P. Wautelet 11/03/2021: budgets: remove ptrajx/y/z optional dummy arguments of Write_diachro
 !-----------------------------------------------------------------
 !#######################
 MODULE MODE_LES_DIACHRO
@@ -888,8 +889,6 @@ integer                                                   :: iles_k             
 integer                                                   :: iil, iih, ijl, ijh, ikl, ikh  ! Cartesian area relatively to the
                                                                                            ! entire domain
 integer                                                   :: jk                            ! Vertical loop counter
-real,                       dimension(:,:,:), allocatable :: ztrajx                        ! Localization of the temporal
-real,                       dimension(:,:,:), allocatable :: ztrajy                        ! series in x,y and z. remark:
 real,                       dimension(:,:,:), allocatable :: ztrajz                        ! x and y are not used for LES
 type(tfield_metadata_base), dimension(:),     allocatable :: tzfields
 !------------------------------------------------------------------------------
@@ -897,8 +896,6 @@ type(tfield_metadata_base), dimension(:),     allocatable :: tzfields
 iles_k = Size( pfield, 1 )
 
 ! Initialization of diachro variables for les (z,t) profiles
-Allocate( ztrajx(1,      1, Size( pfield, 4 )) )
-Allocate( ztrajy(1,      1, Size( pfield, 4 )) )
 Allocate( ztrajz(iles_k, 1, Size( pfield, 4 )) )
 Allocate( ycomment(Size( pfield, 3 )) )
 Allocate( ytitle  (Size( pfield, 3 )) )
@@ -910,9 +907,6 @@ ijl = nles_current_jinf
 ijh = nles_current_jsup
 ikl = nles_levels(1)
 ikh = nles_levels(iles_k)
-
-ztrajx(:, :, :) = ( iil + iih ) / 2
-ztrajy(:, :, :) = ( ijl + ijh ) / 2
 
 if ( Present( hsuffixes ) ) then
   if ( Size( hsuffixes ) /= Size( pfield, 3) ) &
@@ -1033,7 +1027,8 @@ if ( iresp == 0 .and. any( zfield /= XUNDEF ) ) then
   tzbudiachro%cgroupname = ygroup
   tzbudiachro%cname      = ygroup
   !tzbudiachro%ccomment   = DONE BEFORE
-  tzbudiachro%ctype      = 'SSOL'
+!   tzbudiachro%ctype      = 'SSOL'
+  tzbudiachro%ctype      = 'TLES' !T for trajectory (used in Write_diachro_lfi to add trajectory terms)
   tzbudiachro%licompress = .false.
   tzbudiachro%ljcompress = .false.
   tzbudiachro%lkcompress = .false.
@@ -1044,8 +1039,7 @@ if ( iresp == 0 .and. any( zfield /= XUNDEF ) ) then
   tzbudiachro%nkl        = ikl
   tzbudiachro%nkh        = ikh
 
-  call Write_diachro( tpdiafile, tzbudiachro, tzfields, tzdates, zwork6, &
-                      ptrajx = ztrajx, ptrajy = ztrajy, ptrajz = ztrajz  )
+  call Write_diachro( tpdiafile, tzbudiachro, tzfields, tzdates, zwork6 )
 end if
 
 !-------------------------------------------------------------------------------

@@ -69,6 +69,7 @@ END MODULE MODI_WRITE_AIRCRAFT_BALLOON
 !  P. Wautelet 09/10/2020: bugfix: correction on IPROCZ when not LIMA (condition was wrong)
 !  P. Wautelet 09/10/2020: Write_diachro: use new datatype tpfields
 !  P. Wautelet 03/03/2021: budgets: add tbudiachrometadata type (useful to pass more information to Write_diachro)
+!  P. Wautelet 11/03/2021: budgets: remove ptrajx/y/z optional dummy arguments of Write_diachro
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -181,9 +182,6 @@ TYPE(FLYER),        INTENT(IN)       :: TPFLYER
 !
 !*      0.2  declaration of local variables for diachro
 !
-REAL, DIMENSION(:,:,:),       ALLOCATABLE :: ZTRAJX ! temporal series
-REAL, DIMENSION(:,:,:),       ALLOCATABLE :: ZTRAJY ! in t,x,y and z.
-REAL, DIMENSION(:,:,:),       ALLOCATABLE :: ZTRAJZ !
 REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: ZWORK6 ! contains temporal serie
 REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: ZW6    ! contains temporal serie to write
 REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: ZWORKZ6! contains temporal serie
@@ -240,9 +238,6 @@ IF (LORILAM) IPROC = IPROC + JPMODE*3
 IF (LDUST) IPROC = IPROC + NMODE_DST*3
 IF (SIZE(TPFLYER%TSRAD)>0) IPROC = IPROC + 1
 !
-ALLOCATE (ZTRAJX(1,size(tpflyer%tpdates),1))
-ALLOCATE (ZTRAJY(1,size(tpflyer%tpdates),1))
-ALLOCATE (ZTRAJZ(1,size(tpflyer%tpdates),1))
 ALLOCATE (ZWORK6(1,1,1,size(tpflyer%tpdates),1,IPROC))
 ALLOCATE (YCOMMENT(IPROC))
 ALLOCATE (YTITLE  (IPROC))
@@ -253,12 +248,6 @@ ALLOCATE (YCOMMENTZ(IPROCZ))
 ALLOCATE (YTITLEZ (IPROCZ))
 ALLOCATE (YUNITZ  (IPROCZ))
 ALLOCATE (IGRIDZ  (IPROCZ))
-
-!
-ZTRAJX(1,:,1) = TPFLYER%X
-ZTRAJY(1,:,1) = TPFLYER%Y
-ZTRAJZ(1,:,1) = TPFLYER%Z
-!
 !
 IGRID  = 1
 YGROUP = TPFLYER%TITLE
@@ -879,7 +868,6 @@ tzbudiachro%ctype      = 'RSPL'
 ! tzbudiachro%nkh        = NOT SET (default values)
 
 call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpflyer%tpdates, zw6, &
-                    ptrajx = ztrajx, ptrajy = ztrajy, ptrajz = ztrajz,      &
                     tpflyer = tpflyer                                       )
 
 deallocate( tzfields )
@@ -920,15 +908,12 @@ call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpflyer%tpdates, zwz6, &
 
 deallocate( tzfields )
 
-DEALLOCATE (ZTRAJX)
-DEALLOCATE (ZTRAJY)
-DEALLOCATE (ZTRAJZ)
-DEALLOCATE (ZW6)    
+DEALLOCATE (ZW6)
 DEALLOCATE (YCOMMENT)
 DEALLOCATE (YTITLE  )
 DEALLOCATE (YUNIT   )
 DEALLOCATE (IGRID   )
-DEALLOCATE (ZWZ6)    
+DEALLOCATE (ZWZ6)
 DEALLOCATE (YCOMMENTZ)
 DEALLOCATE (YTITLEZ )
 DEALLOCATE (YUNITZ  )

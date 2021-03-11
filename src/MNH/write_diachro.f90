@@ -17,8 +17,7 @@ contains
 
 ! #################################################################
 subroutine Write_diachro( tpdiafile, tpbudiachro, tpfields,       &
-                          tpdates, pvar,                          &
-                          ptrajx, ptrajy, ptrajz, osplit, tpflyer )
+                          tpdates, pvar, osplit, tpflyer )
 ! #################################################################
 !
 !!****  *WRITE_DIACHRO* - Ecriture d'un enregistrement dans un fichier
@@ -85,6 +84,8 @@ subroutine Write_diachro( tpdiafile, tpbudiachro, tpfields,       &
 !  P. Wautelet 09/10/2020: use new data type tpfields
 !  P. Wautelet 08/12/2020: merge budgets terms with different nbutshift in same group variables
 !  P. Wautelet 03/03/2021: add tbudiachrometadata type (useful to pass more information to Write_diachro)
+!  P. Wautelet 11/03/2021: remove ptrajx/y/z optional dummy arguments of Write_diachro
+!                          + get the trajectory data for LFI files differently
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -106,9 +107,6 @@ type(tbudiachrometadata),                            intent(in)           :: tpb
 class(tfield_metadata_base), dimension(:),           intent(in)           :: tpfields
 type(date_time),             dimension(:),           intent(in)           :: tpdates  !Used only for LFI files
 REAL,                        DIMENSION(:,:,:,:,:,:), INTENT(IN)           :: PVAR
-REAL,DIMENSION(:,:,:),                               INTENT(IN), OPTIONAL :: PTRAJX
-REAL,DIMENSION(:,:,:),                               INTENT(IN), OPTIONAL :: PTRAJY
-REAL,DIMENSION(:,:,:),                               INTENT(IN), OPTIONAL :: PTRAJZ
 logical,                                             intent(in), optional :: osplit
 type(flyer),                                         intent(in), optional :: tpflyer
 !
@@ -124,12 +122,12 @@ lpack = .false.
 
 #ifdef MNH_IOLFI
 if ( tpdiafile%cformat == 'LFI' .or. tpdiafile%cformat == 'LFICDF4' ) &
-  call Write_diachro_lfi( tpdiafile, tpbudiachro, tpfields, tpdates, pvar, ptrajx, ptrajy, ptrajz )
+  call Write_diachro_lfi( tpdiafile, tpbudiachro, tpfields, tpdates, pvar,         tpflyer )
 #endif
 
 #ifdef MNH_IOCDF4
 if ( tpdiafile%cformat == 'NETCDF4' .or. tpdiafile%cformat == 'LFICDF4' ) &
-  call Write_diachro_nc4( tpdiafile, tpbudiachro, tpfields, pvar, osplit, tpflyer )
+  call Write_diachro_nc4( tpdiafile, tpbudiachro, tpfields,          pvar, osplit, tpflyer )
 #endif
 
 lpack = gpack
@@ -138,14 +136,16 @@ end subroutine Write_diachro
 
 #ifdef MNH_IOLFI
 !-----------------------------------------------------------------------------
-subroutine Write_diachro_lfi( tpdiafile, tpbudiachro, tpfields, tpdates, pvar, &
-                              ptrajx, ptrajy, ptrajz )
+subroutine Write_diachro_lfi( tpdiafile, tpbudiachro, tpfields, tpdates, pvar, tpflyer )
 
+use modd_aircraft_balloon, only: flyer
 use modd_budget,         only: nbumask, nbutshift, nbusubwrite, tbudiachrometadata
 use modd_field,          only: NMNHDIM_ONE, NMNHDIM_UNKNOWN, NMNHDIM_FLYER_TIME, NMNHDIM_NOTLISTED, NMNHDIM_UNUSED, &
                                TYPECHAR, TYPEINT, TYPEREAL,                                                         &
                                tfield_metadata_base, tfielddata
 use modd_io,             only: tfiledata
+use modd_les,            only: nles_current_iinf, nles_current_isup, nles_current_jinf, nles_current_jsup, &
+                               nles_k, xles_current_z
 use modd_parameters,     only: jphext
 use modd_time,           only: tdtexp, tdtseg
 use modd_time_n,         only: tdtmod
@@ -162,9 +162,7 @@ type(tbudiachrometadata),                            intent(in)           :: tpb
 class(tfield_metadata_base), dimension(:),           intent(in)           :: tpfields
 type(date_time),             dimension(:),           intent(in)           :: tpdates
 real,                        dimension(:,:,:,:,:,:), intent(in)           :: pvar
-REAL,DIMENSION(:,:,:),                               INTENT(IN), OPTIONAL :: PTRAJX
-REAL,DIMENSION(:,:,:),                               INTENT(IN), OPTIONAL :: PTRAJY
-REAL,DIMENSION(:,:,:),                               INTENT(IN), OPTIONAL :: PTRAJZ
+type(flyer),                                         intent(in), optional :: tpflyer
 
 integer, parameter :: LFITITLELGT = 100
 integer, parameter :: LFIUNITLGT = 100
@@ -189,6 +187,7 @@ integer   ::   ji
 INTEGER,DIMENSION(:),ALLOCATABLE :: ITABCHAR
 real, dimension(:,:), allocatable :: ztimes
 real, dimension(:,:), allocatable :: zdatime
+real, dimension(:,:,:), allocatable :: ztrajz
 TYPE(TFIELDDATA) :: TZFIELD
 type(tfiledata)  :: tzfile
 
@@ -244,20 +243,32 @@ INTRAJT=SIZE(tpdates)
 IKTRAJX=0; IKTRAJY=0; IKTRAJZ=0
 ITTRAJX=0; ITTRAJY=0; ITTRAJZ=0
 INTRAJX=0; INTRAJY=0; INTRAJZ=0
-IF(PRESENT(PTRAJX))THEN
-  IKTRAJX=SIZE(PTRAJX,1)
-  ITTRAJX=SIZE(PTRAJX,2)
-  INTRAJX=SIZE(PTRAJX,3)
+IF ( PRESENT( tpflyer ) ) THEN
+  IKTRAJX = 1
+  ITTRAJX = SIZE( tpflyer%x )
+  INTRAJX = 1
+ELSE IF ( tpbudiachro%ctype == 'TLES' ) THEN
+  IKTRAJX = 1
+  ITTRAJX = 1
+  INTRAJX = IN
 ENDIF
-IF(PRESENT(PTRAJY))THEN
-  IKTRAJY=SIZE(PTRAJY,1)
-  ITTRAJY=SIZE(PTRAJY,2)
-  INTRAJY=SIZE(PTRAJY,3)
+IF ( PRESENT( tpflyer ) ) THEN
+  IKTRAJY = 1
+  ITTRAJY = SIZE( tpflyer%y )
+  INTRAJY = 1
+ELSE IF ( tpbudiachro%ctype == 'TLES' ) THEN
+  IKTRAJY = 1
+  ITTRAJY = 1
+  INTRAJY = IN
 ENDIF
-IF(PRESENT(PTRAJZ))THEN
-  IKTRAJZ=SIZE(PTRAJZ,1)
-  ITTRAJZ=SIZE(PTRAJZ,2)
-  INTRAJZ=SIZE(PTRAJZ,3)
+IF ( PRESENT( tpflyer ) ) THEN
+  IKTRAJZ = 1
+  ITTRAJZ = SIZE( tpflyer%z )
+  INTRAJZ = 1
+ELSE IF ( tpbudiachro%ctype == 'TLES' ) THEN
+  IKTRAJZ = IK
+  ITTRAJZ = 1
+  INTRAJZ = IN
 ENDIF
 
 IIMASK=0; IJMASK=0; IKMASK=0; ITMASK=0; INMASK=0; IPMASK=0
@@ -505,7 +516,7 @@ deallocate( ztimes )
 !
 ! 8eme enregistrement TRAJX
 !
-IF(PRESENT(PTRAJX))THEN
+IF(PRESENT(tpflyer))THEN
   TZFIELD%CMNHNAME   = TRIM(ygroup)//'.TRAJX'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = TRIM(ygroup)//'.TRAJX'
@@ -516,12 +527,26 @@ IF(PRESENT(PTRAJX))THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .FALSE.
-  CALL IO_Field_write(tzfile,TZFIELD,PTRAJX)
+  CALL IO_Field_write(tzfile,TZFIELD, Reshape( tpflyer%x, [1, Size( tpflyer%x), 1] ) )
+ELSE IF ( tpbudiachro%ctype == 'TLES' ) THEN
+  TZFIELD%CMNHNAME   = TRIM(ygroup)//'.TRAJX'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = TRIM(ygroup)//'.TRAJX'
+  TZFIELD%CUNITS     = ''
+  TZFIELD%CDIR       = '--'
+  TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
+  TZFIELD%NGRID      = tpfields(1)%ngrid
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  TZFIELD%LTIMEDEP   = .FALSE.
+  CALL IO_Field_write(tzfile,TZFIELD, Reshape( &
+                       Spread( source = ( nles_current_iinf + nles_current_isup) / 2, dim = 1, ncopies = IN ), &
+                       [1, 1, IN] ) )
 ENDIF
 !
 ! 9eme enregistrement TRAJY
 !
-IF(PRESENT(PTRAJY))THEN
+IF(PRESENT(tpflyer))THEN
   TZFIELD%CMNHNAME   = TRIM(ygroup)//'.TRAJY'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = TRIM(ygroup)//'.TRAJY'
@@ -532,12 +557,26 @@ IF(PRESENT(PTRAJY))THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .FALSE.
-  CALL IO_Field_write(tzfile,TZFIELD,PTRAJY)
+  CALL IO_Field_write(tzfile,TZFIELD, Reshape( tpflyer%y, [1, Size( tpflyer%y), 1] ) )
+ELSE IF ( tpbudiachro%ctype == 'TLES' ) THEN
+  TZFIELD%CMNHNAME   = TRIM(ygroup)//'.TRAJY'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = TRIM(ygroup)//'.TRAJY'
+  TZFIELD%CUNITS     = ''
+  TZFIELD%CDIR       = '--'
+  TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
+  TZFIELD%NGRID      = tpfields(1)%ngrid
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  TZFIELD%LTIMEDEP   = .FALSE.
+  CALL IO_Field_write(tzfile,TZFIELD, Reshape( &
+                       Spread( source = ( nles_current_jinf + nles_current_jsup) / 2, dim = 1, ncopies = IN ), &
+                       [1, 1, IN] ) )
 ENDIF
 !
 ! 10eme enregistrement TRAJZ
 !
-IF(PRESENT(PTRAJZ))THEN
+IF(PRESENT(tpflyer))THEN
   TZFIELD%CMNHNAME   = TRIM(ygroup)//'.TRAJZ'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = TRIM(ygroup)//'.TRAJZ'
@@ -548,7 +587,25 @@ IF(PRESENT(PTRAJZ))THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .FALSE.
-  CALL IO_Field_write(tzfile,TZFIELD,PTRAJZ)
+  CALL IO_Field_write(tzfile,TZFIELD, Reshape( tpflyer%z, [1, Size( tpflyer%z), 1] ) )
+ELSE IF ( tpbudiachro%ctype == 'TLES' ) THEN
+  TZFIELD%CMNHNAME   = TRIM(ygroup)//'.TRAJZ'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = TRIM(ygroup)//'.TRAJZ'
+  TZFIELD%CUNITS     = ''
+  TZFIELD%CDIR       = '--'
+  TZFIELD%CCOMMENT   = TRIM(YCOMMENT)
+  TZFIELD%NGRID      = tpfields(1)%ngrid
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  TZFIELD%LTIMEDEP   = .FALSE.
+
+  Allocate( ztrajz(IK, 1, IN) )
+  do jj = 1, IK
+    ztrajz(jj, :, :) = xles_current_z(jj)
+  end do
+  CALL IO_Field_write(tzfile,TZFIELD,ztrajz)
+  Deallocate( ztrajz )
 ENDIF
 !
 ! 11eme enregistrement PDATIME
