@@ -174,6 +174,7 @@ END MODULE MODI_WRITE_LFIFM_n
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Tulet       02/2020: correction for dust and sea salts
 !  P. Wautelet 10/03/2021: use scalar variable names for dust and salt
+!  P. Wautelet 11/03/2021: bugfix: correct name for NSV_LIMA_IMM_NUCL
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -317,7 +318,7 @@ INTEGER           :: JI,JJ,JK   ! loop index
 INTEGER           :: IIU,IJU,IKU,IIB,IJB,IKB,IIE,IJE,IKE ! Arrays bounds
 !
 CHARACTER(LEN=2)  :: INDICE
-INTEGER           :: I, IID
+INTEGER           :: IID
 TYPE(TFIELDDATA)  :: TZFIELD
 !-------------------------------------------------------------------------------
 !
@@ -762,12 +763,8 @@ IF (NSV >=1) THEN
     END IF
 ! N IMM nucl
     IF (JSV .GE. NSV_LIMA_IMM_NUCL .AND. JSV .LT. NSV_LIMA_IMM_NUCL + NMOD_IMM) THEN
-      DO I =  1, NMOD_IMM ! to be supressed
-! ML start to 1 to get the CCN mode indice acting as IN by immersion
-!      WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(JSV - NSV_LIMA_BEG - NSV_LIMA_IMM_NUCL + 1))
-        WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(I)) ! to be supresses
+      WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(JSV - NSV_LIMA_IMM_NUCL + 1))
       TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(4))//INDICE//'T'
-      ENDDO
     END IF
 ! Hom. freez. of CCN
     IF (JSV .EQ. NSV_LIMA_HOM_HAZE) THEN

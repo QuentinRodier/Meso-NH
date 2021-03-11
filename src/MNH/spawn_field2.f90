@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -155,6 +155,7 @@ END MODULE MODI_SPAWN_FIELD2
 !!      Modification 05/03/2018 (J.Escobar) bypass gridnesting special case KD(X/Y)RATIO == 1 not parallelized
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 14/03/2019: correct ZWS when variable not present in file
+!  P. Wautelet 11/03/2021: bugfix: correct name for NSV_LIMA_IMM_NUCL
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -277,7 +278,6 @@ LOGICAL :: GUSERV
 !
 CHARACTER(LEN=15) :: YVAL
 CHARACTER(LEN=2)  :: INDICE
-INTEGER           :: I
 TYPE(TFIELDDATA)             :: TZFIELD
 !
 !-------------------------------------------------------------------------------
@@ -926,10 +926,8 @@ IF (PRESENT(TPSONFILE)) THEN
         TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(3))//INDICE//'T'
       END IF
       ! N IMM nucl
-      I = 0
       IF (JSV .GE. NSV_LIMA_IMM_NUCL .AND. JSV .LT. NSV_LIMA_IMM_NUCL + NMOD_IMM) THEN
-        I = I + 1
-        WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(I))
+        WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(JSV - NSV_LIMA_IMM_NUCL + 1))
         TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(4))//INDICE//'T'
       END IF
       ! Hom. freez. of CCN

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -241,8 +241,9 @@ END MODULE MODI_READ_FIELD
 !  P. Wautelet 13/02/2019: removed PPABSM and PTSTEP dummy arguments (bugfix: PPABSM was intent(OUT))
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 14/03/2019: correct ZWS when variable not present in file
-!! M. Leriche  10/06/2019: in restart case read all immersion modes for LIMA
-!!-------------------------------------------------------------------------------
+!  M. Leriche  10/06/2019: in restart case read all immersion modes for LIMA
+!  P. Wautelet 11/03/2021: bugfix: correct name for NSV_LIMA_IMM_NUCL
+!-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
@@ -384,7 +385,7 @@ REAL, DIMENSION(:,:,:,:),       INTENT(INOUT) :: PRRS_CLD, PRSVS_CLD
 !
 !*       0.2   declarations of local variables
 !
-INTEGER                      :: I, IID
+INTEGER                      :: IID
 INTEGER                      :: ILUOUT       ! Unit number for prints
 INTEGER                      :: IRESP
 INTEGER                      :: ISV          ! total number of  scalar variables
@@ -717,11 +718,8 @@ DO JSV = NSV_LIMA_BEG,NSV_LIMA_END
     END IF
 ! N IMM nucl
     IF (JSV .GE. NSV_LIMA_IMM_NUCL .AND. JSV .LT. NSV_LIMA_IMM_NUCL + NMOD_IMM) THEN
-      DO I= 1, NMOD_IMM ! to be supressed
-        WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(I)) ! to be supressed
-!        WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(JSV - NSV_LIMA_BEG - NSV_LIMA_IMM_NUCL + 1))
-        TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(4))//INDICE//'T'
-      ENDDO
+      WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(JSV - NSV_LIMA_IMM_NUCL + 1))
+      TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(4))//INDICE//'T'
     END IF
 ! Hom. freez. of CCN
     IF (JSV .EQ. NSV_LIMA_HOM_HAZE) THEN

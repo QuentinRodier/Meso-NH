@@ -63,6 +63,7 @@ END MODULE MODI_WRITE_PROFILER_n
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !  P. Wautelet 09/10/2020: Write_diachro: use new datatype tpfields
 !  P. Wautelet 03/03/2021: budgets: add tbudiachrometadata type (useful to pass more information to Write_diachro)
+!  P. Wautelet 11/03/2021: bugfix: correct name for NSV_LIMA_IMM_NUCL
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -152,7 +153,6 @@ INTEGER :: JRR      ! loop counter
 INTEGER :: JSV      ! loop counter
 INTEGER :: IKU, IK  ! loop counter
 CHARACTER(LEN=2)  :: INDICE
-INTEGER           :: I
 type(tbudiachrometadata)                              :: tzbudiachro
 type(tfield_metadata_base), dimension(:), allocatable :: tzfields
 !
@@ -487,11 +487,9 @@ IF (SIZE(TPROFILER%SV,4)>=1) THEN
         WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_NUCL + 1)
         YTITLE(JPROC)=TRIM(CLIMA_COLD_NAMES(3))//INDICE//'T'
     ENDIF
-    I = 0
     IF (JSV .GE. NSV_LIMA_IMM_NUCL .AND. JSV .LT. NSV_LIMA_IMM_NUCL + NMOD_IMM) THEN
-        I = I + 1
-        WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(I))
-        YTITLE(JPROC)=TRIM(CLIMA_COLD_NAMES(4))//INDICE//'T'
+      WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(JSV - NSV_LIMA_IMM_NUCL + 1))
+      YTITLE(JPROC)=TRIM(CLIMA_COLD_NAMES(4))//INDICE//'T'
     ENDIF
     IF (JSV .EQ. NSV_LIMA_HOM_HAZE) YTITLE(JPROC)=TRIM(CLIMA_COLD_NAMES(5))//'T'
 

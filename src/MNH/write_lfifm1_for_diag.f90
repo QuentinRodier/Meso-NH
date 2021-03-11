@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -145,6 +145,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG
 !  P. Wautelet 08/02/2019: minor bug: compute ZWORK36 only when needed
 !  S  Bielli      02/2019: sea salt: significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 18/03/2020: remove ICE2 option
+!  P. Wautelet 11/03/2021: bugfix: correct name for NSV_LIMA_IMM_NUCL
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -339,7 +340,7 @@ INTEGER :: ILUOUT0 ! Logical unit number for output-listing
 !
 CHARACTER(LEN=2)  :: INDICE
 CHARACTER(LEN=100) :: YMSG
-INTEGER           :: I,IID
+INTEGER           :: IID
 TYPE(TFIELDDATA)              :: TZFIELD
 TYPE(TFIELDDATA),DIMENSION(2) :: TZFIELD2
 !
@@ -1153,11 +1154,8 @@ IF (LLIMA_DIAG) THEN
     END IF
 ! N IMM nucl
     IF (JSV .GE. NSV_LIMA_IMM_NUCL .AND. JSV .LT. NSV_LIMA_IMM_NUCL + NMOD_IMM) THEN
-      DO I = 1, NMOD_IMM ! to be supressed
-!       WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(JSV - NSV_LIMA_BEG - NSV_LIMA_IMM_NUCL + 1))
-        WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(I)) ! to be supressed
-        TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_CONC(4))//INDICE//'T'
-      ENDDO
+      WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(JSV - NSV_LIMA_IMM_NUCL + 1))
+      TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_CONC(4))//INDICE//'T'
     END IF
 ! Hom. freez. of CCN
     IF (JSV .EQ. NSV_LIMA_HOM_HAZE) THEN
