@@ -292,7 +292,22 @@ subroutine Budget_source_id_find( tpbudget, hsource, kid )
   if ( iid > 0 ) then
     call Print_msg( NVERB_DEBUG, 'BUD', 'Budget_source_id_find', trim( tpbudget%cname )//':'//trim( hsource )//' found' )
   else
-    call Print_msg( NVERB_ERROR, 'BUD', 'Budget_source_id_find', trim( tpbudget%cname )//':'//trim( hsource )//' not found' )
+    !Search also in the non-available source term list
+    do ji = tpbudget%nsources + 1, tpbudget%nsourcesmax
+      if ( trim( hsource ) == trim( tpbudget%tsources(ji)%cmnhname ) ) then
+        iid = ji
+        exit
+      end if
+    end do
+
+    if ( iid == 0 ) then
+      call Print_msg( NVERB_ERROR, 'BUD', 'Budget_source_id_find', trim( tpbudget%cname )//':'//trim( hsource )//' not found' )
+    else
+      cmnhmsg(1) = Trim( tpbudget%cname ) // ':' // Trim( hsource ) // ' found'
+      cmnhmsg(2) = 'in non-available source term list.'
+      cmnhmsg(3) = 'Check availability condition in Ini_budget.'
+      call Print_msg( NVERB_ERROR, 'BUD', 'Budget_source_id_find' )
+    end if
   end if
 
   kid = iid
