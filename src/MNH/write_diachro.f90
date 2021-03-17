@@ -698,13 +698,6 @@ type(tfiledata)      :: tzfile
 
 ytype = Trim( tpbudiachro%ctype )
 
-if ( trim ( ytype ) == 'CART' .or. trim ( ytype ) == 'MASK' .or. trim ( ytype ) == 'SPXY') then
-    if ( iil < 0 .or. iih < 0 .or. ijl < 0 .or. ijh < 0 .or. ikl < 0 .or. ikh < 0 ) then
-      call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
-                      'nil, nih, njl, njh, nkl or nkh not set in tpbudiachro for variable ' // Trim( tpfields(1)%cmnhname ) )
-    end if
-end if
-
 tzfile = tpdiafile
 
 !Write only in netCDF files
@@ -718,6 +711,13 @@ ijl = tpbudiachro%njl
 ijh = tpbudiachro%njh
 ikl = tpbudiachro%nkl
 ikh = tpbudiachro%nkh
+
+if ( trim ( ytype ) == 'CART' .or. trim ( ytype ) == 'MASK' .or. trim ( ytype ) == 'SPXY') then
+    if ( iil < 0 .or. iih < 0 .or. ijl < 0 .or. ijh < 0 .or. ikl < 0 .or. ikh < 0 ) then
+      call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
+                      'nil, nih, njl, njh, nkl or nkh not set in tpbudiachro for variable ' // Trim( tpfields(1)%cmnhname ) )
+    end if
+end if
 
 if ( Trim( ytype ) == 'CART' .and. .not. tpbudiachro%licompress .and. .not. tpbudiachro%ljcompress ) then
   gdistributed = .true.
