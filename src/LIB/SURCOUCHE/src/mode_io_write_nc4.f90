@@ -1996,7 +1996,7 @@ subroutine Write_hor_coord1d(TDIM,HLONGNAME,HSTDNAME,HAXIS,PSHIFT,KBOUNDLOW,KBOU
   USE MODE_ALLOCBUFFER_ll, ONLY: ALLOCBUFFER_ll
   USE MODE_GATHER_ll,      ONLY: GATHER_XXFIELD
 
-  TYPE(tdimnc), POINTER,      INTENT(IN) :: TDIM
+  TYPE(tdimnc),               INTENT(IN) :: TDIM
   CHARACTER(LEN=*),           INTENT(IN) :: HLONGNAME
   CHARACTER(LEN=*),           INTENT(IN) :: HSTDNAME
   CHARACTER(LEN=*),           INTENT(IN) :: HAXIS
@@ -2074,7 +2074,7 @@ end subroutine Write_hor_coord2d
 
 
 SUBROUTINE WRITE_VER_COORD(TDIM,HLONGNAME,HSTDNAME,HCOMPNAME,PSHIFT,KBOUNDLOW,KBOUNDHIGH,PCOORDS)
-  TYPE(tdimnc), POINTER, INTENT(IN) :: TDIM
+  TYPE(tdimnc),          INTENT(IN) :: TDIM
   CHARACTER(LEN=*),      INTENT(IN) :: HLONGNAME
   CHARACTER(LEN=*),      INTENT(IN) :: HSTDNAME
   CHARACTER(LEN=*),      INTENT(IN) :: HCOMPNAME
@@ -2167,7 +2167,7 @@ subroutine Write_time_coord( tdim, hlongname, tpdates, tpdates_bound )
   use mode_datetime,   only: Datetime_distance
   use mode_field,      only: Find_field_id_from_mnhname
 
-  type(tdimnc),                    pointer,           intent(in) :: tdim
+  type(tdimnc),                                       intent(in) :: tdim
   character(len=*),                                   intent(in) :: hlongname
   type(date_time), dimension(:),                      intent(in) :: tpdates
   type(date_time), dimension(:,:),          optional, intent(in) :: tpdates_bound !Boundaries of the date intervals
