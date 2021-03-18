@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 modd 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ##########################
       MODULE MODD_ICE_C1R3_DESCR
@@ -53,6 +48,7 @@
 !!       J.-P. Pinty   29/11/02 add C1R3NAMES
 !!
 !-------------------------------------------------------------------------------
+USE MODD_PARAMETERS, ONLY: JPSVNAMELGTMAX
 !
 !*       0.   DECLARATIONS
 !             ------------
@@ -77,8 +73,8 @@ REAL,SAVE :: XLBEXG,XLBG              ! Graupel        distribution parameters
 REAL,SAVE :: XLBDAS_MAX,XLBDAG_MAX    ! Max values allowed for the shape
                                       ! parameters (snow,graupeln)
 !
-CHARACTER(LEN=10),DIMENSION(2),PARAMETER &
-                                   :: C1R3NAMES=(/'CICE  ','CIN   '/)
+CHARACTER(LEN=JPSVNAMELGTMAX),DIMENSION(2),PARAMETER &
+                                   :: C1R3NAMES=(/'CICE','CIN '/)
                                        ! basenames of the SV articles stored
                                        ! in the binary files
 !

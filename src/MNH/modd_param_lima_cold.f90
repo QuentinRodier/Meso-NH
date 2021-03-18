@@ -1,3 +1,8 @@
+!MNH_LIC Copyright 2013-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+!MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ###########################
       MODULE MODD_PARAM_LIMA_COLD
 !     ###########################
@@ -16,6 +21,7 @@
 !!      Original             ??/??/13 
 !!
 !-------------------------------------------------------------------------------
+USE MODD_PARAMETERS, ONLY: JPSVNAMELGTMAX
 !
 IMPLICIT NONE 
 !
@@ -48,7 +54,7 @@ REAL,SAVE :: XAS,XBS,XCS,XDS,XCCS,XCXS,XF0S,XF1S,XC1S ! Snow/agg.      charact.
 REAL,SAVE :: XLBDAS_MAX               ! Max values allowed for the shape
                                       ! parameter of snow
 !
-CHARACTER(LEN=8),DIMENSION(5),PARAMETER &
+CHARACTER(LEN=JPSVNAMELGTMAX),DIMENSION(5),PARAMETER &
                               :: CLIMA_COLD_NAMES=(/'CICE    ','CIFNFREE','CIFNNUCL', &
                                                         'CCNINIMM','CCCNNUCL'/)
                                  ! basenames of the SV articles stored
@@ -57,7 +63,7 @@ CHARACTER(LEN=8),DIMENSION(5),PARAMETER &
                                  !     IN:Ice-nuclei Nucleated (activated IFN by Dep/Cond)
                                  !     NI:Nuclei Immersed (activated IFN by Imm)
                                  !     HF:Homogeneous Freezing
-CHARACTER(LEN=3),DIMENSION(5),PARAMETER &
+CHARACTER(LEN=JPSVNAMELGTMAX),DIMENSION(5),PARAMETER &
                               :: CLIMA_COLD_CONC=(/'NI ','NIF','NIN','NNI','NNH'/)!for DIAG
 !
 !-------------------------------------------------------------------------------

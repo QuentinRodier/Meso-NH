@@ -1,3 +1,8 @@
+!MNH_LIC Copyright 2013-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+!MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ###########################
       MODULE MODD_PARAM_LIMA_WARM
 !     ###########################
@@ -16,6 +21,7 @@
 !!      Original             ??/??/13 
 !!
 !-------------------------------------------------------------------------------
+USE MODD_PARAMETERS, ONLY: JPSVNAMELGTMAX
 !
 IMPLICIT NONE 
 !
@@ -30,17 +36,17 @@ REAL,SAVE :: XAR,XBR,XCR,XDR,XF0R,XF1R,     & ! Raindrop       charact.
              XAC,XBC,XCC,XDC,XF0C,XF2C,XC1C   ! Cloud droplet  charact.
 !
 !
-CHARACTER(LEN=8),DIMENSION(4),PARAMETER &
+CHARACTER(LEN=JPSVNAMELGTMAX),DIMENSION(4),PARAMETER &
                      :: CLIMA_WARM_NAMES=(/'CCLOUD  ','CRAIN   ','CCCNFREE','CCCNACTI'/)
                                        ! basenames of the SV articles stored
                                        ! in the binary files
-CHARACTER(LEN=5),DIMENSION(4),PARAMETER &                       
+CHARACTER(LEN=JPSVNAMELGTMAX),DIMENSION(4),PARAMETER &
                      :: CLIMA_WARM_CONC=(/'NC   ','NR   ','NFREE','NCCN '/)
 !                                       ! basenames of the SV articles stored
 !                                       ! in the binary files for DIAG
 !
 !* Special issue for Below-Cloud SCAVenging of Aerosol particles 
-CHARACTER(LEN=6),DIMENSION(2) :: CAERO_MASS =(/'MASSAP', 'MAP   '/)
+CHARACTER(LEN=JPSVNAMELGTMAX),DIMENSION(2) :: CAERO_MASS =(/'MASSAP', 'MAP   '/)
 !
 !-------------------------------------------------------------------------------
 !
