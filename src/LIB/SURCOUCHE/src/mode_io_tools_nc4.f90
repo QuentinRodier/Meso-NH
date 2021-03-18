@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -16,6 +16,7 @@
 !  P. Wautelet 10/11/2020: new data structures for netCDF dimensions
 !  P. Wautelet 26/11/2020: IO_Vdims_fill_nc4: support for empty kshape
 !  P. Wautelet 08/12/2020: add nbutotwrite
+!  P. Wautelet 18/03/2021: workaround for an intel compiler bug (corrected in 19.1.2)
 !-----------------------------------------------------------------
 #ifdef MNH_IOCDF4
 module mode_io_tools_nc4
@@ -691,7 +692,17 @@ if ( kidx == - 1 ) then
   if ( istatus /= NF90_NOERR ) &
     call IO_Err_handle_nc4( istatus, 'IO_Dim_find_create_nc4', 'NF90_DEF_DIM', Trim( tzncdims(inewsize)%cname) )
 
+#if 0
+  !Disabled here due to a bug in the Intel compiler (corrected in the 19.1.2 version)
   call Move_alloc( from = tzncdims, to = tpfile%tncdims%tdims )
+#else
+  !Do the Move_alloc by hand...
+  Deallocate( tpfile%tncdims%tdims )
+  Allocate( tpfile%tncdims%tdims(Size( tzncdims )) )
+  tpfile%tncdims%tdims(:) = tzncdims
+  Deallocate( tzncdims )
+#endif
+
   tpfile%tncdims%nmaxdims = inewsize
 
   kidx = inewsize
@@ -747,7 +758,16 @@ if ( idx == -1 ) then
   if ( istatus /= NF90_NOERR ) &
     call IO_Err_handle_nc4( istatus, 'IO_Strdimid_get_nc4', 'NF90_DEF_DIM', Trim( tzncdims(inewsize)%cname) )
 
+#if 0
+  !Disabled here due to a bug in the Intel compiler (corrected in the 19.1.2 version)
   call Move_alloc( from = tzncdims, to = tpfile%tncdims%tdims_str )
+#else
+  !Do the Move_alloc by hand...
+  Deallocate( tpfile%tncdims%tdims_str )
+  Allocate( tpfile%tncdims%tdims_str(Size( tzncdims )) )
+  tpfile%tncdims%tdims_str(:) = tzncdims(:)
+  Deallocate( tzncdims )
+#endif
   tpfile%tncdims%nmaxdims_str = inewsize
 
   idx = inewsize
