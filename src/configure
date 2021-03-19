@@ -526,8 +526,8 @@ fi
 if [ "x${VER_CDF}" == "xCDFAUTO" ] ;then
 ( cd $LOCAL/src/LIB ; [ ! -d libaec-${VERSION_LIBAEC} ] && tar xvfz libaec-${VERSION_LIBAEC}.tar.gz )
 ( cd $LOCAL/src/LIB ; [ ! -d hdf5-${VERSION_HDF} ] && tar xvfz hdf5-${VERSION_HDF}.tar.gz )
-( cd $LOCAL/src/LIB ; [ ! -d netcdf-${VERSION_CDFC} ] && tar xvfz netcdf-c-${VERSION_CDFC}.tar.gz )
-( cd $LOCAL/src/LIB ; [ ! -d netcdf-cxx-${VERSION_CDFCXX} ] && tar xvfz netcdf-cxx4-${VERSION_CDFCXX}.tar.gz )
+( cd $LOCAL/src/LIB ; [ ! -d netcdf-c-${VERSION_CDFC} ] && tar xvfz netcdf-c-${VERSION_CDFC}.tar.gz )
+( cd $LOCAL/src/LIB ; [ ! -d netcdf-cxx4-${VERSION_CDFCXX} ] && tar xvfz netcdf-cxx4-${VERSION_CDFCXX}.tar.gz )
 ( cd $LOCAL/src/LIB ; [ ! -d netcdf-fortran-${VERSION_CDFF} ] && tar xvfz netcdf-fortran-${VERSION_CDFF}.tar.gz )
 fi
 #
