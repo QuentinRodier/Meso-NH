@@ -80,26 +80,6 @@ integer, parameter :: NBUDGET_SV1 = 13 ! Reference number for 1st budget of RhoJ
 integer :: nbudgets ! Number of budget categories
 
 
-type tbudgetdata
-  character(len=NBUNAMELGTMAX)  :: cname    = ''
-  character(len=NCOMMENTLGTMAX) :: ccomment = ''
-  character(len=100)            :: clessource = '' ! Last source stored
-  integer :: nid         = -1 !Identifier number (based on parameters NBUDGET_*)
-  integer :: ngroups     = 0 !Number of groups of source terms to store
-  integer :: nsources    = 0 !Number of available source terms
-  integer :: nsourcesmax = 0 !Maximum number of source terms
-  integer :: ntmpstoresource = 0 !Reference of the source term using the xtmpstore array
-  logical :: lenabled = .false. ! True if corresponding budget flag is set to true
-  real, dimension(:,:,:), allocatable :: xtmpstore ! Array to store temporary data
-                                                   !  (to allow to store the difference between 2 places)
-  real, dimension(:,:,:), allocatable :: xtmplesstore ! Array to store temporary data for LES budgets
-                                                      !  (to allow to store the difference between 2 places)
-  type(tbusourcedata), dimension(:), allocatable :: tsources ! Full list of source terms (used or not)
-  type(tbugroupdata),  dimension(:), allocatable :: tgroups  ! Full list of groups of source terms (to be written)
-  type(tburhodata),    pointer                   :: trhodj => null() ! Budget array for rhodj
-end type tbudgetdata
-
-
 type, extends( tfield_metadata_base ) :: tbusourcedata
   integer :: ngroup = 0 ! Number of the source term group in which storing the source term
                         !  (0: no store, 1: individual store, >1: number of the group)
@@ -138,6 +118,25 @@ type :: tbudiachrometadata
   integer :: nkh = -1
   integer :: nsv = -1 !Reference number of the corresponding scalar variable
 end type tbudiachrometadata
+
+type tbudgetdata
+  character(len=NBUNAMELGTMAX)  :: cname    = ''
+  character(len=NCOMMENTLGTMAX) :: ccomment = ''
+  character(len=100)            :: clessource = '' ! Last source stored
+  integer :: nid         = -1 !Identifier number (based on parameters NBUDGET_*)
+  integer :: ngroups     = 0 !Number of groups of source terms to store
+  integer :: nsources    = 0 !Number of available source terms
+  integer :: nsourcesmax = 0 !Maximum number of source terms
+  integer :: ntmpstoresource = 0 !Reference of the source term using the xtmpstore array
+  logical :: lenabled = .false. ! True if corresponding budget flag is set to true
+  real, dimension(:,:,:), allocatable :: xtmpstore ! Array to store temporary data
+                                                   !  (to allow to store the difference between 2 places)
+  real, dimension(:,:,:), allocatable :: xtmplesstore ! Array to store temporary data for LES budgets
+                                                      !  (to allow to store the difference between 2 places)
+  type(tbusourcedata), dimension(:), allocatable :: tsources ! Full list of source terms (used or not)
+  type(tbugroupdata),  dimension(:), allocatable :: tgroups  ! Full list of groups of source terms (to be written)
+  type(tburhodata),    pointer                   :: trhodj => null() ! Budget array for rhodj
+end type tbudgetdata
 
 
 type(tbudgetdata), dimension(:), allocatable, save :: tbudgets
