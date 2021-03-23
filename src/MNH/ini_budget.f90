@@ -4055,6 +4055,19 @@ END IF
 
 call Ini_budget_groups( tbudgets, ibudim1, ibudim2, ibudim3 )
 
+if ( tbudgets(NBUDGET_U)  %lenabled ) call Sourcelist_nml_compact( tbudgets(NBUDGET_U),   cbulist_ru   )
+if ( tbudgets(NBUDGET_V)  %lenabled ) call Sourcelist_nml_compact( tbudgets(NBUDGET_V),   cbulist_rv   )
+if ( tbudgets(NBUDGET_W)  %lenabled ) call Sourcelist_nml_compact( tbudgets(NBUDGET_W),   cbulist_rw   )
+if ( tbudgets(NBUDGET_TH) %lenabled ) call Sourcelist_nml_compact( tbudgets(NBUDGET_TH),  cbulist_rth  )
+if ( tbudgets(NBUDGET_TKE)%lenabled ) call Sourcelist_nml_compact( tbudgets(NBUDGET_TKE), cbulist_rtke )
+if ( tbudgets(NBUDGET_RV) %lenabled ) call Sourcelist_nml_compact( tbudgets(NBUDGET_RV),  cbulist_rrv  )
+if ( tbudgets(NBUDGET_RC) %lenabled ) call Sourcelist_nml_compact( tbudgets(NBUDGET_RC),  cbulist_rrc  )
+if ( tbudgets(NBUDGET_RR) %lenabled ) call Sourcelist_nml_compact( tbudgets(NBUDGET_RR),  cbulist_rrr  )
+if ( tbudgets(NBUDGET_RI) %lenabled ) call Sourcelist_nml_compact( tbudgets(NBUDGET_RI),  cbulist_rri  )
+if ( tbudgets(NBUDGET_RS) %lenabled ) call Sourcelist_nml_compact( tbudgets(NBUDGET_RS),  cbulist_rrs  )
+if ( tbudgets(NBUDGET_RG) %lenabled ) call Sourcelist_nml_compact( tbudgets(NBUDGET_RG),  cbulist_rrg  )
+if ( tbudgets(NBUDGET_RH) %lenabled ) call Sourcelist_nml_compact( tbudgets(NBUDGET_RH),  cbulist_rrh  )
+if ( lbu_rsv )                        call Sourcelist_sv_nml_compact( cbulist_rsv  )
 end subroutine Ini_budget
 
 
@@ -4479,6 +4492,87 @@ subroutine Sourcelist_scan( tpbudget, hbulist )
     end if
   end do
 end subroutine Sourcelist_scan
+
+
+subroutine Sourcelist_nml_compact( tpbudget, hbulist )
+  !This subroutine reduce the size of the hbulist to the minimum
+  !The list is generated from the group list
+  use modd_budget, only: NBULISTMAXLEN, tbudgetdata
+
+  type(tbudgetdata),                           intent(in)    :: tpbudget
+  character(len=*), dimension(:), allocatable, intent(inout) :: hbulist
+
+  integer :: idx
+  integer :: isource
+  integer :: jg
+  integer :: js
+
+  if ( Allocated( hbulist ) ) Deallocate( hbulist )
+
+  if ( tpbudget%ngroups < 3 ) then
+    call Print_msg( NVERB_ERROR, 'BUD', 'Sourcelist_nml_compact', 'ngroups is too small' )
+    return
+  end if
+
+  Allocate( character(len=NBULISTMAXLEN) :: hbulist(tpbudget%ngroups - 3) )
+  hbulist(:) = ''
+
+  idx = 0
+  do jg = 1, tpbudget%ngroups
+    if ( tpbudget%tgroups(jg)%nsources < 1 ) then
+      call Print_msg( NVERB_ERROR, 'BUD', 'Sourcelist_nml_compact', 'no source for group' )
+      cycle
+    end if
+
+    !Do not put 'INIF', 'ENDF', 'AVEF' in hbulist because their presence is automatic if the corresponding budget is enabled
+    isource = tpbudget%tgroups(jg)%nsourcelist(1)
+    if ( Any( tpbudget%tsources(isource)%cmnhname ==  [ 'INIF', 'ENDF', 'AVEF' ] ) ) cycle
+
+    idx = idx + 1
+#if 0
+    !Do not do this way because the group cmnhname may be truncated (NMNHNAMELGTMAX is smaller than NBULISTMAXLEN)
+    !and the name separator is different ('_')
+    hbulist(idx) = Trim( tpbudget%tgroups(jg)%cmnhname )
+#else
+    do js = 1, tpbudget%tgroups(jg)%nsources
+      isource = tpbudget%tgroups(jg)%nsourcelist(js)
+      hbulist(idx) = Trim( hbulist(idx) ) // Trim( tpbudget%tsources(isource)%cmnhname )
+      if ( js < tpbudget%tgroups(jg)%nsources ) hbulist(idx) = Trim( hbulist(idx) ) // '+'
+    end do
+#endif
+  end do
+end subroutine Sourcelist_nml_compact
+
+
+subroutine Sourcelist_sv_nml_compact( hbulist )
+  !This subroutine reduce the size of the hbulist
+  !For SV variables the reduction is simpler than for other variables
+  !because it is too complex to do this cleanly (the enabled source terms are different for each scalar variable)
+  use modd_budget, only: NBULISTMAXLEN, tbudgetdata
+
+  character(len=*), dimension(:), allocatable, intent(inout) :: hbulist
+
+  character(len=NBULISTMAXLEN), dimension(:), allocatable :: ybulist_new
+  integer :: ilines
+  integer :: ji
+
+  ilines = 0
+  do ji = 1, Size( hbulist )
+    if ( Len_trim(hbulist(ji)) > 0 ) ilines = ilines + 1
+  end do
+
+  Allocate( ybulist_new(ilines) )
+
+  ilines = 0
+  do ji = 1, Size( hbulist )
+    if ( Len_trim(hbulist(ji)) > 0 ) then
+      ilines = ilines + 1
+      ybulist_new(ilines) = Trim( hbulist(ji) )
+    end if
+  end do
+
+  call Move_alloc( from = ybulist_new, to = hbulist )
+end subroutine Sourcelist_sv_nml_compact
 
 
 pure function Source_find( tpbudget, hsource ) result( ipos )
