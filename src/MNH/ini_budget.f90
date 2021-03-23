@@ -4419,11 +4419,67 @@ subroutine Sourcelist_scan( tpbudget, hbulist )
 
   character(len=:), allocatable :: yline
   character(len=:), allocatable :: ysrc
+  character(len=:), dimension(:), allocatable :: ymsg
   integer                       :: idx
   integer                       :: igroup
   integer                       :: igroup_idx
   integer                       :: ipos
+  integer                       :: istart
   integer                       :: ji
+
+  istart = 1
+
+  ! Case 'LIST_AVAIL': list all the available source terms
+  if ( Size( hbulist ) > 0 ) then
+    if ( Trim( hbulist(1) ) == 'LIST_AVAIL' ) then
+      Allocate( character(len=65) :: ymsg(tpbudget%nsources + 1) )
+      ymsg(1) = '---------------------------------------------------------------------'
+      ymsg(2) = 'Available source terms for budget ' // Trim( tpbudget%cname )
+      Write( ymsg(3), '( A32, " ", A32 )' ) 'Name', 'Long name'
+      idx = 3
+      do ji = 1, tpbudget%nsources
+        if ( All( tpbudget%tsources(ji)%cmnhname /= [ 'INIF' , 'ENDF', 'AVEF' ] ) ) then
+          idx = idx + 1
+          Write( ymsg(idx), '( A32, " ", A32 )' ) tpbudget%tsources(ji)%cmnhname, tpbudget%tsources(ji)%clongname
+        end if
+      end do
+      ymsg(tpbudget%nsources + 1 ) = '---------------------------------------------------------------------'
+      call Print_msg_multi( NVERB_WARNING, 'BUD', 'Sourcelist_scan', ymsg )
+      !To not read the 1st line again
+      istart = 2
+    end if
+  end if
+
+  ! Case 'LIST_ALL': list all the source terms
+  if ( Size( hbulist ) > 0 ) then
+    if ( Trim( hbulist(1) ) == 'LIST_ALL' ) then
+      Allocate( character(len=65) :: ymsg(tpbudget%nsourcesmax + 1) )
+      ymsg(1) = '---------------------------------------------------------------------'
+      ymsg(2) = 'Source terms for budget ' // Trim( tpbudget%cname )
+      Write( ymsg(3), '( A32, " ", A32 )' ) 'Name', 'Long name'
+      idx = 3
+      do ji = 1, tpbudget%nsourcesmax
+        if ( All( tpbudget%tsources(ji)%cmnhname /= [ 'INIF' , 'ENDF', 'AVEF' ] ) ) then
+          idx = idx + 1
+          Write( ymsg(idx), '( A32, " ", A32 )' ) tpbudget%tsources(ji)%cmnhname, tpbudget%tsources(ji)%clongname
+        end if
+      end do
+      ymsg(tpbudget%nsourcesmax + 1 ) = '---------------------------------------------------------------------'
+      call Print_msg_multi( NVERB_WARNING, 'BUD', 'Sourcelist_scan', ymsg )
+      !To not read the 1st line again
+      istart = 2
+    end if
+  end if
+
+  ! Case 'ALL': enable all available source terms
+  if ( Size( hbulist ) > 0 ) then
+    if ( Trim( hbulist(1) ) == 'ALL' ) then
+      do ji = 1, tpbudget%nsources
+        tpbudget%tsources(ji)%ngroup = 1
+      end do
+      return
+    end if
+  end if
 
   !Always enable INIF, ENDF and AVEF terms
   ipos = Source_find( tpbudget, 'INIF' )
@@ -4444,7 +4500,7 @@ subroutine Sourcelist_scan( tpbudget, hbulist )
   !igroup_idx start at 2 because 1 is reserved for individually stored source terms
   igroup_idx = 2
 
-  do ji = 1, Size( hbulist )
+  do ji = istart, Size( hbulist )
     if ( Len_trim( hbulist(ji) ) > 0 ) then
       ! Scan the line and separate the different sources (separated by + signs)
       yline = Trim(hbulist(ji))
