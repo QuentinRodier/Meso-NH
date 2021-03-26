@@ -1,4 +1,0 @@
-#!/bin/bash
-set -x
-rm -f DUST7* 
-rm -f dirconv FICJD LISTING_DIA OUT_DIA pipe_name

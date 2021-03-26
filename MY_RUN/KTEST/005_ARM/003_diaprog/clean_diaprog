@@ -1,4 +1,0 @@
-#!/bin/bash
-rm -f ARM**
-rm -f gmeta OUT*
-rm -f rm dir.*:*

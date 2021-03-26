@@ -1,4 +1,0 @@
-#!/bin/bash
-rm -f EXPER.1.HYD2D*
-rm -f gmeta OUT*
-rm -f rm dir.*:*

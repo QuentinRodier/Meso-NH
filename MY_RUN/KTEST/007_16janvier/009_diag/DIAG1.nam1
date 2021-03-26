@@ -19,7 +19,9 @@ LHU_FLX=T,LTRAJ=T,
   LCLD_COV=T, 
   NCAPE=1,
   LRADAR=T,
-  LDIAG(:)=.FALSE. /
+  LDIAG(:)=.FALSE.,
+  LISOAL=T, XISOAL(1)=9000,
+  LISOPR=T, XISOPR(1)=850, XISOPR(2)=700 /
 &NAM_DIAG_FILE      YINIFILE(1) = "16JAN.1.12B18.001" ,
                     YINIFILEPGD(1) = "16JAN98_36km.neste1",
                     YSUFFIX='dg' /
