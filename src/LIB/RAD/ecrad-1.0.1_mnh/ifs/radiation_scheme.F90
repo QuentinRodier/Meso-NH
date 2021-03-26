@@ -79,7 +79,7 @@ USE YOMHOOK  , ONLY : LHOOK, DR_HOOK
 USE MODD_PARAM_ECRAD_n, ONLY : NAERMACC, NDECOLAT, XCLOUD_FRAC_STD,  &  ! replace YRERAD to get attributes
                             &  LAPPROXLWUPDATE, LAPPROXSWUPDATE
 USE MODD_RADIATIONS_n , ONLY : NSWB_MNH,NSWB_OLD                         
-USE MODE_THERMO ! , ONLY QSATW_2D
+USE MODE_THERMO  , ONLY : QSAT
 USE MODD_DYN_n , ONLY : XTSTEP, NSTOP
 USE MODD_TIME , ONLY : TDTEXP
 USE MODD_TIME_n , ONLY : TDTMOD,TDTCUR
@@ -336,7 +336,7 @@ thermodynamics%temperature_hl(KIDIA:KFDIA,KLEV+1) &
 !     &  PPRESSURE, PTEMPERATURE, thermodynamics%h2o_sat_liq, 2)  
      
 !MNH     
-thermodynamics%h2o_sat_liq(:,:) = QSATW_2D(REAL(PPRESSURE), REAL(PTEMPERATURE))
+thermodynamics%h2o_sat_liq(:,:) = QSAT(REAL(PPRESSURE), REAL(PTEMPERATURE))
 thermodynamics%h2o_sat_liq(:,:) = thermodynamics%h2o_sat_liq(:,:) &
                                 & / (1.+thermodynamics%h2o_sat_liq(:,:)) ! mixing ratio => spec humid
 !MNH
@@ -361,8 +361,8 @@ single_level%lw_emissivity(KIDIA:KFDIA,2)  = PEMIS_WINDOW(KIDIA:KFDIA)
 ! Create the relevant seed from date and time get the starting day
 ! and number of minutes since start
 ! IDAY = NDD(NINDAT)  ! NINDAT is AAAAMMDD initial date NDD extract DD as INTEGER
-IDAY = TDTEXP%TDATE%DAY ! MNH
-ITIM = NINT((TDTMOD%time-TDTCUR%time) / 60.0_JPRB) ! YRRIP contains timestep infos ; number of minutes since beginning
+IDAY = TDTEXP%DATE%NDAY ! MNH
+ITIM = NINT((TDTMOD%xtime-TDTCUR%xtime) / 60.0_JPRB) ! YRRIP contains timestep infos ; number of minutes since beginning
 DO JLON = KIDIA, KFDIA
   ! This method gives a unique value for roughly every 1-km square
   ! on the globe and every minute.  ASIN(PGEMU)*60 gives rough

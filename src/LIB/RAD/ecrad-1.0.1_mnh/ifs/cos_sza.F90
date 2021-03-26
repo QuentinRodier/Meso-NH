@@ -135,7 +135,7 @@ DO JCOL = KSTART,KEND
 ENDDO
 
 ! Computation of solar hour angle from sunposn
-ZTIME     = TDTRAD_FULL%TIME + 0.5*XDTRAD
+ZTIME     = TDTRAD_FULL%XTIME + 0.5*XDTRAD
 ZUT       = MOD( 24.0+MOD(ZTIME/3600.,24.0),24.0 )
 ZTUT = ZUT - XTSIDER
 ZSOLANG = (ZTUT-12.0)*15.0*(RPI/180.)          ! hour angle in radians
