@@ -1288,41 +1288,61 @@ IF (LISOAL .AND.XISOAL(1)/=0.) THEN
 ! *********************
 ! Cloud
 ! *********************
-  IF (SIZE(XRT,4) >= 5) THEN
-    ZWORK31(:,:,:) = (XRT(:,:,:,2)+XRT(:,:,:,4)+XRT(:,:,:,5))*1.E3
-    CALL ZINTER(ZWORK31, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
-    WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
-    TZFIELD%CMNHNAME   = 'ALT_CLOUD'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'ALT_CLOUD'
-    TZFIELD%CUNITS     = 'g kg-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_cloud ALT'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    CALL IO_Field_write(TPFILE,TZFIELD,ZWAL)
-  END IF
+  ZWORK31(:,:,:) = 0.
+  IF (SIZE(XRT,4) >= 2) ZWORK31(:,:,:) = XRT(:,:,:,2) ! Rc
+  IF (SIZE(XRT,4) >= 4) ZWORK31(:,:,:) = ZWORK31(:,:,:) + XRT(:,:,:,4) !Ri
+  ZWORK31(:,:,:) = ZWORK31(:,:,:)*1.E3
+  CALL ZINTER(ZWORK31, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
+  WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
+  TZFIELD%CMNHNAME   = 'ALT_CLOUD'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'ALT_CLOUD'
+  TZFIELD%CUNITS     = 'g kg-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_cloud ALT'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  TZFIELD%LTIMEDEP   = .TRUE.
+  CALL IO_Field_write(TPFILE,TZFIELD,ZWAL)
 ! *********************
 ! Precipitation
 ! *********************
-  IF (SIZE(XRT,4) >= 6) THEN
-    ZWORK31(:,:,:) = (XRT(:,:,:,2)+XRT(:,:,:,6))*1.E3
-    CALL ZINTER(ZWORK31, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
-    WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
-    TZFIELD%CMNHNAME   = 'ALT_PRECIP'
-    TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'ALT_PRECIP'
-    TZFIELD%CUNITS     = 'g kg-1'
-    TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = 'X_Y_precipitation ALT'
-    TZFIELD%NGRID      = 1
-    TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%NDIMS      = 3
-    TZFIELD%LTIMEDEP   = .TRUE.
-    CALL IO_Field_write(TPFILE,TZFIELD,ZWAL)
-  END IF
+  ZWORK31(:,:,:) = 0.
+  IF (SIZE(XRT,4) >= 3) ZWORK31(:,:,:) = XRT(:,:,:,3) ! Rr
+  IF (SIZE(XRT,4) >= 5) ZWORK31(:,:,:) = ZWORK31(:,:,:) + XRT(:,:,:,5) !Rsnow
+  IF (SIZE(XRT,4) >= 6) ZWORK31(:,:,:) = ZWORK31(:,:,:) + XRT(:,:,:,6) !Rgraupel
+  IF (SIZE(XRT,4) >= 7) ZWORK31(:,:,:) = ZWORK31(:,:,:) + XRT(:,:,:,7) !Rhail
+  ZWORK31(:,:,:) = ZWORK31(:,:,:)*1.E3
+  CALL ZINTER(ZWORK31, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
+  WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
+  TZFIELD%CMNHNAME   = 'ALT_PRECIP'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'ALT_PRECIP'
+  TZFIELD%CUNITS     = 'g kg-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_precipitation ALT'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  TZFIELD%LTIMEDEP   = .TRUE.
+  CALL IO_Field_write(TPFILE,TZFIELD,ZWAL)
+! *********************
+! Potential temperature
+! *********************
+  CALL ZINTER(XTHT, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
+  WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
+  TZFIELD%CMNHNAME   = 'ALT_THETA'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'ALT_THETA'
+  TZFIELD%CUNITS     = 'K'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_potential temperature ALT'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  TZFIELD%LTIMEDEP   = .TRUE.
+  CALL IO_Field_write(TPFILE,TZFIELD,ZWAL)
 ! *********************
 ! Pressure
 ! *********************
