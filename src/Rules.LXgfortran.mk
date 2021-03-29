@@ -116,6 +116,12 @@ MNH_COMPRESS=yes
 #if MNH_S4PY exists => compile the libs4py library (for epygram)
 #MNH_S4PY=no
 #
+## ecCodes or grib_api selection
+#MNH_GRIBAPI: if set to no:  use ecCodes
+#             if set to yes: use grib_api (deprecated library)
+#
+MNH_GRIBAPI=no
+#
 #
 # Force -fallow-argument-mismatch option for gcc >= 10.1
 # Necessary because some subroutines may be called with different datatypes
@@ -124,6 +130,7 @@ MNH_COMPRESS=yes
 #
 ifeq ($(shell test $(GFV) -ge 1010 ; echo $$?),0)
 OPT_BASE += -fallow-argument-mismatch
+GRIB_FLAGS += -fallow-argument-mismatch
 NETCDF_SUPPFLAGS += -fallow-argument-mismatch
 ECCODES_FFLAGS += -fallow-argument-mismatch
 endif

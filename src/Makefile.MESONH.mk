@@ -417,8 +417,27 @@ endif
 ARCH_XYZ    := $(ARCH_XYZ)-$(VER_MPI)
 
 ##########################################################
+#           Librairie GRIBAPI                            #
+##########################################################
+ifeq "$(MNH_GRIBAPI)" "yes"
+DIR_GRIBAPI?=${SRC_MESONH}/src/LIB/grib_api-${VERSION_GRIBAPI}
+GRIBAPI_PATH?=${OBJDIR_MASTER}/GRIBAPI-${VERSION_GRIBAPI}
+GRIBAPI_INC?=${GRIBAPI_PATH}/include/grib_api.mod
+#
+ifdef DIR_GRIBAPI
+INC_GRIBAPI   ?= -I${GRIBAPI_PATH}/include
+LIB_GRIBAPI   ?= -L${GRIBAPI_PATH}/lib -L${GRIBAPI_PATH}/lib64 -lgrib_api_f90 -lgrib_api
+INC           += $(INC_GRIBAPI)
+LIBS          += $(LIB_GRIBAPI)
+VPATH         += $(GRIBAPI_PATH)/include
+R64_GRIBAPI=R64
+endif
+endif
+
+##########################################################
 #           ecCodes library                              #
 ##########################################################
+ifneq "$(MNH_GRIBAPI)" "yes"
 DIR_ECCODES_SRC?=${SRC_MESONH}/src/LIB/eccodes-${VERSION_ECCODES}-Source
 DIR_ECCODES_BUILD?=${SRC_MESONH}/src/LIB/eccodes-${VERSION_ECCODES}-${ARCH}-R${MNH_REAL}I${MNH_INT}
 DIR_ECCODES_INSTALL?=${OBJDIR_MASTER}/ECCODES-${VERSION_ECCODES}
@@ -430,6 +449,7 @@ LIB_ECCODES   ?= -L${DIR_ECCODES_INSTALL}/lib -L${DIR_ECCODES_INSTALL}/lib64 -le
 INC           += $(INC_ECCODES)
 LIBS          += $(LIB_ECCODES)
 VPATH         += $(DIR_ECCODES_INSTALL)/include
+endif
 endif
 
 ##########################################################

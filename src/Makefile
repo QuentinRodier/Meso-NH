@@ -1,4 +1,4 @@
-#MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 #MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 #MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 #MNH_LIC for details. version 1.
@@ -177,7 +177,11 @@ DEP_ALL_USER   = $(sort $(filter-out $(IGNORE_DEP_USER)  ,$(DEP_USER)) )
 .PHONY : all objdirmaster libmaster bibmaster objmaster progmaster
 .PHONY : installmaster cleanlibmaster cleanmaster cleanobjmaster cleanprogmaster
 
+ifeq "$(MNH_GRIBAPI)" "yes"
+all : gribapi progmaster
+else
 all : eccodes_lib progmaster
+endif
 
 objdirmaster :  $(OBJDIR_MASTER)/.dummy
 
@@ -196,7 +200,11 @@ ifeq "$(VER_OASIS)" "OASISAUTO"
 depmaster : oasis
 endif
 
+ifeq "$(MNH_GRIBAPI)" "yes"
+depmaster : gribapi
+else
 depmaster : eccodes_lib
+endif
 
 filedepallmaster :  $(DEP_ALL_MASTER)
 	find  $(OBJDIR_MASTER) -follow -name "*.D" >  $(OBJDIR_MASTER)/filemaster
@@ -288,6 +296,22 @@ installuser :
 cleanproguser :
 	test -d $(OBJDIR_USER) && cd $(OBJDIR_USER) && rm -f $(PROG_LIST)
 
+##########################################################
+#                                                        #
+# EXTRA LIB : GRIBAPI                                    #
+#                                                        #
+##########################################################
+ifneq "$(findstring 64,$(shell uname -m))" ""
+A64=A64
+endif
+gribapi : $(GRIBAPI_INC)
+$(GRIBAPI_INC) :
+	cd ${DIR_GRIBAPI} && ./configure --disable-shared --disable-jpeg --prefix=${GRIBAPI_PATH} CC="$(CC)" \
+	FC="$(FC)" FCFLAGS="$(GRIB_FLAGS)" ${GRIBAPI_CONF} && $(MAKE) -j 1 clean && \
+	$(MAKE) -j 1 && $(MAKE) -j 1 install && $(MAKE) -j 1 clean
+
+gribapi_clean :
+	- [  -d ${GRIBAPI_PATH} ] && rm -fr ${GRIBAPI_PATH}
 ##########################################################
 #                                                        #
 # EXTRA LIB : ecCodes                                    #

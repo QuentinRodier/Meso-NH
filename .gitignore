@@ -41,6 +41,8 @@ pub/ncl_ncarg*/
 src/dir_obj-*
 src/LIB/eccodes*
 !src/LIB/eccodes*.tar.gz
+src/LIB/grib_api*
+!src/LIB/grib_api*.tar.gz
 src/LIB/hdf5*
 !src/LIB/hdf5*.tar.gz
 src/LIB/libaec*

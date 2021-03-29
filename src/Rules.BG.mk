@@ -117,6 +117,12 @@ MNH_IOLFI=yes
 #if MNH_S4PY exists => compile the libs4py library (for epygram)
 #MNH_S4PY=no
 #
+## ecCodes or grib_api selection
+#MNH_GRIBAPI: if set to no:  use ecCodes
+#             if set to yes: use grib_api (deprecated library)
+#
+MNH_GRIBAPI=no
+#
 ##########################################################
 #                                                        #
 # Source of MESONH PACKAGE  Distribution                 #
