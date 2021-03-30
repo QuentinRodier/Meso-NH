@@ -68,6 +68,7 @@ END MODULE MODI_INI_NSV
 !  P. Wautelet 09/03/2021: move some chemistry initializations to ini_nsv
 !  P. Wautelet 10/03/2021: move scalar variable name initializations to ini_nsv
 !  P. Wautelet 10/03/2021: add CSVNAMES and CSVNAMES_A to store the name of all the scalar variables
+!  P. Wautelet 30/03/2021: move NINDICE_CCN_IMM and NIMM initializations from init_aerosol_properties to ini_nsv
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -103,7 +104,7 @@ USE MODD_LG,              ONLY: CLGNAMES, XLG1MIN, XLG2MIN, XLG3MIN
 USE MODD_LUNIT_n,         ONLY: TLUOUT
 USE MODD_NSV
 USE MODD_PARAM_C2R2,      ONLY: LSUPSAT
-USE MODD_PARAM_LIMA,      ONLY: NINDICE_CCN_IMM, NMOD_CCN, LSCAV, LAERO_MASS, &
+USE MODD_PARAM_LIMA,      ONLY: NINDICE_CCN_IMM, NIMM, NMOD_CCN, LSCAV, LAERO_MASS, &
                                 NMOD_IFN, NMOD_IMM, LHHONI,  &
                                 LWARM, LCOLD, LRAIN
 USE MODD_PARAM_LIMA_COLD, ONLY: CLIMA_COLD_NAMES
@@ -231,6 +232,23 @@ IF (CCLOUD == 'LIMA' ) THEN
       NSV_LIMA_IMM_NUCL_A(KMI) = ISV
       ISV = ISV + MAX(1,NMOD_IMM)
    END IF
+
+  IF ( NMOD_IFN > 0 ) THEN
+    IF ( .NOT. ALLOCATED( NIMM ) ) ALLOCATE( NIMM(NMOD_CCN) )
+    NIMM(:) = 0
+    IF ( ALLOCATED( NINDICE_CCN_IMM ) ) DEALLOCATE( NINDICE_CCN_IMM )
+    ALLOCATE( NINDICE_CCN_IMM(MAX( 1, NMOD_IMM )) )
+    IF (NMOD_IMM > 0 ) THEN
+      DO JI = 0, NMOD_IMM - 1
+        NIMM(NMOD_CCN - JI) = 1
+        NINDICE_CCN_IMM(NMOD_IMM - JI) = NMOD_CCN - JI
+      END DO
+!     ELSE IF (NMOD_IMM == 0) THEN ! PNIS exists but is 0 for the call to resolved_cloud
+!       NMOD_IMM = 1
+!       NINDICE_CCN_IMM(1) = 0
+    END IF
+  END IF
+
 ! Homogeneous freezing of CCN
    IF (LCOLD .AND. LHHONI) THEN
       NSV_LIMA_HOM_HAZE_A(KMI) = ISV

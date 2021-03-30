@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2013-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -36,23 +36,21 @@ END MODULE MODI_INIT_AEROSOL_PROPERTIES
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!  Philippe Wautelet: 22/01/2019: bugs correction: incorrect writes + unauthorized goto
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
-!!
+!  P. Wautelet 30/03/2021: move NINDICE_CCN_IMM and NIMM initializations from init_aerosol_properties to ini_nsv
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAM_n,         ONLY : CCLOUD
 USE MODD_LUNIT,           ONLY : TLUOUT0
-USE MODD_PARAM_LIMA,      ONLY : LWARM, LACTI, NMOD_CCN, HINI_CCN, HTYPE_CCN,        &
+USE MODD_PARAM_LIMA,      ONLY : NMOD_CCN, HINI_CCN, HTYPE_CCN,        &
                                  XR_MEAN_CCN, XLOGSIG_CCN, XRHO_CCN,                 &
                                  XKHEN_MULTI, XMUHEN_MULTI, XBETAHEN_MULTI,          &
                                  XLIMIT_FACTOR, CCCN_MODES, LSCAV,                    &
                                  XACTEMP_CCN, XFSOLUB_CCN,                           &
-                                 LCOLD, LNUCL, NMOD_IFN, NSPECIE, CIFN_SPECIES,       &
+                                 NMOD_IFN, NSPECIE, CIFN_SPECIES,       &
                                  XMDIAM_IFN, XSIGMA_IFN, XRHO_IFN, XFRAC, XFRAC_REF, &
-                                 CINT_MIXING, NMOD_IMM, NINDICE_CCN_IMM, NIMM,        &
-                                 NPHILLIPS
+                                 CINT_MIXING, NPHILLIPS
 !
 use mode_msg
 !
@@ -358,22 +356,6 @@ IF ( NMOD_IFN .GE. 1 ) THEN
          XFRAC_REF(3)=0.28
          XFRAC_REF(4)=0.06
       END IF
-!
-! Immersion modes
-!
-   IF (.NOT.(ALLOCATED(NIMM))) ALLOCATE(NIMM(NMOD_CCN))
-   NIMM(:)=0
-   IF (ALLOCATED(NINDICE_CCN_IMM)) DEALLOCATE(NINDICE_CCN_IMM)
-   ALLOCATE(NINDICE_CCN_IMM(MAX(1,NMOD_IMM)))
-   IF (NMOD_IMM .GE. 1) THEN
-      DO J = 0, NMOD_IMM-1
-         NIMM(NMOD_CCN-J)=1
-         NINDICE_CCN_IMM(NMOD_IMM-J) = NMOD_CCN-J
-      END DO
-!   ELSE IF (NMOD_IMM == 0) THEN ! PNIS existe mais vaut 0, pour l'appel à resolved_cloud
-!      NMOD_IMM = 1
-!      NINDICE_CCN_IMM(1) = 0
-   END IF
 !
 END IF ! NMOD_IFN > 0
 ! 
