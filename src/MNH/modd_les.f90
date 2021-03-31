@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -41,8 +41,9 @@
 !!       J.Pergaud   Oct    , 2007  MF LES     
 !!       P. Aumond   Oct     ,2009  User multimaskS + 4th order
 !!       C.Lac       Oct     ,2014  Correction on user masks
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
+!  P. Wautelet 30/03/2021: budgets: LES cartesian subdomain limits are defined in the physical domain
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -64,9 +65,9 @@ LOGICAL :: LLES_DOWNDRAFT ! flag to activate the computations in downdrafts
 LOGICAL :: LLES_SPECTRA   ! flag to activate the spectra computations
 LOGICAL :: LLES_PDF      ! flag to activate the pdf computations      
 !
-INTEGER, DIMENSION(900) :: NLES_LEVELS         ! model levels for LES comp.
+INTEGER, DIMENSION(900) :: NLES_LEVELS         ! physical model levels for LES comp.
 REAL,    DIMENSION(900) :: XLES_ALTITUDES      ! alt.  levels for LES comp.
-INTEGER, DIMENSION(900) :: NSPECTRA_LEVELS     ! model levels for spectra comp.
+INTEGER, DIMENSION(900) :: NSPECTRA_LEVELS     ! physical model levels for spectra comp.
 REAL,    DIMENSION(900) :: XSPECTRA_ALTITUDES  ! alt.  levels for spectra comp.
 !
 INTEGER, DIMENSION( 10) :: NLES_TEMP_SERIE_I   ! I, J and Z point
@@ -82,7 +83,7 @@ REAL :: XLES_TEMP_MEAN_END    ! for start and end of the temporal averaged comp.
 REAL :: XLES_TEMP_MEAN_STEP   ! time step for each averaging
 
 LOGICAL :: LLES_CART_MASK     ! flag to use a cartesian mask
-INTEGER :: NLES_IINF          ! definition of the cartesians mask
+INTEGER :: NLES_IINF          ! definition of the cartesians mask in physical domain
 INTEGER :: NLES_ISUP          !     for NLES_CART_MODNBR model
 INTEGER :: NLES_JINF          !               "
 INTEGER :: NLES_JSUP          !               "
@@ -95,7 +96,7 @@ INTEGER :: NPDF         ! number of pdf intervals
 !
 !-------------------------------------------------------------------------------
 !
-INTEGER, DIMENSION(JPMODELMAX) :: NLESn_IINF ! definition of the cartesians mask
+INTEGER, DIMENSION(JPMODELMAX) :: NLESn_IINF ! definition of the cartesians mask in physical domain
 INTEGER, DIMENSION(JPMODELMAX) :: NLESn_ISUP !          for all models
 INTEGER, DIMENSION(JPMODELMAX) :: NLESn_JINF !               "
 INTEGER, DIMENSION(JPMODELMAX) :: NLESn_JSUP !               "
@@ -138,7 +139,7 @@ INTEGER :: NLES_CURRENT_TIMES
 ! current model NLES_TIMES (number of LES samplings)
 !
 INTEGER :: NLES_CURRENT_IINF, NLES_CURRENT_ISUP, NLES_CURRENT_JINF, NLES_CURRENT_JSUP
-! coordinates for write_diachro, set to NLESn_IINF(current model), etc...
+! coordinates (in physical domain) for write_diachro, set to NLESn_IINF(current model), etc...
 !
 REAL :: XLES_CURRENT_DOMEGAX, XLES_CURRENT_DOMEGAY
 ! minimum wavelength in spectra analysis

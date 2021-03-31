@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -49,8 +49,8 @@ END MODULE MODI_LES_INI_TIMESTEP_n
 !!    -------------
 !!      Original         06/11/02
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
-!!
-!! --------------------------------------------------------------------------
+!  P. Wautelet 30/03/2021: budgets: LES cartesian subdomain limits are defined in the physical domain
+! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
 !          ------------
@@ -177,10 +177,10 @@ IMI = GET_CURRENT_MODEL_INDEX()
 !
 ALLOCATE(LLES_CURRENT_CART_MASK(IIU,IJU,NLES_K))
 !
-IIINF_MASK = MAX(IIB, NLESn_IINF(IMI)-(IIB_ll-1-JPHEXT))
-IJINF_MASK = MAX(IJB, NLESn_JINF(IMI)-(IJB_ll-1-JPHEXT))
-IISUP_MASK = MIN(IIE, NLESn_ISUP(IMI)-(IIB_ll-1-JPHEXT))
-IJSUP_MASK = MIN(IJE, NLESn_JSUP(IMI)-(IJB_ll-1-JPHEXT))
+IIINF_MASK = MAX(IIB, NLESn_IINF(IMI)+JPHEXT-(IIB_ll-1-JPHEXT))
+IJINF_MASK = MAX(IJB, NLESn_JINF(IMI)+JPHEXT-(IJB_ll-1-JPHEXT))
+IISUP_MASK = MIN(IIE, NLESn_ISUP(IMI)+JPHEXT-(IIB_ll-1-JPHEXT))
+IJSUP_MASK = MIN(IJE, NLESn_JSUP(IMI)+JPHEXT-(IJB_ll-1-JPHEXT))
 !
 !
 LLES_CURRENT_CART_MASK(:,:,:) = .FALSE.

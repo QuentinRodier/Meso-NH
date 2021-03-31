@@ -47,6 +47,7 @@
 !  P. Wautelet 14/01/2021: change xbusurf type to integer (+ rename it to nbusurf)
 !  P. Wautelet 03/03/2021: add tbudiachrometadata type (useful to pass more information to Write_diachro)
 !  P. Wautelet 17/03/2021: choose source terms for budgets with character strings instead of multiple integer variables
+!  P. Wautelet 30/03/2021: budgets: cartesian subdomain limits are defined in the physical domain
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -110,7 +111,7 @@ type :: tbudiachrometadata
   logical :: licompress = .false.
   logical :: ljcompress = .false.
   logical :: lkcompress = .false.
-  integer :: nil = -1
+  integer :: nil = -1 !Cartesian box boundaries in physical domain coordinates
   integer :: nih = -1
   integer :: njl = -1
   integer :: njh = -1
@@ -167,16 +168,16 @@ integer, save :: nbusubwrite = 0           ! Number of budget time average perio
 integer, save :: nbutotwrite = 0           ! Total number of budget time average periods
 !
 INTEGER, SAVE :: NBUKL, NBUKH              ! lowest and highest K indice values 
-                                           ! of the budget box 
+                                           ! of the budget box in the physical domain
 LOGICAL, SAVE :: LBU_KCP                   ! switch for compression in K
                                            ! direction
 !
 !                Variables used by the cartesian box case ('CART') only
 !
 INTEGER, SAVE :: NBUIL, NBUIH              ! lowest and highest I indice values 
-                                           ! of the cartesian box 
+                                           ! of the cartesian box in the physical domain
 INTEGER, SAVE :: NBUJL, NBUJH              ! lowest and highest J indice values 
-                                           ! of the cartesian box 
+                                           ! of the cartesian box in the physical domain
 LOGICAL, SAVE :: LBU_ICP                   ! switch for compression in I
                                            ! direction
 LOGICAL, SAVE :: LBU_JCP                   ! switch for comppression in J

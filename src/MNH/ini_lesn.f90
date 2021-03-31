@@ -38,7 +38,8 @@
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !  P. Wautelet 12/08/2020: bugfix: use NUNDEF instead of XUNDEF for integer variables
 !  P. Wautelet 04/01/2021: bugfix: nles_k was used instead of nspectra_k for a loop index
-!! --------------------------------------------------------------------------
+!  P. Wautelet 30/03/2021: budgets: LES cartesian subdomain limits are defined in the physical domain
+! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
 !          ------------
@@ -160,28 +161,26 @@ NLES_MASKS = 1
 !  -----------------------------------------------------------------------------
 !
 IF (IMI==1) THEN
-  NLESn_IINF(1)= NUNDEF
-  NLESn_ISUP(1)= NUNDEF
-  NLESn_JINF(1)= NUNDEF
-  NLESn_JSUP(1)= NUNDEF
-  !
-  IF (LLES_CART_MASK) THEN
-    IF (NLES_IINF==NUNDEF) NLES_IINF=JPHEXT+1
-    IF (NLES_JINF==NUNDEF) NLES_JINF=JPHEXT+1
-    IF (NLES_ISUP==NUNDEF) NLES_ISUP=IIU_ll-JPHEXT
-    IF (NLES_JSUP==NUNDEF) NLES_JSUP=IJU_ll-JPHEXT
-  END IF
-  !
-  IF (       NLES_IINF==JPHEXT+1      .AND. NLES_JINF==JPHEXT+1       &
-       .AND. NLES_ISUP==IIU_ll-JPHEXT .AND. NLES_ISUP==IJU_ll-JPHEXT  ) THEN
-    LLES_CART_MASK=.FALSE.
-  END IF
-  !
-  IF (.NOT. LLES_CART_MASK) THEN
-    NLES_IINF=JPHEXT+1
-    NLES_JINF=JPHEXT+1
-    NLES_ISUP=IIU_ll-JPHEXT
-    NLES_JSUP=IJU_ll-JPHEXT
+  IF ( LLES_CART_MASK ) THEN
+    !Compute LES diagnostics inside a cartesian mask
+
+    !Set default values to physical domain boundaries
+    IF ( NLES_IINF == NUNDEF ) NLES_IINF = 1
+    IF ( NLES_JINF == NUNDEF ) NLES_JINF = 1
+    IF ( NLES_ISUP == NUNDEF ) NLES_ISUP = NIMAX_ll
+    IF ( NLES_JSUP == NUNDEF ) NLES_JSUP = NJMAX_ll
+
+    !Set LLES_CART_MASK to false if whole domain is selected
+    IF (       NLES_IINF == 1        .AND. NLES_JINF == 1        &
+         .AND. NLES_ISUP == NIMAX_ll .AND. NLES_ISUP == NJMAX_ll ) THEN
+      LLES_CART_MASK = .FALSE.
+    END IF
+  ELSE
+    !Compute LES diagnostics on whole physical domain
+    NLES_IINF = 1
+    NLES_JINF = 1
+    NLES_ISUP = NIMAX_ll
+    NLES_JSUP = NJMAX_ll
   END IF
   !
   NLESn_IINF(1)= NLES_IINF
@@ -212,17 +211,16 @@ END IF
 !  ----------------------------------------------------------------------------
 !
 IF ( (.NOT. L1D) .AND. CLBCX(1)/='CYCL') THEN
-  NLESn_IINF(IMI) = MAX(NLESn_IINF(IMI),JPHEXT+2)
+  NLESn_IINF(IMI) = MAX(NLESn_IINF(IMI),2)
 END IF
 IF ( (.NOT. L1D) .AND. (.NOT. L2D) .AND. CLBCY(1)/='CYCL') THEN
-  NLESn_JINF(IMI) = MAX(NLESn_JINF(IMI),JPHEXT+2)
+  NLESn_JINF(IMI) = MAX(NLESn_JINF(IMI),2)
 END IF
 !
 !* X boundary conditions for 2points correlations computations
 !  -----------------------------------------------------------
 !
-IF ( NLESn_IINF(IMI)==JPHEXT+1 .AND. NLESn_ISUP(IMI)==IIU_ll-JPHEXT  &
-                              .AND. CLBCX(1)=='CYCL'               ) THEN
+IF ( CLBCX(1) == 'CYCL' .AND. NLESn_IINF(IMI) == 1 .AND. NLESn_ISUP(IMI) == NIMAX_ll ) THEN
   CLES_LBCX(:,IMI) = 'CYCL'
 ELSE
   CLES_LBCX(:,IMI) = 'OPEN'
@@ -231,8 +229,7 @@ END IF
 !* Y boundary conditions for 2points correlations computations
 !  -----------------------------------------------------------
 !
-IF ( NLESn_JINF(IMI)==JPHEXT+1 .AND. NLESn_JSUP(IMI)==IJU_ll-JPHEXT  &
-                              .AND. CLBCY(1)=='CYCL'               ) THEN
+IF ( CLBCY(1) == 'CYCL' .AND. NLESn_JINF(IMI) == 1 .AND. NLESn_JSUP(IMI) == NJMAX_ll ) THEN
   CLES_LBCY(:,IMI) = 'CYCL'
 ELSE
   CLES_LBCY(:,IMI) = 'OPEN'
@@ -372,7 +369,7 @@ ELSE
     NLES_K = MIN(SIZE(NLES_LEVELS),NKMAX)
     CLES_LEVEL_TYPE='K'
     DO JK=1,NLES_K
-      NLES_LEVELS(JK) = JK + JPVEXT
+      NLES_LEVELS(JK) = JK
     END DO
   END IF
 END IF
