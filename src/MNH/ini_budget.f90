@@ -378,22 +378,34 @@ end if
 
 IF (CBUTYPE=='CART') THEN              ! cartesian case only
 !
-  IF ( NBUIH < NBUIL ) CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUIH < NBUIL' )
+  IF ( NBUIL < 1 )        CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUIL too small (<1)' )
+  IF ( NBUIL > NIMAX_ll ) CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUIL too large (>NIMAX)' )
+  IF ( NBUIH < 1 )        CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUIH too small (<1)' )
+  IF ( NBUIH > NIMAX_ll ) CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUIH too large (>NIMAX)' )
+  IF ( NBUIH < NBUIL )    CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUIH < NBUIL' )
   IF (LBU_ICP) THEN
     NBUIMAX_ll = 1
   ELSE
     NBUIMAX_ll = NBUIH - NBUIL +1
   END IF
 
-  IF ( NBUJH < NBUJL ) CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUJH < NBUJL' )
+  IF ( NBUJL < 1 )        CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUJL too small (<1)' )
+  IF ( NBUJL > NJMAX_ll ) CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUJL too large (>NJMAX)' )
+  IF ( NBUJH < 1 )        CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUJH too small (<1)' )
+  IF ( NBUJH > NJMAX_ll ) CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUJH too large (>NJMAX)' )
+  IF ( NBUJH < NBUJL )    CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUJH < NBUJL' )
   IF (LBU_JCP) THEN
     NBUJMAX_ll = 1
   ELSE
     NBUJMAX_ll = NBUJH - NBUJL +1
   END IF
 
+  IF ( NBUKL < 1 )     CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUKL too small (<1)' )
+  IF ( NBUKL > NKMAX ) CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUKL too large (>NKMAX)' )
+  IF ( NBUKH < 1 )     CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUKH too small (<1)' )
+  IF ( NBUKH > NKMAX ) CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUKH too large (>NKMAX)' )
   IF ( NBUKH < NBUKL ) CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUKH < NBUKL' )
-!
+
   CALL GET_INTERSECTION_ll(NBUIL+JPHEXT,NBUJL+JPHEXT,NBUIH+JPHEXT,NBUJH+JPHEXT, &
       NBUSIL,NBUSJL,NBUSIH,NBUSJH,"PHYS",IINFO_ll)
   IF ( IINFO_ll /= 1 ) THEN ! 

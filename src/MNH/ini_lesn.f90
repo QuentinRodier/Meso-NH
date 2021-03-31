@@ -170,6 +170,19 @@ IF (IMI==1) THEN
     IF ( NLES_ISUP == NUNDEF ) NLES_ISUP = NIMAX_ll
     IF ( NLES_JSUP == NUNDEF ) NLES_JSUP = NJMAX_ll
 
+    !Check that selected indices are in physical domain
+    IF ( NLES_IINF < 1 )         CALL Print_msg( NVERB_ERROR, 'GEN', 'INI_LES_n', 'NLES_IINF too small (<1)' )
+    IF ( NLES_IINF > NIMAX_ll )  CALL Print_msg( NVERB_ERROR, 'GEN', 'INI_LES_n', 'NLES_IINF too large (>NIMAX)' )
+    IF ( NLES_ISUP < 1 )         CALL Print_msg( NVERB_ERROR, 'GEN', 'INI_LES_n', 'NLES_ISUP too small (<1)' )
+    IF ( NLES_ISUP > NIMAX_ll )  CALL Print_msg( NVERB_ERROR, 'GEN', 'INI_LES_n', 'NLES_ISUP too large (>NIMAX)' )
+    IF ( NLES_ISUP < NLES_IINF ) CALL Print_msg( NVERB_ERROR, 'BUD', 'INI_LES_n', 'NLES_ISUP < NLES_IINF' )
+
+    IF ( NLES_JINF < 1 )         CALL Print_msg( NVERB_ERROR, 'GEN', 'INI_LES_n', 'NLES_JINF too small (<1)' )
+    IF ( NLES_JINF > NJMAX_ll )  CALL Print_msg( NVERB_ERROR, 'GEN', 'INI_LES_n', 'NLES_JINF too large (>NJMAX)' )
+    IF ( NLES_JSUP < 1 )         CALL Print_msg( NVERB_ERROR, 'GEN', 'INI_LES_n', 'NLES_JSUP too small (<1)' )
+    IF ( NLES_JSUP > NJMAX_ll )  CALL Print_msg( NVERB_ERROR, 'GEN', 'INI_LES_n', 'NLES_JSUP too large (>NJMAX)' )
+    IF ( NLES_JSUP < NLES_JINF ) CALL Print_msg( NVERB_ERROR, 'BUD', 'INI_LES_n', 'NLES_JSUP < NLES_JINF' )
+
     !Set LLES_CART_MASK to false if whole domain is selected
     IF (       NLES_IINF == 1        .AND. NLES_JINF == 1        &
          .AND. NLES_ISUP == NIMAX_ll .AND. NLES_ISUP == NJMAX_ll ) THEN
@@ -362,6 +375,13 @@ END IF
 !            --------------------
 !
 IF (ANY(NLES_LEVELS(:)/=NUNDEF)) THEN
+  DO JK = 1, SIZE( NLES_LEVELS )
+    IF ( NLES_LEVELS(JK) /= NUNDEF ) THEN
+      IF ( NLES_LEVELS(JK) < 1 )     CALL Print_msg( NVERB_ERROR, 'GEN', 'INI_LES_n', 'NLES_LEVELS too small (<1)' )
+      IF ( NLES_LEVELS(JK) > NKMAX ) CALL Print_msg( NVERB_ERROR, 'GEN', 'INI_LES_n', 'NLES_LEVELS too large (>NKMAX)' )
+    END IF
+  END DO
+
   NLES_K = COUNT (NLES_LEVELS(:)/=NUNDEF)
   CLES_LEVEL_TYPE='K'
 ELSE
@@ -411,6 +431,13 @@ END IF
 !            --------------------
 !
 IF (ANY(NSPECTRA_LEVELS(:)/=NUNDEF)) THEN
+  DO JK = 1, SIZE( NSPECTRA_LEVELS )
+    IF ( NSPECTRA_LEVELS(JK) /= NUNDEF ) THEN
+      IF ( NSPECTRA_LEVELS(JK) < 1 )     CALL Print_msg( NVERB_ERROR, 'GEN', 'INI_LES_n', 'NSPECTRA_LEVELS too small (<1)' )
+      IF ( NSPECTRA_LEVELS(JK) > NKMAX ) CALL Print_msg( NVERB_ERROR, 'GEN', 'INI_LES_n', 'NSPECTRA_LEVELS too large (>NKMAX)' )
+    END IF
+  END DO
+
   NSPECTRA_K = COUNT (NSPECTRA_LEVELS(:)/=NUNDEF)
   CSPECTRA_LEVEL_TYPE='K'
 END IF
