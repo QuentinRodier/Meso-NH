@@ -108,6 +108,9 @@ type :: tbudiachrometadata
   character(len=NBUNAMELGTMAX)  :: cname       = 'not set'
   character(len=NCOMMENTLGTMAX) :: ccomment    = 'not set'
   character(len=NBUNAMELGTMAX)  :: ctype       = 'not set'
+  character(len=NBUNAMELGTMAX)  :: ccategory   = 'not set' !budget, LES, aircraft, balloon, series, station, profiler
+  character(len=NBUNAMELGTMAX)  :: cshape      = 'not set' !Shape of the domain (mask, cartesian, vertical profile, point)
+  logical :: lmobile    = .false.                          !Is the domain moving? (ie for aircrafts and balloons)
   logical :: licompress = .false.
   logical :: ljcompress = .false.
   logical :: lkcompress = .false.

@@ -559,6 +559,13 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
   tzbudiachro%cname      = tprhodj%cmnhname
   tzbudiachro%ccomment   = tprhodj%ccomment
   tzbudiachro%ctype      = ybutype
+  tzbudiachro%ccategory  = 'budget'
+  if ( ybutype == 'CART' ) then
+    tzbudiachro%cshape   = 'cartesian'
+  else
+    tzbudiachro%cshape   = 'mask'
+  end if
+  tzbudiachro%lmobile    = .false.
   tzbudiachro%licompress = lbu_icp
   tzbudiachro%ljcompress = lbu_jcp
   tzbudiachro%lkcompress = lbu_kcp
@@ -805,6 +812,13 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
   tzbudiachro%cname      = tpbudget%cname
   tzbudiachro%ccomment   = tpbudget%ccomment
   tzbudiachro%ctype      = ybutype
+  tzbudiachro%ccategory  = 'budget'
+  if ( ybutype == 'CART' ) then
+    tzbudiachro%cshape   = 'cartesian'
+  else
+    tzbudiachro%cshape   = 'mask'
+  end if
+  tzbudiachro%lmobile    = .false.
   tzbudiachro%licompress = lbu_icp
   tzbudiachro%ljcompress = lbu_jcp
   tzbudiachro%lkcompress = lbu_kcp
