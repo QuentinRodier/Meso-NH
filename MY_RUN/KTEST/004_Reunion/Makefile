@@ -5,7 +5,9 @@ all:
 	cd 003_mesonh          && run_mesonh_xyz 
 	cd 004_diag            && run_diag_xyz 
 	cd 006_ncl             && run_ncl
+        ifneq "$(MNH_PYTHON)" "NO"
 	cd 007_python          && run_python
+        endif
 
 all_ncl_lfi2cdf:
 	cd 001_prep_pgd	       && get_pgd_files 
@@ -34,9 +36,11 @@ clean:
 	cd 001_prep_pgd        && clean_prep_pgd_xyz 
 	cd 002_prep_ideal_case && clean_prep_ideal_case_xyz 
 	cd 003_mesonh          && clean_mesonh_xyz 
-	cd 004_diag         && clean_diag_xyz 
+	cd 004_diag            && clean_diag_xyz 
 	cd 005_ncl_lfi2cdf     && clean_ncl 
 	cd 005_ncl_extractdia  && clean_ncl 
 	cd 005_ncl_nc4         && clean_ncl 
-	cd 006_ncl             && clean_ncl 
+	cd 006_ncl             && clean_ncl
+        ifneq "$(MNH_PYTHON)" "NO"
 	cd 007_python          && clean_python
+        endif

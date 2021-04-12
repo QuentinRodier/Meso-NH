@@ -1,4 +1,8 @@
-all: E001_pgd1 E002_pgd2 E003_nest E004_arp2lfi E005_spa_mod1_mod2 E006_preal E008_run2 E009_diag E010_python E011_ncl E012_spectre
+all: E001_pgd1 E002_pgd2 E003_nest E004_arp2lfi E005_spa_mod1_mod2 E006_preal E008_run2 E009_diag
+ifneq "$(MNH_PYTHON)" "NO"
+all: E010_python
+endif
+all: E011_ncl E012_spectre
 
 all_ncl_nc4: E001_pgd1 E002_pgd2 E003_nest E004_arp2lfi E005_spa_mod1_mod2 E006_preal E008_run2 E009_diag E011_ncl_nc4
 
@@ -45,7 +49,9 @@ clean:
 	cd 006_preal	       && clean_preal_xyz
 	cd 008_run2	       && clean_mesonh_xyz
 	cd 009_diag	       && clean_diag_xyz
+        ifneq "$(MNH_PYTHON)" "NO"
 	cd 010_python	       && clean_python
+        endif
 	cd 011_ncl_lfi2cdf     && clean_ncl
 	cd 011_ncl_extractdia  && clean_ncl
 	cd 011_ncl_nc4         && clean_ncl
