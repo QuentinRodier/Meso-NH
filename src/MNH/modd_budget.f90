@@ -47,6 +47,7 @@
 !  P. Wautelet 14/01/2021: change xbusurf type to integer (+ rename it to nbusurf)
 !  P. Wautelet 03/03/2021: add tbudiachrometadata type (useful to pass more information to Write_diachro)
 !  P. Wautelet 17/03/2021: choose source terms for budgets with character strings instead of multiple integer variables
+!  P. Wautelet 30/03/2021: budgets: cartesian subdomain limits are defined in the physical domain
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -59,8 +60,8 @@ implicit none
 
 public
 
-integer, parameter :: NBULISTMAXLEN   = 512
-integer, parameter :: NBULISTMAXLINES = 40
+integer, parameter :: NBULISTMAXLEN   = 256
+integer, parameter :: NBULISTMAXLINES = 50
 
 integer, parameter :: NBUDGET_RHO = 0  ! Reference number for budget of RhoJ
 integer, parameter :: NBUDGET_U   = 1  ! Reference number for budget of RhoJu  and/or LES budgets with u
@@ -107,10 +108,13 @@ type :: tbudiachrometadata
   character(len=NBUNAMELGTMAX)  :: cname       = 'not set'
   character(len=NCOMMENTLGTMAX) :: ccomment    = 'not set'
   character(len=NBUNAMELGTMAX)  :: ctype       = 'not set'
+  character(len=NBUNAMELGTMAX)  :: ccategory   = 'not set' !budget, LES, aircraft, balloon, series, station, profiler
+  character(len=NBUNAMELGTMAX)  :: cshape      = 'not set' !Shape of the domain (mask, cartesian, vertical profile, point)
+  logical :: lmobile    = .false.                          !Is the domain moving? (ie for aircrafts and balloons)
   logical :: licompress = .false.
   logical :: ljcompress = .false.
   logical :: lkcompress = .false.
-  integer :: nil = -1
+  integer :: nil = -1 !Cartesian box boundaries in physical domain coordinates
   integer :: nih = -1
   integer :: njl = -1
   integer :: njh = -1
@@ -167,16 +171,16 @@ integer, save :: nbusubwrite = 0           ! Number of budget time average perio
 integer, save :: nbutotwrite = 0           ! Total number of budget time average periods
 !
 INTEGER, SAVE :: NBUKL, NBUKH              ! lowest and highest K indice values 
-                                           ! of the budget box 
+                                           ! of the budget box in the physical domain
 LOGICAL, SAVE :: LBU_KCP                   ! switch for compression in K
                                            ! direction
 !
 !                Variables used by the cartesian box case ('CART') only
 !
 INTEGER, SAVE :: NBUIL, NBUIH              ! lowest and highest I indice values 
-                                           ! of the cartesian box 
+                                           ! of the cartesian box in the physical domain
 INTEGER, SAVE :: NBUJL, NBUJH              ! lowest and highest J indice values 
-                                           ! of the cartesian box 
+                                           ! of the cartesian box in the physical domain
 LOGICAL, SAVE :: LBU_ICP                   ! switch for compression in I
                                            ! direction
 LOGICAL, SAVE :: LBU_JCP                   ! switch for comppression in J
@@ -222,105 +226,105 @@ INTEGER, SAVE :: NBUKMAX                   ! dimension along K of the budget
 !     
 !      Allowed processes for the budget of RU (wind component along x)
 !
-! Courant namelist: NAM_BURU
+! Current namelist: NAM_BU_RU
 !
 LOGICAL, SAVE :: LBU_RU = .FALSE. ! True when the budget of RU is performed
 !                         
-CHARACTER(LEN=NBULISTMAXLEN), DIMENSION(NBULISTMAXLINES), SAVE :: CBULIST_RU = ''
+CHARACTER(LEN=NBULISTMAXLEN), DIMENSION(:), ALLOCATABLE :: CBULIST_RU
 !
 !      Allowed processes for the budget of RV (wind component along y)
 !                                                  
-! Courant namelist: NAM_BURV
+! Current namelist: NAM_BU_RV
 !
 LOGICAL, SAVE :: LBU_RV = .FALSE. ! True when the budget of RV is performed
 !
-CHARACTER(LEN=NBULISTMAXLEN), DIMENSION(NBULISTMAXLINES), SAVE :: CBULIST_RV = ''
+CHARACTER(LEN=NBULISTMAXLEN), DIMENSION(:), ALLOCATABLE :: CBULIST_RV
 !
 !      Allowed processes for the budget of RW (wind vertical component)
 !                                                  
-! Courant namelist: NAM_BURW
+! Current namelist: NAM_BU_RW
 !
 LOGICAL, SAVE :: LBU_RW = .FALSE. ! True when the budget of RW is performed
 !                                                  
-CHARACTER(LEN=NBULISTMAXLEN), DIMENSION(NBULISTMAXLINES), SAVE :: CBULIST_RW = ''
+CHARACTER(LEN=NBULISTMAXLEN), DIMENSION(:), ALLOCATABLE :: CBULIST_RW
 !
 !      Allowed processes for the budget of RTH (potential temperature)
 !                                                  
-! Courant namelist: NAM_BURTH
+! Current namelist: NAM_BU_RTH
 !
 LOGICAL, SAVE :: LBU_RTH = .FALSE. ! True when the budget of RTH is performed
 !
-CHARACTER(LEN=NBULISTMAXLEN), DIMENSION(NBULISTMAXLINES), SAVE :: CBULIST_RTH = ''
+CHARACTER(LEN=NBULISTMAXLEN), DIMENSION(:), ALLOCATABLE :: CBULIST_RTH
 !
 !      Allowed processes for the budget of RTKE (kinetic energy)
 !                                                  
-! Courant namelist: NAM_BURTKE
+! Current namelist: NAM_BU_RTKE
 !
 LOGICAL, SAVE :: LBU_RTKE = .FALSE. ! True when the budget of RTKE is performed
 !
-CHARACTER(LEN=NBULISTMAXLEN), DIMENSION(NBULISTMAXLINES), SAVE :: CBULIST_RTKE = ''
+CHARACTER(LEN=NBULISTMAXLEN), DIMENSION(:), ALLOCATABLE :: CBULIST_RTKE
 !
 !      Allowed processes for the budget of moist variable RRV (water vapor)
 !                                                  
-! Courant namelist: NAM_BURRV
+! Current namelist: NAM_BU_RRV
 !
 LOGICAL, SAVE :: LBU_RRV = .FALSE. ! true when the budget of RRV is performed
 !
-CHARACTER(LEN=NBULISTMAXLEN), DIMENSION(NBULISTMAXLINES), SAVE :: CBULIST_RRV = ''
+CHARACTER(LEN=NBULISTMAXLEN), DIMENSION(:), ALLOCATABLE :: CBULIST_RRV
 !
 !      Allowed processes for the budget of moist variable RRC (cloud water)
 !                                                  
-! Courant namelist: NAM_BURRC
+! Current namelist: NAM_BU_RRC
 !
 LOGICAL, SAVE :: LBU_RRC = .FALSE. ! True when the budget of RRC is performed
 !
-CHARACTER(LEN=NBULISTMAXLEN), DIMENSION(NBULISTMAXLINES), SAVE :: CBULIST_RRC = ''
+CHARACTER(LEN=NBULISTMAXLEN), DIMENSION(:), ALLOCATABLE :: CBULIST_RRC
 !
 !      Allowed processes for the budget of moist variable RRR (rain water)
 !
-! Courant namelist: NAM_BURRR
+! Current namelist: NAM_BU_RRR
 !
 LOGICAL, SAVE :: LBU_RRR = .FALSE. ! True when the budget of RRR is performed
 !
-CHARACTER(LEN=NBULISTMAXLEN), DIMENSION(NBULISTMAXLINES), SAVE :: CBULIST_RRR = ''
+CHARACTER(LEN=NBULISTMAXLEN), DIMENSION(:), ALLOCATABLE :: CBULIST_RRR
 !
 !      Allowed processes for the budget of moist variable RRI (ice)
 !
-! Courant namelist: NAM_BURRI
+! Current namelist: NAM_BU_RRI
 !
 LOGICAL, SAVE :: LBU_RRI = .FALSE. ! True when the budget of RRI is performed
 !
-CHARACTER(LEN=NBULISTMAXLEN), DIMENSION(NBULISTMAXLINES), SAVE :: CBULIST_RRI = ''
+CHARACTER(LEN=NBULISTMAXLEN), DIMENSION(:), ALLOCATABLE :: CBULIST_RRI
 !
 !      Allowed processes for the budget of moist variable RRS (snow)
 !
-! Courant namelist: NAM_BURRS
+! Current namelist: NAM_BU_RRS
 !
 LOGICAL, SAVE :: LBU_RRS = .FALSE. ! True when the budget of RRS is performed
 !
-CHARACTER(LEN=NBULISTMAXLEN), DIMENSION(NBULISTMAXLINES), SAVE :: CBULIST_RRS = ''
+CHARACTER(LEN=NBULISTMAXLEN), DIMENSION(:), ALLOCATABLE :: CBULIST_RRS
 !
 !      Allowed processes for the budget of moist variable RRG (graupel)
 !
-! Courant namelist: NAM_BURRG
+! Current namelist: NAM_BU_RRG
 !
 LOGICAL, SAVE :: LBU_RRG = .FALSE. ! True when the budget of RRG is performed
 !
-CHARACTER(LEN=NBULISTMAXLEN), DIMENSION(NBULISTMAXLINES), SAVE :: CBULIST_RRG = ''
+CHARACTER(LEN=NBULISTMAXLEN), DIMENSION(:), ALLOCATABLE :: CBULIST_RRG
 !
 !      Allowed processes for the budget of moist variable RRH (hail)
 !
-! Courant namelist: NAM_BURRH
+! Current namelist: NAM_BU_RRH
 !
 LOGICAL, SAVE :: LBU_RRH = .FALSE. ! True when the budget of RRH is performed
 !
-CHARACTER(LEN=NBULISTMAXLEN), DIMENSION(NBULISTMAXLINES), SAVE :: CBULIST_RRH = ''
+CHARACTER(LEN=NBULISTMAXLEN), DIMENSION(:), ALLOCATABLE :: CBULIST_RRH
 !
-! Courant namelist: NAM_BURSV
+! Current namelist: NAM_BU_RSV
 !
 LOGICAL, SAVE :: LBU_RSV = .FALSE. ! True when the budget of RSVx is performed
 !
-CHARACTER(LEN=NBULISTMAXLEN), DIMENSION(NBULISTMAXLINES), SAVE :: CBULIST_RSV = ''
+CHARACTER(LEN=NBULISTMAXLEN), DIMENSION(:), ALLOCATABLE :: CBULIST_RSV
 !
 !
 REAL :: XTIME_BU          ! budget time in this time-step

@@ -219,6 +219,7 @@ use modd_blowsnow_n,    only: lsnowsubl
 use modd_budget
 use modd_ch_aerosol,    only: lorilam
 use modd_conf,          only: l1d, lcartesian, lforcing, lthinshell, nmodel
+use modd_dim_n,         only: nimax_ll, njmax_ll, nkmax
 use modd_dragbldg_n,    only: ldragbldg
 use modd_dust,          only: ldust
 use modd_dyn,           only: lcorio, xseglen
@@ -378,22 +379,34 @@ end if
 
 IF (CBUTYPE=='CART') THEN              ! cartesian case only
 !
-  IF ( NBUIH < NBUIL ) CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUIH < NBUIL' )
+  IF ( NBUIL < 1 )        CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUIL too small (<1)' )
+  IF ( NBUIL > NIMAX_ll ) CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUIL too large (>NIMAX)' )
+  IF ( NBUIH < 1 )        CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUIH too small (<1)' )
+  IF ( NBUIH > NIMAX_ll ) CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUIH too large (>NIMAX)' )
+  IF ( NBUIH < NBUIL )    CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUIH < NBUIL' )
   IF (LBU_ICP) THEN
     NBUIMAX_ll = 1
   ELSE
     NBUIMAX_ll = NBUIH - NBUIL +1
   END IF
 
-  IF ( NBUJH < NBUJL ) CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUJH < NBUJL' )
+  IF ( NBUJL < 1 )        CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUJL too small (<1)' )
+  IF ( NBUJL > NJMAX_ll ) CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUJL too large (>NJMAX)' )
+  IF ( NBUJH < 1 )        CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUJH too small (<1)' )
+  IF ( NBUJH > NJMAX_ll ) CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUJH too large (>NJMAX)' )
+  IF ( NBUJH < NBUJL )    CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUJH < NBUJL' )
   IF (LBU_JCP) THEN
     NBUJMAX_ll = 1
   ELSE
     NBUJMAX_ll = NBUJH - NBUJL +1
   END IF
 
+  IF ( NBUKL < 1 )     CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUKL too small (<1)' )
+  IF ( NBUKL > NKMAX ) CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUKL too large (>NKMAX)' )
+  IF ( NBUKH < 1 )     CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUKH too small (<1)' )
+  IF ( NBUKH > NKMAX ) CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUKH too large (>NKMAX)' )
   IF ( NBUKH < NBUKL ) CALL Print_msg( NVERB_ERROR, 'BUD', 'Ini_budget', 'NBUKH < NBUKL' )
-!
+
   CALL GET_INTERSECTION_ll(NBUIL+JPHEXT,NBUJL+JPHEXT,NBUIH+JPHEXT,NBUJH+JPHEXT, &
       NBUSIL,NBUSJL,NBUSIH,NBUSJH,"PHYS",IINFO_ll)
   IF ( IINFO_ll /= 1 ) THEN ! 
@@ -4055,6 +4068,19 @@ END IF
 
 call Ini_budget_groups( tbudgets, ibudim1, ibudim2, ibudim3 )
 
+if ( tbudgets(NBUDGET_U)  %lenabled ) call Sourcelist_nml_compact( tbudgets(NBUDGET_U),   cbulist_ru   )
+if ( tbudgets(NBUDGET_V)  %lenabled ) call Sourcelist_nml_compact( tbudgets(NBUDGET_V),   cbulist_rv   )
+if ( tbudgets(NBUDGET_W)  %lenabled ) call Sourcelist_nml_compact( tbudgets(NBUDGET_W),   cbulist_rw   )
+if ( tbudgets(NBUDGET_TH) %lenabled ) call Sourcelist_nml_compact( tbudgets(NBUDGET_TH),  cbulist_rth  )
+if ( tbudgets(NBUDGET_TKE)%lenabled ) call Sourcelist_nml_compact( tbudgets(NBUDGET_TKE), cbulist_rtke )
+if ( tbudgets(NBUDGET_RV) %lenabled ) call Sourcelist_nml_compact( tbudgets(NBUDGET_RV),  cbulist_rrv  )
+if ( tbudgets(NBUDGET_RC) %lenabled ) call Sourcelist_nml_compact( tbudgets(NBUDGET_RC),  cbulist_rrc  )
+if ( tbudgets(NBUDGET_RR) %lenabled ) call Sourcelist_nml_compact( tbudgets(NBUDGET_RR),  cbulist_rrr  )
+if ( tbudgets(NBUDGET_RI) %lenabled ) call Sourcelist_nml_compact( tbudgets(NBUDGET_RI),  cbulist_rri  )
+if ( tbudgets(NBUDGET_RS) %lenabled ) call Sourcelist_nml_compact( tbudgets(NBUDGET_RS),  cbulist_rrs  )
+if ( tbudgets(NBUDGET_RG) %lenabled ) call Sourcelist_nml_compact( tbudgets(NBUDGET_RG),  cbulist_rrg  )
+if ( tbudgets(NBUDGET_RH) %lenabled ) call Sourcelist_nml_compact( tbudgets(NBUDGET_RH),  cbulist_rrh  )
+if ( lbu_rsv )                        call Sourcelist_sv_nml_compact( cbulist_rsv  )
 end subroutine Ini_budget
 
 
@@ -4406,11 +4432,67 @@ subroutine Sourcelist_scan( tpbudget, hbulist )
 
   character(len=:), allocatable :: yline
   character(len=:), allocatable :: ysrc
+  character(len=:), dimension(:), allocatable :: ymsg
   integer                       :: idx
   integer                       :: igroup
   integer                       :: igroup_idx
   integer                       :: ipos
+  integer                       :: istart
   integer                       :: ji
+
+  istart = 1
+
+  ! Case 'LIST_AVAIL': list all the available source terms
+  if ( Size( hbulist ) > 0 ) then
+    if ( Trim( hbulist(1) ) == 'LIST_AVAIL' ) then
+      Allocate( character(len=65) :: ymsg(tpbudget%nsources + 1) )
+      ymsg(1) = '---------------------------------------------------------------------'
+      ymsg(2) = 'Available source terms for budget ' // Trim( tpbudget%cname )
+      Write( ymsg(3), '( A32, " ", A32 )' ) 'Name', 'Long name'
+      idx = 3
+      do ji = 1, tpbudget%nsources
+        if ( All( tpbudget%tsources(ji)%cmnhname /= [ 'INIF' , 'ENDF', 'AVEF' ] ) ) then
+          idx = idx + 1
+          Write( ymsg(idx), '( A32, " ", A32 )' ) tpbudget%tsources(ji)%cmnhname, tpbudget%tsources(ji)%clongname
+        end if
+      end do
+      ymsg(tpbudget%nsources + 1 ) = '---------------------------------------------------------------------'
+      call Print_msg_multi( NVERB_WARNING, 'BUD', 'Sourcelist_scan', ymsg )
+      !To not read the 1st line again
+      istart = 2
+    end if
+  end if
+
+  ! Case 'LIST_ALL': list all the source terms
+  if ( Size( hbulist ) > 0 ) then
+    if ( Trim( hbulist(1) ) == 'LIST_ALL' ) then
+      Allocate( character(len=65) :: ymsg(tpbudget%nsourcesmax + 1) )
+      ymsg(1) = '---------------------------------------------------------------------'
+      ymsg(2) = 'Source terms for budget ' // Trim( tpbudget%cname )
+      Write( ymsg(3), '( A32, " ", A32 )' ) 'Name', 'Long name'
+      idx = 3
+      do ji = 1, tpbudget%nsourcesmax
+        if ( All( tpbudget%tsources(ji)%cmnhname /= [ 'INIF' , 'ENDF', 'AVEF' ] ) ) then
+          idx = idx + 1
+          Write( ymsg(idx), '( A32, " ", A32 )' ) tpbudget%tsources(ji)%cmnhname, tpbudget%tsources(ji)%clongname
+        end if
+      end do
+      ymsg(tpbudget%nsourcesmax + 1 ) = '---------------------------------------------------------------------'
+      call Print_msg_multi( NVERB_WARNING, 'BUD', 'Sourcelist_scan', ymsg )
+      !To not read the 1st line again
+      istart = 2
+    end if
+  end if
+
+  ! Case 'ALL': enable all available source terms
+  if ( Size( hbulist ) > 0 ) then
+    if ( Trim( hbulist(1) ) == 'ALL' ) then
+      do ji = 1, tpbudget%nsources
+        tpbudget%tsources(ji)%ngroup = 1
+      end do
+      return
+    end if
+  end if
 
   !Always enable INIF, ENDF and AVEF terms
   ipos = Source_find( tpbudget, 'INIF' )
@@ -4431,7 +4513,7 @@ subroutine Sourcelist_scan( tpbudget, hbulist )
   !igroup_idx start at 2 because 1 is reserved for individually stored source terms
   igroup_idx = 2
 
-  do ji = 1, Size( hbulist )
+  do ji = istart, Size( hbulist )
     if ( Len_trim( hbulist(ji) ) > 0 ) then
       ! Scan the line and separate the different sources (separated by + signs)
       yline = Trim(hbulist(ji))
@@ -4479,6 +4561,87 @@ subroutine Sourcelist_scan( tpbudget, hbulist )
     end if
   end do
 end subroutine Sourcelist_scan
+
+
+subroutine Sourcelist_nml_compact( tpbudget, hbulist )
+  !This subroutine reduce the size of the hbulist to the minimum
+  !The list is generated from the group list
+  use modd_budget, only: NBULISTMAXLEN, tbudgetdata
+
+  type(tbudgetdata),                           intent(in)    :: tpbudget
+  character(len=*), dimension(:), allocatable, intent(inout) :: hbulist
+
+  integer :: idx
+  integer :: isource
+  integer :: jg
+  integer :: js
+
+  if ( Allocated( hbulist ) ) Deallocate( hbulist )
+
+  if ( tpbudget%ngroups < 3 ) then
+    call Print_msg( NVERB_ERROR, 'BUD', 'Sourcelist_nml_compact', 'ngroups is too small' )
+    return
+  end if
+
+  Allocate( character(len=NBULISTMAXLEN) :: hbulist(tpbudget%ngroups - 3) )
+  hbulist(:) = ''
+
+  idx = 0
+  do jg = 1, tpbudget%ngroups
+    if ( tpbudget%tgroups(jg)%nsources < 1 ) then
+      call Print_msg( NVERB_ERROR, 'BUD', 'Sourcelist_nml_compact', 'no source for group' )
+      cycle
+    end if
+
+    !Do not put 'INIF', 'ENDF', 'AVEF' in hbulist because their presence is automatic if the corresponding budget is enabled
+    isource = tpbudget%tgroups(jg)%nsourcelist(1)
+    if ( Any( tpbudget%tsources(isource)%cmnhname ==  [ 'INIF', 'ENDF', 'AVEF' ] ) ) cycle
+
+    idx = idx + 1
+#if 0
+    !Do not do this way because the group cmnhname may be truncated (NMNHNAMELGTMAX is smaller than NBULISTMAXLEN)
+    !and the name separator is different ('_')
+    hbulist(idx) = Trim( tpbudget%tgroups(jg)%cmnhname )
+#else
+    do js = 1, tpbudget%tgroups(jg)%nsources
+      isource = tpbudget%tgroups(jg)%nsourcelist(js)
+      hbulist(idx) = Trim( hbulist(idx) ) // Trim( tpbudget%tsources(isource)%cmnhname )
+      if ( js < tpbudget%tgroups(jg)%nsources ) hbulist(idx) = Trim( hbulist(idx) ) // '+'
+    end do
+#endif
+  end do
+end subroutine Sourcelist_nml_compact
+
+
+subroutine Sourcelist_sv_nml_compact( hbulist )
+  !This subroutine reduce the size of the hbulist
+  !For SV variables the reduction is simpler than for other variables
+  !because it is too complex to do this cleanly (the enabled source terms are different for each scalar variable)
+  use modd_budget, only: NBULISTMAXLEN, tbudgetdata
+
+  character(len=*), dimension(:), allocatable, intent(inout) :: hbulist
+
+  character(len=NBULISTMAXLEN), dimension(:), allocatable :: ybulist_new
+  integer :: ilines
+  integer :: ji
+
+  ilines = 0
+  do ji = 1, Size( hbulist )
+    if ( Len_trim(hbulist(ji)) > 0 ) ilines = ilines + 1
+  end do
+
+  Allocate( ybulist_new(ilines) )
+
+  ilines = 0
+  do ji = 1, Size( hbulist )
+    if ( Len_trim(hbulist(ji)) > 0 ) then
+      ilines = ilines + 1
+      ybulist_new(ilines) = Trim( hbulist(ji) )
+    end if
+  end do
+
+  call Move_alloc( from = ybulist_new, to = hbulist )
+end subroutine Sourcelist_sv_nml_compact
 
 
 pure function Source_find( tpbudget, hsource ) result( ipos )

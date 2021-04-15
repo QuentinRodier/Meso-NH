@@ -263,15 +263,18 @@ tzbudiachro%cgroupname = 'TSERIES'
 tzbudiachro%cname      = 'TSERIES'
 tzbudiachro%ccomment   = 'Time series of horizontally and vertically averaged fields'
 tzbudiachro%ctype      = 'CART'
+tzbudiachro%ccategory  = 'time series'
+tzbudiachro%cshape     = 'cartesian' !It is based on a cartesian domain (with compression in all directions)
+tzbudiachro%lmobile    = .false.
 tzbudiachro%licompress = .true.
 tzbudiachro%ljcompress = .true.
 tzbudiachro%lkcompress = .true.
-tzbudiachro%nil        = 1
-tzbudiachro%nih        = 1
-tzbudiachro%njl        = 1
-tzbudiachro%njh        = 1
+tzbudiachro%nil        = niboxl
+tzbudiachro%nih        = niboxh
+tzbudiachro%njl        = njboxl
+tzbudiachro%njh        = njboxh
 tzbudiachro%nkl        = 1
-tzbudiachro%nkh        = 1
+tzbudiachro%nkh        = ikmax
 
 call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpsdates(1:nsnbstept), &
                     xsseries1(1:1,1:1,1:1,1:nsnbstept,1:1,:)                 )
@@ -355,15 +358,18 @@ tzbudiachro%cgroupname = 'ZTSERIES'
 tzbudiachro%cname      = 'ZTSERIES'
 tzbudiachro%ccomment   = 'Time series of horizontally averaged vertical profile'
 tzbudiachro%ctype      = 'CART'
+tzbudiachro%ccategory  = 'time series'
+tzbudiachro%cshape     = 'cartesian'  !It is based on a cartesian domain (with horizontal compression)
+tzbudiachro%lmobile    = .false.
 tzbudiachro%licompress = .true.
 tzbudiachro%ljcompress = .true.
 tzbudiachro%lkcompress = .false.
-tzbudiachro%nil        = 1
-tzbudiachro%nih        = 1
-tzbudiachro%njl        = 1
-tzbudiachro%njh        = 1
-tzbudiachro%nkl        = ikb
-tzbudiachro%nkh        = ike
+tzbudiachro%nil        = niboxl
+tzbudiachro%nih        = niboxh
+tzbudiachro%njl        = njboxl
+tzbudiachro%njh        = njboxh
+tzbudiachro%nkl        = 1
+tzbudiachro%nkh        = ikmax
 
 call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpsdates(1:nsnbstept), &
                     xsseries2(1:1,1:1,1:ikmax,1:nsnbstept,1:1,:)             )
@@ -451,6 +457,9 @@ DO JS=1,NBJSLICE
   tzbudiachro%cname      = ygroup
   tzbudiachro%ccomment   = 'Time series of y-horizontally averaged fields at one level or vertically averaged between 2 levels'
   tzbudiachro%ctype      = 'SSOL'
+  tzbudiachro%ccategory  = 'time series'
+  tzbudiachro%cshape     = 'cartesian' !It is based on a cartesian domain (with compression in 1 direction)
+  tzbudiachro%lmobile    = .false.
   tzbudiachro%licompress = .false.
   tzbudiachro%ljcompress = .true.
   tzbudiachro%lkcompress = .true.

@@ -199,6 +199,7 @@ END MODULE MODI_SPAWN_MODEL2
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !  P. Wautelet 09/03/2021: move some chemistry initializations to ini_nsv
+!  P. Wautelet 24/03/2021: bugfix: allocate XLSRVM, XINPAP and XACPAP to zero size when not needed
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -766,6 +767,8 @@ ALLOCATE(XLSWM(IIU,IJU,IKU))
 ALLOCATE(XLSTHM(IIU,IJU,IKU))
 IF ( NRR >= 1) THEN
   ALLOCATE(XLSRVM(IIU,IJU,IKU))
+ELSE
+  ALLOCATE(XLSRVM(0,0,0))
 ENDIF
                 !          LB fields for lbc coupling
 !
@@ -931,6 +934,9 @@ IF ( CCLOUD=='LIMA' .AND. LSCAV ) THEN
   ALLOCATE(XACPAP(IIU,IJU))
   XINPAP(:,:)=0.0
   XACPAP(:,:)=0.0  
+ELSE
+  ALLOCATE(XINPAP(0,0))
+  ALLOCATE(XACPAP(0,0))
 END IF
 !
 !        4.8bis electric variables  

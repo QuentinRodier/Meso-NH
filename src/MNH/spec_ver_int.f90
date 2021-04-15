@@ -52,6 +52,7 @@ END MODULE MODI_SPEC_VER_INT
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 05/01/2021: bugfix: CSPECTRA_LEVEL_TYPE='Z' computation was wrong
+!  P. Wautelet 30/03/2021: budgets: LES cartesian subdomain limits are defined in the physical domain
 ! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -96,7 +97,7 @@ IF (CSPECTRA_LEVEL_TYPE=='N') THEN
   RETURN
 ELSE IF (CSPECTRA_LEVEL_TYPE=='K') THEN
   DO JK = 1, NSPECTRA_K
-    ZA(:,:,JK) = PA_MNH(:,:,NSPECTRA_LEVELS(JK))
+    ZA(:,:,JK) = PA_MNH(:,:,NSPECTRA_LEVELS(JK) + JPVEXT)
   END DO
 ELSE IF (CSPECTRA_LEVEL_TYPE=='Z') THEN
   ZA(:,:,:) = VER_INTERP_LIN(PA_MNH,NKLIN_CURRENT_SPEC,XCOEFLIN_CURRENT_SPEC)
@@ -121,7 +122,7 @@ CALL GATHERALL_FIELD_ll('XY',ZA,ZA_ll,IRESP)
 !
 !-------------------------------------------------------------------------------
 !
-PA_SPEC(:,:,:) = ZA_ll(NLESn_IINF(KMI):NLESn_ISUP(KMI),NLESn_JINF(KMI):NLESn_JSUP(KMI),:)
+PA_SPEC(:,:,:) = ZA_ll(NLESn_IINF(KMI)+JPHEXT:NLESn_ISUP(KMI)+JPHEXT,NLESn_JINF(KMI)+JPHEXT:NLESn_JSUP(KMI)+JPHEXT,:)
 !
 DO JK=1,SIZE(PA_SPEC,3)
   ZA_MEAN(JK) = SUM(PA_SPEC(:,:,JK)) / SIZE(PA_SPEC(:,:,JK))

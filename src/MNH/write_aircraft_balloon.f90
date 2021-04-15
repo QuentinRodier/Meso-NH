@@ -105,6 +105,7 @@ USE MODD_PARAM_LIMA     , ONLY: NINDICE_CCN_IMM,NMOD_CCN,NMOD_IFN,NMOD_IMM
 USE MODE_MODELN_HANDLER
 USE MODE_DUST_PSD
 USE MODE_AERO_PSD
+use mode_msg
 use mode_write_diachro,   only: Write_diachro
 !
 IMPLICIT NONE
@@ -855,6 +856,20 @@ tzbudiachro%cgroupname = ygroup
 tzbudiachro%cname      = ygroup
 tzbudiachro%ccomment   = 'Values at position of flyer ' // Trim( tpflyer%title )
 tzbudiachro%ctype      = 'RSPL'
+if ( Trim( tpflyer%type ) == 'AIRCRA' ) then
+  tzbudiachro%ccategory  = 'aircraft'
+else if ( Trim( tpflyer%type ) == 'RADIOS' ) then
+  tzbudiachro%ccategory  = 'radiosonde balloon'
+else if ( Trim( tpflyer%type ) == 'ISODEN' ) then
+  tzbudiachro%ccategory  = 'iso-density balloon'
+else if ( Trim( tpflyer%type ) == 'CVBALL' ) then
+  tzbudiachro%ccategory  = 'constant volume balloon'
+else
+  call Print_msg( NVERB_ERROR, 'IO', 'WRITE_AIRCRAFT_BALLOON', 'unknown category for flyer ' // Trim( tpflyer%title ) )
+  tzbudiachro%ccategory  = 'unknown'
+end if
+tzbudiachro%cshape     = 'point'
+tzbudiachro%lmobile    = .true.
 ! tzbudiachro%licompress = NOT SET (default values)
 ! tzbudiachro%ljcompress = NOT SET (default values)
 ! tzbudiachro%lkcompress = NOT SET (default values)
@@ -891,6 +906,9 @@ tzbudiachro%cgroupname = ygroupz
 tzbudiachro%cname      = ygroupz
 tzbudiachro%ccomment   = 'Vertical profiles at position of flyer ' // Trim( tpflyer%title )
 tzbudiachro%ctype      = 'CART'
+! tzbudiachro%ccategory  =  !unchanged
+tzbudiachro%cshape     = 'vertical profile'
+tzbudiachro%lmobile    = .true.
 tzbudiachro%licompress = .true.
 tzbudiachro%ljcompress = .true.
 tzbudiachro%lkcompress = .false.

@@ -27,6 +27,7 @@
 !  P. Wautelet 11/01/2021: add coordinates for dimension variables in diachronic files
 !  P. Wautelet 14/01/2021: add IO_Field_write_nc4_N4, IO_Field_partial_write_nc4_N2,
 !                          IO_Field_partial_write_nc4_N3 and IO_Field_partial_write_nc4_N4 subroutines
+!  P. Wautelet 30/03/2021: budgets: LES cartesian subdomain limits are defined in the physical domain
 !-----------------------------------------------------------------
 #ifdef MNH_IOCDF4
 module mode_io_write_nc4
@@ -1777,7 +1778,7 @@ if ( tpfile%lmaster ) then
       if ( cles_level_type == 'K' ) then
         Allocate( zles_levels(nles_k) )
         do ji = 1, nles_k
-          zles_levels(ji) = zzhatm(nles_levels(ji))
+          zles_levels(ji) = zzhatm(nles_levels(ji) + JPVEXT)
         end do
         call Write_ver_coord( tpfile%tncdims%tdims(NMNHDIM_BUDGET_LES_LEVEL),           &
                               'position z in the transformed space of the LES budgets', &
@@ -1796,10 +1797,12 @@ if ( tpfile%lmaster ) then
     !Coordinates for the number of horizontal wavelengths for non-local LES budgets (2 points correlations)
     if ( nspectra_ni > 0 ) &
       call Write_hor_coord1d( tpfile%tncdims%tdims(NMNHDIM_SPECTRA_2PTS_NI), 'x-dimension of the LES budget cartesian box',    &
-                            trim(ystdnameprefix)//'_x_coordinate', 'X', 0., 0, 0, zxhatm_glob(nlesn_iinf(imi) : nlesn_isup(imi)) )
+                            trim(ystdnameprefix)//'_x_coordinate', 'X', 0., 0, 0,                                              &
+                            zxhatm_glob(nlesn_iinf(imi) + jphext : nlesn_isup(imi) + jphext) )
     if ( nspectra_nj > 0 .and. .not. l2d ) &
       call Write_hor_coord1d( tpfile%tncdims%tdims(NMNHDIM_SPECTRA_2PTS_NJ), 'y-dimension of the LES budget cartesian box',    &
-                              trim(ystdnameprefix)//'_y_coordinate', 'Y', 0., 0, 0, zyhatm_glob(nlesn_jinf(imi) : nlesn_jsup(imi)) )
+                              trim(ystdnameprefix)//'_y_coordinate', 'Y', 0., 0, 0,                                            &
+                              zyhatm_glob(nlesn_jinf(imi) + jphext : nlesn_jsup(imi) + jphext) )
 
 
     !NMNHDIM_SPECTRA_SPEC_NI, NMNHDIM_SPECTRA_SPEC_NJ: not true dimensions: spectra wavelengths
@@ -1809,7 +1812,7 @@ if ( tpfile%lmaster ) then
       if ( cspectra_level_type == 'K' ) then
         Allocate( zspectra_levels(nspectra_k) )
         do ji = 1, nspectra_k
-          zspectra_levels(ji) = zzhatm(nspectra_levels(ji))
+          zspectra_levels(ji) = zzhatm(nspectra_levels(ji) + JPVEXT)
         end do
         call Write_ver_coord( tpfile%tncdims%tdims(NMNHDIM_SPECTRA_LEVEL),                        &
                               'position z in the transformed space of the non-local LES budgets', &

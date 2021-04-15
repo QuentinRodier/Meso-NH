@@ -539,8 +539,9 @@ ELSE IF ( tpbudiachro%ctype == 'TLES' ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .FALSE.
+  !TRAJX is given in extended domain coordinates (=> +jphext) for backward compatibility
   CALL IO_Field_write(tzfile,TZFIELD, Reshape( &
-                       Spread( source = ( nles_current_iinf + nles_current_isup) / 2, dim = 1, ncopies = IN ), &
+                       Spread( source = ( nles_current_iinf + nles_current_isup) / 2 + jphext, dim = 1, ncopies = IN ), &
                        [1, 1, IN] ) )
 ENDIF
 !
@@ -569,8 +570,9 @@ ELSE IF ( tpbudiachro%ctype == 'TLES' ) THEN
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .FALSE.
+  !TRAJY is given in extended domain coordinates (=> +jphext) for backward compatibility
   CALL IO_Field_write(tzfile,TZFIELD, Reshape( &
-                       Spread( source = ( nles_current_jinf + nles_current_jsup) / 2, dim = 1, ncopies = IN ), &
+                       Spread( source = ( nles_current_jinf + nles_current_jsup) / 2 + jphext, dim = 1, ncopies = IN ), &
                        [1, 1, IN] ) )
 ENDIF
 !
@@ -765,27 +767,27 @@ MASTER: if ( isp == tzfile%nmaster_rank) then
       call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'type for '//trim(ygroup)//' group' )
 
     if ( trim ( ytype ) == 'CART' .or. trim ( ytype ) == 'MASK' .or. trim ( ytype ) == 'SPXY') then
-      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'min x index', iil )
+      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'min x index in physical domain', iil )
       if (istatus /= NF90_NOERR ) &
         call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'min x index for '//trim(ygroup)//' group' )
 
-      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'max x index', iih )
+      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'max x index in physical domain', iih )
       if (istatus /= NF90_NOERR ) &
         call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'max x index for '//trim(ygroup)//' group' )
 
-      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'min y index', ijl )
+      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'min y index in physical domain', ijl )
       if (istatus /= NF90_NOERR ) &
         call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'min y index for '//trim(ygroup)//' group' )
 
-      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'max y index', ijh )
+      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'max y index in physical domain', ijh )
       if (istatus /= NF90_NOERR ) &
         call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'max y index for '//trim(ygroup)//' group' )
 
-      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'min z index', ikl )
+      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'min z index in physical domain', ikl )
       if (istatus /= NF90_NOERR ) &
         call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'min z index for '//trim(ygroup)//' group' )
 
-      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'max z index', ikh )
+      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'max z index in physical domain', ikh )
       if (istatus /= NF90_NOERR ) &
         call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'max z index for '//trim(ygroup)//' group' )
     end if

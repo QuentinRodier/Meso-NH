@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2017 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !#############################
@@ -20,7 +20,7 @@ REAL, DIMENSION(:), INTENT(IN)  :: PXHAT_ll ! son model X coordinate
 REAL, DIMENSION(:), INTENT(IN)  :: PYHAT_ll ! son model X coordinate
 INTEGER,            INTENT(OUT) :: KLES_IINF ! limits of the cartesian
 INTEGER,            INTENT(OUT) :: KLES_JINF ! mask in son model
-INTEGER,            INTENT(OUT) :: KLES_ISUP ! domain
+INTEGER,            INTENT(OUT) :: KLES_ISUP ! physical domain
 INTEGER,            INTENT(OUT) :: KLES_JSUP !
 !
 END SUBROUTINE INI_LES_CART_MASK_n
@@ -58,9 +58,9 @@ END MODULE MODI_INI_LES_CART_MASKn
 !!      Original         07/02/00
 !!      Modification     01/02/01 (D.Gazen) add module MODD_NSV for NSV variable
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
-!!      P.Wautelet: 19/10/2017 : IO: removed extern_userio.f90
-!!
-!! --------------------------------------------------------------------------
+!  P. Wautelet 19/10/2017: IO: removed extern_userio.f90
+!  P. Wautelet 30/03/2021: budgets: LES cartesian subdomain limits are defined in the physical domain
+! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
 !          ------------
@@ -86,7 +86,7 @@ REAL, DIMENSION(:), INTENT(IN)  :: PXHAT_ll ! son model X coordinate
 REAL, DIMENSION(:), INTENT(IN)  :: PYHAT_ll ! son model X coordinate
 INTEGER,            INTENT(OUT) :: KLES_IINF ! limits of the cartesian
 INTEGER,            INTENT(OUT) :: KLES_JINF ! mask in son model
-INTEGER,            INTENT(OUT) :: KLES_ISUP ! domain
+INTEGER,            INTENT(OUT) :: KLES_ISUP ! physical domain
 INTEGER,            INTENT(OUT) :: KLES_JSUP !
 !
 !
@@ -140,32 +140,32 @@ IJE_ll=SIZE(PYHAT_ll)-JPHEXT
 !
 !* left limit
 !
-ZX = ZXHAT_ll(NLESn_IINF(IMI))
+ZX = ZXHAT_ll(NLESn_IINF(IMI) + JPHEXT)
 IF (PXHAT_ll(IIB_ll)>ZX) THEN
-  KLES_IINF=IIB_ll ! father mask starts left of son domain
+  KLES_IINF=1 ! father mask starts left of son domain
 ELSE IF (PXHAT_ll(IIE_ll+1)<ZX) THEN
   CALL MASK_OVER_ALL_DOMAIN
   RETURN
 ELSE
   DO JI=IIB_ll,IIE_ll
     IF (ABS(PXHAT_ll(JI)-ZX) <= (PXHAT_ll(JI+1)-PXHAT_ll(JI))/2. ) THEN
-      KLES_IINF=JI
+      KLES_IINF=JI-JPHEXT
     END IF
   END DO
 END IF
 !
 !* right limit
 !
-ZX = ZXHAT_ll(NLESn_ISUP(IMI)+1)
+ZX = ZXHAT_ll(NLESn_ISUP(IMI) + JPHEXT + 1)
 IF (PXHAT_ll(IIB_ll)>ZX) THEN
   CALL MASK_OVER_ALL_DOMAIN
   RETURN
 ELSE IF (PXHAT_ll(IIE_ll+1)<ZX) THEN
-  KLES_ISUP=IIE_ll ! father mask ends right of son domain
+  KLES_ISUP=IIE_ll-JPHEXT ! father mask ends right of son domain
 ELSE
   DO JI=IIB_ll,IIE_ll
     IF (ABS(PXHAT_ll(JI+1)-ZX) <= (PXHAT_ll(JI+1)-PXHAT_ll(JI))/2. ) THEN
-      KLES_ISUP=JI
+      KLES_ISUP=JI-JPHEXT
     END IF
   END DO
 END IF
@@ -177,32 +177,32 @@ END IF
 !
 !* bottom limit
 !
-ZY = ZYHAT_ll(NLESn_JINF(IMI))
+ZY = ZYHAT_ll(NLESn_JINF(IMI) + JPHEXT)
 IF (PYHAT_ll(IJB_ll)>ZY) THEN
-  KLES_JINF=IJB_ll ! father mask starts under the son domain
+  KLES_JINF=1 ! father mask starts under the son domain
 ELSE IF (PYHAT_ll(IJE_ll+1)<ZY) THEN
   CALL MASK_OVER_ALL_DOMAIN
   RETURN
 ELSE
   DO JJ=IJB_ll,IJE_ll
     IF (ABS(PYHAT_ll(JJ)-ZY) <= (PYHAT_ll(JJ+1)-PYHAT_ll(JJ))/2. ) THEN
-      KLES_JINF=JJ
+      KLES_JINF=JJ-JPHEXT
     END IF
   END DO
 END IF
 !
 !* top limit
 !
-ZY = ZYHAT_ll(NLESn_JSUP(IMI)+1)
+ZY = ZYHAT_ll(NLESn_JSUP(IMI) + JPHEXT + 1)
 IF (PYHAT_ll(IJB_ll)>ZY) THEN
   CALL MASK_OVER_ALL_DOMAIN
   RETURN
 ELSE IF (PYHAT_ll(IJE_ll+1)<ZY) THEN
-  KLES_JSUP=IJE_ll ! father mask ends over the son domain
+  KLES_JSUP=IJE_ll-JPHEXT ! father mask ends over the son domain
 ELSE
   DO JJ=IJB_ll,IJE_ll
     IF (ABS(PYHAT_ll(JJ+1)-ZY) <= (PYHAT_ll(JJ+1)-PYHAT_ll(JJ))/2. ) THEN
-      KLES_JSUP=JJ
+      KLES_JSUP=JJ-JPHEXT
     END IF
   END DO
 END IF
@@ -215,10 +215,10 @@ DEALLOCATE(ZYHAT_ll)
   CONTAINS
 !
   SUBROUTINE MASK_OVER_ALL_DOMAIN
-    KLES_IINF=IIB_ll ! father mask not in son domain, so all domain is taken
-    KLES_ISUP=IIE_ll
-    KLES_JINF=IJB_ll
-    KLES_JSUP=IJE_ll
+    KLES_IINF=IIB_ll-JPHEXT ! father mask not in son domain, so all domain is taken
+    KLES_ISUP=IIE_ll-JPHEXT
+    KLES_JINF=IJB_ll-JPHEXT
+    KLES_JSUP=IJE_ll-JPHEXT
     DEALLOCATE(ZXHAT_ll)
     DEALLOCATE(ZYHAT_ll)
   END SUBROUTINE MASK_OVER_ALL_DOMAIN
