@@ -219,6 +219,7 @@ use modd_blowsnow_n,    only: lsnowsubl
 use modd_budget
 use modd_ch_aerosol,    only: lorilam
 use modd_conf,          only: l1d, lcartesian, lforcing, lthinshell, nmodel
+use modd_dim_n,         only: nimax_ll, njmax_ll, nkmax
 use modd_dragbldg_n,    only: ldragbldg
 use modd_dust,          only: ldust
 use modd_dyn,           only: lcorio, xseglen
