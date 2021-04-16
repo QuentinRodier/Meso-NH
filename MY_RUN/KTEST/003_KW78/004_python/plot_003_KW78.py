@@ -19,7 +19,6 @@ os.system('rm -f tempgraph*')
 #
 #  User's parameter / Namelist
 #
-output_name = '003_KW78.pdf'                 #Name of the output PDF file
 path=""
 
 LnameFiles = ['KWRAI.1.SEG01.004.nc','KWRAI.1.SEG01.004dia.nc' ]

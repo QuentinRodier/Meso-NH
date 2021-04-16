@@ -18,7 +18,6 @@ os.system('rm -f tempgraph*')
 #
 #  User's parameter / Namelist
 #
-output_name = '012_dust.pdf'                 #Name of the output PDF file
 path=""
 LnameFiles = ['DUST7.1.SEG02.004.nc']
 

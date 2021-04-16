@@ -9,5 +9,6 @@ ln -sf ${SRC_MESONH}/src/LIB/Python/* .
 ln -sf ../002_mesonh/REL3D.1.EXP01.002.nc .
 
 python3 plot_002_3DRelief.py
-${POSTRUN} convert *.png 002_3DRelief.pdf
-${POSTRUN} evince 002_3DRelief.pdf
+${POSTRUN} display tempgraph1.png
+#${POSTRUN} convert *.png 002_3DRelief.pdf
+#${POSTRUN} evince 002_3DRelief.pdf

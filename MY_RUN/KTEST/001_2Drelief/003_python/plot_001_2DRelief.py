@@ -17,7 +17,6 @@ os.system('rm -f tempgraph*')
 #
 #  User's parameter / Namelist
 #
-output_name = '001_2DRelief.pdf'                 #Name of the output PDF file
 path=""
 LnameFiles = ['EXPER.1.HYD2D.002.nc', 'EXPER.1.HYD2D.003.nc']
 

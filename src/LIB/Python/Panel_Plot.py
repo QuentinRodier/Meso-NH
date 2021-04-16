@@ -42,8 +42,8 @@ class PanelPlot():
       self.iplt = iplt
       self.fig = fig
       
+      self.fig.savefig('tempgraph'+str(self.iplt)) #TODO possibility to change the default value of .png file name
       self.iplt+=1
-      self.fig.savefig('tempgraph'+str(self.iplt))
       return self.iplt
     
     def draw_Backmap(self,drawCoastLines, ax, projo):

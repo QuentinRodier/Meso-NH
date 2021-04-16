@@ -17,7 +17,6 @@ os.system('rm -f tempgraph*')
 #  User's parameter / Namelist
 #
 #
-output_name = '007_16janvier.pdf'                 #Name of the output PDF file
 path=""
 LnameFiles = ['16JAN.1.12B18.001dg.nc', '16JAN.2.12B18.001dg.nc']
 

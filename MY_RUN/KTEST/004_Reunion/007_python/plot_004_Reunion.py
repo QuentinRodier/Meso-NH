@@ -22,7 +22,6 @@ os.system('rm -f tempgraph*')
 #
 #  User's parameter / Namelist
 #
-output_name = '004_Reunion.pdf'                 #Name of the output PDF file
 path=""
 
 LnameFiles = ['REUNI.1.00A20.004dia.nc', 'REUNI.1.00A20.004.nc']

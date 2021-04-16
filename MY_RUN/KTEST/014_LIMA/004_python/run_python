@@ -9,5 +9,6 @@ ln -sf ${SRC_MESONH}/src/LIB/Python/* .
 ln -sf ../002_mesonh/XPREF.1.SEG01.000.nc .
 
 python3 plot_014_LIMA.py
-${POSTRUN} convert *.png 014_LIMA.pdf
-${POSTRUN} evince 014_LIMA.pdf
+${POSTRUN} display tempgraph1.png
+#${POSTRUN} convert *.png 014_LIMA.pdf
+#${POSTRUN} evince 014_LIMA.pdf

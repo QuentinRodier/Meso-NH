@@ -17,7 +17,6 @@ os.system('rm -f tempgraph*')
 #
 #  User's parameter / Namelist
 #
-output_name = '002_3DRelief.pdf'                 #Name of the output PDF file
 path=""
 
 LnameFiles = ['REL3D.1.EXP01.002.nc']

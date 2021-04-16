@@ -17,7 +17,6 @@ os.system('rm -f tempgraph*')
 #
 #  User's parameter / Namelist
 #
-output_name = '009_ICARTT.pdf'                 #Name of the output PDF file
 path=""
 
 LnameFiles = ['ICART.1.SEG01.001dg.nc', 'ICART.1.SEG01.002dg.nc']
@@ -36,7 +35,6 @@ Dvar = read_netcdf(LnameFiles, Dvar_input, path=path, removeHALO=True)
 #########          PANEL 1  # Horizontal cross-section
 ###############################################################
 Panel1 = PanelPlot(3,3, [25,17],'Horizontal section at 1150m, 19h', titlepad=25, minmaxpad=1.04, timepad=-0.07, colorbarpad=0.01, colorbaraspect=40, labelcolorbarpad = 13)
-
 
 Lplot = [ Dvar['f1']['MRC'][:,:,:], Dvar['f1']['COT'][:,:,:], Dvar['f1']['O3T'][:,:,:], Dvar['f1']['O3_PROD'][:,:,:],
          Dvar['f1']['O3_LOSS'][:,:,:], Dvar['f1']['CO_PROD'][:,:,:], Dvar['f1']['CO_LOSS'][:,:,:]]
@@ -66,7 +64,6 @@ Panel1.save_graph(1,fig1)
 #########          PANEL 2  # Horizontal cross-section
 ###############################################################
 Panel2 = PanelPlot(3,3, [25,17],'Horizontal section at 1150m, 20h', titlepad=25, minmaxpad=1.04, timepad=-0.07, colorbarpad=0.01, colorbaraspect=40, labelcolorbarpad = 13)
-
 
 Lplot = [ Dvar['f2']['MRC'][:,:,:], Dvar['f2']['COT'][:,:,:], Dvar['f2']['O3T'][:,:,:], Dvar['f2']['O3_PROD'][:,:,:],
          Dvar['f2']['O3_LOSS'][:,:,:], Dvar['f2']['CO_PROD'][:,:,:], Dvar['f2']['CO_LOSS'][:,:,:]]

@@ -6,7 +6,6 @@ Creation : 07/01/2021
 
 Last modifications
 """
-
 import matplotlib as mpl
 mpl.use('Agg')
 from read_MNHfile import read_netcdf
@@ -18,7 +17,6 @@ os.system('rm -f tempgraph*')
 #
 #  User's parameter / Namelist
 #
-output_name = '014_LIMA.pdf'                 #Name of the output PDF file
 path=""
 LnameFiles = ['XPREF.1.SEG01.000.nc' ]
 

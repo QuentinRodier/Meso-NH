@@ -6,7 +6,6 @@ Creation : 07/01/2021
 
 Last modifications
 """
-
 import matplotlib as mpl
 mpl.use('Agg')
 from read_MNHfile import read_netcdf
@@ -17,7 +16,6 @@ os.system('rm -f tempgraph*')
 #
 #  User's parameter / Namelist
 #
-output_name = '005_ARM.pdf'                 #Name of the output PDF file
 path=""
 
 LnameFiles = ['ARM__.1.CEN4T.000.nc' ]
@@ -34,7 +32,6 @@ Dvar_input = {
 #  Read the variables in the files
 Dvar = {}
 Dvar = read_netcdf(LnameFiles, Dvar_input, path=path, removeHALO=False)
-
 
 ################################################################
 #########          PANEL 1

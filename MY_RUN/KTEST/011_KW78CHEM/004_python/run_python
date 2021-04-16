@@ -9,5 +9,10 @@ ln -sf ${SRC_MESONH}/src/LIB/Python/* .
 ln -sf ../003_diag/KWRAI.1.SEGCH.004*.nc .
 
 python3 plot_011_KW78CHEM.py
-${POSTRUN} convert *.png 011_KW78CHEM.pdf
-${POSTRUN} evince 011_KW78CHEM.pdf
+${POSTRUN} display tempgraph1.png
+${POSTRUN} display tempgraph2.png
+${POSTRUN} display tempgraph3.png
+${POSTRUN} display tempgraph4.png
+${POSTRUN} display tempgraph5.png
+#${POSTRUN} convert *.png 011_KW78CHEM.pdf
+#${POSTRUN} evince 011_KW78CHEM.pdf
