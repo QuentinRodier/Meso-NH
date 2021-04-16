@@ -192,12 +192,13 @@ TYPE(TFILEDATA),POINTER                       :: TZFILE
 ! For netcdf 
 !
 CHARACTER(LEN=40)                     :: yrecname
+integer              :: IKILEN
 integer(kind=CDFINT) :: istatus, incid, ivarid
 integer(kind=CDFINT) :: ilat_varid, ilon_varid, ilev_varid, itime_varid
 integer(kind=CDFINT) :: ihyam_varid, ihybm_varid, ip0_varid, it_varid, iq_varid, ips_varid
 integer(kind=CDFINT) :: irecid, ilatid, ilonid, ilevid, itimeid
 integer(kind=CDFINT) :: ilatlen, ilonlen, ilevlen, inrecs, itimelen
-integer(kind=CDFINT) :: itimeindex, IKILEN
+integer(kind=CDFINT) :: itimeindex
 INTEGER, DIMENSION(:), ALLOCATABLE    :: ikinlo
 INTEGER(kind=CDFINT), DIMENSION(:), ALLOCATABLE :: icount3d, istart3d
 INTEGER(kind=CDFINT), DIMENSION(:), ALLOCATABLE :: icount2d, istart2d

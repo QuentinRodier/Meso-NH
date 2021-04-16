@@ -977,7 +977,7 @@ select case ( idims )
       !Correspond to FLYER_DIACHRO
       !Create local time dimension
       if ( isp == tzfile%nmaster_rank) then
-        istatus = NF90_DEF_DIM( igrpid, 'time_flyer', Size( pvar, 4), idimid )
+        istatus = NF90_DEF_DIM( igrpid, 'time_flyer', Int( Size( pvar, 4), kind = CDFINT ), idimid )
         if ( istatus /= NF90_NOERR ) &
           call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_DEF_DIM', Trim( tpfields(1)%cmnhname ) )
       end if
@@ -1095,7 +1095,7 @@ select case ( idims )
       !Correspond to FLYER_DIACHRO
       !Create local time dimension
       if ( isp == tzfile%nmaster_rank) then
-        istatus = NF90_DEF_DIM( igrpid, 'time_flyer', Size( pvar, 4), idimid )
+        istatus = NF90_DEF_DIM( igrpid, 'time_flyer', Int( Size( pvar, 4), kind = CDFINT ), idimid )
         if ( istatus /= NF90_NOERR ) &
           call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_DEF_DIM', Trim( tpfields(1)%cmnhname ) )
       end if

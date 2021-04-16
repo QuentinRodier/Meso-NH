@@ -391,7 +391,8 @@ subroutine IO_Field_create( tpfile, tpfield )
 #ifdef MNH_IOCDF4
           ! Write the variable attributes in the non-split file
           if ( tpfile%nmaster_rank==isp .and. gnc4 ) &
-            call IO_Field_header_split_write_nc4( tpfile, tzfield, tpfile%tncdims%tdims(tzfield%ndimlist(3))%nlen )
+            call IO_Field_header_split_write_nc4( tpfile, tzfield, &
+                                                  Int( tpfile%tncdims%tdims(tzfield%ndimlist(3))%nlen, kind = Kind( 1 ) ) )
         end if
 #endif
 
