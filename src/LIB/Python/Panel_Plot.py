@@ -315,7 +315,7 @@ class PanelPlot():
       """
         XY (multiple)-lines plot
         Arguments :
-            - Lzz    : List of z coordinates variable [1D]
+            - Lzz    : List of z coordinates variable [1D] #TODO : Renommer argument Lvar en Lxx et Lzz en Lyy et ajouter Lfacconv pour les deux axes. Impact tous les cas test avec lignes X/Y
             - Lvar   : List of variables to plot [1D]
             - Lxlab  : List of x-axis label
             - Lylab  : List of y-axis label

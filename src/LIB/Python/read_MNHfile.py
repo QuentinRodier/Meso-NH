@@ -143,47 +143,87 @@ def read_TIMESfiles_54(theFile, ifile, Dvar_input, Dvar_output):
     return Dvar_output #Return the dic of [files][variables]
 
 def read_TIMESfiles_55(theFile, ifile, Dvar_input, Dvar_output, removeHALO=False):
+    """
+        Read variables from MNH MASDEV >= 5.5.0 
+        Parameters :
+            - Dvar_input : dictionnary of {file : var}. var can be either 
+                - a string = the variable name 
+                - or a tuple of ('group_name','var_name')
+                If the variable desired is in a group_name and the group_name is not specified, it is assumed group_name = variable_name
+            except for specific variable as (cart, neb, clear, cs1, cs2, cs3) type
+        Return :
+        Dvar_output : dictionnary of Dvar_output[ifile][variables or tuple (group,variables) if the user specified a tuple]
+    """
     Dvar_output[ifile] = {} #initialize dic for each files 
-      
-    for var in Dvar_input[ifile]: #For each var
+    def read_var(theFile, Dvar_output, var):
         suffix, var_name = remove_PROC(var)
-
         try: #  NetCDF4 Variables
             n_dim = theFile.variables[var_name].ndim
             #  First, test if the variable is a dimension/coordinate variable
             if (n_dim ==0):  #  Scalaires variable
-                Dvar_output[ifile][var_name] = theFile.variables[var_name][0].data
+                Dvar_output[var_name] = theFile.variables[var_name][0].data
             else:
                 if(removeHALO):
                     if n_dim == 1:
-                        Dvar_output[ifile][var_name] = theFile.variables[var_name][1:-1]
+                        Dvar_output[var_name] = theFile.variables[var_name][1:-1]
                     elif n_dim == 2:
-                        Dvar_output[ifile][var_name] = theFile.variables[var_name][1:-1,1:-1] 
+                        Dvar_output[var_name] = theFile.variables[var_name][1:-1,1:-1] 
                     else: 
                         raise NameError("Lecture des variables de dimension sup a 2 pas encore implementees pour fichiers .000")
                 else:
                     if n_dim == 1:
-                        Dvar_output[ifile][var_name] = theFile.variables[var_name][:]
+                        Dvar_output[var_name] = theFile.variables[var_name][:]
                     elif n_dim == 2:
-                        Dvar_output[ifile][var_name] = theFile.variables[var_name][:,:] 
+                        Dvar_output[var_name] = theFile.variables[var_name][:,:] 
                     else: 
                         raise NameError("Lecture des variables de dimension sup a 2 pas encore implementees pour fichiers .000")
-        except KeyError: # NetCDF4 Group
-            if theFile.groups[var_name].type == 'TLES' : #LES type
-                #  Build the true name of the groups.variables :
-                whites = ' '*(17 - len('(cart)') - len(var_name)) #  TODO : a adapter selon le type de la variable cart ou autres
-                Dvar_output[ifile][var] = theFile.groups[var].variables[var + whites + '(cart)'][:,:].T
-            elif theFile.groups[var_name].type == 'CART':  #  Budget CART type
-                shapeVar = theFile.groups[var_name].variables[suffix].shape
-                Ltosqueeze=[] #  Build a tuple with the number of the axis which are 0 dimensions to be removed by np.squeeze
-                if shapeVar[0]==1: Ltosqueeze.append(0)
-                if shapeVar[1]==1: Ltosqueeze.append(1)
-                if shapeVar[2]==1: Ltosqueeze.append(2)
-                if shapeVar[3]==1: Ltosqueeze.append(3)
-                Ltosqueeze=tuple(Ltosqueeze)
-                Dvar_output[ifile][var_name] = np.squeeze(theFile.groups[var_name].variables[suffix][:,:,:,:], axis=Ltosqueeze) 
+        except KeyError: # NetCDF4 Group not specified by the user
+            if '(cart)' in var_name or '(neb)' in var_name or '(clear)' in var_name or '(cs1)' in var_name or '(cs2)' in var_name or '(cs3)' in var_name:
+            # If users specify the complete variable name with averaging type
+              group_name = get_group_from_varname(var_name)
             else:
-                raise NameError("Type de groups variables not implemented in read_MNHfile.py")
+              group_name = var_name
+            read_from_group(theFile, Dvar_output, var, var)
+        return Dvar_output
+
+    def read_from_group(theFile, Dvar_output, group_name, var):
+        suffix, var_name = remove_PROC(var)
+        if group_name == 'TSERIES': #always 1D
+            Dvar_output[(group_name,var)] = theFile.groups['TSERIES'].variables[var][:]
+        elif group_name == 'ZTSERIES': #always 2D 
+            Dvar_output[(group_name,var)] = theFile.groups['ZTSERIES'].variables[var][:,:].T
+        elif 'XTSERIES' in group_name: #always 2D
+            Dvar_output[(group_name,var)] = theFile.groups[group_name].variables[var][:,:].T
+        elif theFile.groups[group_name].type == 'TLES' : #  LES type
+            try: #By default, most variables read are 2D cart and user does not specify it in the variable name
+              whites = ' '*(17 - len('(cart)') - len(var_name))
+              Dvar_output[var] = theFile.groups[var].variables[var + whites + '(cart)'][:,:].T
+            except:
+              try: #Variable 3D sv,time_les, level_les
+                  Dvar_output[var] = theFile.groups[group_name].variables[var][:,:,:]
+              except:
+                try: #Variable 2D with type of variable specified (cart, neb, clear, cs1, cs2, cs3) 
+                  Dvar_output[var] = theFile.groups[group_name].variables[var][:,:].T
+                except ValueError: #  Variable 1D
+                  Dvar_output[var] = theFile.groups[group_name].variables[var][:]
+        elif theFile.groups[group_name].type == 'CART':  #  Budget CART type
+            shapeVar = theFile.groups[group_name].variables[suffix].shape
+            Ltosqueeze=[] #  Build a tuple with the number of the axis which are 0 dimensions to be removed by np.squeeze
+            if shapeVar[0]==1: Ltosqueeze.append(0)
+            if shapeVar[1]==1: Ltosqueeze.append(1)
+            if shapeVar[2]==1: Ltosqueeze.append(2)
+            if shapeVar[3]==1: Ltosqueeze.append(3)
+            Ltosqueeze=tuple(Ltosqueeze)
+            Dvar_output[group_name] = np.squeeze(theFile.groups[group_name].variables[suffix][:,:,:,:], axis=Ltosqueeze) 
+        else:
+            raise NameError("Type de groups variables not implemented in read_MNHfile.py")
+        return Dvar_output
+    for var in Dvar_input[ifile]: #For each var
+        if type(var) == tuple:
+            Dvar_output[ifile] = read_from_group(theFile, Dvar_output, var[0], var[1])
+        else:
+            Dvar_output[ifile] = read_var(theFile, Dvar_output, var)
+    
     return Dvar_output #Return the dic of [files][variables]
 
 def list_size1(n_dim, named_dim):
@@ -198,7 +238,7 @@ def list_size1(n_dim, named_dim):
 def remove_PROC(var):
     if '___PROC' in var:
         var_name = var[:-8]
-        suffix = "" # No need of suffix for MNHVERSION < 550 (suffix is for NetCDF4 group
+        suffix = "" # No need of suffix for MNHVERSION < 550 (suffix is for NetCDF4 group)
     elif  '___ENDF' in var or '___INIF' in var or '___AVEF' in var:
         var_name = var[:-7]
         suffix = var[-4:]
@@ -206,3 +246,12 @@ def remove_PROC(var):
         var_name = var
         suffix = ''
     return suffix, var_name
+
+def get_group_from_varname(var):
+    group_name=''
+    for i in range(len(var)):
+      if var[i] is not ' ':
+        group_name+=var[i]
+      else: # As soon as the caracter is a blank, the group variable is set
+        break
+    return group_name 
