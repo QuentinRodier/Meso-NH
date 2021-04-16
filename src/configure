@@ -348,11 +348,14 @@ export CC=gcc
 		export VER_CDF=${VER_CDF:-CDFAUTO}
 		export NEED_NCARG=${NEED_NCARG:-YES}
                       export MNHENV=${MNHENV:-"
-. /home/tools/intel/psxe2017/bin/ifortvars.sh intel64
-export MPI_ROOT=/usr/local/openmpi/1.6.5/ifort17.0.1.132
+. /home/tools/intel/psxe2018/bin/ifortvars.sh intel64
+export MPI_ROOT=/usr/local/openmpi/3.1.4/ifort18.0.2.199
 export PATH=\$MPI_ROOT/bin:\$PATH
 export LD_LIBRARY_PATH=\$MPI_ROOT/lib64:\$LD_LIBRARY_PATH
 export MANPATH=\$MPI_ROOT/share/man:\$MANPATH
+# For python graphic
+source /home/sila/miniconda3/etc/profile.d/conda.sh
+conda activate mnh-env_nuwa
 "}
               ;;
 'Linux eos'*)
