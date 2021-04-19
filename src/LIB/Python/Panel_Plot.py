@@ -32,7 +32,7 @@ class PanelPlot():
         
         #  Initialization of the panel plots
         self.fig = plt.figure(figsize=(self.Lfigsize[0],self.Lfigsize[1]))
-        self.fig.set_dpi(400)
+        self.fig.set_dpi(125)
         self.fig.suptitle(self.bigtitle,fontsize=16)
 
     def save_graph(self, iplt, fig):
@@ -309,14 +309,14 @@ class PanelPlot():
         
       return self.fig
 
-    def pXY_lines(self, Lzz=[], Lvar=[], Lxlab=[], Lylab=[], Ltitle=[], Llinetype=[], Llinewidth=[],
-                 Llinecolor=[], Llinelabel=[], Lfacconv=[], ax=[], id_overlap=None, Lxlim=[], 
+    def pXY_lines(self, Lxx=[], Lyy=[], Lxlab=[], Lylab=[], Ltitle=[], Llinetype=[], Llinewidth=[],
+                 Llinecolor=[], Llinelabel=[], LfacconvX=[], LfacconvY=[], ax=[], id_overlap=None, Lxlim=[], 
                  Lylim=[], Ltime=[], LaxisColor=[]):
       """
         XY (multiple)-lines plot
         Arguments :
-            - Lzz    : List of z coordinates variable [1D] #TODO : Renommer argument Lvar en Lxx et Lzz en Lyy et ajouter Lfacconv pour les deux axes. Impact tous les cas test avec lignes X/Y
-            - Lvar   : List of variables to plot [1D]
+            - Lxx    : List of variables to plot or coordinates along the X axis #TODO : ajouter Lfacconv pour les deux axes. Impact tous les cas test avec lignes X/Y
+            - Lyy    : List of variables to plot or coordinates along the Y axis
             - Lxlab  : List of x-axis label
             - Lylab  : List of y-axis label
             - Lxlim  : List of x (min, max) value plotted
@@ -327,7 +327,7 @@ class PanelPlot():
             - Llinetype  : List of line types
             - Lcolorlines: List of color lines
             - Llinelabel : List of legend label lines
-            - Lfacconv   : List of factors for unit conversion of each variables
+            - LfacconvX/Y: List of factors for unit conversion of the variables/coordinates to plot on X and Y axis
             - ax         : List of fig.axes for ploting multiple different types of plots in a subplot panel
             - Lid_overlap: List of number index of plot to overlap current variables
             - LaxisColor : List of colors for multiple x-axis overlap
@@ -335,14 +335,15 @@ class PanelPlot():
       self.ax = ax
       firstCall = (len(self.ax) == 0)
       #  Defaults value convert to x number of variables list
-      if not Lfacconv:   Lfacconv = [1.0]*len(Lvar)
-      if not Llinewidth: Llinewidth = [1.0]*len(Lvar)
-      if not Llinecolor: Llinecolor = ['blue']*len(Lvar)
-      if not Llinetype:  Llinetype = ['-']*len(Lvar)
-      if not Llinelabel: Llinelabel = ['']*len(Lvar)
-      if not LaxisColor: LaxisColor = ['black']*len(Lvar)
-      if not Lylab: Lylab = ['']*len(Lvar)
-      if not Lxlab: Lxlab = ['']*len(Lvar)
+      if not LfacconvX:   LfacconvX = [1.0]*len(Lxx)
+      if not LfacconvY:   LfacconvY = [1.0]*len(Lxx)
+      if not Llinewidth: Llinewidth = [1.0]*len(Lxx)
+      if not Llinecolor: Llinecolor = ['blue']*len(Lxx)
+      if not Llinetype:  Llinetype = ['-']*len(Lxx)
+      if not Llinelabel: Llinelabel = ['']*len(Lxx)
+      if not LaxisColor: LaxisColor = ['black']*len(Lxx)
+      if not Lylab: Lylab = ['']*len(Lxx)
+      if not Lxlab: Lxlab = ['']*len(Lxx)
     
       if firstCall: #  1st call
         iax = 0
@@ -357,12 +358,12 @@ class PanelPlot():
         iax = len(self.ax)-1 #  The ax index of the new coming plot is the length of the existant ax -1 for indices matter
           
       #  On all variables to plot
-      for i,var in enumerate(Lvar):
+      for i,var in enumerate(Lxx):
         #  Print time validity
         if Ltime: self.showTimeText(self.ax, iax, str(Ltime[i]))
 
         #  Plot
-        cf = self.ax[iax].plot(var*Lfacconv[i], Lzz[i], color=Llinecolor[i], ls=Llinetype[i], 
+        cf = self.ax[iax].plot(Lxx[i]*LfacconvX[i], Lyy[i]*LfacconvY[i], color=Llinecolor[i], ls=Llinetype[i], 
                     label=Llinelabel[i], linewidth=Llinewidth[i])
         #  Legend
         #TODO : Handling legend with overlap two axis lines in the same box. For now, placement is by hand

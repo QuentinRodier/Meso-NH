@@ -163,7 +163,7 @@ Llinecolor = ['r']
 LaxisColor = Llinecolor
 Llvl = [0]*len(Lplot)
 Ltime = [Dvar['f1']['time']]
-fig6 = Panel6.pXY_lines(Lzz=LaxeZ, Lvar=Lplot, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle, Lylim=Lylim, Lxlim=Lxlim, Llinelabel=Llinelabel, 
+fig6 = Panel6.pXY_lines(Lyy=LaxeZ, Lxx=Lplot, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle, Lylim=Lylim, Lxlim=Lxlim, Llinelabel=Llinelabel, 
                                 Llinecolor=Llinecolor, LaxisColor=LaxisColor, Ltime=Ltime)
 
 Lplot = [ Dvar['f1']['THT-LSTHM'][:,127]]
@@ -176,7 +176,7 @@ Lxlim = [(-0.8,0.1)]
 Llinecolor = ['g']
 LaxisColor = Llinecolor
 Llvl = [0]*len(Lplot)
-fig7 = Panel6.pXY_lines(Lzz=LaxeZ, Lvar=Lplot, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle,ax=fig6.axes, id_overlap=1, 
+fig7 = Panel6.pXY_lines(Lyy=LaxeZ, Lxx=Lplot, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle,ax=fig6.axes, id_overlap=1, 
                         Lylim=Lylim, Lxlim=Lxlim, Llinelabel=Llinelabel, Llinecolor=Llinecolor,LaxisColor=LaxisColor, Ltime=Ltime)
 
 Lplot = [ Dvar['f2']['WT'][:,127]]
@@ -191,7 +191,7 @@ Llinecolor = ['r']
 LaxisColor = Llinecolor
 Llvl = [0]*len(Lplot)
 Ltime = [Dvar['f2']['time']]
-fig8 = Panel6.pXY_lines(Lzz=LaxeZ, Lvar=Lplot, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle, Lylim=Lylim, Lxlim=Lxlim, Llinelabel=Llinelabel, 
+fig8 = Panel6.pXY_lines(Lyy=LaxeZ, Lxx=Lplot, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle, Lylim=Lylim, Lxlim=Lxlim, Llinelabel=Llinelabel, 
                                 Llinecolor=Llinecolor, LaxisColor=LaxisColor, Ltime=Ltime, ax=fig7.axes)
 
 Lplot = [ Dvar['f2']['THT-LSTHM'][:,127]]
@@ -204,7 +204,7 @@ Lxlim = [(-0.1,0.2)]
 Llinecolor = ['g']
 LaxisColor = Llinecolor
 Llvl = [0]*len(Lplot)
-fig9 = Panel6.pXY_lines(Lzz=LaxeZ, Lvar=Lplot, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle, ax=fig8.axes, id_overlap=1, 
+fig9 = Panel6.pXY_lines(Lyy=LaxeZ, Lxx=Lplot, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle, ax=fig8.axes, id_overlap=1, 
                         Lylim=Lylim, Lxlim=Lxlim, Llinelabel=Llinelabel, Llinecolor=Llinecolor, LaxisColor=LaxisColor, Ltime=Ltime)
 
 # WT and UT-LSUM
@@ -220,7 +220,7 @@ Llinecolor = ['r']
 LaxisColor = Llinecolor
 Llvl = [0]*len(Lplot)
 Ltime = [Dvar['f1']['time']]
-fig10 = Panel6.pXY_lines(Lzz=LaxeZ, Lvar=Lplot, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle, Lylim=Lylim, Lxlim=Lxlim, Llinelabel=Llinelabel, 
+fig10 = Panel6.pXY_lines(Lyy=LaxeZ, Lxx=Lplot, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle, Lylim=Lylim, Lxlim=Lxlim, Llinelabel=Llinelabel, 
                                 Llinecolor=Llinecolor, LaxisColor=LaxisColor, Ltime=Ltime, ax=fig9.axes)
 
 Lplot = [ Dvar['f1']['UT-LSUM'][:,127]]
@@ -233,7 +233,7 @@ Lxlim = [(-0.2,0.8)]
 Llinecolor = ['g']
 LaxisColor = Llinecolor
 Llvl = [0]*len(Lplot)
-fig11 = Panel6.pXY_lines(Lzz=LaxeZ, Lvar=Lplot, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle, ax=fig10.axes, id_overlap=1, 
+fig11 = Panel6.pXY_lines(Lyy=LaxeZ, Lxx=Lplot, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle, ax=fig10.axes, id_overlap=1, 
                          Lylim=Lylim, Lxlim=Lxlim, Llinelabel=Llinelabel, Llinecolor=Llinecolor,LaxisColor=LaxisColor, Ltime=Ltime)
 
 Lplot = [ Dvar['f2']['WT'][:,127]]
@@ -248,7 +248,7 @@ Llinecolor = ['r']
 LaxisColor = Llinecolor
 Llvl = [0]*len(Lplot)
 Ltime = [Dvar['f2']['time']]
-fig12 = Panel6.pXY_lines(Lzz=LaxeZ, Lvar=Lplot, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle, Lylim=Lylim, Lxlim=Lxlim, Llinelabel=Llinelabel, 
+fig12 = Panel6.pXY_lines(Lyy=LaxeZ, Lxx=Lplot, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle, Lylim=Lylim, Lxlim=Lxlim, Llinelabel=Llinelabel, 
                                 Llinecolor=Llinecolor, LaxisColor=LaxisColor, Ltime=Ltime, ax=fig11.axes)
 
 Lplot = [ Dvar['f2']['UT-LSUM'][:,127]]
@@ -261,7 +261,7 @@ Lxlim = [(-2.0,2.0)]
 Llinecolor = ['g']
 LaxisColor = Llinecolor
 Llvl = [0]*len(Lplot)
-fig13 = Panel6.pXY_lines(Lzz=LaxeZ, Lvar=Lplot, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle,ax=fig12.axes, id_overlap=1, 
+fig13 = Panel6.pXY_lines(Lyy=LaxeZ, Lxx=Lplot, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle,ax=fig12.axes, id_overlap=1, 
                          Lylim=Lylim, Lxlim=Lxlim, Llinelabel=Llinelabel, Llinecolor=Llinecolor, LaxisColor=LaxisColor, Ltime=Ltime)
 
 Panel6.save_graph(6,fig13)
