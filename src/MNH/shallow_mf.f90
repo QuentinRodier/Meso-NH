@@ -169,6 +169,7 @@ END MODULE MODI_SHALLOW_MF
 !!      Q.Rodier  01/2019 : support RM17 mixing length
 !!      R.Honnert 1/2019  : remove SURF 
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
+!       R.Honnert 04/2021: remove HRIO and BOUT schemes
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -183,7 +184,6 @@ USE MODI_THL_RT_FROM_TH_R_MF
 USE MODI_COMPUTE_UPDRAFT
 USE MODI_COMPUTE_UPDRAFT_RHCJ10
 USE MODI_COMPUTE_UPDRAFT_RAHA
-USE MODI_COMPUTE_UPDRAFT_HRIO
 USE MODI_MF_TURB
 USE MODI_MF_TURB_EXPL
 USE MODI_MF_TURB_GREYZONE
@@ -308,8 +308,7 @@ IKB=KKA+KKL*JPVEXT
 IKE=KKU-KKL*JPVEXT
 
 ! updraft governing variables
-IF (HMF_UPDRAFT == 'EDKF' .OR. HMF_UPDRAFT == 'HRIO' .OR. &
-    HMF_UPDRAFT == 'RHCJ' .OR. HMF_UPDRAFT == 'BOUT') THEN
+IF (HMF_UPDRAFT == 'EDKF'  .OR. HMF_UPDRAFT == 'RHCJ') THEN
   PENTR      = 1.E20
   PDETR      = 1.E20
   PEMF       = 1.E20
@@ -337,7 +336,7 @@ ZTHVM(:,:) = PTHM(:,:)*((1.+XRV / XRD *PRM(:,:,1))/(1.+ZRTM(:,:)))
 !!! 2. Compute updraft
 !!!    ---------------
 !
-IF (HMF_UPDRAFT == 'EDKF' .OR. HMF_UPDRAFT == 'BOUT') THEN
+IF (HMF_UPDRAFT == 'EDKF') THEN
   GENTR_DETR = .TRUE.
   CALL COMPUTE_UPDRAFT(KKA,IKB,IKE,KKU,KKL,HFRAC_ICE,GENTR_DETR,OMIXUV,&
                        ONOMIXLG,KSV_LGBEG,KSV_LGEND,             &
@@ -378,22 +377,6 @@ ELSEIF (HMF_UPDRAFT == 'RAHA') THEN
                        ZDEPTH )
 ELSEIF (HMF_UPDRAFT == 'DUAL') THEN
   !Updraft characteristics are already computed and received by interface
-ELSEIF (HMF_UPDRAFT == 'HRIO') THEN
-  GENTR_DETR = .TRUE.
-  ! ma version avec l'entrainement de Rio et al.
-  CALL COMPUTE_UPDRAFT_HRIO(KKA,IKB,IKE,KKU,KKL,HFRAC_ICE,GENTR_DETR,OMIXUV,                   &
-                       ONOMIXLG,KSV_LGBEG,KSV_LGEND,             &
-                       PZZ,PDZZ,                                 &
-                       PSFTH,PSFRV,PPABSM,PRHODREF,              &
-                       PUM,PVM,PTKEM,PWM,                        &                                                 
-                       PTHM,PRM(:,:,1),ZTHLM,ZRTM, PSVM,         &
-                       PTHL_UP,PRT_UP,PRV_UP,PRC_UP,PRI_UP,      &
-                       PTHV_UP,PW_UP, PU_UP, PV_UP, ZSV_UP,      &
-                       PFRAC_UP,ZFRAC_ICE_UP,ZRSAT_UP,           &
-                       PTHL_DO, PTHV_DO, PRT_DO,                 &
-                       PU_DO, PV_DO, ZSV_DO,                     &
-                       PEMF,PDETR,                               &
-                       PENTR,ZBUO_INTEG,KKLCL,KKETL,KKCTL,ZDEPTH )
 ELSE
   call Print_msg( NVERB_FATAL, 'GEN', 'SHALLOW_MF', 'no updraft model for EDKF: CMF_UPDRAFT='//trim(HMF_UPDRAFT) )
 ENDIF
@@ -417,7 +400,7 @@ CALL COMPUTE_MF_CLOUD(KKA,IKB,IKE,KKU,KKL,KRR,KRRL,KRRI,&
 !!!    ------------------------------------------------------------------------
 !
 ZEMF_O_RHODREF=PEMF/PRHODREF
-      IF(HMF_UPDRAFT == 'EDKF' .OR. HMF_UPDRAFT == 'RHCJ'.OR. HMF_UPDRAFT == 'BOUT') THEN
+IF(HMF_UPDRAFT == 'EDKF' .OR. HMF_UPDRAFT == 'RHCJ') THEN
    IF ( PIMPL_MF > 1.E-10 ) THEN  
        CALL MF_TURB(KKA, IKB, IKE, KKU, KKL, OMIXUV,                     &
                 ONOMIXLG,KSV_LGBEG,KSV_LGEND,                            &
@@ -429,66 +412,17 @@ ZEMF_O_RHODREF=PEMF/PRHODREF
                 ZEMF_O_RHODREF,PTHL_UP,PTHV_UP,PRT_UP,PU_UP,PV_UP,ZSV_UP,&
                 PFLXZTHMF,PFLXZTHVMF,PFLXZRMF,PFLXZUMF,PFLXZVMF,         &
                 ZFLXZSVMF                                                )
-ELSE
-  CALL MF_TURB_EXPL(KKA, IKB, IKE, KKU, KKL, OMIXUV,                     &
+  ELSE
+      CALL MF_TURB_EXPL(KKA, IKB, IKE, KKU, KKL, OMIXUV,                 &
            PRHODJ,                                                       &
            ZTHLM,ZTHVM,ZRTM,PUM,PVM,                                     &
            PDTHLDT_MF,PDRTDT_MF,PDUDT_MF,PDVDT_MF,                       &
            ZEMF_O_RHODREF,PTHL_UP,PTHV_UP,PRT_UP,PU_UP,PV_UP,            &
            PFLXZTHMF,PFLXZTHVMF,PFLXZRMF,PFLXZUMF,PFLXZVMF)
-ENDIF
-      ELSEIF (HMF_UPDRAFT == 'HRIO') THEN
-       CALL MF_TURB_GREYZONE(KKA, IKB, IKE, KKU, KKL,OMIXUV,             &
-                ONOMIXLG,KSV_LGBEG,KSV_LGEND,                            &
-                PIMPL_MF, PTSTEP,                                        &
-                PDZZ,                                                    &
-                PRHODJ,                                                  &
-                ZTHLM,ZTHVM,ZRTM,PUM,PVM,PSVM,                           &
-                PDTHLDT_MF,PDRTDT_MF,PDUDT_MF,PDVDT_MF,PDSVDT_MF,        &
-                ZEMF_O_RHODREF,PTHL_UP,PTHV_UP,PRT_UP,PU_UP,PV_UP,ZSV_UP,&
-                PTHL_DO,PTHV_DO,PRT_DO,PU_DO,PV_DO,ZSV_DO,               &
-                PFLXZTHMF,PFLXZTHVMF,PFLXZRMF,PFLXZUMF,PFLXZVMF,         &
-                ZFLXZSVMF                                                )
-       ELSE
-         call Print_msg( NVERB_FATAL, 'GEN', 'SHALLOW_MF', 'no updraft model for EDKF: CMF_UPDRAFT='//trim(HMF_UPDRAFT) )
-       END IF
-
-     IF (HMF_UPDRAFT == 'BOUT') THEN
-      !! calcul de la hauteur de la couche limite ou de L_up
-      DO JK=1,IKE-KKL
-       PTHVREF(:,JK)=RESHAPE(XTHVREF(:,:,JK),(/SIZE(PTHM,1)*SIZE(PTHM,2)/) )
-      ENDDO
-      ZG_O_THVREF=XG/PTHVREF
-      GLMIX=.TRUE.
-      IF(CTURBLEN=='RM17') THEN
-       ZDUDZ = MZF_MF(KKA,KKU,KKL,GZ_M_W_MF(KKA,KKU,KKL,PUM,PDZZ))
-       ZDVDZ = MZF_MF(KKA,KKU,KKL,GZ_M_W_MF(KKA,KKU,KKL,PVM,PDZZ))
-       ZSHEAR = SQRT(ZDUDZ*ZDUDZ + ZDVDZ*ZDVDZ)
-      ELSE
-       ZSHEAR = 0. !no shear in bl89 mixing length
-      END IF  
-      CALL COMPUTE_BL89_ML(KKA,IKB,IKE,KKU,KKL,PDZZ,PTKEM(:,IKB)  ,ZG_O_THVREF(:,IKB),ZTHVM,IKB,GLMIX,.TRUE.,ZSHEAR,ZLUP)
-      !! calcul de Dx/(h+hc)
-      DO JI=1,SIZE(XDXHAT)
-       DO JJ=1,SIZE(XDYHAT)
-          ZRESOL_GRID((JJ-1)*SIZE(XDXHAT)+JI)=SQRT(XDXHAT(JI)*XDYHAT(JJ))
-       ENDDO
-      ENDDO
-      ZRESOL_NORM=ZRESOL_GRID/ZLUP
-      !! P=loi pour MF, on utilise la même loi à chaque fois
-      ZPLAW=(ZRESOL_NORM*ZRESOL_NORM+0.19*ZRESOL_NORM**(2./3.))/ &
-      (ZRESOL_NORM*ZRESOL_NORM+0.15*ZRESOL_NORM**(2./3.)+0.33)
-      !! reduction des flux a posteriori
-      !! MF=P*MF en première approximation, on oublie w'f' (Kgrad) et w'f'resol (nul avec ce flux)
-      !  
-      DO JK=1,IKE-KKL
-       PFLXZTHMF(:,JK)=PFLXZTHMF(:,JK)*ZPLAW
-       PFLXZTHVMF(:,JK)=PFLXZTHVMF(:,JK)*ZPLAW
-       PFLXZRMF(:,JK)=PFLXZRMF(:,JK)*ZPLAW
-       PFLXZUMF(:,JK)=PFLXZUMF(:,JK)*ZPLAW
-       PFLXZVMF(:,JK)=PFLXZVMF(:,JK)*ZPLAW
-      ENDDO
-     END IF
+  ENDIF
+ELSE
+  call Print_msg( NVERB_FATAL, 'GEN', 'SHALLOW_MF', 'no updraft model for EDKF: CMF_UPDRAFT='//trim(HMF_UPDRAFT) )
+END IF
   
 ! security in the case HMF_UPDRAFT = 'DUAL'
 ! to be modified if 'DUAL' is evolving (momentum mixing for example)

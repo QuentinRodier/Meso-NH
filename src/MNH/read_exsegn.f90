@@ -298,6 +298,7 @@ END MODULE MODI_READ_EXSEG_n
 !  P. Wautelet 09/03/2021: simplify allocation of scalar variable names
 !  P. Wautelet 09/03/2021: move some chemistry initializations to ini_nsv
 !  P. Wautelet 10/03/2021: move scalar variable name initializations to ini_nsv
+!  R. Honnert  23/04/2021: add ADAP mixing length and delete HRIO and BOUT from CMF_UPDRAFT
 !------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -856,7 +857,7 @@ CALL TEST_NAM_VAR(ILUOUT,'CLBCY(1)',CLBCY(1),'CYCL','WALL','OPEN')
 CALL TEST_NAM_VAR(ILUOUT,'CLBCY(2)',CLBCY(2),'CYCL','WALL','OPEN')
 !
 CALL TEST_NAM_VAR(ILUOUT,'CTURBDIM',CTURBDIM,'1DIM','3DIM')
-CALL TEST_NAM_VAR(ILUOUT,'CTURBLEN',CTURBLEN,'DELT','BL89','RM17','DEAR','BLKR')
+CALL TEST_NAM_VAR(ILUOUT,'CTURBLEN',CTURBLEN,'DELT','BL89','RM17','DEAR','BLKR','ADAP')
 CALL TEST_NAM_VAR(ILUOUT,'CTOM',CTOM,'NONE','TM06')
 CALL TEST_NAM_VAR(ILUOUT,'CSUBG_AUCV',CSUBG_AUCV,'NONE','CLFR','SIGM','PDF')
 !
@@ -877,8 +878,7 @@ CALL TEST_NAM_VAR(ILUOUT,'CTURBLEN_CLOUD',CTURBLEN_CLOUD,'NONE','DEAR','DELT','B
 !
 !   The test on the mass flux scheme for shallow convection
 !
-CALL TEST_NAM_VAR(ILUOUT,'CMF_UPDRAFT',CMF_UPDRAFT,'NONE','EDKF','RHCJ',&
-                   'HRIO','BOUT')
+CALL TEST_NAM_VAR(ILUOUT,'CMF_UPDRAFT',CMF_UPDRAFT,'NONE','EDKF','RHCJ')
 CALL TEST_NAM_VAR(ILUOUT,'CMF_CLOUD',CMF_CLOUD,'NONE','STAT','DIRE')
 !
 !   The test on the CSOLVER name is made elsewhere
@@ -1566,7 +1566,7 @@ ELSE
   END IF
 END IF
 !
-IF(CTURBLEN=='RM17') THEN
+IF(CTURBLEN=='RM17' .OR. CTURBLEN=='ADAP') THEN
   XCEDIS=0.34
 ELSE
   XCEDIS=0.84
