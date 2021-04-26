@@ -250,7 +250,7 @@ def remove_PROC(var):
 def get_group_from_varname(var):
     group_name=''
     for i in range(len(var)):
-      if var[i] is not ' ':
+      if var[i] != ' ':
         group_name+=var[i]
       else: # As soon as the caracter is a blank, the group variable is set
         break
