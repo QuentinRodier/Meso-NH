@@ -1,5 +1,5 @@
 #!/bin/bash
 set -x
-rm -f 16JAN* OUTPUT_LISTING* OUTPUT_TRANSFER pipe* *.tex
+rm -f 16JAN* OUTPUT_LISTING* OUTPUT_TRANSFER pipe* *.tex REMAP*
 rm -f EXSEG?.nam PRESSURE file_for_xtransfer
 

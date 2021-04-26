@@ -347,8 +347,8 @@ cdf : $(CDF_MOD)
 $(CDF_MOD) :
 	cd ${DIR_LIBAEC} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 CC="$(CC)" CFLAGS="$(HDF_OPT)" && \
 	$(MAKE) && $(MAKE) install && $(MAKE) clean
-	cd ${DIR_HDF} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --with-szlib=${CDF_PATH}/include,${CDF_PATH}/lib64 \
-	CC="$(CC)" CFLAGS="$(HDF_OPT)" LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lsz -laec -lz" && \
+	cd ${DIR_HDF} && ./configure --enable-fortran --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --with-szlib=${CDF_PATH}/include,${CDF_PATH}/lib64 \
+	CC="$(CC)" CFLAGS="$(HDF_OPT)" FC="$(FC)" FCFLAGS="$(NETCDF_OPT)" LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lsz -laec -lz" && \
 	$(MAKE) && $(MAKE) install && $(MAKE) clean
 	cd ${DIR_CDFC} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --disable-dap \
 	CC="$(CC)" CFLAGS="$(NETCDF_OPT)" CPPFLAGS="${INC_NETCDF}" ${CDF_CONF} LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lhdf5_hl -lhdf5 -lsz -laec -lz" && \

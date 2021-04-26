@@ -54,8 +54,13 @@ integer, parameter :: MNHREAL128 = selected_real_kind( p = 33, r = 4931 )
 integer, parameter :: MNHINT32_MPI  = MPI_INTEGER4
 integer, parameter :: MNHINT64_MPI  = MPI_INTEGER8
 
+#ifdef MNH_NO_MPI_LOGICAL48
+integer, parameter :: MNHLOG32_MPI  = MPI_LOGICAL
+integer, parameter :: MNHLOG64_MPI  = MPI_LOGICAL
+#else
 integer, parameter :: MNHLOG32_MPI  = MPI_LOGICAL4
 integer, parameter :: MNHLOG64_MPI  = MPI_LOGICAL8
+#endif
 
 integer, parameter :: MNHREAL32_MPI  = MPI_REAL4
 integer, parameter :: MNHREAL64_MPI  = MPI_REAL8

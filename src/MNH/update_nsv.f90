@@ -37,6 +37,9 @@ use mode_msg
 IMPLICIT NONE 
 
 INTEGER, INTENT(IN) :: KMI ! Model index
+
+CHARACTER(LEN=JPSVNAMELGTMAX), DIMENSION(:,:), ALLOCATABLE :: YSVNAMES_TMP
+INTEGER :: JI, JJ
 !
 ! STOP if INI_NSV has not be called yet
 IF (.NOT. LINI_NSV) THEN
@@ -46,6 +49,20 @@ END IF
 ! Update the NSV_* variables from original NSV_*_A arrays
 ! that have been initialized in ini_nsv.f90 for model KMI
 !
+
+! Allocate/reallocate CSVNAMES_A
+IF ( .NOT. ALLOCATED( CSVNAMES_A ) ) ALLOCATE( CSVNAMES_A( NSV_A(KMI), KMI) )
+!If CSVNAMES_A is too small, enlarge it and transfer data
+IF ( SIZE( CSVNAMES_A, 1 ) < NSV_A(KMI) .OR. SIZE( CSVNAMES_A, 2 ) < KMI ) THEN
+  ALLOCATE( YSVNAMES_TMP(NSV_A(KMI), KMI) )
+  DO JJ = 1, SIZE( CSVNAMES_A, 2 )
+    DO JI = 1, SIZE( CSVNAMES_A, 1 )
+      YSVNAMES_TMP(JI, JJ) = CSVNAMES_A(JI, JJ)
+    END DO
+  END DO
+  CALL MOVE_ALLOC( FROM = YSVNAMES_TMP, TO = CSVNAMES_A )
+END IF
+
 CSVNAMES => CSVNAMES_A(:,KMI)
 
 NSV         = NSV_A(KMI)

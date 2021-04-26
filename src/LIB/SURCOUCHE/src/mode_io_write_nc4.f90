@@ -757,7 +757,7 @@ if ( tpfield%cmnhname == 'JMAX' .and. tpfile%tncdims%tdims(NMNHDIM_NJ)%nid == -1
 end if
 #endif
 if ( tpfield%cmnhname == 'KMAX' .and. tpfile%tncdims%tdims(NMNHDIM_LEVEL)%nid == -1 ) then
-  call IO_Dim_find_create_nc4( tpfile, kfield + 2 * JPVEXT, iidx, 'Z' )
+  call IO_Dim_find_create_nc4( tpfile, Int( kfield + 2 * JPVEXT, kind = CDFINT ), iidx, 'Z' )
 end if
 
 END SUBROUTINE IO_Field_write_nc4_N0
@@ -998,7 +998,7 @@ KRESP = 0
 ILEN  = LEN(HFIELD)
 ISIZE = SIZE(HFIELD)
 
-call IO_Field_create_nc4( tpfile, tpfield, kshape = [ ilen, isize ], kvarid = ivarid, oisempty = gisempty )
+call IO_Field_create_nc4( tpfile, tpfield, kshape = Int ([ ilen, isize ], kind = Kind( 1 ) ), kvarid = ivarid, oisempty = gisempty )
 
 ! Write the data
 if ( .not. gisempty ) then
@@ -1154,7 +1154,7 @@ end if
 ! Write the data
 if ( Size( pfield ) > 0 ) then
   istarts(:) = koffset(:) + 1
-  istatus = NF90_PUT_VAR( tpfile%nncid, ivarid, pfield(:), start = istarts(:), count = Shape( pfield ) )
+  istatus = NF90_PUT_VAR( tpfile%nncid, ivarid, pfield(:), start = istarts(:), count = Int( Shape( pfield ), kind = CDFINT ) )
   if (istatus /= NF90_NOERR) &
     call IO_Err_handle_nc4( istatus, 'IO_Field_partial_write_nc4_X1', 'NF90_PUT_VAR', Trim( tpfield%cmnhname ), kresp )
 end if
@@ -1198,7 +1198,7 @@ end if
 ! Write the data
 if ( Size( pfield ) > 0 ) then
   istarts(:) = koffset(:) + 1
-  istatus = NF90_PUT_VAR( tzfile%nncid, ivarid, pfield(:,:), start = istarts(:), count = Shape( pfield ) )
+  istatus = NF90_PUT_VAR( tzfile%nncid, ivarid, pfield(:,:), start = istarts(:), count = Int( Shape( pfield ), kind = CDFINT ) )
   if (istatus /= NF90_NOERR) &
     call IO_Err_handle_nc4( istatus, 'IO_Field_partial_write_nc4_X2', 'NF90_PUT_VAR', Trim( tzfield%cmnhname ), kresp )
 end if
@@ -1237,7 +1237,7 @@ end if
 ! Write the data
 if ( Size( pfield ) > 0 ) then
   istarts(:) = koffset(:) + 1
-  istatus = NF90_PUT_VAR( tpfile%nncid, ivarid, pfield(:,:,:), start = istarts(:), count = Shape( pfield ) )
+  istatus = NF90_PUT_VAR( tpfile%nncid, ivarid, pfield(:,:,:), start = istarts(:), count = Int( Shape( pfield ), kind = CDFINT ) )
   if (istatus /= NF90_NOERR) &
     call IO_Err_handle_nc4( istatus, 'IO_Field_partial_write_nc4_X3', 'NF90_PUT_VAR', Trim( tpfield%cmnhname ), kresp )
 end if
@@ -1274,7 +1274,7 @@ end if
 ! Write the data
 if ( Size( pfield ) > 0 ) then
   istarts(:) = koffset(:) + 1
-  istatus = NF90_PUT_VAR( tpfile%nncid, ivarid, pfield(:,:,:,:), start = istarts(:), count = Shape( pfield ) )
+  istatus = NF90_PUT_VAR( tpfile%nncid, ivarid, pfield(:,:,:,:), start = istarts(:), count = Int( Shape( pfield ), kind = CDFINT ) )
   if (istatus /= NF90_NOERR) &
     call IO_Err_handle_nc4( istatus, 'IO_Field_partial_write_nc4_X4', 'NF90_PUT_VAR', Trim( tpfield%cmnhname ), kresp )
 end if
@@ -1318,7 +1318,7 @@ end if
 ! Write the data
 if ( Size( kfield ) > 0 ) then
   istarts(:) = koffset(:) + 1
-  istatus = NF90_PUT_VAR( tzfile%nncid, ivarid, kfield(:,:), start = istarts(:), count = Shape( kfield ) )
+  istatus = NF90_PUT_VAR( tzfile%nncid, ivarid, kfield(:,:), start = istarts(:), count = Int( Shape( kfield ), kind = CDFINT ) )
   if (istatus /= NF90_NOERR) &
     call IO_Err_handle_nc4( istatus, 'IO_Field_partial_write_nc4_N2', 'NF90_PUT_VAR', Trim( tzfield%cmnhname ), kresp )
 end if
@@ -1364,7 +1364,7 @@ end if
 ! Write the data
 if ( Size( kfield ) > 0 ) then
   istarts(:) = koffset(:) + 1
-  istatus = NF90_PUT_VAR( tzfile%nncid, ivarid, kfield(:,:,:), start = istarts(:), count = Shape( kfield ) )
+  istatus = NF90_PUT_VAR( tzfile%nncid, ivarid, kfield(:,:,:), start = istarts(:), count = Int( Shape( kfield ), kind = CDFINT ) )
   if (istatus /= NF90_NOERR) &
     call IO_Err_handle_nc4( istatus, 'IO_Field_partial_write_nc4_N3', 'NF90_PUT_VAR', Trim( tzfield%cmnhname ), kresp )
 end if
@@ -1410,7 +1410,7 @@ end if
 ! Write the data
 if ( Size( kfield ) > 0 ) then
   istarts(:) = koffset(:) + 1
-  istatus = NF90_PUT_VAR( tzfile%nncid, ivarid, kfield(:,:,:,:), start = istarts(:), count = Shape( kfield ) )
+  istatus = NF90_PUT_VAR( tzfile%nncid, ivarid, kfield(:,:,:,:), start = istarts(:), count = Int( Shape( kfield ), kind = CDFINT ) )
   if (istatus /= NF90_NOERR) &
     call IO_Err_handle_nc4( istatus, 'IO_Field_partial_write_nc4_N4', 'NF90_PUT_VAR', Trim( tzfield%cmnhname ), kresp )
 end if

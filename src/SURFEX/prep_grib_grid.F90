@@ -494,7 +494,6 @@ SELECT CASE (HGRIDTYPE)
          IF (IRET == 0 .OR. IMISSING/=1)  THEN !  quasi-regular
            CALL GRIB_GET(IGRIB,'pl',ININLO_GRIB)
            XILO2=360.-360./(MAXVAL(ININLO_GRIB))
-           print*,"XILO2=",XILO2
          ENDIF
          DEALLOCATE(ININLO_GRIB)
         ENDIF

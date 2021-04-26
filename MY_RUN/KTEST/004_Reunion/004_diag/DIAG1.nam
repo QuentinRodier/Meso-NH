@@ -1,0 +1,7 @@
+&NAM_CONFIO  LCDF4=T, LLFIOUT=F, LLFIREAD=F /
+&NAM_DIAG             
+  LISOAL=T, XISOAL(1)=1500.0 /
+&NAM_DIAG_FILE      YINIFILE(1) = "REUNI.1.00A20.004" ,
+                    YINIFILEPGD(1) = "REUNION_PGD_1km5",
+                    YSUFFIX='dia' /
+

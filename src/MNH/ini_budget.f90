@@ -4569,7 +4569,7 @@ subroutine Sourcelist_nml_compact( tpbudget, hbulist )
   use modd_budget, only: NBULISTMAXLEN, tbudgetdata
 
   type(tbudgetdata),                           intent(in)    :: tpbudget
-  character(len=*), dimension(:), allocatable, intent(inout) :: hbulist
+  character(len=NBULISTMAXLEN), dimension(:), allocatable, intent(inout) :: hbulist
 
   integer :: idx
   integer :: isource

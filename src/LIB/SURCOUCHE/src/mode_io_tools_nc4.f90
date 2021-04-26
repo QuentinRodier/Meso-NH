@@ -121,7 +121,7 @@ IF (IGRID==0) THEN
         ILEN = 1
       END IF
     CASE (1)
-      call IO_Dim_find_create_nc4( tpfile, klen, iidx )
+      call IO_Dim_find_create_nc4( tpfile, Int( klen, kind = CDFINT ), iidx )
       tpdims(1) = tpfile%tncdims%tdims(iidx)
       ilen = tpdims(1)%nlen
     CASE DEFAULT
@@ -170,7 +170,7 @@ ELSE
       ELSE IF ( YDIR == 'ZZ' ) THEN
         tpdims(1) = tpfile%tncdims%tdims( NMNHDIM_ARAKAWA(igrid,3) )
       ELSE IF (JI==TPFIELD%NDIMS) THEN !Guess last dimension
-        call IO_Dim_find_create_nc4( tpfile, klen, iidx )
+        call IO_Dim_find_create_nc4( tpfile, Int( klen, kind = CDFINT ), iidx )
         tpdims(1) = tpfile%tncdims%tdims(iidx)
       END IF
       ilen = tpdims(1)%nlen
@@ -326,7 +326,7 @@ if ( Trim( yprogram ) /= 'PGD' .and. Trim( yprogram ) /= 'NESPGD' .and. Trim( yp
   call IO_Add_dim_nc4( tpfile, NMNHDIM_LEVEL,   'level',   IKU )
   call IO_Add_dim_nc4( tpfile, NMNHDIM_LEVEL_W, 'level_w', IKU )
   if ( tpfile%ctype /= 'MNHDIACHRONIC' ) &
-    call IO_Add_dim_nc4( tpfile, NMNHDIM_TIME, 'time', NF90_UNLIMITED )
+    call IO_Add_dim_nc4( tpfile, NMNHDIM_TIME, 'time', Int( NF90_UNLIMITED, kind = Kind(1) ) )
 end if
 
 if ( tpfile%ctype == 'MNHDIACHRONIC' .or. ( lpack .and. l2d ) ) then
@@ -638,7 +638,7 @@ subroutine IO_Dim_find_create_nc4( tpfile, klen, kidx, hdimname)
 use modd_netcdf, only: tdimnc
 
 type(tfiledata),            intent(in) :: tpfile
-integer,       intent(in) :: klen
+integer(kind=CDFINT),       intent(in) :: klen
 CHARACTER(LEN=*), OPTIONAL, INTENT(IN) :: HDIMNAME
 integer, intent(out) :: kidx !Position of the dimension in the dimension array
 
@@ -686,9 +686,9 @@ if ( kidx == - 1 ) then
     Write( ysuffix, '( i0 )' ) klen
     tzncdims(inewsize)%cname = 'size' // Trim( ysuffix )
   end if
-  tzncdims(inewsize)%nlen = Int( klen, kind = CDFINT )
+  tzncdims(inewsize)%nlen = klen
 
-  istatus = NF90_DEF_DIM( tpfile%nncid, tzncdims(inewsize)%cname, Int( klen, kind = CDFINT ), tzncdims(inewsize)%nid )
+  istatus = NF90_DEF_DIM( tpfile%nncid, tzncdims(inewsize)%cname, klen, tzncdims(inewsize)%nid )
   if ( istatus /= NF90_NOERR ) &
     call IO_Err_handle_nc4( istatus, 'IO_Dim_find_create_nc4', 'NF90_DEF_DIM', Trim( tzncdims(inewsize)%cname) )
 

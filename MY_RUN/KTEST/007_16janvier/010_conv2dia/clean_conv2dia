@@ -1,4 +1,0 @@
-#!/bin/bash
-set -x
-rm -f 16JAN* 
-rm -f dirconv FICJD LISTING_DIA OUT_DIA pipe_name

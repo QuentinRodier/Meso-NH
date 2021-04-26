@@ -137,13 +137,13 @@ CPPFLAGS_SURCOUCHE += -DMNH_USE_MPI_STATUSES_IGNORE
 endif
 else
 ifeq "$(VER_MPI)" "MPIINTEL"
+CPPFLAGS_SURCOUCHE += -DMNH_USE_MPI_STATUSES_IGNORE -DMNH_NO_MPI_LOGICAL48
 ifneq "$(findstring TAU,$(XYZ))" ""
 F90 = tau_f90.sh 
 export TAU_MAKEFILE?=/home/escj/PATCH/TAU/TAU-2.21.1-IFORT10-OMPI152-THREAD/x86_64/lib/Makefile.tau-mpi
 LIBS += -lz 
 else
 F90 = mpiifort
-CPPFLAGS_SURCOUCHE += -DMNH_USE_MPI_STATUSES_IGNORE
 endif
 ifeq "$(MNH_INT)" "8"
 OPT_BASE         += -ilp64

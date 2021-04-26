@@ -4,4 +4,4 @@ rm -f PRESSURE
 rm -f REUNION_IDEA.{des,lfi,nc} 
 rm -f REUNION_PGD_1km5.{des,lfi,nc}
 rm -f REUNI.1.* OUT* pipe_name
-
+rm -f *.nc file_for*

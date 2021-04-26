@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2018-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -70,8 +70,8 @@ end subroutine IO_File_create_nc4
 subroutine IO_File_close_nc4(tpfile,kstatus)
   use mode_io_tools_nc4, only: IO_Iocdf_dealloc_nc4
 
-  type(tfiledata),                intent(inout) :: tpfile
-  integer(kind=CDFINT), optional, intent(out)   :: kstatus
+  type(tfiledata),           intent(inout) :: tpfile
+  integer,         optional, intent(out)   :: kstatus
 
   integer(kind=CDFINT) :: istatus
 
