@@ -38,7 +38,6 @@ def read_BACKUPfile(nameF, ifile, Dvar_input, Dvar_output, path='.', removeHALO=
     #  Read variables
     n_dim = theFile.variables[var].ndim
     name_dim = theFile.variables[var].dimensions
- #   print(var + "  n_dim  = " + str(n_dim))
     
     if (n_dim ==0) or (n_dim == 1 and 'time' in name_dim):  #Scalaires or Variable time
       Dvar_output[ifile][var] = theFile.variables[var][0].data
@@ -178,12 +177,12 @@ def read_TIMESfiles_55(theFile, ifile, Dvar_input, Dvar_output, removeHALO=False
                     else: 
                         raise NameError("Lecture des variables de dimension sup a 2 pas encore implementees pour fichiers .000")
         except KeyError: # NetCDF4 Group not specified by the user
-            if '(cart)' in var_name or '(neb)' in var_name or '(clear)' in var_name or '(cs1)' in var_name or '(cs2)' in var_name or '(cs3)' in var_name:
+            if '(cart)' in var_name or '(neb)' in var_name or '(clear)' in var_name or '(cs1)' in var_name or '(cs2)' in var_name or '(cs3)' in var_name or 'AVEF' in suffix or 'INIF' in suffix or 'ENDF' in suffix:
             # If users specify the complete variable name with averaging type
               group_name = get_group_from_varname(var_name)
             else:
               group_name = var_name
-            read_from_group(theFile, Dvar_output, var, var)
+            read_from_group(theFile, Dvar_output, group_name, var)
         return Dvar_output
 
     def read_from_group(theFile, Dvar_output, group_name, var):
@@ -220,9 +219,9 @@ def read_TIMESfiles_55(theFile, ifile, Dvar_input, Dvar_output, removeHALO=False
         return Dvar_output
     for var in Dvar_input[ifile]: #For each var
         if type(var) == tuple:
-            Dvar_output[ifile] = read_from_group(theFile, Dvar_output, var[0], var[1])
+            Dvar_output[ifile] = read_from_group(theFile, Dvar_output[ifile], var[0], var[1])
         else:
-            Dvar_output[ifile] = read_var(theFile, Dvar_output, var)
+            Dvar_output[ifile] = read_var(theFile, Dvar_output[ifile], var)
     
     return Dvar_output #Return the dic of [files][variables]
 
@@ -249,9 +248,12 @@ def remove_PROC(var):
 
 def get_group_from_varname(var):
     group_name=''
-    for i in range(len(var)):
-      if var[i] != ' ':
-        group_name+=var[i]
-      else: # As soon as the caracter is a blank, the group variable is set
-        break
+    if '___ENDF' in var or '___INIF' in var or '___AVEF' in var: #Variable CART
+        suff, group_name = remove_PROC(var)
+    else: #Variable with whites in names ex: 'MEAN_TH     (cart)'
+        for i in range(len(var)):
+          if var[i] != ' ':
+            group_name+=var[i]
+          else: # As soon as the caracter is a blank, the group variable is set
+            break
     return group_name 
