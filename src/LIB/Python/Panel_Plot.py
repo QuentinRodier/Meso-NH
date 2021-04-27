@@ -56,8 +56,8 @@ class PanelPlot():
         # Grid lines and labels
       if 'PlateCarree' in str(projo):
         gl = ax.gridlines(crs=self.projo, draw_labels=True, linewidth=1, color='gray')
-        gl.xlabels_top = False
-        gl.ylabels_right = False
+        gl.top_labels = False
+        gl.right_labels = False
         
         #  Coastlines
       if self.drawCoastLines and 'GeoAxes' in str(type(ax)):
