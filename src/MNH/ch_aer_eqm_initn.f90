@@ -59,7 +59,6 @@ USE MODD_NSV
 USE MODD_CONF
 USE MODE_ll
 USE MODD_PARAMETERS, ONLY : JPVEXT
-USE MODD_BLANK , ONLY : CDUMMY1
 USE MODD_CST, ONLY :       & 
           XMNH_TINY        &
          ,XAVOGADRO        & ![molec/mol] avogadros number

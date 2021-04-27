@@ -23,7 +23,7 @@ END MODULE MODI_INIT_AEROSOL_CONCENTRATION
 !!    Define the aerosol distributions
 !! 
 !!
-!!      MODD_BLANK :
+!!      MODD_BLANKn :
 !!      CDUMMY2 : CCN ou IFN pour le panache
 !!      NDUMMY1 : hauteur base du panache
 !!      NDUMMY2 : hauteur sommet du panache
@@ -53,7 +53,7 @@ USE MODD_PARAM_LIMA, ONLY : LWARM, LACTI, NMOD_CCN, LSCAV, LAERO_MASS,      &
                             LCOLD, LNUCL, NMOD_IFN, LMEYERS,                &
                             XIFN_CONC, LIFN_HOM
 USE MODD_PARAMETERS, ONLY : JPVEXT
-USE MODD_BLANK,      ONLY : CDUMMY2, NDUMMY1, NDUMMY2, XDUMMY8
+USE MODD_BLANK_n,      ONLY : CDUMMY2, NDUMMY1, NDUMMY2, XDUMMY8
 !
 IMPLICIT NONE
 !

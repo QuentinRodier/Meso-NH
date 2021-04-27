@@ -242,7 +242,6 @@ END MODULE MODI_PHYS_PARAM_n
 !
 USE MODD_ADV_n,            ONLY : XRTKEMS
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
-USE MODD_BLANK
 use modd_budget,            only: lbudget_th, lbudget_rv, lbudget_rc, lbudget_ri, lbudget_sv,  &
                                   NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RI, NBUDGET_SV1, &
                                   tbudgets, xtime_bu_process
