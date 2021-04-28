@@ -110,10 +110,13 @@ type :: tbudiachrometadata
   character(len=NBUNAMELGTMAX)  :: ctype       = 'not set'
   character(len=NBUNAMELGTMAX)  :: ccategory   = 'not set' !budget, LES, aircraft, balloon, series, station, profiler
   character(len=NBUNAMELGTMAX)  :: cshape      = 'not set' !Shape of the domain (mask, cartesian, vertical profile, point)
+  character(len=1)              :: cdirection  = ''        !Used for 2pt correlation and spectrum
   logical :: lmobile    = .false.                          !Is the domain moving? (ie for aircrafts and balloons)
   logical :: licompress = .false.
   logical :: ljcompress = .false.
   logical :: lkcompress = .false.
+  logical :: ltcompress = .false. ! true if values are time averaged (can be on multiple time periods)
+  logical :: lnorm      = .false. ! true if values are normalized
   integer :: nil = -1 !Cartesian box boundaries in physical domain coordinates
   integer :: nih = -1
   integer :: njl = -1
