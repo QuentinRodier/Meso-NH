@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -487,6 +487,9 @@ IF (NVERB >= 5) THEN
   WRITE(UNIT=ILUOUT,FMT="('********** BLOWING SNOW SCHEME ****************')")
   WRITE(UNIT=ILUOUT,NML=NAM_BLOWSNOWn)
 !
+  WRITE(UNIT=ILUOUT,FMT="('********** BLANKn *****************************')")
+  WRITE(UNIT=ILUOUT,NML=NAM_BLANKn)
+!
   IF (KMI==1) THEN
     WRITE(UNIT=ILUOUT,FMT="(/,'PART OF SEGMENT FILE COMMON TO ALL THE MODELS')")
     WRITE(UNIT=ILUOUT,FMT="(  '---------------------------------------------')")
@@ -563,9 +566,6 @@ IF (NVERB >= 5) THEN
 !    
     WRITE(UNIT=ILUOUT,FMT="('************ LES ******************************')")
     WRITE(UNIT=ILUOUT,NML=NAM_LES)
-!    
-    WRITE(UNIT=ILUOUT,FMT="('************ BLANK ****************************')")
-    WRITE(UNIT=ILUOUT,NML=NAM_BLANKn)
 !    
     WRITE(UNIT=ILUOUT,FMT="('************ FORCING **************************')")
     WRITE(UNIT=ILUOUT,NML=NAM_FRC)
