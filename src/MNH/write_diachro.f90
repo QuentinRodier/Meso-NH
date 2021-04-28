@@ -13,6 +13,9 @@ private
 
 public :: Write_diachro
 
+interface Att_write
+   procedure Att_write_c0, Att_write_i0, Att_write_x0
+end interface
 contains
 
 ! #################################################################
@@ -201,6 +204,15 @@ ijl = tpbudiachro%njl
 ijh = tpbudiachro%njh
 ikl = tpbudiachro%nkl
 ikh = tpbudiachro%nkh
+
+!For backward compatibility of LFI files
+if ( tpbudiachro%cdirection == 'I' ) then
+  ijl = 1
+  ijh = 1
+else if ( tpbudiachro%cdirection == 'J' ) then
+  iil = 1
+  iih = 1
+end if
 
 !Write only in LFI files
 tzfile%cformat = 'LFI'
@@ -664,7 +676,7 @@ use modd_budget,           only: nbutshift, nbusubwrite, tbudiachrometadata
 use modd_conf,             only: lcartesian
 use modd_field
 use modd_io,               only: isp, tfiledata
-use modd_les,              only: nles_masks
+use modd_les,              only: cbl_height_def, cles_norm_type, nles_masks, xles_temp_sampling
 use modd_parameters,       only: jphext
 use modd_precision,        only: CDFINT, MNHREAL_NF90
 use modd_type_date,        only: date_time
@@ -754,59 +766,152 @@ MASTER: if ( isp == tzfile%nmaster_rank) then
   tzfile%nncid = igrpid
 
   if ( .not. ggroupdefined ) then
-    istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'name', Trim( tpbudiachro%cname ) )
-    if (istatus /= NF90_NOERR ) &
-      call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'name for '//trim(ygroup)//' group' )
+    call Att_write( ygroup, igrpid, 'name',    tpbudiachro%cname    )
+    call Att_write( ygroup, igrpid, 'comment', tpbudiachro%ccomment )
+    call Att_write( ygroup, igrpid, 'type',          ytype                 )
+    call Att_write( ygroup, igrpid, 'category',      tpbudiachro%ccategory )
+    call Att_write( ygroup, igrpid, 'shape',         tpbudiachro%cshape    )
+    call Att_write( ygroup, igrpid, 'moving',        Merge( 'yes', 'no ', tpbudiachro%lmobile    ) )
+    call Att_write( ygroup, igrpid, 'time averaged', Merge( 'yes', 'no ', tpbudiachro%ltcompress ) )
+    call Att_write( ygroup, igrpid, 'normalized',    Merge( 'yes', 'no ', tpbudiachro%lnorm      ) )
 
-    istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'comment', Trim( tpbudiachro%ccomment ) )
-    if (istatus /= NF90_NOERR ) &
-      call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'comment for '//trim(ygroup)//' group' )
+    if ( tpbudiachro%ccategory == 'budget' .and. tpbudiachro%cshape == 'cartesian' ) then
+      call Att_write( ygroup, igrpid, 'min I index in physical domain', iil )
+      call Att_write( ygroup, igrpid, 'max I index in physical domain', iih )
+      call Att_write( ygroup, igrpid, 'min J index in physical domain', ijl )
+      call Att_write( ygroup, igrpid, 'max J index in physical domain', ijh )
+      call Att_write( ygroup, igrpid, 'min K index in physical domain', ikl )
+      call Att_write( ygroup, igrpid, 'max K index in physical domain', ikh )
 
-    istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'type', trim( ytype ) )
-    if (istatus /= NF90_NOERR ) &
-      call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'type for '//trim(ygroup)//' group' )
+      call Att_write( ygroup, igrpid, 'averaged in the I direction', Merge( 'yes', 'no ', tpbudiachro%licompress ) )
+      call Att_write( ygroup, igrpid, 'averaged in the J direction', Merge( 'yes', 'no ', tpbudiachro%ljcompress ) )
+      call Att_write( ygroup, igrpid, 'averaged in the K direction', Merge( 'yes', 'no ', tpbudiachro%lkcompress ) )
 
-    if ( trim ( ytype ) == 'CART' .or. trim ( ytype ) == 'MASK' .or. trim ( ytype ) == 'SPXY') then
-      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'min x index in physical domain', iil )
-      if (istatus /= NF90_NOERR ) &
-        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'min x index for '//trim(ygroup)//' group' )
+    else if ( tpbudiachro%ccategory == 'budget' .and. tpbudiachro%cshape == 'mask' ) then
+      call Att_write( ygroup, igrpid, 'masks are stored in variable', 'MASKS' )
+      call Att_write( ygroup, igrpid, 'averaged in the K direction', Merge( 1, 0, tpbudiachro%lkcompress ) )
 
-      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'max x index in physical domain', iih )
-      if (istatus /= NF90_NOERR ) &
-        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'max x index for '//trim(ygroup)//' group' )
+    else if ( tpbudiachro%ccategory == 'LES' .and. tpbudiachro%cshape == 'cartesian' ) then
+      call Att_write( ygroup, igrpid, 'min I index in physical domain', iil )
+      call Att_write( ygroup, igrpid, 'max I index in physical domain', iih )
+      call Att_write( ygroup, igrpid, 'min J index in physical domain', ijl )
+      call Att_write( ygroup, igrpid, 'max J index in physical domain', ijh )
 
-      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'min y index in physical domain', ijl )
-      if (istatus /= NF90_NOERR ) &
-        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'min y index for '//trim(ygroup)//' group' )
+      call Att_write( ygroup, igrpid, 'averaged in the I direction', Merge( 'yes', 'no ', tpbudiachro%licompress ) )
+      call Att_write( ygroup, igrpid, 'averaged in the J direction', Merge( 'yes', 'no ', tpbudiachro%ljcompress ) )
+      call Att_write( ygroup, igrpid, 'averaged in the K direction', Merge( 'yes', 'no ', tpbudiachro%lkcompress ) )
 
-      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'max y index in physical domain', ijh )
-      if (istatus /= NF90_NOERR ) &
-        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'max y index for '//trim(ygroup)//' group' )
+      call Att_write( ygroup, igrpid, 'temporal sampling frequency', xles_temp_sampling )
 
-      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'min z index in physical domain', ikl )
-      if (istatus /= NF90_NOERR ) &
-        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'min z index for '//trim(ygroup)//' group' )
+      if ( tpbudiachro%lnorm ) then
+        if ( cles_norm_type == 'NONE' ) then
+          call Att_write( ygroup, igrpid, 'normalization', 'none' )
+        else if ( cles_norm_type == 'CONV' ) then
+          call Att_write( ygroup, igrpid, 'normalization', 'convective' )
+          ! cbl_height_def determines how the boundary layer height is computed, which is used in this normalization
+          call Att_write( ygroup, igrpid, 'definition of boundary layer height', cbl_height_def )
+        else if ( cles_norm_type == 'EKMA' ) then
+          call Att_write( ygroup, igrpid, 'normalization', 'Ekman' )
+          ! cbl_height_def determines how the boundary layer height is computed, which is used in this normalization
+          call Att_write( ygroup, igrpid, 'definition of boundary layer height', cbl_height_def )
+        else if ( cles_norm_type == 'MOBU' ) then
+          call Att_write( ygroup, igrpid, 'normalization', 'Monin-Obukhov' )
+        else
+          call Print_msg( NVERB_WARNING, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
+                          ': group ' // Trim( ygroup ) // ': unknown normalization' )
+          call Att_write( ygroup, igrpid, 'normalization', 'unknown' )
+        end if
+      else
+        call Att_write( ygroup, igrpid, 'normalization', 'none' )
+      end if
 
-      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'max z index in physical domain', ikh )
-      if (istatus /= NF90_NOERR ) &
-        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'max z index for '//trim(ygroup)//' group' )
+    else if ( tpbudiachro%ccategory == 'LES' .and. tpbudiachro%cshape == '2-point correlation' ) then
+      call Att_write( ygroup, igrpid, 'direction of 2-point correlation', tpbudiachro%cdirection )
+
+      call Att_write( ygroup, igrpid, 'min I index in physical domain', iil )
+      call Att_write( ygroup, igrpid, 'max I index in physical domain', iih )
+      call Att_write( ygroup, igrpid, 'min J index in physical domain', ijl )
+      call Att_write( ygroup, igrpid, 'max J index in physical domain', ijh )
+
+      call Att_write( ygroup, igrpid, 'temporal sampling frequency', xles_temp_sampling )
+
+    else if ( tpbudiachro%ccategory == 'LES' .and. tpbudiachro%cshape == 'spectrum' ) then
+      call Att_write( ygroup, igrpid, 'direction of spectrum', tpbudiachro%cdirection )
+
+      call Att_write( ygroup, igrpid, 'min I index in physical domain', iil )
+      call Att_write( ygroup, igrpid, 'max I index in physical domain', iih )
+      call Att_write( ygroup, igrpid, 'min J index in physical domain', ijl )
+      call Att_write( ygroup, igrpid, 'max J index in physical domain', ijh )
+
+      call Att_write( ygroup, igrpid, 'temporal sampling frequency', xles_temp_sampling )
+
+    else if ( (      tpbudiachro%ccategory == 'aircraft'                   &
+                .or. tpbudiachro%ccategory == 'radiosonde balloon'         &
+                .or. tpbudiachro%ccategory == 'iso-density balloon'        &
+                .or. tpbudiachro%ccategory ==  'constant volume balloon' ) &
+              .and.  tpbudiachro%cshape == 'point' ) then
+
+    else if ( (      tpbudiachro%ccategory == 'aircraft'                   &
+                .or. tpbudiachro%ccategory == 'radiosonde balloon'         &
+                .or. tpbudiachro%ccategory == 'iso-density balloon'        &
+                .or. tpbudiachro%ccategory ==  'constant volume balloon' ) &
+              .and.  tpbudiachro%cshape == 'vertical profile' ) then
+
+    else if ( tpbudiachro%ccategory == 'profiler' .and.  tpbudiachro%cshape == 'vertical profile' ) then
+    else if ( tpbudiachro%ccategory == 'station' .and.  tpbudiachro%cshape == 'point' ) then
+
+    else if ( tpbudiachro%cgroupname == 'TSERIES' ) then
+      call Att_write( ygroup, igrpid, 'min I index in physical domain', iil )
+      call Att_write( ygroup, igrpid, 'max I index in physical domain', iih )
+      call Att_write( ygroup, igrpid, 'min J index in physical domain', ijl )
+      call Att_write( ygroup, igrpid, 'max J index in physical domain', ijh )
+      call Att_write( ygroup, igrpid, 'min K index in physical domain', ikl )
+      call Att_write( ygroup, igrpid, 'max K index in physical domain', ikh )
+
+      call Att_write( ygroup, igrpid, 'averaged in the I direction', Merge( 'yes', 'no ', tpbudiachro%licompress ) )
+      call Att_write( ygroup, igrpid, 'averaged in the J direction', Merge( 'yes', 'no ', tpbudiachro%ljcompress ) )
+      call Att_write( ygroup, igrpid, 'averaged in the K direction', Merge( 'yes', 'no ', tpbudiachro%lkcompress ) )
+
+    else if ( tpbudiachro%cgroupname == 'ZTSERIES' ) then
+      call Att_write( ygroup, igrpid, 'min I index in physical domain', iil )
+      call Att_write( ygroup, igrpid, 'max I index in physical domain', iih )
+      call Att_write( ygroup, igrpid, 'min J index in physical domain', ijl )
+      call Att_write( ygroup, igrpid, 'max J index in physical domain', ijh )
+      call Att_write( ygroup, igrpid, 'min K index in physical domain', ikl )
+      call Att_write( ygroup, igrpid, 'max K index in physical domain', ikh )
+
+      call Att_write( ygroup, igrpid, 'averaged in the I direction', Merge( 'yes', 'no ', tpbudiachro%licompress ) )
+      call Att_write( ygroup, igrpid, 'averaged in the J direction', Merge( 'yes', 'no ', tpbudiachro%ljcompress ) )
+      call Att_write( ygroup, igrpid, 'averaged in the K direction', Merge( 'yes', 'no ', tpbudiachro%lkcompress ) )
+
+    else if ( tpbudiachro%cgroupname(1:8) == 'XTSERIES' ) then
+      call Att_write( ygroup, igrpid, 'min I index in physical domain', iil )
+      call Att_write( ygroup, igrpid, 'max I index in physical domain', iih )
+      call Att_write( ygroup, igrpid, 'min J index in physical domain', ijl )
+      call Att_write( ygroup, igrpid, 'max J index in physical domain', ijh )
+      call Att_write( ygroup, igrpid, 'min K index in physical domain', ikl )
+      call Att_write( ygroup, igrpid, 'max K index in physical domain', ikh )
+
+      call Att_write( ygroup, igrpid, 'averaged in the I direction', Merge( 'yes', 'no ', tpbudiachro%licompress ) )
+      call Att_write( ygroup, igrpid, 'averaged in the J direction', Merge( 'yes', 'no ', tpbudiachro%ljcompress ) )
+      call Att_write( ygroup, igrpid, 'averaged in the K direction', Merge( 'yes', 'no ', tpbudiachro%lkcompress ) )
+
+    else
+      call Print_msg( NVERB_WARNING, 'IO', 'Write_diachro_nc4', &
+                    'unknown group definition for ' // Trim( tpbudiachro%cname ) // ': using default behavior' )
+
+      call Att_write( ygroup, igrpid, 'min I index in physical domain', iil )
+      call Att_write( ygroup, igrpid, 'max I index in physical domain', iih )
+      call Att_write( ygroup, igrpid, 'min J index in physical domain', ijl )
+      call Att_write( ygroup, igrpid, 'max J index in physical domain', ijh )
+      call Att_write( ygroup, igrpid, 'min K index in physical domain', ikl )
+      call Att_write( ygroup, igrpid, 'max K index in physical domain', ikh )
+
+      call Att_write( ygroup, igrpid, 'averaged in the I direction', Merge( 'yes', 'no ', tpbudiachro%licompress ) )
+      call Att_write( ygroup, igrpid, 'averaged in the J direction', Merge( 'yes', 'no ', tpbudiachro%ljcompress ) )
+      call Att_write( ygroup, igrpid, 'averaged in the K direction', Merge( 'yes', 'no ', tpbudiachro%lkcompress ) )
     end if
 
-    if ( trim ( ytype ) == 'CART' ) then
-      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'averaged on x dimension', Merge( 1, 0, tpbudiachro%licompress ) )
-      if (istatus /= NF90_NOERR ) &
-        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'averaged on x dimension '//trim(ygroup)//' group' )
-
-      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'averaged on y dimension', Merge( 1, 0, tpbudiachro%ljcompress ) )
-      if (istatus /= NF90_NOERR ) &
-        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'averaged on y dimension '//trim(ygroup)//' group' )
-    end if
-
-    if ( trim ( ytype ) == 'CART' .or. trim ( ytype ) == 'MASK' .or. trim ( ytype ) == 'SPXY') then
-      istatus = NF90_PUT_ATT( igrpid, NF90_GLOBAL, 'averaged on z dimension', Merge( 1, 0, tpbudiachro%lkcompress ) )
-      if (istatus /= NF90_NOERR ) &
-        call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', 'averaged on z dimension '//trim(ygroup)//' group' )
-    end if
   end if
 
 end if MASTER
@@ -1581,6 +1686,69 @@ if ( osplit ) then
 end if
 
 end subroutine Prepare_diachro_write
+
+
+subroutine Att_write_c0( hgroup, kgrpid, hattname, hdata )
+use NETCDF,            only: NF90_PUT_ATT, NF90_GLOBAL, NF90_NOERR
+
+use modd_precision,    only: CDFINT
+
+use mode_io_tools_nc4, only: IO_Err_handle_nc4
+
+character(len=*),     intent(in) :: hgroup
+integer(kind=CDFINT), intent(in) :: kgrpid
+character(len=*),     intent(in) :: hattname
+character(len=*),     intent(in) :: hdata
+
+integer(kind=CDFINT) :: istatus
+
+istatus = NF90_PUT_ATT( kgrpid, NF90_GLOBAL, hattname, Trim( hdata ) )
+if (istatus /= NF90_NOERR ) &
+ call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', Trim( hattname ) // ' for '// Trim( hgroup ) // ' group' )
+
+end subroutine Att_write_c0
+
+
+subroutine Att_write_i0( hgroup, kgrpid, hattname, kdata )
+use NETCDF,            only: NF90_PUT_ATT, NF90_GLOBAL, NF90_NOERR
+
+use modd_precision,    only: CDFINT
+
+use mode_io_tools_nc4, only: IO_Err_handle_nc4
+
+character(len=*),     intent(in) :: hgroup
+integer(kind=CDFINT), intent(in) :: kgrpid
+character(len=*),     intent(in) :: hattname
+integer,              intent(in) :: kdata
+
+integer(kind=CDFINT) :: istatus
+
+istatus = NF90_PUT_ATT( kgrpid, NF90_GLOBAL, hattname, kdata )
+if (istatus /= NF90_NOERR ) &
+ call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', Trim( hattname ) // ' for '// Trim( hgroup ) // ' group' )
+
+end subroutine Att_write_i0
+
+
+subroutine Att_write_x0( hgroup, kgrpid, hattname, pdata )
+use NETCDF,            only: NF90_PUT_ATT, NF90_GLOBAL, NF90_NOERR
+
+use modd_precision,    only: CDFINT
+
+use mode_io_tools_nc4, only: IO_Err_handle_nc4
+
+character(len=*),     intent(in) :: hgroup
+integer(kind=CDFINT), intent(in) :: kgrpid
+character(len=*),     intent(in) :: hattname
+real,                 intent(in) :: pdata
+
+integer(kind=CDFINT) :: istatus
+
+istatus = NF90_PUT_ATT( kgrpid, NF90_GLOBAL, hattname, pdata )
+if (istatus /= NF90_NOERR ) &
+ call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', Trim( hattname ) // ' for '// Trim( hgroup ) // ' group' )
+
+end subroutine Att_write_x0
 #endif
 
 end module mode_write_diachro

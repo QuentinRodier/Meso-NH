@@ -562,13 +562,17 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
   tzbudiachro%ccategory  = 'budget'
   if ( ybutype == 'CART' ) then
     tzbudiachro%cshape   = 'cartesian'
+    tzbudiachro%lmobile  = .false.
   else
     tzbudiachro%cshape   = 'mask'
+    !Masks are updated at each timestep (therefore the studied domains change during execution)
+    tzbudiachro%lmobile  = .true.
   end if
-  tzbudiachro%lmobile    = .false.
   tzbudiachro%licompress = lbu_icp
   tzbudiachro%ljcompress = lbu_jcp
   tzbudiachro%lkcompress = lbu_kcp
+  tzbudiachro%ltcompress = .true. !Data is temporally averaged
+  tzbudiachro%lnorm      = .false.
   tzbudiachro%nil        = nbuil
   tzbudiachro%nih        = nbuih
   tzbudiachro%njl        = nbujl
@@ -815,13 +819,17 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
   tzbudiachro%ccategory  = 'budget'
   if ( ybutype == 'CART' ) then
     tzbudiachro%cshape   = 'cartesian'
+    tzbudiachro%lmobile  = .false.
   else
     tzbudiachro%cshape   = 'mask'
+    !Masks are updated at each timestep (therefore the studied domains change during execution)
+    tzbudiachro%lmobile  = .true.
   end if
-  tzbudiachro%lmobile    = .false.
   tzbudiachro%licompress = lbu_icp
   tzbudiachro%ljcompress = lbu_jcp
   tzbudiachro%lkcompress = lbu_kcp
+  tzbudiachro%ltcompress = .true. !Data is temporally averaged
+  tzbudiachro%lnorm      = .false.
   tzbudiachro%nil        = nbuil
   tzbudiachro%nih        = nbuih
   tzbudiachro%njl        = nbujl

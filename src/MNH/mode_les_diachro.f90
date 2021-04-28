@@ -970,7 +970,7 @@ else
   zfield(:, :, :, :) = pfield(:, :, :, :)
 end if
 
-! Time average
+! Time average (physical units remain unchanged)
 iresp = 0
 if ( oavg ) call Les_time_avg_4d( zfield, tzdates, iresp )
 
@@ -1035,6 +1035,8 @@ if ( iresp == 0 .and. any( zfield /= XUNDEF ) ) then
   tzbudiachro%licompress = .false.
   tzbudiachro%ljcompress = .false.
   tzbudiachro%lkcompress = .false.
+  tzbudiachro%ltcompress = oavg
+  tzbudiachro%lnorm      = onorm
   tzbudiachro%nil        = iil
   tzbudiachro%nih        = iih
   tzbudiachro%njl        = ijl
@@ -1128,6 +1130,11 @@ type(tfield_metadata_base)                           :: tzfield
 allocate( tzdates( NLES_CURRENT_TIMES ) )
 tzdates(:) = tles_dates(:)
 
+iil = nles_current_iinf
+iih = nles_current_isup
+ijl = nles_current_jinf
+ijh = nles_current_jsup
+
 ikl = 1
 ikh = nspectra_k
 
@@ -1136,11 +1143,6 @@ tzfield = tpfield
 
 if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_2PTS_NI ) then
   Allocate( zwork6(Size( pfield, 1 ), 1, nspectra_k, nles_current_times, 1, 1) )
-
-  iil = nles_current_iinf
-  iih = nles_current_isup
-  ijl = 1
-  ijh = 1
 
   do jt = 1, Size( pfield,  3 )
     do jk = 1, Size( pfield, 2 )
@@ -1160,11 +1162,6 @@ if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_2PTS_NI ) then
   ycomment(:) = " DOMEGAX=" // ystring // ' ' // tpfield%ccomment
 else if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_2PTS_NJ ) then
   Allocate( zwork6(1, Size( pfield, 1 ), nspectra_k, nles_current_times, 1, 1) )
-
-  iil = 1
-  iih = 1
-  ijl = nles_current_jinf
-  ijh = nles_current_jsup
 
   do jt = 1, Size( pfield, 3 )
     do jk = 1, Size( pfield, 2 )
@@ -1191,7 +1188,7 @@ tzfield%cmnhname  = ygroup
 tzfield%clongname = ygroup
 tzfield%ccomment  = ycomment(:)
 
-!* time average
+!* time average (physical units remain unchanged)
 iresp = 0
 if ( gavg ) then
   call Les_time_avg( zwork6, tzdates, iresp )
@@ -1211,11 +1208,18 @@ else
 end if
 tzbudiachro%ctype      = 'SPXY'
 tzbudiachro%ccategory  = 'LES'
-tzbudiachro%cshape     = 'spectrum'
+tzbudiachro%cshape     = '2-point correlation'
+if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_2PTS_NI ) then
+  tzbudiachro%cdirection = 'I'
+else
+  tzbudiachro%cdirection = 'J'
+end if
 tzbudiachro%lmobile    = .false.
 tzbudiachro%licompress = .false.
 tzbudiachro%ljcompress = .false.
 tzbudiachro%lkcompress = .false.
+tzbudiachro%ltcompress = gavg
+tzbudiachro%lnorm      = .false.
 tzbudiachro%nil        = iil
 tzbudiachro%nih        = iih
 tzbudiachro%njl        = ijl
@@ -1295,6 +1299,11 @@ type(tfield_metadata_base)                           :: tzfield
 allocate( tzdates( nles_current_times ) )
 tzdates(:) = tles_dates(:)
 
+iil = nles_current_iinf
+iih = nles_current_isup
+ijl = nles_current_jinf
+ijh = nles_current_jsup
+
 ikl = 1
 ikh = nspectra_k
 
@@ -1306,11 +1315,6 @@ tzfield = tpfield
 
 if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_SPEC_NI ) then
   Allocate( zwork6(Size( pspectra, 1 ), 1, nspectra_k, nles_current_times, 2, 1) )
-
-  iil = nles_current_iinf
-  iih = nles_current_isup
-  ijl = 1
-  ijh = 1
 
   do jt = 1, Size( pspectra, 4 )
     do jk = 1, Size( pspectra, 3 )
@@ -1331,11 +1335,6 @@ if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_SPEC_NI ) then
   ycomment(:) = " DOMEGAX=" // ystring // ' ' // tpfield%ccomment
 else if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_SPEC_NJ ) then
   Allocate( zwork6( 1, Size( pspectra, 1 ), nspectra_k, nles_current_times, 2, 1 ) )
-
-  iil = 1
-  iih = 1
-  ijl = nles_current_jinf
-  ijh = nles_current_jsup
 
   do jt = 1, Size( pspectra, 4 )
     do jk = 1, Size( pspectra, 3 )
@@ -1368,10 +1367,17 @@ tzbudiachro%ccomment   = tzfield%ccomment
 tzbudiachro%ctype      = 'SPXY'
 tzbudiachro%ccategory  = 'LES'
 tzbudiachro%cshape     = 'spectrum'
+if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_SPEC_NI ) then
+  tzbudiachro%cdirection = 'I'
+else
+  tzbudiachro%cdirection = 'J'
+end if
 tzbudiachro%lmobile    = .false.
 tzbudiachro%licompress = .false.
 tzbudiachro%ljcompress = .false.
 tzbudiachro%lkcompress = .false.
+tzbudiachro%ltcompress = .false.
+tzbudiachro%lnorm      = .false.
 tzbudiachro%nil        = iil
 tzbudiachro%nih        = iih
 tzbudiachro%njl        = ijl
@@ -1381,7 +1387,7 @@ tzbudiachro%nkh        = ikh
 
 call Write_diachro( tpdiafile, tzbudiachro, [ tzfield ], tzdates, zwork6 )
 !
-!* time average
+!* time average (physical units remain unchanged)
 !
 iresp = 0
 call Les_time_avg( zwork6, tzdates, iresp )
@@ -1396,10 +1402,17 @@ tzbudiachro%ccomment   = Trim( tzfield%ccomment ) // ' (time averaged)'
 tzbudiachro%ctype      = 'SPXY'
 tzbudiachro%ccategory  = 'LES'
 tzbudiachro%cshape     = 'spectrum'
+if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_SPEC_NI ) then
+  tzbudiachro%cdirection = 'I'
+else
+  tzbudiachro%cdirection = 'J'
+end if
 tzbudiachro%lmobile    = .false.
 tzbudiachro%licompress = .false.
 tzbudiachro%ljcompress = .false.
 tzbudiachro%lkcompress = .false.
+tzbudiachro%ltcompress = .false.
+tzbudiachro%lnorm      = .false.
 tzbudiachro%nil        = iil
 tzbudiachro%nih        = iih
 tzbudiachro%njl        = ijl
