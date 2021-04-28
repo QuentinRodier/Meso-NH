@@ -53,12 +53,6 @@ END MODULE MODI_ADV_FORCING_n
 !!
 !!   NB:   For relaxation forcing, only mask=FIXE has been implemented for simplicity
 !!
-!!   DUMMIES: LDUMMY(2)=T allows ADV forcing
-!!            LDUMMY3=T ------- REL -------
-!!                   with XDUMMY1=lower limit of relaxation (m)
-!!                        XDUMMY2=top limit of relxation (m)
-!!                        XDUMMY3=relaxation timsescale (s)
-!!
 !!    EXTERNAL
 !!    --------
 !!      Temporal_lt function   (compare 2 TYPEd date_and_time data)
@@ -77,7 +71,6 @@ END MODULE MODI_ADV_FORCING_n
 !!        JPVEXT: define the number of marginal points out of the 
 !!        physical domain along the vertical direction.    
 !!      Module MODD_TIME: contains the structure of the TYPEd date_and_time
-!!      Module MODD_BLANK: Uses LDUMMY(2)=T to activate the time varying adv frc 
 !!
 !!    REFERENCE
 !!    ---------
@@ -220,7 +213,6 @@ END IF
 !    2.2 Integration of the  forcing in the source
 !   ------------------------------------------
 
-!    2.2.1 Advective forcing in LDUMMY(2)=T
  DO JK=1,JPVEXT
   ZXADVTHFRC(:,:,JK)    = 0.
   ZXADVRVFRC(:,:,JK)    = 0.

@@ -88,7 +88,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!      Module MODD_BUDGET : CBUTYPE,NBUMOD,XBULEN,NBUKL, NBUKH,LBU_KCP,XBUWRI
 !!         NBUIL, NBUIH,NBUJL, NBUJH,LBU_ICP,LBU_JCP,NBUMASK
 !!
-!!      Module MODD_BLANK :
+!!      Module MODD_BLANK_n :
 !!
 !!          XDUMMYi, NDUMMYi, LDUMMYi, CDUMMYi
 !!
@@ -235,7 +235,7 @@ USE MODD_PARAM_RAD_n
 #ifdef MNH_ECRAD
 USE MODD_PARAM_ECRAD_n
 #endif
-USE MODD_BLANK
+USE MODD_BLANK_n
 USE MODD_FRC
 USE MODD_PARAM_ICE
 USE MODD_PARAM_C2R2
@@ -674,50 +674,44 @@ XCLOUD_FRAC_STD = 1.0_JPRB ! change to 0.75 for more realistic distribution
 #endif
 !-------------------------------------------------------------------------------
 !
-!*      14.   SET DEFAULT VALUES FOR MODD_BLANK :
+!*      14.   SET DEFAULT VALUES FOR MODD_BLANK_n :
 !             -----------------------------------
 !
-IF (KMI == 1) THEN
-  XDUMMY1       = 0.
-  XDUMMY2       = 0.
-  XDUMMY3       = 0.
-  XDUMMY4       = 0.
-  XDUMMY5       = 0.
-  XDUMMY6       = 0.
-  XDUMMY7       = 0.
-  XDUMMY8       = 0.
-  XDUMMY=0.
+XDUMMY1       = 0.
+XDUMMY2       = 0.
+XDUMMY3       = 0.
+XDUMMY4       = 0.
+XDUMMY5       = 0.
+XDUMMY6       = 0.
+XDUMMY7       = 0.
+XDUMMY8       = 0.
 !
-  NDUMMY1       = 0
-  NDUMMY2       = 0
-  NDUMMY3       = 0
-  NDUMMY4       = 0
-  NDUMMY5       = 0
-  NDUMMY6       = 0
-  NDUMMY7       = 0
-  NDUMMY8       = 0
-  NDUMMY=0
+NDUMMY1       = 0
+NDUMMY2       = 0
+NDUMMY3       = 0
+NDUMMY4       = 0
+NDUMMY5       = 0
+NDUMMY6       = 0
+NDUMMY7       = 0
+NDUMMY8       = 0
 !
-  LDUMMY1       = .TRUE.
-  LDUMMY2       = .TRUE.
-  LDUMMY3       = .TRUE.
-  LDUMMY4       = .TRUE.
-  LDUMMY5       = .TRUE.
-  LDUMMY6       = .TRUE.
-  LDUMMY7       = .TRUE.
-  LDUMMY8       = .TRUE.
-  LDUMMY=.TRUE.
+LDUMMY1       = .TRUE.
+LDUMMY2       = .TRUE.
+LDUMMY3       = .TRUE.
+LDUMMY4       = .TRUE.
+LDUMMY5       = .TRUE.
+LDUMMY6       = .TRUE.
+LDUMMY7       = .TRUE.
+LDUMMY8       = .TRUE.
 !
-  CDUMMY1       = ' '
-  CDUMMY2       = ' '
-  CDUMMY3       = ' '
-  CDUMMY4       = ' '
-  CDUMMY5       = ' '
-  CDUMMY6       = ' '
-  CDUMMY7       = ' '
-  CDUMMY8       = ' '
-  CDUMMY= ' '
-END IF
+CDUMMY1       = ' '
+CDUMMY2       = ' '
+CDUMMY3       = ' '
+CDUMMY4       = ' '
+CDUMMY5       = ' '
+CDUMMY6       = ' '
+CDUMMY7       = ' '
+CDUMMY8       = ' '
 !
 !------------------------------------------------------------------------------
 !

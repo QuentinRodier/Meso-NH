@@ -344,6 +344,7 @@ END MODULE MODI_TURB
 !  P. Wautelet 11/06/2020: bugfix: correct PRSVS array indices
 !  P. Wautelet + Benoit Vié 06/2020: improve removal of negative scalar variables + adapt the corresponding budgets
 !  P. Wautelet 30/06/2020: move removal of negative scalar variables to Sources_neg_correct
+!  R. Honnert/V. Masson 02/2021: new mixing length in the grey zone
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -502,6 +503,7 @@ REAL, ALLOCATABLE, DIMENSION(:,:,:) ::&
           ZEXN,                       &  ! EXN at t-1
           ZT,                         &  ! T at t-1
           ZLOCPEXNM,                  &  ! Lv/Cp/EXNREF at t-1
+          ZLMW,                       &  ! Turbulent mixing length (work array)
           ZLEPS,                      &  ! Dissipative length
           ZTRH,                       &  ! Dynamic and Thermal Production of TKE
           ZATHETA,ZAMOIST,            &  ! coefficients for s = f (Thetal,Rnp)
@@ -541,8 +543,10 @@ INTEGER             :: IKTB,IKTE    ! start, end of k loops in physical domain
 INTEGER             :: JRR,JK,JSV   ! loop counters
 INTEGER             :: JI,JJ        ! loop counters
 REAL                :: ZL0          ! Max. Mixing Length in Blakadar formula
-REAL                :: ZALPHA       ! proportionnality constant between Dz/2 and 
-!                                   ! BL89 mixing length near the surface
+REAL                :: ZALPHA       ! work coefficient : 
+                                    ! - proportionnality constant between Dz/2 and 
+!                                   !   BL89 mixing length near the surface
+                                    ! - and coefficient to reduce DELT in ADAP
 !
 REAL :: ZTIME1, ZTIME2
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)):: ZTT,ZEXNE,ZLV,ZLS,ZCPH,ZCOR
@@ -555,6 +559,7 @@ ALLOCATE (                                                        &
           ZEXN(SIZE(PTHLT,1),SIZE(PTHLT,2),SIZE(PTHLT,3)),        &  
           ZT(SIZE(PTHLT,1),SIZE(PTHLT,2),SIZE(PTHLT,3)),          &  
           ZLOCPEXNM(SIZE(PTHLT,1),SIZE(PTHLT,2),SIZE(PTHLT,3)),   & 
+          ZLMW(SIZE(PTHLT,1),SIZE(PTHLT,2),SIZE(PTHLT,3)),        & 
           ZLEPS(SIZE(PTHLT,1),SIZE(PTHLT,2),SIZE(PTHLT,3)),       &  
           ZTRH(SIZE(PTHLT,1),SIZE(PTHLT,2),SIZE(PTHLT,3)),        &  
           ZATHETA(SIZE(PTHLT,1),SIZE(PTHLT,2),SIZE(PTHLT,3)),     &
@@ -759,19 +764,37 @@ SELECT CASE (HTURBLEN)
     ZSHEAR = SQRT(ZDUDZ*ZDUDZ + ZDVDZ*ZDVDZ)
     CALL BL89(KKA,KKU,KKL,PZZ,PDZZ,PTHVREF,ZTHLM,KRR,ZRM,PTKET,ZSHEAR,PLEM)
 !
-!*      3.3 Delta mixing length
+!*      3.3 Grey-zone combined RM17 & Deardorff mixing lengths 
+!           --------------------------------------------------
+
+  CASE ('ADAP')
+    ZDUDZ = MXF(MZF(GZ_U_UW(PUT,PDZZ)))
+    ZDVDZ = MYF(MZF(GZ_V_VW(PVT,PDZZ)))
+    ZSHEAR = SQRT(ZDUDZ*ZDUDZ + ZDVDZ*ZDVDZ)
+    CALL BL89(KKA,KKU,KKL,PZZ,PDZZ,PTHVREF,ZTHLM,KRR,ZRM,PTKET,ZSHEAR,PLEM)
+
+    CALL DELT(ZLMW,ODZ=.FALSE.)
+    ! The minimum mixing length is chosen between Horizontal grid mesh (not taking into account the vertical grid mesh) and RM17.
+    ! For large horizontal grid meshes, this is equal to RM17
+    ! For LES grid meshes, this is equivalent to Deardorff : the base mixing lentgh is the horizontal grid mesh, 
+    !                      and it is limited by a stability-based length (RM17), as was done in Deardorff length (but taking into account shear as well)
+    ! For grid meshes in the grey zone, then this is the smaller of the two.
+    ZALPHA=0.50
+    PLEM = MIN(PLEM,ZALPHA*ZLMW)
+!
+!*      3.4 Delta mixing length
 !           -------------------
 !
   CASE ('DELT')
-    CALL DELT(PLEM)
+    CALL DELT(PLEM,ODZ=.TRUE.)
 !
-!*      3.4 Deardorff mixing length
+!*      3.5 Deardorff mixing length
 !           -----------------------
 !
   CASE ('DEAR')
     CALL DEAR(PLEM)
 !
-!*      3.5 Blackadar mixing length
+!*      3.6 Blackadar mixing length
 !           -----------------------
 !
   CASE ('BLKR')
@@ -1411,7 +1434,7 @@ REAL, DIMENSION(SIZE(PEXN,1),SIZE(PEXN,2),SIZE(PEXN,3)) :: ZDRVSATDT
 END SUBROUTINE COMPUTE_FUNCTION_THERMO
 !
 !     ####################
-      SUBROUTINE DELT(PLM)
+      SUBROUTINE DELT(PLM,ODZ)
 !     ####################
 !!
 !!****  *DELT* routine to compute mixing length for DELT case
@@ -1433,6 +1456,7 @@ END SUBROUTINE COMPUTE_FUNCTION_THERMO
 !*       0.1   Declarations of dummy arguments 
 !
 REAL, DIMENSION(:,:,:), INTENT(OUT)   :: PLM
+LOGICAL,                INTENT(IN)    :: ODZ
 !
 !*       0.2   Declarations of local variables
 !
@@ -1440,18 +1464,32 @@ REAL                :: ZD           ! distance to the surface
 !
 !-------------------------------------------------------------------------------
 !
-DO JK = IKTB,IKTE ! 1D turbulence scheme
-  PLM(:,:,JK) = PZZ(:,:,JK+KKL) - PZZ(:,:,JK)
-END DO
-PLM(:,:,KKU) = PLM(:,:,IKE)
-PLM(:,:,KKA) = PZZ(:,:,IKB) - PZZ(:,:,KKA)
-IF ( HTURBDIM /= '1DIM' ) THEN  ! 3D turbulence scheme
-  IF ( L2D) THEN
-    PLM(:,:,:) = SQRT( PLM(:,:,:)*MXF(PDXX(:,:,:)) ) 
-  ELSE
-    PLM(:,:,:) = (PLM(:,:,:)*MXF(PDXX(:,:,:))*MYF(PDYY(:,:,:)) ) ** (1./3.)
+IF (ODZ) THEN
+  ! Dz is take into account in the computation
+  DO JK = IKTB,IKTE ! 1D turbulence scheme
+    PLM(:,:,JK) = PZZ(:,:,JK+KKL) - PZZ(:,:,JK)
+  END DO
+  PLM(:,:,KKU) = PLM(:,:,IKE)
+  PLM(:,:,KKA) = PZZ(:,:,IKB) - PZZ(:,:,KKA)
+  IF ( HTURBDIM /= '1DIM' ) THEN  ! 3D turbulence scheme
+    IF ( L2D) THEN
+      PLM(:,:,:) = SQRT( PLM(:,:,:)*MXF(PDXX(:,:,:)) ) 
+    ELSE
+      PLM(:,:,:) = (PLM(:,:,:)*MXF(PDXX(:,:,:))*MYF(PDYY(:,:,:)) ) ** (1./3.)
+    END IF
+  END IF
+ELSE
+  ! Dz not taken into account in computation to assure invariability with vertical grid mesh
+  PLM=1.E10
+  IF ( HTURBDIM /= '1DIM' ) THEN  ! 3D turbulence scheme
+    IF ( L2D) THEN
+      PLM(:,:,:) = MXF(PDXX(:,:,:))
+    ELSE
+      PLM(:,:,:) = (MXF(PDXX(:,:,:))*MYF(PDYY(:,:,:)) ) ** (1./2.)
+    END IF
   END IF
 END IF
+
 !
 !  mixing length limited by the distance normal to the surface 
 !  (with the same factor as for BL89)
@@ -1483,7 +1521,7 @@ END SUBROUTINE DELT
       SUBROUTINE DEAR(PLM)
 !     ####################
 !!
-!!****  *DELT* routine to compute mixing length for DEARdorff case
+!!****  *DEAR* routine to compute mixing length for DEARdorff case
 !
 !!    AUTHOR
 !!    ------
@@ -1708,14 +1746,14 @@ ELSE
 !
 !*         3.1 BL89 mixing length
 !           ------------------
-  CASE ('BL89','RM17')
+  CASE ('BL89','RM17','ADAP')
     ZSHEAR=0.
     CALL BL89(KKA,KKU,KKL,PZZ,PDZZ,PTHVREF,ZTHLM,KRR,ZRM,PTKET,ZSHEAR,ZLM_CLOUD)
 !
 !*         3.2 Delta mixing length
 !           -------------------
   CASE ('DELT')
-    CALL DELT(ZLM_CLOUD)
+    CALL DELT(ZLM_CLOUD,ODZ=.TRUE.)
 !
 !*         3.3 Deardorff mixing length
 !           -----------------------

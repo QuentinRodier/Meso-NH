@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -94,7 +94,7 @@ END MODULE MODI_WRITE_DESFM_n
 !!
 !!      Module MODN_LES  : contains declaration of the control parameters
 !!                                for Large Eddy Simulations' storages
-!!      Module MODN_BLANK: contains declaration of MesoNH developper variables
+!!      Module MODN_BLANK_n : contains declaration of MesoNH developper variables
 !!                                for test and debugging purposes.
 !!           
 !!
@@ -176,7 +176,7 @@ USE MODN_LUNIT_n
 USE MODN_LBC_n
 USE MODN_NUDGING_n
 USE MODN_TURB_n
-USE MODN_BLANK
+USE MODN_BLANK_n
 USE MODN_FRC
 USE MODN_CH_MNHC_n
 USE MODN_CH_SOLVER_n
@@ -344,6 +344,9 @@ WRITE(UNIT=ILUSEG,NML=NAM_NUDGINGn)
 CALL INIT_NAM_TURBn
 IF(CTURB /= 'NONE') WRITE(UNIT=ILUSEG,NML=NAM_TURBn)
 !
+CALL INIT_NAM_BLANKn
+WRITE(UNIT=ILUSEG,NML=NAM_BLANKn)
+!
 !IF (CPROGRAM/='MESONH') THEN
 !  LUSECHEM   = .FALSE.
 !  LORILAM    = .FALSE.
@@ -408,7 +411,7 @@ IF(LBU_RRH) WRITE(UNIT=ILUSEG,NML=NAM_BU_RRH)
 IF(LBU_RSV) WRITE(UNIT=ILUSEG,NML=NAM_BU_RSV)
 IF(LLES_MEAN .OR. LLES_RESOLVED .OR. LLES_SUBGRID .OR. LLES_UPDRAFT  &
 .OR. LLES_DOWNDRAFT .OR. LLES_SPECTRA) WRITE(UNIT=ILUSEG,NML=NAM_LES)
-WRITE(UNIT=ILUSEG,NML=NAM_BLANK)
+WRITE(UNIT=ILUSEG,NML=NAM_BLANKn)
 IF(LFORCING .OR. LTRANS) WRITE(UNIT=ILUSEG,NML=NAM_FRC)
 IF(CCLOUD(1:3) == 'ICE')  WRITE(UNIT=ILUSEG,NML=NAM_PARAM_ICE)
 IF(CCLOUD == 'C2R2' .OR. CCLOUD == 'C3R5' .OR. CCLOUD == 'KHKO') &
@@ -483,6 +486,9 @@ IF (NVERB >= 5) THEN
 !  
   WRITE(UNIT=ILUOUT,FMT="('********** BLOWING SNOW SCHEME ****************')")
   WRITE(UNIT=ILUOUT,NML=NAM_BLOWSNOWn)
+!
+  WRITE(UNIT=ILUOUT,FMT="('********** BLANKn *****************************')")
+  WRITE(UNIT=ILUOUT,NML=NAM_BLANKn)
 !
   IF (KMI==1) THEN
     WRITE(UNIT=ILUOUT,FMT="(/,'PART OF SEGMENT FILE COMMON TO ALL THE MODELS')")
@@ -560,9 +566,6 @@ IF (NVERB >= 5) THEN
 !    
     WRITE(UNIT=ILUOUT,FMT="('************ LES ******************************')")
     WRITE(UNIT=ILUOUT,NML=NAM_LES)
-!    
-    WRITE(UNIT=ILUOUT,FMT="('************ BLANK ****************************')")
-    WRITE(UNIT=ILUOUT,NML=NAM_BLANK)
 !    
     WRITE(UNIT=ILUOUT,FMT="('************ FORCING **************************')")
     WRITE(UNIT=ILUOUT,NML=NAM_FRC)
