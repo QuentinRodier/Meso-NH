@@ -344,7 +344,7 @@ END MODULE MODI_TURB
 !  P. Wautelet 11/06/2020: bugfix: correct PRSVS array indices
 !  P. Wautelet + Benoit Vié 06/2020: improve removal of negative scalar variables + adapt the corresponding budgets
 !  P. Wautelet 30/06/2020: move removal of negative scalar variables to Sources_neg_correct
-!! 02/2021  (R. Honnert/V. Masson) New mixing length in the grey zone
+!  R. Honnert/V. Masson 02/2021: new mixing length in the grey zone
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -1456,7 +1456,7 @@ END SUBROUTINE COMPUTE_FUNCTION_THERMO
 !*       0.1   Declarations of dummy arguments 
 !
 REAL, DIMENSION(:,:,:), INTENT(OUT)   :: PLM
-LOGICAL, OPTIONAL,      INTENT(IN)    :: ODZ
+LOGICAL,                INTENT(IN)    :: ODZ
 !
 !*       0.2   Declarations of local variables
 !
