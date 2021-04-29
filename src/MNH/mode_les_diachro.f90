@@ -1032,8 +1032,8 @@ if ( iresp == 0 .and. any( zfield /= XUNDEF ) ) then
   tzbudiachro%ccategory  = 'LES'
   tzbudiachro%cshape     = 'cartesian'
   tzbudiachro%lmobile    = .false.
-  tzbudiachro%licompress = .false.
-  tzbudiachro%ljcompress = .false.
+  tzbudiachro%licompress = .true.
+  tzbudiachro%ljcompress = .true.
   tzbudiachro%lkcompress = .false.
   tzbudiachro%ltcompress = oavg
   tzbudiachro%lnorm      = onorm
