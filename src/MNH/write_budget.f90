@@ -558,7 +558,6 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
   tzbudiachro%cgroupname = ygroup_name
   tzbudiachro%cname      = tprhodj%cmnhname
   tzbudiachro%ccomment   = tprhodj%ccomment
-  tzbudiachro%ctype      = ybutype
   tzbudiachro%ccategory  = 'budget'
   if ( ybutype == 'CART' ) then
     tzbudiachro%cshape   = 'cartesian'
@@ -815,7 +814,6 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
   tzbudiachro%cgroupname = ygroup_name
   tzbudiachro%cname      = tpbudget%cname
   tzbudiachro%ccomment   = tpbudget%ccomment
-  tzbudiachro%ctype      = ybutype
   tzbudiachro%ccategory  = 'budget'
   if ( ybutype == 'CART' ) then
     tzbudiachro%cshape   = 'cartesian'

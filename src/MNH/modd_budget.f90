@@ -107,7 +107,6 @@ type :: tbudiachrometadata
   character(len=NBUNAMELGTMAX)  :: cgroupname  = 'not set'
   character(len=NBUNAMELGTMAX)  :: cname       = 'not set'
   character(len=NCOMMENTLGTMAX) :: ccomment    = 'not set'
-  character(len=NBUNAMELGTMAX)  :: ctype       = 'not set'
   character(len=NBUNAMELGTMAX)  :: ccategory   = 'not set' !budget, LES, aircraft, balloon, series, station, profiler
   character(len=NBUNAMELGTMAX)  :: cshape      = 'not set' !Shape of the domain (mask, cartesian, vertical profile, point)
   character(len=1)              :: cdirection  = ''        !Used for 2pt correlation and spectrum

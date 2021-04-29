@@ -653,7 +653,6 @@ tzfields(:)%ndimlist(6) = NMNHDIM_PROFILER_PROC
 tzbudiachro%cgroupname = ygroup
 tzbudiachro%cname      = ygroup
 tzbudiachro%ccomment   = 'Vertical profiles at position of profiler ' // Trim( ygroup )
-tzbudiachro%ctype      = 'CART'
 tzbudiachro%ccategory  = 'profiler'
 tzbudiachro%cshape     = 'vertical profile'
 tzbudiachro%lmobile    = .false.

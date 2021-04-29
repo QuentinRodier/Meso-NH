@@ -855,7 +855,6 @@ tzfields(:)%ndimlist(6) = NMNHDIM_FLYER_PROC
 tzbudiachro%cgroupname = ygroup
 tzbudiachro%cname      = ygroup
 tzbudiachro%ccomment   = 'Values at position of flyer ' // Trim( tpflyer%title )
-tzbudiachro%ctype      = 'RSPL'
 if ( Trim( tpflyer%type ) == 'AIRCRA' ) then
   tzbudiachro%ccategory  = 'aircraft'
 else if ( Trim( tpflyer%type ) == 'RADIOS' ) then
@@ -907,7 +906,6 @@ tzfields(:)%ndimlist(6) = NMNHDIM_FLYER_PROC
 tzbudiachro%cgroupname = ygroupz
 tzbudiachro%cname      = ygroupz
 tzbudiachro%ccomment   = 'Vertical profiles at position of flyer ' // Trim( tpflyer%title )
-tzbudiachro%ctype      = 'CART'
 ! tzbudiachro%ccategory  =  !unchanged
 tzbudiachro%cshape     = 'vertical profile'
 tzbudiachro%lmobile    = .true.

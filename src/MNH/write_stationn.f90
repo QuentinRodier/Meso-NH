@@ -738,7 +738,6 @@ tzfields(:)%ndimlist(6) = NMNHDIM_STATION_PROC
 tzbudiachro%cgroupname = ygroup
 tzbudiachro%cname      = ygroup
 tzbudiachro%ccomment   = 'Values at position of station ' // Trim( ygroup )
-tzbudiachro%ctype      = 'CART'
 tzbudiachro%ccategory  = 'station'
 tzbudiachro%cshape     = 'point'
 tzbudiachro%lmobile    = .false.

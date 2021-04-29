@@ -1027,8 +1027,6 @@ if ( iresp == 0 .and. any( zfield /= XUNDEF ) ) then
   tzbudiachro%cgroupname = ygroup
   tzbudiachro%cname      = ygroup
   !tzbudiachro%ccomment   = DONE BEFORE
-!   tzbudiachro%ctype      = 'SSOL'
-  tzbudiachro%ctype      = 'TLES' !T for trajectory (used in Write_diachro_lfi to add trajectory terms)
   tzbudiachro%ccategory  = 'LES'
   tzbudiachro%cshape     = 'cartesian'
   tzbudiachro%lmobile    = .false.
@@ -1206,7 +1204,6 @@ if ( .not. gavg ) then
 else
   tzbudiachro%ccomment = Trim( tzfield%ccomment ) // ' (time averaged)'
 end if
-tzbudiachro%ctype      = 'SPXY'
 tzbudiachro%ccategory  = 'LES'
 tzbudiachro%cshape     = '2-point correlation'
 if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_2PTS_NI ) then
@@ -1364,7 +1361,6 @@ tzfield%ccomment  = ycomment(:)
 tzbudiachro%cgroupname = ygroup
 tzbudiachro%cname      = ygroup
 tzbudiachro%ccomment   = tzfield%ccomment
-tzbudiachro%ctype      = 'SPXY'
 tzbudiachro%ccategory  = 'LES'
 tzbudiachro%cshape     = 'spectrum'
 if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_SPEC_NI ) then
@@ -1399,7 +1395,6 @@ end do
 tzbudiachro%cgroupname = ygroup
 tzbudiachro%cname      = ygroup
 tzbudiachro%ccomment   = Trim( tzfield%ccomment ) // ' (time averaged)'
-tzbudiachro%ctype      = 'SPXY'
 tzbudiachro%ccategory  = 'LES'
 tzbudiachro%cshape     = 'spectrum'
 if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_SPEC_NI ) then
