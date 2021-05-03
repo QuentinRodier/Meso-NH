@@ -2284,6 +2284,7 @@ subroutine Write_flyer_time_coord( tpflyer )
   type(flyer), intent(in) :: tpflyer
 
   integer                      :: istatus
+  integer(kind=CDFINT)         :: icatid
   integer(kind=CDFINT)         :: idimid
   type(tdimnc),        pointer :: tzdim
 
@@ -2293,7 +2294,13 @@ subroutine Write_flyer_time_coord( tpflyer )
 
 
     !Group with flyer title
-    istatus = NF90_INQ_NCID( tpfile%nncid, Trim( tpflyer%title ), incid )
+    istatus = NF90_INQ_NCID( tpfile%nncid, 'Flyers', icatid )
+    if ( istatus /= NF90_NOERR ) then
+      call Print_msg( NVERB_ERROR, 'IO', 'Write_flyer_time_coord', &
+                      Trim( tpfile%cname ) // ': group Flyers not found' )
+    end if
+
+    istatus = NF90_INQ_NCID( icatid, Trim( tpflyer%title ), incid )
     if ( istatus /= NF90_NOERR ) then
       call Print_msg( NVERB_ERROR, 'IO', 'Write_flyer_time_coord', &
                       Trim( tpfile%cname ) // ': group '// Trim( tpflyer%title ) // ' not found' )
@@ -2314,10 +2321,10 @@ subroutine Write_flyer_time_coord( tpflyer )
 
 
     !Group with flyer title suffixed by Z
-    istatus = NF90_INQ_NCID( tpfile%nncid, Trim( tpflyer%title ) // 'Z' , incid )
+    istatus = NF90_INQ_NCID( icatid, Trim( tpflyer%title ) // 'Z' , incid )
     if ( istatus /= NF90_NOERR ) then
       call Print_msg( NVERB_ERROR, 'IO', 'Write_flyer_time_coord', &
-                      Trim( tpfile%cname ) // ': group '// Trim( tpflyer%title ) // 'z not found' )
+                      Trim( tpfile%cname ) // ': group '// Trim( tpflyer%title ) // 'Z not found' )
     end if
 
     istatus = NF90_INQ_DIMID( incid, 'time_flyer', idimid )

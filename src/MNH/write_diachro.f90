@@ -736,6 +736,8 @@ logical,                                             intent(in), optional :: osp
 type(flyer),                                         intent(in), optional :: tpflyer
 
 character(len=:), allocatable :: ycategory
+character(len=:), allocatable :: ycategcomment !Comment for category in the netCDF file
+character(len=:), allocatable :: ycategnc      !Name of the group for category in the netCDF file
 character(len=:), allocatable :: yshape
 character(len=:), allocatable :: ygroup
 character(len=:), allocatable :: ystdnameprefix
@@ -747,9 +749,11 @@ integer              :: ji
 integer              :: jp
 integer(kind=CDFINT) :: isavencid
 integer(kind=CDFINT) :: idimid
+integer(kind=CDFINT) :: icatid
 integer(kind=CDFINT) :: igrpid
 integer(kind=CDFINT) :: istatus
 logical              :: gdistributed
+logical              :: gcategdefined
 logical              :: ggroupdefined
 logical              :: gsplit
 type(tfielddata)     :: tzfield
@@ -786,16 +790,56 @@ else
 end if
 
 MASTER: if ( isp == tzfile%nmaster_rank) then
+  gcategdefined = .false.
   ggroupdefined = .false.
 
-  istatus = NF90_INQ_NCID( tzfile%nncid, ygroup, igrpid )
+  select case ( ycategory )
+    case ( 'budget' )
+      ycategnc      = 'Budgets'
+      ycategcomment = 'Group for the different budgets'
+
+    case ( 'LES' )
+      ycategnc = 'LES budgets'
+      ycategcomment = 'Group for the different LES budgets'
+
+    case ( 'profiler' )
+      ycategnc      = 'Profilers'
+      ycategcomment = 'Group for the different vertical profilers'
+
+    case ( 'station' )
+      ycategnc      = 'Stations'
+      ycategcomment = 'Group for the different stations'
+
+    case( 'aircraft', 'radiosonde balloon', 'iso-density balloon', 'constant volume balloon' )
+      ycategnc      = 'Flyers'
+      ycategcomment = 'Group for the different flyers (aircrafts and balloons)'
+
+    case ( 'time series' )
+      ycategnc      = 'Time series'
+      ycategcomment = 'Group for the different time series'
+
+    case default
+      call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', 'unknown category ' // ycategory // ' for group ' // ygroup )
+      return
+  end select
+
+  istatus = NF90_INQ_NCID( tzfile%nncid, ycategnc, icatid )
+  if ( istatus == NF90_NOERR ) then
+    gcategdefined = .true.
+  else
+    istatus = NF90_DEF_GRP( tzfile%nncid, ycategnc, icatid )
+    if ( istatus /= NF90_NOERR ) &
+      call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_DEF_GRP', 'for ' // ycategnc // ' category' )
+  end if
+
+  istatus = NF90_INQ_NCID( icatid, ygroup, igrpid )
   if ( istatus == NF90_NOERR ) then
     ggroupdefined = .true.
     if ( .not. gsplit ) then
       call Print_msg( NVERB_WARNING, 'IO', 'Write_diachro_nc4', trim(tzfile%cname) // ': group ' // ygroup // ' already defined' )
     end if
   else
-    istatus = NF90_DEF_GRP( tzfile%nncid, ygroup, igrpid )
+    istatus = NF90_DEF_GRP( icatid, ygroup, igrpid )
     if ( istatus /= NF90_NOERR ) &
       call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_DEF_GRP', 'for ' // ygroup // ' group' )
   end if
@@ -804,42 +848,66 @@ MASTER: if ( isp == tzfile%nmaster_rank) then
   isavencid = tzfile%nncid
   tzfile%nncid = igrpid
 
+
+  if ( .not. gcategdefined ) then
+    call Att_write( ygroup, icatid, 'name',          ycategnc )
+    call Att_write( ygroup, icatid, 'comment',       ycategcomment )
+    if ( ycategnc /= 'Flyers' ) &
+    call Att_write( ygroup, icatid, 'category',      ycategory )
+    if ( ycategory /= 'LES' ) &
+    call Att_write( ygroup, icatid, 'shape',         yshape )
+    call Att_write( ygroup, icatid, 'moving',        Merge( 'yes', 'no ', tpbudiachro%lmobile    ) )
+    call Att_write( ygroup, icatid, 'time averaged', Merge( 'yes', 'no ', tpbudiachro%ltcompress ) )
+    call Att_write( ygroup, icatid, 'normalized',    Merge( 'yes', 'no ', tpbudiachro%lnorm      ) )
+    if ( ycategory == 'LES' ) &
+    call Att_write( ygroup, icatid, 'temporal sampling frequency', xles_temp_sampling )
+
+    if ( ycategory == 'budget' .and. yshape == 'cartesian' ) then
+      call Att_write( ygroup, icatid, 'min I index in physical domain', iil )
+      call Att_write( ygroup, icatid, 'max I index in physical domain', iih )
+      call Att_write( ygroup, icatid, 'min J index in physical domain', ijl )
+      call Att_write( ygroup, icatid, 'max J index in physical domain', ijh )
+      call Att_write( ygroup, icatid, 'min K index in physical domain', ikl )
+      call Att_write( ygroup, icatid, 'max K index in physical domain', ikh )
+
+      call Att_write( ygroup, icatid, 'averaged in the I direction', Merge( 'yes', 'no ', tpbudiachro%licompress ) )
+      call Att_write( ygroup, icatid, 'averaged in the J direction', Merge( 'yes', 'no ', tpbudiachro%ljcompress ) )
+      call Att_write( ygroup, icatid, 'averaged in the K direction', Merge( 'yes', 'no ', tpbudiachro%lkcompress ) )
+
+    else if ( ycategory == 'budget' .and. yshape == 'mask' ) then
+      call Att_write( ygroup, icatid, 'masks are stored in variable', 'MASKS' )
+      call Att_write( ygroup, icatid, 'averaged in the K direction', Merge( 1, 0, tpbudiachro%lkcompress ) )
+
+    else if ( ycategory == 'LES' ) then
+      call Att_write( ygroup, icatid, 'min I index in physical domain', iil )
+      call Att_write( ygroup, icatid, 'max I index in physical domain', iih )
+      call Att_write( ygroup, icatid, 'min J index in physical domain', ijl )
+      call Att_write( ygroup, icatid, 'max J index in physical domain', ijh )
+
+    else if ( ycategory == 'profiler' .and.  yshape == 'vertical profile' ) then
+
+    else if ( ycategory == 'station' .and.  yshape == 'point' ) then
+
+    else if ( ycategory == 'time series' ) then
+
+    end if
+  end if
+
   if ( .not. ggroupdefined ) then
     call Att_write( ygroup, igrpid, 'name',          tpbudiachro%cname    )
     call Att_write( ygroup, igrpid, 'comment',       tpbudiachro%ccomment )
-    call Att_write( ygroup, igrpid, 'category',      ycategory )
-    call Att_write( ygroup, igrpid, 'shape',         yshape    )
-    call Att_write( ygroup, igrpid, 'moving',        Merge( 'yes', 'no ', tpbudiachro%lmobile    ) )
-    call Att_write( ygroup, igrpid, 'time averaged', Merge( 'yes', 'no ', tpbudiachro%ltcompress ) )
-    call Att_write( ygroup, igrpid, 'normalized',    Merge( 'yes', 'no ', tpbudiachro%lnorm      ) )
 
     if ( ycategory == 'budget' .and. yshape == 'cartesian' ) then
-      call Att_write( ygroup, igrpid, 'min I index in physical domain', iil )
-      call Att_write( ygroup, igrpid, 'max I index in physical domain', iih )
-      call Att_write( ygroup, igrpid, 'min J index in physical domain', ijl )
-      call Att_write( ygroup, igrpid, 'max J index in physical domain', ijh )
-      call Att_write( ygroup, igrpid, 'min K index in physical domain', ikl )
-      call Att_write( ygroup, igrpid, 'max K index in physical domain', ikh )
 
-      call Att_write( ygroup, igrpid, 'averaged in the I direction', Merge( 'yes', 'no ', tpbudiachro%licompress ) )
-      call Att_write( ygroup, igrpid, 'averaged in the J direction', Merge( 'yes', 'no ', tpbudiachro%ljcompress ) )
-      call Att_write( ygroup, igrpid, 'averaged in the K direction', Merge( 'yes', 'no ', tpbudiachro%lkcompress ) )
 
     else if ( ycategory == 'budget' .and. yshape == 'mask' ) then
-      call Att_write( ygroup, igrpid, 'masks are stored in variable', 'MASKS' )
-      call Att_write( ygroup, igrpid, 'averaged in the K direction', Merge( 1, 0, tpbudiachro%lkcompress ) )
 
     else if ( ycategory == 'LES' .and. yshape == 'cartesian' ) then
-      call Att_write( ygroup, igrpid, 'min I index in physical domain', iil )
-      call Att_write( ygroup, igrpid, 'max I index in physical domain', iih )
-      call Att_write( ygroup, igrpid, 'min J index in physical domain', ijl )
-      call Att_write( ygroup, igrpid, 'max J index in physical domain', ijh )
+      call Att_write( ygroup, igrpid, 'shape', yshape    )
 
       call Att_write( ygroup, igrpid, 'averaged in the I direction', Merge( 'yes', 'no ', tpbudiachro%licompress ) )
       call Att_write( ygroup, igrpid, 'averaged in the J direction', Merge( 'yes', 'no ', tpbudiachro%ljcompress ) )
       call Att_write( ygroup, igrpid, 'averaged in the K direction', Merge( 'yes', 'no ', tpbudiachro%lkcompress ) )
-
-      call Att_write( ygroup, igrpid, 'temporal sampling frequency', xles_temp_sampling )
 
       if ( tpbudiachro%lnorm ) then
         if ( cles_norm_type == 'NONE' ) then
@@ -864,35 +932,29 @@ MASTER: if ( isp == tzfile%nmaster_rank) then
       end if
 
     else if ( ycategory == 'LES' .and. yshape == '2-point correlation' ) then
+      call Att_write( ygroup, igrpid, 'shape', yshape )
+
       call Att_write( ygroup, igrpid, 'direction of 2-point correlation', tpbudiachro%cdirection )
 
-      call Att_write( ygroup, igrpid, 'min I index in physical domain', iil )
-      call Att_write( ygroup, igrpid, 'max I index in physical domain', iih )
-      call Att_write( ygroup, igrpid, 'min J index in physical domain', ijl )
-      call Att_write( ygroup, igrpid, 'max J index in physical domain', ijh )
-
-      call Att_write( ygroup, igrpid, 'temporal sampling frequency', xles_temp_sampling )
 
     else if ( ycategory == 'LES' .and. yshape == 'spectrum' ) then
+      call Att_write( ygroup, igrpid, 'shape', yshape )
+
       call Att_write( ygroup, igrpid, 'direction of spectrum', tpbudiachro%cdirection )
 
-      call Att_write( ygroup, igrpid, 'min I index in physical domain', iil )
-      call Att_write( ygroup, igrpid, 'max I index in physical domain', iih )
-      call Att_write( ygroup, igrpid, 'min J index in physical domain', ijl )
-      call Att_write( ygroup, igrpid, 'max J index in physical domain', ijh )
-
-      call Att_write( ygroup, igrpid, 'temporal sampling frequency', xles_temp_sampling )
 
     else if ( (      ycategory == 'aircraft'                   &
                 .or. ycategory == 'radiosonde balloon'         &
                 .or. ycategory == 'iso-density balloon'        &
                 .or. ycategory ==  'constant volume balloon' ) &
               .and.  yshape == 'point' ) then
+      call Att_write( ygroup, igrpid, 'category', ycategory )
     else if ( (      ycategory == 'aircraft'                   &
                 .or. ycategory == 'radiosonde balloon'         &
                 .or. ycategory == 'iso-density balloon'        &
                 .or. ycategory ==  'constant volume balloon' ) &
               .and.  yshape == 'vertical profile' ) then
+      call Att_write( ygroup, igrpid, 'category', ycategory )
 
 
     else if ( ycategory == 'profiler' .and.  yshape == 'vertical profile' ) then
