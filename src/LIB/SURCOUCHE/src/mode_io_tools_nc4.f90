@@ -17,6 +17,7 @@
 !  P. Wautelet 26/11/2020: IO_Vdims_fill_nc4: support for empty kshape
 !  P. Wautelet 08/12/2020: add nbutotwrite
 !  P. Wautelet 18/03/2021: workaround for an intel compiler bug
+!  P. Wautelet 04/05/2021: improve IO_Vdims_fill_nc4 if l2d and lpack
 !-----------------------------------------------------------------
 #ifdef MNH_IOCDF4
 module mode_io_tools_nc4
@@ -479,6 +480,7 @@ SUBROUTINE IO_Vdims_fill_nc4(TPFILE, TPFIELD, KSHAPE, KVDIMS)
 
 use NETCDF, only: NF90_INQ_DIMID, NF90_INQUIRE_DIMENSION
 
+use modd_conf,   only: l2d, lpack
 use modd_field,  only: NMNHDIM_UNKNOWN, NMNHDIM_ONE, NMNHDIM_COMPLEX,                                   &
                        NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NI_U, NMNHDIM_NJ_U, NMNHDIM_NI_V, NMNHDIM_NJ_V,  &
                        NMNHDIM_LEVEL, NMNHDIM_LEVEL_W, NMNHDIM_TIME,                                    &
@@ -505,6 +507,7 @@ INTEGER(KIND=CDFINT),DIMENSION(:),ALLOCATABLE,INTENT(OUT) :: KVDIMS
 CHARACTER(LEN=32)             :: YINT
 CHARACTER(LEN=2)              :: YDIR
 character(len=:), allocatable :: ydimname
+integer                       :: idimn
 INTEGER                       :: IGRID
 integer                       :: iidx
 integer                       :: iresp
@@ -607,8 +610,15 @@ else !ndimlist not provided
           kvdims(1) = tpfile%tncdims%tdims(iidx)%nid
         end if
       else if ( ji == 2 ) then
-        if ( ydir == 'XY' .and. kshape(2) == tpfile%tncdims%tdims( NMNHDIM_ARAKAWA(igrid,2) )%nlen ) then
-          kvdims(2) = tpfile%tncdims%tdims( NMNHDIM_ARAKAWA(igrid,2) )%nid
+        !If lpack and l2d, the J dimension is not used.
+        !Therefore, in that case, the second dimension for a 'XY' field corresponds to the K dimension.
+        if ( lpack .and. l2d ) then
+          idimn = 3
+        else
+          idimn = 2
+        end if
+        if ( ydir == 'XY' .and. kshape(2) == tpfile%tncdims%tdims( NMNHDIM_ARAKAWA(igrid,idimn) )%nlen ) then
+          kvdims(2) = tpfile%tncdims%tdims( NMNHDIM_ARAKAWA(igrid,idimn) )%nid
         else
           call IO_Dim_find_create_nc4( tpfile, kshape(2), iidx )
           kvdims(2) = tpfile%tncdims%tdims(iidx)%nid
