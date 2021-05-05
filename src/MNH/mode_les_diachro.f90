@@ -1392,6 +1392,9 @@ do ji = 1, NMNHMAXDIMS
   if ( tzfield%ndimlist(ji) == NMNHDIM_BUDGET_LES_TIME ) tzfield%ndimlist(ji) = NMNHDIM_BUDGET_LES_AVG_TIME
 end do
 
+tzfield%cmnhname  = ygroup
+tzfield%clongname = ygroup
+
 tzbudiachro%cgroupname = ygroup
 tzbudiachro%cname      = ygroup
 tzbudiachro%ccomment   = Trim( tzfield%ccomment ) // ' (time averaged)'
@@ -1406,7 +1409,7 @@ tzbudiachro%lmobile    = .false.
 tzbudiachro%licompress = .false.
 tzbudiachro%ljcompress = .false.
 tzbudiachro%lkcompress = .false.
-tzbudiachro%ltcompress = .false.
+tzbudiachro%ltcompress = .true.
 tzbudiachro%lnorm      = .false.
 tzbudiachro%nil        = iil
 tzbudiachro%nih        = iih
