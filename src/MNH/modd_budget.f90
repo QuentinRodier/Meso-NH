@@ -60,6 +60,8 @@ implicit none
 
 public
 
+character(len=*), parameter :: CNOTSET = 'not set'
+
 integer, parameter :: NBULISTMAXLEN   = 256
 integer, parameter :: NBULISTMAXLINES = 50
 
@@ -104,11 +106,11 @@ type, extends( tfield_metadata_base ) :: tburhodata
 end type tburhodata
 
 type :: tbudiachrometadata
-  character(len=NBUNAMELGTMAX)  :: cgroupname  = 'not set'
-  character(len=NBUNAMELGTMAX)  :: cname       = 'not set'
-  character(len=NCOMMENTLGTMAX) :: ccomment    = 'not set'
-  character(len=NBUNAMELGTMAX)  :: ccategory   = 'not set' !budget, LES, aircraft, balloon, series, station, profiler
-  character(len=NBUNAMELGTMAX)  :: cshape      = 'not set' !Shape of the domain (mask, cartesian, vertical profile, point)
+  character(len=NBUNAMELGTMAX)  :: cgroupname  = CNOTSET
+  character(len=NBUNAMELGTMAX)  :: cname       = CNOTSET
+  character(len=NCOMMENTLGTMAX) :: ccomment    = CNOTSET
+  character(len=NBUNAMELGTMAX)  :: ccategory   = CNOTSET !budget, LES, aircraft, balloon, series, station, profiler
+  character(len=NBUNAMELGTMAX)  :: cshape      = CNOTSET !Shape of the domain (mask, cartesian, vertical profile, point)
   character(len=1)              :: cdirection  = ''        !Used for 2pt correlation and spectrum
   logical :: lmobile    = .false.                          !Is the domain moving? (ie for aircrafts and balloons)
   logical :: licompress = .false.
