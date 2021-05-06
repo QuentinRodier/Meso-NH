@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -436,7 +436,7 @@ tzfield%clongname = ygroup
 tzfield%ccomment  = 'resolved KE budget'
 tzfield%cunits    = 'm2 s-3'
 
-call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles), ysubtitle(:iles) )
+call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles), hsuffixes = ysubtitle(:iles) )
 
 !-------------------------------------------------------------------------------
 !
@@ -688,7 +688,7 @@ tzfield%clongname = ygroup
 tzfield%ccomment  = 'thetal variance budget'
 tzfield%cunits    = 'K2 s-1'
 
-call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles), ysubtitle(:iles) )
+call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles), hsuffixes = ysubtitle(:iles) )
 
 !-------------------------------------------------------------------------------
 !
@@ -1003,7 +1003,7 @@ tzfield%clongname = ygroup
 tzfield%ccomment  = 'thetal flux budget'
 tzfield%cunits    = 'm K s-2'
 
-call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles), ysubtitle(:iles) )
+call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles), hsuffixes = ysubtitle(:iles) )
 
 !-------------------------------------------------------------------------------
 !

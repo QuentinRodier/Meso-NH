@@ -46,6 +46,8 @@ private
 
 public :: Write_budget
 
+character(len=*), parameter :: CMASK_VARNAME = 'MASKS'
+
 contains
 
 !#########################################################
@@ -272,7 +274,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
         tzfile = tpdiafile
         tzfile%cformat = 'NETCDF4'
 
-        tzfield%cmnhname   = 'MASKS'
+        tzfield%cmnhname   = CMASK_VARNAME
         tzfield%cstdname   = ''
         tzfield%clongname  = Trim( tzfield%cmnhname )
         tzfield%cunits     = '1'
@@ -294,7 +296,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
         !Write the data (partial write of the field with the given offset)
         call IO_Field_write( tzfile, tzfield, nbusurf(:,:,:,:), koffset= [ 0, 0, 0, ( nbutshift - 1 ) * nbusubwrite ] )
 
-        if ( nbutshift == 1 ) call Menu_diachro( tzfile, 'MASKS' )
+        if ( nbutshift == 1 ) call Menu_diachro( tzfile, CMASK_VARNAME )
       end if
   !
   END SELECT
@@ -561,9 +563,11 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
   tzbudiachro%ccategory  = 'budget'
   if ( ybutype == 'CART' ) then
     tzbudiachro%cshape   = 'cartesian'
+    ! tzbudiachro%cmask    = NOT SET (default values)
     tzbudiachro%lmobile  = .false.
   else
     tzbudiachro%cshape   = 'mask'
+    tzbudiachro%cmask    = CMASK_VARNAME
     !Masks are updated at each timestep (therefore the studied domains change during execution)
     tzbudiachro%lmobile  = .true.
   end if
@@ -817,9 +821,11 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
   tzbudiachro%ccategory  = 'budget'
   if ( ybutype == 'CART' ) then
     tzbudiachro%cshape   = 'cartesian'
+    ! tzbudiachro%cmask    = NOT SET (default values)
     tzbudiachro%lmobile  = .false.
   else
     tzbudiachro%cshape   = 'mask'
+    tzbudiachro%cmask    = CMASK_VARNAME
     !Masks are updated at each timestep (therefore the studied domains change during execution)
     tzbudiachro%lmobile  = .true.
   end if

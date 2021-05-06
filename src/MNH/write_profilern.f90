@@ -655,6 +655,7 @@ tzbudiachro%cname      = ygroup
 tzbudiachro%ccomment   = 'Vertical profiles at position of profiler ' // Trim( ygroup )
 tzbudiachro%ccategory  = 'profiler'
 tzbudiachro%cshape     = 'vertical profile'
+! tzbudiachro%cmask     = NOT SET (default values)
 tzbudiachro%lmobile    = .false.
 tzbudiachro%licompress = .true.
 tzbudiachro%ljcompress = .true.

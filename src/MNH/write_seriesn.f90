@@ -95,7 +95,7 @@ TYPE(TFILEDATA),    INTENT(IN) :: TPDIAFILE    ! file to write
 !
 INTEGER                              :: IIB,IJB,IKB     ! Begin of physical dimensions
 INTEGER                              :: IIE,IJE,IKE     ! End   of physical dimensions
-INTEGER                              :: JS,JT,JJ,JI      ! Loop indices 
+INTEGER                              :: JS, JT, JJ, JI, JP ! Loop indices
 INTEGER                              :: ISB1,ISB2
 CHARACTER (LEN=2)                    :: YS             ! String for y-slice
 CHARACTER (LEN=3)                    :: YSL,YSH        ! Strings for y-slice
@@ -251,19 +251,22 @@ tzfields(:)%cunits    = csunit1(:)
 tzfields(:)%ccomment  = cscomment1(:)
 tzfields(:)%ngrid     = nsgridd1(:)
 tzfields(:)%ntype     = TYPEREAL
-tzfields(:)%ndims     = 2
+! tzfields(:)%ndims     = 2
+tzfields(:)%ndims     = 1 !Set to 1 because write are done in a loop (1 write per "process")
 tzfields(:)%ndimlist(1) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(2) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(3) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(4) = NMNHDIM_SERIES_TIME
 tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
-tzfields(:)%ndimlist(6) = NMNHDIM_SERIES_PROC
+! tzfields(:)%ndimlist(6) = NMNHDIM_SERIES_PROC
+tzfields(:)%ndimlist(6) = NMNHDIM_UNUSED !Set to unused because write are done in a loop (1 write per "process")
 
 tzbudiachro%cgroupname = 'TSERIES'
 tzbudiachro%cname      = 'TSERIES'
 tzbudiachro%ccomment   = 'Time series of horizontally and vertically averaged fields'
 tzbudiachro%ccategory  = 'time series'
 tzbudiachro%cshape     = 'cartesian' !It is based on a cartesian domain (with compression in all directions)
+! tzbudiachro%cmask    =  set in the process loop
 tzbudiachro%lmobile    = .false.
 tzbudiachro%licompress = .true.
 tzbudiachro%ljcompress = .true.
@@ -277,8 +280,14 @@ tzbudiachro%njh        = njboxh
 tzbudiachro%nkl        = 1
 tzbudiachro%nkh        = ikmax
 
-call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpsdates(1:nsnbstept), &
-                    xsseries1(1:1,1:1,1:1,1:nsnbstept,1:1,:)                 )
+! Loop on the different masks
+! Do not provide all tzfields once because they can be stored in different HDF groups (based on masks)
+do jp = 1 , nstemp_serie1
+  tzbudiachro%cmask    = csmask1(jp)
+
+  call Write_diachro( tpdiafile, tzbudiachro, [ tzfields(jp) ], tpsdates(1:nsnbstept), &
+                      xsseries1(1:1,1:1,1:1,1:nsnbstept,1:1,jp:jp)                 )
+end do
 
 deallocate( tzfields )
 !
@@ -338,7 +347,8 @@ tzfields(:)%cunits    = csunit2(:)
 tzfields(:)%ccomment  = cscomment2(:)
 tzfields(:)%ngrid     = nsgridd2(:)
 tzfields(:)%ntype     = TYPEREAL
-tzfields(:)%ndims     = 3
+! tzfields(:)%ndims     = 3
+tzfields(:)%ndims     = 2 !Set to 2 because write are done in a loop (1 write per "process")
 tzfields(:)%ndimlist(1) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(2) = NMNHDIM_UNUSED
 do ji = 1, nstemp_serie2
@@ -353,13 +363,15 @@ do ji = 1, nstemp_serie2
 end do
 tzfields(:)%ndimlist(4) = NMNHDIM_SERIES_TIME
 tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
-tzfields(:)%ndimlist(6) = NMNHDIM_SERIES_PROC
+! tzfields(:)%ndimlist(6) = NMNHDIM_SERIES_PROC
+tzfields(:)%ndimlist(6) = NMNHDIM_UNUSED !Set to unused because write are done in a loop (1 write per "process")
 
 tzbudiachro%cgroupname = 'ZTSERIES'
 tzbudiachro%cname      = 'ZTSERIES'
 tzbudiachro%ccomment   = 'Time series of horizontally averaged vertical profile'
 tzbudiachro%ccategory  = 'time series'
 tzbudiachro%cshape     = 'cartesian'  !It is based on a cartesian domain (with horizontal compression)
+! tzbudiachro%cmask    =  set in the process loop
 tzbudiachro%lmobile    = .false.
 tzbudiachro%licompress = .true.
 tzbudiachro%ljcompress = .true.
@@ -373,8 +385,14 @@ tzbudiachro%njh        = njboxh
 tzbudiachro%nkl        = 1
 tzbudiachro%nkh        = ikmax
 
-call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpsdates(1:nsnbstept), &
-                    xsseries2(1:1,1:1,1:ikmax,1:nsnbstept,1:1,:)             )
+! Loop on the different masks
+! Do not provide all tzfields once because they can be stored in different HDF groups (based on masks)
+do jp = 1 , nstemp_serie2
+  tzbudiachro%cmask    = csmask2(jp)
+
+  call Write_diachro( tpdiafile, tzbudiachro, [ tzfields(jp) ], tpsdates(1:nsnbstept), &
+                      xsseries2(1:1,1:1,1:ikmax,1:nsnbstept,1:1,jp:jp)                 )
+end do
 
 deallocate( tzfields )
 !
@@ -460,6 +478,7 @@ DO JS=1,NBJSLICE
   tzbudiachro%ccomment   = 'Time series of y-horizontally averaged fields at one level or vertically averaged between 2 levels'
   tzbudiachro%ccategory  = 'time series'
   tzbudiachro%cshape     = 'cartesian' !It is based on a cartesian domain (with compression in 1 direction)
+!  tzbudiachro%cmask      = NOT SET (default values)
   tzbudiachro%lmobile    = .false.
   tzbudiachro%licompress = .false.
   tzbudiachro%ljcompress = .true.

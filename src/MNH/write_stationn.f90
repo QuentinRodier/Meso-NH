@@ -740,6 +740,7 @@ tzbudiachro%cname      = ygroup
 tzbudiachro%ccomment   = 'Values at position of station ' // Trim( ygroup )
 tzbudiachro%ccategory  = 'station'
 tzbudiachro%cshape     = 'point'
+! tzbudiachro%cmask     = NOT SET (default values)
 tzbudiachro%lmobile    = .false.
 tzbudiachro%licompress = .true.
 tzbudiachro%ljcompress = .true.

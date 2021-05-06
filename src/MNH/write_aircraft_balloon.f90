@@ -868,6 +868,7 @@ else
   tzbudiachro%ccategory  = 'unknown'
 end if
 tzbudiachro%cshape     = 'point'
+! tzbudiachro%cmask      = NOT SET (default values)
 tzbudiachro%lmobile    = .true.
 ! tzbudiachro%licompress = NOT SET (default values)
 ! tzbudiachro%ljcompress = NOT SET (default values)
@@ -908,6 +909,7 @@ tzbudiachro%cname      = ygroupz
 tzbudiachro%ccomment   = 'Vertical profiles at position of flyer ' // Trim( tpflyer%title )
 ! tzbudiachro%ccategory  =  !unchanged
 tzbudiachro%cshape     = 'vertical profile'
+! tzbudiachro%cmask      = NOT SET (default values)
 tzbudiachro%lmobile    = .true.
 tzbudiachro%licompress = .true.
 tzbudiachro%ljcompress = .true.

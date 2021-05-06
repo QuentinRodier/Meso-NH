@@ -1087,7 +1087,7 @@ select case ( idims )
 
   case (1)
 
-    if ( tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) then
+    if ( Any ( tpfields(1)%ndimlist(4) == [ NMNHDIM_BUDGET_LES_TIME, NMNHDIM_BUDGET_LES_AVG_TIME, NMNHDIM_SERIES_TIME ] ) ) then
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
 
@@ -1200,6 +1200,12 @@ select case ( idims )
       do ji = 1, Size( pvar, 6 )
         call Diachro_one_field_write_nc4( tzfile, tpbudiachro, tpfields(ji), pvar(:,:,:,:,:,ji:ji), [ 4 ], gsplit, gdistributed )
       end do
+    else if (  ( tpfields(1)%ndimlist(3) == NMNHDIM_SERIES_LEVEL .or. tpfields(1)%ndimlist(3) == NMNHDIM_SERIES_LEVEL_W ) &
+         .and. tpfields(1)%ndimlist(4) == NMNHDIM_SERIES_TIME ) then
+      !Correspond to WRITE_SERIES_n
+      if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
+                                                   'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
+      call Diachro_one_field_write_nc4( tzfile, tpbudiachro, tpfields(1), pvar(:,:,:,:,:,:), [ 3, 4 ], gsplit, gdistributed )
     else if (  tpfields(1)%ndimlist(4) == NMNHDIM_STATION_TIME &
          .and. tpfields(1)%ndimlist(6) == NMNHDIM_STATION_PROC ) then
       !Correspond to WRITE_STATION_n
