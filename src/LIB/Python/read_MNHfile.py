@@ -31,8 +31,8 @@ def read_BACKUPfile(nameF, ifile, Dvar_input, Dvar_output, path='.', removeHALO=
   Dvar_output[ifile] = {} #initialize dic for each files 
        
   #  Reading date since beginning of the model run
-  Dvar_output[ifile]['date'] =  theFile.variables['time'].units
   Dvar_output[ifile]['time'] =  theFile.variables['time'][0]
+  Dvar_output[ifile]['date'] = nc.num2date(Dvar_output[ifile]['time'],units=theFile.variables['time'].units, calendar = theFile.variables['time'].calendar)
 
   for var in Dvar_input[ifile]: #For each files
     #  Read variables
@@ -186,11 +186,25 @@ def read_TIMESfiles_55(theFile, ifile, Dvar_input, Dvar_output, removeHALO=False
         return Dvar_output
 
     def read_from_group(theFile, Dvar_output, group_name, var):
-        suffix, var_name = remove_PROC(var)
-        if group_name == 'TSERIES': #always 1D
-            Dvar_output[(group_name,var)] = theFile.groups['TSERIES'].variables[var][:]
-        elif group_name == 'ZTSERIES': #always 2D 
-            Dvar_output[(group_name,var)] = theFile.groups['ZTSERIES'].variables[var][:,:].T
+        """
+        Read variables from MNH MASDEV >= 5.5.0 
+        Parameters :
+            - var : the variable name
+            - group_name : the group name            
+        Return :
+        Dvar_output : dictionnary of :
+            - Dvar_output[ifile]['var_name']                if the group contains only one variable
+            - Dvar_output[ifile][('group_name','var_name']  if the group contains more than one variable
+        """
+        if '___' in var:
+            suffix, var_name = remove_PROC(var)
+        else:
+            suffix = var
+            var_name = var
+        if group_name == 'TSERIES' or group_name =='AVION': #always 1D
+            Dvar_output[(group_name,var)] = theFile.groups[group_name].variables[var][:]
+        elif group_name == 'ZTSERIES' or group_name =='AVIONZ': #always 2D 
+            Dvar_output[(group_name,var)] = theFile.groups[group_name].variables[var][:,:].T
         elif 'XTSERIES' in group_name: #always 2D
             Dvar_output[(group_name,var)] = theFile.groups[group_name].variables[var][:,:].T
         elif theFile.groups[group_name].type == 'TLES' : #  LES type
@@ -213,7 +227,21 @@ def read_TIMESfiles_55(theFile, ifile, Dvar_input, Dvar_output, removeHALO=False
             if shapeVar[2]==1: Ltosqueeze.append(2)
             if shapeVar[3]==1: Ltosqueeze.append(3)
             Ltosqueeze=tuple(Ltosqueeze)
-            Dvar_output[group_name] = np.squeeze(theFile.groups[group_name].variables[suffix][:,:,:,:], axis=Ltosqueeze) 
+            if len(theFile.groups[group_name].variables.keys()) > 1: # If more than one variable in the group
+              Dvar_output[(group_name,var)] = np.squeeze(theFile.groups[group_name].variables[suffix][:,:,:,:], axis=Ltosqueeze) 
+            else:
+              Dvar_output[group_name] = np.squeeze(theFile.groups[group_name].variables[suffix][:,:,:,:], axis=Ltosqueeze) 
+        elif theFile.groups[group_name].type == 'MASK':  #  Budget MASK type
+            shapeVar = theFile.groups[group_name].variables[suffix].shape
+            Ltosqueeze=[] #  Build a tuple with the number of the axis which are 0 dimensions to be removed by np.squeeze
+            if shapeVar[0]==1: Ltosqueeze.append(0)
+            if shapeVar[1]==1: Ltosqueeze.append(1)
+            if shapeVar[2]==1: Ltosqueeze.append(2)
+            Ltosqueeze=tuple(Ltosqueeze)
+            if len(theFile.groups[group_name].variables.keys()) > 1: # If more than one variable in the group
+              Dvar_output[(group_name,var)] = np.squeeze(theFile.groups[group_name].variables[suffix][:,:,:], axis=Ltosqueeze).T
+            else:
+              Dvar_output[group_name] = np.squeeze(theFile.groups[group_name].variables[suffix][:,:,:], axis=Ltosqueeze).T
         else:
             raise NameError("Type de groups variables not implemented in read_MNHfile.py")
         return Dvar_output

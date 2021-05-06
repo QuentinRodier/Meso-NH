@@ -30,7 +30,6 @@ Dvar_input = {
 #  Read the variables in the files
 Dvar = {}
 Dvar = read_netcdf(LnameFiles, Dvar_input, path=path, removeHALO=True)
-Dvar['f1']['date'] = convert_date(Dvar['f1']['date'], Dvar['f1']['time'])
 ################################################################
 #########          PANEL 1
 ###############################################################
