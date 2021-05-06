@@ -439,7 +439,7 @@ endif
 ##########################################################
 ifneq "$(MNH_GRIBAPI)" "yes"
 DIR_ECCODES_SRC?=${SRC_MESONH}/src/LIB/eccodes-${VERSION_ECCODES}-Source
-DIR_ECCODES_BUILD?=${SRC_MESONH}/src/LIB/eccodes-${VERSION_ECCODES}-${ARCH}-R${MNH_REAL}I${MNH_INT}
+DIR_ECCODES_BUILD?=${OBJDIR_MASTER}/build_eccodes-${VERSION_ECCODES}
 DIR_ECCODES_INSTALL?=${OBJDIR_MASTER}/ECCODES-${VERSION_ECCODES}
 ECCODES_MOD?=${DIR_ECCODES_INSTALL}/include/grib_api.mod
 #
