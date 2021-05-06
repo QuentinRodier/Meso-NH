@@ -173,5 +173,5 @@ CSEA_ALB	="UNIF" 	; type of albedo formula
                                   'TA96' Taylor et al (1996) formula for water direct albedo )
 
 
-&NAM_BLANK 
+&NAM_BLANKn 
 
