@@ -130,6 +130,10 @@ def comp_altitude2DVar(oneVar3D, orography, ztop, level, n_y, n_x):
     n_x3D[i,:] = n_x
   for i in range(oneVar3D.shape[2]):
     for j in range(oneVar3D.shape[1]):
-      for k in range(len(level)):
-          altitude[k,j,i] = orography[j,i] + level[k]*((ztop-orography[j,i])/ztop)
+      if ztop==0:
+        altitude[:,i,j] = level[:]
+      else:
+        for k in range(len(level)):
+            altitude[k,j,i] = orography[j,i] + level[k]*((ztop-orography[j,i])/ztop)
+
   return altitude, n_x3D, n_y3D
