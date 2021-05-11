@@ -335,12 +335,19 @@ ELSE
     END DO
     !
     WHERE(GDRY(:))
-      PRG_TEND(:, IRSWETG)=XFSDRYG*ZZW(:)                         & ! RSDRYG
+!      PRG_TEND(:, IRSWETG)=XFSDRYG*ZZW(:)                         & ! RSDRYG
+!                                    / XCOLSG &
+!                  *(PLBDAS(:)**(XCXS-XBS))*( PLBDAG(:)**XCXG )    &
+!                  *(PRHODREF(:)**(-XCEXVT-1.))                    &
+!                       *( XLBSDRYG1/( PLBDAG(:)**2              ) + &
+!                          XLBSDRYG2/( PLBDAG(:)   * PLBDAS(:)   ) + &
+!                          XLBSDRYG3/(               PLBDAS(:)**2))
+      PRG_TEND(:, IRSWETG)=XFSDRYG*ZZW(:)                         & ! RSDRYG  ! Modif Wurtz snow diag
                                     / XCOLSG &
-                  *(PLBDAS(:)**(XCXS-XBS))*( PLBDAG(:)**XCXG )    &
-                  *(PRHODREF(:)**(-XCEXVT-1.))                    &
-                       *( XLBSDRYG1/( PLBDAG(:)**2              ) + &
-                          XLBSDRYG2/( PLBDAG(:)   * PLBDAS(:)   ) + &
+                  *(PRST(:))*( PLBDAG(:)**XCXG )    &
+                  *(PRHODREF(:)**(-XCEXVT))                    &
+                       *( XLBSDRYG1/( PLBDAG(:)**2              ) + &	! Il s'agit de moments (?)
+                          XLBSDRYG2/( PLBDAG(:)   *  PLBDAS(:)   ) + &
                           XLBSDRYG3/(               PLBDAS(:)**2))
       PRG_TEND(:, IRSDRYG)=PRG_TEND(:, IRSWETG)*XCOLSG*EXP(XCOLEXSG*(PT(:)-XTT))
     END WHERE

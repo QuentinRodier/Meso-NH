@@ -109,6 +109,8 @@ USE MODD_REF
 !
 use mode_msg
 !
+USE MODD_RAIN_ICE_PARAM, ONLY : XFVELOS
+!
 USE MODI_GAMMA
 USE MODI_GAMMA_INC
 USE MODI_READ_XKER_RACCS
@@ -725,15 +727,15 @@ IF( (KACCLBDAS/=NACCLBDAS) .OR. (KACCLBDAR/=NACCLBDAR) .OR. (KND/=IND) .OR. &
     (PACCLBDAS_MIN/=XACCLBDAS_MIN) .OR. (PACCLBDAR_MIN/=XACCLBDAR_MIN) .OR. &
     (PFDINFTY/=ZFDINFTY)                                               ) THEN
   CALL RRCOLSS ( IND, XALPHAS, XNUS, XALPHAR, XNUR,                          &
-                 ZESR, XBR, XCS, XDS, XCR, XDR,                              &
+                 ZESR, XBR, XCS, XDS, XFVELOS, XCR, XDR,                     &
                  XACCLBDAS_MAX, XACCLBDAR_MAX, XACCLBDAS_MIN, XACCLBDAR_MIN, &
                  ZFDINFTY, XKER_RACCSS, XAG, XBS, XAS                        )
   CALL RZCOLX  ( IND, XALPHAS, XNUS, XALPHAR, XNUR,                          &
-                 ZESR, XBR, XCS, XDS, XCR, XDR,                              &
+                 ZESR, XBR, XCS, XDS, XFVELOS, XCR, XDR, 0.,                             &
                  XACCLBDAS_MAX, XACCLBDAR_MAX, XACCLBDAS_MIN, XACCLBDAR_MIN, &
                  ZFDINFTY, XKER_RACCS                                        )
   CALL RSCOLRG ( IND, XALPHAS, XNUS, XALPHAR, XNUR,                          &
-                 ZESR, XBS, XCS, XDS, XCR, XDR,                              &
+                 ZESR, XBS, XCS, XDS, XFVELOS, XCR, XDR,                              &
                  XACCLBDAS_MAX, XACCLBDAR_MAX, XACCLBDAS_MIN, XACCLBDAR_MIN, &
                  ZFDINFTY, XKER_SACCRG,XAG, XBS, XAS                         )
   WRITE(UNIT=ILUOUT0,FMT='("*****************************************")')
@@ -938,7 +940,7 @@ IF( (KDRYLBDAG/=NDRYLBDAG) .OR. (KDRYLBDAS/=NDRYLBDAS) .OR. (KND/=IND) .OR. &
     (PDRYLBDAG_MIN/=XDRYLBDAG_MIN) .OR. (PDRYLBDAS_MIN/=XDRYLBDAS_MIN) .OR. &
     (PFDINFTY/=ZFDINFTY)                                               ) THEN
   CALL RZCOLX ( IND, XALPHAG, XNUG, XALPHAS, XNUS,                          &
-                ZEGS, XBS, XCG, XDG, XCS, XDS,                              &
+                ZEGS, XBS, XCG, XDG, 0., XCS, XDS, XFVELOS,                             &
                 XDRYLBDAG_MAX, XDRYLBDAS_MAX, XDRYLBDAG_MIN, XDRYLBDAS_MIN, &
                 ZFDINFTY, XKER_SDRYG                                        )
   WRITE(UNIT=ILUOUT0,FMT='("*****************************************")')
@@ -1004,7 +1006,7 @@ IF( (KDRYLBDAG/=NDRYLBDAG) .OR. (KDRYLBDAR/=NDRYLBDAR) .OR. (KND/=IND) .OR. &
     (PDRYLBDAG_MIN/=XDRYLBDAG_MIN) .OR. (PDRYLBDAR_MIN/=XDRYLBDAR_MIN) .OR. &
     (PFDINFTY/=ZFDINFTY)                                               ) THEN
   CALL RZCOLX ( IND, XALPHAG, XNUG, XALPHAR, XNUR,                          &
-                ZEGR, XBR, XCG, XDG, XCR, XDR,                              &
+                ZEGR, XBR, XCG, XDG, 0., XCR, XDR, 0.,                             &
                 XDRYLBDAG_MAX, XDRYLBDAR_MAX, XDRYLBDAG_MIN, XDRYLBDAR_MIN, &
                 ZFDINFTY, XKER_RDRYG                                        )
   WRITE(UNIT=ILUOUT0,FMT='("*****************************************")')

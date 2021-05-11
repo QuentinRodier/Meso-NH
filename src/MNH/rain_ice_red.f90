@@ -356,6 +356,8 @@ REAL, DIMENSION(KIT,KJT,KKT,KRR), OPTIONAL, INTENT(OUT)  :: PFPR ! upper-air pre
 !
 !*       0.2   Declarations of local variables :
 !
+REAL,    DIMENSION(SIZE(PRST,1),SIZE(PRST,2),SIZE(PRST,3)) :: PLBDAS ! Modif  !lbda parameter snow
+
 INTEGER :: IIB           !  Define the domain where is
 INTEGER :: IIE           !  the microphysical sources have to be computed
 INTEGER :: IJB           !
@@ -368,7 +370,7 @@ INTEGER :: JI, JJ, JK
 !For packing
 INTEGER :: IMICRO ! Case r_x>0 locations
 INTEGER, DIMENSION(KSIZE) :: I1,I2,I3 ! Used to replace the COUNT
-INTEGER                   :: JL       ! and PACK intrinsics
+INTEGER                   :: JI, JJ, JK, JL       ! and PACK intrinsics
 !
 !Arrays for nucleation call outisde of LDMICRO points
 REAL,    DIMENSION(KIT, KJT, KKT) :: ZW ! work array
@@ -399,6 +401,7 @@ REAL, DIMENSION(KSIZE) :: ZRVT,     & ! Water vapor m.r. at t
                         & ZRRT,     & ! Rain water m.r. at t
                         & ZRIT,     & ! Pristine ice m.r. at t
                         & ZRST,     & ! Snow/aggregate m.r. at t
+                        & ZLBDAS,   & ! Snow/aggregate lbdas ! Modif Wurtz
                         & ZRGT,     & ! Graupel m.r. at t
                         & ZRHT,     & ! Hail m.r. at t
                         & ZCIT,     & ! Pristine ice conc. at t
@@ -571,6 +574,24 @@ ELSE
     ENDDO
   ENDDO
 ENDIF
+
+!Compute lambda_snow parameter ! Modif Wurtz
+!ZT en KELVIN
+PLBDAS(:,:,:)=1000. !Wurtz
+DO JK = 1, IKT
+  DO JJ = 1, IJT
+    DO JI = 1, IIT
+	IF (PRST(JI,JJ,JK)>XRTMIN(5)) THEN
+
+			IF(ZT(JI,JJ,JK)>263.15) THEN
+				PLBDAS(JI,JJ,JK) = MAX(MIN(XLBDAS_MAX, 10**(14.554-0.0423*ZT(JI,JJ,JK))),XLBDAS_MIN)*XTRANS_MP_GAMMAS ! On le calcul ici car il est utilise dans la sedim en 3D et dans tendencies
+			ELSE
+				PLBDAS(JI,JJ,JK) = MAX(MIN(XLBDAS_MAX, 10**(6.226-0.0106*ZT(JI,JJ,JK))),XLBDAS_MIN)*XTRANS_MP_GAMMAS
+			END IF
+			END IF
+		END DO
+	END DO
+END DO
 !
 !-------------------------------------------------------------------------------
 !
@@ -600,6 +621,7 @@ IF(.NOT. LSEDIM_AFTER) THEN
       CALL ICE4_SEDIMENTATION_STAT(IIB, IIE, KIT, IJB, IJE, KJT, IKB, IKE, IKTB, IKTE, KKT, KKL, &
                                   &PTSTEP, KRR, OSEDIC, LDEPOSC, XVDEPOSC, PDZZ, &
                                   &PRHODREF, PPABST, PTHT, PRHODJ, &
+				  &PLBDAS, &  ! Modif Wurtz                                  
                                   &PRCS, PRCS*PTSTEP, PRRS, PRRS*PTSTEP, PRIS, PRIS*PTSTEP,&
                                   &PRSS, PRSS*PTSTEP, PRGS, PRGS*PTSTEP,&
                                   &PINPRC, PINDEP, PINPRR, ZINPRI, PINPRS, PINPRG, &
@@ -609,6 +631,7 @@ IF(.NOT. LSEDIM_AFTER) THEN
       CALL ICE4_SEDIMENTATION_STAT(IIB, IIE, KIT, IJB, IJE, KJT, IKB, IKE, IKTB, IKTE, KKT, KKL, &
                                   &PTSTEP, KRR, OSEDIC, LDEPOSC, XVDEPOSC, PDZZ, &
                                   &PRHODREF, PPABST, PTHT, PRHODJ, &
+				  &PLBDAS, &  ! Modif Wurtz                                 
                                   &PRCS, PRCS*PTSTEP, PRRS, PRRS*PTSTEP, PRIS, PRIS*PTSTEP,&
                                   &PRSS, PRSS*PTSTEP, PRGS, PRGS*PTSTEP,&
                                   &PINPRC, PINDEP, PINPRR, ZINPRI, PINPRS, PINPRG, &
@@ -623,6 +646,7 @@ IF(.NOT. LSEDIM_AFTER) THEN
       CALL ICE4_SEDIMENTATION_SPLIT(IIB, IIE, KIT, IJB, IJE, KJT, IKB, IKE, IKTB, IKTE, KKT, KKL, &
                                    &PTSTEP, KRR, OSEDIC, LDEPOSC, XVDEPOSC, PDZZ, &
                                    &PRHODREF, PPABST, PTHT, PRHODJ, &
+				   &PLBDAS, &  ! Modif Wurtz                                 
                                    &PRCS, PRCT, PRRS, PRRT, PRIS, PRIT, PRSS, PRST, PRGS, PRGT,&
                                    &PINPRC, PINDEP, PINPRR, ZINPRI, PINPRS, PINPRG, &
                                    &PSEA=PSEA, PTOWN=PTOWN, &
@@ -631,6 +655,7 @@ IF(.NOT. LSEDIM_AFTER) THEN
       CALL ICE4_SEDIMENTATION_SPLIT(IIB, IIE, KIT, IJB, IJE, KJT, IKB, IKE, IKTB, IKTE, KKT, KKL, &
                                    &PTSTEP, KRR, OSEDIC, LDEPOSC, XVDEPOSC, PDZZ, &
                                    &PRHODREF, PPABST, PTHT, PRHODJ, &
+				   &PLBDAS, &  ! Modif Wurtz                                 
                                    &PRCS, PRCT, PRRS, PRRT, PRIS, PRIT, PRSS, PRST, PRGS, PRGT,&
                                    &PINPRC, PINDEP, PINPRR, ZINPRI, PINPRS, PINPRG, &
                                    &PSEA=PSEA, PTOWN=PTOWN, &
@@ -710,6 +735,7 @@ IF(IMICRO>0) THEN
     ELSE
       ZHLI_LCF(JL)=0.
     ENDIF
+    ZLBDAS(JL) = PLBDAS(I1(JL),I2(JL),I3(JL))
   ENDDO
   IF(GEXT_TEND) THEN
     DO JL=1, IMICRO
@@ -859,6 +885,7 @@ DO WHILE(ANY(ZTIME(:)<PTSTEP)) ! Loop to *really* compute tendencies
                         &ZEXN, ZRHODREF, ZLVFACT, ZLSFACT, I1, I2, I3, &
                         &ZPRES, ZCF, ZSIGMA_RC,&
                         &ZCIT, &
+			&ZLBDAS, & ! Wurtz
                         &ZZT, ZTHT, &
                         &ZRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT, ZRHT, &
                         &ZRVHENI_MR, ZRRHONG_MR, ZRIMLTC_MR, ZRSRIMCG_MR, &
@@ -1684,6 +1711,7 @@ IF(LSEDIM_AFTER) THEN
       CALL ICE4_SEDIMENTATION_STAT(IIB, IIE, KIT, IJB, IJE, KJT, IKB, IKE, IKTB, IKTE, KKT, KKL, &
                                   &PTSTEP, KRR, OSEDIC, LDEPOSC, XVDEPOSC, PDZZ, &
                                   &PRHODREF, PPABST, PTHT, PRHODJ, &
+                                  &PLBDAS, &   ! Modif Wurtz				   
                                   &PRCS, PRCS*PTSTEP, PRRS, PRRS*PTSTEP, PRIS, PRIS*PTSTEP,&
                                   &PRSS, PRSS*PTSTEP, PRGS, PRGS*PTSTEP,&
                                   &PINPRC, PINDEP, PINPRR, ZINPRI, PINPRS, PINPRG, &
@@ -1693,6 +1721,7 @@ IF(LSEDIM_AFTER) THEN
       CALL ICE4_SEDIMENTATION_STAT(IIB, IIE, KIT, IJB, IJE, KJT, IKB, IKE, IKTB, IKTE, KKT, KKL, &
                                   &PTSTEP, KRR, OSEDIC, LDEPOSC, XVDEPOSC, PDZZ,&
                                   &PRHODREF, PPABST, PTHT, PRHODJ, &
+                                  &PLBDAS, &   ! Modif Wurtz				   
                                   &PRCS, PRCS*PTSTEP, PRRS, PRRS*PTSTEP, PRIS, PRIS*PTSTEP,&
                                   &PRSS, PRSS*PTSTEP, PRGS, PRGS*PTSTEP,&
                                   &PINPRC, PINDEP, PINPRR, ZINPRI, PINPRS, PINPRG, &
@@ -1707,6 +1736,7 @@ IF(LSEDIM_AFTER) THEN
       CALL ICE4_SEDIMENTATION_SPLIT(IIB, IIE, KIT, IJB, IJE, KJT, IKB, IKE, IKTB, IKTE, KKT, KKL, &
                                    &PTSTEP, KRR, OSEDIC, LDEPOSC, XVDEPOSC, PDZZ, &
                                    &PRHODREF, PPABST, PTHT, PRHODJ, &
+                                   &PLBDAS, &   ! Modif Wurtz				   
                                    &PRCS, PRCT, PRRS, PRRT, PRIS, PRIT, PRSS, PRST, PRGS, PRGT,&
                                    &PINPRC, PINDEP, PINPRR, ZINPRI, PINPRS, PINPRG, &
                                    &PSEA=PSEA, PTOWN=PTOWN, &
@@ -1715,6 +1745,7 @@ IF(LSEDIM_AFTER) THEN
       CALL ICE4_SEDIMENTATION_SPLIT(IIB, IIE, KIT, IJB, IJE, KJT, IKB, IKE, IKTB, IKTE, KKT, KKL, &
                                    &PTSTEP, KRR, OSEDIC, LDEPOSC, XVDEPOSC, PDZZ, &
                                    &PRHODREF, PPABST, PTHT, PRHODJ, &
+                                   &PLBDAS, &   ! Modif Wurtz				   
                                    &PRCS, PRCT, PRRS, PRRT, PRIS, PRIT, PRSS, PRST, PRGS, PRGT,&
                                    &PINPRC, PINDEP, PINPRR, ZINPRI, PINPRS, PINPRG, &
                                    &PSEA=PSEA, PTOWN=PTOWN, &

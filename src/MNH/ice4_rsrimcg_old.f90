@@ -131,8 +131,10 @@ IF(.NOT. ODSOFT) THEN
     !
     !
     WHERE(GRIM(:))
-      PRSRIMCG_MR(:) = XSRIMCG * PLBDAS(:)**XEXSRIMCG   & ! RSRIMCG
-                               * (1.0 - ZZW(:) )/PRHODREF(:)
+!      PRSRIMCG_MR(:) = XSRIMCG * PLBDAS(:)**XEXSRIMCG   & ! RSRIMCG
+!                               * (1.0 - ZZW(:) )/PRHODREF(:)
+      PRSRIMCG_MR(:) = XSRIMCG * PLBDAS(:)**XEXSRIMCG   & ! RSRIMCG	!Modif Wurtz concentration snow
+                               * (1.0 - ZZW(:) )*PRST(:)
       PRSRIMCG_MR(:)=MIN(PRST(:), PRSRIMCG_MR(:))
     END WHERE
   END IF

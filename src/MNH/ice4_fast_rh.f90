@@ -269,10 +269,16 @@ ELSE
     END DO
     !
     WHERE(GWET(:))
-      PRH_TEND(:, IRSWETH)=XFSWETH*ZZW(:)                       & ! RSWETH
-                    *( PLBDAS(:)**(XCXS-XBS) )*( PLBDAH(:)**XCXH )  &
-                       *( PRHODREF(:)**(-XCEXVT-1.) )               &
-                       *( XLBSWETH1/( PLBDAH(:)**2              ) + &
+!      PRH_TEND(:, IRSWETH)=XFSWETH*ZZW(:)                       & ! RSWETH
+!                    *( PLBDAS(:)**(XCXS-XBS) )*( PLBDAH(:)**XCXH )  &
+!                       *( PRHODREF(:)**(-XCEXVT-1.) )               &
+!                       *( XLBSWETH1/( PLBDAH(:)**2              ) + &
+!                          XLBSWETH2/( PLBDAH(:)   * PLBDAS(:)   ) + &
+!                          XLBSWETH3/(               PLBDAS(:)**2) )
+      PRH_TEND(:, IRSWETH)=XFSWETH*ZZW(:)                       & ! RSWETH Modif Wurtz conc snow
+                    *( PRST(:))*( PLBDAH(:)**XCXH )  &
+                       *( PRHODREF(:)**(-XCEXVT) )               &
+                       *( XLBSWETH1/( PLBDAH(:)**2              ) + &	! Il s'agit de moment (?)
                           XLBSWETH2/( PLBDAH(:)   * PLBDAS(:)   ) + &
                           XLBSWETH3/(               PLBDAS(:)**2) )
       PRH_TEND(:, IRSDRYH)=PRH_TEND(:, IRSWETH)*(XCOLSH*EXP(XCOLEXSH*(PT(:)-XTT)))

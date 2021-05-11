@@ -845,20 +845,20 @@ XLBQSACCRG3 =      MOMG(XALPHAS,XNUS,XFS)    * MOMG(XALPHAR,XNUR,2.)
 !
 ZESR = 1.0
 !
-CALL RRCOLSS (KND, XALPHAS, XNUS, XALPHAR, XNUR,                          &
-              ZESR, XFR, XCS, XDS, XCR, XDR,                              &
-              XACCLBDAS_MAX, XACCLBDAR_MAX, XACCLBDAS_MIN, XACCLBDAR_MIN, &
-              PFDINFTY, XKER_Q_RACCSS, XAG, XBS, XAS                      )
+!CALL RRCOLSS (KND, XALPHAS, XNUS, XALPHAR, XNUR,                          &
+!              ZESR, XFR, XCS, XDS, XCR, XDR,                              &
+!              XACCLBDAS_MAX, XACCLBDAR_MAX, XACCLBDAS_MIN, XACCLBDAR_MIN, &
+!              PFDINFTY, XKER_Q_RACCSS, XAG, XBS, XAS                      )
 !
-CALL RZCOLX  (KND, XALPHAS, XNUS, XALPHAR, XNUR,                          &
-              ZESR, XFR, XCS, XDS, XCR, XDR,                              &
-              XACCLBDAS_MAX, XACCLBDAR_MAX, XACCLBDAS_MIN, XACCLBDAR_MIN, &
-              PFDINFTY, XKER_Q_RACCS                                      )
+!CALL RZCOLX  (KND, XALPHAS, XNUS, XALPHAR, XNUR,                          &
+!              ZESR, XFR, XCS, XDS, XCR, XDR,                              &
+!              XACCLBDAS_MAX, XACCLBDAR_MAX, XACCLBDAS_MIN, XACCLBDAR_MIN, &
+!              PFDINFTY, XKER_Q_RACCS                                      )
 !
-CALL RSCOLRG (KND, XALPHAS, XNUS, XALPHAR, XNUR,                          &
-              ZESR, XFS, XCS, XDS, XCR, XDR,                              &
-              XACCLBDAS_MAX, XACCLBDAR_MAX, XACCLBDAS_MIN, XACCLBDAR_MIN, &
-              PFDINFTY, XKER_Q_SACCRG, XAG, XBS, XAS                      )
+!CALL RSCOLRG (KND, XALPHAS, XNUS, XALPHAR, XNUR,                          &
+!              ZESR, XFS, XCS, XDS, XCR, XDR,                              &
+!              XACCLBDAS_MAX, XACCLBDAR_MAX, XACCLBDAS_MIN, XACCLBDAR_MIN, &
+!              PFDINFTY, XKER_Q_SACCRG, XAG, XBS, XAS                      )
 !
 !-------------------------------------------------------------------------------
 !
@@ -877,10 +877,10 @@ XLBQSDRYG3 =      MOMG(XALPHAS,XNUS,XFS)    * MOMG(XALPHAG,XNUG,2.)
 !
 ZEGS = 1. ! also initialized in ini_rain_ice_elec
 !
-CALL RZCOLX (KND, XALPHAG, XNUG, XALPHAS, XNUS,                          &
-             ZEGS, XFS, XCG, XDG, XCS, XDS,                              &
-             XDRYLBDAG_MAX, XDRYLBDAS_MAX, XDRYLBDAG_MIN, XDRYLBDAS_MIN, &
-             PFDINFTY, XKER_Q_SDRYG                                      )
+!CALL RZCOLX (KND, XALPHAG, XNUG, XALPHAS, XNUS,                          &
+!             ZEGS, XFS, XCG, XDG, XCS, XDS,                              &
+!             XDRYLBDAG_MAX, XDRYLBDAS_MAX, XDRYLBDAG_MIN, XDRYLBDAS_MIN, &
+!             PFDINFTY, XKER_Q_SDRYG                                      )
 !
 !
 !*      11.2    NI process: Heldson et Farley (1987) parameterization
@@ -896,10 +896,10 @@ IF (CNI_CHARGING == 'HELFA') THEN
   XLBQSDRYGB6H =      MOMG(XALPHAG,XNUG,2.) 
 !
   IF( .NOT.ALLOCATED(XKER_Q_SDRYGB)) ALLOCATE( XKER_Q_SDRYGB(NDRYLBDAG,NDRYLBDAS) )
-  CALL RZCOLX (KND, XALPHAG, XNUG, XALPHAS, XNUS,                          &
-               ZEGS, 0., XCG, XDG, XCS, XDS,                               &
-               XDRYLBDAG_MAX, XDRYLBDAS_MAX, XDRYLBDAG_MIN, XDRYLBDAS_MIN, &
-               PFDINFTY, XKER_Q_SDRYGB                                     )
+!  CALL RZCOLX (KND, XALPHAG, XNUG, XALPHAS, XNUS,                          &
+!               ZEGS, 0., XCG, XDG, XCS, XDS,                               &
+!               XDRYLBDAG_MAX, XDRYLBDAS_MAX, XDRYLBDAG_MIN, XDRYLBDAS_MIN, &
+!               PFDINFTY, XKER_Q_SDRYGB                                     )
 ! Delta vqb1_sg
 ENDIF
 !
@@ -918,10 +918,10 @@ IF (CNI_CHARGING == 'GARDI') THEN
   XLBQSDRYGB6G =      MOMG(XALPHAS,XNUS,6.)    
 !
   IF( .NOT.ALLOCATED(XKER_Q_SDRYGB)) ALLOCATE( XKER_Q_SDRYGB(NDRYLBDAG,NDRYLBDAS) )
-  CALL VQZCOLX (KND, XALPHAG, XNUG, XALPHAS, XNUS,                          &
-                ZEGS, 4., XCG, XDG, XCS, XDS, 4.,                           &
-                XDRYLBDAG_MAX, XDRYLBDAS_MAX, XDRYLBDAG_MIN, XDRYLBDAS_MIN, &
-                PFDINFTY, XKER_Q_SDRYGB                                     )
+!  CALL VQZCOLX (KND, XALPHAG, XNUG, XALPHAS, XNUS,                          &
+!                ZEGS, 4., XCG, XDG, XCS, XDS, 4.,                           &
+!                XDRYLBDAG_MAX, XDRYLBDAS_MAX, XDRYLBDAG_MIN, XDRYLBDAS_MIN, &
+!                PFDINFTY, XKER_Q_SDRYGB                                     )
 END IF
 !
 !
@@ -941,16 +941,16 @@ IF (CNI_CHARGING == 'SAUN1' .OR. CNI_CHARGING == 'SAUN2' .OR. &
   IF( .NOT.ALLOCATED(XKER_Q_SDRYGB2)) ALLOCATE( XKER_Q_SDRYGB2(NDRYLBDAG,NDRYLBDAS) )
 !
 ! Positive charging region
-  CALL VQZCOLX (KND, XALPHAG, XNUG, XALPHAS, XNUS,                          &
-                ZEGS, XSMP, XCG, XDG, XCS, XDS, (1.+XSNP),                  &
-                XDRYLBDAG_MAX, XDRYLBDAS_MAX, XDRYLBDAG_MIN, XDRYLBDAS_MIN, &
-                PFDINFTY, XKER_Q_SDRYGB1                                    )
+!  CALL VQZCOLX (KND, XALPHAG, XNUG, XALPHAS, XNUS,                          &
+!                ZEGS, XSMP, XCG, XDG, XCS, XDS, (1.+XSNP),                  &
+!                XDRYLBDAG_MAX, XDRYLBDAS_MAX, XDRYLBDAG_MIN, XDRYLBDAS_MIN, &
+!                PFDINFTY, XKER_Q_SDRYGB1                                    )
 !
 ! Negative charging region
-  CALL VQZCOLX (KND, XALPHAG, XNUG, XALPHAS, XNUS,                          &
-                ZEGS, XSMN, XCG, XDG, XCS, XDS, (1.+XSNN),                  &
-                XDRYLBDAG_MAX, XDRYLBDAS_MAX, XDRYLBDAG_MIN, XDRYLBDAS_MIN, &
-                PFDINFTY, XKER_Q_SDRYGB2                                    )
+!  CALL VQZCOLX (KND, XALPHAG, XNUG, XALPHAS, XNUS,                          &
+!                ZEGS, XSMN, XCG, XDG, XCS, XDS, (1.+XSNN),                  &
+!                XDRYLBDAG_MAX, XDRYLBDAS_MAX, XDRYLBDAG_MIN, XDRYLBDAS_MIN, &
+!                PFDINFTY, XKER_Q_SDRYGB2                                    )
 ENDIF
 !
 !
@@ -979,10 +979,10 @@ IF (CNI_CHARGING == 'TAKAH') THEN
   XFQSDRYGBT11 = 2. * MOMG(XALPHAG,XNUG,1.) * MOMG(XALPHAS,XNUS,3.)
 !
   IF( .NOT.ALLOCATED(XKER_Q_SDRYGB)) ALLOCATE( XKER_Q_SDRYGB(NDRYLBDAG,NDRYLBDAS) )
-  CALL VQZCOLX (KND, XALPHAG, XNUG, XALPHAS, XNUS,                          &
-                ZEGS, 2., XCG, XDG, XCS, XDS, 2.,                           &
-                XDRYLBDAG_MAX, XDRYLBDAS_MAX, XDRYLBDAG_MIN, XDRYLBDAS_MIN, &
-                PFDINFTY, XKER_Q_SDRYGB                                     )
+!  CALL VQZCOLX (KND, XALPHAG, XNUG, XALPHAS, XNUS,                          &
+!                ZEGS, 2., XCG, XDG, XCS, XDS, 2.,                           &
+!                XDRYLBDAG_MAX, XDRYLBDAS_MAX, XDRYLBDAG_MIN, XDRYLBDAS_MIN, &
+!                PFDINFTY, XKER_Q_SDRYGB                                     )
 END IF
 !
 !
@@ -998,10 +998,10 @@ IF (CNI_CHARGING == 'TAKAH' .OR. CNI_CHARGING == 'SAP98' .OR. &
   XAUX_LIM2 = 2. * MOMG(XALPHAS,XNUS,1.) * MOMG(XALPHAG,XNUG,1.) 
   XAUX_LIM3 =      MOMG(XALPHAG,XNUG,2.)
   IF( .NOT.ALLOCATED(XKER_Q_LIMSG)) ALLOCATE( XKER_Q_LIMSG(NDRYLBDAG,NDRYLBDAS) )
-  CALL RZCOLX (KND, XALPHAG, XNUG, XALPHAS, XNUS,                          &
-               ZEGS, 0., XCG, XDG, XCS, XDS,                               &
-               XDRYLBDAG_MAX, XDRYLBDAS_MAX, XDRYLBDAG_MIN, XDRYLBDAS_MIN, &
-               PFDINFTY, XKER_Q_LIMSG)
+!  CALL RZCOLX (KND, XALPHAG, XNUG, XALPHAS, XNUS,                          &
+!               ZEGS, 0., XCG, XDG, XCS, XDS,                               &
+!               XDRYLBDAG_MAX, XDRYLBDAS_MAX, XDRYLBDAG_MIN, XDRYLBDAS_MIN, &
+!               PFDINFTY, XKER_Q_LIMSG)
 ENDIF
 !
 !
@@ -1020,10 +1020,10 @@ XLBQRDRYG3 =      MOMG(XALPHAR,XNUR,XFR)    * MOMG(XALPHAG,XNUG,2.)
 !
 ZEGR = 1.0 
 !
-CALL RZCOLX (KND, XALPHAG, XNUG, XALPHAR, XNUR,                            & 
-             ZEGR, XFR, XCG, XDG, XCR, XDR,                                &
-             XDRYLBDAG_MAX, XDRYLBDAR_MAX, XDRYLBDAG_MIN, XDRYLBDAR_MIN,   &
-             PFDINFTY, XKER_Q_RDRYG                                        )
+!CALL RZCOLX (KND, XALPHAG, XNUG, XALPHAR, XNUR,                            & 
+!             ZEGR, XFR, XCG, XDG, XCR, XDR,                                &
+!             XDRYLBDAG_MAX, XDRYLBDAR_MAX, XDRYLBDAG_MIN, XDRYLBDAR_MIN,   &
+!             PFDINFTY, XKER_Q_RDRYG                                        )
 !
 !
 !-------------------------------------------------------------------------------

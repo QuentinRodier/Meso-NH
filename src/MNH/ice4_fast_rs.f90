@@ -170,8 +170,8 @@ ELSE
     PRS_TEND(:, IFREEZ1)=PKA(:)*(XTT-PT(:)) +                              &
              (PDV(:)*(XLVTT+(XCPV-XCL)*(PT(:)-XTT)) &
                            *(XESTT-PRS_TEND(:, IFREEZ1))/(XRV*PT(:))           )
-    PRS_TEND(:, IFREEZ1)=PRS_TEND(:, IFREEZ1)* ( X0DEPS*       PLBDAS(:)**XEX0DEPS +     &
-                           X1DEPS*PCJ(:)*PLBDAS(:)**XEX1DEPS )/ &
+    PRS_TEND(:, IFREEZ1)=PRS_TEND(:, IFREEZ1)* PRST(:) * ( X0DEPS*       PLBDAS(:)**XEX0DEPS +     &
+                           X1DEPS*PCJ(:)*PLBDAS(:) **(XBS+XEX1DEPS)*(1+(XFVELOS/(2*PLBDAS(:)))**XALPHAS)**(-XNUS+XEX1DEPS/XALPHAS))/ &
                           ( PRHODREF(:)*(XLMTT-XCL*(XTT-PT(:))) )
     PRS_TEND(:, IFREEZ2)=(PRHODREF(:)*(XLMTT+(XCI-XCL)*(XTT-PT(:)))   ) / &
                           ( PRHODREF(:)*(XLMTT-XCL*(XTT-PT(:))) )
@@ -218,7 +218,7 @@ ELSE
     !        5.1.1  select the PLBDAS
     !
     DO JJ = 1, IGRIM
-      ZVEC1(JJ) = PLBDAS(I1(JJ))
+      ZVEC1(JJ) = PLBDAS(I1(JJ))**XALPHAS + XFVELOS**XALPHAS)**(1./XALPHAS)
     END DO
     !
     !        5.1.2  find the next lower indice for the PLBDAS in the geometrical
@@ -243,9 +243,13 @@ ELSE
     !        5.1.4  riming of the small sized aggregates
     !
     WHERE (GRIM(:))
-      PRS_TEND(:, IRCRIMSS) = XCRIMSS * ZZW(:) * PRCT(:)                & ! RCRIMSS
-                                      *   PLBDAS(:)**XEXCRIMSS &
-                                      * PRHODREF(:)**(-XCEXVT)
+!      PRS_TEND(:, IRCRIMSS) = XCRIMSS * ZZW(:) * PRCT(:)                & ! RCRIMSS
+!                                      *   PLBDAS(:)**XEXCRIMSS &
+!                                      * PRHODREF(:)**(-XCEXVT)
+      PRS_TEND(:, IRCRIMSS) = XCRIMSS * ZZW(:) * PRCT(:)                & ! RCRIMSS	 !Wurtz ! Thompson
+                                      * PRST(:)*(1+(XFVELOS/PLBDAS(:))**XALPHAS)**(-XNUS+XEXCRIMSS/XALPHAS) &
+                                      * PRHODREF(:)**(-XCEXVT+1.) &
+				      * (PLBDAS(:)) ** (XEXCRIMSS+XBS) ! Thompson
     END WHERE
     !
     !        5.1.5  perform the linear interpolation of the normalized
@@ -270,19 +274,25 @@ ELSE
     !
     !
     WHERE(GRIM(:))
-      PRS_TEND(:, IRCRIMS)=XCRIMSG * PRCT(:)               & ! RCRIMS
-                                   * PLBDAS(:)**XEXCRIMSG  &
-                                   * PRHODREF(:)**(-XCEXVT)
+!      PRS_TEND(:, IRCRIMS)=XCRIMSG * PRCT(:)               & ! RCRIMS
+!                                   * PLBDAS(:)**XEXCRIMSG  &
+!                                   * PRHODREF(:)**(-XCEXVT)
+      PRS_TEND(:, IRCRIMS) = XCRIMSG * PRCT(:)               & ! RCRIMS
+                                   * PRST(:)*(1+(XFVELOS/PLBDAS(:))**(XALPHAS))**(-XNUS+XEXCRIMSG/XALPHAS) &
+                                   * PRHODREF(:)**(-XCEXVT+1.) &
+                                   * PLBDAS(:)**(XBS+XEXCRIMSG) ! GAMMAGEN LH_EXTENDED
       ZZW6(:) = PRS_TEND(:, IRCRIMS) - PRS_TEND(:, IRCRIMSS) ! RCRIMSG
     END WHERE
 
     IF(CSNOWRIMING=='M90 ')THEN
       !Murakami 1990
       WHERE(GRIM(:))
-        PRS_TEND(:, IRSRIMCG)=XSRIMCG * PLBDAS(:)**XEXSRIMCG*(1.0-ZZW(:))
+       ! PRS_TEND(:, IRSRIMCG)=XSRIMCG * PLBDAS(:)**XEXSRIMCG*(1.0-ZZW(:))
+        PRS_TEND(:, IRSRIMCG)=XSRIMCG * PRST(:)*PRHODREF(:)*PLBDAS(:)**(XEXSRIMCG+XBS)*(1.0-ZZW(:)) !Wurtz
+
         PRS_TEND(:, IRSRIMCG)=ZZW6(:)*PRS_TEND(:, IRSRIMCG)/ &
                        MAX(1.E-20, &
-                           XSRIMCG3*XSRIMCG2*PLBDAS(:)**XEXSRIMCG2*(1.-ZZW2(:)) - &
+                           XSRIMCG3*XSRIMCG2*PRST(:)*PRHODREF(:)*PLBDAS(:)**XEXSRIMCG2*(1.-ZZW2(:)) - &
                            XSRIMCG3*PRS_TEND(:, IRSRIMCG))
       END WHERE
     ELSE
@@ -383,8 +393,13 @@ ELSE
     !        5.2.4  raindrop accretion on the small sized aggregates
     !
     WHERE(GACC(:))
+!      ZZW6(:) =                                                        & !! coef of RRACCS
+!            XFRACCSS*( PLBDAS(:)**XCXS )*( PRHODREF(:)**(-XCEXVT-1.) ) &
+!       *( XLBRACCS1/((PLBDAS(:)**2)               ) +                  &
+!          XLBRACCS2/( PLBDAS(:)    * PLBDAR(:)    ) +                  &
+!          XLBRACCS3/(               (PLBDAR(:)**2)) )/PLBDAR(:)**4
       ZZW6(:) =                                                        & !! coef of RRACCS
-            XFRACCSS*( PLBDAS(:)**XCXS )*( PRHODREF(:)**(-XCEXVT-1.) ) &
+            XFRACCSS*( PRST(:)*PLBDAS(:)**XBS )*( PRHODREF(:)**(-XCEXVT) ) & ! Wurtz
        *( XLBRACCS1/((PLBDAS(:)**2)               ) +                  &
           XLBRACCS2/( PLBDAS(:)    * PLBDAR(:)    ) +                  &
           XLBRACCS3/(               (PLBDAR(:)**2)) )/PLBDAR(:)**4
@@ -429,8 +444,13 @@ ELSE
     !               into graupeln
     !
     WHERE(GACC(:))
-      PRS_TEND(:, IRSACCRG) = XFSACCRG*ZZW(:)*                    & ! RSACCRG
-          ( PLBDAS(:)**(XCXS-XBS) )*( PRHODREF(:)**(-XCEXVT-1.) ) &
+!      PRS_TEND(:, IRSACCRG) = XFSACCRG*ZZW(:)*                    & ! RSACCRG
+!          ( PLBDAS(:)**(XCXS-XBS) )*( PRHODREF(:)**(-XCEXVT-1.) ) &
+!         *( XLBSACCR1/((PLBDAR(:)**2)               ) +           &
+!            XLBSACCR2/( PLBDAR(:)    * PLBDAS(:)    ) +           &
+!            XLBSACCR3/(               (PLBDAS(:)**2)) )/PLBDAR(:)
+      PRS_TEND(:, IRSACCRG) = XFSACCRG*ZZW(:)*                    & ! RSACCRG	! Modif Wurtz
+          ( PRST(:))*( PRHODREF(:)**(-XCEXVT) ) &
          *( XLBSACCR1/((PLBDAR(:)**2)               ) +           &
             XLBSACCR2/( PLBDAR(:)    * PLBDAS(:)    ) +           &
             XLBSACCR3/(               (PLBDAS(:)**2)) )/PLBDAR(:)
@@ -495,12 +515,23 @@ ELSE
     !
     ! compute RSMLT
     !
-    PRSMLTG(:)  = XFSCVMG*MAX( 0.0,( -PRSMLTG(:) *             &
-                         ( X0DEPS*       PLBDAS(:)**XEX0DEPS +     &
-                           X1DEPS*PCJ(:)*PLBDAS(:)**XEX1DEPS ) -   &
-                                   ( PRS_TEND(:, IRCRIMS) + PRS_TEND(:, IRRACCS) ) *       &
-                            ( PRHODREF(:)*XCL*(XTT-PT(:))) ) /    &
-                                           ( PRHODREF(:)*XLMTT ) )
+!    PRSMLTG(:)  = XFSCVMG*MAX( 0.0,( -PRSMLTG(:) *             &
+!                         ( X0DEPS*       PLBDAS(:)**XEX0DEPS +     &
+!                           X1DEPS*PCJ(:)*PLBDAS(:)**XEX1DEPS ) -   &
+!                                   ( PRS_TEND(:, IRCRIMS) + PRS_TEND(:, IRRACCS) ) *       &
+!                            ( PRHODREF(:)*XCL*(XTT-PT(:))) ) /    &
+!                                           ( PRHODREF(:)*XLMTT ) )
+    PRSMLTG(:)  = XFSCVMG*MAX( 0.0,( -PRSMLTG(:) *             & ! Modif GAMMAGEN LH_EXTENDED
+         PRST(:)*PRHODREF(:) *    &
+         ( X0DEPS       *PLBDAS(:)**XEX0DEPS +     &
+         X1DEPS*PCJ(:)*(1+(XFVELOS/(2*PLBDAS(:))**XALPHAS))**(XNUS+XEX1DEPS/XALPHAS)*((PLBDAS(:))**(XBS+XEX1DEPS))) -   &
+         ( PRS_TEND(:, IRCRIMS) + PRS_TEND(:, IRRACCS)) *       &
+         ( PRHODREF(:)*XCL*(XTT-PT(:))) ) /    &
+         ( PRHODREF(:)*XLMTT ) )
+    !
+    ! note that RSCVMG = RSMLT*XFSCVMG but no heat is exchanged (at the rate RSMLT)
+    ! because the graupeln produced by this process are still icy!!!
+    !
     ! When T < XTT, rc is collected by snow (riming) to produce snow and graupel
     ! When T > XTT, if riming was still enabled, rc would produce snow and graupel with snow becomming graupel (conversion/melting) and graupel becomming rain (melting)
     ! To insure consistency when crossing T=XTT, rc collected with T>XTT must be transformed in rain.

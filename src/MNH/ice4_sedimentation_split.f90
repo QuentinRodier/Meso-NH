@@ -8,6 +8,7 @@ INTERFACE
 SUBROUTINE ICE4_SEDIMENTATION_SPLIT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB, KKTE, KKT, KKL, &
                                    &PTSTEP, KRR, OSEDIC, ODEPOSC, PVDEPOSC, PDZZ, &
                                    &PRHODREF, PPABST, PTHT, PRHODJ, &
+				   & PLBDAS, &  ! Modif Wurtz                           
                                    &PRCS, PRCT, PRRS, PRRT, PRIS, PRIT, PRSS, PRST, PRGS, PRGT,&
                                    &PINPRC, PINDEP, PINPRR, PINPRI, PINPRS, PINPRG, &
                                    &PSEA, PTOWN,  &
@@ -25,6 +26,7 @@ REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRHODREF! Reference den
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PPABST  ! absolute pressure at t
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PTHT    ! Theta at time t
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRHODJ  ! Dry density * Jacobian
+REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PLBDAS ! lambda parameter for snow ! Modif Wurtz
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(INOUT)           :: PRCS    ! Cloud water m.r. source
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRCT    ! Cloud water m.r. at t
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(INOUT)           :: PRRS    ! Rain water m.r. source
@@ -53,6 +55,7 @@ END MODULE MODI_ICE4_SEDIMENTATION_SPLIT
 SUBROUTINE ICE4_SEDIMENTATION_SPLIT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKTB, KKTE, KKT, KKL, &
                                    &PTSTEP, KRR, OSEDIC, ODEPOSC, PVDEPOSC, PDZZ, &
                                    &PRHODREF, PPABST, PTHT, PRHODJ, &
+				   & PLBDAS, &  ! Modif Wurtz                           
                                    &PRCS, PRCT, PRRS, PRRT, PRIS, PRIT, PRSS, PRST, PRGS, PRGT,&
                                    &PINPRC, PINDEP, PINPRR, PINPRI, PINPRS, PINPRG, &
                                    &PSEA, PTOWN,  &
@@ -102,6 +105,7 @@ REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRHODREF! Reference den
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PPABST  ! absolute pressure at t
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PTHT    ! Theta at time t
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRHODJ  ! Dry density * Jacobian
+REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PLBDAS ! lambda parameter for snow ! Modif Wurtz
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(INOUT)           :: PRCS    ! Cloud water m.r. source
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PRCT    ! Cloud water m.r. at t
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(INOUT)           :: PRRS    ! Rain water m.r. source
@@ -239,6 +243,7 @@ IF (GSEDIC) THEN
                           &XSPLIT_MAXCFL, &
                           &PRHODREF, ZW, PDZZ, PPABST, PTHT, PTSTEP, &
                           &2, &
+			  &PLBDAS, & ! Modif Wurtz
                           &ZRCT, PRCS, PINPRC, ZPRCS, &
                           &ZRAY, ZLBC, ZFSEDC, ZCONC3D, PFPR=PFPR)
 ENDIF
@@ -265,8 +270,9 @@ END IF
                           &XSPLIT_MAXCFL, &
                           &PRHODREF, ZW, PDZZ, PPABST, PTHT, PTSTEP, &
                           &3, &
+			  &PLBDAS, & ! Modif Wurtz
                           &ZRRT, PRRS, PINPRR, ZPRRS, &
-                          PFPR=PFPR)
+                          &PFPR=PFPR)
 !
 !*       2.3   for pristine ice
 !
@@ -274,6 +280,7 @@ END IF
                           &XSPLIT_MAXCFL, &
                           &PRHODREF, ZW, PDZZ, PPABST, PTHT, PTSTEP, &
                           &4, &
+			  &PLBDAS, & ! Modif Wurtz
                           &ZRIT, PRIS, PINPRI, ZPRIS, &
                           PFPR=PFPR)
 !
@@ -283,6 +290,7 @@ END IF
                         &XSPLIT_MAXCFL, &
                         &PRHODREF, ZW, PDZZ, PPABST, PTHT, PTSTEP, &
                         &5, &
+                        &PLBDAS, & ! Modif Wurtz
                         &ZRST, PRSS, PINPRS, ZPRSS, &
                         PFPR=PFPR)
 !
@@ -292,6 +300,7 @@ END IF
                         &XSPLIT_MAXCFL, &
                         &PRHODREF, ZW, PDZZ, PPABST, PTHT, PTSTEP, &
                         &6, &
+                        &PLBDAS, & ! Modif Wurtz
                         &ZRGT, PRGS, PINPRG, ZPRGS, &
                         PFPR=PFPR)
 !
@@ -302,6 +311,7 @@ IF (IRR==7) THEN
                           &XSPLIT_MAXCFL, &
                           &PRHODREF, ZW, PDZZ, PPABST, PTHT, PTSTEP, &
                           &7, &
+			  &PLBDAS, & ! Modif Wurtz
                           &ZRHT, PRHS, PINPRH, ZPRHS, &
                           PFPR=PFPR)
 ENDIF
@@ -315,7 +325,7 @@ CONTAINS
 !
 SUBROUTINE INTERNAL_SEDIM_SPLI(KIB,KIE,KIT,KJB,KJE,KJT,KKB,KKTB,KKTE,KKT,KKL,KRR, &
                               &PMAXCFL,PRHODREF,POORHODZ,PDZZ,PPABST,PTHT,PTSTEP, &
-                              &KSPE,PRXT,PRXS,PINPRX,PPRXS,                       &
+                              &KSPE,PLBDAS,PRXT,PRXS,PINPRX,PPRXS,                &
                               &PRAY,PLBC,PFSEDC,PCONC3D,PFPR)
 !
 !*      0. DECLARATIONS
@@ -344,6 +354,7 @@ REAL, DIMENSION(KIT,KJT),     INTENT(OUT)             :: PINPRX ! instant precip
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PPRXS ! external tendencie
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN), OPTIONAL    :: PRAY, PLBC, PFSEDC, PCONC3D
 REAL, DIMENSION(KIT,KJT,KKT,KRR), INTENT(INOUT), OPTIONAL :: PFPR    ! upper-air precipitation fluxes
+    REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)              :: PLBDAS ! lambda parameter for snow ! Modif Wurtz
 !
 !*       0.2  declaration of local variables
 !
@@ -433,15 +444,33 @@ DO WHILE (ANY(ZREMAINT>0.))
                             &      ALOG(PRHODREF(JI,JJ,JK)*PRXT(JI,JJ,JK)) )**XEXCSEDI
       ENDIF
     ENDDO
+    ELSEIF(KSPE==5) THEN
+      ! ******* for snow
+      PWSED(:,:,:) = 0.
+      DO JL=1, KSEDIM
+        JI=I1(JL)
+        JJ=I2(JL)
+        JK=I3(JL)
+        IF(PRXT(JI,JJ,JK)> XRTMIN(KSPE)) THEN
+
+        PWSED(JI, JJ, JK) = XFSEDS *  &
+                              & PRXT(JI,JJ,JK)* &
+                              & PRHODREF(JI,JJ,JK)**(1-XCEXVT) * & !    Modif Wurtz snow
+                              & (1 + (XFVELOS/PLBDAS(JI, JJ, JK))**XALPHAS)** (-XNUS+XEXSEDS/XALPHAS) * & ! GAMMAGEN LH_EXTENDED
+			      & PLBDAS(JI, JJ, JK) ** (XBS+XEXSEDS)
+ ! GAMMAGEN_LH_EXTENDED
+
+        ENDIF
+      ENDDO
   ELSE
     ! ******* for other species
     SELECT CASE(KSPE)
       CASE(3)
         ZFSED=XFSEDR
         ZEXSED=XEXSEDR
-      CASE(5)
-        ZFSED=XFSEDS
-        ZEXSED=XEXSEDS
+!      CASE(5)
+!        ZFSED=XFSEDS
+!        ZEXSED=XEXSEDS
       CASE(6)
         ZFSED=XFSEDG
         ZEXSED=XEXSEDG

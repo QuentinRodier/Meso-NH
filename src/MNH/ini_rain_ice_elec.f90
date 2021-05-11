@@ -271,8 +271,10 @@ XF2I = 0.14
 !
 XAS = 0.02
 XBS = 1.9
-XCS = 5.1
-XDS = 0.27
+!Values of Thompson (WRF)
+XCS = 12.5 	! Wurtz	GAMMAGEN LH_EXTENDED
+XDS = 0.4	! Wurtz	GAMMAGEN LH_EXTENDED
+XFVELOS = .5 ! Wurtz GAMMAGEN LH_EXTENDED
 !
 XCCS = 5.0
 XCXS = 1.0
@@ -342,8 +344,11 @@ XNUR    = 1.0  ! Exponential law
 XALPHAI = 3.0  ! Gamma law for the ice crystal volume
 XNUI    = 3.0  ! Gamma law with little dispersion
 !
-XALPHAS = 1.0  ! Exponential law
-XNUS    = 1.0  ! Exponential law
+XALPHAS = .214  ! Exponential law
+XNUS    = 43.7  ! Exponential law
+XTRANS_MP_GAMMAS = SQRT( ( GAMMA(XNUS + 2./XALPHAS)*GAMMA(XNUS + 4./XALPHAS) ) / &
+     ( 8.* GAMMA(XNUS + 1./XALPHAS)*GAMMA(XNUS + 3./XALPHAS) ) )    ! Wurtz
+!0.5 * GAMMA(XNUS + 2./XALPHAS) / GAMMA(XNUS+1./XALPHAS) ! Wurtz permet de convertir gamma MP en gamma generalisee
 !
 XALPHAG = 1.0  ! Exponential law
 XNUG    = 1.0  ! Exponential law
@@ -365,8 +370,9 @@ XLBR   = (XAR * XCCR * MOMG(XALPHAR,XNUR,XBR))**(-XLBEXR)
 XLBEXI = 1.0 / (-XBI)
 XLBI   = (XAI * MOMG(XALPHAI,XNUI,XBI))**(-XLBEXI)
 !
-XLBEXS = 1.0 / (XCXS - XBS)
-XLBS   = (XAS * XCCS * MOMG(XALPHAS,XNUS,XBS))**(-XLBEXS)
+!XLBEXS = 1.0/(XCXS-XBS) ! Wurtz Not used new snow diagnostic
+!XLBS   = ( XAS*XCCS*MOMG(XALPHAS,XNUS,XBS) )**(-XLBEXS) !Old constant ! OPER
+XLBS   = 1.0/(XAS*MOMG(XALPHAS,XNUS,XBS))  !Wurtz for new diag
 !
 XLBEXG = 1.0 / (XCXG - XBG)
 XLBG   = (XAG * XCCG * MOMG(XALPHAG,XNUG,XBG))**(-XLBEXG)
@@ -380,8 +386,10 @@ XLBDAR_MAX = 100000.0
 XLBDAS_MAX = 100000.0
 XLBDAG_MAX = 100000.0
 !
-ZCONC_MAX  = 1.E6 ! Maximal concentration for falling particules set to 1 per cc
-XLBDAS_MAX = (ZCONC_MAX / XCCS)**(1./XCXS)
+ZCONC_MAX  = 1.E6 ! Maximal concentration for falling particules set to 1 per cc ! Wurtz verifier par rapport a 1E7
+!XLBDAS_MAX = ( ZCONC_MAX/XCCS )**(1./XCXS) ! OLD CANIAUX
+XLBDAS_MAX = 1.E6 ! Wurtz
+XLBDAS_MIN = 1000. ! Valeurs litterature ! Modif Wurtz ! inutile si on se debrouille bien ?
 !
 IF (HCLOUD == 'ICE4') THEN
   ALLOCATE( XRTMIN(7) )
@@ -694,15 +702,15 @@ IF( (KACCLBDAS/=NACCLBDAS) .OR. (KACCLBDAR/=NACCLBDAR) .OR. (KND/=IND) .OR. &
     (PACCLBDAS_MIN/=XACCLBDAS_MIN) .OR. (PACCLBDAR_MIN/=XACCLBDAR_MIN) .OR. &
     (PFDINFTY/=ZFDINFTY)                                               ) THEN
   CALL RRCOLSS ( IND, XALPHAS, XNUS, XALPHAR, XNUR,                          &
-                 ZESR, XBR, XCS, XDS, XCR, XDR,                              &
+                 ZESR, XBR, XCS, XDS, XFVELOS, XCR, XDR,                              & ! Wurtz Thompson
                  XACCLBDAS_MAX, XACCLBDAR_MAX, XACCLBDAS_MIN, XACCLBDAR_MIN, &
                  ZFDINFTY, XKER_RACCSS, XAG, XBS, XAS                        )
   CALL RZCOLX  ( IND, XALPHAS, XNUS, XALPHAR, XNUR,                          &
-                 ZESR, XBR, XCS, XDS, XCR, XDR,                              &
+                 ZESR, XBR, XCS, XDS, XFVELOS, XCR, XDR, 0.,                             & ! Wurtz Thompson
                  XACCLBDAS_MAX, XACCLBDAR_MAX, XACCLBDAS_MIN, XACCLBDAR_MIN, &
                  ZFDINFTY, XKER_RACCS                                        )
   CALL RSCOLRG ( IND, XALPHAS, XNUS, XALPHAR, XNUR,                          &
-                 ZESR, XBS, XCS, XDS, XCR, XDR,                              &
+                 ZESR, XBS, XCS, XDS, XFVELOS, XCR, XDR,                              & ! Wurtz Thompson
                  XACCLBDAS_MAX, XACCLBDAR_MAX, XACCLBDAS_MIN, XACCLBDAR_MIN, &
                  ZFDINFTY, XKER_SACCRG,  XAG, XBS, XAS                       )
   WRITE(UNIT=KLUOUT,FMT='("*****************************************")')
@@ -905,7 +913,7 @@ IF( (KDRYLBDAG/=NDRYLBDAG) .OR. (KDRYLBDAS/=NDRYLBDAS) .OR. (KND/=IND) .OR. &
     (PDRYLBDAG_MIN/=XDRYLBDAG_MIN) .OR. (PDRYLBDAS_MIN/=XDRYLBDAS_MIN) .OR. &
     (PFDINFTY/=ZFDINFTY)                                               ) THEN
   CALL RZCOLX ( IND, XALPHAG, XNUG, XALPHAS, XNUS,                          &
-                ZEGS, XBS, XCG, XDG, XCS, XDS,                              &
+                ZEGS, XBS, XCG, XDG,0., XCS, XDS, XFVELOS,                  & ! Thompson Wurtz
                 XDRYLBDAG_MAX, XDRYLBDAS_MAX, XDRYLBDAG_MIN, XDRYLBDAS_MIN, &
                 ZFDINFTY, XKER_SDRYG                                        )
   WRITE(UNIT=KLUOUT,FMT='("*****************************************")')
@@ -971,7 +979,7 @@ IF( (KDRYLBDAG/=NDRYLBDAG) .OR. (KDRYLBDAR/=NDRYLBDAR) .OR. (KND/=IND) .OR. &
     (PDRYLBDAG_MIN/=XDRYLBDAG_MIN) .OR. (PDRYLBDAR_MIN/=XDRYLBDAR_MIN) .OR. &
     (PFDINFTY/=ZFDINFTY)                                               ) THEN
   CALL RZCOLX ( IND, XALPHAG, XNUG, XALPHAR, XNUR,                          &
-                ZEGR, XBR, XCG, XDG, XCR, XDR,                              &
+                ZEGR, XBR, XCG, XDG,0., XCR, XDR, 0.,                              & ! Thompson
                 XDRYLBDAG_MAX, XDRYLBDAR_MAX, XDRYLBDAG_MIN, XDRYLBDAR_MIN, &
                 ZFDINFTY, XKER_RDRYG                                        )
   WRITE(UNIT=KLUOUT,FMT='("*****************************************")')
@@ -1089,7 +1097,7 @@ IF( (KWETLBDAH/=NWETLBDAH) .OR. (KWETLBDAS/=NWETLBDAS) .OR. (KND/=IND) .OR. &
     (PWETLBDAH_MIN/=XWETLBDAH_MIN) .OR. (PWETLBDAS_MIN/=XWETLBDAS_MIN) .OR. &
     (PFDINFTY/=ZFDINFTY)                                               ) THEN
   CALL RZCOLX ( IND, XALPHAH, XNUH, XALPHAS, XNUS,                          &
-                ZEHS, XBS, XCH, XDH, XCS, XDS,                              &
+                ZEHS, XBS, XCH, XDH,0., XCS, XDS, XFVELOS,                              & ! Thompson Wurtz
                 XWETLBDAH_MAX, XWETLBDAS_MAX, XWETLBDAH_MIN, XWETLBDAS_MIN, &
                 ZFDINFTY, XKER_SWETH                                        )
   WRITE(UNIT=KLUOUT,FMT='("*****************************************")')
@@ -1155,7 +1163,7 @@ IF( (KWETLBDAH/=NWETLBDAH) .OR. (KWETLBDAG/=NWETLBDAG) .OR. (KND/=IND) .OR. &
     (PWETLBDAH_MIN/=XWETLBDAH_MIN) .OR. (PWETLBDAG_MIN/=XWETLBDAG_MIN) .OR. &
     (PFDINFTY/=ZFDINFTY)                                               ) THEN
   CALL RZCOLX ( IND, XALPHAH, XNUH, XALPHAG, XNUG,                          &
-                ZEHG, XBG, XCH, XDH, XCG, XDG,                              &
+                ZEHG, XBG, XCH, XDH, 0., XCG, XDG, 0.,                             & ! Thompson
                 XWETLBDAH_MAX, XWETLBDAG_MAX, XWETLBDAH_MIN, XWETLBDAG_MIN, &
                 ZFDINFTY, XKER_GWETH                                        )
   WRITE(UNIT=KLUOUT,FMT='("*****************************************")')

@@ -173,8 +173,12 @@ IF(LDSOFT) THEN
 ELSE
   PRVDEPS(:) = 0.
   WHERE(ZMASK(:)==1.)
-    PRVDEPS(:) = ( PSSI(:)/(PRHODREF(:)*PAI(:)) ) *                               &
-                 ( X0DEPS*PLBDAS(:)**XEX0DEPS + X1DEPS*PCJ(:)*PLBDAS(:)**XEX1DEPS )
+!    PRVDEPS(:) = ( PSSI(:)/(PRHODREF(:)*PAI(:)) ) *                               &
+!                 ( X0DEPS*PLBDAS(:)**XEX0DEPS + X1DEPS*PCJ(:)*PLBDAS(:)**XEX1DEPS )
+    PRVDEPS(:) = ( PRST(:)*PSSI(:)/PAI(:)) *                               & 	!Modif Wurtz
+                ! ( X0DEPS*PLBDAS(:)**XEX0DEPS + (X1DEPS*PCJ(:)*(PLBDAS(:)+XFVELOS/2.)**(XEX1DEPS)*(PLBDAS(:))**(XNUS+XBS))) ! Thompson
+         ( X0DEPS*PLBDAS(:)**XEX0DEPS + (X1DEPS*PCJ(:)*(1+(PLBDAS(:)/(2*XFVELOS)**XALPHAS))**(-XNUS+XEX1DEPS) &
+         *(PLBDAS(:))**(XBS+XEX1DEPS))) ! GAMMAGEN LH_EXTENDED
   END WHERE
 ENDIF
 DO JL=1, KSIZE
@@ -197,10 +201,15 @@ IF(LDSOFT) THEN
 ELSE
   PRIAGGS(:) = 0.
   WHERE(ZMASK(:)==1)
-    PRIAGGS(:) = XFIAGGS * EXP( XCOLEXIS*(PT(:)-XTT) ) &
+!    PRIAGGS(:) = XFIAGGS * EXP( XCOLEXIS*(PT(:)-XTT) ) &
+!                         * PRIT(:)                      &
+!                         * PLBDAS(:)**XEXIAGGS          &
+!                         * PRHODREF(:)**(-XCEXVT)
+      PRIAGGS(:) = XFIAGGS * EXP( XCOLEXIS*(PT(:)-XTT) ) &                !Modif Wurtz GAMMAGEN LH_EXTENDED
                          * PRIT(:)                      &
-                         * PLBDAS(:)**XEXIAGGS          &
-                         * PRHODREF(:)**(-XCEXVT)
+                         * PRST(:) * (1+(XFVELOS/PLBDAS(:))**XALPHAS)**(-XNUS+XEXIAGGS/XALPHAS)          &
+                         * PRHODREF(:)**(-XCEXVT+1.) &
+                         * ((PLBDAS(:))**(XBS+XEXIAGGS)) ! Thompson
   END WHERE
 ENDIF
 DO JL=1, KSIZE

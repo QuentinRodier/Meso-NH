@@ -10,7 +10,7 @@
 INTERFACE
 !
       SUBROUTINE RRCOLSS( KND, PALPHAS, PNUS, PALPHAR, PNUR,                 &
-                         PESR, PEXMASSR, PFALLS, PEXFALLS, PFALLR, PEXFALLR, &
+                         PESR, PEXMASSR, PFALLS, PEXFALLS, PFALLEXPS, PFALLR, PEXFALLR, &
                          PLBDASMAX, PLBDARMAX, PLBDASMIN, PLBDARMIN,         &
                          PDINFTY, PRRCOLSS, PAG, PBS, PAS                    )
 !
@@ -28,6 +28,7 @@ REAL, INTENT(IN) :: PESR      ! Efficiency of aggregates collecting rain
 REAL, INTENT(IN) :: PEXMASSR  ! Mass exponent of rain 
 REAL, INTENT(IN) :: PFALLS    ! Fall speed constant of aggregates
 REAL, INTENT(IN) :: PEXFALLS  ! Fall speed exponent of aggregates
+REAL, INTENT(IN) :: PFALLEXPS ! Fall speed exponential of aggregates (Thompson)
 REAL, INTENT(IN) :: PFALLR    ! Fall speed constant of rain 
 REAL, INTENT(IN) :: PEXFALLR  ! Fall speed exponent of rain 
 REAL, INTENT(IN) :: PLBDASMAX ! Maximun slope of size distribution of aggregates
@@ -49,7 +50,7 @@ END INTERFACE
       END MODULE MODI_RRCOLSS
 !     ########################################################################
       SUBROUTINE RRCOLSS( KND, PALPHAS, PNUS, PALPHAR, PNUR,                 &
-                         PESR, PEXMASSR, PFALLS, PEXFALLS, PFALLR, PEXFALLR, &
+                         PESR, PEXMASSR, PFALLS, PEXFALLS, PFALLEXPS, PFALLR, PEXFALLR, &
                          PLBDASMAX, PLBDARMAX, PLBDASMIN, PLBDARMIN,         &
                          PDINFTY, PRRCOLSS, PAG, PBS, PAS                    )
 !     ########################################################################
@@ -151,6 +152,7 @@ REAL, INTENT(IN) :: PESR      ! Efficiency of aggregates collecting rain
 REAL, INTENT(IN) :: PEXMASSR  ! Mass exponent of rain 
 REAL, INTENT(IN) :: PFALLS    ! Fall speed constant of aggregates
 REAL, INTENT(IN) :: PEXFALLS  ! Fall speed exponent of aggregates
+REAL, INTENT(IN) :: PFALLEXPS ! Fall speed exponential of aggregates (Thompson)
 REAL, INTENT(IN) :: PFALLR    ! Fall speed constant of rain 
 REAL, INTENT(IN) :: PEXFALLR  ! Fall speed exponent of rain 
 REAL, INTENT(IN) :: PLBDASMAX ! Maximun slope of size distribution of aggregates
@@ -277,11 +279,11 @@ DO JLBDAS = 1,SIZE(PRRCOLSS(:,:),1)
           DO JDR = 1,INR-1
             ZDR = ZDDCOLLR * REAL(JDR)
             ZCOLLR = ZCOLLR + (ZDS+ZDR)**2 * ZDR**PEXMASSR                     &
-                       * PESR * ABS(PFALLS*ZDS**PEXFALLS-PFALLR*ZDR**PEXFALLR) &
+                       * PESR * ABS(PFALLS*ZDS**PEXFALLS * EXP(-(PFALLEXPS*ZDS)**PALPHAS)-PFALLR*ZDR**PEXFALLR) & ! GAMMAGEN LH_EXTENDED
                                       * GENERAL_GAMMA(PALPHAR,PNUR,ZLBDAR,ZDR)
           END DO
           ZCOLLDRMAX = (ZDS+ZDRMAX)**2 * ZDRMAX**PEXMASSR                      &
-                    * PESR * ABS(PFALLS*ZDS**PEXFALLS-PFALLR*ZDRMAX**PEXFALLR) &
+                     * PESR * ABS(PFALLS*ZDS**PEXFALLS* EXP(-(PFALLEXPS*ZDS)**PALPHAS)-PFALLR*ZDRMAX**PEXFALLR) & ! GAMMAGEN LH_EXTENDED
                                    * GENERAL_GAMMA(PALPHAR,PNUR,ZLBDAR,ZDRMAX)
           ZCOLLR = (ZCOLLR + 0.5*ZCOLLDRMAX)*(ZDDCOLLR/ZDDSCALR)
 !
