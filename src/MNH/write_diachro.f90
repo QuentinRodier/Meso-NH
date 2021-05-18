@@ -712,21 +712,38 @@ end subroutine Write_diachro_lfi
 !-----------------------------------------------------------------------------
 subroutine Write_diachro_nc4( tpdiafile, tpbudiachro, tpfields, pvar, osplit, tpflyer )
 
-use NETCDF,                only: NF90_DEF_DIM, NF90_DEF_GRP, NF90_DEF_VAR, NF90_INQ_NCID, NF90_PUT_ATT, NF90_PUT_VAR, &
-                                 NF90_GLOBAL, NF90_NOERR, NF90_STRERROR
+use NETCDF,                only: NF90_DEF_DIM, NF90_NOERR
 
 use modd_aircraft_balloon, only: flyer
-use modd_budget,           only: nbutshift, nbusubwrite, tbudiachrometadata
+use modd_budget,           only: CNOTSET, nbutshift, nbusubwrite, tbudiachrometadata
 use modd_conf,             only: lcartesian
 use modd_field
 use modd_io,               only: isp, tfiledata
 use modd_les,              only: cbl_height_def, cles_norm_type, nles_masks, xles_temp_sampling
-use modd_parameters,       only: jphext
+use modd_parameters,       only: jphext, NBUNAMELGTMAX, NCOMMENTLGTMAX
 use modd_precision,        only: CDFINT, MNHREAL_NF90
 use modd_type_date,        only: date_time
 
 use mode_io_field_write,   only: IO_Field_create, IO_Field_write, IO_Field_write_box
 use mode_io_tools_nc4,     only: IO_Err_handle_nc4
+
+integer, parameter :: NMAXLEVELS       = 7
+integer, parameter :: NLVL_ROOT        = 0
+integer, parameter :: NLVL_CATEGORY    = 1
+integer, parameter :: NLVL_SUBCATEGORY = 2
+integer, parameter :: NLVL_GROUP       = 3
+integer, parameter :: NLVL_SHAPE       = 4
+integer, parameter :: NLVL_TIMEAVG     = 5
+integer, parameter :: NLVL_NORM        = 6
+integer, parameter :: NLVL_MASK        = 7
+character(len=*), dimension(NMAXLEVELS), parameter :: CNCGROUPNAMES = [ &
+                                         'category   ', &  !Name of the different type of groups/levels in the netCDF file
+                                         'subcategory', &
+                                         'group      ', &
+                                         'shape      ', &
+                                         'timeavg    ', &
+                                         'norm       ', &
+                                         'mask       '  ]
 
 type(tfiledata),                                     intent(in)           :: tpdiafile        ! File to write
 type(tbudiachrometadata),                            intent(in)           :: tpbudiachro
@@ -736,28 +753,32 @@ logical,                                             intent(in), optional :: osp
 type(flyer),                                         intent(in), optional :: tpflyer
 
 character(len=:), allocatable :: ycategory
-character(len=:), allocatable :: ycategcomment !Comment for category in the netCDF file
-character(len=:), allocatable :: ycategnc      !Name of the group for category in the netCDF file
+character(len=:), allocatable :: ylevelname
+character(len=:), allocatable :: ylevels
 character(len=:), allocatable :: yshape
 character(len=:), allocatable :: ygroup
 character(len=:), allocatable :: ystdnameprefix
-integer              :: iil, iih, ijl, ijh, ikl, ikh
-integer              :: idims
-integer              :: icount
-integer              :: icorr
-integer              :: ji
-integer              :: jp
-integer(kind=CDFINT) :: isavencid
-integer(kind=CDFINT) :: idimid
-integer(kind=CDFINT) :: icatid
-integer(kind=CDFINT) :: igrpid
-integer(kind=CDFINT) :: istatus
-logical              :: gdistributed
-logical              :: gcategdefined
-logical              :: ggroupdefined
-logical              :: gsplit
-type(tfielddata)     :: tzfield
-type(tfiledata)      :: tzfile
+character(len=NBUNAMELGTMAX),  dimension(NMAXLEVELS) :: ylevelnames !Name of the different groups/levels in the netCDF file
+character(len=NCOMMENTLGTMAX), dimension(NMAXLEVELS) :: ylevelcomments !Comments for the different groups/levels in the netCDF file
+integer                                       :: iil, iih, ijl, ijh, ikl, ikh
+integer                                       :: idims
+integer                                       :: icount
+integer                                       :: icorr
+integer                                       :: ji
+integer                                       :: jl
+integer                                       :: jp
+integer(kind=CDFINT)                          :: idimid
+integer(kind=CDFINT)                          :: istatus
+integer(kind=CDFINT)                          :: ilevelid
+integer(kind=CDFINT), dimension(0:NMAXLEVELS) :: ilevelids ! ids of the different groups/levels in the netCDF file
+logical                                       :: gdistributed
+logical                                       :: gsplit
+logical(kind=CDFINT), dimension(NMAXLEVELS)   :: gleveluse ! Are the different groups/levels in the netCDF file used?
+logical(kind=CDFINT), dimension(0:NMAXLEVELS) :: gleveldefined ! Are the different groups/levels already defined in the netCDF file
+type(tfielddata)                              :: tzfield
+type(tfiledata)                               :: tzfile
+
+call Print_msg( NVERB_DEBUG, 'BUD', 'Write_diachro_nc4', 'called' )
 
 tzfile = tpdiafile
 
@@ -790,230 +811,321 @@ else
 end if
 
 MASTER: if ( isp == tzfile%nmaster_rank) then
-  gcategdefined = .false.
-  ggroupdefined = .false.
+  ilevelids(NLVL_ROOT) = tzfile%nncid
+
+  gleveldefined(NLVL_ROOT) = .false.
+
+  gleveldefined(NLVL_CATEGORY) = .false.
+  gleveldefined(NLVL_SUBCATEGORY) = .false.
+  gleveldefined(NLVL_GROUP)    = .false.
+  gleveldefined(NLVL_SHAPE)    = .false.
+  gleveldefined(NLVL_TIMEAVG)  = .false.
+  gleveldefined(NLVL_NORM)     = .false.
+  gleveldefined(NLVL_MASK)     = .false.
+
+  ylevelnames(:)    = ''
+  ylevelcomments(:) = ''
 
   select case ( ycategory )
     case ( 'budget' )
-      ycategnc      = 'Budgets'
-      ycategcomment = 'Group for the different budgets'
+      gleveluse(NLVL_CATEGORY)  = .true.
+      ylevelnames(NLVL_CATEGORY) = 'Budgets'
+      ylevelcomments(NLVL_CATEGORY) = 'Group for the different budgets'
+
+      gleveluse(NLVL_SUBCATEGORY) = .false.
+
+      gleveluse(NLVL_GROUP)    = .true.
+      ylevelnames(NLVL_GROUP)   = Trim( tpbudiachro%cgroupname )
+
+      gleveluse(NLVL_SHAPE)    = .false.
+      ylevelnames(NLVL_SHAPE)   = Trim( tpbudiachro%cshape )
+
+      gleveluse(NLVL_TIMEAVG)  = .false.
+      if ( tpbudiachro%ltcompress ) then
+        ylevelnames(NLVL_TIMEAVG) = 'time averaged'
+      else
+        ylevelnames(NLVL_TIMEAVG) = 'not time averaged'
+      end if
+
+      gleveluse(NLVL_NORM)     = .false.
+      if ( tpbudiachro%lnorm ) then
+        ylevelnames(NLVL_NORM) = 'normalized'
+      else
+        ylevelnames(NLVL_NORM) = 'not normalized'
+      end if
+
+      gleveluse(NLVL_MASK)     = .false.
+      ylevelnames(NLVL_MASK)    = tpbudiachro%cmask
 
     case ( 'LES' )
-      ycategnc = 'LES budgets'
-      ycategcomment = 'Group for the different LES budgets'
+      gleveluse(NLVL_CATEGORY)  = .true.
+      ylevelnames(NLVL_CATEGORY) = 'LES budgets'
+      ylevelcomments(NLVL_CATEGORY) = 'Group for the different LES budgets'
+
+      gleveluse(NLVL_SUBCATEGORY) = .false.
+      gleveluse(NLVL_GROUP)    = .false.
+
+      gleveluse(NLVL_SHAPE)    = .true.
+      ylevelnames(NLVL_SHAPE)   = Trim( tpbudiachro%cshape )
+
+      gleveluse(NLVL_TIMEAVG)   = .true.
+      if ( tpbudiachro%ltcompress ) then
+        ylevelnames(NLVL_TIMEAVG) = 'time averaged'
+      else
+        ylevelnames(NLVL_TIMEAVG) = 'not time averaged'
+      end if
+
+      gleveluse(NLVL_NORM)     = .true.
+      if ( tpbudiachro%lnorm ) then
+        ylevelnames(NLVL_NORM) = 'normalized'
+      else
+        ylevelnames(NLVL_NORM) = 'not normalized'
+      end if
+
+      if ( tpbudiachro%cshape == 'cartesian' ) then
+       if ( tpbudiachro%cmask == CNOTSET ) then
+          call Print_msg( NVERB_WARNING, 'IO', 'Write_diachro_nc4', 'mask not set for ' // ygroup  )
+          gleveluse(NLVL_MASK) = .false.
+        else
+          gleveluse(NLVL_MASK)  = .true.
+          ylevelnames(NLVL_MASK) = tpbudiachro%cmask
+        end if
+      else
+        gleveluse(NLVL_MASK)     = .false.
+      end if
 
     case ( 'profiler' )
-      ycategnc      = 'Profilers'
-      ycategcomment = 'Group for the different vertical profilers'
+      gleveluse(NLVL_CATEGORY)  = .true.
+      ylevelnames(NLVL_CATEGORY) = 'Profilers'
+      ylevelcomments(NLVL_CATEGORY) = 'Group for the different vertical profilers'
+
+      gleveluse(NLVL_SUBCATEGORY) = .false.
+
+      gleveluse(NLVL_GROUP)    = .true.
+      ylevelnames(NLVL_GROUP)   = Trim( tpbudiachro%cgroupname )
+
+      gleveluse(NLVL_SHAPE)    = .false.
+      ylevelnames(NLVL_SHAPE)   = Trim( tpbudiachro%cshape )
+
+      gleveluse(NLVL_TIMEAVG)  = .false.
+      gleveluse(NLVL_NORM)     = .false.
+      gleveluse(NLVL_MASK)     = .false.
 
     case ( 'station' )
-      ycategnc      = 'Stations'
-      ycategcomment = 'Group for the different stations'
+      gleveluse(NLVL_CATEGORY)  = .true.
+      ylevelnames(NLVL_CATEGORY) = 'Stations'
+      ylevelcomments(NLVL_CATEGORY) = 'Group for the different stations'
+
+      gleveluse(NLVL_SUBCATEGORY) = .false.
+
+      gleveluse(NLVL_GROUP)    = .true.
+      ylevelnames(NLVL_GROUP)   = Trim( tpbudiachro%cgroupname )
+
+      gleveluse(NLVL_SHAPE)    = .false.
+      ylevelnames(NLVL_SHAPE)   = Trim( tpbudiachro%cshape )
+
+      gleveluse(NLVL_TIMEAVG)  = .false.
+      gleveluse(NLVL_NORM)     = .false.
+      gleveluse(NLVL_MASK)     = .false.
 
     case( 'aircraft', 'radiosonde balloon', 'iso-density balloon', 'constant volume balloon' )
-      ycategnc      = 'Flyers'
-      ycategcomment = 'Group for the different flyers (aircrafts and balloons)'
+      gleveluse(NLVL_CATEGORY)  = .true.
+      ylevelnames(NLVL_CATEGORY) = 'Flyers'
+      ylevelcomments(NLVL_CATEGORY) = 'Group for the different flyers (aircrafts and balloons)'
+
+      gleveluse(NLVL_SUBCATEGORY) = .true.
+      ylevelnames(NLVL_SUBCATEGORY) = ycategory
+      ylevelcomments(NLVL_SUBCATEGORY) = 'Group for the different ' // Trim( ycategory ) // 's'
+
+      gleveluse(NLVL_GROUP)    = .true.
+      ylevelnames(NLVL_GROUP)   = Trim( tpbudiachro%cgroupname )
+
+      gleveluse(NLVL_SHAPE)    = .true.
+      ylevelnames(NLVL_SHAPE) = Trim( tpbudiachro%cshape )
+
+      gleveluse(NLVL_TIMEAVG)  = .false.
+
+      gleveluse(NLVL_NORM)     = .false.
+
+      gleveluse(NLVL_MASK)     = .false.
 
     case ( 'time series' )
-      ycategnc      = 'Time series'
-      ycategcomment = 'Group for the different time series'
+      gleveluse(NLVL_CATEGORY)  = .true.
+      ylevelnames(NLVL_CATEGORY) = 'Time series'
+      ylevelcomments(NLVL_CATEGORY) = 'Group for the different time series'
+
+      gleveluse(NLVL_SUBCATEGORY) = .false.
+
+      gleveluse(NLVL_GROUP)    = .true.
+      ylevelnames(NLVL_GROUP)   = Trim( tpbudiachro%cgroupname )
+
+      gleveluse(NLVL_SHAPE)    = .false.
+      ylevelnames(NLVL_SHAPE)   = Trim( tpbudiachro%cshape )
+
+      gleveluse(NLVL_TIMEAVG)  = .false.
+      gleveluse(NLVL_NORM)     = .false.
+
+      if ( Trim( tpbudiachro%cgroupname ) == 'TSERIES' .or. Trim( tpbudiachro%cgroupname ) == 'ZTSERIES' ) then
+        gleveluse(NLVL_MASK)   = .true.
+        ylevelnames(NLVL_MASK)  = tpbudiachro%cmask
+      else
+        gleveluse(NLVL_MASK)     = .false.
+      end if
 
     case default
       call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', 'unknown category ' // ycategory // ' for group ' // ygroup )
       return
   end select
 
-  istatus = NF90_INQ_NCID( tzfile%nncid, ycategnc, icatid )
-  if ( istatus == NF90_NOERR ) then
-    gcategdefined = .true.
-  else
-    istatus = NF90_DEF_GRP( tzfile%nncid, ycategnc, icatid )
-    if ( istatus /= NF90_NOERR ) &
-      call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_DEF_GRP', 'for ' // ycategnc // ' category' )
-  end if
+  do jl = 1, NMAXLEVELS
+    call Move_to_next_level( ilevelids(jl-1), gleveldefined(jl-1), gleveluse(jl), &
+                           ylevelnames(jl), gleveldefined(jl), ilevelids(jl) )
+  end do
 
-  istatus = NF90_INQ_NCID( icatid, ygroup, igrpid )
-  if ( istatus == NF90_NOERR ) then
-    ggroupdefined = .true.
-    if ( .not. gsplit ) then
-      call Print_msg( NVERB_WARNING, 'IO', 'Write_diachro_nc4', trim(tzfile%cname) // ': group ' // ygroup // ' already defined' )
+  tzfile%nncid = ilevelids(NLVL_MASK)
+
+  ylevels = ''
+
+  do jl = NMAXLEVELS, 1, -1
+    ylevels = Trim( CNCGROUPNAMES(jl) ) // ' ' // ylevels
+    if ( gleveluse(jl) ) then
+      call Att_write( ylevelnames(jl), ilevelids(jl), 'levels', Trim( ylevels ) )
+      ylevels = ''
     end if
-  else
-    istatus = NF90_DEF_GRP( icatid, ygroup, igrpid )
-    if ( istatus /= NF90_NOERR ) &
-      call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_DEF_GRP', 'for ' // ygroup // ' group' )
-  end if
+  end do
 
-  !Save id of the file root group ('/' group)
-  isavencid = tzfile%nncid
-  tzfile%nncid = igrpid
+  if ( .not. gleveldefined(NLVL_CATEGORY) ) then
+    ylevelname = ylevelnames(NLVL_CATEGORY)
+    ilevelid   = ilevelids  (NLVL_CATEGORY)
 
+    call Att_write( ylevelname, ilevelid, 'category', ylevelname )
+    if ( gleveluse(NLVL_CATEGORY) .and. Len_trim( ylevelcomments(NLVL_CATEGORY) ) > 0 ) &
+    call Att_write( ylevelname, ilevelid, 'comment',  ylevelcomments(NLVL_CATEGORY) )
 
-  if ( .not. gcategdefined ) then
-    call Att_write( ygroup, icatid, 'name',          ycategnc )
-    call Att_write( ygroup, icatid, 'comment',       ycategcomment )
-    if ( ycategnc /= 'Flyers' ) &
-    call Att_write( ygroup, icatid, 'category',      ycategory )
-    if ( ycategory /= 'LES' ) &
-    call Att_write( ygroup, icatid, 'shape',         yshape )
-    call Att_write( ygroup, icatid, 'moving',        Merge( 'yes', 'no ', tpbudiachro%lmobile    ) )
-    call Att_write( ygroup, icatid, 'time averaged', Merge( 'yes', 'no ', tpbudiachro%ltcompress ) )
-    call Att_write( ygroup, icatid, 'normalized',    Merge( 'yes', 'no ', tpbudiachro%lnorm      ) )
     if ( ycategory == 'LES' ) &
-    call Att_write( ygroup, icatid, 'temporal sampling frequency', xles_temp_sampling )
+    call Att_write( ylevelname, ilevelid, 'temporal sampling frequency', xles_temp_sampling )
+  end if
 
-    if ( ycategory == 'budget' .and. yshape == 'cartesian' ) then
-      call Att_write( ygroup, icatid, 'min I index in physical domain', iil )
-      call Att_write( ygroup, icatid, 'max I index in physical domain', iih )
-      call Att_write( ygroup, icatid, 'min J index in physical domain', ijl )
-      call Att_write( ygroup, icatid, 'max J index in physical domain', ijh )
-      call Att_write( ygroup, icatid, 'min K index in physical domain', ikl )
-      call Att_write( ygroup, icatid, 'max K index in physical domain', ikh )
+  if ( .not. gleveldefined(NLVL_SUBCATEGORY) ) then
+    ylevelname = ylevelnames(NLVL_SUBCATEGORY)
+    ilevelid   = ilevelids  (NLVL_SUBCATEGORY)
 
-      call Att_write( ygroup, icatid, 'averaged in the I direction', Merge( 'yes', 'no ', tpbudiachro%licompress ) )
-      call Att_write( ygroup, icatid, 'averaged in the J direction', Merge( 'yes', 'no ', tpbudiachro%ljcompress ) )
-      call Att_write( ygroup, icatid, 'averaged in the K direction', Merge( 'yes', 'no ', tpbudiachro%lkcompress ) )
+    call Att_write( ylevelname, ilevelid, 'subcategory', ylevelname )
+    if ( gleveluse(NLVL_SUBCATEGORY) .and. Len_trim( ylevelcomments(NLVL_SUBCATEGORY) ) > 0 ) &
+    call Att_write( ylevelname, ilevelid, 'comment',     ylevelcomments(NLVL_SUBCATEGORY) )
+  end if
 
-    else if ( ycategory == 'budget' .and. yshape == 'mask' ) then
-      call Att_write( ygroup, icatid, 'masks are stored in variable', 'MASKS' )
-      call Att_write( ygroup, icatid, 'averaged in the K direction', Merge( 1, 0, tpbudiachro%lkcompress ) )
+  if ( .not. gleveldefined(NLVL_GROUP) ) then
+    ylevelname = ylevelnames(NLVL_GROUP)
+    ilevelid   = ilevelids  (NLVL_GROUP)
 
-    else if ( ycategory == 'LES' ) then
-      call Att_write( ygroup, icatid, 'min I index in physical domain', iil )
-      call Att_write( ygroup, icatid, 'max I index in physical domain', iih )
-      call Att_write( ygroup, icatid, 'min J index in physical domain', ijl )
-      call Att_write( ygroup, icatid, 'max J index in physical domain', ijh )
+    call Att_write( ylevelname, ilevelid, 'group',   ylevelname )
+    if ( gleveluse(NLVL_GROUP) .and. Len_trim( ylevelcomments(NLVL_GROUP) ) > 0 ) &
+    call Att_write( ylevelname, ilevelid, 'comment', ylevelcomments(NLVL_GROUP) )
+  end if
 
-    else if ( ycategory == 'profiler' .and.  yshape == 'vertical profile' ) then
+  if ( .not. gleveldefined(NLVL_SHAPE) ) then
+    ylevelname = ylevelnames(NLVL_SHAPE)
+    ilevelid   = ilevelids  (NLVL_SHAPE)
 
-    else if ( ycategory == 'station' .and.  yshape == 'point' ) then
+    call Att_write( ylevelname, ilevelid, 'shape',   ylevelname )
+    if ( gleveluse(NLVL_SHAPE) .and. Len_trim( ylevelcomments(NLVL_SHAPE) ) > 0 ) &
+    call Att_write( ylevelname, ilevelid, 'comment', ylevelcomments(NLVL_SHAPE) )
 
-    else if ( ycategory == 'time series' ) then
+    call Att_write( ylevelname, ilevelid, 'moving', Merge( 'yes', 'no ', tpbudiachro%lmobile ) )
 
+    if (      ( ycategory == 'budget' .and. yshape == 'cartesian' ) &
+         .or. ycategory == 'LES'                                    &
+         .or. tpbudiachro%cgroupname      == 'TSERIES'              &
+         .or. tpbudiachro%cgroupname      == 'ZTSERIES'             &
+         .or. tpbudiachro%cgroupname(1:8) == 'XTSERIES'             ) then
+      call Att_write( ylevelname, ilevelid, 'min I index in physical domain', iil )
+      call Att_write( ylevelname, ilevelid, 'max I index in physical domain', iih )
+      call Att_write( ylevelname, ilevelid, 'min J index in physical domain', ijl )
+      call Att_write( ylevelname, ilevelid, 'max J index in physical domain', ijh )
+    end if
+
+    if (      ( ycategory == 'budget' .and. yshape == 'cartesian' ) &
+         .or. tpbudiachro%cgroupname      == 'TSERIES'              &
+         .or. tpbudiachro%cgroupname      == 'ZTSERIES'             &
+         .or. tpbudiachro%cgroupname(1:8) == 'XTSERIES'             ) then
+      call Att_write( ylevelname, ilevelid, 'min K index in physical domain', ikl )
+      call Att_write( ylevelname, ilevelid, 'max K index in physical domain', ikh )
+    end if
+
+
+    if (      ( ycategory == 'budget' .and. yshape == 'cartesian' ) &
+         .or. ( ycategory == 'LES'    .and. yshape == 'cartesian' ) &
+         .or. tpbudiachro%cgroupname      == 'TSERIES'              &
+         .or. tpbudiachro%cgroupname      == 'ZTSERIES'             &
+         .or. tpbudiachro%cgroupname(1:8) == 'XTSERIES'             ) then
+      call Att_write( ylevelname, ilevelid, &
+                      'averaged in the I direction', Merge( 'yes', 'no ', tpbudiachro%licompress ) )
+      call Att_write( ylevelname, ilevelid, &
+                      'averaged in the J direction', Merge( 'yes', 'no ', tpbudiachro%ljcompress ) )
+      call Att_write( ylevelname, ilevelid, &
+                      'averaged in the K direction', Merge( 'yes', 'no ', tpbudiachro%lkcompress ) )
     end if
   end if
 
-  if ( .not. ggroupdefined ) then
-    call Att_write( ygroup, igrpid, 'name',          tpbudiachro%cname    )
-    call Att_write( ygroup, igrpid, 'comment',       tpbudiachro%ccomment )
+  if ( .not. gleveldefined(NLVL_TIMEAVG) ) then
+    ylevelname = ylevelnames(NLVL_TIMEAVG)
+    ilevelid   = ilevelids  (NLVL_TIMEAVG)
 
-    if ( ycategory == 'budget' .and. yshape == 'cartesian' ) then
+    if ( gleveluse(NLVL_TIMEAVG) .and. Len_trim( ylevelcomments(NLVL_TIMEAVG) ) > 0 ) &
+    call Att_write( ylevelname, ilevelid, 'comment',        ylevelcomments(NLVL_TIMEAVG) )
 
+    call Att_write( ylevelname, ilevelid, 'time averaged', Merge( 'yes', 'no ', tpbudiachro%ltcompress ) )
+  end if
 
-    else if ( ycategory == 'budget' .and. yshape == 'mask' ) then
+  if ( .not. gleveldefined(NLVL_NORM) ) then
+    ylevelname = ylevelnames(NLVL_NORM)
+    ilevelid   = ilevelids  (NLVL_NORM)
 
-    else if ( ycategory == 'LES' .and. yshape == 'cartesian' ) then
-      call Att_write( ygroup, igrpid, 'shape', yshape    )
+    if ( gleveluse(NLVL_NORM) .and. Len_trim( ylevelcomments(NLVL_NORM) ) > 0 ) &
+    call Att_write( ylevelname, ilevelid, 'comment',   ylevelcomments(NLVL_NORM) )
 
-      call Att_write( ygroup, igrpid, 'averaged in the I direction', Merge( 'yes', 'no ', tpbudiachro%licompress ) )
-      call Att_write( ygroup, igrpid, 'averaged in the J direction', Merge( 'yes', 'no ', tpbudiachro%ljcompress ) )
-      call Att_write( ygroup, igrpid, 'averaged in the K direction', Merge( 'yes', 'no ', tpbudiachro%lkcompress ) )
+    call Att_write( ylevelname, ilevelid, 'normalized', Merge( 'yes', 'no ', tpbudiachro%lnorm ) )
 
+    if ( ycategory == 'LES' .and. yshape == 'cartesian' ) then
       if ( tpbudiachro%lnorm ) then
         if ( cles_norm_type == 'NONE' ) then
-          call Att_write( ygroup, igrpid, 'normalization', 'none' )
+          call Att_write( ylevelname, ilevelid, 'normalization', 'none' )
         else if ( cles_norm_type == 'CONV' ) then
-          call Att_write( ygroup, igrpid, 'normalization', 'convective' )
+          call Att_write( ylevelname, ilevelid, 'normalization', 'convective' )
           ! cbl_height_def determines how the boundary layer height is computed, which is used in this normalization
-          call Att_write( ygroup, igrpid, 'definition of boundary layer height', cbl_height_def )
+          call Att_write( ylevelname, ilevelid, 'definition of boundary layer height', cbl_height_def )
         else if ( cles_norm_type == 'EKMA' ) then
-          call Att_write( ygroup, igrpid, 'normalization', 'Ekman' )
+          call Att_write( ylevelname, ilevelid, 'normalization', 'Ekman' )
           ! cbl_height_def determines how the boundary layer height is computed, which is used in this normalization
-          call Att_write( ygroup, igrpid, 'definition of boundary layer height', cbl_height_def )
+          call Att_write( ylevelname, ilevelid, 'definition of boundary layer height', cbl_height_def )
         else if ( cles_norm_type == 'MOBU' ) then
-          call Att_write( ygroup, igrpid, 'normalization', 'Monin-Obukhov' )
+          call Att_write( ylevelname, ilevelid, 'normalization', 'Monin-Obukhov' )
         else
           call Print_msg( NVERB_WARNING, 'IO', 'Write_diachro_nc4', Trim( tzfile%cname ) // &
                           ': group ' // Trim( ygroup ) // ': unknown normalization' )
-          call Att_write( ygroup, igrpid, 'normalization', 'unknown' )
+          call Att_write( ylevelname, ilevelid, 'normalization', 'unknown' )
         end if
       else
-        call Att_write( ygroup, igrpid, 'normalization', 'none' )
+      call Att_write( ylevelname, ilevelid, 'normalization', 'none' )
       end if
-
-    else if ( ycategory == 'LES' .and. yshape == '2-point correlation' ) then
-      call Att_write( ygroup, igrpid, 'shape', yshape )
-
-      call Att_write( ygroup, igrpid, 'direction of 2-point correlation', tpbudiachro%cdirection )
-
-
-    else if ( ycategory == 'LES' .and. yshape == 'spectrum' ) then
-      call Att_write( ygroup, igrpid, 'shape', yshape )
-
-      call Att_write( ygroup, igrpid, 'direction of spectrum', tpbudiachro%cdirection )
-
-
-    else if ( (      ycategory == 'aircraft'                   &
-                .or. ycategory == 'radiosonde balloon'         &
-                .or. ycategory == 'iso-density balloon'        &
-                .or. ycategory ==  'constant volume balloon' ) &
-              .and.  yshape == 'point' ) then
-      call Att_write( ygroup, igrpid, 'category', ycategory )
-    else if ( (      ycategory == 'aircraft'                   &
-                .or. ycategory == 'radiosonde balloon'         &
-                .or. ycategory == 'iso-density balloon'        &
-                .or. ycategory ==  'constant volume balloon' ) &
-              .and.  yshape == 'vertical profile' ) then
-      call Att_write( ygroup, igrpid, 'category', ycategory )
-
-
-    else if ( ycategory == 'profiler' .and.  yshape == 'vertical profile' ) then
-
-    else if ( ycategory == 'station' .and.  yshape == 'point' ) then
-
-    else if ( tpbudiachro%cgroupname == 'TSERIES' ) then
-      call Att_write( ygroup, igrpid, 'min I index in physical domain', iil )
-      call Att_write( ygroup, igrpid, 'max I index in physical domain', iih )
-      call Att_write( ygroup, igrpid, 'min J index in physical domain', ijl )
-      call Att_write( ygroup, igrpid, 'max J index in physical domain', ijh )
-      call Att_write( ygroup, igrpid, 'min K index in physical domain', ikl )
-      call Att_write( ygroup, igrpid, 'max K index in physical domain', ikh )
-
-      call Att_write( ygroup, igrpid, 'averaged in the I direction', Merge( 'yes', 'no ', tpbudiachro%licompress ) )
-      call Att_write( ygroup, igrpid, 'averaged in the J direction', Merge( 'yes', 'no ', tpbudiachro%ljcompress ) )
-      call Att_write( ygroup, igrpid, 'averaged in the K direction', Merge( 'yes', 'no ', tpbudiachro%lkcompress ) )
-
-    else if ( tpbudiachro%cgroupname == 'ZTSERIES' ) then
-      call Att_write( ygroup, igrpid, 'min I index in physical domain', iil )
-      call Att_write( ygroup, igrpid, 'max I index in physical domain', iih )
-      call Att_write( ygroup, igrpid, 'min J index in physical domain', ijl )
-      call Att_write( ygroup, igrpid, 'max J index in physical domain', ijh )
-      call Att_write( ygroup, igrpid, 'min K index in physical domain', ikl )
-      call Att_write( ygroup, igrpid, 'max K index in physical domain', ikh )
-
-      call Att_write( ygroup, igrpid, 'averaged in the I direction', Merge( 'yes', 'no ', tpbudiachro%licompress ) )
-      call Att_write( ygroup, igrpid, 'averaged in the J direction', Merge( 'yes', 'no ', tpbudiachro%ljcompress ) )
-      call Att_write( ygroup, igrpid, 'averaged in the K direction', Merge( 'yes', 'no ', tpbudiachro%lkcompress ) )
-
-    else if ( tpbudiachro%cgroupname(1:8) == 'XTSERIES' ) then
-      call Att_write( ygroup, igrpid, 'min I index in physical domain', iil )
-      call Att_write( ygroup, igrpid, 'max I index in physical domain', iih )
-      call Att_write( ygroup, igrpid, 'min J index in physical domain', ijl )
-      call Att_write( ygroup, igrpid, 'max J index in physical domain', ijh )
-      call Att_write( ygroup, igrpid, 'min K index in physical domain', ikl )
-      call Att_write( ygroup, igrpid, 'max K index in physical domain', ikh )
-
-      call Att_write( ygroup, igrpid, 'averaged in the I direction', Merge( 'yes', 'no ', tpbudiachro%licompress ) )
-      call Att_write( ygroup, igrpid, 'averaged in the J direction', Merge( 'yes', 'no ', tpbudiachro%ljcompress ) )
-      call Att_write( ygroup, igrpid, 'averaged in the K direction', Merge( 'yes', 'no ', tpbudiachro%lkcompress ) )
-
-    else
-      call Print_msg( NVERB_WARNING, 'IO', 'Write_diachro_nc4', &
-                    'unknown group definition for ' // Trim( tpbudiachro%cname ) // ': using default behavior' )
-
-      call Att_write( ygroup, igrpid, 'min I index in physical domain', iil )
-      call Att_write( ygroup, igrpid, 'max I index in physical domain', iih )
-      call Att_write( ygroup, igrpid, 'min J index in physical domain', ijl )
-      call Att_write( ygroup, igrpid, 'max J index in physical domain', ijh )
-      call Att_write( ygroup, igrpid, 'min K index in physical domain', ikl )
-      call Att_write( ygroup, igrpid, 'max K index in physical domain', ikh )
-
-      call Att_write( ygroup, igrpid, 'averaged in the I direction', Merge( 'yes', 'no ', tpbudiachro%licompress ) )
-      call Att_write( ygroup, igrpid, 'averaged in the J direction', Merge( 'yes', 'no ', tpbudiachro%ljcompress ) )
-      call Att_write( ygroup, igrpid, 'averaged in the K direction', Merge( 'yes', 'no ', tpbudiachro%lkcompress ) )
     end if
-
   end if
+
+  if ( .not. gleveldefined(NLVL_MASK) ) then
+    ylevelname = ylevelnames(NLVL_MASK)
+    ilevelid   = ilevelids  (NLVL_MASK)
+
+    call Att_write( ylevelname, ilevelid, 'mask',    ylevelname )
+    if ( gleveluse(NLVL_MASK) .and. Len_trim( ylevelcomments(NLVL_MASK) ) > 0 ) &
+    call Att_write( ylevelname, ilevelid, 'comment', ylevelcomments(NLVL_MASK) )
+
+    if ( ycategory == 'budget' .and. yshape == 'mask' ) &
+    call Att_write( ylevelname, ilevelid, 'masks are stored in variable', tpbudiachro%cmask )
+  end if
+
+
+
 
 end if MASTER
 
@@ -1184,7 +1296,7 @@ select case ( idims )
       !Correspond to FLYER_DIACHRO
       !Create local time dimension
       if ( isp == tzfile%nmaster_rank) then
-        istatus = NF90_DEF_DIM( igrpid, 'time_flyer', Int( Size( pvar, 4), kind = CDFINT ), idimid )
+        istatus = NF90_DEF_DIM( ilevelids(NLVL_GROUP), 'time_flyer', Int( Size( pvar, 4), kind = CDFINT ), idimid )
         if ( istatus /= NF90_NOERR ) &
           call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_DEF_DIM', Trim( tpfields(1)%cmnhname ) )
       end if
@@ -1315,7 +1427,7 @@ select case ( idims )
       !Correspond to FLYER_DIACHRO
       !Create local time dimension
       if ( isp == tzfile%nmaster_rank) then
-        istatus = NF90_DEF_DIM( igrpid, 'time_flyer', Int( Size( pvar, 4), kind = CDFINT ), idimid )
+        istatus = NF90_DEF_DIM( ilevelids(NLVL_GROUP), 'time_flyer', Int( Size( pvar, 4), kind = CDFINT ), idimid )
         if ( istatus /= NF90_NOERR ) &
           call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_DEF_DIM', Trim( tpfields(1)%cmnhname ) )
       end if
@@ -1484,10 +1596,7 @@ end if
 
 
 
-!
 
-!Restore id of the file root group ('/' group)
-tzfile%nncid = isavencid
 
 end  subroutine Write_diachro_nc4
 
@@ -1956,6 +2065,42 @@ if (istatus /= NF90_NOERR ) &
  call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', Trim( hattname ) // ' for '// Trim( hlevel ) // ' group' )
 
 end subroutine Att_write_x0
+
+
+subroutine Move_to_next_level( kpreviouslevelid, gpreviousleveldefined, oleveluse, hlevelname, gleveldefined, klevelid )
+use NETCDF,            only: NF90_DEF_GRP, NF90_INQ_NCID, NF90_NOERR
+
+use modd_precision,    only: CDFINT
+
+use mode_io_tools_nc4, only: IO_Err_handle_nc4
+
+integer(kind=CDFINT), intent(in)    :: kpreviouslevelid
+logical,              intent(in)    :: gpreviousleveldefined
+logical,              intent(in)    :: oleveluse
+character(len=*),     intent(inout) :: hlevelname
+logical,              intent(out)   :: gleveldefined
+integer(kind=CDFINT), intent(out)   :: klevelid
+
+integer(kind=CDFINT) :: istatus
+
+
+if ( oleveluse ) then
+  istatus = NF90_INQ_NCID( kpreviouslevelid, Trim( hlevelname ), klevelid )
+  if ( istatus == NF90_NOERR ) then
+    gleveldefined = .true.
+  else
+    gleveldefined = .false.
+    istatus = NF90_DEF_GRP( kpreviouslevelid, Trim( hlevelname ), klevelid )
+    if ( istatus /= NF90_NOERR ) &
+      call IO_Err_handle_nc4( istatus, 'Move_to_next_level', 'NF90_DEF_GRP', 'for ' // Trim( hlevelname ) )
+  end if
+else
+  gleveldefined = gpreviousleveldefined
+  if ( Len_trim( hlevelname ) == 0 ) hlevelname = '(unused)'
+  klevelid = kpreviouslevelid
+end if
+
+end subroutine Move_to_next_level
 #endif
 
 end module mode_write_diachro
