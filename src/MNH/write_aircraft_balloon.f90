@@ -852,7 +852,6 @@ tzfields(:)%ndimlist(4) = NMNHDIM_FLYER_TIME
 tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_FLYER_PROC
 
-tzbudiachro%cgroupname = ygroup
 tzbudiachro%cname      = ygroup
 tzbudiachro%ccomment   = 'Values at position of flyer ' // Trim( tpflyer%title )
 if ( Trim( tpflyer%type ) == 'AIRCRA' ) then
@@ -867,6 +866,7 @@ else
   call Print_msg( NVERB_ERROR, 'IO', 'WRITE_AIRCRAFT_BALLOON', 'unknown category for flyer ' // Trim( tpflyer%title ) )
   tzbudiachro%ccategory  = 'unknown'
 end if
+tzbudiachro%cgroupname = ygroup
 tzbudiachro%cshape     = 'point'
 ! tzbudiachro%cmask      = NOT SET (default values)
 tzbudiachro%lmobile    = .true.
@@ -904,10 +904,10 @@ tzfields(:)%ndimlist(4) = NMNHDIM_FLYER_TIME
 tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_FLYER_PROC
 
-tzbudiachro%cgroupname = ygroupz
 tzbudiachro%cname      = ygroupz
 tzbudiachro%ccomment   = 'Vertical profiles at position of flyer ' // Trim( tpflyer%title )
 ! tzbudiachro%ccategory  =  !unchanged
+tzbudiachro%cgroupname = ygroupz
 tzbudiachro%cshape     = 'vertical profile'
 ! tzbudiachro%cmask      = NOT SET (default values)
 tzbudiachro%lmobile    = .true.

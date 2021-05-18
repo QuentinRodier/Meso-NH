@@ -261,10 +261,10 @@ tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 ! tzfields(:)%ndimlist(6) = NMNHDIM_SERIES_PROC
 tzfields(:)%ndimlist(6) = NMNHDIM_UNUSED !Set to unused because write are done in a loop (1 write per "process")
 
-tzbudiachro%cgroupname = 'TSERIES'
 tzbudiachro%cname      = 'TSERIES'
 tzbudiachro%ccomment   = 'Time series of horizontally and vertically averaged fields'
 tzbudiachro%ccategory  = 'time series'
+tzbudiachro%cgroupname = 'TSERIES'
 tzbudiachro%cshape     = 'cartesian' !It is based on a cartesian domain (with compression in all directions)
 ! tzbudiachro%cmask    =  set in the process loop
 tzbudiachro%lmobile    = .false.
@@ -366,10 +366,10 @@ tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 ! tzfields(:)%ndimlist(6) = NMNHDIM_SERIES_PROC
 tzfields(:)%ndimlist(6) = NMNHDIM_UNUSED !Set to unused because write are done in a loop (1 write per "process")
 
-tzbudiachro%cgroupname = 'ZTSERIES'
 tzbudiachro%cname      = 'ZTSERIES'
 tzbudiachro%ccomment   = 'Time series of horizontally averaged vertical profile'
 tzbudiachro%ccategory  = 'time series'
+tzbudiachro%cgroupname = 'ZTSERIES'
 tzbudiachro%cshape     = 'cartesian'  !It is based on a cartesian domain (with horizontal compression)
 ! tzbudiachro%cmask    =  set in the process loop
 tzbudiachro%lmobile    = .false.
@@ -473,10 +473,10 @@ DO JS=1,NBJSLICE
   tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
   tzfields(:)%ndimlist(6) = NMNHDIM_SERIES_PROC
 
-  tzbudiachro%cgroupname = ygroup
   tzbudiachro%cname      = ygroup
   tzbudiachro%ccomment   = 'Time series of y-horizontally averaged fields at one level or vertically averaged between 2 levels'
   tzbudiachro%ccategory  = 'time series'
+  tzbudiachro%cgroupname = ygroup
   tzbudiachro%cshape     = 'cartesian' !It is based on a cartesian domain (with compression in 1 direction)
 !  tzbudiachro%cmask      = NOT SET (default values)
   tzbudiachro%lmobile    = .false.
