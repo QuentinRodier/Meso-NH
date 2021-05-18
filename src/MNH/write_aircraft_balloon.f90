@@ -180,6 +180,8 @@ use modd_budget, only: tbudiachrometadata
 use modd_field,  only: NMNHDIM_LEVEL, NMNHDIM_FLYER_PROC, NMNHDIM_FLYER_TIME, NMNHDIM_UNUSED, &
                        tfield_metadata_base, TYPEREAL
 
+use modi_aircraft_balloon, only: Aircraft_balloon_longtype_get
+
 TYPE(FLYER),        INTENT(IN)       :: TPFLYER
 !
 !*      0.2  declaration of local variables for diachro
@@ -854,18 +856,7 @@ tzfields(:)%ndimlist(6) = NMNHDIM_FLYER_PROC
 
 tzbudiachro%cname      = ygroup
 tzbudiachro%ccomment   = 'Values at position of flyer ' // Trim( tpflyer%title )
-if ( Trim( tpflyer%type ) == 'AIRCRA' ) then
-  tzbudiachro%ccategory  = 'aircraft'
-else if ( Trim( tpflyer%type ) == 'RADIOS' ) then
-  tzbudiachro%ccategory  = 'radiosonde balloon'
-else if ( Trim( tpflyer%type ) == 'ISODEN' ) then
-  tzbudiachro%ccategory  = 'iso-density balloon'
-else if ( Trim( tpflyer%type ) == 'CVBALL' ) then
-  tzbudiachro%ccategory  = 'constant volume balloon'
-else
-  call Print_msg( NVERB_ERROR, 'IO', 'WRITE_AIRCRAFT_BALLOON', 'unknown category for flyer ' // Trim( tpflyer%title ) )
-  tzbudiachro%ccategory  = 'unknown'
-end if
+call Aircraft_balloon_longtype_get( tpflyer, tzbudiachro%ccategory )
 tzbudiachro%cgroupname = ygroup
 tzbudiachro%cshape     = 'point'
 ! tzbudiachro%cmask      = NOT SET (default values)
