@@ -308,22 +308,22 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   !* RU budgets
   !
     IF (LBU_RU) THEN
-      call Store_one_budget_rho( tpdiafile, tzdates, tbudgets(NBUDGET_U)%trhodj,   NBUDGET_U, gnocompress, zrhodjn )
-      call Store_one_budget    ( tpdiafile, tzdates, tbudgets(NBUDGET_U), zrhodjn,            gnocompress, ptstep  )
+      call Store_one_budget_rho( tpdiafile, tzdates, tbudgets(NBUDGET_U)%trhodj,   gnocompress, zrhodjn )
+      call Store_one_budget    ( tpdiafile, tzdates, tbudgets(NBUDGET_U), zrhodjn, gnocompress, ptstep  )
     END IF
   !
   !* RV budgets
   !
     IF (LBU_RV) THEN
-      call Store_one_budget_rho( tpdiafile, tzdates, tbudgets(NBUDGET_V)%trhodj,   NBUDGET_V, gnocompress, zrhodjn )
-      call Store_one_budget    ( tpdiafile, tzdates, tbudgets(NBUDGET_V), zrhodjn,            gnocompress, ptstep  )
+      call Store_one_budget_rho( tpdiafile, tzdates, tbudgets(NBUDGET_V)%trhodj,   gnocompress, zrhodjn )
+      call Store_one_budget    ( tpdiafile, tzdates, tbudgets(NBUDGET_V), zrhodjn, gnocompress, ptstep  )
     END IF
   !
   !* RW budgets
   !
     IF (LBU_RW) THEN
-      call Store_one_budget_rho( tpdiafile, tzdates, tbudgets(NBUDGET_W)%trhodj,   NBUDGET_W, gnocompress, zrhodjn )
-      call Store_one_budget    ( tpdiafile, tzdates, tbudgets(NBUDGET_W), zrhodjn,            gnocompress, ptstep  )
+      call Store_one_budget_rho( tpdiafile, tzdates, tbudgets(NBUDGET_W)%trhodj,   gnocompress, zrhodjn )
+      call Store_one_budget    ( tpdiafile, tzdates, tbudgets(NBUDGET_W), zrhodjn, gnocompress, ptstep  )
     END IF
   !
   !* RHODJ storage for Scalars
@@ -331,7 +331,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
     IF (LBU_RTH .OR. LBU_RTKE .OR. LBU_RRV .OR. LBU_RRC .OR. LBU_RRR .OR. &
         LBU_RRI .OR. LBU_RRS  .OR. LBU_RRG .OR. LBU_RRH .OR. LBU_RSV      ) THEN
       if ( .not. associated( tburhodj ) ) call Print_msg( NVERB_FATAL, 'BUD', 'Write_budget', 'tburhodj not associated' )
-      call Store_one_budget_rho( tpdiafile, tzdates, tburhodj, NBUDGET_RHO, gnocompress, zrhodjn )
+      call Store_one_budget_rho( tpdiafile, tzdates, tburhodj, gnocompress, zrhodjn )
     ENDIF
   !
   !* RTH budget
@@ -400,14 +400,13 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
 end subroutine Write_budget
 
 
-subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, prhodjn )
+subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, knocompress, prhodjn )
   use modd_budget,            only: cbutype,                                                      &
                                     lbu_icp, lbu_jcp, lbu_kcp,                                    &
                                     nbuil, nbuih, nbujl, nbujh, nbukl, nbukh,                     &
                                     nbuimax, nbuimax_ll, nbujmax, nbujmax_ll, nbukmax, nbutshift, &
                                     nbumask, nbusubwrite,                                         &
-                                    tbudiachrometadata, tburhodata,                               &
-                                    NBUDGET_RHO, NBUDGET_U, NBUDGET_V, NBUDGET_W
+                                    tbudiachrometadata, tburhodata
   use modd_field,             only: NMNHDIM_BUDGET_CART_NI,    NMNHDIM_BUDGET_CART_NJ,   NMNHDIM_BUDGET_CART_NI_U, &
                                     NMNHDIM_BUDGET_CART_NJ_U,  NMNHDIM_BUDGET_CART_NI_V, NMNHDIM_BUDGET_CART_NJ_V, &
                                     NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W,                        &
@@ -430,12 +429,10 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
   type(tfiledata),                                      intent(in)  :: tpdiafile   ! file to write
   type(date_time), dimension(:),                        intent(in)  :: tpdates
   type(tburhodata),                                     intent(in)  :: tprhodj     ! rhodj datastructure
-  integer,                                              intent(in)  :: kp          ! reference number of budget
   logical,                                              intent(in)  :: knocompress ! compression for the cart option
   real,            dimension(:,:,:,:,:,:), allocatable, intent(out) :: prhodjn
 
   character(len=4)              :: ybutype
-  character(len=:), allocatable :: ygroup_name
   type(tbudiachrometadata)      :: tzbudiachro
   type(tburhodata)              :: tzfield
 
@@ -466,23 +463,6 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
 
     case default
       call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_rho', 'unknown CBUTYPE' )
-  end select
-
-  select case( kp )
-    case( NBUDGET_RHO )
-      ygroup_name = 'RJS'
-
-    case( NBUDGET_U )
-      ygroup_name = 'RJX'
-
-    case( NBUDGET_V )
-      ygroup_name = 'RJY'
-
-    case( NBUDGET_W )
-      ygroup_name = 'RJZ'
-
-    case default
-      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_rho', 'unknown budget type' )
   end select
 
   !Copy all fields from tprhodj
@@ -560,7 +540,7 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
   tzbudiachro%cname      = tprhodj%cmnhname
   tzbudiachro%ccomment   = tprhodj%ccomment
   tzbudiachro%ccategory  = 'budget'
-  tzbudiachro%cgroupname = ygroup_name
+  tzbudiachro%cgroupname = 'RhodJ'
   if ( ybutype == 'CART' ) then
     tzbudiachro%cshape   = 'cartesian'
     ! tzbudiachro%cmask    = NOT SET (default values)

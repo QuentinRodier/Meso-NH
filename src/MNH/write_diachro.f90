@@ -226,14 +226,31 @@ tzfile%cformat = 'LFI'
 YCOMMENT='NOTHING'
 
 !Set ygroup to preserve backward compatibility of LFI files
-if (      Any( tpbudiachro%cgroupname == [ 'RJS', 'RJX', 'RJY', 'RJZ'] )                                              &
-     .or. Any( tpbudiachro%cgroupname == [ 'UU', 'VV', 'WW', 'TH', 'TK', 'RV', 'RC', 'RR', 'RI', 'RS', 'RG', 'RH' ] ) &
+if (      Any( tpbudiachro%cgroupname == [ 'UU', 'VV', 'WW', 'TH', 'TK', 'RV', 'RC', 'RR', 'RI', 'RS', 'RG', 'RH' ] ) &
      .or.    ( tpbudiachro%cgroupname(1:2) == 'SV' .and. Len_trim( tpbudiachro%cgroupname ) == 5 )                    ) then
   Allocate( character(len=9) :: ygroup )
   ygroup(:) = Trim( tpbudiachro%cgroupname )
   do ji = Len_trim( tpbudiachro%cgroupname ) + 1, 5
     ygroup(ji : ji) = '_'
   end do
+  Write( ygroup(6:9), '( i4.4 )' ) nbutshift
+else if ( tpbudiachro%cgroupname == 'RhodJ' ) then
+  Allocate( character(len=9) :: ygroup )
+
+  if ( tpbudiachro%cname == 'RhodJX' ) then
+    ygroup(1:3) = 'RJX'
+  else if ( tpbudiachro%cname == 'RhodJY' ) then
+    ygroup(1:3) = 'RJY'
+  else if ( tpbudiachro%cname == 'RhodJZ' ) then
+    ygroup(1:3) = 'RJZ'
+  else if ( tpbudiachro%cname == 'RhodJS' ) then
+    ygroup(1:3) = 'RJS'
+  else
+    call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_lfi', &
+                    'unknown variable ' // Trim( tpbudiachro%cname ) // ' for group ' // Trim( tpbudiachro%cgroupname ) )
+  end if
+
+  ygroup(4:5) = '__'
   Write( ygroup(6:9), '( i4.4 )' ) nbutshift
 else if ( tpbudiachro%nsv > 0 ) then
   Allocate( character(len=9) :: ygroup )
