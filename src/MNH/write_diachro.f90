@@ -226,28 +226,28 @@ tzfile%cformat = 'LFI'
 YCOMMENT='NOTHING'
 
 !Set ygroup to preserve backward compatibility of LFI files
-if (      Any( tpbudiachro%cgroupname == [ 'UU', 'VV', 'WW', 'TH', 'TK', 'RV', 'RC', 'RR', 'RI', 'RS', 'RG', 'RH' ] ) &
-     .or.    ( tpbudiachro%cgroupname(1:2) == 'SV' .and. Len_trim( tpbudiachro%cgroupname ) == 5 )                    ) then
+if (      Any( tpbudiachro%cgroup == [ 'UU', 'VV', 'WW', 'TH', 'TK', 'RV', 'RC', 'RR', 'RI', 'RS', 'RG', 'RH' ] ) &
+     .or.    ( tpbudiachro%cgroup(1:2) == 'SV' .and. Len_trim( tpbudiachro%cgroup ) == 5 )                      ) then
   Allocate( character(len=9) :: ygroup )
-  ygroup(:) = Trim( tpbudiachro%cgroupname )
-  do ji = Len_trim( tpbudiachro%cgroupname ) + 1, 5
+  ygroup(:) = Trim( tpbudiachro%cgroup )
+  do ji = Len_trim( tpbudiachro%cgroup ) + 1, 5
     ygroup(ji : ji) = '_'
   end do
   Write( ygroup(6:9), '( i4.4 )' ) nbutshift
-else if ( tpbudiachro%cgroupname == 'RhodJ' ) then
+else if ( tpbudiachro%cgroup == 'RhodJ' ) then
   Allocate( character(len=9) :: ygroup )
 
-  if ( tpbudiachro%cname == 'RhodJX' ) then
+  if ( tpfields(1)%cmnhname == 'RhodJX' ) then
     ygroup(1:3) = 'RJX'
-  else if ( tpbudiachro%cname == 'RhodJY' ) then
+  else if ( tpfields(1)%cmnhname == 'RhodJY' ) then
     ygroup(1:3) = 'RJY'
-  else if ( tpbudiachro%cname == 'RhodJZ' ) then
+  else if ( tpfields(1)%cmnhname == 'RhodJZ' ) then
     ygroup(1:3) = 'RJZ'
-  else if ( tpbudiachro%cname == 'RhodJS' ) then
+  else if ( tpfields(1)%cmnhname == 'RhodJS' ) then
     ygroup(1:3) = 'RJS'
   else
     call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_lfi', &
-                    'unknown variable ' // Trim( tpbudiachro%cname ) // ' for group ' // Trim( tpbudiachro%cgroupname ) )
+                    'unknown variable ' // Trim( tpfields(1)%cmnhname ) // ' for group ' // Trim( tpbudiachro%cgroup ) )
   end if
 
   ygroup(4:5) = '__'
@@ -256,7 +256,7 @@ else if ( tpbudiachro%nsv > 0 ) then
   Allocate( character(len=9) :: ygroup )
   Write( ygroup, '( "SV", i3.3, i4.4 )' ) tpbudiachro%nsv, nbutshift
 else
-  ygroup = Trim( tpbudiachro%cgroupname )
+  ygroup = Trim( tpbudiachro%cgroup )
 end if
 
 !Recompute old TYPE for backward compatibility
@@ -272,10 +272,7 @@ else if ( ycategory == 'LES' ) then
   else
     ytype = 'SPXY'
   end if
-else if (      ycategory == 'aircraft'                 &
-          .or. ycategory == 'radiosonde balloon'       &
-          .or. ycategory == 'iso-density balloon'      &
-          .or. ycategory ==  'constant volume balloon' ) then
+else if ( ycategory == 'flyer' ) then
   if ( yshape == 'point' ) then
     ytype = 'RSPL'
   else
@@ -804,7 +801,7 @@ tzfile%cformat = 'NETCDF4'
 
 ycategory = Trim( tpbudiachro%ccategory  )
 yshape    = Trim( tpbudiachro%cshape     )
-ygroup    = Trim( tpbudiachro%cgroupname )
+ygroup    = Trim( tpbudiachro%cgroup )
 
 iil = tpbudiachro%nil
 iih = tpbudiachro%nih
@@ -852,7 +849,7 @@ MASTER: if ( isp == tzfile%nmaster_rank) then
       gleveluse(NLVL_SUBCATEGORY) = .false.
 
       gleveluse(NLVL_GROUP)    = .true.
-      ylevelnames(NLVL_GROUP)   = Trim( tpbudiachro%cgroupname )
+      ylevelnames(NLVL_GROUP)   = Trim( tpbudiachro%cgroup )
 
       gleveluse(NLVL_SHAPE)    = .false.
       ylevelnames(NLVL_SHAPE)   = Trim( tpbudiachro%cshape )
@@ -919,7 +916,8 @@ MASTER: if ( isp == tzfile%nmaster_rank) then
       gleveluse(NLVL_SUBCATEGORY) = .false.
 
       gleveluse(NLVL_GROUP)    = .true.
-      ylevelnames(NLVL_GROUP)   = Trim( tpbudiachro%cgroupname )
+      ylevelnames(NLVL_GROUP)   = Trim( tpbudiachro%cgroup )
+!       ylevelcomments(NLVL_GROUP) =
 
       gleveluse(NLVL_SHAPE)    = .false.
       ylevelnames(NLVL_SHAPE)   = Trim( tpbudiachro%cshape )
@@ -936,7 +934,7 @@ MASTER: if ( isp == tzfile%nmaster_rank) then
       gleveluse(NLVL_SUBCATEGORY) = .false.
 
       gleveluse(NLVL_GROUP)    = .true.
-      ylevelnames(NLVL_GROUP)   = Trim( tpbudiachro%cgroupname )
+      ylevelnames(NLVL_GROUP)   = Trim( tpbudiachro%cgroup )
 
       gleveluse(NLVL_SHAPE)    = .false.
       ylevelnames(NLVL_SHAPE)   = Trim( tpbudiachro%cshape )
@@ -945,17 +943,17 @@ MASTER: if ( isp == tzfile%nmaster_rank) then
       gleveluse(NLVL_NORM)     = .false.
       gleveluse(NLVL_MASK)     = .false.
 
-    case( 'aircraft', 'radiosonde balloon', 'iso-density balloon', 'constant volume balloon' )
+    case( 'flyer' )
       gleveluse(NLVL_CATEGORY)  = .true.
       ylevelnames(NLVL_CATEGORY) = 'Flyers'
       ylevelcomments(NLVL_CATEGORY) = 'Group for the different flyers (aircrafts and balloons)'
 
       gleveluse(NLVL_SUBCATEGORY) = .true.
-      ylevelnames(NLVL_SUBCATEGORY) = ycategory
+      ylevelnames(NLVL_SUBCATEGORY) = tpbudiachro%csubcategory
       ylevelcomments(NLVL_SUBCATEGORY) = 'Group for the different ' // Trim( ycategory ) // 's'
 
       gleveluse(NLVL_GROUP)    = .true.
-      ylevelnames(NLVL_GROUP)   = Trim( tpbudiachro%cgroupname )
+      ylevelnames(NLVL_GROUP)   = Trim( tpbudiachro%cgroup )
 
       gleveluse(NLVL_SHAPE)    = .true.
       ylevelnames(NLVL_SHAPE) = Trim( tpbudiachro%cshape )
@@ -974,7 +972,7 @@ MASTER: if ( isp == tzfile%nmaster_rank) then
       gleveluse(NLVL_SUBCATEGORY) = .false.
 
       gleveluse(NLVL_GROUP)    = .true.
-      ylevelnames(NLVL_GROUP)   = Trim( tpbudiachro%cgroupname )
+      ylevelnames(NLVL_GROUP)   = Trim( tpbudiachro%cgroup )
 
       gleveluse(NLVL_SHAPE)    = .false.
       ylevelnames(NLVL_SHAPE)   = Trim( tpbudiachro%cshape )
@@ -982,7 +980,7 @@ MASTER: if ( isp == tzfile%nmaster_rank) then
       gleveluse(NLVL_TIMEAVG)  = .false.
       gleveluse(NLVL_NORM)     = .false.
 
-      if ( Trim( tpbudiachro%cgroupname ) == 'TSERIES' .or. Trim( tpbudiachro%cgroupname ) == 'ZTSERIES' ) then
+      if ( Trim( tpbudiachro%cgroup ) == 'TSERIES' .or. Trim( tpbudiachro%cgroup ) == 'ZTSERIES' ) then
         gleveluse(NLVL_MASK)   = .true.
         ylevelnames(NLVL_MASK)  = tpbudiachro%cmask
       else
@@ -1053,9 +1051,9 @@ MASTER: if ( isp == tzfile%nmaster_rank) then
 
     if (      ( ycategory == 'budget' .and. yshape == 'cartesian' ) &
          .or. ycategory == 'LES'                                    &
-         .or. tpbudiachro%cgroupname      == 'TSERIES'              &
-         .or. tpbudiachro%cgroupname      == 'ZTSERIES'             &
-         .or. tpbudiachro%cgroupname(1:8) == 'XTSERIES'             ) then
+         .or. tpbudiachro%cgroup      == 'TSERIES'                  &
+         .or. tpbudiachro%cgroup      == 'ZTSERIES'                 &
+         .or. tpbudiachro%cgroup(1:8) == 'XTSERIES'                 ) then
       call Att_write( ylevelname, ilevelid, 'min I index in physical domain', iil )
       call Att_write( ylevelname, ilevelid, 'max I index in physical domain', iih )
       call Att_write( ylevelname, ilevelid, 'min J index in physical domain', ijl )
@@ -1063,9 +1061,9 @@ MASTER: if ( isp == tzfile%nmaster_rank) then
     end if
 
     if (      ( ycategory == 'budget' .and. yshape == 'cartesian' ) &
-         .or. tpbudiachro%cgroupname      == 'TSERIES'              &
-         .or. tpbudiachro%cgroupname      == 'ZTSERIES'             &
-         .or. tpbudiachro%cgroupname(1:8) == 'XTSERIES'             ) then
+         .or. tpbudiachro%cgroup      == 'TSERIES'                &
+         .or. tpbudiachro%cgroup      == 'ZTSERIES'               &
+         .or. tpbudiachro%cgroup(1:8) == 'XTSERIES'               ) then
       call Att_write( ylevelname, ilevelid, 'min K index in physical domain', ikl )
       call Att_write( ylevelname, ilevelid, 'max K index in physical domain', ikh )
     end if
@@ -1073,9 +1071,9 @@ MASTER: if ( isp == tzfile%nmaster_rank) then
 
     if (      ( ycategory == 'budget' .and. yshape == 'cartesian' ) &
          .or. ( ycategory == 'LES'    .and. yshape == 'cartesian' ) &
-         .or. tpbudiachro%cgroupname      == 'TSERIES'              &
-         .or. tpbudiachro%cgroupname      == 'ZTSERIES'             &
-         .or. tpbudiachro%cgroupname(1:8) == 'XTSERIES'             ) then
+         .or. tpbudiachro%cgroup      == 'TSERIES'                &
+         .or. tpbudiachro%cgroup      == 'ZTSERIES'               &
+         .or. tpbudiachro%cgroup(1:8) == 'XTSERIES'               ) then
       call Att_write( ylevelname, ilevelid, &
                       'averaged in the I direction', Merge( 'yes', 'no ', tpbudiachro%licompress ) )
       call Att_write( ylevelname, ilevelid, &

@@ -650,10 +650,10 @@ tzfields(:)%ndimlist(4) = NMNHDIM_PROFILER_TIME
 tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_PROFILER_PROC
 
-tzbudiachro%cname      = ygroup
 tzbudiachro%ccomment   = 'Vertical profiles at position of profiler ' // Trim( ygroup )
 tzbudiachro%ccategory  = 'profiler'
-tzbudiachro%cgroupname = ygroup
+! tzbudiachro%csubcategory  = NOT SET (default values)
+tzbudiachro%cgroup     = ygroup
 tzbudiachro%cshape     = 'vertical profile'
 ! tzbudiachro%cmask     = NOT SET (default values)
 tzbudiachro%lmobile    = .false.

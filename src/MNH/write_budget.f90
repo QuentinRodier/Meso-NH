@@ -537,10 +537,10 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, knocompress, prhod
     tzfield%ndimlist(:) = NMNHDIM_UNKNOWN
   end if
 
-  tzbudiachro%cname      = tprhodj%cmnhname
   tzbudiachro%ccomment   = tprhodj%ccomment
   tzbudiachro%ccategory  = 'budget'
-  tzbudiachro%cgroupname = 'RhodJ'
+! tzbudiachro%csubcategory  = NOT SET (default values)
+  tzbudiachro%cgroup     = 'RhodJ'
   if ( ybutype == 'CART' ) then
     tzbudiachro%cshape   = 'cartesian'
     ! tzbudiachro%cmask    = NOT SET (default values)
@@ -795,10 +795,10 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
     end if
   end do
 
-  tzbudiachro%cname      = tpbudget%cname
   tzbudiachro%ccomment   = tpbudget%ccomment
   tzbudiachro%ccategory  = 'budget'
-  tzbudiachro%cgroupname = ygroup_name
+! tzbudiachro%csubcategory  = NOT SET (default values)
+  tzbudiachro%cgroup     = ygroup_name
   if ( ybutype == 'CART' ) then
     tzbudiachro%cshape   = 'cartesian'
     ! tzbudiachro%cmask    = NOT SET (default values)

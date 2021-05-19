@@ -735,10 +735,10 @@ tzfields(:)%ndimlist(4) = NMNHDIM_STATION_TIME
 tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_STATION_PROC
 
-tzbudiachro%cname      = ygroup
 tzbudiachro%ccomment   = 'Values at position of station ' // Trim( ygroup )
 tzbudiachro%ccategory  = 'station'
-tzbudiachro%cgroupname = ygroup
+! tzbudiachro%csubcategory  = NOT SET (default values)
+tzbudiachro%cgroup     = ygroup
 tzbudiachro%cshape     = 'point'
 ! tzbudiachro%cmask     = NOT SET (default values)
 tzbudiachro%lmobile    = .false.

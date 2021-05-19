@@ -1068,10 +1068,10 @@ if ( iresp == 0 .and. any( zfield /= XUNDEF ) ) then
   tzfields(:)%clongname = ytitle(:)
   tzfields(:)%ccomment  = ycomment(:)
 
-  tzbudiachro%cname      = ygroup
   !tzbudiachro%ccomment   = DONE BEFORE
   tzbudiachro%ccategory  = 'LES'
-  tzbudiachro%cgroupname = ygroup
+!   tzbudiachro%csubcategory  = CNOTSET
+  tzbudiachro%cgroup     = ygroup
   tzbudiachro%cshape     = 'cartesian'
   tzbudiachro%lmobile    = .false.
   tzbudiachro%licompress = .true.
@@ -1259,14 +1259,14 @@ if ( gavg ) then
   end do
 end if
 
-tzbudiachro%cname      = ygroup
 if ( .not. gavg ) then
   tzbudiachro%ccomment = tzfield%ccomment
 else
   tzbudiachro%ccomment = Trim( tzfield%ccomment ) // ' (time averaged)'
 end if
 tzbudiachro%ccategory  = 'LES'
-tzbudiachro%cgroupname = ygroup
+! tzbudiachro%csubcategory  = CNOTSET
+tzbudiachro%cgroup     = ygroup
 tzbudiachro%cshape     = '2-point correlation'
 ! tzbudiachro%cmask      = CNOTSET
 if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_2PTS_NI ) then
@@ -1421,10 +1421,10 @@ tzfield%cmnhname  = ygroup
 tzfield%clongname = ygroup
 tzfield%ccomment  = ycomment(:)
 
-tzbudiachro%cname      = ygroup
 tzbudiachro%ccomment   = tzfield%ccomment
 tzbudiachro%ccategory  = 'LES'
-tzbudiachro%cgroupname = ygroup
+! tzbudiachro%csubcategory  = CNOTSET
+tzbudiachro%cgroup     = ygroup
 tzbudiachro%cshape     = 'spectrum'
 ! tzbudiachro%cmask      = CNOTSET
 if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_SPEC_NI ) then
@@ -1459,10 +1459,10 @@ end do
 tzfield%cmnhname  = ygroup
 tzfield%clongname = ygroup
 
-tzbudiachro%cname      = ygroup
 tzbudiachro%ccomment   = Trim( tzfield%ccomment ) // ' (time averaged)'
 tzbudiachro%ccategory  = 'LES'
-tzbudiachro%cgroupname = ygroup
+! tzbudiachro%csubcategory  = CNOTSET
+tzbudiachro%cgroup     = ygroup
 tzbudiachro%cshape     = 'spectrum'
 ! tzbudiachro%cmask      = CNOTSET
 if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_SPEC_NI ) then

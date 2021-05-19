@@ -854,10 +854,10 @@ tzfields(:)%ndimlist(4) = NMNHDIM_FLYER_TIME
 tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_FLYER_PROC
 
-tzbudiachro%cname      = ygroup
 tzbudiachro%ccomment   = 'Values at position of flyer ' // Trim( tpflyer%title )
-call Aircraft_balloon_longtype_get( tpflyer, tzbudiachro%ccategory )
-tzbudiachro%cgroupname = ygroup
+tzbudiachro%ccategory  = 'flyer'
+call Aircraft_balloon_longtype_get( tpflyer, tzbudiachro%csubcategory )
+tzbudiachro%cgroup     = ygroup
 tzbudiachro%cshape     = 'point'
 ! tzbudiachro%cmask      = NOT SET (default values)
 tzbudiachro%lmobile    = .true.
@@ -895,10 +895,10 @@ tzfields(:)%ndimlist(4) = NMNHDIM_FLYER_TIME
 tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_FLYER_PROC
 
-tzbudiachro%cname      = ygroupz
 tzbudiachro%ccomment   = 'Vertical profiles at position of flyer ' // Trim( tpflyer%title )
-! tzbudiachro%ccategory  =  !unchanged
-tzbudiachro%cgroupname = ygroupz
+! tzbudiachro%ccategory    =  !unchanged
+! tzbudiachro%csubcategory =  !unchanged
+tzbudiachro%cgroup     = ygroupz
 tzbudiachro%cshape     = 'vertical profile'
 ! tzbudiachro%cmask      = NOT SET (default values)
 tzbudiachro%lmobile    = .true.

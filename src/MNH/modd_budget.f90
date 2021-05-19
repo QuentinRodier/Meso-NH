@@ -106,13 +106,13 @@ type, extends( tfield_metadata_base ) :: tburhodata
 end type tburhodata
 
 type :: tbudiachrometadata
-  character(len=NBUNAMELGTMAX)  :: cname       = CNOTSET
-  character(len=NCOMMENTLGTMAX) :: ccomment    = CNOTSET
-  character(len=NBUNAMELGTMAX)  :: ccategory   = CNOTSET !budget, LES, aircraft, balloon, series, station, profiler
-  character(len=NBUNAMELGTMAX)  :: cgroupname  = CNOTSET
-  character(len=NBUNAMELGTMAX)  :: cshape      = CNOTSET !Shape of the domain (mask, cartesian, vertical profile, point)
-  character(len=NBUNAMELGTMAX)  :: cmask       = CNOTSET !Mask defining where data is of meaning
-  character(len=1)              :: cdirection  = ''        !Used for 2pt correlation and spectrum
+  character(len=NCOMMENTLGTMAX) :: ccomment     = CNOTSET
+  character(len=NBUNAMELGTMAX)  :: ccategory    = CNOTSET !budget, LES, aircraft, balloon, series, station, profiler
+  character(len=NBUNAMELGTMAX)  :: csubcategory = CNOTSET
+  character(len=NBUNAMELGTMAX)  :: cgroup       = CNOTSET
+  character(len=NBUNAMELGTMAX)  :: cshape       = CNOTSET !Shape of the domain (mask, cartesian, vertical profile, point)
+  character(len=NBUNAMELGTMAX)  :: cmask        = CNOTSET !Mask defining where data is of meaning
+  character(len=1)              :: cdirection   = ''        !Used for 2pt correlation and spectrum
   logical :: lmobile    = .false.                          !Is the domain moving? (ie for aircrafts and balloons)
   logical :: licompress = .false.
   logical :: ljcompress = .false.
