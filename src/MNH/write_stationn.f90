@@ -123,7 +123,8 @@ CONTAINS
 !----------------------------------------------------------------------------
 SUBROUTINE STATION_DIACHRO_n(TSTATION,II)
 
-use modd_field, only:  NMNHDIM_STATION_TIME, NMNHDIM_STATION_PROC, NMNHDIM_UNUSED, &
+use modd_budget, only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK
+use modd_field,  only: NMNHDIM_STATION_TIME, NMNHDIM_STATION_PROC, NMNHDIM_UNUSED, &
                        tfield_metadata_base, TYPEREAL
 
 TYPE(STATION),        INTENT(IN)       :: TSTATION
@@ -735,12 +736,34 @@ tzfields(:)%ndimlist(4) = NMNHDIM_STATION_TIME
 tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_STATION_PROC
 
-tzbudiachro%ccomment   = 'Values at position of station ' // Trim( ygroup )
-tzbudiachro%ccategory  = 'station'
-! tzbudiachro%csubcategory  = NOT SET (default values)
-tzbudiachro%cgroup     = ygroup
-tzbudiachro%cshape     = 'point'
-! tzbudiachro%cmask     = NOT SET (default values)
+tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
+tzbudiachro%clevels  (NLVL_CATEGORY)    = 'Stations'
+tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different stations'
+
+tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
+tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
+tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
+
+tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
+tzbudiachro%clevels  (NLVL_GROUP)       = ygroup
+tzbudiachro%ccomments(NLVL_GROUP)       = 'Values at position of station ' // Trim( ygroup )
+
+tzbudiachro%lleveluse(NLVL_SHAPE)       = .false.
+tzbudiachro%clevels  (NLVL_SHAPE)       = 'Point'
+tzbudiachro%ccomments(NLVL_SHAPE)       = 'Values at position of station ' // Trim( ygroup )
+
+tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
+tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not time averaged'
+tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are not time averaged'
+
+tzbudiachro%lleveluse(NLVL_NORM)        = .false.
+tzbudiachro%clevels  (NLVL_NORM)        = 'Not normalized'
+tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
+
+tzbudiachro%lleveluse(NLVL_MASK)        = .false.
+tzbudiachro%clevels  (NLVL_MASK)        = ''
+tzbudiachro%ccomments(NLVL_MASK)        = ''
+
 tzbudiachro%lmobile    = .false.
 tzbudiachro%licompress = .true.
 tzbudiachro%ljcompress = .true.

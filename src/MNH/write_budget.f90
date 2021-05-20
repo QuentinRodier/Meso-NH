@@ -401,11 +401,12 @@ end subroutine Write_budget
 
 
 subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, knocompress, prhodjn )
-  use modd_budget,            only: cbutype,                                                      &
-                                    lbu_icp, lbu_jcp, lbu_kcp,                                    &
-                                    nbuil, nbuih, nbujl, nbujh, nbukl, nbukh,                     &
-                                    nbuimax, nbuimax_ll, nbujmax, nbujmax_ll, nbukmax, nbutshift, &
-                                    nbumask, nbusubwrite,                                         &
+  use modd_budget,            only: cbutype,                                                                                     &
+                                    lbu_icp, lbu_jcp, lbu_kcp,                                                                   &
+                                    nbuil, nbuih, nbujl, nbujh, nbukl, nbukh,                                                    &
+                                    nbuimax, nbuimax_ll, nbujmax, nbujmax_ll, nbukmax, nbutshift,                                &
+                                    nbumask, nbusubwrite,                                                                        &
+                                    NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK, &
                                     tbudiachrometadata, tburhodata
   use modd_field,             only: NMNHDIM_BUDGET_CART_NI,    NMNHDIM_BUDGET_CART_NJ,   NMNHDIM_BUDGET_CART_NI_U, &
                                     NMNHDIM_BUDGET_CART_NJ_U,  NMNHDIM_BUDGET_CART_NI_V, NMNHDIM_BUDGET_CART_NJ_V, &
@@ -537,17 +538,47 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, knocompress, prhod
     tzfield%ndimlist(:) = NMNHDIM_UNKNOWN
   end if
 
-  tzbudiachro%ccomment   = tprhodj%ccomment
-  tzbudiachro%ccategory  = 'budget'
-! tzbudiachro%csubcategory  = NOT SET (default values)
-  tzbudiachro%cgroup     = 'RhodJ'
+  tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
+  tzbudiachro%clevels  (NLVL_CATEGORY)    = 'Budgets'
+  tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different budgets'
+
+  tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
+  tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
+  tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
+
+  tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
+  tzbudiachro%clevels  (NLVL_GROUP)       = 'RhodJ'
+  tzbudiachro%ccomments(NLVL_GROUP)       = ''
+
+  tzbudiachro%lleveluse(NLVL_SHAPE)       = .false.
   if ( ybutype == 'CART' ) then
-    tzbudiachro%cshape   = 'cartesian'
-    ! tzbudiachro%cmask    = NOT SET (default values)
+    tzbudiachro%clevels  (NLVL_SHAPE)     = 'Cartesian'
+    tzbudiachro%ccomments(NLVL_SHAPE)     = 'cartesian domain'
+  else
+    tzbudiachro%clevels  (NLVL_SHAPE)     = 'Mask'
+    tzbudiachro%ccomments(NLVL_SHAPE)     = 'masked domain'
+  end if
+
+  tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
+  tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Time averaged'
+  tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are time averaged'
+
+  tzbudiachro%lleveluse(NLVL_NORM)        = .false.
+  tzbudiachro%clevels  (NLVL_NORM)        = 'Not normalized'
+  tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
+
+  tzbudiachro%lleveluse(NLVL_MASK)        = .false.
+  if ( ybutype == 'MASK' ) then
+    tzbudiachro%clevels  (NLVL_MASK)      = CMASK_VARNAME
+    tzbudiachro%ccomments(NLVL_MASK)      = ''
+  else
+    tzbudiachro%clevels  (NLVL_MASK)      = ''
+    tzbudiachro%ccomments(NLVL_MASK)      = ''
+  end if
+
+  if ( ybutype == 'CART' ) then
     tzbudiachro%lmobile  = .false.
   else
-    tzbudiachro%cshape   = 'mask'
-    tzbudiachro%cmask    = CMASK_VARNAME
     !Masks are updated at each timestep (therefore the studied domains change during execution)
     tzbudiachro%lmobile  = .true.
   end if
@@ -576,6 +607,7 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
                                     nbumask, nbusubwrite,                                                                         &
                                     NBUDGET_U, NBUDGET_V, NBUDGET_W, NBUDGET_TH, NBUDGET_TKE, NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, &
                                     NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, NBUDGET_SV1,                                  &
+                                    NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK,  &
                                     tbudgetdata, tbudiachrometadata, tbugroupdata
   use modd_field,             only: NMNHDIM_BUDGET_CART_NI,    NMNHDIM_BUDGET_CART_NJ,   NMNHDIM_BUDGET_CART_NI_U, &
                                     NMNHDIM_BUDGET_CART_NJ_U,  NMNHDIM_BUDGET_CART_NI_V, NMNHDIM_BUDGET_CART_NJ_V, &
@@ -795,17 +827,47 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
     end if
   end do
 
-  tzbudiachro%ccomment   = tpbudget%ccomment
-  tzbudiachro%ccategory  = 'budget'
-! tzbudiachro%csubcategory  = NOT SET (default values)
-  tzbudiachro%cgroup     = ygroup_name
+  tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
+  tzbudiachro%clevels  (NLVL_CATEGORY)    = 'Budgets'
+  tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different budgets'
+
+  tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
+  tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
+  tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
+
+  tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
+  tzbudiachro%clevels  (NLVL_GROUP)       = ygroup_name
+  tzbudiachro%ccomments(NLVL_GROUP)       = Trim( tpbudget%ccomment )
+
+  tzbudiachro%lleveluse(NLVL_SHAPE)       = .false.
   if ( ybutype == 'CART' ) then
-    tzbudiachro%cshape   = 'cartesian'
-    ! tzbudiachro%cmask    = NOT SET (default values)
+    tzbudiachro%clevels  (NLVL_SHAPE)     = 'Cartesian'
+    tzbudiachro%ccomments(NLVL_SHAPE)     = 'Cartesian domain'
+  else
+    tzbudiachro%clevels  (NLVL_SHAPE)     = 'Mask'
+    tzbudiachro%ccomments(NLVL_SHAPE)     = 'Masked domain'
+  end if
+
+  tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
+  tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Time averaged'
+  tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are time averaged'
+
+  tzbudiachro%lleveluse(NLVL_NORM)        = .false.
+  tzbudiachro%clevels  (NLVL_NORM)        = 'Not normalized'
+  tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
+
+  tzbudiachro%lleveluse(NLVL_MASK)        = .false.
+  if ( ybutype == 'MASK' ) then
+    tzbudiachro%clevels  (NLVL_MASK)      = CMASK_VARNAME
+    tzbudiachro%ccomments(NLVL_MASK)      = ''
+  else
+    tzbudiachro%clevels  (NLVL_MASK)      = ''
+    tzbudiachro%ccomments(NLVL_MASK)      = ''
+  end if
+
+  if ( ybutype == 'CART' ) then
     tzbudiachro%lmobile  = .false.
   else
-    tzbudiachro%cshape   = 'mask'
-    tzbudiachro%cmask    = CMASK_VARNAME
     !Masks are updated at each timestep (therefore the studied domains change during execution)
     tzbudiachro%lmobile  = .true.
   end if

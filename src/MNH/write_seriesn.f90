@@ -69,7 +69,8 @@ END MODULE MODI_WRITE_SERIES_n
 !*    0. Declaration
 !     --------------
 !
-use modd_budget,        only: tbudiachrometadata
+use modd_budget,        only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK, &
+                              tbudiachrometadata
 use modd_field,         only: NMNHDIM_NI, NMNHDIM_NI_U,                                                               &
                               NMNHDIM_SERIES_LEVEL, NMNHDIM_SERIES_LEVEL_W, NMNHDIM_SERIES_TIME, NMNHDIM_SERIES_PROC, &
                               NMNHDIM_UNUSED,                                                                         &
@@ -261,12 +262,34 @@ tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 ! tzfields(:)%ndimlist(6) = NMNHDIM_SERIES_PROC
 tzfields(:)%ndimlist(6) = NMNHDIM_UNUSED !Set to unused because write are done in a loop (1 write per "process")
 
-tzbudiachro%ccomment   = 'Time series of horizontally and vertically averaged fields'
-tzbudiachro%ccategory  = 'time series'
-! tzbudiachro%csubcategory  = NOT SET (default values)
-tzbudiachro%cgroup     = 'TSERIES'
-tzbudiachro%cshape     = 'cartesian' !It is based on a cartesian domain (with compression in all directions)
-! tzbudiachro%cmask    =  set in the process loop
+tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
+tzbudiachro%clevels  (NLVL_CATEGORY)    = 'Time series'
+tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different time series'
+
+tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
+tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
+tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
+
+tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
+tzbudiachro%clevels  (NLVL_GROUP)       = 'TSERIES'
+tzbudiachro%ccomments(NLVL_GROUP)       = 'Time series of horizontally and vertically averaged fields'
+
+tzbudiachro%lleveluse(NLVL_SHAPE)       = .false.
+tzbudiachro%clevels  (NLVL_SHAPE)       = 'Cartesian' !It is based on a cartesian domain (with compression in all directions)
+tzbudiachro%ccomments(NLVL_SHAPE)       = 'Cartesian domain'
+
+tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
+tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not time averaged'
+tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are not time averaged'
+
+tzbudiachro%lleveluse(NLVL_NORM)        = .false.
+tzbudiachro%clevels  (NLVL_NORM)        = 'Not normalized'
+tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
+
+tzbudiachro%lleveluse(NLVL_MASK)        = .true.
+! tzbudiachro%clevels  (NLVL_MASK)        = DONE LATER
+tzbudiachro%ccomments(NLVL_MASK)        = ''
+
 tzbudiachro%lmobile    = .false.
 tzbudiachro%licompress = .true.
 tzbudiachro%ljcompress = .true.
@@ -283,7 +306,7 @@ tzbudiachro%nkh        = ikmax
 ! Loop on the different masks
 ! Do not provide all tzfields once because they can be stored in different HDF groups (based on masks)
 do jp = 1 , nstemp_serie1
-  tzbudiachro%cmask    = csmask1(jp)
+  tzbudiachro%clevels(NLVL_MASK) = Trim( csmask1(jp) )
 
   call Write_diachro( tpdiafile, tzbudiachro, [ tzfields(jp) ], tpsdates(1:nsnbstept), &
                       xsseries1(1:1,1:1,1:1,1:nsnbstept,1:1,jp:jp)                 )
@@ -366,12 +389,34 @@ tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 ! tzfields(:)%ndimlist(6) = NMNHDIM_SERIES_PROC
 tzfields(:)%ndimlist(6) = NMNHDIM_UNUSED !Set to unused because write are done in a loop (1 write per "process")
 
-tzbudiachro%ccomment   = 'Time series of horizontally averaged vertical profile'
-tzbudiachro%ccategory  = 'time series'
-! tzbudiachro%csubcategory  = NOT SET (default values)
-tzbudiachro%cgroup     = 'ZTSERIES'
-tzbudiachro%cshape     = 'cartesian'  !It is based on a cartesian domain (with horizontal compression)
-! tzbudiachro%cmask    =  set in the process loop
+tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
+tzbudiachro%clevels  (NLVL_CATEGORY)    = 'Time series'
+tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different time series'
+
+tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
+tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
+tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
+
+tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
+tzbudiachro%clevels  (NLVL_GROUP)       = 'ZTSERIES'
+tzbudiachro%ccomments(NLVL_GROUP)       = 'Time series of horizontally averaged vertical profile'
+
+tzbudiachro%lleveluse(NLVL_SHAPE)       = .false.
+tzbudiachro%clevels  (NLVL_SHAPE)       = 'Cartesian' !It is based on a cartesian domain (with horizontal compression)
+tzbudiachro%ccomments(NLVL_SHAPE)       = 'Cartesian domain'
+
+tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
+tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not time averaged'
+tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are not time averaged'
+
+tzbudiachro%lleveluse(NLVL_NORM)        = .false.
+tzbudiachro%clevels  (NLVL_NORM)        = 'Not normalized'
+tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
+
+tzbudiachro%lleveluse(NLVL_MASK)        = .true.
+! tzbudiachro%clevels  (NLVL_MASK)        = DONE LATER
+tzbudiachro%ccomments(NLVL_MASK)        = ''
+
 tzbudiachro%lmobile    = .false.
 tzbudiachro%licompress = .true.
 tzbudiachro%ljcompress = .true.
@@ -388,7 +433,7 @@ tzbudiachro%nkh        = ikmax
 ! Loop on the different masks
 ! Do not provide all tzfields once because they can be stored in different HDF groups (based on masks)
 do jp = 1 , nstemp_serie2
-  tzbudiachro%cmask    = csmask2(jp)
+  tzbudiachro%clevels(NLVL_MASK) = csmask2(jp)
 
   call Write_diachro( tpdiafile, tzbudiachro, [ tzfields(jp) ], tpsdates(1:nsnbstept), &
                       xsseries2(1:1,1:1,1:ikmax,1:nsnbstept,1:1,jp:jp)                 )
@@ -473,12 +518,35 @@ DO JS=1,NBJSLICE
   tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
   tzfields(:)%ndimlist(6) = NMNHDIM_SERIES_PROC
 
-  tzbudiachro%ccomment   = 'Time series of y-horizontally averaged fields at one level or vertically averaged between 2 levels'
-  tzbudiachro%ccategory  = 'time series'
-! tzbudiachro%csubcategory  = NOT SET (default values)
-  tzbudiachro%cgroup     = ygroup
-  tzbudiachro%cshape     = 'cartesian' !It is based on a cartesian domain (with compression in 1 direction)
-!  tzbudiachro%cmask      = NOT SET (default values)
+  tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
+  tzbudiachro%clevels  (NLVL_CATEGORY)    = 'Time series'
+  tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different time series'
+
+  tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
+  tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
+  tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
+
+  tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
+  tzbudiachro%clevels  (NLVL_GROUP)       = Trim( ygroup )
+  tzbudiachro%ccomments(NLVL_GROUP)       = 'Time series of y-horizontally averaged fields at one level ' // &
+                                            'or vertically averaged between 2 levels'
+
+  tzbudiachro%lleveluse(NLVL_SHAPE)       = .false.
+  tzbudiachro%clevels  (NLVL_SHAPE)       = 'Cartesian' !It is based on a cartesian domain (with compression in 1 direction)
+  tzbudiachro%ccomments(NLVL_SHAPE)       = 'Cartesian domain'
+
+  tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
+  tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not time averaged'
+  tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are not time averaged'
+
+  tzbudiachro%lleveluse(NLVL_NORM)        = .false.
+  tzbudiachro%clevels  (NLVL_NORM)        = 'Not normalized'
+  tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
+
+  tzbudiachro%lleveluse(NLVL_MASK)        = .false.
+  tzbudiachro%clevels  (NLVL_MASK)        = ''
+  tzbudiachro%ccomments(NLVL_MASK)        = ''
+
   tzbudiachro%lmobile    = .false.
   tzbudiachro%licompress = .false.
   tzbudiachro%ljcompress = .true.

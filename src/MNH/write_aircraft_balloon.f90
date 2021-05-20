@@ -176,7 +176,8 @@ CONTAINS
 !
 SUBROUTINE FLYER_DIACHRO(TPFLYER)
 
-use modd_budget, only: tbudiachrometadata
+use modd_budget, only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK, &
+                       tbudiachrometadata
 use modd_field,  only: NMNHDIM_LEVEL, NMNHDIM_FLYER_PROC, NMNHDIM_FLYER_TIME, NMNHDIM_UNUSED, &
                        tfield_metadata_base, TYPEREAL
 
@@ -854,12 +855,33 @@ tzfields(:)%ndimlist(4) = NMNHDIM_FLYER_TIME
 tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_FLYER_PROC
 
-tzbudiachro%ccomment   = 'Values at position of flyer ' // Trim( tpflyer%title )
-tzbudiachro%ccategory  = 'flyer'
-call Aircraft_balloon_longtype_get( tpflyer, tzbudiachro%csubcategory )
-tzbudiachro%cgroup     = ygroup
-tzbudiachro%cshape     = 'point'
-! tzbudiachro%cmask      = NOT SET (default values)
+tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
+tzbudiachro%clevels  (NLVL_CATEGORY)    = 'Flyers'
+tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different flyers (aircrafts and balloons)'
+
+tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .true.
+call Aircraft_balloon_longtype_get( tpflyer, tzbudiachro%clevels(NLVL_SUBCATEGORY) )
+tzbudiachro%ccomments(NLVL_SUBCATEGORY) = 'Level for the flyers of type: ' // Trim( tzbudiachro%clevels(NLVL_SUBCATEGORY) )
+
+tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
+tzbudiachro%clevels  (NLVL_GROUP)       = Trim( ygroup )
+tzbudiachro%ccomments(NLVL_GROUP)       = 'Values for flyer ' // Trim( tpflyer%title )
+
+tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
+tzbudiachro%clevels  (NLVL_SHAPE)       = 'point'
+tzbudiachro%ccomments(NLVL_SHAPE)       = 'Values at position of flyer ' // Trim( tpflyer%title )
+
+tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
+tzbudiachro%clevels  (NLVL_TIMEAVG)     = ''
+tzbudiachro%ccomments(NLVL_TIMEAVG)     = ''
+
+tzbudiachro%lleveluse(NLVL_NORM)        = .false.
+tzbudiachro%clevels  (NLVL_NORM)        = ''
+tzbudiachro%ccomments(NLVL_NORM)        = ''
+
+tzbudiachro%lleveluse(NLVL_MASK)        = .false.
+tzbudiachro%clevels  (NLVL_MASK)        = ''
+tzbudiachro%ccomments(NLVL_MASK)        = ''
 tzbudiachro%lmobile    = .true.
 ! tzbudiachro%licompress = NOT SET (default values)
 ! tzbudiachro%ljcompress = NOT SET (default values)
@@ -895,12 +917,34 @@ tzfields(:)%ndimlist(4) = NMNHDIM_FLYER_TIME
 tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_FLYER_PROC
 
-tzbudiachro%ccomment   = 'Vertical profiles at position of flyer ' // Trim( tpflyer%title )
-! tzbudiachro%ccategory    =  !unchanged
-! tzbudiachro%csubcategory =  !unchanged
-tzbudiachro%cgroup     = ygroupz
-tzbudiachro%cshape     = 'vertical profile'
-! tzbudiachro%cmask      = NOT SET (default values)
+tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
+tzbudiachro%clevels  (NLVL_CATEGORY)    = 'Flyers'
+tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different flyers (aircrafts and balloons)'
+
+tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .true.
+call Aircraft_balloon_longtype_get( tpflyer, tzbudiachro%clevels(NLVL_SUBCATEGORY) )
+tzbudiachro%ccomments(NLVL_SUBCATEGORY) = 'Level for the flyers of type: ' // Trim( tzbudiachro%clevels(NLVL_SUBCATEGORY) )
+
+tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
+tzbudiachro%clevels  (NLVL_GROUP)       = Trim( ygroupz )
+tzbudiachro%ccomments(NLVL_GROUP)       = 'Values for flyer ' // Trim( tpflyer%title )
+
+tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
+tzbudiachro%clevels  (NLVL_SHAPE)       = 'Vertical profile'
+tzbudiachro%ccomments(NLVL_SHAPE)       = 'Vertical profiles at position of flyer ' // Trim( tpflyer%title )
+
+tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
+tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not time averaged'
+tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are not time averaged'
+
+tzbudiachro%lleveluse(NLVL_NORM)        = .false.
+tzbudiachro%clevels  (NLVL_NORM)        = 'Not normalized'
+tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
+
+tzbudiachro%lleveluse(NLVL_MASK)        = .false.
+tzbudiachro%clevels  (NLVL_MASK)        = ''
+tzbudiachro%ccomments(NLVL_MASK)        = ''
+
 tzbudiachro%lmobile    = .true.
 tzbudiachro%licompress = .true.
 tzbudiachro%ljcompress = .true.

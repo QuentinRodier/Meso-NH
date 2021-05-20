@@ -17,7 +17,8 @@
 MODULE MODE_LES_DIACHRO
 !#######################
 
-use modd_budget, only: tbudiachrometadata
+use modd_budget, only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK, &
+                       tbudiachrometadata
 use modd_les_n,  only: tles_dates, xles_times
 use modd_lunit
 
@@ -968,7 +969,6 @@ contains
 subroutine Les_diachro_common_intern( oavg, onorm )
 !#######################################################################################
 
-use modd_budget,        only: CNOTSET
 use modd_field,         only: NMNHDIM_BUDGET_LES_TIME, NMNHDIM_BUDGET_LES_AVG_TIME, NMNHDIM_BUDGET_LES_MASK, &
                               NMNHDIM_BUDGET_LES_SV, NMNHDIM_UNUSED
 use modd_les,           only: nles_current_times
@@ -1021,18 +1021,14 @@ if ( oavg ) call Les_time_avg_4d( zfield, tzdates, iresp )
 if ( oavg ) then
   if ( onorm ) then
     ygroup = 'H_' // tpfield%cmnhname
-    tzbudiachro%ccomment = Trim( tpfield%ccomment ) // ' (normalized and time averaged)'
   else
     ygroup = 'A_' // tpfield%cmnhname
-    tzbudiachro%ccomment = Trim( tpfield%ccomment ) // ' (time averaged)'
   end if
 else
   if ( onorm ) then
     ygroup = 'E_' // tpfield%cmnhname
-    tzbudiachro%ccomment = Trim( tpfield%ccomment ) // ' (normalized)'
   else
     ygroup = tpfield%cmnhname
-    tzbudiachro%ccomment = Trim( tpfield%ccomment )
   end if
 endif
 
@@ -1068,11 +1064,50 @@ if ( iresp == 0 .and. any( zfield /= XUNDEF ) ) then
   tzfields(:)%clongname = ytitle(:)
   tzfields(:)%ccomment  = ycomment(:)
 
-  !tzbudiachro%ccomment   = DONE BEFORE
-  tzbudiachro%ccategory  = 'LES'
-!   tzbudiachro%csubcategory  = CNOTSET
-  tzbudiachro%cgroup     = ygroup
-  tzbudiachro%cshape     = 'cartesian'
+  tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
+  tzbudiachro%clevels  (NLVL_CATEGORY)    = 'LES budgets'
+  tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different LES budgets'
+
+  tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
+  tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
+  tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
+
+  tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
+  tzbudiachro%clevels  (NLVL_GROUP)       = Trim( ygroup )
+  tzbudiachro%ccomments(NLVL_GROUP)       = ''
+
+  tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
+  tzbudiachro%clevels  (NLVL_SHAPE)       = 'Cartesian'
+  tzbudiachro%ccomments(NLVL_SHAPE)       = 'cartesian domain'
+
+  tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .true.
+  if ( oavg ) then
+    tzbudiachro%clevels  (NLVL_TIMEAVG)   = 'Time averaged'
+    tzbudiachro%ccomments(NLVL_TIMEAVG)   = 'Values are time averaged'
+  else
+    tzbudiachro%clevels  (NLVL_TIMEAVG)   = 'Not time averaged'
+    tzbudiachro%ccomments(NLVL_TIMEAVG)   = 'Values are not time averaged'
+  end if
+
+  tzbudiachro%lleveluse(NLVL_NORM)        = .true.
+  if ( onorm ) then
+    tzbudiachro%clevels  (NLVL_NORM)      = 'Normalized'
+    tzbudiachro%ccomments(NLVL_NORM)      = 'Values are normalized'
+  else
+    tzbudiachro%clevels  (NLVL_NORM)      = 'Not normalized'
+    tzbudiachro%ccomments(NLVL_NORM)      = 'Values are not normalized'
+  end if
+
+  if ( tzfields(1)%ndimlist(6) == NMNHDIM_BUDGET_LES_MASK ) then
+    tzbudiachro%lleveluse(NLVL_MASK)        = .true.
+!     tzbudiachro%clevels  (NLVL_MASK)        = DONE AFTER
+!     tzbudiachro%ccomments(NLVL_MASK)        = DONE AFTER
+  else
+    tzbudiachro%lleveluse(NLVL_MASK)        = .false.
+    tzbudiachro%clevels  (NLVL_MASK)        = ''
+    tzbudiachro%ccomments(NLVL_MASK)        = ''
+  end if
+
   tzbudiachro%lmobile    = .false.
   tzbudiachro%licompress = .true.
   tzbudiachro%ljcompress = .true.
@@ -1095,12 +1130,13 @@ if ( iresp == 0 .and. any( zfield /= XUNDEF ) ) then
       tzfields(jp)%clongname = Trim( ytitle(jp) ) // ' (' // Trim( hmasks(jp) ) // ')'
       tzfields(jp)%ndims     = tzfields(jp)%ndims - 1
 
-      tzbudiachro%cmask      = hmasks(jp)
+      tzbudiachro%clevels(NLVL_MASK) = hmasks(jp)
+      tzbudiachro%ccomments(NLVL_MASK) = ''
 
       call Write_diachro( tpdiafile, tzbudiachro, [ tzfields(jp) ], tzdates, zwork6(:,:,:,:,:,jp:jp) )
     end do
   else
-    tzbudiachro%cmask      = 'cart'
+    tzbudiachro%clevels(NLVL_MASK) = 'cart'
 
     call Write_diachro( tpdiafile, tzbudiachro, tzfields, tzdates, zwork6 )
   end if
@@ -1259,16 +1295,39 @@ if ( gavg ) then
   end do
 end if
 
-if ( .not. gavg ) then
-  tzbudiachro%ccomment = tzfield%ccomment
+tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
+tzbudiachro%clevels  (NLVL_CATEGORY)    = 'LES budgets'
+tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different LES budgets'
+
+tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
+tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
+tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
+
+tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
+tzbudiachro%clevels  (NLVL_GROUP)       = Trim( ygroup )
+tzbudiachro%ccomments(NLVL_GROUP)       = ''
+
+tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
+tzbudiachro%clevels  (NLVL_SHAPE)       = '2-point correlation'
+tzbudiachro%ccomments(NLVL_SHAPE)       = ''
+
+tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .true.
+if ( gavg ) then
+  tzbudiachro%clevels  (NLVL_TIMEAVG)   = 'Time averaged'
+  tzbudiachro%ccomments(NLVL_TIMEAVG)   = 'Values are time averaged'
 else
-  tzbudiachro%ccomment = Trim( tzfield%ccomment ) // ' (time averaged)'
+  tzbudiachro%clevels  (NLVL_TIMEAVG)   = 'Not time averaged'
+  tzbudiachro%ccomments(NLVL_TIMEAVG)   = 'Values are not time averaged'
 end if
-tzbudiachro%ccategory  = 'LES'
-! tzbudiachro%csubcategory  = CNOTSET
-tzbudiachro%cgroup     = ygroup
-tzbudiachro%cshape     = '2-point correlation'
-! tzbudiachro%cmask      = CNOTSET
+
+tzbudiachro%lleveluse(NLVL_NORM)        = .true.
+tzbudiachro%clevels  (NLVL_NORM)        = 'Not normalized'
+tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
+
+tzbudiachro%lleveluse(NLVL_MASK)        = .false.
+tzbudiachro%clevels  (NLVL_MASK)        = ''
+tzbudiachro%ccomments(NLVL_MASK)        = ''
+
 if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_2PTS_NI ) then
   tzbudiachro%cdirection = 'I'
 else
@@ -1421,12 +1480,34 @@ tzfield%cmnhname  = ygroup
 tzfield%clongname = ygroup
 tzfield%ccomment  = ycomment(:)
 
-tzbudiachro%ccomment   = tzfield%ccomment
-tzbudiachro%ccategory  = 'LES'
-! tzbudiachro%csubcategory  = CNOTSET
-tzbudiachro%cgroup     = ygroup
-tzbudiachro%cshape     = 'spectrum'
-! tzbudiachro%cmask      = CNOTSET
+tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
+tzbudiachro%clevels  (NLVL_CATEGORY)    = 'LES budgets'
+tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different LES budgets'
+
+tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
+tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
+tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
+
+tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
+tzbudiachro%clevels  (NLVL_GROUP)       = Trim( ygroup )
+tzbudiachro%ccomments(NLVL_GROUP)       = ''
+
+tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
+tzbudiachro%clevels  (NLVL_SHAPE)       = 'Spectrum'
+tzbudiachro%ccomments(NLVL_SHAPE)       = ''
+
+tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .true.
+tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not time averaged'
+tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are not time averaged'
+
+tzbudiachro%lleveluse(NLVL_NORM)        = .true.
+tzbudiachro%clevels  (NLVL_NORM)        = 'Not normalized'
+tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
+
+tzbudiachro%lleveluse(NLVL_MASK)        = .false.
+tzbudiachro%clevels  (NLVL_MASK)        = ''
+tzbudiachro%ccomments(NLVL_MASK)        = ''
+
 if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_SPEC_NI ) then
   tzbudiachro%cdirection = 'I'
 else
@@ -1459,12 +1540,34 @@ end do
 tzfield%cmnhname  = ygroup
 tzfield%clongname = ygroup
 
-tzbudiachro%ccomment   = Trim( tzfield%ccomment ) // ' (time averaged)'
-tzbudiachro%ccategory  = 'LES'
-! tzbudiachro%csubcategory  = CNOTSET
-tzbudiachro%cgroup     = ygroup
-tzbudiachro%cshape     = 'spectrum'
-! tzbudiachro%cmask      = CNOTSET
+tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
+tzbudiachro%clevels  (NLVL_CATEGORY)    = 'LES budgets'
+tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different LES budgets'
+
+tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
+tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
+tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
+
+tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
+tzbudiachro%clevels  (NLVL_GROUP)       = Trim( ygroup )
+tzbudiachro%ccomments(NLVL_GROUP)       = ''
+
+tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
+tzbudiachro%clevels  (NLVL_SHAPE)       = 'Spectrum'
+tzbudiachro%ccomments(NLVL_SHAPE)       = ''
+
+tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .true.
+tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Time averaged'
+tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are time averaged'
+
+tzbudiachro%lleveluse(NLVL_NORM)        = .true.
+tzbudiachro%clevels  (NLVL_NORM)        = 'Not normalized'
+tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
+
+tzbudiachro%lleveluse(NLVL_MASK)        = .false.
+tzbudiachro%clevels  (NLVL_MASK)        = ''
+tzbudiachro%ccomments(NLVL_MASK)        = ''
+
 if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_SPEC_NI ) then
   tzbudiachro%cdirection = 'I'
 else

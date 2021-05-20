@@ -357,16 +357,16 @@ CHARACTER(LEN=*), INTENT(OUT) :: HLONGTYPE
 character(len=:), allocatable :: ytype
 
 if ( Trim( TPFLYER%TYPE ) == 'AIRCRA' ) then
-  ytype = 'aircraft'
+  ytype = 'Aircrafts'
 else if ( Trim( TPFLYER%TYPE ) == 'RADIOS' ) then
-  ytype = 'radiosonde balloon'
+  ytype = 'Radiosonde balloons'
 else if ( Trim( TPFLYER%TYPE ) == 'ISODEN' ) then
-  ytype = 'iso-density balloon'
+  ytype = 'Iso-density balloons'
 else if ( Trim( TPFLYER%TYPE ) == 'CVBALL' ) then
-  ytype = 'constant volume balloon'
+  ytype = 'Constant volume balloons'
 else
   call Print_msg( NVERB_ERROR, 'GEN', 'AIRCRAFT_BALLOON_LONGTYPE_GET', 'unknown category for flyer ' // Trim( tpflyer%title ) )
-  ytype = 'unknown'
+  ytype = 'Unknown'
 end if
 
 if ( Len_trim( ytype ) > Len( HLONGTYPE ) ) &

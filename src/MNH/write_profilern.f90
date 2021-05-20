@@ -127,7 +127,8 @@ CONTAINS
 !----------------------------------------------------------------------------
 SUBROUTINE PROFILER_DIACHRO_n(TPROFILER,II)
 
-use modd_budget, only: tbudiachrometadata
+use modd_budget, only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK,  &
+                       tbudiachrometadata
 use modd_field,  only: NMNHDIM_LEVEL, NMNHDIM_PROFILER_TIME, NMNHDIM_PROFILER_PROC, NMNHDIM_UNUSED, &
                        tfield_metadata_base, TYPEREAL
 
@@ -650,12 +651,34 @@ tzfields(:)%ndimlist(4) = NMNHDIM_PROFILER_TIME
 tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_PROFILER_PROC
 
-tzbudiachro%ccomment   = 'Vertical profiles at position of profiler ' // Trim( ygroup )
-tzbudiachro%ccategory  = 'profiler'
-! tzbudiachro%csubcategory  = NOT SET (default values)
-tzbudiachro%cgroup     = ygroup
-tzbudiachro%cshape     = 'vertical profile'
-! tzbudiachro%cmask     = NOT SET (default values)
+tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
+tzbudiachro%clevels  (NLVL_CATEGORY)    = 'Profilers'
+tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different vertical profilers'
+
+tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
+tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
+tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
+
+tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
+tzbudiachro%clevels  (NLVL_GROUP)       = ygroup
+tzbudiachro%ccomments(NLVL_GROUP)       = 'Vertical profiles at position of profiler ' // Trim( ygroup )
+
+tzbudiachro%lleveluse(NLVL_SHAPE)       = .false.
+tzbudiachro%clevels  (NLVL_SHAPE)       = 'Vertical profile'
+tzbudiachro%ccomments(NLVL_SHAPE)       = ''
+
+tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
+tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not time averaged'
+tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are not time averaged'
+
+tzbudiachro%lleveluse(NLVL_NORM)        = .false.
+tzbudiachro%clevels  (NLVL_NORM)        = 'Not normalized'
+tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
+
+tzbudiachro%lleveluse(NLVL_MASK)        = .false.
+tzbudiachro%clevels  (NLVL_MASK)        = ''
+tzbudiachro%ccomments(NLVL_MASK)        = ''
+
 tzbudiachro%lmobile    = .false.
 tzbudiachro%licompress = .true.
 tzbudiachro%ljcompress = .true.
