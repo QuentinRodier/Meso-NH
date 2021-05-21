@@ -265,6 +265,34 @@ if (       Trim( tpbudiachro%clevels(NLVL_CATEGORY) ) == 'Flyers'           &
   ygroup = Trim( ygroup ) // 'Z'
 end if
 
+if (       Trim( tpbudiachro%clevels(NLVL_CATEGORY) ) == 'LES budgets' &
+     .and. Trim( tpbudiachro%clevels(NLVL_SHAPE) )    == 'Cartesian'   ) then
+  if ( tpbudiachro%ltcompress ) then
+    if ( tpbudiachro%lnorm ) then
+      ygroup = 'H_' // Trim( ygroup )
+    else
+      ygroup = 'A_' // Trim( ygroup )
+    end if
+  else
+    if ( tpbudiachro%lnorm ) then
+      ygroup = 'E_' // Trim( ygroup )
+    else
+      !Nothing to do
+    end if
+  end if
+  !Limit to 10 characters (backward compatibility again...)
+  if ( Len_trim( ygroup )  > 10 ) ygroup = ygroup(1:10)
+end if
+
+if (       Trim( tpbudiachro%clevels(NLVL_CATEGORY) ) == 'LES budgets' &
+     .and. Trim( tpbudiachro%clevels(NLVL_SHAPE) )    == 'Spectrum'    ) then
+  if ( tpbudiachro%ltcompress ) then
+    ygroup = 'T_' // Trim( ygroup )
+    !Limit to 10 characters (backward compatibility again...)
+    if ( Len_trim( ygroup )  > 10 ) ygroup = ygroup(1:10)
+  end if
+end if
+
 !Recompute old TYPE for backward compatibility
 if ( ycategory == 'Budgets' ) then
   if ( yshape == 'Cartesian' ) then

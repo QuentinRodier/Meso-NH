@@ -978,7 +978,6 @@ use mode_write_diachro, only: Write_diachro
 logical, intent(in) :: oavg
 logical, intent(in) :: onorm
 
-character(len=10)                                    :: ygroup  ! Group title
 integer                                              :: iresp   ! Return code
 integer                                              :: ji
 integer                                              :: jk      ! Vertical loop counter
@@ -1018,24 +1017,10 @@ end if
 iresp = 0
 if ( oavg ) call Les_time_avg_4d( zfield, tzdates, iresp )
 
-if ( oavg ) then
-  if ( onorm ) then
-    ygroup = 'H_' // tpfield%cmnhname
-  else
-    ygroup = 'A_' // tpfield%cmnhname
-  end if
-else
-  if ( onorm ) then
-    ygroup = 'E_' // tpfield%cmnhname
-  else
-    ygroup = tpfield%cmnhname
-  end if
-endif
-
 if ( Present( hsuffixes ) ) then
-  ytitle(:) = ygroup // hsuffixes(:)
+  ytitle(:) = tpfield%cmnhname // hsuffixes(:)
 else
-  ytitle(:) = ygroup
+  ytitle(:) = tpfield%cmnhname
 endif
 
 ! Write the profile
@@ -1073,12 +1058,12 @@ if ( iresp == 0 .and. any( zfield /= XUNDEF ) ) then
   tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
 
   tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
-  tzbudiachro%clevels  (NLVL_GROUP)       = Trim( ygroup )
+  tzbudiachro%clevels  (NLVL_GROUP)       = Trim( tpfield%cmnhname )
   tzbudiachro%ccomments(NLVL_GROUP)       = ''
 
   tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
   tzbudiachro%clevels  (NLVL_SHAPE)       = 'Cartesian'
-  tzbudiachro%ccomments(NLVL_SHAPE)       = 'cartesian domain'
+  tzbudiachro%ccomments(NLVL_SHAPE)       = 'Cartesian domain'
 
   tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .true.
   if ( oavg ) then
@@ -1532,13 +1517,9 @@ call Write_diachro( tpdiafile, tzbudiachro, [ tzfield ], tzdates, zwork6 )
 !
 iresp = 0
 call Les_time_avg( zwork6, tzdates, iresp )
-ygroup = 'T_' // ygroup
 do ji = 1, NMNHMAXDIMS
   if ( tzfield%ndimlist(ji) == NMNHDIM_BUDGET_LES_TIME ) tzfield%ndimlist(ji) = NMNHDIM_BUDGET_LES_AVG_TIME
 end do
-
-tzfield%cmnhname  = ygroup
-tzfield%clongname = ygroup
 
 tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
 tzbudiachro%clevels  (NLVL_CATEGORY)    = 'LES budgets'
