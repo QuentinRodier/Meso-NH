@@ -256,7 +256,7 @@ ALLOCATE (IGRIDZ  (IPROCZ))
 IGRID  = 1
 YGROUP = TPFLYER%TITLE
 IGRIDZ = 1
-YGROUPZ = TRIM(TPFLYER%TITLE)//"Z"
+YGROUPZ = TPFLYER%TITLE
 !
 !----------------------------------------------------------------------------
 JPROC = 0

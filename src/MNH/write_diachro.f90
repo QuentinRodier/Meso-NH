@@ -259,6 +259,12 @@ else
   ygroup = Trim( tpbudiachro%clevels(NLVL_GROUP) )
 end if
 
+!For backward compatibility
+if (       Trim( tpbudiachro%clevels(NLVL_CATEGORY) ) == 'Flyers'           &
+     .and. Trim( tpbudiachro%clevels(NLVL_SHAPE) )    == 'Vertical profile' ) then
+  ygroup = Trim( ygroup ) // 'Z'
+end if
+
 !Recompute old TYPE for backward compatibility
 if ( ycategory == 'Budgets' ) then
   if ( yshape == 'Cartesian' ) then
@@ -726,7 +732,7 @@ end subroutine Write_diachro_lfi
 !-----------------------------------------------------------------------------
 subroutine Write_diachro_nc4( tpdiafile, tpbudiachro, tpfields, pvar, osplit, tpflyer )
 
-use NETCDF,                only: NF90_DEF_DIM, NF90_NOERR
+use NETCDF,                only: NF90_DEF_DIM, NF90_INQ_DIMID, NF90_INQUIRE_DIMENSION, NF90_NOERR
 
 use modd_aircraft_balloon, only: flyer
 use modd_budget,           only: CNCGROUPNAMES,                                                      &
@@ -764,6 +770,7 @@ integer                                       :: ji
 integer                                       :: jl
 integer                                       :: jp
 integer(kind=CDFINT)                          :: idimid
+integer(kind=CDFINT)                          :: ilen
 integer(kind=CDFINT)                          :: istatus
 integer(kind=CDFINT)                          :: ilevelid
 integer(kind=CDFINT), dimension(0:NMAXLEVELS) :: ilevelids ! ids of the different groups/levels in the netCDF file
@@ -1126,9 +1133,18 @@ select case ( idims )
       !Correspond to FLYER_DIACHRO
       !Create local time dimension
       if ( isp == tzfile%nmaster_rank) then
-        istatus = NF90_DEF_DIM( ilevelids(NLVL_GROUP), 'time_flyer', Int( Size( pvar, 4), kind = CDFINT ), idimid )
-        if ( istatus /= NF90_NOERR ) &
-          call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_DEF_DIM', Trim( tpfields(1)%cmnhname ) )
+        istatus = NF90_INQ_DIMID( ilevelids(NLVL_GROUP), 'time_flyer', idimid )
+        if ( istatus == NF90_NOERR ) then
+          !Dimension already exists, check that it is not changed
+          istatus = NF90_INQUIRE_DIMENSION( ilevelids(NLVL_GROUP), idimid, len = ilen )
+          if ( ilen /= Int( Size( pvar, 4), kind = CDFINT ) ) &
+            call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', 'time_flyer dimension has changed' )
+        else
+          !Dimension does not exist yet, create it
+          istatus = NF90_DEF_DIM( ilevelids(NLVL_GROUP), 'time_flyer', Int( Size( pvar, 4), kind = CDFINT ), idimid )
+          if ( istatus /= NF90_NOERR ) &
+            call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_DEF_DIM', Trim( tpfields(1)%cmnhname ) )
+        end if
       end if
 
       ! Loop on the processes
@@ -1257,9 +1273,18 @@ select case ( idims )
       !Correspond to FLYER_DIACHRO
       !Create local time dimension
       if ( isp == tzfile%nmaster_rank) then
-        istatus = NF90_DEF_DIM( ilevelids(NLVL_GROUP), 'time_flyer', Int( Size( pvar, 4), kind = CDFINT ), idimid )
-        if ( istatus /= NF90_NOERR ) &
-          call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_DEF_DIM', Trim( tpfields(1)%cmnhname ) )
+        istatus = NF90_INQ_DIMID( ilevelids(NLVL_GROUP), 'time_flyer', idimid )
+        if ( istatus == NF90_NOERR ) then
+          !Dimension already exists, check that it is not changed
+          istatus = NF90_INQUIRE_DIMENSION( ilevelids(NLVL_GROUP), idimid, len = ilen )
+          if ( ilen /= Int( Size( pvar, 4), kind = CDFINT ) ) &
+            call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', 'time_flyer dimension has changed' )
+        else
+          !Dimension does not exist yet, create it
+          istatus = NF90_DEF_DIM( ilevelids(NLVL_GROUP), 'time_flyer', Int( Size( pvar, 4), kind = CDFINT ), idimid )
+          if ( istatus /= NF90_NOERR ) &
+            call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_DEF_DIM', Trim( tpfields(1)%cmnhname ) )
+        end if
       end if
 
       ! Loop on the processes
