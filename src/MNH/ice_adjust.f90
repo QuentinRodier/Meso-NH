@@ -9,32 +9,37 @@
 !
 INTERFACE
 !
-      SUBROUTINE ICE_ADJUST (KKA, KKU, KKL, KRR, HFRAC_ICE,                    &
-                             HBUNAME, OSUBG_COND, OSIGMAS,                     &
+      SUBROUTINE ICE_ADJUST (KKA, KKU, KKL, KRR, HFRAC_ICE, HCONDENS, HLAMBDA3,&
+                             HBUNAME, OSUBG_COND, OSIGMAS, HSUBG_MF_PDF,&
                              PTSTEP, PSIGQSAT,                                 &
-                             PRHODJ, PEXNREF, PSIGS, PMFCONV, PPABST, PZZ,     &
+                             PRHODJ, PEXNREF, PRHODREF, PSIGS, PMFCONV, PPABST, PZZ,     &
                              PEXN, PCF_MF, PRC_MF, PRI_MF,                     &
                              PRV, PRC, PRVS, PRCS, PTH, PTHS, PSRCS, PCLDFR ,  &
                              PRR, PRI, PRIS, PRS, PRG,                         &
-                             PRH, POUT_RV, POUT_RC, POUT_RI, POUT_TH           )
+                             PRH, POUT_RV, POUT_RC, POUT_RI, POUT_TH,          &
+                             PHLC_HRC, PHLC_HCF, PHLI_HRI, PHLI_HCF            )
 !
 INTEGER,                  INTENT(IN)    :: KKA   !near ground array index  
 INTEGER,                  INTENT(IN)    :: KKU   !uppest atmosphere array index
 INTEGER,                  INTENT(IN)    :: KKL   !vert. levels type 1=MNH -1=ARO
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 CHARACTER(len=1),         INTENT(IN)    :: HFRAC_ICE
+CHARACTER(len=80),             INTENT(IN)    :: HCONDENS
+CHARACTER(len=4),              INTENT(IN)    :: HLAMBDA3 ! formulation for lambda3 coeff
 CHARACTER(len=*),         INTENT(IN)    :: HBUNAME  ! Name of the budget
 LOGICAL,                  INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid 
                                                     ! Condensation
 LOGICAL                                 :: OSIGMAS  ! Switch for Sigma_s: 
                                                     ! use values computed in CONDENSATION
                                                     ! or that from turbulence scheme
+CHARACTER(len=80),             INTENT(IN)    :: HSUBG_MF_PDF
 REAL,                     INTENT(IN)   :: PTSTEP    ! Double Time step
                                                     ! (single if cold start)
 REAL,                     INTENT(IN)   :: PSIGQSAT  ! coeff applied to qsat variance contribution
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODJ  ! Dry density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PEXNREF ! Reference Exner function
+REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODREF
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PSIGS   ! Sigma_s at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PMFCONV ! convective mass flux
@@ -66,6 +71,10 @@ REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(OUT)  ::  POUT_RV ! Adjusted value
 REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(OUT)  ::  POUT_RC ! Adjusted value
 REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(OUT)  ::  POUT_RI ! Adjusted value
 REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(OUT)  ::  POUT_TH ! Adjusted value
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(OUT)  ::  PHLC_HRC
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(OUT)  ::  PHLC_HCF
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(OUT)  ::  PHLI_HRI
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(OUT)  ::  PHLI_HCF
 !
 !
 END SUBROUTINE ICE_ADJUST
@@ -75,14 +84,16 @@ END INTERFACE
 END MODULE MODI_ICE_ADJUST
 
 !     ##########################################################################
-      SUBROUTINE ICE_ADJUST (KKA, KKU, KKL, KRR, HFRAC_ICE,                    &
-                             HBUNAME, OSUBG_COND, OSIGMAS,                     &
+      SUBROUTINE ICE_ADJUST (KKA, KKU, KKL, KRR, HFRAC_ICE, HCONDENS, HLAMBDA3,&
+                             HBUNAME, OSUBG_COND, OSIGMAS, HSUBG_MF_PDF,       &
                              PTSTEP, PSIGQSAT,                                 &
-                             PRHODJ, PEXNREF, PSIGS, PMFCONV, PPABST, PZZ,     &
+                             PRHODJ, PEXNREF, PRHODREF, PSIGS, PMFCONV,        &
+                             PPABST, PZZ,                                      &
                              PEXN, PCF_MF, PRC_MF, PRI_MF,                     &
-                             PRV, PRC, PRVS, PRCS, PTH, PTHS, PSRCS, PCLDFR ,  &
+                             PRV, PRC, PRVS, PRCS, PTH, PTHS, PSRCS, PCLDFR,   &
                              PRR, PRI, PRIS, PRS, PRG, PRH,                    &
-                             POUT_RV, POUT_RC, POUT_RI, POUT_TH                )
+                             POUT_RV, POUT_RC, POUT_RI, POUT_TH,               &
+                             PHLC_HRC, PHLC_HCF, PHLI_HRI, PHLI_HCF            )
 !     #########################################################################
 !
 !!****  *ICE_ADJUST* -  compute the ajustment of water vapor in mixed-phase 
@@ -178,6 +189,7 @@ USE MODD_CST
 USE MODD_PARAMETERS
 
 use mode_budget,       only: Budget_store_init, Budget_store_end
+USE MODD_RAIN_ICE_PARAM, ONLY : XCRIAUTC, XCRIAUTI, XACRIAUTI, XBCRIAUTI
 use mode_tools_ll,     only: GET_INDICE_ll
 
 USE MODI_CONDENSATION
@@ -194,18 +206,22 @@ INTEGER,                  INTENT(IN)    :: KKU  !uppest atmosphere array index
 INTEGER,                  INTENT(IN)    :: KKL  !vert. levels type 1=MNH -1=ARO
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 CHARACTER(len=1),         INTENT(IN)    :: HFRAC_ICE
+CHARACTER(len=80),             INTENT(IN)    :: HCONDENS
+CHARACTER(len=4),              INTENT(IN)    :: HLAMBDA3 ! formulation for lambda3 coeff
 CHARACTER(len=*),         INTENT(IN)    :: HBUNAME  ! Name of the budget
 LOGICAL,                  INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid 
                                                     ! Condensation
 LOGICAL                                 :: OSIGMAS  ! Switch for Sigma_s: 
                                                     ! use values computed in CONDENSATION
                                                     ! or that from turbulence scheme
+CHARACTER(len=80),             INTENT(IN)    :: HSUBG_MF_PDF
 REAL,                     INTENT(IN)   :: PTSTEP    ! Double Time step
                                                     ! (single if cold start)
 REAL,                     INTENT(IN)   :: PSIGQSAT  ! coeff applied to qsat variance contribution
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODJ  ! Dry density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PEXNREF ! Reference Exner function
+REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODREF
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PSIGS   ! Sigma_s at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PMFCONV ! convective mass flux
@@ -238,6 +254,10 @@ REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(OUT)  ::  POUT_RV ! Adjusted value
 REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(OUT)  ::  POUT_RC ! Adjusted value
 REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(OUT)  ::  POUT_RI ! Adjusted value
 REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(OUT)  ::  POUT_TH ! Adjusted value
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(OUT)  ::  PHLC_HRC
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(OUT)  ::  PHLC_HCF
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(OUT)  ::  PHLI_HRI
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(OUT)  ::  PHLI_HCF
 !
 !*       0.2   Declarations of local variables :
 !
@@ -248,7 +268,9 @@ REAL, DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3)) &
                             ZCPH, &  ! guess of the CPh for the mixing
                             ZLV,  &  ! guess of the Lv at t+1
                             ZLS,  &  ! guess of the Ls at t+1
-                          ZW1,ZW2    ! Work arrays for intermediate fields
+                         ZW1,ZW2, &  ! Work arrays for intermediate fields
+                         ZCRIAUT, &  ! Autoconversion thresholds
+                       ZHCF, ZHR
 !
 INTEGER             :: IIU,IJU,IKU! dimensions of dummy arrays
 INTEGER             :: IIB,IJB    ! Horz index values of the first inner mass points
@@ -327,10 +349,11 @@ DO JITER =1,ITERMAX
     !
     !   PSRC= s'rci'/Sigma_s^2
     !   ZT, ZRV, ZRC and ZRI are INOUT
-    CALL CONDENSATION(IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE, KKL,                  &
-         HFRAC_ICE,                                                                      &
-         PPABST, PZZ, ZT, ZRV, ZRC, ZRI, PRS, PRG, PSIGS, PMFCONV, PCLDFR, PSRCS, .TRUE., OSIGMAS, &
-         PSIGQSAT, PLV=ZLV, PLS=ZLS, PCPH=ZCPH )
+    CALL CONDENSATION(IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE, KKL, &
+         HFRAC_ICE, HCONDENS, HLAMBDA3,                                    &
+         PPABST, PZZ, PRHODREF, ZT, ZRV, ZRC, ZRI, PRS, PRG, PSIGS, PMFCONV, PCLDFR, &
+         PSRCS, .TRUE., OSIGMAS,                                           &
+         PSIGQSAT, PLV=ZLV, PLS=ZLS, PCPH=ZCPH, PHLC_HRC=PHLC_HRC, PHLC_HCF=PHLC_HCF, PHLI_HRI=PHLI_HRI, PHLI_HCF=PHLI_HCF)
   ELSE
     !
     !*       4.     ALL OR NOTHING CONDENSATION SCHEME
@@ -343,12 +366,12 @@ DO JITER =1,ITERMAX
     !CALL ADJUST_LANGLOIS(IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE, KKL,                &
     !                     PPABST, ZT, ZRV, ZRC, ZRI, ZLV, ZLS, ZCPH) HFRAC_ICE must be implemented in Langlois before using it again
     ZSIGS=0.
-    CALL CONDENSATION(IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE, KKL,        &
-         HFRAC_ICE,                                                            &
-         PPABST, PZZ, ZT, ZRV, ZRC, ZRI, PRS, PRG, ZSIGS, PMFCONV, PCLDFR,     &
-         ZSRCS, .TRUE., OSIGMAS=.TRUE.,                                        &
-         PSIGQSAT=0., PLV=ZLV, PLS=ZLS, PCPH=ZCPH )
-  END IF
+    CALL CONDENSATION(IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE, KKL, &
+         HFRAC_ICE, HCONDENS, HLAMBDA3,                                    &
+         PPABST, PZZ, PRHODREF, ZT, ZRV, ZRC, ZRI, PRS, PRG, ZSIGS, PMFCONV, PCLDFR, &
+         ZSRCS, .TRUE., OSIGMAS=.TRUE.,                                    &
+         PSIGQSAT=0., PLV=ZLV, PLS=ZLS, PHLC_HRC=PHLC_HRC, PHLC_HCF=PHLC_HCF, PHLI_HRI=PHLI_HRI, PHLI_HCF=PHLI_HCF)
+  ENDIF
 ENDDO         ! end of the iterative loop
 !
 !*       5.     COMPUTE THE SOURCES AND STORES THE CLOUD FRACTION
@@ -405,6 +428,59 @@ ELSE
     ZW1(:,:,:)=ZW1(:,:,:)*PRVS(:,:,:)/(ZW1(:,:,:)+ZW2(:,:,:))
     ZW2(:,:,:)=PRVS(:,:,:)-ZW1(:,:,:)
   ENDWHERE
+  IF(PRESENT(PHLC_HRC) .AND. PRESENT(PHLC_HCF)) THEN
+    ZCRIAUT(:,:,:)=XCRIAUTC/PRHODREF
+    IF(HSUBG_MF_PDF=='NONE')THEN
+      WHERE(ZW1(:,:,:)*PTSTEP>PCF_MF * ZCRIAUT)
+        PHLC_HRC(:,:,:)=PHLC_HRC(:,:,:)+ZW1(:,:,:)*PTSTEP
+        PHLC_HCF(:,:,:)=MIN(1.,PHLC_HCF(:,:,:)+PCF_MF(:,:,:))
+      ENDWHERE
+    ELSEIF(HSUBG_MF_PDF=='TRIANGLE')THEN
+      !ZHCF is the precipitating part of the *cloud* and not of the grid cell
+      WHERE(ZW1(:,:,:)*PTSTEP>PCF_MF*ZCRIAUT(:,:,:))
+        ZHCF(:,:,:)=1.-.5*(ZCRIAUT(:,:,:)*PCF_MF(:,:,:) / MAX(1.E-20, ZW1(:,:,:)*PTSTEP))**2
+        ZHR(:,:,:)=ZW1(:,:,:)*PTSTEP-(ZCRIAUT(:,:,:)*PCF_MF(:,:,:))**3 / &
+                                    &(3*MAX(1.E-20, ZW1(:,:,:)*PTSTEP)**2)
+      ELSEWHERE(2.*ZW1(:,:,:)*PTSTEP<=PCF_MF * ZCRIAUT(:,:,:))
+        ZHCF(:,:,:)=0.
+        ZHR(:,:,:)=0.
+      ELSEWHERE
+        ZHCF(:,:,:)=(2.*ZW1(:,:,:)*PTSTEP-ZCRIAUT(:,:,:)*PCF_MF(:,:,:))**2 / &
+                   &(2.*MAX(1.E-20, ZW1(:,:,:)*PTSTEP)**2)
+        ZHR(:,:,:)=(4.*(ZW1(:,:,:)*PTSTEP)**3-3.*ZW1(:,:,:)*PTSTEP*(ZCRIAUT(:,:,:)*PCF_MF(:,:,:))**2+&
+                    (ZCRIAUT(:,:,:)*PCF_MF(:,:,:))**3) / &
+                  &(3*MAX(1.E-20, ZW1(:,:,:)*PTSTEP)**2)
+      ENDWHERE
+      ZHCF(:,:,:)=ZHCF(:,:,:)*PCF_MF(:,:,:) !to retrieve the part of the grid cell
+      PHLC_HCF(:,:,:)=MIN(1.,PHLC_HCF(:,:,:)+ZHCF(:,:,:)) !total part of the grid cell that is precipitating
+      PHLC_HRC(:,:,:)=PHLC_HRC(:,:,:)+ZHR(:,:,:)
+    ENDIF
+  ENDIF
+  IF(PRESENT(PHLI_HRI) .AND. PRESENT(PHLI_HCF)) THEN
+    ZCRIAUT(:,:,:)=MIN(XCRIAUTI,10**(XACRIAUTI*(ZT(:,:,:)-XTT)+XBCRIAUTI))
+    IF(HSUBG_MF_PDF=='NONE')THEN
+      WHERE(ZW2(:,:,:)*PTSTEP>PCF_MF * ZCRIAUT(:,:,:))
+        PHLI_HRI(:,:,:)=PHLI_HRI(:,:,:)+ZW2(:,:,:)*PTSTEP
+        PHLI_HCF(:,:,:)=MIN(1.,PHLI_HCF(:,:,:)+PCF_MF(:,:,:))
+      ENDWHERE
+    ELSEIF(HSUBG_MF_PDF=='TRIANGLE')THEN
+      !ZHCF is the precipitating part of the *cloud* and not of the grid cell
+      WHERE(ZW2(:,:,:)*PTSTEP>PCF_MF*ZCRIAUT)
+        ZHCF(:,:,:)=1.-.5*(ZCRIAUT*PCF_MF(:,:,:) / (ZW2(:,:,:)*PTSTEP))**2
+        ZHR(:,:,:)=ZW2(:,:,:)*PTSTEP-(ZCRIAUT*PCF_MF(:,:,:))**3/(3*(ZW2(:,:,:)*PTSTEP)**2)
+      ELSEWHERE(2.*ZW2(:,:,:)*PTSTEP<=PCF_MF * ZCRIAUT)
+        ZHCF(:,:,:)=0.
+        ZHR(:,:,:)=0.
+      ELSEWHERE
+        ZHCF(:,:,:)=(2.*ZW2(:,:,:)*PTSTEP-ZCRIAUT*PCF_MF(:,:,:))**2 / (2.*(ZW2(:,:,:)*PTSTEP)**2)
+        ZHR(:,:,:)=(4.*(ZW2(:,:,:)*PTSTEP)**3-3.*ZW2(:,:,:)*PTSTEP*(ZCRIAUT*PCF_MF(:,:,:))**2+&
+                    (ZCRIAUT*PCF_MF(:,:,:))**3)/(3*(ZW2(:,:,:)*PTSTEP)**2)
+      ENDWHERE
+      ZHCF(:,:,:)=ZHCF(:,:,:)*PCF_MF(:,:,:) !to retrieve the part of the grid cell
+      PHLI_HCF(:,:,:)=MIN(1.,PHLI_HCF(:,:,:)+ZHCF(:,:,:)) !total part of the grid cell that is precipitating
+      PHLI_HRI(:,:,:)=PHLI_HRI(:,:,:)+ZHR(:,:,:)
+    ENDIF
+  ENDIF
   PCLDFR(:,:,:)=MIN(1.,PCLDFR(:,:,:)+PCF_MF(:,:,:))
   PRCS(:,:,:)=PRCS(:,:,:)+ZW1(:,:,:)
   PRIS(:,:,:)=PRIS(:,:,:)+ZW2(:,:,:)
@@ -425,13 +501,13 @@ ELSE
     ZRV(:,:,:)=ZRV(:,:,:)-(ZW1(:,:,:)+ZW2(:,:,:))
     ZT(:,:,:) = ZT(:,:,:) + &
                 (ZW1 * ZLV(:,:,:) + ZW2 * ZLS(:,:,:)) / ZCPH(:,:,:)
-    IF(PRESENT(POUT_RV)) POUT_RV=ZRV
-    IF(PRESENT(POUT_RC)) POUT_RC=ZRC
-    IF(PRESENT(POUT_RI)) POUT_RI=ZRI
-    IF(PRESENT(POUT_TH)) POUT_TH=ZT / PEXN(:,:,:)
   ENDIF
 ENDIF
 !
+IF(PRESENT(POUT_RV)) POUT_RV=ZRV
+IF(PRESENT(POUT_RC)) POUT_RC=ZRC
+IF(PRESENT(POUT_RI)) POUT_RI=ZRI
+IF(PRESENT(POUT_TH)) POUT_TH=ZT / PEXN(:,:,:)
 !
 !
 !*       6.  STORE THE BUDGET TERMS

@@ -68,6 +68,7 @@ END MODULE MODI_DEALLOCATE_MODEL1
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!                   02/2019 C.Lac add rain fraction as an output field
 !  P. Wautelet 07/06/2019: bugfix: deallocate XLSRVM only if allocated
+!                    04/2020 S. Riette, XHL* fields
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -184,6 +185,13 @@ IF ( ASSOCIATED(XSRCT) .AND. KCALL==3 ) THEN
   DEALLOCATE(XSRCT)
   DEALLOCATE(XSIGS)
 END IF   
+!
+IF ( ASSOCIATED(XHLC_HRC) .AND. KCALL==3 ) THEN
+  DEALLOCATE(XHLC_HRC)
+  DEALLOCATE(XHLC_HCF)
+  DEALLOCATE(XHLI_HRI)
+  DEALLOCATE(XHLI_HCF)
+END IF
 !
 IF ( ASSOCIATED(XCLDFR) .AND. KCALL==2 ) THEN
   DEALLOCATE(XCLDFR)

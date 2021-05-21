@@ -289,6 +289,7 @@ END MODULE MODI_INI_MODEL_n
 !  P. Wautelet 07/06/2019: allocate lookup tables for optical properties only when needed
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
 !  C. Lac         11/2019: correction in the drag formula and application to building in addition to tree
+!  S. Riette      04/2020: XHL* fields
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -845,6 +846,21 @@ IF (CTURB /= 'NONE' .AND. NRR>1) THEN
 ELSE
   ALLOCATE(XSRCT(0,0,0))
   ALLOCATE(XSIGS(0,0,0))
+END IF
+IF (CCLOUD == 'ICE3'.OR.CCLOUD == 'ICE4') THEN
+  ALLOCATE(XHLC_HRC(IIU,IJU,IKU))
+  ALLOCATE(XHLC_HCF(IIU,IJU,IKU))
+  ALLOCATE(XHLI_HRI(IIU,IJU,IKU))
+  ALLOCATE(XHLI_HCF(IIU,IJU,IKU))
+  XHLC_HRC(:,:,:)=0.
+  XHLC_HCF(:,:,:)=0.
+  XHLI_HRI(:,:,:)=0.
+  XHLI_HCF(:,:,:)=0.
+ELSE
+  ALLOCATE(XHLC_HRC(0,0,0))
+  ALLOCATE(XHLC_HCF(0,0,0))
+  ALLOCATE(XHLI_HRI(0,0,0))
+  ALLOCATE(XHLI_HCF(0,0,0))
 END IF
 !
 IF (NRR>1) THEN

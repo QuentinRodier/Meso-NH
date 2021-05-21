@@ -180,7 +180,7 @@ ELSEIF (HMF_CLOUD == 'STAT') THEN
 ELSEIF (HMF_CLOUD == 'BIGA') THEN
   !Statistical scheme using the bi-gaussian PDF proposed by E. Perraud.
   CALL COMPUTE_MF_CLOUD_BIGAUS(KKA, KKB, KKE, KKU, KKL,&
-                              &PRC_UP, PRI_UP, PEMF, PDEPTH,&
+                              &PEMF, PDEPTH,&
                               &PRT_UP, PTHV_UP, PFRAC_ICE_UP, PRSAT_UP,&
                               &PRTM, PTHM, PTHVM,&
                               &PDZZ, PZZ, PRHODREF,&

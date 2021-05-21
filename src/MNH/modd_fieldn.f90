@@ -53,6 +53,7 @@
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 06/03/2019: correct XZWS entry
 !  P. Wautelet 14/03/2019: add XZWS_DEFAULT parameter
+!                      04/2020 S. Riette HighLow cloud
 !!
 !-------------------------------------------------------------------------------
 !
@@ -139,6 +140,10 @@ REAL, POINTER :: XDRYMASST=>NULL()
 REAL, POINTER :: XDRYMASSS=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XSRC=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XSRCT=>NULL()
+REAL, DIMENSION(:,:,:), POINTER :: XHLC_HRC=>NULL()
+REAL, DIMENSION(:,:,:), POINTER :: XHLC_HCF=>NULL()
+REAL, DIMENSION(:,:,:), POINTER :: XHLI_HRI=>NULL()
+REAL, DIMENSION(:,:,:), POINTER :: XHLI_HCF=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XSIGS=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XCLDFR=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XRAINFR=>NULL()

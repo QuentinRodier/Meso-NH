@@ -370,9 +370,10 @@ DO JITER = 1, ITERMAX
 !
   !   ZW3=water vapor    ZW1=rc (INOUT)  ZW2=ri (INOUT)   PSRC= s'rci'/Sigma_s^2
     ZW3 = PRVS * PTSTEP;     ZW1 = PRCS * PTSTEP;  ZW2 = PRIS * PTSTEP
+    ZW4 = 1. ! PRODREF is not used if HL variables are not present
 !
-    CALL CONDENSATION( IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE,1, 'T',    &
-       PPABST, PZZ, ZT, ZW3, ZW1, ZW2, PRSS*PTSTEP, PRGS*PTSTEP, &
+    CALL CONDENSATION( IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE,1, 'T', 'CB02', 'CB',   &
+       PPABST, PZZ, ZW4, ZT, ZW3, ZW1, ZW2, PRSS*PTSTEP, PRGS*PTSTEP, &
        PSIGS, PMFCONV, PCLDFR, PSRCS, .TRUE., &
        OSIGMAS, PSIGQSAT, PLV=ZLV, PLS=ZLS, PCPH=ZCPH )
 !

@@ -23,6 +23,7 @@ INTERFACE
                                   PSOLORG,PMI,                                         &
                                   PSPEEDC, PSPEEDR, PSPEEDS, PSPEEDG, PSPEEDH,         &
                                   PINDEP, PSUPSAT,  PNACT, PNPRO,PSSPRO, PRAINFR,      &
+                                  PHLC_HRC, PHLC_HCF, PHLI_HRI, PHLI_HCF,              &
                                   PSEA,PTOWN          )   
 !
 USE MODD_IO, ONLY: TFILEDATA
@@ -132,8 +133,12 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNACT    !concentrtaion d'aérosols a
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNPRO    !concentrtaion d'aérosols activés au temps t
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSSPRO   !sursat
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PRAINFR  ! Rain fraction
-REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA  ! Land Sea mask
-REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PTOWN ! Town fraction
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PHLC_HRC !HighLow liquid content
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PHLC_HCF !HighLow liquid cloud fraction
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PHLI_HRI !HighLow ice content
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PHLI_HCF !HighLow ice clous fraction
+REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA      ! Land Sea mask
+REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PTOWN      ! Town fraction
 !
 END SUBROUTINE RESOLVED_CLOUD
 END INTERFACE
@@ -156,6 +161,7 @@ END MODULE MODI_RESOLVED_CLOUD
                                   PSOLORG,PMI,                                         &
                                   PSPEEDC, PSPEEDR, PSPEEDS, PSPEEDG, PSPEEDH,         &
                                   PINDEP, PSUPSAT,  PNACT, PNPRO,PSSPRO, PRAINFR,      &
+                                  PHLC_HRC, PHLC_HCF, PHLI_HRI, PHLI_HCF,              &
                                   PSEA,PTOWN          )   
 !     ##########################################################################
 !
@@ -294,6 +300,7 @@ USE MODD_PARAM_LIMA,     ONLY: LCOLD, LRAIN, LWARM, XCONC_CCN_TOT, NMOD_CCN, NMO
                                YRTMIN=>XRTMIN, YCTMIN=>XCTMIN
 USE MODD_RAIN_ICE_DESCR, ONLY: XRTMIN
 USE MODD_SALT,           ONLY: LSALT
+USE MODD_TURB_n,         ONLY: CSUBG_AUCV_RI, CCONDENS, CLAMBDA3, CSUBG_MF_PDF
 !
 USE MODE_ll
 use mode_sources_neg_correct, only: Sources_neg_correct
@@ -423,8 +430,12 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNACT    !concentrtaion d'aérosols a
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNPRO    !concentrtaion d'aérosols activés au temps t
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSSPRO   !sursat
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PRAINFR  ! Rain fraction
-REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA  ! Land Sea mask
-REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PTOWN ! Town fraction
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PHLC_HRC !HighLow liquid content
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PHLC_HCF !HighLow liquid cloud fraction
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PHLI_HRI !HighLow ice content
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PHLI_HCF !HighLow ice clous fraction
+REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA      ! Land Sea mask
+REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PTOWN      ! Town fraction
 !
 !
 !*       0.2   Declarations of local variables :
@@ -725,17 +736,20 @@ SELECT CASE ( HCLOUD )
     ENDDO
     ZZZ = MZF( PZZ )
     IF(LRED .AND. LADJ_BEFORE) THEN
-      CALL ICE_ADJUST (1,IKU,1, KRR, CFRAC_ICE_ADJUST, 'ADJU',                 &
-                      OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,                    &
-                      PRHODJ, PEXNREF,  PSIGS, PMFCONV, PPABST, ZZZ,           &
-                      ZEXN, PCF_MF,PRC_MF,PRI_MF,                              &   
+      CALL ICE_ADJUST (1, IKU, 1, KRR, CFRAC_ICE_ADJUST, CCONDENS, CLAMBDA3,   &
+                      'ADJU', OSUBG_COND, OSIGMAS, CSUBG_MF_PDF,               &
+                      PTSTEP, PSIGQSAT,                                        &
+                      PRHODJ, PEXNREF, PRHODREF, PSIGS, PMFCONV, PPABST, ZZZ,  &
+                      ZEXN, PCF_MF, PRC_MF, PRI_MF,                            &
                       PRV=PRS(:,:,:,1)*PTSTEP, PRC=PRS(:,:,:,2)*PTSTEP,        &
                       PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2),                    &
                       PTH=PTHS*PTSTEP, PTHS=PTHS, PSRCS=PSRCS, PCLDFR=PCLDFR,  &
                       PRR=PRS(:,:,:,3)*PTSTEP,                                 &
                       PRI=PRS(:,:,:,4)*PTSTEP, PRIS=PRS(:,:,:,4),              &
                       PRS=PRS(:,:,:,5)*PTSTEP,                                 &
-                      PRG=PRS(:,:,:,6)*PTSTEP                                  )
+                      PRG=PRS(:,:,:,6)*PTSTEP,                                 &
+                      PHLC_HRC=PHLC_HRC, PHLC_HCF=PHLC_HCF,                    &
+                      PHLI_HRI=PHLI_HRI, PHLI_HCF=PHLI_HCF                     )
     ENDIF
     IF (LRED) THEN
       LLMICRO(:,:,:)=PRT(:,:,:,2)>XRTMIN(2) .OR. &
@@ -749,16 +763,20 @@ SELECT CASE ( HCLOUD )
                    PRS(:,:,:,4)>ZRSMIN(4) .OR. &
                    PRS(:,:,:,5)>ZRSMIN(5) .OR. &
                    PRS(:,:,:,6)>ZRSMIN(6)
-      CALL RAIN_ICE_RED ( OSEDIC,CSEDIM, HSUBG_AUCV, OWARM,1,IKU,1,      &
+      CALL RAIN_ICE_RED (SIZE(PTHT, 1), SIZE(PTHT, 2), SIZE(PTHT, 3), COUNT(LLMICRO), &
+                    OSEDIC, CSEDIM, HSUBG_AUCV, CSUBG_AUCV_RI,           &
+                    OWARM,1,IKU,1,                                       &
                     PTSTEP, KRR, LLMICRO, ZEXN,                          &
                     ZDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT,PCLDFR,&
+                    PHLC_HRC, PHLC_HCF, PHLI_HRI, PHLI_HCF,              &
                     PTHT, PRT(:,:,:,1), PRT(:,:,:,2),                    &
                     PRT(:,:,:,3), PRT(:,:,:,4),                          &
                     PRT(:,:,:,5), PRT(:,:,:,6),                          &
                     PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),      &
                     PRS(:,:,:,4), PRS(:,:,:,5), PRS(:,:,:,6),            &
                     PINPRC,PINPRR, PINPRR3D, PEVAP3D,                    &
-                    PINPRS, PINPRG, PSIGS, PINDEP, PRAINFR, PSEA,PTOWN, PFPR=ZFPR)
+                    PINPRS, PINPRG, PINDEP, PRAINFR, PSIGS,              &
+                    PSEA,PTOWN, PFPR=ZFPR                                )
     ELSE 
       CALL RAIN_ICE ( OSEDIC,CSEDIM, HSUBG_AUCV, OWARM,1,IKU,1,          &
                     KSPLITR, PTSTEP, KRR,                                &
@@ -777,17 +795,20 @@ SELECT CASE ( HCLOUD )
 !
 !
     IF (.NOT. LRED .OR. (LRED .AND. LADJ_AFTER) ) THEN
-      CALL ICE_ADJUST (1,IKU,1, KRR, CFRAC_ICE_ADJUST, 'CDEPI',    &
-                    OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,                    &
-                    PRHODJ, PEXNREF,  PSIGS, PMFCONV, PPABST, ZZZ,           &
-                    ZEXN, PCF_MF,PRC_MF,PRI_MF,                                    &   
-                    PRV=PRS(:,:,:,1)*PTSTEP, PRC=PRS(:,:,:,2)*PTSTEP,                    &
-                    PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2),                    &
-                    PTH=PTHS*PTSTEP, PTHS=PTHS, PSRCS=PSRCS, PCLDFR=PCLDFR,                   &
-                    PRR=PRS(:,:,:,3)*PTSTEP,                                 &
-                    PRI=PRS(:,:,:,4)*PTSTEP, PRIS=PRS(:,:,:,4),              &
-                    PRS=PRS(:,:,:,5)*PTSTEP,                                 &
-                    PRG=PRS(:,:,:,6)*PTSTEP                                  )
+      CALL ICE_ADJUST (1, IKU, 1, KRR, CFRAC_ICE_ADJUST, CCONDENS, CLAMBDA3,   &
+                       'CDEPI', OSUBG_COND, OSIGMAS, CSUBG_MF_PDF,             &
+                       PTSTEP, PSIGQSAT,                                       &
+                       PRHODJ, PEXNREF, PRHODREF, PSIGS, PMFCONV, PPABST, ZZZ, &
+                       ZEXN, PCF_MF, PRC_MF, PRI_MF,                           &
+                       PRV=PRS(:,:,:,1)*PTSTEP, PRC=PRS(:,:,:,2)*PTSTEP,       &
+                       PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2),                   &
+                       PTH=PTHS*PTSTEP, PTHS=PTHS, PSRCS=PSRCS, PCLDFR=PCLDFR, &
+                       PRR=PRS(:,:,:,3)*PTSTEP,                                &
+                       PRI=PRS(:,:,:,4)*PTSTEP, PRIS=PRS(:,:,:,4),             &
+                       PRS=PRS(:,:,:,5)*PTSTEP,                                &
+                       PRG=PRS(:,:,:,6)*PTSTEP,                                &
+                       PHLC_HRC=PHLC_HRC, PHLC_HCF=PHLC_HCF,                   &
+                       PHLI_HRI=PHLI_HRI, PHLI_HCF=PHLI_HCF                    )
     END IF
 
     deallocate( zexn )
@@ -808,18 +829,21 @@ SELECT CASE ( HCLOUD )
     ENDDO
     ZZZ = MZF( PZZ )
     IF(LRED .AND. LADJ_BEFORE) THEN
-            CALL ICE_ADJUST (1,IKU,1, KRR, CFRAC_ICE_ADJUST, 'ADJU',                 &
-                      OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,                    &
-                      PRHODJ, PEXNREF, PSIGS, PMFCONV, PPABST, ZZZ,            &
-                      ZEXN, PCF_MF,PRC_MF,PRI_MF,                              & 
-                      PRV=PRS(:,:,:,1)*PTSTEP, PRC=PRS(:,:,:,2)*PTSTEP,        &
-                      PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2),                    &
-                      PTH=PTHS*PTSTEP, PTHS=PTHS, PSRCS=PSRCS, PCLDFR=PCLDFR,  &
-                      PRR=PRS(:,:,:,3)*PTSTEP,                                 &
-                      PRI=PRS(:,:,:,4)*PTSTEP, PRIS=PRS(:,:,:,4),              &
-                      PRS=PRS(:,:,:,5)*PTSTEP,                                 &
-                      PRG=PRS(:,:,:,6)*PTSTEP,                                 &
-                      PRH=PRS(:,:,:,7)*PTSTEP                                  )
+      CALL ICE_ADJUST (1, IKU, 1, KRR, CFRAC_ICE_ADJUST, CCONDENS, CLAMBDA3,   &
+                       'ADJU', OSUBG_COND, OSIGMAS, CSUBG_MF_PDF,              &
+                       PTSTEP, PSIGQSAT,                                       &
+                       PRHODJ, PEXNREF, PRHODREF, PSIGS, PMFCONV, PPABST, ZZZ, &
+                       ZEXN, PCF_MF, PRC_MF, PRI_MF,                           &
+                       PRV=PRS(:,:,:,1)*PTSTEP, PRC=PRS(:,:,:,2)*PTSTEP,       &
+                       PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2),                   &
+                       PTH=PTHS*PTSTEP, PTHS=PTHS, PSRCS=PSRCS, PCLDFR=PCLDFR, &
+                       PRR=PRS(:,:,:,3)*PTSTEP,                                &
+                       PRI=PRS(:,:,:,4)*PTSTEP, PRIS=PRS(:,:,:,4),             &
+                       PRS=PRS(:,:,:,5)*PTSTEP,                                &
+                       PRG=PRS(:,:,:,6)*PTSTEP,                                &
+                       PRH=PRS(:,:,:,7)*PTSTEP,                                &
+                       PHLC_HRC=PHLC_HRC, PHLC_HCF=PHLC_HCF,                   &
+                       PHLI_HRI=PHLI_HRI, PHLI_HCF=PHLI_HCF                    )
     ENDIF
     IF  (LRED) THEN
       LLMICRO(:,:,:)=PRT(:,:,:,2)>XRTMIN(2) .OR. &
@@ -835,16 +859,19 @@ SELECT CASE ( HCLOUD )
                    PRS(:,:,:,5)>ZRSMIN(5) .OR. &
                    PRS(:,:,:,6)>ZRSMIN(6) .OR. &
                    PRS(:,:,:,7)>ZRSMIN(7)
-      CALL RAIN_ICE_RED ( OSEDIC,CSEDIM, HSUBG_AUCV, OWARM,1,IKU,1,       &
-                    PTSTEP, KRR, LLMICRO, ZEXN,                           &
+      CALL RAIN_ICE_RED (SIZE(PTHT, 1), SIZE(PTHT, 2), SIZE(PTHT, 3), COUNT(LLMICRO), &
+                    OSEDIC, CSEDIM, HSUBG_AUCV, CSUBG_AUCV_RI,&
+                    OWARM, 1, IKU, 1,             &
+                    PTSTEP, KRR, LLMICRO, ZEXN,             &
                     ZDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR,&
+                    PHLC_HRC, PHLC_HCF, PHLI_HRI, PHLI_HCF,&
                     PTHT, PRT(:,:,:,1), PRT(:,:,:,2),                     &
                     PRT(:,:,:,3), PRT(:,:,:,4),                           &
                     PRT(:,:,:,5), PRT(:,:,:,6),                           &
                     PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),       &
                     PRS(:,:,:,4), PRS(:,:,:,5), PRS(:,:,:,6),             &
                     PINPRC, PINPRR, PINPRR3D, PEVAP3D,                    &
-                    PINPRS, PINPRG, PSIGS, PINDEP, PRAINFR, PSEA, PTOWN,  &
+                    PINPRS, PINPRG, PINDEP, PRAINFR, PSIGS, PSEA, PTOWN,  &
                     PRT(:,:,:,7), PRS(:,:,:,7), PINPRH, PFPR=ZFPR         )
     ELSE
       CALL RAIN_ICE ( OSEDIC,CSEDIM, HSUBG_AUCV, OWARM,1,IKU,1,           &
@@ -866,18 +893,21 @@ SELECT CASE ( HCLOUD )
 !*       10.2   Perform the saturation adjustment over cloud ice and cloud water
 !
     IF (.NOT. LRED .OR. (LRED .AND. LADJ_AFTER) ) THEN
-     CALL ICE_ADJUST (1,IKU,1, KRR, CFRAC_ICE_ADJUST, 'CDEPI',               &
-                    OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,                    &
-                    PRHODJ, PEXNREF, PSIGS, PMFCONV, PPABST, ZZZ,            &
-                    ZEXN, PCF_MF,PRC_MF,PRI_MF,                              &                     
-                    PRV=PRS(:,:,:,1)*PTSTEP, PRC=PRS(:,:,:,2)*PTSTEP,        &
-                    PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2),                    &
-                    PTH=PTHS*PTSTEP, PTHS=PTHS, PSRCS=PSRCS, PCLDFR=PCLDFR,  &
-                    PRR=PRS(:,:,:,3)*PTSTEP,                                 &
-                    PRI=PRS(:,:,:,4)*PTSTEP, PRIS=PRS(:,:,:,4),              &
-                    PRS=PRS(:,:,:,5)*PTSTEP,                                 &
-                    PRG=PRS(:,:,:,6)*PTSTEP,                                 &
-                    PRH=PRS(:,:,:,7)*PTSTEP                                  )
+     CALL ICE_ADJUST (1, IKU, 1, KRR, CFRAC_ICE_ADJUST, CCONDENS, CLAMBDA3,  &
+                     'CDEPI', OSUBG_COND, OSIGMAS, CSUBG_MF_PDF,             &
+                     PTSTEP, PSIGQSAT,                                       &
+                     PRHODJ, PEXNREF, PRHODREF, PSIGS, PMFCONV, PPABST, ZZZ, &
+                     ZEXN, PCF_MF, PRC_MF, PRI_MF,                           &
+                     PRV=PRS(:,:,:,1)*PTSTEP, PRC=PRS(:,:,:,2)*PTSTEP,       &
+                     PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2),                   &
+                     PTH=PTHS*PTSTEP, PTHS=PTHS, PSRCS=PSRCS, PCLDFR=PCLDFR, &
+                     PRR=PRS(:,:,:,3)*PTSTEP,                                &
+                     PRI=PRS(:,:,:,4)*PTSTEP, PRIS=PRS(:,:,:,4),             &
+                     PRS=PRS(:,:,:,5)*PTSTEP,                                &
+                     PRG=PRS(:,:,:,6)*PTSTEP,                                &
+                     PRH=PRS(:,:,:,7)*PTSTEP,                                &
+                     PHLC_HRC=PHLC_HRC, PHLC_HCF=PHLC_HCF,                   &
+                     PHLI_HRI=PHLI_HRI, PHLI_HCF=PHLI_HCF                    )
     END IF
 
     deallocate( zexn )

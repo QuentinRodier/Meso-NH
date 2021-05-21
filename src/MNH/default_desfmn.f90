@@ -208,6 +208,8 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!                   11/2019 C.Lac correction in the drag formula and application to building in addition to tree
 !  P. Wautelet 17/04/2020: move budgets switch values into modd_budget
 !  P. Wautelet 30/06/2020: add NNETURSV, NNEADVSV and NNECONSV variables
+!  P-A Joulin  21/05/2021: add Wind turbines
+!  S. Riette   21/05/2021: add options to PDF subgrid scheme
 !
 !-------------------------------------------------------------------------------
 !
@@ -515,11 +517,15 @@ LTURB_FLX =.FALSE.
 LTURB_DIAG=.FALSE.
 LSUBG_COND=.FALSE.
 CSUBG_AUCV='NONE' 
+CSUBG_AUCV_RI='NONE'
 LSIGMAS   =.TRUE.
 LSIG_CONV =.FALSE.
 LRMC01    =.FALSE.
 CTOM      ='NONE'
 VSIGQSAT  = 0.02
+CCONDENS='CB02'
+CLAMBDA3='CB'
+CSUBG_MF_PDF='TRIANGLE'
 !-------------------------------------------------------------------------------
 !
 !*      10b.   SET DEFAULT VALUES FOR MODD_DRAGTREE :

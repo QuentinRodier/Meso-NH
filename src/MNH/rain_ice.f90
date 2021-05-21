@@ -751,7 +751,8 @@ IF( IMICRO >= 0 ) THEN
   DO JL=1,IMICRO
     PRAINFR(I1(JL),I2(JL),I3(JL)) = ZRF(JL)
   END DO
-  CALL ICE4_RAINFR_VERT(IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKT, KKL, PRAINFR, PRRT(:,:,:))
+  CALL ICE4_RAINFR_VERT(IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKT, KKL, PRAINFR, PRRT(:,:,:), &
+           PRSS(:,:,:)*0., PRGS(:,:,:)*0.)
   DO JL=1,IMICRO
     ZRF(JL)=PRAINFR(I1(JL),I2(JL),I3(JL))
   END DO
@@ -935,7 +936,8 @@ ELSE
   call Print_msg( NVERB_FATAL, 'GEN', 'RAIN_ICE', 'no sedimentation scheme for HSEDIM='//HSEDIM )
 END IF
 !sedimentation of rain fraction
-CALL ICE4_RAINFR_VERT(IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKT, KKL, PRAINFR, PRRS(:,:,:)*PTSTEP)
+CALL ICE4_RAINFR_VERT(IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKT, KKL, PRAINFR, PRRS(:,:,:)*PTSTEP,  &
+                      PRSS(:,:,:)*PTSTEP, PRGS(:,:,:)*PTSTEP)
 !
 !-------------------------------------------------------------------------------
 !

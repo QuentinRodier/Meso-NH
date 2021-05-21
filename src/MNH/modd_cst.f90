@@ -68,6 +68,7 @@ REAL,SAVE :: XSTEFAN,XI0        ! Stefan-Boltzman constant, solar constant
 !
 REAL,SAVE :: XMD,XMV            ! Molar mass of dry air and molar mass of vapor
 REAL,SAVE :: XRD,XRV            ! Gaz constant for dry air, gaz constant for vapor
+REAL,SAVE :: XEPSILO            ! XMV/XMD
 REAL,SAVE :: XCPD,XCPV          ! Cpd (dry air), Cpv (vapor)
 REAL,SAVE :: XRHOLW             ! Volumic mass of liquid water
 REAL,SAVE :: XCL,XCI            ! Cl (liquid), Ci (ice)

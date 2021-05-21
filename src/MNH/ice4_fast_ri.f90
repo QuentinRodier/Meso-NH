@@ -5,7 +5,7 @@
 !-------------------------------------------------------------------------------
 MODULE MODI_ICE4_FAST_RI
 INTERFACE
-SUBROUTINE ICE4_FAST_RI(KSIZE, LDSOFT, LDCOMPUTE, &
+SUBROUTINE ICE4_FAST_RI(KSIZE, LDSOFT, PCOMPUTE, &
                        &PRHODREF, PLVFACT, PLSFACT, &
                        &PAI, PCJ, PCIT, &
                        &PSSI, &
@@ -25,7 +25,7 @@ IMPLICIT NONE
 !
 INTEGER,                      INTENT(IN)    :: KSIZE
 LOGICAL,                      INTENT(IN)    :: LDSOFT
-LOGICAL, DIMENSION(KSIZE),    INTENT(IN)    :: LDCOMPUTE
+REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PCOMPUTE
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRHODREF ! Reference density
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLVFACT
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLSFACT
@@ -42,7 +42,7 @@ REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PA_RI
 END SUBROUTINE ICE4_FAST_RI
 END INTERFACE
 END MODULE MODI_ICE4_FAST_RI
-SUBROUTINE ICE4_FAST_RI(KSIZE, LDSOFT, LDCOMPUTE, &
+SUBROUTINE ICE4_FAST_RI(KSIZE, LDSOFT, PCOMPUTE, &
                        &PRHODREF, PLVFACT, PLSFACT, &
                        &PAI, PCJ, PCIT, &
                        &PSSI, &
@@ -74,7 +74,7 @@ IMPLICIT NONE
 !
 INTEGER,                      INTENT(IN)    :: KSIZE
 LOGICAL,                      INTENT(IN)    :: LDSOFT
-LOGICAL, DIMENSION(KSIZE),    INTENT(IN)    :: LDCOMPUTE
+REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PCOMPUTE
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRHODREF ! Reference density
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLVFACT
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLSFACT
@@ -91,7 +91,8 @@ REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PA_RI
 !
 !*       0.2  declaration of local variables
 !
-LOGICAL, DIMENSION(SIZE(PRHODREF)) :: GMASK
+REAL, DIMENSION(KSIZE) :: ZMASK
+INTEGER :: JL
 !
 !-------------------------------------------------------------------------------
 !
@@ -99,23 +100,30 @@ LOGICAL, DIMENSION(SIZE(PRHODREF)) :: GMASK
 !
 !*       7.2    Bergeron-Findeisen effect: RCBERI
 !
-GMASK(:)=PSSI(:)>0. .AND. PRCT(:)>XRTMIN(2) .AND. PRIT(:)>XRTMIN(4) .AND. &
-        &PCIT(:)>0. .AND. LDCOMPUTE(:)
+DO JL=1, KSIZE
+  ZMASK(JL)=MAX(0., -SIGN(1., -PSSI(JL))) * &          ! PSSI(:)>0.
+           &MAX(0., -SIGN(1., XRTMIN(2)-PRCT(JL))) * & ! PRCT(:)>XRTMIN(2)
+           &MAX(0., -SIGN(1., XRTMIN(4)-PRIT(JL))) * & ! PRIT(:)>XRTMIN(4)
+           &MAX(0., -SIGN(1., 1.E-20-PCIT(JL))) * &          ! PCIT(:)>0.
+           &PCOMPUTE(JL)
+ENDDO
 IF(LDSOFT) THEN
-  WHERE(.NOT. GMASK(:))
-    PRCBERI(:) = 0.
-  END WHERE
+  DO JL=1, KSIZE
+    PRCBERI(JL) = PRCBERI(JL) * ZMASK(JL)
+  ENDDO
 ELSE
   PRCBERI(:) = 0.
-  WHERE(GMASK(:))
+  WHERE(ZMASK(:)==1.)
     PRCBERI(:) = MIN(1.E8, XLBI*(PRHODREF(:)*PRIT(:)/PCIT(:))**XLBEXI) ! Lbda_i
     PRCBERI(:) = ( PSSI(:) / (PRHODREF(:)*PAI(:)) ) * PCIT(:) * &
                  ( X0DEPI/PRCBERI(:) + X2DEPI*PCJ(:)*PCJ(:)/PRCBERI(:)**(XDI+2.0) )
   END WHERE
 ENDIF
-PA_RC(:) = PA_RC(:) - PRCBERI(:)
-PA_RI(:) = PA_RI(:) + PRCBERI(:)
-PA_TH(:) = PA_TH(:) + PRCBERI(:)*(PLSFACT(:)-PLVFACT(:))
+DO JL=1, KSIZE
+  PA_RC(JL) = PA_RC(JL) - PRCBERI(JL)
+  PA_RI(JL) = PA_RI(JL) + PRCBERI(JL)
+  PA_TH(JL) = PA_TH(JL) + PRCBERI(JL)*(PLSFACT(JL)-PLVFACT(JL))
+ENDDO
 !
 !
 END SUBROUTINE ICE4_FAST_RI

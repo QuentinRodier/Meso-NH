@@ -48,7 +48,7 @@ SUBROUTINE ICE4_NUCLEATION(KSIZE, ODSOFT, ODCOMPUTE, &
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_CST,            ONLY: XALPI,XALPW,XBETAI,XBETAW,XGAMI,XGAMW,XMD,XMV,XTT
+USE MODD_CST,            ONLY: XALPI,XALPW,XBETAI,XBETAW,XGAMI,XGAMW,XMD,XMV,XTT,XEPSILO
 USE MODD_PARAM_ICE,      ONLY: LFEEDBACKT
 USE MODD_RAIN_ICE_PARAM, ONLY: XALPHA1,XALPHA2,XBETA1,XBETA2,XMNU0,XNU10,XNU20
 USE MODD_RAIN_ICE_DESCR, ONLY: XRTMIN
@@ -99,7 +99,7 @@ IF(.NOT. ODSOFT) THEN
   END WHERE
   WHERE(GNEGT(:))
     ZZW(:)=MIN(PPABST(:)/2., ZZW(:))             ! safety limitation
-    ZSSI(:)=PRVT(:)*(PPABST(:)-ZZW(:)) / ((XMV/XMD)*ZZW(:)) - 1.0
+    ZSSI(:)=PRVT(:)*(PPABST(:)-ZZW(:)) / (XEPSILO*ZZW(:)) - 1.0
                                                  ! Supersaturation over ice
     ZUSW(:)=MIN(PPABST(:)/2., ZUSW(:))            ! safety limitation
     ZUSW(:)=(ZUSW(:)/ZZW(:))*((PPABST(:)-ZZW(:))/(PPABST(:)-ZUSW(:))) - 1.0

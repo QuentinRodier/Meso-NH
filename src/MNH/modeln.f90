@@ -1805,6 +1805,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           XINPRS,ZINPRS3D, XINPRG,ZINPRG3D, XINPRH,ZINPRH3D,   &
                           XSOLORG, XMI,ZSPEEDC, ZSPEEDR, ZSPEEDS, ZSPEEDG, ZSPEEDH, &
                           XINDEP, XSUPSAT, XNACT, XNPRO,XSSPRO, XRAINFR,       &
+                          XHLC_HRC, XHLC_HCF, XHLI_HRI, XHLI_HCF,              &
                           ZSEA, ZTOWN                                          )
     DEALLOCATE(ZTOWN)
   ELSE
@@ -1822,7 +1823,8 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           XINPRC,ZINPRC3D,XINPRR, XINPRR3D, XEVAP3D,           &
                           XINPRS,ZINPRS3D, XINPRG,ZINPRG3D, XINPRH,ZINPRH3D,   &
                           XSOLORG, XMI,ZSPEEDC, ZSPEEDR, ZSPEEDS, ZSPEEDG, ZSPEEDH, &
-                          XINDEP, XSUPSAT, XNACT, XNPRO,XSSPRO, XRAINFR        )
+                          XINDEP, XSUPSAT, XNACT, XNPRO,XSSPRO, XRAINFR,       &
+                          XHLC_HRC, XHLC_HCF, XHLI_HRI, XHLI_HCF               )
   END IF
   XRTHS_CLD  = XRTHS - XRTHS_CLD
   XRRS_CLD   = XRRS  - XRRS_CLD
