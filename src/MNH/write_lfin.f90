@@ -173,6 +173,7 @@ END MODULE MODI_WRITE_LFIFM_n
 !  S. Bielli      02/2019: Sea salt: significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Tulet       02/2020: correction for dust and sea salts
+!  PA. Joulin    12/2020: add wind turbine outputs
 !  P. Wautelet 10/03/2021: use scalar variable names for dust and salt
 !  P. Wautelet 11/03/2021: bugfix: correct name for NSV_LIMA_IMM_NUCL
 !-------------------------------------------------------------------------------
@@ -276,7 +277,12 @@ USE MODD_ADVFRC_n              ! Modif PP ADV FRC
 USE MODD_RELFRC_n
 !
 USE MODD_PARAM_C2R2
-! 
+!
+USE MODD_EOL_MAIN
+USE MODD_EOL_SHARED_IO
+USE MODD_EOL_ADNR
+USE MODD_EOL_ALM
+!
 IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
@@ -2079,6 +2085,200 @@ IF ( CPROGRAM=='REAL  ' ) THEN
 !
 END IF
 !
+!*       1.15    Wind turbine variables 
+!
+!             i) Main
+!
+IF (LMAIN_EOL .AND. IMI == NMODEL_EOL) THEN
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  TZFIELD%CDIR       = 'XYZ'
+  TZFIELD%CUNITS     = 'N'
+!
+  TZFIELD%CMNHNAME   = 'FX_RG'
+  TZFIELD%CLONGNAME  = 'FX_RG'
+  TZFIELD%CCOMMENT   = 'X-component field of aerodynamic force (wind->rotor) in global frame (N)'
+  CALL IO_Field_write(TPFILE,TZFIELD,XFX_RG)
+!
+  TZFIELD%CMNHNAME   = 'FY_RG'
+  TZFIELD%CLONGNAME  = 'FY_RG'
+  TZFIELD%CCOMMENT   = 'Y-component field of aerodynamic force (wind->rotor) in global frame (N)'
+  CALL IO_Field_write(TPFILE,TZFIELD,XFY_RG)
+!
+  TZFIELD%CMNHNAME   = 'FZ_RG'
+  TZFIELD%CLONGNAME  = 'FZ_RG'
+  TZFIELD%CCOMMENT   = 'Z-component field of aerodynamic force (wind->rotor) in global frame (N)'
+  CALL IO_Field_write(TPFILE,TZFIELD,XFZ_RG)
+!
+  TZFIELD%CMNHNAME   = 'FX_SMR_RG'
+  TZFIELD%CLONGNAME  = 'FX_SMR_RG'
+  TZFIELD%CCOMMENT   = 'X-component field of smeared aerodynamic force (wind->rotor) in global frame (N)'
+  TZFIELD%CCOMMENT   = ''
+  CALL IO_Field_write(TPFILE,TZFIELD,XFX_SMR_RG)
+!
+  TZFIELD%CMNHNAME   = 'FY_SMR_RG'
+  TZFIELD%CLONGNAME  = 'FY_SMR_RG'
+  TZFIELD%CCOMMENT   = 'Y-component field of smeared aerodynamic force (wind->rotor) in global frame (N)'
+  CALL IO_Field_write(TPFILE,TZFIELD,XFY_SMR_RG)
+!
+  TZFIELD%CMNHNAME   = 'FZ_SMR_RG'
+  TZFIELD%CLONGNAME  = 'FZ_SMR_RG'
+  TZFIELD%CCOMMENT   = 'Z-component field of smeared aerodynamic force (wind->rotor) in global frame (N)'
+  CALL IO_Field_write(TPFILE,TZFIELD,XFZ_SMR_RG)
+!
+SELECT CASE(CMETH_EOL)
+!
+!             ii) Actuator Disk without Rotation model
+!
+  CASE('ADNR') ! Actuator Disc Non-Rotating
+!
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 1
+    TZFIELD%CDIR       = ''
+    TZFIELD%CUNITS     = '-'
+!
+    TZFIELD%CMNHNAME   = 'A_INDU'
+    TZFIELD%CLONGNAME  = 'INDUCTION_FACTOR'
+    TZFIELD%CCOMMENT   = 'Induction factor (-)'
+    CALL IO_Field_write(TPFILE,TZFIELD,XA_INDU)
+!
+    TZFIELD%CMNHNAME   = 'CT_D'
+    TZFIELD%CLONGNAME  = 'CTHRUST_D'
+    TZFIELD%CCOMMENT   = 'Thrust coefficient at disk (-),    &
+                          used with wind speed at disk'
+    CALL IO_Field_write(TPFILE,TZFIELD,XCT_D)
+!
+    TZFIELD%CMNHNAME   = 'THRUT'
+    TZFIELD%CLONGNAME  = 'THRUSTT_EOL'
+    TZFIELD%CUNITS     = 'N'
+    TZFIELD%CCOMMENT   = 'RID instantaneous thrust of the wind turbines (N)'
+    CALL IO_Field_write(TPFILE,TZFIELD,XTHRUT)
+!
+    IF (MEAN_COUNT /= 0) THEN
+
+      TZFIELD%CMNHNAME   = 'THRUMME'
+      TZFIELD%CLONGNAME  = 'MEAN_THRUST_EOL'
+      TZFIELD%CUNITS     = 'N'
+      TZFIELD%CCOMMENT   = 'RID mean thrust of the wind turbines (N)'
+      CALL IO_Field_write(TPFILE,TZFIELD,XTHRU_SUM/MEAN_COUNT)
+!
+    END IF
+!             iii) Actuator Line Model
+!
+  CASE('ALM') ! Actuator Line Method
+!
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%CDIR       = ''
+!
+    TZFIELD%NDIMS      = 1
+!
+    TZFIELD%CMNHNAME   = 'THRUT'
+    TZFIELD%CLONGNAME  = 'THRUSTT_EOL'
+    TZFIELD%CUNITS     = 'N'
+    TZFIELD%CCOMMENT   = 'RID instantaneous thrust (N) of wind turbines'
+    CALL IO_Field_write(TPFILE,TZFIELD,XTHRUT)
+!
+    TZFIELD%CMNHNAME   = 'TORQT'
+    TZFIELD%CLONGNAME  = 'TORQUET_EOL'
+    TZFIELD%CUNITS     = 'Nm'
+    TZFIELD%CCOMMENT   = 'RID instantaneous torque (Nm) of wind turbines'
+    CALL IO_Field_write(TPFILE,TZFIELD,XTORQT)
+!
+    TZFIELD%CMNHNAME   = 'POWT'
+    TZFIELD%CLONGNAME  = 'POWERT_EOL'
+    TZFIELD%CUNITS     = 'W'
+    TZFIELD%CCOMMENT   = 'RID instantaneous power (W) of wind turbines'
+    CALL IO_Field_write(TPFILE,TZFIELD,XPOWT)
+!
+    TZFIELD%NDIMS      = 3
+!
+    TZFIELD%CMNHNAME   = 'ELT_RAD'
+    TZFIELD%CLONGNAME  = 'ELT_RAD'
+    TZFIELD%CUNITS     = 'm'
+    TZFIELD%CCOMMENT   = 'RID_BID_EID radius (m) of wind turbine blade elements'
+    CALL IO_Field_write(TPFILE,TZFIELD,XELT_RAD)
+!
+    TZFIELD%CMNHNAME   = 'AOA'
+    TZFIELD%CLONGNAME  = 'ANGLE OF ATTACK'
+    TZFIELD%CUNITS     = 'rad'
+    TZFIELD%CCOMMENT   = 'RID_BID_EID instantaneous angle of attack (rad)'
+    CALL IO_Field_write(TPFILE,TZFIELD,XAOA_GLB)
+!
+    TZFIELD%CMNHNAME   = 'FLIFT'
+    TZFIELD%CLONGNAME  = 'LIFT FORCE'
+    TZFIELD%CUNITS     = 'N'
+    TZFIELD%CCOMMENT   = 'RID_BID_EID instantaneous lift (N) in relative frame'
+    CALL IO_Field_write(TPFILE,TZFIELD,XFLIFT_GLB)
+!
+    TZFIELD%CMNHNAME   = 'FDRAG'
+    TZFIELD%CLONGNAME  = 'DRAG FORCE'
+    TZFIELD%CUNITS     = 'N'
+    TZFIELD%CCOMMENT   = 'RID_BID_EID instantaneous drag (N) in relative frame'
+    CALL IO_Field_write(TPFILE,TZFIELD,XFDRAG_GLB)
+!
+    TZFIELD%NDIMS      = 4
+!
+    TZFIELD%CMNHNAME   = 'FAERO_RE'
+    TZFIELD%CLONGNAME  = 'AERODYNAMIC FORCE RE'
+    TZFIELD%CUNITS     = 'N'
+    TZFIELD%CCOMMENT   = 'RID_BID_EID_XYZ instantaneous forces (N) in RE'
+    CALL IO_Field_write(TPFILE,TZFIELD,XFAERO_RE_GLB)
+!
+    TZFIELD%CMNHNAME   = 'FAERO_RG'
+    TZFIELD%CLONGNAME  = 'AERODYNAMIC FORCE RG'
+    TZFIELD%CUNITS     = 'N'
+    TZFIELD%CCOMMENT   = 'RID_BID_EID_XYZ instantaneous forces (N) in RG'
+    CALL IO_Field_write(TPFILE,TZFIELD,XFAERO_RG_GLB)
+!
+    IF (MEAN_COUNT /= 0) THEN
+!
+      TZFIELD%NGRID      = 1
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%CDIR       = ''
+!
+      TZFIELD%NDIMS      = 1
+!
+      TZFIELD%CMNHNAME   = 'THRUMME'
+      TZFIELD%CLONGNAME  = 'MEAN_THRUST_EOL'
+      TZFIELD%CUNITS     = 'N'
+      TZFIELD%CCOMMENT   = 'RID mean thrust of the wind turbines (N)'
+      CALL IO_Field_write(TPFILE,TZFIELD,XTHRU_SUM/MEAN_COUNT)
+!
+      TZFIELD%CMNHNAME   = 'TORQMME'
+      TZFIELD%CLONGNAME  = 'MEAN_TORQUE_EOL'
+      TZFIELD%CUNITS     = 'Nm'
+      TZFIELD%CCOMMENT   = 'RID mean torque of the wind turbines (Nm)'
+      CALL IO_Field_write(TPFILE,TZFIELD,XTORQ_SUM/MEAN_COUNT)
+!
+      TZFIELD%CMNHNAME   = 'POWMME'
+      TZFIELD%CLONGNAME  = 'MEAN_POWER_EOL'
+      TZFIELD%CUNITS     = 'W'
+      TZFIELD%CCOMMENT   = 'RID mean power of the wind turbines (W)'
+      CALL IO_Field_write(TPFILE,TZFIELD,XPOW_SUM/MEAN_COUNT)
+!
+      TZFIELD%NDIMS      = 3
+!
+      TZFIELD%CMNHNAME   = 'AOAMME'
+      TZFIELD%CLONGNAME  = 'MEAN_ANGLE_OF_ATTACK'
+      TZFIELD%CUNITS     = 'rad'
+      TZFIELD%CCOMMENT   = 'RID_BID_EID mean angle of attack (rad)'
+      CALL IO_Field_write(TPFILE,TZFIELD,XAOA_SUM/MEAN_COUNT)
+!
+      TZFIELD%NDIMS      = 4
+!
+      TZFIELD%CMNHNAME   = 'FAEROMME_RE'
+      TZFIELD%CLONGNAME  = 'MEAN_AERODYNAMIC_FORCE_RE'
+      TZFIELD%CUNITS     = 'N'
+      TZFIELD%CCOMMENT   = 'RID_BID_EID_XYZ mean forces (N) in RE'
+      CALL IO_Field_write(TPFILE,TZFIELD,XFAERO_RE_SUM/MEAN_COUNT)
+!
+    END IF
+!
+  END SELECT
+END IF 
 !
 DEALLOCATE(ZWORK2D,ZWORK3D)
 !

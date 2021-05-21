@@ -11,8 +11,8 @@
 INTERFACE
 !
       SUBROUTINE PHYS_PARAM_n( KTCOUNT, TPFILE,                                              &
-                               PRAD, PSHADOWS, PKAFR, PGROUND, PMAFL, PDRAG, PTURB, PTRACER, &
-                               PTIME_BU, PWETDEPAER, OMASKkids, OCLOUD_ONLY                  )
+                               PRAD, PSHADOWS, PKAFR, PGROUND, PMAFL, PDRAG,PEOL, PTURB,     &
+                               PTRACER, PTIME_BU, PWETDEPAER, OMASKkids, OCLOUD_ONLY         )
 !
 USE MODD_IO,        ONLY: TFILEDATA
 use modd_precision, only: MNHTIME
@@ -20,7 +20,7 @@ use modd_precision, only: MNHTIME
 INTEGER,           INTENT(IN)     :: KTCOUNT   ! temporal iteration count
 TYPE(TFILEDATA),   INTENT(IN)     :: TPFILE    ! Synchronous output file
 ! advection schemes
-REAL(kind=MNHTIME), DIMENSION(2), INTENT(INOUT) :: PRAD,PSHADOWS,PKAFR,PGROUND,PTURB,PMAFL,PDRAG,PTRACER ! to store CPU
+REAL(kind=MNHTIME), DIMENSION(2), INTENT(INOUT) :: PRAD,PSHADOWS,PKAFR,PGROUND,PTURB,PMAFL,PDRAG,PTRACER,PEOL ! to store CPU
                                                                                                          ! time for computing time
 REAL(kind=MNHTIME), DIMENSION(2), INTENT(INOUT) :: PTIME_BU  ! time used in budget&LES budgets statistics
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT)  :: PWETDEPAER
@@ -36,8 +36,8 @@ END MODULE MODI_PHYS_PARAM_n
 !
 !     ########################################################################################
       SUBROUTINE PHYS_PARAM_n( KTCOUNT, TPFILE,                                              &
-                               PRAD, PSHADOWS, PKAFR, PGROUND, PMAFL, PDRAG, PTURB, PTRACER, &
-                               PTIME_BU, PWETDEPAER, OMASKkids, OCLOUD_ONLY                  )
+                               PRAD, PSHADOWS, PKAFR, PGROUND, PMAFL, PEOL, PDRAG, PTURB,    &
+                               PTRACER, PTIME_BU, PWETDEPAER, OMASKkids, OCLOUD_ONLY         )
 !     ########################################################################################
 !
 !!****  *PHYS_PARAM_n * -monitor of the parameterizations used by model _n
@@ -263,6 +263,7 @@ USE MODD_DRAGTREE_n
 USE MODD_DUST
 USE MODD_DYN
 USE MODD_DYN_n
+USE MODD_EOL_MAIN, ONLY: LMAIN_EOL, CMETH_EOL, NMODEL_EOL
 USE MODD_FIELD_n
 USE MODD_FRC
 USE MODD_FRC_n
@@ -327,6 +328,7 @@ USE MODI_EDDY_FLUX_n               ! Ajout PP
 USE MODI_EDDY_FLUX_ONE_WAY_n       ! Ajout PP
 USE MODI_EDDYUV_FLUX_n             ! Ajout PP
 USE MODI_EDDYUV_FLUX_ONE_WAY_n     ! Ajout PP
+USE MODI_EOL_MAIN
 USE MODI_GROUND_PARAM_n
 USE MODI_PASPOL
 USE MODI_RADIATIONS
@@ -346,7 +348,7 @@ IMPLICIT NONE
 INTEGER,           INTENT(IN)     :: KTCOUNT   ! temporal iteration count
 TYPE(TFILEDATA),   INTENT(IN)     :: TPFILE    ! Synchronous output file
 ! advection schemes
-REAL(kind=MNHTIME), DIMENSION(2), INTENT(INOUT) :: PRAD,PSHADOWS,PKAFR,PGROUND,PTURB,PMAFL,PDRAG,PTRACER ! to store CPU
+REAL(kind=MNHTIME), DIMENSION(2), INTENT(INOUT) :: PRAD,PSHADOWS,PKAFR,PGROUND,PTURB,PMAFL,PDRAG,PTRACER,PEOL ! to store CPU
                                                                                                          ! time for computing time
 REAL(kind=MNHTIME), DIMENSION(2), INTENT(INOUT) :: PTIME_BU  ! time used in budget&LES budgets statistics
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT)  :: PWETDEPAER
@@ -1245,7 +1247,7 @@ CALL SECOND_MNH2(ZTIME2)
 PTRACER = PTRACER + ZTIME2 - ZTIME1
 !-----------------------------------------------------------------------------
 !
-!*        5.    Drag force 
+!*        5a.    Drag force 
 !               ----------
 !
 ZTIME1 = ZTIME2
@@ -1265,6 +1267,29 @@ PDRAG = PDRAG + ZTIME2 - ZTIME1 &
 !
 PTIME_BU = PTIME_BU + XTIME_LES_BU_PROCESS + XTIME_BU_PROCESS
 !
+!*        5b.   Drag force from wind turbines 
+!               -----------------------
+!
+ZTIME1 = ZTIME2
+XTIME_BU_PROCESS = 0.
+XTIME_LES_BU_PROCESS = 0.
+!
+IF (LMAIN_EOL .AND. IMI == NMODEL_EOL) THEN
+ CALL EOL_MAIN(KTCOUNT,XTSTEP,     &
+               XDXX,XDYY,XDZZ,     &
+               XRHODJ,             &
+               XUT,XVT,XWT,        &
+               XRUS, XRVS, XRWS    )
+END IF
+!
+CALL SECOND_MNH2(ZTIME2)
+!
+PEOL = PEOL + ZTIME2 - ZTIME1 &
+             - XTIME_LES_BU_PROCESS - XTIME_BU_PROCESS
+!
+PTIME_BU = PTIME_BU + XTIME_LES_BU_PROCESS + XTIME_BU_PROCESS
+!
+!*        
 !-----------------------------------------------------------------------------
 !
 !*        6.    TURBULENCE SCHEME

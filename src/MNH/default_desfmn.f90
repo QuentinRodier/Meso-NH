@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -253,6 +253,10 @@ USE MODD_CONDSAMP
 USE MODD_MEAN_FIELD
 USE MODD_DRAGTREE_n
 USE MODD_DRAGBLDG_n
+USE MODD_EOL_MAIN
+USE MODD_EOL_ADNR
+USE MODD_EOL_ALM
+USE MODD_EOL_SHARED_IO
 !
 !
 USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LSEDI, LHHONI, LSNOW, LHAIL, LMEYERS,&
@@ -530,6 +534,32 @@ XVDEPOTREE = 0.02 ! 2 cm/s
 !             ----------------------------------
 !
 LDRAGBLDG = .FALSE.
+!
+!*      10d.   SET DEFAULT VALUES FOR MODD_EOL* :
+!             ----------------------------------
+!
+!       10d.i) MODD_EOL_MAIN
+!
+LMAIN_EOL  = .FALSE.
+CMETH_EOL  = 'ADNR'
+CSMEAR     = '3LIN'
+NMODEL_EOL = 1
+!
+!       10d.ii) MODD_EOL_SHARED_IO
+!
+CFARM_CSVDATA     = 'data_farm.csv'
+CTURBINE_CSVDATA  = 'data_turbine.csv'
+CBLADE_CSVDATA    = 'data_blade.csv' 
+CAIRFOIL_CSVDATA  = 'data_airfoil.csv'
+!
+CINTERP           = 'CLS'
+!
+!       10d.iii) MODD_EOL_ALM
+!
+NNB_BLAELT        =  42
+LTIMESPLIT        = .FALSE.
+LTIPLOSSG         = .TRUE.
+LTECOUTPTS        = .FALSE.
 !
 !-------------------------------------------------------------------------------
 !

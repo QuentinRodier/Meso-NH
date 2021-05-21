@@ -106,7 +106,7 @@ end subroutine Budget_preallocate
       OHORELAX_UVWTH,OHORELAX_RV,OHORELAX_RC,OHORELAX_RR,             &
       OHORELAX_RI,OHORELAX_RS, OHORELAX_RG, OHORELAX_RH,OHORELAX_TKE, &
       OHORELAX_SV, OVE_RELAX, ove_relax_grd, OCHTRANS,                &
-      ONUDGING,ODRAGTREE,ODEPOTREE,                                   &
+      ONUDGING,ODRAGTREE,ODEPOTREE, OAERO_EOL,                        &
       HRAD,HDCONV,HSCONV,HTURB,HTURBDIM,HCLOUD                        )
 !     #################################################################
 !
@@ -297,6 +297,7 @@ LOGICAL, INTENT(IN) :: OCHTRANS         ! switch to activate convective
 LOGICAL, INTENT(IN) :: ONUDGING         ! switch to activate nudging
 LOGICAL, INTENT(IN) :: ODRAGTREE        ! switch to activate vegetation drag
 LOGICAL, INTENT(IN) :: ODEPOTREE        ! switch to activate droplet deposition on tree
+LOGICAL, INTENT(IN) :: OAERO_EOL        ! switch to activate wind turbine wake
 CHARACTER (LEN=*), INTENT(IN) :: HRAD   ! type of the radiation scheme
 CHARACTER (LEN=*), INTENT(IN) :: HDCONV ! type of the deep convection scheme
 CHARACTER (LEN=*), INTENT(IN) :: HSCONV ! type of the shallow convection scheme
@@ -615,8 +616,13 @@ if ( lbu_ru ) then
   call Budget_source_add( tbudgets(NBUDGET_U), tzsource )
 
   tzsource%cmnhname   = 'DRAG'
-  tzsource%clongname  = 'drag force'
+  tzsource%clongname  = 'drag force due to trees'
   tzsource%lavailable = odragtree
+  call Budget_source_add( tbudgets(NBUDGET_U), tzsource )
+
+  tzsource%cmnhname   = 'DRAGEOL'
+  tzsource%clongname  = 'drag force due to wind turbine'
+  tzsource%lavailable = OAERO_EOL
   call Budget_source_add( tbudgets(NBUDGET_U), tzsource )
 
   tzsource%cmnhname   = 'DRAGB'
@@ -750,8 +756,13 @@ if ( lbu_rv ) then
   call Budget_source_add( tbudgets(NBUDGET_V), tzsource )
 
   tzsource%cmnhname   = 'DRAG'
-  tzsource%clongname  = 'drag force'
+  tzsource%clongname  = 'drag force due to trees'
   tzsource%lavailable = odragtree
+  call Budget_source_add( tbudgets(NBUDGET_V), tzsource )
+
+  tzsource%cmnhname   = 'DRAGEOL'
+  tzsource%clongname  = 'drag force due to wind turbine'
+  tzsource%lavailable = OAERO_EOL
   call Budget_source_add( tbudgets(NBUDGET_V), tzsource )
 
   tzsource%cmnhname   = 'DRAGB'
