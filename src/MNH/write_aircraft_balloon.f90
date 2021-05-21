@@ -868,7 +868,7 @@ tzbudiachro%clevels  (NLVL_GROUP)       = Trim( ygroup )
 tzbudiachro%ccomments(NLVL_GROUP)       = 'Values for flyer ' // Trim( tpflyer%title )
 
 tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
-tzbudiachro%clevels  (NLVL_SHAPE)       = 'point'
+tzbudiachro%clevels  (NLVL_SHAPE)       = 'Point'
 tzbudiachro%ccomments(NLVL_SHAPE)       = 'Values at position of flyer ' // Trim( tpflyer%title )
 
 tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.

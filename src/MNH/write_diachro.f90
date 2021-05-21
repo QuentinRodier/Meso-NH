@@ -273,7 +273,7 @@ else if ( ycategory == 'LES budgets' ) then
     ytype = 'SPXY'
   end if
 else if ( ycategory == 'Flyers' ) then
-  if ( yshape == 'point' ) then
+  if ( yshape == 'Point' ) then
     ytype = 'RSPL'
   else
     ytype = 'CART'
