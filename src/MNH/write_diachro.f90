@@ -644,9 +644,9 @@ ELSE IF ( ycategory == 'LES budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == '
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .FALSE.
   !TRAJX is given in extended domain coordinates (=> +jphext) for backward compatibility
-  CALL IO_Field_write(tzfile,TZFIELD, Reshape( &
+  CALL IO_Field_write(tzfile,TZFIELD, Real( Reshape( &
                        Spread( source = ( nles_current_iinf + nles_current_isup) / 2 + jphext, dim = 1, ncopies = IN ), &
-                       [1, 1, IN] ) )
+                       [1, 1, IN] ) ) )
 ENDIF
 !
 ! 9eme enregistrement TRAJY
@@ -675,9 +675,9 @@ ELSE IF ( ycategory == 'LES budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == '
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .FALSE.
   !TRAJY is given in extended domain coordinates (=> +jphext) for backward compatibility
-  CALL IO_Field_write(tzfile,TZFIELD, Reshape( &
+  CALL IO_Field_write(tzfile,TZFIELD, Real( Reshape( &
                        Spread( source = ( nles_current_jinf + nles_current_jsup) / 2 + jphext, dim = 1, ncopies = IN ), &
-                       [1, 1, IN] ) )
+                       [1, 1, IN] ) ) )
 ENDIF
 !
 ! 10eme enregistrement TRAJZ
