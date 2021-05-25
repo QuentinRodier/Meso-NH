@@ -925,6 +925,10 @@ if ( lbu_rw ) then
   tzsource%lavailable = .true.
   call Budget_source_add( tbudgets(NBUDGET_W), tzsource )
 
+  tzsource%cmnhname   = 'DRAGEOL'
+  tzsource%clongname  = 'drag force due to wind turbine'
+  tzsource%lavailable = OAERO_EOL
+  call Budget_source_add( tbudgets(NBUDGET_W), tzsource )
 
   call Sourcelist_sort_compact( tbudgets(NBUDGET_W) )
 

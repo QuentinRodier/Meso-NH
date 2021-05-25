@@ -259,17 +259,17 @@ CALL CLEANLIST_ll(  TZFIELDS_S_ll)
 !
 !*       5.1    Adding them to flux points, rotor->wind
 !
-if (lbudget_u) call Budget_store_init( tbudgets(NBUDGET_U), 'EOL', prus(:,:,:) )
-if (lbudget_v) call Budget_store_init( tbudgets(NBUDGET_V), 'EOL', prvs(:,:,:) )
-if (lbudget_w) call Budget_store_init( tbudgets(NBUDGET_W), 'EOL', prws(:,:,:) )
+if (lbudget_u) call Budget_store_init( tbudgets(NBUDGET_U), 'DRAGEOL', prus(:,:,:) )
+if (lbudget_v) call Budget_store_init( tbudgets(NBUDGET_V), 'DRAGEOL', prvs(:,:,:) )
+if (lbudget_w) call Budget_store_init( tbudgets(NBUDGET_W), 'DRAGEOL', prws(:,:,:) )
 !
 PRUS(:,:,:)=PRUS(:,:,:)-MXM(XFX_SMR_RG(:,:,:))
 PRVS(:,:,:)=PRVS(:,:,:)-MYM(XFY_SMR_RG(:,:,:))
 PRWS(:,:,:)=PRWS(:,:,:)-MZM(XFZ_SMR_RG(:,:,:))
 !
-if (lbudget_u) call Budget_store_end( tbudgets(NBUDGET_U), 'EOL', prus(:,:,:) )
-if (lbudget_v) call Budget_store_end( tbudgets(NBUDGET_V), 'EOL', prvs(:,:,:) )
-if (lbudget_w) call Budget_store_end( tbudgets(NBUDGET_W), 'EOL', prws(:,:,:) )
+if (lbudget_u) call Budget_store_end( tbudgets(NBUDGET_U), 'DRAGEOL', prus(:,:,:) )
+if (lbudget_v) call Budget_store_end( tbudgets(NBUDGET_V), 'DRAGEOL', prvs(:,:,:) )
+if (lbudget_w) call Budget_store_end( tbudgets(NBUDGET_W), 'DRAGEOL', prws(:,:,:) )
 !
 !
 !*       5.2    Sharing the field
