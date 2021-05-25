@@ -1057,8 +1057,8 @@ if ( iresp == 0 .and. any( zfield /= XUNDEF ) ) then
   tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
   tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
 
-  tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
-  tzbudiachro%clevels  (NLVL_GROUP)       = Trim( tpfield%cmnhname )
+  tzbudiachro%lleveluse(NLVL_GROUP)       = .false.
+  tzbudiachro%clevels  (NLVL_GROUP)       = ''
   tzbudiachro%ccomments(NLVL_GROUP)       = ''
 
   tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
@@ -1083,12 +1083,13 @@ if ( iresp == 0 .and. any( zfield /= XUNDEF ) ) then
     tzbudiachro%ccomments(NLVL_NORM)      = 'Values are not normalized'
   end if
 
+  !lleveluse true also if no mask dimension to allow all fields to be in the same level/place in the file
+  !(especially if the 2 situation arise in the run)
+  tzbudiachro%lleveluse(NLVL_MASK)        = .true.
   if ( tzfields(1)%ndimlist(6) == NMNHDIM_BUDGET_LES_MASK ) then
-    tzbudiachro%lleveluse(NLVL_MASK)        = .true.
 !     tzbudiachro%clevels  (NLVL_MASK)        = DONE AFTER
 !     tzbudiachro%ccomments(NLVL_MASK)        = DONE AFTER
   else
-    tzbudiachro%lleveluse(NLVL_MASK)        = .false.
     tzbudiachro%clevels  (NLVL_MASK)        = ''
     tzbudiachro%ccomments(NLVL_MASK)        = ''
   end if
@@ -1288,8 +1289,8 @@ tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
 tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
 tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
 
-tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
-tzbudiachro%clevels  (NLVL_GROUP)       = Trim( ygroup )
+tzbudiachro%lleveluse(NLVL_GROUP)       = .false.
+tzbudiachro%clevels  (NLVL_GROUP)       = ''
 tzbudiachro%ccomments(NLVL_GROUP)       = ''
 
 tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
@@ -1473,8 +1474,8 @@ tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
 tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
 tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
 
-tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
-tzbudiachro%clevels  (NLVL_GROUP)       = Trim( ygroup )
+tzbudiachro%lleveluse(NLVL_GROUP)       = .false.
+tzbudiachro%clevels  (NLVL_GROUP)       = ''
 tzbudiachro%ccomments(NLVL_GROUP)       = ''
 
 tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
@@ -1529,8 +1530,8 @@ tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
 tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
 tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
 
-tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
-tzbudiachro%clevels  (NLVL_GROUP)       = Trim( ygroup )
+tzbudiachro%lleveluse(NLVL_GROUP)       = .false.
+tzbudiachro%clevels  (NLVL_GROUP)       = ''
 tzbudiachro%ccomments(NLVL_GROUP)       = ''
 
 tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
