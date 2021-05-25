@@ -805,7 +805,7 @@ if ( lbu_rw ) then
   tbudgets(NBUDGET_W)%trhodj%cstdname  = ''
   tbudgets(NBUDGET_W)%trhodj%clongname = 'RhodJZ'
   tbudgets(NBUDGET_W)%trhodj%cunits    = 'kg'
-  tbudgets(NBUDGET_W)%trhodj%ccomment  = 'RhodJ for momentum along Y axis'
+  tbudgets(NBUDGET_W)%trhodj%ccomment  = 'RhodJ for momentum along Z axis'
   tbudgets(NBUDGET_W)%trhodj%ngrid     = 4
   tbudgets(NBUDGET_W)%trhodj%ntype     = TYPEREAL
   tbudgets(NBUDGET_W)%trhodj%ndims     = 3
