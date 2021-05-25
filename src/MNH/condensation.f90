@@ -24,8 +24,8 @@ INTEGER,                      INTENT(IN)    :: KKB    ! value of the first point
 INTEGER,                      INTENT(IN)    :: KKE    ! value of the last  point in z
 INTEGER,                      INTENT(IN)    :: KKL    ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 CHARACTER(len=1),                  INTENT(IN)    :: HFRAC_ICE
-CHARACTER(len=80),                 INTENT(IN)    :: HCONDENS
-CHARACTER(len=4),                  INTENT(IN)    :: HLAMBDA3 ! formulation for lambda3 coeff
+CHARACTER(len=4),                 INTENT(IN)    :: HCONDENS
+CHARACTER(len=*),                  INTENT(IN)    :: HLAMBDA3 ! formulation for lambda3 coeff
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PPABS  ! pressure (Pa)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PZZ    ! height of model levels (m)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PRHODREF
@@ -153,8 +153,8 @@ INTEGER,                      INTENT(IN)    :: KKB    ! value of the first point
 INTEGER,                      INTENT(IN)    :: KKE    ! value of the last  point in z
 INTEGER,                      INTENT(IN)    :: KKL    ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 CHARACTER(len=1),                  INTENT(IN)    :: HFRAC_ICE
-CHARACTER(len=80),                 INTENT(IN)    :: HCONDENS
-CHARACTER(len=4),                  INTENT(IN)    :: HLAMBDA3 ! formulation for lambda3 coeff
+CHARACTER(len=4),                 INTENT(IN)    :: HCONDENS
+CHARACTER(len=*),                  INTENT(IN)    :: HLAMBDA3 ! formulation for lambda3 coeff
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PPABS  ! pressure (Pa)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PZZ    ! height of model levels (m)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PRHODREF
