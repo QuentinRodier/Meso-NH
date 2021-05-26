@@ -641,7 +641,6 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
   real,                                                 intent(in) :: ptstep      ! time step
 
   character(len=4)                                        :: ybutype
-  character(len=:),                           allocatable :: ygroup_name
   integer                                                 :: igroups
   integer                                                 :: jproc
   integer                                                 :: jsv
@@ -703,52 +702,6 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
   end select
 
   deallocate(zconvert)
-
-  jsv = -1
-  select case( tpbudget%nid )
-    case ( NBUDGET_U )
-      ygroup_name = 'UU'
-
-    case ( NBUDGET_V )
-      ygroup_name = 'VV'
-
-    case ( NBUDGET_W )
-      ygroup_name = 'WW'
-
-    case ( NBUDGET_TH )
-      ygroup_name = 'TH'
-
-    case ( NBUDGET_TKE )
-      ygroup_name = 'TK'
-
-    case ( NBUDGET_RV )
-      ygroup_name = 'RV'
-
-    case ( NBUDGET_RC )
-      ygroup_name = 'RC'
-
-    case ( NBUDGET_RR )
-      ygroup_name = 'RR'
-
-    case ( NBUDGET_RI )
-      ygroup_name = 'RI'
-
-    case ( NBUDGET_RS )
-      ygroup_name = 'RS'
-
-    case ( NBUDGET_RG )
-      ygroup_name = 'RG'
-
-    case ( NBUDGET_RH )
-      ygroup_name = 'RH'
-
-    case ( NBUDGET_SV1 : )
-      jsv = tpbudget%nid - NBUDGET_SV1 + 1
-      ygroup_name = csvnames(jsv)
-
-    case default
-      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget', 'unknown budget type' )
-  end select
 
   allocate( tzfields( igroups ) )
 
@@ -839,7 +792,7 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
   tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
 
   tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
-  tzbudiachro%clevels  (NLVL_GROUP)       = ygroup_name
+  tzbudiachro%clevels  (NLVL_GROUP)       = Trim( tpbudget%cname )
   tzbudiachro%ccomments(NLVL_GROUP)       = Trim( tpbudget%ccomment )
 
   tzbudiachro%lleveluse(NLVL_SHAPE)       = .false.
@@ -890,6 +843,11 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
   tzbudiachro%njh        = nbujh
   tzbudiachro%nkl        = nbukl
   tzbudiachro%nkh        = nbukh
+  if ( tpbudget%nid > NBUDGET_SV1 ) then
+    jsv = tpbudget%nid - NBUDGET_SV1 + 1
+  else
+    jsv = -1
+  end if
   tzbudiachro%nsv        = jsv
 
   call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpdates, zworkt, osplit = .true. )

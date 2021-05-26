@@ -41,51 +41,51 @@ end if
 nbudgets = NBUDGET_SV1 - 1 + nsv
 allocate( tbudgets( nbudgets ) )
 
-tbudgets(NBUDGET_U)%cname    = "BU_RU"
+tbudgets(NBUDGET_U)%cname    = "UU"
 tbudgets(NBUDGET_U)%ccomment = "Budget for U"
 tbudgets(NBUDGET_U)%nid      = NBUDGET_U
 
-tbudgets(NBUDGET_V)%cname    = "BU_RV"
+tbudgets(NBUDGET_V)%cname    = "VV"
 tbudgets(NBUDGET_V)%ccomment = "Budget for V"
 tbudgets(NBUDGET_V)%nid      = NBUDGET_V
 
-tbudgets(NBUDGET_W)%cname    = "BU_RW"
+tbudgets(NBUDGET_W)%cname    = "WW"
 tbudgets(NBUDGET_W)%ccomment = "Budget for W"
 tbudgets(NBUDGET_W)%nid      = NBUDGET_W
 
-tbudgets(NBUDGET_TH)%cname    = "BU_RTH"
+tbudgets(NBUDGET_TH)%cname    = "TH"
 tbudgets(NBUDGET_TH)%ccomment = "Budget for potential temperature"
 tbudgets(NBUDGET_TH)%nid      = NBUDGET_TH
 
-tbudgets(NBUDGET_TKE)%cname    = "BU_RTKE"
+tbudgets(NBUDGET_TKE)%cname    = "TK"
 tbudgets(NBUDGET_TKE)%ccomment = "Budget for turbulent kinetic energy"
 tbudgets(NBUDGET_TKE)%nid      = NBUDGET_TKE
 
-tbudgets(NBUDGET_RV)%cname    = "BU_RRV"
+tbudgets(NBUDGET_RV)%cname    = "RV"
 tbudgets(NBUDGET_RV)%ccomment = "Budget for water vapor mixing ratio"
 tbudgets(NBUDGET_RV)%nid      = NBUDGET_RV
 
-tbudgets(NBUDGET_RC)%cname    = "BU_RRC"
+tbudgets(NBUDGET_RC)%cname    = "RC"
 tbudgets(NBUDGET_RC)%ccomment = "Budget for cloud water mixing ratio"
 tbudgets(NBUDGET_RC)%nid      = NBUDGET_RC
 
-tbudgets(NBUDGET_RR)%cname    = "BU_RRR"
+tbudgets(NBUDGET_RR)%cname    = "RR"
 tbudgets(NBUDGET_RR)%ccomment = "Budget for rain water mixing ratio"
 tbudgets(NBUDGET_RR)%nid      = NBUDGET_RR
 
-tbudgets(NBUDGET_RI)%cname    = "BU_RRI"
+tbudgets(NBUDGET_RI)%cname    = "RI"
 tbudgets(NBUDGET_RI)%ccomment = "Budget for cloud ice mixing ratio"
 tbudgets(NBUDGET_RI)%nid      = NBUDGET_RI
 
-tbudgets(NBUDGET_RS)%cname    = "BU_RRS"
+tbudgets(NBUDGET_RS)%cname    = "RS"
 tbudgets(NBUDGET_RS)%ccomment = "Budget for snow/aggregate mixing ratio"
 tbudgets(NBUDGET_RS)%nid      = NBUDGET_RS
 
-tbudgets(NBUDGET_RG)%cname    = "BU_RRG"
+tbudgets(NBUDGET_RG)%cname    = "RG"
 tbudgets(NBUDGET_RG)%ccomment = "Budget for graupel mixing ratio"
 tbudgets(NBUDGET_RG)%nid      = NBUDGET_RG
 
-tbudgets(NBUDGET_RH)%cname    = "BU_RRH"
+tbudgets(NBUDGET_RH)%cname    = "RH"
 tbudgets(NBUDGET_RH)%ccomment = "Budget for hail mixing ratio"
 tbudgets(NBUDGET_RH)%nid      = NBUDGET_RH
 
