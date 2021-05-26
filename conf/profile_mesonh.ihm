@@ -84,6 +84,7 @@ export VERSION_GRIBAPI=${VERSION_GRIBAPI}
 # Version of ecCodes
 #
 export VERSION_ECCODES=${VERSION_ECCODES}
+export ECCODES_DEFINITION_PATH=${ECCODES_DEFINITION_PATH}
 #
 # Version of Def integer
 #

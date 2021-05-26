@@ -19,6 +19,7 @@ export VERSION_CDFCXX=${VERSION_CDFCXX:-"4.3.1"}
 export VERSION_CDFF=${VERSION_CDFF:-"4.5.3"}
 export VERSION_GRIBAPI=${VERSION_GRIBAPI:-"1.26.0-Source"}
 export VERSION_ECCODES=${VERSION_ECCODES:-"2.18.0"}
+export ECCODES_DEFINITION_PATH=${ECCODES_DEFINITION_PATH:${SRC_MESONH}/src/LIB/eccodes-${VERSION_ECCODES}"/definitions/"}
 export MNH_INT=${MNH_INT:-"4"}
 export LFI_INT=${LFI_INT:-8}
 export MNH_REAL=${MNH_REAL:-"8"}
@@ -552,13 +553,13 @@ if [ "x${MNH_MEGAN}" == "x1" ] ; then
 ( cd $LOCAL/src/LIB ; [ ! -d MEGAN ] && tar xvfz megan.tar.gz )
 fi
 #
-#  Install GRIBAPI
+#  Install GRIBAPI or ecCodes
 #
-cd $LOCAL/src/LIB ; [ ! -d grib_api-${VERSION_GRIBAPI} ] && [ -f grib_api-${VERSION_GRIBAPI}.tar.gz ] && gunzip -c grib_api-${VERSION_GRIBAPI}.tar.gz |tar -xvf -
-#
-#  Install ecCodes
-#
-cd $LOCAL/src/LIB ; [ ! -d eccodes-${VERSION_ECCODES}-Source ] && [ -f eccodes-${VERSION_ECCODES}-Source.tar.gz ] && gunzip -c eccodes-${VERSION_ECCODES}-Source.tar.gz |tar -xvf -
+if [ "x${MNH_GRIBAPI}" == "xyes" ] ; then
+( cd $LOCAL/src/LIB ; [ ! -d grib_api-${VERSION_GRIBAPI} ] && [ -f grib_api-${VERSION_GRIBAPI}.tar.gz ] && gunzip -c grib_api-${VERSION_GRIBAPI}.tar.gz |tar -xvf - )
+else
+( cd $LOCAL/src/LIB ; [ ! -d eccodes-${VERSION_ECCODES}-Source ] && [ -f eccodes-${VERSION_ECCODES}-Source.tar.gz ] && gunzip -c eccodes-${VERSION_ECCODES}-Source.tar.gz |tar -xvf - )
+fi
 ##########################################################
 #                                                        #
 #      RESUME                                            #
