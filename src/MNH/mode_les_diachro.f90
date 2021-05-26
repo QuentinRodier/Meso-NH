@@ -1077,6 +1077,7 @@ if ( iresp == 0 .and. any( zfield /= XUNDEF ) ) then
   tzbudiachro%lleveluse(NLVL_NORM)        = .true.
   if ( onorm ) then
     tzbudiachro%clevels  (NLVL_NORM)      = 'Normalized'
+    !Type of normalization is stored in the attribute "normalization" in Write_diachro
     tzbudiachro%ccomments(NLVL_NORM)      = 'Values are normalized'
   else
     tzbudiachro%clevels  (NLVL_NORM)      = 'Not normalized'
@@ -1104,6 +1105,10 @@ if ( iresp == 0 .and. any( zfield /= XUNDEF ) ) then
   tzbudiachro%nih        = iih
   tzbudiachro%njl        = ijl
   tzbudiachro%njh        = ijh
+  !nkl and nkh values have no real meaning here except if all levels from ikl to ikh are used (and are correctly ordered)
+  !and if xles_altitudes is not used
+  !These values are not written in the netCDF files
+  !These values are written in the LFI files. They are kept for backward compatibility (and not set to default values)
   tzbudiachro%nkl        = ikl
   tzbudiachro%nkh        = ikh
 
@@ -1122,6 +1127,8 @@ if ( iresp == 0 .and. any( zfield /= XUNDEF ) ) then
       call Write_diachro( tpdiafile, tzbudiachro, [ tzfields(jp) ], tzdates, zwork6(:,:,:,:,:,jp:jp) )
     end do
   else
+    !Set to the same value ('cart') than for the fields with no mask in Write_les_n
+    !to put the fields in the same position of the netCDF file
     tzbudiachro%clevels(NLVL_MASK) = 'cart'
 
     call Write_diachro( tpdiafile, tzbudiachro, tzfields, tzdates, zwork6 )
@@ -1320,6 +1327,9 @@ else
   tzbudiachro%cdirection = 'J'
 end if
 tzbudiachro%lmobile    = .false.
+!i/j/k compression has no meaning here as it is 2-point correlations
+!These values are not written in the netCDF files
+!These values are written in the LFI files. They are kept for backward compatibility with these values
 tzbudiachro%licompress = .false.
 tzbudiachro%ljcompress = .false.
 tzbudiachro%lkcompress = .false.
@@ -1329,6 +1339,9 @@ tzbudiachro%nil        = iil
 tzbudiachro%nih        = iih
 tzbudiachro%njl        = ijl
 tzbudiachro%njh        = ijh
+!nkl and nkh values have no real meaning here
+!These values are not written in the netCDF files
+!These values are written in the LFI files. They are kept for backward compatibility (and not set to default values)
 tzbudiachro%nkl        = ikl
 tzbudiachro%nkh        = ikh
 
@@ -1500,6 +1513,9 @@ else
   tzbudiachro%cdirection = 'J'
 end if
 tzbudiachro%lmobile    = .false.
+!i/j/k compression has no meaning here as it is spectrum
+!These values are not written in the netCDF files
+!These values are written in the LFI files. They are kept for backward compatibility with these values
 tzbudiachro%licompress = .false.
 tzbudiachro%ljcompress = .false.
 tzbudiachro%lkcompress = .false.
@@ -1509,6 +1525,9 @@ tzbudiachro%nil        = iil
 tzbudiachro%nih        = iih
 tzbudiachro%njl        = ijl
 tzbudiachro%njh        = ijh
+!nkl and nkh values have no real meaning here
+!These values are not written in the netCDF files
+!These values are written in the LFI files. They are kept for backward compatibility (and not set to default values)
 tzbudiachro%nkl        = ikl
 tzbudiachro%nkh        = ikh
 
@@ -1556,6 +1575,9 @@ else
   tzbudiachro%cdirection = 'J'
 end if
 tzbudiachro%lmobile    = .false.
+!i/j/k compression has no meaning here as it is spectrum
+!These values are not written in the netCDF files
+!These values are written in the LFI files. They are kept for backward compatibility with these values
 tzbudiachro%licompress = .false.
 tzbudiachro%ljcompress = .false.
 tzbudiachro%lkcompress = .false.
@@ -1565,6 +1587,9 @@ tzbudiachro%nil        = iil
 tzbudiachro%nih        = iih
 tzbudiachro%njl        = ijl
 tzbudiachro%njh        = ijh
+!nkl and nkh values have no real meaning here
+!These values are not written in the netCDF files
+!These values are written in the LFI files. They are kept for backward compatibility (and not set to default values)
 tzbudiachro%nkl        = ikl
 tzbudiachro%nkh        = ikh
 

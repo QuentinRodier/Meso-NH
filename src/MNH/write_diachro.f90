@@ -916,6 +916,7 @@ MASTER: if ( isp == tzfile%nmaster_rank) then
          .or. tpbudiachro%clevels(NLVL_GROUP)      == 'TSERIES'                &
          .or. tpbudiachro%clevels(NLVL_GROUP)      == 'ZTSERIES'               &
          .or. tpbudiachro%clevels(NLVL_GROUP)(1:8) == 'XTSERIES'               ) then
+      !Disabled for LES budgets because no real meaning on that case (vertical levels are stored in the level_les variable)
       call Att_write( ylevelname, ilevelid, 'min K index in physical domain', ikl )
       call Att_write( ylevelname, ilevelid, 'max K index in physical domain', ikh )
     end if
@@ -991,9 +992,7 @@ MASTER: if ( isp == tzfile%nmaster_rank) then
     call Att_write( ylevelname, ilevelid, 'masks are stored in variable', tpbudiachro%clevels(NLVL_MASK) )
   end if
 
-
 end if MASTER
-
 
 !Determine the number of dimensions and do some verifications
 do jp = 1, Size( tpfields )
@@ -1475,13 +1474,8 @@ if ( Present( tpflyer ) ) then
   call IO_Field_write( tzfile, tzfield, tpflyer%y )
 end if
 
-
-
-
-
-
-
 end  subroutine Write_diachro_nc4
+
 
 subroutine Diachro_one_field_write_nc4( tpfile, tpbudiachro, tpfield, pvar, kdims, osplit, odistributed, &
                                         kil, kih, kjl, kjh, kkl, kkh )

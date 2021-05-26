@@ -765,11 +765,16 @@ tzbudiachro%clevels  (NLVL_MASK)        = ''
 tzbudiachro%ccomments(NLVL_MASK)        = ''
 
 tzbudiachro%lmobile    = .false.
+!Compression does not make sense here
+!Keep these values for backward compatibility of LFI files
 tzbudiachro%licompress = .true.
 tzbudiachro%ljcompress = .true.
 tzbudiachro%lkcompress = .false.
 tzbudiachro%ltcompress = .false.
 tzbudiachro%lnorm      = .false.
+!Boundaries in physical domain does not make sense here
+!These values are not written in the netCDF files
+!These values are written in the LFI files. Kept for backward compatibility of LFI files
 tzbudiachro%nil        = 1
 tzbudiachro%nih        = 1
 tzbudiachro%njl        = 1

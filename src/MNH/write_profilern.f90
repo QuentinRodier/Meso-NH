@@ -680,15 +680,24 @@ tzbudiachro%clevels  (NLVL_MASK)        = ''
 tzbudiachro%ccomments(NLVL_MASK)        = ''
 
 tzbudiachro%lmobile    = .false.
+!Compression does not make sense here
+!Keep these values for backward compatibility of LFI files
 tzbudiachro%licompress = .true.
 tzbudiachro%ljcompress = .true.
 tzbudiachro%lkcompress = .false.
 tzbudiachro%ltcompress = .false.
 tzbudiachro%lnorm      = .false.
+!Horizontal boundaries in physical domain does not make sense here (but flyer position does)
+!These values are not written in the netCDF files
+!These values are written in the LFI files. They are kept for backward compatibility (and not set to default values)
 tzbudiachro%nil        = 1
 tzbudiachro%nih        = 1
 tzbudiachro%njl        = 1
 tzbudiachro%njh        = 1
+!1->iku includes non-physical levels (IKU=NKMAX+2*JPVEXT)
+!This does not conform to documentation (limits are in the physical domain)
+!These values are not written in the netCDF files
+!These values are written in the LFI files. They are kept for backward compatibility (and not set to default values)
 tzbudiachro%nkl        = 1
 tzbudiachro%nkh        = iku
 

@@ -548,7 +548,7 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, knocompress, prhod
 
   tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
   tzbudiachro%clevels  (NLVL_GROUP)       = 'RhodJ'
-  tzbudiachro%ccomments(NLVL_GROUP)       = ''
+  tzbudiachro%ccomments(NLVL_GROUP)       = 'mass of dry air contained in the mesh cells'
 
   tzbudiachro%lleveluse(NLVL_SHAPE)       = .false.
   if ( ybutype == 'CART' ) then
@@ -587,6 +587,9 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, knocompress, prhod
   tzbudiachro%lkcompress = lbu_kcp
   tzbudiachro%ltcompress = .true. !Data is temporally averaged
   tzbudiachro%lnorm      = .false.
+  !Boundaries in physical domain does not make sense here if 'MASK'
+  !In that case, these values are not written in the netCDF files
+  !But they are always written in the LFI files. They are kept (in the MASK case) for backward compatibility.
   tzbudiachro%nil        = nbuil
   tzbudiachro%nih        = nbuih
   tzbudiachro%njl        = nbujl
@@ -874,8 +877,13 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
   tzbudiachro%licompress = lbu_icp
   tzbudiachro%ljcompress = lbu_jcp
   tzbudiachro%lkcompress = lbu_kcp
+  !Remark: ltcompress should be false for INIF and ENDF fields
+  !        but if set to false these fields should be separated and stored somewhere else
   tzbudiachro%ltcompress = .true. !Data is temporally averaged
   tzbudiachro%lnorm      = .false.
+  !Boundaries in physical domain does not make sense here if 'MASK'
+  !In that case, these values are not written in the netCDF files
+  !But they are always written in the LFI files. They are kept (in the MASK case) for backward compatibility.
   tzbudiachro%nil        = nbuil
   tzbudiachro%nih        = nbuih
   tzbudiachro%njl        = nbujl

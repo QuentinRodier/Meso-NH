@@ -288,7 +288,7 @@ tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
 
 tzbudiachro%lleveluse(NLVL_MASK)        = .true.
 ! tzbudiachro%clevels  (NLVL_MASK)        = DONE LATER
-tzbudiachro%ccomments(NLVL_MASK)        = ''
+! tzbudiachro%ccomments(NLVL_MASK)        = DONE LATER
 
 tzbudiachro%lmobile    = .false.
 tzbudiachro%licompress = .true.
@@ -307,6 +307,7 @@ tzbudiachro%nkh        = ikmax
 ! Do not provide all tzfields once because they can be stored in different HDF groups (based on masks)
 do jp = 1 , nstemp_serie1
   tzbudiachro%clevels(NLVL_MASK) = Trim( csmask1(jp) )
+  tzbudiachro%ccomments(NLVL_MASK) = ''
 
   call Write_diachro( tpdiafile, tzbudiachro, [ tzfields(jp) ], tpsdates(1:nsnbstept), &
                       xsseries1(1:1,1:1,1:1,1:nsnbstept,1:1,jp:jp)                 )
@@ -415,7 +416,7 @@ tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
 
 tzbudiachro%lleveluse(NLVL_MASK)        = .true.
 ! tzbudiachro%clevels  (NLVL_MASK)        = DONE LATER
-tzbudiachro%ccomments(NLVL_MASK)        = ''
+! tzbudiachro%ccomments(NLVL_MASK)        = DONE LATER
 
 tzbudiachro%lmobile    = .false.
 tzbudiachro%licompress = .true.
@@ -434,6 +435,7 @@ tzbudiachro%nkh        = ikmax
 ! Do not provide all tzfields once because they can be stored in different HDF groups (based on masks)
 do jp = 1 , nstemp_serie2
   tzbudiachro%clevels(NLVL_MASK) = csmask2(jp)
+  tzbudiachro%ccomments(NLVL_MASK) = ''
 
   call Write_diachro( tpdiafile, tzbudiachro, [ tzfields(jp) ], tpsdates(1:nsnbstept), &
                       xsseries2(1:1,1:1,1:ikmax,1:nsnbstept,1:1,jp:jp)                 )
