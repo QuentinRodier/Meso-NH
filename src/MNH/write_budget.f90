@@ -105,7 +105,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
                                  tbudgets, tburhodj
   use modd_field,          only: NMNHDIM_ONE, NMNHDIM_NI, NMNHDIM_NJ,                              &
                                  NMNHDIM_BUDGET_TIME, NMNHDIM_BUDGET_MASK_NBUMASK, NMNHDIM_UNUSED, &
-                                 tfielddata, TYPEREAL
+                                 tfielddata, TYPEINT, TYPEREAL
   use modd_io,             only: tfiledata
   use modd_lunit_n,        only: tluout
   use modd_parameters,     only: NMNHNAMELGTMAX
@@ -281,7 +281,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
         tzfield%cdir       = 'XY'
         tzfield%ccomment   = 'Masks for budget areas'
         tzfield%ngrid      = 1
-        tzfield%ntype      = TYPEREAL
+        tzfield%ntype      = TYPEINT
         tzfield%ndims      = 4
         tzfield%ltimedep   = .false. !The time dependance is in the NMNHDIM_BUDGET_TIME dimension
         tzfield%ndimlist(1)  = NMNHDIM_NI
