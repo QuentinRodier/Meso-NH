@@ -296,7 +296,7 @@ IF (.NOT.GISCOORD) THEN
         IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_attr_write_nc4','NF90_PUT_ATT','coordinates')
         DEALLOCATE(YCOORDS)
       ELSE
-        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_attr_write_nc4','coordinates not implemented for variable ' &
+        CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_attr_write_nc4','coordinates not implemented for variable ' &
                                                                     //TRIM(TPFIELD%CMNHNAME))
       END IF
     ELSE
