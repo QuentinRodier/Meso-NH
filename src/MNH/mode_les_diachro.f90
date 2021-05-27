@@ -1018,7 +1018,7 @@ iresp = 0
 if ( oavg ) call Les_time_avg_4d( zfield, tzdates, iresp )
 
 if ( Present( hsuffixes ) ) then
-  ytitle(:) = tpfield%cmnhname // hsuffixes(:)
+  ytitle(:) = Trim( tpfield%cmnhname ) // hsuffixes(:)
 else
   ytitle(:) = tpfield%cmnhname
 endif
