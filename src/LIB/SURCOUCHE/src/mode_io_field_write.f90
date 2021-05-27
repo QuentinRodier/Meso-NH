@@ -397,7 +397,7 @@ subroutine IO_Field_create( tpfile, tpfield )
 #endif
 
       case ( 4 ) NDIMS
-        if ( tzfield%ntype /= TYPEREAL ) then
+        if ( All( tzfield%ntype /= [ TYPEINT, TYPEREAL ] ) ) then
           call Print_msg( NVERB_ERROR, 'IO', 'IO_Field_create', Trim( tpfile%cname ) // ': ' &
                           // Trim( tzfield%cmnhname ) // ': invalid ntype for 4D field' )
           return
