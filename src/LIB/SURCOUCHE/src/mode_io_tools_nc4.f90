@@ -18,6 +18,7 @@
 !  P. Wautelet 08/12/2020: add nbutotwrite
 !  P. Wautelet 18/03/2021: workaround for an intel compiler bug
 !  P. Wautelet 04/05/2021: improve IO_Vdims_fill_nc4 if l2d and lpack
+!  P. Wautelet 27/05/2021: improve IO_Mnhname_clean to autocorrect names to be CF compliant
 !-----------------------------------------------------------------
 #ifdef MNH_IOCDF4
 module mode_io_tools_nc4
@@ -832,31 +833,80 @@ end if
 end subroutine IO_Err_handle_nc4
 
 
-SUBROUTINE IO_Mnhname_clean(HINNAME,HOUTNAME)
-  CHARACTER(LEN=*),INTENT(IN)  :: HINNAME
-  CHARACTER(LEN=*),INTENT(OUT) :: HOUTNAME
-
+subroutine IO_Mnhname_clean( hinname, houtname )
+  ! Try to autocorrect hinname to be CF compliant
   ! NetCDF var names can't contain '%' nor '.'
-  ! CF convention allows only letters, digits and underscores
-  HOUTNAME = str_replace(HINNAME,  '%', '__')
-  HOUTNAME = str_replace(HOUTNAME, '.', '___')
-END SUBROUTINE
+  ! CF convention allows only letters, digits and underscores for variable, dimension, attribute and group names
+  ! and they should begin with a letter
+  character(len=*), intent(in)  :: hinname
+  character(len=*), intent(out) :: houtname
+
+  character(len=:), allocatable :: yresult
+  integer :: ipos
+
+  if ( Len_trim( hinname ) == 0 ) then
+    houtname = ''
+    return
+  end if
+
+  ipos = Scan( Trim( hinname), 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz' )
+  if ( ipos == 0 ) then
+    call Print_msg( NVERB_WARNING, 'IO', 'IO_Mnhname_clean', 'name (' // Trim( hinname) // &
+                    ') must begin with a letter to conform to CF convention' )
+  end if
+
+  ipos = Verify( Trim( hinname), 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_' )
+  if ( ipos > 0 ) then
+    yresult = Str_replace( hinname,  '%', '__' )
+    yresult = Str_replace( yresult, '.', '___' )
+    yresult = Str_replace( yresult, '-', '_' )
+    yresult = Str_replace( yresult, '*', 'star' )
+    yresult = Str_replace( Trim( yresult ), ' ', '_' ) !Trim to prevent problem with spaces at the end of the string
+
+    cmnhmsg(1) = 'name (' // Trim( hinname) // ') contains characters not allowed in CF convention'
+    cmnhmsg(2) = 'Allowed: alphanumeric + underscore'
+
+    !Chek corrected name
+    ipos = Verify( Trim( yresult ), 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_' )
+
+    if ( ipos == 0 ) then
+      cmnhmsg(3) = 'Trying to correct => successful'
+      cmnhmsg(4) = Trim( hinname ) // '->' // Trim( yresult )
+      call Print_msg( NVERB_DEBUG, 'IO', 'IO_Mnhname_clean' )
+    else
+      cmnhmsg(3) = 'Trying to correct => FAILED'
+      cmnhmsg(4) = Trim( hinname ) // '->' // Trim( yresult )
+      call Print_msg( NVERB_WARNING, 'IO', 'IO_Mnhname_clean' )
+    end if
+  else
+    yresult = Trim( hinname )
+  end if
+
+  houtname = Trim( yresult )
+
+  if ( Len_trim( yresult ) > Len( houtname ) ) &
+    call Print_msg( NVERB_WARNING, 'IO', 'IO_Mnhname_clean', &
+                    'houtname has been truncated (' // Trim( houtname) // '->' // Trim( yresult ) // ')' )
+
+end subroutine
 
 
-FUNCTION str_replace(hstr, hold, hnew)
-CHARACTER(LEN=*) :: hstr, hold, hnew
-CHARACTER(LEN=LEN_TRIM(hstr)+MAX(0,LEN(hnew)-LEN(hold))) :: str_replace
+recursive function Str_replace( hstr, hold, hnew ) result( hout )
+character(len=*), intent(in) :: hstr, hold, hnew
 
-INTEGER :: pos
+character(len=:), allocatable :: hout
 
-pos = INDEX(hstr,hold)
-IF (pos /= 0) THEN
-   str_replace = hstr(1:pos-1)//hnew//hstr(pos+LEN(hold):)
-ELSE
-   str_replace = hstr
-END IF
+integer :: ipos
 
-END FUNCTION str_replace
+ipos = Index( hstr, hold )
+if ( ipos > 0 ) then
+   hout = hstr(1 : ipos - 1) // hnew // hstr( ipos + Len( hold ) : )
+   if ( ipos < Len_trim( hstr ) ) hout = Str_replace( hout, hold, hnew )
+else
+   hout = hstr
+end if
+
+end function Str_replace
 
 
 end module mode_io_tools_nc4
