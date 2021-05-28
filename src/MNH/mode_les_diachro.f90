@@ -947,7 +947,7 @@ if ( Present( hsuffixes ) ) then
                     'at the same time (' // Trim( tpfield%cmnhname ) // ')' )
   if ( Size( hsuffixes ) /= Size( pfield, 3) ) &
     call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_common', 'wrong size for hsuffixes (' // Trim( tpfield%cmnhname ) // ')' )
-  ycomment(:) = Trim( tpfield%ccomment(:) ) // hsuffixes(:)
+  ycomment(:) = Trim( tpfield%ccomment(:) ) // ' ' // hsuffixes(:)
 else if ( Present( hmasks ) ) then
   if ( Size( hmasks ) /= Size( pfield, 3) ) &
     call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_common', 'wrong size for hmasks (' // Trim( tpfield%cmnhname ) // ')' )
@@ -1018,7 +1018,7 @@ iresp = 0
 if ( oavg ) call Les_time_avg_4d( zfield, tzdates, iresp )
 
 if ( Present( hsuffixes ) ) then
-  ytitle(:) = Trim( tpfield%cmnhname ) // hsuffixes(:)
+  ytitle(:) = Trim( tpfield%cmnhname ) // '_' // hsuffixes(:)
 else
   ytitle(:) = tpfield%cmnhname
 endif

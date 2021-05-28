@@ -988,8 +988,8 @@ if ( nsv > 0 ) then
   !tfield%ndimlist(3:) = NMNHDIM_UNUSED
 end if
 
-call Les_diachro_write( tpdiafile, XLES_USTAR,      'U*',         'Friction velocity',                   'm s-1' )
-call Les_diachro_write( tpdiafile, XLES_WSTAR,      'W*',         'Convective velocity',                 'm s-1' )
+call Les_diachro_write( tpdiafile, XLES_USTAR,      'Ustar',      'Friction velocity',                   'm s-1' )
+call Les_diachro_write( tpdiafile, XLES_WSTAR,      'Wstar',      'Convective velocity',                 'm s-1' )
 call Les_diachro_write( tpdiafile, XLES_BL_HEIGHT,  'BL_H',       'Boundary Layer Height',               'm' )
 call Les_diachro_write( tpdiafile, XLES_MO_LENGTH,  'L_MO',       'Monin-Obukhov length',                'm' )
 call Les_diachro_write( tpdiafile, XLES_INT_TKE,    'INT_TKE',    'Vertical integrated tke',             'm2 s-2' )
