@@ -560,11 +560,11 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, knocompress, prhod
   end if
 
   tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
-  tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Time averaged'
+  tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Time_averaged'
   tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are time averaged'
 
   tzbudiachro%lleveluse(NLVL_NORM)        = .false.
-  tzbudiachro%clevels  (NLVL_NORM)        = 'Not normalized'
+  tzbudiachro%clevels  (NLVL_NORM)        = 'Not_normalized'
   tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
 
   tzbudiachro%lleveluse(NLVL_MASK)        = .false.
@@ -805,11 +805,11 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
   end if
 
   tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
-  tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Time averaged'
+  tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Time_averaged'
   tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are time averaged'
 
   tzbudiachro%lleveluse(NLVL_NORM)        = .false.
-  tzbudiachro%clevels  (NLVL_NORM)        = 'Not normalized'
+  tzbudiachro%clevels  (NLVL_NORM)        = 'Not_normalized'
   tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
 
   tzbudiachro%lleveluse(NLVL_MASK)        = .false.

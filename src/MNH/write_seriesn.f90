@@ -263,7 +263,7 @@ tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_UNUSED !Set to unused because write are done in a loop (1 write per "process")
 
 tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
-tzbudiachro%clevels  (NLVL_CATEGORY)    = 'Time series'
+tzbudiachro%clevels  (NLVL_CATEGORY)    = 'Time_series'
 tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different time series'
 
 tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
@@ -279,11 +279,11 @@ tzbudiachro%clevels  (NLVL_SHAPE)       = 'Cartesian' !It is based on a cartesia
 tzbudiachro%ccomments(NLVL_SHAPE)       = 'Cartesian domain'
 
 tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
-tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not time averaged'
+tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not_time_averaged'
 tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are not time averaged'
 
 tzbudiachro%lleveluse(NLVL_NORM)        = .false.
-tzbudiachro%clevels  (NLVL_NORM)        = 'Not normalized'
+tzbudiachro%clevels  (NLVL_NORM)        = 'Not_normalized'
 tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
 
 tzbudiachro%lleveluse(NLVL_MASK)        = .true.
@@ -391,7 +391,7 @@ tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_UNUSED !Set to unused because write are done in a loop (1 write per "process")
 
 tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
-tzbudiachro%clevels  (NLVL_CATEGORY)    = 'Time series'
+tzbudiachro%clevels  (NLVL_CATEGORY)    = 'Time_series'
 tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different time series'
 
 tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
@@ -407,11 +407,11 @@ tzbudiachro%clevels  (NLVL_SHAPE)       = 'Cartesian' !It is based on a cartesia
 tzbudiachro%ccomments(NLVL_SHAPE)       = 'Cartesian domain'
 
 tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
-tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not time averaged'
+tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not_time_averaged'
 tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are not time averaged'
 
 tzbudiachro%lleveluse(NLVL_NORM)        = .false.
-tzbudiachro%clevels  (NLVL_NORM)        = 'Not normalized'
+tzbudiachro%clevels  (NLVL_NORM)        = 'Not_normalized'
 tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
 
 tzbudiachro%lleveluse(NLVL_MASK)        = .true.
@@ -521,7 +521,7 @@ DO JS=1,NBJSLICE
   tzfields(:)%ndimlist(6) = NMNHDIM_SERIES_PROC
 
   tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
-  tzbudiachro%clevels  (NLVL_CATEGORY)    = 'Time series'
+  tzbudiachro%clevels  (NLVL_CATEGORY)    = 'Time_series'
   tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different time series'
 
   tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
@@ -538,11 +538,11 @@ DO JS=1,NBJSLICE
   tzbudiachro%ccomments(NLVL_SHAPE)       = 'Cartesian domain'
 
   tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
-  tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not time averaged'
+  tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not_time_averaged'
   tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are not time averaged'
 
   tzbudiachro%lleveluse(NLVL_NORM)        = .false.
-  tzbudiachro%clevels  (NLVL_NORM)        = 'Not normalized'
+  tzbudiachro%clevels  (NLVL_NORM)        = 'Not_normalized'
   tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
 
   tzbudiachro%lleveluse(NLVL_MASK)        = .false.

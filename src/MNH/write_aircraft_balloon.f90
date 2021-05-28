@@ -935,15 +935,15 @@ tzbudiachro%clevels  (NLVL_GROUP)       = Trim( ygroupz )
 tzbudiachro%ccomments(NLVL_GROUP)       = 'Values for flyer ' // Trim( tpflyer%title )
 
 tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
-tzbudiachro%clevels  (NLVL_SHAPE)       = 'Vertical profile'
+tzbudiachro%clevels  (NLVL_SHAPE)       = 'Vertical_profile'
 tzbudiachro%ccomments(NLVL_SHAPE)       = 'Vertical profiles at position of flyer ' // Trim( tpflyer%title )
 
 tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
-tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not time averaged'
+tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not_time_averaged'
 tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are not time averaged'
 
 tzbudiachro%lleveluse(NLVL_NORM)        = .false.
-tzbudiachro%clevels  (NLVL_NORM)        = 'Not normalized'
+tzbudiachro%clevels  (NLVL_NORM)        = 'Not_normalized'
 tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
 
 tzbudiachro%lleveluse(NLVL_MASK)        = .false.

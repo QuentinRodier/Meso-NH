@@ -261,11 +261,11 @@ end if
 
 !For backward compatibility
 if (       Trim( tpbudiachro%clevels(NLVL_CATEGORY) ) == 'Flyers'           &
-     .and. Trim( tpbudiachro%clevels(NLVL_SHAPE) )    == 'Vertical profile' ) then
+     .and. Trim( tpbudiachro%clevels(NLVL_SHAPE) )    == 'Vertical_profile' ) then
   ygroup = Trim( ygroup ) // 'Z'
 end if
 
-if (       Trim( tpbudiachro%clevels(NLVL_CATEGORY) ) == 'LES budgets' &
+if (       Trim( tpbudiachro%clevels(NLVL_CATEGORY) ) == 'LES_budgets' &
      .and. Trim( tpbudiachro%clevels(NLVL_SHAPE) )    == 'Cartesian'   ) then
   if ( tpbudiachro%ltcompress ) then
     if ( tpbudiachro%lnorm ) then
@@ -284,7 +284,7 @@ if (       Trim( tpbudiachro%clevels(NLVL_CATEGORY) ) == 'LES budgets' &
   if ( Len_trim( ygroup )  > 10 ) ygroup = ygroup(1:10)
 end if
 
-if (       Trim( tpbudiachro%clevels(NLVL_CATEGORY) ) == 'LES budgets' &
+if (       Trim( tpbudiachro%clevels(NLVL_CATEGORY) ) == 'LES_budgets' &
      .and. Trim( tpbudiachro%clevels(NLVL_SHAPE) )    == 'Spectrum'    ) then
   if ( tpbudiachro%ltcompress ) then
     ygroup = 'T_' // Trim( ygroup )
@@ -300,7 +300,7 @@ if ( ycategory == 'Budgets' ) then
   else
     ytype = 'MASK'
   end if
-else if ( ycategory == 'LES budgets' ) then
+else if ( ycategory == 'LES_budgets' ) then
   if ( yshape == 'Cartesian' ) then
     ytype = 'SSOL'
   else
@@ -351,7 +351,7 @@ IF ( PRESENT( tpflyer ) ) THEN
   IKTRAJX = 1
   ITTRAJX = SIZE( tpflyer%x )
   INTRAJX = 1
-ELSE IF ( ycategory == 'LES budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == 'Cartesian' ) THEN
+ELSE IF ( ycategory == 'LES_budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == 'Cartesian' ) THEN
   IKTRAJX = 1
   ITTRAJX = 1
   INTRAJX = IN
@@ -360,7 +360,7 @@ IF ( PRESENT( tpflyer ) ) THEN
   IKTRAJY = 1
   ITTRAJY = SIZE( tpflyer%y )
   INTRAJY = 1
-ELSE IF ( ycategory == 'LES budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == 'Cartesian' ) THEN
+ELSE IF ( ycategory == 'LES_budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == 'Cartesian' ) THEN
   IKTRAJY = 1
   ITTRAJY = 1
   INTRAJY = IN
@@ -369,7 +369,7 @@ IF ( PRESENT( tpflyer ) ) THEN
   IKTRAJZ = 1
   ITTRAJZ = SIZE( tpflyer%z )
   INTRAJZ = 1
-ELSE IF ( ycategory == 'LES budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == 'Cartesian' ) THEN
+ELSE IF ( ycategory == 'LES_budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == 'Cartesian' ) THEN
   IKTRAJZ = IK
   ITTRAJZ = 1
   INTRAJZ = IN
@@ -632,7 +632,7 @@ IF(PRESENT(tpflyer))THEN
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .FALSE.
   CALL IO_Field_write(tzfile,TZFIELD, Reshape( tpflyer%x, [1, Size( tpflyer%x), 1] ) )
-ELSE IF ( ycategory == 'LES budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == 'Cartesian' ) THEN
+ELSE IF ( ycategory == 'LES_budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == 'Cartesian' ) THEN
   TZFIELD%CMNHNAME   = TRIM(ygroup)//'.TRAJX'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = TRIM(ygroup)//'.TRAJX'
@@ -663,7 +663,7 @@ IF(PRESENT(tpflyer))THEN
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .FALSE.
   CALL IO_Field_write(tzfile,TZFIELD, Reshape( tpflyer%y, [1, Size( tpflyer%y), 1] ) )
-ELSE IF ( ycategory == 'LES budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == 'Cartesian' ) THEN
+ELSE IF ( ycategory == 'LES_budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == 'Cartesian' ) THEN
   TZFIELD%CMNHNAME   = TRIM(ygroup)//'.TRAJY'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = TRIM(ygroup)//'.TRAJY'
@@ -694,7 +694,7 @@ IF(PRESENT(tpflyer))THEN
   TZFIELD%NDIMS      = 3
   TZFIELD%LTIMEDEP   = .FALSE.
   CALL IO_Field_write(tzfile,TZFIELD, Reshape( tpflyer%z, [1, Size( tpflyer%z), 1] ) )
-ELSE IF ( ycategory == 'LES budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == 'Cartesian' ) THEN
+ELSE IF ( ycategory == 'LES_budgets' .and.  tpbudiachro%clevels(NLVL_SHAPE) == 'Cartesian' ) THEN
   TZFIELD%CMNHNAME   = TRIM(ygroup)//'.TRAJZ'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CLONGNAME  = TRIM(ygroup)//'.TRAJZ'
@@ -869,8 +869,8 @@ MASTER: if ( isp == tzfile%nmaster_rank) then
     if ( tpbudiachro%lleveluse(NLVL_CATEGORY) .and. Len_trim( tpbudiachro%ccomments(NLVL_CATEGORY) ) > 0 ) &
     call Att_write( ylevelname, ilevelid, 'comment',  tpbudiachro%ccomments(NLVL_CATEGORY) )
 
-    if ( ycategory == 'LES budgets' ) &
-    call Att_write( ylevelname, ilevelid, 'temporal sampling frequency', xles_temp_sampling )
+    if ( ycategory == 'LES_budgets' ) &
+    call Att_write( ylevelname, ilevelid, 'temporal_sampling_frequency', xles_temp_sampling )
   end if
 
   if ( .not. gleveldefined(NLVL_SUBCATEGORY) ) then
@@ -902,37 +902,37 @@ MASTER: if ( isp == tzfile%nmaster_rank) then
     call Att_write( ylevelname, ilevelid, 'moving', Merge( 'yes', 'no ', tpbudiachro%lmobile ) )
 
     if (      ( ycategory == 'Budgets' .and. yshape == 'Cartesian' )             &
-         .or. ycategory == 'LES budgets'                                         &
+         .or. ycategory == 'LES_budgets'                                         &
          .or. tpbudiachro%clevels(NLVL_GROUP)      == 'TSERIES'                  &
          .or. tpbudiachro%clevels(NLVL_GROUP)      == 'ZTSERIES'                 &
          .or. tpbudiachro%clevels(NLVL_GROUP)(1:8) == 'XTSERIES'                 ) then
-      call Att_write( ylevelname, ilevelid, 'min I index in physical domain', iil )
-      call Att_write( ylevelname, ilevelid, 'max I index in physical domain', iih )
-      call Att_write( ylevelname, ilevelid, 'min J index in physical domain', ijl )
-      call Att_write( ylevelname, ilevelid, 'max J index in physical domain', ijh )
+      call Att_write( ylevelname, ilevelid, 'min_I_index_in_physical_domain', iil )
+      call Att_write( ylevelname, ilevelid, 'max_I_index_in_physical_domain', iih )
+      call Att_write( ylevelname, ilevelid, 'min_J_index_in_physical_domain', ijl )
+      call Att_write( ylevelname, ilevelid, 'max_J_index_in_physical_domain', ijh )
     end if
 
     if (      ( ycategory == 'Budgets' .and. yshape == 'Cartesian' )           &
          .or. tpbudiachro%clevels(NLVL_GROUP)      == 'TSERIES'                &
          .or. tpbudiachro%clevels(NLVL_GROUP)      == 'ZTSERIES'               &
          .or. tpbudiachro%clevels(NLVL_GROUP)(1:8) == 'XTSERIES'               ) then
-      !Disabled for LES budgets because no real meaning on that case (vertical levels are stored in the level_les variable)
-      call Att_write( ylevelname, ilevelid, 'min K index in physical domain', ikl )
-      call Att_write( ylevelname, ilevelid, 'max K index in physical domain', ikh )
+      !Disabled for LES_budgets because no real meaning on that case (vertical levels are stored in the level_les variable)
+      call Att_write( ylevelname, ilevelid, 'min_K_index_in_physical_domain', ikl )
+      call Att_write( ylevelname, ilevelid, 'max_K_index_in_physical_domain', ikh )
     end if
 
 
     if (      ( ycategory == 'Budgets' .and. yshape == 'Cartesian' )           &
-         .or. ( ycategory == 'LES budgets'    .and. yshape == 'Cartesian' )    &
+         .or. ( ycategory == 'LES_budgets'    .and. yshape == 'Cartesian' )    &
          .or. tpbudiachro%clevels(NLVL_GROUP)      == 'TSERIES'                &
          .or. tpbudiachro%clevels(NLVL_GROUP)      == 'ZTSERIES'               &
          .or. tpbudiachro%clevels(NLVL_GROUP)(1:8) == 'XTSERIES'               ) then
       call Att_write( ylevelname, ilevelid, &
-                      'averaged in the I direction', Merge( 'yes', 'no ', tpbudiachro%licompress ) )
+                      'averaged_in_the_I_direction', Merge( 'yes', 'no ', tpbudiachro%licompress ) )
       call Att_write( ylevelname, ilevelid, &
-                      'averaged in the J direction', Merge( 'yes', 'no ', tpbudiachro%ljcompress ) )
+                      'averaged_in_the_J_direction', Merge( 'yes', 'no ', tpbudiachro%ljcompress ) )
       call Att_write( ylevelname, ilevelid, &
-                      'averaged in the K direction', Merge( 'yes', 'no ', tpbudiachro%lkcompress ) )
+                      'averaged_in_the_K_direction', Merge( 'yes', 'no ', tpbudiachro%lkcompress ) )
     end if
   end if
 
@@ -943,7 +943,7 @@ MASTER: if ( isp == tzfile%nmaster_rank) then
     if ( tpbudiachro%lleveluse(NLVL_TIMEAVG) .and. Len_trim( tpbudiachro%ccomments(NLVL_TIMEAVG) ) > 0 ) &
     call Att_write( ylevelname, ilevelid, 'comment',        tpbudiachro%ccomments(NLVL_TIMEAVG) )
 
-    call Att_write( ylevelname, ilevelid, 'time averaged', Merge( 'yes', 'no ', tpbudiachro%ltcompress ) )
+    call Att_write( ylevelname, ilevelid, 'time_averaged', Merge( 'yes', 'no ', tpbudiachro%ltcompress ) )
   end if
 
   if ( .not. gleveldefined(NLVL_NORM) ) then
@@ -955,18 +955,18 @@ MASTER: if ( isp == tzfile%nmaster_rank) then
 
     call Att_write( ylevelname, ilevelid, 'normalized', Merge( 'yes', 'no ', tpbudiachro%lnorm ) )
 
-    if ( ycategory == 'LES budgets' .and. yshape == 'Cartesian' ) then
+    if ( ycategory == 'LES_budgets' .and. yshape == 'Cartesian' ) then
       if ( tpbudiachro%lnorm ) then
         if ( cles_norm_type == 'NONE' ) then
           call Att_write( ylevelname, ilevelid, 'normalization', 'none' )
         else if ( cles_norm_type == 'CONV' ) then
           call Att_write( ylevelname, ilevelid, 'normalization', 'convective' )
           ! cbl_height_def determines how the boundary layer height is computed, which is used in this normalization
-          call Att_write( ylevelname, ilevelid, 'definition of boundary layer height', cbl_height_def )
+          call Att_write( ylevelname, ilevelid, 'definition_of_boundary_layer_height', cbl_height_def )
         else if ( cles_norm_type == 'EKMA' ) then
           call Att_write( ylevelname, ilevelid, 'normalization', 'Ekman' )
           ! cbl_height_def determines how the boundary layer height is computed, which is used in this normalization
-          call Att_write( ylevelname, ilevelid, 'definition of boundary layer height', cbl_height_def )
+          call Att_write( ylevelname, ilevelid, 'definition_of_boundary_layer_height', cbl_height_def )
         else if ( cles_norm_type == 'MOBU' ) then
           call Att_write( ylevelname, ilevelid, 'normalization', 'Monin-Obukhov' )
         else
@@ -989,7 +989,7 @@ MASTER: if ( isp == tzfile%nmaster_rank) then
     call Att_write( ylevelname, ilevelid, 'comment', tpbudiachro%ccomments(NLVL_MASK) )
 
     if ( ycategory == 'Budgets' .and. yshape == 'Mask' ) &
-    call Att_write( ylevelname, ilevelid, 'masks are stored in variable', tpbudiachro%clevels(NLVL_MASK) )
+    call Att_write( ylevelname, ilevelid, 'masks_are_stored_in_variable', tpbudiachro%clevels(NLVL_MASK) )
   end if
 
 end if MASTER

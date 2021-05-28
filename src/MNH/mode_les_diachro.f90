@@ -1050,7 +1050,7 @@ if ( iresp == 0 .and. any( zfield /= XUNDEF ) ) then
   tzfields(:)%ccomment  = ycomment(:)
 
   tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
-  tzbudiachro%clevels  (NLVL_CATEGORY)    = 'LES budgets'
+  tzbudiachro%clevels  (NLVL_CATEGORY)    = 'LES_budgets'
   tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different LES budgets'
 
   tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
@@ -1067,10 +1067,10 @@ if ( iresp == 0 .and. any( zfield /= XUNDEF ) ) then
 
   tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .true.
   if ( oavg ) then
-    tzbudiachro%clevels  (NLVL_TIMEAVG)   = 'Time averaged'
+    tzbudiachro%clevels  (NLVL_TIMEAVG)   = 'Time_averaged'
     tzbudiachro%ccomments(NLVL_TIMEAVG)   = 'Values are time averaged'
   else
-    tzbudiachro%clevels  (NLVL_TIMEAVG)   = 'Not time averaged'
+    tzbudiachro%clevels  (NLVL_TIMEAVG)   = 'Not_time_averaged'
     tzbudiachro%ccomments(NLVL_TIMEAVG)   = 'Values are not time averaged'
   end if
 
@@ -1080,7 +1080,7 @@ if ( iresp == 0 .and. any( zfield /= XUNDEF ) ) then
     !Type of normalization is stored in the attribute "normalization" in Write_diachro
     tzbudiachro%ccomments(NLVL_NORM)      = 'Values are normalized'
   else
-    tzbudiachro%clevels  (NLVL_NORM)      = 'Not normalized'
+    tzbudiachro%clevels  (NLVL_NORM)      = 'Not_normalized'
     tzbudiachro%ccomments(NLVL_NORM)      = 'Values are not normalized'
   end if
 
@@ -1289,7 +1289,7 @@ if ( gavg ) then
 end if
 
 tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
-tzbudiachro%clevels  (NLVL_CATEGORY)    = 'LES budgets'
+tzbudiachro%clevels  (NLVL_CATEGORY)    = 'LES_budgets'
 tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different LES budgets'
 
 tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
@@ -1301,20 +1301,20 @@ tzbudiachro%clevels  (NLVL_GROUP)       = ''
 tzbudiachro%ccomments(NLVL_GROUP)       = ''
 
 tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
-tzbudiachro%clevels  (NLVL_SHAPE)       = 'Two-point correlation'
+tzbudiachro%clevels  (NLVL_SHAPE)       = 'Two_point_correlation'
 tzbudiachro%ccomments(NLVL_SHAPE)       = ''
 
 tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .true.
 if ( gavg ) then
-  tzbudiachro%clevels  (NLVL_TIMEAVG)   = 'Time averaged'
+  tzbudiachro%clevels  (NLVL_TIMEAVG)   = 'Time_averaged'
   tzbudiachro%ccomments(NLVL_TIMEAVG)   = 'Values are time averaged'
 else
-  tzbudiachro%clevels  (NLVL_TIMEAVG)   = 'Not time averaged'
+  tzbudiachro%clevels  (NLVL_TIMEAVG)   = 'Not_time_averaged'
   tzbudiachro%ccomments(NLVL_TIMEAVG)   = 'Values are not time averaged'
 end if
 
 tzbudiachro%lleveluse(NLVL_NORM)        = .true.
-tzbudiachro%clevels  (NLVL_NORM)        = 'Not normalized'
+tzbudiachro%clevels  (NLVL_NORM)        = 'Not_normalized'
 tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
 
 tzbudiachro%lleveluse(NLVL_MASK)        = .false.
@@ -1480,7 +1480,7 @@ tzfield%clongname = ygroup
 tzfield%ccomment  = ycomment(:)
 
 tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
-tzbudiachro%clevels  (NLVL_CATEGORY)    = 'LES budgets'
+tzbudiachro%clevels  (NLVL_CATEGORY)    = 'LES_budgets'
 tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different LES budgets'
 
 tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
@@ -1496,11 +1496,11 @@ tzbudiachro%clevels  (NLVL_SHAPE)       = 'Spectrum'
 tzbudiachro%ccomments(NLVL_SHAPE)       = ''
 
 tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .true.
-tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not time averaged'
+tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not_time_averaged'
 tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are not time averaged'
 
 tzbudiachro%lleveluse(NLVL_NORM)        = .true.
-tzbudiachro%clevels  (NLVL_NORM)        = 'Not normalized'
+tzbudiachro%clevels  (NLVL_NORM)        = 'Not_normalized'
 tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
 
 tzbudiachro%lleveluse(NLVL_MASK)        = .false.
@@ -1542,7 +1542,7 @@ do ji = 1, NMNHMAXDIMS
 end do
 
 tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
-tzbudiachro%clevels  (NLVL_CATEGORY)    = 'LES budgets'
+tzbudiachro%clevels  (NLVL_CATEGORY)    = 'LES_budgets'
 tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different LES budgets'
 
 tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
@@ -1558,11 +1558,11 @@ tzbudiachro%clevels  (NLVL_SHAPE)       = 'Spectrum'
 tzbudiachro%ccomments(NLVL_SHAPE)       = ''
 
 tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .true.
-tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Time averaged'
+tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Time_averaged'
 tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are time averaged'
 
 tzbudiachro%lleveluse(NLVL_NORM)        = .true.
-tzbudiachro%clevels  (NLVL_NORM)        = 'Not normalized'
+tzbudiachro%clevels  (NLVL_NORM)        = 'Not_normalized'
 tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
 
 tzbudiachro%lleveluse(NLVL_MASK)        = .false.
