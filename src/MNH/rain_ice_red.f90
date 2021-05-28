@@ -677,7 +677,7 @@ ENDIF
 !  optimization by looking for locations where
 !  the microphysical fields are larger than a minimal value only !!!
 !
-!IMICRO=0
+IMICRO=0
 IF(KSIZE/=0) IMICRO=COUNTJV(ODMICRO(:,:,:), I1(:), I2(:), I3(:))
 !Packing
 IF(IMICRO>0) THEN
