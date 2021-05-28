@@ -439,26 +439,29 @@ integer,          intent(in)    :: kidx     !Position of the dimension in the li
 character(len=*), intent(in)    :: hdimname !Name of the dimension
 integer,          intent(in)    :: klen     !Length of the dimension
 
+character(len=Len(hdimname))  :: ydimname_clean
 integer(kind=CDFINT)          :: istatus
 
+
+call IO_Mnhname_clean( hdimname, ydimname_clean )
 
 if ( .not.Associated( tpfile%tncdims ) ) &
   call Print_msg( NVERB_FATAL, 'IO', 'IO_Add_dim_nc4', 'tncdims not associated for ' // Trim( tpfile%cname ) )
 
 if ( kidx < 1 .or. kidx > Size( tpfile%tncdims%tdims ) )                                                      &
-  call Print_msg( NVERB_FATAL, 'IO', 'IO_Add_dim_nc4', 'index out of range for dimension ' // Trim( hdimname ) // &
+  call Print_msg( NVERB_FATAL, 'IO', 'IO_Add_dim_nc4', 'index out of range for dimension ' // Trim( ydimname_clean ) // &
                   ' of file ' //Trim( tpfile%cname ) )
 
 if ( tpfile%tncdims%tdims(kidx)%nlen /= -1 .or. tpfile%tncdims%tdims(kidx)%nid /= -1 ) &
-  call Print_msg( NVERB_WARNING, 'IO', 'IO_Add_dim_nc4', 'dimension ' // Trim( hdimname ) //   &
+  call Print_msg( NVERB_WARNING, 'IO', 'IO_Add_dim_nc4', 'dimension ' // Trim( ydimname_clean ) //   &
                   ' already defined for file ' //Trim( tpfile%cname ) )
 
-tpfile%tncdims%tdims(kidx)%cname = hdimname
+tpfile%tncdims%tdims(kidx)%cname = ydimname_clean
 tpfile%tncdims%tdims(kidx)%nlen  = Int( klen, kind = CDFINT )
 
-istatus = NF90_DEF_DIM( tpfile%nncid, Trim( hdimname ), Int( klen, kind = CDFINT ), tpfile%tncdims%tdims(kidx)%nid )
+istatus = NF90_DEF_DIM( tpfile%nncid, Trim( ydimname_clean ), Int( klen, kind = CDFINT ), tpfile%tncdims%tdims(kidx)%nid )
 if ( istatus /= NF90_NOERR ) &
-  call IO_Err_handle_nc4( istatus, 'IO_Add_dim_nc4', 'NF90_DEF_DIM', Trim( hdimname ) )
+  call IO_Err_handle_nc4( istatus, 'IO_Add_dim_nc4', 'NF90_DEF_DIM', Trim( ydimname_clean ) )
 
 end subroutine IO_Add_dim_nc4
 
@@ -653,7 +656,8 @@ integer(kind=CDFINT),       intent(in) :: klen
 CHARACTER(LEN=*), OPTIONAL, INTENT(IN) :: HDIMNAME
 integer, intent(out) :: kidx !Position of the dimension in the dimension array
 
-character(len=16)     :: ysuffix
+character(len=:), allocatable :: ydimname_clean
+character(len=16)             :: ysuffix
 integer :: inewsize
 integer :: ji
 integer(kind=CDFINT)  :: istatus
@@ -662,10 +666,12 @@ type(tdimnc), dimension(:), allocatable :: tzncdims
 
 kidx = -1
 
+if ( Present( hdimname ) ) call IO_Mnhname_clean( hdimname, ydimname_clean )
+
 do ji = 1, Size( tpfile%tncdims%tdims )
   if ( tpfile%tncdims%tdims(ji)%nlen == klen ) then
     if ( Present( hdimname ) ) then
-      if ( hdimname == Trim( tpfile%tncdims%tdims(ji)%cname ) ) then
+      if ( ydimname_clean == Trim( tpfile%tncdims%tdims(ji)%cname ) ) then
         kidx = ji
         exit
       end if
@@ -680,9 +686,9 @@ if ( kidx == - 1 ) then
   !Check if already exist with the provided name (if so => error)
   if ( Present( hdimname ) ) then
     do ji = 1, Size( tpfile%tncdims%tdims )
-      if ( hdimname == Trim( tpfile%tncdims%tdims(ji)%cname ) )                             &
+      if ( ydimname_clean == Trim( tpfile%tncdims%tdims(ji)%cname ) )                             &
         call Print_msg( NVERB_ERROR, 'IO', 'IO_Dim_find_create_nc4', 'dimension '          &
-                        // Trim( hdimname ) // ' already exist but with a different size' )
+                        // Trim( ydimname_clean ) // ' already exist but with a different size' )
     end do
   end if
 
@@ -692,7 +698,7 @@ if ( kidx == - 1 ) then
   tzncdims(1 : inewsize - 1) = tpfile%tncdims%tdims(:)
 
   if ( Present( hdimname ) ) then
-    tzncdims(inewsize)%cname = Trim( hdimname )
+    tzncdims(inewsize)%cname = Trim( ydimname_clean )
   else
     Write( ysuffix, '( i0 )' ) klen
     tzncdims(inewsize)%cname = 'size' // Trim( ysuffix )

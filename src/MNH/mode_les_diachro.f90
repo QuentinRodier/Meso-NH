@@ -1301,7 +1301,7 @@ tzbudiachro%clevels  (NLVL_GROUP)       = ''
 tzbudiachro%ccomments(NLVL_GROUP)       = ''
 
 tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
-tzbudiachro%clevels  (NLVL_SHAPE)       = '2-point correlation'
+tzbudiachro%clevels  (NLVL_SHAPE)       = 'Two-point correlation'
 tzbudiachro%ccomments(NLVL_SHAPE)       = ''
 
 tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .true.

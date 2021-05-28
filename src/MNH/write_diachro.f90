@@ -1795,45 +1795,48 @@ use NETCDF,            only: NF90_GET_ATT, NF90_INQUIRE_ATTRIBUTE, NF90_PUT_ATT,
 
 use modd_precision,    only: CDFINT
 
-use mode_io_tools_nc4, only: IO_Err_handle_nc4
+use mode_io_tools_nc4, only: IO_Err_handle_nc4, IO_Mnhname_clean
 
 character(len=*),     intent(in) :: hlevel
 integer(kind=CDFINT), intent(in) :: kgrpid
 character(len=*),     intent(in) :: hattname
 character(len=*),     intent(in) :: hdata
 
+character(len=Len(hattname))  :: yattname
 character(len=:), allocatable :: yatt
 integer(kind=CDFINT)          :: ilen
 integer(kind=CDFINT)          :: istatus
 integer(kind=CDFINT)          :: itype
 
-istatus = NF90_INQUIRE_ATTRIBUTE( kgrpid, NF90_GLOBAL, hattname, xtype = itype, len = ilen )
+call IO_Mnhname_clean( hattname, yattname )
+
+istatus = NF90_INQUIRE_ATTRIBUTE( kgrpid, NF90_GLOBAL, yattname, xtype = itype, len = ilen )
 if (istatus == NF90_NOERR ) then
-  call Print_msg( NVERB_DEBUG, 'IO', 'Write_diachro_nc4', 'attribute ' // hattname // ' already exists for ' // Trim( hlevel ) )
+  call Print_msg( NVERB_DEBUG, 'IO', 'Write_diachro_nc4', 'attribute ' // yattname // ' already exists for ' // Trim( hlevel ) )
 
   if ( itype /= NF90_CHAR ) then
-    call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', 'type for attribute ' // hattname // &
+    call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', 'type for attribute ' // yattname // &
                     ' has changed for ' // Trim( hlevel ) )
     return
   end if
 
   Allocate( character(len=ilen) :: yatt )
-  istatus = NF90_GET_ATT( kgrpid, NF90_GLOBAL, hattname, yatt )
+  istatus = NF90_GET_ATT( kgrpid, NF90_GLOBAL, yattname, yatt )
   if ( yatt == Trim( hdata ) ) then
-    call Print_msg( NVERB_DEBUG, 'IO', 'Write_diachro_nc4', 'attribute ' // hattname // ' is unchanged for ' // Trim( hlevel ) )
+    call Print_msg( NVERB_DEBUG, 'IO', 'Write_diachro_nc4', 'attribute ' // yattname // ' is unchanged for ' // Trim( hlevel ) )
     !If unchanged, no need to write it again => return
     return
   else
-    cmnhmsg(1) = 'attribute ' // hattname // ' has changed for ' // Trim( hlevel )
+    cmnhmsg(1) = 'attribute ' // yattname // ' has changed for ' // Trim( hlevel )
     cmnhmsg(2) = yatt // ' -> ' // Trim( hdata )
     call Print_msg( NVERB_WARNING, 'IO', 'Write_diachro_nc4' )
   end if
 
 end if
 
-istatus = NF90_PUT_ATT( kgrpid, NF90_GLOBAL, hattname, Trim( hdata ) )
+istatus = NF90_PUT_ATT( kgrpid, NF90_GLOBAL, yattname, Trim( hdata ) )
 if (istatus /= NF90_NOERR ) &
- call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', Trim( hattname ) // ' for '// Trim( hlevel ) // ' group' )
+ call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', Trim( yattname ) // ' for '// Trim( hlevel ) // ' group' )
 
 end subroutine Att_write_c0
 
@@ -1843,50 +1846,53 @@ use NETCDF,            only: NF90_GET_ATT, NF90_INQUIRE_ATTRIBUTE, NF90_PUT_ATT,
 
 use modd_precision,    only: CDFINT, MNHINT_NF90
 
-use mode_io_tools_nc4, only: IO_Err_handle_nc4
+use mode_io_tools_nc4, only: IO_Err_handle_nc4, IO_Mnhname_clean
 
 character(len=*),     intent(in) :: hlevel
 integer(kind=CDFINT), intent(in) :: kgrpid
 character(len=*),     intent(in) :: hattname
 integer,              intent(in) :: kdata
 
+character(len=Len(hattname)) :: yattname
 integer              :: iatt
 integer(kind=CDFINT) :: ilen
 integer(kind=CDFINT) :: istatus
 integer(kind=CDFINT) :: itype
 
-istatus = NF90_INQUIRE_ATTRIBUTE( kgrpid, NF90_GLOBAL, hattname, xtype = itype, len = ilen )
+call IO_Mnhname_clean( hattname, yattname )
+
+istatus = NF90_INQUIRE_ATTRIBUTE( kgrpid, NF90_GLOBAL, yattname, xtype = itype, len = ilen )
 if (istatus == NF90_NOERR ) then
-  call Print_msg( NVERB_DEBUG, 'IO', 'Write_diachro_nc4', 'attribute ' // hattname // ' already exists for ' // Trim( hlevel ) )
+  call Print_msg( NVERB_DEBUG, 'IO', 'Write_diachro_nc4', 'attribute ' // yattname // ' already exists for ' // Trim( hlevel ) )
 
   if ( itype /= MNHINT_NF90 ) then
-    call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', 'type for attribute ' // hattname // &
+    call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', 'type for attribute ' // yattname // &
                     ' has changed for ' // Trim( hlevel ) )
     return
   end if
 
   if ( ilen /= 1 ) then
-    call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', 'size of attribute ' // hattname // &
+    call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', 'size of attribute ' // yattname // &
                     ' has changed for ' // Trim( hlevel ) )
     return
   end if
 
-  istatus = NF90_GET_ATT( kgrpid, NF90_GLOBAL, hattname, iatt )
+  istatus = NF90_GET_ATT( kgrpid, NF90_GLOBAL, yattname, iatt )
   if ( iatt == kdata ) then
-    call Print_msg( NVERB_DEBUG, 'IO', 'Write_diachro_nc4', 'attribute ' // hattname // ' is unchanged for ' // Trim( hlevel ) )
+    call Print_msg( NVERB_DEBUG, 'IO', 'Write_diachro_nc4', 'attribute ' // yattname // ' is unchanged for ' // Trim( hlevel ) )
     !If unchanged, no need to write it again => return
     return
   else
-    cmnhmsg(1) = 'attribute ' // hattname // ' has changed for ' // Trim( hlevel )
+    cmnhmsg(1) = 'attribute ' // yattname // ' has changed for ' // Trim( hlevel )
     Write( cmnhmsg(2), '( I0, " -> ", I0 )' ) iatt, kdata
     call Print_msg( NVERB_WARNING, 'IO', 'Write_diachro_nc4' )
   end if
 
 end if
 
-istatus = NF90_PUT_ATT( kgrpid, NF90_GLOBAL, hattname, kdata )
+istatus = NF90_PUT_ATT( kgrpid, NF90_GLOBAL, yattname, kdata )
 if (istatus /= NF90_NOERR ) &
- call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', Trim( hattname ) // ' for '// Trim( hlevel ) // ' group' )
+ call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', Trim( yattname ) // ' for '// Trim( hlevel ) // ' group' )
 
 end subroutine Att_write_i0
 
@@ -1896,50 +1902,53 @@ use NETCDF,            only: NF90_GET_ATT, NF90_INQUIRE_ATTRIBUTE, NF90_PUT_ATT,
 
 use modd_precision,    only: CDFINT, MNHREAL_NF90
 
-use mode_io_tools_nc4, only: IO_Err_handle_nc4
+use mode_io_tools_nc4, only: IO_Err_handle_nc4, IO_Mnhname_clean
 
 character(len=*),     intent(in) :: hlevel
 integer(kind=CDFINT), intent(in) :: kgrpid
 character(len=*),     intent(in) :: hattname
 real,                 intent(in) :: pdata
 
+character(len=Len(hattname)) :: yattname
 integer(kind=CDFINT) :: ilen
 integer(kind=CDFINT) :: istatus
 integer(kind=CDFINT) :: itype
 real                 :: zatt
 
-istatus = NF90_INQUIRE_ATTRIBUTE( kgrpid, NF90_GLOBAL, hattname, xtype = itype, len = ilen )
+call IO_Mnhname_clean( hattname, yattname )
+
+istatus = NF90_INQUIRE_ATTRIBUTE( kgrpid, NF90_GLOBAL, yattname, xtype = itype, len = ilen )
 if (istatus == NF90_NOERR ) then
-  call Print_msg( NVERB_DEBUG, 'IO', 'Write_diachro_nc4', 'attribute ' // hattname // ' already exists for ' // Trim( hlevel ) )
+  call Print_msg( NVERB_DEBUG, 'IO', 'Write_diachro_nc4', 'attribute ' // yattname // ' already exists for ' // Trim( hlevel ) )
 
   if ( itype /= MNHREAL_NF90 ) then
-    call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', 'type for attribute ' // hattname // &
+    call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', 'type for attribute ' // yattname // &
                     ' has changed for ' // Trim( hlevel ) )
     return
   end if
 
   if ( ilen /= 1 ) then
-    call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', 'size of attribute ' // hattname // &
+    call Print_msg( NVERB_ERROR, 'IO', 'Write_diachro_nc4', 'size of attribute ' // yattname // &
                     ' has changed for ' // Trim( hlevel ) )
     return
   end if
 
-  istatus = NF90_GET_ATT( kgrpid, NF90_GLOBAL, hattname, zatt )
+  istatus = NF90_GET_ATT( kgrpid, NF90_GLOBAL, yattname, zatt )
   if ( zatt == pdata ) then
-    call Print_msg( NVERB_DEBUG, 'IO', 'Write_diachro_nc4', 'attribute ' // hattname // ' is unchanged for ' // Trim( hlevel ) )
+    call Print_msg( NVERB_DEBUG, 'IO', 'Write_diachro_nc4', 'attribute ' // yattname // ' is unchanged for ' // Trim( hlevel ) )
     !If unchanged, no need to write it again => return
     return
   else
-    cmnhmsg(1) = 'attribute ' // hattname // ' has changed for ' // Trim( hlevel )
+    cmnhmsg(1) = 'attribute ' // yattname // ' has changed for ' // Trim( hlevel )
     Write( cmnhmsg(2), '( F15.7, " -> ", F15.7 )' ) zatt, pdata
     call Print_msg( NVERB_WARNING, 'IO', 'Write_diachro_nc4' )
   end if
 
 end if
 
-istatus = NF90_PUT_ATT( kgrpid, NF90_GLOBAL, hattname, pdata )
+istatus = NF90_PUT_ATT( kgrpid, NF90_GLOBAL, yattname, pdata )
 if (istatus /= NF90_NOERR ) &
- call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', Trim( hattname ) // ' for '// Trim( hlevel ) // ' group' )
+ call IO_Err_handle_nc4( istatus, 'Write_diachro_nc4', 'NF90_PUT_ATT', Trim( yattname ) // ' for '// Trim( hlevel ) // ' group' )
 
 end subroutine Att_write_x0
 
@@ -1949,27 +1958,30 @@ use NETCDF,            only: NF90_DEF_GRP, NF90_INQ_NCID, NF90_NOERR
 
 use modd_precision,    only: CDFINT
 
-use mode_io_tools_nc4, only: IO_Err_handle_nc4
+use mode_io_tools_nc4, only: IO_Err_handle_nc4, IO_Mnhname_clean
 
 integer(kind=CDFINT), intent(in)    :: kpreviouslevelid
 logical,              intent(in)    :: gpreviousleveldefined
 logical,              intent(in)    :: oleveluse
+! character(len=*),     intent(inout) :: hlevelname
 character(len=*),     intent(in)    :: hlevelname
 logical,              intent(out)   :: gleveldefined
 integer(kind=CDFINT), intent(out)   :: klevelid
 
+character(len=Len(hlevelname)) :: ylevelname
 integer(kind=CDFINT) :: istatus
 
+call IO_Mnhname_clean( hlevelname, ylevelname )
 
 if ( oleveluse ) then
-  istatus = NF90_INQ_NCID( kpreviouslevelid, Trim( hlevelname ), klevelid )
+  istatus = NF90_INQ_NCID( kpreviouslevelid, Trim( ylevelname ), klevelid )
   if ( istatus == NF90_NOERR ) then
     gleveldefined = .true.
   else
     gleveldefined = .false.
-    istatus = NF90_DEF_GRP( kpreviouslevelid, Trim( hlevelname ), klevelid )
+    istatus = NF90_DEF_GRP( kpreviouslevelid, Trim( ylevelname ), klevelid )
     if ( istatus /= NF90_NOERR ) &
-      call IO_Err_handle_nc4( istatus, 'Move_to_next_level', 'NF90_DEF_GRP', 'for ' // Trim( hlevelname ) )
+      call IO_Err_handle_nc4( istatus, 'Move_to_next_level', 'NF90_DEF_GRP', 'for ' // Trim( ylevelname ) )
   end if
 else
   gleveldefined = gpreviousleveldefined

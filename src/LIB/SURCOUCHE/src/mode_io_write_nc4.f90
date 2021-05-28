@@ -2281,11 +2281,14 @@ subroutine Write_flyer_time_coord( tpflyer )
   use modd_aircraft_balloon
   use modd_parameters,       only: NBUNAMELGTMAX, XUNDEF
 
+  use mode_io_tools_nc4,     only: IO_Mnhname_clean
+
   use modi_aircraft_balloon, only: Aircraft_balloon_longtype_get
 
   type(flyer), intent(in) :: tpflyer
 
   character(len=NBUNAMELGTMAX) :: ytype
+  character(len=NBUNAMELGTMAX) :: ytype_clean
   integer                      :: istatus
   integer(kind=CDFINT)         :: icatid
   integer(kind=CDFINT)         :: isubcatid
@@ -2303,10 +2306,11 @@ subroutine Write_flyer_time_coord( tpflyer )
     end if
 
     call Aircraft_balloon_longtype_get( tpflyer, ytype )
-    istatus = NF90_INQ_NCID( icatid, Trim( ytype ), isubcatid )
+    call IO_Mnhname_clean( ytype, ytype_clean )
+    istatus = NF90_INQ_NCID( icatid, Trim( ytype_clean ), isubcatid )
     if ( istatus /= NF90_NOERR ) then
       call Print_msg( NVERB_ERROR, 'IO', 'Write_flyer_time_coord', &
-                      Trim( tpfile%cname ) // ': group ' // Trim( ytype ) // ' not found' )
+                      Trim( tpfile%cname ) // ': group ' // Trim( ytype_clean ) // ' not found' )
     end if
 
     istatus = NF90_INQ_NCID( isubcatid, Trim( tpflyer%title ), incid )
