@@ -869,20 +869,15 @@ subroutine IO_Mnhname_clean( hinname, houtname )
     yresult = Str_replace( yresult, '*', 'star' )
     yresult = Str_replace( Trim( yresult ), ' ', '_' ) !Trim to prevent problem with spaces at the end of the string
 
-    cmnhmsg(1) = 'name (' // Trim( hinname) // ') contains characters not allowed in CF convention'
-    cmnhmsg(2) = 'Allowed: alphanumeric + underscore'
-
     !Chek corrected name
     ipos = Verify( Trim( yresult ), 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_' )
 
     if ( ipos == 0 ) then
-      cmnhmsg(3) = 'Trying to correct => successful'
-      cmnhmsg(4) = Trim( hinname ) // '->' // Trim( yresult )
-      call Print_msg( NVERB_DEBUG, 'IO', 'IO_Mnhname_clean' )
+      call Print_msg( NVERB_INFO, 'IO', 'IO_Mnhname_clean', "Renaming to comply with CF convention: '" &
+                      // Trim( hinname ) // "' -> '" // Trim( yresult ) // "'" )
     else
-      cmnhmsg(3) = 'Trying to correct => FAILED'
-      cmnhmsg(4) = Trim( hinname ) // '->' // Trim( yresult )
-      call Print_msg( NVERB_WARNING, 'IO', 'IO_Mnhname_clean' )
+      call Print_msg( NVERB_WARNING, 'IO', 'IO_Mnhname_clean', "Renaming to comply with CF convention FAILED: '" &
+                      // Trim( hinname ) // "' -> '" // Trim( yresult ) // "'" )
     end if
   else
     yresult = Trim( hinname )
