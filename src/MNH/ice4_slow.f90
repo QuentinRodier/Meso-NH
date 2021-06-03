@@ -114,7 +114,7 @@ REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PA_RG
 !*       0.2  declaration of local variables
 !
 REAL, DIMENSION(KSIZE) :: ZCRIAUTI, ZMASK
-REAL                   :: ZTIMAUTIC,ZRCHONI
+REAL                   :: ZTIMAUTIC
 INTEGER                :: JL
 !-------------------------------------------------------------------------------
 !
@@ -136,15 +136,14 @@ IF(LDSOFT) THEN
 ELSE
   PRCHONI(:) = 0.
   WHERE(ZMASK(:)==1.)
-    PRCHONI(:) = XHON*PRHODREF(:)*PRCT(:)       &
-                                 *EXP( XALPHA3*(PT(:)-XTT)-XBETA3 )
+    PRCHONI(:) = MIN(1000.,XHON*PRHODREF(:)*PRCT(:)       &
+                                 *EXP( XALPHA3*(PT(:)-XTT)-XBETA3 ))
   ENDWHERE
 ENDIF
 DO JL=1, KSIZE
-  ZRCHONI=MIN(PRCHONI(JL),1000.)
-  PA_RI(JL) = PA_RI(JL) + ZRCHONI
-  PA_RC(JL) = PA_RC(JL) - ZRCHONI
-  PA_TH(JL) = PA_TH(JL) + ZRCHONI*(PLSFACT(JL)-PLVFACT(JL))
+  PA_RI(JL) = PA_RI(JL) + PRCHONI(JL)
+  PA_RC(JL) = PA_RC(JL) - PRCHONI(JL)
+  PA_TH(JL) = PA_TH(JL) + PRCHONI(JL)*(PLSFACT(JL)-PLVFACT(JL))
 ENDDO
 !
 !*       3.4    compute the deposition, aggregation and autoconversion sources
