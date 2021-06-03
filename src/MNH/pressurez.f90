@@ -563,12 +563,10 @@ END IF
 !
 IF ( HLBCX(1) /= 'CYCL' ) THEN
   IF(LWEST_ll()) THEN
-!    ZPHIT(IIB-1,:,    :) = ZPHIT(IIB,:,  :)
     ZPHIT(IIB-1,:,IKB-1) = ZPHIT(IIB,:,IKB)
     ZPHIT(IIB-1,:,IKE+1) = ZPHIT(IIB,:,IKE)
   ENDIF    
   IF(LEAST_ll()) THEN
-!    ZPHIT(IIE+1,:,    :) = ZPHIT(IIE,:,  :)
     ZPHIT(IIE+1,:,IKB-1) = ZPHIT(IIE,:,IKB)
     ZPHIT(IIE+1,:,IKE+1) = ZPHIT(IIE,:,IKE)
   ENDIF
@@ -576,15 +574,18 @@ ENDIF
 !
 IF ( HLBCY(1) /= 'CYCL' ) THEN
   IF (LSOUTH_ll()) THEN
-!    ZPHIT(:,IJB-1,    :) = ZPHIT(:,IJB,  :)
     ZPHIT(:,IJB-1,IKB-1) = ZPHIT(:,IJB,IKB)
     ZPHIT(:,IJB-1,IKE+1) = ZPHIT(:,IJB,IKE)    
   ENDIF
   IF (LNORTH_ll()) THEN
-!    ZPHIT(:,IJE+1,    :) = ZPHIT(:,IJE,  :)
     ZPHIT(:,IJE+1,IKB-1) = ZPHIT(:,IJE,IKB)
     ZPHIT(:,IJE+1,IKE+1) = ZPHIT(:,IJE,IKE)  
   ENDIF  
+ENDIF
+!
+IF ( L2D ) THEN
+  IF (LSOUTH_ll()) ZPHIT(:,IJB-1,:) = ZPHIT(:,IJB,:)
+  IF (LNORTH_ll()) ZPHIT(:,IJE+1,:) = ZPHIT(:,IJB,:)
 ENDIF
 !
 IF (LIBM) THEN
