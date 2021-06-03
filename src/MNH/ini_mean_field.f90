@@ -48,6 +48,8 @@ END MODULE MODI_INI_MEAN_FIELD
 !!    -------------
 !!      Original        11/12/09
 !!                      10/2016 (C.Lac) Add max values
+!!                      02/2021 (T.Nagel) add passive scalar (XSVT) and UW wind component
+!!                      05/2021 (PA.Joulin) add wind turbine variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -75,10 +77,12 @@ XTHM_MEAN = 0.0
 XTEMPM_MEAN = 0.0
 IF (CTURB /= 'NONE') XTKEM_MEAN = 0.0
 XPABSM_MEAN = 0.0
+XSVT_MEAN = 0.0
 !
 XU2_MEAN  = 0.0
 XV2_MEAN  = 0.0
 XW2_MEAN  = 0.0
+XUW_MEAN  = 0.0
 XTH2_MEAN = 0.0
 XTEMP2_MEAN = 0.0
 XPABS2_MEAN = 0.0

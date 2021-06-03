@@ -17,6 +17,7 @@ INTERFACE
                         PTSTEP,PDXHAT,PDYHAT,PZHAT,                   &
                         PUT,PVT,                                      &
                         PLBXUM,PLBYVM,PLBXUS,PLBYVS,                  &
+                        PFLUCTUNW,PFLUCTVNN,PFLUCTUNE,PFLUCTVNS,      &
                         PCPHASE,PCPHASE_PBL,PRHODJ,                   &
                         PTKET,PRUS,PRVS,PRWS                          )
 ! 
@@ -31,6 +32,7 @@ REAL,      DIMENSION(:),  INTENT(IN) :: PDYHAT      ! Y-direc. meshlength
 REAL,      DIMENSION(:),  INTENT(IN) :: PZHAT       ! height level without orography
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PUT,PVT     ! at t
+REAL, DIMENSION(:,:),     INTENT(IN) :: PFLUCTUNW,PFLUCTVNN,PFLUCTUNE,PFLUCTVNS
 !
 ! Lateral Boundary fields at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PLBXUM,PLBYVM    
@@ -58,6 +60,7 @@ END MODULE MODI_RAD_BOUND
                         PTSTEP,PDXHAT,PDYHAT,PZHAT,                   &
                         PUT,PVT,                                      &
                         PLBXUM,PLBYVM,PLBXUS,PLBYVS,                  &
+                        PFLUCTUNW,PFLUCTVNN,PFLUCTUNE,PFLUCTVNS,      &
                         PCPHASE,PCPHASE_PBL,PRHODJ,                   &
                         PTKET,PRUS,PRVS,PRWS                          )
 !     #################################################################
@@ -152,7 +155,8 @@ END MODULE MODI_RAD_BOUND
 !!      Lac.C.       2011     : Adaptation to FIT temporal scheme
 !!      Modification 06/13     (C.Lac)   Introduction of cphase_pbl
 !!      Modification 03/14     (C.Lac)   Replacement of XRIMKMAX by XCARPKMAX 
-!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1                             
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1          
+!!      Modification 02/2021   (T.Nagel)  Add velocity fluctuations for turbulence recycling purpose                  
 !!      
 !-------------------------------------------------------------------------------
 !
@@ -166,6 +170,7 @@ USE MODD_CTURB
 USE MODI_CPHASE_PROFILE
 !
 USE MODE_ll
+USE MODD_RECYCL_PARAM_n
 !
 IMPLICIT NONE
 !
@@ -185,6 +190,7 @@ REAL,      DIMENSION(:),  INTENT(IN) :: PDYHAT      ! Y-direc. meshlength
 REAL,      DIMENSION(:),  INTENT(IN) :: PZHAT       ! height level without orography
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PUT,PVT     ! at t
+REAL, DIMENSION(:,:),     INTENT(IN) :: PFLUCTUNW,PFLUCTVNN,PFLUCTUNE,PFLUCTVNS
 !
 ! Lateral Boundary fields at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PLBXUM,PLBYVM    
@@ -289,12 +295,12 @@ SELECT CASE ( HLBCX(1) )
     IF ( SIZE(PLBXUS,1) == 0 ) THEN
       ZLBEU (:,:) = 0.
       ZLBGU (:,:) = PLBXUM(JPHEXT+1,:,:) - PLBXUM(JPHEXT,:,:)  ! 2 - 1
-      ZLBXU(:,:)  = PLBXUM(JPHEXT,:,:) ! 1
+      ZLBXU(:,:)  = PLBXUM(JPHEXT,:,:)+PFLUCTUNW*XRCOEFF
     ELSE
       ZLBEU (:,:) = PLBXUS(JPHEXT,:,:) ! 1
       ZLBGU (:,:) = PLBXUM(JPHEXT+1,:,:) - PLBXUM(JPHEXT,:,:) +  & ! 2 -  1
                       PTSTEP * (PLBXUS(JPHEXT+1,:,:) - PLBXUS(JPHEXT,:,:)) ! 2 - 1
-      ZLBXU(:,:)  = PLBXUM(JPHEXT,:,:) + PTSTEP * PLBXUS(JPHEXT,:,:) ! 1  + 1
+      ZLBXU(:,:)  = PLBXUM(JPHEXT,:,:)+ PTSTEP *PLBXUS(JPHEXT,:,:)+PFLUCTUNW*XRCOEFF ! 1  + 1
     END IF
 !  
 !     ============================================================
@@ -358,12 +364,12 @@ SELECT CASE ( HLBCX(2) )
     IF (SIZE(PLBXUS,1) == 0 ) THEN
       ZLBEU (:,:) = 0.
       ZLBGU (:,:) = PLBXUM(ILBX-JPHEXT+1,:,:) - PLBXUM(ILBX-JPHEXT,:,:) ! ILBX / (ILBX-1
-      ZLBXU(:,:)  = PLBXUM(ILBX-JPHEXT+1,:,:)
+      ZLBXU(:,:)  = PLBXUM(ILBX-JPHEXT+1,:,:)+PFLUCTUNE*XRCOEFF
     ELSE
       ZLBEU (:,:) = PLBXUS(ILBX-JPHEXT+1,:,:)
       ZLBGU (:,:) = PLBXUM(ILBX-JPHEXT+1,:,:) - PLBXUM(ILBX-JPHEXT,:,:) +  &
                       PTSTEP * (PLBXUS(ILBX-JPHEXT+1,:,:) - PLBXUS(ILBX-JPHEXT,:,:))
-      ZLBXU(:,:)  = PLBXUM(ILBX-JPHEXT+1,:,:) + PTSTEP * PLBXUS(ILBX-JPHEXT+1,:,:)
+      ZLBXU(:,:)  = PLBXUM(ILBX-JPHEXT+1,:,:) + PTSTEP * PLBXUS(ILBX-JPHEXT+1,:,:)+PFLUCTUNE*XRCOEFF
     END IF
 !     
 !     ============================================================
@@ -426,12 +432,12 @@ SELECT CASE ( HLBCY(1) )
     IF ( SIZE(PLBYVS,1) == 0 ) THEN
       ZLBEV (:,:) = 0.
       ZLBGV (:,:) = PLBYVM(:,JPHEXT+1,:) - PLBYVM(:,JPHEXT,:) 
-      ZLBYV(:,:)  = PLBYVM(:,JPHEXT,:)
+      ZLBYV(:,:)  = PLBYVM(:,JPHEXT,:)+PFLUCTVNS*XRCOEFF
     ELSE
       ZLBEV (:,:) = PLBYVS(:,JPHEXT,:)
       ZLBGV (:,:) = PLBYVM(:,JPHEXT+1,:) - PLBYVM(:,JPHEXT,:) +  &
                       PTSTEP * (PLBYVS(:,JPHEXT+1,:) - PLBYVS(:,JPHEXT,:))
-      ZLBYV(:,:)  = PLBYVM(:,JPHEXT,:) + PTSTEP * PLBYVS(:,JPHEXT,:)
+      ZLBYV(:,:)  = PLBYVM(:,JPHEXT,:) + PTSTEP * PLBYVS(:,JPHEXT,:)+PFLUCTVNS*XRCOEFF
     END IF
 !  
 !     ============================================================
@@ -494,12 +500,12 @@ SELECT CASE ( HLBCY(2) )
     IF ( SIZE(PLBYVS,1) == 0 ) THEN
       ZLBEV (:,:) = 0.
       ZLBGV (:,:) = PLBYVM(:,ILBY-JPHEXT+1,:) - PLBYVM(:,ILBY-JPHEXT,:) 
-      ZLBYV(:,:)  = PLBYVM(:,ILBY-JPHEXT+1,:)
+      ZLBYV(:,:)  = PLBYVM(:,ILBY-JPHEXT+1,:)+PFLUCTVNN*XRCOEFF
     ELSE
       ZLBEV (:,:) = PLBYVS(:,ILBY-JPHEXT+1,:)
       ZLBGV (:,:) = PLBYVM(:,ILBY-JPHEXT+1,:) - PLBYVM(:,ILBY-JPHEXT,:) +  &
                       PTSTEP * (PLBYVS(:,ILBY-JPHEXT+1,:) - PLBYVS(:,ILBY-JPHEXT,:))
-      ZLBYV(:,:)  = PLBYVM(:,ILBY-JPHEXT+1,:) + PTSTEP * PLBYVS(:,ILBY-JPHEXT+1,:)
+      ZLBYV(:,:)  = PLBYVM(:,ILBY-JPHEXT+1,:) + PTSTEP *PLBYVS(:,ILBY-JPHEXT+1,:)+PFLUCTVNN*XRCOEFF
     END IF
 !  
 !     ============================================================

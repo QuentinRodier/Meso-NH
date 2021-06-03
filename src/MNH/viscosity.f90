@@ -92,6 +92,7 @@ SUBROUTINE VISCOSITY(HLBCX, HLBCY, KRR, KSV, PNU, PPRANDTL,          &
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !  P. Wautelet 08/11/2019: corrected wrong budget name VISC_BU_RU -> VISC_BU_RTH
 !  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
+!       02/21 (T.Nagel) Add adhesion condition in case of an IBM-obstacle at the domain top boundary
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -261,6 +262,8 @@ IF (OVISC_UVW) THEN
       ZY1 = MXF(PUT)
       IF (ODRAG) THEN
          ZY1(:,:,1) = PDRAG * ZY1(:,:,2)
+!!Add adhesion condition in case of an IBM-obstacle at the domain top boundary
+!         ZY1(:,:,IKU) = PDRAG * ZY1(:,:,IKE)
       ENDIF
 !
 ! 

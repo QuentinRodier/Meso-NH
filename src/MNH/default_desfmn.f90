@@ -208,6 +208,8 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!                   11/2019 C.Lac correction in the drag formula and application to building in addition to tree
 !  P. Wautelet 17/04/2020: move budgets switch values into modd_budget
 !  P. Wautelet 30/06/2020: add NNETURSV, NNEADVSV and NNECONSV variables
+!!                   02/2021 (F.Auguste,T.Nagel) add IBM defaults parameters
+!!                   02/2021 (T.Nagel) add turbulence recycling defaults parameters
 !  P-A Joulin  21/05/2021: add Wind turbines
 !  S. Riette   21/05/2021: add options to PDF subgrid scheme
 !
@@ -259,6 +261,7 @@ USE MODD_EOL_MAIN
 USE MODD_EOL_ADNR
 USE MODD_EOL_ALM
 USE MODD_EOL_SHARED_IO
+USE MODD_ALLSTATION_n
 !
 !
 USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LSEDI, LHHONI, LSNOW, LHAIL, LMEYERS,&
@@ -285,6 +288,9 @@ USE MODD_BLOWSNOW
 USE MODD_BLOWSNOW_n
 USE MODD_DRAG_n
 USE MODD_VISCOSITY
+USE MODD_RECYCL_PARAM_n
+USE MODD_IBM_PARAM_n
+USE MODD_IBM_LSF
 #ifdef MNH_FOREFIRE
 USE MODD_FOREFIRE
 #endif
@@ -511,6 +517,7 @@ XTNUDGING = 21600.
 XIMPL     = 1.
 XKEMIN    = 0.01
 XCEDIS    = 0.84
+XCADAP    = 0.5
 CTURBLEN  = 'BL89'
 CTURBDIM  = '1DIM'
 LTURB_FLX =.FALSE.
@@ -566,6 +573,22 @@ NNB_BLAELT        =  42
 LTIMESPLIT        = .FALSE.
 LTIPLOSSG         = .TRUE.
 LTECOUTPTS        = .FALSE.
+!
+!------------------------------------------------------------------------------
+!*      10.e   SET DEFAULT VALUES FOR MODD_ALLSTATION_n :
+!             ----------------------------------
+!
+NNUMB_STAT     = 0
+XSTEP_STAT    = 1.0
+XX_STAT(:)    = XUNDEF
+XY_STAT(:)    = XUNDEF
+XZ_STAT(:)    = XUNDEF
+XLAT_STAT(:)  = XUNDEF
+XLON_STAT(:)  = XUNDEF
+CNAME_STAT(:) ="        "
+CTYPE_STAT(:) ="        "
+CFILE_STAT    ="NO_INPUT_CSV"
+LDIAG_RESULTS = .FALSE.
 !
 !-------------------------------------------------------------------------------
 !
@@ -1208,6 +1231,130 @@ IF (KMI == 1) THEN
   NSTART = 1
   XHSTART = 0.
 ENDIF
+!
+!-------------------------------------------------------------------------------
+!
+!*      31.   SET DEFAULT VALUES FOR MODD_IBM_PARAMn         
+!             --------------------------------------
+!                                                           
+  LIBM           = .FALSE.
+  LIBM_TROUBLE   = .FALSE.
+  CIBM_ADV       = 'NOTHIN'
+  XIBM_EPSI      = 1.E-9
+  XIBM_IEPS      = 1.E+9
+  NIBM_ITR       = 8  
+  XIBM_RUG       = 0.01    ! (m^1.s^-0)
+  XIBM_VISC      = 1.56e-5 ! (m^2.s^-1)
+  XIBM_CNU       = 0.06    ! (m^0.s^-0)  
+
+  NIBM_LAYER_P = 2
+  NIBM_LAYER_Q = 2
+  NIBM_LAYER_R = 2
+  NIBM_LAYER_S = 2
+  NIBM_LAYER_T = 2
+  NIBM_LAYER_E = 2
+  NIBM_LAYER_V = 2
+
+  XIBM_RADIUS_P = 2.
+  XIBM_RADIUS_Q = 2.
+  XIBM_RADIUS_R = 2.
+  XIBM_RADIUS_S = 2.
+  XIBM_RADIUS_T = 2.
+  XIBM_RADIUS_E = 2.
+  XIBM_RADIUS_V = 2.
+
+  XIBM_POWERS_P = 1.
+  XIBM_POWERS_Q = 1.
+  XIBM_POWERS_R = 1.
+  XIBM_POWERS_S = 1.
+  XIBM_POWERS_T = 1.
+  XIBM_POWERS_E = 1.
+  XIBM_POWERS_V = 1.
+
+  CIBM_MODE_INTE3_P = 'LAI'
+  CIBM_MODE_INTE3_Q = 'LAI'
+  CIBM_MODE_INTE3_R = 'LAI'
+  CIBM_MODE_INTE3_S = 'LAI'
+  CIBM_MODE_INTE3_T = 'LAI'
+  CIBM_MODE_INTE3_E = 'LAI'
+  CIBM_MODE_INTE3_V = 'LAI'
+
+  CIBM_MODE_INTE1_P = 'CL2'
+  CIBM_MODE_INTE1_Q = 'CL2'
+  CIBM_MODE_INTE1_R = 'CL2'
+  CIBM_MODE_INTE1_S = 'CL2'
+  CIBM_MODE_INTE1_T = 'CL2'
+  CIBM_MODE_INTE1_E = 'CL2'
+  CIBM_MODE_INTE1NV = 'CL2'
+  CIBM_MODE_INTE1TV = 'CL2'
+  CIBM_MODE_INTE1CV = 'CL2'
+
+  CIBM_MODE_BOUND_P = 'SYM'
+  CIBM_MODE_BOUND_Q = 'SYM'
+  CIBM_MODE_BOUND_R = 'SYM'
+  CIBM_MODE_BOUND_S = 'SYM'
+  CIBM_MODE_BOUND_T = 'SYM'
+  CIBM_MODE_BOUND_E = 'SYM'
+  CIBM_MODE_BOUNT_V = 'ASY'
+  CIBM_MODE_BOUNN_V = 'ASY'
+  CIBM_MODE_BOUNC_V = 'ASY'
+
+  XIBM_FORC_BOUND_P = 0.
+  XIBM_FORC_BOUND_Q = 0.
+  XIBM_FORC_BOUND_R = 0.
+  XIBM_FORC_BOUND_S = 0. 
+  XIBM_FORC_BOUND_T = 0.
+  XIBM_FORC_BOUND_E = 0.
+  XIBM_FORC_BOUNN_V = 0.
+  XIBM_FORC_BOUNT_V = 0.
+  XIBM_FORC_BOUNC_V = 0.
+
+  CIBM_TYPE_BOUND_P = 'NEU'
+  CIBM_TYPE_BOUND_Q = 'NEU'
+  CIBM_TYPE_BOUND_R = 'NEU'
+  CIBM_TYPE_BOUND_S = 'NEU'
+  CIBM_TYPE_BOUND_T = 'NEU'
+  CIBM_TYPE_BOUND_E = 'NEU'
+  CIBM_TYPE_BOUNT_V = 'DIR'
+  CIBM_TYPE_BOUNN_V = 'DIR'
+  CIBM_TYPE_BOUNC_V = 'DIR'
+
+  CIBM_FORC_BOUND_P = 'CST'
+  CIBM_FORC_BOUND_Q = 'CST'
+  CIBM_FORC_BOUND_R = 'CST'
+  CIBM_FORC_BOUND_S = 'CST'
+  CIBM_FORC_BOUND_T = 'CST'
+  CIBM_FORC_BOUND_E = 'CST'
+  CIBM_FORC_BOUNN_V = 'CST'
+  CIBM_FORC_BOUNT_V = 'CST'
+  CIBM_FORC_BOUNC_V = 'CST'
+  CIBM_FORC_BOUNR_V = 'CST'
+
+!
+!-------------------------------------------------------------------------------
+!
+!*      32.   SET DEFAULT VALUES FOR MODD_RECYCL_PARAMn         
+!             --------------------------------------
+!
+  LRECYCL        = .FALSE.
+  LRECYCLN       = .FALSE.
+  LRECYCLW       = .FALSE.
+  LRECYCLE       = .FALSE.
+  LRECYCLS       = .FALSE.
+  XDRECYCLN = 0.
+  XARECYCLN  = 0.
+  XDRECYCLW = 0.
+  XARECYCLW  = 0.
+  XDRECYCLS = 0.
+  XARECYCLS  = 0.
+  XDRECYCLE = 0.
+  XARECYCLE  = 0.
+  XTMOY  = 0.
+  XTMOYCOUNT  = 0.
+  XNUMBELT  = 28.
+  XRCOEFF  = 0.2
+  XTBVTOP = 500.
+  XTBVBOT = 300.
 !
 !
 END SUBROUTINE DEFAULT_DESFM_n

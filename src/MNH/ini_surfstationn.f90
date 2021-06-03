@@ -10,7 +10,7 @@ MODULE MODI_INI_SURFSTATION_n
 INTERFACE
 !
       SUBROUTINE INI_SURFSTATION_n(PTSTEP, PSEGLEN,          &
-                                   KRR, KSV, OUSETKE,        &
+                                   KRR, KSV, OUSETKE, KMI,   &
                                    PLATOR, PLONOR            )
 !
 USE MODD_TYPE_DATE
@@ -21,6 +21,7 @@ INTEGER,            INTENT(IN) :: KSV     ! number of scalar variables
 LOGICAL,            INTENT(IN) :: OUSETKE ! flag to use tke
 REAL,               INTENT(IN) :: PLATOR  ! latitude of origine point
 REAL,               INTENT(IN) :: PLONOR  ! longitude of origine point
+INTEGER,            INTENT(IN) :: KMI     ! MODEL NUMBER
 !
 !-------------------------------------------------------------------------------
 !
@@ -32,7 +33,7 @@ END MODULE MODI_INI_SURFSTATION_n
 !
 !     ########################################################
       SUBROUTINE INI_SURFSTATION_n(PTSTEP, PSEGLEN,          &
-                                   KRR, KSV, OUSETKE,        &
+                                   KRR, KSV, OUSETKE, KMI,   &
                                    PLATOR, PLONOR            )
 !     ########################################################
 !
@@ -66,7 +67,8 @@ END MODULE MODI_INI_SURFSTATION_n
 !!     A. Lemonsu 19/11/2002 
 !  P. Wautelet  05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet  13/09/2019: budget: simplify and modernize date/time management
-!  R. Schoetter    11/2019: work for cartesian coordinates + parallel.
+!  R. Schoetter 11/2019: work for cartesian coordinates + parallel.
+!  E.Jezequel   02/2021: Read stations from CVS file
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -80,9 +82,11 @@ USE MODD_GRID_n
 USE MODD_LUNIT_n, ONLY: TLUOUT
 USE MODD_PARAMETERS
 USE MODD_SHADOWS_n
+USE MODD_ALLSTATION_n
 USE MODD_STATION_n
 USE MODD_TYPE_DATE
 USE MODD_VAR_ll,          ONLY: IP
+USE MODD_NESTING
 !
 USE MODE_GATHER_ll
 USE MODE_GRIDPROJ
@@ -90,6 +94,7 @@ USE MODE_ll
 USE MODE_MSG
 !
 USE MODI_INI_STATION_N
+!USE MODN_STATION_n
 !
 IMPLICIT NONE
 !
@@ -104,6 +109,7 @@ INTEGER,            INTENT(IN) :: KSV     ! number of scalar variables
 LOGICAL,            INTENT(IN) :: OUSETKE ! flag to use tke
 REAL,               INTENT(IN) :: PLATOR  ! latitude of origine point
 REAL,               INTENT(IN) :: PLONOR  ! longitude of origine point
+INTEGER,            INTENT(IN) :: KMI     ! MODEL NUMBER
 !
 !-------------------------------------------------------------------------------
 !
@@ -135,8 +141,8 @@ LSTATION = (NUMBSTAT>0)
 !            -----------------------------
 !
 IF(NUMBSTAT>0) THEN
-  CALL ALLOCATE_STATION_n(TSTATION)
-  CALL INI_INTERP_STATION_n(TSTATION)
+  CALL ALLOCATE_STATION_n(TSTATION,KMI)
+  IF (.NOT. LCARTESIAN) CALL INI_INTERP_STATION_n(TSTATION)
 ENDIF
 !----------------------------------------------------------------------------
 !
@@ -156,21 +162,26 @@ TSTATION%STEP   = XTSTEP
 END SUBROUTINE DEFAULT_STATION_n
 !----------------------------------------------------------------------------
 !----------------------------------------------------------------------------
-SUBROUTINE ALLOCATE_STATION_n(TSTATION)
+SUBROUTINE ALLOCATE_STATION_n(TSTATION,KMI)
 !
 TYPE(STATION), INTENT(INOUT) :: TSTATION   ! 
-
+INTEGER                      :: KMI        ! Model Index 
+!
 if ( tstation%step < xtstep ) then
   call Print_msg( NVERB_ERROR, 'GEN', 'INI_SURFSTATION_n', 'TSTATION%STEP smaller than XTSTEP' )
   tstation%step = xtstep
 end if
 
-ISTORE = INT ( (PSEGLEN-XTSTEP) / TSTATION%STEP ) + 1
+IF (KMI==1) THEN
+ ISTORE = NINT ( (PSEGLEN-XTSTEP) / TSTATION%STEP ) + 1
+ELSE 
+ ISTORE = NINT ( (PSEGLEN-XTSTEP * NDTRATIO(KMI)) / TSTATION%STEP ) + 1
+END IF
 
 allocate( tstation%tpdates( istore ) )
 ALLOCATE(TSTATION%ERROR (NUMBSTAT))
-ALLOCATE(TSTATION%X   (NUMBSTAT))
-ALLOCATE(TSTATION%Y   (NUMBSTAT))
+!ALLOCATE(TSTATION%X   (NUMBSTAT))
+!ALLOCATE(TSTATION%Y   (NUMBSTAT))
 ALLOCATE(TSTATION%SV  (ISTORE,NUMBSTAT,KSV))
 ALLOCATE(TSTATION%TSRAD (ISTORE,NUMBSTAT))
 ALLOCATE(TSTATION%ZS  (NUMBSTAT))
@@ -251,27 +262,7 @@ IF ( ALL(TSTATION%LAT(:)/=XUNDEF) .AND. ALL(TSTATION%LON(:)/=XUNDEF) ) THEN
                  TSTATION%X(JII),   TSTATION%Y(JII)    )
  ENDDO
 ELSE
- DO JII=1,NUMBSTAT
-   CALL GET_DIM_EXT_ll ('B',IIU,IJU)
-   IIU_ll=NIMAX_ll + 2 * JPHEXT
-   IJU_ll=NJMAX_ll + 2 * JPHEXT
-   ALLOCATE(XXHAT_ll                 (IIU_ll))
-   ALLOCATE(XYHAT_ll                 (IJU_ll))
-   !
-   CALL GATHERALL_FIELD_ll('XX',XXHAT,XXHAT_ll,IRESP)
-   CALL GATHERALL_FIELD_ll('YY',XYHAT,XYHAT_ll,IRESP)
-   TSTATION%X(JII) = XXHAT_ll(TSTATION%I(JII))
-   TSTATION%Y(JII) = XYHAT_ll(TSTATION%J(JII))
-   IF (LCARTESIAN) THEN
-     XRPK = -1
-   ENDIF
-   CALL SM_LATLON(PLATOR,PLONOR,                       &
-                 TSTATION%X(JII),   TSTATION%Y(JII),   &
-                 TSTATION%LAT(JII), TSTATION%LON(JII)  )
- ENDDO
-END IF
 !
-IF ( ANY(TSTATION%LAT(:)==XUNDEF) .OR. ANY(TSTATION%LON(:)==XUNDEF) ) THEN
   WRITE(ILUOUT,*) 'Error in station position '
   WRITE(ILUOUT,*) 'either LATitude or LONgitude segment'
   WRITE(ILUOUT,*) 'or I and J segment'

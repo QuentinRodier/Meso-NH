@@ -22,7 +22,7 @@
 !!**  METHOD
 !!    ------
 !!    
-!!   Must be defined (for each aircraft):
+!!   Must be defined (for each station):
 !!   ---------------
 !!
 !!  No default exist for these variables.
@@ -37,7 +37,7 @@
 !!
 !!
 !!
-!!   Can be defined  (for each aircraft):
+!!   Can be defined  (for each station):
 !!   --------------
 !!
 !!
@@ -64,14 +64,18 @@
 !!    MODIFICATIONS
 !!    -------------
 !!     Original 15/01/2002
+!!     Modification: 02/2021 (E.Jezequel) Read stations from CVS file
 !!
 !! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_STATION_n
+USE MODD_ALLSTATION_n
 USE MODD_PARAMETERS
+!USE MODN_STATION_n
+USE MODD_CONF, ONLY: LCARTESIAN
+USE MODI_STATION_READER
 !
 !
 IMPLICIT NONE
@@ -84,68 +88,62 @@ IMPLICIT NONE
 !
 !       0.2  declaration of local variables
 !
+INTEGER :: JI
 !
 !----------------------------------------------------------------------------
 !
 !*      1.   Nameliste 
 !            ---------
-NUMBSTAT             = 0
+
+IF (CFILE_STAT=="NO_INPUT_CSV") THEN
+  NUMBSTAT             = NNUMB_STAT
+
+  IF (NUMBSTAT > 0) THEN
+    ALLOCATE  (TSTATION%LAT(NUMBSTAT))
+    ALLOCATE  (TSTATION%LON(NUMBSTAT))
+    ALLOCATE  (TSTATION%X(NUMBSTAT))
+    ALLOCATE  (TSTATION%Y(NUMBSTAT))
+    ALLOCATE  (TSTATION%Z(NUMBSTAT))
+    ALLOCATE  (TSTATION%K(NUMBSTAT))
+    ALLOCATE  (TSTATION%NAME(NUMBSTAT))
+    ALLOCATE  (TSTATION%TYPE(NUMBSTAT))
+    !
+    TSTATION%LON  = XUNDEF
+    TSTATION%LAT  = XUNDEF
+    TSTATION%Z    = XUNDEF
+    TSTATION%K    = XUNDEF
+    TSTATION%X    = XUNDEF
+    TSTATION%Y    = XUNDEF
+    TSTATION%NAME = "        "
+    TSTATION%TYPE = "        "
+    !
+    TSTATION%STEP = XSTEP_STAT
+    !
+    IF (LCARTESIAN) THEN
+      DO JI=1,NUMBSTAT
+        TSTATION%X(JI)= XX_STAT(JI)
+        TSTATION%Y(JI)= XY_STAT(JI)
+        TSTATION%Z(JI)= XZ_STAT(JI)
+        TSTATION%NAME(JI)= CNAME_STAT(JI)
+        TSTATION%TYPE(JI)= CTYPE_STAT(JI)
+      END DO
+    ELSE
+      DO JI=1,NUMBSTAT
+        TSTATION%LAT(JI)= XLAT_STAT(JI)
+        TSTATION%LON(JI)= XLON_STAT(JI)
+        TSTATION%Z(JI)= XZ_STAT(JI)
+        TSTATION%NAME(JI)= CNAME_STAT(JI)
+        TSTATION%TYPE(JI)= CTYPE_STAT(JI)
+      END DO
+    ENDIF
+  ENDIF
+ELSE
 !
-IF (NUMBSTAT > 0) THEN
-ALLOCATE  (TSTATION%LAT(NUMBSTAT))
-ALLOCATE  (TSTATION%LON(NUMBSTAT))
-ALLOCATE  (TSTATION%I(NUMBSTAT))
-ALLOCATE  (TSTATION%J(NUMBSTAT))
-ALLOCATE  (TSTATION%Z(NUMBSTAT))
-ALLOCATE  (TSTATION%K(NUMBSTAT))
-ALLOCATE  (TSTATION%NAME(NUMBSTAT))
-ALLOCATE  (TSTATION%TYPE(NUMBSTAT))
+!*      2.   CSV DATA 
 !
-TSTATION%LON  = XUNDEF
-TSTATION%LAT  = XUNDEF
-TSTATION%Z    = XUNDEF
-TSTATION%K    = XUNDEF
-TSTATION%I    = XUNDEF
-TSTATION%J    = XUNDEF
-TSTATION%NAME = "        "
-TSTATION%TYPE = "        "
-!
-TSTATION%STEP = 10.
-!
-!* location (latitude, longitude, altitude)
-!
-!***************************************************************
-! * Horizontal location
-! You have to choose between (TSTATION%LAT,TSTATION%LON) 
-! or  (TSTATION%I,TSTATION%J) for all the stations 
-! if both are defined it will choose (TSTATION%LAT,TSTATION%LON)
-!***************************************************************
-!
-!TSTATION%LAT              = (/ 45.0  /) 
-!TSTATION%LON              = (/ 4.5 /)
-TSTATION%I                = (/ 25  /) 
-TSTATION%J                = (/ 20 /)
-!
-!***************************************************************
-! * Vertical location
-! You have to choose between TSTATION%K and TSTATION%Z
-! for all the stations
-! if both are defined it will choose TSTATION%K 
-!***************************************************************
-!TSTATION%Z                  = (/ 10., 500. /) 
-!
-TSTATION%K   = (/ 10 /)              
-!
-!***************************************************************
-!* station name
-!***************************************************************
-TSTATION%NAME        = (/ 'BIDON'  /)
-!***************************************************************
-!* station type
-!***************************************************************
-TSTATION%TYPE        = (/ 'sol     '/)
-!
-!----------------------------------------------------------------------------
-ENDIF
+  CALL READ_CSV_STATION(90,CFILE_STAT,TSTATION,LCARTESIAN)
+  TSTATION%STEP = XSTEP_STAT
+END IF 
+
 !
 END SUBROUTINE INI_STATION_n

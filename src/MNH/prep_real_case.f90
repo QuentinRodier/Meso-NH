@@ -383,6 +383,7 @@
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 20/03/2019: missing use MODI_INIT_SALT
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!!    T.Nagel  : 02/2021: add IBM
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -402,6 +403,8 @@ USE MODD_GR_FIELD_n
 USE MODD_GRID
 USE MODD_GRID_n
 USE MODD_HURR_CONF
+USE MODD_IBM_LSF, ONLY: LIBM_LSF,CIBM_TYPE, NIBM_SMOOTH,XIBM_SMOOTH
+USE MODD_IBM_PARAM_n
 USE MODD_IO,               ONLY: TFILEDATA,NIO_VERB,NVERB_DEBUG,TFILE_SURFEX
 USE MODD_LBC_n
 USE MODD_LSFIELD_n
@@ -440,6 +443,7 @@ USE MODI_DEALLOCATE_MODEL1
 USE MODI_DEALLOC_PARA_LL
 USE MODI_DEFAULT_DESFM_n
 USE MODI_ERROR_ON_TEMPERATURE
+USE MODI_IBM_INIT_LS
 USE MODI_INI_PROG_VAR
 USE MODI_INIT_SALT
 USE MODI_METRICS
@@ -494,6 +498,7 @@ INTEGER                           :: ILUOUT0  ! logical unit for listing file
 INTEGER                           :: IPRE_REAL1 ! logical unit for namelist file
 INTEGER                           :: IRESP    ! return code in FM routines
 LOGICAL                           :: GFOUND   ! Return code when searching namelist
+INTEGER                           :: NIU,NJU,NKU   ! Upper bounds in x,y,z directions
 !
 REAL :: ZSTART, ZEND, ZTIME1, ZTIME2, ZTOT, ZALL ! for computing time analysis
 REAL :: ZMISC, ZREAD, ZHORI, ZPREP, ZSURF, ZTHERMO, ZDYN, ZDIAG, ZWRITE
@@ -534,6 +539,9 @@ XANGCONV0, XANGCONV1000, XANGCONV2000,            &
                          LSALT, CRGUNITS, NMODE_DST, XINISIG, XINIRADIUS, XN0MIN,&
                          XINISIG_SLT, XINIRADIUS_SLT, XN0MIN_SLT, NMODE_SLT
 NAMELIST/NAM_CH_CONF/ LUSECHAQ,LUSECHIC,LUSECHEM
+!
+NAMELIST/NAM_IBM_LSF/ LIBM_LSF, CIBM_TYPE, NIBM_SMOOTH, XIBM_SMOOTH
+!
 ! name of dad of input FM file
 INTEGER                :: II, IJ, IGRID, ILENGTH
 CHARACTER (LEN=100)    :: HCOMMENT
@@ -692,6 +700,8 @@ CALL POSNAM(IPRE_REAL1,'NAM_AERO_CONF',GFOUND,ILUOUT0)
 IF (GFOUND) READ(IPRE_REAL1,NAM_AERO_CONF)
 CALL POSNAM(IPRE_REAL1,'NAM_CONFZ',GFOUND,ILUOUT0)
 IF (GFOUND) READ(UNIT=IPRE_REAL1,NML=NAM_CONFZ)
+CALL POSNAM(IPRE_REAL1,'NAM_IBM_LSF' ,GFOUND,ILUOUT0)
+IF (GFOUND) READ(UNIT=IPRE_REAL1,NML=NAM_IBM_LSF)
 !
 ! Sea salt
 CALL INIT_SALT
@@ -1014,7 +1024,27 @@ CALL SECOND_MNH(ZTIME2)
 ZDIAG =  ZDIAG + ZTIME2 - ZTIME1
 !-------------------------------------------------------------------------------
 !
-!*      16.    WRITING OF THE MESO-NH FM-FILE
+!*       16.    INITIALIZE LEVELSET FOR IBM
+!              ---------------------------
+!
+CALL GET_DIM_EXT_ll('B',NIU,NJU)
+NKU=NKMAX+2*JPVEXT
+!
+IF (LIBM_LSF) THEN
+  !
+  IF (.NOT.LCARTESIAN) THEN
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','PREP_IDEAL_CASE','IBM can only be used with cartesian coordinates')
+  ENDIF
+  !
+  ALLOCATE(XIBM_LS(NIU,NJU,NKU,4))
+  !
+  CALL IBM_INIT_LS(XIBM_LS)
+  !
+ENDIF
+!
+!-------------------------------------------------------------------------------
+!
+!*      17.    WRITING OF THE MESO-NH FM-FILE
 !              ------------------------------
 !
 ZTIME1 = ZTIME2
@@ -1063,7 +1093,7 @@ ZWRITE = ZTIME2 - ZTIME1
 !
 !-------------------------------------------------------------------------------
 !
-!*      17.    OROGRAPHIC and DUMMY PHYSIOGRAPHIC FIELDS
+!*      18.    OROGRAPHIC and DUMMY PHYSIOGRAPHIC FIELDS
 !              -----------------------------------------
 !
 !* reading in the PGD file
@@ -1083,7 +1113,7 @@ IF (YATMFILETYPE=='MESONH'.AND. YATMFILE/=YPGDFILE) THEN
 END IF
 !-------------------------------------------------------------------------------
 !
-!*      18.    INTERPOLATION OF SURFACE VARIABLES
+!*      19.    INTERPOLATION OF SURFACE VARIABLES
 !              ----------------------------------
 !
 IF (.NOT. LCOUPLING ) THEN
@@ -1108,7 +1138,7 @@ ENDIF
 !
 !-------------------------------------------------------------------------------
 !
-!*      19.    EPILOGUE
+!*      20.    EPILOGUE
 !              --------
 !
 WRITE(ILUOUT0,*)

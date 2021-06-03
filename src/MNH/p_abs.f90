@@ -122,6 +122,7 @@ USE MODE_ll
 !JUAN
 USE MODE_REPRO_SUM
 !JUAN
+USE MODD_IBM_PARAM_n, ONLY :  XIBM_LS, LIBM, XIBM_EPSI
 !  
 IMPLICIT NONE
 !  
@@ -350,6 +351,11 @@ ELSEIF( CEQNSYS == 'LHE' ) THEN
     ZRTOT(:,:,:) = 0.
   END IF
   !
+  IF (LIBM) THEN
+    WHERE (XIBM_LS(:,:,:,1).GT.-XIBM_EPSI)
+      ZWORK(:,:,:) = PTHVREF(:,:,:)
+    ENDWHERE 
+  ENDIF
   !
   !               compute the absolute pressure function 
   !

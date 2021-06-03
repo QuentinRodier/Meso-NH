@@ -318,6 +318,7 @@
 !  P. Wautelet 19/04/2019: removed unused dummy arguments and variables
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!  F. Auguste  02/2021   : add IBM
 !  P. Wautelet 09/03/2021: move some chemistry initializations to ini_nsv
 !-------------------------------------------------------------------------------
 !
@@ -331,6 +332,8 @@ USE MODD_CONF
 USE MODD_CST
 USE MODD_GRID
 USE MODD_GRID_n
+USE MODD_IBM_LSF,   ONLY: LIBM_LSF, CIBM_TYPE, NIBM_SMOOTH, XIBM_SMOOTH
+USE MODD_IBM_PARAM_n, ONLY : XIBM_LS
 USE MODD_METRICS_n
 USE MODD_PGDDIM
 USE MODD_PGDGRID
@@ -376,6 +379,7 @@ USE MODE_MSG
 !
 USE MODI_DEFAULT_DESFM_n    ! Interface modules
 USE MODI_DEFAULT_EXPRE
+USE MODI_IBM_INIT_LS
 USE MODI_READ_HGRID
 USE MODI_SHUMAN
 USE MODI_SET_RSOU
@@ -602,6 +606,8 @@ NAMELIST/NAM_AERO_PRE/ LORILAM, LINITPM, XINIRADIUSI, XINIRADIUSJ, &
                        XINISIG_SLT, XINIRADIUS_SLT, XN0MIN_SLT, &
                        NMODE_SLT
 !
+NAMELIST/NAM_IBM_LSF/ LIBM_LSF, CIBM_TYPE, NIBM_SMOOTH, XIBM_SMOOTH
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    PROLOGUE
@@ -700,6 +706,8 @@ END IF
 CALL READ_PRE_IDEA_NAM_n(NLUPRE,NLUOUT)
 CALL POSNAM(NLUPRE,'NAM_AERO_PRE',GFOUND,NLUOUT)
 IF (GFOUND) READ(UNIT=NLUPRE,NML=NAM_AERO_PRE)
+CALL POSNAM(NLUPRE,'NAM_IBM_LSF' ,GFOUND,NLUOUT)
+IF (GFOUND) READ(UNIT=NLUPRE,NML=NAM_IBM_LSF )
 !
 CALL INI_FIELD_LIST(1)
 !
@@ -1701,7 +1709,27 @@ IF ( LCH_INIT_FIELD ) CALL CH_INIT_FIELD_n(1, NLUOUT, NVERB)
 !
 !-------------------------------------------------------------------------------
 !
-!*   	 7.    WRITE THE FMFILE 
+!*  	 7.    INITIALIZE LEVELSET FOR IBM
+!   	       ---------------------------
+!
+IF (LIBM_LSF) THEN
+  !
+  ! In their current state, the IBM can only be used in
+  ! combination with cartesian coordinates and flat orography.
+  !
+  IF ((CZS.NE."FLAT").OR.(.NOT.LCARTESIAN)) THEN
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','PREP_IDEAL_CASE','IBM can only be used with flat terrain')
+  ENDIF
+  !
+  ALLOCATE(XIBM_LS(NIU,NJU,NKU,4))
+  !
+  CALL IBM_INIT_LS(XIBM_LS)
+  !
+ENDIF
+!
+!-------------------------------------------------------------------------------
+!
+!*   	 8.    WRITE THE FMFILE 
 !   	       ----------------
 !
 CALL SECOND_MNH2(ZTIME1)
@@ -1728,7 +1756,7 @@ XT_STORE = XT_STORE + ZTIME2 - ZTIME1
 !
 !-------------------------------------------------------------------------------
 !
-!*     8.     EXTERNALIZED SURFACE
+!*     9.     EXTERNALIZED SURFACE
 !             --------------------
 !
 !
@@ -1803,7 +1831,7 @@ END IF
 !
 !-------------------------------------------------------------------------------
 !
-!*     9.     CLOSES THE FILE
+!*     10.     CLOSES THE FILE
 !             ---------------
 !
 IF (CSURF =='EXTE' .AND. (LEN_TRIM(CPGD_FILE)==0 .OR. .NOT. LREAD_GROUND_PARAM)) THEN
@@ -1817,7 +1845,7 @@ ENDIF
 !
 !-------------------------------------------------------------------------------
 !
-!*      10.    PRINTS ON OUTPUT-LISTING
+!*      11.    PRINTS ON OUTPUT-LISTING
 !              ------------------------
 !
 IF (NVERB >= 5) THEN

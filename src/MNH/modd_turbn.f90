@@ -55,6 +55,7 @@ TYPE TURB_t
                                      ! the turbulence scheme
   REAL               :: XKEMIN      ! mimimum value for the TKE                                  
   REAL               :: XCEDIS      ! Constant for dissipation of Tke                            
+  REAL               :: XCADAP      ! Coefficient for ADAPtative mixing length
   CHARACTER (LEN=4)  :: CTURBLEN  ! type of length used for the closure
                                      ! 'BL89' Bougeault and Lacarrere scheme
                                      ! 'DELT' length = ( volum) ** 1/3
@@ -100,6 +101,7 @@ TYPE(TURB_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: TURB_MODEL
 REAL, POINTER :: XIMPL=>NULL()
 REAL, POINTER :: XKEMIN=>NULL()
 REAL, POINTER :: XCEDIS=>NULL()
+REAL, POINTER :: XCADAP=>NULL()
 CHARACTER (LEN=4), POINTER :: CTURBLEN=>NULL()
 CHARACTER (LEN=4), POINTER :: CTURBDIM=>NULL()
 LOGICAL, POINTER :: LTURB_FLX=>NULL()
@@ -144,6 +146,7 @@ TURB_MODEL(KFROM)%XLEM=>XLEM
 XIMPL=>TURB_MODEL(KTO)%XIMPL
 XKEMIN=>TURB_MODEL(KTO)%XKEMIN
 XCEDIS=>TURB_MODEL(KTO)%XCEDIS
+XCADAP=>TURB_MODEL(KTO)%XCADAP
 CTURBLEN=>TURB_MODEL(KTO)%CTURBLEN
 CTURBDIM=>TURB_MODEL(KTO)%CTURBDIM
 LTURB_FLX=>TURB_MODEL(KTO)%LTURB_FLX

@@ -364,6 +364,7 @@ USE MODD_LES
 USE MODD_NSV
 USE MODD_PARAMETERS, ONLY: JPVEXT_TURB
 USE MODD_PARAM_LIMA
+USE MODD_TURB_n, ONLY: XCADAP
 !
 USE MODI_GRADIENT_M
 USE MODI_GRADIENT_U
@@ -391,6 +392,9 @@ USE MODI_EMOIST
 USE MODI_ETHETA
 !
 USE MODI_SECOND_MNH
+!
+USE MODD_IBM_PARAM_n, ONLY : LIBM, XIBM_LS, XIBM_XMUT
+USE MODI_IBM_MIXINGLENGTH
 !
 IMPLICIT NONE
 !
@@ -469,6 +473,7 @@ REAL, INTENT(IN)      ::  PCOEF_AMPL_SAT ! saturation of the amplification coeff
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PTHLT       ! conservative pot. temp.
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) ::  PRT         ! water var.  where 
                              ! PRT(:,:,:,1) is the conservative mixing ratio        
+!
 ! sources of momentum, conservative potential temperature, Turb. Kin. Energy, 
 ! TKE dissipation
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PRUS,PRVS,PRWS,PRTHLS,PRTKES
@@ -546,7 +551,6 @@ REAL                :: ZL0          ! Max. Mixing Length in Blakadar formula
 REAL                :: ZALPHA       ! work coefficient : 
                                     ! - proportionnality constant between Dz/2 and 
 !                                   !   BL89 mixing length near the surface
-                                    ! - and coefficient to reduce DELT in ADAP
 !
 REAL :: ZTIME1, ZTIME2
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)):: ZTT,ZEXNE,ZLV,ZLS,ZCPH,ZCOR
@@ -779,8 +783,7 @@ SELECT CASE (HTURBLEN)
     ! For LES grid meshes, this is equivalent to Deardorff : the base mixing lentgh is the horizontal grid mesh, 
     !                      and it is limited by a stability-based length (RM17), as was done in Deardorff length (but taking into account shear as well)
     ! For grid meshes in the grey zone, then this is the smaller of the two.
-    ZALPHA=0.50
-    PLEM = MIN(PLEM,ZALPHA*ZLMW)
+    PLEM = MIN(PLEM,XCADAP*ZLMW)
 !
 !*      3.4 Delta mixing length
 !           -------------------
@@ -844,12 +847,22 @@ IF (ORMC01) THEN
   CALL RMC01(HTURBLEN,KKA,KKU,KKL,PZZ,PDXX,PDYY,PDZZ,PDIRCOSZW,PSBL_DEPTH,ZLMO,PLEM,ZLEPS)
 END IF
 !
+!RMC01 is only applied on RM17 in ADAP
+IF (HTURBLEN=='ADAP') ZLEPS = MIN(ZLEPS,ZLMW*XCADAP)
+!
 !*      3.8 Mixing length in external points (used if HTURBDIM="3DIM")
 !           ----------------------------------------------------------
 !
 IF (HTURBDIM=="3DIM") THEN
   CALL UPDATE_LM(HLBCX,HLBCY,PLEM,ZLEPS)
 END IF
+!
+!*      3.9 Mixing length correction if immersed walls 
+!           ------------------------------------------
+!
+IF (LIBM) THEN
+   CALL IBM_MIXINGLENGTH(PLEM,ZLEPS,XIBM_XMUT,XIBM_LS(:,:,:,1),PTKET)
+ENDIF
 !----------------------------------------------------------------------------
 !
 !*      4. GO INTO THE AXES FOLLOWING THE SURFACE

@@ -235,6 +235,7 @@ END MODULE MODI_PHYS_PARAM_n
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !  P. Wautelet 21/11/2019: ZRG_HOUR and ZRAT_HOUR are now parameter arrays
 !! 11/2019 C.Lac correction in the drag formula and application to building in addition to tree
+!! 02/2021 F.Auguste: add IBM
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -269,6 +270,7 @@ USE MODD_FRC
 USE MODD_FRC_n
 USE MODD_GRID
 USE MODD_GRID_n
+USE MODD_IBM_PARAM_n, ONLY: XIBM_LS, LIBM, XIBM_EPSI
 USE MODD_ICE_C1R3_DESCR,  ONLY : XRTMIN_C1R3=>XRTMIN
 USE MODD_IO, ONLY: TFILEDATA
 USE MODD_LATZ_EDFLX
@@ -1171,6 +1173,20 @@ IF (CSURF=='EXTE') THEN
  END IF
   CALL GROUND_PARAM_n(ZSFTH, ZSFRV, ZSFSV, ZSFCO2, ZSFU, ZSFV, &
                       ZDIR_ALB, ZSCA_ALB, ZEMIS, ZTSRAD        )
+  !
+  IF (LIBM) THEN
+    WHERE(XIBM_LS(:,:,IKB,1).GT.-XIBM_EPSI)
+      ZSFTH(:,:)=0.
+      ZSFRV(:,:)=0. 
+      ZSFU (:,:)=0. 
+      ZSFV (:,:)=0.
+    ENDWHERE
+    IF (NSV>0) THEN
+      DO JSV = 1 , NSV
+         WHERE(XIBM_LS(:,:,IKB,1).GT.-XIBM_EPSI) ZSFSV(:,:,JSV)=0.
+      ENDDO
+    ENDIF 
+  ENDIF
   !
   IF (SIZE(XEMIS)>0) THEN
     XDIR_ALB = ZDIR_ALB
