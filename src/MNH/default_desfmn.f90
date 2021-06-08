@@ -212,7 +212,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!                   02/2021 (T.Nagel) add turbulence recycling defaults parameters
 !  P-A Joulin  21/05/2021: add Wind turbines
 !  S. Riette   21/05/2021: add options to PDF subgrid scheme
-!
+!                    05/2021 D. Ricard add the contribution of Leonard terms in the turbulence scheme
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -533,6 +533,12 @@ VSIGQSAT  = 0.02
 CCONDENS='CB02'
 CLAMBDA3='CB'
 CSUBG_MF_PDF='TRIANGLE'
+LHGRAD =.FALSE.
+XCOEFHGRADTHL = 1.0
+XCOEFHGRADRM = 1.0
+XALTHGRAD = 2000.0
+XCLDTHOLD = -1.0
+
 !-------------------------------------------------------------------------------
 !
 !*      10b.   SET DEFAULT VALUES FOR MODD_DRAGTREE :

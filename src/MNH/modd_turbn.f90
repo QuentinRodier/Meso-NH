@@ -39,6 +39,7 @@
 !!                   May   2006    Remove KEPS
 !!      C.Lac        Nov 2014      add terms of TKE production for LES diag
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      D. Ricard     May 2021      add the switches for Leonard terms
 !!
 !-------------------------------------------------------------------------------
 !
@@ -93,6 +94,13 @@ TYPE TURB_t
   REAL, DIMENSION(:,:,:), POINTER :: XTR=>NULL()    ! Transport production of Kinetic energy
   REAL, DIMENSION(:,:,:), POINTER :: XDISS=>NULL()    ! Dissipation of Kinetic energy
   REAL, DIMENSION(:,:,:), POINTER :: XLEM=>NULL()    ! Mixing length
+  LOGICAL            :: LHGRAD ! logical switch for the computation of the Leornard Terms
+  REAL               :: XCOEFHGRADTHL  ! coeff applied to thl contribution
+  REAL               :: XCOEFHGRADRM  ! coeff applied to mixing ratio contribution
+  REAL               :: XALTHGRAD  ! altitude from which to apply the Leonard terms
+  REAL               :: XCLDTHOLD  ! cloud threshold to apply the Leonard terms
+                                   ! negative value : applied everywhere
+                                   ! 0.000001 applied only inside the clouds ri+rc > 10**-6 kg/kg
 !
 END TYPE TURB_t
 
@@ -125,6 +133,11 @@ REAL, DIMENSION(:,:,:), POINTER :: XTHP=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XTR=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XDISS=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XLEM=>NULL()
+LOGICAL, POINTER :: LHGRAD=>NULL()
+REAL, POINTER :: XCOEFHGRADTHL=>NULL()
+REAL, POINTER :: XCOEFHGRADRM=>NULL()
+REAL, POINTER :: XALTHGRAD=>NULL()
+REAL, POINTER :: XCLDTHOLD=>NULL()
 
 CONTAINS
 
@@ -170,6 +183,11 @@ XTHP=>TURB_MODEL(KTO)%XTHP
 XTR=>TURB_MODEL(KTO)%XTR  
 XDISS=>TURB_MODEL(KTO)%XDISS
 XLEM=>TURB_MODEL(KTO)%XLEM
+LHGRAD=>TURB_MODEL(KTO)%LHGRAD
+XCOEFHGRADTHL=>TURB_MODEL(KTO)%XCOEFHGRADTHL
+XCOEFHGRADRM=>TURB_MODEL(KTO)%XCOEFHGRADRM
+XALTHGRAD=>TURB_MODEL(KTO)%XALTHGRAD
+XCLDTHOLD=>TURB_MODEL(KTO)%XCLDTHOLD
 
 END SUBROUTINE TURB_GOTO_MODEL
 

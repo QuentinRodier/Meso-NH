@@ -323,6 +323,11 @@ END MODULE MODI_TURB_VER_THERMO_FLUX
 !!                     2012-02 (Y. Seity) add possibility to run with reversed
 !!                                             vertical levels
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!                     2018 (D. Ricard) last version of HGRAD turbulence scheme
+!!                                 Leronard terms instead of Reynolds terms
+!!                                 applied to vertical fluxes of r_np and Thl
+!!                                 for implicit version of turbulence scheme
+!!                                 corrections and cleaning
 !!--------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -331,8 +336,11 @@ END MODULE MODI_TURB_VER_THERMO_FLUX
 USE MODD_CST
 USE MODD_CTURB
 use modd_field,          only: tfielddata, TYPEREAL
+USE MODD_GRID_n, ONLY: XZS, XXHAT
 USE MODD_IO,             ONLY: TFILEDATA
+USE MODD_METRICS_n
 USE MODD_PARAMETERS
+USE MODD_TURB_n, ONLY: LHGRAD, XCOEFHGRADTHL, XCOEFHGRADRM, XALTHGRAD, XCLDTHOLD
 USE MODD_CONF
 USE MODD_LES
 !
@@ -340,6 +348,9 @@ USE MODI_GRADIENT_U
 USE MODI_GRADIENT_V
 USE MODI_GRADIENT_W
 USE MODI_GRADIENT_M
+USE MODI_GRADIENT_UV
+USE MODI_GRADIENT_UW
+USE MODI_GRADIENT_VW
 USE MODI_SHUMAN 
 USE MODI_TRIDIAG 
 USE MODI_LES_MEAN_SUBGRID
@@ -452,13 +463,21 @@ REAL, DIMENSION(SIZE(PTHLM,1),SIZE(PTHLM,2),SIZE(PTHLM,3))  ::  &
        ZF,       & ! Flux in dTh/dt =-dF/dz (evaluated at t-1)(or rt instead of Th)
        ZDFDDTDZ, & ! dF/d(dTh/dz)
        ZDFDDRDZ, & ! dF/d(dr/dz)
-       Z3RDMOMENT  ! 3 order term in flux or variance equation
+       Z3RDMOMENT,&  ! 3 order term in flux or variance equation
+       ZF_NEW,    &
+       ZRWTHL,    &
+       ZRWRNP,    &
+       ZCLD_THOLD
+!
+REAL,DIMENSION(SIZE(XZS,1),SIZE(XZS,2),KKU)  :: ZALT
+!
 INTEGER             :: IKB,IKE      ! I index values for the Beginning and End
                                     ! mass points of the domain in the 3 direct.
 INTEGER             :: IKT          ! array size in k direction
 INTEGER             :: IKTB,IKTE    ! start, end of k loops in physical domain 
 !
 REAL :: ZTIME1, ZTIME2
+REAL :: ZDELTAX
 !
 INTEGER :: JK
 LOGICAL :: GUSERV   ! flag to use water
@@ -485,6 +504,18 @@ GUSERV = (KRR/=0)
 !  ground
 !
 ZKEFF(:,:,:) = MZM( PLM(:,:,:) * SQRT(PTKEM(:,:,:)) )
+!
+! define a cloud mask with ri and rc (used after with a threshold) for Leonard terms
+!
+IF(LHGRAD) THEN
+  IF ( KRRL >= 1 ) THEN
+    IF ( KRRI >= 1 ) THEN
+      ZCLD_THOLD(:,:,:) = PRM(:,:,:,2) + PRM(:,:,:,4)
+    ELSE
+      ZCLD_THOLD(:,:,:) = PRM(:,:,:,2)
+    END IF
+  END IF
+END IF
 !
 ! Flags for 3rd order quantities
 !
@@ -514,6 +545,16 @@ END IF
 ZF      (:,:,:) = -XCSHF*PPHI3*ZKEFF*DZM(PTHLM)/PDZZ
 ZDFDDTDZ(:,:,:) = -XCSHF*ZKEFF*D_PHI3DTDZ_O_DDTDZ(PPHI3,PREDTH1,PREDR1,PRED2TH3,PRED2THR3,HTURBDIM,GUSERV)
 
+!
+IF (LHGRAD) THEN
+ ! Compute the Leonard terms for thl
+ ZDELTAX= XXHAT(3) - XXHAT(2)
+ ZF_NEW (:,:,:)= XCOEFHGRADTHL*ZDELTAX*ZDELTAX/12.0*(      &
+                 MXF(GX_W_UW(PWM(:,:,:), XDXX, XDZZ, XDZX))&
+                *MZM(GX_M_M(PTHLM(:,:,:),XDXX,XDZZ,XDZX))  &
+              +  MYF(GY_W_VW(PWM(:,:,:), XDYY,XDZZ,XDZY))  &
+                *MZM(GY_M_M(PTHLM(:,:,:),XDYY,XDZZ,XDZY)) )
+END IF
 !
 ! Effect of 3rd order terms in temperature flux (at flux point)
 !
@@ -581,8 +622,19 @@ CALL TRIDIAG_THERMO(KKA,KKU,KKL,PTHLM,ZF,ZDFDDTDZ,PTSTEP,PIMPL,PDZZ,&
                     PRHODJ,PTHLP)
 !
 ! Compute the equivalent tendency for the conservative potential temperature
-PRTHLS(:,:,:)= PRTHLS(:,:,:)  +    &
-               PRHODJ(:,:,:)*(PTHLP(:,:,:)-PTHLM(:,:,:))/PTSTEP
+!
+ZRWTHL(:,:,:)= PRHODJ(:,:,:)*(PTHLP(:,:,:)-PTHLM(:,:,:))/PTSTEP
+! replace the flux by the Leonard terms above ZALT and ZCLD_THOLD
+IF (LHGRAD) THEN
+ DO JK=1,KKU
+  ZALT(:,:,JK) = PZZ(:,:,JK)-XZS(:,:)
+ END DO
+ WHERE ( (ZCLD_THOLD(:,:,:) >= XCLDTHOLD) .AND. ( ZALT(:,:,:) >= XALTHGRAD) )
+  ZRWTHL(:,:,:) = -GZ_W_M(MZM(PRHODJ(:,:,:))*ZF_NEW(:,:,:),XDZZ)
+ END WHERE
+END IF
+!
+PRTHLS(:,:,:)= PRTHLS(:,:,:)  + ZRWTHL(:,:,:)
 !
 !*       2.2  Partial Thermal Production
 !
@@ -590,6 +642,12 @@ PRTHLS(:,:,:)= PRTHLS(:,:,:)  +    &
 !
 ZFLXZ(:,:,:)   = ZF                                                &
                + PIMPL * ZDFDDTDZ * DZM(PTHLP - PTHLM) / PDZZ
+! replace the flux by the Leonard terms
+IF (LHGRAD) THEN
+ WHERE ( (ZCLD_THOLD(:,:,:) >= XCLDTHOLD) .AND. ( ZALT(:,:,:) >= XALTHGRAD) )
+  ZFLXZ(:,:,:) = ZF_NEW(:,:,:)
+ END WHERE
+END IF
 !
 ZFLXZ(:,:,KKA) = ZFLXZ(:,:,IKB) 
 !  
@@ -693,6 +751,16 @@ IF (KRR /= 0) THEN
   ZF      (:,:,:) = -XCSHF*PPSI3*ZKEFF*DZM(PRM(:,:,:,1))/PDZZ
   ZDFDDRDZ(:,:,:) = -XCSHF*ZKEFF*D_PSI3DRDZ_O_DDRDZ(PPSI3,PREDR1,PREDTH1,PRED2R3,PRED2THR3,HTURBDIM,GUSERV)
   !
+  ! Compute Leonard Terms for Cloud mixing ratio
+  IF (LHGRAD) THEN
+    ZDELTAX= XXHAT(3) - XXHAT(2)
+    ZF_NEW (:,:,:)= XCOEFHGRADRM*ZDELTAX*ZDELTAX/12.0*(        &
+                MXF(GX_W_UW(PWM(:,:,:), XDXX, XDZZ, XDZX))       &
+                *MZM(GX_M_M(PRM(:,:,:,1),XDXX,XDZZ,XDZX)) &
+                +MYF(GY_W_VW(PWM(:,:,:), XDYY,XDZZ,XDZY))        &
+                *MZM(GY_M_M(PRM(:,:,:,1),XDYY,XDZZ,XDZY)) )
+   END IF
+  !
   ! Effect of 3rd order terms in temperature flux (at flux point)
   !
   ! d(w'2r')/dz
@@ -759,8 +827,20 @@ IF (KRR /= 0) THEN
                       PDZZ,PRHODJ,PRP)
   !
   ! Compute the equivalent tendency for the conservative mixing ratio
-  PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRHODJ(:,:,:) *     &
-                  (PRP(:,:,:)-PRM(:,:,:,1))/PTSTEP
+  !
+  ZRWRNP (:,:,:) = PRHODJ(:,:,:)*(PRP(:,:,:)-PRM(:,:,:,1))/PTSTEP
+  !
+  ! replace the flux by the Leonard terms above ZALT and ZCLD_THOLD
+  IF (LHGRAD) THEN
+   DO JK=1,KKU
+    ZALT(:,:,JK) = PZZ(:,:,JK)-XZS(:,:)
+   END DO
+   WHERE ( (ZCLD_THOLD(:,:,:) >= XCLDTHOLD ) .AND. ( ZALT(:,:,:) >= XALTHGRAD ) )
+    ZRWRNP (:,:,:) =  -GZ_W_M(MZM(PRHODJ(:,:,:))*ZF_NEW(:,:,:),XDZZ)
+   END WHERE
+  END IF
+  !
+  PRRS(:,:,:,1) = PRRS(:,:,:,1) + ZRWRNP (:,:,:)
   !
   !*       3.2  Complete thermal production
   !
@@ -768,6 +848,13 @@ IF (KRR /= 0) THEN
   !
   ZFLXZ(:,:,:)   = ZF                                                &
                  + PIMPL * ZDFDDRDZ * DZM(PRP - PRM(:,:,:,1)) / PDZZ
+  !
+  ! replace the flux by the Leonard terms above ZALT and ZCLD_THOLD
+  IF (LHGRAD) THEN
+   WHERE ( (ZCLD_THOLD(:,:,:) >= XCLDTHOLD ) .AND. ( ZALT(:,:,:) >= XALTHGRAD ) )
+    ZFLXZ(:,:,:) = ZF_NEW(:,:,:)
+   END WHERE
+  END IF
   !
   ZFLXZ(:,:,KKA) = ZFLXZ(:,:,IKB) 
   !
