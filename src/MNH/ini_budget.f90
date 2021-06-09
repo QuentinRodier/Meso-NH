@@ -1307,27 +1307,27 @@ if ( lbu_rtke ) then
 
   tzsource%cmnhname   = 'DP'
   tzsource%clongname  = 'dynamic production'
-  tzsource%lavailable = hturb == 'TKEL'
+  tzsource%lavailable = .true.
   call Budget_source_add( tbudgets(NBUDGET_TKE), tzsource )
 
   tzsource%cmnhname   = 'TP'
   tzsource%clongname  = 'thermal production'
-  tzsource%lavailable = hturb == 'TKEL'
+  tzsource%lavailable = .true.
   call Budget_source_add( tbudgets(NBUDGET_TKE), tzsource )
 
   tzsource%cmnhname   = 'DISS'
   tzsource%clongname  = 'dissipation of TKE'
-  tzsource%lavailable = hturb == 'TKEL'
+  tzsource%lavailable = .true.
   call Budget_source_add( tbudgets(NBUDGET_TKE), tzsource )
 
   tzsource%cmnhname   = 'TR'
   tzsource%clongname  = 'turbulent transport'
-  tzsource%lavailable = hturb == 'TKEL'
+  tzsource%lavailable = .true.
   call Budget_source_add( tbudgets(NBUDGET_TKE), tzsource )
 
   tzsource%cmnhname   = 'ADV'
   tzsource%clongname  = 'total advection'
-  tzsource%lavailable = hturb == 'TKEL'
+  tzsource%lavailable = .true.
   call Budget_source_add( tbudgets(NBUDGET_TKE), tzsource )
 
 
