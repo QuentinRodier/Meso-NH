@@ -175,7 +175,7 @@ end subroutine Budget_preallocate
 !!      C.Lac           01/07/11  Add vegetation drag        
 !!      P. Peyrille, M. Tomasini : include in the forcing term the 2D forcing
 !!                                terms in term 2DFRC search for modif PP . but Not very clean! 
-!!      C .Lac          27/05/14    add negative corrections for chemical species
+!!      C .Lac          27/05/14    add negativity corrections for chemical species
 !!      C.Lac           29/01/15  Correction for NSV_USER
 !!      J.Escobar       02/10/2015 modif for JPHEXT(JPVEXT) variable  
 !!      C.Lac           04/12/15  Correction for LSUPSAT 
@@ -1028,7 +1028,7 @@ if ( lbu_rth ) then
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'NETUR'
-  tzsource%clongname  = 'negative correction induced by turbulence'
+  tzsource%clongname  = 'negativity correction induced by turbulence'
   tzsource%lavailable = hturb == 'TKEL' .and. (      hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4' &
                                                 .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA' )
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
@@ -1054,13 +1054,13 @@ if ( lbu_rth ) then
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'NEADV'
-  tzsource%clongname  = 'negative correction induced by advection'
+  tzsource%clongname  = 'negativity correction induced by advection'
   tzsource%lavailable =       hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4' &
                          .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'NEGA'
-  tzsource%clongname  = 'negative correction'
+  tzsource%clongname  = 'negativity correction'
   tzsource%lavailable =       hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4' &
                          .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
@@ -1135,7 +1135,7 @@ if ( lbu_rth ) then
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'IMLT'
-  tzsource%clongname  = 'ice melting'
+  tzsource%clongname  = 'melting of ice'
   tzsource%lavailable = ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima ) ) ) .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
@@ -1145,13 +1145,13 @@ if ( lbu_rth ) then
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'RIM'
-  tzsource%clongname  = 'riming of cloud droplets'
+  tzsource%clongname  = 'riming of cloud water'
   tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima ) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'ACC'
-  tzsource%clongname  = 'accretion of rain'
+  tzsource%clongname  = 'accretion of rain on aggregates'
   tzsource%lavailable =      ( hcloud == 'LIMA' .and. (        lptsplit                                                            &
                                                         .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima .and. lrain_lima ) ) ) &
                         .or.   hcloud(1:3) == 'ICE'
@@ -1211,12 +1211,12 @@ if ( lbu_rth ) then
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'ADJU'
-  tzsource%clongname  = 'adjustment before'
+  tzsource%clongname  = 'adjustment to saturation'
   tzsource%lavailable = hcloud(1:3) == 'ICE' .and. lred .and. ladj_before .and. celec == 'NONE'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'CDEPI'
-  tzsource%clongname  = 'deposition on ice'
+  tzsource%clongname  = 'condensation/deposition on ice'
   tzsource%lavailable = hcloud(1:3) == 'ICE' .and. ( .not. lred .or. ( lred .and. ladj_after ) .or. celec /= 'NONE' )
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
@@ -1226,7 +1226,7 @@ if ( lbu_rth ) then
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'NECON'
-  tzsource%clongname  = 'negative correction induced by condensation'
+  tzsource%clongname  = 'negativity correction induced by condensation'
   tzsource%lavailable = (      hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4'   &
                           .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA' ) &
                         .and. celec == 'NONE'
@@ -1410,7 +1410,7 @@ if ( tbudgets(NBUDGET_RV)%lenabled ) then
 
   tzsource%cmnhname   = 'REL'
   tzsource%clongname  = 'relaxation'
-  tzsource%lavailable = ohorelax_rv .or. ove_relax
+  tzsource%lavailable = ohorelax_rv
   call Budget_source_add( tbudgets(NBUDGET_RV), tzsource )
 
   tzsource%cmnhname   = 'DCONV'
@@ -1429,7 +1429,7 @@ if ( tbudgets(NBUDGET_RV)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RV), tzsource )
 
   tzsource%cmnhname   = 'NETUR'
-  tzsource%clongname  = 'negative correction induced by turbulence'
+  tzsource%clongname  = 'negativity correction induced by turbulence'
   tzsource%lavailable = hturb == 'TKEL' .and. (      hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4' &
                                                 .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA' )
   call Budget_source_add( tbudgets(NBUDGET_RV), tzsource )
@@ -1455,13 +1455,13 @@ if ( tbudgets(NBUDGET_RV)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RV), tzsource )
 
   tzsource%cmnhname   = 'NEADV'
-  tzsource%clongname  = 'negative correction induced by advection'
+  tzsource%clongname  = 'negativity correction induced by advection'
   tzsource%lavailable =       hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4' &
                          .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA'
   call Budget_source_add( tbudgets(NBUDGET_RV), tzsource )
 
   tzsource%cmnhname   = 'NEGA'
-  tzsource%clongname  = 'negative correction'
+  tzsource%clongname  = 'negativity correction'
   tzsource%lavailable =       hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4' &
                          .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA'
   call Budget_source_add( tbudgets(NBUDGET_RV), tzsource )
@@ -1512,7 +1512,7 @@ if ( tbudgets(NBUDGET_RV)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RV), tzsource )
 
   tzsource%cmnhname   = 'ADJU'
-  tzsource%clongname  = 'adjustment before'
+  tzsource%clongname  = 'adjustment to saturation'
   tzsource%lavailable = hcloud(1:3) == 'ICE' .and. lred .and. ladj_before .and. celec == 'NONE'
   call Budget_source_add( tbudgets(NBUDGET_RV), tzsource )
 
@@ -1527,7 +1527,7 @@ if ( tbudgets(NBUDGET_RV)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RV), tzsource )
 
   tzsource%cmnhname   = 'CDEPI'
-  tzsource%clongname  = 'deposition on ice'
+  tzsource%clongname  = 'condensation/deposition on ice'
   tzsource%lavailable = hcloud(1:3) == 'ICE' .and. ( .not. lred .or. ( lred .and. ladj_after ) .or. celec /= 'NONE' )
   call Budget_source_add( tbudgets(NBUDGET_RV), tzsource )
 
@@ -1537,7 +1537,7 @@ if ( tbudgets(NBUDGET_RV)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RV), tzsource )
 
   tzsource%cmnhname   = 'NECON'
-  tzsource%clongname  = 'negative correction induced by condensation'
+  tzsource%clongname  = 'negativity correction induced by condensation'
   tzsource%lavailable = (      hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4'   &
                           .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA' ) &
                         .and. celec == 'NONE'
@@ -1636,7 +1636,7 @@ if ( tbudgets(NBUDGET_RC)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource )
 
   tzsource%cmnhname   = 'NETUR'
-  tzsource%clongname  = 'negative correction induced by turbulence'
+  tzsource%clongname  = 'negativity correction induced by turbulence'
   tzsource%lavailable = hturb == 'TKEL' .and. (      hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4' &
                                                 .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA' )
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource )
@@ -1652,13 +1652,13 @@ if ( tbudgets(NBUDGET_RC)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource )
 
   tzsource%cmnhname   = 'NEADV'
-  tzsource%clongname  = 'negative correction induced by advection'
+  tzsource%clongname  = 'negativity correction induced by advection'
   tzsource%lavailable =       hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4' &
                          .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA'
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource )
 
   tzsource%cmnhname   = 'NEGA'
-  tzsource%clongname  = 'negative correction'
+  tzsource%clongname  = 'negativity correction'
   tzsource%lavailable =       hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4' &
                          .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA'
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource )
@@ -1723,7 +1723,7 @@ if ( tbudgets(NBUDGET_RC)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource )
 
   tzsource%cmnhname   = 'ACCR'
-  tzsource%clongname  = 'accretion'
+  tzsource%clongname  = 'accretion of cloud droplets'
   tzsource%lavailable =       ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lwarm_lima .and. lrain_lima ) ) ) &
                          .or.   hcloud      == 'KESS'                                                      &
                          .or. ( hcloud(1:3) == 'ICE'  .and. lwarm_ice )                                    &
@@ -1742,7 +1742,7 @@ if ( tbudgets(NBUDGET_RC)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource )
 
   tzsource%cmnhname   = 'IMLT'
-  tzsource%clongname  = 'ice melting'
+  tzsource%clongname  = 'melting of ice'
   tzsource%lavailable = ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima ) ) ) .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource )
 
@@ -1812,7 +1812,7 @@ if ( tbudgets(NBUDGET_RC)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource )
 
   tzsource%cmnhname   = 'NECON'
-  tzsource%clongname  = 'negative correction induced by condensation'
+  tzsource%clongname  = 'negativity correction induced by condensation'
   tzsource%lavailable = (      hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4'   &
                           .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA' ) &
                         .and. celec == 'NONE'
@@ -1887,7 +1887,7 @@ if ( tbudgets(NBUDGET_RR)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource )
 
   tzsource%cmnhname   = 'NETUR'
-  tzsource%clongname  = 'negative correction induced by turbulence'
+  tzsource%clongname  = 'negativity correction induced by turbulence'
   tzsource%lavailable = hturb == 'TKEL' .and. ( hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA' )
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource )
 
@@ -1902,13 +1902,13 @@ if ( tbudgets(NBUDGET_RR)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource )
 
   tzsource%cmnhname   = 'NEADV'
-  tzsource%clongname  = 'negative correction induced by advection'
+  tzsource%clongname  = 'negativity correction induced by advection'
   tzsource%lavailable =       hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4' &
                          .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA'
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource )
 
   tzsource%cmnhname   = 'NEGA'
-  tzsource%clongname  = 'negative correction'
+  tzsource%clongname  = 'negativity correction'
   tzsource%lavailable =       hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4' &
                          .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA'
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource )
@@ -1929,12 +1929,12 @@ if ( tbudgets(NBUDGET_RR)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource )
 
   tzsource%cmnhname   = 'R2C1'
-  tzsource%clongname  = 'rain to cloud after sedimentation'
+  tzsource%clongname  = 'rain to cloud change after sedimentation'
   tzsource%lavailable = hcloud == 'LIMA' .and. lptsplit .and. lwarm_lima .and. lrain_lima
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource )
 
   tzsource%cmnhname   = 'AUTO'
-  tzsource%clongname  = 'autoconversion into rain drops'
+  tzsource%clongname  = 'autoconversion into rain'
   tzsource%lavailable =       ( hcloud      == 'LIMA' .and. ( lptsplit .or. ( lwarm_lima .and. lrain_lima ) ) ) &
                          .or.   hcloud      == 'KESS'                                                           &
                          .or. ( hcloud(1:3) == 'ICE'  .and. lwarm_ice )                                         &
@@ -1967,7 +1967,7 @@ if ( tbudgets(NBUDGET_RR)%lenabled ) then
 
 
   tzsource%cmnhname   = 'ACC'
-  tzsource%clongname  = 'accretion of rain water on aggregates'
+  tzsource%clongname  = 'accretion of rain on aggregates'
   tzsource%lavailable =      ( hcloud == 'LIMA' .and. ( lptsplit .or. (       lcold_lima .and. lwarm_lima      &
                                                                         .and. lsnow_lima .and. lrain_lima) ) ) &
                         .or.   hcloud(1:3) == 'ICE'
@@ -1979,7 +1979,7 @@ if ( tbudgets(NBUDGET_RR)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource )
 
   tzsource%cmnhname   = 'CFRZ'
-  tzsource%clongname  = 'conversion freezing of rain drops'
+  tzsource%clongname  = 'conversion freezing of rain'
   tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. (lcold_lima .and. lwarm_lima .and. lsnow_lima) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource )
@@ -2038,7 +2038,7 @@ if ( tbudgets(NBUDGET_RR)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource )
 
   tzsource%cmnhname   = 'NECON'
-  tzsource%clongname  = 'negative correction induced by condensation'
+  tzsource%clongname  = 'negativity correction induced by condensation'
   tzsource%lavailable = (      hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4'   &
                           .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA' ) &
                         .and. celec == 'NONE'
@@ -2128,8 +2128,8 @@ if ( tbudgets(NBUDGET_RI)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'NETUR'
-  tzsource%clongname  = 'negative correction induced by turbulence'
-  tzsource%lavailable = hturb == 'TKEL' .and. (      hcloud == 'ICE3' .or. hcloud == 'ICE4' .or. hcloud == 'LIMA' )
+  tzsource%clongname  = 'negativity correction induced by turbulence'
+  tzsource%lavailable = hturb == 'TKEL' .and. ( hcloud == 'ICE3' .or. hcloud == 'ICE4' .or. hcloud == 'LIMA' )
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'VISC'
@@ -2143,15 +2143,13 @@ if ( tbudgets(NBUDGET_RI)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'NEADV'
-  tzsource%clongname  = 'negative correction induced by advection'
-  tzsource%lavailable =       hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4' &
-                         .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA'
+  tzsource%clongname  = 'negativity correction induced by advection'
+  tzsource%lavailable =  .true.
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'NEGA'
-  tzsource%clongname  = 'negative correction'
-  tzsource%lavailable =       hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4' &
-                         .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA'
+  tzsource%clongname  = 'negativity correction'
+  tzsource%lavailable =  .true.
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'CORR'
@@ -2161,7 +2159,7 @@ if ( tbudgets(NBUDGET_RI)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'ADJU'
-  tzsource%clongname  = 'adjustment before on ice'
+  tzsource%clongname  = 'adjustment to saturation'
   tzsource%lavailable = hcloud(1:3) == 'ICE' .and. lred .and. ladj_before .and. celec == 'NONE'
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
@@ -2197,7 +2195,7 @@ if ( tbudgets(NBUDGET_RI)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'HONC'
-  tzsource%clongname  = 'droplet homogeneous nucleation'
+  tzsource%clongname  = 'droplet homogeneous freezing'
   tzsource%lavailable = hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lnucl_lima ) )
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
@@ -2222,7 +2220,7 @@ if ( tbudgets(NBUDGET_RI)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'IMLT'
-  tzsource%clongname  = 'ice melting'
+  tzsource%clongname  = 'melting of ice'
   tzsource%lavailable = ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima ) ) ) .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
@@ -2237,7 +2235,7 @@ if ( tbudgets(NBUDGET_RI)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'CFRZ'
-  tzsource%clongname  = 'conversion freezing of rain drops'
+  tzsource%clongname  = 'conversion freezing of rain'
   tzsource%lavailable =    ( hcloud == 'LIMA' .and. ( lptsplit .or. ( lcold_lima .and. lwarm_lima .and. lsnow_lima ) ) ) &
                         .or. hcloud(1:3) == 'ICE'
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
@@ -2287,10 +2285,8 @@ if ( tbudgets(NBUDGET_RI)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'NECON'
-  tzsource%clongname  = 'negative correction induced by condensation'
-  tzsource%lavailable = (      hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4'   &
-                          .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA' ) &
-                        .and. celec == 'NONE'
+  tzsource%clongname  = 'negativity correction induced by condensation'
+  tzsource%lavailable = celec == 'NONE'
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
 
@@ -2362,7 +2358,7 @@ if ( tbudgets(NBUDGET_RS)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource )
 
 !   tzsource%cmnhname   = 'NETUR'
-!   tzsource%clongname  = 'negative correction induced by turbulence'
+!   tzsource%clongname  = 'negativity correction induced by turbulence'
 !   tzsource%lavailable = hturb == 'TKEL' .and. (      hcloud == 'ICE3' .or. hcloud == 'ICE4' &
 !                                   .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA' )
 !   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource nneturrs )
@@ -2378,15 +2374,13 @@ if ( tbudgets(NBUDGET_RS)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource )
 
   tzsource%cmnhname   = 'NEADV'
-  tzsource%clongname  = 'negative correction induced by advection'
-  tzsource%lavailable =       hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4' &
-                         .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA'
+  tzsource%clongname  = 'negativity correction induced by advection'
+  tzsource%lavailable =  .true.
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource )
 
   tzsource%cmnhname   = 'NEGA'
-  tzsource%clongname  = 'negative correction'
-  tzsource%lavailable =       hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4' &
-                         .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA'
+  tzsource%clongname  = 'negativity correction'
+  tzsource%lavailable = .true.
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource )
 
   tzsource%cmnhname   = 'CORR'
@@ -2438,7 +2432,7 @@ if ( tbudgets(NBUDGET_RS)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource )
 
   tzsource%cmnhname   = 'ACC'
-  tzsource%clongname  = 'accretion of rain water'
+  tzsource%clongname  = 'accretion of rain on snow'
   tzsource%lavailable =       ( hcloud == 'LIMA' .and. ( lptsplit .or. (       lcold_lima .and. lwarm_lima      &
                                                                          .and. lsnow_lima .and. lrain_lima) ) ) &
                          .or.   hcloud(1:3) == 'ICE'
@@ -2475,10 +2469,8 @@ if ( tbudgets(NBUDGET_RS)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource )
 
   tzsource%cmnhname   = 'NECON'
-  tzsource%clongname  = 'negative correction induced by condensation'
-  tzsource%lavailable = (      hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4'   &
-                          .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA' ) &
-                        .and. celec == 'NONE'
+  tzsource%clongname  = 'negativity correction induced by condensation'
+  tzsource%lavailable = celec == 'NONE'
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource )
 
 
@@ -2550,7 +2542,7 @@ if ( tbudgets(NBUDGET_RG)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource )
 
 !   tzsource%cmnhname   = 'NETUR'
-!   tzsource%clongname  = 'negative correction induced by turbulence'
+!   tzsource%clongname  = 'negativity correction induced by turbulence'
 !   tzsource%lavailable = hturb == 'TKEL' .and. (      hcloud == 'ICE3' .or. hcloud == 'ICE4' &
 !                                   .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA' )
 !   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource nneturrg )
@@ -2566,15 +2558,13 @@ if ( tbudgets(NBUDGET_RG)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource )
 
   tzsource%cmnhname   = 'NEADV'
-  tzsource%clongname  = 'negative correction induced by advection'
-  tzsource%lavailable =       hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4' &
-                         .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA'
+  tzsource%clongname  = 'negativity correction induced by advection'
+  tzsource%lavailable =  hcloud == 'ICE3' .or. hcloud == 'ICE4' .or. hcloud == 'LIMA'
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource )
 
   tzsource%cmnhname   = 'NEGA'
-  tzsource%clongname  = 'negative correction'
-  tzsource%lavailable =       hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4' &
-                         .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA'
+  tzsource%clongname  = 'negativity correction'
+  tzsource%lavailable =  hcloud == 'ICE3' .or. hcloud == 'ICE4' .or. hcloud == 'LIMA'
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource )
 
   tzsource%cmnhname   = 'CORR'
@@ -2611,7 +2601,7 @@ if ( tbudgets(NBUDGET_RG)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource )
 
   tzsource%cmnhname   = 'ACC'
-  tzsource%clongname  = 'rain accretion on graupel'
+  tzsource%clongname  = 'accretion of rain on graupel'
   tzsource%lavailable =      ( hcloud == 'LIMA' .and. ( lptsplit .or. (       lcold_lima .and. lwarm_lima      &
                                                                         .and. lsnow_lima .and. lrain_lima) ) ) &
                         .or.   hcloud(1:3) == 'ICE'
@@ -2680,7 +2670,7 @@ if ( tbudgets(NBUDGET_RG)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource )
 
   tzsource%cmnhname   = 'NECON'
-  tzsource%clongname  = 'negative correction induced by condensation'
+  tzsource%clongname  = 'negativity correction induced by condensation'
   tzsource%lavailable = (      hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4'   &
                           .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA' ) &
                         .and. celec == 'NONE'
@@ -2707,7 +2697,7 @@ if ( tbudgets(NBUDGET_RH)%lenabled ) then
 
   tbudgets(NBUDGET_RH)%tsources(:)%ngroup = 0
 
-  tzsource%ccomment = 'Budget of graupel mixing ratio'
+  tzsource%ccomment = 'Budget of hail mixing ratio'
   tzsource%ngrid    = 1
 
   tzsource%cunits   = 'kg kg-1'
@@ -2755,7 +2745,7 @@ if ( tbudgets(NBUDGET_RH)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RH), tzsource )
 
 !   tzsource%cmnhname   = 'NETUR'
-!   tzsource%clongname  = 'negative correction induced by turbulence'
+!   tzsource%clongname  = 'negativity correction induced by turbulence'
 !   tzsource%lavailable = hturb == 'TKEL' .and. (      hcloud == 'ICE3' .or. hcloud == 'ICE4' &
 !                                   .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA' )
 !   call Budget_source_add( tbudgets(NBUDGET_RH), tzsource nneturrh )
@@ -2771,15 +2761,13 @@ if ( tbudgets(NBUDGET_RH)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RH), tzsource )
 
   tzsource%cmnhname   = 'NEADV'
-  tzsource%clongname  = 'negative correction induced by advection'
-  tzsource%lavailable =       hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4' &
-                         .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA'
+  tzsource%clongname  = 'negativity correction induced by advection'
+  tzsource%lavailable = .true.
   call Budget_source_add( tbudgets(NBUDGET_RH), tzsource )
 
   tzsource%cmnhname   = 'NEGA'
-  tzsource%clongname  = 'negative correction'
-  tzsource%lavailable =       hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4' &
-                         .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA'
+  tzsource%clongname  = 'negativity correction'
+  tzsource%lavailable =  .true.
   call Budget_source_add( tbudgets(NBUDGET_RH), tzsource )
 
   tzsource%cmnhname   = 'SEDI'
@@ -2836,10 +2824,8 @@ if ( tbudgets(NBUDGET_RH)%lenabled ) then
   call Budget_source_add( tbudgets(NBUDGET_RH), tzsource )
 
   tzsource%cmnhname   = 'NECON'
-  tzsource%clongname  = 'negative correction induced by condensation'
-  tzsource%lavailable = (      hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4'   &
-                          .or. hcloud == 'KHKO' .or. hcloud == 'C2R2' .or. hcloud == 'LIMA' ) &
-                        .and. celec == 'NONE'
+  tzsource%clongname  = 'negativity correction induced by condensation'
+  tzsource%lavailable = celec == 'NONE'
   call Budget_source_add( tbudgets(NBUDGET_RH), tzsource )
 
 
@@ -2948,7 +2934,7 @@ SV_BUDGETS: do jsv = 1, ksv
     call Budget_source_add( tbudgets(ibudget), tzsource )
 
     tzsource%cmnhname   = 'NEGA2'
-    tzsource%clongname  = 'negative correction'
+    tzsource%clongname  = 'negativity correction'
     tzsource%lavailable = .true.
     call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -2962,22 +2948,22 @@ SV_BUDGETS: do jsv = 1, ksv
 
       ! Source terms in common for all C2R2/KHKO budgets
       tzsource%cmnhname   = 'NETUR'
-      tzsource%clongname  = 'negative correction induced by turbulence'
+      tzsource%clongname  = 'negativity correction induced by turbulence'
       tzsource%lavailable = hturb == 'TKEL'
       call Budget_source_add( tbudgets(ibudget), tzsource )
 
       tzsource%cmnhname   = 'NEADV'
-      tzsource%clongname  = 'negative correction induced by advection'
+      tzsource%clongname  = 'negativity correction induced by advection'
       tzsource%lavailable = .true.
       call Budget_source_add( tbudgets(ibudget), tzsource )
 
       tzsource%cmnhname   = 'NEGA'
-      tzsource%clongname  = 'negative correction'
+      tzsource%clongname  = 'negativity correction'
       tzsource%lavailable = .true.
       call Budget_source_add( tbudgets(ibudget), tzsource )
 
       tzsource%cmnhname   = 'NECON'
-      tzsource%clongname  = 'negative correction induced by condensation'
+      tzsource%clongname  = 'negativity correction induced by condensation'
       tzsource%lavailable = .true.
       call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -3016,7 +3002,7 @@ SV_BUDGETS: do jsv = 1, ksv
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
           tzsource%cmnhname   = 'ACCR'
-          tzsource%clongname  = 'accretion'
+          tzsource%clongname  = 'accretion of cloud droplets'
           tzsource%lavailable = lrain_c2r2
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -3079,22 +3065,22 @@ SV_BUDGETS: do jsv = 1, ksv
 
       ! Source terms in common for all LIMA budgets
       tzsource%cmnhname   = 'NETUR'
-      tzsource%clongname  = 'negative correction induced by turbulence'
+      tzsource%clongname  = 'negativity correction induced by turbulence'
       tzsource%lavailable = hturb == 'TKEL'
       call Budget_source_add( tbudgets(ibudget), tzsource )
 
       tzsource%cmnhname   = 'NEADV'
-      tzsource%clongname  = 'negative correction induced by advection'
+      tzsource%clongname  = 'negativity correction induced by advection'
       tzsource%lavailable = .true.
       call Budget_source_add( tbudgets(ibudget), tzsource )
 
       tzsource%cmnhname   = 'NEGA'
-      tzsource%clongname  = 'negative correction'
+      tzsource%clongname  = 'negativity correction'
       tzsource%lavailable = .true.
       call Budget_source_add( tbudgets(ibudget), tzsource )
 
       tzsource%cmnhname   = 'NECON'
-      tzsource%clongname  = 'negative correction induced by condensation'
+      tzsource%clongname  = 'negativity correction induced by condensation'
       tzsource%lavailable = .true.
       call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -3102,10 +3088,10 @@ SV_BUDGETS: do jsv = 1, ksv
       ! Source terms specific to each budget
       SV_LIMA: if ( jsv == nsv_lima_nc ) then
         ! Cloud droplets concentration
-          tzsource%cmnhname   = 'DEPOTR'
-          tzsource%clongname  = 'tree droplet deposition'
-          tzsource%lavailable = odragtree .and. odepotree
-          call Budget_source_add( tbudgets(ibudget), tzsource )
+        tzsource%cmnhname   = 'DEPOTR'
+        tzsource%clongname  = 'tree droplet deposition'
+        tzsource%lavailable = odragtree .and. odepotree
+        call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CORR'
         tzsource%clongname  = 'correction'
@@ -3148,7 +3134,7 @@ SV_BUDGETS: do jsv = 1, ksv
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'ACCR'
-        tzsource%clongname  = 'accretion'
+        tzsource%clongname  = 'accretion of cloud droplets'
         tzsource%lavailable = lptsplit .or. ( lwarm_lima  .and. lrain_lima )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -3158,12 +3144,12 @@ SV_BUDGETS: do jsv = 1, ksv
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'HONC'
-        tzsource%clongname  = 'droplet homogeneous nucleation'
+        tzsource%clongname  = 'droplet homogeneous freezing'
         tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lnucl_lima )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'IMLT'
-        tzsource%clongname  = 'ice melting'
+        tzsource%clongname  = 'melting of ice'
         tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -3194,7 +3180,7 @@ SV_BUDGETS: do jsv = 1, ksv
 
         tzsource%cmnhname   = 'CORR2'
         tzsource%clongname  = 'supplementary correction inside LIMA splitting'
-        tzsource%lavailable = hcloud == 'LIMA' .and. lptsplit
+        tzsource%lavailable = lptsplit
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CEDS'
@@ -3246,7 +3232,7 @@ SV_BUDGETS: do jsv = 1, ksv
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'ACC'
-        tzsource%clongname  = 'accretion of rain water'
+        tzsource%clongname  = 'accretion of rain  on aggregates'
         tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lsnow_lima .and. lrain_lima )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -3281,13 +3267,13 @@ SV_BUDGETS: do jsv = 1, ksv
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'HMLT'
-        tzsource%clongname  = 'hail melting'
+        tzsource%clongname  = 'melting of hail'
         tzsource%lavailable = .not.lptsplit .and. lhail_lima .and. lcold_lima .and. lwarm_lima  .and. lsnow_lima
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CORR2'
         tzsource%clongname  = 'supplementary correction inside LIMA splitting'
-        tzsource%lavailable = hcloud == 'LIMA' .and. lptsplit
+        tzsource%lavailable = lptsplit
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
 
@@ -3373,7 +3359,7 @@ SV_BUDGETS: do jsv = 1, ksv
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'HONC'
-        tzsource%clongname  = 'droplet homogeneous nucleation'
+        tzsource%clongname  = 'droplet homogeneous freezing'
         tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  .and. lnucl_lima )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -3393,7 +3379,7 @@ SV_BUDGETS: do jsv = 1, ksv
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'IMLT'
-        tzsource%clongname  = 'ice melting'
+        tzsource%clongname  = 'melting of ice'
         tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima  )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -3434,7 +3420,7 @@ SV_BUDGETS: do jsv = 1, ksv
 
         tzsource%cmnhname   = 'CORR2'
         tzsource%clongname  = 'supplementary correction inside LIMA splitting'
-        tzsource%lavailable = hcloud == 'LIMA' .and. lptsplit
+        tzsource%lavailable = lptsplit
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
 
@@ -3470,7 +3456,7 @@ SV_BUDGETS: do jsv = 1, ksv
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'IMLT'
-        tzsource%clongname  = 'ice melting'
+        tzsource%clongname  = 'melting of ice'
         tzsource%lavailable = lptsplit .or. ( lcold_lima .and. lwarm_lima )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -3497,9 +3483,8 @@ SV_BUDGETS: do jsv = 1, ksv
         ! Homogeneous freezing of CCN
         tzsource%cmnhname   = 'HONH'
         tzsource%clongname  = 'haze homogeneous nucleation'
-        tzsource%lavailable = lcold_lima .and. lnucl_lima  .and.                                                     &
-                              (      ( .not.lptsplit .and. ( ( lhhoni_lima .and. nmod_ccn >= 1 ) .or. lwarm_lima ) ) &
-                                .or. (      lptsplit .and.   ( lhhoni_lima .and. nmod_ccn >= 1 )                 ) )
+        tzsource%lavailable = lcold_lima .and. lnucl_lima .and.                                             &
+                              ( ( lhhoni_lima .and. nmod_ccn >= 1 ) .or. ( .not.lptsplit .and. lwarm_lima ) )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
     end if SV_LIMA
@@ -3508,7 +3493,7 @@ SV_BUDGETS: do jsv = 1, ksv
     else if ( jsv >= nsv_elecbeg .and. jsv <= nsv_elecend ) then SV_VAR
       ! Electricity case
       tzsource%cmnhname   = 'NEGA'
-      tzsource%clongname  = 'negative correction'
+      tzsource%clongname  = 'negativity correction'
       tzsource%lavailable = .true.
       call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -3546,7 +3531,7 @@ SV_BUDGETS: do jsv = 1, ksv
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
           tzsource%cmnhname   = 'NEUT'
-          tzsource%clongname  = 'NEUT'
+          tzsource%clongname  = 'neutralization'
           tzsource%lavailable = .true.
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -3564,7 +3549,7 @@ SV_BUDGETS: do jsv = 1, ksv
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
           tzsource%cmnhname   = 'ACCR'
-          tzsource%clongname  = 'accretion'
+          tzsource%clongname  = 'accretion of cloud droplets'
           tzsource%lavailable = lwarm_ice
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -3594,7 +3579,7 @@ SV_BUDGETS: do jsv = 1, ksv
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
           tzsource%cmnhname   = 'IMLT'
-          tzsource%clongname  = 'ice melting'
+          tzsource%clongname  = 'melting of ice'
           tzsource%lavailable = .true.
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -3614,7 +3599,7 @@ SV_BUDGETS: do jsv = 1, ksv
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
           tzsource%cmnhname   = 'NEUT'
-          tzsource%clongname  = 'NEUT'
+          tzsource%clongname  = 'neutralization'
           tzsource%lavailable = .true.
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -3632,7 +3617,7 @@ SV_BUDGETS: do jsv = 1, ksv
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
           tzsource%cmnhname   = 'ACCR'
-          tzsource%clongname  = 'accretion'
+          tzsource%clongname  = 'accretion of cloud droplets'
           tzsource%lavailable = lwarm_ice
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -3642,7 +3627,7 @@ SV_BUDGETS: do jsv = 1, ksv
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
           tzsource%cmnhname   = 'ACC'
-          tzsource%clongname  = 'accretion of rain water'
+          tzsource%clongname  = 'accretion of rain  on aggregates'
           tzsource%lavailable = .true.
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -3682,7 +3667,7 @@ SV_BUDGETS: do jsv = 1, ksv
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
           tzsource%cmnhname   = 'NEUT'
-          tzsource%clongname  = 'NEUT'
+          tzsource%clongname  = 'neutralization'
           tzsource%lavailable = .true.
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -3724,7 +3709,7 @@ SV_BUDGETS: do jsv = 1, ksv
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
           tzsource%cmnhname   = 'IMLT'
-          tzsource%clongname  = 'ice melting'
+          tzsource%clongname  = 'melting of ice'
           tzsource%lavailable = .true.
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -3749,7 +3734,7 @@ SV_BUDGETS: do jsv = 1, ksv
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
           tzsource%cmnhname   = 'NEUT'
-          tzsource%clongname  = 'NEUT'
+          tzsource%clongname  = 'neutralization'
           tzsource%lavailable = .true.
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -3777,7 +3762,7 @@ SV_BUDGETS: do jsv = 1, ksv
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
           tzsource%cmnhname   = 'ACC'
-          tzsource%clongname  = 'accretion of rain water'
+          tzsource%clongname  = 'accretion of rain on snow'
           tzsource%lavailable = .true.
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -3812,7 +3797,7 @@ SV_BUDGETS: do jsv = 1, ksv
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
           tzsource%cmnhname   = 'NEUT'
-          tzsource%clongname  = 'NEUT'
+          tzsource%clongname  = 'neutralization'
           tzsource%lavailable = .true.
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -3835,7 +3820,7 @@ SV_BUDGETS: do jsv = 1, ksv
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
           tzsource%cmnhname   = 'ACC'
-          tzsource%clongname  = 'accretion of rain water'
+          tzsource%clongname  = 'accretion of rain  on graupel'
           tzsource%lavailable = .true.
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -3880,7 +3865,7 @@ SV_BUDGETS: do jsv = 1, ksv
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
           tzsource%cmnhname   = 'NEUT'
-          tzsource%clongname  = 'NEUT'
+          tzsource%clongname  = 'neutralization'
           tzsource%lavailable = .true.
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -3909,7 +3894,7 @@ SV_BUDGETS: do jsv = 1, ksv
             call Budget_source_add( tbudgets(ibudget), tzsource )
 
             tzsource%cmnhname   = 'NEUT'
-            tzsource%clongname  = 'NEUT'
+            tzsource%clongname  = 'neutralization'
             tzsource%lavailable = .true.
             call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -3947,7 +3932,7 @@ SV_BUDGETS: do jsv = 1, ksv
             call Budget_source_add( tbudgets(ibudget), tzsource )
 
             tzsource%cmnhname   = 'NEUT'
-            tzsource%clongname  = 'NEUT'
+            tzsource%clongname  = 'neutralization'
             tzsource%lavailable = .true.
             call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -3983,7 +3968,7 @@ SV_BUDGETS: do jsv = 1, ksv
       call Budget_source_add( tbudgets(ibudget), tzsource )
 
       tzsource%cmnhname   = 'NEGA'
-      tzsource%clongname  = 'negative correction'
+      tzsource%clongname  = 'negativity correction'
       tzsource%lavailable = .true.
       call Budget_source_add( tbudgets(ibudget), tzsource )
 
@@ -3995,7 +3980,7 @@ SV_BUDGETS: do jsv = 1, ksv
     else if ( jsv >= nsv_aerbeg .and. jsv <= nsv_aerend ) then SV_VAR
       !Chemical aerosol case
       tzsource%cmnhname   = 'NEGA'
-      tzsource%clongname  = 'negative correction'
+      tzsource%clongname  = 'negativity correction'
       tzsource%lavailable = lorilam
       call Budget_source_add( tbudgets(ibudget), tzsource )
 
