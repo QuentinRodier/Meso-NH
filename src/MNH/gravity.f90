@@ -100,7 +100,7 @@ END MODULE MODI_GRAVITY
 !!      C.Lac - March 2011 - Splitted  from dyn_sources
 !!      Q.Rodier 06/15 correction on budget
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
-!!
+!!      J.L. Redelsperger 03/2021 : Ocean model case
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -108,6 +108,8 @@ END MODULE MODI_GRAVITY
 !
 USE MODD_CONF
 USE MODD_CST
+USE MODD_REF
+USE MODD_DYN_n, ONLY : LOCEAN
 !
 USE MODI_SHUMAN
 USE MODI_GET_HALO
@@ -144,6 +146,16 @@ REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) ::           &
 !
 IF( .NOT.L1D ) THEN     ! no buoyancy for 1D case
 !
+ IF (LOCEAN) THEN  !ocean case
+    CALL GET_HALO(PTHT)
+   IF(KRR > 0) THEN
+    CALL GET_HALO(PRT(:,:,:,1))
+    PRWS(:,:,:) = PRWS + XG * (XALPHAOC*MZM((PTHT - PTHVREF )*PRHODJ) &
+                           - XBETAOC*MZM((PRT(:,:,:,1) - XSA00OCEAN)*PRHODJ) )
+   ELSE ! unsalted case
+    PRWS(:,:,:) = PRWS + XG * XALPHAOC*MZM((PTHT - PTHVREF )*PRHODJ ) 
+   END IF
+ELSE   ! Atmospheric case
   IF(KRR > 0) THEN
 !
 !   compute the ratio : 1 + total water mass / dry air mass
@@ -156,7 +168,6 @@ IF( .NOT.L1D ) THEN     ! no buoyancy for 1D case
     END DO
 !
 !   compute the virtual potential temperature when water is present in any form
-!
     CALL GET_HALO(PTHT)
 !
     
@@ -171,6 +182,7 @@ IF( .NOT.L1D ) THEN     ! no buoyancy for 1D case
 !   compute the gravity term
 !
   PRWS(:,:,:) = PRWS + XG * MZM( ( (ZWORK2/PTHVREF) - 1. ) * PRHODJ )
+ END IF
 !
 !    the extrapolation for the PTHT and the THVREF must be the same at the
 !    ground

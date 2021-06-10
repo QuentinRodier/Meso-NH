@@ -146,6 +146,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG
 !  S  Bielli      02/2019: sea salt: significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 18/03/2020: remove ICE2 option
 !  P. Wautelet 11/03/2021: bugfix: correct name for NSV_LIMA_IMM_NUCL
+!  J.L Redelsperger 03/2021 Adding OCEAN LES Case and Autocoupled O-A LES 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -455,6 +456,8 @@ CALL IO_Field_write(TPFILE,'DTSEG',TDTSEG)
 !
 CALL IO_Field_write(TPFILE,'CARTESIAN',LCARTESIAN)
 CALL IO_Field_write(TPFILE,'LBOUSS',   LBOUSS)
+CALL IO_Field_write(TPFILE,'LOCEAN',   LOCEAN)
+CALL IO_Field_write(TPFILE,'LCOUPLES', LCOUPLES)
 !
 IF (LCARTESIAN .AND. LWIND_ZM) THEN
   LWIND_ZM=.FALSE.
@@ -462,9 +465,15 @@ IF (LCARTESIAN .AND. LWIND_ZM) THEN
 END IF
 !*       1.4    Reference state variables :
 !
-CALL IO_Field_write(TPFILE,'RHOREFZ',XRHODREFZ)
-CALL IO_Field_write(TPFILE,'THVREFZ',XTHVREFZ)
-CALL IO_Field_write(TPFILE,'EXNTOP', XEXNTOP)
+IF (LCOUPLES.AND.LOCEAN) THEN
+  CALL IO_Field_write(TPFILE,'RHOREFZ',XRHODREFZO)
+  CALL IO_Field_write(TPFILE,'THVREFZ',XTHVREFZO)
+  CALL IO_Field_write(TPFILE,'EXNTOP', XEXNTOPO)
+ELSE
+  CALL IO_Field_write(TPFILE,'RHOREFZ',XRHODREFZ)
+  CALL IO_Field_write(TPFILE,'THVREFZ',XTHVREFZ)
+  CALL IO_Field_write(TPFILE,'EXNTOP', XEXNTOP)
+END IF
 !
 CALL IO_Field_write(TPFILE,'RHODREF',XRHODREF)
 CALL IO_Field_write(TPFILE,'THVREF', XTHVREF)

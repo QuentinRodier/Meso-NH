@@ -66,6 +66,11 @@ NAMELIST /NAM_FRC/ LGEOST_UV_FRC      , &
                    LTRANS             , &
                    XUTRANS            , &
                    XVTRANS            , &
-                   LPGROUND_FRC
+                   LPGROUND_FRC       ,&
+                   LDEEPOC ,&
+                   XCENTX_OC ,&
+                   XCENTY_OC ,&
+                   XRADX_OC  ,&
+                   XRADY_OC 
 !
 END MODULE MODN_FRC

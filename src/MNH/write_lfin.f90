@@ -178,6 +178,7 @@ END MODULE MODI_WRITE_LFIFM_n
 !  T.Nagel   02/2021    : Add turbulence recycling
 !  P. Wautelet 10/03/2021: use scalar variable names for dust and salt
 !  P. Wautelet 11/03/2021: bugfix: correct name for NSV_LIMA_IMM_NUCL
+!  J.L. Redelsperger 03/2021: Add OCEAN and auto-coupled O-A LES cases
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -229,6 +230,7 @@ USE MODD_HURR_FIELD_n
 USE MODD_PREP_REAL, ONLY: CDUMMY_2D, XDUMMY_2D
 USE MODD_DUST
 USE MODD_SALT
+USE MODD_OCEANH
 USE MODD_PASPOL
 #ifdef MNH_FOREFIRE
 USE MODD_FOREFIRE
@@ -435,6 +437,8 @@ CALL IO_Field_write(TPFILE,'L2D',      L2D)
 CALL IO_Field_write(TPFILE,'PACK',     LPACK)
 CALL IO_Field_write(TPFILE,'CARTESIAN',LCARTESIAN)
 CALL IO_Field_write(TPFILE,'LBOUSS',   LBOUSS)
+CALL IO_Field_write(TPFILE,'LOCEAN',   LOCEAN)
+CALL IO_Field_write(TPFILE,'LCOUPLES', LCOUPLES)
 !
 CALL IO_Field_write(TPFILE,'SURF',     CSURF)
 CALL IO_Field_write(TPFILE,'CPL_AROME',LCPL_AROME)
@@ -1562,9 +1566,15 @@ END IF
 !
 !*       1.5    Reference state variables :
 !
-CALL IO_Field_write(TPFILE,'RHOREFZ',XRHODREFZ)
-CALL IO_Field_write(TPFILE,'THVREFZ',XTHVREFZ)
-CALL IO_Field_write(TPFILE,'EXNTOP', XEXNTOP)
+IF (LCOUPLES.AND.LOCEAN) THEN
+  CALL IO_Field_write(TPFILE,'RHOREFZ',XRHODREFZO)
+  CALL IO_Field_write(TPFILE,'THVREFZ',XTHVREFZO)
+  CALL IO_Field_write(TPFILE,'EXNTOP', XEXNTOPO)
+ELSE
+  CALL IO_Field_write(TPFILE,'RHOREFZ',XRHODREFZ)
+  CALL IO_Field_write(TPFILE,'THVREFZ',XTHVREFZ)
+  CALL IO_Field_write(TPFILE,'EXNTOP', XEXNTOP)
+END IF
 !
 !
 !*       1.6  Tendencies                                         
@@ -1943,8 +1953,85 @@ IF(LBLOWSNOW) THEN
   END IF
 ENDIF
 !
-!*       1.11   Forcing variables
+!*       1.11   Ocean LES variables
 !
+    IF ((.NOT.LCOUPLES).AND.LOCEAN) THEN
+WRITE (ILUOUT,*) 'LOCEAN NFRCLT', LOCEAN,NFRCLT,XSSUFL_T(1),XSSVFL_T(2),XSSTFL_T(1),XSSOLA_T(2)
+TZFIELD%CMNHNAME   = 'NFRCLT'
+TZFIELD%CSTDNAME   = ''
+TZFIELD%CLONGNAME  = 'NFRCLT'
+TZFIELD%CUNITS     = 'number of forc'
+TZFIELD%CDIR       = '--'
+TZFIELD%CCOMMENT   = 'nb de flux sfc forcant LES ocean'
+TZFIELD%NGRID      = 0
+TZFIELD%NTYPE      = TYPEINT
+TZFIELD%NDIMS      = 0
+TZFIELD%LTIMEDEP   = .FALSE.
+CALL IO_Field_write(TPFILE,TZFIELD,NFRCLT)
+!
+TZFIELD%CMNHNAME   = 'NINFRT'
+TZFIELD%CSTDNAME   = ''
+TZFIELD%CLONGNAME  = 'NINFRT'
+TZFIELD%CUNITS     = 'interv between  forc'
+TZFIELD%CDIR       = '--'
+TZFIELD%CCOMMENT   = 'int between flux sfc forcant LES ocean'
+TZFIELD%NGRID      = 0
+TZFIELD%NTYPE      = TYPEINT
+TZFIELD%NDIMS      = 0
+TZFIELD%LTIMEDEP   = .FALSE.
+CALL IO_Field_write(TPFILE,TZFIELD,NINFRT)
+!
+TZFIELD%CMNHNAME   = 'SSUFL_T'
+TZFIELD%CSTDNAME   = ''
+TZFIELD%CLONGNAME  = 'SSUFL'
+TZFIELD%CUNITS     = 'kg m-1 s-1'
+TZFIELD%CDIR       = '--'
+TZFIELD%CCOMMENT   = 'sfc stress along U to force ocean LES '
+TZFIELD%NGRID      = 0
+TZFIELD%NTYPE      = TYPEREAL
+TZFIELD%NDIMS      = 1
+TZFIELD%LTIMEDEP   = .FALSE.
+ CALL IO_Field_write(TPFILE,TZFIELD,XSSUFL_T(:))
+!
+TZFIELD%CMNHNAME   = 'SSVFL_T'
+TZFIELD%CSTDNAME   = ''
+TZFIELD%CLONGNAME  = 'SSVFL'
+TZFIELD%CUNITS     = 'kg m-1 s-1'
+TZFIELD%CDIR       = '--'
+TZFIELD%CCOMMENT   = 'sfc stress along V to force ocean LES '
+TZFIELD%NGRID      = 0
+TZFIELD%NTYPE      = TYPEREAL
+TZFIELD%NDIMS      = 1
+TZFIELD%LTIMEDEP   = .FALSE.
+ CALL IO_Field_write(TPFILE,TZFIELD,XSSVFL_T(:))
+!
+TZFIELD%CMNHNAME   = 'SSTFL_T'
+TZFIELD%CSTDNAME   = ''
+TZFIELD%CLONGNAME  = 'SSTFL'
+TZFIELD%CUNITS     = 'kg m3 K m s-1'
+TZFIELD%CDIR       = '--'
+TZFIELD%CCOMMENT   = 'sfc total heat flux to force ocean LES '
+TZFIELD%NGRID      = 0
+TZFIELD%NTYPE      = TYPEREAL
+TZFIELD%NDIMS      = 1
+TZFIELD%LTIMEDEP   = .FALSE.
+ CALL IO_Field_write(TPFILE,TZFIELD,XSSTFL_T(:))
+!
+TZFIELD%CMNHNAME   = 'SSOLA_T'
+TZFIELD%CSTDNAME   = ''
+TZFIELD%CLONGNAME  = 'SSOLA'
+TZFIELD%CUNITS     = 'kg m3 K m s-1'
+TZFIELD%CDIR       = '--'
+TZFIELD%CCOMMENT   = 'sfc solar flux to force ocean LES '
+TZFIELD%NGRID      = 0
+TZFIELD%NTYPE      = TYPEREAL
+TZFIELD%NDIMS      = 1
+TZFIELD%LTIMEDEP   = .FALSE.
+ CALL IO_Field_write(TPFILE,TZFIELD,XSSOLA_T(:))
+!
+END IF ! ocean sfc forcing end    
+!
+!*       1.12   Forcing variables
 !
 IF (LFORCING) THEN
 !
@@ -2230,7 +2317,7 @@ IF ( L2D_REL_FRC ) THEN
   ENDDO
 ENDIF
 !
-!*       1.11bis   Eddy Fluxes variables    ! Modif PP
+!*       1.13   Eddy Fluxes variables    ! Modif PP
 !
 IF ( LTH_FLX ) THEN
    CALL IO_Field_write(TPFILE,'VT_FLX',XVTH_FLUX_M)
@@ -2239,13 +2326,13 @@ END IF
 !
 IF ( LUV_FLX) CALL IO_Field_write(TPFILE,'VU_FLX',XVU_FLUX_M)
 !
-!*       1.12   Balloon variables
+!*       1.14   Balloon variables
 !
 !
 IF (LFLYER) CALL WRITE_BALLOON_n(TPFILE)
 !
 !
-!*       1.13    Filtered variables for hurricane initialization
+!*       1.15    Filtered variables for hurricane initialization
 !
 !
 IF ( CPROGRAM=='REAL  ' ) THEN
@@ -2290,7 +2377,7 @@ IF ( CPROGRAM=='REAL  ' ) THEN
 !
   END IF
 !
-!*       1.14    Dummy variables in PREP_REAL_CASE
+!*       1.16    Dummy variables in PREP_REAL_CASE
 !
   IF (ALLOCATED(CDUMMY_2D)) THEN
     TZFIELD%CSTDNAME   = ''
@@ -2311,7 +2398,7 @@ IF ( CPROGRAM=='REAL  ' ) THEN
 !
 END IF
 !
-!*       1.15    Wind turbine variables 
+!*       1.17    Wind turbine variables 
 !
 !             i) Main
 !

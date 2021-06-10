@@ -80,12 +80,14 @@ FUNCTION EMOIST(KRR,KRRI,PTHLM,PRM,PLOCPEXNM,PAMOIST,PSRCM) RESULT(PEMOIST)
 !!       J. Stein       Feb  28, 1996   optimization + Doctorization
 !!       J. Stein       Spet 15, 1996   Amoist previously computed
 !!       J.-P. Pinty    May  20, 2003   Improve EMOIST expression
+!!                  03/2021 (JL Redelsperger) Ocean model case 
 !! 
 !! ----------------------------------------------------------------------
 !
 !*       0. DECLARATIONS
 !           ------------
 USE MODD_CST
+USE MODD_DYN_n, ONLY : LOCEAN
 !
 IMPLICIT NONE
 !
@@ -118,14 +120,21 @@ INTEGER                               :: JRR     ! moist loop counter
 !
 !*       1. COMPUTE EMOIST
 !           --------------
+IF (LOCEAN) THEN
+ IF ( KRR == 0 ) THEN                                ! Unsalted
+   PEMOIST(:,:,:) = 0.
+ ELSE
+   PEMOIST(:,:,:) = 1.                              ! Salted case
+ END IF
 !
+ELSE
 !
-IF ( KRR == 0 ) THEN                                ! dry case
-  PEMOIST(:,:,:) = 0.
-ELSE IF ( KRR == 1 ) THEN                           ! only vapor
+ IF ( KRR == 0 ) THEN                                ! dry case
+   PEMOIST(:,:,:) = 0.
+ ELSE IF ( KRR == 1 ) THEN                           ! only vapor
   ZDELTA = (XRV/XRD) - 1.
   PEMOIST(:,:,:) = ZDELTA*PTHLM(:,:,:)
-ELSE                                                ! liquid water & ice present
+ ELSE                                                ! liquid water & ice present
   ZDELTA = (XRV/XRD) - 1.
   ZRW(:,:,:) = PRM(:,:,:,1)
 !
@@ -173,8 +182,9 @@ ELSE                                                ! liquid water & ice present
                             / (1. + ZRW(:,:,:))                                &
          ) * PAMOIST(:,:,:) * 2. * PSRCM(:,:,:)
   END IF
-END IF
+ END IF
 !
+END IF
 !---------------------------------------------------------------------------
 !
 END FUNCTION EMOIST

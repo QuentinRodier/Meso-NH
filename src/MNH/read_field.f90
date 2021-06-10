@@ -9,7 +9,7 @@
 !
 INTERFACE 
 !
-      SUBROUTINE READ_FIELD(TPINIFILE,KIU,KJU,KKU,                           &
+      SUBROUTINE READ_FIELD(KOCMI,TPINIFILE,KIU,KJU,KKU,                           &
             HGETTKET,HGETRVT,HGETRCT,HGETRRT,HGETRIT,HGETCIT,HGETZWS,        &
             HGETRST,HGETRGT,HGETRHT,HGETSVT,HGETSRCT,HGETSIGS,HGETCLDFR,     &
             HGETBL_DEPTH,HGETSBL_DEPTH,HGETPHC,HGETPHR,HUVW_ADV_SCHEME,      &
@@ -38,7 +38,7 @@ USE MODD_TIME ! for type DATE_TIME
 !
 !
 TYPE(TFILEDATA),           INTENT(IN)  :: TPINIFILE    !Initial file
-INTEGER,                   INTENT(IN)  :: KIU, KJU, KKU   
+INTEGER,                   INTENT(IN)  :: KIU, KJU, KKU,KOCMI   
                              ! array sizes in x, y and z  directions
 ! 
 CHARACTER (LEN=*),         INTENT(IN)  :: HGETTKET,                          &
@@ -131,7 +131,7 @@ END INTERFACE
 END MODULE MODI_READ_FIELD
 !
 !     ########################################################################
-      SUBROUTINE READ_FIELD(TPINIFILE,KIU,KJU,KKU,                           &
+      SUBROUTINE READ_FIELD(KOCEMI,TPINIFILE,KIU,KJU,KKU,                           &
             HGETTKET,HGETRVT,HGETRCT,HGETRRT,HGETRIT,HGETCIT,HGETZWS,        &
             HGETRST,HGETRGT,HGETRHT,HGETSVT,HGETSRCT,HGETSIGS,HGETCLDFR,     &
             HGETBL_DEPTH,HGETSBL_DEPTH,HGETPHC,HGETPHR,HUVW_ADV_SCHEME,      &
@@ -253,6 +253,7 @@ END MODULE MODI_READ_FIELD
 !  M. Leriche  10/06/2019: in restart case read all immersion modes for LIMA
 !! F. Auguste  02/2021: add fields necessary for IBM
 !! T. Nagel    02/2021: add fields necessary for turbulence recycling
+!! J.L. Redelsperger 03/2021:  add necessary variables for Ocean LES case
 !!-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -269,6 +270,7 @@ USE MODD_CONF_n
 USE MODD_CST
 USE MODD_CTURB
 USE MODD_DUST
+USE MODD_DYN_n, ONLY : LOCEAN
 USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
 use modd_field,           only: tfielddata, tfieldlist, TYPEDATE, TYPEREAL,TYPELOG,TYPEINT
 USE MODD_FIELD_n,         only: XZWS_DEFAULT
@@ -282,6 +284,7 @@ USE MODD_LATZ_EDFLX
 USE MODD_LG,              ONLY: CLGNAMES
 USE MODD_LUNIT_N,         ONLY: TLUOUT
 USE MODD_NSV
+USE MODD_OCEANH
 USE MODD_PARAM_C2R2,      ONLY: LSUPSAT
 !
 USE MODD_PARAM_LIMA     , ONLY: NMOD_CCN, LSCAV, LAERO_MASS,                &
@@ -292,6 +295,7 @@ USE MODD_PARAM_n,           ONLY: CSCONV
 USE MODD_PASPOL
 USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
 USE MODD_RECYCL_PARAM_n
+USE MODD_REF, ONLY:LCOUPLES
 USE MODD_SALT
 USE MODD_TIME ! for type DATE_TIME
 !
@@ -310,7 +314,7 @@ IMPLICIT NONE
 !
 !
 TYPE(TFILEDATA),           INTENT(IN)  :: TPINIFILE    !Initial file
-INTEGER,                   INTENT(IN)  :: KIU, KJU, KKU   
+INTEGER,                   INTENT(IN)  :: KIU, KJU, KKU,KOCEMI   
                              ! array sizes in x, y and z  directions
 ! 
 CHARACTER (LEN=*),         INTENT(IN)  :: HGETTKET,                          &
@@ -1532,6 +1536,66 @@ END SELECT
 !*       2.4   READ FORCING VARIABLES
 !              ----------------------
 !
+! READ FIELD ONLY FOR MODEL1 (identical for all model in GN)
+IF (LOCEAN .AND. (.NOT.LCOUPLES) .AND. (KOCEMI==1)) THEN
+!
+ CALL IO_Field_read(TPINIFILE,'NFRCLT',NFRCLT)
+ CALL IO_Field_read(TPINIFILE,'NINFRT',NINFRT)
+!
+ TZFIELD%CMNHNAME   = 'SSUFL_T'
+ TZFIELD%CSTDNAME   = ''
+ TZFIELD%CLONGNAME  = 'SSUFL'
+ TZFIELD%CUNITS     = 'kg m-1 s-1'
+ TZFIELD%CDIR       = '--'
+ TZFIELD%CCOMMENT   = 'sfc stress along U to force ocean LES '
+ TZFIELD%NGRID      = 0
+ TZFIELD%NTYPE      = TYPEREAL
+ TZFIELD%NDIMS      = 1
+ TZFIELD%LTIMEDEP   = .FALSE.
+ ALLOCATE(XSSUFL_T(NFRCLT))
+  CALL IO_Field_read(TPINIFILE,TZFIELD,XSSUFL_T(:))
+!
+ TZFIELD%CMNHNAME   = 'SSVFL_T'
+ TZFIELD%CSTDNAME   = ''
+ TZFIELD%CLONGNAME  = 'SSVFL'
+ TZFIELD%CUNITS     = 'kg m-1 s-1'
+ TZFIELD%CDIR       = '--'
+ TZFIELD%CCOMMENT   = 'sfc stress along V to force ocean LES '
+ TZFIELD%NGRID      = 0
+ TZFIELD%NTYPE      = TYPEREAL
+ TZFIELD%NDIMS      = 1
+ TZFIELD%LTIMEDEP   = .FALSE.
+ALLOCATE(XSSVFL_T(NFRCLT))
+  CALL IO_Field_read(TPINIFILE,TZFIELD,XSSVFL_T(:))
+!
+ TZFIELD%CMNHNAME   = 'SSTFL_T'
+ TZFIELD%CSTDNAME   = ''
+ TZFIELD%CLONGNAME  = 'SSTFL'
+ TZFIELD%CUNITS     = 'kg m3 K m s-1'
+ TZFIELD%CDIR       = '--'
+ TZFIELD%CCOMMENT   = 'sfc total heat flux to force ocean LES '
+ TZFIELD%NGRID      = 0
+ TZFIELD%NTYPE      = TYPEREAL
+ TZFIELD%NDIMS      = 1
+ TZFIELD%LTIMEDEP   = .FALSE.
+ ALLOCATE(XSSTFL_T(NFRCLT))
+  CALL IO_Field_read(TPINIFILE,TZFIELD,XSSTFL_T(:))
+! 
+ TZFIELD%CMNHNAME   = 'SSOLA_T'
+ TZFIELD%CSTDNAME   = ''
+ TZFIELD%CLONGNAME  = 'SSOLA'
+ TZFIELD%CUNITS     = 'kg m3 K m s-1'
+ TZFIELD%CDIR       = '--'
+ TZFIELD%CCOMMENT   = 'sfc solar flux at sfc to force ocean LES '
+ TZFIELD%NGRID      = 0
+ TZFIELD%NTYPE      = TYPEREAL
+ TZFIELD%NDIMS      = 1
+ TZFIELD%LTIMEDEP   = .FALSE.
+ ALLOCATE(XSSOLA_T(NFRCLT))
+  CALL IO_Field_read(TPINIFILE,TZFIELD,XSSOLA_T(:))
+!
+END IF ! ocean sfc forcing end    
+
 !
 IF ( LFORCING ) THEN
   DO JT=1,KFRC
@@ -1880,4 +1944,3 @@ END IF
 ! 
 !
 END SUBROUTINE READ_FIELD
-

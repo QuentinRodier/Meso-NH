@@ -43,16 +43,18 @@
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    16/08/95                      
+!!      Original    16/08/95 
+!!     JL Redelsperger  03/2021 : Add Auto-coupled O-A LES case                      
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
 !
 USE MODD_NESTING
+USE MODD_REF, ONLY: LCOUPLES
 !
 IMPLICIT NONE
 !
-NAMELIST/NAM_NESTING/NDAD,NDTRATIO,XWAY
+NAMELIST/NAM_NESTING/NDAD,NDTRATIO,XWAY,LCOUPLES
 !
 END MODULE MODN_NESTING

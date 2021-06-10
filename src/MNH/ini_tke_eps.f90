@@ -84,18 +84,20 @@ END MODULE MODI_INI_TKE_EPS
 !!                          Aug 10, 1998 (N. Asencio) add parallel code
 !!                          May 2006  Remove KEPS
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!!                          March 2021 (JL Redelsperger) Add Ocean LES case)
 !! -------------------------------------------------------------------------
 !
 !*          0. DECLARATIONS
 !              ------------
 !
-USE MODD_CTURB      ! XLINI, XCED, XCMFS, XTKEMIN
-USE MODD_CST        ! XG, XRD,  XRV
-USE MODD_PARAMETERS ! JPVEXT
+USE MODD_CTURB,      ONLY : XLINI, XCED, XCMFS, XTKEMIN, XCSHF
+USE MODD_CST,        ONLY : XG, XRD, XRV, XALPHAOC
+USE MODD_PARAMETERS, ONLY : JPVEXT
+USE MODD_DYN_n,      ONLY : LOCEAN
 !
-USE MODI_SHUMAN     ! DZF, MXF, MYF, MZM
+USE MODI_SHUMAN,     ONLY : DZF, MXF, MYF, MZM
 USE MODE_ll
-USE MODD_ARGSLIST_ll, ONLY : LIST_ll
+USE MODD_ARGSLIST_ll,ONLY : LIST_ll
 !
 IMPLICIT NONE
 !
@@ -148,11 +150,20 @@ IF (HGETTKET == 'INIT' ) THEN
   PVT(:,:,IKE+1)  = PVT(:,:,IKE)
   !
   ! determines TKE
+  ! Equilibrium/Stationary/neutral 1D TKE equation
+IF (LOCEAN) THEN
+  PTKET(:,:,:)=(XLINI**2/XCED)*(  &
+                  XCMFS*( DZF(MXF(MZM(PUT)))**2                  &
+                         +DZF(MYF(MZM(PVT)))**2) / ZDELTZ        &
+                 -(XG*XALPHAOC)*XCSHF*DZF(MZM(PTHT))              &
+                               ) / ZDELTZ
+ELSE   
   PTKET(:,:,:)=(XLINI**2/XCED)*(  &
                   XCMFS*( DZF(MXF(MZM(PUT)))**2                  &
                          +DZF(MYF(MZM(PVT)))**2) / ZDELTZ        &
                  -(XG/PTHVREF)*XCSHF*DZF(MZM(PTHT))              &
                                ) / ZDELTZ
+END IF
   ! positivity control
   WHERE (PTKET < XTKEMIN) PTKET=XTKEMIN
   !

@@ -345,6 +345,7 @@ END MODULE MODI_TURB
 !  P. Wautelet + Benoit Vié 06/2020: improve removal of negative scalar variables + adapt the corresponding budgets
 !  P. Wautelet 30/06/2020: move removal of negative scalar variables to Sources_neg_correct
 !  R. Honnert/V. Masson 02/2021: new mixing length in the grey zone
+!! J.L. Redelsperger 03/2021: add Ocean LES case
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -358,12 +359,14 @@ use modd_budget,      only: lbudget_u,  lbudget_v,  lbudget_w,  lbudget_th, lbud
 USE MODD_CONF
 USE MODD_CST
 USE MODD_CTURB
+USE MODD_DYN_n, ONLY : LOCEAN
 use modd_field,          only: tfielddata, TYPEREAL
 USE MODD_IO, ONLY: TFILEDATA
 USE MODD_LES
 USE MODD_NSV
 USE MODD_PARAMETERS, ONLY: JPVEXT_TURB
 USE MODD_PARAM_LIMA
+USE MODD_REF
 USE MODD_TURB_n, ONLY: XCADAP
 !
 USE MODI_GRADIENT_M
@@ -643,7 +646,11 @@ END DO
 !
 !*      2.2 Exner function at t
 !
-ZEXN(:,:,:) = (PPABST(:,:,:)/XP00) ** (XRD/XCPD)
+IF (LOCEAN) THEN
+  ZEXN(:,:,:) = 1.
+ELSE
+  ZEXN(:,:,:) = (PPABST(:,:,:)/XP00) ** (XRD/XCPD)
+END IF
 !
 !*      2.3 dissipative heating coeff a t
 !
@@ -1512,15 +1519,26 @@ IF (.NOT. ORMC01) THEN
   !
   DO JJ=1,SIZE(PUT,2)
     DO JI=1,SIZE(PUT,1)
-      DO JK=IKTB,IKTE
-        ZD=ZALPHA*(0.5*(PZZ(JI,JJ,JK)+PZZ(JI,JJ,JK+KKL))&
-        -PZZ(JI,JJ,IKB)) *PDIRCOSZW(JI,JJ)
-        IF ( PLM(JI,JJ,JK)>ZD) THEN
-          PLM(JI,JJ,JK)=ZD
-        ELSE
-          EXIT
-        ENDIF
-      END DO
+      IF (LOCEAN) THEN
+        DO JK=IKTE,IKTB,-1
+          ZD=ZALPHA*(PZZ(JI,JJ,IKTE+1)-PZZ(JI,JJ,JK))
+          IF ( PLM(JI,JJ,JK)>ZD) THEN
+            PLM(JI,JJ,JK)=ZD
+          ELSE
+            EXIT
+          ENDIF
+       END DO
+      ELSE
+        DO JK=IKTB,IKTE
+          ZD=ZALPHA*(0.5*(PZZ(JI,JJ,JK)+PZZ(JI,JJ,JK+KKL))&
+          -PZZ(JI,JJ,IKB)) *PDIRCOSZW(JI,JJ)
+          IF ( PLM(JI,JJ,JK)>ZD) THEN
+            PLM(JI,JJ,JK)=ZD
+          ELSE
+            EXIT
+          ENDIF
+        END DO
+      ENDIF   
     END DO
   END DO
 END IF
@@ -1587,7 +1605,6 @@ END IF
 ZETHETA(:,:,:) = ETHETA(KRR,KRRI,PTHLT,PRT,ZLOCPEXNM,ZATHETA,PSRCT)
 ZEMOIST(:,:,:) = EMOIST(KRR,KRRI,PTHLT,PRT,ZLOCPEXNM,ZAMOIST,PSRCT)
 !
-! For dry simulations
 IF (KRR>0) THEN
   DO JK = IKTB+1,IKTE-1
     DO JJ=1,SIZE(PUT,2)
@@ -1596,8 +1613,12 @@ IF (KRR>0) THEN
                                 (PTHLT(JI,JJ,JK    )-PTHLT(JI,JJ,JK-KKL))/PDZZ(JI,JJ,JK    ))
         ZDRTDZ(JI,JJ,JK) = 0.5*((PRT(JI,JJ,JK+KKL,1)-PRT(JI,JJ,JK    ,1))/PDZZ(JI,JJ,JK+KKL)+ &
                                 (PRT(JI,JJ,JK    ,1)-PRT(JI,JJ,JK-KKL,1))/PDZZ(JI,JJ,JK    ))
-        ZVAR=XG/PTHVREF(JI,JJ,JK)*                                                  &
+        IF (LOCEAN) THEN
+          ZVAR=XG*(XALPHAOC*ZDTHLDZ(JI,JJ,JK)-XBETAOC*ZDRTDZ(JI,JJ,JK))
+        ELSE
+          ZVAR=XG/PTHVREF(JI,JJ,JK)*                                                  &
              (ZETHETA(JI,JJ,JK)*ZDTHLDZ(JI,JJ,JK)+ZEMOIST(JI,JJ,JK)*ZDRTDZ(JI,JJ,JK))
+        END IF
         !
         IF (ZVAR>0.) THEN
           PLM(JI,JJ,JK)=MAX(XMNH_EPSILON,MIN(PLM(JI,JJ,JK), &
@@ -1606,14 +1627,18 @@ IF (KRR>0) THEN
       END DO
     END DO
   END DO
-ELSE
+ELSE! For dry atmos or unsalted ocean runs
   DO JK = IKTB+1,IKTE-1
     DO JJ=1,SIZE(PUT,2)
       DO JI=1,SIZE(PUT,1)
         ZDTHLDZ(JI,JJ,JK)= 0.5*((PTHLT(JI,JJ,JK+KKL)-PTHLT(JI,JJ,JK    ))/PDZZ(JI,JJ,JK+KKL)+ &
                                 (PTHLT(JI,JJ,JK    )-PTHLT(JI,JJ,JK-KKL))/PDZZ(JI,JJ,JK    ))
-        ZVAR=XG/PTHVREF(JI,JJ,JK)*ZETHETA(JI,JJ,JK)*ZDTHLDZ(JI,JJ,JK)
-        !
+        IF (LOCEAN) THEN
+          ZVAR= XG*XALPHAOC*ZDTHLDZ(JI,JJ,JK)
+        ELSE
+          ZVAR= XG/PTHVREF(JI,JJ,JK)*ZETHETA(JI,JJ,JK)*ZDTHLDZ(JI,JJ,JK)
+        END IF
+!
         IF (ZVAR>0.) THEN
           PLM(JI,JJ,JK)=MAX(XMNH_EPSILON,MIN(PLM(JI,JJ,JK), &
                         0.76* SQRT(PTKET(JI,JJ,JK)/ZVAR)))
@@ -1631,8 +1656,12 @@ ELSE
   ZDRTDZ(:,:,IKB)=0
 ENDIF
 !
-ZWORK2D(:,:)=XG/PTHVREF(:,:,IKB)*                                           &
-            (ZETHETA(:,:,IKB)*ZDTHLDZ(:,:,IKB)+ZEMOIST(:,:,IKB)*ZDRTDZ(:,:,IKB))
+IF (LOCEAN) THEN
+  ZWORK2D(:,:)=XG*(XALPHAOC*ZDTHLDZ(:,:,IKB)-XBETAOC*ZDRTDZ(:,:,IKB))
+ELSE
+  ZWORK2D(:,:)=XG/PTHVREF(:,:,IKB)*                                           &
+              (ZETHETA(:,:,IKB)*ZDTHLDZ(:,:,IKB)+ZEMOIST(:,:,IKB)*ZDRTDZ(:,:,IKB))
+END IF
 WHERE(ZWORK2D(:,:)>0.)
   PLM(:,:,IKB)=MAX(XMNH_EPSILON,MIN( PLM(:,:,IKB),                 &
                     0.76* SQRT(PTKET(:,:,IKB)/ZWORK2D(:,:))))
@@ -1645,15 +1674,26 @@ IF (.NOT. ORMC01) THEN
   !
   DO JJ=1,SIZE(PUT,2)
     DO JI=1,SIZE(PUT,1)
-      DO JK=IKTB,IKTE
-        ZD=ZALPHA*(0.5*(PZZ(JI,JJ,JK)+PZZ(JI,JJ,JK+KKL))-PZZ(JI,JJ,IKB)) &
-          *PDIRCOSZW(JI,JJ)
-        IF ( PLM(JI,JJ,JK)>ZD) THEN
-          PLM(JI,JJ,JK)=ZD
-        ELSE
-          EXIT
-        ENDIF
-      END DO
+      IF (LOCEAN) THEN
+        DO JK=IKTE,IKTB,-1
+          ZD=ZALPHA*(PZZ(JI,JJ,IKTE+1)-PZZ(JI,JJ,JK))
+          IF ( PLM(JI,JJ,JK)>ZD) THEN
+            PLM(JI,JJ,JK)=ZD
+          ELSE
+            EXIT
+          ENDIF
+        END DO
+      ELSE
+        DO JK=IKTB,IKTE
+          ZD=ZALPHA*(0.5*(PZZ(JI,JJ,JK)+PZZ(JI,JJ,JK+KKL))-PZZ(JI,JJ,IKB)) &
+            *PDIRCOSZW(JI,JJ)
+          IF ( PLM(JI,JJ,JK)>ZD) THEN
+            PLM(JI,JJ,JK)=ZD
+          ELSE
+            EXIT
+          ENDIF
+        END DO
+      ENDIF 
     END DO
   END DO
 END IF

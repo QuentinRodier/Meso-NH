@@ -40,6 +40,7 @@
 !!      C.Lac        Nov 2014      add terms of TKE production for LES diag
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      D. Ricard     May 2021      add the switches for Leonard terms
+!!    JL Redelsperger  03/2021   Add O-A flux for auto-coupled LES case
 !!
 !-------------------------------------------------------------------------------
 !
@@ -94,6 +95,10 @@ TYPE TURB_t
   REAL, DIMENSION(:,:,:), POINTER :: XTR=>NULL()    ! Transport production of Kinetic energy
   REAL, DIMENSION(:,:,:), POINTER :: XDISS=>NULL()    ! Dissipation of Kinetic energy
   REAL, DIMENSION(:,:,:), POINTER :: XLEM=>NULL()    ! Mixing length
+  REAL, DIMENSION(:,:,:), POINTER :: XSSUFL_C=>NULL() ! O-A interface flux for u
+  REAL, DIMENSION(:,:,:), POINTER :: XSSVFL_C=>NULL() ! O-A interface flux for v
+  REAL, DIMENSION(:,:,:), POINTER :: XSSTFL_C=>NULL() ! O-A interface flux for theta
+  REAL, DIMENSION(:,:,:), POINTER :: XSSRFL_C=>NULL() ! O-A interface flux for vapor
   LOGICAL            :: LHGRAD ! logical switch for the computation of the Leornard Terms
   REAL               :: XCOEFHGRADTHL  ! coeff applied to thl contribution
   REAL               :: XCOEFHGRADRM  ! coeff applied to mixing ratio contribution
@@ -133,6 +138,10 @@ REAL, DIMENSION(:,:,:), POINTER :: XTHP=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XTR=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XDISS=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XLEM=>NULL()
+REAL, DIMENSION(:,:,:), POINTER :: XSSUFL_C=>NULL()
+REAL, DIMENSION(:,:,:), POINTER :: XSSVFL_C=>NULL()
+REAL, DIMENSION(:,:,:), POINTER :: XSSTFL_C=>NULL()
+REAL, DIMENSION(:,:,:), POINTER :: XSSRFL_C=>NULL()
 LOGICAL, POINTER :: LHGRAD=>NULL()
 REAL, POINTER :: XCOEFHGRADTHL=>NULL()
 REAL, POINTER :: XCOEFHGRADRM=>NULL()
@@ -154,6 +163,10 @@ TURB_MODEL(KFROM)%XTHP=>XTHP
 TURB_MODEL(KFROM)%XTR=>XTR 
 TURB_MODEL(KFROM)%XDISS=>XDISS
 TURB_MODEL(KFROM)%XLEM=>XLEM
+TURB_MODEL(KFROM)%XSSUFL_C=>XSSUFL_C
+TURB_MODEL(KFROM)%XSSVFL_C=>XSSVFL_C
+TURB_MODEL(KFROM)%XSSTFL_C=>XSSTFL_C
+TURB_MODEL(KFROM)%XSSRFL_C=>XSSRFL_C
 !
 ! Current model is set to model KTO
 XIMPL=>TURB_MODEL(KTO)%XIMPL
@@ -183,6 +196,10 @@ XTHP=>TURB_MODEL(KTO)%XTHP
 XTR=>TURB_MODEL(KTO)%XTR  
 XDISS=>TURB_MODEL(KTO)%XDISS
 XLEM=>TURB_MODEL(KTO)%XLEM
+XSSUFL_C=>TURB_MODEL(KTO)%XSSUFL_C
+XSSVFL_C=>TURB_MODEL(KTO)%XSSVFL_C
+XSSTFL_C=>TURB_MODEL(KTO)%XSSTFL_C
+XSSRFL_C=>TURB_MODEL(KTO)%XSSRFL_C
 LHGRAD=>TURB_MODEL(KTO)%LHGRAD
 XCOEFHGRADTHL=>TURB_MODEL(KTO)%XCOEFHGRADTHL
 XCOEFHGRADRM=>TURB_MODEL(KTO)%XCOEFHGRADRM

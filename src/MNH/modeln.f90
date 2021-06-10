@@ -271,6 +271,7 @@ END MODULE MODI_MODEL_n
 !  F. Auguste  01/02/2021: add IBM
 !  T. Nagel    01/02/2021: add turbulence recycling
 !  P. Wautelet 19/02/2021 add NEGA2 term for SV budgets
+!  J.L. Redelsperger 03/2021, add Call NHOA_COUPLN (coupling O & A LES version)
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -349,6 +350,7 @@ USE MODD_PROFILER_n
 USE MODD_RADIATIONS_n,   ONLY: XTSRAD,XSCAFLASWD,XDIRFLASWD,XDIRSRFSWD, XAER, XDTHRAD
 USE MODD_RAIN_ICE_DESCR, ONLY: XRTMIN
 USE MODD_RECYCL_PARAM_n
+USE MODD_REF
 USE MODD_REF_n
 USE MODD_SALT,           ONLY: LSALT
 USE MODD_SERIES,         ONLY: LSERIES
@@ -756,11 +758,14 @@ CALL SECOND_MNH2(ZTIME1)
 !
 ISYNCHRO = MODULO (KTCOUNT, NDTRATIO(IMI) )      ! test of synchronisation
 !
-
-
-IF (IMI/=1 .AND. NDAD(IMI)/=IMI .AND. (ISYNCHRO==1 .OR. NDTRATIO(IMI) == 1) ) THEN     
-!                                                                        
-  ! Use dummy pointers to correct an ifort BUG
+!
+IF (LCOUPLES.AND.LOCEAN) THEN
+   CALL NHOA_COUPL_n(NDAD(IMI),XTSTEP,IMI,KTCOUNT,IKU)
+END IF
+! No Gridnest in coupled OA LES for now
+IF (.NOT. LCOUPLES .AND. IMI/=1 .AND. NDAD(IMI)/=IMI .AND. (ISYNCHRO==1 .OR. NDTRATIO(IMI) == 1) ) THEN     
+!                                                                         
+! Use dummy pointers to correct an ifort BUG
   DPTR_XBMX1=>XBMX1
   DPTR_XBMX2=>XBMX2
   DPTR_XBMX3=>XBMX3

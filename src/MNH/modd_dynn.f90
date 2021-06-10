@@ -43,6 +43,7 @@
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      Modification    07/2017  (V. Vionnet)    Add blowing snow variable
+!!      Modification    03/2021   (JL Redelsperger) Add logical LOCEAN
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -55,6 +56,7 @@ TYPE DYN_t
 !
   INTEGER :: NSTOP          ! Number of time step
   REAL    :: XTSTEP         ! Time step
+  LOGICAL   :: LOCEAN
 !
 !++++++++++++++++++++++++++++++++++
 !PART USED BY THE PRESSURE SOLVER
@@ -194,6 +196,7 @@ CHARACTER(LEN=5), POINTER :: CPRESOPT=>NULL()
 INTEGER, POINTER :: NITR=>NULL()
 LOGICAL, POINTER :: LITRADJ=>NULL()
 LOGICAL, POINTER :: LRES=>NULL()
+LOGICAL, POINTER :: LOCEAN=>NULL()
 REAL, POINTER :: XRES=>NULL()
 REAL, POINTER :: XRELAX=>NULL()
 REAL, POINTER :: XDXHATM=>NULL()
@@ -297,6 +300,7 @@ CPRESOPT=>DYN_MODEL(KTO)%CPRESOPT
 NITR=>DYN_MODEL(KTO)%NITR
 LITRADJ=>DYN_MODEL(KTO)%LITRADJ
 LRES=>DYN_MODEL(KTO)%LRES          
+LOCEAN=>DYN_MODEL(KTO)%LOCEAN
 XRES=>DYN_MODEL(KTO)%XRES
 XRELAX=>DYN_MODEL(KTO)%XRELAX
 XDXHATM=>DYN_MODEL(KTO)%XDXHATM

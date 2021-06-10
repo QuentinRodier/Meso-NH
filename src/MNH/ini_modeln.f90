@@ -292,6 +292,7 @@ END MODULE MODI_INI_MODEL_n
 !  S. Riette      04/2020: XHL* fields
 !  F. Auguste     02/2021: add IBM
 !  T.Nigel        02/2021: add turbulence recycling
+! J.L.Redelsperger 06/2011: OCEAN case
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -370,6 +371,7 @@ USE MODD_NESTING,           only: CDAD_NAME, NDAD, NDT_2_WAY, NDTRATIO, NDXRATIO
 USE MODD_NSV
 USE MODD_NSV
 USE MODD_NUDGING_n,         only: LNUDGING
+USE MODD_OCEANH
 USE MODD_OUT_n
 USE MODD_PARAMETERS
 USE MODD_PARAM_KAFR_n
@@ -528,7 +530,7 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZIBM_LS ! LevelSet IBM
 !
 INTEGER, DIMENSION(:,:),ALLOCATABLE :: IINDEX   ! indices of non-zero terms
 INTEGER, DIMENSION(:),ALLOCATABLE   :: IIND
-INTEGER                             :: JM
+INTEGER                             :: JM, JT
 !
 !------------------------------------------
 ! Dummy pointers needed to correct an ifort Bug
@@ -971,11 +973,19 @@ ALLOCATE(XDZZ(IIU,IJU,IKU))
 !
 !*       3.3   Modules MODD_REF and  MODD_REF_n
 !
-IF (KMI == 1) THEN
+! different reference state for O and A models
+!  POur le moment meme etat de ref O et A
+!IF ((KMI == 1).OR.LCOUPLES) THEN
+IF (KMI==1) THEN
   ALLOCATE(XRHODREFZ(IKU),XTHVREFZ(IKU))
+ELSE IF (LCOUPLES) THEN
+! in coupled O-A case, need different variables for ocean
+  ALLOCATE(XRHODREFZO(IKU),XTHVREFZO(IKU))
 ELSE
   !Do not allocate XRHODREFZ and XTHVREFZ because they are the same on all grids (not 'n' variables)
 END IF
+!
+ALLOCATE(XPHIT(IIU,IJU,IKU))
 ALLOCATE(XRHODREF(IIU,IJU,IKU))
 ALLOCATE(XTHVREF(IIU,IJU,IKU))
 ALLOCATE(XEXNREF(IIU,IJU,IKU))
@@ -1830,7 +1840,7 @@ IF (CCLOUD=='LIMA') CALL INIT_AEROSOL_PROPERTIES
 !              --------------------------------
 !
 CALL MPPDB_CHECK3D(XUT,"INI_MODEL_N-before read_field::XUT",PRECISION)
-CALL READ_FIELD(TPINIFILE,IIU,IJU,IKU,                                        &
+CALL READ_FIELD(KMI,TPINIFILE,IIU,IJU,IKU,                                        &
                 CGETTKET,CGETRVT,CGETRCT,CGETRRT,CGETRIT,CGETCIT,CGETZWS,     &
                 CGETRST,CGETRGT,CGETRHT,CGETSVT,CGETSRCT,CGETSIGS,CGETCLDFR,  &
                 CGETBL_DEPTH,CGETSBL_DEPTH,CGETPHC,CGETPHR,CUVW_ADV_SCHEME,   &
@@ -2229,10 +2239,14 @@ ALLOCATE(ZSCA_ALB(IIU,IJU,NSWB_MNH))
 ALLOCATE(ZEMIS  (IIU,IJU,NLWB_MNH))
 ALLOCATE(ZTSRAD (IIU,IJU))
 !
-IF ((TPINIFILE%NMNHVERSION(1)==4 .AND. TPINIFILE%NMNHVERSION(2)>=6) .OR. TPINIFILE%NMNHVERSION(1)>4) THEN
-  CALL IO_Field_read(TPINIFILE,'SURF',CSURF)
+IF (LCOUPLES.AND.(KMI>1))THEN
+  CSURF ="NONE"
 ELSE
-  CSURF = "EXTE"
+  IF ((TPINIFILE%NMNHVERSION(1)==4 .AND. TPINIFILE%NMNHVERSION(2)>=6) .OR. TPINIFILE%NMNHVERSION(1)>4) THEN
+    CALL IO_Field_read(TPINIFILE,'SURF',CSURF)
+  ELSE
+    CSURF = "EXTE"
+  END IF
 END IF
 !
 !
@@ -2599,6 +2613,20 @@ IF (LMAIN_EOL .AND. KMI == NMODEL_EOL) THEN
   CASE('ALM')
    CALL INI_EOL_ALM(XDXX,XDYY)
  END SELECT
+END IF
+!
+!*     33.  Auto-coupling Atmos-Ocean LES NH
+!
+IF (LCOUPLES) THEN
+ ALLOCATE(XSSUFL_C(IIU,IJU,1)); XSSUFL_C=0.0
+ ALLOCATE(XSSVFL_C(IIU,IJU,1)); XSSVFL_C=0.0
+ ALLOCATE(XSSTFL_C(IIU,IJU,1)); XSSTFL_C=0.0
+ ALLOCATE(XSSRFL_C(IIU,IJU,1)); XSSRFL_C=0.
+ELSE
+ ALLOCATE(XSSUFL_C(0,0,0))
+ ALLOCATE(XSSVFL_C(0,0,0))
+ ALLOCATE(XSSTFL_C(0,0,0))
+ ALLOCATE(XSSRFL_C(0,0,0))
 END IF
 !
 END SUBROUTINE INI_MODEL_n

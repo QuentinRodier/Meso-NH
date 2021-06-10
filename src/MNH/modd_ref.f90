@@ -46,6 +46,13 @@ REAL,SAVE, DIMENSION(:), ALLOCATABLE, TARGET :: XRHODREFZ ! rhod(z) for referenc
 REAL,SAVE, DIMENSION(:), ALLOCATABLE, TARGET :: XTHVREFZ  ! Thetav(z) for reference
                                              ! state without orography    
 REAL,SAVE                            :: XEXNTOP   ! Exner function at model top 
+!
+! For coupled A-O case
+REAL,SAVE, DIMENSION(:), ALLOCATABLE, TARGET :: XRHODREFZO! rhod(z) for ocean ref state in coupled mode
+REAL,SAVE, DIMENSION(:), ALLOCATABLE, TARGET :: XTHVREFZO !Thetav(z) for ocean ref state in coupled mode
+REAL,SAVE                            :: XEXNTOPO   ! Exner function at ocean  model top in coupled mode
+!
 LOGICAL, SAVE                        :: LBOUSS    ! Boussinesq approximation
+LOGICAL, SAVE   ::LCOUPLES ! AUTOCOUPLED ATMS-OCEAN LES VERSION
 ! 
 END MODULE MODD_REF

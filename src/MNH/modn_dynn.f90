@@ -55,6 +55,7 @@
 !!      Modifications 09/06/11  (Barthe)  add LHORELAX_SVELEC in namelist
 !!      Modifications 15/06/11  (Lac)     add LHORELAX for conditional sampling
 !!      Modifications 12/02/12  (Pialat/Tulet) add LHORELAX_SVFF for ForeFire scalar variables
+!!      Modification 03/2021 (JL Redelsperger) add logical LOCEAN for ocean LES version
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -62,6 +63,7 @@
 !
 USE MODD_PARAMETERS, ONLY : JPSVMAX
 USE MODD_DYN_n, ONLY : &
+         LOCEAN_n => LOCEAN, &
          XTSTEP_n => XTSTEP, &
          CPRESOPT_n => CPRESOPT, &
          NITR_n => NITR, &
@@ -109,7 +111,8 @@ REAL ,SAVE  :: XTSTEP
 CHARACTER(LEN=5),SAVE  :: CPRESOPT
 INTEGER ,SAVE  :: NITR
 LOGICAL ,SAVE  :: LITRADJ
-LOGICAL ,SAVE  :: LRES 
+LOGICAL ,SAVE  :: LRES
+LOGICAL ,SAVE :: LOCEAN
 REAL ,SAVE     :: XRES
 REAL ,SAVE     :: XRELAX
 LOGICAL, SAVE  :: LHORELAX_UVWTH
@@ -156,12 +159,14 @@ NAMELIST/NAM_DYNn/XTSTEP,CPRESOPT,NITR,LITRADJ,LRES,XRES,XRELAX,LHORELAX_UVWTH, 
 #ifdef MNH_FOREFIRE
                   LHORELAX_SVFF, &
 #endif
+                  LOCEAN,&
                   NRIMX,NRIMY,XRIMKMAX,XT4DIFU, &
                   XT4DIFTH,XT4DIFSV
 !
 CONTAINS
 !
 SUBROUTINE INIT_NAM_DYNn
+  LOCEAN = LOCEAN_n
   XTSTEP = XTSTEP_n
   CPRESOPT = CPRESOPT_n
   NITR = NITR_n
@@ -205,6 +210,7 @@ SUBROUTINE INIT_NAM_DYNn
 END SUBROUTINE INIT_NAM_DYNn
 
 SUBROUTINE UPDATE_NAM_DYNn
+  LOCEAN_n = LOCEAN
   XTSTEP_n = XTSTEP
   CPRESOPT_n = CPRESOPT
   NITR_n = NITR

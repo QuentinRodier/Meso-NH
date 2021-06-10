@@ -236,6 +236,7 @@ END MODULE MODI_PHYS_PARAM_n
 !  P. Wautelet 21/11/2019: ZRG_HOUR and ZRAT_HOUR are now parameter arrays
 !! 11/2019 C.Lac correction in the drag formula and application to building in addition to tree
 !! 02/2021 F.Auguste: add IBM
+!!  03/2021: JL Redelsperger Add the SW flux penetration for Ocean model case
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -283,6 +284,7 @@ USE MODD_METRICS_n
 USE MODD_MNH_SURFEX_n
 USE MODD_NESTING, ONLY : XWAY,NDAD, NDXRATIO_ALL, NDYRATIO_ALL
 USE MODD_NSV
+USE MODD_OCEANH
 USE MODD_OUT_n
 USE MODD_PARAM_C2R2,       ONLY : LSEDC
 USE MODD_PARAMETERS
@@ -298,6 +300,7 @@ USE MODD_PRECIP_n
 use modd_precision,        only: MNHTIME
 USE MODD_RADIATIONS_n
 USE MODD_RAIN_ICE_DESCR,  ONLY : XRTMIN
+USE MODD_REF, ONLY : LCOUPLES
 USE MODD_REF_n
 USE MODD_SALT
 USE MODD_SHADOWS_n
@@ -444,6 +447,11 @@ INTEGER           :: IKIDM          ! index loop
 REAL, DIMENSION(:,:,:),   ALLOCATABLE  :: ZSAVE_INPRR,ZSAVE_INPRS,ZSAVE_INPRG,ZSAVE_INPRH
 REAL, DIMENSION(:,:,:),   ALLOCATABLE  :: ZSAVE_INPRC,ZSAVE_PRCONV,ZSAVE_PRSCONV
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE  :: ZSAVE_DIRFLASWD, ZSAVE_SCAFLASWD,ZSAVE_DIRSRFSWD
+! for ocean model
+INTEGER           :: JKM , JSW         ! vertical index loop                                 
+REAL :: ZSWA,TINTSW     ! index for SW interpolation and int time betwenn forcings (ocean model)
+REAL, DIMENSION(:), ALLOCATABLE :: ZIZOCE(:) ! Solar flux penetrating in ocean
+REAL, DIMENSION(:), ALLOCATABLE :: ZPROSOL1(:),ZPROSOL2(:) ! Funtions for penetrating solar flux
 !
 !-----------------------------------------------------------------------------
 
@@ -805,6 +813,48 @@ IF (CRAD /='NONE') THEN
   XRTHS(:,:,:) = XRTHS(:,:,:) + XRHODJ(:,:,:)*XDTHRAD(:,:,:)
   if ( lbudget_th ) call Budget_store_end ( tbudgets(NBUDGET_TH), 'RAD', xrths(:, :, :) )
 END IF
+!
+!
+!*        1.6   Ocean case:
+! Sfc turbulent fluxes & Radiative tendency due to SW penetrating ocean
+! 
+IF (LOCEAN .AND. (.NOT.LCOUPLES)) THEN
+!
+ ALLOCATE( ZIZOCE(IKU)); ZIZOCE(:)=0. 
+ ALLOCATE( ZPROSOL1(IKU))
+ ALLOCATE( ZPROSOL2(IKU))
+ ALLOCATE(XSSUFL(IIU,IJU))
+ ALLOCATE(XSSVFL(IIU,IJU))
+ ALLOCATE(XSSTFL(IIU,IJU))
+ ALLOCATE(XSSOLA(IIU,IJU))
+! Time interpolation
+  JSW     = INT(TDTCUR%xtime/REAL(NINFRT))
+  ZSWA    = TDTCUR%xtime/REAL(NINFRT)-REAL(JSW)
+  XSSTFL  = (XSSTFL_T(JSW+1)*(1.-ZSWA)+XSSTFL_T(JSW+2)*ZSWA) 
+  XSSUFL  = (XSSUFL_T(JSW+1)*(1.-ZSWA)+XSSUFL_T(JSW+2)*ZSWA)
+  XSSVFL  = (XSSVFL_T(JSW+1)*(1.-ZSWA)+XSSVFL_T(JSW+2)*ZSWA)
+!
+  ZIZOCE(IKU)   = XSSOLA_T(JSW+1)*(1.-ZSWA)+XSSOLA_T(JSW+2)*ZSWA
+  ZPROSOL1(IKU) = XROC*ZIZOCE(IKU)
+  ZPROSOL2(IKU) = (1.-XROC)*ZIZOCE(IKU)
+ IF(NVERB >= 5 ) THEN   
+  WRITE(ILUOUT,*)'ZSWA JSW TDTCUR XTSTEP FT FU FV SolarR(IKU)', NINFRT, ZSWA,JSW,&
+       TDTCUR%xtime, XTSTEP, XSSTFL(2,2), XSSUFL(2,2),XSSVFL(2,2),ZIZOCE(IKU)
+ END IF
+  DO JKM=IKU-1,2,-1
+   ZPROSOL1(JKM) = ZPROSOL1(JKM+1)* exp(-XDZZ(2,2,JKM)/XD1)
+   ZPROSOL2(JKM) = ZPROSOL2(JKM+1)* exp(-XDZZ(2,2,JKM)/XD2)
+   ZIZOCE(JKM)   = (ZPROSOL1(JKM+1)-ZPROSOL1(JKM) + ZPROSOL2(JKM+1)-ZPROSOL2(JKM))/XDZZ(2,2,JKM)
+! Adding to tep temp tendency, the solar radiation penetrating in ocean
+  if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'OCE', xrths(:, :, :) )
+   XRTHS(:,:,JKM) = XRTHS(:,:,JKM) + XRHODJ(:,:,JKM)*ZIZOCE(JKM)
+  if ( lbudget_th ) call Budget_store_end ( tbudgets(NBUDGET_TH), 'OCE', xrths(:, :, :) )
+  END DO
+ DEALLOCATE( ZIZOCE) 
+ DEALLOCATE (ZPROSOL1)
+ DEALLOCATE (ZPROSOL2)
+END IF
+!
 !
 CALL SECOND_MNH2(ZTIME2)
 !
@@ -1526,7 +1576,14 @@ PMAFL = PMAFL + ZTIME4 - ZTIME3 - ZTIME_LES_MF
 PTIME_BU = PTIME_BU + XTIME_LES_BU_PROCESS + XTIME_BU_PROCESS
 !
 !
+!* deallocate sf flux array for ocean model (in grid nesting, dimensions can vary)
 !
+IF (LOCEAN .AND. (.NOT. LCOUPLES)) THEN
+  DEALLOCATE(XSSUFL)
+  DEALLOCATE(XSSVFL)
+  DEALLOCATE(XSSTFL)
+  DEALLOCATE(XSSOLA)
+END IF
 !-------------------------------------------------------------------------------
 !
 !* deallocation of variables used in more than one parameterization

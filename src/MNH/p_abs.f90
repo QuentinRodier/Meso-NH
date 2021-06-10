@@ -16,7 +16,7 @@ INTERFACE
 !
       SUBROUTINE P_ABS (KRR, KRRL, KRRI, PDRYMASST, PREFMASS, PMASS_O_PHI0, &
                         PTHT, PRT, PRHODJ, PRHODREF, PTHETAV, PTHVREF,      &
-                        PRVREF, PEXNREF, PPHIT )
+                        PRVREF, PEXNREF, PPHIT, PPHI0)
 !  
 IMPLICIT NONE
 !
@@ -44,7 +44,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF! Exner function of the
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PPHIT  ! Perturbation of
                ! either the Exner function Pi or Pi * Cpd * THvref
-!
+REAL,                     INTENT(INOUT) :: PPHI0 !    Phi0 at time t !
 !
 END SUBROUTINE P_ABS
 !
@@ -54,7 +54,7 @@ END MODULE MODI_P_ABS
 !     #######################################################################
       SUBROUTINE P_ABS (KRR, KRRL, KRRI, PDRYMASST, PREFMASS, PMASS_O_PHI0, &
 		                PTHT, PRT, PRHODJ, PRHODREF, PTHETAV, PTHVREF,      &
-                        PRVREF, PEXNREF, PPHIT )
+                        PRVREF, PEXNREF, PPHIT, PPHI0 )
 !     #######################################################################
 !
 !!****  *P_ABS * - routine to compute the absolute Exner pressure deviation PHI
@@ -108,6 +108,8 @@ END MODULE MODI_P_ABS
 !!                              from Durran (1989), MAE and DUR respectively
 !!                  15/06/98  (D.Lugato, R.Guivarch) Parallelisation
 !!      J. Colin       07/13  Add LBOUSS
+!!      J.L Redelsperger 03/2021 Change of one step to pressure computation 
+!!                              in order to perform Ocean runs (equivalent to LHE shallow convection)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS 
@@ -116,6 +118,7 @@ END MODULE MODI_P_ABS
 USE MODD_CST
 USE MODD_CONF
 USE MODD_PARAMETERS
+USE MODD_DYN_n, ONLY : LOCEAN
 USE MODD_REF, ONLY : LBOUSS
 !
 USE MODE_ll
@@ -151,6 +154,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRVREF ! vapor mixing ratio
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF! Exner function of the
                                                   ! reference state
 !
+REAL,                     INTENT(INOUT) :: PPHI0  ! PHI0 at t
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PPHIT  ! Perturbation of
                ! either the Exner function Pi or Pi * Cpd * THvref
 !
@@ -357,7 +361,7 @@ ELSEIF( CEQNSYS == 'LHE' ) THEN
     ENDWHERE 
   ENDIF
   !
-  !               compute the absolute pressure function 
+  !               compute the absolute pressure function (LHE equation system case)
   !
   !
   !
@@ -379,9 +383,18 @@ ELSEIF( CEQNSYS == 'LHE' ) THEN
   ZMASSGUESS  = SUM_DD_R2_ll(ZMASSGUESS_2D)
   ZWATERMASST =  SUM_DD_R2_ll(ZWATERMASST_2D)
   !
-  ZPHI0 = (PDRYMASST + ZWATERMASST - 2. * PREFMASS + ZMASSGUESS ) / PMASS_O_PHI0
-  PPHIT(:,:,:) = PPHIT(:,:,:) + ZPHI0
-  !
+!
+! case shallow bouss : to get the real pressure fluctuation
+!  Eq 2.40 p15 :  constant not resolved in poisson equation
+IF (.NOT. LOCEAN) THEN
+  PPHI0 = (PDRYMASST + ZWATERMASST - 2. * PREFMASS + ZMASSGUESS ) / PMASS_O_PHI0
+ELSE
+! PPHI0 = 0. => to be possibly modified for ocean LES case
+   PPHI0=0.
+END IF
+!  following computation moved in PRESSURE routine (Eq 2.40 bis p15: Phi_total)
+!   PPHIT(:,:,:) = PPHIT(:,:,:) + ZPHI0
+!
 END IF
 !
 !-------------------------------------------------------------------------------

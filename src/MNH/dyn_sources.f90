@@ -158,7 +158,8 @@ use modd_budget,      only: lbudget_u, lbudget_v, lbudget_w, lbudget_th, &
 USE MODD_CONF
 USE MODD_CST
 USE MODD_DYN
-
+USE MODD_DYN_n, ONLY : LOCEAN
+!
 use mode_budget,     only: Budget_store_init, Budget_store_end
 USE MODE_MPPDB
 
@@ -319,6 +320,7 @@ ELSE
 ENDIF
 !
 IF( .NOT.L1D ) THEN
+ IF (.NOT. LOCEAN) THEN
 !
   IF (KRR > 0) THEN
     if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'PREF', prths(:, :, :) )
@@ -346,6 +348,7 @@ IF( .NOT.L1D ) THEN
 
     if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'PREF', prths(:, :, :) )
   END IF
+ END IF
 !
 END IF
 !

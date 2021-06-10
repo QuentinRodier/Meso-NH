@@ -172,6 +172,7 @@ END MODULE MODI_INI_SEG_n
 USE MODD_CONF
 USE MODD_CONF_n,           ONLY: CSTORAGE_TYPE
 USE MODN_CONFZ
+USE MODD_DYN_n, ONLY : LOCEAN
 USE MODD_DYN
 USE MODD_IO,               ONLY: NVERB_FATAL, NVERB_WARNING, TFILE_OUTPUTLISTING, TFILEDATA
 USE MODD_LUNIT
@@ -439,6 +440,8 @@ END IF
 !   We pass by arguments the informations read in DESFM descriptor to the
 ! routine which read related informations in the EXSEG descriptor in order to 
 ! check coherence between both informations.
+!
+CALL IO_Field_read(TPINIFILE,'LOCEAN',LOCEAN)
 !
 CALL READ_EXSEG_n(KMI,TZFILE_DES,YCONF,GFLAT,GUSERV,GUSERC,                 &
                 GUSERR,GUSERI,GUSECI,GUSERS,GUSERG,GUSERH,GUSECHEM,         &

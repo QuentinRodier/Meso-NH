@@ -102,7 +102,17 @@ END MODULE MODI_SET_RSOU
 !                                         (Pressure, U, V) , 
 !                                         (Pressure, T, Hu)
 !
+!  For ocean-LES case  the following kind of data is permitted
+!         
+!                  YKIND = 'IDEALOCE' : ZGROUND (Water depth),PGROUND(Sfc Atmos Press),
+!                                        TGROUND (SST), RGROUND (SSS)
+!                                         (Depth , U, V) starting from sfc   
+!                                         (Depth,  T, S)
+!                                     (Time, LE, H, SW_d,SW_u,LW_d,LW_u,Stress_X,Stress_Y)
 !
+!                  YKIND = 'STANDOCE' :  (Depth , Temp, Salinity, U, V) starting from sfc   
+!                                        (Time, LE, H, SW_d,SW_u,LW_d,LW_u,Stress_X,Stress_Y)     
+!        
 !!**  METHOD
 !!    ------
 !!      The radiosounding is first read, then data are converted in order to
@@ -242,6 +252,7 @@ END MODULE MODI_SET_RSOU
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 19/04/2019: removed unused dummy arguments and variables
+!!  JL Redelsperger  : 01/2021: Ocean LES cases added        
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -250,11 +261,16 @@ END MODULE MODI_SET_RSOU
 USE MODD_CONF
 USE MODD_CONF_n
 USE MODD_CST
+USE MODD_DYN_n, ONLY : LOCEAN
 USE MODD_FIELD_n
 USE MODD_GRID
 USE MODD_GRID_n
+USE MODD_LUNIT_n, ONLY: TLUOUT
 USE MODD_IO,         ONLY: TFILEDATA
+USE MODD_NETCDF
+USE MODD_OCEANH
 USE MODD_PARAMETERS, ONLY: JPHEXT
+USE MODD_TYPE_DATE
 !
 USE MODE_ll
 USE MODE_MSG
@@ -268,6 +284,8 @@ USE MODI_SHUMAN
 USE MODI_THETAVPU_THETAVPM
 USE MODI_TH_R_FROM_THL_RT_1D
 USE MODI_VERT_COORD
+!
+USE NETCDF          ! for reading the NR files 
 !
 IMPLICIT NONE
 !  
@@ -291,10 +309,15 @@ REAL, DIMENSION(:,:,:), INTENT(IN) :: PJ ! jacobien
 !
 !*       0.2   Declarations of local variables :
 !
-INTEGER                         :: ILUPRE ! logical unit number
-!
-!  variables read in EXPRE file at the RS levels
-!
+INTEGER                         :: ILUPRE ! logical unit number of the EXPRE return code
+INTEGER                         :: ILUOUT    ! Logical unit number for output-listing
+! local variables for reading sea sfc flux forcing for ocean model
+INTEGER                   :: IFRCLT 
+REAL, DIMENSION(:), ALLOCATABLE :: ZSSUFL_T,ZSSVFL_T,ZSSTFL_T,ZSSOLA_T !
+TYPE (DATE_TIME), DIMENSION(:), ALLOCATABLE :: ZFRCLT ! date/time of sea surface forcings
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  variables read in EXPRE file at the RS/CTD levels
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 CHARACTER(LEN=8)                :: YKIND     ! Kind of  variables in 
                                              ! EXPRE FILE
 INTEGER                         :: ILEVELU   ! number of wind levels 
@@ -332,7 +355,7 @@ REAL, DIMENSION(:), ALLOCATABLE :: ZLSOCPEXN
 REAL, DIMENSION(SIZE(XZHAT))    :: ZZFLUX_PROFILE ! altitude of flux points on the initialization columns
 REAL, DIMENSION(SIZE(XZHAT))    :: ZZMASS_PROFILE ! altitude of mass points on the initialization columns
 !
-!  fieds on the grid of the model without orography
+!  fields on the grid of the model without orography
 !
 REAL, DIMENSION(SIZE(XZHAT))    :: ZUW,ZVW ! Wind at w model grid levels
 REAL, DIMENSION(SIZE(XZHAT))    :: ZMRM   ! vapor mixing ratio at mass model
@@ -341,29 +364,42 @@ REAL, DIMENSION(SIZE(XZHAT))    :: ZMRCM,ZMRIM
 REAL, DIMENSION(SIZE(XZHAT))    :: ZTHVM  ! Temperature at mass model grid levels
 REAL, DIMENSION(SIZE(XZHAT))    :: ZTHLM  ! Thetal at mass model grid levels
 REAL, DIMENSION(SIZE(XZHAT))    :: ZTHM  ! Thetal at mass model grid levels
+REAL, DIMENSION(SIZE(XZHAT))    :: ZRHODM   ! density at mass model grid level
 REAL, DIMENSION(:), ALLOCATABLE :: ZMRT    ! Total Vapor mixing ratio at mass levels on mixed grid
 REAL, DIMENSION(:), ALLOCATABLE :: ZEXNMASS  ! exner fonction at mass level
 REAL, DIMENSION(:), ALLOCATABLE :: ZEXNFLUX  ! exner fonction at flux level
 REAL                            :: ZEXNSURF  ! exner fonction at surface
+REAL, DIMENSION(:), ALLOCATABLE :: ZPREFLUX   ! pressure at flux model grid level
 REAL, DIMENSION(:), ALLOCATABLE :: ZFRAC_ICE ! ice fraction
 REAL, DIMENSION(:), ALLOCATABLE :: ZRSATW, ZRSATI             
 REAL                            :: ZDZSDH,ZDZ1SDH,ZDZ2SDH ! interpolation
                                                           ! working arrays
 !
-INTEGER         :: JK,JKLEV, JKU,JKM  ! Loop indexes
+INTEGER         :: JK,JKLEV,JKU,JKM,JKT,JJ,JI,JO,JLOOP  ! Loop indexes
 INTEGER         :: IKU                ! Upper bound in z direction
 REAL            :: ZRDSCPD,ZRADSDG, & ! Rd/Cpd, Pi/180.,
-                   ZRVSRD,ZRDSRV      ! Rv/Rd, Rd/Rv
+                   ZRVSRD,ZRDSRV,   & ! Rv/Rd, Rd/Rv
+                   ZPTOP              ! Pressure at domain top 
 LOGICAL         :: GUSERC             ! use of input data cloud
-INTEGER         :: IIB, IIE, IJB, IJE
+INTEGER         :: IIB, IIE, IJB, IJE,IKB,IKE
 INTEGER         :: IXOR_ll, IYOR_ll
 INTEGER         :: IINFO_ll
 LOGICAL         :: GPROFILE_IN_PROC   ! T : initialization profile is in current processor
+CHARACTER(LEN=100) :: YMSG
 !
 REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT))   ::ZZS_LS
 REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT)) ::ZZFLUX_MX,ZZMASS_MX ! mixed grid
-INTEGER :: JLOOP
 !-------------------------------------------------------------------------------
+! For standard ocean version, reading external files
+CHARACTER(LEN=256) :: infile,infisf ! files to be read
+INTEGER :: NZ,NLATI,NLONGI,IDX,ITIME,ncid,varid,ndimp,ntcindy
+REAL, DIMENSION(:,:,:),     ALLOCATABLE :: ZOC_TEMPERATURE,ZOC_SALINITY,ZOC_U,ZOC_V
+REAL, DIMENSION(:),     ALLOCATABLE :: ZOC_DEPTH  
+REAL, DIMENSION(:),     ALLOCATABLE :: ZOC_LE,ZOC_H
+REAL, DIMENSION(:),     ALLOCATABLE :: ZOC_SW_DOWN,ZOC_SW_UP,ZOC_LW_DOWN,ZOC_LW_UP
+REAL, DIMENSION(:),     ALLOCATABLE :: ZOC_TAUX,ZOC_TAUY
+
+!--------------------------------------------------------------------------------
 !
 !*	 1.     PROLOGUE : INITIALIZE SOME CONSTANTS, RETRIEVE LOGICAL
 !               UNIT NUMBERS AND READ KIND OF DATA IN EXPRE FILE
@@ -380,31 +416,21 @@ ZRVSRD  = XRV/XRD
 ZRDSRV = XRD/XRV
 !
 !*       1.2  Retrieve logical unit numbers 
-!
-!                           
+!                         
 ILUPRE = TPEXPREFILE%NLU
+ILUOUT = TLUOUT%NLU
 !
 !*       1.3  Read data kind in EXPRE file 
 !
 READ(ILUPRE,*) YKIND
-!
+WRITE(ILUOUT,*) 'YKIND read in set_rsou: ', YKIND
 !
 IF(LUSERC .AND. YKIND/='PUVTHDMR' .AND. YKIND/='ZUVTHDMR' .AND.  YKIND/='ZUVTHLMR') THEN 
   CALL PRINT_MSG(NVERB_FATAL,'GEN','SET_RSOU','hydrometeors are not allowed for YKIND = '//trim(YKIND))
 ENDIF
-! Demande Thierry Bergot Sept 2012 
-!IF(LUSERC .AND.(YKIND == 'PUVTHDMR' .OR. YKIND == 'ZUVTHDMR').AND. .NOT. L1D) THEN
-! !callabortstop
-!  CALL PRINT_MSG(NVERB_FATAL,'GEN','SET_RSOU','use of hydrometeors for YKIND=P(Z)UVTHDMR is only allowed in 1D case')
-!ENDIF
-!
-!IF(LUSERI .AND. YKIND=='ZUVTHLMR') THEN
-! !callabortstop
-!  CALL PRINT_MSG(NVERB_FATAL,'GEN','SET_RSOU','use of ice for  YKIND=ZUVTHLMR is not allowed')
-!ENDIF
 !
 IF(YKIND=='ZUVTHLMR' .AND. .NOT. LUSERC) THEN
- !callabortstop
+!callabortstop
   CALL PRINT_MSG(NVERB_FATAL,'GEN','SET_RSOU','LUSERC=T is required for YKIND=ZUVTHLMR')
 ENDIF
 !
@@ -416,8 +442,345 @@ IF(LUSERC .AND. (YKIND == 'PUVTHDMR' .OR. YKIND == 'ZUVTHDMR')) GUSERC=.TRUE.
 !	        --------------------------------------------------------
 !
 SELECT CASE(YKIND)
+!   
+!     2.0.1 Ocean case 1
+!   
+  CASE ('IDEALOCE')
 !
-!*       2.1  STANDARD case : ZGROUND, PGROUND, TGROUND, TDGROUND
+    ! Read data in PRE_IDEA1.nam
+    ! Surface      
+    WRITE(ILUOUT,FMT=*) 'Reading data for ideal ocean :IDEALOCE'   
+    READ(ILUPRE,*) ZPTOP           ! P_atmosphere at sfc =P top domain
+    READ(ILUPRE,*) ZTGROUND        ! SST 
+    READ(ILUPRE,*) ZMRGROUND       ! SSS
+    WRITE(ILUOUT,FMT=*) 'Patm SST SSS', ZPTOP,ZTGROUND,ZMRGROUND
+    READ(ILUPRE,*) ILEVELU         ! Read number of Current levels
+    ! Allocate required memory 
+    ALLOCATE(ZHEIGHTU(ILEVELU),ZU(ILEVELU),ZV(ILEVELU))
+    ALLOCATE(ZOC_U(ILEVELU,1,1),ZOC_V(ILEVELU,1,1))
+    WRITE(ILUOUT,FMT=*) 'Level number for Current in data', ILEVELU
+    ! Read U and V at each wind level
+    DO JKU = 1,ILEVELU
+      READ(ILUPRE,*) ZHEIGHTU(JKU),ZOC_U(JKU,1,1),ZOC_V(JKU,1,1)
+      ! WRITE(ILUOUT,FMT=*) 'Leveldata D(m) under sfc: U_cur, V_cur', JKU, ZHEIGHTU(JKU),ZU(JKU),ZV(JKU)
+    END DO
+    DO JKU=1,ILEVELU
+      ! Z axis reoriented as in the model
+      IDX     = ILEVELU-JKU+1
+      ZU(JKU) = ZOC_U(IDX,1,1)
+      ZV(JKU) = ZOC_V(IDX,1,1)
+      ! ZHEIGHT used only in set_ rsou, defined as such ZHEIGHT(ILEVELM)=H_model
+      ! Z oriented in same time to have a model domain axis going
+      ! from 0m (ocean bottom/model bottom) towards H (ocean sfc/model top)
+    END DO
+    ! Read number of mass levels  
+    READ(ILUPRE,*) ILEVELM
+    ! Allocate required memory 
+    ALLOCATE(ZOC_DEPTH(ILEVELM))
+    ALLOCATE(ZHEIGHTM(ILEVELM))           
+    ALLOCATE(ZTHL(ILEVELM),ZTH(ILEVELM),ZTHV(ILEVELM)) 
+    ALLOCATE(ZMR(ILEVELM),ZRT(ILEVELM))
+    ALLOCATE(ZOC_TEMPERATURE(ILEVELM,1,1),ZOC_SALINITY(ILEVELM,1,1))
+    ! Read T and S at each mass level 
+    DO JKM= 2,ILEVELM
+      READ(ILUPRE,*) ZOC_DEPTH(JKM),ZOC_TEMPERATURE(JKM,1,1),ZOC_SALINITY(JKM,1,1)
+    END DO
+    ! Complete the mass arrays with the ground informations read in EXPRE file
+    ZOC_DEPTH(1)    = 0.                    
+    ZOC_TEMPERATURE(1,1,1)= ZTGROUND
+    ZOC_SALINITY(1,1,1)= ZMRGROUND
+    !!!!!!!!!!!!!!!!!!!!!!!!Inversing Axis!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! Going from the data (axis downward i.e inverse model) grid to the model grid (axis upward)
+    ! Uniform bathymetry; depth goes from ocean sfc downwards  (data grid)
+    ! ZHEIGHT goes from the model domain bottom up to the sfc ocean (top of model domain)
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ZZGROUND   = 0.
+    ZTGROUND   = ZOC_TEMPERATURE(ILEVELM,1,1) 
+    ZMRGROUND  = ZOC_SALINITY(ILEVELM,1,1)
+    DO JKM= 1,ILEVELM
+      ! Z upward axis (oriented as in the model), i.e.
+      ! going from 0m (ocean bottom/model bottom) upward to H (ocean sfc/model top)
+      ! ZHEIGHT used only in set_ rsou, defined as such ZHEIGHT(ILEVELM)=H_model
+      IDX          = ILEVELM-JKM+1
+      ZTH(JKM)      = ZOC_TEMPERATURE(IDX,1,1)
+      ZMR(JKM)     = ZOC_SALINITY(IDX,1,1)
+      ZHEIGHTM(JKM)= ZOC_DEPTH(ILEVELM)- ZOC_DEPTH(IDX)
+      WRITE(ILUOUT,FMT=*) 'Model oriented initial data: JKM IDX depth T S ZHEIGHTM', &
+                      JKM,IDX,ZOC_DEPTH(IDX),ZTH(JKM),ZMR(JKM),ZHEIGHTM(JKM)
+    END DO
+    ! mass levels of the RS
+    ZTHV = ZTH ! TV==THETA=TL
+    ZTHL = ZTH
+    ZRT  = ZMR  
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! READ Sea Surface Forcing !
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! Reading the forcings from prep_idea1.nam
+    READ(ILUPRE,*) IFRCLT  ! Number of time-dependent forcing 
+    IF (IFRCLT > 99*8) THEN
+      ! CAUTION: number of forcing times is limited by the WRITE format 99(8E10.3)
+      !          and also by the name of forcing variables (format I3.3)
+      !          You have to modify those if you need more forcing times
+     CALL PRINT_MSG(NVERB_FATAL,'IO','SET_RSOU','maximum forcing times NFRCLT is 99*8')
+    END IF
+!
+    WRITE(UNIT=ILUOUT,FMT='(" THERE ARE ",I2," SFC FLUX FORCINGs AT:")') IFRCLT
+    ALLOCATE(ZFRCLT(IFRCLT))
+    ALLOCATE(ZSSUFL_T(IFRCLT)); ZSSUFL_T = 0.0
+    ALLOCATE(ZSSVFL_T(IFRCLT)); ZSSVFL_T = 0.0
+    ALLOCATE(ZSSTFL_T(IFRCLT)); ZSSTFL_T = 0.0
+    ALLOCATE(ZSSOLA_T(IFRCLT)); ZSSOLA_T = 0.0
+    DO JKT = 1,IFRCLT
+      WRITE(ILUOUT,FMT='(A, I4)') "SET_RSOU/Reading Sea Surface forcing: Number=", JKT
+      READ(ILUPRE,*) ZFRCLT(JKT)%nyear, ZFRCLT(JKT)%nmonth, &
+                     ZFRCLT(JKT)%nday,  ZFRCLT(JKT)%xtime
+      READ(ILUPRE,*) ZSSUFL_T(JKT)
+      READ(ILUPRE,*) ZSSVFL_T(JKT)
+      READ(ILUPRE,*) ZSSTFL_T(JKT)
+      READ(ILUPRE,*) ZSSOLA_T(JKT)
+    END DO
+!
+    DO JKT = 1 , IFRCLT
+      WRITE(UNIT=ILUOUT,FMT='(F9.0, "s, date:", I3, "/", I3, "/", I5)') &
+                 ZFRCLT(JKT)%xtime,         ZFRCLT(JKT)%nday,   &
+                 ZFRCLT(JKT)%nmonth, ZFRCLT(JKT)%nyear
+    END DO
+    NINFRT= INT(ZFRCLT(2)%xtime)
+    WRITE(ILUOUT,FMT='(A)') &
+         "Number U-Stress, V-Stress, Heat turb Flux, Solar Flux Interval(s)",NINFRT
+    DO JKT = 1, IFRCLT
+      WRITE(ILUOUT,FMT='(I10,99(3F10.2))') JKT, ZSSUFL_T(JKT),ZSSVFL_T(JKT),ZSSTFL_T(JKT) 
+    END DO
+    NFRCLT = IFRCLT
+    ALLOCATE(TFRCLT(NFRCLT))
+    ALLOCATE(XSSUFL_T(NFRCLT));XSSUFL_T(:)=0.
+    ALLOCATE(XSSVFL_T(NFRCLT));XSSVFL_T(:)=0.
+    ALLOCATE(XSSTFL_T(NFRCLT));XSSTFL_T(:)=0.
+    ALLOCATE(XSSOLA_T(NFRCLT));XSSOLA_T(:)=0.
+!
+    DO JKT=1,NFRCLT
+      TFRCLT(JKT)= ZFRCLT(JKT)
+      XSSUFL_T(JKT)=ZSSUFL_T(JKT)/XRH00OCEAN
+      XSSVFL_T(JKT)=ZSSVFL_T(JKT)/XRH00OCEAN
+      ! working in SI
+      XSSTFL_T(JKT)=ZSSTFL_T(JKT) /(3900.*XRH00OCEAN)
+      XSSOLA_T(JKT)=ZSSOLA_T(JKT) /(3900.*XRH00OCEAN)
+    END DO   
+    DEALLOCATE(ZFRCLT)
+    DEALLOCATE(ZSSUFL_T)
+    DEALLOCATE(ZSSVFL_T)
+    DEALLOCATE(ZSSTFL_T)
+    DEALLOCATE(ZSSOLA_T)
+!
+!--------------------------------------------------------------------------------   
+! 2.0.2  Ocean standard initialize from netcdf files
+!        U,V,T,S at Z levels + Forcings at model TOP (sea surface) 
+!--------------------------------------------------------------------------------   
+!
+  CASE ('STANDOCE')
+!
+    READ(ILUPRE,*) ZPTOP           ! P_atmosphere at sfc =P top domain     
+    READ(ILUPRE,*) INFILE,INFISF
+    WRITE(ILUOUT,FMT=*) 'Netcdf files to read:',INFILE,INFISF
+    ! Open file containing initial profiles
+    CALL check(nf90_open(infile,NF90_NOWRITE,ncid), "opening NC file")
+    ! Reading dimensions and lengths
+    CALL check( nf90_inq_dimid(ncid, "depth",ndimp), "getting depth  dimension id" )
+    CALL check( nf90_inquire_dimension(ncid, ndimp, len=NZ), "getting NZ "  )
+    CALL check( nf90_inquire_dimension(ncid, 2, len=NLONGI), "getting NLONG "  )
+    CALL check( nf90_inquire_dimension(ncid, 1, len=NLATI), "getting NLAT "  )
+!   
+    WRITE(ILUOUT,FMT=*) 'NB LEVLS READ NZ, NLONG NLAT ', NZ, NLONGI,NLATI
+    ALLOCATE(ZOC_TEMPERATURE(NLATI,NLONGI,NZ),ZOC_SALINITY(NLATI,NLONGI,NZ))
+    ALLOCATE(ZOC_U(NLATI,NLONGI,NZ),ZOC_V(NLATI,NLONGI,NZ))
+    ALLOCATE(ZOC_DEPTH(NZ))
+    WRITE(ILUOUT,FMT=*) 'NETCDF READING ==> Temp'
+    CALL check(nf90_inq_varid(ncid,"temperature",varid), "getting temp varid")
+    CALL check(nf90_get_var(ncid,varid,ZOC_TEMPERATURE), "reading temp")
+    WRITE(ILUOUT,FMT=*) 'Netcdf Reading ==> salinity'
+    CALL check(nf90_inq_varid(ncid,"salinity",varid), "getting salinity varid")
+    CALL check(nf90_get_var(ncid,varid,ZOC_SALINITY), "reading salinity")
+    WRITE(ILUOUT,FMT=*) 'Netcdf ==> Reading depth'
+    CALL check(nf90_inq_varid(ncid,"depth",varid), "getting depth varid")
+    CALL check(nf90_get_var(ncid,varid,ZOC_DEPTH), "reading depth")
+    WRITE(ILUOUT,FMT=*) 'depth: max min ', MAXVAL(ZOC_DEPTH),MINVAL(ZOC_DEPTH)
+    WRITE(ILUOUT,FMT=*) 'depth 1 nz: ', ZOC_DEPTH(1),ZOC_DEPTH(NZ)
+    WRITE(ILUOUT,FMT=*) 'Netcdf Reading ==> Currents'
+    CALL check(nf90_inq_varid(ncid,"u",varid), "getting u varid")
+    CALL check(nf90_get_var(ncid,varid,ZOC_U), "reading u")
+    CALL check(nf90_inq_varid(ncid,"v",varid), "getting v varid")
+    CALL check(nf90_get_var(ncid,varid,ZOC_V), "reading v")
+    CALL check(nf90_close(ncid), "closing infile")
+    WRITE(ILUOUT,FMT=*) 'End of initial file reading'
+!
+    DO JKM=1,NZ
+     ZOC_TEMPERATURE(1,1,JKM)=ZOC_TEMPERATURE(1,1,JKM)+273.15
+     WRITE(ILUOUT,FMT=*) 'Z T(Kelvin) S(Sverdup) U V K',&
+     JKM,ZOC_DEPTH(JKM),ZOC_TEMPERATURE(1,1,JKM),ZOC_SALINITY(1,1,JKM),ZOC_U(1,1,JKM),ZOC_V(1,1,JKM), JKM
+    ENDDO
+    !  number of data levels
+    ILEVELM=NZ
+    ! Model bottom
+    ZTGROUND  = ZOC_TEMPERATURE(1,1,ILEVELM)
+    ZMRGROUND = ZOC_SALINITY(1,1,ILEVELM)
+    ZZGROUND=0.
+    ! Allocate required memory
+    ALLOCATE(ZHEIGHTM(ILEVELM))           
+    ALLOCATE(ZT(ILEVELM))
+    ALLOCATE(ZTV(ILEVELM))
+    ALLOCATE(ZMR(ILEVELM))
+    ALLOCATE(ZTHV(ILEVELM)) 
+    ALLOCATE(ZTHL(ILEVELM))
+    ALLOCATE(ZRT(ILEVELM))
+    !  Going from the inverse model grid (data) to the normal one
+    DO JKM= 1,ILEVELM
+      ! Z axis reoriented as in the model
+      IDX     = ILEVELM-JKM+1
+      ZT(JKM) = ZOC_TEMPERATURE(1,1,IDX)
+      ZMR(JKM)  =  ZOC_SALINITY(1,1,IDX)
+      ! ZHEIGHT used only in set_ rsou, defined as such ZHEIGHT(ILEVELM)=H_model
+      ! Z oriented in same time to have a model domain axis going
+      ! from 0m (ocean bottom/model bottom) towards H (ocean sfc/model top)
+      ! translation/inversion
+      ZHEIGHTM(JKM) = -ZOC_DEPTH(IDX) + ZOC_DEPTH(ILEVELM)
+      WRITE(ILUOUT,FMT=*) 'End gridmodel comput: JKM IDX depth T S ZHEIGHTM', &
+      JKM,IDX,ZOC_DEPTH(IDX),ZT(JKM),ZMR(JKM),ZHEIGHTM(JKM)
+    END DO
+    ! complete ther variables
+    ZTV  = ZT
+    ZTHV = ZT
+    ZRT  = ZMR
+    ZTHL = ZT
+    ZTH  = ZT
+    ! INIT --- U V -----
+    ILEVELU=nz               ! Same nb of levels for u,v,T,S
+    !Assume that current and temp are given at same level
+    ALLOCATE(ZHEIGHTU(ILEVELU))           
+    ALLOCATE(ZU(ILEVELU),ZV(ILEVELU))
+    ZHEIGHTU=ZHEIGHTM
+    DO JKM= 1,ILEVELU
+      ! Z axis reoriented as in the model
+      IDX     = ILEVELU-JKM+1
+      ZU(JKM) = ZOC_U(1,1,IDX)
+      ZV(JKM) = ZOC_V(1,1,IDX)
+      ! ZHEIGHT used only in set_ rsou, defined as such ZHEIGHT(ILEVELM)=H_model
+      ! Z oriented in same time to have a model domain axis going
+      ! from 0m (ocean bottom/model bottom) towards H (ocean sfc/model top)
+    END DO
+!
+    DEALLOCATE(ZOC_TEMPERATURE)
+    DEALLOCATE(ZOC_SALINITY)
+    DEALLOCATE(ZOC_U)
+    DEALLOCATE(ZOC_V)
+    DEALLOCATE(ZOC_DEPTH)
+!
+    ! Reading/initializing  surface forcings
+!
+    WRITE(ILUOUT,FMT=*) 'netcdf sfc forcings file to be read:',infisf  
+    ! Open of sfc forcing file
+    CALL check(nf90_open(infisf,NF90_NOWRITE,ncid), "opening NC file")
+    ! Reading dimension and length
+    CALL check( nf90_inq_dimid(ncid,"t",ndimp), "getting  time dimension id" )
+    CALL check( nf90_inquire_dimension(ncid, ndimp, len=ntcindy), "getting ntcindy "  )
+!
+    WRITE(ILUOUT,FMT=*) 'nb sfc-forcing time ntcindy=',ntcindy   
+    ALLOCATE(ZOC_LE(ntcindy))    
+    ALLOCATE(ZOC_H(ntcindy))    
+    ALLOCATE(ZOC_SW_DOWN(ntcindy))    
+    ALLOCATE(ZOC_SW_UP(ntcindy))    
+    ALLOCATE(ZOC_LW_DOWN(ntcindy))    
+    ALLOCATE(ZOC_LW_UP(ntcindy))    
+    ALLOCATE(ZOC_TAUX(ntcindy))
+    ALLOCATE(ZOC_TAUY(ntcindy))
+!
+    WRITE(ILUOUT,FMT=*)'Netcdf Reading ==> LE'  
+    CALL check(nf90_inq_varid(ncid,"LE",varid), "getting LE varid")
+    CALL check(nf90_get_var(ncid,varid,ZOC_LE), "reading LE flux")
+    WRITE(ILUOUT,FMT=*)'Netcdf Reading ==> H'  
+    CALL check(nf90_inq_varid(ncid,"H",varid), "getting H varid")
+    CALL check(nf90_get_var(ncid,varid,ZOC_H), "reading H flux")
+    WRITE(ILUOUT,FMT=*) 'Netcdf Reading ==> SW_DOWN'  
+    CALL check(nf90_inq_varid(ncid,"SW_DOWN",varid), "getting SW_DOWN varid")
+    CALL check(nf90_get_var(ncid,varid,ZOC_SW_DOWN), "reading SW_DOWN")
+    WRITE(ILUOUT,FMT=*) 'Netcdf Reading ==> SW_UP'  
+    CALL check(nf90_inq_varid(ncid,"SW_UP",varid), "getting SW_UP varid")
+    CALL check(nf90_get_var(ncid,varid,ZOC_SW_UP), "reading SW_UP")
+    WRITE(ILUOUT,FMT=*) 'Netcdf Reading ==> LW_DOWN'  
+    CALL check(nf90_inq_varid(ncid,"LW_DOWN",varid), "getting LW_DOWN varid")
+    CALL check(nf90_get_var(ncid,varid,ZOC_LW_DOWN), "reading LW_DOWN")
+    WRITE(ILUOUT,FMT=*) 'Netcdf Reading ==> LW_UP'  
+    CALL check(nf90_inq_varid(ncid,"LW_UP",varid), "getting LW_UP varid")
+    CALL check(nf90_get_var(ncid,varid,ZOC_LW_UP), "reading LW_UP")
+    WRITE(ILUOUT,FMT=*) 'Netcdf Reading ==> TAUX'  
+    CALL check(nf90_inq_varid(ncid,"TAUX",varid), "getting TAUX varid")
+    CALL check(nf90_get_var(ncid,varid,ZOC_TAUX), "reading TAUX")
+    WRITE(ILUOUT,FMT=*) 'Netcdf Reading ==> TAUY'  
+    CALL check(nf90_inq_varid(ncid,"TAUY",varid), "getting TAUY varid")
+    CALL check(nf90_get_var(ncid,varid,ZOC_TAUY), "reading TAUY")
+    CALL check(nf90_close(ncid), "closing infisfS")
+!
+    WRITE(ILUOUT,FMT=*) '  Forcing-Number    LE     H     SW_down     SW_up    LW_down   LW_up TauX TauY' 
+    DO JKM=1,NTCINDY
+      WRITE(ILUOUT,FMT=*) JKM, ZOC_LE(JKM), ZOC_H(JKM),ZOC_SW_DOWN(JKM),ZOC_SW_UP(JKM),&
+                          ZOC_LW_DOWN(JKM),ZOC_LW_UP(JKM),ZOC_TAUX(JKM),ZOC_TAUY(JKM)   
+    ENDDO
+    ! IFRCLT FORCINGS at sea surface
+    IFRCLT=NTCINDY
+    ALLOCATE(ZFRCLT(IFRCLT)) 
+    ALLOCATE(ZSSUFL_T(IFRCLT)); ZSSUFL_T = 0.0
+    ALLOCATE(ZSSVFL_T(IFRCLT)); ZSSVFL_T = 0.0
+    ALLOCATE(ZSSTFL_T(IFRCLT)); ZSSTFL_T = 0.0
+    ALLOCATE(ZSSOLA_T(IFRCLT)); ZSSOLA_T = 0.0
+    DO JKT=1,IFRCLT
+      ! Initial file for CINDY-DYNAMO: all fluxes correspond to the absolute value (>0)
+      ! modele ocean: axe z dirigé du bas vers la sfc de l'océan
+      ! => flux dirigé vers le haut (positif ocean vers l'atmopshere i.e. bas vers le haut)
+      ZSSOLA_T(JKT)=ZOC_SW_DOWN(JKT)-ZOC_SW_UP(JKT)
+      ZSSTFL_T(JKT)=(ZOC_LW_DOWN(JKT)-ZOC_LW_UP(JKT)-ZOC_LE(JKT)-ZOC_H(JKT))
+      ! assume that Tau given on file is along Ox
+      ! rho_air UW_air = rho_ocean UW_ocean= N/m2
+      ! uw_ocean
+      ZSSUFL_T(JKT)=ZOC_TAUX(JKT)
+      ZSSVFL_T(JKT)=ZOC_TAUY(JKT)
+      WRITE(ILUOUT,FMT=*) 'Forcing Nb Sol NSol UW_oc VW',&
+                          JKT,ZSSOLA_T(JKT),ZSSTFL_T(JKT),ZSSUFL_T(JKT),ZSSVFL_T(JKT) 
+    ENDDO
+    ! Allocate and Writing the corresponding variables in module MODD_OCEAN_FRC
+    NFRCLT=IFRCLT
+    ! value to read later on file ? 
+    NINFRT=600
+    ALLOCATE(TFRCLT(NFRCLT))
+    ALLOCATE(XSSUFL_T(NFRCLT));XSSUFL_T(:)=0.
+    ALLOCATE(XSSVFL_T(NFRCLT));XSSVFL_T(:)=0.
+    ALLOCATE(XSSTFL_T(NFRCLT));XSSTFL_T(:)=0.
+    ALLOCATE(XSSOLA_T(NFRCLT));XSSOLA_T(:)=0.
+    ! on passe en unités SI, signe, etc pour le modele ocean
+    !  W/m2 => SI :  /(CP_mer * rho_mer)
+    ! a revoir dans tt le code pour mettre de svaleurs plus exactes
+    DO JKT=1,NFRCLT
+      TFRCLT(JKT)= ZFRCLT(JKT)
+      XSSUFL_T(JKT)=ZSSUFL_T(JKT)/XRH00OCEAN
+      XSSVFL_T(JKT)=ZSSVFL_T(JKT)/XRH00OCEAN
+      XSSTFL_T(JKT)=ZSSTFL_T(JKT) /(3900.*XRH00OCEAN)
+      XSSOLA_T(JKT)=ZSSOLA_T(JKT) /(3900.*XRH00OCEAN)
+    END DO   
+    DEALLOCATE(ZFRCLT)
+    DEALLOCATE(ZSSUFL_T)
+    DEALLOCATE(ZSSVFL_T)
+    DEALLOCATE(ZSSTFL_T)
+    DEALLOCATE(ZSSOLA_T)
+    DEALLOCATE(ZOC_LE)    
+    DEALLOCATE(ZOC_H)    
+    DEALLOCATE(ZOC_SW_DOWN)    
+    DEALLOCATE(ZOC_SW_UP)    
+    DEALLOCATE(ZOC_LW_DOWN)    
+    DEALLOCATE(ZOC_LW_UP)    
+    DEALLOCATE(ZOC_TAUX)
+    DEALLOCATE(ZOC_TAUY)
+    ! END OCEAN STANDARD
+!
+!
+!*       2.1  ATMOSPHERIC STANDARD case : ZGROUND, PGROUND, TGROUND, TDGROUND
 !                               (Pressure, dd, ff) , 
 !                               (Pressure, T, Td)
 !
@@ -448,8 +811,7 @@ SELECT CASE(YKIND)
     ALLOCATE(ZHEIGHTM(ILEVELM))    ! Allocate memory for needed 
     ALLOCATE(ZTHV(ILEVELM))        !  arrays
     ALLOCATE(ZMR(ILEVELM))
-    ALLOCATE(ZTV(ILEVELM))         ! Allocate memory for intermediate
-                                     !  arrays
+    ALLOCATE(ZTV(ILEVELM))         ! Allocate memory for intermediate arrays
     ALLOCATE(ZTHL(ILEVELM))
     ALLOCATE(ZRT(ILEVELM))                                              
 !
@@ -1203,20 +1565,36 @@ END DO
 ALLOCATE(ZEXNFLUX(IKU))
 ALLOCATE(ZEXNMASS(IKU))
 ALLOCATE(ZPRESS(IKU))
+ALLOCATE(ZPREFLUX(IKU))
 ALLOCATE(ZFRAC_ICE(IKU))
 ALLOCATE(ZRSATW(IKU))
 ALLOCATE(ZRSATI(IKU))
 ALLOCATE(ZMRT(IKU))
 ZMRT=ZMRM+ZMRCM+ZMRIM
-ZEXNSURF=(ZPGROUND/XP00)**(XRD/XCPD)
 ZTHVM=ZTHLM
-DO JLOOP=1,20 ! loop for pression 
-  CALL COMPUTE_EXNER_FROM_GROUND(ZTHVM,ZZMASS_PROFILE(:),ZEXNSURF,ZEXNFLUX,ZEXNMASS)
-  ZPRESS(:)=XP00*(ZEXNMASS(:))**(XCPD/XRD)
-  CALL TH_R_FROM_THL_RT_1D('T',ZFRAC_ICE,ZPRESS,ZTHLM,ZMRT,ZTHM,ZMRM,ZMRCM,ZMRIM, &
-                            ZRSATW, ZRSATI)
-   ZTHVM(:)=ZTHM(:)*(1.+XRV/XRD*ZMRM(:))/(1.+(ZMRM(:)+ZMRIM(:)+ZMRCM(:)))
-ENDDO
+!
+IF (LOCEAN) THEN
+  ZRHODM(:)=XRH00OCEAN*(1.-XALPHAOC*(ZTHLM(:) - XTH00OCEAN)&
+          +XBETAOC* (ZMRM(:)  - XSA00OCEAN))
+  ZPREFLUX(IKU)=ZPTOP
+  DO JK=IKU-1,2,-1
+    ZPREFLUX(JK) = ZPREFLUX(JK+1) + XG*ZRHODM(JK)*(ZZFLUX_PROFILE(JK+1)-ZZFLUX_PROFILE(JK))
+  END DO
+  ZPGROUND=ZPREFLUX(2)
+  WRITE(ILUOUT,FMT=*)'ZPGROUND i.e. Pressure at ocean domain bottom',ZPGROUND
+  ZTHM=ZTHVM
+ELSE
+! Atmospheric case   
+  ZEXNSURF=(ZPGROUND/XP00)**(XRD/XCPD)
+  DO JLOOP=1,20 ! loop for pression 
+    CALL COMPUTE_EXNER_FROM_GROUND(ZTHVM,ZZMASS_PROFILE(:),ZEXNSURF,ZEXNFLUX,ZEXNMASS)
+    ZPRESS(:)=XP00*(ZEXNMASS(:))**(XCPD/XRD)
+    CALL TH_R_FROM_THL_RT_1D('T',ZFRAC_ICE,ZPRESS,ZTHLM,ZMRT,ZTHM,ZMRM,ZMRCM,ZMRIM, &
+                              ZRSATW, ZRSATI)
+     ZTHVM(:)=ZTHM(:)*(1.+XRV/XRD*ZMRM(:))/(1.+(ZMRM(:)+ZMRIM(:)+ZMRCM(:)))
+  ENDDO
+ENDIF
+!
 DEALLOCATE(ZEXNFLUX)
 DEALLOCATE(ZEXNMASS)
 DEALLOCATE(ZPRESS)
@@ -1224,7 +1602,6 @@ DEALLOCATE(ZFRAC_ICE)
 DEALLOCATE(ZRSATW)
 DEALLOCATE(ZRSATI)       
 DEALLOCATE(ZMRT)
-
 !-------------------------------------------------------------------------------
 !
 !* 4.     COMPUTE FIELDS ON THE MODEL GRID (WITH OROGRAPHY)
@@ -1234,6 +1611,20 @@ CALL SET_MASS(TPFILE,GPROFILE_IN_PROC, ZZFLUX_PROFILE,                      &
               ZTHVM,ZMRM,ZUW,ZVW,OSHIFT,OBOUSS,PJ,HFUNU,HFUNV,              &
               PMRCM=ZMRCM,PMRIM=ZMRIM,PCORIOZ=PCORIOZ)
 !
+DEALLOCATE(ZPREFLUX)
+DEALLOCATE(ZHEIGHTM)          
+DEALLOCATE(ZTHV)
+DEALLOCATE(ZMR)
+DEALLOCATE(ZTHL)
 !-------------------------------------------------------------------------------
+CONTAINS
+  SUBROUTINE CHECK(STATUS,LOC)
+    INTEGER, INTENT(IN) :: STATUS
+    CHARACTER(LEN=*), INTENT(IN) :: LOC
+    IF(STATUS /= NF90_NOERR) THEN
+       WRITE(ILUOUT,FMT=*) "Error at ", LOC
+      WRITE(ILUOUT,FMT=*) NF90_STRERROR(STATUS)
+    END IF
+  END SUBROUTINE check
 !
 END SUBROUTINE SET_RSOU

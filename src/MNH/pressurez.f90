@@ -220,6 +220,8 @@ END MODULE MODI_PRESSUREZ
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
+!!     JL Redelsperger 03/2021 : Shallow convection case added in LHE case: 
+!!                               working for both atmosphere and ocean cases  
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -229,7 +231,8 @@ USE MODD_ARGSLIST_ll, ONLY: LIST_ll
 use modd_budget,      only: lbudget_u, lbudget_v, lbudget_w, NBUDGET_U, NBUDGET_V, NBUDGET_W, tbudgets
 USE MODD_CST
 USE MODD_CONF
-USE MODD_DYN_n,       ONLY: LRES, XRES
+USE MODD_DYN_n,       ONLY: LRES, XRES,LOCEAN
+USE MODD_FIELD_n,     ONLY: XPHIT
 USE MODD_IBM_PARAM_n, ONLY : XIBM_LS,XIBM_SU,LIBM,NIBM_ITR,XIBM_EPSI
 USE MODD_LUNIT_n,     ONLY: TLUOUT
 USE MODD_MPIF
@@ -359,6 +362,7 @@ REAL, DIMENSION(SIZE(PPABST,1),SIZE(PPABST,2),SIZE(PPABST,3)) :: ZTHETAV, &
                         ! MAE + DUR => Exner function perturbation
                         ! LHE       => Exner function perturbation * CPD * THVREF
 !
+REAL :: ZPHI0
 REAL            :: ZRV_OV_RD !  XRV / XRD
 REAL                  :: ZMAXVAL, ZMAXRES, ZMAX,ZMAX_ll ! for print
 INTEGER, DIMENSION(3) :: IMAXLOC ! purpose
@@ -513,9 +517,15 @@ IF(CEQNSYS=='MAE' .OR. CEQNSYS=='DUR') THEN
   ZPHIT(:,:,:)=(PPABST(:,:,:)/XP00)**(XRD/XCPD)-PEXNREF(:,:,:)
   !
 ELSEIF(CEQNSYS=='LHE') THEN
-  ZPHIT(:,:,:)= ((PPABST(:,:,:)/XP00)**(XRD/XCPD)-PEXNREF(:,:,:))   &
-               * XCPD * PTHVREF(:,:,:)
-  !
+  IF ( .NOT. LOCEAN) THEN
+    ZPHIT(:,:,:)= ((PPABST(:,:,:)/XP00)**(XRD/XCPD)-PEXNREF(:,:,:))   &
+                 * XCPD * PTHVREF(:,:,:)
+  ELSE
+    ! Field at T- DT for LHE anelastic approx
+    ! not used in ocean case (flat LHE)
+    ZPHIT(:,:,:)=0.
+  END IF
+!
 END IF
 !
 IF(CEQNSYS=='LHE'.AND. LFLAT .AND. LCARTESIAN .AND. .NOT. LIBM) THEN
@@ -781,12 +791,23 @@ IF ((ZMAX_ll > 1.E-12) .AND. KTCOUNT >0 ) THEN
 !IF (  KTCOUNT >0 .AND. .NOT.LBOUSS ) THEN
   CALL P_ABS   ( KRR, KRRL, KRRI, PDRYMASST, PREFMASS, PMASS_O_PHI0, &
                  PTHT, PRT, PRHODJ, PRHODREF, ZTHETAV, PTHVREF,      &
-                 PRVREF, PEXNREF,  ZPHIT                             )
+                 PRVREF, PEXNREF, ZPHIT, ZPHI0                       )
 !
   IF(CEQNSYS=='MAE' .OR. CEQNSYS=='DUR') THEN
     PPABST(:,:,:)=XP00*(ZPHIT+PEXNREF)**(XCPD/XRD)
   ELSEIF(CEQNSYS=='LHE') THEN
-    PPABST(:,:,:)=XP00*(ZPHIT/(XCPD*PTHVREF)+PEXNREF)**(XCPD/XRD)
+    IF (.NOT. LOCEAN) THEN
+      ! Deep atmosphere case : computing of PI fluctuation ; ZPHI0 (computed in P_ABS routine) is added 
+      XPHIT(:,:,:) = (ZPHIT+ZPHI0)/(XCPD*PTHVREF)
+      ! Absolute Pressure 
+      PPABST(:,:,:)=XP00*(XPHIT(:,:,:)+PEXNREF)**(XCPD/XRD)
+      ! Computing press fluctuation
+      XPHIT(:,:,:) = PPABST(:,:,:) - XP00*PEXNREF**(XCPD/XRD)
+    ELSE
+!    Shallow atmosphere ou ocean
+     XPHIT(:,:,:) = (ZPHIT+ZPHI0)*PRHODREF
+     PPABST(:,:,:)=XPHIT(:,:,:) + XP00*PEXNREF**(XCPD/XRD)
+    END IF
   ENDIF
 !
   IF( HLBCX(1) == 'CYCL' ) THEN

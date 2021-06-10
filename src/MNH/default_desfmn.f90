@@ -213,6 +213,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !  P-A Joulin  21/05/2021: add Wind turbines
 !  S. Riette   21/05/2021: add options to PDF subgrid scheme
 !                    05/2021 D. Ricard add the contribution of Leonard terms in the turbulence scheme
+!! JL Redelsperger 06/2021 add parameters allowing to active idealized oceanic convection
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -360,6 +361,7 @@ LUSERI    = .FALSE.
 LUSERS    = .FALSE.
 LUSERG    = .FALSE.
 LUSERH    = .FALSE.
+LOCEAN    = .FALSE.
 !NSV      = 0
 !NSV_USER = 0
 LUSECI    = .FALSE.
@@ -798,6 +800,11 @@ IF (KMI == 1) THEN
   XUTRANS            = 0.0
   XVTRANS            = 0.0
   LPGROUND_FRC       = .FALSE.
+  LDEEPOC   = .FALSE.
+  XCENTX_OC = 16000.
+  XCENTY_OC = 16000.
+  XRADX_OC  =  8000.  
+  XRADY_OC  =  8000.
 END IF
 !
 !-------------------------------------------------------------------------------

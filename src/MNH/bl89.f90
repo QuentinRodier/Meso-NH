@@ -72,6 +72,7 @@ END MODULE MODI_BL89
 !!                            reversed vertical levels
 !!  Philippe 13/02/2018: use ifdef MNH_REAL to prevent problems with intrinsics on Blue Gene/Q
 !!                  01/2019 (Q. Rodier) support for RM17 mixing length
+!!                  03/2021 (JL Redelsperger) Ocean model case 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -81,6 +82,7 @@ USE MODD_CONF, ONLY: CPROGRAM
 USE MODD_CST
 USE MODD_CTURB
 USE MODD_PARAMETERS
+USE MODD_DYN_n, ONLY : LOCEAN
 use modd_precision, only: MNHREAL
 !
 !
@@ -177,6 +179,7 @@ ELSE
     ZSHEAR   (:,JK)   = RESHAPE(PSHEAR  (:,:,JK),(/ IIU*IJU /) )    
     ZTKEM  (:,JK)   = RESHAPE(PTKEM  (:,:,JK),(/ IIU*IJU /) )
     ZG_O_THVREF(:,JK)   = RESHAPE(XG/PTHVREF(:,:,JK),(/ IIU*IJU /) )
+    IF (LOCEAN) ZG_O_THVREF(:,JK)   = XG * XALPHAOC
     DO JRR=1,KRR
       ZRM  (:,JK,JRR) = RESHAPE(PRM    (:,:,JK,JRR),(/ IIU*IJU /) )
     END DO

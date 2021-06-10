@@ -95,6 +95,7 @@ END MODULE MODI_DEFAULT_EXPRE
 !!      add the uniform soil values                        05/02/96  (J.Stein)
 !!      removes default values for ground variables        26/11/96  (V.Masson)
 !!      add default value for LBOUSS                       11/07/13  (C.Lac)     
+!!      add default value LOCEAN LCOUPLES                    /03/21  (JL Redelsperger)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -103,6 +104,7 @@ USE MODD_CONF           ! declarative modules
 USE MODD_DIM_n
 USE MODD_GRID
 USE MODD_REF
+USE MODD_DYN_n, ONLY : LOCEAN
 !
 IMPLICIT NONE
 !
@@ -140,7 +142,9 @@ XLATORI = 37.
 !*       4.    SET DEFAULT VALUES FOR MODD_REF :
 !              --------------------------------
 !
-LBOUSS = .FALSE.   
+LBOUSS = .FALSE.
+LOCEAN = .FALSE.
+LCOUPLES= .FALSE.
 !
 !-------------------------------------------------------------------------------
 !

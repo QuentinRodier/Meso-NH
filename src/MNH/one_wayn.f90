@@ -128,6 +128,7 @@ SUBROUTINE ONE_WAY_n(KDAD,PTSTEP,KMI,KTCOUNT,                            &
 USE MODD_CH_MNHC_n,      only: LUSECHAQ, LUSECHIC
 USE MODD_CONF,           only: CEQNSYS
 USE MODD_CST,            only: XCPD, XP00, XRD, XRV, XTH00
+USE MODD_DYN_n,          ONLY : LOCEAN
 USE MODD_FIELD_n,        only: XPABST, XRT, XSVT, XUT, XVT, XWT, XTHT, XTKET
 USE MODD_NESTING,        only: NXOR_ALL, NXEND_ALL, NYOR_ALL, NYEND_ALL
 USE MODD_NSV,            only: NSV_A, NSV_C1R3BEG_A, NSV_C1R3_A, NSV_C2R2BEG_A, NSV_C2R2_A, NSV_CHEMBEG_A, NSV_CHEMEND_A, &
@@ -139,6 +140,7 @@ USE MODD_NSV,            only: NSV_A, NSV_C1R3BEG_A, NSV_C1R3_A, NSV_C2R2BEG_A, 
 
 USE MODD_PARAMETERS,     only: JPHEXT, JPVEXT
 USE MODD_PARAM_n,        only: CCLOUD
+USE MODD_REF,            ONLY : LCOUPLES
 USE MODD_REF_n,          only: XRHODJ, XRHODREF, XRVREF, XTHVREF
 !
 use mode_bikhardt
@@ -239,6 +241,21 @@ REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZCHEMTI
 !
 integer :: igrid
 !
+IF (LCOUPLES) THEN
+   PDRYMASST=0.
+   PDRYMASSS=0.
+   PLBXUS=0.
+   PLBXVS=0.
+   PLBXWS=0.
+   PLBXTHS=0.
+   PLBYTHS=0.
+   PLBXTKES=0.
+   PLBYTKES =0.
+   PLBXRS =0.
+   PLBYRS=0.
+   PLBXSVS =0.
+   PLBYSVS=0.
+ELSE
 !-------------------------------------------------------------------------------
 !
 !*      0.   INITIALISATION
@@ -790,6 +807,8 @@ DEALLOCATE(ZWORK)
 DEALLOCATE(ZCOEFLIN_LBXM_RED,ZCOEFLIN_LBYM_RED,IKLIN_LBXM_RED,IKLIN_LBYM_RED)
 !
 !------------------------------------------------------------------------------
+ENDIF  ! END LCOUPLES couplage
+!
 CALL GOTO_MODEL(KMI)
 !
 END SUBROUTINE ONE_WAY_n

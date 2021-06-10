@@ -45,6 +45,7 @@
 !!                             add SST and surface pressure forcing
 !!      01/2004  V. Masson     surface externalization: removes SST forcing
 !!                   09/2017 Q.Rodier add LTEND_UV_FRC
+!!      03/2021 JL Redelsperger Parameters defining sfc forcing shape for idealized ocean case
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -83,7 +84,7 @@ REAL, SAVE, DIMENSION(:,:), ALLOCATABLE :: XTENDVFRC   ! large scale V tendency
 LOGICAL, SAVE     :: LGEOST_UV_FRC      ! enables geostrophic wind term
 LOGICAL, SAVE     :: LGEOST_TH_FRC      ! enables thermal wind advection
 LOGICAL, SAVE     :: LTEND_THRV_FRC     ! enables tendency forcing
-LOGICAL, SAVE     :: LTEND_UV_FRC     ! enables tendency forcing of the wind
+LOGICAL, SAVE     :: LTEND_UV_FRC       ! enables tendency forcing of the wind
 LOGICAL, SAVE     :: LVERT_MOTION_FRC   ! enables prescribed a forced vertical
 					                    ! transport for all prognostic variables
 LOGICAL, SAVE     :: LRELAX_THRV_FRC    ! enables temp. and humidity relaxation
@@ -100,5 +101,10 @@ LOGICAL, SAVE     :: LTRANS             ! enables a Galilean translation of the
                                         !         domain of simulation
 LOGICAL, SAVE     :: LPGROUND_FRC       ! enables surf. pressure forcing
 !
+LOGICAL, SAVE     :: LDEEPOC            ! activates sfc forcing for ideal ocean deep conv 
+REAL,    SAVE     :: XCENTX_OC          ! center of sfc forc for ideal ocean
+REAL,    SAVE     :: XRADX_OC           ! radius of sfc forc for ideal ocean
+REAL,    SAVE     :: XCENTY_OC          ! center of sfc forc for ideal ocean
+REAL,    SAVE     :: XRADY_OC           ! radius of sfc forc for ideal ocean
 !
 END MODULE MODD_FRC

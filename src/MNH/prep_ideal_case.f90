@@ -320,6 +320,7 @@
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !  F. Auguste  02/2021   : add IBM
 !  P. Wautelet 09/03/2021: move some chemistry initializations to ini_nsv
+!  Jean-Luc Redelsperger 03/2021 : : ocean LES case
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -576,7 +577,7 @@ TYPE(TFILEDATA),POINTER :: TZEXPREFILE  => NULL()
 NAMELIST/NAM_CONF_PRE/ LTHINSHELL,LCARTESIAN,    &! Declarations in MODD_CONF
                        LPACK,                    &!
                        NVERB,CIDEAL,CZS,         &!+global variables initialized
-                       LBOUSS,LPERTURB,          &! at their declarations
+                       LBOUSS,LOCEAN,LPERTURB,   &! at their declarations
                        LFORCING,CEQNSYS,         &! at their declarations
                        LSHIFT,L2D_ADV_FRC,L2D_REL_FRC, &
                        NHALO , JPHEXT
@@ -976,6 +977,11 @@ ALLOCATE(XDZZ(NIU,NJU,NKU))
 !
 ALLOCATE(XRHODREFZ(NKU),XTHVREFZ(NKU))
 XTHVREFZ(:)=0.0
+IF (LCOUPLES) THEN
+  ! Arrays for reference state different in ocean and atmosphere
+  ALLOCATE(XRHODREFZO(NKU),XTHVREFZO(NKU))
+  XTHVREFZO(:)=0.0
+END IF
 IF(CEQNSYS == 'DUR') THEN
   ALLOCATE(XRVREF(NIU,NJU,NKU))
 ELSE
@@ -990,7 +996,11 @@ ALLOCATE(XLSUM(NIU,NJU,NKU))
 ALLOCATE(XLSVM(NIU,NJU,NKU))
 ALLOCATE(XLSWM(NIU,NJU,NKU))
 ALLOCATE(XLSTHM(NIU,NJU,NKU))
-ALLOCATE(XLSRVM(NIU,NJU,NKU))
+IF ( NRR >= 1) THEN
+  ALLOCATE(XLSRVM(NIU,NJU,NKU))
+ELSE
+  ALLOCATE(XLSRVM(0,0,0))
+ENDIF
 !
 !  allocate lateral boundary field used for coupling
 !
@@ -1635,9 +1645,11 @@ IF(LPERTURB) CALL SET_PERTURB(TZEXPREFILE)
 !
 !*       5.9   Anelastic correction and pressure:
 !
-CALL ICE_ADJUST_BIS(XPABST,XTHT,XRT)
-IF ( .NOT. L1D ) CALL PRESSURE_IN_PREP(XDXX,XDYY,XDZX,XDZY,XDZZ)
-CALL ICE_ADJUST_BIS(XPABST,XTHT,XRT)
+IF (.NOT.LOCEAN) THEN
+  CALL ICE_ADJUST_BIS(XPABST,XTHT,XRT)
+  IF ( .NOT. L1D ) CALL PRESSURE_IN_PREP(XDXX,XDYY,XDZX,XDZY,XDZZ)
+  CALL ICE_ADJUST_BIS(XPABST,XTHT,XRT)
+END IF
 !
 !
 !*       5.10  Compute THETA, vapor and cloud mixing ratio
@@ -1654,19 +1666,28 @@ IF (CIDEAL == 'RSOU') THEN
   ALLOCATE(ZRSATW(NIU,NJU,NKU))
   ALLOCATE(ZRSATI(NIU,NJU,NKU))             
   ZRT=XRT(:,:,:,1)+XRT(:,:,:,2)+XRT(:,:,:,4)
+IF (LOCEAN) THEN
+   ZEXN(:,:,:)= 1.  
+   ZT=XTHT
+   ZTHL=XTHT
+   ZCPH=XCPD+ XCPV * XRT(:,:,:,1)
+   ZLVOCPEXN = XLVTT
+   ZLSOCPEXN = XLSTT
+ELSE
   ZEXN=(XPABST/XP00) ** (XRD/XCPD)
   ZT=XTHT*(XPABST/XP00)**(XRD/XCPD)
   ZCPH=XCPD+ XCPV * XRT(:,:,:,1)+ XCL *XRT(:,:,:,2)  + XCI * XRT(:,:,:,4)
   ZLVOCPEXN = (XLVTT + (XCPV-XCL) * (ZT-XTT))/(ZCPH*ZEXN)
   ZLSOCPEXN = (XLSTT + (XCPV-XCI) * (ZT-XTT))/(ZCPH*ZEXN)
   ZTHL=XTHT-ZLVOCPEXN*XRT(:,:,:,2)-ZLSOCPEXN*XRT(:,:,:,4)
+  CALL TH_R_FROM_THL_RT_3D('T',ZFRAC_ICE,XPABST,ZTHL,ZRT,XTHT,XRT(:,:,:,1), &
+                            XRT(:,:,:,2),XRT(:,:,:,4),ZRSATW, ZRSATI)
+END IF
   DEALLOCATE(ZEXN)         
   DEALLOCATE(ZT)       
   DEALLOCATE(ZCPH)        
   DEALLOCATE(ZLVOCPEXN)        
   DEALLOCATE(ZLSOCPEXN)
-  CALL TH_R_FROM_THL_RT_3D('T',ZFRAC_ICE,XPABST,ZTHL,ZRT,XTHT,XRT(:,:,:,1), &
-                            XRT(:,:,:,2),XRT(:,:,:,4),ZRSATW, ZRSATI)
   DEALLOCATE(ZTHL) 
   DEALLOCATE(ZRT)
 ! Coherence test

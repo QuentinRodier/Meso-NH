@@ -90,7 +90,7 @@ SUBROUTINE INI_ONE_WAY_n(KDAD,KMI,                                       &
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 03/05/2019: restructuration of one_wayn and ini_one_wayn
 !  P. Wautelet 04/06/2020: correct call to Set_conc_lima + initialize ZCONCM
-!
+!  J-L Redelsperger 06/2021: add Ocean coupling
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -106,6 +106,7 @@ USE MODD_NSV,            only: NSV_A, NSV_C1R3BEG_A, NSV_C1R3_A, NSV_C2R2BEG_A, 
                                NSV_SLTBEG_A, NSV_SLTDEPBEG_A, NSV_SLTDEP_A, NSV_SLT_A, NSV_USER_A
 
 USE MODD_PARAM_n,        only: CCLOUD
+USE MODD_REF,            ONLY: LCOUPLES
 USE MODD_REF_n,          only: XRHODJ, XRHODREF
 !
 use mode_bikhardt
@@ -183,6 +184,20 @@ REAL,    DIMENSION(:,:,:,:), ALLOCATABLE :: ZCHEMM  ! chemical concentrations
 REAL,    DIMENSION(:,:,:,:), ALLOCATABLE :: ZCHEMMI  ! chemical ice phase concentrations
 !-------------------------------------------------------------------------------
 !
+IF (LCOUPLES) THEN
+   PLBXUM=0.
+   PLBXVM=0.
+   PLBXWM=0.
+   PLBXTHM=0.
+   PLBYTHM=0.
+   PLBXTKEM=0.
+   PLBYTKEM =0.
+   PLBXRM =0.
+   PLBYRM=0.
+   PLBXSVM =0.
+   PLBYSVM=0. 
+RETURN
+ENDIF
 !*      0.   INITIALISATION
 ! 
 CALL GOTO_MODEL(KDAD)
