@@ -820,14 +820,14 @@ END IF
 ! 
 IF (LOCEAN .AND. (.NOT.LCOUPLES)) THEN
 !
- ALLOCATE( ZIZOCE(IKU)); ZIZOCE(:)=0. 
- ALLOCATE( ZPROSOL1(IKU))
- ALLOCATE( ZPROSOL2(IKU))
- ALLOCATE(XSSUFL(IIU,IJU))
- ALLOCATE(XSSVFL(IIU,IJU))
- ALLOCATE(XSSTFL(IIU,IJU))
- ALLOCATE(XSSOLA(IIU,IJU))
-! Time interpolation
+  ALLOCATE( ZIZOCE(IKU)); ZIZOCE(:)=0. 
+  ALLOCATE( ZPROSOL1(IKU))
+  ALLOCATE( ZPROSOL2(IKU))
+  ALLOCATE(XSSUFL(IIU,IJU))
+  ALLOCATE(XSSVFL(IIU,IJU))
+  ALLOCATE(XSSTFL(IIU,IJU))
+  ALLOCATE(XSSOLA(IIU,IJU))
+  ! Time interpolation
   JSW     = INT(TDTCUR%xtime/REAL(NINFRT))
   ZSWA    = TDTCUR%xtime/REAL(NINFRT)-REAL(JSW)
   XSSTFL  = (XSSTFL_T(JSW+1)*(1.-ZSWA)+XSSTFL_T(JSW+2)*ZSWA) 
@@ -837,22 +837,22 @@ IF (LOCEAN .AND. (.NOT.LCOUPLES)) THEN
   ZIZOCE(IKU)   = XSSOLA_T(JSW+1)*(1.-ZSWA)+XSSOLA_T(JSW+2)*ZSWA
   ZPROSOL1(IKU) = XROC*ZIZOCE(IKU)
   ZPROSOL2(IKU) = (1.-XROC)*ZIZOCE(IKU)
- IF(NVERB >= 5 ) THEN   
-  WRITE(ILUOUT,*)'ZSWA JSW TDTCUR XTSTEP FT FU FV SolarR(IKU)', NINFRT, ZSWA,JSW,&
+  IF(NVERB >= 5 ) THEN   
+    WRITE(ILUOUT,*)'ZSWA JSW TDTCUR XTSTEP FT FU FV SolarR(IKU)', NINFRT, ZSWA,JSW,&
        TDTCUR%xtime, XTSTEP, XSSTFL(2,2), XSSUFL(2,2),XSSVFL(2,2),ZIZOCE(IKU)
- END IF
+  END IF
+  if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'OCEAN', xrths(:, :, :) ) 
   DO JKM=IKU-1,2,-1
-   ZPROSOL1(JKM) = ZPROSOL1(JKM+1)* exp(-XDZZ(2,2,JKM)/XD1)
-   ZPROSOL2(JKM) = ZPROSOL2(JKM+1)* exp(-XDZZ(2,2,JKM)/XD2)
-   ZIZOCE(JKM)   = (ZPROSOL1(JKM+1)-ZPROSOL1(JKM) + ZPROSOL2(JKM+1)-ZPROSOL2(JKM))/XDZZ(2,2,JKM)
-! Adding to tep temp tendency, the solar radiation penetrating in ocean
-  if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'OCE', xrths(:, :, :) )
-   XRTHS(:,:,JKM) = XRTHS(:,:,JKM) + XRHODJ(:,:,JKM)*ZIZOCE(JKM)
-  if ( lbudget_th ) call Budget_store_end ( tbudgets(NBUDGET_TH), 'OCE', xrths(:, :, :) )
+    ZPROSOL1(JKM) = ZPROSOL1(JKM+1)* exp(-XDZZ(2,2,JKM)/XD1)
+    ZPROSOL2(JKM) = ZPROSOL2(JKM+1)* exp(-XDZZ(2,2,JKM)/XD2)
+    ZIZOCE(JKM)   = (ZPROSOL1(JKM+1)-ZPROSOL1(JKM) + ZPROSOL2(JKM+1)-ZPROSOL2(JKM))/XDZZ(2,2,JKM)
+    ! Adding to temperature tendency, the solar radiation penetrating in ocean
+    XRTHS(:,:,JKM) = XRTHS(:,:,JKM) + XRHODJ(:,:,JKM)*ZIZOCE(JKM)
   END DO
- DEALLOCATE( ZIZOCE) 
- DEALLOCATE (ZPROSOL1)
- DEALLOCATE (ZPROSOL2)
+  if ( lbudget_th ) call Budget_store_end ( tbudgets(NBUDGET_TH), 'OCEAN', xrths(:, :, :) )
+  DEALLOCATE( ZIZOCE) 
+  DEALLOCATE (ZPROSOL1)
+  DEALLOCATE (ZPROSOL2)
 END IF
 !
 !
