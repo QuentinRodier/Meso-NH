@@ -73,6 +73,7 @@ END MODULE MODI_BL89
 !!  Philippe 13/02/2018: use ifdef MNH_REAL to prevent problems with intrinsics on Blue Gene/Q
 !!                  01/2019 (Q. Rodier) support for RM17 mixing length
 !!                  03/2021 (JL Redelsperger) Ocean model case 
+!!                  06/2021 (P. Marquet) correction of exponent on final length according to Lemarié et al. 2021
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -138,7 +139,7 @@ INTEGER :: JRR        ! moist loop counter
 REAL    :: ZRVORD     ! Rv/Rd
 REAL    :: ZPOTE,ZLWORK1,ZLWORK2
 REAL    :: ZTEST,ZTEST0,ZTESTM ! test for vectorization
-REAL    :: Z2SQRT2
+REAL    :: Z2SQRT2,ZUSRBL89,ZBL89EXP
 !-------------------------------------------------------------------------------
 !
 Z2SQRT2=2.*SQRT(2.)
@@ -187,6 +188,10 @@ ELSE
 END IF
 !
 ZSQRT_TKE = SQRT(ZTKEM)
+!
+!ZBL89EXP is defined here because (and not in ini_cturb) because XCED is defined in read_exseg (depending on BL89/RM17)
+ZBL89EXP = LOG(16.)/(4.*LOG(XKARMAN)+LOG(XCED)-3.*LOG(XCMFS))
+ZUSRBL89 = 1./ZBL89EXP
 !-------------------------------------------------------------------------------
 !
 !*       2.    Virtual potential temperature on the model grid
@@ -354,8 +359,8 @@ DO JK=IKTB,IKTE
     ZLWORK1=MAX(ZLMDN(J1D,JK),1.E-10_MNHREAL)
     ZLWORK2=MAX(ZLWORK(J1D),1.E-10_MNHREAL)
     ZPOTE = ZLWORK1 / ZLWORK2
-    ZLWORK2=1.d0 + ZPOTE**(2./3.)
-    ZLM(J1D,JK) = Z2SQRT2*ZLWORK1/(ZLWORK2*SQRT(ZLWORK2))
+    ZLWORK2=1.d0 + ZPOTE**ZBL89EXP
+    ZLM(J1D,JK) = ZLWORK1*(2./ZLWORK2)**ZUSRBL89
   END DO 
 
 ZLM(:,JK)=MAX(ZLM(:,JK),XLINI)
