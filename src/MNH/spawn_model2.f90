@@ -200,6 +200,7 @@ END MODULE MODI_SPAWN_MODEL2
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !  P. Wautelet 09/03/2021: move some chemistry initializations to ini_nsv
 !  P. Wautelet 24/03/2021: bugfix: allocate XLSRVM, XINPAP and XACPAP to zero size when not needed
+!!               03/2021 (JL Redelsperger) Ocean model case 
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -1379,8 +1380,13 @@ ENDIF
 ZTIME1 = ZTIME2
 !
 ALLOCATE(ZRHOD(IIU,IJU,IKU))
-ZRHOD(:,:,:)=XPABST(:,:,:)/(XPABST(:,:,:)/XP00)**(XRD/XCPD) &
-            /(XRD*ZTHVT(:,:,:)*(1.+ZSUMRT(:,:,:)))
+!
+IF (LOCEAN) THEN
+  ZRHOD(:,:,:)=XRH00OCEAN*(1.-XALPHAOC*(ZTHVT(:,:,:)-XTH00OCEAN)+XBETAOC*(XRT(:,:,:,1)-XSA00OCEAN))
+ELSE
+  ZRHOD(:,:,:)=XPABST(:,:,:)/(XPABST(:,:,:)/XP00)**(XRD/XCPD) &
+              /(XRD*ZTHVT(:,:,:)*(1.+ZSUMRT(:,:,:)))
+ENDIF
 !$20140709
   CALL MPPDB_CHECK3D(ZRHOD,"SPAWN_MOD2:ZRHOD",PRECISION)
   CALL MPPDB_CHECK3D(XPABST,"SPAWN_MOD2:XPABST",PRECISION)

@@ -165,7 +165,6 @@ USE MODD_DYN_n, ONLY : LOCEAN
 !
 USE MODE_IO_FIELD_READ, only: IO_Field_read
 USE MODE_ll
-USE MODE_THERMO
 USE MODE_MPPDB
 USE MODE_REPRO_SUM
 !
@@ -452,6 +451,7 @@ CALL MPPDB_CHECK3D(PRHODJ,"SET_REF::PRHODJ",PRECISION)
 !*       6.     COMPUTES THE TOTAL MASS OF REFERENCE ATMOSPHERE   
 !	        -----------------------------------------------
 !
+IF (CEQNSYS == "LHE" ) THEN
   ZCVD_O_RDCPD = ZCVD_O_RD / XCPD
   !
   ALLOCATE(ZREFMASS_2D(IIB:IIE,IJB:IJE))
@@ -475,6 +475,7 @@ CALL MPPDB_CHECK3D(PRHODJ,"SET_REF::PRHODJ",PRECISION)
   PMASS_O_PHI0 =  SUM_DD_R2_ll(ZMASS_O_PHI0_2D)
 !JUAN16
 !
+END IF
 !
 !
 !-------------------------------------------------------------------------------

@@ -447,6 +447,7 @@ SELECT CASE(YKIND)
 !   
   CASE ('IDEALOCE')
 !
+    XP00=XP00OCEAN
     ! Read data in PRE_IDEA1.nam
     ! Surface      
     WRITE(ILUOUT,FMT=*) 'Reading data for ideal ocean :IDEALOCE'   
@@ -578,7 +579,8 @@ SELECT CASE(YKIND)
 !--------------------------------------------------------------------------------   
 !
   CASE ('STANDOCE')
-!
+!   
+    XP00=XP00OCEAN
     READ(ILUPRE,*) ZPTOP           ! P_atmosphere at sfc =P top domain     
     READ(ILUPRE,*) INFILE,INFISF
     WRITE(ILUOUT,FMT=*) 'Netcdf files to read:',INFILE,INFISF
