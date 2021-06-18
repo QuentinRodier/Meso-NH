@@ -472,6 +472,11 @@ USE MODI_SUNPOS_n
 USE MODI_SURF_SOLAR_GEOM
 USE MODI_UPDATE_METRICS
 USE MODI_UPDATE_NSV
+#ifdef MNH_ECRAD
+#if ( VER_ECRAD == 140 )
+USE YOERDI   , ONLY :RCCO2
+#endif
+#endif
 !
 IMPLICIT NONE
 !
@@ -1402,14 +1407,30 @@ END IF
 ! Initialization of SW bands
 NSWB_OLD = 6 ! Number of bands in ECMWF original scheme (from Fouquart et Bonnel (1980))
              ! then modified through INI_RADIATIONS_ECMWF but remains equal to 6 practically
-IF (CRAD == 'ECRA') THEN
-    NSWB_MNH = 14
-ELSE
-    NSWB_MNH = NSWB_OLD
-END IF
+
+#ifdef MNH_ECRAD
+#if ( VER_ECRAD == 140 )
+NLWB_OLD = 16 ! For XEMIS initialization (should be spectral in the future)
+#endif
+#endif
 
 NLWB_MNH = 16 ! For XEMIS initialization (should be spectral in the future)
 
+IF (CRAD == 'ECRA') THEN
+    NSWB_MNH = 14
+#ifdef MNH_ECRAD
+#if ( VER_ECRAD == 140 )
+    NLWB_MNH = 16
+#endif
+#endif
+ELSE
+    NSWB_MNH = NSWB_OLD
+#ifdef MNH_ECRAD
+#if ( VER_ECRAD == 140 )
+    NLWB_MNH = NLWB_OLD
+#endif
+#endif
+END IF
 
 ALLOCATE(XSW_BANDS (NSWB_MNH)) 
 ALLOCATE(XLW_BANDS (NLWB_MNH)) 
@@ -2223,7 +2244,13 @@ CALL INI_LW_SETUP (CRAD,NLWB_MNH,XLW_BANDS)
 !
 XCCO2 = 360.0E-06 * 44.0E-03 / XMD
 #ifdef MNH_ECRAD
+#if ( VER_ECRAD == 101 )
 RCCO2 = 360.0E-06 * 44.0E-03 / XMD
+#endif
+#if ( VER_ECRAD == 140 )
+XCCO2 = 0.001*360.0E-06 * 44.0E-03 / XMD
+RCCO2 = 0.001*360.0E-06 * 44.0E-03 / XMD
+#endif
 #endif
 !
 !

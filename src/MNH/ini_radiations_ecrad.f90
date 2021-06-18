@@ -165,9 +165,14 @@ LCCNO = .FALSE.       ! True if CCN over sea is diagnosed
 
 ! Constant cloud condensation nuclei over land and sea
 ! In ECMWF original code, those values were 900 and 150
+#if ( VER_ECRAD == 101 )
 XCCNLND = 900_JPRB     ! constant CCN over land in m-3 (needed for Martin et al., 1994 parameterization)
 XCCNSEA = 50_JPRB      ! constant CCN over sea in m-3
-
+#endif
+#if ( VER_ECRAD == 140 )
+XCCNLND = 900_JPRB     ! constant CCN over land in cm-3 (needed for Martin et al., 1994 parameterization)
+XCCNSEA = 50_JPRB      ! constant CCN over sea in cm-3 (IFS value, 150 originally in MNH)
+#endif
 ! NAERMACC is in the namelist
 ! NAERMACC = 0  -> Use of Tegen aerosol climatology
 ! NAERMACC = 1  -> Use of MACC aerosol classification
@@ -215,6 +220,12 @@ RCCFC11 = 280.E-12_JPRB
 RCCFC12 = 484.E-12_JPRB
 RCCFC22 =   0.E-12_JPRB
 RCCCL4  =   0.E-12_JPRB
+
+#if ( VER_ECRAD == 140 )
+USER_ALB_DIFF(:) = 0.5
+USER_ALB_DIR(:) = 0 
+USER_EMISS(:) = 1
+#endif
 
 ! Radiation computed every NRADFR timesteps
 NRADFR = INT(XDTRAD/XTSTEP)
