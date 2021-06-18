@@ -128,8 +128,11 @@ INC_RAD      = -I$(B)LIB/RAD/ECMWF_RAD
 ifdef MNH_ECRAD
 DIR_RAD      +=  LIB/RAD/ecrad-$(VERSION_ECRAD)_mnh
 DIR_RAD      +=  LIB/RAD/ecrad-$(VERSION_ECRAD)
-CPPFLAGS_RAD = -DMNH_ECRAD
-INC_RAD      += -I$(B)LIB/RAD/ecrad-$(VERSION_ECRAD)/include -I$(B)LIB/RAD/ecrad-$(VERSION_ECRAD)/drhook/include
+CPPFLAGS_RAD = -DMNH_ECRAD -DVER_ECRAD=$(VER_ECRAD)
+INC_RAD      += -I$(B)LIB/RAD/ecrad-$(VERSION_ECRAD)/include
+ifeq "$(VER_ECRAD)" "140"
+INC_RAD      += -I$(B)LIB/RAD/ecrad-$(VERSION_ECRAD)/drhook/include
+endif
 ARCH_XYZ    := $(ARCH_XYZ)-ECRAD$(VER_ECRAD)
 endif
 #
@@ -140,7 +143,15 @@ CPPFLAGS    += $(CPPFLAGS_RAD)
 INC         += $(INC_RAD)
 
 IGNORE_DEP_MASTER   += olwu.D olwv.D rad1Driv_MACLATMOSPH_60LEVELS_ICRCCM3.D tstrad.D tstrad_chansubset.D tstrad_rttov7.D \
-                       tstrad_sx6.D
+                       tstrad_sx6.D 
+
+ifneq "$(VER_ECRAD)" "140"
+IGNORE_DEP_MASTER   += read_albedo_data.D read_emiss_data.D
+endif
+
+ifeq "$(VER_ECRAD)" "140"
+IGNORE_DEP_MASTER   += yomhook.D
+endif
 
 OBJS0 += spll_orrtm_kgb1.o spll_orrtm_kgb14.o spll_orrtm_kgb3_a.o spll_orrtm_kgb4_b.o \
         spll_orrtm_kgb5_c.o spll_orrtm_kgb10.o spll_orrtm_kgb15.o spll_orrtm_kgb3_b.o \
