@@ -29,7 +29,7 @@ export VERSION_OASIS=${VERSION_OASIS:-"mct_v3"}
 export VERSION_TOY=${VERSION_TOY:-"v1-0"}
 export VERSION_NCL=${VERSION_NCL:-"ncl-6.4.0"}
 
-export VERSION_ECRAD=${VERSION_ECRAD:-"1.0.1"}
+export VERSION_ECRAD=${VERSION_ECRAD:-"1.4.0"}
 export VER_ECRAD=${VERSION_ECRAD//./}
 
 export LEN_HREC=${LEN_HREC:-16}
@@ -558,6 +558,12 @@ if [ "x${MNH_GRIBAPI}" == "xyes" ] ; then
 ( cd $LOCAL/src/LIB ; [ ! -d grib_api-${VERSION_GRIBAPI} ] && [ -f grib_api-${VERSION_GRIBAPI}.tar.gz ] && gunzip -c grib_api-${VERSION_GRIBAPI}.tar.gz |tar -xvf - )
 else
 ( cd $LOCAL/src/LIB ; [ ! -d eccodes-${VERSION_ECCODES}-Source ] && [ -f eccodes-${VERSION_ECCODES}-Source.tar.gz ] && gunzip -c eccodes-${VERSION_ECCODES}-Source.tar.gz |tar -xvf - )
+fi
+#
+#  Install ECRAD 1.4.0 if MNH_ECRAD=1 & VERSION_ECRAD=1.4.0
+#
+if [ "x${MNH_ECRAD}" == "x1" ] && [ "x${VERSION_ECRAD}" == "x1.4.0" ] ; then
+( cd $LOCAL/src/LIB/RAD ; [ ! -d ecrad-1.4.0 ] && tar xvfz ecrad-1.4.0.tar.gz )
 fi
 ##########################################################
 #                                                        #
