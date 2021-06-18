@@ -27,7 +27,8 @@ extern_usersurc_ll.f90|\
 extern_userio.f90|fmreadwrit.f90|fm_read_ll.f90|poub.f90|\
 mode_glt.*.F90|\
 rrtm_.*.F90|srtm_.*.F90|\
-libs4py.f90"
+libs4py.f90|\
+ec_meminfo.F90"
 #
 
 if [ "$SUF" = "f" ]

@@ -126,11 +126,11 @@ DIR_RAD      +=  LIB/RAD/ECMWF_RAD
 INC_RAD      = -I$(B)LIB/RAD/ECMWF_RAD
 #
 ifdef MNH_ECRAD
-DIR_RAD      +=  LIB/RAD/ecrad-1.0.1_mnh
-DIR_RAD      +=  LIB/RAD/ecrad-1.0.1
+DIR_RAD      +=  LIB/RAD/ecrad-$(VERSION_ECRAD)_mnh
+DIR_RAD      +=  LIB/RAD/ecrad-$(VERSION_ECRAD)
 CPPFLAGS_RAD = -DMNH_ECRAD
-INC_RAD      += -I$(B)LIB/RAD/ecrad-1.0.1/include
-ARCH_XYZ    := $(ARCH_XYZ)-ECRAD
+INC_RAD      += -I$(B)LIB/RAD/ecrad-$(VERSION_ECRAD)/include -I$(B)LIB/RAD/ecrad-$(VERSION_ECRAD)/drhook/include
+ARCH_XYZ    := $(ARCH_XYZ)-ECRAD$(VER_ECRAD)
 endif
 #
 #
