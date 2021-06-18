@@ -226,7 +226,7 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_SBG_TKE(:,:,NLES_TP)
 !       -----------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'DISS'
+YSUBTITLE(ILES) = 'SBG_DISS'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_SBG_TKE(:,:,NLES_DISS)
 !
@@ -492,7 +492,7 @@ ZLES_BUDGET(:,:,ILES)= - 2. * XLES_RES_ddxa_Thl_SBG_UaThl(:,:,1)  &
 !      -----------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'DISS'
+YSUBTITLE(ILES) = 'SBG_DISS'
 !
 ZLES_BUDGET(:,:,ILES) =  XLES_SUBGRID_DISS_Thl2(:,:,1)
 !

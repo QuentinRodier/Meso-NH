@@ -330,7 +330,7 @@ call Les_diachro_write( tpdiafile, XLES_MEAN_Qs,     'MEAN_QS',     'Mean Qs Pro
 if ( luserc ) &
 call Les_diachro_write( tpdiafile, XLES_MEAN_KHt,    'MEAN_KHT',    'Eddy-diffusivity (temperature) Profile', 'm2 s-1', ymasks )
 if ( luserc ) &
-call Les_diachro_write( tpdiafile, XLES_MEAN_KHr,    'MEAN_KHR',    'Eddy-diffusivity (wvapor) Profile',      'm2 s-1', ymasks )
+call Les_diachro_write( tpdiafile, XLES_MEAN_KHr,    'MEAN_KHR',    'Eddy-diffusivity (vapor) Profile',      'm2 s-1', ymasks )
 if ( luserc ) &
 call Les_diachro_write( tpdiafile, XLES_MEAN_Rc,     'MEAN_RC',     'Mean Rc Profile',              'kg kg-1', ymasks )
 if ( luserc ) &
@@ -514,9 +514,9 @@ if ( lles_resolved ) then
   call Les_diachro_write( tpdiafile, XLES_RESOLVED_W3, 'RES_W3', 'Resolved <w3>', 'm3 s-3', ymasks )
   call Les_diachro_write( tpdiafile, XLES_RESOLVED_U4, 'RES_U4', 'Resolved <u4>', 'm4 s-4', ymasks )
   call Les_diachro_write( tpdiafile, XLES_RESOLVED_V4, 'RES_V4', 'Resolved <v4>', 'm4 s-4', ymasks )
-  call Les_diachro_write( tpdiafile, XLES_RESOLVED_W4, 'RES_W4', 'Resolved <>w4', 'm4 s-4', ymasks )
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_W4, 'RES_W4', 'Resolved <w4>', 'm4 s-4', ymasks )
 
-  call Les_diachro_write( tpdiafile, XLES_RESOLVED_WThl2, 'RES_WTL2', 'Resolved <wThl2',  'm K2 s-1', ymasks )
+  call Les_diachro_write( tpdiafile, XLES_RESOLVED_WThl2, 'RES_WTL2', 'Resolved <wThl2>', 'm K2 s-1', ymasks )
   call Les_diachro_write( tpdiafile, XLES_RESOLVED_W2Thl, 'RES_W2TL', 'Resolved <w2Thl>', 'm2 K s-2', ymasks )
 
   if ( luserv ) then
@@ -621,11 +621,11 @@ if ( lles_subgrid ) then
   call Les_diachro_write( tpdiafile, XLES_SUBGRID_WV,   'SBG_WV',   'Subgrid <wv> flux',     'm2 s-2', ymasks )
   call Les_diachro_write( tpdiafile, XLES_SUBGRID_Thl2, 'SBG_THL2', 'Subgrid liquid potential temperature variance', &
                           'K2', ymasks )
-  call Les_diachro_write( tpdiafile, XLES_SUBGRID_UThl, 'SBG_UTHL', 'Subgrid hor. flux of liquid potential temperature',  &
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_UThl, 'SBG_UTHL', 'Subgrid horizontal flux of liquid potential temperature',  &
                           'm K s-1', ymasks )
-  call Les_diachro_write( tpdiafile, XLES_SUBGRID_VThl, 'SBG_VTHL', 'Subgrid hor. flux of liquid potential temperature',  &
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_VThl, 'SBG_VTHL', 'Subgrid horizontal flux of liquid potential temperature',  &
                           'm K s-1', ymasks )
-  call Les_diachro_write( tpdiafile, XLES_SUBGRID_WThl, 'SBG_WTHL', 'Subgrid vert. flux of liquid potential temperature', &
+  call Les_diachro_write( tpdiafile, XLES_SUBGRID_WThl, 'SBG_WTHL', 'Subgrid vertical flux of liquid potential temperature', &
                           'm K s-1', ymasks )
   call Les_diachro_write( tpdiafile, XLES_SUBGRID_WP,   'SBG_WP',   'Subgrid <wp> vertical Flux', 'm Pa s-1', ymasks )
 
@@ -658,7 +658,7 @@ if ( lles_subgrid ) then
   call Les_diachro_write( tpdiafile, XLES_SUBGRID_Kh,    'SBG_KH',   'Eddy diffusivity for heat',     'm2 s-1', ymasks )
 
   if ( luserv ) then
-    call Les_diachro_write( tpdiafile, XLES_SUBGRID_WThv,  'SBG_WTHV', 'Subgrid vert. flux of liquid potential temperature', &
+    call Les_diachro_write( tpdiafile, XLES_SUBGRID_WThv,  'SBG_WTHV', 'Subgrid vertical flux of liquid potential temperature', &
                             'm K s-1', ymasks )
     call Les_diachro_write( tpdiafile, XLES_SUBGRID_Rt2,   'SBG_RT2',  'Subgrid total water variance', 'kg2 kg-2', ymasks )
     call Les_diachro_write( tpdiafile, XLES_SUBGRID_ThlRt, 'SBG_TLRT', 'Subgrid <thlrt> covariance',  'K kg kg-1', ymasks )
@@ -955,14 +955,14 @@ tfield%ndimlist(3:) = NMNHDIM_UNUSED
 ldoavg  = xles_temp_mean_start /= XUNDEF .and. xles_temp_mean_end /= XUNDEF
 ldonorm = .false.
 
-call Les_diachro_write( tpdiafile, XLES_SWU,      'SWU',      'sw_up',     'W m-2' )
-call Les_diachro_write( tpdiafile, XLES_SWD,      'SWD',      'sw_down',   'W m-2' )
-call Les_diachro_write( tpdiafile, XLES_LWU,      'LWU',      'lw_up',     'W m-2' )
-call Les_diachro_write( tpdiafile, XLES_LWD,      'LWD',      'lw_down',   'W m-2' )
-call Les_diachro_write( tpdiafile, XLES_DTHRADSW, 'DTHRADSW', 'dthrad_sw', 'K s-1' )
-call Les_diachro_write( tpdiafile, XLES_DTHRADLW, 'DTHRADLW', 'dthrad_lw', 'K s-1' )
+call Les_diachro_write( tpdiafile, XLES_SWU,      'SWU',      'SW upward radiative flux',          'W m-2' )
+call Les_diachro_write( tpdiafile, XLES_SWD,      'SWD',      'SW downward radiative flux',        'W m-2' )
+call Les_diachro_write( tpdiafile, XLES_LWU,      'LWU',      'LW upward radiative flux',          'W m-2' )
+call Les_diachro_write( tpdiafile, XLES_LWD,      'LWD',      'LW downward radiative flux',        'W m-2' )
+call Les_diachro_write( tpdiafile, XLES_DTHRADSW, 'DTHRADSW', 'SW radiative temperature tendency', 'K s-1' )
+call Les_diachro_write( tpdiafile, XLES_DTHRADLW, 'DTHRADLW', 'LW radiative temperature tendency', 'K s-1' )
 !writes mean_effective radius at all levels
-call Les_diachro_write( tpdiafile, XLES_RADEFF,   'RADEFF',   'mean effective radius', 'micron' )
+call Les_diachro_write( tpdiafile, XLES_RADEFF,   'RADEFF',   'Mean effective radius',             'micron' )
 
 
 ! !Prepare metadate (used in Les_diachro_write calls)
@@ -992,13 +992,13 @@ call Les_diachro_write( tpdiafile, XLES_USTAR,      'Ustar',      'Friction velo
 call Les_diachro_write( tpdiafile, XLES_WSTAR,      'Wstar',      'Convective velocity',                 'm s-1' )
 call Les_diachro_write( tpdiafile, XLES_BL_HEIGHT,  'BL_H',       'Boundary Layer Height',               'm' )
 call Les_diachro_write( tpdiafile, XLES_MO_LENGTH,  'L_MO',       'Monin-Obukhov length',                'm' )
-call Les_diachro_write( tpdiafile, XLES_INT_TKE,    'INT_TKE',    'Vertical integrated tke',             'm2 s-2' )
+call Les_diachro_write( tpdiafile, XLES_INT_TKE,    'INT_TKE',    'Vertical integrated TKE',             'm2 s-2' )
 if ( luserc ) &
 call Les_diachro_write( tpdiafile, XLES_ZCB,        'ZCB',        'Cloud base Height',                   'm' )
 if ( luserc ) &
-call Les_diachro_write( tpdiafile, XLES_CFtot,      'ZCFTOT',     'Total Cloud cover',                   '1' )
+call Les_diachro_write( tpdiafile, XLES_CFtot,      'ZCFTOT',     'Total cloud cover (rc>1e-6)',         '1' )
 if ( luserc ) &
-call Les_diachro_write( tpdiafile, XLES_CF2tot,     'ZCF2TOT',    'Total Cloud cove 2r',                 '1' )
+call Les_diachro_write( tpdiafile, XLES_CF2tot,     'ZCF2TOT',    'Total cloud cover (rc>1e-5)',         '1' )
 if ( luserc ) &
 call Les_diachro_write( tpdiafile, XLES_LWP,        'LWP',        'Liquid Water path',                   'kg m-2' )
 if ( luserc ) &
@@ -1014,21 +1014,22 @@ call Les_diachro_write( tpdiafile, XLES_GWP,        'GWP',        'Graupel Water
 if ( luserh ) &
 call Les_diachro_write( tpdiafile, XLES_HWP,        'HWP',        'Hail Water path',                     'kg m-2' )
 if ( luserr ) &
-call Les_diachro_write( tpdiafile, XLES_PRECFR,     'PREC_FRAC',  'Fract of col where rain at surface',  '1' )
+call Les_diachro_write( tpdiafile, XLES_PRECFR,     'PREC_FRAC',  'Fraction of columns where rain at surface',  '1' )
 if ( luserr ) &
-call Les_diachro_write( tpdiafile, XLES_INPRR,      'INST_PREC',  'Inst precip rate',                    'mm day-1' )
+call Les_diachro_write( tpdiafile, XLES_INPRR,      'INST_PREC',  'Instantaneous precipitation rate',       'mm day-1' )
 if ( luserc ) &
-call Les_diachro_write( tpdiafile, XLES_INPRC,      'INST_SEDIM', 'Inst cloud precip rate',              'mm day-1' )
+call Les_diachro_write( tpdiafile, XLES_INPRC,      'INST_SEDIM', 'Instantaneous cloud precipitation rate', 'mm day-1' )
 if ( luserc .and. ( ldeposc .or. ldepoc ) ) &
-call Les_diachro_write( tpdiafile, XLES_INDEP,      'INST_DEPOS', 'Inst cloud deposi rate',              'mm day-1' )
+call Les_diachro_write( tpdiafile, XLES_INDEP,      'INST_DEPOS', 'Instantaneous cloud deposition rate',    'mm day-1' )
 if ( luserr ) &
-call Les_diachro_write( tpdiafile, XLES_RAIN_INPRR, 'RAIN_PREC',  'Inst pr. rate over rainy grid cells', 'mm day-1' )
+call Les_diachro_write( tpdiafile, XLES_RAIN_INPRR, 'RAIN_PREC',  'Instantaneous precipitation rate over rainy grid cells', &
+                        'mm day-1' )
 if ( luserr ) &
-call Les_diachro_write( tpdiafile, XLES_ACPRR,      'ACCU_PREC',  'Accu precip rate',                    'mm' )
+call Les_diachro_write( tpdiafile, XLES_ACPRR,      'ACCU_PREC',  'Accumulated precipitation rate',             'mm' )
 if ( luserc ) &
-call Les_diachro_write( tpdiafile, XLES_ZMAXCF,     'ZMAXCF',     'Height of Cloud fraction max',        'm' )
+call Les_diachro_write( tpdiafile, XLES_ZMAXCF,     'ZMAXCF',     'Height of Cloud fraction maximum (rc>1e-6)', 'm' )
 if ( luserc ) &
-call Les_diachro_write( tpdiafile, XLES_ZMAXCF2,    'ZMAXCF2',    'Height of Cloud fraction2max',        'm' )
+call Les_diachro_write( tpdiafile, XLES_ZMAXCF2,    'ZMAXCF2',    'Height of Cloud fraction maximum (rc>1e-5)', 'm' )
 
 !-------------------------------------------------------------------------------
 !
