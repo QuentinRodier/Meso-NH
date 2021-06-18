@@ -14,8 +14,8 @@ ln -sf ../003_nest/16JAN98_9km.neste1.* .
 ln -sf ../003_nest/16JAN98_36km.neste1.* .
 
 if [ "x${MNH_ECRAD}" != "x" ]  ; then
-ln -sf ${SRC_MESONH}/src/LIB/RAD/ecrad-1.0.1/data/RAD* .
-ln -sf ${SRC_MESONH}/src/LIB/RAD/ecrad-1.0.1/data/*.nc .
+ln -sf ${SRC_MESONH}/src/LIB/RAD/ecrad-${VERSION_ECRAD}/data/RAD* .
+ln -sf ${SRC_MESONH}/src/LIB/RAD/ecrad-${VERSION_ECRAD}/data/*.nc .
 fi
 
 cp  DIAG1.nam1 DIAG1.nam

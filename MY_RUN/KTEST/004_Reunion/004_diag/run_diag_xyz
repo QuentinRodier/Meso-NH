@@ -11,5 +11,10 @@ rm -f KWRAI* OUT*
 ln -sf ../003_mesonh/REUNI.1.00A20.004.* .
 ln -sf ../001_prep_pgd/REUNION_PGD_1km5.* .
 
+if [ "x${MNH_ECRAD}" != "x" ]  ; then
+ln -sf ${SRC_MESONH}/src/LIB/RAD/ecrad-${VERSION_ECRAD}/data/RAD* .
+ln -sf ${SRC_MESONH}/src/LIB/RAD/ecrad-${VERSION_ECRAD}/data/*.nc .
+fi
+
 time ${MPIRUN} DIAG${XYZ}
 
