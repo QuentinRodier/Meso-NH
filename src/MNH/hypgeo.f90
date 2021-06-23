@@ -97,7 +97,7 @@ REAL                                 :: ZX0,ZX1,ZZA,ZZB,ZZC,ZZD,Y(2)
 !------------------------------------------------------------------------------
 !
 !
-ZEPS = 2.E-2
+ZEPS = 4.E-2
 ZXH = PF * PX**2.0
 IF (ZXH.LT.(1-ZEPS)) THEN
   CALL HYPSER(PA,PB,PC,-ZXH,PHYPGEO)

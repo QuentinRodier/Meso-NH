@@ -10,8 +10,7 @@ INTERFACE
    SUBROUTINE LIMA_DROPS_SELF_COLLECTION (LDCOMPUTE,           &
                                           PRHODREF,            &
                                           PCRT, PLBDR, PLBDR3, &
-                                          P_CR_SCBU,           &
-                                          PA_CR                )
+                                          P_CR_SCBU            )
 !
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
 !
@@ -23,8 +22,6 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR3  !
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_SCBU
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CR
-!
 END SUBROUTINE LIMA_DROPS_SELF_COLLECTION
 END INTERFACE
 END MODULE MODI_LIMA_DROPS_SELF_COLLECTION
@@ -33,8 +30,7 @@ END MODULE MODI_LIMA_DROPS_SELF_COLLECTION
       SUBROUTINE LIMA_DROPS_SELF_COLLECTION (LDCOMPUTE,           &
                                              PRHODREF,            &
                                              PCRT, PLBDR, PLBDR3, &
-                                             P_CR_SCBU,           &
-                                             PA_CR                )
+                                             P_CR_SCBU            )
 !     #############################################################
 !
 !!    PURPOSE
@@ -75,8 +71,6 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR     !
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR3    ! 
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_SCBU
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CR
 !
 !*       0.2   Declarations of local variables :
 !
@@ -121,8 +115,6 @@ WHERE (PCRT(:)>XCTMIN(3) .AND. (ZW4(:)<=1.E-4) .AND. LDCOMPUTE(:))
 END WHERE
 !
 P_CR_SCBU(:) = - ZW3(:) * PRHODREF(:)
-!
-PA_CR(:) = PA_CR(:) + P_CR_SCBU(:)
 !
 !
 !-------------------------------------------------------------------------------

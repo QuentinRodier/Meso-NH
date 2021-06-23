@@ -10,8 +10,7 @@ INTERFACE
    SUBROUTINE LIMA_DROPLETS_SELF_COLLECTION (LDCOMPUTE,                      &
                                              PRHODREF,                       &
                                              PCCT, PLBDC3,                   &
-                                             P_CC_SELF,                      &
-                                             PA_CC                           )
+                                             P_CC_SELF                       )
 !
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
 !
@@ -22,8 +21,6 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PLBDC3  !
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CC_SELF
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CC
-!
 END SUBROUTINE LIMA_DROPLETS_SELF_COLLECTION
 END INTERFACE
 END MODULE MODI_LIMA_DROPLETS_SELF_COLLECTION
@@ -32,8 +29,7 @@ END MODULE MODI_LIMA_DROPLETS_SELF_COLLECTION
       SUBROUTINE LIMA_DROPLETS_SELF_COLLECTION (LDCOMPUTE,                      &
                                                 PRHODREF,                       &
                                                 PCCT, PLBDC3,                   &
-                                                P_CC_SELF,                      &
-                                                PA_CC                           )
+                                                P_CC_SELF                       )
 !     ######################################################################
 !
 !!    PURPOSE
@@ -73,8 +69,6 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PLBDC3   !
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CC_SELF
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CC
-!
 !*       0.2   Declarations of local variables :
 !
 REAL, DIMENSION(SIZE(PCCT)) :: ZW ! work arrays
@@ -91,7 +85,6 @@ P_CC_SELF(:)=0.
 WHERE( PCCT(:)>XCTMIN(2) .AND. LDCOMPUTE(:) )
    ZW(:) = XSELFC*(PCCT(:)/PLBDC3(:))**2 * PRHODREF(:) ! analytical integration
    P_CC_SELF(:) = - ZW(:)
-   PA_CC(:) = PA_CC(:) + P_CC_SELF(:)
 END WHERE
 !
 !

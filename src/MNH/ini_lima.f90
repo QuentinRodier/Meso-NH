@@ -136,18 +136,16 @@ IF (ALLOCATED(XRTMIN)) RETURN    ! In case of nesting microphysics, constants of
 !
 ! Set bounds for mixing ratios and concentrations
 ALLOCATE( XRTMIN(7) )
-XRTMIN(1) = 1.0E-20   ! rv
-XRTMIN(2) = 1.0E-20   ! rc
-!XRTMIN(3) = 1.0E-20   ! rr
-XRTMIN(3) = 1.0E-17   ! rr
-XRTMIN(4) = 1.0E-20   ! ri
-XRTMIN(5) = 1.0E-15   ! rs
-XRTMIN(6) = 1.0E-15   ! rg
-XRTMIN(7) = 1.0E-15   ! rh
+XRTMIN(1) = 1.0E-10   ! rv
+XRTMIN(2) = 1.0E-10   ! rc
+XRTMIN(3) = 1.0E-10   ! rr
+XRTMIN(4) = 1.0E-10   ! ri
+XRTMIN(5) = 1.0E-10   ! rs
+XRTMIN(6) = 1.0E-10   ! rg
+XRTMIN(7) = 1.0E-10   ! rh
 ALLOCATE( XCTMIN(7) )
 XCTMIN(1) = 1.0       ! Not used
 XCTMIN(2) = 1.0E-3    ! Nc
-!XCTMIN(3) = 1.0E+1    ! Nr
 XCTMIN(3) = 1.0E-3    ! Nr
 XCTMIN(4) = 1.0E-3    ! Ni
 XCTMIN(5) = 1.0E-3    ! Not used

@@ -11,8 +11,7 @@ INTERFACE
                                        PRHODREF,                       &
                                        PRCT, PRRT, PCCT, PCRT,         &
                                        PLBDC, PLBDC3, PLBDR, PLBDR3,   &
-                                       P_RC_ACCR, P_CC_ACCR,           &
-                                       PA_RC, PA_CC, PA_RR             )
+                                       P_RC_ACCR, P_CC_ACCR            )
 !
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
 !
@@ -30,10 +29,6 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR3  !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RC_ACCR
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CC_ACCR
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RC
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CC
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RR
-!
 END SUBROUTINE LIMA_DROPLETS_ACCRETION
 END INTERFACE
 END MODULE MODI_LIMA_DROPLETS_ACCRETION
@@ -43,8 +38,7 @@ END MODULE MODI_LIMA_DROPLETS_ACCRETION
                                           PRHODREF,                       &
                                           PRCT, PRRT, PCCT, PCRT,         &
                                           PLBDC, PLBDC3, PLBDR, PLBDR3,   &
-                                          P_RC_ACCR, P_CC_ACCR,           &
-                                          PA_RC, PA_CC, PA_RR             )
+                                          P_RC_ACCR, P_CC_ACCR            )
 !     #####################################################################
 !
 !!    PURPOSE
@@ -93,10 +87,6 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR3   !
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RC_ACCR
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CC_ACCR
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RC
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CC
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RR
 !
 !*       0.2   Declarations of local variables :
 !
@@ -162,9 +152,6 @@ WHERE( GACCR(:).AND.(ZW4(:)<=1.E-4) )
    P_RC_ACCR(:) = - ZW2(:)
 END WHERE
 !
-PA_RC(:) = PA_RC(:) + P_RC_ACCR(:)
-PA_CC(:) = PA_CC(:) + P_CC_ACCR(:)
-PA_RR(:) = PA_RR(:) - P_RC_ACCR(:)
 !
 !
 !-------------------------------------------------------------------------------

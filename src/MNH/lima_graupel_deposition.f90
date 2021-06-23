@@ -9,8 +9,7 @@
 INTERFACE
    SUBROUTINE LIMA_GRAUPEL_DEPOSITION (LDCOMPUTE, PRHODREF,                  &
                                        PRGT, PSSI, PLBDG, PAI, PCJ, PLSFACT, &
-                                       P_TH_DEPG, P_RG_DEPG,                 &
-                                       PA_TH, PA_RV, PA_RG                   )
+                                       P_TH_DEPG, P_RG_DEPG                  )
 !
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
 REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF ! 
@@ -24,10 +23,6 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PLSFACT  !
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_DEPG
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_DEPG
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_TH
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RV
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RG
 !!
 END SUBROUTINE LIMA_GRAUPEL_DEPOSITION
 END INTERFACE
@@ -36,8 +31,7 @@ END MODULE MODI_LIMA_GRAUPEL_DEPOSITION
 !     ###########################################################################
       SUBROUTINE LIMA_GRAUPEL_DEPOSITION (LDCOMPUTE, PRHODREF,                  &
                                           PRGT, PSSI, PLBDG, PAI, PCJ, PLSFACT, &
-                                          P_TH_DEPG, P_RG_DEPG,                 &
-                                          PA_TH, PA_RV, PA_RG                   )
+                                          P_TH_DEPG, P_RG_DEPG                  )
 !     ###########################################################################
 !
 !!    PURPOSE
@@ -81,10 +75,6 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PLSFACT  !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_DEPG
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_DEPG
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_TH
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RV
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RG
-!
 !
 !-------------------------------------------------------------------------------
 !
@@ -99,10 +89,6 @@ WHERE ( (PRGT(:)>XRTMIN(6)) .AND. LDCOMPUTE(:) )
         ( X0DEPG*PLBDG(:)**XEX0DEPG + X1DEPG*PCJ(:)*PLBDG(:)**XEX1DEPG )
    P_TH_DEPG(:) = P_RG_DEPG(:)*PLSFACT(:)
 END WHERE
-!
-PA_RV(:) = PA_RV(:) - P_RG_DEPG(:)
-PA_RG(:) = PA_RG(:) + P_RG_DEPG(:)
-PA_TH(:) = PA_TH(:) + P_TH_DEPG(:)
 !
 !
 !-------------------------------------------------------------------------------

@@ -131,6 +131,7 @@ END MODULE MODI_LIMA_WARM
 !  B. Vie      03/03/2020: use DTHRAD instead of dT/dt in Smax diagnostic computation
 !  P. Wautelet 28/05/2020: bugfix: correct array start for PSVT and PSVS
 !  P. Wautelet 02/02/2021: budgets: add missing source terms for SV budgets in LIMA
+!  B. Vie          06/2021 Add prognostic supersaturation for LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -374,11 +375,12 @@ IF ( LACTI .AND. NMOD_CCN > 0 ) THEN
       call Budget_store_init( tbudgets(idx), 'HENU', znas(:, :, :, jl) * prhodj(:, :, :) )
     end do
   end if
-
-  CALL LIMA_WARM_NUCL( OACTIT, PTSTEP, KMI, TPFILE,                 &
-                        PRHODREF, PEXNREF, PPABST, ZT, PTHM, PW_NU, &
-                        PRCM, PRVT, PRCT, PRRT,                     &
-                        PTHS, PRVS, PRCS, PCCS, ZNFS, ZNAS          )
+   IF (.NOT. LSPRO) THEN
+      CALL LIMA_WARM_NUCL(OACTIT, PTSTEP, KMI, TPFILE,                &
+                          PRHODREF, PEXNREF, PPABST, ZT, PTHM, PW_NU, &
+                          PRCM, PRVT, PRCT, PRRT,                     &
+                          PTHS, PRVS, PRCS, PCCS, ZNFS, ZNAS          )
+   END IF
 
   if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HENU', pths(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'HENU', prvs(:, :, :) * prhodj(:, :, :) )

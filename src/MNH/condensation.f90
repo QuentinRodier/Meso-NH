@@ -23,21 +23,14 @@ INTEGER,                      INTENT(IN)    :: KJE    ! value of the last  point
 INTEGER,                      INTENT(IN)    :: KKB    ! value of the first point in z
 INTEGER,                      INTENT(IN)    :: KKE    ! value of the last  point in z
 INTEGER,                      INTENT(IN)    :: KKL    ! +1 if grid goes from ground to atmosphere top, -1 otherwise
-CHARACTER(len=1),                  INTENT(IN)    :: HFRAC_ICE
-CHARACTER(len=4),                 INTENT(IN)    :: HCONDENS
-CHARACTER(len=*),                  INTENT(IN)    :: HLAMBDA3 ! formulation for lambda3 coeff
+CHARACTER(len=1),             INTENT(IN)    :: HFRAC_ICE
+CHARACTER(len=4),             INTENT(IN)    :: HCONDENS
+CHARACTER(len=*),             INTENT(IN)    :: HLAMBDA3 ! formulation for lambda3 coeff
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PPABS  ! pressure (Pa)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PZZ    ! height of model levels (m)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PRHODREF
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(INOUT) :: PT     ! grid scale T  (K)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(INOUT) :: PRV    ! grid scale water vapor mixing ratio (kg/kg)
-LOGICAL, INTENT(IN)                         :: OUSERI ! logical switch to compute both
-                                                      ! liquid and solid condensate (OUSERI=.TRUE.)
-                                                      ! or only solid condensate (OUSERI=.FALSE.)
-LOGICAL, INTENT(IN)                         :: OSIGMAS! use present global Sigma_s values
-                                                      ! or that from turbulence scheme
-REAL, INTENT(IN)                            :: PSIGQSAT ! use an extra "qsat" variance contribution (OSIGMAS case)
-                                                        ! multiplied by PSIGQSAT
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(INOUT) :: PRC    ! grid scale r_c mixing ratio (kg/kg)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(INOUT) :: PRI    ! grid scale r_i (kg/kg)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PRS    ! grid scale mixing ration of snow (kg/kg)
@@ -46,6 +39,12 @@ REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PSIGS  ! Sigma_s from turbulence 
 REAL, DIMENSION(:,:,:),       INTENT(IN)    :: PMFCONV! convective mass flux (kg /s m^2)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(OUT)   :: PCLDFR ! cloud fraction
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(OUT)   :: PSIGRC ! s r_c / sig_s^2
+LOGICAL, INTENT(IN)                         :: OUSERI ! logical switch to compute both
+                                                      ! liquid and solid condensate (OUSERI=.TRUE.)
+                                                      ! or only solid condensate (OUSERI=.FALSE.)
+LOGICAL, INTENT(IN)                         :: OSIGMAS! use present global Sigma_s values
+                                                      ! or that from turbulence scheme
+REAL, INTENT(IN)                            :: PSIGQSAT ! use an extra "qsat" variance contribution (OSIGMAS case)
 REAL, DIMENSION(KIU,KJU,KKU), OPTIONAL, INTENT(IN)    :: PLV
 REAL, DIMENSION(KIU,KJU,KKU), OPTIONAL, INTENT(IN)    :: PLS
 REAL, DIMENSION(KIU,KJU,KKU), OPTIONAL, INTENT(IN)    :: PCPH
@@ -137,6 +136,8 @@ USE MODD_PARAMETERS
 USE MODD_RAIN_ICE_PARAM, ONLY : XCRIAUTC, XCRIAUTI, XACRIAUTI, XBCRIAUTI
 USE MODI_COMPUTE_FRAC_ICE
 !
+use mode_msg
+!
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
@@ -152,21 +153,14 @@ INTEGER,                      INTENT(IN)    :: KJE    ! value of the last  point
 INTEGER,                      INTENT(IN)    :: KKB    ! value of the first point in z
 INTEGER,                      INTENT(IN)    :: KKE    ! value of the last  point in z
 INTEGER,                      INTENT(IN)    :: KKL    ! +1 if grid goes from ground to atmosphere top, -1 otherwise
-CHARACTER(len=1),                  INTENT(IN)    :: HFRAC_ICE
-CHARACTER(len=4),                 INTENT(IN)    :: HCONDENS
-CHARACTER(len=*),                  INTENT(IN)    :: HLAMBDA3 ! formulation for lambda3 coeff
+CHARACTER(len=1),             INTENT(IN)    :: HFRAC_ICE
+CHARACTER(len=4),             INTENT(IN)    :: HCONDENS
+CHARACTER(len=*),             INTENT(IN)    :: HLAMBDA3 ! formulation for lambda3 coeff
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PPABS  ! pressure (Pa)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PZZ    ! height of model levels (m)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PRHODREF
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(INOUT) :: PT     ! grid scale T  (K)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(INOUT) :: PRV    ! grid scale water vapor mixing ratio (kg/kg)
-LOGICAL, INTENT(IN)                         :: OUSERI ! logical switch to compute both
-						      ! liquid and solid condensate (OUSERI=.TRUE.)
-                                                      ! or only solid condensate (OUSERI=.FALSE.)
-LOGICAL, INTENT(IN)                         :: OSIGMAS! use present global Sigma_s values
-                                                      ! or that from turbulence scheme
-REAL, INTENT(IN)                            :: PSIGQSAT ! use an extra "qsat" variance contribution (OSIGMAS case)
-                                                        ! multiplied by PSIGQSAT
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(INOUT) :: PRC    ! grid scale r_c mixing ratio (kg/kg)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(INOUT) :: PRI    ! grid scale r_i (kg/kg)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PRS    ! grid scale mixing ration of snow (kg/kg)
@@ -175,6 +169,7 @@ REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PSIGS  ! Sigma_s from turbulence 
 REAL, DIMENSION(:,:,:),       INTENT(IN)    :: PMFCONV! convective mass flux (kg /s m^2)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(OUT)   :: PCLDFR ! cloud fraction
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(OUT)   :: PSIGRC ! s r_c / sig_s^2
+
 REAL, DIMENSION(KIU,KJU,KKU), OPTIONAL, INTENT(IN)    :: PLV    ! Latent heat L_v
 REAL, DIMENSION(KIU,KJU,KKU), OPTIONAL, INTENT(IN)    :: PLS    ! Latent heat L_s
 REAL, DIMENSION(KIU,KJU,KKU), OPTIONAL, INTENT(IN)    :: PCPH   ! Specific heat C_ph
@@ -182,6 +177,13 @@ REAL, DIMENSION(KIU,KJU,KKU), OPTIONAL, INTENT(OUT)   :: PHLC_HRC
 REAL, DIMENSION(KIU,KJU,KKU), OPTIONAL, INTENT(OUT)   :: PHLC_HCF ! cloud fraction
 REAL, DIMENSION(KIU,KJU,KKU), OPTIONAL, INTENT(OUT)   :: PHLI_HRI
 REAL, DIMENSION(KIU,KJU,KKU), OPTIONAL, INTENT(OUT)   :: PHLI_HCF
+LOGICAL, INTENT(IN)                         :: OUSERI ! logical switch to compute both
+                                                      ! liquid and solid condensate (OUSERI=.TRUE.)
+                                                      ! or only solid condensate (OUSERI=.FALSE.)
+LOGICAL, INTENT(IN)                         :: OSIGMAS! use present global Sigma_s values
+                                                      ! or that from turbulence scheme
+REAL, INTENT(IN)                            :: PSIGQSAT ! use an extra "qsat" variance contribution (OSIGMAS case)
+
 !
 !
 !*       0.2   Declarations of local variables :
@@ -498,10 +500,7 @@ DO JK=IKTB,IKTE
           PSIGRC(JI,JJ,JK) = PSIGRC(JI,JJ,JK)* MIN( 3. , MAX(1.,1.-ZQ1) )
       ELSEIF(HLAMBDA3=='NONE') THEN
       ELSE
-        WRITE(*,*) ' STOP'
-        WRITE(*,*) ' INVALID VALUE FOR HLAMBDA3:', HLAMBDA3
-        CALL ABORT
-        STOP
+        call Print_msg( NVERB_FATAL, 'GEN', 'CONDENSATION', 'INVALID VALUE FOR HLAMBDA3' )        
       ENDIF
       
     END DO

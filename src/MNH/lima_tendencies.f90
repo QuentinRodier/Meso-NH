@@ -18,6 +18,7 @@ MODULE MODI_LIMA_TENDENCIES
                                  P_TH_EVAP, P_RR_EVAP,                                  & 
                                  P_RI_CNVI, P_CI_CNVI,                                  & 
                                  P_TH_DEPS, P_RS_DEPS,                                  & 
+                                 P_TH_DEPI, P_RI_DEPI,                                  & 
                                  P_RI_CNVS, P_CI_CNVS,                                  & 
                                  P_RI_AGGS, P_CI_AGGS,                                  & 
                                  P_TH_DEPG, P_RG_DEPG,                                  & 
@@ -39,7 +40,8 @@ MODULE MODI_LIMA_TENDENCIES
 !!!     Z_RR_HMLT, Z_CR_HMLT                                     ! hail melting (HMLT) : rr, Nr, rh=-rr, th
                                  PA_TH, PA_RV, PA_RC, PA_CC, PA_RR, PA_CR,              &
                                  PA_RI, PA_CI, PA_RS, PA_RG, PA_RH,                     &
-                                 PEVAP3D                                                )
+                                 PEVAP3D,                                               &
+                                 PCF1D, PIF1D, PPF1D                                    )
 !
 REAL,                 INTENT(IN)    :: PTSTEP 
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
@@ -84,6 +86,9 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_CNVI  ! conversion snow -> ice (CNVI
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_DEPS
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_DEPS  ! deposition of vapor on snow (DEPS) : rv=-rs, rs, th
+!
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_DEPI
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_DEPI  ! deposition of vapor on ice (DEPI) : rv=-ri, ri, th
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_CNVS
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_CNVS  ! conversion ice -> snow (CNVS) : ri, Ni, rs=-ri
@@ -164,6 +169,10 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RH
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: PEVAP3D
 !
+REAL, DIMENSION(:),   INTENT(IN)    :: PCF1D
+REAL, DIMENSION(:),   INTENT(IN)    :: PIF1D
+REAL, DIMENSION(:),   INTENT(IN)    :: PPF1D
+!
      END SUBROUTINE LIMA_TENDENCIES
   END INTERFACE
 END MODULE MODI_LIMA_TENDENCIES
@@ -182,6 +191,7 @@ SUBROUTINE LIMA_TENDENCIES (PTSTEP, LDCOMPUTE,                                  
                             P_TH_EVAP, P_RR_EVAP,                                  & 
                             P_RI_CNVI, P_CI_CNVI,                                  & 
                             P_TH_DEPS, P_RS_DEPS,                                  & 
+                            P_TH_DEPI, P_RI_DEPI,                                  & 
                             P_RI_CNVS, P_CI_CNVS,                                  & 
                             P_RI_AGGS, P_CI_AGGS,                                  & 
                             P_TH_DEPG, P_RG_DEPG,                                  & 
@@ -203,7 +213,8 @@ SUBROUTINE LIMA_TENDENCIES (PTSTEP, LDCOMPUTE,                                  
 !!!     Z_RR_HMLT, Z_CR_HMLT                                     ! hail melting (HMLT) : rr, Nr, rh=-rr, th
                             PA_TH, PA_RV, PA_RC, PA_CC, PA_RR, PA_CR,              &
                             PA_RI, PA_CI, PA_RS, PA_RG, PA_RH,                     &
-                            PEVAP3D                                                )
+                            PEVAP3D,                                               &
+                            PCF1D, PIF1D, PPF1D                                    )
 !     ######################################################################
 !!
 !!    PURPOSE
@@ -238,10 +249,10 @@ USE MODI_LIMA_DROPLETS_AUTOCONVERSION
 USE MODI_LIMA_DROPLETS_ACCRETION
 USE MODI_LIMA_DROPS_SELF_COLLECTION
 USE MODI_LIMA_RAIN_EVAPORATION
-USE MODI_LIMA_ICE_SNOW_DEPOSITION
+USE MODI_LIMA_ICE_DEPOSITION
+USE MODI_LIMA_SNOW_DEPOSITION
 USE MODI_LIMA_ICE_AGGREGATION_SNOW
 USE MODI_LIMA_GRAUPEL_DEPOSITION
-USE MODI_LIMA_BERGERON
 USE MODI_LIMA_DROPLETS_RIMING_SNOW
 USE MODI_LIMA_RAIN_ACCR_SNOW
 USE MODI_LIMA_CONVERSION_MELTING_SNOW
@@ -296,6 +307,9 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_CNVI  ! conversion snow -> ice (CNVI
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_DEPS
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_DEPS  ! deposition of vapor on snow (DEPS) : rv=-rs, rs, th
 !
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_DEPI
+REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_DEPI  ! deposition of vapor on ice (DEPI) : rv=-ri, ri, th
+!
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_CNVS
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_CNVS  ! conversion ice -> snow (CNVS) : ri, Ni, rs=-ri
 !
@@ -375,6 +389,10 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RH
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: PEVAP3D
 !
+REAL, DIMENSION(:),   INTENT(IN)    :: PCF1D
+REAL, DIMENSION(:),   INTENT(IN)    :: PIF1D
+REAL, DIMENSION(:),   INTENT(IN)    :: PPF1D
+!
 !*       0.2   Declarations of local variables :
 !
 REAL,    DIMENSION(SIZE(PRCT))  :: ZT
@@ -409,8 +427,27 @@ REAL,    DIMENSION(SIZE(PRCT))  :: ZLSFACT
 !
 REAL,    DIMENSION(SIZE(PRCT))  :: ZW
 !
+REAL,    DIMENSION(SIZE(PRCT))  :: ZCF1D
+REAL,    DIMENSION(SIZE(PRCT))  :: ZIF1D
+REAL,    DIMENSION(SIZE(PRCT))  :: ZPF1D
+!
 !-------------------------------------------------------------------------------
 ! Pre-compute quantities
+!
+! Prevent fractions to reach 0 (divide by 0)
+!
+ZCF1D(:) = MAX(PCF1D(:),0.01)
+ZIF1D(:) = MAX(PIF1D(:),0.01)
+ZPF1D(:) = MAX(PPF1D(:),0.01)
+!
+! Is it necessary to compute the following quantities
+! accounting for subgrig cloud fraction ?
+! lambda does not depend on cloud fraction for 2-m species
+! lambda depends on CF for 1-m species ?
+!
+!
+! Is it necessary to change water vapour in cloudy / non cloudy parts ?
+!
 !
 WHERE (LDCOMPUTE(:))
    ZT(:) = PTHT(:) * ( PPABST(:)/XP00 ) ** (XRD/XCPD)
@@ -480,66 +517,122 @@ END WHERE
 ! Call microphysical processes   
 !
 IF (LCOLD .AND. LWARM) THEN
-   CALL LIMA_DROPLETS_HOM_FREEZING (PTSTEP, LDCOMPUTE,                 &
+   CALL LIMA_DROPLETS_HOM_FREEZING (PTSTEP, LDCOMPUTE,                 & ! indepenedent from CF,IF,PF
                                     ZT, ZLVFACT, ZLSFACT,              &
                                     PRCT, PCCT, ZLBDC,                 &
                                     P_TH_HONC, P_RC_HONC, P_CC_HONC,   &
                                     PA_TH, PA_RC, PA_CC, PA_RI, PA_CI  )
 END IF
 !
-IF (LWARM .AND. LRAIN) THEN
-   CALL LIMA_DROPLETS_SELF_COLLECTION (LDCOMPUTE,    &
-                                       PRHODREF,     &
-                                       PCCT, ZLBDC3, &
-                                       P_CC_SELF,    &
-                                       PA_CC         )
+IF (LWARM) THEN
+   CALL LIMA_DROPLETS_SELF_COLLECTION (LDCOMPUTE,          & ! depends on CF
+                                       PRHODREF,           &
+                                       PCCT/ZCF1D, ZLBDC3, &
+                                       P_CC_SELF           )
+   P_CC_SELF(:) = P_CC_SELF(:) * ZCF1D(:)
+   PA_CC(:) = PA_CC(:) + P_CC_SELF(:)
 END IF
 !
 IF (LWARM .AND. LRAIN) THEN
-   CALL LIMA_DROPLETS_AUTOCONVERSION (LDCOMPUTE,                       &
-                                      PRHODREF,                        &
-                                      PRCT, ZLBDC, ZLBDR,              &
-                                      P_RC_AUTO, P_CC_AUTO, P_CR_AUTO, &
-                                      PA_RC, PA_CC, PA_RR, PA_CR       )
+   CALL LIMA_DROPLETS_AUTOCONVERSION (LDCOMPUTE,                             & ! depends on CF
+                                      PRHODREF,                              &
+                                      PRCT/ZCF1D, PCCT/ZCF1D, ZLBDC, ZLBDR,  &
+                                      P_RC_AUTO, P_CC_AUTO, P_CR_AUTO        )
+   P_RC_AUTO(:) = P_RC_AUTO(:) * ZCF1D(:)
+   P_CC_AUTO(:) = P_CC_AUTO(:) * ZCF1D(:)
+   P_CR_AUTO(:) = P_CR_AUTO(:) * ZCF1D(:)
+   !
+   PA_RC(:) = PA_RC(:) + P_RC_AUTO(:)
+   PA_CC(:) = PA_CC(:) + P_CC_AUTO(:)
+   PA_RR(:) = PA_RR(:) - P_RC_AUTO(:)
+   PA_CR(:) = PA_CR(:) + P_CR_AUTO(:)
 END IF
 !
 IF (LWARM .AND. LRAIN) THEN
-   CALL LIMA_DROPLETS_ACCRETION (LDCOMPUTE,                    &
-                                 PRHODREF,                     &
-                                 PRCT, PRRT, PCCT, PCRT,       &
-                                 ZLBDC, ZLBDC3, ZLBDR, ZLBDR3, &
-                                 P_RC_ACCR, P_CC_ACCR,         &
-                                 PA_RC, PA_CC, PA_RR           )
+   CALL LIMA_DROPLETS_ACCRETION (LDCOMPUTE,                                     & ! depends on CF, PF
+                                 PRHODREF,                                      &
+                                 PRCT/ZCF1D, PRRT/ZPF1D, PCCT/ZCF1D, PCRT/ZPF1D,&
+                                 ZLBDC, ZLBDC3, ZLBDR, ZLBDR3,                  &
+                                 P_RC_ACCR, P_CC_ACCR                           )
+   !
+   P_CC_ACCR(:) = P_CC_ACCR(:) * ZCF1D(:)
+   P_RC_ACCR(:) = P_RC_ACCR(:) * ZCF1D(:)
+   !
+   PA_RC(:) = PA_RC(:) + P_RC_ACCR(:)
+   PA_CC(:) = PA_CC(:) + P_CC_ACCR(:)
+   PA_RR(:) = PA_RR(:) - P_RC_ACCR(:)
 END IF
 !
 IF (LWARM .AND. LRAIN) THEN 
-   CALL LIMA_DROPS_SELF_COLLECTION (LDCOMPUTE,           &
+   CALL LIMA_DROPS_SELF_COLLECTION (LDCOMPUTE,           & ! depends on PF
                                     PRHODREF,            &
-                                    PCRT, ZLBDR, ZLBDR3, &
-                                    P_CR_SCBU,           &
-                                    PA_CR                )
+                                    PCRT/ZPF1D(:), ZLBDR, ZLBDR3, &
+                                    P_CR_SCBU            )
+   !
+   P_CR_SCBU(:) = P_CR_SCBU(:) * ZPF1D(:)
+   !
+   PA_CR(:) = PA_CR(:) + P_CR_SCBU(:)
 END IF
 !
 IF (LWARM .AND. LRAIN) THEN
-   CALL LIMA_RAIN_EVAPORATION (PTSTEP, LDCOMPUTE,                          &
+   CALL LIMA_RAIN_EVAPORATION (PTSTEP, LDCOMPUTE,                          & ! depends on PF > CF 
                                PRHODREF, ZT, ZLV, ZLVFACT, ZEVSAT, ZRVSAT, &
-                               PRVT, PRCT, PRRT, ZLBDR,                    &
+                               PRVT, PRCT/ZPF1D, PRRT/ZPF1D, ZLBDR,        &
                                P_TH_EVAP, P_RR_EVAP,                       &
-                               PA_RV, PA_RR, PA_TH,                        &
                                PEVAP3D                                     )
+   P_RR_EVAP(:) = P_RR_EVAP(:) * MAX((ZPF1D(:) - ZCF1D(:)),0.)
+   P_TH_EVAP(:) = P_RR_EVAP(:) * ZLVFACT(:)
+   PEVAP3D(:) = - P_RR_EVAP(:)
+   !
+   PA_TH(:) = PA_TH(:) + P_TH_EVAP(:)
+   PA_RV(:) = PA_RV(:) - P_RR_EVAP(:)
+   PA_RR(:) = PA_RR(:) + P_RR_EVAP(:)
+END IF
+!
+IF (LCOLD) THEN
+   !
+   ! Includes vapour deposition on ice, ice -> snow conversion
+   !
+   CALL LIMA_ICE_DEPOSITION (PTSTEP, LDCOMPUTE,                 & ! depends on IF, PF
+                             PRHODREF, ZSSI, ZAI, ZCJ, ZLSFACT, &
+                             PRIT/ZIF1D, PCIT/ZIF1D, ZLBDI,     &
+                             P_TH_DEPI, P_RI_DEPI,              &
+                             P_RI_CNVS, P_CI_CNVS               )
+   !
+   P_RI_DEPI(:) = P_RI_DEPI(:) * ZIF1D(:)
+   P_RI_CNVS(:) = P_RI_CNVS(:) * ZIF1D(:)
+   P_CI_CNVS(:) = P_CI_CNVS(:) * ZIF1D(:)
+   P_TH_DEPI(:) = P_RI_DEPI(:) * ZLSFACT(:)
+   !
+   PA_TH(:) = PA_TH(:) + P_TH_DEPI(:)
+   PA_RV(:) = PA_RV(:) - P_RI_DEPI(:) 
+   PA_RI(:) = PA_RI(:) + P_RI_DEPI(:) + P_RI_CNVS(:)
+   PA_CI(:) = PA_CI(:)                + P_CI_CNVS(:)
+   PA_RS(:) = PA_RS(:)                - P_RI_CNVS(:)
+
 END IF
 !
 IF (LCOLD .AND. LSNOW) THEN
    !
-   ! Includes vapour deposition on snow, ice -> snow and snow -> ice exchanges
+   ! Includes vapour deposition on snow, snow -> ice conversion
    !
-   CALL LIMA_ICE_SNOW_DEPOSITION (PTSTEP, LDCOMPUTE,                 &
-                                  PRHODREF, ZSSI, ZAI, ZCJ, ZLSFACT, &
-                                  PRIT, PRST, PCIT, ZLBDI, ZLBDS,    &
-                                  P_RI_CNVI, P_CI_CNVI,              &
-                                  P_TH_DEPS, P_RS_DEPS,              &
-                                  P_RI_CNVS, P_CI_CNVS,              &
-                                  PA_TH, PA_RV, PA_RI, PA_CI, PA_RS  )
+   CALL LIMA_SNOW_DEPOSITION (LDCOMPUTE,                         & ! depends on IF, PF
+                              PRHODREF, ZSSI, ZAI, ZCJ, ZLSFACT, &
+                              PRST/ZPF1D, ZLBDS,                 &
+                              P_RI_CNVI, P_CI_CNVI,              &
+                              P_TH_DEPS, P_RS_DEPS               )
+   !
+   P_RI_CNVI(:) = P_RI_CNVI(:) * ZPF1D(:)
+   P_CI_CNVI(:) = P_CI_CNVI(:) * ZPF1D(:)
+   P_RS_DEPS(:) = P_RS_DEPS(:) * ZPF1D(:)
+   P_TH_DEPS(:) = P_RS_DEPS(:) * ZLSFACT(:)
+   !
+   PA_RI(:) = PA_RI(:) + P_RI_CNVI(:)
+   PA_CI(:) = PA_CI(:) + P_CI_CNVI(:)
+   PA_RS(:) = PA_RS(:) - P_RI_CNVI(:) + P_RS_DEPS(:) 
+   PA_TH(:) = PA_TH(:)                + P_TH_DEPS(:)
+   PA_RV(:) = PA_RV(:)                - P_RS_DEPS(:) 
+
 END IF
 !
 ! Lambda_s limited for collection processes to prevent too high concentrations
@@ -549,47 +642,87 @@ ZLBDS(:) = MIN( XLBDAS_MAX, ZLBDS(:))
 !
 !
 IF (LCOLD .AND. LSNOW) THEN
-   CALL LIMA_ICE_AGGREGATION_SNOW (LDCOMPUTE,                      &
-                                   ZT, PRHODREF,                   &
-                                   PRIT, PRST, PCIT, ZLBDI, ZLBDS, &
-                                   P_RI_AGGS, P_CI_AGGS,           &
-                                   PA_RI, PA_CI, PA_RS             )
+   CALL LIMA_ICE_AGGREGATION_SNOW (LDCOMPUTE,                                        & ! depends on IF, PF
+                                   ZT, PRHODREF,                                     &
+                                   PRIT/ZIF1D, PRST/ZPF1D, PCIT/ZIF1D, ZLBDI, ZLBDS, &
+                                   P_RI_AGGS, P_CI_AGGS                              )
+   P_CI_AGGS(:) = P_CI_AGGS(:) * ZIF1D(:)
+   P_RI_AGGS(:) = P_RI_AGGS(:) * ZIF1D(:)
+   !
+   PA_RI(:) = PA_RI(:) + P_RI_AGGS(:)
+   PA_CI(:) = PA_CI(:) + P_CI_AGGS(:)
+   PA_RS(:) = PA_RS(:) - P_RI_AGGS(:)
 END IF
 !
 IF (LWARM .AND. LCOLD) THEN
-   CALL LIMA_GRAUPEL_DEPOSITION (LDCOMPUTE, PRHODREF,                  &
-                                 PRGT, ZSSI, ZLBDG, ZAI, ZCJ, ZLSFACT, &
-                                 P_TH_DEPG, P_RG_DEPG,                 &
-                                 PA_TH, PA_RV, PA_RG                   )
+   CALL LIMA_GRAUPEL_DEPOSITION (LDCOMPUTE, PRHODREF,                        & ! depends on PF ?
+                                 PRGT/ZPF1D, ZSSI, ZLBDG, ZAI, ZCJ, ZLSFACT, &
+                                 P_TH_DEPG, P_RG_DEPG                        )
+   P_RG_DEPG(:) = P_RG_DEPG(:) * ZPF1D(:)
+   P_TH_DEPG(:) = P_RG_DEPG(:) * ZLSFACT(:)
+   !
+   PA_RV(:) = PA_RV(:) - P_RG_DEPG(:)
+   PA_RG(:) = PA_RG(:) + P_RG_DEPG(:)
+   PA_TH(:) = PA_TH(:) + P_TH_DEPG(:)
 END IF
 !
-IF (LWARM .AND. LCOLD) THEN
-   CALL LIMA_BERGERON (LDCOMPUTE,                         &
-                       PRCT, PRIT, PCIT, ZLBDI,           &
-                       ZSSIW, ZAI, ZCJ, ZLVFACT, ZLSFACT, &
-                       P_TH_BERFI, P_RC_BERFI,            &
-                       PA_TH, PA_RC, PA_RI                )
-END IF
+!!$IF (LWARM .AND. LCOLD) THEN
+!!$   CALL LIMA_BERGERON (LDCOMPUTE,                         & ! depends on CF, IF
+!!$                       PRCT, PRIT, PCIT, ZLBDI,           &
+!!$                       ZSSIW, ZAI, ZCJ, ZLVFACT, ZLSFACT, &
+!!$                       P_TH_BERFI, P_RC_BERFI,            &
+!!$                       PA_TH, PA_RC, PA_RI                )
+!!$END IF
+P_TH_BERFI(:) = 0.
+P_RC_BERFI(:) = 0.
+!
 !
 IF (LWARM .AND. LCOLD .AND. LSNOW) THEN
      !
      ! Graupel production as tendency (or should be tendency + instant to stick to the previous version ?)
      ! Includes the Hallett Mossop process for riming of droplets by snow (HMS)
      !
-   CALL LIMA_DROPLETS_RIMING_SNOW (PTSTEP, LDCOMPUTE,                                &
+   CALL LIMA_DROPLETS_RIMING_SNOW (PTSTEP, LDCOMPUTE,                                & ! depends on CF
                                    PRHODREF, ZT,                                     &
-                                   PRCT, PCCT, PRST, ZLBDC, ZLBDS, ZLVFACT, ZLSFACT, &
+                                   PRCT/ZCF1D, PCCT/ZCF1D, PRST/ZPF1D, ZLBDC, ZLBDS, ZLVFACT, ZLSFACT, &
                                    P_TH_RIM, P_RC_RIM, P_CC_RIM, P_RS_RIM, P_RG_RIM, &
-                                   P_RI_HMS, P_CI_HMS, P_RS_HMS,                     &
-                                   PA_TH, PA_RC, PA_CC, PA_RI, PA_CI, PA_RS, PA_RG   )
+                                   P_RI_HMS, P_CI_HMS, P_RS_HMS                      )
+   P_RC_RIM(:) = P_RC_RIM(:) * ZCF1D(:)
+   P_CC_RIM(:) = P_CC_RIM(:) * ZCF1D(:)
+   P_RS_RIM(:) = P_RS_RIM(:) * ZCF1D(:)
+   P_RG_RIM(:) = P_RG_RIM(:) * ZCF1D(:)
+   P_TH_RIM(:) = - P_RC_RIM(:) * (ZLSFACT(:)-ZLVFACT(:))
+   P_RI_HMS(:) = P_RI_HMS(:) * ZCF1D(:)
+   P_CI_HMS(:) = P_CI_HMS(:) * ZCF1D(:)
+   P_RS_HMS(:) = P_RS_HMS(:) * ZCF1D(:)
+   !
+   PA_RC(:) = PA_RC(:) + P_RC_RIM(:) 
+   PA_CC(:) = PA_CC(:) + P_CC_RIM(:) 
+   PA_RI(:) = PA_RI(:)               + P_RI_HMS(:)
+   PA_CI(:) = PA_CI(:)               + P_CI_HMS(:)
+   PA_RS(:) = PA_RS(:) + P_RS_RIM(:) + P_RS_HMS(:)
+   PA_RG(:) = PA_RG(:) + P_RG_RIM(:) 
+   PA_TH(:) = PA_TH(:) + P_TH_RIM(:)
+
 END IF
 !
 IF (LWARM .AND. LRAIN .AND. LCOLD .AND. LSNOW) THEN
-   CALL LIMA_RAIN_ACCR_SNOW (PTSTEP, LDCOMPUTE,                                &
+   CALL LIMA_RAIN_ACCR_SNOW (PTSTEP, LDCOMPUTE,                                & ! depends on PF
                              PRHODREF, ZT,                                     &
-                             PRRT, PCRT, PRST, ZLBDR, ZLBDS, ZLVFACT, ZLSFACT, &
-                             P_TH_ACC, P_RR_ACC, P_CR_ACC, P_RS_ACC, P_RG_ACC, &
-                             PA_TH, PA_RR, PA_CR, PA_RS, PA_RG                 )
+                             PRRT/ZPF1D, PCRT/ZPF1D, PRST/ZPF1D, ZLBDR, ZLBDS, ZLVFACT, ZLSFACT, &
+                             P_TH_ACC, P_RR_ACC, P_CR_ACC, P_RS_ACC, P_RG_ACC )
+   P_RR_ACC(:) = P_RR_ACC(:) * ZPF1D(:)
+   P_CR_ACC(:) = P_CR_ACC(:) * ZPF1D(:)
+   P_RS_ACC(:) = P_RS_ACC(:) * ZPF1D(:)
+   P_RG_ACC(:) = P_RG_ACC(:) * ZPF1D(:)
+   P_TH_ACC(:) = - P_RR_ACC(:) * (ZLSFACT(:)-ZLVFACT(:))
+   !
+   PA_RR(:) = PA_RR(:) + P_RR_ACC(:)
+   PA_CR(:) = PA_CR(:) + P_CR_ACC(:)
+   PA_RS(:) = PA_RS(:) + P_RS_ACC(:)
+   PA_RG(:) = PA_RG(:) + P_RG_ACC(:)
+   PA_TH(:) = PA_TH(:) + P_TH_ACC(:)
+
 END IF
 !
 IF (LWARM .AND. LCOLD .AND. LSNOW) THEN
@@ -597,19 +730,35 @@ IF (LWARM .AND. LCOLD .AND. LSNOW) THEN
    ! Conversion melting of snow should account for collected droplets and drops where T>0C, but does not !
    ! Some thermodynamical computations inside, to externalize ?
    !
-   CALL LIMA_CONVERSION_MELTING_SNOW (LDCOMPUTE,                           &
+   CALL LIMA_CONVERSION_MELTING_SNOW (LDCOMPUTE,                           & ! depends on PF
                                       PRHODREF, PPABST, ZT, ZKA, ZDV, ZCJ, &
-                                      PRVT, PRST, ZLBDS,                   &
-                                      P_RS_CMEL,                           &
-                                      PA_RS, PA_RG                         )
+                                      PRVT, PRST/ZPF1D, ZLBDS,             &
+                                      P_RS_CMEL                           )
+   P_RS_CMEL(:) = P_RS_CMEL(:) * ZPF1D(:)
+   !
+   PA_RS(:) = PA_RS(:) + P_RS_CMEL(:)
+   PA_RG(:) = PA_RG(:) - P_RS_CMEL(:)
+
 END IF
 !
 IF (LWARM .AND. LRAIN .AND. LCOLD ) THEN
-   CALL LIMA_RAIN_FREEZING (LDCOMPUTE,                                             &
+   CALL LIMA_RAIN_FREEZING (LDCOMPUTE,                                             & ! depends on PF, IF
                             PRHODREF, ZT, ZLVFACT, ZLSFACT,                        &
-                            PRRT, PCRT, PRIT, PCIT, ZLBDR,                         &
-                            P_TH_CFRZ, P_RR_CFRZ, P_CR_CFRZ, P_RI_CFRZ, P_CI_CFRZ, &
-                            PA_TH, PA_RR, PA_CR, PA_RI, PA_CI, PA_RG               )
+                            PRRT/ZPF1D, PCRT/ZPF1D, PRIT/ZIF1D, PCIT/ZIF1D, ZLBDR, &
+                            P_TH_CFRZ, P_RR_CFRZ, P_CR_CFRZ, P_RI_CFRZ, P_CI_CFRZ  )
+   P_RR_CFRZ(:) = P_RR_CFRZ(:) * ZIF1D(:)
+   P_CR_CFRZ(:) = P_CR_CFRZ(:) * ZIF1D(:)
+   P_RI_CFRZ(:) = P_RI_CFRZ(:) * ZIF1D(:)
+   P_CI_CFRZ(:) = P_CI_CFRZ(:) * ZIF1D(:)
+   P_TH_CFRZ(:) = - P_RR_CFRZ(:) * (ZLSFACT(:)-ZLVFACT(:))
+!
+   PA_TH(:) = PA_TH(:) + P_TH_CFRZ(:)
+   PA_RR(:) = PA_RR(:) + P_RR_CFRZ(:)
+   PA_CR(:) = PA_CR(:) + P_CR_CFRZ(:)
+   PA_RI(:) = PA_RI(:) + P_RI_CFRZ(:)
+   PA_CI(:) = PA_CI(:) + P_CI_CFRZ(:)
+   PA_RG(:) = PA_RG(:) - P_RR_CFRZ(:) - P_RI_CFRZ(:)
+
 END IF
 !
 IF (LWARM .AND. LCOLD) THEN
@@ -620,7 +769,7 @@ IF (LWARM .AND. LCOLD) THEN
      ! Includes Hallett-Mossop  process for riming of droplets by graupel (HMG)
      ! Some thermodynamical computations inside, to externalize ?
      !
-   CALL LIMA_GRAUPEL (PTSTEP, LDCOMPUTE,                                     &
+   CALL LIMA_GRAUPEL (PTSTEP, LDCOMPUTE,                                     & ! depends on PF, CF, IF
                       PRHODREF, PPABST, ZT, ZKA, ZDV, ZCJ,                   &
                       PRVT, PRCT, PRRT, PRIT, PRST, PRGT,                    &
                       PCCT, PCRT, PCIT,                                      &

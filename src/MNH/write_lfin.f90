@@ -173,6 +173,7 @@ END MODULE MODI_WRITE_LFIFM_n
 !  S. Bielli      02/2019: Sea salt: significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Tulet       02/2020: correction for dust and sea salts
+!!      B. Vie          06/2020 Add prognostic supersaturation for LIMA
 !  PA. Joulin    12/2020: add wind turbine outputs
 !  F.Auguste 02/2021    : Add IBM
 !  T.Nagel   02/2021    : Add turbulence recycling
@@ -1005,6 +1006,11 @@ IF (NSV >=1) THEN
 ! Hom. freez. of CCN
     IF (JSV .EQ. NSV_LIMA_HOM_HAZE) THEN
       TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(5))//'T'
+    END IF
+    !
+! Supersaturation     
+    IF (JSV .EQ. NSV_LIMA_SPRO) THEN
+      TZFIELD%CMNHNAME   = TRIM(CLIMA_WARM_NAMES(5))//'T'
     END IF
     !
     TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)

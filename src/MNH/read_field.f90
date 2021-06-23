@@ -251,6 +251,7 @@ END MODULE MODI_READ_FIELD
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 14/03/2019: correct ZWS when variable not present in file
 !  M. Leriche  10/06/2019: in restart case read all immersion modes for LIMA
+!! B. Vie         06/2020: Add prognostic supersaturation for LIMA
 !! F. Auguste  02/2021: add fields necessary for IBM
 !! T. Nagel    02/2021: add fields necessary for turbulence recycling
 !! J.L. Redelsperger 03/2021:  add necessary variables for Ocean LES case
@@ -942,6 +943,11 @@ DO JSV = NSV_LIMA_BEG,NSV_LIMA_END
 ! Hom. freez. of CCN
     IF (JSV .EQ. NSV_LIMA_HOM_HAZE) THEN
       TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(5))//'T'
+    END IF
+!
+! Super saturation      
+    IF (JSV .EQ. NSV_LIMA_SPRO) THEN
+      TZFIELD%CMNHNAME   = TRIM(CLIMA_WARM_NAMES(5))//'T'
     END IF
 !
     TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)

@@ -10,8 +10,7 @@ INTERFACE
    SUBROUTINE LIMA_CONVERSION_MELTING_SNOW (LDCOMPUTE,                          &
                                             PRHODREF, PPRES, PT, PKA, PDV, PCJ, &
                                             PRVT, PRST, PLBDS,                  &
-                                            P_RS_CMEL,                          &
-                                            PA_RS, PA_RG                        )
+                                            P_RS_CMEL                           )
 !
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
 !
@@ -28,9 +27,6 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PLBDS   !
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_CMEL
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RS
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RG
-!
 END SUBROUTINE LIMA_CONVERSION_MELTING_SNOW
 END INTERFACE
 END MODULE MODI_LIMA_CONVERSION_MELTING_SNOW
@@ -39,8 +35,7 @@ END MODULE MODI_LIMA_CONVERSION_MELTING_SNOW
       SUBROUTINE LIMA_CONVERSION_MELTING_SNOW (LDCOMPUTE,                          &
                                                PRHODREF, PPRES, PT, PKA, PDV, PCJ, &
                                                PRVT, PRST, PLBDS,                  &
-                                               P_RS_CMEL,                          &
-                                               PA_RS, PA_RG                        )
+                                               P_RS_CMEL                           )
 !     ##############################################################################
 !
 !!    PURPOSE
@@ -88,9 +83,6 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PLBDS   !
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_CMEL
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RS
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RG
-!
 !*       0.2   Declarations of local variables :
 !
 REAL, DIMENSION(SIZE(PRST)) :: ZW ! work arrays
@@ -122,8 +114,6 @@ WHERE( (PRST(:)>XRTMIN(5)) .AND. (PT(:)>XTT) .AND. LDCOMPUTE(:) )
 !
 END WHERE
 !
-PA_RS(:) = PA_RS(:) + P_RS_CMEL(:)
-PA_RG(:) = PA_RG(:) - P_RS_CMEL(:)
 !
 !-------------------------------------------------------------------------------
 !

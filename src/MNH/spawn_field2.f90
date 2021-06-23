@@ -155,6 +155,7 @@ END MODULE MODI_SPAWN_FIELD2
 !!      Modification 05/03/2018 (J.Escobar) bypass gridnesting special case KD(X/Y)RATIO == 1 not parallelized
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 14/03/2019: correct ZWS when variable not present in file
+!!      B. Vie          06/2020 Add prognostic supersaturation for LIMA
 !  P. Wautelet 11/03/2021: bugfix: correct name for NSV_LIMA_IMM_NUCL
 !-------------------------------------------------------------------------------
 !
@@ -933,6 +934,10 @@ IF (PRESENT(TPSONFILE)) THEN
       ! Hom. freez. of CCN
       IF (JSV .EQ. NSV_LIMA_HOM_HAZE) THEN
         TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(5))//'T'
+      END IF
+      ! Supersaturation    
+      IF (JSV .EQ. NSV_LIMA_SPRO) THEN
+        TZFIELD%CMNHNAME   = TRIM(CLIMA_WARM_NAMES(5))//'T'
       END IF
       ! time t
       TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)

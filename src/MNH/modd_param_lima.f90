@@ -126,6 +126,8 @@ LOGICAL, SAVE :: LBOUND        ! TRUE to enable the continuously replenishing
                                ! lateral boundaries -> boundaries.f90
 LOGICAL, SAVE :: LDEPOC        ! Deposition of rc at 1st level above ground
 LOGICAL, SAVE :: LACTTKE       ! TRUE to take into account TKE in W for activation
+LOGICAL, SAVE :: LADJ          ! TRUE for adjustment procedure + Smax (false for diagnostic supersaturation)
+LOGICAL, SAVE :: LSPRO         ! TRUE for prognostic supersaturation                     
 !
 ! 2.2 CCN initialisation
 !
@@ -151,7 +153,7 @@ REAL,SAVE     :: XALPHAR,XNUR,       & ! Raindrop      distribution parameters
 !
 CHARACTER(LEN=3),SAVE :: HPARAM_CCN = 'CPB'   ! Parameterization of the CCN activation
 CHARACTER(LEN=3),SAVE :: HINI_CCN             ! Initialization type of CCN activation
-CHARACTER(LEN=1),DIMENSION(JPLIMACCNMAX),SAVE :: HTYPE_CCN ! 'M' or 'C' CCN type
+CHARACTER(LEN=10),DIMENSION(JPLIMACCNMAX),SAVE :: HTYPE_CCN ! 'M' or 'C' CCN type
 REAL,SAVE             :: XFSOLUB_CCN,       & ! Fractionnal solubility of the CCN
                          XACTEMP_CCN,       & ! Expected temperature of CCN activation
                          XAERDIFF, XAERHEIGHT ! For the vertical gradient of aerosol distribution

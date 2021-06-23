@@ -276,6 +276,8 @@ XAHENINTP2 = 0.5*REAL(NAHEN-1) - XTT
 !            G
 !
 ALLOCATE (XAHENG(NAHEN))
+ALLOCATE (XAHENG2(NAHEN))
+ALLOCATE (XAHENG3(NAHEN))
 ALLOCATE (XPSI1(NAHEN))
 ALLOCATE (XPSI3(NAHEN))
 XCSTHEN = 1.0 / ( XRHOLW*2.0*XPI )
@@ -288,6 +290,8 @@ DO J1 = 1,NAHEN
                          (XDIVA*EXP(XALPW-(XBETAW/ZTT)-(XGAMW*ALOG(ZTT)))) &
                        + (ZLV/ZTT)**2/(XTHCO*XRV) ) )              
    XAHENG(J1) = XCSTHEN/(ZG)**(3./2.)
+   XAHENG2(J1) = 1/(ZG)**(1./2.) * GAMMA_X0D(XNUC+1./XALPHAC)/GAMMA_X0D(XNUC)
+   XAHENG3(J1) = (ZG) * GAMMA_X0D(XNUC+1./XALPHAC)/GAMMA_X0D(XNUC)
 END DO
 !-------------------------------------------------------------------------------
 !

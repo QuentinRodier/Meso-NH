@@ -328,6 +328,7 @@ END MODULE MODI_TURB_VER_THERMO_FLUX
 !!                                 applied to vertical fluxes of r_np and Thl
 !!                                 for implicit version of turbulence scheme
 !!                                 corrections and cleaning
+!!                     June 2020 (B. Vie) Patch preventing negative rc and ri in 2.3 and 3.3
 !! JL Redelsperger  : 03/2021: Ocean and Autocoupling O-A LES Cases
 !!                             Sfc flux shape for LDEEPOC Case
 !!--------------------------------------------------------------------------
@@ -792,14 +793,14 @@ END IF
 IF ( KRRL >= 1 ) THEN
   IF ( KRRI >= 1 ) THEN
     PRRS(:,:,:,2) = PRRS(:,:,:,2) -                                        &
-                    DZF( MZM( PRHODJ*PATHETA*2.*PSRCM )*ZFLXZ/PDZZ )       &
+                    PRHODJ*PATHETA*2.*PSRCM*DZF(ZFLXZ/PDZZ)       &
                     *(1.0-PFRAC_ICE(:,:,:))
     PRRS(:,:,:,4) = PRRS(:,:,:,4) -                                        &
-                    DZF( MZM( PRHODJ*PATHETA*2.*PSRCM )*ZFLXZ/PDZZ )       &
+                    PRHODJ*PATHETA*2.*PSRCM*DZF(ZFLXZ/PDZZ)       &
                     *PFRAC_ICE(:,:,:)
   ELSE
     PRRS(:,:,:,2) = PRRS(:,:,:,2) -                                        &
-                    DZF( MZM( PRHODJ*PATHETA*2.*PSRCM )*ZFLXZ/PDZZ )
+                    PRHODJ*PATHETA*2.*PSRCM*DZF(ZFLXZ/PDZZ)
   END IF
 END IF
 !
@@ -1024,14 +1025,14 @@ IF (KRR /= 0) THEN
   IF ( KRRL >= 1 ) THEN
     IF ( KRRI >= 1 ) THEN
       PRRS(:,:,:,2) = PRRS(:,:,:,2) -                                        &
-                      DZF( MZM( PRHODJ*PAMOIST*2.*PSRCM )*ZFLXZ/PDZZ )       &
+                      PRHODJ*PAMOIST*2.*PSRCM*DZF(ZFLXZ/PDZZ )       &
                       *(1.0-PFRAC_ICE(:,:,:))
       PRRS(:,:,:,4) = PRRS(:,:,:,4) -                                        &
-                      DZF( MZM( PRHODJ*PAMOIST*2.*PSRCM )*ZFLXZ/PDZZ )       &
+                      PRHODJ*PAMOIST*2.*PSRCM*DZF(ZFLXZ/PDZZ )       &
                       *PFRAC_ICE(:,:,:)
     ELSE
       PRRS(:,:,:,2) = PRRS(:,:,:,2) -                                        &
-                      DZF( MZM( PRHODJ*PAMOIST*2.*PSRCM )*ZFLXZ/PDZZ )
+                      PRHODJ*PAMOIST*2.*PSRCM*DZF(ZFLXZ/PDZZ )
     END IF
   END IF
 !

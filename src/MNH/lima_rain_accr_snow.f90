@@ -11,8 +11,7 @@ INTERFACE
    SUBROUTINE LIMA_RAIN_ACCR_SNOW (PTSTEP, LDCOMPUTE,                                &
                                    PRHODREF, PT,                                     &
                                    PRRT, PCRT, PRST, PLBDR, PLBDS, PLVFACT, PLSFACT, &
-                                   P_TH_ACC, P_RR_ACC, P_CR_ACC, P_RS_ACC, P_RG_ACC, &
-                                   PA_TH, PA_RR, PA_CR, PA_RS, PA_RG                 )
+                                   P_TH_ACC, P_RR_ACC, P_CR_ACC, P_RS_ACC, P_RG_ACC  )
 !
 REAL,                 INTENT(IN)    :: PTSTEP 
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
@@ -34,12 +33,6 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_ACC
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_ACC
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_ACC
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_TH
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RR
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CR
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RS
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RG
-!
 END SUBROUTINE LIMA_RAIN_ACCR_SNOW
 END INTERFACE
 END MODULE MODI_LIMA_RAIN_ACCR_SNOW
@@ -48,8 +41,7 @@ END MODULE MODI_LIMA_RAIN_ACCR_SNOW
       SUBROUTINE LIMA_RAIN_ACCR_SNOW (PTSTEP, LDCOMPUTE,                                &
                                       PRHODREF, PT,                                     &
                                       PRRT, PCRT, PRST, PLBDR, PLBDS, PLVFACT, PLSFACT, &
-                                      P_TH_ACC, P_RR_ACC, P_CR_ACC, P_RS_ACC, P_RG_ACC, &
-                                      PA_TH, PA_RR, PA_CR, PA_RS, PA_RG                 )
+                                      P_TH_ACC, P_RR_ACC, P_CR_ACC, P_RS_ACC, P_RG_ACC  )
 !     ###################################################################################
 !
 !!    PURPOSE
@@ -106,12 +98,6 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_ACC
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_ACC
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_ACC
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_ACC
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_TH
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RR
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CR
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RS
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RG
 !
 !*       0.2   Declarations of local variables :
 !
@@ -264,12 +250,6 @@ WHERE( GACC )
    !
 END WHERE
 !
-!
-PA_RR(:) = PA_RR(:) + P_RR_ACC(:)
-PA_CR(:) = PA_CR(:) + P_CR_ACC(:)
-PA_RS(:) = PA_RS(:) + P_RS_ACC(:)
-PA_RG(:) = PA_RG(:) + P_RG_ACC(:)
-PA_TH(:) = PA_TH(:) + P_TH_ACC(:)
 !
 !-------------------------------------------------------------------------------
 !

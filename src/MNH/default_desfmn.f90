@@ -214,6 +214,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !  S. Riette   21/05/2021: add options to PDF subgrid scheme
 !                    05/2021 D. Ricard add the contribution of Leonard terms in the turbulence scheme
 !! JL Redelsperger 06/2021 add parameters allowing to active idealized oceanic convection
+!!      B. Vie       06/2021 Add prognostic supersaturation for LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -271,8 +272,9 @@ USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LSEDI, LHHONI, LSNOW, LHAIL, LMEYERS,&
                             CPRISTINE_ICE_LIMA, CHEVRIMED_ICE_LIMA,            &
                             XFACTNUC_DEP, XFACTNUC_CON,                        &
                             OWARM=>LWARM, LACTI, ORAIN=>LRAIN, OSEDC=>LSEDC,   &
-                            OACTIT=>LACTIT, LBOUND, NMOD_CCN, XCCN_CONC,        &
-                            LCCN_HOM, CCCN_MODES,                                &
+                            OACTIT=>LACTIT, LBOUND, LSPRO, LADJ,               &
+                            NMOD_CCN, XCCN_CONC,        &
+                            LCCN_HOM, CCCN_MODES,                              &
                             YALPHAR=>XALPHAR, YNUR=>XNUR,                      &
                             YALPHAC=>XALPHAC, YNUC=>XNUC, CINI_CCN=>HINI_CCN,  &
                             CTYPE_CCN=>HTYPE_CCN, YFSOLUB_CCN=>XFSOLUB_CCN,    &
@@ -960,6 +962,8 @@ IF (KMI == 1) THEN
   ORAIN  = .TRUE.
   OSEDC  = .FALSE.
   OACTIT = .FALSE.
+  LADJ   = .TRUE.
+  LSPRO  = .FALSE.
   ODEPOC = .FALSE.
   LBOUND = .FALSE.
   OACTTKE = .TRUE.

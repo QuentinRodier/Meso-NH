@@ -17,7 +17,8 @@ INTERFACE
                                P_TH_IMLT, P_RC_IMLT, P_CC_IMLT,          & ! ice melting (IMLT) : rc, Nc, ri=-rc, Ni=-Nc, th, IFNF, IFNA
                                PB_TH, PB_RV, PB_RC, PB_RR, PB_RI, PB_RG, &
                                PB_CC, PB_CR, PB_CI,                      &
-                               PB_IFNN                                   )
+                               PB_IFNN,                                  &
+                               PCF1D, PIF1D, PPF1D                       )
 !
 REAL,                 INTENT(IN)    :: PTSTEP     ! Time step
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
@@ -60,6 +61,10 @@ REAL, DIMENSION(:)  , INTENT(INOUT) :: PB_CI      ! Cumulated concentration chan
 !
 REAL, DIMENSION(:,:), INTENT(INOUT) :: PB_IFNN    ! Cumulated concentration change (#/kg)
 !
+REAL, DIMENSION(:)  , INTENT(INOUT) :: PCF1D      ! Liquid cloud fraction
+REAL, DIMENSION(:)  , INTENT(INOUT) :: PIF1D      ! Ice cloud fraction
+REAL, DIMENSION(:)  , INTENT(INOUT) :: PPF1D      ! Precipitation fraction
+!
    END SUBROUTINE LIMA_INST_PROCS
 END INTERFACE
 END MODULE MODI_LIMA_INST_PROCS
@@ -76,7 +81,8 @@ SUBROUTINE LIMA_INST_PROCS (PTSTEP, LDCOMPUTE,                                  
                             P_TH_IMLT, P_RC_IMLT, P_CC_IMLT,                    & ! ice melting (IMLT) : rc, Nc, ri=-rc, Ni=-Nc, th, IFNF, IFNA
                             PB_TH, PB_RV, PB_RC, PB_RR, PB_RI, PB_RG,           &
                             PB_CC, PB_CR, PB_CI,                                &
-                            PB_IFNN                                             )
+                            PB_IFNN,                                            &
+                            PCF1D, PIF1D, PPF1D                                 )
 !     ###########################################################################
 !
 !!    PURPOSE
@@ -146,10 +152,14 @@ REAL, DIMENSION(:)  , INTENT(INOUT) :: PB_CI      ! Cumulated concentration chan
 !
 REAL, DIMENSION(:,:), INTENT(INOUT) :: PB_IFNN    ! Cumulated concentration change (#/kg)
 !
+REAL, DIMENSION(:)  , INTENT(INOUT) :: PCF1D      ! Liquid cloud fraction
+REAL, DIMENSION(:)  , INTENT(INOUT) :: PIF1D      ! Ice cloud fraction
+REAL, DIMENSION(:)  , INTENT(INOUT) :: PPF1D      ! Precipitation fraction
+!
 !-------------------------------------------------------------------------------
 !
 IF (LWARM .AND. LRAIN) THEN
-   CALL LIMA_DROPS_BREAK_UP (LDCOMPUTE,    &
+   CALL LIMA_DROPS_BREAK_UP (LDCOMPUTE,    & ! no dependance on CF, IF or PF
                              PCRT, PRRT,   &
                              P_CR_BRKU,    &
                              PB_CR         )
@@ -158,7 +168,7 @@ END IF
 !-------------------------------------------------------------------------------
 !
 IF (LCOLD .AND. LWARM .AND. LRAIN) THEN
-   CALL LIMA_DROPS_HOM_FREEZING (PTSTEP, LDCOMPUTE,                        &
+   CALL LIMA_DROPS_HOM_FREEZING (PTSTEP, LDCOMPUTE,                        & ! no dependance on CF, IF or PF
                                  PEXNREF, PPABST,                          &
                                  PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, &
                                  PCRT,                                     &
@@ -169,12 +179,16 @@ END IF
 !-------------------------------------------------------------------------------
 !
 IF (LCOLD .AND. LWARM) THEN
-   CALL LIMA_ICE_MELTING (PTSTEP, LDCOMPUTE,                        &
-                          PEXNREF, PPABST,                          &
-                          PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, &
+   CALL LIMA_ICE_MELTING (PTSTEP, LDCOMPUTE,                        & ! no dependance on CF, IF or PF
+                          PEXNREF, PPABST,                          & ! but ice fraction becomes cloud fraction
+                          PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, & ! -> where ?
                           PCIT, PINT,                               &
                           P_TH_IMLT, P_RC_IMLT, P_CC_IMLT,          &
                           PB_TH, PB_RC, PB_CC, PB_RI, PB_CI, PB_IFNN)
+   !
+   !PCF1D(:)=MAX(PCF1D(:),PIF1D(:))
+   !PIF1D(:)=0.
+   !
 END IF
 !
 !-------------------------------------------------------------------------------

@@ -10,7 +10,8 @@
 INTERFACE
    SUBROUTINE LIMA_CCN_HOM_FREEZING (PRHODREF, PEXNREF, PPABST, PW_NU,         &
                                      PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, &
-                                     PCCT, PCRT, PCIT, PNFT, PNHT              )
+                                     PCCT, PCRT, PCIT, PNFT, PNHT,             &
+                                     PICEFR                                    )
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF ! Reference Exner function
@@ -33,6 +34,8 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCIT    ! Ice crystal C. source
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNFT    ! Free CCN conc. 
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNHT    ! haze homogeneous freezing
 !
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PICEFR  ! Ice fraction
+!
 END SUBROUTINE LIMA_CCN_HOM_FREEZING
 END INTERFACE
 END MODULE MODI_LIMA_CCN_HOM_FREEZING
@@ -40,7 +43,8 @@ END MODULE MODI_LIMA_CCN_HOM_FREEZING
 !     ##########################################################################
    SUBROUTINE LIMA_CCN_HOM_FREEZING (PRHODREF, PEXNREF, PPABST, PW_NU,         &
                                      PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, &
-                                     PCCT, PCRT, PCIT, PNFT, PNHT              )
+                                     PCCT, PCRT, PCIT, PNFT, PNHT ,            &
+                                     PICEFR                                    )
 !     ##########################################################################
 !
 !!    PURPOSE
@@ -105,6 +109,8 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCIT    ! Ice crystal C. source
 !
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNFT    ! Free CCN conc. 
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNHT    ! haze homogeneous freezing
+!
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PICEFR  ! Ice fraction
 !
 !*       0.2   Declarations of local variables :
 !

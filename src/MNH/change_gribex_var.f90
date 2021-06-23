@@ -304,6 +304,7 @@ END IF
 !
 DO JRR=2,SIZE(PR_LS,4)
   PR_LS(:,:,:,JRR) =  1. / (1./MAX(PQ_LS(:,:,:,JRR),1.E-12) - 1.)
+  WHERE(PR_LS(:,:,:,JRR).LE.2.E-12) PR_LS(:,:,:,JRR)=0.
 END DO
 !
 PR_LS(:,:,:,1)=SM_PMR_HU(PPMASS_LS(:,:,:),                              &

@@ -1238,7 +1238,8 @@ if ( lbu_rth ) then
 
   tzsource%cmnhname   = 'CDEPI'
   tzsource%clongname  = 'deposition on ice'
-  tzsource%lavailable = hcloud(1:3) == 'ICE' .and. ( .not. lred .or. ( lred .and. ladj_after ) .or. celec /= 'NONE' )
+  tzsource%lavailable = hcloud(1:3) == 'ICE' .and. ( .not. lred .or. ( lred .and. ladj_after ) .or. celec /= 'NONE')&
+                    .or. (hcloud == 'LIMA' .and. lptsplit)
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'COND'
@@ -1549,7 +1550,8 @@ if ( tbudgets(NBUDGET_RV)%lenabled ) then
 
   tzsource%cmnhname   = 'CDEPI'
   tzsource%clongname  = 'deposition on ice'
-  tzsource%lavailable = hcloud(1:3) == 'ICE' .and. ( .not. lred .or. ( lred .and. ladj_after ) .or. celec /= 'NONE' )
+  tzsource%lavailable = hcloud(1:3) == 'ICE' .and. ( .not. lred .or. ( lred .and. ladj_after ) .or. celec /= 'NONE')&
+                   .or. (hcloud == 'LIMA' .and. lptsplit)
   call Budget_source_add( tbudgets(NBUDGET_RV), tzsource )
 
   tzsource%cmnhname   = 'CORR2'
@@ -2299,7 +2301,8 @@ if ( tbudgets(NBUDGET_RI)%lenabled ) then
 
   tzsource%cmnhname   = 'CDEPI'
   tzsource%clongname  = 'condensation/deposition on ice'
-  tzsource%lavailable = hcloud(1:3) == 'ICE' .and. ( .not. lred .or. ( lred .and. ladj_after ) .or. celec /= 'NONE' )
+  tzsource%lavailable = hcloud(1:3) == 'ICE' .and. ( .not. lred .or. ( lred .and. ladj_after ) .or. celec /= 'NONE')&
+                        .or. (hcloud == 'LIMA' .and. lptsplit)
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'CORR2'
@@ -2682,7 +2685,7 @@ if ( tbudgets(NBUDGET_RG)%lenabled ) then
   tzsource%clongname  = 'wet growth of hail'
   tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. lhail_lima .and. lcold_lima &
                                                 .and. lwarm_lima    .and. lsnow_lima )                &
-                        .or.   hcloud == 'ICE4'
+                        .or.   (hcloud == 'ICE4' .and. .not. lred)
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource )
 
   tzsource%cmnhname   = 'COHG'
@@ -3160,7 +3163,7 @@ SV_BUDGETS: do jsv = 1, ksv
 
         tzsource%cmnhname   = 'SELF'
         tzsource%clongname  = 'self-collection of cloud droplets'
-        tzsource%lavailable = lwarm_lima  .and. lrain_lima
+        tzsource%lavailable = lptsplit .or. (lwarm_lima  .and. lrain_lima)
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'AUTO'

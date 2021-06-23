@@ -10,8 +10,7 @@ INTERFACE
    SUBROUTINE LIMA_ICE_AGGREGATION_SNOW (LDCOMPUTE,                      &
                                          PT, PRHODREF,                   &
                                          PRIT, PRST, PCIT, PLBDI, PLBDS, &
-                                         P_RI_AGGS, P_CI_AGGS,           &
-                                         PA_RI, PA_CI, PA_RS             )
+                                         P_RI_AGGS, P_CI_AGGS            )
 !
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
 !
@@ -27,10 +26,6 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PLBDS
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_AGGS
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_AGGS
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RI
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CI
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RS
-!
 END SUBROUTINE LIMA_ICE_AGGREGATION_SNOW
 END INTERFACE
 END MODULE MODI_LIMA_ICE_AGGREGATION_SNOW
@@ -39,8 +34,7 @@ END MODULE MODI_LIMA_ICE_AGGREGATION_SNOW
       SUBROUTINE LIMA_ICE_AGGREGATION_SNOW (LDCOMPUTE,                      &
                                             PT, PRHODREF,                   &
                                             PRIT, PRST, PCIT, PLBDI, PLBDS, &
-                                            P_RI_AGGS, P_CI_AGGS,           &
-                                            PA_RI, PA_CI, PA_RS             )
+                                            P_RI_AGGS, P_CI_AGGS            )
 !     #######################################################################
 !
 !!    PURPOSE
@@ -86,10 +80,6 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PLBDS
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_AGGS
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_AGGS
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RI
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CI
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RS
-!
 !*       0.2   Declarations of local variables :
 !
 REAL, DIMENSION(SIZE(PRIT)) :: ZZW1, ZZW2, ZZW3 ! work arrays
@@ -122,10 +112,6 @@ WHERE ( (PRIT(:)>XRTMIN(4)) .AND. (PRST(:)>XRTMIN(5)) .AND. LDCOMPUTE(:) )
    P_RI_AGGS(:) = - ZZW2(:)
 END WHERE
 !
-!
-PA_RI(:) = PA_RI(:) + P_RI_AGGS(:)
-PA_CI(:) = PA_CI(:) + P_CI_AGGS(:)
-PA_RS(:) = PA_RS(:) - P_RI_AGGS(:)
 !
 !-------------------------------------------------------------------------------
 !

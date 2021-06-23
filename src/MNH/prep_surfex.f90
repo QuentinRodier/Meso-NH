@@ -27,6 +27,7 @@
 !!  06/2016     (G.Delautier) phasage surfex 8
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
+!!          2021  B.Vie     LIMA - CAMS coupling
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -67,6 +68,8 @@ CHARACTER(LEN=28)     :: YATMFILE        ! name of the Atmospheric file
 CHARACTER(LEN=6)      :: YATMFILETYPE    ! type of the Atmospheric file
 CHARACTER(LEN=28)     :: YCHEMFILE       ! name of the Chemical file (not used)
 CHARACTER(LEN=6)      :: YCHEMFILETYPE   ! type of the Chemical file (not used)
+CHARACTER(LEN=28)     :: YCAMSFILE       ! name of the input CAMS file
+CHARACTER(LEN=6)      :: YCAMSFILETYPE   ! type of the input CAMS file
 CHARACTER(LEN=28)     :: YSURFFILE       ! name of the Surface file (not used)
 CHARACTER(LEN=6)      :: YSURFFILETYPE   ! type of the Surface file (not used)
 CHARACTER(LEN=28)     :: YPGDFILE        ! name of the physiographic data
@@ -105,7 +108,8 @@ CALL IO_Init()
 CALL OPEN_PRC_FILES(TZPRE_REAL1FILE,YATMFILE, YATMFILETYPE,TZATMFILE &
                                    ,YCHEMFILE,YCHEMFILETYPE &
                                    ,YSURFFILE,YSURFFILETYPE &
-                                   ,YPGDFILE,TPGDFILE)
+                                   ,YPGDFILE,TPGDFILE       &
+                                   ,YCAMSFILE,YCAMSFILETYPE)
 ILUOUT0 = TLUOUT0%NLU
 !
 !-------------------------------------------------------------------------------

@@ -11,7 +11,6 @@ INTERFACE
                                         PRHODREF, PT, PLV, PLVFACT, PEVSAT, PRVSAT, &
                                         PRVT, PRCT, PRRT, PLBDR,                    &
                                         P_TH_EVAP, P_RR_EVAP,                       &
-                                        PA_RV, PA_RR, PA_TH,                        &
                                         PEVAP3D                                     )
 !
 REAL,                 INTENT(IN)    :: PTSTEP     ! Time step
@@ -32,10 +31,6 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR     ! Lambda(rain)
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_EVAP
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_EVAP
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RV
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RR
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_TH
-!
 REAL, DIMENSION(:),   INTENT(INOUT) :: PEVAP3D    ! Rain evap profile
 !
 END SUBROUTINE LIMA_RAIN_EVAPORATION
@@ -46,7 +41,6 @@ END MODULE MODI_LIMA_RAIN_EVAPORATION
                                         PRHODREF, PT, PLV, PLVFACT, PEVSAT, PRVSAT, &
                                         PRVT, PRCT, PRRT, PLBDR,                    &
                                         P_TH_EVAP, P_RR_EVAP,                       &
-                                        PA_RV, PA_RR, PA_TH,                        &
                                         PEVAP3D                                     )
 !     ###############################################################################
 !
@@ -99,10 +93,6 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR     ! Lambda(rain)
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_EVAP
 REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_EVAP
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RV
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RR
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_TH
-!
 REAL, DIMENSION(:),   INTENT(INOUT) :: PEVAP3D    ! Rain evap profile
 !
 !*       0.1   Declarations of local variables :
@@ -148,12 +138,9 @@ WHERE ( GEVAP )
    ZZW2(:) = MAX(ZZW2(:),0.0)
 !
    P_RR_EVAP(:) = - ZZW2(:)
-   P_TH_EVAP(:) = P_RR_EVAP(:) * PLVFACT(:)
-   PEVAP3D(:) = - P_RR_EVAP(:)
+!   P_TH_EVAP(:) = P_RR_EVAP(:) * PLVFACT(:)
+!   PEVAP3D(:) = - P_RR_EVAP(:)
 !
-PA_TH(:) = PA_TH(:) + P_TH_EVAP(:)
-PA_RV(:) = PA_RV(:) - P_RR_EVAP(:)
-PA_RR(:) = PA_RR(:) + P_RR_EVAP(:)
 END WHERE
 !
 !-----------------------------------------------------------------------------

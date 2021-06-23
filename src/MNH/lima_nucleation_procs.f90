@@ -8,11 +8,12 @@
 !      ###############################
 !
 INTERFACE
-   SUBROUTINE LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, PRHODJ,                        &
-                                     PRHODREF, PEXNREF, PPABST, PT, PDTHRAD, PW_NU, &
-                                     PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,      &
-                                     PCCT, PCRT, PCIT,                              &
-                                     PNFT, PNAT, PIFT, PINT, PNIT, PNHT             )
+   SUBROUTINE LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, PRHODJ,                       &
+                                     PRHODREF, PEXNREF, PPABST, PT, PDTHRAD, PW_NU,&
+                                     PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,     &
+                                     PCCT, PCRT, PCIT,                             &
+                                     PNFT, PNAT, PIFT, PINT, PNIT, PNHT,           &
+                                     PCLDFR, PICEFR, PPRCFR                        )
 !
 USE MODD_IO, ONLY: TFILEDATA
 !
@@ -46,16 +47,21 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PINT       ! IFN C. activated at t
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNIT       ! Coated IFN activated at t
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNHT       ! CCN hom freezing
 !
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCLDFR     ! Cloud fraction
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PICEFR     ! Ice fraction
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PPRCFR     ! Precipitation fraction
+!
 END SUBROUTINE LIMA_NUCLEATION_PROCS
 END INTERFACE
 END MODULE MODI_LIMA_NUCLEATION_PROCS
-!     ############################################################################
-SUBROUTINE LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, PRHODJ,                        &
-                                  PRHODREF, PEXNREF, PPABST, PT, PDTHRAD, PW_NU, &
-                                  PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,      &
-                                  PCCT, PCRT, PCIT,                              &
-                                  PNFT, PNAT, PIFT, PINT, PNIT, PNHT             )
-!     ############################################################################
+!     #############################################################################
+SUBROUTINE LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, PRHODJ,                       &
+                                  PRHODREF, PEXNREF, PPABST, PT, PDTHRAD, PW_NU,&
+                                  PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,     &
+                                  PCCT, PCRT, PCIT,                             &
+                                  PNFT, PNAT, PIFT, PINT, PNIT, PNHT,           &
+                                  PCLDFR, PICEFR, PPRCFR                        )
+!     #############################################################################
 !
 !!    PURPOSE
 !!    -------
@@ -83,7 +89,8 @@ USE MODD_IO,         ONLY: TFILEDATA
 USE MODD_NSV,        ONLY : NSV_LIMA_NC, NSV_LIMA_NR, NSV_LIMA_CCN_FREE, NSV_LIMA_CCN_ACTI, &
                             NSV_LIMA_NI, NSV_LIMA_IFN_FREE, NSV_LIMA_IFN_NUCL, NSV_LIMA_IMM_NUCL, NSV_LIMA_HOM_HAZE
 USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LMEYERS, LSNOW, LWARM, LACTI, LRAIN, LHHONI,  &
-                            NMOD_CCN, NMOD_IFN, NMOD_IMM
+                            NMOD_CCN, NMOD_IFN, NMOD_IMM, XCTMIN, XRTMIN, LSPRO
+USE MODD_TURB_n,     ONLY : LSUBG_COND
 
 use mode_budget,     only: Budget_store_add, Budget_store_init, Budget_store_end
 
@@ -128,6 +135,10 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PINT       ! IFN C. activated at t
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNIT       ! Coated IFN activated at t
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNHT       ! CCN hom. freezing
 !
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCLDFR     ! Cloud fraction
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PICEFR     ! Ice fraction
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PPRCFR     ! Precipitation fraction
+!
 !-------------------------------------------------------------------------------
 !
 REAL, DIMENSION(SIZE(PT,1),SIZE(PT,2),SIZE(PT,3))          :: Z_TH_HIND, Z_RI_HIND, Z_CI_HIND, Z_TH_HINC, Z_RC_HINC, Z_CC_HINC
@@ -152,11 +163,12 @@ IF ( LWARM .AND. LACTI .AND. NMOD_CCN >=1 ) THEN
       end do
     end if
   end if
-
-   CALL LIMA_CCN_ACTIVATION (PTSTEP, TPFILE,                                &
+   IF (.NOT.LSUBG_COND .AND. .NOT.LSPRO) THEN
+      CALL LIMA_CCN_ACTIVATION (PTSTEP, TPFILE,                                &
                              PRHODREF, PEXNREF, PPABST, PT, PDTHRAD, PW_NU, &
-                             PTHT, PRVT, PRCT, PCCT, PRRT, PNFT, PNAT       )
-
+                             PTHT, PRVT, PRCT, PCCT, PRRT, PNFT, PNAT, PCLDFR  )
+   END IF
+   WHERE(PCLDFR(:,:,:)<1.E-10 .AND. PRCT(:,:,:)>XRTMIN(2) .AND. PCCT(:,:,:)>XCTMIN(2)) PCLDFR(:,:,:)=1.
   if ( lbu_enable ) then
     if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HENU', ptht(:, :, :) * prhodj(:, :, :) / ptstep )
     if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'HENU', prvt(:, :, :) * prhodj(:, :, :) / ptstep )
@@ -201,8 +213,10 @@ IF ( LCOLD .AND. LNUCL .AND. .NOT.LMEYERS .AND. NMOD_IFN >= 1 ) THEN
                                       PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,         &
                                       PCCT, PCIT, PNAT, PIFT, PINT, PNIT,               &
                                       Z_TH_HIND, Z_RI_HIND, Z_CI_HIND,                  &
-                                      Z_TH_HINC, Z_RC_HINC, Z_CC_HINC                   )
-
+                                      Z_TH_HINC, Z_RC_HINC, Z_CC_HINC,                  &
+                                      PICEFR                                            )
+  WHERE(PICEFR(:,:,:)<1.E-10 .AND. PRIT(:,:,:)>XRTMIN(4) .AND. PCIT(:,:,:)>XCTMIN(4)) PICEFR(:,:,:)=1.
+!
   if ( lbu_enable ) then
     if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'HIND',  z_th_hind(:, :, :) * prhodj(:, :, :) / ptstep )
     if ( lbudget_rv ) call Budget_store_add( tbudgets(NBUDGET_RV), 'HIND', -z_ri_hind(:, :, :) * prhodj(:, :, :) / ptstep )
@@ -243,8 +257,10 @@ IF (LCOLD .AND. LNUCL .AND. LMEYERS) THEN
                                 PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,   &
                                 PCCT, PCIT, PINT,                           &
                                 Z_TH_HIND, Z_RI_HIND, Z_CI_HIND,            &
-                                Z_TH_HINC, Z_RC_HINC, Z_CC_HINC             )
-
+                                Z_TH_HINC, Z_RC_HINC, Z_CC_HINC,            &
+                                PICEFR                                      )
+  WHERE(PICEFR(:,:,:)<1.E-10 .AND. PRIT(:,:,:)>XRTMIN(4) .AND. PCIT(:,:,:)>XCTMIN(4)) PICEFR(:,:,:)=1.
+!
   if ( lbu_enable ) then
     if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'HIND',  z_th_hind(:, :, :) * prhodj(:, :, :) / ptstep )
     if ( lbudget_rv ) call Budget_store_add( tbudgets(NBUDGET_RV), 'HIND', -z_ri_hind(:, :, :) * prhodj(:, :, :) / ptstep )
@@ -288,8 +304,10 @@ IF ( LCOLD .AND. LNUCL .AND. LHHONI .AND. NMOD_CCN >= 1) THEN
 
   CALL LIMA_CCN_HOM_FREEZING (PRHODREF, PEXNREF, PPABST, PW_NU,          &
                                PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, &
-                               PCCT, PCRT, PCIT, PNFT, PNHT              )
-
+                               PCCT, PCRT, PCIT, PNFT, PNHT,             &
+                               PICEFR                                    )
+  WHERE(PICEFR(:,:,:)<1.E-10 .AND. PRIT(:,:,:)>XRTMIN(4) .AND. PCIT(:,:,:)>XCTMIN(4)) PICEFR(:,:,:)=1.
+!
   if ( lbu_enable ) then
     if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HONH', PTHT(:, :, :) * prhodj(:, :, :) / ptstep )
     if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'HONH', PRVT(:, :, :) * prhodj(:, :, :) / ptstep )
