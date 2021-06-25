@@ -430,7 +430,7 @@ DEALLOCATE(XSV_LS)
 ALLOCATE (XSV_LS(IIU,IJU,ilevlen,NSV))
 XSV_LS(:,:,:,:) = 0.
 !
-ALLOCATE(NINDICE_CCN_IMM(1))
+!ALLOCATE(NINDICE_CCN_IMM(1)) already allocated in ini_nsv
 NINDICE_CCN_IMM(1)=3
 !
 ! Define work arrays
