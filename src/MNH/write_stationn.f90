@@ -81,7 +81,7 @@ USE MODD_LG,              ONLY: CLGNAMES
 USE MODD_LUNIT
 USE MODD_NSV
 USE MODD_PARAMETERS
-USE MODD_PARAM_n,         ONLY: CRAD,CSURF
+USE MODD_PARAM_n,         ONLY: CRAD, CSURF
 USE MODD_PASPOL
 USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
 USE MODD_SALT,            ONLY: CSALTNAMES, LSALT, NMODE_SLT
@@ -785,7 +785,6 @@ tzbudiachro%nkl        = 1
 tzbudiachro%nkh        = 1
 
 call Write_diachro( tpdiafile, tzbudiachro, tzfields, tstation%tpdates, zw6 )
-! TODO: ajout de PTRAJX=ZTRAJX, PTRAJY=ZTRAJY, PTRAJZ=ZTRAJZ en argument en entrée de Write_diachro
 
 deallocate( tzfields )
 

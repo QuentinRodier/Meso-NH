@@ -158,7 +158,7 @@ use modd_budget,      only: lbudget_u, lbudget_v, lbudget_w, lbudget_th, &
 USE MODD_CONF
 USE MODD_CST
 USE MODD_DYN
-USE MODD_DYN_n, ONLY : LOCEAN
+USE MODD_DYN_n,      ONLY: LOCEAN
 !
 use mode_budget,     only: Budget_store_init, Budget_store_end
 USE MODE_MPPDB

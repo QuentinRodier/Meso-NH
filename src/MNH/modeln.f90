@@ -270,8 +270,8 @@ END MODULE MODI_MODEL_n
 !  P. Wautelet 12/10/2020: Write_les_n: remove HLES_AVG dummy argument and group all 4 calls
 !  F. Auguste  01/02/2021: add IBM
 !  T. Nagel    01/02/2021: add turbulence recycling
-!  P. Wautelet 19/02/2021 add NEGA2 term for SV budgets
-!  J.L. Redelsperger 03/2021, add Call NHOA_COUPLN (coupling O & A LES version)
+!  P. Wautelet 19/02/2021: add NEGA2 term for SV budgets
+!  J.L. Redelsperger 03/2021: add Call NHOA_COUPLN (coupling O & A LES version)
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS

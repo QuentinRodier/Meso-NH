@@ -223,7 +223,7 @@ use modd_dim_n,         only: nimax_ll, njmax_ll, nkmax
 use modd_dragbldg_n,    only: ldragbldg
 use modd_dust,          only: ldust
 use modd_dyn,           only: lcorio, xseglen
-use modd_dyn_n,         only: xtstep, LOCEAN
+use modd_dyn_n,         only: xtstep, locean
 use modd_elec_descr,    only: linductive, lrelax2fw_ion
 use modd_field,         only: TYPEREAL
 use modd_nsv,           only: csvnames,                                                                            &
@@ -250,7 +250,7 @@ use modd_param_lima,   only: laero_mass_lima => laero_mass, lacti_lima => lacti,
                              lrain_lima => lrain, lscav_lima => lscav, lsedc_lima => lsedc, lsedi_lima => lsedi,        &
                              lsnow_lima => lsnow, lwarm_lima => lwarm,                                                  &
                              nmod_ccn, nmod_ifn, nmod_imm
-use modd_ref,          only: LCOUPLES
+use modd_ref,          only: lcouples
 use modd_salt,         only: lsalt
 use modd_viscosity,    only: lvisc, lvisc_r, lvisc_sv, lvisc_th, lvisc_uvw
 
@@ -1066,7 +1066,7 @@ if ( lbu_rth ) then
 
   tzsource%cmnhname   = 'OCEAN'
   tzsource%clongname  = 'radiative tendency due to SW penetrating ocean'
-  tzsource%lavailable = LOCEAN .AND. (.NOT. LCOUPLES)
+  tzsource%lavailable = locean .and. (.not. lcouples)
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'ADV'
@@ -3163,7 +3163,7 @@ SV_BUDGETS: do jsv = 1, ksv
 
         tzsource%cmnhname   = 'SELF'
         tzsource%clongname  = 'self-collection of cloud droplets'
-        tzsource%lavailable = lptsplit .or. (lwarm_lima  .and. lrain_lima)
+        tzsource%lavailable = lptsplit .or. (lwarm_lima .and. lrain_lima)
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'AUTO'
@@ -4592,7 +4592,7 @@ subroutine Sourcelist_nml_compact( tpbudget, hbulist )
   !The list is generated from the group list
   use modd_budget, only: NBULISTMAXLEN, tbudgetdata
 
-  type(tbudgetdata),                           intent(in)    :: tpbudget
+  type(tbudgetdata),                                       intent(in)    :: tpbudget
   character(len=NBULISTMAXLEN), dimension(:), allocatable, intent(inout) :: hbulist
 
   integer :: idx

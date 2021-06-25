@@ -175,11 +175,11 @@ END MODULE MODI_WRITE_LFIFM_n
 !  P. Tulet       02/2020: correction for dust and sea salts
 !!      B. Vie          06/2020 Add prognostic supersaturation for LIMA
 !  PA. Joulin    12/2020: add wind turbine outputs
-!  F.Auguste 02/2021    : Add IBM
-!  T.Nagel   02/2021    : Add turbulence recycling
+!  F. Auguste    02/2021: add IBM
+!  T. Nagel      02/2021: add turbulence recycling
 !  P. Wautelet 10/03/2021: use scalar variable names for dust and salt
 !  P. Wautelet 11/03/2021: bugfix: correct name for NSV_LIMA_IMM_NUCL
-!  J.L. Redelsperger 03/2021: Add OCEAN and auto-coupled O-A LES cases
+!  J.L. Redelsperger 03/2021: add OCEAN and auto-coupled O-A LES cases
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -188,7 +188,7 @@ END MODULE MODI_WRITE_LFIFM_n
 USE MODD_DIM_n
 USE MODD_CONF
 USE MODD_CONF_n
-use modd_field,       only: tfielddata, tfieldlist, TYPEDATE, TYPEINT, TYPEREAL, TYPELOG
+use modd_field,       only: tfielddata, tfieldlist, TYPEDATE, TYPEINT, TYPELOG, TYPEREAL
 USE MODD_GRID
 USE MODD_GRID_n
 USE MODD_TIME
@@ -289,8 +289,8 @@ USE MODD_EOL_ADNR
 USE MODD_EOL_ALM
 !
 USE MODD_RECYCL_PARAM_n
-USE MODD_IBM_PARAM_n, ONLY : LIBM,XIBM_LS
-USE MODD_IBM_LSF, ONLY : LIBM_LSF
+USE MODD_IBM_PARAM_n,     ONLY: LIBM, XIBM_LS
+USE MODD_IBM_LSF,         ONLY: LIBM_LSF
 ! 
 IMPLICIT NONE
 !

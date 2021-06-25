@@ -114,9 +114,9 @@ END MODULE MODI_ADVECUVW_RK
 !
 USE MODD_ARGSLIST_ll, ONLY: LIST_ll, HALO2LIST_ll
 USE MODD_CONF,        ONLY: NHALO
-USE MODD_IBM_PARAM_n, ONLY : LIBM, CIBM_ADV, XIBM_LS, XIBM_EPSI
+USE MODD_IBM_PARAM_n, ONLY: LIBM, CIBM_ADV, XIBM_LS, XIBM_EPSI
 USE MODD_PARAMETERS,  ONLY: JPVEXT
-USE MODD_SUB_MODEL_n, ONLY : XT_IBM_FORC
+USE MODD_SUB_MODEL_n, ONLY: XT_IBM_FORC
 !
 USE MODE_ll
 USE MODE_MPPDB
@@ -203,8 +203,8 @@ TYPE(LIST_ll), POINTER      :: TZFIELDS4_ll ! list of fields to exchange
 REAL          :: ZTIME1,ZTIME2
 !-------------------------------------------------------------------------------
 !
-!*       0.     INITIALIZATION                        
-!	        --------------
+!*       0.     INITIALIZATION
+!        ---------------------
 !
 IKE = SIZE(PWT,3) - JPVEXT
 IIU=SIZE(PUT,1)
@@ -344,7 +344,7 @@ PRWS_ADV = 0.
 !-------------------------------------------------------------------------------
 !
 !*       2.     Wind guess before RK loop
-!	        -------------------------
+!        --------------------------------
 !
 ZUT = PU
 ZVT = PV
@@ -367,26 +367,26 @@ ZRWS = 0.
 !-------------------------------------------------------------------------------
 !
 !*       3.     BEGINNING of Runge-Kutta loop
-!	        -----------------------------
+!        ------------------------------------
 !
- DO JS = 1, ISPL
-!		
-    CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZUT, PUT, 'U' )    
-    CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZVT, PVT, 'V' )    
-    CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZWT, PWT, 'W' )
-!    
-    CALL UPDATE_HALO_ll(TZFIELDMT_ll,IINFO_ll)        
-    CALL UPDATE_HALO2_ll(TZFIELDMT_ll, TZHALO2MT_ll, IINFO_ll)
+RKLOOP: DO JS = 1, ISPL
+!
+  CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZUT, PUT, 'U' )
+  CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZVT, PVT, 'V' )
+  CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZWT, PWT, 'W' )
+!
+  CALL UPDATE_HALO_ll(TZFIELDMT_ll,IINFO_ll)
+  CALL UPDATE_HALO2_ll(TZFIELDMT_ll, TZHALO2MT_ll, IINFO_ll)
 !
 !*       4.     Advection with WENO
-!	        -------------------
+!        --------------------------
 !
   IF (LIBM .AND. CIBM_ADV=='LOWORD') THEN
     ZIBM(:,:,:,1)=ZRUS(:,:,:,JS)
     ZIBM(:,:,:,2)=ZRVS(:,:,:,JS)
     ZIBM(:,:,:,3)=ZRWS(:,:,:,JS)
   ENDIF
-!  
+!
   IF (HUVW_ADV_SCHEME=='WENO_K') THEN                                                                         
     CALL ADVECUVW_WENO_K (HLBCX, HLBCY, KWENO_ORDER, ZUT, ZVT, ZWT,     &
                         PRUCT, PRVCT, PRWCT,                            &
@@ -405,30 +405,30 @@ ZRWS = 0.
                           PRUCT, PRVCT, PRWCT,                           &
                           ZIBM(:,:,:,1),  ZIBM(:,:,:,2),  ZIBM(:,:,:,3) ,&
                           TZHALO2MT_ll                                   )      
-    ENDIF 
+    ENDIF
     IF (HUVW_ADV_SCHEME=='CEN4TH') THEN
        CALL ADVECUVW_2ND (ZUT, ZVT, ZWT, PRUCT, PRVCT, PRWCT,            &
                           ZIBM(:,:,:,1),  ZIBM(:,:,:,2),  ZIBM(:,:,:,3))
-    ENDIF 
+    ENDIF
     WHERE(XIBM_LS(:,:,:,2).GT.-XIBM_EPSI) ZRUS(:,:,:,JS)=ZIBM(:,:,:,1)
     WHERE(XIBM_LS(:,:,:,3).GT.-XIBM_EPSI) ZRVS(:,:,:,JS)=ZIBM(:,:,:,2)
     WHERE(XIBM_LS(:,:,:,4).GT.-XIBM_EPSI) ZRWS(:,:,:,JS)=ZIBM(:,:,:,3)
     ZIBM(:,:,:,:)=1.
   ENDIF
 !
-     NULLIFY(TZFIELDS4_ll)
+  NULLIFY(TZFIELDS4_ll)
 !
-    write ( ynum, '( I3 )' ) js
-    CALL ADD3DFIELD_ll( TZFIELDS4_ll, ZRUS(:,:,:,JS), 'ADVECUVW_RK::ZRUS(:,:,:,'//trim( adjustl( ynum ) )//')' )
-    CALL ADD3DFIELD_ll( TZFIELDS4_ll, ZRVS(:,:,:,JS), 'ADVECUVW_RK::ZRVS(:,:,:,'//trim( adjustl( ynum ) )//')' )
-    CALL ADD3DFIELD_ll( TZFIELDS4_ll, ZRWS(:,:,:,JS), 'ADVECUVW_RK::ZRWS(:,:,:,'//trim( adjustl( ynum ) )//')' )
-    CALL UPDATE_HALO_ll(TZFIELDS4_ll,IINFO_ll)
-    CALL CLEANLIST_ll(TZFIELDS4_ll)
+  write ( ynum, '( I3 )' ) js
+  CALL ADD3DFIELD_ll( TZFIELDS4_ll, ZRUS(:,:,:,JS), 'ADVECUVW_RK::ZRUS(:,:,:,'//trim( adjustl( ynum ) )//')' )
+  CALL ADD3DFIELD_ll( TZFIELDS4_ll, ZRVS(:,:,:,JS), 'ADVECUVW_RK::ZRVS(:,:,:,'//trim( adjustl( ynum ) )//')' )
+  CALL ADD3DFIELD_ll( TZFIELDS4_ll, ZRWS(:,:,:,JS), 'ADVECUVW_RK::ZRWS(:,:,:,'//trim( adjustl( ynum ) )//')' )
+  CALL UPDATE_HALO_ll(TZFIELDS4_ll,IINFO_ll)
+  CALL CLEANLIST_ll(TZFIELDS4_ll)
 !
   IF (LIBM .AND. CIBM_ADV=='FREEZE') THEN 
-    WHERE(XIBM_LS(:,:,:,2).GT.-XIBM_EPSI) ZRUS(:,:,:,JS)=ZUT(:,:,:)*PMXM_RHODJ/PTSTEP
-    WHERE(XIBM_LS(:,:,:,3).GT.-XIBM_EPSI) ZRVS(:,:,:,JS)=ZVT(:,:,:)*PMYM_RHODJ/PTSTEP
-    WHERE(XIBM_LS(:,:,:,4).GT.-XIBM_EPSI) ZRWS(:,:,:,JS)=ZWT(:,:,:)*PMZM_RHODJ/PTSTEP
+    WHERE(XIBM_LS(:,:,:,2).GT.-XIBM_EPSI) ZRUS(:,:,:,JS)=ZUT(:,:,:)*PMXM_RHODJ(:,:,:)/PTSTEP
+    WHERE(XIBM_LS(:,:,:,3).GT.-XIBM_EPSI) ZRVS(:,:,:,JS)=ZVT(:,:,:)*PMYM_RHODJ(:,:,:)/PTSTEP
+    WHERE(XIBM_LS(:,:,:,4).GT.-XIBM_EPSI) ZRWS(:,:,:,JS)=ZWT(:,:,:)*PMZM_RHODJ(:,:,:)/PTSTEP
   ENDIF
 
   IF (LIBM .AND. CIBM_ADV=='FORCIN') THEN 
@@ -437,12 +437,12 @@ ZRWS = 0.
     CALL SECOND_MNH(ZTIME2)
     XT_IBM_FORC = XT_IBM_FORC + ZTIME2 - ZTIME1
   ENDIF
-!  
+!
   IF ( JS /= ISPL ) THEN
 !
-      ZUT = PU
-      ZVT = PV
-      ZWT = PW
+    ZUT = PU
+    ZVT = PV
+    ZWT = PW
 !
    DO JI = 1, JS
 !
@@ -457,7 +457,7 @@ ZRWS = 0.
 !
     END DO
 !
-  ELSE  
+  ELSE
 !
 ! Guesses at the end of the RK loop
 !
@@ -470,7 +470,7 @@ ZRWS = 0.
   END IF
 !
 ! End of the RK loop
- END DO
+ END DO RKLOOP
 !
 !
 DEALLOCATE(ZBUT, ZBUTS, ZRUS, ZRVS, ZRWS, ZIBM)

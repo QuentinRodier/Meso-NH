@@ -152,7 +152,7 @@ END MODULE MODI_LIMA_ADJUST
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !  P. Wautelet 28/05/2020: bugfix: correct array start for PSVT and PSVS
 !  P. Wautelet 01/02/2021: bugfix: add missing CEDS source terms for SV budgets
-!!      B. Vie               June 2020   fix PSRCS
+!  B. Vie         06/2020: fix PSRCS
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -305,7 +305,7 @@ REAL, DIMENSION(:), ALLOCATABLE &
 INTEGER, DIMENSION(:), ALLOCATABLE :: IVEC1
 !
 INTEGER                  :: IRESP      ! Return code of FM routines
-INTEGER             :: IIU,IJU,IKU! dimensions of dummy arrays
+INTEGER                  :: IIU,IJU,IKU! dimensions of dummy arrays
 INTEGER                  :: IKB        ! K index value of the first inner mass point
 INTEGER                  :: IKE        ! K index value of the last inner mass point
 INTEGER                  :: IIB,IJB    ! Horz index values of the first inner mass points

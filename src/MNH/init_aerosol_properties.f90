@@ -37,8 +37,8 @@ END MODULE MODI_INIT_AEROSOL_PROPERTIES
 !!  Philippe Wautelet: 22/01/2019: bugs correction: incorrect writes + unauthorized goto
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 30/03/2021: move NINDICE_CCN_IMM and NIMM initializations from init_aerosol_properties to ini_nsv
-!!  Benoît Vié:              06/2021: kappa-kohler CCN activation parameters
-!!
+!  B. Vié         06/2021: kappa-kohler CCN activation parameters
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

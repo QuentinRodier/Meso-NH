@@ -98,7 +98,7 @@ END MODULE MODI_OPEN_PRC_FILES
 !  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
 !                          (nsubfiles_ioz is now determined in IO_File_add2list)
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
-!! B. Vie      06/2021 LIMA - CAMS coupling
+!  B. Vie         06/2021: LIMA - CAMS coupling
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

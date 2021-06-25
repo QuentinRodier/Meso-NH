@@ -318,7 +318,7 @@
 !  P. Wautelet 19/04/2019: removed unused dummy arguments and variables
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
-!  F. Auguste  02/2021   : add IBM
+!  F. Auguste     02/2021: add IBM
 !  P. Wautelet 09/03/2021: move some chemistry initializations to ini_nsv
 !  Jean-Luc Redelsperger 03/2021 : : ocean LES case
 !-------------------------------------------------------------------------------
@@ -333,8 +333,8 @@ USE MODD_CONF
 USE MODD_CST
 USE MODD_GRID
 USE MODD_GRID_n
-USE MODD_IBM_LSF,   ONLY: LIBM_LSF, CIBM_TYPE, NIBM_SMOOTH, XIBM_SMOOTH
-USE MODD_IBM_PARAM_n, ONLY : XIBM_LS
+USE MODD_IBM_LSF,     ONLY: CIBM_TYPE, LIBM_LSF, NIBM_SMOOTH, XIBM_SMOOTH
+USE MODD_IBM_PARAM_n, ONLY: XIBM_LS
 USE MODD_METRICS_n
 USE MODD_PGDDIM
 USE MODD_PGDGRID
@@ -1373,7 +1373,7 @@ IF (    LEN_TRIM(CPGD_FILE) == 0  .OR. .NOT. LREAD_ZS) THEN
 !
   CASE DEFAULT   ! undefined  shape of orography
    !callabortstop
-    CALL PRINT_MSG(NVERB_FATAL,'GEN','PREP_IDEAL_CASE','erroneous terrain type')
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','PREP_IDEAL_CASE','erroneous ground type')
   END SELECT
 !
   CALL ADD2DFIELD_ll( TZ_FIELDS_ll, XZS, 'PREP_IDEAL_CASE::XZS' )
@@ -1667,12 +1667,12 @@ IF (CIDEAL == 'RSOU') THEN
   ALLOCATE(ZRSATI(NIU,NJU,NKU))             
   ZRT=XRT(:,:,:,1)+XRT(:,:,:,2)+XRT(:,:,:,4)
 IF (LOCEAN) THEN
-   ZEXN(:,:,:)= 1.  
-   ZT=XTHT
-   ZTHL=XTHT
-   ZCPH=XCPD+ XCPV * XRT(:,:,:,1)
-   ZLVOCPEXN = XLVTT
-   ZLSOCPEXN = XLSTT
+  ZEXN(:,:,:)= 1.
+  ZT=XTHT
+  ZTHL=XTHT
+  ZCPH=XCPD+ XCPV * XRT(:,:,:,1)
+  ZLVOCPEXN = XLVTT
+  ZLSOCPEXN = XLSTT
 ELSE
   ZEXN=(XPABST/XP00) ** (XRD/XCPD)
   ZT=XTHT*(XPABST/XP00)**(XRD/XCPD)
@@ -1739,7 +1739,7 @@ IF (LIBM_LSF) THEN
   ! combination with cartesian coordinates and flat orography.
   !
   IF ((CZS.NE."FLAT").OR.(.NOT.LCARTESIAN)) THEN
-    CALL PRINT_MSG(NVERB_FATAL,'GEN','PREP_IDEAL_CASE','IBM can only be used with flat terrain')
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','PREP_IDEAL_CASE','IBM can only be used with flat ground')
   ENDIF
   !
   ALLOCATE(XIBM_LS(NIU,NJU,NKU,4))

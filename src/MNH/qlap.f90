@@ -110,7 +110,7 @@ END MODULE MODI_QLAP
 !!                     06/12 V.Masson : update_halo due to CONTRAV changes
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1  
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
-!!                     02/21 F.Auguste : add IBM
+!  F. Auguste       02/21: add IBM
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

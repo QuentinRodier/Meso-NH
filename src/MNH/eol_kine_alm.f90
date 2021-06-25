@@ -78,8 +78,8 @@ DOUBLE PRECISION, DIMENSION(3,3) :: ZORI_MAT_X, ZORI_MAT_Y, ZORI_MAT_Z
 DOUBLE PRECISION, DIMENSION(3)   :: ZADD_TO_POS
 !
 DOUBLE PRECISION, DIMENSION(3)   :: ZDIST_TOWO_TELT_RG ! Distance between tower elmt and tower base 
-DOUBLE PRECISION, DIMENSION(3)   :: ZDIST_TOWO_NELT_RG  ! Distance between nacelle and base of tower
-DOUBLE PRECISION, DIMENSION(3)   :: ZDIST_NAC_HUB_RG   ! Distance between hub and base of nacelle       
+DOUBLE PRECISION, DIMENSION(3)   :: ZDIST_TOWO_NELT_RG ! Distance between nacelle and base of tower
+DOUBLE PRECISION, DIMENSION(3)   :: ZDIST_NAC_HUB_RG   ! Distance between hub and base of nacelle
 DOUBLE PRECISION, DIMENSION(3)   :: ZDIST_HUB_BLA_RG   ! Distance between blade and base of hub
 DOUBLE PRECISION, DIMENSION(3)   :: ZDIST_BLA_ELT_RG   ! Distance between blade and elements
 !
@@ -99,7 +99,7 @@ INTEGER                          :: INB_TELT, INB_NELT                 ! Total n
 !*       1.    PRELIMINARIES
 !              ------------- 
 !
-!*       1.1 Some usefull integers
+!*       1.1 Some useful integers
 INB_WT   = TFARM%NNB_TURBINES
 INB_B    = TTURBINE%NNB_BLADES
 INB_TELT = 2

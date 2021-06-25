@@ -386,10 +386,10 @@
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
-!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  S. Bielli      02/2019: sea salt: significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 20/03/2019: missing use MODI_INIT_SALT
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
-!!    T.Nagel  : 02/2021: add IBM
+!  T.Nagel        02/2021: add IBM
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -409,8 +409,8 @@ USE MODD_GR_FIELD_n
 USE MODD_GRID
 USE MODD_GRID_n
 USE MODD_HURR_CONF
-USE MODD_IBM_LSF, ONLY: LIBM_LSF,CIBM_TYPE, NIBM_SMOOTH,XIBM_SMOOTH
-USE MODD_IBM_PARAM_n
+USE MODD_IBM_LSF,          ONLY: CIBM_TYPE, LIBM_LSF, NIBM_SMOOTH, XIBM_SMOOTH
+USE MODD_IBM_PARAM_n,      ONLY: XIBM_LS
 USE MODD_IO,               ONLY: TFILEDATA,NIO_VERB,NVERB_DEBUG,TFILE_SURFEX
 USE MODD_LBC_n
 USE MODD_LSFIELD_n

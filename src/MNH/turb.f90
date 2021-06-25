@@ -345,7 +345,7 @@ END MODULE MODI_TURB
 !  P. Wautelet + Benoit Vié 06/2020: improve removal of negative scalar variables + adapt the corresponding budgets
 !  P. Wautelet 30/06/2020: move removal of negative scalar variables to Sources_neg_correct
 !  R. Honnert/V. Masson 02/2021: new mixing length in the grey zone
-!! J.L. Redelsperger 03/2021: add Ocean LES case
+!  J.L. Redelsperger 03/2021: add Ocean LES case
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -396,7 +396,7 @@ USE MODI_ETHETA
 !
 USE MODI_SECOND_MNH
 !
-USE MODD_IBM_PARAM_n, ONLY : LIBM, XIBM_LS, XIBM_XMUT
+USE MODD_IBM_PARAM_n,    ONLY: LIBM, XIBM_LS, XIBM_XMUT
 USE MODI_IBM_MIXINGLENGTH
 !
 IMPLICIT NONE

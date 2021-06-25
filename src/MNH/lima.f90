@@ -9,13 +9,13 @@ MODULE MODI_LIMA
 !
 INTERFACE
 !
-   SUBROUTINE LIMA ( KKA, KKU, KKL,                                  &
-                     PTSTEP, TPFILE,                                 &
-                     PRHODREF, PEXNREF, PDZZ,                        &
-                     PRHODJ, PPABSM, PPABST,                         &
-                     NCCN, NIFN, NIMM,                               &
-                     PDTHRAD, PTHT, PRT, PSVT, PW_NU,                &
-                     PTHS, PRS, PSVS,                                &
+   SUBROUTINE LIMA ( KKA, KKU, KKL,                                          &
+                     PTSTEP, TPFILE,                                         &
+                     PRHODREF, PEXNREF, PDZZ,                                &
+                     PRHODJ, PPABSM, PPABST,                                 &
+                     NCCN, NIFN, NIMM,                                       &
+                     PDTHRAD, PTHT, PRT, PSVT, PW_NU,                        &
+                     PTHS, PRS, PSVS,                                        &
                      PINPRC, PINDEP, PINPRR, PINPRI, PINPRS, PINPRG, PINPRH, &
                      PEVAP3D, PCLDFR, PICEFR, PPRCFR                         )
 !
@@ -41,7 +41,7 @@ INTEGER,                  INTENT(IN)    :: NCCN       ! for array size declarati
 INTEGER,                  INTENT(IN)    :: NIFN       ! for array size declarations
 INTEGER,                  INTENT(IN)    :: NIMM       ! for array size declarations
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD     ! dT/dt due to radiation
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD    ! dT/dt due to radiation
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT       ! Theta at time t
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT        ! Mixing ratios at time t
 REAL, DIMENSION(:,:,:,NSV_LIMA_BEG:), INTENT(IN)    :: PSVT ! Concentrations at time t
@@ -70,13 +70,13 @@ END MODULE MODI_LIMA
 !
 !
 !     ######spl
-      SUBROUTINE LIMA ( KKA, KKU, KKL,                                  &
-                        PTSTEP, TPFILE,                                 &
-                        PRHODREF, PEXNREF, PDZZ,                        &
-                        PRHODJ, PPABSM, PPABST,                         &
-                        NCCN, NIFN, NIMM,                               &
-                        PDTHRAD, PTHT, PRT, PSVT, PW_NU,                &
-                        PTHS, PRS, PSVS,                                &
+      SUBROUTINE LIMA ( KKA, KKU, KKL,                                          &
+                        PTSTEP, TPFILE,                                         &
+                        PRHODREF, PEXNREF, PDZZ,                                &
+                        PRHODJ, PPABSM, PPABST,                                 &
+                        NCCN, NIFN, NIMM,                                       &
+                        PDTHRAD, PTHT, PRT, PSVT, PW_NU,                        &
+                        PTHS, PRS, PSVS,                                        &
                         PINPRC, PINDEP, PINPRR, PINPRI, PINPRS, PINPRG, PINPRH, &
                         PEVAP3D, PCLDFR, PICEFR, PPRCFR                         )
 !     ######################################################################
@@ -106,7 +106,7 @@ END MODULE MODI_LIMA
 !  B. Vie      03/03/2020: use DTHRAD instead of dT/dt in Smax diagnostic computation
 !  P. Wautelet 28/05/2020: bugfix: correct array start for PSVT and PSVS
 !  P. Wautelet 03/02/2021: budgets: add new source if LIMA splitting: CORR2
-!  B.Vie       06/2021   : add subgrid condensation with LIMA
+!  B. Vie         06/2021: add subgrid condensation with LIMA
 !-----------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -130,7 +130,7 @@ USE MODD_PARAM_LIMA,      ONLY: LCOLD, LRAIN, LWARM, NMOD_CCN, NMOD_IFN, NMOD_IM
                                 LHAIL, LSNOW
 USE MODD_PARAM_LIMA_COLD, ONLY: XAI, XBI
 USE MODD_PARAM_LIMA_WARM, ONLY: XLBC, XLBEXC, XAC, XBC, XAR, XBR
-USE MODD_TURB_n,         ONLY : LSUBG_COND
+USE MODD_TURB_n,          ONLY: LSUBG_COND
 
 use mode_budget,          only: Budget_store_add, Budget_store_init, Budget_store_end
 use mode_tools,           only: Countjv

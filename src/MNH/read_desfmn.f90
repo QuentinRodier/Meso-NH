@@ -724,15 +724,15 @@ IF (NVERB >= 10) THEN
   WRITE(UNIT=ILUOUT,FMT="('********** CHEMICAL MONITORn *******')")  
   WRITE(UNIT=ILUOUT,NML=NAM_CH_MNHCn)
 !
-  WRITE(UNIT=ILUOUT,FMT="('************ CHEMICAL SOLVER ******************')")
+  WRITE(UNIT=ILUOUT,FMT="('********** CHEMICAL SOLVER *********')")
   WRITE(UNIT=ILUOUT,NML=NAM_CH_SOLVERn)
 !
-  WRITE(UNIT=ILUOUT,FMT="('********** BLOWSNOWn *******************')")
+  WRITE(UNIT=ILUOUT,FMT="('********** BLOWSNOWn ***************')")
   WRITE(UNIT=ILUOUT,NML=NAM_BLOWSNOWn)
 !
-    WRITE(UNIT=ILUOUT,FMT="('************ BLANKn ****************************')")
-    WRITE(UNIT=ILUOUT,NML=NAM_BLANKn)  
-!  
+  WRITE(UNIT=ILUOUT,FMT="('********** BLANKn ******************')")
+  WRITE(UNIT=ILUOUT,NML=NAM_BLANKn)
+!
   IF (KMI==1) THEN
     WRITE(UNIT=ILUOUT,FMT="(/,'PART OF INITIAL FILE COMMON TO ALL THE MODELS')")
     WRITE(UNIT=ILUOUT,FMT="(  '---------------------------------------------')")

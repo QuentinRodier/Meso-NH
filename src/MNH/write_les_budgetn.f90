@@ -52,8 +52,8 @@ subroutine  Write_les_budget_n( tpdiafile )
 !          ------------
 
 use modd_conf_n,      only: luserv
-use modd_cst,         only: xg, XALPHAOC
-USE MODD_DYN_n, ONLY : LOCEAN
+use modd_cst,         only: xg, xalphaoc
+use modd_dyn_n,       only: locean
 use modd_field,       only: NMNHDIM_BUDGET_LES_LEVEL, NMNHDIM_BUDGET_LES_TIME, &
                             NMNHDIM_BUDGET_TERM, NMNHDIM_UNUSED,               &
                             tfield_metadata_base, TYPEREAL

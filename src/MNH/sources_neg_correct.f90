@@ -28,8 +28,8 @@ use modd_budget,     only: lbudget_th, lbudget_rv, lbudget_rc, lbudget_rr, lbudg
                            tbudgets
 use modd_cst,        only: xci, xcl, xcpd, xcpv, xlstt, xlvtt, xp00, xrd, xtt
 use modd_nsv,        only: nsv_c2r2beg, nsv_c2r2end, nsv_lima_beg, nsv_lima_end, nsv_lima_nc, nsv_lima_nr, nsv_lima_ni
-use modd_param_lima, only: lcold_lima => lcold, lrain_lima => lrain, lwarm_lima => lwarm, &
-                           xctmin_lima => xctmin, xrtmin_lima => xrtmin, lspro
+use modd_param_lima, only: lcold_lima => lcold, lrain_lima => lrain, lspro_lima => lspro, lwarm_lima => lwarm, &
+                           xctmin_lima => xctmin, xrtmin_lima => xrtmin
 
 use mode_budget,         only: Budget_store_init, Budget_store_end
 use mode_msg
@@ -287,7 +287,7 @@ CLOUD: select case ( hcloud )
     end if
 
     jlimaend=nsv_lima_end
-    if (lspro) jlimaend=jlimaend-1
+    if ( lspro_lima ) jlimaend=jlimaend-1
     prsvs(:, :, :, nsv_lima_beg : jlimaend) = Max( 0.0, prsvs(:, :, :, nsv_lima_beg : jlimaend) )
 
 end select CLOUD

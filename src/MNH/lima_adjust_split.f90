@@ -21,18 +21,18 @@ USE MODD_NSV,   only: NSV_LIMA_BEG
 INTEGER,                  INTENT(IN)   :: KRR        ! Number of moist variables
 INTEGER,                  INTENT(IN)   :: KMI        ! Model index 
 TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE     ! Output file
-CHARACTER(len=4),              INTENT(IN)   :: HTURBDIM   ! Dimensionality of the
+CHARACTER(len=4),         INTENT(IN)   :: HTURBDIM   ! Dimensionality of the
                                                      ! turbulence scheme
-CHARACTER(len=4),              INTENT(IN)   :: HRAD       ! Radiation scheme name
+CHARACTER(len=4),         INTENT(IN)   :: HRAD       ! Radiation scheme name
 LOGICAL,                  INTENT(IN)   :: OSUBG_COND ! Switch for Subgrid 
                                                      ! Condensation
-LOGICAL                                 :: OSIGMAS  ! Switch for Sigma_s: 
-                                                    ! use values computed in CONDENSATION
-                                                    ! or that from turbulence scheme
-CHARACTER(len=80),             INTENT(IN)    :: HCONDENS
-CHARACTER(len=4),              INTENT(IN)    :: HLAMBDA3 ! formulation for lambda3 coeff
+LOGICAL,                  INTENT(IN)   :: OSIGMAS    ! Switch for Sigma_s: 
+                                                     ! use values computed in CONDENSATION
+                                                     ! or that from turbulence scheme
+CHARACTER(len=80),        INTENT(IN)   :: HCONDENS
+CHARACTER(len=4),         INTENT(IN)   :: HLAMBDA3   ! formulation for lambda3 coeff
 REAL,                     INTENT(IN)   :: PTSTEP     ! Time step          
-REAL,                     INTENT(IN)   :: PSIGQSAT  ! coeff applied to qsat variance contribution
+REAL,                     INTENT(IN)   :: PSIGQSAT   ! coeff applied to qsat variance contribution
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODREF  ! Dry density of the 
                                                      ! reference state
@@ -43,8 +43,8 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PSIGS     ! Sigma_s at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PMFCONV   ! 
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABST    ! Absolute Pressure at t     
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PZZ       !     
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD   ! Radiative temperature tendency
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU     ! updraft velocity used for
+REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PDTHRAD   ! Radiative temperature tendency
+REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PW_NU     ! updraft velocity used for
 !
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT       ! m.r. at t
 !
@@ -155,9 +155,9 @@ use modd_budget,           only: lbu_enable, nbumod,                            
                                  tbudgets
 USE MODD_CONF
 USE MODD_CST
-USE MODD_FIELD,   ONLY: TFIELDDATA, TYPEREAL
-USE MODD_IO,      ONLY: TFILEDATA
-USE MODD_LUNIT_n, ONLY: TLUOUT
+use modd_field,            only: TFIELDDATA, TYPEREAL
+USE MODD_IO,               ONLY: TFILEDATA
+USE MODD_LUNIT_n,          ONLY: TLUOUT
 USE MODD_NSV
 USE MODD_PARAMETERS
 USE MODD_PARAM_LIMA
@@ -183,18 +183,18 @@ IMPLICIT NONE
 INTEGER,                  INTENT(IN)   :: KRR        ! Number of moist variables
 INTEGER,                  INTENT(IN)   :: KMI        ! Model index 
 TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE     ! Output file
-CHARACTER(len=4),              INTENT(IN)   :: HTURBDIM   ! Dimensionality of the
+CHARACTER(len=4),         INTENT(IN)   :: HTURBDIM   ! Dimensionality of the
                                                      ! turbulence scheme
-CHARACTER(len=4),              INTENT(IN)   :: HRAD       ! Radiation scheme name
+CHARACTER(len=4),         INTENT(IN)   :: HRAD       ! Radiation scheme name
 LOGICAL,                  INTENT(IN)   :: OSUBG_COND ! Switch for Subgrid 
                                                      ! Condensation
-LOGICAL                                 :: OSIGMAS  ! Switch for Sigma_s: 
-                                                    ! use values computed in CONDENSATION
-                                                    ! or that from turbulence scheme
-CHARACTER(len=80),             INTENT(IN)    :: HCONDENS
-CHARACTER(len=4),              INTENT(IN)    :: HLAMBDA3 ! formulation for lambda3 coeff
+LOGICAL,                  INTENT(IN)   :: OSIGMAS    ! Switch for Sigma_s: 
+                                                     ! use values computed in CONDENSATION
+                                                     ! or that from turbulence scheme
+CHARACTER(len=80),        INTENT(IN)    :: HCONDENS
+CHARACTER(len=4),         INTENT(IN)    :: HLAMBDA3  ! formulation for lambda3 coeff
 REAL,                     INTENT(IN)   :: PTSTEP     ! Time step          
-REAL,                     INTENT(IN)   :: PSIGQSAT  ! coeff applied to qsat variance contribution
+REAL,                     INTENT(IN)   :: PSIGQSAT   ! coeff applied to qsat variance contribution
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODREF  ! Dry density of the 
                                                      ! reference state

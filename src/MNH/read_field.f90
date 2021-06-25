@@ -9,7 +9,7 @@
 !
 INTERFACE 
 !
-      SUBROUTINE READ_FIELD(KOCMI,TPINIFILE,KIU,KJU,KKU,                           &
+      SUBROUTINE READ_FIELD(KOCEMI,TPINIFILE,KIU,KJU,KKU,                    &
             HGETTKET,HGETRVT,HGETRCT,HGETRRT,HGETRIT,HGETCIT,HGETZWS,        &
             HGETRST,HGETRGT,HGETRHT,HGETSVT,HGETSRCT,HGETSIGS,HGETCLDFR,     &
             HGETBL_DEPTH,HGETSBL_DEPTH,HGETPHC,HGETPHR,HUVW_ADV_SCHEME,      &
@@ -37,8 +37,9 @@ USE MODD_IO, ONLY : TFILEDATA
 USE MODD_TIME ! for type DATE_TIME
 !
 !
+INTEGER,                   INTENT(IN)  :: KOCEMI !Ocan model index
 TYPE(TFILEDATA),           INTENT(IN)  :: TPINIFILE    !Initial file
-INTEGER,                   INTENT(IN)  :: KIU, KJU, KKU,KOCMI   
+INTEGER,                   INTENT(IN)  :: KIU, KJU, KKU
                              ! array sizes in x, y and z  directions
 ! 
 CHARACTER (LEN=*),         INTENT(IN)  :: HGETTKET,                          &
@@ -131,7 +132,7 @@ END INTERFACE
 END MODULE MODI_READ_FIELD
 !
 !     ########################################################################
-      SUBROUTINE READ_FIELD(KOCEMI,TPINIFILE,KIU,KJU,KKU,                           &
+      SUBROUTINE READ_FIELD(KOCEMI,TPINIFILE,KIU,KJU,KKU,                    &
             HGETTKET,HGETRVT,HGETRCT,HGETRRT,HGETRIT,HGETCIT,HGETZWS,        &
             HGETRST,HGETRGT,HGETRHT,HGETSVT,HGETSRCT,HGETSIGS,HGETCLDFR,     &
             HGETBL_DEPTH,HGETSBL_DEPTH,HGETPHC,HGETPHR,HUVW_ADV_SCHEME,      &
@@ -271,14 +272,14 @@ USE MODD_CONF_n
 USE MODD_CST
 USE MODD_CTURB
 USE MODD_DUST
-USE MODD_DYN_n, ONLY : LOCEAN
+USE MODD_DYN_n,           ONLY: LOCEAN
 USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
 use modd_field,           only: tfielddata, tfieldlist, TYPEDATE, TYPEREAL,TYPELOG,TYPEINT
 USE MODD_FIELD_n,         only: XZWS_DEFAULT
 #ifdef MNH_FOREFIRE
 USE MODD_FOREFIRE
 #endif
-USE MODD_IBM_PARAM_n, ONLY: LIBM
+USE MODD_IBM_PARAM_n,     ONLY: LIBM
 USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
 USE MODD_IO,              ONLY: TFILEDATA
 USE MODD_LATZ_EDFLX
@@ -292,11 +293,11 @@ USE MODD_PARAM_LIMA     , ONLY: NMOD_CCN, LSCAV, LAERO_MASS,                &
                                 NMOD_IFN, NMOD_IMM, NINDICE_CCN_IMM, LHHONI
 USE MODD_PARAM_LIMA_COLD, ONLY: CLIMA_COLD_NAMES
 USE MODD_PARAM_LIMA_WARM, ONLY: CLIMA_WARM_NAMES, CAERO_MASS
-USE MODD_PARAM_n,           ONLY: CSCONV
+USE MODD_PARAM_n,         ONLY: CSCONV
 USE MODD_PASPOL
 USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
 USE MODD_RECYCL_PARAM_n
-USE MODD_REF, ONLY:LCOUPLES
+USE MODD_REF,             ONLY: LCOUPLES
 USE MODD_SALT
 USE MODD_TIME ! for type DATE_TIME
 !
@@ -314,8 +315,9 @@ IMPLICIT NONE
 !
 !
 !
+INTEGER,                   INTENT(IN)  :: KOCEMI !Ocan model index
 TYPE(TFILEDATA),           INTENT(IN)  :: TPINIFILE    !Initial file
-INTEGER,                   INTENT(IN)  :: KIU, KJU, KKU,KOCEMI   
+INTEGER,                   INTENT(IN)  :: KIU, KJU, KKU
                              ! array sizes in x, y and z  directions
 ! 
 CHARACTER (LEN=*),         INTENT(IN)  :: HGETTKET,                          &

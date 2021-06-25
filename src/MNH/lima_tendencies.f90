@@ -518,7 +518,7 @@ END WHERE
 ! Call microphysical processes   
 !
 IF (LCOLD .AND. LWARM) THEN
-   CALL LIMA_DROPLETS_HOM_FREEZING (PTSTEP, LDCOMPUTE,                 & ! indepenedent from CF,IF,PF
+   CALL LIMA_DROPLETS_HOM_FREEZING (PTSTEP, LDCOMPUTE,                 & ! independent from CF,IF,PF
                                     ZT, ZLVFACT, ZLSFACT,              &
                                     PRCT, PCCT, ZLBDC,                 &
                                     P_TH_HONC, P_RC_HONC, P_CC_HONC,   &

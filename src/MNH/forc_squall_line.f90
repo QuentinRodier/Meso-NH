@@ -55,11 +55,11 @@ END MODULE MODI_FORC_SQUALL_LINE
 !              ------------
 !
 USE MODD_PARAMETERS
-USE MODD_BLANK_n, ONLY : XDUMMY1,    & ! cooling rate (K/s)
-                       XDUMMY2,    & ! vertical size of the disturbance
-                       XDUMMY3,    & ! horizontal size of the disturbance
-                       XDUMMY4,    & ! left border of the disturbance
-                       XDUMMY5       ! duration (s) of the disturbance
+USE MODD_BLANK_n,    ONLY: XDUMMY1,    & ! cooling rate (K/s)
+                           XDUMMY2,    & ! vertical size of the disturbance
+                           XDUMMY3,    & ! horizontal size of the disturbance
+                           XDUMMY4,    & ! left border of the disturbance
+                           XDUMMY5       ! duration (s) of the disturbance
 !
 IMPLICIT NONE
 !

@@ -330,20 +330,10 @@ SUBROUTINE IBM_PREP_LS(OIBM,HIBM_TYPE,PPHI)
         ENDIF
         !
         IF (JN==1.AND.TRIM(YSTRING(1:2))=='vn') THEN
-           WRITE(*,*) '*****************************'
-           WRITE(*,*) '***** vn found in .obj ******'
-           WRITE(*,*) '***** Unable to read it *****'
-           WRITE(*,*) '**** (stopped execution) ****'
-           WRITE(*,*) '*****************************'
            call Print_msg( NVERB_FATAL, 'GEN', 'IBM_PREP_LS', 'Unable to read vn found in .obj' )
         ENDIF
         !
         IF (JN==1.AND.TRIM(YSTRING(1:2))=='vt') THEN
-           WRITE(*,*) '*****************************'
-           WRITE(*,*) '***** vt found in .obj ******'
-           WRITE(*,*) '***** Unable to read it *****'
-           WRITE(*,*) '**** (stopped execution) ****'
-           WRITE(*,*) '*****************************'
            call Print_msg( NVERB_FATAL, 'GEN', 'IBM_PREP_LS', 'Unable to read vt found in .obj' )
         ENDIF
         !

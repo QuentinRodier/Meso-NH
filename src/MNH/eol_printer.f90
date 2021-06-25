@@ -296,7 +296,7 @@ CHARACTER(LEN=1024) :: HFILE      ! File name
 INB_WT   = TFARM%NNB_TURBINES
 INB_B    = TTURBINE%NNB_BLADES
 INB_BELT = TBLADE%NNB_BLAELT
-! Hard coded variables, but they will be usefull in next updates
+! Hard coded variables, but they will be useful in next updates
 INB_TELT = 2
 INB_NELT = 2
 !

@@ -88,7 +88,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!      Module MODD_BUDGET : CBUTYPE,NBUMOD,XBULEN,NBUKL, NBUKH,LBU_KCP,XBUWRI
 !!         NBUIL, NBUIH,NBUJL, NBUJH,LBU_ICP,LBU_JCP,NBUMASK
 !!
-!!      Module MODD_BLANK_n :
+!!      Module MODD_BLANK_n:
 !!
 !!          XDUMMYi, NDUMMYi, LDUMMYi, CDUMMYi
 !!
@@ -208,14 +208,14 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!                   11/2019 C.Lac correction in the drag formula and application to building in addition to tree
 !  P. Wautelet 17/04/2020: move budgets switch values into modd_budget
 !  P. Wautelet 30/06/2020: add NNETURSV, NNEADVSV and NNECONSV variables
-!!                   02/2021 (F.Auguste,T.Nagel) add IBM defaults parameters
-!!                   02/2021 (T.Nagel) add turbulence recycling defaults parameters
+!  F. Auguste, T. Nagel 02/2021: add IBM defaults parameters
+!  T. Nagel       02/2021: add turbulence recycling defaults parameters
 !  P-A Joulin  21/05/2021: add Wind turbines
 !  S. Riette   21/05/2021: add options to PDF subgrid scheme
-!                    05/2021 D. Ricard add the contribution of Leonard terms in the turbulence scheme
-!! JL Redelsperger 06/2021 add parameters allowing to active idealized oceanic convection
-!!      B. Vie       06/2021 Add prognostic supersaturation for LIMA
-!!      Q. Rodier    06/2021 modify default value to LGZ=F (grey-zone corr.), LSEDI and OSEDC=T (LIMA sedimentation)
+!  D. Ricard      05/2021: add the contribution of Leonard terms in the turbulence scheme
+!  JL Redelsperger 06/2021: add parameters allowing to active idealized oceanic convection
+!  B. Vie         06/2021: add prognostic supersaturation for LIMA
+!  Q. Rodier      06/2021: modify default value to LGZ=F (grey-zone corr.), LSEDI and OSEDC=T (LIMA sedimentation)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -267,22 +267,22 @@ USE MODD_EOL_SHARED_IO
 USE MODD_ALLSTATION_n
 !
 !
-USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LSEDI, LHHONI, LSNOW, LHAIL, LMEYERS,&
-                            NMOD_IFN, XIFN_CONC, LIFN_HOM, CIFN_SPECIES,          &
-                            CINT_MIXING, NMOD_IMM, NIND_SPECIE,                  &
-                            CPRISTINE_ICE_LIMA, CHEVRIMED_ICE_LIMA,            &
-                            XFACTNUC_DEP, XFACTNUC_CON,                        &
-                            OWARM=>LWARM, LACTI, ORAIN=>LRAIN, OSEDC=>LSEDC,   &
-                            OACTIT=>LACTIT, LBOUND, LSPRO, LADJ,               &
-                            NMOD_CCN, XCCN_CONC,        &
-                            LCCN_HOM, CCCN_MODES,                              &
-                            YALPHAR=>XALPHAR, YNUR=>XNUR,                      &
-                            YALPHAC=>XALPHAC, YNUC=>XNUC, CINI_CCN=>HINI_CCN,  &
-                            CTYPE_CCN=>HTYPE_CCN, YFSOLUB_CCN=>XFSOLUB_CCN,    &
-                            YACTEMP_CCN=>XACTEMP_CCN, YAERDIFF=>XAERDIFF,      &
-                            YAERHEIGHT=>XAERHEIGHT,                            &
-                            LSCAV, LAERO_MASS, NPHILLIPS,                      &
-                            ODEPOC=>LDEPOC, OVDEPOC=>XVDEPOC, OACTTKE=>LACTTKE,&
+USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LSEDI, LHHONI, LSNOW, LHAIL, LMEYERS,       &
+                            NMOD_IFN, XIFN_CONC, LIFN_HOM, CIFN_SPECIES,              &
+                            CINT_MIXING, NMOD_IMM, NIND_SPECIE,                       &
+                            CPRISTINE_ICE_LIMA, CHEVRIMED_ICE_LIMA,                   &
+                            XFACTNUC_DEP, XFACTNUC_CON,                               &
+                            OWARM=>LWARM, LACTI, ORAIN=>LRAIN, OSEDC=>LSEDC,          &
+                            OACTIT=>LACTIT, LBOUND, LSPRO, LADJ,                      &
+                            NMOD_CCN, XCCN_CONC,                                      &
+                            LCCN_HOM, CCCN_MODES,                                     &
+                            YALPHAR=>XALPHAR, YNUR=>XNUR,                             &
+                            YALPHAC=>XALPHAC, YNUC=>XNUC, CINI_CCN=>HINI_CCN,         &
+                            CTYPE_CCN=>HTYPE_CCN, YFSOLUB_CCN=>XFSOLUB_CCN,           &
+                            YACTEMP_CCN=>XACTEMP_CCN, YAERDIFF=>XAERDIFF,             &
+                            YAERHEIGHT=>XAERHEIGHT,                                   &
+                            LSCAV, LAERO_MASS, NPHILLIPS,                             &
+                            ODEPOC=>LDEPOC, OVDEPOC=>XVDEPOC, OACTTKE=>LACTTKE,       &
                             LPTSPLIT, L_LFEEDBACKT=>LFEEDBACKT, L_NMAXITER=>NMAXITER, &
                             L_XMRSTEP=>XMRSTEP, L_XTSTEP_TS=>XTSTEP_TS
 !
@@ -589,16 +589,16 @@ LTECOUTPTS        = .FALSE.
 !*      10.e   SET DEFAULT VALUES FOR MODD_ALLSTATION_n :
 !             ----------------------------------
 !
-NNUMB_STAT     = 0
+NNUMB_STAT    = 0
 XSTEP_STAT    = 1.0
 XX_STAT(:)    = XUNDEF
 XY_STAT(:)    = XUNDEF
 XZ_STAT(:)    = XUNDEF
 XLAT_STAT(:)  = XUNDEF
 XLON_STAT(:)  = XUNDEF
-CNAME_STAT(:) ="        "
-CTYPE_STAT(:) ="        "
-CFILE_STAT    ="NO_INPUT_CSV"
+CNAME_STAT(:) = ''
+CTYPE_STAT(:) = ''
+CFILE_STAT    = 'NO_INPUT_CSV'
 LDIAG_RESULTS = .FALSE.
 !
 !-------------------------------------------------------------------------------
@@ -1354,25 +1354,25 @@ ENDIF
 !*      32.   SET DEFAULT VALUES FOR MODD_RECYCL_PARAMn         
 !             --------------------------------------
 !
-  LRECYCL        = .FALSE.
-  LRECYCLN       = .FALSE.
-  LRECYCLW       = .FALSE.
-  LRECYCLE       = .FALSE.
-  LRECYCLS       = .FALSE.
-  XDRECYCLN = 0.
+  LRECYCL  = .FALSE.
+  LRECYCLN = .FALSE.
+  LRECYCLW = .FALSE.
+  LRECYCLE = .FALSE.
+  LRECYCLS = .FALSE.
+  XDRECYCLN  = 0.
   XARECYCLN  = 0.
-  XDRECYCLW = 0.
+  XDRECYCLW  = 0.
   XARECYCLW  = 0.
-  XDRECYCLS = 0.
+  XDRECYCLS  = 0.
   XARECYCLS  = 0.
-  XDRECYCLE = 0.
+  XDRECYCLE  = 0.
   XARECYCLE  = 0.
-  XTMOY  = 0.
-  XTMOYCOUNT  = 0.
-  XNUMBELT  = 28.
-  XRCOEFF  = 0.2
-  XTBVTOP = 500.
-  XTBVBOT = 300.
+  XTMOY      = 0.
+  XTMOYCOUNT = 0.
+  XNUMBELT   = 28.
+  XRCOEFF    = 0.2
+  XTBVTOP    = 500.
+  XTBVBOT    = 300.
 !
 !
 END SUBROUTINE DEFAULT_DESFM_n

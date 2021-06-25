@@ -271,7 +271,6 @@ END MODULE MODI_RESOLVED_CLOUD
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 01/02/2019: ZRSMIN is now allocatable (instead of size of XRTMIN which was sometimes not allocated)
 !  C. Lac         02/2019: add rain fraction as an output field
-!  P. Wautelet 24/02/2020: bugfix: corrected budget name (DEPI->CDEPI) for ice_adjust
 !  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !  B. Vie         03/2020: LIMA negativity checks after turbulence, advection and microphysics budgets
 !  B. Vie      03/03/2020: use DTHRAD instead of dT/dt in Smax diagnostic computation
@@ -281,7 +280,7 @@ END MODULE MODI_RESOLVED_CLOUD
 !  P. Wautelet 23/06/2020: remove ZSVS and ZSVT to improve code readability
 !  P. Wautelet 30/06/2020: move removal of negative scalar variables to Sources_neg_correct
 !  P. Wautelet 30/06/2020: remove non-local corrections
-!!      B. Vie          06/2020 Add prognostic supersaturation for LIMA
+!  B. Vie         06/2020: add prognostic supersaturation for LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

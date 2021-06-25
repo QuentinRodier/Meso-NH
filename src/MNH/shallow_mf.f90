@@ -169,7 +169,7 @@ END MODULE MODI_SHALLOW_MF
 !!      Q.Rodier  01/2019 : support RM17 mixing length
 !!      R.Honnert 1/2019  : remove SURF 
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
-!       R.Honnert 04/2021: remove HRIO and BOUT schemes
+!  R. Honnert     04/2021: remove HRIO and BOUT schemes
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS

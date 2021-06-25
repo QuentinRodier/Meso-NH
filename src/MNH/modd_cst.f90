@@ -59,7 +59,7 @@ REAL,SAVE :: XRADIUS,XOMEGA     ! Earth radius, earth rotation
 REAL,SAVE :: XG                 ! Gravity constant
 !
 REAL,SAVE :: XP00               ! Reference pressure
-REAL,SAVE :: XP00OCEAN          ! Reference pressurefor ocean model
+REAL,SAVE :: XP00OCEAN          ! Reference pressure for ocean model
 REAL,SAVE :: XRH00OCEAN         ! Reference density for ocean model
 !
 REAL,SAVE :: XSTEFAN,XI0        ! Stefan-Boltzman constant, solar constant

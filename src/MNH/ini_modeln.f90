@@ -973,8 +973,8 @@ ALLOCATE(XDZZ(IIU,IJU,IKU))
 !
 !*       3.3   Modules MODD_REF and  MODD_REF_n
 !
-! different reference state for O and A models
-!  POur le moment meme etat de ref O et A
+! Different reference states for Ocean and Atmosphere models
+!  For the moment, same reference states for O and A
 !IF ((KMI == 1).OR.LCOUPLES) THEN
 IF (KMI==1) THEN
   ALLOCATE(XRHODREFZ(IKU),XTHVREFZ(IKU))
@@ -1840,11 +1840,12 @@ IF (CCLOUD=='LIMA') CALL INIT_AEROSOL_PROPERTIES
 !              --------------------------------
 !
 CALL MPPDB_CHECK3D(XUT,"INI_MODEL_N-before read_field::XUT",PRECISION)
-CALL READ_FIELD(KMI,TPINIFILE,IIU,IJU,IKU,                                        &
+CALL READ_FIELD(KMI,TPINIFILE,IIU,IJU,IKU,                                    &
                 CGETTKET,CGETRVT,CGETRCT,CGETRRT,CGETRIT,CGETCIT,CGETZWS,     &
                 CGETRST,CGETRGT,CGETRHT,CGETSVT,CGETSRCT,CGETSIGS,CGETCLDFR,  &
-                CGETBL_DEPTH,CGETSBL_DEPTH,CGETPHC,CGETPHR,CUVW_ADV_SCHEME,   &
-                CTEMP_SCHEME,NSIZELBX_ll,NSIZELBXU_ll,NSIZELBY_ll,NSIZELBYV_ll,&
+                CGETBL_DEPTH,CGETSBL_DEPTH,CGETPHC,CGETPHR,                   &
+                CUVW_ADV_SCHEME, CTEMP_SCHEME,                                &
+                NSIZELBX_ll, NSIZELBXU_ll, NSIZELBY_ll, NSIZELBYV_ll,         &
                 NSIZELBXTKE_ll,NSIZELBYTKE_ll,                                &
                 NSIZELBXR_ll,NSIZELBYR_ll,NSIZELBXSV_ll,NSIZELBYSV_ll,        &
                 XUM,XVM,XWM,XDUM,XDVM,XDWM,                                   &

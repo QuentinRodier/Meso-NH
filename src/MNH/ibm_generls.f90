@@ -296,12 +296,7 @@ SUBROUTINE IBM_GENERLS(PIBM_FACES,PNORM_FACES,PV1,PV2,PV3,PX_MIN,PY_MIN,PX_MAX,P
                        ZDIST = SQRT(ZP1P0(1)**2+ZP1P0(2)**2+ZP1P0(3)**2)
                     ELSEIF (ZT>1.) THEN
                        ZDIST = SQRT(ZP2P0(1)**2+ZP2P0(2)**2+ZP2P0(3)**2)
-                    ELSE                    
-                       WRITE(*,*) '*****************************'
-                       WRITE(*,*) '********ERROR in ZT **********'
-                       WRITE(*,*) '******* calculation **********'
-                       WRITE(*,*) '**** (stopped execution) ****'
-                       WRITE(*,*) '*****************************'
+                    ELSE
                        call Print_msg( NVERB_FATAL, 'GEN', 'IBM_PREP_LS', 'Error in ZT calculation' )
                     ENDIF
                  ELSE
@@ -335,11 +330,6 @@ SUBROUTINE IBM_GENERLS(PIBM_FACES,PNORM_FACES,PV1,PV2,PV3,PX_MIN,PY_MIN,PX_MAX,P
                     ELSEIF (ZT>1.) THEN
                        ZDIST = SQRT(ZP3P0(1)**2+ZP3P0(2)**2+ZP3P0(3)**2)
                     ELSE
-                       WRITE(*,*) '*****************************'
-                       WRITE(*,*) '********ERROR in ZT **********'
-                       WRITE(*,*) '******* calculation **********'
-                       WRITE(*,*) '**** (stopped execution) ****'
-                       WRITE(*,*) '*****************************'
                        call Print_msg( NVERB_FATAL, 'GEN', 'IBM_PREP_LS', 'Error in ZT calculation' )
                     ENDIF
                  ELSE
@@ -373,11 +363,6 @@ SUBROUTINE IBM_GENERLS(PIBM_FACES,PNORM_FACES,PV1,PV2,PV3,PX_MIN,PY_MIN,PX_MAX,P
                     ELSEIF (ZT>1.) THEN
                        ZDIST = SQRT(ZP1P0(1)**2+ZP1P0(2)**2+ZP1P0(3)**2)
                     ELSE
-                       WRITE(*,*) '*****************************'
-                       WRITE(*,*) '********ERROR in ZT **********'
-                       WRITE(*,*) '******* calculation **********'
-                       WRITE(*,*) '**** (stopped execution) ****'
-                       WRITE(*,*) '*****************************'
                        call Print_msg( NVERB_FATAL, 'GEN', 'IBM_PREP_LS', 'Error in ZT calculation' )
                     ENDIF
                  ELSE
@@ -385,11 +370,6 @@ SUBROUTINE IBM_GENERLS(PIBM_FACES,PNORM_FACES,PV1,PV2,PV3,PX_MIN,PY_MIN,PX_MAX,P
                     LFACE = .TRUE.
                  ENDIF
               ELSE
-                 WRITE(*,*) '*****************************'
-                 WRITE(*,*) '********ERROR in ZF **********'
-                 WRITE(*,*) '******* instruction **********'
-                 WRITE(*,*) '**** (stopped execution) ****'
-                 WRITE(*,*) '*****************************'
                  call Print_msg( NVERB_FATAL, 'GEN', 'IBM_PREP_LS', 'Error in ZF instruction' )
               ENDIF
               ZDIST = SIGN(ZDIST,-ZSIGN)

@@ -29,7 +29,7 @@
 !
 !*       0.   DECLARATIONS
 !             ------------
-        !
+!
 USE MODD_TYPE_DATE
 !
 IMPLICIT NONE

@@ -69,7 +69,7 @@ END MODULE MODI_INI_NSV
 !  P. Wautelet 10/03/2021: move scalar variable name initializations to ini_nsv
 !  P. Wautelet 10/03/2021: add CSVNAMES and CSVNAMES_A to store the name of all the scalar variables
 !  P. Wautelet 30/03/2021: move NINDICE_CCN_IMM and NIMM initializations from init_aerosol_properties to ini_nsv
-!!      B. Vie          06/2021 Add prognostic supersaturation for LIMA
+!  B. Vie         06/2021: add prognostic supersaturation for LIMA
 !! 
 !-------------------------------------------------------------------------------
 !

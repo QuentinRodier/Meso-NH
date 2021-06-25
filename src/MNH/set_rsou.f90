@@ -252,7 +252,7 @@ END MODULE MODI_SET_RSOU
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 19/04/2019: removed unused dummy arguments and variables
-!!  JL Redelsperger  : 01/2021: Ocean LES cases added        
+!  JL Redelsperger 01/2021: Ocean LES cases added
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -261,11 +261,11 @@ END MODULE MODI_SET_RSOU
 USE MODD_CONF
 USE MODD_CONF_n
 USE MODD_CST
-USE MODD_DYN_n, ONLY : LOCEAN
+USE MODD_DYN_n,      ONLY: LOCEAN
 USE MODD_FIELD_n
 USE MODD_GRID
 USE MODD_GRID_n
-USE MODD_LUNIT_n, ONLY: TLUOUT
+USE MODD_LUNIT_n,    ONLY: TLUOUT
 USE MODD_IO,         ONLY: TFILEDATA
 USE MODD_NETCDF
 USE MODD_OCEANH

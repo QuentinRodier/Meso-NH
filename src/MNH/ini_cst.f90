@@ -113,7 +113,7 @@ XG      = 9.80665
 !	        -------------------
 !
 ! Ocean model cst same as in 1D/CMO SURFEX
-! values used in init_cst to overwrite XP00 and XTH00
+! values used in ini_cst to overwrite XP00 and XTH00
 XRH00OCEAN =1024. 
 XTH00OCEAN = 286.65
 XSA00OCEAN= 32.6

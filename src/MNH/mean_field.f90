@@ -10,7 +10,7 @@
 !
 INTERFACE
 
-      SUBROUTINE MEAN_FIELD(PUT, PVT, PWT, PTHT, PTKET,PPABST,PSVT)   
+      SUBROUTINE MEAN_FIELD( PUT, PVT, PWT, PTHT, PTKET, PPABST, PSVT )
 
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT, PVT, PWT   ! variables
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT, PTKET   ! variables
@@ -23,9 +23,9 @@ END INTERFACE
 
 END MODULE MODI_MEAN_FIELD
 !
-!     #######################################################
-      SUBROUTINE MEAN_FIELD(PUT, PVT, PWT, PTHT, PTKET,PPABST,PSVT)   
-!     #######################################################
+!     #################################################################
+      SUBROUTINE MEAN_FIELD( PUT, PVT, PWT, PTHT, PTKET, PPABST, PSVT )
+!     #################################################################
 !
 !!****  *MEAN_FIELD * -
 !!

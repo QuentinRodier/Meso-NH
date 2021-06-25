@@ -56,7 +56,7 @@ TYPE DYN_t
 !
   INTEGER :: NSTOP          ! Number of time step
   REAL    :: XTSTEP         ! Time step
-  LOGICAL   :: LOCEAN
+  LOGICAL :: LOCEAN
 !
 !++++++++++++++++++++++++++++++++++
 !PART USED BY THE PRESSURE SOLVER

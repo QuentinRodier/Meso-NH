@@ -160,13 +160,13 @@ END MODULE MODI_RAD_BOUND
 !              ------------
 !
 USE MODD_CONF         
-USE MODD_PARAMETERS
 USE MODD_CTURB
-!
-USE MODI_CPHASE_PROFILE
+USE MODD_PARAMETERS
 !
 USE MODE_ll
 USE MODD_RECYCL_PARAM_n
+!
+USE MODI_CPHASE_PROFILE
 !
 IMPLICIT NONE
 !
@@ -258,8 +258,8 @@ ZALPHA2 = 1.
 !
 !*       2.    LBC FILLING IN THE X DIRECTION (LEFT WEST SIDE):
 !              ------------------------------
-!       ====>  It only concernes U component 
-!                                ----------- 
+!       ====>  It only concerns U component
+!                               -----------
 !
 IF (LWEST_ll( )) THEN
 ! 
@@ -326,8 +326,8 @@ END IF
 !
 !*       3.    LBC FILLING IN THE X DIRECTION (RIGHT EAST SIDE):
 !              ------------------------------
-!       ====>  It only concernes U component 
-!                                ----------- 
+!       ====>  It only concerns U component
+!                               -----------
 !
 IF (LEAST_ll( )) THEN
 !
@@ -397,8 +397,8 @@ END IF
 !
 !*       4.    LBC FILLING IN THE Y DIRECTION (BOTTOM SOUTH SIDE):   
 !              ------------------------------
-!       ====>  It only concernes V component 
-!                                ----------- 
+!       ====>  It only concerns V component
+!                               -----------
 !
 IF (LSOUTH_ll( )) THEN
 !
@@ -463,8 +463,8 @@ END IF
 !
 !*       5.    LBC FILLING IN THE Y DIRECTION (TOP NORTH SIDE):   
 !              ------------------------------
-!       ====>  It only concernes V component 
-!                                ----------- 
+!       ====>  It only concerns V component
+!                               -----------
 !
 IF (LNORTH_ll( )) THEN
 !
