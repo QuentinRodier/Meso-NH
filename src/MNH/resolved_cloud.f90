@@ -802,7 +802,7 @@ SELECT CASE ( HCLOUD )
 !
     IF (.NOT. LRED .OR. (LRED .AND. LADJ_AFTER) ) THEN
       CALL ICE_ADJUST (1, IKU, 1, KRR, CFRAC_ICE_ADJUST, CCONDENS, CLAMBDA3,   &
-                       'CDEPI', OSUBG_COND, OSIGMAS, CSUBG_MF_PDF,             &
+                       'DEPI', OSUBG_COND, OSIGMAS, CSUBG_MF_PDF,              &
                        PTSTEP, PSIGQSAT,                                       &
                        PRHODJ, PEXNREF, PRHODREF, PSIGS, PMFCONV, PPABST, ZZZ, &
                        ZEXN, PCF_MF, PRC_MF, PRI_MF,                           &
@@ -900,7 +900,7 @@ SELECT CASE ( HCLOUD )
 !
     IF (.NOT. LRED .OR. (LRED .AND. LADJ_AFTER) ) THEN
      CALL ICE_ADJUST (1, IKU, 1, KRR, CFRAC_ICE_ADJUST, CCONDENS, CLAMBDA3,  &
-                     'CDEPI', OSUBG_COND, OSIGMAS, CSUBG_MF_PDF,             &
+                     'DEPI', OSUBG_COND, OSIGMAS, CSUBG_MF_PDF,              &
                      PTSTEP, PSIGQSAT,                                       &
                      PRHODJ, PEXNREF, PRHODREF, PSIGS, PMFCONV, PPABST, ZZZ, &
                      ZEXN, PCF_MF, PRC_MF, PRI_MF,                           &

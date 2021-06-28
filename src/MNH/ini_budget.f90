@@ -1236,7 +1236,7 @@ if ( lbu_rth ) then
   tzsource%lavailable = hcloud(1:3) == 'ICE' .and. lred .and. ladj_before .and. celec == 'NONE'
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
-  tzsource%cmnhname   = 'CDEPI'
+  tzsource%cmnhname   = 'DEPI'
   tzsource%clongname  = 'deposition on ice'
   tzsource%lavailable = hcloud(1:3) == 'ICE' .and. ( .not. lred .or. ( lred .and. ladj_after ) .or. celec /= 'NONE')&
                     .or. (hcloud == 'LIMA' .and. lptsplit)
@@ -1548,7 +1548,7 @@ if ( tbudgets(NBUDGET_RV)%lenabled ) then
   tzsource%lavailable = hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE'
   call Budget_source_add( tbudgets(NBUDGET_RV), tzsource )
 
-  tzsource%cmnhname   = 'CDEPI'
+  tzsource%cmnhname   = 'DEPI'
   tzsource%clongname  = 'deposition on ice'
   tzsource%lavailable = hcloud(1:3) == 'ICE' .and. ( .not. lred .or. ( lred .and. ladj_after ) .or. celec /= 'NONE')&
                    .or. (hcloud == 'LIMA' .and. lptsplit)
@@ -1819,7 +1819,7 @@ if ( tbudgets(NBUDGET_RC)%lenabled ) then
   tzsource%lavailable = hcloud == 'LIMA'
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource )
 
-  tzsource%cmnhname   = 'CDEPI'
+  tzsource%cmnhname   = 'DEPI'
   tzsource%clongname  = 'condensation/deposition on ice'
   tzsource%lavailable = hcloud(1:3) == 'ICE' .and. ( .not. lred .or. ( lred .and. ladj_after ) .or. celec /= 'NONE' )
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource )
@@ -2299,7 +2299,7 @@ if ( tbudgets(NBUDGET_RI)%lenabled ) then
   tzsource%lavailable = hcloud == 'LIMA'
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
-  tzsource%cmnhname   = 'CDEPI'
+  tzsource%cmnhname   = 'DEPI'
   tzsource%clongname  = 'condensation/deposition on ice'
   tzsource%lavailable = hcloud(1:3) == 'ICE' .and. ( .not. lred .or. ( lred .and. ladj_after ) .or. celec /= 'NONE')&
                         .or. (hcloud == 'LIMA' .and. lptsplit)
@@ -3564,7 +3564,7 @@ SV_BUDGETS: do jsv = 1, ksv
           tzsource%lavailable = lwarm_ice
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
-          tzsource%cmnhname   = 'CDEPI'
+          tzsource%cmnhname   = 'DEPI'
           tzsource%clongname  = 'condensation/deposition on ice'
           tzsource%lavailable = .true.
           call Budget_source_add( tbudgets(ibudget), tzsource )
@@ -3632,7 +3632,7 @@ SV_BUDGETS: do jsv = 1, ksv
           tzsource%lavailable = lsedic_ice
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
-          tzsource%cmnhname   = 'CDEPI'
+          tzsource%cmnhname   = 'DEPI'
           tzsource%clongname  = 'condensation/deposition on ice'
           tzsource%lavailable = .true.
           call Budget_source_add( tbudgets(ibudget), tzsource )
@@ -3767,7 +3767,7 @@ SV_BUDGETS: do jsv = 1, ksv
           tzsource%lavailable = .true.
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
-          tzsource%cmnhname   = 'CDEPI'
+          tzsource%cmnhname   = 'DEPI'
           tzsource%clongname  = 'condensation/deposition on ice'
           tzsource%lavailable = .true.
           call Budget_source_add( tbudgets(ibudget), tzsource )
@@ -3965,7 +3965,7 @@ SV_BUDGETS: do jsv = 1, ksv
             tzsource%lavailable = lwarm_ice
             call Budget_source_add( tbudgets(ibudget), tzsource )
 
-            tzsource%cmnhname   = 'CDEPI'
+            tzsource%cmnhname   = 'DEPI'
             tzsource%clongname  = 'condensation/deposition on ice'
             tzsource%lavailable = .true.
             call Budget_source_add( tbudgets(ibudget), tzsource )

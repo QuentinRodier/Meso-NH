@@ -1648,7 +1648,7 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(NBUDGET_TH), 'HONC',  ztot_th_honc (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_TH), 'HONR',  ztot_th_honr (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_TH), 'DEPS',  ztot_th_deps (:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(NBUDGET_TH), 'CDEPI',  ztot_th_depi (:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_TH), 'DEPI',  ztot_th_depi (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_TH), 'DEPG',  ztot_th_depg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_TH), 'IMLT',  ztot_th_imlt (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_TH), 'BERFI', ztot_th_berfi(:, :, :) * zrhodjontstep(:, :, :) )
@@ -1663,7 +1663,7 @@ if ( lbu_enable ) then
   if ( lbudget_rv ) then
     call Budget_store_add( tbudgets(NBUDGET_RV), 'REVA', -ztot_rr_evap (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RV), 'DEPS', -ztot_rs_deps (:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(NBUDGET_RV), 'CDEPI', -ztot_ri_depi (:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_RV), 'DEPI', -ztot_ri_depi (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RV), 'DEPG', -ztot_rg_depg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RV), 'CORR2', ztot_rv_corr2(:, :, :) * zrhodjontstep(:, :, :) )
   end if
@@ -1705,7 +1705,7 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(NBUDGET_RI), 'BERFI', -ztot_rc_berfi(:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RI), 'HMS',    ztot_ri_hms  (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RI), 'CFRZ',   ztot_ri_cfrz (:, :, :) * zrhodjontstep(:, :, :) )
-    call Budget_store_add( tbudgets(NBUDGET_RI), 'CDEPI',   ztot_ri_depi (:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_RI), 'DEPI',   ztot_ri_depi (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RI), 'WETG',   ztot_ri_wetg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RI), 'DRYG',   ztot_ri_dryg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RI), 'HMG',    ztot_ri_hmg  (:, :, :) * zrhodjontstep(:, :, :) )
