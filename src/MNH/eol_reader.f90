@@ -612,6 +612,8 @@ FUNCTION GET_AIRFOIL_ID(TPTURBINE,TPBLADE,TPAIRFOIL,PRADIUS)
 !
 USE MODD_EOL_ALM, ONLY : TURBINE, BLADE, AIRFOIL
 !
+USE MODE_MSG
+!
 IMPLICIT NONE
 !
 TYPE(TURBINE),                INTENT(IN)  :: TPTURBINE    ! stored turbine data
@@ -620,6 +622,8 @@ TYPE(AIRFOIL), DIMENSION(:),  INTENT(IN)  :: TPAIRFOIL    ! stored arifoil data
 REAL,                         INTENT(IN)  :: PRADIUS      ! Radius position studied
 INTEGER                                   :: GET_AIRFOIL_ID
 !
+CHARACTER(LEN=:), ALLOCATABLE             :: YMSG
+CHARACTER(LEN=10)                         :: YRADIUS, YRMIN, YRMAX
 INTEGER                                   :: INB_BDATA    ! Total number of blade data
 INTEGER                                   :: JBDATA       ! Index over blade's data
 INTEGER                                   :: JA           ! Index over diffetents airfoils
@@ -627,9 +631,11 @@ REAL, DIMENSION(SIZE(TPBLADE%XRAD))       :: ZDELTARAD    ! 2*ZDELTARAD = sectio
 !
 ! Checking data
 IF ((PRADIUS < TPTURBINE%XR_MIN) .OR. (PRADIUS > TPTURBINE%XR_MAX)) THEN
- PRINT*, 'The studied radius R = ', PRADIUS, ' is out of blade range : [', &
-          TPTURBINE%XR_MIN, ';', TPTURBINE%XR_MAX, ']'
- RETURN
+  WRITE( YRADIUS, '( F10.2 )' ) PRADIUS
+  WRITE( YRMIN,   '( F10.2 )' ) TPTURBINE%XR_MIN
+  WRITE( YRMAX,   '( F10.2 )' ) TPTURBINE%XR_MAX
+  YMSG = 'The studied radius R=' // TRIM( YRADIUS ) // ' is out of blade range : [' // TRIM( YRMIN ) // ';' // TRIM( YRMAX ) // ']'
+  CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'GET_AIRFOIL_ID', YMSG )
 END IF
 !
 ! Preliminaires

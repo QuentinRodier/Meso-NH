@@ -141,16 +141,9 @@ ILUOUT = TLUOUT%NLU
 !
 !Moving averaged parameter verification
 IF (PTCOUNT==1 .AND. INT(XTMOY)/INT(XTMOYCOUNT) /= INT(XNUMBELT)) THEN
-    WRITE(ILUOUT,FMT=*)
-    WRITE(ILUOUT,FMT=*) ' ERROR : XTMOY/XTMOYCOUNT must be equal to XNUMBELT'
-    WRITE(ILUOUT,FMT=*) ' Please change the above parameters accordingly in NAM_RECYCL_PARAMn'
-    WRITE(ILUOUT,FMT=*)
-    WRITE(ILUOUT,FMT=*) '###############'
-    WRITE(ILUOUT,FMT=*) ' MESONH STOP'
-    WRITE(ILUOUT,FMT=*) '###############'
-    WRITE(ILUOUT,FMT=*)
-!callabortstop
-    CALL PRINT_MSG(NVERB_FATAL,'GEN','RECYCLING','XTMOY/XTMOYCOUNT must be equal to XNUMBELT')    
+    CMNHMSG(1) = 'XTMOY/XTMOYCOUNT must be equal to XNUMBELT'
+    CMNHMSG(2) = 'Please change the above parameters accordingly in NAM_RECYCL_PARAMn'
+    CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'RECYCLING' )
 END IF
 
 IF(CCONF == "RESTA" .AND. PTCOUNT == 1 ) THEN

@@ -280,7 +280,6 @@ IF (.NOT.LTIMESPLIT) THEN
 ! If time step too high : abort
  IF (PTSTEP > ZMAXTSTEP) THEN
   CALL EOL_WTCFL_ERROR(ZMAXTSTEP)
-  STOP
 ! If time step ok, continue
  ELSE
   INBSUBCOUNT = 1
