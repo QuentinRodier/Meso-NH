@@ -327,7 +327,10 @@ END SELECT
 ALLOCATE(ZRUS(SIZE(PUT,1),SIZE(PUT,2),SIZE(PWT,3),ISPL))
 ALLOCATE(ZRVS(SIZE(PUT,1),SIZE(PUT,2),SIZE(PWT,3),ISPL))
 ALLOCATE(ZRWS(SIZE(PUT,1),SIZE(PUT,2),SIZE(PWT,3),ISPL))
-ALLOCATE(ZIBM(SIZE(PUT,1),SIZE(PUT,2),SIZE(PWT,3),   3)) ; ZIBM = 1.
+IF ( LIBM ) THEN
+  ALLOCATE( ZIBM(SIZE(PUT,1), SIZE(PUT,2), SIZE(PWT,3), 3) )
+  ZIBM(:,:,:,:) = 1.
+END IF
 !
 IF (LIBM .AND. CIBM_ADV=='FREEZE') THEN
 
@@ -444,28 +447,47 @@ RKLOOP: DO JS = 1, ISPL
     ZVT = PV
     ZWT = PW
 !
-   DO JI = 1, JS
 !
 ! Intermediate guesses inside the RK loop
 !
-      ZUT(:,:,:) = ZUT(:,:,:) + ZBUT(JS,JI) *  PTSTEP *  &
-       ( ZRUS(:,:,:,JI) + PRUS_OTHER(:,:,:) ) / PMXM_RHODJ * ZIBM(:,:,:,1)
-      ZVT(:,:,:) = ZVT(:,:,:) + ZBUT(JS,JI) *  PTSTEP *  &
-       ( ZRVS(:,:,:,JI) + PRVS_OTHER(:,:,:) ) / PMYM_RHODJ * ZIBM(:,:,:,2)
-      ZWT(:,:,:) = ZWT(:,:,:) + ZBUT(JS,JI) *  PTSTEP *  &
-       ( ZRWS(:,:,:,JI) + PRWS_OTHER(:,:,:) ) / PMZM_RHODJ * ZIBM(:,:,:,3)
+    IF ( .NOT. LIBM ) THEN
+      DO JI = 1, JS
+        ZUT(:,:,:) = ZUT(:,:,:) + ZBUT(JS,JI) *  PTSTEP *  &
+          ( ZRUS(:,:,:,JI) + PRUS_OTHER(:,:,:) ) / PMXM_RHODJ(:,:,:)
+        ZVT(:,:,:) = ZVT(:,:,:) + ZBUT(JS,JI) *  PTSTEP *  &
+          ( ZRVS(:,:,:,JI) + PRVS_OTHER(:,:,:) ) / PMYM_RHODJ(:,:,:)
+        ZWT(:,:,:) = ZWT(:,:,:) + ZBUT(JS,JI) *  PTSTEP *  &
+          ( ZRWS(:,:,:,JI) + PRWS_OTHER(:,:,:) ) / PMZM_RHODJ(:,:,:)
+      END DO
+    ELSE
+      DO JI = 1, JS
+        ZUT(:,:,:) = ZUT(:,:,:) + ZBUT(JS,JI) *  PTSTEP *  &
+          ( ZRUS(:,:,:,JI) + PRUS_OTHER(:,:,:) ) / PMXM_RHODJ(:,:,:) * ZIBM(:,:,:,1)
+        ZVT(:,:,:) = ZVT(:,:,:) + ZBUT(JS,JI) *  PTSTEP *  &
+          ( ZRVS(:,:,:,JI) + PRVS_OTHER(:,:,:) ) / PMYM_RHODJ(:,:,:) * ZIBM(:,:,:,2)
+        ZWT(:,:,:) = ZWT(:,:,:) + ZBUT(JS,JI) *  PTSTEP *  &
+          ( ZRWS(:,:,:,JI) + PRWS_OTHER(:,:,:) ) / PMZM_RHODJ(:,:,:) * ZIBM(:,:,:,3)
+      END DO
+    END IF
 !
-    END DO
 !
   ELSE
 !
 ! Guesses at the end of the RK loop
 !
-    DO JI = 1, ISPL
-     PRUS_ADV(:,:,:) = PRUS_ADV(:,:,:) + ZBUTS(JI) * ZRUS(:,:,:,JI) * ZIBM(:,:,:,1) 
-     PRVS_ADV(:,:,:) = PRVS_ADV(:,:,:) + ZBUTS(JI) * ZRVS(:,:,:,JI) * ZIBM(:,:,:,2) 
-     PRWS_ADV(:,:,:) = PRWS_ADV(:,:,:) + ZBUTS(JI) * ZRWS(:,:,:,JI) * ZIBM(:,:,:,3) 
-    END DO
+    IF ( .NOT. LIBM ) THEN
+      DO JI = 1, ISPL
+        PRUS_ADV(:,:,:) = PRUS_ADV(:,:,:) + ZBUTS(JI) * ZRUS(:,:,:,JI)
+        PRVS_ADV(:,:,:) = PRVS_ADV(:,:,:) + ZBUTS(JI) * ZRVS(:,:,:,JI)
+        PRWS_ADV(:,:,:) = PRWS_ADV(:,:,:) + ZBUTS(JI) * ZRWS(:,:,:,JI)
+      END DO
+    ELSE
+      DO JI = 1, ISPL
+        PRUS_ADV(:,:,:) = PRUS_ADV(:,:,:) + ZBUTS(JI) * ZRUS(:,:,:,JI) * ZIBM(:,:,:,1)
+        PRVS_ADV(:,:,:) = PRVS_ADV(:,:,:) + ZBUTS(JI) * ZRVS(:,:,:,JI) * ZIBM(:,:,:,2)
+        PRWS_ADV(:,:,:) = PRWS_ADV(:,:,:) + ZBUTS(JI) * ZRWS(:,:,:,JI) * ZIBM(:,:,:,3)
+      END DO
+    END IF
 !
   END IF
 !
@@ -473,7 +495,6 @@ RKLOOP: DO JS = 1, ISPL
  END DO RKLOOP
 !
 !
-DEALLOCATE(ZBUT, ZBUTS, ZRUS, ZRVS, ZRWS, ZIBM)
 CALL CLEANLIST_ll(TZFIELDMT_ll)
 CALL  DEL_HALO2_ll(TZHALO2MT_ll)
 !-------------------------------------------------------------------------------
