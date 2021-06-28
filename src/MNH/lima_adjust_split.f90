@@ -258,10 +258,10 @@ REAL, DIMENSION(:,:,:,:), ALLOCATABLE &
                          :: PNFS,        & ! Free      CCN C. source
                             PNAS,        & ! Activated CCN C. source
                             PNFT,        & ! Free      CCN C.
-                            PNAT,        & ! Activated CCN C.
-                            PIFS,        & ! Free      IFN C. source 
-                            PINS,        & ! Nucleated IFN C. source
-                            PNIS           ! Acti. IMM. nuclei C. source
+                            PNAT           ! Activated CCN C.
+!                             PIFS,        & ! Free      IFN C. source
+!                             PINS,        & ! Nucleated IFN C. source
+!                             PNIS           ! Acti. IMM. nuclei C. source
 !
 !
 !
@@ -385,13 +385,13 @@ IF ( KRR .GE. 6 ) PRGS(:,:,:) = PRS(:,:,:,6)
 PCCT(:,:,:) = 0.
 PCIT(:,:,:) = 0.
 PCCS(:,:,:) = 0.
-PCIS(:,:,:) = 0.
+! PCIS(:,:,:) = 0.
 !
 IF ( LWARM ) PCCT(:,:,:) = PSVT(:,:,:,NSV_LIMA_NC)
 IF ( LCOLD ) PCIT(:,:,:) = PSVT(:,:,:,NSV_LIMA_NI)
 !
 IF ( LWARM ) PCCS(:,:,:) = PSVS(:,:,:,NSV_LIMA_NC)
-IF ( LCOLD ) PCIS(:,:,:) = PSVS(:,:,:,NSV_LIMA_NI)
+! IF ( LCOLD ) PCIS(:,:,:) = PSVS(:,:,:,NSV_LIMA_NI)
 !
 IF ( LSCAV .AND. LAERO_MASS ) PMAS(:,:,:) = PSVS(:,:,:,NSV_LIMA_SCAVMASS)
 ! 
@@ -406,17 +406,17 @@ IF ( LWARM .AND. NMOD_CCN.GE.1 ) THEN
    PNAT(:,:,:,:) = PSVT(:,:,:,NSV_LIMA_CCN_ACTI:NSV_LIMA_CCN_ACTI+NMOD_CCN-1)
 END IF
 !
-IF ( LCOLD .AND. NMOD_IFN .GE. 1 ) THEN
-   ALLOCATE( PIFS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),NMOD_IFN) )
-   ALLOCATE( PINS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),NMOD_IFN) )
-   PIFS(:,:,:,:) = PSVS(:,:,:,NSV_LIMA_IFN_FREE:NSV_LIMA_IFN_FREE+NMOD_IFN-1)
-   PINS(:,:,:,:) = PSVS(:,:,:,NSV_LIMA_IFN_NUCL:NSV_LIMA_IFN_NUCL+NMOD_IFN-1)
-END IF
+! IF ( LCOLD .AND. NMOD_IFN .GE. 1 ) THEN
+!    ALLOCATE( PIFS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),NMOD_IFN) )
+!    ALLOCATE( PINS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),NMOD_IFN) )
+!    PIFS(:,:,:,:) = PSVS(:,:,:,NSV_LIMA_IFN_FREE:NSV_LIMA_IFN_FREE+NMOD_IFN-1)
+!    PINS(:,:,:,:) = PSVS(:,:,:,NSV_LIMA_IFN_NUCL:NSV_LIMA_IFN_NUCL+NMOD_IFN-1)
+! END IF
 !
-IF ( NMOD_IMM .GE. 1 ) THEN
-   ALLOCATE( PNIS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),NMOD_IMM) )
-   PNIS(:,:,:,:) = PSVS(:,:,:,NSV_LIMA_IMM_NUCL:NSV_LIMA_IMM_NUCL+NMOD_IMM-1)
-END IF
+! IF ( NMOD_IMM .GE. 1 ) THEN
+!    ALLOCATE( PNIS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),NMOD_IMM) )
+!    PNIS(:,:,:,:) = PSVS(:,:,:,NSV_LIMA_IMM_NUCL:NSV_LIMA_IMM_NUCL+NMOD_IMM-1)
+! END IF
 !
 !
 if ( nbumod == kmi .and. lbu_enable ) then
@@ -727,11 +727,6 @@ IF ( OSUBG_COND ) THEN
    PNAS(:,:,:,:) = PNAT(:,:,:,:) / PTSTEP
    PTHS(:,:,:)   = PTHS(:,:,:) +        &
                    ZW1(:,:,:) * ZLV(:,:,:) / (ZCPH(:,:,:) * PEXNREF(:,:,:))
-   !
-   ! Cloud fraction
-   !
-   ! PCLDFR(:,:,:) = MAX(PCLDFR(:,:,:),PICEFR(:,:,:))
-   !
 END IF ! fin test OSUBG_COND
 
 IF ( tpfile%lopened ) THEN
@@ -764,7 +759,7 @@ IF ( KRR .GE. 6 ) PRS(:,:,:,6) = PRGS(:,:,:)
 ! Prepare 3D number concentrations
 !
 IF ( LWARM ) PSVS(:,:,:,NSV_LIMA_NC) = PCCS(:,:,:)
-IF ( LCOLD ) PSVS(:,:,:,NSV_LIMA_NI) = PCIS(:,:,:)
+! IF ( LCOLD ) PSVS(:,:,:,NSV_LIMA_NI) = PCIS(:,:,:)
 !
 IF ( LSCAV .AND. LAERO_MASS ) PSVS(:,:,:,NSV_LIMA_SCAVMASS) = PMAS(:,:,:)
 ! 
@@ -773,14 +768,14 @@ IF ( LWARM .AND. NMOD_CCN .GE. 1 ) THEN
    PSVS(:,:,:,NSV_LIMA_CCN_ACTI:NSV_LIMA_CCN_ACTI+NMOD_CCN-1) = PNAS(:,:,:,:)
 END IF
 !
-IF ( LCOLD .AND. NMOD_IFN .GE. 1 ) THEN
-   PSVS(:,:,:,NSV_LIMA_IFN_FREE:NSV_LIMA_IFN_FREE+NMOD_IFN-1) = PIFS(:,:,:,:)
-   PSVS(:,:,:,NSV_LIMA_IFN_NUCL:NSV_LIMA_IFN_NUCL+NMOD_IFN-1) = PINS(:,:,:,:)
-END IF
+! IF ( LCOLD .AND. NMOD_IFN .GE. 1 ) THEN
+!    PSVS(:,:,:,NSV_LIMA_IFN_FREE:NSV_LIMA_IFN_FREE+NMOD_IFN-1) = PIFS(:,:,:,:)
+!    PSVS(:,:,:,NSV_LIMA_IFN_NUCL:NSV_LIMA_IFN_NUCL+NMOD_IFN-1) = PINS(:,:,:,:)
+! END IF
 !
-IF ( LCOLD .AND. NMOD_IMM .GE. 1 ) THEN
-   PSVS(:,:,:,NSV_LIMA_IMM_NUCL:NSV_LIMA_IMM_NUCL+NMOD_IMM-1) = PNIS(:,:,:,:)
-END IF
+! IF ( LCOLD .AND. NMOD_IMM .GE. 1 ) THEN
+!    PSVS(:,:,:,NSV_LIMA_IMM_NUCL:NSV_LIMA_IMM_NUCL+NMOD_IMM-1) = PNIS(:,:,:,:)
+! END IF
 !
 ! write SSI in LFI
 !
@@ -848,9 +843,9 @@ IF (ALLOCATED(PNFS)) DEALLOCATE(PNFS)
 IF (ALLOCATED(PNAS)) DEALLOCATE(PNAS)
 IF (ALLOCATED(PNFT)) DEALLOCATE(PNFT)
 IF (ALLOCATED(PNAT)) DEALLOCATE(PNAT)
-IF (ALLOCATED(PIFS)) DEALLOCATE(PIFS)
-IF (ALLOCATED(PINS)) DEALLOCATE(PINS)
-IF (ALLOCATED(PNIS)) DEALLOCATE(PNIS)
+! IF (ALLOCATED(PIFS)) DEALLOCATE(PIFS)
+! IF (ALLOCATED(PINS)) DEALLOCATE(PINS)
+! IF (ALLOCATED(PNIS)) DEALLOCATE(PNIS)
 !--cb--
 !
 !------------------------------------------------------------------------------

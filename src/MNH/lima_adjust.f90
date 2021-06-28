@@ -264,8 +264,6 @@ REAL, DIMENSION(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3)) &
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE &
                          :: PNFS,        & ! Free      CCN C. source
                             PNAS,        & ! Activated CCN C. source
-                            PNFT,        & ! Free      CCN C.
-                            PNAT,        & ! Activated CCN C.
                             PIFS,        & ! Free      IFN C. source 
                             PINS,        & ! Nucleated IFN C. source
                             PNIS           ! Acti. IMM. nuclei C. source
@@ -283,12 +281,7 @@ REAL, DIMENSION(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3)) &
                             ZW2,  &
                             ZLV,  &      ! guess of the Lv at t+1
                             ZLS,  &      ! guess of the Ls at t+1
-                            ZMASK,&
-                            ZRV,  &
-                            ZRC,  &
-                            ZRI,  &
-                            ZSIGS, &
-                            ZW_MF
+                            ZMASK
 LOGICAL, DIMENSION(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3)) &
                          :: GMICRO, GMICRO_RI, GMICRO_RC ! Test where to compute cond/dep proc.
 INTEGER                  :: IMICRO
@@ -361,8 +354,6 @@ ZCTMIN(:) = XCTMIN(:) / ZDT
 !
 ! Prepare 3D water mixing ratios
 !
-PTHT = PTHS*PTSTEP
-!
 PRVT(:,:,:) = PRT(:,:,:,1)
 PRVS(:,:,:) = PRS(:,:,:,1)
 !
@@ -405,12 +396,8 @@ IF ( LSCAV .AND. LAERO_MASS ) PMAS(:,:,:) = PSVS(:,:,:,NSV_LIMA_SCAVMASS)
 IF ( LWARM .AND. NMOD_CCN.GE.1 ) THEN
    ALLOCATE( PNFS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),NMOD_CCN) )
    ALLOCATE( PNAS(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),NMOD_CCN) )
-   ALLOCATE( PNFT(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),NMOD_CCN) )
-   ALLOCATE( PNAT(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),NMOD_CCN) )
    PNFS(:,:,:,:) = PSVS(:,:,:,NSV_LIMA_CCN_FREE:NSV_LIMA_CCN_FREE+NMOD_CCN-1)
    PNAS(:,:,:,:) = PSVS(:,:,:,NSV_LIMA_CCN_ACTI:NSV_LIMA_CCN_ACTI+NMOD_CCN-1)
-   PNFT(:,:,:,:) = PSVT(:,:,:,NSV_LIMA_CCN_FREE:NSV_LIMA_CCN_FREE+NMOD_CCN-1)
-   PNAT(:,:,:,:) = PSVT(:,:,:,NSV_LIMA_CCN_ACTI:NSV_LIMA_CCN_ACTI+NMOD_CCN-1)
 END IF
 !
 IF ( LCOLD .AND. NMOD_IFN .GE. 1 ) THEN
@@ -1343,8 +1330,6 @@ DEALLOCATE(ZRTMIN)
 DEALLOCATE(ZCTMIN)
 IF (ALLOCATED(PNFS)) DEALLOCATE(PNFS)
 IF (ALLOCATED(PNAS)) DEALLOCATE(PNAS)
-IF (ALLOCATED(PNFT)) DEALLOCATE(PNFT)
-IF (ALLOCATED(PNAT)) DEALLOCATE(PNAT)
 IF (ALLOCATED(PIFS)) DEALLOCATE(PIFS)
 IF (ALLOCATED(PINS)) DEALLOCATE(PINS)
 IF (ALLOCATED(PNIS)) DEALLOCATE(PNIS)

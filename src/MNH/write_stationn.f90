@@ -136,7 +136,6 @@ REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: ZW6    ! contains temporal series t
 REAL, DIMENSION(:,:,:,:),     ALLOCATABLE :: ZSV, ZN0, ZSIG, ZRG
 REAL, DIMENSION(:,:,:,:,:),     ALLOCATABLE :: ZPTOTA
 REAL, DIMENSION(:,:,:),       ALLOCATABLE :: ZRHO
-REAL, DIMENSION(:,:,:),       ALLOCATABLE :: ZTRAJX, ZTRAJY, ZTRAJZ
 !
 INTEGER, DIMENSION(:),            ALLOCATABLE :: IGRID    ! grid indicator
 CHARACTER(LEN=  8)                            :: YGROUP   ! group title
@@ -181,13 +180,6 @@ IGRID  = 1
 YGROUP = TSTATION%NAME(II)
 JPROC = 0
 !
-ALLOCATE (ZTRAJX(1,1,1))
-ALLOCATE (ZTRAJY(1,1,1))
-ALLOCATE (ZTRAJZ(1,1,1))
-!
-ZTRAJX(:,:,:)=TSTATION%X(II)
-ZTRAJY(:,:,:)=TSTATION%Y(II)
-ZTRAJZ(:,:,:)=TSTATION%Z(II)
 !----------------------------------------------------------------------------
 !
 JPROC = JPROC + 1
