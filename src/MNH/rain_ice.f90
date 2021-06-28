@@ -751,8 +751,9 @@ IF( IMICRO >= 0 ) THEN
   DO JL=1,IMICRO
     PRAINFR(I1(JL),I2(JL),I3(JL)) = ZRF(JL)
   END DO
-  CALL ICE4_RAINFR_VERT(IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKT, KKL, PRAINFR, PRRT(:,:,:), &
-           PRSS(:,:,:)*0., PRGS(:,:,:)*0.)
+  CALL ICE4_RAINFR_VERT( IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKT, KKL, PRAINFR, PRRT(:,:,:),      &
+                         RESHAPE( SOURCE = [ ( 0., JL = 1, SIZE( PRSS ) ) ], SHAPE = SHAPE( PRSS ) ), &
+                         RESHAPE( SOURCE = [ ( 0., JL = 1, SIZE( PRGS ) ) ], SHAPE = SHAPE( PRGS ) )  )
   DO JL=1,IMICRO
     ZRF(JL)=PRAINFR(I1(JL),I2(JL),I3(JL))
   END DO
