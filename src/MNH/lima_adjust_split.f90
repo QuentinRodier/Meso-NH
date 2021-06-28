@@ -423,20 +423,34 @@ if ( nbumod == kmi .and. lbu_enable ) then
   if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'CEDS', pths(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'CEDS', prvs(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'CEDS', prcs(:, :, :) * prhodj(:, :, :) )
+  !Remark: PRIS is not modified but source term kept for better coherence with lima_adjust and lima_notadjust
   if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'CEDS', pris(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_sv ) then
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CEDS', pccs(:, :, :) * prhodj(:, :, :) )
-    do jl = nsv_lima_ccn_free,nsv_lima_ccn_free + nmod_ccn - 1
-      idx = NBUDGET_SV1 - 1 + jl
-      call Budget_store_init( tbudgets(idx), 'CEDS', pnfs(:, :, :, jl) * prhodj(:, :, :) )
-    end do
-    if ( lcold ) then
-      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CEDS', pcis(:, :, :) * prhodj(:, :, :) )
-      do jl = 1, nsv_lima_ifn_free, nsv_lima_ifn_free + nmod_ifn - 1
-        idx = NBUDGET_SV1 - 1 + jl
-        call Budget_store_init( tbudgets(idx), 'CEDS', pifs(:, :, :, jl) * prhodj(:, :, :) )
+    if ( lwarm ) &
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CEDS', pccs(:, :, :) * prhodj(:, :, :) )
+    if ( lscav .and. laero_mass ) &
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_scavmass), 'CEDS', pmas(:, :, :) * prhodj(:, :, :) )
+    if ( lwarm ) then
+      do jl = 1, nmod_ccn
+        idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_free - 1 + jl
+        call Budget_store_init( tbudgets(idx), 'CEDS', pnfs(:, :, :, jl) * prhodj(:, :, :) )
+        idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_acti - 1 + jl
+        call Budget_store_init( tbudgets(idx), 'CEDS', pnas(:, :, :, jl) * prhodj(:, :, :) )
       end do
     end if
+!     if ( lcold ) then
+!       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CEDS', pcis(:, :, :) * prhodj(:, :, :) )
+!       do jl = 1, nmod_ifn
+!         idx = NBUDGET_SV1 - 1 + nsv_lima_ifn_free - 1 + jl
+!         call Budget_store_init( tbudgets(idx), 'CEDS', pifs(:, :, :, jl) * prhodj(:, :, :) )
+!         idx = NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl - 1 + jl
+!         call Budget_store_init( tbudgets(idx), 'CEDS', pins(:, :, :, jl) * prhodj(:, :, :) )
+!       end do
+!       do jl = 1, nmod_imm
+!         idx = NBUDGET_SV1 - 1 + nsv_lima_imm_nucl - 1 + jl
+!         call Budget_store_init( tbudgets(idx), 'CEDS', pnis(:, :, :, jl) * prhodj(:, :, :) )
+!       end do
+!     end if
   end if
 end if
 !
@@ -797,20 +811,34 @@ if ( nbumod == kmi .and. lbu_enable ) then
   if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'CEDS', pths(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'CEDS', prvs(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'CEDS', prcs(:, :, :) * prhodj(:, :, :) )
+  !Remark: PRIS is not modified but source term kept for better coherence with lima_adjust and lima_notadjust
   if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'CEDS', pris(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_sv ) then
-    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CEDS', pccs(:, :, :) * prhodj(:, :, :) )
-    do jl = nsv_lima_ccn_free,nsv_lima_ccn_free + nmod_ccn - 1
-      idx = NBUDGET_SV1 - 1 + jl
-      call Budget_store_end( tbudgets(idx), 'CEDS', pnfs(:, :, :, jl) * prhodj(:, :, :) )
-    end do
-    if ( lcold ) then
-      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CEDS', pcis(:, :, :) * prhodj(:, :, :) )
-      do jl = 1, nsv_lima_ifn_free, nsv_lima_ifn_free + nmod_ifn - 1
-        idx = NBUDGET_SV1 - 1 + jl
-        call Budget_store_end( tbudgets(idx), 'CEDS', pifs(:, :, :, jl) * prhodj(:, :, :) )
+    if ( lwarm ) &
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CEDS', pccs(:, :, :) * prhodj(:, :, :) )
+    if ( lscav .and. laero_mass ) &
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_scavmass), 'CEDS', pmas(:, :, :) * prhodj(:, :, :) )
+    if ( lwarm ) then
+      do jl = 1, nmod_ccn
+        idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_free - 1 + jl
+        call Budget_store_end( tbudgets(idx), 'CEDS', pnfs(:, :, :, jl) * prhodj(:, :, :) )
+        idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_acti - 1 + jl
+        call Budget_store_end( tbudgets(idx), 'CEDS', pnas(:, :, :, jl) * prhodj(:, :, :) )
       end do
     end if
+!     if ( lcold ) then
+!       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CEDS', pcis(:, :, :) * prhodj(:, :, :) )
+!       do jl = 1, nmod_ifn
+!         idx = NBUDGET_SV1 - 1 + nsv_lima_ifn_free - 1 + jl
+!         call Budget_store_end( tbudgets(idx), 'CEDS', pifs(:, :, :, jl) * prhodj(:, :, :) )
+!         idx = NBUDGET_SV1 - 1 + nsv_lima_ifn_nucl - 1 + jl
+!         call Budget_store_end( tbudgets(idx), 'CEDS', pins(:, :, :, jl) * prhodj(:, :, :) )
+!       end do
+!       do jl = 1, nmod_imm
+!         idx = NBUDGET_SV1 - 1 + nsv_lima_imm_nucl - 1 + jl
+!         call Budget_store_init( tbudgets(idx), 'CEDS', pnis(:, :, :, jl) * prhodj(:, :, :) )
+!       end do
+!     end if
   end if
 end if
 !++cb++

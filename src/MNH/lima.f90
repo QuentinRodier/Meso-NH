@@ -564,20 +564,20 @@ ZT(:,:,:)   = ZTHT(:,:,:) * ZEXN(:,:,:)
 !
 !*       0.     Check mean diameter for cloud, rain  and ice
 !               --------------------------------------------
-if ( lbu_enable ) then
-  if ( lbudget_rc .and. lwarm .and. lrain ) call Budget_store_init( tbudgets(NBUDGET_RC), 'CORR', zrcs(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_rr .and. lwarm .and. lrain ) call Budget_store_init( tbudgets(NBUDGET_RR), 'CORR', zrrs(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_ri .and. lcold .and. lsnow ) call Budget_store_init( tbudgets(NBUDGET_RI), 'CORR', zris(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_rs .and. lcold .and. lsnow ) call Budget_store_init( tbudgets(NBUDGET_RS), 'CORR', zrss(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_sv ) then
-    if ( lwarm .and. lrain ) &
-      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CORR', zccs(:, :, :) * prhodj(:, :, :) )
-    if ( lwarm .and. lrain ) &
-      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'CORR', zcrs(:, :, :) * prhodj(:, :, :) )
-    if ( lcold .and. lsnow ) &
-      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CORR', zcis(:, :, :) * prhodj(:, :, :) )
-  end if
-end if
+! if ( lbu_enable ) then
+!   if ( lbudget_rc .and. lwarm .and. lrain ) call Budget_store_init( tbudgets(NBUDGET_RC), 'CORR', zrcs(:, :, :) * prhodj(:, :, :) )
+!   if ( lbudget_rr .and. lwarm .and. lrain ) call Budget_store_init( tbudgets(NBUDGET_RR), 'CORR', zrrs(:, :, :) * prhodj(:, :, :) )
+!   if ( lbudget_ri .and. lcold .and. lsnow ) call Budget_store_init( tbudgets(NBUDGET_RI), 'CORR', zris(:, :, :) * prhodj(:, :, :) )
+!   if ( lbudget_rs .and. lcold .and. lsnow ) call Budget_store_init( tbudgets(NBUDGET_RS), 'CORR', zrss(:, :, :) * prhodj(:, :, :) )
+!   if ( lbudget_sv ) then
+!     if ( lwarm .and. lrain ) &
+!       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CORR', zccs(:, :, :) * prhodj(:, :, :) )
+!     if ( lwarm .and. lrain ) &
+!       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'CORR', zcrs(:, :, :) * prhodj(:, :, :) )
+!     if ( lcold .and. lsnow ) &
+!       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CORR', zcis(:, :, :) * prhodj(:, :, :) )
+!   end if
+! end if
 !!$IF (LWARM .AND. LRAIN) THEN
 !!$   WHERE( ZRCT>XRTMIN(2) .AND. ZCCT>XCTMIN(2) .AND. ZRCT>XAC*ZCCT*(100.E-6)**XBC )
 !!$      ZRRT=ZRRT+ZRCT
@@ -615,20 +615,20 @@ end if
 !!$   END WHERE
 !!$END IF
 !
-if ( lbu_enable ) then
-  if ( lbudget_rc .and. lwarm .and. lrain ) call Budget_store_end( tbudgets(NBUDGET_RC), 'CORR', zrcs(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_rr .and. lwarm .and. lrain ) call Budget_store_end( tbudgets(NBUDGET_RR), 'CORR', zrrs(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_ri .and. lcold .and. lsnow ) call Budget_store_end( tbudgets(NBUDGET_RI), 'CORR', zris(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_rs .and. lcold .and. lsnow ) call Budget_store_end( tbudgets(NBUDGET_RS), 'CORR', zrss(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_sv ) then
-    if ( lwarm .and. lrain ) &
-      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CORR', zccs(:, :, :) * prhodj(:, :, :) )
-    if ( lwarm .and. lrain ) &
-      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'CORR', zcrs(:, :, :) * prhodj(:, :, :) )
-    if ( lcold .and. lsnow ) &
-      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CORR', zcis(:, :, :) * prhodj(:, :, :) )
-  end if
-end if
+! if ( lbu_enable ) then
+!   if ( lbudget_rc .and. lwarm .and. lrain ) call Budget_store_end( tbudgets(NBUDGET_RC), 'CORR', zrcs(:, :, :) * prhodj(:, :, :) )
+!   if ( lbudget_rr .and. lwarm .and. lrain ) call Budget_store_end( tbudgets(NBUDGET_RR), 'CORR', zrrs(:, :, :) * prhodj(:, :, :) )
+!   if ( lbudget_ri .and. lcold .and. lsnow ) call Budget_store_end( tbudgets(NBUDGET_RI), 'CORR', zris(:, :, :) * prhodj(:, :, :) )
+!   if ( lbudget_rs .and. lcold .and. lsnow ) call Budget_store_end( tbudgets(NBUDGET_RS), 'CORR', zrss(:, :, :) * prhodj(:, :, :) )
+!   if ( lbudget_sv ) then
+!     if ( lwarm .and. lrain ) &
+!       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CORR', zccs(:, :, :) * prhodj(:, :, :) )
+!     if ( lwarm .and. lrain ) &
+!       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'CORR', zcrs(:, :, :) * prhodj(:, :, :) )
+!     if ( lcold .and. lsnow ) &
+!       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CORR', zcis(:, :, :) * prhodj(:, :, :) )
+!   end if
+! end if
 !-------------------------------------------------------------------------------
 !
 !*       1.     Sedimentation

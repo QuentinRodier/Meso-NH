@@ -149,40 +149,46 @@ INTEGER :: JL
 !-------------------------------------------------------------------------------
 !
 IF ( LWARM .AND. LACTI .AND. NMOD_CCN >=1 ) THEN
-  if ( lbu_enable ) then
-    if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'HENU', ptht(:, :, :) * prhodj(:, :, :) / ptstep )
-    if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'HENU', prvt(:, :, :) * prhodj(:, :, :) / ptstep )
-    if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'HENU', prct(:, :, :) * prhodj(:, :, :) / ptstep )
-    if ( lbudget_sv ) then
-      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'HENU', pcct(:, :, :) * prhodj(:, :, :) / ptstep )
-      do jl = 1, nmod_ccn
-        idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_free - 1 + jl
-        call Budget_store_init( tbudgets(idx), 'HENU', pnft(:, :, :, jl) * prhodj(:, :, :) / ptstep )
-        idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_acti - 1 + jl
-        call Budget_store_init( tbudgets(idx), 'HENU', pnat(:, :, :, jl) * prhodj(:, :, :) / ptstep )
-      end do
+
+  IF (.NOT.LSUBG_COND .AND. .NOT.LSPRO) THEN
+
+    if ( lbu_enable ) then
+      if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'HENU', ptht(:, :, :) * prhodj(:, :, :) / ptstep )
+      if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'HENU', prvt(:, :, :) * prhodj(:, :, :) / ptstep )
+      if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'HENU', prct(:, :, :) * prhodj(:, :, :) / ptstep )
+      if ( lbudget_sv ) then
+        call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'HENU', pcct(:, :, :) * prhodj(:, :, :) / ptstep )
+        do jl = 1, nmod_ccn
+          idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_free - 1 + jl
+          call Budget_store_init( tbudgets(idx), 'HENU', pnft(:, :, :, jl) * prhodj(:, :, :) / ptstep )
+          idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_acti - 1 + jl
+          call Budget_store_init( tbudgets(idx), 'HENU', pnat(:, :, :, jl) * prhodj(:, :, :) / ptstep )
+        end do
+      end if
     end if
-  end if
-   IF (.NOT.LSUBG_COND .AND. .NOT.LSPRO) THEN
-      CALL LIMA_CCN_ACTIVATION (PTSTEP, TPFILE,                                &
-                             PRHODREF, PEXNREF, PPABST, PT, PDTHRAD, PW_NU, &
-                             PTHT, PRVT, PRCT, PCCT, PRRT, PNFT, PNAT, PCLDFR  )
-   END IF
-   WHERE(PCLDFR(:,:,:)<1.E-10 .AND. PRCT(:,:,:)>XRTMIN(2) .AND. PCCT(:,:,:)>XCTMIN(2)) PCLDFR(:,:,:)=1.
-  if ( lbu_enable ) then
-    if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HENU', ptht(:, :, :) * prhodj(:, :, :) / ptstep )
-    if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'HENU', prvt(:, :, :) * prhodj(:, :, :) / ptstep )
-    if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'HENU', prct(:, :, :) * prhodj(:, :, :) / ptstep )
-    if ( lbudget_sv ) then
-      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'HENU', pcct(:, :, :) * prhodj(:, :, :) / ptstep )
-      do jl = 1, nmod_ccn
-        idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_free - 1 + jl
-        call Budget_store_end( tbudgets(idx), 'HENU', pnft(:, :, :, jl) * prhodj(:, :, :) / ptstep )
-        idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_acti - 1 + jl
-        call Budget_store_end( tbudgets(idx), 'HENU', pnat(:, :, :, jl) * prhodj(:, :, :) / ptstep )
-      end do
+
+    CALL LIMA_CCN_ACTIVATION( PTSTEP, TPFILE,                                   &
+                              PRHODREF, PEXNREF, PPABST, PT, PDTHRAD, PW_NU,    &
+                              PTHT, PRVT, PRCT, PCCT, PRRT, PNFT, PNAT, PCLDFR  )
+    if ( lbu_enable ) then
+      if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HENU', ptht(:, :, :) * prhodj(:, :, :) / ptstep )
+      if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'HENU', prvt(:, :, :) * prhodj(:, :, :) / ptstep )
+      if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'HENU', prct(:, :, :) * prhodj(:, :, :) / ptstep )
+      if ( lbudget_sv ) then
+        call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'HENU', pcct(:, :, :) * prhodj(:, :, :) / ptstep )
+        do jl = 1, nmod_ccn
+          idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_free - 1 + jl
+          call Budget_store_end( tbudgets(idx), 'HENU', pnft(:, :, :, jl) * prhodj(:, :, :) / ptstep )
+          idx = NBUDGET_SV1 - 1 + nsv_lima_ccn_acti - 1 + jl
+          call Budget_store_end( tbudgets(idx), 'HENU', pnat(:, :, :, jl) * prhodj(:, :, :) / ptstep )
+        end do
+      end if
     end if
-  end if
+
+  END IF
+
+  WHERE(PCLDFR(:,:,:)<1.E-10 .AND. PRCT(:,:,:)>XRTMIN(2) .AND. PCCT(:,:,:)>XCTMIN(2)) PCLDFR(:,:,:)=1.
+
 END IF
 !
 !-------------------------------------------------------------------------------

@@ -236,7 +236,7 @@ use modd_nsv,           only: csvnames,                                         
                               nsv_lgbeg, nsv_lgend,                                                                &
                               nsv_lima_beg, nsv_lima_end, nsv_lima_ccn_acti, nsv_lima_ccn_free, nsv_lima_hom_haze, &
                               nsv_lima_ifn_free, nsv_lima_ifn_nucl, nsv_lima_imm_nucl,                             &
-                              nsv_lima_nc, nsv_lima_nr, nsv_lima_ni, nsv_lima_scavmass,                            &
+                              nsv_lima_nc, nsv_lima_nr, nsv_lima_ni, nsv_lima_scavmass, nsv_lima_spro,             &
                               nsv_lnoxbeg, nsv_lnoxend, nsv_ppbeg, nsv_ppend,                                      &
                               nsv_sltbeg, nsv_sltend, nsv_sltdepbeg, nsv_sltdepend, nsv_snwbeg, nsv_snwend,        &
                               nsv_user
@@ -245,13 +245,14 @@ use modd_param_c2r2,   only: ldepoc_c2r2 => ldepoc, lrain_c2r2 => lrain, lsedc_c
 use modd_param_ice,    only: ladj_after, ladj_before, ldeposc_ice => ldeposc, lred, lsedic_ice => lsedic, lwarm_ice => lwarm
 use modd_param_n,      only: cactccn, celec
 use modd_param_lima,   only: laero_mass_lima => laero_mass, lacti_lima => lacti, lcold_lima => lcold, ldepoc_lima => ldepoc, &
-                             lhail_lima => lhail, lhhoni_lima => lhhoni, lmeyers_lima => lmeyers, lnucl_lima => lnucl,  &
-                             lptsplit,                                                                                  &
-                             lrain_lima => lrain, lscav_lima => lscav, lsedc_lima => lsedc, lsedi_lima => lsedi,        &
-                             lsnow_lima => lsnow, lwarm_lima => lwarm,                                                  &
+                             lhail_lima => lhail, lhhoni_lima => lhhoni, lmeyers_lima => lmeyers, lnucl_lima => lnucl,       &
+                             lptsplit,                                                                                       &
+                             lrain_lima => lrain, lscav_lima => lscav, lsedc_lima => lsedc, lsedi_lima => lsedi,             &
+                             lsnow_lima => lsnow, lspro_lima => lspro,  lwarm_lima => lwarm,                                 &
                              nmod_ccn, nmod_ifn, nmod_imm
 use modd_ref,          only: lcouples
 use modd_salt,         only: lsalt
+use modd_turb_n,       only: lsubg_cond
 use modd_viscosity,    only: lvisc, lvisc_r, lvisc_sv, lvisc_th, lvisc_uvw
 
 USE MODE_ll
@@ -1094,7 +1095,8 @@ if ( lbu_rth ) then
   tzsource%cmnhname   = 'HENU'
   tzsource%clongname  = 'heterogeneous nucleation'
   gtmp = cactccn == 'ABRK' .and. (lorilam .or. ldust .or. lsalt )
-  tzsource%lavailable =      ( hcloud      == 'LIMA' .and. lwarm_lima .and. lacti_lima .and. nmod_ccn >= 1 ) &
+  tzsource%lavailable =      ( hcloud      == 'LIMA' .and. lwarm_lima .and. lacti_lima .and. nmod_ccn >= 1   &
+                                                     .and. ( .not.lptsplit .or. .not.lsubg_cond )          ) &
                         .or.   hcloud(1:3) == 'ICE'                                                          &
                         .or. ( hcloud      == 'C2R2' .and. ( gtmp .or. .not.lsupsat_c2r2 ) )                 &
                         .or. ( hcloud      == 'KHKO' .and. ( gtmp .or. .not.lsupsat_c2r2 ) )
@@ -1238,8 +1240,8 @@ if ( lbu_rth ) then
 
   tzsource%cmnhname   = 'DEPI'
   tzsource%clongname  = 'deposition on ice'
-  tzsource%lavailable = hcloud(1:3) == 'ICE' .and. ( .not. lred .or. ( lred .and. ladj_after ) .or. celec /= 'NONE')&
-                    .or. (hcloud == 'LIMA' .and. lptsplit)
+  tzsource%lavailable =      ( hcloud(1:3) == 'ICE' .and. ( .not. lred .or. ( lred .and. ladj_after ) .or. celec /= 'NONE') ) &
+                        .or. ( hcloud == 'LIMA' .and. lptsplit )
   call Budget_source_add( tbudgets(NBUDGET_TH), tzsource )
 
   tzsource%cmnhname   = 'COND'
@@ -1491,7 +1493,8 @@ if ( tbudgets(NBUDGET_RV)%lenabled ) then
   tzsource%cmnhname   = 'HENU'
   tzsource%clongname  = 'heterogeneous nucleation'
   gtmp = cactccn == 'ABRK' .and. (lorilam .or. ldust .or. lsalt )
-  tzsource%lavailable =      ( hcloud      == 'LIMA' .and. lwarm_lima .and. lacti_lima .and. nmod_ccn >= 1 ) &
+  tzsource%lavailable =      ( hcloud      == 'LIMA' .and. lwarm_lima .and. lacti_lima .and. nmod_ccn >= 1   &
+                                                     .and. ( .not.lptsplit .or. .not.lsubg_cond )          ) &
                         .or.   hcloud(1:3) == 'ICE'                                                          &
                         .or. ( hcloud      == 'C2R2' .and. ( gtmp .or. .not.lsupsat_c2r2 ) )                 &
                         .or. ( hcloud      == 'KHKO' .and. ( gtmp .or. .not.lsupsat_c2r2 ) )
@@ -1550,8 +1553,8 @@ if ( tbudgets(NBUDGET_RV)%lenabled ) then
 
   tzsource%cmnhname   = 'DEPI'
   tzsource%clongname  = 'deposition on ice'
-  tzsource%lavailable = hcloud(1:3) == 'ICE' .and. ( .not. lred .or. ( lred .and. ladj_after ) .or. celec /= 'NONE')&
-                   .or. (hcloud == 'LIMA' .and. lptsplit)
+  tzsource%lavailable =      ( hcloud(1:3) == 'ICE' .and. ( .not. lred .or. ( lred .and. ladj_after ) .or. celec /= 'NONE') ) &
+                        .or. ( hcloud == 'LIMA' .and. lptsplit )
   call Budget_source_add( tbudgets(NBUDGET_RV), tzsource )
 
   tzsource%cmnhname   = 'CORR2'
@@ -1688,8 +1691,9 @@ if ( tbudgets(NBUDGET_RC)%lenabled ) then
 
   tzsource%cmnhname   = 'CORR'
   tzsource%clongname  = 'correction'
-  tzsource%lavailable =       ( hcloud      == 'LIMA' .and. lptsplit .and. lwarm_lima .and. lrain_lima ) &
-                         .or. ( hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE' )
+!   tzsource%lavailable =       ( hcloud      == 'LIMA' .and. lptsplit .and. lwarm_lima .and. lrain_lima ) &
+!                          .or. ( hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE' )
+  tzsource%lavailable =  hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE'
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource )
 
   tzsource%cmnhname   = 'SEDI'
@@ -1716,8 +1720,9 @@ if ( tbudgets(NBUDGET_RC)%lenabled ) then
   tzsource%cmnhname   = 'HENU'
   tzsource%clongname  = 'CCN activation'
   gtmp = cactccn == 'ABRK' .and. (lorilam .or. ldust .or. lsalt )
-  tzsource%lavailable =      ( hcloud      == 'LIMA' .and. lwarm_lima .and. lacti_lima .and. nmod_ccn >= 1 ) &
-                        .or. ( hcloud      == 'C2R2' .and. ( gtmp .or. .not.lsupsat_c2r2 ) ) &
+  tzsource%lavailable =      ( hcloud      == 'LIMA' .and. lwarm_lima .and. lacti_lima .and. nmod_ccn >= 1   &
+                                                     .and. ( .not.lptsplit .or. .not.lsubg_cond )          ) &
+                        .or. ( hcloud      == 'C2R2' .and. ( gtmp .or. .not.lsupsat_c2r2 ) )                 &
                         .or. ( hcloud      == 'KHKO' .and. ( gtmp .or. .not.lsupsat_c2r2 ) )
   call Budget_source_add( tbudgets(NBUDGET_RC), tzsource )
 
@@ -1938,8 +1943,9 @@ if ( tbudgets(NBUDGET_RR)%lenabled ) then
 
   tzsource%cmnhname   = 'CORR'
   tzsource%clongname  = 'correction'
-  tzsource%lavailable =       ( hcloud      == 'LIMA' .and. lptsplit .and. lwarm_lima .and. lrain_lima ) &
-                         .or. ( hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE' )
+!   tzsource%lavailable =       ( hcloud      == 'LIMA' .and. lptsplit .and. lwarm_lima .and. lrain_lima ) &
+!                          .or. ( hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE' )
+  tzsource%lavailable = hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE'
   call Budget_source_add( tbudgets(NBUDGET_RR), tzsource )
 
   tzsource%cmnhname   = 'SEDI'
@@ -2179,8 +2185,9 @@ if ( tbudgets(NBUDGET_RI)%lenabled ) then
 
   tzsource%cmnhname   = 'CORR'
   tzsource%clongname  = 'correction'
-  tzsource%lavailable =       ( hcloud      == 'LIMA' .and. lptsplit .and. lcold_lima .and. lsnow_lima ) &
-                         .or. ( hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE' )
+!   tzsource%lavailable =       ( hcloud      == 'LIMA' .and. lptsplit .and. lcold_lima .and. lsnow_lima ) &
+!                          .or. ( hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE' )
+  tzsource%lavailable = hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE'
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'ADJU'
@@ -2301,8 +2308,8 @@ if ( tbudgets(NBUDGET_RI)%lenabled ) then
 
   tzsource%cmnhname   = 'DEPI'
   tzsource%clongname  = 'condensation/deposition on ice'
-  tzsource%lavailable = hcloud(1:3) == 'ICE' .and. ( .not. lred .or. ( lred .and. ladj_after ) .or. celec /= 'NONE')&
-                        .or. (hcloud == 'LIMA' .and. lptsplit)
+  tzsource%lavailable =      ( hcloud(1:3) == 'ICE' .and. ( .not. lred .or. ( lred .and. ladj_after ) .or. celec /= 'NONE') ) &
+                        .or. ( hcloud == 'LIMA' .and. lptsplit )
   call Budget_source_add( tbudgets(NBUDGET_RI), tzsource )
 
   tzsource%cmnhname   = 'CORR2'
@@ -2415,8 +2422,9 @@ if ( tbudgets(NBUDGET_RS)%lenabled ) then
 
   tzsource%cmnhname   = 'CORR'
   tzsource%clongname  = 'correction'
-  tzsource%lavailable =       ( hcloud      == 'LIMA' .and. lptsplit .and. lcold_lima .and. lsnow_lima ) &
-                         .or. ( hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE' )
+!   tzsource%lavailable =       ( hcloud      == 'LIMA' .and. lptsplit .and. lcold_lima .and. lsnow_lima ) &
+!                          .or. ( hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE' )
+  tzsource%lavailable = hcloud(1:3) == 'ICE' .and. lred .and. celec == 'NONE'
   call Budget_source_add( tbudgets(NBUDGET_RS), tzsource )
 
   tzsource%cmnhname   = 'SEDI'
@@ -2685,7 +2693,7 @@ if ( tbudgets(NBUDGET_RG)%lenabled ) then
   tzsource%clongname  = 'wet growth of hail'
   tzsource%lavailable =      ( hcloud == 'LIMA' .and. .not.lptsplit .and. lhail_lima .and. lcold_lima &
                                                 .and. lwarm_lima    .and. lsnow_lima )                &
-                        .or.   (hcloud == 'ICE4' .and. .not. lred)
+                        .or.   hcloud == 'ICE4'
   call Budget_source_add( tbudgets(NBUDGET_RG), tzsource )
 
   tzsource%cmnhname   = 'COHG'
@@ -3101,26 +3109,28 @@ SV_BUDGETS: do jsv = 1, ksv
     else if ( jsv >= nsv_lima_beg .and. jsv <= nsv_lima_end ) then SV_VAR
       ! LIMA case
 
-      ! Source terms in common for all LIMA budgets
-      tzsource%cmnhname   = 'NETUR'
-      tzsource%clongname  = 'negative correction induced by turbulence'
-      tzsource%lavailable = hturb == 'TKEL'
-      call Budget_source_add( tbudgets(ibudget), tzsource )
+      ! Source terms in common for all LIMA budgets (except supersaturation)
+      if ( jsv /= nsv_lima_spro ) then
+        tzsource%cmnhname   = 'NETUR'
+        tzsource%clongname  = 'negative correction induced by turbulence'
+        tzsource%lavailable = hturb == 'TKEL'
+        call Budget_source_add( tbudgets(ibudget), tzsource )
 
-      tzsource%cmnhname   = 'NEADV'
-      tzsource%clongname  = 'negative correction induced by advection'
-      tzsource%lavailable = .true.
-      call Budget_source_add( tbudgets(ibudget), tzsource )
+        tzsource%cmnhname   = 'NEADV'
+        tzsource%clongname  = 'negative correction induced by advection'
+        tzsource%lavailable = .true.
+        call Budget_source_add( tbudgets(ibudget), tzsource )
 
-      tzsource%cmnhname   = 'NEGA'
-      tzsource%clongname  = 'negative correction'
-      tzsource%lavailable = .true.
-      call Budget_source_add( tbudgets(ibudget), tzsource )
+        tzsource%cmnhname   = 'NEGA'
+        tzsource%clongname  = 'negative correction'
+        tzsource%lavailable = .true.
+        call Budget_source_add( tbudgets(ibudget), tzsource )
 
-      tzsource%cmnhname   = 'NECON'
-      tzsource%clongname  = 'negative correction induced by condensation'
-      tzsource%lavailable = .true.
-      call Budget_source_add( tbudgets(ibudget), tzsource )
+        tzsource%cmnhname   = 'NECON'
+        tzsource%clongname  = 'negative correction induced by condensation'
+        tzsource%lavailable = .true.
+        call Budget_source_add( tbudgets(ibudget), tzsource )
+      end if
 
 
       ! Source terms specific to each budget
@@ -3131,10 +3141,10 @@ SV_BUDGETS: do jsv = 1, ksv
           tzsource%lavailable = odragtree .and. odepotree
           call Budget_source_add( tbudgets(ibudget), tzsource )
 
-        tzsource%cmnhname   = 'CORR'
-        tzsource%clongname  = 'correction'
-        tzsource%lavailable = lptsplit .and. lwarm_lima  .and. lrain_lima
-        call Budget_source_add( tbudgets(ibudget), tzsource )
+!         tzsource%cmnhname   = 'CORR'
+!         tzsource%clongname  = 'correction'
+!         tzsource%lavailable = lptsplit .and. lwarm_lima  .and. lrain_lima
+!         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'SEDI'
         tzsource%clongname  = 'sedimentation'
@@ -3153,7 +3163,7 @@ SV_BUDGETS: do jsv = 1, ksv
 
         tzsource%cmnhname   = 'HENU'
         tzsource%clongname  = 'CCN activation'
-        tzsource%lavailable = lwarm_lima  .and. lacti_lima .and. nmod_ccn >= 1
+        tzsource%lavailable = lwarm_lima  .and. lacti_lima .and. nmod_ccn >= 1 .and. ( .not.lptsplit .or. .not.lsubg_cond )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'HINC'
@@ -3223,16 +3233,16 @@ SV_BUDGETS: do jsv = 1, ksv
 
         tzsource%cmnhname   = 'CEDS'
         tzsource%clongname  = 'adjustment to saturation'
-        tzsource%lavailable = .true.
+        tzsource%lavailable = lwarm_lima
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
 
       else if ( jsv == nsv_lima_nr ) then SV_LIMA
         ! Rain drops concentration
-        tzsource%cmnhname   = 'CORR'
-        tzsource%clongname  = 'correction'
-        tzsource%lavailable = lptsplit .and. lwarm_lima  .and. lrain_lima
-        call Budget_source_add( tbudgets(ibudget), tzsource )
+!         tzsource%cmnhname   = 'CORR'
+!         tzsource%clongname  = 'correction'
+!         tzsource%lavailable = lptsplit .and. lwarm_lima  .and. lrain_lima
+!         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'SEDI'
         tzsource%clongname  = 'sedimentation'
@@ -3319,7 +3329,7 @@ SV_BUDGETS: do jsv = 1, ksv
         ! Free CCN concentration
         tzsource%cmnhname   = 'HENU'
         tzsource%clongname  = 'CCN activation'
-        tzsource%lavailable = lwarm_lima  .and. lacti_lima .and. nmod_ccn >= 1
+        tzsource%lavailable = lwarm_lima  .and. lacti_lima .and. nmod_ccn >= 1 .and. ( .not.lptsplit .or. .not.lsubg_cond )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'HONH'
@@ -3342,7 +3352,7 @@ SV_BUDGETS: do jsv = 1, ksv
         ! Activated CCN concentration
         tzsource%cmnhname   = 'HENU'
         tzsource%clongname  = 'CCN activation'
-        tzsource%lavailable = lwarm_lima  .and. lacti_lima .and. nmod_ccn >= 1
+        tzsource%lavailable = lwarm_lima  .and. lacti_lima .and. nmod_ccn >= 1 .and. ( .not.lptsplit .or. .not.lsubg_cond )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'HINC'
@@ -3365,16 +3375,16 @@ SV_BUDGETS: do jsv = 1, ksv
 
         tzsource%cmnhname   = 'CEDS'
         tzsource%clongname  = 'adjustment to saturation'
-        tzsource%lavailable = lscav_lima .and. laero_mass_lima
+        tzsource%lavailable = lscav_lima .and. laero_mass_lima .and. .not.lspro_lima
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
 
       else if ( jsv == nsv_lima_ni ) then SV_LIMA
         ! Pristine ice crystals concentration
-        tzsource%cmnhname   = 'CORR'
-        tzsource%clongname  = 'correction'
-        tzsource%lavailable = lptsplit .and. lcold_lima .and. lsnow_lima
-        call Budget_source_add( tbudgets(ibudget), tzsource )
+!         tzsource%cmnhname   = 'CORR'
+!         tzsource%clongname  = 'correction'
+!         tzsource%lavailable = lptsplit .and. lcold_lima .and. lsnow_lima
+!         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'SEDI'
         tzsource%clongname  = 'sedimentation'
@@ -3453,7 +3463,7 @@ SV_BUDGETS: do jsv = 1, ksv
 
         tzsource%cmnhname   = 'CEDS'
         tzsource%clongname  = 'adjustment to saturation'
-        tzsource%lavailable = .true.
+        tzsource%lavailable = lcold_lima .and. .not.lptsplit .and. .not.lspro_lima
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'CORR2'
@@ -3471,7 +3481,7 @@ SV_BUDGETS: do jsv = 1, ksv
 
         tzsource%cmnhname   = 'CEDS'
         tzsource%clongname  = 'adjustment to saturation'
-        tzsource%lavailable = lcold_lima
+        tzsource%lavailable = lcold_lima .and. .not.lptsplit .and. .not.lspro_lima
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
         tzsource%cmnhname   = 'SCAV'
@@ -3500,7 +3510,7 @@ SV_BUDGETS: do jsv = 1, ksv
 
         tzsource%cmnhname   = 'CEDS'
         tzsource%clongname  = 'adjustment to saturation'
-        tzsource%lavailable = lcold_lima
+        tzsource%lavailable = lcold_lima .and. .not.lptsplit .and. .not.lspro_lima
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
 
@@ -3513,7 +3523,7 @@ SV_BUDGETS: do jsv = 1, ksv
 
         tzsource%cmnhname   = 'CEDS'
         tzsource%clongname  = 'adjustment to saturation'
-        tzsource%lavailable = lcold_lima
+        tzsource%lavailable = lcold_lima .and. .not.lptsplit .and. .not.lspro_lima
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
 
@@ -3526,7 +3536,15 @@ SV_BUDGETS: do jsv = 1, ksv
                                 .or. (      lptsplit .and.   ( lhhoni_lima .and. nmod_ccn >= 1 )                 ) )
         call Budget_source_add( tbudgets(ibudget), tzsource )
 
-    end if SV_LIMA
+
+      else if ( jsv == nsv_lima_spro ) then SV_LIMA
+        ! Supersaturation
+        tzsource%cmnhname   = 'CEDS'
+        tzsource%clongname  = 'adjustment to saturation'
+        tzsource%lavailable = .true.
+        call Budget_source_add( tbudgets(ibudget), tzsource )
+
+      end if SV_LIMA
 
 
     else if ( jsv >= nsv_elecbeg .and. jsv <= nsv_elecend ) then SV_VAR

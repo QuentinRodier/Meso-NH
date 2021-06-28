@@ -192,18 +192,36 @@ if ( nbumod == kmi .and. lbu_enable ) then
   if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'CEDS', prs(:, :, :, 2) * prhodj(:, :, :) )
   if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'CEDS', prs(:, :, :, 4) * prhodj(:, :, :) )
   if ( lbudget_sv ) then
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CEDS', psvs(:, :, :, nsv_lima_nc) * prhodj(:, :, :) )
-    do jl = nsv_lima_ccn_free,nsv_lima_ccn_free + nmod_ccn - 1
-      idx = NBUDGET_SV1 - 1 + jl
-      call Budget_store_init( tbudgets(idx), 'CEDS', psvs(:, :, :, jl) * prhodj(:, :, :) )
-    end do
-    if ( lcold ) then
-      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CEDS', psvs(:, :, :, nsv_lima_ni) * prhodj(:, :, :) )
-      do jl = 1, nsv_lima_ifn_free, nsv_lima_ifn_free + nmod_ifn - 1
+    if ( lwarm ) then
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CEDS', psvs(:, :, :, nsv_lima_nc) * prhodj(:, :, :) )
+      do jl = nsv_lima_ccn_free, nsv_lima_ccn_free + nmod_ccn - 1
+        idx = NBUDGET_SV1 - 1 + jl
+        call Budget_store_init( tbudgets(idx), 'CEDS', psvs(:, :, :, jl) * prhodj(:, :, :) )
+      end do
+      do jl = nsv_lima_ccn_acti, nsv_lima_ccn_acti + nmod_ccn - 1
         idx = NBUDGET_SV1 - 1 + jl
         call Budget_store_init( tbudgets(idx), 'CEDS', psvs(:, :, :, jl) * prhodj(:, :, :) )
       end do
     end if
+!     if ( lscav .and. laero_mass ) &
+!       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_scavmass), 'CEDS', psvs(:, :, :, nsv_lima_scavmass) &
+!                                                                                     * prhodj(:, :, :) )
+!     if ( lcold ) then
+!       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CEDS', psvs(:, :, :, nsv_lima_ni) * prhodj(:, :, :) )
+!       do jl = 1, nsv_lima_ifn_free, nsv_lima_ifn_free + nmod_ifn - 1
+!         idx = NBUDGET_SV1 - 1 + jl
+!         call Budget_store_init( tbudgets(idx), 'CEDS', psvs(:, :, :, jl) * prhodj(:, :, :) )
+!       end do
+!       do jl = 1, nsv_lima_ifn_nucl, nsv_lima_ifn_nucl + nmod_ifn - 1
+!         idx = NBUDGET_SV1 - 1 + jl
+!         call Budget_store_init( tbudgets(idx), 'CEDS', psvs(:, :, :, jl) * prhodj(:, :, :) )
+!       end do
+!       do jl = 1, nsv_lima_imm_nucl, nsv_lima_imm_nucl + nmod_ifn - 1
+!         idx = NBUDGET_SV1 - 1 + jl
+!         call Budget_store_init( tbudgets(idx), 'CEDS', psvs(:, :, :, jl) * prhodj(:, :, :) )
+!       end do
+!     end if
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_spro), 'CEDS', psvs(:, :, :, nsv_lima_spro) * prhodj(:, :, :) )
   end if
 end if
 !
@@ -574,18 +592,36 @@ if ( nbumod == kmi .and. lbu_enable ) then
   if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'CEDS', prs(:, :, :, 2) * prhodj(:, :, :) )
   if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'CEDS', prs(:, :, :, 4) * prhodj(:, :, :) )
   if ( lbudget_sv ) then
-    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CEDS', psvs(:, :, :, nsv_lima_nc) * prhodj(:, :, :) )
-    do jl = nsv_lima_ccn_free,nsv_lima_ccn_free + nmod_ccn - 1
-      idx = NBUDGET_SV1 - 1 + jl
-      call Budget_store_end( tbudgets(idx), 'CEDS', psvs(:, :, :, jl) * prhodj(:, :, :) )
-    end do
-    if ( lcold ) then
-      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CEDS', psvs(:, :, :, nsv_lima_ni) * prhodj(:, :, :) )
-      do jl = 1, nsv_lima_ifn_free, nsv_lima_ifn_free + nmod_ifn - 1
+    if ( lwarm ) then
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CEDS', psvs(:, :, :, nsv_lima_nc) * prhodj(:, :, :) )
+      do jl = nsv_lima_ccn_free, nsv_lima_ccn_free + nmod_ccn - 1
+        idx = NBUDGET_SV1 - 1 + jl
+        call Budget_store_end( tbudgets(idx), 'CEDS', psvs(:, :, :, jl) * prhodj(:, :, :) )
+      end do
+      do jl = nsv_lima_ccn_acti, nsv_lima_ccn_acti + nmod_ccn - 1
         idx = NBUDGET_SV1 - 1 + jl
         call Budget_store_end( tbudgets(idx), 'CEDS', psvs(:, :, :, jl) * prhodj(:, :, :) )
       end do
     end if
+!     if ( lscav .and. laero_mass ) &
+!       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_scavmass), 'CEDS', psvs(:, :, :, nsv_lima_scavmass) &
+!                                                                                     * prhodj(:, :, :) )
+!     if ( lcold ) then
+!       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CEDS', psvs(:, :, :, nsv_lima_ni) * prhodj(:, :, :) )
+!       do jl = 1, nsv_lima_ifn_free, nsv_lima_ifn_free + nmod_ifn - 1
+!         idx = NBUDGET_SV1 - 1 + jl
+!         call Budget_store_end( tbudgets(idx), 'CEDS', psvs(:, :, :, jl) * prhodj(:, :, :) )
+!       end do
+!       do jl = 1, nsv_lima_ifn_nucl, nsv_lima_ifn_nucl + nmod_ifn - 1
+!         idx = NBUDGET_SV1 - 1 + jl
+!         call Budget_store_end( tbudgets(idx), 'CEDS', psvs(:, :, :, jl) * prhodj(:, :, :) )
+!       end do
+!       do jl = 1, nsv_lima_imm_nucl, nsv_lima_imm_nucl + nmod_ifn - 1
+!         idx = NBUDGET_SV1 - 1 + jl
+!         call Budget_store_end( tbudgets(idx), 'CEDS', psvs(:, :, :, jl) * prhodj(:, :, :) )
+!       end do
+!     end if
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_spro), 'CEDS', psvs(:, :, :, nsv_lima_spro) * prhodj(:, :, :) )
   end if
 end if
 !

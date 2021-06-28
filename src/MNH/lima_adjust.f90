@@ -431,8 +431,10 @@ if ( nbumod == kmi .and. lbu_enable ) then
   if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'CEDS', prcs(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'CEDS', pris(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_sv ) then
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CEDS', pccs(:, :, :) * prhodj(:, :, :) )
-    if (lcold) call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CEDS', pcis(:, :, :) * prhodj(:, :, :) )
+    if ( lwarm ) &
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc),       'CEDS', pccs(:, :, :) * prhodj(:, :, :) )
+    if ( lcold ) &
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni),       'CEDS', pcis(:, :, :) * prhodj(:, :, :) )
     if ( lscav .and. laero_mass ) &
       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_scavmass), 'CEDS', pmas(:, :, :) * prhodj(:, :, :) )
     if ( lwarm ) then
@@ -1308,8 +1310,10 @@ if ( nbumod == kmi .and. lbu_enable ) then
   if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'CEDS', prcs(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'CEDS', pris(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_sv ) then
-    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CEDS', pccs(:, :, :) * prhodj(:, :, :) )
-    if (lcold) call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CEDS', pcis(:, :, :) * prhodj(:, :, :) )
+    if ( lwarm ) &
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc),       'CEDS', pccs(:, :, :) * prhodj(:, :, :) )
+    if ( lcold ) &
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni),       'CEDS', pcis(:, :, :) * prhodj(:, :, :) )
     if ( lscav .and. laero_mass ) &
       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_scavmass), 'CEDS', pmas(:, :, :) * prhodj(:, :, :) )
     if ( lwarm ) then

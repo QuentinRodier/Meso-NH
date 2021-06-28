@@ -362,7 +362,7 @@ END IF
 !   	        --------------------------------------
 !
 !
-IF ( LACTI .AND. NMOD_CCN > 0 ) THEN
+IF ( LACTI .AND. NMOD_CCN > 0 .AND. .NOT. LSPRO ) THEN
   if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'HENU', pths(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'HENU', prvs(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'HENU', prcs(:, :, :) * prhodj(:, :, :) )
@@ -375,12 +375,11 @@ IF ( LACTI .AND. NMOD_CCN > 0 ) THEN
       call Budget_store_init( tbudgets(idx), 'HENU', znas(:, :, :, jl) * prhodj(:, :, :) )
     end do
   end if
-   IF (.NOT. LSPRO) THEN
-      CALL LIMA_WARM_NUCL(OACTIT, PTSTEP, KMI, TPFILE,                &
-                          PRHODREF, PEXNREF, PPABST, ZT, PTHM, PW_NU, &
-                          PRCM, PRVT, PRCT, PRRT,                     &
-                          PTHS, PRVS, PRCS, PCCS, ZNFS, ZNAS          )
-   END IF
+
+  CALL LIMA_WARM_NUCL( OACTIT, PTSTEP, KMI, TPFILE,                &
+                       PRHODREF, PEXNREF, PPABST, ZT, PTHM, PW_NU, &
+                       PRCM, PRVT, PRCT, PRRT,                     &
+                       PTHS, PRVS, PRCS, PCCS, ZNFS, ZNAS          )
 
   if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'HENU', pths(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'HENU', prvs(:, :, :) * prhodj(:, :, :) )
