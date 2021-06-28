@@ -441,7 +441,8 @@ END IF
 ! routine which read related informations in the EXSEG descriptor in order to 
 ! check coherence between both informations.
 !
-CALL IO_Field_read(TPINIFILE,'LOCEAN',LOCEAN)
+CALL IO_Field_read(TPINIFILE,'LOCEAN',LOCEAN,IRESP)
+IF ( IRESP /= 0 ) LOCEAN = .FALSE.
 !
 CALL READ_EXSEG_n(KMI,TZFILE_DES,YCONF,GFLAT,GUSERV,GUSERC,                 &
                 GUSERR,GUSERI,GUSECI,GUSERS,GUSERG,GUSERH,GUSECHEM,         &
