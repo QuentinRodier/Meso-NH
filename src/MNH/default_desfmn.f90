@@ -215,6 +215,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !                    05/2021 D. Ricard add the contribution of Leonard terms in the turbulence scheme
 !! JL Redelsperger 06/2021 add parameters allowing to active idealized oceanic convection
 !!      B. Vie       06/2021 Add prognostic supersaturation for LIMA
+!!      Q. Rodier    06/2021 modify default value to LGZ=F (grey-zone corr.), LSEDI and OSEDC=T (LIMA sedimentation)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -900,7 +901,7 @@ XC     =  0.012
 XBETA1 =  0.9 
 XR     =  2.
 XLAMBDA_MF=  0.
-LGZ    =  .TRUE.
+LGZ    =  .FALSE.
 XGZ    =  1.83 ! between 1.83 and 1.33
 !
 !-------------------------------------------------------------------------------
@@ -960,7 +961,7 @@ IF (KMI == 1) THEN
   OWARM  = .TRUE.
   LACTI  = .TRUE.
   ORAIN  = .TRUE.
-  OSEDC  = .FALSE.
+  OSEDC  = .TRUE.
   OACTIT = .FALSE.
   LADJ   = .TRUE.
   LSPRO  = .FALSE.
@@ -996,7 +997,7 @@ IF (KMI == 1) THEN
   LHHONI = .FALSE.
   LCOLD  = .TRUE.
   LNUCL  = .TRUE.
-  LSEDI  = .FALSE.
+  LSEDI  = .TRUE.
   LSNOW  = .TRUE.
   LHAIL  = .FALSE.
   CPRISTINE_ICE_LIMA = 'PLAT'
