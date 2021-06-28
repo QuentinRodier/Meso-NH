@@ -88,9 +88,9 @@ INTEGER  :: ILUOUT0 ! Logical unit number for output-listing
 INTEGER  :: IRESP   ! Return code of FM-routines
 !
 REAL :: X1, X2, X3, X4, X5
-REAL, DIMENSION(7) :: diameters=(/ 0.01E-6, 0.05E-6, 0.1E-6, 0.2E-6, 0.5E-6, 1.E-6, 2.E-6 /)
-REAL, DIMENSION(3) :: sigma=(/ 2., 2.5, 3. /)
-CHARACTER(LEN=7), DIMENSION(3) :: types=(/ 'NH42SO4', 'NaCl   ', '       ' /)
+! REAL, DIMENSION(7) :: diameters=(/ 0.01E-6, 0.05E-6, 0.1E-6, 0.2E-6, 0.5E-6, 1.E-6, 2.E-6 /)
+! REAL, DIMENSION(3) :: sigma=(/ 2., 2.5, 3. /)
+! CHARACTER(LEN=7), DIMENSION(3) :: types=(/ 'NH42SO4', 'NaCl   ', '       ' /)
 !REAL, DIMENSION(1) :: diameters=(/ 0.25E-6 /)
 !CHARACTER(LEN=7), DIMENSION(1) :: types=(/ '       ' /)
 INTEGER :: II, IJ, IK

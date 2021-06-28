@@ -1057,14 +1057,14 @@ ZDIAG =  ZDIAG + ZTIME2 - ZTIME1
 !*       16.    INITIALIZE LEVELSET FOR IBM
 !              ---------------------------
 !
-CALL GET_DIM_EXT_ll('B',NIU,NJU)
-NKU=NKMAX+2*JPVEXT
-!
 IF (LIBM_LSF) THEN
   !
   IF (.NOT.LCARTESIAN) THEN
     CALL PRINT_MSG(NVERB_FATAL,'GEN','PREP_IDEAL_CASE','IBM can only be used with cartesian coordinates')
   ENDIF
+  !
+  CALL GET_DIM_EXT_ll('B',NIU,NJU)
+  NKU=NKMAX+2*JPVEXT
   !
   ALLOCATE(XIBM_LS(NIU,NJU,NKU,4))
   !

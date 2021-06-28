@@ -94,7 +94,6 @@ USE MODE_ll
 USE MODE_MSG
 !
 USE MODI_INI_STATION_N
-!USE MODN_STATION_n
 !
 IMPLICIT NONE
 !
@@ -165,7 +164,7 @@ END SUBROUTINE DEFAULT_STATION_n
 SUBROUTINE ALLOCATE_STATION_n(TSTATION,KMI)
 !
 TYPE(STATION), INTENT(INOUT) :: TSTATION   ! 
-INTEGER                      :: KMI        ! Model Index 
+INTEGER,       INTENT(IN)    :: KMI        ! Model Index
 !
 if ( tstation%step < xtstep ) then
   call Print_msg( NVERB_ERROR, 'GEN', 'INI_SURFSTATION_n', 'TSTATION%STEP smaller than XTSTEP' )

@@ -84,7 +84,6 @@ USE MODD_LUNIT
 USE MODD_LUNIT_n
 USE MODD_MNH_SURFEX_n
 USE MODD_PARAMETERS
-USE MODD_REF
 !
 use mode_field,            only: Alloc_field_scalars, Fieldlist_goto_model
 USE MODE_IO_FILE,          ONLY: IO_File_open
