@@ -381,18 +381,18 @@ REAL            :: ZRDSCPD,ZRADSDG, & ! Rd/Cpd, Pi/180.,
                    ZRVSRD,ZRDSRV,   & ! Rv/Rd, Rd/Rv
                    ZPTOP              ! Pressure at domain top 
 LOGICAL         :: GUSERC             ! use of input data cloud
-INTEGER         :: IIB, IIE, IJB, IJE,IKB,IKE
+INTEGER         :: IIB, IIE, IJB, IJE
 INTEGER         :: IXOR_ll, IYOR_ll
 INTEGER         :: IINFO_ll
 LOGICAL         :: GPROFILE_IN_PROC   ! T : initialization profile is in current processor
-CHARACTER(LEN=100) :: YMSG
 !
 REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT))   ::ZZS_LS
 REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT)) ::ZZFLUX_MX,ZZMASS_MX ! mixed grid
 !-------------------------------------------------------------------------------
 ! For standard ocean version, reading external files
-CHARACTER(LEN=256) :: infile,infisf ! files to be read
-INTEGER :: NZ,NLATI,NLONGI,IDX,ITIME,ncid,varid,ndimp,ntcindy
+CHARACTER(LEN=256) :: yinfile, yinfisf ! files to be read
+INTEGER :: INZ, INLATI, INLONGI, IDX
+INTEGER(KIND=CDFINT) :: incid, ivarid, idimid, idimlen
 REAL, DIMENSION(:,:,:),     ALLOCATABLE :: ZOC_TEMPERATURE,ZOC_SALINITY,ZOC_U,ZOC_V
 REAL, DIMENSION(:),     ALLOCATABLE :: ZOC_DEPTH  
 REAL, DIMENSION(:),     ALLOCATABLE :: ZOC_LE,ZOC_H
@@ -581,47 +581,47 @@ SELECT CASE(YKIND)
   CASE ('STANDOCE')
 !   
     XP00=XP00OCEAN
-    READ(ILUPRE,*) ZPTOP           ! P_atmosphere at sfc =P top domain     
-    READ(ILUPRE,*) INFILE,INFISF
-    WRITE(ILUOUT,FMT=*) 'Netcdf files to read:',INFILE,INFISF
+    READ(ILUPRE,*) ZPTOP           ! P_atmosphere at sfc =P top domain
+    READ(ILUPRE,*) YINFILE, YINFISF
+    WRITE(ILUOUT,FMT=*) 'Netcdf files to read:', YINFILE, YINFISF
     ! Open file containing initial profiles
-    CALL check(nf90_open(infile,NF90_NOWRITE,ncid), "opening NC file")
+    CALL check(nf90_open(yinfile,NF90_NOWRITE,incid), "opening NC file")
     ! Reading dimensions and lengths
-    CALL check( nf90_inq_dimid(ncid, "depth",ndimp), "getting depth  dimension id" )
-    CALL check( nf90_inquire_dimension(ncid, ndimp, len=NZ), "getting NZ "  )
-    CALL check( nf90_inquire_dimension(ncid, 2, len=NLONGI), "getting NLONG "  )
-    CALL check( nf90_inquire_dimension(ncid, 1, len=NLATI), "getting NLAT "  )
+    CALL check( nf90_inq_dimid(incid, "depth",idimid), "getting depth  dimension id" )
+    CALL check( nf90_inquire_dimension(incid, idimid, len=INZ), "getting INZ "  )
+    CALL check( nf90_inquire_dimension(incid, 2, len=INLONGI), "getting NLONG "  )
+    CALL check( nf90_inquire_dimension(incid, 1, len=INLATI), "getting NLAT "  )
 !   
-    WRITE(ILUOUT,FMT=*) 'NB LEVLS READ NZ, NLONG NLAT ', NZ, NLONGI,NLATI
-    ALLOCATE(ZOC_TEMPERATURE(NLATI,NLONGI,NZ),ZOC_SALINITY(NLATI,NLONGI,NZ))
-    ALLOCATE(ZOC_U(NLATI,NLONGI,NZ),ZOC_V(NLATI,NLONGI,NZ))
-    ALLOCATE(ZOC_DEPTH(NZ))
+    WRITE(ILUOUT,FMT=*) 'NB LEVLS READ INZ, NLONG NLAT ', INZ, INLONGI,INLATI
+    ALLOCATE(ZOC_TEMPERATURE(INLATI,INLONGI,INZ),ZOC_SALINITY(INLATI,INLONGI,INZ))
+    ALLOCATE(ZOC_U(INLATI,INLONGI,INZ),ZOC_V(INLATI,INLONGI,INZ))
+    ALLOCATE(ZOC_DEPTH(INZ))
     WRITE(ILUOUT,FMT=*) 'NETCDF READING ==> Temp'
-    CALL check(nf90_inq_varid(ncid,"temperature",varid), "getting temp varid")
-    CALL check(nf90_get_var(ncid,varid,ZOC_TEMPERATURE), "reading temp")
+    CALL check(nf90_inq_varid(incid,"temperature",ivarid), "getting temp ivarid")
+    CALL check(nf90_get_var(incid,ivarid,ZOC_TEMPERATURE), "reading temp")
     WRITE(ILUOUT,FMT=*) 'Netcdf Reading ==> salinity'
-    CALL check(nf90_inq_varid(ncid,"salinity",varid), "getting salinity varid")
-    CALL check(nf90_get_var(ncid,varid,ZOC_SALINITY), "reading salinity")
+    CALL check(nf90_inq_varid(incid,"salinity",ivarid), "getting salinity ivarid")
+    CALL check(nf90_get_var(incid,ivarid,ZOC_SALINITY), "reading salinity")
     WRITE(ILUOUT,FMT=*) 'Netcdf ==> Reading depth'
-    CALL check(nf90_inq_varid(ncid,"depth",varid), "getting depth varid")
-    CALL check(nf90_get_var(ncid,varid,ZOC_DEPTH), "reading depth")
+    CALL check(nf90_inq_varid(incid,"depth",ivarid), "getting depth ivarid")
+    CALL check(nf90_get_var(incid,ivarid,ZOC_DEPTH), "reading depth")
     WRITE(ILUOUT,FMT=*) 'depth: max min ', MAXVAL(ZOC_DEPTH),MINVAL(ZOC_DEPTH)
-    WRITE(ILUOUT,FMT=*) 'depth 1 nz: ', ZOC_DEPTH(1),ZOC_DEPTH(NZ)
+    WRITE(ILUOUT,FMT=*) 'depth 1 nz: ', ZOC_DEPTH(1),ZOC_DEPTH(INZ)
     WRITE(ILUOUT,FMT=*) 'Netcdf Reading ==> Currents'
-    CALL check(nf90_inq_varid(ncid,"u",varid), "getting u varid")
-    CALL check(nf90_get_var(ncid,varid,ZOC_U), "reading u")
-    CALL check(nf90_inq_varid(ncid,"v",varid), "getting v varid")
-    CALL check(nf90_get_var(ncid,varid,ZOC_V), "reading v")
-    CALL check(nf90_close(ncid), "closing infile")
+    CALL check(nf90_inq_varid(incid,"u",ivarid), "getting u ivarid")
+    CALL check(nf90_get_var(incid,ivarid,ZOC_U), "reading u")
+    CALL check(nf90_inq_varid(incid,"v",ivarid), "getting v ivarid")
+    CALL check(nf90_get_var(incid,ivarid,ZOC_V), "reading v")
+    CALL check(nf90_close(incid), "closing yinfile")
     WRITE(ILUOUT,FMT=*) 'End of initial file reading'
 !
-    DO JKM=1,NZ
+    DO JKM=1,INZ
      ZOC_TEMPERATURE(1,1,JKM)=ZOC_TEMPERATURE(1,1,JKM)+273.15
      WRITE(ILUOUT,FMT=*) 'Z T(Kelvin) S(Sverdup) U V K',&
      JKM,ZOC_DEPTH(JKM),ZOC_TEMPERATURE(1,1,JKM),ZOC_SALINITY(1,1,JKM),ZOC_U(1,1,JKM),ZOC_V(1,1,JKM), JKM
     ENDDO
     !  number of data levels
-    ILEVELM=NZ
+    ILEVELM=INZ
     ! Model bottom
     ZTGROUND  = ZOC_TEMPERATURE(1,1,ILEVELM)
     ZMRGROUND = ZOC_SALINITY(1,1,ILEVELM)
@@ -655,7 +655,7 @@ SELECT CASE(YKIND)
     ZTHL = ZT
     ZTH  = ZT
     ! INIT --- U V -----
-    ILEVELU=nz               ! Same nb of levels for u,v,T,S
+    ILEVELU = INZ               ! Same nb of levels for u,v,T,S
     !Assume that current and temp are given at same level
     ALLOCATE(ZHEIGHTU(ILEVELU))           
     ALLOCATE(ZU(ILEVELU),ZV(ILEVELU))
@@ -678,56 +678,56 @@ SELECT CASE(YKIND)
 !
     ! Reading/initializing  surface forcings
 !
-    WRITE(ILUOUT,FMT=*) 'netcdf sfc forcings file to be read:',infisf  
+    WRITE(ILUOUT,FMT=*) 'netcdf sfc forcings file to be read:',yinfisf
     ! Open of sfc forcing file
-    CALL check(nf90_open(infisf,NF90_NOWRITE,ncid), "opening NC file")
+    CALL check(nf90_open(yinfisf,NF90_NOWRITE,incid), "opening NC file")
     ! Reading dimension and length
-    CALL check( nf90_inq_dimid(ncid,"t",ndimp), "getting  time dimension id" )
-    CALL check( nf90_inquire_dimension(ncid, ndimp, len=ntcindy), "getting ntcindy "  )
+    CALL check( nf90_inq_dimid(incid,"t",idimid), "getting  time dimension id" )
+    CALL check( nf90_inquire_dimension(incid, idimid, len=idimlen), "getting idimlen "  )
 !
-    WRITE(ILUOUT,FMT=*) 'nb sfc-forcing time ntcindy=',ntcindy   
-    ALLOCATE(ZOC_LE(ntcindy))    
-    ALLOCATE(ZOC_H(ntcindy))    
-    ALLOCATE(ZOC_SW_DOWN(ntcindy))    
-    ALLOCATE(ZOC_SW_UP(ntcindy))    
-    ALLOCATE(ZOC_LW_DOWN(ntcindy))    
-    ALLOCATE(ZOC_LW_UP(ntcindy))    
-    ALLOCATE(ZOC_TAUX(ntcindy))
-    ALLOCATE(ZOC_TAUY(ntcindy))
+    WRITE(ILUOUT,FMT=*) 'nb sfc-forcing time idimlen=',idimlen
+    ALLOCATE(ZOC_LE(idimlen))
+    ALLOCATE(ZOC_H(idimlen))
+    ALLOCATE(ZOC_SW_DOWN(idimlen))
+    ALLOCATE(ZOC_SW_UP(idimlen))
+    ALLOCATE(ZOC_LW_DOWN(idimlen))
+    ALLOCATE(ZOC_LW_UP(idimlen))
+    ALLOCATE(ZOC_TAUX(idimlen))
+    ALLOCATE(ZOC_TAUY(idimlen))
 !
     WRITE(ILUOUT,FMT=*)'Netcdf Reading ==> LE'  
-    CALL check(nf90_inq_varid(ncid,"LE",varid), "getting LE varid")
-    CALL check(nf90_get_var(ncid,varid,ZOC_LE), "reading LE flux")
+    CALL check(nf90_inq_varid(incid,"LE",ivarid), "getting LE ivarid")
+    CALL check(nf90_get_var(incid,ivarid,ZOC_LE), "reading LE flux")
     WRITE(ILUOUT,FMT=*)'Netcdf Reading ==> H'  
-    CALL check(nf90_inq_varid(ncid,"H",varid), "getting H varid")
-    CALL check(nf90_get_var(ncid,varid,ZOC_H), "reading H flux")
+    CALL check(nf90_inq_varid(incid,"H",ivarid), "getting H ivarid")
+    CALL check(nf90_get_var(incid,ivarid,ZOC_H), "reading H flux")
     WRITE(ILUOUT,FMT=*) 'Netcdf Reading ==> SW_DOWN'  
-    CALL check(nf90_inq_varid(ncid,"SW_DOWN",varid), "getting SW_DOWN varid")
-    CALL check(nf90_get_var(ncid,varid,ZOC_SW_DOWN), "reading SW_DOWN")
+    CALL check(nf90_inq_varid(incid,"SW_DOWN",ivarid), "getting SW_DOWN ivarid")
+    CALL check(nf90_get_var(incid,ivarid,ZOC_SW_DOWN), "reading SW_DOWN")
     WRITE(ILUOUT,FMT=*) 'Netcdf Reading ==> SW_UP'  
-    CALL check(nf90_inq_varid(ncid,"SW_UP",varid), "getting SW_UP varid")
-    CALL check(nf90_get_var(ncid,varid,ZOC_SW_UP), "reading SW_UP")
+    CALL check(nf90_inq_varid(incid,"SW_UP",ivarid), "getting SW_UP ivarid")
+    CALL check(nf90_get_var(incid,ivarid,ZOC_SW_UP), "reading SW_UP")
     WRITE(ILUOUT,FMT=*) 'Netcdf Reading ==> LW_DOWN'  
-    CALL check(nf90_inq_varid(ncid,"LW_DOWN",varid), "getting LW_DOWN varid")
-    CALL check(nf90_get_var(ncid,varid,ZOC_LW_DOWN), "reading LW_DOWN")
+    CALL check(nf90_inq_varid(incid,"LW_DOWN",ivarid), "getting LW_DOWN ivarid")
+    CALL check(nf90_get_var(incid,ivarid,ZOC_LW_DOWN), "reading LW_DOWN")
     WRITE(ILUOUT,FMT=*) 'Netcdf Reading ==> LW_UP'  
-    CALL check(nf90_inq_varid(ncid,"LW_UP",varid), "getting LW_UP varid")
-    CALL check(nf90_get_var(ncid,varid,ZOC_LW_UP), "reading LW_UP")
+    CALL check(nf90_inq_varid(incid,"LW_UP",ivarid), "getting LW_UP ivarid")
+    CALL check(nf90_get_var(incid,ivarid,ZOC_LW_UP), "reading LW_UP")
     WRITE(ILUOUT,FMT=*) 'Netcdf Reading ==> TAUX'  
-    CALL check(nf90_inq_varid(ncid,"TAUX",varid), "getting TAUX varid")
-    CALL check(nf90_get_var(ncid,varid,ZOC_TAUX), "reading TAUX")
+    CALL check(nf90_inq_varid(incid,"TAUX",ivarid), "getting TAUX ivarid")
+    CALL check(nf90_get_var(incid,ivarid,ZOC_TAUX), "reading TAUX")
     WRITE(ILUOUT,FMT=*) 'Netcdf Reading ==> TAUY'  
-    CALL check(nf90_inq_varid(ncid,"TAUY",varid), "getting TAUY varid")
-    CALL check(nf90_get_var(ncid,varid,ZOC_TAUY), "reading TAUY")
-    CALL check(nf90_close(ncid), "closing infisfS")
+    CALL check(nf90_inq_varid(incid,"TAUY",ivarid), "getting TAUY ivarid")
+    CALL check(nf90_get_var(incid,ivarid,ZOC_TAUY), "reading TAUY")
+    CALL check(nf90_close(incid), "closing yinfifs")
 !
     WRITE(ILUOUT,FMT=*) '  Forcing-Number    LE     H     SW_down     SW_up    LW_down   LW_up TauX TauY' 
-    DO JKM=1,NTCINDY
+    DO JKM = 1, idimlen
       WRITE(ILUOUT,FMT=*) JKM, ZOC_LE(JKM), ZOC_H(JKM),ZOC_SW_DOWN(JKM),ZOC_SW_UP(JKM),&
                           ZOC_LW_DOWN(JKM),ZOC_LW_UP(JKM),ZOC_TAUX(JKM),ZOC_TAUY(JKM)   
     ENDDO
     ! IFRCLT FORCINGS at sea surface
-    IFRCLT=NTCINDY
+    IFRCLT=idimlen
     ALLOCATE(ZFRCLT(IFRCLT)) 
     ALLOCATE(ZSSUFL_T(IFRCLT)); ZSSUFL_T = 0.0
     ALLOCATE(ZSSVFL_T(IFRCLT)); ZSSVFL_T = 0.0
@@ -1620,12 +1620,12 @@ DEALLOCATE(ZMR)
 DEALLOCATE(ZTHL)
 !-------------------------------------------------------------------------------
 CONTAINS
-  SUBROUTINE CHECK(STATUS,LOC)
-    INTEGER, INTENT(IN) :: STATUS
-    CHARACTER(LEN=*), INTENT(IN) :: LOC
-    IF(STATUS /= NF90_NOERR) THEN
-       WRITE(ILUOUT,FMT=*) "Error at ", LOC
-      WRITE(ILUOUT,FMT=*) NF90_STRERROR(STATUS)
+  SUBROUTINE CHECK( ISTATUS, YLOC )
+    INTEGER(KIND=CDFINT), INTENT(IN) :: ISTATUS
+    CHARACTER(LEN=*),     INTENT(IN) :: YLOC
+
+    IF( ISTATUS /= NF90_NOERR ) THEN
+      CALL PRINT_MSG( NVERB_ERROR, 'IO', 'SET_RSOU', 'error at ' // Trim( yloc) // ': ' // NF90_STRERROR( ISTATUS ) )
     END IF
   END SUBROUTINE check
 !
