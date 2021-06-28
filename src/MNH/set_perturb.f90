@@ -257,7 +257,7 @@ IF (LOCEAN) THEN
   INOISB=NKWH
   INOISE=IKE
 ELSE
-  INOISB=2
+  INOISB=IKB
   INOISE=NKWH
 ENDIF
 !-------------------------------------------------------------------------------
