@@ -518,7 +518,7 @@ IF (LRECYCL) THEN
   TZFIELD%NDIMS      = 0
   TZFIELD%LTIMEDEP   = .TRUE.
   TZFIELD%CCOMMENT   = 'Incremental counter for averaging purpose'
-  CALL IO_Field_write(TPFILE,TZFIELD,R_COUNT)
+  CALL IO_Field_write(TPFILE,TZFIELD,NR_COUNT)
   !
   IF (LRECYCLW) THEN
     TZFIELD%CMNHNAME   = 'URECYCLW'
