@@ -449,7 +449,7 @@ TZFIELD%CMNHNAME   = 'RECYCLING'
 TZFIELD%CLONGNAME  = 'RECYCLING'
 TZFIELD%CSTDNAME   = ''
 TZFIELD%CUNITS     = ''
-TZFIELD%CDIR       = ''
+TZFIELD%CDIR       = '--'
 TZFIELD%NGRID      = 1
 TZFIELD%NTYPE      = TYPELOG
 TZFIELD%NDIMS      = 0
@@ -512,7 +512,7 @@ IF (LRECYCL) THEN
   TZFIELD%CLONGNAME  = 'RCOUNT'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CDIR       = '--'
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEINT
   TZFIELD%NDIMS      = 0
@@ -524,8 +524,8 @@ IF (LRECYCL) THEN
     TZFIELD%CMNHNAME   = 'URECYCLW'
     TZFIELD%CLONGNAME  = 'URECYCLW'
     TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm.s-1'
-    TZFIELD%CDIR       = 'YY'
+    TZFIELD%CUNITS     = 'm s-1'
+    TZFIELD%CDIR       = 'XY'
     TZFIELD%NGRID      = 2
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
@@ -537,8 +537,8 @@ IF (LRECYCL) THEN
     TZFIELD%CMNHNAME   = 'VRECYCLW'
     TZFIELD%CLONGNAME  = 'VRECYCLW'
     TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm.s-1'
-    TZFIELD%CDIR       = 'YY'
+    TZFIELD%CUNITS     = 'm s-1'
+    TZFIELD%CDIR       = 'XY'
     TZFIELD%NGRID      = 3
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
@@ -550,8 +550,8 @@ IF (LRECYCL) THEN
     TZFIELD%CMNHNAME   = 'WRECYCLW'
     TZFIELD%CLONGNAME  = 'WRECYCLW'
     TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm.s-1'
-    TZFIELD%CDIR       = 'YY'
+    TZFIELD%CUNITS     = 'm s-1'
+    TZFIELD%CDIR       = 'XY'
     TZFIELD%NGRID      = 4
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
@@ -565,8 +565,8 @@ IF (LRECYCL) THEN
     TZFIELD%CMNHNAME   = 'URECYCLN'
     TZFIELD%CLONGNAME  = 'URECYCLN'
     TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm.s-1'
-    TZFIELD%CDIR       = 'XX'
+    TZFIELD%CUNITS     = 'm s-1'
+    TZFIELD%CDIR       = 'XY'
     TZFIELD%NGRID      = 2
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
@@ -578,8 +578,8 @@ IF (LRECYCL) THEN
     TZFIELD%CMNHNAME   = 'VRECYCLN'
     TZFIELD%CLONGNAME  = 'VRECYCLN'
     TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm.s-1'
-    TZFIELD%CDIR       = 'XX'
+    TZFIELD%CUNITS     = 'm s-1'
+    TZFIELD%CDIR       = 'XY'
     TZFIELD%NGRID      = 3
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
@@ -591,8 +591,8 @@ IF (LRECYCL) THEN
     TZFIELD%CMNHNAME   = 'WRECYCLN'
     TZFIELD%CLONGNAME  = 'WRECYCLN'
     TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm.s-1'
-    TZFIELD%CDIR       = 'XX'
+    TZFIELD%CUNITS     = 'm s-1'
+    TZFIELD%CDIR       = 'XY'
     TZFIELD%NGRID      = 4
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
@@ -606,8 +606,8 @@ IF (LRECYCL) THEN
     TZFIELD%CMNHNAME   = 'URECYCLE'
     TZFIELD%CLONGNAME  = 'URECYCLE'
     TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm.s-1'
-    TZFIELD%CDIR       = 'YY'
+    TZFIELD%CUNITS     = 'm s-1'
+    TZFIELD%CDIR       = 'XY'
     TZFIELD%NGRID      = 2
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
@@ -619,8 +619,8 @@ IF (LRECYCL) THEN
     TZFIELD%CMNHNAME   = 'VRECYCLE'
     TZFIELD%CLONGNAME  = 'VRECYCLE'
     TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm.s-1'
-    TZFIELD%CDIR       = 'YY'
+    TZFIELD%CUNITS     = 'm s-1'
+    TZFIELD%CDIR       = 'XY'
     TZFIELD%NGRID      = 3
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
@@ -632,8 +632,8 @@ IF (LRECYCL) THEN
     TZFIELD%CMNHNAME   = 'WRECYCLE'
     TZFIELD%CLONGNAME  = 'WRECYCLE'
     TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm.s-1'
-    TZFIELD%CDIR       = 'YY'
+    TZFIELD%CUNITS     = 'm s-1'
+    TZFIELD%CDIR       = 'XY'
     TZFIELD%NGRID      = 4
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
@@ -647,8 +647,8 @@ IF (LRECYCL) THEN
     TZFIELD%CMNHNAME   = 'URECYCLS'
     TZFIELD%CLONGNAME  = 'URECYCLS'
     TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm.s-1'
-    TZFIELD%CDIR       = 'XX'
+    TZFIELD%CUNITS     = 'm s-1'
+    TZFIELD%CDIR       = 'XY'
     TZFIELD%NGRID      = 2
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
@@ -660,8 +660,8 @@ IF (LRECYCL) THEN
     TZFIELD%CMNHNAME   = 'VRECYCLS'
     TZFIELD%CLONGNAME  = 'VRECYCLS'
     TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm.s-1'
-    TZFIELD%CDIR       = 'XX'
+    TZFIELD%CUNITS     = 'm s-1'
+    TZFIELD%CDIR       = 'XY'
     TZFIELD%NGRID      = 3
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
@@ -673,8 +673,8 @@ IF (LRECYCL) THEN
     TZFIELD%CMNHNAME   = 'WRECYCLS'
     TZFIELD%CLONGNAME  = 'WRECYCLS'
     TZFIELD%CSTDNAME   = ''
-    TZFIELD%CUNITS     = 'm.s-1'
-    TZFIELD%CDIR       = 'XX'
+    TZFIELD%CUNITS     = 'm s-1'
+    TZFIELD%CDIR       = 'XY'
     TZFIELD%NGRID      = 4
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
@@ -769,7 +769,7 @@ IF (MEAN_COUNT /= 0) THEN
 !
   TZFIELD%CMNHNAME   = 'CMME'
   TZFIELD%CLONGNAME  = 'CMME'
-  TZFIELD%CUNITS     = 'Kg Kg-1'
+  TZFIELD%CUNITS     = 'kg kg-1'
   TZFIELD%CCOMMENT   = 'mean Passive scalar'
   ZWORK3D = XSVT_MEAN/MEAN_COUNT
   CALL IO_Field_write(TPFILE,TZFIELD,ZWORK3D)
@@ -2412,7 +2412,7 @@ IF (LMAIN_EOL .AND. IMI == NMODEL_EOL) THEN
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  TZFIELD%CDIR       = 'XYZ'
+  TZFIELD%CDIR       = 'XY'
   TZFIELD%CUNITS     = 'N'
 !
   TZFIELD%CMNHNAME   = 'FX_RG'
@@ -2455,17 +2455,17 @@ SELECT CASE(CMETH_EOL)
     TZFIELD%NGRID      = 1
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 1
-    TZFIELD%CDIR       = ''
-    TZFIELD%CUNITS     = '-'
+    TZFIELD%CDIR       = '--'
+    TZFIELD%CUNITS     = '1'
 !
     TZFIELD%CMNHNAME   = 'A_INDU'
     TZFIELD%CLONGNAME  = 'INDUCTION_FACTOR'
-    TZFIELD%CCOMMENT   = 'Induction factor (-)'
+    TZFIELD%CCOMMENT   = 'Induction factor (1)'
     CALL IO_Field_write(TPFILE,TZFIELD,XA_INDU)
 !
     TZFIELD%CMNHNAME   = 'CT_D'
     TZFIELD%CLONGNAME  = 'CTHRUST_D'
-    TZFIELD%CCOMMENT   = 'Thrust coefficient at disk (-),    &
+    TZFIELD%CCOMMENT   = 'Thrust coefficient at disk (1),    &
                           used with wind speed at disk'
     CALL IO_Field_write(TPFILE,TZFIELD,XCT_D)
 !
@@ -2490,7 +2490,7 @@ SELECT CASE(CMETH_EOL)
 !
     TZFIELD%NGRID      = 1
     TZFIELD%NTYPE      = TYPEREAL
-    TZFIELD%CDIR       = ''
+    TZFIELD%CDIR       = '--'
 !
     TZFIELD%NDIMS      = 1
 !
@@ -2556,7 +2556,7 @@ SELECT CASE(CMETH_EOL)
 !
       TZFIELD%NGRID      = 1
       TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%CDIR       = ''
+      TZFIELD%CDIR       = '--'
 !
       TZFIELD%NDIMS      = 1
 !

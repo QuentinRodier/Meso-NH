@@ -198,7 +198,7 @@ ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%ZS(II)
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'P'
-YUNIT    (JPROC) = 'Pascal'
+YUNIT    (JPROC) = 'Pa'
 YCOMMENT (JPROC) = 'Pressure' 
 ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%P(:,II)
 !
