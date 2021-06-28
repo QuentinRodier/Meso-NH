@@ -207,6 +207,18 @@ VPATH         += $(RTTOV_PATH)/mod
 CPPFLAGS    += $(CPPFLAGS_RTTOV)
 CPPFLAGS_MNH += -DMNH_RTTOV_11=MNH_RTTOV_11
 endif
+ifeq "$(VER_RTTOV)" "13.0"
+DIR_RTTOV=${SRC_MESONH}/src/LIB/RTTOV-${VER_RTTOV}
+RTTOV_PATH=${DIR_RTTOV}
+#
+INC_RTTOV     ?= -I${RTTOV_PATH}/include -I${RTTOV_PATH}/mod
+LIB_RTTOV     ?= -L${RTTOV_PATH}/lib -lrttov13_coef_io -lrttov13_hdf -lrttov13_mw_scatt -lrttov13_brdf_atlas -lrttov13_main
+INC            += $(INC_RTTOV)
+LIBS           += $(LIB_RTTOV)
+VPATH         += $(RTTOV_PATH)/mod
+CPPFLAGS    += $(CPPFLAGS_RTTOV)
+CPPFLAGS_MNH += -DMNH_RTTOV_13=MNH_RTTOV_13
+endif
 endif
 ##########################################################
 #           Source MEGAN                                 #
@@ -510,7 +522,7 @@ CDF_PATH?=${OBJDIR_MASTER}/NETCDF-${VERSION_CDFF}
 CDF_MOD?=${CDF_PATH}/include/netcdf.mod
 #
 INC_NETCDF     ?= -I${CDF_PATH}/include
-LIB_NETCDF     ?= -L${CDF_PATH}/lib -L${CDF_PATH}/lib64 -lnetcdff -lnetcdf  -lhdf5_hl -lhdf5 -lsz -laec -lz -ldl
+LIB_NETCDF     ?= -L${CDF_PATH}/lib -L${CDF_PATH}/lib64 -lnetcdff -lnetcdf -lhdf5hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5 -lsz -laec -lz -ldl
 #
 INC            += $(INC_NETCDF)
 LIBS           += $(LIB_NETCDF)

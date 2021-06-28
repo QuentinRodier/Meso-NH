@@ -89,6 +89,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG_SUPP
 !!      J.-P. Chaboureau 01/2018 add coarse graining
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      J.-P. Chaboureau 07/2018 bug fix on XEMIS when calling CALL_RTTOVxx
+!!      J.-P. Chaboureau 09/04/2021 add the call to RTTOV13
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -153,6 +154,9 @@ USE MODI_CALL_RTTOV8
 #endif
 #ifdef MNH_RTTOV_11
 USE MODI_CALL_RTTOV11
+#endif
+#ifdef MNH_RTTOV_13
+USE MODI_CALL_RTTOV13
 #endif
 USE MODI_RADTR_SATEL
 USE MODI_UV_TO_ZONAL_AND_MERID
@@ -841,7 +845,7 @@ END IF
 ! Vertical Sounder (RTTOV) code
 !
 IF (NRTTOVINFO(1,1) /= NUNDEF) THEN
-  PRINT*,'YOU ASK FOR BRIGHTNESS TEMPERATURE COMPUTED by RTTOV code'
+! PRINT*,'YOU ASK FOR BRIGHTNESS TEMPERATURE COMPUTED BY THE RTTOV CODE'
 #ifdef MNH_RTTOV_8
   CALL CALL_RTTOV8(NDLON, NFLEV, NSTATM, XEMIS(:,:,1), XTSRAD, XSTATM, XTHT, XRT, &
                   XPABST, XZZ, XMFCONV, XCLDFR, XUT(:,:,IKB), XVT(:,:,IKB),   &
@@ -852,7 +856,13 @@ IF (NRTTOVINFO(1,1) /= NUNDEF) THEN
                   XPABST, XZZ, XMFCONV, XCLDFR, XUT(:,:,IKB), XVT(:,:,IKB),   &
                   LUSERI, NRTTOVINFO, TPFILE                                  )
 #else
+#ifdef MNH_RTTOV_13
+  CALL CALL_RTTOV13(NDLON, NFLEV, XEMIS(:,:,1), XTSRAD, XTHT, XRT,            &
+                  XPABST, XZZ, XMFCONV, XCLDFR, XUT(:,:,IKB), XVT(:,:,IKB),   &
+                  LUSERI, NRTTOVINFO, TPFILE                                  )
+#else
 PRINT *, "RTTOV LIBRARY NOT AVAILABLE = ###CALL_RTTOV####"
+#endif
 #endif
 #endif
 END IF

@@ -988,9 +988,43 @@ git clone -b 2014.01 https://github.com/forefireAPI/firefront.git
 # because it needs a licence agrement.
 #
 # ----------------------------------
-# OPTION 1: Use version 11.3 of RTTOV 
+# OPTION 1: Use version 13.0 of RTTOV 
 # -----------------------------------
-# Download the RTTOV package rttov113.tar.gz by following the instructions given on http://nwpsaf.eu/site/software/rttov/
+#
+# Run the 'configure' script preceded with the setting of the MNH_RTTOV variable:
+#
+cd MNH.../src/
+export MNH_RTTOV=1
+export VER_RTTOV=13.0
+#
+# Download the RTTOV package rttov130.tar.xz by following the instructions given on https://nwpsaf.eu/site/software/rttov/
+#
+# Install the RTTOV package rttov130.tar.xz
+cd MNH.../src/LIB
+mkdir RTTOV-13.0
+cd RTTOV-13.0
+tar xJf rttov130.tar.xz
+cd build
+edit Makefile.local
+"
+HDF5_PREFIX  = $(SRC_MESONH)/src/LIB/netcdf-LX${ARCH}-R${MNH_REAL}I${MNH_INT}
+uncomment FFLAGS_HDF5  = -D_RTTOV_HDF $(FFLAG_MOD)$(HDF5_PREFIX)/include
+uncomment LDFLAGS_HDF5 = -L$(HDF5_PREFIX)/lib -lhdf5hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5 -lz
+LDFLAGS_HDF5 = -L$(HDF5_PREFIX)/lib64 -lhdf5hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5 -lsz -laec -lz -ldl
+"
+cd src
+../build/Makefile.PL RTTOV_HDF=1
+make ARCH=ifort        # Use Intel "ifort" compiler; other options: gfortran, NAG, pgf90, IBM
+#
+# And then for the Meso-NH compilation, do
+#
+cd MNH.../src/
+make
+
+# ----------------------------------
+# OPTION 2: Use version 11.3 of RTTOV 
+# -----------------------------------
+# Download the RTTOV package rttov113.tar.gz by following the instructions given on https://nwpsaf.eu/site/software/rttov/
 #
 # Install the RTTOV package rttov113.tar.gz
 cd MNH.../src/LIB
@@ -1011,7 +1045,7 @@ export VER_RTTOV=11.3
 etc ...
 
 # ----------------------------------
-# OPTION 2: Use version 8.7 of RTTOV 
+# OPTION 3: Use version 8.7 of RTTOV 
 # ----------------------------------
 # For already(old) licencied MesoNH users (MNH-4-X version with research licence see here: http://mesonh.aero.obs-mip.fr/mesonh410/UserInformation)
 #
