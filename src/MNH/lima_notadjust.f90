@@ -9,15 +9,13 @@
 !
 INTERFACE
 !
-      SUBROUTINE LIMA_NOTADJUST(KRR, KMI, KTCOUNT, TPFILE, HRAD,      &
-                                PTSTEP, PRHODJ, PPABSM,  PPABST, PRHODREF, PEXNREF, PZZ,     &
-                                PTHT,PRT, PSVT, PTHS, PRS,PSVS, PCLDFR, PSRCS             )
+      SUBROUTINE LIMA_NOTADJUST(KMI, TPFILE, HRAD,                                       &
+                                PTSTEP, PRHODJ, PPABSM,  PPABST, PRHODREF, PEXNREF, PZZ, &
+                                PTHT,PRT, PSVT, PTHS, PRS,PSVS, PCLDFR, PSRCS            )
 !
 USE MODD_IO, ONLY: TFILEDATA
 !
-INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
-INTEGER,                  INTENT(IN)   :: KMI        ! Model index 
-INTEGER,                  INTENT(IN)    :: KTCOUNT      ! Number of moist variables
+INTEGER,                  INTENT(IN)    :: KMI        ! Model index
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE   ! Output file
 CHARACTER(len=4),         INTENT(IN)    :: HRAD     ! Radiation scheme name
 REAL,                     INTENT(IN)    :: PTSTEP   ! Double Time step
@@ -48,11 +46,11 @@ END INTERFACE
 !
 END MODULE MODI_LIMA_NOTADJUST
 !
-!     ################################################################################
-      SUBROUTINE LIMA_NOTADJUST(KRR, KMI, KTCOUNT, TPFILE, HRAD,      &
-                                PTSTEP, PRHODJ, PPABSM,  PPABST, PRHODREF, PEXNREF, PZZ,     &
-                                PTHT,PRT, PSVT, PTHS, PRS,PSVS, PCLDFR, PSRCS             )
-!     ################################################################################
+!     ####################################################################################
+      SUBROUTINE LIMA_NOTADJUST(KMI, TPFILE, HRAD,                                       &
+                                PTSTEP, PRHODJ, PPABSM,  PPABST, PRHODREF, PEXNREF, PZZ, &
+                                PTHT,PRT, PSVT, PTHS, PRS,PSVS, PCLDFR, PSRCS            )
+!     ####################################################################################
 !
 !!****  * -  compute pseudo-prognostic of supersaturation according to Thouron
 !                                                                     et al. 2012
@@ -105,9 +103,7 @@ IMPLICIT NONE
 !*       0.1   Declarations of dummy arguments :
 !
 !
-INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
-INTEGER,                  INTENT(IN)   :: KMI        ! Model index 
-INTEGER,                  INTENT(IN)    :: KTCOUNT      ! Number of moist variables
+INTEGER,                  INTENT(IN)    :: KMI        ! Model index
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE   ! Output file
 CHARACTER(len=4),              INTENT(IN)    :: HRAD     ! Radiation scheme name
 REAL,                     INTENT(IN)    :: PTSTEP   ! Double Time step

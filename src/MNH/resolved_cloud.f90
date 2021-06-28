@@ -969,27 +969,26 @@ SELECT CASE ( HCLOUD )
 !*       12.2   Perform the saturation adjustment
 !
    IF (LSPRO) THEN
-    CALL LIMA_NOTADJUST (KRR, KMI, KTCOUNT,TPFILE, HRAD,                                 &
-                         PTSTEP, PRHODJ, PPABSM, PPABST, PRHODREF, PEXNREF, PZZ,         &
-                         PTHT,PRT, PSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),                &
-                         PTHS,PRS, PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),                &
-                         PCLDFR, PSRCS )
+    CALL LIMA_NOTADJUST (KMI, TPFILE, HRAD,                                      &
+                         PTSTEP, PRHODJ, PPABSM, PPABST, PRHODREF, PEXNREF, PZZ, &
+                         PTHT,PRT, PSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),        &
+                         PTHS,PRS, PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),        &
+                         PCLDFR, PSRCS                                           )
    ELSE IF (LPTSPLIT) THEN
-    CALL LIMA_ADJUST_SPLIT(KRR, KMI, TPFILE, HRAD, CCONDENS, CLAMBDA3,                   &
-                     HTURBDIM, OSUBG_COND, OSIGMAS, PTSTEP, PSIGQSAT,                    &
-                     PRHODREF, PRHODJ, PEXNREF, PPABST, PSIGS, PMFCONV, PPABST, ZZZ,     &
-                     PDTHRAD, PW_ACT, &
-                     PRT, PRS, PSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),                    &
-                     PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),                              &
-                     PTHS, PSRCS, PCLDFR, ZICEFR, ZPRCFR, PRC_MF, PCF_MF                 )
+    CALL LIMA_ADJUST_SPLIT(KRR, KMI, TPFILE, CCONDENS, CLAMBDA3,                     &
+                     OSUBG_COND, OSIGMAS, PTSTEP, PSIGQSAT,                          &
+                     PRHODREF, PRHODJ, PEXNREF, PPABST, PSIGS, PMFCONV, PPABST, ZZZ, &
+                     PDTHRAD, PW_ACT,                                                &
+                     PRT, PRS, PSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),                &
+                     PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),                          &
+                     PTHS, PSRCS, PCLDFR, PRC_MF, PCF_MF                             )
    ELSE
-    CALL LIMA_ADJUST(KRR, KMI, TPFILE, HRAD,                  &
-                     HTURBDIM, OSUBG_COND, OSIGMAS, PTSTEP, PSIGQSAT,                    &
-                     PRHODREF, PRHODJ, PEXNREF, PPABST, PSIGS, PMFCONV, PPABST, ZZZ,     &
-                     PDTHRAD, PW_ACT, &
-                     PRT, PRS, PSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),                    &
-                     PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),                              &
-                     PTHS, PSRCS, PCLDFR, ZICEFR, ZPRCFR, PRC_MF, PCF_MF                 )
+    CALL LIMA_ADJUST(KRR, KMI, TPFILE,                                &
+                     OSUBG_COND, PTSTEP,                              &
+                     PRHODREF, PRHODJ, PEXNREF, PPABST, PPABST,       &
+                     PRT, PRS, PSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END), &
+                     PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),           &
+                     PTHS, PSRCS, PCLDFR                              )
    ENDIF
 !
 END SELECT

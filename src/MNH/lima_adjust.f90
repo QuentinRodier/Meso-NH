@@ -9,12 +9,12 @@
 !
 INTERFACE
 !
-      SUBROUTINE LIMA_ADJUST(KRR, KMI, TPFILE, HRAD,                           &
-                             HTURBDIM, OSUBG_COND, OSIGMAS, PTSTEP, PSIGQSAT,  &
-                             PRHODREF, PRHODJ, PEXNREF, PPABSM, PSIGS, PMFCONV,&
-                             PPABST, PZZ, PDTHRAD, PW_NU,                      &
-                             PRT, PRS, PSVT, PSVS,                             &
-                             PTHS, PSRCS, PCLDFR, PICEFR, PPRCFR, PRC_MF, PCF_MF)
+      SUBROUTINE LIMA_ADJUST(KRR, KMI, TPFILE,                  &
+                             OSUBG_COND, PTSTEP,                &
+                             PRHODREF, PRHODJ, PEXNREF, PPABSM, &
+                             PPABST,                            &
+                             PRT, PRS, PSVT, PSVS,              &
+                             PTHS, PSRCS, PCLDFR                )
 !
 USE MODD_IO,  ONLY: TFILEDATA
 USE MODD_NSV, only: NSV_LIMA_BEG
@@ -22,28 +22,16 @@ USE MODD_NSV, only: NSV_LIMA_BEG
 INTEGER,                  INTENT(IN)   :: KRR        ! Number of moist variables
 INTEGER,                  INTENT(IN)   :: KMI        ! Model index 
 TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE     ! Output file
-CHARACTER(len=4),         INTENT(IN)   :: HTURBDIM   ! Dimensionality of the
-                                                     ! turbulence scheme
-CHARACTER(len=4),         INTENT(IN)   :: HRAD       ! Radiation scheme name
 LOGICAL,                  INTENT(IN)   :: OSUBG_COND ! Switch for Subgrid 
                                                      ! Condensation
-LOGICAL                                 :: OSIGMAS  ! Switch for Sigma_s: 
-                                                    ! use values computed in CONDENSATION
-                                                    ! or that from turbulence scheme
 REAL,                     INTENT(IN)   :: PTSTEP     ! Time step          
-REAL,                     INTENT(IN)   :: PSIGQSAT  ! coeff applied to qsat variance contribution
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODREF  ! Dry density of the 
                                                      ! reference state
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODJ    ! Dry density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PEXNREF   ! Reference Exner function
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABSM    ! Absolute Pressure at t-dt
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PSIGS     ! Sigma_s at time t
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PMFCONV   ! 
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABST    ! Absolute Pressure at t     
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PZZ       !     
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD   ! Radiative temperature tendency
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU     ! updraft velocity used for
 !
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT       ! m.r. at t
 !
@@ -59,10 +47,6 @@ REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSRCS     ! Second-order flux
                                                      ! s'rc'/2Sigma_s2 at time t+1
                                                      ! multiplied by Lambda_3
 REAL, DIMENSION(:,:,:),   INTENT(INOUT)   :: PCLDFR    ! Cloud fraction          
-REAL, DIMENSION(:,:,:),   INTENT(INOUT)   :: PICEFR    ! Cloud fraction          
-REAL, DIMENSION(:,:,:),   INTENT(INOUT)   :: PPRCFR    ! Cloud fraction          
-REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PRC_MF! Convective Mass Flux liquid mixing ratio
-REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PCF_MF! Convective Mass Flux Cloud fraction 
 !
 END SUBROUTINE LIMA_ADJUST
 !
@@ -70,14 +54,14 @@ END INTERFACE
 !
 END MODULE MODI_LIMA_ADJUST
 !
-!     ##########################################################################
-      SUBROUTINE LIMA_ADJUST(KRR, KMI, TPFILE, HRAD,                           &
-                             HTURBDIM, OSUBG_COND, OSIGMAS, PTSTEP, PSIGQSAT,  &
-                             PRHODREF, PRHODJ, PEXNREF, PPABSM, PSIGS, PMFCONV,&
-                             PPABST, PZZ, PDTHRAD, PW_NU,                      &
-                             PRT, PRS, PSVT, PSVS,                             &
-                             PTHS, PSRCS, PCLDFR, PICEFR, PPRCFR, PRC_MF, PCF_MF)
-!     ##########################################################################
+!     ###########################################################
+      SUBROUTINE LIMA_ADJUST(KRR, KMI, TPFILE,                  &
+                             OSUBG_COND, PTSTEP,                &
+                             PRHODREF, PRHODJ, PEXNREF, PPABSM, &
+                             PPABST,                            &
+                             PRT, PRS, PSVT, PSVS,              &
+                             PTHS, PSRCS, PCLDFR                )
+!     ###########################################################
 !
 !!****  *MIMA_ADJUST* -  compute the fast microphysical sources 
 !!
@@ -192,28 +176,16 @@ IMPLICIT NONE
 INTEGER,                  INTENT(IN)   :: KRR        ! Number of moist variables
 INTEGER,                  INTENT(IN)   :: KMI        ! Model index 
 TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE     ! Output file
-CHARACTER(len=4),         INTENT(IN)   :: HTURBDIM   ! Dimensionality of the
-                                                     ! turbulence scheme
-CHARACTER(len=4),         INTENT(IN)   :: HRAD       ! Radiation scheme name
 LOGICAL,                  INTENT(IN)   :: OSUBG_COND ! Switch for Subgrid 
                                                      ! Condensation
-LOGICAL                                 :: OSIGMAS  ! Switch for Sigma_s: 
-                                                    ! use values computed in CONDENSATION
-                                                    ! or that from turbulence scheme
 REAL,                     INTENT(IN)   :: PTSTEP     ! Time step          
-REAL,                     INTENT(IN)   :: PSIGQSAT  ! coeff applied to qsat variance contribution
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODREF  ! Dry density of the 
                                                      ! reference state
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODJ    ! Dry density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PEXNREF   ! Reference Exner function
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABSM    ! Absolute Pressure at t-dt
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PSIGS     ! Sigma_s at time t
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PMFCONV   ! 
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABST    ! Absolute Pressure at t     
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PZZ       !     
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD   ! Radiative temperature tendency
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU     ! updraft velocity used for
 !
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT       ! m.r. at t
 !
@@ -229,18 +201,13 @@ REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSRCS     ! Second-order flux
                                                      ! s'rc'/2Sigma_s2 at time t+1
                                                      ! multiplied by Lambda_3
 REAL, DIMENSION(:,:,:),   INTENT(INOUT)   :: PCLDFR    ! Cloud fraction          
-REAL, DIMENSION(:,:,:),   INTENT(INOUT)   :: PICEFR    ! Cloud fraction          
-REAL, DIMENSION(:,:,:),   INTENT(INOUT)   :: PPRCFR    ! Cloud fraction          
-REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PRC_MF! Convective Mass Flux liquid mixing ratio
-REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PCF_MF! Convective Mass Flux Cloud fraction 
 !
 !
 !*       0.2   Declarations of local variables :
 !
 ! 3D Microphysical variables
 REAL, DIMENSION(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3)) &
-                         :: PTHT,        &
-                            PRVT,        & ! Water vapor m.r. at t
+                         :: PRVT,        & ! Water vapor m.r. at t
                             PRCT,        & ! Cloud water m.r. at t
                             PRRT,        & ! Rain water m.r. at t
                             PRIT,        & ! Cloud ice  m.r. at t

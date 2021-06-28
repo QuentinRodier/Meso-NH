@@ -167,7 +167,7 @@ IF ( LWARM .AND. LACTI .AND. NMOD_CCN >=1 ) THEN
       end if
     end if
 
-    CALL LIMA_CCN_ACTIVATION( PTSTEP, TPFILE,                                   &
+    CALL LIMA_CCN_ACTIVATION( TPFILE,                                           &
                               PRHODREF, PEXNREF, PPABST, PT, PDTHRAD, PW_NU,    &
                               PTHT, PRVT, PRCT, PCCT, PRRT, PNFT, PNAT, PCLDFR  )
     if ( lbu_enable ) then

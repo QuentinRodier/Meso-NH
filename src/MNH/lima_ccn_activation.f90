@@ -8,14 +8,12 @@
 !      ###############################
 !
 INTERFACE
-   SUBROUTINE LIMA_CCN_ACTIVATION (PTSTEP, TPFILE,                                &
+   SUBROUTINE LIMA_CCN_ACTIVATION (TPFILE,                                        &
                                    PRHODREF, PEXNREF, PPABST, PT, PDTHRAD, PW_NU, &
                                    PTHT, PRVT, PRCT, PCCT, PRRT, PNFT, PNAT,      &
                                    PCLDFR                                         )
 USE MODD_IO, ONLY: TFILEDATA
 !
-REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
-                                                      ! (single if cold start)
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE     ! Output file
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
@@ -41,7 +39,7 @@ END SUBROUTINE LIMA_CCN_ACTIVATION
 END INTERFACE
 END MODULE MODI_LIMA_CCN_ACTIVATION
 !     #############################################################################
-   SUBROUTINE LIMA_CCN_ACTIVATION (PTSTEP, TPFILE,                                &
+   SUBROUTINE LIMA_CCN_ACTIVATION (TPFILE,                                        &
                                    PRHODREF, PEXNREF, PPABST, PT, PDTHRAD, PW_NU, &
                                    PTHT, PRVT, PRCT, PCCT, PRRT, PNFT, PNAT,      &
                                    PCLDFR                                         )
@@ -119,8 +117,6 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
-REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
-                                                      ! (single if cold start)
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE     ! Output file
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
