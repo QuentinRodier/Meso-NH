@@ -283,7 +283,7 @@ USE MODD_EOL_ALM, ONLY:TFARM,TTURBINE,TBLADE
 !
 IMPLICIT NONE
 !
-INTEGER, INTENT(IN)   :: KFILE      ! File index
+INTEGER, INTENT(OUT)  :: KFILE      ! File index
 INTEGER, INTENT(IN)   :: KTCOUNT    ! Time step index
 INTEGER, INTENT(IN)   :: KTSUBCOUNT ! Subtime step index
 !
@@ -304,7 +304,7 @@ ITOTELT = INB_WT*(INB_TELT+INB_NELT+INB_B*(1+INB_BELT*3))
 !
 ! File name and opening
 WRITE(HFILE, "(A18,I4.4,I2.2,A3)") "Tecplot2.0_Output_", KTCOUNT, KTSUBCOUNT,".tp"
-OPEN( KFILE, file=HFILE, form="FORMATTED")
+OPEN( NEWUNIT=KFILE, file=HFILE, form="FORMATTED")
 !
 ! Tecplot Header
 WRITE(KFILE,*) 'TITLE="Wind Turbines Points"'

@@ -92,6 +92,7 @@ REAL                             :: ZTIME                              ! TIME
 INTEGER                          :: JROT, JBLA, JTELT, JNELT, JBELT    ! Loop control
 INTEGER                          :: INB_WT, INB_B, INB_BELT            ! Total numbers
 INTEGER                          :: INB_TELT, INB_NELT                 ! Total numbers
+INTEGER                          :: ITECOUT                            ! Unit number for Tecplot file
 !
 !
 !---------------------------------------------------------------
@@ -111,7 +112,7 @@ ZTIME = TDTCUR%xtime+(KTSUBCOUNT)*PTSUBSTEP
 !
 !*       1.3 Tecplotfile : opening + headers
 IF (LTECOUTPTS) THEN
- CALL OPEN_TECOUT(45, KTCOUNT, KTSUBCOUNT)
+ CALL OPEN_TECOUT(ITECOUT, KTCOUNT, KTSUBCOUNT)
 END IF
 !
 !
@@ -153,7 +154,7 @@ DO JROT=1, INB_WT
 !* T.4 Print in tecplot file
  IF (LTECOUTPTS) THEN
   DO JTELT=1, INB_TELT
-   CALL PRINT_TECOUT(45, XPOS_TELT_RG(JROT,JTELT,:))
+   CALL PRINT_TECOUT(ITECOUT, XPOS_TELT_RG(JROT,JTELT,:))
   END DO
  END IF
 !
@@ -193,7 +194,7 @@ DO JROT=1, INB_WT
 !* N.4 Print in tecplot file
  IF (LTECOUTPTS) THEN
   DO JNELT=1, INB_NELT
-   CALL PRINT_TECOUT(45, XPOS_NELT_RG(JROT,JNELT,:))
+   CALL PRINT_TECOUT(ITECOUT, XPOS_NELT_RG(JROT,JNELT,:))
   END DO
  END IF
 !
@@ -223,7 +224,7 @@ DO JROT=1, INB_WT
 !
 !* H.4 Print in tecplot file
  IF (LTECOUTPTS) THEN
-  CALL PRINT_TECOUT(45, XPOS_HUB_RG(JROT,:))
+  CALL PRINT_TECOUT(ITECOUT, XPOS_HUB_RG(JROT,:))
  END IF
 !
 !
@@ -253,7 +254,7 @@ DO JROT=1, INB_WT
 !
 !* B.4 Print in tecplot file
   IF (LTECOUTPTS) THEN
-   CALL PRINT_TECOUT(45, XPOS_BLA_RG(JROT,JBLA,:))
+   CALL PRINT_TECOUT(ITECOUT, XPOS_BLA_RG(JROT,JBLA,:))
   END IF
 !
 !
@@ -295,7 +296,7 @@ DO JROT=1, INB_WT
 !
 !* E.4 Print in tecplot file
    IF (LTECOUTPTS) THEN
-    CALL PRINT_TECOUT(45, XPOS_ELT_RG(JROT,JBLA,JBELT,:))
+    CALL PRINT_TECOUT(ITECOUT, XPOS_ELT_RG(JROT,JBLA,JBELT,:))
    END IF
 !
 ! ---- Leading Edge and Trailing Edge ----
@@ -318,8 +319,8 @@ DO JROT=1, INB_WT
                        ZPOS_ELTTE_RE(:))
                                 
 !* LE.2 Print in tecplot file
-    CALL PRINT_TECOUT(45, ZPOS_ELTLE_RG(:))
-    CALL PRINT_TECOUT(45, ZPOS_ELTTE_RG(:))
+    CALL PRINT_TECOUT(ITECOUT, ZPOS_ELTLE_RG(:))
+    CALL PRINT_TECOUT(ITECOUT, ZPOS_ELTTE_RG(:))
    END IF
 !
 !
@@ -329,7 +330,7 @@ END DO ! Rotor loop
 !
 ! Closing tec file
 IF (LTECOUTPTS) THEN
- CLOSE(45)
+ CLOSE(ITECOUT)
 END IF
 !
 END SUBROUTINE EOL_KINE_ALM

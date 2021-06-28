@@ -11,47 +11,41 @@ INTERFACE
 !
 ! ADNR
 ! 
-SUBROUTINE READ_CSVDATA_FARM_ADNR(KLUNAM,HFILE,TPFARM)
+SUBROUTINE READ_CSVDATA_FARM_ADNR(HFILE,TPFARM)
         USE MODD_EOL_ADNR, ONLY: FARM
-        INTEGER,            INTENT(IN)  :: KLUNAM       ! logical unit of the file
         CHARACTER(LEN=*),   INTENT(IN)  :: HFILE        ! file to read    
         TYPE(FARM),         INTENT(OUT) :: TPFARM       ! stored farm data
 END SUBROUTINE READ_CSVDATA_FARM_ADNR
 !
-SUBROUTINE READ_CSVDATA_TURBINE_ADNR(KLUNAM,HFILE,TPTURBINE)
+SUBROUTINE READ_CSVDATA_TURBINE_ADNR(HFILE,TPTURBINE)
         USE MODD_EOL_ADNR, ONLY : TURBINE
-        INTEGER,            INTENT(IN)  :: KLUNAM       ! logical unit of the file
         CHARACTER(LEN=*),   INTENT(IN)  :: HFILE        ! file to read    
         TYPE(TURBINE),      INTENT(OUT) :: TPTURBINE    ! stored turbine data
 END SUBROUTINE READ_CSVDATA_TURBINE_ADNR
 !
 ! ALM
 !
-SUBROUTINE READ_CSVDATA_FARM_ALM(KLUNAM,HFILE,TPFARM)
+SUBROUTINE READ_CSVDATA_FARM_ALM(HFILE,TPFARM)
         USE MODD_EOL_ALM, ONLY: FARM
-        INTEGER,            INTENT(IN)  :: KLUNAM       ! logical unit of the file
         CHARACTER(LEN=*),   INTENT(IN)  :: HFILE        ! file to read    
         TYPE(FARM),         INTENT(OUT) :: TPFARM       ! stored farm data
 END SUBROUTINE READ_CSVDATA_FARM_ALM
 !
-SUBROUTINE READ_CSVDATA_TURBINE_ALM(KLUNAM,HFILE,TPTURBINE)
+SUBROUTINE READ_CSVDATA_TURBINE_ALM(HFILE,TPTURBINE)
         USE MODD_EOL_ALM, ONLY : TURBINE
-        INTEGER,            INTENT(IN)  :: KLUNAM       ! logical unit of the file
         CHARACTER(LEN=*),   INTENT(IN)  :: HFILE        ! file to read    
         TYPE(TURBINE),      INTENT(OUT) :: TPTURBINE    ! stored turbine data
 END SUBROUTINE READ_CSVDATA_TURBINE_ALM
 
-SUBROUTINE READ_CSVDATA_BLADE_ALM(KLUNAM,HFILE,TPTURBINE,TPBLADE)
+SUBROUTINE READ_CSVDATA_BLADE_ALM(HFILE,TPTURBINE,TPBLADE)
         USE MODD_EOL_ALM, ONLY : TURBINE, BLADE
-        INTEGER,            INTENT(IN)  :: KLUNAM       ! logical unit of the file
         CHARACTER(LEN=*),   INTENT(IN)  :: HFILE        ! file to read    
         TYPE(TURBINE),      INTENT(IN)  :: TPTURBINE    ! stored turbine data
         TYPE(BLADE),        INTENT(OUT) :: TPBLADE      ! stored blade data
 END SUBROUTINE READ_CSVDATA_BLADE_ALM
 !
-SUBROUTINE READ_CSVDATA_AIRFOIL_ALM(KLUNAM,HFILE,TPBLADE,TPAIRFOIL)
+SUBROUTINE READ_CSVDATA_AIRFOIL_ALM(HFILE,TPBLADE,TPAIRFOIL)
         USE MODD_EOL_ALM, ONLY : BLADE, AIRFOIL
-        INTEGER,            INTENT(IN)  :: KLUNAM       ! logical unit of the file
         CHARACTER(LEN=*),   INTENT(IN)  :: HFILE        ! file to read    
         TYPE(BLADE),        INTENT(IN)  :: TPBLADE      ! stored blade data (to select airfoils)
         TYPE(AIRFOIL), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: TPAIRFOIL  ! stored airfoil data
@@ -97,19 +91,19 @@ END MODULE MODI_EOL_READER
 !!---------------------------------------------------------------
 !
 !#########################################################
-SUBROUTINE READ_CSVDATA_FARM_ADNR(KLUNAM,HFILE,TPFARM)
+SUBROUTINE READ_CSVDATA_FARM_ADNR(HFILE,TPFARM)
 !        
 USE MODD_EOL_ADNR,  ONLY: FARM
 USE MODI_EOL_ERROR, ONLY: EOL_CSVNOTFOUND_ERROR, EOL_CSVEMPTY_ERROR
 !
 IMPLICIT NONE
 !
-INTEGER,            INTENT(IN)    :: KLUNAM     ! logical unit of the file
-CHARACTER(LEN=*),   INTENT(IN)    :: HFILE      ! file to read    
+CHARACTER(LEN=*),   INTENT(IN)    :: HFILE      ! file to read
 TYPE(FARM),         INTENT(OUT)   :: TPFARM     ! dummy stored data blade
 !
 LOGICAL                           :: GEXIST     ! Existence of file
 !
+INTEGER                           :: ILU        ! logical unit of the file
 INTEGER                           :: INBLINE    ! Nb of line in csv file
 !
 CHARACTER(LEN=400)                :: YSTRING   
@@ -126,12 +120,12 @@ IF (.NOT.GEXIST) THEN
 END IF
 !
 ! Opening the file 
-OPEN(UNIT=KLUNAM,FILE=HFILE, FORM='formatted', STATUS='OLD')
+OPEN(NEWUNIT=ILU,FILE=HFILE, FORM='formatted', STATUS='OLD')
 ! Counting number of line  
-REWIND(KLUNAM)
+REWIND(ILU)
 INBLINE=0
 DO
- READ(KLUNAM,END=101,FMT='(A400)') YSTRING
+ READ(ILU,END=101,FMT='(A400)') YSTRING
  IF (LEN_TRIM(YSTRING) > 0) THEN
   INBLINE = INBLINE + 1
  END IF
@@ -140,7 +134,6 @@ END DO
 101 CONTINUE
 IF (INBLINE < 2) THEN
  CALL EOL_CSVEMPTY_ERROR(HFILE,INBLINE)
- STOP
 ELSE
  ! Saving number of wind turbine 
  TPFARM%NNB_TURBINES = INBLINE - 1 
@@ -150,18 +143,18 @@ ELSE
  ALLOCATE(TPFARM%XCT_INF(TPFARM%NNB_TURBINES))
  !
  ! New read 
- REWIND(KLUNAM)
- READ(KLUNAM,FMT='(A400)') YSTRING ! Header reading 
+ REWIND(ILU)
+ READ(ILU,FMT='(A400)') YSTRING ! Header reading
  !
  ! Saving data 
  DO INBLINE=1, TPFARM%NNB_TURBINES
-  READ(KLUNAM,FMT='(A400)') YSTRING
+  READ(ILU,FMT='(A400)') YSTRING
   READ(YSTRING,*) ZPOS_X, ZPOS_Y, ZCT_INF
   TPFARM%XPOS_X(INBLINE)  = ZPOS_X
   TPFARM%XPOS_Y(INBLINE)  = ZPOS_Y
   TPFARM%XCT_INF(INBLINE) = ZCT_INF
  END DO
- CLOSE(KLUNAM)
+ CLOSE(ILU)
  RETURN
 END IF
 !
@@ -169,19 +162,19 @@ END SUBROUTINE READ_CSVDATA_FARM_ADNR
 !#########################################################
 !
 !#########################################################
-SUBROUTINE READ_CSVDATA_TURBINE_ADNR(KLUNAM,HFILE,TPTURBINE)
+SUBROUTINE READ_CSVDATA_TURBINE_ADNR(HFILE,TPTURBINE)
 !        
 USE MODD_EOL_ADNR,  ONLY: TURBINE
 USE MODI_EOL_ERROR, ONLY: EOL_CSVNOTFOUND_ERROR, EOL_CSVEMPTY_ERROR
 !
 IMPLICIT NONE
 !
-INTEGER,            INTENT(IN)  :: KLUNAM     ! logical unit of the file
-CHARACTER(LEN=*),   INTENT(IN)  :: HFILE      ! file to read    
+CHARACTER(LEN=*),   INTENT(IN)  :: HFILE      ! file to read
 TYPE(TURBINE),      INTENT(OUT) :: TPTURBINE  ! dummy stored data turbine
 !
 LOGICAL                         :: GEXIST     ! Existence of file
 !
+INTEGER                         :: ILU        ! logical unit of the file
 INTEGER                         :: INBLINE    ! Nb of line in csv file
 !
 CHARACTER(LEN=400)              :: YSTRING   
@@ -197,13 +190,13 @@ IF (.NOT.GEXIST) THEN
 END IF
 !
 ! Opening 
-OPEN(UNIT=KLUNAM,FILE=HFILE, FORM='formatted', STATUS='OLD')
+OPEN(NEWUNIT=ILU,FILE=HFILE, FORM='formatted', STATUS='OLD')
 !
 ! Counting number of line  
-REWIND(KLUNAM)
+REWIND(ILU)
 INBLINE=0
 DO
- READ(KLUNAM,END=101,FMT='(A400)') YSTRING
+ READ(ILU,END=101,FMT='(A400)') YSTRING
  IF (LEN_TRIM(YSTRING) > 0) THEN
   INBLINE = INBLINE + 1
  END IF
@@ -212,38 +205,37 @@ END DO
 101 CONTINUE
 IF (INBLINE /= 2) THEN
  CALL EOL_CSVEMPTY_ERROR(HFILE,INBLINE)
- STOP
 ELSE 
- REWIND(KLUNAM)
- READ(KLUNAM,FMT='(A400)') YSTRING                    ! Header reading 
- READ(KLUNAM,FMT='(A400)') YSTRING                    ! Reading next line
+ REWIND(ILU)
+ READ(ILU,FMT='(A400)') YSTRING                    ! Header reading
+ READ(ILU,FMT='(A400)') YSTRING                    ! Reading next line
  ! Read data 
  READ(YSTRING,*) YWT_NAME, ZH_HEIGHT, ZR_MAX          ! reading data
  TPTURBINE%CNAME      = YWT_NAME                      ! Saving them
  TPTURBINE%XH_HEIGHT  = ZH_HEIGHT
  TPTURBINE%XR_MAX     = ZR_MAX
- REWIND(KLUNAM)                                        ! Rembobinage, plutôt 2 fois qu'1 !
+ REWIND(ILU)                                        ! Rembobinage, plutôt 2 fois qu'1 !
  RETURN
- CLOSE(KLUNAM)
+ CLOSE(ILU)
 END IF
 !
 END SUBROUTINE READ_CSVDATA_TURBINE_ADNR
 !#########################################################
 !
 !#########################################################
-SUBROUTINE READ_CSVDATA_FARM_ALM(KLUNAM,HFILE,TPFARM)
+SUBROUTINE READ_CSVDATA_FARM_ALM(HFILE,TPFARM)
 !        
 USE MODD_EOL_ALM,   ONLY: FARM
 USE MODI_EOL_ERROR, ONLY: EOL_CSVNOTFOUND_ERROR, EOL_CSVEMPTY_ERROR
 !
 IMPLICIT NONE
 !
-INTEGER,            INTENT(IN)    :: KLUNAM     ! logical unit of the file
 CHARACTER(LEN=*),   INTENT(IN)    :: HFILE      ! file to read    
 TYPE(FARM),         INTENT(OUT)   :: TPFARM     ! dummy stored data blade
 !
 LOGICAL                           :: GEXIST     ! Existence of file
 !
+INTEGER                           :: ILU        ! logical unit of the file
 INTEGER                           :: INBLINE    ! Nb of line in csv file
 !
 CHARACTER(LEN=400)                :: YSTRING   
@@ -262,12 +254,12 @@ IF (.NOT.GEXIST) THEN
 END IF
 !
 ! Opening the file 
-OPEN(UNIT=KLUNAM,FILE=HFILE, FORM='formatted', STATUS='OLD')
+OPEN(NEWUNIT=ILU,FILE=HFILE, FORM='formatted', STATUS='OLD')
 ! Counting number of line  
-REWIND(KLUNAM)
+REWIND(ILU)
 INBLINE=0
 DO
- READ(KLUNAM,END=101,FMT='(A400)') YSTRING
+ READ(ILU,END=101,FMT='(A400)') YSTRING
  IF (LEN_TRIM(YSTRING) > 0) THEN
   INBLINE = INBLINE + 1
  END IF
@@ -276,7 +268,6 @@ END DO
 101 CONTINUE
 IF (INBLINE < 2) THEN
  CALL EOL_CSVEMPTY_ERROR(HFILE,INBLINE)
- STOP
 ELSE
  ! Saving number of wind turbine 
  TPFARM%NNB_TURBINES = INBLINE - 1 
@@ -288,12 +279,12 @@ ELSE
  ALLOCATE(TPFARM%XBLA_PITCH(TPFARM%NNB_TURBINES))
  !
  ! New read 
- REWIND(KLUNAM)
- READ(KLUNAM,FMT='(A400)') YSTRING ! Header reading 
+ REWIND(ILU)
+ READ(ILU,FMT='(A400)') YSTRING ! Header reading
  !
  ! Saving data 
  DO INBLINE=1, TPFARM%NNB_TURBINES
-  READ(KLUNAM,FMT='(A400)') YSTRING
+  READ(ILU,FMT='(A400)') YSTRING
   READ(YSTRING,*) ZPOS_X, ZPOS_Y, ZOMEGA, ZYAW, ZPITCH
   TPFARM%XPOS_X(INBLINE)     = ZPOS_X
   TPFARM%XPOS_Y(INBLINE)     = ZPOS_Y
@@ -301,7 +292,7 @@ ELSE
   TPFARM%XNAC_YAW(INBLINE)   = ZYAW
   TPFARM%XBLA_PITCH(INBLINE) = ZPITCH
  END DO
- CLOSE(KLUNAM)
+ CLOSE(ILU)
  RETURN
 END IF
 !
@@ -309,19 +300,19 @@ END SUBROUTINE READ_CSVDATA_FARM_ALM
 !#########################################################
 !
 !#########################################################
-SUBROUTINE READ_CSVDATA_TURBINE_ALM(KLUNAM,HFILE,TPTURBINE)
+SUBROUTINE READ_CSVDATA_TURBINE_ALM(HFILE,TPTURBINE)
 !        
 USE MODD_EOL_ALM,   ONLY: TURBINE
 USE MODI_EOL_ERROR, ONLY: EOL_CSVNOTFOUND_ERROR, EOL_CSVEMPTY_ERROR
 !
 IMPLICIT NONE
 !
-INTEGER,            INTENT(IN)  :: KLUNAM     ! logical unit of the file
 CHARACTER(LEN=*),   INTENT(IN)  :: HFILE      ! file to read    
 TYPE(TURBINE),      INTENT(OUT) :: TPTURBINE  ! dummy stored data turbine
 !
 LOGICAL                         :: GEXIST     ! Existence of file
 !
+INTEGER                         :: ILU        ! logical unit of the file
 INTEGER                         :: INBLINE    ! Nb of line in csv file
 !
 CHARACTER(LEN=400)              :: YSTRING   
@@ -341,13 +332,13 @@ IF (.NOT.GEXIST) THEN
 END IF
 !
 ! Opening 
-OPEN(UNIT=KLUNAM,FILE=HFILE, FORM='formatted', STATUS='OLD')
+OPEN(NEWUNIT=ILU,FILE=HFILE, FORM='formatted', STATUS='OLD')
 !
 ! Counting number of line  
-REWIND(KLUNAM)
+REWIND(ILU)
 INBLINE=0
 DO
- READ(KLUNAM,END=101,FMT='(A400)') YSTRING
+ READ(ILU,END=101,FMT='(A400)') YSTRING
  IF (LEN_TRIM(YSTRING) > 0) THEN
   INBLINE = INBLINE + 1
  END IF
@@ -356,11 +347,10 @@ END DO
 101 CONTINUE
 IF (INBLINE /= 2) THEN
  CALL EOL_CSVEMPTY_ERROR(HFILE,INBLINE)
- STOP
 ELSE 
- REWIND(KLUNAM)
- READ(KLUNAM,FMT='(A400)') YSTRING                    ! Header reading 
- READ(KLUNAM,FMT='(A400)') YSTRING                    ! Reading next line
+ REWIND(ILU)
+ READ(ILU,FMT='(A400)') YSTRING                    ! Header reading
+ READ(ILU,FMT='(A400)') YSTRING                    ! Reading next line
  ! Read data 
  READ(YSTRING,*) YWT_NAME, INB_BLADE, ZH_HEIGHT,&     ! reading data
                  ZR_MIN, ZR_MAX, ZNAC_TILT,     &
@@ -372,28 +362,28 @@ ELSE
  TPTURBINE%XR_MAX      = ZR_MAX
  TPTURBINE%XNAC_TILT   = ZNAC_TILT
  TPTURBINE%XH_DEPORT   = ZHUB_DEPORT
- REWIND(KLUNAM)                                       
+ REWIND(ILU)
  RETURN
- CLOSE(KLUNAM)
+ CLOSE(ILU)
 END IF
 !
 END SUBROUTINE READ_CSVDATA_TURBINE_ALM
 !#########################################################
 !
 !#########################################################
-SUBROUTINE READ_CSVDATA_BLADE_ALM(KLUNAM,HFILE,TPTURBINE,TPBLADE)
+SUBROUTINE READ_CSVDATA_BLADE_ALM(HFILE,TPTURBINE,TPBLADE)
 !       
 USE MODD_EOL_ALM,   ONLY: TURBINE, BLADE, NNB_BLAELT
 USE MODI_EOL_ERROR, ONLY: EOL_CSVNOTFOUND_ERROR, EOL_CSVEMPTY_ERROR
 USE MODI_EOL_ERROR, ONLY: EOL_BLADEDATA_ERROR
 !
-INTEGER,            INTENT(IN)  :: KLUNAM     ! logical unit of the file
 CHARACTER(LEN=*),   INTENT(IN)  :: HFILE      ! file to read    
 TYPE(TURBINE),      INTENT(IN)  :: TPTURBINE  ! stored turbine data
 TYPE(BLADE),        INTENT(OUT) :: TPBLADE    ! dummy stored data blade
 !
 LOGICAL                         :: GEXIST     ! Existence of file
 !
+INTEGER                         :: ILU        ! logical unit of the file
 INTEGER                         :: INBLINE    ! Nb of line in csv file
 INTEGER                         :: INBDATA    ! Nb of data (line/section) of blade
 !
@@ -411,12 +401,12 @@ IF (.NOT.GEXIST) THEN
 END IF
 !
 ! Ouverture 
-OPEN(UNIT=KLUNAM,FILE=HFILE, FORM='formatted', STATUS='OLD')
+OPEN(NEWUNIT=ILU,FILE=HFILE, FORM='formatted', STATUS='OLD')
 ! Counting number of line  
-REWIND(KLUNAM)
+REWIND(ILU)
 INBLINE=0
 DO
- READ(KLUNAM,END=101,FMT='(A400)') YSTRING
+ READ(ILU,END=101,FMT='(A400)') YSTRING
  IF (LEN_TRIM(YSTRING) > 0) THEN
   INBLINE = INBLINE + 1
  END IF
@@ -425,7 +415,6 @@ END DO
 101 CONTINUE
 IF (INBLINE < 2) THEN
  CALL EOL_CSVEMPTY_ERROR(HFILE,INBLINE)
- STOP
 ELSE
  TPBLADE%NNB_BLAELT = NNB_BLAELT 
  ! Saving number of data 
@@ -436,12 +425,12 @@ ELSE
  ALLOCATE(TPBLADE%CAIRFOIL(TPBLADE%NNB_BLADAT))
  !
  ! New read
- REWIND(KLUNAM)
- READ(KLUNAM,FMT='(A400)') YSTRING                    ! Header reading 
+ REWIND(ILU)
+ READ(ILU,FMT='(A400)') YSTRING                    ! Header reading
  !
  ! Saving data
  DO INBLINE=1, TPBLADE%NNB_BLADAT
-  READ(KLUNAM,FMT='(A400)') YSTRING
+  READ(ILU,FMT='(A400)') YSTRING
   READ(YSTRING,*) ZCENTER, ZCHORD, ZTWIST, YAIRFOIL  ! Reading data
   IF ((ZCENTER<=0.0) .OR. (ZCENTER>= 1.0)) THEN
    ! Checking data
@@ -455,7 +444,7 @@ ELSE
    TPBLADE%CAIRFOIL(INBLINE) = YAIRFOIL
   END IF
  END DO
- CLOSE(KLUNAM)
+ CLOSE(ILU)
  RETURN
 END IF
 !
@@ -463,19 +452,19 @@ END SUBROUTINE READ_CSVDATA_BLADE_ALM
 !#########################################################
 !
 !#########################################################
-SUBROUTINE READ_CSVDATA_AIRFOIL_ALM(KLUNAM,HFILE,TPBLADE,TPAIRFOIL)
+SUBROUTINE READ_CSVDATA_AIRFOIL_ALM(HFILE,TPBLADE,TPAIRFOIL)
 !        
 USE MODD_EOL_ALM,   ONLY: BLADE, AIRFOIL
 USE MODI_EOL_ERROR, ONLY: EOL_CSVNOTFOUND_ERROR, EOL_CSVEMPTY_ERROR
 USE MODI_EOL_ERROR, ONLY: EOL_AIRFOILNOTFOUND_ERROR 
 !
-INTEGER,            INTENT(IN)  :: KLUNAM     ! logical unit of the file
 CHARACTER(LEN=*),   INTENT(IN)  :: HFILE      ! file to read    
 TYPE(BLADE),        INTENT(IN)  :: TPBLADE    ! stored blade data (to select airfoils)
 TYPE(AIRFOIL), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: TPAIRFOIL  ! dummy stored data blade
 !
 LOGICAL                         :: GEXIST     ! Existence of file
 !
+INTEGER                         :: ILU        ! logical unit of the file
 INTEGER                         :: INBDATA    ! Nb of data (line/section) per airfoil
 INTEGER                         :: INBLINE    ! Nb of line in csv file
 LOGICAL                         :: GAIRFLAG   ! Flag for airfoil counting
@@ -501,7 +490,7 @@ IF (.NOT.GEXIST) THEN
 END IF
 !
 ! Ouverture 
-OPEN(UNIT=KLUNAM,FILE=HFILE, FORM='formatted', STATUS='OLD')
+OPEN(NEWUNIT=ILU,FILE=HFILE, FORM='formatted', STATUS='OLD')
 !
 ! 1. Counting number of differents airfoils along the blade and selection :
 !
@@ -530,17 +519,17 @@ ALLOCATE(TPAIRFOIL(INBAIRFOIL))
 !
 DO IA = 1, INBAIRFOIL
  ! Array allocation
- CALL HOW_MANY_LINES_OF(KLUNAM,HFILE,YAIRFOIL(IA),INBDATA)
+ CALL HOW_MANY_LINES_OF(ILU,HFILE,YAIRFOIL(IA),INBDATA)
  ALLOCATE(TPAIRFOIL(IA)%XAA(INBDATA))
  ALLOCATE(TPAIRFOIL(IA)%XRE(INBDATA))
  ALLOCATE(TPAIRFOIL(IA)%XCL(INBDATA))
  ALLOCATE(TPAIRFOIL(IA)%XCD(INBDATA))
  ALLOCATE(TPAIRFOIL(IA)%XCM(INBDATA))
  !
- REWIND(KLUNAM)
+ REWIND(ILU)
  INBLINE = 0
  DO
-  READ(KLUNAM,END=101,FMT='(A400)') YSTRING        ! Header
+  READ(ILU,END=101,FMT='(A400)') YSTRING        ! Header
   !* reads the string
   IF (LEN_TRIM(YSTRING)>0) THEN
    READ(YSTRING,FMT=*) YREAD_NAME
@@ -557,7 +546,7 @@ DO IA = 1, INBAIRFOIL
     TPAIRFOIL(IA)%XCM(INBLINE)     = ZCM
    ELSE                     ! The name doesnt appear during a new read..
     IF (INBLINE > 0) THEN   ! .. but it has already been found, ..
-     REWIND(KLUNAM)         ! .. so it is the end of the data ..
+     REWIND(ILU)         ! .. so it is the end of the data ..
      EXIT                   ! .. and we can exit :)
     END IF
    END IF
@@ -565,11 +554,10 @@ DO IA = 1, INBAIRFOIL
  END DO
 END DO
 !
-CLOSE(KLUNAM)
+CLOSE(ILU)
 101 CONTINUE
  IF (INBLINE == 0) THEN
   CALL EOL_AIRFOILNOTFOUND_ERROR(HFILE,YAIRFOIL(IA))
-  STOP
  END IF
 END SUBROUTINE READ_CSVDATA_AIRFOIL_ALM
 !#########################################################
@@ -610,7 +598,6 @@ END DO
 101 CONTINUE
  IF (KLINE == 0) THEN
   CALL EOL_AIRFOILNOTFOUND_ERROR(HFILE,HNAME)
-  STOP
  END IF
 END SUBROUTINE HOW_MANY_LINES_OF
 !#########################################################
