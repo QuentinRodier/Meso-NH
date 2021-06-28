@@ -733,6 +733,9 @@ IF (NVERB >= 10) THEN
   WRITE(UNIT=ILUOUT,FMT="('********** BLANKn ******************')")
   WRITE(UNIT=ILUOUT,NML=NAM_BLANKn)
 !
+  WRITE(UNIT=ILUOUT,FMT="('********** STATIONn ******************')")
+  WRITE(UNIT=ILUOUT,NML=NAM_STATIONn)
+!
   IF (KMI==1) THEN
     WRITE(UNIT=ILUOUT,FMT="(/,'PART OF INITIAL FILE COMMON TO ALL THE MODELS')")
     WRITE(UNIT=ILUOUT,FMT="(  '---------------------------------------------')")
