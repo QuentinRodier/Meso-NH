@@ -291,12 +291,20 @@ SELECT CASE ( HLBCX(1) )
     IF ( SIZE(PLBXUS,1) == 0 ) THEN
       ZLBEU (:,:) = 0.
       ZLBGU (:,:) = PLBXUM(JPHEXT+1,:,:) - PLBXUM(JPHEXT,:,:)  ! 2 - 1
-      ZLBXU(:,:)  = PLBXUM(JPHEXT,:,:)+PFLUCTUNW*XRCOEFF
+      IF ( LRECYCL ) THEN
+        ZLBXU(:,:)  = PLBXUM(JPHEXT,:,:) + PFLUCTUNW * XRCOEFF
+      ELSE
+        ZLBXU(:,:)  = PLBXUM(JPHEXT,:,:)
+      END IF
     ELSE
       ZLBEU (:,:) = PLBXUS(JPHEXT,:,:) ! 1
       ZLBGU (:,:) = PLBXUM(JPHEXT+1,:,:) - PLBXUM(JPHEXT,:,:) +  & ! 2 -  1
                       PTSTEP * (PLBXUS(JPHEXT+1,:,:) - PLBXUS(JPHEXT,:,:)) ! 2 - 1
-      ZLBXU(:,:)  = PLBXUM(JPHEXT,:,:)+ PTSTEP *PLBXUS(JPHEXT,:,:)+PFLUCTUNW*XRCOEFF ! 1  + 1
+      IF ( LRECYCL ) THEN
+        ZLBXU(:,:)  = PLBXUM(JPHEXT,:,:)+ PTSTEP *PLBXUS(JPHEXT,:,:) + PFLUCTUNW * XRCOEFF ! 1  + 1
+      ELSE
+        ZLBXU(:,:)  = PLBXUM(JPHEXT,:,:)+ PTSTEP *PLBXUS(JPHEXT,:,:) ! 1  + 1
+      END IF
     END IF
 !  
 !     ============================================================
@@ -360,12 +368,20 @@ SELECT CASE ( HLBCX(2) )
     IF (SIZE(PLBXUS,1) == 0 ) THEN
       ZLBEU (:,:) = 0.
       ZLBGU (:,:) = PLBXUM(ILBX-JPHEXT+1,:,:) - PLBXUM(ILBX-JPHEXT,:,:) ! ILBX / (ILBX-1
-      ZLBXU(:,:)  = PLBXUM(ILBX-JPHEXT+1,:,:)+PFLUCTUNE*XRCOEFF
+      IF ( LRECYCL ) THEN
+        ZLBXU(:,:)  = PLBXUM(ILBX-JPHEXT+1,:,:) + PFLUCTUNE * XRCOEFF
+      ELSE
+        ZLBXU(:,:)  = PLBXUM(ILBX-JPHEXT+1,:,:)
+      END IF
     ELSE
       ZLBEU (:,:) = PLBXUS(ILBX-JPHEXT+1,:,:)
       ZLBGU (:,:) = PLBXUM(ILBX-JPHEXT+1,:,:) - PLBXUM(ILBX-JPHEXT,:,:) +  &
                       PTSTEP * (PLBXUS(ILBX-JPHEXT+1,:,:) - PLBXUS(ILBX-JPHEXT,:,:))
-      ZLBXU(:,:)  = PLBXUM(ILBX-JPHEXT+1,:,:) + PTSTEP * PLBXUS(ILBX-JPHEXT+1,:,:)+PFLUCTUNE*XRCOEFF
+      IF ( LRECYCL ) THEN
+        ZLBXU(:,:)  = PLBXUM(ILBX-JPHEXT+1,:,:) + PTSTEP * PLBXUS(ILBX-JPHEXT+1,:,:) + PFLUCTUNE * XRCOEFF
+      ELSE
+        ZLBXU(:,:)  = PLBXUM(ILBX-JPHEXT+1,:,:) + PTSTEP * PLBXUS(ILBX-JPHEXT+1,:,:)
+      END IF
     END IF
 !     
 !     ============================================================
@@ -428,12 +444,20 @@ SELECT CASE ( HLBCY(1) )
     IF ( SIZE(PLBYVS,1) == 0 ) THEN
       ZLBEV (:,:) = 0.
       ZLBGV (:,:) = PLBYVM(:,JPHEXT+1,:) - PLBYVM(:,JPHEXT,:) 
-      ZLBYV(:,:)  = PLBYVM(:,JPHEXT,:)+PFLUCTVNS*XRCOEFF
+      IF ( LRECYCL ) THEN
+        ZLBYV(:,:)  = PLBYVM(:,JPHEXT,:) + PFLUCTVNS * XRCOEFF
+      ELSE
+        ZLBYV(:,:)  = PLBYVM(:,JPHEXT,:)
+      END IF
     ELSE
       ZLBEV (:,:) = PLBYVS(:,JPHEXT,:)
       ZLBGV (:,:) = PLBYVM(:,JPHEXT+1,:) - PLBYVM(:,JPHEXT,:) +  &
                       PTSTEP * (PLBYVS(:,JPHEXT+1,:) - PLBYVS(:,JPHEXT,:))
-      ZLBYV(:,:)  = PLBYVM(:,JPHEXT,:) + PTSTEP * PLBYVS(:,JPHEXT,:)+PFLUCTVNS*XRCOEFF
+      IF ( LRECYCL ) THEN
+        ZLBYV(:,:)  = PLBYVM(:,JPHEXT,:) + PTSTEP * PLBYVS(:,JPHEXT,:) + PFLUCTVNS * XRCOEFF
+      ELSE
+        ZLBYV(:,:)  = PLBYVM(:,JPHEXT,:) + PTSTEP * PLBYVS(:,JPHEXT,:)
+      END IF
     END IF
 !  
 !     ============================================================
@@ -496,12 +520,20 @@ SELECT CASE ( HLBCY(2) )
     IF ( SIZE(PLBYVS,1) == 0 ) THEN
       ZLBEV (:,:) = 0.
       ZLBGV (:,:) = PLBYVM(:,ILBY-JPHEXT+1,:) - PLBYVM(:,ILBY-JPHEXT,:) 
-      ZLBYV(:,:)  = PLBYVM(:,ILBY-JPHEXT+1,:)+PFLUCTVNN*XRCOEFF
+      IF ( LRECYCL ) THEN
+        ZLBYV(:,:)  = PLBYVM(:,ILBY-JPHEXT+1,:) + PFLUCTVNN * XRCOEFF
+      ELSE
+        ZLBYV(:,:)  = PLBYVM(:,ILBY-JPHEXT+1,:)
+      END IF
     ELSE
       ZLBEV (:,:) = PLBYVS(:,ILBY-JPHEXT+1,:)
       ZLBGV (:,:) = PLBYVM(:,ILBY-JPHEXT+1,:) - PLBYVM(:,ILBY-JPHEXT,:) +  &
                       PTSTEP * (PLBYVS(:,ILBY-JPHEXT+1,:) - PLBYVS(:,ILBY-JPHEXT,:))
-      ZLBYV(:,:)  = PLBYVM(:,ILBY-JPHEXT+1,:) + PTSTEP *PLBYVS(:,ILBY-JPHEXT+1,:)+PFLUCTVNN*XRCOEFF
+      IF ( LRECYCL ) THEN
+        ZLBYV(:,:)  = PLBYVM(:,ILBY-JPHEXT+1,:) + PTSTEP *PLBYVS(:,ILBY-JPHEXT+1,:) + PFLUCTVNN * XRCOEFF
+      ELSE
+        ZLBYV(:,:)  = PLBYVM(:,ILBY-JPHEXT+1,:) + PTSTEP *PLBYVS(:,ILBY-JPHEXT+1,:)
+      END IF
     END IF
 !  
 !     ============================================================
