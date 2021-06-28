@@ -21,7 +21,7 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PCRT    ! Cloud water C. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR   ! 
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR3  ! 
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_SCBU
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_CR_SCBU
 !
 END SUBROUTINE LIMA_DROPS_SELF_COLLECTION
 END INTERFACE
@@ -71,7 +71,7 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PCRT      ! Rain drops C. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR     ! 
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR3    ! 
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_SCBU
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_CR_SCBU
 !
 !*       0.2   Declarations of local variables :
 !

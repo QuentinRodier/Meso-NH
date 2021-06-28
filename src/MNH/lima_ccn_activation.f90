@@ -35,7 +35,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRT       ! Cloud water m.r. at t
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNFT       ! CCN C. available at t
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNAT       ! CCN C. activated at t
 !
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCLDFR     ! Precipitation fraction
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCLDFR     ! Precipitation fraction
 !
 END SUBROUTINE LIMA_CCN_ACTIVATION
 END INTERFACE
@@ -99,8 +99,7 @@ END MODULE MODI_LIMA_CCN_ACTIVATION
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_CST,             ONLY: XALPW, XBETAW, XCL, XCPD, XCPV, XGAMW, XLVTT, XMD, XMV, XRV, XTT, &
-                                XMNH_EPSILON
+USE MODD_CST,             ONLY: XALPW, XBETAW, XCL, XCPD, XCPV, XGAMW, XLVTT, XMD, XMNH_EPSILON, XMV, XRV, XTT
 use modd_field,           only: TFIELDDATA, TYPEREAL
 USE MODD_IO,              ONLY: TFILEDATA
 USE MODD_LUNIT_n,         ONLY: TLUOUT
@@ -141,7 +140,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRT       ! Cloud water m.r. at t
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNFT       ! CCN C. available at t
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNAT       ! CCN C. activated at t
 !
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCLDFR     ! Precipitation fraction
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCLDFR     ! Precipitation fraction
 !
 !*       0.1   Declarations of local variables :
 !

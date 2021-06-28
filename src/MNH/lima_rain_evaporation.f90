@@ -29,8 +29,8 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PRCT       ! Cloud water m.r. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PRRT       ! Rain water m.r. at t 
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR     ! Lambda(rain)
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_EVAP
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_EVAP
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_TH_EVAP
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_RR_EVAP
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: PEVAP3D    ! Rain evap profile
 !
@@ -91,8 +91,8 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PRCT       ! Cloud water m.r. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PRRT       ! Rain water m.r. at t 
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR     ! Lambda(rain)
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_EVAP
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_EVAP
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_TH_EVAP
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_RR_EVAP
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: PEVAP3D    ! Rain evap profile
 !

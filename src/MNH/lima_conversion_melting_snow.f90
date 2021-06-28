@@ -26,7 +26,7 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PRVT    !
 REAL, DIMENSION(:),   INTENT(IN)    :: PRST    ! Cloud water C. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDS   ! 
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_CMEL
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_RS_CMEL
 !
 END SUBROUTINE LIMA_CONVERSION_MELTING_SNOW
 END INTERFACE
@@ -82,7 +82,7 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PRVT    !
 REAL, DIMENSION(:),   INTENT(IN)    :: PRST    ! Cloud water C. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDS   ! 
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_CMEL
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_RS_CMEL
 !
 !*       0.2   Declarations of local variables :
 !

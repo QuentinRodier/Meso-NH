@@ -20,7 +20,7 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF ! Reference Exner function
 REAL, DIMENSION(:),   INTENT(IN)    :: PCCT    ! Cloud water C. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDC3  ! 
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CC_SELF
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_CC_SELF
 !
 END SUBROUTINE LIMA_DROPLETS_SELF_COLLECTION
 END INTERFACE
@@ -68,7 +68,7 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF ! Reference Exner function
 REAL, DIMENSION(:),   INTENT(IN)    :: PCCT     ! Cloud water C. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDC3   ! 
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CC_SELF
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_CC_SELF
 !
 !*       0.2   Declarations of local variables :
 !
