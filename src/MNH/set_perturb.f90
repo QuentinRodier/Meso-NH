@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -98,7 +98,8 @@ END MODULE MODI_SET_PERTURB
 !!      C.Lac, V.Masson       1/2018 : White noise in the LBC
 !!      Q.Rodier              10/2018 : move allocate(ZWHITE) for NKWH>2
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
-!
+!!     J.L Redelsperger   03/2021  : : white noise in Ocean LES case at the top of domain(Sfc)
+!!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -106,6 +107,7 @@ END MODULE MODI_SET_PERTURB
 !
 USE MODD_CST
 USE MODD_CONF
+USE MODD_DYN_n, ONLY : LOCEAN
 USE MODD_DIM_n
 USE MODD_FIELD_n
 USE MODD_GRID_n
@@ -115,6 +117,7 @@ USE MODD_LUNIT_n, ONLY: TLUOUT
 USE MODD_LSFIELD_n
 USE MODD_PARAMETERS
 USE MODD_REF_n
+USE MODD_REF
 USE MODD_VAR_ll , ONLY : NMNH_COMM_WORLD
 !
 USE MODE_GATHER_ll
@@ -196,6 +199,7 @@ INTEGER, DIMENSION(:), ALLOCATABLE :: i_seed
 INTEGER                            :: ni_seed
 !
 INTEGER                            :: IXOR,IYOR,JI_ll,JJ_ll
+INTEGER          :: INOISB,INOISE ! Loop indice for White noise
 !
 NAMELIST/NAM_PERT_PRE/CPERT_KIND,XAMPLITH,       &! Perturbation parameters
                       XAMPLIRV,XCENTERZ,XRADX,   &!
@@ -249,6 +253,13 @@ IJE_ll=IJU_ll-JPHEXT
 !
 CALL GET_OR_ll('B',IXOR,IYOR)
 !
+IF (LOCEAN) THEN
+  INOISB=NKWH
+  INOISE=IKE
+ELSE
+  INOISB=IKB
+  INOISE=NKWH
+ENDIF
 !-------------------------------------------------------------------------------
 !
 !*	 2.     COMPUTE THE PERTURBATION ON THETA : 
@@ -375,8 +386,7 @@ SELECT CASE(CPERT_KIND)
                    ! J.Escobar optim => need only identical random on all domain 
 !
  ALLOCATE(ZWHITE(IIU,IJU))
-!
- DO JK = IKB, NKWH
+  DO JK = INOISB,INOISE
      IKX = (NIMAX_ll+1)/2
      ZX  = 2*XPI/NIMAX_ll
      ALLOCATE(ZCX_ll(IIU_ll,IKX))

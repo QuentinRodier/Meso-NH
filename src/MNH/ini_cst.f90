@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ###################
@@ -112,6 +112,13 @@ XG      = 9.80665
 !*	 4.     REFERENCE PRESSURE
 !	        -------------------
 !
+! Ocean model cst same as in 1D/CMO SURFEX
+! values used in ini_cst to overwrite XP00 and XTH00
+XRH00OCEAN =1024. 
+XTH00OCEAN = 286.65
+XSA00OCEAN= 32.6
+XP00OCEAN = 201.E5
+!Atmospheric model
 XP00 = 1.E5
 XTH00 = 300.
 !-------------------------------------------------------------------------------
@@ -132,6 +139,7 @@ XMD    = 28.9644E-3
 XMV    = 18.0153E-3
 XRD    = XAVOGADRO * XBOLTZ / XMD
 XRV    = XAVOGADRO * XBOLTZ / XMV
+XEPSILO= XMV/XMD
 XCPD   = 7.* XRD /2.
 XCPV   = 4.* XRV
 XRHOLW = 1000.
@@ -150,7 +158,11 @@ XALPW  = LOG(XESTT) + (XBETAW /XTT) + (XGAMW *LOG(XTT))
 XGAMI  = (XCI - XCPV) / XRV
 XBETAI = (XLSTT/XRV) + (XGAMI * XTT)
 XALPI  = LOG(XESTT) + (XBETAI /XTT) + (XGAMI *LOG(XTT))
-
+! Values identical to ones used in CMO1D in SURFEX /could be modified
+! Coefficient of thermal expansion of water (K-1)
+XALPHAOC = 1.9E-4
+! Coeff of Haline contraction coeff (S-1) 
+XBETAOC= 7.7475E-4
 !
 !   Some machine precision value depending of real4/8 use  
 !

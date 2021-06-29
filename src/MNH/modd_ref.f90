@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ###############
@@ -46,6 +46,13 @@ REAL,SAVE, DIMENSION(:), ALLOCATABLE, TARGET :: XRHODREFZ ! rhod(z) for referenc
 REAL,SAVE, DIMENSION(:), ALLOCATABLE, TARGET :: XTHVREFZ  ! Thetav(z) for reference
                                              ! state without orography    
 REAL,SAVE                            :: XEXNTOP   ! Exner function at model top 
+!
+! For coupled A-O case
+REAL,SAVE, DIMENSION(:), ALLOCATABLE, TARGET :: XRHODREFZO! rhod(z) for ocean ref state in coupled mode
+REAL,SAVE, DIMENSION(:), ALLOCATABLE, TARGET :: XTHVREFZO !Thetav(z) for ocean ref state in coupled mode
+REAL,SAVE                            :: XEXNTOPO   ! Exner function at ocean  model top in coupled mode
+!
 LOGICAL, SAVE                        :: LBOUSS    ! Boussinesq approximation
+LOGICAL, SAVE   ::LCOUPLES ! AUTOCOUPLED ATMS-OCEAN LES VERSION
 ! 
 END MODULE MODD_REF

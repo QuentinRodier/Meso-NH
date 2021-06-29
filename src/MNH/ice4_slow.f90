@@ -1,20 +1,21 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 MODULE MODI_ICE4_SLOW
 INTERFACE
-SUBROUTINE ICE4_SLOW(KSIZE, LDSOFT, LDCOMPUTE, PRHODREF, PT,&
+SUBROUTINE ICE4_SLOW(KSIZE, LDSOFT, PCOMPUTE, PRHODREF, PT,&
                      &PSSI, PLVFACT, PLSFACT, &
                      &PRVT, PRCT, PRIT, PRST, PRGT,&
                      &PLBDAS, PLBDAG,&
-                     &PAI, PCJ,&
+                     &PAI, PCJ, PHLI_HCF, PHLI_HRI,&
                      &PRCHONI, PRVDEPS, PRIAGGS, PRIAUTS, PRVDEPG, &
                      &PA_TH, PA_RV, PA_RC, PA_RI, PA_RS, PA_RG)
 IMPLICIT NONE
 INTEGER,                      INTENT(IN)    :: KSIZE
 LOGICAL,                      INTENT(IN)    :: LDSOFT
-LOGICAL, DIMENSION(KSIZE),    INTENT(IN)    :: LDCOMPUTE
+REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PCOMPUTE
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRHODREF ! Reference density
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PT       ! Temperature
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PSSI     ! Supersaturation over ice
@@ -29,6 +30,8 @@ REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLBDAS   ! Slope parameter of the
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLBDAG   ! Slope parameter of the graupel   distribution
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PAI      ! Thermodynamical function
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PCJ      ! Function to compute the ventilation coefficient
+REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PHLI_HCF !
+REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PHLI_HRI !
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRCHONI  ! Homogeneous nucleation
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRVDEPS  ! Deposition on r_s
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRIAGGS  ! Aggregation on r_s
@@ -43,11 +46,11 @@ REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PA_RG
 END SUBROUTINE ICE4_SLOW
 END INTERFACE
 END MODULE MODI_ICE4_SLOW
-SUBROUTINE ICE4_SLOW(KSIZE, LDSOFT, LDCOMPUTE, PRHODREF, PT, &
+SUBROUTINE ICE4_SLOW(KSIZE, LDSOFT, PCOMPUTE, PRHODREF, PT, &
                      &PSSI, PLVFACT, PLSFACT, &
                      &PRVT, PRCT, PRIT, PRST, PRGT, &
                      &PLBDAS, PLBDAG, &
-                     &PAI, PCJ, &
+                     &PAI, PCJ, PHLI_HCF, PHLI_HRI,&
                      &PRCHONI, PRVDEPS, PRIAGGS, PRIAUTS, PRVDEPG, &
                      &PA_TH, PA_RV, PA_RC, PA_RI, PA_RS, PA_RG)
 !!
@@ -78,7 +81,7 @@ IMPLICIT NONE
 !
 INTEGER,                      INTENT(IN)    :: KSIZE
 LOGICAL,                      INTENT(IN)    :: LDSOFT
-LOGICAL, DIMENSION(KSIZE),    INTENT(IN)    :: LDCOMPUTE
+REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PCOMPUTE
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRHODREF ! Reference density
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PT       ! Temperature
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PSSI     ! Supersaturation over ice
@@ -93,6 +96,8 @@ REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLBDAS   ! Slope parameter of the
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLBDAG   ! Slope parameter of the graupel   distribution
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PAI      ! Thermodynamical function
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PCJ      ! Function to compute the ventilation coefficient
+REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PHLI_HCF !
+REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PHLI_HRI !
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRCHONI  ! Homogeneous nucleation
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRVDEPS  ! Deposition on r_s
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRIAGGS  ! Aggregation on r_s
@@ -107,9 +112,10 @@ REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PA_RG
 !
 !*       0.2  declaration of local variables
 !
-LOGICAL, DIMENSION(SIZE(PRHODREF)) :: GMASK
-REAL, DIMENSION(SIZE(PRHODREF))    :: ZCRIAUTI
-REAL                               :: ZTIMAUTIC
+REAL, DIMENSION(KSIZE) :: ZCRIAUTI, ZMASK
+REAL                   :: ZTIMAUTIC
+INTEGER                :: JL
+!-------------------------------------------------------------------------------
 !
 !
 !-------------------------------------------------------------------------------
@@ -117,21 +123,27 @@ REAL                               :: ZTIMAUTIC
 !
 !*       3.2     compute the homogeneous nucleation source: RCHONI
 !
-GMASK(:)=PT(:)<XTT-35.0 .AND. PRCT(:)>XRTMIN(2) .AND. LDCOMPUTE(:)
+DO JL=1, KSIZE
+  ZMASK(JL)=MAX(0., -SIGN(1., PT(JL)-(XTT-35.0))) * & ! PT(:)<XTT-35.0
+           &MAX(0., -SIGN(1., XRTMIN(2)-PRCT(JL))) * & ! PRCT(:)>XRTMIN(2)
+           &PCOMPUTE(JL)
+ENDDO
 IF(LDSOFT) THEN
-  WHERE(.NOT. GMASK(:))
-    PRCHONI(:) = 0.
-  END WHERE
+  DO JL=1, KSIZE
+    PRCHONI(JL) = PRCHONI(JL) * ZMASK(JL)
+  ENDDO
 ELSE
   PRCHONI(:) = 0.
-  WHERE(GMASK(:))
-    PRCHONI(:) = XHON*PRHODREF(:)*PRCT(:)       &
-                                 *EXP( XALPHA3*(PT(:)-XTT)-XBETA3 )
+  WHERE(ZMASK(:)==1.)
+    PRCHONI(:) = MIN(1000.,XHON*PRHODREF(:)*PRCT(:)       &
+                                 *EXP( XALPHA3*(PT(:)-XTT)-XBETA3 ))
   ENDWHERE
 ENDIF
-PA_RI(:) = PA_RI(:) + PRCHONI(:)
-PA_RC(:) = PA_RC(:) - PRCHONI(:)
-PA_TH(:) = PA_TH(:) + PRCHONI(:)*(PLSFACT(:)-PLVFACT(:))
+DO JL=1, KSIZE
+  PA_RI(JL) = PA_RI(JL) + PRCHONI(JL)
+  PA_RC(JL) = PA_RC(JL) - PRCHONI(JL)
+  PA_TH(JL) = PA_TH(JL) + PRCHONI(JL)*(PLSFACT(JL)-PLVFACT(JL))
+ENDDO
 !
 !*       3.4    compute the deposition, aggregation and autoconversion sources
 !
@@ -149,78 +161,103 @@ PA_TH(:) = PA_TH(:) + PRCHONI(:)*(PLSFACT(:)-PLVFACT(:))
 !
 !*       3.4.3  compute the deposition on r_s: RVDEPS
 !
-GMASK(:)=PRVT(:)>XRTMIN(1) .AND. PRST(:)>XRTMIN(5) .AND. LDCOMPUTE(:)
+DO JL=1, KSIZE
+  ZMASK(JL)=MAX(0., -SIGN(1., XRTMIN(1)-PRVT(JL))) * & !PRVT(:)>XRTMIN(1)
+           &MAX(0., -SIGN(1., XRTMIN(5)-PRST(JL))) * & !PRST(:)>XRTMIN(5)
+           &PCOMPUTE(JL)
+ENDDO
 IF(LDSOFT) THEN
-  WHERE(.NOT. GMASK(:))
-    PRVDEPS(:) = 0.
-  END WHERE
+  DO JL=1, KSIZE
+    PRVDEPS(JL)=PRVDEPS(JL)*ZMASK(JL)
+  ENDDO
 ELSE
   PRVDEPS(:) = 0.
-  WHERE(GMASK(:))
+  WHERE(ZMASK(:)==1.)
     PRVDEPS(:) = ( PSSI(:)/(PRHODREF(:)*PAI(:)) ) *                               &
                  ( X0DEPS*PLBDAS(:)**XEX0DEPS + X1DEPS*PCJ(:)*PLBDAS(:)**XEX1DEPS )
   END WHERE
 ENDIF
-PA_RS(:) = PA_RS(:) + PRVDEPS(:)
-PA_RV(:) = PA_RV(:) - PRVDEPS(:)
-PA_TH(:) = PA_TH(:) + PRVDEPS(:)*PLSFACT(:)
+DO JL=1, KSIZE
+  PA_RS(JL) = PA_RS(JL) + PRVDEPS(JL)
+  PA_RV(JL) = PA_RV(JL) - PRVDEPS(JL)
+  PA_TH(JL) = PA_TH(JL) + PRVDEPS(JL)*PLSFACT(JL)
+ENDDO
 !
 !*       3.4.4  compute the aggregation on r_s: RIAGGS
 !
-GMASK(:)=PRIT(:)>XRTMIN(4) .AND. PRST(:)>XRTMIN(5) .AND. LDCOMPUTE(:)
+DO JL=1, KSIZE
+  ZMASK(JL)=MAX(0., -SIGN(1., XRTMIN(4)-PRIT(JL))) * & ! PRIT(:)>XRTMIN(4)
+           &MAX(0., -SIGN(1., XRTMIN(5)-PRST(JL))) * & ! PRST(:)>XRTMIN(5)
+           &PCOMPUTE(JL)
+ENDDO
 IF(LDSOFT) THEN
-  WHERE(.NOT. GMASK(:))
-    PRIAGGS(:) = 0.
-  END WHERE
+  DO JL=1, KSIZE
+    PRIAGGS(JL)=PRIAGGS(JL) * ZMASK(JL)
+  ENDDO
 ELSE
   PRIAGGS(:) = 0.
-  WHERE(GMASK(:))
+  WHERE(ZMASK(:)==1)
     PRIAGGS(:) = XFIAGGS * EXP( XCOLEXIS*(PT(:)-XTT) ) &
                          * PRIT(:)                      &
                          * PLBDAS(:)**XEXIAGGS          &
                          * PRHODREF(:)**(-XCEXVT)
   END WHERE
 ENDIF
-PA_RS(:) = PA_RS(:) + PRIAGGS(:)
-PA_RI(:) = PA_RI(:) - PRIAGGS(:)
+DO JL=1, KSIZE
+  PA_RS(JL) = PA_RS(JL) + PRIAGGS(JL)
+  PA_RI(JL) = PA_RI(JL) - PRIAGGS(JL)
+ENDDO
 !
 !*       3.4.5  compute the autoconversion of r_i for r_s production: RIAUTS
 !
-GMASK(:)=PRIT(:)>XRTMIN(4) .AND. LDCOMPUTE(:)
+DO JL=1, KSIZE
+  ZMASK(JL)=MAX(0., -SIGN(1., XRTMIN(4)-PHLI_HRI(JL))) * & ! PHLI_HRI(:)>XRTMIN(4)
+           &MAX(0., -SIGN(1., 1.E-20-PHLI_HCF(JL))) * & ! PHLI_HCF(:) .GT. 0.
+           &PCOMPUTE(JL)
+ENDDO
 IF(LDSOFT) THEN
-  WHERE(.NOT. GMASK(:))
-    PRIAUTS(:) = 0.
-  END WHERE
+  DO JL=1, KSIZE
+    PRIAUTS(JL) = PRIAUTS(JL) * ZMASK(JL)
+  ENDDO
 ELSE
   PRIAUTS(:) = 0.
   !ZCRIAUTI(:)=MIN(XCRIAUTI,10**(0.06*(PT(:)-XTT)-3.5))
   ZCRIAUTI(:)=MIN(XCRIAUTI,10**(XACRIAUTI*(PT(:)-XTT)+XBCRIAUTI))
-  WHERE(GMASK(:))
+  WHERE(ZMASK(:)==1.)
     PRIAUTS(:) = XTIMAUTI * EXP( XTEXAUTI*(PT(:)-XTT) ) &
-                          * MAX( PRIT(:)-ZCRIAUTI(:),0.0 )
+                          * MAX( PHLI_HRI(:)/PHLI_HCF(:)-ZCRIAUTI(:),0.0 )
+    PRIAUTS(:) = PHLI_HCF(:)*PRIAUTS(:)
   END WHERE
 ENDIF
-PA_RS(:) = PA_RS(:) + PRIAUTS(:)
-PA_RI(:) = PA_RI(:) - PRIAUTS(:)
+DO JL=1, KSIZE
+  PA_RS(JL) = PA_RS(JL) + PRIAUTS(JL)
+  PA_RI(JL) = PA_RI(JL) - PRIAUTS(JL)
+ENDDO
 !
 !*       3.4.6  compute the deposition on r_g: RVDEPG
 !
 !
-GMASK(:)=PRVT(:)>XRTMIN(1) .AND. PRGT(:)>XRTMIN(6) .AND. LDCOMPUTE(:)
+DO JL=1, KSIZE
+  ZMASK(JL)=MAX(0., -SIGN(1., XRTMIN(1)-PRVT(JL))) * & ! PRVT(:)>XRTMIN(1)
+           &MAX(0., -SIGN(1., XRTMIN(6)-PRGT(JL))) * & ! PRGT(:)>XRTMIN(6)
+           &PCOMPUTE(JL)
+ENDDO
 IF(LDSOFT) THEN
-  WHERE(.NOT. GMASK(:))
-    PRVDEPG(:) = 0.
-  END WHERE
+  DO JL=1, KSIZE
+    PRVDEPG(JL) = PRVDEPG(JL) * ZMASK(JL)
+  ENDDO
 ELSE
   PRVDEPG(:) = 0.
-  WHERE(GMASK(:))
+  WHERE(ZMASK(:)==1.)
     PRVDEPG(:) = ( PSSI(:)/(PRHODREF(:)*PAI(:)) ) *                               &
                  ( X0DEPG*PLBDAG(:)**XEX0DEPG + X1DEPG*PCJ(:)*PLBDAG(:)**XEX1DEPG )
   END WHERE
 ENDIF
-PA_RG(:) = PA_RG(:) + PRVDEPG(:)
-PA_RV(:) = PA_RV(:) - PRVDEPG(:)
-PA_TH(:) = PA_TH(:) + PRVDEPG(:)*PLSFACT(:)
+DO JL=1, KSIZE
+  PA_RG(JL) = PA_RG(JL) + PRVDEPG(JL)
+  PA_RV(JL) = PA_RV(JL) - PRVDEPG(JL)
+  PA_TH(JL) = PA_TH(JL) + PRVDEPG(JL)*PLSFACT(JL)
+ENDDO
 !
 !
 END SUBROUTINE ICE4_SLOW

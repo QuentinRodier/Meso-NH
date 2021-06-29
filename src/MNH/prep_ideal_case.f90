@@ -318,7 +318,9 @@
 !  P. Wautelet 19/04/2019: removed unused dummy arguments and variables
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!  F. Auguste     02/2021: add IBM
 !  P. Wautelet 09/03/2021: move some chemistry initializations to ini_nsv
+!  Jean-Luc Redelsperger 03/2021 : : ocean LES case
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -331,6 +333,8 @@ USE MODD_CONF
 USE MODD_CST
 USE MODD_GRID
 USE MODD_GRID_n
+USE MODD_IBM_LSF,     ONLY: CIBM_TYPE, LIBM_LSF, NIBM_SMOOTH, XIBM_SMOOTH
+USE MODD_IBM_PARAM_n, ONLY: XIBM_LS
 USE MODD_METRICS_n
 USE MODD_PGDDIM
 USE MODD_PGDGRID
@@ -376,6 +380,7 @@ USE MODE_MSG
 !
 USE MODI_DEFAULT_DESFM_n    ! Interface modules
 USE MODI_DEFAULT_EXPRE
+USE MODI_IBM_INIT_LS
 USE MODI_READ_HGRID
 USE MODI_SHUMAN
 USE MODI_SET_RSOU
@@ -572,7 +577,7 @@ TYPE(TFILEDATA),POINTER :: TZEXPREFILE  => NULL()
 NAMELIST/NAM_CONF_PRE/ LTHINSHELL,LCARTESIAN,    &! Declarations in MODD_CONF
                        LPACK,                    &!
                        NVERB,CIDEAL,CZS,         &!+global variables initialized
-                       LBOUSS,LPERTURB,          &! at their declarations
+                       LBOUSS,LOCEAN,LPERTURB,   &! at their declarations
                        LFORCING,CEQNSYS,         &! at their declarations
                        LSHIFT,L2D_ADV_FRC,L2D_REL_FRC, &
                        NHALO , JPHEXT
@@ -601,6 +606,8 @@ NAMELIST/NAM_AERO_PRE/ LORILAM, LINITPM, XINIRADIUSI, XINIRADIUSJ, &
                        NMODE_DST, XINISIG, XINIRADIUS, XN0MIN,&
                        XINISIG_SLT, XINIRADIUS_SLT, XN0MIN_SLT, &
                        NMODE_SLT
+!
+NAMELIST/NAM_IBM_LSF/ LIBM_LSF, CIBM_TYPE, NIBM_SMOOTH, XIBM_SMOOTH
 !
 !-------------------------------------------------------------------------------
 !
@@ -691,11 +698,17 @@ CALL POSNAM(NLUPRE,'NAM_GRIDH_PRE',GFOUND,NLUOUT)
 IF (GFOUND) READ(UNIT=NLUPRE,NML=NAM_GRIDH_PRE)
 CALL POSNAM(NLUPRE,'NAM_VPROF_PRE',GFOUND,NLUOUT)
 IF (GFOUND) READ(UNIT=NLUPRE,NML=NAM_VPROF_PRE)
-CALL POSNAM(NLUPRE,'NAM_BLANKn',GFOUND,NLUOUT)
-IF (GFOUND) READ(UNIT=NLUPRE,NML=NAM_BLANKn)
+CALL POSNAM(NLUPRE,'NAM_BLANKN',GFOUND,NLUOUT)
+CALL INIT_NAM_BLANKn
+IF (GFOUND) THEN
+  READ(UNIT=NLUPRE,NML=NAM_BLANKn)
+  CALL UPDATE_NAM_BLANKn
+END IF
 CALL READ_PRE_IDEA_NAM_n(NLUPRE,NLUOUT)
 CALL POSNAM(NLUPRE,'NAM_AERO_PRE',GFOUND,NLUOUT)
 IF (GFOUND) READ(UNIT=NLUPRE,NML=NAM_AERO_PRE)
+CALL POSNAM(NLUPRE,'NAM_IBM_LSF' ,GFOUND,NLUOUT)
+IF (GFOUND) READ(UNIT=NLUPRE,NML=NAM_IBM_LSF )
 !
 CALL INI_FIELD_LIST(1)
 !
@@ -964,6 +977,11 @@ ALLOCATE(XDZZ(NIU,NJU,NKU))
 !
 ALLOCATE(XRHODREFZ(NKU),XTHVREFZ(NKU))
 XTHVREFZ(:)=0.0
+IF (LCOUPLES) THEN
+  ! Arrays for reference state different in ocean and atmosphere
+  ALLOCATE(XRHODREFZO(NKU),XTHVREFZO(NKU))
+  XTHVREFZO(:)=0.0
+END IF
 IF(CEQNSYS == 'DUR') THEN
   ALLOCATE(XRVREF(NIU,NJU,NKU))
 ELSE
@@ -978,7 +996,11 @@ ALLOCATE(XLSUM(NIU,NJU,NKU))
 ALLOCATE(XLSVM(NIU,NJU,NKU))
 ALLOCATE(XLSWM(NIU,NJU,NKU))
 ALLOCATE(XLSTHM(NIU,NJU,NKU))
-ALLOCATE(XLSRVM(NIU,NJU,NKU))
+IF ( NRR >= 1) THEN
+  ALLOCATE(XLSRVM(NIU,NJU,NKU))
+ELSE
+  ALLOCATE(XLSRVM(0,0,0))
+ENDIF
 !
 !  allocate lateral boundary field used for coupling
 !
@@ -1351,7 +1373,7 @@ IF (    LEN_TRIM(CPGD_FILE) == 0  .OR. .NOT. LREAD_ZS) THEN
 !
   CASE DEFAULT   ! undefined  shape of orography
    !callabortstop
-    CALL PRINT_MSG(NVERB_FATAL,'GEN','PREP_IDEAL_CASE','erroneous terrain type')
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','PREP_IDEAL_CASE','erroneous ground type')
   END SELECT
 !
   CALL ADD2DFIELD_ll( TZ_FIELDS_ll, XZS, 'PREP_IDEAL_CASE::XZS' )
@@ -1623,9 +1645,11 @@ IF(LPERTURB) CALL SET_PERTURB(TZEXPREFILE)
 !
 !*       5.9   Anelastic correction and pressure:
 !
-CALL ICE_ADJUST_BIS(XPABST,XTHT,XRT)
-IF ( .NOT. L1D ) CALL PRESSURE_IN_PREP(XDXX,XDYY,XDZX,XDZY,XDZZ)
-CALL ICE_ADJUST_BIS(XPABST,XTHT,XRT)
+IF (.NOT.LOCEAN) THEN
+  CALL ICE_ADJUST_BIS(XPABST,XTHT,XRT)
+  IF ( .NOT. L1D ) CALL PRESSURE_IN_PREP(XDXX,XDYY,XDZX,XDZY,XDZZ)
+  CALL ICE_ADJUST_BIS(XPABST,XTHT,XRT)
+END IF
 !
 !
 !*       5.10  Compute THETA, vapor and cloud mixing ratio
@@ -1642,19 +1666,28 @@ IF (CIDEAL == 'RSOU') THEN
   ALLOCATE(ZRSATW(NIU,NJU,NKU))
   ALLOCATE(ZRSATI(NIU,NJU,NKU))             
   ZRT=XRT(:,:,:,1)+XRT(:,:,:,2)+XRT(:,:,:,4)
+IF (LOCEAN) THEN
+  ZEXN(:,:,:)= 1.
+  ZT=XTHT
+  ZTHL=XTHT
+  ZCPH=XCPD+ XCPV * XRT(:,:,:,1)
+  ZLVOCPEXN = XLVTT
+  ZLSOCPEXN = XLSTT
+ELSE
   ZEXN=(XPABST/XP00) ** (XRD/XCPD)
   ZT=XTHT*(XPABST/XP00)**(XRD/XCPD)
   ZCPH=XCPD+ XCPV * XRT(:,:,:,1)+ XCL *XRT(:,:,:,2)  + XCI * XRT(:,:,:,4)
   ZLVOCPEXN = (XLVTT + (XCPV-XCL) * (ZT-XTT))/(ZCPH*ZEXN)
   ZLSOCPEXN = (XLSTT + (XCPV-XCI) * (ZT-XTT))/(ZCPH*ZEXN)
   ZTHL=XTHT-ZLVOCPEXN*XRT(:,:,:,2)-ZLSOCPEXN*XRT(:,:,:,4)
+  CALL TH_R_FROM_THL_RT_3D('T',ZFRAC_ICE,XPABST,ZTHL,ZRT,XTHT,XRT(:,:,:,1), &
+                            XRT(:,:,:,2),XRT(:,:,:,4),ZRSATW, ZRSATI)
+END IF
   DEALLOCATE(ZEXN)         
   DEALLOCATE(ZT)       
   DEALLOCATE(ZCPH)        
   DEALLOCATE(ZLVOCPEXN)        
   DEALLOCATE(ZLSOCPEXN)
-  CALL TH_R_FROM_THL_RT_3D('T',ZFRAC_ICE,XPABST,ZTHL,ZRT,XTHT,XRT(:,:,:,1), &
-                            XRT(:,:,:,2),XRT(:,:,:,4),ZRSATW, ZRSATI)
   DEALLOCATE(ZTHL) 
   DEALLOCATE(ZRT)
 ! Coherence test
@@ -1697,7 +1730,27 @@ IF ( LCH_INIT_FIELD ) CALL CH_INIT_FIELD_n(1, NLUOUT, NVERB)
 !
 !-------------------------------------------------------------------------------
 !
-!*   	 7.    WRITE THE FMFILE 
+!*  	 7.    INITIALIZE LEVELSET FOR IBM
+!   	       ---------------------------
+!
+IF (LIBM_LSF) THEN
+  !
+  ! In their current state, the IBM can only be used in
+  ! combination with cartesian coordinates and flat orography.
+  !
+  IF ((CZS.NE."FLAT").OR.(.NOT.LCARTESIAN)) THEN
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','PREP_IDEAL_CASE','IBM can only be used with flat ground')
+  ENDIF
+  !
+  ALLOCATE(XIBM_LS(NIU,NJU,NKU,4))
+  !
+  CALL IBM_INIT_LS(XIBM_LS)
+  !
+ENDIF
+!
+!-------------------------------------------------------------------------------
+!
+!*   	 8.    WRITE THE FMFILE 
 !   	       ----------------
 !
 CALL SECOND_MNH2(ZTIME1)
@@ -1724,7 +1777,7 @@ XT_STORE = XT_STORE + ZTIME2 - ZTIME1
 !
 !-------------------------------------------------------------------------------
 !
-!*     8.     EXTERNALIZED SURFACE
+!*     9.     EXTERNALIZED SURFACE
 !             --------------------
 !
 !
@@ -1799,7 +1852,7 @@ END IF
 !
 !-------------------------------------------------------------------------------
 !
-!*     9.     CLOSES THE FILE
+!*     10.     CLOSES THE FILE
 !             ---------------
 !
 IF (CSURF =='EXTE' .AND. (LEN_TRIM(CPGD_FILE)==0 .OR. .NOT. LREAD_GROUND_PARAM)) THEN
@@ -1813,7 +1866,7 @@ ENDIF
 !
 !-------------------------------------------------------------------------------
 !
-!*      10.    PRINTS ON OUTPUT-LISTING
+!*      11.    PRINTS ON OUTPUT-LISTING
 !              ------------------------
 !
 IF (NVERB >= 5) THEN

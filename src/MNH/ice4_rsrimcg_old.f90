@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -72,11 +72,11 @@ REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PB_RG
 !
 !*       0.2  declaration of local variables
 !
-LOGICAL, DIMENSION(SIZE(PRHODREF)) :: GRIM, GACC, GMASK
-INTEGER :: IGRIM, IGACC
-REAL, DIMENSION(SIZE(PRHODREF)) :: ZVEC1, ZVEC2, ZVEC3
-INTEGER, DIMENSION(SIZE(PRHODREF)) :: IVEC1, IVEC2
-REAL, DIMENSION(SIZE(PRHODREF)) :: ZZW, ZZW2, ZZW6
+LOGICAL, DIMENSION(KSIZE) :: GRIM
+INTEGER :: IGRIM
+REAL, DIMENSION(KSIZE) :: ZVEC1, ZVEC2
+INTEGER, DIMENSION(KSIZE) :: IVEC2, IVEC1
+REAL, DIMENSION(KSIZE) :: ZZW
 INTEGER :: JL
 !-------------------------------------------------------------------------------
 !
@@ -98,7 +98,7 @@ IF(.NOT. ODSOFT) THEN
     END IF
   END DO
   !
-  IF(IGRIM>0 .AND. CSNOWRIMING=='OLD ') THEN
+  IF(IGRIM>0) THEN
     !
     !        5.1.1  select the PLBDAS
     !
@@ -133,8 +133,8 @@ IF(.NOT. ODSOFT) THEN
     WHERE(GRIM(:))
       PRSRIMCG_MR(:) = XSRIMCG * PLBDAS(:)**XEXSRIMCG   & ! RSRIMCG
                                * (1.0 - ZZW(:) )/PRHODREF(:)
+      PRSRIMCG_MR(:)=MIN(PRST(:), PRSRIMCG_MR(:))
     END WHERE
-    PRSRIMCG_MR(:)=MIN(PRST(:), PRSRIMCG_MR(:))
   END IF
 ENDIF
 PB_RS(:) = PB_RS(:) - PRSRIMCG_MR(:)

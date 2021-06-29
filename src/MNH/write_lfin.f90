@@ -173,8 +173,13 @@ END MODULE MODI_WRITE_LFIFM_n
 !  S. Bielli      02/2019: Sea salt: significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Tulet       02/2020: correction for dust and sea salts
+!!      B. Vie          06/2020 Add prognostic supersaturation for LIMA
+!  PA. Joulin    12/2020: add wind turbine outputs
+!  F. Auguste    02/2021: add IBM
+!  T. Nagel      02/2021: add turbulence recycling
 !  P. Wautelet 10/03/2021: use scalar variable names for dust and salt
 !  P. Wautelet 11/03/2021: bugfix: correct name for NSV_LIMA_IMM_NUCL
+!  J.L. Redelsperger 03/2021: add OCEAN and auto-coupled O-A LES cases
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -183,7 +188,7 @@ END MODULE MODI_WRITE_LFIFM_n
 USE MODD_DIM_n
 USE MODD_CONF
 USE MODD_CONF_n
-use modd_field,       only: tfielddata, tfieldlist, TYPEDATE, TYPEINT, TYPEREAL
+use modd_field,       only: tfielddata, tfieldlist, TYPEDATE, TYPEINT, TYPELOG, TYPEREAL
 USE MODD_GRID
 USE MODD_GRID_n
 USE MODD_TIME
@@ -226,6 +231,7 @@ USE MODD_HURR_FIELD_n
 USE MODD_PREP_REAL, ONLY: CDUMMY_2D, XDUMMY_2D
 USE MODD_DUST
 USE MODD_SALT
+USE MODD_OCEANH
 USE MODD_PASPOL
 #ifdef MNH_FOREFIRE
 USE MODD_FOREFIRE
@@ -276,6 +282,15 @@ USE MODD_ADVFRC_n              ! Modif PP ADV FRC
 USE MODD_RELFRC_n
 !
 USE MODD_PARAM_C2R2
+!
+USE MODD_EOL_MAIN
+USE MODD_EOL_SHARED_IO
+USE MODD_EOL_ADNR
+USE MODD_EOL_ALM
+!
+USE MODD_RECYCL_PARAM_n
+USE MODD_IBM_PARAM_n,     ONLY: LIBM, XIBM_LS
+USE MODD_IBM_LSF,         ONLY: LIBM_LSF
 ! 
 IMPLICIT NONE
 !
@@ -423,10 +438,23 @@ CALL IO_Field_write(TPFILE,'L2D',      L2D)
 CALL IO_Field_write(TPFILE,'PACK',     LPACK)
 CALL IO_Field_write(TPFILE,'CARTESIAN',LCARTESIAN)
 CALL IO_Field_write(TPFILE,'LBOUSS',   LBOUSS)
+CALL IO_Field_write(TPFILE,'LOCEAN',   LOCEAN)
+CALL IO_Field_write(TPFILE,'LCOUPLES', LCOUPLES)
 !
 CALL IO_Field_write(TPFILE,'SURF',     CSURF)
 CALL IO_Field_write(TPFILE,'CPL_AROME',LCPL_AROME)
 CALL IO_Field_write(TPFILE,'COUPLING', LCOUPLING)
+!
+TZFIELD%CMNHNAME   = 'RECYCLING'
+TZFIELD%CLONGNAME  = 'RECYCLING'
+TZFIELD%CSTDNAME   = ''
+TZFIELD%CUNITS     = ''
+TZFIELD%CDIR       = '--'
+TZFIELD%NGRID      = 1
+TZFIELD%NTYPE      = TYPELOG
+TZFIELD%NDIMS      = 0
+TZFIELD%LTIMEDEP   = .FALSE. 
+CALL IO_Field_write(TPFILE,TZFIELD,LRECYCL)
 !
 !*       1.4    Prognostic variables :
 !
@@ -461,6 +489,201 @@ IF ( (CUVW_ADV_SCHEME == 'CEN4TH') .AND. (CTEMP_SCHEME == 'LEFR') ) THEN
   CALL IO_Field_write(TPFILE,'DWM',XDWM)
 END IF
 !
+IF (LIBM .OR. LIBM_LSF) THEN
+  !
+  TZFIELD%CMNHNAME  = 'LSFP'
+  TZFIELD%CLONGNAME = 'LSFP'
+  TZFIELD%CSTDNAME  = ''
+  TZFIELD%CUNITS    = 'm'
+  TZFIELD%CDIR      = 'XY'
+  TZFIELD%NGRID     = 1
+  TZFIELD%NTYPE     = TYPEREAL
+  TZFIELD%NDIMS     = 3
+  TZFIELD%LTIMEDEP  = .TRUE.
+  TZFIELD%CCOMMENT  = 'Level Set Function at mass node'
+  !
+  CALL IO_Field_write(TPFILE,TZFIELD,XIBM_LS(:,:,:,1))
+  !
+ENDIF
+!
+IF (LRECYCL) THEN
+  !
+  TZFIELD%CMNHNAME   = 'RCOUNT'
+  TZFIELD%CLONGNAME  = 'RCOUNT'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CUNITS     = ''
+  TZFIELD%CDIR       = '--'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEINT
+  TZFIELD%NDIMS      = 0
+  TZFIELD%LTIMEDEP   = .TRUE.
+  TZFIELD%CCOMMENT   = 'Incremental counter for averaging purpose'
+  CALL IO_Field_write(TPFILE,TZFIELD,NR_COUNT)
+  !
+  IF (LRECYCLW) THEN
+    TZFIELD%CMNHNAME   = 'URECYCLW'
+    TZFIELD%CLONGNAME  = 'URECYCLW'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CUNITS     = 'm s-1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%NGRID      = 2
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD%CCOMMENT   = 'UMEAN-WEST side plan for recycling purpose'
+    !
+    CALL IO_Field_write(TPFILE,TZFIELD,XUMEANW(:,:,:))
+    !
+    TZFIELD%CMNHNAME   = 'VRECYCLW'
+    TZFIELD%CLONGNAME  = 'VRECYCLW'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CUNITS     = 'm s-1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%NGRID      = 3
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD%CCOMMENT   = 'VMEAN-WEST side plan for recycling purpose'
+    !
+    CALL IO_Field_write(TPFILE,TZFIELD,XVMEANW(:,:,:))
+    !
+    TZFIELD%CMNHNAME   = 'WRECYCLW'
+    TZFIELD%CLONGNAME  = 'WRECYCLW'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CUNITS     = 'm s-1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%NGRID      = 4
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD%CCOMMENT   = 'WMEAN-WEST side plan for recycling purpose'
+    !
+    CALL IO_Field_write(TPFILE,TZFIELD,XWMEANW(:,:,:))
+    !
+  ENDIF  
+  IF (LRECYCLN) THEN
+    TZFIELD%CMNHNAME   = 'URECYCLN'
+    TZFIELD%CLONGNAME  = 'URECYCLN'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CUNITS     = 'm s-1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%NGRID      = 2
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD%CCOMMENT   = 'UMEAN-NORTH side plan for recycling purpose'
+    !
+    CALL IO_Field_write(TPFILE,TZFIELD,XUMEANN(:,:,:))
+    !
+    TZFIELD%CMNHNAME   = 'VRECYCLN'
+    TZFIELD%CLONGNAME  = 'VRECYCLN'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CUNITS     = 'm s-1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%NGRID      = 3
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD%CCOMMENT   = 'VMEAN-NORTH side plan for recycling purpose'
+    !
+    CALL IO_Field_write(TPFILE,TZFIELD,XVMEANN(:,:,:))
+    !
+    TZFIELD%CMNHNAME   = 'WRECYCLN'
+    TZFIELD%CLONGNAME  = 'WRECYCLN'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CUNITS     = 'm s-1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%NGRID      = 4
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD%CCOMMENT   = 'WMEAN-NORTH side plan for recycling purpose'
+    !
+    CALL IO_Field_write(TPFILE,TZFIELD,XWMEANN(:,:,:))
+    !
+  ENDIF
+  IF (LRECYCLE) THEN
+    TZFIELD%CMNHNAME   = 'URECYCLE'
+    TZFIELD%CLONGNAME  = 'URECYCLE'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CUNITS     = 'm s-1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%NGRID      = 2
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD%CCOMMENT   = 'UMEAN-EAST side plan for recycling purpose'
+    !
+    CALL IO_Field_write(TPFILE,TZFIELD,XUMEANE(:,:,:))
+    !
+    TZFIELD%CMNHNAME   = 'VRECYCLE'
+    TZFIELD%CLONGNAME  = 'VRECYCLE'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CUNITS     = 'm s-1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%NGRID      = 3
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD%CCOMMENT   = 'VMEAN-EAST side plan for recycling purpose'
+    !
+    CALL IO_Field_write(TPFILE,TZFIELD,XVMEANE(:,:,:))
+    !
+    TZFIELD%CMNHNAME   = 'WRECYCLE'
+    TZFIELD%CLONGNAME  = 'WRECYCLE'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CUNITS     = 'm s-1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%NGRID      = 4
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD%CCOMMENT   = 'WMEAN-EAST side plan for recycling purpose'
+    !
+    CALL IO_Field_write(TPFILE,TZFIELD,XWMEANE(:,:,:))
+    !
+  ENDIF
+  IF (LRECYCLS) THEN
+    TZFIELD%CMNHNAME   = 'URECYCLS'
+    TZFIELD%CLONGNAME  = 'URECYCLS'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CUNITS     = 'm s-1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%NGRID      = 2
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD%CCOMMENT   = 'UMEAN-SOUTH side plan for recycling purpose'
+    !
+    CALL IO_Field_write(TPFILE,TZFIELD,XUMEANS(:,:,:))
+    !
+    TZFIELD%CMNHNAME   = 'VRECYCLS'
+    TZFIELD%CLONGNAME  = 'VRECYCLS'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CUNITS     = 'm s-1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%NGRID      = 3
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD%CCOMMENT   = 'VMEAN-SOUTH side plan for recycling purpose'
+    !
+    CALL IO_Field_write(TPFILE,TZFIELD,XVMEANS(:,:,:))
+    !
+    TZFIELD%CMNHNAME   = 'WRECYCLS'
+    TZFIELD%CLONGNAME  = 'WRECYCLS'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CUNITS     = 'm s-1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%NGRID      = 4
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    TZFIELD%LTIMEDEP   = .TRUE.
+    TZFIELD%CCOMMENT   = 'WMEAN-SOUTH side plan for recycling purpose'
+    !
+  ENDIF  
+ENDIF
+!
 IF (MEAN_COUNT /= 0) THEN
 !
   TZFIELD%CSTDNAME   = ''
@@ -491,6 +714,13 @@ IF (MEAN_COUNT /= 0) THEN
   TZFIELD%CCOMMENT   = 'X_Y_Z_U component of max wind'
   CALL IO_Field_write(TPFILE,TZFIELD,XUM_MAX)
 !
+  TZFIELD%CMNHNAME   = 'UWME'
+  TZFIELD%CLONGNAME  = 'UWME'
+  TZFIELD%CUNITS     = 'm2 s-2'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_UW component of mean wind variance'
+  ZWORK3D = XUW_MEAN/MEAN_COUNT-(XUM_MEAN*XWM_MEAN)/MEAN_COUNT**2
+  CALL IO_Field_write(TPFILE,TZFIELD,ZWORK3D)
+  !
   TZFIELD%NGRID      = 3
 !
   TZFIELD%CMNHNAME   = 'VMME'
@@ -536,6 +766,13 @@ IF (MEAN_COUNT /= 0) THEN
   CALL IO_Field_write(TPFILE,TZFIELD,XWM_MAX)
 !
   TZFIELD%NGRID      = 1
+!
+  TZFIELD%CMNHNAME   = 'CMME'
+  TZFIELD%CLONGNAME  = 'CMME'
+  TZFIELD%CUNITS     = 'kg kg-1'
+  TZFIELD%CCOMMENT   = 'mean Passive scalar'
+  ZWORK3D = XSVT_MEAN/MEAN_COUNT
+  CALL IO_Field_write(TPFILE,TZFIELD,ZWORK3D)
 !
   TZFIELD%CMNHNAME   = 'THMME'
   TZFIELD%CLONGNAME  = 'THMME'
@@ -769,6 +1006,11 @@ IF (NSV >=1) THEN
 ! Hom. freez. of CCN
     IF (JSV .EQ. NSV_LIMA_HOM_HAZE) THEN
       TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(5))//'T'
+    END IF
+    !
+! Supersaturation     
+    IF (JSV .EQ. NSV_LIMA_SPRO) THEN
+      TZFIELD%CMNHNAME   = TRIM(CLIMA_WARM_NAMES(5))//'T'
     END IF
     !
     TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
@@ -1330,9 +1572,15 @@ END IF
 !
 !*       1.5    Reference state variables :
 !
-CALL IO_Field_write(TPFILE,'RHOREFZ',XRHODREFZ)
-CALL IO_Field_write(TPFILE,'THVREFZ',XTHVREFZ)
-CALL IO_Field_write(TPFILE,'EXNTOP', XEXNTOP)
+IF (LCOUPLES.AND.LOCEAN) THEN
+  CALL IO_Field_write(TPFILE,'RHOREFZ',XRHODREFZO)
+  CALL IO_Field_write(TPFILE,'THVREFZ',XTHVREFZO)
+  CALL IO_Field_write(TPFILE,'EXNTOP', XEXNTOPO)
+ELSE
+  CALL IO_Field_write(TPFILE,'RHOREFZ',XRHODREFZ)
+  CALL IO_Field_write(TPFILE,'THVREFZ',XTHVREFZ)
+  CALL IO_Field_write(TPFILE,'EXNTOP', XEXNTOP)
+END IF
 !
 !
 !*       1.6  Tendencies                                         
@@ -1711,8 +1959,63 @@ IF(LBLOWSNOW) THEN
   END IF
 ENDIF
 !
-!*       1.11   Forcing variables
+!*       1.11   Ocean LES variables
 !
+IF ((.NOT.LCOUPLES).AND.LOCEAN) THEN
+  CALL IO_Field_write(TPFILE,'NFRCLT',NFRCLT)
+  CALL IO_Field_write(TPFILE,'NINFRT',NINFRT)
+  !
+  TZFIELD%CMNHNAME   = 'SSUFL_T'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'SSUFL'
+  TZFIELD%CUNITS     = 'kg m-1 s-1'
+  TZFIELD%CDIR       = '--'
+  TZFIELD%CCOMMENT   = 'sfc stress along U to force ocean LES'
+  TZFIELD%NGRID      = 0
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 1
+  TZFIELD%LTIMEDEP   = .FALSE.
+  CALL IO_Field_write(TPFILE,TZFIELD,XSSUFL_T(:))
+  !
+  TZFIELD%CMNHNAME   = 'SSVFL_T'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'SSVFL'
+  TZFIELD%CUNITS     = 'kg m-1 s-1'
+  TZFIELD%CDIR       = '--'
+  TZFIELD%CCOMMENT   = 'sfc stress along V to force ocean LES'
+  TZFIELD%NGRID      = 0
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 1
+  TZFIELD%LTIMEDEP   = .FALSE.
+  CALL IO_Field_write(TPFILE,TZFIELD,XSSVFL_T(:))
+  !
+  TZFIELD%CMNHNAME   = 'SSTFL_T'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'SSTFL'
+  TZFIELD%CUNITS     = 'kg m3 K m s-1'
+  TZFIELD%CDIR       = '--'
+  TZFIELD%CCOMMENT   = 'sfc total heat flux to force ocean LES'
+  TZFIELD%NGRID      = 0
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 1
+  TZFIELD%LTIMEDEP   = .FALSE.
+  CALL IO_Field_write(TPFILE,TZFIELD,XSSTFL_T(:))
+  !
+  TZFIELD%CMNHNAME   = 'SSOLA_T'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'SSOLA'
+  TZFIELD%CUNITS     = 'kg m3 K m s-1'
+  TZFIELD%CDIR       = '--'
+  TZFIELD%CCOMMENT   = 'sfc solar flux to force ocean LES'
+  TZFIELD%NGRID      = 0
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 1
+  TZFIELD%LTIMEDEP   = .FALSE.
+  CALL IO_Field_write(TPFILE,TZFIELD,XSSOLA_T(:))
+  !
+END IF ! ocean sfc forcing end    
+!
+!*       1.12   Forcing variables
 !
 IF (LFORCING) THEN
 !
@@ -1998,7 +2301,7 @@ IF ( L2D_REL_FRC ) THEN
   ENDDO
 ENDIF
 !
-!*       1.11bis   Eddy Fluxes variables    ! Modif PP
+!*       1.13   Eddy Fluxes variables    ! Modif PP
 !
 IF ( LTH_FLX ) THEN
    CALL IO_Field_write(TPFILE,'VT_FLX',XVTH_FLUX_M)
@@ -2007,13 +2310,13 @@ END IF
 !
 IF ( LUV_FLX) CALL IO_Field_write(TPFILE,'VU_FLX',XVU_FLUX_M)
 !
-!*       1.12   Balloon variables
+!*       1.14   Balloon variables
 !
 !
 IF (LFLYER) CALL WRITE_BALLOON_n(TPFILE)
 !
 !
-!*       1.13    Filtered variables for hurricane initialization
+!*       1.15    Filtered variables for hurricane initialization
 !
 !
 IF ( CPROGRAM=='REAL  ' ) THEN
@@ -2058,7 +2361,7 @@ IF ( CPROGRAM=='REAL  ' ) THEN
 !
   END IF
 !
-!*       1.14    Dummy variables in PREP_REAL_CASE
+!*       1.16    Dummy variables in PREP_REAL_CASE
 !
   IF (ALLOCATED(CDUMMY_2D)) THEN
     TZFIELD%CSTDNAME   = ''
@@ -2079,6 +2382,200 @@ IF ( CPROGRAM=='REAL  ' ) THEN
 !
 END IF
 !
+!*       1.17    Wind turbine variables 
+!
+!             i) Main
+!
+IF (LMAIN_EOL .AND. IMI == NMODEL_EOL) THEN
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CUNITS     = 'N'
+!
+  TZFIELD%CMNHNAME   = 'FX_RG'
+  TZFIELD%CLONGNAME  = 'FX_RG'
+  TZFIELD%CCOMMENT   = 'X-component field of aerodynamic force (wind->rotor) in global frame (N)'
+  CALL IO_Field_write(TPFILE,TZFIELD,XFX_RG)
+!
+  TZFIELD%CMNHNAME   = 'FY_RG'
+  TZFIELD%CLONGNAME  = 'FY_RG'
+  TZFIELD%CCOMMENT   = 'Y-component field of aerodynamic force (wind->rotor) in global frame (N)'
+  CALL IO_Field_write(TPFILE,TZFIELD,XFY_RG)
+!
+  TZFIELD%CMNHNAME   = 'FZ_RG'
+  TZFIELD%CLONGNAME  = 'FZ_RG'
+  TZFIELD%CCOMMENT   = 'Z-component field of aerodynamic force (wind->rotor) in global frame (N)'
+  CALL IO_Field_write(TPFILE,TZFIELD,XFZ_RG)
+!
+  TZFIELD%CMNHNAME   = 'FX_SMR_RG'
+  TZFIELD%CLONGNAME  = 'FX_SMR_RG'
+  TZFIELD%CCOMMENT   = 'X-component field of smeared aerodynamic force (wind->rotor) in global frame (N)'
+  TZFIELD%CCOMMENT   = ''
+  CALL IO_Field_write(TPFILE,TZFIELD,XFX_SMR_RG)
+!
+  TZFIELD%CMNHNAME   = 'FY_SMR_RG'
+  TZFIELD%CLONGNAME  = 'FY_SMR_RG'
+  TZFIELD%CCOMMENT   = 'Y-component field of smeared aerodynamic force (wind->rotor) in global frame (N)'
+  CALL IO_Field_write(TPFILE,TZFIELD,XFY_SMR_RG)
+!
+  TZFIELD%CMNHNAME   = 'FZ_SMR_RG'
+  TZFIELD%CLONGNAME  = 'FZ_SMR_RG'
+  TZFIELD%CCOMMENT   = 'Z-component field of smeared aerodynamic force (wind->rotor) in global frame (N)'
+  CALL IO_Field_write(TPFILE,TZFIELD,XFZ_SMR_RG)
+!
+SELECT CASE(CMETH_EOL)
+!
+!             ii) Actuator Disk without Rotation model
+!
+  CASE('ADNR') ! Actuator Disc Non-Rotating
+!
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 1
+    TZFIELD%CDIR       = '--'
+    TZFIELD%CUNITS     = '1'
+!
+    TZFIELD%CMNHNAME   = 'A_INDU'
+    TZFIELD%CLONGNAME  = 'INDUCTION_FACTOR'
+    TZFIELD%CCOMMENT   = 'Induction factor (1)'
+    CALL IO_Field_write(TPFILE,TZFIELD,XA_INDU)
+!
+    TZFIELD%CMNHNAME   = 'CT_D'
+    TZFIELD%CLONGNAME  = 'CTHRUST_D'
+    TZFIELD%CCOMMENT   = 'Thrust coefficient at disk (1),    &
+                          used with wind speed at disk'
+    CALL IO_Field_write(TPFILE,TZFIELD,XCT_D)
+!
+    TZFIELD%CMNHNAME   = 'THRUT'
+    TZFIELD%CLONGNAME  = 'THRUSTT_EOL'
+    TZFIELD%CUNITS     = 'N'
+    TZFIELD%CCOMMENT   = 'RID instantaneous thrust of the wind turbines (N)'
+    CALL IO_Field_write(TPFILE,TZFIELD,XTHRUT)
+!
+    IF (MEAN_COUNT /= 0) THEN
+
+      TZFIELD%CMNHNAME   = 'THRUMME'
+      TZFIELD%CLONGNAME  = 'MEAN_THRUST_EOL'
+      TZFIELD%CUNITS     = 'N'
+      TZFIELD%CCOMMENT   = 'RID mean thrust of the wind turbines (N)'
+      CALL IO_Field_write(TPFILE,TZFIELD,XTHRU_SUM/MEAN_COUNT)
+!
+    END IF
+!             iii) Actuator Line Model
+!
+  CASE('ALM') ! Actuator Line Method
+!
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%CDIR       = '--'
+!
+    TZFIELD%NDIMS      = 1
+!
+    TZFIELD%CMNHNAME   = 'THRUT'
+    TZFIELD%CLONGNAME  = 'THRUSTT_EOL'
+    TZFIELD%CUNITS     = 'N'
+    TZFIELD%CCOMMENT   = 'RID instantaneous thrust (N) of wind turbines'
+    CALL IO_Field_write(TPFILE,TZFIELD,XTHRUT)
+!
+    TZFIELD%CMNHNAME   = 'TORQT'
+    TZFIELD%CLONGNAME  = 'TORQUET_EOL'
+    TZFIELD%CUNITS     = 'Nm'
+    TZFIELD%CCOMMENT   = 'RID instantaneous torque (Nm) of wind turbines'
+    CALL IO_Field_write(TPFILE,TZFIELD,XTORQT)
+!
+    TZFIELD%CMNHNAME   = 'POWT'
+    TZFIELD%CLONGNAME  = 'POWERT_EOL'
+    TZFIELD%CUNITS     = 'W'
+    TZFIELD%CCOMMENT   = 'RID instantaneous power (W) of wind turbines'
+    CALL IO_Field_write(TPFILE,TZFIELD,XPOWT)
+!
+    TZFIELD%NDIMS      = 3
+!
+    TZFIELD%CMNHNAME   = 'ELT_RAD'
+    TZFIELD%CLONGNAME  = 'ELT_RAD'
+    TZFIELD%CUNITS     = 'm'
+    TZFIELD%CCOMMENT   = 'RID_BID_EID radius (m) of wind turbine blade elements'
+    CALL IO_Field_write(TPFILE,TZFIELD,XELT_RAD)
+!
+    TZFIELD%CMNHNAME   = 'AOA'
+    TZFIELD%CLONGNAME  = 'ANGLE OF ATTACK'
+    TZFIELD%CUNITS     = 'rad'
+    TZFIELD%CCOMMENT   = 'RID_BID_EID instantaneous angle of attack (rad)'
+    CALL IO_Field_write(TPFILE,TZFIELD,XAOA_GLB)
+!
+    TZFIELD%CMNHNAME   = 'FLIFT'
+    TZFIELD%CLONGNAME  = 'LIFT FORCE'
+    TZFIELD%CUNITS     = 'N'
+    TZFIELD%CCOMMENT   = 'RID_BID_EID instantaneous lift (N) in relative frame'
+    CALL IO_Field_write(TPFILE,TZFIELD,XFLIFT_GLB)
+!
+    TZFIELD%CMNHNAME   = 'FDRAG'
+    TZFIELD%CLONGNAME  = 'DRAG FORCE'
+    TZFIELD%CUNITS     = 'N'
+    TZFIELD%CCOMMENT   = 'RID_BID_EID instantaneous drag (N) in relative frame'
+    CALL IO_Field_write(TPFILE,TZFIELD,XFDRAG_GLB)
+!
+    TZFIELD%NDIMS      = 4
+!
+    TZFIELD%CMNHNAME   = 'FAERO_RE'
+    TZFIELD%CLONGNAME  = 'AERODYNAMIC FORCE RE'
+    TZFIELD%CUNITS     = 'N'
+    TZFIELD%CCOMMENT   = 'RID_BID_EID_XYZ instantaneous forces (N) in RE'
+    CALL IO_Field_write(TPFILE,TZFIELD,XFAERO_RE_GLB)
+!
+    TZFIELD%CMNHNAME   = 'FAERO_RG'
+    TZFIELD%CLONGNAME  = 'AERODYNAMIC FORCE RG'
+    TZFIELD%CUNITS     = 'N'
+    TZFIELD%CCOMMENT   = 'RID_BID_EID_XYZ instantaneous forces (N) in RG'
+    CALL IO_Field_write(TPFILE,TZFIELD,XFAERO_RG_GLB)
+!
+    IF (MEAN_COUNT /= 0) THEN
+!
+      TZFIELD%NGRID      = 1
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%CDIR       = '--'
+!
+      TZFIELD%NDIMS      = 1
+!
+      TZFIELD%CMNHNAME   = 'THRUMME'
+      TZFIELD%CLONGNAME  = 'MEAN_THRUST_EOL'
+      TZFIELD%CUNITS     = 'N'
+      TZFIELD%CCOMMENT   = 'RID mean thrust of the wind turbines (N)'
+      CALL IO_Field_write(TPFILE,TZFIELD,XTHRU_SUM/MEAN_COUNT)
+!
+      TZFIELD%CMNHNAME   = 'TORQMME'
+      TZFIELD%CLONGNAME  = 'MEAN_TORQUE_EOL'
+      TZFIELD%CUNITS     = 'Nm'
+      TZFIELD%CCOMMENT   = 'RID mean torque of the wind turbines (Nm)'
+      CALL IO_Field_write(TPFILE,TZFIELD,XTORQ_SUM/MEAN_COUNT)
+!
+      TZFIELD%CMNHNAME   = 'POWMME'
+      TZFIELD%CLONGNAME  = 'MEAN_POWER_EOL'
+      TZFIELD%CUNITS     = 'W'
+      TZFIELD%CCOMMENT   = 'RID mean power of the wind turbines (W)'
+      CALL IO_Field_write(TPFILE,TZFIELD,XPOW_SUM/MEAN_COUNT)
+!
+      TZFIELD%NDIMS      = 3
+!
+      TZFIELD%CMNHNAME   = 'AOAMME'
+      TZFIELD%CLONGNAME  = 'MEAN_ANGLE_OF_ATTACK'
+      TZFIELD%CUNITS     = 'rad'
+      TZFIELD%CCOMMENT   = 'RID_BID_EID mean angle of attack (rad)'
+      CALL IO_Field_write(TPFILE,TZFIELD,XAOA_SUM/MEAN_COUNT)
+!
+      TZFIELD%NDIMS      = 4
+!
+      TZFIELD%CMNHNAME   = 'FAEROMME_RE'
+      TZFIELD%CLONGNAME  = 'MEAN_AERODYNAMIC_FORCE_RE'
+      TZFIELD%CUNITS     = 'N'
+      TZFIELD%CCOMMENT   = 'RID_BID_EID_XYZ mean forces (N) in RE'
+      CALL IO_Field_write(TPFILE,TZFIELD,XFAERO_RE_SUM/MEAN_COUNT)
+!
+    END IF
+!
+  END SELECT
+END IF 
 !
 DEALLOCATE(ZWORK2D,ZWORK3D)
 !

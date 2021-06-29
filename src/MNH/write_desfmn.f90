@@ -144,6 +144,8 @@ END MODULE MODI_WRITE_DESFM_n
 !!                   02/2018 Q.Libois ECRAD
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!      Modification   V. Vionnet     07/2017  add blowing snow variables
+!!      Modification   F.Auguste      02/2021  add IBM
+!!                     E.Jezequel     02/2021  add stations read from CSV file
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -201,6 +203,10 @@ USE MODD_FOREFIRE_n, ONLY : FFCOUPLING
 #endif
 USE MODN_BLOWSNOW_n
 USE MODN_BLOWSNOW
+USE MODN_IBM_PARAM_n
+USE MODN_RECYCL_PARAM_n
+USE MODD_IBM_LSF, ONLY: LIBM_LSF
+USE MODN_STATION_n
 !
 IMPLICIT NONE
 !
@@ -307,6 +313,20 @@ ELSE  !return to namelist meaning of LHORELAX_SV
 END IF
 WRITE(UNIT=ILUSEG,NML=NAM_DYNn)
 !
+IF (LIBM_LSF) THEN
+  !
+  CALL INIT_NAM_IBM_PARAMn
+  !
+  WRITE(UNIT=ILUSEG,NML=NAM_IBM_PARAMn)
+  !
+  IF (CPROGRAM/='MESONH') THEN
+    LIBM         = .FALSE.
+    LIBM_TROUBLE = .FALSE.  
+    CIBM_ADV     = 'NOTHIN' 
+  END IF
+  !
+END IF
+!
 CALL INIT_NAM_ADVn
 WRITE(UNIT=ILUSEG,NML=NAM_ADVn)
 IF (CPROGRAM/='MESONH') THEN
@@ -368,6 +388,9 @@ IF(LUSECHEM) WRITE(UNIT=ILUSEG,NML=NAM_CH_SOLVERn)
 CALL INIT_NAM_BLOWSNOWn
 IF(LBLOWSNOW) WRITE(UNIT=ILUSEG,NML=NAM_BLOWSNOWn)
 IF(LBLOWSNOW) WRITE(UNIT=ILUSEG,NML=NAM_BLOWSNOW)
+!
+CALL INIT_NAM_STATIONn
+IF(LSTATION) WRITE(UNIT=ILUSEG,NML=NAM_STATIONn)
 !
 IF(LDUST) WRITE(UNIT=ILUSEG,NML=NAM_DUST)
 IF(LSALT) WRITE(UNIT=ILUSEG,NML=NAM_SALT)
@@ -449,7 +472,17 @@ IF (NVERB >= 5) THEN
 !  
   WRITE(UNIT=ILUOUT,FMT="('********** ADVECTIONn **************')")
   WRITE(UNIT=ILUOUT,NML=NAM_ADVn)
-!  
+  !  
+  IF (LIBM_LSF) THEN
+    WRITE(UNIT=ILUOUT,FMT="('********** IBM_PARAMn **************')")                           
+    WRITE(UNIT=ILUOUT,NML=NAM_IBM_PARAMn)
+  ENDIF
+  !
+  IF (LRECYCL) THEN
+    WRITE(UNIT=ILUOUT,FMT="('********** RECYCL_PARAMn **************')")
+    WRITE(UNIT=ILUOUT,NML=NAM_RECYCL_PARAMn)
+  ENDIF
+  !  
   WRITE(UNIT=ILUOUT,FMT="('********** PARAMETERIZATIONSn ******')")
   WRITE(UNIT=ILUOUT,NML=NAM_PARAMn)
 !  

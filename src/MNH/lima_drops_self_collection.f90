@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-------------------------------------------------------------------------------
 !      #################################
        MODULE MODI_LIMA_DROPS_SELF_COLLECTION
 !      #################################
@@ -10,8 +11,7 @@ INTERFACE
    SUBROUTINE LIMA_DROPS_SELF_COLLECTION (LDCOMPUTE,           &
                                           PRHODREF,            &
                                           PCRT, PLBDR, PLBDR3, &
-                                          P_CR_SCBU,           &
-                                          PA_CR                )
+                                          P_CR_SCBU            )
 !
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
 !
@@ -21,9 +21,7 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PCRT    ! Cloud water C. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR   ! 
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR3  ! 
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_SCBU
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CR
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_CR_SCBU
 !
 END SUBROUTINE LIMA_DROPS_SELF_COLLECTION
 END INTERFACE
@@ -33,8 +31,7 @@ END MODULE MODI_LIMA_DROPS_SELF_COLLECTION
       SUBROUTINE LIMA_DROPS_SELF_COLLECTION (LDCOMPUTE,           &
                                              PRHODREF,            &
                                              PCRT, PLBDR, PLBDR3, &
-                                             P_CR_SCBU,           &
-                                             PA_CR                )
+                                             P_CR_SCBU            )
 !     #############################################################
 !
 !!    PURPOSE
@@ -74,9 +71,7 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PCRT      ! Rain drops C. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR     ! 
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR3    ! 
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_SCBU
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CR
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_CR_SCBU
 !
 !*       0.2   Declarations of local variables :
 !
@@ -121,8 +116,6 @@ WHERE (PCRT(:)>XCTMIN(3) .AND. (ZW4(:)<=1.E-4) .AND. LDCOMPUTE(:))
 END WHERE
 !
 P_CR_SCBU(:) = - ZW3(:) * PRHODREF(:)
-!
-PA_CR(:) = PA_CR(:) + P_CR_SCBU(:)
 !
 !
 !-------------------------------------------------------------------------------

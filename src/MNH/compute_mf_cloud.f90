@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2009-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2009-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -180,7 +180,7 @@ ELSEIF (HMF_CLOUD == 'STAT') THEN
 ELSEIF (HMF_CLOUD == 'BIGA') THEN
   !Statistical scheme using the bi-gaussian PDF proposed by E. Perraud.
   CALL COMPUTE_MF_CLOUD_BIGAUS(KKA, KKB, KKE, KKU, KKL,&
-                              &PRC_UP, PRI_UP, PEMF, PDEPTH,&
+                              &PEMF, PDEPTH,&
                               &PRT_UP, PTHV_UP, PFRAC_ICE_UP, PRSAT_UP,&
                               &PRTM, PTHM, PTHVM,&
                               &PDZZ, PZZ, PRHODREF,&

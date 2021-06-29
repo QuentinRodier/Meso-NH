@@ -167,6 +167,7 @@ INTEGER , DIMENSION(SIZE(GNUCT))   :: I1,I2,I3 ! Used to replace the COUNT
 INTEGER                            :: JL       ! and PACK intrinsics 
 !
 ! Packed micophysical variables
+REAL, DIMENSION(:)  , ALLOCATABLE  :: ZRCS     ! cloud mr source
 REAL, DIMENSION(:)  , ALLOCATABLE  :: ZCCS     ! cloud conc. source
 REAL, DIMENSION(:,:), ALLOCATABLE  :: ZNFS     ! available nucleus conc. source
 REAL, DIMENSION(:,:), ALLOCATABLE  :: ZNAS     ! activated nucleus conc. source
@@ -223,26 +224,9 @@ ZCTMIN(:) = XCTMIN(:) / PTSTEP
 !  Saturation vapor mixing ratio and radiative tendency                    
 !
 ZEPS= XMV / XMD
-!
-ZRVSAT(:,:,:) = ZEPS / (PPABST(:,:,:) * &
-                EXP(-XALPW+XBETAW/PT(:,:,:)+XGAMW*ALOG(PT(:,:,:))) - 1.0)
+ZRVSAT(:,:,:) = ZEPS / (PPABST(:,:,:)*EXP(-XALPW+XBETAW/PT(:,:,:)+XGAMW*ALOG(PT(:,:,:))) - 1.0)
 ZTDT(:,:,:)   = 0.
-!! ZDRC(:,:,:)   = 0.
-IF (OACTIT .AND. SIZE(PTM).GT.0) THEN
-   ZTDT(:,:,:)   = PTM(:,:,:)                   ! dThRad 
-!   ZTDT(:,:,:)   = (PT(:,:,:)-PTM(:,:,:))/PTSTEP                   ! dT/dt 
-!!! JPP
-!!! JPP
-!!!   ZDRC(:,:,:)   = (PRCT(:,:,:)-PRCM(:,:,:))/PTSTEP                ! drc/dt
-!!   ZDRC(:,:,:)   = PRCS(:,:,:)-(PRCT(:,:,:)/PTSTEP)                ! drc/dt
-!!! JPP
-!!! JPP
-!!
-!! BV - W and drc/dt effect should not be included in ZTDT (already accounted for in the computations) ?  
-!!
-!!   ZTDT(:,:,:)   = MIN(0.,ZTDT(:,:,:)+(XG*PW_NU(:,:,:))/XCPD- &
-!!        (XLVTT+(XCPV-XCL)*(PT(:,:,:)-XTT))*ZDRC(:,:,:)/XCPD)
-END IF
+IF (OACTIT .AND. SIZE(PTM).GT.0) ZTDT(:,:,:)   = PTM(:,:,:) * PEXNREF(:,:,:)   ! dThRad
 !
 !  find locations where CCN are available
 !
@@ -261,24 +245,24 @@ IF( OACTIT ) THEN
    GNUCT(IIB:IIE,IJB:IJE,IKB:IKE) = (PW_NU(IIB:IIE,IJB:IJE,IKB:IKE)>XWMIN  .OR. &
                                      ZTDT(IIB:IIE,IJB:IJE,IKB:IKE)<XTMIN   .OR. &
         PRVT(IIB:IIE,IJB:IJE,IKB:IKE)>ZRVSAT(IIB:IIE,IJB:IJE,IKB:IKE)    ) .AND.&
-            PRVT(IIB:IIE,IJB:IJE,IKB:IKE)>(0.98*ZRVSAT(IIB:IIE,IJB:IJE,IKB:IKE))&
+            PRVT(IIB:IIE,IJB:IJE,IKB:IKE).GE.ZRVSAT(IIB:IIE,IJB:IJE,IKB:IKE)&
              .AND. PT(IIB:IIE,IJB:IJE,IKB:IKE)>(XTT-22.)                        &
-             .AND. ZCONC_TOT(IIB:IIE,IJB:IJE,IKB:IKE)>ZCTMIN(4)
+             .AND. ZCONC_TOT(IIB:IIE,IJB:IJE,IKB:IKE)>ZCTMIN(2)
 ELSE 
    GNUCT(IIB:IIE,IJB:IJE,IKB:IKE) =   (PW_NU(IIB:IIE,IJB:IJE,IKB:IKE)>XWMIN .OR. &
         PRVT(IIB:IIE,IJB:IJE,IKB:IKE)>ZRVSAT(IIB:IIE,IJB:IJE,IKB:IKE)    ) .AND.&
-            PRVT(IIB:IIE,IJB:IJE,IKB:IKE)>(0.98*ZRVSAT(IIB:IIE,IJB:IJE,IKB:IKE))&
+            PRVT(IIB:IIE,IJB:IJE,IKB:IKE).GE.ZRVSAT(IIB:IIE,IJB:IJE,IKB:IKE)&
              .AND. PT(IIB:IIE,IJB:IJE,IKB:IKE)>(XTT-22.)                        &
-             .AND. ZCONC_TOT(IIB:IIE,IJB:IJE,IKB:IKE)>ZCTMIN(4)
+             .AND. ZCONC_TOT(IIB:IIE,IJB:IJE,IKB:IKE)>ZCTMIN(2)
 END IF
 INUCT = COUNTJV( GNUCT(:,:,:),I1(:),I2(:),I3(:))
-!
 !
 IF( INUCT >= 1 ) THEN
 !
    ALLOCATE(ZNFS(INUCT,NMOD_CCN))
    ALLOCATE(ZNAS(INUCT,NMOD_CCN))
    ALLOCATE(ZTMP(INUCT,NMOD_CCN))
+   ALLOCATE(ZRCS(INUCT))
    ALLOCATE(ZCCS(INUCT))
    ALLOCATE(ZZT(INUCT)) 
    ALLOCATE(ZZTDT(INUCT)) 
@@ -295,6 +279,7 @@ IF( INUCT >= 1 ) THEN
    ALLOCATE(ZRHODREF(INUCT)) 
    ALLOCATE(ZEXNREF(INUCT)) 
    DO JL=1,INUCT
+      ZRCS(JL) = PRCS(I1(JL),I2(JL),I3(JL))
       ZCCS(JL) = PCCS(I1(JL),I2(JL),I3(JL))
       ZZT(JL)  = PT(I1(JL),I2(JL),I3(JL))
       ZZW1(JL) = ZRVSAT(I1(JL),I2(JL),I3(JL))
@@ -324,8 +309,7 @@ IF( INUCT >= 1 ) THEN
 !  Remark : in LIMA's nucleation parameterization, Smax=0.01 for a supersaturation of 1% !
 !
 !
-   ZVEC1(:) = MAX( 1.0001, MIN( REAL(NAHEN)-0.0001, &
-                                 XAHENINTP1 * ZZT(:) + XAHENINTP2 )  )
+   ZVEC1(:) = MAX( 1.0001, MIN( REAL(NAHEN)-0.0001, XAHENINTP1 * ZZT(:) + XAHENINTP2 ) )
    IVEC1(:) = INT( ZVEC1(:) )
    ZVEC1(:) = ZVEC1(:) - REAL( IVEC1(:) )
    ALLOCATE(ZSMAX(INUCT))
@@ -349,6 +333,8 @@ IF( INUCT >= 1 ) THEN
         ZZW3(:) =   XAHENG( IVEC1(:)+1)*(ZZW4(:)**1.5)* ZVEC1(:)      &
                   - XAHENG( IVEC1(:)  )*(ZZW5(:)**1.5)*(ZVEC1(:) - 1.0)
                        ! Cste*((Psi1*w+Psi3*dT/dt)/(G))**1.5
+        ZZW6(:) =   XAHENG2( IVEC1(:)+1)*(ZZW4(:)**0.5)* ZVEC1(:)      &
+                  - XAHENG2( IVEC1(:)  )*(ZZW5(:)**0.5)*(ZVEC1(:) - 1.0)
 !
 !
    ELSE ! OACTIT , for clouds
@@ -365,6 +351,9 @@ IF( INUCT >= 1 ) THEN
         ZZW3(:)=XAHENG(IVEC1(:)+1)*((XPSI1(IVEC1(:)+1)*ZZW2(:))**1.5)* ZVEC1(:)    &
                -XAHENG(IVEC1(:)  )*((XPSI1(IVEC1(:)  )*ZZW2(:))**1.5)*(ZVEC1(:)-1.0)
 !
+        ZZW6(:)=XAHENG2(IVEC1(:)+1)*((XPSI1(IVEC1(:)+1)*ZZW2(:))**0.5)* ZVEC1(:)    &
+               -XAHENG2(IVEC1(:)  )*((XPSI1(IVEC1(:)  )*ZZW2(:))**0.5)*(ZVEC1(:)-1.0)
+!
    END IF ! OACTIT
 !
 !
@@ -374,11 +363,16 @@ IF( INUCT >= 1 ) THEN
 !
    ZZW5(:) = 1.
    ZZW3(:) = (ZZW3(:)/ZZW1(:))*ZRHODREF(:) ! R.H.S. of Eq 9 of CPB 98 but
-                                           ! for multiple aerosol modes
+   ! for multiple aerosol modes
+   WHERE (ZRCS(:) > XRTMIN(2) .AND. ZCCS(:) > XCTMIN(2))
+      ZZW6(:) = ZZW6(:) * ZRHODREF(:) * ZCCS(:) * PTSTEP / (XLBC*ZCCS(:)/ZRCS(:))**XLBEXC
+   ELSEWHERE
+      ZZW6(:)=0.
+   END WHERE
+
    WHERE (ZZW3(:) == 0. .AND. .NOT.(ZSW>0.))
       ZZW5(:) = -1.
    END WHERE
-!
 !
 !-------------------------------------------------------------------------------
 !
@@ -394,9 +388,9 @@ IF( INUCT >= 1 ) THEN
 ! Check with values used for tabulation in ini_lima_warm.f90
    ZS1 = 1.0E-5                   ! corresponds to  0.001% supersaturation
    ZS2 = 5.0E-2                   ! corresponds to 5.0% supersaturation 
-   ZXACC = 1.0E-7                 ! Accuracy needed for the search in [NO UNITS]
+   ZXACC = 1.0E-10                ! Accuracy needed for the search in [NO UNITS]
 !
-   ZSMAX(:) = ZRIDDR(ZS1,ZS2,ZXACC,ZZW3(:),INUCT)    ! ZSMAX(:) is in [NO UNITS]
+   ZSMAX(:) = ZRIDDR(ZS1,ZS2,ZXACC,ZZW3(:),ZZW6(:),INUCT)    ! ZSMAX(:) is in [NO UNITS]
    ZSMAX(:) = MIN(MAX(ZSMAX(:), ZSW(:)),ZS2)
 !
 !
@@ -411,8 +405,7 @@ IF( INUCT >= 1 ) THEN
 ! Modified values for Beta and C (see in init_aerosol_properties) account for that
 !
    WHERE (ZZW5(:) > 0. .AND. ZSMAX(:) > 0.)
-      ZVEC1(:) = MAX( 1.0001, MIN( REAL(NHYP)-0.0001,  &
-                                    XHYPINTP1*LOG(ZSMAX(:))+XHYPINTP2 ) )
+      ZVEC1(:) = MAX( 1.0001, MIN( REAL(NHYP)-0.0001, XHYPINTP1*LOG(ZSMAX(:))+XHYPINTP2 ) )
       IVEC1(:) = INT( ZVEC1(:) )
       ZVEC1(:) = ZVEC1(:) - REAL( IVEC1(:) )
    END WHERE
@@ -428,12 +421,11 @@ IF( INUCT >= 1 ) THEN
       ZZW2(:) = 0.
       ZZW3(:) = 0.
    !
-      WHERE( ZSMAX(:)>0.0 )
+      WHERE( ZZW5(:) > 0. .AND. ZSMAX(:)>0.0 )
          ZZW2(:) =  XHYPF12( IVEC1(:)+1,JMOD )* ZVEC1(:)      & ! hypergeo function
                   - XHYPF12( IVEC1(:)  ,JMOD )*(ZVEC1(:) - 1.0) ! XHYPF12 is tabulated
    !
-         ZTMP(:,JMOD) = (ZCHEN_MULTI(:,JMOD)/ZRHODREF(:))*ZSMAX(:)**XKHEN_MULTI(JMOD) &
-                                                         *ZZW2(:)/PTSTEP
+         ZTMP(:,JMOD) = ZCHEN_MULTI(:,JMOD)/ZRHODREF(:)*ZSMAX(:)**XKHEN_MULTI(JMOD)*ZZW2(:)/PTSTEP
       ENDWHERE
    ENDDO
 !
@@ -445,19 +437,17 @@ IF( INUCT >= 1 ) THEN
       ZZW2(:) = 0.
       ZZW3(:) = 0.
    !
-      WHERE( SUM(ZTMP(:,:),DIM=2)*PTSTEP .GT. 15.E6/ZRHODREF(:) ) 
+      WHERE( SUM(ZTMP(:,:),DIM=2)*PTSTEP .GT. 0.01E6/ZRHODREF(:) ) 
          ZZW1(:) = MIN( ZNFS(:,JMOD),MAX( ZTMP(:,JMOD)- ZNAS(:,JMOD) , 0.0 ) )
       ENDWHERE
    !
    !* update the concentration of activated CCN = Na
    !
-      PNAS(:,:,:,JMOD) = PNAS(:,:,:,JMOD) +                            &
-                         UNPACK( ZZW1(:), MASK=GNUCT(:,:,:), FIELD=0.0 )
+      PNAS(:,:,:,JMOD) = PNAS(:,:,:,JMOD) +  UNPACK( ZZW1(:), MASK=GNUCT(:,:,:), FIELD=0.0 )
    !
    !* update the concentration of free CCN = Nf
    !
-      PNFS(:,:,:,JMOD) = PNFS(:,:,:,JMOD) -                            &
-                         UNPACK( ZZW1(:), MASK=GNUCT(:,:,:), FIELD=0.0 )
+      PNFS(:,:,:,JMOD) = PNFS(:,:,:,JMOD) -  UNPACK( ZZW1(:), MASK=GNUCT(:,:,:), FIELD=0.0 )
    !
    !* prepare to update the cloud water concentration 
    !
@@ -497,6 +487,7 @@ IF( INUCT >= 1 ) THEN
    DEALLOCATE(ZNFS)
    DEALLOCATE(ZNAS)
    DEALLOCATE(ZCCS)
+   DEALLOCATE(ZRCS)
    DEALLOCATE(ZZT)
    DEALLOCATE(ZSMAX)
    DEALLOCATE(ZZW1)
@@ -558,7 +549,7 @@ END IF
 CONTAINS
 !------------------------------------------------------------------------------
 !
-  FUNCTION ZRIDDR(PX1,PX2INIT,PXACC,PZZW3,NPTS)  RESULT(PZRIDDR)
+  FUNCTION ZRIDDR(PX1,PX2INIT,PXACC,PZZW3,PZZW6,NPTS)  RESULT(PZRIDDR)
 !
 !
 !!****  *ZRIDDR* - iterative algorithm to find root of a function
@@ -612,6 +603,7 @@ IMPLICIT NONE
 !
 INTEGER,            INTENT(IN)     :: NPTS
 REAL, DIMENSION(:), INTENT(IN)     :: PZZW3
+REAL, DIMENSION(:), INTENT(IN)     :: PZZW6
 REAL,               INTENT(IN)     :: PX1, PX2INIT, PXACC
 REAL, DIMENSION(:), ALLOCATABLE    :: PZRIDDR
 !
@@ -633,8 +625,8 @@ ALLOCATE(PZRIDDR(NPTS))
 !
 PZRIDDR(:)= UNUSED
 PX2       = PX2INIT 
-fl(:)     = FUNCSMAX(PX1,PZZW3(:),NPTS)
-fh(:)     = FUNCSMAX(PX2,PZZW3(:),NPTS)
+fl(:)     = FUNCSMAX(PX1,PZZW3(:),PZZW6(:),NPTS)
+fh(:)     = FUNCSMAX(PX2,PZZW3(:),PZZW6(:),NPTS)
 !
 DO JL = 1, NPTS
    PX2 = PX2INIT
@@ -643,7 +635,7 @@ DO JL = 1, NPTS
       xh         = PX2
       do j=1,MAXIT
          xm     = 0.5*(xl+xh)
-         fm(JL) = SINGL_FUNCSMAX(xm,PZZW3(JL),JL)
+         fm(JL) = SINGL_FUNCSMAX(xm,PZZW3(JL),PZZW6(JL),JL)
          s      = sqrt(fm(JL)**2-fl(JL)*fh(JL))
          if (s == 0.0) then
             GO TO 101
@@ -653,7 +645,7 @@ DO JL = 1, NPTS
             GO TO 101 
          endif
          PZRIDDR(JL) = xnew
-         fnew(JL)  = SINGL_FUNCSMAX(PZRIDDR(JL),PZZW3(JL),JL)
+         fnew(JL)  = SINGL_FUNCSMAX(PZRIDDR(JL),PZZW3(JL),PZZW6(JL),JL)
          if (fnew(JL) == 0.0) then
             GO TO 101
          endif
@@ -671,7 +663,7 @@ DO JL = 1, NPTS
          else if (PX2 .lt. 0.05) then
             PX2 = PX2 + 1.0E-2
             PRINT*, 'PX2 ALWAYS too small, we put a greater one : PX2 =',PX2
-            fh(JL)   = SINGL_FUNCSMAX(PX2,PZZW3(JL),JL)
+            fh(JL)   = SINGL_FUNCSMAX(PX2,PZZW3(JL),PZZW6(JL),JL)
             go to 100
          end if
          if (abs(xh-xl) <= PXACC) then
@@ -692,7 +684,7 @@ DO JL = 1, NPTS
    else if (PX2 .lt. 0.05) then
       PX2 = PX2 + 1.0E-2
       PRINT*, 'PX2 too small, we put a greater one : PX2 =',PX2
-      fh(JL)   = SINGL_FUNCSMAX(PX2,PZZW3(JL),JL)
+      fh(JL)   = SINGL_FUNCSMAX(PX2,PZZW3(JL),PZZW6(JL),JL)
       go to 100
    else
 !!$      print*, 'PZRIDDR: root must be bracketed'
@@ -715,7 +707,7 @@ END FUNCTION ZRIDDR
 !
 !------------------------------------------------------------------------------
 !
-  FUNCTION FUNCSMAX(PPZSMAX,PPZZW3,NPTS)  RESULT(PFUNCSMAX)
+  FUNCTION FUNCSMAX(PPZSMAX,PPZZW3,PPZZW6,NPTS)  RESULT(PFUNCSMAX)
 !
 !
 !!****  *FUNCSMAX* - function describing SMAX function that you want to find the root
@@ -774,6 +766,7 @@ IMPLICIT NONE
 INTEGER,            INTENT(IN)  :: NPTS
 REAL,               INTENT(IN)  :: PPZSMAX   ! supersaturation is already in no units
 REAL, DIMENSION(:), INTENT(IN)  :: PPZZW3    ! 
+REAL, DIMENSION(:), INTENT(IN)  :: PPZZW6    ! 
 REAL, DIMENSION(:), ALLOCATABLE :: PFUNCSMAX ! 
 !
 !*       0.2 declarations of local variables
@@ -801,13 +794,13 @@ DO JMOD = 1, NMOD_CCN
                  / GAMMA_X0D((XKHEN_MULTI(JMOD)+3.0)/2.0)
 ENDDO
 ! function l.h.s. minus r.h.s. of eq. (9) of CPB98 but for NMOD_CCN aerosol mode
-PFUNCSMAX(:) = PFUNCSMAX(:) - PPZZW3(:)
+PFUNCSMAX(:) = PFUNCSMAX(:) + PPZZW6(:)*PPZSMAX - PPZZW3(:)
 !
 END FUNCTION FUNCSMAX
 !
 !------------------------------------------------------------------------------
 !
-  FUNCTION SINGL_FUNCSMAX(PPZSMAX,PPZZW3,KINDEX)  RESULT(PSINGL_FUNCSMAX)
+  FUNCTION SINGL_FUNCSMAX(PPZSMAX,PPZZW3,PPZZW6,KINDEX)  RESULT(PSINGL_FUNCSMAX)
 !
 !
 !!****  *SINGL_FUNCSMAX* - same function as FUNCSMAX
@@ -832,6 +825,7 @@ IMPLICIT NONE
 INTEGER,            INTENT(IN)  :: KINDEX
 REAL,               INTENT(IN)  :: PPZSMAX   ! supersaturation is "no unit"
 REAL,               INTENT(IN)  :: PPZZW3    ! 
+REAL,               INTENT(IN)  :: PPZZW6    ! 
 REAL                            :: PSINGL_FUNCSMAX ! 
 !
 !*       0.2 declarations of local variables
@@ -857,7 +851,7 @@ DO JMOD = 1, NMOD_CCN
                    / GAMMA_X0D((XKHEN_MULTI(JMOD)+3.0)/2.0)
 ENDDO
 ! function l.h.s. minus r.h.s. of eq. (9) of CPB98 but for NMOD_CCN aerosol mode
-PSINGL_FUNCSMAX = PSINGL_FUNCSMAX - PPZZW3
+PSINGL_FUNCSMAX = PSINGL_FUNCSMAX + PPZZW6*PPZSMAX - PPZZW3
 !
 END FUNCTION SINGL_FUNCSMAX
 !

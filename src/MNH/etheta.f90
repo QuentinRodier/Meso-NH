@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 turb 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !#################
 MODULE MODI_ETHETA
@@ -82,12 +77,13 @@ FUNCTION ETHETA(KRR,KRRI,PTHLM,PRM,PLOCPEXNM,PATHETA,PSRCM) RESULT(PETHETA)
 !!       J. Stein       Feb  28, 1996   optimization + Doctorization
 !!       J. Stein       Sept 15, 1996   Atheta previously computed
 !!       J.-P. Pinty    May  20, 2003   Improve ETHETA expression
-!!
+!!       J.L Redelsperger    03, 2021   Ocean Model Case 
 !! ----------------------------------------------------------------------
 !
 !*       0. DECLARATIONS
 !           ------------
 USE MODD_CST
+USE MODD_DYN_n, ONLY : LOCEAN
 !
 IMPLICIT NONE
 !
@@ -125,12 +121,15 @@ INTEGER                               :: JRR     ! moist loop counter
 !           --------------
 !
 !
-IF ( KRR == 0 ) THEN                                ! dry case
+IF (LOCEAN) THEN                                    ! ocean case
+   PETHETA(:,:,:) =  1.
+ELSE   
+ IF ( KRR == 0.) THEN                                ! dry case
   PETHETA(:,:,:) = 1.
-ELSE IF ( KRR == 1 ) THEN                           ! only vapor
+ ELSE IF ( KRR == 1 ) THEN                           ! only vapor
   ZDELTA = (XRV/XRD) - 1.
   PETHETA(:,:,:) = 1. + ZDELTA*PRM(:,:,:,1)
-ELSE                                                ! liquid water & ice present
+ ELSE                                                ! liquid water & ice present
   ZDELTA = (XRV/XRD) - 1.
   ZRW(:,:,:) = PRM(:,:,:,1)
 !
@@ -173,8 +172,9 @@ ELSE                                                ! liquid water & ice present
                             / (1. + ZRW(:,:,:))                                &
          ) * PATHETA(:,:,:) * 2. * PSRCM(:,:,:)
   END IF
-END IF
+ END IF
 !
+END IF
 !---------------------------------------------------------------------------
 !
 END FUNCTION ETHETA

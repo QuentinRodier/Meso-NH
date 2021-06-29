@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 modn 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ###################
       MODULE MODN_NESTING
@@ -43,16 +38,18 @@
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    16/08/95                      
+!!      Original    16/08/95 
+!!     JL Redelsperger  03/2021 : Add Auto-coupled O-A LES case                      
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
 !
 USE MODD_NESTING
+USE MODD_REF, ONLY: LCOUPLES
 !
 IMPLICIT NONE
 !
-NAMELIST/NAM_NESTING/NDAD,NDTRATIO,XWAY
+NAMELIST/NAM_NESTING/NDAD,NDTRATIO,XWAY,LCOUPLES
 !
 END MODULE MODN_NESTING

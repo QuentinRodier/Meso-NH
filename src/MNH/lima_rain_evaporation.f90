@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !      ##########################
        MODULE MODI_LIMA_RAIN_EVAPORATION
 !      ##########################
@@ -11,7 +12,6 @@ INTERFACE
                                         PRHODREF, PT, PLV, PLVFACT, PEVSAT, PRVSAT, &
                                         PRVT, PRCT, PRRT, PLBDR,                    &
                                         P_TH_EVAP, P_RR_EVAP,                       &
-                                        PA_RV, PA_RR, PA_TH,                        &
                                         PEVAP3D                                     )
 !
 REAL,                 INTENT(IN)    :: PTSTEP     ! Time step
@@ -29,12 +29,8 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PRCT       ! Cloud water m.r. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PRRT       ! Rain water m.r. at t 
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR     ! Lambda(rain)
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_EVAP
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_EVAP
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RV
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RR
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_TH
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_TH_EVAP
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_RR_EVAP
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: PEVAP3D    ! Rain evap profile
 !
@@ -46,7 +42,6 @@ END MODULE MODI_LIMA_RAIN_EVAPORATION
                                         PRHODREF, PT, PLV, PLVFACT, PEVSAT, PRVSAT, &
                                         PRVT, PRCT, PRRT, PLBDR,                    &
                                         P_TH_EVAP, P_RR_EVAP,                       &
-                                        PA_RV, PA_RR, PA_TH,                        &
                                         PEVAP3D                                     )
 !     ###############################################################################
 !
@@ -96,12 +91,8 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PRCT       ! Cloud water m.r. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PRRT       ! Rain water m.r. at t 
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR     ! Lambda(rain)
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_EVAP
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_EVAP
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RV
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RR
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_TH
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_TH_EVAP
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_RR_EVAP
 !
 REAL, DIMENSION(:),   INTENT(INOUT) :: PEVAP3D    ! Rain evap profile
 !
@@ -148,12 +139,9 @@ WHERE ( GEVAP )
    ZZW2(:) = MAX(ZZW2(:),0.0)
 !
    P_RR_EVAP(:) = - ZZW2(:)
-   P_TH_EVAP(:) = P_RR_EVAP(:) * PLVFACT(:)
-   PEVAP3D(:) = - P_RR_EVAP(:)
+!   P_TH_EVAP(:) = P_RR_EVAP(:) * PLVFACT(:)
+!   PEVAP3D(:) = - P_RR_EVAP(:)
 !
-PA_TH(:) = PA_TH(:) + P_TH_EVAP(:)
-PA_RV(:) = PA_RV(:) - P_RR_EVAP(:)
-PA_RR(:) = PA_RR(:) + P_RR_EVAP(:)
 END WHERE
 !
 !-----------------------------------------------------------------------------

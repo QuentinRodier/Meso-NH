@@ -345,6 +345,7 @@ END MODULE MODI_TURB
 !  P. Wautelet + Benoit Vié 06/2020: improve removal of negative scalar variables + adapt the corresponding budgets
 !  P. Wautelet 30/06/2020: move removal of negative scalar variables to Sources_neg_correct
 !  R. Honnert/V. Masson 02/2021: new mixing length in the grey zone
+!  J.L. Redelsperger 03/2021: add Ocean LES case
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -358,12 +359,14 @@ use modd_budget,      only: lbudget_u,  lbudget_v,  lbudget_w,  lbudget_th, lbud
 USE MODD_CONF
 USE MODD_CST
 USE MODD_CTURB
+USE MODD_DYN_n, ONLY : LOCEAN
 use modd_field,          only: tfielddata, TYPEREAL
 USE MODD_IO, ONLY: TFILEDATA
 USE MODD_LES
 USE MODD_NSV
 USE MODD_PARAMETERS, ONLY: JPVEXT_TURB
 USE MODD_PARAM_LIMA
+USE MODD_TURB_n, ONLY: XCADAP
 !
 USE MODI_GRADIENT_M
 USE MODI_GRADIENT_U
@@ -391,6 +394,9 @@ USE MODI_EMOIST
 USE MODI_ETHETA
 !
 USE MODI_SECOND_MNH
+!
+USE MODD_IBM_PARAM_n,    ONLY: LIBM, XIBM_LS, XIBM_XMUT
+USE MODI_IBM_MIXINGLENGTH
 !
 IMPLICIT NONE
 !
@@ -469,6 +475,7 @@ REAL, INTENT(IN)      ::  PCOEF_AMPL_SAT ! saturation of the amplification coeff
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PTHLT       ! conservative pot. temp.
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) ::  PRT         ! water var.  where 
                              ! PRT(:,:,:,1) is the conservative mixing ratio        
+!
 ! sources of momentum, conservative potential temperature, Turb. Kin. Energy, 
 ! TKE dissipation
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PRUS,PRVS,PRWS,PRTHLS,PRTKES
@@ -546,7 +553,6 @@ REAL                :: ZL0          ! Max. Mixing Length in Blakadar formula
 REAL                :: ZALPHA       ! work coefficient : 
                                     ! - proportionnality constant between Dz/2 and 
 !                                   !   BL89 mixing length near the surface
-                                    ! - and coefficient to reduce DELT in ADAP
 !
 REAL :: ZTIME1, ZTIME2
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)):: ZTT,ZEXNE,ZLV,ZLS,ZCPH,ZCOR
@@ -639,7 +645,11 @@ END DO
 !
 !*      2.2 Exner function at t
 !
-ZEXN(:,:,:) = (PPABST(:,:,:)/XP00) ** (XRD/XCPD)
+IF (LOCEAN) THEN
+  ZEXN(:,:,:) = 1.
+ELSE
+  ZEXN(:,:,:) = (PPABST(:,:,:)/XP00) ** (XRD/XCPD)
+END IF
 !
 !*      2.3 dissipative heating coeff a t
 !
@@ -779,8 +789,7 @@ SELECT CASE (HTURBLEN)
     ! For LES grid meshes, this is equivalent to Deardorff : the base mixing lentgh is the horizontal grid mesh, 
     !                      and it is limited by a stability-based length (RM17), as was done in Deardorff length (but taking into account shear as well)
     ! For grid meshes in the grey zone, then this is the smaller of the two.
-    ZALPHA=0.50
-    PLEM = MIN(PLEM,ZALPHA*ZLMW)
+    PLEM = MIN(PLEM,XCADAP*ZLMW)
 !
 !*      3.4 Delta mixing length
 !           -------------------
@@ -844,12 +853,22 @@ IF (ORMC01) THEN
   CALL RMC01(HTURBLEN,KKA,KKU,KKL,PZZ,PDXX,PDYY,PDZZ,PDIRCOSZW,PSBL_DEPTH,ZLMO,PLEM,ZLEPS)
 END IF
 !
+!RMC01 is only applied on RM17 in ADAP
+IF (HTURBLEN=='ADAP') ZLEPS = MIN(ZLEPS,ZLMW*XCADAP)
+!
 !*      3.8 Mixing length in external points (used if HTURBDIM="3DIM")
 !           ----------------------------------------------------------
 !
 IF (HTURBDIM=="3DIM") THEN
   CALL UPDATE_LM(HLBCX,HLBCY,PLEM,ZLEPS)
 END IF
+!
+!*      3.9 Mixing length correction if immersed walls 
+!           ------------------------------------------
+!
+IF (LIBM) THEN
+   CALL IBM_MIXINGLENGTH(PLEM,ZLEPS,XIBM_XMUT,XIBM_LS(:,:,:,1),PTKET)
+ENDIF
 !----------------------------------------------------------------------------
 !
 !*      4. GO INTO THE AXES FOLLOWING THE SURFACE
@@ -1499,15 +1518,26 @@ IF (.NOT. ORMC01) THEN
   !
   DO JJ=1,SIZE(PUT,2)
     DO JI=1,SIZE(PUT,1)
-      DO JK=IKTB,IKTE
-        ZD=ZALPHA*(0.5*(PZZ(JI,JJ,JK)+PZZ(JI,JJ,JK+KKL))&
-        -PZZ(JI,JJ,IKB)) *PDIRCOSZW(JI,JJ)
-        IF ( PLM(JI,JJ,JK)>ZD) THEN
-          PLM(JI,JJ,JK)=ZD
-        ELSE
-          EXIT
-        ENDIF
-      END DO
+      IF (LOCEAN) THEN
+        DO JK=IKTE,IKTB,-1
+          ZD=ZALPHA*(PZZ(JI,JJ,IKTE+1)-PZZ(JI,JJ,JK))
+          IF ( PLM(JI,JJ,JK)>ZD) THEN
+            PLM(JI,JJ,JK)=ZD
+          ELSE
+            EXIT
+          ENDIF
+       END DO
+      ELSE
+        DO JK=IKTB,IKTE
+          ZD=ZALPHA*(0.5*(PZZ(JI,JJ,JK)+PZZ(JI,JJ,JK+KKL))&
+          -PZZ(JI,JJ,IKB)) *PDIRCOSZW(JI,JJ)
+          IF ( PLM(JI,JJ,JK)>ZD) THEN
+            PLM(JI,JJ,JK)=ZD
+          ELSE
+            EXIT
+          ENDIF
+        END DO
+      ENDIF   
     END DO
   END DO
 END IF
@@ -1574,7 +1604,6 @@ END IF
 ZETHETA(:,:,:) = ETHETA(KRR,KRRI,PTHLT,PRT,ZLOCPEXNM,ZATHETA,PSRCT)
 ZEMOIST(:,:,:) = EMOIST(KRR,KRRI,PTHLT,PRT,ZLOCPEXNM,ZAMOIST,PSRCT)
 !
-! For dry simulations
 IF (KRR>0) THEN
   DO JK = IKTB+1,IKTE-1
     DO JJ=1,SIZE(PUT,2)
@@ -1583,8 +1612,12 @@ IF (KRR>0) THEN
                                 (PTHLT(JI,JJ,JK    )-PTHLT(JI,JJ,JK-KKL))/PDZZ(JI,JJ,JK    ))
         ZDRTDZ(JI,JJ,JK) = 0.5*((PRT(JI,JJ,JK+KKL,1)-PRT(JI,JJ,JK    ,1))/PDZZ(JI,JJ,JK+KKL)+ &
                                 (PRT(JI,JJ,JK    ,1)-PRT(JI,JJ,JK-KKL,1))/PDZZ(JI,JJ,JK    ))
-        ZVAR=XG/PTHVREF(JI,JJ,JK)*                                                  &
+        IF (LOCEAN) THEN
+          ZVAR=XG*(XALPHAOC*ZDTHLDZ(JI,JJ,JK)-XBETAOC*ZDRTDZ(JI,JJ,JK))
+        ELSE
+          ZVAR=XG/PTHVREF(JI,JJ,JK)*                                                  &
              (ZETHETA(JI,JJ,JK)*ZDTHLDZ(JI,JJ,JK)+ZEMOIST(JI,JJ,JK)*ZDRTDZ(JI,JJ,JK))
+        END IF
         !
         IF (ZVAR>0.) THEN
           PLM(JI,JJ,JK)=MAX(XMNH_EPSILON,MIN(PLM(JI,JJ,JK), &
@@ -1593,14 +1626,18 @@ IF (KRR>0) THEN
       END DO
     END DO
   END DO
-ELSE
+ELSE! For dry atmos or unsalted ocean runs
   DO JK = IKTB+1,IKTE-1
     DO JJ=1,SIZE(PUT,2)
       DO JI=1,SIZE(PUT,1)
         ZDTHLDZ(JI,JJ,JK)= 0.5*((PTHLT(JI,JJ,JK+KKL)-PTHLT(JI,JJ,JK    ))/PDZZ(JI,JJ,JK+KKL)+ &
                                 (PTHLT(JI,JJ,JK    )-PTHLT(JI,JJ,JK-KKL))/PDZZ(JI,JJ,JK    ))
-        ZVAR=XG/PTHVREF(JI,JJ,JK)*ZETHETA(JI,JJ,JK)*ZDTHLDZ(JI,JJ,JK)
-        !
+        IF (LOCEAN) THEN
+          ZVAR= XG*XALPHAOC*ZDTHLDZ(JI,JJ,JK)
+        ELSE
+          ZVAR= XG/PTHVREF(JI,JJ,JK)*ZETHETA(JI,JJ,JK)*ZDTHLDZ(JI,JJ,JK)
+        END IF
+!
         IF (ZVAR>0.) THEN
           PLM(JI,JJ,JK)=MAX(XMNH_EPSILON,MIN(PLM(JI,JJ,JK), &
                         0.76* SQRT(PTKET(JI,JJ,JK)/ZVAR)))
@@ -1618,8 +1655,12 @@ ELSE
   ZDRTDZ(:,:,IKB)=0
 ENDIF
 !
-ZWORK2D(:,:)=XG/PTHVREF(:,:,IKB)*                                           &
-            (ZETHETA(:,:,IKB)*ZDTHLDZ(:,:,IKB)+ZEMOIST(:,:,IKB)*ZDRTDZ(:,:,IKB))
+IF (LOCEAN) THEN
+  ZWORK2D(:,:)=XG*(XALPHAOC*ZDTHLDZ(:,:,IKB)-XBETAOC*ZDRTDZ(:,:,IKB))
+ELSE
+  ZWORK2D(:,:)=XG/PTHVREF(:,:,IKB)*                                           &
+              (ZETHETA(:,:,IKB)*ZDTHLDZ(:,:,IKB)+ZEMOIST(:,:,IKB)*ZDRTDZ(:,:,IKB))
+END IF
 WHERE(ZWORK2D(:,:)>0.)
   PLM(:,:,IKB)=MAX(XMNH_EPSILON,MIN( PLM(:,:,IKB),                 &
                     0.76* SQRT(PTKET(:,:,IKB)/ZWORK2D(:,:))))
@@ -1632,15 +1673,26 @@ IF (.NOT. ORMC01) THEN
   !
   DO JJ=1,SIZE(PUT,2)
     DO JI=1,SIZE(PUT,1)
-      DO JK=IKTB,IKTE
-        ZD=ZALPHA*(0.5*(PZZ(JI,JJ,JK)+PZZ(JI,JJ,JK+KKL))-PZZ(JI,JJ,IKB)) &
-          *PDIRCOSZW(JI,JJ)
-        IF ( PLM(JI,JJ,JK)>ZD) THEN
-          PLM(JI,JJ,JK)=ZD
-        ELSE
-          EXIT
-        ENDIF
-      END DO
+      IF (LOCEAN) THEN
+        DO JK=IKTE,IKTB,-1
+          ZD=ZALPHA*(PZZ(JI,JJ,IKTE+1)-PZZ(JI,JJ,JK))
+          IF ( PLM(JI,JJ,JK)>ZD) THEN
+            PLM(JI,JJ,JK)=ZD
+          ELSE
+            EXIT
+          ENDIF
+        END DO
+      ELSE
+        DO JK=IKTB,IKTE
+          ZD=ZALPHA*(0.5*(PZZ(JI,JJ,JK)+PZZ(JI,JJ,JK+KKL))-PZZ(JI,JJ,IKB)) &
+            *PDIRCOSZW(JI,JJ)
+          IF ( PLM(JI,JJ,JK)>ZD) THEN
+            PLM(JI,JJ,JK)=ZD
+          ELSE
+            EXIT
+          ENDIF
+        END DO
+      ENDIF 
     END DO
   END DO
 END IF

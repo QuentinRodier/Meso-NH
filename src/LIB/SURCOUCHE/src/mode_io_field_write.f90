@@ -4240,7 +4240,7 @@ SUBROUTINE IO_Field_user_write(TPOUTPUT)
 !
 #if 0
 USE MODD_DYN_n,      ONLY: XTSTEP
-USE MODD_FIELD_n,    ONLY: XUT, XVT, XRT, XTHT
+USE MODD_FIELD_n,    ONLY: XUT, XVT, XRT, XTHT, XSVT
 USE MODD_PARAMETERS, ONLY: JPVEXT
 USE MODD_PRECIP_n,   ONLY: XINPRR
 #endif
@@ -4317,6 +4317,19 @@ TZFIELD%NDIMS      = 2
 TZFIELD%LTIMEDEP   = .TRUE.
 !XACPRR is multiplied by 1000. to convert from m to kg m-2 (water density is assumed to be 1000 kg m-3)
 CALL IO_Field_write(TPOUTPUT%TFILE,TZFIELD,XINPRR*XTSTEP*1.0E3)
+!
+TZFIELD%CMNHNAME   = 'SVT001'
+TZFIELD%CSTDNAME   = 'concentration in scalar variable'
+TZFIELD%CLONGNAME  = ''
+TZFIELD%CUNITS     = 'kg kg-1'
+TZFIELD%CDIR       = 'XY'
+TZFIELD%CCOMMENT   = 'X_Y_Z_concentration in scalar variable'
+TZFIELD%NGRID      = 1
+TZFIELD%NTYPE      = TYPEREAL
+TZFIELD%NDIMS      = 3
+TZFIELD%LTIMEDEP   = .TRUE.
+CALL IO_WRITE_FIELD(TPOUTPUT%TFILE,TZFIELD,XSVT(:,:,:,1))
+!
 #endif
 !
 END SUBROUTINE IO_Field_user_write

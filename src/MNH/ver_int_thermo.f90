@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -136,6 +136,7 @@ END MODULE MODI_VER_INT_THERMO
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 22/02/2019: replace Hollerith edit descriptor (deleted from Fortran 95 standard)
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!!  Jean-Luc Redelsperger 03/2021  OCEAN LES case 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -145,6 +146,7 @@ USE MODD_ARGSLIST_ll, ONLY: LIST_ll
 USE MODD_CONF
 USE MODD_CONF_n
 USE MODD_CST
+USE MODD_DYN_n,       ONLY: LOCEAN
 USE MODD_GRID_n
 USE MODD_IO,          ONLY: TFILEDATA
 USE MODD_LUNIT,       ONLY: TLUOUT0
@@ -343,38 +345,42 @@ CALL MPPDB_CHECK3D(ZPMHPOHP_SH,"ver_int_thermo2a::ZPMHPOHP_SH",PRECISION)
 !*       3.1   Computation of the shift profile
 !              --------------------------------
 !
-ZTHVCLIMGR=3.5E-3 ! K/m
-CALL FREE_ATM_PROFILE(TPFILE,PTHV_MX,PZMASS_MX,PZS_LS,PZSMT_LS,ZTHVCLIMGR,ZTHV_FREE,ZZ_FREE)
-CALL MPPDB_CHECK3D(ZTHV_FREE,"VER_INT_THERMO:ZTHV_FREE",PRECISION)
+IF (LOCEAN) THEN
+  ZTHV_SH(:,:,:) = PTHV_MX(:,:,:)
+ELSE
+  ZTHVCLIMGR=3.5E-3 ! K/m
+  CALL FREE_ATM_PROFILE(TPFILE,PTHV_MX,PZMASS_MX,PZS_LS,PZSMT_LS,ZTHVCLIMGR,ZTHV_FREE,ZZ_FREE)
+  CALL MPPDB_CHECK3D(ZTHV_FREE,"VER_INT_THERMO:ZTHV_FREE",PRECISION)
 !
 !*       3.2   Computation of the value of thetav on the shifted grid
 !              ------------------------------------------------------
 !
-CALL COEF_VER_INTERP_LIN(ZZ_FREE(:,:,:),PZMASS_MX(:,:,:))
-ZTHV_FREE_MX(:,:,:)=VER_INTERP_LIN(ZTHV_FREE(:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
-CALL MPPDB_CHECK3D(ZTHV_FREE_MX,"VER_INT_THERMO:ZTHV_FREE_MX",PRECISION)
+  CALL COEF_VER_INTERP_LIN(ZZ_FREE(:,:,:),PZMASS_MX(:,:,:))
+  ZTHV_FREE_MX(:,:,:)=VER_INTERP_LIN(ZTHV_FREE(:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
+  CALL MPPDB_CHECK3D(ZTHV_FREE_MX,"VER_INT_THERMO:ZTHV_FREE_MX",PRECISION)
 !
-!20131113 add update_halo here
-CALL MPPDB_CHECK3D(ZTHV_FREE_MX,"ver_int_thermo3a::ZTHV_FREE_MX",PRECISION)
-CALL ADD3DFIELD_ll( TZFIELDS_ll, ZTHV_FREE_MX, 'VER_INT_THERMO::ZTHV_FREE_MX' )
-   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
-      CALL CLEANLIST_ll(TZFIELDS_ll) 
-!20131112 check3d
-CALL MPPDB_CHECK3D(ZTHV_FREE_MX,"ver_int_thermo2a::ZTHV_FREE_MX",PRECISION)
+  !20131113 add update_halo here
+  CALL MPPDB_CHECK3D(ZTHV_FREE_MX,"ver_int_thermo3a::ZTHV_FREE_MX",PRECISION)
+  CALL ADD3DFIELD_ll( TZFIELDS_ll, ZTHV_FREE_MX, 'VER_INT_THERMO::ZTHV_FREE_MX' )
+  CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+  CALL CLEANLIST_ll(TZFIELDS_ll) 
+  !20131112 check3d
+  CALL MPPDB_CHECK3D(ZTHV_FREE_MX,"ver_int_thermo2a::ZTHV_FREE_MX",PRECISION)
 !
-CALL COEF_VER_INTERP_LIN(ZZ_FREE(:,:,:),ZZMASS_SH(:,:,:))
-ZTHV_FREE_SH(:,:,:)=VER_INTERP_LIN(ZTHV_FREE(:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
-CALL MPPDB_CHECK3D(ZTHV_FREE_SH,"VER_INT_THERMO:ZTHV_FREE_SH",PRECISION)
+  CALL COEF_VER_INTERP_LIN(ZZ_FREE(:,:,:),ZZMASS_SH(:,:,:))
+  ZTHV_FREE_SH(:,:,:)=VER_INTERP_LIN(ZTHV_FREE(:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
+  CALL MPPDB_CHECK3D(ZTHV_FREE_SH,"VER_INT_THERMO:ZTHV_FREE_SH",PRECISION)
 !
-!20131113 add update_halo here
-CALL MPPDB_CHECK3D(ZTHV_FREE_SH,"ver_int_thermo3a::ZTHV_FREE_SH",PRECISION)
-CALL ADD3DFIELD_ll( TZFIELDS_ll, ZTHV_FREE_SH, 'VER_INT_THERMO::ZTHV_FREE_SH' )
-   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
-      CALL CLEANLIST_ll(TZFIELDS_ll)
-!20131112 check3d
-CALL MPPDB_CHECK3D(ZTHV_FREE_SH,"ver_int_thermo2a::ZTHV_FREE_SH",PRECISION)
+  !20131113 add update_halo here
+  CALL MPPDB_CHECK3D(ZTHV_FREE_SH,"ver_int_thermo3a::ZTHV_FREE_SH",PRECISION)
+  CALL ADD3DFIELD_ll( TZFIELDS_ll, ZTHV_FREE_SH, 'VER_INT_THERMO::ZTHV_FREE_SH' )
+  CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+  CALL CLEANLIST_ll(TZFIELDS_ll)
+  !20131112 check3d
+  CALL MPPDB_CHECK3D(ZTHV_FREE_SH,"ver_int_thermo2a::ZTHV_FREE_SH",PRECISION)
 !
-ZTHV_SH(:,:,:) = PTHV_MX(:,:,:) - ZTHV_FREE_MX(:,:,:) + ZTHV_FREE_SH(:,:,:)
+  ZTHV_SH(:,:,:) = PTHV_MX(:,:,:) - ZTHV_FREE_MX(:,:,:) + ZTHV_FREE_SH(:,:,:)
+END IF
 !
 !20131113 add update_halo here
 CALL MPPDB_CHECK3D(ZTHV_SH,"ver_int_thermo3a::ZTHV_SH",PRECISION)
@@ -393,29 +399,37 @@ CALL MPPDB_CHECK3D(ZTHV_SH,"ver_int_thermo2a::ZTHV_SH",PRECISION)
 !*       4.1   Computation of relative humidity on the mixed grid
 !              --------------------------------------------------
 !
-ZRV_MX(:,:,:)=MAX(PR_MX(:,:,:,1),1.E-10)
-ZTH_MX(:,:,:)=PTHV_MX(:,:,:)*(1.+WATER_SUM(PR_MX(:,:,:,:)))/(1.+XRV/XRD*ZRV_MX(:,:,:))
+IF (LOCEAN) THEN
+  ZRV_MX(:,:,:) = PR_MX(:,:,:,1)
+  ZTH_MX(:,:,:) = PTHV_MX(:,:,:)
+  ZT_MX(:,:,:)  = ZTH_MX(:,:,:)
+  ZES_MX(:,:,:) = SM_FOES(ZT_MX(:,:,:))
+  ZHU_MX(:,:,:) = 1.E-10
+ELSE
+  ZRV_MX(:,:,:)=MAX(PR_MX(:,:,:,1),1.E-10)
+  ZTH_MX(:,:,:)=PTHV_MX(:,:,:)*(1.+WATER_SUM(PR_MX(:,:,:,:)))/(1.+XRV/XRD*ZRV_MX(:,:,:))
 !
-!20131113 add update_halo here
-CALL MPPDB_CHECK3D(ZTH_MX,"ver_int_thermo4a::ZTH_MX",PRECISION)
-CALL ADD3DFIELD_ll( TZFIELDS_ll, ZTH_MX, 'VER_INT_THERMO::ZTH_MX' )
-   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
-      CALL CLEANLIST_ll(TZFIELDS_ll)
-!20131112 check3d
-CALL MPPDB_CHECK3D(ZTH_MX,"ver_int_thermo4b::ZTH_MX",PRECISION)
+  !20131113 add update_halo here
+  CALL MPPDB_CHECK3D(ZTH_MX,"ver_int_thermo4a::ZTH_MX",PRECISION)
+  CALL ADD3DFIELD_ll( TZFIELDS_ll, ZTH_MX, 'VER_INT_THERMO::ZTH_MX' )
+  CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+  CALL CLEANLIST_ll(TZFIELDS_ll)
+  !20131112 check3d
+  CALL MPPDB_CHECK3D(ZTH_MX,"ver_int_thermo4b::ZTH_MX",PRECISION)
 !
-ZT_MX(:,:,:)=ZTH_MX(:,:,:)*ZEXNMASS_MX(:,:,:)
+  ZT_MX(:,:,:)=ZTH_MX(:,:,:)*ZEXNMASS_MX(:,:,:)
 !
-!20131113 add update_halo here
-CALL MPPDB_CHECK3D(ZT_MX,"ver_int_thermo4a::ZT_MX",PRECISION)
-CALL ADD3DFIELD_ll( TZFIELDS_ll, ZT_MX, 'VER_INT_THERMO::ZT_MX' )
-   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
-      CALL CLEANLIST_ll(TZFIELDS_ll)
-!20131112 check3d
-CALL MPPDB_CHECK3D(ZT_MX,"ver_int_thermo4b::ZT_MX",PRECISION)
+  !20131113 add update_halo here
+  CALL MPPDB_CHECK3D(ZT_MX,"ver_int_thermo4a::ZT_MX",PRECISION)
+  CALL ADD3DFIELD_ll( TZFIELDS_ll, ZT_MX, 'VER_INT_THERMO::ZT_MX' )
+  CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+  CALL CLEANLIST_ll(TZFIELDS_ll)
+  !20131112 check3d
+  CALL MPPDB_CHECK3D(ZT_MX,"ver_int_thermo4b::ZT_MX",PRECISION)
 !
-ZES_MX(:,:,:)=SM_FOES(ZT_MX(:,:,:))
-ZHU_MX(:,:,:)=100.*ZP_MX(:,:,:)/(XRD/XRV/ZRV_MX(:,:,:)+1.)/ZES_MX(:,:,:)
+  ZES_MX(:,:,:)=SM_FOES(ZT_MX(:,:,:))
+  ZHU_MX(:,:,:)=100.*ZP_MX(:,:,:)/(XRD/XRV/ZRV_MX(:,:,:)+1.)/ZES_MX(:,:,:)
+END IF
 !
 !20131113 add update_halo here
 CALL MPPDB_CHECK3D(ZHU_MX,"ver_int_thermo4a::ZHU_MX",PRECISION)
@@ -549,17 +563,22 @@ END DO
 CALL COMPUTE_EXNER_FROM_TOP(PTHV,XZZ,PEXNTOP2D,ZHEXN,ZHEXNMASS)
 ZP(:,:,:) = PPMHP(:,:,:) + XP00 * ZHEXNMASS(:,:,:) ** (XCPD/XRD)
 !
-!20131113 add update_halo here
-!CALL MPPDB_CHECK3D(ZP,"ver_int_thermo6a::ZP",PRECISION)
-CALL ADD3DFIELD_ll( TZFIELDS_ll, ZP, 'VER_INT_THERMO::ZP' )
-CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
-CALL CLEANLIST_ll(TZFIELDS_ll)
-!20131112 check3d
-CALL MPPDB_CHECK3D(ZP,"ver_int_thermo6b::ZP",PRECISION)
+IF (LOCEAN) THEN
+  !no interpolation for salinity
+  PR(:,:,:,1)=PR_MX(:,:,:,1)
+ELSE
+  !20131113 add update_halo here
+  !CALL MPPDB_CHECK3D(ZP,"ver_int_thermo6a::ZP",PRECISION)
+  CALL ADD3DFIELD_ll( TZFIELDS_ll, ZP, 'VER_INT_THERMO::ZP' )
+  CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+  CALL CLEANLIST_ll(TZFIELDS_ll)
+  !20131112 check3d
+  CALL MPPDB_CHECK3D(ZP,"ver_int_thermo6b::ZP",PRECISION)
 !
-PR(:,:,:,1)=SM_PMR_HU(ZP(:,:,:),                                &
-                      PTHV(:,:,:)*(ZP(:,:,:)/XP00)**(XRD/XCPD), &
-                      ZHU(:,:,:),PR(:,:,:,:),KITERMAX=100)
+  PR(:,:,:,1)=SM_PMR_HU(ZP(:,:,:),                                &
+                        PTHV(:,:,:)*(ZP(:,:,:)/XP00)**(XRD/XCPD), &
+                        ZHU(:,:,:),PR(:,:,:,:),KITERMAX=100)
+END IF
 CALL ADD3DFIELD_ll( TZFIELDS_ll, PR(:,:,:,1), 'VER_INT_THERMO::PR(:,:,:,1)' )
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZFIELDS_ll)

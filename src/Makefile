@@ -1,4 +1,4 @@
-#MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 #MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 #MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 #MNH_LIC for details. version 1.
@@ -177,7 +177,11 @@ DEP_ALL_USER   = $(sort $(filter-out $(IGNORE_DEP_USER)  ,$(DEP_USER)) )
 .PHONY : all objdirmaster libmaster bibmaster objmaster progmaster
 .PHONY : installmaster cleanlibmaster cleanmaster cleanobjmaster cleanprogmaster
 
+ifeq "$(MNH_GRIBAPI)" "yes"
 all : gribapi progmaster
+else
+all : eccodes_lib progmaster
+endif
 
 objdirmaster :  $(OBJDIR_MASTER)/.dummy
 
@@ -196,7 +200,11 @@ ifeq "$(VER_OASIS)" "OASISAUTO"
 depmaster : oasis
 endif
 
+ifeq "$(MNH_GRIBAPI)" "yes"
 depmaster : gribapi
+else
+depmaster : eccodes_lib
+endif
 
 filedepallmaster :  $(DEP_ALL_MASTER)
 	find  $(OBJDIR_MASTER) -follow -name "*.D" >  $(OBJDIR_MASTER)/filemaster
@@ -288,35 +296,6 @@ installuser :
 cleanproguser :
 	test -d $(OBJDIR_USER) && cd $(OBJDIR_USER) && rm -f $(PROG_LIST)
 
-
-##########################################################
-#                                                        #
-# EXTRA LIB : GRIBEX                                     #
-#                                                        #
-##########################################################
-ifneq "$(findstring 64,$(shell uname -m))" ""
-A64=A64
-endif
-#$(LIB_GRIBEX) : libmaster
-$(LIB_GRIBEX) : 
-ifneq "$(ARCH)" "SX8"
-	- [ ! -d $(DIR_GRIBEX)_$(ARCH) ] && cp -Rp  $(DIR_GRIBEX) $(DIR_GRIBEX)_$(ARCH) 
-	cd $(DIR_GRIBEX)_$(ARCH) && $(MAKE) -j 1 ARCH=$(TARGET_GRIBEX) R64=$(R64_GRIBEX) CNAME=$(CNAME_GRIBEX) A64=$(A64)
-else
-ifneq "$(findstring brodie,$(shell uname -n))" ""
-#brodie
-	- [ ! -d $(DIR_GRIBEX)_$(ARCH) ] && mkdir -p ${workdir}/$(DIR_GRIBEX)_$(ARCH) \
-	&& ln -s ${workdir}/$(DIR_GRIBEX)_$(ARCH)  $(DIR_GRIBEX)_$(ARCH)
-	cp /home/rech/mnh/rmnh007/aeronec/mesonh/binaries/libemosR64.a $(DIR_GRIBEX)_$(ARCH)/libgribexR64.a
-else
-#tori & yuki
-	- [ ! -d $(DIR_GRIBEX)_$(ARCH) ] && mkdir -p $(DIR_GRIBEX)_$(ARCH)
-	cp /usr/local/SX/lib/libgribex.a $(DIR_GRIBEX)_$(ARCH)/libgribexR64.a
-endif
-endif
-
-gribex_clean :
-	- [  -d $(DIR_GRIBEX)_$(ARCH) ] && rm -fr $(DIR_GRIBEX)_$(ARCH) 
 ##########################################################
 #                                                        #
 # EXTRA LIB : GRIBAPI                                    #
@@ -326,13 +305,31 @@ ifneq "$(findstring 64,$(shell uname -m))" ""
 A64=A64
 endif
 gribapi : $(GRIBAPI_INC)
-$(GRIBAPI_INC) : 
+$(GRIBAPI_INC) :
 	cd ${DIR_GRIBAPI} && ./configure --disable-shared --disable-jpeg --prefix=${GRIBAPI_PATH} CC="$(CC)" \
 	FC="$(FC)" FCFLAGS="$(GRIB_FLAGS)" ${GRIBAPI_CONF} && $(MAKE) -j 1 clean && \
 	$(MAKE) -j 1 && $(MAKE) -j 1 install && $(MAKE) -j 1 clean
 
 gribapi_clean :
-	- [  -d ${GRIBAPI_PATH} ] && rm -fr ${GRIBAPI_PATH} 
+	- [  -d ${GRIBAPI_PATH} ] && rm -fr ${GRIBAPI_PATH}
+##########################################################
+#                                                        #
+# EXTRA LIB : ecCodes                                    #
+#                                                        #
+##########################################################
+eccodes_lib : $(ECCODES_MOD)
+$(ECCODES_MOD) :
+	- [ ! -d $(DIR_ECCODES_BUILD) ] && mkdir -p $(DIR_ECCODES_BUILD)
+	cd ${DIR_ECCODES_BUILD} && \
+	cmake ${DIR_ECCODES_SRC} -DCMAKE_INSTALL_PREFIX=${DIR_ECCODES_INSTALL} -DBUILD_SHARED_LIBS=OFF \
+	-DENABLE_NETCDF=OFF -DENABLE_JPG=OFF -DENABLE_PYTHON=OFF -DENABLE_EXAMPLES=OFF \
+	-DCMAKE_Fortran_COMPILER=$(FC) -DCMAKE_C_COMPILER=$(CC) \
+	-DCMAKE_Fortran_FLAGS=$(ECCODES_FFLAGS) -DCMAKE_C_FLAGS=$(ECCODES_CFLAGS) && \
+	$(MAKE) && $(MAKE) install && $(MAKE) clean
+
+eccodes_lib_clean :
+	- [  -d ${DIR_ECCODES_BUILD} ] && rm -fr ${DIR_ECCODES_BUILD}
+	- [  -d ${DIR_ECCODES_INSTALL} ] && rm -fr ${DIR_ECCODES_INSTALL}
 ##########################################################
 #                                                        #
 # EXTRA LIB : NETCDF                                     #
@@ -417,7 +414,7 @@ endif
 ##########################################################
 ifdef PROG_LIST
 
-prog :   lib $(LIB_GRIBEX)
+prog :   lib
 	@$(MAKE) -I$(B)$(OBJDIR) DEP=YES  $(PROG_LIST)  
 
 install : $(patsubst %,%-${ARCH_XYZ},$(PROG_LIST))
@@ -427,7 +424,7 @@ $(PROG_LIST) : OBJ_PROG=$(shell find $(PROG_DIR) -follow -type f -name "spll_*.f
               | xargs grep -l -E -i "^[[:space:]]*program *$@" |  sed -e 's/\.f.*/.o/g' | head -1 \
 	      | xargs basename | xargs -I{} find $(PROG_DIR) -follow -name {} -print | head -1 )  
 
-$(PROG_LIST) :  $(LIB_MNH)  $(LIB_GRIBEX)
+$(PROG_LIST) :  $(LIB_MNH)
 #	echo OBJ_PROG=$(OBJ_PROG)
 	$(F90) $(LDFLAGS) -o $(OBJDIR)/$@ $(OBJ_PROG) $(LIB_MNH) $(LIBS)
 
@@ -511,7 +508,7 @@ endif
 cleanuser :  
 	test -d $(OBJDIR_USER) && rm -fr  $(OBJDIR_USER)
 
-clean :  examplesclean gribex_clean
+clean :  examplesclean eccodes_lib_clean
 	rm -fr  $(OBJDIR_ROOT)
 cleanprog :
 	cd $(OBJDIR_ROOT) ; rm -f $(PROG_LIST)

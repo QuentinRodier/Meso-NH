@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -158,7 +158,8 @@ use modd_budget,      only: lbudget_u, lbudget_v, lbudget_w, lbudget_th, &
 USE MODD_CONF
 USE MODD_CST
 USE MODD_DYN
-
+USE MODD_DYN_n,      ONLY: LOCEAN
+!
 use mode_budget,     only: Budget_store_init, Budget_store_end
 USE MODE_MPPDB
 
@@ -319,6 +320,7 @@ ELSE
 ENDIF
 !
 IF( .NOT.L1D ) THEN
+ IF (.NOT. LOCEAN) THEN
 !
   IF (KRR > 0) THEN
     if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'PREF', prths(:, :, :) )
@@ -346,6 +348,7 @@ IF( .NOT.L1D ) THEN
 
     if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'PREF', prths(:, :, :) )
   END IF
+ END IF
 !
 END IF
 !

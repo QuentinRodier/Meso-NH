@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -11,7 +11,8 @@ INTERFACE
       SUBROUTINE OPEN_PRC_FILES(TPPRE_REAL1FILE,HATMFILE,HATMFILETYPE,TPATMFILE, &
                                                 HCHEMFILE,HCHEMFILETYPE, &
                                                 HSURFFILE,HSURFFILETYPE, &
-                                                HPGDFILE,TPPGDFILE)
+                                                HPGDFILE,TPPGDFILE,      &
+                                                HCAMSFILE,HCAMSFILETYPE)
 !
 USE MODD_IO, ONLY: TFILEDATA
 !
@@ -25,7 +26,8 @@ CHARACTER(LEN=28), INTENT(OUT) :: HSURFFILE    ! name of the input surface file
 CHARACTER(LEN=6),  INTENT(OUT) :: HSURFFILETYPE! type of the input surface file
 CHARACTER(LEN=28), INTENT(OUT) :: HPGDFILE     ! name of the physiographic data file
 TYPE(TFILEDATA),POINTER, INTENT(OUT) :: TPPGDFILE ! physiographic data file
-!
+CHARACTER(LEN=28), INTENT(OUT) :: HCAMSFILE    ! name of the input CAMS file
+CHARACTER(LEN=6),  INTENT(OUT) :: HCAMSFILETYPE! type of the input CAMS file
 END SUBROUTINE OPEN_PRC_FILES
 END INTERFACE
 END MODULE MODI_OPEN_PRC_FILES
@@ -34,7 +36,8 @@ END MODULE MODI_OPEN_PRC_FILES
       SUBROUTINE OPEN_PRC_FILES(TPPRE_REAL1FILE,HATMFILE,HATMFILETYPE,TPATMFILE, &
                                                 HCHEMFILE,HCHEMFILETYPE, &
                                                 HSURFFILE,HSURFFILETYPE, &
-                                                HPGDFILE,TPPGDFILE)
+                                                HPGDFILE,TPPGDFILE,      &
+                                                HCAMSFILE,HCAMSFILETYPE)
 !     ###############################################################
 !
 !!****  *OPEN_PRC_FILES* - openning of the files used in PREP_REAL_CASE
@@ -95,6 +98,7 @@ END MODULE MODI_OPEN_PRC_FILES
 !  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
 !                          (nsubfiles_ioz is now determined in IO_File_add2list)
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
+!  B. Vie         06/2021: LIMA - CAMS coupling
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -136,6 +140,8 @@ CHARACTER(LEN=28), INTENT(OUT) :: HSURFFILE    ! name of the input surface file
 CHARACTER(LEN=6),  INTENT(OUT) :: HSURFFILETYPE! type of the input surface file
 CHARACTER(LEN=28), INTENT(OUT) :: HPGDFILE     ! name of the physiographic data file
 TYPE(TFILEDATA),POINTER, INTENT(OUT) :: TPPGDFILE ! physiographic data file
+CHARACTER(LEN=28), INTENT(OUT) :: HCAMSFILE    ! name of the input CAMS file
+CHARACTER(LEN=6),  INTENT(OUT) :: HCAMSFILETYPE! type of the input CAMS file
 !
 !*       0.2   Declaration of local variables
 !              ------------------------------
@@ -153,7 +159,8 @@ CHARACTER(LEN=28) :: CINIFILE ! re-declaration of this model variable for nameli
 !              ------------------------
 !
 NAMELIST/NAM_FILE_NAMES/ HATMFILE,HATMFILETYPE,HCHEMFILE,HCHEMFILETYPE, &
-                         HSURFFILE,HSURFFILETYPE,HPGDFILE,CINIFILE
+                         HSURFFILE,HSURFFILETYPE,HPGDFILE,CINIFILE, &
+                         HCAMSFILE,HCAMSFILETYPE
 !-------------------------------------------------------------------------------
 !
 !*       1.    SET DEFAULT NAMES
@@ -165,6 +172,8 @@ HCHEMFILE='                            '
 HCHEMFILETYPE='MESONH'
 HSURFFILE='                            '
 HSURFFILETYPE='MESONH'
+HCAMSFILE='                            '
+HCAMSFILETYPE='MESONH'
 !
 !-------------------------------------------------------------------------------
 !
@@ -211,23 +220,9 @@ CALL POSNAM(IPRE_REAL1,'NAM_FILE_NAMES',GFOUND,ILUOUT0)
 IF (GFOUND) READ(UNIT=IPRE_REAL1,NML=NAM_FILE_NAMES)
 CINIFILE_n = CINIFILE
 !
-ILEN = LEN_TRIM(HATMFILE)
-IF (ILEN>0) THEN
-  YFILE='                            '
-  YFILE(1:ILEN) = HATMFILE(1:ILEN)
-  HATMFILE = '                            '
-  HATMFILE(1:ILEN) = YFILE(1:ILEN)
-END IF
 WRITE(ILUOUT0,*) 'HATMFILE= ', HATMFILE
 !
-ILEN = LEN_TRIM(HCHEMFILE)
-IF (ILEN>0) THEN
-  YFILE='                            '
-  YFILE(1:ILEN) = HCHEMFILE(1:ILEN)
-  HCHEMFILE = '                            '
-  HCHEMFILE(1:ILEN) = YFILE(1:ILEN)
-  IF (HCHEMFILE==HATMFILE) HCHEMFILE=''
-END IF
+IF (HCHEMFILE==HATMFILE) HCHEMFILE=''
 IF (LEN_TRIM(HCHEMFILE)>0 .AND. HATMFILETYPE/='GRIBEX') THEN
 !callabortstop
   CALL PRINT_MSG(NVERB_FATAL,'GEN','OPEN_PRC_FILES',&
@@ -235,25 +230,13 @@ IF (LEN_TRIM(HCHEMFILE)>0 .AND. HATMFILETYPE/='GRIBEX') THEN
 END IF
 WRITE(ILUOUT0,*) 'HCHEMFILE=', HCHEMFILE
 !
-ILEN = LEN_TRIM(HSURFFILE)
-IF (ILEN>0) THEN
-  YFILE='                            '
-  YFILE(1:ILEN) = HSURFFILE(1:ILEN)
-  HSURFFILE = '                            '
-  HSURFFILE(1:ILEN) = YFILE(1:ILEN)
-ELSE
-  HSURFFILE = HATMFILE
+WRITE(ILUOUT0,*) 'HCAMSFILE=', HCAMSFILE
+!
+IF ( LEN_TRIM( HSURFFILE ) == 0 ) THEN
+  HSURFFILE     = HATMFILE
   HSURFFILETYPE = HATMFILETYPE
 END IF
 WRITE(ILUOUT0,*) 'HSURFFILE=', HSURFFILE
-!
-ILEN = LEN_TRIM(HPGDFILE)
-IF (ILEN>0) THEN
-  YFILE='                            '
-  YFILE(1:ILEN) = HPGDFILE(1:ILEN)
-  HPGDFILE = '                            '
-  HPGDFILE(1:ILEN) = YFILE(1:ILEN)
-END IF
 !
 CINIFILEPGD_n = HPGDFILE
 IF (LEN_TRIM(HPGDFILE)==0) THEN

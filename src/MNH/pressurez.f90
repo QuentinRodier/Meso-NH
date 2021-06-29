@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -220,6 +220,8 @@ END MODULE MODI_PRESSUREZ
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !  P. Wautelet 28/01/2020: use the new data structures and subroutines for budgets for U
+!!     JL Redelsperger 03/2021 : Shallow convection case added in LHE case: 
+!!                               working for both atmosphere and ocean cases  
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -229,7 +231,9 @@ USE MODD_ARGSLIST_ll, ONLY: LIST_ll
 use modd_budget,      only: lbudget_u, lbudget_v, lbudget_w, NBUDGET_U, NBUDGET_V, NBUDGET_W, tbudgets
 USE MODD_CST
 USE MODD_CONF
-USE MODD_DYN_n,       ONLY: LRES, XRES
+USE MODD_DYN_n,       ONLY: LRES, XRES,LOCEAN
+USE MODD_FIELD_n,     ONLY: XPHIT
+USE MODD_IBM_PARAM_n, ONLY: LIBM, NIBM_ITR, XIBM_EPSI, XIBM_LS, XIBM_SU
 USE MODD_LUNIT_n,     ONLY: TLUOUT
 USE MODD_MPIF
 USE MODD_PARAMETERS
@@ -250,6 +254,7 @@ USE MODI_FLAT_INV
 USE MODI_FLAT_INVZ
 USE MODI_GDIV
 USE MODI_GRADIENT_M
+USE MODI_IBM_BALANCE
 USE MODI_MASS_LEAK
 USE MODI_P_ABS
 USE MODI_RICHARDSON
@@ -357,6 +362,7 @@ REAL, DIMENSION(SIZE(PPABST,1),SIZE(PPABST,2),SIZE(PPABST,3)) :: ZTHETAV, &
                         ! MAE + DUR => Exner function perturbation
                         ! LHE       => Exner function perturbation * CPD * THVREF
 !
+REAL :: ZPHI0
 REAL            :: ZRV_OV_RD !  XRV / XRD
 REAL                  :: ZMAXVAL, ZMAXRES, ZMAX,ZMAX_ll ! for print
 INTEGER, DIMENSION(3) :: IMAXLOC ! purpose
@@ -422,6 +428,11 @@ END IF
 !*       4.    COMPUTE THE FORCING TERM FOR THE PRESSURE EQUATION
 !              --------------------------------------------------
 !
+IF (LIBM) THEN
+  WHERE(XIBM_LS(:,:,:,2).GT.-XIBM_EPSI) PRUS(:,:,:) = 0.
+  WHERE(XIBM_LS(:,:,:,3).GT.-XIBM_EPSI) PRVS(:,:,:) = 0.
+  WHERE(XIBM_LS(:,:,:,4).GT.-XIBM_EPSI) PRWS(:,:,:) = 0.
+ENDIF
 !
 CALL MPPDB_CHECK3D(PRUS,"pressurez 4-before update_halo_ll::PRUS",PRECISION)
 CALL MPPDB_CHECK3D(PRVS,"pressurez 4-before update_halo_ll::PRVS",PRECISION)
@@ -438,6 +449,10 @@ CALL MPPDB_CHECK3D(PRWS,"pressurez 4-after update_halo_ll::PRWS",PRECISION)
 !
 CALL GDIV(HLBCX,HLBCY,PDXX,PDYY,PDZX,PDZY,PDZZ,PRUS,PRVS,PRWS,ZDV_SOURCE)
 !
+IF (LIBM) THEN
+   CALL IBM_BALANCE(XIBM_LS,XIBM_SU,PRUS,PRVS,PRWS,ZDV_SOURCE)
+ENDIF  
+!
 ! The non-homogenous Neuman problem is transformed in an homogenous Neuman
 ! problem in the non-periodic cases
 IF (HLBCX(1) /= 'CYCL') THEN
@@ -448,6 +463,23 @@ ENDIF
 IF (.NOT. L2D .AND. HLBCY(1) /= 'CYCL') THEN
   IF (LSOUTH_ll()) ZDV_SOURCE(:,IJB-1,:) = 0.
   IF (LNORTH_ll()) ZDV_SOURCE(:,IJE+1,:) = 0.
+ENDIF
+
+IF (LIBM) THEN  
+  !
+  IF (HLBCX(1) == 'CYCL') THEN
+    IF (LWEST_ll()) ZDV_SOURCE(IIB-1,:,:) = ZDV_SOURCE(IIB-1,:,:)*XIBM_SU(IIB,:,:,1)
+    IF (LEAST_ll()) ZDV_SOURCE(IIE+1,:,:) = ZDV_SOURCE(IIE+1,:,:)*XIBM_SU(IIE,:,:,1)
+  ENDIF
+  !
+  IF (HLBCY(1) == 'CYCL') THEN
+    IF (LSOUTH_ll()) ZDV_SOURCE(:,IJB-1,:) = ZDV_SOURCE(:,IJB-1,:)*XIBM_SU(:,IJB,:,1)
+    IF (LNORTH_ll()) ZDV_SOURCE(:,IJE+1,:) = ZDV_SOURCE(:,IJE+1,:)*XIBM_SU(:,IJE,:,1)
+  ENDIF
+  !
+  ZDV_SOURCE(:,:,IKB-1) = ZDV_SOURCE(:,:,IKB-1)*XIBM_SU(:,:,IKB,1)
+  ZDV_SOURCE(:,:,IKE+1) = ZDV_SOURCE(:,:,IKE+1)*XIBM_SU(:,:,IKE,1)
+  !
 ENDIF
 !
 !-------------------------------------------------------------------------------
@@ -476,15 +508,27 @@ IF(CEQNSYS=='MAE' .OR. CEQNSYS=='DUR') THEN
     ZTHETAV(:,:,:) = PTHT(:,:,:)
   END IF
   !
+  IF (LIBM) THEN 
+    WHERE (XIBM_LS(:,:,:,1).GT.-XIBM_EPSI)
+      ZTHETAV(:,:,:) = PTHVREF(:,:,:)
+    ENDWHERE 
+  ENDIF
+  !
   ZPHIT(:,:,:)=(PPABST(:,:,:)/XP00)**(XRD/XCPD)-PEXNREF(:,:,:)
   !
 ELSEIF(CEQNSYS=='LHE') THEN
-  ZPHIT(:,:,:)= ((PPABST(:,:,:)/XP00)**(XRD/XCPD)-PEXNREF(:,:,:))   &
-               * XCPD * PTHVREF(:,:,:)
-  !
+  IF ( .NOT. LOCEAN) THEN
+    ZPHIT(:,:,:)= ((PPABST(:,:,:)/XP00)**(XRD/XCPD)-PEXNREF(:,:,:))   &
+                 * XCPD * PTHVREF(:,:,:)
+  ELSE
+    ! Field at T- DT for LHE anelastic approx
+    ! not used in ocean case (flat LHE)
+    ZPHIT(:,:,:)=0.
+  END IF
+!
 END IF
 !
-IF(CEQNSYS=='LHE'.AND. LFLAT .AND. LCARTESIAN) THEN
+IF(CEQNSYS=='LHE'.AND. LFLAT .AND. LCARTESIAN .AND. .NOT. LIBM) THEN
    ! flat cartesian LHE case -> exact solution
  IF ( HPRESOPT /= "ZRESI" ) THEN
   CALL FLAT_INV(HLBCX,HLBCY,PDXHATM,PDYHATM,PRHOT,PAF,PBF,PCF,         &
@@ -528,18 +572,57 @@ END IF
 !              ----------------------------------------
 !
 IF ( HLBCX(1) /= 'CYCL' ) THEN
-  IF(LWEST_ll()) ZPHIT(IIB-1,:,IKB-1) = ZPHIT(IIB,:,IKB-1)
-  IF(LEAST_ll()) ZPHIT(IIE+1,:,IKB-1) = ZPHIT(IIE,:,IKB-1)
+  IF(LWEST_ll()) THEN
+    ZPHIT(IIB-1,:,IKB-1) = ZPHIT(IIB,:,IKB)
+    ZPHIT(IIB-1,:,IKE+1) = ZPHIT(IIB,:,IKE)
+  ENDIF    
+  IF(LEAST_ll()) THEN
+    ZPHIT(IIE+1,:,IKB-1) = ZPHIT(IIE,:,IKB)
+    ZPHIT(IIE+1,:,IKE+1) = ZPHIT(IIE,:,IKE)
+  ENDIF
 ENDIF
+!
 IF ( HLBCY(1) /= 'CYCL' ) THEN
-  IF (LSOUTH_ll()) ZPHIT(:,IJB-1,IKB-1) = ZPHIT(:,IJB,IKB-1)
-  IF (LNORTH_ll()) ZPHIT(:,IJE+1,IKB-1) = ZPHIT(:,IJE,IKB-1)
+  IF (LSOUTH_ll()) THEN
+    ZPHIT(:,IJB-1,IKB-1) = ZPHIT(:,IJB,IKB)
+    ZPHIT(:,IJB-1,IKE+1) = ZPHIT(:,IJB,IKE)    
+  ENDIF
+  IF (LNORTH_ll()) THEN
+    ZPHIT(:,IJE+1,IKB-1) = ZPHIT(:,IJE,IKB)
+    ZPHIT(:,IJE+1,IKE+1) = ZPHIT(:,IJE,IKE)  
+  ENDIF  
 ENDIF
 !
 IF ( L2D ) THEN
   IF (LSOUTH_ll()) ZPHIT(:,IJB-1,:) = ZPHIT(:,IJB,:)
   IF (LNORTH_ll()) ZPHIT(:,IJE+1,:) = ZPHIT(:,IJB,:)
-END IF
+ENDIF
+!
+IF (LIBM) THEN
+  !
+  IF ( HLBCX(1) == 'CYCL' ) THEN
+     IF (LWEST_ll()) THEN
+       ZPHIT(IIB-1,:,:) = ZPHIT(IIB,:,:)*(1.-XIBM_SU(IIB,:,:,1))+XIBM_SU(IIB,:,:,1)*ZPHIT(IIB-1,:,:)
+     ENDIF    
+     IF (LEAST_ll()) THEN
+       ZPHIT(IIE+1,:,:) = ZPHIT(IIE,:,:)*(1.-XIBM_SU(IIE,:,:,1))+XIBM_SU(IIE,:,:,1)*ZPHIT(IIE+1,:,:)
+     ENDIF
+  ENDIF
+  !
+  IF ( HLBCY(1) == 'CYCL' ) THEN
+    IF (LSOUTH_ll()) THEN
+      ZPHIT(:,IJB-1,:) = ZPHIT(:,IJB,:)*(1.-XIBM_SU(:,IJB,:,1))+XIBM_SU(:,IJB,:,1)*ZPHIT(:,IJB-1,:)    
+    ENDIF
+    IF (LNORTH_ll()) THEN
+      ZPHIT(:,IJE+1,:) = ZPHIT(:,IJE,:)*(1.-XIBM_SU(:,IJE,:,1))+XIBM_SU(:,IJE,:,1)*ZPHIT(:,IJE+1,:) 
+    ENDIF  
+  ENDIF
+  !
+  !-------------Bottom Boundary conditions
+  ZPHIT(:,:,IKB-1) = ZPHIT(:,:,IKB-1)*XIBM_SU(:,:,IKB,1)+(1.-XIBM_SU(:,:,IKB,1))*ZPHIT(:,:,IKB)
+  ZPHIT(:,:,IKE+1) = ZPHIT(:,:,IKE+1)*XIBM_SU(:,:,IKE,1)+(1.-XIBM_SU(:,:,IKE,1))*ZPHIT(:,:,IKE) 
+  !
+ENDIF
 !
 ZDV_SOURCE = GX_M_U(1,IKU,1,ZPHIT,PDXX,PDZZ,PDZX)
 !
@@ -638,6 +721,10 @@ CALL CLEANLIST_ll(TZFIELDS2_ll)
 !  compute the residual divergence
 CALL GDIV(HLBCX,HLBCY,PDXX,PDYY,PDZX,PDZY,PDZZ,PRUS,PRVS,PRWS,ZDV_SOURCE)
 !
+IF (LIBM) THEN
+  ZDV_SOURCE(:,:,:)=ZDV_SOURCE(:,:,:)*XIBM_SU(:,:,:,2)
+ENDIF  
+!
 IF ( CEQNSYS=='DUR' ) THEN
   IF ( SIZE(PRVREF,1) == 0 ) THEN
     ZDV_SOURCE=ZDV_SOURCE/PRHODJ/XTH00*PRHODREF*PTHVREF
@@ -679,6 +766,10 @@ IF (OITRADJ) THEN
   ENDIF
 ENDIF
 !
+IF (LIBM) THEN
+  KITR=MIN(NIBM_ITR,KITR)
+ENDIF
+!
 !*       7.    STORAGE OF THE FIELDS IN BUDGET ARRAYS
 !              --------------------------------------
 !
@@ -700,12 +791,23 @@ IF ((ZMAX_ll > 1.E-12) .AND. KTCOUNT >0 ) THEN
 !IF (  KTCOUNT >0 .AND. .NOT.LBOUSS ) THEN
   CALL P_ABS   ( KRR, KRRL, KRRI, PDRYMASST, PREFMASS, PMASS_O_PHI0, &
                  PTHT, PRT, PRHODJ, PRHODREF, ZTHETAV, PTHVREF,      &
-                 PRVREF, PEXNREF,  ZPHIT                             )
+                 PRVREF, PEXNREF, ZPHIT, ZPHI0                       )
 !
   IF(CEQNSYS=='MAE' .OR. CEQNSYS=='DUR') THEN
     PPABST(:,:,:)=XP00*(ZPHIT+PEXNREF)**(XCPD/XRD)
   ELSEIF(CEQNSYS=='LHE') THEN
-    PPABST(:,:,:)=XP00*(ZPHIT/(XCPD*PTHVREF)+PEXNREF)**(XCPD/XRD)
+    IF (.NOT. LOCEAN) THEN
+      ! Deep atmosphere case : computing of PI fluctuation ; ZPHI0 (computed in P_ABS routine) is added 
+      XPHIT(:,:,:) = (ZPHIT+ZPHI0)/(XCPD*PTHVREF)
+      ! Absolute Pressure 
+      PPABST(:,:,:)=XP00*(XPHIT(:,:,:)+PEXNREF)**(XCPD/XRD)
+      ! Computing press fluctuation
+      XPHIT(:,:,:) = PPABST(:,:,:) - XP00*PEXNREF**(XCPD/XRD)
+    ELSE
+!    Shallow atmosphere ou ocean
+     XPHIT(:,:,:) = (ZPHIT+ZPHI0)*PRHODREF
+     PPABST(:,:,:)=XPHIT(:,:,:) + XP00*PEXNREF**(XCPD/XRD)
+    END IF
   ENDIF
 !
   IF( HLBCX(1) == 'CYCL' ) THEN

@@ -20,29 +20,25 @@ os.system('rm -f tempgraph*')
 path=""
 LnameFiles = ['XPREF.1.SEG01.000.nc' ]
 
-Dvar_input = {'f1':['RI', 'CICE', 'RS','RG', 'CIFNFREE01','CIFNNUCL01' ]}
+Dvar_input = {'f1':[('RI','AVEF'), ('CICE','AVEF'), ('RS','AVEF'),('RG','AVEF'), ('CIFNFREE01','AVEF'),('CIFNNUCL01','AVEF') ]}
 Dvar_input_coord_budget = {'f1':['cart_level', 'cart_ni']}
 Dvar_input_coord = {'f1':['ZS','ZTOP']}
 
-#  Add ___AVED to all variables
-for i,var in enumerate(Dvar_input['f1']):
-    Dvar_input['f1'][i] = var + '___AVEF'
-#    
 #  Read the variables in the files
 Dvar, Dvar_coord_budget, Dvar_coord = {}, {}, {}
 Dvar = read_netcdf(LnameFiles, Dvar_input, path=path, removeHALO=False)
 Dvar_coord_budget = read_netcdf(LnameFiles, Dvar_input_coord_budget, path=path, removeHALO=False)
 Dvar_coord = read_netcdf(LnameFiles, Dvar_input_coord, path=path, removeHALO=True)
 
-Dvar['f1']['altitude'], Dvar['f1']['ni_2D'] = comp_altitude1DVar(Dvar['f1']['CIFNFREE01'], Dvar_coord['f1']['ZS'],Dvar_coord['f1']['ZTOP'], Dvar_coord_budget['f1']['cart_level'],Dvar_coord_budget['f1']['cart_ni'])
+Dvar['f1']['altitude'], Dvar['f1']['ni_2D'] = comp_altitude1DVar(Dvar['f1'][('CIFNFREE01','AVEF')], Dvar_coord['f1']['ZS'],Dvar_coord['f1']['ZTOP'], Dvar_coord_budget['f1']['cart_level'],Dvar_coord_budget['f1']['cart_ni'])
 
 ################################################################
 #########          PANEL 1
 ###############################################################
 Panel1 = PanelPlot(2,3, [25,14],'014_LIMA', titlepad=25, minmaxpad=1.04, timepad=-0.07, colorbarpad=0.03, labelcolorbarpad = 13, colorbaraspect=40)
 
-Lplot = [Dvar['f1']['RI'],Dvar['f1']['CICE'], Dvar['f1']['RS'],
-         Dvar['f1']['RG'],Dvar['f1']['CIFNFREE01'], Dvar['f1']['CIFNNUCL01']]
+Lplot = [Dvar['f1'][('RI','AVEF')],Dvar['f1'][('CICE','AVEF')], Dvar['f1'][('RS','AVEF')],
+         Dvar['f1'][('RG','AVEF')],Dvar['f1'][('CIFNFREE01','AVEF')], Dvar['f1'][('CIFNNUCL01','AVEF')]]
 LaxeX = [Dvar['f1']['ni_2D']]*len(Lplot)
 LaxeZ = [Dvar['f1']['altitude']]*len(Lplot)
 Ltitle = ['Ice water content', 'Ice concentration', 'Snow water content',

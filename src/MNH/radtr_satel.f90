@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -257,6 +257,7 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE  :: ZNCLD  ! grid scale cloud fraction
 REAL, DIMENSION(:,:,:), ALLOCATABLE  :: ZRC    ! grid scale r_c mixing ratio (kg/kg)
 REAL, DIMENSION(:,:,:), ALLOCATABLE  :: ZRI    ! grid scale r_i (kg/kg)
 REAL, DIMENSION(:,:,:), ALLOCATABLE  :: ZRV    ! grid scale r_v (kg/kg)
+REAL, DIMENSION(:,:,:), ALLOCATABLE  :: ZRHO
 !----------------------------------------------------------------------------
 !
 !*       1.    INITIALIZATION OF CONSTANTS FOR TRANSFERT CODE
@@ -476,8 +477,10 @@ IF( SIZE(PRT(:,:,:,:),4) >= 2 ) THEN
     ALLOCATE(ZSIGRC(IIU,IJU,IKU))
     ALLOCATE(ZRV(IIU,IJU,IKU))
     ZRV=PRT(:,:,:,1)
-    CALL CONDENSATION( IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE, 1, 'T',&
-         PPABST, PZZ, ZTEMP, ZRV, ZRC, ZRI, PRT(:,:,:,5), PRT(:,:,:,6), PSIGS,&
+    ALLOCATE(ZRHO(IIU,IJU,IKU))
+    ZRHO=1. !unused
+    CALL CONDENSATION( IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE, 1, 'T', 'CB02', 'CB',&
+         PPABST, PZZ, ZRHO, ZTEMP, ZRV, ZRC, ZRI, PRT(:,:,:,5), PRT(:,:,:,6), PSIGS,&
          PMFCONV, ZNCLD, ZSIGRC, OUSERI, OSIGMAS,PSIGQSAT )
     DEALLOCATE(ZTEMP,ZSIGRC)
   ELSE

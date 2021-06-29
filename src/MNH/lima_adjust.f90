@@ -9,11 +9,12 @@
 !
 INTERFACE
 !
-      SUBROUTINE LIMA_ADJUST(KRR, KMI, TPFILE, HRAD,                           &
-                             HTURBDIM, OSUBG_COND, PTSTEP,                     &
-                             PRHODREF, PRHODJ, PEXNREF, PPABSM, PSIGS, PPABST, &
-                             PRT, PRS, PSVT, PSVS,                             &
-                             PTHS, PSRCS, PCLDFR                               )
+      SUBROUTINE LIMA_ADJUST(KRR, KMI, TPFILE,                  &
+                             OSUBG_COND, PTSTEP,                &
+                             PRHODREF, PRHODJ, PEXNREF, PPABSM, &
+                             PPABST,                            &
+                             PRT, PRS, PSVT, PSVS,              &
+                             PTHS, PSRCS, PCLDFR                )
 !
 USE MODD_IO,  ONLY: TFILEDATA
 USE MODD_NSV, only: NSV_LIMA_BEG
@@ -21,9 +22,6 @@ USE MODD_NSV, only: NSV_LIMA_BEG
 INTEGER,                  INTENT(IN)   :: KRR        ! Number of moist variables
 INTEGER,                  INTENT(IN)   :: KMI        ! Model index 
 TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE     ! Output file
-CHARACTER(len=4),         INTENT(IN)   :: HTURBDIM   ! Dimensionality of the
-                                                     ! turbulence scheme
-CHARACTER(len=4),         INTENT(IN)   :: HRAD       ! Radiation scheme name
 LOGICAL,                  INTENT(IN)   :: OSUBG_COND ! Switch for Subgrid 
                                                      ! Condensation
 REAL,                     INTENT(IN)   :: PTSTEP     ! Time step          
@@ -33,7 +31,6 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODREF  ! Dry density of the
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODJ    ! Dry density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PEXNREF   ! Reference Exner function
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABSM    ! Absolute Pressure at t-dt
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PSIGS     ! Sigma_s at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABST    ! Absolute Pressure at t     
 !
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT       ! m.r. at t
@@ -49,7 +46,7 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS      ! Theta source
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSRCS     ! Second-order flux
                                                      ! s'rc'/2Sigma_s2 at time t+1
                                                      ! multiplied by Lambda_3
-REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PCLDFR    ! Cloud fraction          
+REAL, DIMENSION(:,:,:),   INTENT(INOUT)   :: PCLDFR    ! Cloud fraction          
 !
 END SUBROUTINE LIMA_ADJUST
 !
@@ -57,13 +54,14 @@ END INTERFACE
 !
 END MODULE MODI_LIMA_ADJUST
 !
-!     ##########################################################################
-      SUBROUTINE LIMA_ADJUST(KRR, KMI, TPFILE, HRAD,                           &
-                             HTURBDIM, OSUBG_COND, PTSTEP,                     &
-                             PRHODREF, PRHODJ, PEXNREF, PPABSM, PSIGS, PPABST, &
-                             PRT, PRS, PSVT, PSVS,                             &
-                             PTHS, PSRCS, PCLDFR                               )
-!     ##########################################################################
+!     ###########################################################
+      SUBROUTINE LIMA_ADJUST(KRR, KMI, TPFILE,                  &
+                             OSUBG_COND, PTSTEP,                &
+                             PRHODREF, PRHODJ, PEXNREF, PPABSM, &
+                             PPABST,                            &
+                             PRT, PRS, PSVT, PSVS,              &
+                             PTHS, PSRCS, PCLDFR                )
+!     ###########################################################
 !
 !!****  *MIMA_ADJUST* -  compute the fast microphysical sources 
 !!
@@ -138,6 +136,7 @@ END MODULE MODI_LIMA_ADJUST
 !  P. Wautelet 28/05/2019: move COUNTJV function to tools.f90
 !  P. Wautelet 28/05/2020: bugfix: correct array start for PSVT and PSVS
 !  P. Wautelet 01/02/2021: bugfix: add missing CEDS source terms for SV budgets
+!  B. Vie         06/2020: fix PSRCS
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -165,7 +164,9 @@ use mode_msg
 use mode_tools,            only: Countjv
 !
 USE MODI_CONDENS
+USE MODI_CONDENSATION
 USE MODI_LIMA_FUNCTIONS
+USE MODI_LIMA_CCN_ACTIVATION
 !
 IMPLICIT NONE
 !
@@ -175,9 +176,6 @@ IMPLICIT NONE
 INTEGER,                  INTENT(IN)   :: KRR        ! Number of moist variables
 INTEGER,                  INTENT(IN)   :: KMI        ! Model index 
 TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE     ! Output file
-CHARACTER(len=4),         INTENT(IN)   :: HTURBDIM   ! Dimensionality of the
-                                                     ! turbulence scheme
-CHARACTER(len=4),         INTENT(IN)   :: HRAD       ! Radiation scheme name
 LOGICAL,                  INTENT(IN)   :: OSUBG_COND ! Switch for Subgrid 
                                                      ! Condensation
 REAL,                     INTENT(IN)   :: PTSTEP     ! Time step          
@@ -187,7 +185,6 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODREF  ! Dry density of the
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODJ    ! Dry density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PEXNREF   ! Reference Exner function
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABSM    ! Absolute Pressure at t-dt
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PSIGS     ! Sigma_s at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABST    ! Absolute Pressure at t     
 !
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT       ! m.r. at t
@@ -203,7 +200,7 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS      ! Theta source
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSRCS     ! Second-order flux
                                                      ! s'rc'/2Sigma_s2 at time t+1
                                                      ! multiplied by Lambda_3
-REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PCLDFR    ! Cloud fraction          
+REAL, DIMENSION(:,:,:),   INTENT(INOUT)   :: PCLDFR    ! Cloud fraction          
 !
 !
 !*       0.2   Declarations of local variables :
@@ -263,9 +260,12 @@ REAL, DIMENSION(:), ALLOCATABLE &
                             ZRVSATW, ZRVSATI, ZRVSATW_PRIME, ZRVSATI_PRIME,  &
                             ZAW, ZAI, ZCJ, ZKA, ZDV, ZITW, ZITI, ZAWW, ZAIW, &
                             ZAWI, ZAII, ZFACT, ZDELTW,                       &
-                            ZDELTI, ZDELT1, ZDELT2, ZCND, ZDEP
+                            ZDELTI, ZDELT1, ZDELT2, ZCND, ZDEP, ZS, ZVEC1, ZZW2
+!
+INTEGER, DIMENSION(:), ALLOCATABLE :: IVEC1
 !
 INTEGER                  :: IRESP      ! Return code of FM routines
+INTEGER                  :: IIU,IJU,IKU! dimensions of dummy arrays
 INTEGER                  :: IKB        ! K index value of the first inner mass point
 INTEGER                  :: IKE        ! K index value of the last inner mass point
 INTEGER                  :: IIB,IJB    ! Horz index values of the first inner mass points
@@ -292,6 +292,9 @@ TYPE(TFIELDDATA)  :: TZFIELD
 !
 ILUOUT = TLUOUT%NLU
 !
+IIU = SIZE(PEXNREF,1)
+IJU = SIZE(PEXNREF,2)
+IKU = SIZE(PEXNREF,3)
 IIB = 1 + JPHEXT
 IIE = SIZE(PRHODJ,1) - JPHEXT
 IJB = 1 + JPHEXT
@@ -317,6 +320,7 @@ ALLOCATE(ZCTMIN(ISIZE))
 ZCTMIN(:) = XCTMIN(:) / ZDT
 !
 ! Prepare 3D water mixing ratios
+!
 PRVT(:,:,:) = PRT(:,:,:,1)
 PRVS(:,:,:) = PRS(:,:,:,1)
 !
@@ -381,8 +385,10 @@ if ( nbumod == kmi .and. lbu_enable ) then
   if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'CEDS', prcs(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'CEDS', pris(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_sv ) then
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CEDS', pccs(:, :, :) * prhodj(:, :, :) )
-    call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CEDS', pcis(:, :, :) * prhodj(:, :, :) )
+    if ( lwarm ) &
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc),       'CEDS', pccs(:, :, :) * prhodj(:, :, :) )
+    if ( lcold ) &
+      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni),       'CEDS', pcis(:, :, :) * prhodj(:, :, :) )
     if ( lscav .and. laero_mass ) &
       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_scavmass), 'CEDS', pmas(:, :, :) * prhodj(:, :, :) )
     if ( lwarm ) then
@@ -623,12 +629,10 @@ END IF ! IMICRO
 !*              select cases where r_c>0 and r_i=0
 ! 
 !
-GMICRO(IIB:IIE,IJB:IJE,IKB:IKE) =                                      & 
-          .NOT. GMICRO_RI(IIB:IIE,IJB:IJE,IKB:IKE)                     &
-          .AND. ( PRCS(IIB:IIE,IJB:IJE,IKB:IKE)>ZRTMIN(2) .AND.        &
-                  PCCS(IIB:IIE,IJB:IJE,IKB:IKE)>ZCTMIN(2)      )       &
-    .AND. .NOT. ( PRIS(IIB:IIE,IJB:IJE,IKB:IKE)>ZRTMIN(4) .AND.        &
-                  PCIS(IIB:IIE,IJB:IJE,IKB:IKE)>ZCTMIN(4)      )
+GMICRO(:,:,:) = .FALSE.
+GMICRO(IIB:IIE,IJB:IJE,IKB:IKE) =( PRCS(IIB:IIE,IJB:IJE,IKB:IKE)>0. .AND.        &
+                                   PCCS(IIB:IIE,IJB:IJE,IKB:IKE)>0.      ) .AND. &
+                                   .NOT.GMICRO_RI(IIB:IIE,IJB:IJE,IKB:IKE)
 GMICRO_RC(:,:,:) = GMICRO(:,:,:)
 IMICRO = COUNTJV( GMICRO(:,:,:),I1(:),I2(:),I3(:))
 IF( IMICRO >= 1 ) THEN
@@ -637,6 +641,7 @@ IF( IMICRO >= 1 ) THEN
 !
    ALLOCATE(ZRVS(IMICRO))
    ALLOCATE(ZRCS(IMICRO))
+   ALLOCATE(ZCCS(IMICRO))
    ALLOCATE(ZTHS(IMICRO))
 !
    ALLOCATE(ZRHODREF(IMICRO))
@@ -650,6 +655,7 @@ IF( IMICRO >= 1 ) THEN
 !
       ZRVS(JL) = PRVS(I1(JL),I2(JL),I3(JL))
       ZRCS(JL) = PRCS(I1(JL),I2(JL),I3(JL))
+      ZCCS(JL) = PCCS(I1(JL),I2(JL),I3(JL))
       ZTHS(JL) = PTHS(I1(JL),I2(JL),I3(JL))
 !
       ZRHODREF(JL) = PRHODREF(I1(JL),I2(JL),I3(JL))
@@ -660,25 +666,47 @@ IF( IMICRO >= 1 ) THEN
    ENDDO
    ALLOCATE(ZZW(IMICRO))
    ALLOCATE(ZLVFACT(IMICRO))
-   ZLVFACT(:) = (XLVTT+(XCPV-XCL)*(ZZT(:)-XTT))/ZZCPH(:) ! L_v/C_ph
+   ALLOCATE(ZCND(IMICRO))
    ALLOCATE(ZRVSATW(IMICRO))
-   ALLOCATE(ZRVSATW_PRIME(IMICRO))
-!
+   ZLVFACT(:) = (XLVTT+(XCPV-XCL)*(ZZT(:)-XTT))/ZZCPH(:) ! L_v/C_ph
    ZZW(:) = EXP( XALPW - XBETAW/ZZT(:) - XGAMW*ALOG(ZZT(:) ) ) ! es_w
    ZRVSATW(:) = ZEPS*ZZW(:) / ( ZPRES(:)-ZZW(:) )              ! r_sw
-   ZRVSATW_PRIME(:) = (( XBETAW/ZZT(:) - XGAMW ) / ZZT(:))  &  ! r'_sw
-                      * ZRVSATW(:) * ( 1. + ZRVSATW(:)/ZEPS )
-   ALLOCATE(ZAWW(IMICRO))
-   ALLOCATE(ZDELT1(IMICRO))
-   ALLOCATE(ZDELT2(IMICRO))
-   ALLOCATE(ZCND(IMICRO))
-!
-   ZAWW(:) = 1.0 + ZRVSATW_PRIME(:)*ZLVFACT(:)
-   ZDELT2(:) = (ZRVSATW_PRIME(:)*ZLVFACT(:)/ZAWW(:)) *                     &
-               ( ((-2.*XBETAW+XGAMW*ZZT(:))/(XBETAW-XGAMW*ZZT(:))          &
-               + (XBETAW/ZZT(:)-XGAMW)*(1.0+2.0*ZRVSATW(:)/ZEPS))/ZZT(:) )
-   ZDELT1(:) = (ZLVFACT(:)/ZAWW(:)) * ( ZRVSATW(:) - ZRVS(:)*ZDT )
-   ZCND(:) = - ZDELT1(:)*( 1.0 + 0.5*ZDELT1(:)*ZDELT2(:) ) / (ZLVFACT(:)*ZDT)
+   
+   IF (LADJ) THEN
+      ALLOCATE(ZRVSATW_PRIME(IMICRO))
+      ALLOCATE(ZAWW(IMICRO))
+      ALLOCATE(ZDELT1(IMICRO))
+      ALLOCATE(ZDELT2(IMICRO))
+      ZRVSATW_PRIME(:) = (( XBETAW/ZZT(:) - XGAMW ) / ZZT(:))  &  ! r'_sw
+           * ZRVSATW(:) * ( 1. + ZRVSATW(:)/ZEPS )
+      ZAWW(:) = 1.0 + ZRVSATW_PRIME(:)*ZLVFACT(:)
+      ZDELT2(:) = (ZRVSATW_PRIME(:)*ZLVFACT(:)/ZAWW(:)) *                     &
+           ( ((-2.*XBETAW+XGAMW*ZZT(:))/(XBETAW-XGAMW*ZZT(:))          &
+           + (XBETAW/ZZT(:)-XGAMW)*(1.0+2.0*ZRVSATW(:)/ZEPS))/ZZT(:) )
+      ZDELT1(:) = (ZLVFACT(:)/ZAWW(:)) * ( ZRVSATW(:) - ZRVS(:)*ZDT )
+      ZCND(:) = - ZDELT1(:)*( 1.0 + 0.5*ZDELT1(:)*ZDELT2(:) ) / (ZLVFACT(:)*ZDT)
+      DEALLOCATE(ZRVSATW_PRIME)
+      DEALLOCATE(ZAWW)
+      DEALLOCATE(ZDELT1)
+      DEALLOCATE(ZDELT2)      
+   ELSE
+      ALLOCATE(ZS(IMICRO))
+      ALLOCATE(ZZW2(IMICRO))
+      ALLOCATE(ZVEC1(IMICRO))
+      ALLOCATE(IVEC1(IMICRO))
+      ZVEC1(:) = MAX( 1.0001, MIN( FLOAT(NAHEN)-0.0001, XAHENINTP1 * ZZT(:) + XAHENINTP2 ) )
+      IVEC1(:) = INT( ZVEC1(:) )
+      ZVEC1(:) = ZVEC1(:) - FLOAT( IVEC1(:) )
+      ZS(:) = ZRVS(:)*PTSTEP / ZRVSATW(:) - 1.
+      ZZW(:) = ZCCS(:)*PTSTEP/(XLBC*ZCCS(:)/ZRCS(:))**XLBEXC
+      ZZW2(:) = XAHENG3(IVEC1(:)+1)*ZVEC1(:)-XAHENG3(IVEC1(:))*(ZVEC1(:)-1.)
+      ZCND(:) = 2.*3.14*1000.*ZZW2(:)*ZS(:)*ZZW(:)
+      DEALLOCATE(ZS)
+      DEALLOCATE(ZZW2)
+      DEALLOCATE(ZVEC1)
+      DEALLOCATE(IVEC1)
+   END IF
+   
 !
 ! Integration
 !
@@ -702,6 +730,7 @@ IF( IMICRO >= 1 ) THEN
    DEALLOCATE(ZRCT)
    DEALLOCATE(ZRVS)
    DEALLOCATE(ZRCS)
+   DEALLOCATE(ZCCS)
    DEALLOCATE(ZTHS)
    DEALLOCATE(ZRHODREF)
    DEALLOCATE(ZZT)
@@ -711,10 +740,6 @@ IF( IMICRO >= 1 ) THEN
    DEALLOCATE(ZZW)
    DEALLOCATE(ZLVFACT)
    DEALLOCATE(ZRVSATW)
-   DEALLOCATE(ZRVSATW_PRIME)
-   DEALLOCATE(ZAWW)
-   DEALLOCATE(ZDELT1)
-   DEALLOCATE(ZDELT2)
    DEALLOCATE(ZCND)
 END IF ! IMICRO
 !
@@ -1054,6 +1079,8 @@ END IF ! OSUBG_COND
 !
 ! full sublimation of the cloud ice crystals if there are few
 !
+IF ( .NOT. OSUBG_COND ) THEN
+
 ZMASK(:,:,:) = 0.0
 ZW(:,:,:) = 0.
 WHERE (PRIS(:,:,:) <= ZRTMIN(4) .OR. PCIS(:,:,:) <= ZCTMIN(4)) 
@@ -1135,26 +1162,28 @@ IF (LSCAV .AND. LAERO_MASS) PMAS(:,:,:) = PMAS(:,:,:) * (1-ZMASK(:,:,:))
 !
 !  end of the iterative loop
 !
+END IF ! .NOT.OSUBG_COND
+
 END DO
 !
-DEALLOCATE(ZRTMIN)
-DEALLOCATE(ZCTMIN)
 !
 !*       5.2    compute the cloud fraction PCLDFR (binary !!!!!!!)
 !
 IF ( .NOT. OSUBG_COND ) THEN
   WHERE (PRCS(:,:,:) + PRIS(:,:,:) + PRSS(:,:,:) > 1.E-12 / ZDT)
-!   WHERE (PRCS(:,:,:) + PRIS(:,:,:)  > 1.E-12 / ZDT)
-      ZW(:,:,:)  = 1.
+      PCLDFR(:,:,:)  = 1.
    ELSEWHERE
-      ZW(:,:,:)  = 0. 
+      PCLDFR(:,:,:)  = 0.
    ENDWHERE
-   IF ( SIZE(PSRCS,3) /= 0 ) THEN
-      PSRCS(:,:,:) = ZW(:,:,:) 
-   END IF
 END IF
 !
-PCLDFR(:,:,:) = ZW(:,:,:)
+IF ( SIZE(PSRCS,3) /= 0 ) THEN
+  WHERE (PRCS(:,:,:) + PRIS(:,:,:) > 1.E-12 / ZDT)
+      PSRCS(:,:,:)  = 1.
+   ELSEWHERE
+      PSRCS(:,:,:)  = 0.
+   ENDWHERE
+END IF
 !
 IF ( tpfile%lopened ) THEN
   TZFIELD%CMNHNAME   = 'NEB'
@@ -1235,8 +1264,10 @@ if ( nbumod == kmi .and. lbu_enable ) then
   if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'CEDS', prcs(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'CEDS', pris(:, :, :) * prhodj(:, :, :) )
   if ( lbudget_sv ) then
-    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CEDS', pccs(:, :, :) * prhodj(:, :, :) )
-    call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CEDS', pcis(:, :, :) * prhodj(:, :, :) )
+    if ( lwarm ) &
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc),       'CEDS', pccs(:, :, :) * prhodj(:, :, :) )
+    if ( lcold ) &
+      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni),       'CEDS', pcis(:, :, :) * prhodj(:, :, :) )
     if ( lscav .and. laero_mass ) &
       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_scavmass), 'CEDS', pmas(:, :, :) * prhodj(:, :, :) )
     if ( lwarm ) then
@@ -1256,12 +1287,14 @@ if ( nbumod == kmi .and. lbu_enable ) then
       end do
       do jl = 1, nmod_imm
         idx = NBUDGET_SV1 - 1 + nsv_lima_imm_nucl - 1 + jl
-        call Budget_store_init( tbudgets(idx), 'CEDS', pnis(:, :, :, jl) * prhodj(:, :, :) )
+        call Budget_store_end( tbudgets(idx), 'CEDS', pnis(:, :, :, jl) * prhodj(:, :, :) )
       end do
     end if
   end if
 end if
 !++cb++
+DEALLOCATE(ZRTMIN)
+DEALLOCATE(ZCTMIN)
 IF (ALLOCATED(PNFS)) DEALLOCATE(PNFS)
 IF (ALLOCATED(PNAS)) DEALLOCATE(PNAS)
 IF (ALLOCATED(PIFS)) DEALLOCATE(PIFS)

@@ -9,7 +9,7 @@
 !
 INTERFACE 
 !
-      SUBROUTINE READ_FIELD(TPINIFILE,KIU,KJU,KKU,                           &
+      SUBROUTINE READ_FIELD(KOCEMI,TPINIFILE,KIU,KJU,KKU,                    &
             HGETTKET,HGETRVT,HGETRCT,HGETRRT,HGETRIT,HGETCIT,HGETZWS,        &
             HGETRST,HGETRGT,HGETRHT,HGETSVT,HGETSRCT,HGETSIGS,HGETCLDFR,     &
             HGETBL_DEPTH,HGETSBL_DEPTH,HGETPHC,HGETPHR,HUVW_ADV_SCHEME,      &
@@ -29,14 +29,17 @@ INTERFACE
             KADVFRC,TPDTADVFRC,PDTHFRC,PDRVFRC,                              &
             KRELFRC,TPDTRELFRC, PTHREL, PRVREL,                              &
             PVTH_FLUX_M,PWTH_FLUX_M,PVU_FLUX_M,                              &
-            PRUS_PRES,PRVS_PRES,PRWS_PRES,PRTHS_CLD,PRRS_CLD,PRSVS_CLD       )
+            PRUS_PRES,PRVS_PRES,PRWS_PRES,PRTHS_CLD,PRRS_CLD,PRSVS_CLD,      &
+            PIBM_LSF,PIBM_XMUT,PUMEANW,PVMEANW,PWMEANW,PUMEANN,PVMEANN,      &
+            PWMEANN,PUMEANE,PVMEANE,PWMEANE,PUMEANS,PVMEANS,PWMEANS          )
 !
 USE MODD_IO, ONLY : TFILEDATA
 USE MODD_TIME ! for type DATE_TIME
 !
 !
+INTEGER,                   INTENT(IN)  :: KOCEMI !Ocan model index
 TYPE(TFILEDATA),           INTENT(IN)  :: TPINIFILE    !Initial file
-INTEGER,                   INTENT(IN)  :: KIU, KJU, KKU   
+INTEGER,                   INTENT(IN)  :: KIU, KJU, KKU
                              ! array sizes in x, y and z  directions
 ! 
 CHARACTER (LEN=*),         INTENT(IN)  :: HGETTKET,                          &
@@ -115,6 +118,11 @@ REAL, DIMENSION(:,:,:),         INTENT(OUT)   :: PVTH_FLUX_M,PWTH_FLUX_M,PVU_FLU
 REAL, DIMENSION(:,:,:),         INTENT(INOUT) :: PRUS_PRES, PRVS_PRES, PRWS_PRES
 REAL, DIMENSION(:,:,:),         INTENT(INOUT) :: PRTHS_CLD
 REAL, DIMENSION(:,:,:,:),       INTENT(INOUT) :: PRRS_CLD, PRSVS_CLD
+REAL, DIMENSION(:,:,:),         INTENT(INOUT) :: PIBM_LSF,PIBM_XMUT
+REAL, DIMENSION(:,:,:),         INTENT(INOUT) :: PUMEANW,PVMEANW,PWMEANW
+REAL, DIMENSION(:,:,:),         INTENT(INOUT) :: PUMEANN,PVMEANN,PWMEANN
+REAL, DIMENSION(:,:,:),         INTENT(INOUT) :: PUMEANE,PVMEANE,PWMEANE
+REAL, DIMENSION(:,:,:),         INTENT(INOUT) :: PUMEANS,PVMEANS,PWMEANS
 !
 !
 END SUBROUTINE READ_FIELD
@@ -124,7 +132,7 @@ END INTERFACE
 END MODULE MODI_READ_FIELD
 !
 !     ########################################################################
-      SUBROUTINE READ_FIELD(TPINIFILE,KIU,KJU,KKU,                           &
+      SUBROUTINE READ_FIELD(KOCEMI,TPINIFILE,KIU,KJU,KKU,                    &
             HGETTKET,HGETRVT,HGETRCT,HGETRRT,HGETRIT,HGETCIT,HGETZWS,        &
             HGETRST,HGETRGT,HGETRHT,HGETSVT,HGETSRCT,HGETSIGS,HGETCLDFR,     &
             HGETBL_DEPTH,HGETSBL_DEPTH,HGETPHC,HGETPHR,HUVW_ADV_SCHEME,      &
@@ -144,7 +152,9 @@ END MODULE MODI_READ_FIELD
             KADVFRC,TPDTADVFRC,PDTHFRC,PDRVFRC,                              &
             KRELFRC,TPDTRELFRC, PTHREL, PRVREL,                              &
             PVTH_FLUX_M,PWTH_FLUX_M,PVU_FLUX_M,                              &
-            PRUS_PRES,PRVS_PRES,PRWS_PRES,PRTHS_CLD,PRRS_CLD,PRSVS_CLD       )
+            PRUS_PRES,PRVS_PRES,PRWS_PRES,PRTHS_CLD,PRRS_CLD,PRSVS_CLD,      &
+            PIBM_LSF,PIBM_XMUT,PUMEANW,PVMEANW,PWMEANW,PUMEANN,PVMEANN,      &
+            PWMEANN,PUMEANE,PVMEANE,PWMEANE,PUMEANS,PVMEANS,PWMEANS          )
 !     ########################################################################
 !
 !!****  *READ_FIELD* - routine to read prognostic and surface fields
@@ -242,8 +252,11 @@ END MODULE MODI_READ_FIELD
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 14/03/2019: correct ZWS when variable not present in file
 !  M. Leriche  10/06/2019: in restart case read all immersion modes for LIMA
-!  P. Wautelet 11/03/2021: bugfix: correct name for NSV_LIMA_IMM_NUCL
-!-------------------------------------------------------------------------------
+!! B. Vie         06/2020: Add prognostic supersaturation for LIMA
+!! F. Auguste  02/2021: add fields necessary for IBM
+!! T. Nagel    02/2021: add fields necessary for turbulence recycling
+!! J.L. Redelsperger 03/2021:  add necessary variables for Ocean LES case
+!!-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
@@ -259,27 +272,32 @@ USE MODD_CONF_n
 USE MODD_CST
 USE MODD_CTURB
 USE MODD_DUST
+USE MODD_DYN_n,           ONLY: LOCEAN
 USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
-use modd_field,           only: tfielddata, tfieldlist, TYPEDATE, TYPEREAL
+use modd_field,           only: tfielddata, tfieldlist, TYPEDATE, TYPEREAL,TYPELOG,TYPEINT
 USE MODD_FIELD_n,         only: XZWS_DEFAULT
 #ifdef MNH_FOREFIRE
 USE MODD_FOREFIRE
 #endif
+USE MODD_IBM_PARAM_n,     ONLY: LIBM
 USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
 USE MODD_IO,              ONLY: TFILEDATA
 USE MODD_LATZ_EDFLX
 USE MODD_LG,              ONLY: CLGNAMES
 USE MODD_LUNIT_N,         ONLY: TLUOUT
 USE MODD_NSV
+USE MODD_OCEANH
 USE MODD_PARAM_C2R2,      ONLY: LSUPSAT
 !
 USE MODD_PARAM_LIMA     , ONLY: NMOD_CCN, LSCAV, LAERO_MASS,                &
                                 NMOD_IFN, NMOD_IMM, NINDICE_CCN_IMM, LHHONI
 USE MODD_PARAM_LIMA_COLD, ONLY: CLIMA_COLD_NAMES
 USE MODD_PARAM_LIMA_WARM, ONLY: CLIMA_WARM_NAMES, CAERO_MASS
-USE MODD_PARAM_n,           ONLY: CSCONV
+USE MODD_PARAM_n,         ONLY: CSCONV
 USE MODD_PASPOL
 USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
+USE MODD_RECYCL_PARAM_n
+USE MODD_REF,             ONLY: LCOUPLES
 USE MODD_SALT
 USE MODD_TIME ! for type DATE_TIME
 !
@@ -297,8 +315,9 @@ IMPLICIT NONE
 !
 !
 !
+INTEGER,                   INTENT(IN)  :: KOCEMI !Ocan model index
 TYPE(TFILEDATA),           INTENT(IN)  :: TPINIFILE    !Initial file
-INTEGER,                   INTENT(IN)  :: KIU, KJU, KKU   
+INTEGER,                   INTENT(IN)  :: KIU, KJU, KKU
                              ! array sizes in x, y and z  directions
 ! 
 CHARACTER (LEN=*),         INTENT(IN)  :: HGETTKET,                          &
@@ -382,6 +401,12 @@ REAL, DIMENSION(:,:,:),         INTENT(OUT)   :: PVTH_FLUX_M,PWTH_FLUX_M,PVU_FLU
 REAL, DIMENSION(:,:,:),         INTENT(INOUT) :: PRUS_PRES, PRVS_PRES, PRWS_PRES
 REAL, DIMENSION(:,:,:),         INTENT(INOUT) :: PRTHS_CLD
 REAL, DIMENSION(:,:,:,:),       INTENT(INOUT) :: PRRS_CLD, PRSVS_CLD
+REAL, DIMENSION(:,:,:),         INTENT(INOUT) :: PIBM_LSF          ! LSF for IBM
+REAL, DIMENSION(:,:,:),         INTENT(INOUT) :: PIBM_XMUT         ! Turbulent viscosity
+REAL, DIMENSION(:,:,:),         INTENT(INOUT) :: PUMEANW,PVMEANW,PWMEANW ! Velocity average at West boundary
+REAL, DIMENSION(:,:,:),         INTENT(INOUT) :: PUMEANN,PVMEANN,PWMEANN ! Velocity average at North boundary
+REAL, DIMENSION(:,:,:),         INTENT(INOUT) :: PUMEANE,PVMEANE,PWMEANE ! Velocity average at East boundary
+REAL, DIMENSION(:,:,:),         INTENT(INOUT) :: PUMEANS,PVMEANS,PWMEANS ! Velocity average at South boundary
 !
 !*       0.2   declarations of local variables
 !
@@ -394,6 +419,7 @@ INTEGER                      :: JKLOOP,JRR   ! Loop indexes
 INTEGER                      :: IIUP,IJUP    ! size  of working window arrays
 INTEGER                      :: JT           ! loop index
 LOGICAL                      :: GLSOURCE     ! switch for the source term (for ini_ls and ini_lb)
+LOGICAL                      :: ZLRECYCL     ! switch if turbulence recycling is activated
 CHARACTER(LEN=2)             :: INDICE
 CHARACTER(LEN=3)             :: YFRC         ! To mark the different forcing dates
 CHARACTER(LEN=15)            :: YVAL
@@ -587,6 +613,203 @@ SELECT CASE(HGETCIT)             ! ice concentration
     PCIT(:,:,:)=0.
 END SELECT
 !
+IF (LIBM .AND. CPROGRAM=='MESONH') THEN
+   !
+   TZFIELD%CMNHNAME  = 'LSFP'
+   TZFIELD%CLONGNAME = 'LSFP'
+   TZFIELD%CSTDNAME  = ''
+   TZFIELD%CUNITS    = 'm'
+   TZFIELD%CDIR      = 'XY'
+   TZFIELD%NGRID     = 1
+   TZFIELD%NTYPE     = TYPEREAL
+   TZFIELD%NDIMS     = 3
+   TZFIELD%LTIMEDEP  = .TRUE.
+   !
+   CALL IO_Field_read(TPINIFILE,TZFIELD,PIBM_LSF)
+   !
+   TZFIELD%CMNHNAME  = 'XMUT'
+   TZFIELD%CLONGNAME = 'XMUT'
+   TZFIELD%CSTDNAME  = ''
+   TZFIELD%CUNITS    = 'm2 s-1'
+   TZFIELD%CDIR      = 'XY'
+   TZFIELD%NGRID     = 1
+   TZFIELD%NTYPE     = TYPEREAL
+   TZFIELD%NDIMS     = 3
+   TZFIELD%LTIMEDEP  = .TRUE.
+   !
+   CALL IO_Field_read(TPINIFILE,TZFIELD,PIBM_XMUT)
+   !
+ENDIF
+!
+TZFIELD%CMNHNAME   = 'RECYCLING'
+TZFIELD%CLONGNAME  = 'RECYCLING'
+TZFIELD%CSTDNAME   = ''
+TZFIELD%CUNITS     = ''
+TZFIELD%CDIR       = '--'
+TZFIELD%NGRID      = 1
+TZFIELD%NTYPE      = TYPELOG
+TZFIELD%NDIMS      = 0
+TZFIELD%LTIMEDEP   = .FALSE. 
+CALL IO_Field_read(TPINIFILE,TZFIELD,ZLRECYCL,IRESP)
+!If field not found (file from older version of MesoNH) => set ZLRECYCL to false
+IF ( IRESP /= 0 ) ZLRECYCL = .FALSE.
+
+IF (ZLRECYCL) THEN
+  !
+  TZFIELD%CMNHNAME   = 'RCOUNT'
+  TZFIELD%CLONGNAME  = 'RCOUNT'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CUNITS     = ''
+  TZFIELD%CDIR       = '--'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEINT
+  TZFIELD%NDIMS      = 0
+  TZFIELD%LTIMEDEP   = .TRUE.
+  CALL IO_Field_read(TPINIFILE,TZFIELD,NR_COUNT)
+  !
+  IF (NR_COUNT .NE. 0) THEN
+    IF (LRECYCLW) THEN 
+      TZFIELD%CMNHNAME   = 'URECYCLW'
+      TZFIELD%CLONGNAME  = 'URECYCLW'
+      TZFIELD%CSTDNAME   = ''
+      TZFIELD%CUNITS     = 'm s-1'
+      TZFIELD%CDIR       = 'XY'
+      TZFIELD%NGRID      = 2
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%NDIMS      = 3
+      TZFIELD%LTIMEDEP   = .TRUE.
+      CALL IO_Field_read(TPINIFILE,TZFIELD,PUMEANW)
+      !
+      TZFIELD%CMNHNAME   = 'VRECYCLW'
+      TZFIELD%CLONGNAME  = 'VRECYCLW'
+      TZFIELD%CSTDNAME   = ''
+      TZFIELD%CUNITS     = 'm s-1'
+      TZFIELD%CDIR       = 'XY'
+      TZFIELD%NGRID      = 3
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%NDIMS      = 3
+      TZFIELD%LTIMEDEP   = .TRUE.
+      CALL IO_Field_read(TPINIFILE,TZFIELD,PVMEANW)
+      !
+      TZFIELD%CMNHNAME   = 'WRECYCLW'
+      TZFIELD%CLONGNAME  = 'WRECYCLW'
+      TZFIELD%CSTDNAME   = ''
+      TZFIELD%CUNITS     = 'm s-1'
+      TZFIELD%CDIR       = 'XY'
+      TZFIELD%NGRID      = 4
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%NDIMS      = 3
+      TZFIELD%LTIMEDEP   = .TRUE.
+      CALL IO_Field_read(TPINIFILE,TZFIELD,PWMEANW)
+      !
+    ENDIF  
+    IF (LRECYCLN) THEN
+      TZFIELD%CMNHNAME   = 'URECYCLN'
+      TZFIELD%CLONGNAME  = 'URECYCLN'
+      TZFIELD%CSTDNAME   = ''
+      TZFIELD%CUNITS     = 'm s-1'
+      TZFIELD%CDIR       = 'XY'
+      TZFIELD%NGRID      = 2
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%NDIMS      = 3
+      TZFIELD%LTIMEDEP   = .TRUE.
+      CALL IO_Field_read(TPINIFILE,TZFIELD,PUMEANN)
+      !
+      TZFIELD%CMNHNAME   = 'VRECYCLN'
+      TZFIELD%CLONGNAME  = 'VRECYCLN'
+      TZFIELD%CSTDNAME   = ''
+      TZFIELD%CUNITS     = 'm s-1'
+      TZFIELD%CDIR       = 'XY'
+      TZFIELD%NGRID      = 3
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%NDIMS      = 3
+      TZFIELD%LTIMEDEP   = .TRUE.
+      CALL IO_Field_read(TPINIFILE,TZFIELD,PVMEANN)
+      !
+      TZFIELD%CMNHNAME   = 'WRECYCLN'
+      TZFIELD%CLONGNAME  = 'WRECYCLN'
+      TZFIELD%CSTDNAME   = ''
+      TZFIELD%CUNITS     = 'm s-1'
+      TZFIELD%CDIR       = 'XY'
+      TZFIELD%NGRID      = 4
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%NDIMS      = 3
+      TZFIELD%LTIMEDEP   = .TRUE.
+      CALL IO_Field_read(TPINIFILE,TZFIELD,PWMEANN)
+      !
+    ENDIF
+    IF (LRECYCLE) THEN  
+      TZFIELD%CMNHNAME   = 'URECYCLE'
+      TZFIELD%CLONGNAME  = 'URECYCLE'
+      TZFIELD%CSTDNAME   = ''
+      TZFIELD%CUNITS     = 'm s-1'
+      TZFIELD%CDIR       = 'XY'
+      TZFIELD%NGRID      = 2
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%NDIMS      = 3
+      TZFIELD%LTIMEDEP   = .TRUE.
+      CALL IO_Field_read(TPINIFILE,TZFIELD,PUMEANE)
+      !
+      TZFIELD%CMNHNAME   = 'VRECYCLE'
+      TZFIELD%CLONGNAME  = 'VRECYCLE'
+      TZFIELD%CSTDNAME   = ''
+      TZFIELD%CUNITS     = 'm s-1'
+      TZFIELD%CDIR       = 'XY'
+      TZFIELD%NGRID      = 3
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%NDIMS      = 3
+      TZFIELD%LTIMEDEP   = .TRUE.
+      CALL IO_Field_read(TPINIFILE,TZFIELD,PVMEANE)
+      !
+      TZFIELD%CMNHNAME   = 'WRECYCLE'
+      TZFIELD%CLONGNAME  = 'WRECYCLE'
+      TZFIELD%CSTDNAME   = ''
+      TZFIELD%CUNITS     = 'm s-1'
+      TZFIELD%CDIR       = 'XY'
+      TZFIELD%NGRID      = 4
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%NDIMS      = 3
+      TZFIELD%LTIMEDEP   = .TRUE.
+      CALL IO_Field_read(TPINIFILE,TZFIELD,PWMEANE)
+      !
+    ENDIF  
+    IF (LRECYCLS) THEN
+      TZFIELD%CMNHNAME   = 'URECYCLS'
+      TZFIELD%CLONGNAME  = 'URECYCLS'
+      TZFIELD%CSTDNAME   = ''
+      TZFIELD%CUNITS     = 'm s-1'
+      TZFIELD%CDIR       = 'XY'
+      TZFIELD%NGRID      = 2
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%NDIMS      = 3
+      TZFIELD%LTIMEDEP   = .TRUE.
+      CALL IO_Field_read(TPINIFILE,TZFIELD,PUMEANS)
+      !
+      TZFIELD%CMNHNAME   = 'VRECYCLS'
+      TZFIELD%CLONGNAME  = 'VRECYCLS'
+      TZFIELD%CSTDNAME   = ''
+      TZFIELD%CUNITS     = 'm s-1'
+      TZFIELD%CDIR       = 'XY'
+      TZFIELD%NGRID      = 3
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%NDIMS      = 3
+      TZFIELD%LTIMEDEP   = .TRUE.
+      CALL IO_Field_read(TPINIFILE,TZFIELD,PVMEANS)
+      !
+      TZFIELD%CMNHNAME   = 'WRECYCLS'
+      TZFIELD%CLONGNAME  = 'WRECYCLS'
+      TZFIELD%CSTDNAME   = ''
+      TZFIELD%CUNITS     = 'm s-1'
+      TZFIELD%CDIR       = 'XY'
+      TZFIELD%NGRID      = 4
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%NDIMS      = 3
+      TZFIELD%LTIMEDEP   = .TRUE.
+      CALL IO_Field_read(TPINIFILE,TZFIELD,PWMEANS)
+    ENDIF
+  ENDIF  
+ENDIF
+!
 !  Scalar Variables Reading : Users, C2R2, C1R3, LIMA, ELEC, Chemical SV
 !
 ISV= SIZE(PSVT,4)
@@ -724,6 +947,11 @@ DO JSV = NSV_LIMA_BEG,NSV_LIMA_END
 ! Hom. freez. of CCN
     IF (JSV .EQ. NSV_LIMA_HOM_HAZE) THEN
       TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(5))//'T'
+    END IF
+!
+! Super saturation      
+    IF (JSV .EQ. NSV_LIMA_SPRO) THEN
+      TZFIELD%CMNHNAME   = TRIM(CLIMA_WARM_NAMES(5))//'T'
     END IF
 !
     TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
@@ -1318,6 +1546,66 @@ END SELECT
 !*       2.4   READ FORCING VARIABLES
 !              ----------------------
 !
+! READ FIELD ONLY FOR MODEL1 (identical for all model in GN)
+IF (LOCEAN .AND. (.NOT.LCOUPLES) .AND. (KOCEMI==1)) THEN
+!
+ CALL IO_Field_read(TPINIFILE,'NFRCLT',NFRCLT)
+ CALL IO_Field_read(TPINIFILE,'NINFRT',NINFRT)
+!
+ TZFIELD%CMNHNAME   = 'SSUFL_T'
+ TZFIELD%CSTDNAME   = ''
+ TZFIELD%CLONGNAME  = 'SSUFL'
+ TZFIELD%CUNITS     = 'kg m-1 s-1'
+ TZFIELD%CDIR       = '--'
+ TZFIELD%CCOMMENT   = 'sfc stress along U to force ocean LES '
+ TZFIELD%NGRID      = 0
+ TZFIELD%NTYPE      = TYPEREAL
+ TZFIELD%NDIMS      = 1
+ TZFIELD%LTIMEDEP   = .FALSE.
+ ALLOCATE(XSSUFL_T(NFRCLT))
+  CALL IO_Field_read(TPINIFILE,TZFIELD,XSSUFL_T(:))
+!
+ TZFIELD%CMNHNAME   = 'SSVFL_T'
+ TZFIELD%CSTDNAME   = ''
+ TZFIELD%CLONGNAME  = 'SSVFL'
+ TZFIELD%CUNITS     = 'kg m-1 s-1'
+ TZFIELD%CDIR       = '--'
+ TZFIELD%CCOMMENT   = 'sfc stress along V to force ocean LES '
+ TZFIELD%NGRID      = 0
+ TZFIELD%NTYPE      = TYPEREAL
+ TZFIELD%NDIMS      = 1
+ TZFIELD%LTIMEDEP   = .FALSE.
+ALLOCATE(XSSVFL_T(NFRCLT))
+  CALL IO_Field_read(TPINIFILE,TZFIELD,XSSVFL_T(:))
+!
+ TZFIELD%CMNHNAME   = 'SSTFL_T'
+ TZFIELD%CSTDNAME   = ''
+ TZFIELD%CLONGNAME  = 'SSTFL'
+ TZFIELD%CUNITS     = 'kg m3 K m s-1'
+ TZFIELD%CDIR       = '--'
+ TZFIELD%CCOMMENT   = 'sfc total heat flux to force ocean LES '
+ TZFIELD%NGRID      = 0
+ TZFIELD%NTYPE      = TYPEREAL
+ TZFIELD%NDIMS      = 1
+ TZFIELD%LTIMEDEP   = .FALSE.
+ ALLOCATE(XSSTFL_T(NFRCLT))
+  CALL IO_Field_read(TPINIFILE,TZFIELD,XSSTFL_T(:))
+! 
+ TZFIELD%CMNHNAME   = 'SSOLA_T'
+ TZFIELD%CSTDNAME   = ''
+ TZFIELD%CLONGNAME  = 'SSOLA'
+ TZFIELD%CUNITS     = 'kg m3 K m s-1'
+ TZFIELD%CDIR       = '--'
+ TZFIELD%CCOMMENT   = 'sfc solar flux at sfc to force ocean LES '
+ TZFIELD%NGRID      = 0
+ TZFIELD%NTYPE      = TYPEREAL
+ TZFIELD%NDIMS      = 1
+ TZFIELD%LTIMEDEP   = .FALSE.
+ ALLOCATE(XSSOLA_T(NFRCLT))
+  CALL IO_Field_read(TPINIFILE,TZFIELD,XSSOLA_T(:))
+!
+END IF ! ocean sfc forcing end    
+
 !
 IF ( LFORCING ) THEN
   DO JT=1,KFRC
@@ -1666,4 +1954,3 @@ END IF
 ! 
 !
 END SUBROUTINE READ_FIELD
-

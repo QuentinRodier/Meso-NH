@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -110,6 +110,7 @@ END MODULE MODI_QLAP
 !!                     06/12 V.Masson : update_halo due to CONTRAV changes
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1  
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!  F. Auguste       02/21: add IBM
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -125,6 +126,9 @@ USE MODI_GRADIENT_M
 USE MODI_SHUMAN
 !
 USE MODE_MPPDB
+!
+USE MODD_IBM_PARAM_n, ONLY: XIBM_LS, LIBM, XIBM_SU
+USE MODI_IBM_BALANCE
 !
 IMPLICIT NONE
 !
@@ -160,7 +164,7 @@ INTEGER                          :: IIU,IJU,IKU         ! I,J,K array sizes
 INTEGER                          :: JK,JJ,JI            ! vertical loop index
 TYPE(LIST_ll), POINTER :: TZFIELDS_ll   ! list of fields to exchange
 INTEGER :: IINFO_ll
-INTEGER :: IIB,IIE,IJB,IJE
+INTEGER :: IIB,IIE,IJB,IJE,IKB,IKE
 !-------------------------------------------------------------------------------
 !
 !
@@ -170,6 +174,8 @@ INTEGER :: IIB,IIE,IJB,IJE
 CALL GET_DIM_EXT_ll('B',IIU,IJU)
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKU=SIZE(PY,3)
+IKE = IKU - JPVEXT
+IKB =   1 + JPVEXT
 !
 ZU = GX_M_U(1,IKU,1,PY,PDXX,PDZZ,PDZX)
 CALL MPPDB_CHECK3D(ZU,'QLAP::ZU',PRECISION)
@@ -257,7 +263,26 @@ CALL ADD3DFIELD_ll( TZFIELDS_ll, ZW, 'QLAP::ZW' )
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZFIELDS_ll)
 !
-CALL GDIV(HLBCX,HLBCY,PDXX,PDYY,PDZX,PDZY,PDZZ,ZU,ZV,ZW,PQLAP)    
+CALL GDIV(HLBCX,HLBCY,PDXX,PDYY,PDZX,PDZY,PDZZ,ZU,ZV,ZW,PQLAP)
+!
+IF (LIBM)  THEN
+   !
+   CALL IBM_BALANCE(XIBM_LS,XIBM_SU,ZU,ZV,ZW,PQLAP)
+   !
+   PQLAP(:,:,IKB-1) = PQLAP(:,:,IKB-1)*XIBM_SU(:,:,IKB,1)
+   PQLAP(:,:,IKE+1) = PQLAP(:,:,IKE+1)*XIBM_SU(:,:,IKE,1)
+   !
+   IF ( HLBCX(1) /= 'CYCL' ) THEN
+      IF(LWEST_ll()) PQLAP(IIB-1,:,:) = PQLAP(IIB-1,:,:)*XIBM_SU(IIB,:,:,1)
+      IF(LEAST_ll()) PQLAP(IIE+1,:,:) = PQLAP(IIE+1,:,:)*XIBM_SU(IIE,:,:,1)
+   ENDIF
+   !
+   IF ( HLBCY(1) /= 'CYCL' ) THEN
+      IF (LSOUTH_ll()) PQLAP(:,IJB-1,:) = PQLAP(:,IJB-1,:)*XIBM_SU(:,IJB,:,1)
+      IF (LNORTH_ll()) PQLAP(:,IJE+1,:) = PQLAP(:,IJE+1,:)*XIBM_SU(:,IJE,:,1)
+   ENDIF
+   !
+ENDIF
 !
 !-------------------------------------------------------------------------------
 !

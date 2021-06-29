@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2013-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -13,7 +13,8 @@ INTERFACE
                                       PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,   &
                                       PCCT, PCIT, PINT,                           &
                                       P_TH_HIND, P_RI_HIND, P_CI_HIND,            &
-                                      P_TH_HINC, P_RC_HINC, P_CC_HINC             )
+                                      P_TH_HINC, P_RC_HINC, P_CC_HINC,            &
+                                      PICEFR                                      )
 !
 REAL,                     INTENT(IN)    :: PTSTEP
 !
@@ -40,6 +41,8 @@ REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: P_TH_HINC
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: P_RC_HINC
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: P_CC_HINC
 !
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PICEFR
+!
 END SUBROUTINE LIMA_MEYERS_NUCLEATION
 END INTERFACE
 END MODULE MODI_LIMA_MEYERS_NUCLEATION
@@ -50,7 +53,8 @@ END MODULE MODI_LIMA_MEYERS_NUCLEATION
                                       PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,   &
                                       PCCT, PCIT, PINT,                           &
                                       P_TH_HIND, P_RI_HIND, P_CI_HIND,            &
-                                      P_TH_HINC, P_RC_HINC, P_CC_HINC             )
+                                      P_TH_HINC, P_RC_HINC, P_CC_HINC,            &
+                                      PICEFR                                      )
 !     #############################################################################
 !!
 !!    PURPOSE
@@ -112,6 +116,8 @@ REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: P_CI_HIND
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: P_TH_HINC
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: P_RC_HINC
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: P_CC_HINC
+!
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PICEFR
 !
 !
 !*       0.2   Declarations of local variables :

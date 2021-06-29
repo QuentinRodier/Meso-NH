@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -194,8 +194,12 @@ XLEN2_n  = XLEN2
 !
 IF (CPROGRAM=='REAL  ') THEN
   IF (ASSOCIATED (XZHAT) ) DEALLOCATE(XZHAT)
-  CALL POSNAM(IPRE_REAL1,'NAM_BLANKn',GFOUND,ILUOUT0)
-  IF (GFOUND) READ(UNIT=IPRE_REAL1,NML=NAM_BLANKn)
+  CALL POSNAM(IPRE_REAL1,'NAM_BLANKN',GFOUND,ILUOUT0)
+  IF (GFOUND) THEN
+    CALL INIT_NAM_BLANKn
+    READ(UNIT=IPRE_REAL1,NML=NAM_BLANKn)
+    CALL UPDATE_NAM_BLANKn
+  END IF
 END IF 
 !
 IKB=JPVEXT+1

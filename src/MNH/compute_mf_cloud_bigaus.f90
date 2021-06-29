@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2011-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ######spl
      MODULE MODI_COMPUTE_MF_CLOUD_BIGAUS
 !    ###################################
@@ -9,7 +10,7 @@
 INTERFACE
 !     #################################################################
       SUBROUTINE COMPUTE_MF_CLOUD_BIGAUS(KKA, KKB, KKE, KKU, KKL,&
-                                  PRC_UP, PRI_UP, PEMF, PDEPTH,&
+                                  PEMF, PDEPTH,&
                                   PRT_UP, PTHV_UP, PFRAC_ICE_UP, PRSAT_UP,&
                                   PRTM, PTHM, PTHVM,&
                                   PDZZ, PZZ, PRHODREF,&
@@ -24,7 +25,7 @@ INTEGER,                INTENT(IN)   :: KKB          ! near ground physical inde
 INTEGER,                INTENT(IN)   :: KKE          ! uppest atmosphere physical index
 INTEGER,                INTENT(IN)   :: KKU          ! uppest atmosphere array index
 INTEGER,                INTENT(IN)   :: KKL                     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
-REAL, DIMENSION(:,:),   INTENT(IN)   :: PRC_UP,PRI_UP,PEMF      ! updraft characteritics
+REAL, DIMENSION(:,:),   INTENT(IN)   :: PEMF                    ! updraft characteritics
 REAL, DIMENSION(:),     INTENT(IN)   :: PDEPTH                  ! Deepness of cloud
 REAL, DIMENSION(:,:),   INTENT(IN)   :: PTHV_UP, PRSAT_UP, PRT_UP ! updraft characteritics
 REAL, DIMENSION(:,:),   INTENT(IN)   :: PFRAC_ICE_UP            ! liquid/ice fraction in updraft
@@ -40,8 +41,8 @@ END INTERFACE
 !
 END MODULE MODI_COMPUTE_MF_CLOUD_BIGAUS
 !     ######spl
-      SUBROUTINE COMPUTE_MF_CLOUD_BIGAUS(KKA, KKB, KKE, KKU,KKL,&
-                                  PRC_UP, PRI_UP, PEMF, PDEPTH,&
+      SUBROUTINE COMPUTE_MF_CLOUD_BIGAUS(KKA, KKB, KKE, KKU, KKL,&
+                                  PEMF, PDEPTH,&
                                   PRT_UP, PTHV_UP, PFRAC_ICE_UP, PRSAT_UP,&
                                   PRTM, PTHM, PTHVM,&
                                   PDZZ, PZZ, PRHODREF,&
@@ -83,6 +84,7 @@ END MODULE MODI_COMPUTE_MF_CLOUD_BIGAUS
 !!    -------------
 !!      Original 25 Aug 2011
 !!      S. Riette Jan 2012: support for both order of vertical levels
+!!      S. Riette Jun 2019: remove unused PRC_UP and PRI_UP, use SIGN in ERFC computation
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -105,7 +107,7 @@ INTEGER,                INTENT(IN)   :: KKB          ! near ground physical inde
 INTEGER,                INTENT(IN)   :: KKE          ! uppest atmosphere physical index
 INTEGER,                INTENT(IN)   :: KKU          ! uppest atmosphere array index
 INTEGER,                INTENT(IN)   :: KKL                     ! +1 if grid goes from ground to atmosphere top, -1 otherwise
-REAL, DIMENSION(:,:),   INTENT(IN)   :: PRC_UP,PRI_UP,PEMF      ! updraft characteritics
+REAL, DIMENSION(:,:),   INTENT(IN)   :: PEMF                    ! updraft characteritics
 REAL, DIMENSION(:),     INTENT(IN)   :: PDEPTH                  ! Deepness of cloud
 REAL, DIMENSION(:,:),   INTENT(IN)   :: PTHV_UP, PRSAT_UP, PRT_UP ! updraft characteritics
 REAL, DIMENSION(:,:),   INTENT(IN)   :: PFRAC_ICE_UP            ! liquid/ice fraction in updraft
@@ -125,8 +127,7 @@ REAL, DIMENSION(SIZE(PTHM,1))              :: ZOMEGA_UP_M              !
 REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2)) :: ZW1 ! working array
 INTEGER                                    :: JK  ! vertical loop control
 REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2)) :: ZEMF_M, ZTHV_UP_M, &   !
-                                            & ZRSAT_UP_M, ZRC_UP_M,& ! Interpolation on mass points
-                                            & ZRI_UP_M, ZRT_UP_M,&   !
+                                            & ZRSAT_UP_M, ZRT_UP_M,& ! Interpolation on mass points
                                             & ZFRAC_ICE_UP_M         !
 REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2)) :: ZCOND ! condensate
 REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2)) :: ZA, ZGAM ! used for integration
@@ -146,8 +147,6 @@ ZGRAD_Z_RT(:,:)=MZF_MF(KKA,KKU,KKL, ZW1(:,:))
 !Interpolation on mass points
 ZTHV_UP_M(:,:) = MZF_MF(KKA,KKU,KKL, PTHV_UP(:,:))
 ZRSAT_UP_M(:,:)= MZF_MF(KKA,KKU,KKL, PRSAT_UP(:,:))
-ZRC_UP_M(:,:)  = MZF_MF(KKA,KKU,KKL, PRC_UP(:,:))
-ZRI_UP_M(:,:)  = MZF_MF(KKA,KKU,KKL, PRI_UP(:,:))
 ZRT_UP_M(:,:)  = MZF_MF(KKA,KKU,KKL, PRT_UP(:,:))
 ZEMF_M(:,:)    = MZF_MF(KKA,KKU,KKL, PEMF(:,:))
 ZFRAC_ICE_UP_M(:,:) = MZF_MF(KKA,KKU,KKL, PFRAC_ICE_UP(:,:))
@@ -194,25 +193,8 @@ ZSIGMF(:,:)=SQRT(MAX(ABS(ZSIGMF(:,:)), 1.E-40))
 !Computation of ZA and ZGAM (=efrc(ZA)) coefficient
 ZA(:,:)=(ZRSAT_UP_M(:,:)-ZRT_UP_M(:,:))/(sqrt(2.)*ZSIGMF(:,:))
 
-!erf computed by an incomplete gamma function approximation
-!DO JK=KKA,KKU,KKL
-!  DO JI=1, SIZE(PCF_MF,1)
-!    IF(ZA(JI,JK)>1E-20) THEN
-!      ZGAM(JI,JK)=1-GAMMA_INC(0.5,ZA(JI,JK)**2)
-!    ELSEIF(ZA(JI,JK)<-1E-20) THEN
-!      ZGAM(JI,JK)=1+GAMMA_INC(0.5,ZA(JI,JK)**2)
-!    ELSE
-!      ZGAM(JI,JK)=1
-!    ENDIF
-!  ENDDO
-!ENDDO
-
-!alternative approximation of erf function (better for vectorisation)
-WHERE(ZA(:,:)>0)
-  ZGAM(:,:)=1-SQRT(1-EXP(-4*ZA(:,:)**2/XPI))
-ELSEWHERE
-  ZGAM(:,:)=1+SQRT(1-EXP(-4*ZA(:,:)**2/XPI))
-ENDWHERE
+!Approximation of erf function
+ZGAM(:,:)=1-SIGN(1., ZA(:,:))*SQRT(1-EXP(-4*ZA(:,:)**2/XPI))
 
 !computation of cloud fraction
 PCF_MF(:,:)=MAX( 0., MIN(1.,0.5*ZGAM(:,:) * ZALPHA_UP_M(:,:)))

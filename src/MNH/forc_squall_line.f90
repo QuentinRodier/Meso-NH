@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2008-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2008-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -55,11 +55,11 @@ END MODULE MODI_FORC_SQUALL_LINE
 !              ------------
 !
 USE MODD_PARAMETERS
-USE MODD_BLANK_n, ONLY : XDUMMY1,    & ! cooling rate (K/s)
-                       XDUMMY2,    & ! vertical size of the disturbance
-                       XDUMMY3,    & ! horizontal size of the disturbance
-                       XDUMMY4,    & ! left border of the disturbance
-                       XDUMMY5       ! duration (s) of the disturbance
+USE MODD_BLANK_n,    ONLY: XDUMMY1,    & ! cooling rate (K/s)
+                           XDUMMY2,    & ! vertical size of the disturbance
+                           XDUMMY3,    & ! horizontal size of the disturbance
+                           XDUMMY4,    & ! left border of the disturbance
+                           XDUMMY5       ! duration (s) of the disturbance
 !
 IMPLICIT NONE
 !

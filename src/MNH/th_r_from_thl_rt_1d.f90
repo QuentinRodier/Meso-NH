@@ -1,3 +1,8 @@
+!MNH_LIC Copyright 2006-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+!MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ######spl
       MODULE MODI_TH_R_FROM_THL_RT_1D
 !     ###############################
@@ -67,7 +72,8 @@ REAL, DIMENSION(:), INTENT(OUT)  :: PRSATI ! estimated mixing ration at saturati
 !          ------------
 !
 USE MODI_COMPUTE_FRAC_ICE
-USE MODD_CST !, ONLY: XP00, XRD, XCPD, XCPV, XCL, XCI, XLVTT, XTT, XLSTT
+USE MODD_CST
+USE MODD_DYN_n, ONLY : LOCEAN
 USE MODE_THERMO
 !
 IMPLICIT NONE
@@ -131,8 +137,11 @@ PTH(:)=PTHL(:)+ZLVOCPEXN(:)*PRL(:)+ZLSOCPEXN(:)*PRI(:)
 !         ---------
 
 DO II=1,JITER
-  ZT(:)=PTH(:)*ZEXN(:)
-
+  IF (LOCEAN) THEN
+    ZT=PTH                  
+  ELSE
+    ZT(:)=PTH(:)*ZEXN(:)
+  END IF
   !Computation of liquid/ice fractions
   PFRAC_ICE(:) = 0.
   WHERE(PRL(:)+PRI(:) > 1.E-20)

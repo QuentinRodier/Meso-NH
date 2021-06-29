@@ -1,10 +1,11 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 MODULE MODI_ICE4_RIMLTC
 INTERFACE
-SUBROUTINE ICE4_RIMLTC(KSIZE, LDSOFT, LDCOMPUTE, &
+SUBROUTINE ICE4_RIMLTC(KSIZE, LDSOFT, PCOMPUTE, &
                        &PEXN, PLVFACT, PLSFACT, &
                        &PT, &
                        &PTHT, PRIT, &
@@ -12,7 +13,7 @@ SUBROUTINE ICE4_RIMLTC(KSIZE, LDSOFT, LDCOMPUTE, &
 IMPLICIT NONE
 INTEGER, INTENT(IN) :: KSIZE
 LOGICAL,                  INTENT(IN)    :: LDSOFT
-LOGICAL, DIMENSION(KSIZE),INTENT(IN)    :: LDCOMPUTE
+REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PCOMPUTE
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PEXN     ! Exner function
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLVFACT  ! L_v/(Pi_ref*C_ph)
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLSFACT  ! L_s/(Pi_ref*C_ph)
@@ -26,7 +27,7 @@ REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PB_RI
 END SUBROUTINE ICE4_RIMLTC
 END INTERFACE
 END MODULE MODI_ICE4_RIMLTC
-SUBROUTINE ICE4_RIMLTC(KSIZE, LDSOFT, LDCOMPUTE, &
+SUBROUTINE ICE4_RIMLTC(KSIZE, LDSOFT, PCOMPUTE, &
                        &PEXN, PLVFACT, PLSFACT, &
                        &PT, &
                        &PTHT, PRIT, &
@@ -57,7 +58,7 @@ IMPLICIT NONE
 !
 INTEGER,                      INTENT(IN)    :: KSIZE
 LOGICAL,                      INTENT(IN)    :: LDSOFT
-LOGICAL, DIMENSION(KSIZE),    INTENT(IN)    :: LDCOMPUTE
+REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PCOMPUTE
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PEXN     ! Exner function
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLVFACT  ! L_v/(Pi_ref*C_ph)
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PLSFACT  ! L_s/(Pi_ref*C_ph)
@@ -71,7 +72,8 @@ REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PB_RI
 !
 !*       0.2  declaration of local variables
 !
-LOGICAL, DIMENSION(KSIZE) :: GMASK
+REAL, DIMENSION(KSIZE) :: ZMASK
+INTEGER :: JL
 !
 !-------------------------------------------------------------------------------
 !
@@ -79,21 +81,25 @@ LOGICAL, DIMENSION(KSIZE) :: GMASK
 !
 PRIMLTC_MR(:)=0.
 IF(.NOT. LDSOFT) THEN
-  GMASK(:)=PRIT(:)>0. .AND. PT(:)>XTT .AND. LDCOMPUTE(:)
-  WHERE(GMASK(:))
-    PRIMLTC_MR(:)=PRIT(:)
-  END WHERE
+  DO JL=1, KSIZE
+    ZMASK(JL)=MAX(0., -SIGN(1., -PRIT(JL))) * & ! PRIT(:)>0.
+             &MAX(0., -SIGN(1., XTT-PT(JL))) * & ! PT(:)>XTT
+             &PCOMPUTE(JL)
+    PRIMLTC_MR(JL)=PRIT(JL) * ZMASK(JL)
+  ENDDO
 
   IF(LFEEDBACKT) THEN
     !Limitation due to 0 crossing of temperature
-    WHERE(GMASK(:))
-      PRIMLTC_MR(:)=MIN(PRIMLTC_MR(:), MAX(0., (PTHT(:)-XTT/PEXN(:)) / (PLSFACT(:)-PLVFACT(:))))
-    END WHERE
+    DO JL=1, KSIZE
+      PRIMLTC_MR(JL)=MIN(PRIMLTC_MR(JL), MAX(0., (PTHT(JL)-XTT/PEXN(JL)) / (PLSFACT(JL)-PLVFACT(JL))))
+    ENDDO
   ENDIF
 ENDIF
-PB_RC(:) = PB_RC(:) + PRIMLTC_MR(:)
-PB_RI(:) = PB_RI(:) - PRIMLTC_MR(:)
-PB_TH(:) = PB_TH(:) - PRIMLTC_MR(:)*(PLSFACT(:)-PLVFACT(:))
+DO JL=1, KSIZE
+  PB_RC(JL) = PB_RC(JL) + PRIMLTC_MR(JL)
+  PB_RI(JL) = PB_RI(JL) - PRIMLTC_MR(JL)
+  PB_TH(JL) = PB_TH(JL) - PRIMLTC_MR(JL)*(PLSFACT(JL)-PLVFACT(JL))
+ENDDO
 !
 !
 END SUBROUTINE ICE4_RIMLTC

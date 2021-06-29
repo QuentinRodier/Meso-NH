@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -6,13 +6,14 @@
 MODULE MODI_ICE4_TENDENCIES
 INTERFACE
 SUBROUTINE ICE4_TENDENCIES(KSIZE, KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKL, &
-                          &KRR, ODSOFT, ODCOMPUTE, &
-                          &OWARM, HSUBG_RC_RR_ACCR, HSUBG_RR_EVAP, HSUBG_AUCV_RC, HSUBG_PR_PDF, &
+                          &KRR, ODSOFT, PCOMPUTE, &
+                          &OWARM, HSUBG_RC_RR_ACCR, HSUBG_RR_EVAP, &
+                          &HSUBG_AUCV_RC, HSUBG_AUCV_RI, HSUBG_PR_PDF, &
                           &PEXN, PRHODREF, PLVFACT, PLSFACT, K1, K2, K3, &
                           &PPRES, PCF, PSIGMA_RC, &
                           &PCIT, &
                           &PT, PTHT, &
-                          &PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PRHT, PRRT3D, &
+                          &PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PRHT, &
                           &PRVHENI_MR, PRRHONG_MR, PRIMLTC_MR, PRSRIMCG_MR, &
                           &PRCHONI, PRVDEPS, PRIAGGS, PRIAUTS, PRVDEPG, &
                           &PRCAUTR, PRCACCR, PRREVAV, &
@@ -22,19 +23,21 @@ SUBROUTINE ICE4_TENDENCIES(KSIZE, KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, K
                           &PRCWETH, PRIWETH, PRSWETH, PRGWETH, PRRWETH, &
                           &PRCDRYH, PRIDRYH, PRSDRYH, PRRDRYH, PRGDRYH, PRDRYHG, PRHMLTR, &
                           &PRCBERI, &
-                          &PRS_TEND, PRG_TEND, PRH_TEND, &
+                          &PRS_TEND, PRG_TEND, PRH_TEND, PSSI, &
                           &PA_TH, PA_RV, PA_RC, PA_RR, PA_RI, PA_RS, PA_RG, PA_RH, &
                           &PB_TH, PB_RV, PB_RC, PB_RR, PB_RI, PB_RS, PB_RG, PB_RH, &
-                          &PHLC_HCF, PHLC_LCF, PHLC_HRC, PHLC_LRC, PRAINFR)
+                          &PHLC_HCF, PHLC_LCF, PHLC_HRC, PHLC_LRC, &
+                          &PHLI_HCF, PHLI_LCF, PHLI_HRI, PHLI_LRI, PRAINFR)
 IMPLICIT NONE
 INTEGER,                      INTENT(IN)    :: KSIZE, KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKL
 INTEGER,                      INTENT(IN)    :: KRR
 LOGICAL,                      INTENT(IN)    :: ODSOFT
-LOGICAL, DIMENSION(KSIZE),    INTENT(IN)    :: ODCOMPUTE
+REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PCOMPUTE
 LOGICAL,                      INTENT(IN)    :: OWARM
 CHARACTER(len=80),            INTENT(IN)    :: HSUBG_RC_RR_ACCR
 CHARACTER(len=80),            INTENT(IN)    :: HSUBG_RR_EVAP
 CHARACTER(len=4),             INTENT(IN)    :: HSUBG_AUCV_RC
+CHARACTER(len=80),            INTENT(IN)    :: HSUBG_AUCV_RI
 CHARACTER(len=80),            INTENT(IN)    :: HSUBG_PR_PDF ! pdf for subgrid precipitation
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PEXN
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRHODREF
@@ -56,7 +59,6 @@ REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRIT
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRST
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRGT
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRHT
-REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)    :: PRRT3D
 REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRVHENI_MR
 REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRRHONG_MR
 REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRIMLTC_MR
@@ -104,9 +106,10 @@ REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRGDRYH
 REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRDRYHG
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRHMLTR
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRCBERI
-REAL, DIMENSION(KSIZE, 6),    INTENT(INOUT) :: PRS_TEND
-REAL, DIMENSION(KSIZE, 6),    INTENT(INOUT) :: PRG_TEND
-REAL, DIMENSION(KSIZE, 8),    INTENT(INOUT) :: PRH_TEND
+REAL, DIMENSION(KSIZE, 8),    INTENT(INOUT) :: PRS_TEND
+REAL, DIMENSION(KSIZE, 8),    INTENT(INOUT) :: PRG_TEND
+REAL, DIMENSION(KSIZE, 10),   INTENT(INOUT) :: PRH_TEND
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PSSI
 REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PA_TH
 REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PA_RV
 REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PA_RC
@@ -127,18 +130,23 @@ REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PHLC_HCF
 REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PHLC_LCF
 REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PHLC_HRC
 REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PHLC_LRC
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PHLI_HCF
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PHLI_LCF
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PHLI_HRI
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PHLI_LRI
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(OUT)   :: PRAINFR   ! Rain fraction
 END SUBROUTINE ICE4_TENDENCIES
 END INTERFACE
 END MODULE MODI_ICE4_TENDENCIES
 SUBROUTINE ICE4_TENDENCIES(KSIZE, KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKL, &
-                          &KRR, ODSOFT, ODCOMPUTE, &
-                          &OWARM, HSUBG_RC_RR_ACCR, HSUBG_RR_EVAP, HSUBG_AUCV_RC, HSUBG_PR_PDF, &
+                          &KRR, ODSOFT, PCOMPUTE, &
+                          &OWARM, HSUBG_RC_RR_ACCR, HSUBG_RR_EVAP, &
+                          &HSUBG_AUCV_RC, HSUBG_AUCV_RI, HSUBG_PR_PDF, &
                           &PEXN, PRHODREF, PLVFACT, PLSFACT, K1, K2, K3, &
                           &PPRES, PCF, PSIGMA_RC, &
                           &PCIT, &
                           &PT, PTHT, &
-                          &PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PRHT, PRRT3D, &
+                          &PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PRHT, &
                           &PRVHENI_MR, PRRHONG_MR, PRIMLTC_MR, PRSRIMCG_MR, &
                           &PRCHONI, PRVDEPS, PRIAGGS, PRIAUTS, PRVDEPG, &
                           &PRCAUTR, PRCACCR, PRREVAV, &
@@ -148,10 +156,11 @@ SUBROUTINE ICE4_TENDENCIES(KSIZE, KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, K
                           &PRCWETH, PRIWETH, PRSWETH, PRGWETH, PRRWETH, &
                           &PRCDRYH, PRIDRYH, PRSDRYH, PRRDRYH, PRGDRYH, PRDRYHG, PRHMLTR, &
                           &PRCBERI, &
-                          &PRS_TEND, PRG_TEND, PRH_TEND, &
+                          &PRS_TEND, PRG_TEND, PRH_TEND, PSSI, &
                           &PA_TH, PA_RV, PA_RC, PA_RR, PA_RI, PA_RS, PA_RG, PA_RH, &
                           &PB_TH, PB_RV, PB_RC, PB_RR, PB_RI, PB_RS, PB_RG, PB_RH, &
-                          &PHLC_HCF, PHLC_LCF, PHLC_HRC, PHLC_LRC, PRAINFR)
+                          &PHLC_HCF, PHLC_LCF, PHLC_HRC, PHLC_LRC, &
+                          &PHLI_HCF, PHLI_LCF, PHLI_HRI, PHLI_LRI, PRAINFR)
 !!
 !!**  PURPOSE
 !!    -------
@@ -170,7 +179,8 @@ SUBROUTINE ICE4_TENDENCIES(KSIZE, KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, K
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_CST,            ONLY: XALPI,XBETAI,XCI,XCPV,XGAMI,XLSTT,XMD,XMV,XP00,XRV,XTT
+USE MODD_CST,            ONLY: XALPI,XBETAI,XCI,XCPV,XEPSILO,XGAMI,XLSTT,XMD,XMV,XP00,XRV,XTT
+USE MODD_PARAM_ICE,      ONLY: CSNOWRIMING
 USE MODD_RAIN_ICE_DESCR, ONLY: XLBDAS_MAX,XLBEXG,XLBEXH,XLBEXR,XLBEXS,XLBG,XLBH,XLBR,XLBS,XRTMIN
 USE MODD_RAIN_ICE_PARAM, ONLY: XSCFAC
 !
@@ -194,11 +204,12 @@ IMPLICIT NONE
 INTEGER,                      INTENT(IN)    :: KSIZE, KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKL
 INTEGER,                      INTENT(IN)    :: KRR
 LOGICAL,                      INTENT(IN)    :: ODSOFT
-LOGICAL, DIMENSION(KSIZE),    INTENT(IN)    :: ODCOMPUTE
+REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PCOMPUTE
 LOGICAL,                      INTENT(IN)    :: OWARM
 CHARACTER(len=80),            INTENT(IN)    :: HSUBG_RC_RR_ACCR
 CHARACTER(len=80),            INTENT(IN)    :: HSUBG_RR_EVAP
 CHARACTER(len=4),             INTENT(IN)    :: HSUBG_AUCV_RC
+CHARACTER(len=80),            INTENT(IN)    :: HSUBG_AUCV_RI
 CHARACTER(len=80),            INTENT(IN)    :: HSUBG_PR_PDF ! pdf for subgrid precipitation
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PEXN
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRHODREF
@@ -209,6 +220,7 @@ INTEGER, DIMENSION(KSIZE),    INTENT(IN)    :: K2
 INTEGER, DIMENSION(KSIZE),    INTENT(IN)    :: K3
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PPRES
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PCF
+REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PSIGMA_RC
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PCIT
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PT
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PTHT
@@ -219,8 +231,6 @@ REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRIT
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRST
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRGT
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRHT
-REAL, DIMENSION(KIT,KJT,KKT), INTENT(IN)    :: PRRT3D
-REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PSIGMA_RC
 REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRVHENI_MR
 REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRRHONG_MR
 REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRIMLTC_MR
@@ -268,9 +278,10 @@ REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRGDRYH
 REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PRDRYHG
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRHMLTR
 REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PRCBERI
-REAL, DIMENSION(KSIZE, 6),    INTENT(INOUT) :: PRS_TEND
-REAL, DIMENSION(KSIZE, 6),    INTENT(INOUT) :: PRG_TEND
-REAL, DIMENSION(KSIZE, 8),    INTENT(INOUT) :: PRH_TEND
+REAL, DIMENSION(KSIZE, 8),    INTENT(INOUT) :: PRS_TEND
+REAL, DIMENSION(KSIZE, 8),    INTENT(INOUT) :: PRG_TEND
+REAL, DIMENSION(KSIZE, 10),   INTENT(INOUT) :: PRH_TEND
+REAL, DIMENSION(KSIZE),       INTENT(OUT) :: PSSI
 REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PA_TH
 REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PA_RV
 REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PA_RC
@@ -291,20 +302,24 @@ REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PHLC_HCF
 REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PHLC_LCF
 REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PHLC_HRC
 REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PHLC_LRC
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PHLI_HCF
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PHLI_LCF
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PHLI_HRI
+REAL, DIMENSION(KSIZE),       INTENT(OUT)   :: PHLI_LRI
 REAL, DIMENSION(KIT,KJT,KKT), INTENT(OUT)   :: PRAINFR   ! Rain fraction
 !
 !*       0.2  declaration of local variables
 !
 REAL, DIMENSION(KSIZE) :: ZRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT, &
-                        & ZT, ZTHT, &
+                        & ZT, ZTHT, ZRHT, &
                         & ZZW, &
-                        & ZSSI, ZKA, ZDV, ZAI, ZCJ, &
+                        & ZKA, ZDV, ZAI, ZCJ, &
                         & ZRF, &
                         & ZLBDAR, ZLBDAS, ZLBDAG, ZLBDAH, ZLBDAR_RF, &
                         & ZRGSI, ZRGSI_MR
-REAL, DIMENSION(KIT,KJT,KKT) :: ZRRT3D
+REAL, DIMENSION(KIT,KJT,KKT) :: ZRRT3D, ZRST3D, ZRGT3D, ZRHT3D
 INTEGER :: JL
-LOGICAL, DIMENSION(KSIZE) :: LLWETG
+REAL, DIMENSION(KSIZE) :: ZWETG ! 1. if graupel growths in wet mode, 0. otherwise
 
 PA_TH(:)=0.
 PA_RV(:)=0.
@@ -323,93 +338,134 @@ PB_RS(:)=0.
 PB_RG(:)=0.
 PB_RH(:)=0.
 !
-ZRVT(:)=PRVT(:)
-ZRCT(:)=PRCT(:)
-ZRRT(:)=PRRT(:)
-ZRIT(:)=PRIT(:)
-ZRST(:)=PRST(:)
-ZRGT(:)=PRGT(:)
-ZTHT(:)=PTHT(:)
-ZT(:)=PT(:)
-!
-!*       2.     COMPUTES THE SLOW COLD PROCESS SOURCES
-!               --------------------------------------
-CALL ICE4_NUCLEATION(KSIZE, ODSOFT, ODCOMPUTE, &
-                     ZTHT, PPRES, PRHODREF, PEXN, PLSFACT, ZT, &
-                     ZRVT, &
-                     PCIT, PRVHENI_MR, PB_TH, PB_RV, PB_RI)
-ZRIT(:)=ZRIT(:) + PRVHENI_MR(:)
-ZRVT(:)=ZRVT(:) - PRVHENI_MR(:)
-ZTHT(:)=ZTHT(:) + PRVHENI_MR(:)*PLSFACT(:)
-ZT(:) = ZTHT(:) * PEXN(:)
-!
-!*       3.3     compute the spontaneous freezing source: RRHONG
-!
-CALL ICE4_RRHONG(KSIZE, ODSOFT, ODCOMPUTE, &
-                &PEXN, PLVFACT, PLSFACT, &
-                &ZT,   ZRRT, &
-                &ZTHT, &
-                &PRRHONG_MR, PB_TH, PB_RR, PB_RG)
-ZRGT(:) = ZRGT(:) + PRRHONG_MR(:)
-ZRRT(:) = ZRRT(:) - PRRHONG_MR(:)
-ZTHT(:) = ZTHT(:) + PRRHONG_MR(:)*(PLSFACT(:)-PLVFACT(:)) ! f(L_f*(RRHONG))
-ZT(:) = ZTHT(:) * PEXN(:)
-!
-!*       7.1    cloud ice melting
-!
-CALL ICE4_RIMLTC(KSIZE, ODSOFT, ODCOMPUTE, &
-                &PEXN, PLVFACT, PLSFACT, &
-                &ZT, &
-                &ZTHT, ZRIT, &
-                &PRIMLTC_MR, PB_TH, PB_RC, PB_RI)
-ZRCT(:) = ZRCT(:) + PRIMLTC_MR(:)
-ZRIT(:) = ZRIT(:) - PRIMLTC_MR(:)
-ZTHT(:) = ZTHT(:) - PRIMLTC_MR(:)*(PLSFACT(:)-PLVFACT(:)) ! f(L_f*(-RIMLTC))
-ZT(:) = ZTHT(:) * PEXN(:)
-!
-!        5.1.6  riming-conversion of the large sized aggregates into graupel (old parametrisation)
-!
-ZLBDAS(:)=0.
-WHERE(ZRST(:)>0.)
-  ZLBDAS(:)  = MIN(XLBDAS_MAX, XLBS*(PRHODREF(:)*MAX(ZRST(:), XRTMIN(5)))**XLBEXS)
-END WHERE
-CALL ICE4_RSRIMCG_OLD(KSIZE, ODSOFT, ODCOMPUTE, &
-                     &PRHODREF, &
-                     &ZLBDAS, &
-                     &ZT, ZRCT, ZRST, &
-                     &PRSRIMCG_MR, PB_RS, PB_RG)
-ZRST(:) = ZRST(:) - PRSRIMCG_MR(:)
-ZRGT(:) = ZRGT(:) + PRSRIMCG_MR(:)
+DO JL=1, KSIZE
+  ZRVT(JL)=PRVT(JL)
+  ZRCT(JL)=PRCT(JL)
+  ZRRT(JL)=PRRT(JL)
+  ZRIT(JL)=PRIT(JL)
+  ZRST(JL)=PRST(JL)
+  ZRGT(JL)=PRGT(JL)
+  ZTHT(JL)=PTHT(JL)
+  ZRHT(JL)=PRHT(JL)
+  ZT(JL)=PT(JL)
+ENDDO
+IF(ODSOFT) THEN
+  PRVHENI_MR(:)=0.
+  PRRHONG_MR(:)=0.
+  PRIMLTC_MR(:)=0.
+  PRSRIMCG_MR(:)=0.
+ELSE
+  !
+  !*       2.     COMPUTES THE SLOW COLD PROCESS SOURCES
+  !               --------------------------------------
+  CALL ICE4_NUCLEATION(KSIZE, ODSOFT, PCOMPUTE==1., &
+                       ZTHT, PPRES, PRHODREF, PEXN, PLSFACT, ZT, &
+                       ZRVT, &
+                       PCIT, PRVHENI_MR, PB_TH, PB_RV, PB_RI)
+  DO JL=1, KSIZE
+    ZRIT(JL)=ZRIT(JL) + PRVHENI_MR(JL)
+    ZRVT(JL)=ZRVT(JL) - PRVHENI_MR(JL)
+    ZTHT(JL)=ZTHT(JL) + PRVHENI_MR(JL)*PLSFACT(JL)
+    ZT(JL) = ZTHT(JL) * PEXN(JL)
+  ENDDO
+  !
+  !*       3.3     compute the spontaneous freezing source: RRHONG
+  !
+  CALL ICE4_RRHONG(KSIZE, ODSOFT, PCOMPUTE, &
+                  &PEXN, PLVFACT, PLSFACT, &
+                  &ZT,   ZRRT, &
+                  &ZTHT, &
+                  &PRRHONG_MR, PB_TH, PB_RR, PB_RG)
+  DO JL=1, KSIZE
+    ZRGT(JL) = ZRGT(JL) + PRRHONG_MR(JL)
+    ZRRT(JL) = ZRRT(JL) - PRRHONG_MR(JL)
+    ZTHT(JL) = ZTHT(JL) + PRRHONG_MR(JL)*(PLSFACT(JL)-PLVFACT(JL)) ! f(L_f*(RRHONG))
+    ZT(JL) = ZTHT(JL) * PEXN(JL)
+  ENDDO
+  !
+  !*       7.1    cloud ice melting
+  !
+  CALL ICE4_RIMLTC(KSIZE, ODSOFT, PCOMPUTE, &
+                  &PEXN, PLVFACT, PLSFACT, &
+                  &ZT, &
+                  &ZTHT, ZRIT, &
+                  &PRIMLTC_MR, PB_TH, PB_RC, PB_RI)
+  DO JL=1, KSIZE
+    ZRCT(JL) = ZRCT(JL) + PRIMLTC_MR(JL)
+    ZRIT(JL) = ZRIT(JL) - PRIMLTC_MR(JL)
+    ZTHT(JL) = ZTHT(JL) - PRIMLTC_MR(JL)*(PLSFACT(JL)-PLVFACT(JL)) ! f(L_f*(-RIMLTC))
+    ZT(JL) = ZTHT(JL) * PEXN(JL)
+  ENDDO
+  !
+  !        5.1.6  riming-conversion of the large sized aggregates into graupel (old parametrisation)
+  !
+  IF(CSNOWRIMING=='OLD ') THEN
+    ZLBDAS(:)=0.
+    WHERE(ZRST(:)>0.)
+      ZLBDAS(:)  = MIN(XLBDAS_MAX, XLBS*(PRHODREF(:)*MAX(ZRST(:), XRTMIN(5)))**XLBEXS)
+    END WHERE
+    CALL ICE4_RSRIMCG_OLD(KSIZE, ODSOFT, PCOMPUTE==1., &
+                         &PRHODREF, &
+                         &ZLBDAS, &
+                         &ZT, ZRCT, ZRST, &
+                         &PRSRIMCG_MR, PB_RS, PB_RG)
+    DO JL=1, KSIZE
+      ZRST(JL) = ZRST(JL) - PRSRIMCG_MR(JL)
+      ZRGT(JL) = ZRGT(JL) + PRSRIMCG_MR(JL)
+    ENDDO
+  ELSE
+    PRSRIMCG_MR(:) = 0.
+  ENDIF
+ENDIF
 !
 !* Derived fields
 !
 IF(KSIZE>0) THEN
-  ZZW(:) = EXP(XALPI-XBETAI/ZT(:)-XGAMI*ALOG(ZT(:)))
-  DO JL=1, KSIZE
-    ZSSI(JL) = ZRVT(JL)*( PPRES(JL)-ZZW(JL) ) / ( (XMV/XMD) * ZZW(JL) ) - 1.0
-                                                      ! Supersaturation over ice
-    ZKA(JL) = 2.38E-2 + 0.0071E-2*(ZT(JL)-XTT) ! k_a
-    ZDV(JL) = 0.211E-4*(ZT(JL)/XTT)**1.94 * (XP00/PPRES(JL)) ! D_v
-    ZAI(JL) = (XLSTT+(XCPV-XCI)*(ZT(JL)-XTT))**2 / (ZKA(JL)*XRV*ZT(JL)**2) &
-                                 + ( XRV*ZT(JL) ) / (ZDV(JL)*ZZW(JL))
-    ZCJ(JL) = XSCFAC*PRHODREF(JL)**0.3 / SQRT(1.718E-5+0.0049E-5*(ZT(JL)-XTT))
-  ENDDO
+  IF(.NOT. ODSOFT) THEN
+    ZZW(:) = EXP(XALPI-XBETAI/ZT(:)-XGAMI*ALOG(ZT(:)))
+    DO JL=1, KSIZE
+      PSSI(JL) = ZRVT(JL)*( PPRES(JL)-ZZW(JL) ) / ( XEPSILO * ZZW(JL) ) - 1.0
+                                                        ! Supersaturation over ice
+      ZKA(JL) = 2.38E-2 + 0.0071E-2*(ZT(JL)-XTT) ! k_a
+      ZDV(JL) = 0.211E-4*(ZT(JL)/XTT)**1.94 * (XP00/PPRES(JL)) ! D_v
+      ZAI(JL) = (XLSTT+(XCPV-XCI)*(ZT(JL)-XTT))**2 / (ZKA(JL)*XRV*ZT(JL)**2) &
+                                   + ( XRV*ZT(JL) ) / (ZDV(JL)*ZZW(JL))
+      ZCJ(JL) = XSCFAC*PRHODREF(JL)**0.3 / SQRT(1.718E-5+0.0049E-5*(ZT(JL)-XTT))
+    ENDDO
+  ENDIF
   !
   !Cloud water split between high and low content part is done here
-  CALL ICE4_COMPUTE_PDF(KSIZE, HSUBG_AUCV_RC, HSUBG_PR_PDF,&
-                        PRHODREF, ZRCT, PCF, PSIGMA_RC,&
-                        PHLC_HCF, PHLC_LCF, PHLC_HRC, PHLC_LRC, ZRF)
-  !Diagnostic of precipitation fraction
-  PRAINFR(:,:,:) = 0.
-  ZRRT3D (:,:,:) = PRRT3D(:,:,:)
-  DO JL=1,KSIZE
-    PRAINFR(K1(JL), K2(JL), K3(JL)) = ZRF(JL)
-    ZRRT3D (K1(JL), K2(JL), K3(JL)) = ZRRT3D(K1(JL), K2(JL), K3(JL)) - PRRHONG_MR(JL)
-  END DO
-  CALL ICE4_RAINFR_VERT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKL, PRAINFR(:,:,:), ZRRT3D(:,:,:))
-  DO JL=1,KSIZE
-    ZRF(JL)=PRAINFR(K1(JL), K2(JL), K3(JL))
-  END DO
+  CALL ICE4_COMPUTE_PDF(KSIZE, HSUBG_AUCV_RC, HSUBG_AUCV_RI, HSUBG_PR_PDF,&
+                        PRHODREF, ZRCT, ZRIT, PCF, ZT, PSIGMA_RC,&
+                        PHLC_HCF, PHLC_LCF, PHLC_HRC, PHLC_LRC,&
+                        PHLI_HCF, PHLI_LCF, PHLI_HRI, PHLI_LRI, ZRF)
+  IF(HSUBG_RC_RR_ACCR=='PRFR' .OR. HSUBG_RR_EVAP=='PRFR') THEN
+    !Diagnostic of precipitation fraction
+    PRAINFR(:,:,:) = 0.
+    ZRRT3D (:,:,:) = 0.
+    ZRST3D (:,:,:) = 0.
+    ZRGT3D (:,:,:) = 0.
+    ZRHT3D (:,:,:) = 0.
+    DO JL=1,KSIZE
+      PRAINFR(K1(JL), K2(JL), K3(JL)) = ZRF(JL)
+      ZRRT3D (K1(JL), K2(JL), K3(JL)) = ZRRT(JL)
+      ZRST3D (K1(JL), K2(JL), K3(JL)) = ZRST(JL)
+      ZRGT3D (K1(JL), K2(JL), K3(JL)) = ZRGT(JL)
+    END DO
+    IF (KRR==7) THEN
+      DO JL=1,KSIZE    
+        ZRHT3D (K1(JL), K2(JL), K3(JL)) = ZRHT(JL)
+      ENDDO
+    ENDIF
+    CALL ICE4_RAINFR_VERT(KIB, KIE, KIT, KJB, KJE, KJT, KKB, KKE, KKT, KKL, PRAINFR(:,:,:), ZRRT3D(:,:,:), &
+                         &ZRST3D(:,:,:), ZRGT3D(:,:,:), ZRHT3D(:,:,:))
+    DO JL=1,KSIZE
+      ZRF(JL)=PRAINFR(K1(JL), K2(JL), K3(JL))
+    END DO
+  ELSE
+    PRAINFR(:,:,:)=1.
+    ZRF(:)=1.
+  ENDIF
   !
   !*  compute the slope parameters
   !
@@ -427,10 +483,14 @@ IF(KSIZE>0) THEN
     ZLBDAR(:)  = XLBR*( PRHODREF(:)*MAX( ZRRT(:), XRTMIN(3)))**XLBEXR
   END WHERE
   !ZLBDAR_RF is used when we consider rain concentrated in its fraction
-  ZLBDAR_RF(:)=0.
-  WHERE(ZRRT(:)>0. .AND. ZRF(:)>0.)
-    ZLBDAR_RF(:) = XLBR*( PRHODREF(:) *MAX( ZRRT(:)/ZRF(:) , XRTMIN(3)))**XLBEXR
-  END WHERE
+  IF (HSUBG_RC_RR_ACCR=='PRFR' .OR. HSUBG_RR_EVAP=='PRFR') THEN
+    ZLBDAR_RF(:)=0.
+    WHERE(ZRRT(:)>0. .AND. ZRF(:)>0.)
+      ZLBDAR_RF(:) = XLBR*( PRHODREF(:) *MAX( ZRRT(:)/ZRF(:) , XRTMIN(3)))**XLBEXR
+    END WHERE
+  ELSE
+    ZLBDAR_RF(:) = ZLBDAR(:)
+  ENDIF
   IF(KRR==7) THEN
     ZLBDAH(:)=0.
     WHERE(PRHT(:)>0.)
@@ -440,11 +500,11 @@ IF(KSIZE>0) THEN
 ENDIF
 !
 !
-CALL ICE4_SLOW(KSIZE, ODSOFT, ODCOMPUTE, PRHODREF, ZT, &
-              &ZSSI, PLVFACT, PLSFACT, &
+CALL ICE4_SLOW(KSIZE, ODSOFT, PCOMPUTE, PRHODREF, ZT, &
+              &PSSI, PLVFACT, PLSFACT, &
               &ZRVT, ZRCT, ZRIT, ZRST, ZRGT, &
               &ZLBDAS, ZLBDAG, &
-              &ZAI, ZCJ, &
+              &ZAI, ZCJ, PHLI_HCF, PHLI_HRI, &
               &PRCHONI, PRVDEPS, PRIAGGS, PRIAUTS, PRVDEPG, &
               &PA_TH, PA_RV, PA_RC, PA_RI, PA_RS, PA_RG)
 !
@@ -457,7 +517,7 @@ CALL ICE4_SLOW(KSIZE, ODSOFT, ODCOMPUTE, PRHODREF, ZT, &
 !
 IF(OWARM) THEN    !  Check if the formation of the raindrops by the slow
                   !  warm processes is allowed
-  CALL ICE4_WARM(KSIZE, ODSOFT, ODCOMPUTE, HSUBG_RC_RR_ACCR, HSUBG_RR_EVAP, &
+  CALL ICE4_WARM(KSIZE, ODSOFT, PCOMPUTE, HSUBG_RC_RR_ACCR, HSUBG_RR_EVAP, &
                 &PRHODREF, PLVFACT, ZT, PPRES, ZTHT,&
                 &ZLBDAR, ZLBDAR_RF, ZKA, ZDV, ZCJ, &
                 &PHLC_LCF, PHLC_HCF, PHLC_LRC, PHLC_HRC, &
@@ -477,7 +537,7 @@ END IF
 !*       4.     COMPUTES THE FAST COLD PROCESS SOURCES FOR r_s
 !               ----------------------------------------------
 !
-CALL ICE4_FAST_RS(KSIZE, ODSOFT, ODCOMPUTE, &
+CALL ICE4_FAST_RS(KSIZE, ODSOFT, PCOMPUTE, &
                  &PRHODREF, PLVFACT, PLSFACT, PPRES, &
                  &ZDV, ZKA, ZCJ, &
                  &ZLBDAR, ZLBDAS, &
@@ -495,15 +555,18 @@ CALL ICE4_FAST_RS(KSIZE, ODSOFT, ODCOMPUTE, &
 !*       5.        COMPUTES THE FAST COLD PROCESS SOURCES FOR r_g
 !                  ------------------------------------------------------
 !
-ZRGSI(:) = PRVDEPG(:) + PRSMLTG(:) + PRRACCSG(:) + PRSACCRG(:) + PRCRIMSG(:) + PRSRIMCG(:)
-ZRGSI_MR(:) = PRRHONG_MR(:) + PRSRIMCG_MR(:)
-CALL ICE4_FAST_RG(KSIZE, ODSOFT, ODCOMPUTE, KRR, &
+DO JL=1, KSIZE
+  ZRGSI(JL) = PRVDEPG(JL) + PRSMLTG(JL) + PRRACCSG(JL) + &
+           & PRSACCRG(JL) + PRCRIMSG(JL) + PRSRIMCG(JL)
+  ZRGSI_MR(JL) = PRRHONG_MR(JL) + PRSRIMCG_MR(JL)
+ENDDO
+CALL ICE4_FAST_RG(KSIZE, ODSOFT, PCOMPUTE, KRR, &
                  &PRHODREF, PLVFACT, PLSFACT, PPRES, &
                  &ZDV, ZKA, ZCJ, PCIT, &
                  &ZLBDAR, ZLBDAS, ZLBDAG, &
                  &ZT, ZRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT, &
                  &ZRGSI, ZRGSI_MR(:), &
-                 &LLWETG, &
+                 &ZWETG, &
                  &PRICFRRG, PRRCFRIG, PRICFRR, PRCWETG, PRIWETG, PRRWETG, PRSWETG, &
                  &PRCDRYG, PRIDRYG, PRRDRYG, PRSDRYG, PRWETGH, PRWETGH_MR, PRGMLTR, &
                  &PRG_TEND, &
@@ -516,7 +579,7 @@ CALL ICE4_FAST_RG(KSIZE, ODSOFT, ODCOMPUTE, KRR, &
 !               ----------------------------------------------
 !
 IF (KRR==7) THEN
-  CALL ICE4_FAST_RH(KSIZE, ODSOFT, ODCOMPUTE, LLWETG, &
+  CALL ICE4_FAST_RH(KSIZE, ODSOFT, PCOMPUTE, ZWETG, &
                    &PRHODREF, PLVFACT, PLSFACT, PPRES, &
                    &ZDV, ZKA, ZCJ, &
                    &ZLBDAS, ZLBDAG, ZLBDAR, ZLBDAH, &
@@ -546,10 +609,10 @@ END IF
 !*       7.     COMPUTES SPECIFIC SOURCES OF THE WARM AND COLD CLOUDY SPECIES
 !               -------------------------------------------------------------
 !
-CALL ICE4_FAST_RI(KSIZE, ODSOFT, ODCOMPUTE, &
+CALL ICE4_FAST_RI(KSIZE, ODSOFT, PCOMPUTE, &
                  &PRHODREF, PLVFACT, PLSFACT, &
                  &ZAI, ZCJ, PCIT, &
-                 &ZSSI, &
+                 &PSSI, &
                  &ZRCT, ZRIT, &
                  &PRCBERI, PA_TH, PA_RC, PA_RI)
 !

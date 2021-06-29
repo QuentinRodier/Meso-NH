@@ -81,7 +81,7 @@ USE MODD_LG,              ONLY: CLGNAMES
 USE MODD_LUNIT
 USE MODD_NSV
 USE MODD_PARAMETERS
-USE MODD_PARAM_n,         ONLY: CRAD
+USE MODD_PARAM_n,         ONLY: CRAD, CSURF
 USE MODD_PASPOL
 USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
 USE MODD_SALT,            ONLY: CSALTNAMES, LSALT, NMODE_SLT
@@ -157,15 +157,19 @@ type(tfield_metadata_base), dimension(:), allocatable :: tzfields
 IF (TSTATION%X(II)==XUNDEF) RETURN
 IF (TSTATION%Y(II)==XUNDEF) RETURN
 !
-IPROC = 8 + SIZE(TSTATION%R,3) + SIZE(TSTATION%SV,3) 
+IPROC = 6 + SIZE(TSTATION%R,3) + SIZE(TSTATION%SV,3)
 
+IF (TSTATION%X(II)==XUNDEF) IPROC = IPROC + 2
 IF (SIZE(TSTATION%TKE  )>0) IPROC = IPROC + 1
-IF (LDIAG_IN_RUN) IPROC = IPROC + 17
+IF (LDIAG_IN_RUN) THEN
+  IF(CSURF=="EXTE") IPROC = IPROC + 10
+  IF(CRAD/="NONE")  IPROC = IPROC + 7
+END IF
 IF (LORILAM) IPROC = IPROC + JPMODE*(3+NSOA+NCARB+NSP)
 IF (LDUST) IPROC = IPROC + NMODE_DST*3
 IF (LSALT) IPROC = IPROC + NMODE_SLT*3
-IF (SIZE(TSTATION%TSRAD)>0) IPROC = IPROC + 1
-IF (SIZE(TSTATION%SFCO2,1)>0) IPROC = IPROC +1
+IF (ANY(TSTATION%TSRAD(:,:)/=XUNDEF))  IPROC = IPROC + 1
+IF (ANY(TSTATION%SFCO2(:,:)/=XUNDEF))  IPROC = IPROC + 1
 !
 ALLOCATE (ZWORK6(1,1,1,SIZE(tstation%tpdates),1,IPROC))
 ALLOCATE (YCOMMENT(IPROC))
@@ -187,21 +191,15 @@ ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%ZS(II)
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'P'
-YUNIT    (JPROC) = 'Pascal'
+YUNIT    (JPROC) = 'Pa'
 YCOMMENT (JPROC) = 'Pressure' 
 ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%P(:,II)
 !
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'LON'
-YUNIT    (JPROC) = 'degree'
-YCOMMENT (JPROC) = 'Longitude'
-ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%LON(II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'LAT'
-YUNIT    (JPROC) = 'degree'
-YCOMMENT (JPROC) = 'Latitude'
-ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%LAT(II)
+!JPROC = JPROC + 1
+!YTITLE   (JPROC) = 'Z'
+!YUNIT    (JPROC) = 'm'
+!YCOMMENT (JPROC) = 'Z Pos'
+!ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%Z(II)
 !
 IF (LCARTESIAN) THEN
   JPROC = JPROC + 1
@@ -215,19 +213,43 @@ IF (LCARTESIAN) THEN
   YUNIT    (JPROC) = 'm'
   YCOMMENT (JPROC) = 'Y Pos'
   ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%Y(II)
+  !
+  JPROC = JPROC + 1
+  YTITLE   (JPROC) = 'U'
+  YUNIT    (JPROC) = 'm s-1'
+  YCOMMENT (JPROC) = 'Axial velocity'
+  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%ZON(:,II)
+  !
+  JPROC = JPROC + 1
+  YTITLE   (JPROC) = 'V'
+  YUNIT    (JPROC) = 'm s-1'
+  YCOMMENT (JPROC) = 'Transversal velocity'
+  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%MER(:,II)
+ELSE
+  JPROC = JPROC + 1
+  YTITLE   (JPROC) = 'LON'
+  YUNIT    (JPROC) = 'degree'
+  YCOMMENT (JPROC) = 'Longitude'
+  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%LON(II)
+  !
+  JPROC = JPROC + 1
+  YTITLE   (JPROC) = 'LAT'
+  YUNIT    (JPROC) = 'degree'
+  YCOMMENT (JPROC) = 'Latitude'
+  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%LAT(II)
+  !
+  JPROC = JPROC + 1
+  YTITLE   (JPROC) = 'ZON_WIND'
+  YUNIT    (JPROC) = 'm s-1'
+  YCOMMENT (JPROC) = 'Zonal wind'
+  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%ZON(:,II)
+  !
+  JPROC = JPROC + 1
+  YTITLE   (JPROC) = 'MER_WIND'
+  YUNIT    (JPROC) = 'm s-1'
+  YCOMMENT (JPROC) = 'Meridional wind'
+  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%MER(:,II)
 ENDIF
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'ZON_WIND'
-YUNIT    (JPROC) = 'm s-1'
-YCOMMENT (JPROC) = 'Zonal wind'
-ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%ZON(:,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'MER_WIND'
-YUNIT    (JPROC) = 'm s-1'
-YCOMMENT (JPROC) = 'Meridional wind'
-ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%MER(:,II)
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'W'
@@ -242,60 +264,67 @@ YCOMMENT (JPROC) = 'Potential temperature'
 ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%TH(:,II)
 !
 IF (LDIAG_IN_RUN) THEN
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'T2m'
-  YUNIT    (JPROC) = 'K'
-  YCOMMENT (JPROC) = '2-m temperature' 
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%T2M(:,II)
-  !
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'Q2m'
-  YUNIT    (JPROC) = 'kg kg-1'
-  YCOMMENT (JPROC) = '2-m humidity' 
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%Q2M(:,II)
-  !
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'HU2m'
-  YUNIT    (JPROC) = 'percent'
-  YCOMMENT (JPROC) = '2-m relative humidity' 
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%HU2M(:,II)
-  !
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'zon10m'
-  YUNIT    (JPROC) = 'm s-1'
-  YCOMMENT (JPROC) = '10-m zonal wind' 
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%ZON10M(:,II)
-  !       
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'mer10m'
-  YUNIT    (JPROC) = 'm s-1'
-  YCOMMENT (JPROC) = '10-m meridian wind' 
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%MER10M(:,II)
-  !
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'RN'  
-  YUNIT    (JPROC) = 'W m-2'
-  YCOMMENT (JPROC) = 'Net radiation'         
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%RN(:,II)
-  !
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'H'   
-  YUNIT    (JPROC) = 'W m-2'
-  YCOMMENT (JPROC) = 'Sensible heat flux'
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%H(:,II)
-  !       
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'LE'  
-  YUNIT    (JPROC) = 'W m-2'
-  YCOMMENT (JPROC) = 'Total Latent heat flux'   
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%LE(:,II)
-!
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'G'    
-  YUNIT    (JPROC) = 'W m-2'
-  YCOMMENT (JPROC) = 'Storage heat flux'     
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%GFLUX(:,II)
-  !
+  IF (CSURF=="EXTE") THEN
+    JPROC = JPROC + 1
+    YTITLE   (JPROC) = 'T2m'
+    YUNIT    (JPROC) = 'K'
+    YCOMMENT (JPROC) = '2-m temperature' 
+    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%T2M(:,II)
+    !
+    JPROC = JPROC + 1
+    YTITLE   (JPROC) = 'Q2m'
+    YUNIT    (JPROC) = 'kg kg-1'
+    YCOMMENT (JPROC) = '2-m humidity' 
+    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%Q2M(:,II)
+    !
+    JPROC = JPROC + 1
+    YTITLE   (JPROC) = 'HU2m'
+    YUNIT    (JPROC) = 'percent'
+    YCOMMENT (JPROC) = '2-m relative humidity' 
+    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%HU2M(:,II)
+    !
+    JPROC = JPROC + 1
+    YTITLE   (JPROC) = 'zon10m'
+    YUNIT    (JPROC) = 'm s-1'
+    YCOMMENT (JPROC) = '10-m zonal wind' 
+    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%ZON10M(:,II)
+    !       
+    JPROC = JPROC + 1
+    YTITLE   (JPROC) = 'mer10m'
+    YUNIT    (JPROC) = 'm s-1'
+    YCOMMENT (JPROC) = '10-m meridian wind' 
+    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%MER10M(:,II)
+    !
+    JPROC = JPROC + 1
+    YTITLE   (JPROC) = 'RN'  
+    YUNIT    (JPROC) = 'W m-2'
+    YCOMMENT (JPROC) = 'Net radiation'         
+    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%RN(:,II)
+    !
+    JPROC = JPROC + 1
+    YTITLE   (JPROC) = 'H'   
+    YUNIT    (JPROC) = 'W m-2'
+    YCOMMENT (JPROC) = 'Sensible heat flux'
+    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%H(:,II)
+    !       
+    JPROC = JPROC + 1
+    YTITLE   (JPROC) = 'LE'  
+    YUNIT    (JPROC) = 'W m-2'
+    YCOMMENT (JPROC) = 'Total Latent heat flux'   
+    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%LE(:,II)
+    !
+    JPROC = JPROC + 1
+    YTITLE   (JPROC) = 'G'    
+    YUNIT    (JPROC) = 'W m-2'
+    YCOMMENT (JPROC) = 'Storage heat flux'     
+    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%GFLUX(:,II)
+    !
+    JPROC = JPROC + 1
+    YTITLE   (JPROC) = 'LEI'  
+    YUNIT    (JPROC) = 'W m-2'
+    YCOMMENT (JPROC) = 'Solid Latent heat flux'   
+    ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%LEI(:,II)
+  END IF
  IF (CRAD /= 'NONE') THEN
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'SWD'   
@@ -340,11 +369,6 @@ IF (LDIAG_IN_RUN) THEN
   ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%DSTAOD(:,II)
   !
  END IF
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'LEI'  
-  YUNIT    (JPROC) = 'W m-2'
-  YCOMMENT (JPROC) = 'Solid Latent heat flux'   
-  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%LEI(:,II)
 ENDIF
 !
 DO JRR=1,SIZE(TSTATION%R,3)
@@ -696,7 +720,7 @@ ENDIF
     DEALLOCATE (ZN0,ZRG,ZSIG) 
   END IF
 
-IF (SIZE(TSTATION%TSRAD,1)>0) THEN
+IF (ANY(TSTATION%TSRAD(:,:)/=XUNDEF)) THEN
   JPROC = JPROC+1
   YTITLE   (JPROC) = 'Tsrad'
   YUNIT    (JPROC) = 'K'
@@ -704,7 +728,7 @@ IF (SIZE(TSTATION%TSRAD,1)>0) THEN
   ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%TSRAD(:,II)
 END IF
 !
-IF (SIZE(TSTATION%SFCO2,1)>0) THEN
+IF (ANY(TSTATION%SFCO2(:,:)/=XUNDEF)) THEN
   JPROC = JPROC+1
   YTITLE   (JPROC) = 'SFCO2'
   YUNIT    (JPROC) = 'mg m-2 s-1'

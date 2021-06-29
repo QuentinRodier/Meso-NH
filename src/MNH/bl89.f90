@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1997-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/bl89.f90,v $ $Revision: 1.1.8.1.2.2.16.1.2.1 $ $Date: 2014/01/09 13:25:02 $
 !-----------------------------------------------------------------
 !     ################
       MODULE MODI_BL89
@@ -72,14 +68,17 @@ END MODULE MODI_BL89
 !!                            reversed vertical levels
 !!  Philippe 13/02/2018: use ifdef MNH_REAL to prevent problems with intrinsics on Blue Gene/Q
 !!                  01/2019 (Q. Rodier) support for RM17 mixing length
+!!                  03/2021 (JL Redelsperger) Ocean model case 
+!!                  06/2021 (P. Marquet) correction of exponent on final length according to Lemarié et al. 2021
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_CONF, ONLY: CPROGRAM 
+USE MODD_CONF,      ONLY: CPROGRAM
 USE MODD_CST
 USE MODD_CTURB
+USE MODD_DYN_n,     ONLY: LOCEAN
 USE MODD_PARAMETERS
 use modd_precision, only: MNHREAL
 !
@@ -136,7 +135,7 @@ INTEGER :: JRR        ! moist loop counter
 REAL    :: ZRVORD     ! Rv/Rd
 REAL    :: ZPOTE,ZLWORK1,ZLWORK2
 REAL    :: ZTEST,ZTEST0,ZTESTM ! test for vectorization
-REAL    :: Z2SQRT2
+REAL    :: Z2SQRT2,ZUSRBL89,ZBL89EXP
 !-------------------------------------------------------------------------------
 !
 Z2SQRT2=2.*SQRT(2.)
@@ -177,6 +176,7 @@ ELSE
     ZSHEAR   (:,JK)   = RESHAPE(PSHEAR  (:,:,JK),(/ IIU*IJU /) )    
     ZTKEM  (:,JK)   = RESHAPE(PTKEM  (:,:,JK),(/ IIU*IJU /) )
     ZG_O_THVREF(:,JK)   = RESHAPE(XG/PTHVREF(:,:,JK),(/ IIU*IJU /) )
+    IF (LOCEAN) ZG_O_THVREF(:,JK)   = XG * XALPHAOC
     DO JRR=1,KRR
       ZRM  (:,JK,JRR) = RESHAPE(PRM    (:,:,JK,JRR),(/ IIU*IJU /) )
     END DO
@@ -184,6 +184,10 @@ ELSE
 END IF
 !
 ZSQRT_TKE = SQRT(ZTKEM)
+!
+!ZBL89EXP is defined here because (and not in ini_cturb) because XCED is defined in read_exseg (depending on BL89/RM17)
+ZBL89EXP = LOG(16.)/(4.*LOG(XKARMAN)+LOG(XCED)-3.*LOG(XCMFS))
+ZUSRBL89 = 1./ZBL89EXP
 !-------------------------------------------------------------------------------
 !
 !*       2.    Virtual potential temperature on the model grid
@@ -351,8 +355,8 @@ DO JK=IKTB,IKTE
     ZLWORK1=MAX(ZLMDN(J1D,JK),1.E-10_MNHREAL)
     ZLWORK2=MAX(ZLWORK(J1D),1.E-10_MNHREAL)
     ZPOTE = ZLWORK1 / ZLWORK2
-    ZLWORK2=1.d0 + ZPOTE**(2./3.)
-    ZLM(J1D,JK) = Z2SQRT2*ZLWORK1/(ZLWORK2*SQRT(ZLWORK2))
+    ZLWORK2=1.d0 + ZPOTE**ZBL89EXP
+    ZLM(J1D,JK) = ZLWORK1*(2./ZLWORK2)**ZUSRBL89
   END DO 
 
 ZLM(:,JK)=MAX(ZLM(:,JK),XLINI)

@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 prep_ideal 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     #########################
       MODULE MODI_DEFAULT_EXPRE
@@ -95,6 +90,7 @@ END MODULE MODI_DEFAULT_EXPRE
 !!      add the uniform soil values                        05/02/96  (J.Stein)
 !!      removes default values for ground variables        26/11/96  (V.Masson)
 !!      add default value for LBOUSS                       11/07/13  (C.Lac)     
+!!      add default value LOCEAN LCOUPLES                    /03/21  (JL Redelsperger)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -103,6 +99,7 @@ USE MODD_CONF           ! declarative modules
 USE MODD_DIM_n
 USE MODD_GRID
 USE MODD_REF
+USE MODD_DYN_n, ONLY : LOCEAN
 !
 IMPLICIT NONE
 !
@@ -140,7 +137,9 @@ XLATORI = 37.
 !*       4.    SET DEFAULT VALUES FOR MODD_REF :
 !              --------------------------------
 !
-LBOUSS = .FALSE.   
+LBOUSS = .FALSE.
+LOCEAN = .FALSE.
+LCOUPLES= .FALSE.
 !
 !-------------------------------------------------------------------------------
 !

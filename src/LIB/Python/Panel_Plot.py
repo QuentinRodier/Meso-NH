@@ -294,10 +294,11 @@ class PanelPlot():
           except:
               pass
           
-        #  Color label on contour-ligne
+        #  Color label on contour-line
         if Lpltype[i]=='c': #  Contour
-          self.ax[iax].clabel(cf, levels=np.arange(Lminval[i],Lmaxval[i],step=Lstep[i]))
-        
+            self.ax[iax].clabel(cf)
+            #self.ax[iax].clabel(cf, levels=np.arange(Lminval[i],Lmaxval[i],step=Lstep[i])) #TODO bug, levels not recognized
+ 
         #Filling area under topography
         if not orog==[]:
           self.ax[iax].fill_between(Lxx[i][0,:], orog, color='black')
@@ -401,7 +402,7 @@ class PanelPlot():
     
     def psectionH(self, lon=[],lat=[], Lvar=[], Lcarte=[], Llevel=[], Lxlab=[], Lylab=[], Ltitle=[], Lminval=[], Lmaxval=[], 
                  Lstep=[], Lstepticks=[], Lcolormap=[], LcolorLine=[], Lcbarlabel=[], Lproj=[], Lfacconv=[], coastLines=True, ax=[], 
-                 Lid_overlap=[], colorbar=True, Ltime=[], LaddWhite_cm=[], Lpltype=[]):
+                 Lid_overlap=[], colorbar=True, Ltime=[], LaddWhite_cm=[], Lpltype=[], Lcbformatlabel=[]):
       """
         Horizontal cross section plot
         Arguments :
@@ -429,6 +430,7 @@ class PanelPlot():
             - colorbar   : show colorbar or not
             - Lpltype      : List of types of plot 'cf' or 'c'. cf=contourf, c=contour (lines only)
             - LaddWhite_cm : List of boolean to add white color to a colormap at the first (low value) tick colorbar
+            - Lcbformatlabel: List of boolean to reduce the format to exponential 1.1E+02 format colorbar label
       """
       self.ax = ax
       firstCall = (len(self.ax) == 0)
@@ -447,6 +449,7 @@ class PanelPlot():
       if not Lcolormap: LcolorLine=['black']*len(Lvar)
       if not Lpltype: Lpltype=['cf']*len(Lvar)
       if not LaddWhite_cm: LaddWhite_cm=[False]*len(Lvar)
+      if not Lcbformatlabel: Lcbformatlabel=[False]*len(Lvar)
       #  Add an extra percentage of the top max value for forcing the colorbar show the true user maximum value (correct a bug)
       if Lstep: Lmaxval = list(map(lambda x, y: x + 1E-6*y, Lmaxval, Lstep) ) #The extra value is 1E-6 times the step ticks of the colorbar
     
@@ -501,22 +504,22 @@ class PanelPlot():
         
         #  Add White to colormap
         if LaddWhite_cm[i] and Lcolormap: Lcolormap[i]=self.addWhitecm(LaddWhite_cm[i], Lcolormap[i], len(levels_contour))
-
+        
         #  Plot
         if Lproj:
           if Lpltype[i]=='c': #  Contour
               if LcolorLine:
-                  cf = self.ax[iax].contourf(lon[i], lat[i], vartoPlot*Lfacconv[i], levels=levels_contour,transform=Lproj[i], 
+                  cf = self.ax[iax].contour(lon[i], lat[i], vartoPlot*Lfacconv[i], levels=levels_contour,transform=Lproj[i], 
                          norm=norm, vmin=Lminval[i], vmax=Lmaxval[i], colors=LcolorLine[i])
               else:
-                  cf = self.ax[iax].contourf(lon[i], lat[i], vartoPlot*Lfacconv[i], levels=levels_contour,transform=Lproj[i], 
+                  cf = self.ax[iax].contour(lon[i], lat[i], vartoPlot*Lfacconv[i], levels=levels_contour,transform=Lproj[i], 
                          norm=norm, vmin=Lminval[i], vmax=Lmaxval[i], cmap=Lcolormap[i])
           else:
             cf = self.ax[iax].contourf(lon[i], lat[i], vartoPlot*Lfacconv[i], levels=levels_contour,transform=Lproj[i], 
                          norm=norm, vmin=Lminval[i], vmax=Lmaxval[i], cmap=Lcolormap[i])
         else: # Cartesian coordinates
           if Lpltype[i]=='c': #  Contour
-            cf = self.ax[iax].contourf(lon[i], lat[i], vartoPlot*Lfacconv[i], levels=levels_contour, 
+            cf = self.ax[iax].contour(lon[i], lat[i], vartoPlot*Lfacconv[i], levels=levels_contour, 
                          norm=norm, vmin=Lminval[i], vmax=Lmaxval[i], colors=LcolorLine[i])
           else:
             cf = self.ax[iax].contourf(lon[i], lat[i], vartoPlot*Lfacconv[i], levels=levels_contour, 
@@ -530,17 +533,20 @@ class PanelPlot():
         #  X/Y Axis
         self.set_XYaxislab(self.ax, iax, Lxlab[i], Lylab[i])
         
-        #  Color label on contour-ligne
+        #  Color label on contour-line
         if Lpltype[i]=='c': #  Contour
-          self.ax[iax].clabel(cf, levels=np.arange(Lminval[i],Lmaxval[i],step=Lstep[i]))
+          if 'GeoAxes' in str(type(self.ax[self.i])): # cartopy does not like the levels arguments in clabel, known issue
+            self.ax[iax].clabel(cf)
+          else:  
+            self.ax[iax].clabel(cf, levels=np.arange(Lminval[i],Lmaxval[i],step=Lstep[i]))
         
         #  Colorbar
         if colorbar:
-          cb=plt.colorbar(cf, ax=self.ax[iax], fraction=0.031, pad=self.colorbarpad, ticks=np.arange(Lminval[i],Lmaxval[i],Lstepticks[i]), aspect=self.colorbaraspect)   
+          cb=plt.colorbar(cf, ax=self.ax[iax], fraction=0.031, pad=self.colorbarpad, ticks=np.arange(Lminval[i],Lmaxval[i],Lstepticks[i]), aspect=self.colorbaraspect) 
           cb.ax.set_title(Lcbarlabel[i], pad = self.labelcolorbarpad, loc='left') #This creates a new AxesSubplot only for the colorbar y=0 ==> location at the bottom
+          if Lcbformatlabel[i]: cb.ax.set_yticklabels(["{:.1E}".format(i) for i in cb.get_ticks()])
         
       return self.fig
-    
     
     def pvector(self, Lxx=[], Lyy=[], Lvar1=[], Lvar2=[], Lcarte=[], Llevel=[], Lxlab=[], Lylab=[], 
                 Ltitle=[], Lwidth=[], Larrowstep=[], Lcolor=[], Llegendval=[], Lcbarlabel=[], 
@@ -656,6 +662,107 @@ class PanelPlot():
            
       return self.fig
 
+    def pstreamline(self, Lxx=[], Lyy=[], Lvar1=[], Lvar2=[], Lcarte=[], Llevel=[], Lxlab=[], Lylab=[], Llinewidth=[], Ldensity=[],
+                Ltitle=[], Lcolor=[], Lproj=[], Lfacconv=[], ax=[], coastLines=True, Lid_overlap=[], Ltime=[],
+                Lylim=[], Lxlim=[]):
+      """
+        Wind stream lines
+        Arguments :
+            - Lxx    : List of x or y coordinate variable (lat or ni or nm)
+            - Lyy    : List of y coordinates variable (lon or level)
+            - Lvar1   : List of wind-component along x/y or oblic axis (3D for hor. section, 2D for vertical section)
+            - Lvar2   : List of wind-component along y-axis : v-component for horizontal section / w-component for vertical section
+            - Lcarte : Zooming [lonmin, lonmax, latmin, latmax]
+            - Llevel : List of k-level value for the horizontal section plot (ignored if variable is already 2D)
+            - Lxlab  : List of x-axis label
+            - Lylab  : List of y-axis label
+            - Lxlim  : List of x (min, max) value plotted
+            - Lylim  : List of y (min, max) value plotted
+            - Ltitle : List of sub-titles
+            - Ltime  : List of time (validity)
+            - Llinewidth : List of lines thickness
+            - Ldensity   : List of density that control the closeness of streamlines
+            - Lcolor : List of colors for the streamline (default: black)
+            - Lproj      : List of ccrs cartopy projection
+            - Lfacconv   : List of factors for unit conversion of each variables
+            - coastLines : Boolean to plot coast lines and grid lines
+            - ax         : List of fig.axes for ploting multiple different types of plots in a subplot panel
+            - Lid_overlap : List of number index of plot to overlap current variables
+      """
+      self.ax = ax
+      firstCall = (len(self.ax) == 0)
+      # If all plots are not using conversion factor, convert it to List
+      if not Lfacconv:  Lfacconv = [1.0]*len(Lvar1)
+      if not Lcolor: Lcolor = ['black']*len(Lvar1)
+      if not Lylab: Lylab = ['']*len(Lvar1)
+      if not Lxlab: Lxlab = ['']*len(Lvar1)
+      if not Llinewidth: Llinewidth = [1.0]*len(Lvar1)
+      if not Ldensity: Ldensity = [1.0]*len(Lvar1)
+      
+      #  On all variables to plot
+      for i,var1 in enumerate(Lvar1):
+        if firstCall: #1st call
+          iax = i
+          if Lproj: 
+            self.ax.append(self.fig.add_subplot(self.nb_l,self.nb_c,i+1, projection = Lproj[i]))
+          else:
+            self.ax.append(self.fig.add_subplot(self.nb_l,self.nb_c,i+1))
+          self.nb_graph+=1
+        elif Lid_overlap != []: #overlapping plot
+          iax = Lid_overlap[i]
+        else: #existing ax with no overlapping (graphd appended to existing panel)
+          if Lproj:  
+            self.ax.append(self.fig.add_subplot(self.nb_l,self.nb_c,self.nb_graph+1, projection = Lproj[i]))
+          else:
+            self.ax.append(self.fig.add_subplot(self.nb_l,self.nb_c,self.nb_graph+1))
+          self.nb_graph+=1
+          iax = len(self.ax)-1 #  The ax index of the new coming plot is the length of the existant ax -1 for indices matter
+          
+        #  Zooming
+        if len(Lcarte) == 4: #zoom
+          self.ax[iax].set_xlim(Lcarte[0], Lcarte[1])
+          self.ax[iax].set_ylim(Lcarte[2], Lcarte[3])
+        
+        #  Variable to plot w.r.t dimensions
+        if var1.ndim==2:
+          vartoPlot1 = var1[:,:]
+          vartoPlot2 = Lvar2[i][:,:]
+        else: #  Variable is 3D : only for horizontal section
+          vartoPlot1 = var1[Llevel[i],:,:]
+          vartoPlot2 = Lvar2[i][Llevel[i],:,:]
+        
+        #  Print min/max val to help choose steps
+        self.set_minmaxText(self.ax, iax, np.sqrt(vartoPlot1**2 + vartoPlot2**2), Ltitle[i], Lid_overlap, Lfacconv[i])
+        
+        #  Print time validity
+        if Ltime: self.showTimeText(self.ax, iax, str(Ltime[i]))
+
+        #  Plot      
+        cf = self.ax[iax].streamplot(Lxx[i], Lyy[i], vartoPlot1, vartoPlot2, density=Ldensity[i], linewidth=Llinewidth[i], color=Lcolor[i])
+        
+        #  Title
+        self.set_Title(self.ax, iax, Ltitle[i], Lid_overlap,Lxlab[i], Lylab[i])
+
+        #  X/Y Axis Label
+        self.set_XYaxislab(self.ax, iax, Lxlab[i], Lylab[i])
+        
+        # X/Y Axis limits value
+        if Lxlim:
+          try:
+            self.set_xlim(self.ax, iax, Lxlim[i])
+          except:
+             pass
+        if Lylim:
+          try:
+            self.set_ylim(self.ax, iax, Lylim[i])
+          except:
+              pass
+        
+        #  Coastlines:
+        if Lproj: self.draw_Backmap(coastLines, self.ax[iax], Lproj[i])
+           
+      return self.fig
+  
     def pXY_bar(self, Lbins=[], Lvar=[], Lxlab=[], Lylab=[], Ltitle=[], Lcolor=[], Lwidth=[],
                  Llinecolor=[], Llinewidth=[], Lfacconv=[], ax=[], id_overlap=None, Lxlim=[], 
                  Lylim=[], Ltime=[], LaxisColor=[]):

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -99,13 +99,7 @@ USE MODE_SET_CONC_LIMA
 !
 USE MODD_NSV,        ONLY : NSV,NSV_CHEM,NSV_C2R2BEG,NSV_C2R2END, &
                             NSV_C1R3BEG,NSV_C1R3END,              &
-                            NSV_LIMA, NSV_LIMA_BEG, NSV_LIMA_END, &
-                            NSV_LIMA_NC, NSV_LIMA_NR,             &
-                            NSV_LIMA_CCN_FREE, NSV_LIMA_CCN_ACTI, &
-                            NSV_LIMA_SCAVMASS,                    &
-                            NSV_LIMA_NI,                          &
-                            NSV_LIMA_IFN_FREE, NSV_LIMA_IFN_NUCL, &
-                            NSV_LIMA_IMM_NUCL, NSV_LIMA_HOM_HAZE
+                            NSV_LIMA_BEG, NSV_LIMA_END
 USE MODD_PARAM_LIMA, ONLY : LSCAV, MSEDC=>LSEDC, MACTIT=>LACTIT, MDEPOC=>LDEPOC
 USE MODD_LIMA_PRECIP_SCAVENGING_n
 !

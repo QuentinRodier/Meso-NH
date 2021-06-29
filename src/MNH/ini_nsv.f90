@@ -69,6 +69,8 @@ END MODULE MODI_INI_NSV
 !  P. Wautelet 10/03/2021: move scalar variable name initializations to ini_nsv
 !  P. Wautelet 10/03/2021: add CSVNAMES and CSVNAMES_A to store the name of all the scalar variables
 !  P. Wautelet 30/03/2021: move NINDICE_CCN_IMM and NIMM initializations from init_aerosol_properties to ini_nsv
+!  B. Vie         06/2021: add prognostic supersaturation for LIMA
+!! 
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -106,7 +108,7 @@ USE MODD_NSV
 USE MODD_PARAM_C2R2,      ONLY: LSUPSAT
 USE MODD_PARAM_LIMA,      ONLY: NINDICE_CCN_IMM, NIMM, NMOD_CCN, LSCAV, LAERO_MASS, &
                                 NMOD_IFN, NMOD_IMM, LHHONI,  &
-                                LWARM, LCOLD, LRAIN
+                                LWARM, LCOLD, LRAIN, LSPRO
 USE MODD_PARAM_LIMA_COLD, ONLY: CLIMA_COLD_NAMES
 USE MODD_PARAM_LIMA_WARM, ONLY: CAERO_MASS, CLIMA_WARM_NAMES
 USE MODD_PARAM_n,         ONLY: CCLOUD, CELEC
@@ -251,6 +253,11 @@ IF (CCLOUD == 'LIMA' ) THEN
 ! Homogeneous freezing of CCN
    IF (LCOLD .AND. LHHONI) THEN
       NSV_LIMA_HOM_HAZE_A(KMI) = ISV
+      ISV = ISV + 1
+   END IF
+! Supersaturation
+   IF (LSPRO) THEN
+      NSV_LIMA_SPRO_A(KMI) = ISV
       ISV = ISV + 1
    END IF
 !
@@ -810,6 +817,8 @@ DO JSV = NSV_LIMA_BEG_A(KMI), NSV_LIMA_END_A(KMI)
     CSVNAMES_A(JSV,KMI) = TRIM( CLIMA_COLD_NAMES(4) ) // YNUM2
   ELSE IF ( JSV == NSV_LIMA_HOM_HAZE_A(KMI) ) THEN
     CSVNAMES_A(JSV,KMI) = TRIM( CLIMA_COLD_NAMES(5) )
+  ELSE IF ( JSV == NSV_LIMA_SPRO_A(KMI) ) THEN
+    CSVNAMES_A(JSV,KMI) = TRIM( CLIMA_WARM_NAMES(5) )
   ELSE
     CALL Print_msg( NVERB_FATAL, 'GEN', 'INI_NSV', 'invalid index for LIMA' )
   END IF

@@ -121,6 +121,7 @@ SUBROUTINE SET_MASS(TPFILE,OPROFILE_IN_PROC, PZFLUX_PROFILE,                    
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!  J-L Redelsperger 06/2021: Ocean case
 !
 !-------------------------------------------------------------------------------
 !!
@@ -135,6 +136,7 @@ USE MODD_CST
 USE MODD_REF
 USE MODD_PARAMETERS
 USE MODD_DIM_n
+USE MODD_DYN_n, ONLY : LOCEAN
 !
 USE MODE_GATHER_ll
 USE MODE_ll
@@ -147,6 +149,8 @@ USE MODI_VER_INT_DYN
 USE MODI_SHUMAN
 USE MODI_COMPUTE_EXNER_FROM_GROUND
 USE MODI_COMPUTE_EXNER_FROM_TOP
+USE MODI_COMPUTE_PRESS_FROM_OCEANSFC
+USE MODI_COMPUTE_PRESS_FROM_OCEANBOT
 USE MODI_SET_GEOSBAL
 USE MODE_REPRO_SUM
 USE MODE_MPPDB
@@ -191,7 +195,10 @@ REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZPMHP_MX      ! pressu
 REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZRHOD_MX      ! local rhod (mass level)
 REAL,DIMENSION(SIZE(XZHAT))                            :: ZRHOD_PROFILE ! local rhod (mass level) at initialization profile column
 REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZPMASS_MX     ! pressure (mass level)
+REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZPFLUX_MX     ! pressure (mass level)
 REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT))                :: ZEXNSURF2D_MX ! local Exner function at ground
+REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT))                :: ZPRESS2D_MX   ! local pressure at ground
+REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT))                :: ZPRESSFC      !  pressure at ocean sfc (ocen model case)
 REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZHEXNFLUX_MX  ! local hyd. Exner function at flux points on the mixed grid
 REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZHEXNMASS_MX  ! local hyd. Exner function at mass points on the mixed grid
 !
@@ -224,6 +231,8 @@ REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZRHODJU        ! horiz
 REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZRHODJV        ! the MESONH Arakawa C grid
 REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZHEXNFLUX      ! local hyd. Exner function at flux points (MNH grid)
 REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZHEXNMASS      ! local hyd. Exner function at mass points (MNH grid)
+REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZPMASS         ! local hyd. pres at mass points (MNH grid)
+REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZPFLUX         ! local hyd. pres at flux points (MNH grid)
 REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZRHOD          ! dry density on MESO-NH grid
 !
 !!$INTEGER                                                :: IIBP,IIEP,IJBP,IJEP
@@ -279,17 +288,35 @@ ENDIF
 !------------------------------
 !* 2.2 compute exner function on mixed grid
 !
-ZEXNSURF2D_MX(:,:)=(PPGROUND/XP00)**(XRD/XCPD)    
-CALL COMPUTE_EXNER_FROM_GROUND(ZTHV3D_MX,PZFLUX_MX,&
-            ZEXNSURF2D_MX,ZHEXNFLUX_MX,ZHEXNMASS_MX)
-ZEXNTOP2D(:,:)=ZHEXNFLUX_MX(:,:,IKE+1)
-ZPMASS_MX(:,:,:)=XP00*(ZHEXNMASS_MX(:,:,:))**(XCPD/XRD)
-ZRHOD_MX(:,:,:)=ZPMASS_MX(:,:,:)/(ZPMASS_MX(:,:,:)/XP00)**(XRD/XCPD) &
+ZEXNSURF2D_MX(:,:)=(PPGROUND/XP00)**(XRD/XCPD)
+!
+IF (LOCEAN)  THEN
+ ZTHVREF3D(:,:,:) = ZTHV3D_MX(:,:,:)
+ ZRHOD_MX(:,:,:)= XRH00OCEAN*(1.-XALPHAOC*(ZTHV3D_MX(:,:,:)-XTH00OCEAN) &
+                               +XBETAOC *(ZMR3D_MX(:,:,:,1)-XSA00OCEAN))
+ ZPRESS2D_MX(:,:)=PPGROUND
+ CALL COMPUTE_PRESS_FROM_OCEANBOT(ZRHOD_MX,PZFLUX_MX,ZPRESS2D_MX,ZPFLUX_MX,ZPMASS_MX)
+ ZHEXNFLUX_MX(:,:,:)=(ZPFLUX_MX(:,:,:)/XP00)**(XRD/XCPD)
+ ZHEXNMASS_MX(:,:,:)=(ZPMASS_MX(:,:,:)/XP00)**(XRD/XCPD)
+ ZEXNTOP2D(:,:)=ZHEXNFLUX_MX(:,:,IKE+1)
+ELSE   
+ CALL COMPUTE_EXNER_FROM_GROUND(ZTHV3D_MX,PZFLUX_MX,&
+              ZEXNSURF2D_MX,ZHEXNFLUX_MX,ZHEXNMASS_MX)
+ ZEXNTOP2D(:,:)=ZHEXNFLUX_MX(:,:,IKE+1)
+ ZPMASS_MX(:,:,:)=XP00*(ZHEXNMASS_MX(:,:,:))**(XCPD/XRD)
+ENDIF
+!
+IF (LOCEAN) THEN
+ IF (LCOUPLES) THEN
+  XEXNTOPO=SUM_DD_R2_ll(ZHEXNFLUX_MX(IIB:IIE,IJB:IJE,IKE+1))/REAL(NIMAX_ll*NJMAX_ll)
+ ELSE
+  XEXNTOP=SUM_DD_R2_ll(ZHEXNFLUX_MX(IIB:IIE,IJB:IJE,IKE+1))/REAL(NIMAX_ll*NJMAX_ll)
+ END IF
+ELSE
+  ZRHOD_MX(:,:,:)=ZPMASS_MX(:,:,:)/(ZPMASS_MX(:,:,:)/XP00)**(XRD/XCPD) &
                  /(XRD*ZTHV3D_MX(:,:,:)*(1.+WATER_SUM(ZMR3D_MX(:,:,:,:))))
-
-XEXNTOP=SUM_DD_R2_ll(ZHEXNFLUX_MX(IIB:IIE,IJB:IJE,IKE+1))/REAL(NIMAX_ll*NJMAX_ll)
-
-
+  XEXNTOP=SUM_DD_R2_ll(ZHEXNFLUX_MX(IIB:IIE,IJB:IJE,IKE+1))/REAL(NIMAX_ll*NJMAX_ll)
+END IF
 !------------------------------
 !*  2.3 Rotate wind in model axis and take into account variations in x,y
 !      directions on the mixed grid
@@ -445,15 +472,17 @@ DEALLOCATE(ZNFLYZ_TOT,ZNFLYZ_TOT_ll)
 !
 
 IF (PRESENT(PCORIOZ)) THEN
+!To be modified later for ocean model case
   CALL SET_GEOSBAL(ZUW3D_FL,ZVW3D_FL,PTHVM,PMRM, &
                     KILOC,KJLOC,OBOUSS,ZTHV3D,PCORIOZ)
   CALL COMPUTE_EXNER_FROM_TOP(ZTHV3D,XZZ,ZEXNTOP2D,ZHEXNFLUX,ZHEXNMASS)
   XPABSM(:,:,:)=XP00*ZHEXNMASS(:,:,:) ** (XCPD/XRD)
 ELSE
-! 
-! Interpolation of theta and r
 !
- IF (SIZE(ZTHV3D_MX,3) > 3) THEN
+!No interpolation for ocean case (no bathimetry)
+! Interpolation of theta and r in atmos case
+!
+  IF (SIZE(ZTHV3D_MX,3) > 3) THEN
   CALL VER_INT_THERMO(TPFILE,OSHIFT,ZTHV3D_MX,ZMR3D_MX,PZS_MX,PZS_MX,PZMASS_MX,&
                       PZFLUX_MX,ZPMHP_MX,ZEXNTOP2D, &
                       ZTHV3D,XRT,ZPMHP,ZDIAG)
@@ -462,7 +491,11 @@ ELSE
    XRT    = ZMR3D_MX
    ZDIAG  = 0.
  END IF
-  XTHT(:,:,:)=ZTHV3D(:,:,:)*(1.+WATER_SUM(XRT(:,:,:,:)))/(1.+XRV/XRD*XRT(:,:,:,1))
+ IF (LOCEAN) THEN
+   XTHT(:,:,:)=ZTHV3D(:,:,:)
+ ELSE
+   XTHT(:,:,:)=ZTHV3D(:,:,:)*(1.+WATER_SUM(XRT(:,:,:,:)))/(1.+XRV/XRD*XRT(:,:,:,1))
+ ENDIF
   ZTHV3D(:,:,1)=ZTHV3D(:,:,2)
   XTHT(:,:,1)=XTHT(:,:,2)
   XRT(:,:,1,:)=XRT(:,:,2,:)
@@ -472,7 +505,6 @@ CALL ADD3DFIELD_ll( TZFIELDS_ll, ZTHV3D,       'SET_MASS::ZTHV3D' )
 CALL ADD3DFIELD_ll( TZFIELDS_ll, XRT(:,:,1,:), 'SET_MASS::XRT(:,:,1,:)' )
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZFIELDS_ll)
-
 !
   IF (NRR>=3) THEN
     WHERE  (XRT(:,:,:,3)<1.E-20)
@@ -489,17 +521,19 @@ CALL CLEANLIST_ll(TZFIELDS_ll)
   CALL VER_INT_DYN(OSHIFT,ZRHODU_MX,ZRHODV_MX,PZFLUX_MX,PZMASS_MX,PZS_MX,ZRHODUA,ZRHODVA)
   ZRHODJU(:,:,:)=MXM(ZRHODUA(:,:,:)*PJ(:,:,:))
   ZRHODJV(:,:,:)=MYM(ZRHODVA(:,:,:)*PJ(:,:,:))
-  CALL COMPUTE_EXNER_FROM_TOP(ZTHV3D,XZZ,ZEXNTOP2D,ZHEXNFLUX,ZHEXNMASS)
-  XPABST(:,:,:)=ZPMHP(:,:,:) + XP00*ZHEXNMASS(:,:,:) ** (XCPD/XRD)
-  ZRHOD(:,:,:)=XPABST(:,:,:)/(XPABST(:,:,:)/XP00)**(XRD/XCPD) &
-            /(XRD*XTHT(:,:,:)*(1.+XRV/XRD*XRT(:,:,:,1)))
+  IF (.NOT.LOCEAN) THEN
+    CALL COMPUTE_EXNER_FROM_TOP(ZTHV3D,XZZ,ZEXNTOP2D,ZHEXNFLUX,ZHEXNMASS)
+    XPABST(:,:,:)=ZPMHP(:,:,:) + XP00*ZHEXNMASS(:,:,:) ** (XCPD/XRD)
+    ZRHOD(:,:,:)=XPABST(:,:,:)/(XPABST(:,:,:)/XP00)**(XRD/XCPD) /(XRD*XTHT(:,:,:)*(1.+XRV/XRD*XRT(:,:,:,1)))
+   ELSE
+    ZRHOD(:,:,:)=XRH00OCEAN*(1.-XALPHAOC*(XTHT(:,:,:)-XTH00OCEAN)+XBETAOC*(XRT(:,:,:,1)-XSA00OCEAN))
+  END IF
   XUT(:,:,:)=ZRHODJU(:,:,:)/MXM(ZRHOD(:,:,:)*PJ(:,:,:))
   XVT(:,:,:)=ZRHODJV(:,:,:)/MYM(ZRHOD(:,:,:)*PJ(:,:,:))
   XWT(:,:,:)=0
   CALL MPPDB_CHECK3DM("SET_MASS:XVT,ZRHODJV,PJ,ZRHODVA",PRECISION,&
                    &    XVT,ZRHODJV,PJ,ZRHODVA )
   ENDIF
-
 !
 !-------------------------------------------------------------------------------
 !*                   4. COMPUTE ANELASTIC REFERENCE (PV)
@@ -518,17 +552,35 @@ ELSE
   DO JK = 1,IKU
     CALL REDUCESUM_ll(XTHVREFZ(JK), IINFO_ll)
   END DO
-
-  XRHODREFZ(:) = XP00/ (XRD* XTHVREFZ(:))
-  ZTHVREF3D(:,:,:)=XTHVREFZ(2)
-  CALL COMPUTE_EXNER_FROM_GROUND(ZTHVREF3D,PZFLUX_MX,&
+! 
+ IF (LOCEAN) THEN
+! Ocean case boussinesq
+  IF (LCOUPLES) THEN
+   XRHODREFZO(:) = XRH00OCEAN
+   XTHVREFZ(:)  = ZTHV3D(KILOC,KJLOC,IKU-3)   ! XTHVREFZ is uniform
+   ZTHVREF3D(:,:,:)=XTHVREFZ(IKU-3)
+   ZPRESSFC(:,:)=XP00*XEXNTOPO**(XCPD/XRD)   
+  ELSE
+   XRHODREFZ(:) = XRH00OCEAN
+   ZPRESSFC(:,:)=XP00*XEXNTOP**(XCPD/XRD)   
+! on prend pour le moment la valeur  de la couche mélangée
+  END IF
+ CALL COMPUTE_PRESS_FROM_OCEANSFC(ZRHOD,XZZ,ZPRESSFC,ZPFLUX,ZPMASS)
+ XPABST(:,:,:)= ZPMASS(:,:,:)
+!
+ ELSE
+! ATmos: rho = P/ (R Tv)
+ XRHODREFZ(:) = XP00/ (XRD* XTHVREFZ(:))
+ ZTHVREF3D(:,:,:)=XTHVREFZ(2)
+   CALL COMPUTE_EXNER_FROM_GROUND(ZTHVREF3D,PZFLUX_MX,&
           ZEXNSURF2D_MX,ZHEXNFLUX,ZHEXNMASS)
 
-  XEXNTOP=SUM_DD_R2_ll(ZHEXNFLUX(IIB:IIE,IJB:IJE,IKE+1))/REAL(NIMAX_ll*NJMAX_ll)
-
-  ZEXNTOP2D=ZHEXNFLUX(:,:,IKE+1)
-  CALL COMPUTE_EXNER_FROM_TOP(ZTHVREF3D,XZZ,ZEXNTOP2D,ZHEXNFLUX,ZHEXNMASS)
-  XPABST(:,:,:)=ZPMHP(:,:,:) + XP00*ZHEXNMASS(:,:,:) ** (XCPD/XRD)   
+ XEXNTOP=SUM_DD_R2_ll(ZHEXNFLUX(IIB:IIE,IJB:IJE,IKE+1))/REAL(NIMAX_ll*NJMAX_ll)
+ ZEXNTOP2D=ZHEXNFLUX(:,:,IKE+1)
+ CALL COMPUTE_EXNER_FROM_TOP(ZTHVREF3D,XZZ,ZEXNTOP2D,ZHEXNFLUX,ZHEXNMASS)
+ XPABST(:,:,:)=ZPMHP(:,:,:) + XP00*ZHEXNMASS(:,:,:) ** (XCPD/XRD)
+ENDIF
+ ! end of bouss case  
 ENDIF
 !---------------------------------------------------------------------------------
 END SUBROUTINE SET_MASS     

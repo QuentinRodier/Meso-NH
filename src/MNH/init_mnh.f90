@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -76,7 +76,8 @@
 !*       0.    DECLARATIONS
 !              ------------
 USE MODD_CONF
-USE MODD_DYN_n, ONLY: CPRESOPT,NITR ! only for spawning purpose
+USE MODD_CST,   ONLY: XP00, XTH00, XP00OCEAN, XTH00OCEAN
+USE MODD_DYN_n, ONLY: CPRESOPT, NITR, LOCEAN ! only for spawning purpose
 USE MODD_IO,    ONLY: TFILE_OUTPUTLISTING, TPTR2FILE
 USE MODD_LBC_n, ONLY: CLBCX,CLBCY   ! only for spawning purpose
 USE MODD_LUNIT
@@ -180,6 +181,13 @@ END IF
 !
 IF (CPROGRAM=='DIAG') CALL RESET_EXSEG()
 !
+! UPDATE CONSTANTS FOR OCEAN MODEL
+DO JMI=1,JPMODELMAX
+  IF (LOCEAN) THEN
+    XP00=XP00OCEAN
+    XTH00=XTH00OCEAN
+  END IF
+END DO
 !-------------------------------------------------------------------------------
 !
 !

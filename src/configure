@@ -1,7 +1,7 @@
 #!/bin/bash
 #MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 #MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 #MNH_LIC for details. version 1.
 #set -x
 #set -e
@@ -18,6 +18,8 @@ export VERSION_CDFC=${VERSION_CDFC:-"4.7.4"}
 export VERSION_CDFCXX=${VERSION_CDFCXX:-"4.3.1"}
 export VERSION_CDFF=${VERSION_CDFF:-"4.5.3"}
 export VERSION_GRIBAPI=${VERSION_GRIBAPI:-"1.26.0-Source"}
+export VERSION_ECCODES=${VERSION_ECCODES:-"2.18.0"}
+export ECCODES_DEFINITION_PATH=${ECCODES_DEFINITION_PATH:${SRC_MESONH}/src/LIB/eccodes-${VERSION_ECCODES}"/definitions/"}
 export MNH_INT=${MNH_INT:-"4"}
 export LFI_INT=${LFI_INT:-8}
 export MNH_REAL=${MNH_REAL:-"8"}
@@ -175,6 +177,7 @@ export ARMCI_SHR_BUF_METHOD=COPY
 module purge
 module load intel/2019.5.281
 module load openmpi/intel/4.0.2.2
+module load cmake/3.15.4
 unset CC CXX
 "}
               ;;
@@ -550,9 +553,13 @@ if [ "x${MNH_MEGAN}" == "x1" ] ; then
 ( cd $LOCAL/src/LIB ; [ ! -d MEGAN ] && tar xvfz megan.tar.gz )
 fi
 #
-#  Install GRIBAPI
+#  Install GRIBAPI or ecCodes
 #
-cd $LOCAL/src/LIB ; [ ! -d grib_api-${VERSION_GRIBAPI} ] && [ -f grib_api-${VERSION_GRIBAPI}.tar.gz ] && gunzip -c grib_api-${VERSION_GRIBAPI}.tar.gz |tar -xvf -
+if [ "x${MNH_GRIBAPI}" == "xyes" ] ; then
+( cd $LOCAL/src/LIB ; [ ! -d grib_api-${VERSION_GRIBAPI} ] && [ -f grib_api-${VERSION_GRIBAPI}.tar.gz ] && gunzip -c grib_api-${VERSION_GRIBAPI}.tar.gz |tar -xvf - )
+else
+( cd $LOCAL/src/LIB ; [ ! -d eccodes-${VERSION_ECCODES}-Source ] && [ -f eccodes-${VERSION_ECCODES}-Source.tar.gz ] && gunzip -c eccodes-${VERSION_ECCODES}-Source.tar.gz |tar -xvf - )
+fi
 ##########################################################
 #                                                        #
 #      RESUME                                            #

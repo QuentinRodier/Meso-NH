@@ -89,12 +89,6 @@ CPPFLAGS_RAD       =
 CPPFLAGS_NEWLFI    = -DMNH_SX5 -DLFI_INT=${LFI_INT}
 CPPFLAGS_MNH       = -DMNH -DSFX_MNH
 #
-# Gribex flags
-#
-#ARCH_GRIBEX=NEC
-TARGET_GRIBEX=NEC
-CNAME_GRIBEX=sxmpif90
-#
 # LIBTOOLS flags
 #
 #if MNH_TOOLS exists => compile the tools
@@ -114,6 +108,12 @@ MNH_IOLFI=yes
 #
 #if MNH_S4PY exists => compile the libs4py library (for epygram)
 #MNH_S4PY=no
+#
+## ecCodes or grib_api selection
+#MNH_GRIBAPI: if set to no:  use ecCodes
+#             if set to yes: use grib_api (deprecated library)
+#
+MNH_GRIBAPI=no
 #
 ##########################################################
 #                                                        #

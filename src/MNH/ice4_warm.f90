@@ -1,11 +1,11 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 MODULE MODI_ICE4_WARM
 INTERFACE
-SUBROUTINE ICE4_WARM(KSIZE, LDSOFT, LDCOMPUTE, HSUBG_RC_RR_ACCR, HSUBG_RR_EVAP, &
+SUBROUTINE ICE4_WARM(KSIZE, LDSOFT, PCOMPUTE, HSUBG_RC_RR_ACCR, HSUBG_RR_EVAP, &
                      PRHODREF, PLVFACT, PT, PPRES, PTHT, &
                      PLBDAR, PLBDAR_RF, PKA, PDV, PCJ, &
                      PHLC_LCF, PHLC_HCF, PHLC_LRC, PHLC_HRC, &
@@ -16,7 +16,7 @@ SUBROUTINE ICE4_WARM(KSIZE, LDSOFT, LDCOMPUTE, HSUBG_RC_RR_ACCR, HSUBG_RR_EVAP, 
 IMPLICIT NONE
 INTEGER,                      INTENT(IN)    :: KSIZE
 LOGICAL,                      INTENT(IN)    :: LDSOFT
-LOGICAL, DIMENSION(KSIZE),    INTENT(IN)    :: LDCOMPUTE
+REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PCOMPUTE
 CHARACTER(len=80),            INTENT(IN)    :: HSUBG_RC_RR_ACCR ! subgrid rc-rr accretion
 CHARACTER(len=80),            INTENT(IN)    :: HSUBG_RR_EVAP ! subgrid rr evaporation
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRHODREF ! Reference density
@@ -48,7 +48,7 @@ REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PA_RR
 END SUBROUTINE ICE4_WARM
 END INTERFACE
 END MODULE MODI_ICE4_WARM
-SUBROUTINE ICE4_WARM(KSIZE, LDSOFT, LDCOMPUTE, HSUBG_RC_RR_ACCR, HSUBG_RR_EVAP, &
+SUBROUTINE ICE4_WARM(KSIZE, LDSOFT, PCOMPUTE, HSUBG_RC_RR_ACCR, HSUBG_RR_EVAP, &
                      PRHODREF, PLVFACT, PT, PPRES, PTHT, &
                      PLBDAR, PLBDAR_RF, PKA, PDV, PCJ, &
                      PHLC_LCF, PHLC_HCF, PHLC_LRC, PHLC_HRC, &
@@ -73,7 +73,7 @@ SUBROUTINE ICE4_WARM(KSIZE, LDSOFT, LDCOMPUTE, HSUBG_RC_RR_ACCR, HSUBG_RR_EVAP, 
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_CST,            ONLY: XALPW,XBETAW,XCL,XCPD,XCPV,XGAMW,XLVTT,XMD,XMV,XRV,XTT
+USE MODD_CST,            ONLY: XALPW,XBETAW,XCL,XCPD,XCPV,XGAMW,XLVTT,XMD,XMV,XRV,XTT,XEPSILO
 USE MODD_RAIN_ICE_DESCR, ONLY: XCEXVT,XRTMIN
 USE MODD_RAIN_ICE_PARAM, ONLY: X0EVAR,X1EVAR,XCRIAUTC,XEX0EVAR,XEX1EVAR,XEXCACCR,XFCACCR,XTIMAUTC
 !
@@ -85,7 +85,7 @@ IMPLICIT NONE
 !
 INTEGER,                      INTENT(IN)    :: KSIZE
 LOGICAL,                      INTENT(IN)    :: LDSOFT
-LOGICAL, DIMENSION(KSIZE),    INTENT(IN)    :: LDCOMPUTE
+REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PCOMPUTE
 CHARACTER(len=80),            INTENT(IN)    :: HSUBG_RC_RR_ACCR ! subgrid rc-rr accretion
 CHARACTER(len=80),            INTENT(IN)    :: HSUBG_RR_EVAP ! subgrid rr evaporation
 REAL, DIMENSION(KSIZE),       INTENT(IN)    :: PRHODREF ! Reference density
@@ -117,10 +117,12 @@ REAL, DIMENSION(KSIZE),       INTENT(INOUT) :: PA_RR
 !
 !*       0.2  declaration of local variables
 !
-LOGICAL, DIMENSION(SIZE(PRHODREF)) :: GMASK, GMASK1, GMASK2
-REAL, DIMENSION(SIZE(PRHODREF))    :: ZZW2, ZZW3, ZZW4
-REAL, DIMENSION(SIZE(PRHODREF))    :: ZUSW ! Undersaturation over water
-REAL, DIMENSION(SIZE(PRHODREF))    :: ZTHLT    ! Liquid potential temperature
+REAL, DIMENSION(KSIZE) :: ZZW2, ZZW3, ZZW4
+REAL, DIMENSION(KSIZE) :: ZUSW ! Undersaturation over water
+REAL, DIMENSION(KSIZE) :: ZTHLT    ! Liquid potential temperature
+REAL, DIMENSION(KSIZE) :: ZMASK, ZMASK1, ZMASK2
+INTEGER :: JL
+!-------------------------------------------------------------------------------
 !
 !
 !
@@ -128,33 +130,44 @@ REAL, DIMENSION(SIZE(PRHODREF))    :: ZTHLT    ! Liquid potential temperature
 !
 !*       4.2    compute the autoconversion of r_c for r_r production: RCAUTR
 !
-GMASK(:)=PHLC_HRC(:)>XRTMIN(2) .AND. PHLC_HCF(:) .GT. 0. .AND. LDCOMPUTE(:)
+DO JL=1, KSIZE
+  ZMASK(JL)=MAX(0., -SIGN(1., XRTMIN(2)-PHLC_HRC(JL))) * & ! PHLC_HRC(:)>XRTMIN(2)
+           &MAX(0., -SIGN(1., 1.E-20-PHLC_HCF(JL))) * & ! PHLC_HCF(:) .GT. 0.
+           &PCOMPUTE(JL)
+ENDDO
 IF(LDSOFT) THEN
-  WHERE(.NOT. GMASK(:))
-    PRCAUTR(:) = 0.
-  END WHERE
+  DO JL=1, KSIZE
+    PRCAUTR(JL)=PRCAUTR(JL)*ZMASK(JL)
+  ENDDO
 ELSE
   PRCAUTR(:) = 0.
-  WHERE(GMASK(:))
+  WHERE(ZMASK(:)==1.)
     PRCAUTR(:) = XTIMAUTC*MAX(PHLC_HRC(:)/PHLC_HCF(:) - XCRIAUTC/PRHODREF(:), 0.0)
     PRCAUTR(:) = PHLC_HCF(:)*PRCAUTR(:)
   END WHERE
 ENDIF
-PA_RC(:) = PA_RC(:) - PRCAUTR(:)
-PA_RR(:) = PA_RR(:) + PRCAUTR(:)
+DO JL=1, KSIZE
+  PA_RC(JL) = PA_RC(JL) - PRCAUTR(JL)
+  PA_RR(JL) = PA_RR(JL) + PRCAUTR(JL)
+ENDDO
+!
 !
 !*       4.3    compute the accretion of r_c for r_r production: RCACCR
 !
 IF (HSUBG_RC_RR_ACCR=='NONE') THEN
   !CLoud water and rain are diluted over the grid box
-  GMASK(:)=PRCT(:)>XRTMIN(2) .AND. PRRT(:)>XRTMIN(3) .AND. LDCOMPUTE(:)
+  DO JL=1, KSIZE
+    ZMASK(JL)=MAX(0., -SIGN(1., XRTMIN(2)-PRCT(JL))) * & ! PRCT(:)>XRTMIN(2)
+             &MAX(0., -SIGN(1., XRTMIN(3)-PRRT(JL))) * & ! PRRT(:)>XRTMIN(3)
+             &PCOMPUTE(JL)
+  ENDDO
   IF(LDSOFT) THEN
-    WHERE(.NOT. GMASK(:))
-      PRCACCR(:)=0.
-    END WHERE
+    DO JL=1, KSIZE
+      PRCACCR(JL)=PRCACCR(JL) * ZMASK(JL)
+    ENDDO
   ELSE
     PRCACCR(:) = 0.
-    WHERE(GMASK(:))
+    WHERE(ZMASK(:)==1.)
       PRCACCR(:) = XFCACCR * PRCT(:)                &
                  * PLBDAR(:)**XEXCACCR    &
                  * PRHODREF(:)**(-XCEXVT)
@@ -169,23 +182,31 @@ ELSEIF (HSUBG_RC_RR_ACCR=='PRFR') THEN
   ! if PRF<PCF (rain is entirely falling in cloud): PRF-PHLC_HCF
   ! if PRF>PCF (rain is falling in cloud and in clear sky): PCF-PHLC_HCF
   ! => min(PCF, PRF)-PHLC_HCF
-  GMASK(:)=PRCT(:)>XRTMIN(2) .AND. PRRT(:)>XRTMIN(3) .AND. LDCOMPUTE(:)
-  GMASK1(:)=GMASK(:) .AND. PHLC_HRC(:)>XRTMIN(2) .AND. PHLC_HCF(:)>0.
-  GMASK2(:)=GMASK(:) .AND. PHLC_LRC(:)>XRTMIN(2) .AND. PHLC_LCF(:)>0.
+  DO JL=1, KSIZE
+    ZMASK(JL)=MAX(0., -SIGN(1., XRTMIN(2)-PRCT(JL))) * & ! PRCT(:)>XRTMIN(2)
+             &MAX(0., -SIGN(1., XRTMIN(3)-PRRT(JL))) * & ! PRRT(:)>XRTMIN(3)
+             &PCOMPUTE(JL)
+    ZMASK1(JL)=ZMASK(JL) * &
+              &MAX(0., -SIGN(1., XRTMIN(2)-PHLC_HRC(JL))) * & ! PHLC_HRC(:)>XRTMIN(2)
+              &MAX(0., -SIGN(1., 1.E-20-PHLC_HCF(JL))) ! PHLC_HCF(:)>0.
+    ZMASK2(JL)=ZMASK(JL) * &
+              &MAX(0., -SIGN(1., XRTMIN(2)-PHLC_LRC(JL))) * & ! PHLC_LRC(:)>XRTMIN(2)
+              &MAX(0., -SIGN(1., 1.E-20-PHLC_LCF(JL))) ! PHLC_LCF(:)>0.
+  ENDDO
   IF(LDSOFT) THEN
-    WHERE(.NOT. (GMASK1(:) .OR. GMASK2(:)))
-      PRCACCR(:)=0.
-    END WHERE
+    DO JL=1, KSIZE
+      PRCACCR(JL)=PRCACCR(JL) * MIN(1., ZMASK1(JL)+ZMASK2(JL))
+    ENDDO
   ELSE
     PRCACCR(:)=0.
-    WHERE(GMASK1(:))
+    WHERE(ZMASK1(:)==1.)
       !Accretion due to rain falling in high cloud content
       PRCACCR(:) = XFCACCR * ( PHLC_HRC(:)/PHLC_HCF(:) )     &
              * PLBDAR_RF(:)**XEXCACCR &
              * PRHODREF(:)**(-XCEXVT) &
              * PHLC_HCF
     END WHERE
-    WHERE(GMASK2(:))
+    WHERE(ZMASK2(:)==1.)
       !We add acrretion due to rain falling in low cloud content
       PRCACCR(:) = PRCACCR(:) + XFCACCR * ( PHLC_LRC(:)/PHLC_LCF(:) )     &
                       * PLBDAR_RF(:)**XEXCACCR &
@@ -196,24 +217,29 @@ ELSEIF (HSUBG_RC_RR_ACCR=='PRFR') THEN
 ELSE
   CALL PRINT_MSG(NVERB_FATAL,'GEN','ICE4_WARM','wrong HSUBG_RC_RR_ACCR case')
 ENDIF
-!
-PA_RC(:) = PA_RC(:) - PRCACCR(:)
-PA_RR(:) = PA_RR(:) + PRCACCR(:)
+DO JL=1, KSIZE
+  PA_RC(JL) = PA_RC(JL) - PRCACCR(JL)
+  PA_RR(JL) = PA_RR(JL) + PRCACCR(JL)
+ENDDO
 !
 !*       4.4    compute the evaporation of r_r: RREVAV
 !
 IF (HSUBG_RR_EVAP=='NONE') THEN
-  GMASK(:)=PRRT(:)>XRTMIN(3) .AND. PRCT(:)<=XRTMIN(2) .AND. LDCOMPUTE(:)
+  DO JL=1, KSIZE
+    ZMASK(JL)=MAX(0., -SIGN(1., XRTMIN(3)-PRRT(JL))) * & ! PRRT(:)>XRTMIN(3)
+             &MAX(0., SIGN(1., XRTMIN(2)-PRCT(JL))) * & ! PRCT(:)<=XRTMIN(2)
+             &PCOMPUTE(JL)
+  ENDDO
   IF(LDSOFT) THEN
-    WHERE(.NOT. GMASK(:))
-      PRREVAV(:)=0.
-    END WHERE
+    DO JL=1, KSIZE
+      PRREVAV(JL)=PRREVAV(JL)*ZMASK(JL)
+    ENDDO
   ELSE
     PRREVAV(:) = 0.
     !Evaporation only when there's no cloud (RC must be 0)
-    WHERE(GMASK(:))
+    WHERE(ZMASK(:)==1.)
       PRREVAV(:)  = EXP( XALPW - XBETAW/PT(:) - XGAMW*ALOG(PT(:) ) ) ! es_w
-      ZUSW(:) = 1.0 - PRVT(:)*( PPRES(:)-PRREVAV(:) ) / ( (XMV/XMD) * PRREVAV(:) )
+      ZUSW(:) = 1.0 - PRVT(:)*( PPRES(:)-PRREVAV(:) ) / ( XEPSILO * PRREVAV(:) )
                                                     ! Undersaturation over water
       PRREVAV(:) = ( XLVTT+(XCPV-XCL)*(PT(:)-XTT) )**2 / ( PKA(:)*XRV*PT(:)**2 ) &
            + ( XRV*PT(:) ) / ( PDV(:)*PRREVAV(:) )
@@ -240,14 +266,18 @@ ELSEIF (HSUBG_RR_EVAP=='CLFR' .OR. HSUBG_RR_EVAP=='PRFR') THEN
   !Ces variables devraient être sorties de rain_ice_slow et on mettrait le calcul de T^u, T^s
   !et plusieurs versions (comme actuellement, en ciel clair, en ciel nuageux) de PKA, PDV, PCJ dans rain_ice
   !On utiliserait la bonne version suivant l'option NONE, CLFR... dans l'évaporation et ailleurs
-  GMASK(:)=PRRT(:)>XRTMIN(3) .AND. ZZW4(:) > PCF(:) .AND. LDCOMPUTE(:)
+  DO JL=1, KSIZE
+    ZMASK(JL)=MAX(0., -SIGN(1., XRTMIN(3)-PRRT(JL))) * & ! PRRT(:)>XRTMIN(3)
+             &MAX(0., -SIGN(1., PCF(JL)-ZZW4(JL))) * & ! ZZW4(:) > PCF(:)
+             &PCOMPUTE(JL)
+  ENDDO
   IF(LDSOFT) THEN
-    WHERE(.NOT. GMASK(:))
-      PRREVAV(:)=0.
-    END WHERE
+    DO JL=1, KSIZE
+      PRREVAV(JL)=PRREVAV(JL)*ZMASK(JL)
+    ENDDO
   ELSE
     PRREVAV(:) = 0.
-    WHERE(GMASK(:))
+    WHERE(ZMASK(:)==1)
       ! outside the cloud (environment) the use of T^u (unsaturated) instead of T
       ! Bechtold et al. 1993
       !
@@ -261,7 +291,7 @@ ELSEIF (HSUBG_RR_EVAP=='CLFR' .OR. HSUBG_RR_EVAP=='PRFR') THEN
       PRREVAV(:)  = EXP( XALPW - XBETAW/ZZW2(:) - XGAMW*ALOG(ZZW2(:) ) )
       !
       ! S, Undersaturation over water (with new theta^u)
-      ZUSW(:) = 1.0 - PRVT(:)*( PPRES(:)-PRREVAV(:) ) / ( (XMV/XMD) * PRREVAV(:) )
+      ZUSW(:) = 1.0 - PRVT(:)*( PPRES(:)-PRREVAV(:) ) / ( XEPSILO * PRREVAV(:) )
       !
       PRREVAV(:) = ( XLVTT+(XCPV-XCL)*(ZZW2(:)-XTT) )**2 / ( PKA(:)*XRV*ZZW2(:)**2 ) &
              + ( XRV*ZZW2(:) ) / ( PDV(:)*PRREVAV(:) )
@@ -276,9 +306,11 @@ ELSEIF (HSUBG_RR_EVAP=='CLFR' .OR. HSUBG_RR_EVAP=='PRFR') THEN
 ELSE
   CALL PRINT_MSG(NVERB_FATAL,'GEN','ICE4_WARM','wrong HSUBG_RR_EVAP case')
 END IF
-PA_RR(:) = PA_RR(:) - PRREVAV(:)
-PA_RV(:) = PA_RV(:) + PRREVAV(:)
-PA_TH(:) = PA_TH(:) - PRREVAV(:)*PLVFACT(:)
+DO JL=1, KSIZE
+  PA_RR(JL) = PA_RR(JL) - PRREVAV(JL)
+  PA_RV(JL) = PA_RV(JL) + PRREVAV(JL)
+  PA_TH(JL) = PA_TH(JL) - PRREVAV(JL)*PLVFACT(JL)
+ENDDO
 !
 !
 END SUBROUTINE ICE4_WARM

@@ -153,6 +153,7 @@ USE MODD_CST
 USE MODD_CTURB,          ONLY: XTKEMIN
 USE MODD_CONF,           ONLY: LNEUTRAL,NHALO,L1D, L2D
 use modd_field,          only: tfielddata, TYPEREAL
+USE MODD_IBM_PARAM_n,    ONLY: LIBM,XIBM_LS,XIBM_EPSI
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_LUNIT_n,        ONLY: TLUOUT
 USE MODD_NSV
@@ -162,6 +163,7 @@ USE MODD_TYPE_DATE,      ONLY: DATE_TIME
 USE MODD_BLOWSNOW
 USE MODD_BLOWSNOW_n
 USE MODD_PARAMETERS
+USE MODD_REF_n,          ONLY: XRHODJ,XRHODREF
 !
 use mode_budget,         only: Budget_store_init, Budget_store_end
 USE MODE_IO_FIELD_WRITE, only: IO_Field_write
@@ -175,6 +177,7 @@ USE MODI_GET_HALO
 USE MODI_PPM_RHODJ
 USE MODI_PPM_MET
 USE MODI_PPM_SCALAR
+!
 !
 !-------------------------------------------------------------------------------
 !
@@ -338,6 +341,17 @@ IF (.NOT. L1D) THEN
   ZCFLU(IIB:IIE,IJB:IJE,:) = ABS(ZRUCPPM(IIB:IIE,IJB:IJE,:) * PTSTEP)
   ZCFLV(IIB:IIE,IJB:IJE,:) = ABS(ZRVCPPM(IIB:IIE,IJB:IJE,:) * PTSTEP)
   ZCFLW(IIB:IIE,IJB:IJE,:) = ABS(ZRWCPPM(IIB:IIE,IJB:IJE,:) * PTSTEP)
+   IF (LIBM) THEN
+    ZCFLU(IIB:IIE,IJB:IJE,:) = ZCFLU(IIB:IIE,IJB:IJE,:)*(1.-exp(-(XIBM_LS(IIB:IIE,IJB:IJE,:,2)/&
+                                                        (XRHODJ(IIB:IIE,IJB:IJE,:)/XRHODREF(IIB:IIE,IJB:IJE,:))**(1./3.))**2.))
+    ZCFLV(IIB:IIE,IJB:IJE,:) = ZCFLV(IIB:IIE,IJB:IJE,:)*(1.-exp(-(XIBM_LS(IIB:IIE,IJB:IJE,:,3)/&
+                                                        (XRHODJ(IIB:IIE,IJB:IJE,:)/XRHODREF(IIB:IIE,IJB:IJE,:))**(1./3.))**2.))
+    ZCFLW(IIB:IIE,IJB:IJE,:) = ZCFLW(IIB:IIE,IJB:IJE,:)*(1.-exp(-(XIBM_LS(IIB:IIE,IJB:IJE,:,4)/&
+                                                        (XRHODJ(IIB:IIE,IJB:IJE,:)/XRHODREF(IIB:IIE,IJB:IJE,:))**(1./3.))**2.))
+    WHERE (XIBM_LS(IIB:IIE,IJB:IJE,:,2).GT.(-XIBM_EPSI)) ZCFLU(IIB:IIE,IJB:IJE,:)=0.
+    WHERE (XIBM_LS(IIB:IIE,IJB:IJE,:,3).GT.(-XIBM_EPSI)) ZCFLV(IIB:IIE,IJB:IJE,:)=0.
+    WHERE (XIBM_LS(IIB:IIE,IJB:IJE,:,4).GT.(-XIBM_EPSI)) ZCFLW(IIB:IIE,IJB:IJE,:)=0.
+  ENDIF 
   IF (.NOT. L2D) THEN
     ZCFL  = SQRT(ZCFLU**2+ZCFLV**2+ZCFLW**2)
   ELSE

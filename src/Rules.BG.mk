@@ -97,13 +97,6 @@ CPPFLAGS_RAD       =
 CPPFLAGS_NEWLFI    = -DLINUX  -DLFI_INT=${LFI_INT}
 CPPFLAGS_MNH       = -DAMAX1=MAX -DMNH -DSFX_MNH
 #
-# Gribex flags
-#
-#TARGET_GRIBEX=rs6000
-TARGET_GRIBEX=ibm_power4
-CNAME_GRIBEX=""
-#A64=A64
-#
 # LIBTOOLS flags
 #
 #if MNH_TOOLS exists => compile the tools
@@ -123,6 +116,12 @@ MNH_IOLFI=yes
 #
 #if MNH_S4PY exists => compile the libs4py library (for epygram)
 #MNH_S4PY=no
+#
+## ecCodes or grib_api selection
+#MNH_GRIBAPI: if set to no:  use ecCodes
+#             if set to yes: use grib_api (deprecated library)
+#
+MNH_GRIBAPI=no
 #
 ##########################################################
 #                                                        #

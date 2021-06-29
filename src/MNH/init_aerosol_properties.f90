@@ -37,6 +37,8 @@ END MODULE MODI_INIT_AEROSOL_PROPERTIES
 !!  Philippe Wautelet: 22/01/2019: bugs correction: incorrect writes + unauthorized goto
 !  P. Wautelet 10/04/2019: replace ABORT and STOP calls by Print_msg
 !  P. Wautelet 30/03/2021: move NINDICE_CCN_IMM and NIMM initializations from init_aerosol_properties to ini_nsv
+!  B. Vié         06/2021: kappa-kohler CCN activation parameters
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -55,6 +57,7 @@ USE MODD_PARAM_LIMA,      ONLY : NMOD_CCN, HINI_CCN, HTYPE_CCN,        &
 use mode_msg
 !
 USE MODI_GAMMA
+USE MODI_LIMA_INIT_CCN_ACTIVATION_SPECTRUM
 !
 IMPLICIT NONE
 !
@@ -83,7 +86,14 @@ INTEGER            :: I,J,JMOD
 !
 INTEGER  :: ILUOUT0 ! Logical unit number for output-listing
 INTEGER  :: IRESP   ! Return code of FM-routines
-
+!
+REAL :: X1, X2, X3, X4, X5
+! REAL, DIMENSION(7) :: diameters=(/ 0.01E-6, 0.05E-6, 0.1E-6, 0.2E-6, 0.5E-6, 1.E-6, 2.E-6 /)
+! REAL, DIMENSION(3) :: sigma=(/ 2., 2.5, 3. /)
+! CHARACTER(LEN=7), DIMENSION(3) :: types=(/ 'NH42SO4', 'NaCl   ', '       ' /)
+!REAL, DIMENSION(1) :: diameters=(/ 0.25E-6 /)
+!CHARACTER(LEN=7), DIMENSION(1) :: types=(/ '       ' /)
+INTEGER :: II, IJ, IK
 !
 !-------------------------------------------------------------------------------
 !
@@ -108,15 +118,25 @@ IF ( NMOD_CCN .GE. 1 ) THEN
       RCCN(:)   = (/ 0.125E-6 , 0.4E-6 , 1.0E-6 /)
       LOGSIGCCN(:) = (/ 0.69 , 0.41 , 0.47 /)
       RHOCCN(:) = (/ 1000. , 1000. , 1000. /)
-   CASE ('MACC')
+   CASE ('CAMS')
       RCCN(:)   = (/ 0.4E-6 , 0.25E-6 , 0.1E-6 /)
       LOGSIGCCN(:) = (/ 0.64 , 0.47 , 0.47 /)
       RHOCCN(:) = (/ 2160. , 2000. , 1750. /)
-   CASE ('MACC_JPP')
+   CASE ('CAMS_JPP')
 ! sea-salt, sulfate, hydrophilic (GADS data)
       RCCN(:)      = (/ 0.209E-6 , 0.0695E-6 , 0.0212E-6 /)
       LOGSIGCCN(:) = (/ 0.708    , 0.708     , 0.806     /)
       RHOCCN(:)    = (/ 2200.    , 1700.     , 1800.     /)
+   CASE ('CAMS_ACC')
+! sea-salt, sulfate, hydrophilic (GADS data)
+      RCCN(:) = (/ 0.2E-6   , 0.5E-6    , 0.4E-6 /)
+      LOGSIGCCN(:) = (/ 0.693    , 0.476     , 0.788  /)
+      RHOCCN(:)    = (/ 2200.    , 1700.     , 1800.  /)
+   CASE ('CAMS_AIT')
+! sea-salt, sulfate, hydrophilic (GADS data)
+      RCCN(:) = (/ 0.2E-6   , 0.05E-6   , 0.02E-6 /)
+      LOGSIGCCN(:) = (/ 0.693    , 0.693     , 0.788   /)
+      RHOCCN(:)    = (/ 2200.    , 1700.     , 1800.   /)
    CASE ('SIRTA')
       RCCN(:)   = (/ 0.153E-6 , 0.058E-6 , 0.763E-6 /)
       LOGSIGCCN(:) = (/ 0.846 , 0.57 , 0.34 /)
@@ -191,48 +211,60 @@ IF ( NMOD_CCN .GE. 1 ) THEN
 !
     DO JMOD = 1, NMOD_CCN 
 !
-       SELECT CASE (HTYPE_CCN(JMOD))
-       CASE ('M') ! CCN marins
-          XKHEN0     = 3.251
-          XLOGSIG0   = 0.4835
-          XALPHA1    = -1.297
-          XMUHEN0    = 2.589
-          XALPHA2    = -1.511
-          XBETAHEN0  = 621.689
-          XR_MEAN0   = 0.133E-6
-          XALPHA3    = 3.002
-          XALPHA4    = 1.081
-          XALPHA5    = 1.0
-          XACTEMP0   = 290.16
-          XALPHA6    = 2.995
-       CASE ('C') ! CCN continentaux
-          XKHEN0     = 1.403
-          XLOGSIG0   = 1.16
-          XALPHA1    = -1.172
-          XMUHEN0    = 0.834
-          XALPHA2    = -1.350
-          XBETAHEN0  = 25.499
-          XR_MEAN0   = 0.0218E-6
-          XALPHA3    = 3.057
-          XALPHA4    = 4.092
-          XALPHA5    = 1.011
-          XACTEMP0   = 290.16
-          XALPHA6    = 3.076
-       CASE DEFAULT
-          call Print_msg(NVERB_FATAL,'GEN','INIT_AEROSOL_PROPERTIES','HTYPE_CNN(JMOD)=C or M must be specified'// &
-                                                                     ' in EXSEG1.nam for each CCN mode')
-       ENDSELECT
-!
-      XKHEN_MULTI(JMOD)   =   XKHEN0*(XLOGSIG_CCN(JMOD)/XLOGSIG0)**XALPHA1
-      XMUHEN_MULTI(JMOD)  =  XMUHEN0*(XLOGSIG_CCN(JMOD)/XLOGSIG0)**XALPHA2
-      XBETAHEN_MULTI(JMOD)=XBETAHEN0*(XR_MEAN_CCN(JMOD)/XR_MEAN0)**XALPHA3 &
-           * EXP( XALPHA4*((XLOGSIG_CCN(JMOD)/XLOGSIG0)-1.) )              &
-           * XFSOLUB_CCN**XALPHA5                                          &
-           * (XACTEMP_CCN/XACTEMP0)**XALPHA6
-      XLIMIT_FACTOR(JMOD)  = ( GAMMA_X0D(0.5*XKHEN_MULTI(JMOD)+1.) &
-           *GAMMA_X0D(XMUHEN_MULTI(JMOD)-0.5*XKHEN_MULTI(JMOD)) )  &
-           /( XBETAHEN_MULTI(JMOD)**(0.5*XKHEN_MULTI(JMOD))        &
-           *GAMMA_X0D(XMUHEN_MULTI(JMOD)) )
+!!$       SELECT CASE (HTYPE_CCN(JMOD))
+!!$       CASE ('M') ! CCN marins
+!!$          XKHEN0     = 3.251
+!!$          XLOGSIG0   = 0.4835
+!!$          XALPHA1    = -1.297
+!!$          XMUHEN0    = 2.589
+!!$          XALPHA2    = -1.511
+!!$          XBETAHEN0  = 621.689
+!!$          XR_MEAN0   = 0.133E-6
+!!$          XALPHA3    = 3.002
+!!$          XALPHA4    = 1.081
+!!$          XALPHA5    = 1.0
+!!$          XACTEMP0   = 290.16
+!!$          XALPHA6    = 2.995
+!!$       CASE ('C') ! CCN continentaux
+!!$          XKHEN0     = 1.403
+!!$          XLOGSIG0   = 1.16
+!!$          XALPHA1    = -1.172
+!!$          XMUHEN0    = 0.834
+!!$          XALPHA2    = -1.350
+!!$          XBETAHEN0  = 25.499
+!!$          XR_MEAN0   = 0.0218E-6
+!!$          XALPHA3    = 3.057
+!!$          XALPHA4    = 4.092
+!!$          XALPHA5    = 1.011
+!!$          XACTEMP0   = 290.16
+!!$          XALPHA6    = 3.076
+!!$       CASE DEFAULT
+!!$          call Print_msg(NVERB_FATAL,'GEN','INIT_AEROSOL_PROPERTIES','HTYPE_CNN(JMOD)=C or M must be specified'// &
+!!$                                                                     ' in EXSEG1.nam for each CCN mode')
+!!$       ENDSELECT
+!!$!
+!!$      XKHEN_MULTI(JMOD)   =   XKHEN0*(XLOGSIG_CCN(JMOD)/XLOGSIG0)**XALPHA1
+!!$      XMUHEN_MULTI(JMOD)  =  XMUHEN0*(XLOGSIG_CCN(JMOD)/XLOGSIG0)**XALPHA2
+!!$      XBETAHEN_MULTI(JMOD)=XBETAHEN0*(XR_MEAN_CCN(JMOD)/XR_MEAN0)**XALPHA3 &
+!!$           * EXP( XALPHA4*((XLOGSIG_CCN(JMOD)/XLOGSIG0)-1.) )              &
+!!$           * XFSOLUB_CCN**XALPHA5                                          &
+!!$           * (XACTEMP_CCN/XACTEMP0)**XALPHA6
+!!$      XLIMIT_FACTOR(JMOD)  = ( GAMMA_X0D(0.5*XKHEN_MULTI(JMOD)+1.) &
+!!$           *GAMMA_X0D(XMUHEN_MULTI(JMOD)-0.5*XKHEN_MULTI(JMOD)) )  &
+!!$           /( XBETAHEN_MULTI(JMOD)**(0.5*XKHEN_MULTI(JMOD))        &
+!!$           *GAMMA_X0D(XMUHEN_MULTI(JMOD)) )
+!!$
+!!$
+       CALL LIMA_INIT_CCN_ACTIVATION_SPECTRUM (HTYPE_CCN(JMOD),XR_MEAN_CCN(JMOD)*2.,EXP(XLOGSIG_CCN(JMOD)),X1,X2,X3,X4,X5)
+       !
+       ! LIMA_INIT_CCN_ACTIVATION_SPECTRUM returns X1=C/Nccn (instead of XLIMIT_FACTOR), X2=k, X3=mu, X4=beta, X5=kappa
+       ! So XLIMIT_FACTOR = 1/X1
+       ! Nc = Nccn/XLIMIT_FACTOR * S^k *F() = Nccn * X1 * S^k *F()
+       !
+       XLIMIT_FACTOR(JMOD) = 1./X1
+       XKHEN_MULTI(JMOD)   = X2
+       XMUHEN_MULTI(JMOD)  = X3
+       XBETAHEN_MULTI(JMOD)= X4
     ENDDO
 !
 ! These parameters are correct for a nucleation spectra 
@@ -263,7 +295,7 @@ IF ( NMOD_IFN .GE. 1 ) THEN
          XMDIAM_IFN = (/ 0.05E-6 , 3.E-6 , 0.016E-6 , 0.016E-6 /)
          XSIGMA_IFN = (/ 2.4 , 1.6 , 2.5 , 2.5 /)
          XRHO_IFN   = (/ 2650. , 2650. , 1000. , 1000. /)
-   CASE ('MACC_JPP')
+   CASE ('CAMS_JPP')
 ! sea-salt, sulfate, hydrophilic (GADS data)
 ! 2 species, dust-metallic and hydrophobic (as BC)
 ! (Phillips et al. 2013 and GADS data)
@@ -274,6 +306,28 @@ IF ( NMOD_IFN .GE. 1 ) THEN
       XMDIAM_IFN = (/0.8E-6, 3.0E-6, 0.025E-6, 0.2E-6/)
       XSIGMA_IFN = (/2.0, 2.15, 2.0, 1.6 /)
       XRHO_IFN   = (/2600., 2600., 1000., 1500./) 
+   CASE ('CAMS_ACC')
+! sea-salt, sulfate, hydrophilic (GADS data)
+! 2 species, dust-metallic and hydrophobic (as BC)
+! (Phillips et al. 2013 and GADS data)
+      NSPECIE = 4 ! DM1, DM2, BC, BIO+(O)
+      IF (.NOT.(ALLOCATED(XMDIAM_IFN))) ALLOCATE(XMDIAM_IFN(NSPECIE))
+      IF (.NOT.(ALLOCATED(XSIGMA_IFN))) ALLOCATE(XSIGMA_IFN(NSPECIE))
+      IF (.NOT.(ALLOCATED(XRHO_IFN)))   ALLOCATE(XRHO_IFN(NSPECIE))
+      XMDIAM_IFN = (/0.8E-6, 3.0E-6, 0.04E-6, 0.8E-6 /)
+      XSIGMA_IFN = (/2.0,    2.15,   2.0,     2.2    /)
+      XRHO_IFN   = (/2600.,  2600.,  1000.,   2000.  /)
+   CASE ('CAMS_AIT')
+! sea-salt, sulfate, hydrophilic (GADS data)
+! 2 species, dust-metallic and hydrophobic (as BC)
+! (Phillips et al. 2013 and GADS data)
+      NSPECIE = 4 ! DM1, DM2, BC, BIO+(O)
+      IF (.NOT.(ALLOCATED(XMDIAM_IFN))) ALLOCATE(XMDIAM_IFN(NSPECIE))
+      IF (.NOT.(ALLOCATED(XSIGMA_IFN))) ALLOCATE(XSIGMA_IFN(NSPECIE))
+      IF (.NOT.(ALLOCATED(XRHO_IFN)))   ALLOCATE(XRHO_IFN(NSPECIE))
+      XMDIAM_IFN = (/0.8E-6, 3.0E-6, 0.04E-6, 0.04E-6/)
+      XSIGMA_IFN = (/2.0,    2.15,   2.0,     2.2 /)
+      XRHO_IFN   = (/2600.,  2600.,  1000.,   1800./)
    CASE DEFAULT
       IF (NPHILLIPS == 8) THEN
 ! 4 species, according to Phillips et al. 2008
@@ -309,7 +363,7 @@ IF ( NMOD_IFN .GE. 1 ) THEN
       XFRAC(3,:)=1.
    CASE ('O')
       XFRAC(4,:)=1.
-   CASE ('MACC')
+   CASE ('CAMS')
       XFRAC(1,1)=0.99
       XFRAC(2,1)=0.01
       XFRAC(3,1)=0.
@@ -318,7 +372,7 @@ IF ( NMOD_IFN .GE. 1 ) THEN
       XFRAC(2,2)=0.
       XFRAC(3,2)=0.5
       XFRAC(4,2)=0.5
-   CASE ('MACC_JPP')
+   CASE ('CAMS_JPP')
       XFRAC(1,1)=1.0
       XFRAC(2,1)=0.0
       XFRAC(3,1)=0.0
@@ -327,6 +381,24 @@ IF ( NMOD_IFN .GE. 1 ) THEN
       XFRAC(2,2)=0.0
       XFRAC(3,2)=0.5
       XFRAC(4,2)=0.5
+   CASE ('CAMS_ACC')
+      XFRAC(1,1)=1.0
+      XFRAC(2,1)=0.0
+      XFRAC(3,1)=0.0
+      XFRAC(4,1)=0.0
+      XFRAC(1,2)=0.0
+      XFRAC(2,2)=0.0
+      XFRAC(3,2)=0.0
+      XFRAC(4,2)=1.0
+   CASE ('CAMS_AIT')
+      XFRAC(1,1)=1.0
+      XFRAC(2,1)=0.0
+      XFRAC(3,1)=0.0
+      XFRAC(4,1)=0.0
+      XFRAC(1,2)=0.0
+      XFRAC(2,2)=0.0
+      XFRAC(3,2)=0.0
+      XFRAC(4,2)=1.0
    CASE ('MOCAGE')
       XFRAC(1,1)=1.
       XFRAC(2,1)=0.

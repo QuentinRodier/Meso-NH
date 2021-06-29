@@ -91,16 +91,6 @@ INC                += -I${GA_ROOT}/include
 LIBS               += -L${GA_ROOT}/lib -larmci -lga -lgfortran
 endif
 #
-# Gribex flags
-#
-TARGET_GRIBEX=linux
-CNAME_GRIBEX=_gfortran
-#
-# GRIB_API
-#
-GRIBAPI_CONF="FCFLAGS= -em -ef "
-
-#
 # LIBTOOLS flags
 #
 #if MNH_TOOLS exists => compile the tools
@@ -120,6 +110,12 @@ MNH_COMPRESS=yes
 #
 #if MNH_S4PY exists => compile the libs4py library (for epygram)
 #MNH_S4PY=no
+#
+## ecCodes or grib_api selection
+#MNH_GRIBAPI: if set to no:  use ecCodes
+#             if set to yes: use grib_api (deprecated library)
+#
+MNH_GRIBAPI=no
 #
 ##########################################################
 #                                                        #

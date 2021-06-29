@@ -190,7 +190,7 @@ CHARACTER (LEN=4)  :: YTURB     ! initial flag to call to turbulence schemes
 ! CHARACTER (LEN=40) :: YFMT,YFMT2! format for cpu analysis printing
 INTEGER  :: ILUOUT0             ! Logical unit number for the output listing
 REAL(kind=MNHTIME), DIMENSION(2) :: ZTIME0, ZTIME1, ZTIME2, ZRAD, ZDCONV, ZSHADOWS, ZGROUND, &
-                                    ZTRACER, ZDRAG, ZTURB, ZMAFL, ZCHEM, ZTIME_BU ! CPU times
+                                    ZTRACER, ZDRAG, ZTURB, ZMAFL, ZCHEM, ZTIME_BU, ZEOL ! CPU times
 REAL(kind=MNHTIME), DIMENSION(2) :: ZSTART, ZINIT, ZWRIT, ZBALL, ZPHYS, ZSURF, ZWRITS, ZTRAJ ! storing variables
 INTEGER(KIND=LFIINT) :: INPRAR ! number of articles predicted  in the LFIFM file
 INTEGER :: ISTEPBAL   ! loop indice for balloons and aircraft
@@ -691,11 +691,12 @@ ZTURB                = 0.0_MNHTIME
 ZDRAG                = 0.0_MNHTIME
 ZMAFL                = 0.0_MNHTIME
 ZCHEM                = 0.0_MNHTIME
+ZEOL                 = 0.0_MNHTIME
 XTIME_LES            = 0.0_MNHTIME
 XTIME_LES_BU_PROCESS = 0.0_MNHTIME
 XTIME_BU_PROCESS     = 0.0_MNHTIME
 CALL PHYS_PARAM_n( 1, TOUTDATAFILE,                                             &
-                   ZRAD, ZSHADOWS, ZDCONV, ZGROUND, ZMAFL, ZDRAG,               &
+                   ZRAD, ZSHADOWS, ZDCONV, ZGROUND, ZMAFL, ZDRAG,ZEOL,          &
                    ZTURB, ZTRACER, ZTIME_BU, ZWETDEPAER, GMASKkids, GCLOUD_ONLY )
 WRITE(ILUOUT0,*) 'DIAG AFTER PHYS_PARAM1'
 IF (LCHEMDIAG) THEN

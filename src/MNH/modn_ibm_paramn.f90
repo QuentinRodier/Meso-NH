@@ -1,0 +1,374 @@
+!MNH_LIC Copyright 2019-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+!MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
+!
+!     #######################  
+      MODULE MODN_IBM_PARAM_n
+!     #######################
+!
+!****  *MODN_IBM_PARAM$n* - declaration of namelist NAM_IBM_PARAMn
+!
+!    PURPOSE
+!    -------
+!****  The purpose of this declarative module is to declare the constants
+!      which allow to initialize the embedded surface 
+!
+!
+!    IMPLICIT ARGUMENTS
+!    ------------------
+!      Module MODD_IBM_PARAM$n : contains declaration of IBM parameters 
+!
+!
+!    REFERENCE
+!    ---------
+!          
+!    AUTHOR
+!    ------
+!	   Franck Auguste (CERFACS-AE)
+!
+!    MODIFICATIONS
+!    -------------
+!      Original    01/01/2019
+!
+USE MODD_IBM_PARAM_n, ONLY: &
+         LIBM_n => LIBM, &
+         NIBM_ITR_n => NIBM_ITR, &        
+         CIBM_ADV_n => CIBM_ADV, &        
+         LIBM_TROUBLE_n => LIBM_TROUBLE, &  
+         XIBM_EPSI_n => XIBM_EPSI, &
+         XIBM_IEPS_n => XIBM_IEPS, &
+         XIBM_RUG_n => XIBM_RUG, &
+         XIBM_VISC_n => XIBM_VISC, &
+         XIBM_CNU_n => XIBM_CNU, &
+         
+              NIBM_LAYER_P_n =>      NIBM_LAYER_P ,&
+             XIBM_RADIUS_P_n =>     XIBM_RADIUS_P ,&
+             XIBM_POWERS_P_n =>     XIBM_POWERS_P ,&
+         CIBM_MODE_INTE1_P_n => CIBM_MODE_INTE1_P ,&
+         CIBM_MODE_INTE3_P_n => CIBM_MODE_INTE3_P ,&
+         CIBM_MODE_BOUND_P_n => CIBM_MODE_BOUND_P ,&
+         CIBM_TYPE_BOUND_P_n => CIBM_TYPE_BOUND_P ,&
+         CIBM_FORC_BOUND_P_n => CIBM_FORC_BOUND_P ,&
+         XIBM_FORC_BOUND_P_n => XIBM_FORC_BOUND_P ,&
+
+              NIBM_LAYER_Q_n =>      NIBM_LAYER_Q ,&
+             XIBM_RADIUS_Q_n =>     XIBM_RADIUS_Q ,&
+             XIBM_POWERS_Q_n =>     XIBM_POWERS_Q ,&
+         CIBM_MODE_INTE1_Q_n => CIBM_MODE_INTE1_Q ,&
+         CIBM_MODE_INTE3_Q_n => CIBM_MODE_INTE3_Q ,&
+         CIBM_MODE_BOUND_Q_n => CIBM_MODE_BOUND_Q ,&
+         CIBM_TYPE_BOUND_Q_n => CIBM_TYPE_BOUND_Q ,&
+         CIBM_FORC_BOUND_Q_n => CIBM_FORC_BOUND_Q ,&
+         XIBM_FORC_BOUND_Q_n => XIBM_FORC_BOUND_Q ,&
+
+              NIBM_LAYER_R_n =>      NIBM_LAYER_R ,&
+             XIBM_RADIUS_R_n =>     XIBM_RADIUS_R ,&
+             XIBM_POWERS_R_n =>     XIBM_POWERS_R ,&
+         CIBM_MODE_INTE1_R_n => CIBM_MODE_INTE1_R ,&
+         CIBM_MODE_INTE3_R_n => CIBM_MODE_INTE3_R ,&
+         CIBM_MODE_BOUND_R_n => CIBM_MODE_BOUND_R ,&
+         CIBM_TYPE_BOUND_R_n => CIBM_TYPE_BOUND_R ,&
+         CIBM_FORC_BOUND_R_n => CIBM_FORC_BOUND_R ,&
+         XIBM_FORC_BOUND_R_n => XIBM_FORC_BOUND_R ,&
+
+              NIBM_LAYER_S_n =>      NIBM_LAYER_S ,&
+             XIBM_RADIUS_S_n =>     XIBM_RADIUS_S ,&
+             XIBM_POWERS_S_n =>     XIBM_POWERS_S ,&
+         CIBM_MODE_INTE1_S_n => CIBM_MODE_INTE1_S ,&
+         CIBM_MODE_INTE3_S_n => CIBM_MODE_INTE3_S ,&
+         CIBM_MODE_BOUND_S_n => CIBM_MODE_BOUND_S ,&
+         CIBM_TYPE_BOUND_S_n => CIBM_TYPE_BOUND_S ,&
+         CIBM_FORC_BOUND_S_n => CIBM_FORC_BOUND_S ,&
+         XIBM_FORC_BOUND_S_n => XIBM_FORC_BOUND_S ,&
+
+              NIBM_LAYER_T_n =>      NIBM_LAYER_T ,&
+             XIBM_RADIUS_T_n =>     XIBM_RADIUS_T ,&
+             XIBM_POWERS_T_n =>     XIBM_POWERS_T ,&
+         CIBM_MODE_INTE1_T_n => CIBM_MODE_INTE1_T ,&
+         CIBM_MODE_INTE3_T_n => CIBM_MODE_INTE3_T ,&
+         CIBM_MODE_BOUND_T_n => CIBM_MODE_BOUND_T ,&
+         CIBM_TYPE_BOUND_T_n => CIBM_TYPE_BOUND_T ,&
+         CIBM_FORC_BOUND_T_n => CIBM_FORC_BOUND_T ,&
+         XIBM_FORC_BOUND_T_n => XIBM_FORC_BOUND_T ,&
+
+              NIBM_LAYER_E_n =>      NIBM_LAYER_E ,&
+             XIBM_RADIUS_E_n =>     XIBM_RADIUS_E ,&
+             XIBM_POWERS_E_n =>     XIBM_POWERS_E ,&
+         CIBM_MODE_INTE1_E_n => CIBM_MODE_INTE1_E ,&
+         CIBM_MODE_INTE3_E_n => CIBM_MODE_INTE3_E ,&
+         CIBM_MODE_BOUND_E_n => CIBM_MODE_BOUND_E ,&
+         CIBM_TYPE_BOUND_E_n => CIBM_TYPE_BOUND_E ,&
+         CIBM_FORC_BOUND_E_n => CIBM_FORC_BOUND_E ,&
+         XIBM_FORC_BOUND_E_n => XIBM_FORC_BOUND_E ,&
+
+         NIBM_LAYER_V_n      =>      NIBM_LAYER_V ,&
+         XIBM_RADIUS_V_n     =>     XIBM_RADIUS_V ,&
+         XIBM_POWERS_V_n     =>     XIBM_POWERS_V ,&
+         CIBM_MODE_INTE1NV_n => CIBM_MODE_INTE1NV ,&
+         CIBM_MODE_INTE1TV_n => CIBM_MODE_INTE1TV ,&
+         CIBM_MODE_INTE1CV_n => CIBM_MODE_INTE1CV ,&
+         CIBM_MODE_INTE3_V_n => CIBM_MODE_INTE3_V ,&
+         CIBM_MODE_BOUNN_V_n => CIBM_MODE_BOUNN_V ,&
+         CIBM_TYPE_BOUNN_V_n => CIBM_TYPE_BOUNN_V ,&
+         CIBM_MODE_BOUNT_V_n => CIBM_MODE_BOUNT_V ,&
+         CIBM_TYPE_BOUNT_V_n => CIBM_TYPE_BOUNT_V ,&
+         CIBM_MODE_BOUNC_V_n => CIBM_MODE_BOUNC_V ,&
+         CIBM_TYPE_BOUNC_V_n => CIBM_TYPE_BOUNC_V ,&
+         CIBM_FORC_BOUNN_V_n => CIBM_FORC_BOUNN_V ,&
+         CIBM_FORC_BOUNR_V_n => CIBM_FORC_BOUNR_V ,&
+         CIBM_FORC_BOUNT_V_n => CIBM_FORC_BOUNT_V ,&
+         CIBM_FORC_BOUNC_V_n => CIBM_FORC_BOUNC_V ,&                                            
+         XIBM_FORC_BOUNN_V_n => XIBM_FORC_BOUNN_V ,&
+         XIBM_FORC_BOUNT_V_n => XIBM_FORC_BOUNT_V ,&
+         XIBM_FORC_BOUNC_V_n => XIBM_FORC_BOUNC_V
+!
+IMPLICIT NONE
+!
+LOGICAL,SAVE  :: LIBM,LIBM_TROUBLE
+REAL,SAVE  :: XIBM_EPSI
+REAL,SAVE  :: XIBM_IEPS
+REAL,SAVE  :: XIBM_RUG,XIBM_VISC,XIBM_CNU
+INTEGER,SAVE :: NIBM_ITR
+INTEGER,SAVE :: NIBM_LAYER_P,NIBM_LAYER_Q,NIBM_LAYER_R,NIBM_LAYER_S,NIBM_LAYER_T,NIBM_LAYER_E,NIBM_LAYER_V
+CHARACTER (LEN=6),SAVE :: CIBM_ADV
+CHARACTER (LEN=3),SAVE :: CIBM_MODE_INTE1_P,CIBM_MODE_INTE1_Q,CIBM_MODE_INTE1_R,CIBM_MODE_INTE1_S,&
+                          CIBM_MODE_INTE1_T,CIBM_MODE_INTE1_E,&
+                          CIBM_MODE_INTE1NV,CIBM_MODE_INTE1TV,CIBM_MODE_INTE1CV,&
+                          CIBM_MODE_INTE3_P,CIBM_MODE_INTE3_Q,CIBM_MODE_INTE3_R,CIBM_MODE_INTE3_S,&
+                          CIBM_MODE_INTE3_T,CIBM_MODE_INTE3_E,CIBM_MODE_INTE3_V
+CHARACTER (LEN=3),SAVE :: CIBM_MODE_BOUND_P,CIBM_MODE_BOUND_Q,CIBM_MODE_BOUND_R,CIBM_MODE_BOUND_S,&
+                          CIBM_MODE_BOUND_T,CIBM_MODE_BOUND_E,&
+                          CIBM_TYPE_BOUND_P,CIBM_TYPE_BOUND_Q,CIBM_TYPE_BOUND_R,CIBM_TYPE_BOUND_S,&
+                          CIBM_TYPE_BOUND_T,CIBM_TYPE_BOUND_E,&
+                          CIBM_FORC_BOUND_P,CIBM_FORC_BOUND_Q,CIBM_FORC_BOUND_R,CIBM_FORC_BOUND_S,&
+                          CIBM_FORC_BOUND_T,CIBM_FORC_BOUND_E,&
+                          CIBM_MODE_BOUNN_V,CIBM_MODE_BOUNT_V,CIBM_MODE_BOUNC_V,&
+                          CIBM_TYPE_BOUNN_V,CIBM_TYPE_BOUNT_V,CIBM_TYPE_BOUNC_V,&
+                          CIBM_FORC_BOUNN_V,CIBM_FORC_BOUNT_V,CIBM_FORC_BOUNC_V,CIBM_FORC_BOUNR_V
+REAL,SAVE  :: XIBM_FORC_BOUNN_V,XIBM_FORC_BOUNT_V,XIBM_FORC_BOUNC_V,&
+              XIBM_FORC_BOUND_P,XIBM_FORC_BOUND_Q,XIBM_FORC_BOUND_R,XIBM_FORC_BOUND_S,&
+              XIBM_FORC_BOUND_T,XIBM_FORC_BOUND_E
+REAL,SAVE  :: XIBM_RADIUS_P,XIBM_RADIUS_Q,XIBM_RADIUS_R,XIBM_RADIUS_S,&
+                          XIBM_RADIUS_T,XIBM_RADIUS_E,XIBM_RADIUS_V,&
+                          XIBM_POWERS_P,XIBM_POWERS_Q,XIBM_POWERS_R,XIBM_POWERS_S,&
+                          XIBM_POWERS_T,XIBM_POWERS_E,XIBM_POWERS_V
+!
+NAMELIST /NAM_IBM_PARAMn/ LIBM, LIBM_TROUBLE, CIBM_ADV, NIBM_ITR,  &
+                          XIBM_VISC, XIBM_EPSI, XIBM_IEPS, XIBM_RUG, XIBM_CNU, &
+                          NIBM_LAYER_P,NIBM_LAYER_Q,NIBM_LAYER_R,NIBM_LAYER_S,&
+                          NIBM_LAYER_T,NIBM_LAYER_E,NIBM_LAYER_V,&
+                          CIBM_MODE_INTE1_P,CIBM_MODE_INTE1_Q,CIBM_MODE_INTE1_R,CIBM_MODE_INTE1_S,&
+                          CIBM_MODE_INTE1_T,CIBM_MODE_INTE1_E,&
+                          CIBM_MODE_INTE1NV,CIBM_MODE_INTE1TV,CIBM_MODE_INTE1CV,&
+                          CIBM_MODE_INTE3_P,CIBM_MODE_INTE3_Q,CIBM_MODE_INTE3_R,CIBM_MODE_INTE3_S,&
+                          CIBM_MODE_INTE3_T,CIBM_MODE_INTE3_E,CIBM_MODE_INTE3_V,&
+                          CIBM_MODE_BOUND_P,CIBM_MODE_BOUND_Q,CIBM_MODE_BOUND_R,CIBM_MODE_BOUND_S,&
+                          CIBM_MODE_BOUND_T,CIBM_MODE_BOUND_E,&
+                          CIBM_TYPE_BOUND_P,CIBM_TYPE_BOUND_Q,CIBM_TYPE_BOUND_R,CIBM_TYPE_BOUND_S,&
+                          CIBM_TYPE_BOUND_T,CIBM_TYPE_BOUND_E,&                    
+                          CIBM_FORC_BOUND_P,CIBM_FORC_BOUND_Q,CIBM_FORC_BOUND_R,CIBM_FORC_BOUND_S,&
+                          CIBM_FORC_BOUND_T,CIBM_FORC_BOUND_E,&
+                          XIBM_FORC_BOUND_P,XIBM_FORC_BOUND_Q,XIBM_FORC_BOUND_R,XIBM_FORC_BOUND_S,&
+                          XIBM_FORC_BOUND_T,XIBM_FORC_BOUND_E,&
+                          CIBM_MODE_BOUNN_V,CIBM_MODE_BOUNT_V,CIBM_MODE_BOUNC_V,&
+                          CIBM_TYPE_BOUNN_V,CIBM_TYPE_BOUNT_V,CIBM_TYPE_BOUNC_V,&
+                          CIBM_FORC_BOUNN_V,CIBM_FORC_BOUNT_V,CIBM_FORC_BOUNC_V,CIBM_FORC_BOUNR_V,&
+                          XIBM_FORC_BOUNN_V,XIBM_FORC_BOUNT_V,XIBM_FORC_BOUNC_V,&
+                          XIBM_RADIUS_P,XIBM_RADIUS_Q,XIBM_RADIUS_R,XIBM_RADIUS_S,&
+                          XIBM_RADIUS_T,XIBM_RADIUS_E,XIBM_RADIUS_V,&
+                          XIBM_POWERS_P,XIBM_POWERS_Q,XIBM_POWERS_R,XIBM_POWERS_S,&
+                          XIBM_POWERS_T,XIBM_POWERS_E,XIBM_POWERS_V
+!
+CONTAINS
+!
+SUBROUTINE INIT_NAM_IBM_PARAMn
+  LIBM = LIBM_n
+  CIBM_ADV = CIBM_ADV_n  
+  NIBM_ITR = NIBM_ITR_n   
+  LIBM_TROUBLE = LIBM_TROUBLE_n
+  XIBM_EPSI = XIBM_EPSI_n
+  XIBM_IEPS = XIBM_IEPS_n
+  XIBM_RUG = XIBM_RUG_n
+  XIBM_VISC = XIBM_VISC_n
+  XIBM_CNU = XIBM_CNU_n
+  
+              NIBM_LAYER_P =      NIBM_LAYER_P_n 
+             XIBM_RADIUS_P =     XIBM_RADIUS_P_n 
+             XIBM_POWERS_P =     XIBM_POWERS_P_n 
+         CIBM_MODE_INTE1_P = CIBM_MODE_INTE1_P_n 
+         CIBM_MODE_INTE3_P = CIBM_MODE_INTE3_P_n 
+         CIBM_MODE_BOUND_P = CIBM_MODE_BOUND_P_n 
+         CIBM_TYPE_BOUND_P = CIBM_TYPE_BOUND_P_n 
+         CIBM_FORC_BOUND_P = CIBM_FORC_BOUND_P_n
+         XIBM_FORC_BOUND_P = XIBM_FORC_BOUND_P_n
+
+              NIBM_LAYER_Q =      NIBM_LAYER_Q_n 
+             XIBM_RADIUS_Q =     XIBM_RADIUS_Q_n 
+             XIBM_POWERS_Q =     XIBM_POWERS_Q_n 
+         CIBM_MODE_INTE1_Q = CIBM_MODE_INTE1_Q_n 
+         CIBM_MODE_INTE3_Q = CIBM_MODE_INTE3_Q_n 
+         CIBM_MODE_BOUND_Q = CIBM_MODE_BOUND_Q_n 
+         CIBM_TYPE_BOUND_Q = CIBM_TYPE_BOUND_Q_n
+         CIBM_FORC_BOUND_Q = CIBM_FORC_BOUND_Q_n 
+         XIBM_FORC_BOUND_Q = XIBM_FORC_BOUND_Q_n
+
+              NIBM_LAYER_R =      NIBM_LAYER_R_n 
+             XIBM_RADIUS_R =     XIBM_RADIUS_R_n 
+             XIBM_POWERS_R =     XIBM_POWERS_R_n 
+         CIBM_MODE_INTE1_R = CIBM_MODE_INTE1_R_n 
+         CIBM_MODE_INTE3_R = CIBM_MODE_INTE3_R_n 
+         CIBM_MODE_BOUND_R = CIBM_MODE_BOUND_R_n 
+         CIBM_TYPE_BOUND_R = CIBM_TYPE_BOUND_R_n 
+         CIBM_FORC_BOUND_R = CIBM_FORC_BOUND_R_n
+         XIBM_FORC_BOUND_R = XIBM_FORC_BOUND_R_n
+
+              NIBM_LAYER_S =      NIBM_LAYER_S_n 
+             XIBM_RADIUS_S =     XIBM_RADIUS_S_n 
+             XIBM_POWERS_S =     XIBM_POWERS_S_n 
+         CIBM_MODE_INTE1_S = CIBM_MODE_INTE1_S_n 
+         CIBM_MODE_INTE3_S = CIBM_MODE_INTE3_S_n
+         CIBM_MODE_BOUND_S = CIBM_MODE_BOUND_S_n 
+         CIBM_TYPE_BOUND_S = CIBM_TYPE_BOUND_S_n
+         CIBM_FORC_BOUND_S = CIBM_FORC_BOUND_S_n
+         XIBM_FORC_BOUND_S = XIBM_FORC_BOUND_S_n
+
+              NIBM_LAYER_T =      NIBM_LAYER_T_n
+             XIBM_RADIUS_T =     XIBM_RADIUS_T_n
+             XIBM_POWERS_T =     XIBM_POWERS_T_n
+         CIBM_MODE_INTE1_T = CIBM_MODE_INTE1_T_n
+         CIBM_MODE_INTE3_T = CIBM_MODE_INTE3_T_n
+         CIBM_MODE_BOUND_T = CIBM_MODE_BOUND_T_n
+         CIBM_TYPE_BOUND_T = CIBM_TYPE_BOUND_T_n
+         CIBM_FORC_BOUND_T = CIBM_FORC_BOUND_T_n
+         XIBM_FORC_BOUND_T = XIBM_FORC_BOUND_T_n
+
+              NIBM_LAYER_E =      NIBM_LAYER_E_n
+             XIBM_RADIUS_E =     XIBM_RADIUS_E_n
+             XIBM_POWERS_E =     XIBM_POWERS_E_n
+         CIBM_MODE_INTE1_E = CIBM_MODE_INTE1_E_n
+         CIBM_MODE_INTE3_E = CIBM_MODE_INTE3_E_n
+         CIBM_MODE_BOUND_E = CIBM_MODE_BOUND_E_n
+         CIBM_TYPE_BOUND_E = CIBM_TYPE_BOUND_E_n
+         CIBM_FORC_BOUND_E = CIBM_FORC_BOUND_E_n
+         XIBM_FORC_BOUND_E = XIBM_FORC_BOUND_E_n
+
+         NIBM_LAYER_V      =      NIBM_LAYER_V_n
+         XIBM_RADIUS_V     =     XIBM_RADIUS_V_n
+         XIBM_POWERS_V     =     XIBM_POWERS_V_n
+         CIBM_MODE_INTE1NV = CIBM_MODE_INTE1NV_n
+         CIBM_MODE_INTE1TV = CIBM_MODE_INTE1TV_n
+         CIBM_MODE_INTE1CV = CIBM_MODE_INTE1CV_n
+         CIBM_MODE_INTE3_V = CIBM_MODE_INTE3_V_n
+         CIBM_MODE_BOUNN_V = CIBM_MODE_BOUNN_V_n
+         CIBM_TYPE_BOUNN_V = CIBM_TYPE_BOUNN_V_n
+         CIBM_MODE_BOUNT_V = CIBM_MODE_BOUNT_V_n
+         CIBM_TYPE_BOUNT_V = CIBM_TYPE_BOUNT_V_n
+         CIBM_MODE_BOUNC_V = CIBM_MODE_BOUNC_V_n
+         CIBM_TYPE_BOUNC_V = CIBM_TYPE_BOUNC_V_n
+         CIBM_FORC_BOUNN_V = CIBM_FORC_BOUNN_V_n
+         CIBM_FORC_BOUNR_V = CIBM_FORC_BOUNR_V_n
+         CIBM_FORC_BOUNT_V = CIBM_FORC_BOUNT_V_n
+         CIBM_FORC_BOUNC_v = CIBM_FORC_BOUNC_V_n
+         XIBM_FORC_BOUNN_V = XIBM_FORC_BOUNN_V_n
+         XIBM_FORC_BOUNT_V = XIBM_FORC_BOUNT_V_n
+         XIBM_FORC_BOUNC_v = XIBM_FORC_BOUNC_V_n
+
+END SUBROUTINE INIT_NAM_IBM_PARAMn
+
+SUBROUTINE UPDATE_NAM_IBM_PARAMn
+  LIBM_n = LIBM
+  CIBM_ADV_n = CIBM_ADV  
+  NIBM_ITR_n = NIBM_ITR 
+  LIBM_TROUBLE_n = LIBM_TROUBLE
+  XIBM_EPSI_n = XIBM_EPSI
+  XIBM_IEPS_n = XIBM_IEPS
+  XIBM_RUG_n = XIBM_RUG
+  XIBM_VISC_n = XIBM_VISC
+  XIBM_CNU_n = XIBM_CNU
+  
+              NIBM_LAYER_P_n =      NIBM_LAYER_P 
+             XIBM_RADIUS_P_n =     XIBM_RADIUS_P 
+             XIBM_POWERS_P_n =     XIBM_POWERS_P 
+         CIBM_MODE_INTE1_P_n = CIBM_MODE_INTE1_P 
+         CIBM_MODE_INTE3_P_n = CIBM_MODE_INTE3_P 
+         CIBM_MODE_BOUND_P_n = CIBM_MODE_BOUND_P 
+         CIBM_TYPE_BOUND_P_n = CIBM_TYPE_BOUND_P
+         CIBM_FORC_BOUND_P_n = CIBM_FORC_BOUND_P
+         XIBM_FORC_BOUND_P_n = XIBM_FORC_BOUND_P
+
+              NIBM_LAYER_Q_n =      NIBM_LAYER_Q 
+             XIBM_RADIUS_Q_n =     XIBM_RADIUS_Q 
+             XIBM_POWERS_Q_n =     XIBM_POWERS_Q 
+         CIBM_MODE_INTE1_Q_n = CIBM_MODE_INTE1_Q 
+         CIBM_MODE_INTE3_Q_n = CIBM_MODE_INTE3_Q 
+         CIBM_MODE_BOUND_Q_n = CIBM_MODE_BOUND_Q 
+         CIBM_TYPE_BOUND_Q_n = CIBM_TYPE_BOUND_Q 
+         CIBM_FORC_BOUND_Q_n = CIBM_FORC_BOUND_Q
+         XIBM_FORC_BOUND_Q_n = XIBM_FORC_BOUND_Q
+
+              NIBM_LAYER_R_n =      NIBM_LAYER_R 
+             XIBM_RADIUS_R_n =     XIBM_RADIUS_R 
+             XIBM_POWERS_R_n =     XIBM_POWERS_R 
+         CIBM_MODE_INTE1_R_n = CIBM_MODE_INTE1_R 
+         CIBM_MODE_INTE3_R_n = CIBM_MODE_INTE3_R 
+         CIBM_MODE_BOUND_R_n = CIBM_MODE_BOUND_R 
+         CIBM_TYPE_BOUND_R_n = CIBM_TYPE_BOUND_R
+         CIBM_FORC_BOUND_R_n = CIBM_FORC_BOUND_R
+         XIBM_FORC_BOUND_R_n = XIBM_FORC_BOUND_R
+
+              NIBM_LAYER_S_n =      NIBM_LAYER_S 
+             XIBM_RADIUS_S_n =     XIBM_RADIUS_S 
+             XIBM_POWERS_S_n =     XIBM_POWERS_S 
+         CIBM_MODE_INTE1_S_n = CIBM_MODE_INTE1_S 
+         CIBM_MODE_INTE3_S_n = CIBM_MODE_INTE3_S 
+         CIBM_MODE_BOUND_S_n = CIBM_MODE_BOUND_S 
+         CIBM_TYPE_BOUND_S_n = CIBM_TYPE_BOUND_S
+         CIBM_FORC_BOUND_S_n = CIBM_FORC_BOUND_S
+         XIBM_FORC_BOUND_S_n = XIBM_FORC_BOUND_S
+
+              NIBM_LAYER_T_n =      NIBM_LAYER_T 
+             XIBM_RADIUS_T_n =     XIBM_RADIUS_T 
+             XIBM_POWERS_T_n =     XIBM_POWERS_T 
+         CIBM_MODE_INTE1_T_n = CIBM_MODE_INTE1_T 
+         CIBM_MODE_INTE3_T_n = CIBM_MODE_INTE3_T 
+         CIBM_MODE_BOUND_T_n = CIBM_MODE_BOUND_T 
+         CIBM_TYPE_BOUND_T_n = CIBM_TYPE_BOUND_T 
+         CIBM_FORC_BOUND_T_n = CIBM_FORC_BOUND_T
+         XIBM_FORC_BOUND_T_n = XIBM_FORC_BOUND_T
+
+              NIBM_LAYER_E_n =      NIBM_LAYER_E 
+             XIBM_RADIUS_E_n =     XIBM_RADIUS_E 
+             XIBM_POWERS_E_n =     XIBM_POWERS_E 
+         CIBM_MODE_INTE1_E_n = CIBM_MODE_INTE1_E 
+         CIBM_MODE_INTE3_E_n = CIBM_MODE_INTE3_E 
+         CIBM_MODE_BOUND_E_n = CIBM_MODE_BOUND_E 
+         CIBM_TYPE_BOUND_E_n = CIBM_TYPE_BOUND_E 
+         CIBM_FORC_BOUND_E_n = CIBM_FORC_BOUND_E
+         XIBM_FORC_BOUND_E_n = XIBM_FORC_BOUND_E
+
+         NIBM_LAYER_V_n      =      NIBM_LAYER_V 
+         XIBM_RADIUS_V_n     =     XIBM_RADIUS_V 
+         XIBM_POWERS_V_n     =     XIBM_POWERS_V 
+         CIBM_MODE_INTE1NV_n = CIBM_MODE_INTE1NV
+         CIBM_MODE_INTE1TV_n = CIBM_MODE_INTE1TV
+         CIBM_MODE_INTE1CV_n = CIBM_MODE_INTE1CV
+         CIBM_MODE_INTE3_V_n = CIBM_MODE_INTE3_V 
+         CIBM_MODE_BOUNN_V_n = CIBM_MODE_BOUNN_V 
+         CIBM_TYPE_BOUNN_V_n = CIBM_TYPE_BOUNN_V 
+         CIBM_MODE_BOUNT_V_n = CIBM_MODE_BOUNT_V 
+         CIBM_TYPE_BOUNT_V_n = CIBM_TYPE_BOUNT_V 
+         CIBM_MODE_BOUNC_V_n = CIBM_MODE_BOUNC_V 
+         CIBM_TYPE_BOUNC_V_n = CIBM_TYPE_BOUNC_V
+         XIBM_FORC_BOUNN_V_n = XIBM_FORC_BOUNN_V
+         CIBM_FORC_BOUNN_V_n = CIBM_FORC_BOUNN_V
+         CIBM_FORC_BOUNR_V_n = CIBM_FORC_BOUNR_V
+         XIBM_FORC_BOUNT_V_n = XIBM_FORC_BOUNT_V
+         CIBM_FORC_BOUNT_V_n = CIBM_FORC_BOUNT_V
+         XIBM_FORC_BOUNC_V_n = XIBM_FORC_BOUNC_V
+         CIBM_FORC_BOUNC_V_n = CIBM_FORC_BOUNC_V
+
+END SUBROUTINE UPDATE_NAM_IBM_PARAMn
+!------------------------------------------------------------------------------
+END MODULE MODN_IBM_PARAM_n

@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1997-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !############################
@@ -65,9 +65,10 @@ END MODULE MODI_DEALLOCATE_MODEL1
 !!                   01/2004 V. Masson surface externalization
 !!                   06/2012 M.Tomasini add 2D nesting ADVFRC
 !!                   10/2016 M.Mazoyer New KHKO output fields
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-!!                   02/2019 C.Lac add rain fraction as an output field
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  C. Lac         02/2019: add rain fraction as an output field
 !  P. Wautelet 07/06/2019: bugfix: deallocate XLSRVM only if allocated
+!  S. Riette      04/2020: XHL* fields
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -105,6 +106,7 @@ USE MODD_ADV_n
 USE MODD_PAST_FIELD_n
 USE MODD_TURB_n
 USE MODD_PARAM_C2R2, ONLY :LSUPSAT
+!
 IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
@@ -184,6 +186,13 @@ IF ( ASSOCIATED(XSRCT) .AND. KCALL==3 ) THEN
   DEALLOCATE(XSRCT)
   DEALLOCATE(XSIGS)
 END IF   
+!
+IF ( ASSOCIATED(XHLC_HRC) .AND. KCALL==3 ) THEN
+  DEALLOCATE(XHLC_HRC)
+  DEALLOCATE(XHLC_HCF)
+  DEALLOCATE(XHLI_HRI)
+  DEALLOCATE(XHLI_HCF)
+END IF
 !
 IF ( ASSOCIATED(XCLDFR) .AND. KCALL==2 ) THEN
   DEALLOCATE(XCLDFR)

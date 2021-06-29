@@ -166,7 +166,7 @@ FX90FLAGS =  $(OPT)
 # -132 
 #
 #LDFLAGS    =  -Wl,-noinhibit-exec  -Wl,-warn-once $(PAR)
-LDFLAGS    =   -Wl,-warn-once $(PAR) -Wl,-rpath=$(LD_LIBRARY_PATH) $(OPT_BASE)
+LDFLAGS    =   -Wl,--allow-multiple-definition -Wl,-warn-once $(PAR) -Wl,-rpath=$(LD_LIBRARY_PATH) $(OPT_BASE)
 #
 # preprocessing flags 
 #
@@ -182,11 +182,6 @@ CPPFLAGS_SURCOUCHE += -DMNH_GA
 INC                += -I${GA_ROOT}/include
 LIBS               += -L${GA_ROOT}/lib -lga -larmci 
 endif
-#
-# Gribex flags
-#
-TARGET_GRIBEX=linux
-CNAME_GRIBEX=ifort
 #
 # Netcdf/HDF5 flags
 #
@@ -215,6 +210,12 @@ MNH_COMPRESS=yes
 #
 #if MNH_S4PY exists => compile the libs4py library (for epygram)
 #MNH_S4PY=no
+#
+## ecCodes or grib_api selection
+#MNH_GRIBAPI: if set to no:  use ecCodes
+#             if set to yes: use grib_api (deprecated library)
+#
+MNH_GRIBAPI=no
 #
 ##########################################################
 #                                                        #

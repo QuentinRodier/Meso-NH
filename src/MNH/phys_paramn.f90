@@ -11,8 +11,8 @@
 INTERFACE
 !
       SUBROUTINE PHYS_PARAM_n( KTCOUNT, TPFILE,                                              &
-                               PRAD, PSHADOWS, PKAFR, PGROUND, PMAFL, PDRAG, PTURB, PTRACER, &
-                               PTIME_BU, PWETDEPAER, OMASKkids, OCLOUD_ONLY                  )
+                               PRAD, PSHADOWS, PKAFR, PGROUND, PMAFL, PDRAG,PEOL, PTURB,     &
+                               PTRACER, PTIME_BU, PWETDEPAER, OMASKkids, OCLOUD_ONLY         )
 !
 USE MODD_IO,        ONLY: TFILEDATA
 use modd_precision, only: MNHTIME
@@ -20,7 +20,7 @@ use modd_precision, only: MNHTIME
 INTEGER,           INTENT(IN)     :: KTCOUNT   ! temporal iteration count
 TYPE(TFILEDATA),   INTENT(IN)     :: TPFILE    ! Synchronous output file
 ! advection schemes
-REAL(kind=MNHTIME), DIMENSION(2), INTENT(INOUT) :: PRAD,PSHADOWS,PKAFR,PGROUND,PTURB,PMAFL,PDRAG,PTRACER ! to store CPU
+REAL(kind=MNHTIME), DIMENSION(2), INTENT(INOUT) :: PRAD,PSHADOWS,PKAFR,PGROUND,PTURB,PMAFL,PDRAG,PTRACER,PEOL ! to store CPU
                                                                                                          ! time for computing time
 REAL(kind=MNHTIME), DIMENSION(2), INTENT(INOUT) :: PTIME_BU  ! time used in budget&LES budgets statistics
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT)  :: PWETDEPAER
@@ -36,8 +36,8 @@ END MODULE MODI_PHYS_PARAM_n
 !
 !     ########################################################################################
       SUBROUTINE PHYS_PARAM_n( KTCOUNT, TPFILE,                                              &
-                               PRAD, PSHADOWS, PKAFR, PGROUND, PMAFL, PDRAG, PTURB, PTRACER, &
-                               PTIME_BU, PWETDEPAER, OMASKkids, OCLOUD_ONLY                  )
+                               PRAD, PSHADOWS, PKAFR, PGROUND, PMAFL, PEOL, PDRAG, PTURB,    &
+                               PTRACER, PTIME_BU, PWETDEPAER, OMASKkids, OCLOUD_ONLY         )
 !     ########################################################################################
 !
 !!****  *PHYS_PARAM_n * -monitor of the parameterizations used by model _n
@@ -234,7 +234,9 @@ END MODULE MODI_PHYS_PARAM_n
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !  P. Wautelet 21/11/2019: ZRG_HOUR and ZRAT_HOUR are now parameter arrays
-!! 11/2019 C.Lac correction in the drag formula and application to building in addition to tree
+!  C. Lac         11/2019: correction in the drag formula and application to building in addition to tree
+!  F. Auguste     02/2021: add IBM
+!  JL Redelsperger 03/2021: add the SW flux penetration for Ocean model case
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -263,11 +265,13 @@ USE MODD_DRAGTREE_n
 USE MODD_DUST
 USE MODD_DYN
 USE MODD_DYN_n
+USE MODD_EOL_MAIN, ONLY: LMAIN_EOL, CMETH_EOL, NMODEL_EOL
 USE MODD_FIELD_n
 USE MODD_FRC
 USE MODD_FRC_n
 USE MODD_GRID
 USE MODD_GRID_n
+USE MODD_IBM_PARAM_n,      ONLY: LIBM, XIBM_EPSI, XIBM_LS
 USE MODD_ICE_C1R3_DESCR,  ONLY : XRTMIN_C1R3=>XRTMIN
 USE MODD_IO, ONLY: TFILEDATA
 USE MODD_LATZ_EDFLX
@@ -280,6 +284,7 @@ USE MODD_METRICS_n
 USE MODD_MNH_SURFEX_n
 USE MODD_NESTING, ONLY : XWAY,NDAD, NDXRATIO_ALL, NDYRATIO_ALL
 USE MODD_NSV
+USE MODD_OCEANH
 USE MODD_OUT_n
 USE MODD_PARAM_C2R2,       ONLY : LSEDC
 USE MODD_PARAMETERS
@@ -294,7 +299,8 @@ USE MODD_PASPOL_n
 USE MODD_PRECIP_n
 use modd_precision,        only: MNHTIME
 USE MODD_RADIATIONS_n
-USE MODD_RAIN_ICE_DESCR,  ONLY : XRTMIN
+USE MODD_RAIN_ICE_DESCR,   ONLY: XRTMIN
+USE MODD_REF,              ONLY: LCOUPLES
 USE MODD_REF_n
 USE MODD_SALT
 USE MODD_SHADOWS_n
@@ -327,6 +333,7 @@ USE MODI_EDDY_FLUX_n               ! Ajout PP
 USE MODI_EDDY_FLUX_ONE_WAY_n       ! Ajout PP
 USE MODI_EDDYUV_FLUX_n             ! Ajout PP
 USE MODI_EDDYUV_FLUX_ONE_WAY_n     ! Ajout PP
+USE MODI_EOL_MAIN
 USE MODI_GROUND_PARAM_n
 USE MODI_PASPOL
 USE MODI_RADIATIONS
@@ -346,7 +353,7 @@ IMPLICIT NONE
 INTEGER,           INTENT(IN)     :: KTCOUNT   ! temporal iteration count
 TYPE(TFILEDATA),   INTENT(IN)     :: TPFILE    ! Synchronous output file
 ! advection schemes
-REAL(kind=MNHTIME), DIMENSION(2), INTENT(INOUT) :: PRAD,PSHADOWS,PKAFR,PGROUND,PTURB,PMAFL,PDRAG,PTRACER ! to store CPU
+REAL(kind=MNHTIME), DIMENSION(2), INTENT(INOUT) :: PRAD,PSHADOWS,PKAFR,PGROUND,PTURB,PMAFL,PDRAG,PTRACER,PEOL ! to store CPU
                                                                                                          ! time for computing time
 REAL(kind=MNHTIME), DIMENSION(2), INTENT(INOUT) :: PTIME_BU  ! time used in budget&LES budgets statistics
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT)  :: PWETDEPAER
@@ -440,6 +447,11 @@ INTEGER           :: IKIDM          ! index loop
 REAL, DIMENSION(:,:,:),   ALLOCATABLE  :: ZSAVE_INPRR,ZSAVE_INPRS,ZSAVE_INPRG,ZSAVE_INPRH
 REAL, DIMENSION(:,:,:),   ALLOCATABLE  :: ZSAVE_INPRC,ZSAVE_PRCONV,ZSAVE_PRSCONV
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE  :: ZSAVE_DIRFLASWD, ZSAVE_SCAFLASWD,ZSAVE_DIRSRFSWD
+! for ocean model
+INTEGER           :: JKM , JSW         ! vertical index loop                                 
+REAL :: ZSWA,TINTSW     ! index for SW interpolation and int time betwenn forcings (ocean model)
+REAL, DIMENSION(:), ALLOCATABLE :: ZIZOCE(:) ! Solar flux penetrating in ocean
+REAL, DIMENSION(:), ALLOCATABLE :: ZPROSOL1(:),ZPROSOL2(:) ! Funtions for penetrating solar flux
 !
 !-----------------------------------------------------------------------------
 
@@ -801,6 +813,48 @@ IF (CRAD /='NONE') THEN
   XRTHS(:,:,:) = XRTHS(:,:,:) + XRHODJ(:,:,:)*XDTHRAD(:,:,:)
   if ( lbudget_th ) call Budget_store_end ( tbudgets(NBUDGET_TH), 'RAD', xrths(:, :, :) )
 END IF
+!
+!
+!*        1.6   Ocean case:
+! Sfc turbulent fluxes & Radiative tendency due to SW penetrating ocean
+! 
+IF (LOCEAN .AND. (.NOT.LCOUPLES)) THEN
+!
+  ALLOCATE( ZIZOCE(IKU)); ZIZOCE(:)=0. 
+  ALLOCATE( ZPROSOL1(IKU))
+  ALLOCATE( ZPROSOL2(IKU))
+  ALLOCATE(XSSUFL(IIU,IJU))
+  ALLOCATE(XSSVFL(IIU,IJU))
+  ALLOCATE(XSSTFL(IIU,IJU))
+  ALLOCATE(XSSOLA(IIU,IJU))
+  ! Time interpolation
+  JSW     = INT(TDTCUR%xtime/REAL(NINFRT))
+  ZSWA    = TDTCUR%xtime/REAL(NINFRT)-REAL(JSW)
+  XSSTFL  = (XSSTFL_T(JSW+1)*(1.-ZSWA)+XSSTFL_T(JSW+2)*ZSWA) 
+  XSSUFL  = (XSSUFL_T(JSW+1)*(1.-ZSWA)+XSSUFL_T(JSW+2)*ZSWA)
+  XSSVFL  = (XSSVFL_T(JSW+1)*(1.-ZSWA)+XSSVFL_T(JSW+2)*ZSWA)
+!
+  ZIZOCE(IKU)   = XSSOLA_T(JSW+1)*(1.-ZSWA)+XSSOLA_T(JSW+2)*ZSWA
+  ZPROSOL1(IKU) = XROC*ZIZOCE(IKU)
+  ZPROSOL2(IKU) = (1.-XROC)*ZIZOCE(IKU)
+  IF(NVERB >= 5 ) THEN   
+    WRITE(ILUOUT,*)'ZSWA JSW TDTCUR XTSTEP FT FU FV SolarR(IKU)', NINFRT, ZSWA,JSW,&
+       TDTCUR%xtime, XTSTEP, XSSTFL(2,2), XSSUFL(2,2),XSSVFL(2,2),ZIZOCE(IKU)
+  END IF
+  if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'OCEAN', xrths(:, :, :) ) 
+  DO JKM=IKU-1,2,-1
+    ZPROSOL1(JKM) = ZPROSOL1(JKM+1)* exp(-XDZZ(2,2,JKM)/XD1)
+    ZPROSOL2(JKM) = ZPROSOL2(JKM+1)* exp(-XDZZ(2,2,JKM)/XD2)
+    ZIZOCE(JKM)   = (ZPROSOL1(JKM+1)-ZPROSOL1(JKM) + ZPROSOL2(JKM+1)-ZPROSOL2(JKM))/XDZZ(2,2,JKM)
+    ! Adding to temperature tendency, the solar radiation penetrating in ocean
+    XRTHS(:,:,JKM) = XRTHS(:,:,JKM) + XRHODJ(:,:,JKM)*ZIZOCE(JKM)
+  END DO
+  if ( lbudget_th ) call Budget_store_end ( tbudgets(NBUDGET_TH), 'OCEAN', xrths(:, :, :) )
+  DEALLOCATE( ZIZOCE) 
+  DEALLOCATE (ZPROSOL1)
+  DEALLOCATE (ZPROSOL2)
+END IF
+!
 !
 CALL SECOND_MNH2(ZTIME2)
 !
@@ -1170,6 +1224,20 @@ IF (CSURF=='EXTE') THEN
   CALL GROUND_PARAM_n(ZSFTH, ZSFRV, ZSFSV, ZSFCO2, ZSFU, ZSFV, &
                       ZDIR_ALB, ZSCA_ALB, ZEMIS, ZTSRAD        )
   !
+  IF (LIBM) THEN
+    WHERE(XIBM_LS(:,:,IKB,1).GT.-XIBM_EPSI)
+      ZSFTH(:,:)=0.
+      ZSFRV(:,:)=0. 
+      ZSFU (:,:)=0. 
+      ZSFV (:,:)=0.
+    ENDWHERE
+    IF (NSV>0) THEN
+      DO JSV = 1 , NSV
+         WHERE(XIBM_LS(:,:,IKB,1).GT.-XIBM_EPSI) ZSFSV(:,:,JSV)=0.
+      ENDDO
+    ENDIF 
+  ENDIF
+  !
   IF (SIZE(XEMIS)>0) THEN
     XDIR_ALB = ZDIR_ALB
     XSCA_ALB = ZSCA_ALB
@@ -1245,7 +1313,7 @@ CALL SECOND_MNH2(ZTIME2)
 PTRACER = PTRACER + ZTIME2 - ZTIME1
 !-----------------------------------------------------------------------------
 !
-!*        5.    Drag force 
+!*        5a.    Drag force 
 !               ----------
 !
 ZTIME1 = ZTIME2
@@ -1265,6 +1333,29 @@ PDRAG = PDRAG + ZTIME2 - ZTIME1 &
 !
 PTIME_BU = PTIME_BU + XTIME_LES_BU_PROCESS + XTIME_BU_PROCESS
 !
+!*        5b.   Drag force from wind turbines 
+!               -----------------------
+!
+ZTIME1 = ZTIME2
+XTIME_BU_PROCESS = 0.
+XTIME_LES_BU_PROCESS = 0.
+!
+IF (LMAIN_EOL .AND. IMI == NMODEL_EOL) THEN
+ CALL EOL_MAIN(KTCOUNT,XTSTEP,     &
+               XDXX,XDYY,XDZZ,     &
+               XRHODJ,             &
+               XUT,XVT,XWT,        &
+               XRUS, XRVS, XRWS    )
+END IF
+!
+CALL SECOND_MNH2(ZTIME2)
+!
+PEOL = PEOL + ZTIME2 - ZTIME1 &
+             - XTIME_LES_BU_PROCESS - XTIME_BU_PROCESS
+!
+PTIME_BU = PTIME_BU + XTIME_LES_BU_PROCESS + XTIME_BU_PROCESS
+!
+!*        
 !-----------------------------------------------------------------------------
 !
 !*        6.    TURBULENCE SCHEME
@@ -1485,7 +1576,14 @@ PMAFL = PMAFL + ZTIME4 - ZTIME3 - ZTIME_LES_MF
 PTIME_BU = PTIME_BU + XTIME_LES_BU_PROCESS + XTIME_BU_PROCESS
 !
 !
+!* deallocate sf flux array for ocean model (in grid nesting, dimensions can vary)
 !
+IF (LOCEAN .AND. (.NOT. LCOUPLES)) THEN
+  DEALLOCATE(XSSUFL)
+  DEALLOCATE(XSSVFL)
+  DEALLOCATE(XSSTFL)
+  DEALLOCATE(XSSOLA)
+END IF
 !-------------------------------------------------------------------------------
 !
 !* deallocation of variables used in more than one parameterization

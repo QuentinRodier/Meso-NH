@@ -115,6 +115,14 @@ CPPFLAGS     += $(CPPFLAGS_SURCOUCHE)
 #ARCH_XYZ    := $(ARCH_XYZ)-$(VER_SURCOUCHE)
 endif
 ##########################################################
+#           Source MINPACK                             #
+##########################################################
+DIR_MINPACK += LIB/minpack
+#
+ifdef DIR_MINPACK
+DIR_MASTER   += $(DIR_MINPACK)
+endif
+##########################################################
 #           Source RAD                                   #
 ##########################################################
 # PRE_BUG TEST !!!
@@ -198,6 +206,18 @@ LIBS           += $(LIB_RTTOV)
 VPATH         += $(RTTOV_PATH)/mod
 CPPFLAGS    += $(CPPFLAGS_RTTOV)
 CPPFLAGS_MNH += -DMNH_RTTOV_11=MNH_RTTOV_11
+endif
+ifeq "$(VER_RTTOV)" "13.0"
+DIR_RTTOV=${SRC_MESONH}/src/LIB/RTTOV-${VER_RTTOV}
+RTTOV_PATH=${DIR_RTTOV}
+#
+INC_RTTOV     ?= -I${RTTOV_PATH}/include -I${RTTOV_PATH}/mod
+LIB_RTTOV     ?= -L${RTTOV_PATH}/lib -lrttov13_coef_io -lrttov13_hdf -lrttov13_mw_scatt -lrttov13_brdf_atlas -lrttov13_main
+INC            += $(INC_RTTOV)
+LIBS           += $(LIB_RTTOV)
+VPATH         += $(RTTOV_PATH)/mod
+CPPFLAGS    += $(CPPFLAGS_RTTOV)
+CPPFLAGS_MNH += -DMNH_RTTOV_13=MNH_RTTOV_13
 endif
 endif
 ##########################################################
@@ -414,31 +434,15 @@ INC            += $(INC_MPI)
 LIBS           += $(LIB_MPI)
 endif
 
-
 ARCH_XYZ    := $(ARCH_XYZ)-$(VER_MPI)
-##########################################################
-#           Librairie GRIBEX                             #
-##########################################################
-#ifneq "$(ARCH)" "BG"
-# Gribex bypass on BG for the moment
-#DIR_GRIBEX     +=  LIB/GRIBEX
-#endif
-#
-#ifdef DIR_GRIBEX
-#LIB_GRIBEX     =  $(DIR_GRIBEX)_$(ARCH)/libgribexR64.a
-#LIBS          +=    $(LIB_GRIBEX)
-#R64_GRIBEX=R64
-#endif
+
 ##########################################################
 #           Librairie GRIBAPI                            #
 ##########################################################
-#ifneq "$(ARCH)" "BG"
-# Gribapi bypass on BG for the moment
+ifeq "$(MNH_GRIBAPI)" "yes"
 DIR_GRIBAPI?=${SRC_MESONH}/src/LIB/grib_api-${VERSION_GRIBAPI}
 GRIBAPI_PATH?=${OBJDIR_MASTER}/GRIBAPI-${VERSION_GRIBAPI}
-#GRIBAPI_PATH?=${DIR_GRIBAPI}-${ARCH}${MNH_INT}
 GRIBAPI_INC?=${GRIBAPI_PATH}/include/grib_api.mod
-#endif
 #
 ifdef DIR_GRIBAPI
 INC_GRIBAPI   ?= -I${GRIBAPI_PATH}/include
@@ -447,6 +451,25 @@ INC           += $(INC_GRIBAPI)
 LIBS          += $(LIB_GRIBAPI)
 VPATH         += $(GRIBAPI_PATH)/include
 R64_GRIBAPI=R64
+endif
+endif
+
+##########################################################
+#           ecCodes library                              #
+##########################################################
+ifneq "$(MNH_GRIBAPI)" "yes"
+DIR_ECCODES_SRC?=${SRC_MESONH}/src/LIB/eccodes-${VERSION_ECCODES}-Source
+DIR_ECCODES_BUILD?=${OBJDIR_MASTER}/build_eccodes-${VERSION_ECCODES}
+DIR_ECCODES_INSTALL?=${OBJDIR_MASTER}/ECCODES-${VERSION_ECCODES}
+ECCODES_MOD?=${DIR_ECCODES_INSTALL}/include/grib_api.mod
+#
+ifdef DIR_ECCODES_SRC
+INC_ECCODES   ?= -I${DIR_ECCODES_INSTALL}/include
+LIB_ECCODES   ?= -L${DIR_ECCODES_INSTALL}/lib -L${DIR_ECCODES_INSTALL}/lib64 -leccodes_f90 -leccodes
+INC           += $(INC_ECCODES)
+LIBS          += $(LIB_ECCODES)
+VPATH         += $(DIR_ECCODES_INSTALL)/include
+endif
 endif
 
 ##########################################################
@@ -499,7 +522,7 @@ CDF_PATH?=${OBJDIR_MASTER}/NETCDF-${VERSION_CDFF}
 CDF_MOD?=${CDF_PATH}/include/netcdf.mod
 #
 INC_NETCDF     ?= -I${CDF_PATH}/include
-LIB_NETCDF     ?= -L${CDF_PATH}/lib -L${CDF_PATH}/lib64 -lnetcdff -lnetcdf  -lhdf5_hl -lhdf5 -lsz -laec -lz -ldl
+LIB_NETCDF     ?= -L${CDF_PATH}/lib -L${CDF_PATH}/lib64 -lnetcdff -lnetcdf -lhdf5hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5 -lsz -laec -lz -ldl
 #
 INC            += $(INC_NETCDF)
 LIBS           += $(LIB_NETCDF)

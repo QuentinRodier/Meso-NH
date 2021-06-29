@@ -102,11 +102,6 @@ CPPFLAGS_NEWLFI    = -DSWAPIO -DLINUX -DLFI_INT=${LFI_INT}
 CPPFLAGS_MNH       = -DMNH -DMNH_PGI -DSFX_MNH
 
 #
-# Gribex flags
-#
-TARGET_GRIBEX=linux
-CNAME_GRIBEX=_pgf77
-#
 # LIBTOOLS flags
 #
 #if MNH_TOOLS exists => compile the tools
@@ -126,6 +121,12 @@ MNH_COMPRESS=yes
 #
 #if MNH_S4PY exists => compile the libs4py library (for epygram)
 #MNH_S4PY=no
+#
+## ecCodes or grib_api selection
+#MNH_GRIBAPI: if set to no:  use ecCodes
+#             if set to yes: use grib_api (deprecated library)
+#
+MNH_GRIBAPI=no
 #
 ##########################################################
 #                                                        #

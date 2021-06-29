@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! NEC0 masdev4_7 2007/06/16 01:41:59
 !-----------------------------------------------------------------
 !     #################
       MODULE MODD_GET_n
@@ -53,6 +48,7 @@
 !!                  05/2006   Remove EPS and LGETALL
 !!      M. Leriche  04/2010   add get indicators for pH in cloud and rain
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!       S. Riette 04/2020 HighLow cloud
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -92,6 +88,7 @@ TYPE GET_t
                                 ! CLouD FRaction
   CHARACTER (LEN=4)  :: CGETSRCT              !  Get indicator for SRCM
                                 ! and SRCT related to the subgrid condensation
+  CHARACTER (LEN=4)  :: CGETHL                !  Get indicator for HighLow cloud
   CHARACTER (LEN=4)  :: CGETCIT               !  Get indicator for the
                                                  ! primary ice concentration
   CHARACTER (LEN=4)  :: CGETCONV              ! Get indicator for the
@@ -127,6 +124,7 @@ CHARACTER (LEN=4), POINTER :: CGETLSTHM=>NULL(), CGETLSRVM=>NULL()
 CHARACTER (LEN=4), POINTER :: CGETSIGS=>NULL(),CGETSRC=>NULL()
 CHARACTER (LEN=4), POINTER :: CGETCLDFR=>NULL()
 CHARACTER (LEN=4), POINTER :: CGETSRCT=>NULL()
+CHARACTER (LEN=4), POINTER :: CGETHL=>NULL()
 CHARACTER (LEN=4), POINTER :: CGETCIT=>NULL()
 CHARACTER (LEN=4), POINTER :: CGETCONV=>NULL()
 CHARACTER (LEN=4), POINTER :: CGETRAD=>NULL()
@@ -181,6 +179,7 @@ CGETSIGS=>GET_MODEL(KTO)%CGETSIGS
 CGETSRC=>GET_MODEL(KTO)%CGETSRC
 CGETCLDFR=>GET_MODEL(KTO)%CGETCLDFR
 CGETSRCT=>GET_MODEL(KTO)%CGETSRCT
+CGETHL=>GET_MODEL(KTO)%CGETHL
 CGETCIT=>GET_MODEL(KTO)%CGETCIT
 CGETZWS=>GET_MODEL(KTO)%CGETZWS
 CGETCONV=>GET_MODEL(KTO)%CGETCONV

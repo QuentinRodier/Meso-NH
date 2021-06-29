@@ -311,6 +311,7 @@ END MODULE MODI_TURB_VER
 !!                     10/2012 (J.Escobar) Bypass PGI bug , redefine some allocatable array inplace of automatic
 !!                     08/2014 (J.Escobar) Bypass PGI memory leak bug , replace IF statement with IF THEN ENDIF
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!! JL Redelsperger 03/2021 : add Ocean LES case
 !!--------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -318,6 +319,7 @@ END MODULE MODI_TURB_VER
 !
 USE MODD_CST
 USE MODD_CTURB
+USE MODD_DYN_n,          ONLY: LOCEAN
 use modd_field,          only: tfielddata, TYPEREAL
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_PARAMETERS
@@ -463,9 +465,9 @@ REAL, ALLOCATABLE, DIMENSION(:,:,:)  ::  &
 !!$REAL, DIMENSION(SIZE(PTHLM,1),SIZE(PTHLM,2),SIZE(PTHLM,3),NSV)  ::  &
 REAL, ALLOCATABLE, DIMENSION(:,:,:,:)  ::  &
        ZPSI_SV,  & ! Prandtl number for scalars
-       ZREDS1,   & ! 1D Redeslperger number R_sv
-       ZRED2THS, & ! 3D Redeslperger number R*2_thsv
-       ZRED2RS     ! 3D Redeslperger number R*2_rsv
+       ZREDS1,   & ! 1D Redelsperger number R_sv
+       ZRED2THS, & ! 3D Redelsperger number R*2_thsv
+       ZRED2RS     ! 3D Redelsperger number R*2_rsv
 !
 LOGICAL :: GUSERV    ! flag to use water vapor
 INTEGER :: IKB,IKE   ! index value for the Beginning
@@ -509,7 +511,6 @@ ALLOCATE ( &
 !
 IKB=KKA+JPVEXT_TURB*KKL
 IKE=KKU-JPVEXT_TURB*KKL
-
 !
 !
 ! 3D Redelsperger numbers
@@ -529,7 +530,11 @@ CALL PRANDTL(KKA,KKU,KKL,KRR,KRRI,OTURB_FLX,       &
 !
 ! Buoyancy coefficient
 !
-ZBETA = XG/PTHVREF
+IF (LOCEAN) THEN
+  ZBETA = XG*XALPHAOC
+ELSE
+  ZBETA = XG/PTHVREF
+END IF
 !
 ! Square root of Tke
 !

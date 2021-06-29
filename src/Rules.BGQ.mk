@@ -121,7 +121,6 @@ F77FLAGS      =  $(OPT) -qfixed
 FX90 = $(F90)
 FX90FLAGS     =  $(OPT) -qfixed
 #
-# compiler & flags for compilation of grib_api
 # for reproductibility need : -qfloat=nomaf
 #
 FC = mpixlf95_r
@@ -154,15 +153,6 @@ INC                += -I${GA_ROOT}/include
 LIBS               += -L${GA_ROOT}/lib -larmci -lga -lgfortran
 endif
 #
-# Gribex flags
-#
-#TARGET_GRIBEX=rs6000
-TARGET_GRIBEX=ibm_power4
-CNAME_GRIBEX=""
-#A64=A64
-# Gribapi flags
-GRIBAPI_CONF= --host=powerpc64-bgq-linux 
-#
 # LIBTOOLS flags
 #
 #if MNH_TOOLS exists => compile the tools
@@ -182,6 +172,12 @@ MNH_IOLFI=yes
 #
 #if MNH_S4PY exists => compile the libs4py library (for epygram)
 #MNH_S4PY=no
+#
+## ecCodes or grib_api selection
+#MNH_GRIBAPI: if set to no:  use ecCodes
+#             if set to yes: use grib_api (deprecated library)
+#
+MNH_GRIBAPI=no
 #
 ##########################################################
 #                                                        #

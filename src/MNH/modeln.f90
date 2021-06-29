@@ -268,7 +268,10 @@ END MODULE MODI_MODEL_n
 !  J. Escobar  27/09/2019: add missing report timing of RESOLVED_ELEC
 !  P. Wautelet 02-03/2020: use the new data structures and subroutines for budgets
 !  P. Wautelet 12/10/2020: Write_les_n: remove HLES_AVG dummy argument and group all 4 calls
+!  F. Auguste  01/02/2021: add IBM
+!  T. Nagel    01/02/2021: add turbulence recycling
 !  P. Wautelet 19/02/2021: add NEGA2 term for SV budgets
+!  J.L. Redelsperger 03/2021: add Call NHOA_COUPLN (coupling O & A LES version)
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -277,6 +280,7 @@ END MODULE MODI_MODEL_n
 USE MODD_2D_FRC
 USE MODD_ADV_n
 USE MODD_AIRCRAFT_BALLOON
+USE MODD_ARGSLIST_ll,     ONLY : LIST_ll
 USE MODD_BAKOUT
 USE MODD_BIKHARDT_n
 USE MODD_BLANK_n
@@ -303,12 +307,14 @@ USE MODD_DYN_n
 USE MODD_DYNZD
 USE MODD_DYNZD_n
 USE MODD_ELEC_DESCR
+USE MODD_EOL_MAIN
 USE MODD_FIELD_n
 USE MODD_FRC
 USE MODD_FRC_n
 USE MODD_GET_n
 USE MODD_GRID,           ONLY: XLONORI,XLATORI
 USE MODD_GRID_n
+USE MODD_IBM_PARAM_n,    ONLY: CIBM_ADV, LIBM, LIBM_TROUBLE, XIBM_LS
 USE MODD_ICE_C1R3_DESCR, ONLY: XRTMIN_C1R3=>XRTMIN
 USE MODD_IO,             ONLY: LIO_NO_WRITE, TFILEDATA, TFILE_SURFEX, TFILE_DUMMY
 USE MODD_LBC_n
@@ -342,6 +348,8 @@ use modd_precision,      only: MNHTIME
 USE MODD_PROFILER_n
 USE MODD_RADIATIONS_n,   ONLY: XTSRAD,XSCAFLASWD,XDIRFLASWD,XDIRSRFSWD, XAER, XDTHRAD
 USE MODD_RAIN_ICE_DESCR, ONLY: XRTMIN
+USE MODD_RECYCL_PARAM_n, ONLY: LRECYCL
+USE MODD_REF,            ONLY: LCOUPLES
 USE MODD_REF_n
 USE MODD_SALT,           ONLY: LSALT
 USE MODD_SERIES,         ONLY: LSERIES
@@ -370,10 +378,12 @@ use mode_menu_diachro,     only: MENU_DIACHRO
 USE MODE_MNH_TIMING
 USE MODE_MODELN_HANDLER
 USE MODE_MPPDB
+USE MODE_MSG
 USE MODE_ONE_WAY_n
 use mode_write_les_n,               only: Write_les_n
 use mode_write_lfifmn_fordiachro_n, only: WRITE_LFIFMN_FORDIACHRO_n
 !
+USE MODI_ADDFLUCTUATIONS
 USE MODI_ADVECTION_METSV
 USE MODI_ADVECTION_UVW
 USE MODI_ADVECTION_UVW_CEN
@@ -396,6 +406,10 @@ USE MODI_FORC_SQUALL_LINE
 USE MODI_FORC_WIND
 USE MODI_GET_HALO
 USE MODI_GRAVITY_IMPL
+USE MODI_IBM_INIT
+USE MODI_IBM_FORCING
+USE MODI_IBM_FORCING_TR
+USE MODI_IBM_FORCING_ADV
 USE MODI_INI_DIAG_IN_RUN
 USE MODI_INI_LG
 USE MODI_INI_MEAN_FIELD
@@ -414,6 +428,7 @@ USE MODI_PHYS_PARAM_n
 USE MODI_PRESSUREZ
 USE MODI_PROFILER_n
 USE MODI_RAD_BOUND
+USE MODI_RECYCLING
 USE MODI_RELAX2FW_ION 
 USE MODI_RELAXATION
 USE MODI_REL_FORCING_n
@@ -714,11 +729,14 @@ IF (KTCOUNT == 1) THEN
   XT_TURB      = 0.0_MNHTIME
   XT_MAFL      = 0.0_MNHTIME
   XT_DRAG      = 0.0_MNHTIME
+  XT_EOL       = 0.0_MNHTIME
   XT_TRACER    = 0.0_MNHTIME
   XT_SHADOWS   = 0.0_MNHTIME
   XT_ELEC      = 0.0_MNHTIME
   XT_CHEM      = 0.0_MNHTIME
   XT_2WAY      = 0.0_MNHTIME
+  !
+  XT_IBM_FORC  = 0.0_MNHTIME
   !
 END IF
 !
@@ -739,11 +757,14 @@ CALL SECOND_MNH2(ZTIME1)
 !
 ISYNCHRO = MODULO (KTCOUNT, NDTRATIO(IMI) )      ! test of synchronisation
 !
-
-
-IF (IMI/=1 .AND. NDAD(IMI)/=IMI .AND. (ISYNCHRO==1 .OR. NDTRATIO(IMI) == 1) ) THEN     
-!                                                                        
-  ! Use dummy pointers to correct an ifort BUG
+!
+IF (LCOUPLES.AND.LOCEAN) THEN
+   CALL NHOA_COUPL_n(NDAD(IMI),XTSTEP,IMI,KTCOUNT,IKU)
+END IF
+! No Gridnest in coupled OA LES for now
+IF (.NOT. LCOUPLES .AND. IMI/=1 .AND. NDAD(IMI)/=IMI .AND. (ISYNCHRO==1 .OR. NDTRATIO(IMI) == 1) ) THEN     
+!                                                                         
+! Use dummy pointers to correct an ifort BUG
   DPTR_XBMX1=>XBMX1
   DPTR_XBMX2=>XBMX2
   DPTR_XBMX3=>XBMX3
@@ -870,7 +891,28 @@ IF (IMI/=1 .AND. NDAD(IMI)/=IMI .AND. (ISYNCHRO==1 .OR. NDTRATIO(IMI) == 1) ) TH
 END IF
 !
 CALL SECOND_MNH2(ZTIME2)                                                  
-XT_1WAY = XT_1WAY + ZTIME2 - ZTIME1                                
+XT_1WAY = XT_1WAY + ZTIME2 - ZTIME1 
+!
+!*       2.1    RECYCLING TURBULENCE
+!              ---- 
+IF (CTURB /= 'NONE' .AND. LRECYCL) THEN
+  CALL RECYCLING(XFLUCTUNW,XFLUCTVNN,XFLUCTUTN,XFLUCTVTW,XFLUCTWTW,XFLUCTWTN, &
+                 XFLUCTUNE,XFLUCTVNS,XFLUCTUTS,XFLUCTVTE,XFLUCTWTE,XFLUCTWTS, &
+                 KTCOUNT)
+ENDIF
+!
+!*       2.2    IBM
+!              ----
+!
+IF (LIBM .AND. KTCOUNT==1) THEN
+  !
+  IF (.NOT.LCARTESIAN) THEN
+    CALL PRINT_MSG(NVERB_FATAL, 'GEN', 'MODELN', 'IBM can only be used in combination with cartesian coordinates')
+  ENDIF
+  !
+  CALL IBM_INIT(XIBM_LS)
+  !
+ENDIF
 !
 !-------------------------------------------------------------------------------
 !
@@ -977,6 +1019,42 @@ CALL SECOND_MNH2(ZTIME2)
 !
 XT_STORE = XT_STORE + ZTIME2 - ZTIME1
 !
+!-------------------------------------------------------------------------------
+!
+!*       4.BIS    IBM and Fluctuations application
+!              -----------------------------
+!
+!*       4.B1   Add fluctuations at the domain boundaries
+!
+IF (LRECYCL) THEN
+  CALL ADDFLUCTUATIONS (                                    &
+           CLBCX,CLBCY,                                     &
+           XUT, XVT, XWT, XTHT, XTKET, XRT, XSVT, XSRCT,    &
+           XFLUCTUTN,XFLUCTVTW,XFLUCTUTS,XFLUCTVTE,         &
+           XFLUCTWTW,XFLUCTWTN,XFLUCTWTS,XFLUCTWTE          )
+ENDIF
+!
+!*       4.B2   Immersed boundaries
+!
+IF (LIBM) THEN
+  !
+  ZTIME1=ZTIME2
+  !
+  IF (.NOT.LCARTESIAN) THEN
+    CALL PRINT_MSG(NVERB_FATAL, 'GEN', 'MODELN', 'IBM can only be used in combination with cartesian coordinates')
+  ENDIF
+  !
+  CALL IBM_FORCING(XUT,XVT,XWT,XTHT,XRT,XSVT,XTKET)
+  !
+  IF (LIBM_TROUBLE) THEN
+     CALL IBM_FORCING_TR(XUT,XVT,XWT,XTHT,XRT,XSVT,XTKET)
+  ENDIF
+  !
+  CALL SECOND_MNH2(ZTIME2)
+  !
+  XT_IBM_FORC = XT_IBM_FORC + ZTIME2 - ZTIME1
+  !
+ENDIF
 !-------------------------------------------------------------------------------
 !
 !*       5.    INITIALIZATION OF THE BUDGET VARIABLES
@@ -1335,10 +1413,10 @@ XT_RELAX = XT_RELAX + ZTIME2 - ZTIME1 &
 !
 ZTIME1 = ZTIME2
 !
-CALL PHYS_PARAM_n( KTCOUNT, TZBAKFILE,                       &
-                   XT_RAD,  XT_SHADOWS, XT_DCONV, XT_GROUND, &
-                   XT_MAFL, XT_DRAG,    XT_TURB,  XT_TRACER, &
-                   ZTIME, ZWETDEPAER, GMASKkids, GCLOUD_ONLY )
+CALL PHYS_PARAM_n( KTCOUNT, TZBAKFILE,                            &
+                   XT_RAD,  XT_SHADOWS, XT_DCONV, XT_GROUND,      &
+                   XT_MAFL, XT_DRAG, XT_EOL, XT_TURB,  XT_TRACER, &
+                   ZTIME, ZWETDEPAER, GMASKkids, GCLOUD_ONLY      )
 !
 IF (CDCONV/='NONE') THEN
   XPACCONV = XPACCONV + XPRCONV * XTSTEP
@@ -1557,6 +1635,18 @@ CALL SECOND_MNH2(ZTIME2)
 !
 XT_GRAV = XT_GRAV + ZTIME2 - ZTIME1 - XTIME_LES_BU_PROCESS - XTIME_BU_PROCESS
 ! 
+IF ( LIBM .AND. CIBM_ADV=='FORCIN' ) THEN
+  !
+  ZTIME1=ZTIME2
+  !
+  CALL IBM_FORCING_ADV   (XRUS,XRVS,XRWS)
+  !
+  CALL SECOND_MNH2(ZTIME2)
+  !
+  XT_IBM_FORC = XT_IBM_FORC + ZTIME2 - ZTIME1
+  !
+ENDIF
+!
 ZTIME1 = ZTIME2
 XTIME_BU_PROCESS = 0.
 XTIME_LES_BU_PROCESS = 0.
@@ -1640,6 +1730,7 @@ CALL RAD_BOUND (CLBCX,CLBCY,CTURB,XCARPKMAX,             &
                 XDXHAT, XDYHAT, XZHAT,                   &
                 XUT, XVT,                                &
                 XLBXUM, XLBYVM, XLBXUS, XLBYVS,          &
+                XFLUCTUNW,XFLUCTVNN,XFLUCTUNE,XFLUCTVNS, &
                 XCPHASE, XCPHASE_PBL, XRHODJ,            &
                 XTKET,XRUS, XRVS, XRWS                   )
 ZRUS=XRUS-ZRUS
@@ -1803,6 +1894,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           XINPRS,ZINPRS3D, XINPRG,ZINPRG3D, XINPRH,ZINPRH3D,   &
                           XSOLORG, XMI,ZSPEEDC, ZSPEEDR, ZSPEEDS, ZSPEEDG, ZSPEEDH, &
                           XINDEP, XSUPSAT, XNACT, XNPRO,XSSPRO, XRAINFR,       &
+                          XHLC_HRC, XHLC_HCF, XHLI_HRI, XHLI_HCF,              &
                           ZSEA, ZTOWN                                          )
     DEALLOCATE(ZTOWN)
   ELSE
@@ -1820,7 +1912,8 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           XINPRC,ZINPRC3D,XINPRR, XINPRR3D, XEVAP3D,           &
                           XINPRS,ZINPRS3D, XINPRG,ZINPRG3D, XINPRH,ZINPRH3D,   &
                           XSOLORG, XMI,ZSPEEDC, ZSPEEDR, ZSPEEDS, ZSPEEDG, ZSPEEDH, &
-                          XINDEP, XSUPSAT, XNACT, XNPRO,XSSPRO, XRAINFR        )
+                          XINDEP, XSUPSAT, XNACT, XNPRO,XSSPRO, XRAINFR,       &
+                          XHLC_HRC, XHLC_HCF, XHLI_HRI, XHLI_HCF               )
   END IF
   XRTHS_CLD  = XRTHS - XRTHS_CLD
   XRRS_CLD   = XRRS  - XRRS_CLD
@@ -1947,7 +2040,7 @@ XT_SPECTRA = XT_SPECTRA + ZTIME2 - ZTIME1 + XTIME_LES_BU + XTIME_LES
 !               --------------------
 !
 IF (LMEAN_FIELD) THEN
-   CALL MEAN_FIELD(XUT, XVT, XWT, XTHT, XTKET, XPABST)
+   CALL MEAN_FIELD(XUT, XVT, XWT, XTHT, XTKET, XPABST, XSVT(:,:,:,1))
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -2137,6 +2230,7 @@ IF (OEXIT) THEN
   CALL TIME_STAT_ll(XT_ADVUVW,ZTOT,     ' ADVECTION UVW','=')
   CALL TIME_STAT_ll(XT_GRAV,ZTOT,       ' GRAVITY','=')
   CALL TIME_STAT_ll(XT_FORCING,ZTOT,    ' FORCING','=')
+  CALL TIME_STAT_ll(XT_IBM_FORC,ZTOT,   ' IBM','=')  
   CALL TIME_STAT_ll(XT_NUDGING,ZTOT,    ' NUDGING','=')
   CALL TIME_STAT_ll(XT_SOURCES,ZTOT,    ' DYN_SOURCES','=')
   CALL TIME_STAT_ll(XT_DIFF,ZTOT,       ' NUM_DIFF','=')
@@ -2152,6 +2246,7 @@ IF (OEXIT) THEN
     CALL TIME_STAT_ll(XT_TURB,ZTOT,     '   TURB      = '//CTURB ,'-')
     CALL TIME_STAT_ll(XT_MAFL,ZTOT,     '   MAFL      = '//CSCONV,'-')
     CALL TIME_STAT_ll(XT_CHEM,ZTOT,     '   CHIMIE'              ,'-')
+    CALL TIME_STAT_ll(XT_EOL,ZTOT,      '   WIND TURBINE'        ,'-')
   CALL  TIMING_LEGEND()
   CALL TIME_STAT_ll(XT_COUPL,ZTOT,      ' SET_COUPLING','=')
   CALL TIME_STAT_ll(XT_RAD_BOUND,ZTOT,  ' RAD_BOUND','=')
@@ -2176,12 +2271,13 @@ IF (OEXIT) THEN
   CALL TIME_STAT_ll(XT_STEP_BUD,ZTOT,   ' BUDGETS','=')
   CALL TIME_STAT_ll(XT_SPECTRA,ZTOT,    ' LES','=')
   CALL TIME_STAT_ll(XT_STEP_MISC,ZTOT,  ' MISCELLANEOUS','=')
+  IF (LIBM) CALL TIME_STAT_ll(XT_IBM_FORC,ZTOT,' IBM FORCING','=') 
   !
   ! sum of call subroutine
   !
   ZALL   = XT_1WAY + XT_BOUND   + XT_STORE   + XT_GUESS    +  XT_2WAY   + &
            XT_ADV  + XT_FORCING + XT_NUDGING + XT_SOURCES  +  XT_DIFF   + &
-           XT_ADVUVW  + XT_GRAV +                                         &
+           XT_ADVUVW  + XT_GRAV + XT_IBM_FORC                           + &
            XT_RELAX+ XT_PARAM   + XT_COUPL   + XT_RAD_BOUND+XT_PRESS    + &
            XT_CLOUD+ XT_ELEC    + XT_HALO    + XT_SPECTRA + XT_STEP_SWA + &
            XT_STEP_MISC+ XT_STEP_BUD

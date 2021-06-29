@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -150,14 +150,16 @@ END MODULE MODI_SET_REF
 !!                                PRHODREF, PEXNREF, PTHVREF after computation
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
+!! Jean-Luc Redelsperger 03/2021 : OCEAN LES case
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------ 
 USE MODD_CONF
 USE MODD_CST
-USE MODD_IO,      ONLY: TFILEDATA
-USE MODD_LUNIT_n, ONLY: TLUOUT
+USE MODD_DYN_n,         ONLY: LOCEAN
+USE MODD_IO,            ONLY: TFILEDATA
+USE MODD_LUNIT_n,       ONLY: TLUOUT
 USE MODD_PARAMETERS
 USE MODD_REF
 !
@@ -210,6 +212,7 @@ REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)) :: ZRHOREF
                                                  ! Reference density
 REAL, DIMENSION(SIZE(PZZ,3))    :: ZZHATM        ! height of the mass levels
                ! in the transformed space (GCS transf.) or without orography 
+REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)) :: ZDENSOC,ZPFLUX,ZPMASS
 !
 INTEGER             :: IIU        ! Upper dimension in x direction
 INTEGER             :: IJU        ! Upper dimension in y direction
@@ -263,7 +266,12 @@ IF (KMI == 1) THEN
   LNEUTRAL=.FALSE.
   IF (MAXVAL(XTHVREFZ(IKB:IKE))-MINVAL(XTHVREFZ(IKB:IKE)) < 1.E-10) LNEUTRAL=.TRUE.
 END IF
-!
+!*     Ref state diff for O & A in LES coupled mode
+IF (LCOUPLES .AND. LOCEAN) THEN
+  CALL IO_Field_read(TPINIFILE,'RHOREFZ',XRHODREFZO)
+  CALL IO_Field_read(TPINIFILE,'THVREFZ',XTHVREFZO)
+  CALL IO_Field_read(TPINIFILE,'EXNTOP', XEXNTOPO)
+END IF
 !-------------------------------------------------------------------------------
 !
 !*       3.    SET REFERENCE STATE WITH OROGRAPHY 
@@ -285,7 +293,13 @@ CALL MPPDB_CHECK3D(ZZM,"SET_REF::ZZM",PRECISION)
 !
 !*       3.2    Interpolation 
 !  
-DO JI = 1,SIZE(PZZ,1)
+IF (LCOUPLES .AND. LOCEAN) THEN
+   DO JK = 1,IKU
+     PTHVREF(:,:,JK) = XTHVREFZO(JK)
+     PRHODREF(:,:,JK)= XRHODREFZO(JK)
+   END DO
+ELSE   
+ DO JI = 1,SIZE(PZZ,1)
   DO JJ = 1,SIZE(PZZ,2)
 !
     DO JK = 1,IKU
@@ -316,22 +330,21 @@ DO JI = 1,SIZE(PZZ,1)
       END IF
     END DO
   END DO
-END DO
+ END DO
+END IF
 !
 !   change the extrapolation option for the thvref field to be consistent with
 !   the extrapolation option for the flottability at the ground and for rhodref
 !   to be consistent with the extrapolation to compute a divergence 
 PTHVREF(:,:,IKB-1) = PTHVREF(:,:,IKB)
 PRHODREF(:,:,IKB-1) = PRHODREF(:,:,IKB)
-
 CALL MPPDB_CHECK3D(PTHVREF,"SET_REF::PTHVREF",PRECISION)
 CALL MPPDB_CHECK3D(PRHODREF,"SET_REF::PRHODREF",PRECISION)
 !
 !-------------------------------------------------------------------------------
 !
-!*       4.    COMPUTE EXNER FUNCTION
-!              ----------------------
-!
+!*       4.    COMPUTE EXNER FUNCTION AT MASS GRID POINT
+!              ----------------------------------------
 IF (LCARTESIAN .OR. LTHINSHELL) THEN
   ZD1=0.
 ELSE
@@ -340,24 +353,56 @@ ENDIF
 !
 ZGSCPD = XG/XCPD
 !
-PEXNREF(:,:,IKE)=(XEXNTOP*(1.+ZD1*2./7.*(PZZ(:,:,IKE+1)-ZZM(:,:,IKE))/  &
-                                (XRADIUS+(PZZ(:,:,IKE+1)+ZZM(:,:,IKE))/2.))  &
-  + ZGSCPD/PTHVREF(:,:,IKE)*(PZZ(:,:,IKE+1)-ZZM(:,:,IKE)))/ &
-(1.-ZD1*2./7.*(PZZ(:,:,IKE+1)-ZZM(:,:,IKE))/(XRADIUS+(PZZ(:,:,IKE+1)+ZZM(:,:,IKE))/2.))
+IF (LOCEAN) THEN
+!--------------------------------
+! Pressure at domain top (Flux point !!!) saved in Press_mass above the ocen sfc
+ IF (LCOUPLES) THEN
+  ZPMASS(:,:,IKE+1)= XP00 *XEXNTOPO**(XCPD/XRD)
+ ELSE
+  ZPMASS(:,:,IKE+1)= XP00 *XEXNTOP**(XCPD/XRD)
+ ENDIF
+  ZPMASS(:,:,IKE)  = ZPMASS(:,:,IKE+1) +XG*PRHODREF(:,:,IKE)*(PZZ(:,:,IKE+1)-ZZM(:,:,IKE))       
+ DO JK = IKE-1,1,-1
+  ZPMASS(:,:,JK)   = ZPMASS(:,:,JK+1) + XG  * &
+         .5*(PRHODREF(:,:,JK)+ PRHODREF(:,:,JK+1)) * (ZZM(:,:,JK+1) -ZZM(:,:,JK))
+ END DO
+!  
+ IF (LCOUPLES) THEN
+  DO JK = IKE+1, IKU
+! Pressure above domain top (i.e. ocean sfc), i.e. in atmosphere (should be not used)
+    ZPMASS(:,:,JK)   =  XP00 *XEXNTOPO**(XCPD/XRD)
+  END DO
+ ELSE
+  DO JK = IKE+1, IKU
+! Pressure above domain top (i.e. ocean sfc), i.e. in atmosphere (should be not used)
+    ZPMASS(:,:,JK)   =  XP00 *XEXNTOP**(XCPD/XRD)
+  END DO
+ ENDIF
+ PEXNREF(:,:,:)= (ZPMASS(:,:,:)/XP00)**(XRD/XCPD)
+ ! OCEAN end
+ELSE
+ ! ATMOSPHERE
+  PEXNREF(:,:,IKE)=(XEXNTOP*(1.+ZD1*2./7.*(PZZ(:,:,IKE+1)-ZZM(:,:,IKE))/  &
+                                 (XRADIUS+(PZZ(:,:,IKE+1)+ZZM(:,:,IKE))/2.))  &
+   + ZGSCPD/PTHVREF(:,:,IKE)*(PZZ(:,:,IKE+1)-ZZM(:,:,IKE)))/ &
+ (1.-ZD1*2./7.*(PZZ(:,:,IKE+1)-ZZM(:,:,IKE))/(XRADIUS+(PZZ(:,:,IKE+1)+ZZM(:,:,IKE))/2.))
 !
-DO JK = IKE-1, 1, -1
-  PEXNREF(:,:,JK)=(PEXNREF(:,:,JK+1)*(1.+ZD1*2./7.*(ZZM(:,:,JK+1) -ZZM(:,:,JK))/ &
-                                           (XRADIUS+PZZ(:,:,JK+1)))+ &
-  2.*ZGSCPD/(PTHVREF(:,:,JK+1)+PTHVREF(:,:,JK))*(ZZM(:,:,JK+1) -ZZM(:,:,JK)))/&
-  (1.-ZD1*2./7.*(ZZM(:,:,JK+1) -ZZM(:,:,JK))/(XRADIUS+PZZ(:,:,JK+1)))
-END DO
+ DO JK = IKE-1, 1, -1
+   PEXNREF(:,:,JK)=(PEXNREF(:,:,JK+1)*(1.+ZD1*2./7.*(ZZM(:,:,JK+1) -ZZM(:,:,JK))/ &
+                                            (XRADIUS+PZZ(:,:,JK+1)))+ &
+   2.*ZGSCPD/(PTHVREF(:,:,JK+1)+PTHVREF(:,:,JK))*(ZZM(:,:,JK+1) -ZZM(:,:,JK)))/&
+   (1.-ZD1*2./7.*(ZZM(:,:,JK+1) -ZZM(:,:,JK))/(XRADIUS+PZZ(:,:,JK+1)))
+ END DO
 !
-DO JK = IKE+1, IKU
+ DO JK = IKE+1, IKU
   PEXNREF(:,:,JK)=(PEXNREF(:,:,JK-1)*(1.+ZD1*2./7.*(ZZM(:,:,JK-1) -ZZM(:,:,JK))/  &
-                                           (XRADIUS+PZZ(:,:,JK)))+ &
-  2.*ZGSCPD/(PTHVREF(:,:,JK-1)+PTHVREF(:,:,JK))*(ZZM(:,:,JK-1) -ZZM(:,:,JK)))/&
-  (1.-ZD1*2./7.*(ZZM(:,:,JK-1) -ZZM(:,:,JK))/ (XRADIUS+PZZ(:,:,JK)))
-END DO
+                                            (XRADIUS+PZZ(:,:,JK)))+ &
+   2.*ZGSCPD/(PTHVREF(:,:,JK-1)+PTHVREF(:,:,JK))*(ZZM(:,:,JK-1) -ZZM(:,:,JK)))/&
+   (1.-ZD1*2./7.*(ZZM(:,:,JK-1) -ZZM(:,:,JK))/ (XRADIUS+PZZ(:,:,JK)))
+ END DO
+!
+END IF
+!
 !
 CALL MPPDB_CHECK3D(PEXNREF,"SET_REF::PEXNREF",PRECISION)
 !-------------------------------------------------------------------------------
@@ -372,8 +417,8 @@ IF (LBOUSS) THEN
 ELSE
   ZRHOREF(:,:,:) = PEXNREF(:,:,:) ** ZCVD_O_RD * XP00 / ( XRD * PTHVREF(:,:,:) )
   ZRHOREF(:,:,1)=ZRHOREF(:,:,2)  ! this avoids to obtain erroneous values for
+                                  ! rv at this last point
 END IF
-                               ! rv at this last point
 !
 IF ( CEQNSYS == 'DUR' ) THEN
   IF ( SIZE(PRVREF,1) == 0 ) THEN
@@ -402,8 +447,6 @@ CALL CLEANLIST_ll(TZFIELDS_ll)
 CALL MPPDB_CHECK3D(ZRHOREF,"SET_REF::ZRHOREF",PRECISION)
 IF ( SIZE(PRVREF,1) /= 0 ) CALL MPPDB_CHECK3D(PRVREF,"SET_REF::PRVREF",PRECISION)
 CALL MPPDB_CHECK3D(PRHODJ,"SET_REF::PRHODJ",PRECISION)
-
-
 !
 !*       6.     COMPUTES THE TOTAL MASS OF REFERENCE ATMOSPHERE   
 !	        -----------------------------------------------
@@ -480,7 +523,7 @@ IF ( HLBCY(1)=='OPEN' ) THEN
       ENDDO
    ENDIF
    PLINMASS = PLINMASS +  SUM_DD_R2_ll(ZLINMASS_S_2D)
-!
+   !
    ALLOCATE( ZLINMASS_N_2D(IIB:IIE,IJE+1:IJE+1))  
    ZLINMASS_N_2D = 0.0
    IF (LNORTH_ll(HSPLITTING='B')) THEN

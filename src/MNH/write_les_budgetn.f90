@@ -45,13 +45,15 @@ subroutine  Write_les_budget_n( tpdiafile )
 !!                 06/11/02 (V. Masson) new LES budgets
 !  P. Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 15/10/2020: restructure Les_diachro calls to use tfield_metadata_base type
+!  JL Redelsperger 03/21 modif buoyancy flix for OCEAN LES case  
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
 !          ------------
 
 use modd_conf_n,      only: luserv
-use modd_cst,         only: xg
+use modd_cst,         only: xg, xalphaoc
+use modd_dyn_n,       only: locean
 use modd_field,       only: NMNHDIM_BUDGET_LES_LEVEL, NMNHDIM_BUDGET_LES_TIME, &
                             NMNHDIM_BUDGET_TERM, NMNHDIM_UNUSED,               &
                             tfield_metadata_base, TYPEREAL
@@ -762,6 +764,9 @@ IF (LUSERV) THEN
 ELSE
   ZLES_BUDGET(:,:,ILES) =  XG * XLES_SUBGRID_ThlThv(:,:,1)   &
                               / XLES_MEAN_Th       (:,:,1)
+END IF
+IF (LOCEAN) THEN
+  ZLES_BUDGET(:,:,ILES) =  XG * XLES_SUBGRID_ThlThv(:,:,1) *XALPHAOC 
 END IF
 !
 !* 3.6 residual of subgrid budget
