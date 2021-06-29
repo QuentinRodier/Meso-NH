@@ -590,15 +590,15 @@ CSCONV   = 'NONE'                 ! shallow convection will have to be restarted
 !
 ! cas LIMA 
 !
-IF (HCLOUD=='LIMA') THEN
-  CCLOUD='LIMA'
-  NMOD_CCN=3
-  LSCAV=.FALSE.
-  LAERO_MASS=.FALSE.
-  NMOD_IFN=2
-  NMOD_IMM=1
-  LHHONI=.FALSE.
-ENDIF
+!IF (HCLOUD=='LIMA') THEN
+!  CCLOUD='LIMA'
+!  NMOD_CCN=3
+!  LSCAV=.FALSE.
+!  LAERO_MASS=.FALSE.
+!  NMOD_IFN=2
+!  NMOD_IMM=1
+!  LHHONI=.FALSE.
+!ENDIF
 !
 CALL INI_NSV(2) ! NSV* are set equal for model 2 and model 1. 
                 ! NSV is set to the total number of SV for model 2
