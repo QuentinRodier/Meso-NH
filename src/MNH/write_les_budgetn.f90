@@ -131,7 +131,7 @@ gdonorm = Trim( cles_norm_type ) /= 'NONE'
 !*      1.  total (resolved+subgrid) kinetic energy budget
 !            ------------------------------------
 !
-YGROUP= 'BU_KE   '
+YGROUP= 'BU_KE'
 ILES=0
 ILES_STA=ILES
 !
@@ -139,7 +139,7 @@ ILES_STA=ILES
 !     --------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG TEND'
+YSUBTITLE(ILES) = 'SBG_TEND'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_SBG_TKE(:,:,NLES_TEND)
 !
@@ -148,7 +148,7 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_SBG_TKE(:,:,NLES_TEND)
 !     ---------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG DP M'
+YSUBTITLE(ILES) = 'SBG_DP_M'
 !
 ZLES_BUDGET(:,:,ILES)= - XLES_SUBGRID_WU (:,:,1) * XLES_MEAN_DUDZ(:,:,1)  &
                        - XLES_SUBGRID_WV (:,:,1) * XLES_MEAN_DVDZ(:,:,1)  &
@@ -158,7 +158,7 @@ ZLES_BUDGET(:,:,ILES)= - XLES_SUBGRID_WU (:,:,1) * XLES_MEAN_DUDZ(:,:,1)  &
 !     ------------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG DP R'
+YSUBTITLE(ILES) = 'SBG_DP_R'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_SBG_TKE(:,:,NLES_DP) - ZLES_BUDGET(:,:,2)
 !
@@ -169,7 +169,7 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_SBG_TKE(:,:,NLES_DP) - ZLES_BUDGET(:,:,2)
 !
 IF ( ANY(XLES_BU_SBG_TKE(:,:,NLES_ADVM)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG ADVM'
+YSUBTITLE(ILES) = 'SBG_ADVM'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_SBG_TKE(:,:,NLES_ADVM)
 END IF
@@ -180,7 +180,7 @@ END IF
 !
 IF ( ANY(XLES_BU_SBG_TKE(:,:,NLES_FORC)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG FORC'
+YSUBTITLE(ILES) = 'SBG_FORC'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_SBG_TKE(:,:,NLES_FORC)
 END IF
@@ -190,7 +190,7 @@ END IF
 !      -------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG TR  '
+YSUBTITLE(ILES) = 'SBG_TR'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_SBG_TKE(:,:,NLES_TR)
 !
@@ -199,7 +199,7 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_SBG_TKE(:,:,NLES_TR)
 !      -----------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG ADVR'
+YSUBTITLE(ILES) = 'SBG_ADVR'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_SBG_TKE(:,:,NLES_ADVR)
 !
@@ -209,7 +209,7 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_SBG_TKE(:,:,NLES_ADVR)
 !
 IF ( ANY(XLES_BU_SBG_TKE(:,:,NLES_PRES)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG PRES'
+YSUBTITLE(ILES) = 'SBG_PRES'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_SBG_TKE(:,:,NLES_PRES)
 END IF
@@ -219,7 +219,7 @@ END IF
 !      ------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG TP'
+YSUBTITLE(ILES) = 'SBG_TP'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_SBG_TKE(:,:,NLES_TP)
 !
@@ -228,7 +228,7 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_SBG_TKE(:,:,NLES_TP)
 !       -----------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' DISS'
+YSUBTITLE(ILES) = 'SBG_DISS'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_SBG_TKE(:,:,NLES_DISS)
 !
@@ -238,7 +238,7 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_SBG_TKE(:,:,NLES_DISS)
 !
 IF ( ANY(XLES_BU_SBG_TKE(:,:,NLES_DIFF)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG NUMD'
+YSUBTITLE(ILES) = 'SBG_NUMD'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_SBG_TKE(:,:,NLES_DIFF)
 END IF
@@ -248,7 +248,7 @@ END IF
 !
 IF ( ANY(XLES_BU_SBG_TKE(:,:,NLES_RELA)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG RELA'
+YSUBTITLE(ILES) = 'SBG_RELA'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_SBG_TKE(:,:,NLES_RELA)
 END IF
@@ -258,7 +258,7 @@ END IF
 !
 IF ( ANY(XLES_BU_SBG_TKE(:,:,NLES_NEST)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG NEST'
+YSUBTITLE(ILES) = 'SBG_NEST'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_SBG_TKE(:,:,NLES_NEST)
 END IF
@@ -269,7 +269,7 @@ END IF
 !
 IF ( ANY(XLES_BU_SBG_TKE(:,:,NLES_MISC)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG MISC'
+YSUBTITLE(ILES) = 'SBG_MISC'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_SBG_TKE(:,:,NLES_MISC)
 END IF
@@ -279,7 +279,7 @@ END IF
 !       --------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG RESI'
+YSUBTITLE(ILES) = 'SBG_RESI'
 !
 ZLES_BUDGET(:,:,ILES) = 0.
 DO JLES=ILES_STA+1,ILES-1
@@ -292,7 +292,7 @@ ILES_STA=ILES
 !       --------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES TEND'
+YSUBTITLE(ILES) = 'RES_TEND'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_KE(:,:,NLES_TEND)
 !
@@ -302,7 +302,7 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_KE(:,:,NLES_TEND)
 !
 IF ( ANY(XLES_BU_RES_KE(:,:,NLES_ADVM)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES ADV '
+YSUBTITLE(ILES) = 'RES_ADV'
 !
 ZLES_BUDGET(:,:,ILES) =  XLES_BU_RES_Ke(:,:,NLES_ADVM)
 END IF
@@ -313,7 +313,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_KE(:,:,NLES_FORC)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES FORC'
+YSUBTITLE(ILES) = 'RES_FORC'
 !
 ZLES_BUDGET(:,:,ILES) =  XLES_BU_RES_Ke(:,:,NLES_FORC)
 END IF
@@ -323,7 +323,7 @@ END IF
 !       --------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES DP  '
+YSUBTITLE(ILES) = 'RES_DP'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Ke(:,:,NLES_DP)
 !
@@ -332,7 +332,7 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Ke(:,:,NLES_DP)
 !       -------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES TR  '
+YSUBTITLE(ILES) = 'RES_TR'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_KE(:,:,NLES_TR)
 !
@@ -342,7 +342,7 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_KE(:,:,NLES_TR)
 !       -------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES PRES'
+YSUBTITLE(ILES) = 'RES_PRES'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_KE(:,:,NLES_PRES)
 !
@@ -351,7 +351,7 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_KE(:,:,NLES_PRES)
 !       ------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES TP  '
+YSUBTITLE(ILES) = 'RES_TP'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_KE(:,:,NLES_GRAV)
 !
@@ -360,7 +360,7 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_KE(:,:,NLES_GRAV)
 !       ----------------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES SBGT'
+YSUBTITLE(ILES) = 'RES_SBGT'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_KE(:,:,NLES_VTURB) + XLES_BU_RES_KE(:,:,NLES_HTURB)
 !
@@ -369,7 +369,7 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_KE(:,:,NLES_VTURB) + XLES_BU_RES_KE(:,:,NLES
 !
 IF ( ANY(XLES_BU_RES_KE(:,:,NLES_COR)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES CORI'
+YSUBTITLE(ILES) = 'RES_CORI'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_KE(:,:,NLES_COR)
 END IF
@@ -379,7 +379,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_KE(:,:,NLES_DIFF)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES NUMD'
+YSUBTITLE(ILES) = 'RES_NUMD'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_KE(:,:,NLES_DIFF)
 END IF
@@ -389,7 +389,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_KE(:,:,NLES_RELA)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES RELA'
+YSUBTITLE(ILES) = 'RES_RELA'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_KE(:,:,NLES_RELA)
 END IF
@@ -399,7 +399,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_KE(:,:,NLES_NEST)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES NEST'
+YSUBTITLE(ILES) = 'RES_NEST'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_KE(:,:,NLES_NEST)
 END IF
@@ -411,7 +411,7 @@ END IF
 IF ( ANY( XLES_BU_RES_KE(:,:,NLES_MISC) &
          +XLES_BU_RES_KE(:,:,NLES_CURV) /= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES MISC'
+YSUBTITLE(ILES) = 'RES_MISC'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_KE(:,:,NLES_MISC)  &
                       + XLES_BU_RES_KE(:,:,NLES_CURV)
@@ -421,7 +421,7 @@ END IF
 !       ------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES RESI'
+YSUBTITLE(ILES) = 'RES_RESI'
 !
 ZLES_BUDGET(:,:,ILES) = 0.
 DO JLES=ILES_STA+1,ILES-1
@@ -438,7 +438,7 @@ tzfield%clongname = ygroup
 tzfield%ccomment  = 'resolved KE budget'
 tzfield%cunits    = 'm2 s-3'
 
-call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles), ysubtitle(:iles) )
+call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles), hsuffixes = ysubtitle(:iles) )
 
 !-------------------------------------------------------------------------------
 !
@@ -446,7 +446,7 @@ call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles),
 !*      2.  temperature variance budget
 !           ---------------------------
 !
-YGROUP= 'BU_THL2 '
+YGROUP= 'BU_THL2'
 ILES=0
 !
 ILES_STA=ILES
@@ -455,7 +455,7 @@ ILES_STA=ILES
 !      ----------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG DP M'
+YSUBTITLE(ILES) = 'SBG_DP_M'
 ILES_P1=ILES
 !
 ZLES_BUDGET(:,:,ILES)= - 2. * XLES_SUBGRID_WThl(:,:,1) * XLES_MEAN_dThldz(:,:,1)
@@ -466,7 +466,7 @@ ZLES_BUDGET(:,:,ILES)= - 2. * XLES_SUBGRID_WThl(:,:,1) * XLES_MEAN_dThldz(:,:,1)
 !
 IF ( ANY(XLES_SUBGRID_WThl2(:,:,1)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG TR  '
+YSUBTITLE(ILES) = 'SBG_TR'
 !
 DO JK=2,NLES_K-1
   ZLES_BUDGET(JK,:,ILES) = - ( XLES_SUBGRID_WThl2 (JK+1,:,1)      &
@@ -483,7 +483,7 @@ END IF
 !      --------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG DP R'
+YSUBTITLE(ILES) = 'SBG_DP_R'
 ILES_P2=ILES
 !
 ZLES_BUDGET(:,:,ILES)= - 2. * XLES_RES_ddxa_Thl_SBG_UaThl(:,:,1)  &
@@ -494,7 +494,7 @@ ZLES_BUDGET(:,:,ILES)= - 2. * XLES_RES_ddxa_Thl_SBG_UaThl(:,:,1)  &
 !      -----------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' DISS    '
+YSUBTITLE(ILES) = 'SBG_DISS'
 !
 ZLES_BUDGET(:,:,ILES) =  XLES_SUBGRID_DISS_Thl2(:,:,1)
 !
@@ -503,7 +503,7 @@ ZLES_BUDGET(:,:,ILES) =  XLES_SUBGRID_DISS_Thl2(:,:,1)
 !      --------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG RESI'
+YSUBTITLE(ILES) = 'SBG_RESI'
 !
 ZLES_BUDGET(:,:,ILES) = 0.
 DO JLES=ILES_STA+1,ILES-1
@@ -516,7 +516,7 @@ ILES_STA=ILES
 !      --------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES TEND'
+YSUBTITLE(ILES) = 'RES_TEND'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Thl2(:,:,NLES_TEND)
 !
@@ -526,7 +526,7 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Thl2(:,:,NLES_TEND)
 !
 IF ( ANY(XLES_BU_RES_Thl2(:,:,NLES_ADVM)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES ADV '
+YSUBTITLE(ILES) = 'RES_ADV'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Thl2(:,:,NLES_ADVM)
 END IF
@@ -537,7 +537,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_Thl2(:,:,NLES_FORC)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES FORC'
+YSUBTITLE(ILES) = 'RES_FORC'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Thl2(:,:,NLES_FORC)
 END IF
@@ -547,7 +547,7 @@ END IF
 !      ----------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES DP  '
+YSUBTITLE(ILES) = 'RES_DP'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Thl2(:,:,NLES_DP)
 
@@ -556,7 +556,7 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Thl2(:,:,NLES_DP)
 !       -------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES TR  '
+YSUBTITLE(ILES) = 'RES_TR'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Thl2(:,:,NLES_TR)
 !
@@ -565,7 +565,7 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Thl2(:,:,NLES_TR)
 !       ----------------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES SBGT'
+YSUBTITLE(ILES) = 'RES_SBGT'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Thl2(:,:,NLES_VTURB) + XLES_BU_RES_Thl2(:,:,NLES_HTURB)
 !
@@ -574,7 +574,7 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Thl2(:,:,NLES_VTURB) + XLES_BU_RES_Thl2(:,:,
 !
 IF ( ANY(XLES_BU_RES_Thl2(:,:,NLES_DIFF)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES NUMD'
+YSUBTITLE(ILES) = 'RES_NUMD'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Thl2(:,:,NLES_DIFF)
 END IF
@@ -584,7 +584,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_Thl2(:,:,NLES_RELA)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES RELA'
+YSUBTITLE(ILES) = 'RES_RELA'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Thl2(:,:,NLES_RELA)
 END IF
@@ -594,7 +594,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_Thl2(:,:,NLES_NEST)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES NEST'
+YSUBTITLE(ILES) = 'RES_NEST'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Thl2(:,:,NLES_NEST)
 END IF
@@ -607,7 +607,7 @@ IF ( ANY( XLES_BU_RES_Thl2(:,:,NLES_MISC) &
          +XLES_BU_RES_Thl2(:,:,NLES_MICR) &
          + XLES_BU_RES_Thl2(:,:,NLES_PREF) /= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES MISC'
+YSUBTITLE(ILES) = 'RES_MISC'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Thl2(:,:,NLES_MISC) &
                       + XLES_BU_RES_Thl2(:,:,NLES_RAD ) &
@@ -620,7 +620,7 @@ END IF
 !       ---------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES RESI'
+YSUBTITLE(ILES) = 'RES_RESI'
 !
 ZLES_BUDGET(:,:,ILES) = 0.
 DO JLES=ILES_STA+1,ILES-1
@@ -631,7 +631,7 @@ END DO
 !       ------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' NSG TEND'
+YSUBTITLE(ILES) = 'NSG_TEND'
 !
 ZLES_BUDGET(:,:,ILES) = 0.
 IF (NLES_TIMES>2) THEN
@@ -650,7 +650,7 @@ END IF
 !       ----------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' NSG ADVM'
+YSUBTITLE(ILES) = 'NSG_ADVM'
 !
 DO JK=2,NLES_K-1
   ZLES_BUDGET(JK,:,ILES)=  -XLES_MEAN_W(JK,:,1)                 &
@@ -667,7 +667,7 @@ ZLES_BUDGET(NLES_K,:,ILES) = ZLES_BUDGET(NLES_K-1,:,ILES)
 !       ----------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' NSG ADVR'
+YSUBTITLE(ILES) = 'NSG_ADVR'
 !
 DO JK=2,NLES_K-1
   ZLES_BUDGET(JK,:,ILES)= - ( XLES_RES_W_SBG_Thl2   (JK+1,:,1)    &
@@ -690,14 +690,14 @@ tzfield%clongname = ygroup
 tzfield%ccomment  = 'thetal variance budget'
 tzfield%cunits    = 'K2 s-1'
 
-call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles), ysubtitle(:iles) )
+call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles), hsuffixes = ysubtitle(:iles) )
 
 !-------------------------------------------------------------------------------
 !
 !*      3.  temperature flux budget
 !            ---------------------
 !
-YGROUP= 'BU_WTHL '
+YGROUP= 'BU_WTHL'
 ILES=0
 !
 ILES_STA=ILES
@@ -706,7 +706,7 @@ ILES_STA=ILES
 !     -----------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG DP M'
+YSUBTITLE(ILES) = 'SBG_DP_M'
 ILES_P1=ILES
 !
 ZLES_BUDGET(:,:,ILES) =  - XLES_SUBGRID_W2(:,:,1) * XLES_MEAN_dThldz(:,:,1)
@@ -716,7 +716,7 @@ ZLES_BUDGET(:,:,ILES) =  - XLES_SUBGRID_W2(:,:,1) * XLES_MEAN_dThldz(:,:,1)
 !     -------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG DP R'
+YSUBTITLE(ILES) = 'SBG_DP_R'
 !
 ZLES_BUDGET(:,:,ILES)=- XLES_RES_ddz_Thl_SBG_W2(:,:,1) &
                       - ZLES_BUDGET(:,:,ILES_P1)
@@ -727,7 +727,7 @@ ZLES_BUDGET(:,:,ILES)=- XLES_RES_ddz_Thl_SBG_W2(:,:,1) &
 !
 IF ( ANY(XLES_SUBGRID_W2Thl(:,:,1)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG TR  '
+YSUBTITLE(ILES) = 'SBG_TR'
 !
 DO JK=2,NLES_K-1
   ZLES_BUDGET(JK,:,ILES) = - ( XLES_SUBGRID_W2Thl (JK+1,:,1)       &
@@ -746,7 +746,7 @@ END IF
 !
 IF ( ANY(XLES_SUBGRID_ThlPz(:,:,1)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG PRES'
+YSUBTITLE(ILES) = 'SBG_PRES'
 !
 ZLES_BUDGET(:,:,ILES) =  XLES_SUBGRID_ThlPz(:,:,1)
 END IF
@@ -756,7 +756,7 @@ END IF
 !      ------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG TP  '
+YSUBTITLE(ILES) = 'SBG_TP'
 !
 IF (LUSERV) THEN
   ZLES_BUDGET(:,:,ILEs) =  XG * XLES_SUBGRID_ThlThv(:,:,1)   &
@@ -773,7 +773,7 @@ END IF
 !      --------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG RESI'
+YSUBTITLE(ILES) = 'SBG_RESI'
 !
 ZLES_BUDGET(:,:,ILES) = 0.
 DO JLES=ILES_STA+1,ILES-1
@@ -786,7 +786,7 @@ ILES_STA=ILES
 !      --------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES TEND'
+YSUBTITLE(ILES) = 'RES_TEND'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WThl(:,:,NLES_TEND)
 !
@@ -795,7 +795,7 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WThl(:,:,NLES_TEND)
 !
 IF ( ANY(XLES_BU_RES_WThl(:,:,NLES_ADVM)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES ADV '
+YSUBTITLE(ILES) = 'RES_ADV'
 !
 ZLES_BUDGET(:,:,ILES) =  XLES_BU_RES_WThl(:,:,NLES_ADVM)
 END IF
@@ -805,7 +805,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_WThl(:,:,NLES_FORC)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES FORC'
+YSUBTITLE(ILES) = 'RES_FORC'
 !
 ZLES_BUDGET(:,:,ILES) =  XLES_BU_RES_WThl(:,:,NLES_FORC)
 END IF
@@ -815,7 +815,7 @@ END IF
 !       ----------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES DP  '
+YSUBTITLE(ILES) = 'RES_DP'
 !
 ZLES_BUDGET(:,:,ILES) =  XLES_BU_RES_WThl(:,:,NLES_DP)
 !
@@ -823,7 +823,7 @@ ZLES_BUDGET(:,:,ILES) =  XLES_BU_RES_WThl(:,:,NLES_DP)
 !       -------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES TR  '
+YSUBTITLE(ILES) = 'RES_TR'
 !
 ZLES_BUDGET(:,:,ILES) =  XLES_BU_RES_WThl(:,:,NLES_TR)
 !
@@ -832,7 +832,7 @@ ZLES_BUDGET(:,:,ILES) =  XLES_BU_RES_WThl(:,:,NLES_TR)
 !       -------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES PRES'
+YSUBTITLE(ILES) = 'RES_PRES'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WThl(:,:,NLES_PRES)
 !
@@ -841,7 +841,7 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WThl(:,:,NLES_PRES)
 !       ------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES TP  '
+YSUBTITLE(ILES) = 'RES_TP'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WThl(:,:,NLES_GRAV)
 !
@@ -850,7 +850,7 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WThl(:,:,NLES_GRAV)
 !       ----------------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES SBGT'
+YSUBTITLE(ILES) = 'RES_SBGT'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WThl(:,:,NLES_VTURB) + XLES_BU_RES_WThl(:,:,NLES_HTURB)
 !
@@ -859,7 +859,7 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WThl(:,:,NLES_VTURB) + XLES_BU_RES_WThl(:,:,
 !
 IF ( ANY(XLES_BU_RES_WThl(:,:,NLES_COR)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES CORI'
+YSUBTITLE(ILES) = 'RES_CORI'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WThl(:,:,NLES_COR)
 END IF
@@ -869,7 +869,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_WThl(:,:,NLES_DIFF)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES NUMD'
+YSUBTITLE(ILES) = 'RES_NUMD'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WThl(:,:,NLES_DIFF)
 END IF
@@ -879,7 +879,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_WThl(:,:,NLES_RELA)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES RELA'
+YSUBTITLE(ILES) = 'RES_RELA'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WThl(:,:,NLES_RELA)
 END IF
@@ -889,7 +889,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_WThl(:,:,NLES_NEST)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES NEST'
+YSUBTITLE(ILES) = 'RES_NEST'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WThl(:,:,NLES_NEST)
 END IF
@@ -903,7 +903,7 @@ IF ( ANY( XLES_BU_RES_WThl(:,:,NLES_MISC) &
          +XLES_BU_RES_WThl(:,:,NLES_PREF) &
          +XLES_BU_RES_WThl(:,:,NLES_CURV) /= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES MISC'
+YSUBTITLE(ILES) = 'RES_MISC'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WThl(:,:,NLES_MISC) &
                       + XLES_BU_RES_WThl(:,:,NLES_RAD ) &
@@ -917,7 +917,7 @@ END IF
 !       --------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES RESI'
+YSUBTITLE(ILES) = 'RES_RESI'
 !
 ZLES_BUDGET(:,:,ILES) = 0.
 DO JLES=ILES_STA+1,ILES-1
@@ -928,7 +928,7 @@ END DO
 !       ------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' NSG TEND'
+YSUBTITLE(ILES) = 'NSG_TEND'
 !
 ZLES_BUDGET(:,:,ILES) = 0.
 IF (NLES_TIMES>2) THEN
@@ -949,7 +949,7 @@ END IF
 !       ------------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' NSG ADVM'
+YSUBTITLE(ILES) = 'NSG_ADVM'
 !
 DO JK=2,NLES_K-1
   ZLES_BUDGET(JK,:,ILES)= - XLES_MEAN_W(JK,:,1)                               &
@@ -966,7 +966,7 @@ ZLES_BUDGET(NLES_K,:,ILES) = ZLES_BUDGET(NLES_K-1,:,ILES)
 !       ------------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' NSG ADVR'
+YSUBTITLE(ILES) = 'NSG_ADVR'
 !
 DO JK=2,NLES_K-1
   ZLES_BUDGET(JK,:,ILES)= - ( XLES_RES_W_SBG_WThl(JK+1,:,1)   &
@@ -982,7 +982,7 @@ ZLES_BUDGET(NLES_K,:,ILES) = ZLES_BUDGET(NLES_K-1,:,ILES)
 !       ----------------------------------------------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' NSG DPGW'
+YSUBTITLE(ILES) = 'NSG_DPGW'
 !
 ZLES_BUDGET(:,:,ILES)=- XLES_RES_ddxa_W_SBG_UaThl(:,:,1)
 !
@@ -991,7 +991,7 @@ ZLES_BUDGET(:,:,ILES)=- XLES_RES_ddxa_W_SBG_UaThl(:,:,1)
 !       -------------------------------------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' NSG DPGT'
+YSUBTITLE(ILES) = 'NSG_DPGT'
 !
 ZLES_BUDGET(:,:,ILES)=-XLES_RES_ddxa_Thl_SBG_UaW(:,:,1)       &
                       -ZLES_BUDGET(:,:,ILES_P1) -ZLES_BUDGET(:,:,ILES_P2)
@@ -1008,7 +1008,7 @@ tzfield%clongname = ygroup
 tzfield%ccomment  = 'thetal flux budget'
 tzfield%cunits    = 'm K s-2'
 
-call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles), ysubtitle(:iles) )
+call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles), hsuffixes = ysubtitle(:iles) )
 
 !-------------------------------------------------------------------------------
 !

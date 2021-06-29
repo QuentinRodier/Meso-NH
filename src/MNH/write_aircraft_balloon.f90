@@ -176,9 +176,12 @@ CONTAINS
 !
 SUBROUTINE FLYER_DIACHRO(TPFLYER)
 
-use modd_budget, only: tbudiachrometadata
+use modd_budget, only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK, &
+                       tbudiachrometadata
 use modd_field,  only: NMNHDIM_LEVEL, NMNHDIM_FLYER_PROC, NMNHDIM_FLYER_TIME, NMNHDIM_UNUSED, &
                        tfield_metadata_base, TYPEREAL
+
+use modi_aircraft_balloon, only: Aircraft_balloon_longtype_get
 
 TYPE(FLYER),        INTENT(IN)       :: TPFLYER
 !
@@ -253,7 +256,7 @@ ALLOCATE (IGRIDZ  (IPROCZ))
 IGRID  = 1
 YGROUP = TPFLYER%TITLE
 IGRIDZ = 1
-YGROUPZ = TRIM(TPFLYER%TITLE)//"Z"
+YGROUPZ = TPFLYER%TITLE
 !
 !----------------------------------------------------------------------------
 JPROC = 0
@@ -853,27 +856,44 @@ tzfields(:)%ndimlist(4) = NMNHDIM_FLYER_TIME
 tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_FLYER_PROC
 
-tzbudiachro%cgroupname = ygroup
-tzbudiachro%cname      = ygroup
-tzbudiachro%ccomment   = 'Values at position of flyer ' // Trim( tpflyer%title )
-tzbudiachro%ctype      = 'RSPL'
-if ( Trim( tpflyer%type ) == 'AIRCRA' ) then
-  tzbudiachro%ccategory  = 'aircraft'
-else if ( Trim( tpflyer%type ) == 'RADIOS' ) then
-  tzbudiachro%ccategory  = 'radiosonde balloon'
-else if ( Trim( tpflyer%type ) == 'ISODEN' ) then
-  tzbudiachro%ccategory  = 'iso-density balloon'
-else if ( Trim( tpflyer%type ) == 'CVBALL' ) then
-  tzbudiachro%ccategory  = 'constant volume balloon'
-else
-  call Print_msg( NVERB_ERROR, 'IO', 'WRITE_AIRCRAFT_BALLOON', 'unknown category for flyer ' // Trim( tpflyer%title ) )
-  tzbudiachro%ccategory  = 'unknown'
-end if
-tzbudiachro%cshape     = 'point'
+tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
+tzbudiachro%clevels  (NLVL_CATEGORY)    = 'Flyers'
+tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different flyers (aircrafts and balloons)'
+
+tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .true.
+call Aircraft_balloon_longtype_get( tpflyer, tzbudiachro%clevels(NLVL_SUBCATEGORY) )
+tzbudiachro%ccomments(NLVL_SUBCATEGORY) = 'Level for the flyers of type: ' // Trim( tzbudiachro%clevels(NLVL_SUBCATEGORY) )
+
+tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
+tzbudiachro%clevels  (NLVL_GROUP)       = Trim( ygroup )
+tzbudiachro%ccomments(NLVL_GROUP)       = 'Values for flyer ' // Trim( tpflyer%title )
+
+tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
+tzbudiachro%clevels  (NLVL_SHAPE)       = 'Point'
+tzbudiachro%ccomments(NLVL_SHAPE)       = 'Values at position of flyer ' // Trim( tpflyer%title )
+
+tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
+tzbudiachro%clevels  (NLVL_TIMEAVG)     = ''
+tzbudiachro%ccomments(NLVL_TIMEAVG)     = ''
+
+tzbudiachro%lleveluse(NLVL_NORM)        = .false.
+tzbudiachro%clevels  (NLVL_NORM)        = ''
+tzbudiachro%ccomments(NLVL_NORM)        = ''
+
+tzbudiachro%lleveluse(NLVL_MASK)        = .false.
+tzbudiachro%clevels  (NLVL_MASK)        = ''
+tzbudiachro%ccomments(NLVL_MASK)        = ''
+
 tzbudiachro%lmobile    = .true.
+!Compression does not make sense here
 ! tzbudiachro%licompress = NOT SET (default values)
 ! tzbudiachro%ljcompress = NOT SET (default values)
 ! tzbudiachro%lkcompress = NOT SET (default values)
+tzbudiachro%ltcompress = .false.
+tzbudiachro%lnorm      = .false.
+!Boundaries in physical domain does not make sense here (but flyer position does)
+!These values are not written in the netCDF files
+!These values are written in the LFI files
 ! tzbudiachro%nil        = NOT SET (default values)
 ! tzbudiachro%nih        = NOT SET (default values)
 ! tzbudiachro%njl        = NOT SET (default values)
@@ -903,20 +923,53 @@ tzfields(:)%ndimlist(4) = NMNHDIM_FLYER_TIME
 tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_FLYER_PROC
 
-tzbudiachro%cgroupname = ygroupz
-tzbudiachro%cname      = ygroupz
-tzbudiachro%ccomment   = 'Vertical profiles at position of flyer ' // Trim( tpflyer%title )
-tzbudiachro%ctype      = 'CART'
-! tzbudiachro%ccategory  =  !unchanged
-tzbudiachro%cshape     = 'vertical profile'
+tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
+tzbudiachro%clevels  (NLVL_CATEGORY)    = 'Flyers'
+tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different flyers (aircrafts and balloons)'
+
+tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .true.
+call Aircraft_balloon_longtype_get( tpflyer, tzbudiachro%clevels(NLVL_SUBCATEGORY) )
+tzbudiachro%ccomments(NLVL_SUBCATEGORY) = 'Level for the flyers of type: ' // Trim( tzbudiachro%clevels(NLVL_SUBCATEGORY) )
+
+tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
+tzbudiachro%clevels  (NLVL_GROUP)       = Trim( ygroupz )
+tzbudiachro%ccomments(NLVL_GROUP)       = 'Values for flyer ' // Trim( tpflyer%title )
+
+tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
+tzbudiachro%clevels  (NLVL_SHAPE)       = 'Vertical_profile'
+tzbudiachro%ccomments(NLVL_SHAPE)       = 'Vertical profiles at position of flyer ' // Trim( tpflyer%title )
+
+tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
+tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not_time_averaged'
+tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are not time averaged'
+
+tzbudiachro%lleveluse(NLVL_NORM)        = .false.
+tzbudiachro%clevels  (NLVL_NORM)        = 'Not_normalized'
+tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
+
+tzbudiachro%lleveluse(NLVL_MASK)        = .false.
+tzbudiachro%clevels  (NLVL_MASK)        = ''
+tzbudiachro%ccomments(NLVL_MASK)        = ''
+
 tzbudiachro%lmobile    = .true.
+!Compression does not make sense here
+!Keep these values for backward compatibility of LFI files
 tzbudiachro%licompress = .true.
 tzbudiachro%ljcompress = .true.
 tzbudiachro%lkcompress = .false.
+tzbudiachro%ltcompress = .false.
+tzbudiachro%lnorm      = .false.
+!Horizontal boundaries in physical domain does not make sense here (but flyer position does)
+!These values are not written in the netCDF files
+!These values are written in the LFI files. They are kept for backward compatibility (and not set to default values)
 tzbudiachro%nil        = 1
 tzbudiachro%nih        = 1
 tzbudiachro%njl        = 1
 tzbudiachro%njh        = 1
+!1->iku includes non-physical levels (IKU=NKMAX+2*JPVEXT)
+!This does not conform to documentation (limits are in the physical domain)
+!These values are not written in the netCDF files
+!These values are written in the LFI files. They are kept for backward compatibility (and not set to default values)
 tzbudiachro%nkl        = 1
 tzbudiachro%nkh        = iku
 

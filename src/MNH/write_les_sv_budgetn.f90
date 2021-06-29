@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -115,7 +115,7 @@ ZLES_BUDGET(:,:,:,:) = XUNDEF
 !           ----------------------------
 !
 !
-YGROUP='BU_SV2  '
+YGROUP='BU_SV2'
 !
 ILES=0
 ILES_STA=ILES
@@ -124,7 +124,7 @@ ILES_STA=ILES
 !      ----------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG DP M'
+YSUBTITLE(ILES) = 'SBG_DP_M'
 ILES_P1=ILES
 !
 DO JSV=1,NSV
@@ -136,7 +136,7 @@ END DO
 !      --------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG DP R'
+YSUBTITLE(ILES) = 'SBG_DP_R'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV)= - 2. * XLES_RES_ddxa_Sv_SBG_UaSv(:,:,1,JSV)  &
@@ -149,7 +149,7 @@ END DO
 !
 IF ( ANY(XLES_SUBGRID_WSv2(:,:,1,:)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG TR  '
+YSUBTITLE(ILES) = 'SBG_TR'
 !
 DO JSV=1,NSV
   DO JK=2,NLES_K-1
@@ -168,7 +168,7 @@ END IF
 !      -----------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' DISS    '
+YSUBTITLE(ILES) = 'SBG_DISS'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) =  XLES_SUBGRID_DISS_Sv2(:,:,1,JSV)
@@ -179,7 +179,7 @@ END DO
 !      --------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG RESI'
+YSUBTITLE(ILES) = 'SBG_RESI'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = 0.
@@ -194,7 +194,7 @@ ILES_STA=ILES
 !      --------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES TEND'
+YSUBTITLE(ILES) = 'RES_TEND'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_Sv2(:,:,NLES_TEND,JSV)
@@ -205,7 +205,7 @@ END DO
 !
 IF ( ANY(XLES_BU_RES_Sv2(:,:,NLES_ADVM,:)/= 0.) ) THEN
   ILES=ILES+1
-  YSUBTITLE(ILES) = ' RES ADV '
+  YSUBTITLE(ILES) = 'RES_ADV'
 !
   DO JSV=1,NSV
     ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_Sv2(:,:,NLES_ADVM,JSV)
@@ -217,7 +217,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_Sv2(:,:,NLES_FORC,:)/= 0.) ) THEN
   ILES=ILES+1
-  YSUBTITLE(ILES) = ' RES FORC'
+  YSUBTITLE(ILES) = 'RES_FORC'
 !
   DO JSV=1,NSV
     ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_Sv2(:,:,NLES_FORC,JSV)
@@ -229,7 +229,7 @@ END IF
 !      ----------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES DP  '
+YSUBTITLE(ILES) = 'RES_DP'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_Sv2(:,:,NLES_DP,JSV)
@@ -239,7 +239,7 @@ END DO
 !       -------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES TR  '
+YSUBTITLE(ILES) = 'RES_TR'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_Sv2(:,:,NLES_TR,JSV)
@@ -250,7 +250,7 @@ END DO
 !       ----------------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES SBGT'
+YSUBTITLE(ILES) = 'RES_SBGT'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_Sv2(:,:,NLES_VTURB,JSV) &
@@ -262,7 +262,7 @@ END DO
 !
 IF ( ANY(XLES_BU_RES_Sv2(:,:,NLES_DIFF,:)/= 0.) ) THEN
   ILES=ILES+1
-  YSUBTITLE(ILES) = ' RES NUMD'
+  YSUBTITLE(ILES) = 'RES_NUMD'
 !
   DO JSV=1,NSV
     ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_Sv2(:,:,NLES_DIFF,JSV)
@@ -274,7 +274,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_Sv2(:,:,NLES_RELA,:)/= 0.) ) THEN
   ILES=ILES+1
-  YSUBTITLE(ILES) = ' RES RELA'
+  YSUBTITLE(ILES) = 'RES_RELA'
 !
   DO JSV=1,NSV
     ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_Sv2(:,:,NLES_RELA,JSV)
@@ -286,7 +286,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_Sv2(:,:,NLES_NEST,:)/= 0.) ) THEN
   ILES=ILES+1
-  YSUBTITLE(ILES) = ' RES NEST'
+  YSUBTITLE(ILES) = 'RES_NEST'
 !
   DO JSV=1,NSV
     ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_Sv2(:,:,NLES_NEST,JSV)
@@ -298,7 +298,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_Sv2(:,:,NLES_MISC,:)/= 0.) ) THEN
   ILES=ILES+1
-  YSUBTITLE(ILES) = ' RES MISC'
+  YSUBTITLE(ILES) = 'RES_MISC'
   !
   DO JSV=1,NSV
     ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_Sv2(:,:,NLES_MISC,JSV)
@@ -309,7 +309,7 @@ END IF
 !       ---------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES RESI'
+YSUBTITLE(ILES) = 'RES_RESI'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = 0.
@@ -322,7 +322,7 @@ END DO
 !       ------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' NSG TEND'
+YSUBTITLE(ILES) = 'NSG_TEND'
 !
 IF (NLES_TIMES>2) THEN
   DO JSV=1,NSV
@@ -343,7 +343,7 @@ END IF
 !       ----------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' NSG ADVM'
+YSUBTITLE(ILES) = 'NSG_ADVM'
 !
 DO JSV=1,NSV
   DO JK=2,NLES_K-1
@@ -361,7 +361,7 @@ END DO
 !       ----------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' NSG ADVR'
+YSUBTITLE(ILES) = 'NSG_ADVR'
 !
 DO JSV=1,NSV
   DO JK=2,NLES_K-1
@@ -399,7 +399,7 @@ tzfield%ndimlist(5:) = NMNHDIM_UNUSED
 gdoavg  = xles_temp_mean_start /= XUNDEF .and. xles_temp_mean_end /= XUNDEF
 gdonorm = trim(cles_norm_type) /= 'NONE'
 
-call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles, :), ysubtitle(:iles) )
+call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles, :), hsuffixes = ysubtitle(:iles) )
 
 !-------------------------------------------------------------------------------
 !
@@ -407,7 +407,7 @@ call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles, 
 !           -----------------------
 !
 !
-YGROUP = 'BU_WSV  '
+YGROUP = 'BU_WSV'
 !
 !
 ILES=0
@@ -417,7 +417,7 @@ ILES_STA=ILES
 !     -----------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG DP M'
+YSUBTITLE(ILES) = 'SBG_DP_M'
 ILES_P1=ILES
 !
 DO JSV=1,NSV
@@ -430,7 +430,7 @@ END DO
 !     -------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG DP R'
+YSUBTITLE(ILES) = 'SBG_DP_R'
 ILES_P2=ILES
 !
 DO JSV=1,NSV
@@ -445,7 +445,7 @@ END DO
 !
 IF ( ANY(XLES_SUBGRID_W2Sv(:,:,1,:)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG TR  '
+YSUBTITLE(ILES) = 'SBG_TR'
 !
 DO JSV=1,NSV
   DO JK=2,NLES_K-1
@@ -464,7 +464,7 @@ END IF
 !      -------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG PRES'
+YSUBTITLE(ILES) = 'SBG_PRES'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) =  XLES_SUBGRID_SvPz(:,:,1,JSV)
@@ -475,7 +475,7 @@ END DO
 !      ------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG TP  '
+YSUBTITLE(ILES) = 'SBG_TP'
 !
 IF (LUSERV) THEN
   DO JSV=1,NSV
@@ -494,7 +494,7 @@ END IF
 !      -----------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' DISS    '
+YSUBTITLE(ILES) = 'SBG_DISS'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = 0.
@@ -505,7 +505,7 @@ END DO
 !      --------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' SBG RESI'
+YSUBTITLE(ILES) = 'SBG_RESI'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = 0.
@@ -520,7 +520,7 @@ ILES_STA=ILES
 !      --------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES TEND'
+YSUBTITLE(ILES) = 'RES_TEND'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_WSv(:,:,NLES_TEND,JSV)
@@ -531,7 +531,7 @@ END DO
 !
 IF ( ANY(XLES_BU_RES_WSv(:,:,NLES_ADVM,:)/= 0.) ) THEN
   ILES=ILES+1
-  YSUBTITLE(ILES) = ' RES ADV '
+  YSUBTITLE(ILES) = 'RES_ADV'
   !
   DO JSV=1,NSV
     ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_WSv(:,:,NLES_ADVM,JSV)
@@ -543,7 +543,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_WSv(:,:,NLES_FORC,:)/= 0.) ) THEN
   ILES=ILES+1
-  YSUBTITLE(ILES) = ' RES FORC'
+  YSUBTITLE(ILES) = 'RES_FORC'
   !
   DO JSV=1,NSV
     ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_WSv(:,:,NLES_FORC,JSV)
@@ -554,7 +554,7 @@ END IF
 !       ----------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES DP  '
+YSUBTITLE(ILES) = 'RES_DP'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_WSv(:,:,NLES_DP,JSV)
@@ -564,7 +564,7 @@ END DO
 !       -------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES TR  '
+YSUBTITLE(ILES) = 'RES_TR'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_WSv(:,:,NLES_TR,JSV)
@@ -575,7 +575,7 @@ END DO
 !       -------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES PRES'
+YSUBTITLE(ILES) = 'RES_PRES'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_WSv(:,:,NLES_PRES,JSV)
@@ -586,7 +586,7 @@ END DO
 !       ------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES TP  '
+YSUBTITLE(ILES) = 'RES_TP'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_WSv(:,:,NLES_GRAV,JSV)
@@ -597,7 +597,7 @@ END DO
 !       ----------------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES SBGT'
+YSUBTITLE(ILES) = 'RES_SBGT'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_WSv(:,:,NLES_VTURB,JSV) + XLES_BU_RES_WSv(:,:,NLES_HTURB,JSV)
@@ -608,7 +608,7 @@ END DO
 !
 IF ( ANY(XLES_BU_RES_WSv(:,:,NLES_COR,:)/= 0.) ) THEN
   ILES=ILES+1
-  YSUBTITLE(ILES) = ' RES CORI'
+  YSUBTITLE(ILES) = 'RES_CORI'
   !
   DO JSV=1,NSV
     ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_WSv(:,:,NLES_COR,JSV)
@@ -620,7 +620,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_WSv(:,:,NLES_DIFF,:)/= 0.) ) THEN
   ILES=ILES+1
-  YSUBTITLE(ILES) = ' RES NUMD'
+  YSUBTITLE(ILES) = 'RES_NUMD'
   !
   DO JSV=1,NSV
     ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_WSv(:,:,NLES_DIFF,JSV)
@@ -632,7 +632,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_WSv(:,:,NLES_RELA,:)/= 0.) ) THEN
   ILES=ILES+1
-  YSUBTITLE(ILES) = ' RES RELA'
+  YSUBTITLE(ILES) = 'RES_RELA'
   !
   DO JSV=1,NSV
     ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_WSv(:,:,NLES_RELA,JSV)
@@ -644,7 +644,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_WSv(:,:,NLES_NEST,:)/= 0.) ) THEN
   ILES=ILES+1
-  YSUBTITLE(ILES) = ' RES NEST'
+  YSUBTITLE(ILES) = 'RES_NEST'
   !
   DO JSV=1,NSV
     ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_WSv(:,:,NLES_NEST,JSV)
@@ -656,7 +656,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_WSv(:,:,NLES_MISC,:)/= 0.) ) THEN
   ILES=ILES+1
-  YSUBTITLE(ILES) = ' RES MISC'
+  YSUBTITLE(ILES) = 'RES_MISC'
   !
   DO JSV=1,NSV
     ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_WSv(:,:,NLES_MISC,JSV)
@@ -667,7 +667,7 @@ END IF
 !       -------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' RES RESI'
+YSUBTITLE(ILES) = 'RES_RESI'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = 0.
@@ -680,7 +680,7 @@ END DO
 !       ------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' NSG TEND'
+YSUBTITLE(ILES) = 'NSG_TEND'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = 0.
@@ -703,7 +703,7 @@ END DO
 !       ------------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' NSG ADVM'
+YSUBTITLE(ILES) = 'NSG_ADVM'
 !
 DO JSV=1,NSV
   DO JK=2,NLES_K-1
@@ -721,7 +721,7 @@ END DO
 !       ------------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' NSG ADVR'
+YSUBTITLE(ILES) = 'NSG_ADVR'
 !
 DO JSV=1,NSV
   DO JK=2,NLES_K-1
@@ -738,7 +738,7 @@ END DO
 !       ----------------------------------------------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' NSG DPGW'
+YSUBTITLE(ILES) = 'NSG_DPGW'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV)=- XLES_RES_ddxa_W_SBG_UaSv(:,:,1,JSV)
@@ -749,7 +749,7 @@ END DO
 !       -------------------------------------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = ' NSG DPGT'
+YSUBTITLE(ILES) = 'NSG_DPGT'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV)=-XLES_RES_ddxa_Sv_SBG_UaW(:,:,1,JSV)       &
@@ -781,7 +781,7 @@ tzfield%ndimlist(5:) = NMNHDIM_UNUSED
 gdoavg  = xles_temp_mean_start /= XUNDEF .and. xles_temp_mean_end /= XUNDEF
 gdonorm = trim(cles_norm_type) /= 'NONE'
 
-call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles, :), ysubtitle(:iles) )
+call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles, :), hsuffixes = ysubtitle(:iles) )
 
 !-------------------------------------------------------------------------------
 !

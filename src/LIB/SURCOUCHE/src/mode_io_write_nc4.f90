@@ -296,7 +296,7 @@ IF (.NOT.GISCOORD) THEN
         IF (istatus /= NF90_NOERR) CALL IO_Err_handle_nc4(istatus,'IO_Field_attr_write_nc4','NF90_PUT_ATT','coordinates')
         DEALLOCATE(YCOORDS)
       ELSE
-        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_Field_attr_write_nc4','coordinates not implemented for variable ' &
+        CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Field_attr_write_nc4','coordinates not implemented for variable ' &
                                                                     //TRIM(TPFIELD%CMNHNAME))
       END IF
     ELSE
@@ -2279,11 +2279,19 @@ subroutine Write_flyer_time_coord( tpflyer )
   use NETCDF
 
   use modd_aircraft_balloon
-  use modd_parameters,       only: XUNDEF
+  use modd_parameters,       only: NBUNAMELGTMAX, XUNDEF
+
+  use mode_io_tools_nc4,     only: IO_Mnhname_clean
+
+  use modi_aircraft_balloon, only: Aircraft_balloon_longtype_get
 
   type(flyer), intent(in) :: tpflyer
 
+  character(len=NBUNAMELGTMAX) :: ytype
+  character(len=NBUNAMELGTMAX) :: ytype_clean
   integer                      :: istatus
+  integer(kind=CDFINT)         :: icatid
+  integer(kind=CDFINT)         :: isubcatid
   integer(kind=CDFINT)         :: idimid
   type(tdimnc),        pointer :: tzdim
 
@@ -2291,9 +2299,21 @@ subroutine Write_flyer_time_coord( tpflyer )
   if ( tpflyer%nmodel == imi .and. Count( tpflyer%x /= XUNDEF) > 1 ) then
     Allocate( tzdim )
 
+    istatus = NF90_INQ_NCID( tpfile%nncid, 'Flyers', icatid )
+    if ( istatus /= NF90_NOERR ) then
+      call Print_msg( NVERB_ERROR, 'IO', 'Write_flyer_time_coord', &
+                      Trim( tpfile%cname ) // ': group Flyers not found' )
+    end if
 
-    !Group with flyer title
-    istatus = NF90_INQ_NCID( tpfile%nncid, Trim( tpflyer%title ), incid )
+    call Aircraft_balloon_longtype_get( tpflyer, ytype )
+    call IO_Mnhname_clean( ytype, ytype_clean )
+    istatus = NF90_INQ_NCID( icatid, Trim( ytype_clean ), isubcatid )
+    if ( istatus /= NF90_NOERR ) then
+      call Print_msg( NVERB_ERROR, 'IO', 'Write_flyer_time_coord', &
+                      Trim( tpfile%cname ) // ': group ' // Trim( ytype_clean ) // ' not found' )
+    end if
+
+    istatus = NF90_INQ_NCID( isubcatid, Trim( tpflyer%title ), incid )
     if ( istatus /= NF90_NOERR ) then
       call Print_msg( NVERB_ERROR, 'IO', 'Write_flyer_time_coord', &
                       Trim( tpfile%cname ) // ': group '// Trim( tpflyer%title ) // ' not found' )
@@ -2311,28 +2331,6 @@ subroutine Write_flyer_time_coord( tpflyer )
 
     !Remark: incid is used in Write_time_coord
     call Write_time_coord( tzdim, 'time axis for flyer', tpflyer%tpdates )
-
-
-    !Group with flyer title suffixed by Z
-    istatus = NF90_INQ_NCID( tpfile%nncid, Trim( tpflyer%title ) // 'Z' , incid )
-    if ( istatus /= NF90_NOERR ) then
-      call Print_msg( NVERB_ERROR, 'IO', 'Write_flyer_time_coord', &
-                      Trim( tpfile%cname ) // ': group '// Trim( tpflyer%title ) // 'z not found' )
-    end if
-
-    istatus = NF90_INQ_DIMID( incid, 'time_flyer', idimid )
-    if ( istatus /= NF90_NOERR ) then
-      call Print_msg( NVERB_ERROR, 'IO', 'Write_flyer_time_coord', &
-                      Trim( tpfile%cname ) // ': group ' // Trim( tpflyer%title ) // 'Z time_flyer dimension not found' )
-    end if
-
-    tzdim%cname = 'time_flyer'
-    istatus = NF90_INQUIRE_DIMENSION( incid, idimid, len = tzdim%nlen )
-    tzdim%nid = idimid
-
-    !Remark: incid is used in Write_time_coord
-    call Write_time_coord( tzdim, 'time axis for flyer', tpflyer  %tpdates )
-
 
     Deallocate( tzdim )
 

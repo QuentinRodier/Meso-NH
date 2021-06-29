@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !      #####################
@@ -41,6 +41,13 @@ REAL, DIMENSION(:,:),INTENT(IN) :: PSEA
 !
 END SUBROUTINE AIRCRAFT_BALLOON
 !
+SUBROUTINE AIRCRAFT_BALLOON_LONGTYPE_GET( TPFLYER, HLONGTYPE )
+  USE MODD_AIRCRAFT_BALLOON, ONLY: FLYER
+
+  TYPE(FLYER),      INTENT(IN)  :: TPFLYER
+  CHARACTER(LEN=*), INTENT(OUT) :: HLONGTYPE
+END SUBROUTINE AIRCRAFT_BALLOON_LONGTYPE_GET
+
 END INTERFACE
 !
 END MODULE MODI_AIRCRAFT_BALLOON
@@ -337,3 +344,34 @@ ENDIF
 !----------------------------------------------------------------------------
 !
 END SUBROUTINE AIRCRAFT_BALLOON
+
+
+SUBROUTINE AIRCRAFT_BALLOON_LONGTYPE_GET( TPFLYER, HLONGTYPE )
+USE MODD_AIRCRAFT_BALLOON, ONLY: FLYER
+
+USE MODE_MSG
+
+TYPE(FLYER),      INTENT(IN)  :: TPFLYER
+CHARACTER(LEN=*), INTENT(OUT) :: HLONGTYPE
+
+character(len=:), allocatable :: ytype
+
+if ( Trim( TPFLYER%TYPE ) == 'AIRCRA' ) then
+  ytype = 'Aircrafts'
+else if ( Trim( TPFLYER%TYPE ) == 'RADIOS' ) then
+  ytype = 'Radiosonde_balloons'
+else if ( Trim( TPFLYER%TYPE ) == 'ISODEN' ) then
+  ytype = 'Isodensity_balloons'
+else if ( Trim( TPFLYER%TYPE ) == 'CVBALL' ) then
+  ytype = 'Constant_volume_balloons'
+else
+  call Print_msg( NVERB_ERROR, 'GEN', 'AIRCRAFT_BALLOON_LONGTYPE_GET', 'unknown category for flyer ' // Trim( tpflyer%title ) )
+  ytype = 'Unknown'
+end if
+
+if ( Len_trim( ytype ) > Len( HLONGTYPE ) ) &
+  call Print_msg( NVERB_WARNING, 'GEN', 'AIRCRAFT_BALLOON_LONGTYPE_GET', &
+                  'HLONGTYPE truncated for flyer ' // Trim( tpflyer%title ) )
+HLONGTYPE = Trim( ytype )
+
+END SUBROUTINE AIRCRAFT_BALLOON_LONGTYPE_GET

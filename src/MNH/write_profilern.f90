@@ -127,7 +127,8 @@ CONTAINS
 !----------------------------------------------------------------------------
 SUBROUTINE PROFILER_DIACHRO_n(TPROFILER,II)
 
-use modd_budget, only: tbudiachrometadata
+use modd_budget, only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK,  &
+                       tbudiachrometadata
 use modd_field,  only: NMNHDIM_LEVEL, NMNHDIM_PROFILER_TIME, NMNHDIM_PROFILER_PROC, NMNHDIM_UNUSED, &
                        tfield_metadata_base, TYPEREAL
 
@@ -651,20 +652,53 @@ tzfields(:)%ndimlist(4) = NMNHDIM_PROFILER_TIME
 tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_PROFILER_PROC
 
-tzbudiachro%cgroupname = ygroup
-tzbudiachro%cname      = ygroup
-tzbudiachro%ccomment   = 'Vertical profiles at position of profiler ' // Trim( ygroup )
-tzbudiachro%ctype      = 'CART'
-tzbudiachro%ccategory  = 'profiler'
-tzbudiachro%cshape     = 'vertical profile'
+tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
+tzbudiachro%clevels  (NLVL_CATEGORY)    = 'Profilers'
+tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different vertical profilers'
+
+tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
+tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
+tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
+
+tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
+tzbudiachro%clevels  (NLVL_GROUP)       = ygroup
+tzbudiachro%ccomments(NLVL_GROUP)       = 'Vertical profiles at position of profiler ' // Trim( ygroup )
+
+tzbudiachro%lleveluse(NLVL_SHAPE)       = .false.
+tzbudiachro%clevels  (NLVL_SHAPE)       = 'Vertical_profile'
+tzbudiachro%ccomments(NLVL_SHAPE)       = ''
+
+tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
+tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not_time_averaged'
+tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are not time averaged'
+
+tzbudiachro%lleveluse(NLVL_NORM)        = .false.
+tzbudiachro%clevels  (NLVL_NORM)        = 'Not_normalized'
+tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
+
+tzbudiachro%lleveluse(NLVL_MASK)        = .false.
+tzbudiachro%clevels  (NLVL_MASK)        = ''
+tzbudiachro%ccomments(NLVL_MASK)        = ''
+
 tzbudiachro%lmobile    = .false.
+!Compression does not make sense here
+!Keep these values for backward compatibility of LFI files
 tzbudiachro%licompress = .true.
 tzbudiachro%ljcompress = .true.
 tzbudiachro%lkcompress = .false.
+tzbudiachro%ltcompress = .false.
+tzbudiachro%lnorm      = .false.
+!Horizontal boundaries in physical domain does not make sense here (but flyer position does)
+!These values are not written in the netCDF files
+!These values are written in the LFI files. They are kept for backward compatibility (and not set to default values)
 tzbudiachro%nil        = 1
 tzbudiachro%nih        = 1
 tzbudiachro%njl        = 1
 tzbudiachro%njh        = 1
+!1->iku includes non-physical levels (IKU=NKMAX+2*JPVEXT)
+!This does not conform to documentation (limits are in the physical domain)
+!These values are not written in the netCDF files
+!These values are written in the LFI files. They are kept for backward compatibility (and not set to default values)
 tzbudiachro%nkl        = 1
 tzbudiachro%nkh        = iku
 

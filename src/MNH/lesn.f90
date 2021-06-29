@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2000-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -1250,6 +1250,7 @@ LOGICAL, DIMENSION(:,:,:),   INTENT(IN) :: OMASK     ! 2D mask for computations
 !       0.2  declaration of local variables
 !
 INTEGER :: JSV      ! scalar variables counter
+INTEGER :: JI
 INTEGER :: JK       ! vertical loop counter
 INTEGER :: JPDF     ! pdf counter
 !
