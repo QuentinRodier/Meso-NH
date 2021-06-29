@@ -627,13 +627,15 @@ WHERE(PSW_RAD(:) > ZSWRAD_MIN) ! Sun is up...approx
 !
 ELSEWHERE
 
-! Sun is down:
-   
-   DK%XALBT(:)                = 1.0
-   ZSWUP(:)                   = PSW_RAD(:)
+! Sun is down: (below threshold)
+! radiation amounts quite small, so make a simple approximation here:   
+
+   DK%XALBT(:)                = ZALBV(:)
+   ZSWUP(:)                   = DK%XALBT(:)*PSW_RAD(:)
+
    DEK%XSWDOWN_GN(:)          = 0.
    DEK%XSWNET_G(:)            = 0.
-   DEK%XSWNET_V(:)            = 0.
+   DEK%XSWNET_V(:)            = (1.-DK%XALBT(:))*PSW_RAD(:)
    DEK%XSWNET_N(:)            = 0.
    DEK%XSWNET_NS(:)           = 0.
    ZTAU_N(:,SIZE(PEK%TSNOW%WSNOW,2)) = 0.
@@ -918,7 +920,7 @@ ZVEGFACT(:) = ZSIGMA_F(:)*(1.0-PPALPHAN(:)*PEK%XPSN(:))
 ! snowpack and part falling onto snow-free understory.
 !
 !
- CALL HYDRO_VEG(IO%CRAIN, PTSTEP, KK%XMUF, ZRR, DEK%XLEV_CV, DEK%XLETR_CV,          &
+ CALL HYDRO_VEG(IO%CRAIN, PTSTEP, KK%XMUF, ZRR, DEK%XLEV_CV, DEK%XLETR_CV,        &
                 ZVEGFACT, ZPSNCV, PEK%XWR, ZWRMAX, ZRRSFC, DEK%XDRIP, DEK%XRRVEG, &
                 PK%XLVTT  )
 !
@@ -930,7 +932,7 @@ ZVEGFACT(:) = ZSIGMA_F(:)*(1.0-PPALPHAN(:)*PEK%XPSN(:))
  IF (PRESENT(PBLOWSNW_FLUX)) THEN
    CALL SNOW3L_ISBA(IO, G, PK, PEK, DK, DEK, DMK, OMEB, HIMPLICIT_WIND,       &
                   TPTIME, PTSTEP, PK%XVEGTYPE_PATCH,  ZTGL, ZCTSFC,         &
-                  ZSOILHCAPZ, ZSOILCONDZ(:,1), PPS, PTA, PSW_RAD, PQA,      &
+                  ZSOILHCAPZ, ZSOILCONDZ(:,1), PPS, PEK%XTC, DEK%XSWDOWN_GN, PEK%XQC,&
                   PVMOD, PLW_RAD, ZRRSFC, DEK%XSR_GN, PRHOA, ZUREF, PEXNS,  &
                   PEXNA, PDIRCOSZW, ZZREF, ZALBG, ZD_G, ZDZG, PPEW_A_COEF,  &
                   PPEW_B_COEF, PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF,       &
@@ -941,7 +943,7 @@ ZVEGFACT(:) = ZSIGMA_F(:)*(1.0-PPALPHAN(:)*PEK%XPSN(:))
  ELSE
    CALL SNOW3L_ISBA(IO, G, PK, PEK, DK, DEK, DMK, OMEB, HIMPLICIT_WIND,       &
                   TPTIME, PTSTEP, PK%XVEGTYPE_PATCH,  ZTGL, ZCTSFC,         &
-                  ZSOILHCAPZ, ZSOILCONDZ(:,1), PPS, PTA, PSW_RAD, PQA,      &
+                  ZSOILHCAPZ, ZSOILCONDZ(:,1), PEK%XTC, DEK%XSWDOWN_GN, PEK%XQC, &
                   PVMOD, PLW_RAD, ZRRSFC, DEK%XSR_GN, PRHOA, ZUREF, PEXNS,  &
                   PEXNA, PDIRCOSZW, ZZREF, ZALBG, ZD_G, ZDZG, PPEW_A_COEF,  &
                   PPEW_B_COEF, PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF,       &
@@ -1675,16 +1677,6 @@ INTEGER                               :: INJ, INL, JJ, JL
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
-!*      0.3    declarations of local parameters
-!
-REAL, PARAMETER                       :: Z1 = 45.0       !litter bulk density (kg/m3)
-REAL, PARAMETER                       :: Z2 = 0.1        !coeff for litter conductivity (W/(mK))
-REAL, PARAMETER                       :: Z3 = 0.03       !coeff for litter conductivity
-REAL, PARAMETER                       :: Z4 = 0.95       !litter porosity       (m3/m3)
-REAL, PARAMETER                       :: Z5 = 0.12       !litter field capacity (m3/m3)
-!
-REAL, DIMENSION(SIZE(PEK%XWG,1))      :: ZWORK
-!
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('ISBA_MEB:PREP_MEB_SOIL',0,ZHOOK_HANDLE)
@@ -1692,14 +1684,11 @@ IF (LHOOK) CALL DR_HOOK('ISBA_MEB:PREP_MEB_SOIL',0,ZHOOK_HANDLE)
 INJ  = SIZE(PK%XDG,1)
 INL  = SIZE(PK%XDG,2)
 !
-ZWORK(:) = 0.0
 IF(OMEB_LITTER)THEN
    PTGL(:,1)                  = PEK%XTL(:)
-   ZWORK(:)                   = PEK%XWRL(:)/(XRHOLW*PEK%XGNDLITTER(:))
-   PSOILHCAPL(:,1)            = XOMSPH*Z1 + (XCL*XRHOLW)*ZWORK(:) + (XCI*XRHOLI/XRHOLW)*PEK%XWRLI(:)/PEK%XGNDLITTER(:)
-   PSOILCONDL(:,1)            = Z2 + Z3 * ZWORK(:)
-   PWSATL(:,1)                = Z4
-   PWFCL(:,1)                 = Z5
+   CALL MEBLITTER_THRM(PEK%XWRL,PEK%XWRLI,PEK%XGNDLITTER,PSOILHCAPL(:,1),PSOILCONDL(:,1))
+   PWSATL(:,1)                = XLITTER_HYD_Z4
+   PWFCL(:,1)                 = XLITTER_HYD_Z5
    PD_GL(:,1)                 = PEK%XGNDLITTER(:)
    PDZGL(:,1)                 = PEK%XGNDLITTER(:)
    PCTSFC(:)                  = 1. / (PSOILHCAPL(:,1) * PEK%XGNDLITTER(:))

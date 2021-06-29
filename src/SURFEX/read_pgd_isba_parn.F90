@@ -496,15 +496,17 @@ IF (.NOT.OLAND_USE) THEN
     ENDIF
   ENDIF
   GTIME(:) = .FALSE.
-  DO JT = 1,SIZE(GTIME)
-    IF (JT_BEG==JT_END .AND. TPDATE_END%YEAR==TPDATE_BEG%YEAR+1) THEN
-      GTIME(JT) = .TRUE.
-    ELSEIF (JT_BEG<=JT_END .AND. JT>=JT_BEG .AND. JT<=JT_END) THEN
-      GTIME(JT) = .TRUE.
-    ELSEIF (JT_BEG>JT_END .AND. (JT>=JT_BEG .OR. JT<=JT_END)) THEN
-      GTIME(JT) = .TRUE. 
-    ENDIF
-  ENDDO 
+  IF (TPDATE_END%YEAR>=TPDATE_BEG%YEAR+2) THEN ! if the run contains one whole year
+    GTIME(:) = .TRUE. ! all periods must be read
+  ELSEIF (TPDATE_END%YEAR==TPDATE_BEG%YEAR+1) THEN ! if the run passes one year
+    DO JT = 1,SIZE(GTIME)
+      IF (JT>=JT_BEG .OR. JT<=JT_END) GTIME(JT) = .TRUE. ! all periods after JT_BEG and before JT_END are read
+    ENDDO
+  ELSE ! if the run stays in one only year
+    DO JT = 1,SIZE(GTIME)
+      IF (JT>=JT_BEG .AND. JT<=JT_END) GTIME(JT) = .TRUE.  ! all periods between JT_BEG and JT_END are read
+    ENDDO 
+  ENDIF
   !
   !
   IF (DTI%LDATA_VEGTYPE) THEN
