@@ -37,6 +37,7 @@
 !!    Original     01/12/98
 !!     V. Masson    01/2004 extrapolation in latitude and longitude
 !!     M. Jidane    11/2013 add OpenMP directives
+!!     Q. Rodier    06/2021 avoid abort for interpolation of ALL(PFIELD)=XUNDEF with ECOSG
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -417,7 +418,7 @@ IF (ALLOCATED(ZLO)) DEALLOCATE(ZLO)
 DEALLOCATE(ZTLONMIN,ZTLONMAX,ZTLATMIN,ZTLATMAX)
 !
 DO JL=1,INL
-  IF (ANY(PFIELD(:,JL)==XUNDEF .AND. OINTERP(:))) THEN
+  IF (ANY(PFIELD(:,JL)==XUNDEF .AND. OINTERP(:)) .AND. (.NOT. ALL(PFIELD(:,JL)==XUNDEF))) THEN
     WRITE(*,*) 'LAYER ',JL,': NO EXTRAPOLATION : INCREASE YOUR HALO_PREP IN NAM_PREP_SURF_ATM'
     CALL ABOR1_SFX('NO EXTRAPOLATION : INCREASE YOUR HALO_PREP IN NAM_PREP_SURF_ATM')
   ENDIF
