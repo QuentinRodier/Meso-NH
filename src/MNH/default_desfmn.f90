@@ -95,7 +95,8 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!      Module MODD_FRC :
 !!
 !!          LGEOST_UV_FRC,LGEOST_TH_FRC,LTEND_THRV_FRC
-!!          LVERT_MOTION_FRC,LRELAX_THRV_FRC,LRELAX_UV_FRC,XRELAX_TIME_FRC
+!!          LVERT_MOTION_FRC,LRELAX_THRV_FRC,LRELAX_UV_FRC,LRELAX_UVMEAN_FRC,
+!!          XRELAX_TIME_FRC
 !!          XRELAX_HEIGHT_FRC,CRELAX_HEIGHT_TYPE,LTRANS,XUTRANS,XVTRANS,
 !!          LPGROUND_FRC
 !!
@@ -216,6 +217,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !  JL Redelsperger 06/2021: add parameters allowing to active idealized oceanic convection
 !  B. Vie         06/2021: add prognostic supersaturation for LIMA
 !  Q. Rodier      06/2021: modify default value to LGZ=F (grey-zone corr.), LSEDI and OSEDC=T (LIMA sedimentation)
+!  F. Couvreux    06/2021: add LRELAX_UVMEAN_FRC
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -796,6 +798,7 @@ IF (KMI == 1) THEN
   LVERT_MOTION_FRC   = .FALSE.
   LRELAX_THRV_FRC    = .FALSE.
   LRELAX_UV_FRC      = .FALSE.
+  LRELAX_UVMEAN_FRC  = .FALSE.
   XRELAX_TIME_FRC    = 10800.
   XRELAX_HEIGHT_FRC  = 0.
   CRELAX_HEIGHT_TYPE = "FIXE"

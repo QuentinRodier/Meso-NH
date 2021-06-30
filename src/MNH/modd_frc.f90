@@ -17,9 +17,9 @@
 !     and the translation speed of the domain of simulation.
 !     The following control parameters are used by FORCING:
 !     - LGEOST_UV_FRC and LGEOST_TH_FRC
-!     - LTEND_THRV_FRC     
+!     - LTEND_THRV_FRC and LTEND_UV_FRC
 !     - LVERT_MOTION_FRC  
-!     - LRELAX_THRV_FRC and LRELAX_UV_FRC using:
+!     - LRELAX_THRV_FRC, LRELAX_UV_FRC and LRELAX_UVMEAN_FRC using:
 !         XRELAX_TIME_FRC, XRELAX_HEIGHT_FRC and CRELAX_HEIGHT_TYPE
 !     - LTRANS
 !!
@@ -46,6 +46,7 @@
 !!      01/2004  V. Masson     surface externalization: removes SST forcing
 !!                   09/2017 Q.Rodier add LTEND_UV_FRC
 !!      03/2021 JL Redelsperger Parameters defining sfc forcing shape for idealized ocean case
+!!      06/2021 F. Couvreux    add LRELAX_UVMEAN_FRC
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -88,7 +89,8 @@ LOGICAL, SAVE     :: LTEND_UV_FRC       ! enables tendency forcing of the wind
 LOGICAL, SAVE     :: LVERT_MOTION_FRC   ! enables prescribed a forced vertical
 					                    ! transport for all prognostic variables
 LOGICAL, SAVE     :: LRELAX_THRV_FRC    ! enables temp. and humidity relaxation
-LOGICAL, SAVE     :: LRELAX_UV_FRC      ! enables  horizontal  wind  relaxation
+LOGICAL, SAVE     :: LRELAX_UV_FRC      ! enables  horizontal wind relaxation applied to the full wind field
+LOGICAL, SAVE     :: LRELAX_UVMEAN_FRC  ! enables  horizontal wind relaxation applied to the horiz. avg. wind
 !
 REAL,    SAVE     :: XRELAX_TIME_FRC    ! e-folding time for relaxation 
 REAL,    SAVE     :: XRELAX_HEIGHT_FRC  ! height below which relaxation
