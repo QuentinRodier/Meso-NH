@@ -92,7 +92,8 @@ INTEGER :: JK ! vertical loop counter
 INTEGER :: JT ! temporal loop counter
 !
 CHARACTER(len=9), DIMENSION(NMAX_ILES) :: YSUBTITLE
-CHARACTER(len=8)                       :: YGROUP
+character(len=:), allocatable          :: ygroup
+character(len=:), allocatable          :: ygroupcomment
 !
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZLES_BUDGET
 !
@@ -125,7 +126,8 @@ gdonorm = Trim( cles_norm_type ) /= 'NONE'
 !           ---------------------------
 !
 !
-YGROUP= 'BU_RT2'
+ygroup = 'BU_RT2'
+ygroupcomment = 'Total water variance budget'
 ILES=0
 ILES_STA=ILES
 !
@@ -357,13 +359,14 @@ ZLES_BUDGET(NLES_K,:,ILES) = ZLES_BUDGET(NLES_K-1,:,ILES)
 !* 2.16 writing
 !       -------
 !
-tzfield%cmnhname  = ygroup
+tzfield%cmnhname  = ygroup !cmnhname will be overwritten by ysubtitle(:) in Les_diachro
 tzfield%cstdname  = ''
-tzfield%clongname = ygroup
-tzfield%ccomment  = 'Rt variance budget'
+tzfield%clongname = ygroup !clongname will be overwritten by ysubtitle(:) in Les_diachro
+tzfield%ccomment  = 'Rt variance budget' !ccomment will be completed with ysubtitle(:) in Les_diachro
 tzfield%cunits    = 'kg2 kg-2 s-1'
 
-call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles), hsuffixes = ysubtitle(:iles) )
+call Les_diachro( tpdiafile, tzfield, ygroup, ygroupcomment, gdoavg, gdonorm, &
+                  zles_budget(:, :, :iles), hsuffixes = ysubtitle(:iles) )
 
 !-------------------------------------------------------------------------------
 !
@@ -371,7 +374,8 @@ call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles),
 !           -----------------------
 !
 !
-YGROUP= 'BU_WRT'
+ygroup = 'BU_WRT'
+ygroupcomment = 'Total water flux budget'
 ILES=0
 ILES_STA=ILES
 !
@@ -668,13 +672,14 @@ ZLES_BUDGET(:,:,ILES)=-XLES_RES_ddxa_Rt_SBG_UaW(:,:,1)       &
 !* 3.22 writing
 !       -------
 !
-tzfield%cmnhname  = ygroup
+tzfield%cmnhname  = ygroup !cmnhname will be overwritten by ysubtitle(:) in Les_diachro
 tzfield%cstdname  = ''
-tzfield%clongname = ygroup
-tzfield%ccomment  = 'Rt flux budget'
+tzfield%clongname = ygroup !clongname will be overwritten by ysubtitle(:) in Les_diachro
+tzfield%ccomment  = 'Rt flux budget' !ccomment will be completed with ysubtitle(:) in Les_diachro
 tzfield%cunits    = 'm kg kg-1 s-2'
 
-call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles), hsuffixes = ysubtitle(:iles) )
+call Les_diachro( tpdiafile, tzfield, ygroup, ygroupcomment, gdoavg, gdonorm, &
+                  zles_budget(:, :, :iles), hsuffixes = ysubtitle(:iles) )
 
 !-------------------------------------------------------------------------------
 !
@@ -682,6 +687,8 @@ call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles),
 !           ------------------------------------------------------------
 !
 !
+ygroup = 'BU_THLR'
+ygroupcomment = 'Liquid potential temperature - total water covariance budget'
 YGROUP= 'BU_THLR'
 ILES=0
 ILES_STA=ILES
@@ -918,13 +925,14 @@ ZLES_BUDGET(NLES_K,:,ILES) = ZLES_BUDGET(NLES_K-1,:,ILES)
 !* 2.16 writing
 !       -------
 !
-tzfield%cmnhname  = ygroup
+tzfield%cmnhname  = ygroup !cmnhname will be overwritten by ysubtitle(:) in Les_diachro
 tzfield%cstdname  = ''
-tzfield%clongname = ygroup
-tzfield%ccomment  = 'Thl-Rt covariance budget'
+tzfield%clongname = ygroup !clongname will be overwritten by ysubtitle(:) in Les_diachro
+tzfield%ccomment  = 'Thl-Rt covariance budget' !ccomment will be completed with ysubtitle(:) in Les_diachro
 tzfield%cunits    = 'K kg kg-1 s-1'
 
-call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles), hsuffixes = ysubtitle(:iles) )
+call Les_diachro( tpdiafile, tzfield, ygroup, ygroupcomment, gdoavg, gdonorm, &
+                  zles_budget(:, :, :iles), hsuffixes = ysubtitle(:iles) )
 
 !-------------------------------------------------------------------------------
 !

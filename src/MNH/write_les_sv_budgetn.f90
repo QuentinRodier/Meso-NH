@@ -93,8 +93,8 @@ INTEGER :: JSV! scalar loop counter
 INTEGER :: JP ! process loop counter
 !
 CHARACTER(len=9), DIMENSION(NMAX_ILES)      :: YSUBTITLE
-CHARACTER(len=8)                            :: YGROUP
-CHARACTER(len=20)                           :: YTITLE
+character(len=:), allocatable               :: ygroup
+character(len=:), allocatable               :: ygroupcomment
 !
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZLES_BUDGET
 !
@@ -115,7 +115,8 @@ ZLES_BUDGET(:,:,:,:) = XUNDEF
 !           ----------------------------
 !
 !
-YGROUP='BU_SV2'
+ygroup = 'BU_SV2'
+ygroupcomment = 'Total scalar variance budget'
 !
 ILES=0
 ILES_STA=ILES
@@ -378,15 +379,13 @@ END DO
 !* 2.16 writing
 !       -------
 !
-YTITLE = "Sv variance budget  "
-
 tzfield%ngrid = 0 !Not on the Arakawa grid
 tzfield%ntype = TYPEREAL
 
-tzfield%cmnhname  = ygroup
+tzfield%cmnhname  = ygroup !cmnhname will be overwritten by ysubtitle(:) in Les_diachro
 tzfield%cstdname  = ''
-tzfield%clongname = ygroup
-tzfield%ccomment  = ytitle
+tzfield%clongname = ygroup !clongname will be overwritten by ysubtitle(:) in Les_diachro
+tzfield%ccomment  = 'Sv variance budget' !ccomment will be completed with ysubtitle(:) in Les_diachro
 tzfield%cunits    = 'kg2 kg-2 s-1'
 
 tzfield%ndims = 4
@@ -399,7 +398,8 @@ tzfield%ndimlist(5:) = NMNHDIM_UNUSED
 gdoavg  = xles_temp_mean_start /= XUNDEF .and. xles_temp_mean_end /= XUNDEF
 gdonorm = trim(cles_norm_type) /= 'NONE'
 
-call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles, :), hsuffixes = ysubtitle(:iles) )
+call Les_diachro( tpdiafile, tzfield, ygroup, ygroupcomment, gdoavg, gdonorm, &
+                  zles_budget(:, :, :iles, :), hsuffixes = ysubtitle(:iles) )
 
 !-------------------------------------------------------------------------------
 !
@@ -407,7 +407,8 @@ call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles, 
 !           -----------------------
 !
 !
-YGROUP = 'BU_WSV'
+ygroup = 'BU_WSV'
+ygroupcomment = 'Total water flux budget'
 !
 !
 ILES=0
@@ -494,6 +495,7 @@ END IF
 !      -----------
 !
 ILES=ILES+1
+!PW: not in documentation. Always set to 0
 YSUBTITLE(ILES) = 'SBG_DISS'
 !
 DO JSV=1,NSV
@@ -760,15 +762,13 @@ END DO
 !* 3.22 writing
 !       -------
 !
-YTITLE = "Sv flux budget      "
-
 tzfield%ngrid = 0 !Not on the Arakawa grid
 tzfield%ntype = TYPEREAL
 
-tzfield%cmnhname  = ygroup
+tzfield%cmnhname  = ygroup !cmnhname will be overwritten by ysubtitle(:) in Les_diachro
 tzfield%cstdname  = ''
-tzfield%clongname = ygroup
-tzfield%ccomment  = ytitle
+tzfield%clongname = ygroup !clongname will be overwritten by ysubtitle(:) in Les_diachro
+tzfield%ccomment  = 'Sv flux budget' !ccomment will be completed with ysubtitle(:) in Les_diachro
 tzfield%cunits    = 'm kg kg-1 s-2'
 
 tzfield%ndims = 4
@@ -781,7 +781,8 @@ tzfield%ndimlist(5:) = NMNHDIM_UNUSED
 gdoavg  = xles_temp_mean_start /= XUNDEF .and. xles_temp_mean_end /= XUNDEF
 gdonorm = trim(cles_norm_type) /= 'NONE'
 
-call Les_diachro( tpdiafile, tzfield, gdoavg, gdonorm, zles_budget(:, :, :iles, :), hsuffixes = ysubtitle(:iles) )
+call Les_diachro( tpdiafile, tzfield, ygroup, ygroupcomment, gdoavg, gdonorm, &
+                  zles_budget(:, :, :iles, :), hsuffixes = ysubtitle(:iles) )
 
 !-------------------------------------------------------------------------------
 !

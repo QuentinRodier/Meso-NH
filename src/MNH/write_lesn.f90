@@ -16,6 +16,9 @@ private
 public :: Write_les_n
 
 
+character(len=:), allocatable :: cgroup
+character(len=:), allocatable :: cgroupcomment
+
 logical :: ldoavg    ! Compute and store time average
 logical :: ldonorm   ! Compute and store normalized field
 
@@ -283,6 +286,9 @@ tfield%ndimlist(4:) = NMNHDIM_UNUSED
 ldoavg  = xles_temp_mean_start /= XUNDEF .and. xles_temp_mean_end /= XUNDEF
 ldonorm = .false.
 
+cgroup        = 'Miscellaneous'
+cgroupcomment = 'Miscellaneous terms (geometry, various unclassified averaged terms...)'
+
 call Les_diachro_write( tpdiafile, zavg_pts_ll,                'AVG_PTS',  'number of points used for averaging',   '1', ymasks )
 call Les_diachro_write( tpdiafile, zavg_pts_ll / zcart_pts_ll, 'AVG_PTSF', 'fraction of points used for averaging', '1', ymasks )
 call Les_diachro_write( tpdiafile, zund_pts_ll,                'UND_PTS',  'number of points below orography',      '1', ymasks )
@@ -294,6 +300,9 @@ DEALLOCATE(ZUND_PTS_ll)
 !*      2.1  mean quantities
 !            ---------------
 !
+cgroup = 'Mean'
+cgroupcomment = 'Mean vertical profiles of the model variables'
+
 tfield%ndims = 3
 tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
 tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
@@ -374,6 +383,9 @@ call Les_diachro_write( tpdiafile, XLES_MEAN_WIND, 'MEANWIND',       'Profile of
 call Les_diachro_write( tpdiafile, XLES_RESOLVED_MASSFX, 'MEANMSFX', 'Total updraft mass flux',         'kg m-2 s-1', ymasks )
 
 if ( lles_pdf ) then
+  cgroup = 'PDF'
+  cgroupcomment = ''
+
   call Les_diachro_write( tpdiafile,   XLES_PDF_TH,  'PDF_TH',  'Pdf potential temperature Profiles', '1', ymasks )
   call Les_diachro_write( tpdiafile,   XLES_PDF_W,   'PDF_W',   'Pdf vertical velocity Profiles',     '1', ymasks )
   call Les_diachro_write( tpdiafile,   XLES_PDF_THV, 'PDF_THV', 'Pdf virtual pot. temp. Profiles',    '1', ymasks )
@@ -401,6 +413,9 @@ if ( lles_resolved ) then
   !Prepare metadata (used in Les_diachro_write calls)
   ldoavg  = xles_temp_mean_start /= XUNDEF .and. xles_temp_mean_end /= XUNDEF
   ldonorm = trim(cles_norm_type) /= 'NONE'
+
+  cgroup = 'Resolved'
+  cgroupcomment = 'Mean vertical profiles of the resolved fluxes, variances and covariances'
 
   tfield%ndims = 3
   tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
@@ -606,6 +621,9 @@ if ( lles_subgrid ) then
   ldoavg  = xles_temp_mean_start /= XUNDEF .and. xles_temp_mean_end /= XUNDEF
   ldonorm = trim(cles_norm_type) /= 'NONE'
 
+  cgroup = 'Subgrid'
+  cgroupcomment = 'Mean vertical profiles of the subgrid fluxes, variances and covariances'
+
   tfield%ndims = 3
   tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
   tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
@@ -724,6 +742,9 @@ ldonorm = trim(cles_norm_type) /= 'NONE'
 !            ------------------
 !
 if ( lles_updraft ) then
+  cgroup = 'Updraft'
+  cgroupcomment = 'Updraft vertical profiles of some resolved and subgrid fluxes, variances and covariances'
+
   call Les_diachro_write( tpdiafile, XLES_UPDRAFT,     'UP_FRAC', 'Updraft fraction',                                 '1' )
   call Les_diachro_write( tpdiafile, XLES_UPDRAFT_W,   'UP_W',    'Updraft W mean value',                             'm s-1' )
   call Les_diachro_write( tpdiafile, XLES_UPDRAFT_Th,  'UP_TH',   'Updraft potential temperature mean value',         'K' )
@@ -831,6 +852,9 @@ end if
 !            --------------------
 !
 if ( lles_downdraft ) then
+  cgroup = 'Downdraft'
+  cgroupcomment = 'Downdraft vertical profiles of some resolved and subgrid fluxes, variances and covariances'
+
   call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT,     'DW_FRAC', 'Downdraft fraction',                                 '1' )
   call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_W,   'DW_W',    'Downdraft W mean value',                             'm s-1' )
   call Les_diachro_write( tpdiafile, XLES_DOWNDRAFT_Th,  'DW_TH',   'Downdraft potential temperature mean value',         'K' )
@@ -946,7 +970,10 @@ end if
 !*      3.   surface normalization parameters
 !            --------------------------------
 !
-!Prepare metadate (used in Les_diachro_write calls)
+cgroup = 'Miscellaneous'
+cgroupcomment = 'Miscellaneous terms (geometry, various unclassified averaged terms...)'
+
+!Prepare metadata (used in Les_diachro_write calls)
 tfield%ndims = 2
 tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
 tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
@@ -964,6 +991,9 @@ call Les_diachro_write( tpdiafile, XLES_DTHRADLW, 'DTHRADLW', 'LW radiative temp
 !writes mean_effective radius at all levels
 call Les_diachro_write( tpdiafile, XLES_RADEFF,   'RADEFF',   'Mean effective radius',             'micron' )
 
+
+cgroup = 'Surface'
+cgroupcomment = 'Averaged surface fields'
 
 ! !Prepare metadate (used in Les_diachro_write calls)
 tfield%ndims = 1
@@ -1162,7 +1192,7 @@ tfield%clongname = hmnhname
 tfield%ccomment  = hcomment
 tfield%cunits    = hunits
 
-call Les_diachro( tpdiafile, tfield, ldoavg, ldonorm, pdata )
+call Les_diachro( tpdiafile, tfield, cgroup, cgroupcomment, ldoavg, ldonorm, pdata )
 
 end subroutine Les_diachro_write_1D
 
@@ -1185,7 +1215,7 @@ tfield%clongname = hmnhname
 tfield%ccomment  = hcomment
 tfield%cunits    = hunits
 
-call Les_diachro( tpdiafile, tfield, ldoavg, ldonorm, pdata )
+call Les_diachro( tpdiafile, tfield, cgroup, cgroupcomment, ldoavg, ldonorm, pdata )
 
 end subroutine Les_diachro_write_2D
 
@@ -1209,7 +1239,7 @@ tfield%clongname = hmnhname
 tfield%ccomment  = hcomment
 tfield%cunits    = hunits
 
-call Les_diachro( tpdiafile, tfield, ldoavg, ldonorm, pdata, hmasks = hmasks )
+call Les_diachro( tpdiafile, tfield, cgroup, cgroupcomment, ldoavg, ldonorm, pdata, hmasks = hmasks )
 
 end subroutine Les_diachro_write_3D
 
@@ -1233,7 +1263,7 @@ tfield%clongname = hmnhname
 tfield%ccomment  = hcomment
 tfield%cunits    = hunits
 
-call Les_diachro( tpdiafile, tfield, ldoavg, ldonorm, pdata, hmasks = hmasks )
+call Les_diachro( tpdiafile, tfield, cgroup, cgroupcomment, ldoavg, ldonorm, pdata, hmasks = hmasks )
 
 end subroutine Les_diachro_write_4D
 

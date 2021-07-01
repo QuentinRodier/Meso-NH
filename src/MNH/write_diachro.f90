@@ -255,6 +255,8 @@ else if ( tpbudiachro%clevels(NLVL_GROUP) == 'RhodJ' ) then
 else if ( tpbudiachro%nsv > 0 ) then
   Allocate( character(len=9) :: ygroup )
   Write( ygroup, '( "SV", i3.3, i4.4 )' ) tpbudiachro%nsv, nbutshift
+else if ( tpbudiachro%clevels(NLVL_CATEGORY) == 'LES_budgets' .and. tpbudiachro%clevels(NLVL_GROUP)(1:3)/='BU_' ) then
+  ygroup = Trim( tpfields(1)%cmnhname )
 else
   ygroup = Trim( tpbudiachro%clevels(NLVL_GROUP) )
 end if
@@ -285,7 +287,7 @@ if (       Trim( tpbudiachro%clevels(NLVL_CATEGORY) ) == 'LES_budgets' &
 end if
 
 if (       Trim( tpbudiachro%clevels(NLVL_CATEGORY) ) == 'LES_budgets' &
-     .and. Trim( tpbudiachro%clevels(NLVL_SHAPE) )    == 'Spectrum'    ) then
+     .and. Trim( tpbudiachro%clevels(NLVL_GROUP) )    == 'Spectrum'    ) then
   if ( tpbudiachro%ltcompress ) then
     ygroup = 'T_' // Trim( ygroup )
     !Limit to 10 characters (backward compatibility again...)
