@@ -261,7 +261,7 @@ use modd_field,         only: NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NI_U, NMNHDIM_NJ_U
                               NMNHDIM_BUDGET_MASK_LEVEL, NMNHDIM_BUDGET_MASK_LEVEL_W,                           &
                               NMNHDIM_BUDGET_MASK_NBUMASK, NMNHDIM_BUDGET_TIME,                                 &
                               NMNHDIM_BUDGET_LES_TIME, NMNHDIM_BUDGET_LES_AVG_TIME, NMNHDIM_BUDGET_LES_LEVEL,   &
-                              NMNHDIM_BUDGET_LES_SV,                                                            &
+                              NMNHDIM_BUDGET_LES_SV, NMNHDIM_BUDGET_LES_PDF,                                    &
                               NMNHDIM_SPECTRA_2PTS_NI, NMNHDIM_SPECTRA_2PTS_NJ,                                 &
                               NMNHDIM_SPECTRA_SPEC_NI, NMNHDIM_SPECTRA_SPEC_NJ, NMNHDIM_SPECTRA_LEVEL,          &
                               NMNHDIM_SERIES_LEVEL, NMNHDIM_SERIES_LEVEL_W,                                     &
@@ -270,7 +270,7 @@ use modd_field,         only: NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NI_U, NMNHDIM_NJ_U
                               NMNHDIM_ARAKAWA,                                                                  &
                               NMNHDIM_LASTDIM_NODIACHRO, NMNHDIM_LASTDIM_DIACHRO
 
-use modd_les,           only: nles_k, nspectra_k, xles_temp_mean_start, xles_temp_mean_step, xles_temp_mean_end
+use modd_les,           only: lles_pdf, nles_k, npdf, nspectra_k, xles_temp_mean_start, xles_temp_mean_step, xles_temp_mean_end
 use modd_les_n,         only: nles_times, nspectra_ni, nspectra_nj
 use modd_nsv,           only: nsv
 USE MODD_PARAMETERS_ll, ONLY: JPHEXT, JPVEXT
@@ -376,6 +376,9 @@ if ( tpfile%ctype == 'MNHDIACHRONIC' ) then
 
   !Dimension for the number of scalar variables
   if ( nsv > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_LES_SV, 'nsv', nsv )
+
+  !Dimension for the number of PDF
+  if ( lles_pdf ) call IO_Add_dim_nc4( tpfile, NMNHDIM_BUDGET_LES_PDF, 'npdf', npdf )
 
   !Dimensions for the number of horizontal wavelengths for non-local LES budgets (2 points correlations)
   if ( nspectra_ni > 0 ) call IO_Add_dim_nc4( tpfile, NMNHDIM_SPECTRA_2PTS_NI, 'nspectra_2pts_ni', nspectra_ni )
