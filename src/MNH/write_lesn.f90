@@ -80,6 +80,7 @@ subroutine  Write_les_n( tpdiafile )
 use modd_conf_n,     only: luserv, luserc, luserr, luseri, lusers, luserg, luserh
 use modd_io,         only: tfiledata
 use modd_field,      only: NMNHDIM_BUDGET_LES_TIME, NMNHDIM_BUDGET_LES_LEVEL, NMNHDIM_BUDGET_LES_SV, NMNHDIM_BUDGET_LES_MASK, &
+                           NMNHDIM_BUDGET_LES_PDF,                                                                            &
                            NMNHDIM_SPECTRA_2PTS_NI, NMNHDIM_SPECTRA_2PTS_NJ,  NMNHDIM_SPECTRA_LEVEL, NMNHDIM_UNUSED,          &
                            TYPEREAL
 use modd_grid_n,     only: xdxhat, xdyhat
@@ -385,6 +386,13 @@ call Les_diachro_write( tpdiafile, XLES_RESOLVED_MASSFX, 'MEANMSFX', 'Total updr
 if ( lles_pdf ) then
   cgroup = 'PDF'
   cgroupcomment = ''
+
+  tfield%ndims = 4
+  !tfield%ndimlist(1)  = NMNHDIM_BUDGET_LES_LEVEL
+  !tfield%ndimlist(2)  = NMNHDIM_BUDGET_LES_TIME
+  !tfield%ndimlist(3)  = NMNHDIM_BUDGET_LES_MASK
+  tfield%ndimlist(4)  = NMNHDIM_BUDGET_LES_PDF
+  tfield%ndimlist(5:) = NMNHDIM_UNUSED
 
   call Les_diachro_write( tpdiafile,   XLES_PDF_TH,  'PDF_TH',  'Pdf potential temperature Profiles', '1', ymasks )
   call Les_diachro_write( tpdiafile,   XLES_PDF_W,   'PDF_W',   'Pdf vertical velocity Profiles',     '1', ymasks )

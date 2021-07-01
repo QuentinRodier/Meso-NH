@@ -1272,6 +1272,13 @@ select case ( idims )
       do ji = 1, Size( pvar, 6 )
         call Diachro_one_field_write_nc4( tzfile, tpbudiachro, tpfields(ji), pvar(:,:,:,:,:,ji:ji), [ 3, 4 ], gsplit, gdistributed )
       end do
+    else if (       tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL      &
+       .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
+               .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
+              .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_LES_PDF      ) then
+      if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
+                                                   'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
+      call Diachro_one_field_write_nc4( tzfile, tpbudiachro, tpfields(1), pvar, [ 3, 4, 5 ], gsplit, gdistributed )
     else if (              tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL      &
               .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
                       .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &

@@ -842,8 +842,8 @@ end subroutine Les_diachro_3D
 subroutine Les_diachro_4D( tpdiafile, tpfield, hgroup, hgroupcomment, odoavg, odonorm, pfield, hsuffixes, hmasks )
 !#################################################################################################################
 
-use modd_field, only: NMNHDIM_BUDGET_LES_LEVEL, NMNHDIM_BUDGET_LES_MASK, NMNHDIM_BUDGET_LES_SV, &
-                      NMNHDIM_BUDGET_LES_TIME,  NMNHDIM_BUDGET_TERM,     NMNHDIM_UNUSED,        &
+use modd_field, only: NMNHDIM_BUDGET_LES_LEVEL, NMNHDIM_BUDGET_LES_MASK, NMNHDIM_BUDGET_LES_PDF,  NMNHDIM_BUDGET_LES_SV, &
+                      NMNHDIM_BUDGET_LES_TIME,  NMNHDIM_BUDGET_TERM,     NMNHDIM_UNUSED,                                 &
                       tfield_metadata_base
 use modd_io,    only: tfiledata
 
@@ -880,10 +880,13 @@ if (       tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL&
     call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
                     'optional dummy argument hmasks is needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
 
+  if ( Present( hsuffixes ) ) &
+    call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
+                    'optional dummy argument hsuffixes is not needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
+
   if ( Size( hmasks ) /= Size( pfield, 3) ) &
     call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_4D', 'wrong size for hmasks (' // Trim( tzfield%cmnhname ) // ')' )
 
-  call Les_diachro_common( tpdiafile, tzfield, hgroup, hgroupcomment, pfield, odoavg, odonorm, hmasks = hmasks )
 else if (       tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL &
           .and. tzfield%ndimlist(2) == NMNHDIM_BUDGET_LES_TIME  &
           .and. tzfield%ndimlist(3) == NMNHDIM_BUDGET_TERM      &
@@ -892,14 +895,35 @@ else if (       tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL &
     call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
                     'optional dummy argument hsuffixes is needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
 
+  if ( Present( hmasks ) ) &
+    call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
+                    'optional dummy argument hmasks is not needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
+
   if ( Size( hsuffixes ) /= Size( pfield, 3) ) &
     call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_4D', 'wrong size for hsuffixes (' // Trim( tzfield%cmnhname ) // ')' )
 
-  call Les_diachro_common( tpdiafile, tzfield, hgroup, hgroupcomment, pfield, odoavg, odonorm, hsuffixes= hsuffixes )
+else if (       tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL &
+          .and. tzfield%ndimlist(2) == NMNHDIM_BUDGET_LES_TIME  &
+          .and. tzfield%ndimlist(3) == NMNHDIM_BUDGET_LES_MASK      &
+          .and. tzfield%ndimlist(4) == NMNHDIM_BUDGET_LES_PDF   ) then
+  if ( .not. Present( hmasks ) ) &
+    call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
+                    'optional dummy argument hmasks is needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
+
+  if ( Present( hsuffixes ) ) &
+    call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
+                    'optional dummy argument hsuffixes is not needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
+
+  if ( Size( hmasks ) /= Size( pfield, 3) ) &
+    call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_4D', 'wrong size for hmasks (' // Trim( tzfield%cmnhname ) // ')' )
+
 else
   call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
                   'ndimlist configuration not yet implemented for ' // Trim( tzfield%cmnhname ) )
 end if
+
+call Les_diachro_common( tpdiafile, tzfield, hgroup, hgroupcomment, pfield, odoavg, odonorm, &
+                         hsuffixes = hsuffixes, hmasks = hmasks )
 
 end subroutine Les_diachro_4D
 
