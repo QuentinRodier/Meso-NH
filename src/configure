@@ -388,6 +388,7 @@ export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
                 export VER_CDF=${VER_CDF:-CDFAUTO}
                 export   MNHENV=${MNHENV:-"
 module purge
+module load cmake/3.13.0
 module load intel/20.0.015 intelmpi/20.0.015
 export SLURM_CPU_BIND=none
 export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
