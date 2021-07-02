@@ -314,7 +314,7 @@ else if ( ycategory == 'Flyers' ) then
   end if
 else if ( ycategory == 'Profilers' .or. ycategory == 'Stations' ) then
   ytype = 'CART'
-else if ( ycategory == 'Time series'  ) then
+else if ( ycategory == 'Time_series'  ) then
   if ( tpbudiachro%licompress ) then
     ytype = 'CART'
   else
