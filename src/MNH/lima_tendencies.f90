@@ -525,7 +525,7 @@ IF (LCOLD .AND. LWARM) THEN
                                     PA_TH, PA_RC, PA_CC, PA_RI, PA_CI  )
 END IF
 !
-IF (LWARM) THEN
+IF (LWARM .AND. LRAIN) THEN
    CALL LIMA_DROPLETS_SELF_COLLECTION (LDCOMPUTE,          & ! depends on CF
                                        PRHODREF,           &
                                        PCCT/ZCF1D, ZLBDC3, &
