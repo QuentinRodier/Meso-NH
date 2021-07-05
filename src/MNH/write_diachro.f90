@@ -1087,7 +1087,7 @@ select case ( idims )
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
       call Diachro_one_field_write_nc4( tzfile, tpbudiachro, tpfields(1), pvar, [ 3 ], gsplit, gdistributed )
-    else if ( tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS ) then
+    else if ( tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS .or. tpfields(1)%ndimlist(6) == NMNHDIM_PROFILER_PROC ) then
       do ji = 1, Size( pvar, 6 )
         !Remark: [ integer:: ] is a constructor for a zero-size array of integers, [] is not allowed (type can not be determined)
         call Diachro_one_field_write_nc4( tzfile, tpbudiachro, tpfields(ji), pvar(:,:,:,:,:,ji:ji), [ integer:: ], &
@@ -1176,6 +1176,13 @@ select case ( idims )
         end if
       end if
 
+      ! Loop on the processes
+      do ji = 1, Size( pvar, 6 )
+        call Diachro_one_field_write_nc4( tzfile, tpbudiachro, tpfields(ji), pvar(:,:,:,:,:,ji:ji), [ 4 ], gsplit, gdistributed )
+      end do
+    else if (  tpfields(1)%ndimlist(4) == NMNHDIM_PROFILER_TIME &
+         .and. tpfields(1)%ndimlist(6) == NMNHDIM_PROFILER_PROC ) then
+      !Correspond to WRITE_PROFILER_n
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
         call Diachro_one_field_write_nc4( tzfile, tpbudiachro, tpfields(ji), pvar(:,:,:,:,:,ji:ji), [ 4 ], gsplit, gdistributed )
