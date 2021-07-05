@@ -31,6 +31,7 @@
 !!      Original    15/01/02
 !!     C.Lac 10/2016  Add visibility diagnostic
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
+!  M.Taufour 07/2021: modify RARE for hydrometeors containing ice and add bright band calculation for RARE
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -76,7 +77,11 @@ REAL, DIMENSION(:,:,:),   POINTER :: TH=>NULL()       ! th(n)
 REAL, DIMENSION(:,:,:),   POINTER :: THV=>NULL()      ! thv(n)
 REAL, DIMENSION(:,:,:),   POINTER :: VISI=>NULL()     ! VISI(n)
 REAL, DIMENSION(:,:,:),   POINTER :: VISIKUN=>NULL()  ! VISI KUNKEL(n)
-REAL, DIMENSION(:,:,:),   POINTER :: RARE=>NULL()     ! radar reflectivity (n)
+REAL, DIMENSION(:,:,:),   POINTER :: CRARE=>NULL()     ! radar reflectivity (n)
+REAL, DIMENSION(:,:,:),   POINTER :: CRARE_ATT=>NULL() ! radar attenuated reflectivity (n)
+REAL, DIMENSION(:,:,:),   POINTER :: CIZ=>NULL()       ! Ice number concentration ICE3 (n)
+REAL, DIMENSION(:,:,:),   POINTER :: LWCZ=>NULL()      ! liquid water content (n)
+REAL, DIMENSION(:,:,:),   POINTER :: IWCZ=>NULL()      ! ice water content (n)
 REAL, DIMENSION(:,:,:),   POINTER :: RHOD=>NULL()     ! density of dry air/moist air
 REAL, DIMENSION(:,:,:,:), POINTER :: R=>NULL()        ! r*(n)
 REAL, DIMENSION(:,:,:,:), POINTER :: SV=>NULL()       ! Sv*(n)

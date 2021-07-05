@@ -64,6 +64,7 @@ END MODULE MODI_WRITE_PROFILER_n
 !  P. Wautelet 09/10/2020: Write_diachro: use new datatype tpfields
 !  P. Wautelet 03/03/2021: budgets: add tbudiachrometadata type (useful to pass more information to Write_diachro)
 !  P. Wautelet 11/03/2021: bugfix: correct name for NSV_LIMA_IMM_NUCL
+!  M.Taufour 07/2021: modify RARE for hydrometeors containing ice and add bright band calculation for RARE
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -163,7 +164,7 @@ IF (TPROFILER%X(II)==XUNDEF) RETURN
 IF (TPROFILER%Y(II)==XUNDEF) RETURN
 IKU = SIZE(TPROFILER%W,2)    !nbre de niveaux sur la verticale SIZE(TPROFILER%W,2)
 !
-IPROC = 24 + SIZE(TPROFILER%R,4) + SIZE(TPROFILER%SV,4)
+IPROC = 25 + SIZE(TPROFILER%R,4) + SIZE(TPROFILER%SV,4)
 IF (LDIAG_IN_RUN) IPROC = IPROC + 15
 IF (LORILAM) IPROC = IPROC + JPMODE*3
 IF (LDUST) IPROC = IPROC + NMODE_DST*3
@@ -212,7 +213,13 @@ JPROC = JPROC + 1
 YTITLE   (JPROC) = 'RARE'
 YUNIT    (JPROC) = 'dBZ'
 YCOMMENT (JPROC) = 'Radar reflectivity'       
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%RARE(:,IK,II)
+ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%CRARE(:,IK,II)
+!
+JPROC = JPROC + 1
+YTITLE   (JPROC) = 'RAREatt'
+YUNIT    (JPROC) = 'dBZ'
+YCOMMENT (JPROC) = 'Radar attenuated reflectivity'       
+ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%CRARE_ATT(:,IK,II)
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'P'
@@ -392,6 +399,7 @@ DO JRR=1,SIZE(TPROFILER%R,4)
     YCOMMENT (JPROC) = 'Hail mixing ratio' 
   END IF
 END DO
+  !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'Rhod'
 YUNIT    (JPROC) = 'kg m-3'
@@ -404,6 +412,14 @@ IF (SIZE(TPROFILER%TKE,1)>0) THEN
   YUNIT    (JPROC) = 'm2 s-2'
   YCOMMENT (JPROC) = 'Turbulent kinetic energy' 
   ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%TKE(:,IK,II)
+END IF
+!
+IF (SIZE(TPROFILER%CIZ,1)>0) THEN
+  JPROC = JPROC + 1
+  YTITLE  (JPROC) = 'CIT'
+  YUNIT   (JPROC) = 'kg-3'
+  YCOMMENT(JPROC) = 'Ice concentration'
+  ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%CIZ(:,IK,II)
 END IF
 !
 JPROC = JPROC + 1

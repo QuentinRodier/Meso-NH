@@ -12,7 +12,7 @@ INTERFACE
       SUBROUTINE PROFILER_n(PTSTEP,                               &
                             PXHAT, PYHAT, PZ,PRHODREF,            &
                             PU, PV, PW, PTH, PR, PSV, PTKE,       &
-                            PTS,PP, PAER, PCLDFR, PCIT)
+                            PTS,PP, PAER, PCLDFR, PCIT,PSEA)
 !
 REAL,                     INTENT(IN)     :: PTSTEP ! time step
 REAL, DIMENSION(:),       INTENT(IN)     :: PXHAT  ! x coordinate
@@ -31,6 +31,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PP     ! pressure
 REAL, DIMENSION(:,:,:,:), INTENT(IN)     :: PAER   ! aerosol extinction
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCLDFR ! cloud fraction
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCIT   ! ice concentration
+REAL, DIMENSION(:,:),INTENT(IN) :: PSEA            ! for radar 
 !
 !-------------------------------------------------------------------------------
 !
@@ -44,7 +45,7 @@ END MODULE MODI_PROFILER_n
       SUBROUTINE PROFILER_n(PTSTEP,                               &
                             PXHAT, PYHAT, PZ,PRHODREF,            &
                             PU, PV, PW, PTH, PR, PSV, PTKE,       &
-                            PTS, PP, PAER, PCLDFR, PCIT)
+                            PTS, PP, PAER, PCLDFR, PCIT, PSEA)
 !     ########################################################
 !
 !
@@ -83,7 +84,7 @@ END MODULE MODI_PROFILER_n
 !!     March,28, 2018 (P. Wautelet) replace TEMPORAL_DIST by DATETIME_DISTANCE
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
-!
+!  M.Taufour 07/2021: modify RARE for hydrometeors containing ice and add bright band calculation for RARE
 ! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -107,6 +108,31 @@ USE MODI_GPS_ZENITH_GRID
 USE MODI_LIDAR
 USE MODI_RADAR_RAIN_ICE
 USE MODI_WATER_SUM
+USE MODE_FGAU,             ONLY : GAULAG
+USE MODE_FSCATTER,         ONLY: QEPSW,QEPSI,BHMIE,MOMG,MG
+USE MODD_PARAM_LIMA,       ONLY: XALPHAR_L=>XALPHAR,XNUR_L=>XNUR,XALPHAS_L=>XALPHAS,XNUS_L=>XNUS,&
+                                 XALPHAG_L=>XALPHAG,XNUG_L=>XNUG, XALPHAI_L=>XALPHAI,XNUI_L=>XNUI,&
+                                 XRTMIN_L=>XRTMIN,XALPHAC_L=>XALPHAC,XNUC_L=>XNUC
+USE MODD_PARAM_LIMA_COLD,  ONLY: XDI_L=>XDI,XLBEXI_L=>XLBEXI,XLBI_L=>XLBI,XAI_L=>XAI,XBI_L=>XBI,XC_I_L=>XC_I,&
+                                 XLBEXS_L=>XLBEXS,XLBS_L=>XLBS,XCCS_L=>XCCS,&
+                                 XAS_L=>XAS,XBS_L=>XBS,XCXS_L=>XCXS
+USE MODD_PARAM_LIMA_MIXED, ONLY: XDG_L=>XDG,XLBEXG_L=>XLBEXG,XLBG_L=>XLBG,XCCG_L=>XCCG,&
+                                 XAG_L=>XAG,XBG_L=>XBG,XCXG_L=>XCXG,XCG_L=>XCG
+USE MODD_PARAM_LIMA_WARM,  ONLY: XLBEXR_L=>XLBEXR,XLBR_L=>XLBR,XBR_L=>XBR,XAR_L=>XAR,&
+                                 XBC_L=>XBC,XAC_L=>XAC
+USE MODD_RAIN_ICE_DESCR,   ONLY: XALPHAR_I=>XALPHAR,XNUR_I=>XNUR,XLBEXR_I=>XLBEXR,&
+                                 XLBR_I=>XLBR,XCCR_I=>XCCR,XBR_I=>XBR,XAR_I=>XAR,&
+                                 XALPHAC_I=>XALPHAC,XNUC_I=>XNUC,&
+                                 XLBC_I=>XLBC,XBC_I=>XBC,XAC_I=>XAC,&
+                                 XALPHAC2_I=>XALPHAC2,XNUC2_I=>XNUC2,&
+                                 XALPHAS_I=>XALPHAS,XNUS_I=>XNUS,XLBEXS_I=>XLBEXS,&
+                                 XLBS_I=>XLBS,XCCS_I=>XCCS,XAS_I=>XAS,XBS_I=>XBS,XCXS_I=>XCXS,&
+                                 XALPHAG_I=>XALPHAG,XNUG_I=>XNUG,XDG_I=>XDG,XLBEXG_I=>XLBEXG,&
+                                 XLBG_I=>XLBG,XCCG_I=>XCCG,XAG_I=>XAG,XBG_I=>XBG,XCXG_I=>XCXG,XCG_I=>XCG,&
+                                 XALPHAI_I=>XALPHAI,XNUI_I=>XNUI,XDI_I=>XDI,XLBEXI_I=>XLBEXI,&
+                                 XLBI_I=>XLBI,XAI_I=>XAI,XBI_I=>XBI,XC_I_I=>XC_I,&
+                                 XRTMIN_I=>XRTMIN,XCONC_LAND,XCONC_SEA
+!
 !
 IMPLICIT NONE
 !
@@ -131,6 +157,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PP     ! pressure
 REAL, DIMENSION(:,:,:,:), INTENT(IN)     :: PAER   ! aerosol extinction
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCLDFR ! cloud fraction
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCIT   ! ice concentration
+REAL, DIMENSION(:,:),INTENT(IN)          :: PSEA   ! for radar
 !
 !-------------------------------------------------------------------------------
 !
@@ -195,10 +222,33 @@ INTEGER                    :: I           ! loop for stations
 !
 REAL,DIMENSION(SIZE(PTH,1),SIZE(PTH,2))              :: ZZTD,ZZHD,ZZWD
 REAL,DIMENSION(SIZE(PTH,1),SIZE(PTH,2),SIZE(PTH,3))  :: ZTEMP,ZRARE,ZTHV,ZTEMPV
-REAL,DIMENSION(SIZE(PTH,1),SIZE(PTH,2),SIZE(PTH,3))  :: ZWORK32,ZWORK33,ZWORK34,ZCIT
+REAL,DIMENSION(SIZE(PTH,1),SIZE(PTH,2),SIZE(PTH,3))  :: ZWORK32,ZWORK33,ZWORK34
 REAL,DIMENSION(SIZE(PTH,1),SIZE(PTH,2),SIZE(PTH,3))  :: ZVISI,ZVISIKUN
 REAL ::  ZK1,ZK2,ZK3            ! k1, k2 and K3 atmospheric refractivity constants
 REAL  :: ZRDSRV                 ! XRD/XRV
+!
+! specific to cloud radar
+INTEGER                        :: JLOOP,JLOOP2    ! loop counter
+REAL, DIMENSION(SIZE(PR,3))    :: ZTEMPZ! vertical profile of temperature
+REAL, DIMENSION(SIZE(PR,3))    :: ZRHODREFZ ! vertical profile of dry air density of the reference state
+REAL, DIMENSION(SIZE(PR,3))    :: ZCIT     ! pristine ice concentration
+REAL, DIMENSION(SIZE(PR,3))    :: ZCCI,ZCCR,ZCCC     ! ICE,RAIN CLOUD concentration (LIMA)
+REAL, DIMENSION(SIZE(PR,1),SIZE(PR,2),SIZE(PR,3))    :: ZR   
+REAL, DIMENSION(SIZE(PR,3),SIZE(PR,4)+1) :: ZRZ  ! vertical profile of hydrometeor mixing ratios
+REAL                           :: ZA,ZB,ZCC,ZCX,ZALPHA,ZNU,ZLB,ZLBEX,ZRHOHYD,XLAM_CRAD   ! generic microphysical parameters
+INTEGER                        :: JJ    ! loop counter for quadrature
+COMPLEX                        :: QMW,QMI,QM,QB,QEPSIW,QEPSWI   ! dielectric parameter
+REAL                           :: ZAETOT,ZAETMP,ZREFLOC,ZQSCA,ZQBACK,ZQEXT ! temporary scattering parameters
+REAL,DIMENSION(:),ALLOCATABLE  :: ZAELOC,ZZMZ ! temporary arrays
+INTEGER                        :: JPTS_GAULAG=9 ! number of points for Gauss-Laguerre quadrature
+REAL                           :: ZLBDA   ! slope distribution parameter
+REAL                           :: ZFRAC_ICE  ! ice water fraction
+REAL                           :: ZDELTA_EQUIV ! mass-equivalent Gauss-Laguerre point
+REAL                           :: ZFW ! liquid fraction
+REAL                           :: ZFPW ! weight for mixed-phase reflectivity
+REAL,DIMENSION(:),ALLOCATABLE  :: ZX,ZW ! Gauss-Laguerre points and weights
+REAL,DIMENSION(:),ALLOCATABLE  :: ZRTMIN ! local values for XRTMIN
+LOGICAL                        :: GCALC
 !----------------------------------------------------------------------------
 !
 !*      2.   PRELIMINARIES
@@ -211,6 +261,8 @@ ZK1 = 0.776       ! K/Pa
 ZK2 = 0.704       ! K/Pa
 ZK3 = 3739.       ! K2/Pa
 ZRDSRV=XRD/XRV
+!
+XLAM_CRAD        = 3.154E-3 ! (in m) <=> 95.04 GHz = Rasta cloud radar frequency
 !*      2.1  Indices
 !            -------
 !
@@ -364,8 +416,6 @@ END IF
 !            --------------
 !
 ZTEMP(:,:,:)=PTH(:,:,:)*(PP(:,:,:)/ XP00) **(XRD/XCPD)
-IF (CCLOUD(1:3)=="ICE") CALL RADAR_RAIN_ICE (PR, PCIT, PRHODREF, ZTEMP, ZRARE, ZWORK32, &
-                                                         ZWORK33, ZWORK34 )
 ! Theta_v
 ZTHV(:,:,:) = PTH(:,:,:) / (1.+WATER_SUM(PR(:,:,:,:)))*(1.+PR(:,:,:,1)/ZRDSRV)
 ! virtual temperature
@@ -373,8 +423,9 @@ ZTEMPV(:,:,:)=ZTHV(:,:,:)*(PP(:,:,:)/ XP00) **(XRD/XCPD)
 CALL GPS_ZENITH_GRID(PR(:,:,:,1),ZTEMP,PP,ZZTD,ZZHD,ZZWD)
 ! Kunkel formulation
 IF (SIZE(PR,4) >= 2) THEN
+  ZVISIKUN(:,:,:) = 10E5  !default value
   WHERE ( PR(:,:,:,2) /=0 )
-    ZVISIKUN(:,:,:) =0.027/(PR(:,:,:,2)*PRHODREF(:,:,:))**0.88
+    ZVISIKUN(:,:,:) =0.027/(10**(-8)+(PR(:,:,:,2)/(1+PR(:,:,:,2))*PRHODREF(:,:,:)*1000))**0.88
   END WHERE
 END IF
 ! Gultepe formulation
@@ -476,7 +527,268 @@ IF (GSTORE) THEN
       TPROFILER%VISIKUN(IN,:,I) = PROFILER_INTERP(ZVISIKUN)
       TPROFILER%ZZ  (IN,:,I) = ZZ(:)
       TPROFILER%RHOD(IN,:,I) = ZRHOD(:)
-      IF (SIZE(PR,4) == 6) TPROFILER%RARE(IN,:,I) = PROFILER_INTERP(ZRARE)
+      TPROFILER%CIZ(IN,:,I) = PROFILER_INTERP(PCIT)
+! add RARE
+        ! initialization CRARE and CRARE_ATT + LWC and IWC
+      TPROFILER%CRARE(IN,:,I) = 0.
+      TPROFILER%CRARE_ATT(IN,:,I) = 0.
+      TPROFILER%LWCZ  (IN,:,I) = 0.
+      TPROFILER%IWCZ  (IN,:,I) = 0.
+      IF (CCLOUD=="LIMA" .OR. CCLOUD=="ICE3" ) THEN ! only for ICE3 and LIMA
+       TPROFILER%LWCZ  (IN,:,I) = PROFILER_INTERP((PR(:,:,:,2)+PR(:,:,:,3))*PRHODREF(:,:,:))
+       TPROFILER%IWCZ  (IN,:,I) = PROFILER_INTERP((PR(:,:,:,4)+PR(:,:,:,5)+PR(:,:,:,6))*PRHODREF(:,:,:))
+       ZTEMPZ(:)=PROFILER_INTERP(ZTEMP(:,:,:))
+       ZRHODREFZ(:)=PROFILER_INTERP(PRHODREF(:,:,:))
+       ZCIT(:)=PROFILER_INTERP(PCIT(:,:,:))
+       IF (CCLOUD=="LIMA") THEN
+          ZCCI(:)=PROFILER_INTERP(PSV(:,:,:,NSV_LIMA_NI))
+          ZCCR(:)=PROFILER_INTERP(PSV(:,:,:,NSV_LIMA_NR))
+          ZCCC(:)=PROFILER_INTERP(PSV(:,:,:,NSV_LIMA_NC))
+       ENDIF
+       DO JLOOP=3,6
+          ZRZ(:,JLOOP)=PROFILER_INTERP(PR(:,:,:,JLOOP))
+       END DO
+       DO JK=1,IKU
+          ZRZ(JK,2)=PROFILER_INTERP_2D(PR(:,:,JK,2)*PSEA(:,:))       ! becomes cloud mixing ratio over sea
+          ZRZ(JK,7)=PROFILER_INTERP_2D(PR(:,:,JK,2)*(1.-PSEA(:,:)))  ! becomes cloud mixing ratio over land
+       END DO
+       ALLOCATE(ZAELOC(IKU))
+        !
+       ZAELOC(:)=0.
+       ! initialization of quadrature points and weights
+       ALLOCATE(ZX(JPTS_GAULAG),ZW(JPTS_GAULAG))
+       CALL GAULAG(JPTS_GAULAG,ZX,ZW) ! for integration over diameters
+        ! initialize minimum values
+       ALLOCATE(ZRTMIN(SIZE(PR,4)+1))
+       IF (CCLOUD == 'LIMA') THEN
+          ZRTMIN(2)=XRTMIN_L(2) ! cloud water over sea
+          ZRTMIN(3)=XRTMIN_L(3)
+          ZRTMIN(4)=XRTMIN_L(4)
+          ZRTMIN(5)=1E-10
+          ZRTMIN(6)=XRTMIN_L(6)
+          ZRTMIN(7)=XRTMIN_L(2) ! cloud water over land
+       ELSE
+          ZRTMIN(2)=XRTMIN_I(2) ! cloud water over sea
+          ZRTMIN(3)=XRTMIN_I(3)
+          ZRTMIN(4)=XRTMIN_I(4)
+          ZRTMIN(5)=1E-10
+          ZRTMIN(6)=XRTMIN_I(6)
+          ZRTMIN(7)=XRTMIN_I(2) ! cloud water over land
+       ENDIF
+        ! compute cloud radar reflectivity from vertical profiles of temperature
+        ! and mixing ratios
+       DO JK=1,IKU
+         QMW=SQRT(QEPSW(ZTEMPZ(JK),XLIGHTSPEED/XLAM_CRAD))
+         QMI=SQRT(QEPSI(ZTEMPZ(JK),XLIGHTSPEED/XLAM_CRAD))
+         DO JLOOP=2,7
+           IF (CCLOUD == 'LIMA') THEN
+              GCALC=(ZRZ(JK,JLOOP)>ZRTMIN(JLOOP).AND.(JLOOP.NE.4.OR.ZCCI(JK)>0.).AND.&
+                    (JLOOP.NE.3.OR.ZCCR(JK)>0.).AND.((JLOOP.NE.2.AND.JLOOP.NE.7).OR.ZCCC(JK)>0.))
+           ELSE
+              GCALC=(ZRZ(JK,JLOOP)>ZRTMIN(JLOOP).AND.(JLOOP.NE.4.OR.ZCIT(JK)>0.))
+           ENDIF
+           IF(GCALC) THEN
+              SELECT CASE(JLOOP)
+                CASE(2) ! cloud water over sea
+                  IF (CCLOUD == 'LIMA') THEN
+                    ZA=XAC_L
+                    ZB=XBC_L
+                    ZCC=ZCCC(JK)*ZRHODREFZ(JK)
+                    ZCX=0.
+                    ZALPHA=XALPHAC_L
+                    ZNU=XNUC_L
+                    ZLBEX=1.0/(ZCX-ZB)
+                    ZLB=( ZA*ZCC*MOMG(ZALPHA,ZNU,ZB) )**(-ZLBEX)
+                  ELSE
+                    ZA=XAC_I
+                    ZB=XBC_I
+                    ZCC=XCONC_SEA
+                    ZCX=0.
+                    ZALPHA=XALPHAC2_I
+                    ZNU=XNUC2_I
+                    ZLBEX=1.0/(ZCX-ZB)
+                    ZLB=( ZA*ZCC*MOMG(ZALPHA,ZNU,ZB) )**(-ZLBEX)
+                  ENDIF
+                CASE(3) ! rain water
+                  IF (CCLOUD == 'LIMA') THEN
+                    ZA=XAR_L
+                    ZB=XBR_L
+                    ZCC=ZCCR(JK)*ZRHODREFZ(JK)
+                    ZCX=0.
+                    ZALPHA=XALPHAR_L
+                    ZNU=XNUR_L
+                    ZLBEX=1.0/(ZCX-ZB)
+                    ZLB=( ZA*ZCC*MOMG(ZALPHA,ZNU,ZB) )**(-ZLBEX)
+                  ELSE
+                    ZA=XAR_I
+                    ZB=XBR_I
+                    ZCC=XCCR_I
+                    ZCX=-1.
+                    ZALPHA=XALPHAR_I
+                    ZNU=XNUR_I
+                    ZLB=XLBR_I
+                    ZLBEX=XLBEXR_I
+                  ENDIF
+                CASE(4) ! pristine ice
+                  IF (CCLOUD == 'LIMA') THEN
+                    ZA=XAI_L
+                    ZB=XBI_L
+                    ZCC=ZCCI(JK)*ZRHODREFZ(JK)
+                    ZCX=0.
+                    ZALPHA=XALPHAI_L
+                    ZNU=XNUI_L
+                    ZLBEX=1.0/(ZCX-ZB)
+                    ZLB=( ZA*ZCC*MOMG(ZALPHA,ZNU,ZB) )**(-ZLBEX) ! because ZCC not included in XLBI
+                    ZFW=0
+                  ELSE
+                    ZA=XAI_I
+                    ZB=XBI_I
+                    ZCC=ZCIT(JK)
+                    ZCX=0.
+                    ZALPHA=XALPHAI_I
+                    ZNU=XNUI_I
+                    ZLBEX=XLBEXI_I
+                    ZLB=XLBI_I*ZCC**(-ZLBEX) ! because ZCC not included in XLBI
+                    ZFW=0
+                  ENDIF
+                CASE(5) ! snow
+                  IF (CCLOUD == 'LIMA') THEN
+                    ZA=XAS_L
+                    ZB=XBS_L
+                    ZCC=XCCS_L
+                    ZCX=XCXS_L
+                    ZALPHA=XALPHAS_L
+                    ZNU=XNUS_L
+                    ZLB=XLBS_L
+                    ZLBEX=XLBEXS_L
+                    ZFW=0
+                  ELSE
+                    ZA=XAS_I
+                    ZB=XBS_I
+                    ZCC=XCCS_I
+                    ZCX=XCXS_I
+                    ZALPHA=XALPHAS_I
+                    ZNU=XNUS_I
+                    ZLB=XLBS_I
+                    ZLBEX=XLBEXS_I
+                    ZFW=0
+                  ENDIF
+                CASE(6) ! graupel
+                  !If temperature between -10 and 10B0C and Mr and Mg over min
+                  !threshold: melting graupel
+                  ! with liquid water fraction Fw=Mr/(Mr+Mg) else dry graupel
+                  ! (Fw=0)    
+                  IF( ZTEMPZ(JK) > XTT-10 .AND. ZTEMPZ(JK) < XTT+10 &
+                    .AND. ZRZ(JK,3) > ZRTMIN(3) ) THEN
+                    ZFW=ZRZ(JK,3)/(ZRZ(JK,3)+ZRZ(JK,JLOOP))
+                  ELSE
+                    ZFW=0
+                  ENDIF
+                  IF (CCLOUD == 'LIMA') THEN
+                    ZA=XAG_L
+                    ZB=XBG_L
+                    ZCC=XCCG_L
+                    ZCX=XCXG_L
+                    ZALPHA=XALPHAG_L
+                    ZNU=XNUG_L
+                    ZLB=XLBG_L
+                    ZLBEX=XLBEXG_L
+                  ELSE
+                    ZA=XAG_I
+                    ZB=XBG_I
+                    ZCC=XCCG_I
+                    ZCX=XCXG_I
+                    ZALPHA=XALPHAG_I
+                    ZNU=XNUG_I
+                    ZLB=XLBG_I
+                    ZLBEX=XLBEXG_I
+                  ENDIF
+                CASE(7) ! cloud water over land
+                  IF (CCLOUD == 'LIMA') THEN
+                    ZA=XAC_L
+                    ZB=XBC_L
+                    ZCC=ZCCC(JK)*ZRHODREFZ(JK)
+                    ZCX=0.
+                    ZALPHA=XALPHAC_L
+                    ZNU=XNUC_L
+                    ZLBEX=1.0/(ZCX-ZB)
+                    ZLB=( ZA*ZCC*MOMG(ZALPHA,ZNU,ZB) )**(-ZLBEX)
+                  ELSE
+                    ZA=XAC_I
+                    ZB=XBC_I
+                    ZCC=XCONC_LAND
+                    ZCX=0.
+                    ZALPHA=XALPHAC_I
+                    ZNU=XNUC_I
+                    ZLBEX=1.0/(ZCX-ZB)
+                    ZLB=( ZA*ZCC*MOMG(ZALPHA,ZNU,ZB) )**(-ZLBEX)
+                  ENDIF
+            END SELECT
+            ZLBDA=ZLB*(ZRHODREFZ(JK)*ZRZ(JK,JLOOP))**ZLBEX
+            ZREFLOC=0.
+            ZAETMP=0.
+            DO JJ=1,JPTS_GAULAG ! Gauss-Laguerre quadrature
+               ZDELTA_EQUIV=ZX(JJ)**(1./ZALPHA)/ZLBDA
+               SELECT CASE(JLOOP)
+                  CASE(2,3,7)
+                    QM=QMW
+                  CASE(4,5,6)
+                    ! pristine ice, snow, dry graupel
+                    ZRHOHYD=MIN(6.*ZA*ZDELTA_EQUIV**(ZB-3.)/XPI,.92*XRHOLW)
+                    QM=sqrt(MG(QMI**2,CMPLX(1,0),ZRHOHYD/.92/XRHOLW))
+                    ! water inclusions in ice in air
+                    QEPSWI=MG(QMW**2,QM**2,ZFW)
+                    ! ice in air inclusions in water
+                    QEPSIW=MG(QM**2,QMW**2,1.-ZFW)
+                    !MG weighted rule (Matrosov 2008)
+                    IF(ZFW .LT. 0.37) THEN
+                      ZFPW=0
+                    ELSE IF(ZFW .GT. 0.63) THEN
+                      ZFPW=1
+                    ELSE
+                      ZFPW=(ZFW-0.37)/(0.63-0.37)
+                    ENDIF
+                    QM=sqrt(QEPSWI*(1.-ZFPW)+QEPSIW*ZFPW)
+               END SELECT
+               CALL BHMIE(XPI/XLAM_CRAD*ZDELTA_EQUIV,QM,ZQEXT,ZQSCA,ZQBACK)
+               ZREFLOC=ZREFLOC+ZQBACK*ZX(JJ)**(ZNU-1)*ZDELTA_EQUIV**2*ZW(JJ)
+               ZAETMP =ZAETMP +ZQEXT *ZX(JJ)**(ZNU-1)*ZDELTA_EQUIV**2*ZW(JJ)
+             END DO
+             ZREFLOC=ZREFLOC*(XLAM_CRAD/XPI)**4*ZCC*ZLBDA**ZCX/(4.*GAMMA(ZNU)*.93)
+             ZAETMP=ZAETMP  *           XPI    *ZCC*ZLBDA**ZCX/(4.*GAMMA(ZNU))
+             TPROFILER%CRARE(IN,JK,I)=TPROFILER%CRARE(IN,JK,I)+ZREFLOC
+             ZAELOC(JK)=ZAELOC(JK)+ZAETMP
+           END IF
+         END DO
+       END DO
+     ! apply attenuation
+       ALLOCATE(ZZMZ(IKU))
+       ZZMZ = ZZ(:) ! PROFILER_INTERP(ZZM(:,:,:))
+!        ZZMZ(1)=ZZM_STAT
+        ! zenith
+       ZAETOT=1.
+       DO JK = 2,IKU
+            ! attenuation from ZAELOC(JK) and ZAELOC(JK-1)
+        ZAETOT=ZAETOT*EXP(-(ZAELOC(JK-1)+ZAELOC(JK))*(ZZMZ(JK)-ZZMZ(JK-1)))
+        TPROFILER%CRARE_ATT(IN,JK,I)=TPROFILER%CRARE(IN,JK,I)*ZAETOT
+       END DO
+!        TPROFILER%ZZ  (IN,:,I) = ZZMZ(:)
+       DEALLOCATE(ZZMZ,ZAELOC)
+        ! m^3 bmm^6/m^3 bdBZ
+       WHERE(TPROFILER%CRARE(IN,:,I)>0)
+          TPROFILER%CRARE(IN,:,I)=10.*LOG10(1.E18*TPROFILER%CRARE(IN,:,I))
+       ELSEWHERE
+          TPROFILER%CRARE(IN,:,I)=XUNDEF
+       END WHERE
+       WHERE(TPROFILER%CRARE_ATT(IN,:,I)>0)
+          TPROFILER%CRARE_ATT(IN,:,I)=10.*LOG10(1.E18*TPROFILER%CRARE_ATT(IN,:,I))
+       ELSEWHERE
+          TPROFILER%CRARE_ATT(IN,:,I)=XUNDEF
+       END WHERE
+       DEALLOCATE(ZX,ZW,ZRTMIN)
+     END IF ! end LOOP ICE3
+! end add RARE
+!!
       IF (.NOT. L1D) THEN
         TPROFILER%P   (IN,:,I) = PROFILER_INTERP(PP(II(I):II(I)+1,IJ(I):IJ(I)+1,:))
       ELSE
@@ -566,7 +878,9 @@ IF (GSTORE) THEN
   CALL DISTRIBUTE_PROFILER(TPROFILER%VISI(IN,JK,I))
   CALL DISTRIBUTE_PROFILER(TPROFILER%VISIKUN(IN,JK,I))
   CALL DISTRIBUTE_PROFILER(TPROFILER%RHOD(IN,JK,I))
-  CALL DISTRIBUTE_PROFILER(TPROFILER%RARE(IN,JK,I))
+  CALL DISTRIBUTE_PROFILER(TPROFILER%CRARE(IN,JK,I))
+  CALL DISTRIBUTE_PROFILER(TPROFILER%CRARE_ATT(IN,JK,I))
+  CALL DISTRIBUTE_PROFILER(TPROFILER%CIZ(IN,JK,I))
   CALL DISTRIBUTE_PROFILER(TPROFILER%IWV(IN,I))
   CALL DISTRIBUTE_PROFILER(TPROFILER%ZTD(IN,I))
   CALL DISTRIBUTE_PROFILER(TPROFILER%ZHD(IN,I))
