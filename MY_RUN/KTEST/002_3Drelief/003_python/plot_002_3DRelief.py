@@ -10,7 +10,6 @@ mpl.use('Agg')
 from read_MNHfile import read_netcdf
 from Panel_Plot import PanelPlot
 from misc_functions import comp_altitude2DVar
-import cartopy.crs as ccrs
 import os
 
 os.system('rm -f tempgraph*')
@@ -21,8 +20,7 @@ path=""
 
 LnameFiles = ['REL3D.1.EXP01.002.nc']
 
-Dvar_input = {
-'f1':['ZS', 'UT', 'WT','ni_u','nj_u','level','ZTOP', 'ni','nj','level_w','time']}
+Dvar_input = {'f1':['ZS', 'UT', 'WT','ni_u','nj_u','level','ZTOP', 'ni','nj','level_w','time']}
 
 #  Read the variables in the files
 Dvar = {}
@@ -53,7 +51,6 @@ Lstep = [0.25, 0.1]
 Lstepticks = Lstep
 Lcolormap = ['gist_rainbow_r']*len(Lplot)
 Ltime = [Dvar['f1']['time']]*len(Lplot)
-Lprojection = [ccrs.PlateCarree()]*len(Lplot)
 fig1 = Panel1.psectionV(Lxx=LaxeX, Lzz=LaxeZ, Lvar=Lplot, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle, Lminval=Lminval, Lmaxval=Lmaxval, 
                                 Lstep=Lstep, Lstepticks=Lstepticks, Lcolormap=Lcolormap, Lcbarlabel=Lcbarlabel,
                                 orog=orog, Lylim=Lylim, colorbar=True, Ltime=Ltime)

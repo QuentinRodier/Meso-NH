@@ -9,7 +9,7 @@ import matplotlib as mpl
 mpl.use('Agg')
 from read_MNHfile import read_netcdf
 from Panel_Plot import PanelPlot
-from misc_functions import mean_operator, convert_date
+from misc_functions import mean_operator
 import cartopy.crs as ccrs
 import numpy as np
 import os
@@ -21,8 +21,7 @@ os.system('rm -f tempgraph*')
 path=""
 LnameFiles = ['DUST7.1.SEG02.004.nc']
 
-Dvar_input = {
-'f1':['ZS', 'UT','VT', 'WT','THT',
+Dvar_input = {'f1':['ZS', 'UT','VT', 'WT','THT',
       'DSTM03T','DSTM33T','DSTM02T','DSTM32T','DSTM01T','DSTM31T','F_DST001P1','F_DST002P1','F_DST003P1',
       'latitude','longitude','level',
       'INPRR','ACPRR','PABST','RCT','RVT','RRT','LSTHM']}
@@ -30,6 +29,7 @@ Dvar_input = {
 #  Read the variables in the files
 Dvar = {}
 Dvar = read_netcdf(LnameFiles, Dvar_input, path=path, removeHALO=True)
+
 ################################################################
 #########          PANEL 1
 ###############################################################
@@ -74,6 +74,7 @@ fig2 = Panel1.pvector(Lxx=lon, Lyy=lat, Lvar1=Lplot1, Llevel=Llvl, Lvar2=Lplot2,
                         Llegendval=Llegendval, Lcbarlabel=Lcbarlabel, Lid_overlap=[0], ax=fig1.axes, Lscale=Lscale)
 
 Panel1.save_graph(1,fig2)
+
 ################################################################
 #########          PANEL 2
 ###############################################################
@@ -97,6 +98,7 @@ fig3 = Panel2.psectionH(lon=lon, lat=lat, Lvar=Lplot, Llevel=Llvl, Lxlab=Lxlab, 
                                 Ltime=Ltime, LaddWhite_cm=LaddWhite, Lproj=Lprojection, ax=[])
 
 Panel2.save_graph(2,fig3)
+
 ################################################################
 #########          PANEL 3
 ###############################################################
