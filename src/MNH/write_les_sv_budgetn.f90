@@ -92,7 +92,7 @@ INTEGER :: JT ! temporal loop counter
 INTEGER :: JSV! scalar loop counter
 INTEGER :: JP ! process loop counter
 !
-CHARACTER(len=9), DIMENSION(NMAX_ILES)      :: YSUBTITLE
+CHARACTER(len=9), DIMENSION(NMAX_ILES)      :: YFIELDNAMES
 character(len=:), allocatable               :: ygroup
 character(len=:), allocatable               :: ygroupcomment
 !
@@ -125,7 +125,7 @@ ILES_STA=ILES
 !      ----------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'SBG_DP_M'
+YFIELDNAMES(ILES) = 'SBG_DP_M'
 ILES_P1=ILES
 !
 DO JSV=1,NSV
@@ -137,7 +137,7 @@ END DO
 !      --------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'SBG_DP_R'
+YFIELDNAMES(ILES) = 'SBG_DP_R'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV)= - 2. * XLES_RES_ddxa_Sv_SBG_UaSv(:,:,1,JSV)  &
@@ -150,7 +150,7 @@ END DO
 !
 IF ( ANY(XLES_SUBGRID_WSv2(:,:,1,:)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = 'SBG_TR'
+YFIELDNAMES(ILES) = 'SBG_TR'
 !
 DO JSV=1,NSV
   DO JK=2,NLES_K-1
@@ -169,7 +169,7 @@ END IF
 !      -----------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'SBG_DISS'
+YFIELDNAMES(ILES) = 'SBG_DISS'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) =  XLES_SUBGRID_DISS_Sv2(:,:,1,JSV)
@@ -180,7 +180,7 @@ END DO
 !      --------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'SBG_RESI'
+YFIELDNAMES(ILES) = 'SBG_RESI'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = 0.
@@ -195,7 +195,7 @@ ILES_STA=ILES
 !      --------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'RES_TEND'
+YFIELDNAMES(ILES) = 'RES_TEND'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_Sv2(:,:,NLES_TEND,JSV)
@@ -206,7 +206,7 @@ END DO
 !
 IF ( ANY(XLES_BU_RES_Sv2(:,:,NLES_ADVM,:)/= 0.) ) THEN
   ILES=ILES+1
-  YSUBTITLE(ILES) = 'RES_ADV'
+  YFIELDNAMES(ILES) = 'RES_ADV'
 !
   DO JSV=1,NSV
     ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_Sv2(:,:,NLES_ADVM,JSV)
@@ -218,7 +218,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_Sv2(:,:,NLES_FORC,:)/= 0.) ) THEN
   ILES=ILES+1
-  YSUBTITLE(ILES) = 'RES_FORC'
+  YFIELDNAMES(ILES) = 'RES_FORC'
 !
   DO JSV=1,NSV
     ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_Sv2(:,:,NLES_FORC,JSV)
@@ -230,7 +230,7 @@ END IF
 !      ----------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'RES_DP'
+YFIELDNAMES(ILES) = 'RES_DP'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_Sv2(:,:,NLES_DP,JSV)
@@ -240,7 +240,7 @@ END DO
 !       -------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'RES_TR'
+YFIELDNAMES(ILES) = 'RES_TR'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_Sv2(:,:,NLES_TR,JSV)
@@ -251,7 +251,7 @@ END DO
 !       ----------------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'RES_SBGT'
+YFIELDNAMES(ILES) = 'RES_SBGT'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_Sv2(:,:,NLES_VTURB,JSV) &
@@ -263,7 +263,7 @@ END DO
 !
 IF ( ANY(XLES_BU_RES_Sv2(:,:,NLES_DIFF,:)/= 0.) ) THEN
   ILES=ILES+1
-  YSUBTITLE(ILES) = 'RES_NUMD'
+  YFIELDNAMES(ILES) = 'RES_NUMD'
 !
   DO JSV=1,NSV
     ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_Sv2(:,:,NLES_DIFF,JSV)
@@ -275,7 +275,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_Sv2(:,:,NLES_RELA,:)/= 0.) ) THEN
   ILES=ILES+1
-  YSUBTITLE(ILES) = 'RES_RELA'
+  YFIELDNAMES(ILES) = 'RES_RELA'
 !
   DO JSV=1,NSV
     ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_Sv2(:,:,NLES_RELA,JSV)
@@ -287,7 +287,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_Sv2(:,:,NLES_NEST,:)/= 0.) ) THEN
   ILES=ILES+1
-  YSUBTITLE(ILES) = 'RES_NEST'
+  YFIELDNAMES(ILES) = 'RES_NEST'
 !
   DO JSV=1,NSV
     ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_Sv2(:,:,NLES_NEST,JSV)
@@ -299,7 +299,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_Sv2(:,:,NLES_MISC,:)/= 0.) ) THEN
   ILES=ILES+1
-  YSUBTITLE(ILES) = 'RES_MISC'
+  YFIELDNAMES(ILES) = 'RES_MISC'
   !
   DO JSV=1,NSV
     ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_Sv2(:,:,NLES_MISC,JSV)
@@ -310,7 +310,7 @@ END IF
 !       ---------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'RES_RESI'
+YFIELDNAMES(ILES) = 'RES_RESI'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = 0.
@@ -323,7 +323,7 @@ END DO
 !       ------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'NSG_TEND'
+YFIELDNAMES(ILES) = 'NSG_TEND'
 !
 IF (NLES_TIMES>2) THEN
   DO JSV=1,NSV
@@ -344,7 +344,7 @@ END IF
 !       ----------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'NSG_ADVM'
+YFIELDNAMES(ILES) = 'NSG_ADVM'
 !
 DO JSV=1,NSV
   DO JK=2,NLES_K-1
@@ -362,7 +362,7 @@ END DO
 !       ----------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'NSG_ADVR'
+YFIELDNAMES(ILES) = 'NSG_ADVR'
 !
 DO JSV=1,NSV
   DO JK=2,NLES_K-1
@@ -382,10 +382,10 @@ END DO
 tzfield%ngrid = 0 !Not on the Arakawa grid
 tzfield%ntype = TYPEREAL
 
-tzfield%cmnhname  = ygroup !cmnhname will be overwritten by ysubtitle(:) in Les_diachro
+tzfield%cmnhname  = ygroup !cmnhname will be overwritten by yfieldnames(:) in Les_diachro
 tzfield%cstdname  = ''
-tzfield%clongname = ygroup !clongname will be overwritten by ysubtitle(:) in Les_diachro
-tzfield%ccomment  = 'Sv variance budget' !ccomment will be completed with ysubtitle(:) in Les_diachro
+tzfield%clongname = ygroup !clongname will be overwritten by yfieldnames(:) in Les_diachro
+tzfield%ccomment  = 'Sv variance budget' !ccomment will be completed with yfieldnames(:) in Les_diachro
 tzfield%cunits    = 'kg2 kg-2 s-1'
 
 tzfield%ndims = 4
@@ -399,7 +399,7 @@ gdoavg  = xles_temp_mean_start /= XUNDEF .and. xles_temp_mean_end /= XUNDEF
 gdonorm = trim(cles_norm_type) /= 'NONE'
 
 call Les_diachro( tpdiafile, tzfield, ygroup, ygroupcomment, gdoavg, gdonorm, &
-                  zles_budget(:, :, :iles, :), hsuffixes = ysubtitle(:iles) )
+                  zles_budget(:, :, :iles, :), hfieldnames = yfieldnames(:iles) )
 
 !-------------------------------------------------------------------------------
 !
@@ -418,7 +418,7 @@ ILES_STA=ILES
 !     -----------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'SBG_DP_M'
+YFIELDNAMES(ILES) = 'SBG_DP_M'
 ILES_P1=ILES
 !
 DO JSV=1,NSV
@@ -431,7 +431,7 @@ END DO
 !     -------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'SBG_DP_R'
+YFIELDNAMES(ILES) = 'SBG_DP_R'
 ILES_P2=ILES
 !
 DO JSV=1,NSV
@@ -446,7 +446,7 @@ END DO
 !
 IF ( ANY(XLES_SUBGRID_W2Sv(:,:,1,:)/= 0.) ) THEN
 ILES=ILES+1
-YSUBTITLE(ILES) = 'SBG_TR'
+YFIELDNAMES(ILES) = 'SBG_TR'
 !
 DO JSV=1,NSV
   DO JK=2,NLES_K-1
@@ -465,7 +465,7 @@ END IF
 !      -------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'SBG_PRES'
+YFIELDNAMES(ILES) = 'SBG_PRES'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) =  XLES_SUBGRID_SvPz(:,:,1,JSV)
@@ -476,7 +476,7 @@ END DO
 !      ------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'SBG_TP'
+YFIELDNAMES(ILES) = 'SBG_TP'
 !
 IF (LUSERV) THEN
   DO JSV=1,NSV
@@ -496,7 +496,7 @@ END IF
 !
 ILES=ILES+1
 !PW: not in documentation. Always set to 0
-YSUBTITLE(ILES) = 'SBG_DISS'
+YFIELDNAMES(ILES) = 'SBG_DISS'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = 0.
@@ -507,7 +507,7 @@ END DO
 !      --------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'SBG_RESI'
+YFIELDNAMES(ILES) = 'SBG_RESI'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = 0.
@@ -522,7 +522,7 @@ ILES_STA=ILES
 !      --------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'RES_TEND'
+YFIELDNAMES(ILES) = 'RES_TEND'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_WSv(:,:,NLES_TEND,JSV)
@@ -533,7 +533,7 @@ END DO
 !
 IF ( ANY(XLES_BU_RES_WSv(:,:,NLES_ADVM,:)/= 0.) ) THEN
   ILES=ILES+1
-  YSUBTITLE(ILES) = 'RES_ADV'
+  YFIELDNAMES(ILES) = 'RES_ADV'
   !
   DO JSV=1,NSV
     ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_WSv(:,:,NLES_ADVM,JSV)
@@ -545,7 +545,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_WSv(:,:,NLES_FORC,:)/= 0.) ) THEN
   ILES=ILES+1
-  YSUBTITLE(ILES) = 'RES_FORC'
+  YFIELDNAMES(ILES) = 'RES_FORC'
   !
   DO JSV=1,NSV
     ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_WSv(:,:,NLES_FORC,JSV)
@@ -556,7 +556,7 @@ END IF
 !       ----------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'RES_DP'
+YFIELDNAMES(ILES) = 'RES_DP'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_WSv(:,:,NLES_DP,JSV)
@@ -566,7 +566,7 @@ END DO
 !       -------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'RES_TR'
+YFIELDNAMES(ILES) = 'RES_TR'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_WSv(:,:,NLES_TR,JSV)
@@ -577,7 +577,7 @@ END DO
 !       -------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'RES_PRES'
+YFIELDNAMES(ILES) = 'RES_PRES'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_WSv(:,:,NLES_PRES,JSV)
@@ -588,7 +588,7 @@ END DO
 !       ------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'RES_TP'
+YFIELDNAMES(ILES) = 'RES_TP'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_WSv(:,:,NLES_GRAV,JSV)
@@ -599,7 +599,7 @@ END DO
 !       ----------------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'RES_SBGT'
+YFIELDNAMES(ILES) = 'RES_SBGT'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_WSv(:,:,NLES_VTURB,JSV) + XLES_BU_RES_WSv(:,:,NLES_HTURB,JSV)
@@ -610,7 +610,7 @@ END DO
 !
 IF ( ANY(XLES_BU_RES_WSv(:,:,NLES_COR,:)/= 0.) ) THEN
   ILES=ILES+1
-  YSUBTITLE(ILES) = 'RES_CORI'
+  YFIELDNAMES(ILES) = 'RES_CORI'
   !
   DO JSV=1,NSV
     ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_WSv(:,:,NLES_COR,JSV)
@@ -622,7 +622,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_WSv(:,:,NLES_DIFF,:)/= 0.) ) THEN
   ILES=ILES+1
-  YSUBTITLE(ILES) = 'RES_NUMD'
+  YFIELDNAMES(ILES) = 'RES_NUMD'
   !
   DO JSV=1,NSV
     ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_WSv(:,:,NLES_DIFF,JSV)
@@ -634,7 +634,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_WSv(:,:,NLES_RELA,:)/= 0.) ) THEN
   ILES=ILES+1
-  YSUBTITLE(ILES) = 'RES_RELA'
+  YFIELDNAMES(ILES) = 'RES_RELA'
   !
   DO JSV=1,NSV
     ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_WSv(:,:,NLES_RELA,JSV)
@@ -646,7 +646,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_WSv(:,:,NLES_NEST,:)/= 0.) ) THEN
   ILES=ILES+1
-  YSUBTITLE(ILES) = 'RES_NEST'
+  YFIELDNAMES(ILES) = 'RES_NEST'
   !
   DO JSV=1,NSV
     ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_WSv(:,:,NLES_NEST,JSV)
@@ -658,7 +658,7 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_WSv(:,:,NLES_MISC,:)/= 0.) ) THEN
   ILES=ILES+1
-  YSUBTITLE(ILES) = 'RES_MISC'
+  YFIELDNAMES(ILES) = 'RES_MISC'
   !
   DO JSV=1,NSV
     ZLES_BUDGET(:,:,ILES,JSV) = XLES_BU_RES_WSv(:,:,NLES_MISC,JSV)
@@ -669,7 +669,7 @@ END IF
 !       -------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'RES_RESI'
+YFIELDNAMES(ILES) = 'RES_RESI'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = 0.
@@ -682,7 +682,7 @@ END DO
 !       ------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'NSG_TEND'
+YFIELDNAMES(ILES) = 'NSG_TEND'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV) = 0.
@@ -705,7 +705,7 @@ END DO
 !       ------------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'NSG_ADVM'
+YFIELDNAMES(ILES) = 'NSG_ADVM'
 !
 DO JSV=1,NSV
   DO JK=2,NLES_K-1
@@ -723,7 +723,7 @@ END DO
 !       ------------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'NSG_ADVR'
+YFIELDNAMES(ILES) = 'NSG_ADVR'
 !
 DO JSV=1,NSV
   DO JK=2,NLES_K-1
@@ -740,7 +740,7 @@ END DO
 !       ----------------------------------------------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'NSG_DPGW'
+YFIELDNAMES(ILES) = 'NSG_DPGW'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV)=- XLES_RES_ddxa_W_SBG_UaSv(:,:,1,JSV)
@@ -751,7 +751,7 @@ END DO
 !       -------------------------------------------------------------------------
 !
 ILES=ILES+1
-YSUBTITLE(ILES) = 'NSG_DPGT'
+YFIELDNAMES(ILES) = 'NSG_DPGT'
 !
 DO JSV=1,NSV
   ZLES_BUDGET(:,:,ILES,JSV)=-XLES_RES_ddxa_Sv_SBG_UaW(:,:,1,JSV)       &
@@ -765,10 +765,10 @@ END DO
 tzfield%ngrid = 0 !Not on the Arakawa grid
 tzfield%ntype = TYPEREAL
 
-tzfield%cmnhname  = ygroup !cmnhname will be overwritten by ysubtitle(:) in Les_diachro
+tzfield%cmnhname  = ygroup !cmnhname will be overwritten by yfieldnames(:) in Les_diachro
 tzfield%cstdname  = ''
-tzfield%clongname = ygroup !clongname will be overwritten by ysubtitle(:) in Les_diachro
-tzfield%ccomment  = 'Sv flux budget' !ccomment will be completed with ysubtitle(:) in Les_diachro
+tzfield%clongname = ygroup !clongname will be overwritten by yfieldnames(:) in Les_diachro
+tzfield%ccomment  = 'Sv flux budget' !ccomment will be completed with yfieldnames(:) in Les_diachro
 tzfield%cunits    = 'm kg kg-1 s-2'
 
 tzfield%ndims = 4
@@ -782,7 +782,7 @@ gdoavg  = xles_temp_mean_start /= XUNDEF .and. xles_temp_mean_end /= XUNDEF
 gdonorm = trim(cles_norm_type) /= 'NONE'
 
 call Les_diachro( tpdiafile, tzfield, ygroup, ygroupcomment, gdoavg, gdonorm, &
-                  zles_budget(:, :, :iles, :), hsuffixes = ysubtitle(:iles) )
+                  zles_budget(:, :, :iles, :), hfieldnames = yfieldnames(:iles) )
 
 !-------------------------------------------------------------------------------
 !
