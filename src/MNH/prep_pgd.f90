@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -78,7 +78,7 @@
 !  P. Wautelet 07/02/2019: remove OPARALLELIO argument from open and close files subroutines
 !                          (nsubfiles_ioz is now determined in IO_File_add2list)
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
-!
+!  P. Wautelet 06/07/2021: use FINALIZE_MNH
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -89,16 +89,17 @@ USE MODD_CONF_n,ONLY : CSTORAGE_TYPE
 USE MODD_LUNIT,  ONLY : TLUOUT0
 USE MODD_LUNIT_n,ONLY : LUNIT_MODEL
 USE MODD_PARAMETERS, ONLY : XUNDEF
-USE MODD_IO,   ONLY : NIO_VERB,NVERB_DEBUG,TFILEDATA,TFILE_OUTPUTLISTING,TFILE_SURFEX
+USE MODD_IO,               only: TFILEDATA, TFILE_OUTPUTLISTING, TFILE_SURFEX
 use modd_precision,   only: LFIINT
 USE MODD_IO_SURF_MNH, ONLY : NHALO
 USE MODD_SPAWN, ONLY : NDXRATIO,NDYRATIO,NXSIZE,NYSIZE,NXOR,NYOR
 !
 use mode_field,            only: Ini_field_list
+USE MODE_FINALIZE_MNH,     only: FINALIZE_MNH
 USE MODE_IO,               only: IO_Config_set, IO_Init
 USE MODE_IO_FIELD_WRITE,   only: IO_Field_write, IO_Header_write
 USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
-USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list, IO_Filelist_print
+USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list
 use mode_ll
 USE MODE_MODELN_HANDLER
 USE MODE_MSG
@@ -134,7 +135,6 @@ IMPLICIT NONE
 INTEGER :: IRESP    ! return code for I/O
 INTEGER :: ILUOUT0
 INTEGER :: ILUNAM
-INTEGER :: IINFO_LL
 LOGICAL :: GFOUND
 CHARACTER(LEN=28) :: YDAD     =' '        ! name of dad of input FM file
 CHARACTER(LEN=28) :: CPGDFILE ='PGDFILE'  ! name of the output file
@@ -332,13 +332,7 @@ WRITE(ILUOUT0,*) '***************************'
 !
 CALL IO_File_close(TZFILE)
 !
-CALL SURFEX_DEALLO_LIST
-!
-IF(NIO_VERB>=NVERB_DEBUG) CALL IO_Filelist_print()
-!
-CALL IO_File_close(TLUOUT0)
-!
-CALL END_PARA_ll(IINFO_ll)
+CALL FINALIZE_MNH()
 !
 !-------------------------------------------------------------------------------
 !

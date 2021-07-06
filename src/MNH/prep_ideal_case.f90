@@ -320,7 +320,8 @@
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !  F. Auguste     02/2021: add IBM
 !  P. Wautelet 09/03/2021: move some chemistry initializations to ini_nsv
-!  Jean-Luc Redelsperger 03/2021 : : ocean LES case
+!  Jean-Luc Redelsperger 03/2021: ocean LES case
+!  P. Wautelet 06/07/2021: use FINALIZE_MNH
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -356,13 +357,14 @@ USE MODD_SALT,      ONLY:  LSALT, NMODE_SLT, CRGUNITS, XINISIG_SLT, XINIRADIUS_S
 USE MODD_VAR_ll,    ONLY:  NPROC
 USE MODD_LUNIT,     ONLY:  TLUOUT0, TOUTDATAFILE
 USE MODD_LUNIT_n
-USE MODD_IO,        ONLY: NIO_VERB, NVERB_DEBUG, TFILE_DUMMY, TFILE_OUTPUTLISTING
+USE MODD_IO,        ONLY: TFILE_DUMMY, TFILE_OUTPUTLISTING
 USE MODD_CONF_n
 USE MODD_NSV,       ONLY: NSV
 use modd_precision, only: LFIINT, MNHREAL_MPI, MNHTIME
 !
 USE MODN_BLANK_n
 !
+USE MODE_FINALIZE_MNH,     only: FINALIZE_MNH
 USE MODE_THERMO
 USE MODE_POS
 USE MODE_GRIDCART         ! Executive modules
@@ -372,7 +374,7 @@ USE MODE_IO,               only: IO_Config_set, IO_Init, IO_Pack_set
 USE MODE_IO_FIELD_READ,    only: IO_Field_read
 USE MODE_IO_FIELD_WRITE,   only: IO_Field_write, IO_Header_write
 USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
-USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list,IO_Filelist_print
+USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list
 USE MODE_ll
 USE MODE_MODELN_HANDLER
 use mode_field,            only: Alloc_field_scalars, Ini_field_list, Ini_field_scalars
@@ -1845,7 +1847,6 @@ IF (CSURF =='EXTE') THEN
   TFILE_SURFEX => TINIFILE
   CALL PREP_SURF_MNH('                            ','      ')
   NULLIFY(TFILE_SURFEX)
-  CALL SURFEX_DEALLO_LIST
 ELSE
   CSURF = "NONE"
 END IF
@@ -1927,10 +1928,6 @@ WRITE(NLUOUT,FMT=*) '****************************************************'
 WRITE(NLUOUT,FMT=*) '* PREP_IDEAL_CASE: PREP_IDEAL_CASE ENDS CORRECTLY. *'
 WRITE(NLUOUT,FMT=*) '****************************************************'
 !
-IF(NIO_VERB>=NVERB_DEBUG) CALL IO_Filelist_print()
-!
-CALL IO_File_close(TLUOUT)
-!
-CALL END_PARA_ll(IINFO_ll)
+CALL FINALIZE_MNH()
 !
 END PROGRAM PREP_IDEAL_CASE

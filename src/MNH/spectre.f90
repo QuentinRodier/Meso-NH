@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2011-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2011-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -17,7 +17,8 @@
 !!
 !!
 !! Modifications:
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
+!  P. Wautelet 06/07/2021: use FINALIZE_MNH
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -25,8 +26,7 @@
 !
 !
 USE MODD_CONF
-USE MODD_IO, ONLY: NIO_VERB,NVERB_DEBUG,TFILEDATA
-USE MODD_LUNIT
+USE MODD_IO,               only: TFILEDATA
 USE MODD_LUNIT_n
 USE MODD_TIME_n
 USE MODD_DIM_ll
@@ -35,13 +35,13 @@ USE MODD_SPECTRE
 USE MODI_SPECTRE_MESONH
 USE MODI_SPECTRE_AROME
 !
-USE MODE_MSG
-USE MODE_POS
+USE MODE_FINALIZE_MNH,     only: FINALIZE_MNH
 USE MODE_IO,               only: IO_Config_set, IO_Init
 USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
-USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list, IO_Filelist_print
-use mode_init_ll,          only: END_PARA_ll
+USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list
 USE MODE_MODELN_HANDLER
+USE MODE_MSG
+USE MODE_POS
 !USE MODD_TYPE_DATE
 USE MODI_VERSION
 !
@@ -59,8 +59,6 @@ INTEGER                          :: ILUOUT0       ! Logical unit number for the 
 INTEGER                          :: ILUNAM        ! Logical unit numbers for the namelist file
                                                   ! and for output_listing file
 LOGICAL                          :: GFOUND        ! Return code when searching namelist
-!
-INTEGER                          :: IINFO_ll      ! return code for _ll routines 
 !
 REAL,DIMENSION(:,:,:),ALLOCATABLE:: ZWORK         ! work array
 REAL,DIMENSION(:,:,:),ALLOCATABLE:: ZWORKAROME    ! work array
@@ -191,9 +189,6 @@ IF (CTYPEFILE=='MESONH') THEN
   CALL SPECTRE_MESONH(YOUTFILE)
   !
   CALL IO_File_close(LUNIT_MODEL(1)%TINIFILE)
-  IF(NIO_VERB>=NVERB_DEBUG) CALL IO_Filelist_print()
-  CALL IO_File_close(TLUOUT0)
-  CALL IO_File_close(TLUOUT)
 ELSEIF (CTYPEFILE=='AROME ')THEN
  CALL SPECTRE_AROME(CINIFILE,YOUTFILE,XDELTAX,XDELTAY,NI,NJ,NK)
 ELSE
@@ -205,8 +200,8 @@ ENDIF
 !*      4.    FINALIZE THE PARALLEL SESSION
 !              -----------------------------
 !
-CALL END_PARA_ll(IINFO_ll)
-!
+CALL FINALIZE_MNH()
+
 PRINT*, ' '
 PRINT*, '****************************************************'
 PRINT*, '*            EXIT  SPECTRE CORRECTLY          *'

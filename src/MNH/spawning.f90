@@ -78,6 +78,7 @@
 !                          (nsubfiles_ioz is now determined in IO_File_add2list)
 !  S. Bielli      02/2019: sea salt: significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 11/02/2020: bugfix: close TINIFILEPGD only if previously opened
+!  P. Wautelet 06/07/2021: use FINALIZE_MNH
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -105,7 +106,7 @@ USE MODD_CURVCOR_n
 USE MODD_DIM_n
 USE MODD_DYN_n, LRES_n=>LRES, XRES_n=>XRES 
 USE MODD_FIELD_n
-USE MODD_IO, ONLY: NIO_VERB,NVERB_DEBUG,TFILEDATA
+USE MODD_IO,               only: TFILEDATA
 USE MODD_LSFIELD_n
 USE MODD_LBC_n
 USE MODD_LUNIT_n
@@ -116,9 +117,10 @@ USE MODD_TIME_n
 USE MODD_CH_MNHC_n
 USE MODD_GRID_n
 !
+USE MODE_FINALIZE_MNH,     only: FINALIZE_MNH
 USE MODE_IO,               only: IO_Init
 USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
-USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list, IO_File_find_byname, IO_Filelist_print
+USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list, IO_File_find_byname
 USE MODE_ll
 USE MODE_POS
 USE MODE_MODELN_HANDLER
@@ -128,7 +130,6 @@ USE MODI_BOUNDARIES
 !
 USE MODI_VERSION
 USE MODI_INIT_MNH
-USE MODD_MNH_SURFEX_n
 USE MODE_MPPDB
 !
 !
@@ -252,13 +253,8 @@ CALL SPAWN_MODEL2 (NRR,NSV_USER,CTURB,CSURF,CCLOUD,                     &
                    CCHEM_INPUT_FILE,YSPAFILE,YSPANBR,YSONFILE,          &
                    CINIFILE, CINIFILEPGD, LSPAWN_SURF                   )
 !
-CALL SURFEX_DEALLO_LIST
-!
-IF(NIO_VERB>=NVERB_DEBUG) CALL IO_Filelist_print()
-!
-CALL IO_File_close(TLUOUT)
-!
-CALL END_PARA_ll(IINFO_ll)
+CALL FINALIZE_MNH()
+
 
 CONTAINS
 

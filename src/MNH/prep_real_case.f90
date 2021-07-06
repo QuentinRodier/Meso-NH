@@ -390,6 +390,7 @@
 !  P. Wautelet 20/03/2019: missing use MODI_INIT_SALT
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !  T.Nagel        02/2021: add IBM
+!  P. Wautelet 06/07/2021: use FINALIZE_MNH
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -411,7 +412,7 @@ USE MODD_GRID_n
 USE MODD_HURR_CONF
 USE MODD_IBM_LSF,          ONLY: CIBM_TYPE, LIBM_LSF, NIBM_SMOOTH, XIBM_SMOOTH
 USE MODD_IBM_PARAM_n,      ONLY: XIBM_LS
-USE MODD_IO,               ONLY: TFILEDATA,NIO_VERB,NVERB_DEBUG,TFILE_SURFEX
+USE MODD_IO,               ONLY: TFILEDATA, TFILE_SURFEX
 USE MODD_LBC_n
 USE MODD_LSFIELD_n
 USE MODD_LUNIT,            ONLY: TPGDFILE,TLUOUT0,TOUTDATAFILE
@@ -429,13 +430,14 @@ USE MODD_TURB_n
 !
 USE MODE_EXTRAPOL
 use mode_field,            only: Alloc_field_scalars, Ini_field_list, Ini_field_scalars
+USE MODE_FINALIZE_MNH,     only: FINALIZE_MNH
 USE MODE_GRIDCART
 USE MODE_GRIDPROJ
 USE MODE_IO,               only: IO_Init
 USE MODE_IO_FIELD_READ,    only: IO_Field_read
 USE MODE_IO_FIELD_WRITE,   only: IO_Header_write
 USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
-USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list, IO_File_find_byname,IO_Filelist_print
+USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list, IO_File_find_byname
 USE MODE_ll
 USE MODE_MODELN_HANDLER
 USE MODE_MPPDB
@@ -1159,7 +1161,6 @@ IF (.NOT. LCOUPLING ) THEN
     TFILE_SURFEX => TINIFILE
     CALL PREP_SURF_MNH(YSURFFILE,YSURFFILETYPE)
     NULLIFY(TFILE_SURFEX)
-    CALL SURFEX_DEALLO_LIST
   ENDIF
 !
   CALL SECOND_MNH(ZTIME2)
@@ -1248,12 +1249,8 @@ END IF
 CALL IO_File_close(TINIFILE)
 CALL IO_File_close(TPGDFILE)
 !
-IF(NIO_VERB>=NVERB_DEBUG) CALL IO_Filelist_print()
+CALL FINALIZE_MNH()
 !
-CALL IO_File_close(TLUOUT0)
-!
-!
-CALL END_PARA_ll(IINFO_ll)
 !-------------------------------------------------------------------------------
 !
 CONTAINS 

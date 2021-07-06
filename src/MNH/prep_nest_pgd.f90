@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -92,6 +92,7 @@
 !!      P.Wautelet : 08/07/2016 : removed MNH_NCWRIT define
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
+!  P. Wautelet 06/07/2021: use FINALIZE_MNH
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -101,7 +102,7 @@ USE MODD_CONF
 USE MODD_CONF_n
 USE MODD_CST
 USE MODD_DIM_n
-USE MODD_IO,            ONLY: NIO_VERB, NVERB_DEBUG, TFILE_SURFEX, TPTR2FILE
+USE MODD_IO,               ONLY: TFILE_SURFEX, TPTR2FILE
 USE MODD_GRID_n,           ONLY: XZSMT
 USE MODD_LUNIT,            ONLY: TPGDFILE,TLUOUT0,TOUTDATAFILE
 USE MODD_MNH_SURFEX_n
@@ -110,11 +111,12 @@ USE MODD_PARAMETERS
 USE MODD_VAR_ll,           ONLY: NPROC, IP, NMNH_COMM_WORLD
 !
 use mode_field,            only: Ini_field_list
+USE MODE_FINALIZE_MNH,     only: FINALIZE_MNH
 USE MODE_IO,               only: IO_Init, IO_Pack_set
 USE MODE_IO_FIELD_READ,    only: IO_Field_read
 USE MODE_IO_FIELD_WRITE,   only: IO_Field_write, IO_Header_write
 USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
-USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list, IO_Filelist_print
+USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list
 USE MODE_ll
 USE MODE_MNH_WORLD,        ONLY: INIT_NMNH_COMM_WORLD
 USE MODE_MODELN_HANDLER
@@ -384,23 +386,21 @@ END DO
 !*      12.    EPILOGUE
 !              --------
 !
-IF(NIO_VERB>=NVERB_DEBUG) CALL IO_Filelist_print()
-!
 WRITE(ILUOUT0,FMT=*)
 WRITE(ILUOUT0,FMT=*) '************************************************'
 WRITE(ILUOUT0,FMT=*) '* PREP_NEST_PGD: PREP_NEST_PGD ends correctly. *'
 WRITE(ILUOUT0,FMT=*) '************************************************'
-!
-CALL IO_File_close(TLUOUT0)
 !
 !-------------------------------------------------------------------------------
 !
 !*      10.    FINALIZE THE PARALLEL SESSION
 !              -----------------------------
 !
-CALL END_PARA_ll(IINFO_ll)
+CALL FINALIZE_MNH()
+
+! CALL END_PARA_ll(IINFO_ll)
 !
-CALL SURFEX_DEALLO_LIST
+! CALL SURFEX_DEALLO_LIST
 !
 !-------------------------------------------------------------------------------
 

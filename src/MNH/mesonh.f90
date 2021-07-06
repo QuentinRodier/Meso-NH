@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -75,7 +75,8 @@
 !!      J.Escobar                 15/09/2015  WENO5 & JPHEXT <> 1
 !!      G.Delautier                  06/2016  phasage surfex 8
 !!      J. Pianezze               01/08/2016  add sfxoasis coupling functions
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      P. Wautelet          05/2016-04/2018  new data structures and calls for I/O
+!!      P. Wautelet               06/07/2021  use FINALIZE_MNH
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -87,16 +88,15 @@
   USE MODD_SFX_OASIS, ONLY : LOASIS, LOASIS_GRID
 #endif
 !
-USE MODD_CONF
+USE MODD_CONF,             only: CPROGRAM, NMODEL
 USE MODD_NESTING
 USE MODD_CONF_n
-USE MODD_IO, ONLY: NIO_VERB,NVERB_DEBUG
 !
 USE MODI_MODEL_n
 USE MODI_KID_MODEL
 !
+USE MODE_FINALIZE_MNH,     only: FINALIZE_MNH
 USE MODE_IO,               only: IO_Init
-USE MODE_IO_MANAGE_STRUCT, only: IO_Filelist_print
 USE MODE_ll
 USE MODE_MODELN_HANDLER
 !
@@ -108,7 +108,6 @@ USE MODD_MNH_SURFEX_n
   USE MODI_SFX_OASIS_INIT
   USE MODI_MNH_OASIS_GRID
   USE MODI_MNH_OASIS_DEFINE
-  USE MODI_SFX_OASIS_END
 #endif
 !
 USE MODE_MPPDB
@@ -213,26 +212,12 @@ DO
   !
 END DO
 !
-IF(NIO_VERB>=NVERB_DEBUG) CALL IO_Filelist_print()
-!
 !-------------------------------------------------------------------------------
 !
 !*       3.    FINALIZE THE PARALLEL SESSION
 !              -----------------------------
 !
-IF (LCHECK) THEN
-  CALL MPPDB_BARRIER()
-ELSE
-  CALL END_PARA_ll(IINFO_ll)
-#ifdef CPLOASIS
-IF (LOASIS) THEN
-  CALL SFX_OASIS_END
-END IF
-#endif
-END IF
-!
-!
-CALL SURFEX_DEALLO_LIST
+CALL FINALIZE_MNH()
 !
 !-------------------------------------------------------------------------------
 !

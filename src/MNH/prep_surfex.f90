@@ -36,7 +36,7 @@
 USE MODD_CONF,        ONLY : CPROGRAM,&
                              L1D, L2D, LPACK
 USE MODD_CONF_n,      ONLY : CSTORAGE_TYPE
-USE MODD_IO,          ONLY : TFILEDATA, NIO_VERB, NVERB_DEBUG, TFILE_SURFEX
+USE MODD_IO,          ONLY : TFILEDATA, TFILE_SURFEX
 USE MODD_LUNIT,       ONLY : TPGDFILE, TLUOUT0
 USE MODD_LUNIT_n,     ONLY : CINIFILE, TINIFILE
 USE MODD_MNH_SURFEX_n
@@ -44,11 +44,12 @@ USE MODD_PARAMETERS,  ONLY : JPMODELMAX,JPHEXT,JPVEXT, NUNDEF, XUNDEF
 USE MODD_TIME_n,      ONLY : TDTCUR
 !
 use mode_field,            only: Ini_field_list, Ini_field_scalars
+USE MODE_FINALIZE_MNH,     only: FINALIZE_MNH
 USE MODE_IO,               only: IO_Init
 USE MODE_IO_FIELD_READ,    only: IO_Field_read
 USE MODE_IO_FIELD_WRITE,   only: IO_Field_write, IO_Header_write
 USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
-USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list, IO_Filelist_print
+USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list
 USE MODE_ll
 USE MODE_MSG
 USE MODE_MODELN_HANDLER
@@ -200,12 +201,7 @@ WRITE(ILUOUT0,*) '|                                |'
 WRITE(ILUOUT0,*) '----------------------------------'
 CALL IO_File_close(TINIFILE)
 !
-IF(NIO_VERB>=NVERB_DEBUG) CALL IO_Filelist_print()
-!
-CALL IO_File_close(TLUOUT0)
-!
-CALL END_PARA_ll(IINFO_ll)
-CALL SURFEX_DEALLO_LIST
+CALL FINALIZE_MNH()
 !-------------------------------------------------------------------------------
 !
 END PROGRAM PREP_SURFEX
