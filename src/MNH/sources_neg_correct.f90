@@ -52,13 +52,22 @@ integer :: ji, jj, jk
 integer :: jr
 integer :: jrmax
 integer :: jsv
-integer :: jlimaend
+integer :: isv_lima_end
 real, dimension(:, :, :), allocatable :: zt, zexn, zlv, zls, zcph, zcor
 
 if ( krr == 0 ) return
 
 if ( hbudname /= 'NEADV' .and. hbudname /= 'NECON' .and. hbudname /= 'NEGA' .and. hbudname /= 'NETUR' ) &
   call Print_msg( NVERB_WARNING, 'GEN', 'Sources_neg_correct', 'budget '//hbudname//' not yet tested' )
+
+if ( hcloud == 'LIMA' ) then
+  ! The negativity correction does not apply to the SPRO (supersaturation) variable which may be naturally negative
+  if ( lspro_lima ) then
+    isv_lima_end = nsv_lima_end - 1
+  else
+    isv_lima_end = nsv_lima_end
+  end if
+end if
 
 if ( hbudname /= 'NECON' .and. hbudname /= 'NEGA' ) then
   if ( hcloud == 'KESS' .or. hcloud == 'ICE3' .or. hcloud == 'ICE4' .or. &
@@ -85,7 +94,7 @@ if ( hbudname /= 'NECON' .and. hbudname /= 'NEGA' ) then
     end do
   end if
   if ( lbudget_sv .and. hcloud == 'LIMA' ) then
-    do ji = nsv_lima_beg, nsv_lima_end
+    do ji = nsv_lima_beg, isv_lima_end
       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + ji), Trim( hbudname ), prsvs(:, :, :, ji) )
     end do
   end if
@@ -111,7 +120,7 @@ else !NECON + NEGA
     end do
   end if
   if ( lbudget_sv .and. hcloud == 'LIMA' ) then
-    do ji = nsv_lima_beg, nsv_lima_end
+    do ji = nsv_lima_beg, isv_lima_end
       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + ji), Trim( hbudname ), prsvs(:, :, :, ji) * prhodj(:, :, :) )
     end do
   end if
@@ -286,9 +295,7 @@ CLOUD: select case ( hcloud )
       end if
     end if
 
-    jlimaend=nsv_lima_end
-    if ( lspro_lima ) jlimaend=jlimaend-1
-    prsvs(:, :, :, nsv_lima_beg : jlimaend) = Max( 0.0, prsvs(:, :, :, nsv_lima_beg : jlimaend) )
+    prsvs(:, :, :, nsv_lima_beg : isv_lima_end) = Max( 0.0, prsvs(:, :, :, nsv_lima_beg : isv_lima_end) )
 
 end select CLOUD
 
@@ -318,7 +325,7 @@ if ( hbudname /= 'NECON' .and. hbudname /= 'NEGA' ) then
     end do
   end if
   if ( lbudget_sv .and. hcloud == 'LIMA' ) then
-    do ji = nsv_lima_beg, nsv_lima_end
+    do ji = nsv_lima_beg, isv_lima_end
       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + ji), Trim( hbudname ), prsvs(:, :, :, ji) )
     end do
   end if
@@ -341,7 +348,7 @@ else !NECON + NEGA
     end do
   end if
   if ( lbudget_sv .and. hcloud == 'LIMA' ) then
-    do ji = nsv_lima_beg, nsv_lima_end
+    do ji = nsv_lima_beg, isv_lima_end
       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + ji), Trim( hbudname ), prsvs(:, :, :, ji) * prhodj(:, :, :) )
     end do
   end if
