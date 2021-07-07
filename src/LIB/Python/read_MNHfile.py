@@ -208,7 +208,7 @@ def read_from_group(theFile, Dvar, group_name, var_name, get_data_only=True, del
                     var_dim_name[i]=='ni' or var_dim_name[i]=='ni_u' or var_dim_name[i]=='ni_v' or \
                     var_dim_name[i]=='nj' or var_dim_name[i]=='nj_u' or var_dim_name[i]=='nj_v':
                         if var_dim != 0:
-                            Dvar[var_name] = removetheHALO(i+1, Dvar[var_name])
+                            Dvar[(group_name,var_name)] = removetheHALO(i+1, Dvar[(group_name,var_name)])
                 except:
                     break
         if del_empty_dim:
@@ -222,8 +222,8 @@ def read_from_group(theFile, Dvar, group_name, var_name, get_data_only=True, del
             Ldimtosqueeze=tuple(Ldimtosqueeze)                
             Dvar[(group_name,var_name)] = np.squeeze(Dvar[(group_name,var_name)], axis=Ldimtosqueeze)
             
-        # LES budget needs to be transposed to use psection functions without specifying .T each time
-        if 'LES_budgets' in group_name: 
+        # LES budget, ZTSERIES needs to be transposed to use psection functions without specifying .T each time
+        if 'LES_budgets' or 'ZTSERIES' or 'XTSERIES' in group_name: 
             Dvar[(group_name,var_name)] = Dvar[(group_name,var_name)].T   
     return Dvar
 
