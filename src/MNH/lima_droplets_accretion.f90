@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-------------------------------------------------------------------------------
 !      #################################
        MODULE MODI_LIMA_DROPLETS_ACCRETION
 !      #################################
@@ -11,8 +12,7 @@ INTERFACE
                                        PRHODREF,                       &
                                        PRCT, PRRT, PCCT, PCRT,         &
                                        PLBDC, PLBDC3, PLBDR, PLBDR3,   &
-                                       P_RC_ACCR, P_CC_ACCR,           &
-                                       PA_RC, PA_CC, PA_RR             )
+                                       P_RC_ACCR, P_CC_ACCR            )
 !
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
 !
@@ -27,12 +27,8 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PLBDC3  !
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR   ! 
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR3  ! 
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RC_ACCR
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CC_ACCR
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RC
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CC
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RR
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_RC_ACCR
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_CC_ACCR
 !
 END SUBROUTINE LIMA_DROPLETS_ACCRETION
 END INTERFACE
@@ -43,8 +39,7 @@ END MODULE MODI_LIMA_DROPLETS_ACCRETION
                                           PRHODREF,                       &
                                           PRCT, PRRT, PCCT, PCRT,         &
                                           PLBDC, PLBDC3, PLBDR, PLBDR3,   &
-                                          P_RC_ACCR, P_CC_ACCR,           &
-                                          PA_RC, PA_CC, PA_RR             )
+                                          P_RC_ACCR, P_CC_ACCR            )
 !     #####################################################################
 !
 !!    PURPOSE
@@ -91,12 +86,8 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PLBDC3   !
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR    ! 
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR3   ! 
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RC_ACCR
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CC_ACCR
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RC
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CC
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RR
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_RC_ACCR
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_CC_ACCR
 !
 !*       0.2   Declarations of local variables :
 !
@@ -162,9 +153,6 @@ WHERE( GACCR(:).AND.(ZW4(:)<=1.E-4) )
    P_RC_ACCR(:) = - ZW2(:)
 END WHERE
 !
-PA_RC(:) = PA_RC(:) + P_RC_ACCR(:)
-PA_CC(:) = PA_CC(:) + P_CC_ACCR(:)
-PA_RR(:) = PA_RR(:) - P_RC_ACCR(:)
 !
 !
 !-------------------------------------------------------------------------------

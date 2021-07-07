@@ -521,8 +521,8 @@ IF (KSV /= 0) THEN
     !
     IF (CHI%SVI%NDSTEQ >=1) THEN
       !
-      ALLOCATE (DSTK%XSFDST (PK%NSIZE_P, CHI%SVI%NDSTEQ))  !Output array
-      ALLOCATE (DSTK%XSFDSTM(PK%NSIZE_P, CHI%SVI%NDSTEQ))  !Output array
+      ALLOCATE (DSTK%XSFDST (KI, CHI%SVI%NDSTEQ))  !Output array
+      ALLOCATE (DSTK%XSFDSTM(KI, CHI%SVI%NDSTEQ))  !Output array
       DSTK%XSFDST (:,:)  = 0.
       DSTK%XSFDSTM(:,:) = 0.     
       CALL INIT_DST(DSTK, U, HPROGRAM, PK%NSIZE_P, PK%NR_P, PK%XVEGTYPE_PATCH)    

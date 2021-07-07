@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-------------------------------------------------------------------------------
 !      #################################
        MODULE MODI_LIMA_GRAUPEL_DEPOSITION
 !      #################################
@@ -9,8 +10,7 @@
 INTERFACE
    SUBROUTINE LIMA_GRAUPEL_DEPOSITION (LDCOMPUTE, PRHODREF,                  &
                                        PRGT, PSSI, PLBDG, PAI, PCJ, PLSFACT, &
-                                       P_TH_DEPG, P_RG_DEPG,                 &
-                                       PA_TH, PA_RV, PA_RG                   )
+                                       P_TH_DEPG, P_RG_DEPG                  )
 !
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
 REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF ! 
@@ -22,12 +22,8 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PAI      !
 REAL, DIMENSION(:),   INTENT(IN)    :: PCJ      ! 
 REAL, DIMENSION(:),   INTENT(IN)    :: PLSFACT  ! 
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_DEPG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_DEPG
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_TH
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RV
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RG
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_TH_DEPG
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_RG_DEPG
 !!
 END SUBROUTINE LIMA_GRAUPEL_DEPOSITION
 END INTERFACE
@@ -36,8 +32,7 @@ END MODULE MODI_LIMA_GRAUPEL_DEPOSITION
 !     ###########################################################################
       SUBROUTINE LIMA_GRAUPEL_DEPOSITION (LDCOMPUTE, PRHODREF,                  &
                                           PRGT, PSSI, PLBDG, PAI, PCJ, PLSFACT, &
-                                          P_TH_DEPG, P_RG_DEPG,                 &
-                                          PA_TH, PA_RV, PA_RG                   )
+                                          P_TH_DEPG, P_RG_DEPG                  )
 !     ###########################################################################
 !
 !!    PURPOSE
@@ -78,12 +73,8 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PAI      !
 REAL, DIMENSION(:),   INTENT(IN)    :: PCJ      ! 
 REAL, DIMENSION(:),   INTENT(IN)    :: PLSFACT  ! 
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_DEPG
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_DEPG
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_TH
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RV
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RG
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_TH_DEPG
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_RG_DEPG
 !
 !
 !-------------------------------------------------------------------------------
@@ -99,10 +90,6 @@ WHERE ( (PRGT(:)>XRTMIN(6)) .AND. LDCOMPUTE(:) )
         ( X0DEPG*PLBDG(:)**XEX0DEPG + X1DEPG*PCJ(:)*PLBDG(:)**XEX1DEPG )
    P_TH_DEPG(:) = P_RG_DEPG(:)*PLSFACT(:)
 END WHERE
-!
-PA_RV(:) = PA_RV(:) - P_RG_DEPG(:)
-PA_RG(:) = PA_RG(:) + P_RG_DEPG(:)
-PA_TH(:) = PA_TH(:) + P_TH_DEPG(:)
 !
 !
 !-------------------------------------------------------------------------------

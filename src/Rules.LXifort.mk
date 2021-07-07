@@ -166,7 +166,7 @@ FX90FLAGS =  $(OPT)
 # -132 
 #
 #LDFLAGS    =  -Wl,-noinhibit-exec  -Wl,-warn-once $(PAR)
-LDFLAGS    =   -Wl,-warn-once $(PAR) -Wl,-rpath=$(LD_LIBRARY_PATH) $(OPT_BASE)
+LDFLAGS    =   -Wl,--allow-multiple-definition -Wl,-warn-once $(PAR) -Wl,-rpath=$(LD_LIBRARY_PATH) $(OPT_BASE)
 #
 # preprocessing flags 
 #

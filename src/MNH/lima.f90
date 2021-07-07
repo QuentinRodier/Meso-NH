@@ -9,15 +9,15 @@ MODULE MODI_LIMA
 !
 INTERFACE
 !
-   SUBROUTINE LIMA ( KKA, KKU, KKL,                                  &
-                     PTSTEP, TPFILE,                                 &
-                     PRHODREF, PEXNREF, PDZZ,                        &
-                     PRHODJ, PPABSM, PPABST,                         &
-                     NCCN, NIFN, NIMM,                               &
-                     PDTHRAD, PTHT, PRT, PSVT, PW_NU,                &
-                     PTHS, PRS, PSVS,                                &
+   SUBROUTINE LIMA ( KKA, KKU, KKL,                                          &
+                     PTSTEP, TPFILE,                                         &
+                     PRHODREF, PEXNREF, PDZZ,                                &
+                     PRHODJ, PPABSM, PPABST,                                 &
+                     NCCN, NIFN, NIMM,                                       &
+                     PDTHRAD, PTHT, PRT, PSVT, PW_NU,                        &
+                     PTHS, PRS, PSVS,                                        &
                      PINPRC, PINDEP, PINPRR, PINPRI, PINPRS, PINPRG, PINPRH, &
-                     PEVAP3D                                         )
+                     PEVAP3D, PCLDFR, PICEFR, PPRCFR                         )
 !
 USE MODD_IO,  ONLY: TFILEDATA
 USE MODD_NSV, only: NSV_LIMA_BEG
@@ -41,7 +41,7 @@ INTEGER,                  INTENT(IN)    :: NCCN       ! for array size declarati
 INTEGER,                  INTENT(IN)    :: NIFN       ! for array size declarations
 INTEGER,                  INTENT(IN)    :: NIMM       ! for array size declarations
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD    ! Theta at time t-dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD    ! dT/dt due to radiation
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT       ! Theta at time t
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT        ! Mixing ratios at time t
 REAL, DIMENSION(:,:,:,NSV_LIMA_BEG:), INTENT(IN)    :: PSVT ! Concentrations at time t
@@ -60,21 +60,25 @@ REAL, DIMENSION(:,:),     INTENT(OUT)   :: PINPRG     ! Graupel instant precip
 REAL, DIMENSION(:,:),     INTENT(OUT)   :: PINPRH     ! Rain instant precip
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PEVAP3D    ! Rain evap profile
 !
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCLDFR     ! Cloud fraction
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PICEFR     ! Cloud fraction
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PPRCFR     ! Cloud fraction
+!
 END SUBROUTINE LIMA
 END INTERFACE
 END MODULE MODI_LIMA
 !
 !
 !     ######spl
-      SUBROUTINE LIMA ( KKA, KKU, KKL,                                  &
-                        PTSTEP, TPFILE,                                 &
-                        PRHODREF, PEXNREF, PDZZ,                        &
-                        PRHODJ, PPABSM, PPABST,                         &
-                        NCCN, NIFN, NIMM,                               &
-                        PDTHRAD, PTHT, PRT, PSVT, PW_NU,                &
-                        PTHS, PRS, PSVS,                                &
+      SUBROUTINE LIMA ( KKA, KKU, KKL,                                          &
+                        PTSTEP, TPFILE,                                         &
+                        PRHODREF, PEXNREF, PDZZ,                                &
+                        PRHODJ, PPABSM, PPABST,                                 &
+                        NCCN, NIFN, NIMM,                                       &
+                        PDTHRAD, PTHT, PRT, PSVT, PW_NU,                        &
+                        PTHS, PRS, PSVS,                                        &
                         PINPRC, PINDEP, PINPRR, PINPRI, PINPRS, PINPRG, PINPRH, &
-                        PEVAP3D                                         )
+                        PEVAP3D, PCLDFR, PICEFR, PPRCFR                         )
 !     ######################################################################
 !
 !!    PURPOSE
@@ -102,6 +106,7 @@ END MODULE MODI_LIMA
 !  B. Vie      03/03/2020: use DTHRAD instead of dT/dt in Smax diagnostic computation
 !  P. Wautelet 28/05/2020: bugfix: correct array start for PSVT and PSVS
 !  P. Wautelet 03/02/2021: budgets: add new source if LIMA splitting: CORR2
+!  B. Vie         06/2021: add subgrid condensation with LIMA
 !-----------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -125,10 +130,12 @@ USE MODD_PARAM_LIMA,      ONLY: LCOLD, LRAIN, LWARM, NMOD_CCN, NMOD_IFN, NMOD_IM
                                 LHAIL, LSNOW
 USE MODD_PARAM_LIMA_COLD, ONLY: XAI, XBI
 USE MODD_PARAM_LIMA_WARM, ONLY: XLBC, XLBEXC, XAC, XBC, XAR, XBR
+USE MODD_TURB_n,          ONLY: LSUBG_COND
 
 use mode_budget,          only: Budget_store_add, Budget_store_init, Budget_store_end
 use mode_tools,           only: Countjv
 
+USE MODI_LIMA_COMPUTE_CLOUD_FRACTIONS
 USE MODI_LIMA_DROPS_TO_DROPLETS_CONV
 USE MODI_LIMA_INST_PROCS
 USE MODI_LIMA_NUCLEATION_PROCS
@@ -158,7 +165,7 @@ INTEGER,                  INTENT(IN)    :: NCCN       ! for array size declarati
 INTEGER,                  INTENT(IN)    :: NIFN       ! for array size declarations
 INTEGER,                  INTENT(IN)    :: NIMM       ! for array size declarations
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD    ! Theta at time t-dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD    ! dT/dt due to radiation
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT       ! Theta at time t
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT        ! Mixing ratios at time t
 REAL, DIMENSION(:,:,:,NSV_LIMA_BEG:), INTENT(IN)    :: PSVT ! Concentrations at time t
@@ -176,6 +183,10 @@ REAL, DIMENSION(:,:),     INTENT(OUT)   :: PINPRS     ! Snow instant precip
 REAL, DIMENSION(:,:),     INTENT(OUT)   :: PINPRG     ! Graupel instant precip
 REAL, DIMENSION(:,:),     INTENT(OUT)   :: PINPRH     ! Rain instant precip
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PEVAP3D    ! Rain evap profile
+!
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCLDFR     ! Cloud fraction
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PICEFR     ! Cloud fraction
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PPRCFR     ! Cloud fraction
 !
 !*       0.2   Declarations of local variables :
 !
@@ -225,6 +236,7 @@ REAL, DIMENSION(:), ALLOCATABLE ::                          &
      Z_TH_EVAP, Z_RR_EVAP, & ! evaporation of rain drops (EVAP) : rv=-rr-rc, rc, Nc, rr, Nr, th
      Z_RI_CNVI, Z_CI_CNVI,                                  & ! conversion snow -> ice (CNVI) : ri, Ni, rs=-ri
      Z_TH_DEPS, Z_RS_DEPS,                                  & ! deposition of vapor on snow (DEPS) : rv=-rs, rs, th
+     Z_TH_DEPI, Z_RI_DEPI,                                  & ! deposition of vapor on ice (DEPI) : rv=-ri, ri, th
      Z_RI_CNVS, Z_CI_CNVS,                                  & ! conversion ice -> snow (CNVS) : ri, Ni, rs=-ri
      Z_RI_AGGS, Z_CI_AGGS,                                  & ! aggregation of ice on snow (AGGS) : ri, Ni, rs=-ri
      Z_TH_DEPG, Z_RG_DEPG,                                  & ! deposition of vapor on graupel (DEPG) : rv=-rg, rg, th
@@ -275,6 +287,7 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE ::                                     &
      ZTOT_TH_EVAP, ZTOT_RR_EVAP, & ! evaporation of rain drops (EVAP)
      ZTOT_RI_CNVI, ZTOT_CI_CNVI,                                           & ! conversion snow -> ice (CNVI)
      ZTOT_TH_DEPS, ZTOT_RS_DEPS,                                           & ! deposition of vapor on snow (DEPS)
+     ZTOT_TH_DEPI, ZTOT_RI_DEPI,                                           & ! deposition of vapor on ice (DEPI)
      ZTOT_RI_CNVS, ZTOT_CI_CNVS,                                           & ! conversion ice -> snow (CNVS)
      ZTOT_RI_AGGS, ZTOT_CI_AGGS,                                           & ! aggregation of ice on snow (AGGS)
      ZTOT_TH_DEPG, ZTOT_RG_DEPG,                                           & ! deposition of vapor on graupel (DEPG)
@@ -312,7 +325,9 @@ LOGICAL, DIMENSION(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3)) :: LLCOMPUTE
 LOGICAL, DIMENSION(:), ALLOCATABLE                      :: LLCOMPUTE1D
 REAL                                                    :: ZTSTEP
 INTEGER                                                 :: INB_ITER_MAX
-
+!
+!For subgrid clouds
+REAL, DIMENSION(:), ALLOCATABLE                      :: ZCF1D, ZIF1D, ZPF1D     ! 1D packed cloud, ice and precip. frac.
 
 !
 ! Various parameters
@@ -320,7 +335,7 @@ INTEGER                                                 :: INB_ITER_MAX
 INTEGER :: KRR
 INTEGER :: IIB, IIE, IIT, IJB, IJE, IJT, IKB, IKE, IKT, IKTB, IKTE
 ! loops and packing
-INTEGER :: II, IPACK, JI
+INTEGER :: II, IPACK, JI, JJ, JK
 integer :: idx
 INTEGER, DIMENSION(:), ALLOCATABLE :: I1, I2, I3
 ! Inverse ov PTSTEP
@@ -418,6 +433,8 @@ if ( lbu_enable ) then
   allocate( ZTOT_CI_CNVI (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CI_CNVI(:,:,:) = 0.
   allocate( ZTOT_TH_DEPS (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_TH_DEPS(:,:,:) = 0.
   allocate( ZTOT_RS_DEPS (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RS_DEPS(:,:,:) = 0.
+  allocate( ZTOT_TH_DEPI (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_TH_DEPI(:,:,:) = 0.
+  allocate( ZTOT_RI_DEPI (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RI_DEPI(:,:,:) = 0.
   allocate( ZTOT_RI_CNVS (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RI_CNVS(:,:,:) = 0.
   allocate( ZTOT_CI_CNVS (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_CI_CNVS(:,:,:) = 0.
   allocate( ZTOT_RI_AGGS (size( ptht, 1), size( ptht, 2), size( ptht, 3) ) ); ZTOT_RI_AGGS(:,:,:) = 0.
@@ -540,78 +557,78 @@ IF ( LCOLD .AND. LHHONI ) ZHOMFT(:,:,:)  = PSVS(:,:,:,NSV_LIMA_HOM_HAZE) * PTSTE
 IF ( LCOLD .AND. LHHONI ) ZHOMFS(:,:,:)  = PSVS(:,:,:,NSV_LIMA_HOM_HAZE)
 !
 ZINV_TSTEP  = 1./PTSTEP
-ZEXN(:,:,:) = PEXNREF(:,:,:)
+ZEXN(:,:,:) = (PPABST(:,:,:)/XP00)**(XRD/XCPD)
 ZT(:,:,:)   = ZTHT(:,:,:) * ZEXN(:,:,:)
 !
 !-------------------------------------------------------------------------------
 !
 !*       0.     Check mean diameter for cloud, rain  and ice
 !               --------------------------------------------
-if ( lbu_enable ) then
-  if ( lbudget_rc .and. lwarm .and. lrain ) call Budget_store_init( tbudgets(NBUDGET_RC), 'CORR', zrcs(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_rr .and. lwarm .and. lrain ) call Budget_store_init( tbudgets(NBUDGET_RR), 'CORR', zrrs(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_ri .and. lcold .and. lsnow ) call Budget_store_init( tbudgets(NBUDGET_RI), 'CORR', zris(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_rs .and. lcold .and. lsnow ) call Budget_store_init( tbudgets(NBUDGET_RS), 'CORR', zrss(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_sv ) then
-    if ( lwarm .and. lrain ) &
-      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CORR', zccs(:, :, :) * prhodj(:, :, :) )
-    if ( lwarm .and. lrain ) &
-      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'CORR', zcrs(:, :, :) * prhodj(:, :, :) )
-    if ( lcold .and. lsnow ) &
-      call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CORR', zcis(:, :, :) * prhodj(:, :, :) )
-  end if
-end if
-IF (LWARM .AND. LRAIN) THEN
-   WHERE( ZRCT>XRTMIN(2) .AND. ZCCT>XCTMIN(2) .AND. ZRCT>XAC*ZCCT*(100.E-6)**XBC )
-      ZRRT=ZRRT+ZRCT
-      ZRRS=ZRRS+ZRCS
-      ZCRT=ZCRT+ZCCT
-      ZCRS=ZCRS+ZCCS
-      ZRCT=0.
-      ZCCT=0.
-      ZRCS=0.
-      ZCCS=0.
-   END WHERE
-END IF
+! if ( lbu_enable ) then
+!   if ( lbudget_rc .and. lwarm .and. lrain ) call Budget_store_init( tbudgets(NBUDGET_RC), 'CORR', zrcs(:, :, :) * prhodj(:, :, :) )
+!   if ( lbudget_rr .and. lwarm .and. lrain ) call Budget_store_init( tbudgets(NBUDGET_RR), 'CORR', zrrs(:, :, :) * prhodj(:, :, :) )
+!   if ( lbudget_ri .and. lcold .and. lsnow ) call Budget_store_init( tbudgets(NBUDGET_RI), 'CORR', zris(:, :, :) * prhodj(:, :, :) )
+!   if ( lbudget_rs .and. lcold .and. lsnow ) call Budget_store_init( tbudgets(NBUDGET_RS), 'CORR', zrss(:, :, :) * prhodj(:, :, :) )
+!   if ( lbudget_sv ) then
+!     if ( lwarm .and. lrain ) &
+!       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CORR', zccs(:, :, :) * prhodj(:, :, :) )
+!     if ( lwarm .and. lrain ) &
+!       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'CORR', zcrs(:, :, :) * prhodj(:, :, :) )
+!     if ( lcold .and. lsnow ) &
+!       call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CORR', zcis(:, :, :) * prhodj(:, :, :) )
+!   end if
+! end if
+!!$IF (LWARM .AND. LRAIN) THEN
+!!$   WHERE( ZRCT>XRTMIN(2) .AND. ZCCT>XCTMIN(2) .AND. ZRCT>XAC*ZCCT*(100.E-6)**XBC )
+!!$      ZRRT=ZRRT+ZRCT
+!!$      ZRRS=ZRRS+ZRCS
+!!$      ZCRT=ZCRT+ZCCT
+!!$      ZCRS=ZCRS+ZCCS
+!!$      ZRCT=0.
+!!$      ZCCT=0.
+!!$      ZRCS=0.
+!!$      ZCCS=0.
+!!$   END WHERE
+!!$END IF
+!!$!
+!!$IF (LWARM .AND. LRAIN) THEN
+!!$   WHERE( ZRRT>XRTMIN(3) .AND. ZCRT>XCTMIN(3) .AND. ZRRT<XAR*ZCRT*(60.E-6)**XBR )
+!!$      ZRCT=ZRCT+ZRRT
+!!$      ZRCS=ZRCS+ZRRS
+!!$      ZCCT=ZCCT+ZCRT
+!!$      ZCCS=ZCCS+ZCRS
+!!$      ZRRT=0.
+!!$      ZCRT=0.
+!!$      ZRRS=0.
+!!$      ZCRS=0.
+!!$   END WHERE
+!!$END IF
+!!$!
+!!$IF (LCOLD .AND. LSNOW) THEN
+!!$   WHERE( ZRIT>XRTMIN(4) .AND. ZCIT>XCTMIN(4) .AND. ZRIT>XAI*ZCIT*(250.E-6)**XBI )
+!!$      ZRST=ZRST+ZRIT
+!!$      ZRSS=ZRSS+ZRIS
+!!$      ZRIT=0.
+!!$      ZCIT=0.
+!!$      ZRIS=0.
+!!$      ZCIS=0.
+!!$   END WHERE
+!!$END IF
 !
-IF (LWARM .AND. LRAIN) THEN
-   WHERE( ZRRT>XRTMIN(3) .AND. ZCRT>XCTMIN(3) .AND. ZRRT<XAR*ZCRT*(60.E-6)**XBR )
-      ZRCT=ZRCT+ZRRT
-      ZRCS=ZRCS+ZRRS
-      ZCCT=ZCCT+ZCRT
-      ZCCS=ZCCS+ZCRS
-      ZRRT=0.
-      ZCRT=0.
-      ZRRS=0.
-      ZCRS=0.
-   END WHERE
-END IF
-!
-IF (LCOLD .AND. LSNOW) THEN
-   WHERE( ZRIT>XRTMIN(4) .AND. ZCIT>XCTMIN(4) .AND. ZRIT>XAI*ZCIT*(250.E-6)**XBI )
-      ZRST=ZRST+ZRIT
-      ZRSS=ZRSS+ZRIS
-      ZRIT=0.
-      ZCIT=0.
-      ZRIS=0.
-      ZCIS=0.
-   END WHERE
-END IF
-!
-if ( lbu_enable ) then
-  if ( lbudget_rc .and. lwarm .and. lrain ) call Budget_store_end( tbudgets(NBUDGET_RC), 'CORR', zrcs(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_rr .and. lwarm .and. lrain ) call Budget_store_end( tbudgets(NBUDGET_RR), 'CORR', zrrs(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_ri .and. lcold .and. lsnow ) call Budget_store_end( tbudgets(NBUDGET_RI), 'CORR', zris(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_rs .and. lcold .and. lsnow ) call Budget_store_end( tbudgets(NBUDGET_RS), 'CORR', zrss(:, :, :) * prhodj(:, :, :) )
-  if ( lbudget_sv ) then
-    if ( lwarm .and. lrain ) &
-      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CORR', zccs(:, :, :) * prhodj(:, :, :) )
-    if ( lwarm .and. lrain ) &
-      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'CORR', zcrs(:, :, :) * prhodj(:, :, :) )
-    if ( lcold .and. lsnow ) &
-      call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CORR', zcis(:, :, :) * prhodj(:, :, :) )
-  end if
-end if
+! if ( lbu_enable ) then
+!   if ( lbudget_rc .and. lwarm .and. lrain ) call Budget_store_end( tbudgets(NBUDGET_RC), 'CORR', zrcs(:, :, :) * prhodj(:, :, :) )
+!   if ( lbudget_rr .and. lwarm .and. lrain ) call Budget_store_end( tbudgets(NBUDGET_RR), 'CORR', zrrs(:, :, :) * prhodj(:, :, :) )
+!   if ( lbudget_ri .and. lcold .and. lsnow ) call Budget_store_end( tbudgets(NBUDGET_RI), 'CORR', zris(:, :, :) * prhodj(:, :, :) )
+!   if ( lbudget_rs .and. lcold .and. lsnow ) call Budget_store_end( tbudgets(NBUDGET_RS), 'CORR', zrss(:, :, :) * prhodj(:, :, :) )
+!   if ( lbudget_sv ) then
+!     if ( lwarm .and. lrain ) &
+!       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nc), 'CORR', zccs(:, :, :) * prhodj(:, :, :) )
+!     if ( lwarm .and. lrain ) &
+!       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_nr), 'CORR', zcrs(:, :, :) * prhodj(:, :, :) )
+!     if ( lcold .and. lsnow ) &
+!       call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_lima_ni), 'CORR', zcis(:, :, :) * prhodj(:, :, :) )
+!   end if
+! end if
 !-------------------------------------------------------------------------------
 !
 !*       1.     Sedimentation
@@ -748,14 +765,33 @@ IF ( LCOLD )             ZCIT(:,:,:)   = ZCIS(:,:,:) * PTSTEP
 ! 
 !-------------------------------------------------------------------------------
 !
+!*       2.     Compute cloud, ice and precipitation fractions
+!               ----------------------------------------------
+!
+IF (LSUBG_COND) THEN
+   CALL LIMA_COMPUTE_CLOUD_FRACTIONS (IIB, IIE, IJB, IJE, IKB, IKE, KKL, &
+                                      ZCCT, ZRCT,                        &
+                                      ZCRT, ZRRT,                        &
+                                      ZCIT, ZRIT,                        &
+                                      ZRST, ZRGT, ZRHT,                  &
+                                      PCLDFR, PICEFR, PPRCFR             )
+ELSE
+   PCLDFR(:,:,:)=1.
+   PICEFR(:,:,:)=1.
+   PPRCFR(:,:,:)=1.
+END IF
+!
+!-------------------------------------------------------------------------------
+!
 !*       2.     Nucleation processes
 !               --------------------
 !
-CALL LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, PRHODJ,                            &
-                            PRHODREF, ZEXN, PPABST, ZT, PDTHRAD, PW_NU,        &
-                            ZTHT, ZRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT,          &
-                            ZCCT, ZCRT, ZCIT,                                  &
-                            ZCCNFT, ZCCNAT, ZIFNFT, ZIFNNT, ZIMMNT, ZHOMFT     )
+CALL LIMA_NUCLEATION_PROCS (PTSTEP, TPFILE, PRHODJ,                             &
+                            PRHODREF, ZEXN, PPABST, ZT, PDTHRAD, PW_NU,         &
+                            ZTHT, ZRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT,           &
+                            ZCCT, ZCRT, ZCIT,                                   &
+                            ZCCNFT, ZCCNAT, ZIFNFT, ZIFNNT, ZIMMNT, ZHOMFT,     &
+                            PCLDFR, PICEFR, PPRCFR                              )
 !
 ! Saving sources before microphysics time-splitting loop
 !
@@ -803,7 +839,7 @@ ZTIME(:,:,:)=0. ! Current integration time (all points may have a different inte
 ZRT_SUM(:,:,:) = ZRCT(:,:,:) + ZRRT(:,:,:) + ZRIT(:,:,:) + ZRST(:,:,:) + ZRGT(:,:,:) + ZRHT(:,:,:)
 WHERE (ZRT_SUM(:,:,:)<XRTMIN(2)) ZTIME(:,:,:)=PTSTEP ! no need to treat hydrometeor-free point
 !
-DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKB:IKE)<PTSTEP))
+DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP))
    !
    IF(XMRSTEP/=0.) THEN
       ! In this case we need to remember the mixing ratios used to compute the tendencies
@@ -824,7 +860,7 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKB:IKE)<PTSTEP))
    ENDIF
    !
    LLCOMPUTE(:,:,:)=.FALSE.
-   LLCOMPUTE(IIB:IIE,IJB:IJE,IKB:IKE) = ZTIME(IIB:IIE,IJB:IJE,IKB:IKE)<PTSTEP ! Compuation only for points for which integration time has not reached the timestep
+   LLCOMPUTE(IIB:IIE,IJB:IJE,IKTB:IKTE) = ZTIME(IIB:IIE,IJB:IJE,IKTB:IKTE)<PTSTEP ! Compuation only for points for which integration time has not reached the timestep
    WHERE(LLCOMPUTE(:,:,:))
       IITER(:,:,:)=IITER(:,:,:)+1
    END WHERE
@@ -866,6 +902,9 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKB:IKE)<PTSTEP))
       ALLOCATE(Z0RST1D(IPACK))
       ALLOCATE(Z0RGT1D(IPACK))
       ALLOCATE(Z0RHT1D(IPACK))
+      ALLOCATE(ZCF1D(IPACK))
+      ALLOCATE(ZIF1D(IPACK))
+      ALLOCATE(ZPF1D(IPACK))
       IPACK = COUNTJV(LLCOMPUTE,I1,I2,I3)
       DO II=1,IPACK
          ZRHODREF1D(II)       = PRHODREF(I1(II),I2(II),I3(II))
@@ -896,7 +935,15 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKB:IKE)<PTSTEP))
          Z0RST1D(II)          = Z0RST(I1(II),I2(II),I3(II))
          Z0RGT1D(II)          = Z0RGT(I1(II),I2(II),I3(II))
          Z0RHT1D(II)          = Z0RHT(I1(II),I2(II),I3(II))
+         ZCF1D(II)            = PCLDFR(I1(II),I2(II),I3(II))
+         ZIF1D(II)            = PICEFR(I1(II),I2(II),I3(II))
+         ZPF1D(II)            = PPRCFR(I1(II),I2(II),I3(II))
       END DO
+      !
+      WHERE(ZCF1D(:)<1.E-10 .AND. ZRCT1D(:)>XRTMIN(2) .AND. ZCCT1D(:)>XCTMIN(2)) ZCF1D(:)=1.
+      WHERE(ZIF1D(:)<1.E-10 .AND. ZRIT1D(:)>XRTMIN(4) .AND. ZCIT1D(:)>XCTMIN(4)) ZIF1D(:)=1.
+      WHERE(ZPF1D(:)<1.E-10 .AND. (ZRRT1D(:)>XRTMIN(3) .OR. ZRST1D(:)>XRTMIN(5) &
+                              .OR. ZRGT1D(:)>XRTMIN(6) .OR. ZRHT1D(:)>XRTMIN(7) ) ) ZPF1D(:)=1.
       !
       ! Allocating 1D variables
       !
@@ -951,6 +998,8 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKB:IKE)<PTSTEP))
       ALLOCATE(Z_CI_CNVI(IPACK))          ; Z_CI_CNVI(:) = 0.
       ALLOCATE(Z_TH_DEPS(IPACK))          ; Z_TH_DEPS(:) = 0.
       ALLOCATE(Z_RS_DEPS(IPACK))          ; Z_RS_DEPS(:) = 0.
+      ALLOCATE(Z_TH_DEPI(IPACK))          ; Z_TH_DEPI(:) = 0.
+      ALLOCATE(Z_RI_DEPI(IPACK))          ; Z_RI_DEPI(:) = 0.
       ALLOCATE(Z_RI_CNVS(IPACK))          ; Z_RI_CNVS(:) = 0.
       ALLOCATE(Z_CI_CNVS(IPACK))          ; Z_CI_CNVS(:) = 0.
       ALLOCATE(Z_RI_AGGS(IPACK))          ; Z_RI_AGGS(:) = 0.
@@ -1025,7 +1074,8 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKB:IKE)<PTSTEP))
                             Z_TH_IMLT, Z_RC_IMLT, Z_CC_IMLT,                    & ! ice melting (IMLT) : rc, Nc, ri=-rc, Ni=-Nc, th, IFNF, IFNA
                             ZB_TH, ZB_RV, ZB_RC, ZB_RR, ZB_RI, ZB_RG,           &
                             ZB_CC, ZB_CR, ZB_CI,                                &
-                            ZB_IFNN                                             )
+                            ZB_IFNN,                                            &
+                            ZCF1D, ZIF1D, ZPF1D                                 )
       
       CALL LIMA_TENDENCIES (PTSTEP, LLCOMPUTE1D,                                   &
                             ZEXNREF1D, ZRHODREF1D, ZP1D, ZTHT1D,                   &
@@ -1039,6 +1089,7 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKB:IKE)<PTSTEP))
                             Z_TH_EVAP, Z_RR_EVAP,                                  & 
                             Z_RI_CNVI, Z_CI_CNVI,                                  & 
                             Z_TH_DEPS, Z_RS_DEPS,                                  & 
+                            Z_TH_DEPI, Z_RI_DEPI,                                  & 
                             Z_RI_CNVS, Z_CI_CNVS,                                  & 
                             Z_RI_AGGS, Z_CI_AGGS,                                  & 
                             Z_TH_DEPG, Z_RG_DEPG,                                  & 
@@ -1060,7 +1111,8 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKB:IKE)<PTSTEP))
 !!!     Z_RR_HMLT, Z_CR_HMLT                                     ! hail melting (HMLT) : rr, Nr, rh=-rr, th
                             ZA_TH, ZA_RV, ZA_RC, ZA_CC, ZA_RR, ZA_CR,              &
                             ZA_RI, ZA_CI, ZA_RS, ZA_RG, ZA_RH,                     &
-                            ZEVAP1D                                                )
+                            ZEVAP1D,                                               &
+                            ZCF1D, ZIF1D, ZPF1D                                    )
 
       !
       !***       4.2 Integration time
@@ -1323,6 +1375,8 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKB:IKE)<PTSTEP))
             ZTOT_CI_CNVI(I1(II),I2(II),I3(II)) =   ZTOT_CI_CNVI(I1(II),I2(II),I3(II))   + Z_CI_CNVI(II)  * ZMAXTIME(II)
             ZTOT_TH_DEPS(I1(II),I2(II),I3(II)) =   ZTOT_TH_DEPS(I1(II),I2(II),I3(II))   + Z_TH_DEPS(II)  * ZMAXTIME(II)
             ZTOT_RS_DEPS(I1(II),I2(II),I3(II)) =   ZTOT_RS_DEPS(I1(II),I2(II),I3(II))   + Z_RS_DEPS(II)  * ZMAXTIME(II)
+            ZTOT_TH_DEPI(I1(II),I2(II),I3(II)) =   ZTOT_TH_DEPI(I1(II),I2(II),I3(II))   + Z_TH_DEPI(II)  * ZMAXTIME(II)
+            ZTOT_RI_DEPI(I1(II),I2(II),I3(II)) =   ZTOT_RI_DEPI(I1(II),I2(II),I3(II))   + Z_RI_DEPI(II)  * ZMAXTIME(II)
             ZTOT_RI_CNVS(I1(II),I2(II),I3(II)) =   ZTOT_RI_CNVS(I1(II),I2(II),I3(II))   + Z_RI_CNVS(II)  * ZMAXTIME(II)
             ZTOT_CI_CNVS(I1(II),I2(II),I3(II)) =   ZTOT_CI_CNVS(I1(II),I2(II),I3(II))   + Z_CI_CNVS(II)  * ZMAXTIME(II)
             ZTOT_RI_AGGS(I1(II),I2(II),I3(II)) =   ZTOT_RI_AGGS(I1(II),I2(II),I3(II))   + Z_RI_AGGS(II)  * ZMAXTIME(II)
@@ -1432,6 +1486,9 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKB:IKE)<PTSTEP))
       DEALLOCATE(Z0RST1D)
       DEALLOCATE(Z0RGT1D)
       DEALLOCATE(Z0RHT1D)
+      DEALLOCATE(ZCF1D)
+      DEALLOCATE(ZIF1D)
+      DEALLOCATE(ZPF1D)
       !
       DEALLOCATE(ZMAXTIME)
       DEALLOCATE(ZTIME_THRESHOLD)
@@ -1484,6 +1541,8 @@ DO WHILE(ANY(ZTIME(IIB:IIE,IJB:IJE,IKB:IKE)<PTSTEP))
       DEALLOCATE(Z_CI_CNVI)
       DEALLOCATE(Z_TH_DEPS)
       DEALLOCATE(Z_RS_DEPS)
+      DEALLOCATE(Z_TH_DEPI)
+      DEALLOCATE(Z_RI_DEPI)
       DEALLOCATE(Z_RI_CNVS)
       DEALLOCATE(Z_CI_CNVS)
       DEALLOCATE(Z_RI_AGGS) 
@@ -1589,6 +1648,7 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(NBUDGET_TH), 'HONC',  ztot_th_honc (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_TH), 'HONR',  ztot_th_honr (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_TH), 'DEPS',  ztot_th_deps (:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_TH), 'DEPI',  ztot_th_depi (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_TH), 'DEPG',  ztot_th_depg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_TH), 'IMLT',  ztot_th_imlt (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_TH), 'BERFI', ztot_th_berfi(:, :, :) * zrhodjontstep(:, :, :) )
@@ -1603,6 +1663,7 @@ if ( lbu_enable ) then
   if ( lbudget_rv ) then
     call Budget_store_add( tbudgets(NBUDGET_RV), 'REVA', -ztot_rr_evap (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RV), 'DEPS', -ztot_rs_deps (:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_RV), 'DEPI', -ztot_ri_depi (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RV), 'DEPG', -ztot_rg_depg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RV), 'CORR2', ztot_rv_corr2(:, :, :) * zrhodjontstep(:, :, :) )
   end if
@@ -1644,6 +1705,7 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(NBUDGET_RI), 'BERFI', -ztot_rc_berfi(:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RI), 'HMS',    ztot_ri_hms  (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RI), 'CFRZ',   ztot_ri_cfrz (:, :, :) * zrhodjontstep(:, :, :) )
+    call Budget_store_add( tbudgets(NBUDGET_RI), 'DEPI',   ztot_ri_depi (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RI), 'WETG',   ztot_ri_wetg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RI), 'DRYG',   ztot_ri_dryg (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(NBUDGET_RI), 'HMG',    ztot_ri_hmg  (:, :, :) * zrhodjontstep(:, :, :) )
@@ -1689,7 +1751,7 @@ if ( lbu_enable ) then
     call Budget_store_add( tbudgets(idx), 'SELF',  ztot_cc_self (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'AUTO',  ztot_cc_auto (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'ACCR',  ztot_cc_accr (:, :, :) * zrhodjontstep(:, :, :) )
-    !call Budget_store_add( tbudgets(idx), 'REVA',  0. )c
+    !call Budget_store_add( tbudgets(idx), 'REVA',  0. )
     call Budget_store_add( tbudgets(idx), 'HONC',  ztot_cc_honc (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'IMLT',  ztot_cc_imlt (:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'RIM',   ztot_cc_rim  (:, :, :) * zrhodjontstep(:, :, :) )
@@ -1703,7 +1765,7 @@ if ( lbu_enable ) then
     idx = NBUDGET_SV1 - 1 + nsv_lima_nr
     call Budget_store_add( tbudgets(idx), 'AUTO',  ztot_cr_auto(:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'SCBU',  ztot_cr_scbu(:, :, :) * zrhodjontstep(:, :, :) )
-    !all Budget_store_add( tbudgets(idx), 'REVA',  0. )
+    !call Budget_store_add( tbudgets(idx), 'REVA',  0. )
     call Budget_store_add( tbudgets(idx), 'BRKU',  ztot_cr_brku(:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'HONR',  ztot_cr_honr(:, :, :) * zrhodjontstep(:, :, :) )
     call Budget_store_add( tbudgets(idx), 'ACC',   ztot_cr_acc (:, :, :) * zrhodjontstep(:, :, :) )

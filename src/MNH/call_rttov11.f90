@@ -93,6 +93,7 @@ USE MODD_CST
 USE MODD_PARAMETERS
 USE MODD_GRID_n
 USE MODD_IO, ONLY: TFILEDATA
+USE MODD_FIELD, ONLY: TFIELDDATA, TYPEREAL
 USE MODD_LUNIT_n
 USE MODD_DEEP_CONVECTION_n
 USE MODD_REF_n
@@ -542,6 +543,12 @@ DO JSAT=1,IJSAT ! loop over sensors
       END DO
     END DO
   END DO
+! -----------------------------------------------------------------------------
+! LATERAL BOUNDARY FILLING
+  IF (LWEST_ll() .AND.CLBCX(1)/='CYCL') ZOUT(IIB-1,:,:) = ZOUT(IIB,:,:)
+  IF (LEAST_ll() .AND.CLBCX(1)/='CYCL') ZOUT(IIE+1,:,:) = ZOUT(IIE,:,:)
+  IF (LSOUTH_ll().AND.CLBCY(1)/='CYCL') ZOUT(:,IJB-1,:) = ZOUT(:,IJB,:)
+  IF (LNORTH_ll().AND.CLBCY(1)/='CYCL') ZOUT(:,IJE+1,:) = ZOUT(:,IJE,:)
 ! -----------------------------------------------------------------------------
   YBEG='    '
   IF (KRTTOVINFO(1,JSAT) <= 2 .OR. KRTTOVINFO(1,JSAT) == 4) THEN ! NOAA

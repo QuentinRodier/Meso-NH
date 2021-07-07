@@ -36,12 +36,12 @@ REAL,SAVE :: XAR,XBR,XCR,XDR,XF0R,XF1R,     & ! Raindrop       charact.
              XAC,XBC,XCC,XDC,XF0C,XF2C,XC1C   ! Cloud droplet  charact.
 !
 !
-CHARACTER(LEN=JPSVNAMELGTMAX),DIMENSION(4),PARAMETER &
-                     :: CLIMA_WARM_NAMES=(/'CCLOUD  ','CRAIN   ','CCCNFREE','CCCNACTI'/)
+CHARACTER(LEN=JPSVNAMELGTMAX),DIMENSION(5),PARAMETER &
+                     :: CLIMA_WARM_NAMES=(/'CCLOUD  ','CRAIN   ','CCCNFREE','CCCNACTI','SPRO    '/)
                                        ! basenames of the SV articles stored
                                        ! in the binary files
-CHARACTER(LEN=JPSVNAMELGTMAX),DIMENSION(4),PARAMETER &
-                     :: CLIMA_WARM_CONC=(/'NC   ','NR   ','NFREE','NCCN '/)
+CHARACTER(LEN=JPSVNAMELGTMAX),DIMENSION(5),PARAMETER &
+                     :: CLIMA_WARM_CONC=(/'NC   ','NR   ','NFREE','NCCN ','SS   '/)
 !                                       ! basenames of the SV articles stored
 !                                       ! in the binary files for DIAG
 !
@@ -76,7 +76,7 @@ INTEGER, SAVE :: NAHEN                           ! Number of value of the AHEN
 REAL,SAVE :: XAHENINTP1, XAHENINTP2              ! Factors defining the
 						 ! temperatures in lin scale
 REAL, DIMENSION(:), SAVE, ALLOCATABLE          & ! 
-          :: XAHENG,XPSI1, XPSI3,              & ! Twomey-CPB98 and
+          :: XAHENG,XAHENG2,XAHENG3,XPSI1, XPSI3,      & ! Twomey-CPB98 and
 	     XAHENF,XAHENY                       ! Feingold-Heymsfield
 	                                         ! parameterization to compute Smax
 REAL,SAVE :: XWCOEF_F1, XWCOEF_F2, XWCOEF_F3,  & ! COEF_F of the polynomial temp.

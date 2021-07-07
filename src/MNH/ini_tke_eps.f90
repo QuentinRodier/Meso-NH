@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -90,14 +90,15 @@ END MODULE MODI_INI_TKE_EPS
 !*          0. DECLARATIONS
 !              ------------
 !
-USE MODD_CTURB,      ONLY : XLINI, XCED, XCMFS, XTKEMIN, XCSHF
-USE MODD_CST,        ONLY : XG, XRD, XRV, XALPHAOC
-USE MODD_PARAMETERS, ONLY : JPVEXT
-USE MODD_DYN_n,      ONLY : LOCEAN
+USE MODD_ARGSLIST_ll, ONLY: LIST_ll
+USE MODD_CST,         ONLY: XG, XALPHAOC
+USE MODD_CTURB,       ONLY: XLINI, XCED, XCMFS, XTKEMIN, XCSHF
+USE MODD_DYN_n,       ONLY: LOCEAN
+USE MODD_PARAMETERS,  ONLY: JPVEXT
 !
-USE MODI_SHUMAN,     ONLY : DZF, MXF, MYF, MZM
 USE MODE_ll
-USE MODD_ARGSLIST_ll,ONLY : LIST_ll
+!
+USE MODI_SHUMAN,      ONLY: DZF, MXF, MYF, MZM
 !
 IMPLICIT NONE
 !
@@ -151,19 +152,19 @@ IF (HGETTKET == 'INIT' ) THEN
   !
   ! determines TKE
   ! Equilibrium/Stationary/neutral 1D TKE equation
-IF (LOCEAN) THEN
-  PTKET(:,:,:)=(XLINI**2/XCED)*(  &
-                  XCMFS*( DZF(MXF(MZM(PUT)))**2                  &
-                         +DZF(MYF(MZM(PVT)))**2) / ZDELTZ        &
-                 -(XG*XALPHAOC)*XCSHF*DZF(MZM(PTHT))              &
-                               ) / ZDELTZ
-ELSE   
-  PTKET(:,:,:)=(XLINI**2/XCED)*(  &
-                  XCMFS*( DZF(MXF(MZM(PUT)))**2                  &
-                         +DZF(MYF(MZM(PVT)))**2) / ZDELTZ        &
-                 -(XG/PTHVREF)*XCSHF*DZF(MZM(PTHT))              &
-                               ) / ZDELTZ
-END IF
+  IF (LOCEAN) THEN
+    PTKET(:,:,:)=(XLINI**2/XCED)*(  &
+                    XCMFS*( DZF(MXF(MZM(PUT)))**2                  &
+                           +DZF(MYF(MZM(PVT)))**2) / ZDELTZ        &
+                   -(XG*XALPHAOC)*XCSHF*DZF(MZM(PTHT))              &
+                                 ) / ZDELTZ
+  ELSE
+    PTKET(:,:,:)=(XLINI**2/XCED)*(  &
+                    XCMFS*( DZF(MXF(MZM(PUT)))**2                  &
+                           +DZF(MYF(MZM(PVT)))**2) / ZDELTZ        &
+                   -(XG/PTHVREF)*XCSHF*DZF(MZM(PTHT))              &
+                                 ) / ZDELTZ
+  END IF
   ! positivity control
   WHERE (PTKET < XTKEMIN) PTKET=XTKEMIN
   !

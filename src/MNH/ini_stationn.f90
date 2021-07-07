@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 profiler 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     #######################
       SUBROUTINE INI_STATION_n
@@ -72,9 +67,9 @@
 !          ------------
 !
 USE MODD_ALLSTATION_n
+USE MODD_CONF,         ONLY: LCARTESIAN
 USE MODD_PARAMETERS
-!USE MODN_STATION_n
-USE MODD_CONF, ONLY: LCARTESIAN
+!
 USE MODI_STATION_READER
 !
 !
@@ -141,7 +136,7 @@ ELSE
 !
 !*      2.   CSV DATA 
 !
-  CALL READ_CSV_STATION(90,CFILE_STAT,TSTATION,LCARTESIAN)
+  CALL READ_CSV_STATION(CFILE_STAT,TSTATION,LCARTESIAN)
   TSTATION%STEP = XSTEP_STAT
 END IF 
 

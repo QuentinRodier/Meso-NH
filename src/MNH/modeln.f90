@@ -270,8 +270,8 @@ END MODULE MODI_MODEL_n
 !  P. Wautelet 12/10/2020: Write_les_n: remove HLES_AVG dummy argument and group all 4 calls
 !  F. Auguste  01/02/2021: add IBM
 !  T. Nagel    01/02/2021: add turbulence recycling
-!  P. Wautelet 19/02/2021 add NEGA2 term for SV budgets
-!  J.L. Redelsperger 03/2021, add Call NHOA_COUPLN (coupling O & A LES version)
+!  P. Wautelet 19/02/2021: add NEGA2 term for SV budgets
+!  J.L. Redelsperger 03/2021: add Call NHOA_COUPLN (coupling O & A LES version)
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -314,7 +314,7 @@ USE MODD_FRC_n
 USE MODD_GET_n
 USE MODD_GRID,           ONLY: XLONORI,XLATORI
 USE MODD_GRID_n
-USE MODD_IBM_PARAM_n    !, ONLY : LIBM, LIBM_TROUBLE, CIBM_ADV,  XT_IBM_FORC, XIBM_LS
+USE MODD_IBM_PARAM_n,    ONLY: CIBM_ADV, LIBM, LIBM_TROUBLE, XIBM_LS
 USE MODD_ICE_C1R3_DESCR, ONLY: XRTMIN_C1R3=>XRTMIN
 USE MODD_IO,             ONLY: LIO_NO_WRITE, TFILEDATA, TFILE_SURFEX, TFILE_DUMMY
 USE MODD_LBC_n
@@ -342,15 +342,14 @@ USE MODD_PARAM_LIMA,     ONLY: MSEDC => LSEDC, MWARM => LWARM, MRAIN => LRAIN, &
                                XRTMIN_LIMA=>XRTMIN, MACTTKE=>LACTTKE
 USE MODD_PARAM_MFSHALL_n
 USE MODD_PARAM_n
-USE MODD_PASPOL,      ONLY : LPASPOL
 USE MODD_PAST_FIELD_n
 USE MODD_PRECIP_n
 use modd_precision,      only: MNHTIME
 USE MODD_PROFILER_n
 USE MODD_RADIATIONS_n,   ONLY: XTSRAD,XSCAFLASWD,XDIRFLASWD,XDIRSRFSWD, XAER, XDTHRAD
 USE MODD_RAIN_ICE_DESCR, ONLY: XRTMIN
-USE MODD_RECYCL_PARAM_n
-USE MODD_REF
+USE MODD_RECYCL_PARAM_n, ONLY: LRECYCL
+USE MODD_REF,            ONLY: LCOUPLES
 USE MODD_REF_n
 USE MODD_SALT,           ONLY: LSALT
 USE MODD_SERIES,         ONLY: LSERIES
@@ -2123,7 +2122,7 @@ IF (LPROFILER)                                                           &
   CALL PROFILER_n(XTSTEP,                                                &
                   XXHAT, XYHAT, XZZ,XRHODREF,                            &
                   XUT, XVT, XWT, XTHT, XRT, XSVT, XTKET, XTSRAD, XPABST, &
-                  XAER, XCLDFR, XCIT)
+                  XAER, XCLDFR, XCIT,PSEA=ZSEA(:,:))
 !
 !
 CALL SECOND_MNH2(ZTIME2)

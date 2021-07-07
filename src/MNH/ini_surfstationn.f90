@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -67,26 +67,26 @@ END MODULE MODI_INI_SURFSTATION_n
 !!     A. Lemonsu 19/11/2002 
 !  P. Wautelet  05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet  13/09/2019: budget: simplify and modernize date/time management
-!  R. Schoetter 11/2019: work for cartesian coordinates + parallel.
-!  E.Jezequel   02/2021: Read stations from CVS file
+!  R. Schoetter    11/2019: work for cartesian coordinates + parallel.
+!  E.Jezequel      02/2021: read stations from CVS file
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
 !          ------------
 !
+USE MODD_ALLSTATION_n
 USE MODD_CONF
 USE MODD_DIM_n
 USE MODD_DYN_n
 USE MODD_GRID
 USE MODD_GRID_n
 USE MODD_LUNIT_n, ONLY: TLUOUT
+USE MODD_NESTING
 USE MODD_PARAMETERS
 USE MODD_SHADOWS_n
-USE MODD_ALLSTATION_n
 USE MODD_STATION_n
 USE MODD_TYPE_DATE
 USE MODD_VAR_ll,          ONLY: IP
-USE MODD_NESTING
 !
 USE MODE_GATHER_ll
 USE MODE_GRIDPROJ
@@ -94,7 +94,6 @@ USE MODE_ll
 USE MODE_MSG
 !
 USE MODI_INI_STATION_N
-!USE MODN_STATION_n
 !
 IMPLICIT NONE
 !
@@ -165,7 +164,7 @@ END SUBROUTINE DEFAULT_STATION_n
 SUBROUTINE ALLOCATE_STATION_n(TSTATION,KMI)
 !
 TYPE(STATION), INTENT(INOUT) :: TSTATION   ! 
-INTEGER                      :: KMI        ! Model Index 
+INTEGER,       INTENT(IN)    :: KMI        ! Model Index
 !
 if ( tstation%step < xtstep ) then
   call Print_msg( NVERB_ERROR, 'GEN', 'INI_SURFSTATION_n', 'TSTATION%STEP smaller than XTSTEP' )

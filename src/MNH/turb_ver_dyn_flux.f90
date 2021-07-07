@@ -289,7 +289,7 @@ END MODULE MODI_TURB_VER_DYN_FLUX
 USE MODD_CONF
 USE MODD_CST
 USE MODD_CTURB
-USE MODD_DYN_n, ONLY : LOCEAN
+USE MODD_DYN_n,          ONLY: LOCEAN
 use modd_field,          only: tfielddata, TYPEREAL
 USE MODD_IO,             ONLY: TFILEDATA
 USE MODD_LES
@@ -709,7 +709,7 @@ IF (LOCEAN) THEN ! Ocean case
   !No flux at the ocean domain bottom
   ZSOURCE(:,:,IKB) = 0.
 ELSE ! Atmos case
-  IF (.NOT.LCOUPLES) THEN !  only atmosp sans couplage
+  IF (.NOT.LCOUPLES) THEN !  only atmosp without coupling
   ! compute the explicit tangential flux at the W point
     ZSOURCE(:,:,IKB)       =                                                  &
       PTAU11M(:,:) * PSINSLOPE(:,:) * PDIRCOSZW(:,:) * ZDIRSINZW(:,:)         &
@@ -726,8 +726,8 @@ ELSE ! Atmos case
      - ZCOEFS(:,:,1:1) * PVM(:,:,IKB:IKB) * PIMPL             &
     ) * 0.5 * ( 1. + MYM(PRHODJ(:,:,KKA:KKA)) / MYM(PRHODJ(:,:,IKB:IKB)) )
 !
-  ELSE   !atmosphere quand couplage   
-    ! flux en input supposé etre en SI et en point de voticité
+  ELSE   !atmosphere when coupling
+    ! input flux assumed to be in SI and at vorticity point
     ZSOURCE(:,:,IKB:IKB) =     -XSSVFL_C(:,:,1:1)/(1.*PDZZ(:,:,IKB:IKB)) &
       * 0.5 * ( 1. + MYM(PRHODJ(:,:,KKA:KKA)) / MYM(PRHODJ(:,:,IKB:IKB)) )
   ENDIF

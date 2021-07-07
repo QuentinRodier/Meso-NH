@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -108,12 +108,12 @@ END MODULE MODI_GRAVITY
 !
 USE MODD_CONF
 USE MODD_CST
-USE MODD_REF
 USE MODD_DYN_n, ONLY : LOCEAN
+USE MODD_REF
 !
-USE MODI_SHUMAN
 USE MODI_GET_HALO
-!  
+USE MODI_SHUMAN
+!
 IMPLICIT NONE
 !  
 !*       0.1   Declarations of dummy arguments :
@@ -146,43 +146,42 @@ REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) ::           &
 !
 IF( .NOT.L1D ) THEN     ! no buoyancy for 1D case
 !
- IF (LOCEAN) THEN  !ocean case
+  IF (LOCEAN) THEN  !ocean case
     CALL GET_HALO(PTHT)
-   IF(KRR > 0) THEN
-    CALL GET_HALO(PRT(:,:,:,1))
-    PRWS(:,:,:) = PRWS + XG * (XALPHAOC*MZM((PTHT - PTHVREF )*PRHODJ) &
+    IF(KRR > 0) THEN
+      CALL GET_HALO(PRT(:,:,:,1))
+      PRWS(:,:,:) = PRWS + XG * (XALPHAOC*MZM((PTHT - PTHVREF )*PRHODJ) &
                            - XBETAOC*MZM((PRT(:,:,:,1) - XSA00OCEAN)*PRHODJ) )
-   ELSE ! unsalted case
-    PRWS(:,:,:) = PRWS + XG * XALPHAOC*MZM((PTHT - PTHVREF )*PRHODJ ) 
-   END IF
-ELSE   ! Atmospheric case
-  IF(KRR > 0) THEN
+    ELSE ! unsalted case
+      PRWS(:,:,:) = PRWS + XG * XALPHAOC*MZM((PTHT - PTHVREF )*PRHODJ )
+    END IF
+  ELSE   ! Atmospheric case
+    IF(KRR > 0) THEN
 !
 !   compute the ratio : 1 + total water mass / dry air mass
 !
-    ZRV_OV_RD = XRV / XRD
-    ZWORK1(:,:,:) = 1.
-    DO JWATER = 1 , 1+KRRL+KRRI                
-      CALL GET_HALO(PRT(:,:,:,JWATER))
-      ZWORK1(:,:,:) = ZWORK1(:,:,:) + PRT(:,:,:,JWATER)
-    END DO
+      ZRV_OV_RD = XRV / XRD
+      ZWORK1(:,:,:) = 1.
+      DO JWATER = 1 , 1+KRRL+KRRI
+        CALL GET_HALO(PRT(:,:,:,JWATER))
+        ZWORK1(:,:,:) = ZWORK1(:,:,:) + PRT(:,:,:,JWATER)
+      END DO
 !
 !   compute the virtual potential temperature when water is present in any form
-    CALL GET_HALO(PTHT)
+      CALL GET_HALO(PTHT)
 !
-    
-    ZWORK2(:,:,:) = PTHT(:,:,:) * (1. + PRT(:,:,:,1)*ZRV_OV_RD) / ZWORK1(:,:,:)
-  ELSE
+      ZWORK2(:,:,:) = PTHT(:,:,:) * (1. + PRT(:,:,:,1)*ZRV_OV_RD) / ZWORK1(:,:,:)
+    ELSE
 !
 !   compute the virtual potential temperature when water is absent
 !
-    ZWORK2(:,:,:) = PTHT(:,:,:)
-  END IF
+      ZWORK2(:,:,:) = PTHT(:,:,:)
+    END IF
 !
 !   compute the gravity term
 !
-  PRWS(:,:,:) = PRWS + XG * MZM( ( (ZWORK2/PTHVREF) - 1. ) * PRHODJ )
- END IF
+    PRWS(:,:,:) = PRWS + XG * MZM( ( (ZWORK2/PTHVREF) - 1. ) * PRHODJ )
+  END IF
 !
 !    the extrapolation for the PTHT and the THVREF must be the same at the
 !    ground

@@ -6,15 +6,13 @@ Creation : 07/01/2021
 
 Last modifications
 """
-
 import matplotlib as mpl
 mpl.use('Agg')
 from read_MNHfile import read_netcdf
 from Panel_Plot import PanelPlot
-from misc_functions import comp_altitude2DVar, windvec_verti_proj, mean_operator
+from misc_functions import comp_altitude2DVar, mean_operator
 import cartopy.crs as ccrs
 import numpy as np
-import math
 import copy
 import os
 
@@ -22,8 +20,6 @@ os.system('rm -f tempgraph*')
 #
 #  User's parameter / Namelist
 #
-path=""
-
 LnameFiles = ['REUNI.1.00A20.004dia.nc', 'REUNI.1.00A20.004.nc']
 
 Dvar_input = {
@@ -32,7 +28,7 @@ Dvar_input = {
 
 #  Read the variables in the files
 Dvar = {}
-Dvar = read_netcdf(LnameFiles, Dvar_input, path=path, removeHALO=True)
+Dvar = read_netcdf(LnameFiles, Dvar_input, path="", removeHALO=True)
 
 ################################################################
 #########          PANEL 1  # Horizontal cross-section
@@ -40,7 +36,7 @@ Dvar = read_netcdf(LnameFiles, Dvar_input, path=path, removeHALO=True)
 Panel1 = PanelPlot(2,2, [20,20],'004_Reunion horizontal sections')
 
 Dvar['f1']['WIND'] = np.sqrt(Dvar['f1']['UT']**2 + Dvar['f1']['VT']**2)
-Lplot = [ Dvar['f1']['ZS'][:,:], Dvar['f1']['WIND'][0,:,:], Dvar['f1']['ALT_THETA'][0,:,:], Dvar['f1']['ALT_PRESSURE'][0,:,:]]
+Lplot = [ Dvar['f1']['ZS'][:,:], Dvar['f1']['WIND'][0,:,:], Dvar['f1']['ALT_THETA'][:,:], Dvar['f1']['ALT_PRESSURE'][:,:]]
 
 LaxeX = [Dvar['f1']['longitude']]*len(Lplot)
 LaxeY = [Dvar['f1']['latitude']]*len(Lplot)
@@ -78,8 +74,6 @@ Llvl = [0]*len(Lplot1)
 Lscale = [400]*len(Lplot1)
 fig2 = Panel1.pvector(Lxx=LaxeX, Lyy=LaxeY, Llevel=Llvl, Lvar1=Lplot1, Lvar2=Lplot2, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle, Lwidth=Lwidth, Larrowstep=Larrowstep, 
                       Llegendval=Llegendval, Lcbarlabel=Lcbarlabel, Lproj=Lprojection, Lid_overlap=[2,6], ax=fig1.axes, Lscale=Lscale)
-
-
 
 ################################################################
 #########          PANEL 2  # Vertical cross-section

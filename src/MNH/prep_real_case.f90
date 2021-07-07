@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -374,16 +374,22 @@
 !!                  Aug   2015     (M.Moge) removing EXTRAPOL on XDXX and XDYY in part 8
 !!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!    M.Leriche        2015 : add LUSECHEM  dans NAM_CH_CONF 
+!!                  Feb   02, 2012 (C. Mari & BV) interpolation from CAMS
+!!                                  add call to READ_CAMS_NETCDF_CASE &
+!!                                  VER_PREP_NETCDF_CASE 
+!!      Modification    01/2016  (JP Pinty) Add LIMA
+!!      Modification    02/2016  (JP Pinty) Convert CAMS mix ratio to nbr conc
+!
 !!  06/2016     (G.Delautier) phasage surfex 8
 !!    P.Wautelet : 08/07/2016 : removed MNH_NCWRIT define
 !!     B.VIE 2016 : LIMA
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
-!!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
+!  S. Bielli      02/2019: sea salt: significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 20/03/2019: missing use MODI_INIT_SALT
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
-!!    T.Nagel  : 02/2021: add IBM
+!  T.Nagel        02/2021: add IBM
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -403,8 +409,8 @@ USE MODD_GR_FIELD_n
 USE MODD_GRID
 USE MODD_GRID_n
 USE MODD_HURR_CONF
-USE MODD_IBM_LSF, ONLY: LIBM_LSF,CIBM_TYPE, NIBM_SMOOTH,XIBM_SMOOTH
-USE MODD_IBM_PARAM_n
+USE MODD_IBM_LSF,          ONLY: CIBM_TYPE, LIBM_LSF, NIBM_SMOOTH, XIBM_SMOOTH
+USE MODD_IBM_PARAM_n,      ONLY: XIBM_LS
 USE MODD_IO,               ONLY: TFILEDATA,NIO_VERB,NVERB_DEBUG,TFILE_SURFEX
 USE MODD_LBC_n
 USE MODD_LSFIELD_n
@@ -446,6 +452,7 @@ USE MODI_ERROR_ON_TEMPERATURE
 USE MODI_IBM_INIT_LS
 USE MODI_INI_PROG_VAR
 USE MODI_INIT_SALT
+USE MODI_LIMA_MIXRAT_TO_NCONC
 USE MODI_METRICS
 USE MODI_MNHREAD_ZS_DUMMY_n
 USE MODI_MNHWRITE_ZS_DUMMY_n
@@ -455,6 +462,7 @@ USE MODI_PRESSURE_IN_PREP
 USE MODI_READ_ALL_DATA_GRIB_CASE
 USE MODI_READ_ALL_DATA_MESONH_CASE
 USE MODI_READ_ALL_NAMELISTS
+USE MODI_READ_CAMS_DATA_NETCDF_CASE
 USE MODI_READ_CHEM_DATA_NETCDF_CASE
 USE MODI_READ_VER_GRID
 USE MODI_SECOND_MNH
@@ -471,6 +479,7 @@ USE MODI_WRITE_LFIFM_n
 !
 USE MODN_CONF,             ONLY: JPHEXT , NHALO
 USE MODN_CONFZ
+USE MODN_PARAM_LIMA
 !
 IMPLICIT NONE
 !
@@ -481,6 +490,8 @@ CHARACTER(LEN=28)              :: YATMFILE    ! name of the Atmospheric file
 CHARACTER(LEN=6)               :: YATMFILETYPE! type of the Atmospheric file
 CHARACTER(LEN=28)              :: YCHEMFILE    ! name of the Chemical file
 CHARACTER(LEN=6)               :: YCHEMFILETYPE! type of the Chemical file
+CHARACTER(LEN=28)              :: YCAMSFILE    ! name of the input CAMS file
+CHARACTER(LEN=6)               :: YCAMSFILETYPE! type of the input CAMS file
 CHARACTER(LEN=28)              :: YSURFFILE    ! name of the Surface file
 CHARACTER(LEN=6)               :: YSURFFILETYPE! type of the Surface file
 CHARACTER(LEN=28)              :: YPGDFILE    ! name of the physiographic data
@@ -581,7 +592,8 @@ CALL IO_Init()
 CALL OPEN_PRC_FILES(TZPRE_REAL1FILE,YATMFILE, YATMFILETYPE,TZATMFILE &
                                    ,YCHEMFILE,YCHEMFILETYPE &
                                    ,YSURFFILE,YSURFFILETYPE &
-                                   ,YPGDFILE,TPGDFILE)
+                                   ,YPGDFILE,TPGDFILE       &
+                                   ,YCAMSFILE,YCAMSFILETYPE)
 ILUOUT0 = TLUOUT0%NLU
 TLUOUT => TLUOUT0
 !
@@ -621,6 +633,8 @@ IPRE_REAL1 = TZPRE_REAL1FILE%NLU
 CALL INIT_NMLVAR
 CALL POSNAM(IPRE_REAL1,'NAM_REAL_CONF',GFOUND,ILUOUT0)
 IF (GFOUND) READ(IPRE_REAL1,NAM_REAL_CONF)
+CALL POSNAM(IPRE_REAL1,'NAM_PARAM_LIMA',GFOUND,ILUOUT0)
+IF (GFOUND) READ(IPRE_REAL1,NAM_PARAM_LIMA)
 !
 CALL INI_FIELD_LIST(1)
 !
@@ -755,6 +769,16 @@ IF(LEN_TRIM(YCHEMFILE)>0)THEN
   CALL READ_ALL_DATA_GRIB_CASE('CHEM',TZPRE_REAL1FILE,YCHEMFILE,TPGDFILE,ZHORI,NVERB,LDUMMY_REAL)
   IF (YCHEMFILETYPE=='NETCDF') &
   CALL READ_CHEM_DATA_NETCDF_CASE(TZPRE_REAL1FILE,YCHEMFILE,TPGDFILE,ZHORI,NVERB,LDUMMY_REAL)
+END IF
+!
+!*       5.2   reading the input CAMS data
+!
+IF(LEN_TRIM(YCAMSFILE)>0)THEN
+   IF(YCAMSFILETYPE=='NETCDF') THEN
+      CALL READ_CAMS_DATA_NETCDF_CASE(TZPRE_REAL1FILE,YCAMSFILE,TPGDFILE,ZHORI,NVERB,LDUMMY_REAL)
+   ELSE
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','PREP_REAL_CASE','CANNOT READ CAMS GRIB FILES YET')
+   END IF
 END IF
 !
 CALL IO_File_close(TZPRE_REAL1FILE)
@@ -895,7 +919,8 @@ END IF
 IF (LEN_TRIM(YCHEMFILE)>0 .AND. YCHEMFILETYPE=='GRIBEX') THEN
   CALL VER_PREP_GRIBEX_CASE('CHEM',ZDG)
 END IF
-IF (LEN_TRIM(YCHEMFILE)>0 .AND. YCHEMFILETYPE=='NETCDF') THEN
+IF ((LEN_TRIM(YCHEMFILE)>0 .AND. YCHEMFILETYPE=='NETCDF') .OR. &
+   (LEN_TRIM(YCAMSFILE)>0 .AND. YCAMSFILETYPE=='NETCDF')) THEN
   CALL VER_PREP_NETCDF_CASE(ZDG)
 END IF
 !
@@ -983,6 +1008,11 @@ IF(LEN_TRIM(YCHEMFILE)>0 .AND. YCHEMFILETYPE=='MESONH')THEN
   LHORELAX_SVSLT  = (NSV_SLT > 0)
   LHORELAX_SVAER  = (NSV_AER > 0)
 ELSE
+!
+IF (LEN_TRIM(YCAMSFILE)>0 .AND. YCAMSFILETYPE=='NETCDF') THEN
+  CALL LIMA_MIXRAT_TO_NCONC(XPABST, XTHT, XRT(:,:,:,1), XSV_MX)
+END IF
+!
   CALL INI_PROG_VAR(XTKE_MX,XSV_MX)
 END IF
 !
@@ -1027,14 +1057,14 @@ ZDIAG =  ZDIAG + ZTIME2 - ZTIME1
 !*       16.    INITIALIZE LEVELSET FOR IBM
 !              ---------------------------
 !
-CALL GET_DIM_EXT_ll('B',NIU,NJU)
-NKU=NKMAX+2*JPVEXT
-!
 IF (LIBM_LSF) THEN
   !
   IF (.NOT.LCARTESIAN) THEN
     CALL PRINT_MSG(NVERB_FATAL,'GEN','PREP_IDEAL_CASE','IBM can only be used with cartesian coordinates')
   ENDIF
+  !
+  CALL GET_DIM_EXT_ll('B',NIU,NJU)
+  NKU=NKMAX+2*JPVEXT
   !
   ALLOCATE(XIBM_LS(NIU,NJU,NKU,4))
   !

@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2021-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !       #####################
@@ -141,23 +141,16 @@ ILUOUT = TLUOUT%NLU
 !
 !Moving averaged parameter verification
 IF (PTCOUNT==1 .AND. INT(XTMOY)/INT(XTMOYCOUNT) /= INT(XNUMBELT)) THEN
-    WRITE(ILUOUT,FMT=*)
-    WRITE(ILUOUT,FMT=*) ' ERROR : XTMOY/XTMOYCOUNT must be equal to XNUMBELT'
-    WRITE(ILUOUT,FMT=*) ' Please change the above parameters accordingly in NAM_RECYCL_PARAMn'
-    WRITE(ILUOUT,FMT=*)
-    WRITE(ILUOUT,FMT=*) '###############'
-    WRITE(ILUOUT,FMT=*) ' MESONH STOP'
-    WRITE(ILUOUT,FMT=*) '###############'
-    WRITE(ILUOUT,FMT=*)
-!callabortstop
-    CALL PRINT_MSG(NVERB_FATAL,'GEN','RECYCLING','XTMOY/XTMOYCOUNT must be equal to XNUMBELT')    
+    CMNHMSG(1) = 'XTMOY/XTMOYCOUNT must be equal to XNUMBELT'
+    CMNHMSG(2) = 'Please change the above parameters accordingly in NAM_RECYCL_PARAMn'
+    CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'RECYCLING' )
 END IF
 
 IF(CCONF == "RESTA" .AND. PTCOUNT == 1 ) THEN
-  R_COUNT = R_COUNT
+  NR_COUNT = NR_COUNT
 ELSE
-  R_COUNT = R_COUNT +1
-  !IF (IP==1) WRITE(*,*)'RCOUNT: ', R_COUNT
+  NR_COUNT = NR_COUNT +1
+  !IF (IP==1) WRITE(*,*)'RCOUNT: ', NR_COUNT
 ENDIF
 
   IF (LRECYCLW) THEN
@@ -181,9 +174,9 @@ ENDIF
     PMINS = 1+JPHEXT+JJDIST!
   ENDIF  
 
-  CALL RECYCL_FLUC (XUT,XVT,XWT,XTHT,XDZZ,R_COUNT,PTCOUNT,PMINW,PMINN,PMINE,PMINS,&
-                      PFLUCTUNW,PFLUCTVNN,PFLUCTUTN,PFLUCTVTW,PFLUCTWTW,PFLUCTWTN,&
-                      PFLUCTUNE,PFLUCTVNS,PFLUCTUTS,PFLUCTVTE,PFLUCTWTE,PFLUCTWTS )
+  CALL RECYCL_FLUC (XUT,XVT,XWT,XTHT,XDZZ,NR_COUNT,PTCOUNT,PMINW,PMINN,PMINE,PMINS,&
+                      PFLUCTUNW,PFLUCTVNN,PFLUCTUTN,PFLUCTVTW,PFLUCTWTW,PFLUCTWTN, &
+                      PFLUCTUNE,PFLUCTVNS,PFLUCTUTS,PFLUCTVTE,PFLUCTWTE,PFLUCTWTS  )
 
 RETURN
 

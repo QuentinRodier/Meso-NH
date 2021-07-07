@@ -234,9 +234,9 @@ END MODULE MODI_PHYS_PARAM_n
 !  P. Wautelet 26/04/2019: replace non-standard FLOAT function by REAL function
 !  P. Wautelet 20/05/2019: add name argument to ADDnFIELD_ll + new ADD4DFIELD_ll subroutine
 !  P. Wautelet 21/11/2019: ZRG_HOUR and ZRAT_HOUR are now parameter arrays
-!! 11/2019 C.Lac correction in the drag formula and application to building in addition to tree
-!! 02/2021 F.Auguste: add IBM
-!!  03/2021: JL Redelsperger Add the SW flux penetration for Ocean model case
+!  C. Lac         11/2019: correction in the drag formula and application to building in addition to tree
+!  F. Auguste     02/2021: add IBM
+!  JL Redelsperger 03/2021: add the SW flux penetration for Ocean model case
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -271,7 +271,7 @@ USE MODD_FRC
 USE MODD_FRC_n
 USE MODD_GRID
 USE MODD_GRID_n
-USE MODD_IBM_PARAM_n, ONLY: XIBM_LS, LIBM, XIBM_EPSI
+USE MODD_IBM_PARAM_n,      ONLY: LIBM, XIBM_EPSI, XIBM_LS
 USE MODD_ICE_C1R3_DESCR,  ONLY : XRTMIN_C1R3=>XRTMIN
 USE MODD_IO, ONLY: TFILEDATA
 USE MODD_LATZ_EDFLX
@@ -299,8 +299,8 @@ USE MODD_PASPOL_n
 USE MODD_PRECIP_n
 use modd_precision,        only: MNHTIME
 USE MODD_RADIATIONS_n
-USE MODD_RAIN_ICE_DESCR,  ONLY : XRTMIN
-USE MODD_REF, ONLY : LCOUPLES
+USE MODD_RAIN_ICE_DESCR,   ONLY: XRTMIN
+USE MODD_REF,              ONLY: LCOUPLES
 USE MODD_REF_n
 USE MODD_SALT
 USE MODD_SHADOWS_n

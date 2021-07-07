@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !      #################################
        MODULE MODI_LIMA_RAIN_FREEZING
 !      #################################
@@ -10,8 +11,7 @@ INTERFACE
    SUBROUTINE LIMA_RAIN_FREEZING (LDCOMPUTE,                                             &
                                   PRHODREF, PT, PLVFACT, PLSFACT,                        &
                                   PRRT, PCRT, PRIT, PCIT, PLBDR,                         &
-                                  P_TH_CFRZ, P_RR_CFRZ, P_CR_CFRZ, P_RI_CFRZ, P_CI_CFRZ, &
-                                  PA_TH, PA_RR, PA_CR, PA_RI, PA_CI, PA_RG               )
+                                  P_TH_CFRZ, P_RR_CFRZ, P_CR_CFRZ, P_RI_CFRZ, P_CI_CFRZ  )
 !
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
 !
@@ -26,18 +26,11 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PRIT    !
 REAL, DIMENSION(:),   INTENT(IN)    :: PCIT    ! 
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR   ! 
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_CFRZ
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_CFRZ
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_CFRZ
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_CFRZ
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_CFRZ
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_TH
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RR
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CR
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RI
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CI
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RG
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_TH_CFRZ
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_RR_CFRZ
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_CR_CFRZ
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_RI_CFRZ
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_CI_CFRZ
 !
 END SUBROUTINE LIMA_RAIN_FREEZING
 END INTERFACE
@@ -47,8 +40,7 @@ END MODULE MODI_LIMA_RAIN_FREEZING
       SUBROUTINE LIMA_RAIN_FREEZING (LDCOMPUTE,                                             &
                                      PRHODREF, PT, PLVFACT, PLSFACT,                        &
                                      PRRT, PCRT, PRIT, PCIT, PLBDR,                         &
-                                     P_TH_CFRZ, P_RR_CFRZ, P_CR_CFRZ, P_RI_CFRZ, P_CI_CFRZ, &
-                                     PA_TH, PA_RR, PA_CR, PA_RI, PA_CI, PA_RG               )
+                                     P_TH_CFRZ, P_RR_CFRZ, P_CR_CFRZ, P_RI_CFRZ, P_CI_CFRZ  )
 !     #######################################################################################
 !
 !!    PURPOSE
@@ -93,18 +85,11 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PRIT    !
 REAL, DIMENSION(:),   INTENT(IN)    :: PCIT    ! 
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR   ! 
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_CFRZ
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_CFRZ
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_CFRZ
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RI_CFRZ
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CI_CFRZ
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_TH
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RR
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CR
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RI
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CI
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RG
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_TH_CFRZ
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_RR_CFRZ
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_CR_CFRZ
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_RI_CFRZ
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_CI_CFRZ
 !
 !*       0.2   Declarations of local variables :
 !
@@ -143,14 +128,6 @@ WHERE( (PRIT(:)>XRTMIN(4)) .AND. (PRRT(:)>XRTMIN(3)) .AND. (PT(:)<XTT) .AND. LDC
    P_TH_CFRZ(:) = - P_RR_CFRZ(:) * (PLSFACT(:)-PLVFACT(:))
 !
 END WHERE
-!
-PA_TH(:) = PA_TH(:) + P_TH_CFRZ(:)
-PA_RR(:) = PA_RR(:) + P_RR_CFRZ(:)
-PA_CR(:) = PA_CR(:) + P_CR_CFRZ(:)
-PA_RI(:) = PA_RI(:) + P_RI_CFRZ(:)
-PA_CI(:) = PA_CI(:) + P_CI_CFRZ(:)
-PA_RG(:) = PA_RG(:) - P_RR_CFRZ(:) - P_RI_CFRZ(:)
-!
 !
 !-------------------------------------------------------------------------------
 !

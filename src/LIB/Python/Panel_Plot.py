@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed Feb 24 10:49:45 2021
+MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+MNH_LIC for details. version 1.
 
-@author: rodierq
+@author: 07/2021 Quentin Rodier
 """
 import matplotlib as mpl
 mpl.use('Agg')
@@ -11,6 +14,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.colors import ListedColormap
 import numpy as np
+import cartopy
 import cartopy.feature as cfeature
 
 class PanelPlot():
@@ -56,8 +60,12 @@ class PanelPlot():
         # Grid lines and labels
       if 'PlateCarree' in str(projo):
         gl = ax.gridlines(crs=self.projo, draw_labels=True, linewidth=1, color='gray')
-        gl.top_labels = False
-        gl.right_labels = False
+        if float(cartopy.__version__[:4]) >= 0.18:
+          gl.top_labels = False
+          gl.right_labels = False
+        else:
+          gl.xlabels_top = False
+          gl.ylabels_right = False
         
         #  Coastlines
       if self.drawCoastLines and 'GeoAxes' in str(type(ax)):
@@ -188,7 +196,7 @@ class PanelPlot():
                  Lfacconv=[], ax=[], Lid_overlap=[], colorbar=True, orog=[], Lxlim=[], Lylim=[], Ltime=[], Lpltype=[], LaddWhite_cm=[]):
       """
         Horizontal cross section plot
-        Arguments :
+        Parameters :
             - Lxx    : List of x or y coordinate variable or time axis
             - Lzz    : List of z coordinates variable
             - Lvar   : List of variables to plot
@@ -253,7 +261,7 @@ class PanelPlot():
         
         #  Print time validity
         if Ltime: self.showTimeText(self.ax, iax, str(Ltime[i]))
-        
+
         # Number of contours level
         if not Lstep[i]: #  Default value of number of steps is 20
             Lstep[i] = (Lmaxval[i] - Lminval[i])/20  
@@ -315,7 +323,7 @@ class PanelPlot():
                  Lylim=[], Ltime=[], LaxisColor=[]):
       """
         XY (multiple)-lines plot
-        Arguments :
+        Parameters :
             - Lxx    : List of variables to plot or coordinates along the X axis #TODO : ajouter Lfacconv pour les deux axes. Impact tous les cas test avec lignes X/Y
             - Lyy    : List of variables to plot or coordinates along the Y axis
             - Lxlab  : List of x-axis label
@@ -405,7 +413,7 @@ class PanelPlot():
                  Lid_overlap=[], colorbar=True, Ltime=[], LaddWhite_cm=[], Lpltype=[], Lcbformatlabel=[]):
       """
         Horizontal cross section plot
-        Arguments :
+        Parameters :
             - lon    : longitude 2D array
             - lat    : latitude 2D array
             - Lvar   : List of variables to plot
@@ -554,7 +562,7 @@ class PanelPlot():
                 Lylim=[], Lxlim=[]):
       """
         Horizontal vectors lines
-        Arguments :
+        Parameters :
             - Lxx    : List of x or y coordinate variable (lat or ni or nm)
             - Lyy    : List of y coordinates variable (lon or level)
             - Lvar1   : List of wind-component along x/y or oblic axis (3D for hor. section, 2D for vertical section)
@@ -667,7 +675,7 @@ class PanelPlot():
                 Lylim=[], Lxlim=[]):
       """
         Wind stream lines
-        Arguments :
+        Parameters :
             - Lxx    : List of x or y coordinate variable (lat or ni or nm)
             - Lyy    : List of y coordinates variable (lon or level)
             - Lvar1   : List of wind-component along x/y or oblic axis (3D for hor. section, 2D for vertical section)
@@ -768,7 +776,7 @@ class PanelPlot():
                  Lylim=[], Ltime=[], LaxisColor=[]):
       """
         XY Histogram
-        Arguments :
+        Parameters :
             - Lbins    : List of bins
             - Lvar   : List of the value for each bin
             - Lxlab  : List of x-axis label

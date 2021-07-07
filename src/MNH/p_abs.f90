@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 solver 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     #################
       MODULE MODI_P_ABS
@@ -117,16 +112,14 @@ END MODULE MODI_P_ABS
 !
 USE MODD_CST
 USE MODD_CONF
+USE MODD_DYN_n,       ONLY: LOCEAN
+USE MODD_IBM_PARAM_n, ONLY:  XIBM_LS, LIBM, XIBM_EPSI
 USE MODD_PARAMETERS
-USE MODD_DYN_n, ONLY : LOCEAN
-USE MODD_REF, ONLY : LBOUSS
+USE MODD_REF,         ONLY: LBOUSS
 !
 USE MODE_ll
-!JUAN
 USE MODE_REPRO_SUM
-!JUAN
-USE MODD_IBM_PARAM_n, ONLY :  XIBM_LS, LIBM, XIBM_EPSI
-!  
+!
 IMPLICIT NONE
 !  
 !*       0.1   Declarations of dummy arguments :
@@ -383,18 +376,17 @@ ELSEIF( CEQNSYS == 'LHE' ) THEN
   ZMASSGUESS  = SUM_DD_R2_ll(ZMASSGUESS_2D)
   ZWATERMASST =  SUM_DD_R2_ll(ZWATERMASST_2D)
   !
-!
-! case shallow bouss : to get the real pressure fluctuation
-!  Eq 2.40 p15 :  constant not resolved in poisson equation
-IF (.NOT. LOCEAN) THEN
-  PPHI0 = (PDRYMASST + ZWATERMASST - 2. * PREFMASS + ZMASSGUESS ) / PMASS_O_PHI0
-ELSE
-! PPHI0 = 0. => to be possibly modified for ocean LES case
-   PPHI0=0.
-END IF
-!  following computation moved in PRESSURE routine (Eq 2.40 bis p15: Phi_total)
-!   PPHIT(:,:,:) = PPHIT(:,:,:) + ZPHI0
-!
+  ! case shallow bouss : to get the real pressure fluctuation
+  !  Eq 2.40 p15 :  constant not resolved in poisson equation
+  IF (.NOT. LOCEAN) THEN
+    PPHI0 = (PDRYMASST + ZWATERMASST - 2. * PREFMASS + ZMASSGUESS ) / PMASS_O_PHI0
+  ELSE
+  ! PPHI0 = 0. => to be possibly modified for ocean LES case
+     PPHI0=0.
+  END IF
+  !  following computation moved in PRESSURE routine (Eq 2.40 bis p15: Phi_total)
+  !   PPHIT(:,:,:) = PPHIT(:,:,:) + ZPHI0
+  !
 END IF
 !
 !-------------------------------------------------------------------------------

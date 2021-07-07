@@ -81,7 +81,7 @@ USE MODD_LG,              ONLY: CLGNAMES
 USE MODD_LUNIT
 USE MODD_NSV
 USE MODD_PARAMETERS
-USE MODD_PARAM_n,         ONLY: CRAD,CSURF
+USE MODD_PARAM_n,         ONLY: CRAD, CSURF
 USE MODD_PASPOL
 USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
 USE MODD_SALT,            ONLY: CSALTNAMES, LSALT, NMODE_SLT
@@ -123,7 +123,8 @@ CONTAINS
 !----------------------------------------------------------------------------
 SUBROUTINE STATION_DIACHRO_n(TSTATION,II)
 
-use modd_field, only:  NMNHDIM_STATION_TIME, NMNHDIM_STATION_PROC, NMNHDIM_UNUSED, &
+use modd_budget, only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK
+use modd_field,  only: NMNHDIM_STATION_TIME, NMNHDIM_STATION_PROC, NMNHDIM_UNUSED, &
                        tfield_metadata_base, TYPEREAL
 
 TYPE(STATION),        INTENT(IN)       :: TSTATION
@@ -136,7 +137,6 @@ REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: ZW6    ! contains temporal series t
 REAL, DIMENSION(:,:,:,:),     ALLOCATABLE :: ZSV, ZN0, ZSIG, ZRG
 REAL, DIMENSION(:,:,:,:,:),     ALLOCATABLE :: ZPTOTA
 REAL, DIMENSION(:,:,:),       ALLOCATABLE :: ZRHO
-REAL, DIMENSION(:,:,:),       ALLOCATABLE :: ZTRAJX, ZTRAJY, ZTRAJZ
 !
 INTEGER, DIMENSION(:),            ALLOCATABLE :: IGRID    ! grid indicator
 CHARACTER(LEN=  8)                            :: YGROUP   ! group title
@@ -181,13 +181,6 @@ IGRID  = 1
 YGROUP = TSTATION%NAME(II)
 JPROC = 0
 !
-ALLOCATE (ZTRAJX(1,1,1))
-ALLOCATE (ZTRAJY(1,1,1))
-ALLOCATE (ZTRAJZ(1,1,1))
-!
-ZTRAJX(:,:,:)=TSTATION%X(II)
-ZTRAJY(:,:,:)=TSTATION%Y(II)
-ZTRAJZ(:,:,:)=TSTATION%Z(II)
 !----------------------------------------------------------------------------
 !
 JPROC = JPROC + 1
@@ -198,7 +191,7 @@ ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%ZS(II)
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'P'
-YUNIT    (JPROC) = 'Pascal'
+YUNIT    (JPROC) = 'Pa'
 YCOMMENT (JPROC) = 'Pressure' 
 ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%P(:,II)
 !
@@ -767,16 +760,45 @@ tzfields(:)%ndimlist(4) = NMNHDIM_STATION_TIME
 tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_STATION_PROC
 
-tzbudiachro%cgroupname = ygroup
-tzbudiachro%cname      = ygroup
-tzbudiachro%ccomment   = 'Values at position of station ' // Trim( ygroup )
-tzbudiachro%ctype      = 'CART'
-tzbudiachro%ccategory  = 'station'
-tzbudiachro%cshape     = 'point'
+tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
+tzbudiachro%clevels  (NLVL_CATEGORY)    = 'Stations'
+tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different stations'
+
+tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
+tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
+tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
+
+tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
+tzbudiachro%clevels  (NLVL_GROUP)       = ygroup
+tzbudiachro%ccomments(NLVL_GROUP)       = 'Values at position of station ' // Trim( ygroup )
+
+tzbudiachro%lleveluse(NLVL_SHAPE)       = .false.
+tzbudiachro%clevels  (NLVL_SHAPE)       = 'Point'
+tzbudiachro%ccomments(NLVL_SHAPE)       = 'Values at position of station ' // Trim( ygroup )
+
+tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
+tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not_time_averaged'
+tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are not time averaged'
+
+tzbudiachro%lleveluse(NLVL_NORM)        = .false.
+tzbudiachro%clevels  (NLVL_NORM)        = 'Not_normalized'
+tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
+
+tzbudiachro%lleveluse(NLVL_MASK)        = .false.
+tzbudiachro%clevels  (NLVL_MASK)        = ''
+tzbudiachro%ccomments(NLVL_MASK)        = ''
+
 tzbudiachro%lmobile    = .false.
+!Compression does not make sense here
+!Keep these values for backward compatibility of LFI files
 tzbudiachro%licompress = .true.
 tzbudiachro%ljcompress = .true.
 tzbudiachro%lkcompress = .false.
+tzbudiachro%ltcompress = .false.
+tzbudiachro%lnorm      = .false.
+!Boundaries in physical domain does not make sense here
+!These values are not written in the netCDF files
+!These values are written in the LFI files. Kept for backward compatibility of LFI files
 tzbudiachro%nil        = 1
 tzbudiachro%nih        = 1
 tzbudiachro%njl        = 1
@@ -785,7 +807,6 @@ tzbudiachro%nkl        = 1
 tzbudiachro%nkh        = 1
 
 call Write_diachro( tpdiafile, tzbudiachro, tzfields, tstation%tpdates, zw6 )
-! TODO: ajout de PTRAJX=ZTRAJX, PTRAJY=ZTRAJY, PTRAJZ=ZTRAJZ en argument en entrée de Write_diachro
 
 deallocate( tzfields )
 

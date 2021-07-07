@@ -46,6 +46,8 @@ private
 
 public :: Write_budget
 
+character(len=*), parameter :: CMASK_VARNAME = 'MASKS'
+
 contains
 
 !#########################################################
@@ -103,7 +105,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
                                  tbudgets, tburhodj
   use modd_field,          only: NMNHDIM_ONE, NMNHDIM_NI, NMNHDIM_NJ,                              &
                                  NMNHDIM_BUDGET_TIME, NMNHDIM_BUDGET_MASK_NBUMASK, NMNHDIM_UNUSED, &
-                                 tfielddata, TYPEREAL
+                                 tfielddata, TYPEINT, TYPEREAL
   use modd_io,             only: tfiledata
   use modd_lunit_n,        only: tluout
   use modd_parameters,     only: NMNHNAMELGTMAX
@@ -272,14 +274,14 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
         tzfile = tpdiafile
         tzfile%cformat = 'NETCDF4'
 
-        tzfield%cmnhname   = 'MASKS'
+        tzfield%cmnhname   = CMASK_VARNAME
         tzfield%cstdname   = ''
         tzfield%clongname  = Trim( tzfield%cmnhname )
         tzfield%cunits     = '1'
         tzfield%cdir       = 'XY'
         tzfield%ccomment   = 'Masks for budget areas'
         tzfield%ngrid      = 1
-        tzfield%ntype      = TYPEREAL
+        tzfield%ntype      = TYPEINT
         tzfield%ndims      = 4
         tzfield%ltimedep   = .false. !The time dependance is in the NMNHDIM_BUDGET_TIME dimension
         tzfield%ndimlist(1)  = NMNHDIM_NI
@@ -294,7 +296,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
         !Write the data (partial write of the field with the given offset)
         call IO_Field_write( tzfile, tzfield, nbusurf(:,:,:,:), koffset= [ 0, 0, 0, ( nbutshift - 1 ) * nbusubwrite ] )
 
-        if ( nbutshift == 1 ) call Menu_diachro( tzfile, 'MASKS' )
+        if ( nbutshift == 1 ) call Menu_diachro( tzfile, CMASK_VARNAME )
       end if
   !
   END SELECT
@@ -306,22 +308,22 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
   !* RU budgets
   !
     IF (LBU_RU) THEN
-      call Store_one_budget_rho( tpdiafile, tzdates, tbudgets(NBUDGET_U)%trhodj,   NBUDGET_U, gnocompress, zrhodjn )
-      call Store_one_budget    ( tpdiafile, tzdates, tbudgets(NBUDGET_U), zrhodjn,            gnocompress, ptstep  )
+      call Store_one_budget_rho( tpdiafile, tzdates, tbudgets(NBUDGET_U)%trhodj,   gnocompress, zrhodjn )
+      call Store_one_budget    ( tpdiafile, tzdates, tbudgets(NBUDGET_U), zrhodjn, gnocompress, ptstep  )
     END IF
   !
   !* RV budgets
   !
     IF (LBU_RV) THEN
-      call Store_one_budget_rho( tpdiafile, tzdates, tbudgets(NBUDGET_V)%trhodj,   NBUDGET_V, gnocompress, zrhodjn )
-      call Store_one_budget    ( tpdiafile, tzdates, tbudgets(NBUDGET_V), zrhodjn,            gnocompress, ptstep  )
+      call Store_one_budget_rho( tpdiafile, tzdates, tbudgets(NBUDGET_V)%trhodj,   gnocompress, zrhodjn )
+      call Store_one_budget    ( tpdiafile, tzdates, tbudgets(NBUDGET_V), zrhodjn, gnocompress, ptstep  )
     END IF
   !
   !* RW budgets
   !
     IF (LBU_RW) THEN
-      call Store_one_budget_rho( tpdiafile, tzdates, tbudgets(NBUDGET_W)%trhodj,   NBUDGET_W, gnocompress, zrhodjn )
-      call Store_one_budget    ( tpdiafile, tzdates, tbudgets(NBUDGET_W), zrhodjn,            gnocompress, ptstep  )
+      call Store_one_budget_rho( tpdiafile, tzdates, tbudgets(NBUDGET_W)%trhodj,   gnocompress, zrhodjn )
+      call Store_one_budget    ( tpdiafile, tzdates, tbudgets(NBUDGET_W), zrhodjn, gnocompress, ptstep  )
     END IF
   !
   !* RHODJ storage for Scalars
@@ -329,7 +331,7 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
     IF (LBU_RTH .OR. LBU_RTKE .OR. LBU_RRV .OR. LBU_RRC .OR. LBU_RRR .OR. &
         LBU_RRI .OR. LBU_RRS  .OR. LBU_RRG .OR. LBU_RRH .OR. LBU_RSV      ) THEN
       if ( .not. associated( tburhodj ) ) call Print_msg( NVERB_FATAL, 'BUD', 'Write_budget', 'tburhodj not associated' )
-      call Store_one_budget_rho( tpdiafile, tzdates, tburhodj, NBUDGET_RHO, gnocompress, zrhodjn )
+      call Store_one_budget_rho( tpdiafile, tzdates, tburhodj, gnocompress, zrhodjn )
     ENDIF
   !
   !* RTH budget
@@ -398,14 +400,14 @@ subroutine Write_budget( tpdiafile, tpdtcur, ptstep, ksv )
 end subroutine Write_budget
 
 
-subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, prhodjn )
-  use modd_budget,            only: cbutype,                                                      &
-                                    lbu_icp, lbu_jcp, lbu_kcp,                                    &
-                                    nbuil, nbuih, nbujl, nbujh, nbukl, nbukh,                     &
-                                    nbuimax, nbuimax_ll, nbujmax, nbujmax_ll, nbukmax, nbutshift, &
-                                    nbumask, nbusubwrite,                                         &
-                                    tbudiachrometadata, tburhodata,                               &
-                                    NBUDGET_RHO, NBUDGET_U, NBUDGET_V, NBUDGET_W
+subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, knocompress, prhodjn )
+  use modd_budget,            only: cbutype,                                                                                     &
+                                    lbu_icp, lbu_jcp, lbu_kcp,                                                                   &
+                                    nbuil, nbuih, nbujl, nbujh, nbukl, nbukh,                                                    &
+                                    nbuimax, nbuimax_ll, nbujmax, nbujmax_ll, nbukmax, nbutshift,                                &
+                                    nbumask, nbusubwrite,                                                                        &
+                                    NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK, &
+                                    tbudiachrometadata, tburhodata
   use modd_field,             only: NMNHDIM_BUDGET_CART_NI,    NMNHDIM_BUDGET_CART_NJ,   NMNHDIM_BUDGET_CART_NI_U, &
                                     NMNHDIM_BUDGET_CART_NJ_U,  NMNHDIM_BUDGET_CART_NI_V, NMNHDIM_BUDGET_CART_NJ_V, &
                                     NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W,                        &
@@ -428,12 +430,10 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
   type(tfiledata),                                      intent(in)  :: tpdiafile   ! file to write
   type(date_time), dimension(:),                        intent(in)  :: tpdates
   type(tburhodata),                                     intent(in)  :: tprhodj     ! rhodj datastructure
-  integer,                                              intent(in)  :: kp          ! reference number of budget
   logical,                                              intent(in)  :: knocompress ! compression for the cart option
   real,            dimension(:,:,:,:,:,:), allocatable, intent(out) :: prhodjn
 
   character(len=4)              :: ybutype
-  character(len=:), allocatable :: ygroup_name
   type(tbudiachrometadata)      :: tzbudiachro
   type(tburhodata)              :: tzfield
 
@@ -464,23 +464,6 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
 
     case default
       call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_rho', 'unknown CBUTYPE' )
-  end select
-
-  select case( kp )
-    case( NBUDGET_RHO )
-      ygroup_name = 'RJS'
-
-    case( NBUDGET_U )
-      ygroup_name = 'RJX'
-
-    case( NBUDGET_V )
-      ygroup_name = 'RJY'
-
-    case( NBUDGET_W )
-      ygroup_name = 'RJZ'
-
-    case default
-      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget_rho', 'unknown budget type' )
   end select
 
   !Copy all fields from tprhodj
@@ -555,20 +538,58 @@ subroutine Store_one_budget_rho( tpdiafile, tpdates, tprhodj, kp, knocompress, p
     tzfield%ndimlist(:) = NMNHDIM_UNKNOWN
   end if
 
-  tzbudiachro%cgroupname = ygroup_name
-  tzbudiachro%cname      = tprhodj%cmnhname
-  tzbudiachro%ccomment   = tprhodj%ccomment
-  tzbudiachro%ctype      = ybutype
-  tzbudiachro%ccategory  = 'budget'
+  tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
+  tzbudiachro%clevels  (NLVL_CATEGORY)    = 'Budgets'
+  tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different budgets'
+
+  tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
+  tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
+  tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
+
+  tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
+  tzbudiachro%clevels  (NLVL_GROUP)       = 'RhodJ'
+  tzbudiachro%ccomments(NLVL_GROUP)       = 'mass of dry air contained in the mesh cells'
+
+  tzbudiachro%lleveluse(NLVL_SHAPE)       = .false.
   if ( ybutype == 'CART' ) then
-    tzbudiachro%cshape   = 'cartesian'
+    tzbudiachro%clevels  (NLVL_SHAPE)     = 'Cartesian'
+    tzbudiachro%ccomments(NLVL_SHAPE)     = 'cartesian domain'
   else
-    tzbudiachro%cshape   = 'mask'
+    tzbudiachro%clevels  (NLVL_SHAPE)     = 'Mask'
+    tzbudiachro%ccomments(NLVL_SHAPE)     = 'masked domain'
   end if
-  tzbudiachro%lmobile    = .false.
+
+  tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
+  tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Time_averaged'
+  tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are time averaged'
+
+  tzbudiachro%lleveluse(NLVL_NORM)        = .false.
+  tzbudiachro%clevels  (NLVL_NORM)        = 'Not_normalized'
+  tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
+
+  tzbudiachro%lleveluse(NLVL_MASK)        = .false.
+  if ( ybutype == 'MASK' ) then
+    tzbudiachro%clevels  (NLVL_MASK)      = CMASK_VARNAME
+    tzbudiachro%ccomments(NLVL_MASK)      = ''
+  else
+    tzbudiachro%clevels  (NLVL_MASK)      = ''
+    tzbudiachro%ccomments(NLVL_MASK)      = ''
+  end if
+
+  if ( ybutype == 'CART' ) then
+    tzbudiachro%lmobile  = .false.
+  else
+    !Masks are updated at each timestep (therefore the studied domains change during execution)
+    tzbudiachro%lmobile  = .true.
+  end if
   tzbudiachro%licompress = lbu_icp
   tzbudiachro%ljcompress = lbu_jcp
   tzbudiachro%lkcompress = lbu_kcp
+  tzbudiachro%ltcompress = .true. !Data is temporally averaged
+  tzbudiachro%lnorm      = .false.
+  !Boundaries in physical domain does not make sense here if 'MASK'
+  !In that case, these values are not written in the netCDF files
+  !But they are always written in the LFI files. They are kept (in the MASK case) for backward compatibility.
   tzbudiachro%nil        = nbuil
   tzbudiachro%nih        = nbuih
   tzbudiachro%njl        = nbujl
@@ -589,6 +610,7 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
                                     nbumask, nbusubwrite,                                                                         &
                                     NBUDGET_U, NBUDGET_V, NBUDGET_W, NBUDGET_TH, NBUDGET_TKE, NBUDGET_RV, NBUDGET_RC, NBUDGET_RR, &
                                     NBUDGET_RI, NBUDGET_RS, NBUDGET_RG, NBUDGET_RH, NBUDGET_SV1,                                  &
+                                    NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK,  &
                                     tbudgetdata, tbudiachrometadata, tbugroupdata
   use modd_field,             only: NMNHDIM_BUDGET_CART_NI,    NMNHDIM_BUDGET_CART_NJ,   NMNHDIM_BUDGET_CART_NI_U, &
                                     NMNHDIM_BUDGET_CART_NJ_U,  NMNHDIM_BUDGET_CART_NI_V, NMNHDIM_BUDGET_CART_NJ_V, &
@@ -619,7 +641,6 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
   real,                                                 intent(in) :: ptstep      ! time step
 
   character(len=4)                                        :: ybutype
-  character(len=:),                           allocatable :: ygroup_name
   integer                                                 :: igroups
   integer                                                 :: jproc
   integer                                                 :: jsv
@@ -681,52 +702,6 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
   end select
 
   deallocate(zconvert)
-
-  jsv = -1
-  select case( tpbudget%nid )
-    case ( NBUDGET_U )
-      ygroup_name = 'UU'
-
-    case ( NBUDGET_V )
-      ygroup_name = 'VV'
-
-    case ( NBUDGET_W )
-      ygroup_name = 'WW'
-
-    case ( NBUDGET_TH )
-      ygroup_name = 'TH'
-
-    case ( NBUDGET_TKE )
-      ygroup_name = 'TK'
-
-    case ( NBUDGET_RV )
-      ygroup_name = 'RV'
-
-    case ( NBUDGET_RC )
-      ygroup_name = 'RC'
-
-    case ( NBUDGET_RR )
-      ygroup_name = 'RR'
-
-    case ( NBUDGET_RI )
-      ygroup_name = 'RI'
-
-    case ( NBUDGET_RS )
-      ygroup_name = 'RS'
-
-    case ( NBUDGET_RG )
-      ygroup_name = 'RG'
-
-    case ( NBUDGET_RH )
-      ygroup_name = 'RH'
-
-    case ( NBUDGET_SV1 : )
-      jsv = tpbudget%nid - NBUDGET_SV1 + 1
-      ygroup_name = csvnames(jsv)
-
-    case default
-      call Print_msg( NVERB_ERROR, 'BUD', 'Store_one_budget', 'unknown budget type' )
-  end select
 
   allocate( tzfields( igroups ) )
 
@@ -808,26 +783,71 @@ subroutine Store_one_budget( tpdiafile, tpdates, tpbudget, prhodjn, knocompress,
     end if
   end do
 
-  tzbudiachro%cgroupname = ygroup_name
-  tzbudiachro%cname      = tpbudget%cname
-  tzbudiachro%ccomment   = tpbudget%ccomment
-  tzbudiachro%ctype      = ybutype
-  tzbudiachro%ccategory  = 'budget'
+  tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
+  tzbudiachro%clevels  (NLVL_CATEGORY)    = 'Budgets'
+  tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different budgets'
+
+  tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
+  tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
+  tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
+
+  tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
+  tzbudiachro%clevels  (NLVL_GROUP)       = Trim( tpbudget%cname )
+  tzbudiachro%ccomments(NLVL_GROUP)       = Trim( tpbudget%ccomment )
+
+  tzbudiachro%lleveluse(NLVL_SHAPE)       = .false.
   if ( ybutype == 'CART' ) then
-    tzbudiachro%cshape   = 'cartesian'
+    tzbudiachro%clevels  (NLVL_SHAPE)     = 'Cartesian'
+    tzbudiachro%ccomments(NLVL_SHAPE)     = 'Cartesian domain'
   else
-    tzbudiachro%cshape   = 'mask'
+    tzbudiachro%clevels  (NLVL_SHAPE)     = 'Mask'
+    tzbudiachro%ccomments(NLVL_SHAPE)     = 'Masked domain'
   end if
-  tzbudiachro%lmobile    = .false.
+
+  tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
+  tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Time_averaged'
+  tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are time averaged'
+
+  tzbudiachro%lleveluse(NLVL_NORM)        = .false.
+  tzbudiachro%clevels  (NLVL_NORM)        = 'Not_normalized'
+  tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
+
+  tzbudiachro%lleveluse(NLVL_MASK)        = .false.
+  if ( ybutype == 'MASK' ) then
+    tzbudiachro%clevels  (NLVL_MASK)      = CMASK_VARNAME
+    tzbudiachro%ccomments(NLVL_MASK)      = ''
+  else
+    tzbudiachro%clevels  (NLVL_MASK)      = ''
+    tzbudiachro%ccomments(NLVL_MASK)      = ''
+  end if
+
+  if ( ybutype == 'CART' ) then
+    tzbudiachro%lmobile  = .false.
+  else
+    !Masks are updated at each timestep (therefore the studied domains change during execution)
+    tzbudiachro%lmobile  = .true.
+  end if
   tzbudiachro%licompress = lbu_icp
   tzbudiachro%ljcompress = lbu_jcp
   tzbudiachro%lkcompress = lbu_kcp
+  !Remark: ltcompress should be false for INIF and ENDF fields
+  !        but if set to false these fields should be separated and stored somewhere else
+  tzbudiachro%ltcompress = .true. !Data is temporally averaged
+  tzbudiachro%lnorm      = .false.
+  !Boundaries in physical domain does not make sense here if 'MASK'
+  !In that case, these values are not written in the netCDF files
+  !But they are always written in the LFI files. They are kept (in the MASK case) for backward compatibility.
   tzbudiachro%nil        = nbuil
   tzbudiachro%nih        = nbuih
   tzbudiachro%njl        = nbujl
   tzbudiachro%njh        = nbujh
   tzbudiachro%nkl        = nbukl
   tzbudiachro%nkh        = nbukh
+  if ( tpbudget%nid > NBUDGET_SV1 ) then
+    jsv = tpbudget%nid - NBUDGET_SV1 + 1
+  else
+    jsv = -1
+  end if
   tzbudiachro%nsv        = jsv
 
   call Write_diachro( tpdiafile, tzbudiachro, tzfields, tpdates, zworkt, osplit = .true. )

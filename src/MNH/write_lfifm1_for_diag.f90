@@ -145,6 +145,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG
 !  P. Wautelet 08/02/2019: minor bug: compute ZWORK36 only when needed
 !  S  Bielli      02/2019: sea salt: significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 18/03/2020: remove ICE2 option
+!      B. Vie          06/2020 Add prognostic supersaturation for LIMA
 !  P. Wautelet 11/03/2021: bugfix: correct name for NSV_LIMA_IMM_NUCL
 !  J.L Redelsperger 03/2021 Adding OCEAN LES Case and Autocoupled O-A LES 
 !-------------------------------------------------------------------------------
@@ -1169,6 +1170,11 @@ IF (LLIMA_DIAG) THEN
 ! Hom. freez. of CCN
     IF (JSV .EQ. NSV_LIMA_HOM_HAZE) THEN
       TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_CONC(5))//'T'
+    END IF
+    !
+! Supersaturation          
+    IF (JSV .EQ. NSV_LIMA_SPRO) THEN
+      TZFIELD%CMNHNAME   = TRIM(CLIMA_WARM_CONC(5))//'T'
     END IF
     !
     TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)

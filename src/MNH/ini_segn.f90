@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -172,7 +172,7 @@ END MODULE MODI_INI_SEG_n
 USE MODD_CONF
 USE MODD_CONF_n,           ONLY: CSTORAGE_TYPE
 USE MODN_CONFZ
-USE MODD_DYN_n, ONLY : LOCEAN
+USE MODD_DYN_n,            ONLY : LOCEAN
 USE MODD_DYN
 USE MODD_IO,               ONLY: NVERB_FATAL, NVERB_WARNING, TFILE_OUTPUTLISTING, TFILEDATA
 USE MODD_LUNIT
@@ -441,7 +441,8 @@ END IF
 ! routine which read related informations in the EXSEG descriptor in order to 
 ! check coherence between both informations.
 !
-CALL IO_Field_read(TPINIFILE,'LOCEAN',LOCEAN)
+CALL IO_Field_read(TPINIFILE,'LOCEAN',LOCEAN,IRESP)
+IF ( IRESP /= 0 ) LOCEAN = .FALSE.
 !
 CALL READ_EXSEG_n(KMI,TZFILE_DES,YCONF,GFLAT,GUSERV,GUSERC,                 &
                 GUSERR,GUSERI,GUSECI,GUSERS,GUSERG,GUSERH,GUSECHEM,         &

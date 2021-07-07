@@ -9,7 +9,7 @@
 !
 INTERFACE 
 !
-      SUBROUTINE READ_FIELD(KOCMI,TPINIFILE,KIU,KJU,KKU,                           &
+      SUBROUTINE READ_FIELD(KOCEMI,TPINIFILE,KIU,KJU,KKU,                    &
             HGETTKET,HGETRVT,HGETRCT,HGETRRT,HGETRIT,HGETCIT,HGETZWS,        &
             HGETRST,HGETRGT,HGETRHT,HGETSVT,HGETSRCT,HGETSIGS,HGETCLDFR,     &
             HGETBL_DEPTH,HGETSBL_DEPTH,HGETPHC,HGETPHR,HUVW_ADV_SCHEME,      &
@@ -37,8 +37,9 @@ USE MODD_IO, ONLY : TFILEDATA
 USE MODD_TIME ! for type DATE_TIME
 !
 !
+INTEGER,                   INTENT(IN)  :: KOCEMI !Ocan model index
 TYPE(TFILEDATA),           INTENT(IN)  :: TPINIFILE    !Initial file
-INTEGER,                   INTENT(IN)  :: KIU, KJU, KKU,KOCMI   
+INTEGER,                   INTENT(IN)  :: KIU, KJU, KKU
                              ! array sizes in x, y and z  directions
 ! 
 CHARACTER (LEN=*),         INTENT(IN)  :: HGETTKET,                          &
@@ -131,7 +132,7 @@ END INTERFACE
 END MODULE MODI_READ_FIELD
 !
 !     ########################################################################
-      SUBROUTINE READ_FIELD(KOCEMI,TPINIFILE,KIU,KJU,KKU,                           &
+      SUBROUTINE READ_FIELD(KOCEMI,TPINIFILE,KIU,KJU,KKU,                    &
             HGETTKET,HGETRVT,HGETRCT,HGETRRT,HGETRIT,HGETCIT,HGETZWS,        &
             HGETRST,HGETRGT,HGETRHT,HGETSVT,HGETSRCT,HGETSIGS,HGETCLDFR,     &
             HGETBL_DEPTH,HGETSBL_DEPTH,HGETPHC,HGETPHR,HUVW_ADV_SCHEME,      &
@@ -251,6 +252,7 @@ END MODULE MODI_READ_FIELD
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 14/03/2019: correct ZWS when variable not present in file
 !  M. Leriche  10/06/2019: in restart case read all immersion modes for LIMA
+!! B. Vie         06/2020: Add prognostic supersaturation for LIMA
 !! F. Auguste  02/2021: add fields necessary for IBM
 !! T. Nagel    02/2021: add fields necessary for turbulence recycling
 !! J.L. Redelsperger 03/2021:  add necessary variables for Ocean LES case
@@ -270,14 +272,14 @@ USE MODD_CONF_n
 USE MODD_CST
 USE MODD_CTURB
 USE MODD_DUST
-USE MODD_DYN_n, ONLY : LOCEAN
+USE MODD_DYN_n,           ONLY: LOCEAN
 USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
 use modd_field,           only: tfielddata, tfieldlist, TYPEDATE, TYPEREAL,TYPELOG,TYPEINT
 USE MODD_FIELD_n,         only: XZWS_DEFAULT
 #ifdef MNH_FOREFIRE
 USE MODD_FOREFIRE
 #endif
-USE MODD_IBM_PARAM_n, ONLY: LIBM
+USE MODD_IBM_PARAM_n,     ONLY: LIBM
 USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
 USE MODD_IO,              ONLY: TFILEDATA
 USE MODD_LATZ_EDFLX
@@ -291,11 +293,11 @@ USE MODD_PARAM_LIMA     , ONLY: NMOD_CCN, LSCAV, LAERO_MASS,                &
                                 NMOD_IFN, NMOD_IMM, NINDICE_CCN_IMM, LHHONI
 USE MODD_PARAM_LIMA_COLD, ONLY: CLIMA_COLD_NAMES
 USE MODD_PARAM_LIMA_WARM, ONLY: CLIMA_WARM_NAMES, CAERO_MASS
-USE MODD_PARAM_n,           ONLY: CSCONV
+USE MODD_PARAM_n,         ONLY: CSCONV
 USE MODD_PASPOL
 USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
 USE MODD_RECYCL_PARAM_n
-USE MODD_REF, ONLY:LCOUPLES
+USE MODD_REF,             ONLY: LCOUPLES
 USE MODD_SALT
 USE MODD_TIME ! for type DATE_TIME
 !
@@ -313,8 +315,9 @@ IMPLICIT NONE
 !
 !
 !
+INTEGER,                   INTENT(IN)  :: KOCEMI !Ocan model index
 TYPE(TFILEDATA),           INTENT(IN)  :: TPINIFILE    !Initial file
-INTEGER,                   INTENT(IN)  :: KIU, KJU, KKU,KOCEMI   
+INTEGER,                   INTENT(IN)  :: KIU, KJU, KKU
                              ! array sizes in x, y and z  directions
 ! 
 CHARACTER (LEN=*),         INTENT(IN)  :: HGETTKET,                          &
@@ -627,7 +630,7 @@ IF (LIBM .AND. CPROGRAM=='MESONH') THEN
    TZFIELD%CMNHNAME  = 'XMUT'
    TZFIELD%CLONGNAME = 'XMUT'
    TZFIELD%CSTDNAME  = ''
-   TZFIELD%CUNITS    = 'm2.s-1'
+   TZFIELD%CUNITS    = 'm2 s-1'
    TZFIELD%CDIR      = 'XY'
    TZFIELD%NGRID     = 1
    TZFIELD%NTYPE     = TYPEREAL
@@ -638,37 +641,39 @@ IF (LIBM .AND. CPROGRAM=='MESONH') THEN
    !
 ENDIF
 !
-ZLRECYCL=.FALSE.
 TZFIELD%CMNHNAME   = 'RECYCLING'
 TZFIELD%CLONGNAME  = 'RECYCLING'
 TZFIELD%CSTDNAME   = ''
 TZFIELD%CUNITS     = ''
-TZFIELD%CDIR       = ''
+TZFIELD%CDIR       = '--'
 TZFIELD%NGRID      = 1
 TZFIELD%NTYPE      = TYPELOG
 TZFIELD%NDIMS      = 0
 TZFIELD%LTIMEDEP   = .FALSE. 
-CALL IO_Field_read(TPINIFILE,TZFIELD,ZLRECYCL)
+CALL IO_Field_read(TPINIFILE,TZFIELD,ZLRECYCL,IRESP)
+!If field not found (file from older version of MesoNH) => set ZLRECYCL to false
+IF ( IRESP /= 0 ) ZLRECYCL = .FALSE.
+
 IF (ZLRECYCL) THEN
   !
   TZFIELD%CMNHNAME   = 'RCOUNT'
   TZFIELD%CLONGNAME  = 'RCOUNT'
   TZFIELD%CSTDNAME   = ''
   TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CDIR       = '--'
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEINT
   TZFIELD%NDIMS      = 0
   TZFIELD%LTIMEDEP   = .TRUE.
-  CALL IO_Field_read(TPINIFILE,TZFIELD,R_COUNT) 
+  CALL IO_Field_read(TPINIFILE,TZFIELD,NR_COUNT)
   !
-  IF (R_COUNT .NE. 0) THEN
+  IF (NR_COUNT .NE. 0) THEN
     IF (LRECYCLW) THEN 
       TZFIELD%CMNHNAME   = 'URECYCLW'
       TZFIELD%CLONGNAME  = 'URECYCLW'
       TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm.s-1'
-      TZFIELD%CDIR       = 'YY'
+      TZFIELD%CUNITS     = 'm s-1'
+      TZFIELD%CDIR       = 'XY'
       TZFIELD%NGRID      = 2
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
@@ -678,8 +683,8 @@ IF (ZLRECYCL) THEN
       TZFIELD%CMNHNAME   = 'VRECYCLW'
       TZFIELD%CLONGNAME  = 'VRECYCLW'
       TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm.s-1'
-      TZFIELD%CDIR       = 'YY'
+      TZFIELD%CUNITS     = 'm s-1'
+      TZFIELD%CDIR       = 'XY'
       TZFIELD%NGRID      = 3
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
@@ -689,8 +694,8 @@ IF (ZLRECYCL) THEN
       TZFIELD%CMNHNAME   = 'WRECYCLW'
       TZFIELD%CLONGNAME  = 'WRECYCLW'
       TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm.s-1'
-      TZFIELD%CDIR       = 'YY'
+      TZFIELD%CUNITS     = 'm s-1'
+      TZFIELD%CDIR       = 'XY'
       TZFIELD%NGRID      = 4
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
@@ -702,8 +707,8 @@ IF (ZLRECYCL) THEN
       TZFIELD%CMNHNAME   = 'URECYCLN'
       TZFIELD%CLONGNAME  = 'URECYCLN'
       TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm.s-1'
-      TZFIELD%CDIR       = 'XX'
+      TZFIELD%CUNITS     = 'm s-1'
+      TZFIELD%CDIR       = 'XY'
       TZFIELD%NGRID      = 2
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
@@ -713,8 +718,8 @@ IF (ZLRECYCL) THEN
       TZFIELD%CMNHNAME   = 'VRECYCLN'
       TZFIELD%CLONGNAME  = 'VRECYCLN'
       TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm.s-1'
-      TZFIELD%CDIR       = 'XX'
+      TZFIELD%CUNITS     = 'm s-1'
+      TZFIELD%CDIR       = 'XY'
       TZFIELD%NGRID      = 3
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
@@ -724,8 +729,8 @@ IF (ZLRECYCL) THEN
       TZFIELD%CMNHNAME   = 'WRECYCLN'
       TZFIELD%CLONGNAME  = 'WRECYCLN'
       TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm.s-1'
-      TZFIELD%CDIR       = 'XX'
+      TZFIELD%CUNITS     = 'm s-1'
+      TZFIELD%CDIR       = 'XY'
       TZFIELD%NGRID      = 4
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
@@ -737,8 +742,8 @@ IF (ZLRECYCL) THEN
       TZFIELD%CMNHNAME   = 'URECYCLE'
       TZFIELD%CLONGNAME  = 'URECYCLE'
       TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm.s-1'
-      TZFIELD%CDIR       = 'YY'
+      TZFIELD%CUNITS     = 'm s-1'
+      TZFIELD%CDIR       = 'XY'
       TZFIELD%NGRID      = 2
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
@@ -748,8 +753,8 @@ IF (ZLRECYCL) THEN
       TZFIELD%CMNHNAME   = 'VRECYCLE'
       TZFIELD%CLONGNAME  = 'VRECYCLE'
       TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm.s-1'
-      TZFIELD%CDIR       = 'YY'
+      TZFIELD%CUNITS     = 'm s-1'
+      TZFIELD%CDIR       = 'XY'
       TZFIELD%NGRID      = 3
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
@@ -759,8 +764,8 @@ IF (ZLRECYCL) THEN
       TZFIELD%CMNHNAME   = 'WRECYCLE'
       TZFIELD%CLONGNAME  = 'WRECYCLE'
       TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm.s-1'
-      TZFIELD%CDIR       = 'YY'
+      TZFIELD%CUNITS     = 'm s-1'
+      TZFIELD%CDIR       = 'XY'
       TZFIELD%NGRID      = 4
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
@@ -772,8 +777,8 @@ IF (ZLRECYCL) THEN
       TZFIELD%CMNHNAME   = 'URECYCLS'
       TZFIELD%CLONGNAME  = 'URECYCLS'
       TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm.s-1'
-      TZFIELD%CDIR       = 'XX'
+      TZFIELD%CUNITS     = 'm s-1'
+      TZFIELD%CDIR       = 'XY'
       TZFIELD%NGRID      = 2
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
@@ -783,8 +788,8 @@ IF (ZLRECYCL) THEN
       TZFIELD%CMNHNAME   = 'VRECYCLS'
       TZFIELD%CLONGNAME  = 'VRECYCLS'
       TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm.s-1'
-      TZFIELD%CDIR       = 'XX'
+      TZFIELD%CUNITS     = 'm s-1'
+      TZFIELD%CDIR       = 'XY'
       TZFIELD%NGRID      = 3
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
@@ -794,8 +799,8 @@ IF (ZLRECYCL) THEN
       TZFIELD%CMNHNAME   = 'WRECYCLS'
       TZFIELD%CLONGNAME  = 'WRECYCLS'
       TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'm.s-1'
-      TZFIELD%CDIR       = 'XX'
+      TZFIELD%CUNITS     = 'm s-1'
+      TZFIELD%CDIR       = 'XY'
       TZFIELD%NGRID      = 4
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
@@ -942,6 +947,11 @@ DO JSV = NSV_LIMA_BEG,NSV_LIMA_END
 ! Hom. freez. of CCN
     IF (JSV .EQ. NSV_LIMA_HOM_HAZE) THEN
       TZFIELD%CMNHNAME   = TRIM(CLIMA_COLD_NAMES(5))//'T'
+    END IF
+!
+! Super saturation      
+    IF (JSV .EQ. NSV_LIMA_SPRO) THEN
+      TZFIELD%CMNHNAME   = TRIM(CLIMA_WARM_NAMES(5))//'T'
     END IF
 !
     TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)

@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 operators 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !####################
 MODULE MODI_HYPGEO
@@ -97,7 +92,7 @@ REAL                                 :: ZX0,ZX1,ZZA,ZZB,ZZC,ZZD,Y(2)
 !------------------------------------------------------------------------------
 !
 !
-ZEPS = 2.E-2
+ZEPS = 4.E-2
 ZXH = PF * PX**2.0
 IF (ZXH.LT.(1-ZEPS)) THEN
   CALL HYPSER(PA,PB,PC,-ZXH,PHYPGEO)

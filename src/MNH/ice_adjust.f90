@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1996-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -10,13 +10,14 @@
 INTERFACE
 !
       SUBROUTINE ICE_ADJUST (KKA, KKU, KKL, KRR, HFRAC_ICE, HCONDENS, HLAMBDA3,&
-                             HBUNAME, OSUBG_COND, OSIGMAS, HSUBG_MF_PDF,&
+                             HBUNAME, OSUBG_COND, OSIGMAS, HSUBG_MF_PDF,       &
                              PTSTEP, PSIGQSAT,                                 &
-                             PRHODJ, PEXNREF, PRHODREF, PSIGS, PMFCONV, PPABST, PZZ,     &
+                             PRHODJ, PEXNREF, PRHODREF, PSIGS, PMFCONV,        &
+                             PPABST, PZZ,                                      &
                              PEXN, PCF_MF, PRC_MF, PRI_MF,                     &
-                             PRV, PRC, PRVS, PRCS, PTH, PTHS, PSRCS, PCLDFR ,  &
-                             PRR, PRI, PRIS, PRS, PRG,                         &
-                             PRH, POUT_RV, POUT_RC, POUT_RI, POUT_TH,          &
+                             PRV, PRC, PRVS, PRCS, PTH, PTHS, PSRCS, PCLDFR,   &
+                             PRR, PRI, PRIS, PRS, PRG, PRH,                    &
+                             POUT_RV, POUT_RC, POUT_RI, POUT_TH,               &
                              PHLC_HRC, PHLC_HCF, PHLI_HRI, PHLI_HCF            )
 !
 INTEGER,                  INTENT(IN)    :: KKA   !near ground array index  
@@ -24,15 +25,15 @@ INTEGER,                  INTENT(IN)    :: KKU   !uppest atmosphere array index
 INTEGER,                  INTENT(IN)    :: KKL   !vert. levels type 1=MNH -1=ARO
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 CHARACTER(len=1),         INTENT(IN)    :: HFRAC_ICE
-CHARACTER(len=80),             INTENT(IN)    :: HCONDENS
-CHARACTER(len=4),              INTENT(IN)    :: HLAMBDA3 ! formulation for lambda3 coeff
+CHARACTER(len=80),        INTENT(IN)    :: HCONDENS
+CHARACTER(len=4),         INTENT(IN)    :: HLAMBDA3 ! formulation for lambda3 coeff
 CHARACTER(len=*),         INTENT(IN)    :: HBUNAME  ! Name of the budget
 LOGICAL,                  INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid 
                                                     ! Condensation
 LOGICAL                                 :: OSIGMAS  ! Switch for Sigma_s: 
                                                     ! use values computed in CONDENSATION
                                                     ! or that from turbulence scheme
-CHARACTER(len=80),             INTENT(IN)    :: HSUBG_MF_PDF
+CHARACTER(len=*),         INTENT(IN)   :: HSUBG_MF_PDF
 REAL,                     INTENT(IN)   :: PTSTEP    ! Double Time step
                                                     ! (single if cold start)
 REAL,                     INTENT(IN)   :: PSIGQSAT  ! coeff applied to qsat variance contribution
@@ -47,7 +48,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABST  ! Absolute Pressure at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PZZ     ! height of model layer
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PEXN    ! Exner function
 !
-REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PCF_MF! Convective Mass Flux Cloud fraction 
+REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PCF_MF! Convective Mass Flux Cloud fraction
 REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PRI_MF! Convective Mass Flux ice mixing ratio
 REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PRC_MF! Convective Mass Flux liquid mixing ratio
 !
@@ -174,7 +175,6 @@ END MODULE MODI_ICE_ADJUST
 !!                         or to call it on S variables
 !!      2016-11 S. Riette: all-or-nothing adjustment now uses condensation
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
-!  P. Wautelet 24/02/2020: bugfix: corrected budget name (DEPI->CDEPI) for ice_adjust
 !  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !-------------------------------------------------------------------------------
 !
@@ -206,15 +206,15 @@ INTEGER,                  INTENT(IN)    :: KKU  !uppest atmosphere array index
 INTEGER,                  INTENT(IN)    :: KKL  !vert. levels type 1=MNH -1=ARO
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 CHARACTER(len=1),         INTENT(IN)    :: HFRAC_ICE
-CHARACTER(len=80),             INTENT(IN)    :: HCONDENS
-CHARACTER(len=4),              INTENT(IN)    :: HLAMBDA3 ! formulation for lambda3 coeff
+CHARACTER(len=80),        INTENT(IN)    :: HCONDENS
+CHARACTER(len=4),         INTENT(IN)    :: HLAMBDA3 ! formulation for lambda3 coeff
 CHARACTER(len=*),         INTENT(IN)    :: HBUNAME  ! Name of the budget
 LOGICAL,                  INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid 
                                                     ! Condensation
 LOGICAL                                 :: OSIGMAS  ! Switch for Sigma_s: 
                                                     ! use values computed in CONDENSATION
                                                     ! or that from turbulence scheme
-CHARACTER(len=80),             INTENT(IN)    :: HSUBG_MF_PDF
+CHARACTER(len=*),         INTENT(IN)    :: HSUBG_MF_PDF
 REAL,                     INTENT(IN)   :: PTSTEP    ! Double Time step
                                                     ! (single if cold start)
 REAL,                     INTENT(IN)   :: PSIGQSAT  ! coeff applied to qsat variance contribution

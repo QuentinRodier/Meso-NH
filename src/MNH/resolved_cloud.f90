@@ -271,7 +271,6 @@ END MODULE MODI_RESOLVED_CLOUD
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 01/02/2019: ZRSMIN is now allocatable (instead of size of XRTMIN which was sometimes not allocated)
 !  C. Lac         02/2019: add rain fraction as an output field
-!  P. Wautelet 24/02/2020: bugfix: corrected budget name (DEPI->CDEPI) for ice_adjust
 !  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
 !  B. Vie         03/2020: LIMA negativity checks after turbulence, advection and microphysics budgets
 !  B. Vie      03/03/2020: use DTHRAD instead of dT/dt in Smax diagnostic computation
@@ -281,6 +280,7 @@ END MODULE MODI_RESOLVED_CLOUD
 !  P. Wautelet 23/06/2020: remove ZSVS and ZSVT to improve code readability
 !  P. Wautelet 30/06/2020: move removal of negative scalar variables to Sources_neg_correct
 !  P. Wautelet 30/06/2020: remove non-local corrections
+!  B. Vie         06/2020: add prognostic supersaturation for LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -296,8 +296,7 @@ USE MODD_NSV,            ONLY: NSV_C1R3END, NSV_C2R2BEG, NSV_C2R2END,           
 USE MODD_PARAM_C2R2,     ONLY: LSUPSAT
 USE MODD_PARAMETERS,     ONLY: JPHEXT, JPVEXT
 USE MODD_PARAM_ICE,      ONLY: CSEDIM, LADJ_BEFORE, LADJ_AFTER, CFRAC_ICE_ADJUST, LRED
-USE MODD_PARAM_LIMA,     ONLY: LCOLD, LRAIN, LWARM, XCONC_CCN_TOT, NMOD_CCN, NMOD_IFN, NMOD_IMM, LPTSPLIT, &
-                               YRTMIN=>XRTMIN, YCTMIN=>XCTMIN
+USE MODD_PARAM_LIMA,     ONLY: LADJ, LCOLD, LPTSPLIT, LSPRO, NMOD_CCN, NMOD_IFN, NMOD_IMM
 USE MODD_RAIN_ICE_DESCR, ONLY: XRTMIN
 USE MODD_SALT,           ONLY: LSALT
 USE MODD_TURB_n,         ONLY: CSUBG_AUCV_RI, CCONDENS, CLAMBDA3, CSUBG_MF_PDF
@@ -312,8 +311,10 @@ USE MODI_ICE_ADJUST
 USE MODI_KHKO_NOTADJUST
 USE MODI_LIMA
 USE MODI_LIMA_ADJUST
+USE MODI_LIMA_ADJUST_SPLIT
 USE MODI_LIMA_COLD
 USE MODI_LIMA_MIXED
+USE MODI_LIMA_NOTADJUST
 USE MODI_LIMA_WARM
 USE MODI_RAIN_C2R2_KHKO
 USE MODI_RAIN_ICE
@@ -473,6 +474,9 @@ INTEGER                               :: JMOD, JMOD_IFN
 LOGICAL                               :: GWEST,GEAST,GNORTH,GSOUTH
 ! BVIE work array waiting for PINPRI
 REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2)):: ZINPRI
+REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZICEFR
+REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZPRCFR
+REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZTM
 !
 !------------------------------------------------------------------------------
 !
@@ -796,7 +800,7 @@ SELECT CASE ( HCLOUD )
 !
     IF (.NOT. LRED .OR. (LRED .AND. LADJ_AFTER) ) THEN
       CALL ICE_ADJUST (1, IKU, 1, KRR, CFRAC_ICE_ADJUST, CCONDENS, CLAMBDA3,   &
-                       'CDEPI', OSUBG_COND, OSIGMAS, CSUBG_MF_PDF,             &
+                       'DEPI', OSUBG_COND, OSIGMAS, CSUBG_MF_PDF,              &
                        PTSTEP, PSIGQSAT,                                       &
                        PRHODJ, PEXNREF, PRHODREF, PSIGS, PMFCONV, PPABST, ZZZ, &
                        ZEXN, PCF_MF, PRC_MF, PRI_MF,                           &
@@ -894,7 +898,7 @@ SELECT CASE ( HCLOUD )
 !
     IF (.NOT. LRED .OR. (LRED .AND. LADJ_AFTER) ) THEN
      CALL ICE_ADJUST (1, IKU, 1, KRR, CFRAC_ICE_ADJUST, CCONDENS, CLAMBDA3,  &
-                     'CDEPI', OSUBG_COND, OSIGMAS, CSUBG_MF_PDF,             &
+                     'DEPI', OSUBG_COND, OSIGMAS, CSUBG_MF_PDF,              &
                      PTSTEP, PSIGQSAT,                                       &
                      PRHODJ, PEXNREF, PRHODREF, PSIGS, PMFCONV, PPABST, ZZZ, &
                      ZEXN, PCF_MF, PRC_MF, PRI_MF,                           &
@@ -935,7 +939,7 @@ SELECT CASE ( HCLOUD )
                    PSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END), PW_ACT,          &
                    PTHS, PRS, PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),       &
                    PINPRC, PINDEP, PINPRR, ZINPRI, PINPRS, PINPRG, PINPRH, &
-                   PEVAP3D                                                 )
+                   PEVAP3D, PCLDFR, ZICEFR, ZPRCFR                         )
      ELSE
 
         IF (OWARM) CALL LIMA_WARM(OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,       &
@@ -964,12 +968,28 @@ SELECT CASE ( HCLOUD )
 !
 !*       12.2   Perform the saturation adjustment
 !
-     CALL LIMA_ADJUST(KRR, KMI, TPFILE, HRAD,                           &
-                      HTURBDIM, OSUBG_COND, PTSTEP,                     &
-                      PRHODREF, PRHODJ, PEXNREF, PPABST, PSIGS, PPABST, &
-                      PRT, PRS, PSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),  &
-                      PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),            &
-                      PTHS, PSRCS, PCLDFR                               )
+   IF (LSPRO) THEN
+    CALL LIMA_NOTADJUST (KMI, TPFILE, HRAD,                                      &
+                         PTSTEP, PRHODJ, PPABSM, PPABST, PRHODREF, PEXNREF, PZZ, &
+                         PTHT,PRT, PSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),        &
+                         PTHS,PRS, PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),        &
+                         PCLDFR, PSRCS                                           )
+   ELSE IF (LPTSPLIT) THEN
+    CALL LIMA_ADJUST_SPLIT(KRR, KMI, TPFILE, CCONDENS, CLAMBDA3,                     &
+                     OSUBG_COND, OSIGMAS, PTSTEP, PSIGQSAT,                          &
+                     PRHODREF, PRHODJ, PEXNREF, PPABST, PSIGS, PMFCONV, PPABST, ZZZ, &
+                     PDTHRAD, PW_ACT,                                                &
+                     PRT, PRS, PSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),                &
+                     PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),                          &
+                     PTHS, PSRCS, PCLDFR, PRC_MF, PCF_MF                             )
+   ELSE
+    CALL LIMA_ADJUST(KRR, KMI, TPFILE,                                &
+                     OSUBG_COND, PTSTEP,                              &
+                     PRHODREF, PRHODJ, PEXNREF, PPABST, PPABST,       &
+                     PRT, PRS, PSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END), &
+                     PSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),           &
+                     PTHS, PSRCS, PCLDFR                              )
+   ENDIF
 !
 END SELECT
 !

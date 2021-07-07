@@ -17,7 +17,8 @@
 MODULE MODE_LES_DIACHRO
 !#######################
 
-use modd_budget, only: tbudiachrometadata
+use modd_budget, only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK, &
+                       tbudiachrometadata
 use modd_les_n,  only: tles_dates, xles_times
 use modd_lunit
 
@@ -748,9 +749,9 @@ end if
 
 end subroutine Les_diachro_2D
 
-!##################################################################################
-subroutine Les_diachro_3D( tpdiafile, tpfield, odoavg, odonorm, pfield, hsuffixes )
-!##################################################################################
+!##########################################################################################
+subroutine Les_diachro_3D( tpdiafile, tpfield, odoavg, odonorm, pfield, hsuffixes, hmasks )
+!##########################################################################################
 
 use modd_field, only: NMNHDIM_BUDGET_LES_LEVEL, NMNHDIM_BUDGET_LES_MASK, NMNHDIM_BUDGET_LES_SV, &
                       NMNHDIM_BUDGET_LES_TIME,  NMNHDIM_BUDGET_TERM,     NMNHDIM_UNUSED,        &
@@ -763,6 +764,7 @@ logical,                                   intent(in) :: odoavg     ! Compute an
 logical,                                   intent(in) :: odonorm    ! Compute and store normalized field
 real,                    dimension(:,:,:), intent(in) :: pfield     ! Data array
 character(len=*),        dimension(:),     optional, intent(in) :: hsuffixes
+character(len=*),        dimension(:),     optional, intent(in) :: hmasks
 
 type(tfield_metadata_base) :: tzfield
 
@@ -779,9 +781,23 @@ if ( Any( tzfield%ndimlist(4:) /= NMNHDIM_UNUSED ) ) then
   tzfield%ndimlist(4:) = NMNHDIM_UNUSED
 end if
 
-if (         tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL                                                 &
-     .and.   tzfield%ndimlist(2) == NMNHDIM_BUDGET_LES_TIME                                                  &
-     .and. ( tzfield%ndimlist(3) == NMNHDIM_BUDGET_LES_MASK .or.tzfield%ndimlist(3) == NMNHDIM_BUDGET_TERM ) ) then
+if (       tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL &
+     .and. tzfield%ndimlist(2) == NMNHDIM_BUDGET_LES_TIME  &
+     .and. tzfield%ndimlist(3) == NMNHDIM_BUDGET_LES_MASK  ) then
+  if ( .not. Present( hmasks ) ) &
+    call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_3D', &
+                    'optional dummy argument hmasks is needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
+
+  if ( Size( hmasks ) /= Size( pfield, 3) ) &
+    call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_3D', 'wrong size for hmasks (' // Trim( tzfield%cmnhname ) // ')' )
+
+  tzfield%ndimlist(4) = NMNHDIM_UNUSED
+  call Les_diachro_common( tpdiafile, tzfield,                                                                &
+                           reshape( pfield, [ size( pfield, 1 ), size( pfield, 2 ), size( pfield, 3 ), 1 ] ), &
+                           odoavg, odonorm, hmasks = hmasks )
+else if (       tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL &
+          .and. tzfield%ndimlist(2) == NMNHDIM_BUDGET_LES_TIME  &
+          .and. tzfield%ndimlist(3) == NMNHDIM_BUDGET_TERM      ) then
   if ( .not. Present( hsuffixes ) ) &
     call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_3D', &
                     'optional dummy argument hsuffixes is needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
@@ -792,13 +808,17 @@ if (         tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL                    
   tzfield%ndimlist(4) = NMNHDIM_UNUSED
   call Les_diachro_common( tpdiafile, tzfield,                                                                &
                            reshape( pfield, [ size( pfield, 1 ), size( pfield, 2 ), size( pfield, 3 ), 1 ] ), &
-                           odoavg, odonorm, hsuffixes )
+                           odoavg, odonorm, hsuffixes = hsuffixes )
 else if (       tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL &
           .and. tzfield%ndimlist(2) == NMNHDIM_BUDGET_LES_TIME  &
           .and. tzfield%ndimlist(3) == NMNHDIM_BUDGET_LES_SV    ) then
   if ( Present( hsuffixes ) ) &
     call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_3D', &
                     'optional dummy argument hsuffixes is not needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
+
+  if ( Present( hmasks ) ) &
+    call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_3D', &
+                    'optional dummy argument hmasks is not needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
 
   tzfield%ndimlist(4) = tzfield%ndimlist(3)
   tzfield%ndimlist(3) = NMNHDIM_UNUSED
@@ -812,9 +832,9 @@ end if
 
 end subroutine Les_diachro_3D
 
-!##################################################################################
-subroutine Les_diachro_4D( tpdiafile, tpfield, odoavg, odonorm, pfield, hsuffixes )
-!##################################################################################
+!##########################################################################################
+subroutine Les_diachro_4D( tpdiafile, tpfield, odoavg, odonorm, pfield, hsuffixes, hmasks )
+!##########################################################################################
 
 use modd_field, only: NMNHDIM_BUDGET_LES_LEVEL, NMNHDIM_BUDGET_LES_MASK, NMNHDIM_BUDGET_LES_SV, &
                       NMNHDIM_BUDGET_LES_TIME,  NMNHDIM_BUDGET_TERM,     NMNHDIM_UNUSED,        &
@@ -827,6 +847,7 @@ logical,                                     intent(in) :: odoavg     ! Compute 
 logical,                                     intent(in) :: odonorm    ! Compute and store normalized field
 real,                    dimension(:,:,:,:), intent(in) :: pfield     ! Data array
 character(len=*),        dimension(:),     optional, intent(in) :: hsuffixes
+character(len=*),        dimension(:),     optional, intent(in) :: hmasks
 
 type(tfield_metadata_base) :: tzfield
 
@@ -843,10 +864,22 @@ if ( Any( tzfield%ndimlist(5:) /= NMNHDIM_UNUSED ) ) then
   tzfield%ndimlist(5:) = NMNHDIM_UNUSED
 end if
 
-if (         tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL                                                 &
-     .and.   tzfield%ndimlist(2) == NMNHDIM_BUDGET_LES_TIME                                                  &
-     .and. ( tzfield%ndimlist(3) == NMNHDIM_BUDGET_LES_MASK .or.tzfield%ndimlist(3) == NMNHDIM_BUDGET_TERM ) &
-     .and.   tzfield%ndimlist(4) == NMNHDIM_BUDGET_LES_SV                                                    ) then
+if (       tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL&
+     .and. tzfield%ndimlist(2) == NMNHDIM_BUDGET_LES_TIME &
+     .and. tzfield%ndimlist(3) == NMNHDIM_BUDGET_LES_MASK &
+     .and. tzfield%ndimlist(4) == NMNHDIM_BUDGET_LES_SV   ) then
+  if ( .not. Present( hmasks ) ) &
+    call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
+                    'optional dummy argument hmasks is needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
+
+  if ( Size( hmasks ) /= Size( pfield, 3) ) &
+    call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_4D', 'wrong size for hmasks (' // Trim( tzfield%cmnhname ) // ')' )
+
+  call Les_diachro_common( tpdiafile, tzfield, pfield, odoavg, odonorm, hmasks = hmasks )
+else if (       tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL &
+          .and. tzfield%ndimlist(2) == NMNHDIM_BUDGET_LES_TIME  &
+          .and. tzfield%ndimlist(3) == NMNHDIM_BUDGET_TERM      &
+          .and. tzfield%ndimlist(4) == NMNHDIM_BUDGET_LES_SV    ) then
   if ( .not. Present( hsuffixes ) ) &
     call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
                     'optional dummy argument hsuffixes is needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
@@ -854,7 +887,7 @@ if (         tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL                    
   if ( Size( hsuffixes ) /= Size( pfield, 3) ) &
     call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_4D', 'wrong size for hsuffixes (' // Trim( tzfield%cmnhname ) // ')' )
 
-  call Les_diachro_common( tpdiafile, tzfield, pfield, odoavg, odonorm, hsuffixes )
+  call Les_diachro_common( tpdiafile, tzfield, pfield, odoavg, odonorm, hsuffixes= hsuffixes )
 else
   call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
                   'ndimlist configuration not yet implemented for ' // Trim( tzfield%cmnhname ) )
@@ -862,9 +895,9 @@ end if
 
 end subroutine Les_diachro_4D
 
-!#######################################################################################
-subroutine Les_diachro_common( tpdiafile, tpfield, pfield, odoavg, odonorm, hsuffixes )
-!#######################################################################################
+!##############################################################################################
+subroutine Les_diachro_common( tpdiafile, tpfield, pfield, odoavg, odonorm, hsuffixes, hmasks )
+!##############################################################################################
 
 use modd_field,         only: tfield_metadata_base
 use modd_io,            only: tfiledata
@@ -881,14 +914,14 @@ real,                       dimension(:,:,:,:),           intent(in) :: pfield  
 logical,                                                  intent(in) :: odoavg    ! Compute and store time average
 logical,                                                  intent(in) :: odonorm   ! Compute and store normalized field
 character(len=*),           dimension(:),       optional, intent(in) :: hsuffixes
+character(len=*),           dimension(:),       optional, intent(in) :: hmasks
 
 character(len=100),         dimension(:),     allocatable :: ycomment                      ! Comment string
 character(len=100),         dimension(:),     allocatable :: ytitle                        ! Title
-integer                                                   :: iavg
 integer                                                   :: iles_k                        ! Number of vertical levels
 integer                                                   :: iil, iih, ijl, ijh, ikl, ikh  ! Cartesian area relatively to the
                                                                                            ! entire domain
-integer                                                   :: jk                            ! Vertical loop counter
+integer                                                   :: jp                            ! Process loop counter
 real,                       dimension(:,:,:), allocatable :: ztrajz                        ! x and y are not used for LES
 type(tfield_metadata_base), dimension(:),     allocatable :: tzfields
 !------------------------------------------------------------------------------
@@ -909,9 +942,18 @@ ikl = nles_levels(1)
 ikh = nles_levels(iles_k)
 
 if ( Present( hsuffixes ) ) then
+  if ( Present( hmasks ) ) &
+    call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_common', 'hsuffixes and hmasks optional arguments may not be present ' // &
+                    'at the same time (' // Trim( tpfield%cmnhname ) // ')' )
   if ( Size( hsuffixes ) /= Size( pfield, 3) ) &
     call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_common', 'wrong size for hsuffixes (' // Trim( tpfield%cmnhname ) // ')' )
-  ycomment(:) = Trim( tpfield%ccomment(:) ) // hsuffixes(:)
+  ycomment(:) = Trim( tpfield%ccomment(:) ) // ' ' // hsuffixes(:)
+else if ( Present( hmasks ) ) then
+  if ( Size( hmasks ) /= Size( pfield, 3) ) &
+    call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_common', 'wrong size for hmasks (' // Trim( tpfield%cmnhname ) // ')' )
+  do jp = 1, Size( ycomment )
+    ycomment(jp) = Trim( tpfield%ccomment(:) ) // ' (' // Trim( hmasks(jp) ) // ')'
+  end do
 else
   ycomment(:) = tpfield%ccomment(:)
 end if
@@ -927,7 +969,8 @@ contains
 subroutine Les_diachro_common_intern( oavg, onorm )
 !#######################################################################################
 
-use modd_field,         only: NMNHDIM_BUDGET_LES_TIME, NMNHDIM_BUDGET_LES_AVG_TIME, NMNHDIM_BUDGET_LES_SV, NMNHDIM_UNUSED
+use modd_field,         only: NMNHDIM_BUDGET_LES_TIME, NMNHDIM_BUDGET_LES_AVG_TIME, NMNHDIM_BUDGET_LES_MASK, &
+                              NMNHDIM_BUDGET_LES_SV, NMNHDIM_UNUSED
 use modd_les,           only: nles_current_times
 
 use mode_write_diachro, only: Write_diachro
@@ -935,9 +978,9 @@ use mode_write_diachro, only: Write_diachro
 logical, intent(in) :: oavg
 logical, intent(in) :: onorm
 
-character(len=10)                                    :: ygroup  ! Group title
 integer                                              :: iresp   ! Return code
 integer                                              :: ji
+integer                                              :: jk      ! Vertical loop counter
 integer                                              :: jp      ! Process loop counter
 integer                                              :: jsv     ! Scalar loop counter
 logical                                              :: gsv
@@ -970,32 +1013,14 @@ else
   zfield(:, :, :, :) = pfield(:, :, :, :)
 end if
 
-! Time average
+! Time average (physical units remain unchanged)
 iresp = 0
 if ( oavg ) call Les_time_avg_4d( zfield, tzdates, iresp )
 
-if ( oavg ) then
-  if ( onorm ) then
-    ygroup = 'H_' // tpfield%cmnhname
-    tzbudiachro%ccomment = Trim( tpfield%ccomment ) // ' (normalized and time averaged)'
-  else
-    ygroup = 'A_' // tpfield%cmnhname
-    tzbudiachro%ccomment = Trim( tpfield%ccomment ) // ' (time averaged)'
-  end if
-else
-  if ( onorm ) then
-    ygroup = 'E_' // tpfield%cmnhname
-    tzbudiachro%ccomment = Trim( tpfield%ccomment ) // ' (normalized)'
-  else
-    ygroup = tpfield%cmnhname
-    tzbudiachro%ccomment = Trim( tpfield%ccomment )
-  end if
-endif
-
 if ( Present( hsuffixes ) ) then
-  ytitle(:) = ygroup // hsuffixes(:)
+  ytitle(:) = Trim( tpfield%cmnhname ) // '_' // hsuffixes(:)
 else
-  ytitle(:) = ygroup
+  ytitle(:) = tpfield%cmnhname
 endif
 
 ! Write the profile
@@ -1024,25 +1049,91 @@ if ( iresp == 0 .and. any( zfield /= XUNDEF ) ) then
   tzfields(:)%clongname = ytitle(:)
   tzfields(:)%ccomment  = ycomment(:)
 
-  tzbudiachro%cgroupname = ygroup
-  tzbudiachro%cname      = ygroup
-  !tzbudiachro%ccomment   = DONE BEFORE
-!   tzbudiachro%ctype      = 'SSOL'
-  tzbudiachro%ctype      = 'TLES' !T for trajectory (used in Write_diachro_lfi to add trajectory terms)
-  tzbudiachro%ccategory  = 'LES'
-  tzbudiachro%cshape     = 'cartesian'
+  tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
+  tzbudiachro%clevels  (NLVL_CATEGORY)    = 'LES_budgets'
+  tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different LES budgets'
+
+  tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
+  tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
+  tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
+
+  tzbudiachro%lleveluse(NLVL_GROUP)       = .false.
+  tzbudiachro%clevels  (NLVL_GROUP)       = ''
+  tzbudiachro%ccomments(NLVL_GROUP)       = ''
+
+  tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
+  tzbudiachro%clevels  (NLVL_SHAPE)       = 'Cartesian'
+  tzbudiachro%ccomments(NLVL_SHAPE)       = 'Cartesian domain'
+
+  tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .true.
+  if ( oavg ) then
+    tzbudiachro%clevels  (NLVL_TIMEAVG)   = 'Time_averaged'
+    tzbudiachro%ccomments(NLVL_TIMEAVG)   = 'Values are time averaged'
+  else
+    tzbudiachro%clevels  (NLVL_TIMEAVG)   = 'Not_time_averaged'
+    tzbudiachro%ccomments(NLVL_TIMEAVG)   = 'Values are not time averaged'
+  end if
+
+  tzbudiachro%lleveluse(NLVL_NORM)        = .true.
+  if ( onorm ) then
+    tzbudiachro%clevels  (NLVL_NORM)      = 'Normalized'
+    !Type of normalization is stored in the attribute "normalization" in Write_diachro
+    tzbudiachro%ccomments(NLVL_NORM)      = 'Values are normalized'
+  else
+    tzbudiachro%clevels  (NLVL_NORM)      = 'Not_normalized'
+    tzbudiachro%ccomments(NLVL_NORM)      = 'Values are not normalized'
+  end if
+
+  !lleveluse true also if no mask dimension to allow all fields to be in the same level/place in the file
+  !(especially if the 2 situation arise in the run)
+  tzbudiachro%lleveluse(NLVL_MASK)        = .true.
+  if ( tzfields(1)%ndimlist(6) == NMNHDIM_BUDGET_LES_MASK ) then
+!     tzbudiachro%clevels  (NLVL_MASK)        = DONE AFTER
+!     tzbudiachro%ccomments(NLVL_MASK)        = DONE AFTER
+  else
+    tzbudiachro%clevels  (NLVL_MASK)        = ''
+    tzbudiachro%ccomments(NLVL_MASK)        = ''
+  end if
+
   tzbudiachro%lmobile    = .false.
-  tzbudiachro%licompress = .false.
-  tzbudiachro%ljcompress = .false.
+  tzbudiachro%licompress = .true.
+  tzbudiachro%ljcompress = .true.
   tzbudiachro%lkcompress = .false.
+  tzbudiachro%ltcompress = oavg
+  tzbudiachro%lnorm      = onorm
   tzbudiachro%nil        = iil
   tzbudiachro%nih        = iih
   tzbudiachro%njl        = ijl
   tzbudiachro%njh        = ijh
+  !nkl and nkh values have no real meaning here except if all levels from ikl to ikh are used (and are correctly ordered)
+  !and if xles_altitudes is not used
+  !These values are not written in the netCDF files
+  !These values are written in the LFI files. They are kept for backward compatibility (and not set to default values)
   tzbudiachro%nkl        = ikl
   tzbudiachro%nkh        = ikh
 
-  call Write_diachro( tpdiafile, tzbudiachro, tzfields, tzdates, zwork6 )
+  if ( tzfields(1)%ndimlist(6) == NMNHDIM_BUDGET_LES_MASK ) then
+    tzfields(:)%ndimlist(6) = NMNHDIM_UNUSED
+
+    ! Loop on the different masks
+    ! Do not provide all tzfields once because they can be stored in different HDF groups (based on masks)
+    do jp = 1, Size( hmasks )
+      tzfields(jp)%clongname = Trim( ytitle(jp) ) // ' (' // Trim( hmasks(jp) ) // ')'
+      tzfields(jp)%ndims     = tzfields(jp)%ndims - 1
+
+      tzbudiachro%clevels(NLVL_MASK) = hmasks(jp)
+      tzbudiachro%ccomments(NLVL_MASK) = ''
+
+      call Write_diachro( tpdiafile, tzbudiachro, [ tzfields(jp) ], tzdates, zwork6(:,:,:,:,:,jp:jp) )
+    end do
+  else
+    !Set to the same value ('cart') than for the fields with no mask in Write_les_n
+    !to put the fields in the same position of the netCDF file
+    tzbudiachro%clevels(NLVL_MASK) = 'cart'
+
+    call Write_diachro( tpdiafile, tzbudiachro, tzfields, tzdates, zwork6 )
+  end if
+
 end if
 
 !-------------------------------------------------------------------------------
@@ -1128,6 +1219,11 @@ type(tfield_metadata_base)                           :: tzfield
 allocate( tzdates( NLES_CURRENT_TIMES ) )
 tzdates(:) = tles_dates(:)
 
+iil = nles_current_iinf
+iih = nles_current_isup
+ijl = nles_current_jinf
+ijh = nles_current_jsup
+
 ikl = 1
 ikh = nspectra_k
 
@@ -1136,11 +1232,6 @@ tzfield = tpfield
 
 if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_2PTS_NI ) then
   Allocate( zwork6(Size( pfield, 1 ), 1, nspectra_k, nles_current_times, 1, 1) )
-
-  iil = nles_current_iinf
-  iih = nles_current_isup
-  ijl = 1
-  ijh = 1
 
   do jt = 1, Size( pfield,  3 )
     do jk = 1, Size( pfield, 2 )
@@ -1160,11 +1251,6 @@ if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_2PTS_NI ) then
   ycomment(:) = " DOMEGAX=" // ystring // ' ' // tpfield%ccomment
 else if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_2PTS_NJ ) then
   Allocate( zwork6(1, Size( pfield, 1 ), nspectra_k, nles_current_times, 1, 1) )
-
-  iil = 1
-  iih = 1
-  ijl = nles_current_jinf
-  ijh = nles_current_jsup
 
   do jt = 1, Size( pfield, 3 )
     do jk = 1, Size( pfield, 2 )
@@ -1191,7 +1277,7 @@ tzfield%cmnhname  = ygroup
 tzfield%clongname = ygroup
 tzfield%ccomment  = ycomment(:)
 
-!* time average
+!* time average (physical units remain unchanged)
 iresp = 0
 if ( gavg ) then
   call Les_time_avg( zwork6, tzdates, iresp )
@@ -1202,24 +1288,60 @@ if ( gavg ) then
   end do
 end if
 
-tzbudiachro%cgroupname = ygroup
-tzbudiachro%cname      = ygroup
-if ( .not. gavg ) then
-  tzbudiachro%ccomment = tzfield%ccomment
+tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
+tzbudiachro%clevels  (NLVL_CATEGORY)    = 'LES_budgets'
+tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different LES budgets'
+
+tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
+tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
+tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
+
+tzbudiachro%lleveluse(NLVL_GROUP)       = .false.
+tzbudiachro%clevels  (NLVL_GROUP)       = ''
+tzbudiachro%ccomments(NLVL_GROUP)       = ''
+
+tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
+tzbudiachro%clevels  (NLVL_SHAPE)       = 'Two_point_correlation'
+tzbudiachro%ccomments(NLVL_SHAPE)       = ''
+
+tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .true.
+if ( gavg ) then
+  tzbudiachro%clevels  (NLVL_TIMEAVG)   = 'Time_averaged'
+  tzbudiachro%ccomments(NLVL_TIMEAVG)   = 'Values are time averaged'
 else
-  tzbudiachro%ccomment = Trim( tzfield%ccomment ) // ' (time averaged)'
+  tzbudiachro%clevels  (NLVL_TIMEAVG)   = 'Not_time_averaged'
+  tzbudiachro%ccomments(NLVL_TIMEAVG)   = 'Values are not time averaged'
 end if
-tzbudiachro%ctype      = 'SPXY'
-tzbudiachro%ccategory  = 'LES'
-tzbudiachro%cshape     = 'spectrum'
+
+tzbudiachro%lleveluse(NLVL_NORM)        = .true.
+tzbudiachro%clevels  (NLVL_NORM)        = 'Not_normalized'
+tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
+
+tzbudiachro%lleveluse(NLVL_MASK)        = .false.
+tzbudiachro%clevels  (NLVL_MASK)        = ''
+tzbudiachro%ccomments(NLVL_MASK)        = ''
+
+if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_2PTS_NI ) then
+  tzbudiachro%cdirection = 'I'
+else
+  tzbudiachro%cdirection = 'J'
+end if
 tzbudiachro%lmobile    = .false.
+!i/j/k compression has no meaning here as it is 2-point correlations
+!These values are not written in the netCDF files
+!These values are written in the LFI files. They are kept for backward compatibility with these values
 tzbudiachro%licompress = .false.
 tzbudiachro%ljcompress = .false.
 tzbudiachro%lkcompress = .false.
+tzbudiachro%ltcompress = gavg
+tzbudiachro%lnorm      = .false.
 tzbudiachro%nil        = iil
 tzbudiachro%nih        = iih
 tzbudiachro%njl        = ijl
 tzbudiachro%njh        = ijh
+!nkl and nkh values have no real meaning here
+!These values are not written in the netCDF files
+!These values are written in the LFI files. They are kept for backward compatibility (and not set to default values)
 tzbudiachro%nkl        = ikl
 tzbudiachro%nkh        = ikh
 
@@ -1295,6 +1417,11 @@ type(tfield_metadata_base)                           :: tzfield
 allocate( tzdates( nles_current_times ) )
 tzdates(:) = tles_dates(:)
 
+iil = nles_current_iinf
+iih = nles_current_isup
+ijl = nles_current_jinf
+ijh = nles_current_jsup
+
 ikl = 1
 ikh = nspectra_k
 
@@ -1306,11 +1433,6 @@ tzfield = tpfield
 
 if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_SPEC_NI ) then
   Allocate( zwork6(Size( pspectra, 1 ), 1, nspectra_k, nles_current_times, 2, 1) )
-
-  iil = nles_current_iinf
-  iih = nles_current_isup
-  ijl = 1
-  ijh = 1
 
   do jt = 1, Size( pspectra, 4 )
     do jk = 1, Size( pspectra, 3 )
@@ -1331,11 +1453,6 @@ if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_SPEC_NI ) then
   ycomment(:) = " DOMEGAX=" // ystring // ' ' // tpfield%ccomment
 else if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_SPEC_NJ ) then
   Allocate( zwork6( 1, Size( pspectra, 1 ), nspectra_k, nles_current_times, 2, 1 ) )
-
-  iil = 1
-  iih = 1
-  ijl = nles_current_jinf
-  ijh = nles_current_jsup
 
   do jt = 1, Size( pspectra, 4 )
     do jk = 1, Size( pspectra, 3 )
@@ -1362,48 +1479,117 @@ tzfield%cmnhname  = ygroup
 tzfield%clongname = ygroup
 tzfield%ccomment  = ycomment(:)
 
-tzbudiachro%cgroupname = ygroup
-tzbudiachro%cname      = ygroup
-tzbudiachro%ccomment   = tzfield%ccomment
-tzbudiachro%ctype      = 'SPXY'
-tzbudiachro%ccategory  = 'LES'
-tzbudiachro%cshape     = 'spectrum'
+tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
+tzbudiachro%clevels  (NLVL_CATEGORY)    = 'LES_budgets'
+tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different LES budgets'
+
+tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
+tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
+tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
+
+tzbudiachro%lleveluse(NLVL_GROUP)       = .false.
+tzbudiachro%clevels  (NLVL_GROUP)       = ''
+tzbudiachro%ccomments(NLVL_GROUP)       = ''
+
+tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
+tzbudiachro%clevels  (NLVL_SHAPE)       = 'Spectrum'
+tzbudiachro%ccomments(NLVL_SHAPE)       = ''
+
+tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .true.
+tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not_time_averaged'
+tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are not time averaged'
+
+tzbudiachro%lleveluse(NLVL_NORM)        = .true.
+tzbudiachro%clevels  (NLVL_NORM)        = 'Not_normalized'
+tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
+
+tzbudiachro%lleveluse(NLVL_MASK)        = .false.
+tzbudiachro%clevels  (NLVL_MASK)        = ''
+tzbudiachro%ccomments(NLVL_MASK)        = ''
+
+if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_SPEC_NI ) then
+  tzbudiachro%cdirection = 'I'
+else
+  tzbudiachro%cdirection = 'J'
+end if
 tzbudiachro%lmobile    = .false.
+!i/j/k compression has no meaning here as it is spectrum
+!These values are not written in the netCDF files
+!These values are written in the LFI files. They are kept for backward compatibility with these values
 tzbudiachro%licompress = .false.
 tzbudiachro%ljcompress = .false.
 tzbudiachro%lkcompress = .false.
+tzbudiachro%ltcompress = .false.
+tzbudiachro%lnorm      = .false.
 tzbudiachro%nil        = iil
 tzbudiachro%nih        = iih
 tzbudiachro%njl        = ijl
 tzbudiachro%njh        = ijh
+!nkl and nkh values have no real meaning here
+!These values are not written in the netCDF files
+!These values are written in the LFI files. They are kept for backward compatibility (and not set to default values)
 tzbudiachro%nkl        = ikl
 tzbudiachro%nkh        = ikh
 
 call Write_diachro( tpdiafile, tzbudiachro, [ tzfield ], tzdates, zwork6 )
 !
-!* time average
+!* time average (physical units remain unchanged)
 !
 iresp = 0
 call Les_time_avg( zwork6, tzdates, iresp )
-ygroup = 'T_' // ygroup
 do ji = 1, NMNHMAXDIMS
   if ( tzfield%ndimlist(ji) == NMNHDIM_BUDGET_LES_TIME ) tzfield%ndimlist(ji) = NMNHDIM_BUDGET_LES_AVG_TIME
 end do
 
-tzbudiachro%cgroupname = ygroup
-tzbudiachro%cname      = ygroup
-tzbudiachro%ccomment   = Trim( tzfield%ccomment ) // ' (time averaged)'
-tzbudiachro%ctype      = 'SPXY'
-tzbudiachro%ccategory  = 'LES'
-tzbudiachro%cshape     = 'spectrum'
+tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
+tzbudiachro%clevels  (NLVL_CATEGORY)    = 'LES_budgets'
+tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different LES budgets'
+
+tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
+tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
+tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
+
+tzbudiachro%lleveluse(NLVL_GROUP)       = .false.
+tzbudiachro%clevels  (NLVL_GROUP)       = ''
+tzbudiachro%ccomments(NLVL_GROUP)       = ''
+
+tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
+tzbudiachro%clevels  (NLVL_SHAPE)       = 'Spectrum'
+tzbudiachro%ccomments(NLVL_SHAPE)       = ''
+
+tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .true.
+tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Time_averaged'
+tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are time averaged'
+
+tzbudiachro%lleveluse(NLVL_NORM)        = .true.
+tzbudiachro%clevels  (NLVL_NORM)        = 'Not_normalized'
+tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
+
+tzbudiachro%lleveluse(NLVL_MASK)        = .false.
+tzbudiachro%clevels  (NLVL_MASK)        = ''
+tzbudiachro%ccomments(NLVL_MASK)        = ''
+
+if ( tzfield%ndimlist(1) == NMNHDIM_SPECTRA_SPEC_NI ) then
+  tzbudiachro%cdirection = 'I'
+else
+  tzbudiachro%cdirection = 'J'
+end if
 tzbudiachro%lmobile    = .false.
+!i/j/k compression has no meaning here as it is spectrum
+!These values are not written in the netCDF files
+!These values are written in the LFI files. They are kept for backward compatibility with these values
 tzbudiachro%licompress = .false.
 tzbudiachro%ljcompress = .false.
 tzbudiachro%lkcompress = .false.
+tzbudiachro%ltcompress = .true.
+tzbudiachro%lnorm      = .false.
 tzbudiachro%nil        = iil
 tzbudiachro%nih        = iih
 tzbudiachro%njl        = ijl
 tzbudiachro%njh        = ijh
+!nkl and nkh values have no real meaning here
+!These values are not written in the netCDF files
+!These values are written in the LFI files. They are kept for backward compatibility (and not set to default values)
 tzbudiachro%nkl        = ikl
 tzbudiachro%nkh        = ikh
 

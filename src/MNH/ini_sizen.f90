@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -165,12 +165,12 @@ IF (IRESP /= 0)  THEN
 END IF
 !
 IF ( KMI > 1 ) THEN
-    IF (LCOUPLES) THEN
-      IF (KMI==2) THEN
-        CMY_NAME(NDAD(KMI)) =  CDAD_NAME(KMI)
-        WRITE(UNIT=ILUOUT,FMT=*) 'NDAD',NDAD(KMI),'changed in '//TRIM(CMY_NAME(NDAD(KMI)))//TRIM(CDAD_NAME(KMI)),KMI
-      END IF
+  IF ( LCOUPLES ) THEN
+    IF ( KMI == 2 ) THEN
+      CMY_NAME(NDAD(KMI)) = CDAD_NAME(KMI)
+      WRITE(UNIT=ILUOUT,FMT=*) 'NDAD',NDAD(KMI),'changed in '//TRIM(CMY_NAME(NDAD(KMI)))//TRIM(CDAD_NAME(KMI)),KMI
     END IF
+  END IF
   IF ( TRIM(CDAD_NAME(KMI)) /= TRIM(CMY_NAME(NDAD(KMI))) ) THEN
     WRITE(UNIT=ILUOUT,FMT=9005) NDAD(KMI)
     WRITE(ILUOUT,FMT=*) ' THE INITIAL FM-File IS NOT CONSISTANT WITH THE ONE OF THE DAD MODEL!'

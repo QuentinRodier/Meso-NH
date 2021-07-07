@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-------------------------------------------------------------------------------
 !      #################################
        MODULE MODI_LIMA_CONVERSION_MELTING_SNOW
 !      #################################
@@ -10,8 +11,7 @@ INTERFACE
    SUBROUTINE LIMA_CONVERSION_MELTING_SNOW (LDCOMPUTE,                          &
                                             PRHODREF, PPRES, PT, PKA, PDV, PCJ, &
                                             PRVT, PRST, PLBDS,                  &
-                                            P_RS_CMEL,                          &
-                                            PA_RS, PA_RG                        )
+                                            P_RS_CMEL                           )
 !
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
 !
@@ -26,10 +26,7 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PRVT    !
 REAL, DIMENSION(:),   INTENT(IN)    :: PRST    ! Cloud water C. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDS   ! 
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_CMEL
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RS
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RG
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_RS_CMEL
 !
 END SUBROUTINE LIMA_CONVERSION_MELTING_SNOW
 END INTERFACE
@@ -39,8 +36,7 @@ END MODULE MODI_LIMA_CONVERSION_MELTING_SNOW
       SUBROUTINE LIMA_CONVERSION_MELTING_SNOW (LDCOMPUTE,                          &
                                                PRHODREF, PPRES, PT, PKA, PDV, PCJ, &
                                                PRVT, PRST, PLBDS,                  &
-                                               P_RS_CMEL,                          &
-                                               PA_RS, PA_RG                        )
+                                               P_RS_CMEL                           )
 !     ##############################################################################
 !
 !!    PURPOSE
@@ -86,10 +82,7 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PRVT    !
 REAL, DIMENSION(:),   INTENT(IN)    :: PRST    ! Cloud water C. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDS   ! 
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_CMEL
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RS
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RG
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_RS_CMEL
 !
 !*       0.2   Declarations of local variables :
 !
@@ -122,8 +115,6 @@ WHERE( (PRST(:)>XRTMIN(5)) .AND. (PT(:)>XTT) .AND. LDCOMPUTE(:) )
 !
 END WHERE
 !
-PA_RS(:) = PA_RS(:) + P_RS_CMEL(:)
-PA_RG(:) = PA_RG(:) - P_RS_CMEL(:)
 !
 !-------------------------------------------------------------------------------
 !

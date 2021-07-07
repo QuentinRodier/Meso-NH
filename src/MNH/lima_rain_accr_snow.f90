@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2018-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -11,8 +11,7 @@ INTERFACE
    SUBROUTINE LIMA_RAIN_ACCR_SNOW (PTSTEP, LDCOMPUTE,                                &
                                    PRHODREF, PT,                                     &
                                    PRRT, PCRT, PRST, PLBDR, PLBDS, PLVFACT, PLSFACT, &
-                                   P_TH_ACC, P_RR_ACC, P_CR_ACC, P_RS_ACC, P_RG_ACC, &
-                                   PA_TH, PA_RR, PA_CR, PA_RS, PA_RG                 )
+                                   P_TH_ACC, P_RR_ACC, P_CR_ACC, P_RS_ACC, P_RG_ACC  )
 !
 REAL,                 INTENT(IN)    :: PTSTEP 
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
@@ -28,17 +27,11 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PLBDS   !
 REAL, DIMENSION(:),   INTENT(IN)    :: PLVFACT ! 
 REAL, DIMENSION(:),   INTENT(IN)    :: PLSFACT ! 
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_ACC
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_ACC
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_ACC
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_ACC
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_ACC
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_TH
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RR
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CR
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RS
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RG
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_TH_ACC
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_RR_ACC
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_CR_ACC
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_RS_ACC
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_RG_ACC
 !
 END SUBROUTINE LIMA_RAIN_ACCR_SNOW
 END INTERFACE
@@ -48,8 +41,7 @@ END MODULE MODI_LIMA_RAIN_ACCR_SNOW
       SUBROUTINE LIMA_RAIN_ACCR_SNOW (PTSTEP, LDCOMPUTE,                                &
                                       PRHODREF, PT,                                     &
                                       PRRT, PCRT, PRST, PLBDR, PLBDS, PLVFACT, PLSFACT, &
-                                      P_TH_ACC, P_RR_ACC, P_CR_ACC, P_RS_ACC, P_RG_ACC, &
-                                      PA_TH, PA_RR, PA_CR, PA_RS, PA_RG                 )
+                                      P_TH_ACC, P_RR_ACC, P_CR_ACC, P_RS_ACC, P_RG_ACC  )
 !     ###################################################################################
 !
 !!    PURPOSE
@@ -101,17 +93,11 @@ REAL, DIMENSION(:),   INTENT(IN)    :: PLBDS   !
 REAL, DIMENSION(:),   INTENT(IN)    :: PLVFACT ! 
 REAL, DIMENSION(:),   INTENT(IN)    :: PLSFACT ! 
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_TH_ACC
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RR_ACC
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_ACC
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RS_ACC
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RG_ACC
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_TH
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RR
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CR
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RS
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RG
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_TH_ACC
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_RR_ACC
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_CR_ACC
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_RS_ACC
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_RG_ACC
 !
 !*       0.2   Declarations of local variables :
 !
@@ -264,12 +250,6 @@ WHERE( GACC )
    !
 END WHERE
 !
-!
-PA_RR(:) = PA_RR(:) + P_RR_ACC(:)
-PA_CR(:) = PA_CR(:) + P_CR_ACC(:)
-PA_RS(:) = PA_RS(:) + P_RS_ACC(:)
-PA_RG(:) = PA_RG(:) + P_RG_ACC(:)
-PA_TH(:) = PA_TH(:) + P_TH_ACC(:)
 !
 !-------------------------------------------------------------------------------
 !

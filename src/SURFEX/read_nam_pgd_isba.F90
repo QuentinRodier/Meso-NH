@@ -234,7 +234,7 @@ YPERMFILETYPE    = '      '
 YRUNOFFBFILETYPE = '      '
 YWDRAINFILETYPE  = '      ' 
 YPHFILETYPE      = '      '
-YPHFILETYPE      = '      '
+YFERTFILETYPE    = '      '
 !
 LIMP_CLAY        = .FALSE.
 LIMP_SAND        = .FALSE.

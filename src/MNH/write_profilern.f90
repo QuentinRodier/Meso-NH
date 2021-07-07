@@ -64,6 +64,7 @@ END MODULE MODI_WRITE_PROFILER_n
 !  P. Wautelet 09/10/2020: Write_diachro: use new datatype tpfields
 !  P. Wautelet 03/03/2021: budgets: add tbudiachrometadata type (useful to pass more information to Write_diachro)
 !  P. Wautelet 11/03/2021: bugfix: correct name for NSV_LIMA_IMM_NUCL
+!  M.Taufour 07/2021: modify RARE for hydrometeors containing ice and add bright band calculation for RARE
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -127,7 +128,8 @@ CONTAINS
 !----------------------------------------------------------------------------
 SUBROUTINE PROFILER_DIACHRO_n(TPROFILER,II)
 
-use modd_budget, only: tbudiachrometadata
+use modd_budget, only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK,  &
+                       tbudiachrometadata
 use modd_field,  only: NMNHDIM_LEVEL, NMNHDIM_PROFILER_TIME, NMNHDIM_PROFILER_PROC, NMNHDIM_UNUSED, &
                        tfield_metadata_base, TYPEREAL
 
@@ -162,7 +164,7 @@ IF (TPROFILER%X(II)==XUNDEF) RETURN
 IF (TPROFILER%Y(II)==XUNDEF) RETURN
 IKU = SIZE(TPROFILER%W,2)    !nbre de niveaux sur la verticale SIZE(TPROFILER%W,2)
 !
-IPROC = 24 + SIZE(TPROFILER%R,4) + SIZE(TPROFILER%SV,4)
+IPROC = 25 + SIZE(TPROFILER%R,4) + SIZE(TPROFILER%SV,4)
 IF (LDIAG_IN_RUN) IPROC = IPROC + 15
 IF (LORILAM) IPROC = IPROC + JPMODE*3
 IF (LDUST) IPROC = IPROC + NMODE_DST*3
@@ -211,7 +213,13 @@ JPROC = JPROC + 1
 YTITLE   (JPROC) = 'RARE'
 YUNIT    (JPROC) = 'dBZ'
 YCOMMENT (JPROC) = 'Radar reflectivity'       
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%RARE(:,IK,II)
+ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%CRARE(:,IK,II)
+!
+JPROC = JPROC + 1
+YTITLE   (JPROC) = 'RAREatt'
+YUNIT    (JPROC) = 'dBZ'
+YCOMMENT (JPROC) = 'Radar attenuated reflectivity'       
+ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%CRARE_ATT(:,IK,II)
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'P'
@@ -391,6 +399,7 @@ DO JRR=1,SIZE(TPROFILER%R,4)
     YCOMMENT (JPROC) = 'Hail mixing ratio' 
   END IF
 END DO
+  !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'Rhod'
 YUNIT    (JPROC) = 'kg m-3'
@@ -403,6 +412,14 @@ IF (SIZE(TPROFILER%TKE,1)>0) THEN
   YUNIT    (JPROC) = 'm2 s-2'
   YCOMMENT (JPROC) = 'Turbulent kinetic energy' 
   ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%TKE(:,IK,II)
+END IF
+!
+IF (SIZE(TPROFILER%CIZ,1)>0) THEN
+  JPROC = JPROC + 1
+  YTITLE  (JPROC) = 'CIT'
+  YUNIT   (JPROC) = 'kg-3'
+  YCOMMENT(JPROC) = 'Ice concentration'
+  ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%CIZ(:,IK,II)
 END IF
 !
 JPROC = JPROC + 1
@@ -492,6 +509,7 @@ IF (SIZE(TPROFILER%SV,4)>=1) THEN
       YTITLE(JPROC)=TRIM(CLIMA_COLD_NAMES(4))//INDICE//'T'
     ENDIF
     IF (JSV .EQ. NSV_LIMA_HOM_HAZE) YTITLE(JPROC)=TRIM(CLIMA_COLD_NAMES(5))//'T'
+    IF (JSV .EQ. NSV_LIMA_SPRO)     YTITLE(JPROC)=TRIM(CLIMA_WARM_NAMES(5))//'T'
 
     ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SV(:,IK,II,JSV)
   END DO 
@@ -650,20 +668,53 @@ tzfields(:)%ndimlist(4) = NMNHDIM_PROFILER_TIME
 tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
 tzfields(:)%ndimlist(6) = NMNHDIM_PROFILER_PROC
 
-tzbudiachro%cgroupname = ygroup
-tzbudiachro%cname      = ygroup
-tzbudiachro%ccomment   = 'Vertical profiles at position of profiler ' // Trim( ygroup )
-tzbudiachro%ctype      = 'CART'
-tzbudiachro%ccategory  = 'profiler'
-tzbudiachro%cshape     = 'vertical profile'
+tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
+tzbudiachro%clevels  (NLVL_CATEGORY)    = 'Profilers'
+tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different vertical profilers'
+
+tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
+tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
+tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
+
+tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
+tzbudiachro%clevels  (NLVL_GROUP)       = ygroup
+tzbudiachro%ccomments(NLVL_GROUP)       = 'Vertical profiles at position of profiler ' // Trim( ygroup )
+
+tzbudiachro%lleveluse(NLVL_SHAPE)       = .false.
+tzbudiachro%clevels  (NLVL_SHAPE)       = 'Vertical_profile'
+tzbudiachro%ccomments(NLVL_SHAPE)       = ''
+
+tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
+tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not_time_averaged'
+tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are not time averaged'
+
+tzbudiachro%lleveluse(NLVL_NORM)        = .false.
+tzbudiachro%clevels  (NLVL_NORM)        = 'Not_normalized'
+tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
+
+tzbudiachro%lleveluse(NLVL_MASK)        = .false.
+tzbudiachro%clevels  (NLVL_MASK)        = ''
+tzbudiachro%ccomments(NLVL_MASK)        = ''
+
 tzbudiachro%lmobile    = .false.
+!Compression does not make sense here
+!Keep these values for backward compatibility of LFI files
 tzbudiachro%licompress = .true.
 tzbudiachro%ljcompress = .true.
 tzbudiachro%lkcompress = .false.
+tzbudiachro%ltcompress = .false.
+tzbudiachro%lnorm      = .false.
+!Horizontal boundaries in physical domain does not make sense here (but flyer position does)
+!These values are not written in the netCDF files
+!These values are written in the LFI files. They are kept for backward compatibility (and not set to default values)
 tzbudiachro%nil        = 1
 tzbudiachro%nih        = 1
 tzbudiachro%njl        = 1
 tzbudiachro%njh        = 1
+!1->iku includes non-physical levels (IKU=NKMAX+2*JPVEXT)
+!This does not conform to documentation (limits are in the physical domain)
+!These values are not written in the netCDF files
+!These values are written in the LFI files. They are kept for backward compatibility (and not set to default values)
 tzbudiachro%nkl        = 1
 tzbudiachro%nkh        = iku
 

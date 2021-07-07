@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2021-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !
 !     #######################
       MODULE MODD_RECYCL_PARAM_n
@@ -46,7 +47,7 @@ REAL             :: XDRECYCLN,XDRECYCLW,XDRECYCLE,XDRECYCLS,    &
                     XARECYCLN,XARECYCLW,XARECYCLE,XARECYCLS,    &
                     XTMOY,XTMOYCOUNT,XNUMBELT,XRCOEFF,XTBVTOP,XTBVBOT
 
-INTEGER                             :: R_COUNT
+INTEGER                             :: NR_COUNT
 REAL, DIMENSION(:,:,:)   ,POINTER :: XUMEANW=>NULL()
 REAL, DIMENSION(:,:,:)   ,POINTER :: XVMEANW=>NULL()
 REAL, DIMENSION(:,:,:)   ,POINTER :: XWMEANW=>NULL()
@@ -100,7 +101,7 @@ REAL, DIMENSION(:,:,:),POINTER :: XWMEANS=>NULL()
 
 
 
-INTEGER                 ,POINTER :: R_COUNT =>NULL()
+INTEGER                 ,POINTER :: NR_COUNT =>NULL()
 REAL, DIMENSION(:,:,:)  ,POINTER :: XTBV=>NULL()
 
 CONTAINS
@@ -159,7 +160,7 @@ XUMEANS=>RECYCL_MODEL(KTO)%XUMEANS
 XVMEANS=>RECYCL_MODEL(KTO)%XVMEANS
 XWMEANS=>RECYCL_MODEL(KTO)%XWMEANS
 
-R_COUNT=>RECYCL_MODEL(KTO)%R_COUNT
+NR_COUNT=>RECYCL_MODEL(KTO)%NR_COUNT
 
 END SUBROUTINE RECYCL_GOTO_MODEL
 

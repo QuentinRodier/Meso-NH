@@ -29,6 +29,8 @@
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!       V. Vionnet     07/17   add blowing snow
 !  P. Wautelet 10/03/2021: add CSVNAMES and CSVNAMES_A to store the name of all the scalar variables
+!  B. Vie         06/2021: add prognostic supersaturation for LIMA
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -133,6 +135,7 @@ INTEGER,DIMENSION(JPMODELMAX)::NSV_LIMA_IFN_FREE_A = 0 ! First Free IFN conc.
 INTEGER,DIMENSION(JPMODELMAX)::NSV_LIMA_IFN_NUCL_A = 0 ! First Nucl. IFN conc.
 INTEGER,DIMENSION(JPMODELMAX)::NSV_LIMA_IMM_NUCL_A = 0 ! First Nucl. IMM conc.
 INTEGER,DIMENSION(JPMODELMAX)::NSV_LIMA_HOM_HAZE_A = 0 ! Hom. freezing of CCN
+INTEGER,DIMENSION(JPMODELMAX)::NSV_LIMA_SPRO_A = 0     ! Supersaturation
 !
 #ifdef MNH_FOREFIRE
 INTEGER,DIMENSION(JPMODELMAX)::NSV_FF_A = 0    ! number of ForeFire scalar variables
@@ -235,6 +238,7 @@ INTEGER :: NSV_LIMA_IFN_FREE !
 INTEGER :: NSV_LIMA_IFN_NUCL !
 INTEGER :: NSV_LIMA_IMM_NUCL !
 INTEGER :: NSV_LIMA_HOM_HAZE !
+INTEGER :: NSV_LIMA_SPRO     !
 !
 #ifdef MNH_FOREFIRE
 INTEGER :: NSV_FF    = 0 ! number of ForeFire scalar variables

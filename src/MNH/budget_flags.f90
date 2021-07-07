@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -96,7 +96,7 @@ LBUDGET_U  =   (LBU_ENABLE .AND. LBU_RU  ) .OR.  (LLES_CALL .OR. LCHECK )
 LBUDGET_V  =   (LBU_ENABLE .AND. LBU_RV  ) .OR.  (LLES_CALL .OR. LCHECK )
 LBUDGET_W  =   (LBU_ENABLE .AND. LBU_RW  ) .OR.  (LLES_CALL .OR. LCHECK )
 LBUDGET_TH =   (LBU_ENABLE .AND. LBU_RTH ) .OR.  (LLES_CALL .OR. LCHECK )
-LBUDGET_TKE= ( (LBU_ENABLE .AND. LBU_RTKE) .OR.  (LLES_CALL .OR. LCHECK )              ) .AND. CTURB /= 'NONE'
+LBUDGET_TKE= ( (LBU_ENABLE .AND. LBU_RTKE) .OR.  (LLES_CALL .OR. LCHECK )              ) .AND. CTURB == 'TKEL'
 LBUDGET_RV = ( (LBU_ENABLE .AND. LBU_RRV ) .OR. ((LLES_CALL .OR. LCHECK ).AND. OUSERV) ) .AND. NRR >= 1
 LBUDGET_RC = ( (LBU_ENABLE .AND. LBU_RRC ) .OR. ((LLES_CALL .OR. LCHECK ).AND. OUSERC) ) .AND. NRR >= 2
 LBUDGET_RR = ( (LBU_ENABLE .AND. LBU_RRR ) .OR. ((LLES_CALL .OR. LCHECK ).AND. OUSERR) ) .AND. NRR >= 3

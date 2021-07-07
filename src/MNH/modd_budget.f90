@@ -78,6 +78,27 @@ integer, parameter :: NBUDGET_RG  = 11 ! Reference number for budget of RhoJrg a
 integer, parameter :: NBUDGET_RH  = 12 ! Reference number for budget of RhoJrh and/or LES budgets with rh
 integer, parameter :: NBUDGET_SV1 = 13 ! Reference number for 1st budget of RhoJsv and/or LES budgets with sv
 
+integer, parameter :: NMAXLEVELS       = 7
+integer, parameter :: NLVL_ROOT        = 0
+integer, parameter :: NLVL_CATEGORY    = 1
+integer, parameter :: NLVL_SUBCATEGORY = 2
+integer, parameter :: NLVL_GROUP       = 3
+integer, parameter :: NLVL_SHAPE       = 4
+integer, parameter :: NLVL_TIMEAVG     = 5
+integer, parameter :: NLVL_NORM        = 6
+integer, parameter :: NLVL_MASK        = 7
+
+#ifdef MNH_IOCDF4
+character(len=*), dimension(NMAXLEVELS), parameter :: CNCGROUPNAMES = [ &
+                                         'category   ', &  !Name of the different type of groups/levels in the netCDF file
+                                         'subcategory', &
+                                         'group      ', &
+                                         'shape      ', &
+                                         'timeavg    ', &
+                                         'norm       ', &
+                                         'mask       '  ]
+#endif
+
 integer :: nbudgets ! Number of budget categories
 
 
@@ -104,16 +125,16 @@ type, extends( tfield_metadata_base ) :: tburhodata
 end type tburhodata
 
 type :: tbudiachrometadata
-  character(len=NBUNAMELGTMAX)  :: cgroupname  = 'not set'
-  character(len=NBUNAMELGTMAX)  :: cname       = 'not set'
-  character(len=NCOMMENTLGTMAX) :: ccomment    = 'not set'
-  character(len=NBUNAMELGTMAX)  :: ctype       = 'not set'
-  character(len=NBUNAMELGTMAX)  :: ccategory   = 'not set' !budget, LES, aircraft, balloon, series, station, profiler
-  character(len=NBUNAMELGTMAX)  :: cshape      = 'not set' !Shape of the domain (mask, cartesian, vertical profile, point)
-  logical :: lmobile    = .false.                          !Is the domain moving? (ie for aircrafts and balloons)
+  character(len=NBUNAMELGTMAX),  dimension(NMAXLEVELS) :: clevels  = '' !Name of the different groups/levels in the netCDF file
+  character(len=NCOMMENTLGTMAX), dimension(NMAXLEVELS) :: ccomments ='' !Comments for the different groups/levels in the netCDF file
+  character(len=1)              :: cdirection   = ''                    !Used for 2pt correlation and spectrum
+  logical :: lmobile    = .false.                                       !Is the domain moving? (ie for aircrafts and balloons)
   logical :: licompress = .false.
   logical :: ljcompress = .false.
   logical :: lkcompress = .false.
+  logical :: ltcompress = .false. ! true if values are time averaged (can be on multiple time periods)
+  logical :: lnorm      = .false. ! true if values are normalized
+  logical, dimension(NMAXLEVELS) :: lleveluse = .false.
   integer :: nil = -1 !Cartesian box boundaries in physical domain coordinates
   integer :: nih = -1
   integer :: njl = -1

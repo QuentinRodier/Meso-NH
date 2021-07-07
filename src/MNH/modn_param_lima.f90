@@ -1,4 +1,9 @@
-!     ######################  
+!MNH_LIC Copyright 2001-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+!MNH_LIC for details. version 1.
+!-------------------------------------------------------------------------------
+!     ######################
       MODULE MODN_PARAM_LIMA
 !     ######################
 !
@@ -19,7 +24,8 @@ NAMELIST/NAM_PARAM_LIMA/LCOLD, LNUCL, LSEDI, LSNOW, LHAIL, LHHONI, LMEYERS,&
                         XALPHAI, XNUI, XALPHAS, XNUS, XALPHAG, XNUG,       &
                         XFACTNUC_DEP, XFACTNUC_CON, NPHILLIPS,             &
 !
-                        LWARM, LACTI, LRAIN, LSEDC, LACTIT, LBOUND,        &
+                        LWARM, LACTI, LRAIN, LSEDC, LACTIT, LBOUND, LSPRO, &
+                        LADJ,                                              &
                         NMOD_CCN, XCCN_CONC,                               &
                         LCCN_HOM, CCCN_MODES, HINI_CCN, HTYPE_CCN,         &
                         XALPHAC, XNUC, XALPHAR, XNUR,                      &

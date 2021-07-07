@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -305,15 +305,15 @@ ZT0  = XTT               ! Usefull if LPRETREATMENT=T or LNEW_ADJUST=T
 ZT00 = XTT-40.           ! Usefull if LPRETREATMENT=T or LNEW_ADJUST=T
 !
 !-------------------------------------------------------------------------------
-if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'CDEPI', pths(:, :, :) * prhodj(:, :, :) )
-if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'CDEPI', prvs(:, :, :) * prhodj(:, :, :) )
-if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'CDEPI', prcs(:, :, :) * prhodj(:, :, :) )
-if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'CDEPI', pris(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_th ) call Budget_store_init( tbudgets(NBUDGET_TH), 'DEPI', pths(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rv ) call Budget_store_init( tbudgets(NBUDGET_RV), 'DEPI', prvs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rc ) call Budget_store_init( tbudgets(NBUDGET_RC), 'DEPI', prcs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_ri ) call Budget_store_init( tbudgets(NBUDGET_RI), 'DEPI', pris(:, :, :) * prhodj(:, :, :) )
 if ( lbudget_sv ) then
-  call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg     ), 'CDEPI', pqpis(:, :, :) * prhodj(:, :, :) )
-  call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend     ), 'CDEPI', pqnis(:, :, :) * prhodj(:, :, :) )
-  call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'CDEPI', pqcs (:, :, :) * prhodj(:, :, :) )
-  call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'CDEPI', pqis (:, :, :) * prhodj(:, :, :) )
+  call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg     ), 'DEPI', pqpis(:, :, :) * prhodj(:, :, :) )
+  call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend     ), 'DEPI', pqnis(:, :, :) * prhodj(:, :, :) )
+  call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'DEPI', pqcs (:, :, :) * prhodj(:, :, :) )
+  call Budget_store_init( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'DEPI', pqis (:, :, :) * prhodj(:, :, :) )
 end if
 !
 !*       2.     COMPUTE QUANTITIES WITH THE GUESS OF THE FUTURE INSTANT
@@ -630,15 +630,15 @@ ENDIF
 !*       6.  STORE THE BUDGET TERMS
 !            ----------------------
 !
-if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'CDEPI', pths(:, :, :) * prhodj(:, :, :) )
-if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'CDEPI', prvs(:, :, :) * prhodj(:, :, :) )
-if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'CDEPI', prcs(:, :, :) * prhodj(:, :, :) )
-if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'CDEPI', pris(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_th ) call Budget_store_end( tbudgets(NBUDGET_TH), 'DEPI', pths(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rv ) call Budget_store_end( tbudgets(NBUDGET_RV), 'DEPI', prvs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_rc ) call Budget_store_end( tbudgets(NBUDGET_RC), 'DEPI', prcs(:, :, :) * prhodj(:, :, :) )
+if ( lbudget_ri ) call Budget_store_end( tbudgets(NBUDGET_RI), 'DEPI', pris(:, :, :) * prhodj(:, :, :) )
 if ( lbudget_sv ) then
-  call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg     ), 'CDEPI', pqpis(:, :, :) * prhodj(:, :, :) )
-  call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend     ), 'CDEPI', pqnis(:, :, :) * prhodj(:, :, :) )
-  call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'CDEPI', pqcs (:, :, :) * prhodj(:, :, :) )
-  call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'CDEPI', pqis (:, :, :) * prhodj(:, :, :) )
+  call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg     ), 'DEPI', pqpis(:, :, :) * prhodj(:, :, :) )
+  call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecend     ), 'DEPI', pqnis(:, :, :) * prhodj(:, :, :) )
+  call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 1 ), 'DEPI', pqcs (:, :, :) * prhodj(:, :, :) )
+  call Budget_store_end( tbudgets(NBUDGET_SV1 - 1 + nsv_elecbeg + 3 ), 'DEPI', pqis (:, :, :) * prhodj(:, :, :) )
 end if
 !------------------------------------------------------------------------------
 !

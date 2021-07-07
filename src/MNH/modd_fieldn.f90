@@ -1,6 +1,6 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !     ###################
@@ -53,8 +53,8 @@
 !!      Bielli S. 02/2019  Sea salt : significant sea wave height influences salt emission; 5 salt modes
 !  P. Wautelet 06/03/2019: correct XZWS entry
 !  P. Wautelet 14/03/2019: add XZWS_DEFAULT parameter
-!                      04/2020 S. Riette HighLow cloud
-!!                     02/2021  (T.Nagel) Add fields for turbulence recycling
+!  S. Riette      04/2020: highLow cloud
+!  T. Nagel       02/2021: add fields for turbulence recycling
 !!
 !-------------------------------------------------------------------------------
 !
@@ -90,7 +90,8 @@ TYPE FIELD_t
                                                      ! (rho e)
 !  REAL, DIMENSION(:,:,:), POINTER :: XPABST=>NULL()   ! absolute pressure at
 !                                                     ! time t
-!  REAL, DIMENSION(:,:,:,:), POINTER :: XRT=>NULL()    ! Moist variables (rho Rn) 
+!  REAL, DIMENSION(:,:,:), POINTER :: XPHIT=>NULL()
+!  REAL, DIMENSION(:,:,:,:), POINTER :: XRT=>NULL()    ! Moist variables (rho Rn)
 !                                                     ! at time t
   REAL, DIMENSION(:,:,:,:), POINTER :: XRRS=>NULL()   ! Source of Moist variables
                                                      ! (rho Rn) 
@@ -201,6 +202,7 @@ FIELD_MODEL(KFROM)%XRTHS=>XRTHS
 !FIELD_MODEL(KFROM)%XTKET=>XTKET !Done in FIELDLIST_GOTO_MODEL
 FIELD_MODEL(KFROM)%XRTKES=>XRTKES
 !FIELD_MODEL(KFROM)%XPABST=>XPABST !Done in FIELDLIST_GOTO_MODEL
+!FIELD_MODEL(KFROM)%XPHIT=>XPHIT !Done in FIELDLIST_GOTO_MODEL
 !FIELD_MODEL(KFROM)%XRT=>XRT !Done in FIELDLIST_GOTO_MODEL
 FIELD_MODEL(KFROM)%XRRS=>XRRS
 !FIELD_MODEL(KFROM)%XRRS_CLD=>XRRS_CLD !Done in FIELDLIST_GOTO_MODEL
@@ -253,7 +255,7 @@ XRTHS=>FIELD_MODEL(KTO)%XRTHS
 !XTKET=>FIELD_MODEL(KTO)%XTKET !Done in FIELDLIST_GOTO_MODEL
 XRTKES=>FIELD_MODEL(KTO)%XRTKES
 !XPABST=>FIELD_MODEL(KTO)%XPABST !Done in FIELDLIST_GOTO_MODEL
-!XPHIT=>FIELD_MODEL(KTO)%XPHIT
+!XPHIT=>FIELD_MODEL(KTO)%XPHIT !Done in FIELDLIST_GOTO_MODEL
 !XRT=>FIELD_MODEL(KTO)%XRT !Done in FIELDLIST_GOTO_MODEL
 XRRS=>FIELD_MODEL(KTO)%XRRS
 !XRRS_CLD=>FIELD_MODEL(KTO)%XRRS_CLD !Done in FIELDLIST_GOTO_MODEL

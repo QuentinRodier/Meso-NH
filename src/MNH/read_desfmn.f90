@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -724,15 +724,18 @@ IF (NVERB >= 10) THEN
   WRITE(UNIT=ILUOUT,FMT="('********** CHEMICAL MONITORn *******')")  
   WRITE(UNIT=ILUOUT,NML=NAM_CH_MNHCn)
 !
-  WRITE(UNIT=ILUOUT,FMT="('************ CHEMICAL SOLVER ******************')")
+  WRITE(UNIT=ILUOUT,FMT="('********** CHEMICAL SOLVER *********')")
   WRITE(UNIT=ILUOUT,NML=NAM_CH_SOLVERn)
 !
-  WRITE(UNIT=ILUOUT,FMT="('********** BLOWSNOWn *******************')")
+  WRITE(UNIT=ILUOUT,FMT="('********** BLOWSNOWn ***************')")
   WRITE(UNIT=ILUOUT,NML=NAM_BLOWSNOWn)
 !
-    WRITE(UNIT=ILUOUT,FMT="('************ BLANKn ****************************')")
-    WRITE(UNIT=ILUOUT,NML=NAM_BLANKn)  
-!  
+  WRITE(UNIT=ILUOUT,FMT="('********** BLANKn ******************')")
+  WRITE(UNIT=ILUOUT,NML=NAM_BLANKn)
+!
+  WRITE(UNIT=ILUOUT,FMT="('********** STATIONn ******************')")
+  WRITE(UNIT=ILUOUT,NML=NAM_STATIONn)
+!
   IF (KMI==1) THEN
     WRITE(UNIT=ILUOUT,FMT="(/,'PART OF INITIAL FILE COMMON TO ALL THE MODELS')")
     WRITE(UNIT=ILUOUT,FMT="(  '---------------------------------------------')")

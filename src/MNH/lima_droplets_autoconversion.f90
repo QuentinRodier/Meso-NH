@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
+!-------------------------------------------------------------------------------
 !      #################################
        MODULE MODI_LIMA_DROPLETS_AUTOCONVERSION
 !      #################################
@@ -9,26 +10,21 @@
 INTERFACE
    SUBROUTINE LIMA_DROPLETS_AUTOCONVERSION (LDCOMPUTE,                      &
                                             PRHODREF,                       &
-                                            PRCT, PLBDC, PLBDR,             &
-                                            P_RC_AUTO, P_CC_AUTO, P_CR_AUTO,&
-                                            PA_RC, PA_CC, PA_RR, PA_CR      )
+                                            PRCT, PCCT, PLBDC, PLBDR,       &
+                                            P_RC_AUTO, P_CC_AUTO, P_CR_AUTO )
 !
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
 !
 REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF ! Reference Exner function
 !
 REAL, DIMENSION(:),   INTENT(IN)    :: PRCT    ! Cloud water m.r. at t
+REAL, DIMENSION(:),   INTENT(IN)    :: PCCT    ! Cloud water conc. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDC   ! 
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR   ! 
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RC_AUTO
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CC_AUTO
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_AUTO
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RC
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CC
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RR
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CR
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_RC_AUTO
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_CC_AUTO
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_CR_AUTO
 !
 END SUBROUTINE LIMA_DROPLETS_AUTOCONVERSION
 END INTERFACE
@@ -37,9 +33,8 @@ END MODULE MODI_LIMA_DROPLETS_AUTOCONVERSION
 !     ##########################################################################
       SUBROUTINE LIMA_DROPLETS_AUTOCONVERSION (LDCOMPUTE,                      &
                                                PRHODREF,                       &
-                                               PRCT, PLBDC, PLBDR,             &
-                                               P_RC_AUTO, P_CC_AUTO, P_CR_AUTO,&
-                                               PA_RC, PA_CC, PA_RR, PA_CR      )
+                                               PRCT, PCCT, PLBDC, PLBDR,       &
+                                               P_RC_AUTO, P_CC_AUTO, P_CR_AUTO )
 !     ##########################################################################
 !
 !!    PURPOSE
@@ -63,7 +58,7 @@ END MODULE MODI_LIMA_DROPLETS_AUTOCONVERSION
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAM_LIMA,      ONLY : XRTMIN
+USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN
 USE MODD_PARAM_LIMA_WARM, ONLY : XLAUTR, XAUTO1, XLAUTR_THRESHOLD, &
                                  XITAUTR, XAUTO2, XITAUTR_THRESHOLD, &
                                  XACCR4, XACCR5, XACCR3, XACCR1, XAC
@@ -77,17 +72,13 @@ LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
 REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF ! Reference Exner function
 !
 REAL, DIMENSION(:),   INTENT(IN)    :: PRCT    ! Cloud water m.r. at t
+REAL, DIMENSION(:),   INTENT(IN)    :: PCCT    ! Cloud water conc. at t
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDC   ! 
 REAL, DIMENSION(:),   INTENT(IN)    :: PLBDR   ! 
 !
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_RC_AUTO
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CC_AUTO
-REAL, DIMENSION(:),   INTENT(INOUT) :: P_CR_AUTO
-!
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RC
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CC
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_RR
-REAL, DIMENSION(:),   INTENT(INOUT) :: PA_CR
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_RC_AUTO
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_CC_AUTO
+REAL, DIMENSION(:),   INTENT(OUT)   :: P_CR_AUTO
 !
 !*       0.2   Declarations of local variables :
 !
@@ -109,7 +100,7 @@ P_CR_AUTO(:) = 0.0
 ZW3(:) = 0.0
 ZW2(:) = 0.0
 ZW1(:) = 0.0
-WHERE( PRCT(:)>XRTMIN(2) .AND. PLBDC(:)>0. .AND. LDCOMPUTE(:) )
+WHERE( PRCT(:)>XRTMIN(2) .AND. PCCT(:)>XCTMIN(2) .AND. PLBDC(:)>0. .AND. LDCOMPUTE(:) )
    ZW2(:) = MAX( 0.0, &
                      XLAUTR*PRHODREF(:)*PRCT(:)*(XAUTO1/min(PLBDC(:),1.e9)**4-XLAUTR_THRESHOLD) ) ! L 
 !
@@ -128,10 +119,6 @@ WHERE( PRCT(:)>XRTMIN(2) .AND. PLBDC(:)>0. .AND. LDCOMPUTE(:) )
    P_CC_AUTO(:) = -ZW3(:)
    P_CR_AUTO(:) = ZW3(:)
 !
-   PA_RC(:) = PA_RC(:) + P_RC_AUTO(:)
-   PA_CC(:) = PA_CC(:) + P_CC_AUTO(:)
-   PA_RR(:) = PA_RR(:) - P_RC_AUTO(:)
-   PA_CR(:) = PA_CR(:) + P_CR_AUTO(:)
 END WHERE
 !
 !

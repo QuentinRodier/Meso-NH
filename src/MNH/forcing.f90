@@ -149,6 +149,7 @@ END MODULE MODI_FORCING
 !                          use overloaded comparison operator for date_time
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet    02/2020: use the new data structures and subroutines for budgets
+!  F. Couvreux    06/2021: add LRELAX_UVMEAN_FRC : relaxation applied to the horizontal avg. wind (for LES)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -169,9 +170,13 @@ USE MODD_TIME
 !
 use mode_budget,     only: Budget_store_init, Budget_store_end
 USE MODE_DATETIME
+USE MODE_GATHER_ll
 USE MODE_MSG
+USE MODE_ll
+USE MODE_REPRO_SUM
 !
 USE MODI_GET_HALO
+USE MODI_LES_MEAN_ll
 USE MODI_SHUMAN
 USE MODI_UPSTREAM_Z
 !
@@ -209,6 +214,9 @@ REAL, DIMENSION(:,:,:),   INTENT(IN) :: PJ
 !*       0.2   Declarations of local variables
 !
 INTEGER                         :: IIU, IJU, IKU      ! dimensions
+INTEGER                         :: IIB,IJB,IIE,IJE    ! physical domain dimensions
+INTEGER                         :: IKB, IKE           !
+INTEGER                         :: IIMAX_ll,IJMAX_ll
 INTEGER, SAVE                   :: JSX                ! saved loop index
 INTEGER                         :: JI, JJ, JK, JL, JXP! loop indexes 
 !
@@ -248,11 +256,18 @@ INTEGER  :: IRESP   ! Return code of FM-routines
 !
 LOGICAL,DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) :: GRELAX_MASK_FRC
 !
+REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZUMEAN, ZVMEAN
+REAL :: ZTEMPU, ZTEMPV
+!
 !----------------------------------------------------------------------------
 !
 IIU=SIZE(PUT,1) 
 IJU=SIZE(PUT,2) 
 IKU=SIZE(PUT,3) 
+IKE = SIZE(PUT,3) - JPVEXT
+IKB = 1 + JPVEXT
+CALL GET_INDICE_ll( IIB,IJB,IIE,IJE)
+CALL GET_GLOBALDIMS_ll ( IIMAX_ll,IJMAX_ll)
 !
 ILUOUT0 = TLUOUT0%NLU
 
@@ -479,6 +494,8 @@ ALLOCATE(ZDUF(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)))
 ALLOCATE(ZDVF(SIZE(PVT,1),SIZE(PVT,2),SIZE(PVT,3)))
 ALLOCATE(ZTENDUF(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)))
 ALLOCATE(ZTENDVF(SIZE(PVT,1),SIZE(PVT,2),SIZE(PVT,3)))
+ALLOCATE(ZUMEAN(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)))
+ALLOCATE(ZVMEAN(SIZE(PVT,1),SIZE(PVT,2),SIZE(PVT,3)))
 !
 IF (LFLAT) THEN
 !
@@ -782,7 +799,7 @@ PVFRC_PAST(:,:,:) = ZVF(:,:,:)
 !
 !*       4.4    integration of the thermal, moisture and wind relaxation
 !
-IF( LRELAX_THRV_FRC .OR. LRELAX_UV_FRC ) THEN
+IF( LRELAX_THRV_FRC .OR. LRELAX_UV_FRC .OR. LRELAX_UVMEAN_FRC) THEN
 !
   ZDZZ(:,:,:) = DZM(MZF(PZZ(:,:,:)))
   ZDZZ(:,:,IKU) = PZZ(:,:,IKU) - PZZ(:,:,IKU-1)
@@ -833,6 +850,25 @@ IF( LRELAX_THRV_FRC .OR. LRELAX_UV_FRC ) THEN
       PRUS(:,:,:) = PRUS(:,:,:) - MXM(PRHODJ(:,:,:))*(PUT(:,:,:)-ZUF(:,:,:)) &
                                                  / XRELAX_TIME_FRC
       PRVS(:,:,:) = PRVS(:,:,:) - MYM(PRHODJ(:,:,:))*(PVT(:,:,:)-ZVF(:,:,:)) &
+                                                 / XRELAX_TIME_FRC
+    END WHERE
+!
+  END IF
+!
+  IF ( LRELAX_UVMEAN_FRC ) THEN
+   DO JK=IKB,IKE
+       ZTEMPU=SUM_DD_R2_ll(PUT(IIB:IIE,IJB:IJE,JK))/REAL(IIMAX_ll*IJMAX_ll)
+       ZUMEAN(:,:,JK) = ZTEMPU
+       ZTEMPV=SUM_DD_R2_ll(PVT(IIB:IIE,IJB:IJE,JK))/REAL(IIMAX_ll*IJMAX_ll)
+       ZVMEAN(:,:,JK) = ZTEMPV
+   END DO
+!
+!   apply UV relaxation on the horizontal-average value of UV
+!
+    WHERE( GRELAX_MASK_FRC )
+      PRUS(:,:,:) = PRUS(:,:,:) - MXM(PRHODJ(:,:,:))*(ZUMEAN(:,:,:)-ZUF(:,:,:)) &
+                                                 / XRELAX_TIME_FRC
+      PRVS(:,:,:) = PRVS(:,:,:) - MYM(PRHODJ(:,:,:))*(ZVMEAN(:,:,:)-ZVF(:,:,:)) &
                                                  / XRELAX_TIME_FRC
     END WHERE
 !
@@ -891,6 +927,8 @@ DEALLOCATE(ZDZZ)
 DEALLOCATE(ZRWCF)
 DEALLOCATE(ZDUF)
 DEALLOCATE(ZDVF)
+DEALLOCATE(ZUMEAN)
+DEALLOCATE(ZVMEAN)
 !
 !----------------------------------------------------------------------------
 !
