@@ -711,11 +711,6 @@ DO JK=IKUP,KFLEV
   ZQVAVE(:,JK) = 0.5*( PSTATM(JK1,5)/PSTATM(JK1,4)+   &
                  PSTATM(JK2,5)/PSTATM(JK2,4)    )
 END DO
-#ifdef MNH_ECRAD
-#if ( VER_ECRAD == 140 )
-ZQVAVE(:,:) = 0.001*ZQVAVE(:,:)
-#endif
-#endif
 !
 !        2.1 pronostic water concentation fields (C2R2 coupling) 
 !
@@ -1161,8 +1156,6 @@ ELSE
      END DO
    ENDDO  
 END IF
-!PRINT*,"ZALBP",ZALBP
-!PRINT*,"ZALBD",ZALBD
 !
 !
 ! LW emissivity
@@ -1170,7 +1163,6 @@ ZEMIW(:,:)= ZEMIS(:,:)
 !
 !solar constant
 ZRII0= PCORSOL*XI0  ! solar constant multiplied by seasonal variations due to Earth-Sun distance
-!PRINT*,XI0
 !
 !
 !*       5.2   ACCOUNTS FOR THE CLEAR-SKY APPROXIMATION
