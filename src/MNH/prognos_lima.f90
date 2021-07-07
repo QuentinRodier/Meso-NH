@@ -297,6 +297,7 @@ ENDWHERE
 !Calcul de S+dS
 PS0(:)=PS0(:)+((ZA1(:)-(((ZB(:)*(PS0(:)+1.0)+1.0)*ZDZRC(:))/ZRVSAT1(:)))*PTSTEP)
 !
+PS0=MAX(PS0,-0.98)
 !Ajustement tel que rv=(s+1)*rvs
 ZTL(:)=PTT(:)-(PLV(:)/PCPH(:))*PRC(:)
 ZRT(:)=PRC(:)+PRV(:)
