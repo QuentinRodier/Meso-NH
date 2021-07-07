@@ -218,6 +218,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !  B. Vie         06/2021: add prognostic supersaturation for LIMA
 !  Q. Rodier      06/2021: modify default value to LGZ=F (grey-zone corr.), LSEDI and OSEDC=T (LIMA sedimentation)
 !  F. Couvreux    06/2021: add LRELAX_UVMEAN_FRC
+!  Q. Rodier      07/2021: modify XPOND=1
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -499,7 +500,7 @@ NLBLY(:) = 1
 XCPHASE = 20.
 XCPHASE_PBL = 0.
 XCARPKMAX = XUNDEF
-XPOND = 0.2
+XPOND = 1.0
 !
 !-------------------------------------------------------------------------------
 !
