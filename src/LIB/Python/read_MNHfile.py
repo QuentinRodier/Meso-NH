@@ -223,7 +223,7 @@ def read_from_group(theFile, Dvar, group_name, var_name, get_data_only=True, del
             Dvar[(group_name,var_name)] = np.squeeze(Dvar[(group_name,var_name)], axis=Ldimtosqueeze)
             
         # LES budget, ZTSERIES needs to be transposed to use psection functions without specifying .T each time
-        if 'LES_budgets' or 'ZTSERIES' or 'XTSERIES' in group_name: 
+        if 'LES_budget' in group_name or 'ZTSERIES' in group_name or 'XTSERIES' in group_name:
             Dvar[(group_name,var_name)] = Dvar[(group_name,var_name)].T   
     return Dvar
 
