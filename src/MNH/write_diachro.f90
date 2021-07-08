@@ -143,8 +143,9 @@ subroutine Write_diachro_lfi( tpdiafile, tpbudiachro, tpfields, tpdates, pvar, t
 
 use modd_aircraft_balloon, only: flyer
 use modd_budget,         only: NLVL_CATEGORY, NLVL_GROUP, NLVL_SHAPE, nbumask, nbutshift, nbusubwrite, tbudiachrometadata
-use modd_field,          only: NMNHDIM_ONE, NMNHDIM_UNKNOWN, NMNHDIM_FLYER_TIME, NMNHDIM_NOTLISTED, NMNHDIM_UNUSED, &
-                               TYPECHAR, TYPEINT, TYPEREAL,                                                         &
+use modd_field,          only: NMNHDIM_ONE, NMNHDIM_UNKNOWN, NMNHDIM_BUDGET_LES_MASK, &
+                               NMNHDIM_FLYER_TIME, NMNHDIM_NOTLISTED, NMNHDIM_UNUSED, &
+                               TYPECHAR, TYPEINT, TYPEREAL,                           &
                                tfield_metadata_base, tfielddata
 use modd_io,             only: tfiledata
 use modd_les,            only: nles_current_iinf, nles_current_isup, nles_current_jinf, nles_current_jsup, &
@@ -182,6 +183,7 @@ character(len=LFIUNITLGT),    dimension(:), allocatable :: yunits    !Used to re
 character(len=LFICOMMENTLGT), dimension(:), allocatable :: ycomments !Used to respect LFI fileformat
 INTEGER   ::   ILENG, ILENTITRE, ILENUNITE, ILENCOMMENT
 integer   :: iil, iih, ijl, ijh, ikl, ikh
+integer   :: idx
 INTEGER   ::   II, IJ, IK, IT, IN, IP, J, JJ
 INTEGER   ::   INTRAJT, IKTRAJX, IKTRAJY, IKTRAJZ
 INTEGER   ::   ITTRAJX, ITTRAJY, ITTRAJZ
@@ -256,7 +258,17 @@ else if ( tpbudiachro%nsv > 0 ) then
   Allocate( character(len=9) :: ygroup )
   Write( ygroup, '( "SV", i3.3, i4.4 )' ) tpbudiachro%nsv, nbutshift
 else if ( tpbudiachro%clevels(NLVL_CATEGORY) == 'LES_budgets' .and. tpbudiachro%clevels(NLVL_GROUP)(1:3)/='BU_' ) then
-  ygroup = Trim( tpfields(1)%cmnhname )
+  if ( tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_LES_MASK ) then
+    !Remove the name of the mask (different for each 'process') to get the common name for the group
+    idx = Index( tpfields(1)%cmnhname, ' ' )
+    if ( idx > 0 ) then
+      ygroup = tpfields(1)%cmnhname(1:idx- 1)
+    else
+      ygroup = Trim( tpfields(1)%cmnhname )
+    end if
+  else
+    ygroup = Trim( tpfields(1)%cmnhname )
+  end if
 else
   ygroup = Trim( tpbudiachro%clevels(NLVL_GROUP) )
 end if
@@ -316,7 +328,7 @@ else if ( ycategory == 'Flyers' ) then
   end if
 else if ( ycategory == 'Profilers' .or. ycategory == 'Stations' ) then
   ytype = 'CART'
-else if ( ycategory == 'Time series'  ) then
+else if ( ycategory == 'Time_series'  ) then
   if ( tpbudiachro%licompress ) then
     ytype = 'CART'
   else

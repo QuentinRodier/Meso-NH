@@ -119,6 +119,7 @@ REAL :: ZSIZEHB
 CHARACTER(LEN=100) :: YMSG
 type(tbudiachrometadata)                              :: tzbudiachro
 type(tfield_metadata_base), dimension(:), allocatable :: tzfields
+type(tfiledata)                                       :: tzfile
 !----------------------------------------------------------------------------
 !
 !*    1.     INITIALIZATION
@@ -303,15 +304,28 @@ tzbudiachro%njh        = njboxh
 tzbudiachro%nkl        = 1
 tzbudiachro%nkh        = ikmax
 
-! Loop on the different masks
-! Do not provide all tzfields once because they can be stored in different HDF groups (based on masks)
-do jp = 1 , nstemp_serie1
-  tzbudiachro%clevels(NLVL_MASK) = Trim( csmask1(jp) )
-  tzbudiachro%ccomments(NLVL_MASK) = ''
+tzfile = tpdiafile
+if ( Trim( tpdiafile%cformat ) == 'LFI' .or. Trim( tpdiafile%cformat ) == 'LFICDF4' ) then
+  !For LFI files, it is necessary to write all the 'processes' (source terms) of the different masks in one pass
+  !to ensure that they are grouped together and not overwritten
+  tzfile%cformat = 'LFI'
 
-  call Write_diachro( tpdiafile, tzbudiachro, [ tzfields(jp) ], tpsdates(1:nsnbstept), &
-                      xsseries1(1:1,1:1,1:1,1:nsnbstept,1:1,jp:jp)                 )
-end do
+  call Write_diachro( tzfile, tzbudiachro, tzfields, tpsdates(1:nsnbstept), &
+                      xsseries1(1:1,1:1,1:1,1:nsnbstept,1:1,:)              )
+end if
+
+if ( Trim( tpdiafile%cformat ) /= 'LFI' ) then! Loop on the different masks
+  tzfile%cformat = 'NETCDF4'
+
+  ! Do not provide all tzfields once because they can be stored in different HDF groups (based on masks)
+  do jp = 1 , nstemp_serie1
+    tzbudiachro%clevels(NLVL_MASK) = Trim( csmask1(jp) )
+    tzbudiachro%ccomments(NLVL_MASK) = ''
+
+    call Write_diachro( tzfile, tzbudiachro, [ tzfields(jp) ], tpsdates(1:nsnbstept), &
+                        xsseries1(1:1,1:1,1:1,1:nsnbstept,1:1,jp:jp)                 )
+  end do
+end if
 
 deallocate( tzfields )
 !
@@ -431,15 +445,27 @@ tzbudiachro%njh        = njboxh
 tzbudiachro%nkl        = 1
 tzbudiachro%nkh        = ikmax
 
-! Loop on the different masks
-! Do not provide all tzfields once because they can be stored in different HDF groups (based on masks)
-do jp = 1 , nstemp_serie2
-  tzbudiachro%clevels(NLVL_MASK) = csmask2(jp)
-  tzbudiachro%ccomments(NLVL_MASK) = ''
+if ( Trim( tpdiafile%cformat ) == 'LFI' .or. Trim( tpdiafile%cformat ) == 'LFICDF4' ) then
+  !For LFI files, it is necessary to write all the 'processes' (source terms) of the different masks in one pass
+  !to ensure that they are grouped together and not overwritten
+  tzfile%cformat = 'LFI'
 
-  call Write_diachro( tpdiafile, tzbudiachro, [ tzfields(jp) ], tpsdates(1:nsnbstept), &
-                      xsseries2(1:1,1:1,1:ikmax,1:nsnbstept,1:1,jp:jp)                 )
-end do
+  call Write_diachro( tzfile, tzbudiachro, tzfields, tpsdates(1:nsnbstept), &
+                      xsseries2(1:1,1:1,1:ikmax,1:nsnbstept,1:1,:)          )
+end if
+
+if ( Trim( tpdiafile%cformat ) /= 'LFI' ) then! Loop on the different masks
+  tzfile%cformat = 'NETCDF4'
+
+  ! Do not provide all tzfields once because they can be stored in different HDF groups (based on masks)
+  do jp = 1 , nstemp_serie2
+    tzbudiachro%clevels(NLVL_MASK) = csmask2(jp)
+    tzbudiachro%ccomments(NLVL_MASK) = ''
+
+    call Write_diachro( tzfile, tzbudiachro, [ tzfields(jp) ], tpsdates(1:nsnbstept), &
+                        xsseries2(1:1,1:1,1:ikmax,1:nsnbstept,1:1,jp:jp)              )
+  end do
+end if
 
 deallocate( tzfields )
 !

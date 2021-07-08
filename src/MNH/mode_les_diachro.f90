@@ -1022,6 +1022,7 @@ real,            dimension(:,:,:,:),     allocatable :: zfield  ! Normalized fie
 real,            dimension(:,:,:,:,:,:), allocatable :: zwork6  ! Contains physical field
 type(tbudiachrometadata)                             :: tzbudiachro
 type(date_time), dimension(:),           allocatable :: tzdates
+type(tfiledata)                                      :: tzfile
 
 !Reallocate each time necessary because can be reallocated to an other size in Les_time_avg
 Allocate( zfield(Size( pfield, 1 ), Size( pfield, 2 ), Size( pfield, 3 ), Size( pfield, 4 )) )
@@ -1148,20 +1149,41 @@ if ( iresp == 0 .and. any( zfield /= XUNDEF ) ) then
   tzbudiachro%nkh        = ikh
 
   if ( tzfields(1)%ndimlist(6) == NMNHDIM_BUDGET_LES_MASK ) then
-    tzfields(:)%ndimlist(6) = NMNHDIM_UNUSED
+    tzfile = tpdiafile
 
-    ! Loop on the different masks
-    ! Do not provide all tzfields once because they can be stored in different HDF groups (based on masks)
-    do jp = 1, Size( hmasks )
-      tzfields(jp)%clongname = Trim( ytitle(jp) ) // ' (' // Trim( hmasks(jp) ) // ')'
-      tzfields(jp)%ndims     = tzfields(jp)%ndims - 1
+    if ( Trim( tpdiafile%cformat ) == 'LFI' .or. Trim( tpdiafile%cformat ) == 'LFICDF4' ) then
+      !For LFI files, it is necessary to write all the 'processes' (source terms) of the different masks in one pass
+      !to ensure that they are grouped together and not overwritten
+      tzfile%cformat = 'LFI'
 
-      tzbudiachro%clevels(NLVL_MASK) = hmasks(jp)
+      do jp = 1, Size( hmasks )
+        tzfields(jp)%cmnhname  = Trim( ytitle(jp) ) // ' (' // Trim( hmasks(jp) ) // ')'
+        tzfields(jp)%clongname = Trim( ytitle(jp) ) // ' (' // Trim( hmasks(jp) ) // ')'
+      end do
+
+      call Write_diachro( tzfile, tzbudiachro, tzfields, tzdates, zwork6 )
+    end if
+
+    if ( Trim( tpdiafile%cformat ) /= 'LFI' ) then
+      tzfile%cformat = 'NETCDF4'
+
+      tzfields(:)%ndimlist(6) = NMNHDIM_UNUSED
+
+      ! Loop on the different masks
+      ! Do not provide all tzfields once because they can be stored in different HDF groups (based on masks)
+      do jp = 1, Size( hmasks )
+        !Keep the following line (about cmnhname, necessary especially if LFI files before (cmnhname was modified previously)
+        tzfields(jp)%cmnhname  = Trim( ytitle(jp) )
+        tzfields(jp)%clongname = Trim( ytitle(jp) ) // ' (' // Trim( hmasks(jp) ) // ')'
+        tzfields(jp)%ndims     = tzfields(jp)%ndims - 1
+
+        tzbudiachro%clevels(NLVL_MASK) = hmasks(jp)
 !PW:TODO? necessite le transfert d'info depuis les routines appelantes ou via des structures dans les modd
-      tzbudiachro%ccomments(NLVL_MASK) = ''
+        tzbudiachro%ccomments(NLVL_MASK) = ''
 
-      call Write_diachro( tpdiafile, tzbudiachro, [ tzfields(jp) ], tzdates, zwork6(:,:,:,:,:,jp:jp) )
-    end do
+        call Write_diachro( tzfile, tzbudiachro, [ tzfields(jp) ], tzdates, zwork6(:,:,:,:,:,jp:jp) )
+      end do
+    end if
   else
     !Set to the same value ('cart') than for the fields with no mask in Write_les_n
     !to put the fields in the same position of the netCDF file
