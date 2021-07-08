@@ -753,9 +753,10 @@ end if
 
 end subroutine Les_diachro_2D
 
-!###################################################################################################################
-subroutine Les_diachro_3D( tpdiafile, tpfield, hgroup, hgroupcomment, odoavg, odonorm, pfield, hfieldnames, hmasks )
-!###################################################################################################################
+!###############################################################################################
+subroutine Les_diachro_3D( tpdiafile, tpfield, hgroup, hgroupcomment, odoavg, odonorm, pfield, &
+                           hfieldnames, hfieldcomments, hmasks )
+!###############################################################################################
 
 use modd_field, only: NMNHDIM_BUDGET_LES_LEVEL, NMNHDIM_BUDGET_LES_MASK, NMNHDIM_BUDGET_LES_SV, &
                       NMNHDIM_BUDGET_LES_TIME,  NMNHDIM_BUDGET_TERM,     NMNHDIM_UNUSED,        &
@@ -770,6 +771,7 @@ logical,                                   intent(in) :: odoavg     ! Compute an
 logical,                                   intent(in) :: odonorm    ! Compute and store normalized field
 real,                    dimension(:,:,:), intent(in) :: pfield     ! Data array
 character(len=*),        dimension(:),     optional, intent(in) :: hfieldnames
+character(len=*),        dimension(:),     optional, intent(in) :: hfieldcomments
 character(len=*),        dimension(:),     optional, intent(in) :: hmasks
 
 type(tfield_metadata_base) :: tzfield
@@ -808,19 +810,30 @@ else if (       tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL &
     call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_3D', &
                     'optional dummy argument hfieldnames is needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
 
+  if ( .not. Present( hfieldcomments ) ) &
+    call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_3D', &
+                    'optional dummy argument hfieldcomments is needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
+
   if ( Size( hfieldnames ) /= Size( pfield, 3) ) &
     call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_3D', 'wrong size for hfieldnames (' // Trim( tzfield%cmnhname ) // ')' )
+
+  if ( Size( hfieldcomments ) /= Size( pfield, 3) ) &
+    call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_3D', 'wrong size for hfieldcomments (' // Trim( tzfield%cmnhname ) // ')' )
 
   tzfield%ndimlist(4) = NMNHDIM_UNUSED
   call Les_diachro_common( tpdiafile, tzfield, hgroup, hgroupcomment,                                         &
                            reshape( pfield, [ size( pfield, 1 ), size( pfield, 2 ), size( pfield, 3 ), 1 ] ), &
-                           odoavg, odonorm, hfieldnames = hfieldnames )
+                           odoavg, odonorm, hfieldnames = hfieldnames, hfieldcomments = hfieldcomments )
 else if (       tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL &
           .and. tzfield%ndimlist(2) == NMNHDIM_BUDGET_LES_TIME  &
           .and. tzfield%ndimlist(3) == NMNHDIM_BUDGET_LES_SV    ) then
   if ( Present( hfieldnames ) ) &
     call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_3D', &
                     'optional dummy argument hfieldnames is not needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
+
+  if ( Present( hfieldcomments ) ) &
+    call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_3D', &
+                    'optional dummy argument hfieldcomments is not needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
 
   if ( Present( hmasks ) ) &
     call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_3D', &
@@ -838,9 +851,10 @@ end if
 
 end subroutine Les_diachro_3D
 
-!###################################################################################################################
-subroutine Les_diachro_4D( tpdiafile, tpfield, hgroup, hgroupcomment, odoavg, odonorm, pfield, hfieldnames, hmasks )
-!###################################################################################################################
+!###############################################################################################
+subroutine Les_diachro_4D( tpdiafile, tpfield, hgroup, hgroupcomment, odoavg, odonorm, pfield, &
+                           hfieldnames, hfieldcomments, hmasks )
+!###############################################################################################
 
 use modd_field, only: NMNHDIM_BUDGET_LES_LEVEL, NMNHDIM_BUDGET_LES_MASK, NMNHDIM_BUDGET_LES_PDF,  NMNHDIM_BUDGET_LES_SV, &
                       NMNHDIM_BUDGET_LES_TIME,  NMNHDIM_BUDGET_TERM,     NMNHDIM_UNUSED,                                 &
@@ -855,6 +869,7 @@ logical,                                     intent(in) :: odoavg     ! Compute 
 logical,                                     intent(in) :: odonorm    ! Compute and store normalized field
 real,                    dimension(:,:,:,:), intent(in) :: pfield     ! Data array
 character(len=*),        dimension(:),     optional, intent(in) :: hfieldnames
+character(len=*),        dimension(:),     optional, intent(in) :: hfieldcomments
 character(len=*),        dimension(:),     optional, intent(in) :: hmasks
 
 type(tfield_metadata_base) :: tzfield
@@ -884,6 +899,10 @@ if (       tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL&
     call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
                     'optional dummy argument hfieldnames is not needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
 
+  if ( Present( hfieldcomments ) ) &
+    call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
+                    'optional dummy argument hfieldcomments is not needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
+
   if ( Size( hmasks ) /= Size( pfield, 3) ) &
     call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_4D', 'wrong size for hmasks (' // Trim( tzfield%cmnhname ) // ')' )
 
@@ -895,12 +914,19 @@ else if (       tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL &
     call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
                     'optional dummy argument hfieldnames is needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
 
+  if ( .not. Present( hfieldcomments ) ) &
+    call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
+                    'optional dummy argument hfieldcomments is needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
+
   if ( Present( hmasks ) ) &
     call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
                     'optional dummy argument hmasks is not needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
 
   if ( Size( hfieldnames ) /= Size( pfield, 3) ) &
     call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_4D', 'wrong size for hfieldnames (' // Trim( tzfield%cmnhname ) // ')' )
+
+  if ( Size( hfieldcomments ) /= Size( pfield, 3) ) &
+    call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_4D', 'wrong size for hfieldcomments (' // Trim( tzfield%cmnhname ) // ')' )
 
 else if (       tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL &
           .and. tzfield%ndimlist(2) == NMNHDIM_BUDGET_LES_TIME  &
@@ -914,6 +940,10 @@ else if (       tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL &
     call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
                     'optional dummy argument hfieldnames is not needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
 
+  if ( Present( hfieldcomments ) ) &
+    call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
+                    'optional dummy argument hfieldcomments is not needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
+
   if ( Size( hmasks ) /= Size( pfield, 3) ) &
     call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_4D', 'wrong size for hmasks (' // Trim( tzfield%cmnhname ) // ')' )
 
@@ -922,14 +952,15 @@ else
                   'ndimlist configuration not yet implemented for ' // Trim( tzfield%cmnhname ) )
 end if
 
-call Les_diachro_common( tpdiafile, tzfield, hgroup, hgroupcomment, pfield, odoavg, odonorm, &
-                         hfieldnames = hfieldnames, hmasks = hmasks )
+call Les_diachro_common( tpdiafile, tzfield, hgroup, hgroupcomment, pfield, odoavg, odonorm,         &
+                         hfieldnames = hfieldnames, hfieldcomments = hfieldcomments, hmasks = hmasks )
 
 end subroutine Les_diachro_4D
 
-!#######################################################################################################################
-subroutine Les_diachro_common( tpdiafile, tpfield, hgroup, hgroupcomment, pfield, odoavg, odonorm, hfieldnames, hmasks )
-!#######################################################################################################################
+!###################################################################################################
+subroutine Les_diachro_common( tpdiafile, tpfield, hgroup, hgroupcomment, pfield, odoavg, odonorm, &
+                               hfieldnames, hfieldcomments, hmasks )
+!###################################################################################################
 
 use modd_field,         only: tfield_metadata_base
 use modd_io,            only: tfiledata
@@ -948,6 +979,7 @@ real,                       dimension(:,:,:,:),           intent(in) :: pfield  
 logical,                                                  intent(in) :: odoavg    ! Compute and store time average
 logical,                                                  intent(in) :: odonorm   ! Compute and store normalized field
 character(len=*),           dimension(:),       optional, intent(in) :: hfieldnames
+character(len=*),           dimension(:),       optional, intent(in) :: hfieldcomments
 character(len=*),           dimension(:),       optional, intent(in) :: hmasks
 
 character(len=100),         dimension(:),     allocatable :: ycomment                      ! Comment string
@@ -975,13 +1007,13 @@ ijh = nles_current_jsup
 ikl = nles_levels(1)
 ikh = nles_levels(iles_k)
 
-if ( Present( hfieldnames ) ) then
+if ( Present( hfieldcomments ) ) then
   if ( Present( hmasks ) ) &
-    call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_common', 'hfieldnames and hmasks optional arguments may not be present ' // &
+    call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_common', 'hfieldcomments and hmasks optional arguments may not be present ' // &
                     'at the same time (' // Trim( tpfield%cmnhname ) // ')' )
-  if ( Size( hfieldnames ) /= Size( pfield, 3) ) &
-    call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_common', 'wrong size for hfieldnames (' // Trim( tpfield%cmnhname ) // ')' )
-  ycomment(:) = Trim( tpfield%ccomment(:) ) // ': ' // hfieldnames(:)
+  if ( Size( hfieldcomments ) /= Size( pfield, 3) ) &
+    call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_common', 'wrong size for hfieldcomments (' // Trim( tpfield%cmnhname ) // ')' )
+  ycomment(:) = Trim( tpfield%ccomment(:) ) // ': ' // hfieldcomments(:)
 else if ( Present( hmasks ) ) then
   if ( Size( hmasks ) /= Size( pfield, 3) ) &
     call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_common', 'wrong size for hmasks (' // Trim( tpfield%cmnhname ) // ')' )

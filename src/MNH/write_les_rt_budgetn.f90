@@ -91,9 +91,10 @@ INTEGER :: ILES_P1, ILES_P2
 INTEGER :: JK ! vertical loop counter
 INTEGER :: JT ! temporal loop counter
 !
-CHARACTER(len=9), DIMENSION(NMAX_ILES) :: YFIELDNAMES
-character(len=:), allocatable          :: ygroup
-character(len=:), allocatable          :: ygroupcomment
+CHARACTER(len=9),   DIMENSION(NMAX_ILES) :: YFIELDNAMES
+CHARACTER(len=100), DIMENSION(NMAX_ILES) :: YFIELDCOMMENTS
+character(len=:),   allocatable          :: ygroup
+character(len=:),   allocatable          :: ygroupcomment
 !
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZLES_BUDGET
 !
@@ -132,11 +133,12 @@ ILES=0
 ILES_STA=ILES
 !
 !
-!* 2.1 production by mean gradients
+!* 2.1 dynamic production by mean gradients
 !      ----------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'SBG_DP_M'
+YFIELDNAMES(ILES)    = 'SBG_DP_M'
+YFIELDCOMMENTS(ILES) = 'subgrid dynamic production by mean gradient'
 ILES_P1=ILES
 !
 ZLES_BUDGET(:,:,ILES)= - 2. * XLES_SUBGRID_WRt(:,:,1) * XLES_MEAN_dRtdz(:,:,1)
@@ -146,7 +148,8 @@ ZLES_BUDGET(:,:,ILES)= - 2. * XLES_SUBGRID_WRt(:,:,1) * XLES_MEAN_dRtdz(:,:,1)
 !      --------------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'SBG_DP_R'
+YFIELDNAMES(ILES)    = 'SBG_DP_R'
+YFIELDCOMMENTS(ILES) = 'subgrid dynamic production by resolved fluctuations'
 !
 ZLES_BUDGET(:,:,ILES)= - 2. * XLES_RES_ddxa_Rt_SBG_UaRt(:,:,1)  &
                           - ZLES_BUDGET(:,:,ILES_P1)
@@ -157,7 +160,8 @@ ZLES_BUDGET(:,:,ILES)= - 2. * XLES_RES_ddxa_Rt_SBG_UaRt(:,:,1)  &
 !
 IF ( ANY(XLES_SUBGRID_WRt2(:,:,1)/= 0.) ) THEN
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'SBG_TR'
+YFIELDNAMES(ILES)    = 'SBG_TR'
+YFIELDCOMMENTS(ILES) = 'subgrid turbulent transport'
 !
 DO JK=2,NLES_K-1
   ZLES_BUDGET(JK,:,ILES) = - ( XLES_SUBGRID_WRt2 (JK+1,:,1)      &
@@ -174,7 +178,8 @@ END IF
 !      -----------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'SBG_DISS'
+YFIELDNAMES(ILES)    = 'SBG_DISS'
+YFIELDCOMMENTS(ILES) = 'subgrid dissipation'
 !
 ZLES_BUDGET(:,:,ILES) =  XLES_SUBGRID_DISS_Rt2(:,:,1)
 !
@@ -183,7 +188,8 @@ ZLES_BUDGET(:,:,ILES) =  XLES_SUBGRID_DISS_Rt2(:,:,1)
 !      --------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'SBG_RESI'
+YFIELDNAMES(ILES)    = 'SBG_RESI'
+YFIELDCOMMENTS(ILES) = 'residual of subgrid budget'
 !
 ZLES_BUDGET(:,:,ILES) = 0.
 DO JLES=ILES_STA+1,ILES-1
@@ -196,7 +202,8 @@ ILES_STA=ILES
 !      --------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_TEND'
+YFIELDNAMES(ILES)    = 'RES_TEND'
+YFIELDCOMMENTS(ILES) = 'resolved tendency'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Rt2(:,:,NLES_TEND)
 !
@@ -206,7 +213,8 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Rt2(:,:,NLES_TEND)
 !
 IF ( ANY(XLES_BU_RES_Rt2(:,:,NLES_ADVM)/= 0.) ) THEN
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_ADV'
+YFIELDNAMES(ILES)    = 'RES_ADV'
+YFIELDCOMMENTS(ILES) = 'resolved advection by mean flow'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Rt2(:,:,NLES_ADVM)
 END IF
@@ -216,7 +224,8 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_Rt2(:,:,NLES_FORC)/= 0.) ) THEN
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_FORC'
+YFIELDNAMES(ILES)    = 'RES_FORC'
+YFIELDCOMMENTS(ILES) = 'resolved advection by large-scale W forcing'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Rt2(:,:,NLES_FORC)
 END IF
@@ -226,7 +235,8 @@ END IF
 !      ----------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_DP'
+YFIELDNAMES(ILES)    = 'RES_DP'
+YFIELDCOMMENTS(ILES) = 'resolved dynamic production by mean gradient'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Rt2(:,:,NLES_DP)
 
@@ -235,7 +245,8 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Rt2(:,:,NLES_DP)
 !       -------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_TR'
+YFIELDNAMES(ILES)    = 'RES_TR'
+YFIELDCOMMENTS(ILES) = 'turbulent transport of resolved flux by itself'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Rt2(:,:,NLES_TR)
 !
@@ -244,7 +255,8 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Rt2(:,:,NLES_TR)
 !       ----------------------------------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_SBGT'
+YFIELDNAMES(ILES)    = 'RES_SBGT'
+YFIELDCOMMENTS(ILES) = 'resolved sink due to subgrid turbulence'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Rt2(:,:,NLES_VTURB) + XLES_BU_RES_Rt2(:,:,NLES_HTURB)
 !
@@ -254,7 +266,8 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Rt2(:,:,NLES_VTURB) + XLES_BU_RES_Rt2(:,:,NL
 !
 IF ( ANY(XLES_BU_RES_Rt2(:,:,NLES_DIFF)/= 0.) ) THEN
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_NUMD'
+YFIELDNAMES(ILES)    = 'RES_NUMD'
+YFIELDCOMMENTS(ILES) = 'resolved numerical diffusion'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Rt2(:,:,NLES_DIFF)
 END IF
@@ -264,7 +277,8 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_Rt2(:,:,NLES_RELA)/= 0.) ) THEN
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_RELA'
+YFIELDNAMES(ILES)    = 'RES_RELA'
+YFIELDCOMMENTS(ILES) = 'resolved sponge layer relaxation'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Rt2(:,:,NLES_RELA)
 END IF
@@ -274,7 +288,8 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_Rt2(:,:,NLES_NEST)/= 0.) ) THEN
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_NEST'
+YFIELDNAMES(ILES)    = 'RES_NEST'
+YFIELDCOMMENTS(ILES) = 'resolved average from smaller nested models'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Rt2(:,:,NLES_NEST)
 END IF
@@ -285,7 +300,8 @@ END IF
 IF ( ANY( XLES_BU_RES_Rt2(:,:,NLES_MISC) &
          +XLES_BU_RES_Rt2(:,:,NLES_MICR)/= 0.) ) THEN
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_MISC'
+YFIELDNAMES(ILES)    = 'RES_MISC'
+YFIELDCOMMENTS(ILES) = 'resolved: other effects'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_Rt2(:,:,NLES_MISC) &
                       + XLES_BU_RES_Rt2(:,:,NLES_MICR)
@@ -296,7 +312,8 @@ END IF
 !       ---------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_RESI'
+YFIELDNAMES(ILES)    = 'RES_RESI'
+YFIELDCOMMENTS(ILES) = 'residual of resolved budget'
 !
 ZLES_BUDGET(:,:,ILES) = 0.
 DO JLES=ILES_STA+1,ILES-1
@@ -307,7 +324,8 @@ END DO
 !       ------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'NSG_TEND'
+YFIELDNAMES(ILES)    = 'NSG_TEND'
+YFIELDCOMMENTS(ILES) = 'neglected tendency'
 !
 ZLES_BUDGET(:,:,ILES) = 0.
 IF (NLES_TIMES>2) THEN
@@ -326,7 +344,8 @@ END IF
 !       ----------------------------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'NSG_ADVM'
+YFIELDNAMES(ILES)    = 'NSG_ADVM'
+YFIELDCOMMENTS(ILES) = 'neglected advection by mean flow'
 !
 DO JK=2,NLES_K-1
   ZLES_BUDGET(JK,:,ILES)=  -XLES_MEAN_W(JK,:,1)                &
@@ -343,7 +362,8 @@ ZLES_BUDGET(NLES_K,:,ILES) = ZLES_BUDGET(NLES_K-1,:,ILES)
 !       ----------------------------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'NSG_ADVR'
+YFIELDNAMES(ILES)    = 'NSG_ADVR'
+YFIELDCOMMENTS(ILES) = 'neglected advection by resolved flow'
 !
 DO JK=2,NLES_K-1
   ZLES_BUDGET(JK,:,ILES)= - ( XLES_RES_W_SBG_Rt2   (JK+1,:,1)    &
@@ -365,8 +385,8 @@ tzfield%clongname = ygroup !clongname will be overwritten by yfieldnames(:) in L
 tzfield%ccomment  = 'Rt variance budget' !ccomment will be completed with yfieldnames(:) in Les_diachro
 tzfield%cunits    = 'kg2 kg-2 s-1'
 
-call Les_diachro( tpdiafile, tzfield, ygroup, ygroupcomment, gdoavg, gdonorm, &
-                  zles_budget(:, :, :iles), hfieldnames = yfieldnames(:iles) )
+call Les_diachro( tpdiafile, tzfield, ygroup, ygroupcomment, gdoavg, gdonorm, zles_budget(:, :, :iles), &
+                  hfieldnames = yfieldnames(:iles), hfieldcomments = yfieldcomments(:iles) )
 
 !-------------------------------------------------------------------------------
 !
@@ -379,11 +399,12 @@ ygroupcomment = 'Total water flux budget'
 ILES=0
 ILES_STA=ILES
 !
-!* 3.1 production by mean gradients
+!* 3.1 dynamic production by mean gradients
 !     -----------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'SBG_DP_M'
+YFIELDNAMES(ILES)    = 'SBG_DP_M'
+YFIELDCOMMENTS(ILES) = 'subgrid dynamic production by mean gradient'
 ILES_P1=ILES
 !
 ZLES_BUDGET(:,:,ILES) =  - XLES_SUBGRID_W2(:,:,1) * XLES_MEAN_dRtdz(:,:,1)
@@ -393,7 +414,8 @@ ZLES_BUDGET(:,:,ILES) =  - XLES_SUBGRID_W2(:,:,1) * XLES_MEAN_dRtdz(:,:,1)
 !     -------------------------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(2) = 'SBG_DP_R'
+YFIELDNAMES(ILES)    = 'SBG_DP_R'
+YFIELDCOMMENTS(ILES) = 'subgrid dynamic production by resolved fluctuations'
 ILES_P2=ILES
 !
 ZLES_BUDGET(:,:,ILES)=- XLES_RES_ddz_Rt_SBG_W2(:,:,1) &
@@ -406,7 +428,8 @@ ZLES_BUDGET(:,:,ILES)=- XLES_RES_ddz_Rt_SBG_W2(:,:,1) &
 !
 IF ( ANY(XLES_SUBGRID_W2Rt(:,:,1)/= 0.) ) THEN
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'SBG_TR'
+YFIELDNAMES(ILES)    = 'SBG_TR'
+YFIELDCOMMENTS(ILES) = 'subgrid turbulent transport'
 !
 DO JK=2,NLES_K-1
   ZLES_BUDGET(JK,:,ILES) = - ( XLES_SUBGRID_W2Rt (JK+1,:,1)       &
@@ -424,7 +447,8 @@ END IF
 !      -------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'SBG_PRES'
+YFIELDNAMES(ILES)    = 'SBG_PRES'
+YFIELDCOMMENTS(ILES) = 'subgrid pressure-correlation'
 !
 ZLES_BUDGET(:,:,ILES) =  XLES_SUBGRID_RtPz(:,:,1)
 !
@@ -433,7 +457,8 @@ ZLES_BUDGET(:,:,ILES) =  XLES_SUBGRID_RtPz(:,:,1)
 !      ------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'SBG_TP'
+YFIELDNAMES(ILES)    = 'SBG_TP'
+YFIELDCOMMENTS(ILES) = 'subgrid thermal production'
 !
 ZLES_BUDGET(:,:,ILES) =  XG * XLES_SUBGRID_RtThv(:,:,1)   &
                             / XLES_MEAN_Thv     (:,:,1)
@@ -444,7 +469,8 @@ ZLES_BUDGET(:,:,ILES) =  XG * XLES_SUBGRID_RtThv(:,:,1)   &
 !
 !PW: not in the documentation, but set to 0 anyway
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'SBG_DISS'
+YFIELDNAMES(ILES)    = 'SBG_DISS'
+YFIELDCOMMENTS(ILES) = 'subgrid dissipation'
 !
 ZLES_BUDGET(:,:,ILES) = 0.
 !
@@ -453,7 +479,8 @@ ZLES_BUDGET(:,:,ILES) = 0.
 !      --------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'SBG_RESI'
+YFIELDNAMES(ILES)    = 'SBG_RESI'
+YFIELDCOMMENTS(ILES) = 'residual of subgrid budget'
 !
 ZLES_BUDGET(:,:,ILES) = 0.
 DO JLES=ILES_STA+1,ILES-1
@@ -466,7 +493,8 @@ ILES_STA=ILES
 !      --------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_TEND'
+YFIELDNAMES(ILES)    = 'RES_TEND'
+YFIELDCOMMENTS(ILES) = 'resolved tendency'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WRt(:,:,NLES_TEND)
 !
@@ -475,7 +503,8 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WRt(:,:,NLES_TEND)
 !
 IF ( ANY(XLES_BU_RES_WRt(:,:,NLES_ADVM)/= 0.) ) THEN
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_ADV'
+YFIELDNAMES(ILES)    = 'RES_ADV'
+YFIELDCOMMENTS(ILES) = 'resolved advection by mean flow'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WRt(:,:,NLES_ADVM)
 END IF
@@ -485,7 +514,8 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_WRt(:,:,NLES_FORC)/= 0.) ) THEN
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_FORC'
+YFIELDNAMES(ILES)    = 'RES_FORC'
+YFIELDCOMMENTS(ILES) = 'resolved advection by large-scale W forcing'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WRt(:,:,NLES_FORC)
 END IF
@@ -494,7 +524,8 @@ END IF
 !       ----------------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_DP'
+YFIELDNAMES(ILES)    = 'RES_DP'
+YFIELDCOMMENTS(ILES) = 'resolved dynamic production by mean gradient'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WRt(:,:,NLES_DP)
 !
@@ -502,7 +533,8 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WRt(:,:,NLES_DP)
 !       -------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_TR'
+YFIELDNAMES(ILES)    = 'RES_TR'
+YFIELDCOMMENTS(ILES) = 'turbulent transport of resolved flux by itself'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WRt(:,:,NLES_TR)
 !
@@ -511,7 +543,8 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WRt(:,:,NLES_TR)
 !       -------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_PRES'
+YFIELDNAMES(ILES)    = 'RES_PRES'
+YFIELDCOMMENTS(ILES) = 'resolved pressure-correlation'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WRt(:,:,NLES_PRES)
 !
@@ -520,7 +553,8 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WRt(:,:,NLES_PRES)
 !       ------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_TP'
+YFIELDNAMES(ILES)    = 'RES_TP'
+YFIELDCOMMENTS(ILES) = 'resolved thermal production'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WRt(:,:,NLES_GRAV)
 !
@@ -529,7 +563,8 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WRt(:,:,NLES_GRAV)
 !       ----------------------------------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_SBGT'
+YFIELDNAMES(ILES)    = 'RES_SBGT'
+YFIELDCOMMENTS(ILES) = 'resolved sink due to subgrid turbulence'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WRt(:,:,NLES_VTURB) + XLES_BU_RES_WRt(:,:,NLES_HTURB)
 !
@@ -538,7 +573,8 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WRt(:,:,NLES_VTURB) + XLES_BU_RES_WRt(:,:,NL
 !
 IF ( ANY(XLES_BU_RES_WRt(:,:,NLES_COR)/= 0.) ) THEN
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_CORI'
+YFIELDNAMES(ILES)    = 'RES_CORI'
+YFIELDCOMMENTS(ILES) = 'resolved Coriolis effect'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WRt(:,:,NLES_COR)
 END IF
@@ -548,7 +584,8 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_WRt(:,:,NLES_DIFF)/= 0.) ) THEN
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_NUMD'
+YFIELDNAMES(ILES)    = 'RES_NUMD'
+YFIELDCOMMENTS(ILES) = 'resolved numerical diffusion'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WRt(:,:,NLES_DIFF)
 END IF
@@ -558,7 +595,8 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_WRt(:,:,NLES_RELA)/= 0.) ) THEN
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_RELA'
+YFIELDNAMES(ILES)    = 'RES_RELA'
+YFIELDCOMMENTS(ILES) = 'resolved sponge layer relaxation'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WRt(:,:,NLES_RELA)
 END IF
@@ -568,7 +606,8 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_WRt(:,:,NLES_NEST)/= 0.) ) THEN
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_NEST'
+YFIELDNAMES(ILES)    = 'RES_NEST'
+YFIELDCOMMENTS(ILES) = 'resolved average from smaller nested models'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WRt(:,:,NLES_NEST)
 END IF
@@ -579,7 +618,8 @@ END IF
 IF ( ANY( XLES_BU_RES_WRt(:,:,NLES_MISC) &
          +XLES_BU_RES_WRt(:,:,NLES_MICR) /= 0.) ) THEN
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_MISC'
+YFIELDNAMES(ILES)    = 'RES_MISC'
+YFIELDCOMMENTS(ILES) = 'resolved: other effects'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_WRt(:,:,NLES_MISC) &
                       + XLES_BU_RES_WRt(:,:,NLES_MICR)
@@ -589,7 +629,8 @@ END IF
 !       --------------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_RESI'
+YFIELDNAMES(ILES)    = 'RES_RESI'
+YFIELDCOMMENTS(ILES) = 'residual of resolved budget'
 !
 ZLES_BUDGET(:,:,ILES) = 0.
 DO JLES=ILES_STA+1,ILES-1
@@ -600,7 +641,8 @@ END DO
 !       ------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'SBG_TEND'
+YFIELDNAMES(ILES)    = 'NSG_TEND'
+YFIELDCOMMENTS(ILES) = 'neglected tendency'
 !
 ZLES_BUDGET(:,:,ILES) = 0.
 IF (NLES_TIMES>2) THEN
@@ -621,7 +663,8 @@ END IF
 !       ------------------------------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'NSG_ADVM'
+YFIELDNAMES(ILES)    = 'NSG_ADVM'
+YFIELDCOMMENTS(ILES) = 'neglected advection by mean flow'
 !
 DO JK=2,NLES_K-1
   ZLES_BUDGET(JK,:,ILES)= - XLES_MEAN_W(JK,:,1)                              &
@@ -638,7 +681,8 @@ ZLES_BUDGET(NLES_K,:,ILES) = ZLES_BUDGET(NLES_K-1,:,ILES)
 !       ------------------------------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'NSG_ADVR'
+YFIELDNAMES(ILES)    = 'NSG_ADVR'
+YFIELDCOMMENTS(ILES) = 'neglected advection by resolved flow'
 !
 DO JK=2,NLES_K-1
   ZLES_BUDGET(JK,:,ILES)= - ( XLES_RES_W_SBG_WRt(JK+1,:,1)   &
@@ -654,7 +698,8 @@ ZLES_BUDGET(NLES_K,:,ILES) = ZLES_BUDGET(NLES_K-1,:,ILES)
 !       ----------------------------------------------------------------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'NSG_DPGW'
+YFIELDNAMES(ILES)    = 'NSG_DPGW'
+YFIELDCOMMENTS(ILES) = 'neglected production by gradient of vertical velocity for subgrid quantity'
 !
 ZLES_BUDGET(:,:,ILES)=- XLES_RES_ddxa_W_SBG_UaRt(:,:,1)
 !
@@ -663,7 +708,8 @@ ZLES_BUDGET(:,:,ILES)=- XLES_RES_ddxa_W_SBG_UaRt(:,:,1)
 !       -------------------------------------------------------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'NSG_DPGT'
+YFIELDNAMES(ILES)    = 'NSG_DPGT'
+YFIELDCOMMENTS(ILES) = 'neglected production by horizontal gradient of Thl for subgrid quantity'
 !
 ZLES_BUDGET(:,:,ILES)=-XLES_RES_ddxa_Rt_SBG_UaW(:,:,1)       &
                       -ZLES_BUDGET(:,:,ILES_P1) -ZLES_BUDGET(:,:,ILES_P2)
@@ -678,8 +724,8 @@ tzfield%clongname = ygroup !clongname will be overwritten by yfieldnames(:) in L
 tzfield%ccomment  = 'Rt flux budget' !ccomment will be completed with yfieldnames(:) in Les_diachro
 tzfield%cunits    = 'm kg kg-1 s-2'
 
-call Les_diachro( tpdiafile, tzfield, ygroup, ygroupcomment, gdoavg, gdonorm, &
-                  zles_budget(:, :, :iles), hfieldnames = yfieldnames(:iles) )
+call Les_diachro( tpdiafile, tzfield, ygroup, ygroupcomment, gdoavg, gdonorm, zles_budget(:, :, :iles), &
+                  hfieldnames = yfieldnames(:iles), hfieldcomments = yfieldcomments(:iles) )
 
 !-------------------------------------------------------------------------------
 !
@@ -694,11 +740,12 @@ ILES=0
 ILES_STA=ILES
 !
 !
-!* 2.1 production by mean gradients
+!* 2.1 dynamic production by mean gradients
 !      ----------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'SBG_DP_M'
+YFIELDNAMES(ILES)    = 'SBG_DP_M'
+YFIELDCOMMENTS(ILES) = 'subgrid dynamic production by mean gradient'
 ILES_P1=ILES
 !
 ZLES_BUDGET(:,:,ILES)=-XLES_SUBGRID_WRt (:,:,1) * XLES_MEAN_dThldz(:,:,1) &
@@ -709,7 +756,8 @@ ZLES_BUDGET(:,:,ILES)=-XLES_SUBGRID_WRt (:,:,1) * XLES_MEAN_dThldz(:,:,1) &
 !      --------------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'SBG_DP_R'
+YFIELDNAMES(ILES)    = 'SBG_DP_R'
+YFIELDCOMMENTS(ILES) = 'subgrid dynamic production by resolved fluctuations'
 !
 ZLES_BUDGET(:,:,ILES)= - XLES_RES_ddxa_Rt_SBG_UaThl(:,:,1)  &
                        - XLES_RES_ddxa_Thl_SBG_UaRt(:,:,1)  &
@@ -721,7 +769,8 @@ ZLES_BUDGET(:,:,ILES)= - XLES_RES_ddxa_Rt_SBG_UaThl(:,:,1)  &
 !
 IF ( ANY(XLES_SUBGRID_WThlRt(:,:,1)/= 0.) ) THEN
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'SBG_TR'
+YFIELDNAMES(ILES)    = 'SBG_TR'
+YFIELDCOMMENTS(ILES) = 'subgrid turbulent transport'
 !
 DO JK=2,NLES_K-1
   ZLES_BUDGET(JK,:,ILES) = - ( XLES_SUBGRID_WThlRt (JK+1,:,1)      &
@@ -738,7 +787,8 @@ END IF
 !      -----------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'SBG_DISS'
+YFIELDNAMES(ILES)    = 'SBG_DISS'
+YFIELDCOMMENTS(ILES) = 'subgrid dissipation'
 !
 ZLES_BUDGET(:,:,ILES) =  XLES_SUBGRID_DISS_ThlRt(:,:,1)
 !
@@ -747,7 +797,8 @@ ZLES_BUDGET(:,:,ILES) =  XLES_SUBGRID_DISS_ThlRt(:,:,1)
 !      --------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'SBG_RESI'
+YFIELDNAMES(ILES)    = 'SBG_RESI'
+YFIELDCOMMENTS(ILES) = 'residual of subgrid budget'
 !
 ZLES_BUDGET(:,:,ILES) = 0.
 DO JLES=ILES_STA+1,ILES-1
@@ -760,7 +811,8 @@ ILES_STA=ILES
 !      --------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_TEND'
+YFIELDNAMES(ILES)    = 'RES_TEND'
+YFIELDCOMMENTS(ILES) = 'resolved tendency'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_ThlRt(:,:,NLES_TEND)
 !
@@ -770,7 +822,8 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_ThlRt(:,:,NLES_TEND)
 !
 IF ( ANY(XLES_BU_RES_ThlRt(:,:,NLES_ADVM)/= 0.) ) THEN
 ILES=ILES+1
-YFIELDNAMES(7) = 'RES_ADV'
+YFIELDNAMES(ILES)    = 'RES_ADV'
+YFIELDCOMMENTS(ILES) = 'resolved advection by mean flow'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_ThlRt(:,:,NLES_ADVM)
 END IF
@@ -780,7 +833,8 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_ThlRt(:,:,NLES_FORC)/= 0.) ) THEN
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_FORC'
+YFIELDNAMES(ILES)    = 'RES_FORC'
+YFIELDCOMMENTS(ILES) = 'resolved advection by large-scale W forcing'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_ThlRt(:,:,NLES_FORC)
 END IF
@@ -789,7 +843,8 @@ END IF
 !      ----------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_DP'
+YFIELDNAMES(ILES)    = 'RES_DP'
+YFIELDCOMMENTS(ILES) = 'resolved dynamic production by mean gradient'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_ThlRt(:,:,NLES_DP)
 !
@@ -797,7 +852,8 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_ThlRt(:,:,NLES_DP)
 !       -------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_TR'
+YFIELDNAMES(ILES)    = 'RES_TR'
+YFIELDCOMMENTS(ILES) = 'turbulent transport of resolved flux by itself'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_ThlRt(:,:,NLES_TR)
 !
@@ -806,7 +862,8 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_ThlRt(:,:,NLES_TR)
 !       ----------------------------------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_SBGT'
+YFIELDNAMES(ILES)    = 'RES_SBGT'
+YFIELDCOMMENTS(ILES) = 'resolved sink due to subgrid turbulence'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_ThlRt(:,:,NLES_VTURB) + XLES_BU_RES_ThlRt(:,:,NLES_HTURB)
 !
@@ -816,7 +873,8 @@ ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_ThlRt(:,:,NLES_VTURB) + XLES_BU_RES_ThlRt(:,
 !
 IF ( ANY(XLES_BU_RES_ThlRt(:,:,NLES_DIFF)/= 0.) ) THEN
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_NUMD'
+YFIELDNAMES(ILES)    = 'RES_NUMD'
+YFIELDCOMMENTS(ILES) = 'resolved numerical diffusion'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_ThlRt(:,:,NLES_DIFF)
 END IF
@@ -826,7 +884,8 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_ThlRt(:,:,NLES_RELA)/= 0.) ) THEN
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_RELA'
+YFIELDNAMES(ILES)    = 'RES_RELA'
+YFIELDCOMMENTS(ILES) = 'resolved sponge layer relaxation'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_ThlRt(:,:,NLES_RELA)
 END IF
@@ -836,7 +895,8 @@ END IF
 !
 IF ( ANY(XLES_BU_RES_ThlRt(:,:,NLES_NEST)/= 0.) ) THEN
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_NEST'
+YFIELDNAMES(ILES)    = 'RES_NEST'
+YFIELDCOMMENTS(ILES) = 'resolved average from smaller nested models'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_ThlRt(:,:,NLES_NEST)
 END IF
@@ -849,7 +909,8 @@ IF ( ANY( XLES_BU_RES_ThlRt(:,:,NLES_MISC) &
          +XLES_BU_RES_ThlRt(:,:,NLES_RAD ) &
          +XLES_BU_RES_ThlRt(:,:,NLES_MICR) /= 0.) ) THEN
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_MISC'
+YFIELDNAMES(ILES)    = 'RES_MISC'
+YFIELDCOMMENTS(ILES) = 'resolved: other effects'
 !
 ZLES_BUDGET(:,:,ILES) = XLES_BU_RES_ThlRt(:,:,NLES_MISC) &
                       + XLES_BU_RES_ThlRt(:,:,NLES_PREF) &
@@ -862,7 +923,8 @@ END IF
 !       ---------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'RES_RESI'
+YFIELDNAMES(ILES)    = 'RES_RESI'
+YFIELDCOMMENTS(ILES) = 'residual of resolved budget'
 !
 ZLES_BUDGET(:,:,ILES) = 0.
 DO JLES=ILES_STA+1,ILES-1
@@ -873,7 +935,8 @@ END DO
 !       ------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'NSG_TEND'
+YFIELDNAMES(ILES)    = 'NSG_TEND'
+YFIELDCOMMENTS(ILES) = 'neglected tendency'
 !
 ZLES_BUDGET(:,:,ILES) = 0.
 IF (NLES_TIMES>2) THEN
@@ -892,7 +955,8 @@ END IF
 !       ----------------------------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'NSG_ADVM'
+YFIELDNAMES(ILES)    = 'NSG_ADVM'
+YFIELDCOMMENTS(ILES) = 'neglected advection by mean flow'
 !
 DO JK=2,NLES_K-1
   ZLES_BUDGET(JK,:,ILES)=  -XLES_MEAN_W(JK,:,1)                &
@@ -909,7 +973,8 @@ ZLES_BUDGET(NLES_K,:,ILES) = ZLES_BUDGET(NLES_K-1,:,ILES)
 !       ----------------------------------------------
 !
 ILES=ILES+1
-YFIELDNAMES(ILES) = 'NSG_ADVR'
+YFIELDNAMES(ILES)    = 'NSG_ADVR'
+YFIELDCOMMENTS(ILES) = 'neglected advection by resolved flow'
 !
 DO JK=2,NLES_K-1
   ZLES_BUDGET(JK,:,ILES)= - ( XLES_RES_W_SBG_ThlRt (JK+1,:,1)    &
@@ -931,8 +996,8 @@ tzfield%clongname = ygroup !clongname will be overwritten by yfieldnames(:) in L
 tzfield%ccomment  = 'Thl-Rt covariance budget' !ccomment will be completed with yfieldnames(:) in Les_diachro
 tzfield%cunits    = 'K kg kg-1 s-1'
 
-call Les_diachro( tpdiafile, tzfield, ygroup, ygroupcomment, gdoavg, gdonorm, &
-                  zles_budget(:, :, :iles), hfieldnames = yfieldnames(:iles) )
+call Les_diachro( tpdiafile, tzfield, ygroup, ygroupcomment, gdoavg, gdonorm, zles_budget(:, :, :iles), &
+                  hfieldnames = yfieldnames(:iles), hfieldcomments = yfieldcomments(:iles) )
 
 !-------------------------------------------------------------------------------
 !
