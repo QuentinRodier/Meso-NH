@@ -39,6 +39,7 @@
 !  P. Wautelet 12/08/2020: bugfix: use NUNDEF instead of XUNDEF for integer variables
 !  P. Wautelet 04/01/2021: bugfix: nles_k was used instead of nspectra_k for a loop index
 !  P. Wautelet 30/03/2021: budgets: LES cartesian subdomain limits are defined in the physical domain
+!  P. Wautelet 09/07/2021: bugfix: altitude levels are on the correct grid position (mass point)
 ! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -72,6 +73,7 @@ USE MODD_CONDSAMP, ONLY : LCONDSAMP
 !
 USE MODI_INI_LES_CART_MASKn
 USE MODI_COEF_VER_INTERP_LIN
+USE MODI_SHUMAN
 !
 IMPLICIT NONE
 !
@@ -365,7 +367,7 @@ IF (ANY(XLES_ALTITUDES(:)/=XUNDEF)) THEN
       END DO
     END DO
   END DO
-  CALL COEF_VER_INTERP_LIN(XZZ,ZZ_LES,NKLIN_LES,XCOEFLIN_LES)
+  CALL COEF_VER_INTERP_LIN(MZF(XZZ),ZZ_LES,NKLIN_LES,XCOEFLIN_LES)
   !
   DEALLOCATE(ZZ_LES)
 END IF
