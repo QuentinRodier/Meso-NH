@@ -17,28 +17,29 @@ os.system('rm -f tempgraph*')
 #  User's parameter / Namelist
 #
 path=""
-
 LnameFiles = ['ARM__.1.CEN4T.000.nc' ]
+LG_LES = '/LES_budgets/Cartesian/Not_time_averaged/Not_normalized/cart/'
 
 Dvar_input = {
-'f1':['MEAN_TH','MEAN_U','MEAN_V','MEAN_RC','MEAN_RR',
-      'SBG_TKE','SBG_WTHL','SBG_WRT',
-      'THLUP_MF','RTUP_MF','RVUP_MF','RCUP_MF','RIUP_MF','WUP_MF',
-      'MAFLX_MF','DETR_MF','ENTR_MF','FRCUP_MF','THVUP_MF','WTHL_MF',
-      'WRT_MF','WTHV_MF','WU_MF','WV_MF',
+'f1':[(LG_LES,'MEAN_TH') , (LG_LES,'MEAN_U')  , (LG_LES,'MEAN_V') , (LG_LES,'MEAN_RC'), (LG_LES,'MEAN_RR'),
+      (LG_LES,'SBG_TKE') , (LG_LES,'SBG_WTHL'), (LG_LES,'SBG_WRT'),
+      (LG_LES,'THLUP_MF'), (LG_LES,'RTUP_MF') , (LG_LES,'RVUP_MF'), (LG_LES,'RCUP_MF'), (LG_LES,'RIUP_MF'), (LG_LES,'WUP_MF'),
+      (LG_LES,'MAFLX_MF'), (LG_LES,'DETR_MF') , (LG_LES,'ENTR_MF'), (LG_LES,'FRCUP_MF'), (LG_LES,'THVUP_MF'), (LG_LES,'WTHL_MF'),
+      (LG_LES,'WRT_MF')  , (LG_LES,'WTHV_MF') , (LG_LES,'WU_MF')  , (LG_LES,'WV_MF'),
       'level_les','time_les']
 }
 
 #  Read the variables in the files
 Dvar = {}
-Dvar = read_netcdf(LnameFiles, Dvar_input, path=path, removeHALO=False)
+Dvar = read_netcdf(LnameFiles, Dvar_input, path=path, removeHALO=False, get_data_only=True)
 
 ################################################################
 #########          PANEL 1
 ###############################################################
 Panel1 = PanelPlot(2,3, [25,14],'', titlepad=25, minmaxpad=1.04, timepad=-0.07, colorbarpad=0.03, labelcolorbarpad = 13, colorbaraspect=40)
 
-Lplot = [Dvar['f1']['MEAN_TH'],Dvar['f1']['MEAN_U'], Dvar['f1']['MEAN_V'], Dvar['f1']['MEAN_RC'], Dvar['f1']['MEAN_RR'],Dvar['f1']['SBG_TKE'],]
+Lplot = [Dvar['f1'][(LG_LES,'MEAN_TH')],Dvar['f1'][(LG_LES,'MEAN_U')], Dvar['f1'][(LG_LES,'MEAN_V')], 
+         Dvar['f1'][(LG_LES,'MEAN_RC')], Dvar['f1'][(LG_LES,'MEAN_RR')],Dvar['f1'][(LG_LES,'SBG_TKE')]]
 LaxeX = [Dvar['f1']['time_les']/3600.]*len(Lplot)
 LaxeZ = [Dvar['f1']['level_les']]*len(Lplot)
 Ltitle = ['Mean potential temperature TH', 'Mean U', 'Mean V', 'Mean cloud mixing ratio RC', 'Mean precipitation RR', 'Subgrid TKE']
@@ -57,7 +58,6 @@ LaddWhite = [False, False, True, True,True, True]
 fig1 = Panel1.psectionV(Lxx=LaxeX, Lzz=LaxeZ, Lvar=Lplot, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle, Lminval=Lminval, Lmaxval=Lmaxval, 
                                 Lstep=Lstep, Lstepticks=Lstepticks, Lcolormap=Lcolormap, Lcbarlabel=Lcbarlabel, Lfacconv=Lfacconv, 
                                 LaddWhite_cm=LaddWhite, Lylim=Lylim)
-
 Panel1.save_graph(1,fig1)
 
 ################################################################
@@ -65,7 +65,8 @@ Panel1.save_graph(1,fig1)
 ###############################################################
 Panel2 = PanelPlot(2,3, [25,14],'', titlepad=25, minmaxpad=1.04, timepad=-0.07, colorbarpad=0.03, labelcolorbarpad = 13, colorbaraspect=40)
 
-Lplot = [Dvar['f1']['SBG_WTHL'], Dvar['f1']['SBG_WRT'], Dvar['f1']['THLUP_MF'], Dvar['f1']['RTUP_MF'], Dvar['f1']['RVUP_MF'], Dvar['f1']['RCUP_MF']]
+Lplot = [Dvar['f1'][(LG_LES,'SBG_WTHL')], Dvar['f1'][(LG_LES,'SBG_WRT')], Dvar['f1'][(LG_LES,'THLUP_MF')], 
+         Dvar['f1'][(LG_LES,'RTUP_MF')], Dvar['f1'][(LG_LES,'RVUP_MF')], Dvar['f1'][(LG_LES,'RCUP_MF')]]
 LaxeX = [Dvar['f1']['time_les']/3600.]*len(Lplot)
 LaxeZ = [Dvar['f1']['level_les']]*len(Lplot)
 Ltitle = ['Subgrid vertical liquid potential temp. flux', 'Subgrid vertical RT flux', 
@@ -85,7 +86,6 @@ LaddWhite = [False, False, False, False, False, False]
 fig2 = Panel2.psectionV(Lxx=LaxeX, Lzz=LaxeZ, Lvar=Lplot, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle, Lminval=Lminval, Lmaxval=Lmaxval, 
                                 Lstep=Lstep, Lstepticks=Lstepticks, Lcolormap=Lcolormap, Lcbarlabel=Lcbarlabel, Lfacconv=Lfacconv, 
                                 LaddWhite_cm=LaddWhite, Lylim=Lylim)
-
 Panel2.save_graph(2,fig2)
 
 ################################################################
@@ -93,7 +93,8 @@ Panel2.save_graph(2,fig2)
 ###############################################################
 Panel3 = PanelPlot(2,3, [25,14],'', titlepad=25, minmaxpad=1.04, timepad=-0.07, colorbarpad=0.03, labelcolorbarpad = 13, colorbaraspect=40)
 
-Lplot = [Dvar['f1']['RIUP_MF'], Dvar['f1']['WUP_MF'], Dvar['f1']['MAFLX_MF'], Dvar['f1']['DETR_MF'], Dvar['f1']['ENTR_MF'], Dvar['f1']['FRCUP_MF']]
+Lplot = [Dvar['f1'][(LG_LES,'RIUP_MF')], Dvar['f1'][(LG_LES,'WUP_MF')], Dvar['f1'][(LG_LES,'MAFLX_MF')], 
+         Dvar['f1'][(LG_LES,'DETR_MF')], Dvar['f1'][(LG_LES,'ENTR_MF')], Dvar['f1'][(LG_LES,'FRCUP_MF')]]
 LaxeX = [Dvar['f1']['time_les']/3600.]*len(Lplot)
 LaxeZ = [Dvar['f1']['level_les']]*len(Lplot)
 Ltitle = ['Updraft ice mixing ratio', 'Updraft vertical velocity', 
@@ -113,16 +114,15 @@ LaddWhite = [True]*len(Lplot)
 fig3 = Panel3.psectionV(Lxx=LaxeX, Lzz=LaxeZ, Lvar=Lplot, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle, Lminval=Lminval, Lmaxval=Lmaxval, 
                                 Lstep=Lstep, Lstepticks=Lstepticks, Lcolormap=Lcolormap, Lcbarlabel=Lcbarlabel, Lfacconv=Lfacconv, 
                                 LaddWhite_cm=LaddWhite, Lylim=Lylim)
-
 Panel3.save_graph(3,fig3)
-
 
 ################################################################
 #########          PANEL 4
 ###############################################################
 Panel4 = PanelPlot(2,3, [25,14],'', titlepad=25, minmaxpad=1.04, timepad=-0.07, colorbarpad=0.03, labelcolorbarpad = 13, colorbaraspect=40)
 
-Lplot = [Dvar['f1']['THVUP_MF'], Dvar['f1']['WTHL_MF'], Dvar['f1']['WRT_MF'], Dvar['f1']['WTHV_MF'], Dvar['f1']['WU_MF'], Dvar['f1']['WV_MF']]
+Lplot = [Dvar['f1'][(LG_LES,'THVUP_MF')], Dvar['f1'][(LG_LES,'WTHL_MF')], Dvar['f1'][(LG_LES,'WRT_MF')], 
+         Dvar['f1'][(LG_LES,'WTHV_MF')], Dvar['f1'][(LG_LES,'WU_MF')], Dvar['f1'][(LG_LES,'WV_MF')]]
 LaxeX = [Dvar['f1']['time_les']/3600.]*len(Lplot)
 LaxeZ = [Dvar['f1']['level_les']]*len(Lplot)
 Ltitle = ['Updraft virtual potential temperature', 'Subgrid WTHL flux from Mass-Flux scheme', 
@@ -142,5 +142,4 @@ LaddWhite = [False, False, True, False, False, False]
 fig4 = Panel4.psectionV(Lxx=LaxeX, Lzz=LaxeZ, Lvar=Lplot, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle, Lminval=Lminval, Lmaxval=Lmaxval, 
                                 Lstep=Lstep, Lstepticks=Lstepticks, Lcolormap=Lcolormap, Lcbarlabel=Lcbarlabel, Lfacconv=Lfacconv, 
                                 LaddWhite_cm=LaddWhite, Lylim=Lylim)
-
 Panel4.save_graph(4,fig4)

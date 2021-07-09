@@ -16,6 +16,7 @@
 !  P. Wautelet 03/03/2021: budgets: add tbudiachrometadata type (useful to pass more information to Write_diachro)
 !  P. Wautelet 11/03/2021: bugfix: correct name for NSV_LIMA_IMM_NUCL
 !  P. Wautelet 05/07/2021: reorganisation to store point values correctly (not in vertical profiles)
+!  M. Taufour     07/2021: modify RARE for hydrometeors containing ice and add bright band calculation for RARE
 !-----------------------------------------------------------------
 !      ###########################
 MODULE MODE_WRITE_PROFILER_n
@@ -134,7 +135,7 @@ IF (TPROFILER%Y(KI)==XUNDEF) RETURN
 IKU = SIZE(TPROFILER%W,2) !Number of vertical levels
 !
 !IPROC is too large (not a big problem) due to the separation between vertical profiles and point values
-IPROC = 24 + SIZE(TPROFILER%R,4) + SIZE(TPROFILER%SV,4)
+IPROC = 25 + SIZE(TPROFILER%R,4) + SIZE(TPROFILER%SV,4)
 IF (LDIAG_IN_RUN) IPROC = IPROC + 15
 IF (LORILAM) IPROC = IPROC + JPMODE*3
 IF (LDUST) IPROC = IPROC + NMODE_DST*3
@@ -152,21 +153,25 @@ YGROUP = TPROFILER%NAME(KI)
 !Treat vertical profiles
 jproc = 0
 
-call Add_profile( 'Th',       'Potential temperature',         'K',      tprofiler%th      )
-call Add_profile( 'Thv',      'Virtual Potential temperature', 'K',      tprofiler%thv     )
-call Add_profile( 'VISI',     'Visibility',                    'km',     tprofiler%visi    )
-call Add_profile( 'VISIKUN',  'Visibility Kunkel',             'km',     tprofiler%visikun )
-call Add_profile( 'RARE',     'Radar reflectivity',            'dBZ',    tprofiler%rare    )
-call Add_profile( 'P',        'Pressure',                      'Pa',     tprofiler%p       )
-call Add_profile( 'ALT',      'Altitude',                      'm',      tprofiler%zz      )
-call Add_profile( 'ZON_WIND', 'Zonal wind',                    'm s-1',  tprofiler%zon     )
-call Add_profile( 'MER_WIND', 'Meridional wind',               'm s-1',  tprofiler%mer     )
-call Add_profile( 'FF',       'Wind intensity',                'm s-1',  tprofiler%ff      )
-call Add_profile( 'DD',       'Wind direction',                'degree', tprofiler%dd      )
-call Add_profile( 'W',        'Air vertical speed',            'm s-1',  tprofiler%w       )
+call Add_profile( 'Th',       'Potential temperature',         'K',      tprofiler%th        )
+call Add_profile( 'Thv',      'Virtual Potential temperature', 'K',      tprofiler%thv       )
+call Add_profile( 'VISI',     'Visibility',                    'km',     tprofiler%visi      )
+call Add_profile( 'VISIKUN',  'Visibility Kunkel',             'km',     tprofiler%visikun   )
+call Add_profile( 'RARE',     'Radar reflectivity',            'dBZ',    tprofiler%crare     )
+call Add_profile( 'RAREatt',  'Radar attenuated reflectivity', 'dBZ',    tprofiler%crare_att )
+call Add_profile( 'P',        'Pressure',                      'Pa',     tprofiler%p         )
+call Add_profile( 'ALT',      'Altitude',                      'm',      tprofiler%zz        )
+call Add_profile( 'ZON_WIND', 'Zonal wind',                    'm s-1',  tprofiler%zon       )
+call Add_profile( 'MER_WIND', 'Meridional wind',               'm s-1',  tprofiler%mer       )
+call Add_profile( 'FF',       'Wind intensity',                'm s-1',  tprofiler%ff        )
+call Add_profile( 'DD',       'Wind direction',                'degree', tprofiler%dd        )
+call Add_profile( 'W',        'Air vertical speed',            'm s-1',  tprofiler%w         )
 
 if ( ldiag_in_run ) &
   call Add_profile( 'TKE_DISS', 'TKE dissipation rate', 'm2 s-2', tprofiler% tke_diss )
+
+if ( Size( tprofiler%ciz, 1 ) > 0 ) &
+  call Add_profile( 'CIT',      'Ice concentration',    'kg-3',   tprofiler%ciz )
 
 irr = Size( tprofiler%r )
 if ( irr >= 1 ) call Add_profile( 'Rv', 'Water vapor mixing ratio',        'kg kg-1', tprofiler%r(:,:,:,1) )
@@ -468,10 +473,11 @@ if ( ldiag_in_run ) then
   end if
   call Add_point( 'LEI',    'Solid Latent heat flux',        'W m-2',   tprofiler%lei    )
 end if
-call Add_point( 'IWV', 'Integrated Water Vapour', 'kg m-2', tprofiler%iwv )
-call Add_point( 'ZTD', 'Zenith Tropospheric Delay', 'm', tprofiler%ztd )
-call Add_point( 'ZWD', 'Zenith Wet Delay', 'm', tprofiler%zwd )
-call Add_point( 'ZHD', 'Zenith Hydrostatic Delay', 'm', tprofiler%zhd )
+
+call Add_point( 'IWV', 'Integrated Water Vapour',   'kg m-2', tprofiler%iwv )
+call Add_point( 'ZTD', 'Zenith Tropospheric Delay', 'm',      tprofiler%ztd )
+call Add_point( 'ZWD', 'Zenith Wet Delay',          'm',      tprofiler%zwd )
+call Add_point( 'ZHD', 'Zenith Hydrostatic Delay',  'm',      tprofiler%zhd )
 
 Allocate( tzfields( jproc ) )
 

@@ -1,287 +1,344 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon Feb 22 10:29:13 2021
+MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+MNH_LIC for details. version 1.
 
-@author: rodierq
+@author: 07/2021 Quentin Rodier
 """
-
 import netCDF4 as nc
 import numpy as np
 
-def read_netcdf(LnameFiles, Dvar_input, path='.', removeHALO=True):
-  Dvar = {}
-  for i,nameFiles in enumerate(LnameFiles):
-    f_nb = 'f' + str(i+1)
-    print('Reading file ' + f_nb)
-    print(path + nameFiles)
-    if '000' in nameFiles[-6:-3]: #time series file (diachronic)
-        theFile = nc.Dataset(path + nameFiles,'r')
-        if theFile['MASDEV'][0] <= 54:
-            read_TIMESfiles_54(theFile, f_nb, Dvar_input, Dvar)
-        else : # 55 groups variables
-            read_TIMESfiles_55(theFile, f_nb, Dvar_input, Dvar, removeHALO)
-        theFile.close()
-    else:
-        read_BACKUPfile(nameFiles, f_nb, Dvar_input, Dvar, path=path, removeHALO=removeHALO)
-  return Dvar #Return the dic of [files][variables]
-
-def read_BACKUPfile(nameF, ifile, Dvar_input, Dvar_output, path='.', removeHALO=True):
-  theFile = nc.Dataset(path + nameF,'r')
-  Dvar_output[ifile] = {} #initialize dic for each files 
-       
-  #  Reading date since beginning of the model run
-  Dvar_output[ifile]['time'] =  theFile.variables['time'][0]
-  Dvar_output[ifile]['date'] = nc.num2date(Dvar_output[ifile]['time'],units=theFile.variables['time'].units, calendar = theFile.variables['time'].calendar)
-
-  for var in Dvar_input[ifile]: #For each files
-    #  Read variables
-    n_dim = theFile.variables[var].ndim
-    name_dim = theFile.variables[var].dimensions
+def read_netcdf(LnameFiles, Dvar_input, path='.', get_data_only=True, del_empty_dim=True, removeHALO=True):
+    """Read a netCDF4 Meso-NH file
+    For each file, call functions to read diachronic or synchronous file
     
-    if (n_dim ==0) or (n_dim == 1 and 'time' in name_dim):  #Scalaires or Variable time
-      Dvar_output[ifile][var] = theFile.variables[var][0].data
-    else:      
-        if removeHALO:
-          if n_dim == 1:
-            Dvar_output[ifile][var] = theFile.variables[var][1:-1] #Variables 1D
-          elif n_dim == 2:
-            if theFile.variables[var].shape[0] == 1 and 'size' in name_dim[1]: #Variables 2D with the second dimension not a coordinate (--> list of strings : chemicals)
-                Dvar_output[ifile][var] = theFile.variables[var][0,:] #Variables 2D
-            elif theFile.variables[var].shape[0] == 1: #Variables 2D with first dim = 0
-                Dvar_output[ifile][var] = theFile.variables[var][0,1:-1] #Variables 2D
-            else:
-              Dvar_output[ifile][var] = theFile.variables[var][1:-1,1:-1] #Variables 2D
-          elif n_dim == 5: #Variables time, sizeXX, level, nj, ni (ex: chemical budgets in 3D)
-              Dvar_output[ifile][var] = theFile.variables[var][0, :, 1:-1,:1:-1,1:-1]
-          elif n_dim == 4 and 'time' in name_dim and ('level' in name_dim or 'level_w' in name_dim): # time,z,y,x
-              if theFile.variables[var].shape[1] == 1: #Variables 4D time,z,y,x with time=0 z=0
-                Dvar_output[ifile][var] = theFile.variables[var][0,0,1:-1,1:-1] #Variables 2D y/x
-              elif theFile.variables[var].shape[2] == 1: #Variable 2D  (0,zz,0,xx)
-                Dvar_output[ifile][var] = theFile.variables[var][0,1:-1,0,1:-1] #Variables 2D z/y
-              elif theFile.variables[var].shape[3] == 1: #Variable 2D  (0,zz,yy,0)
-                Dvar_output[ifile][var] = theFile.variables[var][0,1:-1,1:-1,0] #Variables 2D z/x
-              ## ATTENTION VARIABLE 1D codé en 4D non faite
-              else: #Variable 3D simple
-                Dvar_output[ifile][var] = theFile.variables[var][0,1:-1,1:-1,1:-1] #Variables time + 3D     
-          elif n_dim == 4 and 'time' in name_dim and 'level' not in name_dim and 'level_w' not in name_dim: # time,nb_something,y,x
-               Dvar_output[ifile][var] = theFile.variables[var][0,:,1:-1,1:-1] #Variables 2D y/x
-          elif n_dim == 3 and 'time' in name_dim: # time, y, x 
-            Dvar_output[ifile][var] = theFile.variables[var][0,1:-1,1:-1]
-          else :
-            Dvar_output[ifile][var] = theFile.variables[var][1:-1,1:-1,1:-1]  #Variables 3D
-        else:
-          if n_dim == 1:
-            Dvar_output[ifile][var] = theFile.variables[var][:] #Variables 1D  
-          elif n_dim == 2:
-            if theFile.variables[var].shape[0] == 1 and 'size' in name_dim[1]: #Variables 2D with the second dimension not a coordinate (--> list of strings : chemicals)
-              Dvar_output[ifile][var] = theFile.variables[var][0,:] #Variables 2D
-            elif theFile.variables[var].shape[0] == 1: #Variables 2D with first dim = 0
-              Dvar_output[ifile][var] = theFile.variables[var][0,:] #Variables 2D
-            else:
-              Dvar_output[ifile][var] = theFile.variables[var][:,:] #Variables 2D
-          elif n_dim == 5: #Variables time, sizeXX, level, nj, ni (ex: chemical budgets in 3D)
-              Dvar_output[ifile][var] = theFile.variables[var][0,:,:,:,:]
-          elif n_dim == 4: # time,z,y,x
-            if theFile.variables[var].shape[1] == 1: #Variables 4D time,z,y,x with time=0 z=0
-              Dvar_output[ifile][var] = theFile.variables[var][0,0,:,:] #Variables 2D y/x
-            elif theFile.variables[var].shape[2] == 1: #Variable 2D  (0,zz,0,xx)
-              Dvar_output[ifile][var] = theFile.variables[var][0,:,0,:] #Variables 2D z/y
-            elif theFile.variables[var].shape[3] == 1: #Variable 2D  (0,zz,yy,0)
-              Dvar_output[ifile][var] = theFile.variables[var][0,:,:,0] #Variables 2D z/x
-            ## ATTENTION VARIABLE 1D codé en 4D non faite
-            else: #Variable 3D simple
-              Dvar_output[ifile][var] = theFile.variables[var][0,:,:,:] #Variables time + 3D
-          elif n_dim ==3 and name_dim in var.dimensions: # time, y, x
-            Dvar_output[ifile][var] = theFile.variables[var][0,:,:]
-          else:
-            Dvar_output[ifile][var] = theFile.variables[var][:,:,:]  #Variables 3D
-        #  For all variables except scalars, change Fill_Value to NaN
-        Dvar_output[ifile][var]= np.where(Dvar_output[ifile][var] != -99999.0, Dvar_output[ifile][var], np.nan)
-        Dvar_output[ifile][var]= np.where(Dvar_output[ifile][var] != 999.0, Dvar_output[ifile][var], np.nan)
-
-  theFile.close()
-  return Dvar_output #Return the dic of [files][variables]
-
-def read_TIMESfiles_54(theFile, ifile, Dvar_input, Dvar_output):
-    Dvar_output[ifile] = {} #initialize dic for each files 
-
-    #  Level variable is automatically read without the Halo
-    Dvar_output[ifile]['level'] = theFile.variables['level'][1:-1]
+    Parameters
+    ----------
+    LnameFiles : list of str
+        list of Meso-NH netCDF4 file (diachronic or synchronous)
     
-    #  Time variable is automatically read (time since begging of the run) from the 1st variable of the asked variable to read
-    suffix, name_first_var = remove_PROC(Dvar_input[ifile][0])
-    try: #  It is possible that there is only one value (one time) in the .000 file, as such time series are not suitable and the following line can't be executed. The time variable is then not written
-        increment = theFile.variables[name_first_var+'___DATIM'][1,-1] - theFile.variables[name_first_var+'___DATIM'][0,-1] #-1 is the last entry of the date (current UTC time in seconds)
-        length_time = theFile.variables[name_first_var+'___DATIM'].shape[0]
-        Dvar_output[ifile]['time'] = np.arange(increment,increment*(length_time+1),increment)
-    except:
-        pass
+    Dvar_input : Dict{'fileNumber' : 'var_name',('group_name','var_name')}
+        where
+        'fileNumber' is a str corresponding to 'f' + the file number in LnameFiles (by order)
+        'var_name' is the exact str of the netCDF4 variable name
+        ('group_name','var_name') is the exact tuple of the (sub-)groups name and the netCDF4 variable name
+        e.g. : {'f1':['ZS', 'WT','ni', 'level'],
+                'f2':[('/LES_budgets/Cartesian/Not_time_averaged/Not_normalized/cart/',MEAN_TH'),('/Budgets/RI','AVEF')]
+                }
     
-    for var in Dvar_input[ifile]: #For each files
-        suffix, var_name = remove_PROC(var)
-        n_dim = theFile.variables[var].ndim
-        name_dim = theFile.variables[var].dimensions
-
-        #  First, test if the variable is a dimension/coordinate variable
-        if (n_dim ==0):  #  Scalaires variable
-             Dvar_output[ifile][var] = theFile.variables[var][0].data
-             pass
-        elif n_dim == 1:
-            Dvar_output[ifile][var_name] = theFile.variables[var][1:-1]  #  By default, the Halo is always removed because is not in the other variables in any .000 variable
-            pass
-        elif n_dim == 2:
-            Lsize1 = list_size1(n_dim, name_dim)
-            if Lsize1 == [True, False]: Dvar_output[ifile][var_name] = theFile.variables[var][0,1:-1] 
-            pass
+    path : str
+        unique path of the files
+    
+    get_data_only : bool, default: True
+        if True,  the function returns Dvar as masked_array (only data)
+        if False, the function returns Dvar as netCDF4._netCDF4.Variable
+    
+    del_empty_dim : bool, default: True
+        if get_data_only=True and del_empty_dim=True, returns Dvar as an array without dimensions with size 1 and 0
+        e.g. : an array of dimensions (time_budget, cart_level, cart_nj, cart_ni) with shape (180,1,50,1) is returned (180,50)
         
-        Lsize1 = list_size1(n_dim, name_dim)
-        if Lsize1 == [True, False, False, True, True]: Dvar_output[ifile][var_name] = theFile.variables[var][0,:,:,0,0].T # Need to be transposed here
-        if Lsize1 == [True, True, False, True, False]: Dvar_output[ifile][var_name] = theFile.variables[var][0,0,:,0,:]
-
-    return Dvar_output #Return the dic of [files][variables]
-
-def read_TIMESfiles_55(theFile, ifile, Dvar_input, Dvar_output, removeHALO=False):
+    removeHALO : bool, default: True
+        if True, remove first and last (NHALO=1) point [1:-1] if get_data_only=True on each 
+        level, level_w, ni, ni_u, ni_v, nj, nj_u, nj_v dimensions
+           
+    Returns
+    -------
+    Dvar : Dict 
+        Dvar[ifile]['var_name']                if the group contains only one variable
+        Dvar[ifile][('group_name','var_name')] if the group contains more than one variable
     """
-        Read variables from MNH MASDEV >= 5.5.0 
-        Parameters :
-            - Dvar_input : dictionnary of {file : var}. var can be either 
-                - a string = the variable name 
-                - or a tuple of ('group_name','var_name')
-                If the variable desired is in a group_name and the group_name is not specified, it is assumed group_name = variable_name
-            except for specific variable as (cart, neb, clear, cs1, cs2, cs3) type
-        Return :
-        Dvar_output : dictionnary of Dvar_output[ifile][variables or tuple (group,variables) if the user specified a tuple]
+    Dvar = {}
+    for i,nameFiles in enumerate(LnameFiles):
+        f_nb = 'f' + str(i+1)
+        print('Reading file ' + f_nb)
+        print(path + nameFiles)
+        theFile = nc.Dataset(path + nameFiles,'r')
+        Dvar[f_nb] = {}
+        if '000' in nameFiles[-6:-3]: 
+            if theFile['MASDEV'][0] <= 54:
+                raise TypeError('The python lib is available for MNH >= 5.5')
+            else:
+                Dvar[f_nb] = read_TIMESfiles_55(theFile, Dvar_input[f_nb], Dvar[f_nb], get_data_only, del_empty_dim, removeHALO)
+        else:
+            Dvar[f_nb]= read_BACKUPfile(theFile, Dvar_input[f_nb], Dvar[f_nb], get_data_only, del_empty_dim, removeHALO)
+        theFile.close()
+    return Dvar
+
+def read_var(theFile, Dvar, var_name, get_data_only=True, del_empty_dim=True, removeHALO=True):
+    """Read a netCDF4 variable
+    
+    Parameters
+    ----------
+    theFile : netCDF4._netCDF4.Dataset
+        a Meso-NH diachronic netCDF4 file
+        
+    var_name : str
+        a Meso-NH netCDF4 variable name
+        
+    get_data_only : bool, default: True
+        if True,  the function returns Dvar as masked_array (only data)
+        if False, the function returns Dvar as netCDF4._netCDF4.Variable
+    
+    del_empty_dim : bool, default: True
+        if get_data_only=True and del_empty_dim=True, returns Dvar as an array without dimensions with size 1 and 0
+        e.g. : an array of dimensions (time_budget, cart_level, cart_nj, cart_ni) with shape (180,1,50,1) is returned (180,50)
+        
+    removeHALO : bool, default: True
+        if True, remove first and last (NHALO=1) point [1:-1] if get_data_only=True on each 
+        level, level_w, ni, ni_u, ni_v, nj, nj_u, nj_v dimensions
+           
+    Returns
+    -------
+    Dvar : Dict 
+        Dvar['var_name']                if the group contains only one variable
+        Dvar[('group_name','var_name')] if the group contains more than one variable
     """
-    Dvar_output[ifile] = {} #initialize dic for each files 
-    def read_var(theFile, Dvar_output, var):
-        suffix, var_name = remove_PROC(var)
-        try: #  NetCDF4 Variables
-            n_dim = theFile.variables[var_name].ndim
-            #  First, test if the variable is a dimension/coordinate variable
-            if (n_dim ==0):  #  Scalaires variable
-                Dvar_output[var_name] = theFile.variables[var_name][0].data
-            else:
-                if(removeHALO):
-                    if n_dim == 1:
-                        Dvar_output[var_name] = theFile.variables[var_name][1:-1]
-                    elif n_dim == 2:
-                        Dvar_output[var_name] = theFile.variables[var_name][1:-1,1:-1] 
-                    else: 
-                        raise NameError("Lecture des variables de dimension sup a 2 pas encore implementees pour fichiers .000")
-                else:
-                    if n_dim == 1:
-                        Dvar_output[var_name] = theFile.variables[var_name][:]
-                    elif n_dim == 2:
-                        Dvar_output[var_name] = theFile.variables[var_name][:,:] 
-                    else: 
-                        raise NameError("Lecture des variables de dimension sup a 2 pas encore implementees pour fichiers .000")
-        except KeyError: # NetCDF4 Group not specified by the user
-            if '(cart)' in var_name or '(neb)' in var_name or '(clear)' in var_name or '(cs1)' in var_name or '(cs2)' in var_name or '(cs3)' in var_name or 'AVEF' in suffix or 'INIF' in suffix or 'ENDF' in suffix:
-            # If users specify the complete variable name with averaging type
-              group_name = get_group_from_varname(var_name)
-            else:
-              group_name = var_name
-            read_from_group(theFile, Dvar_output, group_name, var)
-        return Dvar_output
-
-    def read_from_group(theFile, Dvar_output, group_name, var):
-        """
-        Read variables from MNH MASDEV >= 5.5.0 
-        Parameters :
-            - var : the variable name
-            - group_name : the group name            
-        Return :
-        Dvar_output : dictionnary of :
-            - Dvar_output[ifile]['var_name']                if the group contains only one variable
-            - Dvar_output[ifile][('group_name','var_name']  if the group contains more than one variable
-        """
-        if '___' in var:
-            suffix, var_name = remove_PROC(var)
-        else:
-            suffix = var
-            var_name = var
-        if group_name == 'TSERIES' or group_name =='AVION': #always 1D
-            Dvar_output[(group_name,var)] = theFile.groups[group_name].variables[var][:]
-        elif group_name == 'ZTSERIES' or group_name =='AVIONZ': #always 2D 
-            Dvar_output[(group_name,var)] = theFile.groups[group_name].variables[var][:,:].T
-        elif 'XTSERIES' in group_name: #always 2D
-            Dvar_output[(group_name,var)] = theFile.groups[group_name].variables[var][:,:].T
-        elif theFile.groups[group_name].type == 'TLES' : #  LES type
-            try: #By default, most variables read are 2D cart and user does not specify it in the variable name
-              whites = ' '*(17 - len('(cart)') - len(var_name))
-              Dvar_output[var] = theFile.groups[var].variables[var + whites + '(cart)'][:,:].T
-            except:
-              try: #Variable 3D sv,time_les, level_les
-                  Dvar_output[var] = theFile.groups[group_name].variables[var][:,:,:]
-              except:
-                try: #Variable 2D with type of variable specified (cart, neb, clear, cs1, cs2, cs3) 
-                  Dvar_output[var] = theFile.groups[group_name].variables[var][:,:].T
-                except ValueError: #  Variable 1D
-                  Dvar_output[var] = theFile.groups[group_name].variables[var][:]
-        elif theFile.groups[group_name].type == 'CART':  #  Budget CART type
-            shapeVar = theFile.groups[group_name].variables[suffix].shape
-            Ltosqueeze=[] #  Build a tuple with the number of the axis which are 0 dimensions to be removed by np.squeeze
-            if shapeVar[0]==1: Ltosqueeze.append(0)
-            if shapeVar[1]==1: Ltosqueeze.append(1)
-            if shapeVar[2]==1: Ltosqueeze.append(2)
-            if shapeVar[3]==1: Ltosqueeze.append(3)
-            Ltosqueeze=tuple(Ltosqueeze)
-            if len(theFile.groups[group_name].variables.keys()) > 1: # If more than one variable in the group
-              Dvar_output[(group_name,var)] = np.squeeze(theFile.groups[group_name].variables[suffix][:,:,:,:], axis=Ltosqueeze) 
-            else:
-              Dvar_output[group_name] = np.squeeze(theFile.groups[group_name].variables[suffix][:,:,:,:], axis=Ltosqueeze) 
-        elif theFile.groups[group_name].type == 'MASK':  #  Budget MASK type
-            shapeVar = theFile.groups[group_name].variables[suffix].shape
-            Ltosqueeze=[] #  Build a tuple with the number of the axis which are 0 dimensions to be removed by np.squeeze
-            if shapeVar[0]==1: Ltosqueeze.append(0)
-            if shapeVar[1]==1: Ltosqueeze.append(1)
-            if shapeVar[2]==1: Ltosqueeze.append(2)
-            Ltosqueeze=tuple(Ltosqueeze)
-            if len(theFile.groups[group_name].variables.keys()) > 1: # If more than one variable in the group
-              Dvar_output[(group_name,var)] = np.squeeze(theFile.groups[group_name].variables[suffix][:,:,:], axis=Ltosqueeze).T
-            else:
-              Dvar_output[group_name] = np.squeeze(theFile.groups[group_name].variables[suffix][:,:,:], axis=Ltosqueeze).T
-        else:
-            raise NameError("Type de groups variables not implemented in read_MNHfile.py")
-        return Dvar_output
-    for var in Dvar_input[ifile]: #For each var
-        if type(var) == tuple:
-            Dvar_output[ifile] = read_from_group(theFile, Dvar_output[ifile], var[0], var[1])
-        else:
-            Dvar_output[ifile] = read_var(theFile, Dvar_output[ifile], var)
+    try:
+        var_dim = theFile.variables[var_name].ndim
+        var_dim_name = theFile.variables[var_name].dimensions
+    except:
+        raise KeyError("Group and variable name not found in the file, check the group/variable name with ncdump -h YourMNHFile.000.nc. You asked for variable : " + var_name)
     
-    return Dvar_output #Return the dic of [files][variables]
+    if not get_data_only:
+        Dvar[var_name] = theFile.variables[var_name]
+    else: 
+        if var_dim == 0:
+            Dvar[var_name] = theFile.variables[var_name][0].data
+        elif var_dim == 1:
+            Dvar[var_name] = theFile.variables[var_name][:]
+        elif var_dim == 2:
+            Dvar[var_name] = theFile.variables[var_name][:,:]
+        elif var_dim == 3:
+            Dvar[var_name] = theFile.variables[var_name][:,:,:]
+        elif var_dim == 4:
+            Dvar[var_name] = theFile.variables[var_name][:,:,:,:]
+        elif var_dim == 5:
+            Dvar[var_name] = theFile.variables[var_name][:,:,:,:,:]
+        elif var_dim == 6:
+            Dvar[var_name] = theFile.variables[var_name][:,:,:,:,:,:]
+        elif var_dim == 7:
+            Dvar[var_name] = theFile.variables[var_name][:,:,:,:,:,:,:]
+        if removeHALO:
+            for i in range(8):
+                try:
+                    if var_dim_name[i]=='level' or var_dim_name[i]=='level_w' or \
+                    var_dim_name[i]=='ni' or var_dim_name[i]=='ni_u' or var_dim_name[i]=='ni_v' or \
+                    var_dim_name[i]=='nj' or var_dim_name[i]=='nj_u' or var_dim_name[i]=='nj_v':
+                        if var_dim != 0:
+                            Dvar[var_name] = removetheHALO(i+1, Dvar[var_name])
+                except:
+                    break
+        if del_empty_dim:
+            Ldimtosqueeze=[]
+            var_shape = theFile.variables[var_name].shape
+            for i in range(8):
+                try:
+                    if var_shape[i]==1: Ldimtosqueeze.append(i)
+                except IndexError:
+                    break
+            Ldimtosqueeze=tuple(Ldimtosqueeze)
+            Dvar[var_name] = np.squeeze(Dvar[var_name], axis=Ldimtosqueeze) 
+        
+    return Dvar
 
-def list_size1(n_dim, named_dim):
-    Lsize1 = []
-    for i in range(n_dim):
-        if 'size1' == named_dim[i]:
-            Lsize1.append(True)
-        else:
-            Lsize1.append(False)
-    return Lsize1
+def read_from_group(theFile, Dvar, group_name, var_name, get_data_only=True, del_empty_dim=True,removeHALO=True):
+    """Read a variable from a netCDF4 group 
     
-def remove_PROC(var):
-    if '___PROC' in var:
-        var_name = var[:-8]
-        suffix = "" # No need of suffix for MNHVERSION < 550 (suffix is for NetCDF4 group)
-    elif  '___ENDF' in var or '___INIF' in var or '___AVEF' in var:
-        var_name = var[:-7]
-        suffix = var[-4:]
+    Parameters
+    ----------
+    theFile : netCDF4._netCDF4.Dataset
+        a Meso-NH diachronic netCDF4 file
+    
+    group_name : str
+        a Meso-NH netCDF4 group name
+        
+    var_name : str
+        a Meso-NH netCDF4 variable name
+        
+    get_data_only : bool, default: True
+        if True,  the function returns Dvar as masked_array (only data)
+        if False, the function returns Dvar as netCDF4._netCDF4.Variable
+    
+    del_empty_dim : bool, default: True
+        if get_data_only=True and del_empty_dim=True, returns Dvar as an array without dimensions with size 1 and 0
+        e.g. : an array of dimensions (time_budget, cart_level, cart_nj, cart_ni) with shape (180,1,50,1) is returned (180,50)
+        
+    removeHALO : bool, default: True
+        if True, remove first and last (NHALO=1) point [1:-1] if get_data_only=True on each 
+        level, level_w, ni, ni_u, ni_v, nj, nj_u, nj_v dimensions
+        
+    Returns
+    -------
+    Dvar : Dict 
+        Dvar['var_name']                if the group contains only one variable
+        Dvar[('group_name','var_name')] if the group contains more than one variable
+    """
+    try:
+        var_dim = theFile[group_name].variables[var_name].ndim
+        var_dim_name = theFile[group_name].variables[var_name].dimensions
+    except:
+        raise KeyError("Group and variable name not found in the file, check the group/variable name with ncdump -h YourMNHFile.000.nc. You asked for group/variable : " + group_name + var_name)
+    
+    if not get_data_only:
+        Dvar[(group_name,var_name)] = theFile[group_name].variables[var_name]
     else:
-        var_name = var
-        suffix = ''
-    return suffix, var_name
+        if var_dim == 0:
+            Dvar[(group_name,var_name)] = theFile[group_name].variables[var_name][0].data
+        if var_dim == 1:
+            Dvar[(group_name,var_name)] = theFile[group_name].variables[var_name][:]
+        elif var_dim == 2:
+            Dvar[(group_name,var_name)] = theFile[group_name].variables[var_name][:,:]
+        elif var_dim == 3:
+            Dvar[(group_name,var_name)] = theFile[group_name].variables[var_name][:,:,:]
+        elif var_dim == 4:
+            Dvar[(group_name,var_name)] = theFile[group_name].variables[var_name][:,:,:,:]
+        elif var_dim == 5:
+            Dvar[(group_name,var_name)] = theFile[group_name].variables[var_name][:,:,:,:,:]
+        elif var_dim == 6:
+            Dvar[(group_name,var_name)] = theFile[group_name].variables[var_name][:,:,:,:,:,:]
+        elif var_dim == 7:
+            Dvar[(group_name,var_name)] = theFile[group_name].variables[var_name][:,:,:,:,:,:,:]
+        if removeHALO:
+            for i in range(8):
+                try:
+                    if var_dim_name[i]=='level' or var_dim_name[i]=='level_w' or \
+                    var_dim_name[i]=='ni' or var_dim_name[i]=='ni_u' or var_dim_name[i]=='ni_v' or \
+                    var_dim_name[i]=='nj' or var_dim_name[i]=='nj_u' or var_dim_name[i]=='nj_v':
+                        if var_dim != 0:
+                            Dvar[(group_name,var_name)] = removetheHALO(i+1, Dvar[(group_name,var_name)])
+                except:
+                    break
+        if del_empty_dim:
+            Ldimtosqueeze=[]
+            var_shape = Dvar[(group_name,var_name)].shape
+            for i in range(8):
+                try:
+                    if var_shape[i]==1: Ldimtosqueeze.append(i)
+                except IndexError:
+                    break
+            Ldimtosqueeze=tuple(Ldimtosqueeze)                
+            Dvar[(group_name,var_name)] = np.squeeze(Dvar[(group_name,var_name)], axis=Ldimtosqueeze)
+            
+        # LES budget, ZTSERIES needs to be transposed to use psection functions without specifying .T each time
+        if 'LES_budget' in group_name or 'ZTSERIES' in group_name or 'XTSERIES' in group_name:
+            Dvar[(group_name,var_name)] = Dvar[(group_name,var_name)].T   
+    return Dvar
 
-def get_group_from_varname(var):
-    group_name=''
-    if '___ENDF' in var or '___INIF' in var or '___AVEF' in var: #Variable CART
-        suff, group_name = remove_PROC(var)
-    else: #Variable with whites in names ex: 'MEAN_TH     (cart)'
-        for i in range(len(var)):
-          if var[i] != ' ':
-            group_name+=var[i]
-          else: # As soon as the caracter is a blank, the group variable is set
-            break
-    return group_name 
+def read_BACKUPfile(theFile, Dvar_input, Dvar, get_data_only=True, del_empty_dim=True, removeHALO=True):
+    """Read variables from Meso-NH MASDEV >= 5.5.0 synchronous file
+    For all variables in Dvar_input of one file, call functions to read the variable of the group+variable
+    
+    Parameters
+    ----------
+    theFile : netCDF4._netCDF4.Dataset
+        a Meso-NH diachronic netCDF4 file
+        
+    Dvar_input : Dict{'var_name',('group_name','var_name')}
+        with
+        'var_name' is the exact str of the netCDF4 variable name
+        ('group_name','var_name') is the exact tuple of the (sub-)groups name and the netCDF4 variable name
+        e.g. : {'f1':['ZS', 'WT','ni', 'level'],
+                'f2':[('/LES_budgets/Cartesian/Not_time_averaged/Not_normalized/cart/',MEAN_TH'),('/Budgets/RI','AVEF')]
+                }
+    
+    get_data_only: bool, default: True
+        if True,  the function returns Dvar as masked_array (only data)
+        if False, the function returns Dvar as netCDF4._netCDF4.Variable
+    
+    del_empty_dim: bool, default: True
+        if get_data_only=True and del_empty_dim=True, returns Dvar as masked_array without dimensions with size 1 and 0
+        e.g. : an array of dimensions (time_budget, cart_level, cart_nj, cart_ni) with shape (180,1,50,1) is returned (180,50)
+    
+    Returns
+    -------
+    Dvar : Dict 
+    Dvar['var_name']                if the group contains only one variable
+    Dvar[('group_name','var_name')] if the group contains more than one variable
+    """     
+    #  Reading date since beginning of the model run
+    Dvar['time'] = theFile.variables['time'][0]
+    Dvar['date'] = nc.num2date(Dvar['time'],units=theFile.variables['time'].units, calendar = theFile.variables['time'].calendar)
+           
+    for var in Dvar_input:
+        if type(var) == tuple:
+            Dvar = read_from_group(theFile, Dvar, var[0], var[1], get_data_only, del_empty_dim, removeHALO)
+        else:
+            Dvar = read_var(theFile, Dvar, var, get_data_only, del_empty_dim, removeHALO)
+            
+            #  For all variables except scalars, change Fill_Value to NaN
+            Dvar[var]= np.where(Dvar[var] != -99999.0, Dvar[var], np.nan)
+            Dvar[var]= np.where(Dvar[var] != 999.0, Dvar[var], np.nan)
+    return Dvar
+
+def read_TIMESfiles_55(theFile, Dvar_input, Dvar, get_data_only=True, del_empty_dim=True, removeHALO=True):
+    """Read variables from Meso-NH MASDEV >= 5.5.0 diachronic file
+    For all variables in Dvar_input of one file, call functions to read the variable of the group+variable
+
+    Parameters
+    ----------
+    theFile : netCDF4._netCDF4.Dataset
+        a Meso-NH diachronic netCDF4 file
+        
+    Dvar_input : Dict{'var_name',('group_name','var_name')}
+        with
+        'var_name' is the exact str of the netCDF4 variable name
+        ('group_name','var_name') is the exact tuple of the (sub-)groups name and the netCDF4 variable name
+        e.g. : {'f1':['ZS', 'WT','ni', 'level'],
+                'f2':[('/LES_budgets/Cartesian/Not_time_averaged/Not_normalized/cart/',MEAN_TH'),('/Budgets/RI','AVEF')]
+                }
+    
+    get_data_only: bool, default: True
+        if True,  the function returns Dvar as masked_array (only data)
+        if False, the function returns Dvar as netCDF4._netCDF4.Variable
+    
+    del_empty_dim: bool, default: True
+        if get_data_only=True and del_empty_dim=True, returns Dvar as masked_array without dimensions with size 1 and 0
+        e.g. : an array of dimensions (time_budget, cart_level, cart_nj, cart_ni) with shape (180,1,50,1) is returned (180,50)
+    
+    Returns
+    -------
+    Dvar : Dict 
+    Dvar[ifile]['var_name']                if the group contains only one variable
+    Dvar[ifile][('group_name','var_name')] if the group contains more than one variable
+    """  
+    for var in Dvar_input:
+        print(var)
+        if type(var) == tuple:
+            Dvar = read_from_group(theFile, Dvar, var[0], var[1], get_data_only, del_empty_dim, removeHALO)
+        else:
+            Dvar = read_var(theFile, Dvar, var, get_data_only, del_empty_dim, removeHALO)
+    return Dvar
+
+def removetheHALO(idim, var):
+    """Remove a NHALO=1 point [1:-1] at a given dimension idim of a variable var
+    
+    Parameters
+    ----------
+    idim: int
+        the dimension over which remove the first and last point
+    
+    var: array
+        a Meso-NH netCDF4 variable name
+    
+    Returns
+    -------
+    var : array 
+    """  
+    if idim == 1:
+        var = var[1:-1]
+    elif idim == 2:
+        var = var[:,1:-1]
+    elif idim == 3:
+        var = var[:,:,1:-1]
+    elif idim == 4:
+        var = var[:,:,:,1:-1]
+    elif idim == 5:
+        var = var[:,:,:,:,1:-1]
+    elif idim == 6:
+        var = var[:,:,:,:,:,1:-1]
+    elif idim == 7:
+        var = var[:,:,:,:,:,:,1:-1]
+    return var

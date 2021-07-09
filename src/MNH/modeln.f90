@@ -2122,7 +2122,7 @@ IF (LPROFILER)                                                           &
   CALL PROFILER_n(XTSTEP,                                                &
                   XXHAT, XYHAT, XZZ,XRHODREF,                            &
                   XUT, XVT, XWT, XTHT, XRT, XSVT, XTKET, XTSRAD, XPABST, &
-                  XAER, XCLDFR, XCIT)
+                  XAER, XCLDFR, XCIT,PSEA=ZSEA(:,:))
 !
 !
 CALL SECOND_MNH2(ZTIME2)

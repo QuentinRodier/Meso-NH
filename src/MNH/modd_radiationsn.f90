@@ -59,6 +59,11 @@ TYPE RADIATIONS_t
   INTEGER :: NRAD    ! number of satellite radiances to synthesize
   INTEGER :: NAER    ! number od AERosol classes
   INTEGER :: NSWB_OLD    ! number of SW bands in ECMWF original code (usually 6)
+#ifdef MNH_ECRAD
+#if ( VER_ECRAD == 140 )  
+  INTEGER :: NLWB_OLD    ! number of LW bands for emissivity original code (usually 2)
+#endif
+#endif  
   INTEGER :: NSWB_MNH! number of SW bands practically used (14 if ECRAD, NSWB if original code) 
   INTEGER :: NLWB_MNH! number of LW bands practically used (16 if RRTM) 
   INTEGER :: NSTATM  ! index od the STAndard ATMosphere level just above
@@ -132,6 +137,11 @@ INTEGER, POINTER :: NFLUX=>NULL()
 INTEGER, POINTER :: NRAD=>NULL()
 INTEGER, POINTER :: NAER=>NULL()
 INTEGER, POINTER :: NSWB_OLD=>NULL()
+#ifdef MNH_ECRAD
+#if ( VER_ECRAD == 140 )  
+INTEGER, POINTER :: NLWB_OLD=>NULL()
+#endif
+#endif
 INTEGER, POINTER :: NSWB_MNH=>NULL()
 INTEGER, POINTER :: NLWB_MNH=>NULL()
 INTEGER, POINTER :: NSTATM=>NULL()
@@ -223,6 +233,11 @@ NFLUX=>RADIATIONS_MODEL(KTO)%NFLUX
 NRAD=>RADIATIONS_MODEL(KTO)%NRAD
 NAER=>RADIATIONS_MODEL(KTO)%NAER
 NSWB_OLD=>RADIATIONS_MODEL(KTO)%NSWB_OLD
+#ifdef MNH_ECRAD
+#if ( VER_ECRAD == 140 )
+NLWB_OLD=>RADIATIONS_MODEL(KTO)%NLWB_OLD
+#endif
+#endif
 NSWB_MNH=>RADIATIONS_MODEL(KTO)%NSWB_MNH
 NLWB_MNH=>RADIATIONS_MODEL(KTO)%NLWB_MNH
 NSTATM=>RADIATIONS_MODEL(KTO)%NSTATM

@@ -1100,6 +1100,11 @@ DO JJ=IJB,IJE
     ZO3AVE(IIJ,:)  = POZON (JI,JJ,:)           
   END DO
 END DO
+#ifdef MNH_ECRAD
+#if ( VER_ECRAD == 140 )
+POZON = POZON
+#endif
+#endif
 !
 !-------------------------------------------------------------------------------
 !
@@ -1158,7 +1163,6 @@ ZEMIW(:,:)= ZEMIS(:,:)
 !
 !solar constant
 ZRII0= PCORSOL*XI0  ! solar constant multiplied by seasonal variations due to Earth-Sun distance
-!
 !
 !
 !*       5.2   ACCOUNTS FOR THE CLEAR-SKY APPROXIMATION

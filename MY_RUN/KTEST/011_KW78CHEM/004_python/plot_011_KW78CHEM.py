@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """
-
 @author: Quentin Rodier
 Creation : 07/01/2021
 
@@ -36,7 +35,7 @@ Dvar = read_netcdf(LnameFiles, Dvar_input, path=path, removeHALO=True)
 ################################################################
 #########          PANEL 1
 ###############################################################
-Panel1 = PanelPlot(2,3, [25,14],'', titlepad=25, minmaxpad=1.04, timepad=-0.07, colorbarpad=0.01)
+Panel1 = PanelPlot(2,3, [25,14],'', titlepad=25, minmaxpad=1.04, timepad=-0.07, colorbarpad=0.01, lateralminmaxpad=0.9)
 
 Lplot = [ Dvar['f1']['INPRR'], Dvar['f1']['ACPRR'], Dvar['f1']['PABST'],Dvar['f2']['ALT_CLOUD'],Dvar['f2']['ALT_CLOUD'] ]
 
@@ -92,7 +91,7 @@ Panel1.save_graph(1,fig2)
 ###############################################################
 Panel2 = PanelPlot(2,2, [20,20],'', titlepad=25, minmaxpad=1.04, timepad=-0.07, colorbarpad=0.01, colorbaraspect=40, labelcolorbarpad = 13)
 
-# Interpoler COT','O3T à 3000 et 5000m avec une moyenne sur2 niveaux
+# Interpoler COT','O3T à 3000 et 5000m avec une moyenne sur 2 niveaux
 Dvar['f1']['COT3000m'] = (Dvar['f1']['COT'][6,:,:] + Dvar['f1']['COT'][5,:,:])/2.0
 Dvar['f1']['O3T3000m'] = (Dvar['f1']['O3T'][6,:,:] + Dvar['f1']['O3T'][5,:,:])/2.0
 Dvar['f1']['COT5000m'] = (Dvar['f1']['COT'][10,:,:] + Dvar['f1']['COT'][9,:,:])/2.0
@@ -131,7 +130,6 @@ Dvar['f1']['UM'] = tomass.MXM(Dvar['f1']['UT'])
 Dvar['f1']['VM'] = tomass.MYM(Dvar['f1']['VT'])
 Dvar['f1']['WM'] = tomass.MZM(Dvar['f1']['WT'])
 
-
 angle_sec1, RVT_sec1, axe_m1 = oblique_proj(Dvar['f1']['RVT'], Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
 WIND_proj = windvec_verti_proj(Dvar['f1']['UM'], Dvar['f1']['VM'], Dvar['f1']['level'], angle_sec1)
 angle_sec1, WIND_sec1, axe_m1 = oblique_proj(WIND_proj, Dvar['f1']['ni'], Dvar['f1']['nj'], Dvar['f1']['level'], i_beg, j_beg, i_end, j_end)
@@ -161,7 +159,6 @@ fig3 = Panel3.psectionV(Lxx=LaxeX, Lzz=LaxeZ, Lvar=Lplot, Lxlab=Lxlab, Lylab=Lyl
                                 Lstep=Lstep, Lstepticks=Lstepticks, Lcolormap=Lcolormap, Lcbarlabel=Lcbarlabel, Lfacconv=Lfacconv, 
                                 Ltime=Ltime, Lpltype=Lpltype, LaddWhite_cm=LaddWhite)
 
-
 Lplot1 = [ WIND_sec1]
 Lplot2 = [ WT_sec1]
 Ltitle = ['Wind']
@@ -173,7 +170,6 @@ Lscale = [200]*len(Lplot)
 
 fig4 = Panel3.pvector(Lxx=LaxeX, Lyy=LaxeZ, Lvar1=Lplot1, Lvar2=Lplot2, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle, Lwidth=Lwidth, Larrowstep=Larrowstep, 
                         Llegendval=Llegendval, Lcbarlabel=Lcbarlabel, Lid_overlap=[0], ax=fig3.axes, Lscale=Lscale)
-
 
 Lplot = [RRT_sec1]
 LaxeX = [axe_m1]
@@ -196,7 +192,6 @@ LaddWhite = [True]*len(Lplot)
 fig5 = Panel3.psectionV(Lxx=LaxeX, Lzz=LaxeZ, Lvar=Lplot, Lxlab=Lxlab, Lylab=Lylab, Ltitle=Ltitle, Lminval=Lminval, Lmaxval=Lmaxval, 
                                 Lstep=Lstep, Lstepticks=Lstepticks, LcolorLine=LcolorLine, Lcbarlabel=Lcbarlabel, Lfacconv=Lfacconv, 
                                 Ltime=Ltime, Lpltype=Lpltype, LaddWhite_cm=LaddWhite, ax=fig4.axes,Lid_overlap=[2],colorbar=False)
-
 Panel3.save_graph(3,fig5)
 
 ################################################################

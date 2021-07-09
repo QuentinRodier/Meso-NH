@@ -32,7 +32,7 @@ Dvar = read_netcdf(LnameFiles, Dvar_input, path=path, removeHALO=True)
 ################################################################
 #########          PANEL 1  
 ###############################################################
-Panel1 = PanelPlot(2,2, [20,20],'007_janvier domaine 1 16JAN.1.12B18.001dg.nc')
+Panel1 = PanelPlot(2,2, [20,20],'007_janvier domaine 1 16JAN.1.12B18.001dg.nc', minmaxpad=1.05)
 
 Lplot = [ Dvar['f1']['ZS'],Dvar['f1']['THT850HPA'], Dvar['f1']['MRV700HPA'],Dvar['f1']['ALT_PRESSURE']]
 lon = [Dvar['f1']['longitude']]*len(Lplot)
@@ -73,7 +73,7 @@ Panel1.save_graph(1,fig2)
 ################################################################
 #########          PANEL 2 
 ###############################################################
-Panel2 = PanelPlot(2,2, [20,20],'007_janvier domaine 2 16JAN.1.12B18.001dg.nc')
+Panel2 = PanelPlot(2,2, [20,20],'007_janvier domaine 2 16JAN.1.12B18.001dg.nc', minmaxpad=1.05)
 
 Lplot = [ Dvar['f2']['ZS'],Dvar['f2']['THT850HPA'], Dvar['f2']['MRV700HPA'],Dvar['f2']['ALT_PRESSURE']]
 lon = [Dvar['f2']['longitude']]*len(Lplot)

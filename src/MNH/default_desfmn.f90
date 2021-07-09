@@ -95,7 +95,8 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!      Module MODD_FRC :
 !!
 !!          LGEOST_UV_FRC,LGEOST_TH_FRC,LTEND_THRV_FRC
-!!          LVERT_MOTION_FRC,LRELAX_THRV_FRC,LRELAX_UV_FRC,XRELAX_TIME_FRC
+!!          LVERT_MOTION_FRC,LRELAX_THRV_FRC,LRELAX_UV_FRC,LRELAX_UVMEAN_FRC,
+!!          XRELAX_TIME_FRC
 !!          XRELAX_HEIGHT_FRC,CRELAX_HEIGHT_TYPE,LTRANS,XUTRANS,XVTRANS,
 !!          LPGROUND_FRC
 !!
@@ -216,6 +217,8 @@ END MODULE MODI_DEFAULT_DESFM_n
 !  JL Redelsperger 06/2021: add parameters allowing to active idealized oceanic convection
 !  B. Vie         06/2021: add prognostic supersaturation for LIMA
 !  Q. Rodier      06/2021: modify default value to LGZ=F (grey-zone corr.), LSEDI and OSEDC=T (LIMA sedimentation)
+!  F. Couvreux    06/2021: add LRELAX_UVMEAN_FRC
+!  Q. Rodier      07/2021: modify XPOND=1
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -241,6 +244,9 @@ USE MODD_LES
 USE MODD_PARAM_RAD_n
 #ifdef MNH_ECRAD
 USE MODD_PARAM_ECRAD_n
+#if ( VER_ECRAD == 140 ) 
+USE MODD_RADIATIONS_n , ONLY : NSWB_MNH, NLWB_MNH
+#endif
 #endif
 USE MODD_BLANK_n
 USE MODD_FRC
@@ -497,7 +503,7 @@ NLBLY(:) = 1
 XCPHASE = 20.
 XCPHASE_PBL = 0.
 XCARPKMAX = XUNDEF
-XPOND = 0.2
+XPOND = 1.0
 !
 !-------------------------------------------------------------------------------
 !
@@ -721,8 +727,27 @@ LFIX_DAT=.FALSE.
 !*      13bis.   SET DEFAULT VALUES FOR MODD_PARAM_ECRAD_n :
 !             ---------------------------------------
 !
+#if ( VER_ECRAD == 101 )
 NSWSOLVER = 0           ! 0: 'McICA 1: 'SPARTACUS' 2: 'SPARTACUS' + 3D effect                            
 NLWSOLVER = 0           ! 0: 'McICA 1: 'SPARTACUS' 2: 'SPARTACUS' + 3D effect 
+#endif
+#if ( VER_ECRAD == 140 )
+LSPEC_ALB = .FALSE.
+LSPEC_EMISS = .FALSE.
+
+
+!ALLOCATE(USER_ALB_DIFF(NSWB_MNH))
+!ALLOCATE(USER_ALB_DIR(NSWB_MNH))
+!ALLOCATE(USER_EMISS(NLWB_MNH))
+!PRINT*,USER_ALB_DIFF
+!USER_ALB_DIFF = (/0,0,0,0,0,0,0,0,0,0,0,0,0,0/)
+!USER_ALB_DIR = (/0,0,0,0,0,0,0,0,0,0,0,0,0,0/)
+!USER_EMISS = (/0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0/)
+SURF_TYPE="SNOW"
+
+NLWSOLVER = 1           ! 0: 'McICA 1: 'SPARTACUS' 2: 'SPARTACUS' + 3D effect 
+NSWSOLVER = 1          ! 0: 'McICA 1: 'SPARTACUS' 2: 'SPARTACUS' + 3D effect                            
+#endif
 ! LEFF3D         = .TRUE.
 ! LSIDEM         = .TRUE.
 NREG           = 3            ! Number of cloudy regions (3=TripleClouds)
@@ -796,6 +821,7 @@ IF (KMI == 1) THEN
   LVERT_MOTION_FRC   = .FALSE.
   LRELAX_THRV_FRC    = .FALSE.
   LRELAX_UV_FRC      = .FALSE.
+  LRELAX_UVMEAN_FRC  = .FALSE.
   XRELAX_TIME_FRC    = 10800.
   XRELAX_HEIGHT_FRC  = 0.
   CRELAX_HEIGHT_TYPE = "FIXE"
