@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -31,7 +31,7 @@
 !!      Original    15/01/02
 !!     C.Lac 10/2016  Add visibility diagnostic
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
-!  M.Taufour 07/2021: modify RARE for hydrometeors containing ice and add bright band calculation for RARE
+!  M. Taufour  05/07/2021: modify RARE for hydrometeors containing ice and add bright band calculation for RARE
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS

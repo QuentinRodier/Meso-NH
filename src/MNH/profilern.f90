@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2002-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -12,7 +12,7 @@ INTERFACE
       SUBROUTINE PROFILER_n(PTSTEP,                               &
                             PXHAT, PYHAT, PZ,PRHODREF,            &
                             PU, PV, PW, PTH, PR, PSV, PTKE,       &
-                            PTS,PP, PAER, PCLDFR, PCIT,PSEA)
+                            PTS, PP, PAER, PCLDFR, PCIT, PSEA)
 !
 REAL,                     INTENT(IN)     :: PTSTEP ! time step
 REAL, DIMENSION(:),       INTENT(IN)     :: PXHAT  ! x coordinate
@@ -31,7 +31,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PP     ! pressure
 REAL, DIMENSION(:,:,:,:), INTENT(IN)     :: PAER   ! aerosol extinction
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCLDFR ! cloud fraction
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCIT   ! ice concentration
-REAL, DIMENSION(:,:),INTENT(IN) :: PSEA            ! for radar 
+REAL, DIMENSION(:,:),     INTENT(IN)     :: PSEA   ! for radar 
 !
 !-------------------------------------------------------------------------------
 !
@@ -84,7 +84,7 @@ END MODULE MODI_PROFILER_n
 !!     March,28, 2018 (P. Wautelet) replace TEMPORAL_DIST by DATETIME_DISTANCE
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
-!  M.Taufour 07/2021: modify RARE for hydrometeors containing ice and add bright band calculation for RARE
+!  M. Taufour  05/07/2021: modify RARE for hydrometeors containing ice and add bright band calculation for RARE
 ! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -157,7 +157,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PP     ! pressure
 REAL, DIMENSION(:,:,:,:), INTENT(IN)     :: PAER   ! aerosol extinction
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCLDFR ! cloud fraction
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCIT   ! ice concentration
-REAL, DIMENSION(:,:),INTENT(IN)          :: PSEA   ! for radar
+REAL, DIMENSION(:,:),     INTENT(IN)     :: PSEA   ! for radar 
 !
 !-------------------------------------------------------------------------------
 !

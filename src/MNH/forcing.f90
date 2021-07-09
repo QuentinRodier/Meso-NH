@@ -171,8 +171,8 @@ USE MODD_TIME
 use mode_budget,     only: Budget_store_init, Budget_store_end
 USE MODE_DATETIME
 USE MODE_GATHER_ll
-USE MODE_MSG
 USE MODE_ll
+USE MODE_MSG
 USE MODE_REPRO_SUM
 !
 USE MODI_GET_HALO

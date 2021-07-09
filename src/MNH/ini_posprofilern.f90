@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -65,7 +65,7 @@ END MODULE MODI_INI_POSPROFILER_n
 !!     C.Lac 10/2016  Add visibility diagnostic
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
-!      M.Taufour : modify RARE for hydrometeors containing ice and add bright band calculation for RARE
+!  M. Taufour  05/07/2021: modify RARE for hydrometeors containing ice and add bright band calculation for RARE
 !! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -175,7 +175,7 @@ ALLOCATE(TPROFILER%RHOD  (ISTORE,IKU,NUMBPROFILER))
 ALLOCATE(TPROFILER%VISI  (ISTORE,IKU,NUMBPROFILER))
 ALLOCATE(TPROFILER%VISIKUN(ISTORE,IKU,NUMBPROFILER))
 ALLOCATE(TPROFILER%CRARE  (ISTORE,IKU,NUMBPROFILER))
-ALLOCATE(TPROFILER%CRARE_ATT  (ISTORE,IKU,NUMBPROFILER))
+ALLOCATE(TPROFILER%CRARE_ATT(ISTORE,IKU,NUMBPROFILER))
 ALLOCATE(TPROFILER%LWCZ  (ISTORE,IKU,NUMBPROFILER))
 ALLOCATE(TPROFILER%IWCZ  (ISTORE,IKU,NUMBPROFILER))
 ALLOCATE(TPROFILER%CIZ  (ISTORE,IKU,NUMBPROFILER))
