@@ -18,14 +18,17 @@ os.system('rm -f tempgraph*')
 #
 path=""
 LnameFiles = ['ARM__.1.CEN4T.000.nc' ]
-LG_LES = '/LES_budgets/Cartesian/Not_time_averaged/Not_normalized/cart/'
+LG_MEAN = '/LES_budgets/Mean/Cartesian/Not_time_averaged/Not_normalized/cart/'
+LG_SBG = '/LES_budgets/Subgrid/Cartesian/Not_time_averaged/Not_normalized/cart/'
+LG_MISC = '/LES_budgets/Miscellaneous/Cartesian/Not_time_averaged/Not_normalized/cart/'
+LG_SURF = '/LES_budgets/Surface/Cartesian/Not_time_averaged/Not_normalized/cart/'
 
 Dvar_input = {
-'f1':[(LG_LES,'MEAN_TH') , (LG_LES,'MEAN_U')  , (LG_LES,'MEAN_V') , (LG_LES,'MEAN_RC'), (LG_LES,'MEAN_RR'),
-      (LG_LES,'SBG_TKE') , (LG_LES,'SBG_WTHL'), (LG_LES,'SBG_WRT'),
-      (LG_LES,'THLUP_MF'), (LG_LES,'RTUP_MF') , (LG_LES,'RVUP_MF'), (LG_LES,'RCUP_MF'), (LG_LES,'RIUP_MF'), (LG_LES,'WUP_MF'),
-      (LG_LES,'MAFLX_MF'), (LG_LES,'DETR_MF') , (LG_LES,'ENTR_MF'), (LG_LES,'FRCUP_MF'), (LG_LES,'THVUP_MF'), (LG_LES,'WTHL_MF'),
-      (LG_LES,'WRT_MF')  , (LG_LES,'WTHV_MF') , (LG_LES,'WU_MF')  , (LG_LES,'WV_MF'),
+'f1':[(LG_MEAN,'MEAN_TH') , (LG_MEAN,'MEAN_U')  , (LG_MEAN,'MEAN_V') , (LG_MEAN,'MEAN_RC'), (LG_MEAN,'MEAN_RR'),
+      (LG_SBG,'SBG_TKE') , (LG_SBG,'SBG_WTHL'), (LG_SBG,'SBG_WRT'), (LG_SBG,'THLUP_MF'), (LG_SBG,'RTUP_MF') , 
+      (LG_SBG,'RVUP_MF'), (LG_SBG,'RCUP_MF'), (LG_SBG,'RIUP_MF'), (LG_SBG,'WUP_MF'), (LG_SBG,'MAFLX_MF'), 
+      (LG_SBG,'DETR_MF') , (LG_SBG,'ENTR_MF'), (LG_SBG,'FRCUP_MF'), (LG_SBG,'THVUP_MF'), (LG_SBG,'WTHL_MF'),
+      (LG_SBG,'WRT_MF')  , (LG_SBG,'WTHV_MF') , (LG_SBG,'WU_MF')  , (LG_SBG,'WV_MF'),
       'level_les','time_les']
 }
 
@@ -38,8 +41,8 @@ Dvar = read_netcdf(LnameFiles, Dvar_input, path=path, removeHALO=False, get_data
 ###############################################################
 Panel1 = PanelPlot(2,3, [25,14],'', titlepad=25, minmaxpad=1.04, timepad=-0.07, colorbarpad=0.03, labelcolorbarpad = 13, colorbaraspect=40)
 
-Lplot = [Dvar['f1'][(LG_LES,'MEAN_TH')],Dvar['f1'][(LG_LES,'MEAN_U')], Dvar['f1'][(LG_LES,'MEAN_V')], 
-         Dvar['f1'][(LG_LES,'MEAN_RC')], Dvar['f1'][(LG_LES,'MEAN_RR')],Dvar['f1'][(LG_LES,'SBG_TKE')]]
+Lplot = [Dvar['f1'][(LG_MEAN,'MEAN_TH')],Dvar['f1'][(LG_MEAN,'MEAN_U')], Dvar['f1'][(LG_MEAN,'MEAN_V')], 
+         Dvar['f1'][(LG_MEAN,'MEAN_RC')], Dvar['f1'][(LG_MEAN,'MEAN_RR')],Dvar['f1'][(LG_SBG,'SBG_TKE')]]
 LaxeX = [Dvar['f1']['time_les']/3600.]*len(Lplot)
 LaxeZ = [Dvar['f1']['level_les']]*len(Lplot)
 Ltitle = ['Mean potential temperature TH', 'Mean U', 'Mean V', 'Mean cloud mixing ratio RC', 'Mean precipitation RR', 'Subgrid TKE']
@@ -65,8 +68,8 @@ Panel1.save_graph(1,fig1)
 ###############################################################
 Panel2 = PanelPlot(2,3, [25,14],'', titlepad=25, minmaxpad=1.04, timepad=-0.07, colorbarpad=0.03, labelcolorbarpad = 13, colorbaraspect=40)
 
-Lplot = [Dvar['f1'][(LG_LES,'SBG_WTHL')], Dvar['f1'][(LG_LES,'SBG_WRT')], Dvar['f1'][(LG_LES,'THLUP_MF')], 
-         Dvar['f1'][(LG_LES,'RTUP_MF')], Dvar['f1'][(LG_LES,'RVUP_MF')], Dvar['f1'][(LG_LES,'RCUP_MF')]]
+Lplot = [Dvar['f1'][(LG_SBG,'SBG_WTHL')], Dvar['f1'][(LG_SBG,'SBG_WRT')], Dvar['f1'][(LG_SBG,'THLUP_MF')], 
+         Dvar['f1'][(LG_SBG,'RTUP_MF')], Dvar['f1'][(LG_SBG,'RVUP_MF')], Dvar['f1'][(LG_SBG,'RCUP_MF')]]
 LaxeX = [Dvar['f1']['time_les']/3600.]*len(Lplot)
 LaxeZ = [Dvar['f1']['level_les']]*len(Lplot)
 Ltitle = ['Subgrid vertical liquid potential temp. flux', 'Subgrid vertical RT flux', 
@@ -93,8 +96,8 @@ Panel2.save_graph(2,fig2)
 ###############################################################
 Panel3 = PanelPlot(2,3, [25,14],'', titlepad=25, minmaxpad=1.04, timepad=-0.07, colorbarpad=0.03, labelcolorbarpad = 13, colorbaraspect=40)
 
-Lplot = [Dvar['f1'][(LG_LES,'RIUP_MF')], Dvar['f1'][(LG_LES,'WUP_MF')], Dvar['f1'][(LG_LES,'MAFLX_MF')], 
-         Dvar['f1'][(LG_LES,'DETR_MF')], Dvar['f1'][(LG_LES,'ENTR_MF')], Dvar['f1'][(LG_LES,'FRCUP_MF')]]
+Lplot = [Dvar['f1'][(LG_SBG,'RIUP_MF')], Dvar['f1'][(LG_SBG,'WUP_MF')], Dvar['f1'][(LG_SBG,'MAFLX_MF')], 
+         Dvar['f1'][(LG_SBG,'DETR_MF')], Dvar['f1'][(LG_SBG,'ENTR_MF')], Dvar['f1'][(LG_SBG,'FRCUP_MF')]]
 LaxeX = [Dvar['f1']['time_les']/3600.]*len(Lplot)
 LaxeZ = [Dvar['f1']['level_les']]*len(Lplot)
 Ltitle = ['Updraft ice mixing ratio', 'Updraft vertical velocity', 
@@ -121,8 +124,8 @@ Panel3.save_graph(3,fig3)
 ###############################################################
 Panel4 = PanelPlot(2,3, [25,14],'', titlepad=25, minmaxpad=1.04, timepad=-0.07, colorbarpad=0.03, labelcolorbarpad = 13, colorbaraspect=40)
 
-Lplot = [Dvar['f1'][(LG_LES,'THVUP_MF')], Dvar['f1'][(LG_LES,'WTHL_MF')], Dvar['f1'][(LG_LES,'WRT_MF')], 
-         Dvar['f1'][(LG_LES,'WTHV_MF')], Dvar['f1'][(LG_LES,'WU_MF')], Dvar['f1'][(LG_LES,'WV_MF')]]
+Lplot = [Dvar['f1'][(LG_SBG,'THVUP_MF')], Dvar['f1'][(LG_SBG,'WTHL_MF')], Dvar['f1'][(LG_SBG,'WRT_MF')], 
+         Dvar['f1'][(LG_SBG,'WTHV_MF')], Dvar['f1'][(LG_SBG,'WU_MF')], Dvar['f1'][(LG_SBG,'WV_MF')]]
 LaxeX = [Dvar['f1']['time_les']/3600.]*len(Lplot)
 LaxeZ = [Dvar['f1']['level_les']]*len(Lplot)
 Ltitle = ['Updraft virtual potential temperature', 'Subgrid WTHL flux from Mass-Flux scheme', 
