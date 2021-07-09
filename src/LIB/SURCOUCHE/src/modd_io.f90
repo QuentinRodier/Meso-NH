@@ -46,12 +46,12 @@ LOGICAL, SAVE :: LLFIREAD   = .FALSE. ! TRUE will force LFI read (instead of Net
 LOGICAL, SAVE :: LVERB_OUTLST = .TRUE.  ! TRUE will PRINT_MSG in OUTPUT_LISTINGn files
 LOGICAL, SAVE :: LVERB_STDOUT = .FALSE. ! TRUE will also PRINT_MSG on standard output
 LOGICAL, SAVE :: LVERB_ALLPRC = .FALSE. ! FALSE: only process 0 do PRINT_MSG, TRUE: all processes
-INTEGER, SAVE :: NBUD_VERB        = NVERB_WARNING ! Verbosity level for budgets
+INTEGER, SAVE :: NBUD_VERB        = NVERB_INFO    ! Verbosity level for budgets
 INTEGER, SAVE :: NBUD_ABORT_LEVEL = NVERB_ERROR   ! Level of budget error necessary to force stop of application
-INTEGER, SAVE :: NIO_VERB        = NVERB_WARNING ! Verbosity level for IO
+INTEGER, SAVE :: NIO_VERB        = NVERB_INFO    ! Verbosity level for IO
 INTEGER, SAVE :: NIO_ABORT_LEVEL = NVERB_ERROR   ! Level of IO error necessary to force stop of application
 
-INTEGER, SAVE :: NGEN_VERB        = NVERB_WARNING ! Verbosity level for 'GEN' (generic) messages
+INTEGER, SAVE :: NGEN_VERB        = NVERB_INFO    ! Verbosity level for 'GEN' (generic) messages
 INTEGER, SAVE :: NGEN_ABORT_LEVEL = NVERB_ERROR   ! Level of 'GEN' error necessary to force stop of application
 
 CHARACTER(LEN=NDIRNAMELGTMAX) :: CIO_DIR = '' ! Directory for IO

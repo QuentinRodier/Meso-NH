@@ -3,59 +3,10 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!      ###########################
-MODULE MODI_WRITE_PROFILER_n
-!      ###########################
+! Author:
+!  P. Tulet    15/02/2002
 !
-INTERFACE
-!
-      SUBROUTINE WRITE_PROFILER_n(TPDIAFILE)
-!
-USE MODD_IO, ONLY: TFILEDATA
-!
-TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE ! diachronic file to write
-!
-END SUBROUTINE WRITE_PROFILER_n
-!
-END INTERFACE
-!
-END MODULE MODI_WRITE_PROFILER_n
-!
-!     ##########################################
-      SUBROUTINE WRITE_PROFILER_n(TPDIAFILE)
-!     ##########################################
-!
-!
-!!****  *WRITE_PROFILER* - write the balloon and aircraft trajectories and records
-!!                      in the diachronic file
-!!
-!!    PURPOSE
-!!    -------
-!
-!
-!!**  METHOD
-!!    ------
-!!    
-!!
-!!
-!!
-!!
-!!    EXTERNAL
-!!    --------
-!!
-!!    IMPLICIT ARGUMENTS
-!!    ------------------
-!!
-!!    REFERENCE
-!!    ---------
-!!
-!!    AUTHOR
-!!    ------
-!!      Pierre TULET             * Meteo-France *
-!!
-!!    MODIFICATIONS
-!!    -------------
-!!     Original 15/02/2002
+!  Modifications
 !  G. Delautier      2016: LIMA
 !  C. Lac         10/2016: add visibility diagnostics for fog
 !  P. Wautelet 05/2016-04/2018: new data structures and calls for I/O
@@ -64,39 +15,40 @@ END MODULE MODI_WRITE_PROFILER_n
 !  P. Wautelet 09/10/2020: Write_diachro: use new datatype tpfields
 !  P. Wautelet 03/03/2021: budgets: add tbudiachrometadata type (useful to pass more information to Write_diachro)
 !  P. Wautelet 11/03/2021: bugfix: correct name for NSV_LIMA_IMM_NUCL
-!  M.Taufour 07/2021: modify RARE for hydrometeors containing ice and add bright band calculation for RARE
-! --------------------------------------------------------------------------
+!  P. Wautelet 05/07/2021: reorganisation to store point values correctly (not in vertical profiles)
+!  M. Taufour     07/2021: modify RARE for hydrometeors containing ice and add bright band calculation for RARE
+!-----------------------------------------------------------------
+!      ###########################
+MODULE MODE_WRITE_PROFILER_n
+!      ###########################
+!
+implicit none
+
+private
+
+public :: WRITE_PROFILER_n
+
+CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: CCOMMENT ! comment string
+CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: CTITLE   ! title
+CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: CUNIT    ! physical unit
+
+REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: XWORK6   ! contains temporal serie
+
+contains
+!
+!#####################################
+SUBROUTINE WRITE_PROFILER_n(TPDIAFILE)
+!#####################################
+!
+!
+!****  *WRITE_PROFILER* - write the balloon and aircraft trajectories and records
+!                      in the diachronic file
 !
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_CST
-USE MODD_IO, ONLY: TFILEDATA
-USE MODD_LUNIT
-USE MODD_PARAMETERS
-!
-USE MODD_TYPE_PROFILER
-USE MODD_PROFILER_n
-USE MODD_CH_M9_n,         ONLY: CNAMES
-USE MODD_CH_AEROSOL,      ONLY: CAERONAMES, LORILAM, JPMODE
-USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
-USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
-USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
-USE MODD_LG,              ONLY: CLGNAMES
-USE MODD_DUST,            ONLY: CDUSTNAMES, LDUST, NMODE_DST
-USE MODD_SALT,            ONLY: CSALTNAMES, LSALT
-USE MODD_NSV
-USE MODD_RADIATIONS_n,    ONLY:NAER
-USE MODD_DIAG_IN_RUN
-USE MODD_PARAM_n,         ONLY: CRAD
-!
-USE MODE_AERO_PSD
-USE MODE_DUST_PSD
-use mode_write_diachro,   only: Write_diachro
-!
-USE MODD_PARAM_LIMA_WARM, ONLY: CLIMA_WARM_NAMES, CAERO_MASS
-USE MODD_PARAM_LIMA_COLD, ONLY: CLIMA_COLD_NAMES
-USE MODD_PARAM_LIMA     , ONLY: NINDICE_CCN_IMM,NMOD_CCN,NMOD_IFN,NMOD_IMM
+USE MODD_IO,         ONLY: TFILEDATA
+use MODD_PROFILER_n, only: NUMBPROFILER
 !
 IMPLICIT NONE
 !
@@ -109,61 +61,80 @@ TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE ! diachronic file to write
 !
 !       0.2  declaration of local variables
 !
-INTEGER     ::  II  ! loop
+INTEGER :: JI
 !
 !----------------------------------------------------------------------------
 !
-DO II=1,NUMBPROFILER
-  CALL PROFILER_DIACHRO_n(TPROFILER, II)
+DO JI = 1, NUMBPROFILER
+  CALL PROFILER_DIACHRO_n( TPDIAFILE, JI )
 ENDDO
 !
 !----------------------------------------------------------------------------
+END SUBROUTINE WRITE_PROFILER_n
 !----------------------------------------------------------------------------
-!
-CONTAINS
-!
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-!
-!----------------------------------------------------------------------------
-SUBROUTINE PROFILER_DIACHRO_n(TPROFILER,II)
 
-use modd_budget, only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK,  &
-                       tbudiachrometadata
-use modd_field,  only: NMNHDIM_LEVEL, NMNHDIM_PROFILER_TIME, NMNHDIM_PROFILER_PROC, NMNHDIM_UNUSED, &
-                       tfield_metadata_base, TYPEREAL
 
-TYPE(PROFILER),     INTENT(IN)       :: TPROFILER
-INTEGER,            INTENT(IN)       :: II
+!----------------------------------------------------------------------------
+SUBROUTINE PROFILER_DIACHRO_n( TPDIAFILE, KI )
+
+use modd_budget,          only: NLVL_CATEGORY, NLVL_SUBCATEGORY, NLVL_GROUP, NLVL_SHAPE, NLVL_TIMEAVG, NLVL_NORM, NLVL_MASK, &
+                                tbudiachrometadata
+USE MODD_DIAG_IN_RUN,     only: LDIAG_IN_RUN
+USE MODD_DUST,            ONLY: CDUSTNAMES, LDUST, NMODE_DST
+USE MODD_CH_AEROSOL,      ONLY: CAERONAMES, LORILAM, JPMODE
+USE MODD_CH_M9_n,         ONLY: CNAMES
+USE MODD_CST,             ONLY: XRV
+USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
+use modd_field,           only: NMNHDIM_LEVEL, NMNHDIM_PROFILER_TIME, NMNHDIM_PROFILER_PROC, NMNHDIM_UNUSED, &
+                                tfield_metadata_base, TYPEREAL
+USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
+USE MODD_IO,              ONLY: TFILEDATA
+USE MODD_LG,              ONLY: CLGNAMES
+USE MODD_NSV
+USE MODD_PARAMETERS,      ONLY: XUNDEF
+USE MODD_PARAM_LIMA,      ONLY: NINDICE_CCN_IMM,NMOD_CCN,NMOD_IFN,NMOD_IMM
+USE MODD_PARAM_LIMA_COLD, ONLY: CLIMA_COLD_NAMES
+USE MODD_PARAM_LIMA_WARM, ONLY: CLIMA_WARM_NAMES, CAERO_MASS
+USE MODD_PARAM_n,         ONLY: CRAD
+USE MODD_PROFILER_n
+USE MODD_RADIATIONS_n,    ONLY: NAER
+USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
+USE MODD_SALT,            ONLY: CSALTNAMES, LSALT
+USE MODD_TYPE_PROFILER
+!
+USE MODE_AERO_PSD
+USE MODE_DUST_PSD
+use mode_write_diachro,   only: Write_diachro
+!
+TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE ! diachronic file to write
+INTEGER,          INTENT(IN) :: KI
 !
 !*      0.2  declaration of local variables for diachro
 !
-REAL,    DIMENSION(:,:,:,:,:,:),  ALLOCATABLE :: ZWORK6   ! contains temporal serie
-REAL,    DIMENSION(:,:,:,:,:,:),  ALLOCATABLE :: ZW6      ! contains temporal serie to write
-REAL, DIMENSION(:,:,:,:),         ALLOCATABLE :: ZSV, ZN0, ZSIG, ZRG
-REAL, DIMENSION(:,:,:),           ALLOCATABLE :: ZRHO
-!
-INTEGER, DIMENSION(:),            ALLOCATABLE :: IGRID    ! grid indicator
-CHARACTER(LEN=  8)                            :: YGROUP   ! group title
-CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YCOMMENT ! comment string
-CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YTITLE   ! title
-CHARACTER(LEN=100), DIMENSION(:), ALLOCATABLE :: YUNIT    ! physical unit
-!
-INTEGER :: IPROC    ! number of variables records
-INTEGER :: JPROC    ! loop counter
-INTEGER :: JRR      ! loop counter
-INTEGER :: JSV      ! loop counter
-INTEGER :: IKU, IK  ! loop counter
-CHARACTER(LEN=2)  :: INDICE
+character(len=2)                                      :: yidx
+character(len=100)                                    :: ycomment
+character(len=100)                                    :: yname
+CHARACTER(LEN=:),                         allocatable :: YGROUP   ! group title
+INTEGER                                               :: IKU
+INTEGER                                               :: IPROC    ! number of variables records
+INTEGER                                               :: JPROC
+INTEGER                                               :: JRR      ! loop counter
+INTEGER                                               :: JSV      ! loop counter
+integer                                               :: ji
+integer                                               :: irr !Number of moist variables
+REAL, DIMENSION(:,:,:),                   ALLOCATABLE :: ZRHO
+REAL, DIMENSION(:,:,:,:),                 ALLOCATABLE :: ZSV, ZN0, ZSIG, ZRG
 type(tbudiachrometadata)                              :: tzbudiachro
 type(tfield_metadata_base), dimension(:), allocatable :: tzfields
 !
 !----------------------------------------------------------------------------
 !
-IF (TPROFILER%X(II)==XUNDEF) RETURN
-IF (TPROFILER%Y(II)==XUNDEF) RETURN
-IKU = SIZE(TPROFILER%W,2)    !nbre de niveaux sur la verticale SIZE(TPROFILER%W,2)
+IF (TPROFILER%X(KI)==XUNDEF) RETURN
+IF (TPROFILER%Y(KI)==XUNDEF) RETURN
 !
+IKU = SIZE(TPROFILER%W,2) !Number of vertical levels
+!
+!IPROC is too large (not a big problem) due to the separation between vertical profiles and point values
 IPROC = 25 + SIZE(TPROFILER%R,4) + SIZE(TPROFILER%SV,4)
 IF (LDIAG_IN_RUN) IPROC = IPROC + 15
 IF (LORILAM) IPROC = IPROC + JPMODE*3
@@ -171,493 +142,247 @@ IF (LDUST) IPROC = IPROC + NMODE_DST*3
 IF (LDUST .OR. LORILAM .OR. LSALT) IPROC=IPROC+NAER
 IF (SIZE(TPROFILER%TKE  )>0) IPROC = IPROC + 1
 !
-ALLOCATE (ZWORK6(1,1,IKU,size(tprofiler%tpdates),1,IPROC))
-ALLOCATE (YCOMMENT(IPROC))
-ALLOCATE (YTITLE  (IPROC))
-ALLOCATE (YUNIT   (IPROC))
-ALLOCATE (IGRID   (IPROC))
+ALLOCATE (XWORK6(1,1,IKU,size(tprofiler%tpdates),1,IPROC))
+ALLOCATE (CCOMMENT(IPROC))
+ALLOCATE (CTITLE  (IPROC))
+ALLOCATE (CUNIT   (IPROC))
 !
-IGRID  = 1
-YGROUP = TPROFILER%NAME(II)
+YGROUP = TPROFILER%NAME(KI)
 !
 !----------------------------------------------------------------------------
-DO IK=1, IKU
-!
-JPROC=0
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'Th'
-YUNIT    (JPROC) = 'K'
-YCOMMENT (JPROC) = 'Potential temperature' 
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%TH(:,IK,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'Thv'
-YUNIT    (JPROC) = 'K'
-YCOMMENT (JPROC) = 'Virtual Potential temperature' 
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%THV(:,IK,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'VISI'
-YUNIT    (JPROC) = 'km'
-YCOMMENT (JPROC) = 'Visibility'
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%VISI(:,IK,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'VISIKUN'
-YUNIT    (JPROC) = 'km'
-YCOMMENT (JPROC) = 'Visibility Kunkel'
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%VISIKUN(:,IK,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'RARE'
-YUNIT    (JPROC) = 'dBZ'
-YCOMMENT (JPROC) = 'Radar reflectivity'       
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%CRARE(:,IK,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'RAREatt'
-YUNIT    (JPROC) = 'dBZ'
-YCOMMENT (JPROC) = 'Radar attenuated reflectivity'       
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%CRARE_ATT(:,IK,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'P'
-YUNIT    (JPROC) = 'Pascal'
-YCOMMENT (JPROC) = 'Pressure' 
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%P(:,IK,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'ALT'
-YUNIT    (JPROC) = 'm'
-YCOMMENT (JPROC) = 'Altitude' 
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%ZZ(:,IK,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'LON'
-YUNIT    (JPROC) = 'degree'
-YCOMMENT (JPROC) = 'Longitude'
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%LON(II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'LAT'
-YUNIT    (JPROC) = 'degree'
-YCOMMENT (JPROC) = 'Latitude'
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%LAT(II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'ZON_WIND'
-YUNIT    (JPROC) = 'm s-1'
-YCOMMENT (JPROC) = 'Zonal wind'
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%ZON(:,IK,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'MER_WIND'
-YUNIT    (JPROC) = 'm s-1'
-YCOMMENT (JPROC) = 'Meridional wind'
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%MER(:,IK,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'FF'           
-YUNIT    (JPROC) = 'm s-1'
-YCOMMENT (JPROC) = 'Wind intensity'
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%FF(:,IK,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'DD'        
-YUNIT    (JPROC) = 'degree'
-YCOMMENT (JPROC) = 'Wind direction'
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%DD(:,IK,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'W'
-YUNIT    (JPROC) = 'm s-1'
-YCOMMENT (JPROC) = 'Air vertical speed' 
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%W(:,IK,II)
-!
-IF (LDIAG_IN_RUN) THEN
-  !
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'T2m'
-  YUNIT    (JPROC) = 'K'
-  YCOMMENT (JPROC) = '2-m temperature' 
-  ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%T2M(:,II)
-  !
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'Q2m'
-  YUNIT    (JPROC) = 'kg kg-1'
-  YCOMMENT (JPROC) = '2-m humidity' 
-  ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%Q2M(:,II)
-  !
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'HU2m'
-  YUNIT    (JPROC) = 'percent'
-  YCOMMENT (JPROC) = '2-m relative humidity' 
-  ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%HU2M(:,II)
-  !
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'zon10m'
-  YUNIT    (JPROC) = 'm s-1'
-  YCOMMENT (JPROC) = '10-m zonal wind' 
-  ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%ZON10M(:,II)
-  !       
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'mer10m'
-  YUNIT    (JPROC) = 'm s-1'
-  YCOMMENT (JPROC) = '10-m meridian wind' 
-  ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%MER10M(:,II)
-  !
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'RN' 
-  YUNIT    (JPROC) = 'W m-2'
-  YCOMMENT (JPROC) = 'Net radiation'
-  ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%RN(:,II)
-  !
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'H' 
-  YUNIT    (JPROC) = 'W m-2'
-  YCOMMENT (JPROC) = 'Sensible heat flux'
-  ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%H(:,II)
-  !
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'LE' 
-  YUNIT    (JPROC) = 'W m-2'
-  YCOMMENT (JPROC) = 'Total Latent heat flux'
-  ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%LE(:,II)
-  !
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'G' 
-  YUNIT    (JPROC) = 'W m-2'
-  YCOMMENT (JPROC) = 'Storage heat flux'
-  ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%GFLUX(:,II)
-  !
- IF (CRAD /= 'NONE') THEN
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'SWD'
-  YUNIT    (JPROC) = 'W m-2'
-  YCOMMENT (JPROC) = 'Downward short-wave radiation'
-  ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SWD(:,II)
-  !
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'SWU'
-  YUNIT    (JPROC) = 'W m-2'
-  YCOMMENT (JPROC) = 'Upward short-wave radiation'
-  ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SWU(:,II)
-  !
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'LWD'
-  YUNIT    (JPROC) = 'W m-2'
-  YCOMMENT (JPROC) = 'Downward long-wave radiation'
-  ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%LWD(:,II)
-  !
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'LWU'
-  YUNIT    (JPROC) = 'W m-2'
-  YCOMMENT (JPROC) = 'Upward long-wave radiation'
-  ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%LWU(:,II)
-  !
- END IF
-  !
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'TKE_DISS'
-  YUNIT    (JPROC) = 'm2 s-2'
-  YCOMMENT (JPROC) = 'TKE dissipation rate'
-  ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%TKE_DISS(:,IK,II)
-  !
-  JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'LEI' 
-  YUNIT    (JPROC) = 'W m-2'
-  YCOMMENT (JPROC) = 'Solid Latent heat flux'
-  ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%LEI(:,II)  
-!
-ENDIF
-!
-DO JRR=1,SIZE(TPROFILER%R,4)
-  JPROC = JPROC+1
-  YUNIT    (JPROC) = 'kg kg-1'
-  ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%R(:,IK,II,JRR)
-  IF (JRR==1) THEN
-    YTITLE   (JPROC) = 'Rv'
-    YCOMMENT (JPROC) = 'Water vapor mixing ratio' 
-  ELSE IF (JRR==2) THEN
-    YTITLE   (JPROC) = 'Rc'
-    YCOMMENT (JPROC) = 'Liquid cloud water mixing ratio' 
-  ELSE IF (JRR==3) THEN
-    YTITLE   (JPROC) = 'Rr'
-    YCOMMENT (JPROC) = 'Rain water mixing ratio' 
-  ELSE IF (JRR==4) THEN
-    YTITLE   (JPROC) = 'Ri'
-    YCOMMENT (JPROC) = 'Ice cloud water mixing ratio' 
-  ELSE IF (JRR==5) THEN
-    YTITLE   (JPROC) = 'Rs'
-    YCOMMENT (JPROC) = 'Snow mixing ratio' 
-  ELSE IF (JRR==6) THEN
-    YTITLE   (JPROC) = 'Rg'
-    YCOMMENT (JPROC) = 'Graupel mixing ratio' 
-  ELSE IF (JRR==7) THEN
-    YTITLE   (JPROC) = 'Rh'
-    YCOMMENT (JPROC) = 'Hail mixing ratio' 
-  END IF
-END DO
-  !
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'Rhod'
-YUNIT    (JPROC) = 'kg m-3'
-YCOMMENT (JPROC) = 'Density of dry air in moist' 
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%RHOD(:,IK,II)
-!
-IF (SIZE(TPROFILER%TKE,1)>0) THEN
-  JPROC = JPROC+1
-  YTITLE   (JPROC) = 'Tke'
-  YUNIT    (JPROC) = 'm2 s-2'
-  YCOMMENT (JPROC) = 'Turbulent kinetic energy' 
-  ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%TKE(:,IK,II)
-END IF
-!
-IF (SIZE(TPROFILER%CIZ,1)>0) THEN
-  JPROC = JPROC + 1
-  YTITLE  (JPROC) = 'CIT'
-  YUNIT   (JPROC) = 'kg-3'
-  YCOMMENT(JPROC) = 'Ice concentration'
-  ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%CIZ(:,IK,II)
-END IF
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'IWV'
-YUNIT    (JPROC) = 'kg m-2'
-YCOMMENT (JPROC) = 'Integrated Water Vapour' 
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%IWV(:,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'ZTD'
-YUNIT    (JPROC) = 'm'
-YCOMMENT (JPROC) = 'Zenith Tropospheric Delay' 
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%ZTD(:,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'ZWD'
-YUNIT    (JPROC) = 'm'
-YCOMMENT (JPROC) = 'Zenith Wet Delay' 
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%ZWD(:,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'ZHD'
-YUNIT    (JPROC) = 'm'
-YCOMMENT (JPROC) = 'Zenith Hydrostatic Delay' 
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%ZHD(:,II)
-!
-IF (SIZE(TPROFILER%SV,4)>=1) THEN
-  ! User scalar variables
-  DO JSV = 1,NSV_USER
-    JPROC = JPROC+1
-    WRITE (YTITLE(JPROC),FMT='(A2,I3.3)')   'Sv',JSV
-    YUNIT    (JPROC) = 'kg kg-1'
-    YCOMMENT (JPROC) = ' ' 
-    ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SV(:,IK,II,JSV)
-  END DO
- ! Passive pollutant  scalar variables
-  DO JSV = NSV_PPBEG,NSV_PPEND
-    JPROC = JPROC+1
-    WRITE (YTITLE(JPROC),FMT='(A2,I3.3)')   'Sv',JSV
-    YUNIT    (JPROC) = ''
-    YCOMMENT (JPROC) = ' '
-    ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SV(:,IK,II,JSV)
-  END DO
- ! microphysical C2R2 scheme scalar variables
-  DO JSV = NSV_C2R2BEG,NSV_C2R2END
-    JPROC = JPROC+1
-    YTITLE(JPROC)= TRIM(C2R2NAMES(JSV-NSV_C2R2BEG+1))
-    YUNIT    (JPROC) = 'm-3'
-    YCOMMENT (JPROC) = ' '
-    ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SV(:,IK,II,JSV)
-  END DO
-  ! microphysical C3R5 scheme additional scalar variables
-  DO JSV = NSV_C1R3BEG,NSV_C1R3END
-    JPROC = JPROC+1
-    YTITLE(JPROC)= TRIM(C1R3NAMES(JSV-NSV_C1R3BEG+1))
-    YUNIT    (JPROC) = 'm-3'
-    YCOMMENT (JPROC) = ' '
-    ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SV(:,IK,II,JSV)
-  END DO
-  ! LIMA variables
-  DO JSV=NSV_LIMA_BEG,NSV_LIMA_END
-    JPROC = JPROC+1
-    YUNIT    (JPROC) = 'kg-1'
-    YCOMMENT (JPROC) = ' '
-    IF (JSV==NSV_LIMA_NC) YTITLE(JPROC)=TRIM(CLIMA_WARM_NAMES(1))//'T' 
-    IF (JSV==NSV_LIMA_NR) YTITLE(JPROC)=TRIM(CLIMA_WARM_NAMES(2))//'T' 
-    IF (JSV .GE. NSV_LIMA_CCN_FREE .AND. JSV .LT. NSV_LIMA_CCN_ACTI) THEN
-        WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_CCN_FREE + 1)
-        YTITLE(JPROC)=TRIM(CLIMA_WARM_NAMES(3))//INDICE//'T'
-    ENDIF
-    IF (JSV .GE. NSV_LIMA_CCN_ACTI .AND. JSV .LT. NSV_LIMA_CCN_ACTI + NMOD_CCN) THEN
-        WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_CCN_ACTI + 1)
-        YTITLE(JPROC)=TRIM(CLIMA_WARM_NAMES(4))//INDICE//'T'
-    ENDIF
-    IF (JSV .EQ. NSV_LIMA_SCAVMASS) YTITLE(JPROC)=TRIM(CAERO_MASS(1))//'T'
-    IF (JSV==NSV_LIMA_NI) YTITLE(JPROC)=TRIM(CLIMA_COLD_NAMES(1))//'T' 
-    IF (JSV .GE. NSV_LIMA_IFN_FREE .AND. JSV .LT. NSV_LIMA_IFN_NUCL) THEN
-        WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_FREE + 1)
-        YTITLE(JPROC)=TRIM(CLIMA_COLD_NAMES(2))//INDICE//'T'
-    ENDIF
-    IF (JSV .GE. NSV_LIMA_IFN_NUCL .AND. JSV .LT. NSV_LIMA_IFN_NUCL + NMOD_IFN) THEN
-        WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_NUCL + 1)
-        YTITLE(JPROC)=TRIM(CLIMA_COLD_NAMES(3))//INDICE//'T'
-    ENDIF
-    IF (JSV .GE. NSV_LIMA_IMM_NUCL .AND. JSV .LT. NSV_LIMA_IMM_NUCL + NMOD_IMM) THEN
-      WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(JSV - NSV_LIMA_IMM_NUCL + 1))
-      YTITLE(JPROC)=TRIM(CLIMA_COLD_NAMES(4))//INDICE//'T'
-    ENDIF
-    IF (JSV .EQ. NSV_LIMA_HOM_HAZE) YTITLE(JPROC)=TRIM(CLIMA_COLD_NAMES(5))//'T'
-    IF (JSV .EQ. NSV_LIMA_SPRO)     YTITLE(JPROC)=TRIM(CLIMA_WARM_NAMES(5))//'T'
+!Treat vertical profiles
+jproc = 0
 
-    ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SV(:,IK,II,JSV)
-  END DO 
+call Add_profile( 'Th',       'Potential temperature',         'K',      tprofiler%th        )
+call Add_profile( 'Thv',      'Virtual Potential temperature', 'K',      tprofiler%thv       )
+call Add_profile( 'VISI',     'Visibility',                    'km',     tprofiler%visi      )
+call Add_profile( 'VISIKUN',  'Visibility Kunkel',             'km',     tprofiler%visikun   )
+call Add_profile( 'RARE',     'Radar reflectivity',            'dBZ',    tprofiler%crare     )
+call Add_profile( 'RAREatt',  'Radar attenuated reflectivity', 'dBZ',    tprofiler%crare_att )
+call Add_profile( 'P',        'Pressure',                      'Pa',     tprofiler%p         )
+call Add_profile( 'ALT',      'Altitude',                      'm',      tprofiler%zz        )
+call Add_profile( 'ZON_WIND', 'Zonal wind',                    'm s-1',  tprofiler%zon       )
+call Add_profile( 'MER_WIND', 'Meridional wind',               'm s-1',  tprofiler%mer       )
+call Add_profile( 'FF',       'Wind intensity',                'm s-1',  tprofiler%ff        )
+call Add_profile( 'DD',       'Wind direction',                'degree', tprofiler%dd        )
+call Add_profile( 'W',        'Air vertical speed',            'm s-1',  tprofiler%w         )
+
+if ( ldiag_in_run ) &
+  call Add_profile( 'TKE_DISS', 'TKE dissipation rate', 'm2 s-2', tprofiler% tke_diss )
+
+if ( Size( tprofiler%ciz, 1 ) > 0 ) &
+  call Add_profile( 'CIT',      'Ice concentration',    'kg-3',   tprofiler%ciz )
+
+irr = Size( tprofiler%r )
+if ( irr >= 1 ) call Add_profile( 'Rv', 'Water vapor mixing ratio',        'kg kg-1', tprofiler%r(:,:,:,1) )
+if ( irr >= 2 ) call Add_profile( 'Rc', 'Liquid cloud water mixing ratio', 'kg kg-1', tprofiler%r(:,:,:,2) )
+if ( irr >= 3 ) call Add_profile( 'Rr', 'Rain water mixing ratio',         'kg kg-1', tprofiler%r(:,:,:,3) )
+if ( irr >= 4 ) call Add_profile( 'Ri', 'Ice cloud water mixing ratio',    'kg kg-1', tprofiler%r(:,:,:,4) )
+if ( irr >= 5 ) call Add_profile( 'Rs', 'Snow mixing ratio',               'kg kg-1', tprofiler%r(:,:,:,5) )
+if ( irr >= 6 ) call Add_profile( 'Rg', 'Graupel mixing ratio',            'kg kg-1', tprofiler%r(:,:,:,6) )
+if ( irr >= 7 ) call Add_profile( 'Rh', 'Hail mixing ratio',               'kg kg-1', tprofiler%r(:,:,:,7) )
+
+call Add_profile( 'Rhod', 'Density of dry air in moist', 'kg m-3', tprofiler%rhod )
+if ( Size( tprofiler%tke, 1 ) > 0 ) &
+  call Add_profile( 'Tke', 'Turbulent kinetic energy', 'm2 s-2', tprofiler%tke )
+
+if ( Size( tprofiler%sv, 4 ) > 0  ) then
+  ! User scalar variables
+  do jsv = 1, nsv_user
+    Write ( yname, fmt = '( a2, i3.3 )' ) 'Sv', jsv
+    call Add_profile( yname, '', 'kg kg-1', tprofiler%sv(:,:,:,jsv) )
+  end do
+ ! Passive pollutant  scalar variables
+  do jsv = nsv_ppbeg, nsv_ppend
+    Write ( yname, fmt = '( a2, i3.3 )' ) 'Sv', jsv
+    call Add_profile( yname, '', '1', tprofiler%sv(:,:,:,jsv) )
+  end do
+ ! microphysical C2R2 scheme scalar variables
+  do jsv = nsv_ppbeg, nsv_ppend
+    call Add_profile( Trim( c2r2names(jsv - nsv_c2r2beg + 1) ), '', 'm-3', tprofiler%sv(:,:,:,jsv) )
+  end do
+  ! microphysical C3R5 scheme additional scalar variables
+  do jsv = nsv_c1r3beg, nsv_c1r3end
+    call Add_profile( Trim( c1r3names(jsv - nsv_c1r3beg + 1) ), '', 'm-3', tprofiler%sv(:,:,:,jsv) )
+  end do
+  ! LIMA variables
+  do jsv = nsv_lima_beg, nsv_lima_end
+    if ( jsv == nsv_lima_nc ) then
+      yname = Trim( clima_warm_names(1) ) // 'T'
+    else if ( jsv == nsv_lima_nr ) then
+      yname = Trim( clima_warm_names(2) ) // 'T'
+    else if ( jsv >= nsv_lima_ccn_free .and. jsv < nsv_lima_ccn_free + nmod_ccn ) then
+      Write( yidx, '( i2.2 )' ) jsv - nsv_lima_ccn_free + 1
+      yname = Trim( clima_warm_names(3) ) // yidx // 'T'
+    else if ( jsv >= nsv_lima_ccn_acti .and. jsv < nsv_lima_ccn_acti + nmod_ccn ) then
+      Write( yidx, '( i2.2 )' ) jsv - nsv_lima_ccn_acti + 1
+      yname = Trim( clima_warm_names(4) ) // yidx // 'T'
+    else if ( jsv == nsv_lima_scavmass ) then
+      yname = Trim( caero_mass(1) ) // 'T'
+    else if ( jsv == nsv_lima_ni ) then
+      yname = Trim( clima_cold_names(1) ) // 'T'
+    else if ( jsv >= nsv_lima_ifn_free .and. jsv < nsv_lima_ifn_free + nmod_ifn ) then
+      Write( yidx, '( i2.2 )' ) jsv - nsv_lima_ifn_free + 1
+      yname = Trim( clima_cold_names(2) ) // yidx // 'T'
+    else if ( jsv >= nsv_lima_ifn_nucl .and. jsv < nsv_lima_ifn_nucl + nmod_ifn ) then
+      Write( yidx, '( i2.2 )' ) jsv - nsv_lima_ifn_nucl + 1
+      yname = Trim( clima_cold_names(3) ) // yidx // 'T'
+    else if ( jsv >= nsv_lima_imm_nucl .and. jsv < nsv_lima_imm_nucl + nmod_imm ) then
+      write( yidx, '( i2.2 )' ) nindice_ccn_imm(jsv - nsv_lima_imm_nucl + 1)
+      yname = Trim( clima_cold_names(4) ) // yidx // 'T'
+    else if ( jsv == nsv_lima_hom_haze ) then
+      yname = Trim( clima_cold_names(5) ) // 'T'
+    else if ( jsv == nsv_lima_spro ) then
+      yname = Trim( clima_warm_names(5) ) // 'T'
+    end if
+    call Add_profile( yname, '', 'kg-1', tprofiler%sv(:,:,:,jsv) )
+  end do
   ! electrical scalar variables
-  DO JSV = NSV_ELECBEG,NSV_ELECEND
-    JPROC = JPROC+1
-    YTITLE(JPROC)= TRIM(CELECNAMES(JSV-NSV_ELECBEG+1))
-    YUNIT    (JPROC) = 'C'
-    YCOMMENT (JPROC) = ' '
-    ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SV(:,IK,II,JSV)
-  END DO
+  do jsv = nsv_elecbeg, nsv_elecend
+    call Add_profile( Trim( celecnames(jsv - nsv_elecbeg + 1) ), '', 'C', tprofiler%sv(:,:,:,jsv) )
+  end do
   ! chemical scalar variables
-  DO JSV=NSV_CHEMBEG,NSV_CHEMEND
-    JPROC = JPROC+1
-    YTITLE(JPROC)= TRIM(CNAMES(JSV-NSV_CHEMBEG+1))
-    YUNIT    (JPROC) = 'ppb'
-    WRITE(YCOMMENT (JPROC),'(A5,A3,I3.3)') 'T(s) ','SVT',JSV
-    ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SV(:,IK,II,JSV) * 1.E9
-  END DO
-  IF ((LORILAM).AND. .NOT.(ANY(TPROFILER%P(:,IK,II) == 0.))) THEN
-    ALLOCATE (ZSV(1,1,size(tprofiler%tpdates),NSV_AER))
-    ALLOCATE (ZRHO(1,1,size(tprofiler%tpdates)))
-    ALLOCATE (ZN0(1,1,size(tprofiler%tpdates),JPMODE))
-    ALLOCATE (ZRG(1,1,size(tprofiler%tpdates),JPMODE))
-    ALLOCATE (ZSIG(1,1,size(tprofiler%tpdates),JPMODE))
-    ZSV(1,1,:,1:NSV_AER) = TPROFILER%SV(:,IK,II,NSV_AERBEG:NSV_AEREND)
+  do jsv = nsv_chembeg, nsv_chemend
+    Write( ycomment, '( a5, a3, i3.3 )' ) 'T(s) ', 'SVT', jsv
+    call Add_profile( Trim( cnames(jsv - nsv_chembeg + 1) ), ycomment, 'ppb', tprofiler%sv(:,:,:,jsv) * 1.e9 )
+  end do
+  IF ( LORILAM .AND. .NOT.(ANY(TPROFILER%P(:,:,KI) == 0.)) ) THEN
+    ALLOCATE (ZSV (1,iku,size(tprofiler%tpdates),NSV_AER))
+    ALLOCATE (ZRHO(1,iku,size(tprofiler%tpdates)))
+    ALLOCATE (ZN0 (1,iku,size(tprofiler%tpdates),JPMODE))
+    ALLOCATE (ZRG (1,iku,size(tprofiler%tpdates),JPMODE))
+    ALLOCATE (ZSIG(1,iku,size(tprofiler%tpdates),JPMODE))
+    do ji = 1, iku
+      ZSV(1,ji,:,1:NSV_AER) = TPROFILER%SV(:,ji,KI,NSV_AERBEG:NSV_AEREND)
+    end do
     IF (SIZE(TPROFILER%R,4) >0) THEN
-      ZRHO(1,1,:) = 0.
-      DO JRR=1,SIZE(TPROFILER%R,4)
-        ZRHO(1,1,:) = ZRHO(1,1,:) + TPROFILER%R(:,IK,II,JRR)
-      ENDDO
-      ZRHO(1,1,:) = TPROFILER%TH(:,IK,II) * ( 1. + XRV/XRD*TPROFILER%R(:,IK,II,1) )  &
-                                          / ( 1. + ZRHO(1,1,:)                ) 
+      ZRHO(1,:,:) = 0.
+      do ji = 1, iku
+        DO JRR=1,SIZE(TPROFILER%R,4)
+          ZRHO(1,ji,:) = ZRHO(1,ji,:) + TPROFILER%R(:,ji,KI,JRR)
+        ENDDO
+        ZRHO(1,ji,:) = TPROFILER%TH(:,ji,KI) * ( 1. + XRV/XRD*TPROFILER%R(:,ji,KI,1) )  &
+                                             / ( 1. + ZRHO(1,ji,:)                )
+      end do
     ELSE
-      ZRHO(1,1,:) = TPROFILER%TH(:,IK,II)
+      do ji = 1, iku
+        ZRHO(1,ji,:) = TPROFILER%TH(:,ji,KI)
+      end do
     ENDIF
-    ZRHO(1,1,:) =  TPROFILER%P(:,IK,II) / &
-                  (XRD *ZRHO(1,1,:) *((TPROFILER%P(:,IK,II)/XP00)**(XRD/XCPD)) )
+    do ji = 1, iku
+      ZRHO(1,ji,:) =  TPROFILER%P(:,ji,KI) / &
+                      (XRD *ZRHO(1,ji,:) *((TPROFILER%P(:,ji,KI)/XP00)**(XRD/XCPD)) )
+    end do
     CALL PPP2AERO(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0)
     DO JSV=1,JPMODE
       ! mean radius
       JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A6,I1)')'AERRGA',JSV
-      YUNIT    (JPROC) = 'um'
-      WRITE(YCOMMENT(JPROC),'(A18,I1)')'RG (nb) AERO MODE ',JSV
-      ZWORK6 (1,1,IK,:,1,JPROC) = ZRG(1,1,:,JSV)
+      WRITE(CTITLE(JPROC),'(A6,I1)')'AERRGA',JSV
+      CUNIT(JPROC) = 'um'
+      WRITE(CCOMMENT(JPROC),'(A18,I1)')'RG (nb) AERO MODE ',JSV
+      do ji = 1, iku
+        XWORK6(1,1,ji,:,1,JPROC) = ZRG(1,ji,:,JSV)
+      end do
       ! standard deviation
       JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A7,I1)')'AERSIGA',JSV
-      YUNIT    (JPROC) = '  '
-      WRITE(YCOMMENT(JPROC),'(A16,I1)')'SIGMA AERO MODE ',JSV
-      ZWORK6 (1,1,IK,:,1,JPROC) = ZSIG(1,1,:,JSV)
+      WRITE(CTITLE(JPROC),'(A7,I1)')'AERSIGA',JSV
+      CUNIT(JPROC) = '  '
+      WRITE(CCOMMENT(JPROC),'(A16,I1)')'SIGMA AERO MODE ',JSV
+      do ji = 1, iku
+        XWORK6(1,1,ji,:,1,JPROC) = ZSIG(1,ji,:,JSV)
+      end do
       ! particles number
       JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A6,I1)')'AERN0A',JSV
-      YUNIT    (JPROC) = 'm-3'
-      WRITE(YCOMMENT(JPROC),'(A13,I1)')'N0 AERO MODE ',JSV
-      ZWORK6 (1,1,IK,:,1,JPROC) = ZN0(1,1,:,JSV)
+      WRITE(CTITLE(JPROC),'(A6,I1)')'AERN0A',JSV
+      CUNIT(JPROC) = 'm-3'
+      WRITE(CCOMMENT(JPROC),'(A13,I1)')'N0 AERO MODE ',JSV
+      do ji = 1, iku
+        XWORK6(1,1,ji,:,1,JPROC) = ZN0(1,ji,:,JSV)
+      end do
     ENDDO
-    DEALLOCATE (ZSV,ZRHO) 
-    DEALLOCATE (ZN0,ZRG,ZSIG) 
+    DEALLOCATE (ZSV,ZRHO)
+    DEALLOCATE (ZN0,ZRG,ZSIG)
   END IF
   ! dust scalar variables
-  DO JSV = NSV_DSTBEG,NSV_DSTEND
-    JPROC = JPROC+1
-    YTITLE(JPROC)= TRIM(CDUSTNAMES(JSV-NSV_DSTBEG+1))
-    YUNIT    (JPROC) = 'ppb'
-    YCOMMENT (JPROC) = ' '
-    ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SV(:,IK,II,JSV) * 1.E9
-  END DO
-  IF ((LDUST).AND. .NOT.(ANY(TPROFILER%P(:,IK,II) == 0.))) THEN
-    ALLOCATE (ZSV(1,1,size(tprofiler%tpdates),NSV_DST))
-    ALLOCATE (ZRHO(1,1,size(tprofiler%tpdates)))
-    ALLOCATE (ZN0(1,1,size(tprofiler%tpdates),NMODE_DST))
-    ALLOCATE (ZRG(1,1,size(tprofiler%tpdates),NMODE_DST))
-    ALLOCATE (ZSIG(1,1,size(tprofiler%tpdates),NMODE_DST))
-    ZSV(1,1,:,1:NSV_DST) = TPROFILER%SV(:,IK,II,NSV_DSTBEG:NSV_DSTEND)
+  do jsv = nsv_dstbeg, nsv_dstend
+    call Add_profile( Trim( cdustnames(jsv - nsv_dstbeg + 1) ), '', 'ppb', tprofiler%sv(:,:,:,jsv) * 1.e9 )
+  end do
+  IF ((LDUST).AND. .NOT.(ANY(TPROFILER%P(:,:,KI) == 0.))) THEN
+    ALLOCATE (ZSV (1,iku,size(tprofiler%tpdates),NSV_DST))
+    ALLOCATE (ZRHO(1,iku,size(tprofiler%tpdates)))
+    ALLOCATE (ZN0 (1,iku,size(tprofiler%tpdates),NMODE_DST))
+    ALLOCATE (ZRG (1,iku,size(tprofiler%tpdates),NMODE_DST))
+    ALLOCATE (ZSIG(1,iku,size(tprofiler%tpdates),NMODE_DST))
+    do ji = 1, iku
+      ZSV(1,ji,:,1:NSV_DST) = TPROFILER%SV(:,ji,KI,NSV_DSTBEG:NSV_DSTEND)
+    end do
     IF (SIZE(TPROFILER%R,4) >0) THEN
-      ZRHO(1,1,:) = 0.
-      DO JRR=1,SIZE(TPROFILER%R,4)
-        ZRHO(1,1,:) = ZRHO(1,1,:) + TPROFILER%R(:,IK,II,JRR)
-      ENDDO
-      ZRHO(1,1,:) = TPROFILER%TH(:,IK,II) * ( 1. + XRV/XRD*TPROFILER%R(:,IK,II,1) )  &
-                                          / ( 1. + ZRHO(1,1,:)                ) 
+      ZRHO(1,:,:) = 0.
+      do ji = 1, iku
+        DO JRR=1,SIZE(TPROFILER%R,4)
+          ZRHO(1,ji,:) = ZRHO(1,ji,:) + TPROFILER%R(:,ji,KI,JRR)
+        ENDDO
+        ZRHO(1,ji,:) = TPROFILER%TH(:,ji,KI) * ( 1. + XRV/XRD*TPROFILER%R(:,ji,KI,1) )  &
+                                             / ( 1. + ZRHO(1,ji,:)                )
+      end do
     ELSE
-      ZRHO(1,1,:) = TPROFILER%TH(:,IK,II)
+      do ji = 1, iku
+        ZRHO(1,ji,:) = TPROFILER%TH(:,ji,KI)
+      end do
     ENDIF
-    ZRHO(1,1,:) =  TPROFILER%P(:,IK,II) / &
-                  (XRD *ZRHO(1,1,:) *((TPROFILER%P(:,IK,II)/XP00)**(XRD/XCPD)) )
+    do ji = 1, iku
+      ZRHO(1,ji,:) =  TPROFILER%P(:,ji,KI) / &
+                     (XRD *ZRHO(1,ji,:) *((TPROFILER%P(:,ji,KI)/XP00)**(XRD/XCPD)) )
+    end do
     CALL PPP2DUST(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0)
     DO JSV=1,NMODE_DST
       ! mean radius
       JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A6,I1)')'DSTRGA',JSV
-      YUNIT    (JPROC) = 'um'
-      WRITE(YCOMMENT(JPROC),'(A18,I1)')'RG (nb) DUST MODE ',JSV
-      ZWORK6 (1,1,IK,:,1,JPROC) = ZRG(1,1,:,JSV)
+      WRITE(CTITLE(JPROC),'(A6,I1)')'DSTRGA',JSV
+      CUNIT(JPROC) = 'um'
+      WRITE(CCOMMENT(JPROC),'(A18,I1)')'RG (nb) DUST MODE ',JSV
+      do ji = 1, iku
+        XWORK6 (1,1,ji,:,1,JPROC) = ZRG(1,ji,:,JSV)
+      end do
       ! standard deviation
       JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A7,I1)')'DSTSIGA',JSV
-      YUNIT    (JPROC) = '  '
-      WRITE(YCOMMENT(JPROC),'(A16,I1)')'SIGMA DUST MODE ',JSV
-      ZWORK6 (1,1,IK,:,1,JPROC) = ZSIG(1,1,:,JSV)
+      WRITE(CTITLE(JPROC),'(A7,I1)')'DSTSIGA',JSV
+      CUNIT(JPROC) = '  '
+      WRITE(CCOMMENT(JPROC),'(A16,I1)')'SIGMA DUST MODE ',JSV
+      do ji = 1, iku
+        XWORK6 (1,1,ji,:,1,JPROC) = ZSIG(1,ji,:,JSV)
+      end do
       ! particles number
       JPROC = JPROC+1
-      WRITE(YTITLE(JPROC),'(A6,I1)')'DSTN0A',JSV
-      YUNIT    (JPROC) = 'm-3'
-      WRITE(YCOMMENT(JPROC),'(A13,I1)')'N0 DUST MODE ',JSV
-      ZWORK6 (1,1,IK,:,1,JPROC) = ZN0(1,1,:,JSV)
+      WRITE(CTITLE(JPROC),'(A6,I1)')'DSTN0A',JSV
+      CUNIT(JPROC) = 'm-3'
+      WRITE(CCOMMENT(JPROC),'(A13,I1)')'N0 DUST MODE ',JSV
+      do ji = 1, iku
+        XWORK6 (1,1,ji,:,1,JPROC) = ZN0(1,ji,:,JSV)
+      end do
     ENDDO
-    DEALLOCATE (ZSV,ZRHO) 
-    DEALLOCATE (ZN0,ZRG,ZSIG) 
+    DEALLOCATE (ZSV,ZRHO)
+    DEALLOCATE (ZN0,ZRG,ZSIG)
   END IF
   ! sea salt scalar variables
-  DO JSV = NSV_SLTBEG,NSV_SLTEND
-    JPROC = JPROC+1
-    YTITLE(JPROC)= TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))
-    YUNIT    (JPROC) = 'ppb'
-    YCOMMENT (JPROC) = ' '
-    ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SV(:,IK,II,JSV) * 1.E9
-  END DO
-  IF (LDUST .OR. LORILAM .OR. LSALT) THEN
-  DO JSV = 1,NAER
-    JPROC = JPROC+1
-    WRITE(YTITLE(JPROC),'(A6,I1)')'AEREXT',JSV
-    YUNIT    (JPROC) = ' '
-    YCOMMENT (JPROC) = 'Aerosol Extinction'
-    ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%AER(:,IK,II,JSV) 
-  END DO
-  ENDIF
-ENDIF
-!
-END DO
-!
-!----------------------------------------------------------------------------
-!
-
-ALLOCATE (ZW6(1,1,IKU,size(tprofiler%tpdates),1,JPROC))
-ZW6 = ZWORK6(:,:,:,:,:,:JPROC)
-DEALLOCATE(ZWORK6)
+  do jsv = nsv_sltbeg, nsv_sltend
+    call Add_profile( Trim( csaltnames(jsv - nsv_sltbeg + 1) ), '', 'ppb', tprofiler%sv(:,:,:,jsv) * 1.e9 )
+  end do
+  if ( ldust .or. lorilam .or. lsalt ) then
+    do jsv = 1, naer
+      Write( yname, '( a, i1 )' ) 'AEREXT', jsv
+      call Add_profile( yname, 'Aerosol Extinction', '1', tprofiler%aer(:,:,:,jsv) )
+    end do
+  end if
+end if
 
 allocate( tzfields( jproc ) )
 
-tzfields(:)%cmnhname  = ytitle(1 : jproc)
+tzfields(:)%cmnhname  = ctitle(1 : jproc)
 tzfields(:)%cstdname  = ''
-tzfields(:)%clongname = ytitle(1 : jproc)
-tzfields(:)%cunits    = yunit(1 : jproc)
-tzfields(:)%ccomment  = ycomment(1 : jproc)
+tzfields(:)%clongname = ctitle(1 : jproc)
+tzfields(:)%cunits    = cunit(1 : jproc)
+tzfields(:)%ccomment  = ccomment(1 : jproc)
 tzfields(:)%ngrid     = 0
 tzfields(:)%ntype     = TYPEREAL
 tzfields(:)%ndims     = 3
@@ -678,11 +403,11 @@ tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
 
 tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
 tzbudiachro%clevels  (NLVL_GROUP)       = ygroup
-tzbudiachro%ccomments(NLVL_GROUP)       = 'Vertical profiles at position of profiler ' // Trim( ygroup )
+tzbudiachro%ccomments(NLVL_GROUP)       = 'Data at position of profiler ' // Trim( ygroup )
 
-tzbudiachro%lleveluse(NLVL_SHAPE)       = .false.
+tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
 tzbudiachro%clevels  (NLVL_SHAPE)       = 'Vertical_profile'
-tzbudiachro%ccomments(NLVL_SHAPE)       = ''
+tzbudiachro%ccomments(NLVL_SHAPE)       = 'Vertical profiles at position of profiler ' // Trim( ygroup )
 
 tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
 tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not_time_averaged'
@@ -718,18 +443,206 @@ tzbudiachro%njh        = 1
 tzbudiachro%nkl        = 1
 tzbudiachro%nkh        = iku
 
-call Write_diachro( tpdiafile, tzbudiachro, tzfields, tprofiler%tpdates, zw6 )
+call Write_diachro( tpdiafile, tzbudiachro, tzfields, tprofiler%tpdates, xwork6(:,:,:,:,:,:jproc) )
 
-deallocate( tzfields )
+Deallocate( tzfields )
+Deallocate( xwork6 )
 
-DEALLOCATE (ZW6     )
-DEALLOCATE (YCOMMENT)
-DEALLOCATE (YTITLE  )
-DEALLOCATE (YUNIT   )
-DEALLOCATE (IGRID   )
 !----------------------------------------------------------------------------
+!Treat point values
+
+ALLOCATE (XWORK6(1,1,1,size(tprofiler%tpdates),1,IPROC))
+
+jproc = 0
+
+if ( ldiag_in_run ) then
+  call Add_point( 'T2m',    '2-m temperature',               'K',       tprofiler%t2m    )
+  call Add_point( 'Q2m',    '2-m humidity',                  'kg kg-1', tprofiler%q2m    )
+  call Add_point( 'HU2m',   '2-m relative humidity',         'percent', tprofiler%hu2m   )
+  call Add_point( 'zon10m', '10-m zonal wind',               'm s-1',   tprofiler%zon10m )
+  call Add_point( 'mer10m', '10-m meridian wind',            'm s-1',   tprofiler%mer10m )
+  call Add_point( 'RN',     'Net radiation',                 'W m-2',   tprofiler%rn     )
+  call Add_point( 'H',      'Sensible heat flux',            'W m-2',   tprofiler%h      )
+  call Add_point( 'LE',     'Total Latent heat flux',        'W m-2',   tprofiler%le     )
+  call Add_point( 'G',      'Storage heat flux',             'W m-2',   tprofiler%gflux  )
+  if ( crad /= 'NONE' ) then
+    call Add_point( 'SWD',  'Downward short-wave radiation', 'W m-2',   tprofiler%swd    )
+    call Add_point( 'SWU',  'Upward short-wave radiation',   'W m-2',   tprofiler%swu    )
+    call Add_point( 'LWD',  'Downward long-wave radiation',  'W m-2',   tprofiler%lwd    )
+    call Add_point( 'LWU',  'Upward long-wave radiation',    'W m-2',   tprofiler%lwu    )
+  end if
+  call Add_point( 'LEI',    'Solid Latent heat flux',        'W m-2',   tprofiler%lei    )
+end if
+
+call Add_point( 'IWV', 'Integrated Water Vapour',   'kg m-2', tprofiler%iwv )
+call Add_point( 'ZTD', 'Zenith Tropospheric Delay', 'm',      tprofiler%ztd )
+call Add_point( 'ZWD', 'Zenith Wet Delay',          'm',      tprofiler%zwd )
+call Add_point( 'ZHD', 'Zenith Hydrostatic Delay',  'm',      tprofiler%zhd )
+
+Allocate( tzfields( jproc ) )
+
+tzfields(:)%cmnhname  = ctitle(1 : jproc)
+tzfields(:)%cstdname  = ''
+tzfields(:)%clongname = ctitle(1 : jproc)
+tzfields(:)%cunits    = cunit(1 : jproc)
+tzfields(:)%ccomment  = ccomment(1 : jproc)
+tzfields(:)%ngrid     = 0
+tzfields(:)%ntype     = TYPEREAL
+tzfields(:)%ndims     = 2
+tzfields(:)%ndimlist(1) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(2) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(3) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(4) = NMNHDIM_PROFILER_TIME
+tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(6) = NMNHDIM_PROFILER_PROC
+
+tzbudiachro%lleveluse(NLVL_CATEGORY)    = .true.
+tzbudiachro%clevels  (NLVL_CATEGORY)    = 'Profilers'
+tzbudiachro%ccomments(NLVL_CATEGORY)    = 'Level for the different vertical profilers'
+
+tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
+tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
+tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
+
+tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
+tzbudiachro%clevels  (NLVL_GROUP)       = ygroup
+tzbudiachro%ccomments(NLVL_GROUP)       = 'Data at position of profiler ' // Trim( ygroup )
+
+tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
+tzbudiachro%clevels  (NLVL_SHAPE)       = 'Point'
+tzbudiachro%ccomments(NLVL_SHAPE)       = 'Values at position of profiler ' // Trim( ygroup )
+
+tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .false.
+tzbudiachro%clevels  (NLVL_TIMEAVG)     = 'Not_time_averaged'
+tzbudiachro%ccomments(NLVL_TIMEAVG)     = 'Values are not time averaged'
+
+tzbudiachro%lleveluse(NLVL_NORM)        = .false.
+tzbudiachro%clevels  (NLVL_NORM)        = 'Not_normalized'
+tzbudiachro%ccomments(NLVL_NORM)        = 'Values are not normalized'
+
+tzbudiachro%lleveluse(NLVL_MASK)        = .false.
+tzbudiachro%clevels  (NLVL_MASK)        = ''
+tzbudiachro%ccomments(NLVL_MASK)        = ''
+
+tzbudiachro%lmobile    = .false.
+!Compression does not make sense here
+!Keep these values for backward compatibility of LFI files
+tzbudiachro%licompress = .true.
+tzbudiachro%ljcompress = .true.
+tzbudiachro%lkcompress = .false.
+tzbudiachro%ltcompress = .false.
+tzbudiachro%lnorm      = .false.
+!Horizontal boundaries in physical domain does not make sense here (but flyer position does)
+!These values are not written in the netCDF files
+!These values are written in the LFI files. They are kept for backward compatibility (and not set to default values)
+tzbudiachro%nil        = 1
+tzbudiachro%nih        = 1
+tzbudiachro%njl        = 1
+tzbudiachro%njh        = 1
+tzbudiachro%nkl        = 1
+tzbudiachro%nkh        = 1
+
+call Write_diachro( tpdiafile, tzbudiachro, tzfields, tprofiler%tpdates, xwork6(:,:,:,:,:,:jproc) )
+
+Deallocate( tzfields )
+
+
+!----------------------------------------------------------------------------
+!Treat position
+
+jproc = 0
+
+JPROC = JPROC + 1
+CTITLE   (JPROC) = 'LON'
+CUNIT    (JPROC) = 'degree'
+CCOMMENT (JPROC) = 'Longitude'
+XWORK6 (1,1,1,:,1,JPROC) = TPROFILER%LON(KI)
+
+JPROC = JPROC + 1
+CTITLE   (JPROC) = 'LAT'
+CUNIT    (JPROC) = 'degree'
+CCOMMENT (JPROC) = 'Latitude'
+XWORK6 (1,1,1,:,1,JPROC) = TPROFILER%LAT(KI)
+
+Allocate( tzfields( jproc ) )
+
+tzfields(:)%cmnhname  = ctitle(1 : jproc)
+tzfields(:)%cstdname  = ''
+tzfields(:)%clongname = ctitle(1 : jproc)
+tzfields(:)%cunits    = cunit(1 : jproc)
+tzfields(:)%ccomment  = ccomment(1 : jproc)
+tzfields(:)%ngrid     = 0
+tzfields(:)%ntype     = TYPEREAL
+tzfields(:)%ndims     = 1
+tzfields(:)%ndimlist(1) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(2) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(3) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(4) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(5) = NMNHDIM_UNUSED
+tzfields(:)%ndimlist(6) = NMNHDIM_PROFILER_PROC
+
+call Write_diachro( tpdiafile, tzbudiachro, tzfields, tprofiler%tpdates, xwork6(:,:,:,:,:,:jproc) )
+
+
+!Necessary because global variables (private inside module)
+Deallocate( xwork6  )
+Deallocate (ccomment)
+Deallocate (ctitle  )
+Deallocate (cunit   )
+
+
+contains
+
+
+subroutine Add_profile( htitle, hcomment, hunits, pfield )
+
+use mode_msg
+
+character(len=*),       intent(in) :: htitle
+character(len=*),       intent(in) :: hcomment
+character(len=*),       intent(in) :: hunits
+real, dimension(:,:,:), intent(in) :: pfield
+
+integer :: jk
+
+jproc = jproc + 1
+
+if ( jproc > iproc ) call Print_msg( NVERB_FATAL, 'IO', 'Add_profile', 'more profiles than expected' )
+
+ctitle(jproc)   = Trim( htitle)
+ccomment(jproc) = Trim( hcomment )
+cunit(jproc)    = Trim( hunits )
+
+do jk = 1, iku
+  xwork6(1, 1, jk, :, 1, jproc) = pfield(:, jk, ki)
+end do
+
+end subroutine Add_profile
+
+
+subroutine Add_point( htitle, hcomment, hunits, pfield )
+
+use mode_msg
+
+character(len=*),     intent(in) :: htitle
+character(len=*),     intent(in) :: hcomment
+character(len=*),     intent(in) :: hunits
+real, dimension(:,:), intent(in) :: pfield
+
+integer :: jk
+
+jproc = jproc + 1
+
+if ( jproc > iproc ) call Print_msg( NVERB_FATAL, 'IO', 'Add_profile', 'more profiles than expected' )
+
+ctitle(jproc)   = Trim( htitle)
+ccomment(jproc) = Trim( hcomment )
+cunit(jproc)    = Trim( hunits )
+
+xwork6(1, 1, 1, :, 1, jproc) = pfield(:, ki)
+
+end subroutine Add_point
+
 END SUBROUTINE PROFILER_DIACHRO_n
-!----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
-!
-END SUBROUTINE WRITE_PROFILER_n
+
+END MODULE MODE_WRITE_PROFILER_n

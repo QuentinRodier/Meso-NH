@@ -3046,9 +3046,8 @@ IDX = IDX+1
 !
 IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
 TFIELDLIST(IDX)%CMNHNAME   = 'ACPRR'
-TFIELDLIST(IDX)%CSTDNAME   = 'rainfall_amount'
+TFIELDLIST(IDX)%CSTDNAME   = 'thickness_of_rainfall_amount'
 TFIELDLIST(IDX)%CLONGNAME  = 'ACPRR'
-!PW: TODO: CF-convention prefers 'kg m-2'
 TFIELDLIST(IDX)%CUNITS     = 'm'
 TFIELDLIST(IDX)%CDIR       = 'XY'
 TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_ACcumulated Precipitation Rain Rate'

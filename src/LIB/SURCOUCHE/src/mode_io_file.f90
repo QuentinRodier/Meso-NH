@@ -651,13 +651,13 @@ IF (TPFILE%LMASTER .AND. CPROGRAM/='LFICDF') THEN
     CASE(1)
       YCPIO='MESONH'
     CASE(2)
-      CALL PRINT_MSG(NVERB_INFO,'IO','IO_Transfer_list_addto','file '//TRIM(YFILEM)//' not transferred')
+      CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Transfer_list_addto','file '//TRIM(YFILEM)//' not transferred')
   END SELECT
 
   if (TPFILE%NLFITYPE==0 .or. TPFILE%NLFITYPE==1) then
     ICPT=ICPT+1
     WRITE (YCOMMAND,'(A," ",A," ",A," >> OUTPUT_TRANSFER",I3.3,"  2>&1 &")') YTRANS,YCPIO,TRIM(YFILEM),ICPT
-    CALL PRINT_MSG(NVERB_INFO,'IO','IO_Transfer_list_addto','YCOMMAND='//TRIM(YCOMMAND))
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_Transfer_list_addto','YCOMMAND='//TRIM(YCOMMAND))
     CALL SYSTEM_MNH(YCOMMAND)
   end if
 END IF

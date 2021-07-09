@@ -143,8 +143,9 @@ subroutine Write_diachro_lfi( tpdiafile, tpbudiachro, tpfields, tpdates, pvar, t
 
 use modd_aircraft_balloon, only: flyer
 use modd_budget,         only: NLVL_CATEGORY, NLVL_GROUP, NLVL_SHAPE, nbumask, nbutshift, nbusubwrite, tbudiachrometadata
-use modd_field,          only: NMNHDIM_ONE, NMNHDIM_UNKNOWN, NMNHDIM_FLYER_TIME, NMNHDIM_NOTLISTED, NMNHDIM_UNUSED, &
-                               TYPECHAR, TYPEINT, TYPEREAL,                                                         &
+use modd_field,          only: NMNHDIM_ONE, NMNHDIM_UNKNOWN, NMNHDIM_BUDGET_LES_MASK, &
+                               NMNHDIM_FLYER_TIME, NMNHDIM_NOTLISTED, NMNHDIM_UNUSED, &
+                               TYPECHAR, TYPEINT, TYPEREAL,                           &
                                tfield_metadata_base, tfielddata
 use modd_io,             only: tfiledata
 use modd_les,            only: nles_current_iinf, nles_current_isup, nles_current_jinf, nles_current_jsup, &
@@ -182,6 +183,7 @@ character(len=LFIUNITLGT),    dimension(:), allocatable :: yunits    !Used to re
 character(len=LFICOMMENTLGT), dimension(:), allocatable :: ycomments !Used to respect LFI fileformat
 INTEGER   ::   ILENG, ILENTITRE, ILENUNITE, ILENCOMMENT
 integer   :: iil, iih, ijl, ijh, ikl, ikh
+integer   :: idx
 INTEGER   ::   II, IJ, IK, IT, IN, IP, J, JJ
 INTEGER   ::   INTRAJT, IKTRAJX, IKTRAJY, IKTRAJZ
 INTEGER   ::   ITTRAJX, ITTRAJY, ITTRAJZ
@@ -255,6 +257,18 @@ else if ( tpbudiachro%clevels(NLVL_GROUP) == 'RhodJ' ) then
 else if ( tpbudiachro%nsv > 0 ) then
   Allocate( character(len=9) :: ygroup )
   Write( ygroup, '( "SV", i3.3, i4.4 )' ) tpbudiachro%nsv, nbutshift
+else if ( tpbudiachro%clevels(NLVL_CATEGORY) == 'LES_budgets' .and. tpbudiachro%clevels(NLVL_GROUP)(1:3)/='BU_' ) then
+  if ( tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_LES_MASK ) then
+    !Remove the name of the mask (different for each 'process') to get the common name for the group
+    idx = Index( tpfields(1)%cmnhname, ' ' )
+    if ( idx > 0 ) then
+      ygroup = tpfields(1)%cmnhname(1:idx- 1)
+    else
+      ygroup = Trim( tpfields(1)%cmnhname )
+    end if
+  else
+    ygroup = Trim( tpfields(1)%cmnhname )
+  end if
 else
   ygroup = Trim( tpbudiachro%clevels(NLVL_GROUP) )
 end if
@@ -285,7 +299,7 @@ if (       Trim( tpbudiachro%clevels(NLVL_CATEGORY) ) == 'LES_budgets' &
 end if
 
 if (       Trim( tpbudiachro%clevels(NLVL_CATEGORY) ) == 'LES_budgets' &
-     .and. Trim( tpbudiachro%clevels(NLVL_SHAPE) )    == 'Spectrum'    ) then
+     .and. Trim( tpbudiachro%clevels(NLVL_GROUP) )    == 'Spectrum'    ) then
   if ( tpbudiachro%ltcompress ) then
     ygroup = 'T_' // Trim( ygroup )
     !Limit to 10 characters (backward compatibility again...)
@@ -1085,7 +1099,7 @@ select case ( idims )
       if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
                                                    'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
       call Diachro_one_field_write_nc4( tzfile, tpbudiachro, tpfields(1), pvar, [ 3 ], gsplit, gdistributed )
-    else if ( tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS ) then
+    else if ( tpfields(1)%ndimlist(6) == NMNHDIM_BUDGET_NGROUPS .or. tpfields(1)%ndimlist(6) == NMNHDIM_PROFILER_PROC ) then
       do ji = 1, Size( pvar, 6 )
         !Remark: [ integer:: ] is a constructor for a zero-size array of integers, [] is not allowed (type can not be determined)
         call Diachro_one_field_write_nc4( tzfile, tpbudiachro, tpfields(ji), pvar(:,:,:,:,:,ji:ji), [ integer:: ], &
@@ -1174,6 +1188,13 @@ select case ( idims )
         end if
       end if
 
+      ! Loop on the processes
+      do ji = 1, Size( pvar, 6 )
+        call Diachro_one_field_write_nc4( tzfile, tpbudiachro, tpfields(ji), pvar(:,:,:,:,:,ji:ji), [ 4 ], gsplit, gdistributed )
+      end do
+    else if (  tpfields(1)%ndimlist(4) == NMNHDIM_PROFILER_TIME &
+         .and. tpfields(1)%ndimlist(6) == NMNHDIM_PROFILER_PROC ) then
+      !Correspond to WRITE_PROFILER_n
       ! Loop on the processes
       do ji = 1, Size( pvar, 6 )
         call Diachro_one_field_write_nc4( tzfile, tpbudiachro, tpfields(ji), pvar(:,:,:,:,:,ji:ji), [ 4 ], gsplit, gdistributed )
@@ -1270,6 +1291,13 @@ select case ( idims )
       do ji = 1, Size( pvar, 6 )
         call Diachro_one_field_write_nc4( tzfile, tpbudiachro, tpfields(ji), pvar(:,:,:,:,:,ji:ji), [ 3, 4 ], gsplit, gdistributed )
       end do
+    else if (       tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL      &
+       .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
+               .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &
+              .and. tpfields(1)%ndimlist(5) == NMNHDIM_BUDGET_LES_PDF      ) then
+      if ( Size( tpfields ) /= 1 ) call Print_msg( NVERB_FATAL, 'IO', 'Write_diachro_nc4', &
+                                                   'wrong size of tpfields (variable '//trim(tpfields(1)%cmnhname)//')' )
+      call Diachro_one_field_write_nc4( tzfile, tpbudiachro, tpfields(1), pvar, [ 3, 4, 5 ], gsplit, gdistributed )
     else if (              tpfields(1)%ndimlist(3) == NMNHDIM_BUDGET_LES_LEVEL      &
               .and. (      tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_TIME       &
                       .or. tpfields(1)%ndimlist(4) == NMNHDIM_BUDGET_LES_AVG_TIME ) &

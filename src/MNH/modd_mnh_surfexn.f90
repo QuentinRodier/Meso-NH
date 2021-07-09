@@ -1,3 +1,13 @@
+!MNH_LIC Copyright 2016-2021 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+!MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
+! Author:
+!  ???
+! Modifications:
+!  P. Wautelet 06/07/2021: secure SURFEX_DEALLO_LIST (possibility to call it even if YSURF_LIST not allocated)
+!-----------------------------------------------------------------
 MODULE MODD_MNH_SURFEX_n
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -57,12 +67,15 @@ INTEGER :: J
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK("MODD_MNH_SURFEX_n:SURFEX_DEALLO_LIST",0,ZHOOK_HANDLE)
 !
-DO J=1,SIZE(YSURF_LIST)
-  CALL SURFEX_DEALLO(YSURF_LIST(J))
-ENDDO
+IF ( ASSOCIATED( YSURF_CUR ) ) NULLIFY(YSURF_CUR)
 !
-IF (ASSOCIATED(YSURF_CUR)) NULLIFY(YSURF_CUR)
-IF (ALLOCATED(YSURF_LIST)) DEALLOCATE(YSURF_LIST)
+IF ( ALLOCATED( YSURF_LIST ) ) THEN
+  DO J = 1, SIZE( YSURF_LIST )
+    CALL SURFEX_DEALLO( YSURF_LIST(J) )
+  ENDDO
+  !
+  DEALLOCATE(YSURF_LIST)
+END IF
 !
 IF (LHOOK) CALL DR_HOOK("MODD_MNH_SURFEX_n:SURFEX_DEALLO_LIST",1,ZHOOK_HANDLE)
 !

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2005-2019 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2005-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -42,14 +42,14 @@
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !  P. Wautelet 07/02/2019: force TYPE to a known value for IO_File_add2list
 !  P. Wautelet 14/02/2019: remove CLUOUT/CLUOUT0 and associated variables
-!!
+!  P. Wautelet 06/07/2021: use FINALIZE_MNH
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
 !            -----------
 !
 USE MODD_CONF,   ONLY : CPROGRAM, L1D, L2D, LPACK
-USE MODD_IO,     ONLY:  NIO_VERB,NVERB_DEBUG,TFILE_OUTPUTLISTING,TFILEDATA
+USE MODD_IO,               only:  TFILE_OUTPUTLISTING, TFILEDATA
 USE MODD_LUNIT,  ONLY : TLUOUT0, TOUTDATAFILE
 USE MODD_PARAMETERS, ONLY : XUNDEF, NUNDEF, JPVEXT, JPHEXT, JPMODELMAX
 USE MODD_PARAM_n,     ONLY : CSURF
@@ -57,12 +57,13 @@ USE MODD_DIM_n,       ONLY : NIMAX, NJMAX
 USE MODD_CONF_n,   ONLY : CSTORAGE_TYPE
 use modd_precision, only: LFIINT
 !
+USE MODE_FINALIZE_MNH,     only: FINALIZE_MNH
 USE MODE_POS
 USE MODE_IO,               only: IO_Config_set, IO_Init
 USE MODE_IO_FIELD_READ,    only: IO_Field_read
 USE MODE_IO_FIELD_WRITE,   only: IO_Field_write, IO_Header_write
 USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
-USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list, IO_Filelist_print
+USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list
 USE MODE_ll
 USE MODE_MSG
 USE MODE_MODELN_HANDLER
@@ -258,18 +259,12 @@ CPGDFILE = YZOOMFILE
 !
 CALL IO_File_close(TZPGDFILE)
 !
-IF(NIO_VERB>=NVERB_DEBUG) CALL IO_Filelist_print()
-!
 WRITE(ILUOUT0,*)
 WRITE(ILUOUT0,*) '***************************'
 WRITE(ILUOUT0,*) '* ZOOM_PGD ends correctly *'
 WRITE(ILUOUT0,*) '***************************'
 !
-CALL IO_File_close(TLUOUT0)
-!
-CALL END_PARA_ll(IINFO_ll)
-
-IF (CSURF=='EXTE') CALL SURFEX_DEALLO_LIST
+CALL FINALIZE_MNH()
 !
 !-------------------------------------------------------------------------------
 !

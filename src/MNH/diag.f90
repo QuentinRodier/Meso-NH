@@ -93,6 +93,7 @@
 !  P. Wautelet 28/03/2019: use MNHTIME for time measurement variables
 !  P. Wautelet 26/07/2019: bug correction: deallocate of zsea and ztown done too early
 !  P. Wautelet 13/09/2019: budget: simplify and modernize date/time management
+!  P. Wautelet 06/07/2021: use FINALIZE_MNH
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -141,10 +142,11 @@ USE MODD_TURB_n
 USE MODD_VAR_ll
 !
 USE MODE_DATETIME
+USE MODE_FINALIZE_MNH,     only: FINALIZE_MNH
 USE MODE_IO_FILE,          only: IO_File_close, IO_File_open
 USE MODE_IO_FIELD_WRITE,   only: IO_Header_write
 USE MODE_IO,               only: IO_Config_set, IO_Init
-USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list,IO_Filelist_print
+USE MODE_IO_MANAGE_STRUCT, only: IO_File_add2list
 USE MODE_ll
 #ifdef MNH_IOLFI
 use mode_menu_diachro,     only: MENU_DIACHRO
@@ -203,7 +205,6 @@ LOGICAL:: GCLOUD_ONLY          ! conditionnal radiation computations for
                                 !      the only cloudy columns
 !
 INTEGER :: IIU, IJU, IKU
-INTEGER :: IINFO_ll               ! return code for _ll routines 
 REAL, DIMENSION(:,:),ALLOCATABLE          :: ZSEA,ZTOWN
 REAL, DIMENSION(:,:,:,:),ALLOCATABLE          :: ZWETDEPAER
 !
@@ -808,8 +809,6 @@ ZTIME2=ZTIME2-ZTIME0
 !WRITE(ILUOUT0,*) '|---------------------| -------------------|-------------------|'
 !
 !
-IF(NIO_VERB>=NVERB_DEBUG) CALL IO_Filelist_print()
-!
 WRITE(ILUOUT0,*) ' '
 WRITE(ILUOUT0,*) '***************************** **************'
 WRITE(ILUOUT0,*) '*            EXIT  DIAG CORRECTLY          *'
@@ -817,13 +816,12 @@ WRITE(ILUOUT0,*) '**************************** ***************'
 !WRITE(ILUOUT0,*) '  (see time analysis in ',TRIM(TLUOUT0%CNAME),' )'
 WRITE(ILUOUT0,*) ' '
 !
-CALL IO_File_close(TLUOUT0)
 !-------------------------------------------------------------------------------
 !
 !*      10.    FINALIZE THE PARALLEL SESSION
 !              -----------------------------
 !
-CALL END_PARA_ll(IINFO_ll)
+CALL FINALIZE_MNH()
 !
 !-------------------------------------------------------------------------------
 END PROGRAM DIAG

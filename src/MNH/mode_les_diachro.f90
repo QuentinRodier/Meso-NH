@@ -654,15 +654,17 @@ end if
 
 end function Les_time_avg_1pt
 
-!#######################################################################
-subroutine Les_diachro_1D( tpdiafile, tpfield, odoavg, odonorm, pfield )
-!#######################################################################
+!##############################################################################################
+subroutine Les_diachro_1D( tpdiafile, tpfield, hgroup, hgroupcomment, odoavg, odonorm, pfield )
+!##############################################################################################
 
 use modd_field, only: NMNHDIM_BUDGET_LES_TIME, NMNHDIM_UNUSED, tfield_metadata_base
 use modd_io,    only: tfiledata
 
 type(tfiledata),                       intent(in) :: tpdiafile  ! File to write
 type(tfield_metadata_base),            intent(in) :: tpfield    ! Metadata of field
+character(len=*),                      intent(in) :: hgroup     ! Group of the field
+character(len=*),                      intent(in) :: hgroupcomment
 logical,                               intent(in) :: odoavg     ! Compute and store time average
 logical,                               intent(in) :: odonorm    ! Compute and store normalized field
 real,                    dimension(:), intent(in) :: pfield     ! Data array
@@ -687,7 +689,7 @@ if ( tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_TIME ) then
   tzfield%ndimlist(1) = NMNHDIM_UNUSED
   tzfield%ndimlist(3) = NMNHDIM_UNUSED
   tzfield%ndimlist(4) = NMNHDIM_UNUSED
-  call Les_diachro_common( tpdiafile, tzfield, reshape( pfield, [ 1, size( pfield, 1 ), 1, 1 ] ), &
+  call Les_diachro_common( tpdiafile, tzfield, hgroup, hgroupcomment, reshape( pfield, [ 1, size( pfield, 1 ), 1, 1 ] ), &
                            odoavg, odonorm )
 else
   call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_1D', &
@@ -696,9 +698,9 @@ end if
 
 end subroutine Les_diachro_1D
 
-!#######################################################################
-subroutine Les_diachro_2D( tpdiafile, tpfield, odoavg, odonorm, pfield )
-!#######################################################################
+!##############################################################################################
+subroutine Les_diachro_2D( tpdiafile, tpfield, hgroup, hgroupcomment, odoavg, odonorm, pfield )
+!##############################################################################################
 
 use modd_field, only: NMNHDIM_BUDGET_LES_LEVEL, NMNHDIM_BUDGET_LES_SV, NMNHDIM_BUDGET_LES_TIME, NMNHDIM_UNUSED, &
                       tfield_metadata_base
@@ -706,6 +708,8 @@ use modd_io,    only: tfiledata
 
 type(tfiledata),                         intent(in) :: tpdiafile  ! File to write
 type(tfield_metadata_base),              intent(in) :: tpfield    ! Metadata of field
+character(len=*),                        intent(in) :: hgroup     ! Group of the field
+character(len=*),                        intent(in) :: hgroupcomment
 logical,                                 intent(in) :: odoavg     ! Compute and store time average
 logical,                                 intent(in) :: odonorm    ! Compute and store normalized field
 real,                    dimension(:,:), intent(in) :: pfield     ! Data array
@@ -729,7 +733,7 @@ if (       tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL &
      .and. tzfield%ndimlist(2) == NMNHDIM_BUDGET_LES_TIME  ) then
   tzfield%ndimlist(3) = NMNHDIM_UNUSED
   tzfield%ndimlist(4) = NMNHDIM_UNUSED
-  call Les_diachro_common( tpdiafile, tzfield,                                                &
+  call Les_diachro_common( tpdiafile, tzfield, hgroup, hgroupcomment,                         &
                            reshape( pfield, [ size( pfield, 1 ), size( pfield, 2 ), 1, 1 ] ), &
                            odoavg, odonorm )
 else if (       tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_TIME &
@@ -738,7 +742,7 @@ else if (       tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_TIME &
   tzfield%ndimlist(2) = tzfield%ndimlist(1)
   tzfield%ndimlist(1) = NMNHDIM_UNUSED
   tzfield%ndimlist(3) = NMNHDIM_UNUSED
-  call Les_diachro_common( tpdiafile, tzfield,                                                &
+  call Les_diachro_common( tpdiafile, tzfield, hgroup, hgroupcomment,                         &
                            reshape( pfield, [ 1, size( pfield, 1 ), 1, size( pfield, 2 ) ] ), &
                            odoavg, odonorm )
 else
@@ -749,9 +753,10 @@ end if
 
 end subroutine Les_diachro_2D
 
-!##########################################################################################
-subroutine Les_diachro_3D( tpdiafile, tpfield, odoavg, odonorm, pfield, hsuffixes, hmasks )
-!##########################################################################################
+!###############################################################################################
+subroutine Les_diachro_3D( tpdiafile, tpfield, hgroup, hgroupcomment, odoavg, odonorm, pfield, &
+                           hfieldnames, hfieldcomments, hmasks )
+!###############################################################################################
 
 use modd_field, only: NMNHDIM_BUDGET_LES_LEVEL, NMNHDIM_BUDGET_LES_MASK, NMNHDIM_BUDGET_LES_SV, &
                       NMNHDIM_BUDGET_LES_TIME,  NMNHDIM_BUDGET_TERM,     NMNHDIM_UNUSED,        &
@@ -760,10 +765,13 @@ use modd_io,    only: tfiledata
 
 type(tfiledata),                           intent(in) :: tpdiafile  ! File to write
 type(tfield_metadata_base),                intent(in) :: tpfield    ! Metadata of field
+character(len=*),                          intent(in) :: hgroup     ! Group of the field
+character(len=*),                          intent(in) :: hgroupcomment
 logical,                                   intent(in) :: odoavg     ! Compute and store time average
 logical,                                   intent(in) :: odonorm    ! Compute and store normalized field
 real,                    dimension(:,:,:), intent(in) :: pfield     ! Data array
-character(len=*),        dimension(:),     optional, intent(in) :: hsuffixes
+character(len=*),        dimension(:),     optional, intent(in) :: hfieldnames
+character(len=*),        dimension(:),     optional, intent(in) :: hfieldcomments
 character(len=*),        dimension(:),     optional, intent(in) :: hmasks
 
 type(tfield_metadata_base) :: tzfield
@@ -792,29 +800,40 @@ if (       tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL &
     call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_3D', 'wrong size for hmasks (' // Trim( tzfield%cmnhname ) // ')' )
 
   tzfield%ndimlist(4) = NMNHDIM_UNUSED
-  call Les_diachro_common( tpdiafile, tzfield,                                                                &
+  call Les_diachro_common( tpdiafile, tzfield, hgroup, hgroupcomment,                                         &
                            reshape( pfield, [ size( pfield, 1 ), size( pfield, 2 ), size( pfield, 3 ), 1 ] ), &
                            odoavg, odonorm, hmasks = hmasks )
 else if (       tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL &
           .and. tzfield%ndimlist(2) == NMNHDIM_BUDGET_LES_TIME  &
           .and. tzfield%ndimlist(3) == NMNHDIM_BUDGET_TERM      ) then
-  if ( .not. Present( hsuffixes ) ) &
+  if ( .not. Present( hfieldnames ) ) &
     call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_3D', &
-                    'optional dummy argument hsuffixes is needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
+                    'optional dummy argument hfieldnames is needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
 
-  if ( Size( hsuffixes ) /= Size( pfield, 3) ) &
-    call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_3D', 'wrong size for hsuffixes (' // Trim( tzfield%cmnhname ) // ')' )
+  if ( .not. Present( hfieldcomments ) ) &
+    call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_3D', &
+                    'optional dummy argument hfieldcomments is needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
+
+  if ( Size( hfieldnames ) /= Size( pfield, 3) ) &
+    call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_3D', 'wrong size for hfieldnames (' // Trim( tzfield%cmnhname ) // ')' )
+
+  if ( Size( hfieldcomments ) /= Size( pfield, 3) ) &
+    call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_3D', 'wrong size for hfieldcomments (' // Trim( tzfield%cmnhname ) // ')' )
 
   tzfield%ndimlist(4) = NMNHDIM_UNUSED
-  call Les_diachro_common( tpdiafile, tzfield,                                                                &
+  call Les_diachro_common( tpdiafile, tzfield, hgroup, hgroupcomment,                                         &
                            reshape( pfield, [ size( pfield, 1 ), size( pfield, 2 ), size( pfield, 3 ), 1 ] ), &
-                           odoavg, odonorm, hsuffixes = hsuffixes )
+                           odoavg, odonorm, hfieldnames = hfieldnames, hfieldcomments = hfieldcomments )
 else if (       tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL &
           .and. tzfield%ndimlist(2) == NMNHDIM_BUDGET_LES_TIME  &
           .and. tzfield%ndimlist(3) == NMNHDIM_BUDGET_LES_SV    ) then
-  if ( Present( hsuffixes ) ) &
+  if ( Present( hfieldnames ) ) &
     call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_3D', &
-                    'optional dummy argument hsuffixes is not needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
+                    'optional dummy argument hfieldnames is not needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
+
+  if ( Present( hfieldcomments ) ) &
+    call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_3D', &
+                    'optional dummy argument hfieldcomments is not needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
 
   if ( Present( hmasks ) ) &
     call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_3D', &
@@ -822,7 +841,7 @@ else if (       tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL &
 
   tzfield%ndimlist(4) = tzfield%ndimlist(3)
   tzfield%ndimlist(3) = NMNHDIM_UNUSED
-  call Les_diachro_common( tpdiafile, tzfield,                                                                &
+  call Les_diachro_common( tpdiafile, tzfield, hgroup, hgroupcomment,                                         &
                            reshape( pfield, [ size( pfield, 1 ), size( pfield, 2 ), 1, size( pfield, 3 ) ] ), &
                            odoavg, odonorm )
 else
@@ -832,21 +851,25 @@ end if
 
 end subroutine Les_diachro_3D
 
-!##########################################################################################
-subroutine Les_diachro_4D( tpdiafile, tpfield, odoavg, odonorm, pfield, hsuffixes, hmasks )
-!##########################################################################################
+!###############################################################################################
+subroutine Les_diachro_4D( tpdiafile, tpfield, hgroup, hgroupcomment, odoavg, odonorm, pfield, &
+                           hfieldnames, hfieldcomments, hmasks )
+!###############################################################################################
 
-use modd_field, only: NMNHDIM_BUDGET_LES_LEVEL, NMNHDIM_BUDGET_LES_MASK, NMNHDIM_BUDGET_LES_SV, &
-                      NMNHDIM_BUDGET_LES_TIME,  NMNHDIM_BUDGET_TERM,     NMNHDIM_UNUSED,        &
+use modd_field, only: NMNHDIM_BUDGET_LES_LEVEL, NMNHDIM_BUDGET_LES_MASK, NMNHDIM_BUDGET_LES_PDF,  NMNHDIM_BUDGET_LES_SV, &
+                      NMNHDIM_BUDGET_LES_TIME,  NMNHDIM_BUDGET_TERM,     NMNHDIM_UNUSED,                                 &
                       tfield_metadata_base
 use modd_io,    only: tfiledata
 
 type(tfiledata),                             intent(in) :: tpdiafile  ! File to write
-type(tfield_metadata_base), intent(in) :: tpfield ! Metadata of field
+type(tfield_metadata_base),                  intent(in) :: tpfield ! Metadata of field
+character(len=*),                            intent(in) :: hgroup     ! Group of the field
+character(len=*),                            intent(in) :: hgroupcomment
 logical,                                     intent(in) :: odoavg     ! Compute and store time average
 logical,                                     intent(in) :: odonorm    ! Compute and store normalized field
 real,                    dimension(:,:,:,:), intent(in) :: pfield     ! Data array
-character(len=*),        dimension(:),     optional, intent(in) :: hsuffixes
+character(len=*),        dimension(:),     optional, intent(in) :: hfieldnames
+character(len=*),        dimension(:),     optional, intent(in) :: hfieldcomments
 character(len=*),        dimension(:),     optional, intent(in) :: hmasks
 
 type(tfield_metadata_base) :: tzfield
@@ -872,32 +895,72 @@ if (       tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL&
     call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
                     'optional dummy argument hmasks is needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
 
+  if ( Present( hfieldnames ) ) &
+    call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
+                    'optional dummy argument hfieldnames is not needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
+
+  if ( Present( hfieldcomments ) ) &
+    call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
+                    'optional dummy argument hfieldcomments is not needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
+
   if ( Size( hmasks ) /= Size( pfield, 3) ) &
     call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_4D', 'wrong size for hmasks (' // Trim( tzfield%cmnhname ) // ')' )
 
-  call Les_diachro_common( tpdiafile, tzfield, pfield, odoavg, odonorm, hmasks = hmasks )
 else if (       tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL &
           .and. tzfield%ndimlist(2) == NMNHDIM_BUDGET_LES_TIME  &
           .and. tzfield%ndimlist(3) == NMNHDIM_BUDGET_TERM      &
           .and. tzfield%ndimlist(4) == NMNHDIM_BUDGET_LES_SV    ) then
-  if ( .not. Present( hsuffixes ) ) &
+  if ( .not. Present( hfieldnames ) ) &
     call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
-                    'optional dummy argument hsuffixes is needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
+                    'optional dummy argument hfieldnames is needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
 
-  if ( Size( hsuffixes ) /= Size( pfield, 3) ) &
-    call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_4D', 'wrong size for hsuffixes (' // Trim( tzfield%cmnhname ) // ')' )
+  if ( .not. Present( hfieldcomments ) ) &
+    call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
+                    'optional dummy argument hfieldcomments is needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
 
-  call Les_diachro_common( tpdiafile, tzfield, pfield, odoavg, odonorm, hsuffixes= hsuffixes )
+  if ( Present( hmasks ) ) &
+    call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
+                    'optional dummy argument hmasks is not needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
+
+  if ( Size( hfieldnames ) /= Size( pfield, 3) ) &
+    call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_4D', 'wrong size for hfieldnames (' // Trim( tzfield%cmnhname ) // ')' )
+
+  if ( Size( hfieldcomments ) /= Size( pfield, 3) ) &
+    call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_4D', 'wrong size for hfieldcomments (' // Trim( tzfield%cmnhname ) // ')' )
+
+else if (       tzfield%ndimlist(1) == NMNHDIM_BUDGET_LES_LEVEL &
+          .and. tzfield%ndimlist(2) == NMNHDIM_BUDGET_LES_TIME  &
+          .and. tzfield%ndimlist(3) == NMNHDIM_BUDGET_LES_MASK      &
+          .and. tzfield%ndimlist(4) == NMNHDIM_BUDGET_LES_PDF   ) then
+  if ( .not. Present( hmasks ) ) &
+    call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
+                    'optional dummy argument hmasks is needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
+
+  if ( Present( hfieldnames ) ) &
+    call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
+                    'optional dummy argument hfieldnames is not needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
+
+  if ( Present( hfieldcomments ) ) &
+    call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
+                    'optional dummy argument hfieldcomments is not needed for tpfield (' // Trim( tzfield%cmnhname ) // ')' )
+
+  if ( Size( hmasks ) /= Size( pfield, 3) ) &
+    call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_4D', 'wrong size for hmasks (' // Trim( tzfield%cmnhname ) // ')' )
+
 else
   call Print_msg( NVERB_ERROR, 'IO', 'Les_diachro_4D', &
                   'ndimlist configuration not yet implemented for ' // Trim( tzfield%cmnhname ) )
 end if
 
+call Les_diachro_common( tpdiafile, tzfield, hgroup, hgroupcomment, pfield, odoavg, odonorm,         &
+                         hfieldnames = hfieldnames, hfieldcomments = hfieldcomments, hmasks = hmasks )
+
 end subroutine Les_diachro_4D
 
-!##############################################################################################
-subroutine Les_diachro_common( tpdiafile, tpfield, pfield, odoavg, odonorm, hsuffixes, hmasks )
-!##############################################################################################
+!###################################################################################################
+subroutine Les_diachro_common( tpdiafile, tpfield, hgroup, hgroupcomment, pfield, odoavg, odonorm, &
+                               hfieldnames, hfieldcomments, hmasks )
+!###################################################################################################
 
 use modd_field,         only: tfield_metadata_base
 use modd_io,            only: tfiledata
@@ -910,10 +973,13 @@ implicit none
 
 type(tfiledata),                                          intent(in) :: tpdiafile ! File to write
 type(tfield_metadata_base),                               intent(in) :: tpfield
+character(len=*),                                         intent(in) :: hgroup    ! Group of the field
+character(len=*),                                         intent(in) :: hgroupcomment
 real,                       dimension(:,:,:,:),           intent(in) :: pfield    ! Data array
 logical,                                                  intent(in) :: odoavg    ! Compute and store time average
 logical,                                                  intent(in) :: odonorm   ! Compute and store normalized field
-character(len=*),           dimension(:),       optional, intent(in) :: hsuffixes
+character(len=*),           dimension(:),       optional, intent(in) :: hfieldnames
+character(len=*),           dimension(:),       optional, intent(in) :: hfieldcomments
 character(len=*),           dimension(:),       optional, intent(in) :: hmasks
 
 character(len=100),         dimension(:),     allocatable :: ycomment                      ! Comment string
@@ -941,13 +1007,13 @@ ijh = nles_current_jsup
 ikl = nles_levels(1)
 ikh = nles_levels(iles_k)
 
-if ( Present( hsuffixes ) ) then
+if ( Present( hfieldcomments ) ) then
   if ( Present( hmasks ) ) &
-    call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_common', 'hsuffixes and hmasks optional arguments may not be present ' // &
+    call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_common', 'hfieldcomments and hmasks optional arguments may not be present ' // &
                     'at the same time (' // Trim( tpfield%cmnhname ) // ')' )
-  if ( Size( hsuffixes ) /= Size( pfield, 3) ) &
-    call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_common', 'wrong size for hsuffixes (' // Trim( tpfield%cmnhname ) // ')' )
-  ycomment(:) = Trim( tpfield%ccomment(:) ) // ' ' // hsuffixes(:)
+  if ( Size( hfieldcomments ) /= Size( pfield, 3) ) &
+    call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_common', 'wrong size for hfieldcomments (' // Trim( tpfield%cmnhname ) // ')' )
+  ycomment(:) = Trim( tpfield%ccomment(:) ) // ': ' // hfieldcomments(:)
 else if ( Present( hmasks ) ) then
   if ( Size( hmasks ) /= Size( pfield, 3) ) &
     call Print_msg( NVERB_FATAL, 'IO', 'Les_diachro_common', 'wrong size for hmasks (' // Trim( tpfield%cmnhname ) // ')' )
@@ -965,9 +1031,9 @@ if ( odoavg .and. odonorm ) call Les_diachro_common_intern( .true.,  .true. )
 
 contains
 
-!#######################################################################################
+!##################################################
 subroutine Les_diachro_common_intern( oavg, onorm )
-!#######################################################################################
+!##################################################
 
 use modd_field,         only: NMNHDIM_BUDGET_LES_TIME, NMNHDIM_BUDGET_LES_AVG_TIME, NMNHDIM_BUDGET_LES_MASK, &
                               NMNHDIM_BUDGET_LES_SV, NMNHDIM_UNUSED
@@ -988,6 +1054,7 @@ real,            dimension(:,:,:,:),     allocatable :: zfield  ! Normalized fie
 real,            dimension(:,:,:,:,:,:), allocatable :: zwork6  ! Contains physical field
 type(tbudiachrometadata)                             :: tzbudiachro
 type(date_time), dimension(:),           allocatable :: tzdates
+type(tfiledata)                                      :: tzfile
 
 !Reallocate each time necessary because can be reallocated to an other size in Les_time_avg
 Allocate( zfield(Size( pfield, 1 ), Size( pfield, 2 ), Size( pfield, 3 ), Size( pfield, 4 )) )
@@ -1017,8 +1084,9 @@ end if
 iresp = 0
 if ( oavg ) call Les_time_avg_4d( zfield, tzdates, iresp )
 
-if ( Present( hsuffixes ) ) then
-  ytitle(:) = Trim( tpfield%cmnhname ) // '_' // hsuffixes(:)
+if ( Present( hfieldnames ) ) then
+  !ytitle(:) = Trim( tpfield%cmnhname ) // '_' // hfieldnames(:)
+  ytitle(:) = hfieldnames(:)
 else
   ytitle(:) = tpfield%cmnhname
 endif
@@ -1057,9 +1125,9 @@ if ( iresp == 0 .and. any( zfield /= XUNDEF ) ) then
   tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
   tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
 
-  tzbudiachro%lleveluse(NLVL_GROUP)       = .false.
-  tzbudiachro%clevels  (NLVL_GROUP)       = ''
-  tzbudiachro%ccomments(NLVL_GROUP)       = ''
+  tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
+  tzbudiachro%clevels  (NLVL_GROUP)       = Trim( hgroup )
+  tzbudiachro%ccomments(NLVL_GROUP)       = Trim( hgroupcomment )
 
   tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
   tzbudiachro%clevels  (NLVL_SHAPE)       = 'Cartesian'
@@ -1113,19 +1181,41 @@ if ( iresp == 0 .and. any( zfield /= XUNDEF ) ) then
   tzbudiachro%nkh        = ikh
 
   if ( tzfields(1)%ndimlist(6) == NMNHDIM_BUDGET_LES_MASK ) then
-    tzfields(:)%ndimlist(6) = NMNHDIM_UNUSED
+    tzfile = tpdiafile
 
-    ! Loop on the different masks
-    ! Do not provide all tzfields once because they can be stored in different HDF groups (based on masks)
-    do jp = 1, Size( hmasks )
-      tzfields(jp)%clongname = Trim( ytitle(jp) ) // ' (' // Trim( hmasks(jp) ) // ')'
-      tzfields(jp)%ndims     = tzfields(jp)%ndims - 1
+    if ( Trim( tpdiafile%cformat ) == 'LFI' .or. Trim( tpdiafile%cformat ) == 'LFICDF4' ) then
+      !For LFI files, it is necessary to write all the 'processes' (source terms) of the different masks in one pass
+      !to ensure that they are grouped together and not overwritten
+      tzfile%cformat = 'LFI'
 
-      tzbudiachro%clevels(NLVL_MASK) = hmasks(jp)
-      tzbudiachro%ccomments(NLVL_MASK) = ''
+      do jp = 1, Size( hmasks )
+        tzfields(jp)%cmnhname  = Trim( ytitle(jp) ) // ' (' // Trim( hmasks(jp) ) // ')'
+        tzfields(jp)%clongname = Trim( ytitle(jp) ) // ' (' // Trim( hmasks(jp) ) // ')'
+      end do
 
-      call Write_diachro( tpdiafile, tzbudiachro, [ tzfields(jp) ], tzdates, zwork6(:,:,:,:,:,jp:jp) )
-    end do
+      call Write_diachro( tzfile, tzbudiachro, tzfields, tzdates, zwork6 )
+    end if
+
+    if ( Trim( tpdiafile%cformat ) /= 'LFI' ) then
+      tzfile%cformat = 'NETCDF4'
+
+      tzfields(:)%ndimlist(6) = NMNHDIM_UNUSED
+
+      ! Loop on the different masks
+      ! Do not provide all tzfields once because they can be stored in different HDF groups (based on masks)
+      do jp = 1, Size( hmasks )
+        !Keep the following line (about cmnhname, necessary especially if LFI files before (cmnhname was modified previously)
+        tzfields(jp)%cmnhname  = Trim( ytitle(jp) )
+        tzfields(jp)%clongname = Trim( ytitle(jp) ) // ' (' // Trim( hmasks(jp) ) // ')'
+        tzfields(jp)%ndims     = tzfields(jp)%ndims - 1
+
+        tzbudiachro%clevels(NLVL_MASK) = hmasks(jp)
+!PW:TODO? necessite le transfert d'info depuis les routines appelantes ou via des structures dans les modd
+        tzbudiachro%ccomments(NLVL_MASK) = ''
+
+        call Write_diachro( tzfile, tzbudiachro, [ tzfields(jp) ], tzdates, zwork6(:,:,:,:,:,jp:jp) )
+      end do
+    end if
   else
     !Set to the same value ('cart') than for the fields with no mask in Write_les_n
     !to put the fields in the same position of the netCDF file
@@ -1296,12 +1386,12 @@ tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
 tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
 tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
 
-tzbudiachro%lleveluse(NLVL_GROUP)       = .false.
-tzbudiachro%clevels  (NLVL_GROUP)       = ''
+tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
+tzbudiachro%clevels  (NLVL_GROUP)       = 'Two_point_correlation'
 tzbudiachro%ccomments(NLVL_GROUP)       = ''
 
-tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
-tzbudiachro%clevels  (NLVL_SHAPE)       = 'Two_point_correlation'
+tzbudiachro%lleveluse(NLVL_SHAPE)       = .false.
+tzbudiachro%clevels  (NLVL_SHAPE)       = ''
 tzbudiachro%ccomments(NLVL_SHAPE)       = ''
 
 tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .true.
@@ -1487,12 +1577,12 @@ tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
 tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
 tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
 
-tzbudiachro%lleveluse(NLVL_GROUP)       = .false.
-tzbudiachro%clevels  (NLVL_GROUP)       = ''
+tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
+tzbudiachro%clevels  (NLVL_GROUP)       = 'Spectrum'
 tzbudiachro%ccomments(NLVL_GROUP)       = ''
 
-tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
-tzbudiachro%clevels  (NLVL_SHAPE)       = 'Spectrum'
+tzbudiachro%lleveluse(NLVL_SHAPE)       = .false.
+tzbudiachro%clevels  (NLVL_SHAPE)       = ''
 tzbudiachro%ccomments(NLVL_SHAPE)       = ''
 
 tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .true.
@@ -1549,12 +1639,12 @@ tzbudiachro%lleveluse(NLVL_SUBCATEGORY) = .false.
 tzbudiachro%clevels  (NLVL_SUBCATEGORY) = ''
 tzbudiachro%ccomments(NLVL_SUBCATEGORY) = ''
 
-tzbudiachro%lleveluse(NLVL_GROUP)       = .false.
-tzbudiachro%clevels  (NLVL_GROUP)       = ''
+tzbudiachro%lleveluse(NLVL_GROUP)       = .true.
+tzbudiachro%clevels  (NLVL_GROUP)       = 'Spectrum'
 tzbudiachro%ccomments(NLVL_GROUP)       = ''
 
-tzbudiachro%lleveluse(NLVL_SHAPE)       = .true.
-tzbudiachro%clevels  (NLVL_SHAPE)       = 'Spectrum'
+tzbudiachro%lleveluse(NLVL_SHAPE)       = .false.
+tzbudiachro%clevels  (NLVL_SHAPE)       = ''
 tzbudiachro%ccomments(NLVL_SHAPE)       = ''
 
 tzbudiachro%lleveluse(NLVL_TIMEAVG)     = .true.

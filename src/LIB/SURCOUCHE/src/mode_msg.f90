@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2017-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2017-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -11,6 +11,7 @@
 !  P. Wautelet 02/07/2019: flush messages also for files opened with newunit (logical unit can be negative)
 !  P. Wautelet 17/01/2020: add 'BUD' category for Print_msg
 !  P. Wautelet 08/04/2020: add multiline Print_msg
+!  P. Wautelet 01/07/2021: add counters for the number of prints + subroutine Msg_stats
 !-----------------------------------------------------------------
 module mode_msg
 
@@ -22,6 +23,12 @@ integer, parameter :: NMSGLGTMAX   = 100 ! Maximum length for a message
 integer, parameter :: NMSGLLINEMAX = 10  ! Maximum number of lines for a message
 
 character(len=NMSGLGTMAX), dimension(NMSGLLINEMAX) :: cmnhmsg = ''
+
+integer, save :: nfatal   = 0
+integer, save :: nerror   = 0
+integer, save :: nwarning = 0
+integer, save :: ninfo    = 0
+integer, save :: ndebug   = 0
 
 interface Print_msg
   module procedure Print_msg_1line, Print_msg_multi_cmnhmsg, Print_msg_multi
@@ -141,14 +148,19 @@ ilines = size( hmsg )
 SELECT CASE(KVERB)
   CASE(NVERB_FATAL)
     YPRE='FATAL:   '
+    nfatal = nfatal + 1
   CASE(NVERB_ERROR)
     YPRE='ERROR:   '
+    nerror = nerror + 1
   CASE(NVERB_WARNING)
     YPRE='WARNING: '
+    nwarning = nwarning + 1
   CASE(NVERB_INFO)
     YPRE='INFO:    '
+    ninfo = ninfo + 1
   CASE(NVERB_DEBUG)
     YPRE='DEBUG:   '
+    ndebug = ndebug + 1
   CASE DEFAULT
     IF (GWRITE_STDOUT) WRITE(UNIT=OUTPUT_UNIT,FMT=*) 'ERROR: PRINT_MSG: wrong verbosity level'
     IF (GWRITE_OUTLST) WRITE(UNIT=ILU,        FMT=*) 'ERROR: PRINT_MSG: wrong verbosity level'
@@ -255,5 +267,32 @@ IF (KVERB<=IABORTLEVEL) THEN
 END IF
 !
 end subroutine Print_msg_multi
+
+
+subroutine Msg_stats()
+
+character(len=10) :: ydebug
+character(len=10) :: yinfo
+character(len=10) :: ywarning
+character(len=10) :: yerror
+character(len=10) :: yfatal
+
+Write( ydebug,   '( I10 )' ) ndebug
+Write( yinfo,    '( I10 )' ) ninfo
+Write( ywarning, '( I10 )' ) nwarning
+Write( yerror,   '( I10 )' ) nerror
+Write( yfatal,   '( I10 )' ) nfatal
+
+Write( cmnhmsg(1), '( A )'      ) 'Number of calls to Print_msg (with actual printing):'
+Write( cmnhmsg(2), '( A, A10 )' ) '  Calls with level DEBUG:   ', ydebug
+Write( cmnhmsg(3), '( A, A10 )' ) '  Calls with level INFO:    ', yinfo
+Write( cmnhmsg(4), '( A, A10 )' ) '  Calls with level WARNING: ', ywarning
+Write( cmnhmsg(5), '( A, A10 )' ) '  Calls with level ERROR:   ', yerror
+Write( cmnhmsg(6), '( A, A10 )' ) '  Calls with level FATAL:   ', yfatal
+
+call Print_msg( NVERB_INFO, 'GEN', 'Msg_stats' )
+
+end subroutine Msg_stats
+
 
 end module mode_msg
