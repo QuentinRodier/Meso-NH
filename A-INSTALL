@@ -1005,11 +1005,10 @@ mkdir RTTOV-13.0
 cd RTTOV-13.0
 tar xJf rttov130.tar.xz
 cd build
-edit Makefile.local
+edit Makefile.local and set HDF5_PREFIX, FFLAGS_HDF5 and LDFLAGS_HDF5 as shown below
 "
-HDF5_PREFIX  = $(SRC_MESONH)/src/LIB/netcdf-LX${ARCH}-R${MNH_REAL}I${MNH_INT}
-uncomment FFLAGS_HDF5  = -D_RTTOV_HDF $(FFLAG_MOD)$(HDF5_PREFIX)/include
-uncomment LDFLAGS_HDF5 = -L$(HDF5_PREFIX)/lib -lhdf5hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5 -lz
+HDF5_PREFIX  = $(SRC_MESONH)/src/dir_obj${XYZ}/MASTER/NETCDF-${VERSION_CDFF}
+FFLAGS_HDF5  = -D_RTTOV_HDF $(FFLAG_MOD)$(HDF5_PREFIX)/include
 LDFLAGS_HDF5 = -L$(HDF5_PREFIX)/lib64 -lhdf5hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5 -lsz -laec -lz -ldl
 "
 cd src
