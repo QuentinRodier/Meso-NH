@@ -978,8 +978,8 @@ end if
 !*      3.   surface normalization parameters
 !            --------------------------------
 !
-cgroup = 'Miscellaneous'
-cgroupcomment = 'Miscellaneous terms (geometry, various unclassified averaged terms...)'
+cgroup = 'Radiation'
+cgroupcomment = 'Radiative terms'
 
 !Prepare metadata (used in Les_diachro_write calls)
 tfield%ndims = 2
@@ -1028,8 +1028,26 @@ end if
 
 call Les_diachro_write( tpdiafile, XLES_USTAR,      'Ustar',      'Friction velocity',                   'm s-1' )
 call Les_diachro_write( tpdiafile, XLES_WSTAR,      'Wstar',      'Convective velocity',                 'm s-1' )
-call Les_diachro_write( tpdiafile, XLES_BL_HEIGHT,  'BL_H',       'Boundary Layer Height',               'm' )
 call Les_diachro_write( tpdiafile, XLES_MO_LENGTH,  'L_MO',       'Monin-Obukhov length',                'm' )
+if ( luserr ) &
+call Les_diachro_write( tpdiafile, XLES_PRECFR,     'PREC_FRAC',  'Fraction of columns where rain at surface',  '1' )
+if ( luserr ) &
+call Les_diachro_write( tpdiafile, XLES_INPRR,      'INST_PREC',  'Instantaneous precipitation rate',       'mm day-1' )
+if ( luserc ) &
+call Les_diachro_write( tpdiafile, XLES_INPRC,      'INST_SEDIM', 'Instantaneous cloud precipitation rate', 'mm day-1' )
+if ( luserc .and. ( ldeposc .or. ldepoc ) ) &
+call Les_diachro_write( tpdiafile, XLES_INDEP,      'INST_DEPOS', 'Instantaneous cloud deposition rate',    'mm day-1' )
+if ( luserr ) &
+call Les_diachro_write( tpdiafile, XLES_RAIN_INPRR, 'RAIN_PREC',  'Instantaneous precipitation rate over rainy grid cells', &
+                        'mm day-1' )
+if ( luserr ) &
+call Les_diachro_write( tpdiafile, XLES_ACPRR,      'ACCU_PREC',  'Accumulated precipitation rate',             'mm' )
+
+
+cgroup        = 'Miscellaneous'
+cgroupcomment = 'Miscellaneous terms (geometry, various unclassified averaged terms...)'
+
+call Les_diachro_write( tpdiafile, XLES_BL_HEIGHT,  'BL_H',       'Boundary Layer Height',               'm' )
 call Les_diachro_write( tpdiafile, XLES_INT_TKE,    'INT_TKE',    'Vertical integrated TKE',             'm2 s-2' )
 if ( luserc ) &
 call Les_diachro_write( tpdiafile, XLES_ZCB,        'ZCB',        'Cloud base Height',                   'm' )
@@ -1051,19 +1069,6 @@ if ( luserg ) &
 call Les_diachro_write( tpdiafile, XLES_GWP,        'GWP',        'Graupel Water path',                  'kg m-2' )
 if ( luserh ) &
 call Les_diachro_write( tpdiafile, XLES_HWP,        'HWP',        'Hail Water path',                     'kg m-2' )
-if ( luserr ) &
-call Les_diachro_write( tpdiafile, XLES_PRECFR,     'PREC_FRAC',  'Fraction of columns where rain at surface',  '1' )
-if ( luserr ) &
-call Les_diachro_write( tpdiafile, XLES_INPRR,      'INST_PREC',  'Instantaneous precipitation rate',       'mm day-1' )
-if ( luserc ) &
-call Les_diachro_write( tpdiafile, XLES_INPRC,      'INST_SEDIM', 'Instantaneous cloud precipitation rate', 'mm day-1' )
-if ( luserc .and. ( ldeposc .or. ldepoc ) ) &
-call Les_diachro_write( tpdiafile, XLES_INDEP,      'INST_DEPOS', 'Instantaneous cloud deposition rate',    'mm day-1' )
-if ( luserr ) &
-call Les_diachro_write( tpdiafile, XLES_RAIN_INPRR, 'RAIN_PREC',  'Instantaneous precipitation rate over rainy grid cells', &
-                        'mm day-1' )
-if ( luserr ) &
-call Les_diachro_write( tpdiafile, XLES_ACPRR,      'ACCU_PREC',  'Accumulated precipitation rate',             'mm' )
 if ( luserc ) &
 call Les_diachro_write( tpdiafile, XLES_ZMAXCF,     'ZMAXCF',     'Height of Cloud fraction maximum (rc>1e-6)', 'm' )
 if ( luserc ) &
