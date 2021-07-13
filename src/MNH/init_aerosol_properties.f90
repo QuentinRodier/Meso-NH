@@ -149,12 +149,14 @@ IF ( NMOD_CCN .GE. 1 ) THEN
       RCCN(:)   = (/ 0.01E-6 , 0.05E-6 , 0.008E-6 /)
       LOGSIGCCN(:) = (/ 0.788 , 0.993 , 0.916 /)
       RHOCCN(:) = (/ 1000. , 2200. , 1000. /)
-   CASE DEFAULT
-! d'après Jaenicke 1993, aerosols troposphere libre, masse volumique typique
+   CASE ('FREETROP') ! d'après Jaenicke 1993, aerosols troposphere libre, masse volumique typique
       RCCN(:)   = (/ 0.0035E-6 , 0.125E-6 , 0.26E-6 /)
       LOGSIGCCN(:) = (/ 0.645 , 0.253 , 0.425 /)
       RHOCCN(:) = (/ 1000. , 1000. , 1000. /)
-  ENDSELECT
+   CASE DEFAULT
+      call Print_msg(NVERB_FATAL,'GEN','INIT_AEROSOL_PROPERTIES','CCN_MODES must be JUNGFRAU, COPT, CAMS, CAMS_JPP,'// &
+                                                                 'CAMS_ACC, CAMS_AIT, SIRTA, CPS00, MOCAGE or FREETROP')
+   ENDSELECT
 !
   DO I=1, MIN(NMOD_CCN,3)
     XR_MEAN_CCN(I) = RCCN(I)
