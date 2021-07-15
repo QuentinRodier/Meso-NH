@@ -57,3 +57,5 @@ clean:
 	cd 011_ncl_nc4         && clean_ncl
 	cd 011_ncl             && clean_ncl
 	cd 012_spectre	       && clean_spectre_xyz
+python:
+	cd 010_python          && run_python

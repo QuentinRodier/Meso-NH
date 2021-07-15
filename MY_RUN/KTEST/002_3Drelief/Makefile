@@ -13,3 +13,6 @@ clean:
 	cd 003_python          && clean_python
         endif
 	cd 004_ncl             && clean_ncl
+
+python:
+	cd 003_python          && run_python

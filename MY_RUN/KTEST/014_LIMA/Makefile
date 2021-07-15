@@ -13,3 +13,5 @@ clean:
         ifneq "$(MNH_PYTHON)" "NO"
 	cd 004_python          && clean_python
         endif
+python:
+	cd 004_python          && run_python

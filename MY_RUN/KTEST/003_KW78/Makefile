@@ -17,3 +17,6 @@ clean:
         endif
 	cd 005_ncl             && clean_ncl
 	cd 007_ncl_diag        && clean_ncl
+
+python:
+	cd 004_python          && run_python

@@ -29,3 +29,5 @@ clean:
         endif
 	cd 006_ncl	       && clean_ncl
 
+python:
+	cd 005_python          && run_python
