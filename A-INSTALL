@@ -28,6 +28,10 @@
 #           e) cleaning previous compiled version
 #
 #
+# NEW on MNH-55X : For conda package for graphic output in test-case examples , read
+# the 'README_MNH_CONDA' file in this (root) directory
+#
+#
 ^L
 #  0) TWO WAYS OF DOWNLOADING MESONH
 #  =================================
