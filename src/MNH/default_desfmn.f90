@@ -596,7 +596,7 @@ LTECOUTPTS        = .FALSE.
 !             ----------------------------------
 !
 NNUMB_STAT    = 0
-XSTEP_STAT    = 1.0
+XSTEP_STAT    = 60.0
 XX_STAT(:)    = XUNDEF
 XY_STAT(:)    = XUNDEF
 XZ_STAT(:)    = XUNDEF
