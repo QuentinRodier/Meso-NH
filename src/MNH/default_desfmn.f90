@@ -605,7 +605,7 @@ XLON_STAT(:)  = XUNDEF
 CNAME_STAT(:) = ''
 CTYPE_STAT(:) = ''
 CFILE_STAT    = 'NO_INPUT_CSV'
-LDIAG_RESULTS = .FALSE.
+LDIAG_SURFRAD = .TRUE.
 !
 !-------------------------------------------------------------------------------
 !
