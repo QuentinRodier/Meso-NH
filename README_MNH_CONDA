@@ -1,0 +1,159 @@
+#MNH_LIC Copyright 1994-2021 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+#MNH_LIC for details. version 1.
+#
+# Written by : Juan ESCOBAR , for the Meso-NH Support , 16/07/2021
+#
+###############################################################################################
+#                                                                                             #
+# How to install the python package needed for the new graphic script of the version MNH-55X  #
+# test case with "conda" or "miniconda"                                                                                  #
+#                                                                                             #
+###############################################################################################
+#
+# MAP
+#
+# I)  Installation from Scratch ,  on your PC for example
+#   a) Installation of mini-conda
+#   b) Creation of the conda environmenent "mnh_conda_cartopy_offlinedata"
+#   c) Using the environment with mesonh
+#   d) Optional: export the environment with "conda pack"
+#
+# OR
+#
+# II) Installation from a packed tar.gz file, created with "conda pack"
+#     for Linux Supercomputer without internet connection
+
+# I)  Installation from scratch,  on your PC for example
+# =======================================================
+
+# I- a) Installation of mini-conda
+----------------------------------
+
+# If you don't have already the "conda" command in your PC
+# first install "miniconda"
+
+# Creation of the install directory, for example in your $HOME :
+
+export MNH_MINICONDA=${HOME}/MINICONDA
+mkdir -p ${MNH_MINICONDA}
+cd ${MNH_MINICONDA}
+
+# get/install the last version of miniconda for X64 ( here with python 3.9 )
+
+wget https://repo.anaconda.com/miniconda/Miniconda3-py39_4.9.2-Linux-x86_64.sh
+bash Miniconda3-py39_4.9.2-Linux-x86_64.sh
+
+# during the installation
+# - accept the licence -> yes
+# - give the path of installation > #path -> /home/{your_login}/PATCH/MINICONDA/miniconda3
+
+
+# when installed initialization of miniconda
+
+source ${MNH_MINICONDA}/miniconda3/etc/profile.d/conda.sh
+
+# REM : the other solution is via "conda init bash"  which changes the "~/.bashrc"
+#       but I don't like it ...
+
+# I- b) Creation of the conda environment "mnh_conda_cartopy_offlinedata"
+---------------------------------------------------------------------------
+
+#
+# Now , creation of the conda environment "mnh_conda_cartopy_offlinedata"
+# /!\ about 3Go of disk space are needed
+#
+
+conda create -n mnh_conda_cartopy_offlinedata
+conda activate mnh_conda_cartopy_offlinedata
+conda install -c conda-forge netcdf4 cartopy matlibplot
+
+#
+# this is the minimum packages needed for the MesoNH script of the test cases
+#
+
+#
+# for computer without internet connection ( for example compute nodes of super computers )
+# you could add this package to download in advance cartopy data files
+#
+
+conda install -c conda-forge cartopy_offlinedata
+
+# REM : this files add about 2OO Mo and are located in "$CONDA_PREFIX/share/cartopy"
+        ( CONDA_PREFIX is set when you initialize/ source the (mini)conda command
+
+# I-c) Using the environment with mesonh
+-----------------------------------------
+
+#
+# Now to use this conda environment with MesoNH , the best way is to put
+# these lines at the end of your "profile_mesonh{the_good_one}"
+#
+
+export MNH_MINICONDA=${HOME}/MINICONDA
+source ${MNH_MINICONDA}/miniconda3/etc/profile.d/conda.sh
+conda activate mnh_conda_cartopy_offlinedata
+
+# and then use mesonh as usual by sourcing this file
+
+cd .../MNH.../conf
+. profile_mesonh{the_good_one}
+
+
+# I-d) Optional: export the environment with "conda pack"
+-----------------------------------------------------------
+
+#
+# After this, if you were to export your binary installation in a "tar.gz" file to another 'compatible' computer
+# first add the 'conda-pack' package
+
+conda install -c conda-forge conda-pack
+
+# And now export the environment with 
+
+conda pack -n mnh_conda_cartopy_offlinedata -o mnh_conda_cartopy_offlinedata.tar.gz
+
+# II) Installation from a packed tar.gz file , created with "conda pack"
+#     for Linux Supercomputer without internet connection
+=========================================================
+
+#
+# On Supercomputer without internet connection  , like TGCC/CEA Irene or CINES/Occigen
+# you could not install package with the conda command.
+# As a work-around you could download and use a "tar.gz" as prepared on my Linux OpenSuse PC .
+# ( as explained in the previous sessions )
+#
+# REM : you don't need to load any 'module files' like python to do this work-around
+#       <-> no conda/python needed in your PATH
+
+
+# First, on your PC computer download the "tar.gz" I prepared and uploaded on the MesoNH web page
+
+wget   http://mesonh.aero.obs-mip.fr/mesonh/tmp/MINICONDA/mnh_conda_cartopy_offlinedata.tar.gz
+
+
+# Then, to use it for example on Irene or Occigen computer 
+# Copy the "tar.gz" for you PC to Super computer in $CCCWORKDIR (or  $WORKDIR ) :
+
+# From your PC
+
+scp mnh_conda_cartopy_offlinedata.tar.gz irene:.
+
+# On Irene
+
+cd $CCCWORKDIR
+mv ~/mnh_conda_cartopy_offlinedata.tar.gz $CCCWORKDIR/.
+mkdir mnh_conda_cartopy_offlinedata
+> tar xvf mnh_conda_cartopy_offlinedata.tar.gz -C mnh_conda_cartopy_offlinedata
+
+# Activation of the package, for example at the end of your "profile_mesonh{the_good_one}
+
+source $CCCWORKDIR/mnh_conda_cartopy_offlinedata/bin/activate
+
+# That's all, you can now use the packages included in the "tar.gz"
+#/!\
+#/!\ Warning: you don't have "conda" so you cannot modify this installation/package  .
+#/!\
+
+Good tests .
