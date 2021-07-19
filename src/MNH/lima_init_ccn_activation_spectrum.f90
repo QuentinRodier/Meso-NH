@@ -6,9 +6,9 @@
 !      ####################
        MODULE MODI_LIMA_INIT_CCN_ACTIVATION_SPECTRUM
 INTERFACE
-   SUBROUTINE LIMA_INIT_CCN_ACTIVATION_SPECTRUM (CTYPE,XD,XSIGMA,XLIMIT_FACTOR,XK,XMU,XBETA,XKAPPA)
+   SUBROUTINE LIMA_INIT_CCN_ACTIVATION_SPECTRUM (CTYPE_CCN,XD,XSIGMA,XLIMIT_FACTOR,XK,XMU,XBETA,XKAPPA)
      !
-     CHARACTER(LEN=*), INTENT(IN)  :: CTYPE         ! Aerosol type
+     CHARACTER(LEN=*), INTENT(IN)  :: CTYPE_CCN         ! Aerosol type
      REAL,             INTENT(IN)  :: XD            ! Aerosol PSD modal diameter          
      REAL,             INTENT(IN)  :: XSIGMA        ! Aerosol PSD width
      REAL,             INTENT(OUT) :: XLIMIT_FACTOR ! C/Naer
@@ -23,7 +23,7 @@ END MODULE MODI_LIMA_INIT_CCN_ACTIVATION_SPECTRUM
 !      ####################
 !
 !     #############################################################
-      SUBROUTINE LIMA_INIT_CCN_ACTIVATION_SPECTRUM (CTYPE,XD,XSIGMA,XLIMIT_FACTOR,XK,XMU,XBETA,XKAPPA)
+      SUBROUTINE LIMA_INIT_CCN_ACTIVATION_SPECTRUM (CTYPE_CCN,XD,XSIGMA,XLIMIT_FACTOR,XK,XMU,XBETA,XKAPPA)
 !     #############################################################
 
 !!
@@ -60,7 +60,7 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments : 
 !
-CHARACTER(LEN=*), INTENT(IN)  :: CTYPE          ! Aerosol type
+CHARACTER(LEN=*), INTENT(IN)  :: CTYPE_CCN          ! Aerosol type
 REAL,             INTENT(IN)  :: XD             ! Aerosol PSD modal diameter          
 REAL,             INTENT(IN)  :: XSIGMA         ! Aerosol PSD width
 REAL,             INTENT(OUT) :: XLIMIT_FACTOR  ! C/Naer
@@ -97,12 +97,12 @@ REAL, DIMENSION(1)            :: XT             ! temperature
 !
 !-------------------------------------------------------------------------------
 !
-!*       1.     Select kappa value based on CTYPE
+!*       1.     Select kappa value based on CTYPE_CCN
 !	        ---------------------------------
 !
 ! Kappa values are from Petters and Kreidenweis (2007), table 1.
 !
-SELECT CASE (CTYPE)
+SELECT CASE (CTYPE_CCN)
 CASE('NH42SO4','C') ! Ammonium sulfate
    XKAPPA = 0.61
 CASE('NH4NO3')      ! Ammonium nitrate

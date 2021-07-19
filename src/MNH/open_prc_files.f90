@@ -173,7 +173,7 @@ HCHEMFILETYPE='MESONH'
 HSURFFILE='                            '
 HSURFFILETYPE='MESONH'
 HCAMSFILE='                            '
-HCAMSFILETYPE='MESONH'
+HCAMSFILETYPE='NETCDF'
 !
 !-------------------------------------------------------------------------------
 !
