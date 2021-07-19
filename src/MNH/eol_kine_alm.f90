@@ -51,6 +51,7 @@ SUBROUTINE EOL_KINE_ALM(KTCOUNT,KTSUBCOUNT,PTSUBSTEP,PTSTEP)
 !!    -------------
 !!     Original        04/2017
 !!     Modification    10/11/20 (PA. Joulin) Updated for a main version
+!  P. Wautelet 19/07/2021: replace double precision by real to allow MNH_REAL=4 compilation
 !!
 !!---------------------------------------------------------------
 !
@@ -74,19 +75,19 @@ REAL,    INTENT(IN)                     :: PTSUBSTEP        ! sub timestep
 REAL,    INTENT(IN)                     :: PTSTEP           ! timestep 
 !
 !*       0.3 Local variables
-DOUBLE PRECISION, DIMENSION(3,3) :: ZORI_MAT_X, ZORI_MAT_Y, ZORI_MAT_Z
-DOUBLE PRECISION, DIMENSION(3)   :: ZADD_TO_POS
+REAL, DIMENSION(3,3) :: ZORI_MAT_X, ZORI_MAT_Y, ZORI_MAT_Z
+REAL, DIMENSION(3)   :: ZADD_TO_POS
 !
-DOUBLE PRECISION, DIMENSION(3)   :: ZDIST_TOWO_TELT_RG ! Distance between tower elmt and tower base 
-DOUBLE PRECISION, DIMENSION(3)   :: ZDIST_TOWO_NELT_RG ! Distance between nacelle and base of tower
-DOUBLE PRECISION, DIMENSION(3)   :: ZDIST_NAC_HUB_RG   ! Distance between hub and base of nacelle
-DOUBLE PRECISION, DIMENSION(3)   :: ZDIST_HUB_BLA_RG   ! Distance between blade and base of hub
-DOUBLE PRECISION, DIMENSION(3)   :: ZDIST_BLA_ELT_RG   ! Distance between blade and elements
+REAL, DIMENSION(3)   :: ZDIST_TOWO_TELT_RG ! Distance between tower elmt and tower base
+REAL, DIMENSION(3)   :: ZDIST_TOWO_NELT_RG ! Distance between nacelle and base of tower
+REAL, DIMENSION(3)   :: ZDIST_NAC_HUB_RG   ! Distance between hub and base of nacelle
+REAL, DIMENSION(3)   :: ZDIST_HUB_BLA_RG   ! Distance between blade and base of hub
+REAL, DIMENSION(3)   :: ZDIST_BLA_ELT_RG   ! Distance between blade and elements
 !
-DOUBLE PRECISION, DIMENSION(3)   :: ZPOS_ELTLE_RE      ! Leading Edge (LE) position, in RE
-DOUBLE PRECISION, DIMENSION(3)   :: ZPOS_ELTLE_RG      ! Leading Edge (LE) position, in RG
-DOUBLE PRECISION, DIMENSION(3)   :: ZPOS_ELTTE_RE      ! Trailing Edge (TE) position, in RE
-DOUBLE PRECISION, DIMENSION(3)   :: ZPOS_ELTTE_RG      ! Trailing Edge (TE) position, in RG
+REAL, DIMENSION(3)   :: ZPOS_ELTLE_RE      ! Leading Edge (LE) position, in RE
+REAL, DIMENSION(3)   :: ZPOS_ELTLE_RG      ! Leading Edge (LE) position, in RG
+REAL, DIMENSION(3)   :: ZPOS_ELTTE_RE      ! Trailing Edge (TE) position, in RE
+REAL, DIMENSION(3)   :: ZPOS_ELTTE_RG      ! Trailing Edge (TE) position, in RG
 !
 REAL                             :: ZTIME                              ! TIME 
 INTEGER                          :: JROT, JBLA, JTELT, JNELT, JBELT    ! Loop control

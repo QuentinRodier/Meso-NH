@@ -3,6 +3,9 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
+! Modifications:
+!  P. Wautelet 19/07/2021: replace double precision by real to allow MNH_REAL=4 compilation
+!-----------------------------------------------------------------
 !     #######################
        MODULE MODI_EOL_MATHS
 !     #######################
@@ -10,28 +13,28 @@
 INTERFACE
 !
 FUNCTION CROSS(PA, PB)
-        DOUBLE PRECISION, DIMENSION(3)             :: CROSS
-        DOUBLE PRECISION, DIMENSION(3), INTENT(IN) :: PA, PB
+        REAL, DIMENSION(3)             :: CROSS
+        REAL, DIMENSION(3), INTENT(IN) :: PA, PB
 END FUNCTION CROSS
 !
 FUNCTION NORM(PA)
-        DOUBLE PRECISION                           :: NORM
-        DOUBLE PRECISION, DIMENSION(3), INTENT(IN) :: PA
+        REAL                           :: NORM
+        REAL, DIMENSION(3), INTENT(IN) :: PA
 END FUNCTION NORM
 !
 SUBROUTINE GET_ORI_MAT_X(PTHETA, PORI_MAT_X)
-        DOUBLE PRECISION, INTENT(IN)                   :: PTHETA      ! Angle
-        DOUBLE PRECISION, DIMENSION(3,3), INTENT(OUT)  :: PORI_MAT_X  ! Matrix
+        REAL, INTENT(IN)                   :: PTHETA      ! Angle
+        REAL, DIMENSION(3,3), INTENT(OUT)  :: PORI_MAT_X  ! Matrix
 END SUBROUTINE GET_ORI_MAT_X
 !
 SUBROUTINE GET_ORI_MAT_Y(PTHETA, PORI_MAT_Y)
-        DOUBLE PRECISION, INTENT(IN)                   :: PTHETA      ! Angle
-        DOUBLE PRECISION, DIMENSION(3,3), INTENT(OUT)  :: PORI_MAT_Y  ! Matrix
+        REAL, INTENT(IN)                   :: PTHETA      ! Angle
+        REAL, DIMENSION(3,3), INTENT(OUT)  :: PORI_MAT_Y  ! Matrix
 END SUBROUTINE GET_ORI_MAT_Y
 !
 SUBROUTINE GET_ORI_MAT_Z(PTHETA, PORI_MAT_Z)
-        DOUBLE PRECISION, INTENT(IN)                   :: PTHETA      ! Angle
-        DOUBLE PRECISION, DIMENSION(3,3), INTENT(OUT)  :: PORI_MAT_Z  ! Matrix
+        REAL, INTENT(IN)                   :: PTHETA      ! Angle
+        REAL, DIMENSION(3,3), INTENT(OUT)  :: PORI_MAT_Z  ! Matrix
 END SUBROUTINE GET_ORI_MAT_Z
 !
 FUNCTION INTERP_SPLCUB(PAV, PX, PY)
@@ -71,8 +74,8 @@ END MODULE MODI_EOL_MATHS
 FUNCTION CROSS(PA, PB)
 ! Vectorial product 3D : PA * PB
 !
-        DOUBLE PRECISION, DIMENSION(3) :: CROSS
-        DOUBLE PRECISION, DIMENSION(3), INTENT(IN) :: PA, PB
+        REAL, DIMENSION(3) :: CROSS
+        REAL, DIMENSION(3), INTENT(IN) :: PA, PB
 !
         CROSS(1) = PA(2) * PB(3) - PA(3) * PB(2)
         CROSS(2) = PA(3) * PB(1) - PA(1) * PB(3)
@@ -85,8 +88,8 @@ END FUNCTION CROSS
 FUNCTION NORM(PA)
 ! Eulerian norm of 3D vector : 
 !
-        DOUBLE PRECISION                           :: NORM
-        DOUBLE PRECISION, DIMENSION(3), INTENT(IN) :: PA
+        REAL                           :: NORM
+        REAL, DIMENSION(3), INTENT(IN) :: PA
 !
         NORM  = SQRT( PA(1)**2 + PA(2)**2 + PA(3)**2 )
 !
@@ -97,8 +100,8 @@ END FUNCTION NORM
 SUBROUTINE GET_ORI_MAT_X(PTHETA, PORI_MAT_X)
 ! Rotation matrix of PTHETA angle around X
 !
-        DOUBLE PRECISION, INTENT(IN)                   :: PTHETA      ! Angle
-        DOUBLE PRECISION, DIMENSION(3,3), INTENT(OUT)  :: PORI_MAT_X  ! Matrix
+        REAL, INTENT(IN)                   :: PTHETA      ! Angle
+        REAL, DIMENSION(3,3), INTENT(OUT)  :: PORI_MAT_X  ! Matrix
 !
         PORI_MAT_X (1,1) = 1d0
         PORI_MAT_X (1,2) = 0d0
@@ -117,8 +120,8 @@ END SUBROUTINE GET_ORI_MAT_X
 SUBROUTINE GET_ORI_MAT_Y(PTHETA, PORI_MAT_Y)
 ! Rotation matrix of PTHETA angle around Y
 !
-        DOUBLE PRECISION, INTENT(IN)                   :: PTHETA      ! Angle
-        DOUBLE PRECISION, DIMENSION(3,3), INTENT(OUT)  :: PORI_MAT_Y  ! Matrix
+        REAL, INTENT(IN)                   :: PTHETA      ! Angle
+        REAL, DIMENSION(3,3), INTENT(OUT)  :: PORI_MAT_Y  ! Matrix
 !
         PORI_MAT_Y (1,1) = +COS(PTHETA)
         PORI_MAT_Y (1,2) = 0d0
@@ -137,8 +140,8 @@ END SUBROUTINE GET_ORI_MAT_Y
 SUBROUTINE GET_ORI_MAT_Z(PTHETA, PORI_MAT_Z)
 ! Rotation matrix of PTHETA angle around Z
 !
-        DOUBLE PRECISION, INTENT(IN)                   :: PTHETA      ! Angle
-        DOUBLE PRECISION, DIMENSION(3,3), INTENT(OUT)  :: PORI_MAT_Z  ! Matrix
+        REAL, INTENT(IN)                   :: PTHETA      ! Angle
+        REAL, DIMENSION(3,3), INTENT(OUT)  :: PORI_MAT_Z  ! Matrix
 !
         PORI_MAT_Z (1,1) = +COS(PTHETA)
         PORI_MAT_Z (1,2) = -SIN(PTHETA)
