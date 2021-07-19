@@ -818,7 +818,7 @@ integer(kind=CDFINT)                          :: ilevelid
 integer(kind=CDFINT), dimension(0:NMAXLEVELS) :: ilevelids ! ids of the different groups/levels in the netCDF file
 logical                                       :: gdistributed
 logical                                       :: gsplit
-logical(kind=CDFINT), dimension(0:NMAXLEVELS) :: gleveldefined ! Are the different groups/levels already defined in the netCDF file
+logical,              dimension(0:NMAXLEVELS) :: gleveldefined ! Are the different groups/levels already defined in the netCDF file
 type(tfielddata)                              :: tzfield
 type(tfiledata)                               :: tzfile
 

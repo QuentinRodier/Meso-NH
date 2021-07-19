@@ -391,7 +391,8 @@ REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT)) ::ZZFLUX_MX,ZZMASS_MX ! mixe
 !-------------------------------------------------------------------------------
 ! For standard ocean version, reading external files
 CHARACTER(LEN=256) :: yinfile, yinfisf ! files to be read
-INTEGER :: INZ, INLATI, INLONGI, IDX
+INTEGER :: IDX
+INTEGER(KIND=CDFINT) :: INZ, INLATI, INLONGI
 INTEGER(KIND=CDFINT) :: incid, ivarid, idimid, idimlen
 REAL, DIMENSION(:,:,:),     ALLOCATABLE :: ZOC_TEMPERATURE,ZOC_SALINITY,ZOC_U,ZOC_V
 REAL, DIMENSION(:),     ALLOCATABLE :: ZOC_DEPTH  
@@ -588,9 +589,9 @@ SELECT CASE(YKIND)
     CALL check(nf90_open(yinfile,NF90_NOWRITE,incid), "opening NC file")
     ! Reading dimensions and lengths
     CALL check( nf90_inq_dimid(incid, "depth",idimid), "getting depth  dimension id" )
-    CALL check( nf90_inquire_dimension(incid, idimid, len=INZ), "getting INZ "  )
-    CALL check( nf90_inquire_dimension(incid, 2, len=INLONGI), "getting NLONG "  )
-    CALL check( nf90_inquire_dimension(incid, 1, len=INLATI), "getting NLAT "  )
+    CALL check( nf90_inquire_dimension(incid, idimid,             len=INZ),     "getting INZ"   )
+    CALL check( nf90_inquire_dimension(incid, INT(2,KIND=CDFINT), len=INLONGI), "getting NLONG" )
+    CALL check( nf90_inquire_dimension(incid, INT(1,KIND=CDFINT), len=INLATI),  "getting NLAT"  )
 !   
     WRITE(ILUOUT,FMT=*) 'NB LEVLS READ INZ, NLONG NLAT ', INZ, INLONGI,INLATI
     ALLOCATE(ZOC_TEMPERATURE(INLATI,INLONGI,INZ),ZOC_SALINITY(INLATI,INLONGI,INZ))

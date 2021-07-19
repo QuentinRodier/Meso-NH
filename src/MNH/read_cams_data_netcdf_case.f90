@@ -158,6 +158,7 @@ CHARACTER(LEN=2)                   :: YPGD_TYPE     ! not used - dummy argument
 INTEGER                            :: INO           ! Number of points of the grid
 INTEGER                            :: IIU           ! Number of points along X
 INTEGER                            :: IJU           ! Number of points along Y
+integer                            :: ilatlen, ilonlen, ilevlen
 REAL, DIMENSION(:), ALLOCATABLE    :: ZLONOUT       ! mapping PGD -> Grib (lon.)
 REAL, DIMENSION(:), ALLOCATABLE    :: ZLATOUT       ! mapping PGD -> Grib (lat.)
 REAL, DIMENSION(:,:), ALLOCATABLE  :: ZXM           ! X of PGD mass points
@@ -169,13 +170,11 @@ INTEGER                           :: IMI
 ! For netcdf 
 !
 integer(kind=CDFINT) :: istatus, incid
-integer(kind=CDFINT) :: ilatlen, ilonlen, ilevlen, inrecs
 integer(kind=CDFINT) :: itimeindex
 INTEGER(kind=CDFINT)               :: ind_netcdf    ! Indice for netcdf var.
 REAL, DIMENSION(:), ALLOCATABLE       :: zlats
 REAL, DIMENSION(:), ALLOCATABLE       :: zlons 
 REAL, DIMENSION(:), ALLOCATABLE       :: zlevs 
-REAL, DIMENSION(:), ALLOCATABLE       :: ztime
 REAL, DIMENSION(:,:,:), ALLOCATABLE   :: zmmr_dust1, zmmr_dust2, zmmr_dust3
 REAL, DIMENSION(:,:,:), ALLOCATABLE   :: zmmr_seasalt1, zmmr_seasalt2, zmmr_seasalt3
 REAL, DIMENSION(:,:,:), ALLOCATABLE   :: zmmr_bc_hydrophilic, zmmr_bc_hydrophobic
@@ -251,7 +250,6 @@ CALL READ_DIM(incid,"level",ilevlen)
 ALLOCATE (zlats(ilatlen))
 ALLOCATE (zlons(ilonlen))
 ALLOCATE (zlevs(ilevlen))
-ALLOCATE (ztime(inrecs))
 ! T, Q, Ps :
 ALLOCATE (ZTMOZ(ilonlen,ilatlen,ilevlen))
 ALLOCATE (ZQMOZ(ilonlen,ilatlen,ilevlen))
@@ -541,7 +539,6 @@ DEALLOCATE (ZLONOUT)
 DEALLOCATE (zlats)
 DEALLOCATE (zlons)
 DEALLOCATE (zlevs)
-DEALLOCATE (ztime)
 ! ps, T, Q :
 DEALLOCATE (ZPSMOZ)
 DEALLOCATE (ZTMOZ)
@@ -621,16 +618,19 @@ END SUBROUTINE ARRAY_1D_TO_2D
 !       Small routine used to store a linear array into a 2 dimension array
 !
 IMPLICIT NONE
-INTEGER(kind=CDFINT),                INTENT(IN)  :: file
+INTEGER(kind=CDFINT),   INTENT(IN)  :: file
 CHARACTER(*),           INTENT(IN)  :: name
-INTEGER(kind=CDFINT),                INTENT(OUT) :: output
+INTEGER,                INTENT(OUT) :: output
 !
+INTEGER(kind=CDFINT) :: ilen
 INTEGER(kind=CDFINT) :: istatus, index
 !
 istatus = nf90_inq_dimid(file, name, index)
 if (istatus /= nf90_noerr) call handle_err(istatus)
-istatus = nf90_inquire_dimension(file, index, len=output)
+istatus = nf90_inquire_dimension(file, index, len=ilen)
 if (istatus /= nf90_noerr) call handle_err(istatus)
+!
+output = ilen
 !
 END SUBROUTINE READ_DIM
 !
@@ -641,9 +641,9 @@ END SUBROUTINE READ_DIM
 !       Small routine used to store a linear array into a 2 dimension array
 !
 IMPLICIT NONE
-INTEGER(kind=CDFINT),                INTENT(IN)  :: file
+INTEGER(kind=CDFINT),   INTENT(IN)  :: file
 CHARACTER(*),           INTENT(IN)  :: name
-INTEGER(kind=CDFINT),                INTENT(IN)  :: size
+INTEGER,                INTENT(IN)  :: size
 REAL, DIMENSION(size),  INTENT(INOUT) :: output
 !
 INTEGER(kind=CDFINT) :: istatus, index
@@ -662,10 +662,10 @@ END SUBROUTINE READ_VAR_1D
 !       Small routine used to store a linear array into a 2 dimension array
 !
 IMPLICIT NONE
-INTEGER(kind=CDFINT),                INTENT(IN)  :: file
+INTEGER(kind=CDFINT),   INTENT(IN)  :: file
 CHARACTER(*),           INTENT(IN)  :: name
-INTEGER(kind=CDFINT),                INTENT(IN)  :: size_lon
-INTEGER(kind=CDFINT),                INTENT(IN)  :: size_lat
+INTEGER,                INTENT(IN)  :: size_lon
+INTEGER,                INTENT(IN)  :: size_lat
 REAL, DIMENSION(size_lon,size_lat),      INTENT(INOUT) :: output
 !
 INTEGER(kind=CDFINT) :: istatus, index
@@ -694,16 +694,16 @@ END SUBROUTINE READ_VAR_2D
 !       Small routine used to store a linear array into a 2 dimension array
 !
 IMPLICIT NONE
-INTEGER(kind=CDFINT),                INTENT(IN)  :: file
+INTEGER(kind=CDFINT),   INTENT(IN)  :: file
 CHARACTER(*),           INTENT(IN)  :: name
-INTEGER(kind=CDFINT),                INTENT(IN)  :: size_lon
-INTEGER(kind=CDFINT),                INTENT(IN)  :: size_lat
-INTEGER(kind=CDFINT),                INTENT(IN)  :: size_lev
+INTEGER,                INTENT(IN)  :: size_lon
+INTEGER,                INTENT(IN)  :: size_lat
+INTEGER,                INTENT(IN)  :: size_lev
 REAL, DIMENSION(size_lon,size_lat,size_lev),      INTENT(INOUT) :: output
 !
 INTEGER(kind=CDFINT) :: istatus, index
 REAL :: scale, offset
-INTEGER,DIMENSION(4) :: s, c
+INTEGER(kind=CDFINT),DIMENSION(4) :: s, c
 !
 s(:)=1
 c(1)=size_lon
