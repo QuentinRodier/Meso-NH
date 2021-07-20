@@ -47,7 +47,7 @@ bash Miniconda3-py39_4.9.2-Linux-x86_64.sh
 
 # during the installation
 # - accept the licence -> yes
-# - give the path of installation > #path -> /home/{your_login}/PATCH/MINICONDA/miniconda3
+# - give the path of installation > #path -> /home/{your_login}/MINICONDA/miniconda3
 
 
 # when installed initialization of miniconda
@@ -145,7 +145,7 @@ scp mnh_conda_cartopy_offlinedata.tar.gz irene:.
 cd $CCCWORKDIR
 mv ~/mnh_conda_cartopy_offlinedata.tar.gz $CCCWORKDIR/.
 mkdir mnh_conda_cartopy_offlinedata
-> tar xvf mnh_conda_cartopy_offlinedata.tar.gz -C mnh_conda_cartopy_offlinedata
+tar xvf mnh_conda_cartopy_offlinedata.tar.gz -C mnh_conda_cartopy_offlinedata
 
 # Activation of the package, for example at the end of your "profile_mesonh{the_good_one}
 
