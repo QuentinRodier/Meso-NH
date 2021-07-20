@@ -32,17 +32,18 @@ do j=1,179
  TIME(j)=TIME(j-1)+300
 end do
 
-group_LES_budgets = fichier1=>LES_budgets/Cartesian/Not_time_averaged/Not_normalized/cart
+group_LES_budgets_SBG = fichier1=>LES_budgets/Subgrid/Cartesian/Not_time_averaged/Not_normalized/cart
+group_LES_budgets_MEAN = fichier1=>LES_budgets/Mean/Cartesian/Not_time_averaged/Not_normalized/cart
 
 vname="SBG_TKE"
-SBGTKE = group_LES_budgets->$vname$(:,:) 
+SBGTKE = group_LES_budgets_SBG->$vname$(:,:) 
 SBGTKE@long_name="SBG_TKE"
 SBGTKE!1="nzh"
 SBGTKE!0="TIME"
 SBG_TKE=transpose(SBGTKE)
 
 vname="MEAN_TH"
-MEANTH = group_LES_budgets->$vname$(:,:) ; MEAN_TH
+MEANTH = group_LES_budgets_MEAN->$vname$(:,:) ; MEAN_TH
 MEANTH@long_name="MEAN_TH"
 MEANTH@units="K"
 MEANTH!1="nzh"
@@ -50,42 +51,42 @@ MEANTH!0="TIME"
 MEAN_TH=transpose(MEANTH)
 
 vname="MEAN_U"
-MEANU = group_LES_budgets->$vname$(:,:) 
+MEANU = group_LES_budgets_MEAN->$vname$(:,:) 
 MEANU!1="nzh"
 MEANU!0="TIME"
 MEAN_U=transpose(MEANU)
 MEAN_U@long_name="MEAN_U"
 
 vname="MEAN_V"
-MEANV = group_LES_budgets->$vname$(:,:) 
+MEANV = group_LES_budgets_MEAN->$vname$(:,:) 
 MEANV!1="nzh"
 MEANV!0="TIME"
 MEAN_V=transpose(MEANV)
 MEAN_V@long_name="MEAN_V"
 
 vname="MEAN_RC"
-MEANRC = group_LES_budgets->$vname$(:,:) 
+MEANRC = group_LES_budgets_MEAN->$vname$(:,:) 
 MEANRC!1="nzh"
 MEANRC!0="TIME"
 MEAN_RC=transpose(MEANRC)
 MEAN_RC@long_name="MEAN_RC"
 
 vname="MEAN_RR"
-MEANRR = group_LES_budgets->$vname$(:,:) 
+MEANRR = group_LES_budgets_MEAN->$vname$(:,:) 
 MEANRR!1="nzh"
 MEANRR!0="TIME"
 MEAN_RR=transpose(MEANRR)
 MEAN_RR@long_name="MEAN_RR"
 
 vname="SBG_WTHL"
-SBGWTHL = group_LES_budgets->$vname$(:,:) 
+SBGWTHL = group_LES_budgets_SBG->$vname$(:,:) 
 SBGWTHL!1="nzh"
 SBGWTHL!0="TIME"
 SBG_WTHL=transpose(SBGWTHL)
 SBG_WTHL@long_name="SBG_WTHL"
 
 vname="SBG_WRT"
-SBGWRT = group_LES_budgets->$vname$(:,:) 
+SBGWRT = group_LES_budgets_SBG->$vname$(:,:) 
 SBGWRT!1="nzh"
 SBGWRT!0="TIME"
 SBG_WRT=transpose(SBGWRT)
@@ -93,91 +94,91 @@ SBG_WRT@long_name="SBG_WRT"
 
 
 vname="THLUP_MF"
- THLUPMF= group_LES_budgets->$vname$(:,:) 
+ THLUPMF= group_LES_budgets_SBG->$vname$(:,:) 
 THLUPMF!1="nzh"
 THLUPMF!0="TIME"
 THLUP_MF=transpose(THLUPMF)
 THLUP_MF@long_name="THLUP_MF"
 
 vname="RTUP_MF"
-RTUPMF = group_LES_budgets->$vname$(:,:) 
+RTUPMF = group_LES_budgets_SBG->$vname$(:,:) 
 RTUPMF!1="nzh"
 RTUPMF!0="TIME"
 RTUP_MF=transpose(RTUPMF)
 RTUP_MF@long_name="RTUP_MF"
 
 vname="RVUP_MF"
-RVUPMF = group_LES_budgets->$vname$(:,:) 
+RVUPMF = group_LES_budgets_SBG->$vname$(:,:) 
 RVUPMF!1="nzh"
 RVUPMF!0="TIME"
 RVUP_MF=transpose(RVUPMF)
 RVUP_MF@long_name="RVUP_MF"
 
 vname="RCUP_MF"
-RCUPMF = group_LES_budgets->$vname$(:,:) 
+RCUPMF = group_LES_budgets_SBG->$vname$(:,:) 
 RCUPMF!1="nzh"
 RCUPMF!0="TIME"
 RCUP_MF=transpose(RCUPMF)
 RCUP_MF@long_name="RCUP_MF"
 
 vname="RIUP_MF"
-RIUPMF = group_LES_budgets->$vname$(:,:) 
+RIUPMF = group_LES_budgets_SBG->$vname$(:,:) 
 RIUPMF!1="nzh"
 RIUPMF!0="TIME"
 RIUP_MF=transpose(RIUPMF)
 RIUP_MF@long_name="RIUP_MF"
 
 vname="WUP_MF"
-WUPMF = group_LES_budgets->$vname$(:,:) 
+WUPMF = group_LES_budgets_SBG->$vname$(:,:) 
 WUPMF!1="nzh"
 WUPMF!0="TIME"
 WUP_MF=transpose(WUPMF)
 WUP_MF@long_name="WUP_MF"
 
 vname="MAFLX_MF"
-MAFLXMF = group_LES_budgets->$vname$(:,:) 
+MAFLXMF = group_LES_budgets_SBG->$vname$(:,:) 
 MAFLXMF!1="nzh"
 MAFLXMF!0="TIME"
 MAFLX_MF=transpose(MAFLXMF)
 MAFLX_MF@long_name="MAFLX_MF"
 
 vname="DETR_MF"
-DETRMF = group_LES_budgets->$vname$(:,:) 
+DETRMF = group_LES_budgets_SBG->$vname$(:,:) 
 DETRMF!1="nzh"
 DETRMF!0="TIME"
 DETR_MF=transpose(DETRMF)
 DETR_MF@long_name="DETR_MF"
 
 vname="ENTR_MF"
-ENTRMF = group_LES_budgets->$vname$(:,:) 
+ENTRMF = group_LES_budgets_SBG->$vname$(:,:) 
 ENTRMF!1="nzh"
 ENTRMF!0="TIME"
 ENTR_MF=transpose(ENTRMF)
 ENTR_MF@long_name="ENTR_MF"
 
 vname="FRCUP_MF"
-FRCUPMF = group_LES_budgets->$vname$(:,:) 
+FRCUPMF = group_LES_budgets_SBG->$vname$(:,:) 
 FRCUPMF!1="nzh"
 FRCUPMF!0="TIME"
 FRCUP_MF=transpose(FRCUPMF)
 FRCUP_MF@long_name="FRCUP_MF"
 
 vname="THVUP_MF"
-THVUPMF = group_LES_budgets->$vname$(:,:) 
+THVUPMF = group_LES_budgets_SBG->$vname$(:,:) 
 THVUPMF!1="nzh"
 THVUPMF!0="TIME"
 THVUP_MF=transpose(THVUPMF)
 THVUP_MF@long_name="THVUP_MF"
 
 vname="WTHL_MF"
-WTHLMF = group_LES_budgets->$vname$(:,:) 
+WTHLMF = group_LES_budgets_SBG->$vname$(:,:) 
 WTHLMF!1="nzh"
 WTHLMF!0="TIME"
 WTHL_MF=transpose(WTHLMF)
 WTHL_MF@long_name="WTHL_MF"
 
 vname="WRT_MF"
-WRTMF = group_LES_budgets->$vname$(:,:) 
+WRTMF = group_LES_budgets_SBG->$vname$(:,:) 
 WRTMF!1="nzh"
 WRTMF!0="TIME"
 WRT_MF=transpose(WRTMF)
@@ -185,7 +186,7 @@ WRT_MF@long_name="WRT_MF"
 
 
 vname="WTHV_MF"
-WTHVMF = group_LES_budgets->$vname$(:,:) 
+WTHVMF = group_LES_budgets_SBG->$vname$(:,:) 
 WTHVMF!1="nzh"
 WTHVMF!0="TIME"
 WTHV_MF=transpose(WTHVMF)
@@ -193,7 +194,7 @@ WTHV_MF@long_name="WTHV_MF"
 
 
 vname="WU_MF"
-WUMF = group_LES_budgets->$vname$(:,:) 
+WUMF = group_LES_budgets_SBG->$vname$(:,:) 
 WUMF!1="nzh"
 WUMF!0="TIME"
 WU_MF=transpose(WUMF)
@@ -201,7 +202,7 @@ WU_MF@long_name="WU_MF"
 
 
 vname="WV_MF"
-WVMF = group_LES_budgets->$vname$(:,:) 
+WVMF = group_LES_budgets_SBG->$vname$(:,:) 
 WVMF!1="nzh"
 WVMF!0="TIME"
 WV_MF=transpose(WVMF)
