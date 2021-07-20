@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2018-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2018-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -6,6 +6,7 @@
 ! Modifications:
 !  P. Wautelet 22/02/2019: use MOD intrinsics with same kind for all arguments (to respect Fortran standard)
 !  P. Wautelet 19/04/2019: use modd_precision kinds
+!  P. Wautelet 20/07/2021: modify DATETIME_TIME2REFERENCE and DATETIME_DISTANCE to allow correct computation with 32-bit floats
 !-----------------------------------------------------------------
 MODULE MODE_DATETIME
 !
@@ -35,14 +36,17 @@ END INTERFACE
 !
 CONTAINS
 !
-SUBROUTINE DATETIME_TIME2REFERENCE(TPDATE,PDIST)
+SUBROUTINE DATETIME_TIME2REFERENCE( TPDATE, KDAYS, PSEC )
 !
-!Compute number of seconds since reference date (and time)
+!Compute number of days and seconds since reference date (and time)
+!Days and seconds are separated to allow correct computation of differences even
+!with reduced precision (mantissa is too small for 32-bit floats)
 !
 use modd_precision, only: MNHINT64
 
 TYPE(DATE_TIME), INTENT(IN)  :: TPDATE
-REAL,            INTENT(OUT) :: PDIST
+INTEGER,         INTENT(OUT) :: KDAYS
+REAL,            INTENT(OUT) :: PSEC
 !
 INTEGER(KIND=MNHINT64) :: ILEAPS                          !Number of leap days
 INTEGER(KIND=MNHINT64) :: IDAYS                           !Number of days since reference date
@@ -105,7 +109,8 @@ ILEAPS = ILEAPS+(IYEARS/400) ! multiple of 400 are leap years
 !Compute number of days since reference date
 IDAYS = IDAYS + 365*IYEARS + ILEAPS
 !
-PDIST = REAL(IDAYS*(60*60*24))+ZSEC
+KDAYS = IDAYS
+PSEC  = ZSEC
 !
 END SUBROUTINE DATETIME_TIME2REFERENCE
 !
@@ -118,12 +123,20 @@ TYPE(DATE_TIME), INTENT(IN)  :: TPDATEBEG
 TYPE(DATE_TIME), INTENT(IN)  :: TPDATEEND
 REAL,            INTENT(OUT) :: PDIST
 !
-REAL :: ZDISTBEG, ZDISTEND
+INTEGER :: IDAYSBEG, IDAYSEND
+REAL    :: ZSECBEG, ZSECEND
 !
-CALL DATETIME_TIME2REFERENCE(TPDATEBEG,ZDISTBEG)
-CALL DATETIME_TIME2REFERENCE(TPDATEEND,ZDISTEND)
+CALL DATETIME_TIME2REFERENCE( TPDATEBEG, IDAYSBEG, ZSECBEG )
+CALL DATETIME_TIME2REFERENCE( TPDATEEND, IDAYSEND, ZSECEND )
 !
-PDIST = ZDISTEND-ZDISTBEG
+IF ( ZSECEND < ZSECBEG ) THEN
+  !Add 1 day to ZSECEND and remove it from IDAYSEND
+  ZSECEND = ZSECEND + REAL( 24 * 60 * 60 )
+  IDAYSEND = IDAYSEND - 1
+  IF ( ZSECEND < ZSECBEG ) CALL PRINT_MSG( NVERB_FATAL, 'GEN', 'DATETIME_DISTANCE', 'unexpected: ZSECEND is too small' )
+END IF
+!
+PDIST = REAL( ( IDAYSEND - IDAYSBEG ) * (24*60*60) ) + ZSECEND - ZSECBEG
 !
 END SUBROUTINE DATETIME_DISTANCE
 !
