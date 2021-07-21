@@ -219,13 +219,13 @@ GNUCT(IIB:IIE,IJB:IJE,IKB:IKE) =      PW_NU(IIB:IIE,IJB:IJE,IKB:IKE)>XWMIN      
                                  .OR. PRVT(IIB:IIE,IJB:IJE,IKB:IKE)>ZRVSAT(IIB:IIE,IJB:IJE,IKB:IKE)
 IF (LACTIT) GNUCT(IIB:IIE,IJB:IJE,IKB:IKE) =      GNUCT(IIB:IIE,IJB:IJE,IKB:IKE)      &
                                              .OR. ZTDT(IIB:IIE,IJB:IJE,IKB:IKE)<XTMIN
-IF (LSUBG_COND) GNUCT(IIB:IIE,IJB:IJE,IKB:IKE) =      GNUCT(IIB:IIE,IJB:IJE,IKB:IKE)       &
-                                                 .OR. PCLDFR(IIB:IIE,IJB:IJE,IKB:IKE)>0.01
 !
 GNUCT(IIB:IIE,IJB:IJE,IKB:IKE) =       GNUCT(IIB:IIE,IJB:IJE,IKB:IKE)                       &
                                  .AND. PT(IIB:IIE,IJB:IJE,IKB:IKE)>(XTT-22.)                &
                                  .AND. ZCONC_TOT(IIB:IIE,IJB:IJE,IKB:IKE)>XCTMIN(2)
 !
+IF (LSUBG_COND) GNUCT(IIB:IIE,IJB:IJE,IKB:IKE) = GNUCT(IIB:IIE,IJB:IJE,IKB:IKE)       &
+                                           .AND. PCLDFR(IIB:IIE,IJB:IJE,IKB:IKE)>0.01
 IF (.NOT. LSUBG_COND) GNUCT(IIB:IIE,IJB:IJE,IKB:IKE) = GNUCT(IIB:IIE,IJB:IJE,IKB:IKE)       &
                                                  .AND. PRVT(IIB:IIE,IJB:IJE,IKB:IKE).GE.ZRVSAT(IIB:IIE,IJB:IJE,IKB:IKE)
 !
@@ -255,8 +255,8 @@ IF( INUCT >= 1 ) THEN
    ALLOCATE(ZRHODREF(INUCT)) 
    ALLOCATE(ZEXNREF(INUCT)) 
    DO JL=1,INUCT
-      ZRCT(JL) = PRCT(I1(JL),I2(JL),I3(JL))
-      ZCCT(JL) = PCCT(I1(JL),I2(JL),I3(JL))
+      ZRCT(JL) = PRCT(I1(JL),I2(JL),I3(JL))/PCLDFR(I1(JL),I2(JL),I3(JL))
+      ZCCT(JL) = PCCT(I1(JL),I2(JL),I3(JL))/PCLDFR(I1(JL),I2(JL),I3(JL))
       ZZT(JL)  = PT(I1(JL),I2(JL),I3(JL))
       ZZW1(JL) = ZRVSAT(I1(JL),I2(JL),I3(JL))
       ZZW2(JL) = PW_NU(I1(JL),I2(JL),I3(JL))
@@ -450,7 +450,7 @@ IF( INUCT >= 1 ) THEN
    END IF
 !
    ZW(:,:,:)   = UNPACK( 100.0*ZSMAX(:),MASK=GNUCT(:,:,:),FIELD=0.0 )
-   ZW2(:,:,:)  = UNPACK( ZZW6(:),MASK=GNUCT(:,:,:),FIELD=0.0 )
+   ZW2(:,:,:)  = PCLDFR(:,:,:) * UNPACK( ZZW6(:),MASK=GNUCT(:,:,:),FIELD=0.0 )
 !
 !
 !-------------------------------------------------------------------------------

@@ -261,7 +261,7 @@ REAL                     :: ZEPS         ! Mv/Md
 REAL                     :: ZDT          ! Time increment (2*Delta t or Delta t if cold start)
 REAL, DIMENSION(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3)) &
                          :: ZEXNS,&      ! guess of the Exner function at t+1
-                            ZT,   &      ! guess of the temperature at t+1
+                            ZT, ZT2,  &      ! guess of the temperature at t+1
                             ZCPH, &      ! guess of the CPh for the mixing
                             ZW,   &
                             ZW1,  &
@@ -269,8 +269,8 @@ REAL, DIMENSION(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3)) &
                             ZLV,  &      ! guess of the Lv at t+1
                             ZLS,  &      ! guess of the Ls at t+1
                             ZMASK,&
-                            ZRV,  &
-                            ZRC,  &
+                            ZRV, ZRV2,  &
+                            ZRC, ZRC2,  &
                             ZRI,  &
                             ZSIGS, &
                             ZW_MF
@@ -330,7 +330,7 @@ IKE = SIZE(PRHODJ,3) - JPVEXT
 ZEPS= XMV / XMD
 !
 IF (OSUBG_COND) THEN
-  ITERMAX=2
+  ITERMAX=1
 ELSE
   ITERMAX=1
 END IF
@@ -348,7 +348,7 @@ ZCTMIN(:) = XCTMIN(:) / ZDT
 !
 PTHT = PTHS*PTSTEP
 !
-PRVT(:,:,:) = PRT(:,:,:,1)
+PRVT(:,:,:) = PRS(:,:,:,1)*PTSTEP
 PRVS(:,:,:) = PRS(:,:,:,1)
 !
 PRCT(:,:,:) = 0.
@@ -362,7 +362,7 @@ PRSS(:,:,:) = 0.
 PRGT(:,:,:) = 0.
 PRGS(:,:,:) = 0.
 !
-IF ( KRR .GE. 2 ) PRCT(:,:,:) = PRT(:,:,:,2)
+IF ( KRR .GE. 2 ) PRCT(:,:,:) = PRS(:,:,:,2)*PTSTEP
 IF ( KRR .GE. 2 ) PRCS(:,:,:) = PRS(:,:,:,2)
 IF ( KRR .GE. 3 ) PRRT(:,:,:) = PRT(:,:,:,3) 
 IF ( KRR .GE. 3 ) PRRS(:,:,:) = PRS(:,:,:,3)
@@ -379,7 +379,7 @@ PCIT(:,:,:) = 0.
 PCCS(:,:,:) = 0.
 ! PCIS(:,:,:) = 0.
 !
-IF ( LWARM ) PCCT(:,:,:) = PSVT(:,:,:,NSV_LIMA_NC)
+IF ( LWARM ) PCCT(:,:,:) = PSVS(:,:,:,NSV_LIMA_NC)*PTSTEP
 IF ( LCOLD ) PCIT(:,:,:) = PSVT(:,:,:,NSV_LIMA_NI)
 !
 IF ( LWARM ) PCCS(:,:,:) = PSVS(:,:,:,NSV_LIMA_NC)
@@ -394,8 +394,8 @@ IF ( LWARM .AND. NMOD_CCN.GE.1 ) THEN
    ALLOCATE( PNAT(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3),NMOD_CCN) )
    PNFS(:,:,:,:) = PSVS(:,:,:,NSV_LIMA_CCN_FREE:NSV_LIMA_CCN_FREE+NMOD_CCN-1)
    PNAS(:,:,:,:) = PSVS(:,:,:,NSV_LIMA_CCN_ACTI:NSV_LIMA_CCN_ACTI+NMOD_CCN-1)
-   PNFT(:,:,:,:) = PSVT(:,:,:,NSV_LIMA_CCN_FREE:NSV_LIMA_CCN_FREE+NMOD_CCN-1)
-   PNAT(:,:,:,:) = PSVT(:,:,:,NSV_LIMA_CCN_ACTI:NSV_LIMA_CCN_ACTI+NMOD_CCN-1)
+   PNFT(:,:,:,:) = PSVS(:,:,:,NSV_LIMA_CCN_FREE:NSV_LIMA_CCN_FREE+NMOD_CCN-1)*PTSTEP
+   PNAT(:,:,:,:) = PSVS(:,:,:,NSV_LIMA_CCN_ACTI:NSV_LIMA_CCN_ACTI+NMOD_CCN-1)*PTSTEP
 END IF
 !
 ! IF ( LCOLD .AND. NMOD_IFN .GE. 1 ) THEN
@@ -476,6 +476,7 @@ DO JITER =1,ITERMAX
 !*       2.3    compute the intermediate temperature at t+1, T*
 !  
    ZT(:,:,:) = ( PTHS(:,:,:) * ZDT ) * ZEXNS(:,:,:)
+   ZT2(:,:,:) = ZT(:,:,:)
 !
 !*       2.4    compute the specific heat for moist air (Cph) at t+1
 !
@@ -499,6 +500,8 @@ DO JITER =1,ITERMAX
      !
       ZRV=PRVS*PTSTEP
       ZRC=PRCS*PTSTEP
+      ZRV2=PRVT
+      ZRC2=PRCT
       ZRI=0.
       ZSIGS=PSIGS
       CALL CONDENSATION(IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE, 1, 'S',   &
@@ -511,8 +514,8 @@ DO JITER =1,ITERMAX
       ZRC(:,:,:) = ZRC(:,:,:) + MAX(MIN(PRC_MF(:,:,:), ZRV(:,:,:)),0.)
       ZW_MF=0.
       CALL LIMA_CCN_ACTIVATION (TPFILE,                         &
-           PRHODREF, PEXNREF, PPABST, ZT, PDTHRAD, PW_NU+ZW_MF, &
-           PTHT, ZRV, ZRC, PCCT, PRRT, PNFT, PNAT,              &
+           PRHODREF, PEXNREF, PPABST, ZT2, PDTHRAD, PW_NU+ZW_MF, &
+           PTHT, ZRV2, ZRC2, PCCT, PRRT, PNFT, PNAT,              &
            PCLDFR                                               )
 !
    ELSE
