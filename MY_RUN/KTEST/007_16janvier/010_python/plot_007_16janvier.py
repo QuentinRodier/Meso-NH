@@ -38,7 +38,7 @@ Lplot = [ Dvar['f1']['ZS'],Dvar['f1']['THT850HPA'], Dvar['f1']['MRV700HPA'],Dvar
 lon = [Dvar['f1']['longitude']]*len(Lplot)
 lat = [Dvar['f1']['latitude']]*len(Lplot)
 Ltitle = ['Orography', 'Potential Temperature at 850hPa', 'Water vapor mixing at 700hPa','Pressure at z = 9000m']
-Lcbarlabel = ['(m)','(K)', 'g/kg', 'hPa']
+Lcbarlabel = ['m','K', 'g/kg', 'hPa']
 Lxlab = ['longitude']*len(Lplot)
 Lylab = ['latitude']*len(Lplot)
 Lminval = [0, 285, 0.9, 286]
@@ -55,15 +55,15 @@ fig1 = Panel1.psectionH(lon=lon, lat=lat, Lvar=Lplot, Lcarte=[], Llevel=Llvl, Lx
 Lplot1 = [ Dvar['f1']['UT850HPA'], Dvar['f1']['UT700HPA'], Dvar['f1']['ALT_U']]
 Lplot2 = [ Dvar['f1']['VT850HPA'], Dvar['f1']['VT700HPA'], Dvar['f1']['ALT_V']]
 Ltitle = ['Wind at 850hPa', 'Wind at 700hPa', 'Wind at 9000m']
-Lxlab = ['longitude']*len(Lplot)
-Lylab = ['latitude']*len(Lplot)
+Lxlab = ['longitude']*len(Lplot1)
+Lylab = ['latitude']*len(Lplot1)
 Llegendval = [20,20,40]
-Lcbarlabel = ['(m/s)']*len(Lplot)
-Larrowstep = [2]*len(Lplot)
-Lwidth = [0.002]*len(Lplot)
-Lcolor = ['black']*len(Lplot)
-Lprojection = [ccrs.PlateCarree()]*len(Lplot)
-Llvl = [0]*len(Lplot)
+Lcbarlabel = ['(m/s)']*len(Lplot1)
+Larrowstep = [2]*len(Lplot1)
+Lwidth = [0.002]*len(Lplot1)
+Lcolor = ['black']*len(Lplot1)
+Lprojection = [ccrs.PlateCarree()]*len(Lplot1)
+Llvl = [0]*len(Lplot1)
 fig2 = Panel1.pvector(Lxx=lon, Lyy=lat, Lvar1=Lplot1, Lvar2=Lplot2, Lcarte=[], Llevel=Llvl, Lxlab=Lxlab, Lylab=Lylab, 
                       Ltitle=Ltitle, Lwidth=Lwidth, Larrowstep=Larrowstep, Lproj=Lprojection,
                       Lcolor=Lcolor, Llegendval=Llegendval, Lcbarlabel=Lcbarlabel, Lid_overlap=[2,4,6], ax=fig1.axes)
@@ -79,7 +79,7 @@ Lplot = [ Dvar['f2']['ZS'],Dvar['f2']['THT850HPA'], Dvar['f2']['MRV700HPA'],Dvar
 lon = [Dvar['f2']['longitude']]*len(Lplot)
 lat = [Dvar['f2']['latitude']]*len(Lplot)
 Ltitle = ['Orography', 'Potential Temperature at 850hPa', 'Water vapor mixing at 700hPa','Pressure at z = 9000m']
-Lbarlabel = ['(m)','(K)', 'g/kg', 'hPa']
+Lcbarlabel = ['m','K', 'g/kg', 'hPa']
 Lxlab = ['longitude']*len(Lplot)
 Lylab = ['latitude']*len(Lplot)
 Lminval = [0, 285, 0.9, 286]
@@ -97,14 +97,14 @@ Lplot1 = [ Dvar['f2']['UT850HPA'], Dvar['f2']['UT700HPA'], Dvar['f2']['ALT_U']]
 Lplot2 = [ Dvar['f2']['VT850HPA'], Dvar['f2']['VT700HPA'], Dvar['f2']['ALT_V']]
 Ltitle = ['Wind at 850hPa', 'Wind at 700hPa', 'Wind at 9000m']
 Llegendval = [20,20,40]
-Lxlab = ['longitude']*len(Lplot)
-Lylab = ['latitude']*len(Lplot)
-Lbarlabel = ['(m/s)']*len(Lplot)
-Larrowstep = [2]*len(Lplot)
-Lwidth = [0.002]*len(Lplot)
-Lcolor = ['black']*len(Lplot)
-Lprojection = [ccrs.PlateCarree()]*len(Lplot)
-Llvl = [0]*len(Lplot)
+Lxlab = ['longitude']*len(Lplot1)
+Lylab = ['latitude']*len(Lplot1)
+Lcbarlabel = ['(m/s)']*len(Lplot1)
+Larrowstep = [2]*len(Lplot1)
+Lwidth = [0.002]*len(Lplot1)
+Lcolor = ['black']*len(Lplot1)
+Lprojection = [ccrs.PlateCarree()]*len(Lplot1)
+Llvl = [0]*len(Lplot1)
 fig2 = Panel2.pvector(Lxx=lon, Lyy=lat, Lvar1=Lplot1, Lvar2=Lplot2, Lcarte=[], Llevel=Llvl, Lxlab=Lxlab, Lylab=Lylab, 
                       Ltitle=Ltitle, Lwidth=Lwidth, Larrowstep=Larrowstep, Lproj=Lprojection,
                       Lcolor=Lcolor, Llegendval=Llegendval, Lcbarlabel=Lcbarlabel, Lid_overlap=[2,4,6], ax=fig1.axes)
