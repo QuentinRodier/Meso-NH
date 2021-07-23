@@ -74,7 +74,7 @@ END MODULE MODI_EOL_ALM
 !!    -------------
 !!    Original     24/01/17
 !!    Modification 14/10/20 (PA. Joulin) Updated for a main version
-!!
+!  P. Wautelet 23/07/2021: replace non-standard FLOAT function by REAL function
 !!---------------------------------------------------------------
 !
 !
@@ -408,22 +408,22 @@ DO KTSUBCOUNT=1,INBSUBCOUNT
           ZFAERO_RG(:) = MATMUL(XMAT_RG_RE(JROT,JBLA,JBELT,:,:), ZFAERO_RE(:))
 !
 !*       4.11     Adding it to the cell of Meso-NH
-          PFX_RG(JI,JJ,JK) = PFX_RG(JI,JJ,JK) + ZFAERO_RG(1) / FLOAT(INBSUBCOUNT)
-          PFY_RG(JI,JJ,JK) = PFY_RG(JI,JJ,JK) + ZFAERO_RG(2) / FLOAT(INBSUBCOUNT)
-          PFZ_RG(JI,JJ,JK) = PFZ_RG(JI,JJ,JK) + ZFAERO_RG(3) / FLOAT(INBSUBCOUNT)
+          PFX_RG(JI,JJ,JK) = PFX_RG(JI,JJ,JK) + ZFAERO_RG(1) / REAL(INBSUBCOUNT)
+          PFY_RG(JI,JJ,JK) = PFY_RG(JI,JJ,JK) + ZFAERO_RG(2) / REAL(INBSUBCOUNT)
+          PFZ_RG(JI,JJ,JK) = PFZ_RG(JI,JJ,JK) + ZFAERO_RG(3) / REAL(INBSUBCOUNT)
 !
 !*       4.12     Storing mean values over one full MNH timestep
 !               (all the sub-timesteps values are averaged)
           ZAOA_ATS(JROT,JBLA,JBELT)       = ZAOA_ATS(JROT,JBLA,JBELT)        &
-                                          + ZAOA         / FLOAT(INBSUBCOUNT)
+                                          + ZAOA         / REAL(INBSUBCOUNT)
           ZFLIFT_ATS(JROT,JBLA,JBELT)     = ZFLIFT_ATS(JROT,JBLA,JBELT)      &
-                                          + ZFLIFT       / FLOAT(INBSUBCOUNT)
+                                          + ZFLIFT       / REAL(INBSUBCOUNT)
           ZFDRAG_ATS(JROT,JBLA,JBELT)     = ZFDRAG_ATS(JROT,JBLA,JBELT)      &
-                                          + ZFDRAG       / FLOAT(INBSUBCOUNT)
+                                          + ZFDRAG       / REAL(INBSUBCOUNT)
           ZFAERO_RE_ATS(JROT,JBLA,JBELT,:)= ZFAERO_RE_ATS(JROT,JBLA,JBELT,:) &
-                                          + ZFAERO_RE(:) / FLOAT(INBSUBCOUNT)
+                                          + ZFAERO_RE(:) / REAL(INBSUBCOUNT)
           ZFAERO_RG_ATS(JROT,JBLA,JBELT,:)= ZFAERO_RG_ATS(JROT,JBLA,JBELT,:) &
-                                          + ZFAERO_RG(:) / FLOAT(INBSUBCOUNT)
+                                          + ZFAERO_RG(:) / REAL(INBSUBCOUNT)
 !
          ! End of position tests 
          END IF
