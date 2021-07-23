@@ -1071,12 +1071,14 @@ C ///////////////////////////////////
 C ***
 C234567
       subroutine cubic(a2,a1,a0,nr,crutes)
+      use modd_precision, only: MNHREAL64
       implicit none
       integer  nr      
       real a2,a1,a0,crutes(3)
-      real*8 qq,rr,a2sq,theta, sqrt3, one3rd
-      real*8 dum1,dum2,part1,part2,part3,rrsq,phi,yy1,yy2,yy3
-      real*8 costh, sinth
+      real(kind=MNHREAL64) qq,rr,a2sq,theta, sqrt3, one3rd
+      real(kind=MNHREAL64) dum1,dum2,part1,part2,part3,rrsq,phi
+      real(kind=MNHREAL64) yy1,yy2,yy3
+      real(kind=MNHREAL64) costh, sinth
       data sqrt3/1.732050808/, one3rd/0.333333333/
 	  a2sq=a2*a2
 	  qq=(a2sq-3.*a1)/9.
