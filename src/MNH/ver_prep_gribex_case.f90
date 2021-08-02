@@ -87,6 +87,8 @@ END MODULE MODI_VER_PREP_GRIBEX_CASE
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!                  Sep, 02, 2020 (Q. Rodier) use of geopotential height instead of
 !!                                height above orography for isobaric surface interpolation
+!!                  Aug, 02 2021 (J.-P. Chaboureau) change back to height above
+!!                                 orography for isobaric surface interpolation
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -264,18 +266,18 @@ END IF
 IF (HFILE(1:3)=='ATM') THEN
 
   IF (SIZE(XB_LS)/=0) THEN   ! hybrid level (w at flux points)
-  CALL VER_INTERP_TO_MIXED_GRID('ATM ',.TRUE.,XZS_LS,XZSMT_LS,    &
-                                ZZMASS_LS,ZSV_LS,                &
-                                ZZFLUX_LS,XPS_LS,ZPMHP_LS,       &
-                                ZTHV_LS,ZR_LS,                   &
-                                ZHU_LS,                          &
-                                ZTKE_LS,                         &
-                                ZU_LS,ZV_LS,                     &
-                                ZW_LS,'FLUX'                     )
+    CALL VER_INTERP_TO_MIXED_GRID('ATM ',.TRUE.,XZS_LS,XZSMT_LS,   &
+                                  ZZMASS_LS,ZSV_LS,                &
+                                  ZZFLUX_LS,XPS_LS,ZPMHP_LS,       &
+                                  ZTHV_LS,ZR_LS,                   &
+                                  ZHU_LS,                          &
+                                  ZTKE_LS,                         &
+                                  ZU_LS,ZV_LS,                     &
+                                  ZW_LS,'FLUX'                     )
   ELSE                      ! isobaric surfaces (w at mass points)
     !Warning, in that case (NCEP only for now) ZZFLUX_LS is not correct (but not used)
-    CALL VER_INTERP_TO_MIXED_GRID('ATM ',.TRUE.,XZS_LS,XZSMT_LS,    &
-                                  XGH_LS,ZSV_LS, &
+    CALL VER_INTERP_TO_MIXED_GRID('ATM ',.TRUE.,XZS_LS,XZSMT_LS,   &
+                                  ZZMASS_LS,ZSV_LS,                &
                                   ZZFLUX_LS,XPS_LS,ZPMHP_LS,       &
                                   ZTHV_LS,ZR_LS,                   &
                                   ZHU_LS,                          &
