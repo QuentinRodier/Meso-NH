@@ -136,7 +136,6 @@ END MODULE MODI_READ_ALL_DATA_GRIB_CASE
 !  Q. Rodier   21/04/2020: correction GFS u and v wind component written in the right vertical order
 !  Q. Rodier   02/09/2020: Read and interpol geopotential height for interpolation on isobaric surface Grid of NCEP
 !  P. Wautelet 09/03/2021: move some chemistry initializations to ini_nsv
-!JP Chaboureau 02/08/2021: add ERA5 reanlysis in pressure levels
 !-------------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -203,11 +202,10 @@ REAL,              INTENT(INOUT) :: PTIME_HORI  ! time spent in hor. interpolati
 !      ------------------------------
 ! General purpose variables
 INTEGER                            :: ILUOUT0       ! Unit used for output msg.
-INTEGER                            :: IRESP         ! Return code of FM-routines
+INTEGER                            :: IRESP   ! Return code of FM-routines
 INTEGER                            :: IRET          ! Return code from subroutines
-INTEGER(KIND=kindOfInt)            :: IRET_GRIB     ! Return code from subroutines
+INTEGER(KIND=kindOfInt)            :: IRET_GRIB          ! Return code from subroutines
 INTEGER, PARAMETER                 :: JP_GFS=31     ! number of pressure levels for GFS model
-INTEGER, PARAMETER                 :: JP_ERA=37     ! number of pressure levels for ERA5 reanalysis
 REAL                               :: ZA,ZB,ZC      ! Dummy variables
 REAL                               :: ZD,ZE,ZF      !  |
 REAL                               :: ZTEMP         !  |
@@ -232,7 +230,7 @@ REAL, DIMENSION(:,:), ALLOCATABLE  :: ZYM           ! Y of PGD mass points
 REAL, DIMENSION(:,:), ALLOCATABLE  :: ZLATM         ! Lat of PGD mass points
 REAL, DIMENSION(:,:), ALLOCATABLE  :: ZLONM         ! Lon of PGD mass points
 ! Variable involved in the task of reading the grib file
-INTEGER(KIND=kindOfInt)            :: IUNIT         ! unit of the grib file
+INTEGER(KIND=kindOfInt)                            :: IUNIT         ! unit of the grib file
 CHARACTER(LEN=50)                  :: HGRID         ! type of grid
 INTEGER                            :: IPAR          ! Parameter identifier
 INTEGER                            :: ITYP          ! type of level (Grib code table 3)
@@ -248,13 +246,13 @@ INTEGER                            :: IMODEL        ! Type of Grib file :
                                                     ! 10 -> NCEP - GFS
 INTEGER                            :: ICENTER       ! number of center
 INTEGER                            :: ISIZE         ! size of grib message
-INTEGER(KIND=kindOfInt)            :: ICOUNT        ! number of messages in the file
+INTEGER(KIND=kindOfInt)                            :: ICOUNT        ! number of messages in the file
 INTEGER(KIND=kindOfInt),DIMENSION(:),ALLOCATABLE   :: IGRIB         ! number of the grib in memory
 INTEGER                            :: INUM ,INUM_ZS ! number of a grib message 
-REAL,DIMENSION(:),ALLOCATABLE      :: ZPARAM        ! parameter of grib grid
+REAL,DIMENSION(:),ALLOCATABLE      :: ZPARAM        ! parameter of girb grid
 INTEGER,DIMENSION(:),ALLOCATABLE   :: IINLO         ! longitude of grib grid
 INTEGER(KIND=kindOfInt),DIMENSION(:),ALLOCATABLE   :: IINLO_GRIB         ! longitude of grib grid
-REAL,DIMENSION(:),ALLOCATABLE      :: ZPARAM_ZS     ! parameter of grib grid for ZS
+REAL,DIMENSION(:),ALLOCATABLE      :: ZPARAM_ZS     ! parameter of girb grid for ZS
 INTEGER,DIMENSION(:),ALLOCATABLE   :: IINLO_ZS      ! longitude of grib grid for ZS
 REAL,DIMENSION(:),ALLOCATABLE      :: ZVALUE        ! Intermediate array
 REAL,DIMENSION(:),ALLOCATABLE      :: ZOUT          ! Intermediate arrays
@@ -266,11 +264,11 @@ TYPE(DATE_TIME)                    :: TPTCUR        ! Date & time of the grib fi
 INTEGER                            :: ITWOZS
 ! surface pressure
 REAL, DIMENSION(:), ALLOCATABLE    :: ZPS_G         ! Grib data : Ps
-REAL, DIMENSION(:), ALLOCATABLE    :: ZLNPS_G       ! Grib data : ln(Ps)
-REAL, DIMENSION(:), ALLOCATABLE    :: ZWORK_LNPS    ! Grib data on zs grid: ln(Ps)
+REAL, DIMENSION(:), ALLOCATABLE    :: ZLNPS_G  ! Grib data : ln(Ps)
+REAL, DIMENSION(:), ALLOCATABLE    :: ZWORK_LNPS ! Grib data on zs grid: ln(Ps)
 INTEGER                            :: INJ,INJ_ZS
 ! orography
-CHARACTER(LEN=50)                  :: HGRID_ZS      ! type of grid
+CHARACTER(LEN=50)                  :: HGRID_ZS         ! type of grid
 !
 ! Reading and projection of the wind vectors u, v
 REAL                               :: ZALPHA        ! Angle of rotation
@@ -332,17 +330,14 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZTEV_LS  ! T V
 REAL, DIMENSION(:), ALLOCATABLE     :: ZPV      ! vertical level in grib file
 INTEGER                             :: IPVPRESENT ,IPV
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZR_DUM
-INTEGER                             :: IMI
+INTEGER                            :: IMI
 TYPE(TFILEDATA),POINTER             :: TZFILE
 INTEGER, DIMENSION(JP_GFS)    :: IP_GFS   ! list of pressure levels for GFS model
-INTEGER, DIMENSION(JP_ERA)    :: IP_ERA   ! list of pressure levels for ERA5 reanalysis
 INTEGER :: IVERSION,ILEVTYPE
-LOGICAL                       :: GFIND    ! to test if sea wave height is found
+LOGICAL                                       :: GFIND  ! to test if sea wave height is found
 !---------------------------------------------------------------------------------------
 IP_GFS=(/1000,975,950,925,900,850,800,750,700,650,600,550,500,450,400,350,300,&
-           250,200,150,100,70,50,30,20,10,7,5,3,2,1/)
-IP_ERA=(/1000,975,950,925,900,875,850,825,800,775,750,700,650,600,550,500,450,&
-           400,350,300,250,225,200,175,150,125,100,70,50,30,20,10,7,5,3,2,1/)
+           250,200,150,100,70,50,30,20,10,7,5,3,2,1/)!
 !
 TZFILE => NULL()
 !
@@ -572,6 +567,7 @@ ELSE IF (HFILE=='CHEM') THEN
 END IF
 DEALLOCATE (ZOUT)
 !
+! *** BEGIN MODIF SB ADD HS ***
 !---------------------------------------------------------------------------------------
 !* 2.3 bis Read and interpol Sea Wave significant height
 !---------------------------------------------------------------------------------------
@@ -597,7 +593,7 @@ SELECT CASE (IMODEL)
       GFIND=.TRUE. 
     END IF
   !
-  IF (GFIND) THEN
+  IF(GFIND) THEN
     !!!!!!!!!!! Faire en sorte de le faire que pour le CASE(0)
     ! Sea wave significant height disponible uniquement pour ECMWF
     ! recuperation du tableau de valeurs
@@ -619,6 +615,7 @@ SELECT CASE (IMODEL)
     DEALLOCATE (ZOUT)
   END IF
 END SELECT
+  ! *** END MODIF SB ADD HS ***
 !
 !---------------------------------------------------------------------------------------
 !* 2.4 Interpolation surface pressure
@@ -631,12 +628,6 @@ WRITE (ILUOUT0,'(A)') ' | Searching pressure'
 SELECT CASE (IMODEL)
   CASE(0) ! ECMWF
      CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=152)
-     IF( INUM < 0 ) THEN
-         WRITE (ILUOUT0,'(A)') ' | Logarithm of surface pressure is missing. It is then supposed that'
-         WRITE (ILUOUT0,'(A)') ' | this ECMWF file has atmospheric fields on pressure levels (e.g. ERA5)'
-         CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=134)
-         IMODEL = 11
-     END IF
   CASE(1,2,3,4,5) ! arpege mocage aladin et aladin reunion
       CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=1)
   CASE(6,7) ! NEW AROME,ARPEGE
@@ -656,7 +647,7 @@ SELECT CASE (IMODEL)
     ALLOCATE (ZLNPS_G(ISIZE))
     ZLNPS_G(:) =     ZVALUE(1:ISIZE)
     ZPS_G  (:) = EXP(ZVALUE(1:ISIZE))
-  CASE(1,2,3,4,5,10,11) ! arpege mocage aladin aladin-reunion NCEP ERA5
+  CASE(1,2,3,4,5,10) ! arpege mocage aladin aladin-reunion NCEP
     ALLOCATE (ZPS_G  (ISIZE))
     ALLOCATE (ZLNPS_G(ISIZE))
     ZPS_G  (:) =     ZVALUE(1:ISIZE)
@@ -717,7 +708,7 @@ DEALLOCATE (ZLNPS_G)
 !
 WRITE (ILUOUT0,'(A)') ' | Reading T and Q fields'
 !
-IF (IMODEL/=10.AND.IMODEL/=11) THEN
+IF (IMODEL/=10) THEN
   SELECT CASE (IMODEL)
     CASE(0) ! ECMWF
           ISTARTLEVEL=1
@@ -741,7 +732,7 @@ IF (IMODEL/=10.AND.IMODEL/=11) THEN
   IF(INUM < 0) call Print_msg( NVERB_FATAL, 'IO', 'READ_ALL_DATA_GRIB_CASE', 'air temperature is missing' )
   CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IQ,KLEV1=ISTARTLEVEL)
   IF(INUM < 0) call Print_msg( NVERB_FATAL, 'IO', 'READ_ALL_DATA_GRIB_CASE', 'atmospheric specific humidity is missing' )
-ELSEIF (IMODEL==10) THEN ! NCEP
+ELSE ! NCEP
   ISTARTLEVEL=1000
   IT=130
   IQ=157
@@ -749,32 +740,20 @@ ELSEIF (IMODEL==10) THEN ! NCEP
   IF(INUM < 0) call Print_msg( NVERB_FATAL, 'IO', 'READ_ALL_DATA_GRIB_CASE', 'air temperature is missing' )
   CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IQ,KLEV1=ISTARTLEVEL)
   IF(INUM < 0) call Print_msg( NVERB_FATAL, 'IO', 'READ_ALL_DATA_GRIB_CASE', 'atmospheric relative humidity is missing' )
-ELSE ! ERA5
-  ISTARTLEVEL=1000
-  IT=130
-  IQ=133
-  CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IT,KLEV1=ISTARTLEVEL)
-  IF(INUM < 0) call Print_msg( NVERB_FATAL, 'IO', 'READ_ALL_DATA_GRIB_CASE', 'air temperature is missing' )
-  CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IQ,KLEV1=ISTARTLEVEL)
-  IF(INUM < 0) call Print_msg( NVERB_FATAL, 'IO', 'READ_ALL_DATA_GRIB_CASE', 'atmospheric specific humidity is missing' )
 ENDIF
 !
-IF (IMODEL/=10.AND.IMODEL/=11) THEN ! others than NCEP AND ERA5
+IF (IMODEL/=10) THEN ! others than NCEP
   CALL GRIB_GET(IGRIB(INUM),'NV',INLEVEL)
   INLEVEL = NINT(INLEVEL / 2.) - 1
   CALL GRIB_GET_SIZE(IGRIB(INUM),'values',ISIZE)
 ELSE
-  IF (IMODEL==10) THEN
-    INLEVEL=JP_GFS
-  ELSE
-    INLEVEL=JP_ERA
-  END IF
+  INLEVEL=JP_GFS
 END IF
 !
 ALLOCATE (ZT_G(ISIZE,INLEVEL))
 ALLOCATE (ZQ_G(ISIZE,INLEVEL))
 !
-IF (IMODEL/=10.AND.IMODEL/=11) THEN ! others than NCEP AND ERA5
+IF (IMODEL/=10) THEN ! others than NCEP
   DO JLOOP1=1, INLEVEL
     ILEV1 = JLOOP1-1+ISTARTLEVEL
     CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IQ,KLEV1=ILEV1)
@@ -791,7 +770,7 @@ IF (IMODEL/=10.AND.IMODEL/=11) THEN ! others than NCEP AND ERA5
     CALL GRIB_GET(IGRIB(INUM),'values',ZT_G(:,INLEVEL-JLOOP1+1))
     CALL GRIB_GET(IGRIB(INUM),'Nj',INJ,IRET_GRIB)
   END DO
-ELSEIF (IMODEL==10) THEN ! NCEP
+ELSE ! NCEP
   DO JLOOP1=1, INLEVEL
     ILEV1 = IP_GFS(JLOOP1)
     CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IQ,KLEV1=ILEV1)
@@ -800,29 +779,14 @@ ELSEIF (IMODEL==10) THEN ! NCEP
       CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE',YMSG)
     END IF
     CALL GRIB_GET(IGRIB(INUM),'values',ZQ_G(:,JLOOP1),IRET_GRIB)
+    WRITE (ILUOUT0,*) 'Q ',ILEV1,IRET_GRIB
     CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=0,KNUMBER=0,KLEV1=ILEV1,KTFFS=100)
     IF (INUM< 0) THEN
       WRITE(YMSG,*) 'atmospheric temperature level ',JLOOP1,' is missing'
       CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE',YMSG)
     END IF
     CALL GRIB_GET(IGRIB(INUM),'values',ZT_G(:,JLOOP1),IRET_GRIB)
-    CALL GRIB_GET(IGRIB(INUM),'Nj',INJ,IRET_GRIB)
-  END DO
-ELSE ! ERA5
-  DO JLOOP1=1, INLEVEL
-    ILEV1 = IP_ERA(JLOOP1)
-    CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IQ,KLEV1=ILEV1)
-    IF (INUM< 0) THEN
-      WRITE(YMSG,*) 'atmospheric humidity level ',JLOOP1,' is missing'
-      CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE',YMSG)
-    END IF
-    CALL GRIB_GET(IGRIB(INUM),'values',ZQ_G(:,JLOOP1),IRET_GRIB)
-    CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IT,KLEV1=ILEV1)
-    IF (INUM< 0) THEN
-      WRITE(YMSG,*) 'atmospheric temperature level ',JLOOP1,' is missing'
-      CALL PRINT_MSG(NVERB_FATAL,'IO','READ_ALL_DATA_GRIB_CASE',YMSG)
-    END IF
-    CALL GRIB_GET(IGRIB(INUM),'values',ZT_G(:,JLOOP1),IRET_GRIB)
+    WRITE (ILUOUT0,*) 'T ',ILEV1,IRET_GRIB
     CALL GRIB_GET(IGRIB(INUM),'Nj',INJ,IRET_GRIB)
   END DO
 END IF
@@ -833,7 +797,7 @@ CALL COORDINATE_CONVERSION(IMODEL,IGRIB(INUM),IIU,IJU,ZLONOUT,ZLATOUT,&
 !
 !*  2.5.2  Load level definition parameters A and B
 !
-IF (IMODEL/=10.AND.IMODEL/=11) THEN ! others than NCEP AND ERA5
+IF (IMODEL/=10) THEN ! others than NCEP
 
   IF (HFILE(1:3)=='ATM') THEN
     XP00_LS = 101325.
@@ -889,19 +853,14 @@ IF (IMODEL/=10.AND.IMODEL/=11) THEN ! others than NCEP AND ERA5
 ELSE
   ALLOCATE (XA_LS(INLEVEL))
   ALLOCATE (XB_LS(0))
-  IF (IMODEL==10) THEN
-    XA_LS = 100.*IP_GFS
-  ELSE
-    XA_LS = 100.*IP_ERA
-  END IF
+  XA_LS = 100.*IP_GFS
 END IF
 !
 !*  2.5.3  Compute atmospheric pressure on grib grid
 !
 WRITE (ILUOUT0,'(A)') ' | Atmospheric pressure on Grib grid is being computed'
-
 ALLOCATE (ZPF_G(INI,INLEVEL))
-IF (IMODEL/=10.AND.IMODEL/=11) THEN ! others than NCEP and ERA5
+IF (IMODEL/=10) THEN ! others than NCEP
   IF (HFILE(1:3)=='ATM') THEN
     ZPF_G(:,:) = SPREAD(XA_LS,1,INI)*XP00_LS + &
     SPREAD(XB_LS,1,INI)*SPREAD(ZPS_G(1:INI),2,INLEVEL)
@@ -910,11 +869,7 @@ IF (IMODEL/=10.AND.IMODEL/=11) THEN ! others than NCEP and ERA5
     SPREAD(XB_SV_LS,1,INI)*SPREAD(ZPS_G(1:INI),2,INLEVEL)
   END IF
 ELSE
-  IF (IMODEL==10) THEN
-    ZPF_G(:,:) = 100.*SPREAD(IP_GFS,1,INI)
-  ELSE
-    ZPF_G(:,:) = 100.*SPREAD(IP_ERA,1,INI)
-  END IF
+  ZPF_G(:,:) = 100.*SPREAD(IP_GFS,1,INI)
 END IF
 DEALLOCATE (ZPS_G)
 !
@@ -1010,8 +965,6 @@ ALLOCATE (ZRV_G(INI))
 ALLOCATE (ZOUT(INO))
 IF (IMODEL/=10) THEN ! others than NCEP
   DO JLOOP1=1, INLEVEL
-    !WRITE (ILUOUT0,*) 'JLOOP1=',JLOOP1,MINVAL(ZPM_G(:,JLOOP1)),MINVAL(ZT_G(:,JLOOP1)),MINVAL(ZQ_G(:,JLOOP1))
-    !WRITE (ILUOUT0,*) '                     ',MAXVAL(ZPM_G(:,JLOOP1)),MAXVAL(ZT_G(:,JLOOP1)),MAXVAL(ZQ_G(:,JLOOP1))
     !
     ! Compute Theta V and relative humidity on grib grid
     !
@@ -1041,15 +994,15 @@ IF (IMODEL/=10) THEN ! others than NCEP
   END DO
 ELSE !NCEP
   DO JLOOP1=1, INLEVEL
-    !WRITE (ILUOUT0,*) 'JLOOP1=',JLOOP1,MINVAL(ZPM_G(:,JLOOP1)),MINVAL(ZT_G(:,JLOOP1)),MINVAL(ZQ_G(:,JLOOP1))
-    !WRITE (ILUOUT0,*) '                     ',MAXVAL(ZPM_G(:,JLOOP1)),MAXVAL(ZT_G(:,JLOOP1)),MAXVAL(ZQ_G(:,JLOOP1))
+    WRITE (ILUOUT0,*) 'JLOOP1=',JLOOP1,MINVAL(ZPM_G(:,JLOOP1)),MINVAL(ZT_G(:,JLOOP1)),MINVAL(ZQ_G(:,JLOOP1))
+    WRITE (ILUOUT0,*) '                     ',MAXVAL(ZPM_G(:,JLOOP1)),MAXVAL(ZT_G(:,JLOOP1)),MAXVAL(ZQ_G(:,JLOOP1))
     ZH_G(:)  =ZQ_G(:,JLOOP1)
     ZRV_G(:) = (XRD/XRV)*SM_FOES(ZT_G(:,JLOOP1))*0.01*ZH_G(:) &
                         /(ZPM_G(:,JLOOP1) -SM_FOES(ZT_G(:,JLOOP1))*0.01*ZH_G(:))
-    !WRITE (ILUOUT0,*) '                     ',MINVAL(ZRV_G(:)),MAXVAL(ZRV_G(:))
+    WRITE (ILUOUT0,*) '                     ',MINVAL(ZRV_G(:)),MAXVAL(ZRV_G(:))
     ZTHV_G(:)=ZT_G(:,JLOOP1) * ((XP00/ZPM_G(:,JLOOP1))**(XRD/XCPD)) * &
                                ((1. + XRV*ZRV_G(:)/XRD) / (1. + ZRV_G(:)))
-    !WRITE (ILUOUT0,*) '                     ',MINVAL(ZTHV_G(:)),MAXVAL(ZTHV_G(:))
+    WRITE (ILUOUT0,*) '                     ',MINVAL(ZTHV_G(:)),MAXVAL(ZTHV_G(:))
     !
     ! Interpolation : H           
     CALL HORIBL(ZPARAM(3),ZPARAM(4),ZPARAM(5),ZPARAM(6),INT(ZPARAM(2)),IINLO,INI, &
@@ -1074,18 +1027,14 @@ DEALLOCATE (ZOUT)
 !
 ALLOCATE (ZGH_G(ISIZE,INLEVEL))
 !
-IF (IMODEL==10.OR.IMODEL==11) THEN !NCEP or ERA5 with pressure grid only
+IF(IMODEL==10) THEN !NCEP with pressure grid only
  DO JLOOP1=1, INLEVEL
-  IF (IMODEL==10) THEN
-    ILEV1 = IP_GFS(JLOOP1)
-    CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=3,KNUMBER=5,KLEV1=ILEV1)
-  ELSE
-    ILEV1 = IP_ERA(JLOOP1)
-    CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=129,KLEV1=ILEV1)
-  END IF
+  ILEV1 = IP_GFS(JLOOP1)
+  WRITE (ILUOUT0,'(A)') ' | Searching geopotential height'
+  CALL SEARCH_FIELD(IGRIB,INUM,KDIS=0,KCAT=3,KNUMBER=5,KLEV1=ILEV1)
     IF (INUM< 0) THEN
     !callabortstop
-      WRITE(YMSG,*) 'Geopotential height level ',JLOOP1,' is missing'
+      WRITE(YMSG,*) 'Geopoential height level ',JLOOP1,' is missing'
       CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_GRIB_CASE',YMSG)
     END IF
   !
@@ -1104,16 +1053,15 @@ IF (IMODEL==10.OR.IMODEL==11) THEN !NCEP or ERA5 with pressure grid only
   CALL HORIBL(ZPARAM(3),ZPARAM(4),ZPARAM(5),ZPARAM(6),INT(ZPARAM(2)),IINLO,INI, &
               ZGH_G(:,JLOOP1),INO,ZXOUT,ZYOUT,ZOUT,.FALSE.,PTIME_HORI,.FALSE.)
   CALL ARRAY_1D_TO_2D (INO,ZOUT,IIU,IJU,XGH_LS(:,:,JLOOP1))
-  WRITE (ILUOUT0,*) ' XGH_LS              ',MINVAL(XGH_LS(:,:,JLOOP1)),MAXVAL(XGH_LS(:,:,JLOOP1))
  END DO
  DEALLOCATE(ZOUT)
 END IF
 !
 !*  2.5.5  Compute atmospheric pressure on MESO-NH grid
 !
-WRITE (ILUOUT0,'(A)') ' | Atmospheric pressure on the Meso-NH grid is being computed'
+WRITE (ILUOUT0,'(A)') ' | Atmospheric pressure on MesoNH grid is being computed'
 ALLOCATE (ZPF_LS(IIU,IJU,INLEVEL))
-IF (IMODEL/=10.AND.IMODEL/=11) THEN ! others than NCEP and ERA5
+IF (IMODEL/=10) THEN ! others than NCEP
   IF (HFILE(1:3)=='ATM') THEN
     ZPF_LS(:,:,:) = SPREAD(SPREAD(XA_LS,1,IIU),2,IJU)*XP00_LS + &
     SPREAD(SPREAD(XB_LS,1,IIU),2,IJU)*SPREAD(XPS_LS,3,INLEVEL)
@@ -1122,11 +1070,7 @@ IF (IMODEL/=10.AND.IMODEL/=11) THEN ! others than NCEP and ERA5
     SPREAD(SPREAD(XB_SV_LS,1,IIU),2,IJU)*SPREAD(XPS_SV_LS,3,INLEVEL)
   END IF
 ELSE
-  IF(IMODEL==10) THEN
-    ZPF_LS(:,:,:) = 100.*SPREAD(SPREAD(IP_GFS,1,IIU),2,IJU)
-  ELSE
-    ZPF_LS(:,:,:) = 100.*SPREAD(SPREAD(IP_ERA,1,IIU),2,IJU)
-  END IF
+  ZPF_LS(:,:,:) = 100.*SPREAD(SPREAD(IP_GFS,1,IIU),2,IJU)
 END IF  
 !
 ALLOCATE (ZEXNF_LS(IIU,IJU,INLEVEL))
@@ -1476,6 +1420,11 @@ END IF
 ! After this projection, the file is simil
 !
 IF (HFILE(1:3)=='ATM') THEN
+IF (IMODEL/=10) THEN ! others than NCEP
+  ISTARTLEVEL = 1
+ELSE
+  ISTARTLEVEL = 10
+END IF
 ALLOCATE (XU_LS(IIU,IJU,INLEVEL))
 ALLOCATE (XV_LS(IIU,IJU,INLEVEL))
 ALLOCATE (ZTU_LS(INO))
@@ -1496,20 +1445,16 @@ SELECT CASE (IMODEL)
       ISTARTLEVEL = 0
       CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IPAR,KLEV1=ISTARTLEVEL)
     END IF
-  CASE (10,11)
+  CASE (10)
     IPAR = 131
     ISTARTLEVEL = 1
 END SELECT
 
 DO JLOOP1 = ISTARTLEVEL, ISTARTLEVEL+INLEVEL-1
-  IF (IMODEL/=10.AND.IMODEL/=11) THEN ! others than NCEP and ERA5
+  IF (IMODEL/=10) THEN ! others than NCEP
     ILEV1 = JLOOP1
   ELSE
-    IF(IMODEL==10) THEN
-      ILEV1 = IP_GFS(INLEVEL+ISTARTLEVEL-JLOOP1)
-    ELSE
-      ILEV1 = IP_ERA(INLEVEL+ISTARTLEVEL-JLOOP1)
-    END IF
+    ILEV1 = IP_GFS(INLEVEL+ISTARTLEVEL-JLOOP1)
   END IF
   ! read component u 
   CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IPAR,KLEV1=ILEV1)
@@ -1538,14 +1483,10 @@ DO JLOOP1 = ISTARTLEVEL, ISTARTLEVEL+INLEVEL-1
   END IF
   DEALLOCATE (ZVALUE)
   ! read component v and perform interpolation if not Arpege grid
-  IF (IMODEL/=10.AND.IMODEL/=11) THEN ! others than NCEP and ERA5
+  IF (IMODEL/=10) THEN ! others than NCEP
     ILEV1 = JLOOP1
   ELSE
-    IF(IMODEL==10) THEN
-      ILEV1 = IP_GFS(INLEVEL+ISTARTLEVEL-JLOOP1)
-    ELSE
-      ILEV1 = IP_ERA(INLEVEL+ISTARTLEVEL-JLOOP1)
-    END IF
+    ILEV1 = IP_GFS(INLEVEL+ISTARTLEVEL-JLOOP1)
   END IF
   CALL SEARCH_FIELD(IGRIB,INUM,KPARAM=IPAR+1,KLEV1=ILEV1)
   IF (INUM < 0) THEN
@@ -1720,7 +1661,7 @@ TPTCUR%nmonth=INT((IDATE-TPTCUR%nyear*10000)/100)
 TPTCUR%nday=IDATE-TPTCUR%nyear*10000-TPTCUR%nmonth*100
 CALL GRIB_GET(IGRIB(INUM),'startStep',ITIMESTEP,IRET_GRIB)
 CALL GRIB_GET(IGRIB(INUM),'stepUnits',CSTEPUNIT,IRET_GRIB)
-IF (IMODEL==0.OR.IMODEL==11) THEN
+IF (IMODEL==0) THEN
   ITWOZS=0
   IF ((TPTCUR%nyear ==2000).AND.(TPTCUR%nmonth  >11)) ITWOZS=1
   IF ((TPTCUR%nyear ==2000).AND.(TPTCUR%nmonth ==11)) THEN
@@ -2194,7 +2135,7 @@ ALLOCATE(INLO_GRIB(SIZE(KINLO)))
 INO= KNOLON*KNOLARG
 SELECT CASE (KMODEL)
 !
-CASE(0,5,11) ! CEP/MOCAGE/ERA5
+CASE(0,5) ! CEP/MOCAGE
 ! en theorie il faut ces 4 lignes
 !  CALL GRIB_GET(KGRIB,'latitudeOfFirstGridPointInDegrees',ZILA1)
 !  CALL GRIB_GET(KGRIB,'longitudeOfFirstGridPointInDegrees',ZILO1)
