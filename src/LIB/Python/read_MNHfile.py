@@ -11,6 +11,47 @@ MNH_LIC for details. version 1.
 import netCDF4 as nc
 import numpy as np
 
+def read_withEPY(LnameFiles,Dvar_input, Dvar_output={}, path='.'):
+    import epygram
+    epygram.init_env()
+    for i,keyFiles in enumerate(Dvar_input.keys()):
+        print('Reading file ' + keyFiles)
+        theFile = epygram.formats.resource(LnameFiles[i],'r')
+        Dvar_output[keyFiles] = {} #initialize dic for each files 
+        for var in Dvar_input[keyFiles]: #For each files
+            #  Read variables
+            if(theFile.format == 'FA'):
+                Dvar_output[keyFiles][var] = theFile.readfield(var)
+            elif(theFile.format == 'LFI'):
+                if(var[1]==None or var[1]==0): # 2D Field
+                    Dvar_output[keyFiles][var[0]] = theFile.readfield(var)
+                else: # 3D Field
+                    Dvar_output[keyFiles][var[0]+str(var[1])] = theFile.readfield(var).getlevel(k=var[1])
+            elif(theFile.format == 'netCDFMNH'):
+                if(var[1]==None or var[1]==0): # 2D Field
+                    Dvar_output[keyFiles][var[0]] = theFile.readfield(var[0])
+                else:
+                    Dvar_output[keyFiles][var[0]+str(var[1])] = theFile.readfield(var[0]).getlevel(k=var[1])
+            elif(theFile.format == 'GRIB'): 
+                if len(var)==6:  # GRIB2
+                    Dvar_output[keyFiles][var[5]] = theFile.readfield({'discipline': var[0], 'parameterCategory': var[1], 'typeOfFirstFixedSurface': var[2],'parameterNumber': var[3], 'level': var[4]})
+                elif len(var)==5: # GRIB1
+                    Dvar_output[keyFiles][var[4]] = theFile.readfield({'indicatorOfParameter': var[0], 'paramId': var[1], 'indicatorOfTypeOfLevel': var[2], 'level': var[3]})
+                else: epygramError("GRIB format error. GRIB1 expects 4 values : [indicatorOfParameter, paramId, indicatorOfTypeOfLevel, level, 'casual name'], GRIB2 expects 5 values [discipline, parameterCategory, typeOfFirstFixedSurface, parameterNumber, level, casual name]")
+            else:
+                raise epygramError("Unknown format file, please use FA, LFI, GRIB or MNH NetCDF")
+        theFile.close()
+
+    #  Transform spectral data to physics space (for AROME and ARPEGE)
+    for f in Dvar_output:
+        for var in Dvar_output[f]:
+            try: 
+                if(Dvar_output[f][var].spectral):
+                    Dvar_output[f][var].sp2gp()
+            except:
+                break
+    return Dvar_output
+
 def read_netcdf(LnameFiles, Dvar_input, path='.', get_data_only=True, del_empty_dim=True, removeHALO=True):
     """Read a netCDF4 Meso-NH file
     For each file, call functions to read diachronic or synchronous file
@@ -20,9 +61,9 @@ def read_netcdf(LnameFiles, Dvar_input, path='.', get_data_only=True, del_empty_
     LnameFiles : list of str
         list of Meso-NH netCDF4 file (diachronic or synchronous)
     
-    Dvar_input : Dict{'fileNumber' : 'var_name',('group_name','var_name')}
+    Dvar_input : Dict{'keyFile' : 'var_name',('group_name','var_name')}
         where
-        'fileNumber' is a str corresponding to 'f' + the file number in LnameFiles (by order)
+        'keyFile' is a str corresponding to a key for the file number in LnameFiles (by order)
         'var_name' is the exact str of the netCDF4 variable name
         ('group_name','var_name') is the exact tuple of the (sub-)groups name and the netCDF4 variable name
         e.g. : {'f1':['ZS', 'WT','ni', 'level'],
@@ -51,19 +92,18 @@ def read_netcdf(LnameFiles, Dvar_input, path='.', get_data_only=True, del_empty_
         Dvar[ifile][('group_name','var_name')] if the group contains more than one variable
     """
     Dvar = {}
-    for i,nameFiles in enumerate(LnameFiles):
-        f_nb = 'f' + str(i+1)
-        print('Reading file ' + f_nb)
-        print(path + nameFiles)
-        theFile = nc.Dataset(path + nameFiles,'r')
-        Dvar[f_nb] = {}
-        if '000' in nameFiles[-6:-3]: 
+    for i,keyFiles in enumerate(Dvar_input.keys()):
+        print('Reading file ' + keyFiles)
+        print(path + LnameFiles[i])
+        theFile = nc.Dataset(path + LnameFiles[i],'r')
+        Dvar[keyFiles] = {}
+        if '000' in LnameFiles[i][-6:-3]: 
             if theFile['MASDEV'][0] <= 54:
                 raise TypeError('The python lib is available for MNH >= 5.5')
             else:
-                Dvar[f_nb] = read_TIMESfiles_55(theFile, Dvar_input[f_nb], Dvar[f_nb], get_data_only, del_empty_dim, removeHALO)
+                Dvar[keyFiles] = read_TIMESfiles_55(theFile, Dvar_input[keyFiles], Dvar[keyFiles], get_data_only, del_empty_dim, removeHALO)
         else:
-            Dvar[f_nb]= read_BACKUPfile(theFile, Dvar_input[f_nb], Dvar[f_nb], get_data_only, del_empty_dim, removeHALO)
+            Dvar[keyFiles]= read_BACKUPfile(theFile, Dvar_input[keyFiles], Dvar[keyFiles], get_data_only, del_empty_dim, removeHALO)
         theFile.close()
     return Dvar
 
