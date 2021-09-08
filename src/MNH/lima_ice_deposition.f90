@@ -65,6 +65,7 @@ SUBROUTINE LIMA_ICE_DEPOSITION (PTSTEP, LDCOMPUTE,                        &
 !!    MODIFICATIONS
 !!    -------------
 !!      Original             15/03/2018
+!!      B. Vié               30/08/2021      Disable CNVS if LSNOW=F  
 !!
 !-------------------------------------------------------------------------------
 !
@@ -171,5 +172,9 @@ P_CI_CNVS(:) = - ZZW2(:)
 !
 END WHERE
 !
+IF (.NOT.LSNOW) THEN
+   P_RI_CNVS(:) = 0.
+   P_CI_CNVS(:) = 0.
+END IF
 !
 END SUBROUTINE LIMA_ICE_DEPOSITION
