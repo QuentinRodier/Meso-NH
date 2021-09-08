@@ -149,7 +149,7 @@ WHERE( GMICRO )
 !
    ZZW(:) = 0.0
    WHERE ( (PRST(:)>XRTMIN(5)) )
-      ZZW(:) = ( PSSI(:)/(PAI(:)) ) * &
+      ZZW(:) = ( PSSI(:)/(PAI(:)*PRHODREF(:)) ) * &
            ( X0DEPS*PLBDS(:)**XEX0DEPS + X1DEPS*PCJ(:)*PLBDS(:)**XEX1DEPS )
       ZZW(:) =    ZZW(:)*(0.5+SIGN(0.5,ZZW(:))) - ABS(ZZW(:))*(0.5-SIGN(0.5,ZZW(:)))
    END WHERE
