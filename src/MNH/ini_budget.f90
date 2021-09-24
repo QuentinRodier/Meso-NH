@@ -4148,7 +4148,7 @@ end subroutine Budget_source_add
 subroutine Ini_budget_groups( tpbudgets, kbudim1, kbudim2, kbudim3 )
   use modd_budget,     only: tbudgetdata
   use modd_field,      only: TYPEINT, TYPEREAL
-  use modd_parameters, only: NMNHNAMELGTMAX, NSTDNAMELGTMAX
+  use modd_parameters, only: NMNHNAMELGTMAX, NSTDNAMELGTMAX, NLONGNAMELGTMAX, NUNITLGTMAX, NCOMMENTLGTMAX
 
   use mode_tools,  only: Quicksort
 
@@ -4159,9 +4159,9 @@ subroutine Ini_budget_groups( tpbudgets, kbudim1, kbudim2, kbudim3 )
 
   character(len=NMNHNAMELGTMAX)      :: ymnhname
   character(len=NSTDNAMELGTMAX)      :: ystdname
-  character(len=32)                  :: ylongname
-  character(len=40)                  :: yunits
-  character(len=100)                 :: ycomment
+  character(len=NLONGNAMELGTMAX)     :: ylongname
+  character(len=NUNITLGTMAX)         :: yunits
+  character(len=NCOMMENTLGTMAX)      :: ycomment
   integer                            :: ji, jj, jk
   integer                            :: isources ! Number of source terms in a budget
   integer                            :: inbgroups ! Number of budget groups

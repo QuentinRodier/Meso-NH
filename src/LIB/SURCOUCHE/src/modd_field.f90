@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 2016-2020 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2016-2021 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !MNH_LIC for details. version 1.
@@ -15,7 +15,7 @@
 !-----------------------------------------------------------------
 module modd_field
 
-use modd_parameters, only: NGRIDUNKNOWN, NMNHNAMELGTMAX, NSTDNAMELGTMAX
+use modd_parameters, only: NGRIDUNKNOWN, NMNHNAMELGTMAX, NSTDNAMELGTMAX, NLONGNAMELGTMAX, NUNITLGTMAX, NCOMMENTLGTMAX
 use modd_type_date,  only: date_time
 #ifdef MNH_IOCDF4
 use NETCDF,          only: NF90_FILL_INT, NF90_FILL_REAL
@@ -179,11 +179,11 @@ TYPE TFIELDPTR_T1D
 END TYPE TFIELDPTR_T1D
 !
 type :: tfield_metadata_base
-  CHARACTER(LEN=NMNHNAMELGTMAX) :: CMNHNAME  = '' !Name of the field (for MesoNH, non CF convention)
-  CHARACTER(LEN=NSTDNAMELGTMAX) :: CSTDNAME  = '' !Standard name (CF convention)
-  CHARACTER(LEN=32)  :: CLONGNAME = '' !Long name (CF convention)
-  CHARACTER(LEN=40)  :: CUNITS    = '' !Canonical units (CF convention)
-  CHARACTER(LEN=100) :: CCOMMENT  = '' !Comment (for MesoNH, non CF convention)
+  CHARACTER(LEN=NMNHNAMELGTMAX)  :: CMNHNAME  = '' !Name of the field (for MesoNH, non CF convention)
+  CHARACTER(LEN=NSTDNAMELGTMAX)  :: CSTDNAME  = '' !Standard name (CF convention)
+  CHARACTER(LEN=NLONGNAMELGTMAX) :: CLONGNAME = '' !Long name (CF convention)
+  CHARACTER(LEN=NUNITLGTMAX)     :: CUNITS    = '' !Canonical units (CF convention)
+  CHARACTER(LEN=NCOMMENTLGTMAX)  :: CCOMMENT  = '' !Comment (for MesoNH, non CF convention)
   INTEGER            :: NGRID     = NGRIDUNKNOWN !Localization on the model grid
   INTEGER            :: NTYPE     = TYPEUNDEF !Datatype
   INTEGER            :: NDIMS     = 0  !Number of dimensions
