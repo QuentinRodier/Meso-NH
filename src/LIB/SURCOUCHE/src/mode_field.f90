@@ -15,6 +15,7 @@
 !  P. Wautelet 19/06/2019: add Fieldlist_nmodel_resize subroutine + provide KMODEL to INI_FIELD_LIST when known
 !  P. Wautelet 23/01/2020: split in modd_field.f90 and mode_field.f90
 !  JL Redelsperger 03/2021: add variables for Ocean LES and auto-coupled version
+!  P. Wautelet 24/09/2021: add Goto_model_1field generic procedure
 !-----------------------------------------------------------------
 module mode_field
 
@@ -35,6 +36,10 @@ public :: Alloc_field_scalars
 public :: Fieldlist_goto_model
 public :: Fieldlist_nmodel_resize
 public :: Ini_field_scalars
+
+interface Goto_model_1field
+  module procedure :: Goto_model_1field_x3d
+end interface
 
 contains
 
@@ -4604,6 +4609,57 @@ END IF
 END IF !KFROM/=KTO
 !
 END SUBROUTINE FIELDLIST_GOTO_MODEL
+
+
+subroutine Goto_model_1field_x3d(hname, kfrom, kto, pdata)
+
+implicit none
+
+character(len=*),                   intent(in)    :: hname
+integer,                            intent(in)    :: kfrom
+integer,                            intent(in)    :: kto
+real,    dimension(:,:,:), pointer, intent(inout) :: pdata
+
+integer :: iid
+integer :: iresp
+integer :: isize
+integer :: ji
+type(tfieldptr_x3d), dimension(:), allocatable :: tzfield_x3d
+
+call Find_field_id_from_mnhname( hname, iid, iresp )
+
+isize = Max( kfrom, kto )
+
+if ( tfieldlist(iid)%nmodelmax < 0 ) then
+  !nmodelmax is < 0 if the allocation of the field has been done by hand
+  !(not using a constructor, default value of nmodelmax)
+  !The correct value of nmodelmax is hence computed here
+  tfieldlist(iid)%nmodelmax = Size( tfieldlist(iid)%tfield_x3d )
+end if
+
+if ( isize > tfieldlist(iid)%nmodelmax ) then
+  if ( tfieldlist(iid)%nmodelmax == 0 ) then
+    Allocate( tfieldlist(iid)%tfield_x3d(isize) )
+    do ji = 1, isize
+      tfieldlist(iid)%tfield_x3d(ji)%data => null()
+    end do
+  else
+    Allocate( tzfield_x3d(isize) )
+    do ji = 1, Size( tfieldlist(iid)%tfield_x3d)
+      tzfield_x3d(ji)%data => tfieldlist(iid)%tfield_x3d(ji)%data
+    end do
+    do ji = Size( tfieldlist(iid)%tfield_x3d) + 1, isize
+      tzfield_x3d(ji)%data => null()
+    end do
+    call Move_alloc( from = tzfield_x3d, to = tfieldlist(iid)%tfield_x3d )
+  end if
+  tfieldlist(iid)%nmodelmax = isize
+end if
+
+tfieldlist(iid)%tfield_x3d(kfrom)%data => pdata
+if ( kfrom /= kto ) pdata => tfieldlist(iid)%tfield_x3d(kto)%data
+
+end subroutine Goto_model_1field_x3d
 
 
 subroutine Fieldlist_nmodel_resize( kmodelnew )
