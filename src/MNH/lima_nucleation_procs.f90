@@ -86,6 +86,7 @@ use modd_budget,     only: lbu_enable, lbudget_th, lbudget_rv, lbudget_rc, lbudg
                            NBUDGET_TH, NBUDGET_RV, NBUDGET_RC, NBUDGET_RI, NBUDGET_SV1, &
                            tbudgets
 USE MODD_IO,         ONLY: TFILEDATA
+USE MODD_PARAMETERS, ONLY : JPHEXT, JPVEXT
 USE MODD_NSV,        ONLY : NSV_LIMA_NC, NSV_LIMA_NR, NSV_LIMA_CCN_FREE, NSV_LIMA_CCN_ACTI, &
                             NSV_LIMA_NI, NSV_LIMA_IFN_FREE, NSV_LIMA_IFN_NUCL, NSV_LIMA_IMM_NUCL, NSV_LIMA_HOM_HAZE
 USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LMEYERS, LSNOW, LWARM, LACTI, LRAIN, LHHONI,  &
@@ -98,6 +99,7 @@ USE MODI_LIMA_CCN_ACTIVATION
 USE MODI_LIMA_CCN_HOM_FREEZING
 USE MODI_LIMA_MEYERS_NUCLEATION
 USE MODI_LIMA_PHILLIPS_IFN_NUCLEATION
+USE MODE_RAIN_ICE_NUCLEATION
 !
 !-------------------------------------------------------------------------------
 !
@@ -142,6 +144,7 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PPRCFR     ! Precipitation fraction
 !-------------------------------------------------------------------------------
 !
 REAL, DIMENSION(SIZE(PT,1),SIZE(PT,2),SIZE(PT,3))          :: Z_TH_HIND, Z_RI_HIND, Z_CI_HIND, Z_TH_HINC, Z_RC_HINC, Z_CC_HINC
+REAL, DIMENSION(SIZE(PT,1),SIZE(PT,2),SIZE(PT,3))          :: ZTHS, ZRIS, ZRVS, ZRHT, ZCIT, ZT
 !
 integer :: idx
 INTEGER :: JL
@@ -258,15 +261,35 @@ END IF
 !-------------------------------------------------------------------------------
 !
 IF (LCOLD .AND. LNUCL .AND. LMEYERS) THEN
-   CALL LIMA_MEYERS_NUCLEATION (PTSTEP,                                     &
-                                PRHODREF, PEXNREF, PPABST,                  &
-                                PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,   &
-                                PCCT, PCIT, PINT,                           &
-                                Z_TH_HIND, Z_RI_HIND, Z_CI_HIND,            &
-                                Z_TH_HINC, Z_RC_HINC, Z_CC_HINC,            &
-                                PICEFR                                      )
+!   CALL LIMA_MEYERS_NUCLEATION (PTSTEP,                                     &
+!                                PRHODREF, PEXNREF, PPABST,                  &
+!                                PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,   &
+!                                PCCT, PCIT, PINT,                           &
+!                                Z_TH_HIND, Z_RI_HIND, Z_CI_HIND,            &
+!                                Z_TH_HINC, Z_RC_HINC, Z_CC_HINC,            &
+!                                PICEFR                                      )
   WHERE(PICEFR(:,:,:)<1.E-10 .AND. PRIT(:,:,:)>XRTMIN(4) .AND. PCIT(:,:,:)>XCTMIN(4)) PICEFR(:,:,:)=1.
-!
+  !
+  ZTHS=PTHT/PTSTEP
+  ZRVS=PRVT/PTSTEP
+  ZRIS=PRIT/PTSTEP
+  ZRHT=0.
+  ZCIT=PCIT
+  ZT=PT
+  CALL RAIN_ICE_NUCLEATION(1+JPHEXT, SIZE(PT,1)-JPHEXT, 1+JPHEXT, SIZE(PT,2)-JPHEXT, 1+JPVEXT, SIZE(PT,3)-JPVEXT, 6, &
+                           PTSTEP, PTHT, PPABST, PRHODJ, PRHODREF, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,               &
+                           ZCIT, PEXNREF, ZTHS, ZRVS, ZRIS, ZT, ZRHT)
+  !
+  Z_TH_HIND=ZTHS*PTSTEP-PTHT
+  Z_RI_HIND=ZRIS*PTSTEP-PRIT
+  Z_CI_HIND=ZCIT-PCIT
+  PCIT=ZCIT
+  PRIT=ZRIS*PTSTEP
+  PTHT=ZTHS*PTSTEP
+  Z_TH_HINC=0.
+  Z_RC_HINC=0.
+  Z_CC_HINC=0.
+  !
   if ( lbu_enable ) then
     if ( lbudget_th ) call Budget_store_add( tbudgets(NBUDGET_TH), 'HIND',  z_th_hind(:, :, :) * prhodj(:, :, :) / ptstep )
     if ( lbudget_rv ) call Budget_store_add( tbudgets(NBUDGET_RV), 'HIND', -z_ri_hind(:, :, :) * prhodj(:, :, :) / ptstep )

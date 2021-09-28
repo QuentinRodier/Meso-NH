@@ -127,20 +127,20 @@ WHERE( GMICRO )
 !        ----------------------------------------
 !
 !
-   ZZW2(:) = 0.0
-   ZZW(:) = 0.0
-   WHERE ( PLBDS(:)<XLBDASCNVI_MAX .AND. (PRST(:)>XRTMIN(5)) &
-                                   .AND. (PSSI(:)<0.0)       )
-      ZZW(:) = (PLBDS(:)*XDSCNVI_LIM)**(XALPHAS)
-      ZZX(:) = ( -PSSI(:)/PAI(:) ) * (XCCS*PLBDS(:)**XCXS) * (ZZW(:)**XNUS) * EXP(-ZZW(:))
-!
-      ZZW(:) = ( XR0DEPSI+XR1DEPSI*PCJ(:) )*ZZX(:)
-!
-      ZZW2(:) = ZZW(:)*( XC0DEPSI+XC1DEPSI*PCJ(:) )/( XR0DEPSI+XR1DEPSI*PCJ(:) )
-   END WHERE
-!
-   P_RI_CNVI(:) = ZZW(:)
-   P_CI_CNVI(:) = ZZW2(:)
+!!$   ZZW2(:) = 0.0
+!!$   ZZW(:) = 0.0
+!!$   WHERE ( PLBDS(:)<XLBDASCNVI_MAX .AND. (PRST(:)>XRTMIN(5)) &
+!!$                                   .AND. (PSSI(:)<0.0)       )
+!!$      ZZW(:) = (PLBDS(:)*XDSCNVI_LIM)**(XALPHAS)
+!!$      ZZX(:) = ( -PSSI(:)/PAI(:) ) * (XCCS*PLBDS(:)**XCXS) * (ZZW(:)**XNUS) * EXP(-ZZW(:))
+!!$!
+!!$      ZZW(:) = ( XR0DEPSI+XR1DEPSI*PCJ(:) )*ZZX(:)
+!!$!
+!!$      ZZW2(:) = ZZW(:)*( XC0DEPSI+XC1DEPSI*PCJ(:) )/( XR0DEPSI+XR1DEPSI*PCJ(:) )
+!!$   END WHERE
+!!$!
+!!$   P_RI_CNVI(:) = ZZW(:)
+!!$   P_CI_CNVI(:) = ZZW2(:)
 !
 !
 !*       2.2    Deposition of water vapor on r_s: RVDEPS

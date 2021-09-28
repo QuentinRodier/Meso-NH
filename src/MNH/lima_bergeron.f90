@@ -111,9 +111,9 @@ WHERE( (PRCT(:)>XRTMIN(2)) .AND. (PRIT(:)>XRTMIN(4)) .AND. (PCIT(:)>XCTMIN(4)) .
    P_TH_BERFI(:) = - P_RC_BERFI(:)*(PLSFACT(:)-PLVFACT(:))
 END WHERE
 !
-PA_RC(:) = PA_RC(:) + P_RC_BERFI(:)
-PA_RI(:) = PA_RI(:) - P_RC_BERFI(:)
-PA_TH(:) = PA_TH(:) + P_TH_BERFI(:)
+!PA_RC(:) = PA_RC(:) + P_RC_BERFI(:)
+!PA_RI(:) = PA_RI(:) - P_RC_BERFI(:)
+!PA_TH(:) = PA_TH(:) + P_TH_BERFI(:)
 !
 !
 !-------------------------------------------------------------------------------

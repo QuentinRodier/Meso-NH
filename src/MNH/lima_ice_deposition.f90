@@ -8,16 +8,17 @@
 !      #####################
 !
 INTERFACE
-      SUBROUTINE LIMA_ICE_DEPOSITION (PTSTEP, LDCOMPUTE,                 &
-                                      PRHODREF, PSSI, PAI, PCJ, PLSFACT, &
-                                      PRIT, PCIT, PLBDI,                 &
-                                      P_TH_DEPI, P_RI_DEPI,              &
-                                      P_RI_CNVS, P_CI_CNVS               )
+      SUBROUTINE LIMA_ICE_DEPOSITION (PTSTEP, LDCOMPUTE,                     &
+                                      PRHODREF, PT, PSSI, PAI, PCJ, PLSFACT, &
+                                      PRIT, PCIT, PLBDI,                     &
+                                      P_TH_DEPI, P_RI_DEPI,                  &
+                                      P_RI_CNVS, P_CI_CNVS                   )
 !
 REAL,                 INTENT(IN)    :: PTSTEP
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
 !
 REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF! Reference density
+REAL, DIMENSION(:),   INTENT(IN)    :: PT  ! abs. pressure at time t
 REAL, DIMENSION(:),   INTENT(IN)    :: PSSI  ! abs. pressure at time t
 REAL, DIMENSION(:),   INTENT(IN)    :: PAI  ! abs. pressure at time t
 REAL, DIMENSION(:),   INTENT(IN)    :: PCJ  ! abs. pressure at time t
@@ -40,7 +41,7 @@ END MODULE MODI_LIMA_ICE_DEPOSITION
 !
 !     ##########################################################################
 SUBROUTINE LIMA_ICE_DEPOSITION (PTSTEP, LDCOMPUTE,                        &
-                                PRHODREF,  PSSI, PAI, PCJ, PLSFACT,       &
+                                PRHODREF, PT,  PSSI, PAI, PCJ, PLSFACT,   &
                                 PRIT, PCIT, PLBDI,                        &
                                 P_TH_DEPI, P_RI_DEPI,                     &
                                 P_RI_CNVS, P_CI_CNVS                      )
@@ -72,7 +73,7 @@ SUBROUTINE LIMA_ICE_DEPOSITION (PTSTEP, LDCOMPUTE,                        &
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, XALPHAI, XALPHAS, XNUI, XNUS 
+USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, XALPHAI, XALPHAS, XNUI, XNUS, LSNOW 
 USE MODD_PARAM_LIMA_COLD, ONLY : XCXS, XCCS, &
                                  XLBDAS_MAX, XDSCNVI_LIM, XLBDASCNVI_MAX,     &
                                  XC0DEPSI, XC1DEPSI, XR0DEPSI, XR1DEPSI,      &
@@ -82,7 +83,7 @@ USE MODD_PARAM_LIMA_COLD, ONLY : XCXS, XCCS, &
                                  XCOLEXIS, XAGGS_CLARGE1, XAGGS_CLARGE2,      &
                                  XAGGS_RLARGE1, XAGGS_RLARGE2,                &
                                  XDI, X0DEPI, X2DEPI
-
+USE MODD_CST,             ONLY : XTT
 !
 IMPLICIT NONE
 !
@@ -92,6 +93,7 @@ REAL,                 INTENT(IN)    :: PTSTEP
 LOGICAL, DIMENSION(:),INTENT(IN)    :: LDCOMPUTE
 !
 REAL, DIMENSION(:),   INTENT(IN)    :: PRHODREF! Reference density
+REAL, DIMENSION(:),   INTENT(IN)    :: PT  ! abs. pressure at time t
 REAL, DIMENSION(:),   INTENT(IN)    :: PSSI  ! abs. pressure at time t
 REAL, DIMENSION(:),   INTENT(IN)    :: PAI  ! abs. pressure at time t
 REAL, DIMENSION(:),   INTENT(IN)    :: PCJ  ! abs. pressure at time t
@@ -111,7 +113,7 @@ REAL, DIMENSION(:),   INTENT(OUT)   :: P_CI_CNVS
 !*       0.2   Declarations of local variables :
 !
 LOGICAL, DIMENSION(SIZE(PRHODREF)) :: GMICRO ! Computations only where necessary
-REAL,    DIMENSION(SIZE(PRHODREF)) :: ZZW, ZZW2, ZZX ! Work array
+REAL,    DIMENSION(SIZE(PRHODREF)) :: ZZW, ZZW2, ZZX, ZCRIAUTI ! Work array
 !
 !
 !-------------------------------------------------------------------------------
@@ -136,13 +138,13 @@ WHERE( GMICRO )
 !        -----------------------------------------------
 !
 !
-   ZZW(:) = 0.0
-   WHERE ( (PRIT(:)>XRTMIN(4)) .AND. (PCIT(:)>XCTMIN(4)) )
-      ZZW(:) = ( PSSI(:) / PAI(:) ) * PCIT(:) *        &
-        ( X0DEPI/PLBDI(:)+X2DEPI*PCJ(:)*PCJ(:)/PLBDI(:)**(XDI+2.0) )
-   END WHERE
+!   ZZW(:) = 0.0
+!   WHERE ( (PRIT(:)>XRTMIN(4)) .AND. (PCIT(:)>XCTMIN(4)) )
+!      ZZW(:) = ( PSSI(:) / PAI(:) ) * PCIT(:) *        &
+!        ( X0DEPI/PLBDI(:)+X2DEPI*PCJ(:)*PCJ(:)/PLBDI(:)**(XDI+2.0) )
+!   END WHERE
 !
-   P_RI_DEPI(:) = ZZW(:)
+!   P_RI_DEPI(:) = ZZW(:)
 !!$   P_TH_DEPI(:) = P_RI_DEPI(:) * PLSFACT(:)
 !
 !!$   PA_TH(:) = PA_TH(:) + P_TH_DEPI(:)
@@ -154,20 +156,26 @@ WHERE( GMICRO )
 !        ------------------------------------------------
 !
 !
+!!$   ZZW(:) = 0.0
+!!$   ZZW2(:) = 0.0
+!!$   WHERE ( (PLBDI(:)<XLBDAICNVS_LIM) .AND. (PCIT(:)>XCTMIN(4)) &
+!!$                                     .AND. (PSSI(:)>0.0)       )
+!!$      ZZW(:) = (PLBDI(:)*XDICNVS_LIM)**(XALPHAI)
+!!$      ZZX(:) = ( PSSI(:)/PAI(:) )*PCIT(:) * (ZZW(:)**XNUI) *EXP(-ZZW(:))
+!!$!
+!!$      ZZW(:) = ( XR0DEPIS + XR1DEPIS*PCJ(:) )*ZZX(:)                             
+!!$!
+!!$      ZZW2(:) = ZZW(:) * (XC0DEPIS+XC1DEPIS*PCJ(:)) / (XR0DEPIS+XR1DEPIS*PCJ(:))
+!!$   END WHERE
+!
+   ZCRIAUTI(:)=MIN(0.2E-4,10**(0.06*(PT(:)-XTT)-3.5))
    ZZW(:) = 0.0
-   ZZW2(:) = 0.0
-   WHERE ( (PLBDI(:)<XLBDAICNVS_LIM) .AND. (PCIT(:)>XCTMIN(4)) &
-                                     .AND. (PSSI(:)>0.0)       )
-      ZZW(:) = (PLBDI(:)*XDICNVS_LIM)**(XALPHAI)
-      ZZX(:) = ( PSSI(:)/PAI(:) )*PCIT(:) * (ZZW(:)**XNUI) *EXP(-ZZW(:))
-!
-      ZZW(:) = ( XR0DEPIS + XR1DEPIS*PCJ(:) )*ZZX(:)                             
-!
-      ZZW2(:) = ZZW(:) * (XC0DEPIS+XC1DEPIS*PCJ(:)) / (XR0DEPIS+XR1DEPIS*PCJ(:))
+   WHERE ( (PRIT(:)>XRTMIN(4)))
+      ZZW(:)   = 1.E-3 * EXP( 0.015*(PT(:)-XTT) ) * MAX( PRIT(:)-ZCRIAUTI(:),0.0 )
    END WHERE
 !
 P_RI_CNVS(:) = - ZZW(:)
-P_CI_CNVS(:) = - ZZW2(:)
+!P_CI_CNVS(:) = - ZZW2(:)
 !
 !
 END WHERE

@@ -595,7 +595,7 @@ IF (LCOLD) THEN
    ! Includes vapour deposition on ice, ice -> snow conversion
    !
    CALL LIMA_ICE_DEPOSITION (PTSTEP, LDCOMPUTE,                 & ! depends on IF, PF
-                             PRHODREF, ZSSI, ZAI, ZCJ, ZLSFACT, &
+                             PRHODREF, ZT, ZSSI, ZAI, ZCJ, ZLSFACT, &
                              PRIT/ZIF1D, PCIT/ZIF1D, ZLBDI,     &
                              P_TH_DEPI, P_RI_DEPI,              &
                              P_RI_CNVS, P_CI_CNVS               )
@@ -617,11 +617,11 @@ IF (LCOLD .AND. LSNOW) THEN
    !
    ! Includes vapour deposition on snow, snow -> ice conversion
    !
-   CALL LIMA_SNOW_DEPOSITION (LDCOMPUTE,                         & ! depends on IF, PF
+   CALL LIMA_SNOW_DEPOSITION (LDCOMPUTE,                             & ! depends on IF, PF
                               PRHODREF, ZSSI, ZAI, ZCJ, ZLSFACT, &
-                              PRST/ZPF1D, ZLBDS,                 &
-                              P_RI_CNVI, P_CI_CNVI,              &
-                              P_TH_DEPS, P_RS_DEPS               )
+                              PRST/ZPF1D, ZLBDS,                     &
+                              P_RI_CNVI, P_CI_CNVI,                  &
+                              P_TH_DEPS, P_RS_DEPS                   )
    !
    P_RI_CNVI(:) = P_RI_CNVI(:) * ZPF1D(:)
    P_CI_CNVI(:) = P_CI_CNVI(:) * ZPF1D(:)
@@ -667,16 +667,19 @@ IF (LWARM .AND. LCOLD) THEN
    PA_TH(:) = PA_TH(:) + P_TH_DEPG(:)
 END IF
 !
-!!$IF (LWARM .AND. LCOLD) THEN
-!!$   CALL LIMA_BERGERON (LDCOMPUTE,                         & ! depends on CF, IF
-!!$                       PRCT, PRIT, PCIT, ZLBDI,           &
-!!$                       ZSSIW, ZAI, ZCJ, ZLVFACT, ZLSFACT, &
-!!$                       P_TH_BERFI, P_RC_BERFI,            &
-!!$                       PA_TH, PA_RC, PA_RI                )
-!!$END IF
-P_TH_BERFI(:) = 0.
-P_RC_BERFI(:) = 0.
+IF (LWARM .AND. LCOLD) THEN
+   CALL LIMA_BERGERON (LDCOMPUTE,                         & ! depends on CF, IF
+                       PRCT, PRIT, PCIT, ZLBDI,           &
+                       ZSSIW, ZAI, ZCJ, ZLVFACT, ZLSFACT, &
+                       P_TH_BERFI, P_RC_BERFI,            &
+                       PA_TH, PA_RC, PA_RI                )
+END IF
+!P_TH_BERFI(:) = 0.
+!P_RC_BERFI(:) = 0.
 !
+PA_RC(:) = PA_RC(:) + P_RC_BERFI(:)
+PA_RI(:) = PA_RI(:) - P_RC_BERFI(:)
+PA_TH(:) = PA_TH(:) + P_TH_BERFI(:)
 !
 IF (LWARM .AND. LCOLD .AND. LSNOW) THEN
      !

@@ -273,7 +273,7 @@ REAL, DIMENSION(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3)) &
                             ZRV, ZRV2,  &
                             ZRC, ZRC2,  &
                             ZRI,  &
-                            ZSIGS, &
+                            ZSIGS, ZSRCS, &
                             ZW_MF
 LOGICAL, DIMENSION(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3)) &
                          :: GMICRO ! Test where to compute cond/dep proc.
@@ -523,124 +523,42 @@ DO JITER =1,ITERMAX
 !
 !-------------------------------------------------------------------------------
 !
-!
-!
-!*              FULLY IMPLICIT CONDENSATION SCHEME
-!               ---------------------------------
-! 
-!*              select cases where r_c>0
-! 
-!
-      GMICRO(:,:,:) = .FALSE.
-      GMICRO(IIB:IIE,IJB:IJE,IKB:IKE) =( PRCS(IIB:IIE,IJB:IJE,IKB:IKE)>0. .AND.        &
-                                         PCCS(IIB:IIE,IJB:IJE,IKB:IKE)>0.      )
-      IMICRO = COUNTJV( GMICRO(:,:,:),I1(:),I2(:),I3(:))
-      IF( IMICRO >= 1 ) THEN
-         ALLOCATE(ZRVT(IMICRO))
-         ALLOCATE(ZRCT(IMICRO))
-!
-         ALLOCATE(ZRVS(IMICRO))
-         ALLOCATE(ZRCS(IMICRO))
-         ALLOCATE(ZCCS(IMICRO))
-         ALLOCATE(ZTHS(IMICRO))
-!
-         ALLOCATE(ZRHODREF(IMICRO))
-         ALLOCATE(ZZT(IMICRO))
-         ALLOCATE(ZPRES(IMICRO))
-         ALLOCATE(ZEXNREF(IMICRO))
-         ALLOCATE(ZZCPH(IMICRO))
-         DO JL=1,IMICRO
-            ZRVT(JL) = PRVT(I1(JL),I2(JL),I3(JL))
-            ZRCT(JL) = PRCT(I1(JL),I2(JL),I3(JL))
-            !
-            ZRVS(JL) = PRVS(I1(JL),I2(JL),I3(JL))
-            ZRCS(JL) = PRCS(I1(JL),I2(JL),I3(JL))
-            ZCCS(JL) = PCCS(I1(JL),I2(JL),I3(JL))
-            ZTHS(JL) = PTHS(I1(JL),I2(JL),I3(JL))
-            !
-            ZRHODREF(JL) = PRHODREF(I1(JL),I2(JL),I3(JL))
-            ZZT(JL) = ZT(I1(JL),I2(JL),I3(JL))
-            ZPRES(JL) = 2.0*PPABST(I1(JL),I2(JL),I3(JL))-PPABSM(I1(JL),I2(JL),I3(JL))
-            ZEXNREF(JL) = PEXNREF(I1(JL),I2(JL),I3(JL))
-            ZZCPH(JL) = ZCPH(I1(JL),I2(JL),I3(JL))
-         ENDDO
-         ALLOCATE(ZZW(IMICRO))
-         ALLOCATE(ZLVFACT(IMICRO))
-         ALLOCATE(ZRVSATW(IMICRO))
-         ALLOCATE(ZCND(IMICRO))
-         ZLVFACT(:) = (XLVTT+(XCPV-XCL)*(ZZT(:)-XTT))/ZZCPH(:) ! L_v/C_ph
-         ZZW(:) = EXP( XALPW - XBETAW/ZZT(:) - XGAMW*ALOG(ZZT(:) ) ) ! es_w
-         ZRVSATW(:) = ZEPS*ZZW(:) / ( ZPRES(:)-ZZW(:) )              ! r_sw
+      ZRV=PRVS*PTSTEP
+      ZRC=PRCS*PTSTEP
+      ZRI=PRIS*PTSTEP
+      ZSIGS=0
+      CALL CONDENSATION(IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE, 1, 'S',   &
+           HCONDENS, HLAMBDA3, &
+           PPABST, PZZ, PRHODREF, ZT, ZRV, ZRC, ZRI, PRSS*PTSTEP, PRGS*PTSTEP, &
+           ZSIGS, PMFCONV, PCLDFR, ZSRCS, .TRUE., OSIGMAS=.TRUE., &
+           PSIGQSAT=0., PLV=ZLV, PLS=ZLS, PCPH=ZCPH )
 
-         IF (LADJ) THEN
-            ALLOCATE(ZRVSATW_PRIME(IMICRO))
-            ALLOCATE(ZAWW(IMICRO))
-            ALLOCATE(ZDELT1(IMICRO))
-            ALLOCATE(ZDELT2(IMICRO))
-            ZRVSATW_PRIME(:) = (( XBETAW/ZZT(:) - XGAMW ) / ZZT(:))  &  ! r'_sw
-                               * ZRVSATW(:) * ( 1. + ZRVSATW(:)/ZEPS )
-            ZAWW(:) = 1.0 + ZRVSATW_PRIME(:)*ZLVFACT(:)
-            ZDELT2(:) = (ZRVSATW_PRIME(:)*ZLVFACT(:)/ZAWW(:)) *                     &
-                        ( ((-2.*XBETAW+XGAMW*ZZT(:))/(XBETAW-XGAMW*ZZT(:))          &
-                        + (XBETAW/ZZT(:)-XGAMW)*(1.0+2.0*ZRVSATW(:)/ZEPS))/ZZT(:) )
-            ZDELT1(:) = (ZLVFACT(:)/ZAWW(:)) * ( ZRVSATW(:) - ZRVS(:)*ZDT )
-            ZCND(:) = - ZDELT1(:)*( 1.0 + 0.5*ZDELT1(:)*ZDELT2(:) ) / (ZLVFACT(:)*ZDT)
-            DEALLOCATE(ZRVSATW_PRIME)
-            DEALLOCATE(ZAWW)
-            DEALLOCATE(ZDELT1)
-            DEALLOCATE(ZDELT2)
-         ELSE
-            ALLOCATE(ZS(IMICRO))
-            ALLOCATE(ZZW2(IMICRO))
-            ALLOCATE(ZVEC1(IMICRO))
-            ALLOCATE(IVEC1(IMICRO))
-            ZVEC1(:) = MAX( 1.0001, MIN( REAL(NAHEN)-0.0001, XAHENINTP1 * ZZT(:) + XAHENINTP2 ) )
-            IVEC1(:) = INT( ZVEC1(:) )
-            ZVEC1(:) = ZVEC1(:) - REAL( IVEC1(:) )
-            ZS(:) = ZRVS(:)*PTSTEP / ZRVSATW(:) - 1.
-            ZZW(:) = ZCCS(:)*PTSTEP/(XLBC*ZCCS(:)/ZRCS(:))**XLBEXC
-            ZZW2(:) = XAHENG3(IVEC1(:)+1)*ZVEC1(:)-XAHENG3(IVEC1(:))*(ZVEC1(:)-1.)
-            ZCND(:) = 2.*3.14*1000.*ZZW2(:)*ZS(:)*ZZW(:)
-            DEALLOCATE(ZS)
-            DEALLOCATE(ZZW2)
-            DEALLOCATE(ZVEC1)
-            DEALLOCATE(IVEC1)
-         END IF
+      ZW1(:,:,:) = (ZRC(:,:,:) - PRCS(:,:,:)*PTSTEP) / PTSTEP       ! Pcon = ----------
+                                                      !         2 Delta t
+
+      ZW2(:,:,:) = (ZRI(:,:,:) - PRIS(:,:,:)*PTSTEP) / PTSTEP       ! idem ZW1 but for Ri
 !
+!*       5.1    compute the sources
 !
-! Integration
+      WHERE( ZW1(:,:,:) < 0.0 )
+         ZW1(:,:,:) = MAX ( ZW1(:,:,:), -PRCS(:,:,:) )
+      ELSEWHERE
+         ZW1(:,:,:) = MIN ( ZW1(:,:,:),  PRVS(:,:,:) )
+      END WHERE
+      PRVS(:,:,:) = PRVS(:,:,:) - ZW1(:,:,:)
+      PRCS(:,:,:) = PRCS(:,:,:) + ZW1(:,:,:)
+      PTHS(:,:,:) = PTHS(:,:,:) +        &
+           ZW1(:,:,:) * ZLV(:,:,:) / (ZCPH(:,:,:) * PEXNREF(:,:,:))
 !
-         WHERE( ZCND(:) < 0.0 )
-            ZCND(:) = MAX ( ZCND(:), -ZRCS(:) )
-         ELSEWHERE
-            ZCND(:) = MIN ( ZCND(:),  ZRVS(:) )
-         END WHERE
-         ZRVS(:) = ZRVS(:) - ZCND(:)
-         ZRCS(:) = ZRCS(:) + ZCND(:)
-         ZTHS(:) = ZTHS(:) + ZCND(:) * ZLVFACT(:) / ZEXNREF(:)
-!
-         ZW(:,:,:) = PRVS(:,:,:)
-         PRVS(:,:,:) = UNPACK( ZRVS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
-         ZW(:,:,:) = PRCS(:,:,:)
-         PRCS(:,:,:) = UNPACK( ZRCS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
-         ZW(:,:,:) = PTHS(:,:,:)
-         PTHS(:,:,:) = UNPACK( ZTHS(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:) )
-!
-         DEALLOCATE(ZRVT)
-         DEALLOCATE(ZRCT)
-         DEALLOCATE(ZRVS)
-         DEALLOCATE(ZRCS)
-         DEALLOCATE(ZTHS)
-         DEALLOCATE(ZRHODREF)
-         DEALLOCATE(ZZT)
-         DEALLOCATE(ZPRES)
-         DEALLOCATE(ZEXNREF)
-         DEALLOCATE(ZZCPH)
-         DEALLOCATE(ZZW)
-         DEALLOCATE(ZLVFACT)
-         DEALLOCATE(ZRVSATW)
-         DEALLOCATE(ZCND)
-      END IF ! IMICRO
+      WHERE( ZW2(:,:,:) < 0.0 )
+         ZW2(:,:,:) = MAX ( ZW2(:,:,:), -PRIS(:,:,:) )
+      ELSEWHERE
+         ZW2(:,:,:) = MIN ( ZW2(:,:,:),  PRVS(:,:,:) )
+      END WHERE
+      PRVS(:,:,:) = PRVS(:,:,:) - ZW2(:,:,:)
+      PRIS(:,:,:) = PRIS(:,:,:) + ZW2(:,:,:)
+      PTHS(:,:,:) = PTHS(:,:,:) +        &
+           ZW2(:,:,:) * ZLS(:,:,:) / (ZCPH(:,:,:) * PEXNREF(:,:,:))
 !
    END IF ! end of adjustment procedure (test on OSUBG_COND)
 !
