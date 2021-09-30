@@ -972,6 +972,10 @@ IF ( nfile_backup_current < NBAK_NUMB ) THEN
       TFILE_SURFEX => TZBAKFILE
       CALL GOTO_SURFEX(IMI)
       CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','ALL',.FALSE.)
+      IF ( nfile_backup_current -1 > 0) THEN
+        CALL DIAG_SURF_ATM_n(YSURF_CUR,'MESONH')
+        CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','ALL')
+      END IF
       NULLIFY(TFILE_SURFEX)
     END IF
     !
@@ -1426,17 +1430,6 @@ IF (CDCONV/='NONE') THEN
   END IF
 END IF
 !
-IF ( nfile_backup_current > 0 .AND. nfile_backup_current <= NBAK_NUMB ) THEN
-  IF ( KTCOUNT == TBACKUPN(nfile_backup_current)%NSTEP ) THEN
-    IF (CSURF=='EXTE') THEN
-      CALL GOTO_SURFEX(IMI)
-      CALL DIAG_SURF_ATM_n(YSURF_CUR,'MESONH')
-      TFILE_SURFEX => TZBAKFILE
-      CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','ALL')
-      NULLIFY(TFILE_SURFEX)
-    END IF
-  END IF
-END IF
 !
 CALL SECOND_MNH2(ZTIME2)
 !
