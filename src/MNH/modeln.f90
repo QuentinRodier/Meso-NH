@@ -972,7 +972,7 @@ IF ( nfile_backup_current < NBAK_NUMB ) THEN
       TFILE_SURFEX => TZBAKFILE
       CALL GOTO_SURFEX(IMI)
       CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','ALL',.FALSE.)
-      IF ( nfile_backup_current -1 > 0) THEN
+      IF ( KTCOUNT > 1) THEN
         CALL DIAG_SURF_ATM_n(YSURF_CUR,'MESONH')
         CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','ALL')
       END IF
