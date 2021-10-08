@@ -15,7 +15,7 @@
 !  P. Wautelet 19/06/2019: add Fieldlist_nmodel_resize subroutine + provide KMODEL to INI_FIELD_LIST when known
 !  P. Wautelet 23/01/2020: split in modd_field.f90 and mode_field.f90
 !  JL Redelsperger 03/2021: add variables for Ocean LES and auto-coupled version
-!  P. Wautelet 24/09/2021: add Goto_model_1field generic procedure
+!  P. Wautelet 08/10/2021: add Goto_model_1field procedures
 !-----------------------------------------------------------------
 module mode_field
 
@@ -38,8 +38,25 @@ public :: Fieldlist_nmodel_resize
 public :: Ini_field_scalars
 
 interface Goto_model_1field
+  module procedure :: Goto_model_1field_c0d
+  module procedure :: Goto_model_1field_c1d
+  module procedure :: Goto_model_1field_l0d
+  module procedure :: Goto_model_1field_l1d
+  module procedure :: Goto_model_1field_n0d
+  module procedure :: Goto_model_1field_n1d
+  module procedure :: Goto_model_1field_n2d
+  module procedure :: Goto_model_1field_n3d
+  module procedure :: Goto_model_1field_t0d
+  module procedure :: Goto_model_1field_t1d
+  module procedure :: Goto_model_1field_x0d
+  module procedure :: Goto_model_1field_x1d
+  module procedure :: Goto_model_1field_x2d
   module procedure :: Goto_model_1field_x3d
+  module procedure :: Goto_model_1field_x4d
+  module procedure :: Goto_model_1field_x5d
+  module procedure :: Goto_model_1field_x6d
 end interface
+
 
 contains
 
@@ -4611,7 +4628,312 @@ END IF !KFROM/=KTO
 END SUBROUTINE FIELDLIST_GOTO_MODEL
 
 
-subroutine Goto_model_1field_x3d(hname, kfrom, kto, pdata)
+subroutine Goto_model_1field_c0d( hname, kfrom, kto, pdata )
+
+implicit none
+
+character(len=*),          intent(in)    :: hname
+integer,                   intent(in)    :: kfrom
+integer,                   intent(in)    :: kto
+character(len=*), pointer, intent(inout) :: pdata
+
+integer :: iid
+integer :: iresp
+
+call Find_field_id_from_mnhname( hname, iid, iresp )
+
+call Extend_1field_c0d( tfieldlist(iid), Max( kfrom, kto ) )
+
+tfieldlist(iid)%tfield_c0d(kfrom)%data => pdata
+if ( kfrom /= kto ) then
+  if ( .not. Associated( tfieldlist(iid)%tfield_c0d(kto)%data ) ) then
+    Allocate( character(len=Len(pdata)) :: tfieldlist(iid)%tfield_c0d(kto)%data )
+    tfieldlist(iid)%tfield_c0d(kto)%data(:) = ''
+  end if
+  pdata => tfieldlist(iid)%tfield_c0d(kto)%data
+end if
+
+end subroutine Goto_model_1field_c0d
+
+
+subroutine Goto_model_1field_c1d( hname, kfrom, kto, pdata )
+
+implicit none
+
+character(len=*),                        intent(in)    :: hname
+integer,                                 intent(in)    :: kfrom
+integer,                                 intent(in)    :: kto
+character(len=*), dimension(:), pointer, intent(inout) :: pdata
+
+integer :: iid
+integer :: iresp
+integer :: ji
+
+call Find_field_id_from_mnhname( hname, iid, iresp )
+
+call Extend_1field_c1d( tfieldlist(iid), Max( kfrom, kto ) )
+
+tfieldlist(iid)%tfield_c1d(kfrom)%data => pdata
+if ( kfrom /= kto ) then
+  if ( .not. Associated( tfieldlist(iid)%tfield_c1d(kto)%data ) ) then
+    Allocate( character(len=Len(pdata)) :: tfieldlist(iid)%tfield_c1d(kto)%data(Size(pdata)) )
+    do ji = 1, Size(pdata)
+      tfieldlist(iid)%tfield_c1d(kto)%data(ji) = ''
+    end do
+  end if
+  pdata => tfieldlist(iid)%tfield_c1d(kto)%data
+end if
+
+end subroutine Goto_model_1field_c1d
+
+
+subroutine Goto_model_1field_l0d( hname, kfrom, kto, pdata )
+
+implicit none
+
+character(len=*),          intent(in)    :: hname
+integer,                   intent(in)    :: kfrom
+integer,                   intent(in)    :: kto
+logical,          pointer, intent(inout) :: pdata
+
+integer :: iid
+integer :: iresp
+
+call Find_field_id_from_mnhname( hname, iid, iresp )
+
+call Extend_1field_l0d( tfieldlist(iid), Max( kfrom, kto ) )
+
+tfieldlist(iid)%tfield_l0d(kfrom)%data => pdata
+if ( kfrom /= kto ) pdata => tfieldlist(iid)%tfield_l0d(kto)%data
+
+end subroutine Goto_model_1field_l0d
+
+
+subroutine Goto_model_1field_l1d( hname, kfrom, kto, pdata )
+
+implicit none
+
+character(len=*),               intent(in)    :: hname
+integer,                        intent(in)    :: kfrom
+integer,                        intent(in)    :: kto
+logical, dimension(:), pointer, intent(inout) :: pdata
+
+integer :: iid
+integer :: iresp
+
+call Find_field_id_from_mnhname( hname, iid, iresp )
+
+call Extend_1field_l1d( tfieldlist(iid), Max( kfrom, kto ) )
+
+tfieldlist(iid)%tfield_l1d(kfrom)%data => pdata
+if ( kfrom /= kto ) pdata => tfieldlist(iid)%tfield_l1d(kto)%data
+
+end subroutine Goto_model_1field_l1d
+
+
+subroutine Goto_model_1field_n0d( hname, kfrom, kto, pdata )
+
+implicit none
+
+character(len=*),          intent(in)    :: hname
+integer,                   intent(in)    :: kfrom
+integer,                   intent(in)    :: kto
+integer,          pointer, intent(inout) :: pdata
+
+integer :: iid
+integer :: iresp
+
+call Find_field_id_from_mnhname( hname, iid, iresp )
+
+call Extend_1field_n0d( tfieldlist(iid), Max( kfrom, kto ) )
+
+tfieldlist(iid)%tfield_n0d(kfrom)%data => pdata
+if ( kfrom /= kto ) pdata => tfieldlist(iid)%tfield_n0d(kto)%data
+
+end subroutine Goto_model_1field_n0d
+
+
+subroutine Goto_model_1field_n1d( hname, kfrom, kto, pdata )
+
+implicit none
+
+character(len=*),               intent(in)    :: hname
+integer,                        intent(in)    :: kfrom
+integer,                        intent(in)    :: kto
+integer, dimension(:), pointer, intent(inout) :: pdata
+
+integer :: iid
+integer :: iresp
+
+call Find_field_id_from_mnhname( hname, iid, iresp )
+
+call Extend_1field_n1d( tfieldlist(iid), Max( kfrom, kto ) )
+
+tfieldlist(iid)%tfield_n1d(kfrom)%data => pdata
+if ( kfrom /= kto ) pdata => tfieldlist(iid)%tfield_n1d(kto)%data
+
+end subroutine Goto_model_1field_n1d
+
+
+subroutine Goto_model_1field_n2d( hname, kfrom, kto, pdata )
+
+implicit none
+
+character(len=*),                 intent(in)    :: hname
+integer,                          intent(in)    :: kfrom
+integer,                          intent(in)    :: kto
+integer, dimension(:,:), pointer, intent(inout) :: pdata
+
+integer :: iid
+integer :: iresp
+
+call Find_field_id_from_mnhname( hname, iid, iresp )
+
+call Extend_1field_n2d( tfieldlist(iid), Max( kfrom, kto ) )
+
+tfieldlist(iid)%tfield_n2d(kfrom)%data => pdata
+if ( kfrom /= kto ) pdata => tfieldlist(iid)%tfield_n2d(kto)%data
+
+end subroutine Goto_model_1field_n2d
+
+
+subroutine Goto_model_1field_n3d( hname, kfrom, kto, pdata )
+
+implicit none
+
+character(len=*),                   intent(in)    :: hname
+integer,                            intent(in)    :: kfrom
+integer,                            intent(in)    :: kto
+integer, dimension(:,:,:), pointer, intent(inout) :: pdata
+
+integer :: iid
+integer :: iresp
+
+call Find_field_id_from_mnhname( hname, iid, iresp )
+
+call Extend_1field_n3d( tfieldlist(iid), Max( kfrom, kto ) )
+
+tfieldlist(iid)%tfield_n3d(kfrom)%data => pdata
+if ( kfrom /= kto ) pdata => tfieldlist(iid)%tfield_n3d(kto)%data
+
+end subroutine Goto_model_1field_n3d
+
+
+subroutine Goto_model_1field_t0d( hname, kfrom, kto, pdata )
+
+use modd_type_date, only: date_time
+
+implicit none
+
+character(len=*),          intent(in)    :: hname
+integer,                   intent(in)    :: kfrom
+integer,                   intent(in)    :: kto
+type(date_time),  pointer, intent(inout) :: pdata
+
+integer :: iid
+integer :: iresp
+
+call Find_field_id_from_mnhname( hname, iid, iresp )
+
+call Extend_1field_t0d( tfieldlist(iid), Max( kfrom, kto ) )
+
+tfieldlist(iid)%tfield_t0d(kfrom)%data => pdata
+if ( kfrom /= kto ) pdata => tfieldlist(iid)%tfield_t0d(kto)%data
+
+end subroutine Goto_model_1field_t0d
+
+
+subroutine Goto_model_1field_t1d( hname, kfrom, kto, pdata )
+
+use modd_type_date, only: date_time
+
+implicit none
+
+character(len=*),                       intent(in)    :: hname
+integer,                                intent(in)    :: kfrom
+integer,                                intent(in)    :: kto
+type(date_time), dimension(:), pointer, intent(inout) :: pdata
+
+integer :: iid
+integer :: iresp
+
+call Find_field_id_from_mnhname( hname, iid, iresp )
+
+call Extend_1field_t1d( tfieldlist(iid), Max( kfrom, kto ) )
+
+tfieldlist(iid)%tfield_t1d(kfrom)%data => pdata
+if ( kfrom /= kto ) pdata => tfieldlist(iid)%tfield_t1d(kto)%data
+
+end subroutine Goto_model_1field_t1d
+
+
+subroutine Goto_model_1field_x0d( hname, kfrom, kto, pdata )
+
+implicit none
+
+character(len=*),          intent(in)    :: hname
+integer,                   intent(in)    :: kfrom
+integer,                   intent(in)    :: kto
+real,             pointer, intent(inout) :: pdata
+
+integer :: iid
+integer :: iresp
+
+call Find_field_id_from_mnhname( hname, iid, iresp )
+
+call Extend_1field_x0d( tfieldlist(iid), Max( kfrom, kto ) )
+
+tfieldlist(iid)%tfield_x0d(kfrom)%data => pdata
+if ( kfrom /= kto ) pdata => tfieldlist(iid)%tfield_x0d(kto)%data
+
+end subroutine Goto_model_1field_x0d
+
+
+subroutine Goto_model_1field_x1d( hname, kfrom, kto, pdata )
+
+implicit none
+
+character(len=*),               intent(in)    :: hname
+integer,                        intent(in)    :: kfrom
+integer,                        intent(in)    :: kto
+real,    dimension(:), pointer, intent(inout) :: pdata
+
+integer :: iid
+integer :: iresp
+
+call Find_field_id_from_mnhname( hname, iid, iresp )
+
+call Extend_1field_x1d( tfieldlist(iid), Max( kfrom, kto ) )
+
+tfieldlist(iid)%tfield_x1d(kfrom)%data => pdata
+if ( kfrom /= kto ) pdata => tfieldlist(iid)%tfield_x1d(kto)%data
+
+end subroutine Goto_model_1field_x1d
+
+
+subroutine Goto_model_1field_x2d( hname, kfrom, kto, pdata )
+
+implicit none
+
+character(len=*),                 intent(in)    :: hname
+integer,                          intent(in)    :: kfrom
+integer,                          intent(in)    :: kto
+real,    dimension(:,:), pointer, intent(inout) :: pdata
+
+integer :: iid
+integer :: iresp
+
+call Find_field_id_from_mnhname( hname, iid, iresp )
+
+call Extend_1field_x2d( tfieldlist(iid), Max( kfrom, kto ) )
+
+tfieldlist(iid)%tfield_x2d(kfrom)%data => pdata
+if ( kfrom /= kto ) pdata => tfieldlist(iid)%tfield_x2d(kto)%data
+
+end subroutine Goto_model_1field_x2d
+
+
+subroutine Goto_model_1field_x3d( hname, kfrom, kto, pdata )
 
 implicit none
 
@@ -4622,44 +4944,762 @@ real,    dimension(:,:,:), pointer, intent(inout) :: pdata
 
 integer :: iid
 integer :: iresp
-integer :: isize
-integer :: ji
-type(tfieldptr_x3d), dimension(:), allocatable :: tzfield_x3d
 
 call Find_field_id_from_mnhname( hname, iid, iresp )
 
-isize = Max( kfrom, kto )
-
-if ( tfieldlist(iid)%nmodelmax < 0 ) then
-  !nmodelmax is < 0 if the allocation of the field has been done by hand
-  !(not using a constructor, default value of nmodelmax)
-  !The correct value of nmodelmax is hence computed here
-  tfieldlist(iid)%nmodelmax = Size( tfieldlist(iid)%tfield_x3d )
-end if
-
-if ( isize > tfieldlist(iid)%nmodelmax ) then
-  if ( tfieldlist(iid)%nmodelmax == 0 ) then
-    Allocate( tfieldlist(iid)%tfield_x3d(isize) )
-    do ji = 1, isize
-      tfieldlist(iid)%tfield_x3d(ji)%data => null()
-    end do
-  else
-    Allocate( tzfield_x3d(isize) )
-    do ji = 1, Size( tfieldlist(iid)%tfield_x3d)
-      tzfield_x3d(ji)%data => tfieldlist(iid)%tfield_x3d(ji)%data
-    end do
-    do ji = Size( tfieldlist(iid)%tfield_x3d) + 1, isize
-      tzfield_x3d(ji)%data => null()
-    end do
-    call Move_alloc( from = tzfield_x3d, to = tfieldlist(iid)%tfield_x3d )
-  end if
-  tfieldlist(iid)%nmodelmax = isize
-end if
+call Extend_1field_x3d( tfieldlist(iid), Max( kfrom, kto ) )
 
 tfieldlist(iid)%tfield_x3d(kfrom)%data => pdata
 if ( kfrom /= kto ) pdata => tfieldlist(iid)%tfield_x3d(kto)%data
 
 end subroutine Goto_model_1field_x3d
+
+
+subroutine Goto_model_1field_x4d( hname, kfrom, kto, pdata )
+
+implicit none
+
+character(len=*),                     intent(in)    :: hname
+integer,                              intent(in)    :: kfrom
+integer,                              intent(in)    :: kto
+real,    dimension(:,:,:,:), pointer, intent(inout) :: pdata
+
+integer :: iid
+integer :: iresp
+
+call Find_field_id_from_mnhname( hname, iid, iresp )
+
+call Extend_1field_x4d( tfieldlist(iid), Max( kfrom, kto ) )
+
+tfieldlist(iid)%tfield_x4d(kfrom)%data => pdata
+if ( kfrom /= kto ) pdata => tfieldlist(iid)%tfield_x4d(kto)%data
+
+end subroutine Goto_model_1field_x4d
+
+
+subroutine Goto_model_1field_x5d( hname, kfrom, kto, pdata )
+
+implicit none
+
+character(len=*),                       intent(in)    :: hname
+integer,                                intent(in)    :: kfrom
+integer,                                intent(in)    :: kto
+real,    dimension(:,:,:,:,:), pointer, intent(inout) :: pdata
+
+integer :: iid
+integer :: iresp
+
+call Find_field_id_from_mnhname( hname, iid, iresp )
+
+call Extend_1field_x5d( tfieldlist(iid), Max( kfrom, kto ) )
+
+tfieldlist(iid)%tfield_x5d(kfrom)%data => pdata
+if ( kfrom /= kto ) pdata => tfieldlist(iid)%tfield_x5d(kto)%data
+
+end subroutine Goto_model_1field_x5d
+
+
+subroutine Goto_model_1field_x6d( hname, kfrom, kto, pdata )
+
+implicit none
+
+character(len=*),                         intent(in)    :: hname
+integer,                                  intent(in)    :: kfrom
+integer,                                  intent(in)    :: kto
+real,    dimension(:,:,:,:,:,:), pointer, intent(inout) :: pdata
+
+integer :: iid
+integer :: iresp
+
+call Find_field_id_from_mnhname( hname, iid, iresp )
+
+call Extend_1field_x6d( tfieldlist(iid), Max( kfrom, kto ) )
+
+tfieldlist(iid)%tfield_x6d(kfrom)%data => pdata
+if ( kfrom /= kto ) pdata => tfieldlist(iid)%tfield_x6d(kto)%data
+
+end subroutine Goto_model_1field_x6d
+
+
+subroutine Extend_1field_c0d( tpfield, ksize )
+
+implicit none
+
+type(tfielddata), intent(inout) :: tpfield
+integer,          intent(in)    :: ksize
+
+integer :: ji
+type(tfieldptr_c0d), dimension(:), allocatable :: tzfield_c0d
+
+if ( tpfield%nmodelmax < 0 ) then
+  !nmodelmax is < 0 if the allocation of the field has been done by hand
+  !(not using a constructor, default value of nmodelmax)
+  !The correct value of nmodelmax is hence computed here
+  tpfield%nmodelmax = Size( tpfield%tfield_c0d )
+end if
+
+if ( ksize > tpfield%nmodelmax ) then
+  if ( tpfield%nmodelmax == 0 ) then
+    Allocate( tpfield%tfield_c0d(ksize) )
+    do ji = 1, ksize
+      tpfield%tfield_c0d(ji)%data => null()
+    end do
+  else
+    Allocate( tzfield_c0d(ksize) )
+    do ji = 1, Size( tpfield%tfield_c0d)
+      tzfield_c0d(ji)%data => tpfield%tfield_c0d(ji)%data
+    end do
+    do ji = Size( tpfield%tfield_c0d) + 1, ksize
+      tzfield_c0d(ji)%data => null()
+    end do
+    call Move_alloc( from = tzfield_c0d, to = tpfield%tfield_c0d )
+  end if
+  tpfield%nmodelmax = ksize
+end if
+
+end subroutine Extend_1field_c0d
+
+
+subroutine Extend_1field_c1d( tpfield, ksize )
+
+implicit none
+
+type(tfielddata), intent(inout) :: tpfield
+integer,          intent(in)    :: ksize
+
+integer :: ji
+type(tfieldptr_c1d), dimension(:), allocatable :: tzfield_c1d
+
+if ( tpfield%nmodelmax < 0 ) then
+  !nmodelmax is < 0 if the allocation of the field has been done by hand
+  !(not using a constructor, default value of nmodelmax)
+  !The correct value of nmodelmax is hence computed here
+  tpfield%nmodelmax = Size( tpfield%tfield_c1d )
+end if
+
+if ( ksize > tpfield%nmodelmax ) then
+  if ( tpfield%nmodelmax == 0 ) then
+    Allocate( tpfield%tfield_c1d(ksize) )
+    do ji = 1, ksize
+      tpfield%tfield_c1d(ji)%data => null()
+    end do
+  else
+    Allocate( tzfield_c1d(ksize) )
+    do ji = 1, Size( tpfield%tfield_c1d)
+      tzfield_c1d(ji)%data => tpfield%tfield_c1d(ji)%data
+    end do
+    do ji = Size( tpfield%tfield_c1d) + 1, ksize
+      tzfield_c1d(ji)%data => null()
+    end do
+    call Move_alloc( from = tzfield_c1d, to = tpfield%tfield_c1d )
+  end if
+  tpfield%nmodelmax = ksize
+end if
+
+end subroutine Extend_1field_c1d
+
+
+subroutine Extend_1field_l0d( tpfield, ksize )
+
+implicit none
+
+type(tfielddata), intent(inout) :: tpfield
+integer,          intent(in)    :: ksize
+
+integer :: ji
+type(tfieldptr_l0d), dimension(:), allocatable :: tzfield_l0d
+
+if ( tpfield%nmodelmax < 0 ) then
+  !nmodelmax is < 0 if the allocation of the field has been done by hand
+  !(not using a constructor, default value of nmodelmax)
+  !The correct value of nmodelmax is hence computed here
+  tpfield%nmodelmax = Size( tpfield%tfield_l0d )
+end if
+
+if ( ksize > tpfield%nmodelmax ) then
+  if ( tpfield%nmodelmax == 0 ) then
+    Allocate( tpfield%tfield_l0d(ksize) )
+    do ji = 1, ksize
+      ! tpfield%tfield_l0d(ji)%data => null()
+      Allocate( tpfield%tfield_l0d(ji)%data )
+      tpfield%tfield_l0d(ji)%data = .false.
+    end do
+  else
+    Allocate( tzfield_l0d(ksize) )
+    do ji = 1, Size( tpfield%tfield_l0d)
+      tzfield_l0d(ji)%data => tpfield%tfield_l0d(ji)%data
+    end do
+    do ji = Size( tpfield%tfield_l0d) + 1, ksize
+      ! tzfield_l0d(ji)%data => null()
+      Allocate( tzfield_l0d(ji)%data )
+      tzfield_l0d(ji)%data = .false.
+    end do
+    call Move_alloc( from = tzfield_l0d, to = tpfield%tfield_l0d )
+  end if
+  tpfield%nmodelmax = ksize
+end if
+
+end subroutine Extend_1field_l0d
+
+
+subroutine Extend_1field_l1d( tpfield, ksize )
+
+implicit none
+
+type(tfielddata), intent(inout) :: tpfield
+integer,          intent(in)    :: ksize
+
+integer :: ji
+type(tfieldptr_l1d), dimension(:), allocatable :: tzfield_l1d
+
+if ( tpfield%nmodelmax < 0 ) then
+  !nmodelmax is < 0 if the allocation of the field has been done by hand
+  !(not using a constructor, default value of nmodelmax)
+  !The correct value of nmodelmax is hence computed here
+  tpfield%nmodelmax = Size( tpfield%tfield_l1d )
+end if
+
+if ( ksize > tpfield%nmodelmax ) then
+  if ( tpfield%nmodelmax == 0 ) then
+    Allocate( tpfield%tfield_l1d(ksize) )
+    do ji = 1, ksize
+      tpfield%tfield_l1d(ji)%data => null()
+    end do
+  else
+    Allocate( tzfield_l1d(ksize) )
+    do ji = 1, Size( tpfield%tfield_l1d)
+      tzfield_l1d(ji)%data => tpfield%tfield_l1d(ji)%data
+    end do
+    do ji = Size( tpfield%tfield_l1d) + 1, ksize
+      tzfield_l1d(ji)%data => null()
+    end do
+    call Move_alloc( from = tzfield_l1d, to = tpfield%tfield_l1d )
+  end if
+  tpfield%nmodelmax = ksize
+end if
+
+end subroutine Extend_1field_l1d
+
+
+subroutine Extend_1field_n0d( tpfield, ksize )
+
+use modd_parameters, only: NUNDEF
+
+implicit none
+
+type(tfielddata), intent(inout) :: tpfield
+integer,          intent(in)    :: ksize
+
+integer :: ji
+type(tfieldptr_n0d), dimension(:), allocatable :: tzfield_n0d
+
+if ( tpfield%nmodelmax < 0 ) then
+  !nmodelmax is < 0 if the allocation of the field has been done by hand
+  !(not using a constructor, default value of nmodelmax)
+  !The correct value of nmodelmax is hence computed here
+  tpfield%nmodelmax = Size( tpfield%tfield_n0d )
+end if
+
+if ( ksize > tpfield%nmodelmax ) then
+  if ( tpfield%nmodelmax == 0 ) then
+    Allocate( tpfield%tfield_n0d(ksize) )
+    do ji = 1, ksize
+      ! tpfield%tfield_n0d(ji)%data => null()
+      Allocate( tpfield%tfield_n0d(ji)%data )
+      tpfield%tfield_n0d(ji)%data = NUNDEF
+    end do
+  else
+    Allocate( tzfield_n0d(ksize) )
+    do ji = 1, Size( tpfield%tfield_n0d)
+      tzfield_n0d(ji)%data => tpfield%tfield_n0d(ji)%data
+    end do
+    do ji = Size( tpfield%tfield_n0d) + 1, ksize
+      ! tzfield_n0d(ji)%data => null()
+      Allocate( tzfield_n0d(ji)%data )
+      tzfield_n0d(ji)%data = NUNDEF
+    end do
+    call Move_alloc( from = tzfield_n0d, to = tpfield%tfield_n0d )
+  end if
+  tpfield%nmodelmax = ksize
+end if
+
+end subroutine Extend_1field_n0d
+
+
+subroutine Extend_1field_n1d( tpfield, ksize )
+
+implicit none
+
+type(tfielddata), intent(inout) :: tpfield
+integer,          intent(in)    :: ksize
+
+integer :: ji
+type(tfieldptr_n1d), dimension(:), allocatable :: tzfield_n1d
+
+if ( tpfield%nmodelmax < 0 ) then
+  !nmodelmax is < 0 if the allocation of the field has been done by hand
+  !(not using a constructor, default value of nmodelmax)
+  !The correct value of nmodelmax is hence computed here
+  tpfield%nmodelmax = Size( tpfield%tfield_n1d )
+end if
+
+if ( ksize > tpfield%nmodelmax ) then
+  if ( tpfield%nmodelmax == 0 ) then
+    Allocate( tpfield%tfield_n1d(ksize) )
+    do ji = 1, ksize
+      tpfield%tfield_n1d(ji)%data => null()
+    end do
+  else
+    Allocate( tzfield_n1d(ksize) )
+    do ji = 1, Size( tpfield%tfield_n1d)
+      tzfield_n1d(ji)%data => tpfield%tfield_n1d(ji)%data
+    end do
+    do ji = Size( tpfield%tfield_n1d) + 1, ksize
+      tzfield_n1d(ji)%data => null()
+    end do
+    call Move_alloc( from = tzfield_n1d, to = tpfield%tfield_n1d )
+  end if
+  tpfield%nmodelmax = ksize
+end if
+
+end subroutine Extend_1field_n1d
+
+
+subroutine Extend_1field_n2d( tpfield, ksize )
+
+implicit none
+
+type(tfielddata), intent(inout) :: tpfield
+integer,          intent(in)    :: ksize
+
+integer :: ji
+type(tfieldptr_n2d), dimension(:), allocatable :: tzfield_n2d
+
+if ( tpfield%nmodelmax < 0 ) then
+  !nmodelmax is < 0 if the allocation of the field has been done by hand
+  !(not using a constructor, default value of nmodelmax)
+  !The correct value of nmodelmax is hence computed here
+  tpfield%nmodelmax = Size( tpfield%tfield_n2d )
+end if
+
+if ( ksize > tpfield%nmodelmax ) then
+  if ( tpfield%nmodelmax == 0 ) then
+    Allocate( tpfield%tfield_n2d(ksize) )
+    do ji = 1, ksize
+      tpfield%tfield_n2d(ji)%data => null()
+    end do
+  else
+    Allocate( tzfield_n2d(ksize) )
+    do ji = 1, Size( tpfield%tfield_n2d)
+      tzfield_n2d(ji)%data => tpfield%tfield_n2d(ji)%data
+    end do
+    do ji = Size( tpfield%tfield_n2d) + 1, ksize
+      tzfield_n2d(ji)%data => null()
+    end do
+    call Move_alloc( from = tzfield_n2d, to = tpfield%tfield_n2d )
+  end if
+  tpfield%nmodelmax = ksize
+end if
+
+end subroutine Extend_1field_n2d
+
+
+subroutine Extend_1field_n3d( tpfield, ksize )
+
+implicit none
+
+type(tfielddata), intent(inout) :: tpfield
+integer,          intent(in)    :: ksize
+
+integer :: ji
+type(tfieldptr_n3d), dimension(:), allocatable :: tzfield_n3d
+
+if ( tpfield%nmodelmax < 0 ) then
+  !nmodelmax is < 0 if the allocation of the field has been done by hand
+  !(not using a constructor, default value of nmodelmax)
+  !The correct value of nmodelmax is hence computed here
+  tpfield%nmodelmax = Size( tpfield%tfield_n3d )
+end if
+
+if ( ksize > tpfield%nmodelmax ) then
+  if ( tpfield%nmodelmax == 0 ) then
+    Allocate( tpfield%tfield_n3d(ksize) )
+    do ji = 1, ksize
+      tpfield%tfield_n3d(ji)%data => null()
+    end do
+  else
+    Allocate( tzfield_n3d(ksize) )
+    do ji = 1, Size( tpfield%tfield_n3d)
+      tzfield_n3d(ji)%data => tpfield%tfield_n3d(ji)%data
+    end do
+    do ji = Size( tpfield%tfield_n3d) + 1, ksize
+      tzfield_n3d(ji)%data => null()
+    end do
+    call Move_alloc( from = tzfield_n3d, to = tpfield%tfield_n3d )
+  end if
+  tpfield%nmodelmax = ksize
+end if
+
+end subroutine Extend_1field_n3d
+
+
+subroutine Extend_1field_t0d( tpfield, ksize )
+
+implicit none
+
+type(tfielddata), intent(inout) :: tpfield
+integer,          intent(in)    :: ksize
+
+integer :: ji
+type(tfieldptr_t0d), dimension(:), allocatable :: tzfield_t0d
+
+if ( tpfield%nmodelmax < 0 ) then
+  !nmodelmax is < 0 if the allocation of the field has been done by hand
+  !(not using a constructor, default value of nmodelmax)
+  !The correct value of nmodelmax is hence computed here
+  tpfield%nmodelmax = Size( tpfield%tfield_t0d )
+end if
+
+if ( ksize > tpfield%nmodelmax ) then
+  if ( tpfield%nmodelmax == 0 ) then
+    Allocate( tpfield%tfield_t0d(ksize) )
+    do ji = 1, ksize
+      ! tpfield%tfield_t0d(ji)%data => null()
+      Allocate( tpfield%tfield_t0d(ji)%data )
+    end do
+  else
+    Allocate( tzfield_t0d(ksize) )
+    do ji = 1, Size( tpfield%tfield_t0d)
+      tzfield_t0d(ji)%data => tpfield%tfield_t0d(ji)%data
+    end do
+    do ji = Size( tpfield%tfield_t0d) + 1, ksize
+      ! tzfield_t0d(ji)%data => null()
+      Allocate( tzfield_t0d(ji)%data )
+    end do
+    call Move_alloc( from = tzfield_t0d, to = tpfield%tfield_t0d )
+  end if
+  tpfield%nmodelmax = ksize
+end if
+
+end subroutine Extend_1field_t0d
+
+
+subroutine Extend_1field_t1d( tpfield, ksize )
+
+implicit none
+
+type(tfielddata), intent(inout) :: tpfield
+integer,          intent(in)    :: ksize
+
+integer :: ji
+type(tfieldptr_t1d), dimension(:), allocatable :: tzfield_t1d
+
+if ( tpfield%nmodelmax < 0 ) then
+  !nmodelmax is < 0 if the allocation of the field has been done by hand
+  !(not using a constructor, default value of nmodelmax)
+  !The correct value of nmodelmax is hence computed here
+  tpfield%nmodelmax = Size( tpfield%tfield_t1d )
+end if
+
+if ( ksize > tpfield%nmodelmax ) then
+  if ( tpfield%nmodelmax == 0 ) then
+    Allocate( tpfield%tfield_t1d(ksize) )
+    do ji = 1, ksize
+      tpfield%tfield_t1d(ji)%data => null()
+    end do
+  else
+    Allocate( tzfield_t1d(ksize) )
+    do ji = 1, Size( tpfield%tfield_t1d)
+      tzfield_t1d(ji)%data => tpfield%tfield_t1d(ji)%data
+    end do
+    do ji = Size( tpfield%tfield_t1d) + 1, ksize
+      tzfield_t1d(ji)%data => null()
+    end do
+    call Move_alloc( from = tzfield_t1d, to = tpfield%tfield_t1d )
+  end if
+  tpfield%nmodelmax = ksize
+end if
+
+end subroutine Extend_1field_t1d
+
+
+subroutine Extend_1field_x0d( tpfield, ksize )
+
+use modd_parameters, only: XUNDEF
+
+implicit none
+
+type(tfielddata), intent(inout) :: tpfield
+integer,          intent(in)    :: ksize
+
+integer :: ji
+type(tfieldptr_x0d), dimension(:), allocatable :: tzfield_x0d
+
+if ( tpfield%nmodelmax < 0 ) then
+  !nmodelmax is < 0 if the allocation of the field has been done by hand
+  !(not using a constructor, default value of nmodelmax)
+  !The correct value of nmodelmax is hence computed here
+  tpfield%nmodelmax = Size( tpfield%tfield_x0d )
+end if
+
+if ( ksize > tpfield%nmodelmax ) then
+  if ( tpfield%nmodelmax == 0 ) then
+    Allocate( tpfield%tfield_x0d(ksize) )
+    do ji = 1, ksize
+      ! tpfield%tfield_x0d(ji)%data => null()
+      Allocate( tpfield%tfield_x0d(ji)%data )
+      tpfield%tfield_x0d(ji)%data = XUNDEF
+    end do
+  else
+    Allocate( tzfield_x0d(ksize) )
+    do ji = 1, Size( tpfield%tfield_x0d)
+      tzfield_x0d(ji)%data => tpfield%tfield_x0d(ji)%data
+    end do
+    do ji = Size( tpfield%tfield_x0d) + 1, ksize
+      ! tzfield_x0d(ji)%data => null()
+      Allocate( tzfield_x0d(ji)%data )
+      tzfield_x0d(ji)%data = XUNDEF
+    end do
+    call Move_alloc( from = tzfield_x0d, to = tpfield%tfield_x0d )
+  end if
+  tpfield%nmodelmax = ksize
+end if
+
+end subroutine Extend_1field_x0d
+
+
+subroutine Extend_1field_x1d( tpfield, ksize )
+
+implicit none
+
+type(tfielddata), intent(inout) :: tpfield
+integer,          intent(in)    :: ksize
+
+integer :: ji
+type(tfieldptr_x1d), dimension(:), allocatable :: tzfield_x1d
+
+if ( tpfield%nmodelmax < 0 ) then
+  !nmodelmax is < 0 if the allocation of the field has been done by hand
+  !(not using a constructor, default value of nmodelmax)
+  !The correct value of nmodelmax is hence computed here
+  tpfield%nmodelmax = Size( tpfield%tfield_x1d )
+end if
+
+if ( ksize > tpfield%nmodelmax ) then
+  if ( tpfield%nmodelmax == 0 ) then
+    Allocate( tpfield%tfield_x1d(ksize) )
+    do ji = 1, ksize
+      tpfield%tfield_x1d(ji)%data => null()
+    end do
+  else
+    Allocate( tzfield_x1d(ksize) )
+    do ji = 1, Size( tpfield%tfield_x1d)
+      tzfield_x1d(ji)%data => tpfield%tfield_x1d(ji)%data
+    end do
+    do ji = Size( tpfield%tfield_x1d) + 1, ksize
+      tzfield_x1d(ji)%data => null()
+    end do
+    call Move_alloc( from = tzfield_x1d, to = tpfield%tfield_x1d )
+  end if
+  tpfield%nmodelmax = ksize
+end if
+
+end subroutine Extend_1field_x1d
+
+
+subroutine Extend_1field_x2d( tpfield, ksize )
+
+implicit none
+
+type(tfielddata), intent(inout) :: tpfield
+integer,          intent(in)    :: ksize
+
+integer :: ji
+type(tfieldptr_x2d), dimension(:), allocatable :: tzfield_x2d
+
+if ( tpfield%nmodelmax < 0 ) then
+  !nmodelmax is < 0 if the allocation of the field has been done by hand
+  !(not using a constructor, default value of nmodelmax)
+  !The correct value of nmodelmax is hence computed here
+  tpfield%nmodelmax = Size( tpfield%tfield_x2d )
+end if
+
+if ( ksize > tpfield%nmodelmax ) then
+  if ( tpfield%nmodelmax == 0 ) then
+    Allocate( tpfield%tfield_x2d(ksize) )
+    do ji = 1, ksize
+      tpfield%tfield_x2d(ji)%data => null()
+    end do
+  else
+    Allocate( tzfield_x2d(ksize) )
+    do ji = 1, Size( tpfield%tfield_x2d)
+      tzfield_x2d(ji)%data => tpfield%tfield_x2d(ji)%data
+    end do
+    do ji = Size( tpfield%tfield_x2d) + 1, ksize
+      tzfield_x2d(ji)%data => null()
+    end do
+    call Move_alloc( from = tzfield_x2d, to = tpfield%tfield_x2d )
+  end if
+  tpfield%nmodelmax = ksize
+end if
+
+end subroutine Extend_1field_x2d
+
+
+subroutine Extend_1field_x3d( tpfield, ksize )
+
+implicit none
+
+type(tfielddata), intent(inout) :: tpfield
+integer,          intent(in)    :: ksize
+
+integer :: ji
+type(tfieldptr_x3d), dimension(:), allocatable :: tzfield_x3d
+
+if ( tpfield%nmodelmax < 0 ) then
+  !nmodelmax is < 0 if the allocation of the field has been done by hand
+  !(not using a constructor, default value of nmodelmax)
+  !The correct value of nmodelmax is hence computed here
+  tpfield%nmodelmax = Size( tpfield%tfield_x3d )
+end if
+
+if ( ksize > tpfield%nmodelmax ) then
+  if ( tpfield%nmodelmax == 0 ) then
+    Allocate( tpfield%tfield_x3d(ksize) )
+    do ji = 1, ksize
+      tpfield%tfield_x3d(ji)%data => null()
+    end do
+  else
+    Allocate( tzfield_x3d(ksize) )
+    do ji = 1, Size( tpfield%tfield_x3d)
+      tzfield_x3d(ji)%data => tpfield%tfield_x3d(ji)%data
+    end do
+    do ji = Size( tpfield%tfield_x3d) + 1, ksize
+      tzfield_x3d(ji)%data => null()
+    end do
+    call Move_alloc( from = tzfield_x3d, to = tpfield%tfield_x3d )
+  end if
+  tpfield%nmodelmax = ksize
+end if
+
+end subroutine Extend_1field_x3d
+
+
+subroutine Extend_1field_x4d( tpfield, ksize )
+
+implicit none
+
+type(tfielddata), intent(inout) :: tpfield
+integer,          intent(in)    :: ksize
+
+integer :: ji
+type(tfieldptr_x4d), dimension(:), allocatable :: tzfield_x4d
+
+if ( tpfield%nmodelmax < 0 ) then
+  !nmodelmax is < 0 if the allocation of the field has been done by hand
+  !(not using a constructor, default value of nmodelmax)
+  !The correct value of nmodelmax is hence computed here
+  tpfield%nmodelmax = Size( tpfield%tfield_x4d )
+end if
+
+if ( ksize > tpfield%nmodelmax ) then
+  if ( tpfield%nmodelmax == 0 ) then
+    Allocate( tpfield%tfield_x4d(ksize) )
+    do ji = 1, ksize
+      tpfield%tfield_x4d(ji)%data => null()
+    end do
+  else
+    Allocate( tzfield_x4d(ksize) )
+    do ji = 1, Size( tpfield%tfield_x4d)
+      tzfield_x4d(ji)%data => tpfield%tfield_x4d(ji)%data
+    end do
+    do ji = Size( tpfield%tfield_x4d) + 1, ksize
+      tzfield_x4d(ji)%data => null()
+    end do
+    call Move_alloc( from = tzfield_x4d, to = tpfield%tfield_x4d )
+  end if
+  tpfield%nmodelmax = ksize
+end if
+
+end subroutine Extend_1field_x4d
+
+
+subroutine Extend_1field_x5d( tpfield, ksize )
+
+implicit none
+
+type(tfielddata), intent(inout) :: tpfield
+integer,          intent(in)    :: ksize
+
+integer :: ji
+type(tfieldptr_x5d), dimension(:), allocatable :: tzfield_x5d
+
+if ( tpfield%nmodelmax < 0 ) then
+  !nmodelmax is < 0 if the allocation of the field has been done by hand
+  !(not using a constructor, default value of nmodelmax)
+  !The correct value of nmodelmax is hence computed here
+  tpfield%nmodelmax = Size( tpfield%tfield_x5d )
+end if
+
+if ( ksize > tpfield%nmodelmax ) then
+  if ( tpfield%nmodelmax == 0 ) then
+    Allocate( tpfield%tfield_x5d(ksize) )
+    do ji = 1, ksize
+      tpfield%tfield_x5d(ji)%data => null()
+    end do
+  else
+    Allocate( tzfield_x5d(ksize) )
+    do ji = 1, Size( tpfield%tfield_x5d)
+      tzfield_x5d(ji)%data => tpfield%tfield_x5d(ji)%data
+    end do
+    do ji = Size( tpfield%tfield_x5d) + 1, ksize
+      tzfield_x5d(ji)%data => null()
+    end do
+    call Move_alloc( from = tzfield_x5d, to = tpfield%tfield_x5d )
+  end if
+  tpfield%nmodelmax = ksize
+end if
+
+end subroutine Extend_1field_x5d
+
+
+subroutine Extend_1field_x6d( tpfield, ksize )
+
+implicit none
+
+type(tfielddata), intent(inout) :: tpfield
+integer,          intent(in)    :: ksize
+
+integer :: ji
+type(tfieldptr_x6d), dimension(:), allocatable :: tzfield_x6d
+
+if ( tpfield%nmodelmax < 0 ) then
+  !nmodelmax is < 0 if the allocation of the field has been done by hand
+  !(not using a constructor, default value of nmodelmax)
+  !The correct value of nmodelmax is hence computed here
+  tpfield%nmodelmax = Size( tpfield%tfield_x6d )
+end if
+
+if ( ksize > tpfield%nmodelmax ) then
+  if ( tpfield%nmodelmax == 0 ) then
+    Allocate( tpfield%tfield_x6d(ksize) )
+    do ji = 1, ksize
+      tpfield%tfield_x6d(ji)%data => null()
+    end do
+  else
+    Allocate( tzfield_x6d(ksize) )
+    do ji = 1, Size( tpfield%tfield_x6d)
+      tzfield_x6d(ji)%data => tpfield%tfield_x6d(ji)%data
+    end do
+    do ji = Size( tpfield%tfield_x6d) + 1, ksize
+      tzfield_x6d(ji)%data => null()
+    end do
+    call Move_alloc( from = tzfield_x6d, to = tpfield%tfield_x6d )
+  end if
+  tpfield%nmodelmax = ksize
+end if
+
+end subroutine Extend_1field_x6d
 
 
 subroutine Fieldlist_nmodel_resize( kmodelnew )
