@@ -19,6 +19,7 @@
 !  P. Wautelet 18/03/2021: workaround for an intel compiler bug
 !  P. Wautelet 04/05/2021: improve IO_Vdims_fill_nc4 if l2d and lpack
 !  P. Wautelet 27/05/2021: improve IO_Mnhname_clean to autocorrect names to be CF compliant
+!  P. Wautelet 08/10/2021: add 2 new dimensions: LW_bands and SW_bands
 !-----------------------------------------------------------------
 #ifdef MNH_IOCDF4
 module mode_io_tools_nc4
@@ -254,7 +255,7 @@ use modd_dyn,           only: xseglen
 use modd_dyn_n,         only: xtstep
 use modd_field,         only: NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NI_U, NMNHDIM_NJ_U, NMNHDIM_NI_V, NMNHDIM_NJ_V,   &
                               NMNHDIM_LEVEL, NMNHDIM_LEVEL_W, NMNHDIM_TIME,                                     &
-                              NMNHDIM_ONE,  NMNHDIM_COMPLEX,                                                    &
+                              NMNHDIM_ONE,  NMNHDIM_NSWB, NMNHDIM_NLWB, NMNHDIM_COMPLEX,                        &
                               NMNHDIM_BUDGET_CART_NI, NMNHDIM_BUDGET_CART_NJ, NMNHDIM_BUDGET_CART_NI_U,         &
                               NMNHDIM_BUDGET_CART_NJ_U, NMNHDIM_BUDGET_CART_NI_V, NMNHDIM_BUDGET_CART_NJ_V,     &
                               NMNHDIM_BUDGET_CART_LEVEL, NMNHDIM_BUDGET_CART_LEVEL_W,                           &
@@ -274,7 +275,9 @@ use modd_les,           only: lles_pdf, nles_k, npdf, nspectra_k, xles_temp_mean
 use modd_les_n,         only: nles_times, nspectra_ni, nspectra_nj
 use modd_nsv,           only: nsv
 USE MODD_PARAMETERS_ll, ONLY: JPHEXT, JPVEXT
+use modd_param_n,       only: crad
 use modd_profiler_n,    only: numbprofiler, tprofiler
+use modd_radiations_n,  only: nlwb_mnh, nswb_mnh
 use modd_series,        only: lseries
 use modd_series_n,      only: nsnbstept
 use modd_station_n,     only: numbstat, tstation
@@ -334,6 +337,11 @@ end if
 if ( tpfile%ctype == 'MNHDIACHRONIC' .or. ( lpack .and. l2d ) ) then
   !Dimension of size 1 used for NMNHDIM_ONE
   call IO_Add_dim_nc4( tpfile, NMNHDIM_ONE, 'one', 1 )
+end if
+
+if ( tpfile%ctype /= 'MNHDIACHRONIC' .and. crad /= 'NONE' ) then
+  call IO_Add_dim_nc4( tpfile, NMNHDIM_NSWB, 'SW_bands', nswb_mnh ) !number of SW bands practically used
+  call IO_Add_dim_nc4( tpfile, NMNHDIM_NLWB, 'LW_bands', nlwb_mnh ) !number of LW bands practically used
 end if
 
 !Write dimensions used in diachronic files
