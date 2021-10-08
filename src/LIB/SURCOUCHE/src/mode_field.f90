@@ -15,7 +15,7 @@
 !  P. Wautelet 19/06/2019: add Fieldlist_nmodel_resize subroutine + provide KMODEL to INI_FIELD_LIST when known
 !  P. Wautelet 23/01/2020: split in modd_field.f90 and mode_field.f90
 !  JL Redelsperger 03/2021: add variables for Ocean LES and auto-coupled version
-!  P. Wautelet 08/10/2021: add Goto_model_1field procedures
+!  P. Wautelet 08/10/2021: add Goto_model_1field + Add_field2list procedures
 !-----------------------------------------------------------------
 module mode_field
 
@@ -68,7 +68,7 @@ USE MODD_CONF, ONLY: NMODEL
 !
 INTEGER,INTENT(IN),OPTIONAL :: KMODEL
 !
-INTEGER :: IDX, IMODEL
+INTEGER :: IMODEL
 CHARACTER(LEN=42) :: YMSG
 !
 !F90/95: TFIELDLIST(1) = TFIELDDATA('UT','x_wind','m s-1','XY','X_Y_Z_U component of wind',2)
@@ -102,3467 +102,3024 @@ CALL PRINT_MSG(NVERB_DEBUG,'GEN','INI_FIELD_LIST',YMSG)
 !
 NMODEL_ALLOCATED = IMODEL
 !
-IDX = 1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'MNHVERSION'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'MesoNH version'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = ''
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 1
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'MASDEV'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'MesoNH version (without bugfix)'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = ''
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'BUGFIX'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'MesoNH bugfix number'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = ''
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'BIBUSER'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'MesoNH: user binary library'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = ''
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPECHAR
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'VERSION'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'SURFEX version (without BUG)'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = ''
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'BUG'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'SURFEX bugfix number'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = ''
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'PROGRAM'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'MesoNH family: used program'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = ''
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPECHAR
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'FILETYPE'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'type of this file'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = ''
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPECHAR
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'MY_NAME'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'filename (no extension)'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = ''
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPECHAR
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DAD_NAME'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'filename of the dad file'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = ''
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPECHAR
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DXRATIO'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'DXRATIO'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Resolution ratio between this mesh and its father in x-direction'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DYRATIO'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'DYRATIO'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Resolution ratio between this mesh and its father in y-direction'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'XSIZE'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'XSIZE'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Number of model 1 grid points in x-direction in the model 2 physical domain'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'YSIZE'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'YSIZE'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Number of model 1 grid points in y-direction in the model 2 physical domain'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'XOR'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'XOR'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Horizontal position of this mesh relative to its father'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'YOR'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'YOR'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Vertical position of this mesh relative to its father'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'STORAGE_TYPE'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'STORAGE_TYPE'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Storage type for the information written in the FM files'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPECHAR
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'IMAX'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'IMAX'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'x-dimension of the physical domain'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'JMAX'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'JMAX'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'y-dimension of the physical domain'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'KMAX'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'KMAX'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'z-dimension of the physical domain'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'JPHEXT'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'JPHEXT'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Number of horizontal external points on each side'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'RPK'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'RPK'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Projection parameter for conformal projection'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LONORI'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LONORI'
-TFIELDLIST(IDX)%CUNITS     = 'degree'
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Longitude of the point of coordinates x=0, y=0 for conformal projection'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LATORI'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LATORI'
-TFIELDLIST(IDX)%CUNITS     = 'degree'
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Latitude of the point of coordinates x=0, y=0 for conformal projection'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LONOR'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LONOR'
-TFIELDLIST(IDX)%CUNITS     = 'degree'
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Longitude of 1st mass point'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LATOR'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LATOR'
-TFIELDLIST(IDX)%CUNITS     = 'degree'
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Latitude of 1st mass point'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'THINSHELL'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'THINSHELL'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Logical for thinshell approximation'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPELOG
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LAT0'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LAT0'
-TFIELDLIST(IDX)%CUNITS     = 'degree'
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Reference latitude for conformal projection'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LON0'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LON0'
-TFIELDLIST(IDX)%CUNITS     = 'degree'
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Reference longitude for conformal projection'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'BETA'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'BETA'
-TFIELDLIST(IDX)%CUNITS     = 'degree'
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Rotation angle for conformal projection'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'XHAT'
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'MNHVERSION',     &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'MesoNH version', &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = '',               &
+  NGRID      = 0,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 1,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA(                  &
+  CMNHNAME   = 'MASDEV',                          &
+  CSTDNAME   = '',                                &
+  CLONGNAME  = 'MesoNH version (without bugfix)', &
+  CUNITS     = '',                                &
+  CDIR       = '--',                              &
+  CCOMMENT   = '',                                &
+  NGRID      = 0,                                 &
+  NTYPE      = TYPEINT,                           &
+  NDIMS      = 0,                                 &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA(       &
+  CMNHNAME   = 'BUGFIX',               &
+  CSTDNAME   = '',                     &
+  CLONGNAME  = 'MesoNH bugfix number', &
+  CUNITS     = '',                     &
+  CDIR       = '--',                   &
+  CCOMMENT   = '',                     &
+  NGRID      = 0,                      &
+  NTYPE      = TYPEINT,                &
+  NDIMS      = 0,                      &
+  LTIMEDEP   = .FALSE.                 ) )
+
+call Add_field2list( TFIELDDATA(              &
+  CMNHNAME   = 'BIBUSER',                     &
+  CSTDNAME   = '',                            &
+  CLONGNAME  = 'MesoNH: user binary library', &
+  CUNITS     = '',                            &
+  CDIR       = '--',                          &
+  CCOMMENT   = '',                            &
+  NGRID      = 0,                             &
+  NTYPE      = TYPECHAR,                      &
+  NDIMS      = 0,                             &
+  LTIMEDEP   = .FALSE.                        ) )
+
+call Add_field2list( TFIELDDATA(               &
+  CMNHNAME   = 'VERSION',                      &
+  CSTDNAME   = '',                             &
+  CLONGNAME  = 'SURFEX version (without BUG)', &
+  CUNITS     = '',                             &
+  CDIR       = '--',                           &
+  CCOMMENT   = '',                             &
+  NGRID      = 0,                              &
+  NTYPE      = TYPEINT,                        &
+  NDIMS      = 0,                              &
+  LTIMEDEP   = .FALSE.                         ) )
+
+call Add_field2list( TFIELDDATA(       &
+  CMNHNAME   = 'BUG',                  &
+  CSTDNAME   = '',                     &
+  CLONGNAME  = 'SURFEX bugfix number', &
+  CUNITS     = '',                     &
+  CDIR       = '--',                   &
+  CCOMMENT   = '',                     &
+  NGRID      = 0,                      &
+  NTYPE      = TYPEINT,                &
+  NDIMS      = 0,                      &
+  LTIMEDEP   = .FALSE.                 ) )
+
+call Add_field2list( TFIELDDATA(              &
+  CMNHNAME   = 'PROGRAM',                     &
+  CSTDNAME   = '',                            &
+  CLONGNAME  = 'MesoNH family: used program', &
+  CUNITS     = '',                            &
+  CDIR       = '--',                          &
+  CCOMMENT   = '',                            &
+  NGRID      = 0,                             &
+  NTYPE      = TYPECHAR,                      &
+  NDIMS      = 0,                             &
+  LTIMEDEP   = .FALSE.                        ) )
+
+call Add_field2list( TFIELDDATA(    &
+  CMNHNAME   = 'FILETYPE',          &
+  CSTDNAME   = '',                  &
+  CLONGNAME  = 'type of this file', &
+  CUNITS     = '',                  &
+  CDIR       = '--',                &
+  CCOMMENT   = '',                  &
+  NGRID      = 0,                   &
+  NTYPE      = TYPECHAR,            &
+  NDIMS      = 0,                   &
+  LTIMEDEP   = .FALSE.              ) )
+
+call Add_field2list( TFIELDDATA(          &
+  CMNHNAME   = 'MY_NAME',                 &
+  CSTDNAME   = '',                        &
+  CLONGNAME  = 'filename (no extension)', &
+  CUNITS     = '',                        &
+  CDIR       = '--',                      &
+  CCOMMENT   = '',                        &
+  NGRID      = 0,                         &
+  NTYPE      = TYPECHAR,                  &
+  NDIMS      = 0,                         &
+  LTIMEDEP   = .FALSE.                    ) )
+
+call Add_field2list( TFIELDDATA(           &
+  CMNHNAME   = 'DAD_NAME',                 &
+  CSTDNAME   = '',                         &
+  CLONGNAME  = 'filename of the dad file', &
+  CUNITS     = '',                         &
+  CDIR       = '--',                       &
+  CCOMMENT   = '',                         &
+  NGRID      = 0,                          &
+  NTYPE      = TYPECHAR,                   &
+  NDIMS      = 0,                          &
+  LTIMEDEP   = .FALSE.                     ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'DXRATIO',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'DXRATIO',        &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Resolution ratio between this mesh and its father in x-direction', &
+  NGRID      = 0,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'DYRATIO',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'DYRATIO',        &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Resolution ratio between this mesh and its father in y-direction', &
+  NGRID      = 0,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'XSIZE',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'XSIZE',          &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Number of model 1 grid points in x-direction in the model 2 physical domain', &
+  NGRID      = 0,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'YSIZE',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'YSIZE',          &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Number of model 1 grid points in y-direction in the model 2 physical domain', &
+  NGRID      = 0,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'XOR',            &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'XOR',            &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Horizontal position of this mesh relative to its father', &
+  NGRID      = 0,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'YOR',            &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'YOR',            &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Vertical position of this mesh relative to its father', &
+  NGRID      = 0,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'STORAGE_TYPE',   &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'STORAGE_TYPE',   &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Storage type for the information written in the FM files', &
+  NGRID      = 0,                &
+  NTYPE      = TYPECHAR,         &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'IMAX',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'IMAX',           &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'x-dimension of the physical domain', &
+  NGRID      = 0,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'JMAX',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'JMAX',           &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'y-dimension of the physical domain', &
+  NGRID      = 0,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'KMAX',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'KMAX',           &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'z-dimension of the physical domain', &
+  NGRID      = 0,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'JPHEXT',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'JPHEXT',         &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Number of horizontal external points on each side', &
+  NGRID      = 0,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'RPK',            &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'RPK',            &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Projection parameter for conformal projection', &
+  NGRID      = 0,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LONORI',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LONORI',         &
+  CUNITS     = 'degree',         &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Longitude of the point of coordinates x=0, y=0 for conformal projection', &
+  NGRID      = 0,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LATORI',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LATORI',         &
+  CUNITS     = 'degree',         &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Latitude of the point of coordinates x=0, y=0 for conformal projection', &
+  NGRID      = 0,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LONOR',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LONOR',          &
+  CUNITS     = 'degree',         &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Longitude of 1st mass point', &
+  NGRID      = 0,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LATOR',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LATOR',          &
+  CUNITS     = 'degree',         &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Latitude of 1st mass point', &
+  NGRID      = 0,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'THINSHELL',      &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'THINSHELL',      &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Logical for thinshell approximation', &
+  NGRID      = 0,                &
+  NTYPE      = TYPELOG,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LAT0',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LAT0',           &
+  CUNITS     = 'degree',         &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Reference latitude for conformal projection', &
+  NGRID      = 0,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LON0',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LON0',           &
+  CUNITS     = 'degree',         &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Reference longitude for conformal projection', &
+  NGRID      = 0,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'BETA',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'BETA',           &
+  CUNITS     = 'degree',         &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Rotation angle for conformal projection', &
+  NGRID      = 0,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'XHAT',           &
 !TODO: check stdname
-TFIELDLIST(IDX)%CSTDNAME   = 'projection_x_coordinate'
-TFIELDLIST(IDX)%CLONGNAME  = 'XHAT'
-TFIELDLIST(IDX)%CUNITS     = 'm'
-TFIELDLIST(IDX)%CDIR       = 'XX'
-TFIELDLIST(IDX)%CCOMMENT   = 'Position x in the conformal or cartesian plane'
-TFIELDLIST(IDX)%NGRID      = 2
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 1
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X1D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'YHAT'
+  CSTDNAME   = 'projection_x_coordinate', &
+  CLONGNAME  = 'XHAT',           &
+  CUNITS     = 'm',              &
+  CDIR       = 'XX',             &
+  CCOMMENT   = 'Position x in the conformal or cartesian plane', &
+  NGRID      = 2,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 1,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'YHAT',           &
 !TODO: check stdname
-TFIELDLIST(IDX)%CSTDNAME   = 'projection_y_coordinate'
-TFIELDLIST(IDX)%CLONGNAME  = 'YHAT'
-TFIELDLIST(IDX)%CUNITS     = 'm'
-TFIELDLIST(IDX)%CDIR       = 'YY'
-TFIELDLIST(IDX)%CCOMMENT   = 'Position y in the conformal or cartesian plane'
-TFIELDLIST(IDX)%NGRID      = 3
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 1
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X1D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'ZHAT'
+  CSTDNAME   = 'projection_y_coordinate', &
+  CLONGNAME  = 'YHAT',           &
+  CUNITS     = 'm',              &
+  CDIR       = 'YY',             &
+  CCOMMENT   = 'Position y in the conformal or cartesian plane', &
+  NGRID      = 3,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 1,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'ZHAT',           &
 !TODO: check stdname
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'ZHAT'
-TFIELDLIST(IDX)%CUNITS     = 'm'
-TFIELDLIST(IDX)%CDIR       = 'ZZ'
-TFIELDLIST(IDX)%CCOMMENT   = 'Height level without orography'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 1
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X1D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'ZTOP'
-TFIELDLIST(IDX)%CSTDNAME   = 'altitude_at_top_of_atmosphere_model'
-TFIELDLIST(IDX)%CLONGNAME  = 'ZTOP'
-TFIELDLIST(IDX)%CUNITS     = 'm'
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Height of top level'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X0D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DXHAT'
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'ZHAT',           &
+  CUNITS     = 'm',              &
+  CDIR       = 'ZZ',             &
+  CCOMMENT   = 'Height level without orography', &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 1,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA(      &
+  CMNHNAME   = 'ZTOP',                &
+  CSTDNAME   = 'altitude_at_top_of_atmosphere_model', &
+  CLONGNAME  = 'ZTOP',                &
+  CUNITS     = 'm',                   &
+  CDIR       = '--',                  &
+  CCOMMENT   = 'Height of top level', &
+  NGRID      = 4,                     &
+  NTYPE      = TYPEREAL,              &
+  NDIMS      = 0,                     &
+  LTIMEDEP   = .FALSE.                ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'DXHAT',          &
 !TODO: check stdname
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'DXHAT'
-TFIELDLIST(IDX)%CUNITS     = 'm'
-TFIELDLIST(IDX)%CDIR       = 'XX'
-TFIELDLIST(IDX)%CCOMMENT   = 'Horizontal stretching in x'
-TFIELDLIST(IDX)%NGRID      = 2
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 1
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X1D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DYHAT'
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'DXHAT',          &
+  CUNITS     = 'm',              &
+  CDIR       = 'XX',             &
+  CCOMMENT   = 'Horizontal stretching in x', &
+  NGRID      = 2,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 1,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'DYHAT',          &
 !TODO: check stdname
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'DYHAT'
-TFIELDLIST(IDX)%CUNITS     = 'm'
-TFIELDLIST(IDX)%CDIR       = 'YY'
-TFIELDLIST(IDX)%CCOMMENT   = 'Horizontal stretching in y'
-TFIELDLIST(IDX)%NGRID      = 3
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 1
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X1D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'ALT'
-TFIELDLIST(IDX)%CSTDNAME   = 'altitude'
-TFIELDLIST(IDX)%CLONGNAME  = 'ALT'
-TFIELDLIST(IDX)%CUNITS     = 'm'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_ALTitude'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DIRCOSXW'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'DIRCOSXW'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X director cosinus of the normal to the ground surface'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DIRCOSYW'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'DIRCOSYW'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'Y director cosinus of the normal to the ground surface'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DIRCOSZW'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'DIRCOSZW'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'Z director cosinus of the normal to the ground surface'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'COSSLOPE'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'COSSLOPE'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'cosinus of the angle between i and the slope vector'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'SINSLOPE'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'SINSLOPE'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'sinus of the angle between i and the slope vector'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'MAP'
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'DYHAT',          &
+  CUNITS     = 'm',              &
+  CDIR       = 'YY',             &
+  CCOMMENT   = 'Horizontal stretching in y', &
+  NGRID      = 3,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 1,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'ALT',            &
+  CSTDNAME   = 'altitude',       &
+  CLONGNAME  = 'ALT',            &
+  CUNITS     = 'm',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_ALTitude', &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'DIRCOSXW',       &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'DIRCOSXW',       &
+  CUNITS     = '',               &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X director cosinus of the normal to the ground surface', &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'DIRCOSYW',       &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'DIRCOSYW',       &
+  CUNITS     = '',               &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'Y director cosinus of the normal to the ground surface', &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'DIRCOSZW',       &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'DIRCOSZW',       &
+  CUNITS     = '',               &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'Z director cosinus of the normal to the ground surface', &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'COSSLOPE',       &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'COSSLOPE',       &
+  CUNITS     = '',               &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'cosinus of the angle between i and the slope vector', &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'SINSLOPE',       &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'SINSLOPE',       &
+  CUNITS     = '',               &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'sinus of the angle between i and the slope vector', &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'MAP',            &
 !TODO: check stdname
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'MAP'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'Map factor'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'latitude'
-TFIELDLIST(IDX)%CSTDNAME   = 'latitude'
-TFIELDLIST(IDX)%CLONGNAME  = 'latitude'
-TFIELDLIST(IDX)%CUNITS     = 'degrees_north'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_latitude at mass point'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'longitude'
-TFIELDLIST(IDX)%CSTDNAME   = 'longitude'
-TFIELDLIST(IDX)%CLONGNAME  = 'longitude'
-TFIELDLIST(IDX)%CUNITS     = 'degrees_east'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_longitude at mass point'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'latitude_u'
-TFIELDLIST(IDX)%CSTDNAME   = 'latitude_at_u_location'
-TFIELDLIST(IDX)%CLONGNAME  = 'latitude at u location'
-TFIELDLIST(IDX)%CUNITS     = 'degrees_north'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_latitude at u point'
-TFIELDLIST(IDX)%NGRID      = 2
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'longitude_u'
-TFIELDLIST(IDX)%CSTDNAME   = 'longitude_at_u_location'
-TFIELDLIST(IDX)%CLONGNAME  = 'longitude at u location'
-TFIELDLIST(IDX)%CUNITS     = 'degrees_east'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_longitude at u point'
-TFIELDLIST(IDX)%NGRID      = 2
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'latitude_v'
-TFIELDLIST(IDX)%CSTDNAME   = 'latitude_at_v_location'
-TFIELDLIST(IDX)%CLONGNAME  = 'latitude at v location'
-TFIELDLIST(IDX)%CUNITS     = 'degrees_north'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_latitude at v point'
-TFIELDLIST(IDX)%NGRID      = 3
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'longitude_v'
-TFIELDLIST(IDX)%CSTDNAME   = 'longitude_at_v_location'
-TFIELDLIST(IDX)%CLONGNAME  = 'longitude at v location'
-TFIELDLIST(IDX)%CUNITS     = 'degrees_east'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_longitude at v point'
-TFIELDLIST(IDX)%NGRID      = 3
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'latitude_f'
-TFIELDLIST(IDX)%CSTDNAME   = 'latitude_at_f_location'
-TFIELDLIST(IDX)%CLONGNAME  = 'latitude at f location'
-TFIELDLIST(IDX)%CUNITS     = 'degrees_north'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_latitude at f point'
-TFIELDLIST(IDX)%NGRID      = 5
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'longitude_f'
-TFIELDLIST(IDX)%CSTDNAME   = 'longitude_at_f_location'
-TFIELDLIST(IDX)%CLONGNAME  = 'longitude at f location'
-TFIELDLIST(IDX)%CUNITS     = 'degrees_east'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_longitude at f point'
-TFIELDLIST(IDX)%NGRID      = 5
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LAT'
-! TFIELDLIST(IDX)%CSTDNAME   = 'latitude'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LAT'
-TFIELDLIST(IDX)%CUNITS     = 'degrees_north'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_latitude'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LON'
-! TFIELDLIST(IDX)%CSTDNAME   = 'longitude'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LON'
-TFIELDLIST(IDX)%CUNITS     = 'degrees_east'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_longitude'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'ZS'
-TFIELDLIST(IDX)%CSTDNAME   = 'surface_altitude'
-TFIELDLIST(IDX)%CLONGNAME  = 'ZS'
-TFIELDLIST(IDX)%CUNITS     = 'm'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'orography'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'ZWS'
-TFIELDLIST(IDX)%CSTDNAME   = 'sea_surface_wave_significant_height'
-TFIELDLIST(IDX)%CLONGNAME  = 'ZWS'
-TFIELDLIST(IDX)%CUNITS     = 'm'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'sea wave height'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'ZSMT'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'ZSMT'
-TFIELDLIST(IDX)%CUNITS     = 'm'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'smooth orography'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'SLEVE'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'SLEVE'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Logical for SLEVE coordinate'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPELOG
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_L0D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LEN1'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LEN1'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Decay scale for smooth topography'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X0D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LEN2'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LEN2'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Decay scale for small-scale topography deviation'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X0D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DTMOD'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'DTMOD'
-TFIELDLIST(IDX)%CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S'
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Time and date of model beginning'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEDATE
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_T0D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DTCUR'
-TFIELDLIST(IDX)%CSTDNAME   = 'time'
-TFIELDLIST(IDX)%CLONGNAME  = 'DTCUR'
-TFIELDLIST(IDX)%CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S'
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Current time and date'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEDATE
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_T0D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DTRAD_FULL'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'DTRAD_FULL'
-TFIELDLIST(IDX)%CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S'
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Time and date of last full radiation call'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEDATE
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_T0D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DTRAD_CLLY'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'DTRAD_CLLY'
-TFIELDLIST(IDX)%CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S'
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Time and date of last radiation call for only cloudy verticals'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEDATE
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_T0D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DTDCONV'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'DTDCONV'
-TFIELDLIST(IDX)%CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S'
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Time and date of the last deep convection call'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEDATE
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_T0D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DTEXP'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'DTEXP'
-TFIELDLIST(IDX)%CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S'
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Time and date of experiment beginning'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEDATE
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DTSEG'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'DTSEG'
-TFIELDLIST(IDX)%CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S'
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Time and date of segment beginning'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEDATE
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'L1D'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'L1D'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Logical for 1D model version'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPELOG
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'L2D'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'L2D'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Logical for 2D model version'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPELOG
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'PACK'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'PACK'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Logical to compress 1D or 2D FM files'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPELOG
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'CARTESIAN'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'CARTESIAN'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Logical for cartesian geometry'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPELOG
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LBOUSS'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LBOUSS'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Logical for Boussinesq approximation'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPELOG
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LOCEAN'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LOCEAN'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Logical for Ocean MesoNH'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPELOG
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LCOUPLES'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LCOUPLES'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Logical for coupling O-A LES'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPELOG
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'SURF'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'SURF'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Kind of surface processes parameterization'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPECHAR
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_C0D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'CPL_AROME'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'CPL_AROME'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Logical for AROME coupling file'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPELOG
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'COUPLING'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'COUPLING'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Logical for coupling file'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPELOG
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'UT'
-TFIELDLIST(IDX)%CSTDNAME   = 'x_wind'
-TFIELDLIST(IDX)%CLONGNAME  = 'UT'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_U component of wind'
-TFIELDLIST(IDX)%NGRID      = 2
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'VT'
-TFIELDLIST(IDX)%CSTDNAME   = 'y_wind'
-TFIELDLIST(IDX)%CLONGNAME  = 'VT'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_V component of wind'
-TFIELDLIST(IDX)%NGRID      = 3
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'WT'
-TFIELDLIST(IDX)%CSTDNAME   = 'upward_air_velocity'
-TFIELDLIST(IDX)%CLONGNAME  = 'WT'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_vertical wind'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'THT'
-TFIELDLIST(IDX)%CSTDNAME   = 'air_potential_temperature'
-TFIELDLIST(IDX)%CLONGNAME  = 'THT'
-TFIELDLIST(IDX)%CUNITS     = 'K'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_potential temperature'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'UM'
-TFIELDLIST(IDX)%CSTDNAME   = 'x_wind'
-TFIELDLIST(IDX)%CLONGNAME  = 'UM'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_U component of wind'
-TFIELDLIST(IDX)%NGRID      = 2
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'VM'
-TFIELDLIST(IDX)%CSTDNAME   = 'y_wind'
-TFIELDLIST(IDX)%CLONGNAME  = 'VM'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_V component of wind'
-TFIELDLIST(IDX)%NGRID      = 3
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'WM'
-TFIELDLIST(IDX)%CSTDNAME   = 'upward_air_velocity'
-TFIELDLIST(IDX)%CLONGNAME  = 'WM'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_vertical wind'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DUM'
-TFIELDLIST(IDX)%CSTDNAME   = 'x_wind'
-TFIELDLIST(IDX)%CLONGNAME  = 'DUM'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_U component of wind'
-TFIELDLIST(IDX)%NGRID      = 2
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DVM'
-TFIELDLIST(IDX)%CSTDNAME   = 'y_wind'
-TFIELDLIST(IDX)%CLONGNAME  = 'DVM'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_V component of wind'
-TFIELDLIST(IDX)%NGRID      = 3
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DWM'
-TFIELDLIST(IDX)%CSTDNAME   = 'upward_air_velocity'
-TFIELDLIST(IDX)%CLONGNAME  = 'DWM'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_vertical wind'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'TKET'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'TKET'
-TFIELDLIST(IDX)%CUNITS     = 'm2 s-2'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_Turbulent Kinetic Energy'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'TKEMS'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'TKEMS'
-TFIELDLIST(IDX)%CUNITS     = 'm2 s-3'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_Turbulent Kinetic Energy adv source'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'PABST'
-TFIELDLIST(IDX)%CSTDNAME   = 'air_pressure'
-TFIELDLIST(IDX)%CLONGNAME  = 'PABST'
-TFIELDLIST(IDX)%CUNITS     = 'Pa'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_ABSolute Pressure'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'PHIT'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'PHIT'
-TFIELDLIST(IDX)%CUNITS     = 'Pa'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_Reduced Pressure Oce/Shallow conv'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'RT'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'RT'
-TFIELDLIST(IDX)%CUNITS     = 'kg kg-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'Moist variables (rho Rn)'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 4
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X4D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'RVT'
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'MAP',            &
+  CUNITS     = '',               &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'Map factor',     &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'latitude',       &
+  CSTDNAME   = 'latitude',       &
+  CLONGNAME  = 'latitude',       &
+  CUNITS     = 'degrees_north',  &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_latitude at mass point', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'longitude',      &
+  CSTDNAME   = 'longitude',      &
+  CLONGNAME  = 'longitude',      &
+  CUNITS     = 'degrees_east',   &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_longitude at mass point', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA(          &
+  CMNHNAME   = 'latitude_u',              &
+  CSTDNAME   = 'latitude_at_u_location',  &
+  CLONGNAME  = 'latitude at u location',  &
+  CUNITS     = 'degrees_north',           &
+  CDIR       = 'XY',                      &
+  CCOMMENT   = 'X_Y_latitude at u point', &
+  NGRID      = 2,                         &
+  NTYPE      = TYPEREAL,                  &
+  NDIMS      = 2,                         &
+  LTIMEDEP   = .FALSE.                    ) )
+
+call Add_field2list( TFIELDDATA(           &
+  CMNHNAME   = 'longitude_u',              &
+  CSTDNAME   = 'longitude_at_u_location',  &
+  CLONGNAME  = 'longitude at u location',  &
+  CUNITS     = 'degrees_east',             &
+  CDIR       = 'XY',                       &
+  CCOMMENT   = 'X_Y_longitude at u point', &
+  NGRID      = 2,                          &
+  NTYPE      = TYPEREAL,                   &
+  NDIMS      = 2,                          &
+  LTIMEDEP   = .FALSE.                     ) )
+
+call Add_field2list( TFIELDDATA(          &
+  CMNHNAME   = 'latitude_v',              &
+  CSTDNAME   = 'latitude_at_v_location',  &
+  CLONGNAME  = 'latitude at v location',  &
+  CUNITS     = 'degrees_north',           &
+  CDIR       = 'XY',                      &
+  CCOMMENT   = 'X_Y_latitude at v point', &
+  NGRID      = 3,                         &
+  NTYPE      = TYPEREAL,                  &
+  NDIMS      = 2,                         &
+  LTIMEDEP   = .FALSE.                    ) )
+
+call Add_field2list( TFIELDDATA(           &
+  CMNHNAME   = 'longitude_v',              &
+  CSTDNAME   = 'longitude_at_v_location',  &
+  CLONGNAME  = 'longitude at v location',  &
+  CUNITS     = 'degrees_east',             &
+  CDIR       = 'XY',                       &
+  CCOMMENT   = 'X_Y_longitude at v point', &
+  NGRID      = 3,                          &
+  NTYPE      = TYPEREAL,                   &
+  NDIMS      = 2,                          &
+  LTIMEDEP   = .FALSE.                     ) )
+
+call Add_field2list( TFIELDDATA(          &
+  CMNHNAME   = 'latitude_f',              &
+  CSTDNAME   = 'latitude_at_f_location',  &
+  CLONGNAME  = 'latitude at f location',  &
+  CUNITS     = 'degrees_north',           &
+  CDIR       = 'XY',                      &
+  CCOMMENT   = 'X_Y_latitude at f point', &
+  NGRID      = 5,                         &
+  NTYPE      = TYPEREAL,                  &
+  NDIMS      = 2,                         &
+  LTIMEDEP   = .FALSE.                    ) )
+
+call Add_field2list( TFIELDDATA(           &
+  CMNHNAME   = 'longitude_f',              &
+  CSTDNAME   = 'longitude_at_f_location',  &
+  CLONGNAME  = 'longitude at f location',  &
+  CUNITS     = 'degrees_east',             &
+  CDIR       = 'XY',                       &
+  CCOMMENT   = 'X_Y_longitude at f point', &
+  NGRID      = 5,                          &
+  NTYPE      = TYPEREAL,                   &
+  NDIMS      = 2,                          &
+  LTIMEDEP   = .FALSE.                     ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LAT',            &
+!   CSTDNAME   = 'latitude',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LAT',            &
+  CUNITS     = 'degrees_north',  &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_latitude',   &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LON',            &
+!   CSTDNAME   = 'longitude',       &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LON',            &
+  CUNITS     = 'degrees_east',   &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_longitude',  &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA(   &
+  CMNHNAME   = 'ZS',               &
+  CSTDNAME   = 'surface_altitude', &
+  CLONGNAME  = 'ZS',               &
+  CUNITS     = 'm',                &
+  CDIR       = 'XY',               &
+  CCOMMENT   = 'orography',        &
+  NGRID      = 4,                  &
+  NTYPE      = TYPEREAL,           &
+  NDIMS      = 2,                  &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA(  &
+  CMNHNAME   = 'ZWS',             &
+  CSTDNAME   = 'sea_surface_wave_significant_height', &
+  CLONGNAME  = 'ZWS',             &
+  CUNITS     = 'm',               &
+  CDIR       = 'XY',              &
+  CCOMMENT   = 'sea wave height', &
+  NGRID      = 4,                 &
+  NTYPE      = TYPEREAL,          &
+  NDIMS      = 2,                 &
+  LTIMEDEP   = .TRUE.             ) )
+
+call Add_field2list( TFIELDDATA(   &
+  CMNHNAME   = 'ZSMT',             &
+  CSTDNAME   = '',                 &
+  CLONGNAME  = 'ZSMT',             &
+  CUNITS     = 'm',                &
+  CDIR       = 'XY',               &
+  CCOMMENT   = 'smooth orography', &
+  NGRID      = 4,                  &
+  NTYPE      = TYPEREAL,           &
+  NDIMS      = 2,                  &
+  LTIMEDEP   = .FALSE.             ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'SLEVE',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'SLEVE',          &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Logical for SLEVE coordinate', &
+  NGRID      = 4,                &
+  NTYPE      = TYPELOG,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LEN1',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LEN1',           &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Decay scale for smooth topography', &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LEN2',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LEN2',           &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Decay scale for small-scale topography deviation', &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA(                      &
+  CMNHNAME   = 'DTMOD',                               &
+  CSTDNAME   = '',                                    &
+  CLONGNAME  = 'DTMOD',                               &
+  CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S', &
+  CDIR       = '--',                                  &
+  CCOMMENT   = 'Time and date of model beginning',    &
+  NGRID      = 0,                                     &
+  NTYPE      = TYPEDATE,                              &
+  NDIMS      = 0,                                     &
+  LTIMEDEP   = .FALSE.                                ) )
+
+call Add_field2list( TFIELDDATA(                      &
+  CMNHNAME   = 'DTCUR',                               &
+  CSTDNAME   = 'time',                                &
+  CLONGNAME  = 'DTCUR',                               &
+  CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S', &
+  CDIR       = '--',                                  &
+  CCOMMENT   = 'Current time and date',               &
+  NGRID      = 0,                                     &
+  NTYPE      = TYPEDATE,                              &
+  NDIMS      = 0,                                     &
+  LTIMEDEP   = .FALSE.                                ) )
+
+call Add_field2list( TFIELDDATA(                            &
+  CMNHNAME   = 'DTRAD_FULL',                                &
+  CSTDNAME   = '',                                          &
+  CLONGNAME  = 'DTRAD_FULL',                                &
+  CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S',       &
+  CDIR       = '--',                                        &
+  CCOMMENT   = 'Time and date of last full radiation call', &
+  NGRID      = 0,                                           &
+  NTYPE      = TYPEDATE,                                    &
+  NDIMS      = 0,                                           &
+  LTIMEDEP   = .FALSE.                                      ) )
+
+call Add_field2list( TFIELDDATA(                      &
+  CMNHNAME   = 'DTRAD_CLLY',                          &
+  CSTDNAME   = '',                                    &
+  CLONGNAME  = 'DTRAD_CLLY',                          &
+  CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S', &
+  CDIR       = '--',                                  &
+  CCOMMENT   = 'Time and date of last radiation call for only cloudy verticals', &
+  NGRID      = 0,                                     &
+  NTYPE      = TYPEDATE,                              &
+  NDIMS      = 0,                                     &
+  LTIMEDEP   = .FALSE.                                ) )
+
+call Add_field2list( TFIELDDATA(                                 &
+  CMNHNAME   = 'DTDCONV',                                        &
+  CSTDNAME   = '',                                               &
+  CLONGNAME  = 'DTDCONV',                                        &
+  CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S',            &
+  CDIR       = '--',                                             &
+  CCOMMENT   = 'Time and date of the last deep convection call', &
+  NGRID      = 0,                                                &
+  NTYPE      = TYPEDATE,                                         &
+  NDIMS      = 0,                                                &
+  LTIMEDEP   = .FALSE.                                           ) )
+
+call Add_field2list( TFIELDDATA(                        &
+  CMNHNAME   = 'DTEXP',                                 &
+  CSTDNAME   = '',                                      &
+  CLONGNAME  = 'DTEXP',                                 &
+  CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S',   &
+  CDIR       = '--',                                    &
+  CCOMMENT   = 'Time and date of experiment beginning', &
+  NGRID      = 0,                                       &
+  NTYPE      = TYPEDATE,                                &
+  NDIMS      = 0,                                       &
+  LTIMEDEP   = .FALSE.                                  ) )
+
+call Add_field2list( TFIELDDATA(                      &
+  CMNHNAME   = 'DTSEG',                               &
+  CSTDNAME   = '',                                    &
+  CLONGNAME  = 'DTSEG',                               &
+  CUNITS     = 'seconds since YYYY-MM-DD HH:MM:SS.S', &
+  CDIR       = '--',                                  &
+  CCOMMENT   = 'Time and date of segment beginning',  &
+  NGRID      = 0,                                     &
+  NTYPE      = TYPEDATE,                              &
+  NDIMS      = 0,                                     &
+  LTIMEDEP   = .FALSE.                                ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'L1D',            &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'L1D',            &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Logical for 1D model version', &
+  NGRID      = 0,                &
+  NTYPE      = TYPELOG,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'L2D',            &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'L2D',            &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Logical for 2D model version', &
+  NGRID      = 0,                &
+  NTYPE      = TYPELOG,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'PACK',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'PACK',           &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Logical to compress 1D or 2D FM files', &
+  NGRID      = 0,                &
+  NTYPE      = TYPELOG,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'CARTESIAN',      &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'CARTESIAN',      &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Logical for cartesian geometry', &
+  NGRID      = 0,                &
+  NTYPE      = TYPELOG,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LBOUSS',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LBOUSS',         &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Logical for Boussinesq approximation', &
+  NGRID      = 0,                &
+  NTYPE      = TYPELOG,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LOCEAN',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LOCEAN',         &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Logical for Ocean MesoNH', &
+  NGRID      = 0,                &
+  NTYPE      = TYPELOG,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LCOUPLES',       &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LCOUPLES',       &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Logical for coupling O-A LES', &
+  NGRID      = 0,                &
+  NTYPE      = TYPELOG,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'SURF',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'SURF',           &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Kind of surface processes parameterization', &
+  NGRID      = 0,                &
+  NTYPE      = TYPECHAR,         &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'CPL_AROME',      &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'CPL_AROME',      &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Logical for AROME coupling file', &
+  NGRID      = 0,                &
+  NTYPE      = TYPELOG,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'COUPLING',       &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'COUPLING',       &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Logical for coupling file', &
+  NGRID      = 0,                &
+  NTYPE      = TYPELOG,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA(            &
+  CMNHNAME   = 'UT',                        &
+  CSTDNAME   = 'x_wind',                    &
+  CLONGNAME  = 'UT',                        &
+  CUNITS     = 'm s-1',                     &
+  CDIR       = 'XY',                        &
+  CCOMMENT   = 'X_Y_Z_U component of wind', &
+  NGRID      = 2,                           &
+  NTYPE      = TYPEREAL,                    &
+  NDIMS      = 3,                           &
+  LTIMEDEP   = .TRUE.                       ) )
+
+call Add_field2list( TFIELDDATA(            &
+  CMNHNAME   = 'VT',                        &
+  CSTDNAME   = 'y_wind',                    &
+  CLONGNAME  = 'VT',                        &
+  CUNITS     = 'm s-1',                     &
+  CDIR       = 'XY',                        &
+  CCOMMENT   = 'X_Y_Z_V component of wind', &
+  NGRID      = 3,                           &
+  NTYPE      = TYPEREAL,                    &
+  NDIMS      = 3,                           &
+  LTIMEDEP   = .TRUE.                       ) )
+
+call Add_field2list( TFIELDDATA(      &
+  CMNHNAME   = 'WT',                  &
+  CSTDNAME   = 'upward_air_velocity', &
+  CLONGNAME  = 'WT',                  &
+  CUNITS     = 'm s-1',               &
+  CDIR       = 'XY',                  &
+  CCOMMENT   = 'X_Y_Z_vertical wind', &
+  NGRID      = 4,                     &
+  NTYPE      = TYPEREAL,              &
+  NDIMS      = 3,                     &
+  LTIMEDEP   = .TRUE.                 ) )
+
+call Add_field2list( TFIELDDATA(              &
+  CMNHNAME   = 'THT',                         &
+  CSTDNAME   = 'air_potential_temperature',   &
+  CLONGNAME  = 'THT',                         &
+  CUNITS     = 'K',                           &
+  CDIR       = 'XY',                          &
+  CCOMMENT   = 'X_Y_Z_potential temperature', &
+  NGRID      = 1,                             &
+  NTYPE      = TYPEREAL,                      &
+  NDIMS      = 3,                             &
+  LTIMEDEP   = .TRUE.                         ) )
+
+call Add_field2list( TFIELDDATA(            &
+  CMNHNAME   = 'UM',                        &
+  CSTDNAME   = 'x_wind',                    &
+  CLONGNAME  = 'UM',                        &
+  CUNITS     = 'm s-1',                     &
+  CDIR       = 'XY',                        &
+  CCOMMENT   = 'X_Y_Z_U component of wind', &
+  NGRID      = 2,                           &
+  NTYPE      = TYPEREAL,                    &
+  NDIMS      = 3,                           &
+  LTIMEDEP   = .TRUE.                       ) )
+
+call Add_field2list( TFIELDDATA(            &
+  CMNHNAME   = 'VM',                        &
+  CSTDNAME   = 'y_wind',                    &
+  CLONGNAME  = 'VM',                        &
+  CUNITS     = 'm s-1',                     &
+  CDIR       = 'XY',                        &
+  CCOMMENT   = 'X_Y_Z_V component of wind', &
+  NGRID      = 3,                           &
+  NTYPE      = TYPEREAL,                    &
+  NDIMS      = 3,                           &
+  LTIMEDEP   = .TRUE.                       ) )
+
+call Add_field2list( TFIELDDATA(      &
+  CMNHNAME   = 'WM',                  &
+  CSTDNAME   = 'upward_air_velocity', &
+  CLONGNAME  = 'WM',                  &
+  CUNITS     = 'm s-1',               &
+  CDIR       = 'XY',                  &
+  CCOMMENT   = 'X_Y_Z_vertical wind', &
+  NGRID      = 4,                     &
+  NTYPE      = TYPEREAL,              &
+  NDIMS      = 3,                     &
+  LTIMEDEP   = .TRUE.                 ) )
+
+call Add_field2list( TFIELDDATA(            &
+  CMNHNAME   = 'DUM',                       &
+  CSTDNAME   = 'x_wind',                    &
+  CLONGNAME  = 'DUM',                       &
+  CUNITS     = 'm s-1',                     &
+  CDIR       = 'XY',                        &
+  CCOMMENT   = 'X_Y_Z_U component of wind', &
+  NGRID      = 2,                           &
+  NTYPE      = TYPEREAL,                    &
+  NDIMS      = 3,                           &
+  LTIMEDEP   = .TRUE.                       ) )
+
+call Add_field2list( TFIELDDATA(            &
+  CMNHNAME   = 'DVM',                       &
+  CSTDNAME   = 'y_wind',                    &
+  CLONGNAME  = 'DVM',                       &
+  CUNITS     = 'm s-1',                     &
+  CDIR       = 'XY',                        &
+  CCOMMENT   = 'X_Y_Z_V component of wind', &
+  NGRID      = 3,                           &
+  NTYPE      = TYPEREAL,                    &
+  NDIMS      = 3,                           &
+  LTIMEDEP   = .TRUE.                       ) )
+
+call Add_field2list( TFIELDDATA(      &
+  CMNHNAME   = 'DWM',                 &
+  CSTDNAME   = 'upward_air_velocity', &
+  CLONGNAME  = 'DWM',                 &
+  CUNITS     = 'm s-1',               &
+  CDIR       = 'XY',                  &
+  CCOMMENT   = 'X_Y_Z_vertical wind', &
+  NGRID      = 4,                     &
+  NTYPE      = TYPEREAL,              &
+  NDIMS      = 3,                     &
+  LTIMEDEP   = .TRUE.                 ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'TKET',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'TKET',           &
+  CUNITS     = 'm2 s-2',         &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_Turbulent Kinetic Energy', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'TKEMS',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'TKEMS',          &
+  CUNITS     = 'm2 s-3',         &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_Turbulent Kinetic Energy adv source', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA(          &
+  CMNHNAME   = 'PABST',                   &
+  CSTDNAME   = 'air_pressure',            &
+  CLONGNAME  = 'PABST',                   &
+  CUNITS     = 'Pa',                      &
+  CDIR       = 'XY',                      &
+  CCOMMENT   = 'X_Y_Z_ABSolute Pressure', &
+  NGRID      = 1,                         &
+  NTYPE      = TYPEREAL,                  &
+  NDIMS      = 3,                         &
+  LTIMEDEP   = .TRUE.                     ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'PHIT',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'PHIT',           &
+  CUNITS     = 'Pa',             &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_Reduced Pressure Oce/Shallow conv', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'RT',             &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'RT',             &
+  CUNITS     = 'kg kg-1',        &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'Moist variables (rho Rn)', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 4,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA(           &
+  CMNHNAME   = 'RVT',                      &
 !TODO: check stdname
-TFIELDLIST(IDX)%CSTDNAME   = 'humidity_mixing_ratio'
-TFIELDLIST(IDX)%CLONGNAME  = 'RVT'
-TFIELDLIST(IDX)%CUNITS     = 'kg kg-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_Vapor mixing Ratio'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'RCT'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'RCT'
-TFIELDLIST(IDX)%CUNITS     = 'kg kg-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_Cloud mixing Ratio'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'RRT'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'RRT'
-TFIELDLIST(IDX)%CUNITS     = 'kg kg-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_Rain mixing Ratio'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'RIT'
+  CSTDNAME   = 'humidity_mixing_ratio',    &
+  CLONGNAME  = 'RVT',                      &
+  CUNITS     = 'kg kg-1',                  &
+  CDIR       = 'XY',                       &
+  CCOMMENT   = 'X_Y_Z_Vapor mixing Ratio', &
+  NGRID      = 1,                          &
+  NTYPE      = TYPEREAL,                   &
+  NDIMS      = 3,                          &
+  LTIMEDEP   = .TRUE.                      ) )
+
+call Add_field2list( TFIELDDATA(           &
+  CMNHNAME   = 'RCT',                      &
+  CSTDNAME   = '',                         &
+  CLONGNAME  = 'RCT',                      &
+  CUNITS     = 'kg kg-1',                  &
+  CDIR       = 'XY',                       &
+  CCOMMENT   = 'X_Y_Z_Cloud mixing Ratio', &
+  NGRID      = 1,                          &
+  NTYPE      = TYPEREAL,                   &
+  NDIMS      = 3,                          &
+  LTIMEDEP   = .TRUE.                      ) )
+
+call Add_field2list( TFIELDDATA(          &
+  CMNHNAME   = 'RRT',                     &
+  CSTDNAME   = '',                        &
+  CLONGNAME  = 'RRT',                     &
+  CUNITS     = 'kg kg-1',                 &
+  CDIR       = 'XY',                      &
+  CCOMMENT   = 'X_Y_Z_Rain mixing Ratio', &
+  NGRID      = 1,                         &
+  NTYPE      = TYPEREAL,                  &
+  NDIMS      = 3,                         &
+  LTIMEDEP   = .TRUE.                     ) )
+
+call Add_field2list( TFIELDDATA(         &
+  CMNHNAME   = 'RIT',                    &
 !TODO: check stdname
-TFIELDLIST(IDX)%CSTDNAME   = 'cloud_ice_mixing_ratio'
-TFIELDLIST(IDX)%CLONGNAME  = 'RIT'
-TFIELDLIST(IDX)%CUNITS     = 'kg kg-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_Ice mixing Ratio'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'RST'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'RST'
-TFIELDLIST(IDX)%CUNITS     = 'kg kg-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_Snow mixing Ratio'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'RGT'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'RGT'
-TFIELDLIST(IDX)%CUNITS     = 'kg kg-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_Graupel mixing Ratio'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'RHT'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'RHT'
-TFIELDLIST(IDX)%CUNITS     = 'kg kg-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_Hail mixing Ratio'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-TFIELDLIST(IDX)%NDIMS      = 3
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'SUPSATMAX'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'SUPSATMAX'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_Supersaturation'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'NACT'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'NACT'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_Nact'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'SSPRO'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'SSPRO'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_Supersaturation'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'NPRO'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'NPRO'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_Nact'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'INPAP'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'INPAP'
-TFIELDLIST(IDX)%CUNITS     = 'kg m-2 s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_INstantaneous Precipitating Aerosol Rate'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'ACPAP'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'ACPAP'
-TFIELDLIST(IDX)%CUNITS     = 'kg m-2'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_ACcumulated Precipitating Aerosol Rate'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'EFIELDU'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'EFIELDU'
-TFIELDLIST(IDX)%CUNITS     = 'V m-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_EFIELDU'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'EFIELDV'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'EFIELDV'
-TFIELDLIST(IDX)%CUNITS     = 'V m-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_EFIELDV'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'EFIELDW'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'EFIELDW'
-TFIELDLIST(IDX)%CUNITS     = 'V m-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_EFIELDW'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'NI_IAGGS'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'NI_IAGGS'
-TFIELDLIST(IDX)%CUNITS     = 'C m-3 s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_NI_IAGGS'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'NI_IDRYG'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'NI_IDRYG'
-TFIELDLIST(IDX)%CUNITS     = 'C m-3 s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_NI_IDRYG'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'NI_SDRYG'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'NI_SDRYG'
-TFIELDLIST(IDX)%CUNITS     = 'C m-3 s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_NI_SDRYG'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'INDUC_CG'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'INDUC_CG'
-TFIELDLIST(IDX)%CUNITS     = 'C m-3 s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_INDUC_CG'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'TRIG_IC'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'TRIG_IC'
-TFIELDLIST(IDX)%CUNITS     = '1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_FLASH_MAP_TRIG_IC'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'IMPACT_CG'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'IMPACT_CG'
-TFIELDLIST(IDX)%CUNITS     = '1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_FLASH_MAP_IMPACT_CG'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'AREA_CG'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'AREA_CG'
-TFIELDLIST(IDX)%CUNITS     = '1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_FLASH_MAP_2DAREA_CG'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'AREA_IC'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'AREA_IC'
-TFIELDLIST(IDX)%CUNITS     = '1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_FLASH_MAP_2DAREA_IC'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'FLASH_3DCG'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'FLASH_3DCG'
-TFIELDLIST(IDX)%CUNITS     = '1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_FLASH_MAP_3DCG'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'FLASH_3DIC'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'FLASH_3DIC'
-TFIELDLIST(IDX)%CUNITS     = '1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_FLASH_MAP_3DIC'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'PHC'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'PHC'
-TFIELDLIST(IDX)%CUNITS     = '1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'pH in cloud'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'PHR'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'PHR'
-TFIELDLIST(IDX)%CUNITS     = '1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'pH in rain'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LSUM'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LSUM'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_Large Scale U component'
-TFIELDLIST(IDX)%NGRID      = 2
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LSVM'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LSVM'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_Large Scale V component'
-TFIELDLIST(IDX)%NGRID      = 3
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LSWM'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LSWM'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_Large Scale vertical wind'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LSTHM'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LSTHM'
-TFIELDLIST(IDX)%CUNITS     = 'K'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_Large Scale potential Temperature'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LSRVM'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LSRVM'
-TFIELDLIST(IDX)%CUNITS     = 'kg kg-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_Large Scale Vapor Mixing Ratio'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'RIMX'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'RIMX'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Number of points in the lateral absorbing layer in the x direction'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_N0D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'RIMY'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'RIMY'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Number of points in the lateral absorbing layer in the y direction'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_N0D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'HORELAX_UVWTH'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'HORELAX_UVWTH'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Switch to activate the HOrizontal RELAXation'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPELOG
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_L0D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LBXUM'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LBXUM'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-! TFIELDLIST(IDX)%CDIR       = ''
-TFIELDLIST(IDX)%CLBTYPE    = 'LBXU'
-TFIELDLIST(IDX)%CCOMMENT   = '2_Y_Z_LBXUM'
-TFIELDLIST(IDX)%NGRID      = 2
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LBXVM'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LBXVM'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-! TFIELDLIST(IDX)%CDIR       = ''
-TFIELDLIST(IDX)%CLBTYPE    = 'LBX'
-TFIELDLIST(IDX)%CCOMMENT   = '2_Y_Z_LBXVM'
-TFIELDLIST(IDX)%NGRID      = 3
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LBXWM'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LBXWM'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-! TFIELDLIST(IDX)%CDIR       = ''
-TFIELDLIST(IDX)%CLBTYPE    = 'LBX'
-TFIELDLIST(IDX)%CCOMMENT   = '2_Y_Z_LBXWM'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LBYUM'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LBYUM'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-! TFIELDLIST(IDX)%CDIR       = ''
-TFIELDLIST(IDX)%CLBTYPE    = 'LBY'
-TFIELDLIST(IDX)%CCOMMENT   = '2_Y_Z_LBYUM'
-TFIELDLIST(IDX)%NGRID      = 2
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LBYVM'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LBYVM'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-! TFIELDLIST(IDX)%CDIR       = ''
-TFIELDLIST(IDX)%CLBTYPE    = 'LBYV'
-TFIELDLIST(IDX)%CCOMMENT   = '2_Y_Z_LBYVM'
-TFIELDLIST(IDX)%NGRID      = 3
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LBYWM'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LBYWM'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-! TFIELDLIST(IDX)%CDIR       = ''
-TFIELDLIST(IDX)%CLBTYPE    = 'LBY'
-TFIELDLIST(IDX)%CCOMMENT   = '2_Y_Z_LBYWM'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LBXTHM'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LBXTHM'
-TFIELDLIST(IDX)%CUNITS     = 'K'
-! TFIELDLIST(IDX)%CDIR       = ''
-TFIELDLIST(IDX)%CLBTYPE    = 'LBX'
-TFIELDLIST(IDX)%CCOMMENT   = '2_Y_Z_LBXTHM'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LBYTHM'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LBYTHM'
-TFIELDLIST(IDX)%CUNITS     = 'K'
-! TFIELDLIST(IDX)%CDIR       = ''
-TFIELDLIST(IDX)%CLBTYPE    = 'LBY'
-TFIELDLIST(IDX)%CCOMMENT   = '2_Y_Z_LBYTHM'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'HORELAX_TKE'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'HORELAX_TKE'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Switch to activate the HOrizontal RELAXation'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPELOG
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_L0D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LBXTKEM'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LBXTKEM'
-TFIELDLIST(IDX)%CUNITS     = 'm2 s-2'
-! TFIELDLIST(IDX)%CDIR       = ''
-TFIELDLIST(IDX)%CLBTYPE    = 'LBX'
-TFIELDLIST(IDX)%CCOMMENT   = '2_Y_Z_LBXTKEM'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'LBYTKEM'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'LBYTKEM'
-TFIELDLIST(IDX)%CUNITS     = 'm2 s-2'
-! TFIELDLIST(IDX)%CDIR       = ''
-TFIELDLIST(IDX)%CLBTYPE    = 'LBY'
-TFIELDLIST(IDX)%CCOMMENT   = '2_Y_Z_LBYTKEM'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DRYMASST'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'DRYMASST'
-TFIELDLIST(IDX)%CUNITS     = 'kg'
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Total Dry Mass'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X0D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'BL_DEPTH'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'BL_DEPTH'
-TFIELDLIST(IDX)%CUNITS     = 'm'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_BL_DEPTH'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'SBL_DEPTH'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'SBL_DEPTH'
-TFIELDLIST(IDX)%CUNITS     = 'm'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_BL_SDEPTH'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'WTHVMF'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'WTHVMF'
-TFIELDLIST(IDX)%CUNITS     = 'm K s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_WTHVMF'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'SRCT'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'SRCT'
-TFIELDLIST(IDX)%CUNITS     = 'kg kg-2'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_normalized 2nd_order moment s_r_c/2Sigma_s2'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'SIGS'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'SIGS'
-TFIELDLIST(IDX)%CUNITS     = 'kg kg-2'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_Sigma_s from turbulence scheme'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'RHOREFZ'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'RHOREFZ'
-TFIELDLIST(IDX)%CUNITS     = 'kg m-3'
-TFIELDLIST(IDX)%CDIR       = 'ZZ'
-TFIELDLIST(IDX)%CCOMMENT   = 'rhodz for reference state without orography'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 1
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X1D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'THVREFZ'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'THVREFZ'
-TFIELDLIST(IDX)%CUNITS     = 'K'
-TFIELDLIST(IDX)%CDIR       = 'ZZ'
-TFIELDLIST(IDX)%CCOMMENT   = 'thetavz for reference state without orography'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 1
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X1D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'EXNTOP'
-TFIELDLIST(IDX)%CSTDNAME   = 'dimensionless_exner_function'
-TFIELDLIST(IDX)%CLONGNAME  = 'EXNTOP'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Exner function at model top'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-!
-!
-IF (TRIM(CPROGRAM) == 'MESONH' .OR. TRIM(CPROGRAM) == 'DIAG' .OR. TRIM(CPROGRAM) == 'LFICDF') THEN
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'US_PRES'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'US_PRES'
+  CSTDNAME   = 'cloud_ice_mixing_ratio', &
+  CLONGNAME  = 'RIT',                    &
+  CUNITS     = 'kg kg-1',                &
+  CDIR       = 'XY',                     &
+  CCOMMENT   = 'X_Y_Z_Ice mixing Ratio', &
+  NGRID      = 1,                        &
+  NTYPE      = TYPEREAL,                 &
+  NDIMS      = 3,                        &
+  LTIMEDEP   = .TRUE.                    ) )
+
+call Add_field2list( TFIELDDATA(          &
+  CMNHNAME   = 'RST',                     &
+  CSTDNAME   = '',                        &
+  CLONGNAME  = 'RST',                     &
+  CUNITS     = 'kg kg-1',                 &
+  CDIR       = 'XY',                      &
+  CCOMMENT   = 'X_Y_Z_Snow mixing Ratio', &
+  NGRID      = 1,                         &
+  NTYPE      = TYPEREAL,                  &
+  NDIMS      = 3,                         &
+  LTIMEDEP   = .TRUE.                     ) )
+
+call Add_field2list( TFIELDDATA(             &
+  CMNHNAME   = 'RGT',                        &
+  CSTDNAME   = '',                           &
+  CLONGNAME  = 'RGT',                        &
+  CUNITS     = 'kg kg-1',                    &
+  CDIR       = 'XY',                         &
+  CCOMMENT   = 'X_Y_Z_Graupel mixing Ratio', &
+  NGRID      = 1,                            &
+  NTYPE      = TYPEREAL,                     &
+  NDIMS      = 3,                            &
+  LTIMEDEP   = .TRUE.                        ) )
+
+call Add_field2list( TFIELDDATA(          &
+  CMNHNAME   = 'RHT',                     &
+  CSTDNAME   = '',                        &
+  CLONGNAME  = 'RHT',                     &
+  CUNITS     = 'kg kg-1',                 &
+  CDIR       = 'XY',                      &
+  CCOMMENT   = 'X_Y_Z_Hail mixing Ratio', &
+  NGRID      = 1,                         &
+  NTYPE      = TYPEREAL,                  &
+  NDIMS      = 3,                         &
+  LTIMEDEP   = .TRUE.                     ) )
+
+call Add_field2list( TFIELDDATA(        &
+  CMNHNAME   = 'SUPSATMAX',             &
+  CSTDNAME   = '',                      &
+  CLONGNAME  = 'SUPSATMAX',             &
+  CUNITS     = '',                      &
+  CDIR       = 'XY',                    &
+  CCOMMENT   = 'X_Y_Z_Supersaturation', &
+  NGRID      = 1,                       &
+  NTYPE      = TYPEREAL,                &
+  NDIMS      = 3,                       &
+  LTIMEDEP   = .TRUE.                   ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'NACT',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'NACT',           &
+  CUNITS     = '',               &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_Nact',     &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'SSPRO',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'SSPRO',          &
+  CUNITS     = '',               &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_Supersaturation', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'NPRO',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'NPRO',           &
+  CUNITS     = '',               &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_Nact',     &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'INPAP',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'INPAP',          &
+  CUNITS     = 'kg m-2 s-1',     &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_INstantaneous Precipitating Aerosol Rate', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'ACPAP',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'ACPAP',          &
+  CUNITS     = 'kg m-2',         &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_ACcumulated Precipitating Aerosol Rate', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'EFIELDU',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'EFIELDU',        &
+  CUNITS     = 'V m-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_EFIELDU',  &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'EFIELDV',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'EFIELDV',        &
+  CUNITS     = 'V m-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_EFIELDV',  &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'EFIELDW',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'EFIELDW',        &
+  CUNITS     = 'V m-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_EFIELDW',  &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'NI_IAGGS',       &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'NI_IAGGS',       &
+  CUNITS     = 'C m-3 s-1',      &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_NI_IAGGS', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'NI_IDRYG',       &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'NI_IDRYG',       &
+  CUNITS     = 'C m-3 s-1',      &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_NI_IDRYG', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'NI_SDRYG',       &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'NI_SDRYG',       &
+  CUNITS     = 'C m-3 s-1',      &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_NI_SDRYG', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'INDUC_CG',       &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'INDUC_CG',       &
+  CUNITS     = 'C m-3 s-1',      &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_INDUC_CG', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'TRIG_IC',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'TRIG_IC',        &
+  CUNITS     = '1',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_FLASH_MAP_TRIG_IC', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'IMPACT_CG',      &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'IMPACT_CG',      &
+  CUNITS     = '1',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_FLASH_MAP_IMPACT_CG', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'AREA_CG',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'AREA_CG',        &
+  CUNITS     = '1',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_FLASH_MAP_2DAREA_CG', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'AREA_IC',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'AREA_IC',        &
+  CUNITS     = '1',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_FLASH_MAP_2DAREA_IC', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'FLASH_3DCG',     &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'FLASH_3DCG',     &
+  CUNITS     = '1',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_FLASH_MAP_3DCG', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'FLASH_3DIC',     &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'FLASH_3DIC',     &
+  CUNITS     = '1',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_FLASH_MAP_3DIC', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'PHC',            &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'PHC',            &
+  CUNITS     = '1',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'pH in cloud',    &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'PHR',            &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'PHR',            &
+  CUNITS     = '1',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'pH in rain',     &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LSUM',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LSUM',           &
+  CUNITS     = 'm s-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_Large Scale U component', &
+  NGRID      = 2,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LSVM',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LSVM',           &
+  CUNITS     = 'm s-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_Large Scale V component', &
+  NGRID      = 3,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LSWM',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LSWM',           &
+  CUNITS     = 'm s-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_Large Scale vertical wind', &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LSTHM',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LSTHM',          &
+  CUNITS     = 'K',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_Large Scale potential Temperature', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LSRVM',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LSRVM',          &
+  CUNITS     = 'kg kg-1',        &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_Large Scale Vapor Mixing Ratio', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'RIMX',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'RIMX',           &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Number of points in the lateral absorbing layer in the x direction', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'RIMY',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'RIMY',           &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Number of points in the lateral absorbing layer in the y direction', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'HORELAX_UVWTH',  &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'HORELAX_UVWTH',  &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Switch to activate the HOrizontal RELAXation', &
+  NGRID      = 1,                &
+  NTYPE      = TYPELOG,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LBXUM',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LBXUM',          &
+  CUNITS     = 'm s-1',          &
+!   CDIR       = ''
+  CLBTYPE    = 'LBXU',           &
+  CCOMMENT   = '2_Y_Z_LBXUM',    &
+  NGRID      = 2,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LBXVM',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LBXVM',          &
+  CUNITS     = 'm s-1',          &
+!   CDIR       = ''
+  CLBTYPE    = 'LBX',            &
+  CCOMMENT   = '2_Y_Z_LBXVM',    &
+  NGRID      = 3,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LBXWM',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LBXWM',          &
+  CUNITS     = 'm s-1',          &
+!   CDIR       = ''
+  CLBTYPE    = 'LBX',            &
+  CCOMMENT   = '2_Y_Z_LBXWM',    &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LBYUM',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LBYUM',          &
+  CUNITS     = 'm s-1',          &
+!   CDIR       = ''
+  CLBTYPE    = 'LBY',            &
+  CCOMMENT   = '2_Y_Z_LBYUM',    &
+  NGRID      = 2,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LBYVM',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LBYVM',          &
+  CUNITS     = 'm s-1',          &
+!   CDIR       = ''
+  CLBTYPE    = 'LBYV',           &
+  CCOMMENT   = '2_Y_Z_LBYVM',    &
+  NGRID      = 3,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LBYWM',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LBYWM',          &
+  CUNITS     = 'm s-1',          &
+!   CDIR       = ''
+  CLBTYPE    = 'LBY',            &
+  CCOMMENT   = '2_Y_Z_LBYWM',    &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LBXTHM',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LBXTHM',         &
+  CUNITS     = 'K',              &
+!   CDIR       = ''
+  CLBTYPE    = 'LBX',            &
+  CCOMMENT   = '2_Y_Z_LBXTHM',   &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LBYTHM',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LBYTHM',         &
+  CUNITS     = 'K',              &
+!   CDIR       = ''
+  CLBTYPE    = 'LBY',            &
+  CCOMMENT   = '2_Y_Z_LBYTHM',   &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'HORELAX_TKE',    &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'HORELAX_TKE',    &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Switch to activate the HOrizontal RELAXation', &
+  NGRID      = 1,                &
+  NTYPE      = TYPELOG,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LBXTKEM',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LBXTKEM',        &
+  CUNITS     = 'm2 s-2',         &
+!   CDIR       = ''
+  CLBTYPE    = 'LBX',            &
+  CCOMMENT   = '2_Y_Z_LBXTKEM',  &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'LBYTKEM',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'LBYTKEM',        &
+  CUNITS     = 'm2 s-2',         &
+!   CDIR       = ''
+  CLBTYPE    = 'LBY',            &
+  CCOMMENT   = '2_Y_Z_LBYTKEM',  &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'DRYMASST',       &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'DRYMASST',       &
+  CUNITS     = 'kg',             &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Total Dry Mass', &
+  NGRID      = 0,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'BL_DEPTH',       &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'BL_DEPTH',       &
+  CUNITS     = 'm',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_BL_DEPTH',   &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'SBL_DEPTH',      &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'SBL_DEPTH',      &
+  CUNITS     = 'm',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_BL_SDEPTH',  &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'WTHVMF',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'WTHVMF',         &
+  CUNITS     = 'm K s-1',        &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_WTHVMF',     &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'SRCT',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'SRCT',           &
+  CUNITS     = 'kg kg-2',        &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_normalized 2nd_order moment s_r_c/2Sigma_s2', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'SIGS',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'SIGS',           &
+  CUNITS     = 'kg kg-2',        &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_Sigma_s from turbulence scheme', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'RHOREFZ',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'RHOREFZ',        &
+  CUNITS     = 'kg m-3',         &
+  CDIR       = 'ZZ',             &
+  CCOMMENT   = 'rhodz for reference state without orography', &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 1,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'THVREFZ',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'THVREFZ',        &
+  CUNITS     = 'K',              &
+  CDIR       = 'ZZ',             &
+  CCOMMENT   = 'thetavz for reference state without orography', &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 1,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'EXNTOP',         &
+  CSTDNAME   = 'dimensionless_exner_function', &
+  CLONGNAME  = 'EXNTOP',         &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Exner function at model top', &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+  IF (TRIM(CPROGRAM) == 'MESONH' .OR. TRIM(CPROGRAM) == 'DIAG' .OR. TRIM(CPROGRAM) == 'LFICDF') THEN
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'US_PRES',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'US_PRES',        &
 !TODO: units?
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_US_PRES'
-TFIELDLIST(IDX)%NGRID      = 2
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'VS_PRES'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'VS_PRES'
+  CUNITS     = '',               &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_US_PRES',  &
+  NGRID      = 2,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'VS_PRES',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'VS_PRES',        &
 !TODO: units?
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_VS_PRES'
-TFIELDLIST(IDX)%NGRID      = 3
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'WS_PRES'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'WS_PRES'
+  CUNITS     = '',               &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_VS_PRES',  &
+  NGRID      = 3,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'WS_PRES',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'WS_PRES',        &
 !TODO: units?
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_WS_PRES'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'THS_CLD'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'THS_CLD'
+  CUNITS     = '',               &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_WS_PRES',  &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'THS_CLD',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'THS_CLD',        &
 !TODO: units?
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_THS_CLD'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'RS_CLD'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'RS_CLD'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'Source of Moist variables'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 4
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X4D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'RVS_CLD'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'RVS_CLD'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_RVS_CLD'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'RCS_CLD'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'RCS_CLD'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_RCS_CLD'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'RRS_CLD'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'RRS_CLD'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_RRS_CLD'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'RIS_CLD'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'RIS_CLD'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_RIS_CLD'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'RSS_CLD'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'RSS_CLD'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_RSS_CLD'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'RGS_CLD'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'RGS_CLD'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_RGS_CLD'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'RHS_CLD'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'RHS_CLD'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_RHS_CLD'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'CLDFR'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'CLDFR'
-TFIELDLIST(IDX)%CUNITS     = '1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_CLouD FRaction'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'CIT'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'CIT'
-TFIELDLIST(IDX)%CUNITS     = 'm-3'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_Cloud Ice concentration'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'RAINFR'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'RAINFR'
-TFIELDLIST(IDX)%CUNITS     = '1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_Rain FRaction'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
+  CUNITS     = '',               &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_THS_CLD',  &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'RS_CLD',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'RS_CLD',         &
+  CUNITS     = '',               &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'Source of Moist variables', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 4,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'RVS_CLD',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'RVS_CLD',        &
+  CUNITS     = '',               &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_RVS_CLD',  &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'RCS_CLD',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'RCS_CLD',        &
+  CUNITS     = '',               &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_RCS_CLD',  &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'RRS_CLD',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'RRS_CLD',        &
+  CUNITS     = '',               &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_RRS_CLD',  &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'RIS_CLD',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'RIS_CLD',        &
+  CUNITS     = '',               &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_RIS_CLD',  &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'RSS_CLD',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'RSS_CLD',        &
+  CUNITS     = '',               &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_RSS_CLD',  &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'RGS_CLD',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'RGS_CLD',        &
+  CUNITS     = '',               &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_RGS_CLD',  &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'RHS_CLD',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'RHS_CLD',        &
+  CUNITS     = '',               &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_RHS_CLD',  &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'CLDFR',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'CLDFR',          &
+  CUNITS     = '1',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_CLouD FRaction', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'CIT',            &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'CIT',            &
+  CUNITS     = 'm-3',            &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_Cloud Ice concentration', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA(      &
+  CMNHNAME   = 'RAINFR',              &
+  CSTDNAME   = '',                    &
+  CLONGNAME  = 'RAINFR',              &
+  CUNITS     = '1',                   &
+  CDIR       = 'XY',                  &
+  CCOMMENT   = 'X_Y_Z_Rain FRaction', &
+  NGRID      = 1,                     &
+  NTYPE      = TYPEREAL,              &
+  NDIMS      = 3,                     &
+  LTIMEDEP   = .TRUE.                 ) )
 !
 END IF ! CPROGRAM=MESONH .OR. DIAG .OR. LFICDF
 !
 !
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'RHODREF'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'RHODREF'
-TFIELDLIST(IDX)%CUNITS     = 'kg m-3'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'Dry density for reference state with orography'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'THVREF'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'THVREF'
-TFIELDLIST(IDX)%CUNITS     = 'K'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'Thetav for reference state with orography'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'RHODREF',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'RHODREF',        &
+  CUNITS     = 'kg m-3',         &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'Dry density for reference state with orography', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'THVREF',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'THVREF',         &
+  CUNITS     = 'K',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'Thetav for reference state with orography', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .FALSE.           ) )
 !
 !
 IF (     TRIM(CPROGRAM) =='MESONH' .OR. TRIM(CPROGRAM) == 'DIAG'  &
     .OR. TRIM(CPROGRAM) == 'LFICDF'.OR. TRIM(CPROGRAM) == 'SPAWN' ) THEN
 !
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DTHRAD'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'DTHRAD'
-TFIELDLIST(IDX)%CUNITS     = 'K s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_RADiative heating/cooling rate'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'FLALWD'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'FLALWD'
-TFIELDLIST(IDX)%CUNITS     = 'W m-2'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Downward Long Waves on FLAT surface'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DIRFLASWD'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'DIRFLASWD'
-TFIELDLIST(IDX)%CUNITS     = 'W m-2'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_DIRect Downward Short Waves on FLAT surface'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'SCAFLASWD'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'SCAFLASWD'
-TFIELDLIST(IDX)%CUNITS     = 'W m-2'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_SCAttered Downward Short Waves on FLAT surface'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DIRSRFSWD'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'DIRSRFSWD'
-TFIELDLIST(IDX)%CUNITS     = 'W m-2'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_DIRect Downward Short Waves'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'CLEARCOL_TM1'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'CLEARCOL_TM1'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'TRACE OF CLOUD'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_N2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'ZENITH'
-TFIELDLIST(IDX)%CSTDNAME   = 'zenith_angle'
-TFIELDLIST(IDX)%CLONGNAME  = 'ZENITH'
-TFIELDLIST(IDX)%CUNITS     = 'rad'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_ZENITH'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'AZIM'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'AZIM'
-TFIELDLIST(IDX)%CUNITS     = 'rad'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_AZIMuth'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DIR_ALB'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'DIR_ALB'
-TFIELDLIST(IDX)%CUNITS     = '1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_DIRect ALBedo'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'SCA_ALB'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'SCA_ALB'
-TFIELDLIST(IDX)%CUNITS     = '1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_SCAttered ALBedo'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'EMIS'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'EMIS'
-TFIELDLIST(IDX)%CUNITS     = '1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_EMISsivity'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'TSRAD'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'TSRAD'
-TFIELDLIST(IDX)%CUNITS     = 'K'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_RADiative Surface Temperature'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'DTHRAD',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'DTHRAD',         &
+  CUNITS     = 'K s-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_RADiative heating/cooling rate', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'FLALWD',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'FLALWD',         &
+  CUNITS     = 'W m-2',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Downward Long Waves on FLAT surface', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'DIRFLASWD',      &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'DIRFLASWD',      &
+  CUNITS     = 'W m-2',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_DIRect Downward Short Waves on FLAT surface', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NSWB ], &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'SCAFLASWD',      &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'SCAFLASWD',      &
+  CUNITS     = 'W m-2',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_SCAttered Downward Short Waves on FLAT surface', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NSWB ], &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'DIRSRFSWD',      &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'DIRSRFSWD',      &
+  CUNITS     = 'W m-2',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_DIRect Downward Short Waves', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NSWB ], &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'CLEARCOL_TM1',   &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'CLEARCOL_TM1',   &
+  CUNITS     = '',               &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'TRACE OF CLOUD', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'ZENITH',         &
+  CSTDNAME   = 'zenith_angle',   &
+  CLONGNAME  = 'ZENITH',         &
+  CUNITS     = 'rad',            &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_ZENITH',     &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'AZIM',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'AZIM',           &
+  CUNITS     = 'rad',            &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_AZIMuth',    &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA(    &
+  CMNHNAME   = 'DIR_ALB',           &
+  CSTDNAME   = '',                  &
+  CLONGNAME  = 'DIR_ALB',           &
+  CUNITS     = '1',                 &
+  CDIR       = 'XY',                &
+  CCOMMENT   = 'X_Y_DIRect ALBedo', &
+  NGRID      = 1,                   &
+  NTYPE      = TYPEREAL,            &
+  NDIMS      = 3,                   &
+  NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NSWB ], &
+  LTIMEDEP   = .TRUE.               ) )
+
+call Add_field2list( TFIELDDATA(       &
+  CMNHNAME   = 'SCA_ALB',              &
+  CSTDNAME   = '',                     &
+  CLONGNAME  = 'SCA_ALB',              &
+  CUNITS     = '1',                    &
+  CDIR       = 'XY',                   &
+  CCOMMENT   = 'X_Y_SCAttered ALBedo', &
+  NGRID      = 1,                      &
+  NTYPE      = TYPEREAL,               &
+  NDIMS      = 3,                      &
+  NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NSWB ], &
+  LTIMEDEP   = .TRUE.                  ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'EMIS',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'EMIS',           &
+  CUNITS     = '1',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_EMISsivity', &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  NDIMLIST   = [ NMNHDIM_NI, NMNHDIM_NJ, NMNHDIM_NLWB ], &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'TSRAD',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'TSRAD',          &
+  CUNITS     = 'K',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_RADiative Surface Temperature', &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
 !
 END IF !CPROGRAM=MESONH .OR. DIAG .OR. LFICDF .OR. SPAWN
 !
 !
 IF ( TRIM(CPROGRAM) /= 'PGD' .AND. TRIM(CPROGRAM) /= 'NESPGD' ) THEN
 !
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'COUNTCONV'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'COUNTCONV'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_COUNTCONV'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_N2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DTHCONV'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'DTHCONV'
-TFIELDLIST(IDX)%CUNITS     = 'K s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_CONVective heating/cooling rate'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DRVCONV'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'DRVCONV'
-TFIELDLIST(IDX)%CUNITS     = 's-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_CONVective R_v tendency'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DRCCONV'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'DRCCONV'
-TFIELDLIST(IDX)%CUNITS     = 's-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_CONVective R_c tendency'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DRICONV'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'DRICONV'
-TFIELDLIST(IDX)%CUNITS     = 's-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_CONVective R_i tendency'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'PRCONV'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'PRCONV'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_CONVective instantaneous Precipitation Rate'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'PACCONV'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'PACCONV'
-TFIELDLIST(IDX)%CUNITS     = 'm'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_CONVective ACcumulated Precipitation rate'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'PRSCONV'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'PRSCONV'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_CONVective instantaneous Precipitation Rate for Snow'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DSVCONV'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'DSVCONV'
-TFIELDLIST(IDX)%CUNITS     = 's-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'Tracer tendencies'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 4
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X4D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'PRLFLXCONV'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'PRLFLXCONV'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Liquid Precipitation Convective Flux'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'PRSFLXCONV'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'PRSFLXCONV'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Solid Precipitation Convective Flux'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'UMFCONV'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'UMFCONV'
-TFIELDLIST(IDX)%CUNITS     = 'kg s-1 m-2'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Updraft Convective Mass Flux'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'DMFCONV'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'DMFCONV'
-TFIELDLIST(IDX)%CUNITS     = 'kg s-1 m-2'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Downdraft Convective Mass Flux'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'MFCONV'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'MFCONV'
-TFIELDLIST(IDX)%CUNITS     = 'kg s-1 m-2'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Convective Mass Flux'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'CAPE'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'CAPE'
-TFIELDLIST(IDX)%CUNITS     = 'J kg-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Convective Available Potentiel Energy'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'CLTOPCONV_LVL'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'CLTOPCONV_LVL'
-TFIELDLIST(IDX)%CUNITS     = '1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'Convective cloud top level'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_N2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'CLBASCONV_LVL'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'CLBASCONV_LVL'
-TFIELDLIST(IDX)%CUNITS     = '1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'Convective cloud base level'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_N2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'IC_RATE'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'IC_RATE'
-TFIELDLIST(IDX)%CUNITS     = 's-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_IntraCloud lightning Rate'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'CG_RATE'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'CG_RATE'
-TFIELDLIST(IDX)%CUNITS     = 's-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_CloudGround lightning Rate'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'IC_TOTAL_NB'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'IC_TOTAL_NB'
-TFIELDLIST(IDX)%CUNITS     = '1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_IntraCloud lightning Number'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'CG_TOTAL_NB'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'CG_TOTAL_NB'
-TFIELDLIST(IDX)%CUNITS     = '1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_CloudGround lightning Number'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'COUNTCONV',      &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'COUNTCONV',      &
+  CUNITS     = '',               &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_COUNTCONV',  &
+  NGRID      = 1,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'DTHCONV',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'DTHCONV',        &
+  CUNITS     = 'K s-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_CONVective heating/cooling rate', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'DRVCONV',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'DRVCONV',        &
+  CUNITS     = 's-1',            &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_CONVective R_v tendency', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'DRCCONV',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'DRCCONV',        &
+  CUNITS     = 's-1',            &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_CONVective R_c tendency', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'DRICONV',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'DRICONV',        &
+  CUNITS     = 's-1',            &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_CONVective R_i tendency', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'PRCONV',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'PRCONV',         &
+  CUNITS     = 'm s-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_CONVective instantaneous Precipitation Rate', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'PACCONV',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'PACCONV',        &
+  CUNITS     = 'm',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_CONVective ACcumulated Precipitation rate', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'PRSCONV',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'PRSCONV',        &
+  CUNITS     = 'm s-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_CONVective instantaneous Precipitation Rate for Snow', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA(    &
+  CMNHNAME   = 'DSVCONV',           &
+  CSTDNAME   = '',                  &
+  CLONGNAME  = 'DSVCONV',           &
+  CUNITS     = 's-1',               &
+  CDIR       = 'XY',                &
+  CCOMMENT   = 'Tracer tendencies', &
+  NGRID      = 1,                   &
+  NTYPE      = TYPEREAL,            &
+  NDIMS      = 4,                   &
+  LTIMEDEP   = .TRUE.               ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'PRLFLXCONV',     &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'PRLFLXCONV',     &
+  CUNITS     = 'm s-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Liquid Precipitation Convective Flux', &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'PRSFLXCONV',     &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'PRSFLXCONV',     &
+  CUNITS     = 'm s-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Solid Precipitation Convective Flux', &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'UMFCONV',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'UMFCONV',        &
+  CUNITS     = 'kg s-1 m-2',     &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Updraft Convective Mass Flux', &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'DMFCONV',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'DMFCONV',        &
+  CUNITS     = 'kg s-1 m-2',     &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Downdraft Convective Mass Flux', &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'MFCONV',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'MFCONV',         &
+  CUNITS     = 'kg s-1 m-2',     &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Convective Mass Flux', &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'CAPE',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'CAPE',           &
+  CUNITS     = 'J kg-1',         &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Convective Available Potentiel Energy', &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'CLTOPCONV_LVL',  &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'CLTOPCONV_LVL',  &
+  CUNITS     = '1',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'Convective cloud top level', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'CLBASCONV_LVL',  &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'CLBASCONV_LVL',  &
+  CUNITS     = '1',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'Convective cloud base level', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'IC_RATE',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'IC_RATE',        &
+  CUNITS     = 's-1',            &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_IntraCloud lightning Rate', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'CG_RATE',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'CG_RATE',        &
+  CUNITS     = 's-1',            &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_CloudGround lightning Rate', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'IC_TOTAL_NB',    &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'IC_TOTAL_NB',    &
+  CUNITS     = '1',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_IntraCloud lightning Number', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'CG_TOTAL_NB',    &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'CG_TOTAL_NB',    &
+  CUNITS     = '1',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_CloudGround lightning Number', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
 !
 END IF !CPROGRAM/=PGD , NESPGD
 !
 !
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'SSO_ANIS'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'SSO_ANIS'
-TFIELDLIST(IDX)%CUNITS     = 'm'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_SSO_ANISOTROPY'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'SSO_SLOPE'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'SSO_SLOPE'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_SSO_SLOPE'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'SSO_DIR'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'SSO_DIR'
-TFIELDLIST(IDX)%CUNITS     = 'degree'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_SSO_DIR'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'AVG_ZS'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'AVG_ZS'
-TFIELDLIST(IDX)%CUNITS     = 'm'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_AVG_ZS'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'SIL_ZS'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'SIL_ZS'
-TFIELDLIST(IDX)%CUNITS     = 'm'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_SIL_ZS'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'MAX_ZS'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'MAX_ZS'
-TFIELDLIST(IDX)%CUNITS     = 'm'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_MAX_ZS'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'MIN_ZS'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'MIN_ZS'
-TFIELDLIST(IDX)%CUNITS     = 'm'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_MIN_ZS'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'SSO_STDEV'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'SSO_STDEV'
-TFIELDLIST(IDX)%CUNITS     = 'm'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_SSO_STDEV'
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'INPRC'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'INPRC'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_INstantaneous Cloud Precipitation Rate'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'ACPRC'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'ACPRC'
-TFIELDLIST(IDX)%CUNITS     = 'm'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_ACcumulated Cloud Precipitation Rate'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'INDEP'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'INDEP'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_INstantaneous Cloud Deposition Rate'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'ACDEP'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'ACDEP'
-TFIELDLIST(IDX)%CUNITS     = 'm'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_ACcumulated Cloud Deposition Rate'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'INPRR'
-TFIELDLIST(IDX)%CSTDNAME   = 'rainfall_rate'
-TFIELDLIST(IDX)%CLONGNAME  = 'INPRR'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_INstantaneous Precipitation Rain Rate'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'INPRR3D'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'INPRR3D'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_INstantaneous 3D Rain Precipitation flux'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'EVAP3D'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'EVAP3D'
-TFIELDLIST(IDX)%CUNITS     = 'kg kg-1 s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_INstantaneous 3D Rain Evaporation flux'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'ACPRR'
-TFIELDLIST(IDX)%CSTDNAME   = 'thickness_of_rainfall_amount'
-TFIELDLIST(IDX)%CLONGNAME  = 'ACPRR'
-TFIELDLIST(IDX)%CUNITS     = 'm'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_ACcumulated Precipitation Rain Rate'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'INPRS'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'INPRS'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_INstantaneous PRecipitation Snow Rate'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'ACPRS'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'ACPRS'
-TFIELDLIST(IDX)%CUNITS     = 'm'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_ACcumulated PRecipitation Snow Rate'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'INPRG'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'INPRG'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_INstantaneous PRecipitation Graupel Rate'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'ACPRG'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'ACPRG'
-TFIELDLIST(IDX)%CUNITS     = 'm'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_ACcumulated PRecipitation Graupel Rate'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'INPRH'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'INPRH'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_INstantaneous PRecipitation Hail Rate'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'ACPRH'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'ACPRH'
-TFIELDLIST(IDX)%CUNITS     = 'm'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_ACcumulated PRecipitation Hail Rate'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'INPRT'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'INPRT'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Total INstantaneaous PRecipitation rate'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
+call Add_field2list( TFIELDDATA(     &
+  CMNHNAME   = 'SSO_ANIS',           &
+  CSTDNAME   = '',                   &
+  CLONGNAME  = 'SSO_ANIS',           &
+  CUNITS     = 'm',                  &
+  CDIR       = 'XY',                 &
+  CCOMMENT   = 'X_Y_SSO_ANISOTROPY', &
+  NGRID      = 4,                    &
+  NTYPE      = TYPEREAL,             &
+  NDIMS      = 2,                    &
+  LTIMEDEP   = .FALSE.               ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'SSO_SLOPE',      &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'SSO_SLOPE',      &
+  CUNITS     = '',               &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_SSO_SLOPE',  &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'SSO_DIR',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'SSO_DIR',        &
+  CUNITS     = 'degree',         &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_SSO_DIR',    &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'AVG_ZS',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'AVG_ZS',         &
+  CUNITS     = 'm',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_AVG_ZS',     &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'SIL_ZS',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'SIL_ZS',         &
+  CUNITS     = 'm',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_SIL_ZS',     &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'MAX_ZS',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'MAX_ZS',         &
+  CUNITS     = 'm',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_MAX_ZS',     &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'MIN_ZS',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'MIN_ZS',         &
+  CUNITS     = 'm',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_MIN_ZS',     &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'SSO_STDEV',      &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'SSO_STDEV',      &
+  CUNITS     = 'm',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_SSO_STDEV',  &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'INPRC',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'INPRC',          &
+  CUNITS     = 'm s-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_INstantaneous Cloud Precipitation Rate', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'ACPRC',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'ACPRC',          &
+  CUNITS     = 'm',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_ACcumulated Cloud Precipitation Rate', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'INDEP',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'INDEP',          &
+  CUNITS     = 'm s-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_INstantaneous Cloud Deposition Rate', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'ACDEP',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'ACDEP',          &
+  CUNITS     = 'm',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_ACcumulated Cloud Deposition Rate', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'INPRR',          &
+  CSTDNAME   = 'rainfall_rate',  &
+  CLONGNAME  = 'INPRR',          &
+  CUNITS     = 'm s-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_INstantaneous Precipitation Rain Rate', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'INPRR3D',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'INPRR3D',        &
+  CUNITS     = 'm s-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_INstantaneous 3D Rain Precipitation flux', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'EVAP3D',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'EVAP3D',         &
+  CUNITS     = 'kg kg-1 s-1',    &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_INstantaneous 3D Rain Evaporation flux', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA(                          &
+  CMNHNAME   = 'ACPRR',                                   &
+  CSTDNAME   = 'thickness_of_rainfall_amount',            &
+  CLONGNAME  = 'ACPRR',                                   &
+  CUNITS     = 'm',                                       &
+  CDIR       = 'XY',                                      &
+  CCOMMENT   = 'X_Y_ACcumulated Precipitation Rain Rate', &
+  NGRID      = 1,                                         &
+  NTYPE      = TYPEREAL,                                  &
+  NDIMS      = 2,                                         &
+  LTIMEDEP   = .TRUE.                                     ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'INPRS',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'INPRS',          &
+  CUNITS     = 'm s-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_INstantaneous PRecipitation Snow Rate', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'ACPRS',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'ACPRS',          &
+  CUNITS     = 'm',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_ACcumulated PRecipitation Snow Rate', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'INPRG',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'INPRG',          &
+  CUNITS     = 'm s-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_INstantaneous PRecipitation Graupel Rate', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'ACPRG',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'ACPRG',          &
+  CUNITS     = 'm',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_ACcumulated PRecipitation Graupel Rate', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'INPRH',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'INPRH',          &
+  CUNITS     = 'm s-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_INstantaneous PRecipitation Hail Rate', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'ACPRH',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'ACPRH',          &
+  CUNITS     = 'm',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_ACcumulated PRecipitation Hail Rate', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'INPRT',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'INPRT',          &
+  CUNITS     = 'm s-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Total INstantaneaous PRecipitation rate', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
 !No permanent variable associated to this field
-!ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'ACPRT'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'ACPRT'
-TFIELDLIST(IDX)%CUNITS     = 'm'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Total ACcumulated PRecipitation rate'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'ACPRT',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'ACPRT',          &
+  CUNITS     = 'm',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Total ACcumulated PRecipitation rate', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .TRUE.            ) )
 !No permanent variable associated to this field
-!ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'VT_FLX'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'VT_FLX'
-TFIELDLIST(IDX)%CUNITS     = 'K m s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = ''
-TFIELDLIST(IDX)%NGRID      = 2
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'WT_FLX'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'WT_FLX'
-TFIELDLIST(IDX)%CUNITS     = 'K m s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = ''
-TFIELDLIST(IDX)%NGRID      = 4
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'RTHS_EDDY_FLUX'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'RTHS_EDDY_FLUX'
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'VT_FLX',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'VT_FLX',         &
+  CUNITS     = 'K m s-1',        &
+  CDIR       = 'XY',             &
+  CCOMMENT   = '',               &
+  NGRID      = 2,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'WT_FLX',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'WT_FLX',         &
+  CUNITS     = 'K m s-1',        &
+  CDIR       = 'XY',             &
+  CCOMMENT   = '',               &
+  NGRID      = 4,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'RTHS_EDDY_FLUX', &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'RTHS_EDDY_FLUX', &
 !TODO PW: units?
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = ''
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'VU_FLX'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'VU_FLX'
-TFIELDLIST(IDX)%CUNITS     = 'm s-2'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = ''
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'RVS_EDDY_FLUX'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'RVS_EDDY_FLUX'
+  CUNITS     = '',               &
+  CDIR       = 'XY',             &
+  CCOMMENT   = '',               &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'VU_FLX',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'VU_FLX',         &
+  CUNITS     = 'm s-2',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = '',               &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'RVS_EDDY_FLUX',  &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'RVS_EDDY_FLUX',  &
 !TODO PW: units?
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = ''
-TFIELDLIST(IDX)%NGRID      = 3
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .TRUE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'FRC'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'FRC'
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Number of forcing profiles'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
+  CUNITS     = '',               &
+  CDIR       = 'XY',             &
+  CCOMMENT   = '',               &
+  NGRID      = 3,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .TRUE.            ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'FRC',            &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'FRC',            &
+  CUNITS     = '',               &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Number of forcing profiles', &
+  NGRID      = 0,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 IF (TRIM(CPROGRAM)=='REAL' .OR. TRIM(CPROGRAM) == 'LFICDF') THEN
 !PW: not yet known: IF (LFILTERING) THEN
 !
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'UT15'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'UT15'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_U component of Total wind'
-TFIELDLIST(IDX)%NGRID      = 2
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'VT15'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'VT15'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_V component of Total wind'
-TFIELDLIST(IDX)%NGRID      = 3
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'TEMPTOT'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'TEMPTOT'
-TFIELDLIST(IDX)%CUNITS     = 'K'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_TOTal TEMPerature'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'PRESTOT'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'PRESTOT'
-TFIELDLIST(IDX)%CUNITS     = 'Pa'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_TOTal PRESsure'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'HUMTOT'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'HUMTOT'
-TFIELDLIST(IDX)%CUNITS     = 'kg kg-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_TOTal specific HUMidity'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'UT16'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'UT16'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_U component of Environmental wind'
-TFIELDLIST(IDX)%NGRID      = 2
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'VT16'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'VT16'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_V component of Environmental wind'
-TFIELDLIST(IDX)%NGRID      = 3
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'TEMPENV'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'TEMPENV'
-TFIELDLIST(IDX)%CUNITS     = 'K'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_ENVironmental TEMPerature'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'PRESENV'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'PRESENV'
-TFIELDLIST(IDX)%CUNITS     = 'Pa'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_ENVironmental PRESsure'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 2
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X2D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'HUMENV'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'HUMENV'
-TFIELDLIST(IDX)%CUNITS     = 'kg kg-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_ENVironmental specific HUMidity'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'UT17'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'UT17'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_U component of Basic wind'
-TFIELDLIST(IDX)%NGRID      = 2
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'VT17'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'VT17'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_V component of Basic wind'
-TFIELDLIST(IDX)%NGRID      = 3
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'TEMPBAS'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'TEMPBAS'
-TFIELDLIST(IDX)%CUNITS     = 'K'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_BASic TEMPerature'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'PRESBAS'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'PRESBAS'
-TFIELDLIST(IDX)%CUNITS     = 'Pa'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_BASic PRESsure'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'HUMBAS'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'HUMBAS'
-TFIELDLIST(IDX)%CUNITS     = 'kg kg-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_BASic specific HUMidity'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
-!
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'VTDIS'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'VTDIS'
-TFIELDLIST(IDX)%CUNITS     = 'm s-1'
-TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_Total disturbance tangential wind'
-TFIELDLIST(IDX)%NGRID      = 1
-TFIELDLIST(IDX)%NTYPE      = TYPEREAL
-TFIELDLIST(IDX)%NDIMS      = 3
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_X3D(IMODEL))
-IDX = IDX+1
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'UT15',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'UT15',           &
+  CUNITS     = 'm s-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_U component of Total wind', &
+  NGRID      = 2,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'VT15',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'VT15',           &
+  CUNITS     = 'm s-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_V component of Total wind', &
+  NGRID      = 3,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'TEMPTOT',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'TEMPTOT',        &
+  CUNITS     = 'K',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_TOTal TEMPerature', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'PRESTOT',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'PRESTOT',        &
+  CUNITS     = 'Pa',             &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_TOTal PRESsure', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'HUMTOT',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'HUMTOT',         &
+  CUNITS     = 'kg kg-1',        &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_TOTal specific HUMidity', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'UT16',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'UT16',           &
+  CUNITS     = 'm s-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_U component of Environmental wind', &
+  NGRID      = 2,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'VT16',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'VT16',           &
+  CUNITS     = 'm s-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_V component of Environmental wind', &
+  NGRID      = 3,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'TEMPENV',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'TEMPENV',        &
+  CUNITS     = 'K',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_ENVironmental TEMPerature', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'PRESENV',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'PRESENV',        &
+  CUNITS     = 'Pa',             &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_ENVironmental PRESsure', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 2,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'HUMENV',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'HUMENV',         &
+  CUNITS     = 'kg kg-1',        &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_ENVironmental specific HUMidity', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'UT17',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'UT17',           &
+  CUNITS     = 'm s-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_U component of Basic wind', &
+  NGRID      = 2,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'VT17',           &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'VT17',           &
+  CUNITS     = 'm s-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_V component of Basic wind', &
+  NGRID      = 3,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'TEMPBAS',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'TEMPBAS',        &
+  CUNITS     = 'K',              &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_BASic TEMPerature', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'PRESBAS',        &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'PRESBAS',        &
+  CUNITS     = 'Pa',             &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_BASic PRESsure', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'HUMBAS',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'HUMBAS',         &
+  CUNITS     = 'kg kg-1',        &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_BASic specific HUMidity', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'VTDIS',          &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'VTDIS',          &
+  CUNITS     = 'm s-1',          &
+  CDIR       = 'XY',             &
+  CCOMMENT   = 'X_Y_Z_Total disturbance tangential wind', &
+  NGRID      = 1,                &
+  NTYPE      = TYPEREAL,         &
+  NDIMS      = 3,                &
+  LTIMEDEP   = .FALSE.           ) )
 !
 !END IF !LFILTERING
 END IF !CPROGRAM==REAL .OR. LFICDF
 !
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'NFRCLT'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'NFRCLT'
-TFIELDLIST(IDX)%CUNITS     = '1'
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'number of sea surface forcings + 1'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = 'NINFRT'
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = 'NINFRT'
-TFIELDLIST(IDX)%CUNITS     = 's'
-TFIELDLIST(IDX)%CDIR       = '--'
-TFIELDLIST(IDX)%CCOMMENT   = 'Interval in seconds between forcings'
-TFIELDLIST(IDX)%NGRID      = 0
-TFIELDLIST(IDX)%NTYPE      = TYPEINT
-TFIELDLIST(IDX)%NDIMS      = 0
-TFIELDLIST(IDX)%LTIMEDEP   = .FALSE.
-IDX = IDX+1
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'NFRCLT',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'NFRCLT',         &
+  CUNITS     = '1',              &
+  CDIR       = '--',             &
+  CCOMMENT   = 'number of sea surface forcings + 1', &
+  NGRID      = 0,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
+
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = 'NINFRT',         &
+  CSTDNAME   = '',               &
+  CLONGNAME  = 'NINFRT',         &
+  CUNITS     = 's',              &
+  CDIR       = '--',             &
+  CCOMMENT   = 'Interval in seconds between forcings', &
+  NGRID      = 0,                &
+  NTYPE      = TYPEINT,          &
+  NDIMS      = 0,                &
+  LTIMEDEP   = .FALSE.           ) )
 !
 !
-WRITE(YMSG,'("number of used fields=",I4," out of ",I4)') IDX-1,MAXFIELDS
+WRITE(YMSG,'("number of used fields=",I4," out of ",I4)') nfields_used-1,MAXFIELDS
 CALL PRINT_MSG(NVERB_INFO,'GEN','INI_FIELD_LIST',TRIM(YMSG))
 !
 #if 0
 !
-IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
-TFIELDLIST(IDX)%CMNHNAME   = ''
-TFIELDLIST(IDX)%CSTDNAME   = ''
-TFIELDLIST(IDX)%CLONGNAME  = ''
-TFIELDLIST(IDX)%CUNITS     = ''
-TFIELDLIST(IDX)%CDIR       = ''
-TFIELDLIST(IDX)%CLBTYPE    = ''
-TFIELDLIST(IDX)%CCOMMENT   = ''
-TFIELDLIST(IDX)%NGRID      = 
-TFIELDLIST(IDX)%NTYPE      = 
-TFIELDLIST(IDX)%NDIMS      = 
-TFIELDLIST(IDX)%LTIMEDEP   = 
-ALLOCATE(TFIELDLIST(IDX)%TFIELD_xxxD(IMODEL))
-IDX = IDX+1
+call Add_field2list( TFIELDDATA( &
+  CMNHNAME   = '',               &
+  CSTDNAME   = '',               &
+  CLONGNAME  = '',               &
+  CUNITS     = '',               &
+  CDIR       = '',               &
+  CLBTYPE    = '',               &
+  CCOMMENT   = '',               &
+  NGRID      = ,                 &
+  NTYPE      = ,                 &
+  NDIMS      = ,                 &
+  LTIMEDEP   = ,                 ) )
 #endif
-!
-CONTAINS
-SUBROUTINE ERR_INI_FIELD_LIST()
-  WRITE(YMSG,'( "IDX>MAXFIELDS (",I5,")" )') MAXFIELDS
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_FIELD_LIST',TRIM(YMSG))
-END SUBROUTINE ERR_INI_FIELD_LIST
 !
 END SUBROUTINE INI_FIELD_LIST
 !
@@ -4626,6 +4183,26 @@ END IF
 END IF !KFROM/=KTO
 !
 END SUBROUTINE FIELDLIST_GOTO_MODEL
+
+
+subroutine Add_field2list( tpfield )
+
+implicit none
+
+type(tfielddata) :: tpfield
+
+CHARACTER(LEN=42) :: YMSG
+
+if ( nfields_used >= MAXFIELDS ) then
+  WRITE(YMSG,'( "nfields_used>=MAXFIELDS (",I5,")" )') MAXFIELDS
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_FIELD_LIST',TRIM(YMSG))
+end if
+
+nfields_used = nfields_used + 1
+
+tfieldlist(nfields_used) = tpfield
+
+end subroutine Add_field2list
 
 
 subroutine Goto_model_1field_c0d( hname, kfrom, kto, pdata )

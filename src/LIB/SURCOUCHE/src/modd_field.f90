@@ -241,7 +241,8 @@ TYPE, extends( tfield_metadata_base ) :: TFIELDDATA
   TYPE(TFIELDPTR_T1D),DIMENSION(:),ALLOCATABLE :: TFIELD_T1D !Pointer to the date/time 1D fields (one per nested mesh)
 END TYPE TFIELDDATA
 !
-integer, save :: NMODEL_ALLOCATED
+integer, save :: NMODEL_ALLOCATED = 0
+integer, save :: NFIELDS_USED = 0
 LOGICAL, SAVE :: LFIELDLIST_ISINIT = .FALSE.
 TYPE(TFIELDDATA),DIMENSION(MAXFIELDS),SAVE :: TFIELDLIST
 
