@@ -3388,30 +3388,6 @@ END IF
 if (kfrom > nmodel_allocated .or. kto > nmodel_allocated ) &
   call Print_msg( NVERB_FATAL, 'GEN', 'FIELDLIST_GOTO_MODEL', 'kfrom or kto > nmodel_allocated' )
 !
-! Initialize some pointers
-!
-!PW: TODO: check if still necessary as XRHODREFZ and XTHVREFZ are now initialiazed in ini_modeln even for KMI/=1 (29/01/2019)
-IF (KFROM == KTO) THEN
-  IF ( CPROGRAM/='NESPGD' .AND. CPROGRAM/='PGD' ) THEN
-    IF (.NOT.ALLOCATED(XRHODREFZ)) CALL PRINT_MSG(NVERB_FATAL,'GEN','FIELDLIST_GOTO_MODEL','XRHODREFZ not yet allocated')
-    CALL FIND_FIELD_ID_FROM_MNHNAME('RHOREFZ',IID,IRESP)
-    TFIELDLIST(IID)%TFIELD_X1D(KFROM)%DATA=>XRHODREFZ
-    !
-    IF (.NOT.ALLOCATED(XTHVREFZ)) CALL PRINT_MSG(NVERB_FATAL,'GEN','FIELDLIST_GOTO_MODEL','XTHVREFZ not yet allocated')
-    CALL FIND_FIELD_ID_FROM_MNHNAME('THVREFZ',IID,IRESP)
-    TFIELDLIST(IID)%TFIELD_X1D(KFROM)%DATA=>XTHVREFZ
-  END IF
-END IF
-!
-!
-!
-!
-! Save current state for allocated arrays
-!
-!
-!
-!
-!
 ! MODD_FIELD_n variables
 !
 call Goto_model_1field( 'ZWS',   kfrom, kto, xzws   )
