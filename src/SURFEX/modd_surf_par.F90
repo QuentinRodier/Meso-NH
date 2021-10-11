@@ -58,6 +58,15 @@ INTEGER, PARAMETER :: NUNDEF = 1E+9   !  HUGE(NUNDEF) !  undefined value
 REAL,    PARAMETER :: XSURF_EPSILON = EPSILON(XSURF_EPSILON)  ! minimum 
 REAL,    PARAMETER :: XSURF_HUGE    = HUGE(XSURF_HUGE) 
 REAL,    PARAMETER :: XSURF_TINY    = TINY(XSURF_TINY) 
+#ifdef SFX_MNH
+INTEGER, PARAMETER :: LEN_HREC = MNH_LEN_HREC ! Length of record variable written in output files.
+                                    ! !!!!!!!!!!!!!!!!!!!   WARNING. !!!!!!!!!!!!!!!!!!!!!!!!!!!
+                                    ! The use of 16 is forbidden for operational use.
+                                    ! Developpers must restrict length of I/O
+                                    ! variable names to 12 as much as possible.
+#else
+INTEGER, PARAMETER :: LEN_HREC = 12
+#endif
 !-----------------------------------------------------------------------------------------------------
 !
 END MODULE MODD_SURF_PAR

@@ -57,7 +57,7 @@ CPPFLAGS   += -DMNH_REAL=$(MNH_REAL)
 #
 #  Len of HREC characters 
 #
-CPPFLAGS   += -DLEN_HREC=$(LEN_HREC)
+CPPFLAGS   += -DMNH_LEN_HREC=$(MNH_LEN_HREC)
 #
 
 OBJS_NOCB +=  spll_dxf.o spll_dxm.o spll_dyf.o spll_dym.o \

@@ -16,7 +16,7 @@ use modd_field, only: tfielddata, tfieldlist, TYPECHAR, TYPEDATE, TYPELOG
 use mode_field, only: Find_field_id_from_mnhname
 USE MODE_MSG
 !
-CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
+CHARACTER(LEN=MNH_LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
 CHARACTER(LEN=2),       INTENT(IN)  :: HDIR     ! Expected type of the data field (XX,XY,--...)
 CHARACTER(LEN=100),     INTENT(IN)  :: HCOMMENT ! Comment string
 INTEGER,                INTENT(IN)  :: KGRID    ! Localization on the model grid
@@ -187,7 +187,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
+CHARACTER(LEN=MNH_LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
 REAL,                   INTENT(IN)  :: PFIELD   ! the real scalar to write
 INTEGER,                INTENT(OUT) :: KRESP    ! return-code if a problem appears
 CHARACTER(LEN=100),     INTENT(IN)  :: HCOMMENT ! Comment string
@@ -307,7 +307,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
+CHARACTER(LEN=MNH_LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
 INTEGER,                INTENT(IN)  :: KL       ! number of points
 REAL, DIMENSION(KL),    INTENT(IN)  :: PFIELD   ! array containing the data field
 INTEGER,                INTENT(OUT) :: KRESP    ! return-code if a problem appears
@@ -570,7 +570,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),   INTENT(IN)  :: HREC     ! name of the article to write
+CHARACTER(LEN=MNH_LEN_HREC),   INTENT(IN)  :: HREC     ! name of the article to write
 INTEGER,                   INTENT(IN)  :: KL1,KL2  ! number of points
 REAL, DIMENSION(KL1,KL2),  INTENT(IN)  :: PFIELD   ! array containing the data field
 LOGICAL,DIMENSION(:),      INTENT(IN)  :: OFLAG    ! mask for array filling
@@ -595,7 +595,7 @@ INTEGER           :: IIU, IJU, IIB, IJB, IIE, IJE ! dimensions of horizontal fie
 INTEGER, DIMENSION(:), ALLOCATABLE :: IMASK       ! mask for unpacking
 REAL              :: ZUNDEF                       ! undefined value in SURFEX
 CHARACTER(LEN=2)  :: YDIR
-CHARACTER(LEN=LEN_HREC) :: YREC
+CHARACTER(LEN=MNH_LEN_HREC) :: YREC
 !
 !JUANZ
 INTEGER           :: NCOVER,ICOVER,IKL2, JL2
@@ -771,7 +771,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),   INTENT(IN)  :: HREC     ! name of the article to write
+CHARACTER(LEN=MNH_LEN_HREC),   INTENT(IN)  :: HREC     ! name of the article to write
 INTEGER,                   INTENT(IN)  :: KL1,KL2  ! number of points
 REAL, DIMENSION(KL1,KL2),  INTENT(IN)  :: PFIELD   ! array containing the data field
 INTEGER,                   INTENT(OUT) :: KRESP    ! return-code if a problem appears
@@ -914,7 +914,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
+CHARACTER(LEN=MNH_LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
 INTEGER,                INTENT(IN)  :: KFIELD   ! the integer to write
 INTEGER,                INTENT(OUT) :: KRESP    ! return-code if a problem appears
 CHARACTER(LEN=100),     INTENT(IN)  :: HCOMMENT ! Comment string
@@ -1011,7 +1011,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
+CHARACTER(LEN=MNH_LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
 INTEGER,                INTENT(IN)  :: KL       ! number of points
 INTEGER, DIMENSION(KL), INTENT(IN)  :: KFIELD   ! the integers to be written
 INTEGER,                INTENT(OUT) :: KRESP    ! return-code if a problem appears
@@ -1111,7 +1111,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
+CHARACTER(LEN=MNH_LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
 CHARACTER(LEN=40),      INTENT(IN)  :: HFIELD   ! the string to write
 INTEGER,                INTENT(OUT) :: KRESP    ! return-code if a problem appears
 CHARACTER(LEN=100),     INTENT(IN)  :: HCOMMENT ! Comment string
@@ -1210,7 +1210,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
+CHARACTER(LEN=MNH_LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
 INTEGER,                INTENT(IN)  :: KL       ! number of points
 LOGICAL, DIMENSION(KL), INTENT(IN)  :: OFIELD   ! array containing the data field
 INTEGER,                INTENT(OUT) :: KRESP    ! return-code if a problem appears
@@ -1322,7 +1322,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
+CHARACTER(LEN=MNH_LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
 LOGICAL,                INTENT(IN)  :: OFIELD   ! array containing the data field
 INTEGER,                INTENT(OUT) :: KRESP    ! return-code if a problem appears
 CHARACTER(LEN=100),     INTENT(IN)  :: HCOMMENT ! Comment string
@@ -1406,7 +1406,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),  INTENT(IN)  :: HREC     ! name of the article to be written
+CHARACTER(LEN=MNH_LEN_HREC),  INTENT(IN)  :: HREC     ! name of the article to be written
 INTEGER,            INTENT(IN)  :: KYEAR    ! year
 INTEGER,            INTENT(IN)  :: KMONTH   ! month
 INTEGER,            INTENT(IN)  :: KDAY     ! day
@@ -1417,7 +1417,7 @@ CHARACTER(LEN=100), INTENT(IN)  :: HCOMMENT ! Comment string
 !*      0.2   Declarations of local variables
 !
 !
-CHARACTER(LEN=LEN_HREC)      :: YRECFM    ! Name of the article to be written
+CHARACTER(LEN=MNH_LEN_HREC)      :: YRECFM    ! Name of the article to be written
 INTEGER, DIMENSION(3)  :: ITDATE
 CHARACTER(LEN=5) :: YMSG
 TYPE (DATE_TIME) :: TZDATA
@@ -1499,7 +1499,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),  INTENT(IN) :: HREC     ! name of the article to be written
+CHARACTER(LEN=MNH_LEN_HREC),  INTENT(IN) :: HREC     ! name of the article to be written
 INTEGER,            INTENT(IN) :: KL1       ! number of points
 INTEGER, DIMENSION(KL1), INTENT(IN)  :: KYEAR    ! year
 INTEGER, DIMENSION(KL1), INTENT(IN)  :: KMONTH   ! month

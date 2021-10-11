@@ -32,7 +32,7 @@ export VERSION_NCL=${VERSION_NCL:-"ncl-6.4.0"}
 export VERSION_ECRAD=${VERSION_ECRAD:-"1.4.0"}
 export VER_ECRAD=${VERSION_ECRAD//./}
 
-export LEN_HREC=${LEN_HREC:-16}
+export MNH_LEN_HREC=${MNH_LEN_HREC:-16}
 
 #
 export NEED_TOOLS=YES

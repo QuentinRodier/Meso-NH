@@ -97,7 +97,7 @@ export MNH_REAL=${MNH_REAL}
 #
 #  Len of HREC characters 
 #
-export LEN_HREC=${LEN_HREC}
+export MNH_LEN_HREC=${MNH_LEN_HREC}
 #
 #  FOREFIRE
 #

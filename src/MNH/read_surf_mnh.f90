@@ -21,7 +21,7 @@ SUBROUTINE PREPARE_METADATA_READ_SURF(HREC,HDIR,KGRID,KTYPE,KDIMS,HSUBR,TPFIELD)
 use modd_field, only: tfielddata, tfieldlist, TYPECHAR, TYPEDATE, TYPELOG
 use mode_field, only: Find_field_id_from_mnhname
 !
-CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
+CHARACTER(LEN=MNH_LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
 CHARACTER(LEN=2),       INTENT(IN)  :: HDIR     ! Expected type of the data field (XX,XY,--...)
 INTEGER,                INTENT(IN)  :: KGRID    ! Localization on the model grid
 INTEGER,                INTENT(IN)  :: KTYPE    ! Datatype
@@ -158,7 +158,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=MNH_LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to be read
 REAL,                   INTENT(OUT) :: PFIELD   ! the real scalar to be read
 INTEGER,                INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
 CHARACTER(LEN=*),       INTENT(OUT) :: HCOMMENT ! comment
@@ -312,7 +312,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),INTENT(IN) :: HREC     ! name of the article to be read
+CHARACTER(LEN=MNH_LEN_HREC),INTENT(IN) :: HREC     ! name of the article to be read
 INTEGER,                INTENT(IN) :: KL       !  number of points
 REAL, DIMENSION(KL),    INTENT(OUT):: PFIELD   ! array containing the data field
 INTEGER,                INTENT(OUT):: KRESP    ! KRESP  : return-code if a problem appears
@@ -334,7 +334,7 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZWORK  ! work array read in the file
 REAL, DIMENSION(:),   ALLOCATABLE :: ZWORK1D! work array read in the file
 REAL                              :: ZW     ! work value
 
-CHARACTER(LEN=LEN_HREC) :: YREC
+CHARACTER(LEN=MNH_LEN_HREC) :: YREC
 CHARACTER(LEN=2)  :: YSTORAGE_TYPE
 !
 INTEGER           :: IID, IRESP
@@ -598,7 +598,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC), INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=MNH_LEN_HREC), INTENT(IN)  :: HREC     ! name of the article to be read
 INTEGER,                 INTENT(IN)  :: KL1      ! number of points
 INTEGER,                 INTENT(IN)  :: KL2      ! second dimension
 REAL, DIMENSION(KL1,KL2),INTENT(OUT) :: PFIELD   ! array containing the data field
@@ -735,7 +735,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),   INTENT(IN) :: HREC     ! name of the article to be read
+CHARACTER(LEN=MNH_LEN_HREC),   INTENT(IN) :: HREC     ! name of the article to be read
 INTEGER,                   INTENT(IN) :: KL1,KL2  !  number of points
 REAL, DIMENSION(KL1,KL2),  INTENT(OUT):: PFIELD   ! array containing the data field
 LOGICAL,DIMENSION(JPCOVER),INTENT(IN) :: OFLAG    ! mask for array filling
@@ -753,7 +753,7 @@ INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: ILENCH         ! ILENCH : length of comment string
 INTEGER           :: ILUOUT
 !
-CHARACTER(LEN=LEN_HREC) :: YREC
+CHARACTER(LEN=MNH_LEN_HREC) :: YREC
 CHARACTER(LEN=2)  :: YDIR
 CHARACTER(LEN=2)  :: YSTORAGE_TYPE
 !
@@ -928,7 +928,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),INTENT(IN) :: HREC     ! name of the article to be read
+CHARACTER(LEN=MNH_LEN_HREC),INTENT(IN) :: HREC     ! name of the article to be read
 INTEGER,                INTENT(IN) :: KL1      !  number of points
 INTEGER,                INTENT(IN) :: KCOVER   ! index of the vertical level, it should be a index such that LCOVER(KCOVER)=.TRUE.
 REAL, DIMENSION(KL1),   INTENT(OUT):: PFIELD   ! array containing the data field
@@ -946,7 +946,7 @@ INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: ILENCH         ! ILENCH : length of comment string
 INTEGER           :: ILUOUT
 !
-CHARACTER(LEN=LEN_HREC) :: YREC
+CHARACTER(LEN=MNH_LEN_HREC) :: YREC
 CHARACTER(LEN=2)  :: YDIR
 CHARACTER(LEN=2)  :: YSTORAGE_TYPE
 !
@@ -1107,7 +1107,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=MNH_LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to be read
 INTEGER,                INTENT(OUT) :: KFIELD   ! the integer to be read
 INTEGER,                INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
 CHARACTER(LEN=*),       INTENT(OUT) :: HCOMMENT ! comment
@@ -1203,7 +1203,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=MNH_LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to be read
 INTEGER,                INTENT(IN)  :: KL       ! number of points
 INTEGER, DIMENSION(KL), INTENT(OUT) :: KFIELD   ! the integer to be read
 INTEGER,                INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
@@ -1312,7 +1312,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC      ! name of the article to be read
+CHARACTER(LEN=MNH_LEN_HREC),INTENT(IN)  :: HREC      ! name of the article to be read
 CHARACTER(LEN=40),      INTENT(OUT) :: HFIELD    ! the integer to be read
 INTEGER,                INTENT(OUT) :: KRESP     ! KRESP  : return-code if a problem appears
 CHARACTER(LEN=*),       INTENT(OUT) :: HCOMMENT  ! comment
@@ -1467,7 +1467,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=MNH_LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to be read
 INTEGER,                INTENT(IN)  :: KL       ! number of points
 LOGICAL, DIMENSION(KL), INTENT(OUT) :: OFIELD   ! array containing the data field
 INTEGER,                INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
@@ -1580,7 +1580,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=MNH_LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to be read
 LOGICAL,                INTENT(OUT) :: OFIELD   ! array containing the data field
 INTEGER,                INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
 CHARACTER(LEN=*),       INTENT(OUT) :: HCOMMENT ! comment
@@ -1676,7 +1676,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),INTENT(IN)    :: HREC     ! name of the article to be read
+CHARACTER(LEN=MNH_LEN_HREC),INTENT(IN)    :: HREC     ! name of the article to be read
 INTEGER,                INTENT(OUT)   :: KYEAR    ! year
 INTEGER,                INTENT(OUT)   :: KMONTH   ! month
 INTEGER,                INTENT(OUT)   :: KDAY     ! day
@@ -1690,7 +1690,7 @@ INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: ILENCH         ! ILENCH : length of comment string
 INTEGER           :: ILUOUT
 !
-CHARACTER(LEN=LEN_HREC)        :: YRECFM     ! Name of the article to be written
+CHARACTER(LEN=MNH_LEN_HREC)        :: YRECFM     ! Name of the article to be written
 CHARACTER(LEN=40)              :: YFILETYPE40! MESONH file type
 CHARACTER(LEN=2)               :: YFILETYPE2 ! MESONH file type
 INTEGER, DIMENSION(3)  :: ITDATE
@@ -1798,7 +1798,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC), INTENT(IN)    :: HREC     ! name of the article to be read
+CHARACTER(LEN=MNH_LEN_HREC), INTENT(IN)    :: HREC     ! name of the article to be read
 INTEGER,                 INTENT(IN)    :: KL1      ! number of points
 
 INTEGER, DIMENSION(KL1), INTENT(OUT)   :: KYEAR    ! year
@@ -1814,7 +1814,7 @@ INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: ILENCH         ! ILENCH : length of comment string
 INTEGER           :: ILUOUT
 !
-CHARACTER(LEN=LEN_HREC)        :: YRECFM     ! Name of the article to be written
+CHARACTER(LEN=MNH_LEN_HREC)        :: YRECFM     ! Name of the article to be written
 CHARACTER(LEN=40)              :: YFILETYPE40! MESONH file type
 CHARACTER(LEN=2)               :: YFILETYPE2 ! MESONH file type
 INTEGER, DIMENSION(3,KL1)  :: ITDATE
