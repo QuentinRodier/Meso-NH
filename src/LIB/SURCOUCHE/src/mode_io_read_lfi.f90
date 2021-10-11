@@ -664,7 +664,7 @@ CHARACTER(LEN=12)            :: YRECLENGTH_FILE, YRECLENGTH_MEM
 CHARACTER(LEN=12)            :: YVAL_FILE, YVAL_MEM
 CHARACTER(LEN=JPXKRK)        :: YCOMMENT
 CHARACTER(LEN=12)            :: YRESP
-CHARACTER(LEN=LEN_HREC)      :: YRECFM
+CHARACTER(LEN=MNH_LEN_HREC)      :: YRECFM
 LOGICAL                      :: GOLDMNH !if old version of MesoNH (<5.4, old files without complete and correct metadata)
 !
 OGOOD = .TRUE.
