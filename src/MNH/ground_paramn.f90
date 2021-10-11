@@ -553,10 +553,6 @@ ELSE
     YSV_SURF(:)     = CSV(:)
 ENDIF
 !
-!        1.15   Wet/dry impurity type deposition coefficient (SURFEX offline)
-!
-ZP_ZIMPWET = 0.
-ZP_ZIMPDRY = 0.
 !
 !-------------------------------------------------------------------------------
 !
@@ -1000,8 +996,6 @@ DEALLOCATE(ZP_TA      )
 DEALLOCATE(ZP_RHOA    )
 DEALLOCATE(ZP_SV      )
 DEALLOCATE(ZP_CO2     )
-DEALLOCATE(ZP_ZIMPDRY )
-DEALLOCATE(ZP_ZIMPWET )
 DEALLOCATE(ZP_RAIN    )
 DEALLOCATE(ZP_SNOW    )
 DEALLOCATE(ZP_LW      )
